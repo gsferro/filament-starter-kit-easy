@@ -3,6 +3,14 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.6.1] - 2026-08-12
+
+### Alterado
+
+- Mensagem de "nada a atualizar" reescrita: diz que o projeto está na versão
+  mais atual quando é o caso, e distingue o cenário de comparar com uma versão
+  antiga (onde dizer "atualizado" seria mentira).
+
 ## [0.6.0] - 2026-08-12
 
 ### Corrigido

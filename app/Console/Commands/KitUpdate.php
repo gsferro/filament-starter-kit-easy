@@ -123,7 +123,13 @@ class KitUpdate extends Command
             $arquivos = $this->arquivosAlterados($origem, $destino);
 
             if ($arquivos === []) {
-                $this->components->info('Nada a atualizar: seu projeto já está na altura de '.$destino.'.');
+                $versao = str_replace('kit-v', '', $destino);
+
+                // Escolher uma versão antiga também cai aqui — e aí dizer "está
+                // atualizado" seria mentira: não há mudanças ENTRE as duas.
+                $this->components->info($destino === $tags[0]
+                    ? "Nada a atualizar: seu projeto já está na versão mais atual do kit ({$versao})."
+                    : "Nada a atualizar: não há mudanças do kit entre a sua versão e a {$versao}.");
 
                 return self::SUCCESS;
             }
