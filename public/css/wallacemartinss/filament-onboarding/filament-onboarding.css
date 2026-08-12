@@ -1,0 +1,1488 @@
+/**
+ * filament-onboarding
+ *
+ * Self-contained styles: they borrow the panel's colour variables (--primary-*,
+ * --gray-*) so the checklist and tours wear the host theme, but they never rely
+ * on the host's Tailwind build being aware of this package.
+ *
+ * Every value below reads an override first — declare any of the --fio-theme-*
+ * variables in your own stylesheet (:root, or scoped to a panel) and this picks
+ * them up regardless of which file the browser loaded last:
+ *
+ *   :root {
+ *       --fio-theme-accent: var(--color-brand-600);
+ *       --fio-theme-radius: 1rem;
+ *   }
+ *
+ * For anything deeper, publish the stylesheet:
+ *   php artisan vendor:publish --tag=filament-onboarding-styles
+ */
+
+.fio {
+    --fio-radius: var(--fio-theme-radius, 0.875rem);
+    --fio-radius-sm: var(--fio-theme-radius-sm, 0.625rem);
+    --fio-panel-width: var(--fio-theme-panel-width, 23rem);
+    --fio-surface: var(--fio-theme-surface, white);
+    --fio-surface-muted: var(--fio-theme-surface-muted, var(--gray-50));
+    --fio-border: var(--fio-theme-border, var(--gray-200));
+    --fio-text: var(--fio-theme-text, var(--gray-950));
+    --fio-text-muted: var(--fio-theme-text-muted, var(--gray-500));
+    --fio-shadow: var(--fio-theme-shadow, 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08));
+    --fio-shadow-lg: var(--fio-theme-shadow-lg, 0 24px 48px -12px rgb(0 0 0 / 0.25));
+    --fio-accent: var(--fio-theme-accent, var(--primary-600));
+    --fio-accent-soft: var(--fio-theme-accent-soft, color-mix(in oklch, var(--primary-500) 12%, transparent));
+    --fio-success: var(--fio-theme-success, var(--success-600, oklch(0.627 0.194 149.214)));
+}
+
+.dark .fio {
+    --fio-surface: var(--fio-theme-surface-dark, var(--gray-900));
+    --fio-surface-muted: var(--fio-theme-surface-muted-dark, color-mix(in oklch, var(--gray-800) 60%, transparent));
+    --fio-border: var(--fio-theme-border-dark, var(--gray-800));
+    --fio-text: var(--fio-theme-text-dark, white);
+    --fio-text-muted: var(--fio-theme-text-muted-dark, var(--gray-400));
+    --fio-shadow-lg: var(--fio-theme-shadow-lg-dark, 0 24px 48px -12px rgb(0 0 0 / 0.6));
+    --fio-accent: var(--fio-theme-accent-dark, var(--primary-400));
+    --fio-accent-soft: var(--fio-theme-accent-soft-dark, color-mix(in oklch, var(--primary-400) 16%, transparent));
+    --fio-success: var(--fio-theme-success-dark, var(--success-400, oklch(0.792 0.209 151.711)));
+}
+
+/* ---------------------------------------------------------------- launcher */
+
+.fio-launcher {
+    position: fixed;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+
+.fio-launcher--bottom-right {
+    inset-block-end: 1.5rem;
+    inset-inline-end: 1.5rem;
+}
+
+.fio-launcher--bottom-left {
+    inset-block-end: 1.5rem;
+    inset-inline-start: 1.5rem;
+    align-items: flex-start;
+}
+
+.fio-launcher--top-right {
+    inset-block-start: 5rem;
+    inset-inline-end: 1.5rem;
+    flex-direction: column-reverse;
+}
+
+.fio-launcher--top-left {
+    inset-block-start: 5rem;
+    inset-inline-start: 1.5rem;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+}
+
+.fio-launcher-button {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+    border-radius: 9999px;
+    border: 1px solid var(--fio-border);
+    background-color: var(--fio-surface);
+    box-shadow: var(--fio-shadow);
+    color: var(--fio-accent);
+    cursor: pointer;
+    transition:
+        transform 200ms cubic-bezier(0.2, 0, 0, 1),
+        box-shadow 200ms ease;
+}
+
+.fio-launcher-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--fio-shadow-lg);
+}
+
+.fio-launcher-button:focus-visible {
+    outline: 2px solid var(--fio-accent);
+    outline-offset: 2px;
+}
+
+.fio-launcher-button svg.fio-ring {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    transform: rotate(-90deg);
+}
+
+.fio-ring-track {
+    fill: none;
+    stroke: var(--fio-border);
+    stroke-width: 3;
+}
+
+.fio-ring-value {
+    fill: none;
+    stroke: var(--fio-accent);
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 600ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.fio-launcher-count {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--fio-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.fio-launcher-badge {
+    position: absolute;
+    inset-block-start: -0.125rem;
+    inset-inline-end: -0.125rem;
+    min-inline-size: 1.125rem;
+    block-size: 1.125rem;
+    padding-inline: 0.25rem;
+    display: grid;
+    place-items: center;
+    border-radius: 9999px;
+    background-color: var(--fio-accent);
+    color: white;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 0 0 2px var(--fio-surface);
+}
+
+/* ------------------------------------------------------------------- panel */
+
+.fio-panel {
+    inline-size: var(--fio-panel-width);
+    max-inline-size: calc(100vw - 2rem);
+    max-block-size: min(32rem, calc(100vh - 8rem));
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--fio-radius);
+    border: 1px solid var(--fio-border);
+    background-color: var(--fio-surface);
+    box-shadow: var(--fio-shadow-lg);
+    color: var(--fio-text);
+}
+
+.fio-panel-header {
+    padding: 1.125rem 1.25rem 1rem;
+    border-block-end: 1px solid var(--fio-border);
+    background: linear-gradient(180deg, var(--fio-accent-soft), transparent);
+}
+
+.fio-panel-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.fio-panel-title {
+    font-size: 0.9375rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    color: var(--fio-text);
+}
+
+.fio-panel-description {
+    margin-block-start: 0.25rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--fio-text-muted);
+}
+
+.fio-icon-button {
+    display: grid;
+    place-items: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    flex-shrink: 0;
+    border-radius: 0.5rem;
+    color: var(--fio-text-muted);
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.fio-icon-button:hover {
+    background-color: var(--fio-surface-muted);
+    color: var(--fio-text);
+}
+
+.fio-progress {
+    margin-block-start: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.fio-progress-track {
+    position: relative;
+    flex: 1;
+    block-size: 0.375rem;
+    border-radius: 9999px;
+    background-color: color-mix(in oklch, var(--gray-500) 18%, transparent);
+    overflow: hidden;
+}
+
+.fio-progress-value {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, var(--primary-500), var(--primary-400));
+    transition: inline-size 600ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.fio-progress-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--fio-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------------------------------- journey tabs */
+
+.fio-tabs {
+    margin-block-start: 0.75rem;
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.fio-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.fio-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid var(--fio-border);
+    background-color: transparent;
+    color: var(--fio-text-muted);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.fio-tab:hover {
+    color: var(--fio-text);
+    border-color: var(--fio-accent);
+}
+
+.fio-tab--active {
+    background-color: var(--fio-accent-soft);
+    border-color: var(--fio-accent);
+    color: var(--fio-accent);
+}
+
+.fio-tab-count {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+}
+
+/* ------------------------------------------------------------------- steps */
+
+.fio-steps {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.fio-step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: var(--fio-radius-sm);
+    transition: background-color 150ms ease;
+}
+
+.fio-step:hover {
+    background-color: var(--fio-surface-muted);
+}
+
+.fio-step-marker {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 1.375rem;
+    block-size: 1.375rem;
+    margin-block-start: 0.0625rem;
+    border-radius: 9999px;
+    border: 1.5px solid var(--fio-border);
+    color: transparent;
+    background-color: transparent;
+    transition: all 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+button.fio-step-marker {
+    cursor: pointer;
+}
+
+button.fio-step-marker:hover {
+    border-color: var(--fio-accent);
+    background-color: var(--fio-accent-soft);
+}
+
+.fio-step-marker svg {
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+}
+
+.fio-step--done .fio-step-marker {
+    border-color: transparent;
+    background-color: var(--fio-success);
+    color: white;
+}
+
+.fio-step--skipped .fio-step-marker {
+    border-style: dashed;
+    color: var(--fio-text-muted);
+}
+
+/* The step waiting on the subject right now gets the ring. */
+.fio-step--next .fio-step-marker {
+    border-color: var(--fio-accent);
+    box-shadow: 0 0 0 4px var(--fio-accent-soft);
+}
+
+.fio-step-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--fio-text);
+}
+
+.fio-step--done .fio-step-title,
+.fio-step--skipped .fio-step-title {
+    color: var(--fio-text-muted);
+    font-weight: 500;
+}
+
+.fio-step-description {
+    margin-block-start: 0.1875rem;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--fio-text-muted);
+}
+
+.fio-step-actions {
+    margin-block-start: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-wrap: wrap;
+}
+
+.fio-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3125rem;
+    padding: 0.3125rem 0.625rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease, opacity 150ms ease;
+    text-decoration: none;
+}
+
+.fio-button svg {
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+}
+
+.fio-button--primary {
+    background-color: var(--primary-600);
+    color: white;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+.fio-button--primary:hover {
+    background-color: var(--primary-500);
+}
+
+.fio-button--ghost {
+    color: var(--fio-text-muted);
+    background-color: transparent;
+}
+
+.fio-button--ghost:hover {
+    background-color: color-mix(in oklch, var(--gray-500) 12%, transparent);
+    color: var(--fio-text);
+}
+
+.fio-panel-footer {
+    padding: 0.625rem 1.25rem;
+    border-block-start: 1px solid var(--fio-border);
+    background-color: var(--fio-surface-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fio-footer-note {
+    font-size: 0.6875rem;
+    color: var(--fio-text-muted);
+}
+
+/* ---------------------------------------------------------------- complete */
+
+.fio-complete {
+    padding: 1.5rem 1.25rem;
+    text-align: center;
+}
+
+.fio-complete-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    margin: 0 auto 0.75rem;
+    border-radius: 9999px;
+    background-color: color-mix(in oklch, var(--fio-success) 15%, transparent);
+    color: var(--fio-success);
+}
+
+.fio-complete-icon svg {
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+}
+
+/* ------------------------------------------------------------------ widget */
+
+.fio-card {
+    border-radius: var(--fio-radius);
+    border: 1px solid var(--fio-border);
+    background-color: var(--fio-surface);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    overflow: hidden;
+    color: var(--fio-text);
+}
+
+.fio-card .fio-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: 0.25rem;
+    padding: 0.625rem;
+    max-block-size: none;
+}
+
+/* ------------------------------------------------------- progress page */
+
+.fio-dash {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.fio-journey {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.fio-hero {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+    padding: 1.5rem 1.75rem;
+    border-radius: var(--fio-radius);
+    border: 1px solid var(--fio-border);
+    background:
+        radial-gradient(120% 140% at 0% 0%, var(--fio-accent-soft), transparent 60%),
+        var(--fio-surface);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.fio-hero-ring {
+    position: relative;
+    flex-shrink: 0;
+    inline-size: 5.5rem;
+    block-size: 5.5rem;
+    display: grid;
+    place-items: center;
+}
+
+.fio-hero-ring svg {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    transform: rotate(-90deg);
+}
+
+.fio-hero-ring .fio-ring-track,
+.fio-hero-ring .fio-ring-value {
+    stroke-width: 5;
+}
+
+.fio-hero-percentage {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--fio-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.fio-hero-body {
+    flex: 1;
+    min-inline-size: 0;
+}
+
+.fio-hero-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.fio-hero-title {
+    font-size: 1.0625rem;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    color: var(--fio-text);
+}
+
+/* The journey's description, which lives behind the fold and sits above the
+   tiles. It had no margin under it at all: the sentence ended and the first
+   card began, touching it — the line of text read as though it were falling
+   into the box rather than introducing it. It needs to breathe on both sides of
+   the fold: away from the header above, and away from the tiles below. */
+.fio-hero-description {
+    margin-block: 0.875rem 1.125rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--fio-text-muted);
+}
+
+.fio-hero-note {
+    margin-block: 0.875rem 1.125rem;
+    font-size: 0.8125rem;
+    color: var(--fio-text-muted);
+}
+
+.fio-chip {
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    background-color: var(--fio-surface-muted);
+    border: 1px solid var(--fio-border);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--fio-text-muted);
+}
+
+.fio-stats {
+    margin-block-start: 1rem;
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.fio-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.fio-stat-value {
+    font-size: 1.375rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--fio-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.fio-stat-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--fio-text-muted);
+}
+
+.fio-next {
+    margin-block-start: 1.125rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.75rem 0.875rem;
+    border-radius: var(--fio-radius-sm);
+    border: 1px dashed color-mix(in oklch, var(--fio-accent) 35%, transparent);
+    background-color: var(--fio-accent-soft);
+}
+
+.fio-next-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fio-accent);
+}
+
+.fio-next-title {
+    margin-block-start: 0.125rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--fio-text);
+}
+
+/* The foot of a journey. These used to float under the tiles with nothing
+   holding them, which is half of why they read as lost — the other half being
+   that they were underlined words rather than buttons. A rule above them says
+   where the journey ends and what you may do about it. */
+.fio-hero-actions {
+    margin-block-start: 1.25rem;
+    padding-block-start: 1rem;
+    border-block-start: 1px solid var(--fio-border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------------ step tiles */
+
+.fio-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr));
+    gap: 0.875rem;
+}
+
+.fio-tile {
+    display: flex;
+    flex-direction: column;
+    /* Filament gives a card 24px either side (.fi-section-header is 16px 24px),
+       and it is the horizontal that reads as cramped when it is short: text that
+       starts against the border looks like it is falling out of the box. Match
+       it, and let the vertical stay a little tighter — a tile is not a section. */
+    padding: 1.125rem 1.5rem 1.25rem;
+    border-radius: var(--fio-radius);
+    border: 1px solid var(--fio-border);
+    background-color: var(--fio-surface);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    transition:
+        transform 200ms cubic-bezier(0.2, 0, 0, 1),
+        box-shadow 200ms ease,
+        border-color 200ms ease;
+}
+
+.fio-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--fio-shadow);
+}
+
+.fio-tile--done {
+    border-color: color-mix(in oklch, var(--fio-success) 35%, var(--fio-border));
+}
+
+.fio-tile--next {
+    border-color: var(--fio-accent);
+    box-shadow: 0 0 0 3px var(--fio-accent-soft);
+}
+
+.fio-tile--skipped {
+    border-style: dashed;
+}
+
+.fio-tile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-block-end: 0.75rem;
+}
+
+.fio-tile-marker {
+    display: grid;
+    place-items: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border-radius: 9999px;
+    border: 1px solid var(--fio-border);
+    color: var(--fio-text-muted);
+    background-color: var(--fio-surface-muted);
+}
+
+.fio-tile-marker svg {
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+}
+
+.fio-tile--done .fio-tile-marker {
+    border-color: transparent;
+    background-color: var(--fio-success);
+    color: white;
+}
+
+.fio-tile--next .fio-tile-marker {
+    border-color: var(--fio-accent);
+    color: var(--fio-accent);
+    background-color: var(--fio-accent-soft);
+}
+
+.fio-tile-index {
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.fio-tile-status {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fio-text-muted);
+}
+
+.fio-tile--done .fio-tile-status {
+    color: var(--fio-success);
+}
+
+.fio-tile--next .fio-tile-status {
+    color: var(--fio-accent);
+}
+
+.fio-tile-title {
+    font-size: 0.9375rem;
+    font-weight: 620;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: var(--fio-text);
+}
+
+.fio-tile-description {
+    margin-block-start: 0.3125rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--fio-text-muted);
+}
+
+.fio-tile-progress {
+    margin-block-start: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fio-tile-footer {
+    margin-block-start: auto;
+    padding-block-start: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.fio-tile-meta {
+    font-size: 0.6875rem;
+    color: var(--fio-text-muted);
+}
+
+.fio-tile-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    margin-inline-start: auto;
+}
+
+.fio-empty {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    border-radius: var(--fio-radius);
+    border: 1px dashed var(--fio-border);
+    background-color: var(--fio-surface);
+}
+
+@media (max-width: 768px) {
+    .fio-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: start;
+    }
+}
+
+/* ------------------------------------------------------------- media modal */
+
+.fio-modal-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 9990;
+    display: flex;
+    padding: 1.5rem;
+    pointer-events: none;
+}
+
+.fio-modal-layer--center {
+    align-items: center;
+    justify-content: center;
+}
+
+.fio-modal-layer--top {
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.fio-modal-layer--bottom {
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.fio-modal-layer--top-left {
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.fio-modal-layer--top-right {
+    align-items: flex-start;
+    justify-content: flex-end;
+}
+
+.fio-modal-layer--bottom-left {
+    align-items: flex-end;
+    justify-content: flex-start;
+}
+
+.fio-modal-layer--bottom-right {
+    align-items: flex-end;
+    justify-content: flex-end;
+}
+
+.fio-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgb(0 0 0 / 0.6);
+    pointer-events: auto;
+}
+
+.fio-modal {
+    position: relative;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    inline-size: min(44rem, 100%);
+    max-block-size: calc(100vh - 3rem);
+    overflow: hidden;
+    border-radius: var(--fio-radius);
+    border: 1px solid var(--fio-border);
+    background-color: var(--fio-surface);
+    box-shadow: var(--fio-shadow-lg);
+    color: var(--fio-text);
+}
+
+/* Docked in a corner: smaller, so the page behind it stays workable — the point
+   of not centring is being able to follow along. */
+.fio-modal--top-left,
+.fio-modal--top-right,
+.fio-modal--bottom-left,
+.fio-modal--bottom-right {
+    inline-size: min(26rem, 100%);
+}
+
+.fio-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-block-end: 1px solid var(--fio-border);
+}
+
+.fio-modal-title {
+    font-size: 0.9375rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+}
+
+.fio-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    background-color: var(--fio-surface-muted);
+}
+
+.fio-modal-image,
+.fio-modal-video {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    max-block-size: 70vh;
+    background-color: black;
+}
+
+.fio-modal-frame {
+    position: relative;
+    inline-size: 100%;
+    aspect-ratio: 16 / 9;
+    background-color: black;
+}
+
+.fio-modal-frame :is(iframe, div) {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    border: 0;
+}
+
+.fio-modal-caption {
+    padding: 0.875rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--fio-text-muted);
+    background-color: var(--fio-surface);
+}
+
+.fio-modal-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+    border-block-start: 1px solid var(--fio-border);
+    background-color: var(--fio-surface);
+}
+
+/* ----------------------------------------------------------- media on cards */
+
+.fio-thumb {
+    display: block;
+    inline-size: 100%;
+    block-size: 8rem;
+    margin-block-end: 0.875rem;
+    object-fit: cover;
+    border-radius: var(--fio-radius-sm);
+    border: 1px solid var(--fio-border);
+    cursor: pointer;
+    transition: transform 200ms cubic-bezier(0.2, 0, 0, 1), box-shadow 200ms ease;
+}
+
+.fio-thumb:hover {
+    transform: scale(1.01);
+    box-shadow: var(--fio-shadow);
+}
+
+.fio-step .fio-thumb {
+    block-size: 5.5rem;
+}
+
+/* -------------------------------------------------------------------- tour */
+
+.fio-tour-spotlight {
+    position: fixed;
+    z-index: 9998;
+    border-radius: 0.75rem;
+    box-shadow:
+        0 0 0 9999px rgb(0 0 0 / 0.6),
+        0 0 0 3px var(--primary-500);
+    pointer-events: none;
+    /* The runner writes top/left/width/height (it measures with
+       getBoundingClientRect, which is physical). A transition declared on the
+       logical longhands never fires for them — the spotlight jumped instead of
+       gliding, for a whole release. */
+    transition:
+        top 300ms cubic-bezier(0.2, 0, 0, 1),
+        left 300ms cubic-bezier(0.2, 0, 0, 1),
+        width 300ms cubic-bezier(0.2, 0, 0, 1),
+        height 300ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* No element to point at: the popover floats over a plain dimmed page. */
+.fio-tour-spotlight--empty {
+    box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.6);
+}
+
+.fio-tour-popover {
+    position: fixed;
+    z-index: 9999;
+    inline-size: 20rem;
+    max-inline-size: calc(100vw - 2rem);
+    /* Long copy on a short viewport used to push the buttons off the bottom of
+       the screen. The box stops growing and scrolls instead — vertically only:
+       overflow-y alone turns a horizontal overflow into a scrollbar, and a
+       popover with a scrollbar reads as broken. */
+    max-block-size: calc(100vh - 2rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1rem 1.125rem 0.875rem;
+    border-radius: var(--fio-radius);
+    background-color: var(--fio-surface);
+    border: 1px solid var(--fio-border);
+    box-shadow: var(--fio-shadow-lg);
+    color: var(--fio-text);
+    transition:
+        top 300ms cubic-bezier(0.2, 0, 0, 1),
+        left 300ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.fio-button--primary[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.fio-tour-blocked {
+    margin-block-start: 0.625rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--danger-600, #dc2626);
+}
+
+.fio-tour-blocked .fio-icon {
+    flex-shrink: 0;
+    inline-size: 0.9375rem;
+    block-size: 0.9375rem;
+    margin-block-start: 0.125rem;
+}
+
+.dark .fio .fio-tour-blocked {
+    color: var(--danger-400, #f87171);
+}
+
+.fio-tour-waiting {
+    margin-block-start: 0.625rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--fio-accent);
+}
+
+.fio-tour-waiting-pulse {
+    margin-block-start: 0.3125rem;
+    flex-shrink: 0;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: 9999px;
+    background-color: var(--fio-accent);
+    animation: fio-tour-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes fio-tour-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.75); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fio-tab,
+    .fio-step-marker,
+    .fio-tile,
+    .fio-thumb {
+        transition: none;
+        transform: none;
+    }
+
+    .fio-tour-waiting-pulse {
+        animation: none;
+    }
+}
+
+.fio-tour-counter {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--fio-accent);
+}
+
+.fio-tour-title {
+    margin-block-start: 0.25rem;
+    font-size: 0.9375rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+}
+
+.fio-tour-body {
+    margin-block-start: 0.375rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--fio-text-muted);
+}
+
+.fio-tour-actions {
+    margin-block-start: 0.875rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.fio-tour-dots {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.fio-tour-dot {
+    inline-size: 0.375rem;
+    block-size: 0.375rem;
+    border-radius: 9999px;
+    background-color: var(--fio-border);
+    transition: background-color 200ms ease, inline-size 200ms ease;
+}
+
+.fio-tour-dot--active {
+    inline-size: 1rem;
+    background-color: var(--fio-accent);
+}
+
+/* --------------------------------------------------------------- animation */
+
+@keyframes fio-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(0.5rem) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.fio-animate-in {
+    animation: fio-fade-up 220ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fio-launcher-button,
+    .fio-ring-value,
+    .fio-progress-value,
+    .fio-tour-spotlight,
+    .fio-tour-popover,
+    .fio-animate-in {
+        transition: none;
+        animation: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .fio-panel {
+        --fio-panel-width: calc(100vw - 2rem);
+    }
+}
+
+/* ------------------------------------------- layout the blades used inline */
+
+/* These were style="" attributes on the markup: presentation nobody could
+   restyle without forking the view, and a strict style-src CSP would refuse to
+   apply at all. The data-driven ones (a progress bar's width) stay inline — they
+   are a value, not a rule. */
+
+.fio-stack {
+    margin-block-start: 1rem;
+}
+
+.fio-stack-tight {
+    margin-block-start: 0.5rem;
+}
+
+/* An icon sitting on a line of text: the flow's own icon, in front of its title. */
+.fio-inline-icon {
+    display: inline-block;
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+    vertical-align: -3px;
+    margin-inline-end: 0.375rem;
+}
+
+.fio-inline-icon--sm {
+    inline-size: 0.9375rem;
+    block-size: 0.9375rem;
+    vertical-align: -2px;
+    margin-inline-end: 0.25rem;
+}
+
+.fio-inline-icon--lg {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+}
+
+.fio-inline-actions {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.fio-thumb-button {
+    display: block;
+    inline-size: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+}
+
+.fio-thumb-button:focus-visible {
+    outline: 2px solid var(--fio-accent);
+    outline-offset: 2px;
+    border-radius: var(--fio-radius);
+}
+
+/* ------------------------------------------------------- welcome screen */
+
+/* A tour dims the page and speaks for itself. The welcome screen — which asks
+   whether you would like to begin — has nothing to say to somebody who plainly
+   has. Two modals over one screen is one too many, and the runner says which of
+   them is in charge. */
+.fio-tour-running .fio-welcome-layer {
+    display: none;
+}
+
+.fio-welcome-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 9995;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.fio-welcome-backdrop {
+    position: absolute;
+    inset: 0;
+    background-color: rgb(0 0 0 / 0.55);
+    backdrop-filter: blur(2px);
+}
+
+.fio-welcome {
+    position: relative;
+    inline-size: 28rem;
+    max-inline-size: 100%;
+    max-block-size: calc(100vh - 3rem);
+    overflow-y: auto;
+    padding: 2rem 2rem 1.25rem;
+    border-radius: calc(var(--fio-radius) * 1.5);
+    background-color: var(--fio-surface);
+    border: 1px solid var(--fio-border);
+    box-shadow: var(--fio-shadow-lg);
+    color: var(--fio-text);
+    text-align: center;
+}
+
+.fio-welcome-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+    margin-block-end: 1rem;
+    border-radius: 9999px;
+    background-color: var(--fio-surface-muted);
+    color: var(--fio-accent);
+}
+
+.fio-welcome-badge .fio-welcome-icon,
+.fio-welcome-badge svg {
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+}
+
+.fio-welcome-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+
+.fio-welcome-description {
+    margin-block-start: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--fio-text-muted);
+}
+
+.fio-welcome-meta {
+    margin-block-start: 0.875rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--fio-accent);
+}
+
+.fio-welcome-actions {
+    margin-block-start: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.fio-button--lg {
+    justify-content: center;
+    padding-block: 0.625rem;
+    font-size: 0.9375rem;
+}
+
+.fio-welcome-never {
+    margin-block-start: 1rem;
+    inline-size: 100%;
+    padding-block: 0.5rem;
+    border: 0;
+    background: none;
+    font-size: 0.75rem;
+    color: var(--fio-text-muted);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.fio-welcome-never:hover {
+    color: var(--fio-text);
+}
+
+.fio-welcome-never:focus-visible {
+    outline: 2px solid var(--fio-accent);
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fio-welcome {
+        animation: none;
+    }
+}
+
+.fio-callout {
+    margin-block-end: 1.5rem;
+    padding: 1rem 1.125rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: var(--fio-radius);
+    background-color: var(--fio-surface-muted);
+    border: 1px solid var(--fio-border);
+}
+
+.fio-callout-text {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--fio-text-muted);
+}
+
+/* ------------------------------------------ the progress page, folded up */
+
+/* The page used to lay every step of every journey out at once. The header now
+   answers the question people came with — how far am I, what is next — and the
+   steps wait behind a chevron. */
+
+/* The header *is* the card. Folding the steps away took the surface with them —
+   the journey became a bare row on the page background — and the page lost the
+   one thing that made it feel like something rather than a list. Same gradient,
+   same border, same shadow the hero had: what changed is that it now holds a
+   summary instead of everything. */
+.fio-journey-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.25rem;
+    align-items: center;
+    padding: 1.125rem 1.375rem;
+    border-radius: var(--fio-radius);
+    border: 1px solid var(--fio-border);
+    background:
+        radial-gradient(120% 140% at 0% 0%, var(--fio-accent-soft), transparent 60%),
+        var(--fio-surface);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.fio-journey-heading {
+    flex: 1 1 14rem;
+    min-inline-size: 0;
+}
+
+.fio-journey-meta {
+    margin-block-start: 0.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    color: var(--fio-text-muted);
+}
+
+.fio-journey-meta-done {
+    font-weight: 600;
+    color: var(--fio-text);
+}
+
+.fio-journey-next {
+    flex-shrink: 0;
+}
+
+.fio-journey-toggle {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    border: 1px solid var(--fio-border);
+    border-radius: 9999px;
+    background-color: var(--fio-surface-muted);
+    color: var(--fio-text-muted);
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.fio-journey-toggle:hover {
+    color: var(--fio-text);
+}
+
+.fio-journey-toggle:focus-visible {
+    outline: 2px solid var(--fio-accent);
+    outline-offset: 2px;
+}
+
+.fio-journey-chevron {
+    display: inline-flex;
+    transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.fio-journey-chevron .fio-icon {
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+}
+
+.fio-journey-chevron--open {
+    transform: rotate(180deg);
+}
+
+/* A smaller ring: the header is a summary now, not a hero. */
+.fio-hero-ring--sm {
+    inline-size: 3.75rem;
+    block-size: 3.75rem;
+    flex-shrink: 0;
+}
+
+.fio-hero-ring--sm .fio-hero-percentage {
+    font-size: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fio-journey-chevron {
+        transition: none;
+    }
+}

@@ -1,0 +1,140 @@
+<?php
+
+namespace App\Providers\Filament;
+
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
+use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
+use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
+use Filament\Http\Middleware\Authenticate;
+use Filament\Http\Middleware\AuthenticateSession;
+use Filament\Http\Middleware\DisableBladeIconComponents;
+use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Pages\Dashboard;
+use Filament\Pages\Enums\SubNavigationPosition;
+use Filament\Panel;
+use Filament\PanelProvider;
+use Filament\Support\Enums\Width;
+use Filament\Widgets\AccountWidget;
+use Filament\Widgets\FilamentInfoWidget;
+use Gsferro\FilamentOdometerEasy\FilamentOdometerEasyPlugin;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Jeffgreco13\FilamentBreezy\BreezyCore;
+use lockscreen\FilamentLockscreen\Lockscreen;
+use Prodstarter\FilamentNotificationCenter\FilamentNotificationCenterPlugin;
+use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
+use Wallacemartinss\FilamentOnboarding\FilamentOnboardingPlugin;
+use Wezlo\FilamentSearchSpotlight\FilamentSearchSpotlightPlugin;
+
+/**
+ * Painel ADMIN — administração da aplicação: usuários, papéis e permissões
+ * (Shield), catálogo de agentes de IA e autoria das jornadas de onboarding.
+ * Acesso: papéis `master_global` e `admin` (User::canAccessPanel).
+ */
+class AdminPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('admin')
+            ->path('admin')
+            ->login()
+            ->passwordReset()
+            ->brandName(config('app.name').' • Admin')
+            ->sidebarCollapsibleOnDesktop()
+            ->maxContentWidth(Width::Full)
+            ->subNavigationPosition(SubNavigationPosition::Top)
+            // Com Reverb o sininho reage ao evento Echo (sem polling); sem ele,
+            // volta o polling de 30s — senão o sininho "funciona" mas nunca atualiza.
+            ->databaseNotifications()
+            ->databaseNotificationsPolling(config('broadcasting.default') === 'reverb' ? null : '30s')
+            ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\Filament\Admin\Resources')
+            ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\Filament\Admin\Pages')
+            ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\Filament\Admin\Widgets')
+            ->pages([
+                Dashboard::class,
+            ])
+            ->widgets([
+                AccountWidget::class,
+                FilamentInfoWidget::class,
+            ])
+            ->plugins([
+                // Busca ⌘K. O discovery de ações de criação do pacote fica fora:
+                // ele monta getUrl('create') sem checar canCreate().
+                FilamentSearchSpotlightPlugin::make()
+                    ->keyBinding(['mod+k'])
+                    ->disableDefaultGlobalSearch()
+                    ->resultLimitPerCategory(5)
+                    ->placeholder('Buscar registros e telas...'),
+
+                // Login split: mídia à esquerda, formulário à direita.
+                AuthDesignerPlugin::make()
+                    ->login(fn (AuthPageConfig $config): AuthPageConfig => $config
+                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->mediaPosition(MediaPosition::Left)
+                        ->mediaSize('70%')
+                        ->themeToggle()
+                    ),
+
+                // Papéis e permissões com UI (spatie/laravel-permission).
+                FilamentShieldPlugin::make(),
+
+                // Perfil do usuário + 2FA. O label explícito evita repetir o nome
+                // do usuário duas vezes no dropdown.
+                BreezyCore::make()
+                    ->myProfile(shouldRegisterUserMenu: true, hasAvatars: true, slug: 'meu-perfil', userMenuLabel: 'Meu perfil')
+                    ->enableTwoFactorAuthentication(),
+
+                /**
+                 * Bloqueio de sessão. Precisa estar registrado em TODOS os painéis:
+                 * o routes/web.php do pacote resolve o plugin pelo painel corrente
+                 * e estoura LogicException em todo request num painel sem ele
+                 * (até `artisan package:discover` morre).
+                 */
+                Lockscreen::make()
+                    ->enablePlugin((bool) config('lockscreen.enabled'))
+                    ->enableIdleTimeout((int) config('lockscreen.idle_timeout'))
+                    ->enableRateLimit(limit: 5, decayMinutes: 5, forceLogout: true),
+
+                /**
+                 * AUTORIA das jornadas de onboarding — e só ela. O consumo
+                 * (launcher/tours) pertence ao painel de negócio; a autoria fica
+                 * onde entrar já exige papel de administração.
+                 */
+                FilamentOnboardingPlugin::make()
+                    ->manageFlows((bool) config('filament-onboarding.enabled', true))
+                    ->launcher(false)
+                    ->tours(false),
+
+                EnvironmentIndicatorPlugin::make()
+                    ->visible(fn (): bool => ! app()->isProduction()),
+
+                FilamentOdometerEasyPlugin::make()
+                    ->delay(1000)
+                    ->duration(1500)
+                    // Sem isto o badge de contagem some com a sidebar recolhida.
+                    ->badgeOnCollapsedSidebar(),
+
+                FilamentNotificationCenterPlugin::make(),
+            ])
+            ->middleware([
+                EncryptCookies::class,
+                AddQueuedCookiesToResponse::class,
+                StartSession::class,
+                AuthenticateSession::class,
+                ShareErrorsFromSession::class,
+                PreventRequestForgery::class,
+                SubstituteBindings::class,
+                DisableBladeIconComponents::class,
+                DispatchServingFilamentEvent::class,
+            ])
+            ->authMiddleware([
+                Authenticate::class,
+            ]);
+    }
+}

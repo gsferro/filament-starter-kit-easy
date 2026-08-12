@@ -1,0 +1,178 @@
+/*
+ | filament-stat-plus-easy
+ |
+ | CSS estático de propósito: este arquivo é registrado como asset do pacote
+ | (FilamentAsset::register) e copiado para public/ por `php artisan filament:assets`.
+ | Ele NÃO passa pelo build do app consumidor, então nada de @apply, utilitário do
+ | Tailwind ou @layer aqui — só CSS puro. É também o que faz o pacote dispensar
+ | qualquer edição de tema.
+ |
+ | Sem camada (@layer) de propósito: o CSS do Filament v4/v5 vive em `@layer components`,
+ | e regra fora de camada vence camada independentemente de especificidade. No v3 não há
+ | camadas, e a especificidade de dois seletores de classe já vence os utilitários.
+ |
+ | Duas classes, independentes, injetadas pelo PHP (Concerns\HasStatPlus):
+ |   .fi-stat-plus           → ícone no canto   (cor em --stat-plus-icon)
+ |   .fi-stat-plus-bordered  → borda à esquerda (cor em --stat-plus-accent)
+ |
+ | As cores chegam inline, no formato da versão instalada do Filament (v3 usa canais
+ | RGB, v4/v5 usam cor pronta) — ver Gsferro\FilamentStatPlusEasy\FilamentStatPlusEasy.
+ |
+ | Medidas são custom properties com default: sobrescreva no seu tema, por painel ou
+ | por card, sem tocar no pacote.
+ */
+
+.fi-wi-stats-overview-stat.fi-stat-plus,
+.fi-wi-stats-overview-stat.fi-stat-plus-bordered {
+    --stat-plus-icon-size: 2.5rem;
+    --stat-plus-icon-padding: 0.5rem;
+    --stat-plus-icon-offset: 1.25rem;
+    --stat-plus-icon-radius: 0.625rem;
+    --stat-plus-icon-opacity: 12%;
+    --stat-plus-icon-opacity-dark: 22%;
+    --stat-plus-border-width: 4px;
+}
+
+/* ── Borda de acento ─────────────────────────────────────────────────────── */
+
+.fi-wi-stats-overview-stat.fi-stat-plus-bordered {
+    border-inline-start: var(--stat-plus-border-width) solid var(--stat-plus-accent, var(--stat-plus-icon, currentColor));
+}
+
+/* ── Ícone no canto superior direito ─────────────────────────────────────── */
+
+/*
+ | Reserva a faixa do ícone no PRÓPRIO card (e não no wrapper de conteúdo): o wrapper
+ | tem classe própria no v4/v5 (`fi-wi-stats-overview-stat-content`) e nenhuma no v3.
+ | Aplicar no card resolve as três versões com uma regra.
+ */
+.fi-wi-stats-overview-stat.fi-stat-plus {
+    padding-inline-end: calc(var(--stat-plus-icon-size) + var(--stat-plus-icon-offset) + 0.5rem);
+}
+
+/*
+ | O card já é `relative` em todas as versões, então basta posicionar.
+ |
+ | Dois seletores porque o markup do ícone mudou:
+ |   v3      → <x-filament::icon class="fi-wi-stats-overview-stat-icon">
+ |   v4 e v5 → generate_icon_html() dentro de .fi-wi-stats-overview-stat-label-ctn
+ |
+ | Nenhum dos dois alcança o ícone da description (`…-stat-description-icon` no v3,
+ | dentro de `…-stat-description` no v4/v5).
+ */
+.fi-wi-stats-overview-stat.fi-stat-plus .fi-wi-stats-overview-stat-icon,
+.fi-wi-stats-overview-stat.fi-stat-plus .fi-wi-stats-overview-stat-label-ctn > .fi-icon {
+    position: absolute;
+    inset-block-start: var(--stat-plus-icon-offset);
+    inset-inline-end: var(--stat-plus-icon-offset);
+    width: var(--stat-plus-icon-size);
+    height: var(--stat-plus-icon-size);
+    padding: var(--stat-plus-icon-padding);
+    border-radius: var(--stat-plus-icon-radius);
+    color: var(--stat-plus-icon, currentColor);
+    background-color: color-mix(in oklab, currentColor var(--stat-plus-icon-opacity), transparent);
+}
+
+/* currentColor no fundo evita uma segunda custom property só para o modo escuro. */
+.dark .fi-wi-stats-overview-stat.fi-stat-plus .fi-wi-stats-overview-stat-icon,
+.dark .fi-wi-stats-overview-stat.fi-stat-plus .fi-wi-stats-overview-stat-label-ctn > .fi-icon {
+    background-color: color-mix(in oklab, currentColor var(--stat-plus-icon-opacity-dark), transparent);
+}
+
+/* ── Esqueleto do carregamento lazy ──────────────────────────────────────── */
+
+/*
+ | O esqueleto usa as MESMAS classes do card real — é o que garante que a troca pelo
+ | widget hidratado não desloque nada. Só a cor muda: cinza neutro em vez da cor de
+ | acento, como o resto do placeholder.
+ |
+ | Os cinzas são rgb() com alfa, e não var(--gray-200): o formato da variável muda
+ | entre v3 (canais) e v4/v5 (cor pronta), e o esqueleto não precisa da escala do tema.
+ */
+.fi-stat-plus-skeleton {
+    --stat-plus-icon: rgb(0 0 0 / 0.22);
+    --stat-plus-accent: rgb(0 0 0 / 0.22);
+    --stat-plus-icon-opacity: 100%;
+}
+
+.dark .fi-stat-plus-skeleton {
+    --stat-plus-icon: rgb(255 255 255 / 0.2);
+    --stat-plus-accent: rgb(255 255 255 / 0.2);
+    --stat-plus-icon-opacity-dark: 100%;
+}
+
+.fi-stat-plus-skeleton-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 64rem) {
+    .fi-stat-plus-skeleton-grid {
+        grid-template-columns: repeat(var(--stat-plus-skeleton-columns, 3), minmax(0, 1fr));
+    }
+}
+
+.fi-stat-plus-skeleton-bar {
+    border-radius: 9999px;
+    background-color: rgb(0 0 0 / 0.1);
+}
+
+.dark .fi-stat-plus-skeleton-bar {
+    background-color: rgb(255 255 255 / 0.12);
+}
+
+.fi-stat-plus-skeleton-label {
+    display: flex;
+    align-items: center;
+    height: 1.25rem;
+}
+
+.fi-stat-plus-skeleton-label .fi-stat-plus-skeleton-bar {
+    width: 6rem;
+    height: 0.625rem;
+}
+
+.fi-stat-plus-skeleton-value {
+    display: flex;
+    align-items: center;
+    height: 2.25rem;
+}
+
+.fi-stat-plus-skeleton-value .fi-stat-plus-skeleton-bar {
+    width: 8rem;
+    height: 1.5rem;
+}
+
+.fi-stat-plus-skeleton-description {
+    display: flex;
+    align-items: center;
+    height: 1.25rem;
+}
+
+.fi-stat-plus-skeleton-description .fi-stat-plus-skeleton-bar {
+    width: 10rem;
+    height: 0.5rem;
+}
+
+/* O `grid gap-y-2` do wrapper de conteúdo é do Filament no v4/v5 e inexiste no v3. */
+.fi-stat-plus-skeleton-content {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.fi-stat-plus-skeleton-pulse {
+    animation: fi-stat-plus-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes fi-stat-plus-pulse {
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fi-stat-plus-skeleton-pulse {
+        animation: none;
+    }
+}

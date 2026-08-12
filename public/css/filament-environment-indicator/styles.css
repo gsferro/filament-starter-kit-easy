@@ -1,0 +1,27 @@
+.environment-indicator, .debug-mode-indicator {
+    display: none;
+    height: 2.25rem;
+
+    @media (width > 40rem) {
+        display: flex;
+    }
+
+    code {
+        margin-block-start: 1px;
+        margin-inline-start: 0.25rem;
+        font-size: var(--text-xs);
+
+        /* Keep the badge compact: truncate long tags/hashes, full value on hover. */
+        display: inline-block;
+        max-width: 12rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: bottom;
+    }
+}
+
+.fi-sidebar-nav > .environment-indicator {
+    flex-shrink: 0;
+    margin-inline: -0.5rem;
+}

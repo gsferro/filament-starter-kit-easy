@@ -1,0 +1,18 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 6
+
+    paths:
+        - app
+        - bootstrap/app.php
+        - config
+        - database
+        - routes
+
+    excludePaths:
+        # Migrations publicadas por pacotes: são stubs de vendor, não código do projeto.
+        - database/migrations/*_create_health_tables.php
+        - database/migrations/*_create_breezy_sessions_table.php
+        - database/migrations/*_create_pulse_tables.php

@@ -1,0 +1,146 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "gsferro/starter-kit-easy",
+    "type": "project",
+    "description": "Starter kit Laravel 13 + Filament 5 pronto para uso: painéis app, admin e infra, permissões, observabilidade, IA local e Docker.",
+    "keywords": ["laravel", "filament", "starter-kit", "admin-panel", "boilerplate"],
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "anselmokossa/filament-sentinel": "^1.0",
+        "asmit/resized-column": "^4.0",
+        "awcodes/filament-badgeable-column": "^4.2",
+        "bezhansalleh/filament-panel-switch": "^3.1",
+        "bezhansalleh/filament-shield": "^4.2",
+        "brimham/filament-backup-monitor": "^0.1",
+        "caresome/filament-auth-designer": "^3.1",
+        "cms-multi/filament-clear-cache": "^3.0",
+        "croustibat/filament-jobs-monitor": "^4.5",
+        "dotswan/filament-laravel-pulse": "^2.2",
+        "filament/filament": "^5.6",
+        "filament/spatie-laravel-settings-plugin": "^5.6",
+        "flowframe/laravel-trend": "^0.5",
+        "fomvasss/laravel-ai-tasks": "^3.11",
+        "gsferro/filament-odometer-easy": "^1.2",
+        "gsferro/filament-stat-plus-easy": "^1.0",
+        "gsferro/odometer-easy": "^1.0",
+        "jeffgreco13/filament-breezy": "^3.2",
+        "laboiteacode/filament-dashboard-widgets": "^1.0",
+        "laboiteacode/filament-dependency-graph": "^1.1",
+        "laboiteacode/filament-logs-explorer": "^1.0",
+        "lara-zeus/progress": "^3.0",
+        "laravel/ai": "^0.10",
+        "laravel/framework": "^13.17",
+        "laravel/pulse": "^1.8",
+        "laravel/reverb": "^1.0",
+        "laravel/tinker": "^3.0",
+        "livewire/blaze": "^1.0",
+        "marjose123/filament-lockscreen": "^3.4",
+        "mddev31/filament-dynamic-dashboard": "^1.0",
+        "mike-bronner/laravel-model-caching": "^13.1",
+        "mominalzaraa/filament-composer-release-notifier": "^1.0",
+        "owen-it/laravel-auditing": "^14.0",
+        "predis/predis": "^3.5",
+        "prodstarter/filament-notification-center": "^1.0",
+        "pxlrbt/filament-environment-indicator": "^3.5",
+        "shuvroroy/filament-spatie-laravel-health": "^3.3",
+        "spatie/laravel-backup": "*",
+        "spatie/laravel-settings": "^3.9",
+        "ssbityukov/filament-command-center": "^1.0",
+        "stechstudio/filament-impersonate": "^5.5",
+        "syriable/filament-activitylog": "^0.1",
+        "tapp/filament-auditing": "^4.0",
+        "tapp/filament-authentication-log": "^5.0",
+        "wallacemartinss/filament-onboarding": "^2.1",
+        "wezlo/filament-search-spotlight": "^1.0"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.9",
+        "laravel-lang/common": "^6.8",
+        "laravel/pail": "^1.2.5",
+        "laravel/pao": "^1.0.6",
+        "laravel/pint": "^1.27",
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^8.6",
+        "pestphp/pest": "^4.7",
+        "pestphp/pest-plugin-laravel": "^4.1",
+        "phpunit/phpunit": "^12.5.12"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        },
+        "exclude-from-classmap": [
+            "vendor/mohaphez/pulse/src/"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "setup": [
+            "Composer\\Config::disableProcessTimeout",
+            "composer install",
+            "@php artisan kit:install --ansi"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan dev"
+        ],
+        "lint": [
+            "pint --parallel"
+        ],
+        "lint:check": [
+            "pint --parallel --test"
+        ],
+        "types:check": [
+            "phpstan analyse"
+        ],
+        "test": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@lint:check",
+            "@types:check",
+            "@php artisan test"
+        ],
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan kit:install --ansi"
+        ],
+        "pre-package-uninstall": [
+            "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,246 @@
+.fi-auth-layout .fi-simple-header {
+    align-items: start;
+}
+
+.fi-auth-layout .fi-simple-header-heading {
+    text-align: left;
+}
+
+/* ============================================
+   Unified Auth Layout System
+   ============================================ */
+
+.fi-auth-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* No media - centered form */
+.fi-auth-layout.no-media {
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.fi-auth-layout.no-media .fi-auth-content-section {
+    width: 100%;
+    max-width: 28rem;
+}
+
+/* ============================================
+   Media Section - Common Styles
+   ============================================ */
+
+.fi-auth-media-wrapper {
+    position: absolute;
+    inset: 0;
+    user-select: none;
+    pointer-events: none;
+}
+
+.fi-auth-media {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.fi-auth-media-overlay {
+    position: absolute;
+    inset: 0;
+}
+
+.fi-auth-media-content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    padding: 2rem;
+    color: white;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   Horizontal Positions (Left / Right)
+   ============================================ */
+
+.fi-auth-layout.media-left,
+.fi-auth-layout.media-right {
+    flex-direction: row;
+}
+
+.fi-auth-layout.media-left .fi-auth-media-section,
+.fi-auth-layout.media-right .fi-auth-media-section {
+    position: relative;
+    display: none;
+    width: var(--media-size, 50%);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.fi-auth-layout.media-left .fi-auth-media-overlay,
+.fi-auth-layout.media-right .fi-auth-media-overlay {
+    background: linear-gradient(
+        to top,
+        color-mix(in srgb, var(--gray-900) 50%, transparent),
+        transparent
+    );
+    backdrop-filter: blur(var(--ad-blur, 0px));
+}
+
+.fi-auth-layout.media-left .fi-auth-content-section,
+.fi-auth-layout.media-right .fi-auth-content-section {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+}
+
+.fi-auth-layout.media-left .fi-auth-form-container,
+.fi-auth-layout.media-right .fi-auth-form-container {
+    width: 100%;
+    max-width: 28rem;
+}
+
+.fi-auth-layout.media-right {
+    flex-direction: row-reverse;
+}
+
+@media (min-width: 1024px) {
+    .fi-auth-layout.media-left .fi-auth-media-section,
+    .fi-auth-layout.media-right .fi-auth-media-section {
+        display: block;
+    }
+
+    .fi-auth-layout.media-left .fi-auth-content-section,
+    .fi-auth-layout.media-right .fi-auth-content-section {
+        padding: 3rem;
+    }
+}
+
+/* ============================================
+   Vertical Positions (Top / Bottom)
+   ============================================ */
+
+.fi-auth-layout.media-top,
+.fi-auth-layout.media-bottom {
+    flex-direction: column;
+}
+
+.fi-auth-layout.media-bottom {
+    flex-direction: column-reverse;
+}
+
+.fi-auth-layout.media-top .fi-auth-media-section,
+.fi-auth-layout.media-bottom .fi-auth-media-section {
+    position: relative;
+    width: 100%;
+    flex: 0 0 var(--media-size, 250px);
+    overflow: hidden;
+}
+
+.fi-auth-layout.media-top .fi-auth-media-overlay {
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        color-mix(in srgb, var(--gray-900) 30%, transparent)
+    );
+    backdrop-filter: blur(var(--ad-blur, 0px));
+}
+
+.fi-auth-layout.media-bottom .fi-auth-media-overlay {
+    background: linear-gradient(
+        to top,
+        transparent,
+        color-mix(in srgb, var(--gray-900) 30%, transparent)
+    );
+    backdrop-filter: blur(var(--ad-blur, 0px));
+}
+
+.fi-auth-layout.media-top .fi-auth-content-section,
+.fi-auth-layout.media-bottom .fi-auth-content-section {
+    display: flex;
+    flex: 1 1 0;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    overflow: auto;
+}
+
+.fi-auth-layout.media-top .fi-auth-form-container,
+.fi-auth-layout.media-bottom .fi-auth-form-container {
+    width: 100%;
+    max-width: 28rem;
+}
+
+@media (min-width: 768px) {
+    .fi-auth-layout.media-top .fi-auth-content-section,
+    .fi-auth-layout.media-bottom .fi-auth-content-section {
+        padding: 3rem 1.5rem;
+    }
+}
+
+/* ============================================
+   Cover Position (Overlay / Fullscreen)
+   ============================================ */
+
+.fi-auth-layout.media-cover {
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.fi-auth-layout.media-cover .fi-auth-media-section {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.fi-auth-layout.media-cover .fi-auth-media-overlay {
+    background: color-mix(in srgb, var(--gray-950) 40%, transparent);
+    backdrop-filter: blur(var(--ad-blur, 0px));
+}
+
+.fi-auth-layout.media-cover .fi-auth-content-section {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 28rem;
+}
+
+.fi-auth-layout.media-cover .fi-auth-card {
+    backdrop-filter: blur(calc(var(--ad-blur, 0px) * 2.5));
+    box-shadow: 0 20px 60px color-mix(in srgb, var(--gray-950) 30%, transparent);
+}
+
+/* ============================================
+   Theme Switcher
+   ============================================ */
+
+.fi-auth-theme-switcher-wrapper {
+    position: fixed;
+    z-index: 50;
+    background-color: var(--gray-100);
+    border-radius: var(--radius-lg);
+    padding: 0.25rem;
+    box-shadow: var(--ring-shadow);
+    border: 1px solid var(--gray-200);
+}
+
+.dark .fi-auth-theme-switcher-wrapper {
+    background-color: var(--gray-900);
+    border: 1px solid var(--gray-800);
+}
+
+.fi-auth-theme-switcher-wrapper {
+    top: var(--ad-theme-switcher-top, auto);
+    right: var(--ad-theme-switcher-right, auto);
+    bottom: var(--ad-theme-switcher-bottom, auto);
+    left: var(--ad-theme-switcher-left, auto);
+}

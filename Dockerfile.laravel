@@ -1,0 +1,68 @@
+# =============================================================================
+# Imagem única do starter-kit-easy — multi-stage, diferenciada por command: no
+# docker-compose.yml (app, queue, scheduler, reverb, pulse) + estágio web (nginx).
+# Código assado na imagem (self-contained); só o .env entra por bind-mount.
+# APP_KEY nunca é assada no build — vem do .env em runtime.
+# =============================================================================
+
+# ---- Estágio 1: vendor (composer, sem dev) ----------------------------------
+FROM php:8.4-fpm-alpine AS vendor
+
+RUN apk add --no-cache \
+        postgresql-dev libpq icu-dev git unzip curl \
+        oniguruma-dev libzip-dev postgresql17-client \
+    && docker-php-ext-install pdo_pgsql pgsql intl pcntl zip opcache bcmath
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www
+COPY . .
+
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# ---- Estágio 2: assets (vite build) ------------------------------------------
+# vendor/ precisa existir antes do build: os temas Filament importam CSS do
+# vendor e o Tailwind v4 escaneia app/ e vendor/ via @source.
+FROM node:22-alpine AS assets
+
+WORKDIR /app
+COPY package*.json vite.config.js ./
+RUN npm ci
+
+COPY resources ./resources
+COPY app ./app
+COPY --from=vendor /var/www/vendor ./vendor
+
+RUN npm run build
+
+# ---- Estágio app: runtime php-fpm --------------------------------------------
+FROM vendor AS app
+
+# Dev valida timestamps; produção define 0 via .env/compose.
+ENV PHP_OPCACHE_VALIDATE_TIMESTAMPS=1
+
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
+COPY --from=assets /app/public/build public/build
+
+# O .dockerignore exclui o conteúdo de storage/ — recria o skeleton.
+RUN mkdir -p \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/logs \
+        storage/app/public \
+        bootstrap/cache \
+    && ln -sf /var/www/storage/app/public /var/www/public/storage \
+    && chown -R www-data:www-data storage bootstrap/cache public \
+    && chmod -R 775 storage bootstrap/cache
+
+EXPOSE 9000
+CMD ["php-fpm"]
+
+# ---- Estágio web: nginx com estáticos assados --------------------------------
+FROM nginx:alpine AS web
+
+COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY --from=app /var/www/public /var/www/public

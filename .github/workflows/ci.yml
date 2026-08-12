@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  qualidade:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, intl, pcntl, zip, sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Instalar dependências
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Preparar ambiente
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Estilo (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Análise estática (PHPStan)
+        run: vendor/bin/phpstan analyse --no-progress
+
+      - name: Testes (Pest)
+        run: php artisan test
+
+  instalacao:
+    # Prova que `composer create-project` continua entregando o projeto pronto.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, intl, pcntl, zip, sqlite3, pdo_sqlite
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependências
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Rodar o instalador do kit
+        run: |
+          cp .env.example .env
+          php artisan kit:install --ansi
+
+      - name: Verificar que os painéis respondem
+        run: |
+          php artisan serve --port=8000 &
+          sleep 5
+          for rota in up app/login admin/login infra/login; do
+            codigo=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8000/$rota")
+            echo "$rota -> $codigo"
+            [ "$codigo" = "200" ] || exit 1
+          done
