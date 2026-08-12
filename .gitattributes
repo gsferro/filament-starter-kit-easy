@@ -6,6 +6,9 @@
 *.md diff=markdown
 *.php diff=php
 
+# O CI e o changelog são do kit, não do projeto que nasce dele: ficam fora do
+# pacote distribuído. Tudo o mais (tests, docker, .env.docker) segue junto de
+# propósito — é material de trabalho de quem instala.
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
