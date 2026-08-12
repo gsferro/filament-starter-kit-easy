@@ -247,13 +247,24 @@ O que ele faz, em ordem:
 2. **Vincula o kit temporariamente** — adiciona o remote `kit` com **push bloqueado** e busca as tags num namespace próprio (`kit-v*`), para não colidirem com as versões do seu projeto.
 3. **Compara** — da versão em `config('kit.version')` até a tag escolhida, restrito aos caminhos que pertencem ao kit. Seu código de negócio nunca entra na conta.
 4. **Oferece um branch temporário** (`kit-update/v0.2.0`) para não sujar o seu.
-5. **Pergunta arquivo a arquivo** — ver o diff, aplicar, pular ou parar. Arquivo removido do kit nunca é apagado automaticamente: ele só avisa.
+5. **Pergunta arquivo a arquivo** — ver o diff, aplicar, pular ou parar. Dá para mudar de ideia no meio e aplicar o resto em lote. Arquivo removido do kit nunca é apagado automaticamente: ele só avisa.
 6. **Desfaz o vínculo** — remove o remote e as tags `kit-*` ao sair, mesmo se você interromper no meio. O projeto não fica com nada de terceiros pendurado.
 
 Ao final nada está commitado: você revisa com `git diff`, roda `composer update` e `composer test`, e só então commita. Deu errado? `git checkout -- .` desfaz, ou apague o branch e volte para o seu.
 
+**Não precisa aprovar 30 arquivos um a um.** Durante a revisão, o menu oferece *"Aplicar todos os arquivos NOVOS daqui em diante"* e *"Aplicar TUDO daqui em diante"* — uma confirmação vale para o conjunto. E dá para começar já em lote:
+
+```bash
+php artisan kit:update --only-new   # só o que ainda não existe no projeto
+php artisan kit:update --all        # tudo, inclusive o que sobrescreve
+```
+
+A distinção é o ponto: **arquivo novo não tem o que sobrescrever**, então aplicá-los em massa é seguro — é o caso dos widgets, do Spotlight e das concerns. Já um **modificado** substitui o conteúdo atual, e se você editou aquele arquivo a sua versão se perde (recuperável com `git checkout -- <arquivo>`, já que nada é commitado). Por isso `--only-new` é o lote recomendado para a primeira passada, deixando os modificados para revisar com calma.
+
 | Opção | Para quê |
 |---|---|
+| `--only-new` | aplica de uma vez só os arquivos novos (não sobrescreve nada) |
+| `--all` | aplica tudo de uma vez, com uma confirmação para o conjunto |
 | `--dry-run` | só o relatório, não altera nada |
 | `--tag=v0.3.0` | comparar com uma versão específica |
 | `--from=v0.1.0` | dizer de qual versão o projeto partiu (quando `config/kit.php` não sabe) |
@@ -261,7 +272,7 @@ Ao final nada está commitado: você revisa com `git diff`, roda `composer updat
 | `--no-branch` | aplicar no branch atual |
 | `--keep-remote` | manter o remote e as tags do kit ao final |
 
-O comando é **interativo por natureza**: sem terminal (CI, `--no-interaction`) ele vira relatório e não altera arquivo nenhum.
+Sem terminal (CI, `--no-interaction`) o comando vira relatório e não altera nada — a menos que você passe `--only-new` ou `--all`, que **são** a aprovação, dada na linha de comando.
 
 > Depois de atualizar, suba a marca `'version'` em `config/kit.php` — é ela que o próximo `kit:update` usa como ponto de partida.
 

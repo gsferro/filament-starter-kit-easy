@@ -32,6 +32,8 @@ class KitUpdate extends Command
         {--from= : Versão de origem (padrão: config kit.version)}
         {--branch= : Nome do branch temporário (padrão: kit-update/<tag>)}
         {--no-branch : Trabalha no branch atual, sem criar um temporário}
+        {--all : Aplica tudo de uma vez (uma confirmação para o conjunto)}
+        {--only-new : Aplica de uma vez só os arquivos que ainda não existem no projeto}
         {--dry-run : Só mostra o que mudou; não altera nenhum arquivo}
         {--keep-remote : Mantém o remote e as tags do kit ao final}';
 
@@ -117,12 +119,16 @@ class KitUpdate extends Command
             }
 
             /*
-             * Aplicar exige aprovação arquivo a arquivo — sem terminal não há
-             * a quem perguntar. Em vez de criar um branch vazio e sair, o
-             * comando se comporta como relatório.
+             * Aplicar exige aprovação. Sem terminal não há a quem perguntar —
+             * a não ser que a aprovação já tenha vindo na linha de comando,
+             * como `--all` ou `--only-new`. Nesse caso o comando é scriptável.
              */
-            if (! $this->input->isInteractive()) {
-                note('Sem terminal interativo: nada foi aplicado. Rode `php artisan kit:update` num terminal para revisar e aprovar cada arquivo.');
+            if (! $this->input->isInteractive() && ! $this->option('all') && ! $this->option('only-new')) {
+                note(
+                    "Sem terminal interativo: nada foi aplicado.\n"
+                    ."Rode `php artisan kit:update` num terminal para revisar arquivo a arquivo,\n"
+                    .'ou passe `--only-new` (só os arquivos novos) / `--all` (tudo).'
+                );
 
                 return self::SUCCESS;
             }
@@ -379,7 +385,9 @@ class KitUpdate extends Command
             return true;
         }
 
-        $criar = confirm(
+        // Sem terminal (rodando com --all/--only-new num script), cria o branch
+        // sem perguntar: é o comportamento mais conservador dos dois.
+        $criar = ! $this->input->isInteractive() || confirm(
             label: "Criar o branch temporário `{$branch}` para aplicar as mudanças?",
             default: true,
             hint: "Você está em `{$atual}`. Trabalhar num branch mantém o seu limpo e torna o descarte trivial.",
@@ -399,8 +407,16 @@ class KitUpdate extends Command
     }
 
     /**
-     * Aprovação arquivo a arquivo. Nada é sobrescrito sem o usuário ver o diff
-     * e dizer sim.
+     * Revisão com aprovação — arquivo a arquivo ou em lote.
+     *
+     * O lote existe porque revisar 30 arquivos um a um é hostil, mas ele continua
+     * sendo uma aprovação: uma confirmação para o conjunto, com a conta de quantos
+     * são novos e quantos são modificados.
+     *
+     * A distinção importa e é a razão de existir o lote "só os novos": arquivo que
+     * não existe no seu projeto não tem o que sobrescrever, então aplicá-lo em massa
+     * é seguro. Já um "modificado" pode conter edição sua — e é aí que o diff vale
+     * o tempo de olhar.
      *
      * @param  array<string, string>  $arquivos
      * @return list<string>
@@ -408,22 +424,43 @@ class KitUpdate extends Command
     private function revisarEAplicar(string $destino, array $arquivos): array
     {
         $aplicados = [];
+        $emLote    = null;
+
+        if ($this->option('all')) {
+            $emLote = 'todos';
+        } elseif ($this->option('only-new')) {
+            $emLote = 'novos';
+        }
+
+        if ($emLote !== null && ! $this->confirmarLote($emLote, $arquivos)) {
+            return [];
+        }
+
+        $pendentes = $arquivos;
 
         foreach ($arquivos as $caminho => $rotulo) {
+            unset($pendentes[$caminho]);
+
             if ($rotulo === 'removido do kit') {
                 note("`{$caminho}` foi REMOVIDO do kit. Nada é apagado automaticamente — decida você.");
 
                 continue;
             }
 
+            // Já está em lote: aplica sem perguntar de novo.
+            if ($emLote === 'todos' || ($emLote === 'novos' && $rotulo === 'novo no kit')) {
+                $aplicados[] = $this->aplicar($destino, $caminho);
+
+                continue;
+            }
+
+            if ($emLote === 'novos') {
+                continue;
+            }
+
             $escolha = select(
                 label: "{$caminho} ({$rotulo})",
-                options: [
-                    'diff'    => 'Ver o diff',
-                    'aplicar' => 'Aplicar a versão do kit',
-                    'pular'   => 'Pular',
-                    'sair'    => 'Parar por aqui',
-                ],
+                options: $this->opcoesDeRevisao($pendentes),
                 default: 'diff',
             );
 
@@ -441,14 +478,85 @@ class KitUpdate extends Command
                 break;
             }
 
+            // Lote escolhido no meio do caminho: vale para este arquivo em diante.
+            if (in_array($escolha, ['todos', 'novos'], true)) {
+                $restantes = [$caminho => $rotulo] + $pendentes;
+
+                if (! $this->confirmarLote($escolha, $restantes)) {
+                    $escolha = 'pular';
+                } else {
+                    $emLote  = $escolha;
+                    $escolha = ($escolha === 'todos' || $rotulo === 'novo no kit') ? 'aplicar' : 'pular';
+                }
+            }
+
             if ($escolha === 'aplicar') {
-                $this->git(['checkout', $destino, '--', $caminho]);
-                $aplicados[] = $caminho;
-                $this->components->info("aplicado: {$caminho}");
+                $aplicados[] = $this->aplicar($destino, $caminho);
             }
         }
 
         return $aplicados;
+    }
+
+    /**
+     * @param  array<string, string>  $pendentes
+     * @return array<string, string>
+     */
+    private function opcoesDeRevisao(array $pendentes): array
+    {
+        $opcoes = [
+            'diff'    => 'Ver o diff',
+            'aplicar' => 'Aplicar a versão do kit',
+            'pular'   => 'Pular',
+        ];
+
+        $novos = count(array_filter($pendentes, fn (string $r): bool => $r === 'novo no kit'));
+        $total = count(array_filter($pendentes, fn (string $r): bool => $r !== 'removido do kit'));
+
+        if ($novos > 0) {
+            $opcoes['novos'] = "Aplicar todos os arquivos NOVOS daqui em diante ({$novos} restantes)";
+        }
+
+        if ($total > 0) {
+            $opcoes['todos'] = "Aplicar TUDO daqui em diante ({$total} restantes)";
+        }
+
+        $opcoes['sair'] = 'Parar por aqui';
+
+        return $opcoes;
+    }
+
+    /** @param  array<string, string>  $arquivos */
+    private function confirmarLote(string $modo, array $arquivos): bool
+    {
+        $novos       = count(array_filter($arquivos, fn (string $r): bool => $r === 'novo no kit'));
+        $modificados = count(array_filter($arquivos, fn (string $r): bool => $r === 'modificado'));
+
+        if ($modo === 'novos') {
+            note("Serão aplicados {$novos} arquivo(s) novo(s). Nenhum arquivo seu é sobrescrito — eles ainda não existem no projeto.");
+
+            return ! $this->input->isInteractive() || confirm(label: 'Aplicar os novos?', default: true);
+        }
+
+        note(
+            "Serão aplicados {$novos} arquivo(s) novo(s) e {$modificados} modificado(s).\n"
+            .'Os modificados SUBSTITUEM o conteúdo atual — se você editou algum deles, a sua versão se perde '
+            .'(recuperável com `git checkout -- <arquivo>`, já que nada foi commitado).'
+        );
+
+        return ! $this->input->isInteractive() || confirm(
+            label: 'Aplicar tudo?',
+            default: false,
+            hint: 'Prefere não arriscar os modificados? Cancele e escolha "Aplicar todos os arquivos NOVOS".',
+        );
+    }
+
+    private function aplicar(string $destino, string $caminho): string
+    {
+        $this->git(['checkout', $destino, '--', $caminho]);
+        $this->components->info("aplicado: {$caminho}");
+
+        return $caminho;
     }
 
     /** @param  list<string>  $aplicados */

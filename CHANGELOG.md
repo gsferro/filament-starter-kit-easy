@@ -3,6 +3,17 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.4.0] - 2026-08-12
+
+### Adicionado
+
+- `kit:update` aplica em lote: opções `--only-new` (só arquivos que ainda não
+  existem no projeto — não sobrescreve nada) e `--all` (tudo, com uma
+  confirmação para o conjunto). Durante a revisão arquivo a arquivo também é
+  possível mudar para lote a qualquer momento, sem recomeçar.
+- Com `--only-new`/`--all` o comando passa a ser scriptável: a aprovação veio
+  na linha de comando, então ele roda sem terminal interativo.
+
 ## [0.3.1] - 2026-08-12
 
 ### Corrigido
