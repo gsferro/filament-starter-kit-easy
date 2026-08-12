@@ -3,6 +3,17 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.7.1] - 2026-08-12
+
+### Corrigido
+
+- **`composer test` abortava com `Test directory "tests/Feature" not found`**
+  em projeto novo. Ao mover os testes do kit para `tests/Kit`, a pasta
+  `tests/Feature` ficou vazia — e git não versiona diretório vazio, então ela
+  não existia no pacote distribuído e o PHPUnit parava com exit 2.
+  Agora o kit entrega um `tests/Feature/ExemploTest.php` que serve de ponto de
+  partida e mantém a pasta no repositório.
+
 ## [0.7.0] - 2026-08-12
 
 ### Corrigido
