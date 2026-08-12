@@ -1,0 +1,510 @@
+# starter-kit-easy
+
+![Starter Kit Easy](art/banner.png)
+
+[![Packagist](https://img.shields.io/packagist/v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
+[![Downloads](https://img.shields.io/packagist/dt/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
+[![Tests](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=tests)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
+[![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
+[![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
+[![License](https://img.shields.io/packagist/l/gsferro/starter-kit-easy.svg?style=flat-square)](LICENSE)
+
+> 🇺🇸 English · 🇧🇷 [Português](https://github.com/gsferro/filament-starter-kit-easy/blob/main/README.md)
+
+A ready-to-use **Laravel 13 + Filament 5** starter kit. One command creates the project, installs everything, migrates, seeds the database and hands you three working panels: **business**, **administration** and **infrastructure**.
+
+```bash
+composer create-project gsferro/starter-kit-easy my-project
+cd my-project
+composer dev
+```
+
+There is no manual step: `create-project` already creates the `.env`, generates the `APP_KEY`, creates the SQLite database, runs the migrations, seeds roles/permissions/user, publishes the Filament assets and builds the front-end. At the end it prints the URLs and the initial login.
+
+![Installing starter-kit-easy in a single command](art/install.gif)
+
+Prefer to clone? The same installer runs on its own:
+
+```bash
+git clone https://github.com/gsferro/filament-starter-kit-easy.git my-project
+cd my-project && rm -rf .git && git init   # drop the kit's history
+composer setup
+```
+
+## Demo access
+
+The seeder creates a master user that already gets into all three panels:
+
+| | |
+|---|---|
+| **User** | `admin@example.com` |
+| **Password** | `password` |
+| **Role** | `master_global` (beats any permission through `Gate::before`) |
+
+Sign in at `/app`, `/admin` or `/infra` — the same session works for all three, and the user menu switches panels.
+
+> ⚠️ **Change the password before exposing the environment.** To be born with different credentials, set `KIT_ADMIN_EMAIL`, `KIT_ADMIN_PASSWORD` and `KIT_ADMIN_NAME` in `.env` **before** running the installation (the values live in `config/kit.php`). On an already-installed project, change it from the panel itself at `/admin/users` or under **My profile**.
+
+To see the access boundary in action, create a user with only the `admin` or `infra` role: they get into the matching panel and take a 403 on the other.
+
+## The three panels
+
+| Panel | URL | What for | Who gets in |
+|---|---|---|---|
+| **App** | `/app` | The business operation. **Intentionally empty** — this is where your project is born | any authenticated user |
+| **Admin** | `/admin` | Users, roles and permissions (Shield), AI agent catalog, onboarding authoring | `master_global`, `admin` |
+| **Infra** | `/infra` | Health checks, backups, queues, logs, auditing, caches, commands, Pulse, AI costs | `master_global`, `infra` |
+
+The access rule lives in `App\Models\User::canAccessPanel()`. The `master_global` role beats any gate through `Gate::before` (`App\Providers\KitServiceProvider`) — no permissions needed in the database.
+
+Separating admin from infra is the whole point of the kit: whoever administers users doesn't need (and shouldn't) see logs, queues and operational commands, and vice versa.
+
+### What each one looks like
+
+| Login | Administration |
+|---|---|
+| [![Login screen](art/thumbs/login.png)](art/login.png) | [![Admin panel](art/thumbs/panel-admin.png)](art/panel-admin.png) |
+| Two-column Auth Designer — swap the artwork in `public/images/auth/login.svg` | Users, roles, AI agents and administration indicators |
+
+| Infrastructure | Business |
+|---|---|
+| [![Infra panel](art/thumbs/panel-infra.png)](art/panel-infra.png) | [![App panel](art/thumbs/panel-app.png)](art/panel-app.png) |
+| Health, queues, audit trails, commands and AI costs — grouped under Observability, AI, Trails and System | Intentionally empty: it's where your project is born |
+
+More screens: [application health](art/infra-health.png) · [users](art/admin-users.png) · [permissions (Shield)](art/admin-roles.png) · [AI agent catalog](art/admin-agentes-ia.png) · [command center](art/infra-comandos.png) · [⌘K search](art/spotlight.png) · [access denied](art/erro-403.png)
+
+## What's already there
+
+**Administration and security**
+- Shield (roles and permissions with a UI) on top of spatie/laravel-permission
+- Breezy: user profile, avatar, 2FA and passkeys
+- Auth Designer: two-column login screen (swap the artwork in `public/images/auth/login.svg`)
+- Lockscreen: session lock on inactivity (30 min), registered on all 3 panels
+- Impersonate, authentication log, change auditing (owen-it)
+- Panel Switch: switch panels from the user menu
+
+**Observability and maintenance (infra panel)**
+- Spatie Health with checks for database, cache, queues, scheduler, disk, debug mode and local AI
+- Backup Monitor (spatie/laravel-backup), Jobs Monitor, Logs Explorer (no delete button — a trail is evidence)
+- Command Center: Artisan commands pre-approved for the UI, with history
+- Laravel Pulse embedded as a panel page
+- Dependency Graph: a map of models, relations, resources and panels
+- Release Notifier: warns you when there's a new version of the Composer packages
+
+**AI (optional, local by default)**
+- `laravel/ai` with an agent catalog in the database: system prompt, provider, model, tools and guardrails are **data**, editable in `/admin` with no deploy
+- Chained guardrails: budget, prompt injection, local classifier, PII redaction and sensitive-output filter
+- Execution ledger (`ai_runs`) with cost and tokens in the infra panel
+- Chat widget with streaming
+- 100% local inference through llama.cpp (`docker compose --profile ai up -d`) or any SaaS provider by switching `AI_PROVIDER`
+
+**Productivity**
+- **⌘K search** in place of the topbar's native field: finds records, screens, pages and creation actions — all scoped by permission (details below)
+- Animated count badges in the menu, notification center with tabs, environment indicator
+- **Dashboards already filled in** on the admin and infra panels: 20 widgets (stat cards with an animated counter, funnels, goals, breakdowns, timelines) over the data the panels already have — no empty screen waiting for you
+- Branded error pages (Sentinel) in pt-BR — the 403 one only shows the permission diagnosis outside production
+- 100% pt-BR UI, including plugins that ship English only (translations in `lang/vendor/`)
+
+### The ⌘K search
+
+[![⌘K search](art/thumbs/spotlight.png)](art/spotlight.png)
+
+The topbar field is **Filament's native one** — same markup, same look, same `Ctrl/⌘+K`. What changes is what happens on click: instead of typing there, it opens the Spotlight overlay, which searches on four fronts:
+
+| Category | What it finds |
+|---|---|
+| **Records** | Filament's native global search (respects your resources' `getGloballySearchableAttributes()`) |
+| **Screens** | the panel's resources, **filtered by `canAccess()`** |
+| **Pages** | the panel's pages, also by `canAccess()` |
+| **Actions** | "Create X" for each resource, with `canAccess()` + `canCreate()` + `shouldRegisterNavigation()` |
+
+Permission filtering is the reason `App\Filament\Spotlight\*` exists in the kit: the package's categories do **not** call `canAccess()`, and without that the search offers screens that would result in a 403 — an affordance leak. The "Create X" suggestions are the kit's too (`AcoesDeCriacao`), for the same reason plus one more: the package's discovery resolves URLs without checking context and takes the login screen down with a 500.
+
+## Requirements
+
+- PHP 8.3+ and Composer 2
+- Node 20+ (optional — without it the installation still goes through and tells you how to build later)
+- Docker (optional — only for Postgres, Redis, local AI and e-mail)
+
+## Database
+
+The kit installs with **SQLite** so it depends on nothing. For Postgres, bring the containers up and copy the variables:
+
+```bash
+docker compose up -d              # pgsql (with pgvector) + redis
+# copy the database block from .env.docker into your .env
+php artisan migrate --seed
+```
+
+## Docker
+
+Everything is opt-in per profile. One container per feature:
+
+```bash
+docker compose up -d                            # pgsql + redis
+docker compose --profile ai up -d               # + llama.cpp (chat and embeddings)
+docker compose --profile mail up -d             # + mailpit (1025 / 8025)
+docker compose --profile full up -d             # the whole infrastructure
+docker compose --profile app up -d --build      # the containerized application
+docker compose --profile realtime up -d reverb pulse
+```
+
+| Service | Port | Profile |
+|---|---|---|
+| PostgreSQL 17 + pgvector | 5432 | base |
+| Redis 7 (cache only) | 6379 | base |
+| llama.cpp (chat) | 8080 | `ai` |
+| llama.cpp (embeddings) | 8081 | `ai` |
+| Mailpit | 1025 / 8025 | `mail` |
+| App (nginx + php-fpm) | 8000 | `app` |
+| Reverb (WebSocket) | 8090 | `app`, `realtime` |
+
+Reverb uses 8090 instead of the default 8080 so it doesn't collide with llama.cpp.
+
+## Commands
+
+```bash
+composer dev          # server + queue + vite together
+composer test         # pint + phpstan + the whole suite
+composer test:kit     # only the kit's tests (the foundation)
+composer lint         # formats the code
+php artisan kit:install --force   # reinstalls from scratch (deletes the SQLite file)
+php artisan kit:update            # brings in improvements from a new kit version
+```
+
+### The kit's tests
+
+The kit ships its own suite, isolated in `tests/Kit/` — access to the three panels, infra and admin screens standing up, foundation invariants (uuid, gates, auditing) and the AI layer's contract.
+
+It's kept apart from yours on purpose: after a `kit:update` you want to know whether the **foundation** is still intact, without waiting on your business suite.
+
+```bash
+composer test:kit                     # shortcut
+php artisan test --testsuite=Kit      # equivalent
+php artisan test --group=kit          # same thing, by Pest group
+php artisan test --testsuite=Feature  # only YOUR tests
+```
+
+Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never touches them.
+
+## Customize your project
+
+1. **Name** — `APP_NAME` in `.env`
+2. **Login artwork** — `public/images/auth/login.svg`
+3. **Colors** — `->colors([...])` in each `app/Providers/Filament/*PanelProvider.php`
+4. **Panel access** — `App\Models\User::canAccessPanel()`
+5. **Permission matrix** — `database/seeders/PapeisSeeder.php`
+6. **Health checks** — `KitServiceProvider::configureHealthChecks()`
+7. **Commands in the UI** — `config/command-center.php`
+8. **Seeder credentials** — `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` in `.env`
+9. **Backups** — destination and schedule in `config/backup.php`
+10. **AI agent** — `/admin` → AI Agents (or `database/seeders/AssistenteSeeder.php`)
+
+## Global Filament configuration
+
+A single file defines how **every** table, toggle, modal and column in the project behaves: `app/Providers/Concerns/ConfiguraFilamentGlobal.php` (applied by `KitServiceProvider`). Change it there, and it changes everywhere — including on third-party plugin screens, which you couldn't edit any other way.
+
+**Every table is born with:**
+
+| Behavior | Why |
+|---|---|
+| `deferLoading()` | the screen shows up before the query finishes |
+| `striped()` + `stackedOnMobile()` | list reading on desktop, cards on mobile |
+| `persistFilters/Search/Sort/ColumnSearchesInSession()` | the user's slice survives navigation |
+| `reorderableColumns()` + `dragReorderableColumns()` + `stickableColumns()` | columns that can be reordered, dragged and pinned |
+| **resizable columns** (`asmit/resized-column`) | width adjustable by the user, preserved in the session |
+| `filtersLayout(Modal)` + `filtersFormColumns(2)` + `deferFilters()` | with 3+ filters the dropdown turns into scrolling; the modal doesn't |
+| `defaultPaginationPageOption(10)` + `extremePaginationLinks()` | predictable pagination, with first/last shortcuts |
+| `deselectAllRecordsWhenFiltered(false)` | filtering doesn't throw the selection away |
+
+Also global: modals that do **not** close on Esc (an accidental tap would discard the form), toggles with state color and icon, boolean icon column with a colored check/x, `CreateAction` with a default icon and the panel switcher.
+
+> **Resizable columns on new screens:** the default behavior already applies to any table; for the chosen width to be **remembered**, the list page needs the trait:
+>
+> ```php
+> use Asmit\ResizedColumn\HasResizableColumn;
+>
+> class ListProdutos extends ListRecords
+> {
+>     use HasResizableColumn;
+> }
+> ```
+
+> 📌 **TODO:** turn these defaults into **Settings under `/admin`**, so pagination, density, filter persistence and resizable columns become a project preference set through the interface, with no code editing. `filament/spatie-laravel-settings-plugin` is already installed for that.
+
+## Kit conventions
+
+- **UUID in routes, int `id` as PK.** Every new table gets `$table->uuid('uuid')->unique()` and the model uses `App\Traits\TemUuid`. A URL with a numeric id returns 404 and nobody enumerates records by sequence. UUID is not authorization — policies remain mandatory.
+- **Auditing on what is editable.** `App\Traits\AuditsFillables` audits exactly the `$fillable`, without leaking technical columns into the trail.
+- **Seeders never use factories or faker.** `fakerphp/faker` is `require-dev` and the Docker image runs `--no-dev`.
+- **Permissions come from a seeder, not from the interactive `shield:generate`** — that's what makes an unattended install possible. After creating new Resources, run `php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder`.
+- **No affordance without permission.** Menu, search and actions consult `canAccess()`/`canCreate()` before showing up. Finding something that results in a 403 is considered a bug.
+- **Plugin translations go in `lang/vendor/`.** Several packages ship English only; the kit translates them without touching vendor.
+
+### Traps already handled
+
+Things that cost time to figure out and that the kit already delivers done — if you change them, know why:
+
+| Where | What |
+|---|---|
+| Lockscreen | must be registered on **all three** panels: the package's `routes/web.php` resolves the plugin through the current panel and throws `LogicException` on every request — even `artisan package:discover` dies |
+| Command Center | **no** `->cluster()`: with a cluster the root page returns 500 |
+| `databaseNotifications()` | declared **after** `plugins()`, otherwise the Notification Center wipes out the customization, with no error at all |
+| Dependency Graph | `canAccessUsing()` replaces the package's local-only rule (without it, 404 on staging) |
+| Logs Explorer | `deletable(false)`: the package's delete does an `@unlink()` without recording a trace |
+| Filter actions | **outside** the global `configureUsing()`: on a table with no filters the action is born nameless and takes the page down |
+| Pulse + resized-column | both bundles declare constants in the global scope; loaded as an ES module so the second one doesn't die silently |
+| ⌘K search | trigger on the `GLOBAL_SEARCH_BEFORE` hook (`USER_MENU_BEFORE` renders inside the dropdown) and the overlay opened in a `setTimeout`, otherwise the click itself closes the panel |
+
+## After creating your Resources
+
+```bash
+php artisan make:filament-resource Produto --panel=app
+php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder
+php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
+```
+
+Add the kit's two traits to what was generated:
+
+```php
+// On the Resource — animated count badge in the menu:
+use App\Filament\Concerns\BadgeContagemNavegacao;
+
+class ProdutoResource extends Resource
+{
+    use BadgeContagemNavegacao;
+}
+
+// On the List page — remembers the column width chosen by the user:
+use Asmit\ResizedColumn\HasResizableColumn;
+
+class ListProdutos extends ListRecords
+{
+    use HasResizableColumn;
+}
+```
+
+### Count badges
+
+Every **kit** Resource already has a badge in the menu (Users, AI Agents, AI Runs). The count comes from `getEloquentQuery()`, never from `Model::count()`: the resource's query carries the scopes that apply to that panel, and counting straight from the model would show a number the listing doesn't confirm. Zero doesn't become a badge — a gray "0" on every item is just noise.
+
+**Third-party plugin** resources (Auditing, Logins, Queues, Composer Packages, Commands, Shield Roles, Onboarding) go without a badge: `getNavigationBadge()` is a static method on the resource, and Filament offers no API to override it from the outside — the panel's `ResourceConfiguration` only lets you change the slug. Giving them a badge would mean extending each vendor resource and preventing the plugin from registering its own, which breaks on every package update. If one of them matters in your project, that's the path — resource by resource, deliberately.
+
+## Updating a project born from the kit
+
+**The kit is a starting point, not a dependency.** After `create-project` the project is yours: you rename panels, change `canAccessPanel()`, edit seeders. That's why there is **no** `kit:update` that overwrites files — it would rewrite exactly what you customized, and a starter kit that ruins the user's project is worth nothing.
+
+What changes splits into three layers, and each one has its own path:
+
+| Layer | What it is | How to update |
+|---|---|---|
+| **Dependencies** | Filament, plugins, Laravel | `composer update` — it's most of the improvements and it arrives on its own |
+| **The kit's glue** | providers, traits, widgets, error views | manual diff against the new tag (below) |
+| **Your business** | everything you wrote | never touched |
+
+### The easy way: `php artisan kit:update`
+
+The command automates the entire git step and **applies nothing without your approval**:
+
+```bash
+php artisan kit:update --dry-run   # only shows what changed
+php artisan kit:update             # review and apply, file by file
+```
+
+What it does, in order:
+
+1. **Checks the ground** — requires a git repository with a clean tree. Without that there would be no way back, so it refuses to run (showing the commands to put the project under version control).
+2. **Links the kit temporarily** — adds the `kit` remote with **push blocked** and fetches the tags into a namespace of their own (`kit-v*`), so they don't collide with your project's versions.
+3. **Compares** — from the version in `config('kit.version')` up to the chosen tag, restricted to the paths that belong to the kit. Your business code never enters the equation.
+4. **Offers a temporary branch** (`kit-update/v0.2.0`) so yours doesn't get dirty.
+5. **Asks file by file** — see the diff, apply, skip or stop. You can change your mind halfway and apply the rest in bulk. A file removed from the kit is never deleted automatically: it only warns you.
+6. **Unlinks** — removes the remote and the `kit-*` tags on the way out, even if you interrupt it halfway. The project isn't left with anything third-party hanging around.
+
+7. **Marks the applied version** in `config/kit.php` — only that line, without touching the rest of the file. It's the starting point for the next comparison.
+
+Two details that show up in practice:
+
+- **`config/kit.php` always shows up as "modified"** (it carries the version mark). Applying it brings the kit's new keys, but **replaces the whole file** — if you changed seeder credentials or added your own keys there, read the diff and copy only what matters instead of applying.
+- **`kit:update` updates itself.** Since PHP already loaded the class into memory, the new behavior (and the new messages) only take effect on the following run. The command tells you when that happens.
+
+At the end nothing is committed: you review with `git diff`, run `composer test:kit` (the foundation) and commit. Went wrong? `git checkout -- .` undoes it, or delete the branch and go back to yours.
+
+**You don't have to approve 30 files one by one.** During the review the menu offers *"Apply all NEW files from here on"* and *"Apply EVERYTHING from here on"* — one confirmation covers the set. And you can start in bulk already:
+
+```bash
+php artisan kit:update --only-new   # only what doesn't exist in the project yet
+php artisan kit:update --all        # everything, including what overwrites
+```
+
+The distinction is the point: **a new file has nothing to overwrite**, so applying those in bulk is safe — that's the case for the widgets, the Spotlight and the concerns. A **modified** one replaces the current content, and if you edited that file your version is lost (recoverable with `git checkout -- <file>`, since nothing is committed). That's why `--only-new` is the recommended bulk for a first pass, leaving the modified ones to review calmly.
+
+| Option | What for |
+|---|---|
+| `--only-new` | applies all the new files at once (overwrites nothing) |
+| `--all` | applies everything at once, with a single confirmation for the set |
+| `--dry-run` | report only, changes nothing |
+| `--tag=v0.3.0` | compare against a specific version |
+| `--from=v0.1.0` | tell it which version the project started from (when `config/kit.php` doesn't know) |
+| `--branch=name` | choose the temporary branch's name |
+| `--no-branch` | apply on the current branch |
+| `--keep-remote` | keep the kit's remote and tags at the end |
+
+With no terminal (CI, `--no-interaction`) the command becomes a report and changes nothing — unless you pass `--only-new` or `--all`, which **are** the approval, given on the command line.
+
+### The manual way
+
+If you'd rather control every step — or understand what the command does under the hood:
+
+Add the kit as a **second remote**, once. Your `origin` stays your project; `kit` is just a read source:
+
+```bash
+git remote add kit https://github.com/gsferro/filament-starter-kit-easy.git
+
+# the kit's remote is read-only: it prevents an accidental `git push kit main`
+# from sending YOUR project into the kit's repository
+git remote set-url --push kit no_push
+```
+
+The kit's tags go into a namespace of their own (`kit-v*`). That matters: a `git fetch kit --tags` would bring `v0.1.0`, `v0.2.0`… into your project and collide with **your** versions later.
+
+```bash
+git fetch --no-tags kit 'refs/tags/*:refs/tags/kit-*'
+git tag -l 'kit-*'      # kit-v0.1.0, kit-v0.2.0, ...
+```
+
+Then, at each version, see what changed and bring over only what matters:
+
+```bash
+# 1. overview between your version and the new one
+git diff kit-v0.1.0..kit-v0.2.0 --stat
+
+# 2. the diff of the kit's "glue" (ignore what you already rewrote)
+git diff kit-v0.1.0..kit-v0.2.0 -- app/Providers app/Filament/Concerns \
+        app/Filament/Spotlight app/Traits resources/views/errors config/kit.php
+
+# 3. bring it over file by file, reviewing
+git checkout kit-v0.2.0 -- resources/views/errors
+git checkout kit-v0.2.0 -- app/Filament/Concerns/BadgeContagemNavegacao.php
+```
+
+Do this on a branch (`git switch -c update-kit`) and run `composer test` before merging. Files you rewrote: read the diff and apply by hand — it's the only safe path.
+
+> 💡 **TODO / where the project is heading:** extract the "glue" into a Composer package of its own (`gsferro/kit-core`) with the providers, traits, widgets and infra pages. Then the middle layer becomes `composer update gsferro/kit-core` and the skeleton stays minimal — only what really is a starting point. It's this kit's natural evolution.
+
+## Troubleshooting
+
+- **`/infra` or `/admin` returning 403** — your user needs the `master_global`, `admin` or `infra` role. The 403 screen shows which permission was missing, but **only outside production**: in production it reveals neither roles nor permissions.
+- **Filament assets gone** — `php artisan filament:assets`.
+- **Pulse with no data** — the daemon is missing: `php artisan pulse:check` (or the compose `pulse` service).
+- **The bell doesn't update in real time** — `BROADCAST_CONNECTION=reverb` requires the Reverb process to be up; without it the kit falls back to 30s polling.
+- **AI assistant unavailable** — bring up `docker compose --profile ai up -d` (the first boot downloads ~4.5 GB of model) or switch `AI_PROVIDER` to a SaaS provider with an API key.
+
+## Installed packages
+
+Everything below comes installed, published and registered on the panels — there is no "now install plugin X" step. The source of truth for versions is `composer.json`; the table tells you **what each one is for inside the kit**.
+
+### Base
+
+| Package | What for |
+|---|---|
+| [laravel/framework](https://packagist.org/packages/laravel/framework) | the framework |
+| [filament/filament](https://packagist.org/packages/filament/filament) | the panels, tables, forms and widgets |
+| [laravel/tinker](https://packagist.org/packages/laravel/tinker) | Laravel's REPL |
+| [livewire/blaze](https://packagist.org/packages/livewire/blaze) | optimizes Blade components by folding them into the parent template |
+
+### Administration and security
+
+| Package | What for |
+|---|---|
+| [bezhansalleh/filament-shield](https://packagist.org/packages/bezhansalleh/filament-shield) | roles and permissions with a UI, on top of spatie/laravel-permission |
+| [jeffgreco13/filament-breezy](https://packagist.org/packages/jeffgreco13/filament-breezy) | user profile, avatar, 2FA and passkeys |
+| [caresome/filament-auth-designer](https://packagist.org/packages/caresome/filament-auth-designer) | two-column login screen |
+| [marjose123/filament-lockscreen](https://packagist.org/packages/marjose123/filament-lockscreen) | session lock on inactivity, without logging out |
+| [stechstudio/filament-impersonate](https://packagist.org/packages/stechstudio/filament-impersonate) | sign in as another user |
+| [tapp/filament-authentication-log](https://packagist.org/packages/tapp/filament-authentication-log) | login history, IP and device |
+| [owen-it/laravel-auditing](https://packagist.org/packages/owen-it/laravel-auditing) | change trail for your models |
+| [tapp/filament-auditing](https://packagist.org/packages/tapp/filament-auditing) | the screen for that trail inside the panel |
+| [syriable/filament-activitylog](https://packagist.org/packages/syriable/filament-activitylog) | activity log (spatie/laravel-activitylog) in Filament |
+| [bezhansalleh/filament-panel-switch](https://packagist.org/packages/bezhansalleh/filament-panel-switch) | panel switching from the user menu |
+
+### Observability and maintenance
+
+| Package | What for |
+|---|---|
+| [shuvroroy/filament-spatie-laravel-health](https://packagist.org/packages/shuvroroy/filament-spatie-laravel-health) | health checks (database, cache, queues, scheduler, disk, AI) |
+| [spatie/laravel-backup](https://packagist.org/packages/spatie/laravel-backup) | application and database backups |
+| [brimham/filament-backup-monitor](https://packagist.org/packages/brimham/filament-backup-monitor) | backup history and health per destination |
+| [croustibat/filament-jobs-monitor](https://packagist.org/packages/croustibat/filament-jobs-monitor) | queue monitor for any driver |
+| [laboiteacode/filament-logs-explorer](https://packagist.org/packages/laboiteacode/filament-logs-explorer) | read and search the logs without leaving the panel |
+| [ssbityukov/filament-command-center](https://packagist.org/packages/ssbityukov/filament-command-center) | Artisan commands pre-approved for the UI, with history |
+| [laravel/pulse](https://packagist.org/packages/laravel/pulse) | real-time application performance and usage |
+| [dotswan/filament-laravel-pulse](https://packagist.org/packages/dotswan/filament-laravel-pulse) | Pulse embedded as a panel page |
+| [laboiteacode/filament-dependency-graph](https://packagist.org/packages/laboiteacode/filament-dependency-graph) | visual map of models, relations, resources and panels |
+| [mominalzaraa/filament-composer-release-notifier](https://packagist.org/packages/mominalzaraa/filament-composer-release-notifier) | warns you when there's a new version of the Composer packages |
+| [cms-multi/filament-clear-cache](https://packagist.org/packages/cms-multi/filament-clear-cache) | clear caches from the panel |
+
+### AI
+
+| Package | What for |
+|---|---|
+| [laravel/ai](https://packagist.org/packages/laravel/ai) | the official Laravel AI SDK (agents, tools, streaming) |
+| [fomvasss/laravel-ai-tasks](https://packagist.org/packages/fomvasss/laravel-ai-tasks) | AI task orchestration: routing, queue, auditing and budget |
+
+### UI and productivity
+
+| Package | What for |
+|---|---|
+| [wezlo/filament-search-spotlight](https://packagist.org/packages/wezlo/filament-search-spotlight) | the ⌘K search overlay |
+| [prodstarter/filament-notification-center](https://packagist.org/packages/prodstarter/filament-notification-center) | notification center with tabs and categories |
+| [pxlrbt/filament-environment-indicator](https://packagist.org/packages/pxlrbt/filament-environment-indicator) | environment indicator (local, staging, production) |
+| [gsferro/filament-odometer-easy](https://packagist.org/packages/gsferro/filament-odometer-easy) | animated counters in tables, infolists, stats and badges |
+| [gsferro/odometer-easy](https://packagist.org/packages/gsferro/odometer-easy) | the odometer base, outside Filament |
+| [gsferro/filament-stat-plus-easy](https://packagist.org/packages/gsferro/filament-stat-plus-easy) | stat cards with a corner icon, colored border and skeleton |
+| [awcodes/filament-badgeable-column](https://packagist.org/packages/awcodes/filament-badgeable-column) | badges inside table columns |
+| [asmit/resized-column](https://packagist.org/packages/asmit/resized-column) | columns resizable by the user |
+| [laboiteacode/filament-dashboard-widgets](https://packagist.org/packages/laboiteacode/filament-dashboard-widgets) | ready-made metric, goal, breakdown and trend widgets |
+| [mddev31/filament-dynamic-dashboard](https://packagist.org/packages/mddev31/filament-dynamic-dashboard) | user-configurable dashboard: drag and resize widgets |
+| [lara-zeus/progress](https://packagist.org/packages/lara-zeus/progress) | progress bars in columns and entries |
+| [wallacemartinss/filament-onboarding](https://packagist.org/packages/wallacemartinss/filament-onboarding) | checklists and guided tours, authored in `/admin` |
+| [anselmokossa/filament-sentinel](https://packagist.org/packages/anselmokossa/filament-sentinel) | error pages (403, 404, 419, 500, 503) that look like the panel |
+| [flowframe/laravel-trend](https://packagist.org/packages/flowframe/laravel-trend) | period aggregation for the widgets' charts |
+
+### Data and services
+
+| Package | What for |
+|---|---|
+| [filament/spatie-laravel-settings-plugin](https://packagist.org/packages/filament/spatie-laravel-settings-plugin) | settings pages in the panel |
+| [spatie/laravel-settings](https://packagist.org/packages/spatie/laravel-settings) | the persisted settings behind them |
+| [mike-bronner/laravel-model-caching](https://packagist.org/packages/mike-bronner/laravel-model-caching) | automatic caching of Eloquent queries |
+| [predis/predis](https://packagist.org/packages/predis/predis) | pure-PHP Redis client (no extension needed) |
+| [laravel/reverb](https://packagist.org/packages/laravel/reverb) | WebSocket for real-time notifications |
+
+> **Engines under the plugins**, installed as dependencies (you don't declare them, but they're what actually runs): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (the checks), `spatie/laravel-activitylog` (the activity log) and `livewire/livewire` (all of Filament).
+
+### Development (`require-dev`)
+
+| Package | What for |
+|---|---|
+| [pestphp/pest](https://packagist.org/packages/pestphp/pest) + [pest-plugin-laravel](https://packagist.org/packages/pestphp/pest-plugin-laravel) | the test suite |
+| [phpunit/phpunit](https://packagist.org/packages/phpunit/phpunit) | the engine under Pest |
+| [larastan/larastan](https://packagist.org/packages/larastan/larastan) | static analysis (`composer types:check`) |
+| [laravel/pint](https://packagist.org/packages/laravel/pint) | formatting (`composer lint`) |
+| [laravel-lang/common](https://packagist.org/packages/laravel-lang/common) | pt-BR translations for Laravel |
+| [laravel/pail](https://packagist.org/packages/laravel/pail) | real-time logs in the terminal |
+| [laravel/pao](https://packagist.org/packages/laravel/pao) | Laravel development tooling |
+| [nunomaduro/collision](https://packagist.org/packages/nunomaduro/collision) | readable errors in the terminal |
+| [mockery/mockery](https://packagist.org/packages/mockery/mockery) | mocks in tests |
+| [fakerphp/faker](https://packagist.org/packages/fakerphp/faker) | fake data **in tests only** — the kit's seeders never use it |
+
+### Front-end (`package.json`)
+
+| Package | What for |
+|---|---|
+| [vite](https://www.npmjs.com/package/vite) + [laravel-vite-plugin](https://www.npmjs.com/package/laravel-vite-plugin) | the asset build |
+| [tailwindcss](https://www.npmjs.com/package/tailwindcss) + [@tailwindcss/vite](https://www.npmjs.com/package/@tailwindcss/vite) | the CSS (v4, no config file) |
+| [concurrently](https://www.npmjs.com/package/concurrently) | runs server, queue and vite together in `composer dev` |
+| [@laravel/multiplex](https://www.npmjs.com/package/@laravel/multiplex) | batches Livewire requests (optional) |
+
+## License
+
+MIT.
