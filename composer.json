@@ -5,6 +5,17 @@
     "description": "Starter kit Laravel 13 + Filament 5 pronto para uso: painéis app, admin e infra, permissões, observabilidade, IA local e Docker.",
     "keywords": ["laravel", "filament", "starter-kit", "admin-panel", "boilerplate"],
     "license": "MIT",
+    "homepage": "https://github.com/gsferro/filament-starter-kit-easy",
+    "authors": [
+        {
+            "name": "Guilherme Ferro",
+            "homepage": "https://github.com/gsferro"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/gsferro/filament-starter-kit-easy/issues",
+        "source": "https://github.com/gsferro/filament-starter-kit-easy"
+    },
     "require": {
         "php": "^8.3",
         "anselmokossa/filament-sentinel": "^1.0",

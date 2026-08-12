@@ -10,6 +10,14 @@ composer dev
 
 Não há passo manual: o `create-project` já cria o `.env`, gera a `APP_KEY`, cria o banco SQLite, roda as migrations, semeia papéis/permissões/usuário, publica os assets do Filament e faz o build do front-end. Ao final ele imprime as URLs e o login inicial.
 
+Prefere clonar? O mesmo instalador roda sozinho:
+
+```bash
+git clone https://github.com/gsferro/filament-starter-kit-easy.git meu-projeto
+cd meu-projeto && rm -rf .git && git init   # descarta o histórico do kit
+composer setup
+```
+
 **Login inicial:** `admin@example.com` / `password` — papel `master_global`. **Troque antes de expor o ambiente.**
 
 ## Os três painéis
