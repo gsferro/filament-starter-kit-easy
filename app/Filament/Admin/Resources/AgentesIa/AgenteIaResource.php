@@ -7,6 +7,7 @@ use App\Filament\Admin\Resources\AgentesIa\Pages\EditAgenteIa;
 use App\Filament\Admin\Resources\AgentesIa\Pages\ListAgentesIa;
 use App\Filament\Admin\Resources\AgentesIa\Schemas\AgenteIaForm;
 use App\Filament\Admin\Resources\AgentesIa\Tables\AgentesIaTable;
+use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\AgenteIa;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -26,6 +27,8 @@ use UnitEnum;
  */
 class AgenteIaResource extends Resource
 {
+    use BadgeContagemNavegacao;
+
     protected static ?string $model = AgenteIa::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCpuChip;

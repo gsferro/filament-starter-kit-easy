@@ -2,6 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Spotlight\PagesAutorizadasCategory;
+use App\Filament\Spotlight\ResourcesAutorizadasCategory;
+use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
 use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
@@ -15,6 +18,7 @@ use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Enums\Width;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Gsferro\FilamentOdometerEasy\FilamentOdometerEasyPlugin;
@@ -29,6 +33,7 @@ use lockscreen\FilamentLockscreen\Lockscreen;
 use Prodstarter\FilamentNotificationCenter\FilamentNotificationCenterPlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
 use Wallacemartinss\FilamentOnboarding\FilamentOnboardingPlugin;
+use Wezlo\FilamentSearchSpotlight\Categories\RecordsCategory;
 use Wezlo\FilamentSearchSpotlight\FilamentSearchSpotlightPlugin;
 
 /**
@@ -70,7 +75,13 @@ class AdminPanelProvider extends PanelProvider
                     ->keyBinding(['mod+k'])
                     ->disableDefaultGlobalSearch()
                     ->resultLimitPerCategory(5)
-                    ->placeholder('Buscar registros e telas...'),
+                    ->placeholder('Buscar registros e telas...')
+                    // As categorias do vendor NÃO checam canAccess(); as nossas checam.
+                    ->categories([
+                        RecordsCategory::class,
+                        ResourcesAutorizadasCategory::class,
+                        PagesAutorizadasCategory::class,
+                    ]),
 
                 // Login split: mídia à esquerda, formulário à direita.
                 AuthDesignerPlugin::make()
@@ -120,8 +131,22 @@ class AdminPanelProvider extends PanelProvider
                     // Sem isto o badge de contagem some com a sidebar recolhida.
                     ->badgeOnCollapsedSidebar(),
 
+                // Colunas redimensionáveis/fixáveis. Os defaults de tabela ficam em
+                // App\Providers\Concerns\ConfiguraFilamentGlobal; aqui só a persistência.
+                ResizedColumnPlugin::make()
+                    ->preserveOnSession(),
+
                 FilamentNotificationCenterPlugin::make(),
             ])
+            /*
+             * Gatilho visível da busca ⌘K. Sem ele o recurso existe mas é
+             * invisível: a busca nativa do Filament foi desligada acima para
+             * não haver dois campos disputando o mesmo atalho.
+             */
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn (): string => view('filament.spotlight-trigger')->render(),
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

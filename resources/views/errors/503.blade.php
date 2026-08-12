@@ -9,8 +9,8 @@
 @extends('errors.sentinel-layout', [
     'code' => 503,
     'tone' => 'warning',
-    'title' => 'Down for maintenance',
-    'body' => 'The system is temporarily unavailable for maintenance or high load. We are working to restore service as quickly as possible.',
+    'title' => 'Em manutenção',
+    'body' => 'O sistema está temporariamente indisponível por manutenção ou carga alta. Estamos trabalhando para restabelecer o serviço o mais rápido possível.',
     'exception' => $exception ?? null,
 ])
 
@@ -25,11 +25,11 @@
 
     <div class="sn-actions">
         <a class="sn-btn sn-btn-primary" href="#" onclick="window.location.reload(); return false;">Check status</a>
-        <a class="sn-btn sn-btn-gray" href="#" onclick="history.back(); return false;">Go back</a>
+        <a class="sn-btn sn-btn-gray" href="#" onclick="history.back(); return false;">Voltar</a>
     </div>
 
     <div class="sn-note">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
-        <span>Scheduled maintenance in progress. Your data is safe and the service will be back shortly.</span>
+        <span>Manutenção programada em andamento. Seus dados estão seguros e o serviço volta em breve.</span>
     </div>
 @endsection

@@ -1,8 +1,8 @@
 @extends('errors.sentinel-layout', [
     'code' => 404,
     'tone' => 'gray',
-    'title' => 'Page not found',
-    'body' => 'The page you are looking for was moved, deleted, or the address is wrong. Check the URL or head back to safety.',
+    'title' => 'Página não encontrada',
+    'body' => 'A página que você procura foi movida, removida ou o endereço está errado. Confira a URL ou volte para a página anterior.',
     'exception' => $exception ?? null,
 ])
 
@@ -14,7 +14,7 @@
     <div class="sn-codeblock" style="text-align:center">/{{ ltrim(request()->path(), '/') }}</div>
 
     <div class="sn-actions">
-        <a class="sn-btn sn-btn-primary" href="/">Back to safety</a>
-        <a class="sn-btn sn-btn-gray" href="#" onclick="history.back(); return false;">Go back</a>
+        <a class="sn-btn sn-btn-primary" href="/">Início</a>
+        <a class="sn-btn sn-btn-gray" href="#" onclick="history.back(); return false;">Voltar</a>
     </div>
 @endsection

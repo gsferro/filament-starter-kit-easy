@@ -2,6 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Spotlight\PagesAutorizadasCategory;
+use App\Filament\Spotlight\ResourcesAutorizadasCategory;
+use Asmit\ResizedColumn\ResizedColumnPlugin;
 use Bityukov\CommandCenter\Filament\CommandCenterPlugin;
 use Bityukov\CommandCenter\Filament\Pages\Commands as CommandCenterCommands;
 use Bityukov\CommandCenter\Filament\Pages\History as CommandCenterHistory;
@@ -21,6 +24,7 @@ use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Enums\Width;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Gsferro\FilamentOdometerEasy\FilamentOdometerEasyPlugin;
@@ -40,6 +44,7 @@ use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
 use ShuvroRoy\FilamentSpatieLaravelHealth\FilamentSpatieLaravelHealthPlugin;
 use Tapp\FilamentAuditing\FilamentAuditingPlugin;
 use Tapp\FilamentAuthenticationLog\FilamentAuthenticationLogPlugin;
+use Wezlo\FilamentSearchSpotlight\Categories\RecordsCategory;
 use Wezlo\FilamentSearchSpotlight\FilamentSearchSpotlightPlugin;
 
 /**
@@ -65,6 +70,18 @@ class InfraPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Infra/Resources'), for: 'App\Filament\Infra\Resources')
             ->discoverPages(in: app_path('Filament/Infra/Pages'), for: 'App\Filament\Infra\Pages')
             ->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\Filament\Infra\Widgets')
+            /*
+             * Ordem explícita dos grupos — sem isto o Filament ordena alfabeticamente
+             * e a navegação vira uma lista sem hierarquia de leitura. Cada plugin é
+             * encaixado num destes quatro grupos logo abaixo, pelo mecanismo que ele
+             * expõe (método do plugin, chave de config ou tradução).
+             */
+            ->navigationGroups([
+                'Observabilidade',
+                'IA',
+                'Trilhas',
+                'Sistema',
+            ])
             ->pages([
                 Dashboard::class,
             ])
@@ -87,7 +104,13 @@ class InfraPanelProvider extends PanelProvider
                     ->keyBinding(['mod+k'])
                     ->disableDefaultGlobalSearch()
                     ->resultLimitPerCategory(5)
-                    ->placeholder('Buscar registros e telas...'),
+                    ->placeholder('Buscar registros e telas...')
+                    // As categorias do vendor NÃO checam canAccess(); as nossas checam.
+                    ->categories([
+                        RecordsCategory::class,
+                        ResourcesAutorizadasCategory::class,
+                        PagesAutorizadasCategory::class,
+                    ]),
 
                 AuthDesignerPlugin::make()
                     ->login(fn (AuthPageConfig $config): AuthPageConfig => $config
@@ -109,8 +132,12 @@ class InfraPanelProvider extends PanelProvider
 
                 // --- Observabilidade -------------------------------------------
 
-                FilamentSpatieLaravelHealthPlugin::make(),
+                FilamentSpatieLaravelHealthPlugin::make()
+                    ->navigationGroup('Observabilidade'),
+                // Backup Monitor e Auditing não expõem grupo de navegação nem
+                // rótulo traduzível: ficam soltos no topo do menu, antes dos grupos.
                 FilamentBackupMonitorPlugin::make(),
+                // Grupo vem de config/filament-jobs-monitor.php.
                 FilamentJobsMonitorPlugin::make(),
 
                 // Trilha de ACESSO (logins, novos dispositivos).
@@ -125,7 +152,7 @@ class InfraPanelProvider extends PanelProvider
                  * evidências sem registro. Retenção é papel da rotação diária.
                  */
                 FilamentLogsExplorerPlugin::make()
-                    ->navigationGroup('Sistema')
+                    ->navigationGroup('Trilhas')
                     ->navigationSort(210)
                     ->canAccessUsing(fn (): bool => auth()->user()?->can('ver-logs') ?? false)
                     ->deletable(false),
@@ -174,6 +201,11 @@ class InfraPanelProvider extends PanelProvider
                     ->duration(1500)
                     ->badgeOnCollapsedSidebar(),
 
+                // Colunas redimensionáveis/fixáveis. Os defaults de tabela ficam em
+                // App\Providers\Concerns\ConfiguraFilamentGlobal; aqui só a persistência.
+                ResizedColumnPlugin::make()
+                    ->preserveOnSession(),
+
                 FilamentNotificationCenterPlugin::make(),
             ])
             /*
@@ -186,6 +218,15 @@ class InfraPanelProvider extends PanelProvider
                 CommandCenterCommands::navigationLabel('Comandos');
                 CommandCenterHistory::navigationLabel('Histórico de execuções');
             })
+            /*
+             * Gatilho visível da busca ⌘K. Sem ele o recurso existe mas é
+             * invisível: a busca nativa do Filament foi desligada acima para
+             * não haver dois campos disputando o mesmo atalho.
+             */
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn (): string => view('filament.spotlight-trigger')->render(),
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Infra\Resources\AiRuns;
 
+use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Filament\Infra\Resources\AiRuns\Pages\ListAiRuns;
 use App\Filament\Infra\Resources\AiRuns\Pages\ViewAiRun;
 use App\Filament\Infra\Resources\AiRuns\Schemas\AiRunInfolist;
@@ -29,6 +30,8 @@ use UnitEnum;
  */
 class AiRunResource extends Resource
 {
+    use BadgeContagemNavegacao;
+
     protected static ?string $model = AiRun::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCpuChip;

@@ -3,6 +3,7 @@
 namespace App\Filament\Infra\Resources\AiRuns\Pages;
 
 use App\Filament\Infra\Resources\AiRuns\AiRunResource;
+use Asmit\ResizedColumn\HasResizableColumn;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
 
@@ -11,6 +12,8 @@ use Filament\Resources\Pages\ListRecords;
  */
 class ListAiRuns extends ListRecords
 {
+    use HasResizableColumn;
+
     protected static string $resource = AiRunResource::class;
 
     protected function getHeaderActions(): array

@@ -33,7 +33,7 @@ class Pulse extends Dashboard
 
     protected static ?string $navigationLabel = 'Pulse';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Sistema';
+    protected static string|UnitEnum|null $navigationGroup = 'Observabilidade';
 
     protected static ?int $navigationSort = 240;
 

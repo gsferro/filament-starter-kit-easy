@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Users;
 use App\Filament\Admin\Resources\Users\Pages\CreateUser;
 use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Filament\Admin\Resources\Users\Pages\ListUsers;
+use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
@@ -20,6 +21,8 @@ use STS\FilamentImpersonate\Actions\Impersonate;
 
 class UserResource extends Resource
 {
+    use BadgeContagemNavegacao;
+
     protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';

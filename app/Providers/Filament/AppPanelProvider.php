@@ -2,6 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Spotlight\PagesAutorizadasCategory;
+use App\Filament\Spotlight\ResourcesAutorizadasCategory;
+use Asmit\ResizedColumn\ResizedColumnPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
 use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
@@ -29,6 +32,7 @@ use LaBoiteACode\FilamentDashboardWidgets\FilamentDashboardWidgetsPlugin;
 use lockscreen\FilamentLockscreen\Lockscreen;
 use Prodstarter\FilamentNotificationCenter\FilamentNotificationCenterPlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
+use Wezlo\FilamentSearchSpotlight\Categories\RecordsCategory;
 use Wezlo\FilamentSearchSpotlight\FilamentSearchSpotlightPlugin;
 
 /**
@@ -76,7 +80,13 @@ class AppPanelProvider extends PanelProvider
                     ->keyBinding(['mod+k'])
                     ->disableDefaultGlobalSearch()
                     ->resultLimitPerCategory(5)
-                    ->placeholder('Buscar registros e telas...'),
+                    ->placeholder('Buscar registros e telas...')
+                    // As categorias do vendor NÃO checam canAccess(); as nossas checam.
+                    ->categories([
+                        RecordsCategory::class,
+                        ResourcesAutorizadasCategory::class,
+                        PagesAutorizadasCategory::class,
+                    ]),
 
                 AuthDesignerPlugin::make()
                     ->login(fn (AuthPageConfig $config): AuthPageConfig => $config
@@ -108,8 +118,22 @@ class AppPanelProvider extends PanelProvider
                     ->duration(1500)
                     ->badgeOnCollapsedSidebar(),
 
+                // Colunas redimensionáveis/fixáveis. Os defaults de tabela ficam em
+                // App\Providers\Concerns\ConfiguraFilamentGlobal; aqui só a persistência.
+                ResizedColumnPlugin::make()
+                    ->preserveOnSession(),
+
                 FilamentNotificationCenterPlugin::make(),
             ])
+            /*
+             * Gatilho visível da busca ⌘K. Sem ele o recurso existe mas é
+             * invisível: a busca nativa do Filament foi desligada acima para
+             * não haver dois campos disputando o mesmo atalho.
+             */
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn (): string => view('filament.spotlight-trigger')->render(),
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

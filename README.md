@@ -3,6 +3,8 @@
 ![Starter Kit Easy](art/banner.png)
 
 [![Packagist](https://img.shields.io/packagist/v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
+[![Downloads](https://img.shields.io/packagist/dt/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
+[![Testes](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=testes)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![License](https://img.shields.io/packagist/l/gsferro/starter-kit-easy.svg?style=flat-square)](LICENSE)
 
@@ -16,6 +18,8 @@ composer dev
 
 Não há passo manual: o `create-project` já cria o `.env`, gera a `APP_KEY`, cria o banco SQLite, roda as migrations, semeia papéis/permissões/usuário, publica os assets do Filament e faz o build do front-end. Ao final ele imprime as URLs e o login inicial.
 
+![Instalação do starter-kit-easy em um comando](art/install.gif)
+
 Prefere clonar? O mesmo instalador roda sozinho:
 
 ```bash
@@ -24,7 +28,21 @@ cd meu-projeto && rm -rf .git && git init   # descarta o histórico do kit
 composer setup
 ```
 
-**Login inicial:** `admin@example.com` / `password` — papel `master_global`. **Troque antes de expor o ambiente.**
+## Acesso de demonstração
+
+O seeder cria um usuário master que já entra nos três painéis:
+
+| | |
+|---|---|
+| **Usuário** | `admin@example.com` |
+| **Senha** | `password` |
+| **Papel** | `master_global` (vence qualquer permissão via `Gate::before`) |
+
+Entre por `/app`, `/admin` ou `/infra` — a mesma sessão vale para os três, e o menu do usuário troca de painel.
+
+> ⚠️ **Troque a senha antes de expor o ambiente.** Para nascer com outra credencial, defina `KIT_ADMIN_EMAIL`, `KIT_ADMIN_PASSWORD` e `KIT_ADMIN_NAME` no `.env` **antes** de rodar a instalação (os valores ficam em `config/kit.php`). Num projeto já instalado, troque pelo próprio painel em `/admin/users` ou em **Meu perfil**.
+
+Para testar o recorte de acesso, crie um usuário só com o papel `admin` ou `infra`: ele entra no painel correspondente e toma 403 no outro.
 
 ## Os três painéis
 
@@ -37,6 +55,20 @@ composer setup
 A regra de acesso fica em `App\Models\User::canAccessPanel()`. O papel `master_global` vence qualquer gate via `Gate::before` (`App\Providers\KitServiceProvider`) — não precisa de permissions no banco.
 
 Separar admin de infra é o ponto do kit: quem administra usuários não precisa (nem deve) enxergar logs, filas e comandos operacionais, e vice-versa.
+
+### Como cada um se parece
+
+| Login | Administração |
+|---|---|
+| [![Tela de login](art/thumbs/login.png)](art/login.png) | [![Painel admin](art/thumbs/panel-admin.png)](art/panel-admin.png) |
+| Auth Designer em duas colunas — troque a arte em `public/images/auth/login.svg` | Usuários, papéis, agentes de IA e indicadores de administração |
+
+| Infraestrutura | Negócio |
+|---|---|
+| [![Painel infra](art/thumbs/panel-infra.png)](art/panel-infra.png) | [![Painel app](art/thumbs/panel-app.png)](art/panel-app.png) |
+| Saúde, filas, trilhas, comandos e custos de IA — agrupados por tema | Vazio de propósito: é onde o seu projeto nasce |
+
+Mais telas: [saúde da aplicação](art/infra-health.png) · [permissões (Shield)](art/admin-roles.png) · [catálogo de agentes de IA](art/admin-agentes-ia.png) · [central de comandos](art/infra-comandos.png) · [busca ⌘K](art/spotlight.png) · [acesso negado](art/erro-403.png)
 
 ## O que já vem pronto
 
@@ -64,9 +96,11 @@ Separar admin de infra é o ponto do kit: quem administra usuários não precisa
 - Inferência 100% local via llama.cpp (`docker compose --profile ai up -d`) ou qualquer provider SaaS trocando `AI_PROVIDER`
 
 **Produtividade**
-- Busca global ⌘K (Spotlight), centro de notificações com abas, indicador de ambiente
-- Widgets prontos: odômetro animado, stat cards, funis, metas, timelines
-- Páginas de erro brandadas (Sentinel), tabelas com defaults sensatos e UI 100% em pt-BR
+- Busca ⌘K (Spotlight) com gatilho na topbar — as categorias do kit checam `canAccess()`, então ninguém encontra na busca uma tela que tomaria 403
+- Badges de contagem animados no menu, centro de notificações com abas, indicador de ambiente
+- Dashboards já preenchidos: stat cards com contador animado, funis, metas, breakdowns e timelines sobre os dados que os painéis já têm
+- Páginas de erro brandadas (Sentinel) em pt-BR — a de 403 só mostra o diagnóstico de permissão fora de produção
+- UI 100% em pt-BR e tabelas com defaults sensatos
 
 ## Requisitos
 
@@ -131,6 +165,38 @@ php artisan kit:install --force   # reinstala do zero (apaga o SQLite)
 9. **Backups** — destino e agenda em `config/backup.php`
 10. **Agente de IA** — `/admin` → Agentes de IA (ou `database/seeders/AssistenteSeeder.php`)
 
+## Configuração global do Filament
+
+Um único arquivo define como **toda** tabela, toggle, modal e coluna do projeto se comporta: `app/Providers/Concerns/ConfiguraFilamentGlobal.php` (aplicado pelo `KitServiceProvider`). Mudou ali, mudou em todo lugar — inclusive nas telas dos plugins de terceiros, que você não conseguiria editar de outro jeito.
+
+**Toda tabela nasce com:**
+
+| Comportamento | Por quê |
+|---|---|
+| `deferLoading()` | a tela aparece antes da query terminar |
+| `striped()` + `stackedOnMobile()` | leitura em lista no desktop, cartão no celular |
+| `persistFilters/Search/Sort/ColumnSearchesInSession()` | o recorte do usuário sobrevive à navegação |
+| `reorderableColumns()` + `dragReorderableColumns()` + `stickableColumns()` | colunas reordenáveis, arrastáveis e fixáveis |
+| **colunas redimensionáveis** (`asmit/resized-column`) | largura ajustável pelo usuário, preservada na sessão |
+| `filtersLayout(Modal)` + `filtersFormColumns(2)` + `deferFilters()` | com 3+ filtros o dropdown vira rolagem; o modal não |
+| `defaultPaginationPageOption(10)` + `extremePaginationLinks()` | paginação previsível, com atalhos de primeira/última |
+| `deselectAllRecordsWhenFiltered(false)` | filtrar não descarta a seleção |
+
+Também são globais: modal que **não** fecha no Esc (um toque acidental descartaria o formulário), toggles com cor e ícone de estado, coluna de ícone booleana com check/x colorido, `CreateAction` com ícone padrão e o alternador de painéis.
+
+> **Colunas redimensionáveis em telas novas:** o comportamento padrão já vale para qualquer tabela; para que a largura escolhida seja **lembrada**, a página de listagem precisa do trait:
+>
+> ```php
+> use Asmit\ResizedColumn\HasResizableColumn;
+>
+> class ListProdutos extends ListRecords
+> {
+>     use HasResizableColumn;
+> }
+> ```
+
+> 📌 **TODO:** transformar esses defaults num **Settings em `/admin`**, para que paginação, densidade, persistência de filtros e colunas redimensionáveis virem preferência do projeto pela interface, sem editar código. O `filament/spatie-laravel-settings-plugin` já está instalado para isso.
+
 ## Convenções do kit
 
 - **UUID nas rotas, `id` int como PK.** Toda tabela nova ganha `$table->uuid('uuid')->unique()` e o model usa `App\Traits\TemUuid`. URL com id numérico devolve 404 e ninguém enumera registros por sequência. UUID não é autorização — policies continuam obrigatórias.
@@ -146,9 +212,56 @@ php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder
 php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
 ```
 
+Na página de listagem gerada, adicione os dois traits do kit:
+
+```php
+use App\Filament\Concerns\BadgeContagemNavegacao;   // no Resource: badge de contagem no menu
+use Asmit\ResizedColumn\HasResizableColumn;         // na List page: lembra a largura das colunas
+```
+
+## Atualizando um projeto que já nasceu do kit
+
+**O kit é um ponto de partida, não uma dependência.** Depois do `create-project` o projeto é seu: você renomeia painéis, muda `canAccessPanel()`, edita seeders. Por isso **não existe** um `kit:update` que sobrescreve arquivos — ele reescreveria justamente o que você personalizou, e um starter kit que estraga o projeto do usuário não serve para nada.
+
+O que muda separa-se em três camadas, e cada uma tem um caminho próprio:
+
+| Camada | O que é | Como atualizar |
+|---|---|---|
+| **Dependências** | Filament, plugins, Laravel | `composer update` — é a maior parte das melhorias e chega sozinha |
+| **Cola do kit** | providers, traits, widgets, views de erro | diff manual contra a tag nova (abaixo) |
+| **Seu negócio** | tudo que você escreveu | nunca é tocado |
+
+### Diff contra a versão nova
+
+Adicione o kit como um segundo remote **uma vez**:
+
+```bash
+git remote add kit https://github.com/gsferro/filament-starter-kit-easy.git
+git fetch kit --tags
+```
+
+Depois, a cada versão, veja o que mudou e traga só o que interessa:
+
+```bash
+# 1. o que mudou entre a sua versão e a nova
+git diff v0.1.0..v0.2.0 --stat
+
+# 2. o diff da "cola" do kit (ignore o que você já reescreveu)
+git diff v0.1.0..v0.2.0 -- app/Providers app/Filament/Concerns app/Filament/Spotlight \
+                            app/Traits resources/views/errors config/kit.php
+
+# 3. traga arquivo a arquivo, revisando
+git checkout v0.2.0 -- resources/views/errors
+git checkout v0.2.0 -- app/Filament/Concerns/BadgeContagemNavegacao.php
+```
+
+Faça isso num branch (`git switch -c atualiza-kit`) e rode `composer test` antes do merge. Arquivos que você reescreveu: leia o diff e aplique à mão — é o único caminho seguro.
+
+> 💡 **TODO / rumo do projeto:** extrair a "cola" para um pacote Composer próprio (`gsferro/kit-core`) com os providers, traits, widgets e páginas de infra. Aí a camada do meio vira `composer update gsferro/kit-core` e o skeleton fica mínimo — só o que é mesmo ponto de partida. É a evolução natural deste kit.
+
 ## Solução de problemas
 
-- **`/infra` ou `/admin` dando 403** — seu usuário precisa do papel `master_global`, `admin` ou `infra`.
+- **`/infra` ou `/admin` dando 403** — seu usuário precisa do papel `master_global`, `admin` ou `infra`. A tela de 403 mostra qual permissão faltou, mas **só fora de produção**: em produção ela não revela papéis nem permissões.
 - **Assets do Filament sumidos** — `php artisan filament:assets`.
 - **Pulse sem dados** — falta o daemon: `php artisan pulse:check` (ou o serviço `pulse` do compose).
 - **Sininho não atualiza em tempo real** — `BROADCAST_CONNECTION=reverb` exige o processo Reverb no ar; sem ele o kit cai para polling de 30s.
