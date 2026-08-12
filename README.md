@@ -233,26 +233,36 @@ O que muda separa-se em três camadas, e cada uma tem um caminho próprio:
 
 ### Diff contra a versão nova
 
-Adicione o kit como um segundo remote **uma vez**:
+Adicione o kit como um **segundo remote**, uma única vez. Seu `origin` continua sendo o seu projeto; o `kit` é só uma fonte de leitura:
 
 ```bash
 git remote add kit https://github.com/gsferro/filament-starter-kit-easy.git
-git fetch kit --tags
+
+# o remote do kit é somente-leitura: evita um `git push kit main` acidental
+# mandar o SEU projeto para dentro do repositório do kit
+git remote set-url --push kit no_push
+```
+
+As tags do kit vão para um namespace próprio (`kit-v*`). Isso importa: um `git fetch kit --tags` traria `v0.1.0`, `v0.2.0`… para o seu projeto e colidiria com as **suas** versões depois.
+
+```bash
+git fetch --no-tags kit 'refs/tags/*:refs/tags/kit-*'
+git tag -l 'kit-*'      # kit-v0.1.0, kit-v0.2.0, ...
 ```
 
 Depois, a cada versão, veja o que mudou e traga só o que interessa:
 
 ```bash
-# 1. o que mudou entre a sua versão e a nova
-git diff v0.1.0..v0.2.0 --stat
+# 1. panorama entre a sua versão e a nova
+git diff kit-v0.1.0..kit-v0.2.0 --stat
 
 # 2. o diff da "cola" do kit (ignore o que você já reescreveu)
-git diff v0.1.0..v0.2.0 -- app/Providers app/Filament/Concerns app/Filament/Spotlight \
-                            app/Traits resources/views/errors config/kit.php
+git diff kit-v0.1.0..kit-v0.2.0 -- app/Providers app/Filament/Concerns \
+        app/Filament/Spotlight app/Traits resources/views/errors config/kit.php
 
 # 3. traga arquivo a arquivo, revisando
-git checkout v0.2.0 -- resources/views/errors
-git checkout v0.2.0 -- app/Filament/Concerns/BadgeContagemNavegacao.php
+git checkout kit-v0.2.0 -- resources/views/errors
+git checkout kit-v0.2.0 -- app/Filament/Concerns/BadgeContagemNavegacao.php
 ```
 
 Faça isso num branch (`git switch -c atualiza-kit`) e rode `composer test` antes do merge. Arquivos que você reescreveu: leia o diff e aplique à mão — é o único caminho seguro.
