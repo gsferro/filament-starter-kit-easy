@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
@@ -33,6 +34,7 @@ use lockscreen\FilamentLockscreen\Lockscreen;
 use Prodstarter\FilamentNotificationCenter\FilamentNotificationCenterPlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
 use Wallacemartinss\FilamentOnboarding\FilamentOnboardingPlugin;
+use Wezlo\FilamentSearchSpotlight\Categories\ActionsCategory;
 use Wezlo\FilamentSearchSpotlight\Categories\RecordsCategory;
 use Wezlo\FilamentSearchSpotlight\FilamentSearchSpotlightPlugin;
 
@@ -68,6 +70,8 @@ class AdminPanelProvider extends PanelProvider
                 AccountWidget::class,
                 FilamentInfoWidget::class,
             ])
+            // Registra as sugestões "Criar X" no request, com auth já resolvido.
+            ->bootUsing(fn (): null => AcoesDeCriacao::registrar())
             ->plugins([
                 // Busca ⌘K. O discovery de ações de criação do pacote fica fora:
                 // ele monta getUrl('create') sem checar canCreate().
@@ -75,12 +79,16 @@ class AdminPanelProvider extends PanelProvider
                     ->keyBinding(['mod+k'])
                     ->disableDefaultGlobalSearch()
                     ->resultLimitPerCategory(5)
+                    ->actionsEnabled()
+                    ->disableCreateActions()
                     ->placeholder('Buscar registros e telas...')
                     // As categorias do vendor NÃO checam canAccess(); as nossas checam.
                     ->categories([
                         RecordsCategory::class,
                         ResourcesAutorizadasCategory::class,
                         PagesAutorizadasCategory::class,
+                        // Lê o registry alimentado por AcoesDeCriacao (as sugestões "Criar X").
+                        ActionsCategory::class,
                     ]),
 
                 // Login split: mídia à esquerda, formulário à direita.
@@ -139,12 +147,16 @@ class AdminPanelProvider extends PanelProvider
                 FilamentNotificationCenterPlugin::make(),
             ])
             /*
-             * Gatilho visível da busca ⌘K. Sem ele o recurso existe mas é
-             * invisível: a busca nativa do Filament foi desligada acima para
-             * não haver dois campos disputando o mesmo atalho.
+             * Gatilho da busca ⌘K, no lugar exato do campo nativo.
+             *
+             * GLOBAL_SEARCH_BEFORE (e não USER_MENU_BEFORE, que renderiza
+             * DENTRO do dropdown do usuário): o hook é emitido pela topbar
+             * incondicionalmente — o `disableDefaultGlobalSearch()` guarda o
+             * componente Livewire da busca, não o hook. Então a topbar mantém
+             * a mesma aparência de sempre, e o clique abre o overlay.
              */
             ->renderHook(
-                PanelsRenderHook::USER_MENU_BEFORE,
+                PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn (): string => view('filament.spotlight-trigger')->render(),
             )
             ->middleware([

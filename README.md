@@ -66,9 +66,9 @@ Separar admin de infra é o ponto do kit: quem administra usuários não precisa
 | Infraestrutura | Negócio |
 |---|---|
 | [![Painel infra](art/thumbs/panel-infra.png)](art/panel-infra.png) | [![Painel app](art/thumbs/panel-app.png)](art/panel-app.png) |
-| Saúde, filas, trilhas, comandos e custos de IA — agrupados por tema | Vazio de propósito: é onde o seu projeto nasce |
+| Saúde, filas, trilhas, comandos e custos de IA — agrupados em Observabilidade, IA, Trilhas e Sistema | Vazio de propósito: é onde o seu projeto nasce |
 
-Mais telas: [saúde da aplicação](art/infra-health.png) · [permissões (Shield)](art/admin-roles.png) · [catálogo de agentes de IA](art/admin-agentes-ia.png) · [central de comandos](art/infra-comandos.png) · [busca ⌘K](art/spotlight.png) · [acesso negado](art/erro-403.png)
+Mais telas: [saúde da aplicação](art/infra-health.png) · [usuários](art/admin-users.png) · [permissões (Shield)](art/admin-roles.png) · [catálogo de agentes de IA](art/admin-agentes-ia.png) · [central de comandos](art/infra-comandos.png) · [busca ⌘K](art/spotlight.png) · [acesso negado](art/erro-403.png)
 
 ## O que já vem pronto
 
@@ -96,11 +96,26 @@ Mais telas: [saúde da aplicação](art/infra-health.png) · [permissões (Shiel
 - Inferência 100% local via llama.cpp (`docker compose --profile ai up -d`) ou qualquer provider SaaS trocando `AI_PROVIDER`
 
 **Produtividade**
-- Busca ⌘K (Spotlight) com gatilho na topbar — as categorias do kit checam `canAccess()`, então ninguém encontra na busca uma tela que tomaria 403
+- **Busca ⌘K** no lugar do campo nativo da topbar: encontra registros, telas, páginas e ações de criação — tudo recortado por permissão (detalhes abaixo)
 - Badges de contagem animados no menu, centro de notificações com abas, indicador de ambiente
-- Dashboards já preenchidos: stat cards com contador animado, funis, metas, breakdowns e timelines sobre os dados que os painéis já têm
+- **Dashboards já preenchidos** nos painéis admin e infra: 20 widgets (stat cards com contador animado, funis, metas, breakdowns, timelines) sobre os dados que os painéis já têm — nada de tela vazia esperando você
 - Páginas de erro brandadas (Sentinel) em pt-BR — a de 403 só mostra o diagnóstico de permissão fora de produção
-- UI 100% em pt-BR e tabelas com defaults sensatos
+- UI 100% em pt-BR, inclusive nos plugins que só trazem inglês (traduções em `lang/vendor/`)
+
+### A busca ⌘K
+
+[![Busca ⌘K](art/thumbs/spotlight.png)](art/spotlight.png)
+
+O campo na topbar é o **nativo do Filament** — mesma marcação, mesma aparência, mesmo `Ctrl/⌘+K`. O que muda é o que acontece ao clicar: em vez de digitar ali, abre o overlay do Spotlight, que busca em quatro frentes:
+
+| Categoria | O que encontra |
+|---|---|
+| **Registros** | a busca global nativa do Filament (respeita `getGloballySearchableAttributes()` dos seus resources) |
+| **Telas** | os resources do painel, **filtrados por `canAccess()`** |
+| **Páginas** | as páginas do painel, também por `canAccess()` |
+| **Ações** | "Criar X" para cada resource, com `canAccess()` + `canCreate()` + `shouldRegisterNavigation()` |
+
+O filtro por permissão é a razão de existirem `App\Filament\Spotlight\*` no kit: as categorias do pacote **não** chamam `canAccess()`, e sem isso a busca oferece telas que resultariam em 403 — vazamento de affordance. As sugestões "Criar X" também são do kit (`AcoesDeCriacao`), pelo mesmo motivo e mais um: o discovery do pacote resolve URLs sem checar contexto e derruba a tela de login com 500.
 
 ## Requisitos
 
@@ -220,6 +235,23 @@ Também são globais: modal que **não** fecha no Esc (um toque acidental descar
 - **Auditoria no que é editável.** `App\Traits\AuditsFillables` audita exatamente o `$fillable`, sem vazar colunas técnicas para a trilha.
 - **Seeder nunca usa factory nem faker.** `fakerphp/faker` é `require-dev` e a imagem Docker roda `--no-dev`.
 - **Permissões vêm de seeder, não de `shield:generate` interativo** — é o que permite instalar sem intervenção. Depois de criar Resources novos, rode `php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder`.
+- **Nada de affordance sem permissão.** Menu, busca e ações consultam `canAccess()`/`canCreate()` antes de aparecer. Encontrar algo que resulta em 403 é considerado bug.
+- **Tradução de plugin vai em `lang/vendor/`.** Vários pacotes só trazem inglês; o kit traduz sem tocar no vendor.
+
+### Armadilhas já resolvidas
+
+Coisas que custaram tempo para descobrir e que o kit já entrega prontas — se você mexer nelas, saiba o porquê:
+
+| Onde | O quê |
+|---|---|
+| Lockscreen | precisa estar registrado nos **três** painéis: o `routes/web.php` do pacote resolve o plugin pelo painel corrente e estoura `LogicException` em todo request — até `artisan package:discover` morre |
+| Command Center | **sem** `->cluster()`: com cluster a página raiz devolve 500 |
+| `databaseNotifications()` | declarado **depois** de `plugins()`, senão o Notification Center apaga o recorte, sem erro nenhum |
+| Dependency Graph | `canAccessUsing()` substitui a regra local-only do pacote (sem ele, 404 em homologação) |
+| Logs Explorer | `deletable(false)`: o delete do pacote faz `@unlink()` sem gravar rastro |
+| Ações de filtro | **fora** do `configureUsing()` global: em tabela sem filtro a ação nasce sem nome e derruba a página |
+| Pulse + resized-column | os dois bundles declaram constantes no escopo global; carregados como ES module para o segundo não morrer calado |
+| Busca ⌘K | gatilho no hook `GLOBAL_SEARCH_BEFORE` (o `USER_MENU_BEFORE` renderiza dentro do dropdown) e overlay aberto em `setTimeout`, senão o próprio clique fecha o painel |
 
 ## Depois de criar seus Resources
 
@@ -229,12 +261,31 @@ php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder
 php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
 ```
 
-Na página de listagem gerada, adicione os dois traits do kit:
+Adicione os dois traits do kit ao que foi gerado:
 
 ```php
-use App\Filament\Concerns\BadgeContagemNavegacao;   // no Resource: badge de contagem no menu
-use Asmit\ResizedColumn\HasResizableColumn;         // na List page: lembra a largura das colunas
+// No Resource — badge de contagem animado no menu:
+use App\Filament\Concerns\BadgeContagemNavegacao;
+
+class ProdutoResource extends Resource
+{
+    use BadgeContagemNavegacao;
+}
+
+// Na List page — lembra a largura das colunas escolhida pelo usuário:
+use Asmit\ResizedColumn\HasResizableColumn;
+
+class ListProdutos extends ListRecords
+{
+    use HasResizableColumn;
+}
 ```
+
+### Badges de contagem
+
+Todos os Resources **do kit** já têm badge no menu (Usuários, Agentes de IA, Execuções de IA). A contagem sai de `getEloquentQuery()`, nunca de `Model::count()`: a query do resource carrega os escopos que valem para aquele painel, e contar direto no model mostraria um número que a listagem não confirma. Zero não vira badge — um "0" cinza em todo item só polui.
+
+Resources de **plugins de terceiros** (Auditoria, Logins, Filas, Pacotes do Composer, Comandos, Funções do Shield, Onboarding) ficam sem badge: `getNavigationBadge()` é um método estático do resource, e o Filament não oferece API para sobrescrevê-lo de fora — a `ResourceConfiguration` do painel só permite trocar o slug. Dar badge a eles exigiria estender cada resource de vendor e impedir o plugin de registrar o seu, o que quebra a cada atualização do pacote. Se algum for importante no seu projeto, o caminho é esse — resource por resource, conscientemente.
 
 ## Atualizando um projeto que já nasceu do kit
 

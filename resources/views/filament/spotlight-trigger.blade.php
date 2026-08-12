@@ -1,25 +1,62 @@
 {{--
-    Gatilho visível da busca ⌘K.
+    Gatilho da busca ⌘K.
 
-    O painel desliga a busca nativa do Filament (`disableDefaultGlobalSearch()`)
-    para não ter dois campos disputando a mesma tecla — mas sem um gatilho o
-    recurso fica invisível: só descobre quem já sabe do atalho. Este botão
-    dispara o mesmo evento que o overlay do pacote escuta (`open-spotlight`).
+    Reusa a MARCAÇÃO do campo nativo do Filament (`fi-global-search-field` +
+    `x-filament::input.wrapper` com lupa inline e sufixo de atalho), igual a
+    vendor/filament/filament/resources/views/livewire/global-search.blade.php.
+    A topbar mantém a aparência de sempre; o que muda é o que acontece ao
+    interagir: em vez de digitar aqui, abre o overlay do Spotlight.
+
+    Nenhuma classe nova: tudo já é compilado pelo Filament, então o tema não
+    precisa de `@source` adicional.
+
+    `readonly` (não `disabled`): mantém o campo focável por Tab e sem o estilo
+    apagado — quem navega por teclado precisa alcançar a busca.
+
+    O overlay abre em `setTimeout`, FORA da interação que o pediu. Esse é o
+    ponto: o pacote fecha o painel com `x-on:click.outside`, um listener no
+    `document`, e um clique aqui é "fora do painel" para ele. Abrindo em outro
+    task, o `document` já processou o clique inteiro enquanto o overlay ainda
+    estava fechado, e o guard do Alpine descarta o evento. Tentativas que NÃO
+    resolvem: abrir no `focus` (o foco dispara no mousedown e o `click`
+    seguinte fecha), `mousedown.prevent` (impede o foco, não o clique) e
+    `click.stop` (para o bubbling, mas não o listener no document).
+
+    O handler fica no WRAPPER, não no input: clicar na lupa, no sufixo ou no
+    padding também abre.
+
+    `open-spotlight` é o evento que o blade do pacote escuta.
+    `data-spotlight-trigger` é o seletor usado nos testes — preserve ao mexer.
 --}}
-<button
-    type="button"
-    x-data
-    x-on:click="window.dispatchEvent(new CustomEvent('open-spotlight'))"
-    title="Buscar (Ctrl/⌘ + K)"
-    class="fi-icon-btn relative flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-500 outline-none transition duration-75 hover:bg-gray-50 focus-visible:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5 dark:focus-visible:bg-white/5"
+<div
+    x-data="{ abrir() { setTimeout(() => window.dispatchEvent(new CustomEvent('open-spotlight'))) } }"
+    x-id="['spotlight-trigger']"
+    x-on:click.stop.prevent="abrir()"
+    class="fi-global-search-field"
 >
-    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-    </svg>
+    <label x-bind:for="$id('spotlight-trigger')" class="fi-sr-only">
+        {{ __('filament-panels::global-search.field.label') }}
+    </label>
 
-    <span class="hidden md:inline">Buscar</span>
+    <x-filament::input.wrapper
+        :prefix-icon="\Filament\Support\Icons\Heroicon::MagnifyingGlass"
+        :prefix-icon-alias="\Filament\View\PanelsIconAlias::GLOBAL_SEARCH_FIELD"
+        inline-prefix
+        inline-suffix
+    >
+        <x-slot name="suffix">
+            <span x-data="{ mac: navigator.platform.toUpperCase().includes('MAC') }" x-text="mac ? '⌘K' : 'Ctrl+K'"></span>
+        </x-slot>
 
-    <kbd class="hidden rounded border border-gray-300 px-1.5 py-0.5 font-sans text-xs text-gray-400 md:inline dark:border-white/10 dark:text-gray-500">
-        ⌘K
-    </kbd>
-</button>
+        <input
+            data-spotlight-trigger
+            type="search"
+            readonly
+            autocomplete="off"
+            placeholder="{{ __('filament-search-spotlight::spotlight.placeholder') }}"
+            x-bind:id="$id('spotlight-trigger')"
+            x-on:keydown.enter.prevent.stop="abrir()"
+            class="fi-input fi-input-has-inline-prefix cursor-pointer"
+        />
+    </x-filament::input.wrapper>
+</div>

@@ -3,6 +3,34 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.7.0] - 2026-08-12
+
+### Corrigido
+
+- **A busca ⌘K não aparecia na topbar.** O gatilho estava no render hook
+  `USER_MENU_BEFORE`, que no Filament 5.7 renderiza DENTRO do dropdown do
+  usuário. Agora usa `GLOBAL_SEARCH_BEFORE`, emitido pela topbar
+  incondicionalmente — é o lugar exato do campo nativo.
+- O gatilho passa a reusar a **marcação nativa** do campo de busca do Filament
+  (lupa, sufixo com o atalho, mesmo visual), em vez de um botão próprio. O
+  overlay abre em `setTimeout`: sem isso o próprio clique é visto como
+  "clique fora" e fecha o painel recém-aberto.
+- Ações "Criar X" na busca: a categoria de ações do pacote não estava
+  registrada, então nada aparecia.
+
+### Adicionado
+
+- `App\Filament\Spotlight\AcoesDeCriacao`: sugestões "Criar X" com três
+  guards (`canAccess`, `canCreate`, `shouldRegisterNavigation`). O discovery do
+  pacote fica desligado — ele não checa permissão e derruba a tela de login
+  com 500 ao resolver URLs sem contexto.
+- Traduções pt-BR da busca (`lang/vendor/filament-search-spotlight`) e do painel
+  de colunas fixas: o placeholder da topbar era a primeira coisa em inglês num
+  painel inteiro em português.
+- README reescrito: seção da busca ⌘K, badges de contagem (incluindo por que
+  resources de terceiros não podem ter), armadilhas já resolvidas e capturas
+  atualizadas.
+
 ## [0.6.1] - 2026-08-12
 
 ### Alterado
