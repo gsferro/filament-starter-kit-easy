@@ -144,8 +144,11 @@ class KitUpdate extends Command
     }
 
     /**
-     * Só faz sentido rodar num repositório git limpo: é o que garante que
-     * qualquer coisa aplicada aqui possa ser revertida com um comando.
+     * Aplicar mudanças exige repositório git com a árvore limpa: é o que garante
+     * que tudo que este comando fizer possa ser desfeito com um `git checkout`.
+     *
+     * `--dry-run` não escreve nada, então não exige árvore limpa — cobrar isso
+     * de um relatório só atrapalharia quem quer justamente olhar antes de mexer.
      */
     private function preVoo(): bool
     {
@@ -167,18 +170,34 @@ class KitUpdate extends Command
             return false;
         }
 
-        if (trim($this->git(['status', '--porcelain'])) !== '') {
-            $this->components->error('Há alterações não commitadas na árvore de trabalho.');
-            note(
-                "Commite ou guarde o que está em andamento antes de continuar:\n\n"
-                ."  git add -A && git commit -m \"wip\"\n"
-                .'  # ou:  git stash'
-            );
-
-            return false;
+        if ($this->option('dry-run')) {
+            return true;
         }
 
-        return true;
+        $sujos = trim($this->git(['status', '--porcelain']));
+
+        if ($sujos === '') {
+            return true;
+        }
+
+        $this->components->error('Há alterações não commitadas na árvore de trabalho.');
+
+        $lista = array_slice(explode("\n", $sujos), 0, 10);
+        $this->line('  '.implode("\n  ", array_map(trim(...), $lista)));
+
+        if (substr_count($sujos, "\n") >= 10) {
+            $this->line('  ...');
+        }
+
+        note(
+            "Commite ou guarde o que está em andamento — assim dá para distinguir o que é seu\n"
+            ."do que o kit trouxe, e reverter só o que quiser:\n\n"
+            ."  git add -A && git commit -m \"antes de atualizar o kit\"\n"
+            ."  # ou:  git stash\n\n"
+            .'Só quer ver o que mudou, sem tocar em nada? Rode com `--dry-run`.'
+        );
+
+        return false;
     }
 
     /**

@@ -3,6 +3,16 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.3.1] - 2026-08-12
+
+### Corrigido
+
+- `kit:update --dry-run` não exige mais árvore de trabalho limpa: um relatório
+  não altera nada, e cobrar isso atrapalhava justamente quem quer olhar antes
+  de mexer. A exigência continua valendo para aplicar mudanças.
+- O erro de árvore suja agora **lista os arquivos** que impedem a execução e
+  lembra da opção `--dry-run` — antes só dizia que havia pendências.
+
 ## [0.3.0] - 2026-08-12
 
 ### Adicionado
