@@ -163,6 +163,7 @@ class KitUpdate extends Command
 
             $aplicados = $this->revisarEAplicar($destino, $arquivos);
 
+            $this->repararPastasDeTeste();
             $this->relatarComposerJson($origem, $destino);
 
             $this->encerrar($destino, $aplicados);
@@ -583,6 +584,45 @@ class KitUpdate extends Command
         $this->components->info("aplicado: {$caminho}");
 
         return $caminho;
+    }
+
+    /**
+     * Recria pastas de teste declaradas no phpunit.xml que não existem em disco.
+     *
+     * O PHPUnit aborta com exit 2 quando uma testsuite aponta para um caminho
+     * inexistente — e é fácil chegar nesse estado sem perceber: git não versiona
+     * diretório vazio, então uma pasta de testes sem arquivos simplesmente não
+     * viaja no pacote nem no clone. Acontece com `tests/Feature` em projeto que
+     * ainda não escreveu nenhum teste próprio.
+     *
+     * O `.gitkeep` é o que impede o problema de voltar no próximo clone.
+     */
+    private function repararPastasDeTeste(): void
+    {
+        $phpunit = base_path('phpunit.xml');
+
+        if (! is_file($phpunit)) {
+            return;
+        }
+
+        $xml = @simplexml_load_file($phpunit);
+
+        if ($xml === false) {
+            return;
+        }
+
+        foreach ($xml->xpath('//testsuite/directory') ?: [] as $diretorio) {
+            $caminho = base_path((string) $diretorio);
+
+            if (is_dir($caminho)) {
+                continue;
+            }
+
+            mkdir($caminho, 0755, recursive: true);
+            file_put_contents($caminho.'/.gitkeep', '');
+
+            $this->components->info('Pasta de testes recriada: '.(string) $diretorio);
+        }
     }
 
     /**

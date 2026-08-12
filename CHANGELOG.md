@@ -3,6 +3,16 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.7.2] - 2026-08-12
+
+### Adicionado
+
+- `kit:update` recria pastas de teste declaradas no `phpunit.xml` que não
+  existem em disco, com um `.gitkeep`. É a outra metade do bug da 0.7.1: quem
+  já tinha o projeto criado não recebia a correção, porque `tests/Feature` é
+  pasta do usuário e não entra nos caminhos do kit — e sem a pasta o PHPUnit
+  aborta com exit 2.
+
 ## [0.7.1] - 2026-08-12
 
 ### Corrigido
