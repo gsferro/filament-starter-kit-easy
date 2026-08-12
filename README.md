@@ -150,6 +150,7 @@ composer dev          # servidor + fila + vite juntos
 composer test         # pint + phpstan + testes
 composer lint         # formata o código
 php artisan kit:install --force   # reinstala do zero (apaga o SQLite)
+php artisan kit:update            # traz melhorias de uma versão nova do kit
 ```
 
 ## Personalize seu projeto
@@ -231,7 +232,42 @@ O que muda separa-se em três camadas, e cada uma tem um caminho próprio:
 | **Cola do kit** | providers, traits, widgets, views de erro | diff manual contra a tag nova (abaixo) |
 | **Seu negócio** | tudo que você escreveu | nunca é tocado |
 
-### Diff contra a versão nova
+### O jeito fácil: `php artisan kit:update`
+
+O comando automatiza a etapa do git inteira e **não aplica nada sem sua aprovação**:
+
+```bash
+php artisan kit:update --dry-run   # só mostra o que mudou
+php artisan kit:update             # revisa e aplica, arquivo a arquivo
+```
+
+O que ele faz, em ordem:
+
+1. **Confere o terreno** — exige repositório git com a árvore limpa. Sem isso não haveria como reverter, e ele recusa rodar (mostrando os comandos para versionar o projeto).
+2. **Vincula o kit temporariamente** — adiciona o remote `kit` com **push bloqueado** e busca as tags num namespace próprio (`kit-v*`), para não colidirem com as versões do seu projeto.
+3. **Compara** — da versão em `config('kit.version')` até a tag escolhida, restrito aos caminhos que pertencem ao kit. Seu código de negócio nunca entra na conta.
+4. **Oferece um branch temporário** (`kit-update/v0.2.0`) para não sujar o seu.
+5. **Pergunta arquivo a arquivo** — ver o diff, aplicar, pular ou parar. Arquivo removido do kit nunca é apagado automaticamente: ele só avisa.
+6. **Desfaz o vínculo** — remove o remote e as tags `kit-*` ao sair, mesmo se você interromper no meio. O projeto não fica com nada de terceiros pendurado.
+
+Ao final nada está commitado: você revisa com `git diff`, roda `composer update` e `composer test`, e só então commita. Deu errado? `git checkout -- .` desfaz, ou apague o branch e volte para o seu.
+
+| Opção | Para quê |
+|---|---|
+| `--dry-run` | só o relatório, não altera nada |
+| `--tag=v0.3.0` | comparar com uma versão específica |
+| `--from=v0.1.0` | dizer de qual versão o projeto partiu (quando `config/kit.php` não sabe) |
+| `--branch=nome` | escolher o nome do branch temporário |
+| `--no-branch` | aplicar no branch atual |
+| `--keep-remote` | manter o remote e as tags do kit ao final |
+
+O comando é **interativo por natureza**: sem terminal (CI, `--no-interaction`) ele vira relatório e não altera arquivo nenhum.
+
+> Depois de atualizar, suba a marca `'version'` em `config/kit.php` — é ela que o próximo `kit:update` usa como ponto de partida.
+
+### O jeito manual
+
+Se preferir controlar cada passo — ou entender o que o comando faz por baixo:
 
 Adicione o kit como um **segundo remote**, uma única vez. Seu `origin` continua sendo o seu projeto; o `kit` é só uma fonte de leitura:
 

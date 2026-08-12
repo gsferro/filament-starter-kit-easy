@@ -3,6 +3,19 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.3.0] - 2026-08-12
+
+### Adicionado
+
+- Comando `php artisan kit:update`: compara o projeto com uma versão nova do kit,
+  mostra o que mudou e aplica só o que for aprovado, arquivo a arquivo. Vincula o
+  repositório do kit de forma temporária e somente-leitura (tags em namespace
+  `kit-*`), sugere um branch de trabalho e desfaz o vínculo ao sair.
+- `config/kit.php` passa a registrar a versão do kit que originou o projeto,
+  usada pelo `kit:update` como ponto de partida da comparação.
+- README: seção completa sobre atualizar um projeto existente (comando e passo
+  a passo manual).
+
 ## [0.2.0] - 2026-08-12
 
 ### Adicionado
