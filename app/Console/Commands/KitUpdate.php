@@ -76,7 +76,21 @@ class KitUpdate extends Command
         'Dockerfile.laravel',
         'docker-compose.yml',
         'phpstan.neon',
+        'phpunit.xml',
         'pint.json',
+    ];
+
+    /**
+     * Arquivos que o kit evolui mas NUNCA aplica: são do usuário por definição.
+     *
+     * O `composer.json` carrega as dependências do projeto — sobrescrevê-lo
+     * apagaria tudo que foi instalado depois do kit. Em vez de aplicar, o
+     * comando relata o que mudou (pacotes e scripts) para você copiar à mão.
+     *
+     * @var list<string>
+     */
+    private const CAMINHOS_SO_RELATORIO = [
+        'composer.json',
     ];
 
     private string $git;
@@ -142,6 +156,8 @@ class KitUpdate extends Command
             }
 
             $aplicados = $this->revisarEAplicar($destino, $arquivos);
+
+            $this->relatarComposerJson($origem, $destino);
 
             $this->encerrar($destino, $aplicados);
         } finally {
@@ -561,6 +577,47 @@ class KitUpdate extends Command
         $this->components->info("aplicado: {$caminho}");
 
         return $caminho;
+    }
+
+    /**
+     * O que mudou no `composer.json` do kit — como relatório, nunca aplicado.
+     *
+     * Sobrescrever o composer.json apagaria as dependências que o projeto
+     * instalou depois do kit. Mas ignorá-lo em silêncio esconde coisas que o
+     * usuário precisa saber: pacote novo do kit e script novo (foi assim que o
+     * `composer test:kit` deixou de chegar em quem já tinha o projeto criado).
+     */
+    private function relatarComposerJson(?string $origem, string $destino): void
+    {
+        if ($origem === null) {
+            return;
+        }
+
+        $diff = trim($this->git(['diff', $origem, $destino, '--', ...self::CAMINHOS_SO_RELATORIO]));
+
+        if ($diff === '') {
+            return;
+        }
+
+        // Só as linhas que interessam: pacotes e scripts entrando ou saindo.
+        $relevantes = array_values(array_filter(
+            explode("\n", $diff),
+            fn (string $linha): bool => (bool) preg_match('/^[+-]\s{8,}"[^"]+"\s*:/', $linha),
+        ));
+
+        $this->newLine();
+        $this->components->warn('O composer.json do kit mudou — este arquivo NUNCA é aplicado automaticamente.');
+
+        if ($relevantes !== []) {
+            $this->line('  '.implode("\n  ", array_map(trim(...), array_slice($relevantes, 0, 20))));
+        }
+
+        note(
+            "Ele carrega as dependências do SEU projeto: aplicá-lo apagaria tudo que você instalou.\n"
+            ."Copie à mão o que fizer sentido (pacote novo, script novo):\n\n"
+            ."  git diff {$origem} {$destino} -- composer.json\n\n"
+            .'Depois de mexer nas dependências: `composer update`.'
+        );
     }
 
     /** @param  list<string>  $aplicados */

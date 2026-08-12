@@ -3,6 +3,23 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.6.0] - 2026-08-12
+
+### Corrigido
+
+- **`composer test` falhava num projeto recém-instalado**: o `shield:generate`
+  escreve as policies com o estilo dele, e o Pint reprovava três arquivos logo
+  na primeira execução. O `kit:install` passa a formatar o código gerado.
+- **`phpunit.xml` entra nos caminhos do `kit:update`** — sem ele a testsuite
+  `Kit` nunca chegava a quem já tinha o projeto criado, e `composer test:kit`
+  não existia.
+
+### Adicionado
+
+- `kit:update` relata o que mudou no `composer.json` do kit (pacotes e scripts)
+  sem nunca aplicá-lo: sobrescrever esse arquivo apagaria as dependências do
+  projeto. Foi assim que o script `test:kit` deixou de chegar em quem atualizou.
+
 ## [0.5.1] - 2026-08-12
 
 ### Alterado

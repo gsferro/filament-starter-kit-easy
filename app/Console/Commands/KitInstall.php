@@ -40,6 +40,7 @@ class KitInstall extends Command
 
         if (! $this->option('no-seed')) {
             $this->semear();
+            $this->formatarCodigoGerado();
         }
 
         $this->publicarAssets();
@@ -126,6 +127,32 @@ class KitInstall extends Command
             }
 
             return $codigo === self::SUCCESS;
+        });
+    }
+
+    /**
+     * Formata o que os geradores cuspiram.
+     *
+     * O `shield:generate` (chamado pelo ShieldPermissionsSeeder) escreve as
+     * policies com o estilo dele, não com o do projeto — e aí `composer test`
+     * falha no Pint logo na primeira execução de um projeto recém-criado.
+     *
+     * Pint é require-dev: numa instalação `--no-dev` ele não existe, e aí não
+     * há o que formatar (nem `composer test` para rodar).
+     */
+    protected function formatarCodigoGerado(): void
+    {
+        $pint = base_path('vendor/bin/pint');
+
+        if (! File::exists($pint)) {
+            return;
+        }
+
+        $this->components->task('Formatando o código gerado', function () use ($pint): bool {
+            $processo = new Process([PHP_BINARY, $pint, '--quiet', 'app/Policies'], base_path(), timeout: 300);
+            $processo->run();
+
+            return $processo->isSuccessful();
         });
     }
 
