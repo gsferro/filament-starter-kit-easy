@@ -68,6 +68,10 @@ class KitUpdate extends Command
         'resources/views/filament',
         'resources/views/livewire',
         'routes/console.php',
+        // Os testes do kit acompanham a atualização: é com eles que você
+        // confere se a fundação continua de pé depois de aplicar.
+        'tests/Kit',
+        'tests/Pest.php',
         '.github',
         'Dockerfile.laravel',
         'docker-compose.yml',
@@ -574,15 +578,56 @@ class KitUpdate extends Command
 
         $this->components->info(count($aplicados).' arquivo(s) atualizado(s) — nada foi commitado ainda.');
 
+        $this->marcarVersao($versao);
+
         note(
             "Próximos passos:\n\n"
             ."  git diff --staged        # revise tudo que entrou\n"
-            ."  composer update          # traz as dependências novas (Filament, plugins)\n"
             ."  php artisan filament:assets\n"
-            ."  composer test            # pint + phpstan + testes\n\n"
-            ."Atualize a marca de versão em config/kit.php para '{$versao}'.\n\n"
+            ."  composer test:kit        # só os testes do kit — é o que a atualização pode ter quebrado\n"
+            ."  composer test            # a suíte inteira, incluindo a do seu negócio\n\n"
             .'Se algo saiu errado: `git checkout -- .` desfaz, ou apague o branch e volte para o seu.'
         );
+    }
+
+    /**
+     * Grava a versão aplicada em `config/kit.php`.
+     *
+     * É o ponto de partida da PRÓXIMA comparação, então deixar isso a cargo do
+     * usuário significa que uma distração hoje vira um diff errado no próximo
+     * update. Só a linha da versão é reescrita — o resto do arquivo (credenciais
+     * do seeder, repositório) fica intacto.
+     */
+    private function marcarVersao(string $versao): void
+    {
+        $arquivo = config_path('kit.php');
+
+        if (! is_file($arquivo)) {
+            return;
+        }
+
+        $conteudo = (string) file_get_contents($arquivo);
+
+        $novo = preg_replace(
+            "/(['\"]version['\"]\s*=>\s*)['\"][^'\"]*['\"]/",
+            "\${1}'{$versao}'",
+            $conteudo,
+            1,
+            $trocas,
+        );
+
+        if ($novo === null || $trocas === 0) {
+            $this->components->warn(
+                "Não encontrei a chave `version` em config/kit.php — adicione `'version' => '{$versao}',` "
+                .'para o próximo `kit:update` saber de onde comparar.'
+            );
+
+            return;
+        }
+
+        file_put_contents($arquivo, $novo);
+
+        $this->components->info("config/kit.php: versão marcada como {$versao}.");
     }
 
     /** @param  list<string>  $args */

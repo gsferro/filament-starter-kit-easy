@@ -3,6 +3,23 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.5.0] - 2026-08-12
+
+### Adicionado
+
+- Testes do kit isolados em `tests/Kit` (testsuite `Kit` e grupo `kit`), com o
+  atalho `composer test:kit`. Depois de um `kit:update` dá para verificar só a
+  fundação, sem esperar a suíte do seu negócio. `tests/Feature` e `tests/Unit`
+  ficam livres para os seus testes.
+
+### Alterado
+
+- `kit:update` grava a versão aplicada em `config/kit.php` automaticamente —
+  antes ele pedia a edição manual, e esquecer isso estragava o diff da próxima
+  atualização. Só a linha da versão é reescrita.
+- `kit:update` passa a trazer também `tests/Kit`, para que a suíte da fundação
+  acompanhe a atualização.
+
 ## [0.4.0] - 2026-08-12
 
 ### Adicionado

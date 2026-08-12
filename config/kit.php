@@ -10,12 +10,12 @@ return [
     | versão comparar e mostrar só o que o KIT mudou — sem confundir com o que
     | você mudou no seu projeto.
     |
-    | Depois de aplicar uma atualização, suba este número à mão (o comando
-    | lembra você disso no final). Sem ele, o `kit:update` cai na comparação
-    | direta contra a árvore de trabalho, que é mais ruidosa.
+    | O `kit:update` grava este número sozinho ao final de cada atualização —
+    | você não precisa editar à mão. Sem a chave, ele cai na comparação direta
+    | contra a árvore de trabalho, que é mais ruidosa.
     */
 
-    'version' => '0.4.0',
+    'version' => '0.5.0',
 
     /*
     |--------------------------------------------------------------------------

@@ -147,11 +147,27 @@ O Reverb usa 8090 e não o default 8080 para não colidir com o llama.cpp.
 
 ```bash
 composer dev          # servidor + fila + vite juntos
-composer test         # pint + phpstan + testes
+composer test         # pint + phpstan + a suíte inteira
+composer test:kit     # só os testes do kit (a fundação)
 composer lint         # formata o código
 php artisan kit:install --force   # reinstala do zero (apaga o SQLite)
 php artisan kit:update            # traz melhorias de uma versão nova do kit
 ```
+
+### Os testes do kit
+
+O kit traz sua própria suíte, isolada em `tests/Kit/` — acesso aos três painéis, telas de infra e admin de pé, invariantes da fundação (uuid, gates, auditoria) e o contrato da camada de IA.
+
+Ela fica separada da sua de propósito: depois de um `kit:update` você quer saber se a **fundação** continua íntegra, sem esperar a suíte do seu negócio.
+
+```bash
+composer test:kit                     # atalho
+php artisan test --testsuite=Kit      # equivalente
+php artisan test --group=kit          # mesma coisa, por grupo do Pest
+php artisan test --testsuite=Feature  # só os SEUS testes
+```
+
+Seus testes vão em `tests/Feature` e `tests/Unit`, como de costume — o kit não encosta neles.
 
 ## Personalize seu projeto
 
@@ -250,7 +266,9 @@ O que ele faz, em ordem:
 5. **Pergunta arquivo a arquivo** — ver o diff, aplicar, pular ou parar. Dá para mudar de ideia no meio e aplicar o resto em lote. Arquivo removido do kit nunca é apagado automaticamente: ele só avisa.
 6. **Desfaz o vínculo** — remove o remote e as tags `kit-*` ao sair, mesmo se você interromper no meio. O projeto não fica com nada de terceiros pendurado.
 
-Ao final nada está commitado: você revisa com `git diff`, roda `composer update` e `composer test`, e só então commita. Deu errado? `git checkout -- .` desfaz, ou apague o branch e volte para o seu.
+7. **Marca a versão aplicada** em `config/kit.php` — só aquela linha, sem tocar no resto do arquivo. É o ponto de partida da próxima comparação.
+
+Ao final nada está commitado: você revisa com `git diff`, roda `composer test:kit` (a fundação) e commita. Deu errado? `git checkout -- .` desfaz, ou apague o branch e volte para o seu.
 
 **Não precisa aprovar 30 arquivos um a um.** Durante a revisão, o menu oferece *"Aplicar todos os arquivos NOVOS daqui em diante"* e *"Aplicar TUDO daqui em diante"* — uma confirmação vale para o conjunto. E dá para começar já em lote:
 
@@ -273,8 +291,6 @@ A distinção é o ponto: **arquivo novo não tem o que sobrescrever**, então a
 | `--keep-remote` | manter o remote e as tags do kit ao final |
 
 Sem terminal (CI, `--no-interaction`) o comando vira relatório e não altera nada — a menos que você passe `--only-new` ou `--all`, que **são** a aprovação, dada na linha de comando.
-
-> Depois de atualizar, suba a marca `'version'` em `config/kit.php` — é ela que o próximo `kit:update` usa como ponto de partida.
 
 ### O jeito manual
 
