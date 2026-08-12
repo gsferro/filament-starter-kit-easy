@@ -3,6 +3,17 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.5.1] - 2026-08-12
+
+### Alterado
+
+- `kit:update` avisa quando atualiza a si próprio: o PHP já carregou a classe
+  antiga em memória, então o comportamento (e as mensagens) da versão nova só
+  valem na execução seguinte. Sem o aviso, parecia que a melhoria não tinha
+  funcionado.
+- README documenta que `config/kit.php` sempre aparece como modificado e que
+  aplicá-lo substitui o arquivo inteiro, incluindo suas customizações.
+
 ## [0.5.0] - 2026-08-12
 
 ### Adicionado

@@ -580,6 +580,19 @@ class KitUpdate extends Command
 
         $this->marcarVersao($versao);
 
+        /*
+         * O comando é um dos arquivos que ele mesmo atualiza. O PHP já carregou
+         * a classe antiga em memória, então tudo nesta execução — inclusive as
+         * mensagens acima — vem da versão anterior. Avisar evita a conclusão
+         * errada de que a versão nova não funcionou.
+         */
+        if (in_array('app/Console/Commands/KitUpdate.php', $aplicados, true)) {
+            note(
+                "O próprio `kit:update` foi atualizado nesta rodada.\n"
+                .'O que você viu acima ainda é o comportamento da versão anterior; a nova vale a partir da próxima execução.'
+            );
+        }
+
         note(
             "Próximos passos:\n\n"
             ."  git diff --staged        # revise tudo que entrou\n"
