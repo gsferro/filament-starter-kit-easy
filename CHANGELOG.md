@@ -3,6 +3,36 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.9.4] - 2026-08-13
+
+### Corrigido
+
+- **O `kit:update` não entregava a multi-tenancy.** Ele compara duas versões do
+  kit restrito a uma lista fechada de caminhos, e essa lista não foi atualizada
+  quando a feature nasceu: das versões 0.9.1 a 0.9.3, um projeto já instalado só
+  recebia `config/kit.php` — a marca de versão, sem nenhum dos arquivos. A
+  feature existia no repositório e era invisível na prática.
+
+  Entraram na lista: `app/Console/Commands` (que só cobria dois comandos),
+  `app/Http/Middleware`, `app/Policies/TenantPolicy.php`, os resources de
+  tenants e da demo, `app/Models/User.php`, `Tenant.php` e `Projeto.php`,
+  `database/migrations`, `database/seeders`, `database/factories/TenantFactory.php`
+  e as suítes `tests/Tenancy`, `tests/TestCase.php` e `tests/TenancyTestCase.php`.
+
+- `tests/Kit/KitUpdateTest.php` passa a cobrar a lista: 22 arquivos da fundação
+  precisam estar cobertos, e todo caminho listado precisa existir. É o que faz a
+  lista envelhecer com barulho em vez de em silêncio.
+
+### Notas
+
+- Diretório na lista é seguro mesmo com arquivos seus dentro: a comparação é
+  kit-versão-A × kit-versão-B, então um arquivo que só existe no seu projeto
+  nunca entra no diff. `app/Models` continua arquivo a arquivo, onde a colisão
+  de nome com um model seu é plausível.
+- Quem atualizou para 0.9.1–0.9.3 e recebeu só o `config/kit.php` precisa
+  comparar a partir da versão anterior à tenancy:
+  `php artisan kit:update --from=v0.9.0`
+
 ## [0.9.3] - 2026-08-13
 
 ### Corrigido

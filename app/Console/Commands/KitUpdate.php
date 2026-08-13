@@ -45,23 +45,50 @@ class KitUpdate extends Command
     /**
      * Caminhos que pertencem ao kit — a "cola" que evolui entre versões.
      *
-     * Fora desta lista está o que é seu (models, resources de negócio,
-     * migrations do seu domínio) ou o que o Composer já atualiza (vendor).
+     * Fora desta lista está o que é seu (seus models, seus resources de
+     * negócio) ou o que o Composer já atualiza (vendor).
+     *
+     * Diretórios são seguros mesmo quando você tem arquivos seus dentro deles:
+     * a comparação é kit-versão-A × kit-versão-B, então um arquivo que só
+     * existe no SEU projeto nunca aparece no diff. Por isso `database/seeders`
+     * entra inteiro, mas `app/Models` entra arquivo a arquivo — ali a chance de
+     * colisão de nome com um model seu é real.
+     *
+     * MANTER ESTA LISTA EM DIA É PARTE DE ENTREGAR UMA FEATURE. Arquivo do kit
+     * fora daqui simplesmente não chega a quem já instalou — a feature existe
+     * no repositório e é invisível na prática. `tests/Kit/KitUpdateTest.php`
+     * cobra os caminhos críticos.
      *
      * @var list<string>
      */
     private const CAMINHOS_DO_KIT = [
         'app/Ai',
-        'app/Console/Commands/KitInstall.php',
-        'app/Console/Commands/KitUpdate.php',
+        // Comandos do kit. Comando SEU não aparece: ele não existe na árvore
+        // do kit, então nunca entra no diff entre duas versões.
+        'app/Console/Commands',
         'app/Filament/Concerns',
         'app/Filament/Spotlight',
         'app/Filament/Admin/Widgets',
+        'app/Filament/Admin/Resources/Tenants',
+        'app/Filament/App/Resources/Projetos',
         'app/Filament/Infra/Widgets',
         'app/Filament/Infra/Pages',
+        'app/Http/Middleware',
+        // Models do kit, um a um: `app/Models` inteiro convidaria colisão com
+        // os seus.
+        'app/Models/User.php',
+        'app/Models/Tenant.php',
+        'app/Models/Projeto.php',
+        'app/Policies/TenantPolicy.php',
         'app/Providers',
         'app/Traits',
         'config/kit.php',
+        // Migrations e seeders do kit. Os SEUS não entram no diff, pela mesma
+        // razão dos comandos. Migration nova exige rodar `php artisan migrate`
+        // depois de aplicar.
+        'database/factories/TenantFactory.php',
+        'database/migrations',
+        'database/seeders',
         'docker',
         'lang/vendor',
         'resources/views/errors',
@@ -71,7 +98,10 @@ class KitUpdate extends Command
         // Os testes do kit acompanham a atualização: é com eles que você
         // confere se a fundação continua de pé depois de aplicar.
         'tests/Kit',
+        'tests/Tenancy',
         'tests/Pest.php',
+        'tests/TestCase.php',
+        'tests/TenancyTestCase.php',
         '.github',
         'Dockerfile.laravel',
         'docker-compose.yml',
