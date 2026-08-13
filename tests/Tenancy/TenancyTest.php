@@ -10,6 +10,7 @@ use Database\Seeders\ShieldPermissionsSeeder;
 use Database\Seeders\TenantsSeeder;
 use Database\Seeders\UsuarioAdminSeeder;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
@@ -43,7 +44,20 @@ function usuario(string $email = 'user@example.com'): User
  */
 function usuarioComPapel(string $papel, ?Tenant $tenant = null, string $email = 'user@example.com'): User
 {
-    $user      = usuario($email);
+    return papelNaOrganizacao(usuario($email), $papel, $tenant);
+}
+
+/**
+ * Atribui papel a um usuário que JÁ existe, dentro do contexto de uma organização.
+ *
+ * É a diferença entre a persona funcionar e ela entrar num painel vazio: papel gravado em
+ * `Tenant::CONTEXTO_GLOBAL` fica invisível dentro do /app, porque o `wherePivot` do spatie
+ * filtra pelo team do request. Ver ADR-10 da wiki admin-da-organizacao.
+ *
+ * `null` no tenant = contexto global, que é onde vivem `admin`, `infra` e `master_global`.
+ */
+function papelNaOrganizacao(User $user, string $papel, ?Tenant $tenant = null): User
+{
     $registrar = app(PermissionRegistrar::class);
     $anterior  = $registrar->getPermissionsTeamId();
 
@@ -326,10 +340,23 @@ it('cria o cenário completo da demo, de forma idempotente', function (): void {
     $this->seed(DemoTenancySeeder::class);
     $this->seed(DemoTenancySeeder::class);
 
+    $acme = Tenant::where('slug', 'acme')->firstOrFail();
+    $ana  = User::where('email', 'ana@example.com')->firstOrFail();
+
     expect(Tenant::whereIn('slug', ['acme', 'globex'])->count())->toBe(2)
         ->and(Projeto::withoutGlobalScope('tenant')->count())->toBe(4)
         ->and(User::where('email', 'carla@example.com')->firstOrFail()->tenants()->count())->toBe(2)
-        ->and(User::where('email', 'ana@example.com')->firstOrFail()->tenants()->count())->toBe(1);
+        ->and($ana->tenants()->count())->toBe(1);
+
+    // A demo mostra a persona: Ana administra a Acme. Rodar o seeder duas vezes não pode
+    // duplicar a atribuição — `assignRole()` é idempotente, mas a asserção é o alarme.
+    expect(
+        DB::table(config('permission.table_names.model_has_roles', 'model_has_roles'))
+            ->where('model_id', $ana->id)
+            ->where('role_id', Role::findByName('admin_organizacao')->getKey())
+            ->where('team_id', $acme->id)
+            ->count()
+    )->toBe(1);
 });
 
 /** Cria um projeto sem depender do tenant corrente (o seeder faz igual). */

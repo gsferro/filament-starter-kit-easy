@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Filament\App\Resources\Convites\ConviteResource;
+use App\Filament\App\Resources\Users\UserResource;
 use App\Support\Paineis;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -14,10 +16,11 @@ use Spatie\Permission\PermissionRegistrar;
  *
  * Cada papel declara em QUAL PAINEL vale, na coluna `roles.painel`:
  *
- *   master_global → painel nulo; entra em tudo pelo Gate::before, não pela coluna
- *   admin         → /admin: usuários, papéis, agentes de IA
- *   infra         → /infra: health, filas, logs, auditoria, comandos
- *   panel_user    → /app: o perfil básico da operação de negócio
+ *   master_global      → painel nulo; entra em tudo pelo Gate::before, não pela coluna
+ *   admin              → /admin: usuários, papéis, agentes de IA
+ *   infra              → /infra: health, filas, logs, auditoria, comandos
+ *   admin_organizacao  → /app: administra a PRÓPRIA organização (só com tenancy)
+ *   panel_user         → /app: o perfil básico da operação de negócio
  *
  * A matriz de permissões de cada papel é EXATAMENTE a do painel dele, colhida por
  * `App\Support\Paineis` na mesma fonte que o `shield:generate` usa. Antes isso era
@@ -56,17 +59,68 @@ class PapeisSeeder extends Seeder
         $this->papel('infra', $guard, 'infra')
             ->syncPermissions($this->permissoesDoPainel('infra', $guard));
 
-        // panel_user deixou de ser "papel sem nada": é o perfil básico do /app, e é ele
-        // que dá acesso ao painel de negócio.
+        // admin_organizacao só existe no modo multi-tenant: sem organização não há o que
+        // administrar dentro do /app, e um papel com permissão de criar usuário sem
+        // recorte de organização seria um segundo `admin` com outro nome. Ver ADR-09 da
+        // wiki admin-da-organizacao.
         //
-        // Ele nasce com TODAS as permissões do painel porque o /app do kit vem vazio de
-        // propósito — o único Resource é o `Projeto` da demo. No seu projeto, este seeder
-        // é o lugar da matriz de autorização: recorte o que o usuário comum pode fazer
-        // (`Paineis::permissoes('app')->reject(...)`) ou crie papéis mais finos.
+        // A matriz é a do painel INTEIRA: quem administra a organização administra tudo
+        // que o /app oferece. O recorte dele é de DADO (só a organização corrente), feito
+        // no `getEloquentQuery()` dos Resources, não de permissão.
+        if (config('kit.tenancy.enabled')) {
+            $this->papel('admin_organizacao', $guard, 'app')
+                ->syncPermissions($this->permissoesDoPainel('app', $guard));
+        }
+
+        // panel_user é o perfil básico do /app: usa o NEGÓCIO, não administra a
+        // organização. Por isso ele recebe a matriz do painel MENOS as permissões dos
+        // Resources de administração (usuários e convites) — sem a subtração, registrar
+        // esses Resources no painel `app` promoveria todo usuário comum a administrador
+        // da organização, sem migration e sem erro nenhum. Ver ADR-06.
+        //
+        // A subtração roda nos DOIS modos: os Resources existem no painel mesmo com
+        // `canAccess()` falso em single-tenant, então o Shield gera as permissões deles
+        // de qualquer forma.
+        //
+        // No seu projeto, este seeder é o lugar da matriz de autorização: recorte mais o
+        // que o usuário comum pode fazer, ou crie papéis mais finos.
+        $administracao = $this->permissoesDeAdministracaoDoApp();
+
         $this->papel(config('filament-shield.panel_user.name', 'panel_user'), $guard, 'app')
-            ->syncPermissions($this->permissoesDoPainel('app', $guard));
+            ->syncPermissions(
+                $this->permissoesDoPainel('app', $guard)
+                    ->reject(fn (string $permissao): bool => in_array($permissao, $administracao, true))
+            );
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    /**
+     * Permissões dos Resources de ADMINISTRAÇÃO do painel `app`.
+     *
+     * Recortadas por FQCN de Resource, nunca por substring do nome da permission: o
+     * casamento por `str_contains($p, 'User')` foi removido daqui justamente porque um
+     * `UserPreferenceResource` futuro cairia nele por acidente. Numa SUBTRAÇÃO o erro
+     * seria o espelhado — tirar permissão de quem deveria tê-la.
+     *
+     * Resource de administração novo no painel `app` precisa entrar nesta lista, senão o
+     * `panel_user` o herda.
+     *
+     * @return list<string>
+     */
+    private function permissoesDeAdministracaoDoApp(): array
+    {
+        $administracao = [
+            UserResource::class,
+            ConviteResource::class,
+        ];
+
+        return collect(Paineis::resources()['app'] ?? [])
+            ->whereIn('resourceFqcn', $administracao)
+            ->flatMap(fn (array $entidade): array => array_column($entidade['permissions'], 'key'))
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

@@ -14,8 +14,11 @@ use Spatie\Permission\PermissionRegistrar;
  *
  * Monta o cenário mínimo que prova o isolamento em três cliques:
  *
- *   Acme    → Ana (só Acme)      + 2 projetos
- *   Globex  → Bruno (só Globex)  + 2 projetos
+ *   Acme    → Ana (só Acme)      + 2 projetos — `admin_organizacao`: é ela que
+ *                                  mostra as telas de usuários e convites
+ *                                  recortadas à organização dela
+ *   Globex  → Bruno (só Globex)  + 2 projetos — `panel_user`: entra no /app e
+ *                                  NÃO vê a administração da organização
  *   ambos   → Carla (nos dois)   — é ela que mostra o seletor de tenant e a
  *                                  listagem mudando ao trocar
  *
@@ -50,7 +53,12 @@ class DemoTenancySeeder extends Seeder
         //
         // A atribuição é POR organização: `model_has_roles.team_id` guarda o contexto, e
         // `assignRole()` carimba o que estiver fixado no PermissionRegistrar.
-        $this->papelDoApp($ana, $acme);
+        //
+        // Ana administra a Acme (usuários e convites recortados à organização dela);
+        // Bruno e Carla são usuários comuns do negócio. É esse contraste que mostra a
+        // persona nova — e a Carla, que está nas duas organizações, é quem prova que
+        // mexer nos papéis dela na Acme não toca nos da Globex.
+        $this->papelDoApp($ana, $acme, 'admin_organizacao');
         $this->papelDoApp($bruno, $globex);
         $this->papelDoApp($carla, $acme);
         $this->papelDoApp($carla, $globex);
@@ -65,16 +73,18 @@ class DemoTenancySeeder extends Seeder
         $this->command->info('Demo criada: /app/acme e /app/globex — entre como carla@example.com (senha: password).');
     }
 
-    /** Perfil básico do /app, atribuído dentro do contexto da organização. */
-    private function papelDoApp(User $usuario, Tenant $tenant): void
+    /** Papel do /app atribuído dentro do contexto da organização. */
+    private function papelDoApp(User $usuario, Tenant $tenant, ?string $papel = null): void
     {
+        $papel ??= (string) config('filament-shield.panel_user.name', 'panel_user');
+
         $registrar = app(PermissionRegistrar::class);
         $anterior  = $registrar->getPermissionsTeamId();
 
         try {
             $registrar->setPermissionsTeamId($tenant->getKey());
             $usuario->unsetRelation('roles');
-            $usuario->assignRole(config('filament-shield.panel_user.name', 'panel_user'));
+            $usuario->assignRole($papel);
         } finally {
             $registrar->setPermissionsTeamId($anterior);
             $usuario->unsetRelation('roles');

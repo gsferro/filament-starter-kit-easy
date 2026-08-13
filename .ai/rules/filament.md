@@ -32,3 +32,13 @@ O primeiro roda `shield:generate --all` **em cada painel** (o comando só enxerg
 `roles.painel` é o que dá acesso ao painel — `User::canAccessPanel()` compara a coluna com o id do painel. **Nulo não é coringa**: papel sem painel não abre painel algum (o `master_global` entra pelo `Gate::before`, não pela coluna). Papel criado sem painel só carrega permissões, e quem o tiver sozinho autentica e leva 403 nos três painéis.
 
 Papel semeado entra em `database/seeders/PapeisSeeder.php`, com o painel no terceiro argumento de `papel()`.
+
+## Resource de model sem relação de posse com o tenant
+
+Resource de painel COM tenancy cujo model não tem a relação `tenant()` (ex.: `User`, cujo vínculo é a pivot many-to-many `tenant_user`) precisa de `protected static bool $isScopedToTenant = false;`. Sem isso `Panel::boot()` registra o global scope nativo e a PRIMEIRA query do painel morre com `LogicException: The model [App\Models\User] does not have a relationship named [tenant]`.
+
+Desligado o escopo nativo, o recorte é seu: escreva em `getEloquentQuery()` (nunca só na `table()` — o `getEloquentQuery()` é o que também alimenta o route binding, a busca ⌘K e o badge de contagem) e faça-o FALHAR FECHADO: sem `Filament::getTenant()`, devolva `->whereRaw('1 = 0')` e um `warning` no channel `autenticacao`. O escopo nativo, no mesmo cenário, falha ABERTO e devolve a base inteira da instalação. Consulta em Page nova é sempre `static::getEloquentQuery()`, nunca `Model::query()`.
+
+Apontar `$tenantOwnershipRelationshipName` para a relação plural funciona e foi recusado: falha aberto, registra global scope no model compartilhado com o guard de autenticação, e traz junto o observer de vendor do `created`. Ver `app/Filament/App/Resources/Users/UserResource.php` e ADR-03 em `wikis/specs/main/admin-da-organizacao/`.
+
+Teste em par: um caso conferindo `isScopedToTenant() === false` + `Model::query()->count()` sem exception, e outro conferindo que a query fecha (0, não "todos") sem tenant corrente.

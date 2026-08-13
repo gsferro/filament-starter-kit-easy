@@ -51,7 +51,7 @@ To see the access boundary in action, create a user with only the `admin` or `in
 
 | Panel | URL | What for | Who gets in |
 |---|---|---|---|
-| **App** | `/app` | The business operation. **Intentionally empty** — this is where your project is born | `master_global`, `panel_user` |
+| **App** | `/app` | The business operation. **Intentionally empty** — this is where your project is born | `master_global`, `panel_user`, `admin_organizacao` (with tenancy) |
 | **Admin** | `/admin` | Users, roles and permissions (Shield), AI agent catalog, onboarding authoring | `master_global`, `admin` |
 | **Infra** | `/infra` | Health checks, backups, queues, logs, auditing, caches, commands, Pulse, AI costs | `master_global`, `infra` |
 
@@ -170,9 +170,27 @@ php artisan kit:tenancy --demo   # turn it on + create a demo scenario
 
 | Panel | With the mode on |
 |---|---|
-| **App** | becomes `/app/{tenant}`. Users only see the tenants they're linked to |
+| **App** | becomes `/app/{tenant}`. Users only see the tenants they're linked to, and it gains the **administration of their own organization** |
 | **Admin** | gains the tenant CRUD and the **user linking** — not scoped, whoever administers sees them all |
 | **Infra** | unchanged: health, queues and logs belong to the installation, not to a client |
+
+### Administering one organization is not administering the installation
+
+The kit's roles, and what each one means with the mode on:
+
+| Role | Panel | Assignment context | What it does |
+|---|---|---|---|
+| `master_global` | all | global | beats any permission, via `Gate::before` |
+| `admin` | `/admin` | global | users, roles and permissions of the **installation** |
+| `infra` | `/infra` | global | health, queues, logs, auditing, commands |
+| `admin_organizacao` | `/app` | **the organization** | users and invitations **of their own organization** |
+| `panel_user` | `/app` | the organization | uses the business; doesn't see the administration |
+
+`admin_organizacao` is the persona multi-tenancy creates: someone who administers **one** organization without administering the system. Inside `/app/{slug}` they gain **Users** and **Invitations**, scoped to that organization — and nothing beyond that. They don't enter `/admin` or `/infra`, get a 404 on another organization's panel, can't reach an outside user even by direct URL, don't create or edit roles (they only assign, and only `/app` panel roles), don't delete users — deleting would remove the person from **every** organization — and any invitation they create is stamped with their organization, ignoring the form.
+
+The role only exists with tenancy on, and it is granted in `/admin` → organizations → **Linked users** → *Roles in this organization*. **Not** from the user record: there the assignment goes to the global context and the person enters `/app` seeing nothing. The full recipe, with the symptom, is in [`wikis/receitas.md`](wikis/receitas.md#promover-alguém-a-admin-de-uma-organização).
+
+> ⚠️ **If you are updating an existing project:** run `ShieldPermissionsSeeder` and then `PapeisSeeder`. `panel_user` now receives the `/app` matrix **minus** the permissions of those two screens — without running the seeders, every ordinary user would keep the power to create and delete users.
 
 ### English in the code, your language in the UI
 

@@ -155,6 +155,35 @@ O `app/Models/Projeto.php` e o `ProjetoResource` da demo são o exemplo canônic
 
 Sem vínculo, o usuário não vê o tenant no seletor e toma **404** se tentar a URL direto — não 403. É deliberado do Filament: um 403 confirmaria que o tenant existe, e bastaria varrer slugs para enumerar os clientes da instalação. O `master_global` é a exceção — enxerga todos.
 
+## Promover alguém a admin de uma organização
+
+**O caminho intuitivo é o errado.** Dar o papel `admin_organizacao` pelo `/admin` → Usuários grava a atribuição no **contexto global** (`model_has_roles.team_id = 0`): a pessoa entra no `/app`, e lá dentro o papel não existe — menu vazio, 403 em cada tela, nenhuma mensagem de erro.
+
+O caminho certo:
+
+`/admin` → o cadastro de organizações → aba **Usuários vinculados** → ação **Papéis nesta organização**.
+
+É o único lugar que conhece o usuário **e** a organização ao mesmo tempo, e é ele que fixa o contexto antes de gravar. O Select oferece só papéis do painel `/app` — papel de instalação (`admin`, `infra`) continua no cadastro do usuário.
+
+Em código (seeder, comando):
+
+```php
+$registrar = app(PermissionRegistrar::class);
+$registrar->setPermissionsTeamId($tenant->getKey());
+$usuario->unsetRelation('roles');          // o Eloquent cacheia `roles` na instância
+$usuario->assignRole('admin_organizacao');
+```
+
+O que a persona ganha: **Usuários** e **Convites** dentro do `/app`, recortados à organização dela. O que ela **não** ganha, e é de propósito:
+
+- não entra em `/admin` nem `/infra` (o papel declara `roles.painel = 'app'`);
+- não vê nem edita usuário de outra organização, nem por URL direta (404);
+- não cria nem edita papéis — só atribui, e só papéis do painel `/app`;
+- não exclui usuário (o delete apagaria a pessoa de **todas** as organizações);
+- o convite que ela cria nasce com a organização dela, ignorando o formulário.
+
+O papel só é semeado com a tenancy ligada — sem organização ele seria um segundo `admin` com outro nome. `panel_user` continua sendo o perfil de quem só usa o negócio: ele recebe a matriz do painel **menos** as permissões dessas duas telas (`PapeisSeeder::permissoesDeAdministracaoDoApp()`). Resource de administração novo no `/app` precisa entrar nessa lista, senão todo usuário comum o herda.
+
 ## Convidar alguém que ainda não tem conta
 
 `/admin` → **Convites** → *Novo convite*: e-mail, papel e (com tenancy) a organização. O e-mail sai na hora e o link leva a `/app/register?token=…`.
@@ -256,6 +285,8 @@ Commit no padrão do repositório: gitmoji + escopo, mensagem em pt-BR.
 | `NOT NULL constraint failed: model_has_roles.team_id` | atribuiu papel sem contexto de tenant — use `Tenant::CONTEXTO_GLOBAL` ou rode dentro de um request do `/app` |
 | `no such column: model_has_roles.team_id` | as tabelas de permissão nasceram sem a coluna de tenant. Refaça num processo novo: `php artisan migrate:fresh --seed` (corrigido no kit a partir da v0.9.2) |
 | Usuário perdeu os papéis dentro do `/app` | papel atribuído no contexto global; para valer no tenant, atribua com `setPermissionsTeamId($tenant->id)` |
+| Admin da organização entra no `/app` e não vê nada | o `admin_organizacao` foi dado pelo `/admin` → Usuários, que grava no contexto global. Refaça por `/admin` → organizações → **Usuários vinculados** → *Papéis nesta organização* — ver [a receita](#promover-alguém-a-admin-de-uma-organização) |
+| Usuário comum vê "Usuários" e "Convites" no `/app` | o `PapeisSeeder` não rodou depois de o kit ganhar essas telas, ou a subtração de `permissoesDeAdministracaoDoApp()` foi removida: `panel_user` está com a matriz inteira do painel |
 | Listagem mostra dados de outro cliente | model sem `BelongsToTenant`, ou query com `withoutGlobalScopes()` |
 | Menu não mostra o item | `canAccess()` da policy, ou `shouldRegisterNavigation()` |
 | Assets do Filament sumiram | `php artisan filament:assets` |

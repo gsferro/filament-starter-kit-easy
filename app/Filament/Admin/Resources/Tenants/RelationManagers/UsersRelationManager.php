@@ -2,16 +2,21 @@
 
 namespace App\Filament\Admin\Resources\Tenants\RelationManagers;
 
+use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use Filament\Actions\Action;
 use Filament\Actions\AttachAction;
 use Filament\Actions\DetachAction;
+use Filament\Forms\Components\Select;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Vínculo usuário ↔ tenant.
@@ -55,12 +60,105 @@ class UsersRelationManager extends RelationManager
                     ->after(fn (User $record): null => $this->registrar('vinculado', $record)),
             ])
             ->recordActions([
+                $this->acaoDePapeis(),
                 DetachAction::make()
                     ->label('Desvincular')
                     ->after(fn (User $record): null => $this->registrar('desvinculado', $record)),
             ])
             ->emptyStateHeading('Nenhum usuário vinculado')
             ->emptyStateDescription('Sem vínculo, ninguém abre o painel de negócio deste registro.');
+    }
+
+    /**
+     * "Papéis nesta organização" — onde nasce o primeiro admin de uma organização.
+     *
+     * Problema de bootstrap: `admin_organizacao` só vale atribuído DENTRO da organização,
+     * e o Select de papéis do `UserResource` do /admin grava em `Tenant::CONTEXTO_GLOBAL`
+     * (é o que ele deve fazer — lá se concedem `admin`, `infra` e `master_global`, que são
+     * papéis de instalação). Promover por lá produz a falha mais silenciosa da feature: a
+     * pessoa ENTRA no /app e não vê nada, porque o `wherePivot` do spatie filtra pelo team
+     * do request. Ver ADR-10.
+     *
+     * Este relation manager é o único lugar do sistema que conhece o usuário E a
+     * organização ao mesmo tempo.
+     */
+    private function acaoDePapeis(): Action
+    {
+        return Action::make('papeisNaOrganizacao')
+            ->label('Papéis nesta organização')
+            ->icon(Heroicon::OutlinedShieldCheck)
+            ->schema([
+                Select::make('roles')
+                    ->label('Papéis')
+                    ->multiple()
+                    ->preload()
+                    ->searchable()
+                    ->options(fn (): array => Role::query()->where('painel', 'app')->pluck('name', 'id')->all())
+                    ->helperText('Só papéis do painel /app. Papel de instalação (admin, infra) se dá no cadastro do usuário.'),
+            ])
+            ->fillForm(fn (User $record): array => ['roles' => $this->papeisNoTenant($record)])
+            ->action(function (User $record, array $data): void {
+                /** @var Tenant $tenant */
+                $tenant = $this->getOwnerRecord();
+
+                // Mesmo filtro de painel da escrita do /app (ADR-07): o state vem do
+                // cliente, e um id de papel `admin` gravado aqui daria acesso à instalação.
+                $papeis = Role::query()->whereKey($data['roles'] ?? [])->where('painel', 'app')->get();
+
+                $this->noContextoDe($tenant, $record, fn (): mixed => $record->syncRoles($papeis));
+
+                Log::channel('autenticacao')->info(
+                    "[UsersRelationManager@papeisNaOrganizacao] Papéis definidos na organização | tenant: {$tenant->slug} - user: {$record->id}",
+                    [
+                        'tenant_id'   => $tenant->id,
+                        'user_id'     => $record->id,
+                        'executor_id' => Auth::id(),
+                        'papeis'      => $papeis->pluck('name')->all(),
+                    ],
+                );
+            })
+            ->successNotificationTitle('Papéis atualizados nesta organização');
+    }
+
+    /**
+     * Os ids de papel que o usuário tem DENTRO desta organização.
+     *
+     * @return list<int|string>
+     */
+    private function papeisNoTenant(User $usuario): array
+    {
+        /** @var Tenant $tenant */
+        $tenant = $this->getOwnerRecord();
+
+        return $this->noContextoDe($tenant, $usuario, fn (): array => $usuario->roles->modelKeys());
+    }
+
+    /**
+     * Roda o callback com o contexto de papéis fixado nesta organização.
+     *
+     * O `unsetRelation('roles')` nas duas pontas não é zelo: o Eloquent cacheia `roles` na
+     * instância, e o cache do contexto anterior contaminaria tanto a leitura quanto o
+     * `syncRoles()`. É o mesmo par que `DemoTenancySeeder::papelDoApp()` usa.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    private function noContextoDe(Tenant $tenant, User $usuario, callable $callback): mixed
+    {
+        $registrar = app(PermissionRegistrar::class);
+        $anterior  = $registrar->getPermissionsTeamId();
+
+        try {
+            $registrar->setPermissionsTeamId($tenant->getKey());
+            $usuario->unsetRelation('roles');
+
+            return $callback();
+        } finally {
+            $registrar->setPermissionsTeamId($anterior);
+            $usuario->unsetRelation('roles');
+        }
     }
 
     private function registrar(string $acao, User $usuario): null

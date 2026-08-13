@@ -51,7 +51,7 @@ Para testar o recorte de acesso, crie um usuário só com o papel `admin` ou `in
 
 | Painel | URL | Para quê | Quem entra |
 |---|---|---|---|
-| **App** | `/app` | A operação do negócio. **Vem vazio de propósito** — é aqui que seu projeto nasce | `master_global`, `panel_user` |
+| **App** | `/app` | A operação do negócio. **Vem vazio de propósito** — é aqui que seu projeto nasce | `master_global`, `panel_user`, `admin_organizacao` (com tenancy) |
 | **Admin** | `/admin` | Usuários, papéis e permissões (Shield), catálogo de agentes de IA, autoria de onboarding | `master_global`, `admin` |
 | **Infra** | `/infra` | Health checks, backups, filas, logs, auditoria, caches, comandos, Pulse, custos de IA | `master_global`, `infra` |
 
@@ -169,9 +169,27 @@ php artisan kit:tenancy --demo   # liga + cria um cenário de demonstração
 
 | Painel | Com o modo ligado |
 |---|---|
-| **App** | vira `/app/{tenant}`. O usuário só enxerga os tenants a que está vinculado |
+| **App** | vira `/app/{tenant}`. O usuário só enxerga os tenants a que está vinculado, e ganha a **administração da própria organização** |
 | **Admin** | ganha o cadastro de tenants e o **vínculo de usuários** — não é escopado, quem administra vê todos |
 | **Infra** | inalterado: saúde, filas e logs são da instalação, não de um cliente |
+
+### Quem administra uma organização não administra a instalação
+
+Os quatro papéis do kit, e o que cada um significa com o modo ligado:
+
+| Papel | Painel | Contexto da atribuição | O que faz |
+|---|---|---|---|
+| `master_global` | todos | global | vence qualquer permissão, por `Gate::before` |
+| `admin` | `/admin` | global | usuários, papéis e permissões da **instalação** |
+| `infra` | `/infra` | global | saúde, filas, logs, auditoria, comandos |
+| `admin_organizacao` | `/app` | **a organização** | usuários e convites **da organização dele** |
+| `panel_user` | `/app` | a organização | usa o negócio; não vê a administração |
+
+`admin_organizacao` é a persona que o modo multi-tenant cria: alguém que administra **uma** organização sem administrar o sistema. Dentro de `/app/{slug}` ele ganha **Usuários** e **Convites**, recortados àquela organização — e nada além disso. Ele não entra em `/admin` nem `/infra`, leva 404 no painel de outra organização, não alcança usuário de fora nem por URL direta, não cria nem edita papéis (só atribui, e só papéis do painel `/app`), não exclui usuário — o delete apagaria a pessoa de **todas** as organizações — e o convite que ele cria nasce carimbado com a organização dele, ignorando o formulário.
+
+O papel só existe com a tenancy ligada, e a concessão é em `/admin` → organizações → **Usuários vinculados** → *Papéis nesta organização*. **Não** pelo cadastro do usuário: ali a atribuição vai para o contexto global e a pessoa entra no `/app` sem enxergar nada. A receita completa, com o sintoma, está em [`wikis/receitas.md`](wikis/receitas.md#promover-alguém-a-admin-de-uma-organização).
+
+> ⚠️ **Se você está atualizando um projeto:** rode `ShieldPermissionsSeeder` e depois `PapeisSeeder`. O `panel_user` passou a receber a matriz do `/app` **menos** as permissões dessas duas telas — sem rodar os seeders, todo usuário comum ficaria com poder de criar e apagar usuários.
 
 ### Código em inglês, interface no seu idioma
 

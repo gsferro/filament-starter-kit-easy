@@ -181,6 +181,9 @@ Código que parece errado e **é deliberado**. Antes de "corrigir" qualquer linh
 | `Convite`: `token` fora do `$fillable` | não é estilo | `AuditsFillables::getAuditInclude()` devolve o `$fillable`: dentro dele, o hash do token entraria na trilha de `/infra/audits` |
 | `'painel'` nas listas das Pages do Shield | `CreateRole`/`EditRole` publicadas | as Pages tratam toda chave desconhecida do formulário como permissão: sem entrar no `in_array` **e** no `Arr::only` das duas, o Shield cria uma permission chamada `app` e o valor nunca chega ao banco |
 | `getResourceEntitiesSchema()` **sem** `#[Override]` | o método vem da trait `HasShieldFormComponents` | `#[Override]` só vale para método de classe pai; num método de trait o PHP aborta o request inteiro |
+| `$isScopedToTenant = false` no `UserResource` do `/app` | parece desligar o isolamento e é o contrário | `User` não tem a relação `tenant()` — o vínculo é a pivot `tenant_user`. Com o escopo nativo ligado, a primeira query do painel morre em `LogicException: … does not have a relationship named [tenant]`; e o escopo nativo falha **aberto** (sem tenant corrente, devolve a base inteira de usuários da instalação). O recorte fica em `getEloquentQuery()`, que falha **fechado**. Ver `.ai/rules/filament.md` |
+| Filtro `painel = 'app'` repetido na **escrita** dos papéis | o Select já filtra as opções | opção de Select é UX, não autorização: o state chega do cliente. O `where('painel','app')` de `UserResource::gravarPapeis()` é o que impede um payload forjado de promover alguém a `admin` da instalação a partir do painel de negócio |
+| `panel_user` recebe a matriz do `/app` **menos** os Resources de administração | parece recorte arbitrário no seeder | sem a subtração, registrar `UserResource`/`ConviteResource` no painel `app` dá `Create:User` e `Delete:User` a **todo** usuário comum: cada um vira admin da própria organização, sem migration e sem erro nenhum |
 
 ## Onde cada coisa se configura
 
