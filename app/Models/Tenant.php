@@ -6,6 +6,7 @@ use App\Traits\AuditsFillables;
 use App\Traits\TemUuid;
 use Database\Factories\TenantFactory;
 use Filament\Models\Contracts\HasCurrentTenantLabel;
+use Filament\Models\Contracts\HasName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -41,7 +42,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $slug
  * @property bool $ativo
  */
-class Tenant extends Model implements Auditable, HasCurrentTenantLabel
+class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
 {
     /**
      * Contexto de papéis fora de qualquer tenant.
@@ -78,6 +79,19 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel
     public function getCurrentTenantLabel(): string
     {
         return (string) config('kit.tenancy.label', 'Organização');
+    }
+
+    /**
+     * Nome exibido pelo Filament no seletor e no menu de tenant.
+     *
+     * OBRIGATÓRIO neste kit: sem o contrato, o `FilamentManager::getTenantName()`
+     * cai em `$tenant->getAttributeValue('name')` — e a coluna aqui é `nome`,
+     * pela convenção pt-BR do domínio. O retorno vira `null` e o método,
+     * tipado como `string`, estoura TypeError ao montar o menu.
+     */
+    public function getFilamentName(): string
+    {
+        return $this->nome;
     }
 
     /** @return BelongsToMany<User, $this> */

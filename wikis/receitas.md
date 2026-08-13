@@ -118,7 +118,7 @@ O `app/Models/Projeto.php` e o `ProjetoResource` da demo são o exemplo canônic
 
 `/admin` → o cadastro de tenants → aba **Usuários vinculados** → *Vincular usuário*.
 
-Sem vínculo, o usuário não vê o tenant no seletor e toma 403 se tentar a URL direto. O `master_global` é a exceção — enxerga todos.
+Sem vínculo, o usuário não vê o tenant no seletor e toma **404** se tentar a URL direto — não 403. É deliberado do Filament: um 403 confirmaria que o tenant existe, e bastaria varrer slugs para enumerar os clientes da instalação. O `master_global` é a exceção — enxerga todos.
 
 ## Página de painel
 

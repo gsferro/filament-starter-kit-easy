@@ -2,7 +2,7 @@
 
 namespace Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
@@ -12,7 +12,36 @@ abstract class TestCase extends BaseTestCase
      * Modo de tenancy com que o schema em memória foi migrado nesta execução.
      * `null` = ainda não migrou.
      */
-    private static ?bool $schemaComTenancy = null;
+    private static ?bool $schemaMigradoComTenancy = null;
+
+    /** Sobrescrito por Tests\TenancyTestCase. */
+    protected function usaTenancy(): bool
+    {
+        return false;
+    }
+
+    /**
+     * A flag vai para o AMBIENTE, antes do bootstrap.
+     *
+     * O `AppPanelProvider` lê `kit.tenancy.enabled` durante o boot para decidir
+     * se registra as rotas do painel com o segmento `/{tenant}`. Config ajustada
+     * depois de `parent::createApplication()` chega tarde: as rotas já existem
+     * sem o segmento, e todo `/app/{slug}` responde 404.
+     *
+     * O repositório de env do Laravel é imutável, então valor já presente em
+     * `$_SERVER` vence o que estiver no `.env` — é o que permite alternar os
+     * dois modos dentro da mesma execução de testes.
+     */
+    public function createApplication(): Application
+    {
+        $valor = $this->usaTenancy() ? 'true' : 'false';
+
+        putenv("KIT_TENANCY={$valor}");
+        $_ENV['KIT_TENANCY']    = $valor;
+        $_SERVER['KIT_TENANCY'] = $valor;
+
+        return parent::createApplication();
+    }
 
     /**
      * O `RefreshDatabase` migra UMA vez por processo e reaproveita o schema em
@@ -28,17 +57,11 @@ abstract class TestCase extends BaseTestCase
      */
     protected function setUp(): void
     {
-        if (self::$schemaComTenancy !== $this->schemaComTenancy()) {
+        if (self::$schemaMigradoComTenancy !== $this->usaTenancy()) {
             RefreshDatabaseState::$migrated = false;
-            self::$schemaComTenancy         = $this->schemaComTenancy();
+            self::$schemaMigradoComTenancy  = $this->usaTenancy();
         }
 
         parent::setUp();
-    }
-
-    /** Sobrescrito por Tests\TenancyTestCase. */
-    protected function schemaComTenancy(): bool
-    {
-        return false;
     }
 }

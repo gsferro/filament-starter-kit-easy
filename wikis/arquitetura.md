@@ -172,6 +172,19 @@ A migration de permissões do spatie cria as colunas de team **condicionalmente*
 
 Por isso `kit:tenancy` exige árvore git limpa, avisa que é destrutivo e roda `migrate:fresh --seed`. **A hora de rodar é o dia 1 do projeto.** Projeto com dados em produção precisa migrar à mão.
 
+### Contratos que o model do tenant precisa implementar
+
+| Contrato | Por quê |
+|---|---|
+| `HasName` → `getFilamentName()` | **obrigatório aqui.** Sem ele o Filament cai em `$tenant->getAttributeValue('name')`, e a coluna do kit é `nome` — o retorno vira `null` e o método, tipado como `string`, estoura `TypeError` ao montar o menu de tenant |
+| `HasCurrentTenantLabel` → `getCurrentTenantLabel()` | o rótulo configurável acima do nome no seletor |
+
+Toda coluna em pt-BR que o Filament espera em inglês precisa de um contrato desses. É o preço de manter o domínio em português com uma API em inglês — e o erro só aparece ao renderizar a página, nunca num teste de model.
+
+### 404, não 403
+
+Acesso a um tenant não vinculado responde **404**. É do Filament (`IdentifyTenant` faz `abort(404)`) e é deliberado: um 403 confirmaria que o tenant existe, e bastaria varrer slugs para enumerar os clientes da instalação.
+
 ### Testes
 
 Ficam em `tests/Tenancy/`, suíte própria e mesmo grupo `kit`. A separação é de **bootstrap**, não de organização: `Tests\TenancyTestCase` fixa a config em `createApplication()`, que roda antes das migrations do `RefreshDatabase` — e o Pest não permite dois TestCases na mesma pasta.

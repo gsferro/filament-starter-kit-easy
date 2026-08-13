@@ -6,6 +6,7 @@ use App\Models\User;
 use Database\Seeders\DemoTenancySeeder;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Database\Seeders\TenantsSeeder;
 use Database\Seeders\UsuarioAdminSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Log;
@@ -176,6 +177,39 @@ it('resolve papéis por tenant', function (): void {
     $registrar->forgetCachedPermissions();
 
     expect($user->fresh()->hasRole('admin'))->toBeFalse();
+});
+
+/*
+|--------------------------------------------------------------------------
+| Requisições HTTP de verdade
+|--------------------------------------------------------------------------
+| Os casos acima exercitam models e escopo; estes sobem a PÁGINA. A diferença
+| importa: foi só ao renderizar o menu de tenant que apareceu o TypeError de
+| `getTenantName()` — o Filament resolve o nome por `getAttributeValue('name')`
+| e a coluna do kit é `nome`. Nenhum teste de model chegaria lá.
+*/
+
+it('abre o painel de negócio no tenant vinculado', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class, UsuarioAdminSeeder::class]);
+    $this->seed(TenantsSeeder::class);
+
+    $master = User::where('email', config('kit.admin.email'))->firstOrFail();
+    $tenant = Tenant::where('slug', 'padrao')->firstOrFail();
+
+    $this->actingAs($master)->get("/app/{$tenant->slug}")->assertSuccessful();
+});
+
+it('responde 404 — e não 403 — no painel de um tenant não vinculado', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    tenant('Globex', 'globex');
+    $user = usuario();          // sem vínculo nenhum
+
+    // 404 é deliberado do Filament (IdentifyTenant faz `abort(404)`): um 403
+    // confirmaria que o tenant EXISTE, e bastaria varrer slugs para enumerar
+    // os clientes da instalação. O teste trava essa propriedade — se um dia
+    // alguém "corrigir" para 403, a regressão aparece aqui.
+    $this->actingAs($user)->get('/app/globex')->assertNotFound();
 });
 
 it('mantém admin e infra fora do escopo de tenant', function (string $rota): void {

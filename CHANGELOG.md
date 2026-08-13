@@ -3,6 +3,34 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.9.3] - 2026-08-13
+
+### Corrigido
+
+- **Trocar para o painel `/app` estourava `TypeError` com tenancy ligada.**
+  O `FilamentManager::getTenantName()` é tipado como `string` e cai em
+  `$tenant->getAttributeValue('name')` quando o model não implementa `HasName`
+  — a coluna do kit é `nome`, então o retorno era `null`. `App\Models\Tenant`
+  passa a implementar `Filament\Models\Contracts\HasName`.
+
+  A lição fica documentada em `wikis/arquitetura.md`: toda coluna em pt-BR que
+  o Filament espera em inglês precisa de um contrato, e esse tipo de erro só
+  aparece ao renderizar a página — nenhum teste de model chega lá.
+
+- Testes de **requisição HTTP real** ao painel de negócio (`/app/{slug}`), que
+  é o que teria pego o erro acima. Um deles trava também a propriedade de
+  segurança de responder **404, e não 403**, num tenant não vinculado: 403
+  confirmaria a existência do tenant e permitiria enumerar os clientes da
+  instalação por varredura de slug.
+
+### Alterado
+
+- Os testes passam a ligar a tenancy pelo **ambiente**, antes do bootstrap: o
+  `AppPanelProvider` lê a flag durante o boot para registrar as rotas com
+  `/{tenant}`, e config ajustada depois chegava tarde (as rotas nasciam sem o
+  segmento e o painel dava 404).
+- `wikis/receitas.md` corrigido: acesso a tenant não vinculado é 404, não 403.
+
 ## [0.9.2] - 2026-08-13
 
 ### Corrigido
