@@ -22,5 +22,11 @@ class DatabaseSeeder extends Seeder
             AssistenteSeeder::class,
             GuardaPromptSeeder::class,
         ]);
+
+        // Só no modo multi-tenant: em single-tenant a tabela existe mas não é
+        // usada, e semear um tenant fantasma só confundiria.
+        if (config('kit.tenancy.enabled')) {
+            $this->call(TenantsSeeder::class);
+        }
     }
 }

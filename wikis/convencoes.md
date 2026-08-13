@@ -40,6 +40,41 @@ class Produto extends Model implements Auditable
 
 O trait faz `getAuditInclude()` devolver o `$fillable` — a trilha registra exatamente o que o usuário pode alterar, sem vazar colunas técnicas (tokens, contadores, caches). A trilha aparece em `/infra/audits`.
 
+### Model de negócio pertence a um tenant
+
+**Vale só no modo multi-tenant** (`php artisan kit:tenancy`). Toda model do negócio usa `App\Traits\BelongsToTenant`:
+
+```php
+// migration
+$table->foreignId('tenant_id')->constrained();
+
+// model
+use App\Traits\BelongsToTenant;
+
+class Projeto extends Model
+{
+    use BelongsToTenant;
+
+    protected $fillable = ['nome'];   // `tenant_id` fica FORA — quem preenche é a trait
+}
+```
+
+A trait entrega três coisas: a relação `tenant()` (que é o `ownershipRelationship` do Filament), um **escopo global** e o preenchimento automático de `tenant_id` ao criar.
+
+- **Por que o escopo, se o Filament já escopa:** ele só escopa models que passam por um Resource. Job, comando, listener, widget e API ficam de fora — e é exatamente aí que vaza dado de um cliente para outro, em silêncio.
+- **Sem tenant corrente, sem escopo.** Fora de request de painel a query volta a ser global, de propósito: um job que roda para todos os tenants precisa ver todos. Para um tenant só, filtre explícito ou chame `Filament::setTenant()`.
+- **`withoutGlobalScopes()` derruba o escopo de tenant junto.** A própria doc do Filament avisa que isso "can lead to data leakage". Para uma query deliberadamente global, remova só este: `Model::withoutGlobalScope('tenant')`.
+- **Escopo não é autorização.** Policies continuam obrigatórias.
+
+### Validação em resource com tenancy: `scopedUnique()`
+
+```php
+TextInput::make('nome')->scopedUnique(ignoreRecord: true)   // ✅
+TextInput::make('nome')->unique(ignoreRecord: true)         // ❌ ignora o tenant
+```
+
+As regras `unique` e `exists` do Laravel não passam pelo Eloquent, então não enxergam o escopo: um nome já usado por **outro cliente** bloquearia o cadastro aqui. O Filament oferece `scopedUnique()` e `scopedExists()` exatamente para isso.
+
 ### Exclusão de configuração é lógica
 
 Registros de catálogo (ex.: `agentes_ia`) usam flag `ativo` em vez de `DELETE`. Desligar é dado, não destruição.
@@ -126,6 +161,10 @@ Código que parece errado e **é deliberado**. Antes de "corrigir" qualquer linh
 | `UsedDiskSpaceCheck` | pulado no Windows | o check do Spatie não suporta Windows |
 | `$_SERVER` no Windows | reposto no `KitServiceProvider` | processos criados pela UI nascem sem `SystemRoot`/`PATH` e morrem com erro vazio de socket |
 | Badge de resource de vendor | **não existe** | `getNavigationBadge()` é estático e o Filament não oferece API para sobrescrever de fora; forçar exige estender cada resource de vendor e quebra a cada update |
+| `Tenant::CONTEXTO_GLOBAL = 0` | sentinela de papel global | `model_has_roles.team_id` é NOT NULL: sem o sentinela, atribuir papel em seeder, job ou nos painéis /admin e /infra estoura violação de constraint |
+| `User::temPapelGlobal()` | troca o contexto de papéis | sem ela o `master_global` perde os poderes ao entrar num tenant — o spatie filtra a relação `roles` pelo team corrente |
+| `->tenant()` depois de `->plugins()` | reescreve as rotas do painel | plugin registrado depois não enxerga o prefixo `/{tenant}` |
+| Papéis criados com `roles.team_id` nulo | definição global | o `Role::findOrCreate` do spatie carimba o team corrente, e um papel carimbado no tenant A fica invisível no B |
 
 ## Onde cada coisa se configura
 
@@ -142,3 +181,5 @@ Código que parece errado e **é deliberado**. Antes de "corrigir" qualquer linh
 | Backups | `config/backup.php` + agendamento em `routes/console.php` |
 | Cores de cada painel | `->colors([...])` no `*PanelProvider` |
 | Arte do login | `public/images/auth/login.svg` |
+| Ligar multi-tenancy | `php artisan kit:tenancy` (destrutivo — ver [arquitetura](arquitetura.md#multi-tenancy-opt-in)) |
+| Termo do tenant na UI | `kit.tenancy.label` / `label_plural` / `slug` em `config/kit.php` |

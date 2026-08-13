@@ -57,6 +57,8 @@ To see the access boundary in action, create a user with only the `admin` or `in
 
 The access rule lives in `App\Models\User::canAccessPanel()`. The `master_global` role beats any gate through `Gate::before` (`App\Providers\KitServiceProvider`) — no permissions needed in the database.
 
+> With [multi-tenancy](#multi-tenancy-opt-in) turned on, **App** becomes `/app/{tenant}` and shows only the selected tenant's data. Admin and Infra stay global.
+
 Separating admin from infra is the whole point of the kit: whoever administers users doesn't need (and shouldn't) see logs, queues and operational commands, and vice versa.
 
 ### What each one looks like
@@ -119,6 +121,53 @@ The topbar field is **Filament's native one** — same markup, same look, same `
 | **Actions** | "Create X" for each resource, with `canAccess()` + `canCreate()` + `shouldRegisterNavigation()` |
 
 Permission filtering is the reason `App\Filament\Spotlight\*` exists in the kit: the package's categories do **not** call `canAccess()`, and without that the search offers screens that would result in a 403 — an affordance leak. The "Create X" suggestions are the kit's too (`AcoesDeCriacao`), for the same reason plus one more: the package's discovery resolves URLs without checking context and takes the login screen down with a 500.
+
+## Multi-tenancy (opt-in)
+
+The kit is born **single-tenant**. One command turns multi-tenancy on — and those who don't need it pay nothing for it:
+
+```bash
+php artisan kit:tenancy          # turn it on
+php artisan kit:tenancy --demo   # turn it on + create a demo scenario
+```
+
+| Panel | With the mode on |
+|---|---|
+| **App** | becomes `/app/{tenant}`. Users only see the tenants they're linked to |
+| **Admin** | gains the tenant CRUD and the **user linking** — not scoped, whoever administers sees them all |
+| **Infra** | unchanged: health, queues and logs belong to the installation, not to a client |
+
+### English in the code, your language in the UI
+
+The code follows Filament's API vocabulary — model `Tenant`, table `tenants`, `getTenants()`, `canAccessTenant()` — so the official docs read without mental translation. **What the user sees is configurable**, and defaults to "Organização":
+
+```php
+// config/kit.php
+'tenancy' => [
+    'label'        => 'Company',    // Organization · Client · School · Unit · Store
+    'label_plural' => 'Companies',
+    'slug'         => 'companies',  // /admin/companies
+],
+```
+
+### In your models
+
+Every business model uses the kit's trait:
+
+```php
+use App\Traits\BelongsToTenant;
+
+class Projeto extends Model
+{
+    use BelongsToTenant;
+
+    protected $fillable = ['nome'];   // `tenant_id` stays out: the trait fills it
+}
+```
+
+It provides the `tenant()` relationship, a **global scope** and automatic `tenant_id` filling. The scope matters because Filament only scopes what goes through a Resource — jobs, commands, listeners and APIs would be left out, and that's exactly where one client's data leaks into another's.
+
+> ⚠️ **`kit:tenancy` recreates the database.** It turns on `permission.teams`, and the spatie migration only creates the tenant columns if the flag is active **before** the migrate. That's why it requires a clean git tree, an explicit confirmation, and runs `migrate:fresh --seed`. **The time to run it is day 1 of the project.** The detailed path — including global vs. per-tenant roles and `scopedUnique()` — is in [`wikis/arquitetura.md`](wikis/arquitetura.md#multi-tenancy-opt-in) (pt-BR).
 
 ## Working with AI agents
 
@@ -214,6 +263,7 @@ composer test:kit     # only the kit's tests (the foundation)
 composer lint         # formats the code
 php artisan kit:install --force   # reinstalls from scratch (deletes the SQLite file)
 php artisan kit:update            # brings in improvements from a new kit version
+php artisan kit:tenancy           # turns on multi-tenancy (opt-in)
 ```
 
 ### The kit's tests
@@ -243,6 +293,9 @@ Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never to
 8. **Seeder credentials** — `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` in `.env`
 9. **Backups** — destination and schedule in `config/backup.php`
 10. **AI agent** — `/admin` → AI Agents (or `database/seeders/AssistenteSeeder.php`)
+11. **[Multi-tenancy](#multi-tenancy-opt-in)** — `php artisan kit:tenancy`, and the displayed term in `config/kit.php` → `tenancy.label`
+
+> ⚠️ Item 11 is the only one on this list that is **not** "edit a file": `kit:tenancy` runs `migrate:fresh --seed` and **deletes your data**. It requires a clean git tree and an explicit confirmation, but the right time to run it is day 1 of the project — later, with production data, the migration is manual.
 
 ## Global Filament configuration
 

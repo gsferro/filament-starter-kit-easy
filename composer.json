@@ -123,7 +123,7 @@
         "test:kit": [
             "Composer\\Config::disableProcessTimeout",
             "@php artisan config:clear --ansi",
-            "@php artisan test --testsuite=Kit"
+            "@php artisan test --group=kit"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

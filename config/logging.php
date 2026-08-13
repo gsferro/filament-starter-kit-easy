@@ -90,6 +90,14 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'tenancy' => [
+            'driver'               => 'daily',
+            'path'                 => storage_path('logs/tenancy.log'),
+            'level'                => env('LOG_TENANCY_LEVEL', env('LOG_LEVEL', 'debug')),
+            'days'                 => 14,
+            'replace_placeholders' => true,
+        ],
+
         'autenticacao' => [
             'driver'               => 'daily',
             'path'                 => storage_path('logs/autenticacao.log'),

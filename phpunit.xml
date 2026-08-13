@@ -17,6 +17,9 @@
             admin, uuid, gates, camada de IA) e são o que se roda depois de um
             kit:update, para saber se a atualização quebrou algo.
         -->
+        <testsuite name="Tenancy">
+            <directory>tests/Tenancy</directory>
+        </testsuite>
         <testsuite name="Kit">
             <directory>tests/Kit</directory>
         </testsuite>

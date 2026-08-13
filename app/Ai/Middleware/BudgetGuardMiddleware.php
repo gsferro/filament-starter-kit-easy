@@ -2,6 +2,7 @@
 
 namespace App\Ai\Middleware;
 
+use App\Ai\Support\ResolvedorDeTenant;
 use Closure;
 use Fomvasss\AiTasks\Exceptions\BudgetExceededException;
 use Fomvasss\AiTasks\Support\Budget;
@@ -19,14 +20,16 @@ use Laravel\Ai\Prompts\AgentPrompt;
  * de `ai_runs.cost`. Sem cap configurado (`ai-tasks.budgets.default.monthly_usd` ausente) o
  * guard é no-op, sem nenhuma query.
  *
- * O kit não tem multi-tenancy: tudo cai no tenant default de `ai-tasks.default_tenant`
- * (a coluna `ai_runs.tenant_id` é NOT NULL, então "sem tenant" é o tenant default, não null).
+ * O tenant vem do `ResolvedorDeTenant`: a organização corrente do painel quando há uma,
+ * senão o default de `ai-tasks.default_tenant` (a coluna `ai_runs.tenant_id` é NOT NULL,
+ * então "sem tenant" é o tenant default, não null). Com `kit.tenancy` desligado é sempre
+ * o default — o comportamento single-tenant não muda.
  */
 final class BudgetGuardMiddleware
 {
     public function handle(AgentPrompt $prompt, Closure $next): mixed
     {
-        $tenant = (string) config('ai-tasks.default_tenant', 'default');
+        $tenant = app(ResolvedorDeTenant::class)->id();
         $budget = app(Budget::class);
         $limite = $budget->getMonthlyLimit($tenant);
 

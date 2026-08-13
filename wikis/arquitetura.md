@@ -108,6 +108,76 @@ Widgets do kit ficam em `app/Filament/{Admin,Infra}/Widgets/` e são descobertos
 
 Bases prontas vêm de `laboiteacode/filament-dashboard-widgets` (funil, timeline, metas, breakdown) e os contadores animados de `gsferro/filament-odometer-easy` / `gsferro/filament-stat-plus-easy`.
 
+## Multi-tenancy (opt-in)
+
+O kit nasce **single-tenant**. `php artisan kit:tenancy` liga o modo multi-tenant; sem ele, nada nesta seção existe na prática.
+
+### Código em inglês, interface no idioma do negócio
+
+| Camada | Vocabulário |
+|---|---|
+| Código | `App\Models\Tenant`, tabela `tenants`, coluna `tenant_id`, `getTenants()`, `canAccessTenant()` — o padrão da API do Filament |
+| Interface e URL | `config('kit.tenancy')` → `label`, `label_plural`, `slug`. Default: "Organização" / "organizacoes" |
+
+Assim a documentação oficial do Filament se lê sem tradução mental, e cada projeto troca o termo (Empresa, Cliente, Escola, Unidade) sem tocar em código. O gancho oficial para o rótulo é `HasCurrentTenantLabel`, implementado em `Tenant::getCurrentTenantLabel()`.
+
+### O que muda em cada painel
+
+| Painel | Com tenancy |
+|---|---|
+| `/app` | vira `/app/{slug}`; o usuário só enxerga os tenants a que está vinculado |
+| `/admin` | ganha o CRUD de tenants + o vínculo de usuários. **Não** é escopado — quem administra precisa ver todos |
+| `/infra` | inalterado. Saúde, filas e logs são da instalação, não de um cliente |
+
+### As peças
+
+| Arquivo | Papel |
+|---|---|
+| `app/Models/Tenant.php` | o tenant, com a constante `CONTEXTO_GLOBAL` |
+| `app/Traits/BelongsToTenant.php` | relação + escopo global + preenchimento de `tenant_id` nas models de negócio |
+| `app/Models/User.php` | `HasTenants`: `tenants()`, `getTenants()`, `canAccessTenant()`, `temPapelGlobal()` |
+| `app/Http/Middleware/DefinirTenantDePermissoes.php` | fixa o contexto de papéis do spatie a cada request |
+| `app/Console/Commands/KitTenancy.php` | o comando que liga tudo |
+| `app/Filament/Admin/Resources/Tenants/` | CRUD + `UsersRelationManager` (o vínculo) |
+| `app/Ai/Support/ResolvedorDeTenant.php` | tenant das execuções de IA (`ai_runs.tenant_id`, budget) |
+
+### Duas camadas de escopo, de propósito
+
+1. **O Filament** escopa sozinho os resources cuja model tem a relação de posse — mas *só* os que passam por um Resource. A documentação é explícita: model sem resource não é escopada.
+2. **A trait `BelongsToTenant`** fecha esse buraco no próprio model, cobrindo job, comando, listener, widget e API.
+
+Em model com resource as duas se sobrepõem, aplicando a mesma condição — sem efeito colateral.
+
+### Papéis: global × por tenant
+
+Esta é a parte mais sutil. Com `permission.teams` ligado:
+
+| Conceito | Coluna | Nulo permitido? | Significado |
+|---|---|---|---|
+| **Definição** do papel | `roles.team_id` | sim | nulo = papel disponível em qualquer tenant |
+| **Atribuição** do papel | `model_has_roles.team_id` | **não** | sempre um valor: o tenant, ou `Tenant::CONTEXTO_GLOBAL` (`0`) |
+
+O spatie não tem "atribuição global" — a coluna é NOT NULL. Mas o kit precisa de papéis globais: `master_global`, `admin` e `infra` governam painéis que não têm tenant nenhum. Daí o sentinela `0`:
+
+- atribuição em `0` → vale em `/admin`, `/infra`, console, jobs e seeders;
+- atribuição com o id de um tenant → vale só dentro dele, no `/app`.
+
+`KitServiceProvider::configureTenancy()` fixa `0` como contexto padrão do processo; o `DefinirTenantDePermissoes` sobrescreve por request no `/app`.
+
+E `User::temPapelGlobal()` troca o contexto temporariamente para consultar um papel global de dentro de um tenant — sem ele, o `master_global` perderia os poderes justamente ao entrar no `/app`. É o que `isMasterGlobal()` e `canAccessPanel()` usam.
+
+### Por que o comando recria o banco
+
+A migration de permissões do spatie cria as colunas de team **condicionalmente**, lendo `config('permission.teams')` em tempo de execução. Ligar a flag depois de migrar deixa config e schema incoerentes, em silêncio. Refazer aditivamente exigiria recriar índices únicos — em SQLite, recriar a tabela.
+
+Por isso `kit:tenancy` exige árvore git limpa, avisa que é destrutivo e roda `migrate:fresh --seed`. **A hora de rodar é o dia 1 do projeto.** Projeto com dados em produção precisa migrar à mão.
+
+### Testes
+
+Ficam em `tests/Tenancy/`, suíte própria e mesmo grupo `kit`. A separação é de **bootstrap**, não de organização: `Tests\TenancyTestCase` fixa a config em `createApplication()`, que roda antes das migrations do `RefreshDatabase` — e o Pest não permite dois TestCases na mesma pasta.
+
+`Tests\TestCase` invalida o schema quando o modo muda, para que `--group=kit` rode os dois modos no mesmo processo sem colisão.
+
 ## Erros e traduções
 
 - Páginas de erro (403, 404, 419, 500, 503) são do `anselmokossa/filament-sentinel`, com views próprias em `resources/views/errors/`. A de 403 só mostra o diagnóstico de permissão **fora de produção**.

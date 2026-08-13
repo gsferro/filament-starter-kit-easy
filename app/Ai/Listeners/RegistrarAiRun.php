@@ -3,6 +3,7 @@
 namespace App\Ai\Listeners;
 
 use App\Ai\Agents\AgenteBase;
+use App\Ai\Support\ResolvedorDeTenant;
 use Fomvasss\AiTasks\Models\AiRun;
 use Fomvasss\AiTasks\Support\Cost;
 use Illuminate\Support\Facades\Log;
@@ -41,9 +42,10 @@ final class RegistrarAiRun
             ];
 
             AiRun::create([
-                // O kit não tem multi-tenancy e `ai_runs.tenant_id` é NOT NULL: toda execução
-                // cai no tenant default do pacote (mesma chave usada pelo BudgetGuard).
-                'tenant_id'    => (string) config('ai-tasks.default_tenant', 'default'),
+                // Organização corrente do painel, ou o tenant default do pacote fora de um
+                // request de painel — `ai_runs.tenant_id` é NOT NULL, então "sem tenant" é um
+                // valor, não null. Mesma chave usada pelo BudgetGuard.
+                'tenant_id'    => app(ResolvedorDeTenant::class)->id(),
                 'task'         => $agente instanceof AgenteBase ? $agente->slug() : Str::snake(class_basename($agente)),
                 'driver'       => $driver,
                 // Coluna dedicada (migration `add_model_to_ai_runs_table`): é o que o filtro e

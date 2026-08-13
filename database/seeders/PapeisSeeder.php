@@ -16,6 +16,17 @@ use Spatie\Permission\PermissionRegistrar;
  *   panel_user    → só o painel /app (a operação do negócio)
  *
  * Idempotente: pode rodar de novo depois de criar Resources novos.
+ *
+ * ## Com multi-tenancy ligada (`permission.teams`)
+ *
+ * Os papéis continuam sendo criados SEM team (`team_id` nulo) — no spatie isso
+ * significa "papel global, disponível em qualquer tenant". O que passa a ser
+ * por tenant é a ATRIBUIÇÃO: `$user->assignRole('admin')` grava em
+ * `model_has_roles` o team corrente, fixado a cada request pelo middleware
+ * `DefinirTenantDePermissoes`.
+ *
+ * Efeito prático: o mesmo usuário pode ser `admin` num tenant e usuário comum
+ * em outro, sem duplicar a definição do papel.
  */
 class PapeisSeeder extends Seeder
 {
@@ -23,15 +34,11 @@ class PapeisSeeder extends Seeder
     {
         $guard = config('auth.defaults.guard', 'web');
 
-        $master = Role::findOrCreate(
-            config('filament-shield.super_admin.name', 'master_global'),
-            $guard,
-        );
+        $master = $this->papel(config('filament-shield.super_admin.name', 'master_global'), $guard);
+        $admin  = $this->papel('admin', $guard);
+        $infra  = $this->papel('infra', $guard);
 
-        $admin = Role::findOrCreate('admin', $guard);
-        $infra = Role::findOrCreate('infra', $guard);
-
-        Role::findOrCreate(config('filament-shield.panel_user.name', 'panel_user'), $guard);
+        $this->papel(config('filament-shield.panel_user.name', 'panel_user'), $guard);
 
         // master_global fica sem permissions de propósito: o acesso vem do
         // Gate::before (KitServiceProvider). Sincronizar tudo aqui só criaria
@@ -44,7 +51,10 @@ class PapeisSeeder extends Seeder
         $todas = Permission::where('guard_name', $guard)->pluck('name');
 
         $admin->syncPermissions(
-            $todas->filter(fn (string $p): bool => str_contains($p, 'User') || str_contains($p, 'Role') || str_contains($p, 'AgenteIa'))
+            $todas->filter(fn (string $p): bool => str_contains($p, 'User')
+                || str_contains($p, 'Role')
+                || str_contains($p, 'AgenteIa')
+                || str_contains($p, 'Tenant'))
         );
 
         $infra->syncPermissions(
@@ -52,5 +62,28 @@ class PapeisSeeder extends Seeder
         );
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    /**
+     * Papel com DEFINIÇÃO global (`roles.team_id` nulo).
+     *
+     * Com `permission.teams` ligado, o `Role::findOrCreate` do spatie carimba
+     * o team corrente na definição do papel, e um papel carimbado no tenant A
+     * fica invisível no tenant B — não haveria como atribuir `admin` em dois
+     * tenants sem duplicar a definição.
+     *
+     * `roles.team_id` é nullable justamente para isso: nulo = papel disponível
+     * em qualquer contexto. O que varia por tenant é a ATRIBUIÇÃO
+     * (`model_has_roles.team_id`, essa sim NOT NULL).
+     */
+    private function papel(string $nome, string $guard): Role
+    {
+        $atributos = ['name' => $nome, 'guard_name' => $guard];
+
+        if (config('permission.teams')) {
+            $atributos[config('permission.column_names.team_foreign_key', 'team_id')] = null;
+        }
+
+        return Role::query()->firstOrCreate($atributos);
     }
 }

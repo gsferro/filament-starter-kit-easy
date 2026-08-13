@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Ai\Health\LocalAiCheck;
 use App\Ai\Listeners\RegistrarAiRun;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Providers\Concerns\ConfiguraFilamentGlobal;
 use Carbon\CarbonImmutable;
@@ -25,6 +26,7 @@ use Spatie\Health\Checks\Checks\QueueCheck;
 use Spatie\Health\Checks\Checks\ScheduleCheck;
 use Spatie\Health\Checks\Checks\UsedDiskSpaceCheck;
 use Spatie\Health\Facades\Health;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Provider "cola" do starter-kit: defaults do framework, gates, health checks
@@ -38,6 +40,7 @@ class KitServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureTenancy();
         $this->configureGates();
         $this->configureAiLedger();
         $this->configureHealthChecks();
@@ -55,6 +58,26 @@ class KitServiceProvider extends ServiceProvider
         Password::defaults(fn (): Password => app()->isProduction()
             ? Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()
             : Password::min(8));
+    }
+
+    /**
+     * Contexto de papéis padrão do processo, no modo multi-tenant.
+     *
+     * Com `permission.teams` ligado, o spatie exige um `team_id` em toda
+     * atribuição de papel (a coluna é NOT NULL). Sem um valor default, seeder,
+     * comando, job e os painéis /admin e /infra — que não têm tenant — quebram
+     * com violação de constraint.
+     *
+     * Aqui fica o contexto GLOBAL. O painel /app sobrescreve por request com o
+     * tenant corrente, via App\Http\Middleware\DefinirTenantDePermissoes.
+     */
+    protected function configureTenancy(): void
+    {
+        if (! config('kit.tenancy.enabled')) {
+            return;
+        }
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId(Tenant::CONTEXTO_GLOBAL);
     }
 
     protected function configureGates(): void

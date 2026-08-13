@@ -31,6 +31,7 @@ Leia nesta ordem. São ~20 minutos e evitam a maior parte dos erros caros:
 - A **autorização** sai de `App\Models\User::canAccessPanel()` + papéis do Shield; `master_global` vence qualquer gate via `Gate::before`.
 - Toda a **cola** do kit está em `app/Providers/KitServiceProvider.php` e `app/Providers/Concerns/ConfiguraFilamentGlobal.php`.
 - A **camada de IA** trata o agente como dado (tabela `agentes_ia`), com guardrails encadeados e ledger em `ai_runs`.
+- **Multi-tenancy é opt-in** (`php artisan kit:tenancy`): o kit nasce single-tenant. Ligado, o `/app` vira `/app/{tenant}` e toda model de negócio usa `App\Traits\BelongsToTenant`.
 - A **suíte do kit** (`tests/Kit/`) valida a fundação e é separada da sua (`tests/Feature`, `tests/Unit`).
 - O kit é um **ponto de partida, não uma dependência**: depois do `create-project` o projeto é seu.
 

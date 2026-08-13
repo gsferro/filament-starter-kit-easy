@@ -69,6 +69,57 @@ class ListProdutos extends ListRecords
 
 > Não repita no `table()` os defaults globais (striped, deferLoading, persistência de filtro, paginação, colunas redimensionáveis) — eles já valem. Configure só o que é específico da tela.
 
+## Ligar o multi-tenancy
+
+```bash
+git add -A && git commit -m "antes de ligar o multi-tenancy"   # o comando exige árvore limpa
+php artisan kit:tenancy            # liga o modo
+php artisan kit:tenancy --demo     # liga + cria o cenário de demonstração
+```
+
+**É destrutivo** (`migrate:fresh --seed`) e a hora certa é o dia 1 do projeto. O porquê está em [arquitetura.md](arquitetura.md#por-que-o-comando-recria-o-banco).
+
+Para trocar o termo exibido, sem tocar em código — `config/kit.php`:
+
+```php
+'tenancy' => [
+    'label'        => 'Empresa',
+    'label_plural' => 'Empresas',
+    'slug'         => 'empresas',   // /admin/empresas
+],
+```
+
+## Model de negócio com tenancy
+
+```php
+// migration
+$table->foreignId('tenant_id')->constrained();
+$table->index(['tenant_id', 'nome']);   // toda listagem filtra por tenant primeiro
+
+// model
+use App\Traits\BelongsToTenant;
+use App\Traits\TemUuid;
+
+class Projeto extends Model implements Auditable
+{
+    use AuditsFillables;
+    use BelongsToTenant;
+    use TemUuid;
+
+    protected $fillable = ['nome'];   // tenant_id fora: a trait preenche
+}
+```
+
+No form do resource, `->scopedUnique()` no lugar de `->unique()`. Ver [convencoes.md](convencoes.md#validação-em-resource-com-tenancy-scopedunique).
+
+O `app/Models/Projeto.php` e o `ProjetoResource` da demo são o exemplo canônico completo.
+
+## Vincular usuário a um tenant
+
+`/admin` → o cadastro de tenants → aba **Usuários vinculados** → *Vincular usuário*.
+
+Sem vínculo, o usuário não vê o tenant no seletor e toma 403 se tentar a URL direto. O `master_global` é a exceção — enxerga todos.
+
 ## Página de painel
 
 ```bash
@@ -148,6 +199,9 @@ Commit no padrão do repositório: gitmoji + escopo, mensagem em pt-BR.
 | Sintoma | Causa provável |
 |---|---|
 | Tela nova dá 403 | falta rodar `ShieldPermissionsSeeder` + `PapeisSeeder` depois de criar o Resource |
+| `NOT NULL constraint failed: model_has_roles.team_id` | atribuiu papel sem contexto de tenant — use `Tenant::CONTEXTO_GLOBAL` ou rode dentro de um request do `/app` |
+| Usuário perdeu os papéis dentro do `/app` | papel atribuído no contexto global; para valer no tenant, atribua com `setPermissionsTeamId($tenant->id)` |
+| Listagem mostra dados de outro cliente | model sem `BelongsToTenant`, ou query com `withoutGlobalScopes()` |
 | Menu não mostra o item | `canAccess()` da policy, ou `shouldRegisterNavigation()` |
 | Assets do Filament sumiram | `php artisan filament:assets` |
 | Vite manifest não encontrado | `npm run build` ou `composer dev` |

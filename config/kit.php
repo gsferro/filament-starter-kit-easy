@@ -15,7 +15,7 @@ return [
     | contra a árvore de trabalho, que é mais ruidosa.
     */
 
-    'version' => '0.8.0',
+    'version' => '0.9.1',
 
     /*
     |--------------------------------------------------------------------------
@@ -27,6 +27,47 @@ return [
     */
 
     'repository' => env('KIT_REPOSITORY', 'https://github.com/gsferro/filament-starter-kit-easy.git'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Multi-tenancy
+    |--------------------------------------------------------------------------
+    | Desligado por default: o kit nasce single-tenant. Ligue com
+    | `php artisan kit:tenancy` — ele escreve `enabled`, liga os papéis por
+    | tenant (`permission.teams`) e recria o banco.
+    |
+    | Com o modo ligado, o painel /app passa a ser /app/{tenant} e o usuário só
+    | enxerga os tenants aos quais está vinculado. /admin e /infra seguem globais.
+    |
+    | Não ligue `enabled` à mão num projeto já migrado: as tabelas de permissão
+    | só ganham a coluna de tenant quando `permission.teams` está ativo ANTES do
+    | migrate. Use o comando.
+    |
+    | ## Código em inglês, interface em português
+    |
+    | O CÓDIGO usa o vocabulário da API do Filament — model `Tenant`, tabela
+    | `tenants`, coluna `tenant_id`, métodos `getTenants()`/`canAccessTenant()`.
+    | Assim a documentação oficial do Filament se lê sem tradução mental.
+    |
+    | O que o USUÁRIO vê é o que estiver aqui embaixo. O default é "Organização",
+    | mas cada projeto troca para o termo do seu negócio — Empresa, Cliente,
+    | Escola, Unidade, Loja — sem tocar numa linha de código.
+    */
+
+    'tenancy' => [
+
+        'enabled' => (bool) env('KIT_TENANCY', false),
+
+        // Rótulos exibidos na interface (menu, títulos, formulários, mensagens).
+        'label'        => env('KIT_TENANCY_LABEL', 'Organização'),
+        'label_plural' => env('KIT_TENANCY_LABEL_PLURAL', 'Organizações'),
+
+        // Segmento do cadastro no painel admin: /admin/organizacoes.
+        // Só a URL do CRUD — o endereço do painel de negócio é /app/{slug do
+        // próprio registro}, definido em cada tenant.
+        'slug' => env('KIT_TENANCY_SLUG', 'organizacoes'),
+
+    ],
 
     /*
     |--------------------------------------------------------------------------

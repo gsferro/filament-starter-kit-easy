@@ -5,6 +5,8 @@ namespace App\Providers\Filament;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
+use App\Http\Middleware\DefinirTenantDePermissoes;
+use App\Models\Tenant;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
 use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
@@ -46,7 +48,7 @@ class AppPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        return $panel
+        $panel
             ->default()
             ->id('app')
             ->path('app')
@@ -160,5 +162,29 @@ class AppPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+
+        /*
+         * Multi-tenancy (opt-in) — ligue com `php artisan kit:tenancy`.
+         *
+         * Declarado DEPOIS de plugins() e middleware() de propósito: o
+         * ->tenant() reescreve as rotas do painel para /app/{tenant}, e plugin
+         * registrado depois disso não enxerga o prefixo.
+         *
+         * `IdentifyTenant` NÃO entra na lista: o Filament já o registra sozinho.
+         * O tenantMiddleware recebe só o middleware do kit, e `isPersistent`
+         * é o que o faz rodar também nos requests AJAX do Livewire — sem isso
+         * o contexto de papéis se perde na primeira interação de tabela.
+         *
+         * Sem `->tenantRegistration()` de propósito: quem cria tenant é o
+         * administrador, em /admin. Ligar o auto-cadastro deixaria qualquer
+         * usuário autenticado criar tenants pelo painel de negócio.
+         */
+        if (config('kit.tenancy.enabled')) {
+            $panel
+                ->tenant(Tenant::class, slugAttribute: 'slug')
+                ->tenantMiddleware([DefinirTenantDePermissoes::class], isPersistent: true);
+        }
+
+        return $panel;
     }
 }

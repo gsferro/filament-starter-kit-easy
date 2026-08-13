@@ -3,6 +3,39 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.9.1] - 2026-08-13
+
+### Adicionado
+
+- **Multi-tenancy opt-in.** `php artisan kit:tenancy` liga o modo multi-tenant;
+  sem ele o kit continua single-tenant e nada muda. Com o modo ligado, o painel
+  `/app` vira `/app/{tenant}` e o usuário só enxerga os tenants aos quais está
+  vinculado; o `/admin` ganha o cadastro de tenants e o vínculo de usuários; o
+  `/infra` segue global, porque saúde, filas e logs são da instalação e não de
+  um cliente.
+- **Vocabulário separado do rótulo.** O código usa o padrão da API do Filament
+  (`Tenant`, `tenants`, `tenant_id`, `getTenants()`), e o que o usuário lê vem de
+  `config('kit.tenancy')` — `label`, `label_plural` e `slug`, que nascem como
+  "Organização"/"organizacoes" e cada projeto troca pelo termo do seu negócio
+  sem tocar em código.
+- **`App\Traits\BelongsToTenant`** para as models de negócio: relação `tenant()`,
+  escopo global e preenchimento automático de `tenant_id`. O escopo existe porque
+  o Filament só recorta o que passa por um Resource — job, comando, listener e
+  API ficariam de fora.
+- **Papéis por tenant** (`permission.teams`): definição do papel global
+  (`roles.team_id` nulo) e atribuição por tenant. Como `model_has_roles.team_id`
+  é NOT NULL e o spatie não tem atribuição global, o kit usa o sentinela
+  `Tenant::CONTEXTO_GLOBAL` para os papéis que governam `/admin` e `/infra`.
+- **Cenário de demonstração** com `--demo`: dois tenants, três usuários e um
+  resource no `/app` para ver o isolamento funcionando. Descartável — o comando
+  imprime quais arquivos apagar.
+- Ledger de IA e budget passam a gravar o tenant real (`ai_runs.tenant_id`).
+- Suíte `tests/Tenancy/` (14 casos), no mesmo grupo `kit`.
+
+### Alterado
+
+- `composer test:kit` passa a rodar `--group=kit`, cobrindo as duas suítes.
+
 ## [0.8.0] - 2026-08-13
 
 ### Adicionado
