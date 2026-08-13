@@ -3,6 +3,52 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.9.8] - 2026-08-13
+
+### Corrigido
+
+- **Metade do Filament do kit nunca chegava a quem instalou.** A correção da tela
+  de usuários publicada na 0.9.7 não alcançou projeto nenhum: o
+  `app/Filament/Admin/Resources/Users` não estava em
+  `KitUpdate::CAMINHOS_DO_KIT`. Junto com ele estavam de fora
+  `app/Filament/Admin/Resources/AgentesIa`, `app/Filament/Infra/Resources/AiRuns`,
+  `app/Livewire/AssistenteChatWidget.php`, `app/Models/AgenteIa.php` e as
+  policies de `User`, `Role` e `AgenteIa`.
+
+  A causa é a granularidade: a lista tinha uma linha por subpasta do Filament
+  (`Admin/Widgets`, `Admin/Resources/Tenants`, `Infra/Pages`…), e o que não
+  ganhou linha própria simplesmente não existia para o `kit:update`. Agora entra
+  `app/Filament` inteiro, mais `app/Livewire`, `app/Policies` e
+  `database/factories`.
+
+- **O teste que devia ter pegado isso era uma lista à mão.** O
+  `tests/Kit/KitUpdateTest.php` cobrava 22 arquivos escolhidos a dedo — e
+  `UserResource.php` não era um deles. Ele passa a **varrer a árvore**: todo
+  arquivo sob `app/`, `database/factories`, `database/migrations` e
+  `database/seeders` precisa estar coberto, com uma allowlist explícita para o
+  que não é do kit. A varredura roda só no repositório do kit (detectado pelo
+  `.github`, que é `export-ignore`), porque em projeto instalado o model e o
+  resource do usuário moram nesses mesmos diretórios.
+
+### Notas
+
+- **Quem já atualizou até a 0.9.7 precisa comparar a partir da 0.8.0 uma vez.**
+  O `kit:update` compara duas tags: indo de 0.9.7 para 0.9.8 o diff traz apenas o
+  que mudou entre elas, e os arquivos que estavam fora da lista **não voltam**.
+  Para recuperar tudo o que os buracos de 0.9.1–0.9.7 engoliram:
+
+  ```bash
+  php artisan kit:update --from=v0.8.0
+  ```
+
+  É também o que traz o `app/Models/Tenant.php` com `HasName` (correção da 0.9.3),
+  sem o qual `/app/{tenant}` responde 500 —
+  `FilamentManager::getTenantName(): Return value must be of type string, null returned`.
+
+- `config/` segue fora da lista de propósito: é o que cada projeto calibra, e
+  sobrescrever apagaria ajuste seu. A exceção é `config/kit.php`, a marca de
+  nascença.
+
 ## [0.9.7] - 2026-08-13
 
 ### Corrigido

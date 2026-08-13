@@ -69,6 +69,76 @@ it('cobre os arquivos da fundação na lista de caminhos do kit', function (stri
     'tests/Tenancy/TenancyTest.php',
 ]);
 
+/**
+ * Diretórios de CÓDIGO do kit, varridos arquivo a arquivo.
+ *
+ * A lista à mão do teste acima documenta o que é crítico, mas não pega o que
+ * ninguém pensou em escrever — e foi exatamente o que aconteceu: os resources de
+ * `Users`, `AgentesIa` e `AiRuns` ficaram fora do `kit:update` por três versões,
+ * e a correção da tela de usuários da 0.9.7 não chegou a nenhum projeto
+ * instalado. Aqui a árvore é a fonte da verdade.
+ *
+ * `config/` fica fora de propósito: é o que cada projeto calibra, e o kit não
+ * sobrescreve (só `config/kit.php`, que é a marca de nascença).
+ *
+ * @var list<string>
+ */
+const DIRETORIOS_DE_CODIGO = [
+    'app',
+    'database/factories',
+    'database/migrations',
+    'database/seeders',
+];
+
+/**
+ * Arquivos que moram nesses diretórios e NÃO são do kit.
+ *
+ * @var list<string>
+ */
+const NAO_E_DO_KIT = [
+    // Do skeleton do Laravel, e ponto de extensão de quem instala.
+    'app/Http/Controllers/Controller.php',
+];
+
+it('cobre todo o código do kit, e não só o que alguém lembrou de listar', function (): void {
+    /*
+     * Só faz sentido NO kit: em projeto instalado, o model e o resource DO
+     * USUÁRIO moram nesses mesmos diretórios e apareceriam como descobertos. O
+     * `.github` é `export-ignore`, logo existe aqui e não lá — é o sinal mais
+     * confiável de "estou na árvore do kit".
+     */
+    if (! is_dir(base_path('.github'))) {
+        expect(true)->toBeTrue();
+
+        return;
+    }
+
+    $descobertos = [];
+
+    foreach (DIRETORIOS_DE_CODIGO as $diretorio) {
+        $arquivos = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator(base_path($diretorio), FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($arquivos as $arquivo) {
+            $relativo = str_replace('\\', '/', substr($arquivo->getPathname(), strlen(base_path()) + 1));
+
+            if (in_array($relativo, NAO_E_DO_KIT, true) || estaCoberto($relativo)) {
+                continue;
+            }
+
+            $descobertos[] = $relativo;
+        }
+    }
+
+    sort($descobertos);
+
+    expect($descobertos)->toBe([], "Arquivos do kit fora de KitUpdate::CAMINHOS_DO_KIT:\n  "
+        .implode("\n  ", $descobertos)
+        ."\n\nQuem já instalou o projeto nunca vai receber estes arquivos. "
+        .'Some-os à lista, ou a NAO_E_DO_KIT se realmente não forem do kit.');
+});
+
 it('só lista caminhos que existem de fato', function (): void {
     $ausentes = array_values(array_filter(
         caminhosDoKit(),

@@ -57,7 +57,9 @@ class KitUpdate extends Command
      * MANTER ESTA LISTA EM DIA É PARTE DE ENTREGAR UMA FEATURE. Arquivo do kit
      * fora daqui simplesmente não chega a quem já instalou — a feature existe
      * no repositório e é invisível na prática. `tests/Kit/KitUpdateTest.php`
-     * cobra os caminhos críticos.
+     * varre a árvore do kit e cobra a cobertura arquivo a arquivo; foi assim que
+     * apareceram os resources de Users, AgentesIa e AiRuns, fora daqui por três
+     * versões (a correção da tela de usuários na 0.9.7 não chegou a ninguém).
      *
      * @var list<string>
      */
@@ -66,27 +68,26 @@ class KitUpdate extends Command
         // Comandos do kit. Comando SEU não aparece: ele não existe na árvore
         // do kit, então nunca entra no diff entre duas versões.
         'app/Console/Commands',
-        'app/Filament/Concerns',
-        'app/Filament/Spotlight',
-        'app/Filament/Admin/Widgets',
-        'app/Filament/Admin/Resources/Tenants',
-        'app/Filament/App/Resources/Projetos',
-        'app/Filament/Infra/Widgets',
-        'app/Filament/Infra/Pages',
+        // Todo o Filament do kit — inclusive os resources. Granularidade fina
+        // aqui só produziu esquecimento: os resources de Users, AgentesIa e
+        // AiRuns ficaram de fora justamente por não ter linha própria.
+        'app/Filament',
         'app/Http/Middleware',
+        'app/Livewire',
         // Models do kit, um a um: `app/Models` inteiro convidaria colisão com
         // os seus.
         'app/Models/User.php',
         'app/Models/Tenant.php',
         'app/Models/Projeto.php',
-        'app/Policies/TenantPolicy.php',
+        'app/Models/AgenteIa.php',
+        'app/Policies',
         'app/Providers',
         'app/Traits',
         'config/kit.php',
-        // Migrations e seeders do kit. Os SEUS não entram no diff, pela mesma
-        // razão dos comandos. Migration nova exige rodar `php artisan migrate`
-        // depois de aplicar.
-        'database/factories/TenantFactory.php',
+        // Migrations, seeders e factories do kit. Os SEUS não entram no diff,
+        // pela mesma razão dos comandos. Migration nova exige rodar
+        // `php artisan migrate` depois de aplicar.
+        'database/factories',
         'database/migrations',
         'database/seeders',
         'docker',
