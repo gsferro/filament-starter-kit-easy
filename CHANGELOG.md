@@ -3,6 +3,37 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.8.0] - 2026-08-13
+
+### Adicionado
+
+- **`wikis/` — a documentação que o agente de IA lê antes de codar.** Sete
+  documentos com o que o código não conta sozinho: arquitetura (os três
+  painéis, a "cola", o ciclo do request, os três níveis de autorização),
+  convenções e armadilhas já resolvidas, a camada de IA (agente como dado,
+  fail-closed, ledger), receitas passo a passo, o mapa de agentes e skills e a
+  lista de "quem é dono de qual tela" — para não reimplementar vendor.
+  `wikis/README.md` é o ponto de entrada; `wikis/specs/{branch}/{feature}/`
+  continua sendo onde a skill `feature-wiki` grava cada feature.
+- **Skills e plugins de IA no kit.** `feature-wiki` (de
+  `gsferro/laravel-ai-skills`) instalada via Boost e sincronizada para os cinco
+  agentes; no Claude Code, os plugins Ponytail e Caveman habilitados em
+  `.claude/settings.json`. As três cobrem camadas distintas — comunicação,
+  planejamento e execução — e a fronteira entre elas está documentada.
+- **README em inglês** (`README.en.md`), com troca de idioma no topo dos dois
+  arquivos, e banner próprio (`art/banner-en.png`).
+- **Seção "Pacotes instalados"** nos dois READMEs: 46 dependências, 11 de
+  desenvolvimento e 6 de front-end, agrupadas por função no kit, com nota sobre
+  os motores que rodam por baixo dos plugins.
+- **Thumbnail 16:9** (`art/thumbnail.png`) para a página do plugin no
+  filamentphp.com.
+- Badge do Filament nos READMEs.
+
+### Alterado
+
+- Imagens dos READMEs passam a apontar para `raw.githubusercontent.com`, para
+  renderizarem também no Packagist e em qualquer lugar fora do GitHub.
+
 ## [0.7.2] - 2026-08-12
 
 ### Adicionado

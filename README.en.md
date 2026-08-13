@@ -120,6 +120,48 @@ The topbar field is **Filament's native one** — same markup, same look, same `
 
 Permission filtering is the reason `App\Filament\Spotlight\*` exists in the kit: the package's categories do **not** call `canAccess()`, and without that the search offers screens that would result in a 403 — an affordance leak. The "Create X" suggestions are the kit's too (`AcoesDeCriacao`), for the same reason plus one more: the package's discovery resolves URLs without checking context and takes the login screen down with a 500.
 
+## Working with AI agents
+
+The kit ships ready for you to develop with a coding agent (Claude Code, Codex, Cursor, Junie, OpenCode) — and, more importantly, with **the documentation the agent needs to read** so it doesn't reinvent or break what's already there.
+
+### 📚 `wikis/` — the kit's documentation
+
+**[`wikis/README.md`](wikis/README.md) is the entry point.** It's where everything an agent (or a new teammate) needs before the first line of code lives:
+
+| Document | What it answers |
+|---|---|
+| [`wikis/arquitetura.md`](wikis/arquitetura.md) | the three panels, the kit's "glue", a request's lifecycle, the three authorization levels |
+| [`wikis/convencoes.md`](wikis/convencoes.md) | the non-negotiable rules and the **traps already handled** — the document that prevents the "fix" that breaks things |
+| [`wikis/ia.md`](wikis/ia.md) | the agent as data, fail-closed guardrails, execution ledger |
+| [`wikis/receitas.md`](wikis/receitas.md) | step by step: Resource, page, widget, health check, command, AI agent |
+| [`wikis/agentes-e-skills.md`](wikis/agentes-e-skills.md) | Boost, MCP, the installed skills and the execution trio |
+| [`wikis/pacotes.md`](wikis/pacotes.md) | which package owns which screen — so you don't reimplement vendor code |
+
+It's also the folder where **you** write your project's own docs: `wikis/specs/{branch}/{feature}/` gets one folder per feature, created by the skill below.
+
+> The wiki is written in pt-BR, like the kit's UI and code comments.
+
+### The installed skills
+
+[Laravel Boost](https://github.com/laravel/boost) is configured (`boost.json`) for five agents, with an MCP server (`php artisan boost:mcp`) and nine synchronized skills — among them `laravel-best-practices`, `pest-testing`, `ai-sdk-development`, `tailwindcss-development`, `pulse-development`, `laravel-backup` and `blaze-optimize`.
+
+The one that changes the workflow is **[`feature-wiki`](https://github.com/gsferro/laravel-ai-skills)**: invoked **before** implementing any feature, it creates `wikis/specs/{branch}/{feature}/` with an action plan (PRD), architecture decisions (ADR), progress tracking and test cases — and it sets the project's logging standard.
+
+In Claude Code it works alongside two plugins already enabled in `.claude/settings.json`, each covering a different layer:
+
+| Layer | Tool | Role |
+|---|---|---|
+| Communication | [Caveman](https://github.com/JuliusBrussee/caveman) | terse replies — does **not** apply to the wiki, code, commits or security warnings |
+| Planning | [feature-wiki](https://github.com/gsferro/laravel-ai-skills) | PRD + ADR + test cases + tracking |
+| Execution | [Ponytail](https://github.com/DietrichGebert/ponytail) | the minimum code that works — without cutting validation, security or error handling |
+
+```bash
+php artisan boost:add-skill gsferro/laravel-ai-skills   # the skill
+php artisan boost:update                                # syncs it to every agent
+```
+
+> `AGENTS.md` and `CLAUDE.md` are **generated** by Boost — editing them by hand is lost work on the next `boost:update`. Durable rules go in `.ai/rules` (the `record-rule` tool) or in `wikis/`.
+
 ## Requirements
 
 - PHP 8.3+ and Composer 2

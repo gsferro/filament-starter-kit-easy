@@ -120,6 +120,46 @@ O campo na topbar é o **nativo do Filament** — mesma marcação, mesma aparê
 
 O filtro por permissão é a razão de existirem `App\Filament\Spotlight\*` no kit: as categorias do pacote **não** chamam `canAccess()`, e sem isso a busca oferece telas que resultariam em 403 — vazamento de affordance. As sugestões "Criar X" também são do kit (`AcoesDeCriacao`), pelo mesmo motivo e mais um: o discovery do pacote resolve URLs sem checar contexto e derruba a tela de login com 500.
 
+## Trabalhando com agentes de IA
+
+O kit já vem preparado para você desenvolver com um agente de código (Claude Code, Codex, Cursor, Junie, OpenCode) — e, mais importante, com a **documentação que o agente precisa ler** para não reinventar nem quebrar o que já está pronto.
+
+### 📚 `wikis/` — a documentação do kit
+
+**[`wikis/README.md`](wikis/README.md) é o ponto de entrada.** É onde mora tudo que um agente (ou uma pessoa nova no time) precisa saber antes da primeira linha de código:
+
+| Documento | O que responde |
+|---|---|
+| [`wikis/arquitetura.md`](wikis/arquitetura.md) | três painéis, a "cola" do kit, ciclo de um request, os três níveis de autorização |
+| [`wikis/convencoes.md`](wikis/convencoes.md) | as regras inegociáveis e as **armadilhas já resolvidas** — o documento que evita o "conserto" que quebra |
+| [`wikis/ia.md`](wikis/ia.md) | agente como dado, guardrails fail-closed, ledger de execuções |
+| [`wikis/receitas.md`](wikis/receitas.md) | passo a passo: Resource, página, widget, health check, comando, agente |
+| [`wikis/agentes-e-skills.md`](wikis/agentes-e-skills.md) | Boost, MCP, as skills instaladas e o trio de execução |
+| [`wikis/pacotes.md`](wikis/pacotes.md) | qual pacote é dono de qual tela — para não reimplementar vendor |
+
+É também a pasta onde **você** escreve o que for do seu projeto: `wikis/specs/{branch}/{feature}/` recebe uma pasta por feature, criada pela skill abaixo.
+
+### As skills instaladas
+
+O [Laravel Boost](https://github.com/laravel/boost) está configurado (`boost.json`) para cinco agentes, com servidor MCP (`php artisan boost:mcp`) e nove skills sincronizadas — entre elas `laravel-best-practices`, `pest-testing`, `ai-sdk-development`, `tailwindcss-development`, `pulse-development`, `laravel-backup` e `blaze-optimize`.
+
+A que muda o fluxo de trabalho é a **[`feature-wiki`](https://github.com/gsferro/laravel-ai-skills)**: invocada **antes** de implementar qualquer feature, ela cria `wikis/specs/{branch}/{feature}/` com plano de ação (PRD), decisões arquiteturais (ADR), progresso e casos de teste — além de fixar o padrão de log do projeto.
+
+No Claude Code ela trabalha com dois plugins já habilitados em `.claude/settings.json`, cada um cobrindo uma camada diferente:
+
+| Camada | Ferramenta | Papel |
+|---|---|---|
+| Comunicação | [Caveman](https://github.com/JuliusBrussee/caveman) | resposta enxuta — **não** se aplica a wiki, código, commits e avisos de segurança |
+| Planejamento | [feature-wiki](https://github.com/gsferro/laravel-ai-skills) | PRD + ADR + casos de teste + tracking |
+| Execução | [Ponytail](https://github.com/DietrichGebert/ponytail) | mínimo código que funciona — sem cortar validação, segurança ou tratamento de erro |
+
+```bash
+php artisan boost:add-skill gsferro/laravel-ai-skills   # a skill
+php artisan boost:update                                # sincroniza para todos os agentes
+```
+
+> `AGENTS.md` e `CLAUDE.md` são **gerados** pelo Boost — editar à mão é trabalho perdido no próximo `boost:update`. Regra durável vai em `.ai/rules` (ferramenta `record-rule`) ou na `wikis/`.
+
 ## Requisitos
 
 - PHP 8.3+ e Composer 2
