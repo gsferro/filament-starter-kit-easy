@@ -86,12 +86,22 @@ class KitServiceProvider extends ServiceProvider
         // Retornar null (não false) deixa os demais checks seguirem o fluxo normal.
         Gate::before(fn (User $user) => $user->isMasterGlobal() ? true : null);
 
-        // Superfícies de infra/observabilidade. master_global passa pelo before;
-        // o papel `infra` recebe acesso explícito aqui.
-        Gate::define('ver-ai-tasks', fn (User $user): bool => $user->hasRole('infra'));
-        Gate::define('ver-logs', fn (User $user): bool => $user->hasRole('infra'));
-        Gate::define('command-center:access', fn (User $user): bool => $user->hasRole('infra'));
-        Gate::define('viewPulse', fn (User $user): bool => $user->hasRole('infra'));
+        // Superfícies de infra/observabilidade. master_global passa pelo before; quem
+        // tem papel do painel /infra recebe acesso explícito aqui.
+        //
+        // `temPapelDoPainel()` e não `hasRole('infra')`: a relação `roles` do spatie é
+        // filtrada pelo team corrente quando `permission.teams` está ligado, então o
+        // mesmo gate responderia diferente conforme a organização aberta no request. A
+        // pergunta é sobre a instalação, não sobre a organização — daí o contexto global.
+        $doPainelInfra = fn (User $user): bool => $user->temPapelDoPainel(
+            'infra',
+            config('permission.teams') ? Tenant::CONTEXTO_GLOBAL : null,
+        );
+
+        Gate::define('ver-ai-tasks', $doPainelInfra);
+        Gate::define('ver-logs', $doPainelInfra);
+        Gate::define('command-center:access', $doPainelInfra);
+        Gate::define('viewPulse', $doPainelInfra);
 
         // command-center:prune-history e :manage-commands ficam deliberadamente
         // SEM define: um `fn () => false` seria vencido pelo Gate::before do

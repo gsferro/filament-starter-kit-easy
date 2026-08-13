@@ -1,8 +1,8 @@
 <?php
 
+use App\Models\Role;
 use Spatie\Permission\DefaultTeamResolver;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 return [
 
@@ -28,6 +28,9 @@ return [
          * `Spatie\Permission\Contracts\Role` contract.
          */
 
+        // `App\Models\Role` e não o do spatie: o kit acrescentou a coluna `painel`
+        // (o que dá acesso a painel), e o model próprio é o que a tipa. Spatie e Shield
+        // resolvem o papel por esta chave, então trocar aqui basta.
         'role' => Role::class,
 
         /*

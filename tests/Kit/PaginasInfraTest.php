@@ -25,6 +25,29 @@ beforeEach(function (): void {
     $this->master->assignRole('master_global');
 });
 
+/**
+ * O papel `infra` abrindo as telas dele — e não só o master_global.
+ *
+ * A diferença é o que se prova: o master_global vence pelo `Gate::before` SEM permission
+ * nenhuma no banco, então testar só com ele deixa a matriz de permissões inteira sem
+ * cobertura. Passou a importar de verdade quando o `shield:generate` começou a rodar nos
+ * três painéis: os Resources de `/infra` ganharam policy (`AiRunPolicy`, `AuditPolicy`,
+ * `QueueMonitorPolicy`…), e tela sem policy — que antes era tela aberta — virou tela que
+ * exige permission. Se a matriz do papel `infra` deixar de cobrir alguma, é aqui que
+ * aparece o 403.
+ */
+it('abre as telas do painel infra com o papel infra', function (string $rota): void {
+    $infra = User::create(['name' => 'Infra', 'email' => 'infra@example.com', 'password' => 'password']);
+    $infra->assignRole('infra');
+
+    $this->actingAs($infra)->get($rota)->assertSuccessful();
+})->with([
+    'auditoria'       => '/infra/audits',
+    'logins'          => '/infra/authentication-logs',
+    'filas'           => '/infra/queue-monitors',
+    'execuções de IA' => '/infra/execucoes-ia',
+]);
+
 it('abre as telas do painel infra', function (string $rota): void {
     $this->actingAs($this->master)
         ->get($rota)

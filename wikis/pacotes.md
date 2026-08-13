@@ -6,7 +6,7 @@
 
 | Se você fosse implementar… | Já vem de |
 |---|---|
-| CRUD de papéis e permissões | `bezhansalleh/filament-shield` (`/admin`) |
+| CRUD de papéis e permissões | `bezhansalleh/filament-shield` (`/admin`) — com o `RoleResource` **publicado no projeto**, ver abaixo |
 | Perfil, avatar, troca de senha, 2FA, passkeys | `jeffgreco13/filament-breezy` (`/meu-perfil`) |
 | Tela de login com arte | `caresome/filament-auth-designer` |
 | Bloqueio de sessão por inatividade | `marjose123/filament-lockscreen` |
@@ -41,6 +41,23 @@
 | WebSocket para notificação em tempo real | `laravel/reverb` |
 | SDK de IA (agentes, tools, streaming) | `laravel/ai` |
 | Orquestração de tarefa de IA, budget, ledger | `fomvasss/laravel-ai-tasks` |
+
+### O `RoleResource` do Shield é código do projeto
+
+`php artisan shield:publish --panel=admin` copiou o Resource e as quatro Pages para `app/Filament/Admin/Resources/Roles/`. Enquanto esses arquivos existirem, o `FilamentShieldPlugin` **não** registra o dele — `Utils::isResourcePublished()` procura `\RoleResource` entre os resources do painel. A URL não muda (`/admin/shield/roles`).
+
+Foi preciso porque o Shield não oferece hook para agrupar as permissões por painel: nada em `HasShieldFormComponents` consulta o painel corrente, e a tela mostrava os Resources dos três misturados numa lista só.
+
+| O que mudou em relação ao vendor | Onde |
+|---|---|
+| `Select::make('painel')` — o campo que dá acesso ao painel | `RoleResource::form()` |
+| `getResourceEntitiesSchema()` agrupa as seções por painel, lendo `App\Support\Paineis` | `RoleResource` |
+| `secaoDoResource()` — o corpo do `map()` original do vendor, extraído para ser reusado | `RoleResource` |
+| `'painel'` nas listas de `mutateFormDataBefore*` | `Pages/CreateRole.php`, `Pages/EditRole.php` |
+
+**No upgrade do Shield:** o resto dos cinco arquivos é cópia byte a byte, de propósito, para o `diff` contra o vendor novo continuar legível. Depois de um major do pacote, compare `app/Filament/Admin/Resources/Roles/` com `vendor/bezhansalleh/filament-shield/src/Resources/Roles/` e traga o que mudou, preservando as quatro linhas acima. O formato da entidade (`resourceFqcn`, `model`, `modelFqcn`, `permissions`) é contrato interno do Shield — se mudar, o agrupamento quebra. `tests/Kit/PaineisTest.php` acusa os dois casos: um teste afirma que o Resource registrado é o do projeto, outro que a tela mostra os três grupos de painel.
+
+Reverter é apagar a pasta: o plugin volta a registrar o Resource dele, e a tela perde o agrupamento e o campo `Painel`.
 
 ## Onde cada plugin é registrado
 

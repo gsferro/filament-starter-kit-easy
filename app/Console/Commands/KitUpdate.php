@@ -77,11 +77,13 @@ class KitUpdate extends Command
         // Models do kit, um a um: `app/Models` inteiro convidaria colisão com
         // os seus.
         'app/Models/User.php',
+        'app/Models/Role.php',
         'app/Models/Tenant.php',
         'app/Models/Projeto.php',
         'app/Models/AgenteIa.php',
         'app/Policies',
         'app/Providers',
+        'app/Support',
         'app/Traits',
         'config/kit.php',
         // Migrations, seeders e factories do kit. Os SEUS não entram no diff,

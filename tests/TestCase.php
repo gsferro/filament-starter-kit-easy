@@ -6,6 +6,8 @@ use App\Models\Tenant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Artisan;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -131,5 +133,38 @@ abstract class TestCase extends BaseTestCase
         }
 
         parent::setUp();
+    }
+
+    /**
+     * Semeia por `Artisan::call`, não pelo `$this->artisan()` do Laravel.
+     *
+     * O `seed()` padrão passa por `PendingCommand`, que **liga um mock de
+     * `OutputStyle` no container** para poder afirmar sobre a saída. Todo comando
+     * disparado DE DENTRO do seeder resolve esse mock — e o mock é
+     * `shouldIgnoreMissing()`, ou seja, engole as chamadas em vez de executá-las.
+     *
+     * O efeito prático no kit era grave e silencioso: o `ShieldPermissionsSeeder`
+     * chama `shield:generate`, e sob `$this->seed()` ele terminava com exit 0,
+     * imprimia "79 permissions generated" e gravava **zero** linhas na tabela
+     * `permissions`. Toda a suíte rodava sem uma única permission no banco desde
+     * sempre, e nada acusava: os testes autenticavam como `master_global`, que
+     * vence pelo `Gate::before` justamente sem precisar de permission.
+     *
+     * Medido: `$this->seed(ShieldPermissionsSeeder::class)` → 0 permissions;
+     * `Artisan::call('db:seed', ...)` com o mesmo seeder → 186.
+     *
+     * @param  class-string|array<int, class-string>  $class
+     */
+    public function seed($class = 'Database\\Seeders\\DatabaseSeeder'): static
+    {
+        foreach (Arr::wrap($class) as $seeder) {
+            Artisan::call('db:seed', [
+                '--class'          => $seeder,
+                '--force'          => true,
+                '--no-interaction' => true,
+            ]);
+        }
+
+        return $this;
     }
 }

@@ -82,12 +82,15 @@ Registros de catálogo (ex.: `agentes_ia`) usam flag `ativo` em vez de `DELETE`.
 ## Autorização
 
 - **Nada de affordance sem permissão.** Menu, busca e ações consultam `canAccess()` / `canCreate()` antes de aparecer. Encontrar na UI algo que resulta em 403 é considerado **bug**, não detalhe.
-- **Permissions vêm de seeder**, nunca do `shield:generate` interativo — é o que permite instalar sem intervenção. Depois de criar Resources novos:
+- **Permissions vêm de seeder**, nunca do `shield:generate` interativo — é o que permite instalar sem intervenção. Depois de criar Resources novos, os dois, nesta ordem:
   ```bash
   php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder
   php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
   ```
-- **`master_global` fica sem permissions no banco** — o acesso vem do `Gate::before`. Não "conserte" isso sincronizando permissions para ele.
+  O primeiro roda `shield:generate --all` **em cada painel** — o comando só enxerga o painel corrente, e até a 0.10.0 o seeder passava `--panel=admin` e mais nada: as permissions de `/app` e `/infra` nunca chegaram a existir no banco. Medido depois da correção: admin 79, app 13, infra 96 — **186 no total**, contra 79 antes. O segundo recorta a matriz por painel via `App\Support\Paineis::permissoes()` e devolve as permissões aos papéis. Os dois são idempotentes.
+- **`RelationManager` o Shield não enxerga.** A descoberta cobre só Resources, Pages e Widgets: nenhuma permission é gerada e a autorização recai na policy do model relacionado. Se esse model já tem Resource em algum painel, não há nada a fazer; se não tem, `make:policy` à mão e as chaves em `config('filament-shield.custom_permissions')` **antes** dos seeders — senão o RelationManager fica aberto a quem abrir o Resource pai.
+- **Papel novo declara o painel em que vale** (`roles.painel`). Nulo **não** é coringa: papel sem painel só carrega permissões, e quem o tiver sozinho autentica e leva 403 nos três painéis. Papel semeado entra no `PapeisSeeder`, com o painel no terceiro argumento de `papel()`.
+- **`master_global` fica sem permissions no banco** — o acesso vem do `Gate::before`, e ao painel de `isMasterGlobal()` dentro do `canAccessPanel()`. Não "conserte" isso sincronizando permissions nem carimbando um painel nele.
 - **Não implemente `canSwitchPanels()` no `User`.** O nome engana: não esconde painel nenhum, só mapeia URLs para `null` e deixa a lista renderizada. O recorte real é o `canAccessPanel()`, que o próprio Panel Switch consulta — painel inacessível some sozinho.
 
 ## Banco e seeders
@@ -165,17 +168,26 @@ Código que parece errado e **é deliberado**. Antes de "corrigir" qualquer linh
 | `$_SERVER` no Windows | reposto no `KitServiceProvider` | processos criados pela UI nascem sem `SystemRoot`/`PATH` e morrem com erro vazio de socket |
 | Badge de resource de vendor | **não existe** | `getNavigationBadge()` é estático e o Filament não oferece API para sobrescrever de fora; forçar exige estender cada resource de vendor e quebra a cada update |
 | `Tenant::CONTEXTO_GLOBAL = 0` | sentinela de papel global | `model_has_roles.team_id` é NOT NULL: sem o sentinela, atribuir papel em seeder, job ou nos painéis /admin e /infra estoura violação de constraint |
-| `User::temPapelGlobal()` | troca o contexto de papéis | sem ela o `master_global` perde os poderes ao entrar num tenant — o spatie filtra a relação `roles` pelo team corrente |
+| `User::papeisEmQualquerContexto()` | relação sem o `wherePivot(team_id)` do spatie | sem ela o `master_global` perde os poderes ao entrar num tenant, e `canAccessPanel()` — que roda **antes** de o tenant da rota existir — passa a depender de qual organização está aberta |
 | `->tenant()` depois de `->plugins()` | reescreve as rotas do painel | plugin registrado depois não enxerga o prefixo `/{tenant}` |
 | Papéis criados com `roles.team_id` nulo | definição global | o `Role::findOrCreate` do spatie carimba o team corrente, e um papel carimbado no tenant A fica invisível no B |
+| `roles.painel` nulo | **não** é coringa | papel em branco viraria chave-mestra dos três painéis, em silêncio. O default fecha; quem entra em todos é o `master_global`, por `isMasterGlobal()`/`Gate::before` |
+| `temPapelOnde()` usa `if`, não `->when()` | `when()` numa relação Eloquent entrega o **Builder** ao closure | `wherePivot()` não existe no Builder: o filtro de contexto some sem erro nenhum. `isMasterGlobal()` respondia `false` com a pivot correta no banco |
+| `Paineis::shieldNovo()` chama `Facade::clearResolvedInstance` | `app()->forgetInstance('filament-shield')` **não** basta | a facade guarda o objeto em `Facade::$resolvedInstance` e continua entregando o antigo: os três painéis devolvem o mapa do primeiro. Sintoma: os três papéis nascendo com a mesma matriz de 79 permissões |
+| `Tests\TestCase::seed()` usa `Artisan::call` | o `seed()` do Laravel passa por `PendingCommand` | o `PendingCommand` liga um mock de `OutputStyle` (`shouldIgnoreMissing`) no container, e comando aninhado resolve esse mock: `shield:generate` termina com exit 0, imprime "79 permissions generated" e grava **zero** linhas. Medido: 0 permissions por `$this->seed()`, 186 por `Artisan::call` |
+| `getOptionLabelFromRecordUsing(fn (Role $record) => …)` | o parâmetro **tem** de se chamar `$record` | o Filament injeta closure por NOME, não por tipo: com outro nome a tela morre em `[$papel] was unresolvable`, e só ao renderizar o campo |
+| `'painel'` nas listas das Pages do Shield | `CreateRole`/`EditRole` publicadas | as Pages tratam toda chave desconhecida do formulário como permissão: sem entrar no `in_array` **e** no `Arr::only` das duas, o Shield cria uma permission chamada `app` e o valor nunca chega ao banco |
+| `getResourceEntitiesSchema()` **sem** `#[Override]` | o método vem da trait `HasShieldFormComponents` | `#[Override]` só vale para método de classe pai; num método de trait o PHP aborta o request inteiro |
 
 ## Onde cada coisa se configura
 
 | Quero mudar | Arquivo |
 |---|---|
-| Acesso aos painéis | `app/Models/User.php` → `canAccessPanel()` |
+| Quem entra em cada painel | o **papel** do usuário: `/admin` → Funções → campo *Painel* (`roles.painel`). O código que lê é `app/Models/User.php` → `canAccessPanel()` |
+| Papéis do kit e o painel de cada um | `database/seeders/PapeisSeeder.php` → `papel()`, terceiro argumento |
 | Gates de infra | `app/Providers/KitServiceProvider.php` → `configureGates()` |
-| Matriz de permissões | `database/seeders/PapeisSeeder.php` |
+| Matriz de permissões | `database/seeders/PapeisSeeder.php` (o recorte por painel vem de `app/Support/Paineis.php`) |
+| A tela de papéis do Shield | `app/Filament/Admin/Resources/Roles/` — publicada no projeto |
 | Health checks | `KitServiceProvider::configureHealthChecks()` |
 | Defaults de tabela/modal/toggle | `app/Providers/Concerns/ConfiguraFilamentGlobal.php` |
 | Comandos liberados na UI | `config/command-center.php` |

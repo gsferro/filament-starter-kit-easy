@@ -17,6 +17,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Spatie\Permission\Models\Role;
 use STS\FilamentImpersonate\Actions\Impersonate;
 
 class UserResource extends Resource
@@ -59,6 +60,30 @@ class UserResource extends Resource
                 ->preload()
                 ->searchable()
                 /*
+                 * Papel é obrigatório porque é ele que dá acesso a painel
+                 * (User::canAccessPanel lê `roles.painel`). Usuário sem papel é conta
+                 * morta: entra na tela de login, autentica e leva 403 nos três painéis.
+                 */
+                ->required()
+                ->helperText('O acesso aos painéis vem do papel — o painel de cada um aparece ao lado do nome.')
+                // O painel no rótulo da opção, e não um select agrupado: agrupar exigiria
+                // abandonar o ->relationship(), que é quem hidrata o estado na edição e
+                // mantém a chave fora do update() do model.
+                // O papel é tipado pela classe do spatie, não por App\Models\Role: quem
+                // resolve o model é `permission.models.role`, e `config/` fica fora do
+                // kit:update — num projeto atualizado a config pode ainda apontar para o
+                // model do pacote, e o type hint concreto viraria TypeError na tela.
+                // O parâmetro TEM de se chamar `$record`: o Filament injeta closure por
+                // NOME, não por tipo. Com outro nome a tela morre em
+                // "[$papel] was unresolvable" só ao renderizar o campo.
+                ->getOptionLabelFromRecordUsing(function (Role $record): string {
+                    $painel = $record->getAttribute('painel');
+
+                    return $painel === null
+                        ? "{$record->name} — sem painel"
+                        : "{$record->name} — /{$painel}";
+                })
+                /*
                  * Gravar papel é pela API do spatie, NUNCA pelo sync da relação.
                  *
                  * O `->relationship()` grava com `$relationship->sync()`, que
@@ -82,6 +107,26 @@ class UserResource extends Resource
                         $record->roles()->getRelated()->newQuery()->whereKey($state)->get()
                     );
                 }),
+
+            /*
+             * Só com a tenancy ligada. É este vínculo que impede o acesso indevido a
+             * dados de outra organização: `User::canAccessTenant()` exige a linha na
+             * pivot, e sem nenhuma o usuário entra no /app e não encontra organização
+             * para abrir.
+             *
+             * Aqui o ->relationship() basta sozinho — a armadilha do sync() é específica
+             * de `model_has_roles.team_id`, que é NOT NULL. A `tenant_user` é pivot magra,
+             * só com as duas chaves.
+             */
+            Select::make('tenants')
+                ->label(config('kit.tenancy.label_plural', 'Organizações'))
+                ->relationship('tenants', 'nome')
+                ->multiple()
+                ->preload()
+                ->searchable()
+                ->required()
+                ->visible(fn (): bool => (bool) config('kit.tenancy.enabled'))
+                ->helperText('Sem vínculo o usuário entra no painel e não vê organização nenhuma.'),
         ]);
     }
 

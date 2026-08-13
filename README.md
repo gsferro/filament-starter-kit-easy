@@ -51,11 +51,17 @@ Para testar o recorte de acesso, crie um usuário só com o papel `admin` ou `in
 
 | Painel | URL | Para quê | Quem entra |
 |---|---|---|---|
-| **App** | `/app` | A operação do negócio. **Vem vazio de propósito** — é aqui que seu projeto nasce | qualquer usuário autenticado |
+| **App** | `/app` | A operação do negócio. **Vem vazio de propósito** — é aqui que seu projeto nasce | `master_global`, `panel_user` |
 | **Admin** | `/admin` | Usuários, papéis e permissões (Shield), catálogo de agentes de IA, autoria de onboarding | `master_global`, `admin` |
 | **Infra** | `/infra` | Health checks, backups, filas, logs, auditoria, caches, comandos, Pulse, custos de IA | `master_global`, `infra` |
 
-A regra de acesso fica em `App\Models\User::canAccessPanel()`. O papel `master_global` vence qualquer gate via `Gate::before` (`App\Providers\KitServiceProvider`) — não precisa de permissions no banco.
+**Quem entra vem do papel, não de uma lista no código.** Cada papel declara em qual painel vale, na coluna `roles.painel` — é o campo **Painel** na tela `/admin` → Funções. `App\Models\User::canAccessPanel()` compara essa coluna com o painel que está sendo aberto. Criar um papel e escolher o painel dele **é** o ato de dar acesso.
+
+Nulo **não** é coringa: papel sem painel só carrega permissões e não abre painel algum. O papel `master_global` entra nos três de outro jeito — ele vence qualquer gate via `Gate::before` (`App\Providers\KitServiceProvider`), sem precisar de permissions no banco, e o `canAccessPanel()` o libera antes de olhar a coluna.
+
+> ⚠️ **Quebra deliberada:** até a 0.10.0 o `/app` era aberto a **qualquer usuário autenticado**. Deixou de ser — sem papel, ninguém entra em painel nenhum. Se você está atualizando um projeto, rode os dois seeders (`ShieldPermissionsSeeder` e `PapeisSeeder`) e revise os usuários: quem opera o negócio precisa do papel `panel_user`, ou de um papel seu com o painel `app`.
+
+Nos painéis **sem** tenancy (`/admin`, `/infra`) o papel precisa estar atribuído no contexto global: ser `admin` dentro de uma organização não é credencial para administrar a instalação. No `/app` vale o papel em qualquer organização — qual delas você abre é decidido depois, por `canAccessTenant()`.
 
 > Com o [modo multi-tenant](#multi-tenancy-opt-in) ligado, o **App** vira `/app/{tenant}` e passa a mostrar só os dados do tenant selecionado. Admin e Infra seguem globais.
 
@@ -284,7 +290,7 @@ Seus testes vão em `tests/Feature` e `tests/Unit`, como de costume — o kit n�
 1. **Nome** — `APP_NAME` no `.env`
 2. **Arte do login** — `public/images/auth/login.svg`
 3. **Cores** — `->colors([...])` em cada `app/Providers/Filament/*PanelProvider.php`
-4. **Acesso aos painéis** — `App\Models\User::canAccessPanel()`
+4. **Acesso aos painéis** — o papel de cada usuário (`/admin` → Funções, campo *Painel*); a regra que o lê é `App\Models\User::canAccessPanel()`
 5. **Matriz de permissões** — `database/seeders/PapeisSeeder.php`
 6. **Health checks** — `KitServiceProvider::configureHealthChecks()`
 7. **Comandos da UI** — `config/command-center.php`
@@ -332,7 +338,8 @@ Também são globais: modal que **não** fecha no Esc (um toque acidental descar
 - **UUID nas rotas, `id` int como PK.** Toda tabela nova ganha `$table->uuid('uuid')->unique()` e o model usa `App\Traits\TemUuid`. URL com id numérico devolve 404 e ninguém enumera registros por sequência. UUID não é autorização — policies continuam obrigatórias.
 - **Auditoria no que é editável.** `App\Traits\AuditsFillables` audita exatamente o `$fillable`, sem vazar colunas técnicas para a trilha.
 - **Seeder nunca usa factory nem faker.** `fakerphp/faker` é `require-dev` e a imagem Docker roda `--no-dev`.
-- **Permissões vêm de seeder, não de `shield:generate` interativo** — é o que permite instalar sem intervenção. Depois de criar Resources novos, rode `php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder`.
+- **Permissões vêm de seeder, não de `shield:generate` interativo** — é o que permite instalar sem intervenção. O `ShieldPermissionsSeeder` gera para os **três** painéis (o comando do Shield só enxerga o painel corrente); o `PapeisSeeder` recorta a matriz por painel e entrega aos papéis. Depois de criar Resources novos, rode os dois (veja [abaixo](#depois-de-criar-seus-resources)).
+- **Acesso a painel é dado do papel**, na coluna `roles.painel` — não uma lista de nomes no código. Papel sem painel não abre painel nenhum: o default fecha.
 - **Nada de affordance sem permissão.** Menu, busca e ações consultam `canAccess()`/`canCreate()` antes de aparecer. Encontrar algo que resulta em 403 é considerado bug.
 - **Tradução de plugin vai em `lang/vendor/`.** Vários pacotes só trazem inglês; o kit traduz sem tocar no vendor.
 
@@ -360,6 +367,10 @@ php artisan make:filament-resource Produto --panel=app
 php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder
 php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
 ```
+
+**Os dois, nesta ordem, sempre.** O primeiro roda `shield:generate --all` em **cada** painel e escreve as policies; o segundo recorta a matriz pelo painel em que o Resource está registrado e devolve as permissões aos papéis. Só o primeiro cria a permission e não a entrega a ninguém — a tela continua em 403 para quem não é `master_global`. Os dois são idempotentes: rodar de novo é operação normal.
+
+> **RelationManager o Shield não enxerga.** A descoberta dele cobre apenas Resources, Pages e Widgets, então nenhuma permission é gerada e a autorização recai na **policy do model relacionado**. Se esse model já tem Resource em algum painel, não há nada a fazer. Se não tem, crie a policy à mão (`php artisan make:policy`) e declare as chaves em `config('filament-shield.custom_permissions')` **antes** de rodar os seeders — do contrário o RelationManager fica aberto a qualquer um que consiga abrir o Resource pai.
 
 Adicione os dois traits do kit ao que foi gerado:
 
@@ -490,7 +501,8 @@ Faça isso num branch (`git switch -c atualiza-kit`) e rode `composer test` ante
 
 ## Solução de problemas
 
-- **`/infra` ou `/admin` dando 403** — seu usuário precisa do papel `master_global`, `admin` ou `infra`. A tela de 403 mostra qual permissão faltou, mas **só fora de produção**: em produção ela não revela papéis nem permissões.
+- **403 em todos os painéis, logo depois de autenticar** — o usuário não tem papel nenhum, ou o papel dele está sem painel declarado (`roles.painel` vazio não é coringa: não abre nada). Dê o papel em `/admin` → Usuários, ou preencha o campo *Painel* em `/admin` → Funções.
+- **`/infra` ou `/admin` dando 403** — seu usuário precisa de um papel cujo painel seja esse (`master_global`, `admin` ou `infra`), e com a tenancy ligada o papel tem de estar atribuído no contexto global. A tela de 403 mostra qual permissão faltou, mas **só fora de produção**: em produção ela não revela papéis nem permissões.
 - **Assets do Filament sumidos** — `php artisan filament:assets`.
 - **Pulse sem dados** — falta o daemon: `php artisan pulse:check` (ou o serviço `pulse` do compose).
 - **Sininho não atualiza em tempo real** — `BROADCAST_CONNECTION=reverb` exige o processo Reverb no ar; sem ele o kit cai para polling de 30s.

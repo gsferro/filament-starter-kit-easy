@@ -34,6 +34,31 @@ function usuario(string $email = 'user@example.com'): User
     return User::create(['name' => 'Usuário', 'email' => $email, 'password' => 'password']);
 }
 
+/**
+ * Usuário com papel atribuído num contexto explícito.
+ *
+ * Com `permission.teams` ligado, `model_has_roles.team_id` guarda o contexto e
+ * `assignRole()` carimba o que estiver fixado no PermissionRegistrar. Papel do painel
+ * /app pertence a uma organização; papel de /admin e /infra pertence ao contexto global.
+ */
+function usuarioComPapel(string $papel, ?Tenant $tenant = null, string $email = 'user@example.com'): User
+{
+    $user      = usuario($email);
+    $registrar = app(PermissionRegistrar::class);
+    $anterior  = $registrar->getPermissionsTeamId();
+
+    try {
+        $registrar->setPermissionsTeamId($tenant?->getKey() ?? Tenant::CONTEXTO_GLOBAL);
+        $user->unsetRelation('roles');
+        $user->assignRole($papel);
+    } finally {
+        $registrar->setPermissionsTeamId($anterior);
+        $user->unsetRelation('roles');
+    }
+
+    return $user;
+}
+
 it('cria as tabelas de permissão com a coluna de tenant', function (): void {
     $tabela = config('permission.table_names.model_has_roles', 'model_has_roles');
     $coluna = config('permission.column_names.team_foreign_key', 'team_id');
@@ -205,14 +230,42 @@ it('abre o painel de negócio no tenant vinculado', function (): void {
 it('responde 404 — e não 403 — no painel de um tenant não vinculado', function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 
-    tenant('Globex', 'globex');
-    $user = usuario();          // sem vínculo nenhum
+    $globex = tenant('Globex', 'globex');
+
+    // COM papel do painel app, mas SEM vínculo com a Globex: é o recorte que interessa.
+    // Sem o papel o request morreria antes, em canAccessPanel(), e o 403 esconderia a
+    // propriedade que este caso trava.
+    $user = usuarioComPapel('panel_user', $globex);
+    $user->tenants()->detach();
 
     // 404 é deliberado do Filament (IdentifyTenant faz `abort(404)`): um 403
     // confirmaria que o tenant EXISTE, e bastaria varrer slugs para enumerar
     // os clientes da instalação. O teste trava essa propriedade — se um dia
     // alguém "corrigir" para 403, a regressão aparece aqui.
     $this->actingAs($user)->get('/app/globex')->assertNotFound();
+});
+
+it('exige papel no contexto global para os painéis da instalação', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    $acme = tenant('Acme', 'acme');
+
+    // Papel `admin` atribuído DENTRO de uma organização não é credencial para
+    // administrar a instalação. Sem esta barreira, promover alguém a admin da própria
+    // organização abriria o /admin da aplicação inteira.
+    $user = usuarioComPapel('admin', $acme);
+    $user->tenants()->syncWithoutDetaching([$acme->id]);
+
+    $this->assertDatabaseHas(config('permission.table_names.model_has_roles', 'model_has_roles'), [
+        'model_id' => $user->id,
+        'team_id'  => $acme->id,
+    ]);
+
+    $this->actingAs($user)->get('/admin')->assertForbidden();
+
+    // O mesmo papel, no contexto global, abre.
+    $global = usuarioComPapel('admin', null, 'global@example.com');
+    $this->actingAs($global)->get('/admin')->assertSuccessful();
 });
 
 it('mantém admin e infra fora do escopo de tenant', function (string $rota): void {
@@ -233,13 +286,14 @@ it('salva os papéis do usuário no painel admin', function (): void {
     $master = User::where('email', config('kit.admin.email'))->firstOrFail();
     $alvo   = usuario('alvo@example.com');
     $papel  = Role::findByName('admin');
+    $acme   = tenant('Acme', 'acme');   // o form exige organização com a tenancy ligada
 
     Filament::setCurrentPanel('admin');
 
     $this->actingAs($master);
 
     Livewire::test(EditUser::class, ['record' => $alvo->getRouteKey()])
-        ->fillForm(['roles' => [$papel->getKey()]])
+        ->fillForm(['roles' => [$papel->getKey()], 'tenants' => [$acme->getKey()]])
         ->call('save')
         ->assertHasNoFormErrors();
 

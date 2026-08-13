@@ -38,14 +38,16 @@ php artisan make:model Produto -mf --no-interaction
 php artisan make:filament-resource Produto --panel=app --no-interaction
 ```
 
-Escolha o painel pelo público: `app` = negócio, `admin` = administração, `infra` = operação.
+Escolha o painel pelo público: `app` = negócio, `admin` = administração, `infra` = operação. O painel também decide de qual papel a permission vai fazer parte — o `PapeisSeeder` recorta a matriz pelo painel em que o Resource está registrado.
 
-Depois:
+Depois, **sempre os dois, nesta ordem**:
 
 ```bash
 php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder
 php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
 ```
+
+O primeiro gera as permissions e as policies em **cada painel**; o segundo devolve as permissões aos papéis. Sem eles a tela nova responde 403 para todo mundo que não seja `master_global`.
 
 E acrescente os dois traits do kit ao que foi gerado:
 
@@ -68,6 +70,39 @@ class ListProdutos extends ListRecords
 ```
 
 > Não repita no `table()` os defaults globais (striped, deferLoading, persistência de filtro, paginação, colunas redimensionáveis) — eles já valem. Configure só o que é específico da tela.
+
+## RelationManager novo
+
+```bash
+php artisan make:filament-relation-manager ProdutoResource itens nome --no-interaction
+```
+
+**O Shield não enxerga RelationManager.** A descoberta dele cobre só Resources, Pages e Widgets, então nenhuma permission é gerada e a autorização recai na **policy do model relacionado**. Duas situações:
+
+| O model relacionado… | O que fazer |
+|---|---|
+| já tem Resource em algum painel | nada — a policy já existe e já foi semeada |
+| não tem Resource nenhum | `php artisan make:policy ItemPolicy --model=Item`, declare as chaves em `config('filament-shield.custom_permissions')` e **só então** rode os dois seeders |
+
+Pular isso deixa o RelationManager aberto a qualquer um que consiga abrir o Resource pai — sem erro, sem 403, sem pista.
+
+## Papel novo
+
+Pela tela: `/admin` → **Funções** → *Criar*. O campo **Painel** é o que dá o acesso; deixá-lo em branco cria um papel que só carrega permissões, e quem o tiver sozinho autentica e leva 403 nos três painéis.
+
+Para semear (o caminho de quem versiona a matriz), em `database/seeders/PapeisSeeder.php`:
+
+```php
+$this->papel('suporte', $guard, 'admin')
+    ->syncPermissions($this->permissoesDoPainel('admin', $guard));
+```
+
+- O terceiro argumento é o painel (`admin`, `app`, `infra`, ou `null` para nenhum).
+- `permissoesDoPainel()` já intersecta com o que existe no banco: nome ausente na tabela faria `syncPermissions()` estourar `PermissionDoesNotExist` e derrubar o seeder.
+- Para recortar em vez de dar o painel inteiro: `Paineis::permissoes('app')->reject(fn (string $p): bool => str_starts_with($p, 'Delete:'))`.
+- `updateOrCreate`, não `firstOrCreate`: papel que já existe precisa **receber** o painel, senão quem atualiza o kit fica com papéis sem acesso.
+
+Atribuir a alguém: `/admin` → Usuários → o papel aparece com o painel no rótulo (`admin — /admin`). Com a tenancy ligada a atribuição é **por organização** (`model_has_roles.team_id`) — em código, `setPermissionsTeamId($tenant->id)` antes do `assignRole()`, como faz o `DemoTenancySeeder`.
 
 ## Ligar o multi-tenancy
 
@@ -198,7 +233,10 @@ Commit no padrão do repositório: gitmoji + escopo, mensagem em pt-BR.
 
 | Sintoma | Causa provável |
 |---|---|
-| Tela nova dá 403 | falta rodar `ShieldPermissionsSeeder` + `PapeisSeeder` depois de criar o Resource |
+| Usuário autentica e leva 403 nos **três** painéis | ele não tem papel nenhum, ou o papel que tem está com `roles.painel` vazio — e nulo não é coringa. Dê um papel em `/admin` → Usuários, ou declare o painel do papel em `/admin` → Funções |
+| Entra no `/app` mas não no `/admin` (ou vice-versa) | é o desenho: o papel vale para **um** painel. E `/admin` e `/infra` exigem o papel atribuído no contexto global — ser `admin` dentro de uma organização não abre a administração da instalação |
+| Tela nova dá 403 | falta rodar `ShieldPermissionsSeeder` + `PapeisSeeder` depois de criar o Resource — nessa ordem, e os dois: só o primeiro cria a permission e não a entrega a papel nenhum |
+| RelationManager aberto a quem não devia | o Shield não gera permission para RelationManager; ver [RelationManager novo](#relationmanager-novo) |
 | `NOT NULL constraint failed: model_has_roles.team_id` | atribuiu papel sem contexto de tenant — use `Tenant::CONTEXTO_GLOBAL` ou rode dentro de um request do `/app` |
 | `no such column: model_has_roles.team_id` | as tabelas de permissão nasceram sem a coluna de tenant. Refaça num processo novo: `php artisan migrate:fresh --seed` (corrigido no kit a partir da v0.9.2) |
 | Usuário perdeu os papéis dentro do `/app` | papel atribuído no contexto global; para valer no tenant, atribua com `setPermissionsTeamId($tenant->id)` |

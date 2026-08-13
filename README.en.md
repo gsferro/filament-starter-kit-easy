@@ -51,11 +51,17 @@ To see the access boundary in action, create a user with only the `admin` or `in
 
 | Panel | URL | What for | Who gets in |
 |---|---|---|---|
-| **App** | `/app` | The business operation. **Intentionally empty** — this is where your project is born | any authenticated user |
+| **App** | `/app` | The business operation. **Intentionally empty** — this is where your project is born | `master_global`, `panel_user` |
 | **Admin** | `/admin` | Users, roles and permissions (Shield), AI agent catalog, onboarding authoring | `master_global`, `admin` |
 | **Infra** | `/infra` | Health checks, backups, queues, logs, auditing, caches, commands, Pulse, AI costs | `master_global`, `infra` |
 
-The access rule lives in `App\Models\User::canAccessPanel()`. The `master_global` role beats any gate through `Gate::before` (`App\Providers\KitServiceProvider`) — no permissions needed in the database.
+**Who gets in comes from the role, not from a list in the code.** Each role declares which panel it is good for, in the `roles.painel` column — the **Painel** field on the `/admin` → Roles screen. `App\Models\User::canAccessPanel()` compares that column against the panel being opened. Creating a role and picking its panel **is** the act of granting access.
+
+Null is **not** a wildcard: a role with no panel only carries permissions and opens no panel at all. The `master_global` role gets into all three another way — it beats any gate through `Gate::before` (`App\Providers\KitServiceProvider`), with no permissions in the database, and `canAccessPanel()` lets it through before it ever looks at the column.
+
+> ⚠️ **Deliberate break:** up to 0.10.0 `/app` was open to **any authenticated user**. Not anymore — with no role, nobody gets into any panel. If you are updating an existing project, run both seeders (`ShieldPermissionsSeeder` and `PapeisSeeder`) and review your users: whoever runs the business needs the `panel_user` role, or a role of your own carrying the `app` panel.
+
+On panels **without** tenancy (`/admin`, `/infra`) the role must be assigned in the global context: being an `admin` inside one organization is not a credential to administer the installation. On `/app` the role counts in any organization — which one you open is decided later, by `canAccessTenant()`.
 
 > With [multi-tenancy](#multi-tenancy-opt-in) turned on, **App** becomes `/app/{tenant}` and shows only the selected tenant's data. Admin and Infra stay global.
 
@@ -286,7 +292,7 @@ Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never to
 1. **Name** — `APP_NAME` in `.env`
 2. **Login artwork** — `public/images/auth/login.svg`
 3. **Colors** — `->colors([...])` in each `app/Providers/Filament/*PanelProvider.php`
-4. **Panel access** — `App\Models\User::canAccessPanel()`
+4. **Panel access** — each user's role (`/admin` → Roles, the *Painel* field); the rule that reads it is `App\Models\User::canAccessPanel()`
 5. **Permission matrix** — `database/seeders/PapeisSeeder.php`
 6. **Health checks** — `KitServiceProvider::configureHealthChecks()`
 7. **Commands in the UI** — `config/command-center.php`
@@ -334,7 +340,8 @@ Also global: modals that do **not** close on Esc (an accidental tap would discar
 - **UUID in routes, int `id` as PK.** Every new table gets `$table->uuid('uuid')->unique()` and the model uses `App\Traits\TemUuid`. A URL with a numeric id returns 404 and nobody enumerates records by sequence. UUID is not authorization — policies remain mandatory.
 - **Auditing on what is editable.** `App\Traits\AuditsFillables` audits exactly the `$fillable`, without leaking technical columns into the trail.
 - **Seeders never use factories or faker.** `fakerphp/faker` is `require-dev` and the Docker image runs `--no-dev`.
-- **Permissions come from a seeder, not from the interactive `shield:generate`** — that's what makes an unattended install possible. After creating new Resources, run `php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder`.
+- **Permissions come from a seeder, not from the interactive `shield:generate`** — that's what makes an unattended install possible. `ShieldPermissionsSeeder` generates for all **three** panels (the Shield command only sees the current panel); `PapeisSeeder` slices the matrix per panel and hands it to the roles. After creating new Resources, run both (see [below](#after-creating-your-resources)).
+- **Panel access is data on the role**, in the `roles.painel` column — not a list of names in the code. A role with no panel opens no panel: the default is closed.
 - **No affordance without permission.** Menu, search and actions consult `canAccess()`/`canCreate()` before showing up. Finding something that results in a 403 is considered a bug.
 - **Plugin translations go in `lang/vendor/`.** Several packages ship English only; the kit translates them without touching vendor.
 
@@ -362,6 +369,10 @@ php artisan make:filament-resource Produto --panel=app
 php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder
 php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
 ```
+
+**Both, in this order, every time.** The first runs `shield:generate --all` on **each** panel and writes the policies; the second slices the matrix by the panel the Resource is registered on and hands the permissions back to the roles. The first one alone creates the permission and gives it to nobody — the screen stays at 403 for anyone who isn't `master_global`. Both are idempotent: running them again is normal operation.
+
+> **Shield does not see RelationManagers.** Its discovery covers Resources, Pages and Widgets only, so no permission is generated and authorization falls back to the **related model's policy**. If that model already has a Resource on some panel, there is nothing to do. If it doesn't, write the policy by hand (`php artisan make:policy`) and declare the keys in `config('filament-shield.custom_permissions')` **before** running the seeders — otherwise the RelationManager is open to anyone who can open the parent Resource.
 
 Add the kit's two traits to what was generated:
 
@@ -492,7 +503,8 @@ Do this on a branch (`git switch -c update-kit`) and run `composer test` before 
 
 ## Troubleshooting
 
-- **`/infra` or `/admin` returning 403** — your user needs the `master_global`, `admin` or `infra` role. The 403 screen shows which permission was missing, but **only outside production**: in production it reveals neither roles nor permissions.
+- **403 on every panel, right after signing in** — the user has no role at all, or their role has no panel declared (an empty `roles.painel` is not a wildcard: it opens nothing). Give them a role at `/admin` → Users, or fill in the *Painel* field at `/admin` → Roles.
+- **`/infra` or `/admin` returning 403** — your user needs a role whose panel is that one (`master_global`, `admin` or `infra`), and with multi-tenancy on the role must be assigned in the global context. The 403 screen shows which permission was missing, but **only outside production**: in production it reveals neither roles nor permissions.
 - **Filament assets gone** — `php artisan filament:assets`.
 - **Pulse with no data** — the daemon is missing: `php artisan pulse:check` (or the compose `pulse` service).
 - **The bell doesn't update in real time** — `BROADCAST_CONNECTION=reverb` requires the Reverb process to be up; without it the kit falls back to 30s polling.

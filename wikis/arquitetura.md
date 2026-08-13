@@ -10,11 +10,15 @@ O que justifica os três painéis é **separação de superfície**, não de dad
 
 | Painel | Path | Provider | Discovery | Quem entra |
 |---|---|---|---|---|
-| **App** | `/app` | `AppPanelProvider` | `app/Filament/App/{Resources,Pages,Widgets}` | qualquer autenticado |
-| **Admin** | `/admin` | `AdminPanelProvider` | `app/Filament/Admin/…` | `master_global`, `admin` |
-| **Infra** | `/infra` | `InfraPanelProvider` | `app/Filament/Infra/…` | `master_global`, `infra` |
+| **App** | `/app` | `AppPanelProvider` | `app/Filament/App/{Resources,Pages,Widgets}` | quem tem papel com `roles.painel = 'app'` (`panel_user`) |
+| **Admin** | `/admin` | `AdminPanelProvider` | `app/Filament/Admin/…` | quem tem papel com `roles.painel = 'admin'` (`admin`) |
+| **Infra** | `/infra` | `InfraPanelProvider` | `app/Filament/Infra/…` | quem tem papel com `roles.painel = 'infra'` (`infra`) |
+
+O `master_global` entra nos três, mas **não pela coluna** — ver [Painel é dado do papel](#painel-é-dado-do-papel).
 
 `/app` é o painel **default** (`->default()`) e nasce vazio de propósito — é onde o projeto do usuário cresce. Quem administra usuários não precisa (nem deve) enxergar logs, filas e comandos operacionais, e vice-versa.
+
+> Até a 0.10.0 o `/app` era aberto a **qualquer autenticado** (`canAccessPanel()` devolvia `'app' => true`). Deixou de ser: hoje sem papel não se entra em painel nenhum. É quebra deliberada, e o caminho de volta é rodar os dois seeders (abaixo).
 
 ## Camadas
 
@@ -81,13 +85,39 @@ Os defaults estão tabelados no [README](../README.md#configuração-global-do-f
 
 | Nível | Onde | Pergunta que responde |
 |---|---|---|
-| **Painel** | `User::canAccessPanel()` | Este usuário entra em `/admin`? |
+| **Painel** | `User::canAccessPanel()`, lendo `roles.painel` | Este usuário entra em `/admin`? |
 | **Gate** | `KitServiceProvider::configureGates()` | Ele pode ver logs / rodar comandos / abrir o Pulse? |
 | **Policy** | `app/Policies/*` + permissions do Shield | Ele pode editar **este** registro? |
 
-`master_global` atravessa os níveis 2 e 3 pelo `Gate::before`, mas **não** o nível 1 — acesso a painel é checado antes, no model.
+`master_global` atravessa os níveis 2 e 3 pelo `Gate::before`, mas **não** o nível 1 — acesso a painel é checado antes, no model: `canAccessPanel()` chama `isMasterGlobal()` na primeira linha (`app/Models/User.php:76-78`) e só depois olha a coluna.
 
 Permissions vêm do `ShieldPermissionsSeeder` (não do `shield:generate` interativo), e a matriz de papéis do `PapeisSeeder`. É isso que permite instalar sem intervenção humana.
+
+### Painel é dado do papel
+
+Não há lista de nomes de papel no código. Quem declara o painel é a **coluna `roles.painel`** (`database/migrations/2026_08_13_000001_add_painel_to_roles_table.php`), e `canAccessPanel()` a compara com o id do painel corrente (`app/Models/User.php:74-103`).
+
+| Papel | `roles.painel` | Entra em | Contexto exigido |
+|---|---|---|---|
+| `master_global` | `null` | os três — por `isMasterGlobal()`, nunca pela coluna | global |
+| `admin` | `admin` | `/admin` | global |
+| `infra` | `infra` | `/infra` | global |
+| `panel_user` | `app` | `/app` | qualquer organização |
+
+**Nulo não é coringa.** Papel sem painel não abre painel algum: o default fecha. A analogia com `roles.team_id` (onde nulo *é* coringa) é armadilha — lá o nulo vale para a **definição** do papel, aqui valeria para a **concessão** de acesso, e um papel criado em branco na tela viraria chave-mestra em silêncio.
+
+**O contexto muda com a tenancy do painel** (`app/Models/User.php:87`):
+
+| Painel | `hasTenancy()` | O que exige |
+|---|---|---|
+| `/admin`, `/infra` | não | papel atribuído no **contexto global** (`model_has_roles.team_id = Tenant::CONTEXTO_GLOBAL`) — ser `admin` dentro de uma organização não é credencial para administrar a instalação |
+| `/app` | sim | papel em **qualquer** organização; qual organização é decidido depois, por `canAccessTenant()` (que responde [404, não 403](#404-não-403)) |
+
+A pergunta é respondida por `temPapelDoPainel()`, sobre a relação `papeisEmQualquerContexto()` — a `roles()` do spatie sem o `wherePivot(team_id)` do team corrente. É preciso: `canAccessPanel()` roda **antes** de o tenant da rota ser identificado.
+
+Negativa vira log (`Log::channel('autenticacao')->warning`, com `motivo: sem_papel_do_painel`); acesso concedido não loga, para não encher o arquivo com o caminho feliz.
+
+Permission continua **global por nome** — `ViewAny:User` é uma linha só na tabela do spatie. O Shield não sabe a que painel uma permission pertence: o nome é `{Ação}:{Model}` e o único diferenciador que chega ao banco é o `guard_name`, que é o mesmo `web` nos três painéis. Quem cruza painel × Resource × permission é `App\Support\Paineis`, varrendo `Filament::getPanels()` e perguntando ao próprio Shield. É dele que saem a matriz do `PapeisSeeder` e o agrupamento da tela `/admin/shield/roles`. O porquê completo está nas ADR-01 a ADR-03 de `wikis/specs/main/perfil-e-acesso-ao-painel/02-decisoes-arquiteturais.md`.
 
 ## Busca ⌘K (Spotlight)
 
@@ -135,7 +165,7 @@ Assim a documentação oficial do Filament se lê sem tradução mental, e cada 
 |---|---|
 | `app/Models/Tenant.php` | o tenant, com a constante `CONTEXTO_GLOBAL` |
 | `app/Traits/BelongsToTenant.php` | relação + escopo global + preenchimento de `tenant_id` nas models de negócio |
-| `app/Models/User.php` | `HasTenants`: `tenants()`, `getTenants()`, `canAccessTenant()`, `temPapelGlobal()` |
+| `app/Models/User.php` | `HasTenants`: `tenants()`, `getTenants()`, `canAccessTenant()`, `papeisEmQualquerContexto()` |
 | `app/Http/Middleware/DefinirTenantDePermissoes.php` | fixa o contexto de papéis do spatie a cada request |
 | `app/Console/Commands/KitTenancy.php` | o comando que liga tudo |
 | `app/Filament/Admin/Resources/Tenants/` | CRUD + `UsersRelationManager` (o vínculo) |
@@ -156,6 +186,7 @@ Esta é a parte mais sutil. Com `permission.teams` ligado:
 |---|---|---|---|
 | **Definição** do papel | `roles.team_id` | sim | nulo = papel disponível em qualquer tenant |
 | **Atribuição** do papel | `model_has_roles.team_id` | **não** | sempre um valor: o tenant, ou `Tenant::CONTEXTO_GLOBAL` (`0`) |
+| **Painel** do papel | `roles.painel` | sim | nulo = **não abre painel nenhum**. É a coluna oposta à de cima: aqui nulo fecha |
 
 O spatie não tem "atribuição global" — a coluna é NOT NULL. Mas o kit precisa de papéis globais: `master_global`, `admin` e `infra` governam painéis que não têm tenant nenhum. Daí o sentinela `0`:
 
@@ -164,7 +195,11 @@ O spatie não tem "atribuição global" — a coluna é NOT NULL. Mas o kit prec
 
 `KitServiceProvider::configureTenancy()` fixa `0` como contexto padrão do processo; o `DefinirTenantDePermissoes` sobrescreve por request no `/app`.
 
-E `User::temPapelGlobal()` troca o contexto temporariamente para consultar um papel global de dentro de um tenant — sem ele, o `master_global` perderia os poderes justamente ao entrar no `/app`. É o que `isMasterGlobal()` e `canAccessPanel()` usam.
+Para consultar papel **sem** depender do contexto corrente, o `User` tem a relação `papeisEmQualquerContexto()` (`app/Models/User.php:166-175`): é a `roles()` do spatie sem o `wherePivot(team_id)` que ele acrescenta com `permission.teams` ligado. É sobre ela que `isMasterGlobal()` e `temPapelDoPainel()` perguntam — sem isso o `master_global` perderia os poderes justamente ao entrar no `/app`, e `canAccessPanel()`, que roda antes de o tenant da rota existir, não teria contexto para consultar.
+
+> O antigo `User::temPapelGlobal()` **foi removido**. Ele trocava o `PermissionRegistrar` do container e descarregava a relação duas vezes para responder uma pergunta de leitura. Quem o chamava usa hoje `temPapelDoPainel()` ou `isMasterGlobal()`.
+
+Os gates de `/infra` seguem o mesmo caminho: `temPapelDoPainel('infra', CONTEXTO_GLOBAL)` no lugar de `hasRole('infra')` (`app/Providers/KitServiceProvider.php:96-104`). Com `hasRole()` o mesmo gate respondia diferente conforme a organização aberta no request — e a pergunta é sobre a instalação, não sobre a organização.
 
 ### Por que o comando recria o banco
 

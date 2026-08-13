@@ -1,9 +1,14 @@
 <?php
 
 use App\Models\User;
+use App\Support\Paineis;
+use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 /**
  * Contrato de acesso do kit: cada painel abre para quem deve e fecha para o
@@ -49,8 +54,37 @@ it('recorta admin e infra por papel', function (): void {
         ->and($infra->canAccessPanel(Filament::getPanel('admin')))->toBeFalse();
 });
 
-it('abre o painel app para qualquer usuário autenticado', function (): void {
-    expect(usuarioCom(null)->canAccessPanel(Filament::getPanel('app')))->toBeTrue();
+it('abre o painel app para quem tem papel do painel app', function (): void {
+    expect(usuarioCom('panel_user')->canAccessPanel(Filament::getPanel('app')))->toBeTrue();
+});
+
+/**
+ * O contrário do que o kit fazia até a 0.10.0, quando `canAccessPanel()` devolvia
+ * `'app' => true` e qualquer autenticado entrava no painel de negócio. Agora o acesso é
+ * um ATO: alguém escolhe um papel, e o papel declara o painel (`roles.painel`).
+ */
+it('fecha os três painéis para quem não tem papel nenhum', function (string $painel): void {
+    expect(usuarioCom(null)->canAccessPanel(Filament::getPanel($painel)))->toBeFalse();
+})->with(['app', 'admin', 'infra']);
+
+it('não trata painel nulo como coringa', function (): void {
+    // `roles.painel` nulo NÃO abre painel: quem entra em tudo é o master_global, pelo
+    // Gate::before. Se alguém implementar nulo como "vale em qualquer painel", um papel
+    // criado sem painel na tela do Shield vira chave-mestra em silêncio.
+    Role::create(['name' => 'auditor', 'guard_name' => 'web', 'painel' => null]);
+
+    expect(usuarioCom('auditor')->canAccessPanel(Filament::getPanel('app')))->toBeFalse();
+});
+
+it('nega painel registrando o motivo no log', function (): void {
+    Log::shouldReceive('channel')->with('autenticacao')->andReturnSelf();
+    Log::shouldReceive('warning')->once()->withArgs(
+        fn (string $mensagem, array $contexto): bool => str_starts_with($mensagem, '[User@canAccessPanel]')
+            && $contexto['motivo'] === 'sem_papel_do_painel'
+            && $contexto['painel'] === 'admin',
+    );
+
+    usuarioCom('panel_user')->canAccessPanel(Filament::getPanel('admin'));
 });
 
 /**
@@ -86,4 +120,43 @@ it('dá 403 no painel errado', function (): void {
     $this->actingAs(usuarioCom('infra'))
         ->get('/admin')
         ->assertForbidden();
+});
+
+it('gera permission para os três painéis, não só para o admin', function (): void {
+    // Até a 0.10.0 o ShieldPermissionsSeeder rodava `shield:generate --panel=admin` e
+    // mais nada: as telas de /app e /infra não tinham permission nenhuma no banco e só
+    // abriam para o master_global.
+    expect(Permission::where('name', 'ViewAny:Projeto')->exists())->toBeTrue()
+        ->and(Paineis::permissoes('admin')->all())->toContain('ViewAny:User')
+        ->and(Paineis::permissoes('infra')->all())->not->toContain('ViewAny:User')
+        ->and(Paineis::permissoes('app')->all())->not->toBe(Paineis::permissoes('admin')->all());
+});
+
+it('recorta a matriz do papel pelo painel', function (): void {
+    expect(Role::findByName('master_global')->permissions)->toHaveCount(0)
+        ->and(Role::findByName('admin')->painel)->toBe('admin')
+        ->and(Role::findByName('master_global')->painel)->toBeNull();
+
+    $doAdmin = Role::findByName('admin')->permissions->pluck('name');
+
+    expect($doAdmin->all())->toContain('ViewAny:User')
+        ->and($doAdmin->filter(fn (string $p): bool => str_contains($p, 'AiRun'))->all())->toBeEmpty();
+});
+
+it('registra o RoleResource publicado, não o do vendor', function (): void {
+    // Enquanto esta asserção valer, a tela agrupada por painel está no ar. Um upgrade do
+    // Shield que devolva o Resource ao vendor some com o agrupamento em silêncio.
+    $resources = Filament::getPanel('admin')->getResources();
+
+    expect($resources)->toContain(App\Filament\Admin\Resources\Roles\RoleResource::class)
+        ->and($resources)->not->toContain(RoleResource::class);
+});
+
+it('agrupa as permissões por painel na tela de papéis', function (): void {
+    $this->actingAs(usuarioCom('master_global'))
+        ->get('/admin/shield/roles/create')
+        ->assertSuccessful()
+        ->assertSee('Painel /admin')
+        ->assertSee('Painel /app')
+        ->assertSee('Painel /infra');
 });

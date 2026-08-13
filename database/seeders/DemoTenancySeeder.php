@@ -7,6 +7,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * DEMONSTRAÇÃO do modo multi-tenant — `php artisan kit:tenancy --demo`.
@@ -27,6 +28,11 @@ class DemoTenancySeeder extends Seeder
 {
     public function run(): void
     {
+        // A demo precisa do papel `panel_user` existindo para dar acesso ao /app. Chamar
+        // aqui deixa este seeder autossuficiente: `kit:tenancy --demo` já rodou o
+        // PapeisSeeder no migrate:fresh, e rodá-lo de novo é idempotente.
+        $this->call(PapeisSeeder::class);
+
         $acme   = $this->tenant('Acme', 'acme');
         $globex = $this->tenant('Globex', 'globex');
 
@@ -38,6 +44,17 @@ class DemoTenancySeeder extends Seeder
         $bruno->tenants()->syncWithoutDetaching([$globex->id]);
         $carla->tenants()->syncWithoutDetaching([$acme->id, $globex->id]);
 
+        // Vínculo não é acesso: quem abre o /app é o papel (User::canAccessPanel lê
+        // `roles.painel`). Sem esta parte a demo nasce com três usuários que autenticam
+        // e levam 403 — ou seja, sem demonstrar nada.
+        //
+        // A atribuição é POR organização: `model_has_roles.team_id` guarda o contexto, e
+        // `assignRole()` carimba o que estiver fixado no PermissionRegistrar.
+        $this->papelDoApp($ana, $acme);
+        $this->papelDoApp($bruno, $globex);
+        $this->papelDoApp($carla, $acme);
+        $this->papelDoApp($carla, $globex);
+
         // tenant_id explícito: fora de um request de painel não há
         // `Filament::getTenant()`, então a trait não tem o que preencher.
         $this->projeto($acme, 'Portal do cliente');
@@ -46,6 +63,22 @@ class DemoTenancySeeder extends Seeder
         $this->projeto($globex, 'Integração fiscal');
 
         $this->command->info('Demo criada: /app/acme e /app/globex — entre como carla@example.com (senha: password).');
+    }
+
+    /** Perfil básico do /app, atribuído dentro do contexto da organização. */
+    private function papelDoApp(User $usuario, Tenant $tenant): void
+    {
+        $registrar = app(PermissionRegistrar::class);
+        $anterior  = $registrar->getPermissionsTeamId();
+
+        try {
+            $registrar->setPermissionsTeamId($tenant->getKey());
+            $usuario->unsetRelation('roles');
+            $usuario->assignRole(config('filament-shield.panel_user.name', 'panel_user'));
+        } finally {
+            $registrar->setPermissionsTeamId($anterior);
+            $usuario->unsetRelation('roles');
+        }
     }
 
     private function tenant(string $nome, string $slug): Tenant

@@ -12,6 +12,7 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
@@ -21,6 +22,7 @@ use Jeffgreco13\FilamentBreezy\Traits\TwoFactorAuthenticatable;
 use OwenIt\Auditing\Contracts\Auditable;
 use Rappasoft\LaravelAuthenticationLog\Traits\AuthenticationLoggable;
 use Spatie\Permission\PermissionRegistrar;
+use Spatie\Permission\Support\Config;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants
@@ -60,65 +62,127 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
     |--------------------------------------------------------------------------
     | Acesso aos painéis
     |--------------------------------------------------------------------------
-    | admin → administração da aplicação (usuários, papéis, agentes de IA)
-    | infra → observabilidade e manutenção (health, filas, logs, auditoria)
-    | app   → a operação de negócio; nasce aberto a qualquer autenticado
+    | Quem decide é o PAPEL, pela coluna `roles.painel` — não uma lista de nomes
+    | escrita aqui. Criar um papel e escolher o painel dele é o ato de "dar acesso
+    | a um painel"; usuário sem papel não entra em lugar nenhum.
     |
-    | O papel master_global também vence via Gate::before (KitServiceProvider),
-    | mas o acesso a painel é checado aqui, antes de qualquer gate.
+    | O master_global vence antes de tudo, pelo mesmo motivo do Gate::before
+    | (KitServiceProvider): ele é o guarda-chuva da instalação e não tem painel
+    | declarado — `roles.painel` nulo NÃO é coringa.
     */
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return match ($panel->getId()) {
-            // Papel GLOBAL, não por tenant: /admin e /infra governam a
-            // instalação inteira. Ser `admin` dentro de um tenant não é
-            // credencial para administrar o sistema.
-            'admin' => $this->temPapelGlobal('admin') || $this->isMasterGlobal(),
-            'infra' => $this->temPapelGlobal('infra') || $this->isMasterGlobal(),
-            'app'   => true,
-            default => false,
-        };
+        if ($this->isMasterGlobal()) {
+            return true;
+        }
+
+        /*
+         * Painel COM tenancy (/app): basta ter o papel em ALGUMA organização — qual
+         * organização é decidido depois, por canAccessTenant(). Painel SEM tenancy
+         * (/admin, /infra) governa a instalação inteira, então o papel tem de estar
+         * atribuído no contexto global: ser `admin` dentro de uma organização não é
+         * credencial para administrar o sistema.
+         */
+        $contexto = $panel->hasTenancy() ? null : $this->contextoGlobal();
+
+        if ($this->temPapelDoPainel($panel->getId(), $contexto)) {
+            return true;
+        }
+
+        Log::channel('autenticacao')->warning(
+            "[User@canAccessPanel] Acesso a painel negado | user: {$this->id} - painel: {$panel->getId()}",
+            [
+                'user_id' => $this->id,
+                'painel'  => $panel->getId(),
+                'motivo'  => 'sem_papel_do_painel',
+            ],
+        );
+
+        return false;
+    }
+
+    /**
+     * Tem papel que dá acesso a este painel?
+     *
+     * @param  int|null  $contexto  team_id exigido na atribuição; null aceita qualquer.
+     */
+    public function temPapelDoPainel(string $painel, ?int $contexto = null): bool
+    {
+        return $this->temPapelOnde('painel', $painel, $contexto);
     }
 
     /** Papel guarda-chuva do kit — o "super admin" do Shield (define_via_gate). */
     public function isMasterGlobal(): bool
     {
-        return $this->temPapelGlobal(config('filament-shield.super_admin.name', 'master_global'));
+        return $this->temPapelOnde(
+            'name',
+            config('filament-shield.super_admin.name', 'master_global'),
+            $this->contextoGlobal(),
+        );
     }
 
     /**
-     * Checa um papel no contexto GLOBAL, ignorando o tenant corrente.
+     * A pergunta única: existe papel deste usuário com `$coluna = $valor`?
      *
-     * Sem tenancy, é `hasRole()` puro. Com tenancy, o spatie filtra a relação
-     * `roles` pelo team corrente (`wherePivot(team_id, getPermissionsTeamId())`):
-     * dentro do /app o team é o tenant, e um papel global — atribuído em
-     * `Tenant::CONTEXTO_GLOBAL` — sumiria justamente onde mais importa. Sem esta
-     * troca temporária de contexto, o master_global perderia os poderes ao
-     * entrar num tenant.
-     *
-     * A relação é descarregada nas duas pontas porque o Eloquent cacheia
-     * `roles` na instância — reaproveitar o cache traria o resultado do outro
-     * contexto.
+     * **Nada de `->when()` aqui.** `when()` é encaminhado da relação para o
+     * `Eloquent\Builder`, e é o BUILDER que chega ao closure — `wherePivot()` não existe
+     * lá. O filtro de contexto simplesmente não era aplicado, e o `isMasterGlobal()`
+     * respondia `false` com a pivot correta no banco. Um `if` faz a coisa certa.
      */
-    public function temPapelGlobal(string $papel): bool
+    private function temPapelOnde(string $coluna, string $valor, ?int $contexto): bool
     {
-        if (! config('kit.tenancy.enabled')) {
-            return $this->hasRole($papel);
+        $papeis = $this->papeisEmQualquerContexto()
+            ->where($coluna, $valor)
+            ->where('guard_name', $this->getDefaultGuardName());
+
+        if ($contexto !== null) {
+            $papeis->wherePivot($this->colunaDeTeam(), $contexto);
         }
 
-        $registrar = app(PermissionRegistrar::class);
-        $anterior  = $registrar->getPermissionsTeamId();
+        return $papeis->exists();
+    }
 
-        try {
-            $registrar->setPermissionsTeamId(Tenant::CONTEXTO_GLOBAL);
-            $this->unsetRelation('roles');
+    /**
+     * Papéis do usuário em QUALQUER contexto de team.
+     *
+     * É a `roles()` do spatie sem o `wherePivot(team_id, getPermissionsTeamId())` que
+     * ele acrescenta quando `permission.teams` está ligado. Existe porque pergunta de
+     * ACESSO A PAINEL não é pergunta de organização: "este usuário é admin em alguma
+     * organização?" não pode depender de qual organização está aberta agora — e
+     * `canAccessPanel()` roda ANTES de o tenant da rota ser identificado.
+     *
+     * Substitui o antigo `temPapelGlobal()`, que trocava o `PermissionRegistrar` do
+     * container e descarregava a relação duas vezes para responder a mesma coisa.
+     *
+     * O genérico é `Model`, não `Role`, porque é isso que o próprio spatie garante:
+     * `Config::roleModel()` é declarado `class-string<Model>` — a classe do papel sai de
+     * `permission.models.role` em runtime (o kit aponta para `App\Models\Role`, um
+     * projeto pode apontar para outra). Prometer `Role` aqui seria afirmar mais do que
+     * a fonte diz.
+     *
+     * @return MorphToMany<Model, $this>
+     */
+    public function papeisEmQualquerContexto(): MorphToMany
+    {
+        return $this->morphToMany(
+            Config::roleModel(),
+            'model',
+            Config::modelHasRolesTable(),
+            Config::morphKey(),
+            app(PermissionRegistrar::class)->pivotRole,
+        );
+    }
 
-            return $this->hasRole($papel);
-        } finally {
-            $registrar->setPermissionsTeamId($anterior);
-            $this->unsetRelation('roles');
-        }
+    /** Contexto exigido dos papéis que governam a instalação; null quando não há teams. */
+    private function contextoGlobal(): ?int
+    {
+        return config('permission.teams') ? Tenant::CONTEXTO_GLOBAL : null;
+    }
+
+    private function colunaDeTeam(): string
+    {
+        return Config::teamForeignKey();
     }
 
     /*
