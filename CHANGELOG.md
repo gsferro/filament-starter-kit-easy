@@ -3,6 +3,150 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.11.0] - 2026-08-13
+
+Três features que se completam: o painel passa a ser dado do papel, o cadastro
+de quem vem de fora passa por convite, e a organização ganha um administrador
+próprio dentro do `/app`. Cada uma tem a wiki dela em `wikis/specs/main/`.
+
+### Alterado — quebra deliberada
+
+- **`/app` deixou de ser aberto a qualquer usuário autenticado.** Acesso a painel
+  agora vem do papel, pela coluna nova `roles.painel`, e `User::canAccessPanel()`
+  lê essa coluna no lugar da lista de nomes que estava escrita dentro do model.
+  Usuário sem papel autentica e leva 403 nos três painéis — dar acesso virou um
+  ato explícito.
+
+  **Nulo não é coringa**: papel sem painel não abre painel algum. Quem entra em
+  todos é o `master_global`, pelo `Gate::before`, como sempre foi.
+
+  Painel **sem** tenancy (`/admin`, `/infra`) exige o papel atribuído no contexto
+  global; painel **com** tenancy (`/app`) aceita o papel em qualquer organização,
+  e quem barra a organização errada continua sendo `canAccessTenant()`, com 404 e
+  não 403. É a propriedade que impede alguém promovido a `admin` dentro de uma
+  organização de administrar a instalação inteira.
+
+  **Ao atualizar**, rode os dois seeders e revise seus usuários:
+
+  ```bash
+  php artisan migrate
+  php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder
+  php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
+  ```
+
+- **`User::temPapelGlobal()` foi removido.** Quem o chamava troca por
+  `temPapelDoPainel()` ou `isMasterGlobal()`. O método trocava o
+  `PermissionRegistrar` do container e descarregava a relação duas vezes para
+  responder uma pergunta de leitura; a relação nova `papeisEmQualquerContexto()`
+  responde com um `exists()`.
+
+- **`panel_user` deixou de receber a matriz inteira do painel `app`.** Com as
+  telas de administração da organização registradas nesse painel, dar tudo ao
+  perfil básico promoveria todo usuário comum a administrador — sem migration e
+  sem erro nenhum. A subtração é por FQCN de Resource.
+
+### Adicionado
+
+- **Convite por e-mail.** `/admin` → **Convites**: e-mail, papel e (com tenancy) a
+  organização. O link leva a `/app/register?token=…`, que é a página de registro
+  nativa do Filament com uma guarda no `mount()` — sem token válido ela recusa,
+  então o registro nunca vira cadastro aberto. Quem clica escolhe **só nome e
+  senha**; o resto vem do convite, imposto pelo servidor.
+
+  O token é a credencial: `Str::random(64)` gravado como `hash('sha256', …)`,
+  válido **uma vez** (`aceito_em`) e por um **prazo**
+  (`kit.convites.validade_em_dias`, 7 dias). Em claro ele existe no e-mail e em
+  lugar nenhum mais — nunca é logado nem entra na trilha de auditoria. Token
+  inexistente, expirado e já aceito dão a **mesma** resposta: distinguir
+  confirmaria que o convite existiu.
+
+  No aceite o papel é atribuído no contexto certo — global se o papel for de
+  `/admin` ou `/infra`, a organização do convite se for de `/app`.
+
+  O e-mail sai por Notification enfileirável: **sem worker no ar o convite não
+  chega** (`QUEUE_CONNECTION=database`).
+
+- **Administrador da organização** (`admin_organizacao`, só com a tenancy ligada).
+  Ele administra a **própria** organização dentro do `/app` — cria usuários,
+  convida por e-mail, vê só quem pertence à organização corrente — e **não entra
+  no `/admin`**. Seis barreiras contra escalada de privilégio, cada uma com teste
+  próprio: papéis oferecidos e gravados restritos ao painel `app`, atribuição
+  sempre no contexto da organização, sem criar ou editar papéis, sem alcançar
+  usuário de fora (nem trocando o id na URL), sem promover ninguém a
+  `admin`/`infra`/`master_global`, e convite nascendo com a organização dele
+  carimbada à força.
+
+- **A tela de papéis agrupa as permissões por painel.** O `RoleResource` do Shield
+  foi publicado no projeto (`app/Filament/Admin/Resources/Roles/`) porque o pacote
+  não oferece hook para isso, e ganhou o campo **Painel**. As edições em relação
+  ao vendor são mínimas de propósito — duas Pages e um método —, para o diff de um
+  upgrade continuar legível.
+
+- **`App\Support\Paineis`**: o mapa painel × Resource × permission, colhido na
+  mesma fonte que o `shield:generate` usa. É ele que faz o `PapeisSeeder` recortar
+  a matriz por painel em vez de adivinhar por substring — o casamento antigo
+  (`str_contains($p, 'User')`) colocaria um `UserPreferenceResource` futuro no
+  papel `admin` sem ninguém decidir.
+
+- **`App\Models\Role`**, para a coluna `painel` ter tipo. `config/permission.php`
+  passa a apontar `models.role` para ele.
+
+- Regras novas em `.ai/rules/filament.md`, que é o que os cinco agentes de IA leem
+  antes de escrever código: Resource ou RelationManager novo exige gerar as
+  permissões; papel novo precisa declarar o painel; Resource de model sem relação
+  de posse com o tenant precisa de `$isScopedToTenant = false` e de um
+  `getEloquentQuery()` que falhe fechado.
+
+### Corrigido
+
+- **As permissões de `/app` e `/infra` nunca existiram no banco.** O
+  `ShieldPermissionsSeeder` rodava `shield:generate --all --panel=admin` e mais
+  nada, e o comando só enxerga o painel corrente. Agora ele varre os três: 79
+  permissions viraram 186, e sete policies novas apareceram. Telas que estavam sem
+  policy — logo, abertas — passam a exigir permissão.
+
+- **A suíte de testes do kit nunca teve uma permission no banco.** O `$this->seed()`
+  do Laravel passa por `PendingCommand`, que liga um mock de `OutputStyle` no
+  container; comando chamado de dentro do seeder resolve esse mock e é engolido.
+  O `shield:generate` terminava com exit 0, imprimia "79 permissions generated" e
+  gravava **zero** linhas. Nada acusava porque os testes autenticavam como
+  `master_global`, que vence pelo `Gate::before` justamente sem precisar de
+  permission. `Tests\TestCase::seed()` passa a usar `Artisan::call` — medido: 0
+  contra 186.
+
+- **Rodar a suíte deixava a árvore de trabalho suja.** O `shield:generate` reescreve
+  as policies com o estilo dele, e o seeder roda em todo `beforeEach`: o
+  `composer test` seguinte falhava no `lint:check` e o `kit:update` recusava a
+  árvore. O seeder passa a usar `--ignore-existing-policies`, o que também o torna
+  idempotente de verdade — quem editou uma policy à mão não a perde ao gerar as
+  permissões de um Resource novo.
+
+- `kit:update` passa a cobrir `app/Support`, `app/Notifications`,
+  `app/Models/Role.php` e `app/Models/Convite.php`. O teste que varre a árvore
+  pegou os dois primeiros sozinho.
+
+### Notas
+
+- **`config/` continua fora do `kit:update`, de propósito**, então
+  `permission.models.role` apontando para `App\Models\Role` **não chega** a quem já
+  instalou — e não precisa: sem a troca, `painel` volta a ser atributo dinâmico e
+  tudo funciona igual. É por isso que o `UserResource` tipa o papel pela classe do
+  spatie e não pela do kit; com o type hint concreto, um projeto atualizado teria
+  `TypeError` na tela de usuários.
+
+- Seis armadilhas novas na tabela de
+  [convenções](wikis/convencoes.md#armadilhas-já-resolvidas), todas encontradas
+  executando e nenhuma visível na leitura do vendor. As três que mais custaram:
+
+  - **A facade `FilamentShield` cacheia a instância resolvida**, e o
+    `forgetInstance()` do container não a alcança — é preciso
+    `Facade::clearResolvedInstance()` junto. Sem isso os três painéis devolvem o
+    mapa do primeiro, e os três papéis nascem com a mesma matriz. Parecia sucesso.
+  - **`->when()` numa relação Eloquent entrega o `Builder`**, não a relação:
+    `wherePivot()` dentro do closure não é aplicado, sem erro nenhum.
+  - **O Filament injeta parâmetro de closure por NOME, não por tipo** — o parâmetro
+    tem de se chamar `$record`, e o erro só aparece ao renderizar o campo.
+
 ## [0.10.0] - 2026-08-13
 
 ### Adicionado

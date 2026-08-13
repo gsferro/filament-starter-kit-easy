@@ -27,6 +27,16 @@ O primeiro roda `shield:generate --all` **em cada painel** (o comando só enxerg
 
 **RelationManager o Shield não enxerga.** A descoberta cobre apenas Resources, Pages e Widgets (`vendor/bezhansalleh/filament-shield/src/Concerns/HasEntityDiscovery.php`), então nenhuma permission é gerada para ele e a autorização recai na policy do model relacionado. Se esse model já tem Resource em algum painel, não há nada a fazer. Se não tem, crie a policy à mão (`php artisan make:policy`) e declare as chaves em `config('filament-shield.custom_permissions')` **antes** de rodar os seeders — do contrário o RelationManager fica aberto a qualquer um que consiga abrir o Resource pai.
 
+## Resource de administração no painel `app` entra na lista de subtração
+
+O `panel_user` recebe a matriz do painel `app` **menos** as permissões dos Resources de administração — a lista `PapeisSeeder::permissoesDeAdministracaoDoApp()`. Resource novo de administração nesse painel (qualquer um que mexa em quem entra: usuários, convites, papéis) precisa entrar nessa lista.
+
+Esquecer não dá erro: os dois seeders rodam, tudo fica verde, e **todo usuário comum do negócio vira administrador da organização** — sem migration, sem 403, sem log. É a falha mais cara desta parte do kit porque ela só aparece quando alguém repara que o cliente está editando os próprios colegas.
+
+A lista casa por **FQCN de Resource**, nunca por substring do nome da permission. Numa subtração o erro do substring é espelhado: tirar permissão de quem deveria tê-la.
+
+Teste: um caso conferindo que `panel_user` **não** tem `ViewAny:{SeuResource}` e **tem** a permissão de um Resource de negócio — ver `it('mantem o usuario comum fora da administracao da organizacao')`.
+
 ## Papel novo precisa declarar o painel
 
 `roles.painel` é o que dá acesso ao painel — `User::canAccessPanel()` compara a coluna com o id do painel. **Nulo não é coringa**: papel sem painel não abre painel algum (o `master_global` entra pelo `Gate::before`, não pela coluna). Papel criado sem painel só carrega permissões, e quem o tiver sozinho autentica e leva 403 nos três painéis.
