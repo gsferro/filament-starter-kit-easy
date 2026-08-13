@@ -78,3 +78,26 @@ it('só lista caminhos que existem de fato', function (): void {
     // Caminho que não existe mais vira ruído no diff e esconde erro de digitação.
     expect($ausentes)->toBe([]);
 });
+
+/**
+ * O `.gitattributes` marca com `export-ignore` o que fica fora do pacote
+ * distribuído — o CI e o changelog são do kit, não do projeto que nasce dele.
+ * Caminho assim não existe em projeto instalado por `create-project`: listá-lo
+ * aqui faria o `kit:update` oferecer arquivo que o projeto não deveria ter, e
+ * derrubaria o teste acima em toda instalação (foi o que aconteceu com
+ * `.github`).
+ */
+it('não lista caminho que o pacote distribuído deixa de fora', function (): void {
+    $linhas = file(base_path('.gitattributes'), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+    $exportIgnore = [];
+
+    foreach ($linhas as $linha) {
+        if (preg_match('/^(\S+)\s+export-ignore\b/', trim($linha), $captura) === 1) {
+            $exportIgnore[] = ltrim($captura[1], '/');
+        }
+    }
+
+    expect($exportIgnore)->not->toBeEmpty('.gitattributes sem export-ignore: o teste perdeu o alvo.')
+        ->and(array_values(array_intersect(caminhosDoKit(), $exportIgnore)))->toBe([]);
+});

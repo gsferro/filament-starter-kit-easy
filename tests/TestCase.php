@@ -27,20 +27,40 @@ abstract class TestCase extends BaseTestCase
      * se registra as rotas do painel com o segmento `/{tenant}`. Config ajustada
      * depois de `parent::createApplication()` chega tarde: as rotas já existem
      * sem o segmento, e todo `/app/{slug}` responde 404.
-     *
-     * O repositório de env do Laravel é imutável, então valor já presente em
-     * `$_SERVER` vence o que estiver no `.env` — é o que permite alternar os
-     * dois modos dentro da mesma execução de testes.
      */
     public function createApplication(): Application
     {
-        $valor = $this->usaTenancy() ? 'true' : 'false';
+        /*
+         * Cache de config e de rotas ficam FORA de alcance nos testes.
+         *
+         * Os dois congelam decisões de um ambiente: com `bootstrap/cache/config.php`
+         * no lugar, o `env()` nem é consultado e a flag escrita logo abaixo não tem
+         * efeito nenhum — a tenancy volta a ligar, o painel /app vira /app/{tenant}
+         * e a suíte do kit falha com 404 em `GET /app`, sem pista da causa.
+         *
+         * Apontar as duas chaves para arquivos que não existem faz o Laravel
+         * bootar da fonte. Nada é apagado: o cache do projeto continua no lugar.
+         */
+        $this->definirEnv('APP_CONFIG_CACHE', 'bootstrap/cache/config.testing.php');
+        $this->definirEnv('APP_ROUTES_CACHE', 'bootstrap/cache/routes-v7.testing.php');
 
-        putenv("KIT_TENANCY={$valor}");
-        $_ENV['KIT_TENANCY']    = $valor;
-        $_SERVER['KIT_TENANCY'] = $valor;
+        $this->definirEnv('KIT_TENANCY', $this->usaTenancy() ? 'true' : 'false');
 
         return parent::createApplication();
+    }
+
+    /**
+     * Escreve no ambiente do processo, antes do bootstrap.
+     *
+     * O repositório de env do Laravel é imutável, então valor já presente em
+     * `$_SERVER` vence o que estiver no `.env` — é o que permite alternar os dois
+     * modos de tenancy dentro da mesma execução de testes.
+     */
+    private function definirEnv(string $chave, string $valor): void
+    {
+        putenv("{$chave}={$valor}");
+        $_ENV[$chave]    = $valor;
+        $_SERVER[$chave] = $valor;
     }
 
     /**

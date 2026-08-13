@@ -53,6 +53,20 @@ it('abre o painel app para qualquer usuário autenticado', function (): void {
     expect(usuarioCom(null)->canAccessPanel(Filament::getPanel('app')))->toBeTrue();
 });
 
+/**
+ * Premissa das rotas usadas abaixo: sem tenancy, `/app` é o dashboard. Com ela
+ * ligada o painel vira `/app/{tenant}` e todo `GET /app` responde 404 — falha
+ * que não diz nada sobre a causa. Este teste dá o nome dela.
+ */
+it('roda em modo single-tenant', function (): void {
+    expect(config('kit.tenancy.enabled'))->toBeFalse(
+        'A suíte tests/Kit pressupõe rotas sem /{tenant}. Se a tenancy vazou para '
+        .'cá, algo anulou o ambiente definido em Tests\TestCase::createApplication() '
+        .'— cache de config é o suspeito de sempre. Os testes de tenancy são os de '
+        .'tests/Tenancy.'
+    );
+});
+
 it('carrega o dashboard de cada painel autenticado', function (string $painel): void {
     $this->actingAs(usuarioCom('master_global'))
         ->get("/{$painel}")

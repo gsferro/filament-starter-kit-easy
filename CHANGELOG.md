@@ -3,6 +3,41 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.9.5] - 2026-08-13
+
+### Corrigido
+
+Os dois erros abaixo só apareciam em **projeto instalado** — no repositório do
+kit a suíte passava inteira. É a pior categoria de bug para um starter kit: o
+primeiro `composer test:kit` de quem instala falha, e nada no kit reproduz.
+
+- **`.github` na lista de caminhos do `kit:update`.** O `.gitattributes` marca
+  `/.github export-ignore`, então a pasta não vai no pacote distribuído — o CI é
+  do kit, não do projeto que nasce dele. Mas ela estava em
+  `KitUpdate::CAMINHOS_DO_KIT`, e daí duas consequências: o teste "só lista
+  caminhos que existem de fato" falhava em toda instalação, e o `kit:update`
+  (que lê o repositório git, onde a pasta existe) ofereceria o CI do kit ao
+  projeto — justamente o que o `export-ignore` decidiu evitar.
+
+  `tests/Kit/KitUpdateTest.php` passa a ler o `.gitattributes` e a cobrar que
+  nenhum caminho `export-ignore` volte para a lista.
+
+- **`GET /app` respondia 404 na suíte do kit quando a config estava cacheada.**
+  Não era rota nem painel: `tests/Kit` pressupõe o modo single-tenant, e o
+  `Tests\TestCase` garantia isso escrevendo `KIT_TENANCY=false` no ambiente antes
+  do bootstrap. Com um `bootstrap/cache/config.php` no lugar, o `env()` nem é
+  consultado — a tenancy voltava a ligar, o `->tenant()` reescrevia o painel para
+  `/app/{tenant}` e o dashboard sumia. A tela de login seguia de pé, o que
+  escondia a causa.
+
+  O `Tests\TestCase` agora aponta `APP_CONFIG_CACHE` e `APP_ROUTES_CACHE` para
+  arquivos inexistentes: nos testes o Laravel boota da fonte, sem apagar o cache
+  do projeto. Ambos os caches congelam decisões de um ambiente e nunca deveriam
+  valer numa suíte que alterna modos do kit.
+
+  `tests/Kit/PaineisTest.php` ganhou o teste `roda em modo single-tenant`, para a
+  premissa quebrar com nome em vez de virar um 404 sem pista.
+
 ## [0.9.4] - 2026-08-13
 
 ### Corrigido

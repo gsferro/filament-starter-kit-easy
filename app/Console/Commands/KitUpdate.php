@@ -102,7 +102,10 @@ class KitUpdate extends Command
         'tests/Pest.php',
         'tests/TestCase.php',
         'tests/TenancyTestCase.php',
-        '.github',
+        // `.github` NÃO entra: o `.gitattributes` o marca com `export-ignore`,
+        // então ele não existe em projeto nascido de `create-project`. O CI é do
+        // kit, não do projeto — listá-lo aqui faria o comando oferecer arquivo
+        // que o projeto não deveria ter.
         'Dockerfile.laravel',
         'docker-compose.yml',
         'phpstan.neon',
