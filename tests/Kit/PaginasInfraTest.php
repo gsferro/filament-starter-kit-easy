@@ -1,8 +1,12 @@
 <?php
 
+use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Facades\Filament;
+use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
 
 /**
  * Smoke test das telas de infra e admin: cada plugin registra rota própria e
@@ -49,3 +53,29 @@ it('abre as telas do painel admin', function (string $rota): void {
     'papéis'        => '/admin/shield/roles',
     'agentes de IA' => '/admin/agentes-ia',
 ]);
+
+/**
+ * A tela de usuários é a única do admin que GRAVA relação, e abrir não é
+ * gravar: o `Select::make('roles')` já derrubou o salvamento com 500 enquanto
+ * o `GET /admin/users` seguia verde. Por isso o par — aqui em single-tenant, e
+ * em `tests/Tenancy` com o `team_id` da pivot.
+ */
+it('salva os papéis do usuário no painel admin', function (): void {
+    $alvo  = User::create([
+        'name'     => 'Alvo',
+        'email'    => 'alvo@example.com',
+        'password' => 'password',
+    ]);
+    $papel = Role::findByName('admin');
+
+    Filament::setCurrentPanel('admin');
+
+    $this->actingAs($this->master);
+
+    Livewire::test(EditUser::class, ['record' => $alvo->getRouteKey()])
+        ->fillForm(['roles' => [$papel->getKey()]])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($alvo->fresh()->hasRole('admin'))->toBeTrue();
+});

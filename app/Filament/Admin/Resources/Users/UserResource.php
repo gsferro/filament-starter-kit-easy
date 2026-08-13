@@ -57,7 +57,31 @@ class UserResource extends Resource
                 ->relationship('roles', 'name')
                 ->multiple()
                 ->preload()
-                ->searchable(),
+                ->searchable()
+                /*
+                 * Gravar papel é pela API do spatie, NUNCA pelo sync da relação.
+                 *
+                 * O `->relationship()` grava com `$relationship->sync()`, que
+                 * escreve na pivot só as colunas da chave. Com multi-tenancy a
+                 * `model_has_roles.team_id` é NOT NULL e ninguém a preenche: o
+                 * `wherePivot` que o spatie põe em `roles()` filtra LEITURA, não
+                 * alimenta escrita. Resultado era 500 ao salvar o usuário —
+                 * `NOT NULL constraint failed: model_has_roles.team_id`.
+                 *
+                 * O `syncRoles()` resolve os dois lados: passa o `team_id` do
+                 * contexto corrente no attach e invalida o cache de papéis, que
+                 * o `sync()` deixava velho mesmo em modo single-tenant.
+                 *
+                 * Os papéis são resolvidos em modelos antes de entrar: o state
+                 * vem do Livewire como string, e o `collectRoles()` do spatie
+                 * trata string como NOME de papel — `"4"` viraria
+                 * `RoleDoesNotExist`.
+                 */
+                ->saveRelationshipsUsing(function (User $record, array $state): void {
+                    $record->syncRoles(
+                        $record->roles()->getRelated()->newQuery()->whereKey($state)->get()
+                    );
+                }),
         ]);
     }
 

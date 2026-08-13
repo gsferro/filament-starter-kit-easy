@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Models\Projeto;
 use App\Models\Tenant;
 use App\Models\User;
@@ -11,7 +12,9 @@ use Database\Seeders\UsuarioAdminSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Livewire\Livewire;
 use Psr\Log\LoggerInterface;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -223,6 +226,38 @@ it('mantém admin e infra fora do escopo de tenant', function (string $rota): vo
     '/infra/health-check-results',
     '/infra/logs',
 ]);
+
+it('salva os papéis do usuário no painel admin', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class, UsuarioAdminSeeder::class]);
+
+    $master = User::where('email', config('kit.admin.email'))->firstOrFail();
+    $alvo   = usuario('alvo@example.com');
+    $papel  = Role::findByName('admin');
+
+    Filament::setCurrentPanel('admin');
+
+    $this->actingAs($master);
+
+    Livewire::test(EditUser::class, ['record' => $alvo->getRouteKey()])
+        ->fillForm(['roles' => [$papel->getKey()]])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    /*
+     * A pivot precisa nascer COM o team_id. O `->relationship()` do Filament
+     * grava por `$relationship->sync()`, que escreve só as colunas da chave —
+     * e a tela devolvia 500 (`NOT NULL constraint failed:
+     * model_has_roles.team_id`). Só um teste que GRAVA pega isso: carregar
+     * /admin/users passava.
+     */
+    $this->assertDatabaseHas(config('permission.table_names.model_has_roles', 'model_has_roles'), [
+        'model_id' => $alvo->id,
+        'role_id'  => $papel->getKey(),
+        'team_id'  => Tenant::CONTEXTO_GLOBAL,
+    ]);
+
+    expect($alvo->fresh()->hasRole('admin'))->toBeTrue();
+});
 
 it('registra o cadastro de tenants no painel admin', function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class, UsuarioAdminSeeder::class]);

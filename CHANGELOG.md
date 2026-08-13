@@ -3,6 +3,36 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.9.7] - 2026-08-13
+
+### Corrigido
+
+- **Salvar papéis do usuário em `/admin/users/{id}/edit` dava 500 com a tenancy
+  ligada.** `NOT NULL constraint failed: model_has_roles.team_id`, na gravação —
+  abrir a tela funcionava.
+
+  O `Select::make('roles')->relationship('roles', 'name')` salva com
+  `$relationship->sync()`, que escreve na pivot apenas as colunas da chave. Com
+  multi-tenancy a `model_has_roles.team_id` é NOT NULL e ninguém a preenchia: o
+  `wherePivot` que o spatie põe em `roles()` filtra **leitura**, não alimenta
+  escrita. Quem carimba o `team_id` do contexto corrente é o
+  `assignRole()`/`syncRoles()` — a API que o kit passou a usar, via
+  `->saveRelationshipsUsing()`.
+
+  Vale também para single-tenant, onde o sintoma era silencioso: o `sync()` cru
+  não invalida o cache de papéis do spatie, então uma permissão recém-tirada
+  continuava valendo até o cache expirar.
+
+- Dois testes novos, em par, porque abrir a tela não cobre gravar (o
+  `GET /admin/users` seguia verde com o salvamento quebrado): um em `tests/Kit`
+  para o modo single-tenant e um em `tests/Tenancy` conferindo o `team_id` da
+  pivot.
+
+### Notas
+
+- A armadilha ficou registrada em `.ai/rules/filament.md`: campo que grava
+  `roles` ou `permissions` nunca usa o sync da relação.
+
 ## [0.9.6] - 2026-08-13
 
 ### Corrigido
