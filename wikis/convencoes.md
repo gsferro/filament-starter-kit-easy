@@ -150,6 +150,9 @@ Código que parece errado e **é deliberado**. Antes de "corrigir" qualquer linh
 | Onde | O quê | Se você reverter |
 |---|---|---|
 | Lockscreen | registrado nos **três** painéis | o `routes/web.php` do pacote resolve o plugin pelo painel corrente e estoura `LogicException` em todo request — até `artisan package:discover` morre |
+| `TelaBloqueio` redeclara `$layout` | parece redundante com a trait `HasAuthDesignerLayout` | a trait faz `static::$layout = ...`; sem storage próprio na subclasse a atribuição cai no estático de `Filament\Pages\Page` e o layout de login veste **toda** página Filament do processo (a de 2FA do Breezy morre em `getAuthDesignerConfig does not exist`) |
+| `TelaBloqueio::mount()` sai por `HttpResponseException` | o pacote usa `redirect()` sem `return` | com o Redirector do Livewire já instalado no processo, o objeto chega onde o Laravel espera código HTTP: 500 em `GET /{painel}/screen/lock` com a sessão destravada — e essa URL fica em favorito/histórico |
+| "Bloquear sessão" registrado em `bootUsing()` com `sort(-1)` | o item do pacote nasce sem `sort` | sem sort ele cai depois do alternador de tema, colado em "Sair"; no corpo de `panel()` não funciona — plugin boota antes e quem registra por último vence |
 | Command Center | **sem** `->cluster()` | a página raiz devolve 500 (`Redirector could not be converted to int`) |
 | `databaseNotifications()` | declarado **depois** de `plugins()` | o Notification Center apaga o recorte, sem erro nenhum |
 | Dependency Graph | `canAccessUsing()` próprio | volta a regra local-only do pacote: 404 em homologação |

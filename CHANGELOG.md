@@ -3,6 +3,50 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.10.0] - 2026-08-13
+
+### Adicionado
+
+- **A tela de bloqueio de sessão agora usa o layout do login.** O
+  `marjose123/filament-lockscreen` entrega a tela como `SimplePage` do Filament,
+  então ela ignorava o `caresome/filament-auth-designer`: quem bloqueava a sessão
+  caía numa caixa cinza no meio da tela, sem a arte, sem a marca e sem o
+  alternador de tema. Agora é a mesma barreira do login, nos três painéis.
+
+  Quem faz isso é `App\Filament\Pages\Auth\TelaBloqueio`, colocada no lugar da
+  classe do pacote por um bind em `AppServiceProvider` — a rota do pacote resolve
+  `LockerScreen::class` pelo container.
+
+- **Tradução pt-BR do lockscreen** em `lang/vendor/filament-lockscreen/pt_BR/` —
+  o pacote só traz inglês, e "Lock Screen"/"Sign In" apareciam na tela.
+
+### Corrigido
+
+- **`GET /{painel}/screen/lock` com a sessão destravada dava 500.** O `mount()` do
+  pacote chama `redirect()` **sem `return`**; num processo onde o Livewire já
+  instalou o Redirector dele, esse objeto chega onde o Laravel espera um código
+  HTTP e o request morre em `ErrorException: Object of class
+  Livewire\...\Redirector could not be converted to int`. É a mesma falha já
+  registrada para o Command Center, e aqui doía mais: a URL fica em favorito e
+  histórico do usuário. A `TelaBloqueio` sai por `HttpResponseException`.
+
+- **"Bloquear sessão" estava no fim do menu do usuário**, depois do alternador de
+  tema e colado em "Sair". O item que o pacote registra nasce sem `sort`, e a view
+  do menu agrupa por `getSort() < 0`. Agora vem com `sort(-1)`, logo abaixo de
+  "Meu perfil" — registrado em `bootUsing()`, porque plugin boota antes dos
+  callbacks de boot e quem registra por último vence.
+
+### Notas
+
+- Armadilha nova na tabela de [convenções](wikis/convencoes.md#armadilhas-já-resolvidas)
+  e em `.ai/rules/auth.md`: **a `TelaBloqueio` redeclara `protected static string
+  $layout`**, e isso não é redundância com a trait `HasAuthDesignerLayout`. A trait
+  faz `static::$layout = ...`; sem storage próprio na subclasse a atribuição cai no
+  estático herdado de `Filament\Pages\Page` e o layout de login passa a vestir
+  **toda** página Filament do processo (a de 2FA do Breezy morre em
+  `getAuthDesignerConfig does not exist`). `tests/Kit/BloqueioDeSessaoTest.php`
+  cobre em par: a tela nova com `fi-auth-layout`, e o `/admin` sem ele depois dela.
+
 ## [0.9.9] - 2026-08-13
 
 ### Corrigido

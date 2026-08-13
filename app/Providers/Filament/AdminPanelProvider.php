@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
@@ -70,8 +71,17 @@ class AdminPanelProvider extends PanelProvider
                 AccountWidget::class,
                 FilamentInfoWidget::class,
             ])
-            // Registra as sugestões "Criar X" no request, com auth já resolvido.
-            ->bootUsing(fn (): null => AcoesDeCriacao::registrar())
+            ->bootUsing(function (Panel $panel): void {
+                // Registra as sugestões "Criar X" no request, com auth já resolvido.
+                AcoesDeCriacao::registrar();
+
+                // "Bloquear sessão" logo abaixo do "Meu perfil" — ver
+                // TelaBloqueio::itemDeMenu(). A guarda espelha a do plugin: com o
+                // kill-switch desligado a rota não existe e o item estouraria no render.
+                if (config('lockscreen.enabled')) {
+                    $panel->userMenuItems([TelaBloqueio::itemDeMenu($panel->getId())]);
+                }
+            })
             ->plugins([
                 // Busca ⌘K. O discovery de ações de criação do pacote fica fora:
                 // ele monta getUrl('create') sem checar canCreate().

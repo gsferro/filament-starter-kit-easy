@@ -81,7 +81,7 @@ More screens: [application health](https://raw.githubusercontent.com/gsferro/fil
 - Shield (roles and permissions with a UI) on top of spatie/laravel-permission
 - Breezy: user profile, avatar, 2FA and passkeys
 - Auth Designer: two-column login screen (swap the artwork in `public/images/auth/login.svg`)
-- Lockscreen: session lock on inactivity (30 min), registered on all 3 panels
+- Lockscreen: session lock on inactivity (30 min), registered on all 3 panels — the lock screen wears the same layout as the login page (Auth Designer), not Filament's simple layout
 - Impersonate, authentication log, change auditing (owen-it)
 - Panel Switch: switch panels from the user menu
 
@@ -345,6 +345,8 @@ Things that cost time to figure out and that the kit already delivers done — i
 | Where | What |
 |---|---|
 | Lockscreen | must be registered on **all three** panels: the package's `routes/web.php` resolves the plugin through the current panel and throws `LogicException` on every request — even `artisan package:discover` dies |
+| Lock screen | it is a `SimplePage` and ignores the Auth Designer layout. `App\Filament\Pages\Auth\TelaBloqueio` wears the login layout (bound in `AppServiceProvider`) and **redeclares `$layout`** — the package trait assigns the static property, and without the redeclaration the login layout leaks into every Filament page in the process |
+| "Lock session" menu item | the item the package registers has no `sort` and lands after the theme switcher; the kit replaces it in a `bootUsing()` with `sort(-1)` (inside `panel()` it would not work: plugins boot first, and the last registration wins) |
 | Command Center | **no** `->cluster()`: with a cluster the root page returns 500 |
 | `databaseNotifications()` | declared **after** `plugins()`, otherwise the Notification Center wipes out the customization, with no error at all |
 | Dependency Graph | `canAccessUsing()` replaces the package's local-only rule (without it, 404 on staging) |
