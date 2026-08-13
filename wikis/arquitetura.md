@@ -119,6 +119,14 @@ Negativa vira log (`Log::channel('autenticacao')->warning`, com `motivo: sem_pap
 
 Permission continua **global por nome** — `ViewAny:User` é uma linha só na tabela do spatie. O Shield não sabe a que painel uma permission pertence: o nome é `{Ação}:{Model}` e o único diferenciador que chega ao banco é o `guard_name`, que é o mesmo `web` nos três painéis. Quem cruza painel × Resource × permission é `App\Support\Paineis`, varrendo `Filament::getPanels()` e perguntando ao próprio Shield. É dele que saem a matriz do `PapeisSeeder` e o agrupamento da tela `/admin/shield/roles`. O porquê completo está nas ADR-01 a ADR-03 de `wikis/specs/main/perfil-e-acesso-ao-painel/02-decisoes-arquiteturais.md`.
 
+### Convite é a única porta de entrada
+
+O painel `/app` tem registro ligado, mas **não é cadastro aberto**: `App\Filament\Pages\Auth\RegistroPorConvite` estende a página de registro nativa do Filament e recusa no `mount()` sem um token válido na query string. Registrar e aceitar convite passam a ser a mesma tela — e daí vêm de graça o rate limit (por IP e por e-mail), a transação e o auto-login.
+
+O token é a credencial: quem o tem cria uma conta com o papel do convite. Por isso vai **hasheado** (`sha256`) para o banco, vale **uma vez** (`aceito_em`) e por um **prazo** (`expira_em`); em claro ele existe só no e-mail. Os três motivos de recusa dão a mesma resposta, pelo mesmo motivo do 404 dos tenants: distinguir vaza a existência do registro.
+
+Quem decide quem entra é quem convida. E-mail, papel e organização vêm do convite — o formulário só coleta nome e senha, e `mutateFormDataBeforeRegister()` sobrescreve o e-mail com o do convite, porque estado de Livewire é do cliente.
+
 ## Busca ⌘K (Spotlight)
 
 O campo da topbar é o **nativo do Filament**; o clique abre o overlay do `wezlo/filament-search-spotlight`. Quatro categorias, duas delas do kit:

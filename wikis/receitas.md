@@ -155,6 +155,20 @@ O `app/Models/Projeto.php` e o `ProjetoResource` da demo são o exemplo canônic
 
 Sem vínculo, o usuário não vê o tenant no seletor e toma **404** se tentar a URL direto — não 403. É deliberado do Filament: um 403 confirmaria que o tenant existe, e bastaria varrer slugs para enumerar os clientes da instalação. O `master_global` é a exceção — enxerga todos.
 
+## Convidar alguém que ainda não tem conta
+
+`/admin` → **Convites** → *Novo convite*: e-mail, papel e (com tenancy) a organização. O e-mail sai na hora e o link leva a `/app/register?token=…`.
+
+Quem clica escolhe **só nome e senha** — e-mail, papel e organização vêm do convite, impostos pelo servidor. Ao aceitar, o usuário nasce com o papel já no contexto certo: contexto global se o papel for de `/admin` ou `/infra`, a organização do convite se for de `/app`.
+
+Três coisas a saber:
+
+- **O link vale uma vez e expira** (`kit.convites.validade_em_dias`, 7 dias). Recusa por token inexistente, expirado ou já usado dá a **mesma** resposta — distinguir confirmaria que o convite existiu.
+- **Reenviar gera um token novo e mata o anterior.** É a mesma ação de enviar.
+- **Revogar é apagar o convite.** O rastro fica na auditoria (`/infra/audits`).
+
+O e-mail sai pela fila (`QUEUE_CONNECTION=database` no `.env.example`): **sem worker no ar o convite não chega**. Em desenvolvimento, `php artisan queue:work` ou `composer dev`.
+
 ## Página de painel
 
 ```bash
@@ -235,6 +249,8 @@ Commit no padrão do repositório: gitmoji + escopo, mensagem em pt-BR.
 |---|---|
 | Usuário autentica e leva 403 nos **três** painéis | ele não tem papel nenhum, ou o papel que tem está com `roles.painel` vazio — e nulo não é coringa. Dê um papel em `/admin` → Usuários, ou declare o painel do papel em `/admin` → Funções |
 | Entra no `/app` mas não no `/admin` (ou vice-versa) | é o desenho: o papel vale para **um** painel. E `/admin` e `/infra` exigem o papel atribuído no contexto global — ser `admin` dentro de uma organização não abre a administração da instalação |
+| Convite não chega | o e-mail vai pela fila e não há worker: `php artisan queue:work`. Em desenvolvimento o mailer é `log` — o conteúdo cai em `storage/logs/laravel.log` |
+| Link do convite sempre recusa | usado, expirado ou token inexistente — os três dão a mesma tela, de propósito. Reenvie pelo `/admin` → Convites |
 | Tela nova dá 403 | falta rodar `ShieldPermissionsSeeder` + `PapeisSeeder` depois de criar o Resource — nessa ordem, e os dois: só o primeiro cria a permission e não a entrega a papel nenhum |
 | RelationManager aberto a quem não devia | o Shield não gera permission para RelationManager; ver [RelationManager novo](#relationmanager-novo) |
 | `NOT NULL constraint failed: model_has_roles.team_id` | atribuiu papel sem contexto de tenant — use `Tenant::CONTEXTO_GLOBAL` ou rode dentro de um request do `/app` |

@@ -71,6 +71,27 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Convites de acesso
+    |--------------------------------------------------------------------------
+    | O convite é a única forma de alguém de fora virar usuário: a tela de
+    | registro do painel /app recusa quem não traz um token válido.
+    |
+    | O token é de uso único e vale pelo prazo abaixo. Prazo curto reduz a
+    | janela de um link vazado (encaminhado, esquecido na caixa de entrada);
+    | prazo longo evita reenvio para quem só demorou a ver o e-mail. Sete dias
+    | é o meio-termo — troque no .env, não aqui.
+    |
+    | Lembre que o envio depende de MAIL_MAILER configurado (o default `log`
+    | escreve o convite em storage/logs e não manda nada) e de um worker de
+    | fila rodando, porque a notificação é enfileirável.
+    */
+
+    'convites' => [
+        'validade_em_dias' => (int) env('KIT_CONVITE_VALIDADE_DIAS', 7),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Usuário inicial
     |--------------------------------------------------------------------------
     | Criado pelo UsuarioAdminSeeder com o papel master_global. Troque a senha

@@ -128,6 +128,36 @@ O campo na topbar é o **nativo do Filament** — mesma marcação, mesma aparê
 
 O filtro por permissão é a razão de existirem `App\Filament\Spotlight\*` no kit: as categorias do pacote **não** chamam `canAccess()`, e sem isso a busca oferece telas que resultariam em 403 — vazamento de affordance. As sugestões "Criar X" também são do kit (`AcoesDeCriacao`), pelo mesmo motivo e mais um: o discovery do pacote resolve URLs sem checar contexto e derruba a tela de login com 500.
 
+## Convite de usuário
+
+Alguém de fora vira usuário **por convite, e só por convite**. Um administrador abre
+`/admin/convites`, escolhe e-mail, papel e (com tenancy) organização; o kit envia um link
+com token de uso único; a pessoa define a própria senha e nasce com o papel certo, no
+contexto certo.
+
+A tela de aceite é a página de registro nativa do Filament (`/app/register`), com uma
+guarda: **sem token válido na query string ela recusa e manda para o login**. Não existe
+cadastro aberto.
+
+| O que | Como |
+|---|---|
+| Token | `Str::random(64)`, guardado **hasheado** (`sha256`) — banco vazado não vira acesso |
+| Validade | `KIT_CONVITE_VALIDADE_DIAS` (7 dias por padrão) |
+| Uso | **único**: o aceite carimba `aceito_em` na mesma transação que cria o usuário |
+| Reenviar | gera token novo e **mata o link anterior** |
+| Revogar | apaga o convite; o link para de funcionar na hora, e a exclusão fica em `/infra/audits` |
+| Editar | **não existe** — o convite já foi enviado; corrija revogando e criando outro |
+
+> ⚠️ **O convite depende de duas coisas de ambiente.** `MAIL_MAILER` no default `log` só
+> escreve o e-mail em `storage/logs` — nada sai para o mundo. E a notificação é
+> enfileirável com `QUEUE_CONNECTION=database`: **sem um worker rodando o convite não
+> sai**. O `composer dev` sobe um; num deploy, `php artisan queue:work`. A fila parada
+> aparece no monitor do `/infra`.
+
+O papel do convite decide o contexto da atribuição: papel do painel `/app` nasce dentro da
+organização do convite; papel de `/admin` ou `/infra` nasce no contexto global — ser
+administrador de uma organização não é credencial para administrar a instalação.
+
 ## Multi-tenancy (opt-in)
 
 O kit nasce **single-tenant**. Um comando liga o modo multi-tenant — e quem não precisa não paga nada por ele:

@@ -79,8 +79,13 @@ class KitUpdate extends Command
         'app/Models/User.php',
         'app/Models/Role.php',
         'app/Models/Tenant.php',
+        'app/Models/Convite.php',
         'app/Models/Projeto.php',
         'app/Models/AgenteIa.php',
+        // Notifications do kit (o convite de acesso). Diretório inteiro, como
+        // app/Policies: é área do kit, e a sua notification não existe na
+        // árvore dele, então nunca entra no diff.
+        'app/Notifications',
         'app/Policies',
         'app/Providers',
         'app/Support',

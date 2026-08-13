@@ -2,7 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\RegistroPorConvite;
 use App\Filament\Pages\Auth\TelaBloqueio;
+use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
@@ -110,6 +112,33 @@ class AppPanelProvider extends PanelProvider
 
                 AuthDesignerPlugin::make()
                     ->login(fn (AuthPageConfig $config): AuthPageConfig => $config
+                        // A nossa tela de login: a única diferença é não oferecer
+                        // "Cadastre-se", que o Filament acrescenta sozinho assim que o
+                        // painel ganha registro.
+                        ->usingPage(TelaLogin::class)
+                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->mediaPosition(MediaPosition::Left)
+                        ->mediaSize('70%')
+                        ->themeToggle()
+                    )
+                    /*
+                     * A tela de aceite do convite — a ÚNICA rota pública deste painel
+                     * além do login. Sem token válido na query string ela recusa e
+                     * manda para o login (App\Filament\Pages\Auth\RegistroPorConvite).
+                     *
+                     * Passa pelo PLUGIN, e não por `$panel->registration(...)` direto:
+                     * é o plugin que grava a chave 'registration' no
+                     * AuthDesignerConfigRepository (AuthDesignerPlugin.php:92-94). Sem
+                     * ela o repositório cai em `new AuthPageConfig`
+                     * (AuthDesignerConfigRepository.php:80) e a tela nasce sem mídia e
+                     * sem alternador de tema — diferente do login ao lado, sem erro
+                     * nenhum. Ver ADR-06.
+                     *
+                     * Para fechar o cadastro por completo, remova este bloco: a rota
+                     * deixa de existir e a superfície pública desaparece.
+                     */
+                    ->registration(fn (AuthPageConfig $config): AuthPageConfig => $config
+                        ->usingPage(RegistroPorConvite::class)
                         ->media(asset('images/auth/login.svg'), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Left)
                         ->mediaSize('70%')

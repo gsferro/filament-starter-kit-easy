@@ -128,6 +128,37 @@ The topbar field is **Filament's native one** — same markup, same look, same `
 
 Permission filtering is the reason `App\Filament\Spotlight\*` exists in the kit: the package's categories do **not** call `canAccess()`, and without that the search offers screens that would result in a 403 — an affordance leak. The "Create X" suggestions are the kit's too (`AcoesDeCriacao`), for the same reason plus one more: the package's discovery resolves URLs without checking context and takes the login screen down with a 500.
 
+## User invitation
+
+Someone from outside becomes a user **by invitation, and only by invitation**. An admin
+opens `/admin/convites`, picks e-mail, role and (with tenancy) organization; the kit sends
+a link carrying a single-use token; the person sets their own password and is born with
+the right role, in the right context.
+
+The acceptance screen is Filament's native registration page (`/app/register`), with one
+guard: **without a valid token in the query string it refuses and redirects to login**.
+There is no open sign-up.
+
+| What | How |
+|---|---|
+| Token | `Str::random(64)`, stored **hashed** (`sha256`) — a leaked database dump is not access |
+| Lifetime | `KIT_CONVITE_VALIDADE_DIAS` (7 days by default) |
+| Usage | **single use**: accepting stamps `aceito_em` in the same transaction that creates the user |
+| Resend | issues a new token and **kills the previous link** |
+| Revoke | deletes the invitation; the link stops working immediately, and the deletion lands in `/infra/audits` |
+| Edit | **does not exist** — the invitation was already sent; fix it by revoking and creating another |
+
+> ⚠️ **Invitations depend on two environment facts.** `MAIL_MAILER` at its `log` default
+> only writes the e-mail to `storage/logs` — nothing leaves the machine. And the
+> notification is queueable with `QUEUE_CONNECTION=database`: **without a running worker
+> the invitation never goes out**. `composer dev` starts one; on a deploy, use
+> `php artisan queue:work`. A stalled queue shows up in the `/infra` monitor.
+
+The invitation's role decides the context of the assignment: a role of the `/app` panel is
+granted inside the invitation's organization; a role of `/admin` or `/infra` is granted in
+the global context — being an admin of one organization is not a credential to administer
+the installation.
+
 ## Multi-tenancy (opt-in)
 
 The kit is born **single-tenant**. One command turns multi-tenancy on — and those who don't need it pay nothing for it:
