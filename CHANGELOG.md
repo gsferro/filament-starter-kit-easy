@@ -3,6 +3,30 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.9.2] - 2026-08-13
+
+### Corrigido
+
+- **`kit:tenancy` criava as tabelas de permissão sem a coluna de tenant.** O
+  comando rodava `config:clear` e em seguida `migrate:fresh` no MESMO processo —
+  mas `config:clear` apaga o arquivo de cache, não recarrega a config já em
+  memória. A migration do spatie lia `permission.teams` ainda como `false` e
+  criava as tabelas sem `team_id`. O banco ficava de pé, o comando terminava com
+  sucesso, e o erro só aparecia no primeiro login:
+  `SQLSTATE[HY000]: no such column: model_has_roles.team_id`.
+
+  Agora o comando alinha a config em memória e descarta o singleton
+  `PermissionRegistrar` antes de migrar, e **confere o schema ao final** — se a
+  coluna não existir, falha alto em vez de entregar uma instalação quebrada.
+
+- Dois testes novos travam a invariante: a existência das colunas de team e a
+  atribuição de papel no contexto global (o caminho dos seeders).
+
+### Alterado
+
+- `App\Policies\TenantPolicy` passa a ser a saída canônica do `shield:generate`
+  (assinaturas com o model, conjunto completo de métodos).
+
 ## [0.9.1] - 2026-08-13
 
 ### Adicionado

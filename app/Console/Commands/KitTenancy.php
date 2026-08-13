@@ -6,6 +6,9 @@ use App\Models\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use RuntimeException;
+use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 use Throwable;
@@ -192,14 +195,68 @@ class KitTenancy extends Command
         $this->components->task('papéis por tenant (permission.teams + Shield)', fn (): bool => true);
     }
 
+    /**
+     * Alinha a config JÁ CARREGADA com o que acabou de ser escrito em disco.
+     *
+     * Sem isto o comando falha de um jeito traiçoeiro: `config:clear` apaga o
+     * arquivo de cache, mas NÃO recarrega a config em memória. O
+     * `migrate:fresh` roda neste mesmo processo, lê `permission.teams` ainda
+     * como `false` e cria as tabelas de permissão SEM as colunas de team. A
+     * requisição seguinte — processo novo, config nova — consulta
+     * `model_has_roles.team_id` e recebe "no such column".
+     *
+     * O `PermissionRegistrar` é singleton e lê `permission.teams` no
+     * construtor, então precisa ser descartado para renascer sabendo de teams.
+     * E o contexto global de papéis precisa ser fixado à mão, porque o
+     * `KitServiceProvider::configureTenancy()` já rodou no boot, quando a flag
+     * ainda estava desligada — sem ele, os seeders atribuem papel com
+     * `team_id` nulo e estouram a constraint NOT NULL.
+     */
+    private function alinharConfigEmMemoria(): void
+    {
+        config([
+            'kit.tenancy.enabled'          => true,
+            'permission.teams'             => true,
+            'filament-shield.tenant_model' => Tenant::class,
+        ]);
+
+        $this->laravel->forgetInstance(PermissionRegistrar::class);
+        app(PermissionRegistrar::class)->setPermissionsTeamId(Tenant::CONTEXTO_GLOBAL);
+    }
+
     private function recriarBanco(): void
     {
-        // A migration do spatie aborta com mensagem explícita se a config estiver
-        // em cache — o valor novo precisa estar visível para ela.
+        // Limpa o cache em disco (para os próximos processos) e alinha a config
+        // desta execução (para o migrate:fresh logo abaixo).
         $this->callSilently('config:clear');
+        $this->alinharConfigEmMemoria();
 
         $this->components->info('Recriando o banco com as tabelas de permissão por tenant...');
         $this->call('migrate:fresh', ['--seed' => true, '--force' => true]);
+
+        $this->conferirSchema();
+    }
+
+    /**
+     * Confere o que o passo anterior prometeu. A ausência desta coluna é
+     * justamente a falha silenciosa que o comando existe para evitar: o banco
+     * fica de pé, o comando termina com sucesso, e o erro só aparece no
+     * primeiro login.
+     */
+    private function conferirSchema(): void
+    {
+        $tabela = config('permission.table_names.model_has_roles', 'model_has_roles');
+        $coluna = config('permission.column_names.team_foreign_key', 'team_id');
+
+        if (Schema::hasColumn($tabela, $coluna)) {
+            return;
+        }
+
+        throw new RuntimeException(
+            "As tabelas de permissão nasceram sem a coluna `{$tabela}.{$coluna}`. "
+            .'A config de teams não chegou à migration — rode `php artisan migrate:fresh --seed` '
+            .'num processo novo para refazer.'
+        );
     }
 
     private function semearDemo(): void

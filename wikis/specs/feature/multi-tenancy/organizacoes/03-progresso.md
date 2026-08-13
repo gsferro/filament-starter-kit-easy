@@ -127,6 +127,7 @@ Branch: `feature/multi-tenancy` · Iniciado e concluído em 2026-08-13
 - **`createApplication()` roda depois do boot dos providers**, então o `PermissionRegistrar` (singleton que lê `permission.teams` no construtor) precisou ser descartado com `forgetInstance()` no `TenancyTestCase`.
 - **A doc do Filament exige `scopedUnique()`/`scopedExists()`** em resources escopados: as regras `unique`/`exists` do Laravel não passam pelo Eloquent e ignoram o tenant. Virou convenção.
 - **A trait é complementar ao escopo do Filament**, não redundante: a doc afirma que só models COM resource são escopadas. Job, comando e API ficariam de fora.
+- **[pós-entrega, v0.9.2] `config:clear` não recarrega a config em memória.** O `kit:tenancy` rodava `config:clear` e `migrate:fresh` no mesmo processo; a migration do spatie lia `permission.teams` ainda como `false` e criava as tabelas sem `team_id`. O banco subia, o comando dizia sucesso, e o erro só aparecia no primeiro login. A lição amarga: eu já tinha resolvido exatamente este problema no `TenancyTestCase` (config + `forgetInstance`) e não levei o aprendizado para o comando — o teste e o código de produção resolviam o mesmo problema e não conversavam. Corrigido com `alinharConfigEmMemoria()` + `conferirSchema()`, que faz o comando falhar alto em vez de entregar instalação quebrada.
 
 ## Retrospectiva
 

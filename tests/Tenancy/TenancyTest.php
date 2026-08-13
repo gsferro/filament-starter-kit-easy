@@ -9,6 +9,7 @@ use Database\Seeders\ShieldPermissionsSeeder;
 use Database\Seeders\UsuarioAdminSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Psr\Log\LoggerInterface;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -28,6 +29,28 @@ function usuario(string $email = 'user@example.com'): User
 {
     return User::create(['name' => 'Usuário', 'email' => $email, 'password' => 'password']);
 }
+
+it('cria as tabelas de permissão com a coluna de tenant', function (): void {
+    $tabela = config('permission.table_names.model_has_roles', 'model_has_roles');
+    $coluna = config('permission.column_names.team_foreign_key', 'team_id');
+
+    // Invariante que já quebrou de verdade: o `kit:tenancy` rodava
+    // `migrate:fresh` no mesmo processo, com a config ainda em memória dizendo
+    // teams=false, e as tabelas nasciam sem a coluna. O banco ficava de pé e o
+    // erro só aparecia no primeiro login ("no such column").
+    expect(Schema::hasColumn($tabela, $coluna))->toBeTrue()
+        ->and(Schema::hasColumn(config('permission.table_names.roles', 'roles'), $coluna))->toBeTrue();
+});
+
+it('atribui papel no contexto global sem violar a constraint', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class, UsuarioAdminSeeder::class]);
+
+    $master = User::where('email', config('kit.admin.email'))->firstOrFail();
+
+    // O seeder roda fora de request: sem o contexto global fixado, o spatie
+    // gravaria team_id nulo e estouraria NOT NULL.
+    expect($master->isMasterGlobal())->toBeTrue();
+});
 
 it('lista apenas os tenants vinculados ao usuário', function (): void {
     $acme   = tenant('Acme', 'acme');
