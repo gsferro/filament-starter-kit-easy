@@ -3,6 +3,32 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.9.9] - 2026-08-13
+
+### Corrigido
+
+- **O `kit:update` precisa de DUAS rodadas quando ele próprio muda — e não dizia
+  isso.** A lista de caminhos que filtra o diff é uma constante da própria classe
+  `KitUpdate`, e o PHP já carregou a versão antiga em memória. Então a rodada que
+  traz um `KitUpdate.php` novo ainda filtra pela lista VELHA: arquivo coberto só
+  pela lista nova não entra. Verificado na prática — a correção da tela de
+  usuários da 0.9.7 só apareceu na segunda rodada.
+
+  O aviso de "atualizou a si próprio" agora manda rodar de novo com o mesmo
+  `--from`, e diz como saber que terminou ("Nada a atualizar").
+
+### Notas
+
+- Recuperando um projeto que ficou para trás nos buracos de 0.9.1–0.9.7:
+
+  ```bash
+  php artisan optimize:clear
+  php artisan kit:update --from=v0.8.0            # traz a lista de caminhos nova
+  git add -A && git commit -m "kit:update, rodada 1"
+  php artisan kit:update --from=v0.8.0 --no-branch # traz o que só a lista nova cobre
+  composer test:kit
+  ```
+
 ## [0.9.8] - 2026-08-13
 
 ### Corrigido

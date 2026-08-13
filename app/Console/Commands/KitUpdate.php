@@ -722,11 +722,20 @@ class KitUpdate extends Command
          * a classe antiga em memória, então tudo nesta execução — inclusive as
          * mensagens acima — vem da versão anterior. Avisar evita a conclusão
          * errada de que a versão nova não funcionou.
+         *
+         * E a consequência prática é maior do que parecer cosmética: a LISTA de
+         * caminhos que filtra o diff é uma constante desta classe. Se a versão
+         * nova cobre caminho que a antiga não cobria, o arquivo desse caminho
+         * NÃO entrou nesta rodada — foi o que aconteceu na 0.9.8, com metade do
+         * Filament do kit. Só a rodada seguinte enxerga.
          */
         if (in_array('app/Console/Commands/KitUpdate.php', $aplicados, true)) {
             note(
                 "O próprio `kit:update` foi atualizado nesta rodada.\n"
-                .'O que você viu acima ainda é o comportamento da versão anterior; a nova vale a partir da próxima execução.'
+                ."O que você viu acima ainda é o comportamento da versão anterior; a nova vale a partir da próxima execução.\n\n"
+                ."RODE O COMANDO DE NOVO, com o mesmo `--from`: a lista de caminhos do kit é\n"
+                ."parte deste arquivo, e arquivo coberto só pela lista NOVA não entrou agora.\n"
+                .'A segunda rodada termina em "Nada a atualizar" quando não houver mais nada.'
             );
         }
 
