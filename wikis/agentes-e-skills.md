@@ -37,7 +37,7 @@ Nove skills, sincronizadas para todos os agentes. Ative a que corresponde ao dom
 
 | Skill | Quando ativar |
 |---|---|
-| **`feature-wiki`** | ao iniciar **qualquer feature nova** — antes de qualquer `make:` |
+| **`feature-wiki`** | ao iniciar **qualquer feature nova** — chame `/feature-wiki` antes de qualquer `make:` |
 | `laravel-best-practices` | qualquer PHP Laravel (traz `rules/` por tema: eloquent, queue, security, testing…) |
 | `pest-testing` | escrever, editar ou consertar teste |
 | `ai-sdk-development` | mexer em `app/Ai/`, agentes, tools, guardrails, streaming |

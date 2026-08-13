@@ -147,6 +147,8 @@ It's also the folder where **you** write your project's own docs: `wikis/specs/{
 
 The one that changes the workflow is **[`feature-wiki`](https://github.com/gsferro/laravel-ai-skills)**: invoked **before** implementing any feature, it creates `wikis/specs/{branch}/{feature}/` with an action plan (PRD), architecture decisions (ADR), progress tracking and test cases — and it sets the project's logging standard.
 
+> 💡 **New feature? Call `/feature-wiki`.** It's the first step, before any `php artisan make:*`. The skill researches the code, writes the plan, and only then does implementation start. For a typo, a config tweak, a pure refactor or a dependency bump, skip it — the skill itself tells you when it isn't worth it.
+
 In Claude Code it works alongside two plugins already enabled in `.claude/settings.json`, each covering a different layer:
 
 | Layer | Tool | Role |

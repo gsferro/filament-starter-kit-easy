@@ -41,7 +41,7 @@ Versão do kit que originou este projeto: veja `config/kit.php` → `version`.
 1. **Ler [convencoes.md](convencoes.md)** — em especial a tabela de armadilhas. Código que parece errado ali costuma ser deliberado, com o motivo documentado.
 2. **Invocar a skill certa** para o domínio (`laravel-best-practices`, `pest-testing`, `ai-sdk-development`, …). Veja [agentes-e-skills.md](agentes-e-skills.md).
 3. **Usar o Laravel Boost** antes de decidir API: `search-docs` para a documentação da versão instalada, `database-schema` antes de migration, `list-artisan-commands` antes de inventar comando.
-4. **Criar a wiki da feature** com a skill `feature-wiki` quando a mudança adiciona lógica de negócio nova (ela mesma diz quando **não** é necessária).
+4. **Criar a wiki da feature**: para feature nova, chame **`/feature-wiki`** — antes de qualquer `php artisan make:*`. Vale sempre que a mudança adiciona lógica de negócio nova; ela mesma diz quando **não** é necessária (typo, config, refactor puro, bump de dependência).
 5. **Verificar antes de entregar**: `vendor/bin/pint --dirty`, `php artisan test --compact` no que foi tocado e `composer test:kit` se encostou na fundação.
 
 ## O que NÃO fazer
