@@ -30,8 +30,12 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   nunca entra no diff. `app/Models` continua arquivo a arquivo, onde a colisão
   de nome com um model seu é plausível.
 - Quem atualizou para 0.9.1–0.9.3 e recebeu só o `config/kit.php` precisa
-  comparar a partir da versão anterior à tenancy:
-  `php artisan kit:update --from=v0.9.0`
+  comparar a partir da última versão anterior à tenancy — que é a **0.8.0**,
+  não uma 0.9.0 (essa nunca existiu como tag; a série foi de 0.8.0 para 0.9.1):
+
+  ```bash
+  php artisan kit:update --from=v0.8.0
+  ```
 
 ## [0.9.3] - 2026-08-13
 
