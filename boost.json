@@ -1,0 +1,30 @@
+{
+    "agents": [
+        "claude_code",
+        "codex",
+        "junie",
+        "opencode",
+        "cursor"
+    ],
+    "cloud": false,
+    "guidelines": true,
+    "mcp": true,
+    "nightwatch": false,
+    "packages": [
+        "filament/filament",
+        "livewire/blaze",
+        "spatie/laravel-backup"
+    ],
+    "sail": false,
+    "skills": [
+        "infer-conventions",
+        "ai-sdk-development",
+        "laravel-best-practices",
+        "pulse-development",
+        "pest-testing",
+        "tailwindcss-development",
+        "blaze-optimize",
+        "laravel-backup",
+        "feature-wiki"
+    ]
+}
