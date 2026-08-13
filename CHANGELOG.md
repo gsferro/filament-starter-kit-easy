@@ -3,6 +3,34 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.9.6] - 2026-08-13
+
+### Corrigido
+
+- **`composer test:kit` estourava `model_has_roles.team_id` em projeto com a
+  tenancy ligada.** Vinte e quatro testes de `tests/Kit` morriam com
+  `NOT NULL constraint failed: model_has_roles.team_id` na primeira atribuição de
+  papel. A suíte `tests/Tenancy` passava inteira, o que tornava o sintoma
+  confuso: o modo multi-tenant funcionava, o single-tenant não.
+
+  O modo de tenancy vive em três chaves que precisam concordar, e elas não vêm do
+  mesmo lugar. `kit.tenancy.enabled` é env (`KIT_TENANCY`); `permission.teams` e
+  `filament-shield.tenant_model` são arquivos que o `kit:tenancy` reescreve em
+  **disco**. O `Tests\TestCase` alinhava só a primeira — então num projeto com a
+  tenancy ligada as suítes single-tenant migravam o schema COM as colunas de team
+  (`permission.teams` ainda `true`) e atribuíam papel SEM contexto de team
+  (`kit.tenancy.enabled` já `false`, e é essa flag que o
+  `KitServiceProvider::configureTenancy()` usa para fixar o contexto global).
+
+  Agora `usaTenancy()` decide as três, em `Tests\TestCase::createApplication()` —
+  antes das migrations, com o `PermissionRegistrar` descartado para renascer
+  sabendo do modo. O `Tests\TenancyTestCase` ficou só com a declaração do modo: o
+  mecanismo deixou de estar duplicado nos dois arquivos.
+
+- `tests/Kit/PaineisTest.php`: o teste `roda em modo single-tenant` passa a cobrar
+  as três chaves, não só a primeira. É o que faz a dessincronia falhar dizendo o
+  nome, em vez de virar um 404 ou um `NOT NULL` sem pista.
+
 ## [0.9.5] - 2026-08-13
 
 ### Corrigido

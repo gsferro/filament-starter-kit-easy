@@ -2,10 +2,33 @@
 
 namespace Tests;
 
+use App\Models\Tenant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Spatie\Permission\PermissionRegistrar;
 
+/**
+ * Base dos testes do kit — e o único lugar que decide o modo de tenancy da
+ * execução, por `usaTenancy()`.
+ *
+ * O modo mora em TRÊS chaves que precisam concordar, e cada uma tem seu prazo:
+ *
+ *   1. `kit.tenancy.enabled`, antes do BOOT — o `AppPanelProvider` a lê para
+ *      registrar (ou não) as rotas do painel com o segmento `/{tenant}`.
+ *   2. `permission.teams` + `filament-shield.tenant_model`, antes das
+ *      MIGRATIONS — a migration do spatie lê a primeira em tempo de execução
+ *      para criar (ou não) as colunas de team.
+ *   3. o contexto de papéis do `PermissionRegistrar`, que é singleton e lê
+ *      `permission.teams` no construtor.
+ *
+ * Elas não vêm do mesmo lugar, e é aí que saíam de sincronia: a primeira é env
+ * (`KIT_TENANCY`), as outras duas são arquivos que o `kit:tenancy` reescreve em
+ * DISCO. Num projeto com a tenancy ligada, `permission.teams` chegava aqui como
+ * `true` mesmo nas suítes single-tenant — e como ninguém fixava o contexto de
+ * papéis (o `KitServiceProvider` só o faz com `kit.tenancy.enabled`), atribuir
+ * papel estourava `NOT NULL constraint failed: model_has_roles.team_id`.
+ */
 abstract class TestCase extends BaseTestCase
 {
     /**
@@ -46,7 +69,32 @@ abstract class TestCase extends BaseTestCase
 
         $this->definirEnv('KIT_TENANCY', $this->usaTenancy() ? 'true' : 'false');
 
-        return parent::createApplication();
+        $app = parent::createApplication();
+
+        /*
+         * As duas chaves de DISCO, alinhadas com o modo desta execução.
+         *
+         * Aqui ainda é antes das migrations: o RefreshDatabase roda no
+         * `setUpTraits()`, depois deste método. Ajustar `permission.teams` num
+         * `beforeEach` seria tarde — o schema já teria sido criado.
+         */
+        $app['config']->set('permission.teams', $this->usaTenancy());
+        $app['config']->set('filament-shield.tenant_model', $this->usaTenancy() ? Tenant::class : null);
+
+        /*
+         * O PermissionRegistrar já foi resolvido durante o boot, lendo o
+         * `permission.teams` do arquivo — precisa ser descartado para renascer
+         * sabendo do modo. Com teams ligado, o contexto global de papéis também
+         * precisa ser fixado à mão: o `KitServiceProvider::configureTenancy()`
+         * rodou no boot, quando esta config ainda não existia.
+         */
+        $app->forgetInstance(PermissionRegistrar::class);
+
+        if ($this->usaTenancy()) {
+            $app->make(PermissionRegistrar::class)->setPermissionsTeamId(Tenant::CONTEXTO_GLOBAL);
+        }
+
+        return $app;
     }
 
     /**

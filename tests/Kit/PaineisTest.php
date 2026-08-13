@@ -54,17 +54,26 @@ it('abre o painel app para qualquer usuário autenticado', function (): void {
 });
 
 /**
- * Premissa das rotas usadas abaixo: sem tenancy, `/app` é o dashboard. Com ela
- * ligada o painel vira `/app/{tenant}` e todo `GET /app` responde 404 — falha
- * que não diz nada sobre a causa. Este teste dá o nome dela.
+ * Premissa desta suíte, em cada uma das três chaves que a compõem.
+ *
+ * Quebrada, ela não falha dizendo o nome: `kit.tenancy.enabled` ligada faz o
+ * painel virar `/app/{tenant}` e todo `GET /app` responder 404; `permission.teams`
+ * ligada faz atribuir papel estourar `NOT NULL constraint failed:
+ * model_has_roles.team_id`. Nenhuma das duas mensagens aponta para a causa —
+ * daí este teste vir antes.
+ *
+ * As três saem de lugares diferentes (env, `config/permission.php`,
+ * `config/filament-shield.php`) e são alinhadas em `Tests\TestCase`. Os testes
+ * de tenancy são os de `tests/Tenancy`.
  */
 it('roda em modo single-tenant', function (): void {
-    expect(config('kit.tenancy.enabled'))->toBeFalse(
-        'A suíte tests/Kit pressupõe rotas sem /{tenant}. Se a tenancy vazou para '
-        .'cá, algo anulou o ambiente definido em Tests\TestCase::createApplication() '
-        .'— cache de config é o suspeito de sempre. Os testes de tenancy são os de '
-        .'tests/Tenancy.'
-    );
+    $causa = 'A suíte tests/Kit pressupõe o modo single-tenant nas três chaves. '
+        .'Se a tenancy vazou para cá, algo passou por cima do que o '
+        .'Tests\TestCase::createApplication() alinha.';
+
+    expect(config('kit.tenancy.enabled'))->toBeFalse($causa)
+        ->and(config('permission.teams'))->toBeFalse($causa)
+        ->and(config('filament-shield.tenant_model'))->toBeNull($causa);
 });
 
 it('carrega o dashboard de cada painel autenticado', function (string $painel): void {
