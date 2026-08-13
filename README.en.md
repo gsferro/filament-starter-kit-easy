@@ -1,6 +1,6 @@
 # starter-kit-easy
 
-![Starter Kit Easy](art/banner.png)
+![Starter Kit Easy](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/banner-en.png)
 
 [![Packagist](https://img.shields.io/packagist/v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Downloads](https://img.shields.io/packagist/dt/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
@@ -21,7 +21,7 @@ composer dev
 
 There is no manual step: `create-project` already creates the `.env`, generates the `APP_KEY`, creates the SQLite database, runs the migrations, seeds roles/permissions/user, publishes the Filament assets and builds the front-end. At the end it prints the URLs and the initial login.
 
-![Installing starter-kit-easy in a single command](art/install.gif)
+![Installing starter-kit-easy in a single command](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/install.gif)
 
 Prefer to clone? The same installer runs on its own:
 
@@ -63,15 +63,15 @@ Separating admin from infra is the whole point of the kit: whoever administers u
 
 | Login | Administration |
 |---|---|
-| [![Login screen](art/thumbs/login.png)](art/login.png) | [![Admin panel](art/thumbs/panel-admin.png)](art/panel-admin.png) |
+| [![Login screen](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login.png) | [![Admin panel](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/panel-admin.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/panel-admin.png) |
 | Two-column Auth Designer — swap the artwork in `public/images/auth/login.svg` | Users, roles, AI agents and administration indicators |
 
 | Infrastructure | Business |
 |---|---|
-| [![Infra panel](art/thumbs/panel-infra.png)](art/panel-infra.png) | [![App panel](art/thumbs/panel-app.png)](art/panel-app.png) |
+| [![Infra panel](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/panel-infra.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/panel-infra.png) | [![App panel](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/panel-app.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/panel-app.png) |
 | Health, queues, audit trails, commands and AI costs — grouped under Observability, AI, Trails and System | Intentionally empty: it's where your project is born |
 
-More screens: [application health](art/infra-health.png) · [users](art/admin-users.png) · [permissions (Shield)](art/admin-roles.png) · [AI agent catalog](art/admin-agentes-ia.png) · [command center](art/infra-comandos.png) · [⌘K search](art/spotlight.png) · [access denied](art/erro-403.png)
+More screens: [application health](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/infra-health.png) · [users](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-users.png) · [permissions (Shield)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-roles.png) · [AI agent catalog](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-agentes-ia.png) · [command center](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/infra-comandos.png) · [⌘K search](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/spotlight.png) · [access denied](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/erro-403.png)
 
 ## What's already there
 
@@ -107,7 +107,7 @@ More screens: [application health](art/infra-health.png) · [users](art/admin-us
 
 ### The ⌘K search
 
-[![⌘K search](art/thumbs/spotlight.png)](art/spotlight.png)
+[![⌘K search](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/spotlight.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/spotlight.png)
 
 The topbar field is **Filament's native one** — same markup, same look, same `Ctrl/⌘+K`. What changes is what happens on click: instead of typing there, it opens the Spotlight overlay, which searches on four fronts:
 

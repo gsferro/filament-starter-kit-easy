@@ -1,6 +1,6 @@
 # starter-kit-easy
 
-![Starter Kit Easy](art/banner.png)
+![Starter Kit Easy](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/banner.png)
 
 [![Packagist](https://img.shields.io/packagist/v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Downloads](https://img.shields.io/packagist/dt/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
@@ -21,7 +21,7 @@ composer dev
 
 Não há passo manual: o `create-project` já cria o `.env`, gera a `APP_KEY`, cria o banco SQLite, roda as migrations, semeia papéis/permissões/usuário, publica os assets do Filament e faz o build do front-end. Ao final ele imprime as URLs e o login inicial.
 
-![Instalação do starter-kit-easy em um comando](art/install.gif)
+![Instalação do starter-kit-easy em um comando](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/install.gif)
 
 Prefere clonar? O mesmo instalador roda sozinho:
 
@@ -63,15 +63,15 @@ Separar admin de infra é o ponto do kit: quem administra usuários não precisa
 
 | Login | Administração |
 |---|---|
-| [![Tela de login](art/thumbs/login.png)](art/login.png) | [![Painel admin](art/thumbs/panel-admin.png)](art/panel-admin.png) |
+| [![Tela de login](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login.png) | [![Painel admin](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/panel-admin.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/panel-admin.png) |
 | Auth Designer em duas colunas — troque a arte em `public/images/auth/login.svg` | Usuários, papéis, agentes de IA e indicadores de administração |
 
 | Infraestrutura | Negócio |
 |---|---|
-| [![Painel infra](art/thumbs/panel-infra.png)](art/panel-infra.png) | [![Painel app](art/thumbs/panel-app.png)](art/panel-app.png) |
+| [![Painel infra](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/panel-infra.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/panel-infra.png) | [![Painel app](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/panel-app.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/panel-app.png) |
 | Saúde, filas, trilhas, comandos e custos de IA — agrupados em Observabilidade, IA, Trilhas e Sistema | Vazio de propósito: é onde o seu projeto nasce |
 
-Mais telas: [saúde da aplicação](art/infra-health.png) · [usuários](art/admin-users.png) · [permissões (Shield)](art/admin-roles.png) · [catálogo de agentes de IA](art/admin-agentes-ia.png) · [central de comandos](art/infra-comandos.png) · [busca ⌘K](art/spotlight.png) · [acesso negado](art/erro-403.png)
+Mais telas: [saúde da aplicação](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/infra-health.png) · [usuários](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-users.png) · [permissões (Shield)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-roles.png) · [catálogo de agentes de IA](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-agentes-ia.png) · [central de comandos](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/infra-comandos.png) · [busca ⌘K](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/spotlight.png) · [acesso negado](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/erro-403.png)
 
 ## O que já vem pronto
 
@@ -107,7 +107,7 @@ Mais telas: [saúde da aplicação](art/infra-health.png) · [usuários](art/adm
 
 ### A busca ⌘K
 
-[![Busca ⌘K](art/thumbs/spotlight.png)](art/spotlight.png)
+[![Busca ⌘K](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/spotlight.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/spotlight.png)
 
 O campo na topbar é o **nativo do Filament** — mesma marcação, mesma aparência, mesmo `Ctrl/⌘+K`. O que muda é o que acontece ao clicar: em vez de digitar ali, abre o overlay do Spotlight, que busca em quatro frentes:
 
