@@ -14,6 +14,7 @@ use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -74,6 +75,36 @@ function aceitarConvite(string $token, string $nome = 'Fulano', ?string $email =
             'passwordConfirmation' => 'segredo-bem-longo-123',
         ]))
         ->call('register');
+}
+
+/**
+ * Os tokens em claro dos lembretes já disparados, na ordem dos disparos.
+ *
+ * Pelo OBJETO da notificação, NUNCA pelo corpo renderizado: a URL em e-mail sofre quebra de
+ * linha do quoted-printable, e um `preg_match` no HTML falharia por formatação em vez de por
+ * comportamento.
+ *
+ * Todo destinatário on-demand cai no mesmo balde do fake (`AnonymousNotifiable::getKey()`
+ * devolve null), então a ordem aqui é a ordem real dos envios.
+ *
+ * @return list<string>
+ */
+function tokensDosLembretes(): array
+{
+    $tokens = [];
+
+    Notification::assertSentOnDemand(
+        ConviteDeAcesso::class,
+        function (ConviteDeAcesso $notificacao) use (&$tokens): bool {
+            if ($notificacao->lembrete) {
+                $tokens[] = $notificacao->token;
+            }
+
+            return true;
+        },
+    );
+
+    return $tokens;
 }
 
 it('cria convite pela tela e dispara a notificacao', function (): void {
@@ -406,4 +437,478 @@ it('convida quem ja tem conta em vez de recusar', function (): void {
         ->toThrow(RuntimeException::class);
 
     expect($deOutro->fresh()?->aceito_em)->toBeNull();
+});
+
+/*
+|--------------------------------------------------------------------------
+| Lembretes de convite
+|--------------------------------------------------------------------------
+| O convite cobra a si mesmo: `kit:convites-lembrar` manda um SEGUNDO link,
+| paralelo ao do envio. O que estes casos travam, em ordem de importância: o
+| `orWhere` de `Convite::valido()` NÃO escapa dos filtros de estado (CT-04), o
+| link original continua valendo depois de qualquer lembrete (CT-02, CT-03), e
+| sai UM lembrete por convite por execução (CT-01).
+|
+| Ver `wikis/specs/main/lembretes-de-convite/`.
+*/
+
+/**
+ * CT-01 — cinco linhas, quatro propriedades travadas.
+ *
+ * As duas primeiras linhas são a diferença entre lembrete e spam: um erro de sinal na
+ * comparação de datas mandaria lembrete no mesmo minuto do convite. `[[3, 5], 6, [1, 2]]` é
+ * a propriedade central de ADR-03 e a razão de conferir o contador ENTRE execuções: os dois
+ * prazos venceram e ainda assim sai um lembrete por execução. `[[3], 6, [1, 1]]` prova
+ * ADR-05 — o teto é `count($dias)`, não uma segunda chave de config.
+ *
+ * Dois convites idênticos, para o caso também provar que eles andam juntos: nenhum recebe
+ * dois lembretes enquanto o outro recebe zero.
+ *
+ * @param  list<int>  $dias
+ * @param  list<int>  $esperados  o contador depois de CADA execução
+ */
+it('lembra conforme o cronograma, um lembrete por convite por execucao', function (array $dias, int $viagem, array $esperados): void {
+    Notification::fake();
+    config(['kit.convites.lembretes_dias' => $dias]);
+
+    [$a] = conviteCom('panel_user', email: 'a@example.com');
+    [$b] = conviteCom('panel_user', email: 'b@example.com');
+
+    $enviadoAntes = $a->fresh()?->enviado_em;
+
+    $this->travel($viagem)->days();
+
+    foreach ($esperados as $esperado) {
+        $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+        expect($a->fresh()?->lembretes_enviados)->toBe($esperado)
+            ->and($b->fresh()?->lembretes_enviados)->toBe($esperado);
+    }
+
+    // Os dois envios originais mais um lembrete por convite por incremento.
+    Notification::assertSentOnDemandTimes(ConviteDeAcesso::class, 2 + 2 * end($esperados));
+
+    // Lembrete não é envio: o relógio de `enviado_em` não se move.
+    expect($a->fresh()?->enviado_em?->equalTo($enviadoAntes))->toBeTrue();
+
+    if (end($esperados) === 0) {
+        expect($a->fresh()?->token_lembrete)->toBeNull();
+    } else {
+        expect($a->fresh()?->token_lembrete)->not->toBeNull();
+    }
+})->with([
+    'nada no dia do envio'         => [[3, 5], 0, [0, 0]],
+    'nada antes do primeiro prazo' => [[3, 5], 2, [0, 0]],
+    'primeiro prazo vencido'       => [[3, 5], 4, [1, 1]],
+    'dois prazos vencidos'         => [[3, 5], 6, [1, 2]],
+    'teto = count(dias)'           => [[3], 6, [1, 1]],
+]);
+
+/**
+ * CT-02 — é o caso que a feature existe para não quebrar.
+ *
+ * O reflexo de quem for mexer aqui é chamar `enviar()`, que rotaciona o token e renova o
+ * prazo — e o e-mail que a pessoa já tem passa a dar redirect para o login. A asserção 2
+ * acusa isso. Ver ADR-01.
+ */
+it('lembra com um link novo sem invalidar o do envio', function (): void {
+    Notification::fake();
+    config(['kit.convites.lembretes_dias' => [3, 5]]);
+
+    [$convite, $token] = conviteCom('panel_user');
+
+    $hashAntes   = $convite->fresh()?->token;
+    $expiraAntes = $convite->fresh()?->expira_em;
+
+    $this->travel(4)->days();
+
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    $tokenDoLembrete = tokensDosLembretes()[0] ?? '';
+
+    expect($tokenDoLembrete)->not->toBe('')
+        // 1. O lembrete carrega um token DIFERENTE.
+        ->and($tokenDoLembrete)->not->toBe($token)
+        // 2. O hash do envio não mudou — ninguém chamou `enviar()`.
+        ->and($convite->fresh()?->token)->toBe($hashAntes)
+        // 3. O prazo não foi renovado.
+        ->and($convite->fresh()?->expira_em?->equalTo($expiraAntes))->toBeTrue()
+        // 4. Os DOIS links abrem o mesmo convite.
+        ->and(Convite::valido($token)?->is($convite))->toBeTrue()
+        ->and(Convite::valido($tokenDoLembrete)?->is($convite))->toBeTrue();
+
+    // 5. E o link do lembrete cadastra de verdade.
+    aceitarConvite($tokenDoLembrete)->assertHasNoFormErrors();
+
+    $this->assertDatabaseHas('users', ['email' => $convite->email]);
+});
+
+/**
+ * CT-03 — no máximo DOIS links vivos por convite, e o caso diz quais.
+ */
+it('mantem vivos apenas o link do envio e o do ultimo lembrete', function (): void {
+    Notification::fake();
+    config(['kit.convites.lembretes_dias' => [3, 5]]);
+
+    [$convite, $token] = conviteCom('panel_user');
+
+    $this->travel(4)->days();
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    $this->travel(2)->days();
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    [$lembrete1, $lembrete2] = tokensDosLembretes();
+
+    expect($lembrete1)->not->toBe($lembrete2)
+        // O link do envio continua valendo depois dos dois: é a propriedade que ADR-01 compra.
+        ->and(Convite::valido($token)?->is($convite))->toBeTrue()
+        // Cada lembrete SOBRESCREVE `token_lembrete`: o do primeiro morreu.
+        ->and(Convite::valido($lembrete1))->toBeNull()
+        ->and(Convite::valido($lembrete2)?->is($convite))->toBeTrue()
+        // A coluna guarda o hash, nunca o claro.
+        ->and($convite->fresh()?->token_lembrete)->toBe(hash('sha256', $lembrete2));
+});
+
+/**
+ * CT-04 — o CT que existe para uma linha de SQL.
+ *
+ * `valido()` ganhou um `orWhere` (ADR-01), e `orWhere` **sem agrupamento explícito escapa
+ * dos outros filtros**: o SQL sairia como
+ * `WHERE token = ? AND aceito_em IS NULL AND ... OR token_lembrete = ?`, e o `OR` parte o
+ * `WHERE` inteiro — o token de lembrete passaria a valer SOZINHO, sem prazo e sem estado.
+ * O sintoma é o pior possível: um convite expirado volta a ser aceitável pelo link do
+ * lembrete, sem erro, sem log, e a tela simplesmente aceita.
+ *
+ * Cobra os TRÊS filtros de estado, um por vez, porque é isso que diz QUAL deles escapou.
+ */
+it('nao aceita token de lembrete de convite aceito, recusado nem expirado', function (): void {
+    [$convite, $token] = conviteCom('panel_user');
+
+    $tokenLembrete = 'x'.Str::random(63);
+    $convite->forceFill(['token_lembrete' => hash('sha256', $tokenLembrete)])->save();
+
+    // Sanidade: antes de qualquer coisa, os dois valem.
+    expect(Convite::valido($token)?->is($convite))->toBeTrue()
+        ->and(Convite::valido($tokenLembrete)?->is($convite))->toBeTrue();
+
+    $login = Filament::getPanel('app')->getLoginUrl();
+
+    $estados = [
+        'aceito'   => ['aceito_em' => now()],
+        'recusado' => ['aceito_em' => null, 'recusado_em' => now()],
+        'expirado' => ['recusado_em' => null, 'expira_em' => now()->subMinute()],
+    ];
+
+    foreach ($estados as $estado => $colunas) {
+        $convite->forceFill($colunas)->save();
+
+        expect(Convite::valido($token))->toBeNull($estado)
+            ->and(Convite::valido($tokenLembrete))->toBeNull($estado);
+
+        // Fecha pela porta HTTP também, que é onde a falha apareceria de verdade.
+        $this->get("/app/register?token={$token}")->assertRedirect($login);
+        $this->get("/app/register?token={$tokenLembrete}")->assertRedirect($login);
+    }
+});
+
+/**
+ * CT-05 — o aceite fecha as DUAS portas.
+ */
+it('nao lembra convite ja aceito', function (): void {
+    Notification::fake();
+    config(['kit.convites.lembretes_dias' => [3, 5]]);
+
+    [$convite, $token] = conviteCom('panel_user', email: 'aceitou@example.com');
+
+    // Um lembrete já enviado, para haver o que apagar.
+    $this->travel(4)->days();
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    aceitarConvite($token)->assertHasNoFormErrors();
+
+    $this->travel(2)->days();
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    // O envio e o lembrete de ANTES do aceite, e nada depois dele.
+    Notification::assertSentOnDemandTimes(ConviteDeAcesso::class, 2);
+
+    expect($convite->fresh()?->lembretes_enviados)->toBe(1)
+        /*
+         * Sem esta asserção, um link de lembrete continuaria pendurado num convite
+         * consumido — barrado pelo `whereNull('aceito_em')` de `valido()`, mas vivo no
+         * banco sem razão.
+         */
+        ->and($convite->fresh()?->token_lembrete)->toBeNull();
+});
+
+/**
+ * CT-06 — "ela disse não" é diferente de "ela não viu".
+ *
+ * Sem a linha `recusado`, o kit insistiria com quem recusou: o pior comportamento possível
+ * desta feature. E nenhuma coluna de status é escrita — expirado é DERIVADO de `expira_em`,
+ * que é o que nos poupou do `--mark-expired` do laravel-invite-only (ADR-03).
+ */
+it('nao lembra convite fora de jogo', function (string $estado): void {
+    Notification::fake();
+    config(['kit.convites.lembretes_dias' => [3, 5]]);
+
+    [$convite] = conviteCom('panel_user');
+
+    if ($estado === 'expirado') {
+        $convite->forceFill(['expira_em' => now()->subMinute()])->save();
+    } else {
+        // O caminho real da wiki irmã: `recusar()` exige o dono do endereço.
+        $convite->recusar(usuario($convite->email));
+    }
+
+    $this->travel(4)->days();
+
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    // Só o envio original.
+    Notification::assertSentOnDemandTimes(ConviteDeAcesso::class, 1);
+
+    expect($convite->fresh()?->lembretes_enviados)->toBe(0)
+        ->and($convite->fresh()?->token_lembrete)->toBeNull()
+        ->and($convite->fresh()?->aceito_em)->toBeNull();
+})->with(['expirado', 'recusado']);
+
+/**
+ * CT-07 — agora há DOIS segredos por convite, e o `autenticacao.log` é aberto na tela pelo
+ * Logs Explorer do /infra. A asserção é a tradução literal da regra de
+ * `config/logging.php:80-81`.
+ */
+it('registra a execucao no channel autenticacao sem vazar token', function (): void {
+    Notification::fake();
+    config(['kit.convites.lembretes_dias' => [3, 5]]);
+
+    $canal = espiarAutenticacao();
+
+    [, $token] = conviteCom('panel_user', email: 'fulano@example.com');
+    conviteCom('panel_user', email: 'outro@example.com');
+
+    $this->travel(4)->days();
+
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    $tokens = tokensDosLembretes();
+
+    expect($tokens)->toHaveCount(2);
+
+    $semSegredo = function (array $contexto) use ($token, $tokens): bool {
+        $serializado = (string) json_encode($contexto);
+
+        foreach ([$token, ...$tokens] as $segredo) {
+            if (str_contains($serializado, $segredo) || str_contains($serializado, hash('sha256', $segredo))) {
+                return false;
+            }
+        }
+
+        // E-mail sempre mascarado (`Str::mask($email, '*', 3)`).
+        return ! str_contains($serializado, 'fulano@example.com');
+    };
+
+    $canal->shouldHaveReceived('info')
+        ->withArgs(fn (string $mensagem, array $contexto): bool => str_starts_with($mensagem, '[Convite@lembrar]')
+            && filled($contexto['convite_id'])
+            && filled($contexto['enviado_em'])
+            && filled($contexto['expira_em'])
+            && $contexto['lembretes_enviados'] === 1
+            && $semSegredo($contexto))
+        ->twice();
+
+    $canal->shouldHaveReceived('info')
+        ->withArgs(fn (string $mensagem, array $contexto): bool => str_starts_with($mensagem, '[KitConvitesLembrar@handle]')
+            && $contexto['total'] === 2
+            && $contexto['dias'] === [3, 5]
+            && $semSegredo($contexto))
+        ->once();
+
+    // Convite não devido não gera linha: repetir a execução produz só o resumo, com total 0.
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    $canal->shouldHaveReceived('info')
+        ->withArgs(fn (string $mensagem, array $contexto): bool => str_starts_with($mensagem, '[KitConvitesLembrar@handle]')
+            && $contexto['total'] === 0)
+        ->once();
+
+    Log::shouldHaveReceived('channel')->with('autenticacao');
+});
+
+/**
+ * CT-08 — o único caso que exercita o CORPO do e-mail de lembrete.
+ *
+ * **Sem `Notification::fake()` de propósito**: é o único em que `toMail()` renderiza. O
+ * mailer é `array` (`phpunit.xml:41`), então nada sai da máquina. Um erro no ternário do
+ * assunto ou no `url()` só apareceria como job falhado em produção.
+ */
+it('manda o e-mail de lembrete com assunto proprio', function (): void {
+    config(['kit.convites.lembretes_dias' => [3, 5]]);
+
+    conviteCom('panel_user');
+
+    $this->travel(4)->days();
+
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    $mensagens = Mail::mailer()->getSymfonyTransport()->messages();
+
+    expect($mensagens)->toHaveCount(2);
+
+    $envio    = $mensagens->first()?->getOriginalMessage();
+    $lembrete = $mensagens->last()?->getOriginalMessage();
+
+    expect($envio?->getSubject())->toStartWith('Você foi convidado')
+        ->and($lembrete?->getSubject())->toStartWith('Lembrete:');
+
+    // Quoted-printable quebra a cada 76 colunas, inclusive no meio da URL.
+    $corpo = quoted_printable_decode((string) $lembrete?->toString());
+
+    expect($corpo)->toContain('Aceitar convite')
+        ->and($corpo)->toContain('Este é um lembrete')
+        ->and($corpo)->toContain('/app/register?token=');
+});
+
+/**
+ * CT-09 — o caso de ADR-02.
+ *
+ * Se o intervalo contasse de `created_at`, a última execução mandaria um "lembrete" no mesmo
+ * dia do reenvio, e em duas execuções o teto se esgotaria — os lembretes do envio que
+ * importa nunca sairiam, sem erro nenhum no caminho.
+ */
+it('reinicia o relogio de lembretes quando o convite e reenviado', function (): void {
+    Notification::fake();
+    config(['kit.convites.lembretes_dias' => [3, 5]]);
+
+    [$convite, $token] = conviteCom('panel_user');
+
+    $this->travel(6)->days();
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    $tokenDoLembrete = tokensDosLembretes()[0] ?? '';
+
+    $tokenNovo = $convite->enviar();
+
+    expect($convite->fresh()?->lembretes_enviados)->toBe(0)
+        ->and($convite->fresh()?->token_lembrete)->toBeNull()
+        // Ao segundo: a coluna é `timestamp` e não guarda os microssegundos que `now()` tem.
+        ->and($convite->fresh()?->enviado_em?->format('Y-m-d H:i:s'))->toBe(now()->format('Y-m-d H:i:s'))
+        /*
+         * Os DOIS links anteriores morreram — é o que mantém verdadeira a promessa da modal
+         * de Reenviar ("o link anterior deixa de funcionar"): os dois, não só o do envio.
+         */
+        ->and(Convite::valido($token))->toBeNull()
+        ->and(Convite::valido($tokenDoLembrete))->toBeNull()
+        ->and(Convite::valido($tokenNovo)?->is($convite))->toBeTrue();
+
+    // O relógio recomeçou: no mesmo instante do reenvio não há lembrete devido.
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    expect($convite->fresh()?->lembretes_enviados)->toBe(0);
+
+    // 1 envio + 1 lembrete + 1 reenvio.
+    Notification::assertSentOnDemandTimes(ConviteDeAcesso::class, 3);
+});
+
+/**
+ * CT-10 — a ordem é o ponto.
+ *
+ * O convite estragado tem `id` menor, então é o primeiro do chunk (`chunkById` ordena por
+ * id). Sem o `try/catch`, ele derrubaria a execução e o convite bom ficaria sem lembrete em
+ * TODA execução, para sempre — starvation silenciosa.
+ *
+ * **Sem `Notification::fake()`**: com o fake nada monta o destinatário no Symfony Mailer, e
+ * o endereço inválido não estouraria — o caso não testaria nada. O mailer é `array`.
+ */
+it('nao deixa um convite estragado derrubar o lote', function (): void {
+    config(['kit.convites.lembretes_dias' => [3, 5]]);
+
+    $canal = espiarAutenticacao();
+
+    // 1º — endereço inválido: o Symfony Mailer lança ao montar o destinatário. Não pode
+    //      nascer por `conviteCom()`, porque `enviar()` estouraria na hora.
+    $estragado = Convite::factory()->create([
+        'email'   => 'sem-arroba',
+        'role_id' => Role::findByName('panel_user')->getKey(),
+    ]);
+    $estragado->forceFill(['enviado_em' => now()->subDays(4)])->save();
+
+    // 2º — anterior à migration: `enviado_em` nulo, e nunca foi enviado.
+    $antigo = Convite::factory()->create([
+        'email'   => 'antigo@example.com',
+        'role_id' => Role::findByName('panel_user')->getKey(),
+    ]);
+
+    // 3º — o bom.
+    [$bom] = conviteCom('panel_user', email: 'novo@example.com');
+
+    $this->travel(4)->days();
+
+    // Sucesso, e não FAILURE: um cron que sai com erro por causa de um endereço inválido
+    // gera alarme falso todo dia.
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    expect($bom->fresh()?->lembretes_enviados)->toBe(1)
+        // Sem `enviado_em` o kit não sabe de quando contar, e a linha fica fora do lote.
+        ->and($antigo->fresh()?->lembretes_enviados)->toBe(0)
+        // A escrita acontece ANTES do `notify()`, de propósito: endereço permanentemente
+        // quebrado sai do lote em vez de ser tentado todo dia (ADR-03).
+        ->and($estragado->fresh()?->lembretes_enviados)->toBe(1);
+
+    // O lembrete do convite bom saiu de verdade.
+    $destinos = Mail::mailer()->getSymfonyTransport()->messages()
+        ->flatMap(fn ($mensagem) => array_map(
+            fn ($endereco) => $endereco->getAddress(),
+            $mensagem->getEnvelope()->getRecipients(),
+        ));
+
+    expect($destinos)->toContain('novo@example.com');
+
+    $canal->shouldHaveReceived('warning')
+        ->withArgs(fn (string $mensagem, array $contexto): bool => str_starts_with($mensagem, '[KitConvitesLembrar@handle]')
+            && $contexto['convite_id'] === $estragado->id
+            && $contexto['exception'] instanceof Throwable
+            && $contexto['email'] === Str::mask('sem-arroba', '*', 3))
+        ->once();
+});
+
+/**
+ * CT-11 — o agendamento nasce ligado (ADR-04), então o comando precisa ser inerte numa
+ * instalação nova. E a chave vazia desliga a FEATURE, não só o cronograma: o convite da
+ * segunda metade está devido, e ainda assim nada sai.
+ */
+it('termina com sucesso sem convite pendente e com os lembretes desligados', function (): void {
+    Notification::fake();
+
+    $canal = espiarAutenticacao();
+
+    // 1ª metade — banco vazio, com o default de config (sem override).
+    $this->artisan('kit:convites-lembrar')
+        ->expectsOutputToContain('Nenhum convite pendente')
+        ->assertSuccessful();
+
+    Notification::assertNothingSent();
+
+    $canal->shouldHaveReceived('info')
+        ->withArgs(fn (string $mensagem, array $contexto): bool => str_starts_with($mensagem, '[KitConvitesLembrar@handle]')
+            && $contexto['total'] === 0)
+        ->once();
+
+    // 2ª metade — convite DEVIDO, mas a lista vazia desliga a feature.
+    config(['kit.convites.lembretes_dias' => []]);
+
+    [$convite] = conviteCom('panel_user');
+
+    $this->travel(4)->days();
+
+    $this->artisan('kit:convites-lembrar')
+        ->expectsOutputToContain('desligados')
+        ->assertSuccessful();
+
+    // Só o envio original.
+    Notification::assertSentOnDemandTimes(ConviteDeAcesso::class, 1);
+
+    expect($convite->fresh()?->lembretes_enviados)->toBe(0)
+        ->and($convite->fresh()?->token_lembrete)->toBeNull();
 });

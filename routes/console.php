@@ -26,6 +26,14 @@ Schedule::command('health:check')->everyFifteenMinutes();
 // Expurgo da trilha de acesso (retenção em config/authentication-log.php).
 Schedule::command('authentication-log:purge')->daily();
 
+// Lembrete dos convites pendentes (prazos em config/kit.php). Não manda nada
+// quando a lista de dias está vazia, quando MAIL_MAILER=log ou quando não há
+// convite pendente — então nasce ligado, e inerte numa instalação nova.
+//
+// ponytail: sem onOneServer(); o kit não presume cluster, e nem o health:check
+// nem o purge acima usam. Em cluster, acrescente ->onOneServer() aqui.
+Schedule::command('kit:convites-lembrar')->dailyAt('08:00');
+
 // Backups. Ligue quando configurar o destino em config/backup.php.
 // Schedule::command('backup:clean')->daily()->at('01:00');
 // Schedule::command('backup:run')->daily()->at('01:30');

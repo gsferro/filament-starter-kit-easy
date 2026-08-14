@@ -97,6 +97,26 @@ return [
          * de fila rodando.
          */
         'limite_do_lote' => (int) env('KIT_CONVITE_LIMITE_LOTE', 100),
+
+        /*
+        | Dias, contados do ENVIO, em que cada lembrete do convite pendente é
+        | devido. O lembrete manda um SEGUNDO link, paralelo ao do envio: nada é
+        | invalidado e o prazo não é renovado, então o e-mail que a pessoa já tem
+        | continua valendo.
+        |
+        | Lista vazia desliga a feature. Todo dia aqui precisa ser MENOR que
+        | `validade_em_dias`: com validade 3 e lembrete em D+3 o convite expira
+        | antes de o lembrete ser devido, e nenhum lembrete sai — sem erro nenhum.
+        |
+        | O teto de lembretes por convite é a quantidade de dias desta lista. Não
+        | existe um segundo botão de máximo: dois botões discordam.
+        |
+        | Quem chama é `kit:convites-lembrar`, agendado em routes/console.php.
+        */
+        'lembretes_dias' => array_values(array_filter(array_map(
+            'intval',
+            explode(',', (string) env('KIT_CONVITE_LEMBRETES_DIAS', '3,5')),
+        ))),
     ],
 
     /*

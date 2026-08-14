@@ -164,7 +164,8 @@ cadastro aberto.
 | Validade | `KIT_CONVITE_VALIDADE_DIAS` (7 dias por padrão) |
 | Em massa | **Convidar em massa** no header da listagem: cole os endereços, um papel e uma organização para o lote. Até `KIT_CONVITE_LIMITE_LOTE` (100 por padrão) — um endereço com problema **não impede os outros**, e o resumo diz quantos saíram e por que os outros não |
 | Uso | **único**: na conta nova, `aceito_em` é carimbado na mesma transação que cria o usuário; na oferta, por `update` condicional — é o que impede dois cliques de valerem duas vezes |
-| Reenviar | gera token novo e **mata o link anterior** |
+| Lembrete | `KIT_CONVITE_LEMBRETES_DIAS` (D+3 e D+5 por padrão, contados do envio): o kit manda **um** lembrete por convite por dia devido, com um **segundo link paralelo** — o link original **continua valendo**, e nada é revogado nem se o lembrete cair no spam. O teto é a quantidade de dias da lista, e a lista vazia desliga a feature. Todo dia precisa ser **menor** que a validade, senão o convite expira antes de o lembrete ser devido e nenhum lembrete sai |
+| Reenviar | gera token novo e **mata os links anteriores** — o do envio e o do último lembrete |
 | Revogar | apaga o convite; o link para de funcionar na hora, e a exclusão fica em `/infra/audits` |
 | Editar | **não existe** — o convite já foi enviado; corrija revogando e criando outro |
 
@@ -176,6 +177,15 @@ cadastro aberto.
 > põe cem linhas em `jobs` e entrega zero, e a tela diz "cem enviados" — porque foram, para
 > a fila. Com `QUEUE_CONNECTION=sync` é o oposto: cada e-mail é um handshake SMTP dentro do
 > request, e cem encostam no `max_execution_time`. É o que o limite do lote protege.
+
+> ⚠️ **O lembrete exige as duas coisas acima E o scheduler.** Quem manda é
+> `kit:convites-lembrar`, agendado em `routes/console.php` para as 08:00 — sem
+> `php artisan schedule:work` (ou o serviço `scheduler` do docker compose) ele nunca é
+> chamado. E o contador do convite **sobe mesmo com o worker parado**: a gravação acontece
+> antes de a notificação ser enfileirada, de propósito, para que um endereço permanentemente
+> quebrado não faça o cron tentar o mesmo convite todo dia para sempre. A consequência é
+> honesta: worker parado gasta lembretes sem entregar e-mail. Numa instalação com convites
+> antigos acumulados, ensaie com `MAIL_MAILER=log` — que é o default do kit.
 
 O papel do convite decide o contexto da atribuição: papel do painel `/app` nasce dentro da
 organização do convite; papel de `/admin` ou `/infra` nasce no contexto global — ser

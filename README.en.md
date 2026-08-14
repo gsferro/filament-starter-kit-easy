@@ -164,7 +164,8 @@ There is no open sign-up.
 | Lifetime | `KIT_CONVITE_VALIDADE_DIAS` (7 days by default) |
 | In bulk | **Invite in bulk** in the listing header: paste the addresses, one role and one organization for the whole batch. Up to `KIT_CONVITE_LIMITE_LOTE` (100 by default) — one bad address **does not stop the others**, and the summary tells you how many went out and why the rest did not |
 | Usage | **single use**: for a new account, `aceito_em` is stamped in the same transaction that creates the user; for an offer, by a conditional `update` — which is what keeps two clicks from counting twice |
-| Resend | issues a new token and **kills the previous link** |
+| Reminder | `KIT_CONVITE_LEMBRETES_DIAS` (D+3 and D+5 by default, counted from the send): the kit sends **one** reminder per invitation per due day, carrying a **second, parallel link** — the original link **keeps working**, and nothing is revoked even if the reminder lands in spam. The cap is the number of days in the list, and an empty list turns the feature off. Every day must be **smaller** than the lifetime, otherwise the invitation expires before the reminder is due and no reminder ever goes out |
+| Resend | issues a new token and **kills the previous links** — the one from the send and the one from the last reminder |
 | Revoke | deletes the invitation; the link stops working immediately, and the deletion lands in `/infra/audits` |
 | Edit | **does not exist** — the invitation was already sent; fix it by revoking and creating another |
 
@@ -178,6 +179,15 @@ There is no open sign-up.
 > `QUEUE_CONNECTION=sync` it is the opposite: each e-mail is an SMTP handshake inside the
 > request, and a hundred of them hit `max_execution_time`. That is what the batch limit
 > protects.
+
+> ⚠️ **Reminders need both of the above AND the scheduler.** They are sent by
+> `kit:convites-lembrar`, scheduled in `routes/console.php` for 08:00 — without
+> `php artisan schedule:work` (or the docker compose `scheduler` service) it is never called.
+> And the invitation's counter **goes up even with the worker stopped**: the write happens
+> before the notification is queued, on purpose, so that a permanently broken address cannot
+> make the cron retry the same invitation every day forever. The consequence is honest: a
+> stopped worker spends reminders without delivering e-mail. On an installation with old
+> pending invitations, rehearse with `MAIL_MAILER=log` — which is the kit's default.
 
 The invitation's role decides the context of the assignment: a role of the `/app` panel is
 granted inside the invitation's organization; a role of `/admin` or `/infra` is granted in

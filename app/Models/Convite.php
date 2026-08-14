@@ -43,6 +43,9 @@ use Throwable;
  * @property ?Carbon $expira_em
  * @property ?Carbon $aceito_em
  * @property ?Carbon $recusado_em
+ * @property ?string $token_lembrete
+ * @property ?Carbon $enviado_em
+ * @property int $lembretes_enviados
  */
 class Convite extends Model implements Auditable
 {
@@ -73,8 +76,14 @@ class Convite extends Model implements Auditable
         'recusado_em',
     ];
 
+    /**
+     * Os DOIS hashes de token, pelo mesmo motivo: fora do `$fillable` eles não entram na
+     * auditoria, e aqui não aparecem em `toArray()`, num `dd($convite)` nem num `$context`
+     * de log que passe o model inteiro. Hash de credencial não é dado de diagnóstico.
+     */
     protected $hidden = [
         'token',
+        'token_lembrete',
     ];
 
     /**
@@ -86,6 +95,7 @@ class Convite extends Model implements Auditable
             'expira_em'   => 'datetime',
             'aceito_em'   => 'datetime',
             'recusado_em' => 'datetime',
+            'enviado_em'  => 'datetime',
         ];
     }
 
@@ -127,12 +137,34 @@ class Convite extends Model implements Auditable
      */
     public function enviar(): string
     {
+        /*
+         * O `save()` abaixo grava só o que está SUJO, e é isso que obriga o refresh: uma
+         * instância carregada ANTES de um lembrete tem `lembretes_enviados` e
+         * `token_lembrete` velhos em memória, o `forceFill` os igualaria ao valor antigo,
+         * o Eloquent não veria mudança nenhuma e a reinicialização seria descartada EM
+         * SILÊNCIO — o link do último lembrete continuaria valendo depois de um reenvio
+         * que promete matá-lo. Um SELECT por chave primária, num método que já faz UPDATE
+         * + e-mail + log. Ver CT-09.
+         */
+        $this->refresh();
+
         $token = Str::random(64);
 
         $this->forceFill([
             'token'     => hash('sha256', $token),
             'expira_em' => now()->addDays((int) config('kit.convites.validade_em_dias', 7)),
             'aceito_em' => null,
+            /*
+             * Reenviar é emitir um convite novo: o link anterior morre, e o link do
+             * ÚLTIMO LEMBRETE tem de morrer com ele. Sem esta linha, um lembrete enviado
+             * antes do reenvio continuaria aceitando — e a promessa da modal de
+             * confirmação ("o link anterior deixa de funcionar") seria mentira pela
+             * metade.
+             */
+            'token_lembrete' => null,
+            // O relógio dos lembretes começa AQUI, não em `created_at`. Ver ADR-02.
+            'enviado_em'         => now(),
+            'lembretes_enviados' => 0,
         ])->save();
 
         Notification::route('mail', $this->email)->notify(new ConviteDeAcesso($this, $token));
@@ -146,6 +178,7 @@ class Convite extends Model implements Auditable
                 'papel'         => $this->papel?->getAttribute('name'),
                 'painel'        => $this->painelDoPapel(),
                 'tenant_id'     => $this->tenant_id,
+                'enviado_em'    => $this->enviado_em?->toIso8601String(),
                 'expira_em'     => $this->expira_em?->toIso8601String(),
                 'convidado_por' => $this->convidado_por_id,
                 'reenvio'       => $this->wasRecentlyCreated === false,
@@ -153,6 +186,49 @@ class Convite extends Model implements Auditable
         );
 
         return $token;
+    }
+
+    /**
+     * Manda um lembrete com um SEGUNDO link, sem tocar no primeiro.
+     *
+     * É a diferença entre lembrete e reenvio, e ela é a feature inteira: `enviar()`
+     * rotaciona o token e renova o prazo, matando o link que a pessoa já tem na caixa de
+     * entrada; um lembrete que fizesse isso e caísse no spam teria REVOGADO o único link
+     * válido. Aqui `token` e `expira_em` não são tocados.
+     *
+     * O token novo em claro existe nesta variável local, no e-mail e em lugar nenhum mais
+     * — a mesma regra do token do envio. Ver ADR-01.
+     */
+    public function lembrar(): void
+    {
+        $token = Str::random(64);
+
+        /*
+         * Grava ANTES de notificar, por duas razões independentes: o hash precisa estar no
+         * banco antes de o link existir numa caixa de entrada, senão o e-mail sai com um
+         * token que `valido()` não encontra; e um endereço permanentemente quebrado não
+         * pode fazer o cron tentar o mesmo convite todo dia para sempre — o contador sobe e
+         * o convite acaba saindo do lote.
+         */
+        $this->forceFill([
+            'token_lembrete'     => hash('sha256', $token),
+            'lembretes_enviados' => $this->lembretes_enviados + 1,
+        ])->save();
+
+        Notification::route('mail', $this->email)->notify(new ConviteDeAcesso($this, $token, lembrete: true));
+
+        Log::channel('autenticacao')->info(
+            "[Convite@lembrar] Lembrete de convite enviado | convite: {$this->id} - email: ".Str::mask($this->email, '*', 3),
+            [
+                'convite_id'         => $this->id,
+                'email'              => Str::mask($this->email, '*', 3),
+                'role_id'            => $this->role_id,
+                'tenant_id'          => $this->tenant_id,
+                'enviado_em'         => $this->enviado_em?->toIso8601String(),
+                'expira_em'          => $this->expira_em?->toIso8601String(),
+                'lembretes_enviados' => $this->lembretes_enviados,
+            ],
+        );
     }
 
     /**
@@ -359,6 +435,20 @@ class Convite extends Model implements Auditable
      * porque o chamador não deve poder distingui-los: a tela responde igual em todos.
      * Devolver o motivo faria alguém exibi-lo "para ajudar", e "este convite já foi usado"
      * confirma que o convite existiu. Ver ADR-02.
+     *
+     * DOIS tokens abrem o mesmo convite: o do envio (`token`) e o do último lembrete
+     * (`token_lembrete`). O chamador não sabe (nem precisa saber) qual foi usado — a
+     * autorização é a mesma nos dois casos, e é por isso que não existe um segundo método.
+     * Ver ADR-01 de `wikis/specs/main/lembretes-de-convite/`.
+     *
+     * O `where(closure)` em volta do par NÃO é estilo. Sem ele o SQL sai como
+     *
+     *     WHERE token = ? OR token_lembrete = ? AND aceito_em IS NULL AND ...
+     *
+     * e o `OR` parte o WHERE inteiro: cada token passa a valer SOZINHO, sem prazo e sem
+     * estado — um convite expirado (ou já aceito, ou recusado) volta a ser aceitável. Nada
+     * acusa; a tela simplesmente aceita. Visto vermelho antes de o closure entrar, e CT-04
+     * existe só para isso.
      */
     public static function valido(?string $token): ?self
     {
@@ -366,8 +456,14 @@ class Convite extends Model implements Auditable
             return null;
         }
 
+        $hash = hash('sha256', (string) $token);
+
         return static::query()
-            ->where('token', hash('sha256', (string) $token))
+            // SÓ o par de tokens entra no agrupamento.
+            ->where(fn (Builder $consulta) => $consulta
+                ->where('token', $hash)
+                ->orWhere('token_lembrete', $hash))
+            // Os TRÊS filtros de estado ficam de fora, em AND.
             ->whereNull('aceito_em')
             ->whereNull('recusado_em')
             ->where('expira_em', '>', now())
@@ -477,8 +573,9 @@ class Convite extends Model implements Auditable
 
         $this->atribuirPapel($user);
 
-        // O uso único: `Convite::valido()` já não devolve este convite.
-        $this->forceFill(['aceito_em' => now()])->save();
+        // O uso único: `Convite::valido()` já não devolve este convite. Convite consumido
+        // fecha as DUAS portas — o link do último lembrete morre junto.
+        $this->forceFill(['aceito_em' => now(), 'token_lembrete' => null])->save();
 
         Log::channel('autenticacao')->info(
             "[Convite@aceitar] Convite aceito | convite: {$this->id} - user: {$user->id}",
@@ -526,7 +623,8 @@ class Convite extends Model implements Auditable
             ->whereKey($this->getKey())
             ->whereNull('aceito_em')
             ->whereNull('recusado_em')
-            ->update(['aceito_em' => now()]);
+            // `token_lembrete` junto: convite consumido não deixa link de lembrete vivo.
+            ->update(['aceito_em' => now(), 'token_lembrete' => null]);
 
         if ($consumido !== 1) {
             throw new RuntimeException('Este convite já foi usado.');
@@ -577,7 +675,8 @@ class Convite extends Model implements Auditable
             ->whereKey($this->getKey())
             ->whereNull('aceito_em')
             ->whereNull('recusado_em')
-            ->update(['recusado_em' => now()]);
+            // `token_lembrete` junto: quem disse não também não deixa link vivo atrás.
+            ->update(['recusado_em' => now(), 'token_lembrete' => null]);
 
         if ($consumido !== 1) {
             throw new RuntimeException('Este convite já foi usado.');

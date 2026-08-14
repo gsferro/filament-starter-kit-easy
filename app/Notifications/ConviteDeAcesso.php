@@ -31,6 +31,12 @@ class ConviteDeAcesso extends Notification implements ShouldQueue
     public function __construct(
         public readonly Convite $convite,
         #[SensitiveParameter] public readonly string $token,
+        /**
+         * Muda o assunto e acrescenta uma linha. O token é OUTRO (o do lembrete), montado
+         * pelo mesmo `url()` — e o link original continua valendo. Ver ADR-01 de
+         * `wikis/specs/main/lembretes-de-convite/`.
+         */
+        public readonly bool $lembrete = false,
     ) {}
 
     /** @return list<string> */
@@ -52,7 +58,9 @@ class ConviteDeAcesso extends Notification implements ShouldQueue
         $jaTemConta = $this->convite->usuarioExistente() !== null;
 
         $mensagem = (new MailMessage)
-            ->subject('Você foi convidado para o '.config('app.name'))
+            ->subject($this->lembrete
+                ? 'Lembrete: seu convite para o '.config('app.name').' ainda está esperando'
+                : 'Você foi convidado para o '.config('app.name'))
             ->greeting('Olá!')
             ->line($jaTemConta
                 ? 'Você já tem conta no '.config('app.name').', e recebeu um convite para um acesso novo.'
@@ -69,6 +77,10 @@ class ConviteDeAcesso extends Notification implements ShouldQueue
         $mensagem->line($jaTemConta
             ? 'Entre com a sua senha e confirme — nenhuma conta nova é criada, e você também pode recusar.'
             : 'Ao aceitar, você escolhe a sua senha.');
+
+        if ($this->lembrete) {
+            $mensagem->line('Este é um lembrete: o convite abaixo continua valendo e ainda não foi usado.');
+        }
 
         return $mensagem
             ->action($jaTemConta ? 'Entrar e aceitar' : 'Aceitar convite', $this->url())

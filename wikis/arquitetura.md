@@ -147,6 +147,16 @@ O consumo é um `update` condicional (`WHERE aceito_em IS NULL AND recusado_em I
 
 Convidar uma turma é a **mesma porta**, com uma entrada a mais: a ação "Convidar em massa" no header das duas listagens de convites cola N endereços, um papel e uma organização, e chama `Convite::enviar()` N vezes. **Não existe segundo fluxo de envio** — nenhum Job de lote (a notificação já é `ShouldQueue`, então cada e-mail já é um job), nenhuma coluna de lote, nenhuma transação em volta: cada endereço é sua própria unidade, e é isso que dá **resultado parcial** — o décimo segundo endereço com problema não impede os outros trinta e nove. O que não saiu volta como lista de `{email, motivo}` e vira resumo na tela e contagem por motivo no log. É uma `Action` e não uma `Page` de propósito: `Page` nova no painel `app` gera permission que entra na matriz do `panel_user`.
 
+#### O convite cobra a si mesmo
+
+`kit:convites-lembrar`, agendado diariamente em `routes/console.php`, manda **um** lembrete por convite pendente por dia devido (`kit.convites.lembretes_dias`, D+3 e D+5 por default; lista vazia desliga). Um lembrete por convite **por execução**, por construção — há uma única chamada de `lembrar()` no laço —, então cron parado uma semana se recupera nas execuções seguintes em vez de disparar uma rajada.
+
+O lembrete **não chama `enviar()`**, e é aí que está a decisão. O token em claro existe no e-mail e em lugar nenhum mais: dias depois, dentro de um cron, ele não é recuperável. Reenviar o link exigiria rotacionar o token — e um lembrete que caísse no spam teria **revogado** o único link válido que a pessoa tinha. Então **dois tokens hasheados abrem o mesmo convite**: `token` (o do envio) e `token_lembrete` (o do último lembrete), os dois presos ao **mesmo `expira_em`**, que o lembrete não renova. Cada lembrete sobrescreve `token_lembrete`, então são no máximo dois links vivos; `enviar()`, `aceitar()`, `aceitarComoUsuarioExistente()` e `recusar()` limpam a coluna, para que convite reenviado ou consumido não deixe link pendurado.
+
+`Convite::valido()` é a porta única dos dois, e o `orWhere` do par vive dentro de um `where(closure)`: **os três filtros de estado ficam fora do agrupamento**. Sem o closure o `OR` parte o `WHERE` inteiro e cada token passa a valer sozinho, sem prazo e sem estado. Ver ADR-01 de `wikis/specs/main/lembretes-de-convite/`.
+
+O relógio é `enviado_em`, não `created_at`: `enviar()` é também o reenvio, então `created_at` pode estar a semanas do último envio — e a linha anterior à migration, com `enviado_em` nulo, fica de fora do lote em vez de ganhar um relógio fabricado. O contador `lembretes_enviados` é zerado por `enviar()`, e o teto **é** `count(dias)` — não existe uma segunda chave de máximo, porque dois botões discordam em silêncio.
+
 ## Busca ⌘K (Spotlight)
 
 O campo da topbar é o **nativo do Filament**; o clique abre o overlay do `wezlo/filament-search-spotlight`. Quatro categorias, duas delas do kit:
