@@ -31,6 +31,12 @@
         -->
         <testsuite name="Browser">
             <directory>tests/Browser</directory>
+            <!--
+                Multi-tenancy tem pasta própria porque o TenancyTestCase fixa
+                `permission.teams` antes das migrations, e o Pest não permite
+                dois TestCases na mesma pasta.
+            -->
+            <directory>tests/BrowserTenancy</directory>
         </testsuite>
     </testsuites>
     <source>
