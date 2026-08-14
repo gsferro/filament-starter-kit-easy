@@ -52,14 +52,20 @@ it('alterna o tema pela tela de login', function (): void {
 /**
  * CT-B09 — acessibilidade dos dashboards. Nasce `->todo()`, e isso é deliberado.
  *
- * Rodando, ele falha de verdade, com dois achados que vêm de `vendor/`: o botão do Clear
- * Cache sem texto acessível (critical, `cms-multi/filament-clear-cache`) e contraste
- * 4.25:1 no environment indicator (serious, `pxlrbt/filament-environment-indicator`).
- * Corrigir os dois exigiria mexer em `app/`, que o requisito desta entrega põe fora de
- * escopo. Ver 06-divida-tecnica.md → DT-01 e DT-02.
+ * Rodando, ele falha de verdade, com dois achados que vêm de `vendor/`: contraste 4.25:1 no
+ * environment indicator (serious, `pxlrbt/filament-environment-indicator`, e SÓ no tema
+ * claro — no escuro o `dark:fi-text-color-400` atravessa o limiar) e o botão do Clear Cache
+ * sem texto acessível (critical, `cms-multi/filament-clear-cache`, no `/infra` — o plugin é
+ * registrado apenas no InfraPanelProvider). Corrigir exigiria mexer em `app/`, que o
+ * requisito desta entrega põe fora de escopo. Ver 06-divida-tecnica.md → DT-01 e DT-02.
  *
  * `->todo()` e não comentado: assim a pendência aparece nomeada na saída de todo run, em
  * vez de dormir num comentário que ninguém lê.
+ *
+ * ATENÇÃO ao pagar a dívida: como lote, este cenário alcança só o PRIMEIRO painel que falha
+ * — `visit([...])` aborta na primeira exceção, e `/app` já falha no contraste, então a
+ * `critical` do `/infra` nunca é avaliada. Separar em um cenário por painel antes de
+ * remover o `->todo()`. Ver QA-03 do 07-relatorio-qa.md.
  */
 it('nao tem problema de acessibilidade nos dashboards', function (): void {
     $this->actingAs(usuarioDoKit('master_global'));

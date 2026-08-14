@@ -269,18 +269,28 @@ Rotas: os três dashboards (`/app`, `/admin`, `/infra`).
 
 ### Estado
 
-**Marcado `->todo()` deliberadamente.** Rodando, ele falha — e a falha é real, já reproduzida
-na sonda em `/admin`:
+**Marcado `->todo()` deliberadamente.** Rodando, ele falha — e a falha é real:
 
-| Severidade | Problema | Origem |
-|---|---|---|
-| **critical** | `<button wire:click="clear">` do *Clear Cache* sem texto acessível: sem `aria-label`, sem `title`, sem texto interno | `cms-multi/filament-clear-cache` |
-| **serious** | contraste 4.25:1 no `.environment-indicator` (`#e60076` sobre `#fdf2f8`); mínimo WCAG é 4.5:1 | `pxlrbt/filament-environment-indicator` |
+| Severidade | Problema | Painel | Origem |
+|---|---|---|---|
+| **critical** | `<button wire:click="clear">` do *Clear Cache* sem texto acessível: sem `aria-label`, sem `title`, sem texto interno | **`/infra`** | `cms-multi/filament-clear-cache` |
+| **serious** | contraste 4.25:1 no `.environment-indicator` (`#e60076` sobre `#fdf2f8`); mínimo WCAG é 4.5:1 | os três, **só no tema claro** | `pxlrbt/filament-environment-indicator` |
 
 Ambas em `vendor/`. Corrigir mexeria em `app/`, que RQ-07 coloca fora desta entrega.
 
 `->todo()` e não comentado: assim a pendência aparece nomeada na saída de **todo** run, em vez
 de dormir num comentário. Ver ADR-07 e `06-divida-tecnica.md` → DT-01, DT-02.
+
+> **Duas correções que o `feature-quality-gate` fez nesta descrição** — ver `07-relatorio-qa.md`:
+>
+> 1. **A `critical` é do `/infra`, não do `/admin`** (QA-02). A primeira escrita atribuía ao
+>    `/admin` porque a sonda a viu ali — mas o plugin é registrado só no `InfraPanelProvider`, e o
+>    botão vazou entre painéis no mesmo processo (DT-08). `/admin` isolado tem **0** botões.
+> 2. **Este cenário, como está, alcança só um dos dois achados** (QA-03). `visit([...])` aborta na
+>    primeira falha, e o `/app` já falha no contraste — então o `/infra` nunca é avaliado e a
+>    `critical` não aparece. Ao pagar a dívida, **separar o CT-B09 em um cenário por painel**.
+> 3. A `serious` some no tema escuro: o elemento é `dark:fi-text-color-400`, que atravessa o
+>    limiar (QA-04).
 
 ### Assertions (quando a dívida for paga)
 

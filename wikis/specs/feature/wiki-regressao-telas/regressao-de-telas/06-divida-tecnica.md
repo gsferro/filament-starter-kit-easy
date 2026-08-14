@@ -11,15 +11,22 @@ Confirmação: `git diff main --stat` não toca `app/`.
 
 ## Resumo
 
+Sete dívidas nasceram da rodada de CT-B; três (**DT-08**, **DT-09**, **DT-10**) vieram do
+`feature-quality-gate` depois, e duas entradas (**DT-01**, **DT-02**) foram **corrigidas** por
+ele. O relatório está em `07-relatorio-qa.md`.
+
 | ID | Dívida | Severidade | Custo estimado | Onde |
 |----|--------|-----------|----------------|------|
 | **DT-03** | Helpers de teste declarados dentro de arquivos de teste — inviabiliza `--parallel` e `--tia` | **bloqueante** | ~30 min | `tests/Kit`, `tests/Tenancy` |
 | **DT-01** | Botão *Clear Cache* sem texto acessível (a11y critical) | relevante | ~15 min | `vendor` + `app/Providers` |
+| **DT-08** | Render hook de plugin vaza entre painéis no mesmo processo PHP | relevante | investigação | `vendor` + `tests/Browser` |
 | **DT-04** | Assimetria de cobertura HTTP: `/app` quase sem smoke de backend | relevante | ~1 h | `tests/Kit` |
 | **DT-06** | Suíte `tests/Kit` leva ~14 min em série | relevante | depende de DT-03 | `tests/` |
 | **DT-02** | Contraste 4.25:1 no indicador de ambiente (a11y serious) | cosmética | ~10 min | `vendor` + CSS |
 | **DT-05** | Nenhum `data-testid` nas telas do kit | cosmética | ~1 h | `app/Filament` |
 | **DT-07** | Inventário de telas dos CT-B é array escrito à mão | cosmética | ~30 min | `tests/Browser` |
+| **DT-09** | Telas de `/infra` misturam inglês e português | cosmética | ~2 h | `lang/`, `vendor` |
+| **DT-10** | A suíte de testes escreve no `storage/logs` real | cosmética | ~5 min | `phpunit.xml` |
 
 ---
 
@@ -95,7 +102,16 @@ quem for pagar a dívida.
 ## DT-01 — Botão *Clear Cache* sem texto acessível
 
 **Severidade**: relevante (a11y **critical** pelo axe-core)
-**Como foi encontrada**: `assertNoAccessibilityIssues()` em `/admin`, na sonda do plugin.
+**Como foi encontrada**: `assertNoAccessibilityIssues()` em **`/infra`**.
+
+> **Correção de proveniência (QA-02 do `07-relatorio-qa.md`).** A primeira escrita desta
+> entrada dizia `/admin`, porque foi ali que a sonda registrou o botão. Estava errado: o
+> `FilamentClearCachePlugin` é registrado **só** em `InfraPanelProvider.php:198`, e o botão
+> apareceu no `/admin` por contaminação de processo — ver **DT-08**. Verificado: `/admin`
+> isolado tem **0** ocorrências de `clear-cache-button`.
+>
+> Isto importa para quem for pagar a dívida: verificando em `/admin`, não encontraria o botão
+> e concluiria que já estava resolvida.
 
 ### O problema
 
@@ -127,6 +143,10 @@ acrescenta os comandos extras (`config:clear`, `view:clear`, `modelCache:clear`)
 natural para o `aria-label` também.
 
 **Verificação**: remover `->todo()` do CT-B09 e rodar `pest --testsuite=Browser`.
+
+**Atenção**: o CT-B09 é um lote, e o lote **aborta na primeira falha** — o `/app` já falha no
+contraste, então o `/infra` nunca é avaliado e esta `critical` não aparece. Separar o cenário
+por painel antes de usá-lo como verificação. Ver QA-03 do `07-relatorio-qa.md`.
 
 ---
 
@@ -194,12 +214,18 @@ adivinhação.
 ## DT-02 — Contraste 4.25:1 no indicador de ambiente
 
 **Severidade**: cosmética (a11y **serious** pelo axe-core)
-**Como foi encontrada**: `assertNoAccessibilityIssues()` em `/admin`.
+**Como foi encontrada**: `assertNoAccessibilityIssues()` em `/admin`, **no tema claro**.
 
 ### O problema
 
 `.environment-indicator` renderiza `#e60076` sobre `#fdf2f8` a 12 px. Contraste **4.25:1**;
 mínimo WCAG AA para texto pequeno é **4.5:1**.
+
+> **Vale só no tema claro** (QA-04 do `07-relatorio-qa.md`). O elemento é
+> `fi-text-color-600 dark:fi-text-color-400`: no escuro usa a cor 400 e **atravessa** o
+> limiar. Verificado — `visit('/admin')->inDarkMode()->assertNoAccessibilityIssues()`
+> **passa**, e sem `inDarkMode()` **falha**. A sonda que originou esta entrada só mediu no
+> claro, que é justamente o eixo que o requisito (RQ-06) pedia distinguir.
 
 Falta pouco — e é o suficiente para o badge ficar ilegível em tela com brilho baixo ou para
 quem tem baixa visão. O badge diz em que ambiente a pessoa está, o que o torna exatamente o
@@ -272,6 +298,114 @@ Registrado aqui para que, quando acontecer, ninguém precise redescobrir a solu�
 
 ---
 
+## DT-08 - Render hook de plugin vaza entre paineis no mesmo processo PHP
+
+**Severidade**: relevante
+**Como foi encontrada**: `feature-quality-gate`, ciclo 1 - QA-01. E a **causa raiz** do erro de
+proveniencia de DT-01.
+
+### O problema
+
+`FilamentClearCachePlugin` esta registrado so em `InfraPanelProvider.php:198`. Ainda assim:
+
+| Cenario, no mesmo processo PHP | ocorrencias de `clear-cache-button` em `/admin` |
+|---|---|
+| `/admin` e a primeira tela do processo | **0** - correto |
+| `/infra` visitado antes, depois `/admin` | **9** - o painel renderiza um botao que nao e dele |
+| `/infra` tres vezes seguidas | 9, 9, 9 - estavel; o vazamento e **cross-painel**, nao acumulo |
+
+O `register()` do pacote registra um `renderHook` no painel, e o hook sobrevive a troca de painel
+dentro do processo.
+
+### Por que importa aqui
+
+Os CT-B01-04 visitam os tres paineis **no mesmo processo**. Logo **o DOM que a suite valida nao e
+o DOM que o usuario ve** - e essa e a premissa da suite inteira. Foi tambem o que fez a sonda
+desta wiki atribuir o botao ao `/admin`, produzindo um erro de documentacao que so o quality gate
+pegou.
+
+### Impacto em producao hoje: nulo
+
+Octane, FrankenPHP e RoadRunner **nao** estao instalados, entao cada request web e um processo
+novo. O risco e latente: ligar um worker persistente o torna real, e a manifestacao seria um
+botao de administracao aparecendo em painel que nao o registrou.
+
+### Correcao
+
+Duas frentes, e a ordem importa:
+
+1. **Nos testes** (barata): isolar processo por painel nos CT-B de smoke, ou aceitar por escrito
+   que o lote valida um DOM contaminado. Aceitar sem escrever e o que produziu QA-02.
+2. **No pacote** (upstream): o `renderHook` deveria ser registrado em `boot()` e nao em
+   `register()`, ou ser idempotente. Fora do controle do kit.
+
+**Verificacao**: os cenarios da tabela acima, num teste efemero.
+
+---
+
+## DT-09 - Telas de `/infra` misturam ingles e portugues
+
+**Severidade**: cosmetica
+**Como foi encontrada**: `feature-quality-gate`, ciclo 1 - QA-06, por inspecao visual de
+screenshot.
+
+### O problema
+
+O kit traduz o essencial (`Dashboard` para *Painel de Controle*), mas telas de plugin do `/infra`
+ficaram para tras:
+
+| Tela | Strings em ingles |
+|---|---|
+| `/infra/logs` | *"Logs explorer"*, *"Browse, read and search your application log files, grouped by channel."*, *"1 file"* / *"3 files"*, *"Refresh"* |
+| `/infra` (dashboard) | *"Composer releases"*, *"From composer.json / composer.lock on GitHub"*, *"Informational - no auto-updates"* |
+| Tela de 403 | *"Message no. SNT-403-783"* |
+
+Pior que ingles puro e o hibrido: *"Modified ha 1 hora"*.
+
+### Correcao
+
+Publicar as traducoes dos pacotes envolvidos (`laboiteacode/filament-logs-explorer`,
+`mominalzaraa/filament-composer-release-notifier`) em `lang/vendor/`, ou sobrescrever os rotulos
+pelos setters de plugin que ja sao usados para outros - o `InfraPanelProvider` ja faz isso com o
+Command Center (`CommandCenterCommands::navigationLabel('Comandos')`).
+
+Nenhuma das outras nove dividas cobre i18n, e o projeto e pt-BR por decisao.
+
+---
+
+## DT-10 - A suite de testes escreve no `storage/logs` real
+
+**Severidade**: cosmetica, destino **infra**
+**Como foi encontrada**: `feature-quality-gate`, ciclo 1 - QA-07.
+
+### O problema
+
+`phpunit.xml` fixa `DB_CONNECTION`, `CACHE_STORE`, `SESSION_DRIVER`, `MAIL_MAILER` e
+`QUEUE_CONNECTION` em drivers de teste - mas **nao** redireciona o log. O channel `autenticacao`
+e `daily` em disco, entao a suite escreve nos logs de trabalho do desenvolvedor:
+
+```
+storage/logs/autenticacao-2026-08-14.log  ->  4.463 linhas, 1,1 MB
+                                              1.033 delas sao [User@canAccessPanel]
+```
+
+Tudo produzido pelas rodadas de teste do dia. Precede esta branch (vem de `tests/Kit`), e a suite
+de browser nova soma ao volume.
+
+### Correcao
+
+Uma linha em `phpunit.xml`:
+
+```xml
+<env name="LOG_CHANNEL" value="null"/>
+```
+
+**Cuidado**: isso desligaria a assercao de log de `tests/Kit/PaineisTest.php:81-90` se ela
+dependesse do arquivo - ela **nao** depende, usa `Log::shouldReceive()`. Confirmar antes de
+aplicar.
+
+---
+
 ## O que **não** é dívida, e por que está escrito aqui
 
 Três coisas que pareceriam dívida numa leitura rápida:
@@ -282,3 +416,12 @@ Três coisas que pareceriam dívida numa leitura rápida:
 3. **`pest()->browser()->timeout(20_000)`** — é **teto** de reexecução de assertion, não espera
    fixa. Cenário verde não gasta esse tempo. O default de 5 s não alcança o primeiro boot de um
    painel Filament em teste, sem opcache e com Livewire compilando.
+4. **Stats do dashboard mostrando `0` por ~2,5 s** — é o odômetro funcionando como
+   configurado (`FilamentOdometerEasyPlugin::make()->delay(1000)->duration(1500)`,
+   `AdminPanelProvider.php:146-148`). Escolha explícita do mantenedor, não defeito. O que
+   **é** lacuna: nenhum CT-B assere o valor de um indicador, então se o custom element
+   falhar o `0` fica permanente e silencioso. Ver QA-05 do `07-relatorio-qa.md`.
+5. **Senha preservada no formulário após login inválido** — default do Filament, e
+   defensável. Sem requisito contra. Ver R-2 do `07-relatorio-qa.md`.
+6. **N+1 em `/admin/users`** — medido: **13 queries constantes** com 1, 10 e 30 usuários. A
+   aparência de N+1 vinha de deriva de medição no mesmo processo. Ver R-4.

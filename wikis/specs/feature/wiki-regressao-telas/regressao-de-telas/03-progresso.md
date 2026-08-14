@@ -57,7 +57,8 @@
 
 ## 8. Registrar as dívidas técnicas
 
-- [x] `06-divida-tecnica.md` escrito — **7 dívidas**: 1 bloqueante, 3 relevantes, 3 cosméticas
+- [x] `06-divida-tecnica.md` escrito — **10 dívidas**: 1 bloqueante, 3 relevantes, 6 cosméticas
+      (7 da rodada de CT-B; DT-08/09/10 vieram do quality gate)
 - [x] Confirmado: **nenhum arquivo de `app/` no diff** (`git diff main --stat`)
 
 ## 9. Commits individualizados
@@ -70,7 +71,8 @@
 - [x] `1bce3a3` — `:green_heart:` CI: job de telas
 - [x] `364c767` — `:memo:` dívida técnica
 - [x] `7b7a4e8` — `:recycle:` fusão dos CT-B de smoke + ordem das assertions
-- [ ] `:memo:` wiki
+- [x] `9bc437a` — `:memo:` wiki
+- [ ] `:memo:` relatório de QA + correções que ele exigiu
 
 ## Testes
 
@@ -92,7 +94,8 @@
 - [~] `vendor/bin/pest --parallel --tia` — **bloqueado por DT-03**, não por esta entrega. Ver
       Blockers. O contorno é rodar em série, que é verde
 - [x] Roteiro *Desenhado × Implementado* do `05-*-browser.md` preenchido
-- [ ] `feature-quality-gate` invocado, veredito registrado
+- [x] `feature-quality-gate` invocado — **ciclo 1: REPROVADO → especificação**, depois
+      corrigido. Ver `07-relatorio-qa.md`
 - [ ] Candidatos a rule apresentados ao usuário
 - [ ] `git commit`
 
@@ -129,6 +132,40 @@
   **Contorno adotado**: a Verificação Final desta wiki usa `vendor/bin/pest --group=kit` em
   série, que é o comando sob o qual a suíte é verde.
 
+## Quality Gate — Ciclo 1
+
+**Veredito: REPROVADO → especificação**, e **corrigido na mesma rodada**. Relatório completo em
+`07-relatorio-qa.md`.
+
+- Blocker: 0 · Major: 1 · Minor: 4 · Cosmético: 0
+- Perfil: **completo** (10 dimensões). Dimensão J pulada: natureza `nova`, sem ancestral
+- Dimensões dinâmicas delegadas a um **agente avaliador independente**, para reduzir a cegueira
+  correlacionada de quem escreveu requisito, plano e testes ser quem julga. Achados dele
+  **reverificados por reprodução própria**: 3 confirmados, 1 rebaixado, 4 rejeitados
+
+O que reprovou **não foi código** — a suíte estava verde e estável. Foi **documentação de dívida
+errada**, que é o defeito mais caro de um documento cujo propósito é ser verificado depois por
+outra pessoa:
+
+| # | Achado | Severidade | Destino | Situação |
+|---|---|---|---|---|
+| QA-01 | Render hook de plugin vaza entre painéis no mesmo processo PHP: `/admin` isolado tem 0 botões de *Clear Cache*, e 9 depois de visitar `/infra`. **O DOM que os CT-B validam não é o que o usuário vê** | **Major** | 3 + 2 | virou **DT-08** |
+| QA-02 | DT-01 atribuía a `critical` de acessibilidade ao `/admin`; o plugin está só no `InfraPanelProvider`. Quem fosse pagar a dívida concluiria que já estava resolvida | Minor | 1 | **corrigido** no `06` e no `05` |
+| QA-03 | O CT-B09, como lote, nunca alcançaria a `critical`: `visit([...])` aborta na primeira falha e `/app` já falha no contraste | Minor | 3 | **documentado** no `05`, no `06` e no docblock do teste |
+| QA-04 | DT-02 vale **só no tema claro** — no escuro o `dark:fi-text-color-400` atravessa o limiar. Era justamente o eixo que RQ-06 pedia | Minor | 1 | **corrigido** no `06` |
+| QA-05 | Nenhum CT-B assere valor de indicador; se o odômetro falhar, o `0` fica permanente e silencioso | Minor | 3 | registrado como não-dívida no `06` |
+
+Quatro suspeitas **rejeitadas** com motivo, para não voltarem no próximo ciclo: `admin_organizacao`
+sem CT-B (só existe com tenancy, fora de escopo), senha preservada após login inválido (default do
+Filament), avatar do perfil "quebrado" (artefato de captura pré-hidratação) e N+1 em `/admin/users`
+(medido: 13 queries constantes com 1, 10 e 30 usuários).
+
+Dimensões que passaram limpas: **D** (nenhum PII em log — e-mails aparecem mascarados),
+**E** (nenhum N+1), **F** (a tela de 403 é boa: pt-BR, explica, tem saída, zero vazamento de
+stack trace), **I** (nenhum segredo no CI; `--exclude-group=browser` exclui exatamente 11 de 227).
+
+**Ciclo 2 não foi necessário**: nenhum achado exigia reimplementação, e todos tinham destino claro.
+
 ## Desvios do Plano
 
 <!-- Onde a implementação divergiu do PRD e por quê -->
@@ -164,6 +201,11 @@
   fonte única (~50 linhas de wiki). O inventário das 52 rotas passa a viver em **dois** lugares
   — a tabela `## Superfície de UI` do PRD e o array do teste — e não em três, que foi o que
   produziu D-02.
+- **D-07 — a sonda inicial produziu um erro de documentação que só o quality gate pegou.** Ela
+  registrou o botão *Clear Cache* em `/admin`, e isso entrou em DT-01 e no CT-B09. O botão é do
+  `/infra`; apareceu no `/admin` por vazamento de render hook no mesmo processo (DT-08). É o
+  contra-exemplo honesto de ADR-04: sondar antes de planejar deu quatro fatos certos e **um
+  errado**, e o errado sobreviveu a duas revisões porque a sonda parecia evidência direta.
 - **D-05 — regressão que esta entrega introduziu, e corrigiu.** Registrar a suíte `Browser` em
   `phpunit.xml` fez `php artisan test` sem argumentos passar a incluí-la, e o job `qualidade` do
   CI não tem Node nem browsers do Playwright — quebraria em toda tela com `ViteException`.
@@ -210,3 +252,11 @@
   `## Impacto em Features Existentes` deveria exigir *"rodar o baseline em série E em paralelo"*
   — foi a divergência entre os dois modos que revelou DT-03, a dívida mais consequente da
   rodada. E deveria exigir *"reler o CI depois de mexer em `phpunit.xml`"*.
+- **Funcionou bem, e é o achado metodológico da rodada**: delegar as dimensões dinâmicas do
+  quality gate a um **agente independente**, instruído a ser cético. Ele encontrou o vazamento
+  de render hook (DT-08) que invalidava a proveniência de DT-01 — algo que eu não acharia,
+  porque a sonda que produziu o erro era *minha* e parecia evidência direta. A separação de
+  poderes do princípio 2 da skill não é formalidade.
+- **Faltou no plano**: reverificar a evidência da sonda contra o código antes de escrever
+  dívida. `grep FilamentClearCachePlugin app/Providers/` levaria 5 segundos e teria evitado
+  QA-02 inteiro.
