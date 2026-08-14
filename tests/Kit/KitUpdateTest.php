@@ -139,6 +139,44 @@ it('cobre todo o código do kit, e não só o que alguém lembrou de listar', fu
         .'Some-os à lista, ou a NAO_E_DO_KIT se realmente não forem do kit.');
 });
 
+/**
+ * O que os agentes de IA leem tem de acompanhar a atualização.
+ *
+ * As regras de `.ai/rules` são lidas ANTES de editar arquivo, por instrução do
+ * `CLAUDE.md`/`AGENTS.md` que o Boost gera, e as wikis são a referência que elas citam.
+ * Sem elas na lista, o `kit:update` entregava o código de uma feature e não a armadilha
+ * que ela documenta — regra nova chegava só a projeto novo.
+ *
+ * Varredura, e não lista à mão: foi lista à mão que deixou metade do Filament de fora na
+ * v0.9.8. `wikis/specs/` fica fora de propósito — é o histórico de planejamento do kit.
+ */
+it('cobre as regras de IA e as wikis de referência', function (): void {
+    $descobertos = [];
+
+    foreach (['.ai/rules', 'wikis'] as $diretorio) {
+        foreach (glob(base_path($diretorio).'/*.md') ?: [] as $arquivo) {
+            $relativo = str_replace('\\', '/', substr($arquivo, strlen(base_path()) + 1));
+
+            if (! estaCoberto($relativo)) {
+                $descobertos[] = $relativo;
+            }
+        }
+    }
+
+    sort($descobertos);
+
+    expect($descobertos)->toBe([], "Documentação do kit fora de KitUpdate::CAMINHOS_DO_KIT:\n  "
+        .implode("\n  ", $descobertos)
+        ."\n\nQuem já instalou o projeto nunca vai receber estes arquivos — e são eles que "
+        .'ensinam o próximo agente a não repetir armadilha já paga.');
+});
+
+it('não entrega o histórico de planejamento do kit', function (): void {
+    // `wikis/specs/` são as ADRs das features DO KIT. Entregá-las faria todo projeto
+    // instalado carregar o planejamento de outro projeto, que só cresce.
+    expect(estaCoberto('wikis/specs/main/convite-de-usuario/01-plano-acao.md'))->toBeFalse();
+});
+
 it('só lista caminhos que existem de fato', function (): void {
     $ausentes = array_values(array_filter(
         caminhosDoKit(),

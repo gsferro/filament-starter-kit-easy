@@ -114,6 +114,37 @@ class KitUpdate extends Command
         // então ele não existe em projeto nascido de `create-project`. O CI é do
         // kit, não do projeto — listá-lo aqui faria o comando oferecer arquivo
         // que o projeto não deveria ter.
+
+        /*
+        |----------------------------------------------------------------------
+        | O que os agentes de IA leem
+        |----------------------------------------------------------------------
+        | As regras são LIDAS ANTES DE EDITAR arquivo, por instrução do
+        | CLAUDE.md/AGENTS.md que o Boost gera. Sem elas na lista, regra nova
+        | chegava só a projeto novo: quem rodava `kit:update` recebia o código
+        | de uma feature e não a armadilha que ela documenta.
+        |
+        | `CLAUDE.md` e `AGENTS.md` continuam FORA: são gerados por
+        | `boost:update` a partir do `boost.json`, e sobrescrevê-los apagaria as
+        | guidelines dos pacotes do projeto.
+        */
+        '.ai/rules',
+
+        /*
+        | Os sete documentos de topo da wiki, um a um — e não `wikis` inteiro.
+        | `wikis/specs/` é o histórico de planejamento DO KIT (hoje ~6 mil
+        | linhas, e só cresce); entregá-lo faria todo projeto instalado carregar
+        | as ADRs das features do kit. O que o projeto precisa é a wiki de
+        | referência, que envelhece junto com o código.
+        */
+        'wikis/README.md',
+        'wikis/agentes-e-skills.md',
+        'wikis/arquitetura.md',
+        'wikis/convencoes.md',
+        'wikis/ia.md',
+        'wikis/pacotes.md',
+        'wikis/receitas.md',
+
         'Dockerfile.laravel',
         'docker-compose.yml',
         'phpstan.neon',
