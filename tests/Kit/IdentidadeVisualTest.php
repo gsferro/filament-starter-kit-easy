@@ -47,21 +47,28 @@ it('guarda cor e logo da organizacao', function (): void {
 });
 
 /**
- * CT-02 — a URL sai do disk `public`, e a ausência de logo é `null`.
+ * CT-02 — a URL da logo, e os DOIS jeitos de não ter uma.
  *
- * O `null` é metade do caso: string vazia num `src` de `<img>` faz o navegador requisitar a
- * própria página e renderizar ícone quebrado, e `null` é o que o Auth Designer trata como "sem
- * mídia" (`AuthPageConfig::hasMedia()`). Uma implementação que devolvesse `Storage::url('')`
- * passaria em tudo o mais e quebraria só a tela.
+ * `null` é metade do caso: string vazia num `src` de `<img>` faz o navegador requisitar a própria
+ * página e renderizar ícone quebrado, e `null` é o que o Auth Designer trata como "sem mídia"
+ * (`AuthPageConfig::hasMedia()`).
+ *
+ * A terceira persona é a que o quality gate acrescentou: **path preenchido com arquivo ausente**.
+ * Acontece de verdade — restore de banco sem o storage, `migrate:fresh` com uploads antigos,
+ * arquivo apagado à mão. Sem o `exists()` do model, a tela renderiza um `<img>` quebrado no lugar
+ * da mídia base, que é o oposto do que ela promete.
  */
 it('resolve a url da logo pelo disk publico', function (): void {
     Storage::fake('public');
+    Storage::disk('public')->put('organizacoes/logos/acme.png', 'png-de-mentira');
 
-    $comLogo = Tenant::factory()->comIdentidadeVisual('#7c3aed', 'organizacoes/logos/acme.png')->create();
-    $semLogo = Tenant::factory()->create();
+    $comLogo  = Tenant::factory()->comIdentidadeVisual('#7c3aed', 'organizacoes/logos/acme.png')->create();
+    $semLogo  = Tenant::factory()->create();
+    $comOrfao = Tenant::factory()->comIdentidadeVisual('#7c3aed', 'organizacoes/logos/sumiu.png')->create();
 
     expect($comLogo->urlDaLogo())->toContain('organizacoes/logos/acme.png')
-        ->and($semLogo->urlDaLogo())->toBeNull();
+        ->and($semLogo->urlDaLogo())->toBeNull()
+        ->and($comOrfao->urlDaLogo())->toBeNull();
 });
 
 /**

@@ -80,7 +80,8 @@
 - [x] `vendor/bin/pest --testsuite=Browser` — em série
 - [x] Regressão: `tests/Tenancy/*` e `tests/Kit/AdminDaOrganizacaoTest.php` verdes
 - [x] Roteiro *Desenhado × Implementado* do `05` preenchido
-- [ ] `feature-quality-gate` invocado, veredito registrado
+- [x] `feature-quality-gate` invocado — **ciclo 1: REPROVADO → implementação**, corrigido na mesma
+      rodada. 4 Major, 3 Minor, 1 cosmético. Ver `06-relatorio-qa.md`
 - [ ] Candidatos a rule avaliados e apresentados
 - [x] `git commit` — 5 commits: model, resource, cor, lock-screen, testes
 
@@ -166,6 +167,32 @@ em ADR-03 e ADR-06 — não bloqueiam.
 - **`FILESYSTEM_DISK` default é `local`**, que aponta para `storage/app/private` e não é servível por
   URL (`config/filesystems.php:16,35`). `->disk('public')` explícito é obrigatório. O `storage:link`
   já roda no install (`KitInstall.php:163`).
+
+## Quality Gate — Ciclo 1
+
+**Veredito: REPROVADO → implementação**, corrigido na mesma rodada. Relatório em `06-relatorio-qa.md`.
+
+Ao contrário da wiki anterior — onde o que reprovou foi documentação errada — aqui **três dos quatro
+Major eram código**, e dois em validação de entrada numa superfície que esta entrega criou:
+
+| # | Achado | Severidade | Situação |
+|---|---|---|---|
+| QA-01 | `FileUpload::image()` gera `mimetypes:image/*`, que **aceita SVG** — e SVG com `<script>` servido do próprio origin é XSS armazenado | **Major** | corrigido: `acceptedFileTypes(['image/png','image/jpeg','image/webp'])` |
+| QA-02 | `ColorPicker::hex()` **não valida nada**. `roxo`, `#ZZZZZZ` e `rgb(...)` entravam sem erro, e `generatePalette()` degradava para paleta **acromática** — painel do cliente cinza, em silêncio | **Major** | corrigido: `->regex('/^#[0-9A-Fa-f]{6}$/')` + CT-08 com os 4 valores |
+| QA-03 | A logo **não renderizava**: `Storage::disk('public')->url()` usa o `APP_URL` congelado, e o `asset()` segue o request | **Major** | corrigido: `asset('storage/'.$logo)` |
+| QA-04 | O CT-B da logo **passava verde com a logo quebrada** — a asserção era substring de atributo, e `assertNoJavaScriptErrors()` não vê 404 de imagem | **Major** | corrigido junto com QA-03 |
+| QA-05 | Sem degradação para arquivo órfão (path preenchido, arquivo ausente) | Minor | corrigido: `Storage::exists()` no model, e o CT-02 ganhou a terceira persona |
+| QA-06 | RQ-07 entregou metade do que o `00` assumiu, e as ADRs rejeitaram a outra metade sem reconciliar | Minor | **retratado** no `00-requisito.md` |
+| QA-07 | `ViewAction` sem cenário de navegador | Minor | débito aceito |
+| QA-08 | Logo legível sem autenticação | Cosmético | não-defeito, registrado com gatilho de revisão |
+
+**O que o gate confirmou que estava certo**: a cor chega à tela de verdade. Screenshot dos dois
+painéis mostra roxo em `/app/acme`, verde em `/app/globex` e âmbar default em `/admin` — dezenas de
+elementos com a cor computada no hue da organização, e **nenhum vazamento**. RQ-05 e a guarda de
+painel de ADR-02 estão visualmente comprovados, que é o que nenhum teste HTTP mostraria.
+
+**Achado mais instrutivo**: QA-04. Um CT-B que existia justamente para provar que a logo aparece, e
+que passava com ela quebrada — porque assertar substring de atributo não é assertar renderização.
 
 ## Retrospectiva
 

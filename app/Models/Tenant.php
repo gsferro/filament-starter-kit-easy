@@ -128,8 +128,20 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
      */
     public function urlDaLogo(): ?string
     {
-        return $this->logo
-            ? Storage::disk('public')->url($this->logo)
-            : null;
+        if (blank($this->logo) || ! Storage::disk('public')->exists($this->logo)) {
+            // `exists()` e não só `blank()`: path órfão (arquivo apagado à mão, restore de banco
+            // sem o storage, `migrate:fresh` com os uploads antigos) renderizaria um <img>
+            // quebrado no lugar da mídia base — exatamente o oposto do que a tela promete, que é
+            // DEGRADAR para o genérico quando não há logo confiável.
+            return null;
+        }
+
+        // `asset()` e não `Storage::disk('public')->url()`: a URL do disk é a string congelada
+        // `APP_URL . '/storage'` (config/filesystems.php:44), enquanto o `asset()` segue o host do
+        // request corrente. Os dois divergem sempre que o host efetivo não é o APP_URL — domínio
+        // próprio de organização, staging, `config:cache` com APP_URL velho — e aí a logo quebra
+        // enquanto o resto da página carrega. É o mesmo `asset()` que os painéis já usam para a
+        // mídia base (`asset('images/auth/login.svg')`).
+        return asset('storage/'.$this->logo);
     }
 }

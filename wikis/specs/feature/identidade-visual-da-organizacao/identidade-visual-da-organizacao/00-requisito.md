@@ -98,9 +98,15 @@ migration nova. Registrado em ADR-01.
 kit"* — sem lista, sem critério de aceite.
 
 **Assumido**: a cláusula não pede que o kit **implemente** campos extras; pede que o kit **não impeça** que
-quem o usa os acrescente. Cumpre-se com um ponto de extensão óbvio e documentado (uma `Section` no form e uma
-coluna que aceita chaves novas sem migration), não com campos inventados. Nada a testar além de o mecanismo
-existir.
+quem o usa os acrescente. Cumpre-se com um ponto de extensão óbvio e documentado — uma `Section` nomeada no
+form, com o docblock dizendo o que acrescentar e onde — não com campos inventados.
+
+> **Retratação (QA-06 do `06-relatorio-qa.md`).** A primeira escrita desta assunção dizia *"uma `Section` no
+> form **e uma coluna que aceita chaves novas sem migration**"*. A segunda metade foi **rejeitada** depois,
+> em ADR-01 e ADR-05, que descartam a coluna JSON com razões próprias — e a assunção ficou aqui contradizendo
+> as ADRs. O que se entrega de fato é a `Section` e o docblock: acrescentar campo custa migration + `$fillable`
+> + componente, o mesmo que custaria sem a feature. O ganho real é saber **onde** acrescentar sem reestruturar
+> nada, e é isso que a cláusula pede quando diz "a cargo do usuário do kit".
 
 ## Fora de Escopo (declarado)
 

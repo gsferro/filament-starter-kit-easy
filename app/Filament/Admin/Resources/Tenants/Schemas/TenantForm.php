@@ -81,11 +81,37 @@ class TenantForm
                         ColorPicker::make('cor_primaria')
                             ->label('Cor primária')
                             ->hex()
+                            // `hex()` NÃO valida: ele só troca o formato do picker
+                            // (vendor/filament/forms/src/Components/ColorPicker.php:31-36). Sem a
+                            // regra abaixo, `roxo` e `rgb(124,58,237)` entram sem erro — e
+                            // `Color::generatePalette()` não estoura com lixo: o `sscanf` falha, o
+                            // chroma cai abaixo de 0.03 e a paleta inteira sai ACROMÁTICA. O painel
+                            // do cliente fica cinza, sem erro em lugar nenhum.
+                            // O regex é âncorado, então ele já garante os 7 caracteres exatos que a
+                            // coluna `string(7)` aceita — em sqlite o excesso passaria calado, em
+                            // MySQL/Postgres seria erro no save. (`ColorPicker` não tem
+                            // `maxLength()`; o regex cobre os dois problemas de uma vez.)
+                            ->regex('/^#[0-9A-Fa-f]{6}$/')
+                            ->validationMessages([
+                                'regex' => 'Informe uma cor no formato #RRGGBB.',
+                            ])
                             ->helperText('O Filament deriva as 11 tonalidades desta cor e escolhe a legível por contraste. Em branco, usa a cor padrão da aplicação.'),
 
                         FileUpload::make('logo')
                             ->label('Logo')
-                            ->image()
+                            // `acceptedFileTypes()` explícito, e NÃO `->image()`: o `image()` do
+                            // Filament gera `acceptedFileTypes(['image/*'])`
+                            // (FileUpload.php:130-134), que vira a regra `mimetypes:image/*` —
+                            // e `image/svg+xml` casa com ela. (A regra `image` do Laravel, que é
+                            // outra coisa, recusa SVG por padrão.)
+                            //
+                            // SVG aceita `<script>` embutido. Com disk público e visibility
+                            // pública, o arquivo é servido pelo MESMO origin da aplicação: abrir a
+                            // URL dele direto executa o script com acesso ao cookie de sessão.
+                            // Exige quem já administra organizações, então é escalada de insider e
+                            // não porta anônima — mas é superfície nova, e superfície nova não
+                            // nasce com XSS armazenado.
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
                             // `disk('public')` explícito: o default é `local`, que aponta para
                             // storage/app/private e NÃO é servível por URL — a logo nasceria
                             // quebrada. O `storage:link` já roda no `kit:install`.

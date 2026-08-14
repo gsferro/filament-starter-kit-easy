@@ -1,10 +1,13 @@
 <?php
 
+use App\Filament\Admin\Resources\Tenants\Pages\CreateTenant;
 use App\Models\Tenant;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Facades\Filament;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentColor;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 
 /**
@@ -126,3 +129,39 @@ it('guarda o tenant corrente na sessao', function (): void {
     // comentário acima explica por que a mudança precisa ser deliberada.
     expect(session('tenant_corrente'))->toBe($acme->getKey());
 });
+
+/**
+ * CT-08 — a cor só entra no formato que a coluna e o Filament esperam.
+ *
+ * `ColorPicker::hex()` NÃO valida: ele troca o formato do picker e nada mais
+ * (`vendor/filament/forms/src/Components/ColorPicker.php:31-36`). E `Color::generatePalette()`
+ * não estoura com lixo — o `sscanf` falha, o chroma cai abaixo de 0.03 e a paleta sai
+ * ACROMÁTICA. O painel do cliente ficaria cinza, sem erro em lugar nenhum.
+ *
+ * Achado do `feature-quality-gate` (QA-03); a regra no form é a correção.
+ */
+it('recusa cor fora do formato hexadecimal', function (string $corInvalida): void {
+    // `setCurrentPanel` antes do Livewire::test: o componente de resource resolve o schema pelo
+    // painel corrente, e sem ele o teste morre em `getDefaultTestingSchemaName() on null`. Mesmo
+    // padrão de tests/Kit/PaginasInfraTest.php:94.
+    Filament::setCurrentPanel('admin');
+
+    $this->actingAs(usuarioComPapel('master_global'));
+
+    Livewire::test(CreateTenant::class)
+        ->fillForm([
+            'nome'         => 'Acme',
+            'slug'         => 'acme',
+            'ativo'        => true,
+            'cor_primaria' => $corInvalida,
+        ])
+        ->call('create')
+        ->assertHasFormErrors(['cor_primaria']);
+
+    expect(Tenant::where('slug', 'acme')->exists())->toBeFalse();
+})->with([
+    'nome de cor'      => 'roxo',
+    'hex invalido'     => '#ZZZZZZ',
+    'formato rgb'      => 'rgb(124, 58, 237)',
+    'tentativa de xss' => '"><script>alert(1)</script>',
+]);
