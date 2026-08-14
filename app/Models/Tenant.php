@@ -10,6 +10,7 @@ use Filament\Models\Contracts\HasName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
@@ -41,6 +42,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $nome
  * @property string $slug
  * @property bool $ativo
+ * @property ?string $cor_primaria
+ * @property ?string $logo
  */
 class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
 {
@@ -73,6 +76,8 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         'nome',
         'slug',
         'ativo',
+        'cor_primaria',
+        'logo',
     ];
 
     /** Rótulo exibido acima do nome no seletor de tenant do painel. */
@@ -108,5 +113,23 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         return [
             'ativo' => 'boolean',
         ];
+    }
+
+    /**
+     * URL pública da logo, ou `null` quando a organização não enviou uma.
+     *
+     * Mesma forma de `User::getFilamentAvatarUrl()`: o banco guarda o path relativo e o disk
+     * resolve a URL. O disk `public` é explícito porque o default é `local`, que aponta para
+     * `storage/app/private` e não é servível por URL — logo herdada do default nasceria quebrada.
+     *
+     * `null` e não string vazia: string vazia num `src` de `<img>` faz o navegador requisitar a
+     * própria página e renderizar ícone quebrado, e `null` é o que o Auth Designer trata como
+     * "sem mídia".
+     */
+    public function urlDaLogo(): ?string
+    {
+        return $this->logo
+            ? Storage::disk('public')->url($this->logo)
+            : null;
     }
 }
