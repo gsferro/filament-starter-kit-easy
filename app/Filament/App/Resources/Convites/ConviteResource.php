@@ -98,10 +98,17 @@ class ConviteResource extends Resource
                 ->email()
                 ->required()
                 ->maxLength(255)
-                // Aponta para `users`, como no /admin: quem preenche já administra a
-                // organização e um convite para quem já tem conta falharia no aceite.
-                ->unique('users', 'email')
-                ->helperText('O convite sai por e-mail, com link de uso único.')
+                /*
+                 * SEM `->unique('users', 'email')`, e é aqui que a feature mais importa.
+                 *
+                 * Até a v0.11.0 este campo recusava endereço que já tinha conta — e o
+                 * `admin_organizacao` era justamente quem ficava sem NENHUM caminho para
+                 * trazer a consultora que já atende outro cliente. Agora o endereço com
+                 * conta vira OFERTA DE ACESSO: ninguém é cadastrado de novo, a pessoa
+                 * confirma autenticada e é vinculada a ESTA organização com o papel abaixo.
+                 */
+                ->helperText('O convite sai por e-mail, com link de uso único. Se o endereço já tiver conta, ninguém é cadastrado de novo: a pessoa recebe uma oferta para entrar nesta '
+                    .mb_strtolower((string) config('kit.tenancy.label', 'Organização')).' e escolhe aceitar ou recusar.')
                 ->columnSpanFull(),
 
             Select::make('role_id')
@@ -136,11 +143,22 @@ class ConviteResource extends Resource
                 TextColumn::make('email')->label('E-mail')->searchable()->sortable(),
                 TextColumn::make('papel.name')->label('Papel')->badge(),
                 TextColumn::make('expira_em')->label('Expira em')->dateTime('d/m/Y H:i')->sortable(),
-                TextColumn::make('aceito_em')
-                    ->label('Aceito em')
-                    ->dateTime('d/m/Y H:i')
-                    ->placeholder('Pendente')
-                    ->sortable(),
+                /*
+                 * Situação DERIVADA pelo model, e não `aceito_em` com placeholder
+                 * "Pendente": aquele placeholder mentia para convite recusado — mostrava
+                 * "Pendente" para sempre, e o admin da organização reconvidaria alguém que
+                 * já disse não.
+                 */
+                TextColumn::make('situacao')
+                    ->label('Situação')
+                    ->badge()
+                    ->color(fn (Convite $record): string => match ($record->situacao()) {
+                        'Aceito'   => 'success',
+                        'Recusado' => 'gray',
+                        'Expirado' => 'danger',
+                        default    => 'warning',
+                    })
+                    ->state(fn (Convite $record): string => $record->situacao()),
             ])
             ->headerActions([
                 CreateAction::make()->label('Novo convite'),

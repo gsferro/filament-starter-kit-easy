@@ -33,15 +33,15 @@ class ConviteForm
                             ->required()
                             ->maxLength(255)
                             /*
-                             * O `unique` aponta para `users`, não para `convites`: dizer
-                             * "já cadastrado" AQUI é correto, porque quem preenche é um
-                             * administrador que já pode buscar o endereço em
-                             * /admin/users — esconder seria teatro, e faria nascer um
-                             * convite que falharia no aceite. Na tela pública de aceite
-                             * a regra é o oposto (ADR-02, item 8).
+                             * SEM `->unique('users', 'email')`, e isto é a feature.
+                             *
+                             * Até a v0.11.0 o campo recusava endereço que já tinha conta, o
+                             * que fazia do convite uma parede no caso mais comum de SaaS
+                             * multi-tenant. Agora o endereço com conta vira OFERTA DE
+                             * ACESSO: nenhuma conta nova é criada, a pessoa confirma
+                             * autenticada e é vinculada à organização com este papel.
                              */
-                            ->unique('users', 'email')
-                            ->helperText('O convite sai por e-mail: com MAIL_MAILER=log ele só é escrito em storage/logs.')
+                            ->helperText('Se o endereço já tiver conta, ninguém é cadastrado de novo: a pessoa recebe uma oferta para entrar nesta organização e escolhe aceitar ou recusar. Com MAIL_MAILER=log o e-mail só é escrito em storage/logs.')
                             ->columnSpanFull(),
 
                         Select::make('role_id')

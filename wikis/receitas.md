@@ -184,11 +184,23 @@ O que a persona ganha: **Usuários** e **Convites** dentro do `/app`, recortados
 
 O papel só é semeado com a tenancy ligada — sem organização ele seria um segundo `admin` com outro nome. `panel_user` continua sendo o perfil de quem só usa o negócio: ele recebe a matriz do painel **menos** as permissões dessas duas telas (`PapeisSeeder::permissoesDeAdministracaoDoApp()`). Resource de administração novo no `/app` precisa entrar nessa lista, senão todo usuário comum o herda.
 
-## Convidar alguém que ainda não tem conta
+## Convidar alguém
 
-`/admin` → **Convites** → *Novo convite*: e-mail, papel e (com tenancy) a organização. O e-mail sai na hora e o link leva a `/app/register?token=…`.
+`/admin` → **Convites** → *Novo convite*: e-mail, papel e (com tenancy) a organização. Com a tenancy ligada, quem tem `admin_organizacao` faz o mesmo por `/app/{organizacao}` → **Convites**, e ali a organização é a do painel — o formulário não a pergunta. O e-mail sai na hora e o link leva a `/app/register?token=…`.
 
-Quem clica escolhe **só nome e senha** — e-mail, papel e organização vêm do convite, impostos pelo servidor. Ao aceitar, o usuário nasce com o papel já no contexto certo: contexto global se o papel for de `/admin` ou `/infra`, a organização do convite se for de `/app`.
+**Não pergunte se a pessoa já tem conta.** O sistema decide no aceite, e as duas vias usam o mesmo convite e o mesmo link:
+
+| O endereço | O que acontece no aceite |
+|---|---|
+| ainda **não tem** conta | quem clica escolhe **só nome e senha** — e-mail, papel e organização vêm do convite, impostos pelo servidor. O usuário nasce com o e-mail já verificado (o token prova a posse do endereço) |
+| **já tem** conta | ninguém é cadastrado de novo: é uma **oferta de acesso**. A pessoa entra com a senha que já tem, confirma, e é vinculada à organização com o papel do convite. Os acessos dela nas outras organizações ficam intactos — e ela pode **recusar** |
+
+Em qualquer das duas, o papel nasce no contexto certo: contexto global se for de `/admin` ou `/infra`, a organização do convite se for de `/app`.
+
+Quem recebeu a oferta tem dois caminhos, e os dois valem:
+
+- **O link do e-mail**, que é o canônico: funciona inclusive para quem ainda não pertence a nenhuma organização.
+- **O menu do usuário → Convites recebidos**, com a contagem de ofertas pendentes. É de lá que se **recusa** (o link tem um destino só). A recusa fica registrada, o convite deixa de valer e reconvidar é enviar outro.
 
 Três coisas a saber:
 
@@ -279,7 +291,9 @@ Commit no padrão do repositório: gitmoji + escopo, mensagem em pt-BR.
 | Usuário autentica e leva 403 nos **três** painéis | ele não tem papel nenhum, ou o papel que tem está com `roles.painel` vazio — e nulo não é coringa. Dê um papel em `/admin` → Usuários, ou declare o painel do papel em `/admin` → Funções |
 | Entra no `/app` mas não no `/admin` (ou vice-versa) | é o desenho: o papel vale para **um** painel. E `/admin` e `/infra` exigem o papel atribuído no contexto global — ser `admin` dentro de uma organização não abre a administração da instalação |
 | Convite não chega | o e-mail vai pela fila e não há worker: `php artisan queue:work`. Em desenvolvimento o mailer é `log` — o conteúdo cai em `storage/logs/laravel.log` |
-| Link do convite sempre recusa | usado, expirado ou token inexistente — os três dão a mesma tela, de propósito. Reenvie pelo `/admin` → Convites |
+| Link do convite sempre recusa | usado, expirado, recusado ou token inexistente — todos dão a mesma tela, de propósito. Reenvie pelo `/admin` → Convites |
+| "Este convite não é para esta conta" | o link foi aberto com **outra** conta autenticada. É a barreira funcionando: o token não basta na via de oferta, o e-mail tem de ser o do convite. Saia e entre com a conta convidada, ou peça um convite novo. A sessão não é derrubada e o convite continua pendente |
+| "Não vejo meus convites" | a caixa de entrada é uma página do painel `app` — quem tem **zero** organizações (ou só papel de `/admin`/`/infra`) não a alcança, porque o painel precisa de uma organização para abrir. Para esses casos a via é o **link do e-mail**, que funciona sempre. Quem já pertence a alguma organização acha o item no menu do usuário, e ele só aparece quando há oferta pendente |
 | Tela nova dá 403 | falta rodar `ShieldPermissionsSeeder` + `PapeisSeeder` depois de criar o Resource — nessa ordem, e os dois: só o primeiro cria a permission e não a entrega a papel nenhum |
 | RelationManager aberto a quem não devia | o Shield não gera permission para RelationManager; ver [RelationManager novo](#relationmanager-novo) |
 | `NOT NULL constraint failed: model_has_roles.team_id` | atribuiu papel sem contexto de tenant — use `Tenant::CONTEXTO_GLOBAL` ou rode dentro de um request do `/app` |

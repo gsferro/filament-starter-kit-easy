@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\App\Pages\ConvitesRecebidos;
 use App\Filament\Pages\Auth\RegistroPorConvite;
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\Auth\TelaLogin;
@@ -68,6 +69,7 @@ class AppPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\Filament\App\Widgets')
             ->pages([
                 Dashboard::class,
+                ConvitesRecebidos::class,
             ])
             ->widgets([
                 AccountWidget::class,
@@ -92,6 +94,14 @@ class AppPanelProvider extends PanelProvider
                 if (config('lockscreen.enabled')) {
                     $panel->userMenuItems([TelaBloqueio::itemDeMenu($panel->getId())]);
                 }
+
+                /*
+                 * Convites recebidos, com a contagem das ofertas pendentes. Registrado
+                 * aqui, e não em `->pages()`, porque o caminho é o menu do usuário: a
+                 * página fica fora da navegação lateral e só aparece quando há algo a
+                 * decidir. `itemDeMenu()` já cuida do `visible()`.
+                 */
+                $panel->userMenuItems([ConvitesRecebidos::itemDeMenu()]);
             })
             ->plugins([
                 FilamentSearchSpotlightPlugin::make()

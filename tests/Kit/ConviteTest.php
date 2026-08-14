@@ -380,60 +380,51 @@ it('nao oferece cadastro na tela de login', function (): void {
     expect($painel->hasRegistration())->toBeTrue();
 });
 
-it('recusa email ja cadastrado ao convidar e ao aceitar', function (): void {
+/**
+ * O INVERSO do que este caso provava até a v0.11.0.
+ *
+ * Antes, e-mail já cadastrado era recusado em duas pontas — no formulário de convite e no
+ * `aceitar()`. Isso fazia do convite uma parede no caso mais comum de SaaS multi-tenant: a
+ * consultora que atende dois clientes não podia ser convidada pelo segundo.
+ *
+ * Agora o endereço com conta vira OFERTA DE ACESSO: nenhuma conta nova, a pessoa confirma
+ * autenticada, e é vinculada com o papel do convite. Ver
+ * `wikis/specs/main/convite-para-usuario-existente/`.
+ */
+it('convida quem ja tem conta em vez de recusar', function (): void {
     Notification::fake();
 
-    $canal = espiarAutenticacao();
-
-    User::factory()->create(['email' => 'existente@example.com']);
+    $existente = User::factory()->create(['email' => 'existente@example.com']);
 
     Filament::setCurrentPanel('admin');
     $this->actingAs(usuarioDoKit('master_global'));
 
-    // Ponta 1 — o formulário de convite. Dizer "já cadastrado" AQUI é correto: quem
-    // preenche é um administrador que já pode buscar o e-mail em /admin/users.
+    // Ponta 1 — o formulário ACEITA o endereço que já tem conta.
     Livewire::test(CreateConvite::class)
         ->fillForm([
             'email'   => 'existente@example.com',
             'role_id' => Role::findByName('panel_user')->getKey(),
         ])
         ->call('create')
-        ->assertHasFormErrors(['email']);
+        ->assertHasNoFormErrors();
 
-    expect(Convite::where('email', 'existente@example.com')->exists())->toBeFalse();
+    expect(Convite::where('email', 'existente@example.com')->exists())->toBeTrue();
 
-    // Ponta 2 — a corrida: o convite foi emitido ANTES de o e-mail virar usuário.
+    // Ponta 2 — o aceite VINCULA em vez de lançar, e não cria segunda conta.
     [$convite, $token] = conviteCom('panel_user', email: 'corrida@example.com');
-    User::factory()->create(['email' => 'corrida@example.com']);
+    $corrida           = User::factory()->create(['email' => 'corrida@example.com']);
 
-    // Quem clica no link do convite não é o administrador que o criou. E autenticado a
-    // tela nem renderiza: `Register::mount()` do Filament manda o logado para o painel.
-    auth()->logout();
+    $aceito = $convite->aceitar(['name' => 'Ignorado', 'password' => 'ignorada']);
 
-    /*
-     * Pela TELA quem recusa é o `->unique($this->getUserModel())` que a página do
-     * Filament já põe no campo de e-mail (Register.php:216) — o campo está desabilitado,
-     * mas continua validado, e o valor é o do convite. O aceite nem chega ao model.
-     */
-    aceitarConvite($token)->assertHasFormErrors(['email']);
+    expect($aceito->getKey())->toBe($corrida->getKey())
+        ->and(User::where('email', 'corrida@example.com')->count())->toBe(1)
+        ->and($convite->fresh()?->aceito_em)->not->toBeNull();
 
-    expect(User::where('email', 'corrida@example.com')->count())->toBe(1)
-        ->and($convite->fresh()?->aceito_em)->toBeNull();
+    // Ponta 3 — a barreira que substituiu a recusa: o convite é de OUTRO endereço.
+    [$deOutro] = conviteCom('panel_user', email: 'dona@example.com');
 
-    /*
-     * E a guarda do model, que é a que fecha a janela entre validar e gravar (a validação
-     * roda antes da transação; a criação, dentro dela) e vale para qualquer chamador de
-     * `aceitar()` que não passe pelo formulário.
-     */
-    expect(fn () => $convite->aceitar(['name' => 'Fulano', 'password' => 'x']))
+    expect(fn () => $deOutro->aceitarComoUsuarioExistente($existente))
         ->toThrow(RuntimeException::class);
 
-    expect(User::where('email', 'corrida@example.com')->count())->toBe(1)
-        ->and($convite->fresh()?->aceito_em)->toBeNull();
-
-    $canal->shouldHaveReceived('warning')
-        ->withArgs(fn (string $mensagem, array $contexto): bool => str_starts_with($mensagem, '[Convite@aceitar]')
-            && $contexto['motivo'] === 'email_ja_cadastrado'
-            && $contexto['email'] === Str::mask('corrida@example.com', '*', 3))
-        ->once();
+    expect($deOutro->fresh()?->aceito_em)->toBeNull();
 });

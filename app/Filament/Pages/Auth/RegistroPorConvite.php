@@ -3,6 +3,7 @@
 namespace App\Filament\Pages\Auth;
 
 use App\Models\Convite;
+use App\Models\User;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Register;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Field;
@@ -45,7 +46,79 @@ class RegistroPorConvite extends Register
             $this->recusar();
         }
 
+        // Já tem conta? Não há o que registrar. O token abre a porta; a senha que a pessoa
+        // já tem é que atravessa. Ver ADR-01 e ADR-02 de
+        // `wikis/specs/main/convite-para-usuario-existente/`.
+        if (($existente = $this->convite->usuarioExistente()) !== null) {
+            $this->desviarParaAceite($existente);
+        }
+
         parent::mount();
+    }
+
+    /**
+     * O convite é de quem já tem conta — três destinos, nenhum deles o formulário.
+     *
+     * Sai sempre por `HttpResponseException`, como `recusar()`, e pelo mesmo motivo: dentro
+     * de `mount()` de página Livewire um `redirect()` solto devolve o Redirector do Livewire
+     * onde o Laravel espera um código HTTP, e o request morre em 500. O
+     * `Register::mount()` do próprio Filament faz isso em `:58-62` — nós rodamos antes dele.
+     */
+    private function desviarParaAceite(User $convidado): never
+    {
+        $autenticado = Filament::auth()->user();
+
+        // Ninguém autenticado: manda entrar. NÃO consome o convite, e não guarda o token
+        // em sessão — o aceite é ato explícito, e depois do login a oferta aparece no item
+        // de menu com contagem. Um redirecionamento que vincula alguém a uma organização no
+        // primeiro login é exatamente o que `requiresConfirmation()` existe para evitar.
+        if (! $autenticado instanceof User) {
+            $this->sair(
+                'Entre para aceitar o convite',
+                'Você já tem conta neste sistema. Entre com a sua senha — o convite aparece no menu do seu usuário.',
+                'info',
+                Filament::getPanel('app')->getLoginUrl(),
+            );
+        }
+
+        // Autenticado com OUTRA conta: explica e mantém a sessão. Derrubar o login de
+        // alguém por causa de um link é pior que explicar.
+        if ($autenticado->getKey() !== $convidado->getKey()) {
+            $this->sair(
+                'Este convite não é para esta conta',
+                'O convite foi enviado para outro endereço. Saia e entre com a conta convidada, ou peça um convite novo.',
+                'warning',
+                Filament::getPanel('app')->getUrl(),
+            );
+        }
+
+        // É a pessoa certa, já autenticada: aceita na hora. A asserção de e-mail acontece
+        // de novo dentro do model — de propósito (ADR-03).
+        $this->convite->aceitarComoUsuarioExistente($autenticado);
+
+        $this->sair(
+            'Convite aceito',
+            'Você agora faz parte de '.($this->convite()->tenant->nome ?? config('app.name')).'.',
+            'success',
+            $this->urlDaOrganizacao(),
+        );
+    }
+
+    /** Para onde mandar depois de aceitar: a organização do convite, se houver. */
+    private function urlDaOrganizacao(): string
+    {
+        $painel = Filament::getPanel('app');
+
+        return $this->convite()->tenant !== null
+            ? $painel->getUrl($this->convite()->tenant)
+            : $painel->getUrl();
+    }
+
+    private function sair(string $titulo, string $corpo, string $tom, string $destino): never
+    {
+        Notification::make()->title($titulo)->body($corpo)->{$tom}()->persistent()->send();
+
+        throw new HttpResponseException(new RedirectResponse($destino));
     }
 
     /**

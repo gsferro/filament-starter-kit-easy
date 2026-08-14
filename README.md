@@ -131,9 +131,28 @@ O filtro por permissão é a razão de existirem `App\Filament\Spotlight\*` no k
 ## Convite de usuário
 
 Alguém de fora vira usuário **por convite, e só por convite**. Um administrador abre
-`/admin/convites`, escolhe e-mail, papel e (com tenancy) organização; o kit envia um link
-com token de uso único; a pessoa define a própria senha e nasce com o papel certo, no
-contexto certo.
+`/admin/convites` — ou, com tenancy, quem tem `admin_organizacao` abre
+`/app/{organizacao}/convites` — e escolhe e-mail, papel e organização; o kit envia um link
+com token de uso único.
+
+**Quem convida não precisa saber se o endereço já tem conta.** O kit decide no aceite, e as
+duas vias usam o mesmo convite e o mesmo link:
+
+| O endereço | O que acontece no aceite |
+|---|---|
+| **não tem** conta | a pessoa define a própria senha e nasce com o papel certo, no contexto certo, e com o e-mail já verificado — o token prova a posse do endereço |
+| **já tem** conta | é uma **oferta de acesso**: ninguém é cadastrado de novo. A pessoa entra com a senha que já tem, confirma, e é vinculada à organização com o papel do convite — os acessos dela nas outras organizações ficam intactos |
+
+Na via de oferta o token **não basta**: o aceite exige que a conta autenticada seja a do
+e-mail convidado, conferido no model e não na query da tela. Link interceptado não vira
+acesso sem a senha do endereço convidado.
+
+E dá para dizer **não**. O menu do usuário ganha **Convites recebidos**, com a contagem das
+ofertas pendentes e as ações de aceitar e recusar; a recusa fica **registrada**, o convite
+deixa de valer (inclusive pelo link) e quem administra vê "Recusado" na listagem em vez de
+reconvidar alguém que já disse não. O link do e-mail continua sendo a via canônica: ele
+funciona também para quem ainda não pertence a nenhuma organização e por isso não alcança
+essa tela.
 
 A tela de aceite é a página de registro nativa do Filament (`/app/register`), com uma
 guarda: **sem token válido na query string ela recusa e manda para o login**. Não existe
@@ -143,7 +162,7 @@ cadastro aberto.
 |---|---|
 | Token | `Str::random(64)`, guardado **hasheado** (`sha256`) — banco vazado não vira acesso |
 | Validade | `KIT_CONVITE_VALIDADE_DIAS` (7 dias por padrão) |
-| Uso | **único**: o aceite carimba `aceito_em` na mesma transação que cria o usuário |
+| Uso | **único**: na conta nova, `aceito_em` é carimbado na mesma transação que cria o usuário; na oferta, por `update` condicional — é o que impede dois cliques de valerem duas vezes |
 | Reenviar | gera token novo e **mata o link anterior** |
 | Revogar | apaga o convite; o link para de funcionar na hora, e a exclusão fica em `/infra/audits` |
 | Editar | **não existe** — o convite já foi enviado; corrija revogando e criando outro |

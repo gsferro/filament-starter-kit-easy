@@ -33,17 +33,20 @@ class ConvitesTable
                     ->label(config('kit.tenancy.label', 'Organização'))
                     ->visible(fn (): bool => (bool) config('kit.tenancy.enabled')),
 
-                // Derivada de `aceito_em` + `expira_em`, sem coluna no banco: um terceiro
-                // estado a manter em sincronia com dois fatos que já estão lá.
+                // Derivada, sem coluna de status no banco. Quem deriva é o MODEL: esta
+                // tela e a do /app mostram o mesmo estado, e derivá-lo em dois lugares foi
+                // como elas divergiram (a do /app mostrava `aceito_em` com placeholder
+                // "Pendente", que mentiria para um convite recusado).
                 TextColumn::make('situacao')
                     ->label('Situação')
                     ->badge()
-                    ->color(fn (Convite $record): string => match (self::situacao($record)) {
+                    ->color(fn (Convite $record): string => match ($record->situacao()) {
                         'Aceito'   => 'success',
+                        'Recusado' => 'gray',
                         'Expirado' => 'danger',
                         default    => 'warning',
                     })
-                    ->state(fn (Convite $record): string => self::situacao($record)),
+                    ->state(fn (Convite $record): string => $record->situacao()),
 
                 TextColumn::make('expira_em')->label('Expira em')->dateTime('d/m/Y H:i')->sortable(),
 
@@ -68,7 +71,7 @@ class ConvitesTable
                     ->icon(Heroicon::OutlinedPaperAirplane)
                     ->requiresConfirmation()
                     ->modalDescription('O link anterior deixa de funcionar e um novo é enviado.')
-                    ->visible(fn (Convite $record): bool => $record->aceito_em === null)
+                    ->visible(fn (Convite $record): bool => $record->situacao() === 'Pendente' || $record->situacao() === 'Expirado')
                     ->action(fn (Convite $record) => $record->enviar())
                     ->successNotificationTitle('Convite reenviado'),
 
@@ -93,14 +96,5 @@ class ConvitesTable
             ])
             ->emptyStateHeading('Nenhum convite enviado')
             ->emptyStateDescription('Convide alguém para que ela crie a própria senha e nasça com o papel certo.');
-    }
-
-    private static function situacao(Convite $convite): string
-    {
-        return match (true) {
-            $convite->aceito_em !== null                  => 'Aceito',
-            $convite->expira_em?->isPast() ?? true        => 'Expirado',
-            default                                       => 'Pendente',
-        };
     }
 }

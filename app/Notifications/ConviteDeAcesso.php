@@ -41,10 +41,22 @@ class ConviteDeAcesso extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        /*
+         * Duas vias, dois textos, UMA classe.
+         *
+         * Quem já tem conta não vai "criar uma senha" — vai entrar com a que tem. Dizer o
+         * contrário faz a pessoa procurar um formulário que a tela não mostra. Duas
+         * Notifications seriam duas cópias do assunto, do rodapé e da URL — e é a URL que
+         * garante que o link não congela o path do painel.
+         */
+        $jaTemConta = $this->convite->usuarioExistente() !== null;
+
         $mensagem = (new MailMessage)
             ->subject('Você foi convidado para o '.config('app.name'))
             ->greeting('Olá!')
-            ->line('Você recebeu um convite para acessar o '.config('app.name').'.');
+            ->line($jaTemConta
+                ? 'Você já tem conta no '.config('app.name').', e recebeu um convite para um acesso novo.'
+                : 'Você recebeu um convite para acessar o '.config('app.name').'.');
 
         $organizacao = $this->convite->tenant?->nome;
 
@@ -54,8 +66,12 @@ class ConviteDeAcesso extends Notification implements ShouldQueue
             $mensagem->line("O acesso é para a {$rotulo}: {$organizacao}.");
         }
 
+        $mensagem->line($jaTemConta
+            ? 'Entre com a sua senha e confirme — nenhuma conta nova é criada, e você também pode recusar.'
+            : 'Ao aceitar, você escolhe a sua senha.');
+
         return $mensagem
-            ->action('Aceitar convite', $this->url())
+            ->action($jaTemConta ? 'Entrar e aceitar' : 'Aceitar convite', $this->url())
             ->line('Este convite expira em '.$this->convite->expira_em?->format('d/m/Y H:i').'.')
             ->line('Se você não esperava este convite, ignore esta mensagem.')
             ->salutation('Atenciosamente, '.config('app.name'));

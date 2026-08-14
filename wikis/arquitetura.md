@@ -127,6 +127,24 @@ O token é a credencial: quem o tem cria uma conta com o papel do convite. Por i
 
 Quem decide quem entra é quem convida. E-mail, papel e organização vêm do convite — o formulário só coleta nome e senha, e `mutateFormDataBeforeRegister()` sobrescreve o e-mail com o do convite, porque estado de Livewire é do cliente.
 
+#### Duas vias, decididas no aceite
+
+Um convite para um endereço que **já tem conta** não é erro: é uma **oferta de acesso**. A via não é escolhida por quem convida (que não sabe, nem deveria saber, se o endereço já existe) nem congelada na criação — é uma pergunta ao banco no momento do aceite, `Convite::usuarioExistente()`. Entre criar o convite e alguém clicar podem passar dias, e a pessoa pode ter criado conta nesse meio-tempo por outro caminho.
+
+| E-mail do convite | Via | O que o token faz | Quem confirma |
+|---|---|---|---|
+| não tem conta | **registro** — `aceitar()` cria o usuário (já com `email_verified_at`: o token prova a posse do endereço) | **suficiente** | quem tem o link |
+| já tem conta | **oferta de acesso** — `aceitarComoUsuarioExistente()` vincula quem já existe, sem criar segunda conta | **necessário, não suficiente** | a própria pessoa, autenticada, com o e-mail conferido no model |
+
+Na via de oferta o token sozinho não abre nada: interceptar o link não dá nada a quem não tem a senha do endereço convidado. A asserção `$user->email === $convite->email` está **no model** (`exigirDono()`), não na query da tela — a tela é filtro de UI. Ver `.ai/rules/filament.md`.
+
+Dois caminhos chegam ao aceite, e o link é o canônico:
+
+- **O link do e-mail** funciona sempre — inclusive para quem tem conta e **zero** organizações, ou papel só de `/admin`/`/infra`. A caixa de entrada não alcança esses casos (é uma página do painel `app`, sob `/app/{tenant}` com tenancy), e não inventamos organização pessoal para destravar uma tela.
+- **A caixa de entrada** (`App\Filament\App\Pages\ConvitesRecebidos`, no menu do usuário, com a contagem de ofertas pendentes) é conveniência para quem já está dentro — e é o único lugar de onde se **recusa**: link tem um destino só. A recusa fica registrada em `recusado_em`, e um convite recusado não volta a valer nem pelo link; reconvidar é criar outro.
+
+O consumo é um `update` condicional (`WHERE aceito_em IS NULL AND recusado_em IS NULL`), não um `SELECT` seguido de `save()`: na via de oferta não existe o `unique` de `users.email` para abortar um segundo aceite concorrente, e `syncWithoutDetaching`/`assignRole` são idempotentes — os dois cliques passariam.
+
 ## Busca ⌘K (Spotlight)
 
 O campo da topbar é o **nativo do Filament**; o clique abre o overlay do `wezlo/filament-search-spotlight`. Quatro categorias, duas delas do kit:

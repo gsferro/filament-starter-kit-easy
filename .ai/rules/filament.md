@@ -14,6 +14,20 @@ Use `->saveRelationshipsUsing()` chamando `syncRoles()`, e resolva os papéis em
 
 Teste em par: um caso em `tests/Kit` (single-tenant) e um em `tests/Tenancy` conferindo o `team_id` da pivot. Abrir a tela não cobre — o `GET /admin/users` seguia verde com o salvamento quebrado.
 
+## Asserção de identidade vive no model, não na query da tela
+
+Ação de tabela que age **sobre o registro de outra pessoa** (aceitar um convite, confirmar um convite, assumir algo endereçado a um e-mail) não se protege com o `where` da query que lista os registros. A query é **filtro de UI**; a barreira é uma asserção no método do model, que lança quando o registro não é de quem chamou.
+
+O raciocínio que produz o furo é sempre o mesmo: "a tabela já filtra por e-mail, então conferir de novo no model é redundância". Não é. Enquanto a página for o único chamador, funciona; o primeiro job, comando, action em massa, seeder ou rota de API chama o método direto e passa por cima da barreira **sem nada acusar** — e o resultado é alguém dentro de uma organização com o papel de um convite que não era dele.
+
+É literalmente o furo do `jeffersongoncalves/filament-teams`: `TeamInvitation::accept(Authenticatable $user)` faz `attach()` + `delete()` sem comparar e-mail nenhum, e a única barreira é o `->where('email', $email)` da página de aceite.
+
+No kit: `Convite::exigirDono()`, chamado na primeira linha de `aceitarComoUsuarioExistente()` e de `recusar()`. Comparação normalizada (`mb_strtolower(trim(...))`) nos dois lados — e-mail não é case-sensitive na prática. `App\Filament\App\Pages\ConvitesRecebidos` continua escapando a query por e-mail, e o PHPDoc dela diz que isso é conveniência.
+
+Policy não substitui: policy é autorização de ação por perfil, isto é identidade do **dono do registro** — e policy não é consultada por job nem por comando, que é justamente o chamador que se quer cobrir.
+
+Teste: chame o método **direto**, com o usuário errado, e cobre a exceção (`it('recusa aceite quando o e-mail nao corresponde')` em `tests/Kit/ConviteUsuarioExistenteTest.php`). Barreira sem teste direto não é barreira — o caso que passa pela tela continuaria verde com a asserção removida.
+
 ## Resource ou RelationManager novo exige gerar as permissões
 
 Resource novo nasce sem permission no banco: a tela responde 403 para todo mundo que não seja `master_global`. Depois de `make:filament-resource`, rode sempre os dois seeders, nesta ordem:

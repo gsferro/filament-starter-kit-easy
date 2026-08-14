@@ -215,7 +215,8 @@ get("/app/register?token={$token}")
 ### Dados de Entrada
 
 ```php
-livewire(RegistroPorConvite::class, ['token' => $token])
+Livewire::withQueryParams(['token' => $token])
+    ->test(RegistroPorConvite::class)
     ->fillForm([
         'name'                 => 'Fulano',
         'password'             => 'segredo-bem-longo-123',
@@ -225,10 +226,13 @@ livewire(RegistroPorConvite::class, ['token' => $token])
     ->assertHasNoFormErrors();
 ```
 
-> Se a passagem do token pelo construtor do Livewire não reproduzir a query string, o caminho
-> alternativo é HTTP: `get("/app/register?token={$token}")` para provar o `200` e o
-> componente montado, e o `livewire()` com
-> `withQueryParams(['token' => $token])`. Confirmar na implementação e ajustar aqui.
+> **Resolvido na implementação**: o token vai por QUERY STRING, nunca pelo construtor.
+> `RegistroPorConvite::mount()` é `mount(): void` e lê `request()->query('token')` — um
+> `livewire(…, ['token' => …])` não tem onde entregar o valor, e o `mount()` cairia no ramo
+> de convite inválido. No componente, `Livewire::withQueryParams([...])->test(...)` (ver o
+> helper `aceitarConvite()` em `tests/Kit/ConviteTest.php`); quando o que se prova é um
+> REDIRECT do `mount()`, o caminho é o request HTTP `get("/app/register?token={$token}")`,
+> porque a saída é `HttpResponseException` e é o request que a expõe.
 
 ### Resultado Esperado
 
