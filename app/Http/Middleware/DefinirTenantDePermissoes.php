@@ -25,6 +25,14 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Não confundir com `Filament\Http\Middleware\IdentifyTenant`, que resolve o
  * tenant a partir da rota — esse o Filament registra sozinho.
+ *
+ * ## Duas responsabilidades, e o nome só anuncia uma
+ *
+ * Além do contexto de papéis, ele grava o tenant corrente na sessão — porque este é o ponto do
+ * kit em que o tenant do request é conhecido, e a tela de bloqueio precisa dele sem tê-lo na
+ * rota. Um middleware separado só para uma chave de sessão, ao lado de um que já tem o valor em
+ * mãos, é arquivo a mais sem ganho. Renomear a classe tocaria o `AppPanelProvider` e os testes
+ * de tenancy por ganho cosmético. Ver ADR-03.
  */
 class DefinirTenantDePermissoes
 {
@@ -39,11 +47,26 @@ class DefinirTenantDePermissoes
             $tenant?->getKey() ?? Tenant::CONTEXTO_GLOBAL,
         );
 
+        /*
+         * O tenant corrente, para quem NÃO o recebe pela rota.
+         *
+         * A tela de bloqueio é o caso: o pacote registra `/{painel}/screen/lock` com
+         * `->prefix($panel->getPath())` e só o middleware base
+         * (vendor/marjose123/filament-lockscreen/routes/web.php), então ela não tem o segmento
+         * `{tenant}` nem o tenantMiddleware, e `Filament::getTenant()` é null lá. O Filament
+         * também não persiste tenant em sessão — `FilamentManager::$tenant` é propriedade de
+         * instância, preenchida só pelo `IdentifyTenant` a partir da rota.
+         *
+         * Esta linha é a única fonte. Ver ADR-03 da wiki `identidade-visual-da-organizacao`.
+         */
+        session(['tenant_corrente' => $tenant?->getKey()]);
+
         Log::channel('tenancy')->debug(
             '[DefinirTenantDePermissoes@handle] Contexto de papéis fixado | tenant: '.($tenant?->getKey() ?? 'nenhum'),
             [
                 'tenant_id' => $tenant?->getKey(),
                 'user_id'   => $request->user()?->getKey(),
+                'em_sessao' => true,
             ],
         );
 

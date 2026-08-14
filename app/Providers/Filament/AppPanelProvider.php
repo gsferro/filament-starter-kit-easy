@@ -15,6 +15,7 @@ use Asmit\ResizedColumn\ResizedColumnPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
 use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
+use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -24,6 +25,7 @@ use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Enums\Width;
+use Filament\Support\Facades\FilamentColor;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Gsferro\FilamentOdometerEasy\FilamentOdometerEasyPlugin;
@@ -33,6 +35,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
 use LaBoiteACode\FilamentDashboardWidgets\FilamentDashboardWidgetsPlugin;
@@ -87,6 +90,57 @@ class AppPanelProvider extends PanelProvider
             ->bootUsing(function (Panel $panel): void {
                 // Registra as sugestões "Criar X" no request, com auth já resolvido.
                 AcoesDeCriacao::registrar();
+
+                /*
+                 * A cor da organização corrente.
+                 *
+                 * `FilamentColor::register()` com Closure, e NÃO `$panel->colors()`. Os dois
+                 * aceitam Closure na assinatura, o que os faz parecer equivalentes — não são:
+                 * `Panel::boot()` faz `FilamentColor::register($this->getColors())`
+                 * (vendor/filament/filament/src/Panel.php:95) e o `getColors()` do painel avalia
+                 * a Closure ali mesmo (Panel/Concerns/HasColors.php:31). Como o `Panel::boot()` é
+                 * disparado pelo middleware `panel:{id}`/`SetUpPanel`, que é o PRIMEIRO da pilha
+                 * (HasMiddleware.php:97-103), o `IdentifyTenant` ainda não rodou e
+                 * `Filament::getTenant()` é sempre null. O código pareceria certo, rodaria sem
+                 * erro e nunca aplicaria cor.
+                 *
+                 * O `register()` guarda a Closure e a avalia em `getColors()`
+                 * (ColorManager.php:80), chamado por `AssetManager::renderStyles()`
+                 * (AssetManager.php:286) — o `@filamentStyles`, no render do <head>, depois de
+                 * todo middleware. É a única janela que serve.
+                 *
+                 * A guarda de painel não é defensiva, é obrigatória: `FilamentColor` é GLOBAL,
+                 * não por painel. Sem ela, a cor de um cliente pintaria /admin e /infra também.
+                 *
+                 * Uma cor, não uma paleta: o ColorManager chama `Color::generatePalette()` sozinho
+                 * quando recebe string (ColorManager.php:84-85).
+                 *
+                 * Ver ADR-02 da wiki `identidade-visual-da-organizacao`.
+                 */
+                FilamentColor::register(function (): array {
+                    $tenant = Filament::getTenant();
+
+                    // `instanceof Tenant` e não `?->`: `getTenant()` devolve `?Model`, e o model de
+                    // tenancy é configurável — o narrowing é guarda real, não cerimônia de tipo.
+                    if (Filament::getCurrentPanel()?->getId() !== 'app'
+                        || ! $tenant instanceof Tenant
+                        || blank($tenant->cor_primaria)) {
+                        // Array vazio é o neutro: `getColors()` faz foreach sobre o resultado
+                        // (ColorManager.php:82), então nada é sobrescrito e o default sobrevive.
+                        return [];
+                    }
+
+                    Log::channel('tenancy')->debug(
+                        '[AppPanelProvider@bootUsing] Cor da organização aplicada | tenant: '.$tenant->getKey(),
+                        [
+                            'tenant_id'    => $tenant->getKey(),
+                            'tenant_slug'  => $tenant->slug,
+                            'cor_primaria' => $tenant->cor_primaria,
+                        ],
+                    );
+
+                    return ['primary' => $tenant->cor_primaria];
+                });
 
                 // "Bloquear sessão" logo abaixo do "Meu perfil" — ver
                 // TelaBloqueio::itemDeMenu(). A guarda espelha a do plugin: com o
