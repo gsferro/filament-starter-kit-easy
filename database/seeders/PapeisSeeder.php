@@ -73,8 +73,8 @@ class PapeisSeeder extends Seeder
         }
 
         // panel_user é o perfil básico do /app: usa o NEGÓCIO, não administra a
-        // organização. Por isso ele recebe a matriz do painel MENOS as permissões dos
-        // Resources de administração (usuários e convites) — sem a subtração, registrar
+        // organização. Por isso ele recebe a matriz do painel MENOS as permissões das
+        // entidades de administração (usuários e convites) — sem a subtração, registrar
         // esses Resources no painel `app` promoveria todo usuário comum a administrador
         // da organização, sem migration e sem erro nenhum. Ver ADR-06.
         //
@@ -96,31 +96,30 @@ class PapeisSeeder extends Seeder
     }
 
     /**
-     * Permissões dos Resources de ADMINISTRAÇÃO do painel `app`.
+     * Permissões das entidades de ADMINISTRAÇÃO do painel `app`.
      *
-     * Recortadas por FQCN de Resource, nunca por substring do nome da permission: o
-     * casamento por `str_contains($p, 'User')` foi removido daqui justamente porque um
-     * `UserPreferenceResource` futuro cairia nele por acidente. Numa SUBTRAÇÃO o erro
-     * seria o espelhado — tirar permissão de quem deveria tê-la.
+     * Resource, Page OU Widget: as três entram na matriz do painel por
+     * `FilamentShield::getEntitiesPermissions()`, então as três precisam poder ser
+     * subtraídas. Até a 0.11.0 esta lista varria só Resources, e uma Page de administração
+     * registrada no `app` era herdada pelo `panel_user` sem que nada pudesse removê-la. Ver
+     * ADR-06 da wiki convite-em-massa.
      *
-     * Resource de administração novo no painel `app` precisa entrar nesta lista, senão o
-     * `panel_user` o herda.
+     * Recortadas por FQCN, nunca por substring do nome da permission: o casamento por
+     * `str_contains($p, 'User')` foi removido daqui justamente porque um
+     * `UserPreferenceResource` futuro cairia nele por acidente. Numa SUBTRAÇÃO o erro seria
+     * o espelhado — tirar permissão de quem deveria tê-la.
+     *
+     * Entidade de administração nova no painel `app` precisa entrar nesta lista, senão o
+     * `panel_user` a herda.
      *
      * @return list<string>
      */
     private function permissoesDeAdministracaoDoApp(): array
     {
-        $administracao = [
+        return Paineis::permissoesDe('app', [
             UserResource::class,
             ConviteResource::class,
-        ];
-
-        return collect(Paineis::resources()['app'] ?? [])
-            ->whereIn('resourceFqcn', $administracao)
-            ->flatMap(fn (array $entidade): array => array_column($entidade['permissions'], 'key'))
-            ->unique()
-            ->values()
-            ->all();
+        ])->all();
     }
 
     /**

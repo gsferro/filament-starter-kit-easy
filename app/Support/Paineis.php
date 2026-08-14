@@ -88,9 +88,32 @@ final class Paineis
     }
 
     /**
+     * As permissões destas entidades neste painel — Resource, Page ou Widget.
+     *
+     * `->only()` casa por FQCN exato. NUNCA por substring: o PHPDoc de
+     * `PapeisSeeder::permissoesDeAdministracaoDoApp()` já registra que
+     * `str_contains($p, 'User')` foi removido de lá porque um `UserPreferenceResource`
+     * futuro cairia nele — e numa SUBTRAÇÃO o erro é o espelhado, tirar permissão de quem
+     * deveria tê-la.
+     *
+     * @param  list<class-string>  $fqcns
+     * @return Collection<int, string>
+     */
+    public static function permissoesDe(string $painel, array $fqcns): Collection
+    {
+        return collect(self::mapa()['entidades'][$painel] ?? [])
+            ->only($fqcns)
+            // `flatMap` e não `flatten()`: o segundo devolve `static<int, mixed>` nos stubs
+            // do Laravel e a coleção perde o tipo string no caminho.
+            ->flatMap(fn (array $chaves): array => $chaves)
+            ->unique()
+            ->values();
+    }
+
+    /**
      * A varredura, uma vez por aplicação.
      *
-     * @return array{permissoes: array<string, list<string>>, resources: array<string, list<array<string, mixed>>>}
+     * @return array{permissoes: array<string, list<string>>, resources: array<string, list<array<string, mixed>>>, entidades: array<string, array<string, list<string>>>}
      */
     private static function mapa(): array
     {
@@ -102,6 +125,7 @@ final class Paineis
 
         $permissoes = [];
         $resources  = [];
+        $entidades  = [];
         $anterior   = Filament::getCurrentPanel();
 
         try {
@@ -111,6 +135,7 @@ final class Paineis
 
                 $permissoes[$id] = $shield->getEntitiesPermissions() ?? [];
                 $resources[$id]  = array_values($shield->getResources() ?? []);
+                $entidades[$id]  = self::entidadesDoPainel($shield);
             }
         } finally {
             self::shieldNovo();
@@ -120,11 +145,47 @@ final class Paineis
             }
         }
 
-        $mapa = ['permissoes' => $permissoes, 'resources' => $resources];
+        $mapa = ['permissoes' => $permissoes, 'resources' => $resources, 'entidades' => $entidades];
 
         app()->instance(self::MEMO, $mapa);
 
         return $mapa;
+    }
+
+    /**
+     * FQCN => chaves de permission, para Resource, Page e Widget do painel.
+     *
+     * As três famílias guardam `permissions` em formatos DIFERENTES, e é a armadilha deste
+     * método: Resource guarda `[affix => ['key' => …, 'label' => …]]` e Page/Widget guardam
+     * `[chave => rótulo]` (`getDefaultPermissionKeys()` ramifica por `is_array($affixes)`,
+     * `FilamentShield.php:91-113`). Aplicar `array_column($…, 'key')` numa Page devolve `[]`
+     * — sem erro, sem exception e sem aviso, e a subtração do `panel_user` volta a não
+     * subtrair nada. Para Page e Widget o caminho é `array_keys()`, que é o que o próprio
+     * Shield usa em `getEntityPermissionKeys()` (`:140-145`).
+     *
+     * A chave vem do campo `*Fqcn` de DENTRO da entidade, e não da chave externa do array:
+     * em `transformWidgets()` (`HasEntityTransformers.php:56-70`) a chave externa pode ser um
+     * `WidgetConfiguration`, e só `widgetFqcn` é garantidamente a string.
+     *
+     * @param  FilamentShield  $shield
+     * @return array<string, list<string>>
+     */
+    private static function entidadesDoPainel(object $shield): array
+    {
+        return collect($shield->getResources() ?? [])
+            ->keyBy('resourceFqcn')
+            ->map(fn (array $e): array => array_column($e['permissions'], 'key'))
+            ->merge(
+                collect($shield->getPages() ?? [])
+                    ->keyBy('pageFqcn')
+                    ->map(fn (array $e): array => array_keys($e['permissions'])),
+            )
+            ->merge(
+                collect($shield->getWidgets() ?? [])
+                    ->keyBy('widgetFqcn')
+                    ->map(fn (array $e): array => array_keys($e['permissions'])),
+            )
+            ->all();
     }
 
     /**

@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\App\Resources\Convites\ConviteResource;
 use App\Models\User;
 use App\Support\Paineis;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
@@ -7,6 +8,7 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Log;
+use Jeffgreco13\FilamentBreezy\Pages\MyProfilePage;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -141,6 +143,32 @@ it('recorta a matriz do papel pelo painel', function (): void {
 
     expect($doAdmin->all())->toContain('ViewAny:User')
         ->and($doAdmin->filter(fn (string $p): bool => str_contains($p, 'AiRun'))->all())->toBeEmpty();
+});
+
+/**
+ * A subtração do `panel_user` cobre as TRÊS famílias de entidade, não só Resource.
+ *
+ * A matriz do painel vem de `getEntitiesPermissions()`, que mistura Resource, Page e Widget;
+ * a subtração vinha de `Paineis::resources()`, que só enxerga Resource. Enquanto a única
+ * permission de Page do painel `app` era a de perfil (que deve mesmo ser de todos), o furo era
+ * inofensivo — e mecanismo aberto para a próxima Page de administração. Ver ADR-06 da wiki
+ * convite-em-massa.
+ */
+it('alcanca Page e Widget na subtracao do painel app', function (): void {
+    $daPagina    = Paineis::permissoesDe('app', [MyProfilePage::class]);
+    $doResource  = Paineis::permissoesDe('app', [ConviteResource::class]);
+    $doPanelUser = Role::findByName('panel_user')->permissions->pluck('name');
+
+    // A metade nova: com `array_column($e['permissions'], 'key')` — o formato de Resource —
+    // esta coleção volta VAZIA, sem erro nenhum. É a única asserção que acusa.
+    expect($daPagina->all())->toContain('View:MyProfilePage')
+        ->and($doResource->all())->toContain('Create:Convite', 'ViewAny:Convite')
+        // A subtração continua subtraindo o que deve...
+        ->and($doPanelUser->all())->not->toContain('Create:Convite')
+        // ...e não subtrai o que não deve: a página de perfil é de todos, e não está na
+        // lista de FQCN de administração.
+        ->and($doPanelUser->all())->toContain('View:MyProfilePage')
+        ->and(Paineis::permissoesDe('app', ['App\\Nada'])->isEmpty())->toBeTrue();
 });
 
 it('registra o RoleResource publicado, não o do vendor', function (): void {
