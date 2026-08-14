@@ -67,6 +67,50 @@ pest()->extend(TenancyTestCase::class)
 
 /*
 |--------------------------------------------------------------------------
+| Testes do KIT — telas em browser real
+|--------------------------------------------------------------------------
+| Navegador de verdade, com JavaScript executando, sobre as telas dos três
+| painéis. O que isto pega e o smoke HTTP de tests/Kit não pega: um painel
+| Filament é Livewire + Alpine, então o corpo do HTML pode vir íntegro e a
+| tela estar inutilizável porque um x-on:click estourou, porque um asset do
+| Vite não subiu ou porque um componente registrou erro no console. Nenhuma
+| dessas três falhas move o status HTTP de 200.
+|
+| Grupo `browser`, e NÃO `kit`, de propósito: o `composer test:kit` é o
+| comando de resposta rápida depois de um kit:update, e browser em série
+| custa ordens de magnitude mais que HTTP. Rode esta suíte com:
+|
+|   composer test:browser
+|   php artisan test --testsuite=Browser
+|   php artisan test --group=browser
+|
+| `npm run build` é pré-requisito DURO: sem o manifest do Vite toda tela
+| responde ViteException e todo cenário falha por um motivo que não é o
+| dele. O script test:browser já embute o build.
+|
+| O plugin sobe servidor HTTP próprio in-process (amphp), em porta
+| aleatória — nada de Herd, `artisan serve` ou Sail. E porque é o MESMO
+| processo, o `:memory:` do phpunit.xml, o RefreshDatabase e o
+| `$this->actingAs()` continuam valendo dentro do navegador.
+*/
+
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->group('browser')
+    ->in('Browser');
+
+/*
+| O plugin reexecuta cada assertion até este teto — é assim que ele espera por
+| conteúdo assíncrono, sem nenhum `wait()` de segundos fixos no teste. O default
+| de 5 s não alcança o primeiro boot de um painel Filament em ambiente de teste
+| (sem opcache, com o Livewire compilando na primeira visita): o login pela tela
+| do CT-B06 redirecionava DEPOIS do teto e falhava dizendo que ainda estava em
+| `/app/login`. Teto, não espera: cenário verde não gasta esse tempo.
+*/
+pest()->browser()->timeout(20_000);
+
+/*
+|--------------------------------------------------------------------------
 | Helpers compartilhados
 |--------------------------------------------------------------------------
 | Aqui, e não dentro de um arquivo de teste, porque em Pest as funções são

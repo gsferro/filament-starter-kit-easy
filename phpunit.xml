@@ -23,6 +23,15 @@
         <testsuite name="Kit">
             <directory>tests/Kit</directory>
         </testsuite>
+        <!--
+            Telas em navegador real (pest-plugin-browser). Fora do
+            `composer test:kit` porque browser em série custa ordens de
+            magnitude mais que HTTP: rode com `composer test:browser`, que
+            já embute o `npm run build` de que a suíte depende.
+        -->
+        <testsuite name="Browser">
+            <directory>tests/Browser</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>

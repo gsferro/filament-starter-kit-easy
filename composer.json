@@ -126,6 +126,12 @@
             "@php artisan config:clear --ansi",
             "@php artisan test --group=kit"
         ],
+        "test:browser": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "npm run build",
+            "@php artisan test --testsuite=Browser"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi",
