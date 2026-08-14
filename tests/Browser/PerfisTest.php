@@ -50,10 +50,15 @@ it('faz login pela tela e entra no painel', function (): void {
         ->fill('#form\\.email', 'login@example.com')
         ->fill('#form\\.password', 'password')
         ->press('Login')
-        // A URL certa não basta: o redirect pode levar a um dashboard que não renderizou.
-        // O par (conteúdo, path) é o que distingue "logou" de "trocou de URL".
-        ->assertSee('Painel de Controle')
+        // `assertPathIs` PRIMEIRO, e a ordem não é estilo: é ele que espera a navegação
+        // terminar. Invertido, o `assertSee` é avaliado contra o snapshot da página que
+        // ainda era /app/login e falha dizendo que não achou o texto — mesmo com o login
+        // tendo funcionado, o que o screenshot da falha mostrava com o dashboard já
+        // renderizado atrás.
         ->assertPathIs('/app')
+        // E a URL certa não basta: o redirect pode levar a um dashboard que não renderizou.
+        // O par (path, conteúdo) é o que distingue "logou" de "trocou de URL".
+        ->assertSee('Painel de Controle')
         ->assertNoJavaScriptErrors();
 
     // Vale porque o navegador compartilha o processo do teste: a sessão que o formulário

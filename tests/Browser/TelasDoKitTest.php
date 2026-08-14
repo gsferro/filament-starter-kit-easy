@@ -12,8 +12,12 @@ use Database\Seeders\ShieldPermissionsSeeder;
  * porque um componente de plugin registrou erro no console. Nenhuma dessas três falhas
  * move o status HTTP.
  *
- * Um cenário por painel, com `visit([...])` em lote: 48 telas em 4 cenários. Escrever
- * um cenário por tela custaria 48 boots de navegador para provar a mesma coisa.
+ * Lote com `visit([...])`: as 52 telas em 2 cenários (um deles com dataset de 3 painéis).
+ * Escrever um cenário por tela custaria 52 boots de navegador para provar a mesma coisa.
+ *
+ * O inventário das rotas vive AQUI e em mais nenhum lugar. A wiki que especificou estes
+ * cenários listava as mesmas 52 rotas numa terceira cópia, e foi essa duplicação que
+ * produziu a única divergência de aritmética da rodada — ver D-02 no arquivo 05 da wiki.
  */
 beforeEach(function (): void {
     // Mesmo par de seeders de tests/Kit/PaineisTest.php:20-22. Sem helper novo de
@@ -22,16 +26,25 @@ beforeEach(function (): void {
 });
 
 /**
- * CT-B01 — painel `/app`, o único dos três que não tinha nenhuma cobertura de tela.
+ * CT-B01, CT-B02 e CT-B03 — as telas autenticadas de cada painel.
+ *
+ * Um dataset e não três cenários: o corpo era idêntico nos três, e o nome do painel
+ * continua aparecendo na saída do Pest. O que era específico de cada um virou comentário
+ * dentro do array, junto da rota que o motiva.
  *
  * `master_global` porque ele vence pelo `Gate::before` sem depender da matriz de
- * permissões: é o único papel capaz de abrir as 48 telas. O recorte por papel é assunto
+ * permissões: é o único papel capaz de abrir as 52 telas. O recorte por papel é assunto
  * do CT-B05, não deste.
  */
-it('abre as telas do painel app', function (): void {
+it('abre as telas autenticadas do painel', function (array $rotas): void {
     $this->actingAs(usuarioDoKit('master_global'));
 
-    visit([
+    visit($rotas)->assertNoJavaScriptErrors();
+})->with([
+    // O painel /app é o único dos três que não tinha nenhuma cobertura de tela: o
+    // PaginasInfraTest cobria 15 rotas de /infra e 3 de /admin, e o painel de negócio
+    // tinha só o `GET /app` genérico do PaineisTest.
+    'app' => [[
         '/app',
         '/app/meu-perfil',
         '/app/two-factor-authentication',
@@ -41,24 +54,15 @@ it('abre as telas do painel app', function (): void {
         '/app/projetos',
         '/app/users',
         '/app/users/create',
-    ])->assertNoJavaScriptErrors();
-});
-
-/**
- * CT-B02 — painel `/admin`.
- *
- * Cinco dos Resources aqui são de plugin (Shield, onboarding), e incompatibilidade de
- * versão de plugin aparece na primeira visita, não no boot.
- */
-it('abre as telas do painel admin', function (): void {
-    $this->actingAs(usuarioDoKit('master_global'));
-
-    visit([
+    ]],
+    'admin' => [[
         '/admin',
         '/admin/meu-perfil',
         '/admin/two-factor-authentication',
         '/admin/users',
         '/admin/users/create',
+        // Shield e onboarding são Resources de plugin, e incompatibilidade de versão de
+        // plugin aparece na primeira visita, não no boot.
         '/admin/shield/roles',
         '/admin/shield/roles/create',
         '/admin/convites',
@@ -71,19 +75,9 @@ it('abre as telas do painel admin', function (): void {
         '/admin/onboarding-flows/create',
         '/admin/onboarding-conditions',
         '/admin/onboarding-conditions/create',
-    ])->assertNoJavaScriptErrors();
-});
-
-/**
- * CT-B03 — painel `/infra`, onde quase toda tela vem de um pacote de terceiro.
- *
- * `/infra/pulse` roda com `PULSE_ENABLED=false` (phpunit.xml): a tela precisa abrir
- * mesmo assim, porque Pulse desligado não é Pulse quebrado.
- */
-it('abre as telas do painel infra', function (): void {
-    $this->actingAs(usuarioDoKit('master_global'));
-
-    visit([
+    ]],
+    // No /infra quase toda tela vem de um pacote de terceiro.
+    'infra' => [[
         '/infra',
         '/infra/meu-perfil',
         '/infra/two-factor-authentication',
@@ -98,13 +92,15 @@ it('abre as telas do painel infra', function (): void {
         '/infra/dependency-graph',
         '/infra/composer-release-packages',
         '/infra/execucoes-ia',
+        // Roda com PULSE_ENABLED=false (phpunit.xml): a tela precisa abrir mesmo assim,
+        // porque Pulse desligado não é Pulse quebrado.
         '/infra/pulse',
         '/infra/command-center/commands',
         '/infra/command-center/history',
         '/infra/command-center/definitions',
         '/infra/command-center/definitions/create',
-    ])->assertNoJavaScriptErrors();
-});
+    ]],
+]);
 
 /**
  * CT-B04 — as telas públicas, sem nenhum `actingAs()`.
