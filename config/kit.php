@@ -88,6 +88,15 @@ return [
 
     'convites' => [
         'validade_em_dias' => (int) env('KIT_CONVITE_VALIDADE_DIAS', 7),
+
+        /*
+         * Máximo de endereços por lote na tela "Convidar em massa". Com
+         * QUEUE_CONNECTION=sync cada e-mail é um handshake SMTP DENTRO do request:
+         * a 200-400 ms por endereço, cem encostam nos 30 s de max_execution_time e
+         * o operador leva 504 com metade do lote enviada. Subir daqui exige worker
+         * de fila rodando.
+         */
+        'limite_do_lote' => (int) env('KIT_CONVITE_LIMITE_LOTE', 100),
     ],
 
     /*

@@ -162,6 +162,7 @@ cadastro aberto.
 |---|---|
 | Token | `Str::random(64)`, guardado **hasheado** (`sha256`) — banco vazado não vira acesso |
 | Validade | `KIT_CONVITE_VALIDADE_DIAS` (7 dias por padrão) |
+| Em massa | **Convidar em massa** no header da listagem: cole os endereços, um papel e uma organização para o lote. Até `KIT_CONVITE_LIMITE_LOTE` (100 por padrão) — um endereço com problema **não impede os outros**, e o resumo diz quantos saíram e por que os outros não |
 | Uso | **único**: na conta nova, `aceito_em` é carimbado na mesma transação que cria o usuário; na oferta, por `update` condicional — é o que impede dois cliques de valerem duas vezes |
 | Reenviar | gera token novo e **mata o link anterior** |
 | Revogar | apaga o convite; o link para de funcionar na hora, e a exclusão fica em `/infra/audits` |
@@ -171,7 +172,10 @@ cadastro aberto.
 > escreve o e-mail em `storage/logs` — nada sai para o mundo. E a notificação é
 > enfileirável com `QUEUE_CONNECTION=database`: **sem um worker rodando o convite não
 > sai**. O `composer dev` sobe um; num deploy, `php artisan queue:work`. A fila parada
-> aparece no monitor do `/infra`.
+> aparece no monitor do `/infra`. **Multiplique por N no convite em massa**: um lote de cem
+> põe cem linhas em `jobs` e entrega zero, e a tela diz "cem enviados" — porque foram, para
+> a fila. Com `QUEUE_CONNECTION=sync` é o oposto: cada e-mail é um handshake SMTP dentro do
+> request, e cem encostam no `max_execution_time`. É o que o limite do lote protege.
 
 O papel do convite decide o contexto da atribuição: papel do painel `/app` nasce dentro da
 organização do convite; papel de `/admin` ou `/infra` nasce no contexto global — ser

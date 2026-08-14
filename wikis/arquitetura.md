@@ -145,6 +145,8 @@ Dois caminhos chegam ao aceite, e o link é o canônico:
 
 O consumo é um `update` condicional (`WHERE aceito_em IS NULL AND recusado_em IS NULL`), não um `SELECT` seguido de `save()`: na via de oferta não existe o `unique` de `users.email` para abortar um segundo aceite concorrente, e `syncWithoutDetaching`/`assignRole` são idempotentes — os dois cliques passariam.
 
+Convidar uma turma é a **mesma porta**, com uma entrada a mais: a ação "Convidar em massa" no header das duas listagens de convites cola N endereços, um papel e uma organização, e chama `Convite::enviar()` N vezes. **Não existe segundo fluxo de envio** — nenhum Job de lote (a notificação já é `ShouldQueue`, então cada e-mail já é um job), nenhuma coluna de lote, nenhuma transação em volta: cada endereço é sua própria unidade, e é isso que dá **resultado parcial** — o décimo segundo endereço com problema não impede os outros trinta e nove. O que não saiu volta como lista de `{email, motivo}` e vira resumo na tela e contagem por motivo no log. É uma `Action` e não uma `Page` de propósito: `Page` nova no painel `app` gera permission que entra na matriz do `panel_user`.
+
 ## Busca ⌘K (Spotlight)
 
 O campo da topbar é o **nativo do Filament**; o clique abre o overlay do `wezlo/filament-search-spotlight`. Quatro categorias, duas delas do kit:

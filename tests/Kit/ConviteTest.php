@@ -14,13 +14,11 @@ use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
-use Psr\Log\LoggerInterface;
 
 /**
  * Convite de acesso — a única porta pela qual alguém de fora vira usuário.
@@ -36,15 +34,6 @@ use Psr\Log\LoggerInterface;
 beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
-
-function usuarioDoKit(string $papel, string $email = 'user@example.com'): User
-{
-    $user = User::create(['name' => 'Teste', 'email' => $email, 'password' => 'password']);
-
-    $user->assignRole($papel);
-
-    return $user;
-}
 
 /**
  * Cria um convite pendente e devolve o par [convite, token em claro].
@@ -85,16 +74,6 @@ function aceitarConvite(string $token, string $nome = 'Fulano', ?string $email =
             'passwordConfirmation' => 'segredo-bem-longo-123',
         ]))
         ->call('register');
-}
-
-/** Espia só o channel `autenticacao`; os outros continuam reais. */
-function espiarAutenticacao(): LoggerInterface
-{
-    $canal = Mockery::spy(LoggerInterface::class);
-
-    Log::partialMock()->shouldReceive('channel')->with('autenticacao')->andReturn($canal);
-
-    return $canal;
 }
 
 it('cria convite pela tela e dispara a notificacao', function (): void {

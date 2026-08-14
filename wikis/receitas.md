@@ -210,6 +210,27 @@ Três coisas a saber:
 
 O e-mail sai pela fila (`QUEUE_CONNECTION=database` no `.env.example`): **sem worker no ar o convite não chega**. Em desenvolvimento, `php artisan queue:work` ou `composer dev`.
 
+## Convidar várias pessoas de uma vez
+
+`/admin` → **Convites** → *Convidar em massa* (e, com tenancy, o mesmo botão em `/app/{organizacao}` → **Convites**). Cole os endereços — um por linha, ou separados por vírgula ou ponto-e-vírgula —, escolha **um** papel e **uma** organização para o lote inteiro, e envie. Até `KIT_CONVITE_LIMITE_LOTE` endereços (100 por padrão).
+
+**Um endereço com problema não impede os outros.** Ao final você recebe um resumo que fica na tela: quantos saíram e uma linha por endereço que não saiu, com o motivo.
+
+| O endereço | Resultado |
+|---|---|
+| novo, formato válido | **enviado** |
+| **já tem conta** | **enviado** — é oferta de acesso, não erro |
+| repetido no próprio texto | **enviado uma vez**, sem aviso |
+| formato inválido | não enviado — *endereço inválido* |
+| já tem convite pendente para essa organização | não enviado — o link antigo continua valendo; para renovar, use o **Reenviar** da linha |
+| recusou um convite anterior | não enviado — quem disse não não é reconvidado porque alguém colou a planilha antiga de novo |
+| já faz parte da organização do lote | não enviado — não há acesso novo a conceder |
+| lote acima do limite | **nada é enviado**, e a modal fica aberta com o texto colado |
+
+O que fazer com o resumo: *endereço inválido* é digitação, corrija e mande só ele; *já tem convite pendente* e *já faz parte* não pedem ação nenhuma; *recusou o convite anterior* é uma conversa, não um reenvio — se ainda faz sentido, use o **Novo convite** individual, que não tem essa trava. *Falha no envio* é infraestrutura: o convite **existe** e aparece como Pendente, então o **Reenviar** da linha resolve depois de o e-mail voltar. O motivo de cada falha está no `storage/logs` do channel `autenticacao`, com os endereços mascarados.
+
+O envio é o mesmo do convite individual: **sem worker de fila no ar, cem convites param na tabela `jobs`** e ninguém recebe nada. Reenviar e revogar continuam por linha — não existe versão em massa das duas, porque reenviar trinta mata trinta links antigos e manda trinta e-mails repetidos com um clique.
+
 ## Página de painel
 
 ```bash

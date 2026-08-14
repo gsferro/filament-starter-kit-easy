@@ -162,6 +162,7 @@ There is no open sign-up.
 |---|---|
 | Token | `Str::random(64)`, stored **hashed** (`sha256`) — a leaked database dump is not access |
 | Lifetime | `KIT_CONVITE_VALIDADE_DIAS` (7 days by default) |
+| In bulk | **Invite in bulk** in the listing header: paste the addresses, one role and one organization for the whole batch. Up to `KIT_CONVITE_LIMITE_LOTE` (100 by default) — one bad address **does not stop the others**, and the summary tells you how many went out and why the rest did not |
 | Usage | **single use**: for a new account, `aceito_em` is stamped in the same transaction that creates the user; for an offer, by a conditional `update` — which is what keeps two clicks from counting twice |
 | Resend | issues a new token and **kills the previous link** |
 | Revoke | deletes the invitation; the link stops working immediately, and the deletion lands in `/infra/audits` |
@@ -171,7 +172,12 @@ There is no open sign-up.
 > only writes the e-mail to `storage/logs` — nothing leaves the machine. And the
 > notification is queueable with `QUEUE_CONNECTION=database`: **without a running worker
 > the invitation never goes out**. `composer dev` starts one; on a deploy, use
-> `php artisan queue:work`. A stalled queue shows up in the `/infra` monitor.
+> `php artisan queue:work`. A stalled queue shows up in the `/infra` monitor. **Multiply that
+> by N for bulk invitations**: a batch of a hundred puts a hundred rows in `jobs` and delivers
+> zero, while the screen says "a hundred sent" — because they were, to the queue. With
+> `QUEUE_CONNECTION=sync` it is the opposite: each e-mail is an SMTP handshake inside the
+> request, and a hundred of them hit `max_execution_time`. That is what the batch limit
+> protects.
 
 The invitation's role decides the context of the assignment: a role of the `/app` panel is
 granted inside the invitation's organization; a role of `/admin` or `/infra` is granted in

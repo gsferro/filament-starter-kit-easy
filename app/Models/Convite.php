@@ -11,13 +11,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use OwenIt\Auditing\Contracts\Auditable;
 use RuntimeException;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Support\Config;
+use Throwable;
 
 /**
  * Convite de acesso — a única porta pela qual alguém de fora vira usuário.
@@ -150,6 +153,203 @@ class Convite extends Model implements Auditable
         );
 
         return $token;
+    }
+
+    /**
+     * Os endereços de um texto pastado, normalizados e sem repetição.
+     *
+     * Separadores: qualquer espaço em branco (inclusive quebra de linha e tab), vírgula e
+     * ponto-e-vírgula — porque o texto real vem de uma coluna de planilha, de um campo
+     * "Para:" ou de alguém digitando. Normalizar em minúsculas é o que torna o
+     * pré-carregamento do lote comparável, e é a mesma normalização que `exigirDono()` usa
+     * no aceite.
+     *
+     * Endereço repetido dentro do próprio texto NÃO é falha: é o mesmo endereço colado duas
+     * vezes, e ninguém precisa ser avisado.
+     *
+     * @return Collection<int, string>
+     */
+    public static function separarEmails(?string $texto): Collection
+    {
+        return collect(preg_split('/[\s,;]+/', (string) $texto, flags: PREG_SPLIT_NO_EMPTY) ?: [])
+            // `Str::of(...)->lower()` em vez de `mb_strtolower(trim(...))`, que é o mesmo
+            // resultado: o segundo tipa como `lowercase-string`, e `Collection` é INVARIANTE
+            // no PHPStan — `Collection<int, lowercase-string>` não satisfaz
+            // `Collection<int, string>` e o nível 6 reprova a assinatura pública.
+            ->map(fn (string $email): string => Str::of($email)->trim()->lower()->toString())
+            ->unique()
+            ->values();
+    }
+
+    /**
+     * Convida vários endereços com o MESMO papel e a MESMA organização, e devolve o que saiu
+     * e o que não saiu.
+     *
+     * O lote NÃO aborta por causa de um endereço: é a razão de a feature existir. Cada e-mail
+     * é sua própria unidade — sem transação envolvendo o conjunto, porque transação faria
+     * tudo-ou-nada, que é a decisão oposta.
+     *
+     * O que conta como falha está em ADR-03 da wiki convite-em-massa. **"Já tem conta" NÃO
+     * conta**: o convite para quem já é usuário é uma oferta de acesso legítima, e sai como
+     * qualquer outro.
+     *
+     * O limite de tamanho do lote não vive aqui: ele protege o REQUEST, não o dado, e mora na
+     * ação do Filament (ADR-04). Um job futuro tem o direito de convidar mil endereços.
+     *
+     * @param  Collection<int, string>  $emails  já normalizados por `separarEmails()`
+     * @return array{enviados: list<string>, falhas: list<array{email: string, motivo: string}>}
+     */
+    public static function convidarEmMassa(
+        Collection $emails,
+        int $roleId,
+        ?int $tenantId,
+        ?int $convidadoPorId,
+    ): array {
+        /*
+         * O formato se decide ANTES do laço, e reprovar um endereço não reprova o lote. A
+         * regra é a MESMA `email` do Laravel que o campo do convite individual usa
+         * (`ConviteForm.php:32`): o lote não pode aceitar endereço que o formulário
+         * individual recusaria, nem o contrário. `filter_var()` seria mais curto e
+         * divergiria em casos de borda.
+         *
+         * ponytail: um Validator por endereço, com N ≤ 100. Um Validator só, com regra
+         * `emails.*`, exigiria mapear `emails.3` de volta ao índice.
+         */
+        [$validos, $tortos] = $emails->partition(
+            fn (string $email): bool => Validator::make(['email' => $email], ['email' => ['email']])->passes(),
+        );
+
+        // A normalização de `separarEmails()` aplicada ao que vem DO BANCO: a entrada já
+        // chegou minúscula, os registros não necessariamente.
+        $normalizar = fn (string $email): string => mb_strtolower(trim($email));
+
+        /*
+         * Convites que já existem para estes endereços NESTA organização. Uma query, e as
+         * mesmas condições de `valido()` — pendente é pendente nos dois lugares, senão o
+         * lote cria duplicata do que a tela mostra como pendente.
+         *
+         * ponytail: o `whereIn` compara a coluna crua contra endereços já minúsculos.
+         * Registro com caixa mista escapa do filtro, e a consequência é um convite pendente
+         * a mais — nunca conta duplicada, porque `users.email` é único e o aceite é
+         * idempotente. Se virar problema real, normalize na ESCRITA: `lower(email)` no
+         * `whereIn` derruba o índice.
+         */
+        $existentes = static::query()
+            ->whereIn('email', $validos->all())
+            ->when(
+                $tenantId === null,
+                fn (Builder $q): Builder => $q->whereNull('tenant_id'),
+                fn (Builder $q): Builder => $q->where('tenant_id', $tenantId),
+            )
+            ->get(['email', 'aceito_em', 'recusado_em', 'expira_em']);
+
+        $pendentes = $existentes
+            ->filter(fn (self $c): bool => $c->aceito_em === null
+                && $c->recusado_em === null
+                && ($c->expira_em?->isFuture() ?? false))
+            ->pluck('email')
+            ->map($normalizar);
+
+        $recusaram = $existentes
+            ->filter(fn (self $c): bool => $c->recusado_em !== null)
+            ->pluck('email')
+            ->map($normalizar);
+
+        // Quem JÁ é membro desta organização. Sem organização a pergunta não existe: "já tem
+        // conta" não é falha.
+        $membros = $tenantId === null
+            ? collect()
+            : User::query()
+                ->whereIn('email', $validos->all())
+                ->whereHas('tenants', fn (Builder $q): Builder => $q->whereKey($tenantId))
+                ->pluck('email')
+                ->map($normalizar);
+
+        $enviados = [];
+        $falhas   = $tortos->map(fn (string $email): array => [
+            'email'  => $email,
+            'motivo' => 'formato_invalido',
+        ])->values()->all();
+
+        foreach ($validos as $email) {
+            $motivo = match (true) {
+                $pendentes->contains($email) => 'convite_pendente',
+                $recusaram->contains($email) => 'recusou_antes',
+                $membros->contains($email)   => 'ja_e_membro',
+                default                      => null,
+            };
+
+            if ($motivo !== null) {
+                $falhas[] = ['email' => $email, 'motivo' => $motivo];
+
+                continue;
+            }
+
+            try {
+                $convite = static::create([
+                    'email'            => $email,
+                    'role_id'          => $roleId,
+                    'tenant_id'        => $tenantId,
+                    'convidado_por_id' => $convidadoPorId,
+                ]);
+
+                // O retorno é o token EM CLARO e morre nesta linha — como na ação de
+                // reenvio. Nunca entra em variável, resultado ou log.
+                $convite->enviar();
+
+                $enviados[] = $email;
+            } catch (Throwable $e) {
+                /*
+                 * `Throwable`, e não uma exceção específica: é EXATAMENTE aqui que o
+                 * `inviteMany()` do laravel-invite-only quebra. Ele captura só
+                 * `InvalidArgumentException`, então um duplicado não-pendente estoura
+                 * `QueryException` crua e derruba o lote inteiro. Falha de driver de e-mail,
+                 * de fila ou de banco é motivo para o ENDEREÇO falhar, nunca para os outros
+                 * 39 não serem convidados. Nada é engolido: o warning leva a exception
+                 * inteira, com stack trace.
+                 */
+                Log::channel('autenticacao')->warning(
+                    '[Convite@convidarEmMassa] Falha no envio de um endereço do lote, seguindo | email: '.Str::mask($email, '*', 3),
+                    [
+                        'email'     => Str::mask($email, '*', 3),
+                        'role_id'   => $roleId,
+                        'tenant_id' => $tenantId,
+                        'motivo'    => 'erro_no_envio',
+                        'exception' => $e,
+                    ],
+                );
+
+                $falhas[] = ['email' => $email, 'motivo' => 'erro_no_envio'];
+            }
+        }
+
+        /*
+         * Um resumo por lote, não um log por e-mail: cada envio já loga `[Convite@enviar]`.
+         *
+         * Sem chave `total`: `recebidos` é o que entrou, e `enviados + falhas` é o que saiu.
+         * Um total calculado seria a versão nova do `BulkInvitationResult::count()` do
+         * invite-only, que conta só os sucessos.
+         */
+        Log::channel('autenticacao')->info(
+            '[Convite@convidarEmMassa] Lote de convites processado | enviados: '.count($enviados).' - falhas: '.count($falhas),
+            [
+                'recebidos' => $emails->count(),
+                'enviados'  => count($enviados),
+                'falhas'    => count($falhas),
+                'motivos'   => collect($falhas)->countBy('motivo')->all(),
+                // Mascarados: a lista de falhas é onde o descuido é mais provável, porque ela
+                // é o produto do método. O resultado devolvido ao chamador vai em claro — ele
+                // é exibido para quem operou, e quem operou digitou os endereços.
+                'com_falha' => collect($falhas)
+                    ->map(fn (array $f): array => ['email' => Str::mask($f['email'], '*', 3), 'motivo' => $f['motivo']])
+                    ->all(),
+                'role_id'       => $roleId,
+                'tenant_id'     => $tenantId,
+                'convidado_por' => $convidadoPorId,
+            ],
+        );
+
+        return ['enviados' => $enviados, 'falhas' => $falhas];
     }
 
     /**

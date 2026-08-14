@@ -3,6 +3,8 @@
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
+use Psr\Log\LoggerInterface;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TenancyTestCase;
 use Tests\TestCase;
@@ -84,6 +86,31 @@ function tenant(string $nome, string $slug, bool $ativo = true): Tenant
 function usuario(string $email = 'user@example.com'): User
 {
     return User::create(['name' => 'Usuário', 'email' => $email, 'password' => 'password']);
+}
+
+/**
+ * Usuário com papel atribuído no contexto corrente — a persona de quem OPERA a tela.
+ *
+ * Sem organização explícita, ao contrário de `usuarioComPapel()`: serve às suítes
+ * single-tenant, onde não existe contexto para escolher.
+ */
+function usuarioDoKit(string $papel, string $email = 'user@example.com'): User
+{
+    $user = usuario($email);
+
+    $user->assignRole($papel);
+
+    return $user;
+}
+
+/** Espia só o channel `autenticacao`; os outros continuam reais. */
+function espiarAutenticacao(): LoggerInterface
+{
+    $canal = Mockery::spy(LoggerInterface::class);
+
+    Log::partialMock()->shouldReceive('channel')->with('autenticacao')->andReturn($canal);
+
+    return $canal;
 }
 
 /**
