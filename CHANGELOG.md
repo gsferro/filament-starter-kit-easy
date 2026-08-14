@@ -3,6 +3,125 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.12.0] - 2026-08-14
+
+O convite deixa de ser só uma porta para gente nova. Três features nasceram de
+ler o código-fonte de dois pacotes que resolvem o mesmo problema —
+[`jeffersongoncalves/teamkitv4`](https://github.com/jeffersongoncalves/teamkitv4)
+(via `jeffersongoncalves/filament-teams`) e
+[`offload-project/laravel-invite-only`](https://github.com/offload-project/laravel-invite-only).
+**Nenhum dos dois é instalado**; o que se copiou foram ideias, e três decisões
+saíram dos defeitos deles. Cada feature tem a wiki dela em `wikis/specs/main/`.
+
+### Adicionado
+
+- **Convite para quem já tem conta.** Convidar um endereço que já é usuário
+  deixa de ser erro e passa a ser **oferta de acesso**: a pessoa entra com a
+  senha que já tem, confirma, e é vinculada com o papel do convite. Ou **recusa**,
+  e a recusa fica registrada — "ela disse não" é diferente de "o convite
+  desapareceu".
+
+  Era uma parede no caso mais comum de SaaS multi-tenant: a consultora que
+  atende dois clientes, a funcionária em duas unidades. Antes, só o
+  `master_global` resolvia, por `/admin` → Organizações → *Vincular usuário*; o
+  `admin_organizacao`, a persona criada justamente para dar autonomia à
+  organização, **não conseguia**.
+
+  Duas vias, uma tabela, decididas **no aceite** e não na criação (entre criar e
+  clicar passam dias, e a pessoa pode ter criado conta por outro caminho). Na via
+  de conta nova o token é **suficiente**; na de oferta é **necessário mas não
+  suficiente** — exige também que o e-mail do autenticado seja o do convite.
+
+  Junto vem a **caixa de entrada de convites**, no menu do usuário do `/app` com
+  a contagem das ofertas pendentes. Ela não substitui o link: vive sob
+  `/app/{tenant}`, então não alcança quem tem zero organizações nem quem só tem
+  papel de `/admin` ou `/infra`. Ganha o lugar dela por outro motivo — é o único
+  lugar onde a **recusa** existe.
+
+- **Convite em massa.** Colar vários endereços, um papel e uma organização para o
+  lote, e o resultado por endereço: quantos foram e quais falharam, com o motivo
+  de cada um. O lote **não aborta** por causa de um endereço torto.
+
+- **Lembretes de convite pendente.** `kit:convites-lembrar`, agendado às 08:00,
+  reenvia em D+3 e D+5. Idempotente e com catch-up: cron parado por dias não
+  produz rajada, e cada convite recebe no máximo um lembrete por execução.
+
+  O lembrete leva um **segundo token, também hasheado** (`token_lembrete`), e o
+  link original **não é tocado**. Foi a saída do beco: o token em claro existiu
+  só no momento do envio, e as alternativas eram rotacionar (um lembrete não
+  entregue revogaria o convite) ou guardar uma cópia reversível no banco (que
+  contradiria uma promessa já publicada aqui). Ver ADR-01 da wiki.
+
+- **`email_verified_at` no aceite de conta nova**: o token prova posse do
+  endereço, então pedir verificação depois é pedir a mesma prova duas vezes.
+  Inócuo hoje; no dia em que alguém ligar `->emailVerification()`, sem isso todo
+  usuário nascido de convite é barrado na porta.
+
+### Corrigido
+
+- **A subtração do `panel_user` não cobria Page nem Widget.**
+  `Paineis::permissoes('app')` sai de `getEntitiesPermissions()`, que mistura
+  Resources, Pages, Widgets e permissions custom — mas a subtração só varria
+  Resources. Medido: 38 permissões no painel `app`, 36 alcançáveis, 2 não.
+
+  Inofensivas hoje, mas o mecanismo estava aberto: a próxima Page de
+  **administração** registrada no `/app` cairia na matriz do usuário comum — todo
+  mundo virando administrador da própria organização, sem migration, sem 403 e sem
+  log. E não era hipótese: quando o buraco foi encontrado a medição era 37/36/1;
+  duas semanas depois já era 38/36/2, porque a feature de convite registrou
+  `ConvitesRecebidos` como Page naquele painel. A "próxima Page" chegou, e
+  continuou inofensiva por sorte.
+
+  A matriz de nenhum papel mudou — verificado por dump antes/depois. O que mudou
+  é o alcance da subtração.
+
+- **`kit:update` não entregava `.ai/rules` nem as wikis.** Projeto novo recebia
+  os dois; projeto que atualizava, nenhum dos dois. Para um kit cujo diferencial
+  anunciado é "a documentação que o agente de IA lê antes de codar", isso
+  significava entregar o **código** de uma feature e não a armadilha que ela
+  documenta. `wikis/specs/` continua fora de propósito: é o histórico de
+  planejamento do kit, e não do projeto de quem instalou.
+
+- **O form de convite do `/app` recusava quem já tem conta.** Regra própria, além
+  da do `/admin`, com comentário que já não valia. Efeito: a feature nascia
+  desligada exatamente para a persona que a motivou. Achado por um caso de teste,
+  não por leitura.
+
+- **`save()` não gravava a limpeza do token de lembrete.** `save()` escreve só o
+  que está sujo: numa instância carregada antes de um lembrete, o `forceFill` que
+  zera `token_lembrete` igualava o valor ao `original` e **não entrava no UPDATE**
+  — o link de lembrete sobrevivia a um reenvio que promete matá-lo, sem erro.
+  Corrigido com `refresh()` na primeira linha de `enviar()`.
+
+### Notas
+
+- **Três decisões vindas dos defeitos dos pacotes analisados**, todas em
+  [convenções](wikis/convencoes.md#armadilhas-já-resolvidas):
+
+  - **Asserção de identidade vive no model, não na query da tela.** O
+    `filament-teams` tem `TeamInvitation::accept(Authenticatable $user)` que faz
+    `attach()` + `delete()` sem comparar e-mail nenhum — a única barreira é o
+    `where('email', …)` da página. Enquanto a página for o único chamador funciona;
+    o primeiro job, comando ou rota de API passa por cima sem nada acusar.
+  - **Consumo por `update` condicional.** O `invite-only` faz check-then-act sem
+    transação nem lock, então clique duplo dispara dois eventos de aceite e duplica
+    o grant de papel. Onde não existe `unique` que salve, o
+    `UPDATE … WHERE aceito_em IS NULL` é o que garante uso único.
+  - **Não reprovar o formulário inteiro por causa de um item do lote.** O
+    `inviteMany()` do `invite-only` só captura `InvalidArgumentException`, e o
+    `unique` do schema dele derruba o lote inteiro num endereço com convite
+    recusado.
+
+- **O agrupamento do `orWhere` em `Convite::valido()`** é a armadilha mais cara
+  desta versão, e o procedimento de "ver o teste falhar antes de implementar"
+  mostrou que ela é pior do que parecia: `AND` liga mais forte que `OR`, então sem
+  o closure o **token original** também perde os três filtros de estado — um
+  convite já aceito volta a ser aceitável pelo link antigo, sem erro e sem log.
+
+- **`config/` continua fora do `kit:update`.** As chaves novas
+  (`kit.convites.limite_do_lote`, `kit.convites.lembretes_dias`) não chegam a
+  projeto instalado; os defaults do código cobrem a ausência.
+
 ## [0.11.0] - 2026-08-13
 
 Três features que se completam: o painel passa a ser dado do papel, o cadastro
