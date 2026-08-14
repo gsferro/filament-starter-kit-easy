@@ -2,6 +2,8 @@
 
 namespace App\Filament\Admin\Resources\Tenants\Schemas;
 
+use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
@@ -50,6 +52,52 @@ class TenantForm
                             ->helperText('Inativo some do seletor de todos os usuários, sem perder dados.')
                             ->default(true)
                             ->columnSpanFull(),
+                    ]),
+
+                /*
+                 * A identidade visual da organização.
+                 *
+                 * ## É AQUI que você acrescenta os campos da SUA organização
+                 *
+                 * CNPJ, razão social, endereço, contato, responsável — o kit não os cria de
+                 * propósito: são dados de negócio, e cada instalação quer os seus, com as suas
+                 * validações e o seu formato fiscal. Um kit que crava "CNPJ" não serve fora do
+                 * Brasil e obriga migration de remoção em quem não quer o campo.
+                 *
+                 * Para acrescentar: uma migration com a coluna, o campo em `$fillable` do
+                 * `App\Models\Tenant`, e o componente aqui. Ver ADR-05 da wiki
+                 * `identidade-visual-da-organizacao`.
+                 *
+                 * ## Os dois campos abaixo são inertes quando vazios
+                 *
+                 * Sem cor, o painel `/app` da organização usa o default do Filament; sem logo, a
+                 * tela de bloqueio usa a mídia base da aplicação. Nada quebra, nada precisa ser
+                 * preenchido.
+                 */
+                Section::make('Identidade visual')
+                    ->description('Aplicadas no painel de negócio desta organização. As demais não são afetadas.')
+                    ->columns(2)
+                    ->components([
+                        ColorPicker::make('cor_primaria')
+                            ->label('Cor primária')
+                            ->hex()
+                            ->helperText('O Filament deriva as 11 tonalidades desta cor e escolhe a legível por contraste. Em branco, usa a cor padrão da aplicação.'),
+
+                        FileUpload::make('logo')
+                            ->label('Logo')
+                            ->image()
+                            // `disk('public')` explícito: o default é `local`, que aponta para
+                            // storage/app/private e NÃO é servível por URL — a logo nasceria
+                            // quebrada. O `storage:link` já roda no `kit:install`.
+                            ->disk('public')
+                            ->directory('organizacoes/logos')
+                            // `visibility()`, e não `visible()`. O Breezy escreve `->visible('public')`
+                            // no upload de avatar dele (HasMyProfile.php:64), o que é bug: `visible()`
+                            // espera bool|Closure, a string é só truthy, e a visibility nunca é
+                            // declarada. Funciona lá por acidente, porque o disk já é público.
+                            ->visibility('public')
+                            ->maxSize(1024)
+                            ->helperText('Exibida na tela de bloqueio de sessão do painel de negócio. Em branco, usa a imagem padrão.'),
                     ]),
             ]);
     }
