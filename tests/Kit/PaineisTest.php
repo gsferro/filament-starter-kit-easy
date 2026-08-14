@@ -21,21 +21,6 @@ beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
 
-function usuarioCom(?string $papel): User
-{
-    $user = User::create([
-        'name'     => 'Teste',
-        'email'    => fake()->unique()->safeEmail(),
-        'password' => 'password',
-    ]);
-
-    if ($papel !== null) {
-        $user->assignRole($papel);
-    }
-
-    return $user;
-}
-
 it('serve as telas de login dos três painéis sem autenticação', function (string $painel): void {
     $this->get("/{$painel}/login")->assertSuccessful();
 })->with(['app', 'admin', 'infra']);

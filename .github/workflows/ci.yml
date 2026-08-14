@@ -33,8 +33,50 @@ jobs:
       - name: Análise estática (PHPStan)
         run: vendor/bin/phpstan analyse --no-progress
 
+      # --exclude-group=browser: a suíte de browser precisa de Node, dos browsers do
+      # Playwright e do build do Vite, e roda no job `telas`. Sem a exclusão, este job
+      # falharia em toda tela com ViteException.
       - name: Testes (Pest)
-        run: php artisan test
+        run: php artisan test --exclude-group=browser
+
+  telas:
+    # Navegador real sobre as 52 telas dos três painéis. Job próprio porque é o único que
+    # precisa de Node + browsers do Playwright, e porque leva ~2min contra os segundos do
+    # job de qualidade — separado, uma falha aqui não esconde uma falha de estilo.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, intl, pcntl, zip, sqlite3, pdo_sqlite
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependências
+        run: |
+          composer install --prefer-dist --no-interaction --no-progress
+          npm ci
+
+      - name: Instalar browsers do Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Preparar ambiente
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          npm run build
+
+      # Em série de propósito: --parallel multiplicaria processos de navegador e exigiria
+      # banco por worker.
+      - name: Testes de tela (Pest browser)
+        run: php artisan test --testsuite=Browser
 
   instalacao:
     # Prova que `composer create-project` continua entregando o projeto pronto.

@@ -3,6 +3,114 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.13.0] - 2026-08-14
+
+O kit ganha a camada de teste que não tinha: **navegador real, com JavaScript
+executando, sobre as 52 telas dos três painéis**. Até aqui a cobertura de tela era
+HTTP (`$this->get()`), que prova que o servidor devolveu 200 e nada além disso — e
+um painel Filament é Livewire + Alpine, então o HTML pode vir íntegro com status
+200 e a tela estar inutilizável porque um `x-on:click` estourou, porque um asset
+do Vite não subiu ou porque um componente de plugin registrou erro no console.
+Nenhuma dessas três falhas move o status HTTP.
+
+A rodada também virou uma auditoria: **11 dívidas técnicas identificadas, uma
+paga**, e duas Project Rules novas para o que foi aprendido não se perder. Wiki
+completa em `wikis/specs/feature/wiki-regressao-telas/regressao-de-telas/`.
+
+### Adicionado
+
+- **Suíte de testes de browser** (`tests/Browser`, grupo `browser`), com 11
+  cenários cobrindo **100% das 52 telas alcançáveis por URL fixa** — das 74 rotas
+  GET dos painéis, 13 exigem `{record}`, 3 são endpoint JSON de passkey e 6 exigem
+  estado ou token. Rode com `composer test:browser`, que embute o `npm run build`
+  de que a suíte depende.
+
+  O painel `/app` ganha aqui a **primeira cobertura de tela que já teve**: o
+  smoke HTTP cobria 15 rotas de `/infra` e 3 de `/admin`, e o painel de negócio —
+  o único que o consumidor do kit usa todo dia — tinha só o `GET /app` genérico.
+
+  Fica **fora** do `composer test:kit` de propósito: aquele é o comando de
+  resposta rápida depois de um `kit:update`, e browser em série custa ordens de
+  magnitude mais que HTTP.
+
+- **Validação de perfis pela tela.** Cada papel entra no painel dele e vê uma
+  página de 403 **legível** no painel negado — o teste HTTP afirmava
+  `assertForbidden()`, que passa igual se o usuário barrado receber tela branca.
+
+- **Validação de dark mode.** `->inDarkMode()` nos três dashboards, e o alternador
+  de tema exercitado por clique. Com uma ressalva honesta, que está na wiki:
+  `assertSee()` **passa** com texto branco em fundo branco, então o teste prova
+  que a tela abre sob `prefers-color-scheme: dark`, não que está legível. A
+  legibilidade foi conferida por inspeção visual de 9 telas nos dois temas —
+  nenhum texto ilegível, ícone sumido ou logo com fundo cravado.
+
+- **Job de CI `telas`**, com Node, browsers do Playwright e build do Vite.
+  Separado do job de qualidade, que passa a rodar `--exclude-group=browser`:
+  registrar a testsuite nova fazia `php artisan test` incluí-la, e o CI quebraria
+  em toda tela com `ViteException`.
+
+- **Duas Project Rules** em `.ai/rules/`: `testes.md` (glob `tests/**`) e
+  `testes-browser.md` (glob `tests/Browser/**`). A segunda registra os quatro
+  fatos sobre o `pest-plugin-browser` que a doc oficial não diz e que custaram uma
+  sonda inteira — entre eles que **o plugin sobe o próprio servidor in-process**,
+  então `:memory:`, `RefreshDatabase` e `$this->actingAs()` continuam valendo
+  dentro do navegador, e nenhum Herd ou `artisan serve` é necessário.
+
+- **`tests/Kit/HelpersDeTesteTest.php`** — guarda automática contra helper de
+  teste usado de outro arquivo. Usa `token_get_all()` e não regex, porque menção
+  em docblock é comum nesta suíte e guarda com falso positivo ensina o time a
+  ignorá-la.
+
+### Corrigido
+
+- **Helper de teste declarado dentro de arquivo de teste** (era a dívida
+  bloqueante). Em PHP função é global no processo: quando o Pest carrega **todos**
+  os arquivos, um helper declarado em `AlgumTest.php` vaza para o vizinho e tudo
+  passa — o acoplamento fica invisível. Ele só aparece em execução **parcial**, que
+  é o que fazem `--parallel`, `--tia` e `pest tests/Kit/AlgumTest.php`.
+
+  Eram **7 erros** `Call to undefined function` em `--parallel`, e o `--tia` do
+  Pest 5 — a feature que motivou o upgrade — era inutilizável. `usuarioCom()`,
+  `noPainelDa()` e `pivotDePapeis()` foram para `tests/Pest.php`, e **dois clones
+  desapareceram**: existiam só para escapar da colisão de redeclaração, cada um
+  idêntico ao original, trocando um erro que estoura por duas funções iguais que
+  ninguém percebe.
+
+  Medido: `pest --parallel --group=kit` de 206/213 com 7 erros para **214/214** em
+  196 s, contra 818 s em série — **4,2× mais rápido**.
+
+- **`tests/Unit/ExampleTest.php` convertido para Pest.** Era o scaffolding
+  class-based do Laravel, e o `--tia` **aborta a execução inteira** ao encontrar
+  uma classe PHPUnit. Um arquivo esquecido desligava o Test Impact Analysis para o
+  projeto todo.
+
+### Alterado
+
+- **Pest 4.7 → 5.1** e **PHPUnit 12.5 → 13.3** (requisito duro do Pest 5), mais
+  `pestphp/pest-plugin-browser` 5.0 e `playwright`. São dependências de
+  desenvolvimento: nada muda em runtime para quem usa o kit.
+- `pest()->tia()->defaultBranch('main')->locally()` em `tests/Pest.php` — o default
+  do TIA é `master`, e o `locally()` liga o TIA no desenvolvimento e o desliga em
+  CI, como a doc do Pest recomenda.
+
+### Conhecido
+
+Dez dívidas seguem abertas, com custo estimado e caminho de correção em
+`06-divida-tecnica.md`. As que mais importam:
+
+- **Sem PCOV**, o `--tia` é impraticável: com Xdebug, em série não termina
+  (abortado após 35 min), e `--parallel` derruba 4 dos 11 cenários de browser
+  porque multiplica processos de navegador. O contorno são dois comandos.
+- **Botão *Clear Cache* sem texto acessível** (a11y *critical*) no `/infra`, e
+  **contraste 4.25:1** no indicador de ambiente (a11y *serious*, só no tema claro).
+  Ambos em `vendor/`.
+- **Render hook de plugin vaza entre painéis** no mesmo processo PHP: `/admin`
+  isolado tem 0 botões de *Clear Cache* e 9 depois de visitar `/infra`. Impacto em
+  produção hoje é nulo (sem Octane), mas os testes de browser validam um DOM
+  contaminado.
+- **Nenhum `data-testid`** nas telas, então os seletores são `id` de framework,
+  texto visível e `aria-label`.
+
 ## [0.12.0] - 2026-08-14
 
 O convite deixa de ser só uma porta para gente nova. Três features nasceram de
