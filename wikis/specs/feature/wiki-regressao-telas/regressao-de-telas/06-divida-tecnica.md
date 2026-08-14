@@ -29,6 +29,7 @@ ele. O relatório está em `07-relatorio-qa.md`.
 | **DT-07** | Inventário de telas dos CT-B é array escrito à mão | cosmética | ~30 min | `tests/Browser` |
 | **DT-09** | Telas de `/infra` misturam inglês e português | cosmética | ~2 h | `lang/`, `vendor` |
 | **DT-10** | A suíte de testes escreve no `storage/logs` real | cosmética | ~5 min | `phpunit.xml` |
+| **DT-11** | Sem PCOV: o `--tia` roda com Xdebug e fica impraticável em série | relevante | ~10 min | ambiente / CI |
 
 ---
 
@@ -450,6 +451,55 @@ aplicar.
 
 ---
 
+## DT-11 — Sem PCOV, o `--tia` é impraticável em série
+
+**Severidade**: relevante
+**Como foi encontrada**: tentando fechar a Verificação Final com `pest --tia` em série, que é a
+única combinação em que o TIA liga **e** os CT-B ficam estáveis.
+
+### O problema
+
+O `--tia` exige driver de cobertura. O ambiente tem **Xdebug 3.4.4 e não tem PCOV**
+(`php -m | grep -i pcov` → vazio). Xdebug com cobertura ativa é ordens de magnitude mais lento
+que PCOV, e o efeito é este:
+
+| Combinação | Tempo |
+|---|---|
+| `pest --parallel --tia` (completo) | 507 s — mas derruba 4 dos 11 CT-B, porque `--parallel` não convive com browser |
+| `pest --tia` (série, completo) | **abortado após 35 min sem terminar** |
+
+Ou seja: das duas formas de rodar o TIA no run completo que ele exige, uma é rápida e instável, e
+a outra é estável e não termina. O TIA fica tecnicamente desbloqueado (DT-03 foi paga) e
+praticamente inutilizável.
+
+### Correção
+
+Instalar PCOV no ambiente de desenvolvimento e no job de baseline do CI:
+
+```bash
+pecl install pcov
+```
+
+E, no CI, o job dedicado que a doc do Pest recomenda — nunca `--tia` no job que roda a suíte,
+que deve rodar tudo:
+
+```yaml
+- run: vendor/bin/pest --tia --coverage --fresh   # job de baseline, artefato pest-tia-baseline
+```
+
+O `.github/workflows/ci.yml` hoje usa `coverage: none` nos três jobs, que é o correto para eles —
+o baseline do TIA seria um quarto job.
+
+### Por que não foi feito agora
+
+Instalar extensão PHP é mudança de **ambiente**, não de código: não entra num commit, não é
+revisável em PR, e afeta a máquina de quem rodar. É decisão de quem mantém o ambiente.
+
+O contorno usado nesta wiki: `pest --parallel --group=kit` para o backend (196 s, verde) e
+`pest --testsuite=Browser` em série para as telas (120 s, verde). Cobre o mesmo, sem o TIA.
+
+---
+
 ## Nota — a matriz de comandos de teste, medida
 
 Não é dívida; é característica das ferramentas, e custa uma tarde para redescobrir. Registrada
@@ -461,6 +511,7 @@ aqui e em `.ai/rules/testes-browser.md`.
 | `pest --parallel --tia --exclude-group=browser` | ❌ *"does not apply to partial runs"* | n/a | 217/217 verde |
 | `pest --parallel --group=kit` | ❌ (partial) | n/a | 214/214 verde, 196 s |
 | `pest --testsuite=Browser` (série) | ❌ (partial) | ✅ | 11 cenários, verde em 4 execuções |
+| `pest --tia` (série, completo) | ✅ | ✅ | **abortado após 35 min** — ver DT-11 |
 
 **A consequência prática**: o `--tia` exige run **completo** — `--group` e `--exclude-group` o
 desligam. E `--parallel` é incompatível com browser. Logo os dois **não convivem numa invocação

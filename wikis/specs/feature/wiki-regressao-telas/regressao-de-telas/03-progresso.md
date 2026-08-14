@@ -93,9 +93,10 @@
       valida a correção do CI (D-05)
 - [x] `vendor/bin/pest --group=kit --parallel` — **214/214**, 727 asserções, 196 s. Era
       206/213 com 7 erros antes de DT-03 ser paga
-- [x] `vendor/bin/pest --parallel --tia` — **desbloqueado**: o grafo é criado e o TIA roda.
-      Ressalva medida: no run completo o `--parallel` derruba 4 dos 11 CT-B por timeout, então
-      backend e browser vão em comandos separados. Matriz completa no `06`
+- [~] `vendor/bin/pest --parallel --tia` — **desbloqueado tecnicamente** (o grafo é criado e o
+      TIA roda), mas **impraticável** por falta de PCOV: no run completo o `--parallel` derruba
+      4 dos 11 CT-B, e em série não termina (abortado após 35 min com Xdebug). Registrado como
+      **DT-11**. Contorno usado: dois comandos, `--parallel --group=kit` + `--testsuite=Browser`
 - [x] Roteiro *Desenhado × Implementado* do `05-*-browser.md` preenchido
 - [x] `feature-quality-gate` invocado — **ciclo 1: REPROVADO → especificação**, depois
       corrigido. Ver `07-relatorio-qa.md`

@@ -30,7 +30,14 @@ Nunca use `wait(n)` com segundos fixos. O plugin reexecuta cada asserção até 
 
 Multiplica processos de navegador e produz timeout. Medido: `pest --parallel --tia` no run completo derruba 4 dos 11 cenários. Rode `pest --testsuite=Browser` em série.
 
-Consequência: o `--tia` exige run **completo** (`--group` e `--exclude-group` o desligam), então `--parallel --tia` e os CT-B não convivem numa invocação só. Use dois comandos.
+Consequência: o `--tia` exige run **completo** (`--group` e `--exclude-group` o desligam), então `--parallel --tia` e os CT-B não convivem numa invocação só. Use dois comandos:
+
+```bash
+vendor/bin/pest --parallel --group=kit   # backend, 196 s
+vendor/bin/pest --testsuite=Browser      # telas, em série, 120 s
+```
+
+E enquanto o ambiente não tiver **PCOV**, o `--tia` é inviável de qualquer jeito: em série, com Xdebug, não termina (medido: abortado após 35 min).
 
 ## `visit([...])` aborta na primeira falha
 
