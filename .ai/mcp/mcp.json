@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "laravel-boost": {
+      "command": "C:\\php-8.4.10\\php.exe",
+      "args": [
+        "D:\\PROJECTS\\PACOTES\\FILAMENTS\\STARTER-KIT-EASY\\starter-kit-easy\\artisan",
+        "boost:mcp"
+      ]
+    }
+  }
+}

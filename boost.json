@@ -25,6 +25,8 @@
         "tailwindcss-development",
         "blaze-optimize",
         "laravel-backup",
-        "feature-wiki"
+        "feature-quality-gate",
+        "feature-wiki",
+        "requirement-to-rule"
     ]
 }
