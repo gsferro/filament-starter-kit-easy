@@ -252,17 +252,18 @@ Travar a sessão no `/app` e abrir a lock-screen.
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | Duas colunas em `tenants` (`cor_primaria`, `logo`) | *a preencher* | | CT-01 |
-| 2 | `Section` "Identidade visual" com `ColorPicker` + `FileUpload` | *a preencher* | | CT-B01 |
-| 3 | Página `view` registrada e no menu de ações | *a preencher* | | CT-03 (backend) |
-| 4 | Cor via `FilamentColor::register(Closure)`, avaliada no render | *a preencher* | | CT-B02 |
-| 5 | Guarda dupla (painel `app` + tenant com cor) | *a preencher* | | CT-B03 |
-| 6 | `session('tenant_corrente')` gravada no middleware existente | *a preencher* | | CT-06 |
-| 7 | Logo na lock-screen via `mergeWith()`, preservando o alternador de tema | *a preencher* | | CT-B04 |
-| 8 | Fallback para a mídia base sem tenant | *a preencher* | | CT-B05 |
-| 9 | RQ-09: o `EditAction` já navega (premissa do requisito não se aplica) | *a preencher* | | CT-B01 |
-| 10 | Regressão: `tests/Tenancy/*` e `BloqueioDeSessaoTest` verdes | *a preencher* | | CT-09–12 |
-| 11 | *(não desenhado)* pasta `tests/BrowserTenancy/` + `phpunit.xml` | *a preencher* | | Setup Global |
+| 1 | Duas colunas em `tenants` (`cor_primaria`, `logo`) | migration aplicada; `$fillable` e `urlDaLogo()` no model | ✅ | CT-01, CT-02 |
+| 2 | `Section` "Identidade visual" com `ColorPicker` + `FileUpload` | visível na tela cheia de edição | ✅ | CT-B01 |
+| 3 | Página `view` registrada e no menu de ações | rota `/admin/organizacoes/{record}` no ar | ✅ | CT-03 |
+| 4 | Cor via `FilamentColor::register(Closure)`, avaliada no render | funciona; cada organização chega ao seu `--primary-500` | ✅ | CT-B02 |
+| 5 | Guarda dupla (painel `app` + tenant com cor) | ganhou `instanceof Tenant` — `getTenant()` devolve `?Model`, e o PHPStan pegou | ⚠️ | CT-05, CT-B03 |
+| 6 | `session('tenant_corrente')` gravada no middleware existente | uma linha, como desenhado | ✅ | CT-06 |
+| 7 | Logo na lock-screen via `mergeWith()`, preservando o alternador de tema | **`mergeWith()` não serve**: `getAuthDesignerConfig()` devolve `AuthDesignerConfig` (final readonly), não `AuthPageConfig`. Reconstruído com os campos do original + mídia trocada — mesmo efeito, e mais explícito | ⚠️ | CT-B04 |
+| 8 | Fallback para a mídia base sem tenant | com log do motivo nos três casos | ✅ | CT-B05, CT-07 |
+| 9 | RQ-09: o `EditAction` já navega (premissa do requisito não se aplica) | **confirmado** — verde na 1ª execução. Nada corrigido no `EditAction` | ✅ | CT-B01 |
+| 10 | Regressão: `tests/Tenancy/*` e `BloqueioDeSessaoTest` verdes | 223/223, 759 asserções | ✅ | CT-09–12 |
+| 11 | *(não desenhado)* pasta `tests/BrowserTenancy/` + `phpunit.xml` | criada e registrada | ✅ | Setup Global |
+| 12 | *(não desenhado)* alias de trait no `TelaBloqueio` | `parent::` não alcança método de trait; exigiu `getAuthDesignerConfig as configBaseDoAuthDesigner` | ⚠️ | — |
 
 **Divergências encontradas**: registrar aqui e replicar em `03-progresso.md` → "Desvios do Plano".
 
