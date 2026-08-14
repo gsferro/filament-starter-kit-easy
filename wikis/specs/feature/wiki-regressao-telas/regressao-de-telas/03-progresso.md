@@ -91,12 +91,17 @@
 - [x] `vendor/bin/phpstan analyse` — **0 erros** com PHPUnit 13
 - [x] `vendor/bin/pest --exclude-group=browser --list-tests` — 0 testes de `Browser`, o que
       valida a correção do CI (D-05)
-- [~] `vendor/bin/pest --parallel --tia` — **bloqueado por DT-03**, não por esta entrega. Ver
-      Blockers. O contorno é rodar em série, que é verde
+- [x] `vendor/bin/pest --group=kit --parallel` — **214/214**, 727 asserções, 196 s. Era
+      206/213 com 7 erros antes de DT-03 ser paga
+- [x] `vendor/bin/pest --parallel --tia` — **desbloqueado**: o grafo é criado e o TIA roda.
+      Ressalva medida: no run completo o `--parallel` derruba 4 dos 11 CT-B por timeout, então
+      backend e browser vão em comandos separados. Matriz completa no `06`
 - [x] Roteiro *Desenhado × Implementado* do `05-*-browser.md` preenchido
 - [x] `feature-quality-gate` invocado — **ciclo 1: REPROVADO → especificação**, depois
       corrigido. Ver `07-relatorio-qa.md`
-- [ ] Candidatos a rule apresentados ao usuário
+- [x] Candidatos a rule apresentados ao usuário — **ambos aprovados**:
+      `.ai/rules/testes.md` (glob `tests/**`) e `.ai/rules/testes-browser.md`
+      (glob `tests/Browser/**`), com o `index.md` atualizado
 - [ ] `git commit`
 
 ## Blockers
@@ -125,12 +130,15 @@
   **inutilizável** neste projeto até os três helpers migrarem para `tests/Pest.php` — porque o
   `--tia` roda, por definição, apenas os arquivos afetados pelo diff.
 
-  **Não corrigido aqui**: mover os helpers alteraria três arquivos de teste de features
-  alheias, fora do escopo desta wiki (RQ-07 pede identificar). Registrado como
-  `06-divida-tecnica.md` → **DT-03**, com severidade **bloqueante** e o diff exato da correção.
+  **RESOLVIDO nesta branch**, por decisão explícita do usuário depois de o quality gate expor
+  que a dívida bloqueava justamente o `--tia`. Os três helpers foram para `tests/Pest.php`, dois
+  clones que existiam só para escapar da colisão desapareceram, e uma guarda automática
+  (`tests/Kit/HelpersDeTesteTest.php`, com `token_get_all()`) impede a reincidência.
 
-  **Contorno adotado**: a Verificação Final desta wiki usa `vendor/bin/pest --group=kit` em
-  série, que é o comando sob o qual a suíte é verde.
+  Medido: `--parallel` de 206/213 com 7 erros para **214/214** em 196 s, contra 818 s em série.
+  Um segundo bloqueio do `--tia` apareceu no caminho e também foi resolvido —
+  `tests/Unit/ExampleTest.php` era classe PHPUnit, e o `--tia` aborta a execução inteira ao
+  encontrar uma. Detalhes em `06-divida-tecnica.md` → DT-03.
 
 ## Quality Gate — Ciclo 1
 

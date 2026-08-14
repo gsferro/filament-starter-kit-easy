@@ -3,11 +3,13 @@
 > Atende RQ-07: *"use esse momento também para identificar possiveis dividas tecnicas para
 > correção, antes das proximas evoluções"*.
 
-**Nenhuma dívida deste documento foi corrigida.** O requisito posiciona a correção *antes das
-próximas evoluções*, o que a coloca **depois** desta entrega. Corrigir aqui seria escopo que o
-usuário não pediu — e, em três dos sete casos, mexeria em arquivos de features alheias.
+**Uma dívida foi paga: DT-03**, por decisão explícita do usuário depois de o quality gate
+expor que ela bloqueava o `--tia` — a feature que motivou o upgrade para Pest 5. As outras
+nove seguem abertas: o requisito posiciona a correção *antes das próximas evoluções*, o que a
+coloca **depois** desta entrega.
 
-Confirmação: `git diff main --stat` não toca `app/`.
+Confirmação que continua valendo: `git diff main --stat` **não toca `app/`**. DT-03 vive só em
+`tests/`.
 
 ## Resumo
 
@@ -17,7 +19,7 @@ ele. O relatório está em `07-relatorio-qa.md`.
 
 | ID | Dívida | Severidade | Custo estimado | Onde |
 |----|--------|-----------|----------------|------|
-| **DT-03** | Helpers de teste declarados dentro de arquivos de teste — inviabiliza `--parallel` e `--tia` | **bloqueante** | ~30 min | `tests/Kit`, `tests/Tenancy` |
+| ~~**DT-03**~~ | ~~Helpers de teste declarados dentro de arquivos de teste~~ | ~~bloqueante~~ | **PAGA** | `tests/Pest.php` |
 | **DT-01** | Botão *Clear Cache* sem texto acessível (a11y critical) | relevante | ~15 min | `vendor` + `app/Providers` |
 | **DT-08** | Render hook de plugin vaza entre painéis no mesmo processo PHP | relevante | investigação | `vendor` + `tests/Browser` |
 | **DT-04** | Assimetria de cobertura HTTP: `/app` quase sem smoke de backend | relevante | ~1 h | `tests/Kit` |
@@ -30,9 +32,9 @@ ele. O relatório está em `07-relatorio-qa.md`.
 
 ---
 
-## DT-03 — Helpers de teste declarados dentro de arquivos de teste
+## DT-03 — Helpers de teste declarados dentro de arquivos de teste · ✅ **PAGA**
 
-**Severidade**: **bloqueante**
+**Severidade**: era **bloqueante**
 **Como foi encontrada**: rodando o baseline do upgrade em dois modos. Em série a suíte é
 213/213 verde; em `--parallel`, **7 erros**.
 
@@ -94,8 +96,50 @@ papel e recebe e-mail fixo. A correção óbvia é fundir as duas em `usuarioDoK
 e ajustar os dois chamadores — mas isso toca os testes de quatro features, e a decisão é de
 quem for pagar a dívida.
 
-**Verificação**: `vendor/bin/pest --group=kit --parallel` volta a 213/213, e
-`vendor/bin/pest --parallel --tia` passa a ser utilizável.
+### Resolução — aplicada nesta branch
+
+Movidos para a seção de helpers compartilhados de `tests/Pest.php`: `usuarioCom()`,
+`noPainelDa()` e `pivotDePapeis()`.
+
+**Dois clones desapareceram no processo** — e eles são a parte instrutiva. Existiam só para
+escapar da colisão de redeclaração, cada um idêntico ao original:
+
+| Clone | Era idêntico a | Chamadores atualizados |
+|---|---|---|
+| `pivotDePapeisDaOrganizacao()` (`Tenancy/AdminDaOrganizacaoTest.php`) | `pivotDePapeis()` | 12 |
+| `entrarNoPainelDa()` (`Tenancy/ConviteEmMassaTenancyTest.php`) | `noPainelDa()` | 2 |
+
+O padrão trocava *um erro que estoura* por *duas funções idênticas que ninguém percebe*. Está
+proibido na rule nova `.ai/rules/testes.md`.
+
+**Guarda automática**: `tests/Kit/HelpersDeTesteTest.php`. Ela usa `token_get_all()` e não regex
+— a menção a `conviteCom()` dentro de um docblock é comum nesta suíte, e um regex a contaria como
+chamada. Guarda com falso positivo é pior que guarda nenhuma, porque ensina o time a ignorá-la.
+Verificada nos dois sentidos: verde no estado atual, e vermelha nomeando o arquivo quando uma
+violação é injetada de propósito.
+
+A regra que a guarda enforça **não** é "nenhum helper local" — os 16 helpers de arquivo único
+continuam onde estão, como `tests/Pest.php` determina. O defeito é o uso **cruzado**.
+
+### Resultado medido
+
+| Comando | Antes | Depois |
+|---|---|---|
+| `pest --group=kit --parallel` | 206/213, **7 erros** | **214/214**, 727 asserções |
+| Tempo do `--parallel` | 249 s (com erros) | **196 s** |
+| `pest --group=kit` (série) | 213/213, 818 s | 214/214, ~690 s |
+| `pest --parallel --tia` | **abortava** | roda, grafo criado |
+
+**Um bloqueio extra apareceu ao testar o `--tia`, e também foi resolvido**: `tests/Unit/ExampleTest.php`
+era o scaffolding class-based do Laravel, e o `--tia` **aborta a execução inteira** ao encontrar
+uma classe PHPUnit (*"Encountered PHPUnit class … Convert it to a Pest test, or run without
+Tia"*). Um único arquivo esquecido desliga o Test Impact Analysis para todo o projeto. Convertido
+para Pest, com o motivo no cabeçalho do arquivo.
+
+Também configurado em `tests/Pest.php`: `pest()->tia()->defaultBranch('main')->locally()`. O
+default do TIA é `master`, e sem isso ele pede `git remote set-head origin --auto` uma vez por
+clone; a linha vale para todo mundo de uma vez. O `locally()` liga o TIA no desenvolvimento e o
+desliga sozinho em CI, que é o que a doc do Pest recomenda.
 
 ---
 
@@ -202,12 +246,12 @@ desloca a descoberta de regressão para horas depois da causa, que é justamente
 
 ### Correção
 
-**Depende de DT-03.** Paga aquela, `--parallel` volta a valer e o tempo cai para ~4 min. Só
-então vale medir o que sobra com `pest --profile`, que aponta o cenário lento em vez de
-adivinhar.
+**Dependia de DT-03, que foi paga.** Com `--parallel` de volta, o tempo caiu de **818 s para
+196 s** (4,2×) — a suíte volta a caber no ciclo de desenvolvimento.
 
-Ordem correta: DT-03 → medir → otimizar o que o profile apontar. Otimizar antes de medir é
-adivinhação.
+O que resta: 196 s ainda é muito para rodar a cada passo. Agora **vale medir** com
+`pest --profile`, que aponta o cenário lento em vez de adivinhar. Otimizar antes de medir é
+adivinhação — e era por isso que esta dívida esperava a DT-03.
 
 ---
 
@@ -403,6 +447,25 @@ Uma linha em `phpunit.xml`:
 **Cuidado**: isso desligaria a assercao de log de `tests/Kit/PaineisTest.php:81-90` se ela
 dependesse do arquivo - ela **nao** depende, usa `Log::shouldReceive()`. Confirmar antes de
 aplicar.
+
+---
+
+## Nota — a matriz de comandos de teste, medida
+
+Não é dívida; é característica das ferramentas, e custa uma tarde para redescobrir. Registrada
+aqui e em `.ai/rules/testes-browser.md`.
+
+| Comando | TIA liga? | Browser estável? | Resultado medido |
+|---|---|---|---|
+| `pest --parallel --tia` (completo) | ✅ | ❌ | **4 dos 11 CT-B falham** por timeout — `--parallel` multiplica processos de navegador |
+| `pest --parallel --tia --exclude-group=browser` | ❌ *"does not apply to partial runs"* | n/a | 217/217 verde |
+| `pest --parallel --group=kit` | ❌ (partial) | n/a | 214/214 verde, 196 s |
+| `pest --testsuite=Browser` (série) | ❌ (partial) | ✅ | 11 cenários, verde em 4 execuções |
+
+**A consequência prática**: o `--tia` exige run **completo** — `--group` e `--exclude-group` o
+desligam. E `--parallel` é incompatível com browser. Logo os dois **não convivem numa invocação
+só** enquanto os CT-B estiverem na mesma suíte. Use dois comandos, que é o que a Verificação
+Final da wiki faz.
 
 ---
 
