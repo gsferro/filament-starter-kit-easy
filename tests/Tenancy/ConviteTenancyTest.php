@@ -51,11 +51,6 @@ function aceitarConviteTenancy(string $token): Testable
         ->call('register');
 }
 
-function pivotDePapeis(): string
-{
-    return (string) config('permission.table_names.model_has_roles', 'model_has_roles');
-}
-
 it('vincula o usuario a organizacao do convite', function (): void {
     $acme   = Tenant::factory()->create(['slug' => 'acme']);
     $globex = Tenant::factory()->create(['slug' => 'globex']);

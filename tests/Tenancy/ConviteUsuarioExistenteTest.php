@@ -36,7 +36,7 @@ use Psr\Log\LoggerInterface;
  * `tests/Kit/ConviteTest.php`.
  *
  * Os helpers `tenant()`, `usuario()`, `usuarioComPapel()` e `papelNaOrganizacao()` vêm de
- * `tests/Pest.php`; `pivotDePapeis()` de `ConviteTenancyTest.php` e `noPainelDa()` de
+ * `tests/Pest.php` — inclusive `pivotDePapeis()` e `noPainelDa()`, que antes viviam em
  * `AdminDaOrganizacaoTest.php` — o Pest carrega os arquivos da suíte inteira, então rode a
  * pasta, não um arquivo só.
  */

@@ -10,7 +10,6 @@ use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
-use Spatie\Permission\PermissionRegistrar;
 
 /**
  * O convite em massa com a tenancy LIGADA — onde a organização deixa de ser detalhe.
@@ -22,19 +21,6 @@ use Spatie\Permission\PermissionRegistrar;
 beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
-
-/**
- * O que o middleware do painel faria num request real.
- *
- * Nome próprio para não colidir com o `noPainelDa()` de `AdminDaOrganizacaoTest.php`: em Pest as
- * funções são globais no processo.
- */
-function entrarNoPainelDa(Tenant $tenant): void
-{
-    Filament::setCurrentPanel('app');
-    Filament::setTenant($tenant, isQuiet: true);
-    app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getKey());
-}
 
 function papelDoLoteTenancy(string $papel = 'panel_user'): int
 {
@@ -86,7 +72,7 @@ it('carimba a organizacao corrente no lote do admin da organizacao', function ()
     $ana = usuarioComPapel('admin_organizacao', $acme, 'ana@example.com');
     $ana->tenants()->attach($acme);
 
-    entrarNoPainelDa($acme);
+    noPainelDa($acme);
     $this->actingAs($ana);
 
     Livewire::test(ListConvites::class)
@@ -151,7 +137,7 @@ it('recusa papel de outro painel no lote do painel de negocio', function (): voi
     $ana  = usuarioComPapel('admin_organizacao', $acme, 'ana@example.com');
     $ana->tenants()->attach($acme);
 
-    entrarNoPainelDa($acme);
+    noPainelDa($acme);
     $this->actingAs($ana);
 
     Livewire::test(ListConvites::class)

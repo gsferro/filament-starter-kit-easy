@@ -19,7 +19,7 @@ beforeEach(function (): void {
 it('nao semeia o admin da organizacao sem tenancy', function (): void {
     expect(Role::where('name', 'admin_organizacao')->exists())->toBeFalse();
 
-    $user = usuarioCom('panel_user');   // helper de tests/Kit/PaineisTest.php
+    $user = usuarioCom('panel_user');
 
     // Quem barra é `canAccess()`, que devolve false com `kit.tenancy.enabled` desligada —
     // o mesmo par usado no TenantResource.

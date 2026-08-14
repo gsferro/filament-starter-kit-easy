@@ -65,26 +65,6 @@ function cenario(): array
     return compact('acme', 'globex', 'ana', 'beto', 'bruno', 'carla');
 }
 
-/**
- * O que o middleware do painel faria num request real.
- *
- * Teste de componente Livewire não passa por ele, e as duas chaves são
- * indispensáveis: sem `setTenant` todo caso cairia no ramo fail-closed de
- * `getEloquentQuery()` (e passaria por CT-14 em vez do que se quer provar); sem
- * `setPermissionsTeamId` o `syncRoles()` gravaria em `Tenant::CONTEXTO_GLOBAL`.
- */
-function noPainelDa(Tenant $tenant): void
-{
-    Filament::setCurrentPanel('app');
-    Filament::setTenant($tenant, isQuiet: true);
-    app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getKey());
-}
-
-function pivotDePapeisDaOrganizacao(): string
-{
-    return (string) config('permission.table_names.model_has_roles', 'model_has_roles');
-}
-
 /*
 |--------------------------------------------------------------------------
 | As quatro fronteiras da persona
@@ -107,7 +87,7 @@ it('nao entra nos paineis de instalacao', function (string $rota): void {
 
     // Sem esta asserção o caso passaria com um usuário SEM papel nenhum e não provaria
     // nada: o 403 tem de vir do painel do papel, não da ausência dele.
-    $this->assertDatabaseHas(pivotDePapeisDaOrganizacao(), [
+    $this->assertDatabaseHas(pivotDePapeis(), [
         'model_id' => $ana->id,
         'team_id'  => $acme->id,
     ]);
@@ -208,7 +188,7 @@ it('grava o papel no contexto da organizacao', function (): void {
         ->call('save')
         ->assertHasNoFormErrors();
 
-    $this->assertDatabaseHas(pivotDePapeisDaOrganizacao(), [
+    $this->assertDatabaseHas(pivotDePapeis(), [
         'model_id' => $beto->id,
         'role_id'  => $adminOrg->getKey(),
         'team_id'  => $acme->id,
@@ -216,7 +196,7 @@ it('grava o papel no contexto da organizacao', function (): void {
 
     // A asserção que importa: `team_id = 0` produziria alguém que entra no /app e não vê
     // nada — menu vazio, 403 em tudo, sem mensagem de erro.
-    $this->assertDatabaseMissing(pivotDePapeisDaOrganizacao(), [
+    $this->assertDatabaseMissing(pivotDePapeis(), [
         'model_id' => $beto->id,
         'role_id'  => $adminOrg->getKey(),
         'team_id'  => Tenant::CONTEXTO_GLOBAL,
@@ -252,13 +232,13 @@ it('promove a admin da organizacao pelo relation manager', function (): void {
     // A ação roda num painel SEM tenancy, onde o contexto default do processo é
     // CONTEXTO_GLOBAL. É a troca explícita de contexto que faz o papel nascer na
     // organização certa — sem ela, o promovido entraria no /app e não veria nada.
-    $this->assertDatabaseHas(pivotDePapeisDaOrganizacao(), [
+    $this->assertDatabaseHas(pivotDePapeis(), [
         'model_id' => $beto->id,
         'role_id'  => $adminOrg->getKey(),
         'team_id'  => $acme->id,
     ]);
 
-    $this->assertDatabaseMissing(pivotDePapeisDaOrganizacao(), [
+    $this->assertDatabaseMissing(pivotDePapeis(), [
         'model_id' => $beto->id,
         'role_id'  => $adminOrg->getKey(),
         'team_id'  => Tenant::CONTEXTO_GLOBAL,
@@ -294,19 +274,19 @@ it('descarta papel de outro painel enviado no payload', function (): void {
     // massa) não passar pela validação do formulário. ADR-07 existe por isso.
     UserResource::gravarPapeis($beto, [$panelUser->getKey(), $admin->getKey(), $master->getKey()]);
 
-    $this->assertDatabaseHas(pivotDePapeisDaOrganizacao(), [
+    $this->assertDatabaseHas(pivotDePapeis(), [
         'model_id' => $beto->id,
         'role_id'  => $panelUser->getKey(),
         'team_id'  => $acme->id,
     ]);
 
     // Em QUALQUER team_id: nem na organização, nem no contexto global.
-    $this->assertDatabaseMissing(pivotDePapeisDaOrganizacao(), [
+    $this->assertDatabaseMissing(pivotDePapeis(), [
         'model_id' => $beto->id,
         'role_id'  => $admin->getKey(),
     ]);
 
-    $this->assertDatabaseMissing(pivotDePapeisDaOrganizacao(), [
+    $this->assertDatabaseMissing(pivotDePapeis(), [
         'model_id' => $beto->id,
         'role_id'  => $master->getKey(),
     ]);
@@ -416,7 +396,7 @@ it('vincula o usuario criado a organizacao corrente', function (): void {
     // o criou — porque getEloquentQuery() filtra pela pivot.
     $this->assertDatabaseHas('tenant_user', ['user_id' => $novo->id, 'tenant_id' => $acme->id]);
     $this->assertDatabaseMissing('tenant_user', ['user_id' => $novo->id, 'tenant_id' => $globex->id]);
-    $this->assertDatabaseHas(pivotDePapeisDaOrganizacao(), ['model_id' => $novo->id, 'team_id' => $acme->id]);
+    $this->assertDatabaseHas(pivotDePapeis(), ['model_id' => $novo->id, 'team_id' => $acme->id]);
 
     expect(UserResource::getEloquentQuery()->pluck('email')->all())->toContain('fulano@example.com')
         ->and($novo->canAccessTenant($globex))->toBeFalse();
@@ -454,18 +434,18 @@ it('preserva os papeis do usuario nas outras organizacoes', function (): void {
         ->call('save')
         ->assertHasNoFormErrors();
 
-    $this->assertDatabaseHas(pivotDePapeisDaOrganizacao(), [
+    $this->assertDatabaseHas(pivotDePapeis(), [
         'model_id' => $carla->id, 'role_id' => $adminOrg->getKey(), 'team_id' => $acme->id,
     ]);
 
-    $this->assertDatabaseMissing(pivotDePapeisDaOrganizacao(), [
+    $this->assertDatabaseMissing(pivotDePapeis(), [
         'model_id' => $carla->id, 'role_id' => $panelUser->getKey(), 'team_id' => $acme->id,
     ]);
 
     // Quem garante é o spatie, não o kit: `syncRoles()` apaga pela pivot escopada no team
     // corrente. É COMPORTAMENTO DE VENDOR — daí o caso, que acusa se um upgrade mudar
     // isso. Sem ele, uma edição na Acme derrubaria o acesso da Carla na Globex.
-    $this->assertDatabaseHas(pivotDePapeisDaOrganizacao(), [
+    $this->assertDatabaseHas(pivotDePapeis(), [
         'model_id' => $carla->id, 'role_id' => $panelUser->getKey(), 'team_id' => $globex->id,
     ]);
 });
