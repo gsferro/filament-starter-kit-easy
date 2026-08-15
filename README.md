@@ -298,6 +298,68 @@ php artisan boost:update                                # sincroniza para todos 
 
 > `AGENTS.md` e `CLAUDE.md` são **gerados** pelo Boost — editar à mão é trabalho perdido no próximo `boost:update`. Regra durável vai em `.ai/rules` (ferramenta `record-rule`) ou na `wikis/`.
 
+#### Caveman e Ponytail fora do Claude Code
+
+O trio acima só é trio de verdade se as três camadas existirem. No Claude Code, Caveman e
+Ponytail chegam como **plugin** (`.claude/settings.json`) — com ativação automática por hook e
+comandos no namespace `/ponytail:…` e `/caveman:…`. Nos outros agentes não há sistema de plugin,
+e a `feature-wiki` invocaria um `/ponytail-review` que não existe.
+
+Por isso o kit **versiona uma cópia** das três skills que a `feature-wiki` cita por nome, em
+`.agents/skills/`, `.ai/skills/` e `.junie/skills/`:
+
+| Skill | Para quê a `feature-wiki` usa |
+|---|---|
+| `ponytail` | a escada de simplicidade durante a implementação (step 7) |
+| `ponytail-review` | auditoria do plano contra over-engineering (step 6, obrigatório) e do diff no fim |
+| `caveman` | comunicação enxuta agent ↔ você; **não** vale para wiki, código, commit ou aviso de segurança |
+
+Duas consequências práticas:
+
+- **A invocação muda de nome.** No Claude Code é `/ponytail:ponytail-review`; nos demais agentes,
+  a cópia local responde por `/ponytail-review`, sem namespace.
+- **`.claude/skills/` fica de fora de propósito.** Copiar para lá criaria duas `ponytail` ativas
+  ao mesmo tempo — a do plugin e a do projeto.
+
+`boost:update` **não** apaga essas pastas: ele só remove skill que já rastreou e saiu do
+`boost.json`, e nenhuma das três está listada lá. São cópias MIT, com o `LICENSE` original junto —
+atualizar é recopiar do upstream ([Caveman](https://github.com/JuliusBrussee/caveman),
+[Ponytail](https://github.com/DietrichGebert/ponytail)).
+
+### O ciclo de uma feature com agente
+
+O kit não pede que você confie no agente: pede que ele **deixe rastro**. Cada etapa produz um
+arquivo que a etapa seguinte confere.
+
+| # | Você faz | O agente produz | Por que existe |
+|---|---|---|---|
+| 1 | `/feature-wiki` com o pedido em texto corrido | `wikis/specs/{branch}/{feature}/00-requisito.md` — **cópia imutável** do que você pediu | O requisito nunca é reescrito para caber no que foi implementado. É ele que julga a entrega |
+| 2 | lê e ajusta | `01-plano-acao.md` (PRD passo a passo), `02-decisoes.md` (ADR), `04-casos-de-teste.md`, e `05-…-browser.md` quando tem tela | Revisar plano é barato; revisar 900 linhas de diff, não |
+| 3 | aprova | auditoria automática do plano por `ponytail-review` | Corta passo desnecessário e abstração prematura **antes** de virar código |
+| 4 | — | implementação seguindo o plano, com `03-progresso.md` atualizado | Sessão que cai retoma de onde parou, sem reconstruir contexto |
+| 5 | — | testes rodando (`--parallel --tia`) | Verde é pré-condição do passo seguinte, não a entrega |
+| 6 | — | `/feature-quality-gate` → `06-relatorio-qa.md` | Confronta requisito × plano × app rodando. A **matriz de rastreabilidade** expõe a cláusula que nunca virou passo, teste nem código — a omissão que suíte verde não denuncia |
+| 7 | aprova | `/requirement-to-rule` → regra em `.ai/rules` | Decisão que vale além desta feature passa a valer para **toda sessão futura**, de qualquer agente |
+
+**O que isso muda na prática:**
+
+- **O agente lê antes de escrever.** `wikis/` e `.ai/rules` respondem o que já existe, e o
+  [roteiro de features](#roteiro-de-features) abaixo lista as 56 telas prontas. Feature
+  reimplementada do zero porque o agente não sabia que existia é o custo mais caro e mais invisível.
+- **Contexto vira arquivo, não histórico de chat.** Trocar de agente, de máquina ou de pessoa não
+  perde o porquê da decisão — ele está no ADR, versionado no mesmo commit do código.
+- **Simples por padrão, sem cortar o que importa.** Ponytail nunca simplifica validação em fronteira
+  de confiança, tratamento de erro que evita perda de dado, segurança ou acessibilidade.
+- **Menos token por resposta.** Caveman corta a prosa da conversa; wiki, código e commit continuam
+  em português normal.
+- **Cada correção fica.** Armadilha resolvida vira `.ai/rules` — e o gate seguinte já a verifica.
+  Quando dá para provar por `pest --arch`, PHPStan ou Rector, a regra aponta para o teste em vez de
+  pedir boa vontade.
+
+> Para typo, ajuste de `.env`, bump de dependência ou refactor puro, **pule o ciclo**. A skill
+> mesma diz quando não compensa — cerimônia em mudança de uma linha é o over-engineering que o
+> Ponytail existe para cortar.
+
 ## Roteiro de features
 
 Tudo que o kit entrega, numerado, com **onde fica**, **quem alcança** e **como conferir**. Serve
