@@ -33,11 +33,13 @@ jobs:
       - name: Análise estática (PHPStan)
         run: vendor/bin/phpstan analyse --no-progress
 
-      # --exclude-group=browser: a suíte de browser precisa de Node, dos browsers do
-      # Playwright e do build do Vite, e roda no job `telas`. Sem a exclusão, este job
-      # falharia em toda tela com ViteException.
+      # Seleção de suíte, e NÃO `--exclude-group=browser`: o grupo é filtrado na EXECUÇÃO,
+      # mas o pest-plugin-browser sobe o Playwright já na COLETA — ao parsear qualquer
+      # arquivo com `visit()` (UsesBrowserTestCaseMethodFilter.php:57-60). Com o grupo, este
+      # job morria em PlaywrightNotInstalledException sem rodar um único teste. Nomear as
+      # suítes tira as pastas de browser da coleta, e elas seguem cobertas no job `telas`.
       - name: Testes (Pest)
-        run: php artisan test --exclude-group=browser
+        run: php artisan test --testsuite=Unit,Feature,Kit,Tenancy
 
   telas:
     # Navegador real sobre as 52 telas dos três painéis. Job próprio porque é o único que
