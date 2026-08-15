@@ -3,6 +3,24 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.14.3] - 2026-08-15
+
+### Corrigido
+
+- **A marca de versão do kit ficou defasada três releases seguidas.**
+  `config('kit.version')` apontava para `0.13.1` enquanto as tags já eram
+  `v0.14.0`, `v0.14.1` e `v0.14.2`.
+
+  Não é cosmético: é dessa chave que o `kit:update` parte para comparar
+  (`KitUpdate.php:383`). Com ela atrasada, quem instalasse uma 0.14.x e rodasse
+  a atualização veria como "novidade" o que já tinha — e teria de revisar
+  arquivo a arquivo um diff que não era dele.
+
+  O comando **grava a chave sozinho** ao final de cada atualização, que é o
+  fluxo normal; o que faltava era o passo equivalente no **release**, onde a
+  tag é criada à mão. Fica registrado aqui como parte da checklist: subir a
+  versão em `config/kit.php` **antes** de taggear.
+
 ## [0.14.2] - 2026-08-15
 
 ### Corrigido
