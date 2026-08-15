@@ -1,4 +1,4 @@
-# feature-quality-gate — Motivação e Estudo de Viabilidade
+# feature-quality-gate — QA no Agente
 
 > **Status: implementada — [`SKILL.md`](SKILL.md) v1.0.0.**
 > Requer `feature-wiki` ≥ **2.10.0** (que introduziu o `00-requisito.md`, o oráculo desta skill).
@@ -11,6 +11,10 @@
 
 ## Índice
 
+**Uso**
+- [Uso da skill](#uso-da-skill)
+
+**Motivação e estudo**
 - [TL;DR do veredito](#tldr-do-veredito)
 - [O problema: onde a coletânea para](#o-problema-onde-a-coletânea-para)
 - [Estudo de mercado](#estudo-de-mercado-o-que-já-existe)
@@ -30,6 +34,89 @@
 - [Fontes](#fontes)
 
 ---
+
+## Uso da skill
+
+A skill é a **próxima estação da esteira** — roda no step 8 da [`feature-wiki`](../feature-wiki/README.md), depois de implementar e com os testes verdes.
+
+### O defeito que ela existe para pegar
+
+**Omissão silenciosa**: cláusula do requisito que nunca virou passo do plano, nunca virou teste, nunca virou código.
+
+| RQ | Cláusula | Passo PRD | CT | CT-B | Código | Veredito |
+|----|----------|-----------|----|------|--------|----------|
+| RQ-01 | gerar relatório em lote | 3, 4 | CT-01 | CT-B01 | `GerarRelatorioLoteJob` | OK |
+| RQ-03 | notificar coordenador | — | — | — | — | ❌ **omissão silenciosa** |
+
+Nenhum teste falhou porque **nunca existiu teste** — e nunca existiu teste porque a cláusula nunca entrou no plano. CT e CT-B só podem falhar no que foi especificado; o `ponytail-review` audita **excesso**, nunca **falta**; o TIA mede impacto do diff, não cobertura do requisito. **É uma classe de defeito estruturalmente invisível para o resto do ciclo.**
+
+### As 10 dimensões
+
+| # | Dimensão | Exemplo do que pega |
+|---|---|---|
+| A | Cobertura do requisito | cláusula sem plano/teste/código |
+| B | Fronteiras e dados | `-1`, string de 500 chars, upload de 0 byte, 29/02 |
+| C | Matriz de permissão | 3 papéis × 4 ações = 12 células; o CT cobre 1 |
+| D | Observabilidade real | o PRD manda logar `[Classe@Método]` — **e ninguém confere**. Inclui **PII vazando no context** |
+| E | Performance | N+1, query sem índice, `->get()` onde cabia paginação |
+| F | UX de erro | "Erro ao processar" em vez de "CPF já inscrito na turma X" |
+| G | Tema e cor | **texto branco em fundo branco: `assertSee()` PASSA** |
+| H | Acessibilidade | teclado, foco, contraste, `alt` |
+| I | Segurança da superfície nova | IDOR, mass assignment, rota sem `can:` |
+| J | Regressão adjacente | só em wiki de evolução/correção |
+
+A dimensão **D** é auto-referente e reveladora: a [`feature-wiki`](../feature-wiki/README.md) exige log em toda etapa de execução, com channel dedicado e context estruturado — e nada no ciclo verificava se isso acontecia. O quality gate fecha o laço da própria skill principal.
+
+### Roteamento: 5 destinos, não 2
+
+Esta é a peça que **não existe em nenhuma skill de QA do mercado** — verificado na pesquisa.
+
+| Achado | Diagnóstico | Volta para |
+|---|---|---|
+| requisito ambíguo/incompleto | defeito de **especificação** | escrita da wiki (`00`/`01`/`02`) |
+| implementação diverge do PRD | defeito de **código** | execução do passo |
+| comportamento errado sem CT que cubra | defeito de **teste** | `04`/`05`, **depois** implementação |
+| ambiente, dado, build | não é defeito do produto | infra |
+| comportamento correto, expectativa errada | não é defeito | fecha, registrando o porquê |
+
+Prioridade quando há vários: **especificação > teste > implementação**. Corrigir código contra especificação ambígua é retrabalho garantido.
+
+E no destino "teste", a ordem importa: **escrever o CT que falha primeiro**, só então corrigir. Invertido, perde-se a prova e o defeito volta na feature seguinte.
+
+### Regras que impedem a skill de virar teatro
+
+| Princípio | Efeito prático |
+|---|---|
+| **Oráculo externo** | o PRD é **alegação a ser testada**, não verdade |
+| **Separação de poderes** | **não corrige nada** — lê, reproduz, reporta. Quem julga não conserta |
+| **Convergência** | teto de **3 ciclos**; ciclo sem achado novo encerra; estourar escala a você |
+| **Teto por risco** | 3 perfis: `ajuste` sem UI roda 3 dimensões, não 10 |
+| **Degradação graciosa** | sem MCP, sem `qa-skills`, sem Pest 5 ela roda — e **declara no relatório** o que não pôde verificar |
+
+### Saída
+
+`06-relatorio-qa.md` na wiki, com veredito (`APROVADO` / `APROVADO COM DÉBITO` / `REPROVADO → destino`), achados com repro mínima e evidência, a Matriz de Rastreabilidade (**impressa só se houver lacuna**, para não virar métrica de vaidade) e uma seção **"Não Verificado"** declarando o alcance real da execução.
+
+### Dependências
+
+**Obrigatórias:** `feature-wiki` ≥ 2.10.0 (pelo `00-requisito.md`), app servido, Pest.
+
+**Opcionais** — a skill degrada sem cada uma: Pest 5 (`--parallel --tia` para regressão), `pest-plugin-agent` (sondagem), `pest-plugin-browser` (CT-B), Playwright MCP (inventário de elementos, tema, console/rede), Boost MCP (`Browser Logs`, `database-query`), PCOV/Xdebug (pré-requisito do `--tia`).
+
+**Técnica de QA delegada** (MIT, instalar só as usadas):
+
+```bash
+# NÃO instalar as 50 — inflação de contexto. Copiar só as pastas necessárias.
+# risk-based-testing · exploratory-testing · ai-bug-triage
+# bug-reproduction · ai-qa-review · test-reliability
+npx skills add petrkindlmann/qa-skills
+```
+
+Cada delegação tem **fallback inline** documentado na skill: se a skill externa não estiver instalada, o agente aplica a técnica resumida em 2-3 linhas e registra no relatório qual caminho usou.
+
+---
+
+# Motivação e Estudo de Viabilidade
 
 ## TL;DR do veredito
 
