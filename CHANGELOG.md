@@ -3,6 +3,57 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.13.1] - 2026-08-14
+
+Identidade visual por organização, e dois defeitos de cor que ela revelou.
+
+### Adicionado
+
+- **Cor e logo por organização.** No `/admin` → Organizações, cada uma escolhe a
+  cor primária e envia a logo. Ao abrir `/app/{organizacao}`, o painel inteiro
+  veste a cor dela — botões, links, ícones, badges — e a **tela de bloqueio**
+  mostra a logo do cliente no lugar da imagem base. Sem nada preenchido, a
+  feature é **inerte**: o painel usa o default do Filament.
+
+  Uma coluna de cor, não onze: `Color::generatePalette()` deriva as 11
+  tonalidades de um hex, e o Filament escolhe a legível por contraste em runtime.
+
+- **Página `view` no cadastro de organizações**, com o `ViewAction` na listagem.
+  Era a única lacuna real do CRUD — create e edit já eram telas cheias.
+
+### Corrigido
+
+- **A cor da organização não chegava a toda a tela.** O CSS do
+  `croustibat/filament-jobs-monitor` é registrado como asset **global**, e dentro
+  dele as utilitárias vêm com a paleta âmbar **literal**
+  (`.text-primary-600 { color: rgb(217 119 6) }`). Quem usa essas classes ficava
+  âmbar mesmo com `--primary-600` dizendo outra coisa — na prática, o alternador
+  de painel, que aparece em toda tela, ficava âmbar dentro de um painel verde.
+
+  A correção vive em `resources/css/filament/kit.css`, registrado por
+  `FilamentAsset::register()`. **Escrever a regra em `resources/css/app.css` não
+  funcionaria**: o painel Filament não carrega o Vite da aplicação.
+
+- **`AcoesDeCriacao` resolvia a URL sem fixar o painel.** Como o registry do
+  Spotlight é singleton de container, num processo que atende dois painéis as
+  ações do primeiro sobrevivem e tentam uma rota que só existe lá — `Route
+  [...] not defined`, 500 numa tela sem relação com o resource citado. **Sob
+  worker persistente (Octane) isso era defeito de produção.**
+
+### Segurança
+
+- **O upload da logo aceitava SVG.** `FileUpload::image()` gera a regra
+  `mimetypes:image/*`, e `image/svg+xml` casa com ela — ao contrário da regra
+  `image` do Laravel, que recusa. Com disk público, um SVG com `<script>` é
+  servido pelo próprio origin da aplicação: abrir a URL executa o script com
+  acesso ao cookie de sessão. Exige quem já administra organizações, então é
+  escalada de insider, não porta anônima. Trocado por `acceptedFileTypes()`
+  explícito.
+- **A cor primária entrava sem validação.** `ColorPicker::hex()` não valida — só
+  troca o formato do picker. Strings arbitrárias eram persistidas, e
+  `generatePalette()` degradava para uma paleta **acromática**: o painel do
+  cliente ficava cinza, sem erro em lugar nenhum.
+
 ## [0.13.0] - 2026-08-14
 
 O kit ganha a camada de teste que não tinha: **navegador real, com JavaScript

@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Providers\Concerns\ConfiguraFilamentGlobal;
 use Carbon\CarbonImmutable;
 use CmsMulti\FilamentClearCache\Facades\FilamentClearCache;
+use Filament\Support\Assets\Css;
+use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -47,6 +49,7 @@ class KitServiceProvider extends ServiceProvider
         $this->configureClearCacheButton();
         $this->configureProcessEnvNoWindows();
         $this->configuraFilamentGlobal();
+        $this->configureCorrecoesDeCss();
     }
 
     protected function configureDefaults(): void
@@ -126,6 +129,28 @@ class KitServiceProvider extends ServiceProvider
      * Health checks padrão — adicione/remova conforme o projeto.
      * A página fica no painel infra; agendamento em routes/console.php.
      */
+    /**
+     * Registra o CSS de correções do kit nos três painéis.
+     *
+     * Pelo `FilamentAsset::register()`, que é o MESMO mecanismo dos plugins — e não pelo
+     * `resources/css/app.css`: o painel Filament não carrega o Vite da aplicação, então uma regra
+     * escrita lá nunca chega à tela. (Foi assim que a primeira tentativa de corrigir a cor do
+     * alternador de painel falhou em silêncio.)
+     *
+     * Registrado no fim do `boot()` de propósito: os assets saem na ordem de registro, e a regra
+     * do kit precisa vir DEPOIS da do `filament-jobs-monitor`, que é quem sequestra as
+     * utilitárias. O motivo completo está no cabeçalho de `resources/css/filament/kit.css`.
+     *
+     * Depois de mexer no arquivo: `php artisan filament:assets`.
+     */
+    protected function configureCorrecoesDeCss(): void
+    {
+        FilamentAsset::register(
+            [Css::make('kit-correcoes', resource_path('css/filament/kit.css'))],
+            package: 'kit',
+        );
+    }
+
     protected function configureHealthChecks(): void
     {
         Health::checks(array_filter([

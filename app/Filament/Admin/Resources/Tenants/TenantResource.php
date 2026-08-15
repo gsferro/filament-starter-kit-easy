@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Tenants;
 use App\Filament\Admin\Resources\Tenants\Pages\CreateTenant;
 use App\Filament\Admin\Resources\Tenants\Pages\EditTenant;
 use App\Filament\Admin\Resources\Tenants\Pages\ListTenants;
+use App\Filament\Admin\Resources\Tenants\Pages\ViewTenant;
 use App\Filament\Admin\Resources\Tenants\RelationManagers\UsersRelationManager;
 use App\Filament\Admin\Resources\Tenants\Schemas\TenantForm;
 use App\Filament\Admin\Resources\Tenants\Tables\TenantsTable;
@@ -115,6 +116,9 @@ class TenantResource extends Resource
         return [
             'index'  => ListTenants::route('/'),
             'create' => CreateTenant::route('/create'),
+            // Registrada ANTES da de edição de propósito: é a rota mais curta
+            // (`/{record}`), e o Filament casa na ordem de declaração.
+            'view'   => ViewTenant::route('/{record}'),
             'edit'   => EditTenant::route('/{record}/edit'),
         ];
     }

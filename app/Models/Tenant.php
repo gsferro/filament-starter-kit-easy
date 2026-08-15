@@ -10,6 +10,7 @@ use Filament\Models\Contracts\HasName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
@@ -41,6 +42,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $nome
  * @property string $slug
  * @property bool $ativo
+ * @property ?string $cor_primaria
+ * @property ?string $logo
  */
 class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
 {
@@ -73,6 +76,8 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         'nome',
         'slug',
         'ativo',
+        'cor_primaria',
+        'logo',
     ];
 
     /** Rótulo exibido acima do nome no seletor de tenant do painel. */
@@ -108,5 +113,35 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         return [
             'ativo' => 'boolean',
         ];
+    }
+
+    /**
+     * URL pública da logo, ou `null` quando a organização não enviou uma.
+     *
+     * Mesma forma de `User::getFilamentAvatarUrl()`: o banco guarda o path relativo e o disk
+     * resolve a URL. O disk `public` é explícito porque o default é `local`, que aponta para
+     * `storage/app/private` e não é servível por URL — logo herdada do default nasceria quebrada.
+     *
+     * `null` e não string vazia: string vazia num `src` de `<img>` faz o navegador requisitar a
+     * própria página e renderizar ícone quebrado, e `null` é o que o Auth Designer trata como
+     * "sem mídia".
+     */
+    public function urlDaLogo(): ?string
+    {
+        if (blank($this->logo) || ! Storage::disk('public')->exists($this->logo)) {
+            // `exists()` e não só `blank()`: path órfão (arquivo apagado à mão, restore de banco
+            // sem o storage, `migrate:fresh` com os uploads antigos) renderizaria um <img>
+            // quebrado no lugar da mídia base — exatamente o oposto do que a tela promete, que é
+            // DEGRADAR para o genérico quando não há logo confiável.
+            return null;
+        }
+
+        // `asset()` e não `Storage::disk('public')->url()`: a URL do disk é a string congelada
+        // `APP_URL . '/storage'` (config/filesystems.php:44), enquanto o `asset()` segue o host do
+        // request corrente. Os dois divergem sempre que o host efetivo não é o APP_URL — domínio
+        // próprio de organização, staging, `config:cache` com APP_URL velho — e aí a logo quebra
+        // enquanto o resto da página carrega. É o mesmo `asset()` que os painéis já usam para a
+        // mídia base (`asset('images/auth/login.svg')`).
+        return asset('storage/'.$this->logo);
     }
 }

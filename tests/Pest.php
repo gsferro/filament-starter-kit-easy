@@ -3,12 +3,15 @@
 use App\Models\Tenant;
 use App\Models\User;
 use Filament\Facades\Filament;
+use Filament\Support\Colors\ColorManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Log;
 use Psr\Log\LoggerInterface;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TenancyTestCase;
 use Tests\TestCase;
+use Wezlo\FilamentSearchSpotlight\Actions\SpotlightActionRegistry;
 
 /*
 |--------------------------------------------------------------------------
@@ -123,6 +126,25 @@ pest()->extend(TestCase::class)
 pest()->tia()->defaultBranch('main')->locally();
 
 /*
+|--------------------------------------------------------------------------
+| Testes do KIT — telas em browser real, com multi-tenancy
+|--------------------------------------------------------------------------
+| Pasta separada de tests/Browser pela MESMA razão que separa tests/Tenancy de
+| tests/Kit: o Tests\TenancyTestCase fixa `permission.teams` em
+| createApplication(), antes das migrations, e o Pest não permite dois TestCases
+| na mesma pasta.
+|
+| Aqui vivem os CT-B que precisam de /app/{tenant} — identidade visual por
+| organização, por exemplo. Mesmo grupo `browser`, então continua fora do
+| `composer test:kit` e dentro do `--testsuite=Browser`.
+*/
+
+pest()->extend(TenancyTestCase::class)
+    ->use(RefreshDatabase::class)
+    ->group('browser')
+    ->in('BrowserTenancy');
+
+/*
 | O plugin reexecuta cada assertion até este teto — é assim que ele espera por
 | conteúdo assíncrono, sem nenhum `wait()` de segundos fixos no teste. O default
 | de 5 s não alcança o primeiro boot de um painel Filament em ambiente de teste
@@ -233,6 +255,60 @@ function espiarAutenticacao(): LoggerInterface
 function usuarioComPapel(string $papel, ?Tenant $tenant = null, string $email = 'user@example.com'): User
 {
     return papelNaOrganizacao(usuario($email), $papel, $tenant);
+}
+
+/**
+ * Duas organizações com identidade visual diferente, e uma pessoa que opera as duas — e que
+ * também administra a instalação.
+ *
+ * O papel `admin` no contexto global não é enfeite: é ele que torna o vazamento de identidade
+ * visual OBSERVÁVEL no mesmo cenário. Sem ele o `/admin` responderia 403, e o caso mediria o
+ * barramento em vez da cor.
+ *
+ * Usada pelos casos de identidade visual das suítes `Tenancy` e `BrowserTenancy`.
+ *
+ * @return array{acme: Tenant, globex: Tenant, usuario: User}
+ */
+function duasOrganizacoes(): array
+{
+    $acme   = Tenant::factory()->comIdentidadeVisual('#7c3aed')->create(['nome' => 'Acme', 'slug' => 'acme']);
+    $globex = Tenant::factory()->comIdentidadeVisual('#059669')->create(['nome' => 'Globex', 'slug' => 'globex']);
+
+    $usuario = usuarioComPapel('panel_user', $acme);
+
+    papelNaOrganizacao($usuario, 'panel_user', $globex);
+    papelNaOrganizacao($usuario, 'admin');
+
+    $usuario->tenants()->attach([$acme->id, $globex->id]);
+
+    return compact('acme', 'globex', 'usuario');
+}
+
+/**
+ * A fronteira entre dois requests — que o teste não tem de graça, e o request de verdade tem.
+ *
+ * Em produção cada request nasce com container próprio (e o Octane, que reaproveita o processo,
+ * descarta os `scoped` e as facades entre um e outro). No teste — tanto no HTTP quanto no
+ * navegador, porque o servidor do pest-plugin-browser roda IN-PROCESS — o mesmo container
+ * atravessa todas as visitas. Dois bindings guardam estado de painel e mentem sobre o request
+ * seguinte:
+ *
+ * - `ColorManager` cacheia a paleta em `$cachedColors` (`ColorManager.php:70-78`) e nunca a
+ *   invalida: sem isto, a cor da PRIMEIRA organização visitada é devolvida para todas as outras.
+ *   São DUAS caches, e limpar só uma não adianta — o container guarda a instância, e a Facade
+ *   guarda outra referência em `Facade::$resolvedInstance`, fora do alcance de `forgetInstance()`.
+ * - `SpotlightActionRegistry` é singleton (`FilamentSearchSpotlightServiceProvider.php:25`) e
+ *   acumula as ações "Criar X" de todo painel visitado. No painel seguinte, o ⌘K resolve
+ *   `getUrl('create')` de um resource que não existe ali e o request morre em 500
+ *   (`Route [filament.app.resources.agentes-ia.create] not defined`). É o que impede qualquer
+ *   cenário de atravessar dois painéis sem esta fronteira.
+ */
+function fronteiraDeRequest(): void
+{
+    app()->forgetInstance(ColorManager::class);
+    Facade::clearResolvedInstance(ColorManager::class);
+
+    app()->forgetInstance(SpotlightActionRegistry::class);
 }
 
 /**

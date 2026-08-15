@@ -30,6 +30,20 @@ class TenantFactory extends Factory
         ];
     }
 
+    /**
+     * Organização com identidade visual definida.
+     *
+     * O default de `definition()` deixa os dois campos nulos de propósito: o estado neutro é o
+     * mais importante de cobrir, porque a feature tem de ser inerte sem eles.
+     */
+    public function comIdentidadeVisual(string $cor = '#7c3aed', ?string $logo = null): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'cor_primaria' => $cor,
+            'logo'         => $logo,
+        ]);
+    }
+
     public function inativo(): static
     {
         return $this->state(fn (array $attributes): array => [

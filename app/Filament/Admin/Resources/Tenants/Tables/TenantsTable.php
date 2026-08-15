@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Tenants\Tables;
 
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
@@ -35,6 +36,12 @@ class TenantsTable
                 TernaryFilter::make('ativo')->label('Ativo'),
             ])
             ->recordActions([
+                // Sem `->url()` nos dois: com as páginas `view` e `edit` registradas, o
+                // `Page::getDefaultActionUrl()` resolve a URL sozinho e o Filament renderiza
+                // `<a href>` em vez de `wire:click` (Page.php:373-389, Action.php:889). Passar
+                // URL à mão duplicaria isso — e apontaria para rota inexistente no dia em que
+                // uma das páginas saísse do resource.
+                ViewAction::make(),
                 EditAction::make(),
             ])
             ->emptyStateHeading('Nenhum registro cadastrado')
