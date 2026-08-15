@@ -7,6 +7,7 @@ use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Livewire\DatabaseNotifications;
+use Filament\Resources\Resource;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Icons\Heroicon;
 use Filament\Support\View\Components\ModalComponent;
@@ -40,6 +41,22 @@ trait ConfiguraFilamentGlobal
 
         // Modal só fecha no botão: um Esc acidental no meio de um formulário
         // longo descarta o preenchimento sem confirmação.
+        /*
+         * Title case FORA — ele é regra do inglês, não do português.
+         *
+         * `Resource::getNavigationLabel()` cai em `getTitleCasePluralModelLabel()`
+         * (HasNavigation.php:142), que aplica `Str::ucwords()` ao label plural — e isso
+         * capitaliza TODA palavra, preposição inclusive. Num painel em pt-BR o resultado é
+         * "Agentes **De** IA", "Logs **De** Autenticação", "Pacotes **Do** Composer": errado no
+         * menu, no breadcrumb e no <h1>, porque os três saem do mesmo lugar.
+         *
+         * Desligado aqui e não resource a resource: a chave é estática e vale para TODOS,
+         * inclusive os Resources de plugin de terceiro, que é onde o kit não tem como declarar
+         * label. Quem quiser o label exato continua declarando `$navigationLabel` — esta chave
+         * só para de MEXER no que já foi escrito.
+         */
+        Resource::titleCaseModelLabel(false);
+
         ModalComponent::closedByEscaping(false);
 
         // Fallback do sininho. Os painéis zeram o intervalo quando o broadcast
