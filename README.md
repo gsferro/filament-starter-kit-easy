@@ -437,7 +437,7 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 
 | # | Feature | Onde | Quem alcança | Como conferir | Teste |
 |---|---|---|---|---|---|
-| F-33 | Health checks | `/infra/health-check-results` | `infra` | banco, cache, filas, agendador, disco, debug mode e IA local | 🔵 |
+| F-33 | Health checks | `/infra/health-check-results` | `infra` | banco, cache, filas, agendador, debug mode e IA local. **Abre vazia até rodar `php artisan health:check`** | 🔵 |
 | F-34 | Backups | `/infra/backup-runs` | `infra` | histórico e saúde por destino | 🔵 |
 | F-35 | Filas | `/infra/queue-monitors` | `infra` | pendentes, falhas e histórico — de qualquer driver | 🔵 |
 | F-36 | Logs | `/infra/logs` | `infra` (`ver-logs`) | leitura e busca por channel. **Sem botão de apagar**: trilha é evidência | 🔵 |
@@ -446,7 +446,7 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-39 | Central de comandos | `/infra/command-center/commands` | `infra` (`command-center:access`) | comandos **pré-aprovados** em `config/command-center.php`, com histórico | 🔵 |
 | F-40 | Pulse | `/infra/pulse` | `infra` | performance em tempo real. Precisa de `pulse:check` para ter dados | 🔵 |
 | F-41 | Grafo de dependências | `/infra/dependency-graph` | autenticado no `/infra` | mapa de models, relações, resources e painéis | 🔵 |
-| F-42 | Releases do Composer | `/infra/composer-release-packages` | `infra` | avisa versão nova. **Informativo — nunca atualiza nada** | 🔵 |
+| F-42 | Releases do Composer | `/infra/composer-release-packages` | `infra` | avisa versão nova. **Informativo — nunca atualiza nada.** O sync é um job: sem worker, a tela fica vazia | 🔵 |
 | F-43 | Execuções de IA | `/infra/execucoes-ia` | `infra` (`ver-ai-tasks`) | ledger com custo e tokens por execução | 🔵 |
 | F-44 | Limpar caches | topbar do `/infra` | `infra` | `cache`, `config`, `view` e `modelCache` juntos | ⚪ |
 
@@ -479,6 +479,8 @@ Cinco features dependem de coisa fora do processo, e nenhum teste as substitui:
 | Feature | Depende de | Sem isso |
 |---|---|---|
 | F-15…F-20 (entrega do e-mail) | `MAIL_MAILER` real **e** um worker (`QUEUE_CONNECTION=database`) | o convite é gravado e a fila enche; nada sai |
+| F-33 (health checks) | uma execução de `php artisan health:check` | a tela abre **vazia**, sem estado explicando — o widget do dashboard avisa, a página do recurso não |
+| F-35, F-42 (filas e releases) | um worker | o job de sync do Composer fica na fila: F-42 mostra "sem registros" e F-35 conta pendências contra uma tabela vazia |
 | F-19 (lembretes) | o scheduler (`schedule:work`) | o comando nunca é chamado |
 | F-34 (backups) | destino configurado em `config/backup.php` | a tela abre vazia |
 | F-40 (Pulse) | `pulse:check` rodando | a tela abre sem dados |
