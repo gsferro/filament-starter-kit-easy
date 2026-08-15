@@ -53,7 +53,7 @@
                             document.body.removeChild(field);
                         "
                     >
-                        Copy
+                        Copiar
                     </x-filament::button>
                 @endif
             </x-slot>

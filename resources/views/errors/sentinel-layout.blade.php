@@ -150,9 +150,9 @@
 
             <div class="sn-foot">
                 <div class="sn-ref">
-                    <span>Message no. {{ $number }}</span>
+                    <span>Mensagem nº {{ $number }}</span>
                     <span aria-hidden="true">·</span>
-                    <span>Request ID {{ $requestId }}</span>
+                    <span>ID da requisição {{ $requestId }}</span>
                 </div>
                 <div class="sn-copy">&copy; {{ date('Y') }} {{ $brand }}</div>
             </div>

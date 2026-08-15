@@ -11,7 +11,7 @@
         {{-- One line, same shape as the result panel on the catalogue --}}
         <x-slot name="description">
             {{ collect([
-                $this->record->exitCode === null ? null : 'Exit code '.$this->record->exitCode,
+                $this->record->exitCode === null ? null : 'Código de saída '.$this->record->exitCode,
                 $this->record->durationMs === null ? null : number_format($this->record->durationMs / 1000, 2).'s',
                 $this->record->startedAt?->diffForHumans(),
             ])->filter()->implode(' · ') }}

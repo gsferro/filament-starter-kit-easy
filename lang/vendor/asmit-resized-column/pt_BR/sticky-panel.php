@@ -14,4 +14,14 @@ return [
 
     'heading' => 'Fixar colunas',
 
+    /*
+     * Estas quatro o pacote escreve direto no Blade, sem __(). A view foi
+     * publicada em resources/views/vendor/asmit-resized-column/ só para
+     * trocá-las por estas chaves.
+     */
+    'select_all'   => 'Selecionar todas',
+    'deselect_all' => 'Limpar seleção',
+    'empty'        => 'Nenhuma coluna',
+    'apply'        => 'Aplicar',
+
 ];
