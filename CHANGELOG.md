@@ -3,6 +3,31 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.14.1] - 2026-08-15
+
+### Adicionado
+
+- **Caveman e Ponytail versionados para os agentes sem plugin.** A `feature-wiki`
+  depende **por nome** de `/ponytail-review` (auditoria obrigatória do plano),
+  `ponytail` (execução) e `caveman` (comunicação). No Claude Code os dois chegam
+  como plugin; nos outros agentes não existe sistema de plugin, e a skill
+  invocava um comando que não estava lá. Agora as três vão versionadas em
+  `.agents/`, `.ai/` e `.junie/` — cópias MIT, com o `LICENSE` original junto.
+
+  `.claude/skills/` fica **de fora de propósito**: o plugin já está habilitado em
+  `.claude/settings.json`, e a cópia criaria duas `ponytail` ativas ao mesmo
+  tempo. Fora do Claude Code a invocação perde o namespace: `/ponytail-review`,
+  não `/ponytail:ponytail-review`.
+
+  `boost:update` não apaga essas pastas — ele só remove skill que já rastreou e
+  saiu do `boost.json`, e nenhuma das três está listada lá.
+
+- **`README`: o ciclo de uma feature com agente.** As sete etapas, cada uma com o
+  arquivo que produz e por que ele existe — do requisito imutável (00) ao
+  relatório de QA (06) e à regra durável em `.ai/rules`. Mais o que isso muda na
+  prática: contexto vira arquivo em vez de histórico de chat, e correção vira
+  regra em vez de lembrança.
+
 ## [0.14.0] - 2026-08-14
 
 O kit passa a levar junto **como a feature é feita**, não só o que ela usa: as
