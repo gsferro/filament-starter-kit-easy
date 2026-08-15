@@ -25,8 +25,11 @@
         "tailwindcss-development",
         "blaze-optimize",
         "laravel-backup",
+        "caveman",
         "feature-quality-gate",
         "feature-wiki",
+        "ponytail",
+        "ponytail-review",
         "requirement-to-rule"
     ]
 }
