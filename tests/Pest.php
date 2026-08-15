@@ -146,11 +146,26 @@ pest()->extend(TenancyTestCase::class)
 
 /*
 | O plugin reexecuta cada assertion até este teto — é assim que ele espera por
-| conteúdo assíncrono, sem nenhum `wait()` de segundos fixos no teste. O default
-| de 5 s não alcança o primeiro boot de um painel Filament em ambiente de teste
+| conteúdo assíncrono, sem nenhum `wait()` de segundos fixos no teste. Teto, e
+| não espera: cenário verde não gasta esse tempo.
+|
+| O default de 5 s não alcança o primeiro boot de um painel Filament em teste
 | (sem opcache, com o Livewire compilando na primeira visita): o login pela tela
-| do CT-B06 redirecionava DEPOIS do teto e falhava dizendo que ainda estava em
-| `/app/login`. Teto, não espera: cenário verde não gasta esse tempo.
+| redirecionava DEPOIS do teto e falhava dizendo que ainda estava em
+| `/app/login`.
+|
+| ATENÇÃO ao rodar UM arquivo isolado com as views frias
+| (`php artisan view:clear && pest tests/BrowserTenancy/AlgumTest.php`): o
+| primeiro cenário do arquivo paga a compilação inteira dos componentes Livewire
+| sozinho — medido, ~25 s só nisso — e falha por tempo, não por comportamento.
+| Subir o teto NÃO resolve: reproduzido igual com 40 s e 60 s.
+|
+| A suíte completa (`--testsuite=Browser`) não sofre disso, e é o que o CI roda:
+| os arquivos anteriores aquecem a compilação antes de o BrowserTenancy começar.
+| Medido com as views frias: 23 cenários, 21 verdes, 129 asserções.
+|
+| Se precisar rodar um arquivo isolado depois de um `view:clear`, rode a suíte
+| uma vez antes — ou aceite que o primeiro cenário vai falhar por tempo.
 */
 pest()->browser()->timeout(20_000);
 
