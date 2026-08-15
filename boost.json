@@ -27,6 +27,7 @@
         "laravel-backup",
         "caveman",
         "feature-quality-gate",
+        "feature-test-design",
         "feature-wiki",
         "ponytail",
         "ponytail-review",

@@ -1,20 +1,22 @@
 ---
 name: feature-wiki
-version: 2.10.0
+version: 3.0.0
 description: >
   Cria estrutura de documentação wiki para uma feature antes de implementá-la.
   Invoque SEMPRE ao iniciar implementação de qualquer feature nova.
-  Cria pasta em wikis/specs/{branch} com 5 arquivos obrigatórios: requisito bruto
-  imutável (00), plano de ação (PRD), decisões arquiteturais (ADR), tracking de
-  progresso e casos de teste. O plano de ação
-  deve ser minucioso o suficiente para um agente implementar sem ambiguidade.
+  Cria pasta em wikis/specs/{branch} com os arquivos obrigatórios: requisito bruto
+  imutável (00), plano de ação (PRD), decisões arquiteturais (ADR) e tracking de
+  progresso. O plano de ação deve ser minucioso o suficiente para um agente
+  implementar sem ambiguidade.
+  A DERIVAÇÃO DOS CASOS DE TESTE (04 e 05) É DELEGADA à skill feature-test-design,
+  invocada no step 4 — ela deriva do 00-requisito, nunca do PRD, com técnicas formais
+  (partição, valor limite, tabela de decisão, tabela estado x evento) e um gate de
+  falsificabilidade por mutantes. Esta skill mantém o gate do 05 (browser só para o
+  que só o navegador prova) e o loop de execução dos CT-B por sub-agente.
   Inclui padrão de log obrigatório, channel por feature, etapa de pós-implementação,
   auditoria automática da wiki via /ponytail:ponytail-review, e integração com
   Caveman (comunicação terse, modo padrão `ultra`) e Ponytail (execução minimalista).
-  Quando a feature tem superfície de UI, cria também 05-casos-de-teste-browser.md
-  (CT-B em Pest browser plugin / Playwright) que serve como roteiro de validação
-  desenhado x implementado — com Playwright MCP opcional como ferramenta de
-  observação no loop de correção dos CT-B, nunca como cobertura. Usa Pest 5 (--parallel --tia, --agent) na verificação.
+  Usa Pest 5 (--parallel --tia, --agent, --mutate) na verificação.
   Após os testes passarem, aciona a skill feature-quality-gate (etapa de QA no
   agente), que confronta 00-requisito x PRD x app rodando. No fim, avalia se
   alguma decisão da wiki deve virar Project Rule do Boost e
@@ -56,8 +58,7 @@ description: >
 - [Padrão de Log](#padrão-de-log--classeétodo-mensagem)
 - [Arquivo 02: ADR](#arquivo-02-decisões-arquiteturais)
 - [Arquivo 03: Progresso](#arquivo-03-progresso--tracking)
-- [Arquivo 04: Casos de Teste](#arquivo-04-casos-de-teste-ct)
-- [Arquivo 05: Casos de Teste de Browser](#arquivo-05-casos-de-teste-de-browser-ct-b--condicional)
+- [Arquivos 04 e 05: Casos de Teste (delegados)](#arquivos-04-e-05-casos-de-teste--delegados-à-feature-test-design)
   - [Playwright MCP na validação](#playwright-mcp-na-validação-opcional--ferramenta-de-observação)
 - [Execução de Testes com Pest 5](#execução-de-testes-com-pest-5)
 - [Arquivos Extras](#arquivos-extras-conforme-necessidade)
@@ -96,6 +97,15 @@ Ao implementar, o agente deve ler os arquivos nesta ordem:
 
 ## Fluxo de Execução
 
+### 0. Capturar o Requisito — PRIMEIRO ATO
+
+**Antes de descobrir branch, antes de nomear a feature, antes de qualquer pesquisa.**
+O procedimento está em [Captura do Requisito](#captura-do-requisito-primeiro-ato--antes-de-qualquer-pesquisa),
+dentro do step 3, porque é lá que ele convive com o resto da pesquisa — mas **a execução dele é aqui**.
+
+> Por que a ordem importa: o step 2 manda nomear a feature, e nome de feature não se decide bem
+> antes de ler o que foi pedido. Nomear primeiro é fixar uma interpretação antes de ter o requisito.
+
 ### 1. Descobrir Branch e Estrutura de Pasta
 
 ```bash
@@ -108,7 +118,7 @@ Branch `fix/boleto-juros` → pasta base: `wikis/specs/fix/boleto-juros/`
 
 ### 2. Definir Nome da Feature
 
-Perguntar ao usuário (ou derivar do contexto):
+Derivar **do requisito capturado no step 0**, e confirmar com o usuário:
 - Nome deve ser `kebab-case`
 - Deve descrever a feature, não o ticket
 - Exemplos: `envio-progresso`, `unico-jobs-progress-tracking`, `api-webhook-payments`
@@ -132,7 +142,56 @@ O requisito é a **fonte da verdade** de toda a wiki e o oráculo do `feature-qu
 
 **Regra dura**: o texto original é **imutável**. Se estiver ambíguo, incompleto ou contraditório, a ambiguidade é **achado**, não algo a "melhorar" na transcrição. Corrigir o requisito na captura destrói a única linha de base independente do agente.
 
+**Caso especial — o requisito pressupõe algo que não existe no projeto.** É comum: o card fala em
+"aplicar o desconto no pedido" e **não existe `Pedido`** — nem model, nem tabela. Isso não é
+ambiguidade de redação, é **premissa de escopo**, e escolher sozinho entre *"entrego só o motor"* e
+*"crio a entidade que falta"* é decidir o tamanho da entrega no lugar do usuário.
+
+Procedimento:
+
+1. `Grep`/`Glob` para **confirmar a ausência** antes de declará-la — pode existir com outro nome
+2. Listar quais `RQ` dependem da entidade ausente
+3. **Perguntar ao usuário**, com as duas opções e o custo de cada uma
+4. Se o usuário não estiver disponível: seguir com a premissa **mais estreita** (entregar o que
+   existe, não criar a entidade), registrá-la em `## Ambiguidades` e marcar as `RQ` dependentes
+   como **fora desta entrega** em `## Cobertura do Requisito` — nunca como atendidas
+
+Premissa de escopo tomada em silêncio é a forma mais cara de erro da wiki inteira: tudo fica
+coerente, verde, e entrega outra coisa.
+
 Em seguida, **decompor em cláusulas numeradas** (`RQ-01`, `RQ-02`, …), cada uma citando o trecho literal de origem. A decomposição é derivada e revisável; o texto bruto não.
+
+**Granularidade da cláusula — o critério.** Não é uma por frase nem uma por verbo. É:
+
+> **Uma `RQ` = uma afirmação que pode ser verdadeira ou falsa sozinha, e cuja violação é
+> observável.**
+
+Testes práticos, nesta ordem:
+
+1. **Consigo imaginar um sistema que atende tudo, menos esta cláusula?** Se não, ela está grudada
+   em outra — funda as duas
+2. **A cláusula tem dois "e" que podem falhar separadamente?** ("só admin cria **e** edita **e**
+   exclui" são três permissões) — separe, porque a matriz de rastreabilidade vai marcar ✅ com
+   duas das três implementadas
+3. **A cláusula sobrevive sem contexto?** Se ela só faz sentido lida junto da anterior, funda
+
+Grosso demais **esconde omissão** (uma `RQ` marcada ✅ com metade entregue); fino demais vira
+ruído e a matriz fica ilegível. Na dúvida, **separe** — fundir depois é barato, e a omissão
+escondida não aparece nunca.
+
+**Quando não há usuário para responder a ambiguidade.** A skill manda perguntar antes de
+implementar. Se não houver ninguém disponível, a ambiguidade **não vira silêncio**: registre em
+`## Ambiguidades` no par obrigatório
+
+```markdown
+- **RQ-04** — o limite de usos é global ou por usuário?
+  - **Assumido**: global (o card fala em "limite de quantas vezes pode ser usado", sem sujeito)
+  - **Se negado**: RQ-04 muda de escopo; o passo 6 do PRD e os cenários CT-09..CT-11 são refeitos
+```
+
+e propague a premissa para `## Cobertura do Requisito`, marcando a `RQ` como **atendida sob
+premissa**. Premissa sem "Se negado" é suposição disfarçada de decisão: ninguém sabe o custo de
+descobrir que ela estava errada.
 
 > **Por que isso existe**: sem o `00-requisito.md`, o único registro do que foi pedido é o PRD — que é a **interpretação** do agente. Se a interpretação estiver errada, ela contamina plano, testes, código e validação de forma coerente, e nada no ciclo detecta. Ver [Arquivo 00](#arquivo-00-requisito--fonte-da-verdade).
 
@@ -166,7 +225,7 @@ Antes de escrever qualquer documento:
   - Se a feature tem UI e o plugin **não** está instalado: incluir a instalação como passo explícito no PRD (`## Dependências`), não assumir que existe
   - Se `tests/Browser/` já existe: ler 1-2 testes para herdar o padrão do projeto (helper de login, traits no `Pest.php`, seletores usados)
 - **Playwright instalado?** — `Grep "playwright" package.json`; browsers baixados via `npx playwright install`
-- **Como o app é servido em teste** — `Read` no `.env.example`/`.env.testing` para `APP_URL`; confirmar se o projeto usa Herd, `php artisan serve`, Sail ou Vite dev server. Registrar isso nos pré-requisitos do `05-casos-de-teste-browser.md`
+- **Como o app é servido em teste** — o `pest-plugin-browser` **sobe o próprio servidor** (HTTP in-process, porta aleatória): não há Herd, `php artisan serve`, Sail nem `APP_URL` a configurar. O que confirmar é outra coisa: se o projeto roda `npm run build` antes da suíte de browser (pré-requisito duro — sem o manifest do Vite toda tela responde `ViteException`) e qual o teto em `pest()->browser()->timeout()`
 - **Traits globais** — `Read tests/Pest.php` para ver se `RefreshDatabase` está aplicado globalmente e se há `pest()->browser()` ou `pest()->tia()` configurado
 
 #### Documentation API do Boost (`search-docs`)
@@ -221,13 +280,20 @@ O Boost expõe a tool MCP **`search-docs`**, que consulta a Documentation API ho
 
 Criar os **5 arquivos obrigatórios** + extras se necessário.
 
-**Ordem de criação** (cada arquivo depende do anterior):
+**Ordem de criação**:
 1. **`00-requisito.md`** — requisito bruto + decomposição em `RQ-##`; é a linha de base de tudo
 2. **`01-plano-acao.md`** — PRD deriva do `00`; cada passo deve citar quais `RQ` atende
 3. **`02-decisoes-arquiteturais.md`** — ADRs justificam escolhas do PRD
-4. **`04-casos-de-teste.md`** — CTs validam os passos do PRD; cada CT cita o `RQ` que cobre
-5. **`05-casos-de-teste-browser.md`** — **condicional**: criar quando o PRD declarar superfície de UI (ver gate na seção do Arquivo 05)
-6. **`03-progresso.md`** — espelha os passos do PRD (por isso é o último; se houver CT-B, o progresso também os lista)
+4. **`04-casos-de-teste.md`** e, condicionalmente, **`05-casos-de-teste-browser.md`** —
+   **invocar a skill `feature-test-design`**. Ela deriva os cenários do **`00-requisito.md`**;
+   o PRD entra só para paths, rotas e a tabela `## Superfície de UI`
+5. **`03-progresso.md`** — espelha os passos do PRD (por isso é o último; se houver CT-B, o progresso também os lista)
+
+> **Não escrever o `04` inline.** O caso de teste derivado do plano confirma o plano — é a
+> mesma cegueira correlacionada que o `00-requisito.md` existe para quebrar. Ver
+> [Arquivos 04 e 05](#arquivos-04-e-05-casos-de-teste--delegados-à-feature-test-design).
+> Se a skill `feature-test-design` não estiver instalada, **declarar a degradação no
+> `03-progresso.md`** antes de escrever o `04` à mão.
 
 > **Rastreabilidade obrigatória**: todo passo do PRD e todo CT/CT-B referencia o `RQ` de origem. É isso que permite ao `feature-quality-gate` montar a Matriz de Rastreabilidade e detectar cláusula sem plano, sem teste ou sem código.
 
@@ -242,6 +308,7 @@ Após escrever os 4 arquivos, **re-validar cada premissa do plano contra o códi
 
 - Reler os pontos exatos citados no plano: imports dos arquivos a editar, assinaturas de métodos, relações de models, padrão das migrations-referência, factories/states usados nos CTs
 - **Corrigir a wiki imediatamente** quando a revisão contradisser o plano (ex: plano diz "adicionar import X" → import já existe; plano cita guard genérico → padrão real é `! app()->environment('testing')`)
+- **Registrar cada correção** em `03-progresso.md` → `## Auditoria Pré-Implementação` → *Revisão profunda*. Correção aplicada e não registrada some: a próxima pessoa refaz a verificação e o histórico não mostra que a premissa original estava errada
 - Só então avançar para o step 6 (Auditoria da Wiki)
 
 > Exemplo real (feature/implementar-carga-horaria): a revisão pós-escrita detectou que o import `MbaTrack` já existia no arquivo a editar e confirmou o padrão exato do guard de environment nas migrations com seeder — ambos corrigidos na wiki antes da implementação.
@@ -484,8 +551,15 @@ Virar rule? (1, 2, ambos, nenhum)
 - **Tipo**: nova | evolução | correção | ajuste
 - **Wiki ancestral**: `wikis/specs/{branch}/{feature}/` — **obrigatório** se o tipo não for "nova"
 - **Motivo**: {o que mudou desde a ancestral}
+- **Toca infra compartilhada?**: não | sim → {o quê: seeder de permissões, middleware global, `tests/Pest.php`, config de logging, migration em tabela de outra feature}
 
 > O tipo decide o escopo do `feature-quality-gate`: `nova` valida só a feature; os outros três disparam **regressão** contra os CT/CT-B da wiki ancestral.
+>
+> **Exceção que o tipo não cobre**: feature `nova` que **altera infra compartilhada** — a matriz
+> de papéis, um seeder que outras features consomem, um middleware global, o `tests/Pest.php`.
+> Aí o tipo é `nova` e a regressão é **obrigatória** mesmo assim, contra os CT/CT-B das features
+> que consomem a infra tocada. Marcar "Toca infra compartilhada? sim" **força a regressão**,
+> independente do tipo.
 
 ## Cobertura do Requisito
 
@@ -531,7 +605,13 @@ Virar rule? (1, 2, ambos, nenhum)
 |---|---|---|---|---|
 | {NomeDoComponente} | Filament \| Livewire \| Blade \| Inertia | {/path} | {o que o usuário faz} | Sim \| Não |
 
-**Gate de CT-B**: se houver ao menos uma linha nesta tabela **e** (`Depende de JS? = Sim` **ou** a interação envolve ≥ 2 telas/etapas) → criar `05-casos-de-teste-browser.md`.
+**Gate de CT-B**: esta tabela é o **gatilho**, não o critério. O cenário só vai para o browser
+quando afirma sobre algo que **só o navegador prova** — JavaScript executado, console/erro de JS,
+acessibilidade, cor/tema, layout. Validação de formulário, gravação, listagem, filtro, ação de
+tabela, notificação e autorização na tela são **teste de componente Livewire** e pertencem ao `04`.
+
+**Gate de tela de escrita**: para toda rota `create`/`edit` desta tabela, o `04` precisa ter um
+cenário de **gravação por componente** — *uma tela aberta não é uma tela que grava*.
 
 ## Variáveis de Ambiente
 
@@ -994,6 +1074,20 @@ Se o projeto possuir uma trait de logging (ex: `UnicoLogging`), verificar:
 - [ ] Roteiro "Desenhado × Implementado" do `05-*-browser.md` preenchido <!-- se houver CT-B -->
 - [ ] `git commit`
 
+## Auditoria Pré-Implementação
+<!-- Saída dos steps 5 e 6, ANTES de escrever código. Não confundir com "Desvios do Plano",
+     que é pós-implementação. -->
+
+### Revisão profunda (step 5) — premissas do plano contra o código real
+| Premissa do plano | O código real diz | Correção aplicada na wiki |
+|---|---|---|
+| {"adicionar import X"} | {já existe em `Arquivo.php:12`} | passo 3 reescrito |
+
+### Auditoria Ponytail (step 6)
+| # | Sugestão de corte | Aplicada? | Onde |
+|---|---|---|---|
+| 1 | {…} | sim / recusada: {motivo} | `01`, passo 4 |
+
 ## Blockers
 <!-- Impedimentos encontrados durante implementação -->
 - [ ] {Blocker 1}: {descrição + o que está sendo feito para resolver}
@@ -1014,262 +1108,94 @@ Se o projeto possuir uma trait de logging (ex: `UnicoLogging`), verificar:
 
 ---
 
-## Arquivo 04: Casos de Teste (CT)
+## Arquivos 04 e 05: Casos de Teste — delegados à `feature-test-design`
 
-**Path**: `wikis/specs/{branch}/{feature}/04-casos-de-teste.md`
+**Paths**: `wikis/specs/{branch}/{feature}/04-casos-de-teste.md` e `05-casos-de-teste-browser.md`
 
-**Propósito**: Especificação completa de cada caso de teste — setup, mocks, dados de entrada e assertions esperadas. Deve ser detalhado o suficiente para um agente escrever os testes sem ambiguidade.
+A **derivação e a escrita dos casos de teste não pertencem a esta skill**. Ela delega à skill
+[`feature-test-design`](../feature-test-design/SKILL.md), invocada no step 4 desta wiki.
 
-**Por que este arquivo existe**: Escrever os CTs *antes* da implementação força a pesquisa das APIs envolvidas (métodos reais, restrições de schema, contratos de terceiros) na fase de planejamento — não na fase de debug. Previne surpresas como nomes de método incorretos, FKs obrigatórias em fixtures ou restrições de schema de bibliotecas externas.
+### Por que delegar
 
-**Obrigatório incluir por cenário**:
-- ID único (`CT-01`, `CT-02`, ...)
-- Tipo: `Feature` ou `Unit`
-- Path do arquivo de teste
-- Nome do método `it()`
-- Precondições (estado do DB, factories, mocks ativos)
-- Dados de entrada (payload, CSV row, argumentos)
-- Resultado esperado (assertions específicas)
-- **Estratégia de DB**: `RefreshDatabase` (isola entre tests) vs `DatabaseTransactions` (mais rápido, não recria schema) — especificar qual e por quê
-- **`withoutExceptionHandling()`**: para CTs que precisam validar exception exata (tipo, mensagem, código) — caso contrário o Laravel converte para HTTP error
+O `04` era escrito logo depois do `01`, pelo mesmo agente, para "validar os passos do PRD".
+Isso é a direção invertida: o PRD é a **interpretação** do requisito, e testar a interpretação a
+confirma. Medido sobre 318 defeitos reais com 11 modelos, derivar teste a partir do código/plano
+em vez da especificação multiplica por ~8 os testes que codificam o bug como comportamento
+esperado e corta por ~3 os que detectam o defeito.
 
-**Cobertura esperada**: todos os métodos públicos das classes da feature devem ter pelo menos 1 CT. Métodos com branches (if/else, switch) devem ter CTs para cada branch.
+É o mesmo princípio que criou o `00-requisito.md` como oráculo e que proíbe o
+`feature-quality-gate` de corrigir o que julga: **quem escreve o plano não deriva o teste do
+próprio plano**.
 
-**CTs de Autorização** (quando aplicável):
-- Usuário sem permissão → `403 Forbidden`
-- Usuário não autenticado → `401 Unauthorized` ou redirect
-- Policy denial → `403` com mensagem esperada
+Sintoma medido na coletânea antes da delegação, sobre 9 wikis reais e 125 casos: 52% dos casos
+caíam nos quatro arquétipos que o antigo template nomeava (happy path, falha, autorização, log)
+e nada além; análise de valor limite apareceu **1 vez em 125**; tabela de decisão e pairwise,
+nenhuma; 9 de 19 cláusulas `RQ` rastreáveis ficaram sem nenhum caso.
 
-**CTs de Log** (quando aplicável):
-- Verificar que log foi emitido no channel correto
-- Verificar nível correto (info/warning/error)
-- Verificar formato da mensagem `[Classe@Método]`
-- Verificar context com campos esperados
-- Usar `Log::spy()` ou `Log::shouldReceive()`
+### O contrato da delegação
 
-**Data Providers (Pest)**: para testar múltiplos inputs no mesmo CT, usar `dataset()`:
-```php
-dataset('valid_enrollments', [
-    ['status' => 'active', 'expected' => true],
-    ['status' => 'pending', 'expected' => true],
-    ['status' => 'cancelled', 'expected' => false],
-]);
+```text
+Invocar: feature-test-design
 
-it('valida enrollment status', function (string $status, bool $expected) {
-    // ... assertion com $expected
-})->with('valid_enrollments');
+Entrada (nesta ordem de autoridade):
+  1. 00-requisito.md            → ORÁCULO. É daqui que o comportamento esperado sai
+  2. 01-plano-acao.md           → APENAS paths, rotas, stack e a tabela ## Superfície de UI
+  3. .ai/rules/, tests/Pest.php → convenção de teste do projeto
+  4. versões: Pest, Filament, Livewire, Laravel
+
+Saída:
+  - 04-casos-de-teste.md   (sempre)
+  - 05-casos-de-teste-browser.md   (só se o gate abaixo passar)
+  - perguntas novas devolvidas para ## Ambiguidades do 00-requisito.md
+
+Proibido passar como entrada:
+  - implementação da feature (ela ainda não existe; se existir, não é fonte de comportamento)
 ```
 
-**Setup Global**: documentar uma vez as factories/mocks comuns a vários CTs.
+**O `01-plano-acao.md` não é fonte de comportamento esperado.** Se a única forma de saber o que
+o sistema deve fazer é ler o PRD, o `00-requisito.md` está incompleto — e isso é achado, não
+atalho.
 
-### Fronteira com os CT-B (browser)
+### Gate do `05` (browser)
 
-Este arquivo é **backend**: regra de negócio, persistência, autorização, jobs, logs. Não colocar cenários de navegador aqui.
+A tabela `## Superfície de UI` do PRD continua sendo o gatilho, mas o critério mudou: **o cenário
+vai para o browser somente quando afirma sobre algo que só o navegador prova** — JavaScript
+executado, console/erro de JS, acessibilidade, cor/tema, layout.
 
-| Pergunta | Arquivo | Tipo |
-|---|---|---|
-| A regra de negócio está correta? | `04-casos-de-teste.md` | `Feature` / `Unit` |
-| O usuário consegue chegar até a regra? | `05-casos-de-teste-browser.md` | `Browser` |
+Tudo o mais que parece "de tela" em Filament é **teste de componente Livewire**, roda em
+milissegundos, sem Node e sem Playwright, e pertence ao `04`: validação de formulário,
+gravação, listagem, busca, filtro, ação de tabela, notificação e autorização na tela.
 
-> **Regra**: se um `CT-B` falha e nenhum `CT` de backend falha, o defeito é de UI. Se ambos falham, corrigir o backend primeiro.
-> **Não duplicar**: um `CT-B` não repete as assertions de regra de negócio do `04` — ele confirma que o fluxo do usuário alcança o resultado, e no máximo faz **uma** assertion de persistência como âncora.
+> **Gate de tela de escrita**: para toda rota `create`/`edit` da `## Superfície de UI`, o `04`
+> precisa ter um cenário de **gravação por componente**. *Uma tela aberta não é uma tela que
+> grava* — um `GET` fica verde com o salvamento quebrado.
 
-**Template `04-casos-de-teste.md`**:
-```markdown
-# Casos de Teste — {Card}: {Título da Feature}
-
-## Setup Global
-
-### Factories / Fixtures
-- `{Model}::factory()->{state}()->create([...])` — {descrição}
-- ...
-
-### Estratégia de Mock
-- `{ExternalService}`: Mockery via `app()->instance()` — métodos: `{método}()`
-- `Queue::fake()` — verificar dispatch de `{JobClass}`
-- `Http::fake()` — endpoints: `{url}`
-- `Log::spy()` — verificar logs emitidos (channel, nível, mensagem, context)
-
-### Estratégia de DB
-- `RefreshDatabase` — {justificativa se isolamento total é necessário}
-- `DatabaseTransactions` — {justificativa se performance é crítica}
-- Seeders: {quais rodar no setup}
-
----
-
-## CT-01: {Nome do Cenário — Happy Path}
-
-**Tipo**: `Feature` | `Unit`
-**Arquivo**: `tests/{Feature|Unit}/{Path}/{NomeTest}.php`
-**Método**: `it('{descrição legível}')`
-
-### Precondições
-- {O que deve existir no DB antes — model + estado}
-- {Mocks a configurar}
-
-### Dados de Entrada
-```
-{input: payload, CSV row, argumentos de método, etc.}
-```
-
-### Resultado Esperado
-- `{Model}` criado/atualizado com `{campo}` = `{valor}`
-- `{Job}` despachado com `{argumento}` = `{valor}`
-- `{Relacionamento}` existe com `{n}` registros
-
----
-
-## CT-02: {Nome do Cenário — Falha / Edge Case}
-
-**Tipo**: `Feature`
-**Arquivo**: `tests/Feature/...`
-**Método**: `it('{descrição}')`
-
-### Precondições
-- {Estado inicial que causa a falha}
-- `withoutExceptionHandling()` — {para validar exception exata}
-
-### Dados de Entrada
-```
-{input inválido ou condição de borda}
-```
-
-### Resultado Esperado
-- Lança `{ExceptionClass}` com mensagem `"{texto}"`
-- `{Model}` NÃO criado (`{Model}::count()` = 0)
-- `{Job}` NÃO despachado
-- Log `warning` emitido com `{campos do context}`
-
----
-
-## CT-03: {Nome do Cenário — Autorização}
-
-**Tipo**: `Feature`
-**Arquivo**: `tests/Feature/...`
-**Método**: `it('{descrição}')`
-
-### Precondições
-- Usuário sem permissão `{policy}`
-- {Mocks a configurar}
-
-### Dados de Entrada
-```
-{request para endpoint protegido}
-```
-
-### Resultado Esperado
-- HTTP `403 Forbidden`
-- `{Model}` NÃO modificado
-
----
-
-## CT-04: {Nome do Cenário — Log Emitido}
-
-**Tipo**: `Unit`
-**Arquivo**: `tests/Unit/...`
-**Método**: `it('{descrição}')`
-
-### Precondições
-- `Log::spy()` ativo
-
-### Dados de Entrada
-```
-{ação que dispara o log}
-```
-
-### Resultado Esperado
-- `Log::shouldHaveReceived('channel')` com `'{feature-name}'`
-- `shouldHaveReceived('info')` com mensagem `[Classe@Método] ...`
-- Context contém `{campo}` = `{valor}`
-
----
-
-## Índice de Casos
-
-| ID | Cenário | Tipo | Arquivo |
-|----|---------|------|---------|
-| CT-01 | {happy path} | Feature | `tests/...` |
-| CT-02 | {falha X} | Feature | `tests/...` |
-| CT-03 | {autorização} | Feature | `tests/...` |
-| CT-04 | {log emitido} | Unit | `tests/...` |
-| CT-05 | {edge case Y} | Unit | `tests/...` |
-```
-
----
-
-## Arquivo 05: Casos de Teste de Browser (CT-B) — Condicional
-
-**Path**: `wikis/specs/{branch}/{feature}/05-casos-de-teste-browser.md`
-
-**Propósito**: Roteiro de validação da UI em navegador real — CTs executáveis via `pest-plugin-browser` (Playwright) **e**, no mesmo documento, o roteiro de auditoria *desenhado × implementado*. O arquivo é simultaneamente especificação de teste e checklist de conferência do que o PRD prometeu.
-
-### Gate — quando criar
-
-Criar **somente** se a tabela `## Superfície de UI` do `01-plano-acao.md` tiver ao menos uma linha **e** pelo menos uma destas condições:
-
-1. `Depende de JS? = Sim` (Livewire, Filament, Alpine, Inertia, upload, modal, polling), **ou**
-2. a interação atravessa ≥ 2 telas/etapas (wizard, fluxo de checkout, aprovação em duas mãos)
-
-Se o gate não passar: **não criar o arquivo** e registrar no `04-casos-de-teste.md` a linha *"Sem CT-B: {motivo}"*. Feature de job, webhook, command ou import não gera CT-B.
-
-### Por que arquivo separado do 04
-
-- **Metadados incompatíveis**: CT-B precisa de URL, viewport/device, estratégia de login, build de assets e baseline de screenshot. Enfiar isso no `04` polui o template de backend, que é o arquivo mais lido.
-- **Ciclo de vida diferente**: CT de backend roda em qualquer máquina com `vendor/bin/pest`. CT-B exige Node, browsers do Playwright e app servido — dá para pular sem invalidar o `04`.
-- **Duplo uso**: o `05` serve como roteiro manual de QA/auditoria quando a automação não roda (ambiente sem Node, revisão em homologação). O `04` não tem essa função.
-- **Custo de execução**: browser é ordens de magnitude mais lento. Separar o arquivo separa também o comando (`pest tests/Browser`) e permite excluir do loop rápido de desenvolvimento.
-
-### Dependências obrigatórias do projeto
-
-Se ausentes, incluir a instalação como **passo numerado** no `## Dependências` do PRD:
-
-```bash
-composer require pestphp/pest-plugin-browser --dev
-npm install playwright@latest
-npx playwright install
-```
-
-E adicionar `tests/Browser/Screenshots` ao `.gitignore`.
-
-### Regras de escrita dos CT-B
-
-1. **Teto de quantidade**: no máximo **1 happy path + 1 erro visível ao usuário** por feature (Ponytail). Matriz de regra de negócio fica no `04`, que é muito mais rápido.
-2. **Seletores estáveis**: preferir `data-test` / texto visível a classe de CSS. Registrar no PRD a criação do atributo se ele não existir ainda.
-3. **`assertNoSmoke()` em todo CT-B** — pega `console.log` esquecido e erro de JS de graça.
-4. **`assertNoAccessibilityIssues()`** quando a tela é de uso público ou operacional (o Ponytail não corta acessibilidade).
-5. **`assertScreenshotMatches()`** só se houver baseline versionado e revisado; sem baseline, é flake garantido.
-6. **Uma única âncora de persistência** por CT-B (`assertDatabaseHas` ou equivalente) — o resto da regra é do `04`.
-7. **Login**: usar o padrão real do projeto. A doc do plugin demonstra login **pela própria UI** (factory + preencher formulário + `press`) e `$this->assertAuthenticated()`. Se o projeto já tem helper de login em `tests/Browser/`, herdar. Não inventar `actingAs()` em teste de browser sem confirmar que funciona no projeto.
-8. **Espera de conteúdo assíncrono**: documentar a estratégia escolhida. O plugin expõe `wait(segundos)`; para conteúdo dinâmico, preferir assertions sobre o estado final visível a `wait()` fixo. Registrar no CT-B qual foi usada e por quê.
+Se nenhum cenário exigir navegador: **não criar o `05`** e registrar no `04` a seção
+`## Sem CT-B` com o motivo.
 
 ### Ciclo de escrita e auditoria dos CT-B (loop + sub-agente)
 
-Os CT-B são o único ponto da wiki onde o teste **é** o instrumento de auditoria: ele executa o que o PRD desenhou contra a UI que existe de fato. Por isso a escrita deles roda em **loop delegado a um sub-agente**, e não inline.
+A **especificação** dos CT-B é da `feature-test-design`. A **execução** deles contra a UI real é
+desta skill, no step 7, e roda em loop delegado a um sub-agente — porque falha de browser
+despeja HTML, snapshot e stack de Playwright no contexto, porque acertar seletor e timing é
+tentativa e erro, e porque quem escreve o teste a partir do `05` não deve ser quem implementou.
 
-**Por que sub-agente**:
-
-1. **Ruído**: falha de browser despeja HTML, dump de snapshot, stack de Playwright e path de screenshot. Isso polui o contexto principal e briga com o Caveman `ultra`. O sub-agente absorve o ruído e devolve só o veredito.
-2. **Iteração**: acertar seletor e timing de UI exige tentativa e erro. Loop isolado evita que cada tentativa consuma o contexto do agente principal.
-3. **Independência de julgamento**: quem escreve o CT-B a partir do `05` não deve ser quem escreveu a implementação — reduz o viés de "testar o que eu fiz" em vez de "testar o que foi especificado".
-
-**Contrato do sub-agente** (passar explicitamente na delegação):
+**Contrato do sub-agente**:
 
 ```text
 Entrada:
-  - wikis/specs/{branch}/{feature}/05-casos-de-teste-browser.md  (os CT-B a implementar)
-  - wikis/specs/{branch}/{feature}/01-plano-acao.md  (seção ## Superfície de UI — o que foi desenhado)
+  - 05-casos-de-teste-browser.md   (os CT-B a implementar)
+  - 01-plano-acao.md               (seção ## Superfície de UI — o que foi desenhado)
 
 Tarefa:
   1. Escrever tests/Browser/{Feature}/{Nome}Test.php a partir dos CT-B
-  2. Rodar: vendor/bin/pest tests/Browser --filter={Feature}
-  3. Se falhar, classificar a causa antes de mexer em qualquer coisa:
-     (a) CT-B errado (seletor/rota/texto especificado errado)  → corrigir o CT-B no arquivo 05
-     (b) Implementação divergente do PRD                        → NÃO corrigir; registrar divergência
-     (c) Flake (timing/assíncrono)                              → ajustar estratégia de espera e anotar
-  4. Nas causas (a) e (c), se o Playwright MCP estiver disponível: observar a
-     página ao vivo para descobrir o locator/estado real, e corrigir o CT-B com
-     base no que foi observado (ver "Playwright MCP na validação")
-     Na causa (b): NÃO usar o MCP para "consertar" — a divergência é o achado
+  2. Rodar: vendor/bin/pest --testsuite=Browser   (NUNCA com --parallel)
+  3. Se falhar, classificar a causa ANTES de mexer em qualquer coisa:
+     (a) CT-B especificado errado (seletor/rota/texto)  → corrigir o CT-B no arquivo 05
+     (b) Implementação divergente do PRD                → NÃO corrigir; registrar divergência
+     (c) Flake (timing/assíncrono)                      → rever a estratégia de espera e anotar
+  4. Nas causas (a) e (c), se o Playwright MCP estiver disponível, observar a página ao vivo
+     para descobrir o locator/estado real. Na causa (b): NÃO usar o MCP para contornar
   5. Repetir no máximo 3 iterações
 
 PROIBIDO:
@@ -1284,52 +1210,70 @@ Saída (formato fixo):
   - Lista de divergências para "Desvios do Plano" do 03-progresso.md
 ```
 
-**A regra que dá valor à auditoria**: teste vermelho por causa (b) é **resultado válido**, não falha do ciclo. É exatamente a divergência entre desenhado e implementado que se queria capturar. Sub-agente que "conserta" a aplicação para ficar verde destrói o instrumento de medição.
+**Teste vermelho por causa (b) é resultado válido, não falha do ciclo** — é exatamente a
+divergência entre desenhado e implementado que se queria capturar. Sub-agente que "conserta" a
+aplicação para ficar verde destrói o instrumento de medição. Após 3 iterações com vermelho,
+parar e registrar como blocker no `03-progresso.md`.
 
-**Escalada para o usuário**: se após 3 iterações houver CT-B vermelho, parar e reportar — não seguir tentando. Registrar como blocker no `03-progresso.md`.
+> **Sondagem rápida dentro do loop**: `vendor/bin/pest --agent='visit("/rota")->assertSee("...");'`
+> confirma uma premissa de UI sem versionar nada. Serve para descobrir, não para provar.
 
-> **Sondagem rápida dentro do loop**: para confirmar uma premissa de UI antes de escrever o CT-B definitivo, usar `vendor/bin/pest --agent='visit("/rota")->assertSee("...");'`. É efêmero e não fica versionado — serve para descobrir, não para provar.
+### Fatos do `pest-plugin-browser` que o sub-agente precisa saber
+
+Cada um destes já custou tempo em projeto real, e vários contradizem o que a documentação
+anterior desta skill afirmava:
+
+1. **O plugin sobe o próprio servidor** — HTTP in-process, porta aleatória. **Nada** de Herd,
+   `php artisan serve`, Sail ou Vite dev server; nada de `APP_URL` a configurar.
+2. Como é o **mesmo processo**, valem dentro do navegador: `DB_DATABASE=:memory:`,
+   `RefreshDatabase`, **`$this->actingAs($user)` antes do `visit()`** e `assertAuthenticated()`.
+   Use `actingAs()` — login pela tela custa dezenas de segundos por cenário. Reserve um único
+   cenário para o formulário de login, que é o caminho real do usuário.
+3. **Nunca `wait($segundos)`.** O plugin reexecuta cada assertion até o teto de
+   `pest()->browser()->timeout()`. Espere pelo estado final visível. `waitForText`,
+   `waitForSelector` e `waitUntil` **não existem** — não inventar.
+4. **`assertPathIs` antes das asserções de conteúdo.** Depois de qualquer ação que navegue
+   (`press`, `click`), ela vem primeiro — é ela que espera a navegação. Invertido, o `assertSee`
+   roda contra o snapshot da página anterior e falha **com a ação tendo funcionado**.
+5. **`npm run build` é pré-requisito duro** — sem `public/build/manifest.json` toda tela responde
+   `ViteException` e todo cenário falha por um motivo que não é o dele.
+6. **Nunca `--parallel` com browser** (multiplica processos de navegador e produz timeout). E
+   como o `--tia` exige run completo, `--parallel --tia` e os CT-B não convivem numa invocação
+   só — são dois comandos.
+7. **`assertNoSmoke()` só em tela de autoria própria**; em tela de plugin de terceiro use
+   `assertNoJavaScriptErrors()`, senão a suíte fica vermelha por `console.log` alheio.
+8. **`visit([...])` em lote aborta na primeira falha** — as rotas seguintes não são verificadas
+   naquele run.
+9. Upload é **`attach()`**, não `upload()`.
+10. **`assertSee` não valida tema**: passa com texto branco em fundo branco.
+
+**Assertion de console ou de status nunca é o oráculo único de um CT-B.** Todo cenário precisa de
+pelo menos uma assertion sobre o que ele afirma — o elemento, o valor ou o registro.
 
 ### Playwright MCP na validação (OPCIONAL — ferramenta de observação)
 
-A regra que resolve a divisão de papéis:
-
 > **O `pest-plugin-browser` atesta. O Playwright MCP observa.**
 >
-> O CT-B é sempre um teste Pest versionado. O MCP nunca produz cobertura, nunca entra no arquivo `05` como evidência e nunca substitui um CT-B — ele existe para o agente **ver** a página quando o teste falha.
+> O CT-B é sempre um teste Pest versionado. O MCP nunca produz cobertura, nunca entra no `05`
+> como evidência e nunca substitui um CT-B — ele existe para o agente **ver** a página quando o
+> teste falha.
 
-#### Por que o pest-plugin-browser não cobre isso sozinho
-
-O plugin tem ferramentas de debug excelentes — e **todas exigem um humano**:
-
-| Ferramenta do plugin | O que faz | Serve para agente autônomo? |
-|---|---|---|
-| `$page->debug()` | abre o browser e **pausa o teste** | ❌ pausa esperando pessoa — agente travaria |
-| `$page->tinker()` | abre sessão Tinker interativa | ❌ interativo |
-| `$page->waitForKey()` | abre no browser e espera tecla | ❌ espera input humano |
-| `--headed` | mostra a janela do navegador | ❌ só útil se alguém estiver olhando |
-| `$page->screenshot()` | salva PNG | ⚠️ funciona, mas é imagem: caro e impreciso para achar seletor |
-| `$page->content()` | devolve o HTML da página | ⚠️ funciona, mas despeja a página inteira no contexto |
-
-Ou seja: para **rodar e atestar**, o plugin basta e é o único caminho. Para o agente **investigar sozinho** por que o seletor não casou, as opções nativas são um PNG ou um dump de HTML. É exatamente aí que o MCP é melhor: `browser_snapshot` devolve a árvore de acessibilidade (~200–400 tokens, texto estruturado) e `browser_generate_locator` converte o elemento observado em locator estável.
-
-Três lacunas concretas, todas dentro do loop:
-
-1. **Descobrir o locator verdadeiro** quando o CT-B falha por seletor (causa **a**)
-2. **Observar quando o elemento realmente aparece** em UI assíncrona (causa **c**) — o plugin não documenta `waitFor(seletor)`, só `wait(segundos)`, então sem observação o agente chuta o tempo
-3. **Extrair seletores de tela existente** no step 3, antes de escrever o CT-B
-
-#### Onde o MCP entra (3 pontos, todos opcionais)
+As ferramentas de debug do próprio plugin (`debug()`, `tinker()`, `waitForKey()`, `--headed`)
+**exigem um humano na frente** e travariam um agente autônomo. As que servem —
+`screenshot()` e `content()` — devolvem um PNG caro ou a página inteira. O MCP resolve os três
+casos em que isso não basta: descobrir o locator verdadeiro numa falha de seletor, observar
+quando o elemento realmente aparece em UI assíncrona, e extrair seletores de tela existente.
 
 | Etapa | Uso | Tools |
 |---|---|---|
-| **Step 3** — pesquisa | extrair locators reais das telas que a feature vai tocar → alimenta a tabela `### Seletores` do arquivo `05` | `browser_navigate`, `browser_find`, `browser_generate_locator` |
-| **Loop do CT-B** — falha (a)/(c) | observar a página ao vivo, achar o locator/estado real, corrigir o CT-B | `browser_find`, `browser_generate_locator`, `browser_wait_for` |
+| **Step 3** — pesquisa | extrair locators reais das telas que a feature vai tocar | `browser_navigate`, `browser_find`, `browser_generate_locator` |
+| **Loop do CT-B** — falha (a)/(c) | observar a página ao vivo e corrigir o CT-B | `browser_find`, `browser_generate_locator`, `browser_wait_for` |
 | **Step 7** — evidência | anexar console e rede ao roteiro *Desenhado × Implementado* | `browser_console_messages`, `browser_network_requests` |
 
-> O Boost MCP já expõe **`Browser Logs`** ("read logs and errors from the browser"). Para o step 7, verificar primeiro se ele resolve — é uma tool que o projeto provavelmente já tem, sem adicionar servidor novo.
+> Para o step 7, verificar primeiro se o **`Browser Logs`** do Boost MCP já resolve — é uma tool
+> que o projeto provavelmente já tem, sem adicionar servidor novo.
 
-#### Configuração obrigatória
+**Configuração obrigatória**:
 
 ```json
 {
@@ -1345,130 +1289,25 @@ Três lacunas concretas, todas dentro do loop:
 }
 ```
 
-- **`--isolated` é obrigatório.** O default do MCP é **perfil persistente**: o login sobrevive entre sessões e, combinado a uma URL errada, o agente pode clicar em produção autenticado.
-- **`--caps=testing`** habilita `browser_generate_locator` e os `browser_verify_*` — é o único grupo que interessa aqui.
-- **Somente `localhost` / `APP_URL` de desenvolvimento.** Apontar para staging ou produção é proibido pela skill.
+- **`--isolated` é obrigatório.** O default do MCP é perfil persistente: o login sobrevive entre
+  sessões e, com uma URL errada, o agente pode clicar em produção autenticado.
+- **`--caps=testing`** habilita `browser_generate_locator` e os `browser_verify_*`.
+- **Somente `localhost`.** Apontar para staging ou produção é proibido pela skill.
 
-#### Regras de uso
+**Regras de uso**:
 
-1. **Ref nunca entra em teste.** `ref=e5` é válido *"until the next page change"* — efêmero. Só o resultado de `browser_generate_locator` vai para o CT-B.
-2. **`browser_find` antes de `browser_snapshot` cru.** Snapshot em loop acumula contexto; `find` devolve só o trecho. Isso preserva o Caveman `ultra`.
+1. **Ref nunca entra em teste.** `ref=e5` é válido "until the next page change". Só o resultado
+   de `browser_generate_locator` vai para o CT-B.
+2. **`browser_find` antes de `browser_snapshot` cru** — snapshot em loop acumula contexto.
 3. **Proibido `browser_run_code_unsafe`.** Se o cenário exige, ele exige um CT-B.
-4. **Proibido `--caps=vision`.** Clique por coordenada XY destrói o determinismo que a wiki exige.
-5. **Sessão MCP não é cobertura.** Nada de "validado via MCP" no `05` sem CT-B correspondente — isso criaria falsa cobertura, que é pior que cobertura ausente.
-6. **Na causa (b), o MCP é só leitura.** Serve para descrever a divergência com precisão, nunca para contorná-la.
-7. **Feature com dado sensível** (PII, pagamento): sem `browser_take_screenshot` versionado; ver `05-security.md`.
+4. **Proibido `--caps=vision`.** Clique por coordenada XY destrói o determinismo.
+5. **Sessão MCP não é cobertura.** Nada de "validado via MCP" sem CT-B correspondente.
+6. **Na causa (b), o MCP é só leitura** — serve para descrever a divergência, nunca para contorná-la.
+7. **Feature com dado sensível** (PII, pagamento): sem `browser_take_screenshot` versionado.
 
-#### Se o MCP não estiver disponível
-
-**A skill funciona sem ele.** Fallback dentro do próprio plugin, na ordem:
-
-1. `$page->screenshot()` no ponto da falha — anexar ao relatório do sub-agente
-2. `$page->content()` **filtrado** (`Grep` no HTML salvo, não despejar tudo no contexto)
-3. Ler o Blade/componente Livewire/Filament e derivar o seletor do código-fonte
-4. Após 3 iterações, **escalar ao usuário** com screenshot e sugerir `--headed` para inspeção humana
-
-**Template `05-casos-de-teste-browser.md`**:
-```markdown
-# Casos de Teste de Browser — {Card}: {Título da Feature}
-
-> Referência: `01-plano-acao.md` seção `## Superfície de UI`
-> Runtime: `pest-plugin-browser` (Playwright) — `vendor/bin/pest tests/Browser`
-
-## Pré-requisitos de Ambiente
-
-- [ ] `pestphp/pest-plugin-browser` instalado (`composer require --dev`)
-- [ ] `npm install playwright@latest && npx playwright install` executados
-- [ ] App acessível em `{APP_URL}` — servido por: {Herd | php artisan serve | Sail | Vite dev}
-- [ ] Assets compilados (`npm run build`) ou dev server ativo
-- [ ] `tests/Browser/Screenshots` no `.gitignore`
-- [ ] Seeders determinísticos: {quais} — sem factory aleatória em campo assertado
-
-## Setup Global
-
-### Autenticação
-- {Padrão do projeto: login via UI com `User::factory()->create([...])` + `type`/`press`, ou helper existente em `tests/Browser/`}
-
-### Estratégia de DB
-- `RefreshDatabase` aplicado em `tests/Pest.php` — {confirmar}
-- Dados fixos necessários: {lista}
-
-### Device / Viewport
-- Default: desktop. Variações a cobrir: {`->on()->mobile()` | `->inDarkMode()` | nenhuma}
-
-### Seletores
-| Elemento | Seletor | Já existe? |
-|---|---|---|
-| {Botão Salvar} | `data-test="salvar"` | Sim \| Criar no passo {N} do PRD |
-
----
-
-## CT-B01: {Fluxo do usuário — happy path}
-
-**Arquivo**: `tests/Browser/{Feature}/{Nome}Test.php`
-**Método**: `it('{descrição legível}')`
-**Rota inicial**: `{/path}`
-
-### Precondições
-- {Usuário/role e estado do DB}
-
-### Roteiro (passo a passo executável)
-| # | Ação | Código Pest | Resultado visível esperado |
-|---|---|---|---|
-| 1 | Abrir a tela | `visit('/{rota}')` | {título/heading visível} |
-| 2 | Preencher {campo} | `->type('{seletor}', '{valor}')` | {campo preenchido} |
-| 3 | Confirmar | `->press('{Botão}')` | {mensagem de sucesso} |
-
-### Assertions
-- `assertSee('{texto de sucesso}')`
-- `assertPathIs('{/rota-destino}')`
-- `assertNoSmoke()` — sem console log e sem erro de JS
-- `assertNoAccessibilityIssues()` — {se tela pública/operacional}
-- Âncora de persistência: `{Model}` com `{campo}` = `{valor}`
-
----
-
-## CT-B02: {Erro visível ao usuário}
-
-**Arquivo**: `tests/Browser/{Feature}/{Nome}Test.php`
-**Método**: `it('{descrição}')`
-
-### Precondições
-- {Estado que provoca o erro — validação, permissão, indisponibilidade}
-
-### Roteiro
-| # | Ação | Código Pest | Resultado visível esperado |
-|---|---|---|---|
-| 1 | {ação} | `visit('/{rota}')` | {estado inicial} |
-| 2 | {input inválido} | `->type(...)->press(...)` | {mensagem de erro} |
-
-### Assertions
-- `assertSee('{mensagem de erro}')`
-- `assertPathIs('{/rota-original}')` — não avançou
-- `{Model}` NÃO criado
-- `assertNoJavaScriptErrors()` — erro de negócio não deve virar erro de JS
-
----
-
-## Roteiro de Validação: Desenhado × Implementado
-
-<!-- Preencher durante a implementação. Serve como auditoria do PRD contra a realidade. -->
-
-| # | O que o PRD desenhou (`01`, seção) | O que foi implementado | Confere? | Evidência |
-|---|---|---|---|---|
-| 1 | {Superfície de UI: tela X com campos A, B} | {o que existe de fato} | ✅ / ⚠️ / ❌ | CT-B01 / screenshot / nota |
-| 2 | {Rotas: POST /x com middleware can:y} | | | |
-| 3 | {Logs: `[Classe@metodo]` no channel Z} | | | `browser`/`storage/logs` |
-
-**Divergências encontradas**: registrar aqui e replicar em `03-progresso.md` → seção "Desvios do Plano".
-
-## Índice de CT-B
-
-| ID | Cenário | Rota | Arquivo |
-|----|---------|------|---------|
-| CT-B01 | {happy path} | {/path} | `tests/Browser/...` |
-| CT-B02 | {erro visível} | {/path} | `tests/Browser/...` |
-```
+**Se o MCP não estiver disponível**, a skill funciona: `screenshot()` no ponto da falha →
+`content()` filtrado com `Grep` → ler o Blade/componente e derivar o seletor do código-fonte →
+após 3 iterações, escalar ao usuário.
 
 ---
 
@@ -1561,7 +1400,7 @@ Criar apenas quando a feature exige:
 
 | Arquivo | Quando criar |
 |---------|-------------|
-| `05-casos-de-teste-browser.md` | Feature que passa no gate de CT-B — ver [Arquivo 05](#arquivo-05-casos-de-teste-de-browser-ct-b--condicional) |
+| `05-casos-de-teste-browser.md` | Feature que passa no gate de CT-B — ver [Arquivos 04 e 05](#arquivos-04-e-05-casos-de-teste--delegados-à-feature-test-design) |
 | `05-design.md` | Feature com UI significativa (Filament, Livewire, Blade) |
 | `05-api-contract.md` | Feature com API externa (payloads, endpoints, autenticação) |
 | `05-db-schema.md` | Feature com schema complexo (múltiplas tabelas, migrations em cadeia) |
@@ -1602,8 +1441,10 @@ Antes de encerrar a invocação:
 - [ ] `01-plano-acao.md` inclui seções: Autorização, Rotas, Variáveis de Ambiente, Eventos, Jobs, Impacto, Rollback, Dependências, Riscos
 - [ ] `02-decisoes-arquiteturais.md` escrito em formato ADR (Status, Contexto, Decisão, Alternativas, Consequências)
 - [ ] `03-progresso.md` escrito com checkboxes espelhando o plano + seções Blockers, Desvios, Notas, Retrospectiva
-- [ ] `04-casos-de-teste.md` escrito com todos os CTs identificados (happy path, falha, autorização, log)
-- [ ] `04-casos-de-teste.md` inclui estratégia de DB, data providers e cobertura esperada
+- [ ] **`feature-test-design` invocada** (step 4) com o `00-requisito.md` como entrada primária — o `04` **não** foi escrito inline a partir do PRD
+- [ ] `04-casos-de-teste.md` recebido com: perfil de risco, varredura SFDIPOT, mapa de regras, técnica nomeada por regra e **mutantes previstos com o cenário que mata cada um**
+- [ ] Toda rota `create`/`edit` da `## Superfície de UI` tem cenário de **gravação por componente** no `04`
+- [ ] Perguntas devolvidas pela `feature-test-design` incorporadas em `## Ambiguidades` do `00-requisito.md`
 - [ ] `01-plano-acao.md` tem a seção `## Superfície de UI` preenchida (ou "Sem superfície de UI" declarado)
 - [ ] Gate de CT-B avaliado → `05-casos-de-teste-browser.md` criado **ou** motivo da ausência registrado no `04`
 - [ ] Se houver CT-B: dependências (`pest-plugin-browser`, Playwright) confirmadas ou incluídas como passo no PRD
@@ -1637,12 +1478,13 @@ Antes de encerrar a invocação:
 
 ## Skills Companheiras
 
-A feature-wiki faz parte de um trio de skills que cobrem o ciclo completo de desenvolvimento:
+A feature-wiki é a primeira estação de uma esteira de skills que cobrem o ciclo completo:
 
 | Camada | Skill | Responsabilidade | Boundary |
 |--------|-------|------------------|----------|
 | **Comunicação** (agent ↔ usuário) | [Caveman](https://github.com/JuliusBrussee/caveman) — modo padrão `ultra` | Prosa terse — corta ~75% dos tokens removendo fluff, artigos, fillers | **NÃO aplica em arquivos wiki** (00-06), código, commits, PRs |
-| **Planejamento** (estrutura de documentação) | feature-wiki | PRD + ADR + CTs + tracking + padrão de log | Arquivos wiki são detalhados por design — compressão cria ambiguidade |
+| **Planejamento** (estrutura de documentação) | feature-wiki | requisito + PRD + ADR + tracking + padrão de log | não deriva caso de teste — testar o próprio plano confirma o plano |
+| **Especificação de teste** | `feature-test-design` | deriva o `04`/`05` do **`00-requisito.md`**, com técnica formal e gate de mutantes | não escreve código nem corrige implementação |
 | **Execução** (código) | [Ponytail](https://github.com/DietrichGebert/ponytail) | Mínimo código que funciona — escada de simplicidade | Não corta validação, segurança, tratamento de erros |
 | **Qualidade** (QA no agente) | `feature-quality-gate` | Confronta `00-requisito` × PRD × app rodando; roteia achado para especificação / implementação / teste | Não corrige nada — só lê, reproduz e reporta |
 | **Memória de projeto** (rules) | `requirement-to-rule` | Decisão da wiki vira Project Rule do Boost em `.ai/rules/` | Só o que é específico da aplicação; ecossistema é guideline do Boost |

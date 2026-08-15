@@ -1,6 +1,6 @@
 ---
 name: requirement-to-rule
-version: 1.1.0
+version: 1.2.0
 description: >
   Transforma decisões e restrições de um requisito em Project Rules do Laravel Boost
   (.ai/rules/). Invoque quando uma decisão precisar valer para agentes futuros em
@@ -37,7 +37,7 @@ description: >
 
 ## Quando Invocar
 
-- Step 8 da skill `feature-wiki` identificou candidatos a rule e o usuário aprovou
+- Step 9 da skill `feature-wiki` identificou candidatos a rule e o usuário aprovou
 - O usuário disse explicitamente "isso vira rule", "lembre disso para sempre", "todo agente precisa saber disso"
 - Uma ADR foi aceita e a consequência dela vale para código futuro fora da feature
 - Uma armadilha foi descoberta em implementação e outro agente cairia nela
@@ -389,7 +389,8 @@ Para agentes sem suporte a `.ai/rules` (Windsurf, Cursor, Cline), espelhar o con
 
 | Skill | Relação |
 |---|---|
-| `feature-wiki` | Produz as fontes (ADR, notas, PRD). O step 8 dela invoca esta skill |
+| `feature-wiki` | Produz as fontes (ADR, notas, PRD). O step 9 dela invoca esta skill |
+| `feature-test-design` | Fonte de candidato com evidência forte: linha nova do **checklist de taxonomia de defeito**, nascida de defeito que escapou para produção. Se generaliza além da feature, é rule — de preferência com enforcement em `pest --arch` |
 | `infer-conventions` (Boost) | Caminho inverso: varre o **código existente** para bootstrapar rules. Rodar uma vez, no início do projeto; esta skill é o incremento contínuo |
 | `ponytail` | A escada de enforcement é a escada de simplicidade aplicada a rules: automação antes de prosa, nada antes de automação desnecessária |
 | `pest-testing` | Materializa o enforcement em `pest --arch` quando o gate 4 aponta para automação |

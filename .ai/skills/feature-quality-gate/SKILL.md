@@ -1,16 +1,17 @@
 ---
 name: feature-quality-gate
-version: 1.0.0
+version: 1.1.0
 description: >
   Etapa de QA dentro do agente — a próxima estação da esteira depois de
   implementar e rodar os testes. Invoque no step 8 da skill feature-wiki, ou
   sempre que precisar validar se uma feature entregue atende de fato ao que foi
   pedido. Confronta 00-requisito.md x 01-plano-acao.md x app rodando, monta a
   Matriz de Rastreabilidade para detectar omissão silenciosa (cláusula que nunca
-  virou passo, teste nem código), e valida 10 dimensões que CT e CT-B não cobrem:
+  virou passo, teste nem código), e valida 11 dimensões que CT e CT-B não cobrem:
   fronteiras, matriz de permissão, log real, N+1, UX de erro, tema/dark mode,
-  acessibilidade, segurança da superfície nova e regressão adjacente. Cada achado
-  é classificado por severidade e roteado para um de 5 destinos — especificação,
+  acessibilidade, segurança da superfície nova, regressão adjacente e adequação da
+  própria suíte de testes (oráculo fraco + mutation score via pest --mutate).
+  Cada achado é classificado por severidade e roteado para um de 5 destinos — especificação,
   implementação, teste, infra ou não-defeito. NÃO corrige nada: lê, reproduz e
   reporta em 06-relatorio-qa.md. Loop converge em no máximo 3 ciclos.
 ---
@@ -36,7 +37,7 @@ description: >
 - [Entradas e Gate de Entrada](#entradas-e-gate-de-entrada)
 - [Gate de Esforço por Risco](#gate-de-esforço-por-risco)
 - [Fluxo de Execução](#fluxo-de-execução)
-- [As 10 Dimensões](#as-10-dimensões)
+- [As 11 Dimensões](#as-11-dimensões)
 - [Classificação e Roteamento](#classificação-e-roteamento)
 - [Convergência do Loop](#convergência-do-loop)
 - [Arquivo 06: Relatório de QA](#arquivo-06-relatório-de-qa)
@@ -70,7 +71,7 @@ Máximo **3 ciclos**. Ciclo que não traz achado novo encerra. Estourar o teto e
 
 ### 4. Teto por risco — profundidade proporcional
 
-Feature de ajuste sem UI não merece 10 dimensões. O [gate de esforço](#gate-de-esforço-por-risco) decide o escopo **antes** de começar.
+Feature de ajuste sem UI não merece 11 dimensões. O [gate de esforço](#gate-de-esforço-por-risco) decide o escopo **antes** de começar.
 
 ### 5. Degradação graciosa — nada é dependência dura
 
@@ -103,6 +104,7 @@ Playwright MCP, skills de `qa-skills`, Pest 5, PCOV: **todos opcionais**. Sem el
 | `04-casos-de-teste.md` | sim | não roda |
 | `05-casos-de-teste-browser.md` | se houver UI | dimensões G/H limitadas |
 | App servido e acessível na `APP_URL` | para dimensões dinâmicas | dimensões B, D, F, G, H, I ficam estáticas |
+| Driver de cobertura (PCOV ou Xdebug) | para a dimensão K medida | K roda só o passo estático; a medição vai para "Não Verificado" |
 | Diff da feature (`git diff`) | sim | escopo indefinido |
 
 ### Oráculo degradado
@@ -111,7 +113,7 @@ Se o `00-requisito.md` **não existir** (wiki criada antes da `feature-wiki` 2.1
 
 1. **Pedir o requisito original ao usuário** — texto do card, arquivo, o que houver
 2. **Nunca derivar o `00` do PRD.** PRD derivado de PRD não é oráculo
-3. Se o usuário não tiver o requisito: rodar em **modo degradado**, validando só as dimensões B–J (que não dependem do requisito), e **estampar no topo do relatório**:
+3. Se o usuário não tiver o requisito: rodar em **modo degradado**, validando só as dimensões B–K (que não dependem do requisito), e **estampar no topo do relatório**:
 
 ```markdown
 > ⚠️ ORÁCULO DEGRADADO — sem 00-requisito.md. A dimensão A (cobertura do
@@ -135,9 +137,13 @@ Determinar o escopo **antes** de começar. Três fatores:
 
 | Perfil | Dimensões a rodar | Ciclos |
 |---|---|---|
-| **Mínimo** — ajuste, sem UI, domínio comum | A, D, J | 1 |
-| **Padrão** — nova/evolução, sem UI ou UI simples | A, B, C, D, E, F, I | até 2 |
-| **Completo** — UI com JS **ou** domínio sensível | A a J (todas) | até 3 |
+| **Mínimo** — ajuste, sem UI, domínio comum | A, D, J, **K** (só o passo estático) | 1 |
+| **Padrão** — nova/evolução, sem UI ou UI simples | A, B, C, D, E, F, I, **K** (estático) | até 2 |
+| **Completo** — UI com JS **ou** domínio sensível | A a K (todas), **K com `--mutate`** | até 3 |
+
+> **A dimensão K nunca é pulada por inteiro.** O passo estático dela (procurar teste sem oráculo)
+> é grep, custa segundos, e é a checagem com melhor razão achado/esforço da skill inteira. O que
+> o perfil decide é se roda também a medição por mutação.
 
 **Dimensão pulada é dimensão declarada.** No relatório, cada dimensão fora do escopo aparece com o motivo (`fora do perfil {X}` / `projeto sem dark mode` / `app não servido`). Nunca omitir em silêncio — omissão silenciosa no relatório de QA é ironia dispensável.
 
@@ -197,7 +203,7 @@ Registrar: veredito, número do ciclo, achados abertos e débitos aceitos. O `03
 
 ---
 
-## As 10 Dimensões
+## As 11 Dimensões
 
 ### A — Cobertura do Requisito (omissão silenciosa)
 
@@ -349,6 +355,75 @@ Achado de IDOR ou dado sensível exposto é **Blocker**, sempre.
 
 Só no modo evolução/correção/ajuste — ver [Regressão Condicional](#regressão-condicional).
 
+### K — Adequação da Suíte (a suíte pega defeito?)
+
+**O que é**: as dimensões A–J perguntam se o **produto** está certo. Esta pergunta se o
+**instrumento de medição** presta. Uma feature pode passar em tudo aqui e ainda estar
+desprotegida — os testes ficam verdes porque não afirmam nada.
+
+**Por que escapa**: `ponytail-review` audita excesso; a dimensão A audita cobertura do requisito;
+nenhuma das duas pergunta se um teste **falharia** diante de uma implementação errada. E cobertura
+de linha não responde: com o tamanho da suíte controlado, ela não prevê eficácia de detecção — 100%
+de linha é compatível com zero assertion útil.
+
+**Como verificar** — dois passos, o segundo só no perfil completo:
+
+1. **Estático, barato** — varrer os testes novos do diff procurando oráculo ausente ou fraco:
+
+| Padrão no teste | Achado |
+|---|---|
+| teste **sem nenhuma** assertion | Major — não prova nada |
+| `assertOk()` / `assertSuccessful()` como assertion única | Major |
+| `assertNoJavaScriptErrors()` / `assertNoSmoke()` como assertion única de um CT-B | Major — página em branco e 403 renderizado passam |
+| `assertSee('{texto de layout}')` como oráculo do comportamento | Major — o texto do layout aparece em qualquer estado |
+| `assertDatabaseHas` só com a chave primária | Minor a Major, conforme a regra |
+| "não lança exceção" / `expect($x->count())->toBeInt()` | Minor — tautologia |
+| `->not->toBe($outro)` sem valor esperado | Minor — dois resultados errados porém diferentes passam |
+
+2. **Medido** — mutation score nas classes que o diff introduziu:
+
+```bash
+XDEBUG_MODE=coverage vendor/bin/pest tests/Feature/{Feature} --mutate --path=app/Services
+```
+
+Exige driver de cobertura (PCOV ou Xdebug). Escopar sempre: mutar o projeto inteiro é caro e
+devolve ruído.
+
+> **Armadilha verificada**: `covers(X::class)` no arquivo de teste **restringe o que conta como
+> coberto**. Mutantes em classe fora do `covers()` são reportados como `uncovered` e o score vai a
+> 0%, mesmo com os testes executando aquele código em toda chamada. E `--class=` pode não casar;
+> **`--path=` é o filtro confiável**.
+
+> **O que este passo NÃO responde — e é o erro mais fácil de cometer com ele.**
+> Mutation testing só muta **código que existe**. Cláusula do requisito que nunca virou código não
+> gera mutante nenhum, e o score **não cai**. Medido contra a mesma implementação: duas suítes com
+> **100% de mutation score cada** detectaram 7 e 12 defeitos plantados de 18 — a métrica saturou e
+> não distinguiu as duas.
+>
+> Portanto: score alto **não** absolve a dimensão A. Score baixo é achado; score alto é apenas
+> ausência de um achado específico — o de assertion fraca.
+
+**Como ler o resultado** — cada mutante sobrevivente é um **defeito que ninguém detectaria**, e o
+operador diz qual lacuna de derivação o deixou vivo:
+
+| Mutante sobreviveu | Lacuna | Destino |
+|---|---|---|
+| `>` → `>=` | falta valor limite | **3** |
+| `&&` → `\|\|` | falta linha da tabela de decisão | **3** |
+| `return $x` → `return null` | oráculo fraco sobre o retorno | **3** |
+| chamada removida (e-mail, log, `increment`) | falta assertion de efeito colateral | **3** |
+| linha **uncovered** | comportamento sem nenhum teste | **3**, e possivelmente **1** se for `RQ` sem plano |
+
+**Roteamento**: todo achado desta dimensão vai para o **destino 3**, e a correção é invocar a
+`feature-test-design` com o mutante como entrada — ela fecha a **classe** de lacuna, não só o caso.
+
+**Piso sugerido**: 70% de mutation score nas classes de regra de negócio da feature. Abaixo disso,
+`REPROVADO → teste`. Sem driver de cobertura, rodar só o passo 1 e declarar o passo 2 em
+"Não Verificado".
+
+> **Nunca reprovar por cobertura de linha.** O indicador é o mutation score, e o achado é sempre
+> um mutante nomeado — não um percentual.
+
 ---
 
 ## Classificação e Roteamento
@@ -368,11 +443,20 @@ Só no modo evolução/correção/ajuste — ver [Regressão Condicional](#regre
 |---|---|---|---|---|
 | **1** | requisito ambíguo, incompleto ou contraditório | defeito de **especificação** | escrita da wiki (`00`/`01`/`02`) | perguntar ao usuário; corrigir a decomposição `RQ` ou abrir ADR |
 | **2** | implementação diverge do PRD | defeito de **código** | execução do passo do PRD | corrigir o código, não o plano |
-| **3** | comportamento errado que nenhum CT cobria | defeito de **teste** | `04`/`05`, **depois** implementação | escrever o CT que **falha** primeiro; só então corrigir |
+| **3** | comportamento errado que nenhum CT cobria | defeito de **teste** | `04`/`05` via **`feature-test-design`**, **depois** implementação | invocar a skill com o achado como entrada; escrever o CT que **falha** primeiro; só então corrigir |
 | **4** | ambiente, dado, build, seed | não é defeito do produto | infra / setup | nota no `03`; não reprova a feature |
 | **5** | comportamento correto, expectativa do gate errada | não é defeito | fecha | registrar o porquê, para não reaparecer no próximo ciclo |
 
 O destino **3** é o mais fácil de errar. **Escrever o teste primeiro não é formalidade**: corrigir antes destrói a prova, e o mesmo defeito volta na feature seguinte sem nada para detectá-lo.
+
+> **O destino 3 não termina no CT que reproduz o achado.** O achado é um **mutante que
+> sobreviveu** — então a pergunta seguinte é qual **lacuna de derivação** o deixou vivo (faltou
+> valor limite? linha de tabela de decisão? célula da tabela de estados? assertion de efeito
+> colateral?). Invocar a `feature-test-design` com o achado: ela fecha a classe inteira, não só o
+> caso. Fechar só o caso garante que o vizinho dele volte na próxima feature.
+>
+> **Achado recorrente entre features vira linha nova no checklist de taxonomia** da
+> `feature-test-design` — e, se generalizar, candidato a rule no step 9.
 
 ### O formato da lacuna determina o destino
 
@@ -423,7 +507,7 @@ A Matriz de Rastreabilidade transforma roteamento em consequência, não opiniã
 
 ### QA-01 — {título curto} · {Blocker|Major|Minor|Cosmético} · destino {1-5}
 
-- **Dimensão**: {A-J}
+- **Dimensão**: {A-K}
 - **Relacionado a**: RQ-02, CT-05, passo 4 do PRD
 - **Esperado**: {o que o requisito/PRD determina, com citação}
 - **Observado**: {o que o app faz}
@@ -607,7 +691,8 @@ Violação de qualquer uma invalida a execução:
 
 | Skill | Relação |
 |---|---|
-| `feature-wiki` | produz as entradas (`00`–`05`) e invoca esta skill no step 8 |
+| `feature-wiki` | produz as entradas (`00`–`03`) e invoca esta skill no step 8 |
+| `feature-test-design` | produz o `04`/`05` que esta skill audita, e **recebe de volta** todo achado de destino 3 — o achado é um mutante que sobreviveu, e a lacuna de derivação é o que precisa fechar |
 | `requirement-to-rule` | step 9: achado recorrente entre features é candidato a Project Rule |
 | `ponytail` | complementar e não sobreposto: o `ponytail-review` audita **excesso** no plano/diff; o quality gate audita **falta** em relação ao requisito |
 | `pest-testing` | materializa o achado de destino 3 em CT/CT-B novo |

@@ -1,6 +1,6 @@
 # feature-wiki — Documentação Antes de Implementar
 
-> **Skill**: [`SKILL.md`](SKILL.md) · versão **2.10.0**
+> **Skill**: [`SKILL.md`](SKILL.md) · versão **3.0.0**
 > Este README fala com a **pessoa**: por que a skill existe, o que ela entrega, dependências e limitações. O procedimento que o agente segue está no `SKILL.md` e não é duplicado aqui.
 
 ## Índice
@@ -42,13 +42,19 @@ wikis/specs/{branch}/{feature}/
 ├── 01-plano-acao.md              ← PRD: passos, rotas, autorização, logs, riscos
 ├── 02-decisoes-arquiteturais.md  ← ADRs
 ├── 03-progresso.md               ← checklist + blockers + desvios + retrospectiva
-├── 04-casos-de-teste.md          ← CTs de backend (Feature/Unit)
-├── 05-casos-de-teste-browser.md  ← CT-B (condicional: só com UI que justifique)
+├── 04-casos-de-teste.md          ← delegado à feature-test-design
+├── 05-casos-de-teste-browser.md  ← delegado (condicional: só o que exige navegador)
 ├── 05-*.md                       ← extras: api-contract, rollback, security, performance
 └── 06-relatorio-qa.md            ← saída do feature-quality-gate
 ```
 
 Os **cinco primeiros são obrigatórios** (o `05` de browser é condicional a um gate). Os `05-*` extras e o `06` são criados conforme necessidade.
+
+> **A partir da v3.0.0 o `04` e o `05` não são escritos por esta skill.** Ela invoca a
+> [`feature-test-design`](../feature-test-design/README.md) no step 4, passando o
+> `00-requisito.md` como oráculo. O motivo é medido: derivar teste do plano em vez do requisito
+> multiplica por ~8 os testes que codificam o bug como comportamento esperado. Testar o plano
+> confirma o plano.
 
 ## Quando é invocada
 
@@ -66,6 +72,7 @@ Nenhuma além de um projeto Laravel com git. A skill funciona com Pest 3, 4 ou 5
 
 | Item | O que habilita | Sem ela |
 |---|---|---|
+| [`feature-test-design`](../feature-test-design/README.md) | step 4: derivação do `04`/`05` a partir do requisito, com técnica formal e gate de mutantes | o `04` volta a ser preenchimento de gabarito a partir do PRD — **é a degradação mais cara da lista**, e precisa ser declarada no `03-progresso.md` |
 | Laravel Boost | `search-docs`, `database-schema`, `database-query`, `Browser Logs` | pesquisa cai para doc oficial e `Grep` |
 | Pest 5 | `--parallel --tia`, `--agent`, sharding, novos matchers | usa `pest --filter` |
 | `pest-plugin-browser` + Playwright | CT-B executáveis | `05` fica como roteiro manual |
@@ -156,16 +163,28 @@ O `05-casos-de-teste-browser.md` só é criado se houver ao menos uma linha ness
 
 Se o gate não passar, a skill **não cria o arquivo** e registra no `04` a linha *"Sem CT-B: {motivo}"*. Feature de job, webhook, command ou import de CSV **não** gera CT-B — isso é deliberado, para a seção não virar burocracia morta.
 
-### Fronteira entre o 04 e o 05
+### Fronteira entre o 04 e o 05 (revista na v3.0.0)
 
-| Pergunta | Arquivo | Tipo de teste |
+A fronteira antiga — *"backend no `04`, tela no `05`"* — tinha um efeito colateral caro: como o
+`05` tem teto de 1 happy path + 1 erro, **a superfície de UI ficava praticamente sem cobertura**.
+O teto do browser virou o teto de toda a tela.
+
+A fronteira correta não é *backend × tela*, é **o que só o navegador prova × todo o resto**:
+
+| O cenário afirma sobre… | Arquivo | Camada |
 |---|---|---|
-| A regra de negócio está correta? | `04-casos-de-teste.md` | `Feature` / `Unit` |
-| O usuário consegue chegar até a regra? | `05-casos-de-teste-browser.md` | `Browser` |
+| regra de negócio, persistência, autorização, efeito colateral | `04` | `Unit` / `Feature` |
+| formulário Filament, gravação, tabela, filtro, ação, notificação, autorização na tela | `04` | **componente Livewire** |
+| JavaScript executado, console/erro de JS, acessibilidade, cor/tema, layout | `05` | `Browser` |
 
-Se um `CT-B` falha e nenhum `CT` de backend falha → o defeito é de UI. Se ambos falham → corrigir o backend primeiro.
+Em Laravel + Filament, a maior parte do que parece exigir navegador é **teste de componente
+Livewire** — milissegundos, sem Node e sem Playwright.
 
-**Teto deliberado (Ponytail)**: no máximo **1 happy path + 1 erro visível ao usuário** por feature. A matriz de regras de negócio continua no `04`, que é ordens de magnitude mais rápido. Browser é caro; usar como bisturi, não como rede de arrasto.
+**Regra do par**: *uma tela aberta não é uma tela que grava.* Um `GET` fica verde com o
+salvamento quebrado. Toda rota `create`/`edit` da `## Superfície de UI` precisa de um cenário de
+**gravação por componente** no `04` — é gate, não recomendação.
+
+O teto de 1 happy path + 1 erro continua valendo, mas agora só para o que de fato exige browser.
 
 ### Dependências que o projeto precisa ter
 
@@ -192,9 +211,10 @@ tests/Browser/Screenshots
 |---|---|
 | Node.js | necessário para o Playwright |
 | Browsers | baixados por `npx playwright install` |
-| App servido | acessível na `APP_URL` — Herd, `php artisan serve`, Sail ou Vite dev server. **Registrar no `05` qual é o do projeto** |
-| Assets | `npm run build` executado, ou dev server ativo |
-| DB | seeders determinísticos; `RefreshDatabase` no `tests/Pest.php` |
+| App servido | **nada a fazer** — o plugin sobe o próprio servidor HTTP in-process, em porta aleatória |
+| Assets | `npm run build` **obrigatório** — sem o manifest do Vite, toda tela responde `ViteException` |
+| DB | `:memory:` e `RefreshDatabase` funcionam dentro do navegador (mesmo processo) |
+| Autenticação | `$this->actingAs($user)` antes do `visit()` |
 
 **Opcional, mas recomendado (Pest 5):**
 
@@ -378,14 +398,26 @@ Na falha de **tipo (b)** — implementação divergente do PRD — o MCP é **s�
 
 **A skill funciona sem ele** — MCP é aceleração, não dependência. Fallback dentro do próprio plugin, na ordem: `screenshot()` no ponto da falha → `content()` **filtrado** com `Grep` (não despejar tudo no contexto) → ler o Blade/componente e derivar o seletor do código-fonte → após 3 iterações, escalar ao usuário com screenshot e sugerir `--headed` para inspeção humana.
 
-### Limitações conhecidas (documentadas na skill)
+### Fatos verificados sobre o plugin (corrigidos na v3.0.0)
 
-Levantadas na análise da doc oficial do plugin, para o agente não inventar API:
+Até a v2.10.0 este README trazia três afirmações **erradas**, derivadas de leitura conservadora da
+doc. Foram corrigidas contra o comportamento real do plugin em projeto de produção:
 
-- **Login**: a doc demonstra autenticação **pela própria UI** (factory + preencher formulário + `press`) e `$this->assertAuthenticated()`. `actingAs()` em teste de browser **não** está documentado — a skill manda herdar o padrão real do projeto em vez de assumir.
-- **Espera assíncrona**: o plugin expõe `wait(segundos)`; não há `waitFor(seletor)` documentado. Para Livewire/Filament, a skill manda preferir assertion sobre o estado final visível a `wait()` fixo, e registrar a estratégia escolhida no CT-B.
-- **Servidor**: a doc não explicita se o plugin sobe o app ou exige servidor externo. A skill obriga a registrar no `05` como o projeto serve o app em teste.
-- **Boost**: as guidelines e a Documentation API do Laravel Boost cobrem Pest `core, 3.x, 4.x`. Se o projeto está em Pest 5, o `search-docs` pode devolver informação de versão anterior — confirmar na doc oficial.
+| O que dizia antes | O que é verdade |
+|---|---|
+| "a doc não explicita se o plugin sobe o app ou exige servidor externo — registrar no `05` como o projeto serve o app" | **O plugin sobe o próprio servidor**: HTTP in-process (amphp), porta aleatória. Nada de Herd, `php artisan serve`, Sail ou Vite dev server; **nada de `APP_URL` a configurar** |
+| "`actingAs()` em teste de browser não está documentado — não assumir" | Como é o **mesmo processo**, `$this->actingAs($user)` antes do `visit()` funciona, junto com `:memory:`, `RefreshDatabase` e `assertAuthenticated()`. **Use `actingAs()`** — login pela tela custa dezenas de segundos por cenário |
+| "o plugin expõe `wait(segundos)`; não há `waitFor(seletor)`" | Certo sobre a API, errado sobre a conclusão: **nunca use `wait()`**. O plugin reexecuta cada assertion até o teto de `pest()->browser()->timeout()`. Espere pelo estado final visível |
+
+E três armadilhas que não estavam documentadas:
+
+- **`assertPathIs` antes das asserções de conteúdo.** Depois de qualquer ação que navegue, ela vem primeiro — é ela que espera a navegação. Invertido, o `assertSee` roda contra o snapshot da página anterior e falha *com a ação tendo funcionado*
+- **Nunca `--parallel` com browser** (medido: derruba cenários por timeout). E como o `--tia` exige run completo, `--parallel --tia` e os CT-B não convivem numa invocação só
+- **`npm run build` é pré-requisito duro** — sem o manifest do Vite, toda tela responde `ViteException`
+
+Limitação que continua válida:
+
+- **Boost**: as guidelines e a Documentation API cobrem Pest `core, 3.x, 4.x`. Em projeto com Pest 5, o `search-docs` pode devolver informação de versão anterior — confirmar na doc oficial.
 
 ### Estrutura resultante
 

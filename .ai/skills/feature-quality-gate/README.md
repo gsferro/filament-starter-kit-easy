@@ -21,7 +21,7 @@
 - [A lacuna verificada](#a-lacuna-verificada)
 - [A objeção que quase matou a skill](#a-objeção-que-quase-matou-a-skill)
 - [Ganho real 1: omissão silenciosa](#ganho-real-1--omissão-silenciosa-e-a-matriz-de-rastreabilidade)
-- [Ganho real 2: as 10 dimensões](#ganho-real-2--as-10-dimensões-que-as-camadas-atuais-não-cobrem)
+- [Ganho real 2: as 11 dimensões](#ganho-real-2--as-11-dimensões-que-as-camadas-atuais-não-cobrem)
 - [Ganho real 3: roteamento](#ganho-real-3--roteamento-de-achados)
 - [Achado técnico: dark mode inverte a regra](#achado-técnico-dark-mode-inverte-a-regra-de-visão--estrutura)
 - [Achado técnico: MCP como confronto](#achado-técnico-playwright-mcp-como-confronto-do-ct-b)
@@ -50,7 +50,7 @@ A skill é a **próxima estação da esteira** — roda no step 8 da [`feature-w
 
 Nenhum teste falhou porque **nunca existiu teste** — e nunca existiu teste porque a cláusula nunca entrou no plano. CT e CT-B só podem falhar no que foi especificado; o `ponytail-review` audita **excesso**, nunca **falta**; o TIA mede impacto do diff, não cobertura do requisito. **É uma classe de defeito estruturalmente invisível para o resto do ciclo.**
 
-### As 10 dimensões
+### As 11 dimensões
 
 | # | Dimensão | Exemplo do que pega |
 |---|---|---|
@@ -259,7 +259,7 @@ A linha **RQ-02** é a razão de existir da skill: **nenhum teste falhou porque 
 
 ---
 
-## Ganho real 2 — As 10 dimensões que as camadas atuais não cobrem
+## Ganho real 2 — As 11 dimensões que as camadas atuais não cobrem
 
 | # | Dimensão | Por que escapa hoje | Como verificar |
 |---|---|---|---|
@@ -437,7 +437,7 @@ Rodar os CT da ancestral **por ID** é o que garante que a evolução não silen
 
 | Risco | Mitigação |
 |---|---|
-| **Custo por ciclo** — 10 dimensões × 3 ciclos numa feature pequena é desproporcional | gate de esforço agressivo por risco |
+| **Custo por ciclo** — 11 dimensões × 3 ciclos numa feature pequena é desproporcional | gate de esforço agressivo por risco |
 | **Cegueira correlacionada residual** — requisito original já ambíguo pode ser interpretado igual duas vezes | forçar a listagem das **ambiguidades do `00`** como achado tipo 1 **antes** de validar qualquer coisa |
 | **Relatório que ninguém lê** — `06` com 400 linhas morre | teto: veredito + tabela de achados + Matriz de Rastreabilidade. Detalhe vai em anexo ou não vai |
 | **Matriz como métrica de vaidade** — "98% de cobertura" em planilha morta | ela existe só como **detector de lacuna**; ciclo sem lacuna não imprime tabela, só o veredito |
