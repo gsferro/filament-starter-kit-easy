@@ -3,6 +3,49 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.14.0] - 2026-08-14
+
+O kit passa a levar junto **como a feature é feita**, não só o que ela usa: as
+skills que orquestram wiki, QA e regra durável, e o roteiro que lista o que já
+existe antes de alguém reimplementar.
+
+### Adicionado
+
+- **Skill `feature-wiki`.** Toda feature nova começa por `wikis/specs/{branch}`
+  com cinco arquivos obrigatórios: requisito bruto **imutável** (00), plano de
+  ação, decisões arquiteturais, tracking e casos de teste — mais o roteiro de
+  navegador (05) quando a feature tem tela. O requisito nunca é reescrito para
+  caber na implementação: é ele que julga a entrega no fim.
+
+- **Skill `feature-quality-gate`.** A estação de QA depois de os testes
+  passarem. Confronta requisito × plano × app rodando e monta a **matriz de
+  rastreabilidade** — a cláusula que nunca virou passo, teste nem código aparece
+  como linha vazia, que é a omissão que nenhuma suíte verde denuncia. Só lê e
+  reporta em `06-relatorio-qa.md`; não corrige nada.
+
+- **Skill `requirement-to-rule`.** Decisão que vale além da feature atual vira
+  Project Rule em `.ai/rules` pela tool `record-rule`, com quatro gates
+  (durável, escopável por path, não-inferível, não-redundante) e aprovação
+  explícita. Mantém o `index.md` atualizado — **regra fora do índice não é
+  descoberta pelos agentes**.
+
+- **Roteiro de features no `README`.** As 56 features (F-01…F-56) com onde fica,
+  quem alcança, como conferir e o que já é testado sozinho — 🟢 suíte, 🔵
+  navegador real, ⚪ sem teste. A última coluna é honesta: cinco features
+  dependem de worker, cron, SMTP, Docker ou API key, e a tabela final diz o que
+  acontece sem cada um.
+
+### Alterado
+
+- **Skill `pest-testing` atualizada para Pest 5**: Tia (`--parallel --tia`)
+  rerroda só o que a mudança afetou e reproduz o resto do cache, sharding
+  balanceado por tempo de execução, e as oito novas expectations de validação
+  (`toBeEmail()`, `toBeUlid()`, `toBeIpAddress()`, …).
+
+As skills são instaladas nos quatro diretórios que os agentes leem —
+`.agents/`, `.ai/`, `.claude/` e `.junie/` — para valerem qualquer que seja a
+ferramenta de quem clonar o kit.
+
 ## [0.13.1] - 2026-08-14
 
 Identidade visual por organização, e dois defeitos de cor que ela revelou.
