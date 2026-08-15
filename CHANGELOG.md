@@ -3,6 +3,38 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.14.2] - 2026-08-15
+
+### Corrigido
+
+- **O CI não rodava um único teste desde a 0.13.0.** O job `qualidade` morria em
+  `PlaywrightNotInstalledException` — e Pint, PHPStan e as 230 asserções que
+  vinham depois nunca eram exercidos. `--exclude-group=browser` filtra na
+  **execução**, mas o `pest-plugin-browser` sobe o Playwright já na **coleta**,
+  ao parsear qualquer arquivo com `visit()`
+  (`UsesBrowserTestCaseMethodFilter.php:57-60`): o grupo nunca chegava a ser
+  consultado.
+
+  Trocado por seleção de suíte — `--testsuite=Unit,Feature,Kit,Tenancy` —, que
+  tira `tests/Browser` e `tests/BrowserTenancy` da coleta. As telas seguem
+  cobertas no job `telas`, que tem Node e os browsers.
+
+- **Title case no menu, que é regra do inglês.** `getNavigationLabel()` cai em
+  `getTitleCasePluralModelLabel()` e aplica `Str::ucwords()` a **toda** palavra,
+  preposição inclusive: "Agentes De IA", "Logs De Autenticação", "Pacotes Do
+  Composer". Desligado por `Resource::titleCaseModelLabel(false)` no
+  `ConfiguraFilamentGlobal` — chave estática, então vale também para os
+  Resources de plugin de terceiro, que é justamente onde o kit não tem como
+  declarar label.
+
+- **Cinco telas do `/infra` ainda saíam em inglês.** O kit promete UI 100% em
+  pt-BR, inclusive nos plugins que só trazem inglês. Traduzidos
+  `filament-logs-explorer` e `filament-dependency-graph` (o pacote tinha
+  `lang/`, o kit não tinha publicado), completado o
+  `filament-jobs-monitor` (faltavam 84 das 116 chaves, caindo no fallback `en`)
+  e o `resized-column`, e publicadas as views do `filament-command-center`, que
+  tem o texto no Blade.
+
 ## [0.14.1] - 2026-08-15
 
 ### Adicionado
