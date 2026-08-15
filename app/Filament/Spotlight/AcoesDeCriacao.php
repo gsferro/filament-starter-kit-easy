@@ -75,9 +75,20 @@ class AcoesDeCriacao
                     ->icon('heroicon-o-plus')
                     ->keywords(['criar', 'novo', 'nova', 'adicionar', $rotulo])
                     ->group('Criar')
-                    // Closure: a URL só é resolvida ao montar o resultado, quando
-                    // o contexto do request já está completo.
-                    ->url(fn (): string => $resource::getUrl('create')),
+                    /*
+                     * Closure para resolver a URL só ao montar o resultado, quando o contexto do
+                     * request já está completo — e `panel:` FIXANDO o painel de origem.
+                     *
+                     * Sem o `panel:`, a URL é resolvida contra o painel CORRENTE no momento do
+                     * clique, e não contra o painel que registrou a ação. Isso quebra porque o
+                     * `SpotlightActionRegistry` é singleton de container
+                     * (`FilamentSearchSpotlightServiceProvider.php:25`): num processo que atende
+                     * dois painéis — worker persistente, teste, console — as ações do primeiro
+                     * sobrevivem, e a Closure delas tenta uma rota que só existe lá. O sintoma é
+                     * `Route [filament.app.resources.agentes-ia.create] not defined`, com 500 numa
+                     * tela que não tem nada a ver com o resource citado.
+                     */
+                    ->url(fn (): string => $resource::getUrl('create', panel: $painel->getId())),
             );
         }
     }

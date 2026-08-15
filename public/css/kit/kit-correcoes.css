@@ -1,0 +1,48 @@
+/*
+|--------------------------------------------------------------------------
+| Correções de CSS do kit, carregadas nos três painéis
+|--------------------------------------------------------------------------
+| Este arquivo é registrado por `KitServiceProvider::configureCorrecoesDeCss()`
+| via `FilamentAsset::register()` — o MESMO mecanismo dos plugins. O
+| `resources/css/app.css` (Vite) NÃO serve aqui: o painel Filament não carrega o
+| Vite da aplicação, e uma regra escrita lá simplesmente nunca chega à tela.
+*/
+
+/*
+| Devolve as utilitárias `*-primary-*` às variáveis do Filament.
+|
+| O CSS do `croustibat/filament-jobs-monitor` é registrado como asset GLOBAL
+| (`FilamentJobsMonitorServiceProvider.php:36`, `Css::make()` sem escopo de
+| painel), então carrega nos três painéis — e dentro dele as classes vêm com a
+| paleta âmbar LITERAL, do build daquele pacote:
+|
+|     .text-primary-600 { color: rgb(217 119 6 / …) }
+|     .bg-primary-500   { background-color: rgb(245 158 11 / …) }
+|
+| Quem usa essas classes fica âmbar mesmo quando `--primary-*` diz outra coisa.
+| Não é hipotético: com a identidade visual por organização, o alternador de
+| painel (`bezhansalleh/filament-panel-switch`) aparecia em âmbar dentro de um
+| painel pintado de verde. O mesmo vale para a timeline do
+| `syriable/filament-activitylog` e para qualquer código que use a utilitária.
+|
+| `:root` na frente só para vencer a especificidade da regra do plugin, que é de
+| classe simples. Publicar as views dos quatro vendors resolveria o mesmo e
+| custaria manter quatro cópias que quebram a cada upgrade.
+|
+| Se algum dia o pacote escopar o CSS dele, este bloco fica inofensivo — as
+| variáveis são as mesmas que o Filament já publica no `@filamentStyles`.
+*/
+:root .text-primary-400 { color: var(--primary-400); }
+:root .text-primary-500 { color: var(--primary-500); }
+:root .text-primary-600 { color: var(--primary-600); }
+
+:root .bg-primary-500 { background-color: var(--primary-500); }
+:root .bg-primary-600 { background-color: var(--primary-600); }
+
+:root .border-primary-500 { border-color: var(--primary-500); }
+:root .border-primary-600 { border-color: var(--primary-600); }
+
+:root .ring-primary-600 { --tw-ring-color: var(--primary-600); }
+
+.dark :root .text-primary-400,
+:root .dark .text-primary-400 { color: var(--primary-400); }

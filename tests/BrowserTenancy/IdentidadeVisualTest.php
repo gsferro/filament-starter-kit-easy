@@ -176,3 +176,44 @@ it('exibe a logo da organizacao na tela de bloqueio', function (): void {
         ->assertPresent('.fi-auth-theme-switcher-wrapper')
         ->assertNoJavaScriptErrors();
 });
+
+/**
+ * CT-B06 — nenhum elemento da tela fica na cor default quando a organização definiu a dela.
+ *
+ * Este caso nasceu de um achado do `feature-quality-gate` que quase virou "artefato do arnês":
+ * dentro de um painel pintado de VERDE, sete elementos continuavam âmbar. A causa não era o
+ * cache de cor nem o servidor in-process — era CSS.
+ *
+ * O `croustibat/filament-jobs-monitor` registra o CSS dele como asset GLOBAL
+ * (`FilamentJobsMonitorServiceProvider.php:36`), e lá dentro `.text-primary-600` vem com a paleta
+ * âmbar LITERAL do build daquele pacote. Quem usa a utilitária fica âmbar mesmo com
+ * `--primary-600` dizendo outra coisa — no caso, o alternador de painel do
+ * `bezhansalleh/filament-panel-switch`, que aparece em toda tela.
+ *
+ * A correção é `resources/css/filament/kit.css`, registrado por
+ * `KitServiceProvider::configureCorrecoesDeCss()`. Este teste é o que impede a regressão: ele não
+ * olha uma classe específica, olha a TELA INTEIRA procurando a cor default. Um plugin novo que
+ * repita o padrão cai aqui.
+ *
+ * `rgb(217, 119, 6)` é o âmbar-600 do Tailwind, que é o `primary` default do Filament.
+ */
+it('nao deixa nenhum elemento na cor default quando a organizacao tem a sua', function (): void {
+    ['usuario' => $usuario] = duasOrganizacoes();
+
+    $this->actingAs($usuario);
+
+    fronteiraDeRequest();
+
+    $ambar = visit('/app/globex')
+        ->assertSee('Painel de Controle')
+        ->script(<<<'JS'
+            [...document.querySelectorAll('*')]
+                .filter((el) => getComputedStyle(el).color === 'rgb(217, 119, 6)')
+                .length
+        JS);
+
+    expect($ambar)->toBe(0, 'Há elementos na cor primária DEFAULT do Filament numa tela que '
+        .'deveria estar inteira na cor da organização. Provável causa: um plugin registrou CSS '
+        .'global com a paleta literal, sequestrando as utilitárias `*-primary-*` — ver '
+        .'resources/css/filament/kit.css.');
+});
