@@ -128,7 +128,12 @@
         "test:kit": [
             "Composer\\Config::disableProcessTimeout",
             "@php artisan config:clear --ansi",
-            "@php artisan test --group=kit"
+            "@php artisan test --testsuite=Kit,Tenancy --parallel"
+        ],
+        "test:kit:serial": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@php artisan test --testsuite=Kit,Tenancy"
         ],
         "test:browser": [
             "Composer\\Config::disableProcessTimeout",

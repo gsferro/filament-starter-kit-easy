@@ -565,7 +565,7 @@ O Reverb usa 8090 e não o default 8080 para não colidir com o llama.cpp.
 ```bash
 composer dev          # servidor + fila + vite juntos
 composer test         # pint + phpstan + a suíte inteira
-composer test:kit     # só os testes do kit (a fundação)
+composer test:kit     # só os testes do kit (a fundação), em paralelo
 composer lint         # formata o código
 php artisan kit:install --force   # reinstala do zero (apaga o SQLite) e refaz as perguntas
 php artisan kit:install --no-custom   # instala sem perguntar nada
@@ -580,11 +580,26 @@ O kit traz sua própria suíte, isolada em `tests/Kit/` — acesso aos três pai
 Ela fica separada da sua de propósito: depois de um `kit:update` você quer saber se a **fundação** continua íntegra, sem esperar a suíte do seu negócio.
 
 ```bash
-composer test:kit                     # atalho
-php artisan test --testsuite=Kit      # equivalente
-php artisan test --group=kit          # mesma coisa, por grupo do Pest
+composer test:kit                     # em paralelo — ~3 min
+composer test:kit:serial              # em série, para investigar falha
 php artisan test --testsuite=Feature  # só os SEUS testes
 ```
+
+**Roda em paralelo por padrão.** Medido nesta suíte: **12m26s → ~3min** (20 núcleos), mesmos casos e
+mesmas asserções. Cada worker tem o próprio banco, porque o `phpunit.xml` usa SQLite `:memory:`, que
+é por processo.
+
+Se uma falha aparecer só em paralelo, é sinal de teste que depende de ordem ou de estado
+compartilhado — `composer test:kit:serial` isola isso, e a diferença entre os dois é o diagnóstico.
+
+> **Por que `--testsuite` e não `--group=kit`**: o `pest-plugin-browser` sobe o Playwright já na
+> **coleta**, ao parsear qualquer arquivo com `visit()` — antes de qualquer filtro de grupo ser
+> consultado. Num projeto recém-instalado, sem os browsers baixados, `--group=kit` morre em
+> `PlaywrightNotInstalledException` sem rodar um único teste.
+
+> **Argumento extra precisa de `--`**: `composer test:kit --parallel` é engolido em silêncio pelo
+> Composer; o que funciona é `composer test:kit -- --parallel`. Como o paralelo já é o padrão, você
+> não precisa disso — mas vale saber para qualquer outra flag.
 
 Seus testes vão em `tests/Feature` e `tests/Unit`, como de costume — o kit não encosta neles.
 
