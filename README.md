@@ -19,7 +19,21 @@ cd meu-projeto
 composer dev
 ```
 
-Não há passo manual: o `create-project` já cria o `.env`, gera a `APP_KEY`, cria o banco SQLite, roda as migrations, semeia papéis/permissões/usuário, publica os assets do Filament e faz o build do front-end. Ao final ele imprime as URLs e o login inicial.
+Não há passo manual: o `create-project` já cria o `.env`, gera a `APP_KEY`, cria o banco, roda as migrations, semeia papéis/permissões/usuário, publica os assets do Filament e faz o build do front-end. Ao final ele imprime as URLs e o login inicial.
+
+Antes de tocar no banco, ele **pergunta cinco coisas** — como o `laravel new` faz:
+
+| | Pergunta | Padrão |
+|---|---|---|
+| 1 | Nome do projeto | o nome da pasta |
+| 2 | Banco de dados | SQLite · **PostgreSQL** (recomendado: é o único com `pgvector`, exigido pelas funções de IA local) · MySQL |
+| 3 | E-mail e senha do administrador | `admin@example.com` / `password` |
+| 4 | Cor primária dos painéis | o padrão do Filament |
+| 5 | Multi-organização (multi-tenancy) | desligada |
+
+**Enter em tudo instala exatamente como antes** — nenhuma pergunta é obrigatória, e a primeira delas é "personalizar agora?", que pula todas de uma vez. Sem terminal (CI, Docker, `--no-interaction`) nada é perguntado. Ao final o instalador mostra o resumo do que mudou, o que continua sendo editado à mão, e oferece rodar os testes do kit.
+
+> A multi-organização é o item que mais compensa decidir agora: ligada na instalação, ela custa zero; ligada depois, o `kit:tenancy` **recria o banco** (as tabelas de permissão só nascem com a coluna de contexto se a flag estiver ativa antes do migrate).
 
 ![Instalação do starter-kit-easy em um comando](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/install.gif)
 
@@ -497,7 +511,18 @@ juntos.
 
 ## Banco de dados
 
-O kit instala com **SQLite** para não depender de nada. Para Postgres, suba os containers e copie as variáveis:
+**A instalação pergunta** — SQLite, PostgreSQL ou MySQL. O padrão é **SQLite**, para não depender de nada.
+
+**PostgreSQL é o recomendado**, e por um motivo funcional: ele é o único que traz `pgvector`, de que dependem as funções de IA local que usam busca semântica (embeddings). Com SQLite ou MySQL o resto do kit roda igual — só essas funções ficam indisponíveis.
+
+Escolhendo Postgres na instalação, o `.env` já sai com o bloco que o `docker-compose.yml` lê, e falta só subir o container. Se ele não estiver de pé na hora da instalação, o kit avisa, **pula as migrations** e diz o comando para refazer:
+
+```bash
+docker compose up -d
+php artisan migrate --seed
+```
+
+Para trocar depois da instalação, suba os containers e copie as variáveis:
 
 ```bash
 docker compose up -d              # pgsql (com pgvector) + redis
@@ -537,7 +562,8 @@ composer dev          # servidor + fila + vite juntos
 composer test         # pint + phpstan + a suíte inteira
 composer test:kit     # só os testes do kit (a fundação)
 composer lint         # formata o código
-php artisan kit:install --force   # reinstala do zero (apaga o SQLite)
+php artisan kit:install --force   # reinstala do zero (apaga o SQLite) e refaz as perguntas
+php artisan kit:install --no-custom   # instala sem perguntar nada
 php artisan kit:update            # traz melhorias de uma versão nova do kit
 php artisan kit:tenancy           # liga o modo multi-tenant (opt-in)
 ```
@@ -575,19 +601,28 @@ O benefício está em não derivar os testes só do "caminho feliz". O que escap
 
 ## Personalize seu projeto
 
-1. **Nome** — `APP_NAME` no `.env`
-2. **Arte do login** — `public/images/auth/login.svg`
-3. **Cores** — `->colors([...])` em cada `app/Providers/Filament/*PanelProvider.php`
-4. **Acesso aos painéis** — o papel de cada usuário (`/admin` → Funções, campo *Painel*); a regra que o lê é `App\Models\User::canAccessPanel()`
-5. **Matriz de permissões** — `database/seeders/PapeisSeeder.php`
-6. **Health checks** — `KitServiceProvider::configureHealthChecks()`
-7. **Comandos da UI** — `config/command-center.php`
-8. **Credenciais do seeder** — `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` no `.env`
-9. **Backups** — destino e agenda em `config/backup.php`
-10. **Agente de IA** — `/admin` → Agentes de IA (ou `database/seeders/AssistenteSeeder.php`)
-11. **[Multi-tenancy](#multi-tenancy-opt-in)** — `php artisan kit:tenancy`, e o termo exibido em `config/kit.php` → `tenancy.label`
+**Os cinco primeiros o instalador já pergunta** (ver [a instalação](#starter-kit-easy)) — a lista abaixo é para mudar depois, ou para quem pulou as perguntas.
 
-> ⚠️ O item 11 é o único da lista que **não** é "edite um arquivo": o `kit:tenancy` roda `migrate:fresh --seed` e **apaga os dados**. Ele exige árvore git limpa e confirmação explícita, mas a hora certa de rodar é o dia 1 do projeto — depois, com dados em produção, a migração é manual.
+| # | O quê | Onde | Perguntado na instalação? |
+|---|---|---|---|
+| 1 | **Nome** | `APP_NAME` no `.env` | ✅ |
+| 2 | **Banco de dados** | bloco `DB_*` no `.env` | ✅ |
+| 3 | **Credenciais do seeder** | `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` no `.env` | ✅ |
+| 4 | **Cor primária** | `KIT_COR_PRIMARIA` no `.env` (nome de uma cor da paleta do Filament) | ✅ |
+| 5 | **[Multi-tenancy](#multi-tenancy-opt-in)** | `php artisan kit:tenancy`, e o termo exibido em `config/kit.php` → `tenancy.label` | ✅ |
+| 6 | **Arte do login** | `public/images/auth/login.svg` | — |
+| 7 | **Acesso aos painéis** | o papel de cada usuário (`/admin` → Funções, campo *Painel*); a regra que o lê é `App\Models\User::canAccessPanel()` | — |
+| 8 | **Matriz de permissões** | `database/seeders/PapeisSeeder.php` | — |
+| 9 | **Health checks** | `KitServiceProvider::configureHealthChecks()` | — |
+| 10 | **Comandos da UI** | `config/command-center.php` | — |
+| 11 | **Backups** | destino e agenda em `config/backup.php` | — |
+| 12 | **Agente de IA** | `/admin` → Agentes de IA (ou `database/seeders/AssistenteSeeder.php`) | — |
+
+Os sete últimos não entram nas perguntas porque são **código ou dado de tela**, não um valor que caiba num prompt de terminal. O instalador os lista no resumo final, com o arquivo de cada um.
+
+> ⚠️ O item 5 é o único que **não** é "edite um arquivo" depois de instalado: o `kit:tenancy` roda `migrate:fresh --seed` e **apaga os dados**. Ele exige árvore git limpa e confirmação explícita. **Respondido na instalação, ele não apaga nada** — o banco ainda nem existe, e é essa a hora certa de decidir.
+
+> A cor primária vale para os três painéis. Com o [modo multi-tenant](#multi-tenancy-opt-in) ligado, a cor de cada organização **vence** esta dentro de `/app/{slug}` — o `/admin` e o `/infra` continuam com a do projeto. Para uma paleta completa, e não só a `primary`, o caminho continua sendo `->colors([...])` em cada `app/Providers/Filament/*PanelProvider.php`.
 
 ## Configuração global do Filament
 

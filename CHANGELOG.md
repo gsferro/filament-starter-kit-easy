@@ -3,6 +3,49 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.16.0] - 2026-08-16
+
+### Adicionado
+
+- **O `create-project` agora pergunta.** Cinco perguntas antes de tocar no banco,
+  no mesmo lugar em que o `laravel new` faz as dele: nome do projeto, banco de
+  dados, credenciais do administrador, cor primária dos painéis e modo
+  multi-organização. As respostas são aplicadas pela própria instalação — `.env`,
+  `config/permission.php` e `config/filament-shield.php` — e a config já carregada
+  é alinhada, para que o `migrate` e os seeders **da mesma execução** usem o que
+  foi escolhido.
+
+  Todas têm resposta padrão: **Enter em tudo instala exatamente como antes**. A
+  primeira pergunta é "personalizar agora?", que pula todas de uma vez, e
+  `--no-custom` faz o mesmo pela linha de comando. Sem terminal (CI, Docker,
+  `--no-interaction`) nada é perguntado — o Composer só repassa o TTY ao script
+  quando ele mesmo é interativo (`EventDispatcher::executeTty`).
+
+  Ao final: resumo do que mudou, os sete itens da lista "Personalize seu projeto"
+  que continuam sendo editados à mão (cada um com o arquivo), a oferta de rodar
+  `composer test:kit` e o convite para dar uma estrela ao kit — desligável com
+  `--no-support`.
+
+- **Escolha de banco na instalação: SQLite, PostgreSQL ou MySQL.** O padrão segue
+  SQLite. PostgreSQL é o **recomendado** e a razão é funcional: é o único com
+  `pgvector`, de que dependem as funções de IA local com busca semântica. Se o
+  serviço escolhido não estiver de pé, o instalador avisa, **pula migrations e
+  seeders** e imprime o comando para refazer — em vez de derramar duas falhas de
+  PDO em cascata.
+
+- **`KIT_COR_PRIMARIA`.** A cor primária dos três painéis passou a ser
+  configuração, e não edição de `PanelProvider`. Nome de uma cor da paleta do
+  Filament; vazio mantém o padrão. Nome inválido volta ao padrão em vez de
+  derrubar toda página com `Undefined constant`. A cor de uma **organização**
+  continua vencendo esta dentro de `/app/{slug}` — o `Panel::boot()` registra as
+  cores do painel antes dos `bootCallbacks`, e quem registra por último vence.
+
+- **Multi-organização ligada na instalação não recria o banco.** Os três passos
+  não destrutivos do `kit:tenancy` — a flag no `.env`, `permission.teams` +
+  `tenant_model` do Shield, e o alinhamento da config em memória — saíram para
+  `App\Support\AtivadorDeTenancy` e rodam **antes do primeiro migrate**. O
+  `kit:tenancy` segue existindo, e segue destrutivo, para quem decide depois.
+
 ## [0.14.3] - 2026-08-15
 
 ### Corrigido

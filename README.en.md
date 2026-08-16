@@ -19,7 +19,21 @@ cd my-project
 composer dev
 ```
 
-There is no manual step: `create-project` already creates the `.env`, generates the `APP_KEY`, creates the SQLite database, runs the migrations, seeds roles/permissions/user, publishes the Filament assets and builds the front-end. At the end it prints the URLs and the initial login.
+There is no manual step: `create-project` already creates the `.env`, generates the `APP_KEY`, creates the database, runs the migrations, seeds roles/permissions/user, publishes the Filament assets and builds the front-end. At the end it prints the URLs and the initial login.
+
+Before touching the database, it **asks five questions** — the same way `laravel new` does:
+
+| | Question | Default |
+|---|---|---|
+| 1 | Project name | the folder name |
+| 2 | Database | SQLite · **PostgreSQL** (recommended: the only one with `pgvector`, required by the local AI features) · MySQL |
+| 3 | Administrator e-mail and password | `admin@example.com` / `password` |
+| 4 | Primary color of the panels | the Filament default |
+| 5 | Multi-tenancy | off |
+
+**Hitting Enter on everything installs exactly as before** — no question is mandatory, and the first one is "customize now?", which skips them all at once. With no terminal (CI, Docker, `--no-interaction`) nothing is asked. At the end the installer prints a summary of what changed, what is still edited by hand, and offers to run the kit's test suite.
+
+> Multi-tenancy is the item that pays off most to decide now: switched on during installation it costs nothing; switched on later, `kit:tenancy` **recreates the database** (the permission tables only get the tenant column if the flag is active before the migration).
 
 ![Installing starter-kit-easy in a single command](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/install.gif)
 
@@ -311,7 +325,18 @@ php artisan boost:update                                # syncs it to every agen
 
 ## Database
 
-The kit installs with **SQLite** so it depends on nothing. For Postgres, bring the containers up and copy the variables:
+**The installation asks** — SQLite, PostgreSQL or MySQL. The default is **SQLite**, so it depends on nothing.
+
+**PostgreSQL is the recommended one**, for a functional reason: it is the only one shipping `pgvector`, which the local AI features that use semantic search (embeddings) depend on. With SQLite or MySQL the rest of the kit runs the same — only those features are unavailable.
+
+If you pick Postgres during installation, the `.env` already comes with the block `docker-compose.yml` reads. If the container is not up at that moment, the kit warns you, **skips the migrations** and prints the command to finish:
+
+```bash
+docker compose up -d
+php artisan migrate --seed
+```
+
+To switch after the installation, bring the containers up and copy the variables:
 
 ```bash
 docker compose up -d              # pgsql (with pgvector) + redis
@@ -351,7 +376,8 @@ composer dev          # server + queue + vite together
 composer test         # pint + phpstan + the whole suite
 composer test:kit     # only the kit's tests (the foundation)
 composer lint         # formats the code
-php artisan kit:install --force   # reinstalls from scratch (deletes the SQLite file)
+php artisan kit:install --force   # reinstalls from scratch (deletes the SQLite file) and asks again
+php artisan kit:install --no-custom   # installs without asking anything
 php artisan kit:update            # brings in improvements from a new kit version
 php artisan kit:tenancy           # turns on multi-tenancy (opt-in)
 ```
@@ -373,19 +399,28 @@ Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never to
 
 ## Customize your project
 
-1. **Name** — `APP_NAME` in `.env`
-2. **Login artwork** — `public/images/auth/login.svg`
-3. **Colors** — `->colors([...])` in each `app/Providers/Filament/*PanelProvider.php`
-4. **Panel access** — each user's role (`/admin` → Roles, the *Painel* field); the rule that reads it is `App\Models\User::canAccessPanel()`
-5. **Permission matrix** — `database/seeders/PapeisSeeder.php`
-6. **Health checks** — `KitServiceProvider::configureHealthChecks()`
-7. **Commands in the UI** — `config/command-center.php`
-8. **Seeder credentials** — `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` in `.env`
-9. **Backups** — destination and schedule in `config/backup.php`
-10. **AI agent** — `/admin` → AI Agents (or `database/seeders/AssistenteSeeder.php`)
-11. **[Multi-tenancy](#multi-tenancy-opt-in)** — `php artisan kit:tenancy`, and the displayed term in `config/kit.php` → `tenancy.label`
+**The installer already asks the first five** — the list below is for changing them later, or for whoever skipped the questions.
 
-> ⚠️ Item 11 is the only one on this list that is **not** "edit a file": `kit:tenancy` runs `migrate:fresh --seed` and **deletes your data**. It requires a clean git tree and an explicit confirmation, but the right time to run it is day 1 of the project — later, with production data, the migration is manual.
+| # | What | Where | Asked during installation? |
+|---|---|---|---|
+| 1 | **Name** | `APP_NAME` in `.env` | ✅ |
+| 2 | **Database** | the `DB_*` block in `.env` | ✅ |
+| 3 | **Seeder credentials** | `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` in `.env` | ✅ |
+| 4 | **Primary color** | `KIT_COR_PRIMARIA` in `.env` (a color name from the Filament palette) | ✅ |
+| 5 | **[Multi-tenancy](#multi-tenancy-opt-in)** | `php artisan kit:tenancy`, and the displayed term in `config/kit.php` → `tenancy.label` | ✅ |
+| 6 | **Login artwork** | `public/images/auth/login.svg` | — |
+| 7 | **Panel access** | each user's role (`/admin` → Roles, the *Painel* field); the rule that reads it is `App\Models\User::canAccessPanel()` | — |
+| 8 | **Permission matrix** | `database/seeders/PapeisSeeder.php` | — |
+| 9 | **Health checks** | `KitServiceProvider::configureHealthChecks()` | — |
+| 10 | **Commands in the UI** | `config/command-center.php` | — |
+| 11 | **Backups** | destination and schedule in `config/backup.php` | — |
+| 12 | **AI agent** | `/admin` → AI Agents (or `database/seeders/AssistenteSeeder.php`) | — |
+
+The last seven are not asked because they are **code or screen data**, not a value that fits in a terminal prompt. The installer lists them in the final summary, each with its file.
+
+> ⚠️ Item 5 is the only one that is **not** "edit a file" once installed: `kit:tenancy` runs `migrate:fresh --seed` and **deletes your data**. It requires a clean git tree and an explicit confirmation. **Answered during installation it deletes nothing** — the database does not exist yet, and that is the right moment to decide.
+
+> The primary color applies to all three panels. With [multi-tenancy](#multi-tenancy-opt-in) on, each organization's color **wins** over it inside `/app/{slug}` — `/admin` and `/infra` keep the project's one. For a full palette, and not just `primary`, the way is still `->colors([...])` in each `app/Providers/Filament/*PanelProvider.php`.
 
 ## Global Filament configuration
 
