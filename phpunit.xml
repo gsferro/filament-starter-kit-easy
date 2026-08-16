@@ -45,6 +45,27 @@
         </include>
     </source>
     <php>
+        <!--
+            A suíte roda contra a configuração DO KIT, não contra a do projeto.
+
+            Sem isto, quem personaliza vê vermelho sem ter quebrado nada: um projeto
+            que escolheu a cor Violet e chamou a organização de "Universidade" fazia
+            cinco casos falharem — a URL do cadastro vira /admin/universidades, o
+            /admin nasce violeta em vez do âmbar padrão, e o plural sugerido deixa de
+            ser "Organizações". Nenhum é regressão, e é justamente isso que torna o
+            estrago grave: o `composer test:kit` existe para dizer se a FUNDAÇÃO
+            continua íntegra depois de um kit:update, e um vermelho por diferença de
+            config não deixa ninguém distinguir uma coisa da outra.
+
+            Fixar aqui vale para toda a suíte de uma vez, e é o mesmo motivo pelo
+            qual banco, fila e e-mail já estão fixados abaixo.
+        -->
+        <env name="KIT_COR_PRIMARIA" value="" force="true"/>
+        <env name="KIT_DEMO" value="false" force="true"/>
+        <env name="KIT_TENANCY_LABEL" value="Organização" force="true"/>
+        <env name="KIT_TENANCY_LABEL_PLURAL" value="Organizações" force="true"/>
+        <env name="KIT_TENANCY_SLUG" value="organizacoes" force="true"/>
+
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

@@ -271,9 +271,28 @@ it('liga as três chaves da tenancy de uma vez', function (): void {
         ->and(File::get($this->base.'/config/filament-shield.php'))->toContain('tenant_model')
         ->and(config('permission.teams'))->toBeTrue()
         ->and(config('kit.tenancy.label'))->toBe('Empresa');
+})->group('kit');
 
-    // O config real do projeto continua intocado.
-    expect(File::get(config_path('permission.php')))->toContain("'teams' => false");
+/**
+ * A ativação escreve no diretório que RECEBE, e em nenhum outro.
+ *
+ * A versão anterior deste caso afirmava que o `config/permission.php` do projeto
+ * continuava com `'teams' => false` — o que é falso, e legitimamente, em qualquer
+ * projeto que tenha ligado a multi-organização. O que interessa provar é que a
+ * escrita foi para o diretório informado; o estado do projeto não é oráculo de
+ * nada aqui.
+ */
+it('escreve a tenancy no diretório recebido, e não no do projeto', function (): void {
+    $antes = File::get(config_path('permission.php'));
+
+    customizadorNoTemp()->aplicar(respostasDeCustomizacao([
+        'tenancy'              => true,
+        'tenancy_label'        => 'Empresa',
+        'tenancy_label_plural' => 'Empresas',
+    ]));
+
+    expect(File::get($this->base.'/config/permission.php'))->toContain("'teams' => true")
+        ->and(File::get(config_path('permission.php')))->toBe($antes);
 })->group('kit');
 
 it('preserva chave própria do usuário ao reaplicar', function (): void {
