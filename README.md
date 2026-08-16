@@ -557,6 +557,22 @@ php artisan test --testsuite=Feature  # só os SEUS testes
 
 Seus testes vão em `tests/Feature` e `tests/Unit`, como de costume — o kit não encosta neles.
 
+### Como os testes são pensados: varredura SFDIPOT
+
+Toda feature nova passa por uma varredura **SFDIPOT** antes de virar caso de teste. A heurística, criada por James Bach, divide o sistema em sete perspectivas para que nenhuma dimensão seja esquecida na especificação:
+
+| Letra | Perspectiva | O que cobre |
+|---|---|---|
+| **S** — Structure | Estrutura | Código, arquivos, componentes físicos ou lógicos |
+| **F** — Function | Função | O que o software faz, suas funcionalidades |
+| **D** — Data | Dados | O que o sistema processa, armazena ou manipula |
+| **I** — Interfaces | Interfaces | Telas, APIs, integrações, entradas e saídas |
+| **P** — Platform | Plataforma | Sistema operacional, hardware ou ambiente onde roda |
+| **O** — Operations | Operações | Como o usuário ou administrador usa o sistema no dia a dia |
+| **T** — Time | Tempo | Concorrência, desempenho, histórico ou a sequência dos eventos |
+
+O benefício está em não derivar os testes só do "caminho feliz". O que escapa raramente é mais um caso a mais — geralmente é uma dimensão inteira (dados, plataforma, tempo, operações) que ninguém lembrou de cobrir. A varredura força essa revisão no plano, antes do código existir.
+
 ## Personalize seu projeto
 
 1. **Nome** — `APP_NAME` no `.env`
