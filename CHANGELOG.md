@@ -3,6 +3,32 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.16.5] - 2026-08-16
+
+### Alterado
+
+- **`composer test:kit` roda em paralelo por padrão: 12m26s → 3m36s** nesta suíte (20 núcleos),
+  com os mesmos 355 casos e 1047 asserções. Cada worker tem o próprio banco porque o `phpunit.xml`
+  usa SQLite `:memory:`, que é por processo.
+
+  A troca de `--group=kit` por `--testsuite=Kit,Tenancy` resolve um segundo problema junto: o
+  `pest-plugin-browser` sobe o Playwright já na **coleta**, ao parsear qualquer arquivo com
+  `visit()`, **antes** de qualquer filtro de grupo ser consultado — e num projeto recém-instalado,
+  sem os browsers baixados, `--group=kit` morre em `PlaywrightNotInstalledException` sem rodar um
+  único teste. As duas seleções cobrem o mesmo conjunto: o `tests/Pest.php` marca as duas pastas
+  com o grupo `kit`.
+
+  E um terceiro, silencioso: `composer test:kit --parallel` é **engolido** pelo Composer — só
+  `composer test:kit -- --parallel` encaminha o argumento. Com o paralelo virando padrão, ninguém
+  precisa saber disso.
+
+- **Novo `composer test:kit:serial`.** Paralelo embaralha a ordem e usa processos separados; se uma
+  falha aparecer só nele, é sinal de teste que depende de ordem ou de estado compartilhado — e a
+  diferença entre os dois comandos **é** o diagnóstico.
+
+  `composer test` e `composer test:browser` seguem como estavam: browser em paralelo multiplica
+  processos de navegador e vira timeout.
+
 ## [0.16.4] - 2026-08-16
 
 ### Alterado
