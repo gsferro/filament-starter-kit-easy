@@ -6,6 +6,7 @@ use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
+use App\Support\CorPrimaria;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use Bityukov\CommandCenter\Filament\CommandCenterPlugin;
 use Bityukov\CommandCenter\Filament\Pages\Commands as CommandCenterCommands;
@@ -68,6 +69,7 @@ class InfraPanelProvider extends PanelProvider
             ->login()
             ->passwordReset()
             ->brandName(config('app.name').' • Infra')
+            ->colors(fn (): array => CorPrimaria::paleta())
             ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth(Width::Full)
             ->subNavigationPosition(SubNavigationPosition::Top)

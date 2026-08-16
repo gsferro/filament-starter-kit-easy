@@ -6,6 +6,7 @@ use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
+use App\Support\CorPrimaria;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
@@ -57,6 +58,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->passwordReset()
             ->brandName(config('app.name').' • Admin')
+            ->colors(fn (): array => CorPrimaria::paleta())
             ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth(Width::Full)
             ->subNavigationPosition(SubNavigationPosition::Top)

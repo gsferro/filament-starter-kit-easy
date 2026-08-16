@@ -11,6 +11,7 @@ use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Http\Middleware\DefinirTenantDePermissoes;
 use App\Models\Tenant;
+use App\Support\CorPrimaria;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
 use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
@@ -64,6 +65,10 @@ class AppPanelProvider extends PanelProvider
             ->login()
             ->passwordReset()
             ->brandName(config('app.name'))
+            // Closure, e não array: o valor precisa vir da config resolvida no
+            // request, não da que existia quando o provider foi registrado.
+            // A cor da organização, registrada no bootUsing() abaixo, vence esta.
+            ->colors(fn (): array => CorPrimaria::paleta())
             ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth(Width::Full)
             ->subNavigationPosition(SubNavigationPosition::Top)
