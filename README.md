@@ -878,6 +878,20 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 
 > **Motores por baixo dos plugins**, instalados como dependência (você não os declara, mas eles são o que de fato roda): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (os checks), `spatie/laravel-activitylog` (o log de atividades) e `livewire/livewire` (o Filament inteiro).
 
+### Model Caching
+
+O kit aplica a trait `App\Traits\ModeloCacheavel` nas models que têm Resource no painel `/app` — hoje `User`, `Convite` e `Projeto`. O pacote `mike-bronner/laravel-model-caching` cacheia as queries Eloquent quando `MODEL_CACHE_ENABLED=true`.
+
+- O default é `false` (`MODEL_CACHE_ENABLED=false` no `.env.example`).
+- Para ligar, defina `MODEL_CACHE_ENABLED=true` e use `MODEL_CACHE_STORE=model-cache` (store Redis configurado em `config/cache.php`).
+- A invalidação é automática: `save`, `update` e `delete` limpam o cache da model.
+- Painéis `/admin` e `/infra` continuam **sem** model caching por padrão, reduzindo o risco de stale data em telas administrativas.
+
+```bash
+php artisan modelCache:clear      # limpa o cache das models
+```
+
+
 ### Desenvolvimento (`require-dev`)
 
 | Pacote | Para quê |
