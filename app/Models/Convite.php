@@ -7,6 +7,7 @@ use App\Traits\AuditsFillables;
 use App\Traits\ModeloCacheavel;
 use App\Traits\TemUuid;
 use Database\Factories\ConviteFactory;
+use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -497,11 +498,28 @@ class Convite extends Model implements Auditable
      * `where` escrito na página, porque duas cópias divergem — e a que divergisse seria o
      * contador dizendo "1" numa tela vazia.
      *
+     * ## Por que ignorar o escopo de tenancy do painel
+     *
+     * O `Panel::boot()` do Filament registra um escopo global NO MODEL de todo resource
+     * escopado por tenant (`Panel.php:85-90`, nome em `getTenancyScopeName()`). Como existe
+     * um `ConviteResource` no painel /app, TODA query de Convite dentro de um request de
+     * `/app/{tenant}` nasce filtrada pela organização corrente — inclusive esta.
+     *
+     * O efeito era um beco sem saída, encontrado em teste manual: quem já tem conta e é
+     * convidado para OUTRA organização entrava, e o convite não aparecia em lugar nenhum. A
+     * tela de aceite promete "o convite aparece no menu do seu usuário" e o menu contava
+     * zero — porque a oferta pertence à organização de destino, que não é a corrente.
+     *
+     * Esta pergunta é, por definição, entre organizações: "o que endereçaram a esta pessoa,
+     * em qualquer lugar". Removemos só o escopo do painel, e não `withoutGlobalScopes()`,
+     * para não derrubar de carona um escopo futuro que seja legítimo aqui.
+     *
      * @return Builder<static>
      */
     public static function pendentesPara(?User $user): Builder
     {
         $query = static::query()
+            ->withoutGlobalScope(Filament::getPanel('app')->getTenancyScopeName())
             ->whereNull('aceito_em')
             ->whereNull('recusado_em')
             ->where('expira_em', '>', now());
