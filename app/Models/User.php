@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\AuditsFillables;
+use App\Traits\ModeloCacheavel;
 use App\Traits\TemUuid;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
@@ -34,6 +35,7 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
     use HasFactory;
 
     use HasRoles;
+    use ModeloCacheavel;
     use Notifiable;
     use TemUuid;
     use TwoFactorAuthenticatable;
