@@ -81,6 +81,7 @@
         "pestphp/pest": "^5.1",
         "pestphp/pest-plugin-browser": "^5.0",
         "pestphp/pest-plugin-laravel": "^5.0",
+        "pestphp/pest-plugin-mutate": "^5.0",
         "phpunit/phpunit": "^13.3"
     },
     "autoload": {

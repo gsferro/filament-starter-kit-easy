@@ -50,6 +50,12 @@ it('cobre os arquivos da fundação na lista de caminhos do kit', function (stri
     'app/Console/Commands/KitUpdate.php',
     'app/Console/Commands/KitTenancy.php',
 
+    // Customizador da instalação
+    'app/Support/CustomizadorDaInstalacao.php',
+    'app/Support/SubstituicaoEmArquivo.php',
+    'app/Support/AtivadorDeTenancy.php',
+    'app/Support/CorPrimaria.php',
+
     // Multi-tenancy
     'app/Models/Tenant.php',
     'app/Traits/BelongsToTenant.php',
