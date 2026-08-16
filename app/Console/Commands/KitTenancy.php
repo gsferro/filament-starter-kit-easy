@@ -3,12 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Models\Tenant;
+use App\Support\AtivadorDeTenancy;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
-use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 use Throwable;
@@ -164,64 +163,16 @@ class KitTenancy extends Command
 
     private function ligarFlagNoEnv(): void
     {
-        $this->substituirNoArquivo(
-            base_path('.env'),
-            '/^KIT_TENANCY=.*$/m',
-            'KIT_TENANCY=true',
-            "\nKIT_TENANCY=true\n",
-        );
+        AtivadorDeTenancy::escreverEnv(base_path('.env'));
 
         $this->components->task('KIT_TENANCY=true no .env', fn (): bool => true);
     }
 
-    /**
-     * `permission.teams` liga o recorte por tenant no spatie E no Shield: o
-     * `Utils::isTenancyEnabled()` do Shield lê exatamente esta chave.
-     */
     private function ligarPapeisPorTenant(): void
     {
-        $this->substituirNoArquivo(
-            config_path('permission.php'),
-            "/'teams'\s*=>\s*false/",
-            "'teams' => true",
-        );
-
-        $this->substituirNoArquivo(
-            config_path('filament-shield.php'),
-            "/'tenant_model'\s*=>\s*null/",
-            "'tenant_model' => \\App\\Models\\Tenant::class",
-        );
+        AtivadorDeTenancy::ligarPapeisPorTenant();
 
         $this->components->task('papéis por tenant (permission.teams + Shield)', fn (): bool => true);
-    }
-
-    /**
-     * Alinha a config JÁ CARREGADA com o que acabou de ser escrito em disco.
-     *
-     * Sem isto o comando falha de um jeito traiçoeiro: `config:clear` apaga o
-     * arquivo de cache, mas NÃO recarrega a config em memória. O
-     * `migrate:fresh` roda neste mesmo processo, lê `permission.teams` ainda
-     * como `false` e cria as tabelas de permissão SEM as colunas de team. A
-     * requisição seguinte — processo novo, config nova — consulta
-     * `model_has_roles.team_id` e recebe "no such column".
-     *
-     * O `PermissionRegistrar` é singleton e lê `permission.teams` no
-     * construtor, então precisa ser descartado para renascer sabendo de teams.
-     * E o contexto global de papéis precisa ser fixado à mão, porque o
-     * `KitServiceProvider::configureTenancy()` já rodou no boot, quando a flag
-     * ainda estava desligada — sem ele, os seeders atribuem papel com
-     * `team_id` nulo e estouram a constraint NOT NULL.
-     */
-    private function alinharConfigEmMemoria(): void
-    {
-        config([
-            'kit.tenancy.enabled'          => true,
-            'permission.teams'             => true,
-            'filament-shield.tenant_model' => Tenant::class,
-        ]);
-
-        $this->laravel->forgetInstance(PermissionRegistrar::class);
-        app(PermissionRegistrar::class)->setPermissionsTeamId(Tenant::CONTEXTO_GLOBAL);
     }
 
     private function recriarBanco(): void
@@ -229,7 +180,7 @@ class KitTenancy extends Command
         // Limpa o cache em disco (para os próximos processos) e alinha a config
         // desta execução (para o migrate:fresh logo abaixo).
         $this->callSilently('config:clear');
-        $this->alinharConfigEmMemoria();
+        AtivadorDeTenancy::alinharConfigEmMemoria();
 
         $this->components->info('Recriando o banco com as tabelas de permissão por tenant...');
         $this->call('migrate:fresh', ['--seed' => true, '--force' => true]);
@@ -265,30 +216,6 @@ class KitTenancy extends Command
             '--class' => 'Database\\Seeders\\DemoTenancySeeder',
             '--force' => true,
         ]);
-    }
-
-    /**
-     * Substituição pontual num arquivo — mesma abordagem do `kit:update` ao
-     * marcar a versão: mexe só na linha alvo, preservando comentários e
-     * qualquer chave que o usuário tenha acrescentado.
-     */
-    private function substituirNoArquivo(string $caminho, string $padrao, string $novo, ?string $fallback = null): void
-    {
-        if (! File::exists($caminho)) {
-            return;
-        }
-
-        $conteudo = File::get($caminho);
-
-        if (preg_match($padrao, $conteudo) === 1) {
-            File::put($caminho, preg_replace($padrao, $novo, $conteudo, 1));
-
-            return;
-        }
-
-        if ($fallback !== null) {
-            File::append($caminho, $fallback);
-        }
     }
 
     /** @param  list<string>  $args */
