@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Log;
 use UnitEnum;
 
 /**
- * Usuários DA ORGANIZAÇÃO corrente — a tela do `admin_organizacao`.
+ * Usuários DA ORGANIZAÇÃO corrente — a tela do `admin_app`.
  *
  * Irmão do `App\Filament\Admin\Resources\Users\UserResource`, e deliberadamente uma
  * classe separada: o que é igual são quatro campos de formulário; o que é diferente é

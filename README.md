@@ -65,7 +65,7 @@ Para testar o recorte de acesso, crie um usuário só com o papel `admin` ou `in
 
 | Painel | URL | Para quê | Quem entra |
 |---|---|---|---|
-| **App** | `/app` | A operação do negócio. **Vem vazio de propósito** — é aqui que seu projeto nasce | `master_global`, `panel_user`, `admin_organizacao` (com tenancy) |
+| **App** | `/app` | A operação do negócio. **Vem vazio de propósito** — é aqui que seu projeto nasce | `master_global`, `panel_user`, `admin_app` (com tenancy) |
 | **Admin** | `/admin` | Usuários, papéis e permissões (Shield), catálogo de agentes de IA, autoria de onboarding | `master_global`, `admin` |
 | **Infra** | `/infra` | Health checks, backups, filas, logs, auditoria, caches, comandos, Pulse, custos de IA | `master_global`, `infra` |
 
@@ -145,7 +145,7 @@ O filtro por permissão é a razão de existirem `App\Filament\Spotlight\*` no k
 ## Convite de usuário
 
 Alguém de fora vira usuário **por convite, e só por convite**. Um administrador abre
-`/admin/convites` — ou, com tenancy, quem tem `admin_organizacao` abre
+`/admin/convites` — ou, com tenancy, quem tem `admin_app` abre
 `/app/{organizacao}/convites` — e escolhe e-mail, papel e organização; o kit envia um link
 com token de uso único.
 
@@ -234,10 +234,10 @@ Os quatro papéis do kit, e o que cada um significa com o modo ligado:
 | `master_global` | todos | global | vence qualquer permissão, por `Gate::before` |
 | `admin` | `/admin` | global | usuários, papéis e permissões da **instalação** |
 | `infra` | `/infra` | global | saúde, filas, logs, auditoria, comandos |
-| `admin_organizacao` | `/app` | **a organização** | usuários e convites **da organização dele** |
+| `admin_app` | `/app` | **a organização** | usuários e convites **da organização dele** |
 | `panel_user` | `/app` | a organização | usa o negócio; não vê a administração |
 
-`admin_organizacao` é a persona que o modo multi-tenant cria: alguém que administra **uma** organização sem administrar o sistema. Dentro de `/app/{slug}` ele ganha **Usuários** e **Convites**, recortados àquela organização — e nada além disso. Ele não entra em `/admin` nem `/infra`, leva 404 no painel de outra organização, não alcança usuário de fora nem por URL direta, não cria nem edita papéis (só atribui, e só papéis do painel `/app`), não exclui usuário — o delete apagaria a pessoa de **todas** as organizações — e o convite que ele cria nasce carimbado com a organização dele, ignorando o formulário.
+`admin_app` é a persona que o modo multi-tenant cria: alguém que administra **uma** organização sem administrar o sistema. Dentro de `/app/{slug}` ele ganha **Usuários** e **Convites**, recortados àquela organização — e nada além disso. Ele não entra em `/admin` nem `/infra`, leva 404 no painel de outra organização, não alcança usuário de fora nem por URL direta, não cria nem edita papéis (só atribui, e só papéis do painel `/app`), não exclui usuário — o delete apagaria a pessoa de **todas** as organizações — e o convite que ele cria nasce carimbado com a organização dele, ignorando o formulário.
 
 O papel só existe com a tenancy ligada, e a concessão é em `/admin` → organizações → **Usuários vinculados** → *Papéis nesta organização*. **Não** pelo cadastro do usuário: ali a atribuição vai para o contexto global e a pessoa entra no `/app` sem enxergar nada. A receita completa, com o sintoma, está em [`wikis/receitas.md`](wikis/receitas.md#promover-alguém-a-admin-de-uma-organização).
 
@@ -423,10 +423,10 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 
 | # | Feature | Onde | Quem alcança | Como conferir | Teste |
 |---|---|---|---|---|---|
-| F-15 | Convite individual | `/admin/convites` · `/app/{org}/convites` | `admin`, `admin_organizacao` | e-mail + papel + organização; o link vai por e-mail com token de uso único | 🟢 |
+| F-15 | Convite individual | `/admin/convites` · `/app/{org}/convites` | `admin`, `admin_app` | e-mail + papel + organização; o link vai por e-mail com token de uso único | 🟢 |
 | F-16 | Convite para quem **já tem conta** | mesmo lugar | idem | vira *oferta de acesso*: a pessoa entra com a senha que já tem e é vinculada | 🟢 |
 | F-17 | Caixa de convites recebidos | menu do usuário → *Convites recebidos* | qualquer autenticado | aceitar **ou recusar**; a recusa fica registrada | 🟢 |
-| F-18 | Convite em massa | header da listagem | `admin`, `admin_organizacao` | cole N endereços; um com problema **não** derruba os outros, e o resumo diz por quê | 🟢 |
+| F-18 | Convite em massa | header da listagem | `admin`, `admin_app` | cole N endereços; um com problema **não** derruba os outros, e o resumo diz por quê | 🟢 |
 | F-19 | Lembretes automáticos | `kit:convites-lembrar` (cron 08:00) | — | D+3 e D+5, com um **segundo link paralelo**; o original continua valendo | 🟢 |
 | F-20 | Reenviar / revogar | ação na linha | `admin` | reenviar **mata** os links anteriores; revogar apaga e fica em `/infra/audits` | 🟢 |
 
@@ -438,7 +438,7 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-22 | Painel por organização | `/app/{org}` | vinculados | o seletor lista só as organizações do usuário; a de outro dá 404 | 🟢 |
 | F-23 | Cadastro de organizações | `/admin/organizacoes` | `admin` | create, **view** e edit em tela cheia | 🔵 |
 | F-24 | Vínculo de usuários | organização → *Usuários vinculados* | `admin` | vincular, desvincular e dar papel **naquela** organização | 🟢 |
-| F-25 | `admin_organizacao` | `/app/{org}` | o papel | administra **uma** organização: usuários e convites recortados. Não entra no `/admin` | 🟢 |
+| F-25 | `admin_app` | `/app/{org}` | o papel | administra **uma** organização: usuários e convites recortados. Não entra no `/admin` | 🟢 |
 | F-26 | Escopo por trait | seus models | — | `BelongsToTenant` dá relação, escopo global e preenchimento — vale fora do Filament também | 🟢 |
 | F-27 | **Identidade visual: cor** | organização → *Identidade visual* | `admin` | escolha a cor e abra `/app/{org}`: o painel inteiro veste a cor dela, e o `/admin` **não** muda | 🔵 |
 | F-28 | **Identidade visual: logo** | idem | `admin` | a logo aparece na tela de bloqueio do `/app` no lugar da imagem base | 🔵 |

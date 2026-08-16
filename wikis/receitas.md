@@ -157,7 +157,7 @@ Sem vínculo, o usuário não vê o tenant no seletor e toma **404** se tentar a
 
 ## Promover alguém a admin de uma organização
 
-**O caminho intuitivo é o errado.** Dar o papel `admin_organizacao` pelo `/admin` → Usuários grava a atribuição no **contexto global** (`model_has_roles.team_id = 0`): a pessoa entra no `/app`, e lá dentro o papel não existe — menu vazio, 403 em cada tela, nenhuma mensagem de erro.
+**O caminho intuitivo é o errado.** Dar o papel `admin_app` pelo `/admin` → Usuários grava a atribuição no **contexto global** (`model_has_roles.team_id = 0`): a pessoa entra no `/app`, e lá dentro o papel não existe — menu vazio, 403 em cada tela, nenhuma mensagem de erro.
 
 O caminho certo:
 
@@ -171,7 +171,7 @@ Em código (seeder, comando):
 $registrar = app(PermissionRegistrar::class);
 $registrar->setPermissionsTeamId($tenant->getKey());
 $usuario->unsetRelation('roles');          // o Eloquent cacheia `roles` na instância
-$usuario->assignRole('admin_organizacao');
+$usuario->assignRole('admin_app');
 ```
 
 O que a persona ganha: **Usuários** e **Convites** dentro do `/app`, recortados à organização dela. O que ela **não** ganha, e é de propósito:
@@ -186,7 +186,7 @@ O papel só é semeado com a tenancy ligada — sem organização ele seria um s
 
 ## Convidar alguém
 
-`/admin` → **Convites** → *Novo convite*: e-mail, papel e (com tenancy) a organização. Com a tenancy ligada, quem tem `admin_organizacao` faz o mesmo por `/app/{organizacao}` → **Convites**, e ali a organização é a do painel — o formulário não a pergunta. O e-mail sai na hora e o link leva a `/app/register?token=…`.
+`/admin` → **Convites** → *Novo convite*: e-mail, papel e (com tenancy) a organização. Com a tenancy ligada, quem tem `admin_app` faz o mesmo por `/app/{organizacao}` → **Convites**, e ali a organização é a do painel — o formulário não a pergunta. O e-mail sai na hora e o link leva a `/app/register?token=…`.
 
 **Não pergunte se a pessoa já tem conta.** O sistema decide no aceite, e as duas vias usam o mesmo convite e o mesmo link:
 
@@ -477,7 +477,7 @@ Commit no padrão do repositório: gitmoji + escopo, mensagem em pt-BR.
 | `NOT NULL constraint failed: model_has_roles.team_id` | atribuiu papel sem contexto de tenant — use `Tenant::CONTEXTO_GLOBAL` ou rode dentro de um request do `/app` |
 | `no such column: model_has_roles.team_id` | as tabelas de permissão nasceram sem a coluna de tenant. Refaça num processo novo: `php artisan migrate:fresh --seed` (corrigido no kit a partir da v0.9.2) |
 | Usuário perdeu os papéis dentro do `/app` | papel atribuído no contexto global; para valer no tenant, atribua com `setPermissionsTeamId($tenant->id)` |
-| Admin da organização entra no `/app` e não vê nada | o `admin_organizacao` foi dado pelo `/admin` → Usuários, que grava no contexto global. Refaça por `/admin` → organizações → **Usuários vinculados** → *Papéis nesta organização* — ver [a receita](#promover-alguém-a-admin-de-uma-organização) |
+| Admin da organização entra no `/app` e não vê nada | o `admin_app` foi dado pelo `/admin` → Usuários, que grava no contexto global. Refaça por `/admin` → organizações → **Usuários vinculados** → *Papéis nesta organização* — ver [a receita](#promover-alguém-a-admin-de-uma-organização) |
 | Usuário comum vê "Usuários" e "Convites" no `/app` | o `PapeisSeeder` não rodou depois de o kit ganhar essas telas, ou a subtração de `permissoesDeAdministracaoDoApp()` foi removida: `panel_user` está com a matriz inteira do painel |
 | Listagem mostra dados de outro cliente | model sem `BelongsToTenant`, ou query com `withoutGlobalScopes()` |
 | Menu não mostra o item | `canAccess()` da policy, ou `shouldRegisterNavigation()` |

@@ -309,7 +309,7 @@ it('cria o cenário completo da demo, de forma idempotente', function (): void {
     expect(
         DB::table(config('permission.table_names.model_has_roles', 'model_has_roles'))
             ->where('model_id', $ana->id)
-            ->where('role_id', Role::findByName('admin_organizacao')->getKey())
+            ->where('role_id', Role::findByName('admin_app')->getKey())
             ->where('team_id', $acme->id)
             ->count()
     )->toBe(1);

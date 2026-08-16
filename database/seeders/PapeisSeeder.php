@@ -19,7 +19,7 @@ use Spatie\Permission\PermissionRegistrar;
  *   master_global      → painel nulo; entra em tudo pelo Gate::before, não pela coluna
  *   admin              → /admin: usuários, papéis, agentes de IA
  *   infra              → /infra: health, filas, logs, auditoria, comandos
- *   admin_organizacao  → /app: administra a PRÓPRIA organização (só com tenancy)
+ *   admin_app  → /app: administra a PRÓPRIA organização (só com tenancy)
  *   panel_user         → /app: o perfil básico da operação de negócio
  *
  * A matriz de permissões de cada papel é EXATAMENTE a do painel dele, colhida por
@@ -59,7 +59,7 @@ class PapeisSeeder extends Seeder
         $this->papel('infra', $guard, 'infra')
             ->syncPermissions($this->permissoesDoPainel('infra', $guard));
 
-        // admin_organizacao só existe no modo multi-tenant: sem organização não há o que
+        // admin_app só existe no modo multi-tenant: sem organização não há o que
         // administrar dentro do /app, e um papel com permissão de criar usuário sem
         // recorte de organização seria um segundo `admin` com outro nome. Ver ADR-09 da
         // wiki admin-da-organizacao.
@@ -68,7 +68,7 @@ class PapeisSeeder extends Seeder
         // que o /app oferece. O recorte dele é de DADO (só a organização corrente), feito
         // no `getEloquentQuery()` dos Resources, não de permissão.
         if (config('kit.tenancy.enabled')) {
-            $this->papel('admin_organizacao', $guard, 'app')
+            $this->papel('admin_app', $guard, 'app')
                 ->syncPermissions($this->permissoesDoPainel('app', $guard));
         }
 

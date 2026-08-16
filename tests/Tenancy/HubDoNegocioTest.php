@@ -14,7 +14,7 @@ use Spatie\Permission\Models\Role;
  * O hub do painel de negócio — e a única tela onde a filtragem por autorização é observável.
  *
  * Nos outros dois painéis, quem entra costuma poder tudo; aqui não: o `panel_user` divide a
- * tela com o `admin_organizacao`, e é essa divergência que separa "o hub filtra por
+ * tela com o `admin_app`, e é essa divergência que separa "o hub filtra por
  * `canAccess()`" de "o hub mostra tudo".
  *
  * O ponto vale ser repetido porque o pacote induz ao erro: `CardItem` NÃO verifica

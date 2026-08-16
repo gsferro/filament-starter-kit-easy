@@ -109,7 +109,7 @@ it('cria convite para e-mail que ja tem conta', function (): void {
 /**
  * CT-17 — é a razão de a feature existir.
  *
- * Antes dela o `admin_organizacao` não tinha NENHUM caminho para trazer alguém que já tem
+ * Antes dela o `admin_app` não tinha NENHUM caminho para trazer alguém que já tem
  * conta: só o `master_global`, por /admin → Organizações → Vincular usuário. E o
  * `tenant_id` continua carimbado à força pelo painel (barreira 6 da wiki
  * `admin-da-organizacao`), então o convite nasce na Acme mesmo com a Globex forjada no
@@ -121,7 +121,7 @@ it('deixa o admin da organizacao convidar quem ja tem conta', function (): void 
     $acme   = tenant('Acme', 'acme');
     $globex = tenant('Globex', 'globex');
 
-    $ana = usuarioComPapel('admin_organizacao', $acme, 'ana@example.test');
+    $ana = usuarioComPapel('admin_app', $acme, 'ana@example.test');
     $ana->tenants()->attach($acme);
 
     carlaDaGlobex($globex);
@@ -230,14 +230,14 @@ it('aceita oferta de quem ja e membro sem duplicar vinculo', function (): void {
     $carla = usuarioComPapel('panel_user', $acme, 'carla@example.test');
     $carla->tenants()->attach($acme);
 
-    ofertaPara('carla@example.test', $acme, 'admin_organizacao')
+    ofertaPara('carla@example.test', $acme, 'admin_app')
         ->aceitarComoUsuarioExistente($carla);
 
     expect(DB::table('tenant_user')->where('user_id', $carla->id)->count())->toBe(1);
 
     $this->assertDatabaseHas(pivotDePapeis(), [
         'model_id' => $carla->id,
-        'role_id'  => Role::findByName('admin_organizacao')->getKey(),
+        'role_id'  => Role::findByName('admin_app')->getKey(),
         'team_id'  => $acme->id,
     ]);
 });

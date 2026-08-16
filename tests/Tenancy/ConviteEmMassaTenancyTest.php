@@ -69,7 +69,7 @@ it('carimba a organizacao corrente no lote do admin da organizacao', function ()
     $acme   = tenant('Acme', 'acme');
     $globex = tenant('Globex', 'globex');
 
-    $ana = usuarioComPapel('admin_organizacao', $acme, 'ana@example.com');
+    $ana = usuarioComPapel('admin_app', $acme, 'ana@example.com');
     $ana->tenants()->attach($acme);
 
     noPainelDa($acme);
@@ -134,7 +134,7 @@ it('recusa papel de outro painel no lote do painel de negocio', function (): voi
     Notification::fake();
 
     $acme = tenant('Acme', 'acme');
-    $ana  = usuarioComPapel('admin_organizacao', $acme, 'ana@example.com');
+    $ana  = usuarioComPapel('admin_app', $acme, 'ana@example.com');
     $ana->tenants()->attach($acme);
 
     noPainelDa($acme);

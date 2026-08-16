@@ -8,7 +8,7 @@ use Database\Seeders\ShieldPermissionsSeeder;
 /**
  * Sem multi-tenancy a persona não existe — e os dois Resources ficam inertes.
  *
- * Um `admin_organizacao` em modo single-tenant seria um papel com permissão de criar
+ * Um `admin_app` em modo single-tenant seria um papel com permissão de criar
  * usuário e NENHUM recorte: um segundo `admin` com outro nome, alcançando toda a base de
  * usuários da instalação a partir do painel de negócio. Ver ADR-09.
  */
@@ -17,7 +17,7 @@ beforeEach(function (): void {
 });
 
 it('nao semeia o admin da organizacao sem tenancy', function (): void {
-    expect(Role::where('name', 'admin_organizacao')->exists())->toBeFalse();
+    expect(Role::where('name', 'admin_app')->exists())->toBeFalse();
 
     $user = usuarioCom('panel_user');
 

@@ -65,7 +65,7 @@ To see the access boundary in action, create a user with only the `admin` or `in
 
 | Panel | URL | What for | Who gets in |
 |---|---|---|---|
-| **App** | `/app` | The business operation. **Intentionally empty** — this is where your project is born | `master_global`, `panel_user`, `admin_organizacao` (with tenancy) |
+| **App** | `/app` | The business operation. **Intentionally empty** — this is where your project is born | `master_global`, `panel_user`, `admin_app` (with tenancy) |
 | **Admin** | `/admin` | Users, roles and permissions (Shield), AI agent catalog, onboarding authoring | `master_global`, `admin` |
 | **Infra** | `/infra` | Health checks, backups, queues, logs, auditing, caches, commands, Pulse, AI costs | `master_global`, `infra` |
 
@@ -145,7 +145,7 @@ Permission filtering is the reason `App\Filament\Spotlight\*` exists in the kit:
 ## User invitation
 
 Someone from outside becomes a user **by invitation, and only by invitation**. An admin
-opens `/admin/convites` — or, with tenancy, whoever holds `admin_organizacao` opens
+opens `/admin/convites` — or, with tenancy, whoever holds `admin_app` opens
 `/app/{organization}/convites` — and picks e-mail, role and organization; the kit sends a
 link carrying a single-use token.
 
@@ -232,10 +232,10 @@ The kit's roles, and what each one means with the mode on:
 | `master_global` | all | global | beats any permission, via `Gate::before` |
 | `admin` | `/admin` | global | users, roles and permissions of the **installation** |
 | `infra` | `/infra` | global | health, queues, logs, auditing, commands |
-| `admin_organizacao` | `/app` | **the organization** | users and invitations **of their own organization** |
+| `admin_app` | `/app` | **the organization** | users and invitations **of their own organization** |
 | `panel_user` | `/app` | the organization | uses the business; doesn't see the administration |
 
-`admin_organizacao` is the persona multi-tenancy creates: someone who administers **one** organization without administering the system. Inside `/app/{slug}` they gain **Users** and **Invitations**, scoped to that organization — and nothing beyond that. They don't enter `/admin` or `/infra`, get a 404 on another organization's panel, can't reach an outside user even by direct URL, don't create or edit roles (they only assign, and only `/app` panel roles), don't delete users — deleting would remove the person from **every** organization — and any invitation they create is stamped with their organization, ignoring the form.
+`admin_app` is the persona multi-tenancy creates: someone who administers **one** organization without administering the system. Inside `/app/{slug}` they gain **Users** and **Invitations**, scoped to that organization — and nothing beyond that. They don't enter `/admin` or `/infra`, get a 404 on another organization's panel, can't reach an outside user even by direct URL, don't create or edit roles (they only assign, and only `/app` panel roles), don't delete users — deleting would remove the person from **every** organization — and any invitation they create is stamped with their organization, ignoring the form.
 
 The role only exists with tenancy on, and it is granted in `/admin` → organizations → **Linked users** → *Roles in this organization*. **Not** from the user record: there the assignment goes to the global context and the person enters `/app` seeing nothing. The full recipe, with the symptom, is in [`wikis/receitas.md`](wikis/receitas.md#promover-alguém-a-admin-de-uma-organização).
 

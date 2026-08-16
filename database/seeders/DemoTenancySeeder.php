@@ -14,7 +14,7 @@ use Spatie\Permission\PermissionRegistrar;
  *
  * Monta o cenário mínimo que prova o isolamento em três cliques:
  *
- *   Acme    → Ana (só Acme)      + 2 projetos — `admin_organizacao`: é ela que
+ *   Acme    → Ana (só Acme)      + 2 projetos — `admin_app`: é ela que
  *                                  mostra as telas de usuários e convites
  *                                  recortadas à organização dela
  *   Globex  → Bruno (só Globex)  + 2 projetos — `panel_user`: entra no /app e
@@ -58,7 +58,7 @@ class DemoTenancySeeder extends Seeder
         // Bruno e Carla são usuários comuns do negócio. É esse contraste que mostra a
         // persona nova — e a Carla, que está nas duas organizações, é quem prova que
         // mexer nos papéis dela na Acme não toca nos da Globex.
-        $this->papelDoApp($ana, $acme, 'admin_organizacao');
+        $this->papelDoApp($ana, $acme, 'admin_app');
         $this->papelDoApp($bruno, $globex);
         $this->papelDoApp($carla, $acme);
         $this->papelDoApp($carla, $globex);

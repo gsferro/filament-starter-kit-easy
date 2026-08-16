@@ -74,7 +74,7 @@ class UsersRelationManager extends RelationManager
     /**
      * "Papéis nesta organização" — onde nasce o primeiro admin de uma organização.
      *
-     * Problema de bootstrap: `admin_organizacao` só vale atribuído DENTRO da organização,
+     * Problema de bootstrap: `admin_app` só vale atribuído DENTRO da organização,
      * e o Select de papéis do `UserResource` do /admin grava em `Tenant::CONTEXTO_GLOBAL`
      * (é o que ele deve fazer — lá se concedem `admin`, `infra` e `master_global`, que são
      * papéis de instalação). Promover por lá produz a falha mais silenciosa da feature: a

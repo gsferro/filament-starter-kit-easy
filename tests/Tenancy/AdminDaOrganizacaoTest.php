@@ -22,7 +22,7 @@ use Psr\Log\LoggerInterface;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * O `admin_organizacao` — quem administra UMA organização sem administrar a instalação.
+ * O `admin_app` — quem administra UMA organização sem administrar a instalação.
  *
  * O valor da feature não está nas duas telas: está nas seis barreiras que impedem esse
  * administrador de enxergar dados de outra organização ou de se promover a administrador
@@ -50,9 +50,9 @@ function cenario(): array
     $acme   = tenant('Acme', 'acme');
     $globex = tenant('Globex', 'globex');
 
-    $ana   = papelNaOrganizacao(usuario('ana@example.com'), 'admin_organizacao', $acme);
+    $ana   = papelNaOrganizacao(usuario('ana@example.com'), 'admin_app', $acme);
     $beto  = papelNaOrganizacao(usuario('beto@example.com'), 'panel_user', $acme);
-    $bruno = papelNaOrganizacao(usuario('bruno@example.com'), 'admin_organizacao', $globex);
+    $bruno = papelNaOrganizacao(usuario('bruno@example.com'), 'admin_app', $globex);
     $carla = papelNaOrganizacao(usuario('carla@example.com'), 'panel_user', $acme);
 
     papelNaOrganizacao($carla, 'panel_user', $globex);
@@ -160,7 +160,7 @@ it('oferece apenas papeis do painel app', function (): void {
 
     expect($opcoes)
         ->toContain(Role::findByName('panel_user')->getKey())
-        ->toContain(Role::findByName('admin_organizacao')->getKey())
+        ->toContain(Role::findByName('admin_app')->getKey())
         ->not->toContain(Role::findByName('admin')->getKey())
         ->not->toContain(Role::findByName('infra')->getKey())
         ->not->toContain(Role::findByName('master_global')->getKey());
@@ -178,7 +178,7 @@ it('grava o papel no contexto da organizacao', function (): void {
     $canal = Mockery::spy(LoggerInterface::class);
     Log::shouldReceive('channel')->with('autenticacao')->andReturn($canal);
 
-    $adminOrg = Role::findByName('admin_organizacao');
+    $adminOrg = Role::findByName('admin_app');
 
     noPainelDa($acme);
     $this->actingAs($ana);
@@ -209,7 +209,7 @@ it('grava o papel no contexto da organizacao', function (): void {
             && $contexto['alvo_id'] === $beto->id
             && $contexto['executor_id'] === $ana->id
             && $contexto['tenant_id'] === $acme->id
-            && in_array('admin_organizacao', $contexto['papeis'], true));
+            && in_array('admin_app', $contexto['papeis'], true));
 });
 
 it('promove a admin da organizacao pelo relation manager', function (): void {
@@ -218,7 +218,7 @@ it('promove a admin da organizacao pelo relation manager', function (): void {
     ['acme' => $acme, 'beto' => $beto] = cenario();
 
     $master   = User::where('email', config('kit.admin.email'))->firstOrFail();
-    $adminOrg = Role::findByName('admin_organizacao');
+    $adminOrg = Role::findByName('admin_app');
 
     Filament::setCurrentPanel('admin');
     $this->actingAs($master);
@@ -424,7 +424,7 @@ it('preserva os papeis do usuario nas outras organizacoes', function (): void {
     ['acme' => $acme, 'globex' => $globex, 'ana' => $ana, 'carla' => $carla] = cenario();
 
     $panelUser = Role::findByName('panel_user');
-    $adminOrg  = Role::findByName('admin_organizacao');
+    $adminOrg  = Role::findByName('admin_app');
 
     noPainelDa($acme);
     $this->actingAs($ana);

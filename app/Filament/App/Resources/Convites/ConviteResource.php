@@ -26,7 +26,7 @@ use Illuminate\Validation\Rule;
 use UnitEnum;
 
 /**
- * Convites DA ORGANIZAÇÃO corrente — o outro lado da administração do `admin_organizacao`.
+ * Convites DA ORGANIZAÇÃO corrente — o outro lado da administração do `admin_app`.
  *
  * Sem página de edição, como no /admin: o convite já foi enviado, existe um e-mail com um
  * link funcionando, e editar o papel faria a pessoa receber algo diferente do que o e-mail
@@ -103,7 +103,7 @@ class ConviteResource extends Resource
                  * SEM `->unique('users', 'email')`, e é aqui que a feature mais importa.
                  *
                  * Até a v0.11.0 este campo recusava endereço que já tinha conta — e o
-                 * `admin_organizacao` era justamente quem ficava sem NENHUM caminho para
+                 * `admin_app` era justamente quem ficava sem NENHUM caminho para
                  * trazer a consultora que já atende outro cliente. Agora o endereço com
                  * conta vira OFERTA DE ACESSO: ninguém é cadastrado de novo, a pessoa
                  * confirma autenticada e é vinculada a ESTA organização com o papel abaixo.

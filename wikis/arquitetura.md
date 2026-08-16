@@ -193,7 +193,7 @@ Assim a documentação oficial do Filament se lê sem tradução mental, e cada 
 
 | Painel | Com tenancy |
 |---|---|
-| `/app` | vira `/app/{slug}`; o usuário só enxerga os tenants a que está vinculado. Ganha a **administração da própria organização** (usuários e convites recortados a ela), para quem tem o papel `admin_organizacao` |
+| `/app` | vira `/app/{slug}`; o usuário só enxerga os tenants a que está vinculado. Ganha a **administração da própria organização** (usuários e convites recortados a ela), para quem tem o papel `admin_app` |
 | `/admin` | ganha o CRUD de tenants + o vínculo de usuários. **Não** é escopado — quem administra precisa ver todos |
 | `/infra` | inalterado. Saúde, filas e logs são da instalação, não de um cliente |
 

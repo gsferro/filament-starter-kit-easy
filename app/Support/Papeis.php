@@ -7,10 +7,10 @@ use Illuminate\Support\Str;
 /**
  * Como um papel é EXIBIDO.
  *
- * O nome do papel é chave: `master_global`, `admin_organizacao`, `panel_user`. Ele é
+ * O nome do papel é chave: `master_global`, `admin_app`, `panel_user`. Ele é
  * assim de propósito — é o que vai em `assignRole()`, em `hasRole()`, nos seeders e nas
  * policies, e mudá-lo quebraria tudo isso de uma vez. O que não serve é mostrar a chave
- * para quem opera: "admin_organizacao" é identificador, não rótulo.
+ * para quem opera: "admin_app" é identificador, não rótulo.
  *
  * Então a chave fica, e a exibição vira Title Case. Aqui, e não repetido em cada tabela,
  * porque a regra aparece em sete telas — a tabela de papéis, o cadastro de usuários, os
@@ -20,10 +20,32 @@ use Illuminate\Support\Str;
  */
 final class Papeis
 {
-    /** `master_global` → "Master Global". */
+    /**
+     * Rótulos que o Title Case não acerta sozinho.
+     *
+     * `Str::headline('panel_user')` devolve "Panel User" — inglês, e sem dizer o que o
+     * papel faz. Quem o tem opera o painel de negócio, então é isso que a tela mostra.
+     *
+     * Só entram aqui os papéis do kit cujo nome em inglês vazaria para a interface. O
+     * resto continua derivado da chave, e um papel SEU criado em `/admin` não precisa
+     * de entrada nenhuma.
+     *
+     * @var array<string, string>
+     */
+    private const ROTULOS = [
+        'panel_user'    => 'Painel App',
+        'admin_app'     => 'Administrador App',
+        'master_global' => 'Administrador Geral',
+    ];
+
+    /** `master_global` → "Master Global"; `panel_user` → "Painel App". */
     public static function rotulo(?string $nome): string
     {
-        return blank($nome) ? '—' : Str::headline($nome);
+        if (blank($nome)) {
+            return '—';
+        }
+
+        return self::ROTULOS[$nome] ?? Str::headline($nome);
     }
 
     /**
