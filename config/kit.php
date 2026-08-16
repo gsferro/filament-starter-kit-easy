@@ -15,7 +15,7 @@ return [
     | contra a árvore de trabalho, que é mais ruidosa.
     */
 
-    'version' => '0.15.0',
+    'version' => '0.16.0',
 
     /*
     |--------------------------------------------------------------------------
@@ -27,6 +27,27 @@ return [
     */
 
     'repository' => env('KIT_REPOSITORY', 'https://github.com/gsferro/filament-starter-kit-easy.git'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cor primária dos painéis
+    |--------------------------------------------------------------------------
+    | Nome de uma constante da paleta do Filament (Filament\Support\Colors\Color):
+    | Amber, Blue, Cyan, Emerald, Fuchsia, Indigo, Lime, Orange, Pink, Purple,
+    | Red, Rose, Sky, Slate, Teal, Violet.
+    |
+    | Vazio = o padrão do Filament (âmbar). O `kit:install` grava esta chave a
+    | partir da pergunta de customização, e trocar depois é editar o .env.
+    |
+    | Vale para os TRÊS painéis. A cor de uma ORGANIZAÇÃO (multi-tenancy) continua
+    | vencendo esta dentro de /app/{slug}: ela é registrada mais tarde no ciclo,
+    | no `bootUsing()` do AppPanelProvider — ver o comentário de lá.
+    |
+    | Nome fora da lista é ignorado, e o painel volta ao padrão em vez de morrer
+    | com "Undefined constant" em toda página.
+    */
+
+    'cor_primaria' => env('KIT_COR_PRIMARIA'),
 
     /*
     |--------------------------------------------------------------------------
