@@ -276,7 +276,7 @@ final class CustomizadorDaInstalacao
     /** @return array<string, mixed> */
     private function perguntarTenancy(): array
     {
-        $label = (string) config('kit.tenancy.label', 'Organização');
+        $padrao = (string) config('kit.tenancy.label', 'Organização');
 
         if (! confirm(
             label: 'Ligar o modo multi-organização (multi-tenancy)?',
@@ -286,13 +286,39 @@ final class CustomizadorDaInstalacao
             return ['tenancy' => false];
         }
 
-        $label = text(label: 'Como chamar cada organização?', default: $label, required: true);
+        $label = text(label: 'Como chamar cada organização?', default: $padrao, required: true);
 
         return [
             'tenancy'              => true,
             'tenancy_label'        => $label,
-            'tenancy_label_plural' => text(label: 'E no plural?', default: $label.'s', required: true),
+            'tenancy_label_plural' => text(
+                label: 'E no plural?',
+                default: $this->pluralSugerido($label, $padrao),
+                required: true,
+            ),
         ];
+    }
+
+    /**
+     * O plural OFERECIDO — que é só um palpite, e por isso é editável.
+     *
+     * Acrescentar "s" é a regra de plural do inglês, não do português: o default do
+     * kit é "Organização", e a sugestão ingênua oferecia **"Organizaçãos"** para
+     * quem só apertasse Enter — no caminho mais comum de todos.
+     *
+     * Quando o singular não foi alterado, a resposta certa já está na config
+     * (`label_plural`), e é ela que vale. Só um rótulo NOVO cai no palpite, e aí o
+     * "+s" acerta a maioria das palavras que alguém escolheria aqui (Empresa,
+     * Escola, Loja, Unidade, Cliente) e erra visivelmente nas outras — o que é
+     * aceitável num campo que está ali, preenchido, esperando correção.
+     */
+    private function pluralSugerido(string $label, string $padrao): string
+    {
+        if ($label === $padrao) {
+            return (string) config('kit.tenancy.label_plural', $padrao.'s');
+        }
+
+        return $label.'s';
     }
 
     /**

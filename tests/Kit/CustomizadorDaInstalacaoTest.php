@@ -348,3 +348,31 @@ it('não anexa nada quando o padrão não casa e não há fallback', function ()
 it('ignora arquivo inexistente em vez de estourar', function (): void {
     expect(SubstituicaoEmArquivo::aplicar($this->base.'/nao-existe.env', '/^A=.*$/m', 'A=1'))->toBeFalse();
 })->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| O plural sugerido para o rótulo da organização
+|--------------------------------------------------------------------------
+| Encontrado em teste manual da v0.16.1: quem apertasse Enter nas duas perguntas
+| via "Organizaçãos" oferecido — regra de plural do inglês aplicada a português,
+| no caminho mais comum de todos.
+*/
+
+it('sugere o plural certo quando o rótulo não foi alterado', function (): void {
+    $sugerido = (new ReflectionMethod(CustomizadorDaInstalacao::class, 'pluralSugerido'))
+        ->invoke(customizadorNoTemp(), 'Organização', 'Organização');
+
+    expect($sugerido)->toBe('Organizações')
+        ->and($sugerido)->not->toBe('Organizaçãos');
+})->group('kit');
+
+it('cai no palpite "+s" só quando o rótulo é novo', function (string $novo, string $esperado): void {
+    $sugerido = (new ReflectionMethod(CustomizadorDaInstalacao::class, 'pluralSugerido'))
+        ->invoke(customizadorNoTemp(), $novo, 'Organização');
+
+    expect($sugerido)->toBe($esperado);
+})->with([
+    'Empresa' => ['Empresa', 'Empresas'],
+    'Escola'  => ['Escola', 'Escolas'],
+    'Loja'    => ['Loja', 'Lojas'],
+])->group('kit');
