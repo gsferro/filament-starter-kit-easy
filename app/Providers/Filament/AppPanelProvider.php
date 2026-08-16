@@ -214,6 +214,27 @@ class AppPanelProvider extends PanelProvider
                         ->mediaPosition(MediaPosition::Left)
                         ->mediaSize('70%')
                         ->themeToggle()
+                    )
+                    /*
+                     * Recuperação de senha: o MESMO layout do login, ESPELHADO.
+                     *
+                     * `MediaPosition::Right` inverte o eixo (a CSS do pacote troca
+                     * `row` por `row-reverse`), então a arte vai para a direita e o
+                     * formulário para a esquerda. É a diferença que dá ao usuário um
+                     * sinal imediato de que ele saiu do login — sem trocar cor, texto
+                     * ou marca.
+                     *
+                     * Precisa passar pelo PLUGIN, e não por `$panel->passwordReset()`
+                     * direto, pela mesma razão do registro logo acima: é o plugin que
+                     * grava a chave 'password-reset' no AuthDesignerConfigRepository.
+                     * Sem ela a tela nasce sem mídia e sem alternador de tema — sem
+                     * erro nenhum. Ver ADR-06.
+                     */
+                    ->passwordReset(fn (AuthPageConfig $config): AuthPageConfig => $config
+                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->mediaPosition(MediaPosition::Right)
+                        ->mediaSize('70%')
+                        ->themeToggle()
                     ),
 
                 BreezyCore::make()

@@ -113,6 +113,12 @@ class AdminPanelProvider extends PanelProvider
                         ->mediaPosition(MediaPosition::Left)
                         ->mediaSize('70%')
                         ->themeToggle()
+                    )
+                    ->passwordReset(fn (AuthPageConfig $config): AuthPageConfig => $config
+                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->mediaPosition(MediaPosition::Right)
+                        ->mediaSize('70%')
+                        ->themeToggle()
                     ),
 
                 // Papéis e permissões com UI (spatie/laravel-permission).

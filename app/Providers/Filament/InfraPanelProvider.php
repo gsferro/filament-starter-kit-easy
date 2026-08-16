@@ -141,6 +141,13 @@ class InfraPanelProvider extends PanelProvider
                         ->mediaPosition(MediaPosition::Left)
                         ->mediaSize('70%')
                         ->themeToggle()
+                    )
+                    // Recuperação de senha espelhada — ver a nota no AppPanelProvider.
+                    ->passwordReset(fn (AuthPageConfig $config): AuthPageConfig => $config
+                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->mediaPosition(MediaPosition::Right)
+                        ->mediaSize('70%')
+                        ->themeToggle()
                     ),
 
                 BreezyCore::make()
