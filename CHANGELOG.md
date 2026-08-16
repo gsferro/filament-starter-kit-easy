@@ -3,6 +3,40 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.16.4] - 2026-08-16
+
+### Alterado
+
+- **⚠️ O papel `admin_organizacao` passou a se chamar `admin_app`.** É quebra para quem já
+  instalou e escreveu código com esse nome — `hasRole('admin_organizacao')`, `@role`, `@can`,
+  policies, seeders próprios. Uma migration renomeia o papel **no banco**
+  (`rename_admin_organizacao_role`), porque papel é dado e mudar só o seeder não alcançaria quem
+  já está rodando; o **seu** código ela não alcança. Procure pelo nome antigo antes de atualizar.
+
+  A migration é condicional: num projeto single-tenant, que nunca semeou esse papel, ela não cria
+  nada — papel a mais é papel que alguém atribui sem querer.
+
+- **Os papéis do kit têm nome de gente na interface.** `master_global` → **Administrador Geral**,
+  `admin_app` → **Administrador App**, `panel_user` → **Painel App**. Antes o Title Case derivava
+  da chave e produzia "Master Global" e "Panel User" — inglês, e sem dizer o que o papel faz.
+  As chaves não mudam (fora a do item acima), e um papel criado por você em `/admin` continua
+  derivando da própria chave.
+
+### Corrigido
+
+- **A suíte do kit quebrava em projeto personalizado.** Um projeto que escolheu a cor Violet e
+  chamou a organização de "Universidade" via **cinco casos falharem** — a URL do cadastro vira
+  `/admin/universidades`, o `/admin` nasce violeta em vez do âmbar padrão, e o plural sugerido
+  deixa de ser "Organizações". Nenhum era regressão.
+
+  E é isso que tornava o estrago grave: o `composer test:kit` existe para dizer se a **fundação**
+  continua íntegra depois de um `kit:update`, e um vermelho por diferença de configuração não
+  deixa ninguém distinguir uma coisa da outra.
+
+  O `phpunit.xml` passa a fixar `KIT_COR_PRIMARIA`, `KIT_DEMO` e os rótulos de tenancy, pelo mesmo
+  motivo por que já fixava banco, fila e e-mail: a suíte roda contra a configuração do kit, não
+  contra a do projeto.
+
 ## [0.16.3] - 2026-08-16
 
 ### Corrigido
