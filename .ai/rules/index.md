@@ -6,5 +6,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | app/Filament/Pages/Auth/** | .ai/rules/auth.md |
 | app/Filament/** | .ai/rules/filament.md |
+| app/Models/** | .ai/rules/models.md |
 | tests/Browser/** | .ai/rules/testes-browser.md |
 | tests/** | .ai/rules/testes.md |
