@@ -3,6 +3,8 @@
 use App\Models\Tenant;
 use App\Models\User;
 use Filament\Facades\Filament;
+use Filament\FilamentManager;
+use Filament\Support\Assets\AssetManager;
 use Filament\Support\Colors\ColorManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Facade;
@@ -229,6 +231,27 @@ function noPainelDa(Tenant $tenant): void
     app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getKey());
 }
 
+/**
+ * Define E BOOTA o painel — o que um request real faz e um teste de componente não.
+ *
+ * `Filament::setCurrentPanel()` só troca a propriedade `$currentPanel`
+ * (FilamentManager.php:885-892). Quem chama `Panel::boot()` é `Filament::bootCurrentPanel()`, e o
+ * único chamador dele em todo o Filament é o middleware `SetUpPanel` — que teste de componente
+ * Livewire não atravessa.
+ *
+ * Faz diferença sempre que a tela depende de algo registrado no `boot()` de um plugin. O caso
+ * concreto: os macros `ImageColumn::simpleLightbox()` do solution-forest/filament-simplelightbox.
+ * Sem o boot, a tela morre com `BadMethodCallException` no ARRANJO do teste, sem defeito nenhum
+ * no código.
+ *
+ * Aqui, e não dentro de um arquivo de teste, porque mais de um arquivo usa.
+ */
+function noPainelBootado(string $painel): void
+{
+    Filament::setCurrentPanel($painel);
+    Filament::bootCurrentPanel();
+}
+
 /** Nome da pivot de papéis, que muda com `config('permission.table_names')`. */
 function pivotDePapeis(): string
 {
@@ -322,6 +345,13 @@ function fronteiraDeRequest(): void
 {
     app()->forgetInstance(ColorManager::class);
     Facade::clearResolvedInstance(ColorManager::class);
+
+    app()->forgetInstance(AssetManager::class);
+    Facade::clearResolvedInstance(AssetManager::class);
+
+    app()->forgetInstance(FilamentManager::class);
+    app()->forgetInstance('filament');
+    Facade::clearResolvedInstance('filament');
 
     app()->forgetInstance(SpotlightActionRegistry::class);
 }

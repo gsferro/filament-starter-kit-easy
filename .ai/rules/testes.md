@@ -13,3 +13,7 @@ Nunca crie um clone com outro nome para escapar da colisão de redeclaração (`
 ## Uma tela aberta não é uma tela que grava
 
 `GET /admin/users` seguiu verde com o salvamento quebrado por `Select::make('roles')`. Cubra em par: a visita **e** a gravação por componente Livewire. Ver `tests/Kit/PaginasInfraTest.php:86-104`.
+
+## Teste de componente de painel
+
+`Filament::setCurrentPanel()` não boota o painel: quem chama `Panel::boot()` é o middleware `SetUpPanel`, que teste de componente não atravessa. Tela que depende de algo registrado no `boot()` de plugin precisa de `noPainelBootado()`. E toda tabela do kit carrega adiada (`deferLoading` global) — sem `->loadTable()` o HTML testado é o do esqueleto.

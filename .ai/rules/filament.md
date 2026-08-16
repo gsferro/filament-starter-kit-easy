@@ -70,3 +70,11 @@ Desligado o escopo nativo, o recorte é seu: escreva em `getEloquentQuery()` (nu
 Apontar `$tenantOwnershipRelationshipName` para a relação plural funciona e foi recusado: falha aberto, registra global scope no model compartilhado com o guard de autenticação, e traz junto o observer de vendor do `created`. Ver `app/Filament/App/Resources/Users/UserResource.php` e ADR-03 em `wikis/specs/main/admin-da-organizacao/`.
 
 Teste em par: um caso conferindo `isScopedToTenant() === false` + `Model::query()->count()` sem exception, e outro conferindo que a query fecha (0, não "todos") sem tenant corrente.
+
+## Mídia em tabela
+
+Coluna de imagem nasce com `->simpleLightbox()` e `->disk('public')` explícito, sem `defaultImageUrl()`. O plugin precisa estar registrado no painel: `simpleLightbox()` é macro do `boot(Panel $panel)`, e coluna num painel sem ele derruba a tela com `BadMethodCallException` na renderização. Documento (PDF/Office) só quando o arquivo é público e não sensível — o preview passa por Google/Microsoft.
+
+## Qual pacote de widget
+
+Gráfico é `filament-apex-charts`; stat card é `filament-stat-plus-easy`; o resto é `filament-dashboard-widgets`. Todo `ApexChartWidget` declara `$pollingInterval` (o default é 5 s por aba aberta) e `canView()` com `Schema::hasTable()` quando a fonte é tabela opcional — widget que estoura derruba o dashboard inteiro.

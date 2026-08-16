@@ -82,7 +82,8 @@
 - [x] Roteiro *Desenhado × Implementado* do `05` preenchido
 - [x] `feature-quality-gate` invocado — **ciclo 1: REPROVADO → implementação**, corrigido na mesma
       rodada. 4 Major, 3 Minor, 1 cosmético. Ver `06-relatorio-qa.md`
-- [ ] Candidatos a rule avaliados e apresentados
+- [x] Candidatos a rule avaliados e apresentados
+- [x] Gravado manualmente em `.ai/rules/testes.md` (Teste de componente de painel) — `requirement-to-rule` indisponível nesta sessão
 - [x] `git commit` — 5 commits: model, resource, cor, lock-screen, testes
 
 ## Blockers
