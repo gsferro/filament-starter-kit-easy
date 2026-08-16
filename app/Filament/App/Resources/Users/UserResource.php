@@ -17,6 +17,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -197,6 +198,16 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
+                // O avatar enviado pela própria pessoa no "Meu perfil" (Breezy), ampliável em
+                // lightbox. Mesmos cuidados do irmão em /admin: `disk('public')` explícito
+                // porque o default não é servível por URL, e SEM `defaultImageUrl()` para que
+                // quem não enviou avatar fique com a célula vazia em vez de um placeholder
+                // clicável. O macro `simpleLightbox()` vem do plugin registrado no painel.
+                ImageColumn::make('avatar_url')
+                    ->label('Avatar')
+                    ->disk('public')
+                    ->circular()
+                    ->simpleLightbox(),
                 TextColumn::make('name')->label('Nome')->searchable()->sortable(),
                 TextColumn::make('email')->label('E-mail')->searchable()->sortable(),
                 // Mostra só os papéis do contexto corrente: o `wherePivot` que o spatie

@@ -146,7 +146,17 @@ class KitServiceProvider extends ServiceProvider
     protected function configureCorrecoesDeCss(): void
     {
         FilamentAsset::register(
-            [Css::make('kit-correcoes', resource_path('css/filament/kit.css'))],
+            [
+                Css::make('kit-correcoes', resource_path('css/filament/kit.css')),
+                /*
+                 * O estilo das páginas hub em cartões. Vive aqui, e não num tema Filament, porque
+                 * o `harvirsidhu/filament-cards` não registra CSS nenhum e a CSS pré-compilada do
+                 * Filament 5 carrega quase só as classes `fi-*` — 51 das 53 utilitárias que a
+                 * blade do pacote emite não existem lá. Tudo escopado em `.kit-cards-page`.
+                 * Ver o cabeçalho de `resources/css/filament/cards.css`.
+                 */
+                Css::make('kit-cards', resource_path('css/filament/cards.css')),
+            ],
             package: 'kit',
         );
     }

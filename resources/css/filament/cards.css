@@ -1,0 +1,144 @@
+/*
+|--------------------------------------------------------------------------
+| Estilo das páginas hub em cartões (harvirsidhu/filament-cards)
+|--------------------------------------------------------------------------
+| Registrado por `KitServiceProvider::configureCorrecoesDeCss()` via
+| `FilamentAsset::register()` — o MESMO mecanismo dos plugins, e o mesmo motivo do
+| `kit.css` ao lado: o painel Filament não carrega o Vite da aplicação, então regra
+| escrita em `resources/css/app.css` nunca chega à tela.
+|
+| ## Por que este arquivo existe
+|
+| O `harvirsidhu/filament-cards` NÃO registra CSS nenhum: o service provider dele só faz
+| `->hasViews()`. A instalação oficial manda acrescentar
+|
+|     @source '.../vendor/harvirsidhu/filament-cards/resources/views';
+|
+| a um `theme.css` — o que pressupõe um TEMA FILAMENT CUSTOMIZADO. O kit não tem: nenhum
+| dos três painéis chama `viteTheme()`, de propósito, para que os painéis funcionem logo
+| após o `create-project`, sem `npm run build`.
+|
+| ## Por que o arquivo é grande
+|
+| Medido: das 53 classes que a blade do pacote emite, 51 NÃO existem na CSS pré-compilada
+| do Filament 5 — ela carrega quase só as semânticas `fi-*`, não as utilitárias genéricas
+| do Tailwind. Ou seja: não é "preencher o que faltou", é fornecer a folha inteira da
+| página. O custo real ficou acima do que o ADR-02 estimava, e está registrado lá.
+|
+| ## Escopo
+|
+| TUDO fica sob `.kit-cards-page`, a classe que as três páginas hub acrescentam em
+| `getPageClasses()`. Definir `.p-4`, `.text-sm` ou `.bg-white` no escopo global
+| atropelaria a marcação de qualquer plugin que use os mesmos nomes.
+|
+| As cores saem das variáveis que o Filament emite em runtime (`assets.blade.php`), nunca
+| de valor literal — é isso que faz a grade acompanhar o tema claro/escuro e a cor da
+| organização no painel /app.
+|
+| Depois de mexer aqui: `php artisan filament:assets`.
+|
+| Combinações que o kit NÃO usa e que por isso não estão aqui: `compact()`,
+| `collapsible()`, `columnSpan(['lg' => n])`, alinhamento diferente de Center e
+| `$columns >= 5`. As três últimas montam nome de classe por interpolação de string e
+| NUNCA seriam geradas por Tailwind, com ou sem tema — ver ADR-03.
+*/
+
+/* Layout da página ------------------------------------------------------- */
+
+.kit-cards-page .space-y-6 > * + * { margin-top: 1.5rem; }
+.kit-cards-page .space-y-3 > * + * { margin-top: 0.75rem; }
+
+.kit-cards-page .grid { display: grid; }
+.kit-cards-page .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.kit-cards-page .gap-2 { gap: 0.5rem; }
+.kit-cards-page .gap-4 { gap: 1rem; }
+
+@media (min-width: 48rem) {
+    .kit-cards-page .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 64rem) {
+    .kit-cards-page .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 80rem) {
+    .kit-cards-page .xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.kit-cards-page .flex { display: flex; }
+.kit-cards-page .flex-col { flex-direction: column; }
+.kit-cards-page .items-center { align-items: center; }
+.kit-cards-page .justify-center { justify-content: center; }
+.kit-cards-page .justify-end { justify-content: flex-end; }
+.kit-cards-page .relative { position: relative; }
+.kit-cards-page .absolute { position: absolute; }
+.kit-cards-page .inset-y-0 { top: 0; bottom: 0; }
+.kit-cards-page .end-0 { inset-inline-end: 0; }
+.kit-cards-page .w-full { width: 100%; }
+.kit-cards-page .mb-4 { margin-bottom: 1rem; }
+.kit-cards-page .pe-3 { padding-inline-end: 0.75rem; }
+.kit-cards-page .pe-9 { padding-inline-end: 2.25rem; }
+
+@media (min-width: 40rem) {
+    .kit-cards-page .sm\:w-72 { width: 18rem; }
+}
+
+/* O cartão --------------------------------------------------------------- */
+
+.kit-cards-page .rounded-xl { border-radius: 0.75rem; }
+.kit-cards-page .overflow-hidden { overflow: hidden; }
+.kit-cards-page .p-4 { padding: 1rem; }
+
+.kit-cards-page .bg-white { background-color: var(--white, #fff); }
+.kit-cards-page .shadow-sm { box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+.kit-cards-page .ring-1 { box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05), 0 0 0 1px rgb(3 7 18 / 0.05); }
+
+.kit-cards-page .transition { transition-property: color, background-color, border-color, box-shadow, transform; }
+.kit-cards-page .duration-150 { transition-duration: 150ms; }
+
+.kit-cards-page a.group:hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 0 0 1px color-mix(in oklab, var(--primary-500) 25%, transparent);
+}
+
+/* Borda de destaque do `CardItem::color()`. Sem as variantes que o kit não usa. */
+.kit-cards-page .border-l-4 { border-left-width: 4px; border-left-style: solid; }
+.kit-cards-page .border-primary-500 { border-left-color: var(--primary-500); }
+.kit-cards-page .border-success-500 { border-left-color: var(--success-500); }
+.kit-cards-page .border-danger-500 { border-left-color: var(--danger-500); }
+.kit-cards-page .border-warning-500 { border-left-color: var(--warning-500); }
+.kit-cards-page .border-info-500 { border-left-color: var(--info-500); }
+.kit-cards-page .border-gray-500 { border-left-color: var(--gray-500); }
+
+/* Tipografia e ícones ---------------------------------------------------- */
+
+.kit-cards-page .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.kit-cards-page .text-center { text-align: center; }
+.kit-cards-page .font-medium { font-weight: 500; }
+.kit-cards-page .font-semibold { font-weight: 600; }
+
+.kit-cards-page .text-gray-400 { color: var(--gray-400); }
+.kit-cards-page .text-gray-500 { color: var(--gray-500); }
+.kit-cards-page .text-gray-700 { color: var(--gray-700); }
+
+.kit-cards-page .w-10 { width: 2.5rem; }
+.kit-cards-page .h-10 { height: 2.5rem; }
+.kit-cards-page .w-4 { width: 1rem; }
+.kit-cards-page .h-4 { height: 1rem; }
+.kit-cards-page .h-5 { height: 1.25rem; }
+.kit-cards-page .w-5 { width: 1.25rem; }
+
+.kit-cards-page a.group:hover .text-gray-400 { color: var(--primary-500); }
+
+/* Tema escuro ------------------------------------------------------------ */
+
+.dark .kit-cards-page .bg-white { background-color: var(--gray-900); }
+.dark .kit-cards-page .ring-1 { box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05), 0 0 0 1px rgb(255 255 255 / 0.1); }
+.dark .kit-cards-page a.group:hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 0 0 1px color-mix(in oklab, var(--primary-400) 25%, transparent);
+}
+
+.dark .kit-cards-page .text-gray-400 { color: var(--gray-500); }
+.dark .kit-cards-page .text-gray-500 { color: var(--gray-400); }
+.dark .kit-cards-page .text-gray-700 { color: var(--gray-200); }
+
+.dark .kit-cards-page a.group:hover .text-gray-400 { color: var(--primary-400); }

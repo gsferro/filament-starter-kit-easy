@@ -6,29 +6,44 @@ namespace App\Filament\Infra\Widgets;
 
 use DateTimeInterface;
 use Fomvasss\AiTasks\Models\AiRun;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
-use LaBoiteACode\FilamentDashboardWidgets\Data\Trend;
-use LaBoiteACode\FilamentDashboardWidgets\Data\TrendPoint;
-use LaBoiteACode\FilamentDashboardWidgets\Widgets\TrendWidget;
+use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 /**
  * Execuções de IA por dia nos últimos 14 dias.
  *
- * Trend e não ComparisonChart: há UMA série (volume diário) — o
- * ComparisonChart existe para sobrepor duas, e desenhar uma só nele daria um
- * gráfico com legenda inútil. A comparação com a quinzena anterior vira um
- * número no subtítulo, que é onde ela é lida de fato.
+ * Área e não barra: a leitura que importa é a CONTINUIDADE do volume — uma parada de dois dias
+ * tem de saltar aos olhos.
+ *
+ * Migrado do `TrendWidget` do laboiteacode/filament-dashboard-widgets para o ApexCharts na
+ * 0.15.0. A regra do kit passou a ser: GRÁFICO é ApexCharts, stat card é StatPlus, todo o resto
+ * é dashboard-widgets. Este era o único gráfico do kit e virava exceção viva à regra — e
+ * contraexemplo no repositório pesa mais que convenção escrita, porque se copia o vizinho antes
+ * de ler a convenção. O nome da classe foi PRESERVADO de propósito: ele é entidade do Shield, e
+ * renomear criaria permission nova deixando `View:IaExecucoesPorDia` órfã em toda instalação já
+ * existente. Ver ADR-01 e ADR-02 da wiki `graficos-com-apexcharts`.
  */
-class IaExecucoesPorDia extends TrendWidget
+class IaExecucoesPorDia extends ApexChartWidget
 {
     private const DIAS = 14;
+
+    protected static ?string $chartId = 'iaExecucoesPorDia';
+
+    protected static ?string $heading = 'Execuções de IA por dia';
 
     protected static ?int $sort = 80;
 
     protected int|string|array $columnSpan = 'full';
 
-    protected ?string $maxHeight = '220px';
+    /*
+     * O default do pacote é 5 SEGUNDOS — por widget, por aba aberta. Aqui o dado é diário:
+     * atualizar a cada 5 s não muda um pixel e cobra do banco proporcionalmente às abas que
+     * alguém esqueceu abertas. Ver ADR-04 da wiki.
+     */
+    protected ?string $pollingInterval = null;
 
     public static function canView(): bool
     {
@@ -39,60 +54,92 @@ class IaExecucoesPorDia extends TrendWidget
         );
     }
 
-    public function getEmptyStateHeading(): string
-    {
-        return 'Nenhuma execução de IA no período';
-    }
-
     /**
-     * Subtítulo próprio: o do pacote monta a comparação com a string
-     * "Compared to the previous period", que só tem tradução en/fr.
+     * Subtítulo próprio, com a comparação contra a quinzena anterior.
+     *
+     * Ela vinha de graça no `Trend::comparison()` do widget antigo; perdê-la na migração seria
+     * entregar um gráfico mais bonito e menos informativo que o que existia.
      */
-    public function getDescription(): ?string
-    {
-        $tendencia = $this->getTrend();
-        $partes    = [$tendencia->getFormattedValue()];
-
-        if ($tendencia->hasComparison()) {
-            $partes[] = $tendencia->getComparisonLabel().' em relação aos '.self::DIAS.' dias anteriores';
-        }
-
-        return implode(' • ', array_filter($partes));
-    }
-
-    protected function getTrend(): Trend
+    protected function getSubheading(): null|string|Htmlable|View
     {
         $primeiroDia = Carbon::today()->subDays(self::DIAS - 1);
-        $porDia      = $this->contarPorDia($primeiroDia, Carbon::today()->endOfDay());
+        $total       = array_sum($this->quantidadesPorDia($primeiroDia));
+        $variacao    = $this->variacaoContraPeriodoAnterior($total, $primeiroDia);
 
-        $pontos = [];
-        $total  = 0;
+        $partes = [$total.' execuções em '.self::DIAS.' dias'];
 
-        // O eixo é construído a partir do CALENDÁRIO, não do resultado da
-        // consulta: dia sem execução tem que aparecer como zero, senão a linha
-        // "pula" o buraco e uma parada de dois dias vira um trecho reto.
-        for ($i = 0; $i < self::DIAS; $i++) {
-            $dia        = $primeiroDia->copy()->addDays($i);
-            $quantidade = $porDia[$dia->toDateString()] ?? 0;
-            $total += $quantidade;
-
-            $pontos[] = TrendPoint::make($dia->format('d/m'), $quantidade);
+        if ($variacao !== null) {
+            $partes[] = sprintf('%+.2f%%', $variacao).' em relação aos '.self::DIAS.' dias anteriores';
         }
 
-        return Trend::make('Execuções de IA por dia')
-            ->type('area')
-            ->color('primary')
-            ->points($pontos)
-            ->value($total)
-            ->comparison($this->variacaoContraPeriodoAnterior($total, $primeiroDia))
-            ->formatUsing(fn (mixed $valor): string => $valor.' execuções em '.self::DIAS.' dias');
+        return implode(' • ', $partes);
     }
 
     /**
-     * Agrupamento em PHP e não `GROUP BY DATE(created_at)`: a função de data
-     * muda de nome em cada banco (SQLite/MySQL/PostgreSQL) e o kit roda nos
-     * três. A janela é de 14 dias, então o volume trazido é limitado por
-     * construção.
+     * @return array<string, mixed>
+     */
+    protected function getOptions(): array
+    {
+        $primeiroDia  = Carbon::today()->subDays(self::DIAS - 1);
+        $quantidades  = $this->quantidadesPorDia($primeiroDia);
+        $rotulos      = [];
+
+        for ($i = 0; $i < self::DIAS; $i++) {
+            $rotulos[] = $primeiroDia->copy()->addDays($i)->format('d/m');
+        }
+
+        return [
+            'chart' => [
+                'type'    => 'area',
+                'height'  => 220,
+                'toolbar' => ['show' => false],
+            ],
+            'series' => [[
+                'name' => 'Execuções',
+                'data' => array_values($quantidades),
+            ]],
+            'xaxis' => [
+                'categories' => $rotulos,
+                'labels'     => ['style' => ['fontFamily' => 'inherit']],
+            ],
+            'yaxis' => [
+                'labels' => ['style' => ['fontFamily' => 'inherit']],
+            ],
+            // Token semântico, nunca hexadecimal: é isto que faz o gráfico acompanhar o tema e a
+            // cor da organização. Ver ADR-05 da wiki.
+            'colors'      => ['var(--primary-500)'],
+            'stroke'      => ['curve' => 'smooth', 'width' => 2],
+            'dataLabels'  => ['enabled' => false],
+        ];
+    }
+
+    /**
+     * Uma posição por dia do CALENDÁRIO, incluindo os dias sem execução.
+     *
+     * O eixo é construído a partir do calendário, e não do resultado da consulta: dia sem
+     * execução tem que aparecer como zero, senão a linha "pula" o buraco e uma parada de dois
+     * dias vira um trecho reto — mentindo sobre a operação.
+     *
+     * @return array<int, int>
+     */
+    private function quantidadesPorDia(Carbon $primeiroDia): array
+    {
+        $porDia = $this->contarPorDia($primeiroDia, Carbon::today()->endOfDay());
+
+        $quantidades = [];
+
+        for ($i = 0; $i < self::DIAS; $i++) {
+            $dia           = $primeiroDia->copy()->addDays($i);
+            $quantidades[] = $porDia[$dia->toDateString()] ?? 0;
+        }
+
+        return $quantidades;
+    }
+
+    /**
+     * Agrupamento em PHP e não `GROUP BY DATE(created_at)`: a função de data muda de nome em
+     * cada banco (SQLite/MySQL/PostgreSQL) e o kit roda nos três. A janela é de 14 dias, então
+     * o volume trazido é limitado por construção.
      *
      * @return array<string, int>
      */
@@ -109,8 +156,9 @@ class IaExecucoesPorDia extends TrendWidget
 
     /**
      * Variação percentual contra os 14 dias imediatamente anteriores.
-     * Devolve `null` quando não há base de comparação — inventar "+100%" a
-     * partir de zero é ruído, não informação.
+     *
+     * Devolve `null` quando não há base de comparação — inventar "+100%" a partir de zero é
+     * ruído, não informação.
      */
     private function variacaoContraPeriodoAnterior(int $total, Carbon $primeiroDia): ?float
     {

@@ -29,6 +29,7 @@ use Filament\Support\Facades\FilamentColor;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Gsferro\FilamentOdometerEasy\FilamentOdometerEasyPlugin;
+use Harvirsidhu\FilamentCards\FilamentCardsPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -42,6 +43,7 @@ use LaBoiteACode\FilamentDashboardWidgets\FilamentDashboardWidgetsPlugin;
 use lockscreen\FilamentLockscreen\Lockscreen;
 use Prodstarter\FilamentNotificationCenter\FilamentNotificationCenterPlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
+use SolutionForest\FilamentSimpleLightBox\SimpleLightBoxPlugin;
 use Wezlo\FilamentSearchSpotlight\Categories\ActionsCategory;
 use Wezlo\FilamentSearchSpotlight\Categories\RecordsCategory;
 use Wezlo\FilamentSearchSpotlight\FilamentSearchSpotlightPlugin;
@@ -237,6 +239,18 @@ class AppPanelProvider extends PanelProvider
                     ->preserveOnSession(),
 
                 FilamentNotificationCenterPlugin::make(),
+
+                /*
+                 * Lightbox em imagem e documento de tabela. O plugin registra MACROS
+                 * (`ImageColumn::macro('simpleLightbox', …)`) no `boot()` dele, por painel:
+                 * coluna chamando `->simpleLightbox()` num painel sem o plugin derruba a tela
+                 * com `BadMethodCallException` na renderização. Ver o comentário longo no
+                 * AdminPanelProvider e o ADR-02 da wiki lightbox-em-imagens-e-documentos.
+                 */
+                SimpleLightBoxPlugin::make(),
+
+                // Páginas hub em grade de cartões (App\Filament\App\Pages\HubDoNegocio).
+                FilamentCardsPlugin::make(),
             ])
             /*
              * Gatilho da busca ⌘K, no lugar exato do campo nativo.

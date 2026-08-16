@@ -24,6 +24,7 @@ use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Gsferro\FilamentOdometerEasy\FilamentOdometerEasyPlugin;
+use Harvirsidhu\FilamentCards\FilamentCardsPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -31,9 +32,11 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
+use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use lockscreen\FilamentLockscreen\Lockscreen;
 use Prodstarter\FilamentNotificationCenter\FilamentNotificationCenterPlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
+use SolutionForest\FilamentSimpleLightBox\SimpleLightBoxPlugin;
 use Wallacemartinss\FilamentOnboarding\FilamentOnboardingPlugin;
 use Wezlo\FilamentSearchSpotlight\Categories\ActionsCategory;
 use Wezlo\FilamentSearchSpotlight\Categories\RecordsCategory;
@@ -155,6 +158,35 @@ class AdminPanelProvider extends PanelProvider
                     ->preserveOnSession(),
 
                 FilamentNotificationCenterPlugin::make(),
+
+                /*
+                 * Lightbox em imagem e documento de tabela — o `->simpleLightbox()` das colunas.
+                 *
+                 * Registrado nos TRÊS painéis, inclusive no /infra, que hoje não tem mídia
+                 * nenhuma. O plugin não configura nada: ele REGISTRA MACROS
+                 * (`ImageColumn::macro('simpleLightbox', …)` e três irmãs) no `boot(Panel $panel)`
+                 * dele. Macro é resolvido por `Macroable::__call()` no momento da chamada, então
+                 * a primeira coluna de imagem criada num painel sem o plugin derruba a tela com
+                 * `BadMethodCallException` — na RENDERIZAÇÃO, não no boot, e com uma mensagem que
+                 * não menciona nem "painel" nem "plugin".
+                 *
+                 * A economia seria um `<script>` por página; o custo é um modo de falha caro e
+                 * silencioso até o clique. Ver ADR-02 da wiki lightbox-em-imagens-e-documentos.
+                 *
+                 * Depois de instalar/atualizar: `php artisan filament:assets`. Sem o JS publicado
+                 * o clique é INERTE, sem erro nenhum.
+                 */
+                SimpleLightBoxPlugin::make(),
+
+                /*
+                 * Gráficos do kit. Registrado só onde há gráfico — /admin e /infra.
+                 * O primeiro gráfico criado no /app precisa registrar o plugin lá junto,
+                 * pelo mesmo motivo do lightbox acima.
+                 */
+                FilamentApexChartsPlugin::make(),
+
+                // Páginas hub em grade de cartões (App\Filament\Admin\Pages\HubDeAdministracao).
+                FilamentCardsPlugin::make(),
             ])
             /*
              * Gatilho da busca ⌘K, no lugar exato do campo nativo.

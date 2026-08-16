@@ -239,18 +239,173 @@ php artisan make:filament-page Relatorio --panel=infra --no-interaction
 
 O discovery pega a classe automaticamente (`app/Filament/{Painel}/Pages`). Para recortar acesso, implemente `canAccess()` na página — a busca ⌘K e o menu respeitam isso sozinhos.
 
+> **Vale um hub de cartões?** Se a página que você está criando é um **índice de caminhos** — várias
+> escolhas, atalhos rápidos, uma área de configurações —, ela provavelmente quer ser uma
+> `CardsPage`. Ver [Página hub de cards](#página-hub-de-cards).
+
 ## Widget de dashboard
 
 ```bash
 php artisan make:filament-widget VendasStats --panel=app --no-interaction
 ```
 
-- Contador animado: `gsferro/filament-odometer-easy` (`OdometerStat`).
-- Card com ícone de canto e borda colorida: `gsferro/filament-stat-plus-easy`.
-- Funil, meta, timeline, breakdown: `laboiteacode/filament-dashboard-widgets`.
-- Série temporal: `flowframe/laravel-trend` para agregar por período.
+### Qual pacote usar — a regra é por TIPO DE DESENHO
+
+| Vou desenhar | Pacote | Classe base |
+|---|---|---|
+| **Gráfico** — linha, área, barra, rosca, radial, radar, heatmap | `leandrocfe/filament-apex-charts` | `ApexChartWidget` |
+| **Stat card** — número grande, ícone de canto, variação | `gsferro/filament-stat-plus-easy` | `StatsOverviewWidget` + `StatPlus` |
+| **Todo o resto** — métrica, meta, breakdown, barra segmentada, timeline, lista, bullet | `laboiteacode/filament-dashboard-widgets` | `MetricWidget`, `GoalProgressWidget`, `BreakdownWidget`, … |
+| Contador animado dentro de um stat | `gsferro/filament-odometer-easy` | `OdometerStat` |
+
+Sem essa fronteira a escolha vira preferência de quem escreve, e o dashboard fica com duas
+linguagens visuais para a mesma pergunta. Ver ADR-01 da wiki `graficos-com-apexcharts`.
+
+### Gráfico novo
+
+```bash
+php artisan make:filament-apex-charts VendasPorMes
+```
+
+Checklist — cada item existe por causa de um modo de falha real:
+
+1. **`$pollingInterval` explícito, sempre.** O default do pacote é **5 segundos**, por widget e
+   por aba aberta: uma aba esquecida gera dezenas de consultas agregadas por minuto,
+   indefinidamente. Use `null` para dado que muda por ação humana.
+2. **`canView()` com `Schema::hasTable()`** quando a fonte é tabela de pacote opcional. Widget
+   que estoura derruba o **dashboard inteiro**, não só o próprio card.
+3. **Estado vazio com a série ZERADA**, nunca `series: []` — array vazio faz o ApexCharts
+   desenhar um canvas em branco, sem legenda e sem explicação. É o estado de toda instalação
+   nova.
+4. **Cor por token semântico** (`var(--success-500)`, `var(--primary-500)`), nunca hexadecimal:
+   é isso que faz o gráfico acompanhar tema claro/escuro e a cor da organização no `/app`.
+5. **`$chartId` declarado** — vira o `id` do elemento, e é o seletor dos testes de browser.
+6. **Plugin registrado no painel**: `FilamentApexChartsPlugin::make()`. Hoje está em `/admin` e
+   `/infra`; o primeiro gráfico do `/app` precisa registrá-lo lá junto.
+7. **Rodar os dois seeders** — widget é entidade do Shield e nasce sem permission.
+
+### Quando rosca, quando radial
+
+- **Rosca (`donut`)**: categorias mutuamente exclusivas que somam o total, de 2 a 5 fatias, e a
+  leitura procurada é a **proporção entre elas**. Ex.: `ConvitesPorSituacao`.
+- **Radial (`radialBar`)**: **um** número entre 0 e 100%. Ex.: `FilasTaxaDeSucesso`.
+- **Nenhum dos dois** para série temporal — aí é área ou linha.
+
+### Quando NÃO usar gráfico
+
+O exemplo está no próprio kit: `SaudeAplicacaoPorStatus` recusou rosca e usa barra segmentada,
+porque a pergunta ali é *"quanto da barra ainda é verde"* — e barra horizontal responde isso mais
+rápido que comparar ângulos. Gráfico não é sempre a melhor resposta para "tenho categorias que
+somam o todo".
 
 Olhe `app/Filament/Infra/Widgets/` antes de escrever do zero — provavelmente já existe um widget parecido para copiar a forma.
+
+## Imagem ou documento em tabela
+
+Toda coluna de mídia do kit nasce com lightbox: clicar na miniatura amplia sobre a listagem, sem
+sair da página. É o `solution-forest/filament-simplelightbox`.
+
+```php
+use Filament\Tables\Columns\ImageColumn;
+
+ImageColumn::make('avatar_url')
+    ->label('Avatar')
+    // `disk('public')` explícito: o default é `local`, que aponta para storage/app/private e
+    // NÃO é servível por URL — a miniatura nasceria quebrada.
+    ->disk('public')
+    ->circular()
+    // Sem `defaultImageUrl()`: quem não enviou nada fica com a célula VAZIA, e não com um
+    // placeholder clicável que abriria o lightbox em cima de nada.
+    ->simpleLightbox(),
+```
+
+Duas armadilhas, as duas silenciosas:
+
+1. **O plugin tem de estar registrado NO PAINEL.** `simpleLightbox()` é um **macro**, registrado
+   no `boot(Panel $panel)` do plugin. Num painel sem ele, a coluna derruba a tela com
+   `BadMethodCallException` **na renderização** — não no boot, não no deploy. Os três painéis do
+   kit já registram; painel novo precisa registrar junto.
+2. **`php artisan filament:assets` depois de instalar ou atualizar.** Sem o JS publicado o clique
+   é **inerte**, sem erro nenhum.
+
+`ImageColumn` confere a existência do arquivo por padrão e devolve célula vazia quando não acha —
+não é preciso `Storage::exists()` à mão.
+
+### Documento (PDF, Office): só se o arquivo for público e não sensível
+
+```php
+TextColumn::make('manual_url')
+    ->label('Manual')
+    ->simpleLightbox(fn ($record) => $record->manual_url),
+```
+
+⚠️ **O preview de documento sai da sua aplicação.** O JS do pacote monta PDF via
+`https://docs.google.com/viewer?url=…` e Office via `https://view.officeapps.live.com/…`. Duas
+consequências: a URL do arquivo é **enviada a um terceiro**, e o arquivo precisa ser
+**publicamente acessível** — documento atrás de autenticação devolve preview em branco, sem erro.
+
+Regra do kit: **imagem sempre; documento apenas quando já é público e não é sensível** (manual,
+catálogo, folheto). Contrato, holerite, anexo de cliente e qualquer coisa com dado pessoal seguem
+com download autenticado, sem lightbox. Ver ADR-03 da wiki `lightbox-em-imagens-e-documentos`.
+
+## Página hub de cards
+
+Quando um painel — ou um cluster, ou uma área de configurações — tem muitos destinos, uma **grade
+de cartões** lê melhor que uma árvore de barra lateral. É o `harvirsidhu/filament-cards`.
+
+```php
+use App\Filament\Concerns\DescobreCardsDoPainel;
+use Harvirsidhu\FilamentCards\Filament\Pages\CardsPage;
+
+class HubDeInfraestrutura extends CardsPage
+{
+    use DescobreCardsDoPainel;
+
+    protected static ?int $navigationSort = -10;
+
+    protected static bool $searchable = true;
+
+    /** A classe que dá escopo ao `resources/css/filament/cards.css` — sem ela a grade sai sem estilo. */
+    public function getPageClasses(): array
+    {
+        return ['kit-cards-page'];
+    }
+
+    protected static function getCards(): array
+    {
+        return static::cardsDoPainel(excluir: [static::class, Dashboard::class]);
+    }
+}
+```
+
+### Quatro casos de uso
+
+1. **Porta de entrada de painel denso** — é o que o kit faz nos três painéis. O hub **soma** à
+   barra lateral, não a substitui: esconder itens da navegação quebraria a busca ⌘K e custaria
+   dois cliques onde havia um.
+2. **Hub de configurações** — agrupar as páginas de settings numa grade em vez de espalhá-las
+   pelo menu.
+3. **Página inicial de Cluster** — aí sim vale o `discoverClusterCards()` do pacote, que já filtra
+   por `canAccess()` sozinho.
+4. **Atalhos externos** — `CardItem::make('https://status.exemplo.com')->openUrlInNewTab()`.
+
+### O que NÃO fazer
+
+- **`CardItem::make(SeuResource::class)` cru.** O `CardItem` **não** verifica autorização: o
+  cartão aparece para todo mundo e só devolve 403 no clique, vazando a existência da tela. Use
+  `App\Filament\Concerns\DescobreCardsDoPainel`, que filtra por `canAccess()` por construção.
+- **`$columns` ≥ 5, `columnSpan(['lg' => n])` e cor de ícone no hover.** As três montam o nome da
+  classe CSS por interpolação de string, e Tailwind **nunca** gera classe montada em runtime —
+  com ou sem tema. Ver ADR-03 da wiki `hub-de-navegacao-em-cards`.
+- **Usar o pacote como componente de formulário.** Ele transforma uma *página* em grade de links;
+  não substitui `Radio` nem `Select`.
+
+### Depois de criar
+
+1. Os **dois seeders** do Shield — Page nova nasce sem permission e responde 403 para todo mundo.
+2. `php artisan filament:assets` se mexer em `resources/css/filament/cards.css`.
+3. No painel `app`: a página **só** entra em `PapeisSeeder::permissoesDeAdministracaoDoApp()` se
+   for de administração. Hub de navegação **não** é — ver ADR-05 da wiki.
 
 ## Health check novo
 

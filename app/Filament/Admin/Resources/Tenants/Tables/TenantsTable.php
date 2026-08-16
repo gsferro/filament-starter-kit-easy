@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Tenants\Tables;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -21,6 +22,24 @@ class TenantsTable
         return $table
             ->defaultSort('nome')
             ->columns([
+                /*
+                 * A logo enviada no formulário da organização, ampliável em lightbox.
+                 *
+                 * Quadrada e não `circular()`: logo costuma ser retangular, e o corte circular
+                 * comeria as pontas. Diferente do avatar de pessoa, de propósito.
+                 *
+                 * A coluna NÃO usa `Tenant::logoUrl()`, que confere `Storage::exists()`: isso
+                 * seria uma ida ao disco por linha renderizada, a cada paginação, ordenação e
+                 * busca. Registro cuja logo sumiu do disco mostra imagem quebrada aqui — o
+                 * comportamento padrão de qualquer ImageColumn. Onde a verificação importa (a
+                 * tela de bloqueio) o acessor continua sendo usado. Ver ADR-05 da wiki
+                 * lightbox-em-imagens-e-documentos.
+                 */
+                ImageColumn::make('logo')
+                    ->label('Logo')
+                    ->disk('public')
+                    ->size(40)
+                    ->simpleLightbox(),
                 TextColumn::make('nome')->label('Nome')->searchable(['nome', 'slug'])->sortable(),
                 TextColumn::make('slug')->label('Slug')->badge()->color('gray')->searchable(),
                 IconColumn::make('ativo')->label('Ativo')->boolean(),

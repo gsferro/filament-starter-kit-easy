@@ -15,6 +15,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Spatie\Permission\Models\Role;
@@ -134,6 +135,26 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
+                /*
+                 * O avatar que a pessoa enviou no "Meu perfil" (Breezy, `hasAvatars: true`),
+                 * ampliável em lightbox — `->simpleLightbox()`, do
+                 * solution-forest/filament-simplelightbox.
+                 *
+                 * `disk('public')` explícito: o default é `local`, que aponta para
+                 * storage/app/private e NÃO é servível por URL — a miniatura nasceria quebrada.
+                 * É o mesmo disk em que o Breezy grava.
+                 *
+                 * SEM `defaultImageUrl()`: quem nunca enviou avatar tem de ficar com a célula
+                 * VAZIA, não com um placeholder clicável que abriria o lightbox em cima de nada.
+                 *
+                 * O macro vem do plugin registrado no painel (AdminPanelProvider). Painel sem o
+                 * plugin + esta linha = BadMethodCallException na renderização da tabela.
+                 */
+                ImageColumn::make('avatar_url')
+                    ->label('Avatar')
+                    ->disk('public')
+                    ->circular()
+                    ->simpleLightbox(),
                 TextColumn::make('name')->label('Nome')->searchable()->sortable(),
                 TextColumn::make('email')->label('E-mail')->searchable()->sortable(),
                 TextColumn::make('roles.name')->label('Papéis')->badge(),

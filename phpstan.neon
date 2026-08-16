@@ -4,6 +4,28 @@ includes:
 parameters:
     level: 6
 
+    ignoreErrors:
+        # `simpleLightbox()` é MACRO: o solution-forest/filament-simplelightbox o registra em
+        # `ImageColumn::macro(...)` dentro do `boot(Panel $panel)` do plugin
+        # (SimpleLightBoxPlugin.php:24-104). Macro é resolvido em runtime por
+        # `Macroable::__call()`, e o boot do painel só acontece dentro de um request de painel
+        # (middleware `SetUpPanel`) — nunca durante a análise. Nenhuma análise estática o enxerga.
+        #
+        # Tentado e descartado ANTES desta exceção:
+        #   - `stubFiles`: PHPStan usa stub para SOBRESCREVER assinatura de método existente,
+        #     não para ACRESCENTAR método a uma classe de vendor. Sem efeito, verificado.
+        #   - replicar as 5 linhas do macro com a API pública da coluna: acopla o kit ao
+        #     miolo do vendor e quebra calado no primeiro upgrade que mudar o gatilho.
+        #
+        # A cobertura de verdade deste ponto é o teste, não o analisador:
+        # `tests/Kit/LightboxEmTabelaTest.php` assere o gatilho `SimpleLightBox.open` no HTML e
+        # a presença do plugin nos três painéis. Se o macro sumir num upgrade, ele fica
+        # vermelho — que é mais do que o PHPStan faria aqui de qualquer forma.
+        -
+            message: '#Call to an undefined method .*::simpleLightbox\(\)#'
+            paths:
+                - app/Filament/*/Resources/**
+
     paths:
         - app
         - bootstrap/app.php

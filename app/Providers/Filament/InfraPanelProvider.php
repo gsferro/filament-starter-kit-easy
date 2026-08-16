@@ -30,6 +30,7 @@ use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Gsferro\FilamentOdometerEasy\FilamentOdometerEasyPlugin;
+use Harvirsidhu\FilamentCards\FilamentCardsPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -39,11 +40,13 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
 use LaBoiteACode\DependencyGraph\DependencyGraphPlugin;
 use LaBoiteACode\FilamentLogsExplorer\FilamentLogsExplorerPlugin;
+use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use lockscreen\FilamentLockscreen\Lockscreen;
 use MominAlZaraa\FilamentComposerReleaseNotifier\FilamentComposerReleaseNotifierPlugin;
 use Prodstarter\FilamentNotificationCenter\FilamentNotificationCenterPlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
 use ShuvroRoy\FilamentSpatieLaravelHealth\FilamentSpatieLaravelHealthPlugin;
+use SolutionForest\FilamentSimpleLightBox\SimpleLightBoxPlugin;
 use Tapp\FilamentAuditing\FilamentAuditingPlugin;
 use Tapp\FilamentAuthenticationLog\FilamentAuthenticationLogPlugin;
 use Wezlo\FilamentSearchSpotlight\Categories\ActionsCategory;
@@ -225,6 +228,23 @@ class InfraPanelProvider extends PanelProvider
                     ->preserveOnSession(),
 
                 FilamentNotificationCenterPlugin::make(),
+
+                /*
+                 * Lightbox em imagem e documento de tabela.
+                 *
+                 * Registrado AQUI mesmo sem nenhuma coluna de mídia no /infra hoje: o plugin
+                 * registra MACROS por painel, e a primeira `ImageColumn` que alguém criar neste
+                 * painel derrubaria a tela com `BadMethodCallException` na renderização — uma
+                 * falha cara e silenciosa até o clique, para economizar um `<script>`.
+                 * Ver ADR-02 da wiki lightbox-em-imagens-e-documentos.
+                 */
+                SimpleLightBoxPlugin::make(),
+
+                // Os gráficos do kit (App\Filament\Infra\Widgets\Ia*, FilasTaxaDeSucesso).
+                FilamentApexChartsPlugin::make(),
+
+                // Páginas hub em grade de cartões (App\Filament\Infra\Pages\HubDeInfraestrutura).
+                FilamentCardsPlugin::make(),
             ])
             /*
              * Rótulos da Central de comandos em pt-BR. Precisa ser em bootUsing():

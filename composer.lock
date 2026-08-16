@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1d68a68991b96ff37ff378efcfa81a0c",
+    "content-hash": "ef8267529114bf40316b2d71f5628da7",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -3856,6 +3856,87 @@
             "time": "2026-07-17T13:53:03+00:00"
         },
         {
+            "name": "harvirsidhu/filament-cards",
+            "version": "v1.0.9",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/harvirsidhu/filament-cards.git",
+                "reference": "71a3147a012d85cf4e1bc0ff542e6c0135e93ebc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/harvirsidhu/filament-cards/zipball/71a3147a012d85cf4e1bc0ff542e6c0135e93ebc",
+                "reference": "71a3147a012d85cf4e1bc0ff542e6c0135e93ebc",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^4.0|^5.0",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.15.0"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.0",
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^8.0",
+                "orchestra/testbench": "^9.0|^10.0",
+                "pestphp/pest": "^3.7|^4.0",
+                "pestphp/pest-plugin-arch": "^3.0|^4.0",
+                "pestphp/pest-plugin-laravel": "^3.0|^4.0",
+                "pestphp/pest-plugin-livewire": "^3.0|^4.0",
+                "rector/rector": "^2.0",
+                "spatie/laravel-ray": "^1.26"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Harvirsidhu\\FilamentCards\\FilamentCardsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Harvirsidhu\\FilamentCards\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "harvirsidhu",
+                    "email": "harvirsidhu@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A Filament-native cards plugin for organizing pages and resources into a card-based navigation hub.",
+            "homepage": "https://github.com/harvirsidhu/filament-cards",
+            "keywords": [
+                "Settings",
+                "cards",
+                "cluster",
+                "control-panel",
+                "filament",
+                "filament-cards",
+                "filament-plugin",
+                "filamentphp",
+                "harvirsidhu",
+                "laravel"
+            ],
+            "support": {
+                "issues": "https://github.com/harvirsidhu/filament-cards/issues",
+                "source": "https://github.com/harvirsidhu/filament-cards"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/:vendor_name",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-07-26T16:25:00+00:00"
+        },
+        {
             "name": "jeffgreco13/filament-breezy",
             "version": "v3.2.8",
             "source": {
@@ -5745,6 +5826,82 @@
                 }
             ],
             "time": "2026-03-08T20:05:35+00:00"
+        },
+        {
+            "name": "leandrocfe/filament-apex-charts",
+            "version": "5.1.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/leandrocfe/filament-apex-charts.git",
+                "reference": "353cd3ef0d5958863da93c0c5c59d1948da8661b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/leandrocfe/filament-apex-charts/zipball/353cd3ef0d5958863da93c0c5c59d1948da8661b",
+                "reference": "353cd3ef0d5958863da93c0c5c59d1948da8661b",
+                "shasum": ""
+            },
+            "require": {
+                "filament/schemas": "^v4.0.0|^v5.0.0",
+                "filament/widgets": "^v4.0.0|^v5.0.0",
+                "illuminate/contracts": "^11.0|^12.0|^13.0",
+                "livewire/livewire": "^3.0|^4.0",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.13.0"
+            },
+            "require-dev": {
+                "filament/filament": "^4.0|^5.0",
+                "larastan/larastan": "^3.0.1",
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^8.0",
+                "orchestra/testbench": "^9.0|^10.0|^11.0",
+                "pestphp/pest": "^3.0",
+                "pestphp/pest-plugin-laravel": "^3.0",
+                "phpstan/extension-installer": "^1.1",
+                "phpstan/phpstan-deprecation-rules": "^2.0",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpunit/phpunit": "^11.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "FilamentApexCharts": "Leandrocfe\\FilamentApexCharts\\Facades\\FilamentApexCharts"
+                    },
+                    "providers": [
+                        "Leandrocfe\\FilamentApexCharts\\FilamentApexChartsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Leandrocfe\\FilamentApexCharts\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Leandro Costa Ferreira",
+                    "email": "leandrocfe@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Apex Charts integration for Filament PHP.",
+            "homepage": "https://github.com/leandrocfe/filament-apex-charts",
+            "keywords": [
+                "apexcharts",
+                "filament-apex-charts",
+                "laravel",
+                "leandrocfe"
+            ],
+            "support": {
+                "issues": "https://github.com/leandrocfe/filament-apex-charts/issues",
+                "source": "https://github.com/leandrocfe/filament-apex-charts/tree/5.1.3"
+            },
+            "time": "2026-07-13T11:08:40+00:00"
         },
         {
             "name": "livewire/blaze",
@@ -9560,6 +9717,88 @@
                 }
             ],
             "time": "2026-06-14T07:47:18+00:00"
+        },
+        {
+            "name": "solution-forest/filament-simplelightbox",
+            "version": "1.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/solutionforest/Filament-SimpleLightBox.git",
+                "reference": "643062c2cedd77ad967d023092442893d2ee751b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/solutionforest/Filament-SimpleLightBox/zipball/643062c2cedd77ad967d023092442893d2ee751b",
+                "reference": "643062c2cedd77ad967d023092442893d2ee751b",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^4.0|^5.0",
+                "filament/infolists": "^4.0|^5.0",
+                "filament/tables": "^4.0|^5.0",
+                "illuminate/contracts": "^11.28|^12.0|^13.0",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.15.0"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.0",
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^8.0",
+                "orchestra/testbench": "^9.0|^10.0|^11.0",
+                "pestphp/pest": "^3.0|^4.0",
+                "pestphp/pest-plugin-arch": "^3.0|^4.0",
+                "pestphp/pest-plugin-laravel": "^3.0|^4.0",
+                "phpstan/extension-installer": "^1.1",
+                "phpstan/phpstan-deprecation-rules": "^2.0",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "spatie/laravel-ray": "^1.26"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "FilamentSimpleLightBox": "SolutionForest\\FilamentSimpleLightBox\\Facades\\FilamentSimpleLightBox"
+                    },
+                    "providers": [
+                        "SolutionForest\\FilamentSimpleLightBox\\FilamentSimpleLightBoxServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "SolutionForest\\FilamentSimpleLightBox\\": "src/",
+                    "SolutionForest\\FilamentSimpleLightBox\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "alan",
+                    "email": "info@solutionforest.net",
+                    "role": "Developer"
+                }
+            ],
+            "description": "This is my package filament-simplelightbox",
+            "homepage": "https://github.com/solutionforest/filament-simplelightbox",
+            "keywords": [
+                "filament-simplelightbox",
+                "laravel",
+                "solutionforest"
+            ],
+            "support": {
+                "issues": "https://github.com/solutionforest/filament-simplelightbox/issues",
+                "source": "https://github.com/solutionforest/filament-simplelightbox"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/SolutionForest",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-04-29T07:46:58+00:00"
         },
         {
             "name": "spatie/db-dumper",
