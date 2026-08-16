@@ -214,6 +214,11 @@ php artisan kit:tenancy          # liga o modo
 php artisan kit:tenancy --demo   # liga + cria um cenário de demonstração
 ```
 
+> O `--demo` também escreve `KIT_DEMO=true` no `.env`. É essa chave que faz o resource de exemplo
+> **Projetos** aparecer no `/app` — sem ela o painel de negócio continua vazio, que é o desenho do
+> kit. Para tirar a demo da vista sem apagar nada, `KIT_DEMO=false`; para removê-la de vez, apague
+> os arquivos que o comando lista ao final.
+
 | Painel | Com o modo ligado |
 |---|---|
 | **App** | vira `/app/{tenant}`. O usuário só enxerga os tenants a que está vinculado, e ganha a **administração da própria organização** |

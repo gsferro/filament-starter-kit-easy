@@ -3,6 +3,39 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.16.2] - 2026-08-16
+
+### Adicionado
+
+- **A recuperação de senha ganhou o layout do Auth Designer, espelhado.** As telas de
+  `/{painel}/password-reset` não passavam pelo plugin — caíam no layout padrão do Filament, sem
+  arte e sem alternador de tema. Agora usam a mesma arte do login com o eixo invertido:
+  **arte à direita, formulário à esquerda**. É o sinal de que se saiu do login, sem trocar cor,
+  texto ou marca. Vale para os três painéis.
+
+### Corrigido
+
+- **O resource de exemplo aparecia em todo projeto.** `Projetos` é a demonstração do isolamento
+  entre organizações, criada por `kit:tenancy --demo` — mas não tinha guarda nenhuma e ocupava o
+  menu do `/app` de qualquer instalação, com ou sem multi-organização. O painel de negócio nasce
+  **vazio** de propósito: ninguém sabe o que o seu projeto vai construir.
+
+  Agora ele exige as duas condições: multi-organização ligada **e** demo. A segunda não existia —
+  o `--demo` só rodava o seeder —, então nasceu a chave `KIT_DEMO` / `config('kit.demo')`, que o
+  próprio comando escreve. Sem ela a demo nasceria invisível: dados no banco e menu vazio.
+
+  A guarda é `canAccess()` **e** `shouldRegisterNavigation()`. Só o segundo tiraria o item do menu
+  deixando a rota de pé e a busca ⌘K oferecendo "Criar projeto" — affordance para uma tela que não
+  deveria existir ali.
+
+  > Num projeto que já rodou `kit:tenancy --demo`, acrescente `KIT_DEMO=true` ao `.env` para
+  > continuar vendo a tela de Projetos.
+
+- **O plural sugerido para o rótulo da organização usava a regra do inglês.** Quem apertasse Enter
+  nas duas perguntas da instalação via **"Organizaçãos"** oferecido. Quando o rótulo não é
+  alterado, a sugestão passa a vir de `config('kit.tenancy.label_plural')` — só um rótulo novo cai
+  no palpite `+s`, que acerta as palavras que alguém de fato escolhe aqui (Empresa, Escola, Loja).
+
 ## [0.16.1] - 2026-08-16
 
 ### Corrigido

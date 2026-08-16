@@ -15,7 +15,7 @@ return [
     | contra a árvore de trabalho, que é mais ruidosa.
     */
 
-    'version' => '0.16.1',
+    'version' => '0.16.2',
 
     /*
     |--------------------------------------------------------------------------
@@ -89,6 +89,27 @@ return [
         'slug' => env('KIT_TENANCY_SLUG', 'organizacoes'),
 
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cenário de demonstração
+    |--------------------------------------------------------------------------
+    | Ligado por `php artisan kit:tenancy --demo`, que cria duas organizações,
+    | três usuários e alguns projetos para você VER o isolamento funcionando.
+    |
+    | É esta chave que faz o resource de Projetos aparecer no painel /app. Sem
+    | ela o painel nasce vazio, que é o desenho do kit: ninguém sabe o que o seu
+    | projeto vai construir, e um resource de exemplo no menu de um projeto de
+    | verdade é lixo que alguém vai ter de limpar.
+    |
+    | Desligar aqui tira a demo da vista sem apagar nada. Para removê-la de vez,
+    | apague os arquivos que o `kit:tenancy` lista ao final.
+    |
+    | Só tem efeito com a multi-organização ligada: a demo É o cenário de
+    | tenancy, e um Projeto sem tenant não demonstra isolamento nenhum.
+    */
+
+    'demo' => (bool) env('KIT_DEMO', false),
 
     /*
     |--------------------------------------------------------------------------
