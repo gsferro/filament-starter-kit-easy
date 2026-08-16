@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Convites\Tables;
 
 use App\Models\Convite;
+use App\Support\Papeis;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Support\Icons\Heroicon;
@@ -27,7 +28,8 @@ class ConvitesTable
             ->columns([
                 TextColumn::make('email')->label('E-mail')->searchable()->sortable(),
 
-                TextColumn::make('papel.name')->label('Papel')->badge(),
+                TextColumn::make('papel.name')->label('Papel')->badge()
+                    ->formatStateUsing(fn (?string $state): string => Papeis::rotulo($state)),
 
                 TextColumn::make('tenant.nome')
                     ->label(config('kit.tenancy.label', 'Organização'))

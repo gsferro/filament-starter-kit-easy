@@ -7,6 +7,7 @@ use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Filament\Admin\Resources\Users\Pages\ListUsers;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\User;
+use App\Support\Papeis;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -57,6 +58,7 @@ class UserResource extends Resource
             Select::make('roles')
                 ->label('Papéis')
                 ->relationship('roles', 'name')
+                ->getOptionLabelFromRecordUsing(fn (Role $record): string => Papeis::rotulo($record->name))
                 ->multiple()
                 ->preload()
                 ->searchable()
@@ -157,7 +159,8 @@ class UserResource extends Resource
                     ->simpleLightbox(),
                 TextColumn::make('name')->label('Nome')->searchable()->sortable(),
                 TextColumn::make('email')->label('E-mail')->searchable()->sortable(),
-                TextColumn::make('roles.name')->label('Papéis')->badge(),
+                TextColumn::make('roles.name')->label('Papéis')->badge()
+                    ->formatStateUsing(fn (?string $state): string => Papeis::rotulo($state)),
                 TextColumn::make('created_at')->label('Criado em')->dateTime('d/m/Y H:i')->sortable(),
             ])
             ->recordActions([

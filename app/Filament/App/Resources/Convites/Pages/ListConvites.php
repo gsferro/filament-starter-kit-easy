@@ -4,6 +4,8 @@ namespace App\Filament\App\Resources\Convites\Pages;
 
 use App\Filament\App\Resources\Convites\ConviteResource;
 use App\Filament\Concerns\ConvidaEmMassa;
+use App\Models\Role;
+use App\Support\Papeis;
 use Asmit\ResizedColumn\HasResizableColumn;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
@@ -28,6 +30,7 @@ class ListConvites extends ListRecords
                     ->label('Papel')
                     // Barreira de UX: só papéis do painel app aparecem.
                     ->relationship('papel', 'name', fn (Builder $query): Builder => $query->where('painel', 'app'))
+                    ->getOptionLabelFromRecordUsing(fn (Role $record): string => Papeis::rotulo($record->name))
                     ->required()
                     ->preload()
                     ->searchable()

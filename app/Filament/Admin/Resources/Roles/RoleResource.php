@@ -9,6 +9,7 @@ use App\Filament\Admin\Resources\Roles\Pages\EditRole;
 use App\Filament\Admin\Resources\Roles\Pages\ListRoles;
 use App\Filament\Admin\Resources\Roles\Pages\ViewRole;
 use App\Support\Paineis;
+use App\Support\Papeis;
 use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use BezhanSalleh\FilamentShield\Support\Utils;
@@ -29,7 +30,6 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\HtmlString;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Unique;
 use Override;
 
@@ -87,7 +87,7 @@ class RoleResource extends Resource
                                     ->maxLength(255),
 
                                 Select::make('painel')
-                                    ->label('Painel')
+                                    ->label('Acesso ao painel')
                                     ->options(Paineis::opcoes())
                                     ->placeholder('Nenhum — o papel não abre painel')
                                     ->helperText('É este campo que dá acesso ao painel. Papel sem painel só carrega permissões: quem o tiver sozinho não entra em lugar nenhum.')
@@ -123,17 +123,17 @@ class RoleResource extends Resource
                 TextColumn::make('name')
                     ->weight(FontWeight::Medium)
                     ->label(__('filament-shield::filament-shield.column.name'))
-                    ->formatStateUsing(fn (string $state): string => Str::headline($state))
+                    ->formatStateUsing(fn (string $state): string => Papeis::rotulo($state))
                     ->searchable(),
                 TextColumn::make('guard_name')
                     ->badge()
                     ->color('warning')
                     ->label(__('filament-shield::filament-shield.column.guard_name')),
                 TextColumn::make('painel')
-                    ->label('Painel')
+                    ->label('Acesso ao painel')
                     ->badge()
                     ->color(fn (?string $state): string => $state === null ? 'gray' : 'success')
-                    ->formatStateUsing(fn (?string $state): string => $state === null ? '—' : '/'.$state)
+                    ->formatStateUsing(fn (?string $state): string => Papeis::rotuloDoPainel($state))
                     ->default(null),
                 TextColumn::make('team.name')
                     ->default('Global')

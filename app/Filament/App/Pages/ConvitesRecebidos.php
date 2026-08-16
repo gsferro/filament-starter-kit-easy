@@ -4,6 +4,7 @@ namespace App\Filament\App\Pages;
 
 use App\Models\Convite;
 use App\Models\User;
+use App\Support\Papeis;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
@@ -69,7 +70,8 @@ class ConvitesRecebidos extends Page implements HasTable
                 TextColumn::make('tenant.nome')
                     ->label(config('kit.tenancy.label', 'Organização'))
                     ->placeholder('—'),
-                TextColumn::make('papel.name')->label('Papel')->badge(),
+                TextColumn::make('papel.name')->label('Papel')->badge()
+                    ->formatStateUsing(fn (?string $state): string => Papeis::rotulo($state)),
                 TextColumn::make('convidadoPor.name')->label('Convidado por')->placeholder('—'),
                 TextColumn::make('expira_em')->label('Expira em')->dateTime('d/m/Y H:i')->sortable(),
             ])

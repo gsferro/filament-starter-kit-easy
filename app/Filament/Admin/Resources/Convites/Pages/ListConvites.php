@@ -4,6 +4,8 @@ namespace App\Filament\Admin\Resources\Convites\Pages;
 
 use App\Filament\Admin\Resources\Convites\ConviteResource;
 use App\Filament\Concerns\ConvidaEmMassa;
+use App\Models\Role;
+use App\Support\Papeis;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ListRecords;
@@ -26,6 +28,7 @@ class ListConvites extends ListRecords
                 Select::make('role_id')
                     ->label('Papel')
                     ->relationship('papel', 'name')
+                    ->getOptionLabelFromRecordUsing(fn (Role $record): string => Papeis::rotulo($record->name))
                     ->required()
                     ->preload()
                     ->searchable()

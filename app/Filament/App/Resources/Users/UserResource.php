@@ -8,8 +8,8 @@ use App\Filament\App\Resources\Users\Pages\ListUsers;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Papeis;
 use BackedEnum;
-use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
@@ -67,9 +67,9 @@ class UserResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Administração';
 
-    protected static ?string $modelLabel = 'usuário';
+    protected static ?string $modelLabel = 'Usuário';
 
-    protected static ?string $pluralModelLabel = 'usuários';
+    protected static ?string $pluralModelLabel = 'Usuários';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -212,11 +212,9 @@ class UserResource extends Resource
                 TextColumn::make('email')->label('E-mail')->searchable()->sortable(),
                 // Mostra só os papéis do contexto corrente: o `wherePivot` que o spatie
                 // põe em `roles()` faz o recorte por team sozinho.
-                TextColumn::make('roles.name')->label('Papéis')->badge(),
+                TextColumn::make('roles.name')->label('Papéis')->badge()
+                    ->formatStateUsing(fn (?string $state): string => Papeis::rotulo($state)),
                 TextColumn::make('created_at')->label('Criado em')->dateTime('d/m/Y H:i')->sortable(),
-            ])
-            ->headerActions([
-                CreateAction::make()->label('Novo usuário'),
             ])
             // Sem Impersonate (é privilégio do master_global) e sem DeleteAction nem
             // DeleteBulkAction (ADR-08) — ver canDelete() acima.

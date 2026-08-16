@@ -6,7 +6,6 @@ use App\Filament\App\Resources\Projetos\Pages\ListProjetos;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\Projeto;
 use BackedEnum;
-use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
@@ -43,9 +42,9 @@ class ProjetoResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $modelLabel = 'projeto';
+    protected static ?string $modelLabel = 'Projeto';
 
-    protected static ?string $pluralModelLabel = 'projetos';
+    protected static ?string $pluralModelLabel = 'Projetos';
 
     protected static ?string $recordTitleAttribute = 'nome';
 
@@ -113,9 +112,6 @@ class ProjetoResource extends Resource
             ->columns([
                 TextColumn::make('nome')->label('Nome')->searchable()->sortable(),
                 TextColumn::make('created_at')->label('Criado em')->dateTime('d/m/Y H:i')->sortable(),
-            ])
-            ->headerActions([
-                CreateAction::make()->label('Novo projeto'),
             ])
             ->recordActions([
                 EditAction::make(),

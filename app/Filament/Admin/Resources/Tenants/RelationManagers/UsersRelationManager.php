@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Tenants\RelationManagers;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Papeis;
 use Filament\Actions\Action;
 use Filament\Actions\AttachAction;
 use Filament\Actions\DetachAction;
@@ -34,9 +35,9 @@ class UsersRelationManager extends RelationManager
 
     protected static ?string $title = 'Usuários vinculados';
 
-    protected static ?string $modelLabel = 'usuário';
+    protected static ?string $modelLabel = 'Usuário';
 
-    protected static ?string $pluralModelLabel = 'usuários';
+    protected static ?string $pluralModelLabel = 'Usuários';
 
     public function form(Schema $schema): Schema
     {
@@ -50,7 +51,8 @@ class UsersRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('name')->label('Nome')->searchable()->sortable(),
                 TextColumn::make('email')->label('E-mail')->searchable()->sortable(),
-                TextColumn::make('roles.name')->label('Papéis')->badge()->color('gray'),
+                TextColumn::make('roles.name')->label('Papéis')->badge()->color('gray')
+                    ->formatStateUsing(fn (?string $state): string => Papeis::rotulo($state)),
             ])
             ->headerActions([
                 AttachAction::make()

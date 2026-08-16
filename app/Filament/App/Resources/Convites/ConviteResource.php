@@ -6,9 +6,10 @@ use App\Filament\App\Resources\Convites\Pages\CreateConvite;
 use App\Filament\App\Resources\Convites\Pages\ListConvites;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\Convite;
+use App\Models\Role;
 use App\Models\Tenant;
+use App\Support\Papeis;
 use BackedEnum;
-use Filament\Actions\CreateAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -46,9 +47,9 @@ class ConviteResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Administração';
 
-    protected static ?string $modelLabel = 'convite';
+    protected static ?string $modelLabel = 'Convite';
 
-    protected static ?string $pluralModelLabel = 'convites';
+    protected static ?string $pluralModelLabel = 'Convites';
 
     protected static ?string $recordTitleAttribute = 'email';
 
@@ -115,6 +116,7 @@ class ConviteResource extends Resource
                 ->label('Papel')
                 // Barreira 1 (UX): só papéis do painel app aparecem.
                 ->relationship('papel', 'name', fn (Builder $query): Builder => $query->where('painel', 'app'))
+                ->getOptionLabelFromRecordUsing(fn (Role $record): string => Papeis::rotulo($record->name))
                 ->required()
                 ->preload()
                 ->searchable()
@@ -141,7 +143,8 @@ class ConviteResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('email')->label('E-mail')->searchable()->sortable(),
-                TextColumn::make('papel.name')->label('Papel')->badge(),
+                TextColumn::make('papel.name')->label('Papel')->badge()
+                    ->formatStateUsing(fn (?string $state): string => Papeis::rotulo($state)),
                 TextColumn::make('expira_em')->label('Expira em')->dateTime('d/m/Y H:i')->sortable(),
                 /*
                  * Situação DERIVADA pelo model, e não `aceito_em` com placeholder
@@ -159,9 +162,6 @@ class ConviteResource extends Resource
                         default    => 'warning',
                     })
                     ->state(fn (Convite $record): string => $record->situacao()),
-            ])
-            ->headerActions([
-                CreateAction::make()->label('Novo convite'),
             ])
             ->emptyStateHeading('Nenhum convite enviado')
             ->emptyStateDescription('Convide alguém para que ela crie a própria senha e nasça dentro desta organização.');

@@ -40,9 +40,9 @@ class AiRunResource extends Resource
 
     protected static ?string $navigationLabel = 'Execuções de IA';
 
-    protected static ?string $modelLabel = 'execução de IA';
+    protected static ?string $modelLabel = 'Execução de IA';
 
-    protected static ?string $pluralModelLabel = 'execuções de IA';
+    protected static ?string $pluralModelLabel = 'Execuções de IA';
 
     protected static ?string $slug = 'execucoes-ia';
 
