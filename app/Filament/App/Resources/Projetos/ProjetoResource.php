@@ -50,6 +50,43 @@ class ProjetoResource extends Resource
     protected static ?string $recordTitleAttribute = 'nome';
 
     /**
+     * Só existe quando a demo existe.
+     *
+     * O painel /app nasce VAZIO de propósito: ninguém sabe o que o seu projeto vai
+     * construir, e um resource de exemplo no menu de um projeto de verdade é lixo
+     * que alguém vai ter de limpar — provavelmente depois de perguntar de onde
+     * veio.
+     *
+     * As duas condições são uma só ideia: a demo é o cenário de MULTI-ORGANIZAÇÃO,
+     * e um Projeto sem tenant não demonstra o isolamento que ele existe para
+     * mostrar. Com a tenancy desligada, o resource não teria nem escopo.
+     *
+     * Espelha `UserResource` e `ConviteResource` do mesmo painel, que já se
+     * escondem sem tenancy.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return self::daDemo();
+    }
+
+    /**
+     * Some do menu E da URL.
+     *
+     * `shouldRegisterNavigation()` sozinho tiraria só o item do menu: a rota
+     * continuaria de pé, e a busca ⌘K continuaria oferecendo "Criar projeto" —
+     * affordance para uma tela que não deveria existir naquele projeto.
+     */
+    public static function canAccess(): bool
+    {
+        return self::daDemo() && parent::canAccess();
+    }
+
+    private static function daDemo(): bool
+    {
+        return (bool) config('kit.tenancy.enabled') && (bool) config('kit.demo');
+    }
+
+    /**
      * @return list<string>
      */
     public static function getGloballySearchableAttributes(): array

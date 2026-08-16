@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Tenant;
 use App\Support\AtivadorDeTenancy;
+use App\Support\SubstituicaoEmArquivo;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -210,12 +211,33 @@ class KitTenancy extends Command
         );
     }
 
+    /**
+     * Semeia a demo e LIGA a chave que a torna visível.
+     *
+     * Sem `KIT_DEMO=true` o `ProjetoResource` continua escondido e a demo nasce
+     * invisível — os dados estariam no banco e o menu, vazio. As duas coisas são
+     * um ato só, e por isso moram no mesmo método.
+     *
+     * `config()` em memória junto com a escrita, porque o banner logo abaixo roda
+     * neste mesmo processo e o `.env` só vale a partir do próximo.
+     */
     private function semearDemo(): void
     {
         $this->call('db:seed', [
             '--class' => 'Database\\Seeders\\DemoTenancySeeder',
             '--force' => true,
         ]);
+
+        SubstituicaoEmArquivo::aplicar(
+            base_path('.env'),
+            '/^#?\s*KIT_DEMO=.*$/m',
+            'KIT_DEMO=true',
+            PHP_EOL.'KIT_DEMO=true'.PHP_EOL,
+        );
+
+        config(['kit.demo' => true]);
+
+        $this->components->task('KIT_DEMO=true no .env (mostra o resource de exemplo)', fn (): bool => true);
     }
 
     /** @param  list<string>  $args */

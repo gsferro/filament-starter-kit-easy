@@ -40,6 +40,16 @@ beforeEach(function (): void {
  * quebrado que esconde tudo passaria só com as duas negativas).
  */
 it('esconde os destinos de administração do usuário comum da organização', function (): void {
+    /*
+     * A demo LIGADA é o que dá ao caso o seu controle positivo.
+     *
+     * `ProjetoResource` é o único resource de negócio do painel, e ele só existe
+     * quando há demo (`config('kit.demo')`) — o /app de um projeto de verdade
+     * nasce vazio. Sem esta linha o hub vem vazio, a primeira asserção cai, e as
+     * duas negativas passariam por ausência de conteúdo em vez de por filtro.
+     */
+    config(['kit.demo' => true]);
+
     $comum = usuarioComPapel('panel_user', $this->acme, 'comum@example.com');
     $comum->tenants()->attach($this->acme->getKey());
 

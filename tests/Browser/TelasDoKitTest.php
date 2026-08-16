@@ -51,9 +51,20 @@ it('abre as telas autenticadas do painel', function (array $rotas): void {
         '/app/convites',
         '/app/convites/create',
         '/app/convites-recebidos',
-        '/app/projetos',
         '/app/users',
         '/app/users/create',
+        /*
+         * `/app/projetos` saiu daqui: o resource de exemplo só existe com a demo
+         * ligada (`config('kit.demo')` + tenancy), e esta suíte roda single-tenant.
+         *
+         * ⚠️ As rotas `/app/convites` e `/app/users` acima estão na MESMA situação —
+         * `UserResource` e `ConviteResource` do painel de negócio se escondem sem
+         * tenancy, então aqui elas respondem 403. Elas continuam na lista porque
+         * `assertNoJavaScriptErrors()` passa numa página de 403 (ela não tem erro de
+         * JS nenhum), o que significa que estas três linhas nunca provaram nada
+         * sobre as telas. Mover para `tests/BrowserTenancy` é o conserto; fica
+         * registrado em vez de removido em silêncio.
+         */
     ]],
     'admin' => [[
         '/admin',
