@@ -65,7 +65,15 @@
 
 ## 9. Verificação manual do `create-project`
 
-- [ ] **PENDENTE — só o mantenedor pode fazer.** `composer create-project` real, a partir de um
+- [x] **FEITA na v0.16.0 — e reprovou.** `composer create-project gsferro/starter-kit-easy` num
+      terminal Windows: instalou sem fazer **nenhuma** pergunta. Duas causas, ambas invisíveis
+      para a suíte:
+      1. o gate lia a existência do `.env`, que o `post-root-package-install` do Composer cria
+         **antes** do `kit:install` (ADR-10) — a feature se pulava sozinha em toda instalação;
+      2. o `artisan` rodou sem terminal, o que também pulou o convite da estrela (ADR-11).
+      Corrigido na v0.16.1: o gate passou a ser `APP_KEY` vazia, e o pulo por falta de terminal
+      virou aviso com o comando que refaz a instalação com as perguntas.
+- [ ] **PENDENTE — reteste da v0.16.1.** `composer create-project` real, a partir de um
       checkout local, com as perguntas aparecendo. Nenhum teste automatizado alcança a camada de
       TTY do Composer; o que está provado é que o Composer **repassa** o TTY
       (`EventDispatcher::executeTty`, verificado no `composer.phar` 2.9.5) e que o customizador
@@ -195,6 +203,12 @@ alternativa é duplicar o método privado. É reutilização, não camada.
   Vale a ressalva que a própria `feature-test-design` faz: o score é piso de qualidade de
   assertion, e é **cego a omissão** — quem responde por cláusula não implementada é a matriz de
   rastreabilidade do `01`, não este número.
+
+- **Um repositório `path` do Composer copia o diretório INTEIRO**, inclusive `.env`,
+  `database/database.sqlite` e `vendor/` — arquivos que o zip do Packagist não tem. O primeiro
+  smoke test montado assim nasceu com `APP_KEY` já preenchida e teria dado um falso resultado sobre
+  o gate novo. Para simular a instalação de verdade, a fonte precisa ser só o que está versionado:
+  `git ls-files -z | xargs -0 -I{} cp --parents "{}" destino/`.
 
 ## Retrospectiva
 

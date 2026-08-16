@@ -65,28 +65,60 @@ final class CustomizadorDaInstalacao
     }
 
     /**
+     * A decisão de perguntar, isolada e sem efeito colateral.
+     *
+     * **`$projetoNovo` NÃO pode vir da existência do `.env`.** O `composer.json`
+     * traz um `post-root-package-install` que copia `.env.example` para `.env`
+     * ANTES de o `kit:install` rodar — num `create-project` o arquivo sempre
+     * existe, e um gate baseado nele nunca deixa perguntar nada. Foi exatamente
+     * assim que a feature nasceu quebrada na v0.16.0: instalava em silêncio, sem
+     * erro, e os testes passavam porque exercitavam esta classe num diretório
+     * temporário, onde aquele script do Composer não existe.
+     *
+     * O sinal honesto é a `APP_KEY`: ela nasce vazia no `.env.example` e só é
+     * preenchida pela própria instalação. Vazia significa "este projeto nunca
+     * foi instalado" — que é a pergunta que se queria fazer.
+     */
+    public static function devePerguntar(
+        bool $projetoNovo,
+        bool $forcado,
+        bool $pulaPorFlag,
+        bool $interativo,
+    ): bool {
+        if ($pulaPorFlag || ! $interativo) {
+            return false;
+        }
+
+        return $projetoNovo || $forcado;
+    }
+
+    /**
      * Faz as perguntas. Devolve `null` quando a customização foi pulada.
      *
-     * O `$interativo` vem de `$this->input->isInteractive()` do comando — que é
-     * protegido, e por isso chega como parâmetro. Precisa ser ESSE valor, e nunca
-     * um `stream_isatty(STDIN)` calculado aqui: o Laravel já resolve o tty por
-     * conta própria (`ConfiguresPrompts` liga `Prompt::interactive()` quando há
-     * tty OU quando roda em teste), e um `stream_isatty` faria o customizador se
-     * pular dentro da própria suíte — todo cenário passaria sem exercitar nada.
+     * O `$interativo` é calculado por `KitInstall::temTerminal()`, que repete a
+     * expressão do próprio Laravel — `isInteractive()` **e** `stream_isatty(STDIN)`,
+     * ou rodando em teste. Nenhum dos dois primeiros serve sozinho, e o docblock
+     * de lá explica por quê: um deixa passar instalação sem terminal no Windows,
+     * o outro faz o customizador se pular dentro da suíte.
      *
-     * Com `--no-interaction`, isto chega `false` e a instalação segue com os
-     * padrões, que é o que o CI e o build Docker precisam.
+     * Chega `false` em CI, build Docker e `--no-interaction`: a instalação segue
+     * com os padrões e nada é reescrito.
      *
      * @return array<string, mixed>|null
      */
     public function perguntar(Command $comando, bool $interativo): ?array
     {
-        if ($comando->option('no-custom')) {
-            return $this->pulou('flag');
-        }
-
-        if (! $interativo) {
-            return $this->pulou('sem-tty');
+        if (! self::devePerguntar(
+            projetoNovo: blank(config('app.key')),
+            forcado: (bool) $comando->option('force'),
+            pulaPorFlag: (bool) $comando->option('no-custom'),
+            interativo: $interativo,
+        )) {
+            return $this->pulou(match (true) {
+                (bool) $comando->option('no-custom') => 'flag',
+                ! $interativo                        => 'sem-tty',
+                default                              => 'projeto-ja-instalado',
+            });
         }
 
         note(

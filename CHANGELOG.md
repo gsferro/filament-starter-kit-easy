@@ -3,6 +3,30 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.16.1] - 2026-08-16
+
+### Corrigido
+
+- **As perguntas da instalação nunca apareciam.** A 0.16.0 saiu com a feature inteira se pulando
+  sozinha, em todo `create-project`, sem erro nenhum.
+
+  O gate era "o `.env` já existia antes desta execução?". Só que o `composer.json` traz, desde o
+  skeleton do Laravel, um `post-root-package-install` que copia `.env.example` para `.env` — e ele
+  roda **antes** do `post-create-project-cmd` que chama o `kit:install`. A resposta era sempre
+  sim.
+
+  O sinal passou a ser a `APP_KEY` vazia, que é o que significa "este projeto nunca foi
+  instalado". A decisão virou `CustomizadorDaInstalacao::devePerguntar()`, pura, com tabela-verdade
+  testada — e um teste estrutural proíbe voltar a decidir por existência de arquivo, porque esse é
+  o tipo de defeito que nenhuma suíte pega: a sequência que o expõe é a do Composer, não a do Pest.
+
+- **Instalação sem terminal agora se explica.** O Composer só repassa o terminal ao script quando
+  ele mesmo consegue (`ProcessExecutor::executeTty`), e em várias combinações de sistema e console
+  isso não acontece — o `artisan` roda com a entrada fechada e todo prompt é pulado. Continuar
+  pulando é o certo; ficar calado não era. Quando o projeto é novo e não há terminal, a instalação
+  termina avisando o que aconteceu e qual comando refaz a instalação **com** as perguntas
+  (`php artisan kit:install --force`).
+
 ## [0.16.0] - 2026-08-16
 
 ### Adicionado

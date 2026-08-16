@@ -231,6 +231,113 @@ existir nesse caso. Na instalação atendida, o registro está no terminal, na f
 
 ---
 
+## ADR-10: "Projeto nascendo" é `APP_KEY` vazia, nunca a existência do `.env`
+
+**Status**: Aceita
+**Data**: 2026-08-16 *(nasceu de um defeito real na v0.16.0, encontrado na verificação manual)*
+
+### Contexto
+
+O gate original era: "o `.env` existia antes desta execução?". Num `create-project` a resposta é
+**sempre sim** — o `composer.json` traz, desde o skeleton do Laravel, um
+`post-root-package-install` que copia `.env.example` para `.env` **antes** de o
+`post-create-project-cmd` chamar o `kit:install`. O log do usuário mostra as duas linhas nessa
+ordem.
+
+Resultado: a feature inteira se pulava sozinha, em toda instalação, sem erro nenhum. E a suíte
+passava — porque exercitava o customizador num diretório temporário, onde esse script do Composer
+não existe. Era o mutante **M3** já previsto no `04-casos-de-teste.md` ("o gate é avaliado depois
+de o `.env` ser copiado, e portanto é sempre verdadeiro"), com um matador que não matava.
+
+### Decisão
+
+O sinal é `blank(config('app.key'))`. A `APP_KEY` nasce vazia no `.env.example` e só é preenchida
+pela própria instalação — vazia significa, literalmente, "este projeto nunca foi instalado", que é
+a pergunta que se queria fazer. `--force` continua sendo a porta explícita para reinstalar e
+responder de novo.
+
+A decisão inteira virou `CustomizadorDaInstalacao::devePerguntar()`, pura e com tabela-verdade
+testada.
+
+### Alternativas Consideradas
+
+1. **Remover o `post-root-package-install`** — o `kit:install` já copia o `.env` sozinho, então o
+   script é redundante. Mas ele é convenção do skeleton do Laravel e garante que um
+   `php artisan` avulso funcione entre o `create-project` e o `kit:install`. Mexer nele é mudar
+   o contrato do skeleton para resolver um problema que é nosso.
+2. **Comparar o `.env` com o `.env.example`** — "iguais = ninguém customizou". Funciona, mas
+   depende de igualdade byte a byte de um arquivo que qualquer coisa pode tocar.
+
+### Consequências
+
+- **Positivas**: o sinal passa a significar o que a regra diz; a decisão é testável fora do
+  Composer.
+- **Negativas**: um projeto com `APP_KEY` definida à mão e nunca instalado não é perguntado.
+  `--force` cobre.
+- **Riscos**: nenhum novo. O gate é lido uma vez, antes do `gerarAppKey()` da mesma execução —
+  se alguém inverter essa ordem, o gate volta a ser sempre falso. Por isso o
+  `avisarSePerdeuAsPerguntas()` também consulta `config('app.key')`: os dois quebram juntos, e o
+  aviso deixa de sair.
+
+### Referências
+
+- `composer.json` → `post-root-package-install`
+- `tests/Kit/CustomizadorDaInstalacaoTest.php` — tabela-verdade + o teste estrutural que proíbe
+  voltar a decidir por `File::exists(base_path('.env'))`
+
+---
+
+## ADR-11: Terminal que o Composer não repassa vira aviso, não silêncio
+
+**Status**: Aceita
+**Data**: 2026-08-16
+
+### Contexto
+
+Na mesma verificação manual apareceu um segundo sintoma: o convite da estrela — que **não** passa
+pelo gate — imprimiu o endereço do repositório e não fez a pergunta. Isso só acontece com
+`input->isInteractive()` falso, ou seja: o `artisan` rodou **sem terminal**, dentro de um
+`create-project` executado num terminal de verdade.
+
+O Composer só entrega o terminal ao script quando ele mesmo consegue
+(`ProcessExecutor::executeTty()`, que depende de `Platform::isTty()` e, no Windows, do modo TTY do
+Symfony Process). Não é algo que o kit controle.
+
+### Decisão
+
+Detectar a ausência de terminal com a **mesma expressão do Laravel** — `isInteractive()` **e**
+`stream_isatty(STDIN)`, ou rodando em teste (`ConfiguresPrompts:33`) — e não com
+`isInteractive()` sozinho, que no Windows é sempre verdadeiro por falta de `posix_isatty`. Foi
+esse detalhe que fez a primeira correção do gate produzir um sintoma novo: num `create-project`
+sem TTY, as cinco perguntas eram "respondidas" com os defaults e o `.env` reescrito — o
+`APP_NAME` virava o nome da pasta sem ninguém ter pedido.
+
+Manter o pulo — perguntar sem entrada é que seria errado —, mas **torná-lo visível**: quando o
+projeto é novo, ninguém pediu `--no-custom` e não há terminal, a instalação termina com um aviso
+dizendo o que aconteceu e qual comando refaz a instalação **com** as perguntas
+(`php artisan kit:install --force`, que num projeto recém-nascido não tem dado a perder).
+
+### Alternativas Consideradas
+
+1. **Forçar interatividade no filho** — não está ao nosso alcance: quem decide é o Composer.
+2. **Deixar como estava** — foi o que produziu a conclusão "a feature não existe" no primeiro
+   teste real. Silêncio, aqui, é indistinguível de defeito.
+
+### Consequências
+
+- **Positivas**: o comportamento passa a se explicar sozinho no output; a próxima instalação
+  diagnostica a si mesma.
+- **Negativas**: em ambiente sem TTY o usuário lê um aviso a mais. É barato perto de descobrir a
+  feature meses depois.
+
+### Referências
+
+- `phar://composer.phar/src/Composer/Util/ProcessExecutor.php` → `executeTty()`
+- `vendor/laravel/prompts/src/Prompt.php:107-115` — o fallback é avaliado **antes** de
+  `$interactive`, o que torna a guarda do lado do kit obrigatória
+
+---
+
 ## ADR-06: Banco inacessível pula migrate e seed em vez de falhar em cascata
 
 **Status**: Aceita

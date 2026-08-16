@@ -24,9 +24,12 @@ use function Laravel\Prompts\note;
  *
  * Num projeto NASCENDO ele também pergunta: nome, banco, credenciais do admin,
  * cor e multi-organização, no mesmo lugar em que o `laravel new` faz as dele.
- * O Composer repassa o terminal ao script (`EventDispatcher::executeTty`), então
- * as perguntas aparecem dentro do `create-project`. Sem terminal — CI, Docker,
- * `--no-interaction` — nada é perguntado e a instalação é a de sempre.
+ *
+ * As perguntas dependem de o Composer conseguir repassar o terminal ao script
+ * (`ProcessExecutor::executeTty`), e ele nem sempre consegue — sistema, console e
+ * forma de invocação mudam o resultado. Sem terminal, nada é perguntado, a
+ * instalação é a de sempre, e o comando avisa como refazê-la com as perguntas.
+ * `temTerminal()` explica por que a detecção não é `isInteractive()` sozinho.
  */
 class KitInstall extends Command
 {
@@ -59,14 +62,8 @@ class KitInstall extends Command
     {
         $this->components->info('Instalando o starter-kit-easy...');
 
-        /*
-         * Antes do prepararEnv(): depois dele o arquivo existe sempre, e o gate
-         * "este projeto está nascendo" ficaria sempre falso.
-         */
-        $envJaExistia = File::exists(base_path('.env'));
-
         $this->prepararEnv();
-        $this->customizar($envJaExistia);
+        $this->customizar();
         $this->gerarAppKey();
         $this->prepararBancoSqlite();
         $this->conferirConexao();
@@ -95,27 +92,69 @@ class KitInstall extends Command
     }
 
     /**
+     * Há uma pessoa do outro lado capaz de responder?
+     *
+     * É a MESMA expressão que o Laravel usa para decidir se os prompts são
+     * interativos (`ConfiguresPrompts::configurePrompts()`), e cada termo dela
+     * existe por um motivo:
+     *
+     *   - `isInteractive()` sozinho NÃO basta. No Windows o Symfony não tem
+     *     `posix_isatty` para consultar, então ele deixa a entrada como
+     *     interativa mesmo quando não há terminal nenhum. Foi o que fez a
+     *     instalação sem TTY "responder" as cinco perguntas com os defaults e
+     *     reescrever o .env — trocando inclusive o APP_NAME pelo nome da pasta.
+     *   - `stream_isatty(STDIN)` sozinho também não: sob `$this->artisan()` o
+     *     STDIN não é tty, e o customizador se pularia dentro da própria suíte.
+     *   - `runningUnitTests()` é o que reconcilia os dois.
+     *
+     * A propriedade equivalente do `Laravel\Prompts\Prompt` é `protected`, então
+     * a expressão é repetida aqui em vez de lida de lá.
+     */
+    private function temTerminal(): bool
+    {
+        return ($this->input->isInteractive() && defined('STDIN') && stream_isatty(STDIN))
+            || $this->laravel->runningUnitTests();
+    }
+
+    /**
      * As perguntas — só num projeto nascendo, ou numa reinstalação explícita.
      *
-     * `--force` já significa "recria o banco do zero", então quem o passa está
-     * reinstalando de propósito e merece as perguntas de volta. Um `kit:install`
-     * seco num projeto em uso não pergunta nada: reescrever o .env de alguém que
-     * já configurou o projeto seria destruir trabalho.
+     * A decisão inteira vive em `CustomizadorDaInstalacao::devePerguntar()`, com
+     * o porquê de cada sinal. Aqui só se colhe o que é do comando.
      */
-    private function customizar(bool $envJaExistia): void
+    private function customizar(): void
     {
-        if ($envJaExistia && ! $this->option('force')) {
-            return;
-        }
-
         $customizador = new CustomizadorDaInstalacao;
-        $respostas    = $customizador->perguntar($this, $this->input->isInteractive());
+        $respostas    = $customizador->perguntar($this, $this->temTerminal());
 
         if ($respostas === null) {
+            $this->avisarSePerdeuAsPerguntas();
+
             return;
         }
 
         $this->resumo = $customizador->aplicar($respostas);
+    }
+
+    /**
+     * Projeto novo + sem terminal = as perguntas passaram batido.
+     *
+     * Acontece de verdade, e não é hipótese: o Composer só repassa o terminal ao
+     * script quando ele mesmo consegue (`ProcessExecutor::executeTty`), e em
+     * várias combinações de sistema e console isso não acontece — o `artisan`
+     * roda com a entrada fechada e todo prompt é pulado. Sem esta mensagem o
+     * usuário conclui que a feature não existe; com ela, sabe o comando que
+     * refaz a instalação **com** as perguntas.
+     */
+    private function avisarSePerdeuAsPerguntas(): void
+    {
+        if ($this->option('no-custom') || $this->temTerminal() || filled(config('app.key'))) {
+            return;
+        }
+
+        $this->avisos[] = 'Instalado com os padrões: este terminal não aceitou perguntas '
+            .'(o Composer nem sempre consegue repassá-lo ao script). Para escolher nome, banco, '
+            .'cor, credenciais e multi-organização agora, rode: php artisan kit:install --force';
     }
 
     /**
@@ -364,7 +403,7 @@ class KitInstall extends Command
      */
     private function oferecerTestes(): void
     {
-        if ($this->resumo === [] || ! $this->input->isInteractive()) {
+        if ($this->resumo === [] || ! $this->temTerminal()) {
             return;
         }
 
@@ -404,7 +443,7 @@ class KitInstall extends Command
     {
         $this->components->twoColumnDetail('<fg=gray>Repositório do kit</>', self::REPOSITORIO);
 
-        if ($this->option('no-support') || ! $this->input->isInteractive()) {
+        if ($this->option('no-support') || ! $this->temTerminal()) {
             return;
         }
 

@@ -31,10 +31,15 @@ Três fatos do projeto mudam o que é escrevível, e todos foram confirmados no 
    os prompts caírem no `QuestionHelper` do Symfony em teste. Consequência: `expectsQuestion()` e
    `expectsConfirmation()` do `$this->artisan()` **funcionam** sobre os prompts do
    `laravel/prompts`.
-2. **A guarda de "sem terminal" não pode ser `stream_isatty(STDIN)`.** Sob `$this->artisan()` o
-   STDIN não é tty, e uma guarda assim faria o customizador se pular dentro da própria suíte —
-   todo cenário de coleta passaria sem exercitar nada. A guarda observável é
-   `$this->input->isInteractive()`, que é `true` em teste e `false` com `--no-interaction`.
+2. **A guarda de "sem terminal" precisa dos três termos, e nenhum serve sozinho.**
+   `stream_isatty(STDIN)` sozinho faz o customizador se pular dentro da própria suíte (sob
+   `$this->artisan()` o STDIN não é tty). `isInteractive()` sozinho deixa passar instalação **sem
+   terminal nenhum** no Windows, onde o Symfony não tem `posix_isatty` para consultar — foi assim
+   que a v0.16.0 "respondeu" as cinco perguntas com os defaults num `create-project` sem TTY.
+   A expressão correta é a que o próprio Laravel usa em `ConfiguresPrompts:33`:
+   `($input->isInteractive() && defined('STDIN') && stream_isatty(STDIN)) || runningUnitTests()`.
+   *(Corrigido depois da verificação manual; a primeira versão desta seção proibia `stream_isatty`
+   categoricamente e estava errada.)*
 3. **O alvo da escrita precisa ser injetável.** Os cenários de A1 escrevem em `.env`,
    `config/permission.php` e `config/filament-shield.php`; apontá-los para `base_path()` faria a
    suíte **reescrever o `.env` da máquina de quem roda os testes**. Testabilidade aqui é

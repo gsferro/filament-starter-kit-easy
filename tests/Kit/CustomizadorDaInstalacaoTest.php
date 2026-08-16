@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\KitInstall;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\SubstituicaoEmArquivo;
 use Illuminate\Support\Facades\DB;
@@ -78,6 +79,54 @@ function customizadorNoTemp(): CustomizadorDaInstalacao
 {
     return new CustomizadorDaInstalacao(test()->base);
 }
+
+/*
+|--------------------------------------------------------------------------
+| R1 — quando perguntar
+|--------------------------------------------------------------------------
+| A v0.16.0 saiu quebrada aqui: o gate era "o `.env` já existia?", e num
+| `create-project` a resposta é SEMPRE sim — o `post-root-package-install` do
+| composer.json copia `.env.example` para `.env` antes de o `kit:install` rodar.
+| A instalação seguia em silêncio, sem erro, e a suíte passava porque exercitava
+| a classe num diretório temporário, onde aquele script não existe.
+*/
+
+it('decide se pergunta a partir de projeto novo, flags e terminal', function (
+    bool $projetoNovo,
+    bool $forcado,
+    bool $pulaPorFlag,
+    bool $interativo,
+    bool $esperado,
+): void {
+    expect(CustomizadorDaInstalacao::devePerguntar($projetoNovo, $forcado, $pulaPorFlag, $interativo))
+        ->toBe($esperado);
+})->with([
+    'projeto nascendo, com terminal'          => [true,  false, false, true,  true],
+    'o .env do create-project não conta'      => [true,  false, false, true,  true],
+    'sem terminal (CI, Docker, -n)'           => [true,  false, false, false, false],
+    'pulo explícito por --no-custom'          => [true,  false, true,  true,  false],
+    'projeto já instalado não é perguntado'   => [false, false, false, true,  false],
+    'reinstalação com --force pergunta'       => [false, true,  false, true,  true],
+    '--force sem terminal continua calado'    => [false, true,  false, false, false],
+    '--no-custom vence o --force'             => [true,  true,  true,  true,  false],
+])->group('kit');
+
+/**
+ * O sinal de "projeto nascendo" NÃO pode ser a existência do `.env`.
+ *
+ * Este é o teste que teria pego a v0.16.0. Ele olha a fonte porque o defeito é
+ * de ORIGEM DO SINAL: qualquer teste que rode a decisão isolada passa nos dois
+ * desenhos — só a sequência real do Composer os distingue, e ela não cabe numa
+ * suíte.
+ */
+it('não decide "projeto novo" pela existência do .env', function (): void {
+    $fonte = File::get((new ReflectionClass(KitInstall::class))->getFileName());
+
+    expect($fonte)->not->toContain("File::exists(base_path('.env'))",
+        'O `post-root-package-install` copia o .env ANTES do kit:install: gate por existência de '
+        .'arquivo nunca deixa perguntar nada num create-project. Use `blank(config(\'app.key\'))`.'
+    );
+})->group('kit');
 
 /*
 |--------------------------------------------------------------------------
