@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Notifications\ConviteDeAcesso;
 use App\Traits\AuditsFillables;
+use App\Traits\ModeloCacheavel;
 use App\Traits\TemUuid;
 use Database\Factories\ConviteFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -54,6 +55,7 @@ class Convite extends Model implements Auditable
     /** @use HasFactory<ConviteFactory> */
     use HasFactory;
 
+    use ModeloCacheavel;
     use TemUuid;
 
     /**
