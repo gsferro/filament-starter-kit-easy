@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\AuditsFillables;
 use App\Traits\BelongsToTenant;
+use App\Traits\ModeloCacheavel;
 use App\Traits\TemUuid;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable;
@@ -28,6 +29,7 @@ class Projeto extends Model implements Auditable
 {
     use AuditsFillables;
     use BelongsToTenant;
+    use ModeloCacheavel;
     use TemUuid;
 
     protected $fillable = [
