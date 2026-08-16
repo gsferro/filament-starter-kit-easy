@@ -134,16 +134,23 @@ trait ConfiguraFilamentGlobal
     }
 
     /**
-     * Arrastar e fixar colunas (asmit/resized-column).
+     * Arrastar colunas (asmit/resized-column).
      *
      * São `Table::macro()` registradas em runtime pelo ServiceProvider do pacote:
      * invisíveis para a análise estática e inexistentes se o pacote for removido.
      * O `hasMacro()` faz as duas coisas de uma vez — degrada sem quebrar a tabela
      * e dispensa fingir para o PHPStan que o método existe.
+     *
+     * `stickableColumns` ficou de fora de propósito: ele acrescenta um botão
+     * "fixar colunas" em TODA tabela do projeto, e o gerenciador de colunas —
+     * que já está ali ao lado, no mesmo cabeçalho — resolve organizar a tabela
+     * sozinho. Dois botões para o mesmo objetivo é escolha a mais na cara de
+     * quem só quer ver a listagem. Para trazer de volta, acrescente
+     * `'stickableColumns'` à lista abaixo.
      */
     private function aplicaMacrosDeColuna(Table $table): Table
     {
-        foreach (['dragReorderableColumns', 'stickableColumns'] as $macro) {
+        foreach (['dragReorderableColumns'] as $macro) {
             if (Table::hasMacro($macro)) {
                 $table = $table->{$macro}();
             }

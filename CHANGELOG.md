@@ -3,6 +3,50 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.16.3] - 2026-08-16
+
+### Corrigido
+
+- **Quem já tinha conta era convidado para outra organização e não achava onde aceitar.** A tela de
+  aceite manda essa pessoa entrar e promete, com todas as letras, que "o convite aparece no menu do
+  seu usuário" — e o menu contava zero. Beco sem saída: autentica e não tem o que fazer.
+
+  A causa não estava no convite. O `Panel::boot()` do Filament registra um escopo global **no
+  model** de todo resource escopado por tenant (`Panel.php:85-90`). Como existe um
+  `ConviteResource` no painel `/app`, **toda** query de `Convite` dentro de um request de
+  `/app/{organização}` nascia filtrada pela organização corrente — inclusive a que conta as ofertas
+  recebidas. A oferta pertence à organização de **destino**, que não é a corrente.
+
+  `Convite::pendentesPara()` passa a ignorar esse escopo — só ele, e não `withoutGlobalScopes()`,
+  para não derrubar de carona um escopo futuro que seja legítimo ali. A pergunta é, por definição,
+  entre organizações: "o que endereçaram a esta pessoa, em qualquer lugar".
+
+- **Dois botões idênticos de criar na mesma tela.** Convites, Usuários e Projetos do painel de
+  negócio registravam `CreateAction` no cabeçalho da **página** e no `headerActions()` da
+  **tabela**. Ficou só o da página, que é a convenção das outras sete listagens do kit.
+
+- **Rótulos em minúscula.** O kit desliga o title-case automático do Filament (ele produzia
+  "Agentes De IA", que é regra do inglês), então o rótulo vale exatamente como escrito — e os
+  painéis divergiram: `/admin` dizia "Convite" e `/app` dizia "convite". Padronizados `Convite`,
+  `Usuário`, `Projeto` e `Execução de IA`.
+
+### Alterado
+
+- **Papéis são exibidos em Title Case.** `master_global` virava rótulo de tela em sete lugares, e
+  identificador não é rótulo. A **chave não muda** — ela é o que vai em `assignRole()`, nos seeders
+  e nas policies; muda só a exibição, por `App\Support\Papeis::rotulo()`, inclusive nos selects em
+  que o papel é escolhido.
+
+- **O campo que dá acesso ao painel diz isso.** `roles.painel` é a coluna que `User::canAccessPanel()`
+  lê, e ela aparecia como "app" — parecia categoria. Agora o campo se chama **"Acesso ao painel"** e
+  o valor lê "Acesso ao painel /app". Papel sem painel lê **"Não abre painel"**, em vez de um traço
+  que o leitor tinha de interpretar: nulo não é coringa, e a tela passa a dizer isso.
+
+- **O botão "fixar colunas" saiu de todas as tabelas.** O gerenciador de colunas fica no mesmo
+  cabeçalho e já resolve organizar a tabela; dois botões para o mesmo objetivo é escolha a mais na
+  cara de quem só quer ver a listagem. Para trazer de volta, é uma linha em
+  `ConfiguraFilamentGlobal::aplicaMacrosDeColuna()`.
+
 ## [0.16.2] - 2026-08-16
 
 ### Adicionado
