@@ -3,6 +3,14 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.16.7] - 2026-08-17
+
+### Corrigido
+
+- **Título dos READMEs duplicado na página do plugin no site do Filament.** Removeu-se o
+  cabeçalho `# starter-kit-easy` dos arquivos `README.md` e `README.en.md`, mantendo a imagem
+  com a classe `filament-hidden` já ajustada na versão anterior.
+
 ## [0.16.6] - 2026-08-17
 
 ### Corrigido
