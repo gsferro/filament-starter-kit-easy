@@ -3,6 +3,40 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.16.9] - 2026-08-17
+
+### Corrigido
+
+- **`create-project` da v0.16.8 nascia sem `phpunit.xml`, `pint.json` e `phpstan.neon`.** O
+  `export-ignore` dos três tirava do pacote distribuído justamente os arquivos que os scripts
+  `test`, `lint` e `types:check` do `composer.json` — que seguem no dist — precisam para rodar.
+  Os três voltaram ao pacote, e o `.gitattributes` agora explica por que não podem sair: eles
+  estão em `KitUpdate::CAMINHOS_DO_KIT`, e `tests/Kit/KitUpdateTest.php` falha se o
+  `export-ignore` voltar.
+
+- **Todo login na suíte de testes custava ~7s numa chamada de rede a `repo.packagist.org`.** O
+  `filament-composer-release-notifier` enfileira o `SyncComposerReleaseSnapshotsJob` no evento de
+  `Login`; com `QUEUE_CONNECTION=sync`, o job rodava dentro do teste. Media 9,776s no listener,
+  contra 0,014s do listener do log de autenticação. Pesava em todo caso que autentica de verdade
+  — formulário de login, aceite de convite, destravar sessão — e no CI a latência estourava a
+  espera do `assertPathIs('/app')`, derrubando o login pela tela de `tests/Browser/PerfisTest.php`.
+  O `phpunit.xml` agora desliga o notifier na suíte (`FILAMENT_COMPOSER_RELEASE_NOTIFIER_ENABLED`),
+  o que afeta só o listener: o resource de releases do painel `/infra` segue registrado.
+  `tests/Kit/BloqueioDeSessaoTest.php`, caso do destravamento: 14,0s → 3,4s.
+
+### Alterado
+
+- **Timeout do `pest-plugin-browser`: 20s → 45s** (`tests/Pest.php`), como folga para a primeira
+  tela de cada arquivo, que ainda paga a compilação das views.
+
+## [0.16.8] - 2026-08-17
+
+### Segurança
+
+- **Ações do CI presas por SHA** em vez de tag móvel (`actions/checkout`, `shivammathur/setup-php`,
+  `actions/setup-node`), e o repositório ganhou `SECURITY.md` e `dependabot.yml`. Apontamentos do
+  Plumb.
+
 ## [0.16.7] - 2026-08-17
 
 ### Corrigido
