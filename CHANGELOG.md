@@ -3,6 +3,14 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.16.6] - 2026-08-17
+
+### Corrigido
+
+- **Imagens duplicadas na página do plugin no site do Filament.** As logos do `README.md` e
+  `README.en.md` passaram a usar a classe `filament-hidden`, ocultando a imagem no site da Filament
+  enquanto a mantêm no repositório.
+
 ## [0.16.5] - 2026-08-16
 
 ### Alterado
