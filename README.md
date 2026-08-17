@@ -237,8 +237,6 @@ Os quatro papéis do kit, e o que cada um significa com o modo ligado:
 
 O papel só existe com a tenancy ligada, e a concessão é em `/admin` → organizações → **Usuários vinculados** → *Papéis nesta organização*. **Não** pelo cadastro do usuário: ali a atribuição vai para o contexto global e a pessoa entra no `/app` sem enxergar nada. A receita completa, com o sintoma, está em [`wikis/receitas.md`](wikis/receitas.md#promover-alguém-a-admin-de-uma-organização).
 
-> ⚠️ **Se você está atualizando um projeto:** rode `ShieldPermissionsSeeder` e depois `PapeisSeeder`. O `panel_user` passou a receber a matriz do `/app` **menos** as permissões dessas duas telas — sem rodar os seeders, todo usuário comum ficaria com poder de criar e apagar usuários.
-
 ### Código em inglês, interface no seu idioma
 
 O código segue o vocabulário da API do Filament — model `Tenant`, tabela `tenants`, `getTenants()`, `canAccessTenant()` — para que a documentação oficial se leia sem tradução mental. **O que o usuário vê é configurável**, e nasce como "Organização":
@@ -763,7 +761,7 @@ O que ele faz, em ordem:
 1. **Confere o terreno** — exige repositório git com a árvore limpa. Sem isso não haveria como reverter, e ele recusa rodar (mostrando os comandos para versionar o projeto).
 2. **Vincula o kit temporariamente** — adiciona o remote `kit` com **push bloqueado** e busca as tags num namespace próprio (`kit-v*`), para não colidirem com as versões do seu projeto.
 3. **Compara** — da versão em `config('kit.version')` até a tag escolhida, restrito aos caminhos que pertencem ao kit. Seu código de negócio nunca entra na conta.
-4. **Oferece um branch temporário** (`kit-update/v0.2.0`) para não sujar o seu.
+4. **Oferece um branch temporário** (`kit-update/v0.16.0`) para não sujar o seu.
 5. **Pergunta arquivo a arquivo** — ver o diff, aplicar, pular ou parar. Dá para mudar de ideia no meio e aplicar o resto em lote. Arquivo removido do kit nunca é apagado automaticamente: ele só avisa.
 6. **Desfaz o vínculo** — remove o remote e as tags `kit-*` ao sair, mesmo se você interromper no meio. O projeto não fica com nada de terceiros pendurado.
 
@@ -790,8 +788,8 @@ A distinção é o ponto: **arquivo novo não tem o que sobrescrever**, então a
 | `--only-new` | aplica de uma vez só os arquivos novos (não sobrescreve nada) |
 | `--all` | aplica tudo de uma vez, com uma confirmação para o conjunto |
 | `--dry-run` | só o relatório, não altera nada |
-| `--tag=v0.3.0` | comparar com uma versão específica |
-| `--from=v0.1.0` | dizer de qual versão o projeto partiu (quando `config/kit.php` não sabe) |
+| `--tag=v0.16.0` | comparar com uma versão específica |
+| `--from=v0.15.0` | dizer de qual versão o projeto partiu (quando `config/kit.php` não sabe) |
 | `--branch=nome` | escolher o nome do branch temporário |
 | `--no-branch` | aplicar no branch atual |
 | `--keep-remote` | manter o remote e as tags do kit ao final |
@@ -812,26 +810,26 @@ git remote add kit https://github.com/gsferro/filament-starter-kit-easy.git
 git remote set-url --push kit no_push
 ```
 
-As tags do kit vão para um namespace próprio (`kit-v*`). Isso importa: um `git fetch kit --tags` traria `v0.1.0`, `v0.2.0`… para o seu projeto e colidiria com as **suas** versões depois.
+As tags do kit vão para um namespace próprio (`kit-v*`). Isso importa: um `git fetch kit --tags` traria `v0.15.0`, `v0.16.0`… para o seu projeto e colidiria com as **suas** versões depois.
 
 ```bash
 git fetch --no-tags kit 'refs/tags/*:refs/tags/kit-*'
-git tag -l 'kit-*'      # kit-v0.1.0, kit-v0.2.0, ...
+git tag -l 'kit-*'      # kit-v0.15.0, kit-v0.16.0, ...
 ```
 
 Depois, a cada versão, veja o que mudou e traga só o que interessa:
 
 ```bash
 # 1. panorama entre a sua versão e a nova
-git diff kit-v0.1.0..kit-v0.2.0 --stat
+git diff kit-v0.15.0..kit-v0.16.0 --stat
 
 # 2. o diff da "cola" do kit (ignore o que você já reescreveu)
-git diff kit-v0.1.0..kit-v0.2.0 -- app/Providers app/Filament/Concerns \
+git diff kit-v0.15.0..kit-v0.16.0 -- app/Providers app/Filament/Concerns \
         app/Filament/Spotlight app/Traits resources/views/errors config/kit.php
 
 # 3. traga arquivo a arquivo, revisando
-git checkout kit-v0.2.0 -- resources/views/errors
-git checkout kit-v0.2.0 -- app/Filament/Concerns/BadgeContagemNavegacao.php
+git checkout kit-v0.16.0 -- resources/views/errors
+git checkout kit-v0.16.0 -- app/Filament/Concerns/BadgeContagemNavegacao.php
 ```
 
 Faça isso num branch (`git switch -c atualiza-kit`) e rode `composer test` antes do merge. Arquivos que você reescreveu: leia o diff e aplique à mão — é o único caminho seguro.

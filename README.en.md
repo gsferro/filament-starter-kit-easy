@@ -235,8 +235,6 @@ The kit's roles, and what each one means with the mode on:
 
 The role only exists with tenancy on, and it is granted in `/admin` → organizations → **Linked users** → *Roles in this organization*. **Not** from the user record: there the assignment goes to the global context and the person enters `/app` seeing nothing. The full recipe, with the symptom, is in [`wikis/receitas.md`](wikis/receitas.md#promover-alguém-a-admin-de-uma-organização).
 
-> ⚠️ **If you are updating an existing project:** run `ShieldPermissionsSeeder` and then `PapeisSeeder`. `panel_user` now receives the `/app` matrix **minus** the permissions of those two screens — without running the seeders, every ordinary user would keep the power to create and delete users.
-
 ### English in the code, your language in the UI
 
 The code follows Filament's API vocabulary — model `Tenant`, table `tenants`, `getTenants()`, `canAccessTenant()` — so the official docs read without mental translation. **What the user sees is configurable**, and defaults to "Organização":
@@ -312,6 +310,68 @@ php artisan boost:update                                # syncs it to every agen
 ```
 
 > `AGENTS.md` and `CLAUDE.md` are **generated** by Boost — editing them by hand is lost work on the next `boost:update`. Durable rules go in `.ai/rules` (the `record-rule` tool) or in `wikis/`.
+
+#### Caveman and Ponytail outside of Claude Code
+
+The trio above is only a real trio if all three layers exist. In Claude Code, Caveman and
+Ponytail come as **plugin** (`.claude/settings.json`) — with automatic activation by hook and
+commands in the `/ponytail:…` and `/caveman:…` namespace. In other agents there is no plugin
+system, and `feature-wiki` would invoke a `/ponytail-review` that does not exist.
+
+That's why the kit **versions a copy** of the three skills that `feature-wiki` cites by name, in
+`.agents/skills/`, `.ai/skills/` and `.junie/skills/`:
+
+| Skill | What `feature-wiki` uses it for |
+|---|---|
+| `ponytail` | the simplicity ladder during implementation (step 7) |
+| `ponytail-review` | plan audit against over-engineering (step 6, mandatory) and diff audit at the end |
+| `caveman` | terse agent ↔ you communication; does **not** apply to wiki, code, commit or security warning |
+
+Two practical consequences:
+
+- **The invocation name changes.** In Claude Code it is `/ponytail:ponytail-review`; in the other
+  agents the local copy answers to `/ponytail-review`, with no namespace.
+- **`.claude/skills/` is left out on purpose.** Copying there would create two active `ponytail`s
+  at the same time — the plugin's and the project's.
+
+`boost:update` **does not** delete these folders: it only removes a skill it has already tracked
+and that left `boost.json`, and none of the three are listed there. They are MIT copies, with the
+original `LICENSE` attached — updating is re-copying from upstream ([Caveman](https://github.com/JuliusBrussee/caveman),
+[Ponytail](https://github.com/DietrichGebert/ponytail)).
+
+### The feature cycle with an agent
+
+The kit does not ask you to trust the agent: it asks the agent to **leave a trail**. Each step
+produces a file that the next step checks.
+
+| # | You do | The agent produces | Why it exists |
+|---|---|---|---|
+| 1 | `/feature-wiki` with the request in plain text | `wikis/specs/{branch}/{feature}/00-requisito.md` — **immutable copy** of what you asked | The requirement is never rewritten to fit what was implemented. It is what judges the delivery |
+| 2 | read and adjust | `01-plano-acao.md` (step-by-step PRD), `02-decisoes.md` (ADR), `04-casos-de-teste.md`, and `05-…-browser.md` when there is a screen | Reviewing a plan is cheap; reviewing 900 lines of diff is not |
+| 3 | approve | automatic plan audit by `ponytail-review` | Cuts unnecessary step and premature abstraction **before** it becomes code |
+| 4 | — | implementation following the plan, with `03-progresso.md` updated | A session that drops resumes from where it stopped, without rebuilding context |
+| 5 | — | tests running (`--parallel --tia`) | Green is a precondition for the next step, not the delivery |
+| 6 | — | `/feature-quality-gate` → `06-relatorio-qa.md` | Confronts requirement × plan × running app. The **traceability matrix** exposes the clause that never became a step, test or code — the omission a green suite does not denounce |
+| 7 | approve | `/requirement-to-rule` → rule in `.ai/rules` | A decision that matters beyond this feature starts to matter for **every future session**, of any agent |
+
+**What this changes in practice:**
+
+- **The agent reads before writing.** `wikis/` and `.ai/rules` answer what already exists, and the
+  [feature roadmap](#feature-roadmap) below lists the 56 ready screens. A feature
+  reimplemented from scratch because the agent didn't know it existed is the most expensive and most invisible cost.
+- **Context becomes a file, not chat history.** Switching agent, machine or person does not
+  lose the why of the decision — it is in the ADR, versioned in the same commit as the code.
+- **Simple by default, without cutting what matters.** Ponytail never simplifies validation at a trust
+  boundary, error handling that prevents data loss, security or accessibility.
+- **Less token per reply.** Caveman cuts the prose from the conversation; wiki, code and commit continue
+  in normal Portuguese.
+- **Every fix sticks.** A resolved trap becomes `.ai/rules` — and the next gate already checks it.
+  When it can be proven by `pest --arch`, PHPStan or Rector, the rule points to the test instead of
+  asking for goodwill.
+
+> For a typo, `.env` tweak, dependency bump or pure refactor, **skip the cycle**. The skill
+> itself tells you when it isn't worth it — ceremony in a one-line change is the over-engineering
+> Ponytail exists to cut.
 
 ## Feature roadmap
 
@@ -511,11 +571,26 @@ The kit ships its own suite, isolated in `tests/Kit/` — access to the three pa
 It's kept apart from yours on purpose: after a `kit:update` you want to know whether the **foundation** is still intact, without waiting on your business suite.
 
 ```bash
-composer test:kit                     # shortcut
-php artisan test --testsuite=Kit      # equivalent
-php artisan test --group=kit          # same thing, by Pest group
+composer test:kit                     # parallel — ~3 min
+composer test:kit:serial              # serial, to investigate a failure
 php artisan test --testsuite=Feature  # only YOUR tests
 ```
+
+**It runs in parallel by default.** Measured on this suite: **12m26s → ~3min** (20 cores), same cases and
+same assertions. Each worker has its own database, because `phpunit.xml` uses SQLite `:memory:`, which
+is per process.
+
+If a failure only appears in parallel, it's a sign of a test that depends on order or shared
+state — `composer test:kit:serial` isolates that, and the difference between the two is the diagnosis.
+
+> **Why `--testsuite` and not `--group=kit`**: `pest-plugin-browser` spins up Playwright already at
+> **collection**, when parsing any file with `visit()` — before any group filter is consulted. On a
+> freshly installed project, without the browsers downloaded, `--group=kit` dies with
+> `PlaywrightNotInstalledException` without running a single test.
+
+> **Extra argument needs `--`**: `composer test:kit --parallel` is silently swallowed by Composer;
+> what works is `composer test:kit -- --parallel`. Since parallel is already the default, you don't
+> need this — but it's good to know for any other flag.
 
 Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never touches them.
 
@@ -683,7 +758,7 @@ What it does, in order:
 1. **Checks the ground** — requires a git repository with a clean tree. Without that there would be no way back, so it refuses to run (showing the commands to put the project under version control).
 2. **Links the kit temporarily** — adds the `kit` remote with **push blocked** and fetches the tags into a namespace of their own (`kit-v*`), so they don't collide with your project's versions.
 3. **Compares** — from the version in `config('kit.version')` up to the chosen tag, restricted to the paths that belong to the kit. Your business code never enters the equation.
-4. **Offers a temporary branch** (`kit-update/v0.2.0`) so yours doesn't get dirty.
+4. **Offers a temporary branch** (`kit-update/v0.16.0`) so yours doesn't get dirty.
 5. **Asks file by file** — see the diff, apply, skip or stop. You can change your mind halfway and apply the rest in bulk. A file removed from the kit is never deleted automatically: it only warns you.
 6. **Unlinks** — removes the remote and the `kit-*` tags on the way out, even if you interrupt it halfway. The project isn't left with anything third-party hanging around.
 
@@ -710,8 +785,8 @@ The distinction is the point: **a new file has nothing to overwrite**, so applyi
 | `--only-new` | applies all the new files at once (overwrites nothing) |
 | `--all` | applies everything at once, with a single confirmation for the set |
 | `--dry-run` | report only, changes nothing |
-| `--tag=v0.3.0` | compare against a specific version |
-| `--from=v0.1.0` | tell it which version the project started from (when `config/kit.php` doesn't know) |
+| `--tag=v0.16.0` | compare against a specific version |
+| `--from=v0.15.0` | tell it which version the project started from (when `config/kit.php` doesn't know) |
 | `--branch=name` | choose the temporary branch's name |
 | `--no-branch` | apply on the current branch |
 | `--keep-remote` | keep the kit's remote and tags at the end |
@@ -732,26 +807,26 @@ git remote add kit https://github.com/gsferro/filament-starter-kit-easy.git
 git remote set-url --push kit no_push
 ```
 
-The kit's tags go into a namespace of their own (`kit-v*`). That matters: a `git fetch kit --tags` would bring `v0.1.0`, `v0.2.0`… into your project and collide with **your** versions later.
+The kit's tags go into a namespace of their own (`kit-v*`). That matters: a `git fetch kit --tags` would bring `v0.15.0`, `v0.16.0`… into your project and collide with **your** versions later.
 
 ```bash
 git fetch --no-tags kit 'refs/tags/*:refs/tags/kit-*'
-git tag -l 'kit-*'      # kit-v0.1.0, kit-v0.2.0, ...
+git tag -l 'kit-*'      # kit-v0.15.0, kit-v0.16.0, ...
 ```
 
 Then, at each version, see what changed and bring over only what matters:
 
 ```bash
 # 1. overview between your version and the new one
-git diff kit-v0.1.0..kit-v0.2.0 --stat
+git diff kit-v0.15.0..kit-v0.16.0 --stat
 
 # 2. the diff of the kit's "glue" (ignore what you already rewrote)
-git diff kit-v0.1.0..kit-v0.2.0 -- app/Providers app/Filament/Concerns \
+git diff kit-v0.15.0..kit-v0.16.0 -- app/Providers app/Filament/Concerns \
         app/Filament/Spotlight app/Traits resources/views/errors config/kit.php
 
 # 3. bring it over file by file, reviewing
-git checkout kit-v0.2.0 -- resources/views/errors
-git checkout kit-v0.2.0 -- app/Filament/Concerns/BadgeContagemNavegacao.php
+git checkout kit-v0.16.0 -- resources/views/errors
+git checkout kit-v0.16.0 -- app/Filament/Concerns/BadgeContagemNavegacao.php
 ```
 
 Do this on a branch (`git switch -c update-kit`) and run `composer test` before merging. Files you rewrote: read the diff and apply by hand — it's the only safe path.
@@ -848,6 +923,19 @@ Everything below comes installed, published and registered on the panels — the
 | [laravel/reverb](https://packagist.org/packages/laravel/reverb) | WebSocket for real-time notifications |
 
 > **Engines under the plugins**, installed as dependencies (you don't declare them, but they're what actually runs): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (the checks), `spatie/laravel-activitylog` (the activity log) and `livewire/livewire` (all of Filament).
+
+### Model Caching
+
+The kit applies the `App\Traits\ModeloCacheavel` trait to models that have a Resource on the `/app` panel — currently `User`, `Convite` and `Projeto`. The `mike-bronner/laravel-model-caching` package caches Eloquent queries when `MODEL_CACHE_ENABLED=true`.
+
+- The default is `false` (`MODEL_CACHE_ENABLED=false` in `.env.example`).
+- To turn it on, set `MODEL_CACHE_ENABLED=true` and use `MODEL_CACHE_STORE=model-cache` (Redis store configured in `config/cache.php`).
+- Invalidation is automatic: `save`, `update` and `delete` clear the model's cache.
+- The `/admin` and `/infra` panels remain **without** model caching by default, reducing the risk of stale data on administrative screens.
+
+```bash
+php artisan modelCache:clear      # clears the model cache
+```
 
 ### Development (`require-dev`)
 
