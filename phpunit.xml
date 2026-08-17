@@ -77,6 +77,15 @@
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <!--
+            O notifier de releases enfileira um sync no evento de Login, e com
+            QUEUE_CONNECTION=sync isso vira uma chamada HTTP ao repo.packagist.org
+            DENTRO do teste: ~7s no primeiro login de cada teste que autentica de
+            verdade (formulário, aceite de convite, destravar sessão). No CI a
+            latência estourava a espera do `assertPathIs('/app')` e derrubava o
+            login pela tela em tests/Browser/PerfisTest.php.
+        -->
+        <env name="FILAMENT_COMPOSER_RELEASE_NOTIFIER_ENABLED" value="false" force="true"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
