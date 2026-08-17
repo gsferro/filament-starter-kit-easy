@@ -71,8 +71,6 @@ Para testar o recorte de acesso, crie um usuário só com o papel `admin` ou `in
 
 Nulo **não** é coringa: papel sem painel só carrega permissões e não abre painel algum. O papel `master_global` entra nos três de outro jeito — ele vence qualquer gate via `Gate::before` (`App\Providers\KitServiceProvider`), sem precisar de permissions no banco, e o `canAccessPanel()` o libera antes de olhar a coluna.
 
-> ⚠️ **Quebra deliberada:** até a 0.10.0 o `/app` era aberto a **qualquer usuário autenticado**. Deixou de ser — sem papel, ninguém entra em painel nenhum. Se você está atualizando um projeto, rode os dois seeders (`ShieldPermissionsSeeder` e `PapeisSeeder`) e revise os usuários: quem opera o negócio precisa do papel `panel_user`, ou de um papel seu com o painel `app`.
-
 Nos painéis **sem** tenancy (`/admin`, `/infra`) o papel precisa estar atribuído no contexto global: ser `admin` dentro de uma organização não é credencial para administrar a instalação. No `/app` vale o papel em qualquer organização — qual delas você abre é decidido depois, por `canAccessTenant()`.
 
 > Com o [modo multi-tenant](#multi-tenancy-opt-in) ligado, o **App** vira `/app/{tenant}` e passa a mostrar só os dados do tenant selecionado. Admin e Infra seguem globais.

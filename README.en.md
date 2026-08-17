@@ -71,8 +71,6 @@ To see the access boundary in action, create a user with only the `admin` or `in
 
 Null is **not** a wildcard: a role with no panel only carries permissions and opens no panel at all. The `master_global` role gets into all three another way — it beats any gate through `Gate::before` (`App\Providers\KitServiceProvider`), with no permissions in the database, and `canAccessPanel()` lets it through before it ever looks at the column.
 
-> ⚠️ **Deliberate break:** up to 0.10.0 `/app` was open to **any authenticated user**. Not anymore — with no role, nobody gets into any panel. If you are updating an existing project, run both seeders (`ShieldPermissionsSeeder` and `PapeisSeeder`) and review your users: whoever runs the business needs the `panel_user` role, or a role of your own carrying the `app` panel.
-
 On panels **without** tenancy (`/admin`, `/infra`) the role must be assigned in the global context: being an `admin` inside one organization is not a credential to administer the installation. On `/app` the role counts in any organization — which one you open is decided later, by `canAccessTenant()`.
 
 > With [multi-tenancy](#multi-tenancy-opt-in) turned on, **App** becomes `/app/{tenant}` and shows only the selected tenant's data. Admin and Infra stay global.
@@ -122,7 +120,7 @@ More screens: [application health](https://raw.githubusercontent.com/gsferro/fil
 - **⌘K search** in place of the topbar's native field: finds records, screens, pages and creation actions — all scoped by permission (details below)
 - Animated count badges in the menu, notification center with tabs, environment indicator
 - **Dashboards already filled in** on the admin and infra panels: 20 widgets (stat cards with an animated counter, funnels, goals, breakdowns, timelines) over the data the panels already have — no empty screen waiting for you
-- Branded error pages (Sentinel) in pt-BR — the 403 one only shows the permission diagnosis outside production
+- Branded error pages (Sentinel) in Portuguese (pt-BR) — the 403 one only shows the permission diagnosis outside production
 - 100% pt-BR UI, including plugins that ship English only (translations in `lang/vendor/`)
 
 ### The ⌘K search
@@ -159,10 +157,10 @@ On the offer path the token is **not enough**: acceptance requires the authentic
 to be the invited e-mail, checked in the model and not in the screen's query. An intercepted
 link is not access without the password of the invited address.
 
-And saying **no** is possible. The user menu gains **Convites recebidos** (received
-invitations), with the count of pending offers and the accept and decline actions; a decline
+And saying **no** is possible. The user menu gains **Received invitations** (Convites
+recebidos), with the count of pending offers and the accept and decline actions; a decline
 is **recorded**, the invitation stops being valid (including through the link), and whoever
-administers sees "Recusado" in the listing instead of re-inviting someone who already said
+administers sees "Declined" in the listing instead of re-inviting someone who already said
 no. The e-mail link remains the canonical path: it also works for someone who doesn't belong
 to any organization yet and therefore can't reach that screen.
 
@@ -315,6 +313,132 @@ php artisan boost:update                                # syncs it to every agen
 
 > `AGENTS.md` and `CLAUDE.md` are **generated** by Boost — editing them by hand is lost work on the next `boost:update`. Durable rules go in `.ai/rules` (the `record-rule` tool) or in `wikis/`.
 
+## Feature roadmap
+
+Everything the kit delivers, numbered, with **where it is**, **who can access it** and **how to check it**. It serves three purposes: knowing what already exists before reimplementing, having a manual test script after a `kit:update`, and giving names to features in the automated tests.
+
+**The "Test" column** says what is already checked automatically:
+
+| Mark | Meaning |
+|---|---|
+| 🟢 | covered by automated test — `composer test:kit` or `composer test:browser` |
+| 🔵 | covered **in a real browser**, with JS running |
+| ⚪ | no test: depends on an external service (worker, cron, Docker, SMTP) or on visual judgment |
+
+Where the route has `{org}`, it is multi-tenant mode — without it, the path is `/app` directly.
+
+### Access and authentication
+
+| # | Feature | Where | Who can access | How to check | Test |
+|---|---|---|---|---|---|
+| F-01 | Login on the three panels | `/app/login`, `/admin/login`, `/infra/login` | anyone | the three screens open without authentication, in the two-column layout | 🔵 |
+| F-02 | Password recovery | `/{panel}/password-reset/request` | anyone | the screen opens; the e-mail depends on `MAIL_MAILER` | 🔵 |
+| F-03 | Registration **only** by invitation | `/app/register?token=…` | whoever has a valid token | without a token in the query, the screen refuses and goes to login | 🟢 |
+| F-04 | Two-factor authentication | `/{panel}/two-factor-authentication` | authenticated | the screen opens and offers the QR | 🔵 |
+| F-05 | Passkeys | My profile | authenticated | key registration, in Breezy's profile | ⚪ |
+| F-06 | Session lock | user menu → *Lock session* | authenticated | locks without logging out; returns with password. Uses the login layout, not `SimplePage` | 🟢 |
+| F-07 | My profile, avatar and password | `/{panel}/my-profile` | authenticated | edits name, e-mail, password and avatar | 🔵 |
+| F-08 | Impersonate | `/admin/users` → row action | `master_global` | enters as another user and returns via the top banner | ⚪ |
+
+### Authorization
+
+| # | Feature | Where | Who can access | How to check | Test |
+|---|---|---|---|---|---|
+| F-09 | **The role decides the panel** (`roles.painel`) | `/admin` → Roles | `admin`, `master_global` | create a role with panel `infra`: whoever has it enters `/infra` and takes 403 on `/admin` | 🟢 |
+| F-10 | Readable 403 on the wrong panel | any panel | — | the 403 screen tells the account, the roles and offers an exit — and **does not** reveal permission in production | 🔵 |
+| F-11 | `master_global` wins by `Gate::before` | the three | `master_global` | they enter everything **without** any permission in the database | 🟢 |
+| F-12 | Roles and permissions grouped by panel | `/admin/shield/roles` | `admin` | the screen separates *Panel /admin*, */app* and */infra* | 🟢 |
+| F-13 | `panel_user` **does not** administer | `/app{/org}` | `panel_user` | they use the business and don't see Users or Invitations — their matrix is the panel's **minus** the admin screens | 🟢 |
+| F-14 | Without a role, nobody enters | the three | — | authenticated user without a role takes 403 on the three. Null **is not** a wildcard | 🟢 |
+
+### Invitations
+
+| # | Feature | Where | Who can access | How to check | Test |
+|---|---|---|---|---|---|
+| F-15 | Individual invitation | `/admin/convites` · `/app/{org}/convites` | `admin`, `admin_app` | e-mail + role + organization; the link goes by e-mail with a single-use token | 🟢 |
+| F-16 | Invitation for someone who **already has an account** | same place | same | it becomes an *access offer*: the person logs in with the password they already have and is linked | 🟢 |
+| F-17 | Received invitations box | user menu → *Received invitations* | any authenticated | accept **or decline**; the decline is recorded | 🟢 |
+| F-18 | Bulk invitation | listing header | `admin`, `admin_app` | paste N addresses; one with a problem **does not** bring down the others, and the summary says why | 🟢 |
+| F-19 | Automatic reminders | `kit:convites-lembrar` (cron 08:00) | — | D+3 and D+5, with a **second parallel link**; the original keeps working | 🟢 |
+| F-20 | Resend / revoke | row action | `admin` | resend **kills** the previous links; revoke deletes and goes to `/infra/audits` | 🟢 |
+
+### Multi-tenancy (opt-in)
+
+| # | Feature | Where | Who can access | How to check | Test |
+|---|---|---|---|---|---|
+| F-21 | Turn the mode on | `php artisan kit:tenancy` | — | runs `migrate:fresh --seed`; **requires a clean git tree** | ⚪ |
+| F-22 | Panel by organization | `/app/{org}` | linked | the selector lists only the user's organizations; another one gives 404 | 🟢 |
+| F-23 | Organization CRUD | `/admin/organizacoes` | `admin` | create, **view** and edit in full screen | 🔵 |
+| F-24 | User linking | organization → *Linked users* | `admin` | link, unlink and give a role **in that** organization | 🟢 |
+| F-25 | `admin_app` | `/app/{org}` | the role | administers **one** organization: users and invitations scoped. Does not enter `/admin` | 🟢 |
+| F-26 | Scope by trait | your models | — | `BelongsToTenant` gives relationship, global scope and filling — works outside Filament too | 🟢 |
+| F-27 | **Visual identity: color** | organization → *Visual identity* | `admin` | choose the color and open `/app/{org}`: the whole panel wears its color, and `/admin` **does not** change | 🔵 |
+| F-28 | **Visual identity: logo** | same | `admin` | the logo appears on the `/app` lock screen instead of the base image | 🔵 |
+
+### Administration
+
+| # | Feature | Where | Who can access | How to check | Test |
+|---|---|---|---|---|---|
+| F-29 | Users | `/admin/users` | `admin` | CRUD, with **mandatory** role on creation | 🟢 |
+| F-30 | AI agent catalog | `/admin/agentes-ia` | `admin` | prompt, provider, model, tools and guardrails are **data**, editable without deploy | 🟢 |
+| F-31 | Onboarding authoring | `/admin/onboarding-flows` | `admin` | checklists and tours; consumption is in the business panel | 🔵 |
+| F-32 | Filled dashboard | `/admin` | `admin` | 6 widgets over the data the panel already has | 🔵 |
+
+### Infrastructure
+
+| # | Feature | Where | Who can access | How to check | Test |
+|---|---|---|---|---|---|
+| F-33 | Health checks | `/infra/health-check-results` | `infra` | database, cache, queues, scheduler, debug mode and local AI. **Opens empty until `php artisan health:check` runs** | 🔵 |
+| F-34 | Backups | `/infra/backup-runs` | `infra` | history and health per destination | 🔵 |
+| F-35 | Queues | `/infra/queue-monitors` | `infra` | pending, failed and history — of any driver | 🔵 |
+| F-36 | Logs | `/infra/logs` | `infra` (`ver-logs`) | reading and searching by channel. **No delete button**: a trail is evidence | 🔵 |
+| F-37 | Change auditing | `/infra/audits` | `infra` | who changed what, field by field | 🔵 |
+| F-38 | Access trail | `/infra/authentication-logs` | `infra` | logins, IP and device | 🔵 |
+| F-39 | Command center | `/infra/command-center/commands` | `infra` (`command-center:access`) | **pre-approved** commands in `config/command-center.php`, with history | 🔵 |
+| F-40 | Pulse | `/infra/pulse` | `infra` | real-time performance. Needs `pulse:check` to have data | 🔵 |
+| F-41 | Dependency graph | `/infra/dependency-graph` | authenticated in `/infra` | map of models, relations, resources and panels | 🔵 |
+| F-42 | Composer releases | `/infra/composer-release-packages` | `infra` | warns of new version. **Informational — never updates anything.** Sync is a job: without worker, the screen is empty | 🔵 |
+| F-43 | AI runs | `/infra/execucoes-ia` | `infra` (`ver-ai-tasks`) | ledger with cost and tokens per run | 🔵 |
+| F-44 | Clear caches | `/infra` topbar | `infra` | `cache`, `config`, `view` and `modelCache` together | ⚪ |
+
+### Productivity and UI
+
+| # | Feature | Where | Who can access | How to check | Test |
+|---|---|---|---|---|---|
+| F-45 | ⌘K search | topbar of the three | authenticated | records, screens, pages and "Create X" actions — **all scoped by permission** | ⚪ |
+| F-46 | Animated count badges | sidebar | authenticated | the count comes from `getEloquentQuery()`; zero doesn't become a badge | 🟢 |
+| F-47 | Notification center | bell | authenticated | tabs and categories; real-time with Reverb, otherwise 30s polling | ⚪ |
+| F-48 | Panel switch | user menu | whoever accesses more than one | goes straight to the chosen panel | 🔵 |
+| F-49 | **Light/dark theme** | top switch | anyone | screens follow `prefers-color-scheme` and the switch; choice persists | 🔵 |
+| F-50 | Resizable columns | any table | authenticated | width adjustable, remembered in the session | ⚪ |
+| F-51 | Environment indicator | topbar | anyone | `local`/`staging` badge; hides in production | 🔵 |
+| F-52 | Branded error pages | 403, 404, 419, 500, 503 | — | with the panel's look, in Portuguese (pt-BR) | 🔵 |
+
+### AI
+
+| # | Feature | Where | Who can access | How to check | Test |
+|---|---|---|---|---|---|
+| F-53 | Assistant chat | corner of **every** `/app` screen | authenticated | streaming; renders empty without user | ⚪ |
+| F-54 | Chained guardrails | — | — | budget, prompt injection, local classifier, PII redaction and sensitive-output filter. **Fail-closed** | 🟢 |
+| F-55 | Run ledger | `/infra/execucoes-ia` | `infra` | every call becomes a row with cost and tokens | 🟢 |
+| F-56 | Local inference | `docker compose --profile ai up -d` | — | llama.cpp; or switch `AI_PROVIDER` to SaaS | ⚪ |
+
+### What the roadmap **does not** cover on its own
+
+Five features depend on something outside the process, and no test replaces it:
+
+| Feature | Depends on | Without this |
+|---|---|---|
+| F-15…F-20 (e-mail delivery) | a real `MAIL_MAILER` **and** a worker (`QUEUE_CONNECTION=database`) | the invitation is saved and the queue fills; nothing leaves |
+| F-33 (health checks) | a run of `php artisan health:check` | the screen opens **empty**, with no state explaining — the dashboard widget warns, the resource page doesn't |
+| F-35, F-42 (queues and releases) | a worker | the Composer sync job stays in the queue: F-42 shows "no records" and F-35 counts pending against an empty table |
+| F-19 (reminders) | the scheduler (`schedule:work`) | the command is never called |
+| F-34 (backups) | destination configured in `config/backup.php` | the screen opens empty |
+| F-40 (Pulse) | `pulse:check` running | the screen opens with no data |
+| F-53, F-56 (AI) | llama.cpp or an API key | the assistant answers unavailable |
+
+The first three are solved by `composer dev` in development: it brings up server, queue and Vite together.
+
 ## Requirements
 
 - PHP 8.3+ and Composer 2
@@ -394,6 +518,22 @@ php artisan test --testsuite=Feature  # only YOUR tests
 ```
 
 Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never touches them.
+
+### How tests are thought out: SFDIPOT sweep
+
+Every new feature goes through an **SFDIPOT** sweep before it becomes a test case. The heuristic, created by James Bach, splits the system into seven perspectives so that no dimension is forgotten in the specification:
+
+| Letter | Perspective | What it covers |
+|---|---|---|
+| **S** — Structure | Structure | Code, files, physical or logical components |
+| **F** — Function | Function | What the software does, its features |
+| **D** — Data | Data | What the system processes, stores or manipulates |
+| **I** — Interfaces | Interfaces | Screens, APIs, integrations, inputs and outputs |
+| **P** — Platform | Platform | Operating system, hardware or environment it runs on |
+| **O** — Operations | Operations | How the user or administrator uses the system day to day |
+| **T** — Time | Time | Concurrency, performance, history or the sequence of events |
+
+The benefit is in not deriving tests only from the "happy path". What slips through is rarely one more case — usually it is an entire dimension (data, platform, time, operations) that nobody remembered to cover. The sweep forces this review into the plan before the code exists.
 
 ## Customize your project
 
