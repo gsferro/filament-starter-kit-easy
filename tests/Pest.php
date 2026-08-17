@@ -169,7 +169,7 @@ pest()->extend(TenancyTestCase::class)
 | Se precisar rodar um arquivo isolado depois de um `view:clear`, rode a suíte
 | uma vez antes — ou aceite que o primeiro cenário vai falhar por tempo.
 */
-pest()->browser()->timeout(20_000);
+pest()->browser()->timeout(45_000);
 
 /*
 |--------------------------------------------------------------------------

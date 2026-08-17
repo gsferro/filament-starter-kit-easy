@@ -12,8 +12,3 @@
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
-
-# Configurações de ferramentas de desenvolvimento: não fazem parte do dist.
-/phpstan.neon export-ignore
-/phpunit.xml export-ignore
-/pint.json export-ignore
