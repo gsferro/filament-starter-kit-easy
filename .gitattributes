@@ -12,3 +12,8 @@
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
+
+# `phpstan.neon`, `phpunit.xml` e `pint.json` NÃO entram aqui: os scripts `lint`,
+# `types:check` e `test` do composer.json seguem no dist e sem esses arquivos
+# nenhum deles roda no projeto instalado. Os três estão em
+# KitUpdate::CAMINHOS_DO_KIT, e tests/Kit/KitUpdateTest.php falha se voltarem.
