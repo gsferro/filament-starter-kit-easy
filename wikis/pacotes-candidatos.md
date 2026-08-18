@@ -167,8 +167,25 @@ operador vê, busca e reaproveita o que já subiu.
 - Tabela própria significa que o dado de mídia não é portável para fora do Filament — um job ou uma
   API teriam de conhecer o schema do Curator.
 
-**Esforço**: médio · **Veredito**: o par 1 × 2 é uma **decisão excludente**. Curator é o caminho
-rápido; medialibrary é o caminho padrão.
+**Multi-tenancy — verificado no código em 18/08/2026**
+
+O Curator **tem** suporte explícito: `Config/Concerns/SupportsTenancy.php`, `tenantAware()` no
+`CuratorPicker`, `isScopedToTenant()` e `getTenantOwnershipRelationshipName()` no `MediaResource`,
+coluna `tenant_id` na migration, e o picker filtrando `->where('{relationship}_id', ...)`.
+
+O plugin oficial (item 1) tem **zero** ocorrências de `tenant` no código — e não precisa: a tabela
+`media` do Spatie é `morphs('model')`, então cada arquivo pertence a um registro e herda o escopo do
+dono. Não há biblioteca compartilhada, logo não há o que vazar.
+
+**A armadilha**: o Curator nasce com `'tenancy' => ['enabled' => false]`. Instalado num projeto do
+kit com a tenancy ligada e sem virar essa chave, todo arquivo de toda organização aparece no picker
+de todas as outras — sem erro, sem aviso.
+
+**Esforço**: médio · **Veredito**: o par 1 × 2 é uma **decisão excludente**, e não é escolha de
+gosto. Para um kit genérico com tenancy opt-in, "escopado por construção" (item 1) vence
+"escopado por configuração" (item 2) — o default do Curator não acompanha quem liga a tenancy
+**depois** de instalar. Detalhamento e o que a adoção do Curator exigiria em
+[`pacotes-ranking.md`](pacotes-ranking.md#multi-tenancy--o-critério-que-decide-este-par).
 
 ---
 

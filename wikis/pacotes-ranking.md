@@ -76,6 +76,39 @@ Levantadas na revisão de 18/08/2026, em ordem de gravidade:
 
 > Os dois resolvem a mesma coisa. Adotar ambos deixa duas tabelas de mídia no kit.
 
+#### Multi-tenancy — o critério que decide este par
+
+Verificado no código dos dois em 18/08/2026, não na descrição do diretório.
+
+| | **1 — oficial** | **2 — Curator** |
+|---|---|---|
+| Código de tenancy | **nenhum** (0 ocorrências de `tenant` no pacote) | `Config/Concerns/SupportsTenancy.php`, `tenantAware()` no picker, `isScopedToTenant()` + `getTenantOwnershipRelationshipName()` no `MediaResource`, coluna `tenant_id` |
+| Modelo de dados | `media` com `morphs('model')` — **cada arquivo pertence a um registro** | tabela própria, registros **avulsos** numa biblioteca compartilhada |
+| Como o escopo acontece | **por construção**: a mídia herda o escopo do dono. `Projeto` escopado por organização ⇒ mídia escopada junto | **por configuração**: `curator.features.tenancy.enabled` + `relationship_name`, e o picker filtra `{relationship}_id` |
+| Superfície de vazamento | **não existe** — não há pool nem tela de navegação | a biblioteca compartilhada **é** a superfície |
+| Default | n/a | **`'enabled' => false`** |
+
+**A armadilha do Curator**: ele nasce com a tenancy desligada. Instalado num projeto do kit com
+`kit.tenancy.enabled` ligado e sem virar essa chave, **todo arquivo de toda organização aparece no
+picker de todas as outras** — sem erro, sem aviso.
+
+Isso inverte a leitura fácil ("Curator é o atalho, medialibrary é o padrão"):
+
+- **Curator tem a feature e tem o risco.** A biblioteca compartilhada é o valor dele *e* a superfície
+  de vazamento.
+- **O oficial não tem a feature porque não tem o risco.** Sem pool, não há o que escapar.
+
+Para um kit genérico distribuído por `create-project` — em que a tenancy é **opt-in** e pode ser
+ligada depois da instalação, quando o default do Curator já foi aceito —, "seguro por construção"
+pesa mais que "configurável". **Recomendação: item 1.**
+
+**Se ainda assim for Curator**, três coisas fazem parte da entrega, não são detalhe:
+
+1. `curator.features.tenancy.enabled` amarrado a `config('kit.tenancy.enabled')`, não escrito à mão
+2. `relationship_name` apontando para a relação do `Tenant`
+3. Um caso de teste que cria arquivo na organização A e afirma que o picker da B **não** o enxerga —
+   e que continua valendo depois de o `kit:tenancy` ligar a tenancy num projeto já instalado
+
 | # | Pacote | O que faz | Por que aqui |
 |---|--------|-----------|---|
 | **3** | `promethys/revive` | Lixeira central para qualquer model com `SoftDeletes` | O kit usa soft delete e não tem tela de restauração — hoje é tinker. Substitui código próprio (o `mini-pff` resolveu com uma `Page` custom). Exige policy: restaurar ignora regra de negócio por definição |
@@ -380,7 +413,7 @@ Quick Links duplicados.
 | Instalados hoje | 51 (`require`) + 15 (`require-dev`) |
 
 **Se for instalar só cinco**: 7 (FilaCheck) → 5 (Mail Log) → 4 (Exception Viewer) → 3 (Revive) →
-1 ou 2 (mídia). Os quatro primeiros somam risco quase nulo; o quinto é a decisão de arquitetura que
+**1** (mídia — ver o critério de tenancy acima; para este kit o oficial vence o Curator). Os quatro primeiros somam risco quase nulo; o quinto é a decisão de arquitetura que
 a 1.0 precisa tomar de qualquer jeito.
 
 > ⚠️ **Todo `vendor/pacote` desta página veio do slug da URL do diretório**, que não expõe o nome
