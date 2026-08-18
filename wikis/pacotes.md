@@ -103,5 +103,8 @@ diretório oficial, o que vale avaliar e o que já foi olhado e recusado* — te
 (agosto/2026), top 10 candidatos com prós e contras, segunda linha e a lista de descartados com o
 motivo de cada um.
 
+E a fila de adoção, com os 112 que sobraram ordenados do que mais agrega ao que menos:
+**[pacotes-ranking.md](pacotes-ranking.md)**.
+
 Pacote aprovado sai de lá e entra aqui, na tabela do "já existe". Pacote recusado **fica** lá, com o
 motivo — é o que impede a próxima varredura de trazer o mesmo nome de volta.

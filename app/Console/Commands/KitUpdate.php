@@ -143,6 +143,7 @@ class KitUpdate extends Command
         'wikis/convencoes.md',
         'wikis/ia.md',
         'wikis/pacotes-candidatos.md',
+        'wikis/pacotes-ranking.md',
         'wikis/pacotes.md',
         'wikis/receitas.md',
 

@@ -36,11 +36,17 @@ vale a pena e o que já foi olhado e recusado — para não ser reavaliado do ze
 
 ### Distribuição
 
-| Classificação | Aprox. | O que significa |
+Contado nas tabelas dos 7 lotes, não estimado:
+
+| Classificação | Qtd. | O que significa |
 |---|---|---|
-| `SIM` | ~155 | Infra/plataforma genérica que um kit se beneficiaria |
-| `TALVEZ` | ~190 | Útil, mas duplicado com o instalado, nichado ou de decisão estética |
-| `NÃO` | ~200 | Domínio de negócio, integração de nicho, ou **já instalado aqui** |
+| `SIM` | **140** | Infra/plataforma genérica que um kit se beneficiaria |
+| `TALVEZ` | **201** | Útil, mas duplicado com o instalado, nichado ou de decisão estética |
+| `NÃO` | **206** | Domínio de negócio, integração de nicho, ou **já instalado aqui** |
+| **Total** | **547** | — |
+
+Dos 341 `SIM` + `TALVEZ`, **112** sobreviveram à consolidação de duplicatas e ao corte do que não
+agrega — são esses que a fila de [`pacotes-ranking.md`](pacotes-ranking.md) ordena.
 
 ---
 
@@ -506,3 +512,13 @@ top 10 sem que o par estivesse explícito:
 3. Pacote instalado sai daqui e entra em [`pacotes.md`](pacotes.md), na tabela do "já existe".
 4. Pacote recusado **fica** aqui, na seção 4, com o motivo. Motivo registrado é o que impede a
    próxima varredura de trazer o mesmo nome de volta.
+
+---
+
+## Onde continua
+
+O **top 10** acima é a análise a fundo. A lista completa e ordenada — os 112 pacotes que sobraram da
+triagem, do que mais agrega ao que menos, com os grupos excludentes marcados e os 435 excluídos com
+motivo registrado — está em **[pacotes-ranking.md](pacotes-ranking.md)**.
+
+Aquela é a fila de instalação. Esta é o dossiê dos finalistas.
