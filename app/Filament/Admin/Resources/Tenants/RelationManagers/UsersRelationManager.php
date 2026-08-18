@@ -132,7 +132,11 @@ class UsersRelationManager extends RelationManager
         /** @var Tenant $tenant */
         $tenant = $this->getOwnerRecord();
 
-        return $this->noContextoDe($tenant, $usuario, fn (): array => $usuario->roles->modelKeys());
+        // `array_values()` porque `modelKeys()` devolve `array<int, …>` para o analisador, e
+        // quem consome é o `->options()`/state do Select, que espera lista.
+        return array_values(
+            $this->noContextoDe($tenant, $usuario, fn (): array => $usuario->roles->modelKeys())
+        );
     }
 
     /**

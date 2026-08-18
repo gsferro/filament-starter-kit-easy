@@ -119,11 +119,17 @@ trait ConvidaEmMassa
                     $action->halt();
                 }
 
+                /*
+                 * `Auth::user()?->id` e não `Auth::id()`: o segundo é tipado `int|string|null`
+                 * (o identificador de um guard pode ser uuid), e `convite.convidado_por_id` é
+                 * FK inteira. Ler pelo model é o que amarra o valor à coluna de verdade —
+                 * alargar a assinatura de `convidarEmMassa()` deixaria passar um uuid até a FK.
+                 */
                 $this->notificarResultadoDoLote(Convite::convidarEmMassa(
                     $emails,
                     (int) $data['role_id'],
                     $tenantId === null ? null : (int) $tenantId,
-                    Auth::id(),
+                    Auth::user()?->id,
                 ));
             });
     }

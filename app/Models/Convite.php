@@ -428,7 +428,10 @@ class Convite extends Model implements Auditable
             ],
         );
 
-        return ['enviados' => $enviados, 'falhas' => $falhas];
+        // `array_values()` em `falhas`: o array nasce de um `->values()->all()` de Collection
+        // (que o analisador só sabe ser `array<int, …>`) e depois cresce por `[]=`. O contrato
+        // publicado é `list`, e `notificarResultadoDoLote()` itera por posição.
+        return ['enviados' => $enviados, 'falhas' => array_values($falhas)];
     }
 
     /**

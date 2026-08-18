@@ -87,14 +87,27 @@ class TelaBloqueio extends LockerScreen
         $config = $this->configBaseDoAuthDesigner();
         $painel = Filament::getCurrentOrDefaultPanel()?->getId();
 
+        /*
+         * A CHAVE da organização, não a organização: quem grava a sessão é
+         * `DefinirTenantDePermissoes`, com `$tenant?->getKey()`.
+         *
+         * A guarda de tipo não é cerimônia — `session()` devolve `mixed`, e `find()` com
+         * array/Arrayable devolve uma COLEÇÃO em vez de um model. Sessão adulterada com
+         * `tenant_corrente = [1, 2]` faria o resto do método tratar a coleção como
+         * organização: `->urlDaLogo()` estouraria `BadMethodCallException` na tela de
+         * bloqueio, que é justamente a tela que ninguém pode perder.
+         */
+        $sessao = session('tenant_corrente');
+        $chave  = is_int($sessao) || is_string($sessao) ? $sessao : null;
+
         $motivo = match (true) {
-            $painel !== 'app'                 => 'painel_sem_tenancy',
-            blank(session('tenant_corrente')) => 'sem_tenant',
-            default                           => null,
+            $painel !== 'app' => 'painel_sem_tenancy',
+            blank($chave)     => 'sem_tenant',
+            default           => null,
         };
 
         $organizacao = $motivo === null
-            ? Tenant::find(session('tenant_corrente'))
+            ? Tenant::find($chave)
             : null;
 
         $logo = $organizacao?->urlDaLogo();

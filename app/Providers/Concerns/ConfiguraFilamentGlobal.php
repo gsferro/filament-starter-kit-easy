@@ -219,6 +219,19 @@ trait ConfiguraFilamentGlobal
         return $table;
     }
 
+    /**
+     * O mesmo par de cor e ícone no Toggle de formulário e na ToggleColumn de tabela.
+     *
+     * Genérico, e não dois métodos: cada `configureUsing()` exige de volta EXATAMENTE o tipo
+     * que entregou (o do Toggle devolve `Toggle`, o da ToggleColumn devolve `ToggleColumn`).
+     * Um retorno `Toggle|ToggleColumn` cru não satisfaz nenhum dos dois — o `@template`
+     * amarra saída à entrada e mantém um método só.
+     *
+     * @template T of Toggle|ToggleColumn
+     *
+     * @param  T  $toggle
+     * @return T
+     */
     private function configuraToggle(Toggle|ToggleColumn $toggle): Toggle|ToggleColumn
     {
         return $toggle

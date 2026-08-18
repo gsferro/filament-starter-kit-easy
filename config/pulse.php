@@ -168,7 +168,10 @@ return [
 
         Recorders\Servers::class => [
             'server_name' => env('PULSE_SERVER_NAME', gethostname()),
-            'directories' => explode(':', env('PULSE_SERVER_DIRECTORIES', '/')),
+            // `(string)`: `env()` devolve bool quando o valor literal é "true"/"false", e
+            // `explode()` exige string. A variável é uma lista de caminhos separada por ':' —
+            // um booleano ali é erro de configuração, e vira lista vazia em vez de TypeError.
+            'directories' => explode(':', (string) env('PULSE_SERVER_DIRECTORIES', '/')),
         ],
 
         Recorders\SlowJobs::class => [

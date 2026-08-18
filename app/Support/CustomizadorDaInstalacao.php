@@ -253,7 +253,10 @@ final class CustomizadorDaInstalacao
      */
     private function perguntarBanco(): string
     {
-        $banco = select(
+        // `(string)`: o `select()` dos Prompts devolve `int|string` porque a chave da opção
+        // pode ser inteira. As três chaves declaradas logo abaixo são strings não numéricas,
+        // então o retorno é sempre uma delas.
+        $banco = (string) select(
             label: 'Banco de dados',
             options: [
                 'sqlite' => 'SQLite — padrão, não depende de nenhum serviço externo',

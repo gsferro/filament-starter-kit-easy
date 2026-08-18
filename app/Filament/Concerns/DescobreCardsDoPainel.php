@@ -98,7 +98,10 @@ trait DescobreCardsDoPainel
             ->values()
             ->all();
 
-        return $itens
+        // `array_values()` por cima do `->values()`: o `all()` da Collection devolve
+        // `array<int, CardGroup>` para o analisador, e o `filament-cards` consome a lista por
+        // posição.
+        return array_values($itens
             ->groupBy(fn (CardItem $item): string => static::grupoDe($item->getPage()))
             ->sortBy(fn (Collection $itens, string $grupo): array => [
                 // Sem rótulo vai por último; depois os grupos declarados, na ordem do painel;
@@ -109,8 +112,7 @@ trait DescobreCardsDoPainel
             ])
             ->map(fn (Collection $itens, string $grupo): CardGroup => CardGroup::make($grupo === '' ? null : $grupo)
                 ->schema($itens->sortBy(fn (CardItem $item): int => $item->getSort())->values()->all()))
-            ->values()
-            ->all();
+            ->all());
     }
 
     /** O grupo de navegação da classe, normalizado para string (o Filament aceita enum). */

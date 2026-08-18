@@ -57,8 +57,12 @@ class AgenteIaForm
                             ->label('Provider')
                             // Opções vindas do próprio config: o painel nunca oferece um provider
                             // que a aplicação não sabe resolver.
-                            ->options(fn (): array => collect(array_keys(config('ai.providers', [])))
-                                ->mapWithKeys(fn (string $chave): array => [$chave => $chave])
+                            // `int|string` é o que `array_keys()` entrega: o PHP converte
+                            // chave numérica em int, então um provider chamado "1" chegaria
+                            // como int e o callback tipado `string` estouraria TypeError sob
+                            // strict_types. O `(string)` desfaz essa conversão.
+                            ->options(fn (): array => collect(array_keys((array) config('ai.providers', [])))
+                                ->mapWithKeys(fn (int|string $chave): array => [(string) $chave => (string) $chave])
                                 ->all())
                             ->searchable()
                             ->placeholder('Default da aplicação'),

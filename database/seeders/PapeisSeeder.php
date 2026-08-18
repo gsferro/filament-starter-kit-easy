@@ -117,7 +117,9 @@ class PapeisSeeder extends Seeder
      */
     private function permissoesDeAdministracaoDoApp(): array
     {
-        return Paineis::permissoesDe('app', [
+        // `array_values()` no fim: `Paineis::permissoesDe()` devolve `Collection<int, string>`
+        // e o `all()` dela é `array<int, string>` para o analisador — o contrato aqui é lista.
+        return array_values(Paineis::permissoesDe('app', [
             UserResource::class,
             ConviteResource::class,
 
@@ -133,7 +135,7 @@ class PapeisSeeder extends Seeder
              * qualquer organização.
              */
             ExceptionResource::class,
-        ])->all();
+        ])->all());
     }
 
     /**
