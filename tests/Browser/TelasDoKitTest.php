@@ -12,8 +12,8 @@ use Database\Seeders\ShieldPermissionsSeeder;
  * porque um componente de plugin registrou erro no console. Nenhuma dessas três falhas
  * move o status HTTP.
  *
- * Lote com `visit([...])`: as 52 telas em 2 cenários (um deles com dataset de 3 painéis).
- * Escrever um cenário por tela custaria 52 boots de navegador para provar a mesma coisa.
+ * Lote com `visit([...])`: as 55 telas em 2 cenários (um deles com dataset de 3 painéis).
+ * Escrever um cenário por tela custaria 55 boots de navegador para provar a mesma coisa.
  *
  * O inventário das rotas vive AQUI e em mais nenhum lugar. A wiki que especificou estes
  * cenários listava as mesmas 52 rotas numa terceira cópia, e foi essa duplicação que
@@ -110,6 +110,22 @@ it('abre as telas autenticadas do painel', function (array $rotas): void {
         '/infra/command-center/history',
         '/infra/command-center/definitions',
         '/infra/command-center/definitions/create',
+        /*
+         * As três telas da 0.17.0.
+         *
+         * A de exceções é a que mais precisa estar aqui, e não pelo motivo óbvio: o
+         * plugin dela resolve o painel CORRENTE, e um registro errado não quebra esta
+         * tela — quebra a aplicação inteira, em todo request e em todo comando artisan.
+         * Um smoke em navegador é justamente o que pega isso de um jeito que nenhum
+         * `$this->get()` isolado pegaria.
+         *
+         * A Lixeira e a trilha de e-mail abrem VAZIAS numa instalação nova, e é assim
+         * mesmo: o que se prova aqui é que a tela renderiza sem erro de JS, não que há
+         * dado nela.
+         */
+        '/infra/exceptions',
+        '/infra/mail-logs',
+        '/infra/recycle-bin',
     ]],
 ]);
 
