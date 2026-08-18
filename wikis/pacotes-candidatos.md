@@ -132,8 +132,12 @@ sem uma tabela que saiba o que é anexo de quê. É a maior lacuna aberta para u
 - `spatie/laravel-medialibrary` é o padrão de fato do ecossistema Laravel; qualquer dev que chegue
   no kit já sabe usar.
 - Resolve de uma vez conversões, disk por coleção, ordenação e limpeza de órfão.
-- Combina com o `solution-forest/filament-simplelightbox` já instalado, que hoje serve imagem sem
-  ter de onde tirá-la bem organizada.
+- **Combina com o `solution-forest/filament-simplelightbox` já instalado, de graça**: o
+  `SpatieMediaLibraryImageColumn` estende `ImageColumn` e o `SpatieMediaLibraryImageEntry` estende
+  `ImageEntry`, que são exatamente as classes onde o `simpleLightbox()` é registrado como macro. O
+  `Macroable` do Filament resolve por `class_parents()`, então a subclasse herda — verificado. (O
+  Curator empata nisso: `CuratorColumn` também estende `ImageColumn`. Nenhum dos dois traz
+  visualizador próprio.)
 
 **Contras**
 - Traz `spatie/laravel-medialibrary` junto: **uma migration** (`media`) e uma dependência pesada para

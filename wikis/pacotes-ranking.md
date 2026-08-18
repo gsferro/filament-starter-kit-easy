@@ -137,9 +137,41 @@ Filament não alcança o sistema de arquivos, e o Curator tem exatamente o mesmo
 existe uma camada de mídia — porque camada de mídia convida documento, e anexo de contrato vazando
 não é o mesmo evento que avatar vazando.
 
+#### Lightbox: o que o kit já tem cobre os dois — não é critério de desempate
+
+Pergunta natural ao adotar mídia: o `solution-forest/filament-simplelightbox`, já registrado nos três
+painéis, funciona na mídia nova? **Sim, nos dois candidatos, sem escrever nada.** Verificado:
+
+| | Item 1 | Item 2 |
+|---|---|---|
+| Lightbox próprio | ❌ 0 ocorrências de `lightbox` no pacote | ❌ 0 ocorrências |
+| Classe de exibição | `SpatieMediaLibraryImageColumn extends ImageColumn` | `CuratorColumn extends ImageColumn` |
+| `->simpleLightbox()` | ✅ por herança | ✅ por herança |
+
+Funciona porque o `Macroable` do Filament é próprio (não o do Laravel) e resolve subindo a
+hierarquia — `Filament\Support\Concerns\Macroable::getMacro()` percorre `class_parents()`. O
+`SimpleLightBoxPlugin` registra em `ImageColumn`, `ImageEntry`, `TextColumn` e `TextEntry`
+(`SimpleLightBoxPlugin.php:39,52,64,76`), e toda subclasse dessas quatro herda.
+
+Medido no kit:
+
+```
+subclasse de ImageColumn ve o macro: true
+subclasse de ImageEntry  ve o macro: true
+TextColumn (irma, nao filha) ve:     false   ← herança, não escopo global
+```
+
+> Vale a armadilha que os providers já documentam: o macro nasce no `boot(Panel)` do plugin, **por
+> painel**. Coluna chamando `->simpleLightbox()` num painel sem o plugin derruba a tela com
+> `BadMethodCallException` na renderização. O kit registra nos três — mas um painel novo precisa
+> lembrar.
+
+O `Modals/CuratorPanel` do Curator **não** é visualizador: é a tela de navegar e escolher arquivo.
+Resolve outro problema.
+
 #### Conclusão
 
-A diferença entre 1 e 2 é **só a camada de UI**. Ali, "escopado por construção" pesa mais que
+A diferença entre 1 e 2 é **só a camada de UI de tenancy**. Lightbox empata. Ali, "escopado por construção" pesa mais que
 "escopado por configuração" num kit em que a tenancy é opt-in e pode ser ligada **depois** da
 instalação, quando o default do Curator já foi aceito e ninguém volta nele.
 
