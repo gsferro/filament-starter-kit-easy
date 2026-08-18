@@ -91,6 +91,23 @@ class KitUpdate extends Command
         'app/Support',
         'app/Traits',
         'config/kit.php',
+        /*
+         * Configs de pacote que o kit AJUSTOU — não são o publish cru do vendor.
+         *
+         * `media-library.php`: o `temporary_upload_model` virou string porque a classe
+         * é do Media Library Pro e não existe aqui; como `::class` reprovava no
+         * `composer types:check`.
+         *
+         * `filament-maillog.php`: ícone, ordenação e a tenancy do pacote (desligada —
+         * a tela vive no /infra, que não tem tenant). O GRUPO de navegação não sai
+         * daqui: `MailLogResource::getNavigationGroup()` lê uma chave de tradução, e
+         * por isso ele mora em `lang/vendor/filament-maillog/pt_BR`, já coberto pela
+         * entrada `lang/vendor` abaixo.
+         *
+         * Sem estas duas linhas, quem já instalou o kit nunca receberia os ajustes.
+         */
+        'config/media-library.php',
+        'config/filament-maillog.php',
         // Migrations, seeders e factories do kit. Os SEUS não entram no diff,
         // pela mesma razão dos comandos. Migration nova exige rodar
         // `php artisan migrate` depois de aplicar.

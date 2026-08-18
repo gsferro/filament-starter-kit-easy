@@ -66,7 +66,7 @@ Para testar o recorte de acesso, crie um usuário só com o papel `admin` ou `in
 |---|---|---|---|
 | **App** | `/app` | A operação do negócio. **Vem vazio de propósito** — é aqui que seu projeto nasce | `master_global`, `panel_user`, `admin_app` (com tenancy) |
 | **Admin** | `/admin` | Usuários, papéis e permissões (Shield), catálogo de agentes de IA, autoria de onboarding | `master_global`, `admin` |
-| **Infra** | `/infra` | Health checks, backups, filas, logs, auditoria, caches, comandos, Pulse, custos de IA | `master_global`, `infra` |
+| **Infra** | `/infra` | Health checks, backups, filas, logs, exceções, trilha de e-mails, lixeira, auditoria, caches, comandos, Pulse, custos de IA | `master_global`, `infra` |
 
 **Quem entra vem do papel, não de uma lista no código.** Cada papel declara em qual painel vale, na coluna `roles.painel` — é o campo **Painel** na tela `/admin` → Funções. `App\Models\User::canAccessPanel()` compara essa coluna com o painel que está sendo aberto. Criar um papel e escolher o painel dele **é** o ato de dar acesso.
 
@@ -105,6 +105,9 @@ Mais telas: [saúde da aplicação](https://raw.githubusercontent.com/gsferro/fi
 **Observabilidade e manutenção (painel infra)**
 - Spatie Health com checks de banco, cache, filas, agendador, disco, debug mode e IA local
 - Backup Monitor (spatie/laravel-backup), Jobs Monitor, Logs Explorer (sem botão de apagar — trilha é evidência)
+- **Exceções agrupadas** por tipo e frequência — o que Health, Pulse e arquivo de log não respondem
+- **Trilha de e-mails enviados**: separa "não foi enviado" de "foi enviado e caiu no spam"
+- **Lixeira**: restaura o que foi apagado com `SoftDeletes` ([detalhes](#trilhas-do-infra-exceções-e-mails-e-lixeira))
 - Command Center: comandos Artisan pré-aprovados pela UI, com histórico
 - Laravel Pulse embutido como página do painel
 - Dependency Graph: mapa de models, relações, resources e painéis
@@ -123,6 +126,8 @@ Mais telas: [saúde da aplicação](https://raw.githubusercontent.com/gsferro/fi
 - **Dashboards já preenchidos** nos painéis admin e infra: 20 widgets (stat cards com contador animado, funis, metas, breakdowns, timelines) sobre os dados que os painéis já têm — nada de tela vazia esperando você
 - Páginas de erro brandadas (Sentinel) em pt-BR — a de 403 só mostra o diagnóstico de permissão fora de produção
 - UI 100% em pt-BR, inclusive nos plugins que só trazem inglês (traduções em `lang/vendor/`)
+- **Seletor de idioma** nos três painéis e nas telas de login — dirigido por dado, não por flag (detalhes abaixo)
+- **Camada de mídia** (spatie/laravel-medialibrary) nos componentes do Filament: upload, coleções e conversões em formulário, tabela e infolist ([detalhes](#anexos-e-mídia))
 
 ### A busca ⌘K
 
@@ -138,6 +143,21 @@ O campo na topbar é o **nativo do Filament** — mesma marcação, mesma aparê
 | **Ações** | "Criar X" para cada resource, com `canAccess()` + `canCreate()` + `shouldRegisterNavigation()` |
 
 O filtro por permissão é a razão de existirem `App\Filament\Spotlight\*` no kit: as categorias do pacote **não** chamam `canAccess()`, e sem isso a busca oferece telas que resultariam em 403 — vazamento de affordance. As sugestões "Criar X" também são do kit (`AcoesDeCriacao`), pelo mesmo motivo e mais um: o discovery do pacote resolve URLs sem checar contexto e derruba a tela de login com 500.
+
+### O seletor de idioma
+
+O botão de idioma (`bezhansalleh/filament-language-switch`) está registrado nos **três painéis e também nas telas de login** — que é justamente onde alguém que não lê português precisa trocar, antes de existir sessão.
+
+**Ele é dirigido por dado, não por flag.** A lista de locales fica em `config/kit.php`:
+
+```php
+'idiomas' => ['pt_BR'],           // como o kit nasce: um idioma, sem botão
+'idiomas' => ['pt_BR', 'en'],     // dois idiomas: o seletor aparece sozinho
+```
+
+Com **um único idioma** — que é o padrão — o seletor não aparece: não há para onde trocar. É a razão de isto ser uma lista e não um booleano; ninguém esquece uma flag ligada com um idioma só.
+
+> ⚠️ **O seletor traduz a camada do Filament e dos pacotes, não os rótulos do kit.** A cobertura vem do Filament e do `laravel-lang/common`. "Administrador Geral", "Acesso ao painel /app", os títulos dos hubs e os labels dos resources são strings pt-BR escritas no código — há dez `__()` em todo o app. Com `en` ligado hoje, **metade da tela troca de idioma e a outra metade não**. Internacionalizar o kit é trabalho declarado e ainda não feito.
 
 ## Convite de usuário
 
@@ -201,6 +221,67 @@ cadastro aberto.
 O papel do convite decide o contexto da atribuição: papel do painel `/app` nasce dentro da
 organização do convite; papel de `/admin` ou `/infra` nasce no contexto global — ser
 administrador de uma organização não é credencial para administrar a instalação.
+
+## Trilhas do `/infra`: exceções, e-mails e lixeira
+
+O painel de infraestrutura já mostrava **saúde** (Health), **desempenho** (Pulse), **arquivo de
+log** (Logs Explorer) e **filas** (Jobs Monitor) — e nenhum deles respondia "qual exception está
+estourando, e quantas vezes", "o convite chegou?" ou "dá para desfazer aquele delete?". Três telas
+respondem cada uma dessas perguntas:
+
+| Tela | Onde | O que responde |
+|---|---|---|
+| **Exceções** | `/infra`, grupo *Observabilidade* | as exceptions agrupadas por tipo e frequência, com badge de contagem no menu |
+| **Trilha de e-mails** | `/infra`, grupo *Trilhas* | todo e-mail que o kit enviou — separa "não foi enviado" de "foi enviado e caiu no spam" |
+| **Lixeira** | `/infra`, grupo *Sistema* | restaura registro apagado com `SoftDeletes` |
+
+### As duas trilhas guardam dado sensível
+
+É por isso que elas vivem **só** no `/infra`, onde entrar já exige papel `master_global` ou
+`infra` — no `/app` qualquer papel do painel as veria:
+
+- o **stack trace** da exceção pode carregar parâmetro de request, logo pode carregar dado pessoal;
+- o **corpo do e-mail** é gravado, e o convite de acesso carrega o link de aceite.
+
+### Retenção: o número é a intenção, o agendador é a execução
+
+As duas tabelas crescem por evento — um bug em laço enche o disco em horas. Por isso a poda tem
+prazo, em `config/kit.php`:
+
+| Chave | `.env` | Padrão |
+|---|---|---|
+| `kit.retencao.excecoes_em_dias` | `KIT_RETENCAO_EXCECOES_DIAS` | 14 |
+| `kit.retencao.emails_em_dias` | `KIT_RETENCAO_EMAILS_DIAS` | 14 |
+
+Os 14 dias acompanham o `days` da rotação em `config/logging.php`: a trilha morre junto com o log
+que a originou, não depois dele. **Zero ou negativo desliga a poda** daquela trilha — e aí a tabela
+cresce sem teto, o que é uma escolha, não um esquecimento.
+
+> ⚠️ **Quem aplica a retenção é o agendador.** As rotinas estão em `routes/console.php`; sem
+> `php artisan schedule:work` (ou o serviço `scheduler` do docker compose) o número no config é só
+> intenção declarada.
+
+### A Lixeira lista o que você declarar
+
+O `RevivePlugin` recebe uma **lista explícita** de models em
+`app/Providers/Filament/InfraPanelProvider.php` — hoje só `App\Models\Projeto`, a única model do
+kit com `SoftDeletes`:
+
+```php
+RevivePlugin::make()
+    ->navigationGroup('Sistema')
+    ->navigationLabel('Lixeira')
+    ->models([
+        Projeto::class,
+    ])
+    ->withoutScoping(),
+```
+
+**Model nova com `SoftDeletes` precisa entrar nessa lista**, senão fica apagada sem tela para
+restaurar. A varredura automática de `app/Models` foi evitada de propósito: alcançaria `User`,
+`Role` e `Tenant`, cuja restauração tem consequência de **autorização** — um usuário volta com
+papel numa organização que pode nem existir mais. A trava é a lista, como na allow-list do
+Command Center.
 
 ## Multi-tenancy (opt-in)
 
@@ -269,6 +350,58 @@ class Projeto extends Model
 Ela dá a relação `tenant()`, um **escopo global** e o preenchimento automático de `tenant_id`. O escopo importa porque o Filament só recorta o que passa por um Resource — job, comando, listener e API ficariam de fora, e é aí que dado de um cliente vaza para outro.
 
 > ⚠️ **`kit:tenancy` recria o banco.** Ele liga `permission.teams`, e a migration do spatie só cria as colunas de tenant se a flag estiver ativa **antes** do migrate. Por isso exige árvore git limpa, confirmação explícita e roda `migrate:fresh --seed`. **A hora de rodar é o dia 1 do projeto.** O caminho detalhado — inclusive papéis globais × por tenant e `scopedUnique()` — está em [`wikis/arquitetura.md`](wikis/arquitetura.md#multi-tenancy-opt-in).
+
+## Anexos e mídia
+
+O `filament/spatie-laravel-media-library-plugin` entrega a camada de mídia — upload, coleções e
+conversões — nos componentes de formulário, tabela e infolist do Filament. A model de demonstração
+`App\Models\Projeto` mostra o desenho completo:
+
+```php
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+class Projeto extends Model implements HasMedia
+{
+    use InteractsWithMedia;
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('anexos');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('miniatura')
+            ->nonQueued()   // o kit nasce com QUEUE_CONNECTION=sync: enfileirada, a
+            ->width(200)    // conversão só existiria com um worker de pé, e a coluna
+            ->height(200);  // ficaria vazia sem erro nenhum
+    }
+}
+```
+
+E o `ProjetoResource` consome as duas pontas:
+
+```php
+SpatieMediaLibraryFileUpload::make('anexos'),   // no formulário
+
+SpatieMediaLibraryImageColumn::make('anexos')   // na tabela
+    ->simpleLightbox(),
+```
+
+O `->simpleLightbox()` funciona sem cola porque `SpatieMediaLibraryImageColumn` **estende
+`ImageColumn`**, que é exatamente onde o macro do lightbox é registrado.
+
+**O escopo por organização vem de graça** — e é o ponto. A tabela `media` do Spatie é polimórfica:
+o arquivo pertence ao registro, e o registro já é escopado por `BelongsToTenant`. Quem não alcança
+o projeto não alcança o anexo, sem coluna de tenant em `media` e sem configuração para lembrar de
+ligar.
+
+> ⚠️ **`MEDIA_DISK=public` serve para avatar e logo, não para documento.** Com o disco público o
+> caminho é `/storage/{id}/{arquivo}`, com ID sequencial, alcançável **sem sessão** — a
+> multi-organização do Filament não chega ao sistema de arquivos. Para anexo privado, troque o
+> disco (`MEDIA_DISK` no `.env`, `config/media-library.php`) e sirva por rota autorizada.
 
 ## Trabalhando com agentes de IA
 
@@ -358,7 +491,7 @@ arquivo que a etapa seguinte confere.
 **O que isso muda na prática:**
 
 - **O agente lê antes de escrever.** `wikis/` e `.ai/rules` respondem o que já existe, e o
-  [roteiro de features](#roteiro-de-features) abaixo lista as 56 telas prontas. Feature
+  [roteiro de features](#roteiro-de-features) abaixo lista as 61 telas prontas. Feature
   reimplementada do zero porque o agente não sabia que existia é o custo mais caro e mais invisível.
 - **Contexto vira arquivo, não histórico de chat.** Trocar de agente, de máquina ou de pessoa não
   perde o porquê da decisão — ele está no ADR, versionado no mesmo commit do código.
@@ -463,6 +596,9 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-42 | Releases do Composer | `/infra/composer-release-packages` | `infra` | avisa versão nova. **Informativo — nunca atualiza nada.** O sync é um job: sem worker, a tela fica vazia | 🔵 |
 | F-43 | Execuções de IA | `/infra/execucoes-ia` | `infra` (`ver-ai-tasks`) | ledger com custo e tokens por execução | 🔵 |
 | F-44 | Limpar caches | topbar do `/infra` | `infra` | `cache`, `config`, `view` e `modelCache` juntos | ⚪ |
+| F-57 | Exceções agrupadas | `/infra/exceptions` | `infra` | por tipo e frequência, com badge no menu. A retenção (`KIT_RETENCAO_EXCECOES_DIAS`) só acontece **com o agendador rodando** | 🟢 |
+| F-58 | Trilha de e-mails | `/infra/mail-logs` | `infra` | todo e-mail enviado. Guarda o **corpo** — inclusive o link de aceite do convite | 🟢 |
+| F-59 | Lixeira | `/infra/recycle-bin` | `infra` | restaura o que foi apagado com `SoftDeletes`. Lista **só** as models declaradas em `models()` no `InfraPanelProvider` | 🟢 |
 
 ### Produtividade e UI
 
@@ -476,6 +612,8 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-50 | Colunas redimensionáveis | qualquer tabela | autenticado | largura ajustável, lembrada na sessão | ⚪ |
 | F-51 | Indicador de ambiente | topbar | qualquer um | badge de `local`/`homologação`; some em produção | 🔵 |
 | F-52 | Páginas de erro brandadas | 403, 404, 419, 500, 503 | — | com a cara do painel, em pt-BR | 🔵 |
+| F-60 | **Seletor de idioma** | topbar dos três e telas de login | qualquer um | só aparece com **dois** locales em `kit.idiomas`; traduz Filament e pacotes, **não** os rótulos do kit | 🟢 |
+| F-61 | **Anexos e mídia** | formulário e tabela de Projetos | quem alcança o resource | upload, coleção `anexos`, conversão `miniatura` e lightbox na tabela. O anexo herda o escopo da organização do próprio registro | 🟢 |
 
 ### IA
 
@@ -488,10 +626,11 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 
 ### O que o roteiro **não** cobre sozinho
 
-Cinco features dependem de coisa fora do processo, e nenhum teste as substitui:
+Algumas features dependem de coisa fora do processo, e nenhum teste as substitui:
 
 | Feature | Depende de | Sem isso |
 |---|---|---|
+| F-57, F-58 (retenção das trilhas) | o scheduler (`schedule:work`) | as tabelas de exceções e de e-mails crescem sem teto; o prazo em `config/kit.php` fica só declarado |
 | F-15…F-20 (entrega do e-mail) | `MAIL_MAILER` real **e** um worker (`QUEUE_CONNECTION=database`) | o convite é gravado e a fila enche; nada sai |
 | F-33 (health checks) | uma execução de `php artisan health:check` | a tela abre **vazia**, sem estado explicando — o widget do dashboard avisa, a página do recurso não |
 | F-35, F-42 (filas e releases) | um worker | o job de sync do Composer fica na fila: F-42 mostra "sem registros" e F-35 conta pendências contra uma tabela vazia |
@@ -559,14 +698,25 @@ O Reverb usa 8090 e não o default 8080 para não colidir com o llama.cpp.
 
 ```bash
 composer dev          # servidor + fila + vite juntos
-composer test         # pint + phpstan + a suíte inteira
+composer test         # pint + phpstan + filacheck + a suíte inteira
 composer test:kit     # só os testes do kit (a fundação), em paralelo
 composer lint         # formata o código
+composer filament:check   # só o lint específico de Filament (FilaCheck)
 php artisan kit:install --force   # reinstala do zero (apaga o SQLite) e refaz as perguntas
 php artisan kit:install --no-custom   # instala sem perguntar nada
 php artisan kit:update            # traz melhorias de uma versão nova do kit
 php artisan kit:tenancy           # liga o modo multi-tenant (opt-in)
 ```
+
+### FilaCheck: o lint que só entende de Filament
+
+`composer filament:check` roda o `laraveldaily/filacheck` — 17 regras que o Pint e o PHPStan não
+têm como ter: método depreciado da API do Filament, namespace errado de action, chamada que mudou
+entre versões. Ele entra no `composer test` junto com o pint e o phpstan, então a CI reprova o
+mesmo que a sua máquina.
+
+Ao ser adotado, ele encontrou **7 problemas preexistentes** no próprio kit — seis métodos de teste
+depreciados e um `ImageColumn::size()` — todos corrigidos.
 
 ### Os testes do kit
 
@@ -632,8 +782,11 @@ O benefício está em não derivar os testes só do "caminho feliz". O que escap
 | 10 | **Comandos da UI** | `config/command-center.php` | — |
 | 11 | **Backups** | destino e agenda em `config/backup.php` | — |
 | 12 | **Agente de IA** | `/admin` → Agentes de IA (ou `database/seeders/AssistenteSeeder.php`) | — |
+| 13 | **[Idiomas do painel](#o-seletor-de-idioma)** | `config/kit.php` → `idiomas` (lista de locales; com um só, o seletor não aparece) | — |
+| 14 | **[Retenção das trilhas](#retenção-o-número-é-a-intenção-o-agendador-é-a-execução)** | `KIT_RETENCAO_EXCECOES_DIAS` / `KIT_RETENCAO_EMAILS_DIAS` no `.env` | — |
+| 15 | **[Disco da mídia](#anexos-e-mídia)** | `MEDIA_DISK` no `.env` (`public` por padrão — não serve para documento) | — |
 
-Os sete últimos não entram nas perguntas porque são **código ou dado de tela**, não um valor que caiba num prompt de terminal. O instalador os lista no resumo final, com o arquivo de cada um.
+Os dez últimos não entram nas perguntas porque são **código ou dado de tela**, não um valor que caiba num prompt de terminal. O instalador os lista no resumo final, com o arquivo de cada um.
 
 > ⚠️ O item 5 é o único que **não** é "edite um arquivo" depois de instalado: o `kit:tenancy` roda `migrate:fresh --seed` e **apaga os dados**. Ele exige árvore git limpa e confirmação explícita. **Respondido na instalação, ele não apaga nada** — o banco ainda nem existe, e é essa a hora certa de decidir.
 
@@ -889,6 +1042,9 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | [laboiteacode/filament-dependency-graph](https://packagist.org/packages/laboiteacode/filament-dependency-graph) | mapa visual de models, relações, resources e painéis |
 | [mominalzaraa/filament-composer-release-notifier](https://packagist.org/packages/mominalzaraa/filament-composer-release-notifier) | avisa quando há versão nova dos pacotes Composer |
 | [cms-multi/filament-clear-cache](https://packagist.org/packages/cms-multi/filament-clear-cache) | limpar caches pelo painel |
+| [bezhansalleh/filament-exceptions](https://packagist.org/packages/bezhansalleh/filament-exceptions) | exceções agrupadas por tipo e frequência, com retenção |
+| [tapp/filament-maillog](https://packagist.org/packages/tapp/filament-maillog) | trilha de todo e-mail enviado |
+| [promethys/revive](https://packagist.org/packages/promethys/revive) | a Lixeira: restaura registro apagado com `SoftDeletes` |
 
 ### IA
 
@@ -915,6 +1071,7 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | [wallacemartinss/filament-onboarding](https://packagist.org/packages/wallacemartinss/filament-onboarding) | checklists e tours guiados, com autoria no `/admin` |
 | [anselmokossa/filament-sentinel](https://packagist.org/packages/anselmokossa/filament-sentinel) | páginas de erro (403, 404, 419, 500, 503) com a cara do painel |
 | [flowframe/laravel-trend](https://packagist.org/packages/flowframe/laravel-trend) | agregação por período para os gráficos dos widgets |
+| [bezhansalleh/filament-language-switch](https://packagist.org/packages/bezhansalleh/filament-language-switch) | seletor de idioma nos três painéis e nas telas de login |
 
 ### Dados e serviços
 
@@ -922,11 +1079,12 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 |---|---|
 | [filament/spatie-laravel-settings-plugin](https://packagist.org/packages/filament/spatie-laravel-settings-plugin) | páginas de configuração no painel |
 | [spatie/laravel-settings](https://packagist.org/packages/spatie/laravel-settings) | as configurações persistidas por trás delas |
+| [filament/spatie-laravel-media-library-plugin](https://packagist.org/packages/filament/spatie-laravel-media-library-plugin) | a camada de mídia (upload, coleções, conversões) nos componentes de form, tabela e infolist |
 | [mike-bronner/laravel-model-caching](https://packagist.org/packages/mike-bronner/laravel-model-caching) | cache automático de queries do Eloquent |
 | [predis/predis](https://packagist.org/packages/predis/predis) | cliente Redis em PHP puro (sem extensão) |
 | [laravel/reverb](https://packagist.org/packages/laravel/reverb) | WebSocket para as notificações em tempo real |
 
-> **Motores por baixo dos plugins**, instalados como dependência (você não os declara, mas eles são o que de fato roda): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (os checks), `spatie/laravel-activitylog` (o log de atividades) e `livewire/livewire` (o Filament inteiro).
+> **Motores por baixo dos plugins**, instalados como dependência (você não os declara, mas eles são o que de fato roda): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (os checks), `spatie/laravel-activitylog` (o log de atividades), `spatie/laravel-medialibrary` (os anexos) e `livewire/livewire` (o Filament inteiro).
 
 ### Model Caching
 
@@ -950,6 +1108,7 @@ php artisan modelCache:clear      # limpa o cache das models
 | [phpunit/phpunit](https://packagist.org/packages/phpunit/phpunit) | o motor por baixo do Pest |
 | [larastan/larastan](https://packagist.org/packages/larastan/larastan) | análise estática (`composer types:check`) |
 | [laravel/pint](https://packagist.org/packages/laravel/pint) | formatação (`composer lint`) |
+| [laraveldaily/filacheck](https://packagist.org/packages/laraveldaily/filacheck) | lint específico de Filament (`composer filament:check`) |
 | [laravel-lang/common](https://packagist.org/packages/laravel-lang/common) | traduções pt-BR do Laravel |
 | [laravel/pail](https://packagist.org/packages/laravel/pail) | logs em tempo real no terminal |
 | [laravel/pao](https://packagist.org/packages/laravel/pao) | ferramentas de desenvolvimento do Laravel |

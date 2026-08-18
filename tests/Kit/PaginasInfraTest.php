@@ -65,6 +65,11 @@ it('abre as telas do painel infra', function (string $rota): void {
     'grafo de dependências' => '/infra/dependency-graph',
     'releases do composer'  => '/infra/composer-release-packages',
     'execuções de IA'       => '/infra/execucoes-ia',
+    // Telas da 0.17.0. A de exceções é a que mais precisa estar aqui: o plugin dela
+    // resolve o painel corrente, e um registro errado derruba a aplicação inteira.
+    'exceções'              => '/infra/exceptions',
+    'e-mails enviados'      => '/infra/mail-logs',
+    'lixeira'               => '/infra/recycle-bin',
 ]);
 
 it('abre as telas do painel admin', function (string $rota): void {

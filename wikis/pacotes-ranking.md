@@ -189,11 +189,33 @@ disco privado e rota autorizada (ou URL assinada com validade) para tudo que nã
 
 | # | Pacote | O que faz | Por que aqui |
 |---|--------|-----------|---|
-| **3** | `promethys/revive` | Lixeira central para qualquer model com `SoftDeletes` | O kit usa soft delete e não tem tela de restauração — hoje é tinker. Substitui código próprio (o `mini-pff` resolveu com uma `Page` custom). Exige policy: restaurar ignora regra de negócio por definição |
-| **4** | `bezhansalleh/filament-exception-viewer` | Exceções agrupadas por tipo e frequência | Autor do Shield e do PanelSwitch. Fecha o ponto fraco do `/infra`. Exige retenção — e stack trace guardado pode conter dado pessoal |
-| **5** | `tapp/filament-mail-log` | Registro de todo e-mail enviado | O `ConviteDeAcesso` é a porta de entrada do kit e não deixa rastro. "O convite não chegou" é hoje impossível de responder. Guarda corpo do e-mail: precisa de retenção |
+| **3** | `promethys/revive` | Lixeira central para qualquer model com `SoftDeletes` | Substitui código próprio (o `mini-pff` resolveu com uma `Page` custom varrendo `app/Models`). Exige policy e lista explícita de models: restaurar ignora regra de negócio por definição |
+| **4** | `bezhansalleh/filament-exceptions` | Exceções agrupadas por tipo e frequência | Autor do Shield e do PanelSwitch. Fecha o ponto fraco do `/infra`. Exige retenção — e stack trace guardado pode conter dado pessoal |
+| **5** | `tapp/filament-maillog` | Registro de todo e-mail enviado | O `ConviteDeAcesso` é a porta de entrada do kit e não deixa rastro. "O convite não chegou" é hoje impossível de responder. Guarda corpo do e-mail: precisa de retenção |
 | **6** | `bezhansalleh/filament-language-switch` | Troca de idioma no painel | O kit já é publicado com `README.en.md` no diretório oficial. **O pacote é a parte fácil** — a cara é tirar os rótulos pt-BR de dentro do código (ver 49) |
 | **7** | `laraveldaily/filacheck` | Análise estática específica de Filament | `require-dev`, entra no CI ao lado do Pint e do PHPStan. **Risco zero em produção.** Precisa de baseline para as decisões deliberadas do kit (`CommandCenterPlugin` sem `->cluster()`, `RoleResource` publicado) |
+
+> ### ✅ Tier S adotado em 2026-08-18 — e o que a adoção corrigiu nesta página
+>
+> Os itens **1, 3, 4, 5, 6 e 7** foram instalados. O **2** ficou de fora por ser ⚔️ com o 1.
+> A amarração ao kit está em `wikis/pacotes.md` e nas receitas.
+>
+> **Dois nomes desta página estavam errados**, e a verificação no Packagist antes do
+> `composer require` pegou os dois — é exatamente o limite declarado na seção "Método" do
+> [`pacotes-candidatos.md`](pacotes-candidatos.md), de que os `vendor/pacote` vinham do slug da URL:
+>
+> | Estava escrito | Nome real |
+> |---|---|
+> | `bezhansalleh/filament-exception-viewer` | **`bezhansalleh/filament-exceptions`** — e a série para Filament 5 é a **4.x**, não a 5.x |
+> | `tapp/filament-mail-log` | **`tapp/filament-maillog`** `^2.0` |
+>
+> **E uma afirmação era falsa.** O texto do item 3 dizia "o kit usa soft delete e não tem tela de
+> restauração — hoje é tinker". Verificado na adoção: **nenhuma model do kit usava `SoftDeletes`**.
+> A lixeira nasceria vazia. `App\Models\Projeto` — a model de demonstração — ganhou a trait junto,
+> e é o que dá conteúdo à tela. A frase acima está corrigida.
+>
+> Também não previsto aqui: registrar o `filament-exceptions` num painel só **derruba todo comando
+> artisan**. Ver a armadilha em `wikis/convencoes.md` e a rule em `.ai/rules/providers-filament.md`.
 
 ---
 

@@ -73,6 +73,10 @@ Os defaults estão tabelados no [README](../README.md#configuração-global-do-f
 - **Ações de filtro ficam fora do `configureUsing()` global** — em tabela sem filtro a ação nasce sem nome e derruba a página inteira. Oito telas do painel infra já caíram em 500 por isso.
 - Macros do `asmit/resized-column` são aplicadas com `hasMacro()` antes: o pacote as registra em runtime, então a tabela degrada sem quebrar se ele sair.
 
+O **seletor de idioma** (`bezhansalleh/filament-language-switch`) mora aqui pelo mesmo motivo do Panel Switch, e não em cada `PanelProvider`: `LanguageSwitch::configureUsing()` é registro estático do container e o pacote pendura um **render hook global** — não é plugin de painel. Registrar por painel daria a impressão de configuração por painel com efeito global.
+
+Quem manda na lista é `config('kit.idiomas')`, lida **dentro** da closure. Lida fora, ela seria avaliada uma vez no boot e capturada por valor: o seletor exibiria a lista que existia naquele instante, não a que o request tem — foi defeito real, pego pelo caso "mostra o seletor quando há um segundo idioma". E é **lista, não booleano**: com um idioma só o botão não aparece, dentro nem fora do painel. Não há flag para alguém deixar ligada com um idioma só. A contagem é repetida explicitamente para as telas de login, porque `isVisibleOutsidePanels()` avalia só a flag — dentro do painel o pacote já exige mais de um locale sozinho.
+
 ## Ciclo de um request no painel
 
 1. Middleware do painel (sessão, CSRF, bindings) → `Authenticate`.
@@ -176,6 +180,27 @@ Widgets do kit ficam em `app/Filament/{Admin,Infra}/Widgets/` e são descobertos
 
 Bases prontas vêm de `laboiteacode/filament-dashboard-widgets` (funil, timeline, metas, breakdown) e os contadores animados de `gsferro/filament-odometer-easy` / `gsferro/filament-stat-plus-easy`.
 
+## Os quatro grupos do `/infra`
+
+`InfraPanelProvider` declara a ordem dos grupos explicitamente (`->navigationGroups([...])`) porque sem isso o Filament os ordena em ordem alfabética, e a navegação vira lista sem hierarquia de leitura. Cada plugin é encaixado num deles **pelo mecanismo que ele próprio expõe** — e os três mecanismos aparecem lado a lado nas telas novas da 0.17.0:
+
+| Grupo | Telas | Como a tela entra no grupo |
+|---|---|---|
+| **Observabilidade** | Saúde (Health), Pulse, **Exceções** | método do plugin (`->navigationGroup('Observabilidade')`) ou `$navigationGroup` da página do kit |
+| **IA** | Execuções de IA, Dashboard de IA | `$navigationGroup` do `AiRunResource` e o `navigationItems()` do painel |
+| **Trilhas** | Acessos, Auditoria, Arquivos de log, **E-mails enviados** | tradução: o `MailLogResource` lê `__('filament-maillog::filament-maillog.navigation.group')` — não há chave de config nem método de plugin, então o grupo mora em `lang/vendor/filament-maillog/pt_BR/` |
+| **Sistema** | Central de comandos, Mapa de dependências, **Lixeira** | método do plugin |
+
+Backup Monitor e Auditing não expõem nem método nem chave: ficam soltos no topo do menu, antes dos grupos. Filas vêm de `config/filament-jobs-monitor.php`.
+
+**Exceções** (`bezhansalleh/filament-exceptions`) responde a pergunta que nenhuma das outras respondia: *qual exception está estourando, e quantas vezes*. Saúde cobre estado, Pulse cobre desempenho, Logs Explorer cobre o arquivo e Filas cobrem o job — achar um erro recorrente exigia saber o dia e caçar dentro do arquivo. O plugin é registrado nos **três** painéis, com navegação só aqui; o porquê está em [convencoes.md](convencoes.md#armadilhas-já-resolvidas).
+
+**E-mails enviados** (`tapp/filament-maillog`) existe por causa do convite: ele é a única porta de entrada de usuário e não deixava registro nenhum, então "o convite não chegou" era impossível de responder — não dava para separar *não foi enviado* de *foi enviado e caiu no spam*.
+
+**Lixeira** (`promethys/revive`) fica no `/infra` e **não** no `/app`, apesar de o pacote suportar escopo por tenant: uma tela que lista tudo o que foi apagado na instalação é, ela mesma, exposição de dado. Aqui entrar já exige `master_global` ou `infra`; no `/app` qualquer papel do painel veria. Por isso ela vai com `withoutScoping()` — o `/infra` não tem tenancy, não haveria de onde tirar o escopo.
+
+As duas primeiras **gravam dado sensível**: stack trace com parâmetro de request e corpo de e-mail com o link de aceite. É metade da razão de viverem só aqui; a outra metade é a [retenção](#agendamentos), que não é opcional.
+
 ## Multi-tenancy (opt-in)
 
 O kit nasce **single-tenant**. `php artisan kit:tenancy` liga o modo multi-tenant; sem ele, nada nesta seção existe na prática.
@@ -264,6 +289,26 @@ Ficam em `tests/Tenancy/`, suíte própria e mesmo grupo `kit`. A separação é
 
 `Tests\TestCase` invalida o schema quando o modo muda, para que `--group=kit` rode os dois modos no mesmo processo sem colisão.
 
+## Camada de mídia
+
+Arquivo anexado a registro é `spatie/laravel-medialibrary`, pela ponte oficial `filament/spatie-laravel-media-library-plugin`. Não há tabela de anexo por model, nem coluna de caminho: tudo vive na tabela **polimórfica** `media` (`morphs('model')`), e a model declara coleções em vez de colunas.
+
+É a polimorfia que decide o isolamento. O arquivo pertence a **um registro**, e o registro já é escopado por `BelongsToTenant` — quem não alcança o dono não alcança o anexo. **O isolamento por organização é herdado, não configurado**: não existe coluna de tenant em `media`, e não existe checkbox a lembrar de marcar. Foi esse o critério que escolheu este pacote em vez do `awcodes/filament-curator`, cuja biblioteca é **compartilhada** por natureza e cujo escopo por tenant nasce **desligado** — o isolamento passaria a depender de alguém ligar uma flag, e falharia aberto se esquecesse.
+
+### Os três furos do isolamento herdado
+
+Herdado quer dizer que ele existe **quando há de quem herdar**. Três casos em que não há:
+
+1. **Query direta em `Media`.** `Media::query()` não tem escopo nenhum — a tabela não tem coluna de tenant e o escopo do dono não a alcança. Contar, listar ou exportar mídia por ali devolve a instalação inteira.
+2. **Dono que não é escopado.** O `User` do kit pertence a **várias** organizações (a pivot `tenant_user`), então não usa `BelongsToTenant`: avatar e qualquer mídia de usuário são globais por construção. É correto para foto de perfil e errado para qualquer coisa que seja de uma organização só.
+3. **Model nova sem `BelongsToTenant`.** A mídia dela é global pelo mesmo motivo. A trait não é opcional numa model de negócio — ver [Model de negócio pertence a um tenant](convencoes.md#model-de-negócio-pertence-a-um-tenant).
+
+### A camada de URL não é protegida por ninguém
+
+O escopo herdado vale para a **query**. Não vale para o **arquivo**: `MEDIA_DISK` nasce `public` e `MEDIA_PREFIX` nasce vazio, então o caminho é `/storage/{id}/{arquivo}` — ID **sequencial**, servido pelo link simbólico, alcançável **sem sessão**. A tenancy do Filament vive no request do painel; ela não chega ao sistema de arquivos.
+
+Para anexo privado o trabalho é do projeto, não do pacote: disco privado (`MEDIA_DISK` fora do `public`) mais uma rota que autoriza antes de entregar o arquivo. `->visibility('private')` no campo protege a visibilidade **no disco**, não a URL de um disco público. É por isso que o `ProjetoResource` da demo o declara explicitamente e o comentário ao lado avisa: anexo de projeto não é imagem de identidade.
+
 ## Erros e traduções
 
 - Páginas de erro (403, 404, 419, 500, 503) são do `anselmokossa/filament-sentinel`, com views próprias em `resources/views/errors/`. A de 403 só mostra o diagnóstico de permissão **fora de produção**.
@@ -271,7 +316,20 @@ Ficam em `tests/Tenancy/`, suíte própria e mesmo grupo `kit`. A separação é
 
 ## Agendamentos
 
-`routes/console.php` guarda o schedule do kit: `health:check` a cada 15 minutos e `authentication-log:purge` diário. Backup vem comentado, para você ligar ao configurar o destino. Nada disso roda sem `php artisan schedule:work` (já incluso no `composer dev`) ou o serviço `scheduler` do compose — e é justamente o `ScheduleCheck` do Health que denuncia o agendador parado.
+`routes/console.php` guarda o schedule do kit: `health:check` a cada 15 minutos, `authentication-log:purge` diário, o lembrete de convites às 8h e a **retenção das duas trilhas que o kit grava**. Backup vem comentado, para você ligar ao configurar o destino.
+
+### Retenção: o prazo é config, o expurgo é schedule
+
+`config('kit.retencao')` declara **quanto tempo** exceções e e-mails sobrevivem (14 dias nos dois, alinhado ao `days` da rotação de log — a trilha morre junto com o log que a originou, não depois). Quem **aplica** é `routes/console.php`. Separar os dois é o ponto: com o agendador parado, o número no config é intenção declarada e as tabelas crescem sem teto — as duas crescem por evento e as duas guardam dado sensível.
+
+São **dois mecanismos diferentes**, e é o pacote que decide qual:
+
+| Trilha | Mecanismo | Por quê |
+|---|---|---|
+| Exceções | `model:prune --model=…`, 02:00 | o `Exception` do pacote declara `prunable()`, o contrato do Laravel; a data de corte sai de `modelPruneInterval()` no `InfraPanelProvider`, lendo o mesmo config |
+| E-mails | `delete()` direto num `Schedule::call`, 02:10 | o `MailLog` **não** implementa `Prunable`. Passá-lo no `--model` daria um agendamento verde que nunca apaga nada — o pior resultado possível para uma rotina de dado pessoal |
+
+O `--model` é explícito de propósito: a varredura automática do `model:prune` alcançaria qualquer model podável do projeto, inclusive as **suas**, e retenção de dado de terceiro não pode ser efeito colateral de um agendamento do kit. Zero ou negativo em qualquer dos dois prazos desliga aquela poda, sem apagar nada por engano. Nada disso roda sem `php artisan schedule:work` (já incluso no `composer dev`) ou o serviço `scheduler` do compose — e é justamente o `ScheduleCheck` do Health que denuncia o agendador parado.
 
 ## Testes
 

@@ -38,6 +38,12 @@
 | Barra de progresso em coluna/entry | `lara-zeus/progress` |
 | Checklist e tour guiado | `wallacemartinss/filament-onboarding` |
 | Página de erro branda | `anselmokossa/filament-sentinel` |
+| **Upload com coleções, conversões e ordenação** | `spatie/laravel-medialibrary` + `filament/spatie-laravel-media-library-plugin` — nunca `FileUpload` gravando caminho em coluna, exceto para avatar e logo, que já são assim |
+| **Restaurar registro apagado** (`SoftDeletes`) | `promethys/revive` (`/infra`, "Lixeira") — nunca uma Page própria varrendo `app/Models` |
+| **Ver exceções agrupadas por tipo e frequência** | `bezhansalleh/filament-exceptions` (`/infra`) — o LogsExplorer mostra o arquivo, não o agrupamento |
+| **Saber se um e-mail foi enviado** | `tapp/filament-maillog` (`/infra`, grupo "Trilhas") |
+| Trocar o idioma da interface | `bezhansalleh/filament-language-switch` — ligado por `config('kit.idiomas')` |
+| Lint específico de Filament no CI | `laraveldaily/filacheck` (dev) — `composer filament:check`, dentro de `composer test` |
 | Agregar série temporal para gráfico | `flowframe/laravel-trend` |
 | Página de configurações persistidas | `filament/spatie-laravel-settings-plugin` + `spatie/laravel-settings` |
 | Cache automático de query Eloquent | `mike-bronner/laravel-model-caching` |

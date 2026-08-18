@@ -66,7 +66,7 @@ To see the access boundary in action, create a user with only the `admin` or `in
 |---|---|---|---|
 | **App** | `/app` | The business operation. **Intentionally empty** — this is where your project is born | `master_global`, `panel_user`, `admin_app` (with tenancy) |
 | **Admin** | `/admin` | Users, roles and permissions (Shield), AI agent catalog, onboarding authoring | `master_global`, `admin` |
-| **Infra** | `/infra` | Health checks, backups, queues, logs, auditing, caches, commands, Pulse, AI costs | `master_global`, `infra` |
+| **Infra** | `/infra` | Health checks, backups, queues, logs, exceptions, mail trail, recycle bin, auditing, caches, commands, Pulse, AI costs | `master_global`, `infra` |
 
 **Who gets in comes from the role, not from a list in the code.** Each role declares which panel it is good for, in the `roles.painel` column — the **Painel** field on the `/admin` → Roles screen. `App\Models\User::canAccessPanel()` compares that column against the panel being opened. Creating a role and picking its panel **is** the act of granting access.
 
@@ -105,6 +105,9 @@ More screens: [application health](https://raw.githubusercontent.com/gsferro/fil
 **Observability and maintenance (infra panel)**
 - Spatie Health with checks for database, cache, queues, scheduler, disk, debug mode and local AI
 - Backup Monitor (spatie/laravel-backup), Jobs Monitor, Logs Explorer (no delete button — a trail is evidence)
+- **Grouped exceptions** by type and frequency — what Health, Pulse and the log file don't answer
+- **Sent-mail trail**: separates "it was never sent" from "it was sent and landed in spam"
+- **Recycle bin**: restores what was deleted with `SoftDeletes` ([details](#the-infra-trails-exceptions-mail-and-recycle-bin))
 - Command Center: Artisan commands pre-approved for the UI, with history
 - Laravel Pulse embedded as a panel page
 - Dependency Graph: a map of models, relations, resources and panels
@@ -123,6 +126,8 @@ More screens: [application health](https://raw.githubusercontent.com/gsferro/fil
 - **Dashboards already filled in** on the admin and infra panels: 20 widgets (stat cards with an animated counter, funnels, goals, breakdowns, timelines) over the data the panels already have — no empty screen waiting for you
 - Branded error pages (Sentinel) in Portuguese (pt-BR) — the 403 one only shows the permission diagnosis outside production
 - 100% pt-BR UI, including plugins that ship English only (translations in `lang/vendor/`)
+- **Language switcher** on all three panels and on the login screens — driven by data, not by a flag (details below)
+- **Media layer** (spatie/laravel-medialibrary) inside Filament's components: uploads, collections and conversions in form, table and infolist ([details](#attachments-and-media))
 
 ### The ⌘K search
 
@@ -138,6 +143,21 @@ The topbar field is **Filament's native one** — same markup, same look, same `
 | **Actions** | "Create X" for each resource, with `canAccess()` + `canCreate()` + `shouldRegisterNavigation()` |
 
 Permission filtering is the reason `App\Filament\Spotlight\*` exists in the kit: the package's categories do **not** call `canAccess()`, and without that the search offers screens that would result in a 403 — an affordance leak. The "Create X" suggestions are the kit's too (`AcoesDeCriacao`), for the same reason plus one more: the package's discovery resolves URLs without checking context and takes the login screen down with a 500.
+
+### The language switcher
+
+The language button (`bezhansalleh/filament-language-switch`) is registered on **all three panels and on the login screens too** — which is exactly where someone who doesn't read Portuguese needs to switch, before a session even exists.
+
+**It is driven by data, not by a flag.** The list of locales lives in `config/kit.php`:
+
+```php
+'idiomas' => ['pt_BR'],           // how the kit is born: one language, no button
+'idiomas' => ['pt_BR', 'en'],     // two languages: the switcher shows up on its own
+```
+
+With a **single language** — the default — the switcher does not appear: there is nowhere to switch to. That is why this is a list and not a boolean; nobody forgets a flag left on with only one language.
+
+> ⚠️ **The switcher translates Filament's layer and the packages', not the kit's own labels.** The coverage comes from Filament and `laravel-lang/common`. "Administrador Geral", "Acesso ao painel /app", the hub titles and the resource labels are pt-BR strings written in the code — there are ten `__()` calls in the whole app. Turning `en` on today makes **half the screen switch language and the other half not**. Internationalizing the kit is declared work, not yet done.
 
 ## User invitation
 
@@ -205,6 +225,67 @@ granted inside the invitation's organization; a role of `/admin` or `/infra` is 
 the global context — being an admin of one organization is not a credential to administer
 the installation.
 
+## The `/infra` trails: exceptions, mail and recycle bin
+
+The infrastructure panel already showed **health** (Health), **performance** (Pulse), **the log
+file** (Logs Explorer) and **queues** (Jobs Monitor) — and none of them answered "which exception
+is blowing up, and how often", "did the invitation arrive?" or "can that delete be undone?". Three
+screens answer one of those each:
+
+| Screen | Where | What it answers |
+|---|---|---|
+| **Exceptions** | `/infra`, *Observability* group | exceptions grouped by type and frequency, with a count badge in the menu |
+| **Mail trail** | `/infra`, *Trails* group | every e-mail the kit sent — separates "it was never sent" from "it was sent and landed in spam" |
+| **Recycle bin** | `/infra`, *System* group | restores records deleted with `SoftDeletes` |
+
+### Both trails store sensitive data
+
+That is why they live **only** on `/infra`, where getting in already requires the `master_global`
+or `infra` role — on `/app` any panel role would see them:
+
+- the exception's **stack trace** can carry request parameters, therefore personal data;
+- the e-mail's **body** is stored, and the access invitation carries the acceptance link.
+
+### Retention: the number is the intent, the scheduler is the execution
+
+Both tables grow per event — a bug in a loop fills the disk in hours. That is why pruning has a
+deadline, in `config/kit.php`:
+
+| Key | `.env` | Default |
+|---|---|---|
+| `kit.retencao.excecoes_em_dias` | `KIT_RETENCAO_EXCECOES_DIAS` | 14 |
+| `kit.retencao.emails_em_dias` | `KIT_RETENCAO_EMAILS_DIAS` | 14 |
+
+The 14 days follow the `days` of the log rotation in `config/logging.php`: the trail dies together
+with the log that produced it, not after it. **Zero or negative turns pruning off** for that trail —
+and then the table grows with no ceiling, which is a choice, not an oversight.
+
+> ⚠️ **The scheduler is what applies retention.** The routines are in `routes/console.php`; without
+> `php artisan schedule:work` (or the docker compose `scheduler` service) the number in the config
+> is only a declared intent.
+
+### The recycle bin lists what you declare
+
+`RevivePlugin` takes an **explicit list** of models in
+`app/Providers/Filament/InfraPanelProvider.php` — today only `App\Models\Projeto`, the kit's only
+model with `SoftDeletes`:
+
+```php
+RevivePlugin::make()
+    ->navigationGroup('Sistema')
+    ->navigationLabel('Lixeira')
+    ->models([
+        Projeto::class,
+    ])
+    ->withoutScoping(),
+```
+
+**A new model with `SoftDeletes` has to go into that list**, otherwise it ends up deleted with no
+screen to restore it from. Automatic scanning of `app/Models` was avoided on purpose: it would
+reach `User`, `Role` and `Tenant`, whose restoration has an **authorization** consequence — a user
+comes back with a role in an organization that may no longer exist. The lock is the list, just like
+the Command Center's allow-list.
+
 ## Multi-tenancy (opt-in)
 
 The kit is born **single-tenant**. One command turns multi-tenancy on — and those who don't need it pay nothing for it:
@@ -267,6 +348,58 @@ class Projeto extends Model
 It provides the `tenant()` relationship, a **global scope** and automatic `tenant_id` filling. The scope matters because Filament only scopes what goes through a Resource — jobs, commands, listeners and APIs would be left out, and that's exactly where one client's data leaks into another's.
 
 > ⚠️ **`kit:tenancy` recreates the database.** It turns on `permission.teams`, and the spatie migration only creates the tenant columns if the flag is active **before** the migrate. That's why it requires a clean git tree, an explicit confirmation, and runs `migrate:fresh --seed`. **The time to run it is day 1 of the project.** The detailed path — including global vs. per-tenant roles and `scopedUnique()` — is in [`wikis/arquitetura.md`](wikis/arquitetura.md#multi-tenancy-opt-in) (pt-BR).
+
+## Attachments and media
+
+`filament/spatie-laravel-media-library-plugin` delivers the media layer — uploads, collections and
+conversions — inside Filament's form, table and infolist components. The demo model
+`App\Models\Projeto` shows the whole design:
+
+```php
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+class Projeto extends Model implements HasMedia
+{
+    use InteractsWithMedia;
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('anexos');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('miniatura')
+            ->nonQueued()   // the kit is born with QUEUE_CONNECTION=sync: queued, the
+            ->width(200)    // conversion would only exist with a worker up, and the
+            ->height(200);  // column would stay empty with no error at all
+    }
+}
+```
+
+And `ProjetoResource` consumes both ends:
+
+```php
+SpatieMediaLibraryFileUpload::make('anexos'),   // in the form
+
+SpatieMediaLibraryImageColumn::make('anexos')   // in the table
+    ->simpleLightbox(),
+```
+
+`->simpleLightbox()` works with no glue because `SpatieMediaLibraryImageColumn` **extends
+`ImageColumn`**, which is exactly where the lightbox macro is registered.
+
+**Organization scoping comes for free** — and that's the point. Spatie's `media` table is
+polymorphic: the file belongs to the record, and the record is already scoped by
+`BelongsToTenant`. Whoever can't reach the project can't reach the attachment, with no tenant
+column in `media` and no configuration to remember to turn on.
+
+> ⚠️ **`MEDIA_DISK=public` is for avatars and logos, not for documents.** On the public disk the
+> path is `/storage/{id}/{file}`, with a sequential ID, reachable **without a session** — Filament's
+> multi-tenancy does not reach the file system. For a private attachment, switch the disk
+> (`MEDIA_DISK` in `.env`, `config/media-library.php`) and serve it through an authorized route.
 
 ## Working with AI agents
 
@@ -358,7 +491,7 @@ produces a file that the next step checks.
 **What this changes in practice:**
 
 - **The agent reads before writing.** `wikis/` and `.ai/rules` answer what already exists, and the
-  [feature roadmap](#feature-roadmap) below lists the 56 ready screens. A feature
+  [feature roadmap](#feature-roadmap) below lists the 61 ready screens. A feature
   reimplemented from scratch because the agent didn't know it existed is the most expensive and most invisible cost.
 - **Context becomes a file, not chat history.** Switching agent, machine or person does not
   lose the why of the decision — it is in the ADR, versioned in the same commit as the code.
@@ -461,6 +594,9 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 | F-42 | Composer releases | `/infra/composer-release-packages` | `infra` | warns of new version. **Informational — never updates anything.** Sync is a job: without worker, the screen is empty | 🔵 |
 | F-43 | AI runs | `/infra/execucoes-ia` | `infra` (`ver-ai-tasks`) | ledger with cost and tokens per run | 🔵 |
 | F-44 | Clear caches | `/infra` topbar | `infra` | `cache`, `config`, `view` and `modelCache` together | ⚪ |
+| F-57 | Grouped exceptions | `/infra/exceptions` | `infra` | by type and frequency, with a menu badge. Retention (`KIT_RETENCAO_EXCECOES_DIAS`) only happens **with the scheduler running** | 🟢 |
+| F-58 | Mail trail | `/infra/mail-logs` | `infra` | every e-mail sent. It stores the **body** — including the invitation's acceptance link | 🟢 |
+| F-59 | Recycle bin | `/infra/recycle-bin` | `infra` | restores what was deleted with `SoftDeletes`. Lists **only** the models declared in `models()` in `InfraPanelProvider` | 🟢 |
 
 ### Productivity and UI
 
@@ -474,6 +610,8 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 | F-50 | Resizable columns | any table | authenticated | width adjustable, remembered in the session | ⚪ |
 | F-51 | Environment indicator | topbar | anyone | `local`/`staging` badge; hides in production | 🔵 |
 | F-52 | Branded error pages | 403, 404, 419, 500, 503 | — | with the panel's look, in Portuguese (pt-BR) | 🔵 |
+| F-60 | **Language switcher** | topbar of the three and login screens | anyone | only shows up with **two** locales in `kit.idiomas`; translates Filament and the packages, **not** the kit's labels | 🟢 |
+| F-61 | **Attachments and media** | Projects form and table | whoever reaches the resource | upload, `anexos` collection, `miniatura` conversion and a table lightbox. The attachment inherits the record's own organization scope | 🟢 |
 
 ### AI
 
@@ -486,10 +624,11 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 
 ### What the roadmap **does not** cover on its own
 
-Five features depend on something outside the process, and no test replaces it:
+Some features depend on something outside the process, and no test replaces it:
 
 | Feature | Depends on | Without this |
 |---|---|---|
+| F-57, F-58 (trail retention) | the scheduler (`schedule:work`) | the exceptions and mail tables grow with no ceiling; the deadline in `config/kit.php` stays merely declared |
 | F-15…F-20 (e-mail delivery) | a real `MAIL_MAILER` **and** a worker (`QUEUE_CONNECTION=database`) | the invitation is saved and the queue fills; nothing leaves |
 | F-33 (health checks) | a run of `php artisan health:check` | the screen opens **empty**, with no state explaining — the dashboard widget warns, the resource page doesn't |
 | F-35, F-42 (queues and releases) | a worker | the Composer sync job stays in the queue: F-42 shows "no records" and F-35 counts pending against an empty table |
@@ -556,14 +695,25 @@ Reverb uses 8090 instead of the default 8080 so it doesn't collide with llama.cp
 
 ```bash
 composer dev          # server + queue + vite together
-composer test         # pint + phpstan + the whole suite
+composer test         # pint + phpstan + filacheck + the whole suite
 composer test:kit     # only the kit's tests (the foundation)
 composer lint         # formats the code
+composer filament:check   # only the Filament-specific lint (FilaCheck)
 php artisan kit:install --force   # reinstalls from scratch (deletes the SQLite file) and asks again
 php artisan kit:install --no-custom   # installs without asking anything
 php artisan kit:update            # brings in improvements from a new kit version
 php artisan kit:tenancy           # turns on multi-tenancy (opt-in)
 ```
+
+### FilaCheck: the lint that only knows Filament
+
+`composer filament:check` runs `laraveldaily/filacheck` — 17 rules that Pint and PHPStan have no
+way of having: a deprecated Filament API method, the wrong action namespace, a call that changed
+between versions. It runs inside `composer test` along with pint and phpstan, so CI fails on the
+same things your machine does.
+
+When it was adopted it found **7 pre-existing problems** in the kit itself — six deprecated test
+methods and one `ImageColumn::size()` — all fixed.
 
 ### The kit's tests
 
@@ -629,8 +779,11 @@ The benefit is in not deriving tests only from the "happy path". What slips thro
 | 10 | **Commands in the UI** | `config/command-center.php` | — |
 | 11 | **Backups** | destination and schedule in `config/backup.php` | — |
 | 12 | **AI agent** | `/admin` → AI Agents (or `database/seeders/AssistenteSeeder.php`) | — |
+| 13 | **[Panel languages](#the-language-switcher)** | `config/kit.php` → `idiomas` (a list of locales; with only one, the switcher doesn't show) | — |
+| 14 | **[Trail retention](#retention-the-number-is-the-intent-the-scheduler-is-the-execution)** | `KIT_RETENCAO_EXCECOES_DIAS` / `KIT_RETENCAO_EMAILS_DIAS` in `.env` | — |
+| 15 | **[Media disk](#attachments-and-media)** | `MEDIA_DISK` in `.env` (`public` by default — not for documents) | — |
 
-The last seven are not asked because they are **code or screen data**, not a value that fits in a terminal prompt. The installer lists them in the final summary, each with its file.
+The last ten are not asked because they are **code or screen data**, not a value that fits in a terminal prompt. The installer lists them in the final summary, each with its file.
 
 > ⚠️ Item 5 is the only one that is **not** "edit a file" once installed: `kit:tenancy` runs `migrate:fresh --seed` and **deletes your data**. It requires a clean git tree and an explicit confirmation. **Answered during installation it deletes nothing** — the database does not exist yet, and that is the right moment to decide.
 
@@ -886,6 +1039,9 @@ Everything below comes installed, published and registered on the panels — the
 | [laboiteacode/filament-dependency-graph](https://packagist.org/packages/laboiteacode/filament-dependency-graph) | visual map of models, relations, resources and panels |
 | [mominalzaraa/filament-composer-release-notifier](https://packagist.org/packages/mominalzaraa/filament-composer-release-notifier) | warns you when there's a new version of the Composer packages |
 | [cms-multi/filament-clear-cache](https://packagist.org/packages/cms-multi/filament-clear-cache) | clear caches from the panel |
+| [bezhansalleh/filament-exceptions](https://packagist.org/packages/bezhansalleh/filament-exceptions) | exceptions grouped by type and frequency, with retention |
+| [tapp/filament-maillog](https://packagist.org/packages/tapp/filament-maillog) | a trail of every e-mail sent |
+| [promethys/revive](https://packagist.org/packages/promethys/revive) | the recycle bin: restores records deleted with `SoftDeletes` |
 
 ### AI
 
@@ -912,6 +1068,7 @@ Everything below comes installed, published and registered on the panels — the
 | [wallacemartinss/filament-onboarding](https://packagist.org/packages/wallacemartinss/filament-onboarding) | checklists and guided tours, authored in `/admin` |
 | [anselmokossa/filament-sentinel](https://packagist.org/packages/anselmokossa/filament-sentinel) | error pages (403, 404, 419, 500, 503) that look like the panel |
 | [flowframe/laravel-trend](https://packagist.org/packages/flowframe/laravel-trend) | period aggregation for the widgets' charts |
+| [bezhansalleh/filament-language-switch](https://packagist.org/packages/bezhansalleh/filament-language-switch) | language switcher on the three panels and on the login screens |
 
 ### Data and services
 
@@ -919,11 +1076,12 @@ Everything below comes installed, published and registered on the panels — the
 |---|---|
 | [filament/spatie-laravel-settings-plugin](https://packagist.org/packages/filament/spatie-laravel-settings-plugin) | settings pages in the panel |
 | [spatie/laravel-settings](https://packagist.org/packages/spatie/laravel-settings) | the persisted settings behind them |
+| [filament/spatie-laravel-media-library-plugin](https://packagist.org/packages/filament/spatie-laravel-media-library-plugin) | the media layer (uploads, collections, conversions) in the form, table and infolist components |
 | [mike-bronner/laravel-model-caching](https://packagist.org/packages/mike-bronner/laravel-model-caching) | automatic caching of Eloquent queries |
 | [predis/predis](https://packagist.org/packages/predis/predis) | pure-PHP Redis client (no extension needed) |
 | [laravel/reverb](https://packagist.org/packages/laravel/reverb) | WebSocket for real-time notifications |
 
-> **Engines under the plugins**, installed as dependencies (you don't declare them, but they're what actually runs): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (the checks), `spatie/laravel-activitylog` (the activity log) and `livewire/livewire` (all of Filament).
+> **Engines under the plugins**, installed as dependencies (you don't declare them, but they're what actually runs): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (the checks), `spatie/laravel-activitylog` (the activity log), `spatie/laravel-medialibrary` (the attachments) and `livewire/livewire` (all of Filament).
 
 ### Model Caching
 
@@ -946,6 +1104,7 @@ php artisan modelCache:clear      # clears the model cache
 | [phpunit/phpunit](https://packagist.org/packages/phpunit/phpunit) | the engine under Pest |
 | [larastan/larastan](https://packagist.org/packages/larastan/larastan) | static analysis (`composer types:check`) |
 | [laravel/pint](https://packagist.org/packages/laravel/pint) | formatting (`composer lint`) |
+| [laraveldaily/filacheck](https://packagist.org/packages/laraveldaily/filacheck) | Filament-specific lint (`composer filament:check`) |
 | [laravel-lang/common](https://packagist.org/packages/laravel-lang/common) | pt-BR translations for Laravel |
 | [laravel/pail](https://packagist.org/packages/laravel/pail) | real-time logs in the terminal |
 | [laravel/pao](https://packagist.org/packages/laravel/pao) | Laravel development tooling |

@@ -30,9 +30,11 @@ vale a pena e o que já foi olhado e recusado — para não ser reavaliado do ze
    marcou. Alguns plugins listados como v5 têm README ainda falando em v4.
 3. **A classificação é de triagem**, feita pela descrição de uma linha. Nenhum dos 547 teve o código
    lido. Um `SIM` aqui significa "vale abrir o repositório", não "pode instalar".
-4. **Nada foi instalado.** O `CLAUDE.md` do projeto proíbe mexer em dependência sem aprovação, e a
-   decisão é do mantenedor. Ver ADR-07 em
+4. **A varredura em si não instalou nada.** O `CLAUDE.md` do projeto proíbe mexer em dependência sem
+   aprovação, e a decisão é do mantenedor. Ver ADR-07 em
    `wikis/specs/feature/v1-enriquecimento-kit/02-decisoes-arquiteturais.md`.
+   O **Tier S foi aprovado e instalado depois**, em 2026-08-18 — ver a seção "Estado: Tier S
+   adotado" no fim desta página. O resto continua sendo proposta.
 
 ### Distribuição
 
@@ -222,7 +224,7 @@ como parte da entrega, não como detalhe.
 
 ---
 
-### 4. `bezhansalleh/filament-exception-viewer` — exceções no painel
+### 4. `bezhansalleh/filament-exceptions` — exceções no painel
 
 **Lacuna que fecha**: o kit vê **saúde** (Health), **desempenho** (Pulse), **arquivo de log**
 (LogsExplorer) e **filas** (JobsMonitor) — mas não tem uma tela que agrupe *exceções* por tipo e
@@ -244,7 +246,7 @@ frequência. Achar a exception no LogsExplorer exige saber o dia e caçar no arq
 
 ---
 
-### 5. `tapp/filament-mail-log` — trilha de e-mail enviado
+### 5. `tapp/filament-maillog` — trilha de e-mail enviado
 
 **Lacuna que fecha**: o kit envia `ConviteDeAcesso` e não guarda nenhum registro. Quando o convite
 "não chegou", não há como distinguir *não foi enviado* de *foi enviado e caiu no spam*.
@@ -387,8 +389,8 @@ decidir o que fazer com "autenticado sem convite".
 | 1 | `filament/spatie-laravel-media-library-plugin` | mídia | alto | médio |
 | 2 | `awcodes/filament-curator` | mídia (UI) | médio | baixo |
 | 3 | `promethys/revive` | lixeira | baixo/médio | baixo |
-| 4 | `bezhansalleh/filament-exception-viewer` | exceções | baixo/médio | baixo |
-| 5 | `tapp/filament-mail-log` | trilha de e-mail | baixo | baixo |
+| 4 | `bezhansalleh/filament-exceptions` | exceções | baixo/médio | baixo |
+| 5 | `tapp/filament-maillog` | trilha de e-mail | baixo | baixo |
 | 6 | `bezhansalleh/filament-language-switch` | i18n | alto (de verdade) | médio |
 | 7 | `awcodes/overlook` | dashboard | baixo | **duplicidade** |
 | 8 | `awcodes/filament-quick-create` | UX | baixo | ruído de UI |
@@ -548,3 +550,25 @@ triagem, do que mais agrega ao que menos, com os grupos excludentes marcados e o
 motivo registrado — está em **[pacotes-ranking.md](pacotes-ranking.md)**.
 
 Aquela é a fila de instalação. Esta é o dossiê dos finalistas.
+
+---
+
+## Estado: Tier S adotado
+
+Em **2026-08-18** os itens **1, 3, 4, 5, 6 e 7** deste top 10 foram instalados. O item **2**
+(Curator) ficou de fora por ser excludente com o 1 — a decisão e o critério estão acima.
+
+O que a adoção ensinou, e que este documento não sabia:
+
+1. **Dois nomes de pacote estavam errados.** Vieram do slug da URL do diretório, exatamente como o
+   limite nº 1 da seção "Método" avisava. Corrigidos no texto: `filament-exception-viewer` era
+   `bezhansalleh/filament-exceptions` (e a série para Filament 5 é a **4.x**), e `filament-mail-log`
+   era `tapp/filament-maillog`.
+2. **A justificativa do item 3 tinha um erro de fato.** Dizia que o kit usava soft delete sem tela de
+   restauração. Não usava: **nenhuma model tinha `SoftDeletes`**. A lixeira nasceria vazia, e
+   `App\Models\Projeto` ganhou a trait junto com a adoção.
+3. **Triagem não substitui leitura de código.** O limite nº 3 da seção "Método" dizia que um `SIM`
+   aqui significa "vale abrir o repositório", não "pode instalar". Os dois achados acima são a prova
+   disso, e a razão de cada adoção continuar valendo uma wiki própria.
+
+A fila completa, com o restante dos 112, está em [`pacotes-ranking.md`](pacotes-ranking.md).

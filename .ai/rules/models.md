@@ -23,3 +23,16 @@ Duas coisas nele não podem ser "simplificadas":
 2. A relação é `papeisEmQualquerContexto()`, a mesma de `canAccessPanel()` — **nunca** `roles()`. Com `permission.teams` ligado, a `roles()` do spatie acrescenta `wherePivot(team_id, getPermissionsTeamId())`, e o papel some no `/admin` e no `/infra`, que não têm tenant na rota. O caso que pega isso é `tests/Tenancy/CabecalhoDoMenuDoUsuarioTenancyTest.php` ("acha o papel mesmo fora do contexto") — e só ele.
 
 Retorno por `getAttribute('name')`, não `->name`: o genérico da relação é `Model` porque `Config::roleModel()` é `class-string<Model>`, e o PHPStan reprova o acesso direto.
+
+## Mídia e soft delete: o que cada trait obriga em outro lugar
+**`SoftDeletes`** — model que ganha a trait PRECISA entrar na lista `models()` do `RevivePlugin`, no `InfraPanelProvider`. Sem isso o registro é apagado e não existe tela para restaurar. A lista é explícita, e não `modelsNamespace()`, porque a varredura automática alcançaria `User`, `Role` e `Tenant`, cuja restauração tem consequência de autorização — usuário volta com papel numa organização que pode não existir mais.
+
+**`InteractsWithMedia`** (spatie/laravel-medialibrary):
+
+- O isolamento por organização é **herdado, não configurado**: a tabela `media` é polimórfica, o arquivo pertence ao registro, e o registro já é escopado por `BelongsToTenant`. Não há coluna de tenant em `media`.
+- Herdado quer dizer que três coisas o desfazem, sem gerar erro: query direta em `Media` (a tabela não tem escopo nenhum), dono que não é escopado (o `User` do kit pertence a várias organizações) e model nova sem `BelongsToTenant`.
+- A camada de URL **não** é protegida: com `MEDIA_DISK=public` o caminho é `/storage/{id}/{arquivo}`, ID sequencial, alcançável sem sessão. Serve para avatar e logo; para documento, use disco privado e rota autorizada, e `->visibility('private')` no campo.
+- Em `registerMediaConversions()`, `nonQueued()` vem **antes** de `width()`/`height()`: os dois últimos são encaminhados ao `ImageDriver` e devolvem o driver, não a `Conversion`. Encadeado depois, é `BadMethodCallException` na primeira conversão.
+- Enquanto o kit nascer com `QUEUE_CONNECTION=sync`, conversão enfileirada nunca é gerada e a coluna fica vazia sem erro. `nonQueued()` é o default certo aqui.
+
+Referência viva das duas: `App\Models\Projeto` e `app/Filament/App/Resources/Projetos/ProjetoResource.php`.

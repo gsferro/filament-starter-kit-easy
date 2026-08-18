@@ -149,6 +149,46 @@ No form do resource, `->scopedUnique()` no lugar de `->unique()`. Ver [convencoe
 
 O `app/Models/Projeto.php` e o `ProjetoResource` da demo são o exemplo canônico completo.
 
+## Tornar uma model restaurável pela Lixeira
+
+Três passos — e é o terceiro que ninguém lembra:
+
+```php
+// 1. migration
+$table->softDeletes();
+
+// 2. model
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Projeto extends Model implements Auditable
+{
+    use SoftDeletes;
+}
+```
+
+```php
+// 3. app/Providers/Filament/InfraPanelProvider.php
+RevivePlugin::make()
+    ->navigationGroup('Sistema')
+    ->navigationLabel('Lixeira')
+    ->models([
+        Projeto::class,
+        SuaModel::class,   // ← sem esta linha não há tela para restaurar
+    ])
+    ->withoutScoping(),
+```
+
+**Sem o passo 3 o dado não se perde, mas fica inalcançável pela UI**: `delete()` grava `deleted_at`, o registro some de toda listagem por causa do escopo global do `SoftDeletes`, e não existe nenhuma tela que o mostre. Volta só com SQL na mão. Nenhum erro, nenhum aviso — é exatamente o tipo de falha silenciosa que a Lixeira existe para evitar.
+
+**Por que a lista é explícita e não `modelsNamespace()`:** a varredura automática de `app/Models` alcançaria `User`, `Role` e `Tenant`, cuja restauração tem consequência de **autorização** — um usuário volta com papel numa organização que pode não existir mais, e quem restaurou não tinha como saber disso. É a mesma escolha da allow-list do Command Center: a trava é a lista, não o gate.
+
+Duas consequências do `SoftDeletes` que valem para qualquer model:
+
+- **Índice único continua ocupado** pelo registro apagado. Se a tabela tem `unique` em `nome`, não dá para recriar com o mesmo nome enquanto o antigo estiver na lixeira.
+- **Dois escopos globais convivem** — o do `SoftDeletes` e o de `BelongsToTenant`. A ordem não importa: os dois são `where`.
+
+Na tela do painel de negócio fica só o `DeleteAction`; **não** acrescente `RestoreAction`/`ForceDeleteAction` lá. Quem restaura é a Lixeira, num painel de acesso mais estreito — duas portas para o mesmo ato dariam ao usuário do `/app` o poder de desfazer a exclusão feita por outro.
+
 ## Vincular usuário a um tenant
 
 `/admin` → o cadastro de tenants → aba **Usuários vinculados** → *Vincular usuário*.
@@ -300,6 +340,79 @@ somam o todo".
 
 Olhe `app/Filament/Infra/Widgets/` antes de escrever do zero — provavelmente já existe um widget parecido para copiar a forma.
 
+## Anexar arquivos a uma model
+
+`spatie/laravel-medialibrary` com a ponte oficial do Filament. A model **não ganha coluna nenhuma**: tudo vai para a tabela polimórfica `media`, e o que você declara são **coleções**. `App\Models\Projeto` e `app/Filament/App/Resources/Projetos/ProjetoResource.php` são o exemplo vivo — leia os dois antes de escrever o seu.
+
+### 1. A model
+
+```php
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+class Projeto extends Model implements Auditable, HasMedia
+{
+    use InteractsWithMedia;
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('anexos');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('miniatura')
+            ->nonQueued()
+            ->width(200)
+            ->height(200);
+    }
+}
+```
+
+`HasMedia` é **interface**, `InteractsWithMedia` é **trait** — faltando a interface, o campo do Filament não reconhece a model. `singleFile()` fica de fora quando o caso é anexo: o múltiplo é o que exercita ordenação e remoção na tela.
+
+⚠️ **`nonQueued()` vem ANTES de `width()`/`height()`.** Os dois últimos são encaminhados ao `ImageDriver` do `spatie/image` e devolvem o **driver**, não a `Conversion`: encadear `nonQueued()` depois deles procura o método na classe errada. O PHPStan pega; em runtime é `BadMethodCallException` na primeira conversão. E `nonQueued()` existe porque o kit nasce com `QUEUE_CONNECTION=sync` — enfileirada, a conversão só existiria com worker no ar e a coluna da tabela ficaria **vazia sem erro nenhum**. Com worker de verdade, tire-o.
+
+### 2. O formulário
+
+```php
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+
+SpatieMediaLibraryFileUpload::make('anexos')
+    ->label('Anexos')
+    ->collection('anexos')      // o nome do campo é o da COLEÇÃO, não de uma coluna
+    ->multiple()
+    ->reorderable()
+    ->openable()
+    ->downloadable()
+    ->visibility('private')
+    ->maxSize(10 * 1024)
+    ->columnSpanFull(),
+```
+
+### 3. A coluna da tabela
+
+```php
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
+
+SpatieMediaLibraryImageColumn::make('anexos')
+    ->label('Anexos')
+    ->collection('anexos')
+    ->conversion('miniatura')
+    ->circular()
+    ->stacked()
+    ->limit(3)
+    ->simpleLightbox(),
+```
+
+`->simpleLightbox()` funciona aqui **sem uma linha de cola**: `SpatieMediaLibraryImageColumn extends ImageColumn`, que é exatamente a classe onde o macro do `solution-forest/filament-simplelightbox` é declarado, e o `Macroable` do Filament resolve subindo por `class_parents()`. As duas armadilhas do macro continuam valendo — ver [Imagem ou documento em tabela](#imagem-ou-documento-em-tabela).
+
+### O que você ganha e o que não ganha
+
+- **Ganha o isolamento por organização de graça**: o arquivo pertence ao registro, e o registro já é escopado por `BelongsToTenant`. Não há coluna de tenant em `media` nem configuração a lembrar.
+- **Não ganha a URL protegida**: com `MEDIA_DISK=public` o caminho é `/storage/{id}/{arquivo}`, ID sequencial, alcançável sem sessão. `->visibility('private')` protege a visibilidade **no disco**, não a URL de um disco público. Anexo sensível pede disco privado **e** rota autorizada — ver [arquitetura.md](arquitetura.md#a-camada-de-url-não-é-protegida-por-ninguém).
+
 ## Imagem ou documento em tabela
 
 Toda coluna de mídia do kit nasce com lightbox: clicar na miniatura amplia sobre a listagem, sem
@@ -420,6 +533,21 @@ Health::checks(array_filter([
 
 A página em `/infra` e o `health:check` agendado pegam sozinhos. Check que não vale em toda plataforma entra condicionado (é o que o kit faz com `UsedDiskSpaceCheck` no Windows).
 
+## Ajustar a retenção das trilhas
+
+As duas trilhas que o kit **grava** — exceções e e-mails enviados — têm prazo em `config/kit.php`, e o prazo se muda pelo `.env`:
+
+```dotenv
+KIT_RETENCAO_EXCECOES_DIAS=14
+KIT_RETENCAO_EMAILS_DIAS=14
+```
+
+Os dois nascem em 14 dias, alinhados ao `days` da rotação de log: a trilha morre junto com o log que a originou, não depois dele. **Zero ou negativo desliga a poda daquela trilha** — e aí a tabela cresce sem teto, o que é uma escolha, não um esquecimento.
+
+**Só acontece com o agendador rodando.** O que está no config é a intenção; quem executa são os dois agendamentos de `routes/console.php` (02:00 e 02:10). Sem `php artisan schedule:work` (ou o serviço `scheduler` do compose), o número não apaga nada e as duas tabelas crescem para sempre — a de exceções cresce por **request com defeito**, e um bug em laço enche o disco em horas. É o `ScheduleCheck` do Health que denuncia o agendador parado.
+
+Baixar o prazo não apaga o passado na hora: o expurgo roda de madrugada. Para ver o efeito agora, `php artisan schedule:run` ou `php artisan model:prune --model="BezhanSalleh\FilamentExceptions\Models\Exception"`.
+
 ## Comando na Central de Comandos
 
 A trava real é a allow-list de `config/command-center.php` — comando fora dela não roda pela UI, ponto. Acrescente lá, e o gate `command-center:access` (papel `infra`) já cuida de quem vê a tela.
@@ -432,6 +560,18 @@ A trava real é a allow-list de `config/command-center.php` — comando fora del
 4. Tools: fábrica no `tools()` do agente **e** chave liberada em `agentes_ia.tools`. A permissão do usuário vai **na query da tool**.
 
 Detalhes em [ia.md](ia.md). Skill obrigatória: `ai-sdk-development`.
+
+## Ligar um segundo idioma
+
+Um item só em `config/kit.php` → `idiomas`, e o seletor aparece nos três painéis **e** nas telas de login:
+
+```php
+'idiomas' => ['pt_BR', 'en'],
+```
+
+É lista e não booleano de propósito: **com um idioma só o botão não é renderizado**, dentro nem fora do painel. Quem quer a feature declara o segundo idioma, e o dado liga o botão — não há flag para esquecer ligada. Nada mais a registrar: o seletor é configurado uma vez em `ConfiguraFilamentGlobal`, globalmente ([por quê](arquitetura.md#a-cola-configurafilamentglobal)).
+
+⚠️ **Saiba o que você recebe.** A tradução cobre a camada do **Filament e dos pacotes** (`laravel-lang/common`), **não** os rótulos do kit: "Administrador Geral", "Acesso ao painel /app", os títulos dos hubs e os labels dos resources são strings pt-BR escritas no código — há **dez** `__()` em todo o app. Com `en` ligado hoje, metade da tela troca de idioma e a outra metade não. Internacionalizar o kit é trabalho declarado e ainda não feito; até lá, o segundo idioma é para quem aceita esse meio-termo, e passar os rótulos do seu projeto por `__()` é trabalho seu.
 
 ## Tradução de plugin
 
@@ -454,6 +594,7 @@ php artisan test --compact --filter=Produto
 
 ```bash
 vendor/bin/pint --dirty
+composer filament:check  # se mexeu em Resource, Page, Widget ou PanelProvider
 php artisan test --compact --filter=<oQueVocêTocou>
 composer test:kit        # se mexeu em provider, trait, painel, gate ou app/Ai
 ```
@@ -481,6 +622,10 @@ Commit no padrão do repositório: gitmoji + escopo, mensagem em pt-BR.
 | Usuário comum vê "Usuários" e "Convites" no `/app` | o `PapeisSeeder` não rodou depois de o kit ganhar essas telas, ou a subtração de `permissoesDeAdministracaoDoApp()` foi removida: `panel_user` está com a matriz inteira do painel |
 | Listagem mostra dados de outro cliente | model sem `BelongsToTenant`, ou query com `withoutGlobalScopes()` |
 | Menu não mostra o item | `canAccess()` da policy, ou `shouldRegisterNavigation()` |
+| Apaguei um registro e ele não aparece na Lixeira | a model não está em `models()` do `RevivePlugin` (`InfraPanelProvider`) — ou nem usa `SoftDeletes`, e aí o `delete()` removeu a linha de verdade. Ver [a receita](#tornar-uma-model-restaurável-pela-lixeira) |
+| Miniatura do anexo nasce vazia, sem erro | a conversão está enfileirada e não há worker: `nonQueued()` na `registerMediaConversions()`, ou `php artisan queue:work` |
+| O seletor de idioma não aparece | `config('kit.idiomas')` tem um item só — é o desenho, não um bug. Acrescente o segundo locale |
+| Trilha de exceções ou de e-mails crescendo sem parar | o prazo em `kit.retencao` é só intenção: quem expurga é o agendador (`php artisan schedule:work`). Prazo zero ou negativo desliga a poda de propósito |
 | Assets do Filament sumiram | `php artisan filament:assets` |
 | Vite manifest não encontrado | `npm run build` ou `composer dev` |
 | Pulse sem dados | falta o daemon: `php artisan pulse:check` |
