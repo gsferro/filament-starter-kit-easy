@@ -74,7 +74,9 @@
         "wezlo/filament-search-spotlight": "^1.0"
     },
     "require-dev": {
+        "driftingly/rector-laravel": "^2.5",
         "fakerphp/faker": "^1.23",
+        "filament/upgrade": "^5.7",
         "larastan/larastan": "^3.9",
         "laravel-lang/common": "^6.8",
         "laravel/boost": "^2.5",
@@ -88,7 +90,8 @@
         "pestphp/pest-plugin-browser": "^5.0",
         "pestphp/pest-plugin-laravel": "^5.0",
         "pestphp/pest-plugin-mutate": "^5.0",
-        "phpunit/phpunit": "^13.3"
+        "phpunit/phpunit": "^13.3",
+        "rector/rector": "^2.6"
     },
     "autoload": {
         "psr-4": {
@@ -126,6 +129,15 @@
         ],
         "filament:check": [
             "filacheck"
+        ],
+        "refactor:preview": [
+            "rector process --dry-run"
+        ],
+        "refactor:apply": [
+            "rector process"
+        ],
+        "upgrade:filament": [
+            "filament-v5"
         ],
         "test": [
             "Composer\\Config::disableProcessTimeout",

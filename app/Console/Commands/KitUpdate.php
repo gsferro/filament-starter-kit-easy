@@ -162,7 +162,17 @@ class KitUpdate extends Command
         'wikis/pacotes-candidatos.md',
         'wikis/pacotes-ranking.md',
         'wikis/pacotes.md',
+        'wikis/qualidade-de-codigo.md',
         'wikis/receitas.md',
+
+        /*
+         * Configuração do Rector. Não é lint — é a ferramenta de upgrade, e o arquivo
+         * nasce sem nenhum set ligado de propósito. O valor dele é o bloco de instruções
+         * no topo, que diz qual set ligar em cada tipo de upgrade e por que os sets de
+         * qualidade ficam fora. Sem esta linha, quem já instalou o kit não recebe nem a
+         * ferramenta nem a decisão.
+         */
+        'rector.php',
 
         'Dockerfile.laravel',
         'docker-compose.yml',
@@ -384,7 +394,10 @@ class KitUpdate extends Command
             return $tags[0];
         }
 
-        return select(
+        // `(string)`: o `select()` dos Prompts devolve `int|string` porque a chave da opção
+        // pode ser inteira. Aqui `$tags` é `list<string>` de valores (sem chave declarada),
+        // então o que volta é sempre o próprio nome da tag.
+        return (string) select(
             label: 'Atualizar para qual versão do kit?',
             options: $tags,
             default: $tags[0],
