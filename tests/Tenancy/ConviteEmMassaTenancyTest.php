@@ -82,7 +82,7 @@ it('carimba a organizacao corrente no lote do admin da organizacao', function ()
             // Forjado no state do Livewire: o formulário do /app NÃO tem este campo.
             'tenant_id' => $globex->getKey(),
         ])
-        ->assertHasNoActionErrors();
+        ->assertHasNoFormErrors();
 
     /*
      * É a barreira 6 da wiki `admin-da-organizacao`, e não vem de graça: `Convite` tem
@@ -118,7 +118,7 @@ it('usa a organizacao escolhida no lote do admin', function (): void {
             'role_id'   => papelDoLoteTenancy(),
             'tenant_id' => $globex->getKey(),
         ])
-        ->assertHasNoActionErrors();
+        ->assertHasNoFormErrors();
 
     expect(Convite::count())->toBe(2)
         ->and(Convite::pluck('tenant_id')->unique()->all())->toBe([$globex->id])
@@ -146,7 +146,7 @@ it('recusa papel de outro painel no lote do painel de negocio', function (): voi
             // O papel de /admin, forjado.
             'role_id' => papelDoLoteTenancy('admin'),
         ])
-        ->assertHasActionErrors(['role_id']);
+        ->assertHasFormErrors(['role_id']);
 
     expect(Convite::count())->toBe(0);
 
@@ -156,7 +156,7 @@ it('recusa papel de outro painel no lote do painel de negocio', function (): voi
             'emails'  => "uma@example.com\noutra@example.com",
             'role_id' => papelDoLoteTenancy(),
         ])
-        ->assertHasNoActionErrors();
+        ->assertHasNoFormErrors();
 
     expect(Convite::count())->toBe(2);
 });

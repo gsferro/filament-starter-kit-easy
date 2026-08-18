@@ -227,7 +227,7 @@ it('promove a admin da organizacao pelo relation manager', function (): void {
         ->callAction(TestAction::make('papeisNaOrganizacao')->table($beto), [
             'roles' => [$adminOrg->getKey()],
         ])
-        ->assertHasNoActionErrors();
+        ->assertHasNoFormErrors();
 
     // A ação roda num painel SEM tenancy, onde o contexto default do processo é
     // CONTEXTO_GLOBAL. É a troca explícita de contexto que faz o papel nascer na

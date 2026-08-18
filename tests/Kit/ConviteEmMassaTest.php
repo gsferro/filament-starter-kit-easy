@@ -72,7 +72,7 @@ it('convida todos os enderecos de um lote valido', function (): void {
 /**
  * O caso central: sem ele a feature vira tudo-ou-nada num refactor e nada acusa.
  *
- * `assertHasNoActionErrors()` é a metade que importa — se alguém acrescentar `->email()` ou
+ * `assertHasNoFormErrors()` é a metade que importa — se alguém acrescentar `->email()` ou
  * `->nestedRecursiveRules()` no Textarea "para validar direito", um endereço torto reprova a
  * modal inteira e o resultado parcial morre.
  */
@@ -82,7 +82,7 @@ it('envia os validos mesmo com um endereco torto no meio', function (): void {
     $this->actingAs(usuarioDoKit('master_global'));
 
     chamarLote("um@example.com\nnao-e-email\ntres@example.com")
-        ->assertHasNoActionErrors()
+        ->assertHasNoFormErrors()
         ->assertNotified();
 
     expect(Convite::count())->toBe(2)

@@ -8,6 +8,7 @@ use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Support\CorPrimaria;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
+use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
 use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
@@ -195,6 +196,22 @@ class AdminPanelProvider extends PanelProvider
 
                 // Páginas hub em grade de cartões (App\Filament\Admin\Pages\HubDeAdministracao).
                 FilamentCardsPlugin::make(),
+
+                /*
+                 * Registrado aqui SEM navegação — a tela pertence ao /infra.
+                 *
+                 * O `ExceptionResource` resolve o plugin pelo painel CORRENTE, e o
+                 * filament-shield percorre todos os painéis no boot sem fixar qual é o
+                 * corrente. Painel sem o plugin estoura `LogicException` em todo request e
+                 * em todo comando artisan. É a mesma armadilha do `Lockscreen`; a saída é a
+                 * mesma: registrar nos três, com navegação só onde a tela deve estar.
+                 *
+                 * Ver o comentário longo no AppPanelProvider e .ai/rules/filament.md §4 —
+                 * o resource entra na matriz deste painel, e por isso na subtração do
+                 * `panel_user`.
+                 */
+                FilamentExceptionsPlugin::make()
+                    ->registerNavigation(false),
             ])
             /*
              * Gatilho da busca ⌘K, no lugar exato do campo nativo.

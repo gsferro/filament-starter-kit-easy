@@ -38,7 +38,7 @@ class TenantsTable
                 ImageColumn::make('logo')
                     ->label('Logo')
                     ->disk('public')
-                    ->size(40)
+                    ->imageSize(40)
                     ->simpleLightbox(),
                 TextColumn::make('nome')->label('Nome')->searchable(['nome', 'slug'])->sortable(),
                 TextColumn::make('slug')->label('Slug')->badge()->color('gray')->searchable(),

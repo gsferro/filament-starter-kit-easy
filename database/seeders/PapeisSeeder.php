@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Filament\App\Resources\Convites\ConviteResource;
 use App\Filament\App\Resources\Users\UserResource;
 use App\Support\Paineis;
+use BezhanSalleh\FilamentExceptions\Resources\ExceptionResource;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Permission;
@@ -119,6 +120,19 @@ class PapeisSeeder extends Seeder
         return Paineis::permissoesDe('app', [
             UserResource::class,
             ConviteResource::class,
+
+            /*
+             * O ExceptionResource não é tela do /app — ele existe na matriz deste painel
+             * só porque o `FilamentExceptionsPlugin` precisa estar registrado nos TRÊS
+             * painéis para o pacote não estourar `LogicException` no boot (ver o comentário
+             * no AppPanelProvider). Registrado sem navegação, mas registrado.
+             *
+             * Sem esta subtração, todo `panel_user` herdaria `ViewAny:Exception` e
+             * companhia: a rota existe neste painel, então a permission bastaria para ler
+             * stack traces da instalação inteira — que podem conter dado de request de
+             * qualquer organização.
+             */
+            ExceptionResource::class,
         ])->all();
     }
 

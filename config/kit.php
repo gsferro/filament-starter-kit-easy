@@ -113,6 +113,63 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Observabilidade — retenção
+    |--------------------------------------------------------------------------
+    | Quanto tempo as trilhas que o kit GRAVA sobrevivem. Não é preferência de
+    | gosto: as duas tabelas abaixo crescem por evento e guardam dado sensível.
+    |
+    | `excecoes` alimenta /infra/exceptions (bezhansalleh/filament-exceptions).
+    | A tabela cresce por REQUEST com defeito — um bug em laço enche o disco em
+    | horas — e o stack trace guardado pode conter parâmetro de request, logo
+    | pode conter dado pessoal.
+    |
+    | `emails` alimenta /infra (tapp/filament-maillog). Mais delicada ainda: o
+    | CORPO do e-mail é gravado, e o convite de acesso carrega o link de aceite.
+    |
+    | Os dois defaults são 14 dias, alinhados ao `days` da rotação de log em
+    | config/logging.php: a trilha morre junto com o log que a originou, não
+    | depois dele.
+    |
+    | Quem APLICA a retenção é `model:prune`, agendado em routes/console.php.
+    | Sem o agendador rodando, o número aqui é só uma intenção declarada.
+    |
+    | Zero ou negativo desliga a poda daquela trilha — e aí a tabela cresce sem
+    | teto, o que é uma escolha, não um esquecimento.
+    */
+
+    'retencao' => [
+        'excecoes_em_dias' => (int) env('KIT_RETENCAO_EXCECOES_DIAS', 14),
+        'emails_em_dias'   => (int) env('KIT_RETENCAO_EMAILS_DIAS', 14),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Idiomas do painel
+    |--------------------------------------------------------------------------
+    | Lista de locales oferecidos no seletor de idioma
+    | (bezhansalleh/filament-language-switch), nos três painéis e nas telas de
+    | autenticação.
+    |
+    | **Um único idioma esconde o seletor** — é assim que o kit nasce, e é a
+    | razão de isto ser uma LISTA e não um booleano: quem quer a feature declara
+    | o segundo idioma, e o dado liga o botão. Não há flag para esquecer ligada
+    | com um idioma só.
+    |
+    | Antes de acrescentar `en` aqui, saiba o que você recebe: a tradução cobre a
+    | camada do Filament e dos pacotes (laravel-lang/common), NÃO os rótulos do
+    | próprio kit. "Administrador Geral", "Acesso ao painel /app", os títulos dos
+    | hubs e os labels dos resources são strings pt-BR escritas no código — há
+    | dez `__()` em todo o app. Com `en` ligado hoje, metade da tela troca de
+    | idioma e a outra metade não.
+    |
+    | Internacionalizar o kit é trabalho declarado e ainda não feito. Ver
+    | wikis/pacotes-ranking.md, item 6 do Tier S.
+    */
+
+    'idiomas' => ['pt_BR'],
+
+    /*
+    |--------------------------------------------------------------------------
     | Convites de acesso
     |--------------------------------------------------------------------------
     | O convite é a única forma de alguém de fora virar usuário: a tela de

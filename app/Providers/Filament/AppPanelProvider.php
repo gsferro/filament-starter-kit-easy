@@ -13,6 +13,7 @@ use App\Http\Middleware\DefinirTenantDePermissoes;
 use App\Models\Tenant;
 use App\Support\CorPrimaria;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
+use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
 use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
@@ -277,6 +278,31 @@ class AppPanelProvider extends PanelProvider
 
                 // Páginas hub em grade de cartões (App\Filament\App\Pages\HubDoNegocio).
                 FilamentCardsPlugin::make(),
+
+                /*
+                 * Registrado aqui SEM navegação, e isso não é opcional.
+                 *
+                 * A tela de exceções pertence ao /infra, e só lá ela aparece. Mas o
+                 * `ExceptionResource` do pacote resolve o plugin pelo painel CORRENTE — os
+                 * métodos estáticos de navegação dele chamam `FilamentExceptionsPlugin::get()`,
+                 * que é o helper `filament()`. E o filament-shield percorre
+                 * `Filament::getPanels()` no boot para montar a matriz de permissões, sem
+                 * fixar o painel corrente: a resolução cai no painel DEFAULT, que é este.
+                 *
+                 * Sem esta linha, `LogicException: Plugin [filament-exceptions] is not
+                 * registered for panel [app]` derruba TODO request e TODO comando artisan —
+                 * `migrate` e `inspire` inclusive. Medido, não suposto.
+                 *
+                 * Mesma armadilha do `Lockscreen` logo acima, mesma saída: registrar nos
+                 * três. A diferença é o `registerNavigation(false)`, porque aqui a tela não
+                 * deve aparecer.
+                 *
+                 * Consequência que NÃO pode ser esquecida: o resource passa a existir na
+                 * matriz deste painel, então `Exception` entra na lista de subtração do
+                 * `panel_user` no `PapeisSeeder`. Ver .ai/rules/filament.md §4.
+                 */
+                FilamentExceptionsPlugin::make()
+                    ->registerNavigation(false),
             ])
             /*
              * Gatilho da busca ⌘K, no lugar exato do campo nativo.

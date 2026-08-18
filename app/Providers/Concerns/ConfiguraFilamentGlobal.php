@@ -2,6 +2,7 @@
 
 namespace App\Providers\Concerns;
 
+use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -70,6 +71,65 @@ trait ConfiguraFilamentGlobal
         Table::configureUsing(fn (Table $table): Table => $this->configuraTable($table));
 
         $this->configuraPanelSwitch();
+        $this->configuraSeletorDeIdioma();
+    }
+
+    /**
+     * Seletor de idioma nos três painéis e nas telas de autenticação.
+     *
+     * Global e não por painel pelo mesmo motivo do Panel Switch acima: o pacote não é
+     * plugin de painel, registra um render hook global no `BODY_END`. Configurar em
+     * cada provider daria aparência de config por painel com efeito global.
+     *
+     * **Dirigido por dado, sem flag.** Com um idioma só em `config('kit.idiomas')` — que é
+     * como o kit nasce — não há para onde trocar, e o `visible(false)` some com o botão.
+     * Quem quer a feature declara o segundo locale; ninguém esquece um booleano ligado.
+     *
+     * O que o seletor NÃO faz: traduzir o kit. A cobertura é da camada do Filament e dos
+     * pacotes (laravel-lang/common). Os rótulos do próprio kit são strings pt-BR escritas
+     * no código — há dez `__()` em todo o app. Ligar `en` hoje troca metade da tela.
+     * Está declarado em `config/kit.php` e em wikis/pacotes-ranking.md.
+     */
+    private function configuraSeletorDeIdioma(): void
+    {
+        LanguageSwitch::configureUsing(function (LanguageSwitch $seletor): void {
+            /*
+             * A leitura da config fica DENTRO da closure, e isso não é estilo.
+             *
+             * Lida fora, ela seria avaliada uma vez no boot do provider e capturada por
+             * valor — o seletor passaria a exibir a lista que existia naquele instante,
+             * não a que o request tem. É o mesmo motivo pelo qual os painéis passam
+             * `fn (): array => CorPrimaria::paleta()` em vez do array pronto.
+             *
+             * Foi um defeito real: a primeira versão capturava `$idiomas` por `use`, e o
+             * caso "mostra o seletor quando há um segundo idioma" reprovou.
+             */
+            /** @var list<string> $idiomas */
+            $idiomas = array_values(array_filter((array) config('kit.idiomas', [])));
+
+            $seletor
+                ->locales($idiomas)
+                // `displayLocale(null)` = cada idioma aparece escrito NELE MESMO
+                // ("Português", "English"), e não traduzido para o idioma corrente.
+                // Quem procura o próprio idioma numa lista o reconhece assim.
+                ->displayLocale(null)
+                ->circular()
+                // Também fora do painel: a tela de login é justamente onde alguém que
+                // não lê português precisa trocar, e ela é servida antes da sessão.
+                ->outsidePanelRoutes([
+                    'filament.app.auth.login',
+                    'filament.admin.auth.login',
+                    'filament.infra.auth.login',
+                ])
+                /*
+                 * Dentro do painel, o `isVisible()` do pacote já exige
+                 * `count(getLocales()) > 1` — a checagem aqui é redundante e fica por
+                 * simetria. FORA do painel não há essa proteção: `isVisibleOutsidePanels()`
+                 * só avalia a flag. Sem a contagem, a tela de login mostraria um seletor
+                 * com uma opção só.
+                 */
+                ->visible(insidePanels: count($idiomas) > 1, outsidePanels: count($idiomas) > 1);
+        });
     }
 
     /**
