@@ -92,6 +92,86 @@ Separating admin from infra is the whole point of the kit: whoever administers u
 
 More screens: [application health](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/infra-health.png) · [users](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-users.png) · [permissions (Shield)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-roles.png) · [AI agent catalog](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-agentes-ia.png) · [command center](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/infra-comandos.png) · [⌘K search](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/spotlight.png) · [access denied](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/erro-403.png)
 
+## Our numbers
+
+Not a showcase: it's the inventory of everything that already exists, and of what you won't have to write.
+
+| | `/app` | `/admin` | `/infra` | **Total** |
+|---|---:|---:|---:|---:|
+| **Navigable screens** | 12 | 28 | 27 | **67** |
+| Resources | 4 | 8 | 8 | **20** |
+| Standalone pages | 4 | 3 | 12 | **19** |
+| Widgets | 1 | 9 | 19 | **29** |
+| `GET` routes | 19 | 34 | 33 | **86** |
+
+`/app` is the smallest on purpose — it is born **empty**, because that's where your business comes in.
+The other two already come complete.
+
+| Foundation | |
+|---|---:|
+| Production packages | **55** |
+| Development packages | **15** |
+| Migrations | **48** |
+| Policies | **14** |
+| `kit:*` commands | **4** |
+
+| Quality | |
+|---|---:|
+| Test cases (`Kit` + `Tenancy`) | **411**, with 1138 assertions |
+| Screens swept in a real browser | **55** |
+| Test files | **51** |
+| PHPStan | **level 7**, zero errors |
+| FilaCheck | **17** rules, all passing |
+
+| Documentation | |
+|---|---:|
+| Reference documents (`wikis/`) | **9** |
+| Specified features (`wikis/specs/`) | **15** |
+| Project rules for AI agents (`.ai/rules/`) | **7** |
+
+### PHPStan at level 7 — and why that's a strong point
+
+Most Laravel projects stop at level 5 or 6. The kit runs at **7, with zero errors and no
+baseline**: there is no `@phpstan-ignore` scattered around, no `phpstan-baseline.neon` hiding debt.
+
+What level 7 catches and 6 doesn't, in practice:
+
+- **Unchecked null.** `Filament::getCurrentPanel()` returns `?Panel`; `auth()->user()` returns
+  `?User`. At level 6 you call a method on them and it passes. At 7, you have to prove it exists.
+- **A wide vendor type leaking into your code.** `session()` is `mixed`, `env()` is `bool|string`,
+  Shield's getters are `?array`. 7 forces you to narrow it at the **boundary**, once, instead of
+  hoping the value is what you expect at every use.
+- **`list<T>` vs `array<int,T>`.** `filter()` and `map()` preserve keys. An array with holes handed
+  where a list was expected is a bug that only shows up at `json_encode` — it turns into an object
+  instead of an array, and the front end breaks.
+
+Going from 6 to 7 exposed **29 real errors** in the kit, and one of them was a genuine latent bug: a
+`Convite|null` with a method called straight on it. All fixed at the source — none silenced.
+
+> ### ⚠️ Watch out when implementing this in your project
+>
+> **Level 7 applies to the code you write too.** `composer test` runs
+> `phpstan analyse` and fails the whole build.
+>
+> What shows up the most when someone starts writing in the kit:
+>
+> | What you write | What PHPStan demands |
+> |---|---|
+> | `auth()->user()->id` | prove there is a user: `auth()->user()?->id`, or an `if` before it |
+> | `Filament::getTenant()->nome` | `?Model` — use `instanceof Tenant` as a guard |
+> | `->filter()->all()` in a `@return list<string>` | `array_values()` at the end |
+> | `env('ALGUMA_COISA')` straight into a `str_*` | `(string) env(...)`, or `config()` with a typed default |
+> | a method with no return type | declare the type; the kit requires it everywhere |
+>
+> **Don't solve it with `@phpstan-ignore` or a baseline.** The kit has exactly **one** exception in
+> `phpstan.neon`, and it is for a vendor macro resolved at runtime — with the reason, the two
+> alternatives that were tried and dropped, and the test that covers the point for real. That's the
+> standard: if an exception is needed, it comes with the justification and with the test that
+> replaces it.
+>
+> If you want to loosen it in your project, it's one line in `phpstan.neon`. But know what you're
+> trading away: the 29 errors above were all real.
+
 ## What's already there
 
 **Administration and security**
@@ -699,6 +779,8 @@ composer test         # pint + phpstan + filacheck + the whole suite
 composer test:kit     # only the kit's tests (the foundation)
 composer lint         # formats the code
 composer filament:check   # only the Filament-specific lint (FilaCheck)
+composer refactor:preview # what Rector would rewrite (dry-run) — OUTSIDE composer test
+composer refactor:apply   # applies Rector's rewrite — OUTSIDE composer test
 php artisan kit:install --force   # reinstalls from scratch (deletes the SQLite file) and asks again
 php artisan kit:install --no-custom   # installs without asking anything
 php artisan kit:update            # brings in improvements from a new kit version
@@ -714,6 +796,73 @@ same things your machine does.
 
 When it was adopted it found **7 pre-existing problems** in the kit itself — six deprecated test
 methods and one `ImageColumn::size()` — all fixed.
+
+### Rector: major upgrades, not linting
+
+The kit has **four** quality tools, on four axes — and only **three** are in the gate:
+
+| Tool | Axis | On finding a problem | Runs |
+|---|---|---|---|
+| **Pint** | style | **fixes it** | always (gate) |
+| **PHPStan** + larastan | types | reports | always (gate), **level 7** |
+| **FilaCheck** | Filament's API | reports | always (gate) |
+| **Rector** | code rewriting | **changes semantics** | **on demand** |
+
+`composer refactor:preview` and `composer refactor:apply` are **not** part of `composer test` — and
+that is deliberate.
+
+**What Rector is for here: major upgrades.** Laravel 13 → 14, PHP 8.4 → 8.5. The `rector.php` at the
+root ships with **no set enabled**, and carries, in a comment block, which set to turn on for each
+case. The flow is: uncomment the set → `composer refactor:preview` → read the whole diff →
+`composer refactor:apply` → `composer test` → turn the set off again.
+
+**Why it stays out of the gate — it was measured, not opined.** With Laravel's quality sets turned
+on, Rector would rewrite **103 files** in this project. The three biggest reasons:
+
+| Rule | Files | What it proposes |
+|---|---:|---|
+| `EloquentMagicMethodToQueryBuilderRector` | 35 | `User::find()` → `User::query()->find()` |
+| `AddClosureVoidReturnTypeWhereNoReturnRector` | 26 | `: void` on closures |
+| `AppToResolveRector` | 21 | `app()` → `resolve()` |
+
+Those are style opinions, not corrections. In a kit whose product **is readable example code**,
+`User::find()` and `app()` are the idiom the ecosystem reads without pausing.
+
+And there is one case that settles it. `CarbonToDateFacadeRector` proposes, in `InfraPanelProvider`:
+
+```diff
+- Carbon::now()->subDays(...)
++ Date::now()->subDays(...)
+```
+
+And that **breaks**, for three verifiable facts:
+
+1. `now()` **is** `Date::now()` — `Illuminate/Foundation/helpers.php:623`
+2. The kit calls `Date::use(CarbonImmutable::class)` — `KitServiceProvider.php:57`
+3. `FilamentExceptionsPlugin::modelPruneInterval()` requires a **mutable** `Carbon`
+
+PHPStan at level 7 **already reported exactly this error** when the code used `now()`. The explicit
+`Carbon::now()` is the fix — and Rector would undo it.
+
+> **A quality tool that reverts another one's fix is not a gate, it's a dispute** — and the build
+> would start depending on which of the two ran last.
+
+`tests/Kit/QualidadeDeCodigoTest.php` pins this down: it fails if Rector enters `composer test`, or
+if a quality set is turned on.
+
+**Upgrading Filament is a different tool.** **There is no Filament rule in
+`driftingly/rector-laravel`** — searching for "filament" in the package returns zero. That's not a
+gap: Filament ships its **own** tool, also based on Rector.
+
+```bash
+composer require filament/upgrade --dev -W
+vendor/bin/filament-vN     # N = the target major
+```
+
+It is kept in lockstep with the framework — whoever writes the rules is whoever breaks the API.
+
+The full reading on the four tools is in
+[`wikis/qualidade-de-codigo.md`](wikis/qualidade-de-codigo.md) (pt-BR).
 
 ### The kit's tests
 

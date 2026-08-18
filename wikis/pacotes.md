@@ -44,6 +44,8 @@
 | **Saber se um e-mail foi enviado** | `tapp/filament-maillog` (`/infra`, grupo "Trilhas") |
 | Trocar o idioma da interface | `bezhansalleh/filament-language-switch` — ligado por `config('kit.idiomas')` |
 | Lint específico de Filament no CI | `laraveldaily/filacheck` (dev) — `composer filament:check`, dentro de `composer test` |
+| **Upgrade automatizado de major** (Laravel, PHP) | `rector/rector` + `driftingly/rector-laravel` (dev) — `composer refactor:preview`. **Fora** do `composer test`, por decisão medida: ver [qualidade-de-codigo.md](qualidade-de-codigo.md) |
+| Upgrade automatizado de major do **Filament** | `filament/upgrade` — ferramenta oficial, também baseada em Rector. Não existe regra de Filament no `rector-laravel` |
 | Agregar série temporal para gráfico | `flowframe/laravel-trend` |
 | Página de configurações persistidas | `filament/spatie-laravel-settings-plugin` + `spatie/laravel-settings` |
 | Cache automático de query Eloquent | `mike-bronner/laravel-model-caching` |
@@ -63,8 +65,9 @@ Foi preciso porque o Shield não oferece hook para agrupar as permissões por pa
 | `getResourceEntitiesSchema()` agrupa as seções por painel, lendo `App\Support\Paineis` | `RoleResource` |
 | `secaoDoResource()` — o corpo do `map()` original do vendor, extraído para ser reusado | `RoleResource` |
 | `'painel'` nas listas de `mutateFormDataBefore*` | `Pages/CreateRole.php`, `Pages/EditRole.php` |
+| Normalização de tipo nas três fronteiras em que o Shield é mais largo que o Filament: `colunasDaGrade()` (o `getGridColumns()` do plugin é `int|string|array`, o `columns()` do Filament não aceita string nem array solto) e as guardas de `getModel()`/`getCluster()` (o `Utils` devolve `string`, o Filament exige `class-string`). Sem mudança de comportamento com config válida; com config inválida o erro passa a ser explícito | `RoleResource` |
 
-**No upgrade do Shield:** o resto dos cinco arquivos é cópia byte a byte, de propósito, para o `diff` contra o vendor novo continuar legível. Depois de um major do pacote, compare `app/Filament/Admin/Resources/Roles/` com `vendor/bezhansalleh/filament-shield/src/Resources/Roles/` e traga o que mudou, preservando as quatro linhas acima. O formato da entidade (`resourceFqcn`, `model`, `modelFqcn`, `permissions`) é contrato interno do Shield — se mudar, o agrupamento quebra. `tests/Kit/PaineisTest.php` acusa os dois casos: um teste afirma que o Resource registrado é o do projeto, outro que a tela mostra os três grupos de painel.
+**No upgrade do Shield:** o resto dos cinco arquivos é cópia byte a byte, de propósito, para o `diff` contra o vendor novo continuar legível. Depois de um major do pacote, compare `app/Filament/Admin/Resources/Roles/` com `vendor/bezhansalleh/filament-shield/src/Resources/Roles/` e traga o que mudou, preservando as cinco linhas acima. O formato da entidade (`resourceFqcn`, `model`, `modelFqcn`, `permissions`) é contrato interno do Shield — se mudar, o agrupamento quebra. `tests/Kit/PaineisTest.php` acusa os dois casos: um teste afirma que o Resource registrado é o do projeto, outro que a tela mostra os três grupos de painel.
 
 Reverter é apagar a pasta: o plugin volta a registrar o Resource dele, e a tela perde o agrupamento e o campo `Painel`.
 

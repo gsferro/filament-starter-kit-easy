@@ -25,6 +25,7 @@ Leia nesta ordem. São ~20 minutos e evitam a maior parte dos erros caros:
 | 6 | [Pacotes](pacotes.md) | Qual pacote é dono de qual tela — para não reimplementar o que já existe |
 | 7 | [Pacotes candidatos](pacotes-candidatos.md) | O que existe no diretório oficial e ainda não é dependência: top 10 avaliado, e o que já foi recusado e por quê |
 | 8 | [Ranking de adoção](pacotes-ranking.md) | A fila: os 112 pacotes que agregam, do que mais agrega ao que menos, para instalar de cima para baixo |
+| 9 | [Qualidade de código](qualidade-de-codigo.md) | As quatro ferramentas — Pint, PHPStan level 7, FilaCheck e Rector — e por que só três estão no gate |
 
 ## O kit em dez linhas
 
