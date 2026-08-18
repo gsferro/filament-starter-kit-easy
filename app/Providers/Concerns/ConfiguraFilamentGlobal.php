@@ -10,6 +10,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Livewire\DatabaseNotifications;
 use Filament\Resources\Resource;
 use Filament\Support\Facades\FilamentAsset;
+use Filament\Support\Facades\FilamentView;
 use Filament\Support\Icons\Heroicon;
 use Filament\Support\View\Components\ModalComponent;
 use Filament\Tables\Columns\IconColumn;
@@ -17,6 +18,8 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Enums\ColumnManagerLayout;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\View\View;
 
 /**
  * Configuração GLOBAL do Filament — vale para os três painéis (app, admin, infra).
@@ -72,6 +75,35 @@ trait ConfiguraFilamentGlobal
 
         $this->configuraPanelSwitch();
         $this->configuraSeletorDeIdioma();
+        $this->configuraBotaoVoltarAoTopo();
+    }
+
+    /**
+     * Botão "Voltar ao topo" em TODA tela de TODOS os painéis.
+     *
+     * **Sem `scopes:` de propósito, e é isso que faz a feature.** O
+     * `ViewManager::registerRenderHook()` normaliza `null` para o bucket `''`, e o
+     * `renderHook()` lê esse bucket SEMPRE, antes de qualquer escopo. Resultado: vale para
+     * `app`, `admin`, `infra` e qualquer painel que o seu projeto criar depois, sem tocar em
+     * nenhum PanelProvider.
+     *
+     * O ganho real está nas telas que NÃO são nossas. Auditoria, log de autenticação,
+     * exceções, trilha de e-mail, monitor de filas, releases do Composer, lixeira e
+     * permissões vêm de plugin: não dá para colar trait nem editar. Um render hook global
+     * alcança todas — e é exatamente por isso que o pacote
+     * `gboquizosanchez/filament-scroll-to-top` não serve aqui (ele exige um trait por
+     * `ListRecords`, e não renderiza botão nenhum). Ver ADR-01 da wiki `voltar-ao-topo`.
+     *
+     * Registrado aqui, e não num PanelProvider, pela mesma razão do PanelSwitch e do seletor
+     * de idioma: registro global num arquivo por painel dá aparência de config por painel com
+     * efeito global.
+     */
+    private function configuraBotaoVoltarAoTopo(): void
+    {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::BODY_END,
+            fn (): View => view('filament.voltar-ao-topo'),
+        );
     }
 
     /**
