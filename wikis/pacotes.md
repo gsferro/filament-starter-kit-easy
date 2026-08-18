@@ -93,3 +93,15 @@ Não estão no `require`, mas são o que de fato roda:
 - Antes de usar uma API de pacote, confirme a versão instalada: `composer show <vendor/pacote>` ou `composer show --direct`. Não presuma major.
 - Use `search-docs` (MCP do Boost): ele devolve a documentação **da versão instalada**, não a mais recente do site.
 - Personalização de plugin: traduções em `lang/vendor/`, views em `resources/views/vendor/`. Nunca editar `vendor/`.
+
+## O que ainda não está aqui
+
+Esta página lista o que **já é dependência**. A pergunta complementar — *o que mais existe no
+diretório oficial, o que vale avaliar e o que já foi olhado e recusado* — tem página própria:
+
+**[pacotes-candidatos.md](pacotes-candidatos.md)** — varredura dos 547 plugins Filament v5 gratuitos
+(agosto/2026), top 10 candidatos com prós e contras, segunda linha e a lista de descartados com o
+motivo de cada um.
+
+Pacote aprovado sai de lá e entra aqui, na tabela do "já existe". Pacote recusado **fica** lá, com o
+motivo — é o que impede a próxima varredura de trazer o mesmo nome de volta.

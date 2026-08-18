@@ -23,6 +23,7 @@ Leia nesta ordem. São ~20 minutos e evitam a maior parte dos erros caros:
 | 4 | [Receitas](receitas.md) | Passo a passo do que você mais vai fazer: Resource novo, página, widget, health check, comando, agente |
 | 5 | [Agentes e skills](agentes-e-skills.md) | Boost, MCP, as skills instaladas e o trio feature-wiki + Ponytail + Caveman |
 | 6 | [Pacotes](pacotes.md) | Qual pacote é dono de qual tela — para não reimplementar o que já existe |
+| 7 | [Pacotes candidatos](pacotes-candidatos.md) | O que existe no diretório oficial e ainda não é dependência: top 10 avaliado, e o que já foi recusado e por quê |
 
 ## O kit em dez linhas
 

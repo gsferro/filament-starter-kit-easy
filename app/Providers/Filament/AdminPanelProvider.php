@@ -209,6 +209,18 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn (): string => view('filament.spotlight-trigger')->render(),
             )
+            /*
+             * Cabeçalho de identidade: avatar, nome, e-mail e o badge do papel.
+             *
+             * USER_MENU_PROFILE_BEFORE renderiza DENTRO do dropdown, e é por isso
+             * que ele serve aqui. Não contradiz o bloco de cima: lá o gatilho ⌘K
+             * precisava ficar na TOPBAR, e foi esse mesmo fato que desqualificou o
+             * USER_MENU_BEFORE. Mesmo comportamento, exigência oposta.
+             */
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_PROFILE_BEFORE,
+                fn (): string => view('filament.user-menu-header')->render(),
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

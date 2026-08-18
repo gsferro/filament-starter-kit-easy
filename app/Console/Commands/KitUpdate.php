@@ -142,6 +142,7 @@ class KitUpdate extends Command
         'wikis/arquitetura.md',
         'wikis/convencoes.md',
         'wikis/ia.md',
+        'wikis/pacotes-candidatos.md',
         'wikis/pacotes.md',
         'wikis/receitas.md',
 
