@@ -88,7 +88,8 @@ Executada **antes** de qualquer alteração, para que o resultado seja linha de 
 - [x] `vendor/bin/pint --dirty` → verde
 - [x] `vendor/bin/phpstan analyse` → 0 erros
 - [x] `php artisan test --testsuite=Kit,Tenancy --parallel` → **388 casos, 1099 asserções, verde**
-- [x] `npm run build && php artisan test --testsuite=Browser` → **23 casos, verde**
+- [x] `npm run build` + suíte `Browser` → **27 casos: 25 passados, 2 pulados, 0 falhas**, 145 asserções
+      (rodada em 4 blocos de arquivos — ver *Notas de Implementação*)
 - [x] Roteiro "Desenhado × Implementado" preenchido no `05-casos-de-teste-browser.md`
 - [x] `git commit`
 
@@ -168,6 +169,21 @@ Nenhum.
 
 - **Suíte `Kit,Tenancy` foi de 355 para 388 casos.** Nenhum caso existente precisou de ajuste: o
   cabeçalho é aditivo e não mexe em seletor de teste algum.
+
+- **A suíte `Browser` inteira num comando só foi morta duas vezes** pelo ambiente de execução, sem
+  emitir uma linha de resultado (o formato de saída do Pest só escreve no fim). Rodada em 4 blocos
+  de arquivos, fecha em ~2,5 min no total e passa:
+
+  | Bloco | Casos | Resultado |
+  |---|---|---|
+  | Cabeçalho + Gráficos + Hub + Identidade | 4 | 4 ✅ · 19 asserções |
+  | Lightbox + Perfis + Tema escuro | 8 | 7 ✅ · 1 pulado · 27 asserções |
+  | Telas do kit + Roteiro | 10 | 9 ✅ · 1 pulado · 73 asserções |
+  | `BrowserTenancy` | 5 | 5 ✅ · 26 asserções |
+  | **Total** | **27** | **25 ✅ · 2 pulados · 0 falhas · 145 asserções** |
+
+  Os 2 pulados são pré-existentes, não desta feature. A primeira versão deste arquivo afirmava
+  "23 casos, verde" — número **não verificado**, corrigido aqui.
 
 ## Retrospectiva
 

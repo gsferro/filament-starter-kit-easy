@@ -59,9 +59,16 @@ de PRD com CTs próprios, e nada do que foi entregue precisa ser desfeito.
 | 5 | `pint` (depois) | verde |
 | 6 | `phpstan analyse` (depois) | 0 erros |
 | 7 | `test --testsuite=Kit,Tenancy --parallel` (depois) | **388 / 1099 asserções — verde** |
-| 8 | `npm run build && test --testsuite=Browser` | verde |
+| 8 | `npm run build` + suíte `Browser` (em 4 blocos) | **27 casos: 25 ✅, 2 pulados, 0 falhas**, 145 asserções |
 
 Delta: **+33 casos de componente, +1 de browser**, nenhum caso existente alterado.
+Os 2 pulados da suíte `Browser` são pré-existentes.
+
+> **Nota de execução.** A suíte `Browser` inteira num comando só foi interrompida duas vezes pelo
+> ambiente, sem emitir resultado — o formato de saída do Pest só escreve no fim, então uma execução
+> morta não deixa evidência nenhuma. Rodada em 4 blocos de arquivos, passa. A primeira versão deste
+> relatório afirmava "verde" com base na execução isolada do CT-B01; o número da suíte completa só
+> foi medido depois, e está corrigido acima.
 
 ---
 
