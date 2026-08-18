@@ -85,24 +85,70 @@ Verificado no código dos dois em 18/08/2026, não na descrição do diretório.
 | Código de tenancy | **nenhum** (0 ocorrências de `tenant` no pacote) | `Config/Concerns/SupportsTenancy.php`, `tenantAware()` no picker, `isScopedToTenant()` + `getTenantOwnershipRelationshipName()` no `MediaResource`, coluna `tenant_id` |
 | Modelo de dados | `media` com `morphs('model')` — **cada arquivo pertence a um registro** | tabela própria, registros **avulsos** numa biblioteca compartilhada |
 | Como o escopo acontece | **por construção**: a mídia herda o escopo do dono. `Projeto` escopado por organização ⇒ mídia escopada junto | **por configuração**: `curator.features.tenancy.enabled` + `relationship_name`, e o picker filtra `{relationship}_id` |
-| Superfície de vazamento | **não existe** — não há pool nem tela de navegação | a biblioteca compartilhada **é** a superfície |
+| Superfície na UI do painel | **não existe** — o pacote entrega só `Forms/Components`, `Tables/Columns` e `Infolists/Components`. Nenhum Resource, nenhuma tela de navegação | a biblioteca compartilhada **é** a superfície |
 | Default | n/a | **`'enabled' => false`** |
 
 **A armadilha do Curator**: ele nasce com a tenancy desligada. Instalado num projeto do kit com
 `kit.tenancy.enabled` ligado e sem virar essa chave, **todo arquivo de toda organização aparece no
 picker de todas as outras** — sem erro, sem aviso.
 
-Isso inverte a leitura fácil ("Curator é o atalho, medialibrary é o padrão"):
+Isso inverte a leitura fácil ("Curator é o atalho, medialibrary é o padrão"): o Curator tem a
+feature **e** o risco; o oficial não tem a feature porque não tem o pool.
 
-- **Curator tem a feature e tem o risco.** A biblioteca compartilhada é o valor dele *e* a superfície
-  de vazamento.
-- **O oficial não tem a feature porque não tem o risco.** Sem pool, não há o que escapar.
+#### Mas "protegido" vale só para uma camada — e é preciso dizer qual
 
-Para um kit genérico distribuído por `create-project` — em que a tenancy é **opt-in** e pode ser
-ligada depois da instalação, quando o default do Curator já foi aceito —, "seguro por construção"
-pesa mais que "configurável". **Recomendação: item 1.**
+O isolamento do item 1 é **herdado, não imposto**. A mídia só é alcançada por `$record->getMedia()`,
+e o `$record` passa pelo `BelongsToTenant` e pela tenancy do Filament. Quem está na organização B
+nunca recebe registro da A, logo nunca vê mídia da A.
 
-**Se ainda assim for Curator**, três coisas fazem parte da entrega, não são detalhe:
+Herdado quer dizer que **três coisas o desfazem**, e nenhuma delas gera erro:
+
+1. **Query direta em `Media`.** A tabela não tem coluna de tenant. Um widget "total de arquivos", um
+   relatório ou um job com `Media::count()` conta tudo, de todas as organizações.
+2. **Dono que não é escopado.** `User` no kit não é por organização (pertence a várias, via pivot),
+   então avatar é global — correto por design, mas a proteção não vem do plugin.
+3. **Model novo sem `BelongsToTenant`.** A mídia dele nasce global. É a mesma armadilha que a
+   `.ai/rules/filament.md` §6 já cobre para Resource, com `getEloquentQuery()` fail-closed.
+
+#### A camada que **nenhum dos dois** protege: URL e disco
+
+```php
+// spatie/laravel-medialibrary — config/media-library.php
+'disk_name' => env('MEDIA_DISK', 'public'),   // :36
+'prefix'    => env('MEDIA_PREFIX', ''),       // :356
+```
+
+```php
+// DefaultPathGenerator::getBasePath()
+return $media->getKey();   // o ID. Inteiro sequencial.
+```
+
+Caminho final: `/storage/{id}/{arquivo}`. **Enumerável, sem sessão, sem tenant.** A tenancy do
+Filament não alcança o sistema de arquivos, e o Curator tem exatamente o mesmo comportamento — o
+`tenantAware()` dele cobre a camada de UI, que é a que o oficial já ganha de graça.
+
+| Camada | Item 1 (oficial) | Item 2 (Curator) |
+|---|---|---|
+| UI do painel | protegido **por herança** — nada a configurar, nada a esquecer | protegido **por config**, que nasce `false` |
+| URL / disco | ❌ aberto | ❌ aberto |
+
+**O kit já vive nisso hoje**: `users.avatar_url` e `tenants.logo` usam `->disk('public')` com
+`->visibility('public')`. Para imagem de identidade é defensável. Deixa de ser no momento em que
+existe uma camada de mídia — porque camada de mídia convida documento, e anexo de contrato vazando
+não é o mesmo evento que avatar vazando.
+
+#### Conclusão
+
+A diferença entre 1 e 2 é **só a camada de UI**. Ali, "escopado por construção" pesa mais que
+"escopado por configuração" num kit em que a tenancy é opt-in e pode ser ligada **depois** da
+instalação, quando o default do Curator já foi aceito e ninguém volta nele.
+
+**Recomendação: item 1** — por ter menos o que esquecer, não por ser seguro.
+
+**A camada de URL é trabalho do kit nos dois cenários**, e faz parte da entrega de mídia:
+disco privado e rota autorizada (ou URL assinada com validade) para tudo que não for avatar e logo.
+
+**Se ainda assim for Curator**, some a isto:
 
 1. `curator.features.tenancy.enabled` amarrado a `config('kit.tenancy.enabled')`, não escrito à mão
 2. `relationship_name` apontando para a relação do `Tenant`

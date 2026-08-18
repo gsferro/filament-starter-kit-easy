@@ -173,18 +173,23 @@ O Curator **tem** suporte explícito: `Config/Concerns/SupportsTenancy.php`, `te
 `CuratorPicker`, `isScopedToTenant()` e `getTenantOwnershipRelationshipName()` no `MediaResource`,
 coluna `tenant_id` na migration, e o picker filtrando `->where('{relationship}_id', ...)`.
 
-O plugin oficial (item 1) tem **zero** ocorrências de `tenant` no código — e não precisa: a tabela
-`media` do Spatie é `morphs('model')`, então cada arquivo pertence a um registro e herda o escopo do
-dono. Não há biblioteca compartilhada, logo não há o que vazar.
+O plugin oficial (item 1) tem **zero** ocorrências de `tenant` no código — e não precisa **na UI**:
+a tabela `media` do Spatie é `morphs('model')`, cada arquivo pertence a um registro e herda o escopo
+do dono, e o pacote não traz Resource nem tela de navegação. Sem pool, não há o que vazar no painel.
 
-**A armadilha**: o Curator nasce com `'tenancy' => ['enabled' => false]`. Instalado num projeto do
-kit com a tenancy ligada e sem virar essa chave, todo arquivo de toda organização aparece no picker
-de todas as outras — sem erro, sem aviso.
+**A armadilha do Curator**: ele nasce com `'tenancy' => ['enabled' => false]`. Instalado num projeto
+do kit com a tenancy ligada e sem virar essa chave, todo arquivo de toda organização aparece no
+picker de todas as outras — sem erro, sem aviso.
+
+**A armadilha dos dois**: `disk_name` default é `public`, `prefix` é vazio e o caminho é
+`{media.id}/{arquivo}` — ID inteiro sequencial. `/storage/1/contrato.pdf` é alcançável **sem sessão
+e sem tenant**. A tenancy do Filament não chega ao sistema de arquivos. Disco privado e rota
+autorizada são trabalho do kit, em qualquer das duas escolhas.
 
 **Esforço**: médio · **Veredito**: o par 1 × 2 é uma **decisão excludente**, e não é escolha de
 gosto. Para um kit genérico com tenancy opt-in, "escopado por construção" (item 1) vence
 "escopado por configuração" (item 2) — o default do Curator não acompanha quem liga a tenancy
-**depois** de instalar. Detalhamento e o que a adoção do Curator exigiria em
+**depois** de instalar. Vale só para a camada de UI: a de URL fica aberta nos dois. Detalhamento e o que a adoção do Curator exigiria em
 [`pacotes-ranking.md`](pacotes-ranking.md#multi-tenancy--o-critério-que-decide-este-par).
 
 ---
