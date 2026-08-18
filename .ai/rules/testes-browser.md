@@ -1,3 +1,8 @@
+---
+paths:
+  - 'tests/Browser/**'
+---
+
 # Testes de browser (`pest-plugin-browser`)
 
 ## O plugin sobe o próprio servidor — não configure nenhum

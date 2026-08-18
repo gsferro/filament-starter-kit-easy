@@ -1,3 +1,8 @@
+---
+paths:
+  - 'tests/**'
+---
+
 # Testes
 
 ## Helper de teste usado por mais de um arquivo vive em `tests/Pest.php`
@@ -17,3 +22,19 @@ Nunca crie um clone com outro nome para escapar da colisão de redeclaração (`
 ## Teste de componente de painel
 
 `Filament::setCurrentPanel()` não boota o painel: quem chama `Panel::boot()` é o middleware `SetUpPanel`, que teste de componente não atravessa. Tela que depende de algo registrado no `boot()` de plugin precisa de `noPainelBootado()`. E toda tabela do kit carrega adiada (`deferLoading` global) — sem `->loadTable()` o HTML testado é o do esqueleto.
+
+
+## Nem todo papel do kit existe em toda suíte de teste
+O `PapeisSeeder` cria papéis diferentes conforme a tenancy esteja ligada ou não. Escolher a suíte errada faz o caso morrer no arranjo, com `Spatie\Permission\Exceptions\RoleDoesNotExist: There is no role named 'X' for guard 'web'` — que parece defeito de código e é defeito de suíte.
+
+| Papel | `roles.painel` | Onde existe |
+|---|---|---|
+| `master_global` | nulo (entra pelo `Gate::before`) | ambas |
+| `admin` | `admin` | ambas |
+| `infra` | `infra` | ambas |
+| `panel_user` | `app` | ambas |
+| `admin_app` | `app` | **só `tests/Tenancy`** |
+
+`admin_app` é o papel de quem administra UMA organização — o `PapeisSeeder` só o cria dentro do ramo de tenancy. Caso que precise dele vai para `tests/Tenancy`, nunca `tests/Kit`.
+
+Lembre também que `Tests\TenancyTestCase` fixa `permission.teams` em `createApplication()`, antes das migrations: ligar a flag num `beforeEach` é tarde demais.
