@@ -19,6 +19,31 @@ Como é o **mesmo processo** do teste, três coisas continuam valendo dentro do 
 
 Sem `public/build/manifest.json` **toda** tela responde `ViteException` e todo cenário falha por um motivo que não é o dele. Rode com `composer test:browser`, que já embute o build.
 
+## `view:cache` é o segundo pré-requisito duro
+
+Compilar as ~590 views do kit custa dezenas de segundos, e o **primeiro** cenário que renderiza
+um painel paga a conta inteira **dentro do próprio timeout**. Com cache frio ele estoura o teto
+de 45s e falha por um motivo que não é o dele — o mesmo estrago do `ViteException` acima, com
+outra cara.
+
+Medido em `tests/Browser/CabecalhoDoMenuDoUsuarioTest`:
+
+| Cache de view | Resultado |
+|---|---|
+| frio (`view:clear` antes) | **falha**, `Timeout 45000ms exceeded`, 50s |
+| quente | passa, 6 asserções, 10,6s |
+
+É determinístico, e o disfarce é cruel: numa máquina que acabou de rodar `composer test:kit` as
+views estão quentes e tudo passa; num clone novo ou no CI a suíte nasce vermelha, e o sintoma
+tem exatamente o formato de teste instável — foi preciso rodar a suíte duas vezes para separar
+uma coisa da outra.
+
+`composer test:browser` embute o `view:cache` por isso. **Não remova a linha**, e não "conserte"
+o sintoma subindo o `pest()->browser()->timeout()`: isso troca a falha por uma suíte lenta e
+mantém a compilação dentro do cronômetro do cenário.
+
+Mesma causa raiz do `view:cache` no boot do container — ver
+`wikis/specs/feature/v1-enriquecimento-kit/cache-de-views-no-docker/`.
 ## `assertPathIs` antes das asserções de conteúdo
 
 `assertPathIs` é a asserção que **espera a navegação**. Depois de qualquer ação que navegue (`press`, `click`), ela vem primeiro:

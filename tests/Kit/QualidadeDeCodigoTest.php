@@ -118,3 +118,22 @@ it('guarda o cache do rector fora da raiz', function (): void {
     expect($this->rector)->toContain('withCache')
         ->and($this->rector)->toContain('storage/framework/cache/rector');
 })->group('kit');
+
+/**
+ * A suíte de browser aquece as views ANTES de rodar.
+ *
+ * Compilar as ~590 views custa dezenas de segundos, e o primeiro cenário que renderiza
+ * um painel pagaria a conta inteira dentro do próprio timeout de 45s — falhando por um
+ * motivo que não é o dele.
+ *
+ * O caso existe porque a falha é enganosa: numa máquina com as views quentes de um
+ * `composer test:kit` anterior a suíte passa, e só o CI limpo fica vermelho. O sintoma
+ * tem a cara de teste instável, e custou duas execuções completas da suíte para separar
+ * uma coisa da outra.
+ *
+ * Ver .ai/rules/testes-browser.md.
+ */
+it('aquece as views antes da suíte de browser', function (): void {
+    expect($this->composer['scripts']['test:browser'] ?? [])
+        ->toContain('@php artisan view:cache');
+})->group('kit');
