@@ -58,6 +58,16 @@ RUN mkdir -p \
     && chown -R www-data:www-data storage bootstrap/cache public \
     && chmod -R 775 storage bootstrap/cache
 
+# Índice de componentes do Filament + ícones em cache. Medido: 14 ms.
+#
+# Aqui e não no boot porque ele grava em `bootstrap/cache`, que NÃO é volume — sobrevive
+# ao build. É o oposto do `view:cache`, que grava em `storage/framework/views` e seria
+# encoberto pelo volume `app-storage`; aquele roda no `command:` do serviço `app`.
+#
+# Congela a lista de componentes descobertos: Resource novo exige rebuild da imagem — o
+# que já era verdade, porque o código é assado aqui.
+RUN php artisan filament:optimize
+
 EXPOSE 9000
 CMD ["php-fpm"]
 
