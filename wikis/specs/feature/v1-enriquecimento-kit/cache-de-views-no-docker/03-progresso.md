@@ -126,4 +126,10 @@ Nenhum.
 > código compilado.
 > Gates: durável ✅ · escopável ✅ · não-inferível ✅ · não-redundante ✅
 
-Apresentado ao usuário; não gravado sem aprovação.
+**Aprovado pelo usuário e gravado** em `.ai/rules/testes.md` (commit `6bf613b`), que já cobria
+`tests/**` — atualizar rule existente em vez de criar arquivo novo.
+
+Gravada **à mão**, e não pelo `record-rule` do Boost: o servidor MCP caiu nesta sessão. Escrita
+no arquivo que já tinha frontmatter `paths:` e já constava do `index.md`, então a próxima
+regeneração do Boost a encontra. Foi exatamente a **falta** desse frontmatter que fez o Boost
+derrubar `testes.md` e `testes-browser.md` do índice mais cedo nesta branch (`dbbee3b`).
