@@ -11,7 +11,6 @@ use Illuminate\View\View;
 use Laravel\Ai\Models\Conversation;
 use Laravel\Ai\Models\ConversationMessage;
 use Laravel\Ai\Streaming\Events\TextDelta;
-use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -31,33 +30,9 @@ use Throwable;
  * SEM tenancy: o kit não tem entidade/tenant. A posse da conversa é verificada pelo
  * participante (usuário autenticado) — `agent_conversations` é tabela do vendor e escopa
  * exatamente por isso.
- *
- * ## Por que `#[Lazy]`
- *
- * Este componente é injetado no `BODY_END` de TODA tela do painel `/app`. Sem `#[Lazy]`, o
- * custo dele entra no caminho crítico de toda página: medido, `/app` renderizava em 3121ms
- * no servidor contra 873ms do `/admin` e 407ms do `/infra`, e no navegador as duas telas
- * mais pesadas do painel estouravam o teto de 45s da suíte de browser.
- *
- * Com `#[Lazy]`, o Livewire devolve o `placeholder()` no primeiro render e busca o
- * componente de verdade num segundo request. O chat é auxiliar — ninguém entra no painel
- * para vê-lo fechado —, então adiar é exatamente o comportamento certo.
  */
-#[Lazy]
 class AssistenteChatWidget extends Component
 {
-    /**
-     * O que aparece enquanto o componente de verdade não chegou.
-     *
-     * Vazio de propósito: o chat fechado é um botão flutuante no canto, e um esqueleto
-     * piscando ali seria mais ruído do que informação. O `<div>` existe porque o Livewire
-     * exige um elemento raiz único no placeholder.
-     */
-    public function placeholder(): string
-    {
-        return '<div></div>';
-    }
-
     public bool $aberto = false;
 
     /**
