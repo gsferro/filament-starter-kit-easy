@@ -85,6 +85,19 @@ O que **não** é plugin de painel (defaults de tabela, Panel Switch, gates, hea
 
 Oito plugins estão registrados nos **três** painéis, de propósito: Spotlight, Auth Designer, Breezy, Lockscreen, Environment Indicator, Odometer, ResizedColumn e Notification Center. No caso do Lockscreen isso é **obrigatório** — ver a tabela de armadilhas em [convencoes.md](convencoes.md#armadilhas-já-resolvidas).
 
+### Pacote não registrado ainda mexe nos seus models
+
+O parágrafo acima diz que não há registro global. `mddev31/filament-dynamic-dashboard` é o
+contraexemplo: não está em painel nenhum e mesmo assim age. O service provider é
+auto-descoberto e pendura um `User::deleting` global que apaga os dashboards **pessoais** de
+quem está saindo. Não dá para optar por não tê-lo sem remover o pacote.
+
+As migrations dele vêm como `.stub` e exigiram `vendor:publish` — estão em
+`database/migrations/*_dynamic_dashboard_*`. **Não as apague por parecerem de feature
+desligada**: sem a tabela `dashboards`, excluir QUALQUER usuário devolve 500 nas três
+superfícies de exclusão (DeleteAction da edição, da tabela e DeleteBulkAction). O defeito
+nasceu com o skeleton e sobreviveu 449 casos verdes porque nenhum deles excluía um usuário;
+`tests/Kit/ExclusaoDeUsuarioTest.php` fecha a lacuna.
 ## Motores por baixo
 
 Não estão no `require`, mas são o que de fato roda:
