@@ -38,3 +38,28 @@ O `PapeisSeeder` cria papéis diferentes conforme a tenancy esteja ligada ou nã
 `admin_app` é o papel de quem administra UMA organização — o `PapeisSeeder` só o cria dentro do ramo de tenancy. Caso que precise dele vai para `tests/Tenancy`, nunca `tests/Kit`.
 
 Lembre também que `Tests\TenancyTestCase` fixa `permission.teams` em `createApplication()`, antes das migrations: ligar a flag num `beforeEach` é tarde demais.
+
+## Asserção de ausência sobre arquivo documentado precisa filtrar comentário
+
+Teste que afirma "o arquivo X **não** contém o comando Y" reprova pela própria documentação: os arquivos bem comentados do kit **citam** o que proíbem, e é lá que está escrito o porquê. Filtre comentário antes de afirmar ausência.
+
+```php
+$semComentario = static fn (string $arquivo): string => implode("\n", array_filter(
+    explode("\n", $arquivo),
+    static fn (string $linha): bool => ! str_starts_with(ltrim($linha), '#'),
+));
+```
+
+Para PHP, o equivalente é `preg_replace('~/\*.*?\*/~s', '', $codigo)`.
+
+**Citar não é executar.** A asserção de PRESENÇA continua rodando sobre o texto cru — só a de ausência precisa do filtro.
+
+O padrão já custou três vezes nesta base:
+
+| Onde | O que aconteceu |
+|---|---|
+| `tests/Kit/CacheDeViewsNoDockerTest.php` | reprovou em 3 de 9 casos — os comentários do `docker-compose.yml` e do `Dockerfile` citam `config:cache` e `route:cache` para explicar por que são proibidos |
+| `tests/Kit/QualidadeDeCodigoTest.php` | o `rector.php` lista os sets de qualidade no bloco de instruções, e citar não é ligar |
+| `resources/views/filament/perfil-indicator.blade.php` | pior variante: o comentário `{{-- --}}` do Blade **não protege** diretiva — a menção a um `@include` virou código no arquivo compilado e derrubou três telas com `ParseError` |
+
+O último caso é o que mostra a regra maior: em Blade, a menção nem chega ao teste — ela vira código. Ver `.ai/rules/views.md`.
