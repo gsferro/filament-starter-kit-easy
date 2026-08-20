@@ -92,10 +92,11 @@ class Projeto extends Model implements Auditable, HasMedia
     /**
      * Miniatura para a tabela e o lightbox.
      *
-     * `nonQueued()` porque o kit nasce com `QUEUE_CONNECTION=sync`: enfileirada, a
-     * conversão só existiria com um worker rodando, e a coluna da tabela ficaria
-     * vazia sem erro nenhum — falha silenciosa é o que este kit evita por padrão.
-     * Com worker de verdade, tire o `nonQueued()`.
+     * `nonQueued()` porque o kit nasce com `QUEUE_CONNECTION=database` e **sem
+     * garantia de worker no ar**: enfileirada, a conversão só existiria com um worker
+     * rodando, e a coluna da tabela ficaria vazia sem erro nenhum — falha silenciosa é
+     * o que este kit evita por padrão. Com worker garantido (o serviço `worker` do
+     * docker compose, ou o `composer dev`), tire o `nonQueued()`.
      *
      * E `nonQueued()` vem ANTES de `width()`/`height()`: os dois últimos são
      * encaminhados ao `ImageDriver` do spatie/image e devolvem o DRIVER, não a
