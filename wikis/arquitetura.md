@@ -323,6 +323,35 @@ Avatar e logo continuam em `->disk('public')` **explícito**, e isso é delibera
 
 Instalação anterior a esta mudança tem mídia já gravada em disco público, e a config nova não a alcança: **`php artisan kit:midia-privada`** (com `--dry-run`) move original e conversões e atualiza as colunas `disk`/`conversions_disk`. Ele preserva coleção que declara `useDisk('public')`.
 
+## Import e export: o worker perde o tenant, o export o herda
+
+Import e export de CSV são **nativos do Filament 5** — `ImportAction`, `ExportAction`, os jobs, o batch, as tabelas `imports` / `exports` / `failed_import_rows`. O kit não escreve wrapper nenhum em volta disso. Ele acrescenta duas classes base em `app/Support/ImportExport/`, e a razão de existirem é uma assimetria que não aparece na API: **os dois lados atravessam a fronteira de organização em direções opostas.**
+
+| | Onde a query nasce | O que acontece com `BelongsToTenant` |
+|---|---|---|
+| **Export** | no **request** (`CanExportRecords::getTableQueryForExport()`, a tabela da tela) | o escopo global aplica o `where tenant_id = X`, a query é serializada **com** ele dentro, e é isso que o job executa |
+| **Import** | no **worker** (`Importer::resolveRecord()`, uma linha do CSV por vez) | `Filament::getTenant()` devolve `null` — não há painel nem rota na sessão — e o escopo global vira **no-op** |
+
+O isolamento do export é **herdado**, e por isso `ExportadorDoKit` não tem uma linha de código de tenant: nada a construir. O do import tem de ser **construído**, porque o que existiria de graça foi perdido antes de a primeira linha ser lida. `ImportCsv` restaura o `auth()->setUser()` — o **usuário**, para que a policy e a notificação funcionem. Nada restaura o tenant, e o próprio `Importer` do Filament avisa no código que não faz esse tipo de verificação (`// Security: This method runs without policy checks.`).
+
+Sem `ImportadorDoKit`, as duas consequências são silenciosas: linha de CSV cuja chave casa com registro de **outra** organização faz UPDATE nele (sem 403, sem log), e linha nova nasce com `tenant_id` **nulo**, invisível para todo mundo — inclusive para quem importou.
+
+A correção é de **duas pontas**, e nenhuma delas funciona sozinha:
+
+1. **A Action captura o tenant no request** — `->options(['tenant_id' => Filament::getTenant()?->getKey()])`. O array de options viaja no payload do job, que é onde o dado ainda existe.
+2. **A classe base o usa nas duas pontas** — filtra a resolução do registro e preenche a criação, no lugar do hook `creating` da trait, que ali não tem contexto.
+
+E ela **falha fechada**: tenancy ligada, model que usa `BelongsToTenant`, nenhum `tenant_id` nas options ⇒ a linha é recusada com `RowImportFailedException` e o motivo vai para o log. O contrário — seguir sem escopo — é exatamente o defeito que a classe fecha. Em single-tenant, ou em model que não é de organização (`AgenteIa`, `Tenant`), a exigência não se aplica: não há fronteira, e cobrar uma mataria a feature no modo que o kit tem por default.
+
+> ⚠️ **Cenário de teste que passa pela tela não prova nada aqui.** Ele roda no request, onde o tenant existe: fica verde com a classe base inteira removida. O que prova é chamar o importador **direto**, sem tenant no contexto — a reprodução fiel do worker. É o que `tests/Tenancy/ImportExportTenancyTest.php` faz.
+
+### O que mais essas duas classes decidem
+
+- **Fórmula neutralizada em toda coluna.** `preventFormulaInjection()` existe **por coluna** no Filament e nasce **desligado**. Célula começando em `=`, `+`, `-` ou `@` é fórmula quando alguém abre o CSV no Excel, e o dado que a preencheu veio de formulário de usuário. `ExportadorDoKit` aplica a neutralização a toda coluna que a subclasse declarar — daí a subclasse declarar `colunas()` e não `getColumns()`, que é `final`. `ImportadorDoKit` liga a mesma coisa, porque o CSV de linhas que falharam volta para download.
+- **Autorização explícita, porque a Action não tem.** `Actions\Concerns\CanBeAuthorized` nasce com autorização `null` — liberada. `import` e `export` foram acrescentados a `config('filament-shield.policies.methods')` (e a `single_parameter_methods`, porque nenhum dos dois recebe registro) e cada Action carrega `->authorize('import')` / `->authorize('export')` na mão. Ler a listagem e levar a listagem inteira embora são duas permissões diferentes — e `panel_user` não nasce com nenhuma das duas, por subtração de **prefixo de ação** no `PapeisSeeder`.
+- **Coluna ausente é decisão de arquitetura, não esquecimento.** `tenant` fora do `ProjetoImporter` (senão o CSV escolhe a organização de destino e a fronteira acima fica decorativa), `token` fora do `ConviteExporter`, `request`/`response` fora do `AiRunExporter`. O gerador do Filament recoloca as três em `--force`; quem guarda a ausência são os testes de `tests/Kit/ImportExportTest.php`.
+- **Rastro sem tabela nova.** `imports` e `exports` são do pacote e **não têm `tenant_id`** — não respondem de qual organização saiu o arquivo, que é a pergunta de uma auditoria de vazamento. `KitServiceProvider::configureRastroDeImportExport()` completa isso no channel `tenancy`. Import tem eventos de verdade (`ImportStarted` / `ImportCompleted`); o export **não tem nenhum** no Filament, então o gancho é o model `Export` (`created`, e `completed_at` recém-preenchido). A retenção dos dois históricos é de **30 dias**, e a do export apaga o **arquivo** antes da linha — ver [Retenção](#retenção-o-prazo-é-config-o-expurgo-é-schedule).
+
 ## Erros e traduções
 
 - Páginas de erro (403, 404, 419, 500, 503) são do `anselmokossa/filament-sentinel`, com views próprias em `resources/views/errors/`. A de 403 só mostra o diagnóstico de permissão **fora de produção**.

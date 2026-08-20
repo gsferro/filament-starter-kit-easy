@@ -71,6 +71,132 @@ class ListProdutos extends ListRecords
 
 > Não repita no `table()` os defaults globais (striped, deferLoading, persistência de filtro, paginação, colunas redimensionáveis) — eles já valem. Configure só o que é específico da tela.
 
+## Ligar import/export num resource
+
+Todo resource com listagem **decide as duas coisas**, e a decisão fica escrita no arquivo da Page — ligada ou comentada. `app/Filament/App/Resources/Projetos/Pages/ListProjetos.php` é o exemplo vivo dos dois; leia antes de escrever o seu.
+
+### 1. As classes
+
+```bash
+php artisan make:filament-importer Produto -G
+php artisan make:filament-exporter Produto -G
+```
+
+O `-G` infere as colunas do banco, e o que ele gera precisa de três correções na mão:
+
+```php
+// app/Filament/Imports/ProdutoImporter.php
+use App\Support\ImportExport\ImportadorDoKit;
+
+class ProdutoImporter extends ImportadorDoKit   // não `extends Importer`
+{
+    protected static ?string $model = Produto::class;
+
+    /** A coluna que decide se a linha do CSV é registro que já existe. */
+    protected function colunaDeResolucao(): string
+    {
+        return 'nome';
+    }
+
+    public static function getColumns(): array
+    {
+        return [
+            ImportColumn::make('nome')
+                ->label('Nome')
+                ->requiredMapping()
+                ->rules(['required', 'string', 'max:255']),
+            // ImportColumn::make('tenant')->relationship()  ← APAGUE
+        ];
+    }
+}
+```
+
+```php
+// app/Filament/Exports/ProdutoExporter.php
+use App\Support\ImportExport\ExportadorDoKit;
+
+class ProdutoExporter extends ExportadorDoKit   // não `extends Exporter`
+{
+    protected static ?string $model = Produto::class;
+
+    /** `colunas()`, não `getColumns()` — este é `final` na classe base. */
+    protected static function colunas(): array
+    {
+        return [
+            ExportColumn::make('nome')->label('Nome'),
+            ExportColumn::make('created_at')->label('Criado em'),
+        ];
+    }
+}
+```
+
+⚠️ **`tenant` fora do importer, sempre.** O gerador cria `ImportColumn::make('tenant')->relationship()` para toda FK, e aceitá-la deixa o **CSV escolher a organização de destino** — a fronteira que o `ImportadorDoKit` existe para fechar, reaberta pela porta da frente. A organização vem do request, no passo 2. Pelo mesmo motivo saem `uuid` (gerado pela trait `TemUuid`) e qualquer coluna que seja **segredo**: `token` de convite, prompt e resposta de IA, hash de senha. O gerador recoloca todas em `--force`.
+
+### 2. As Actions no `getHeaderActions()`
+
+```php
+use Filament\Actions\ExportAction;
+use Filament\Actions\ImportAction;
+use Filament\Facades\Filament;
+
+protected function getHeaderActions(): array
+{
+    return [
+        CreateAction::make(),
+
+        ImportAction::make()
+            ->importer(ProdutoImporter::class)
+            ->authorize('import')
+            ->options(fn (): array => ['tenant_id' => Filament::getTenant()?->getKey()]),
+
+        ExportAction::make()
+            ->exporter(ProdutoExporter::class)
+            ->authorize('export'),
+    ];
+}
+```
+
+Três coisas não são opcionais aí, e cada uma fecha um furo:
+
+- **`->authorize(...)`** — Action do Filament **não consulta policy sozinha** (`Actions\Concerns\CanBeAuthorized`: a autorização default é `null`, liberada). Sem a linha, quem abre a listagem exporta a listagem inteira.
+- **`->options(['tenant_id' => ...])` no import** — `resolveRecord()` roda dentro do **worker**, onde `Filament::getTenant()` é `null` e o escopo de `BelongsToTenant` vira no-op. O tenant é capturado **aqui**, no request, e viaja no payload do job. Ver [arquitetura.md](arquitetura.md#import-e-export-o-worker-perde-o-tenant-o-export-o-herda).
+- **O export não recebe options** — e não é esquecimento: a query dele vem da tabela **desta tela**, já com o `where tenant_id`, e é serializada com ele dentro.
+
+### 3. Ressemeie, sempre os dois
+
+```bash
+php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder
+php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
+```
+
+`import` e `export` são métodos de policy do kit (`config/filament-shield.php` → `policies.methods`), e geram `Import:{Model}` / `Export:{Model}`. **Sem a permission no banco, a Action simplesmente não aparece na tela — sem erro nenhum.**
+
+`panel_user` **não** herda as duas: `PapeisSeeder::ehPermissaoDeImportOuExport()` as subtrai por prefixo da ação, então resource novo nasce com as duas fora do usuário comum. Quem fica com elas é o `admin_app`. Se o usuário comum daquele projeto **deve** importar ou exportar, conceda em `/admin` → Funções — é decisão de negócio, e é para ser tomada uma vez, na tela, e não por acidente num seeder.
+
+### 4. Confira que há worker
+
+Import e export são **jobs**. `QUEUE_CONNECTION=database`, e alguém processando: `composer dev` já sobe um worker; em produção é o serviço `worker` do compose. Com a fila parada o upload é aceito, a linha entra em `imports`/`exports` e **a notificação de conclusão nunca chega**.
+
+### Quando a decisão é *não* ligar
+
+Deixe as linhas **comentadas**, com uma frase dizendo o que descomentar expõe — é o que `app/Filament/App/Resources/Users/Pages/ListUsers.php` faz:
+
+```php
+/*
+ * Export de usuários — desligado de propósito. Descomente ciente do que liga: a
+ * planilha sai com o e-mail de todo mundo que tem acesso.
+ */
+// ExportAction::make()
+//     ->exporter(UserExporter::class)
+//     ->authorize('export'),
+```
+
+**Ausência silenciosa não é decisão**: ninguém volta para reavaliar o que nunca foi escrito. E a regra vale nos dois sentidos — import de usuário não existe no kit porque criar conta por CSV contorna convite, verificação de e-mail e atribuição de papel.
+
+### O que testar
+
+Um caso chamando o **importador direto**, sem tenant no contexto — é a reprodução fiel do worker. Cenário que passa pela tela mede o contexto, não a fronteira: fica verde com a classe base inteira removida. Ver `tests/Tenancy/ImportExportTenancyTest.php` e `tests/Kit/ImportExportTest.php`.
+
 ## RelationManager novo
 
 ```bash
@@ -372,7 +498,7 @@ class Projeto extends Model implements Auditable, HasMedia
 
 `HasMedia` é **interface**, `InteractsWithMedia` é **trait** — faltando a interface, o campo do Filament não reconhece a model. `singleFile()` fica de fora quando o caso é anexo: o múltiplo é o que exercita ordenação e remoção na tela.
 
-⚠️ **`nonQueued()` vem ANTES de `width()`/`height()`.** Os dois últimos são encaminhados ao `ImageDriver` do `spatie/image` e devolvem o **driver**, não a `Conversion`: encadear `nonQueued()` depois deles procura o método na classe errada. O PHPStan pega; em runtime é `BadMethodCallException` na primeira conversão. E `nonQueued()` existe porque o kit nasce com `QUEUE_CONNECTION=sync` — enfileirada, a conversão só existiria com worker no ar e a coluna da tabela ficaria **vazia sem erro nenhum**. Com worker de verdade, tire-o.
+⚠️ **`nonQueued()` vem ANTES de `width()`/`height()`.** Os dois últimos são encaminhados ao `ImageDriver` do `spatie/image` e devolvem o **driver**, não a `Conversion`: encadear `nonQueued()` depois deles procura o método na classe errada. O PHPStan pega; em runtime é `BadMethodCallException` na primeira conversão. E `nonQueued()` existe porque o kit nasce com `QUEUE_CONNECTION=database` e **sem garantia de worker no ar** — enfileirada, a conversão só existiria com worker rodando e a coluna da tabela ficaria **vazia sem erro nenhum**. Com worker garantido (o serviço `worker` do compose, ou `composer dev`), tire-o.
 
 ### 2. O formulário
 
@@ -614,6 +740,9 @@ Commit no padrão do repositório: gitmoji + escopo, mensagem em pt-BR.
 | "Este convite não é para esta conta" | o link foi aberto com **outra** conta autenticada. É a barreira funcionando: o token não basta na via de oferta, o e-mail tem de ser o do convite. Saia e entre com a conta convidada, ou peça um convite novo. A sessão não é derrubada e o convite continua pendente |
 | "Não vejo meus convites" | a caixa de entrada é uma página do painel `app` — quem tem **zero** organizações (ou só papel de `/admin`/`/infra`) não a alcança, porque o painel precisa de uma organização para abrir. Para esses casos a via é o **link do e-mail**, que funciona sempre. Quem já pertence a alguma organização acha o item no menu do usuário, e ele só aparece quando há oferta pendente |
 | Tela nova dá 403 | falta rodar `ShieldPermissionsSeeder` + `PapeisSeeder` depois de criar o Resource — nessa ordem, e os dois: só o primeiro cria a permission e não a entrega a papel nenhum |
+| Botão de importar/exportar não aparece na listagem | a permission `Import:{Model}` / `Export:{Model}` não existe no banco (ressemeie os dois seeders), ou o papel é `panel_user`, que **não** nasce com nenhuma das duas — conceda em `/admin` → Funções. Ver [a receita](#ligar-importexport-num-resource) |
+| Importei o CSV e nada aconteceu | import e export são **jobs**: sem worker o arquivo é aceito, a linha entra em `imports` e a notificação nunca chega. `php artisan queue:work`, ou `composer dev`. A fila parada aparece no Jobs Monitor do `/infra` |
+| Linhas importadas somem da listagem | nasceram com `tenant_id` nulo: a Action está sem `->options(["tenant_id" => ...])`, ou o importer não estende `ImportadorDoKit`. O worker não tem tenant no contexto — ver [arquitetura.md](arquitetura.md#import-e-export-o-worker-perde-o-tenant-o-export-o-herda) |
 | RelationManager aberto a quem não devia | o Shield não gera permission para RelationManager; ver [RelationManager novo](#relationmanager-novo) |
 | `NOT NULL constraint failed: model_has_roles.team_id` | atribuiu papel sem contexto de tenant — use `Tenant::CONTEXTO_GLOBAL` ou rode dentro de um request do `/app` |
 | `no such column: model_has_roles.team_id` | as tabelas de permissão nasceram sem a coluna de tenant. Refaça num processo novo: `php artisan migrate:fresh --seed` (corrigido no kit a partir da v0.9.2) |

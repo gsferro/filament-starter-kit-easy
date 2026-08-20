@@ -108,6 +108,14 @@ class KitUpdate extends Command
          */
         'config/media-library.php',
         'config/filament-maillog.php',
+        /*
+         * `filament-shield.php`: o `separator`, o `case` e — desde o import/export de CSV
+         * — os métodos `import`/`export` em `policies.methods` são decisão do KIT, não
+         * publish cru. Sem esta linha, quem já instalou nunca recebe os dois métodos: o
+         * `shield:generate` não cria `Import:{Model}`/`Export:{Model}`, e a Action
+         * simplesmente não aparece na tela, sem erro nenhum.
+         */
+        'config/filament-shield.php',
         // Migrations, seeders e factories do kit. Os SEUS não entram no diff,
         // pela mesma razão dos comandos. Migration nova exige rodar
         // `php artisan migrate` depois de aplicar.
