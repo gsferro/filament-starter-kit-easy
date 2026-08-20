@@ -68,14 +68,16 @@ it('renderiza a coluna de anexos na listagem', function (): void {
     $this->actingAs($user);
 
     /*
-     * A asserção sobre o `src`, e ela não é decorativa.
+     * A asserção sobre a URL assinada da miniatura NÃO vive aqui: `<img>` que responde
+     * 403 não gera erro de JavaScript, e o seletor do corpo da tabela do Filament 5 é
+     * detalhe de markup do pacote. O oráculo está em
+     * `tests/Tenancy/AnexosPrivadosTest.php` (CT-07b), sobre o HTML renderizado do
+     * componente, que é mais barato e mais estável.
      *
-     * Com a mídia em disco privado a miniatura passa a ser servida por URL ASSINADA
-     * (`expires` + `signature`). Imagem quebrada NÃO gera erro de JavaScript: sem esta
-     * linha o cenário ficaria verde com a coluna renderizando 403 em todas as linhas.
+     * O que este cenário prova, e só ele: FilePond inicializa e o macro do lightbox
+     * existe no boot do painel.
      */
     visit("/app/{$organizacao->slug}/projetos")
         ->assertSee('Com anexo')
-        ->assertAttributeContains('table img', 'src', 'signature=')
         ->assertNoJavaScriptErrors();
 })->group('browser');

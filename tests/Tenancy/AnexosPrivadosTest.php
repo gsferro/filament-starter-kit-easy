@@ -290,3 +290,31 @@ it('[CT-11] a assinatura válida é o que separa o 403 do 200, sem sessão nenhu
 
     $this->get($midia->getTemporaryUrl(now()->addMinutes(5)))->assertOk();
 });
+
+/**
+ * A miniatura na LISTAGEM sai com URL assinada.
+ *
+ * Aqui e não no navegador: `<img>` que responde 403 **não gera erro de JavaScript**,
+ * então `assertNoJavaScriptErrors()` fica verde com a coluna inteira quebrada. O oráculo
+ * é o `src` renderizado, e o HTML do componente já o carrega.
+ */
+it('[CT-07b] a coluna de mídia da listagem renderiza src assinada', function (): void {
+    config(['kit.demo' => true]);
+
+    $usuario = usuarioComPapel('admin_app', $this->organizacao);
+    $usuario->tenants()->attach($this->organizacao);
+    $this->actingAs($usuario);
+
+    Projeto::create(['nome' => 'Com imagem'])
+        ->addMedia(UploadedFile::fake()->image('planta.png', 600, 600))
+        ->toMediaCollection('anexos');
+
+    $this->get(ProjetoResource::getUrl('index', tenant: $this->organizacao))->assertOk();
+
+    // `loadTable` explícito: o corpo da tabela do Filament 5 nasce vazio e é carregado
+    // por `wire:init`, então sem esta chamada o HTML não tem linha nenhuma — e a asserção
+    // passaria a medir a ausência de tabela.
+    Livewire::test(ListProjetos::class)
+        ->call('loadTable')
+        ->assertSee('signature=', escape: false);
+});
