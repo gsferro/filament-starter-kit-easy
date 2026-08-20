@@ -22,6 +22,19 @@ class ListConvites extends ListRecords
         return [
             CreateAction::make(),
 
+            /*
+             * Export de convites — **desligado de propósito**. Descomente ciente de que a
+             * planilha sai com o e-mail de cada convidado. O `ConviteExporter` já deixa
+             * `token` e `token_lembrete` fora: exportá-los seria distribuir chaves de
+             * entrada, porque `Convite::aceitar()` valida o token e vincula o usuário à
+             * organização com o papel do convite.
+             *
+             * Import não existe: convite é fluxo com e-mail, prazo e token rotativo.
+             */
+            // ExportAction::make()
+            //     ->exporter(ConviteExporter::class)
+            //     ->authorize('export'),
+
             $this->acaoDeConvidarEmMassa(
                 // O mesmo Select do ConviteForm, sem o `->live()`: aqui nenhum campo depende
                 // do painel do papel escolhido.
