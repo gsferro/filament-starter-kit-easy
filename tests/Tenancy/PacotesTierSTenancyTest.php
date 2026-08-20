@@ -61,7 +61,7 @@ it('mantém o recorte por organização mesmo com withTrashed', function (): voi
 */
 
 it('anexa arquivo na coleção do projeto', function (): void {
-    Storage::fake('public');
+    Storage::fake('local');
 
     $projeto = Projeto::create(['nome' => 'Com anexo']);
 
@@ -84,7 +84,7 @@ it('anexa arquivo na coleção do projeto', function (): void {
  * DESLIGADO. Ver wikis/pacotes-ranking.md.
  */
 it('isola o anexo por organização, sem coluna de tenant em media', function (): void {
-    Storage::fake('public');
+    Storage::fake('local');
 
     Projeto::create(['nome' => 'Da Acme'])
         ->addMedia(UploadedFile::fake()->create('sigiloso.pdf', 12))

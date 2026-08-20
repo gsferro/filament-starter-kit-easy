@@ -67,7 +67,15 @@ it('renderiza a coluna de anexos na listagem', function (): void {
 
     $this->actingAs($user);
 
+    /*
+     * A asserção sobre o `src`, e ela não é decorativa.
+     *
+     * Com a mídia em disco privado a miniatura passa a ser servida por URL ASSINADA
+     * (`expires` + `signature`). Imagem quebrada NÃO gera erro de JavaScript: sem esta
+     * linha o cenário ficaria verde com a coluna renderizando 403 em todas as linhas.
+     */
     visit("/app/{$organizacao->slug}/projetos")
         ->assertSee('Com anexo')
+        ->assertAttributeContains('table img', 'src', 'signature=')
         ->assertNoJavaScriptErrors();
 })->group('browser');
