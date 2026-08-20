@@ -112,10 +112,16 @@ Herdado quer dizer que **três coisas o desfazem**, e nenhuma delas gera erro:
 
 #### A camada que **nenhum dos dois** protege: URL e disco
 
+> **Errata (feature `anexos-privados`).** O default do pacote é `public`, e era isso que o kit
+> publicava. **Não é mais**: `config/media-library.php` fixa `env('MEDIA_DISK', 'local')`, e a
+> coleção do `Projeto` declara `useDisk('local')`. O que a análise abaixo descreve é o
+> comportamento do **pacote**, que segue valendo para quem não tocar na config — e é o motivo de o
+> kit ter tocado.
+
 ```php
-// spatie/laravel-medialibrary — config/media-library.php
-'disk_name' => env('MEDIA_DISK', 'public'),   // :36
-'prefix'    => env('MEDIA_PREFIX', ''),       // :356
+// spatie/laravel-medialibrary — o default DO PACOTE
+'disk_name' => env('MEDIA_DISK', 'public'),
+'prefix'    => env('MEDIA_PREFIX', ''),
 ```
 
 ```php
@@ -123,19 +129,25 @@ Herdado quer dizer que **três coisas o desfazem**, e nenhuma delas gera erro:
 return $media->getKey();   // o ID. Inteiro sequencial.
 ```
 
-Caminho final: `/storage/{id}/{arquivo}`. **Enumerável, sem sessão, sem tenant.** A tenancy do
-Filament não alcança o sistema de arquivos, e o Curator tem exatamente o mesmo comportamento — o
-`tenantAware()` dele cobre a camada de UI, que é a que o oficial já ganha de graça.
+Caminho final com disco público: `/storage/{id}/{arquivo}`. **Enumerável, sem sessão, sem tenant.**
+A tenancy do Filament não alcança o sistema de arquivos, e o Curator tem exatamente o mesmo
+comportamento — o `tenantAware()` dele cobre a camada de UI, que é a que o oficial já ganha de
+graça.
 
 | Camada | Item 1 (oficial) | Item 2 (Curator) |
 |---|---|---|
 | UI do painel | protegido **por herança** — nada a configurar, nada a esquecer | protegido **por config**, que nasce `false` |
-| URL / disco | ❌ aberto | ❌ aberto |
+| URL / disco | ❌ aberto no default do pacote — **fechado no kit** pelo disco `local` com `serve => true` | ❌ aberto |
 
-**O kit já vive nisso hoje**: `users.avatar_url` e `tenants.logo` usam `->disk('public')` com
-`->visibility('public')`. Para imagem de identidade é defensável. Deixa de ser no momento em que
-existe uma camada de mídia — porque camada de mídia convida documento, e anexo de contrato vazando
-não é o mesmo evento que avatar vazando.
+**Como o kit fechou**: o disco `local` (`config/filesystems.php`) tem `serve => true`, o que
+registra a rota `storage.local` exigindo **URL assinada**. `Media::getUrl()` passa a responder 403 e
+o link publicável vem de `getTemporaryUrl()`. O limite que sobra está escrito em
+[arquitetura.md](arquitetura.md#a-camada-de-url-é-assinada-não-autorizada): a rota valida a
+assinatura, não o usuário.
+
+`users.avatar_url` e `tenants.logo` seguem em `->disk('public')` com `->visibility('public')`, e
+isso é deliberado: aparecem na tela de login, antes de existir sessão para assinar nada. Imagem de
+identidade é o caso em que público é a resposta certa; anexo de contrato não é.
 
 #### Lightbox: o que o kit já tem cobre os dois — não é critério de desempate
 

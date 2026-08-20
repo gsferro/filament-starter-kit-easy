@@ -31,7 +31,8 @@ Retorno por `getAttribute('name')`, não `->name`: o genérico da relação é `
 
 - O isolamento por organização é **herdado, não configurado**: a tabela `media` é polimórfica, o arquivo pertence ao registro, e o registro já é escopado por `BelongsToTenant`. Não há coluna de tenant em `media`.
 - Herdado quer dizer que três coisas o desfazem, sem gerar erro: query direta em `Media` (a tabela não tem escopo nenhum), dono que não é escopado (o `User` do kit pertence a várias organizações) e model nova sem `BelongsToTenant`.
-- A camada de URL **não** é protegida: com `MEDIA_DISK=public` o caminho é `/storage/{id}/{arquivo}`, ID sequencial, alcançável sem sessão. Serve para avatar e logo; para documento, use disco privado e rota autorizada, e `->visibility('private')` no campo.
+- **Coleção de mídia declara o disco**: `$this->addMediaCollection('x')->useDisk('local')`. Quem decide se o arquivo sai sem sessão é o **disco**, não o `->visibility('private')` do campo de upload — e a declaração vence o default, então trocar `MEDIA_DISK` não reabre o vazamento. O default já é `local` (privado, servido por URL assinada); a redundância é de propósito.
+- A URL é **assinada, não autorizada**: `Media::getUrl()` de mídia privada responde 403 (falha fechada) e o link publicável vem de `getTemporaryUrl()`, mas quem tem o link entra sem sessão durante a validade. Avatar e logo ficam em `->disk('public')` explícito, porque aparecem antes de haver sessão.
 - Em `registerMediaConversions()`, `nonQueued()` vem **antes** de `width()`/`height()`: os dois últimos são encaminhados ao `ImageDriver` e devolvem o driver, não a `Conversion`. Encadeado depois, é `BadMethodCallException` na primeira conversão.
 - Enquanto o kit nascer com `QUEUE_CONNECTION=sync`, conversão enfileirada nunca é gerada e a coluna fica vazia sem erro. `nonQueued()` é o default certo aqui.
 

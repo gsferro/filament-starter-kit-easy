@@ -411,7 +411,7 @@ SpatieMediaLibraryImageColumn::make('anexos')
 ### O que você ganha e o que não ganha
 
 - **Ganha o isolamento por organização de graça**: o arquivo pertence ao registro, e o registro já é escopado por `BelongsToTenant`. Não há coluna de tenant em `media` nem configuração a lembrar.
-- **Não ganha a URL protegida**: com `MEDIA_DISK=public` o caminho é `/storage/{id}/{arquivo}`, ID sequencial, alcançável sem sessão. `->visibility('private')` protege a visibilidade **no disco**, não a URL de um disco público. Anexo sensível pede disco privado **e** rota autorizada — ver [arquitetura.md](arquitetura.md#a-camada-de-url-não-é-protegida-por-ninguém).
+- **Ganha URL assinada, não autorização**: o disco default é `local` e a rota `storage.local` exige assinatura, então `Media::getUrl()` responde 403 e o link publicável vem de `getTemporaryUrl()`. Mas a assinatura não conhece usuário: **quem tem o link entra durante a validade**. Anexo que precise de autorização por organização pede rota própria consultando a policy — ver [arquitetura.md](arquitetura.md#a-camada-de-url-é-assinada-não-autorizada). E declare o disco na coleção (`->useDisk('local')`): quem decide é o disco, não o `->visibility('private')` do campo.
 
 ## Imagem ou documento em tabela
 

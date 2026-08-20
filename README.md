@@ -477,10 +477,24 @@ o arquivo pertence ao registro, e o registro já é escopado por `BelongsToTenan
 o projeto não alcança o anexo, sem coluna de tenant em `media` e sem configuração para lembrar de
 ligar.
 
-> ⚠️ **`MEDIA_DISK=public` serve para avatar e logo, não para documento.** Com o disco público o
-> caminho é `/storage/{id}/{arquivo}`, com ID sequencial, alcançável **sem sessão** — a
-> multi-organização do Filament não chega ao sistema de arquivos. Para anexo privado, troque o
-> disco (`MEDIA_DISK` no `.env`, `config/media-library.php`) e sirva por rota autorizada.
+> ⚠️ **O disco default da mídia é `local`, e é privado de propósito.** Com `MEDIA_DISK=public` o
+> arquivo cai em `storage/app/public`, servido pelo symlink `public/storage`: caminho
+> `/storage/{id}/{arquivo}`, ID sequencial, alcançável **sem sessão** — a multi-organização do
+> Filament não chega ao sistema de arquivos. Use `public` só para avatar e logo, que aparecem na
+> tela de login.
+>
+> Duas consequências práticas do disco privado:
+>
+> 1. **`Media::getUrl()` responde 403.** É falha fechada, e é o que se espera. Quem publica link de
+>    mídia privada usa **`getTemporaryUrl()`**, que assina a URL.
+> 2. **Quem tem o link entra, durante a validade da assinatura, sem sessão.** A rota
+>    `storage.local` do Laravel valida a assinatura, não o usuário: compartilhar o link é
+>    compartilhar o arquivo até ele expirar. Para anexo que precise de autorização por
+>    organização, sirva por rota própria que consulte a policy antes de entregar.
+>
+> Já tem instalação rodando com `MEDIA_DISK=public`? A config nova protege só o arquivo NOVO.
+> Rode **`php artisan kit:midia-privada`** (aceita `--dry-run`) para mover o que já foi gravado —
+> sem ele, a mídia antiga continua servida pelo symlink.
 
 ## Trabalhando com agentes de IA
 
@@ -932,7 +946,7 @@ O benefício está em não derivar os testes só do "caminho feliz". O que escap
 | 12 | **Agente de IA** | `/admin` → Agentes de IA (ou `database/seeders/AssistenteSeeder.php`) | — |
 | 13 | **[Idiomas do painel](#o-seletor-de-idioma)** | `config/kit.php` → `idiomas` (lista de locales; com um só, o seletor não aparece) | — |
 | 14 | **[Retenção das trilhas](#retenção-o-número-é-a-intenção-o-agendador-é-a-execução)** | `KIT_RETENCAO_EXCECOES_DIAS` / `KIT_RETENCAO_EMAILS_DIAS` no `.env` | — |
-| 15 | **[Disco da mídia](#anexos-e-mídia)** | `MEDIA_DISK` no `.env` (`public` por padrão — não serve para documento) | — |
+| 15 | **[Disco da mídia](#anexos-e-mídia)** | `MEDIA_DISK` no `.env` (`local` por padrão — privado, servido por URL assinada) | `php artisan kit:midia-privada` migra a mídia já gravada em disco público |
 
 Os dez últimos não entram nas perguntas porque são **código ou dado de tela**, não um valor que caiba num prompt de terminal. O instalador os lista no resumo final, com o arquivo de cada um.
 

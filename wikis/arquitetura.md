@@ -303,11 +303,25 @@ Herdado quer dizer que ele existe **quando há de quem herdar**. Três casos em 
 2. **Dono que não é escopado.** O `User` do kit pertence a **várias** organizações (a pivot `tenant_user`), então não usa `BelongsToTenant`: avatar e qualquer mídia de usuário são globais por construção. É correto para foto de perfil e errado para qualquer coisa que seja de uma organização só.
 3. **Model nova sem `BelongsToTenant`.** A mídia dela é global pelo mesmo motivo. A trait não é opcional numa model de negócio — ver [Model de negócio pertence a um tenant](convencoes.md#model-de-negócio-pertence-a-um-tenant).
 
-### A camada de URL não é protegida por ninguém
+### A camada de URL é assinada, não autorizada
 
-O escopo herdado vale para a **query**. Não vale para o **arquivo**: `MEDIA_DISK` nasce `public` e `MEDIA_PREFIX` nasce vazio, então o caminho é `/storage/{id}/{arquivo}` — ID **sequencial**, servido pelo link simbólico, alcançável **sem sessão**. A tenancy do Filament vive no request do painel; ela não chega ao sistema de arquivos.
+O escopo herdado vale para a **query**. Não vale para o **arquivo**, e quem decide isso é o **disco** — não a visibilidade declarada no campo de upload.
 
-Para anexo privado o trabalho é do projeto, não do pacote: disco privado (`MEDIA_DISK` fora do `public`) mais uma rota que autoriza antes de entregar o arquivo. `->visibility('private')` no campo protege a visibilidade **no disco**, não a URL de um disco público. É por isso que o `ProjetoResource` da demo o declara explicitamente e o comentário ao lado avisa: anexo de projeto não é imagem de identidade.
+`MEDIA_DISK` nasce **`local`**, cuja `serve => true` (`config/filesystems.php`) registra a rota `storage.local`, que **exige URL assinada**. Com `public` o arquivo cairia em `storage/app/public`, servido pelo symlink `public/storage`: caminho `/storage/{id}/{arquivo}`, ID **sequencial**, alcançável **sem sessão**. A tenancy do Filament vive no request do painel; ela nunca chega ao sistema de arquivos.
+
+O que isso resolve, e o que **não** resolve:
+
+- **Resolve** o arquivo alcançável por quem só adivinhou o ID. Sem assinatura a rota devolve 403 antes mesmo de checar se o arquivo existe.
+- **Não resolve** autorização. A rota valida a **assinatura**, não o usuário: **quem tem o link entra, sem sessão, durante a validade**. É limite aceito e documentado, não descuido. Anexo que precise de autorização por organização pede rota própria consultando a policy antes de entregar.
+
+Duas consequências para quem escreve código aqui:
+
+1. **`Media::getUrl()` de mídia privada responde 403** — falha fechada. Link publicável se obtém com **`getTemporaryUrl()`**.
+2. **Coleção de mídia declara o disco** (`->useDisk('local')` em `registerMediaCollections()`), mesmo sendo redundante com o default. É defesa em profundidade: trocar `MEDIA_DISK` de volta não reabre o vazamento na coleção.
+
+Avatar e logo continuam em `->disk('public')` **explícito**, e isso é deliberado: aparecem na tela de login, antes de existir sessão para assinar nada.
+
+Instalação anterior a esta mudança tem mídia já gravada em disco público, e a config nova não a alcança: **`php artisan kit:midia-privada`** (com `--dry-run`) move original e conversões e atualiza as colunas `disk`/`conversions_disk`. Ele preserva coleção que declara `useDisk('public')`.
 
 ## Erros e traduções
 

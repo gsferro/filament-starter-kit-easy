@@ -476,10 +476,24 @@ polymorphic: the file belongs to the record, and the record is already scoped by
 `BelongsToTenant`. Whoever can't reach the project can't reach the attachment, with no tenant
 column in `media` and no configuration to remember to turn on.
 
-> ⚠️ **`MEDIA_DISK=public` is for avatars and logos, not for documents.** On the public disk the
-> path is `/storage/{id}/{file}`, with a sequential ID, reachable **without a session** — Filament's
-> multi-tenancy does not reach the file system. For a private attachment, switch the disk
-> (`MEDIA_DISK` in `.env`, `config/media-library.php`) and serve it through an authorized route.
+> ⚠️ **The default media disk is `local`, and it is private on purpose.** With
+> `MEDIA_DISK=public` the file lands in `storage/app/public`, served by the `public/storage`
+> symlink: path `/storage/{id}/{file}`, sequential ID, reachable **without a session** — Filament's
+> multi-tenancy does not reach the file system. Use `public` only for avatars and logos, which show
+> up on the login screen.
+>
+> Two practical consequences of the private disk:
+>
+> 1. **`Media::getUrl()` answers 403.** That is fail-closed, and it is what you want. To publish a
+>    link to private media use **`getTemporaryUrl()`**, which signs the URL.
+> 2. **Whoever holds the link gets in, for as long as the signature is valid, with no session.**
+>    Laravel's `storage.local` route validates the signature, not the user: sharing the link shares
+>    the file until it expires. For attachments that need per-organization authorization, serve them
+>    through your own route that checks the policy first.
+>
+> Already running an install with `MEDIA_DISK=public`? The new config only protects NEW files. Run
+> **`php artisan kit:midia-privada`** (it takes `--dry-run`) to move what was already written —
+> without it, the old media stays served by the symlink.
 
 ## Working with AI agents
 
@@ -930,7 +944,7 @@ The benefit is in not deriving tests only from the "happy path". What slips thro
 | 12 | **AI agent** | `/admin` → AI Agents (or `database/seeders/AssistenteSeeder.php`) | — |
 | 13 | **[Panel languages](#the-language-switcher)** | `config/kit.php` → `idiomas` (a list of locales; with only one, the switcher doesn't show) | — |
 | 14 | **[Trail retention](#retention-the-number-is-the-intent-the-scheduler-is-the-execution)** | `KIT_RETENCAO_EXCECOES_DIAS` / `KIT_RETENCAO_EMAILS_DIAS` in `.env` | — |
-| 15 | **[Media disk](#attachments-and-media)** | `MEDIA_DISK` in `.env` (`public` by default — not for documents) | — |
+| 15 | **[Media disk](#attachments-and-media)** | `MEDIA_DISK` in `.env` (`local` by default — private, served through a signed URL) | `php artisan kit:midia-privada` migrates media already written to a public disk |
 
 The last ten are not asked because they are **code or screen data**, not a value that fits in a terminal prompt. The installer lists them in the final summary, each with its file.
 
