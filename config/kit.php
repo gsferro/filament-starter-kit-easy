@@ -140,6 +140,22 @@ return [
     'retencao' => [
         'excecoes_em_dias' => (int) env('KIT_RETENCAO_EXCECOES_DIAS', 14),
         'emails_em_dias'   => (int) env('KIT_RETENCAO_EMAILS_DIAS', 14),
+
+        /*
+         * Histórico de import e export (`imports`, `exports`, `failed_import_rows`).
+         *
+         * 30 dias, e não 14 como as duas acima: o histórico de importação é o que
+         * responde "quem escreveu isso em massa na semana passada", e a pergunta costuma
+         * chegar depois do fechamento do mês.
+         *
+         * A poda do export **apaga o arquivo**, não só a linha. Sem isso o disco cresce
+         * para sempre com CSV que ninguém mais consegue baixar, porque o link de download
+         * é assinado e a linha que o autorizava já foi.
+         *
+         * Zero ou negativo desliga a poda, sem apagar nada por engano.
+         */
+        'importacoes_em_dias' => (int) env('KIT_RETENCAO_IMPORTACOES_DIAS', 30),
+        'exportacoes_em_dias' => (int) env('KIT_RETENCAO_EXPORTACOES_DIAS', 30),
     ],
 
     /*

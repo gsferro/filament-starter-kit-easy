@@ -1,6 +1,8 @@
 <?php
 
 use BezhanSalleh\FilamentExceptions\Models\Exception;
+use Filament\Actions\Exports\Models\Export;
+use Filament\Actions\Imports\Models\Import;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -88,6 +90,50 @@ Schedule::call(function (): void {
         ->where('created_at', '<', now()->subDays($dias))
         ->delete();
 })->daily()->at('02:10')->name('kit:limpar-trilha-de-emails');
+
+/*
+ * Histórico de import e export.
+ *
+ * Os models `Import` e `Export` do Filament usam a trait `Prunable` mas **não declaram
+ * `prunable()`** (verificado no vendor) — passá-los ao `model:prune` daria
+ * `LogicException`, e não há como acrescentar o método sem editar `vendor/`. Daí a
+ * exclusão direta, no mesmo padrão da trilha de e-mails acima.
+ *
+ * `failed_import_rows` cai por cascata (`import_id` é FK com `cascadeOnDelete`).
+ *
+ * A do export apaga o ARQUIVO antes da linha, via `deleteFileDirectory()` do próprio
+ * model: invertido, ficaria arquivo órfão em disco sem nada que aponte para ele — e é
+ * arquivo com dado exportado da aplicação.
+ *
+ * ponytail: closures, não comandos. São duas cláusulas `where`. O teto é o mesmo da poda
+ * de e-mails: sem `chunk`, tabela com milhões de linhas faz um DELETE longo.
+ */
+Schedule::call(function (): void {
+    $dias = (int) config('kit.retencao.importacoes_em_dias', 30);
+
+    if ($dias <= 0) {
+        return;
+    }
+
+    Import::query()
+        ->where('created_at', '<', now()->subDays($dias))
+        ->delete();
+})->daily()->at('02:20')->name('kit:limpar-historico-de-importacoes');
+
+Schedule::call(function (): void {
+    $dias = (int) config('kit.retencao.exportacoes_em_dias', 30);
+
+    if ($dias <= 0) {
+        return;
+    }
+
+    Export::query()
+        ->where('created_at', '<', now()->subDays($dias))
+        ->each(function (Export $export): void {
+            $export->deleteFileDirectory();
+            $export->delete();
+        });
+})->daily()->at('02:30')->name('kit:limpar-historico-de-exportacoes');
 
 // Backups. Ligue quando configurar o destino em config/backup.php.
 // Schedule::command('backup:clean')->daily()->at('01:00');
