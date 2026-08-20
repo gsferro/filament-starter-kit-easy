@@ -73,14 +73,20 @@ class Projeto extends Model implements Auditable, HasMedia
      * este projeto já é escopado por `BelongsToTenant`. Quem não alcança o projeto
      * não alcança o anexo — sem coluna de tenant em `media`, sem configuração.
      *
-     * O que NÃO vem de graça, e está documentado em wikis/pacotes.md: a URL. Com
-     * `MEDIA_DISK=public` o caminho é `/storage/{id}/{arquivo}`, ID sequencial,
-     * alcançável sem sessão. Para anexo que não seja imagem de identidade, troque o
-     * disco e sirva por rota autorizada.
+     * O que NÃO vem de graça é a URL, e por isso o `useDisk()` está escrito aqui
+     * mesmo sendo redundante com o default de `config/media-library.php`: quem decide
+     * se o arquivo é alcançável sem sessão é o DISCO, não a visibilidade do campo de
+     * upload. Com `public`, o caminho é `/storage/{id}/{arquivo}` — ID sequencial,
+     * servido pelo symlink, sem sessão e sem assinatura. Com `local`, a entrega passa
+     * pela rota `storage.local`, que exige URL assinada.
+     *
+     * A redundância é defesa em profundidade de propriedade de segurança: trocar
+     * `MEDIA_DISK` de volta para `public` não reabre o vazamento nesta coleção. Vale
+     * como padrão — coleção de mídia declara o disco (.ai/rules/models.md).
      */
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('anexos');
+        $this->addMediaCollection('anexos')->useDisk('local');
     }
 
     /**

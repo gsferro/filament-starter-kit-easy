@@ -116,10 +116,12 @@ class ProjetoResource extends Resource
              * e o projeto já é escopado por `BelongsToTenant`. Não há coluna de tenant em
              * `media` nem configuração a lembrar.
              *
-             * `->visibility('private')` é o default do medialibrary e fica explícito aqui
-             * porque anexo de projeto NÃO é imagem de identidade: com disco público o
-             * caminho é `/storage/{id}/{arquivo}`, ID sequencial, alcançável sem sessão.
-             * Ver o aviso em config/media-library.php e wikis/pacotes.md.
+             * `->visibility('private')` PARTICIPA da proteção, mas não é ela: o componente
+             * só usa a visibilidade para escolher o disco quando o default seria público
+             * (`SpatieMediaLibraryFileUpload::getDiskName()`). Quem decide se o arquivo sai
+             * sem sessão é o DISCO — e ele está declarado em
+             * `Projeto::registerMediaCollections()` com `useDisk('local')`, cujo `serve`
+             * obriga URL assinada. Ver o aviso em config/media-library.php.
              */
             SpatieMediaLibraryFileUpload::make('anexos')
                 ->label('Anexos')

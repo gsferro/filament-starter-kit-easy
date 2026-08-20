@@ -32,8 +32,17 @@ return [
     /*
      * The disk on which to store added files and derived images by default. Choose
      * one or more of the disks you've configured in config/filesystems.php.
+     *
+     * O default é `local`, não `public`, e a escolha é de segurança: `public` grava em
+     * `storage/app/public`, servido pelo symlink `public/storage` SEM sessão e sem
+     * assinatura. Anexo de projeto não é imagem de identidade. O disco `local` tem
+     * `serve => true` (config/filesystems.php), logo entrega o arquivo pela rota
+     * `storage.local`, que exige URL assinada.
+     *
+     * Consequência prática: `Media::getUrl()` de mídia privada responde 403 — falha
+     * fechada. Quem publica link de mídia privada usa `getTemporaryUrl()`.
      */
-    'disk_name' => env('MEDIA_DISK', 'public'),
+    'disk_name' => env('MEDIA_DISK', 'local'),
 
     /*
      * The disk on which to store conversions (thumbnails, etc.) and responsive images
