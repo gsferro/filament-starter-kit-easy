@@ -71,4 +71,21 @@ class QueueMonitorPolicy
     {
         return $authUser->can('Reorder:QueueMonitor');
     }
+
+    /**
+     * Importar CSV é escrita em massa — permissão separada de `create` de propósito.
+     */
+    public function import(AuthUser $authUser): bool
+    {
+        return $authUser->can('Import:QueueMonitor');
+    }
+
+    /**
+     * Exportar é levar a listagem inteira embora num arquivo, e isso não é o mesmo que
+     * poder abrir a tela: `ViewAny` mostra na tela, `Export` deixa sair da aplicação.
+     */
+    public function export(AuthUser $authUser): bool
+    {
+        return $authUser->can('Export:QueueMonitor');
+    }
 }

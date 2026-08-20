@@ -91,9 +91,39 @@ class PapeisSeeder extends Seeder
             ->syncPermissions(
                 $this->permissoesDoPainel('app', $guard)
                     ->reject(fn (string $permissao): bool => in_array($permissao, $administracao, true))
+                    ->reject(fn (string $permissao): bool => $this->ehPermissaoDeImportOuExport($permissao))
             );
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    /**
+     * `Import:{Model}` e `Export:{Model}` — subtraídas do `panel_user` por default.
+     *
+     * As duas não são "ver a tela em massa": **import é escrita em massa** e **export tira
+     * o dado da aplicação** num arquivo que segue por e-mail. O usuário comum do /app usa
+     * o negócio um registro por vez; quem move planilha é quem opera a organização.
+     *
+     * Fica com o `admin_app`, que recebe a matriz do painel inteira, e pode ser concedida
+     * ao `panel_user` na tela de Papéis por quem decidir que faz sentido — que é
+     * exatamente o cenário separado que o requisito pediu ("pode ter cenarios diferentes
+     * caso envolve quem pode exportar e quem pode importar").
+     *
+     * **Prefixo, e não FQCN, e a diferença importa.** A subtração de administração acima é
+     * por FQCN de propósito, porque `str_contains($p, 'User')` pegaria um
+     * `UserPreferenceResource` futuro por acidente. Aqui o casamento é no segmento de AÇÃO
+     * do nome, que o Shield monta deterministicamente de `policies.methods` +
+     * `permissions.separator` — `Import:` só aparece em permissão de import, para qualquer
+     * model presente ou futuro. É o comportamento desejado: resource novo nasce com as
+     * duas fora do usuário comum, sem ninguém precisar lembrar de acrescentá-lo a lista
+     * nenhuma.
+     */
+    private function ehPermissaoDeImportOuExport(string $permissao): bool
+    {
+        $separador = (string) config('filament-shield.permissions.separator', ':');
+
+        return str_starts_with($permissao, 'Import'.$separador)
+            || str_starts_with($permissao, 'Export'.$separador);
     }
 
     /**
