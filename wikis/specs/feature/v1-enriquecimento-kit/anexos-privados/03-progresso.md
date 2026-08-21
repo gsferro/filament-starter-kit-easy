@@ -85,13 +85,16 @@ o default seria público (`SpatieMediaLibraryFileUpload::getDiskName()`); quem d
 
 ## Candidatos a Rule de Projeto
 
-**Dois**, e o segundo já foi gravado como parte do passo 5.
+**Dois**, e os dois estão gravados.
 
 1. **Coleção de mídia declara o disco** — gravado em `.ai/rules/models.md`, com o porquê (quem
    decide é o disco, não o `visibility` do campo) e a consequência (`getUrl()` 403).
 2. **Justificativa de comportamento de pacote se escreve depois de ler o vendor, não antes.**
-   Glob: `wikis/specs/**`, `.ai/rules/**`. Evidência: nesta feature, três afirmações sobre
+   Evidência: nesta feature, três afirmações sobre
    `SpatieMediaLibraryFileUpload`, `Storage::fake()` e `phpunit.xml` estavam erradas, e as três
    **sustentavam decisões de desenho** — em todas a conclusão estava certa por outro motivo, o que
    torna o erro invisível até alguém tentar consertar o cenário pelo motivo escrito.
-   **Ainda não gravada**: depende de aprovação explícita do usuário.
+   **Aprovada pelo usuário e gravada** em `.ai/rules/specs.md`, glob `wikis/specs/**` — arquivo de
+   área novo, e o `index.md` ganhou a linha correspondente. O glob é só `wikis/specs/**`, e não
+   também `.ai/rules/**`: uma regra sobre como escrever regra, indexada apenas no diretório de
+   regras, só seria lida por quem já estivesse editando regra — e o erro nasce na wiki.
