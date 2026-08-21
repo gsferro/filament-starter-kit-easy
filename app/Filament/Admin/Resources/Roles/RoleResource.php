@@ -18,6 +18,7 @@ use BezhanSalleh\PluginEssentials\Concerns\Resource as Essentials;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Clusters\Cluster;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -29,9 +30,11 @@ use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rules\Unique;
 use Override;
+use RuntimeException;
 
 /**
  * Tela de papéis do Shield, PUBLICADA no projeto (`php artisan shield:publish --panel=admin`).
@@ -43,6 +46,14 @@ use Override;
  *   1. `Select::make('painel')` — é ele que dá acesso ao painel (User::canAccessPanel);
  *   2. `getResourceEntitiesSchema()` agrupa as seções por painel;
  *   3. `secaoDoResource()` — o corpo do `map()` original, extraído para ser reusado.
+ *   4. os três pontos onde o tipo do vendor é largo demais para o do Filament — a **5ª
+ *      divergência** na contagem de `wikis/pacotes.md`, que inclui as Pages logo abaixo, e é
+ *      assim que estão marcados no corpo: `colunasDaGrade()` (o `getGridColumns()` do plugin é
+ *      `int|string|array` e o `columns()` do Filament não aceita string nem array solto) e as
+ *      guardas de `getModel()`/`getCluster()` (o `Utils` do Shield devolve `string`, e o
+ *      Filament exige `class-string`). São normalizações de tipo, não mudança de
+ *      comportamento: com config válida a tela é byte a byte a do vendor; com config inválida
+ *      o erro passa a ser explícito em vez de "class not found" no meio do render.
  *
  * As Pages `CreateRole` e `EditRole` também foram tocadas: sem acrescentar `painel` às
  * listas de `mutateFormDataBefore*`, o Shield trataria o valor como lista de permissões e
@@ -191,10 +202,38 @@ class RoleResource extends Resource
                 ->schema([
                     Grid::make()
                         ->schema(array_map(static::secaoDoResource(...), $entidades))
-                        ->columns(static::shield()->getGridColumns()),
+                        ->columns(self::colunasDaGrade()),
                 ]))
             ->values()
             ->all();
+    }
+
+    /**
+     * As colunas da grade, no tipo que o `columns()` do Filament aceita (5ª divergência).
+     *
+     * `CanCustomizeColumns::getGridColumns()` devolve `int|string|array`. A string é herança
+     * do `columnSpan` ('full'), que não faz sentido como CONTAGEM de coluna; e o array é o
+     * mapa `breakpoint => colunas`, sem tipo declarado no plugin. Normalizar aqui é o que
+     * impede um valor de config virar breakpoint inválido no Tailwind — falha que não gera
+     * erro, só um layout errado.
+     *
+     * @return array<string, int>|int
+     */
+    private static function colunasDaGrade(): array|int
+    {
+        $colunas = static::shield()->getGridColumns();
+
+        if (! is_array($colunas)) {
+            return (int) $colunas;
+        }
+
+        $normalizadas = [];
+
+        foreach ($colunas as $breakpoint => $quantidade) {
+            $normalizadas[(string) $breakpoint] = (int) $quantidade;
+        }
+
+        return $normalizadas;
     }
 
     /**
@@ -242,7 +281,17 @@ class RoleResource extends Resource
     #[Override]
     public static function getModel(): string
     {
-        return Utils::getRoleModel();
+        $model = Utils::getRoleModel();
+
+        // 5ª divergência: o `Utils` do Shield devolve `string` cru e o Filament exige uma
+        // classe de Model — o Resource inteiro (query, policy, route binding) depende disso.
+        // Config apontando para outra coisa quebraria adiante, com mensagem que não aponta
+        // para a config.
+        if (! is_a($model, Model::class, true)) {
+            throw new RuntimeException("permission.models.role aponta para [{$model}], que não é um Eloquent Model.");
+        }
+
+        return $model;
     }
 
     public static function getSlug(?Panel $panel = null): string
@@ -252,7 +301,15 @@ class RoleResource extends Resource
 
     public static function getCluster(): ?string
     {
-        return Utils::getResourceCluster();
+        $cluster = Utils::getResourceCluster();
+
+        // 5ª divergência: mesma razão do `getModel()` acima — o Shield devolve `?string` e o
+        // Filament exige uma classe de Cluster para montar navegação e breadcrumb.
+        if ($cluster !== null && ! is_a($cluster, Cluster::class, true)) {
+            throw new RuntimeException("filament-shield.shield_resource.cluster aponta para [{$cluster}], que não é um Cluster.");
+        }
+
+        return $cluster;
     }
 
     public static function getEssentialsPlugin(): ?FilamentShieldPlugin

@@ -30,7 +30,32 @@ beforeEach(function (): void {
 });
 
 /**
- * CT-02 — o usuário comum da organização não recebe os caminhos de administração.
+ * CT-01 da wiki `hub-de-cards-opcional` — a linha do painel /app.
+ *
+ * O par das linhas de /admin, que vivem em `tests/Kit/HubDeCardsTest.php`. Ele fica aqui porque a
+ * persona do painel de negócio só existe com contexto de organização.
+ *
+ * A segunda parte cobre a barra lateral sem gastar um caso: `canAccess()` falso também faz
+ * `Page::registerNavigationItems()` retornar cedo
+ * (`vendor/filament/filament/src/Pages/Page.php:133-135`).
+ */
+it('recusa o hub do negócio enquanto a flag está desligada', function (): void {
+    expect(config('kit.hub'))->toBeFalse();
+
+    $comum = usuarioComPapel('panel_user', $this->acme, 'comum@example.com');
+    $comum->tenants()->attach($this->acme->getKey());
+
+    $this->actingAs($comum);
+
+    $this->get("/app/{$this->acme->slug}/hub-do-negocio")->assertForbidden();
+
+    $this->get("/app/{$this->acme->slug}")
+        ->assertSuccessful()
+        ->assertDontSee('Início');
+});
+
+/**
+ * CT-02 da ancestral — o usuário comum da organização não recebe os caminhos de administração.
  *
  * Persona discriminante: rodar este caso com `master_global` deixaria a barreira inteira sem
  * cobertura, porque ele vence pelo `Gate::before` ANTES de qualquer `canAccess()` ser
@@ -38,6 +63,9 @@ beforeEach(function (): void {
  *
  * As três asserções são um conjunto: a primeira prova que o hub não veio vazio (um filtro
  * quebrado que esconde tudo passaria só com as duas negativas).
+ *
+ * `kit.hub` LIGADO no arranjo: esta página nasce desligada no kit desde a wiki
+ * `hub-de-cards-opcional`, e o caso mede o FILTRO por autorização, não a flag.
  */
 it('esconde os destinos de administração do usuário comum da organização', function (): void {
     /*
@@ -48,7 +76,7 @@ it('esconde os destinos de administração do usuário comum da organização', 
      * nasce vazio. Sem esta linha o hub vem vazio, a primeira asserção cai, e as
      * duas negativas passariam por ausência de conteúdo em vez de por filtro.
      */
-    config(['kit.demo' => true]);
+    config(['kit.demo' => true, 'kit.hub' => true]);
 
     $comum = usuarioComPapel('panel_user', $this->acme, 'comum@example.com');
     $comum->tenants()->attach($this->acme->getKey());

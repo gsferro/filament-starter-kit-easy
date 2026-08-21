@@ -1,3 +1,9 @@
+---
+paths:
+  - 'tests/Browser/**'
+  - 'tests/BrowserTenancy/**'
+---
+
 # Testes de browser (`pest-plugin-browser`)
 
 ## O plugin sobe o próprio servidor — não configure nenhum
@@ -13,6 +19,75 @@ Como é o **mesmo processo** do teste, três coisas continuam valendo dentro do 
 ## `npm run build` é pré-requisito duro
 
 Sem `public/build/manifest.json` **toda** tela responde `ViteException` e todo cenário falha por um motivo que não é o dele. Rode com `composer test:browser`, que já embute o build.
+
+## `view:cache` é o segundo pré-requisito duro
+
+Compilar as ~590 views do kit custa dezenas de segundos, e o **primeiro** cenário que renderiza
+um painel paga a conta inteira **dentro do próprio timeout**. Com cache frio ele estoura o teto
+de 45s e falha por um motivo que não é o dele — o mesmo estrago do `ViteException` acima, com
+outra cara.
+
+Medido em `tests/Browser/CabecalhoDoMenuDoUsuarioTest`:
+
+| Cache de view | Resultado |
+|---|---|
+| frio (`view:clear` antes) | **falha**, `Timeout 45000ms exceeded`, 50s |
+| quente | passa, 6 asserções, 10,6s |
+
+É determinístico, e o disfarce é cruel: numa máquina que acabou de rodar `composer test:kit` as
+views estão quentes e tudo passa; num clone novo ou no CI a suíte nasce vermelha, e o sintoma
+tem exatamente o formato de teste instável — foi preciso rodar a suíte duas vezes para separar
+uma coisa da outra.
+
+`composer test:browser` embute o `view:cache` por isso. **Não remova a linha**, e não "conserte"
+o sintoma subindo o `pest()->browser()->timeout()`: isso troca a falha por uma suíte lenta e
+mantém a compilação dentro do cronômetro do cenário.
+
+Mesma causa raiz do `view:cache` no boot do container — ver
+`wikis/specs/feature/v1-enriquecimento-kit/cache-de-views-no-docker/`.
+## `view:cache` não basta para arquivo isolado — aqueça pelo kernel
+
+O `view:cache` cobre as Blade do repositório. **O primeiro render de um painel ainda paga a
+compilação dos componentes Livewire do Filament**, e isso são ~25 s que o `view:cache` não
+adianta. Rodando a suíte inteira o problema não aparece: os arquivos anteriores pagam a conta.
+Rodando **um arquivo só** de `tests/BrowserTenancy`, o primeiro cenário estoura os 45 s.
+
+Medido em `tests/BrowserTenancy/CapturaDeArteTest` depois de um `view:clear`, com o
+`view:cache` já executado:
+
+| Aquecimento | Resultado |
+|---|---|
+| nenhum | **3 de 4 verdes**, o primeiro cenário em `Timeout 45000ms exceeded` |
+| um `$this->get()` da mesma tela no `beforeEach` | 4 de 4 verdes, 53 s |
+
+A correção é pagar a conta **fora do cronômetro do Playwright**, num request pelo kernel, no
+`beforeEach`:
+
+```php
+$this->actingAs($usuario);
+
+// Compila os componentes do painel em PHP, onde ninguém está cronometrando.
+// Os arquivos compilados ficam em disco e o servidor do navegador os reusa.
+$this->get(ProjetoResource::getUrl('index', tenant: $organizacao));
+```
+
+Funciona porque o servidor do plugin roda **no mesmo processo** e lê o mesmo
+`storage/framework/views`.
+
+Não troque isto por `pest()->browser()->timeout()` maior: o `tests/Pest.php` registra que 40 s e
+60 s reproduzem a falha igual — o problema é a conta estar dentro do cronômetro, não o teto ser
+baixo.
+
+## `waitForEvent('networkidle')` não serve em painel do Filament
+
+Ele nunca resolve: o painel fica consultando as notificações, a rede não fica ociosa e o cenário
+morre no teto. Espere pelo **estado visível** (`assertSee`, `assertAttributeContains`), que é o
+que o plugin reexecuta com retry.
+
+E cuidado com o modo estrito do Playwright: seletor que casa mais de um elemento é **erro**, não
+"o primeiro". `.fi-ta-image img` numa listagem com duas linhas de anexo estoura
+`strict mode violation`. Prefira seletor por atributo único — `[id="form.painel-app::data::section-heading"]`
+em vez de `text=Painel /app`, que também casa o select "Acesso ao painel".
 
 ## `assertPathIs` antes das asserções de conteúdo
 
@@ -56,3 +131,44 @@ O kit não tem `data-testid` (dívida conhecida). O disponível hoje:
 `assertSee('Salvar')` **passa** com texto branco em fundo branco: o texto está no DOM, só está invisível. `->inDarkMode()->assertSee(...)` prova que a tela abre sob `prefers-color-scheme: dark`, e nada sobre legibilidade. Para defeito de cor não há saída barata — é screenshot e olhar.
 
 Use `assertNoSmoke()` só em tela de autoria própria; nas de plugin de terceiro, `assertNoJavaScriptErrors()`, senão a suíte fica vermelha por `console.log` que ninguém vai corrigir.
+
+## `kit:arte` publica de uma lista declarada — captura nova precisa da linha
+
+`tests/Browser/Screenshots` é caminho fixo do `pest-plugin-browser` e recebe TUDO: as capturas de
+arte, os `->screenshot()` de evidência de qualquer CT-B, e os screenshots que o Pest grava sozinho
+quando um cenário de navegador FALHA. O plugin limpa o diretório no início de cada run, então
+sobra do run anterior não existe — mas screenshot de falha DO MESMO run existe, e já quase entrou
+no `art/`.
+
+Por isso `KitArte::IMAGENS` é uma lista de nomes: arquivo não declarado é **reportado**, nunca
+publicado e nunca silenciado. Os dois erros ficam visíveis — o intruso aparece como ignorado, e a
+captura nova que esqueceu a linha aparece como ignorada também, com o nome dela.
+
+Ao acrescentar uma captura: o `->screenshot(filename: 'x')` no cenário **e** a linha `'x'` em
+`KitArte::IMAGENS`.
+
+E o `composer art` roda os arquivos de captura numa **única** invocação do `artisan test`. Duas
+invocações não funcionam: a segunda limpa o diretório e apaga o que a primeira escreveu, e o
+`kit:arte` publica só o resto — sem erro nenhum, com quatro imagens silenciosamente não
+atualizadas.
+## Cenário de navegador visita o painel em que o processo foi deixado
+**Substitui a rule anterior sobre `fronteiraDeRequest()` na captura de arte** — aquela descrevia o sintoma e prescrevia uma correção que não funciona.
+
+O servidor do `pest-plugin-browser` roda in-process. Cenário arranjado num painel e que visita OUTRO renderiza a tela com **a barra lateral do painel do arranjo**: cabeçalho e conteúdo saem certos, a navegação ao lado é de outro painel, e os ícones da topbar saem repetidos.
+
+Medido com o mesmo cenário (`/admin/shield/roles/{id}/edit`):
+
+| Arranjo antes do `visit()` | Barra lateral |
+|---|---|
+| `noPainelDa($org)` + `get()` de URL do /app | **/app** — Projetos, Convites, Usuários |
+| nenhum arranjo de /app | /admin — Usuários, Onboarding, Organizações, Funções |
+
+Por isso `art/admin-papeis-import-export.png` ficou errada do commit `04642b0` até a correção: o `beforeEach` arranjava o /app e aquele cenário visita o /admin. As outras capturas do arquivo nunca estiveram erradas — arranjam e visitam o /app.
+
+**Não reproduz em `$this->get()`**: em HTTP puro o painel troca certo em qualquer ordem, e o painel de destino não acumula item de navegação alheio (`getNavigationItems()` devolve só o declarado no provider). É específico do `visit()`.
+
+**`fronteiraDeRequest()` não resolve**, e foi tentado duas vezes: no `beforeEach` derruba os cenários que criam model com `BelongsToTenant` (esquece `Filament::getTenant()`), e antes do `visit()` produz topbar duplicada com a barra lateral ainda errada.
+
+Regra: **o `beforeEach` não arranja painel**. Cada cenário arranja o seu, imediatamente antes de visitar. Ver `arranjarPainelApp()` em `tests/BrowserTenancy/CapturaDeArteTest.php`.
+
+E ao revisar captura de tela, confira a **barra lateral** — nenhum `assertSee` afirma sobre ela, então o defeito passa verde.

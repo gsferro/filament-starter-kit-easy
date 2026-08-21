@@ -86,10 +86,14 @@ final class Assistente extends AgenteBase implements Conversational, HasTools
             // 'minha_tool' => fn (): MinhaTool => new MinhaTool($this->user),
         ];
 
-        return collect($this->agente()->tools ?? [])
-            ->filter(fn (string $nome): bool => isset($fabricas[$nome]))
-            ->map(fn (string $nome): object => $fabricas[$nome]())
-            ->values()
-            ->all();
+        // `array_values()` por cima do `->values()`: o `all()` da Collection devolve
+        // `array<int, T>` para o analisador, e o contrato do agente é `list<object>` — o SDK
+        // itera por posição. Sem isso a promessa do PHPDoc não é verificável.
+        return array_values(
+            collect($this->agente()->tools ?? [])
+                ->filter(fn (string $nome): bool => isset($fabricas[$nome]))
+                ->map(fn (string $nome): object => $fabricas[$nome]())
+                ->all()
+        );
     }
 }

@@ -91,6 +91,31 @@ class KitUpdate extends Command
         'app/Support',
         'app/Traits',
         'config/kit.php',
+        /*
+         * Configs de pacote que o kit AJUSTOU — não são o publish cru do vendor.
+         *
+         * `media-library.php`: o `temporary_upload_model` virou string porque a classe
+         * é do Media Library Pro e não existe aqui; como `::class` reprovava no
+         * `composer types:check`.
+         *
+         * `filament-maillog.php`: ícone, ordenação e a tenancy do pacote (desligada —
+         * a tela vive no /infra, que não tem tenant). O GRUPO de navegação não sai
+         * daqui: `MailLogResource::getNavigationGroup()` lê uma chave de tradução, e
+         * por isso ele mora em `lang/vendor/filament-maillog/pt_BR`, já coberto pela
+         * entrada `lang/vendor` abaixo.
+         *
+         * Sem estas duas linhas, quem já instalou o kit nunca receberia os ajustes.
+         */
+        'config/media-library.php',
+        'config/filament-maillog.php',
+        /*
+         * `filament-shield.php`: o `separator`, o `case` e — desde o import/export de CSV
+         * — os métodos `import`/`export` em `policies.methods` são decisão do KIT, não
+         * publish cru. Sem esta linha, quem já instalou nunca recebe os dois métodos: o
+         * `shield:generate` não cria `Import:{Model}`/`Export:{Model}`, e a Action
+         * simplesmente não aparece na tela, sem erro nenhum.
+         */
+        'config/filament-shield.php',
         // Migrations, seeders e factories do kit. Os SEUS não entram no diff,
         // pela mesma razão dos comandos. Migration nova exige rodar
         // `php artisan migrate` depois de aplicar.
@@ -142,8 +167,20 @@ class KitUpdate extends Command
         'wikis/arquitetura.md',
         'wikis/convencoes.md',
         'wikis/ia.md',
+        'wikis/pacotes-candidatos.md',
+        'wikis/pacotes-ranking.md',
         'wikis/pacotes.md',
+        'wikis/qualidade-de-codigo.md',
         'wikis/receitas.md',
+
+        /*
+         * Configuração do Rector. Não é lint — é a ferramenta de upgrade, e o arquivo
+         * nasce sem nenhum set ligado de propósito. O valor dele é o bloco de instruções
+         * no topo, que diz qual set ligar em cada tipo de upgrade e por que os sets de
+         * qualidade ficam fora. Sem esta linha, quem já instalou o kit não recebe nem a
+         * ferramenta nem a decisão.
+         */
+        'rector.php',
 
         'Dockerfile.laravel',
         'docker-compose.yml',
@@ -365,7 +402,10 @@ class KitUpdate extends Command
             return $tags[0];
         }
 
-        return select(
+        // `(string)`: o `select()` dos Prompts devolve `int|string` porque a chave da opção
+        // pode ser inteira. Aqui `$tags` é `list<string>` de valores (sem chave declarada),
+        // então o que volta é sempre o próprio nome da tag.
+        return (string) select(
             label: 'Atualizar para qual versão do kit?',
             options: $tags,
             default: $tags[0],

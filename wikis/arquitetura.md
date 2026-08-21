@@ -73,6 +73,10 @@ Os defaults estão tabelados no [README](../README.md#configuração-global-do-f
 - **Ações de filtro ficam fora do `configureUsing()` global** — em tabela sem filtro a ação nasce sem nome e derruba a página inteira. Oito telas do painel infra já caíram em 500 por isso.
 - Macros do `asmit/resized-column` são aplicadas com `hasMacro()` antes: o pacote as registra em runtime, então a tabela degrada sem quebrar se ele sair.
 
+O **seletor de idioma** (`bezhansalleh/filament-language-switch`) mora aqui pelo mesmo motivo do Panel Switch, e não em cada `PanelProvider`: `LanguageSwitch::configureUsing()` é registro estático do container e o pacote pendura um **render hook global** — não é plugin de painel. Registrar por painel daria a impressão de configuração por painel com efeito global.
+
+Quem manda na lista é `config('kit.idiomas')`, lida **dentro** da closure. Lida fora, ela seria avaliada uma vez no boot e capturada por valor: o seletor exibiria a lista que existia naquele instante, não a que o request tem — foi defeito real, pego pelo caso "mostra o seletor quando há um segundo idioma". E é **lista, não booleano**: com um idioma só o botão não aparece, dentro nem fora do painel. Não há flag para alguém deixar ligada com um idioma só. A contagem é repetida explicitamente para as telas de login, porque `isVisibleOutsidePanels()` avalia só a flag — dentro do painel o pacote já exige mais de um locale sozinho.
+
 ## Ciclo de um request no painel
 
 1. Middleware do painel (sessão, CSRF, bindings) → `Authenticate`.
@@ -176,6 +180,27 @@ Widgets do kit ficam em `app/Filament/{Admin,Infra}/Widgets/` e são descobertos
 
 Bases prontas vêm de `laboiteacode/filament-dashboard-widgets` (funil, timeline, metas, breakdown) e os contadores animados de `gsferro/filament-odometer-easy` / `gsferro/filament-stat-plus-easy`.
 
+## Os quatro grupos do `/infra`
+
+`InfraPanelProvider` declara a ordem dos grupos explicitamente (`->navigationGroups([...])`) porque sem isso o Filament os ordena em ordem alfabética, e a navegação vira lista sem hierarquia de leitura. Cada plugin é encaixado num deles **pelo mecanismo que ele próprio expõe** — e os três mecanismos aparecem lado a lado nas telas novas da 0.17.0:
+
+| Grupo | Telas | Como a tela entra no grupo |
+|---|---|---|
+| **Observabilidade** | Saúde (Health), Pulse, **Exceções** | método do plugin (`->navigationGroup('Observabilidade')`) ou `$navigationGroup` da página do kit |
+| **IA** | Execuções de IA, Dashboard de IA | `$navigationGroup` do `AiRunResource` e o `navigationItems()` do painel |
+| **Trilhas** | Acessos, Auditoria, Arquivos de log, **E-mails enviados** | tradução: o `MailLogResource` lê `__('filament-maillog::filament-maillog.navigation.group')` — não há chave de config nem método de plugin, então o grupo mora em `lang/vendor/filament-maillog/pt_BR/` |
+| **Sistema** | Central de comandos, Mapa de dependências, **Lixeira** | método do plugin |
+
+Backup Monitor e Auditing não expõem nem método nem chave: ficam soltos no topo do menu, antes dos grupos. Filas vêm de `config/filament-jobs-monitor.php`.
+
+**Exceções** (`bezhansalleh/filament-exceptions`) responde a pergunta que nenhuma das outras respondia: *qual exception está estourando, e quantas vezes*. Saúde cobre estado, Pulse cobre desempenho, Logs Explorer cobre o arquivo e Filas cobrem o job — achar um erro recorrente exigia saber o dia e caçar dentro do arquivo. O plugin é registrado nos **três** painéis, com navegação só aqui; o porquê está em [convencoes.md](convencoes.md#armadilhas-já-resolvidas).
+
+**E-mails enviados** (`tapp/filament-maillog`) existe por causa do convite: ele é a única porta de entrada de usuário e não deixava registro nenhum, então "o convite não chegou" era impossível de responder — não dava para separar *não foi enviado* de *foi enviado e caiu no spam*.
+
+**Lixeira** (`promethys/revive`) fica no `/infra` e **não** no `/app`, apesar de o pacote suportar escopo por tenant: uma tela que lista tudo o que foi apagado na instalação é, ela mesma, exposição de dado. Aqui entrar já exige `master_global` ou `infra`; no `/app` qualquer papel do painel veria. Por isso ela vai com `withoutScoping()` — o `/infra` não tem tenancy, não haveria de onde tirar o escopo.
+
+As duas primeiras **gravam dado sensível**: stack trace com parâmetro de request e corpo de e-mail com o link de aceite. É metade da razão de viverem só aqui; a outra metade é a [retenção](#agendamentos), que não é opcional.
+
 ## Multi-tenancy (opt-in)
 
 O kit nasce **single-tenant**. `php artisan kit:tenancy` liga o modo multi-tenant; sem ele, nada nesta seção existe na prática.
@@ -264,6 +289,69 @@ Ficam em `tests/Tenancy/`, suíte própria e mesmo grupo `kit`. A separação é
 
 `Tests\TestCase` invalida o schema quando o modo muda, para que `--group=kit` rode os dois modos no mesmo processo sem colisão.
 
+## Camada de mídia
+
+Arquivo anexado a registro é `spatie/laravel-medialibrary`, pela ponte oficial `filament/spatie-laravel-media-library-plugin`. Não há tabela de anexo por model, nem coluna de caminho: tudo vive na tabela **polimórfica** `media` (`morphs('model')`), e a model declara coleções em vez de colunas.
+
+É a polimorfia que decide o isolamento. O arquivo pertence a **um registro**, e o registro já é escopado por `BelongsToTenant` — quem não alcança o dono não alcança o anexo. **O isolamento por organização é herdado, não configurado**: não existe coluna de tenant em `media`, e não existe checkbox a lembrar de marcar. Foi esse o critério que escolheu este pacote em vez do `awcodes/filament-curator`, cuja biblioteca é **compartilhada** por natureza e cujo escopo por tenant nasce **desligado** — o isolamento passaria a depender de alguém ligar uma flag, e falharia aberto se esquecesse.
+
+### Os três furos do isolamento herdado
+
+Herdado quer dizer que ele existe **quando há de quem herdar**. Três casos em que não há:
+
+1. **Query direta em `Media`.** `Media::query()` não tem escopo nenhum — a tabela não tem coluna de tenant e o escopo do dono não a alcança. Contar, listar ou exportar mídia por ali devolve a instalação inteira.
+2. **Dono que não é escopado.** O `User` do kit pertence a **várias** organizações (a pivot `tenant_user`), então não usa `BelongsToTenant`: avatar e qualquer mídia de usuário são globais por construção. É correto para foto de perfil e errado para qualquer coisa que seja de uma organização só.
+3. **Model nova sem `BelongsToTenant`.** A mídia dela é global pelo mesmo motivo. A trait não é opcional numa model de negócio — ver [Model de negócio pertence a um tenant](convencoes.md#model-de-negócio-pertence-a-um-tenant).
+
+### A camada de URL é assinada, não autorizada
+
+O escopo herdado vale para a **query**. Não vale para o **arquivo**, e quem decide isso é o **disco** — não a visibilidade declarada no campo de upload.
+
+`MEDIA_DISK` nasce **`local`**, cuja `serve => true` (`config/filesystems.php`) registra a rota `storage.local`, que **exige URL assinada**. Com `public` o arquivo cairia em `storage/app/public`, servido pelo symlink `public/storage`: caminho `/storage/{id}/{arquivo}`, ID **sequencial**, alcançável **sem sessão**. A tenancy do Filament vive no request do painel; ela nunca chega ao sistema de arquivos.
+
+O que isso resolve, e o que **não** resolve:
+
+- **Resolve** o arquivo alcançável por quem só adivinhou o ID. Sem assinatura a rota devolve 403 antes mesmo de checar se o arquivo existe.
+- **Não resolve** autorização. A rota valida a **assinatura**, não o usuário: **quem tem o link entra, sem sessão, durante a validade**. É limite aceito e documentado, não descuido. Anexo que precise de autorização por organização pede rota própria consultando a policy antes de entregar.
+
+Duas consequências para quem escreve código aqui:
+
+1. **`Media::getUrl()` de mídia privada responde 403** — falha fechada. Link publicável se obtém com **`getTemporaryUrl()`**.
+2. **Coleção de mídia declara o disco** (`->useDisk('local')` em `registerMediaCollections()`), mesmo sendo redundante com o default. É defesa em profundidade: trocar `MEDIA_DISK` de volta não reabre o vazamento na coleção.
+
+Avatar e logo continuam em `->disk('public')` **explícito**, e isso é deliberado: aparecem na tela de login, antes de existir sessão para assinar nada.
+
+Instalação anterior a esta mudança tem mídia já gravada em disco público, e a config nova não a alcança: **`php artisan kit:midia-privada`** (com `--dry-run`) move original e conversões e atualiza as colunas `disk`/`conversions_disk`. Ele preserva coleção que declara `useDisk('public')`.
+
+## Import e export: o worker perde o tenant, o export o herda
+
+Import e export de CSV são **nativos do Filament 5** — `ImportAction`, `ExportAction`, os jobs, o batch, as tabelas `imports` / `exports` / `failed_import_rows`. O kit não escreve wrapper nenhum em volta disso. Ele acrescenta duas classes base em `app/Support/ImportExport/`, e a razão de existirem é uma assimetria que não aparece na API: **os dois lados atravessam a fronteira de organização em direções opostas.**
+
+| | Onde a query nasce | O que acontece com `BelongsToTenant` |
+|---|---|---|
+| **Export** | no **request** (`CanExportRecords::getTableQueryForExport()`, a tabela da tela) | o escopo global aplica o `where tenant_id = X`, a query é serializada **com** ele dentro, e é isso que o job executa |
+| **Import** | no **worker** (`Importer::resolveRecord()`, uma linha do CSV por vez) | `Filament::getTenant()` devolve `null` — não há painel nem rota na sessão — e o escopo global vira **no-op** |
+
+O isolamento do export é **herdado**, e por isso `ExportadorDoKit` não tem uma linha de código de tenant: nada a construir. O do import tem de ser **construído**, porque o que existiria de graça foi perdido antes de a primeira linha ser lida. `ImportCsv` restaura o `auth()->setUser()` — o **usuário**, para que a policy e a notificação funcionem. Nada restaura o tenant, e o próprio `Importer` do Filament avisa no código que não faz esse tipo de verificação (`// Security: This method runs without policy checks.`).
+
+Sem `ImportadorDoKit`, as duas consequências são silenciosas: linha de CSV cuja chave casa com registro de **outra** organização faz UPDATE nele (sem 403, sem log), e linha nova nasce com `tenant_id` **nulo**, invisível para todo mundo — inclusive para quem importou.
+
+A correção é de **duas pontas**, e nenhuma delas funciona sozinha:
+
+1. **A Action captura o tenant no request** — `->options(['tenant_id' => Filament::getTenant()?->getKey()])`. O array de options viaja no payload do job, que é onde o dado ainda existe.
+2. **A classe base o usa nas duas pontas** — filtra a resolução do registro e preenche a criação, no lugar do hook `creating` da trait, que ali não tem contexto.
+
+E ela **falha fechada**: tenancy ligada, model que usa `BelongsToTenant`, nenhum `tenant_id` nas options ⇒ a linha é recusada com `RowImportFailedException` e o motivo vai para o log. O contrário — seguir sem escopo — é exatamente o defeito que a classe fecha. Em single-tenant, ou em model que não é de organização (`AgenteIa`, `Tenant`), a exigência não se aplica: não há fronteira, e cobrar uma mataria a feature no modo que o kit tem por default.
+
+> ⚠️ **Cenário de teste que passa pela tela não prova nada aqui.** Ele roda no request, onde o tenant existe: fica verde com a classe base inteira removida. O que prova é chamar o importador **direto**, sem tenant no contexto — a reprodução fiel do worker. É o que `tests/Tenancy/ImportExportTenancyTest.php` faz.
+
+### O que mais essas duas classes decidem
+
+- **Fórmula neutralizada em toda coluna.** `preventFormulaInjection()` existe **por coluna** no Filament e nasce **desligado**. Célula começando em `=`, `+`, `-` ou `@` é fórmula quando alguém abre o CSV no Excel, e o dado que a preencheu veio de formulário de usuário. `ExportadorDoKit` aplica a neutralização a toda coluna que a subclasse declarar — daí a subclasse declarar `colunas()` e não `getColumns()`, que é `final`. `ImportadorDoKit` liga a mesma coisa, porque o CSV de linhas que falharam volta para download.
+- **Autorização explícita, porque a Action não tem.** `Actions\Concerns\CanBeAuthorized` nasce com autorização `null` — liberada. `import` e `export` foram acrescentados a `config('filament-shield.policies.methods')` (e a `single_parameter_methods`, porque nenhum dos dois recebe registro) e cada Action carrega `->authorize('import')` / `->authorize('export')` na mão. Ler a listagem e levar a listagem inteira embora são duas permissões diferentes — e `panel_user` não nasce com nenhuma das duas, por subtração de **prefixo de ação** no `PapeisSeeder`.
+- **Coluna ausente é decisão de arquitetura, não esquecimento.** `tenant` fora do `ProjetoImporter` (senão o CSV escolhe a organização de destino e a fronteira acima fica decorativa), `token` fora do `ConviteExporter`, `request`/`response` fora do `AiRunExporter`. O gerador do Filament recoloca as três em `--force`; quem guarda a ausência são os testes de `tests/Kit/ImportExportTest.php`.
+- **Rastro sem tabela nova.** `imports` e `exports` são do pacote e **não têm `tenant_id`** — não respondem de qual organização saiu o arquivo, que é a pergunta de uma auditoria de vazamento. `KitServiceProvider::configureRastroDeImportExport()` completa isso no channel `tenancy`. Import tem eventos de verdade (`ImportStarted` / `ImportCompleted`); o export **não tem nenhum** no Filament, então o gancho é o model `Export` (`created`, e `completed_at` recém-preenchido). A retenção dos dois históricos é de **30 dias**, e a do export apaga o **arquivo** antes da linha — ver [Retenção](#retenção-o-prazo-é-config-o-expurgo-é-schedule).
+
 ## Erros e traduções
 
 - Páginas de erro (403, 404, 419, 500, 503) são do `anselmokossa/filament-sentinel`, com views próprias em `resources/views/errors/`. A de 403 só mostra o diagnóstico de permissão **fora de produção**.
@@ -271,7 +359,20 @@ Ficam em `tests/Tenancy/`, suíte própria e mesmo grupo `kit`. A separação é
 
 ## Agendamentos
 
-`routes/console.php` guarda o schedule do kit: `health:check` a cada 15 minutos e `authentication-log:purge` diário. Backup vem comentado, para você ligar ao configurar o destino. Nada disso roda sem `php artisan schedule:work` (já incluso no `composer dev`) ou o serviço `scheduler` do compose — e é justamente o `ScheduleCheck` do Health que denuncia o agendador parado.
+`routes/console.php` guarda o schedule do kit: `health:check` a cada 15 minutos, `authentication-log:purge` diário, o lembrete de convites às 8h e a **retenção das duas trilhas que o kit grava**. Backup vem comentado, para você ligar ao configurar o destino.
+
+### Retenção: o prazo é config, o expurgo é schedule
+
+`config('kit.retencao')` declara **quanto tempo** exceções e e-mails sobrevivem (14 dias nos dois, alinhado ao `days` da rotação de log — a trilha morre junto com o log que a originou, não depois). Quem **aplica** é `routes/console.php`. Separar os dois é o ponto: com o agendador parado, o número no config é intenção declarada e as tabelas crescem sem teto — as duas crescem por evento e as duas guardam dado sensível.
+
+São **dois mecanismos diferentes**, e é o pacote que decide qual:
+
+| Trilha | Mecanismo | Por quê |
+|---|---|---|
+| Exceções | `model:prune --model=…`, 02:00 | o `Exception` do pacote declara `prunable()`, o contrato do Laravel; a data de corte sai de `modelPruneInterval()` no `InfraPanelProvider`, lendo o mesmo config |
+| E-mails | `delete()` direto num `Schedule::call`, 02:10 | o `MailLog` **não** implementa `Prunable`. Passá-lo no `--model` daria um agendamento verde que nunca apaga nada — o pior resultado possível para uma rotina de dado pessoal |
+
+O `--model` é explícito de propósito: a varredura automática do `model:prune` alcançaria qualquer model podável do projeto, inclusive as **suas**, e retenção de dado de terceiro não pode ser efeito colateral de um agendamento do kit. Zero ou negativo em qualquer dos dois prazos desliga aquela poda, sem apagar nada por engano. Nada disso roda sem `php artisan schedule:work` (já incluso no `composer dev`) ou o serviço `scheduler` do compose — e é justamente o `ScheduleCheck` do Health que denuncia o agendador parado.
 
 ## Testes
 

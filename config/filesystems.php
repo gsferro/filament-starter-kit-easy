@@ -41,7 +41,11 @@ return [
         'public' => [
             'driver'     => 'local',
             'root'       => storage_path('app/public'),
-            'url'        => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            // `(string)`: `env()` devolve bool quando o valor literal é "true"/"false", e
+            // `rtrim()` exige string. APP_URL com esse conteúdo é configuração errada de
+            // qualquer forma — o cast a transforma em URL vazia, que é o mesmo que o default
+            // do Laravel faria, em vez de um TypeError no boot.
+            'url'        => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw'      => false,
             'report'     => false,

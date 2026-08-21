@@ -124,8 +124,11 @@ class DemoTenancySeeder extends Seeder
             return;
         }
 
-        $projeto            = new Projeto(['nome' => $nome]);
-        $projeto->tenant_id = $tenant->id;
+        // `associate()` e não `$projeto->tenant_id = $tenant->id`: quem sabe qual é a coluna
+        // da FK é a própria relação, e o valor vem da chave primária do model — sem repetir
+        // aqui o nome da coluna nem o tipo dela.
+        $projeto = new Projeto(['nome' => $nome]);
+        $projeto->tenant()->associate($tenant);
         $projeto->save();
     }
 }

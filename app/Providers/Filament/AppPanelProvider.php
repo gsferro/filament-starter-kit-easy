@@ -13,6 +13,7 @@ use App\Http\Middleware\DefinirTenantDePermissoes;
 use App\Models\Tenant;
 use App\Support\CorPrimaria;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
+use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
 use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
@@ -275,8 +276,34 @@ class AppPanelProvider extends PanelProvider
                  */
                 SimpleLightBoxPlugin::make(),
 
-                // Páginas hub em grade de cartões (App\Filament\App\Pages\HubDoNegocio).
+                // Páginas hub em grade de cartões (App\Filament\App\Pages\HubDoNegocio),
+                // ligadas por config('kit.hub') — desligado no default do kit.
                 FilamentCardsPlugin::make(),
+
+                /*
+                 * Registrado aqui SEM navegação, e isso não é opcional.
+                 *
+                 * A tela de exceções pertence ao /infra, e só lá ela aparece. Mas o
+                 * `ExceptionResource` do pacote resolve o plugin pelo painel CORRENTE — os
+                 * métodos estáticos de navegação dele chamam `FilamentExceptionsPlugin::get()`,
+                 * que é o helper `filament()`. E o filament-shield percorre
+                 * `Filament::getPanels()` no boot para montar a matriz de permissões, sem
+                 * fixar o painel corrente: a resolução cai no painel DEFAULT, que é este.
+                 *
+                 * Sem esta linha, `LogicException: Plugin [filament-exceptions] is not
+                 * registered for panel [app]` derruba TODO request e TODO comando artisan —
+                 * `migrate` e `inspire` inclusive. Medido, não suposto.
+                 *
+                 * Mesma armadilha do `Lockscreen` logo acima, mesma saída: registrar nos
+                 * três. A diferença é o `registerNavigation(false)`, porque aqui a tela não
+                 * deve aparecer.
+                 *
+                 * Consequência que NÃO pode ser esquecida: o resource passa a existir na
+                 * matriz deste painel, então `Exception` entra na lista de subtração do
+                 * `panel_user` no `PapeisSeeder`. Ver .ai/rules/filament.md §4.
+                 */
+                FilamentExceptionsPlugin::make()
+                    ->registerNavigation(false),
             ])
             /*
              * Gatilho da busca ⌘K, no lugar exato do campo nativo.
@@ -290,6 +317,18 @@ class AppPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn (): string => view('filament.spotlight-trigger')->render(),
+            )
+            /*
+             * Cabeçalho de identidade: avatar, nome, e-mail e o badge do papel.
+             *
+             * USER_MENU_PROFILE_BEFORE renderiza DENTRO do dropdown, e é por isso
+             * que ele serve aqui. Não contradiz o bloco de cima: lá o gatilho ⌘K
+             * precisava ficar na TOPBAR, e foi esse mesmo fato que desqualificou o
+             * USER_MENU_BEFORE. Mesmo comportamento, exigência oposta.
+             */
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_PROFILE_BEFORE,
+                fn (): string => view('filament.user-menu-header')->render(),
             )
             ->middleware([
                 EncryptCookies::class,

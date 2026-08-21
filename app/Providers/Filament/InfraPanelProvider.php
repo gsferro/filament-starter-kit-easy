@@ -6,12 +6,15 @@ use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
+use App\Models\Projeto;
 use App\Support\CorPrimaria;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
+use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Bityukov\CommandCenter\Filament\CommandCenterPlugin;
 use Bityukov\CommandCenter\Filament\Pages\Commands as CommandCenterCommands;
 use Bityukov\CommandCenter\Filament\Pages\History as CommandCenterHistory;
 use Brimham\FilamentBackupMonitor\FilamentBackupMonitorPlugin;
+use Carbon\Carbon;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
 use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
@@ -45,11 +48,13 @@ use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use lockscreen\FilamentLockscreen\Lockscreen;
 use MominAlZaraa\FilamentComposerReleaseNotifier\FilamentComposerReleaseNotifierPlugin;
 use Prodstarter\FilamentNotificationCenter\FilamentNotificationCenterPlugin;
+use Promethys\Revive\RevivePlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
 use ShuvroRoy\FilamentSpatieLaravelHealth\FilamentSpatieLaravelHealthPlugin;
 use SolutionForest\FilamentSimpleLightBox\SimpleLightBoxPlugin;
 use Tapp\FilamentAuditing\FilamentAuditingPlugin;
 use Tapp\FilamentAuthenticationLog\FilamentAuthenticationLogPlugin;
+use Tapp\FilamentMailLog\FilamentMailLogPlugin;
 use Wezlo\FilamentSearchSpotlight\Categories\ActionsCategory;
 use Wezlo\FilamentSearchSpotlight\Categories\RecordsCategory;
 use Wezlo\FilamentSearchSpotlight\FilamentSearchSpotlightPlugin;
@@ -252,7 +257,97 @@ class InfraPanelProvider extends PanelProvider
                 // Os gráficos do kit (App\Filament\Infra\Widgets\Ia*, FilasTaxaDeSucesso).
                 FilamentApexChartsPlugin::make(),
 
+                /*
+                 * Exceções agrupadas por tipo e frequência.
+                 *
+                 * O /infra já mostrava SAÚDE (Health), DESEMPENHO (Pulse), ARQUIVO DE LOG
+                 * (LogsExplorer) e FILAS (JobsMonitor) — e nenhum deles responde "qual
+                 * exception está estourando, e quantas vezes". Achar isso no LogsExplorer
+                 * exigia saber o dia e caçar dentro do arquivo.
+                 *
+                 * A retenção não é opcional: a tabela cresce por request com defeito, e um
+                 * bug em laço enche o disco em horas. O prazo vem de
+                 * `config('kit.retencao.excecoes_em_dias')`, que nasce em 14 para acompanhar
+                 * o `days` da rotação em `config/logging.php` — a trilha morre junto com o
+                 * log que a originou, não depois.
+                 *
+                 * `modelPruneInterval()` recebe a DATA DE CORTE, não uma quantidade de dias:
+                 * o `Exception::prunable()` do pacote faz
+                 * `whereDate('created_at', '<=', $intervalo)`. Passar `14` compararia
+                 * `created_at` com o ano 14 e nunca podaria nada. O default do pacote é
+                 * `now()->subWeek()`.
+                 *
+                 * Quem APLICA é o `model:prune` agendado em `routes/console.php` — sem o
+                 * agendador rodando, isto aqui é só intenção declarada.
+                 *
+                 * Cuidado com o dado: o stack trace guardado pode conter parâmetro de
+                 * request, logo pode conter dado pessoal. É parte do motivo de a tela viver
+                 * só aqui, onde entrar já exige `master_global` ou `infra`.
+                 */
+                FilamentExceptionsPlugin::make()
+                    ->navigationGroup('Observabilidade')
+                    ->navigationSort(60)
+                    ->navigationBadge()
+                    /*
+                     * `Carbon::now()` explícito, e não o helper `now()`: o kit faz
+                     * `Date::use(CarbonImmutable::class)` no KitServiceProvider, então
+                     * `now()` devolve `CarbonImmutable` — e a assinatura do pacote pede
+                     * `Carbon` (o mutável). O PHPStan pega; em runtime seria TypeError.
+                     */
+                    ->modelPruneInterval(
+                        Carbon::now()->subDays((int) config('kit.retencao.excecoes_em_dias', 14)),
+                    ),
+
+                /*
+                 * Trilha de e-mail enviado.
+                 *
+                 * O kit envia `ConviteDeAcesso`, que é a ÚNICA porta de entrada de usuário, e
+                 * não guardava registro nenhum. "O convite não chegou" era impossível de
+                 * responder — não dava para separar "não foi enviado" de "foi enviado e caiu
+                 * no spam".
+                 *
+                 * Mesma ressalva de dado pessoal do plugin acima, e mais forte: o corpo do
+                 * e-mail é gravado, e o convite carrega o link de aceite. A retenção está no
+                 * agendamento de `routes/console.php`, não no plugin.
+                 *
+                 * Sem `->navigationGroup()`: o resource lê grupo e ícone de
+                 * `config/filament-maillog.php`, então rótulo em dois lugares seria um deles
+                 * errado — mesmo motivo do jobs-monitor.
+                 */
+                FilamentMailLogPlugin::make(),
+
+                /*
+                 * Lixeira: restaura o que foi apagado com `SoftDeletes`.
+                 *
+                 * Aqui e NÃO no /app, apesar de o pacote suportar escopo por tenant. Duas
+                 * razões: a lixeira varre models da instalação inteira, e uma tela que lista
+                 * tudo que foi apagado é, ela mesma, exposição de dado. No /infra entrar já
+                 * exige `master_global` ou `infra`; no /app qualquer papel do painel veria.
+                 *
+                 * `models()` explícito em vez de `modelsNamespace()`: a varredura automática
+                 * de `app/Models` alcançaria `User`, `Role` e `Tenant`, cuja restauração tem
+                 * consequência de AUTORIZAÇÃO — um usuário volta com papel numa organização
+                 * que pode não existir mais. Lista explícita é a mesma escolha da allow-list
+                 * do command-center: a trava é a lista, não o gate.
+                 *
+                 * `withoutScoping()` porque o /infra não tem tenancy: escopo por tenant aqui
+                 * não teria de onde sair. Se um dia a lixeira for para o /app, é
+                 * `enableTenantScoping()` que entra — e com CT provando o isolamento.
+                 *
+                 * Hoje só `Projeto` usa `SoftDeletes` no kit. A tela nasce com um model e
+                 * cresce com o seu: acrescente aqui toda model que ganhar a trait.
+                 */
+                RevivePlugin::make()
+                    ->navigationGroup('Sistema')
+                    ->navigationLabel('Lixeira')
+                    ->navigationSort(250)
+                    ->models([
+                        Projeto::class,
+                    ])
+                    ->withoutScoping(),
+
                 // Páginas hub em grade de cartões (App\Filament\Infra\Pages\HubDeInfraestrutura).
+                // Este painel NAO depende de config('kit.hub') — ver o docblock da Page.
                 FilamentCardsPlugin::make(),
             ])
             /*
@@ -277,6 +372,18 @@ class InfraPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn (): string => view('filament.spotlight-trigger')->render(),
+            )
+            /*
+             * Cabeçalho de identidade: avatar, nome, e-mail e o badge do papel.
+             *
+             * USER_MENU_PROFILE_BEFORE renderiza DENTRO do dropdown, e é por isso
+             * que ele serve aqui. Não contradiz o bloco de cima: lá o gatilho ⌘K
+             * precisava ficar na TOPBAR, e foi esse mesmo fato que desqualificou o
+             * USER_MENU_BEFORE. Mesmo comportamento, exigência oposta.
+             */
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_PROFILE_BEFORE,
+                fn (): string => view('filament.user-menu-header')->render(),
             )
             ->middleware([
                 EncryptCookies::class,

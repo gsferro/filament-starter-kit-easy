@@ -113,7 +113,8 @@ Registros de catálogo (ex.: `agentes_ia`) usam flag `ativo` em vez de `DELETE`.
 |---|---|---|
 | Pint | `vendor/bin/pint --dirty` | sempre, antes de finalizar mudança em PHP |
 | PHPStan (larastan) | `composer types:check` | antes de PR |
-| Suíte completa | `composer test` | pint + phpstan + testes |
+| Filacheck | `composer filament:check` | antes de PR — lint específico do Filament (`laraveldaily/filacheck`), que olha o que PHPStan não olha: uso de API das telas |
+| Suíte completa | `composer test` | pint + phpstan + filacheck + testes |
 
 Regras de PHP que o Boost já cobra e valem aqui: chaves sempre em estruturas de controle, promoção de propriedade no construtor, tipos de retorno e de parâmetro explícitos, `TitleCase` em chave de Enum, PHPDoc em vez de comentário inline.
 
@@ -201,6 +202,9 @@ Código que parece errado e **é deliberado**. Antes de "corrigir" qualquer linh
 | Todo `ApexChartWidget` declara `$pollingInterval` | parece configuração repetida | o default do pacote é **5 segundos**, por widget e por aba aberta: três gráficos numa aba esquecida geram 36 consultas agregadas por minuto, indefinidamente e sem ninguém olhando. Custo de banco proporcional a abas esquecidas |
 | Cor de gráfico por token (`var(--success-500)`), nunca hexadecimal | parece preciosismo | hexadecimal literal ignora tema claro/escuro e a identidade visual da organização no `/app` — é o mesmo defeito que o `resources/css/filament/kit.css` existe para corrigir no alternador de painel |
 | `ConvitesPorSituacao` carrega três colunas de cada convite em vez de agregar em SQL | parece consulta ineficiente | não há coluna de status: a situação é derivada por `Convite::situacao()`, e a regra tem uma precedência que um `where` ingênuo erra — **aceito vence expirado**. Reescrever em SQL cria uma segunda definição do mesmo estado, que é exatamente como a divergência volta |
+| `FilamentExceptionsPlugin` registrado nos **três** painéis, com `->registerNavigation(false)` no `/app` e no `/admin` | parece plugin sobrando em painel que não tem a tela | o `ExceptionResource` resolve o plugin pelo painel **corrente** (`FilamentExceptionsPlugin::get()`, pelo helper `filament()`) já nos métodos **estáticos** de navegação, e o `filament-shield` percorre `Filament::getPanels()` no boot **sem fixar** qual é o corrente — a resolução cai no painel default. Painel sem o plugin estoura `LogicException: Plugin [filament-exceptions] is not registered for panel [app]` em **todo** request e em **todo** comando artisan, `migrate` e `inspire` inclusive. Medido, não suposto. É a mesma armadilha do `Lockscreen`, e a saída é a mesma: registrar nos três, com navegação só onde a tela deve estar |
+| `ExceptionResource` na lista de subtração do `panel_user` (`PapeisSeeder`) | parece resource de vendor entrando numa lista de telas do `/app` | é **consequência obrigatória** da linha acima: registrar o plugin no painel `app` põe o resource na matriz de permissões **daquele** painel. Sem a subtração, todo usuário comum herda `ViewAny:Exception` e companhia — e a rota existe no painel dele, então a permission basta para ler **stack traces da instalação inteira**, que carregam parâmetro de request de qualquer organização. Medido: 12 permissions de `Exception` no banco, **0** no `panel_user`. Vale como regra geral: plugin registrado por obrigação técnica num painel exige revisar a matriz daquele painel |
+| `modelPruneInterval(Carbon::now()->subDays($dias))` | parece que o método pede uma quantidade de dias | ele recebe a **data de corte**: o `Exception::prunable()` do pacote faz `whereDate('created_at', '<=', $intervalo)`. Passar `14` compararia `created_at` com o **ano 14** e nunca podaria nada — agendamento verde, tabela crescendo, ninguém avisado. E é `Carbon` **mutável**, não o helper `now()`: o kit faz `Date::use(CarbonImmutable::class)` no `KitServiceProvider` e a assinatura do pacote pede o mutável — o PHPStan pega, em runtime seria `TypeError` |
 
 ## Onde cada coisa se configura
 
@@ -221,3 +225,8 @@ Código que parece errado e **é deliberado**. Antes de "corrigir" qualquer linh
 | Arte do login | `public/images/auth/login.svg` |
 | Ligar multi-tenancy | `php artisan kit:tenancy` (destrutivo — ver [arquitetura](arquitetura.md#multi-tenancy-opt-in)) |
 | Termo do tenant na UI | `kit.tenancy.label` / `label_plural` / `slug` em `config/kit.php` |
+| Retenção das trilhas (exceções, e-mails) | `KIT_RETENCAO_EXCECOES_DIAS` / `KIT_RETENCAO_EMAILS_DIAS` no `.env` (`kit.retencao` em `config/kit.php`). O config declara o prazo; **quem aplica é `routes/console.php`** |
+| Idiomas oferecidos no seletor | `kit.idiomas` em `config/kit.php` — um item só esconde o botão. O seletor em si é configurado em `ConfiguraFilamentGlobal` |
+| Grupo de navegação da trilha de e-mail | `lang/vendor/filament-maillog/pt_BR/filament-maillog.php` → `navigation.group`. O resource lê de uma chave de **tradução**, não de config nem de método de plugin — mudar em qualquer outro lugar não tem efeito |
+| Models restauráveis pela Lixeira | `RevivePlugin::make()->models([...])` no `InfraPanelProvider` (lista explícita, de propósito) |
+| Disco dos anexos | `MEDIA_DISK` / `MEDIA_PREFIX` no `.env` (`config/media-library.php`) |

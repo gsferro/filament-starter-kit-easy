@@ -71,6 +71,58 @@ Apontar `$tenantOwnershipRelationshipName` para a relação plural funciona e fo
 
 Teste em par: um caso conferindo `isScopedToTenant() === false` + `Model::query()->count()` sem exception, e outro conferindo que a query fecha (0, não "todos") sem tenant corrente.
 
+## Resource novo decide import e export, e a decisão nasce escrita no arquivo
+
+Ao criar um Resource com listagem, decida as duas coisas — importar CSV e exportar CSV — e deixe a decisão **no arquivo da Page**, ligada ou comentada. Ausência silenciosa não é decisão: ninguém volta para reavaliar o que nunca foi escrito.
+
+O mecanismo é o nativo do Filament 5 (`ImportAction`, `ExportAction`, job, batch, notificação com botão de download). O kit não tem wrapper. O que ele acrescenta são duas classes-base em `app/Support/ImportExport/`, e cada uma existe por um motivo que não dá para omitir.
+
+### As duas linhas, no `getHeaderActions()`
+
+```php
+ImportAction::make()
+    ->importer(SeuImporter::class)
+    ->authorize('import')
+    // Só em painel COM tenancy e model com BelongsToTenant:
+    ->options(fn (): array => ['tenant_id' => Filament::getTenant()?->getKey()]),
+
+ExportAction::make()
+    ->exporter(SeuExporter::class)
+    ->authorize('export'),
+```
+
+Não faz sentido? Deixe as linhas **comentadas**, com uma frase dizendo o que descomentar expõe. Ver `app/Filament/App/Resources/Users/Pages/ListUsers.php`, onde export nasce comentado porque a planilha sai com o e-mail de todo mundo, e import não existe porque criar conta por CSV contorna convite, verificação de e-mail e atribuição de papel.
+
+### `->authorize()` não é opcional
+
+**Action do Filament não consulta policy sozinha.** O vendor diz isso em `Concerns/CanBeAuthorized.php`: a autorização default é `null`, ou seja, liberada para todo mundo. Sem a linha, quem abre a listagem exporta a listagem inteira.
+
+`import` e `export` são métodos de policy do kit — estão em `config('filament-shield.policies.methods')` (e em `single_parameter_methods`, porque nenhum dos dois recebe registro) e geram `Import:{Model}` e `Export:{Model}`. **Depois de criar o Resource, ressemeie os dois seeders**, como manda a regra "Resource ou RelationManager novo exige gerar as permissões": sem a permission no banco a Action simplesmente não aparece, sem erro nenhum.
+
+`panel_user` **não** herda as duas: `PapeisSeeder::ehPermissaoDeImportOuExport()` as subtrai por prefixo da ação, e é a única subtração do kit que casa por prefixo em vez de FQCN — de propósito, porque `Import:` só aparece em permissão de import, para qualquer model presente ou futuro. Resource novo nasce com as duas fora do usuário comum sem ninguém lembrar de nada.
+
+### O import perde o tenant, e o export não
+
+**Estenda `App\Support\ImportExport\ImportadorDoKit`, nunca o `Importer` do Filament.** `resolveRecord()` roda DENTRO do worker, onde `Filament::getTenant()` é `null` e o escopo global de `BelongsToTenant` vira no-op. O `ImportCsv` do Filament restaura o `auth()->setUser()` — o usuário, não o tenant. Sem a classe-base, duas coisas acontecem em silêncio: linha cuja chave colide com registro de OUTRA organização faz UPDATE nele, e linha nova nasce com `tenant_id` nulo, invisível para todo mundo. A base recebe o `tenant_id` das `options` (capturado no request, onde o tenant existe), escopa a resolução, preenche a criação e **recusa a linha** se a organização for necessária e não chegar.
+
+**Estenda `App\Support\ImportExport\ExportadorDoKit` e declare `colunas()`, não `getColumns()`.** Ele liga `preventFormulaInjection()` em toda coluna — o default do Filament é desligado, por coluna, e célula começando em `=`, `+`, `-` ou `@` é fórmula quando alguém abre o CSV no Excel. O escopo por organização o export ganha de graça: a query vem da tabela da tela (`getTableQueryForExport()`), montada no request já com o `where tenant_id`, e é serializada com ele dentro.
+
+### O gerador do Filament devolve colunas que não podem ir
+
+`make:filament-importer Model -G` e `make:filament-exporter Model -G` inferem colunas do banco, e três classes de coluna precisam sair na mão:
+
+- **A FK do tenant no import.** O gerador cria `ImportColumn::make('tenant')->relationship()`. Aceitá-la deixa o CSV escolher a organização de destino e torna a fronteira decorativa.
+- **Segredo.** `token`, `token_lembrete`: `Convite::aceitar()` valida o token e vincula o usuário à organização com o papel do convite — CSV com essa coluna é planilha de chaves de entrada.
+- **Payload livre.** `request`/`response` do ledger de IA são prompt e resposta completos, de qualquer organização.
+
+`--force` põe tudo de volta. Os casos que reprovam estão em `tests/Kit/ImportExportTest.php`.
+
+### Teste
+
+Um caso chamando o **importador direto**, sem tenant no contexto — é a reprodução fiel do worker. Cenário que passa pela tela mede o contexto, não a fronteira: fica verde com a classe-base inteira removida. Ver `tests/Tenancy/ImportExportTenancyTest.php`.
+
+E lembre: sem worker de fila nada processa. `composer dev` sobe um.
+
 ## Mídia em tabela
 
 Coluna de imagem nasce com `->simpleLightbox()` e `->disk('public')` explícito, sem `defaultImageUrl()`. O plugin precisa estar registrado no painel: `simpleLightbox()` é macro do `boot(Panel $panel)`, e coluna num painel sem ele derruba a tela com `BadMethodCallException` na renderização. Documento (PDF/Office) só quando o arquivo é público e não sensível — o preview passa por Google/Microsoft.
@@ -78,3 +130,12 @@ Coluna de imagem nasce com `->simpleLightbox()` e `->disk('public')` explícito,
 ## Qual pacote de widget
 
 Gráfico é `filament-apex-charts`; stat card é `filament-stat-plus-easy`; o resto é `filament-dashboard-widgets`. Todo `ApexChartWidget` declara `$pollingInterval` (o default é 5 s por aba aberta) e `canView()` com `Schema::hasTable()` quando a fonte é tabela opcional — widget que estoura derruba o dashboard inteiro.
+
+## Em Page, canAccess() sozinho basta; em Resource são dois métodos
+Para esconder uma Page de painel por config/permissão, sobrescreva SÓ `canAccess()`. Um método cobre os três efeitos: `Page::registerNavigationItems()` retorna cedo quando `canAccess()` é falso (`vendor/filament/filament/src/Pages/Page.php:133-135`), a rota responde 403 via `abort_unless()` (`vendor/filament/filament/src/Pages/Concerns/CanAuthorizeAccess.php:8-15`), e a categoria `PagesAutorizadasCategory` do Spotlight consulta o mesmo método.
+
+Em **Resource** são dois: `canAccess()` E `shouldRegisterNavigation()` — é o que `ProjetoResource`, `TenantResource`, `ConviteResource` e os dois `UserResource` fazem. Copiar esse par para uma Page acrescenta um método que não muda nada e sugere uma barreira a mais do que existe.
+
+Exemplo do padrão certo: `App\Filament\Admin\Pages\HubDeAdministracao::canAccess()`.
+
+A rota fica registrada e responde 403 (não 404). Tirá-la do ar exigiria recortar o `discoverPages()` do provider, e aí o Shield deixa de gerar a permission — a descoberta dele usa `$panel->getPages()` cru (`vendor/bezhansalleh/filament-shield/src/Concerns/HasEntityDiscovery.php:30-34`). Ver ADR-02 de `wikis/specs/feature/v1-enriquecimento-kit/hub-de-cards-opcional/`.

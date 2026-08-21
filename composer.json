@@ -21,6 +21,8 @@
         "anselmokossa/filament-sentinel": "^1.0",
         "asmit/resized-column": "^4.0",
         "awcodes/filament-badgeable-column": "^4.2",
+        "bezhansalleh/filament-exceptions": "^4.2",
+        "bezhansalleh/filament-language-switch": "^5.0",
         "bezhansalleh/filament-panel-switch": "^3.1",
         "bezhansalleh/filament-shield": "^4.2",
         "brimham/filament-backup-monitor": "^0.1",
@@ -29,6 +31,7 @@
         "croustibat/filament-jobs-monitor": "^4.5",
         "dotswan/filament-laravel-pulse": "^2.2",
         "filament/filament": "^5.6",
+        "filament/spatie-laravel-media-library-plugin": "^5.7",
         "filament/spatie-laravel-settings-plugin": "^5.6",
         "flowframe/laravel-trend": "^0.5",
         "fomvasss/laravel-ai-tasks": "^3.11",
@@ -55,6 +58,7 @@
         "owen-it/laravel-auditing": "^14.0",
         "predis/predis": "^3.5",
         "prodstarter/filament-notification-center": "^1.0",
+        "promethys/revive": "^3.1",
         "pxlrbt/filament-environment-indicator": "^3.5",
         "shuvroroy/filament-spatie-laravel-health": "^3.3",
         "solution-forest/filament-simplelightbox": "^1.0",
@@ -65,24 +69,29 @@
         "syriable/filament-activitylog": "^0.1",
         "tapp/filament-auditing": "^4.0",
         "tapp/filament-authentication-log": "^5.0",
+        "tapp/filament-maillog": "^2.2",
         "wallacemartinss/filament-onboarding": "^2.1",
         "wezlo/filament-search-spotlight": "^1.0"
     },
     "require-dev": {
+        "driftingly/rector-laravel": "^2.5",
         "fakerphp/faker": "^1.23",
+        "filament/upgrade": "^5.7",
         "larastan/larastan": "^3.9",
         "laravel-lang/common": "^6.8",
         "laravel/boost": "^2.5",
         "laravel/pail": "^1.2.5",
         "laravel/pao": "^1.0.6",
         "laravel/pint": "^1.27",
+        "laraveldaily/filacheck": "^1.2",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
         "pestphp/pest": "^5.1",
         "pestphp/pest-plugin-browser": "^5.0",
         "pestphp/pest-plugin-laravel": "^5.0",
         "pestphp/pest-plugin-mutate": "^5.0",
-        "phpunit/phpunit": "^13.3"
+        "phpunit/phpunit": "^13.3",
+        "rector/rector": "^2.6"
     },
     "autoload": {
         "psr-4": {
@@ -118,11 +127,24 @@
         "types:check": [
             "phpstan analyse"
         ],
+        "filament:check": [
+            "filacheck"
+        ],
+        "refactor:preview": [
+            "rector process --dry-run"
+        ],
+        "refactor:apply": [
+            "rector process"
+        ],
+        "upgrade:filament": [
+            "filament-v5"
+        ],
         "test": [
             "Composer\\Config::disableProcessTimeout",
             "@php artisan config:clear --ansi",
             "@lint:check",
             "@types:check",
+            "@filament:check",
             "@php artisan test"
         ],
         "test:kit": [
@@ -135,10 +157,20 @@
             "@php artisan config:clear --ansi",
             "@php artisan test --testsuite=Kit,Tenancy"
         ],
+        "art": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "npm run build",
+            "@php artisan view:cache",
+            "@putenv KIT_ART=1",
+            "@php artisan test tests/BrowserTenancy/CapturaDeArteTest.php tests/Browser/HubDeCardsTest.php --ansi",
+            "@php artisan kit:arte --ansi"
+        ],
         "test:browser": [
             "Composer\\Config::disableProcessTimeout",
             "@php artisan config:clear --ansi",
             "npm run build",
+            "@php artisan view:cache",
             "@php artisan test --testsuite=Browser"
         ],
         "post-autoload-dump": [

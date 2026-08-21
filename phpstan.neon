@@ -2,7 +2,7 @@ includes:
     - vendor/larastan/larastan/extension.neon
 
 parameters:
-    level: 6
+    level: 7
 
     ignoreErrors:
         # `simpleLightbox()` é MACRO: o solution-forest/filament-simplelightbox o registra em

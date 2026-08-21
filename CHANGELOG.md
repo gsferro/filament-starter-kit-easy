@@ -3,6 +3,173 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.18.0] - 2026-08-21
+
+### Alterado
+
+- **O hub em cards deixa de ser padrão em `/admin` e `/app`.** Nova chave `kit.hub`
+  (`KIT_HUB`), **desligada por default**: os dois painéis nascem sem a página de grade de cartões,
+  e `KIT_HUB=true` no `.env` devolve as duas — sem editar código e sem ressemear o Shield, porque
+  o `FilamentCardsPlugin` continua registrado nos três painéis e a permissão continua na matriz.
+
+  O motivo é cardinalidade: grade de cartões paga o próprio espaço quando há **muitos** caminhos.
+  O `/admin` tem oito destinos, e o `/app` de um projeto de verdade nasce vazio — ali a grade é a
+  barra lateral com um clique a mais.
+
+  **O `/infra` não mudou e não depende da chave.** São dezesseis destinos em quatro grupos, metade
+  com rótulo de plugin de terceiro sem tradução ("audits", "Exception", "Manage commands",
+  "Run history"): é o único painel do kit onde a grade ganha da árvore no default. A assimetria é
+  deliberada e tem caso de teste que fica vermelho se alguém "corrigir" a inconsistência.
+
+  Para quem já instalou o kit e vai rodar `kit:update`: se você usava os hubs de `/admin` ou
+  `/app`, acrescente `KIT_HUB=true` ao `.env`. O pacote `harvirsidhu/filament-cards` continua
+  instalado nos dois casos.
+
+### Adicionado
+
+- **Descrição em cada cartão do hub de infraestrutura.** Os dezesseis destinos passam a exibir uma
+  frase dizendo para que o link serve, e a frase entra no texto pesquisável do cartão — a busca da
+  página passa a encontrar por assunto ("fila", "restaurar", "e-mail") e não só pelo rótulo.
+
+  Vem de um mapa por FQCN em `HubDeInfraestrutura::descricoesDosDestinos()`, porque treze dos
+  dezesseis destinos são vendor e não há onde declarar a frase na classe. Plugin novo no painel
+  entra sem frase e a suíte acusa, apontando a classe que falta.
+
+### Corrigido
+
+- **A captura `art/admin-papeis-import-export.png` estava publicada com a barra lateral do painel
+  errado** — navegação do `/app` sob o cabeçalho do `/admin` — desde a v0.17.0. Cenário de navegador
+  precisa visitar o painel em que o processo foi deixado: o servidor do `pest-plugin-browser` roda
+  in-process, e atravessar painel dentro do mesmo processo faz a tela renderizar com a barra lateral
+  do painel anterior. O `beforeEach` da suíte de arte arranjava o `/app` para todos os cenários, e o
+  de papéis visita o `/admin`.
+
+  Nenhum teste ficou vermelho por isso: os cenários afirmam sobre o conteúdo da tela, e ninguém
+  afirma sobre a barra lateral. Foi encontrado ao **abrir a imagem**.
+
+- **`kit:arte` publicava todo PNG que encontrasse** em `tests/Browser/Screenshots` — inclusive os
+  screenshots que o Pest grava sozinho quando um cenário de navegador falha. Agora publica de uma
+  lista declarada (`KitArte::IMAGENS`), e o que não está declarado é **reportado**, nunca publicado
+  e nunca silenciado.
+
+- **`composer art` rodava duas invocações do `artisan test`**, e o plugin limpa o diretório de
+  screenshots no início de cada run — a segunda apagava o que a primeira escrevera, e quatro imagens
+  ficavam silenciosamente sem atualizar. Passou a ser uma invocação com os dois caminhos.
+
+### Armadilhas registradas
+
+- **Em Page do Filament, `canAccess()` sozinho basta** para tirar da URL, do menu e da busca ⌘K —
+  `Page::registerNavigationItems()` já retorna cedo. Em **Resource** são dois métodos. Copiar o par
+  do Resource para uma Page acrescenta código que não muda nada
+  (`.ai/rules/filament.md`).
+- **Cenário de navegador visita o painel em que o processo foi deixado.** Atravessar painel dentro
+  do mesmo processo renderiza a barra lateral do painel anterior, sem nenhum teste vermelho
+  (`.ai/rules/testes-browser.md`).
+- **Captura nova exige a linha em `KitArte::IMAGENS`**, e o `composer art` roda os arquivos de
+  captura numa única invocação do `artisan test` (`.ai/rules/testes-browser.md`).
+- **Utilitária Tailwind que blade de vendor emite precisa existir no CSS do kit.** Ausência produz
+  HTML correto sem estilo nenhum, com todo teste verde (`.ai/rules/css-filament.md`).
+
+## [0.17.0] - 2026-08-18
+
+Seis pacotes novos, todos Filament v5 e gratuitos, escolhidos numa varredura dos **547** plugins do
+diretório oficial. O método, os 112 finalistas ranqueados e os 435 descartados com motivo estão em
+[`wikis/pacotes-ranking.md`](wikis/pacotes-ranking.md) e
+[`wikis/pacotes-candidatos.md`](wikis/pacotes-candidatos.md).
+
+### Adicionado
+
+- **Camada de mídia** — `filament/spatie-laravel-media-library-plugin`. Até aqui upload era
+  `FileUpload` gravando caminho em coluna, sem coleções, conversões nem uma tabela que soubesse o
+  que é anexo de quê. `App\Models\Projeto`, a model de demonstração, ganhou a coleção `anexos` e a
+  conversão `miniatura`, e o `ProjetoResource` mostra o padrão no form e na tabela.
+
+  Escolhido em vez do `awcodes/filament-curator` pelo critério de **multi-organização**: a tabela
+  `media` do Spatie é polimórfica, então o anexo pertence ao registro e herda o escopo de
+  `BelongsToTenant` — sem coluna de tenant, sem configuração para esquecer ligada. O Curator tem
+  suporte a tenancy, mas com biblioteca compartilhada e escopo **desligado por padrão**.
+
+- **Lixeira** — `promethys/revive`, no `/infra`, grupo "Sistema". Restaura registros apagados com
+  `SoftDeletes`. `App\Models\Projeto` ganhou a trait junto: nenhuma model do kit usava soft delete
+  antes desta versão, e a tela nasceria vazia.
+
+  A lista de models é **explícita** (`models()`), e não `modelsNamespace()`: a varredura automática
+  alcançaria `User`, `Role` e `Tenant`, cuja restauração tem consequência de autorização.
+
+- **Exceções agrupadas** — `bezhansalleh/filament-exceptions`, no `/infra`, grupo "Observabilidade".
+  O painel via saúde, desempenho, arquivo de log e filas; faltava "qual exception está estourando, e
+  quantas vezes".
+
+- **Trilha de e-mail** — `tapp/filament-maillog`, no `/infra`, grupo "Trilhas". O `ConviteDeAcesso` é
+  a única porta de entrada de usuário e não deixava rastro: "o convite não chegou" era impossível de
+  responder.
+
+- **Seletor de idioma** — `bezhansalleh/filament-language-switch`, nos três painéis e nas telas de
+  login. **Dirigido por dado, sem flag**: `config('kit.idiomas')` com um item só — que é como o kit
+  nasce — esconde o botão.
+
+  Está declarado no config e na wiki que a tradução cobre a camada do Filament e dos pacotes, **não**
+  os rótulos do kit, que são strings pt-BR no código (há dez `__()` em todo o app).
+  Internacionalizar o kit continua sendo trabalho declarado e não feito.
+
+- **Lint de Filament no CI** — `laraveldaily/filacheck` (dev), como `composer filament:check`, dentro
+  do `composer test`. Achou **7 problemas preexistentes** no primeiro run, todos corrigidos abaixo.
+
+- **`config/kit.php` → `retencao`** (`KIT_RETENCAO_EXCECOES_DIAS`, `KIT_RETENCAO_EMAILS_DIAS`, ambos
+  14 dias) e **`idiomas`**. A retenção é aplicada por dois mecanismos diferentes em
+  `routes/console.php`, porque os pacotes diferem: `model:prune` para as exceções, que declaram
+  `prunable()`, e exclusão direta para o `MailLog`, que **não** implementa `Prunable` — passá-lo ao
+  `model:prune` seria um agendamento verde que nunca apaga nada.
+
+### Corrigido
+
+- **Seis métodos de teste depreciados** (`assertHasNoActionErrors`, `assertHasActionErrors`) e um
+  **`ImageColumn::size()`** no `TenantsTable`, todos apontados pelo FilaCheck no primeiro run.
+
+### Segurança
+
+- **`ExceptionResource` entrou na lista de subtração do `panel_user`** no `PapeisSeeder`. O plugin de
+  exceções precisou ser registrado nos **três** painéis (ver abaixo), o que fez o resource existir na
+  matriz do `/app`. Sem a subtração, todo usuário comum herdaria `ViewAny:Exception` — e a rota
+  existe naquele painel — ganhando leitura de stack trace da instalação inteira, com parâmetro de
+  request dentro. Verificado: 12 permissions de `Exception` no banco, 0 no `panel_user`. Fixado por
+  `tests/Kit/PacotesTierSTest.php`.
+
+- **Retenção obrigatória nas duas trilhas novas.** O stack trace pode conter parâmetro de request; o
+  corpo do e-mail é gravado, e o convite carrega o link de aceite. As duas telas vivem só no
+  `/infra`, onde entrar já exige `master_global` ou `infra`.
+
+- **`MEDIA_DISK` documentado como superfície aberta.** Com o default `public` o caminho é
+  `/storage/{id}/{arquivo}`, ID sequencial, alcançável sem sessão — a multi-organização do Filament
+  não chega ao sistema de arquivos. Serve para avatar e logo; para documento, disco privado e rota
+  autorizada. O campo de anexos do `ProjetoResource` já usa `->visibility('private')`.
+
+### Armadilhas registradas
+
+- **Plugin que resolve o painel corrente precisa estar nos TRÊS painéis.** Registrar o
+  `filament-exceptions` só no `/infra` derrubou **todo comando artisan** — `migrate` e `inspire`
+  inclusive — com `LogicException: Plugin [filament-exceptions] is not registered for panel [app]`. O
+  `ExceptionResource` chama `FilamentExceptionsPlugin::get()` nos métodos estáticos de navegação, e o
+  `filament-shield` percorre `Filament::getPanels()` no boot sem fixar o painel corrente: a resolução
+  cai no default. Mesma armadilha já documentada do `Lockscreen`. Virou rule em
+  `.ai/rules/providers-filament.md`.
+
+- **`modelPruneInterval()` recebe DATA DE CORTE, não quantidade de dias.** `Exception::prunable()`
+  faz `whereDate('created_at', '<=', $intervalo)`; passar `14` compararia com o ano 14 e nunca
+  podaria nada. E precisa de `Carbon` mutável, porque o kit usa `Date::use(CarbonImmutable::class)`.
+
+- **`nonQueued()` antes de `width()`/`height()`** em `registerMediaConversions()`: os dois últimos
+  devolvem o `ImageDriver`, não a `Conversion`. Virou rule em `.ai/rules/models.md`.
+
+### Notas de adoção
+
+Dois nomes de pacote do ranking estavam errados — vinham do slug da URL do diretório, que não expõe o
+nome Composer. Corrigidos na wiki: `filament-exception-viewer` → **`bezhansalleh/filament-exceptions`**
+(e a série para Filament 5 é a **4.x**, não a 5.x), e `filament-mail-log` →
+**`tapp/filament-maillog`**.
+
+Suíte: **408 casos**, 1135 asserções (era 388). PHPStan 0 erros. FilaCheck 17 regras.
+
 ## [0.16.9] - 2026-08-17
 
 ### Corrigido

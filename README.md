@@ -66,7 +66,7 @@ Para testar o recorte de acesso, crie um usuário só com o papel `admin` ou `in
 |---|---|---|---|
 | **App** | `/app` | A operação do negócio. **Vem vazio de propósito** — é aqui que seu projeto nasce | `master_global`, `panel_user`, `admin_app` (com tenancy) |
 | **Admin** | `/admin` | Usuários, papéis e permissões (Shield), catálogo de agentes de IA, autoria de onboarding | `master_global`, `admin` |
-| **Infra** | `/infra` | Health checks, backups, filas, logs, auditoria, caches, comandos, Pulse, custos de IA | `master_global`, `infra` |
+| **Infra** | `/infra` | Health checks, backups, filas, logs, exceções, trilha de e-mails, lixeira, auditoria, caches, comandos, Pulse, custos de IA | `master_global`, `infra` |
 
 **Quem entra vem do papel, não de uma lista no código.** Cada papel declara em qual painel vale, na coluna `roles.painel` — é o campo **Painel** na tela `/admin` → Funções. `App\Models\User::canAccessPanel()` compara essa coluna com o painel que está sendo aberto. Criar um papel e escolher o painel dele **é** o ato de dar acesso.
 
@@ -92,6 +92,85 @@ Separar admin de infra é o ponto do kit: quem administra usuários não precisa
 
 Mais telas: [saúde da aplicação](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/infra-health.png) · [usuários](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-users.png) · [permissões (Shield)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-roles.png) · [catálogo de agentes de IA](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-agentes-ia.png) · [central de comandos](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/infra-comandos.png) · [busca ⌘K](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/spotlight.png) · [acesso negado](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/erro-403.png)
 
+## Nossos números
+
+Não é vitrine: é o inventário de tudo que já existe, e o que você não vai precisar escrever.
+
+| | `/app` | `/admin` | `/infra` | **Total** |
+|---|---:|---:|---:|---:|
+| **Telas navegáveis** | 12 | 28 | 27 | **67** |
+| Resources | 4 | 8 | 8 | **20** |
+| Páginas próprias | 4 | 3 | 12 | **19** |
+| Widgets | 1 | 9 | 19 | **29** |
+| Rotas `GET` | 19 | 34 | 33 | **86** |
+
+O `/app` é o menor de propósito — ele nasce **vazio**, porque é onde o seu negócio entra. Os outros
+dois já vêm completos.
+
+| Fundação | |
+|---|---:|
+| Pacotes de produção | **55** |
+| Pacotes de desenvolvimento | **15** |
+| Migrations | **48** |
+| Policies | **14** |
+| Comandos `kit:*` | **4** |
+
+| Qualidade | |
+|---|---:|
+| Casos de teste (`Kit` + `Tenancy`) | **411**, com 1138 asserções |
+| Telas varridas em navegador real | **55** |
+| Arquivos de teste | **51** |
+| PHPStan | **level 7**, zero erros |
+| FilaCheck | **17** regras, todas passando |
+
+| Documentação | |
+|---|---:|
+| Documentos de referência (`wikis/`) | **9** |
+| Features especificadas (`wikis/specs/`) | **15** |
+| Project rules para agentes de IA (`.ai/rules/`) | **7** |
+
+### PHPStan no level 7 — e por que isso é um ponto forte
+
+A maioria dos projetos Laravel para no level 5 ou 6. O kit roda no **7, com zero erros e sem
+baseline**: não há `@phpstan-ignore` espalhado, não há `phpstan-baseline.neon` escondendo dívida.
+
+O que o level 7 pega e o 6 não pega, na prática:
+
+- **Nulo não checado.** `Filament::getCurrentPanel()` devolve `?Panel`; `auth()->user()` devolve
+  `?User`. No level 6 você chama método neles e passa. No 7, precisa provar que existe.
+- **Tipo largo do vendor entrando no seu código.** `session()` é `mixed`, `env()` é `bool|string`,
+  os getters do Shield são `?array`. O 7 obriga a estreitar na **fronteira**, uma vez, em vez de
+  torcer para o valor ser o esperado em cada uso.
+- **`list<T>` vs `array<int,T>`.** `filter()` e `map()` preservam chave. Um array com buracos
+  entregue onde se esperava lista é bug que só aparece no `json_encode` — vira objeto em vez de
+  array, e o front quebra.
+
+Subir de 6 para 7 expôs **29 erros reais** no kit, e um deles era bug latente de verdade: um
+`Convite|null` com método chamado direto. Todos corrigidos na origem — nenhum silenciado.
+
+> ### ⚠️ Ponto de atenção ao implementar no seu projeto
+>
+> **O level 7 vale para o código que você escrever também.** `composer test` roda
+> `phpstan analyse` e reprova o build inteiro.
+>
+> O que mais aparece quando alguém começa a escrever no kit:
+>
+> | Você escreve | O que o PHPStan cobra |
+> |---|---|
+> | `auth()->user()->id` | prove que há usuário: `auth()->user()?->id`, ou um `if` antes |
+> | `Filament::getTenant()->nome` | `?Model` — use `instanceof Tenant` como guarda |
+> | `->filter()->all()` num `@return list<string>` | `array_values()` no fim |
+> | `env('ALGUMA_COISA')` direto num `str_*` | `(string) env(...)`, ou `config()` com default tipado |
+> | método sem tipo de retorno | declare o tipo; o kit exige em tudo |
+>
+> **Não resolva com `@phpstan-ignore` nem baseline.** O kit tem exatamente **uma** exceção em
+> `phpstan.neon`, e ela é para um macro de vendor resolvido em runtime — com o motivo, as duas
+> alternativas testadas e descartadas, e o teste que cobre o ponto de verdade. Esse é o padrão:
+> se precisar de exceção, ela vem com a justificativa e com o teste que a substitui.
+>
+> Se quiser afrouxar no seu projeto, é uma linha em `phpstan.neon`. Mas saiba o que está trocando:
+> os 29 erros acima eram todos reais.
+
 ## O que já vem pronto
 
 **Administração e segurança**
@@ -105,6 +184,9 @@ Mais telas: [saúde da aplicação](https://raw.githubusercontent.com/gsferro/fi
 **Observabilidade e manutenção (painel infra)**
 - Spatie Health com checks de banco, cache, filas, agendador, disco, debug mode e IA local
 - Backup Monitor (spatie/laravel-backup), Jobs Monitor, Logs Explorer (sem botão de apagar — trilha é evidência)
+- **Exceções agrupadas** por tipo e frequência — o que Health, Pulse e arquivo de log não respondem
+- **Trilha de e-mails enviados**: separa "não foi enviado" de "foi enviado e caiu no spam"
+- **Lixeira**: restaura o que foi apagado com `SoftDeletes` ([detalhes](#trilhas-do-infra-exceções-e-mails-e-lixeira))
 - Command Center: comandos Artisan pré-aprovados pela UI, com histórico
 - Laravel Pulse embutido como página do painel
 - Dependency Graph: mapa de models, relações, resources e painéis
@@ -123,6 +205,8 @@ Mais telas: [saúde da aplicação](https://raw.githubusercontent.com/gsferro/fi
 - **Dashboards já preenchidos** nos painéis admin e infra: 20 widgets (stat cards com contador animado, funis, metas, breakdowns, timelines) sobre os dados que os painéis já têm — nada de tela vazia esperando você
 - Páginas de erro brandadas (Sentinel) em pt-BR — a de 403 só mostra o diagnóstico de permissão fora de produção
 - UI 100% em pt-BR, inclusive nos plugins que só trazem inglês (traduções em `lang/vendor/`)
+- **Seletor de idioma** nos três painéis e nas telas de login — dirigido por dado, não por flag (detalhes abaixo)
+- **Camada de mídia** (spatie/laravel-medialibrary) nos componentes do Filament: upload, coleções e conversões em formulário, tabela e infolist ([detalhes](#anexos-e-mídia))
 
 ### A busca ⌘K
 
@@ -138,6 +222,21 @@ O campo na topbar é o **nativo do Filament** — mesma marcação, mesma aparê
 | **Ações** | "Criar X" para cada resource, com `canAccess()` + `canCreate()` + `shouldRegisterNavigation()` |
 
 O filtro por permissão é a razão de existirem `App\Filament\Spotlight\*` no kit: as categorias do pacote **não** chamam `canAccess()`, e sem isso a busca oferece telas que resultariam em 403 — vazamento de affordance. As sugestões "Criar X" também são do kit (`AcoesDeCriacao`), pelo mesmo motivo e mais um: o discovery do pacote resolve URLs sem checar contexto e derruba a tela de login com 500.
+
+### O seletor de idioma
+
+O botão de idioma (`bezhansalleh/filament-language-switch`) está registrado nos **três painéis e também nas telas de login** — que é justamente onde alguém que não lê português precisa trocar, antes de existir sessão.
+
+**Ele é dirigido por dado, não por flag.** A lista de locales fica em `config/kit.php`:
+
+```php
+'idiomas' => ['pt_BR'],           // como o kit nasce: um idioma, sem botão
+'idiomas' => ['pt_BR', 'en'],     // dois idiomas: o seletor aparece sozinho
+```
+
+Com **um único idioma** — que é o padrão — o seletor não aparece: não há para onde trocar. É a razão de isto ser uma lista e não um booleano; ninguém esquece uma flag ligada com um idioma só.
+
+> ⚠️ **O seletor traduz a camada do Filament e dos pacotes, não os rótulos do kit.** A cobertura vem do Filament e do `laravel-lang/common`. "Administrador Geral", "Acesso ao painel /app", os títulos dos hubs e os labels dos resources são strings pt-BR escritas no código — há dez `__()` em todo o app. Com `en` ligado hoje, **metade da tela troca de idioma e a outra metade não**. Internacionalizar o kit é trabalho declarado e ainda não feito.
 
 ## Convite de usuário
 
@@ -201,6 +300,67 @@ cadastro aberto.
 O papel do convite decide o contexto da atribuição: papel do painel `/app` nasce dentro da
 organização do convite; papel de `/admin` ou `/infra` nasce no contexto global — ser
 administrador de uma organização não é credencial para administrar a instalação.
+
+## Trilhas do `/infra`: exceções, e-mails e lixeira
+
+O painel de infraestrutura já mostrava **saúde** (Health), **desempenho** (Pulse), **arquivo de
+log** (Logs Explorer) e **filas** (Jobs Monitor) — e nenhum deles respondia "qual exception está
+estourando, e quantas vezes", "o convite chegou?" ou "dá para desfazer aquele delete?". Três telas
+respondem cada uma dessas perguntas:
+
+| Tela | Onde | O que responde |
+|---|---|---|
+| **Exceções** | `/infra`, grupo *Observabilidade* | as exceptions agrupadas por tipo e frequência, com badge de contagem no menu |
+| **Trilha de e-mails** | `/infra`, grupo *Trilhas* | todo e-mail que o kit enviou — separa "não foi enviado" de "foi enviado e caiu no spam" |
+| **Lixeira** | `/infra`, grupo *Sistema* | restaura registro apagado com `SoftDeletes` |
+
+### As duas trilhas guardam dado sensível
+
+É por isso que elas vivem **só** no `/infra`, onde entrar já exige papel `master_global` ou
+`infra` — no `/app` qualquer papel do painel as veria:
+
+- o **stack trace** da exceção pode carregar parâmetro de request, logo pode carregar dado pessoal;
+- o **corpo do e-mail** é gravado, e o convite de acesso carrega o link de aceite.
+
+### Retenção: o número é a intenção, o agendador é a execução
+
+As duas tabelas crescem por evento — um bug em laço enche o disco em horas. Por isso a poda tem
+prazo, em `config/kit.php`:
+
+| Chave | `.env` | Padrão |
+|---|---|---|
+| `kit.retencao.excecoes_em_dias` | `KIT_RETENCAO_EXCECOES_DIAS` | 14 |
+| `kit.retencao.emails_em_dias` | `KIT_RETENCAO_EMAILS_DIAS` | 14 |
+
+Os 14 dias acompanham o `days` da rotação em `config/logging.php`: a trilha morre junto com o log
+que a originou, não depois dele. **Zero ou negativo desliga a poda** daquela trilha — e aí a tabela
+cresce sem teto, o que é uma escolha, não um esquecimento.
+
+> ⚠️ **Quem aplica a retenção é o agendador.** As rotinas estão em `routes/console.php`; sem
+> `php artisan schedule:work` (ou o serviço `scheduler` do docker compose) o número no config é só
+> intenção declarada.
+
+### A Lixeira lista o que você declarar
+
+O `RevivePlugin` recebe uma **lista explícita** de models em
+`app/Providers/Filament/InfraPanelProvider.php` — hoje só `App\Models\Projeto`, a única model do
+kit com `SoftDeletes`:
+
+```php
+RevivePlugin::make()
+    ->navigationGroup('Sistema')
+    ->navigationLabel('Lixeira')
+    ->models([
+        Projeto::class,
+    ])
+    ->withoutScoping(),
+```
+
+**Model nova com `SoftDeletes` precisa entrar nessa lista**, senão fica apagada sem tela para
+restaurar. A varredura automática de `app/Models` foi evitada de propósito: alcançaria `User`,
+`Role` e `Tenant`, cuja restauração tem consequência de **autorização** — um usuário volta com
+papel numa organização que pode nem existir mais. A trava é a lista, como na allow-list do
+Command Center.
 
 ## Multi-tenancy (opt-in)
 
@@ -269,6 +429,267 @@ class Projeto extends Model
 Ela dá a relação `tenant()`, um **escopo global** e o preenchimento automático de `tenant_id`. O escopo importa porque o Filament só recorta o que passa por um Resource — job, comando, listener e API ficariam de fora, e é aí que dado de um cliente vaza para outro.
 
 > ⚠️ **`kit:tenancy` recria o banco.** Ele liga `permission.teams`, e a migration do spatie só cria as colunas de tenant se a flag estiver ativa **antes** do migrate. Por isso exige árvore git limpa, confirmação explícita e roda `migrate:fresh --seed`. **A hora de rodar é o dia 1 do projeto.** O caminho detalhado — inclusive papéis globais × por tenant e `scopedUnique()` — está em [`wikis/arquitetura.md`](wikis/arquitetura.md#multi-tenancy-opt-in).
+
+## Anexos e mídia
+
+O `filament/spatie-laravel-media-library-plugin` entrega a camada de mídia — upload, coleções e
+conversões — nos componentes de formulário, tabela e infolist do Filament. A model de demonstração
+`App\Models\Projeto` mostra o desenho completo:
+
+```php
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+class Projeto extends Model implements HasMedia
+{
+    use InteractsWithMedia;
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('anexos');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('miniatura')
+            ->nonQueued()   // sem garantia de worker no ar: enfileirada, a
+            ->width(200)    // conversão só existiria com um worker de pé, e a coluna
+            ->height(200);  // ficaria vazia sem erro nenhum
+    }
+}
+```
+
+E o `ProjetoResource` consome as duas pontas:
+
+```php
+SpatieMediaLibraryFileUpload::make('anexos'),   // no formulário
+
+SpatieMediaLibraryImageColumn::make('anexos')   // na tabela
+    ->simpleLightbox(),
+```
+
+O `->simpleLightbox()` funciona sem cola porque `SpatieMediaLibraryImageColumn` **estende
+`ImageColumn`**, que é exatamente onde o macro do lightbox é registrado.
+
+[![Listagem de Projetos no /app com a coluna de anexos: miniaturas circulares empilhadas na linha de cada registro](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-projetos-anexos.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-projetos-anexos.png)
+
+Repare nas miniaturas empilhadas na linha do registro: cada uma é servida por **URL assinada**,
+porque o disco é privado — o mesmo arquivo pedido sem a assinatura responde 403.
+
+**O escopo por organização vem de graça** — e é o ponto. A tabela `media` do Spatie é polimórfica:
+o arquivo pertence ao registro, e o registro já é escopado por `BelongsToTenant`. Quem não alcança
+o projeto não alcança o anexo, sem coluna de tenant em `media` e sem configuração para lembrar de
+ligar.
+
+> ⚠️ **O disco default da mídia é `local`, e é privado de propósito.** Com `MEDIA_DISK=public` o
+> arquivo cai em `storage/app/public`, servido pelo symlink `public/storage`: caminho
+> `/storage/{id}/{arquivo}`, ID sequencial, alcançável **sem sessão** — a multi-organização do
+> Filament não chega ao sistema de arquivos. Use `public` só para avatar e logo, que aparecem na
+> tela de login.
+>
+> Duas consequências práticas do disco privado:
+>
+> 1. **`Media::getUrl()` responde 403.** É falha fechada, e é o que se espera. Quem publica link de
+>    mídia privada usa **`getTemporaryUrl()`**, que assina a URL.
+> 2. **Quem tem o link entra, durante a validade da assinatura, sem sessão.** A rota
+>    `storage.local` do Laravel valida a assinatura, não o usuário: compartilhar o link é
+>    compartilhar o arquivo até ele expirar. Para anexo que precise de autorização por
+>    organização, sirva por rota própria que consulte a policy antes de entregar.
+>
+> Já tem instalação rodando com `MEDIA_DISK=public`? A config nova protege só o arquivo NOVO.
+> Rode **`php artisan kit:midia-privada`** (aceita `--dry-run`) para mover o que já foi gravado —
+> sem ele, a mídia antiga continua servida pelo symlink.
+
+## Import e export (CSV)
+
+O mecanismo é **nativo do Filament 5**: `ImportAction`, `ExportAction`, os jobs, o batch e a
+notificação de conclusão com botão de download. As tabelas `imports`, `exports` e
+`failed_import_rows` já vêm migradas, e o kit **não escreve wrapper nenhum** em volta disso. O que
+ele acrescenta são duas classes base, uma permissão própria para cada lado e a decisão — resource
+por resource — de ligar ou não.
+
+![Fluxo de import e export no /app: a listagem de Projetos com os botões no cabeçalho, o modal de exportação com um campo por coluna e o modal de importação com o CSV de exemplo](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/fluxo-import-export.gif)
+
+Os dois botões vivem no cabeçalho da listagem, ao lado do "Novo": nada de tela nova, nada de rota
+própria — o que muda de resource para resource é só a permissão que cada um exige.
+
+### `ImportadorDoKit`: a fronteira de organização que o pacote não entrega
+
+`Importer::resolveRecord()` roda **dentro do worker**. Lá não há painel nem rota na sessão, então
+`Filament::getTenant()` devolve `null` e o escopo global de `BelongsToTenant` vira **no-op** — o
+`ImportCsv` restaura o `auth()->setUser()`, o **usuário**, e nada restaura o tenant. Duas
+consequências, as duas silenciosas:
+
+| Linha do CSV | Sem `App\Support\ImportExport\ImportadorDoKit` |
+|---|---|
+| com chave de **outra** organização | UPDATE no registro alheio, sem 403 e sem log |
+| nova | nasce com `tenant_id` **nulo** — invisível para todo mundo, inclusive para quem importou |
+
+A correção tem duas pontas. A **Action** captura o tenant no request, onde ele existe
+(`->options(['tenant_id' => Filament::getTenant()?->getKey()])`), e a classe base o usa nas duas
+pontas: filtra a resolução do registro e preenche a criação, no lugar do hook `creating` que ali
+não tem contexto.
+
+E ela **falha fechada**: tenancy ligada + model que usa `BelongsToTenant` + nenhum `tenant_id` nas
+options = a linha é **recusada** com `RowImportFailedException` (vai para `failed_import_rows`, sai
+no CSV de falhas da notificação) e o motivo é logado. Seguir sem escopo seria exatamente o defeito
+que a classe existe para fechar.
+
+### `ExportadorDoKit`: fórmula neutralizada em toda coluna
+
+`preventFormulaInjection()` existe no Filament **por coluna**, e nasce **desligado**. Uma célula
+começando em `=`, `+`, `-` ou `@` vira fórmula quando alguém abre o CSV no Excel — e o dado que a
+preencheu veio de formulário de usuário. `App\Support\ImportExport\ExportadorDoKit` aplica a
+neutralização a **toda** coluna que a subclasse declarar; por isso a subclasse declara `colunas()`,
+e não `getColumns()`.
+
+**O export não tem uma linha de código de tenant, e é isso que interessa entender.** A query dele
+vem da tabela da tela (`getTableQueryForExport()`), montada no request, onde o escopo global já
+aplicou o `where tenant_id = X`; ela é serializada **com** esse `where` dentro, e é isso que o job
+executa. O isolamento do export é **herdado**; o do import é **construído** — o inverso exato. O
+raciocínio completo está em
+[`wikis/arquitetura.md`](wikis/arquitetura.md#import-e-export-o-worker-perde-o-tenant-o-export-o-herda).
+
+Os dois modais são os nativos do Filament — o kit não desenha tela nenhuma aqui:
+
+| Importar | Exportar |
+|---|---|
+| [![Modal de importação de Projetos, com o link para baixar um CSV de exemplo e o campo de upload do arquivo](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/import-modal.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/import-modal.png) | [![Modal de exportação de Projetos, com um campo por coluna do exporter: Nome, Organização, Criado em e Atualizado em, cada um com checkbox e rótulo editável](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/export-modal.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/export-modal.png) |
+| **Baixar um arquivo CSV de exemplo** monta o cabeçalho a partir das colunas do importer — é ali que se vê, na prática, que `tenant` não está entre elas | Um campo por coluna declarada em `colunas()`, com checkbox e rótulo editável: quem exporta escolhe o recorte e renomeia o cabeçalho, mas não acrescenta coluna que o exporter não declarou |
+
+### Permissão própria, e ela não é opcional
+
+`import` e `export` são **acréscimo do kit** aos 12 métodos default do Shield, em
+`config/filament-shield.php` → `policies.methods` — e também em `single_parameter_methods`, porque
+nenhum dos dois recebe registro (fora dessa lista o Shield geraria
+`import(User $user, Model $record)` na policy, e a Action, que chama `Gate::authorize('import')` sem
+registro, estouraria `ArgumentCountError`). Daí saem `Import:{Model}` e `Export:{Model}` para todo
+resource.
+
+[![Tela de edição de um papel no Filament Shield, com as checkboxes Import e Export ao lado de View Any, Create e Delete](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-papeis-import-export.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-papeis-import-export.png)
+
+Na tela de papéis, `Import` e `Export` aparecem lado a lado com `View Any`, `Create` e `Delete` —
+para **todo** resource, inclusive os que não ligaram as Actions. É o que permite conceder ou tirar
+cada lado por papel, em `/admin` → Funções, sem tocar em código.
+
+Elas são necessárias porque **Action do Filament não consulta policy sozinha** — o próprio vendor
+diz isso em `Actions/Concerns/CanBeAuthorized.php`: a autorização default é `null`, ou seja,
+liberada. Por isso toda Action do kit carrega `->authorize('import')` ou `->authorize('export')`
+explícito. Sem a linha, quem abre a listagem leva a listagem inteira embora.
+
+> ⚠️ **Mexeu nesse config? Ressemeie.** A permission nova não existe no banco até o
+> `shield:generate` rodar de novo, e o sintoma é a Action **desaparecer da tela sem erro nenhum**:
+>
+> ```bash
+> php artisan db:seed --class=Database\Seeders\ShieldPermissionsSeeder
+> php artisan db:seed --class=Database\Seeders\PapeisSeeder
+> ```
+
+### `panel_user` não nasce com nenhuma das duas
+
+A subtração está em `PapeisSeeder::ehPermissaoDeImportOuExport()`, e casa por **prefixo de ação**
+(`Import:` / `Export:`), não por lista de FQCN — de propósito: **resource novo nasce com as duas
+fora do usuário comum sem ninguém precisar lembrar de acrescentá-lo a lista nenhuma.** O critério é
+o que cada uma é de fato: import é **escrita em massa**; export **tira o dado da organização da
+aplicação** num arquivo. Quem usa o negócio faz isso um registro por vez; quem move planilha é quem
+opera a organização. O `admin_app` fica com as duas, porque recebe a matriz inteira do painel — e
+conceder ao `panel_user` é um clique em `/admin` → Funções, se fizer sentido no seu caso.
+
+### Quem tem o quê hoje
+
+| Painel | Resource | Import | Export | Motivo |
+|---|---|---|---|---|
+| `/app` | **Projeto** | ✅ | ✅ | resource de demonstração — é o exemplo de referência dos dois |
+| `/admin` | **AgenteIa** | ✅ | ✅ | configuração, sem dado pessoal |
+| `/admin` | **Tenant** | — | ✅ | criar organização por CSV pularia o provisionamento: papéis por tenant, primeiro administrador, identidade visual. Uma linha de planilha viraria uma organização que ninguém alcança |
+| `/admin`, `/app` | **User** | — | 💤 comentado | a planilha sai com o e-mail de todo mundo que tem acesso; e import contornaria convite, verificação de e-mail e atribuição de papel — os três pilares do acesso no kit |
+| `/admin`, `/app` | **Convite** | — | 💤 comentado | e-mail do convidado |
+| `/admin` | **Role** | — | — | papel é identificador de código, não dado de planilha |
+| `/infra` | **AiRun** | — | ✅ | ledger de custo; a pergunta que ele responde é "quanto gastamos" |
+
+**Comentado** quer dizer que as duas linhas **já estão** no arquivo da Page, comentadas, com o aviso
+do que ligar expõe — o exporter existe pronto, é descomentar uma linha. A decisão nasce **escrita**,
+e não esquecida: é a convenção que `.ai/rules/filament.md` cobra de todo resource novo, porque
+ausência silenciosa não é decisão — ninguém volta para reavaliar o que nunca foi escrito.
+
+### As colunas que faltam de propósito
+
+O gerador do Filament infere as colunas do banco, e três delas o kit tira na mão. Não as devolva:
+
+| Classe | Coluna ausente | O que ela entregaria |
+|---|---|---|
+| `ConviteExporter` | `token`, `token_lembrete` | `Convite::aceitar()` valida o token e vincula o usuário à organização com o papel do convite: um CSV com essa coluna é uma **planilha de chaves de entrada** |
+| `AiRunExporter` | `request`, `response` | prompt e resposta completos, de qualquer organização — e o `/infra` não tem tenant na rota |
+| `ProjetoImporter` | `tenant` | o gerador cria `ImportColumn::make('tenant')->relationship()` para toda FK; aceitá-la deixaria o **CSV escolher a organização de destino** e tornaria a fronteira do `ImportadorDoKit` decorativa |
+
+O gerador recoloca todas elas em `--force`. Quem guarda a ausência são os testes de
+`tests/Kit/ImportExportTest.php`.
+
+### Sem worker, nada acontece
+
+Import e export do Filament são **jobs**. O kit nasce com `QUEUE_CONNECTION=database` no `.env`;
+`composer dev` já sobe um worker, e em produção quem processa é o serviço `worker` do docker
+compose. Com a fila parada, o arquivo é aceito, a linha entra em `imports`/`exports` e a notificação
+de conclusão nunca chega — fila parada aparece no **Jobs Monitor** do `/infra`.
+
+### Rastro: sem tabela nova
+
+`imports` e `exports` já guardam quem pediu, qual importador, quantas linhas e quando terminou. O
+que **não** está lá é justamente o que uma auditoria de vazamento pergunta — **de qual organização
+saiu o arquivo** —, porque as duas tabelas são do pacote e não têm `tenant_id`. É o que
+`KitServiceProvider::configureRastroDeImportExport()` acrescenta, no channel **`tenancy`**: o
+assunto é cruzamento de organização.
+
+Os dois lados usam gancho diferente porque o pacote é assimétrico: o import tem eventos de verdade
+(`ImportStarted` / `ImportCompleted`), o export **não tem nenhum**, então o gancho é o próprio model
+`Export` — `created` marca o pedido e o `completed_at` recém-preenchido marca a conclusão.
+
+### Retenção: 30 dias, e a do export apaga o arquivo
+
+| Chave | `.env` | Padrão |
+|---|---|---|
+| `kit.retencao.importacoes_em_dias` | `KIT_RETENCAO_IMPORTACOES_DIAS` | 30 |
+| `kit.retencao.exportacoes_em_dias` | `KIT_RETENCAO_EXPORTACOES_DIAS` | 30 |
+
+**30, e não os 14 das trilhas de exceção e e-mail**: o histórico de uma escrita em massa é o que
+responde "quem escreveu isso na semana passada", e essa pergunta costuma chegar depois do fechamento
+do mês. `failed_import_rows` cai por cascata; **a poda do export apaga o ARQUIVO**, não só a linha —
+sem isso o disco cresce para sempre com CSV que ninguém mais consegue baixar, porque o link de
+download é assinado e a linha que o autorizava já foi.
+
+Os dois agendamentos estão em `routes/console.php` (02:20 e 02:30), como `Schedule::call` e não como
+`model:prune`: os models `Import` e `Export` do Filament **usam a trait `Prunable` mas não declaram
+`prunable()`**, então o comando estouraria `LogicException` — e não há como acrescentar o método sem
+editar o `vendor/`. É o mesmo padrão já usado na poda da trilha de e-mails. Zero ou negativo desliga
+aquela poda, e **quem executa é o agendador**: sem `php artisan schedule:work` (ou o serviço
+`scheduler` do compose) o número no config é só intenção.
+
+### Ligar num resource novo
+
+```bash
+php artisan make:filament-importer Produto -G
+php artisan make:filament-exporter Produto -G
+```
+
+Troque o `extends Importer` / `extends Exporter` gerado pelas classes base do kit (no exporter,
+renomeie `getColumns()` para `protected static function colunas()`), **apague a coluna `tenant`** do
+importer, e acrescente as Actions no `getHeaderActions()` da Page de listagem:
+
+```php
+ImportAction::make()
+    ->importer(ProdutoImporter::class)
+    ->authorize('import')
+    ->options(fn (): array => ['tenant_id' => Filament::getTenant()?->getKey()]),
+
+ExportAction::make()
+    ->exporter(ProdutoExporter::class)
+    ->authorize('export'),
+```
+
+Depois **ressemeie os dois seeders** (`ShieldPermissionsSeeder`, então `PapeisSeeder`) e confira que
+há worker no ar. A receita completa, inclusive o que fazer quando a decisão é *não* ligar, está em
+[`wikis/receitas.md`](wikis/receitas.md#ligar-importexport-num-resource).
 
 ## Trabalhando com agentes de IA
 
@@ -358,7 +779,7 @@ arquivo que a etapa seguinte confere.
 **O que isso muda na prática:**
 
 - **O agente lê antes de escrever.** `wikis/` e `.ai/rules` respondem o que já existe, e o
-  [roteiro de features](#roteiro-de-features) abaixo lista as 56 telas prontas. Feature
+  [roteiro de features](#roteiro-de-features) abaixo lista as 61 telas prontas. Feature
   reimplementada do zero porque o agente não sabia que existia é o custo mais caro e mais invisível.
 - **Contexto vira arquivo, não histórico de chat.** Trocar de agente, de máquina ou de pessoa não
   perde o porquê da decisão — ele está no ADR, versionado no mesmo commit do código.
@@ -463,6 +884,9 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-42 | Releases do Composer | `/infra/composer-release-packages` | `infra` | avisa versão nova. **Informativo — nunca atualiza nada.** O sync é um job: sem worker, a tela fica vazia | 🔵 |
 | F-43 | Execuções de IA | `/infra/execucoes-ia` | `infra` (`ver-ai-tasks`) | ledger com custo e tokens por execução | 🔵 |
 | F-44 | Limpar caches | topbar do `/infra` | `infra` | `cache`, `config`, `view` e `modelCache` juntos | ⚪ |
+| F-57 | Exceções agrupadas | `/infra/exceptions` | `infra` | por tipo e frequência, com badge no menu. A retenção (`KIT_RETENCAO_EXCECOES_DIAS`) só acontece **com o agendador rodando** | 🟢 |
+| F-58 | Trilha de e-mails | `/infra/mail-logs` | `infra` | todo e-mail enviado. Guarda o **corpo** — inclusive o link de aceite do convite | 🟢 |
+| F-59 | Lixeira | `/infra/recycle-bin` | `infra` | restaura o que foi apagado com `SoftDeletes`. Lista **só** as models declaradas em `models()` no `InfraPanelProvider` | 🟢 |
 
 ### Produtividade e UI
 
@@ -476,6 +900,8 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-50 | Colunas redimensionáveis | qualquer tabela | autenticado | largura ajustável, lembrada na sessão | ⚪ |
 | F-51 | Indicador de ambiente | topbar | qualquer um | badge de `local`/`homologação`; some em produção | 🔵 |
 | F-52 | Páginas de erro brandadas | 403, 404, 419, 500, 503 | — | com a cara do painel, em pt-BR | 🔵 |
+| F-60 | **Seletor de idioma** | topbar dos três e telas de login | qualquer um | só aparece com **dois** locales em `kit.idiomas`; traduz Filament e pacotes, **não** os rótulos do kit | 🟢 |
+| F-61 | **Anexos e mídia** | formulário e tabela de Projetos | quem alcança o resource | upload, coleção `anexos`, conversão `miniatura` e lightbox na tabela. O anexo herda o escopo da organização do próprio registro | 🟢 |
 
 ### IA
 
@@ -488,10 +914,11 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 
 ### O que o roteiro **não** cobre sozinho
 
-Cinco features dependem de coisa fora do processo, e nenhum teste as substitui:
+Algumas features dependem de coisa fora do processo, e nenhum teste as substitui:
 
 | Feature | Depende de | Sem isso |
 |---|---|---|
+| F-57, F-58 (retenção das trilhas) | o scheduler (`schedule:work`) | as tabelas de exceções e de e-mails crescem sem teto; o prazo em `config/kit.php` fica só declarado |
 | F-15…F-20 (entrega do e-mail) | `MAIL_MAILER` real **e** um worker (`QUEUE_CONNECTION=database`) | o convite é gravado e a fila enche; nada sai |
 | F-33 (health checks) | uma execução de `php artisan health:check` | a tela abre **vazia**, sem estado explicando — o widget do dashboard avisa, a página do recurso não |
 | F-35, F-42 (filas e releases) | um worker | o job de sync do Composer fica na fila: F-42 mostra "sem registros" e F-35 conta pendências contra uma tabela vazia |
@@ -559,14 +986,94 @@ O Reverb usa 8090 e não o default 8080 para não colidir com o llama.cpp.
 
 ```bash
 composer dev          # servidor + fila + vite juntos
-composer test         # pint + phpstan + a suíte inteira
+composer test         # pint + phpstan + filacheck + a suíte inteira
 composer test:kit     # só os testes do kit (a fundação), em paralelo
 composer lint         # formata o código
+composer filament:check   # só o lint específico de Filament (FilaCheck)
+composer refactor:preview # o que o Rector reescreveria (dry-run) — FORA do composer test
+composer refactor:apply   # aplica a reescrita do Rector — FORA do composer test
 php artisan kit:install --force   # reinstala do zero (apaga o SQLite) e refaz as perguntas
 php artisan kit:install --no-custom   # instala sem perguntar nada
 php artisan kit:update            # traz melhorias de uma versão nova do kit
 php artisan kit:tenancy           # liga o modo multi-tenant (opt-in)
 ```
+
+### FilaCheck: o lint que só entende de Filament
+
+`composer filament:check` roda o `laraveldaily/filacheck` — 17 regras que o Pint e o PHPStan não
+têm como ter: método depreciado da API do Filament, namespace errado de action, chamada que mudou
+entre versões. Ele entra no `composer test` junto com o pint e o phpstan, então a CI reprova o
+mesmo que a sua máquina.
+
+Ao ser adotado, ele encontrou **7 problemas preexistentes** no próprio kit — seis métodos de teste
+depreciados e um `ImageColumn::size()` — todos corrigidos.
+
+### Rector: upgrade de major, não lint
+
+O kit tem **quatro** ferramentas de qualidade, em quatro eixos — e só **três** estão no gate:
+
+| Ferramenta | Eixo | Ao achar problema | Roda |
+|---|---|---|---|
+| **Pint** | estilo | **corrige** | sempre (gate) |
+| **PHPStan** + larastan | tipos | reporta | sempre (gate), **level 7** |
+| **FilaCheck** | API do Filament | reporta | sempre (gate) |
+| **Rector** | reescrita de código | **muda semântica** | **sob demanda** |
+
+`composer refactor:preview` e `composer refactor:apply` **não** estão no `composer test` — e isso é
+deliberado.
+
+**Para que o Rector serve aqui: upgrade de major.** Laravel 13 → 14, PHP 8.4 → 8.5. O `rector.php`
+da raiz nasce **sem nenhum set ligado**, e traz, num bloco de comentário, qual set ligar em cada
+caso. O fluxo é: descomentar o set → `composer refactor:preview` → ler o diff inteiro →
+`composer refactor:apply` → `composer test` → desligar o set de novo.
+
+**Por que ele fica fora do gate — foi medido, não opinado.** Com os sets de qualidade do Laravel
+ligados, o Rector reescreveria **103 arquivos** deste projeto. Os três maiores motivos:
+
+| Regra | Arquivos | O que propõe |
+|---|---:|---|
+| `EloquentMagicMethodToQueryBuilderRector` | 35 | `User::find()` → `User::query()->find()` |
+| `AddClosureVoidReturnTypeWhereNoReturnRector` | 26 | `: void` em closure |
+| `AppToResolveRector` | 21 | `app()` → `resolve()` |
+
+São opinião de estilo, não correção. Num kit cujo produto **é o código-exemplo legível**,
+`User::find()` e `app()` são o idioma que o ecossistema lê sem parar.
+
+E há um caso que fecha a questão. `CarbonToDateFacadeRector` propõe, no `InfraPanelProvider`:
+
+```diff
+- Carbon::now()->subDays(...)
++ Date::now()->subDays(...)
+```
+
+E isso **quebra**, por três fatos verificáveis:
+
+1. `now()` **é** `Date::now()` — `Illuminate/Foundation/helpers.php:623`
+2. O kit faz `Date::use(CarbonImmutable::class)` — `KitServiceProvider.php:57`
+3. `FilamentExceptionsPlugin::modelPruneInterval()` exige `Carbon` **mutável**
+
+O PHPStan level 7 **já reportou exatamente esse erro** quando o código usava `now()`. O
+`Carbon::now()` explícito é a correção — e o Rector a desfaria.
+
+> **Ferramenta de qualidade que reverte a correção de outra não é gate, é disputa** — e o build
+> passaria a depender de qual das duas rodou por último.
+
+`tests/Kit/QualidadeDeCodigoTest.php` fixa isso: falha se o Rector entrar no `composer test`, ou se
+um set de qualidade for ligado.
+
+**Upgrade de Filament é outra ferramenta.** **Não existe regra de Filament no
+`driftingly/rector-laravel`** — busca por "filament" no pacote devolve zero. Não é lacuna: o
+Filament distribui a **própria** ferramenta, também baseada em Rector.
+
+```bash
+composer require filament/upgrade --dev -W
+vendor/bin/filament-vN     # N = major de destino
+```
+
+Ela é mantida em lockstep com o framework — quem escreve as regras é quem quebra a API.
+
+A leitura completa das quatro ferramentas está em
+[`wikis/qualidade-de-codigo.md`](wikis/qualidade-de-codigo.md).
 
 ### Os testes do kit
 
@@ -597,6 +1104,39 @@ compartilhado — `composer test:kit:serial` isola isso, e a diferença entre os
 > não precisa disso — mas vale saber para qualquer outra flag.
 
 Seus testes vão em `tests/Feature` e `tests/Unit`, como de costume — o kit não encosta neles.
+
+### As imagens do README saem de um teste
+
+As capturas de tela deste README **não são feitas à mão**. Elas nascem de
+`tests/BrowserTenancy/CapturaDeArteTest.php`, na mesma suíte que prova que as telas funcionam:
+
+```bash
+composer art
+```
+
+O comando navega de verdade, salva os PNG, publica em `art/`, gera as thumbs de `art/thumbs/` e
+monta o GIF do fluxo. É o único jeito que encontramos de a documentação não envelhecer: ninguém
+refaz quinze imagens a cada release, e o resultado é um README mostrando uma versão do kit que
+não existe mais.
+
+| Etapa | O que faz |
+|---|---|
+| `npm run build` + `view:cache` | pré-requisitos duros da suíte de navegador |
+| `KIT_ART=1 pest tests/BrowserTenancy/CapturaDeArteTest.php` | navega e escreve os PNG em `tests/Browser/Screenshots/` (caminho fixo do plugin) |
+| `php artisan kit:arte` | copia para `art/`, redimensiona as thumbs e monta o GIF |
+
+Três decisões que valem saber antes de mexer:
+
+- **`KIT_ART=1` não é enfeite.** Sem a variável o arquivo é *skipped*. Ele escreve em `art/`, e uma
+  suíte de CI que suja a árvore de trabalho é pior que uma suíte lenta.
+- **As medidas são fixas: 1400x875 no cheio, 760x475 na thumb.** É a proporção das imagens que já
+  estavam no `art/`, e a galeria põe duas thumbs por linha — thumb com outra proporção desalinha a
+  tabela.
+- **O GIF é slideshow, montado com `ffmpeg` a partir de três quadros.** O plugin de navegador não
+  grava vídeo, e quadro capturado é o que dá para reproduzir de forma determinística. Sem `ffmpeg`
+  no PATH o comando avisa e segue: as imagens estáticas já foram publicadas.
+
+Precisa só refazer as thumbs, sem repetir a navegação? `php artisan kit:arte --sem-gif`.
 
 ### Como os testes são pensados: varredura SFDIPOT
 
@@ -632,8 +1172,12 @@ O benefício está em não derivar os testes só do "caminho feliz". O que escap
 | 10 | **Comandos da UI** | `config/command-center.php` | — |
 | 11 | **Backups** | destino e agenda em `config/backup.php` | — |
 | 12 | **Agente de IA** | `/admin` → Agentes de IA (ou `database/seeders/AssistenteSeeder.php`) | — |
+| 13 | **[Idiomas do painel](#o-seletor-de-idioma)** | `config/kit.php` → `idiomas` (lista de locales; com um só, o seletor não aparece) | — |
+| 14 | **[Retenção das trilhas](#retenção-o-número-é-a-intenção-o-agendador-é-a-execução)** | `KIT_RETENCAO_EXCECOES_DIAS` / `KIT_RETENCAO_EMAILS_DIAS` no `.env` | — |
+| 15 | **[Disco da mídia](#anexos-e-mídia)** | `MEDIA_DISK` no `.env` (`local` por padrão — privado, servido por URL assinada) | `php artisan kit:midia-privada` migra a mídia já gravada em disco público |
+| 16 | **[Import e export CSV](#import-e-export-csv)** | a Action em cada `app/Filament/**/Pages/List*.php` (ligada ou comentada); a permissão em `config/filament-shield.php` → `policies.methods`; a retenção do histórico em `KIT_RETENCAO_IMPORTACOES_DIAS` / `KIT_RETENCAO_EXPORTACOES_DIAS` no `.env` | ressemeie `ShieldPermissionsSeeder` + `PapeisSeeder` depois de mexer no config |
 
-Os sete últimos não entram nas perguntas porque são **código ou dado de tela**, não um valor que caiba num prompt de terminal. O instalador os lista no resumo final, com o arquivo de cada um.
+Os onze últimos não entram nas perguntas porque são **código ou dado de tela**, não um valor que caiba num prompt de terminal. O instalador os lista no resumo final, com o arquivo de cada um.
 
 > ⚠️ O item 5 é o único que **não** é "edite um arquivo" depois de instalado: o `kit:tenancy` roda `migrate:fresh --seed` e **apaga os dados**. Ele exige árvore git limpa e confirmação explícita. **Respondido na instalação, ele não apaga nada** — o banco ainda nem existe, e é essa a hora certa de decidir.
 
@@ -889,6 +1433,9 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | [laboiteacode/filament-dependency-graph](https://packagist.org/packages/laboiteacode/filament-dependency-graph) | mapa visual de models, relações, resources e painéis |
 | [mominalzaraa/filament-composer-release-notifier](https://packagist.org/packages/mominalzaraa/filament-composer-release-notifier) | avisa quando há versão nova dos pacotes Composer |
 | [cms-multi/filament-clear-cache](https://packagist.org/packages/cms-multi/filament-clear-cache) | limpar caches pelo painel |
+| [bezhansalleh/filament-exceptions](https://packagist.org/packages/bezhansalleh/filament-exceptions) | exceções agrupadas por tipo e frequência, com retenção |
+| [tapp/filament-maillog](https://packagist.org/packages/tapp/filament-maillog) | trilha de todo e-mail enviado |
+| [promethys/revive](https://packagist.org/packages/promethys/revive) | a Lixeira: restaura registro apagado com `SoftDeletes` |
 
 ### IA
 
@@ -915,6 +1462,7 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | [wallacemartinss/filament-onboarding](https://packagist.org/packages/wallacemartinss/filament-onboarding) | checklists e tours guiados, com autoria no `/admin` |
 | [anselmokossa/filament-sentinel](https://packagist.org/packages/anselmokossa/filament-sentinel) | páginas de erro (403, 404, 419, 500, 503) com a cara do painel |
 | [flowframe/laravel-trend](https://packagist.org/packages/flowframe/laravel-trend) | agregação por período para os gráficos dos widgets |
+| [bezhansalleh/filament-language-switch](https://packagist.org/packages/bezhansalleh/filament-language-switch) | seletor de idioma nos três painéis e nas telas de login |
 
 ### Dados e serviços
 
@@ -922,11 +1470,12 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 |---|---|
 | [filament/spatie-laravel-settings-plugin](https://packagist.org/packages/filament/spatie-laravel-settings-plugin) | páginas de configuração no painel |
 | [spatie/laravel-settings](https://packagist.org/packages/spatie/laravel-settings) | as configurações persistidas por trás delas |
+| [filament/spatie-laravel-media-library-plugin](https://packagist.org/packages/filament/spatie-laravel-media-library-plugin) | a camada de mídia (upload, coleções, conversões) nos componentes de form, tabela e infolist |
 | [mike-bronner/laravel-model-caching](https://packagist.org/packages/mike-bronner/laravel-model-caching) | cache automático de queries do Eloquent |
 | [predis/predis](https://packagist.org/packages/predis/predis) | cliente Redis em PHP puro (sem extensão) |
 | [laravel/reverb](https://packagist.org/packages/laravel/reverb) | WebSocket para as notificações em tempo real |
 
-> **Motores por baixo dos plugins**, instalados como dependência (você não os declara, mas eles são o que de fato roda): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (os checks), `spatie/laravel-activitylog` (o log de atividades) e `livewire/livewire` (o Filament inteiro).
+> **Motores por baixo dos plugins**, instalados como dependência (você não os declara, mas eles são o que de fato roda): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (os checks), `spatie/laravel-activitylog` (o log de atividades), `spatie/laravel-medialibrary` (os anexos) e `livewire/livewire` (o Filament inteiro).
 
 ### Model Caching
 
@@ -950,6 +1499,7 @@ php artisan modelCache:clear      # limpa o cache das models
 | [phpunit/phpunit](https://packagist.org/packages/phpunit/phpunit) | o motor por baixo do Pest |
 | [larastan/larastan](https://packagist.org/packages/larastan/larastan) | análise estática (`composer types:check`) |
 | [laravel/pint](https://packagist.org/packages/laravel/pint) | formatação (`composer lint`) |
+| [laraveldaily/filacheck](https://packagist.org/packages/laraveldaily/filacheck) | lint específico de Filament (`composer filament:check`) |
 | [laravel-lang/common](https://packagist.org/packages/laravel-lang/common) | traduções pt-BR do Laravel |
 | [laravel/pail](https://packagist.org/packages/laravel/pail) | logs em tempo real no terminal |
 | [laravel/pao](https://packagist.org/packages/laravel/pao) | ferramentas de desenvolvimento do Laravel |

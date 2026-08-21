@@ -66,7 +66,7 @@ To see the access boundary in action, create a user with only the `admin` or `in
 |---|---|---|---|
 | **App** | `/app` | The business operation. **Intentionally empty** — this is where your project is born | `master_global`, `panel_user`, `admin_app` (with tenancy) |
 | **Admin** | `/admin` | Users, roles and permissions (Shield), AI agent catalog, onboarding authoring | `master_global`, `admin` |
-| **Infra** | `/infra` | Health checks, backups, queues, logs, auditing, caches, commands, Pulse, AI costs | `master_global`, `infra` |
+| **Infra** | `/infra` | Health checks, backups, queues, logs, exceptions, mail trail, recycle bin, auditing, caches, commands, Pulse, AI costs | `master_global`, `infra` |
 
 **Who gets in comes from the role, not from a list in the code.** Each role declares which panel it is good for, in the `roles.painel` column — the **Painel** field on the `/admin` → Roles screen. `App\Models\User::canAccessPanel()` compares that column against the panel being opened. Creating a role and picking its panel **is** the act of granting access.
 
@@ -92,6 +92,86 @@ Separating admin from infra is the whole point of the kit: whoever administers u
 
 More screens: [application health](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/infra-health.png) · [users](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-users.png) · [permissions (Shield)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-roles.png) · [AI agent catalog](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-agentes-ia.png) · [command center](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/infra-comandos.png) · [⌘K search](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/spotlight.png) · [access denied](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/erro-403.png)
 
+## Our numbers
+
+Not a showcase: it's the inventory of everything that already exists, and of what you won't have to write.
+
+| | `/app` | `/admin` | `/infra` | **Total** |
+|---|---:|---:|---:|---:|
+| **Navigable screens** | 12 | 28 | 27 | **67** |
+| Resources | 4 | 8 | 8 | **20** |
+| Standalone pages | 4 | 3 | 12 | **19** |
+| Widgets | 1 | 9 | 19 | **29** |
+| `GET` routes | 19 | 34 | 33 | **86** |
+
+`/app` is the smallest on purpose — it is born **empty**, because that's where your business comes in.
+The other two already come complete.
+
+| Foundation | |
+|---|---:|
+| Production packages | **55** |
+| Development packages | **15** |
+| Migrations | **48** |
+| Policies | **14** |
+| `kit:*` commands | **4** |
+
+| Quality | |
+|---|---:|
+| Test cases (`Kit` + `Tenancy`) | **411**, with 1138 assertions |
+| Screens swept in a real browser | **55** |
+| Test files | **51** |
+| PHPStan | **level 7**, zero errors |
+| FilaCheck | **17** rules, all passing |
+
+| Documentation | |
+|---|---:|
+| Reference documents (`wikis/`) | **9** |
+| Specified features (`wikis/specs/`) | **15** |
+| Project rules for AI agents (`.ai/rules/`) | **7** |
+
+### PHPStan at level 7 — and why that's a strong point
+
+Most Laravel projects stop at level 5 or 6. The kit runs at **7, with zero errors and no
+baseline**: there is no `@phpstan-ignore` scattered around, no `phpstan-baseline.neon` hiding debt.
+
+What level 7 catches and 6 doesn't, in practice:
+
+- **Unchecked null.** `Filament::getCurrentPanel()` returns `?Panel`; `auth()->user()` returns
+  `?User`. At level 6 you call a method on them and it passes. At 7, you have to prove it exists.
+- **A wide vendor type leaking into your code.** `session()` is `mixed`, `env()` is `bool|string`,
+  Shield's getters are `?array`. 7 forces you to narrow it at the **boundary**, once, instead of
+  hoping the value is what you expect at every use.
+- **`list<T>` vs `array<int,T>`.** `filter()` and `map()` preserve keys. An array with holes handed
+  where a list was expected is a bug that only shows up at `json_encode` — it turns into an object
+  instead of an array, and the front end breaks.
+
+Going from 6 to 7 exposed **29 real errors** in the kit, and one of them was a genuine latent bug: a
+`Convite|null` with a method called straight on it. All fixed at the source — none silenced.
+
+> ### ⚠️ Watch out when implementing this in your project
+>
+> **Level 7 applies to the code you write too.** `composer test` runs
+> `phpstan analyse` and fails the whole build.
+>
+> What shows up the most when someone starts writing in the kit:
+>
+> | What you write | What PHPStan demands |
+> |---|---|
+> | `auth()->user()->id` | prove there is a user: `auth()->user()?->id`, or an `if` before it |
+> | `Filament::getTenant()->nome` | `?Model` — use `instanceof Tenant` as a guard |
+> | `->filter()->all()` in a `@return list<string>` | `array_values()` at the end |
+> | `env('ALGUMA_COISA')` straight into a `str_*` | `(string) env(...)`, or `config()` with a typed default |
+> | a method with no return type | declare the type; the kit requires it everywhere |
+>
+> **Don't solve it with `@phpstan-ignore` or a baseline.** The kit has exactly **one** exception in
+> `phpstan.neon`, and it is for a vendor macro resolved at runtime — with the reason, the two
+> alternatives that were tried and dropped, and the test that covers the point for real. That's the
+> standard: if an exception is needed, it comes with the justification and with the test that
+> replaces it.
+>
+> If you want to loosen it in your project, it's one line in `phpstan.neon`. But know what you're
+> trading away: the 29 errors above were all real.
+
 ## What's already there
 
 **Administration and security**
@@ -105,6 +185,9 @@ More screens: [application health](https://raw.githubusercontent.com/gsferro/fil
 **Observability and maintenance (infra panel)**
 - Spatie Health with checks for database, cache, queues, scheduler, disk, debug mode and local AI
 - Backup Monitor (spatie/laravel-backup), Jobs Monitor, Logs Explorer (no delete button — a trail is evidence)
+- **Grouped exceptions** by type and frequency — what Health, Pulse and the log file don't answer
+- **Sent-mail trail**: separates "it was never sent" from "it was sent and landed in spam"
+- **Recycle bin**: restores what was deleted with `SoftDeletes` ([details](#the-infra-trails-exceptions-mail-and-recycle-bin))
 - Command Center: Artisan commands pre-approved for the UI, with history
 - Laravel Pulse embedded as a panel page
 - Dependency Graph: a map of models, relations, resources and panels
@@ -123,6 +206,8 @@ More screens: [application health](https://raw.githubusercontent.com/gsferro/fil
 - **Dashboards already filled in** on the admin and infra panels: 20 widgets (stat cards with an animated counter, funnels, goals, breakdowns, timelines) over the data the panels already have — no empty screen waiting for you
 - Branded error pages (Sentinel) in Portuguese (pt-BR) — the 403 one only shows the permission diagnosis outside production
 - 100% pt-BR UI, including plugins that ship English only (translations in `lang/vendor/`)
+- **Language switcher** on all three panels and on the login screens — driven by data, not by a flag (details below)
+- **Media layer** (spatie/laravel-medialibrary) inside Filament's components: uploads, collections and conversions in form, table and infolist ([details](#attachments-and-media))
 
 ### The ⌘K search
 
@@ -138,6 +223,21 @@ The topbar field is **Filament's native one** — same markup, same look, same `
 | **Actions** | "Create X" for each resource, with `canAccess()` + `canCreate()` + `shouldRegisterNavigation()` |
 
 Permission filtering is the reason `App\Filament\Spotlight\*` exists in the kit: the package's categories do **not** call `canAccess()`, and without that the search offers screens that would result in a 403 — an affordance leak. The "Create X" suggestions are the kit's too (`AcoesDeCriacao`), for the same reason plus one more: the package's discovery resolves URLs without checking context and takes the login screen down with a 500.
+
+### The language switcher
+
+The language button (`bezhansalleh/filament-language-switch`) is registered on **all three panels and on the login screens too** — which is exactly where someone who doesn't read Portuguese needs to switch, before a session even exists.
+
+**It is driven by data, not by a flag.** The list of locales lives in `config/kit.php`:
+
+```php
+'idiomas' => ['pt_BR'],           // how the kit is born: one language, no button
+'idiomas' => ['pt_BR', 'en'],     // two languages: the switcher shows up on its own
+```
+
+With a **single language** — the default — the switcher does not appear: there is nowhere to switch to. That is why this is a list and not a boolean; nobody forgets a flag left on with only one language.
+
+> ⚠️ **The switcher translates Filament's layer and the packages', not the kit's own labels.** The coverage comes from Filament and `laravel-lang/common`. "Administrador Geral", "Acesso ao painel /app", the hub titles and the resource labels are pt-BR strings written in the code — there are ten `__()` calls in the whole app. Turning `en` on today makes **half the screen switch language and the other half not**. Internationalizing the kit is declared work, not yet done.
 
 ## User invitation
 
@@ -205,6 +305,67 @@ granted inside the invitation's organization; a role of `/admin` or `/infra` is 
 the global context — being an admin of one organization is not a credential to administer
 the installation.
 
+## The `/infra` trails: exceptions, mail and recycle bin
+
+The infrastructure panel already showed **health** (Health), **performance** (Pulse), **the log
+file** (Logs Explorer) and **queues** (Jobs Monitor) — and none of them answered "which exception
+is blowing up, and how often", "did the invitation arrive?" or "can that delete be undone?". Three
+screens answer one of those each:
+
+| Screen | Where | What it answers |
+|---|---|---|
+| **Exceptions** | `/infra`, *Observability* group | exceptions grouped by type and frequency, with a count badge in the menu |
+| **Mail trail** | `/infra`, *Trails* group | every e-mail the kit sent — separates "it was never sent" from "it was sent and landed in spam" |
+| **Recycle bin** | `/infra`, *System* group | restores records deleted with `SoftDeletes` |
+
+### Both trails store sensitive data
+
+That is why they live **only** on `/infra`, where getting in already requires the `master_global`
+or `infra` role — on `/app` any panel role would see them:
+
+- the exception's **stack trace** can carry request parameters, therefore personal data;
+- the e-mail's **body** is stored, and the access invitation carries the acceptance link.
+
+### Retention: the number is the intent, the scheduler is the execution
+
+Both tables grow per event — a bug in a loop fills the disk in hours. That is why pruning has a
+deadline, in `config/kit.php`:
+
+| Key | `.env` | Default |
+|---|---|---|
+| `kit.retencao.excecoes_em_dias` | `KIT_RETENCAO_EXCECOES_DIAS` | 14 |
+| `kit.retencao.emails_em_dias` | `KIT_RETENCAO_EMAILS_DIAS` | 14 |
+
+The 14 days follow the `days` of the log rotation in `config/logging.php`: the trail dies together
+with the log that produced it, not after it. **Zero or negative turns pruning off** for that trail —
+and then the table grows with no ceiling, which is a choice, not an oversight.
+
+> ⚠️ **The scheduler is what applies retention.** The routines are in `routes/console.php`; without
+> `php artisan schedule:work` (or the docker compose `scheduler` service) the number in the config
+> is only a declared intent.
+
+### The recycle bin lists what you declare
+
+`RevivePlugin` takes an **explicit list** of models in
+`app/Providers/Filament/InfraPanelProvider.php` — today only `App\Models\Projeto`, the kit's only
+model with `SoftDeletes`:
+
+```php
+RevivePlugin::make()
+    ->navigationGroup('Sistema')
+    ->navigationLabel('Lixeira')
+    ->models([
+        Projeto::class,
+    ])
+    ->withoutScoping(),
+```
+
+**A new model with `SoftDeletes` has to go into that list**, otherwise it ends up deleted with no
+screen to restore it from. Automatic scanning of `app/Models` was avoided on purpose: it would
+reach `User`, `Role` and `Tenant`, whose restoration has an **authorization** consequence — a user
+comes back with a role in an organization that may no longer exist. The lock is the list, just like
+the Command Center's allow-list.
+
 ## Multi-tenancy (opt-in)
 
 The kit is born **single-tenant**. One command turns multi-tenancy on — and those who don't need it pay nothing for it:
@@ -267,6 +428,275 @@ class Projeto extends Model
 It provides the `tenant()` relationship, a **global scope** and automatic `tenant_id` filling. The scope matters because Filament only scopes what goes through a Resource — jobs, commands, listeners and APIs would be left out, and that's exactly where one client's data leaks into another's.
 
 > ⚠️ **`kit:tenancy` recreates the database.** It turns on `permission.teams`, and the spatie migration only creates the tenant columns if the flag is active **before** the migrate. That's why it requires a clean git tree, an explicit confirmation, and runs `migrate:fresh --seed`. **The time to run it is day 1 of the project.** The detailed path — including global vs. per-tenant roles and `scopedUnique()` — is in [`wikis/arquitetura.md`](wikis/arquitetura.md#multi-tenancy-opt-in) (pt-BR).
+
+## Attachments and media
+
+`filament/spatie-laravel-media-library-plugin` delivers the media layer — uploads, collections and
+conversions — inside Filament's form, table and infolist components. The demo model
+`App\Models\Projeto` shows the whole design:
+
+```php
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+class Projeto extends Model implements HasMedia
+{
+    use InteractsWithMedia;
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('anexos');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('miniatura')
+            ->nonQueued()   // with no guaranteed worker running: queued, the
+            ->width(200)    // conversion would only exist with a worker up, and the
+            ->height(200);  // column would stay empty with no error at all
+    }
+}
+```
+
+And `ProjetoResource` consumes both ends:
+
+```php
+SpatieMediaLibraryFileUpload::make('anexos'),   // in the form
+
+SpatieMediaLibraryImageColumn::make('anexos')   // in the table
+    ->simpleLightbox(),
+```
+
+`->simpleLightbox()` works with no glue because `SpatieMediaLibraryImageColumn` **extends
+`ImageColumn`**, which is exactly where the lightbox macro is registered.
+
+[![The Projeto listing on /app with the attachment column: circular thumbnails stacked on each record's row](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-projetos-anexos.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-projetos-anexos.png)
+
+Look at the thumbnails stacked on the record's row: each one is served through a **signed URL**,
+because the disk is private — the same file requested without the signature answers 403.
+
+**Organization scoping comes for free** — and that's the point. Spatie's `media` table is
+polymorphic: the file belongs to the record, and the record is already scoped by
+`BelongsToTenant`. Whoever can't reach the project can't reach the attachment, with no tenant
+column in `media` and no configuration to remember to turn on.
+
+> ⚠️ **The default media disk is `local`, and it is private on purpose.** With
+> `MEDIA_DISK=public` the file lands in `storage/app/public`, served by the `public/storage`
+> symlink: path `/storage/{id}/{file}`, sequential ID, reachable **without a session** — Filament's
+> multi-tenancy does not reach the file system. Use `public` only for avatars and logos, which show
+> up on the login screen.
+>
+> Two practical consequences of the private disk:
+>
+> 1. **`Media::getUrl()` answers 403.** That is fail-closed, and it is what you want. To publish a
+>    link to private media use **`getTemporaryUrl()`**, which signs the URL.
+> 2. **Whoever holds the link gets in, for as long as the signature is valid, with no session.**
+>    Laravel's `storage.local` route validates the signature, not the user: sharing the link shares
+>    the file until it expires. For attachments that need per-organization authorization, serve them
+>    through your own route that checks the policy first.
+>
+> Already running an install with `MEDIA_DISK=public`? The new config only protects NEW files. Run
+> **`php artisan kit:midia-privada`** (it takes `--dry-run`) to move what was already written —
+> without it, the old media stays served by the symlink.
+
+## CSV import and export
+
+The mechanism is **native Filament 5**: `ImportAction`, `ExportAction`, the jobs, the batch and the
+completion notification with a download button. The `imports`, `exports` and `failed_import_rows`
+tables are already migrated, and the kit **writes no wrapper at all** around any of it. What it adds
+are two base classes, a dedicated permission for each side, and the decision — resource by resource
+— to turn them on or not.
+
+![The import and export flow on /app: the Projeto listing with both buttons in the header, the export modal with one field per column, and the import modal with the sample CSV](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/fluxo-import-export.gif)
+
+Both buttons live in the listing header, next to "New": no new screen, no route of their own — what
+changes from resource to resource is only the permission each one requires.
+
+### `ImportadorDoKit`: the organization boundary the package does not ship
+
+`Importer::resolveRecord()` runs **inside the worker**. There is no panel and no route in the session
+there, so `Filament::getTenant()` returns `null` and the `BelongsToTenant` global scope becomes a
+**no-op** — `ImportCsv` restores `auth()->setUser()`, the **user**, and nothing restores the tenant.
+Two consequences, both silent:
+
+| CSV row | Without `App\Support\ImportExport\ImportadorDoKit` |
+|---|---|
+| with a key from **another** organization | UPDATE on someone else's record, no 403 and no log |
+| new | born with a **null** `tenant_id` — invisible to everybody, including whoever imported it |
+
+The fix has two ends. The **Action** captures the tenant in the request, where it exists
+(`->options(['tenant_id' => Filament::getTenant()?->getKey()])`), and the base class uses it on both
+ends: it scopes record resolution and it fills creation, standing in for the `creating` hook that has
+no context down there.
+
+And it **fails closed**: tenancy on + a model using `BelongsToTenant` + no `tenant_id` in the options
+= the row is **refused** with `RowImportFailedException` (it lands in `failed_import_rows` and comes
+out in the notification's failure CSV) and the reason is logged. Carrying on unscoped would be
+exactly the defect the class exists to close.
+
+### `ExportadorDoKit`: formula injection neutralized on every column
+
+`preventFormulaInjection()` exists in Filament **per column**, and it is born **off**. A cell
+starting with `=`, `+`, `-` or `@` becomes a formula when someone opens the CSV in Excel — and the
+data that filled it came from a user form. `App\Support\ImportExport\ExportadorDoKit` applies the
+neutralization to **every** column the subclass declares; that is why the subclass declares
+`colunas()`, not `getColumns()`.
+
+**Export has not a single line of tenant code, and that is the part worth understanding.** Its query
+comes from the screen's table (`getTableQueryForExport()`), built in the request, where the global
+scope has already applied `where tenant_id = X`; it is serialized **with** that `where` inside, and
+that is what the job runs. Export isolation is **inherited**; import isolation is **built** — the
+exact inverse. The full reasoning is in
+[`wikis/arquitetura.md`](wikis/arquitetura.md#import-e-export-o-worker-perde-o-tenant-o-export-o-herda)
+(pt-BR).
+
+Both modals are Filament's own — the kit draws no screen here:
+
+| Import | Export |
+|---|---|
+| [![The Projeto import modal, with the link to download a sample CSV and the file upload field](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/import-modal.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/import-modal.png) | [![The Projeto export modal, with one field per exporter column — Nome, Organização, Criado em and Atualizado em — each with a checkbox and an editable label](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/export-modal.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/export-modal.png) |
+| **Download an example CSV file** builds the header from the importer's columns — that is where you can see, in practice, that `tenant` is not among them | One field per column declared in `colunas()`, each with a checkbox and an editable label: whoever exports picks the slice and renames the header, but cannot add a column the exporter never declared |
+
+### A dedicated permission, and it is not optional
+
+`import` and `export` are the **kit's addition** to Shield's 12 default methods, in
+`config/filament-shield.php` → `policies.methods` — and in `single_parameter_methods` too, because
+neither of them receives a record (outside that list Shield would generate
+`import(User $user, Model $record)` in the policy, and the Action, which calls
+`Gate::authorize('import')` with no record, would throw `ArgumentCountError`). They generate
+`Import:{Model}` and `Export:{Model}` for every resource.
+
+[![A role edit screen in Filament Shield, with the Import and Export checkboxes next to View Any, Create and Delete](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-papeis-import-export.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-papeis-import-export.png)
+
+On the roles screen, `Import` and `Export` sit right next to `View Any`, `Create` and `Delete` — for
+**every** resource, including the ones that never turned the Actions on. That is what lets you grant
+or revoke each side per role, in `/admin` → Roles, without touching code.
+
+They are necessary because **a Filament Action does not check policies on its own** — the vendor says
+so in `Actions/Concerns/CanBeAuthorized.php`: the default authorization is `null`, i.e. allowed.
+That is why every Action in the kit carries an explicit `->authorize('import')` or
+`->authorize('export')`. Without that line, whoever can open the listing takes the whole listing
+away.
+
+> ⚠️ **Changed that config? Reseed.** The new permission does not exist in the database until
+> `shield:generate` runs again, and the symptom is the Action **disappearing from the screen with no
+> error at all**:
+>
+> ```bash
+> php artisan db:seed --class=Database\Seeders\ShieldPermissionsSeeder
+> php artisan db:seed --class=Database\Seeders\PapeisSeeder
+> ```
+
+### `panel_user` is born with neither of them
+
+The subtraction lives in `PapeisSeeder::ehPermissaoDeImportOuExport()`, and it matches by **action
+prefix** (`Import:` / `Export:`), not by a list of FQCNs — on purpose: **a new resource is born with
+both outside the ordinary user without anyone having to remember to add it to any list.** The
+criterion is what each one actually is: import is a **mass write**; export **takes the
+organization's data out of the application** in a file. Whoever uses the business does that one
+record at a time; whoever moves spreadsheets is whoever operates the organization. `admin_app` keeps
+both, because it receives the panel's whole matrix — and granting it to `panel_user` is one click in
+`/admin` → Roles, if that fits your case.
+
+### Who has what today
+
+| Panel | Resource | Import | Export | Why |
+|---|---|---|---|---|
+| `/app` | **Projeto** | ✅ | ✅ | the demo resource — it is the reference example for both |
+| `/admin` | **AgenteIa** | ✅ | ✅ | configuration, no personal data |
+| `/admin` | **Tenant** | — | ✅ | creating an organization from a CSV would skip provisioning: per-tenant roles, the first administrator, the visual identity. One spreadsheet row would become an organization nobody can reach |
+| `/admin`, `/app` | **User** | — | 💤 commented out | the spreadsheet leaves with the e-mail of everybody who has access; and import would bypass invitation, e-mail verification and role assignment — the three pillars of access in the kit |
+| `/admin`, `/app` | **Convite** | — | 💤 commented out | the invitee's e-mail |
+| `/admin` | **Role** | — | — | a role is a code identifier, not spreadsheet data |
+| `/infra` | **AiRun** | — | ✅ | a cost ledger; the question it answers is "how much did we spend" |
+
+**Commented out** means the two lines **are already** in the Page file, commented, with the warning
+of what turning them on exposes — the exporter is there, ready; it is one line to uncomment. The
+decision is born **written down**, not forgotten: it is the convention `.ai/rules/filament.md`
+demands of every new resource, because silent absence is not a decision — nobody goes back to
+reconsider what was never written.
+
+### The columns that are missing on purpose
+
+Filament's generator infers columns from the database, and the kit strips three of them by hand. Do
+not put them back:
+
+| Class | Missing column | What it would hand over |
+|---|---|---|
+| `ConviteExporter` | `token`, `token_lembrete` | `Convite::aceitar()` validates the token and binds the user to the organization with the invite's role: a CSV with that column is a **spreadsheet of entry keys** |
+| `AiRunExporter` | `request`, `response` | the full prompt and answer, from any organization — and `/infra` has no tenant in the route |
+| `ProjetoImporter` | `tenant` | the generator creates `ImportColumn::make('tenant')->relationship()` for every FK; accepting it would let the **CSV pick the destination organization** and make the `ImportadorDoKit` boundary decorative |
+
+The generator puts all of them back on `--force`. What guards the absence are the tests in
+`tests/Kit/ImportExportTest.php`.
+
+### No worker, nothing happens
+
+Filament's import and export are **jobs**. The kit is born with `QUEUE_CONNECTION=database` in
+`.env`; `composer dev` already starts a worker, and in production the `worker` service of docker
+compose is what processes them. With the queue stopped, the file is accepted, the row lands in
+`imports`/`exports` and the completion notification never arrives — a stopped queue shows up in the
+**Jobs Monitor** in `/infra`.
+
+### Tracking: no new table
+
+`imports` and `exports` already record who asked, which importer, how many rows and when it
+finished. What is **not** there is exactly what a leak audit asks — **which organization the file
+came from** — because both tables belong to the package and have no `tenant_id`. That is what
+`KitServiceProvider::configureRastroDeImportExport()` adds, on the **`tenancy`** channel: the subject
+is organization crossing.
+
+The two sides use different hooks because the package is asymmetric: import has real events
+(`ImportStarted` / `ImportCompleted`), export has **none at all**, so the hook is the `Export` model
+itself — `created` marks the request and the freshly filled `completed_at` marks the completion.
+
+### Retention: 30 days, and the export pruning deletes the file
+
+| Key | `.env` | Default |
+|---|---|---|
+| `kit.retencao.importacoes_em_dias` | `KIT_RETENCAO_IMPORTACOES_DIAS` | 30 |
+| `kit.retencao.exportacoes_em_dias` | `KIT_RETENCAO_EXPORTACOES_DIAS` | 30 |
+
+**30, and not the 14 of the exception and mail trails**: the history of a mass write is what answers
+"who wrote this last week", and that question usually arrives after month-end closing.
+`failed_import_rows` falls by cascade; **the export pruning deletes the FILE**, not just the row —
+without that the disk grows forever with CSVs nobody can download any more, because the download
+link is signed and the row that authorized it is gone.
+
+Both schedules live in `routes/console.php` (02:20 and 02:30), as `Schedule::call` and not as
+`model:prune`: Filament's `Import` and `Export` models **use the `Prunable` trait but never declare
+`prunable()`**, so the command would throw `LogicException` — and there is no way to add the method
+without editing `vendor/`. It is the same pattern already used by the mail-trail pruning. Zero or
+negative turns that pruning off, and **the scheduler is what executes it**: with no
+`php artisan schedule:work` (or the compose `scheduler` service) the number in the config is just
+intent.
+
+### Turning it on for a new resource
+
+```bash
+php artisan make:filament-importer Produto -G
+php artisan make:filament-exporter Produto -G
+```
+
+Swap the generated `extends Importer` / `extends Exporter` for the kit's base classes (in the
+exporter, rename `getColumns()` to `protected static function colunas()`), **delete the `tenant`
+column** from the importer, and add the Actions to the listing Page's `getHeaderActions()`:
+
+```php
+ImportAction::make()
+    ->importer(ProdutoImporter::class)
+    ->authorize('import')
+    ->options(fn (): array => ['tenant_id' => Filament::getTenant()?->getKey()]),
+
+ExportAction::make()
+    ->exporter(ProdutoExporter::class)
+    ->authorize('export'),
+```
+
+Then **reseed both seeders** (`ShieldPermissionsSeeder`, then `PapeisSeeder`) and make sure a worker
+is up. The full recipe, including what to do when the decision is *not* to turn it on, is in
+[`wikis/receitas.md`](wikis/receitas.md#ligar-importexport-num-resource) (pt-BR).
 
 ## Working with AI agents
 
@@ -358,7 +788,7 @@ produces a file that the next step checks.
 **What this changes in practice:**
 
 - **The agent reads before writing.** `wikis/` and `.ai/rules` answer what already exists, and the
-  [feature roadmap](#feature-roadmap) below lists the 56 ready screens. A feature
+  [feature roadmap](#feature-roadmap) below lists the 61 ready screens. A feature
   reimplemented from scratch because the agent didn't know it existed is the most expensive and most invisible cost.
 - **Context becomes a file, not chat history.** Switching agent, machine or person does not
   lose the why of the decision — it is in the ADR, versioned in the same commit as the code.
@@ -461,6 +891,9 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 | F-42 | Composer releases | `/infra/composer-release-packages` | `infra` | warns of new version. **Informational — never updates anything.** Sync is a job: without worker, the screen is empty | 🔵 |
 | F-43 | AI runs | `/infra/execucoes-ia` | `infra` (`ver-ai-tasks`) | ledger with cost and tokens per run | 🔵 |
 | F-44 | Clear caches | `/infra` topbar | `infra` | `cache`, `config`, `view` and `modelCache` together | ⚪ |
+| F-57 | Grouped exceptions | `/infra/exceptions` | `infra` | by type and frequency, with a menu badge. Retention (`KIT_RETENCAO_EXCECOES_DIAS`) only happens **with the scheduler running** | 🟢 |
+| F-58 | Mail trail | `/infra/mail-logs` | `infra` | every e-mail sent. It stores the **body** — including the invitation's acceptance link | 🟢 |
+| F-59 | Recycle bin | `/infra/recycle-bin` | `infra` | restores what was deleted with `SoftDeletes`. Lists **only** the models declared in `models()` in `InfraPanelProvider` | 🟢 |
 
 ### Productivity and UI
 
@@ -474,6 +907,8 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 | F-50 | Resizable columns | any table | authenticated | width adjustable, remembered in the session | ⚪ |
 | F-51 | Environment indicator | topbar | anyone | `local`/`staging` badge; hides in production | 🔵 |
 | F-52 | Branded error pages | 403, 404, 419, 500, 503 | — | with the panel's look, in Portuguese (pt-BR) | 🔵 |
+| F-60 | **Language switcher** | topbar of the three and login screens | anyone | only shows up with **two** locales in `kit.idiomas`; translates Filament and the packages, **not** the kit's labels | 🟢 |
+| F-61 | **Attachments and media** | Projects form and table | whoever reaches the resource | upload, `anexos` collection, `miniatura` conversion and a table lightbox. The attachment inherits the record's own organization scope | 🟢 |
 
 ### AI
 
@@ -486,10 +921,11 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 
 ### What the roadmap **does not** cover on its own
 
-Five features depend on something outside the process, and no test replaces it:
+Some features depend on something outside the process, and no test replaces it:
 
 | Feature | Depends on | Without this |
 |---|---|---|
+| F-57, F-58 (trail retention) | the scheduler (`schedule:work`) | the exceptions and mail tables grow with no ceiling; the deadline in `config/kit.php` stays merely declared |
 | F-15…F-20 (e-mail delivery) | a real `MAIL_MAILER` **and** a worker (`QUEUE_CONNECTION=database`) | the invitation is saved and the queue fills; nothing leaves |
 | F-33 (health checks) | a run of `php artisan health:check` | the screen opens **empty**, with no state explaining — the dashboard widget warns, the resource page doesn't |
 | F-35, F-42 (queues and releases) | a worker | the Composer sync job stays in the queue: F-42 shows "no records" and F-35 counts pending against an empty table |
@@ -556,14 +992,94 @@ Reverb uses 8090 instead of the default 8080 so it doesn't collide with llama.cp
 
 ```bash
 composer dev          # server + queue + vite together
-composer test         # pint + phpstan + the whole suite
+composer test         # pint + phpstan + filacheck + the whole suite
 composer test:kit     # only the kit's tests (the foundation)
 composer lint         # formats the code
+composer filament:check   # only the Filament-specific lint (FilaCheck)
+composer refactor:preview # what Rector would rewrite (dry-run) — OUTSIDE composer test
+composer refactor:apply   # applies Rector's rewrite — OUTSIDE composer test
 php artisan kit:install --force   # reinstalls from scratch (deletes the SQLite file) and asks again
 php artisan kit:install --no-custom   # installs without asking anything
 php artisan kit:update            # brings in improvements from a new kit version
 php artisan kit:tenancy           # turns on multi-tenancy (opt-in)
 ```
+
+### FilaCheck: the lint that only knows Filament
+
+`composer filament:check` runs `laraveldaily/filacheck` — 17 rules that Pint and PHPStan have no
+way of having: a deprecated Filament API method, the wrong action namespace, a call that changed
+between versions. It runs inside `composer test` along with pint and phpstan, so CI fails on the
+same things your machine does.
+
+When it was adopted it found **7 pre-existing problems** in the kit itself — six deprecated test
+methods and one `ImageColumn::size()` — all fixed.
+
+### Rector: major upgrades, not linting
+
+The kit has **four** quality tools, on four axes — and only **three** are in the gate:
+
+| Tool | Axis | On finding a problem | Runs |
+|---|---|---|---|
+| **Pint** | style | **fixes it** | always (gate) |
+| **PHPStan** + larastan | types | reports | always (gate), **level 7** |
+| **FilaCheck** | Filament's API | reports | always (gate) |
+| **Rector** | code rewriting | **changes semantics** | **on demand** |
+
+`composer refactor:preview` and `composer refactor:apply` are **not** part of `composer test` — and
+that is deliberate.
+
+**What Rector is for here: major upgrades.** Laravel 13 → 14, PHP 8.4 → 8.5. The `rector.php` at the
+root ships with **no set enabled**, and carries, in a comment block, which set to turn on for each
+case. The flow is: uncomment the set → `composer refactor:preview` → read the whole diff →
+`composer refactor:apply` → `composer test` → turn the set off again.
+
+**Why it stays out of the gate — it was measured, not opined.** With Laravel's quality sets turned
+on, Rector would rewrite **103 files** in this project. The three biggest reasons:
+
+| Rule | Files | What it proposes |
+|---|---:|---|
+| `EloquentMagicMethodToQueryBuilderRector` | 35 | `User::find()` → `User::query()->find()` |
+| `AddClosureVoidReturnTypeWhereNoReturnRector` | 26 | `: void` on closures |
+| `AppToResolveRector` | 21 | `app()` → `resolve()` |
+
+Those are style opinions, not corrections. In a kit whose product **is readable example code**,
+`User::find()` and `app()` are the idiom the ecosystem reads without pausing.
+
+And there is one case that settles it. `CarbonToDateFacadeRector` proposes, in `InfraPanelProvider`:
+
+```diff
+- Carbon::now()->subDays(...)
++ Date::now()->subDays(...)
+```
+
+And that **breaks**, for three verifiable facts:
+
+1. `now()` **is** `Date::now()` — `Illuminate/Foundation/helpers.php:623`
+2. The kit calls `Date::use(CarbonImmutable::class)` — `KitServiceProvider.php:57`
+3. `FilamentExceptionsPlugin::modelPruneInterval()` requires a **mutable** `Carbon`
+
+PHPStan at level 7 **already reported exactly this error** when the code used `now()`. The explicit
+`Carbon::now()` is the fix — and Rector would undo it.
+
+> **A quality tool that reverts another one's fix is not a gate, it's a dispute** — and the build
+> would start depending on which of the two ran last.
+
+`tests/Kit/QualidadeDeCodigoTest.php` pins this down: it fails if Rector enters `composer test`, or
+if a quality set is turned on.
+
+**Upgrading Filament is a different tool.** **There is no Filament rule in
+`driftingly/rector-laravel`** — searching for "filament" in the package returns zero. That's not a
+gap: Filament ships its **own** tool, also based on Rector.
+
+```bash
+composer require filament/upgrade --dev -W
+vendor/bin/filament-vN     # N = the target major
+```
+
+It is kept in lockstep with the framework — whoever writes the rules is whoever breaks the API.
+
+The full reading on the four tools is in
+[`wikis/qualidade-de-codigo.md`](wikis/qualidade-de-codigo.md) (pt-BR).
 
 ### The kit's tests
 
@@ -594,6 +1110,38 @@ state — `composer test:kit:serial` isolates that, and the difference between t
 > need this — but it's good to know for any other flag.
 
 Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never touches them.
+
+### The README images come out of a test
+
+The screenshots in this README are **not taken by hand**. They come from
+`tests/BrowserTenancy/CapturaDeArteTest.php`, in the same suite that proves the screens work:
+
+```bash
+composer art
+```
+
+The command really navigates, saves the PNGs, publishes them into `art/`, generates the
+`art/thumbs/` versions and assembles the flow GIF. It is the only way we found for the docs not to
+rot: nobody redoes fifteen images every release, and the result is a README showing a version of
+the kit that no longer exists.
+
+| Step | What it does |
+|---|---|
+| `npm run build` + `view:cache` | hard prerequisites of the browser suite |
+| `KIT_ART=1 pest tests/BrowserTenancy/CapturaDeArteTest.php` | navigates and writes the PNGs into `tests/Browser/Screenshots/` (the plugin's fixed path) |
+| `php artisan kit:arte` | copies into `art/`, resizes the thumbs and assembles the GIF |
+
+Three decisions worth knowing before you touch it:
+
+- **`KIT_ART=1` is not decoration.** Without the variable the file is *skipped*. It writes into
+  `art/`, and a CI suite that dirties the working tree is worse than a slow one.
+- **The sizes are fixed: 1400x875 full, 760x475 thumb.** That is the ratio of the images already in
+  `art/`, and the gallery puts two thumbs per row — a thumb with a different ratio breaks the table.
+- **The GIF is a slideshow**, assembled with `ffmpeg` from three frames. The browser plugin does not
+  record video, and captured frames are what can be reproduced deterministically. With no `ffmpeg`
+  on the PATH the command warns and moves on: the static images were already published.
+
+Only need to redo the thumbs, without repeating the navigation? `php artisan kit:arte --sem-gif`.
 
 ### How tests are thought out: SFDIPOT sweep
 
@@ -629,8 +1177,12 @@ The benefit is in not deriving tests only from the "happy path". What slips thro
 | 10 | **Commands in the UI** | `config/command-center.php` | — |
 | 11 | **Backups** | destination and schedule in `config/backup.php` | — |
 | 12 | **AI agent** | `/admin` → AI Agents (or `database/seeders/AssistenteSeeder.php`) | — |
+| 13 | **[Panel languages](#the-language-switcher)** | `config/kit.php` → `idiomas` (a list of locales; with only one, the switcher doesn't show) | — |
+| 14 | **[Trail retention](#retention-the-number-is-the-intent-the-scheduler-is-the-execution)** | `KIT_RETENCAO_EXCECOES_DIAS` / `KIT_RETENCAO_EMAILS_DIAS` in `.env` | — |
+| 15 | **[Media disk](#attachments-and-media)** | `MEDIA_DISK` in `.env` (`local` by default — private, served through a signed URL) | `php artisan kit:midia-privada` migrates media already written to a public disk |
+| 16 | **[CSV import and export](#csv-import-and-export)** | the Action in each `app/Filament/**/Pages/List*.php` (on or commented out); the permission in `config/filament-shield.php` → `policies.methods`; history retention in `KIT_RETENCAO_IMPORTACOES_DIAS` / `KIT_RETENCAO_EXPORTACOES_DIAS` in `.env` | reseed `ShieldPermissionsSeeder` + `PapeisSeeder` after touching the config |
 
-The last seven are not asked because they are **code or screen data**, not a value that fits in a terminal prompt. The installer lists them in the final summary, each with its file.
+The last eleven are not asked because they are **code or screen data**, not a value that fits in a terminal prompt. The installer lists them in the final summary, each with its file.
 
 > ⚠️ Item 5 is the only one that is **not** "edit a file" once installed: `kit:tenancy` runs `migrate:fresh --seed` and **deletes your data**. It requires a clean git tree and an explicit confirmation. **Answered during installation it deletes nothing** — the database does not exist yet, and that is the right moment to decide.
 
@@ -886,6 +1438,9 @@ Everything below comes installed, published and registered on the panels — the
 | [laboiteacode/filament-dependency-graph](https://packagist.org/packages/laboiteacode/filament-dependency-graph) | visual map of models, relations, resources and panels |
 | [mominalzaraa/filament-composer-release-notifier](https://packagist.org/packages/mominalzaraa/filament-composer-release-notifier) | warns you when there's a new version of the Composer packages |
 | [cms-multi/filament-clear-cache](https://packagist.org/packages/cms-multi/filament-clear-cache) | clear caches from the panel |
+| [bezhansalleh/filament-exceptions](https://packagist.org/packages/bezhansalleh/filament-exceptions) | exceptions grouped by type and frequency, with retention |
+| [tapp/filament-maillog](https://packagist.org/packages/tapp/filament-maillog) | a trail of every e-mail sent |
+| [promethys/revive](https://packagist.org/packages/promethys/revive) | the recycle bin: restores records deleted with `SoftDeletes` |
 
 ### AI
 
@@ -912,6 +1467,7 @@ Everything below comes installed, published and registered on the panels — the
 | [wallacemartinss/filament-onboarding](https://packagist.org/packages/wallacemartinss/filament-onboarding) | checklists and guided tours, authored in `/admin` |
 | [anselmokossa/filament-sentinel](https://packagist.org/packages/anselmokossa/filament-sentinel) | error pages (403, 404, 419, 500, 503) that look like the panel |
 | [flowframe/laravel-trend](https://packagist.org/packages/flowframe/laravel-trend) | period aggregation for the widgets' charts |
+| [bezhansalleh/filament-language-switch](https://packagist.org/packages/bezhansalleh/filament-language-switch) | language switcher on the three panels and on the login screens |
 
 ### Data and services
 
@@ -919,11 +1475,12 @@ Everything below comes installed, published and registered on the panels — the
 |---|---|
 | [filament/spatie-laravel-settings-plugin](https://packagist.org/packages/filament/spatie-laravel-settings-plugin) | settings pages in the panel |
 | [spatie/laravel-settings](https://packagist.org/packages/spatie/laravel-settings) | the persisted settings behind them |
+| [filament/spatie-laravel-media-library-plugin](https://packagist.org/packages/filament/spatie-laravel-media-library-plugin) | the media layer (uploads, collections, conversions) in the form, table and infolist components |
 | [mike-bronner/laravel-model-caching](https://packagist.org/packages/mike-bronner/laravel-model-caching) | automatic caching of Eloquent queries |
 | [predis/predis](https://packagist.org/packages/predis/predis) | pure-PHP Redis client (no extension needed) |
 | [laravel/reverb](https://packagist.org/packages/laravel/reverb) | WebSocket for real-time notifications |
 
-> **Engines under the plugins**, installed as dependencies (you don't declare them, but they're what actually runs): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (the checks), `spatie/laravel-activitylog` (the activity log) and `livewire/livewire` (all of Filament).
+> **Engines under the plugins**, installed as dependencies (you don't declare them, but they're what actually runs): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (the checks), `spatie/laravel-activitylog` (the activity log), `spatie/laravel-medialibrary` (the attachments) and `livewire/livewire` (all of Filament).
 
 ### Model Caching
 
@@ -946,6 +1503,7 @@ php artisan modelCache:clear      # clears the model cache
 | [phpunit/phpunit](https://packagist.org/packages/phpunit/phpunit) | the engine under Pest |
 | [larastan/larastan](https://packagist.org/packages/larastan/larastan) | static analysis (`composer types:check`) |
 | [laravel/pint](https://packagist.org/packages/laravel/pint) | formatting (`composer lint`) |
+| [laraveldaily/filacheck](https://packagist.org/packages/laraveldaily/filacheck) | Filament-specific lint (`composer filament:check`) |
 | [laravel-lang/common](https://packagist.org/packages/laravel-lang/common) | pt-BR translations for Laravel |
 | [laravel/pail](https://packagist.org/packages/laravel/pail) | real-time logs in the terminal |
 | [laravel/pao](https://packagist.org/packages/laravel/pao) | Laravel development tooling |

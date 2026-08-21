@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Filament\App\Resources\Convites\ConviteResource;
 use App\Filament\App\Resources\Users\UserResource;
 use App\Support\Paineis;
+use BezhanSalleh\FilamentExceptions\Resources\ExceptionResource;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Permission;
@@ -90,9 +91,39 @@ class PapeisSeeder extends Seeder
             ->syncPermissions(
                 $this->permissoesDoPainel('app', $guard)
                     ->reject(fn (string $permissao): bool => in_array($permissao, $administracao, true))
+                    ->reject(fn (string $permissao): bool => $this->ehPermissaoDeImportOuExport($permissao))
             );
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    /**
+     * `Import:{Model}` e `Export:{Model}` — subtraídas do `panel_user` por default.
+     *
+     * As duas não são "ver a tela em massa": **import é escrita em massa** e **export tira
+     * o dado da aplicação** num arquivo que segue por e-mail. O usuário comum do /app usa
+     * o negócio um registro por vez; quem move planilha é quem opera a organização.
+     *
+     * Fica com o `admin_app`, que recebe a matriz do painel inteira, e pode ser concedida
+     * ao `panel_user` na tela de Papéis por quem decidir que faz sentido — que é
+     * exatamente o cenário separado que o requisito pediu ("pode ter cenarios diferentes
+     * caso envolve quem pode exportar e quem pode importar").
+     *
+     * **Prefixo, e não FQCN, e a diferença importa.** A subtração de administração acima é
+     * por FQCN de propósito, porque `str_contains($p, 'User')` pegaria um
+     * `UserPreferenceResource` futuro por acidente. Aqui o casamento é no segmento de AÇÃO
+     * do nome, que o Shield monta deterministicamente de `policies.methods` +
+     * `permissions.separator` — `Import:` só aparece em permissão de import, para qualquer
+     * model presente ou futuro. É o comportamento desejado: resource novo nasce com as
+     * duas fora do usuário comum, sem ninguém precisar lembrar de acrescentá-lo a lista
+     * nenhuma.
+     */
+    private function ehPermissaoDeImportOuExport(string $permissao): bool
+    {
+        $separador = (string) config('filament-shield.permissions.separator', ':');
+
+        return str_starts_with($permissao, 'Import'.$separador)
+            || str_starts_with($permissao, 'Export'.$separador);
     }
 
     /**
@@ -116,10 +147,25 @@ class PapeisSeeder extends Seeder
      */
     private function permissoesDeAdministracaoDoApp(): array
     {
-        return Paineis::permissoesDe('app', [
+        // `array_values()` no fim: `Paineis::permissoesDe()` devolve `Collection<int, string>`
+        // e o `all()` dela é `array<int, string>` para o analisador — o contrato aqui é lista.
+        return array_values(Paineis::permissoesDe('app', [
             UserResource::class,
             ConviteResource::class,
-        ])->all();
+
+            /*
+             * O ExceptionResource não é tela do /app — ele existe na matriz deste painel
+             * só porque o `FilamentExceptionsPlugin` precisa estar registrado nos TRÊS
+             * painéis para o pacote não estourar `LogicException` no boot (ver o comentário
+             * no AppPanelProvider). Registrado sem navegação, mas registrado.
+             *
+             * Sem esta subtração, todo `panel_user` herdaria `ViewAny:Exception` e
+             * companhia: a rota existe neste painel, então a permission bastaria para ler
+             * stack traces da instalação inteira — que podem conter dado de request de
+             * qualquer organização.
+             */
+            ExceptionResource::class,
+        ])->all());
     }
 
     /**

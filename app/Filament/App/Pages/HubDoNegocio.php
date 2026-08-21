@@ -24,6 +24,12 @@ use Harvirsidhu\FilamentCards\Filament\Pages\CardsPage;
  * sozinhos pelo `canAccess()` que o `cardsDoPainel()` aplica. O usuário comum vê o hub COM MENOS
  * CARTÕES, nunca uma tela negada. Ver ADR-05 da wiki `hub-de-navegacao-em-cards`.
  *
+ * A flag `kit.hub` **esconde a página; ela não muda a permissão**. Com o hub desligado,
+ * `View:HubDoNegocio` continua no `panel_user` — e é isso que faz ligar a flag bastar, sem
+ * ressemear nada. Ver ADR-02 da wiki `hub-de-cards-opcional`.
+ *
+ * **Desligada por default** — só existe com `KIT_HUB=true`. Ver `canAccess()` abaixo.
+ *
  * Sem `$searchable`: com meia dúzia de destinos um campo de busca é ruído.
  */
 class HubDoNegocio extends CardsPage
@@ -53,6 +59,17 @@ class HubDoNegocio extends CardsPage
     public function getPageClasses(): array
     {
         return ['kit-cards-page'];
+    }
+
+    /**
+     * Some do menu, da URL e da busca ⌘K quando `kit.hub` está desligado — que é o default do kit.
+     *
+     * Um método só, e não dois: o motivo está no docblock do mesmo método em
+     * `App\Filament\Admin\Pages\HubDeAdministracao`.
+     */
+    public static function canAccess(): bool
+    {
+        return (bool) config('kit.hub') && parent::canAccess();
     }
 
     /**

@@ -71,6 +71,132 @@ class ListProdutos extends ListRecords
 
 > Não repita no `table()` os defaults globais (striped, deferLoading, persistência de filtro, paginação, colunas redimensionáveis) — eles já valem. Configure só o que é específico da tela.
 
+## Ligar import/export num resource
+
+Todo resource com listagem **decide as duas coisas**, e a decisão fica escrita no arquivo da Page — ligada ou comentada. `app/Filament/App/Resources/Projetos/Pages/ListProjetos.php` é o exemplo vivo dos dois; leia antes de escrever o seu.
+
+### 1. As classes
+
+```bash
+php artisan make:filament-importer Produto -G
+php artisan make:filament-exporter Produto -G
+```
+
+O `-G` infere as colunas do banco, e o que ele gera precisa de três correções na mão:
+
+```php
+// app/Filament/Imports/ProdutoImporter.php
+use App\Support\ImportExport\ImportadorDoKit;
+
+class ProdutoImporter extends ImportadorDoKit   // não `extends Importer`
+{
+    protected static ?string $model = Produto::class;
+
+    /** A coluna que decide se a linha do CSV é registro que já existe. */
+    protected function colunaDeResolucao(): string
+    {
+        return 'nome';
+    }
+
+    public static function getColumns(): array
+    {
+        return [
+            ImportColumn::make('nome')
+                ->label('Nome')
+                ->requiredMapping()
+                ->rules(['required', 'string', 'max:255']),
+            // ImportColumn::make('tenant')->relationship()  ← APAGUE
+        ];
+    }
+}
+```
+
+```php
+// app/Filament/Exports/ProdutoExporter.php
+use App\Support\ImportExport\ExportadorDoKit;
+
+class ProdutoExporter extends ExportadorDoKit   // não `extends Exporter`
+{
+    protected static ?string $model = Produto::class;
+
+    /** `colunas()`, não `getColumns()` — este é `final` na classe base. */
+    protected static function colunas(): array
+    {
+        return [
+            ExportColumn::make('nome')->label('Nome'),
+            ExportColumn::make('created_at')->label('Criado em'),
+        ];
+    }
+}
+```
+
+⚠️ **`tenant` fora do importer, sempre.** O gerador cria `ImportColumn::make('tenant')->relationship()` para toda FK, e aceitá-la deixa o **CSV escolher a organização de destino** — a fronteira que o `ImportadorDoKit` existe para fechar, reaberta pela porta da frente. A organização vem do request, no passo 2. Pelo mesmo motivo saem `uuid` (gerado pela trait `TemUuid`) e qualquer coluna que seja **segredo**: `token` de convite, prompt e resposta de IA, hash de senha. O gerador recoloca todas em `--force`.
+
+### 2. As Actions no `getHeaderActions()`
+
+```php
+use Filament\Actions\ExportAction;
+use Filament\Actions\ImportAction;
+use Filament\Facades\Filament;
+
+protected function getHeaderActions(): array
+{
+    return [
+        CreateAction::make(),
+
+        ImportAction::make()
+            ->importer(ProdutoImporter::class)
+            ->authorize('import')
+            ->options(fn (): array => ['tenant_id' => Filament::getTenant()?->getKey()]),
+
+        ExportAction::make()
+            ->exporter(ProdutoExporter::class)
+            ->authorize('export'),
+    ];
+}
+```
+
+Três coisas não são opcionais aí, e cada uma fecha um furo:
+
+- **`->authorize(...)`** — Action do Filament **não consulta policy sozinha** (`Actions\Concerns\CanBeAuthorized`: a autorização default é `null`, liberada). Sem a linha, quem abre a listagem exporta a listagem inteira.
+- **`->options(['tenant_id' => ...])` no import** — `resolveRecord()` roda dentro do **worker**, onde `Filament::getTenant()` é `null` e o escopo de `BelongsToTenant` vira no-op. O tenant é capturado **aqui**, no request, e viaja no payload do job. Ver [arquitetura.md](arquitetura.md#import-e-export-o-worker-perde-o-tenant-o-export-o-herda).
+- **O export não recebe options** — e não é esquecimento: a query dele vem da tabela **desta tela**, já com o `where tenant_id`, e é serializada com ele dentro.
+
+### 3. Ressemeie, sempre os dois
+
+```bash
+php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder
+php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
+```
+
+`import` e `export` são métodos de policy do kit (`config/filament-shield.php` → `policies.methods`), e geram `Import:{Model}` / `Export:{Model}`. **Sem a permission no banco, a Action simplesmente não aparece na tela — sem erro nenhum.**
+
+`panel_user` **não** herda as duas: `PapeisSeeder::ehPermissaoDeImportOuExport()` as subtrai por prefixo da ação, então resource novo nasce com as duas fora do usuário comum. Quem fica com elas é o `admin_app`. Se o usuário comum daquele projeto **deve** importar ou exportar, conceda em `/admin` → Funções — é decisão de negócio, e é para ser tomada uma vez, na tela, e não por acidente num seeder.
+
+### 4. Confira que há worker
+
+Import e export são **jobs**. `QUEUE_CONNECTION=database`, e alguém processando: `composer dev` já sobe um worker; em produção é o serviço `worker` do compose. Com a fila parada o upload é aceito, a linha entra em `imports`/`exports` e **a notificação de conclusão nunca chega**.
+
+### Quando a decisão é *não* ligar
+
+Deixe as linhas **comentadas**, com uma frase dizendo o que descomentar expõe — é o que `app/Filament/App/Resources/Users/Pages/ListUsers.php` faz:
+
+```php
+/*
+ * Export de usuários — desligado de propósito. Descomente ciente do que liga: a
+ * planilha sai com o e-mail de todo mundo que tem acesso.
+ */
+// ExportAction::make()
+//     ->exporter(UserExporter::class)
+//     ->authorize('export'),
+```
+
+**Ausência silenciosa não é decisão**: ninguém volta para reavaliar o que nunca foi escrito. E a regra vale nos dois sentidos — import de usuário não existe no kit porque criar conta por CSV contorna convite, verificação de e-mail e atribuição de papel.
+
+### O que testar
+
+Um caso chamando o **importador direto**, sem tenant no contexto — é a reprodução fiel do worker. Cenário que passa pela tela mede o contexto, não a fronteira: fica verde com a classe base inteira removida. Ver `tests/Tenancy/ImportExportTenancyTest.php` e `tests/Kit/ImportExportTest.php`.
+
 ## RelationManager novo
 
 ```bash
@@ -148,6 +274,46 @@ class Projeto extends Model implements Auditable
 No form do resource, `->scopedUnique()` no lugar de `->unique()`. Ver [convencoes.md](convencoes.md#validação-em-resource-com-tenancy-scopedunique).
 
 O `app/Models/Projeto.php` e o `ProjetoResource` da demo são o exemplo canônico completo.
+
+## Tornar uma model restaurável pela Lixeira
+
+Três passos — e é o terceiro que ninguém lembra:
+
+```php
+// 1. migration
+$table->softDeletes();
+
+// 2. model
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Projeto extends Model implements Auditable
+{
+    use SoftDeletes;
+}
+```
+
+```php
+// 3. app/Providers/Filament/InfraPanelProvider.php
+RevivePlugin::make()
+    ->navigationGroup('Sistema')
+    ->navigationLabel('Lixeira')
+    ->models([
+        Projeto::class,
+        SuaModel::class,   // ← sem esta linha não há tela para restaurar
+    ])
+    ->withoutScoping(),
+```
+
+**Sem o passo 3 o dado não se perde, mas fica inalcançável pela UI**: `delete()` grava `deleted_at`, o registro some de toda listagem por causa do escopo global do `SoftDeletes`, e não existe nenhuma tela que o mostre. Volta só com SQL na mão. Nenhum erro, nenhum aviso — é exatamente o tipo de falha silenciosa que a Lixeira existe para evitar.
+
+**Por que a lista é explícita e não `modelsNamespace()`:** a varredura automática de `app/Models` alcançaria `User`, `Role` e `Tenant`, cuja restauração tem consequência de **autorização** — um usuário volta com papel numa organização que pode não existir mais, e quem restaurou não tinha como saber disso. É a mesma escolha da allow-list do Command Center: a trava é a lista, não o gate.
+
+Duas consequências do `SoftDeletes` que valem para qualquer model:
+
+- **Índice único continua ocupado** pelo registro apagado. Se a tabela tem `unique` em `nome`, não dá para recriar com o mesmo nome enquanto o antigo estiver na lixeira.
+- **Dois escopos globais convivem** — o do `SoftDeletes` e o de `BelongsToTenant`. A ordem não importa: os dois são `where`.
+
+Na tela do painel de negócio fica só o `DeleteAction`; **não** acrescente `RestoreAction`/`ForceDeleteAction` lá. Quem restaura é a Lixeira, num painel de acesso mais estreito — duas portas para o mesmo ato dariam ao usuário do `/app` o poder de desfazer a exclusão feita por outro.
 
 ## Vincular usuário a um tenant
 
@@ -300,6 +466,79 @@ somam o todo".
 
 Olhe `app/Filament/Infra/Widgets/` antes de escrever do zero — provavelmente já existe um widget parecido para copiar a forma.
 
+## Anexar arquivos a uma model
+
+`spatie/laravel-medialibrary` com a ponte oficial do Filament. A model **não ganha coluna nenhuma**: tudo vai para a tabela polimórfica `media`, e o que você declara são **coleções**. `App\Models\Projeto` e `app/Filament/App/Resources/Projetos/ProjetoResource.php` são o exemplo vivo — leia os dois antes de escrever o seu.
+
+### 1. A model
+
+```php
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+class Projeto extends Model implements Auditable, HasMedia
+{
+    use InteractsWithMedia;
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('anexos');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('miniatura')
+            ->nonQueued()
+            ->width(200)
+            ->height(200);
+    }
+}
+```
+
+`HasMedia` é **interface**, `InteractsWithMedia` é **trait** — faltando a interface, o campo do Filament não reconhece a model. `singleFile()` fica de fora quando o caso é anexo: o múltiplo é o que exercita ordenação e remoção na tela.
+
+⚠️ **`nonQueued()` vem ANTES de `width()`/`height()`.** Os dois últimos são encaminhados ao `ImageDriver` do `spatie/image` e devolvem o **driver**, não a `Conversion`: encadear `nonQueued()` depois deles procura o método na classe errada. O PHPStan pega; em runtime é `BadMethodCallException` na primeira conversão. E `nonQueued()` existe porque o kit nasce com `QUEUE_CONNECTION=database` e **sem garantia de worker no ar** — enfileirada, a conversão só existiria com worker rodando e a coluna da tabela ficaria **vazia sem erro nenhum**. Com worker garantido (o serviço `worker` do compose, ou `composer dev`), tire-o.
+
+### 2. O formulário
+
+```php
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+
+SpatieMediaLibraryFileUpload::make('anexos')
+    ->label('Anexos')
+    ->collection('anexos')      // o nome do campo é o da COLEÇÃO, não de uma coluna
+    ->multiple()
+    ->reorderable()
+    ->openable()
+    ->downloadable()
+    ->visibility('private')
+    ->maxSize(10 * 1024)
+    ->columnSpanFull(),
+```
+
+### 3. A coluna da tabela
+
+```php
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
+
+SpatieMediaLibraryImageColumn::make('anexos')
+    ->label('Anexos')
+    ->collection('anexos')
+    ->conversion('miniatura')
+    ->circular()
+    ->stacked()
+    ->limit(3)
+    ->simpleLightbox(),
+```
+
+`->simpleLightbox()` funciona aqui **sem uma linha de cola**: `SpatieMediaLibraryImageColumn extends ImageColumn`, que é exatamente a classe onde o macro do `solution-forest/filament-simplelightbox` é declarado, e o `Macroable` do Filament resolve subindo por `class_parents()`. As duas armadilhas do macro continuam valendo — ver [Imagem ou documento em tabela](#imagem-ou-documento-em-tabela).
+
+### O que você ganha e o que não ganha
+
+- **Ganha o isolamento por organização de graça**: o arquivo pertence ao registro, e o registro já é escopado por `BelongsToTenant`. Não há coluna de tenant em `media` nem configuração a lembrar.
+- **Ganha URL assinada, não autorização**: o disco default é `local` e a rota `storage.local` exige assinatura, então `Media::getUrl()` responde 403 e o link publicável vem de `getTemporaryUrl()`. Mas a assinatura não conhece usuário: **quem tem o link entra durante a validade**. Anexo que precise de autorização por organização pede rota própria consultando a policy — ver [arquitetura.md](arquitetura.md#a-camada-de-url-é-assinada-não-autorizada). E declare o disco na coleção (`->useDisk('local')`): quem decide é o disco, não o `->visibility('private')` do campo.
+
 ## Imagem ou documento em tabela
 
 Toda coluna de mídia do kit nasce com lightbox: clicar na miniatura amplia sobre a listagem, sem
@@ -353,6 +592,26 @@ com download autenticado, sem lightbox. Ver ADR-03 da wiki `lightbox-em-imagens-
 Quando um painel — ou um cluster, ou uma área de configurações — tem muitos destinos, uma **grade
 de cartões** lê melhor que uma árvore de barra lateral. É o `harvirsidhu/filament-cards`.
 
+[![Central de infraestrutura: grade de cartões com os destinos do painel /infra, cada um com ícone, rótulo e uma frase explicando para que o link serve](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/infra-hub.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/infra-hub.png)
+
+### O que já está ligado, e o que é opt-in
+
+| Painel | Hub no default | Como ligar |
+|---|---|---|
+| `/infra` | **sim** | já vem — dezesseis destinos em quatro grupos, metade com rótulo de plugin de terceiro sem tradução |
+| `/admin` | não | `KIT_HUB=true` |
+| `/app` | não | `KIT_HUB=true` |
+
+O pacote **fica instalado** com a flag desligada, e as três Pages continuam no repositório: ligar é
+um caractere no `.env`, sem editar código e sem ressemear o Shield. A permissão
+(`View:HubDeAdministracao`, `View:HubDoNegocio`) existe nos dois casos — a flag esconde a tela, não
+mexe na matriz.
+
+Por que `/admin` e `/app` nascem desligados: grade de cartões paga o próprio espaço quando há
+**muitos** caminhos. O `/admin` tem oito destinos, e o `/app` de um projeto de verdade nasce vazio —
+ali a grade é a barra lateral com um clique a mais. Ver a wiki
+`wikis/specs/feature/v1-enriquecimento-kit/hub-de-cards-opcional/`.
+
 ```php
 use App\Filament\Concerns\DescobreCardsDoPainel;
 use Harvirsidhu\FilamentCards\Filament\Pages\CardsPage;
@@ -378,16 +637,18 @@ class HubDeInfraestrutura extends CardsPage
 }
 ```
 
-### Quatro casos de uso
+### Cinco casos de uso
 
-1. **Porta de entrada de painel denso** — é o que o kit faz nos três painéis. O hub **soma** à
-   barra lateral, não a substitui: esconder itens da navegação quebraria a busca ⌘K e custaria
-   dois cliques onde havia um.
+1. **Porta de entrada de painel denso** — é o que o kit faz no `/infra`. O hub **soma** à barra
+   lateral, não a substitui: esconder itens da navegação quebraria a busca ⌘K e custaria dois
+   cliques onde havia um.
 2. **Hub de configurações** — agrupar as páginas de settings numa grade em vez de espalhá-las
    pelo menu.
 3. **Página inicial de Cluster** — aí sim vale o `discoverClusterCards()` do pacote, que já filtra
    por `canAccess()` sozinho.
 4. **Atalhos externos** — `CardItem::make('https://status.exemplo.com')->openUrlInNewTab()`.
+5. **Página de fluxo** — apresentar as etapas de um processo como cartões, em ordem, com descrição
+   em cada etapa. É o encaixe que o pacote pede e que o kit ainda não usa.
 
 ### O que NÃO fazer
 
@@ -399,6 +660,49 @@ class HubDeInfraestrutura extends CardsPage
   com ou sem tema. Ver ADR-03 da wiki `hub-de-navegacao-em-cards`.
 - **Usar o pacote como componente de formulário.** Ele transforma uma *página* em grade de links;
   não substitui `Radio` nem `Select`.
+- **Ligar o hub em painel com poucos destinos.** Grade de cartões para quatro links é a barra
+  lateral com passos a mais. Foi por isso que `/admin` e `/app` saíram do default do kit.
+
+### Descrição em cada cartão
+
+O `/infra` tem dezesseis destinos, e **treze são vendor** — "audits", "Exception",
+"Manage commands", "Run history" são rótulos de plugin, não escolhas do kit. A descrição é o que
+torna a grade legível sem mexer em sete plugins:
+
+```php
+protected static function descricoesDosDestinos(): array
+{
+    return [
+        HealthCheckResults::class   => 'Estado atual dos checks de banco, cache, fila, agendador, disco e ambiente.',
+        QueueMonitorResource::class => 'Histórico dos jobs da fila: o que rodou, o que falhou e quanto tempo levou.',
+        RecycleBin::class           => 'Registros apagados com soft delete, com restauração registro por registro.',
+    ];
+}
+
+protected static function getCards(): array
+{
+    return static::cardsDoPainel(
+        excluir: [static::class, Dashboard::class],
+        descricoes: static::descricoesDosDestinos(),
+    );
+}
+```
+
+Três coisas que não são óbvias:
+
+- **É um mapa por FQCN, e não um método na classe do destino.** O Filament não tem
+  `getNavigationDescription()`, e a maioria dos destinos de um painel é vendor: não há onde declarar
+  a frase. Um método no concern só funcionaria para as classes do próprio projeto, e a grade sairia
+  com três frases e treze buracos.
+- **A frase entra no `data-search-text` do cartão**, então a busca da página passa a encontrar por
+  assunto — "fila", "restaurar", "e-mail" — e não só pelo rótulo. Só vale a pena onde
+  `$searchable = true`.
+- **Cartão sem frase não quebra nada**: o parâmetro é opcional e a blade só emite o `<p>` quando a
+  descrição está preenchida. É o que mantém os hubs de `/admin` e `/app` idênticos ao que eram.
+
+**Plugin novo no painel entra sem frase**, e `tests/Kit/HubDeCardsTest.php` fica vermelho pedindo a
+linha — a mensagem de falha diz qual classe está faltando. Isso é deliberado: a regra do kit é que
+nenhum cartão fica sem descrição.
 
 ### Depois de criar
 
@@ -420,6 +724,21 @@ Health::checks(array_filter([
 
 A página em `/infra` e o `health:check` agendado pegam sozinhos. Check que não vale em toda plataforma entra condicionado (é o que o kit faz com `UsedDiskSpaceCheck` no Windows).
 
+## Ajustar a retenção das trilhas
+
+As duas trilhas que o kit **grava** — exceções e e-mails enviados — têm prazo em `config/kit.php`, e o prazo se muda pelo `.env`:
+
+```dotenv
+KIT_RETENCAO_EXCECOES_DIAS=14
+KIT_RETENCAO_EMAILS_DIAS=14
+```
+
+Os dois nascem em 14 dias, alinhados ao `days` da rotação de log: a trilha morre junto com o log que a originou, não depois dele. **Zero ou negativo desliga a poda daquela trilha** — e aí a tabela cresce sem teto, o que é uma escolha, não um esquecimento.
+
+**Só acontece com o agendador rodando.** O que está no config é a intenção; quem executa são os dois agendamentos de `routes/console.php` (02:00 e 02:10). Sem `php artisan schedule:work` (ou o serviço `scheduler` do compose), o número não apaga nada e as duas tabelas crescem para sempre — a de exceções cresce por **request com defeito**, e um bug em laço enche o disco em horas. É o `ScheduleCheck` do Health que denuncia o agendador parado.
+
+Baixar o prazo não apaga o passado na hora: o expurgo roda de madrugada. Para ver o efeito agora, `php artisan schedule:run` ou `php artisan model:prune --model="BezhanSalleh\FilamentExceptions\Models\Exception"`.
+
 ## Comando na Central de Comandos
 
 A trava real é a allow-list de `config/command-center.php` — comando fora dela não roda pela UI, ponto. Acrescente lá, e o gate `command-center:access` (papel `infra`) já cuida de quem vê a tela.
@@ -432,6 +751,18 @@ A trava real é a allow-list de `config/command-center.php` — comando fora del
 4. Tools: fábrica no `tools()` do agente **e** chave liberada em `agentes_ia.tools`. A permissão do usuário vai **na query da tool**.
 
 Detalhes em [ia.md](ia.md). Skill obrigatória: `ai-sdk-development`.
+
+## Ligar um segundo idioma
+
+Um item só em `config/kit.php` → `idiomas`, e o seletor aparece nos três painéis **e** nas telas de login:
+
+```php
+'idiomas' => ['pt_BR', 'en'],
+```
+
+É lista e não booleano de propósito: **com um idioma só o botão não é renderizado**, dentro nem fora do painel. Quem quer a feature declara o segundo idioma, e o dado liga o botão — não há flag para esquecer ligada. Nada mais a registrar: o seletor é configurado uma vez em `ConfiguraFilamentGlobal`, globalmente ([por quê](arquitetura.md#a-cola-configurafilamentglobal)).
+
+⚠️ **Saiba o que você recebe.** A tradução cobre a camada do **Filament e dos pacotes** (`laravel-lang/common`), **não** os rótulos do kit: "Administrador Geral", "Acesso ao painel /app", os títulos dos hubs e os labels dos resources são strings pt-BR escritas no código — há **dez** `__()` em todo o app. Com `en` ligado hoje, metade da tela troca de idioma e a outra metade não. Internacionalizar o kit é trabalho declarado e ainda não feito; até lá, o segundo idioma é para quem aceita esse meio-termo, e passar os rótulos do seu projeto por `__()` é trabalho seu.
 
 ## Tradução de plugin
 
@@ -454,6 +785,7 @@ php artisan test --compact --filter=Produto
 
 ```bash
 vendor/bin/pint --dirty
+composer filament:check  # se mexeu em Resource, Page, Widget ou PanelProvider
 php artisan test --compact --filter=<oQueVocêTocou>
 composer test:kit        # se mexeu em provider, trait, painel, gate ou app/Ai
 ```
@@ -473,6 +805,9 @@ Commit no padrão do repositório: gitmoji + escopo, mensagem em pt-BR.
 | "Este convite não é para esta conta" | o link foi aberto com **outra** conta autenticada. É a barreira funcionando: o token não basta na via de oferta, o e-mail tem de ser o do convite. Saia e entre com a conta convidada, ou peça um convite novo. A sessão não é derrubada e o convite continua pendente |
 | "Não vejo meus convites" | a caixa de entrada é uma página do painel `app` — quem tem **zero** organizações (ou só papel de `/admin`/`/infra`) não a alcança, porque o painel precisa de uma organização para abrir. Para esses casos a via é o **link do e-mail**, que funciona sempre. Quem já pertence a alguma organização acha o item no menu do usuário, e ele só aparece quando há oferta pendente |
 | Tela nova dá 403 | falta rodar `ShieldPermissionsSeeder` + `PapeisSeeder` depois de criar o Resource — nessa ordem, e os dois: só o primeiro cria a permission e não a entrega a papel nenhum |
+| Botão de importar/exportar não aparece na listagem | a permission `Import:{Model}` / `Export:{Model}` não existe no banco (ressemeie os dois seeders), ou o papel é `panel_user`, que **não** nasce com nenhuma das duas — conceda em `/admin` → Funções. Ver [a receita](#ligar-importexport-num-resource) |
+| Importei o CSV e nada aconteceu | import e export são **jobs**: sem worker o arquivo é aceito, a linha entra em `imports` e a notificação nunca chega. `php artisan queue:work`, ou `composer dev`. A fila parada aparece no Jobs Monitor do `/infra` |
+| Linhas importadas somem da listagem | nasceram com `tenant_id` nulo: a Action está sem `->options(["tenant_id" => ...])`, ou o importer não estende `ImportadorDoKit`. O worker não tem tenant no contexto — ver [arquitetura.md](arquitetura.md#import-e-export-o-worker-perde-o-tenant-o-export-o-herda) |
 | RelationManager aberto a quem não devia | o Shield não gera permission para RelationManager; ver [RelationManager novo](#relationmanager-novo) |
 | `NOT NULL constraint failed: model_has_roles.team_id` | atribuiu papel sem contexto de tenant — use `Tenant::CONTEXTO_GLOBAL` ou rode dentro de um request do `/app` |
 | `no such column: model_has_roles.team_id` | as tabelas de permissão nasceram sem a coluna de tenant. Refaça num processo novo: `php artisan migrate:fresh --seed` (corrigido no kit a partir da v0.9.2) |
@@ -481,6 +816,10 @@ Commit no padrão do repositório: gitmoji + escopo, mensagem em pt-BR.
 | Usuário comum vê "Usuários" e "Convites" no `/app` | o `PapeisSeeder` não rodou depois de o kit ganhar essas telas, ou a subtração de `permissoesDeAdministracaoDoApp()` foi removida: `panel_user` está com a matriz inteira do painel |
 | Listagem mostra dados de outro cliente | model sem `BelongsToTenant`, ou query com `withoutGlobalScopes()` |
 | Menu não mostra o item | `canAccess()` da policy, ou `shouldRegisterNavigation()` |
+| Apaguei um registro e ele não aparece na Lixeira | a model não está em `models()` do `RevivePlugin` (`InfraPanelProvider`) — ou nem usa `SoftDeletes`, e aí o `delete()` removeu a linha de verdade. Ver [a receita](#tornar-uma-model-restaurável-pela-lixeira) |
+| Miniatura do anexo nasce vazia, sem erro | a conversão está enfileirada e não há worker: `nonQueued()` na `registerMediaConversions()`, ou `php artisan queue:work` |
+| O seletor de idioma não aparece | `config('kit.idiomas')` tem um item só — é o desenho, não um bug. Acrescente o segundo locale |
+| Trilha de exceções ou de e-mails crescendo sem parar | o prazo em `kit.retencao` é só intenção: quem expurga é o agendador (`php artisan schedule:work`). Prazo zero ou negativo desliga a poda de propósito |
 | Assets do Filament sumiram | `php artisan filament:assets` |
 | Vite manifest não encontrado | `npm run build` ou `composer dev` |
 | Pulse sem dados | falta o daemon: `php artisan pulse:check` |

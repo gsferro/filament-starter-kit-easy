@@ -114,6 +114,47 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
         return $this->temPapelOnde('painel', $painel, $contexto);
     }
 
+    /**
+     * O papel que este usuário EXIBE no painel — o que abriu a porta dele.
+     *
+     * É exibição, não autorização: quem decide entrada é `canAccessPanel()`, e nada
+     * aqui deve ser usado como guarda. O que este método faz é responder, para o
+     * cabeçalho do menu do usuário, a pergunta "com que papel eu estou aqui".
+     *
+     * O `master_global` é resolvido antes de qualquer consulta, e não por descuido: ele
+     * não tem `roles.painel` preenchido — nulo não é coringa, quem o faz entrar em todo
+     * painel é o `Gate::before`. Uma consulta por painel devolveria `null` justamente
+     * para quem tem mais acesso, e o cabeçalho ficaria sem badge no caso mais visível.
+     *
+     * A relação é `papeisEmQualquerContexto()`, a mesma de `canAccessPanel()`, e isso é
+     * deliberado: o badge tem de dizer o papel que deu o acesso. Pela `roles()` do
+     * spatie, com `permission.teams` ligado, a consulta ganharia
+     * `wherePivot(team_id, ...)` do contexto corrente — e no `/admin` e no `/infra`, que
+     * não têm tenant na rota, o badge sumiria conforme o `team_id` que estivesse setado.
+     *
+     * @return string|null Nome do papel (`admin_app`, `panel_user`…) ou null quando
+     *                     nenhum papel deste usuário abre este painel.
+     */
+    public function papelDoPainel(string $painel): ?string
+    {
+        if ($this->isMasterGlobal()) {
+            return config('filament-shield.super_admin.name', 'master_global');
+        }
+
+        /*
+         * `getAttribute('name')` e não `->name`: o genérico da relação é `Model`, porque
+         * `Config::roleModel()` é declarado `class-string<Model>` — a classe do papel sai
+         * de `permission.models.role` em runtime. Prometer `Role` aqui seria afirmar mais
+         * do que a fonte diz, e o PHPStan reprova o acesso direto à propriedade.
+         */
+        $papel = $this->papeisEmQualquerContexto()
+            ->where('painel', $painel)
+            ->where('guard_name', $this->getDefaultGuardName())
+            ->first();
+
+        return $papel?->getAttribute('name');
+    }
+
     /** Papel guarda-chuva do kit — o "super admin" do Shield (define_via_gate). */
     public function isMasterGlobal(): bool
     {

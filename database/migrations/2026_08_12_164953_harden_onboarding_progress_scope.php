@@ -57,6 +57,12 @@ return new class extends Migration
      * before this migration and an ''-scoped row from after it are the same
      * progress, about to be spelled the same way.
      *
+     * `literal-string` no nome da coluna: ele é interpolado em `selectRaw()`/`groupByRaw()`,
+     * que não passam por bind. Exigir literal aqui é o que garante, na análise, que nenhum
+     * chamador futuro monte esse nome a partir de entrada — as duas chamadas do `up()` passam
+     * constantes.
+     *
+     * @param  literal-string  $ownerColumn
      * @param  array<int, string>  $timestamps
      */
     private function mergeDuplicates(string $table, string $ownerColumn, array $timestamps): void

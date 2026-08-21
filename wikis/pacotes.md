@@ -33,11 +33,19 @@
 | Widget de funil, meta, breakdown, timeline | `laboiteacode/filament-dashboard-widgets` |
 | **Gráfico** (linha, área, barra, rosca, radial, radar) | `leandrocfe/filament-apex-charts` — nunca `<canvas>` nem Chart.js à mão |
 | **Ampliar imagem ou documento de tabela** | `solution-forest/filament-simplelightbox` — nunca modal de preview escrito à mão |
-| **Página hub: grade de cartões de navegação** | `harvirsidhu/filament-cards` — nunca Blade de cartões à mão |
+| **Página hub: grade de cartões de navegação** | `harvirsidhu/filament-cards` — **ligado no `/infra`; opt-in (`KIT_HUB`) em `/admin` e `/app`**. Nunca Blade de cartões à mão |
 | Dashboard arrastável pelo usuário | `mddev31/filament-dynamic-dashboard` |
 | Barra de progresso em coluna/entry | `lara-zeus/progress` |
 | Checklist e tour guiado | `wallacemartinss/filament-onboarding` |
 | Página de erro branda | `anselmokossa/filament-sentinel` |
+| **Upload com coleções, conversões e ordenação** | `spatie/laravel-medialibrary` + `filament/spatie-laravel-media-library-plugin` — nunca `FileUpload` gravando caminho em coluna, exceto para avatar e logo, que já são assim |
+| **Restaurar registro apagado** (`SoftDeletes`) | `promethys/revive` (`/infra`, "Lixeira") — nunca uma Page própria varrendo `app/Models` |
+| **Ver exceções agrupadas por tipo e frequência** | `bezhansalleh/filament-exceptions` (`/infra`) — o LogsExplorer mostra o arquivo, não o agrupamento |
+| **Saber se um e-mail foi enviado** | `tapp/filament-maillog` (`/infra`, grupo "Trilhas") |
+| Trocar o idioma da interface | `bezhansalleh/filament-language-switch` — ligado por `config('kit.idiomas')` |
+| Lint específico de Filament no CI | `laraveldaily/filacheck` (dev) — `composer filament:check`, dentro de `composer test` |
+| **Upgrade automatizado de major** (Laravel, PHP) | `rector/rector` + `driftingly/rector-laravel` (dev) — `composer refactor:preview`. **Fora** do `composer test`, por decisão medida: ver [qualidade-de-codigo.md](qualidade-de-codigo.md) |
+| Upgrade automatizado de major do **Filament** | `filament/upgrade` — ferramenta oficial, também baseada em Rector. Não existe regra de Filament no `rector-laravel` |
 | Agregar série temporal para gráfico | `flowframe/laravel-trend` |
 | Página de configurações persistidas | `filament/spatie-laravel-settings-plugin` + `spatie/laravel-settings` |
 | Cache automático de query Eloquent | `mike-bronner/laravel-model-caching` |
@@ -57,8 +65,9 @@ Foi preciso porque o Shield não oferece hook para agrupar as permissões por pa
 | `getResourceEntitiesSchema()` agrupa as seções por painel, lendo `App\Support\Paineis` | `RoleResource` |
 | `secaoDoResource()` — o corpo do `map()` original do vendor, extraído para ser reusado | `RoleResource` |
 | `'painel'` nas listas de `mutateFormDataBefore*` | `Pages/CreateRole.php`, `Pages/EditRole.php` |
+| Normalização de tipo nas três fronteiras em que o Shield é mais largo que o Filament: `colunasDaGrade()` (o `getGridColumns()` do plugin é `int|string|array`, o `columns()` do Filament não aceita string nem array solto) e as guardas de `getModel()`/`getCluster()` (o `Utils` devolve `string`, o Filament exige `class-string`). Sem mudança de comportamento com config válida; com config inválida o erro passa a ser explícito | `RoleResource` |
 
-**No upgrade do Shield:** o resto dos cinco arquivos é cópia byte a byte, de propósito, para o `diff` contra o vendor novo continuar legível. Depois de um major do pacote, compare `app/Filament/Admin/Resources/Roles/` com `vendor/bezhansalleh/filament-shield/src/Resources/Roles/` e traga o que mudou, preservando as quatro linhas acima. O formato da entidade (`resourceFqcn`, `model`, `modelFqcn`, `permissions`) é contrato interno do Shield — se mudar, o agrupamento quebra. `tests/Kit/PaineisTest.php` acusa os dois casos: um teste afirma que o Resource registrado é o do projeto, outro que a tela mostra os três grupos de painel.
+**No upgrade do Shield:** o resto dos cinco arquivos é cópia byte a byte, de propósito, para o `diff` contra o vendor novo continuar legível. Depois de um major do pacote, compare `app/Filament/Admin/Resources/Roles/` com `vendor/bezhansalleh/filament-shield/src/Resources/Roles/` e traga o que mudou, preservando as cinco linhas acima. O formato da entidade (`resourceFqcn`, `model`, `modelFqcn`, `permissions`) é contrato interno do Shield — se mudar, o agrupamento quebra. `tests/Kit/PaineisTest.php` acusa os dois casos: um teste afirma que o Resource registrado é o do projeto, outro que a tela mostra os três grupos de painel.
 
 Reverter é apagar a pasta: o plugin volta a registrar o Resource dele, e a tela perde o agrupamento e o campo `Painel`.
 
@@ -76,6 +85,19 @@ O que **não** é plugin de painel (defaults de tabela, Panel Switch, gates, hea
 
 Oito plugins estão registrados nos **três** painéis, de propósito: Spotlight, Auth Designer, Breezy, Lockscreen, Environment Indicator, Odometer, ResizedColumn e Notification Center. No caso do Lockscreen isso é **obrigatório** — ver a tabela de armadilhas em [convencoes.md](convencoes.md#armadilhas-já-resolvidas).
 
+### Pacote não registrado ainda mexe nos seus models
+
+O parágrafo acima diz que não há registro global. `mddev31/filament-dynamic-dashboard` é o
+contraexemplo: não está em painel nenhum e mesmo assim age. O service provider é
+auto-descoberto e pendura um `User::deleting` global que apaga os dashboards **pessoais** de
+quem está saindo. Não dá para optar por não tê-lo sem remover o pacote.
+
+As migrations dele vêm como `.stub` e exigiram `vendor:publish` — estão em
+`database/migrations/*_dynamic_dashboard_*`. **Não as apague por parecerem de feature
+desligada**: sem a tabela `dashboards`, excluir QUALQUER usuário devolve 500 nas três
+superfícies de exclusão (DeleteAction da edição, da tabela e DeleteBulkAction). O defeito
+nasceu com o skeleton e sobreviveu 449 casos verdes porque nenhum deles excluía um usuário;
+`tests/Kit/ExclusaoDeUsuarioTest.php` fecha a lacuna.
 ## Motores por baixo
 
 Não estão no `require`, mas são o que de fato roda:
@@ -93,3 +115,18 @@ Não estão no `require`, mas são o que de fato roda:
 - Antes de usar uma API de pacote, confirme a versão instalada: `composer show <vendor/pacote>` ou `composer show --direct`. Não presuma major.
 - Use `search-docs` (MCP do Boost): ele devolve a documentação **da versão instalada**, não a mais recente do site.
 - Personalização de plugin: traduções em `lang/vendor/`, views em `resources/views/vendor/`. Nunca editar `vendor/`.
+
+## O que ainda não está aqui
+
+Esta página lista o que **já é dependência**. A pergunta complementar — *o que mais existe no
+diretório oficial, o que vale avaliar e o que já foi olhado e recusado* — tem página própria:
+
+**[pacotes-candidatos.md](pacotes-candidatos.md)** — varredura dos 547 plugins Filament v5 gratuitos
+(agosto/2026), top 10 candidatos com prós e contras, segunda linha e a lista de descartados com o
+motivo de cada um.
+
+E a fila de adoção, com os 112 que sobraram ordenados do que mais agrega ao que menos:
+**[pacotes-ranking.md](pacotes-ranking.md)**.
+
+Pacote aprovado sai de lá e entra aqui, na tabela do "já existe". Pacote recusado **fica** lá, com o
+motivo — é o que impede a próxima varredura de trazer o mesmo nome de volta.

@@ -133,8 +133,16 @@ final class Paineis
                 $shield = self::shieldNovo();
                 Filament::setCurrentPanel($painel);
 
-                $permissoes[$id] = $shield->getEntitiesPermissions() ?? [];
-                $resources[$id]  = array_values($shield->getResources() ?? []);
+                /*
+                 * Os dois getters do Shield são `?array` sem tipo nenhum, e no caso das
+                 * permissões nem lista é: `getEntitiesPermissions()` termina em `unique()`,
+                 * que PRESERVA as chaves — o retorno vem com buracos. O filtro por tipo mais
+                 * o `array_values()` é o que sustenta as formas publicadas no PHPDoc deste
+                 * método, das quais dependem `permissoes()` (alimenta um `whereIn`) e
+                 * `resources()` (alimenta o schema da tela de papéis).
+                 */
+                $permissoes[$id] = array_values(array_filter($shield->getEntitiesPermissions() ?? [], 'is_string'));
+                $resources[$id]  = array_values(array_filter($shield->getResources() ?? [], 'is_array'));
                 $entidades[$id]  = self::entidadesDoPainel($shield);
             }
         } finally {

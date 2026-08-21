@@ -147,6 +147,23 @@ services:
     # Sem `user: www-data`, `docker compose exec app php artisan ...` roda como root
     # e cria os logs do dia com root:root, quebrando o append do worker.
     user: www-data
+    # Compila as 417 views ANTES de servir o primeiro request. Medido: ~39s.
+    #
+    # Por que no boot e não no Dockerfile: `view:cache` grava em
+    # `storage/framework/views`, e `storage/` é o volume `app-storage` montado por cima
+    # do diretório da imagem. View assada no build é encoberta pelo volume assim que ele
+    # já existir de uma subida anterior — funcionaria no primeiro teste e sumiria em
+    # produção. Ver ADR-01 da wiki `cache-de-views-no-docker`.
+    #
+    # SÓ `view:cache`. `config:cache` faria o Laravel parar de ler o `.env` montado logo
+    # abaixo, e `route:cache` congelaria o estado de tenancy (com `kit.tenancy.enabled` o
+    # painel `app` deixa de ser `/app` e vira `/app/{tenant}`). Ver ADR-02.
+    #
+    # `&&` e não `;`: se a compilação falhar, o container morre em vez de servir com
+    # views não cacheadas. Falha de boot visível é melhor que degradação silenciosa.
+    command: >-
+      sh -c "php artisan view:cache &&
+             php-fpm"
     env_file: .env
     environment:
       DB_CONNECTION: pgsql
@@ -167,6 +184,11 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+      # O `view:cache` do `command:` acima leva ~39s, e o php-fpm só sobe depois dele.
+      # Sem `start_period`, o Docker começa a contar falha no primeiro intervalo e o
+      # container nasce `unhealthy` — quem depender dele por `service_healthy` nunca
+      # sobe. Durante o start_period, falha de healthcheck não conta para o limite.
+      start_period: 90s
     depends_on:
       pgsql:
         condition: service_healthy

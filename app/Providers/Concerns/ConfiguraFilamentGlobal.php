@@ -2,6 +2,7 @@
 
 namespace App\Providers\Concerns;
 
+use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -9,6 +10,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Livewire\DatabaseNotifications;
 use Filament\Resources\Resource;
 use Filament\Support\Facades\FilamentAsset;
+use Filament\Support\Facades\FilamentView;
 use Filament\Support\Icons\Heroicon;
 use Filament\Support\View\Components\ModalComponent;
 use Filament\Tables\Columns\IconColumn;
@@ -16,6 +18,8 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Enums\ColumnManagerLayout;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\View\View;
 
 /**
  * Configuração GLOBAL do Filament — vale para os três painéis (app, admin, infra).
@@ -70,6 +74,94 @@ trait ConfiguraFilamentGlobal
         Table::configureUsing(fn (Table $table): Table => $this->configuraTable($table));
 
         $this->configuraPanelSwitch();
+        $this->configuraSeletorDeIdioma();
+        $this->configuraBotaoVoltarAoTopo();
+    }
+
+    /**
+     * Botão "Voltar ao topo" em TODA tela de TODOS os painéis.
+     *
+     * **Sem `scopes:` de propósito, e é isso que faz a feature.** O
+     * `ViewManager::registerRenderHook()` normaliza `null` para o bucket `''`, e o
+     * `renderHook()` lê esse bucket SEMPRE, antes de qualquer escopo. Resultado: vale para
+     * `app`, `admin`, `infra` e qualquer painel que o seu projeto criar depois, sem tocar em
+     * nenhum PanelProvider.
+     *
+     * O ganho real está nas telas que NÃO são nossas. Auditoria, log de autenticação,
+     * exceções, trilha de e-mail, monitor de filas, releases do Composer, lixeira e
+     * permissões vêm de plugin: não dá para colar trait nem editar. Um render hook global
+     * alcança todas — e é exatamente por isso que o pacote
+     * `gboquizosanchez/filament-scroll-to-top` não serve aqui (ele exige um trait por
+     * `ListRecords`, e não renderiza botão nenhum). Ver ADR-01 da wiki `voltar-ao-topo`.
+     *
+     * Registrado aqui, e não num PanelProvider, pela mesma razão do PanelSwitch e do seletor
+     * de idioma: registro global num arquivo por painel dá aparência de config por painel com
+     * efeito global.
+     */
+    private function configuraBotaoVoltarAoTopo(): void
+    {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::BODY_END,
+            fn (): View => view('filament.voltar-ao-topo'),
+        );
+    }
+
+    /**
+     * Seletor de idioma nos três painéis e nas telas de autenticação.
+     *
+     * Global e não por painel pelo mesmo motivo do Panel Switch acima: o pacote não é
+     * plugin de painel, registra um render hook global no `BODY_END`. Configurar em
+     * cada provider daria aparência de config por painel com efeito global.
+     *
+     * **Dirigido por dado, sem flag.** Com um idioma só em `config('kit.idiomas')` — que é
+     * como o kit nasce — não há para onde trocar, e o `visible(false)` some com o botão.
+     * Quem quer a feature declara o segundo locale; ninguém esquece um booleano ligado.
+     *
+     * O que o seletor NÃO faz: traduzir o kit. A cobertura é da camada do Filament e dos
+     * pacotes (laravel-lang/common). Os rótulos do próprio kit são strings pt-BR escritas
+     * no código — há dez `__()` em todo o app. Ligar `en` hoje troca metade da tela.
+     * Está declarado em `config/kit.php` e em wikis/pacotes-ranking.md.
+     */
+    private function configuraSeletorDeIdioma(): void
+    {
+        LanguageSwitch::configureUsing(function (LanguageSwitch $seletor): void {
+            /*
+             * A leitura da config fica DENTRO da closure, e isso não é estilo.
+             *
+             * Lida fora, ela seria avaliada uma vez no boot do provider e capturada por
+             * valor — o seletor passaria a exibir a lista que existia naquele instante,
+             * não a que o request tem. É o mesmo motivo pelo qual os painéis passam
+             * `fn (): array => CorPrimaria::paleta()` em vez do array pronto.
+             *
+             * Foi um defeito real: a primeira versão capturava `$idiomas` por `use`, e o
+             * caso "mostra o seletor quando há um segundo idioma" reprovou.
+             */
+            /** @var list<string> $idiomas */
+            $idiomas = array_values(array_filter((array) config('kit.idiomas', [])));
+
+            $seletor
+                ->locales($idiomas)
+                // `displayLocale(null)` = cada idioma aparece escrito NELE MESMO
+                // ("Português", "English"), e não traduzido para o idioma corrente.
+                // Quem procura o próprio idioma numa lista o reconhece assim.
+                ->displayLocale(null)
+                ->circular()
+                // Também fora do painel: a tela de login é justamente onde alguém que
+                // não lê português precisa trocar, e ela é servida antes da sessão.
+                ->outsidePanelRoutes([
+                    'filament.app.auth.login',
+                    'filament.admin.auth.login',
+                    'filament.infra.auth.login',
+                ])
+                /*
+                 * Dentro do painel, o `isVisible()` do pacote já exige
+                 * `count(getLocales()) > 1` — a checagem aqui é redundante e fica por
+                 * simetria. FORA do painel não há essa proteção: `isVisibleOutsidePanels()`
+                 * só avalia a flag. Sem a contagem, a tela de login mostraria um seletor
+                 * com uma opção só.
+                 */
+                ->visible(insidePanels: count($idiomas) > 1, outsidePanels: count($idiomas) > 1);
+        });
     }
 
     /**
@@ -159,6 +251,19 @@ trait ConfiguraFilamentGlobal
         return $table;
     }
 
+    /**
+     * O mesmo par de cor e ícone no Toggle de formulário e na ToggleColumn de tabela.
+     *
+     * Genérico, e não dois métodos: cada `configureUsing()` exige de volta EXATAMENTE o tipo
+     * que entregou (o do Toggle devolve `Toggle`, o da ToggleColumn devolve `ToggleColumn`).
+     * Um retorno `Toggle|ToggleColumn` cru não satisfaz nenhum dos dois — o `@template`
+     * amarra saída à entrada e mantém um método só.
+     *
+     * @template T of Toggle|ToggleColumn
+     *
+     * @param  T  $toggle
+     * @return T
+     */
     private function configuraToggle(Toggle|ToggleColumn $toggle): Toggle|ToggleColumn
     {
         return $toggle

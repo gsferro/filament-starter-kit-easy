@@ -142,10 +142,33 @@ return [
         'path'     => app_path('Policies'),
         'merge'    => true,
         'generate' => true,
+        /*
+         * `import` e `export` são ACRÉSCIMO do kit aos 12 defaults do Shield.
+         *
+         * Eles geram `Import:{Model}` e `Export:{Model}` para todo resource, e existem
+         * porque quem pode LER uma listagem não é necessariamente quem pode levar a
+         * listagem inteira embora num arquivo, nem quem pode escrever em massa nela. Sem
+         * permissão própria, a Action de export herdaria `ViewAny` e todo usuário de
+         * painel exportaria tudo o que enxerga.
+         *
+         * Depois de mexer aqui, RESSEMEIE — a permission nova não existe no banco até o
+         * `shield:generate` rodar de novo, e a Action simplesmente não aparece na tela,
+         * sem erro nenhum:
+         *
+         *   php artisan db:seed --class=Database\Seeders\ShieldPermissionsSeeder
+         *   php artisan db:seed --class=Database\Seeders\PapeisSeeder
+         */
         'methods'  => [
             'viewAny', 'view', 'create', 'update', 'delete', 'deleteAny', 'restore',
             'forceDelete', 'forceDeleteAny', 'restoreAny', 'replicate', 'reorder',
+            'import', 'export',
         ],
+        /*
+         * `import` e `export` entram aqui porque nenhum dos dois recebe registro: são
+         * ações de coleção. Fora desta lista o Shield geraria `import(User $user, Model $record)`
+         * na policy, e a Action — que chama `Gate::authorize('import')` sem registro —
+         * estouraria `ArgumentCountError`.
+         */
         'single_parameter_methods' => [
             'viewAny',
             'create',
@@ -153,6 +176,8 @@ return [
             'forceDeleteAny',
             'restoreAny',
             'reorder',
+            'import',
+            'export',
         ],
     ],
 
