@@ -3,6 +3,51 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
+### Alterado
+
+- **O hub em cards deixa de ser padrão em `/admin` e `/app`.** Nova chave `kit.hub`
+  (`KIT_HUB`), **desligada por default**: os dois painéis nascem sem a página de grade de cartões,
+  e `KIT_HUB=true` no `.env` devolve as duas — sem editar código e sem ressemear o Shield, porque
+  o `FilamentCardsPlugin` continua registrado nos três painéis e a permissão continua na matriz.
+
+  O motivo é cardinalidade: grade de cartões paga o próprio espaço quando há **muitos** caminhos.
+  O `/admin` tem oito destinos, e o `/app` de um projeto de verdade nasce vazio — ali a grade é a
+  barra lateral com um clique a mais.
+
+  **O `/infra` não mudou e não depende da chave.** São dezesseis destinos em quatro grupos, metade
+  com rótulo de plugin de terceiro sem tradução ("audits", "Exception", "Manage commands",
+  "Run history"): é o único painel do kit onde a grade ganha da árvore no default. A assimetria é
+  deliberada e tem caso de teste que fica vermelho se alguém "corrigir" a inconsistência.
+
+  Para quem já instalou o kit e vai rodar `kit:update`: se você usava os hubs de `/admin` ou
+  `/app`, acrescente `KIT_HUB=true` ao `.env`. O pacote `harvirsidhu/filament-cards` continua
+  instalado nos dois casos.
+
+### Adicionado
+
+- **Descrição em cada cartão do hub de infraestrutura.** Os dezesseis destinos passam a exibir uma
+  frase dizendo para que o link serve, e a frase entra no texto pesquisável do cartão — a busca da
+  página passa a encontrar por assunto ("fila", "restaurar", "e-mail") e não só pelo rótulo.
+
+  Vem de um mapa por FQCN em `HubDeInfraestrutura::descricoesDosDestinos()`, porque treze dos
+  dezesseis destinos são vendor e não há onde declarar a frase na classe. Plugin novo no painel
+  entra sem frase e a suíte acusa, apontando a classe que falta.
+
+### Armadilhas registradas
+
+- **Em Page do Filament, `canAccess()` sozinho basta** para tirar da URL, do menu e da busca ⌘K —
+  `Page::registerNavigationItems()` já retorna cedo. Em **Resource** são dois métodos. Copiar o par
+  do Resource para uma Page acrescenta código que não muda nada
+  (`.ai/rules/filament.md`).
+- **Nome de screenshot de CT-B nunca pode colidir com nome de imagem de `art/`**: as duas coisas
+  escrevem em `tests/Browser/Screenshots`, e o `kit:arte` publica tudo o que encontra lá — a imagem
+  da galeria passaria a depender de qual suíte rodou por último
+  (`.ai/rules/testes-browser.md`).
+- **Utilitária Tailwind que blade de vendor emite precisa existir no CSS do kit.** Ausência produz
+  HTML correto sem estilo nenhum, com todo teste verde (`.ai/rules/css-filament.md`).
+
 ## [0.17.0] - 2026-08-18
 
 Seis pacotes novos, todos Filament v5 e gratuitos, escolhidos numa varredura dos **547** plugins do

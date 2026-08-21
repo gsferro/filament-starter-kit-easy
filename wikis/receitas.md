@@ -592,6 +592,26 @@ com download autenticado, sem lightbox. Ver ADR-03 da wiki `lightbox-em-imagens-
 Quando um painel — ou um cluster, ou uma área de configurações — tem muitos destinos, uma **grade
 de cartões** lê melhor que uma árvore de barra lateral. É o `harvirsidhu/filament-cards`.
 
+[![Central de infraestrutura: grade de cartões com os destinos do painel /infra, cada um com ícone, rótulo e uma frase explicando para que o link serve](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/infra-hub.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/infra-hub.png)
+
+### O que já está ligado, e o que é opt-in
+
+| Painel | Hub no default | Como ligar |
+|---|---|---|
+| `/infra` | **sim** | já vem — dezesseis destinos em quatro grupos, metade com rótulo de plugin de terceiro sem tradução |
+| `/admin` | não | `KIT_HUB=true` |
+| `/app` | não | `KIT_HUB=true` |
+
+O pacote **fica instalado** com a flag desligada, e as três Pages continuam no repositório: ligar é
+um caractere no `.env`, sem editar código e sem ressemear o Shield. A permissão
+(`View:HubDeAdministracao`, `View:HubDoNegocio`) existe nos dois casos — a flag esconde a tela, não
+mexe na matriz.
+
+Por que `/admin` e `/app` nascem desligados: grade de cartões paga o próprio espaço quando há
+**muitos** caminhos. O `/admin` tem oito destinos, e o `/app` de um projeto de verdade nasce vazio —
+ali a grade é a barra lateral com um clique a mais. Ver a wiki
+`wikis/specs/feature/v1-enriquecimento-kit/hub-de-cards-opcional/`.
+
 ```php
 use App\Filament\Concerns\DescobreCardsDoPainel;
 use Harvirsidhu\FilamentCards\Filament\Pages\CardsPage;
@@ -617,16 +637,18 @@ class HubDeInfraestrutura extends CardsPage
 }
 ```
 
-### Quatro casos de uso
+### Cinco casos de uso
 
-1. **Porta de entrada de painel denso** — é o que o kit faz nos três painéis. O hub **soma** à
-   barra lateral, não a substitui: esconder itens da navegação quebraria a busca ⌘K e custaria
-   dois cliques onde havia um.
+1. **Porta de entrada de painel denso** — é o que o kit faz no `/infra`. O hub **soma** à barra
+   lateral, não a substitui: esconder itens da navegação quebraria a busca ⌘K e custaria dois
+   cliques onde havia um.
 2. **Hub de configurações** — agrupar as páginas de settings numa grade em vez de espalhá-las
    pelo menu.
 3. **Página inicial de Cluster** — aí sim vale o `discoverClusterCards()` do pacote, que já filtra
    por `canAccess()` sozinho.
 4. **Atalhos externos** — `CardItem::make('https://status.exemplo.com')->openUrlInNewTab()`.
+5. **Página de fluxo** — apresentar as etapas de um processo como cartões, em ordem, com descrição
+   em cada etapa. É o encaixe que o pacote pede e que o kit ainda não usa.
 
 ### O que NÃO fazer
 
@@ -638,6 +660,49 @@ class HubDeInfraestrutura extends CardsPage
   com ou sem tema. Ver ADR-03 da wiki `hub-de-navegacao-em-cards`.
 - **Usar o pacote como componente de formulário.** Ele transforma uma *página* em grade de links;
   não substitui `Radio` nem `Select`.
+- **Ligar o hub em painel com poucos destinos.** Grade de cartões para quatro links é a barra
+  lateral com passos a mais. Foi por isso que `/admin` e `/app` saíram do default do kit.
+
+### Descrição em cada cartão
+
+O `/infra` tem dezesseis destinos, e **treze são vendor** — "audits", "Exception",
+"Manage commands", "Run history" são rótulos de plugin, não escolhas do kit. A descrição é o que
+torna a grade legível sem mexer em sete plugins:
+
+```php
+protected static function descricoesDosDestinos(): array
+{
+    return [
+        HealthCheckResults::class   => 'Estado atual dos checks de banco, cache, fila, agendador, disco e ambiente.',
+        QueueMonitorResource::class => 'Histórico dos jobs da fila: o que rodou, o que falhou e quanto tempo levou.',
+        RecycleBin::class           => 'Registros apagados com soft delete, com restauração registro por registro.',
+    ];
+}
+
+protected static function getCards(): array
+{
+    return static::cardsDoPainel(
+        excluir: [static::class, Dashboard::class],
+        descricoes: static::descricoesDosDestinos(),
+    );
+}
+```
+
+Três coisas que não são óbvias:
+
+- **É um mapa por FQCN, e não um método na classe do destino.** O Filament não tem
+  `getNavigationDescription()`, e a maioria dos destinos de um painel é vendor: não há onde declarar
+  a frase. Um método no concern só funcionaria para as classes do próprio projeto, e a grade sairia
+  com três frases e treze buracos.
+- **A frase entra no `data-search-text` do cartão**, então a busca da página passa a encontrar por
+  assunto — "fila", "restaurar", "e-mail" — e não só pelo rótulo. Só vale a pena onde
+  `$searchable = true`.
+- **Cartão sem frase não quebra nada**: o parâmetro é opcional e a blade só emite o `<p>` quando a
+  descrição está preenchida. É o que mantém os hubs de `/admin` e `/app` idênticos ao que eram.
+
+**Plugin novo no painel entra sem frase**, e `tests/Kit/HubDeCardsTest.php` fica vermelho pedindo a
+linha — a mensagem de falha diz qual classe está faltando. Isso é deliberado: a regra do kit é que
+nenhum cartão fica sem descrição.
 
 ### Depois de criar
 

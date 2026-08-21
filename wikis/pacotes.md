@@ -33,7 +33,7 @@
 | Widget de funil, meta, breakdown, timeline | `laboiteacode/filament-dashboard-widgets` |
 | **Gráfico** (linha, área, barra, rosca, radial, radar) | `leandrocfe/filament-apex-charts` — nunca `<canvas>` nem Chart.js à mão |
 | **Ampliar imagem ou documento de tabela** | `solution-forest/filament-simplelightbox` — nunca modal de preview escrito à mão |
-| **Página hub: grade de cartões de navegação** | `harvirsidhu/filament-cards` — nunca Blade de cartões à mão |
+| **Página hub: grade de cartões de navegação** | `harvirsidhu/filament-cards` — **ligado no `/infra`; opt-in (`KIT_HUB`) em `/admin` e `/app`**. Nunca Blade de cartões à mão |
 | Dashboard arrastável pelo usuário | `mddev31/filament-dynamic-dashboard` |
 | Barra de progresso em coluna/entry | `lara-zeus/progress` |
 | Checklist e tour guiado | `wallacemartinss/filament-onboarding` |
