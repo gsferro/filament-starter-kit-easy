@@ -41,9 +41,12 @@ trait DescobreCardsDoPainel
      * Os destinos do painel corrente que o visitante PODE acessar, agrupados.
      *
      * @param  list<class-string>  $excluir  classes que não viram cartão (a própria página, o Dashboard)
+     * @param  array<class-string, string>  $descricoes  a frase de cada destino, por FQCN. Chave
+     *                                                   ausente sai sem frase; chave órfã (destino
+     *                                                   que não está neste painel) nunca é lida.
      * @return list<CardGroup>
      */
-    protected static function cardsDoPainel(array $excluir = []): array
+    protected static function cardsDoPainel(array $excluir = [], array $descricoes = []): array
     {
         $painel = Filament::getCurrentPanel();
 
@@ -57,7 +60,10 @@ trait DescobreCardsDoPainel
             // navegação não deve desfazer essa decisão por conta própria.
             ->filter(fn (string $componente): bool => $componente::canAccess()
                 && $componente::shouldRegisterNavigation())
-            ->map(fn (string $componente): CardItem => static::cardDe($componente))
+            ->map(fn (string $componente): CardItem => static::cardDe(
+                $componente,
+                $descricoes[$componente] ?? null,
+            ))
             ->pipe(static::agrupar(...));
     }
 
@@ -66,13 +72,24 @@ trait DescobreCardsDoPainel
      *
      * Nada é redigitado aqui: resource renomeado, com ícone novo ou com badge de contagem se
      * atualiza sozinho no hub. É o que mantém a grade fiel à barra lateral sem duas fontes.
+     *
+     * A descrição é a única exceção, e é exceção por necessidade: o Filament não tem
+     * `getNavigationDescription()`, e a maioria dos destinos de um painel é vendor — não há onde
+     * declarar a frase na classe. Ela vem de fora, do mapa que a Page passa. Ver ADR-04 da wiki
+     * `hub-de-cards-opcional`.
+     *
+     * `null` é seguro: `HasDescription::description()` aceita nulo e a blade do pacote só emite o
+     * `<p>` sob `@if (filled($itemDescription))`
+     * (`vendor/harvirsidhu/filament-cards/resources/views/pages/cards-page.blade.php:373`). Cartão
+     * sem frase sai byte a byte como antes — é o que mantém os hubs de /admin e /app intactos.
      */
-    protected static function cardDe(string $componente): CardItem
+    protected static function cardDe(string $componente, ?string $descricao = null): CardItem
     {
         $icone = $componente::getNavigationIcon();
 
         return CardItem::make($componente)
             ->label($componente::getNavigationLabel())
+            ->description($descricao)
             ->icon($icone instanceof BackedEnum || is_string($icone) ? $icone : null)
             ->badge($componente::getNavigationBadge())
             ->badgeColor($componente::getNavigationBadgeColor())
