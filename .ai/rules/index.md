@@ -10,5 +10,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Providers/Filament/** | .ai/rules/providers-filament.md |
 | wikis/specs/** | .ai/rules/specs.md |
 | tests/Browser/** | .ai/rules/testes-browser.md |
+| tests/BrowserTenancy/** | .ai/rules/testes-browser.md |
 | tests/** | .ai/rules/testes.md |
 | resources/views/** | .ai/rules/views.md |

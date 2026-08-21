@@ -1,6 +1,7 @@
 ---
 paths:
   - 'tests/Browser/**'
+  - 'tests/BrowserTenancy/**'
 ---
 
 # Testes de browser (`pest-plugin-browser`)
@@ -44,6 +45,50 @@ mantém a compilação dentro do cronômetro do cenário.
 
 Mesma causa raiz do `view:cache` no boot do container — ver
 `wikis/specs/feature/v1-enriquecimento-kit/cache-de-views-no-docker/`.
+## `view:cache` não basta para arquivo isolado — aqueça pelo kernel
+
+O `view:cache` cobre as Blade do repositório. **O primeiro render de um painel ainda paga a
+compilação dos componentes Livewire do Filament**, e isso são ~25 s que o `view:cache` não
+adianta. Rodando a suíte inteira o problema não aparece: os arquivos anteriores pagam a conta.
+Rodando **um arquivo só** de `tests/BrowserTenancy`, o primeiro cenário estoura os 45 s.
+
+Medido em `tests/BrowserTenancy/CapturaDeArteTest` depois de um `view:clear`, com o
+`view:cache` já executado:
+
+| Aquecimento | Resultado |
+|---|---|
+| nenhum | **3 de 4 verdes**, o primeiro cenário em `Timeout 45000ms exceeded` |
+| um `$this->get()` da mesma tela no `beforeEach` | 4 de 4 verdes, 53 s |
+
+A correção é pagar a conta **fora do cronômetro do Playwright**, num request pelo kernel, no
+`beforeEach`:
+
+```php
+$this->actingAs($usuario);
+
+// Compila os componentes do painel em PHP, onde ninguém está cronometrando.
+// Os arquivos compilados ficam em disco e o servidor do navegador os reusa.
+$this->get(ProjetoResource::getUrl('index', tenant: $organizacao));
+```
+
+Funciona porque o servidor do plugin roda **no mesmo processo** e lê o mesmo
+`storage/framework/views`.
+
+Não troque isto por `pest()->browser()->timeout()` maior: o `tests/Pest.php` registra que 40 s e
+60 s reproduzem a falha igual — o problema é a conta estar dentro do cronômetro, não o teto ser
+baixo.
+
+## `waitForEvent('networkidle')` não serve em painel do Filament
+
+Ele nunca resolve: o painel fica consultando as notificações, a rede não fica ociosa e o cenário
+morre no teto. Espere pelo **estado visível** (`assertSee`, `assertAttributeContains`), que é o
+que o plugin reexecuta com retry.
+
+E cuidado com o modo estrito do Playwright: seletor que casa mais de um elemento é **erro**, não
+"o primeiro". `.fi-ta-image img` numa listagem com duas linhas de anexo estoura
+`strict mode violation`. Prefira seletor por atributo único — `[id="form.painel-app::data::section-heading"]`
+em vez de `text=Painel /app`, que também casa o select "Acesso ao painel".
+
 ## `assertPathIs` antes das asserções de conteúdo
 
 `assertPathIs` é a asserção que **espera a navegação**. Depois de qualquer ação que navegue (`press`, `click`), ela vem primeiro:
