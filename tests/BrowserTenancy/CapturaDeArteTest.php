@@ -2,9 +2,11 @@
 
 use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Models\Projeto;
+use App\Models\Tenant;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Spatie\Permission\Models\Role;
+use Tests\TenancyTestCase;
 
 /**
  * As capturas de tela do README — código, não trabalho manual.
@@ -24,6 +26,31 @@ use Spatie\Permission\Models\Role;
  * A viewport é fixa em **1400x875** e `fullPage: false`, porque é a proporção das imagens
  * que já estão no `art/` (e das thumbs, 760x475). Captura de página inteira sairia mais
  * alta e a galeria do README ficaria desalinhada.
+ *
+ * ## Cada cenário arranja o SEU painel — o `beforeEach` não arranja painel nenhum
+ *
+ * Cenário de navegador precisa visitar o painel em que o processo foi deixado. Atravessar painel
+ * dentro do mesmo processo faz a tela renderizar com **a barra lateral do painel anterior**: o
+ * cabeçalho e o conteúdo saem certos, e a navegação ao lado é de outro painel.
+ *
+ * Foi o que aconteceu com `art/admin-papeis-import-export.png`, publicada errada desde o commit
+ * `04642b0`: o `beforeEach` arranjava o /app (contexto de tenant + aquecimento) e aquele cenário
+ * visita o /admin. As outras três capturas nunca estiveram erradas porque arranjam e visitam o
+ * MESMO painel — o /app.
+ *
+ * Medido, com o mesmo cenário de papéis:
+ *
+ * | Arranjo | Barra lateral da captura |
+ * |---|---|
+ * | `/app` arranjado antes (o que havia aqui) | `/app` — Projetos, Convites, Usuários (ERRADA) |
+ * | nenhum arranjo de `/app` | `/admin` — Usuários, Onboarding, Organizações, Funções |
+ *
+ * Não reproduz por `$this->get()`: em HTTP puro o painel troca certo em qualquer ordem. É
+ * específico do servidor in-process do `pest-plugin-browser`.
+ *
+ * `fronteiraDeRequest()` **não resolve** e foi tentado duas vezes: no `beforeEach` ele derruba os
+ * cenários que criam `Projeto` (esquece `Filament::getTenant()`), e antes do `visit()` produz topbar
+ * duplicada com a barra lateral ainda errada.
  */
 beforeEach(function (): void {
     if (! env('KIT_ART')) {
@@ -39,34 +66,37 @@ beforeEach(function (): void {
     $this->usuario     = usuarioComPapel('master_global');
     $this->usuario->tenants()->attach($this->organizacao);
 
-    noPainelDa($this->organizacao);
-
     $this->actingAs($this->usuario);
-
-    /*
-     * Aquece a compilação **fora do cronómetro do Playwright**, e sem isto a captura é
-     * vermelha em cache frio.
-     *
-     * O `view:cache` do `composer art` compila as Blade do repositório, mas o primeiro
-     * render de um painel ainda paga a compilação dos componentes Livewire do Filament —
-     * ~25s, medido. Rodando dentro de um cenário de navegador, isso estoura os 45s do
-     * plugin; rodando aqui, num request pelo KERNEL, o mesmo trabalho acontece em PHP,
-     * onde ninguém está cronometrando, e os arquivos compilados ficam em disco para o
-     * servidor do navegador reusar.
-     *
-     * É a mesma causa raiz que o `tests/Pest.php` documenta em
-     * `pest()->browser()->timeout()`: arquivo isolado de BrowserTenancy falha por TEMPO, e
-     * subir o teto não resolve. Aqui a conta é paga antes, não esticada.
-     *
-     * Medido: sem estas duas linhas, 3 de 4 cenários verdes e o primeiro em
-     * "Timeout 45000ms exceeded", de forma determinística após um `view:clear`.
-     */
-    $this->get(ProjetoResource::getUrl('index', tenant: $this->organizacao));
-    $this->get('/admin/shield/roles');
 });
+
+/**
+ * O arranjo do painel /app: contexto de tenant + aquecimento, para os cenários que visitam /app.
+ *
+ * ## Por que isto NÃO está no `beforeEach`
+ *
+ * Estava, e produzia a captura errada. Ver o cabeçalho do arquivo: cenário que é arranjado num
+ * painel e visita OUTRO renderiza a barra lateral do primeiro.
+ *
+ * ## Por que o aquecimento existe
+ *
+ * O `view:cache` do `composer art` compila as Blade do repositório, mas o primeiro render de um
+ * painel ainda paga a compilação dos componentes Livewire do Filament — ~25s, medido. Dentro de um
+ * cenário de navegador isso estoura os 45s do plugin; num request pelo KERNEL o mesmo trabalho
+ * acontece em PHP, onde ninguém cronometra, e os arquivos compilados ficam em disco para o servidor
+ * do navegador reusar. Mesma causa raiz que o `tests/Pest.php` documenta em
+ * `pest()->browser()->timeout()`.
+ */
+function arranjarPainelApp(TenancyTestCase $teste, Tenant $organizacao): void
+{
+    noPainelDa($organizacao);
+
+    $teste->get(ProjetoResource::getUrl('index', tenant: $organizacao));
+}
 
 /** O modal de import: upload de CSV, mapeamento de colunas e o CSV de exemplo. */
 it('captura o modal de import', function (): void {
+    arranjarPainelApp($this, $this->organizacao);
+
     Projeto::create(['nome' => 'Contrato de fornecimento 2026']);
 
     visit("/app/{$this->organizacao->slug}/projetos")
@@ -78,6 +108,8 @@ it('captura o modal de import', function (): void {
 
 /** O modal de export: uma linha por coluna do exporter, com rótulo editável. */
 it('captura o modal de export', function (): void {
+    arranjarPainelApp($this, $this->organizacao);
+
     Projeto::create(['nome' => 'Contrato de fornecimento 2026']);
 
     visit("/app/{$this->organizacao->slug}/projetos")
@@ -95,6 +127,10 @@ it('captura o modal de export', function (): void {
  */
 it('captura a matriz de papéis com Import e Export', function (): void {
     $papel = Role::query()->where('name', 'admin_app')->firstOrFail();
+
+    // Aquece o /admin, e SÓ ele: este cenário visita o /admin, então é o /admin que o processo
+    // precisa ter visto. Aquecer o /app aqui é exatamente o que publicava a captura errada.
+    $this->get('/admin/shield/roles');
 
     // O RoleResource do Shield vive sob `/admin/shield/roles`, não `/admin/roles`.
     //
@@ -145,6 +181,8 @@ it('captura a listagem com anexos e os quadros do fluxo', function (): void {
      * Então o anexo é gerado aqui, com cor forte, e são TRÊS: é o que mostra o
      * `->stacked()` fazendo o que promete.
      */
+    arranjarPainelApp($this, $this->organizacao);
+
     $projeto = Projeto::create(['nome' => 'Contrato de fornecimento 2026']);
 
     foreach (['planta-baixa', 'orcamento', 'cronograma'] as $indice => $nome) {
