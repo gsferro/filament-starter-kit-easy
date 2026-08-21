@@ -157,6 +157,15 @@
             "@php artisan config:clear --ansi",
             "@php artisan test --testsuite=Kit,Tenancy"
         ],
+        "art": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "npm run build",
+            "@php artisan view:cache",
+            "@putenv KIT_ART=1",
+            "@php artisan test tests/BrowserTenancy/CapturaDeArteTest.php --ansi",
+            "@php artisan kit:arte --ansi"
+        ],
         "test:browser": [
             "Composer\\Config::disableProcessTimeout",
             "@php artisan config:clear --ansi",
