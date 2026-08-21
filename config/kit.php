@@ -113,6 +113,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Hub de navegação em cards
+    |--------------------------------------------------------------------------
+    | Desligado por default. Liga as páginas hub — uma grade de cartões com os
+    | destinos do painel, em vez da árvore da barra lateral — nos painéis
+    | /admin e /app.
+    |
+    | Desligado porque o kit inicial não precisa: /admin tem oito destinos e o
+    | /app de um projeto de verdade nasce vazio. Grade de cartões paga o próprio
+    | espaço quando há MUITOS caminhos e a pergunta "onde vejo X?" é real.
+    |
+    | ## O /infra NÃO depende desta chave
+    |
+    | Lá o hub nasce ligado, e de propósito: são dezesseis destinos em quatro
+    | grupos, metade com rótulo de plugin de terceiro não traduzido. É o único
+    | painel do kit onde a grade ganha da árvore no default.
+    |
+    | Ligando aqui, os três painéis passam a ter hub — nada mais precisa ser
+    | editado, porque o FilamentCardsPlugin já está registrado nos três e o CSS
+    | dos cartões já é publicado.
+    |
+    | O pacote (harvirsidhu/filament-cards) fica instalado com a chave
+    | desligada: ele é o dono do padrão "página que exibe links e fluxos em
+    | grade", e wikis/receitas.md tem a receita de quando usá-lo.
+    */
+
+    'hub' => (bool) env('KIT_HUB', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Observabilidade — retenção
     |--------------------------------------------------------------------------
     | Quanto tempo as trilhas que o kit GRAVA sobrevivem. Não é preferência de

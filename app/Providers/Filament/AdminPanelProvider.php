@@ -194,7 +194,8 @@ class AdminPanelProvider extends PanelProvider
                  */
                 FilamentApexChartsPlugin::make(),
 
-                // Páginas hub em grade de cartões (App\Filament\Admin\Pages\HubDeAdministracao).
+                // Páginas hub em grade de cartões (App\Filament\Admin\Pages\HubDeAdministracao),
+                // ligadas por config('kit.hub') — desligado no default do kit.
                 FilamentCardsPlugin::make(),
 
                 /*

@@ -13,6 +13,9 @@ use Harvirsidhu\FilamentCards\Filament\Pages\CardsPage;
 /**
  * Porta de entrada do /admin: usuários, papéis, convites, organizações e agentes de IA em grade.
  *
+ * **Desligada por default** — só existe com `KIT_HUB=true`. Ver `canAccess()` abaixo e o bloco
+ * "Hub de navegação em cards" de `config/kit.php`.
+ *
  * Mesma construção do hub de infraestrutura — os cartões saem de `cardsDoPainel()`, que filtra
  * por `canAccess()` de cada destino. Ver `App\Filament\Concerns\DescobreCardsDoPainel`.
  */
@@ -47,6 +50,25 @@ class HubDeAdministracao extends CardsPage
     public function getPageClasses(): array
     {
         return ['kit-cards-page'];
+    }
+
+    /**
+     * Some do menu, da URL e da busca ⌘K quando `kit.hub` está desligado — que é o default do kit.
+     *
+     * **Só `canAccess()`, sem `shouldRegisterNavigation()`.** Em Page do Filament 5 um método basta
+     * para os três efeitos: `Page::registerNavigationItems()` já retorna cedo quando `canAccess()`
+     * é falso (`vendor/filament/filament/src/Pages/Page.php:133-135`), e a categoria
+     * `PagesAutorizadasCategory` do Spotlight consulta o mesmo método. Em RESOURCE são dois — é por
+     * isso que `ProjetoResource` sobrescreve os dois e esta Page, um. Acrescentar o segundo aqui é
+     * ruído que sugere uma barreira que não existe.
+     *
+     * A rota continua registrada e responde 403, com a tela branda do filament-sentinel. Tirar a
+     * rota exigiria recortar o `discoverPages()` do provider, e aí o Shield deixaria de gerar
+     * `View:HubDeAdministracao` — ver ADR-02 da wiki `hub-de-cards-opcional`.
+     */
+    public static function canAccess(): bool
+    {
+        return (bool) config('kit.hub') && parent::canAccess();
     }
 
     /**

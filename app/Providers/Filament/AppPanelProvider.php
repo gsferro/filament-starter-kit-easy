@@ -276,7 +276,8 @@ class AppPanelProvider extends PanelProvider
                  */
                 SimpleLightBoxPlugin::make(),
 
-                // Páginas hub em grade de cartões (App\Filament\App\Pages\HubDoNegocio).
+                // Páginas hub em grade de cartões (App\Filament\App\Pages\HubDoNegocio),
+                // ligadas por config('kit.hub') — desligado no default do kit.
                 FilamentCardsPlugin::make(),
 
                 /*

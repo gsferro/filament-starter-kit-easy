@@ -347,6 +347,7 @@ class InfraPanelProvider extends PanelProvider
                     ->withoutScoping(),
 
                 // Páginas hub em grade de cartões (App\Filament\Infra\Pages\HubDeInfraestrutura).
+                // Este painel NAO depende de config('kit.hub') — ver o docblock da Page.
                 FilamentCardsPlugin::make(),
             ])
             /*
