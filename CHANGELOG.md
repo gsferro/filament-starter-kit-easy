@@ -3,7 +3,7 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Não lançado]
+## [0.18.0] - 2026-08-21
 
 ### Alterado
 
@@ -35,16 +35,38 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   dezesseis destinos são vendor e não há onde declarar a frase na classe. Plugin novo no painel
   entra sem frase e a suíte acusa, apontando a classe que falta.
 
+### Corrigido
+
+- **A captura `art/admin-papeis-import-export.png` estava publicada com a barra lateral do painel
+  errado** — navegação do `/app` sob o cabeçalho do `/admin` — desde a v0.17.0. Cenário de navegador
+  precisa visitar o painel em que o processo foi deixado: o servidor do `pest-plugin-browser` roda
+  in-process, e atravessar painel dentro do mesmo processo faz a tela renderizar com a barra lateral
+  do painel anterior. O `beforeEach` da suíte de arte arranjava o `/app` para todos os cenários, e o
+  de papéis visita o `/admin`.
+
+  Nenhum teste ficou vermelho por isso: os cenários afirmam sobre o conteúdo da tela, e ninguém
+  afirma sobre a barra lateral. Foi encontrado ao **abrir a imagem**.
+
+- **`kit:arte` publicava todo PNG que encontrasse** em `tests/Browser/Screenshots` — inclusive os
+  screenshots que o Pest grava sozinho quando um cenário de navegador falha. Agora publica de uma
+  lista declarada (`KitArte::IMAGENS`), e o que não está declarado é **reportado**, nunca publicado
+  e nunca silenciado.
+
+- **`composer art` rodava duas invocações do `artisan test`**, e o plugin limpa o diretório de
+  screenshots no início de cada run — a segunda apagava o que a primeira escrevera, e quatro imagens
+  ficavam silenciosamente sem atualizar. Passou a ser uma invocação com os dois caminhos.
+
 ### Armadilhas registradas
 
 - **Em Page do Filament, `canAccess()` sozinho basta** para tirar da URL, do menu e da busca ⌘K —
   `Page::registerNavigationItems()` já retorna cedo. Em **Resource** são dois métodos. Copiar o par
   do Resource para uma Page acrescenta código que não muda nada
   (`.ai/rules/filament.md`).
-- **Nome de screenshot de CT-B nunca pode colidir com nome de imagem de `art/`**: as duas coisas
-  escrevem em `tests/Browser/Screenshots`, e o `kit:arte` publica tudo o que encontra lá — a imagem
-  da galeria passaria a depender de qual suíte rodou por último
+- **Cenário de navegador visita o painel em que o processo foi deixado.** Atravessar painel dentro
+  do mesmo processo renderiza a barra lateral do painel anterior, sem nenhum teste vermelho
   (`.ai/rules/testes-browser.md`).
+- **Captura nova exige a linha em `KitArte::IMAGENS`**, e o `composer art` roda os arquivos de
+  captura numa única invocação do `artisan test` (`.ai/rules/testes-browser.md`).
 - **Utilitária Tailwind que blade de vendor emite precisa existir no CSS do kit.** Ausência produz
   HTML correto sem estilo nenhum, com todo teste verde (`.ai/rules/css-filament.md`).
 
