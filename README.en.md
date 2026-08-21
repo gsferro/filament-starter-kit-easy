@@ -471,6 +471,11 @@ SpatieMediaLibraryImageColumn::make('anexos')   // in the table
 `->simpleLightbox()` works with no glue because `SpatieMediaLibraryImageColumn` **extends
 `ImageColumn`**, which is exactly where the lightbox macro is registered.
 
+[![The Projeto listing on /app with the attachment column: circular thumbnails stacked on each record's row](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-projetos-anexos.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-projetos-anexos.png)
+
+Look at the thumbnails stacked on the record's row: each one is served through a **signed URL**,
+because the disk is private — the same file requested without the signature answers 403.
+
 **Organization scoping comes for free** — and that's the point. Spatie's `media` table is
 polymorphic: the file belongs to the record, and the record is already scoped by
 `BelongsToTenant`. Whoever can't reach the project can't reach the attachment, with no tenant
@@ -502,6 +507,11 @@ completion notification with a download button. The `imports`, `exports` and `fa
 tables are already migrated, and the kit **writes no wrapper at all** around any of it. What it adds
 are two base classes, a dedicated permission for each side, and the decision — resource by resource
 — to turn them on or not.
+
+![The import and export flow on /app: the Projeto listing with both buttons in the header, the export modal with one field per column, and the import modal with the sample CSV](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/fluxo-import-export.gif)
+
+Both buttons live in the listing header, next to "New": no new screen, no route of their own — what
+changes from resource to resource is only the permission each one requires.
 
 ### `ImportadorDoKit`: the organization boundary the package does not ship
 
@@ -541,6 +551,13 @@ exact inverse. The full reasoning is in
 [`wikis/arquitetura.md`](wikis/arquitetura.md#import-e-export-o-worker-perde-o-tenant-o-export-o-herda)
 (pt-BR).
 
+Both modals are Filament's own — the kit draws no screen here:
+
+| Import | Export |
+|---|---|
+| [![The Projeto import modal, with the link to download a sample CSV and the file upload field](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/import-modal.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/import-modal.png) | [![The Projeto export modal, with one field per exporter column — Nome, Organização, Criado em and Atualizado em — each with a checkbox and an editable label](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/export-modal.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/export-modal.png) |
+| **Download an example CSV file** builds the header from the importer's columns — that is where you can see, in practice, that `tenant` is not among them | One field per column declared in `colunas()`, each with a checkbox and an editable label: whoever exports picks the slice and renames the header, but cannot add a column the exporter never declared |
+
 ### A dedicated permission, and it is not optional
 
 `import` and `export` are the **kit's addition** to Shield's 12 default methods, in
@@ -549,6 +566,12 @@ neither of them receives a record (outside that list Shield would generate
 `import(User $user, Model $record)` in the policy, and the Action, which calls
 `Gate::authorize('import')` with no record, would throw `ArgumentCountError`). They generate
 `Import:{Model}` and `Export:{Model}` for every resource.
+
+[![A role edit screen in Filament Shield, with the Import and Export checkboxes next to View Any, Create and Delete](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-papeis-import-export.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-papeis-import-export.png)
+
+On the roles screen, `Import` and `Export` sit right next to `View Any`, `Create` and `Delete` — for
+**every** resource, including the ones that never turned the Actions on. That is what lets you grant
+or revoke each side per role, in `/admin` → Roles, without touching code.
 
 They are necessary because **a Filament Action does not check policies on its own** — the vendor says
 so in `Actions/Concerns/CanBeAuthorized.php`: the default authorization is `null`, i.e. allowed.
@@ -1087,6 +1110,38 @@ state — `composer test:kit:serial` isolates that, and the difference between t
 > need this — but it's good to know for any other flag.
 
 Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never touches them.
+
+### The README images come out of a test
+
+The screenshots in this README are **not taken by hand**. They come from
+`tests/BrowserTenancy/CapturaDeArteTest.php`, in the same suite that proves the screens work:
+
+```bash
+composer art
+```
+
+The command really navigates, saves the PNGs, publishes them into `art/`, generates the
+`art/thumbs/` versions and assembles the flow GIF. It is the only way we found for the docs not to
+rot: nobody redoes fifteen images every release, and the result is a README showing a version of
+the kit that no longer exists.
+
+| Step | What it does |
+|---|---|
+| `npm run build` + `view:cache` | hard prerequisites of the browser suite |
+| `KIT_ART=1 pest tests/BrowserTenancy/CapturaDeArteTest.php` | navigates and writes the PNGs into `tests/Browser/Screenshots/` (the plugin's fixed path) |
+| `php artisan kit:arte` | copies into `art/`, resizes the thumbs and assembles the GIF |
+
+Three decisions worth knowing before you touch it:
+
+- **`KIT_ART=1` is not decoration.** Without the variable the file is *skipped*. It writes into
+  `art/`, and a CI suite that dirties the working tree is worse than a slow one.
+- **The sizes are fixed: 1400x875 full, 760x475 thumb.** That is the ratio of the images already in
+  `art/`, and the gallery puts two thumbs per row — a thumb with a different ratio breaks the table.
+- **The GIF is a slideshow**, assembled with `ffmpeg` from three frames. The browser plugin does not
+  record video, and captured frames are what can be reproduced deterministically. With no `ffmpeg`
+  on the PATH the command warns and moves on: the static images were already published.
+
+Only need to redo the thumbs, without repeating the navigation? `php artisan kit:arte --sem-gif`.
 
 ### How tests are thought out: SFDIPOT sweep
 

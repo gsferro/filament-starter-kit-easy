@@ -472,6 +472,11 @@ SpatieMediaLibraryImageColumn::make('anexos')   // na tabela
 O `->simpleLightbox()` funciona sem cola porque `SpatieMediaLibraryImageColumn` **estende
 `ImageColumn`**, que é exatamente onde o macro do lightbox é registrado.
 
+[![Listagem de Projetos no /app com a coluna de anexos: miniaturas circulares empilhadas na linha de cada registro](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-projetos-anexos.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-projetos-anexos.png)
+
+Repare nas miniaturas empilhadas na linha do registro: cada uma é servida por **URL assinada**,
+porque o disco é privado — o mesmo arquivo pedido sem a assinatura responde 403.
+
 **O escopo por organização vem de graça** — e é o ponto. A tabela `media` do Spatie é polimórfica:
 o arquivo pertence ao registro, e o registro já é escopado por `BelongsToTenant`. Quem não alcança
 o projeto não alcança o anexo, sem coluna de tenant em `media` e sem configuração para lembrar de
@@ -503,6 +508,11 @@ notificação de conclusão com botão de download. As tabelas `imports`, `expor
 `failed_import_rows` já vêm migradas, e o kit **não escreve wrapper nenhum** em volta disso. O que
 ele acrescenta são duas classes base, uma permissão própria para cada lado e a decisão — resource
 por resource — de ligar ou não.
+
+![Fluxo de import e export no /app: a listagem de Projetos com os botões no cabeçalho, o modal de exportação com um campo por coluna e o modal de importação com o CSV de exemplo](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/fluxo-import-export.gif)
+
+Os dois botões vivem no cabeçalho da listagem, ao lado do "Novo": nada de tela nova, nada de rota
+própria — o que muda de resource para resource é só a permissão que cada um exige.
 
 ### `ImportadorDoKit`: a fronteira de organização que o pacote não entrega
 
@@ -541,6 +551,13 @@ executa. O isolamento do export é **herdado**; o do import é **construído** �
 raciocínio completo está em
 [`wikis/arquitetura.md`](wikis/arquitetura.md#import-e-export-o-worker-perde-o-tenant-o-export-o-herda).
 
+Os dois modais são os nativos do Filament — o kit não desenha tela nenhuma aqui:
+
+| Importar | Exportar |
+|---|---|
+| [![Modal de importação de Projetos, com o link para baixar um CSV de exemplo e o campo de upload do arquivo](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/import-modal.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/import-modal.png) | [![Modal de exportação de Projetos, com um campo por coluna do exporter: Nome, Organização, Criado em e Atualizado em, cada um com checkbox e rótulo editável](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/export-modal.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/export-modal.png) |
+| **Baixar um arquivo CSV de exemplo** monta o cabeçalho a partir das colunas do importer — é ali que se vê, na prática, que `tenant` não está entre elas | Um campo por coluna declarada em `colunas()`, com checkbox e rótulo editável: quem exporta escolhe o recorte e renomeia o cabeçalho, mas não acrescenta coluna que o exporter não declarou |
+
 ### Permissão própria, e ela não é opcional
 
 `import` e `export` são **acréscimo do kit** aos 12 métodos default do Shield, em
@@ -549,6 +566,12 @@ nenhum dos dois recebe registro (fora dessa lista o Shield geraria
 `import(User $user, Model $record)` na policy, e a Action, que chama `Gate::authorize('import')` sem
 registro, estouraria `ArgumentCountError`). Daí saem `Import:{Model}` e `Export:{Model}` para todo
 resource.
+
+[![Tela de edição de um papel no Filament Shield, com as checkboxes Import e Export ao lado de View Any, Create e Delete](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-papeis-import-export.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-papeis-import-export.png)
+
+Na tela de papéis, `Import` e `Export` aparecem lado a lado com `View Any`, `Create` e `Delete` —
+para **todo** resource, inclusive os que não ligaram as Actions. É o que permite conceder ou tirar
+cada lado por papel, em `/admin` → Funções, sem tocar em código.
 
 Elas são necessárias porque **Action do Filament não consulta policy sozinha** — o próprio vendor
 diz isso em `Actions/Concerns/CanBeAuthorized.php`: a autorização default é `null`, ou seja,
@@ -1081,6 +1104,39 @@ compartilhado — `composer test:kit:serial` isola isso, e a diferença entre os
 > não precisa disso — mas vale saber para qualquer outra flag.
 
 Seus testes vão em `tests/Feature` e `tests/Unit`, como de costume — o kit não encosta neles.
+
+### As imagens do README saem de um teste
+
+As capturas de tela deste README **não são feitas à mão**. Elas nascem de
+`tests/BrowserTenancy/CapturaDeArteTest.php`, na mesma suíte que prova que as telas funcionam:
+
+```bash
+composer art
+```
+
+O comando navega de verdade, salva os PNG, publica em `art/`, gera as thumbs de `art/thumbs/` e
+monta o GIF do fluxo. É o único jeito que encontramos de a documentação não envelhecer: ninguém
+refaz quinze imagens a cada release, e o resultado é um README mostrando uma versão do kit que
+não existe mais.
+
+| Etapa | O que faz |
+|---|---|
+| `npm run build` + `view:cache` | pré-requisitos duros da suíte de navegador |
+| `KIT_ART=1 pest tests/BrowserTenancy/CapturaDeArteTest.php` | navega e escreve os PNG em `tests/Browser/Screenshots/` (caminho fixo do plugin) |
+| `php artisan kit:arte` | copia para `art/`, redimensiona as thumbs e monta o GIF |
+
+Três decisões que valem saber antes de mexer:
+
+- **`KIT_ART=1` não é enfeite.** Sem a variável o arquivo é *skipped*. Ele escreve em `art/`, e uma
+  suíte de CI que suja a árvore de trabalho é pior que uma suíte lenta.
+- **As medidas são fixas: 1400x875 no cheio, 760x475 na thumb.** É a proporção das imagens que já
+  estavam no `art/`, e a galeria põe duas thumbs por linha — thumb com outra proporção desalinha a
+  tabela.
+- **O GIF é slideshow, montado com `ffmpeg` a partir de três quadros.** O plugin de navegador não
+  grava vídeo, e quadro capturado é o que dá para reproduzir de forma determinística. Sem `ffmpeg`
+  no PATH o comando avisa e segue: as imagens estáticas já foram publicadas.
+
+Precisa só refazer as thumbs, sem repetir a navegação? `php artisan kit:arte --sem-gif`.
 
 ### Como os testes são pensados: varredura SFDIPOT
 
