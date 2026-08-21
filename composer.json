@@ -164,6 +164,7 @@
             "@php artisan view:cache",
             "@putenv KIT_ART=1",
             "@php artisan test tests/BrowserTenancy/CapturaDeArteTest.php --ansi",
+            "@php artisan test tests/Browser/HubDeCardsTest.php --ansi",
             "@php artisan kit:arte --ansi"
         ],
         "test:browser": [
