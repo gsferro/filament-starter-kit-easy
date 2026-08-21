@@ -44,6 +44,33 @@ class KitArte extends Command
         'fluxo-3-import',
     ];
 
+    /**
+     * As capturas que este comando publica, por nome de arquivo.
+     *
+     * ## Por que uma lista, e não "tudo o que estiver no diretório"
+     *
+     * `tests/Browser/Screenshots` é caminho fixo do `pest-plugin-browser` e recebe TUDO: as
+     * capturas de arte, os `->screenshot()` de evidência de qualquer CT-B, e os screenshots que o
+     * próprio Pest grava automaticamente quando um cenário de navegador FALHA.
+     *
+     * Publicar tudo fazia a galeria da documentação depender de qual suíte rodou por último. O
+     * caso concreto: um screenshot de falha (`it_desenha_a_descricao_...png`) ficava a um
+     * `kit:arte` de distância de entrar no `art/`.
+     *
+     * Arquivo não declarado é **reportado**, nunca publicado e nunca silenciado. Os dois erros
+     * possíveis passam a ser visíveis: o intruso aparece como ignorado, e a captura nova que
+     * esqueceu a linha aqui aparece como ignorada também, com o nome dela.
+     *
+     * @var list<string>
+     */
+    private const IMAGENS = [
+        'admin-papeis-import-export',
+        'app-projetos-anexos',
+        'export-modal',
+        'import-modal',
+        'infra-hub',
+    ];
+
     public function handle(): int
     {
         $origem = base_path('tests/Browser/Screenshots');
@@ -75,11 +102,18 @@ class KitArte extends Command
         File::ensureDirectoryExists(base_path('art/thumbs'));
 
         $publicadas = 0;
+        $ignoradas  = [];
 
         foreach (File::glob($origem.'/*.png') as $arquivo) {
             $nome = pathinfo($arquivo, PATHINFO_FILENAME);
 
             if (in_array($nome, self::QUADROS_DO_GIF, true)) {
+                continue;
+            }
+
+            if (! in_array($nome, self::IMAGENS, true)) {
+                $ignoradas[] = $nome;
+
                 continue;
             }
 
@@ -97,6 +131,16 @@ class KitArte extends Command
             $this->components->twoColumnDetail("art/{$nome}.png", 'publicada + thumb');
 
             $publicadas++;
+        }
+
+        /*
+         * Reportado, e não silenciado: se a captura nova esqueceu a linha em `IMAGENS`, este aviso
+         * é a única coisa que separa "não publiquei" de "publiquei e você não viu".
+         */
+        if ($ignoradas !== []) {
+            $this->components->warn(
+                'Ignoradas (não declaradas em KitArte::IMAGENS): '.implode(', ', $ignoradas)
+            );
         }
 
         return $publicadas;

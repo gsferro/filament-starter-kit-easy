@@ -132,39 +132,43 @@ O kit não tem `data-testid` (dívida conhecida). O disponível hoje:
 
 Use `assertNoSmoke()` só em tela de autoria própria; nas de plugin de terceiro, `assertNoJavaScriptErrors()`, senão a suíte fica vermelha por `console.log` que ninguém vai corrigir.
 
-## Nome de screenshot de CT-B nunca colide com nome de imagem de art/
-`tests/Browser/Screenshots` é caminho fixo do `pest-plugin-browser`, não configurável — e as DUAS coisas escrevem lá: os `->screenshot()` de evidência dos CT-B e as capturas da suíte de arte (`tests/BrowserTenancy/CapturaDeArteTest.php`).
+## `kit:arte` publica de uma lista declarada — captura nova precisa da linha
 
-O `kit:arte` publica em `art/` **todo** PNG que encontra no diretório, sem lista de permissão (`app/Console/Commands/KitArte.php:79-100`); a única exceção são os três quadros do GIF. Consequência: dois cenários com o mesmo `filename` fazem a imagem publicada na galeria do README depender de qual suíte rodou por último — sem erro, sem aviso, e só visível quando alguém repara que a tabela de thumbs desalinhou (a arte usa `resize(1400, 875)`, o CT-B não).
+`tests/Browser/Screenshots` é caminho fixo do `pest-plugin-browser` e recebe TUDO: as capturas de
+arte, os `->screenshot()` de evidência de qualquer CT-B, e os screenshots que o Pest grava sozinho
+quando um cenário de navegador FALHA. O plugin limpa o diretório no início de cada run, então
+sobra do run anterior não existe — mas screenshot de falha DO MESMO run existe, e já quase entrou
+no `art/`.
 
-Regra: antes de escolher o `filename` de um `->screenshot()`, confira `ls art/`. Se o nome existir lá, escolha outro. O par atual é `hub-infraestrutura` (CT-B) × `infra-hub` (arte).
+Por isso `KitArte::IMAGENS` é uma lista de nomes: arquivo não declarado é **reportado**, nunca
+publicado e nunca silenciado. Os dois erros ficam visíveis — o intruso aparece como ignorado, e a
+captura nova que esqueceu a linha aparece como ignorada também, com o nome dela.
 
-Vale também na direção inversa: rode `rm -rf tests/Browser/Screenshots` antes de `composer art`, para não publicar sobra de um run de browser anterior.
+Ao acrescentar uma captura: o `->screenshot(filename: 'x')` no cenário **e** a linha `'x'` em
+`KitArte::IMAGENS`.
 
-Ver ADR-05 de `wikis/specs/feature/v1-enriquecimento-kit/hub-de-cards-opcional/`.
+E o `composer art` roda os arquivos de captura numa **única** invocação do `artisan test`. Duas
+invocações não funcionam: a segunda limpa o diretório e apaga o que a primeira escreveu, e o
+`kit:arte` publica só o resto — sem erro nenhum, com quatro imagens silenciosamente não
+atualizadas.
+## Cenário de navegador visita o painel em que o processo foi deixado
+**Substitui a rule anterior sobre `fronteiraDeRequest()` na captura de arte** — aquela descrevia o sintoma e prescrevia uma correção que não funciona.
 
-## `fronteiraDeRequest()` entre o aquecimento e o `visit()` — e o LUGAR dela não é livre
+O servidor do `pest-plugin-browser` roda in-process. Cenário arranjado num painel e que visita OUTRO renderiza a tela com **a barra lateral do painel do arranjo**: cabeçalho e conteúdo saem certos, a navegação ao lado é de outro painel, e os ícones da topbar saem repetidos.
 
-O servidor do plugin roda **in-process**, então o container atravessa os `$this->get()` de aquecimento e o `visit()` seguinte. `FilamentManager` e `AssetManager` guardam estado de painel, e o painel do ÚLTIMO aquecimento é o que a tela renderiza: ela sai com o título e o cabeçalho do painel certo e a **barra lateral do painel errado**, com os ícones da topbar todos iguais.
+Medido com o mesmo cenário (`/admin/shield/roles/{id}/edit`):
 
-Medido em `tests/BrowserTenancy/CapturaDeArteTest.php`: o `beforeEach` aquecia `/app` e `/admin`, e as capturas publicadas em `art/` saíram com a navegação do `/app` sob o cabeçalho de outro painel — `art/infra-hub.png` e `art/admin-papeis-import-export.png`, esta desde o commit `04642b0`.
+| Arranjo antes do `visit()` | Barra lateral |
+|---|---|
+| `noPainelDa($org)` + `get()` de URL do /app | **/app** — Projetos, Convites, Usuários |
+| nenhum arranjo de /app | /admin — Usuários, Onboarding, Organizações, Funções |
 
-**Nenhum teste ficou vermelho.** `assertSee` acha o texto que o cenário pediu, e ninguém afirma sobre a barra lateral — é o caso concreto de "assertion de apoio não serve de oráculo único". O defeito só apareceu ao **abrir a imagem**. Ao revisar captura de tela, confira a barra lateral, não só o conteúdo que o cenário afirma.
+Por isso `art/admin-papeis-import-export.png` ficou errada do commit `04642b0` até a correção: o `beforeEach` arranjava o /app e aquele cenário visita o /admin. As outras capturas do arquivo nunca estiveram erradas — arranjam e visitam o /app.
 
-**Onde a chamada vai**: dentro do cenário, depois do arranjo e imediatamente antes do `visit()`.
+**Não reproduz em `$this->get()`**: em HTTP puro o painel troca certo em qualquer ordem, e o painel de destino não acumula item de navegação alheio (`getNavigationItems()` devolve só o declarado no provider). É específico do `visit()`.
 
-```php
-$projeto = Projeto::create([...]);   // arranjo, com o tenant vivo
+**`fronteiraDeRequest()` não resolve**, e foi tentado duas vezes: no `beforeEach` derruba os cenários que criam model com `BelongsToTenant` (esquece `Filament::getTenant()`), e antes do `visit()` produz topbar duplicada com a barra lateral ainda errada.
 
-fronteiraDeRequest();                // a fronteira entre dois requests
+Regra: **o `beforeEach` não arranja painel**. Cada cenário arranja o seu, imediatamente antes de visitar. Ver `arranjarPainelApp()` em `tests/BrowserTenancy/CapturaDeArteTest.php`.
 
-visit("/app/{$org->slug}/projetos")  // container limpo
-```
-
-**Nunca no `beforeEach`.** Ela esquece o `FilamentManager`, e com ele `Filament::getTenant()`: todo model com `BelongsToTenant` criado depois dela nasce sem `tenant_id` e a inserção morre em `SQLSTATE[23000] NOT NULL constraint failed: {tabela}.tenant_id`. Medido no mesmo arquivo: posta no fim do `beforeEach`, ela corrigiu o vazamento de painel **e derrubou os três cenários que criam `Projeto`** — o único que ficou verde foi o que não cria nada.
-
-Cinco chamadas em cinco cenários, e não uma no `beforeEach`: é mais linha e é o lugar certo.
-
-Se precisar da fronteira e do tenant depois dela, re-arme com `noPainelDa($tenant)` — mas prefira mover a fronteira, porque re-armar reintroduz parte do estado que ela existe para limpar.
-
-O helper está em `tests/Pest.php`, com o inventário do que é esquecido e por quê. Ele não desfaz o aquecimento: os arquivos compilados ficam em disco.
+E ao revisar captura de tela, confira a **barra lateral** — nenhum `assertSee` afirma sobre ela, então o defeito passa verde.
