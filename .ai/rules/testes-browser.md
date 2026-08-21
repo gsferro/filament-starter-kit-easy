@@ -131,3 +131,40 @@ O kit não tem `data-testid` (dívida conhecida). O disponível hoje:
 `assertSee('Salvar')` **passa** com texto branco em fundo branco: o texto está no DOM, só está invisível. `->inDarkMode()->assertSee(...)` prova que a tela abre sob `prefers-color-scheme: dark`, e nada sobre legibilidade. Para defeito de cor não há saída barata — é screenshot e olhar.
 
 Use `assertNoSmoke()` só em tela de autoria própria; nas de plugin de terceiro, `assertNoJavaScriptErrors()`, senão a suíte fica vermelha por `console.log` que ninguém vai corrigir.
+
+## Nome de screenshot de CT-B nunca colide com nome de imagem de art/
+`tests/Browser/Screenshots` é caminho fixo do `pest-plugin-browser`, não configurável — e as DUAS coisas escrevem lá: os `->screenshot()` de evidência dos CT-B e as capturas da suíte de arte (`tests/BrowserTenancy/CapturaDeArteTest.php`).
+
+O `kit:arte` publica em `art/` **todo** PNG que encontra no diretório, sem lista de permissão (`app/Console/Commands/KitArte.php:79-100`); a única exceção são os três quadros do GIF. Consequência: dois cenários com o mesmo `filename` fazem a imagem publicada na galeria do README depender de qual suíte rodou por último — sem erro, sem aviso, e só visível quando alguém repara que a tabela de thumbs desalinhou (a arte usa `resize(1400, 875)`, o CT-B não).
+
+Regra: antes de escolher o `filename` de um `->screenshot()`, confira `ls art/`. Se o nome existir lá, escolha outro. O par atual é `hub-infraestrutura` (CT-B) × `infra-hub` (arte).
+
+Vale também na direção inversa: rode `rm -rf tests/Browser/Screenshots` antes de `composer art`, para não publicar sobra de um run de browser anterior.
+
+Ver ADR-05 de `wikis/specs/feature/v1-enriquecimento-kit/hub-de-cards-opcional/`.
+
+## `fronteiraDeRequest()` entre o aquecimento e o `visit()` — e o LUGAR dela não é livre
+
+O servidor do plugin roda **in-process**, então o container atravessa os `$this->get()` de aquecimento e o `visit()` seguinte. `FilamentManager` e `AssetManager` guardam estado de painel, e o painel do ÚLTIMO aquecimento é o que a tela renderiza: ela sai com o título e o cabeçalho do painel certo e a **barra lateral do painel errado**, com os ícones da topbar todos iguais.
+
+Medido em `tests/BrowserTenancy/CapturaDeArteTest.php`: o `beforeEach` aquecia `/app` e `/admin`, e as capturas publicadas em `art/` saíram com a navegação do `/app` sob o cabeçalho de outro painel — `art/infra-hub.png` e `art/admin-papeis-import-export.png`, esta desde o commit `04642b0`.
+
+**Nenhum teste ficou vermelho.** `assertSee` acha o texto que o cenário pediu, e ninguém afirma sobre a barra lateral — é o caso concreto de "assertion de apoio não serve de oráculo único". O defeito só apareceu ao **abrir a imagem**. Ao revisar captura de tela, confira a barra lateral, não só o conteúdo que o cenário afirma.
+
+**Onde a chamada vai**: dentro do cenário, depois do arranjo e imediatamente antes do `visit()`.
+
+```php
+$projeto = Projeto::create([...]);   // arranjo, com o tenant vivo
+
+fronteiraDeRequest();                // a fronteira entre dois requests
+
+visit("/app/{$org->slug}/projetos")  // container limpo
+```
+
+**Nunca no `beforeEach`.** Ela esquece o `FilamentManager`, e com ele `Filament::getTenant()`: todo model com `BelongsToTenant` criado depois dela nasce sem `tenant_id` e a inserção morre em `SQLSTATE[23000] NOT NULL constraint failed: {tabela}.tenant_id`. Medido no mesmo arquivo: posta no fim do `beforeEach`, ela corrigiu o vazamento de painel **e derrubou os três cenários que criam `Projeto`** — o único que ficou verde foi o que não cria nada.
+
+Cinco chamadas em cinco cenários, e não uma no `beforeEach`: é mais linha e é o lugar certo.
+
+Se precisar da fronteira e do tenant depois dela, re-arme com `noPainelDa($tenant)` — mas prefira mover a fronteira, porque re-armar reintroduz parte do estado que ela existe para limpar.
+
+O helper está em `tests/Pest.php`, com o inventário do que é esquecido e por quê. Ele não desfaz o aquecimento: os arquivos compilados ficam em disco.

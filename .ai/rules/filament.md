@@ -130,3 +130,12 @@ Coluna de imagem nasce com `->simpleLightbox()` e `->disk('public')` explícito,
 ## Qual pacote de widget
 
 Gráfico é `filament-apex-charts`; stat card é `filament-stat-plus-easy`; o resto é `filament-dashboard-widgets`. Todo `ApexChartWidget` declara `$pollingInterval` (o default é 5 s por aba aberta) e `canView()` com `Schema::hasTable()` quando a fonte é tabela opcional — widget que estoura derruba o dashboard inteiro.
+
+## Em Page, canAccess() sozinho basta; em Resource são dois métodos
+Para esconder uma Page de painel por config/permissão, sobrescreva SÓ `canAccess()`. Um método cobre os três efeitos: `Page::registerNavigationItems()` retorna cedo quando `canAccess()` é falso (`vendor/filament/filament/src/Pages/Page.php:133-135`), a rota responde 403 via `abort_unless()` (`vendor/filament/filament/src/Pages/Concerns/CanAuthorizeAccess.php:8-15`), e a categoria `PagesAutorizadasCategory` do Spotlight consulta o mesmo método.
+
+Em **Resource** são dois: `canAccess()` E `shouldRegisterNavigation()` — é o que `ProjetoResource`, `TenantResource`, `ConviteResource` e os dois `UserResource` fazem. Copiar esse par para uma Page acrescenta um método que não muda nada e sugere uma barreira a mais do que existe.
+
+Exemplo do padrão certo: `App\Filament\Admin\Pages\HubDeAdministracao::canAccess()`.
+
+A rota fica registrada e responde 403 (não 404). Tirá-la do ar exigiria recortar o `discoverPages()` do provider, e aí o Shield deixa de gerar a permission — a descoberta dele usa `$panel->getPages()` cru (`vendor/bezhansalleh/filament-shield/src/Concerns/HasEntityDiscovery.php:30-34`). Ver ADR-02 de `wikis/specs/feature/v1-enriquecimento-kit/hub-de-cards-opcional/`.
