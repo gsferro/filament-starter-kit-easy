@@ -145,3 +145,24 @@ Seis armadilhas que o plano não previu. Todas foram para `wikis/convencoes.md#a
 - **Funcionou bem**: escrever os CTs antes fez a contradição de `painel = null` aparecer ainda na fase de plano — CT-08 nasceu contradizendo ADR-03, e a ADR foi corrigida antes de qualquer linha de código. A auditoria com `/ponytail:ponytail-review` cortou cinco itens que teriam virado código morto.
 - **Faltou no plano**: nenhuma das seis armadilhas era previsível pela leitura do vendor — as três primeiras só aparecem executando. O plano teria ganhado um passo "provar o mapa por painel com números reais antes de escrever o seeder": foi assim que o cache da facade apareceu, e ele tinha passado despercebido como sucesso.
 - **A herdar**: `App\Models\Role` e `Tests\TestCase::seed()` são fundação para as duas wikis irmãs. A wiki `admin-da-organizacao` registrou, em ADR-06, que `panel_user` precisa **parar** de receber a matriz inteira do painel `app` quando o `UserResource` do `/app` existir — senão todo usuário comum vira admin da organização. Aceito; a subtração pertence àquela feature.
+
+## Quality Gate — Ciclo 1 (2026-08-22)
+
+> Relatorio: `06-relatorio-qa.md`
+
+**APROVADO COM DEBITO** — Blocker 0 · Major 1 · Minor 3 · Cosmetico 1
+
+- **QA-01 (Major, destino 3)**: CT-11 nao tem teste nenhum. Nenhum caso da suite instancia
+  `CreateRole` ou `EditRole`, e e justamente o CT que a wiki chama de "falha silenciosa mais
+  provavel de todo este plano". Codigo conferido e correto; falta o oraculo.
+- **QA-02 (Minor, destino 3)**: CT-14 e CT-15 tambem sem teste — `->required()` de `roles` e de
+  `tenants` sem cobertura. Sondado: os dois barram corretamente.
+- **QA-03 (Minor, destino 1)**: `tests/Kit/PerfilEAcessoTest.php` e
+  `tests/Tenancy/PerfilEAcessoTenancyTest.php` **nao existem** — os casos foram para
+  `PaineisTest.php` e `TenancyTest.php`, e a wiki nunca registrou.
+- **QA-04 (Minor, destino 1)**: o `01` diz 11 casos, o `04` tem 16.
+- **QA-05 (Cosmetico, destino 1)**: `.ai/rules/filament.md` diz "38 permissions no painel app";
+  medido agora: 59.
+
+Debitos aceitos: QA-03, QA-04, QA-05. Nao verificado: mutation score (sem driver de
+cobertura) e dimensoes G/H (app nao servido).
