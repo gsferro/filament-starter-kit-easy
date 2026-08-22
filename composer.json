@@ -90,6 +90,7 @@
         "pestphp/pest-plugin-browser": "^5.0",
         "pestphp/pest-plugin-laravel": "^5.0",
         "pestphp/pest-plugin-mutate": "^5.0",
+        "pestphp/pest-plugin-phpstan": "^5.1",
         "phpunit/phpunit": "^13.3",
         "rector/rector": "^2.6"
     },

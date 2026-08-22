@@ -1,5 +1,10 @@
+# O include do pest-plugin-phpstan vale mesmo com `tests` fora dos paths: ele
+# tipa `expect()`, o `$this` das closures de teste e o higher-order testing, e e
+# pre-requisito para o dia em que `tests` entrar. Sem `phpstan/extension-installer`
+# no projeto, o include e manual.
 includes:
     - vendor/larastan/larastan/extension.neon
+    - vendor/pestphp/pest-plugin-phpstan/extension.neon
 
 parameters:
     level: 7
@@ -26,6 +31,25 @@ parameters:
             paths:
                 - app/Filament/*/Resources/**
 
+    # `tests` NAO esta nos paths, e a ausencia e medida.
+    #
+    # Com o `pest-plugin-phpstan` incluido acima: 117 erros em 26 dos 62 arquivos.
+    # Sem ele: 566. O plugin nao adiciona ruido — ele REMOVE 449 falsos positivos,
+    # e essa diferenca e o que torna `tests` analisavel um dia.
+    #
+    # Os 117 que sobram nao sao defeito: sao level 7 vendo codigo de teste pela
+    # primeira vez, e tres padroes respondem por 33 deles — `artisan()` devolve
+    # `PendingCommand|int`, spy do Mockery em `LoggerInterface`, e fake de Mail em
+    # `TransportInterface`.
+    #
+    # Nenhuma das regras PROPRIAS do plugin acusou nada: zero expectation
+    # impossivel, zero descricao de teste duplicada, zero `covers()` com classe
+    # inexistente. O ganho de incluir `tests` e prevencao, nao um lote de defeito
+    # esperando.
+    #
+    # `types:check` e gate dentro do `composer test`. Incluir `tests` sem pagar a
+    # triagem deixa o gate vermelho, e gate vermelho por ruido ensina a ignorar
+    # gate. Ver wikis/qualidade-de-codigo.md.
     paths:
         - app
         - bootstrap/app.php
