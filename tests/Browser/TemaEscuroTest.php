@@ -66,9 +66,31 @@ it('alterna o tema pela tela de login', function (): void {
  * 07-relatorio-qa.md.
  *
  * O tema claro é o eixo que interessa aqui: é onde os dois achados viviam.
+ *
+ * **O `waitForEvent('networkidle')` não é tempero — sem ele o caso é flaky por construção.**
+ * O `assertNoAccessibilityIssues()` varre o DOM quando é chamado, e o axe julga **cor
+ * computada**: varrer antes da folha de estilo assentar mede uma página sem CSS. Medido numa
+ * execução de cache frio, no `/app`:
+ *
+ *     h1.fi-header-heading          #d0d0d0 sobre #fafafa   1,47:1
+ *     .fi-account-widget-heading    #d0d0d0 sobre #fbfbfb   1,49:1
+ *     .fi-account-widget-user-name  #e2e2e4 sobre #fbfbfb   1,25:1
+ *     .fi-btn                       #d0d0d0 sobre #fbfbfb   1,49:1
+ *
+ * Quatro achados `serious`, e o que os denuncia como falsos é **todo** o texto da página estar
+ * em cinza-claro: título, subtítulo, parágrafo e botão. O texto do Filament no tema claro é
+ * quase preto — 1,25:1 uniforme é ausência de CSS, não escolha de paleta. A mesma suíte
+ * passou na execução seguinte, com os assets quentes e sem uma linha mudada.
+ *
+ * O `networkidle` espera a rede sossegar, que é quando a folha de estilo já chegou e foi
+ * aplicada. É o estado que o caso precisa, e não um `sleep` disfarçado: se o CSS nunca chegar,
+ * a espera estoura com essa causa em vez de produzir quatro achados de contraste que mandam
+ * quem lê procurar defeito de paleta onde não há.
  */
 it('nao tem problema de acessibilidade no dashboard', function (string $painel): void {
     $this->actingAs(usuarioDoKit('master_global'));
 
-    visit($painel)->assertNoAccessibilityIssues();
+    visit($painel)
+        ->waitForEvent('networkidle')
+        ->assertNoAccessibilityIssues();
 })->with(['/app', '/admin', '/infra']);
