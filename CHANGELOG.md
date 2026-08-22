@@ -3,6 +3,41 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Nao lancado]
+
+Revisao das wikis, uma divida tecnica paga e uma recusa revertida. A unica mudanca de
+comportamento e a do log em teste.
+
+### Corrigido
+
+- **A suite deixa de escrever no `storage/logs` real** (DT-10). Os canais `ai`, `tenancy` e
+  `autenticacao` passam a ler o driver de `LOG_KIT_DRIVER`, e o `phpunit.xml` fixa `monolog` nele —
+  com `handler` sempre presente, o `NullHandler`. Em producao nada muda: sem a variavel, driver
+  `daily`. Medido antes: 4.463 linhas e 1,1 MB num dia em `autenticacao-*.log`, produzidas so pelas
+  rodadas de teste.
+  - `LOG_CHANNEL=null` **nao** resolvia (troca so o canal default, e as 60 chamadas do kit sao
+    `Log::channel()` nomeado) e `LOG_KIT_DRIVER=null` **piorava em silencio** — nao existe
+    `createNullDriver` no `LogManager`, o `resolve()` lanca, o `get()` cai no emergency logger e o
+    log ia para `storage/logs/laravel.log`. Guarda em `tests/Kit/QualidadeDeCodigoTest.php`.
+
+### Adicionado
+
+- **Project rule do `CardItem`** (`.ai/rules/filament.md`, glob `app/Filament/**`): cartao de hub
+  sai sempre de `DescobreCardsDoPainel`. `CardItem` nao verifica autorizacao — escrito a mao, o
+  cartao aparece para todo mundo e so devolve 403 no clique.
+
+### Alterado
+
+- **A recusa do TIA foi revertida** em `wikis/qualidade-de-codigo.md`. A medicao que a sustentava
+  estava errada — dizia que o ambiente nao tinha driver de cobertura, e media com Xdebug na mesma
+  frase. Com PCOV instalado: `pest --tia --fresh` roda completo em **24m59s** (antes: abortado apos
+  35 min) e a rodada seguinte custa **6,4 s**. Continua valendo que `--testsuite`/`--group`/
+  `--filter` desligam o TIA, e que PCOV e por maquina, nao por commit.
+- **21 wikis de `specs/` revisadas.** Caixas que diziam pendencia sobre obra ja entregue foram
+  fechadas com a evidencia (11 `git commit`, os CT-B de quatro features, o relatorio de QA da
+  regressao) e o `03-progresso.md` do `v1-enriquecimento-kit` deixou de afirmar que o merge nao
+  havia sido feito.
+
 ## [0.18.1] - 2026-08-22
 
 Release de ferramenta e de medição. **Nada muda no comportamento do kit** — quem já está na
