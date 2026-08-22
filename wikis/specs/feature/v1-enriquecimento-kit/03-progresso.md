@@ -2,7 +2,7 @@
 
 **Branch**: `feature/v1-enriquecimento-kit` (a partir de `main` em `198ccc9`)
 **Concluído em**: 2026-08-18
-**Merge**: ❌ **não feito, por decisão do usuário** (RQ-18)
+**Merge**: ✅ **feito** — `main` em `22f1d93` (v0.18.0). RQ-18 pediu para não commitar dentro da sessão; o merge veio depois. `git branch --no-merged main` não lista mais esta branch.
 
 ## 0. Preparação
 

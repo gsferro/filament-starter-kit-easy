@@ -28,7 +28,7 @@
 - [x] `04-casos-de-teste.md` gerado pela skill `feature-test-design`
 - [x] `05-casos-de-teste-browser.md` gerado (a feature depende de JS)
 - [x] Testes de componente escritos e verdes
-- [ ] CT-B escritos e verdes
+- [x] CT-B escritos e verdes — `tests/Browser/LightboxTest.php:36` (CT-B01); verde no CI em `1a83eec`
 
 ## 6. Documentação do kit
 

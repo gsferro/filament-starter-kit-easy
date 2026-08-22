@@ -59,16 +59,16 @@
 
 ## 11. Candidato a rule de projeto
 
-- [ ] Avaliado nos 4 gates
-- [ ] Apresentado ao usuário
-- [ ] Gravado via `requirement-to-rule` **somente se aprovado**
+- [x] Avaliado nos 4 gates — durável (é comportamento do pacote), escopável (`app/Filament/**`), não-inferível (nada no código diz que `CardItem` não autoriza; o defeito é silencioso) e não-redundante (`grep -rin "CardItem" .ai/rules` era zero)
+- [x] Apresentado ao usuário — aprovado em 2026-08-22
+- [x] Gravado via `record-rule` em `.ai/rules/filament.md:143`, com o `file:line` do vendor (`CardItem.php:22`, `CanBeHidden.php:13,20`, `CardsPage.php:89,94,151`)
 
 ## Testes
 
 - [x] `04-casos-de-teste.md` gerado pela skill `feature-test-design`
 - [x] `05-casos-de-teste-browser.md` gerado
 - [x] Testes de componente verdes
-- [ ] CT-B verdes
+- [x] CT-B verdes — `tests/Browser/HubDeCardsTest.php`: CT-B01 (`:45`) e CT-B02 (`:75`)
 
 ## Verificação Final
 
@@ -76,10 +76,10 @@
 - [x] `vendor/bin/pint --dirty --format agent`
 - [x] `composer types:check`
 - [x] `vendor/bin/pest --group=kit --compact`
-- [ ] `composer test:browser`
+- [x] `composer test:browser` — o job `Testes de tela (Pest browser)` do `ci.yml` roda a suíte inteira em série; verde em `1a83eec`
 - [x] Os três hubs abertos com `master_global`, papel de painel e `panel_user`
 - [ ] Roteiro "Desenhado × Implementado" do `05-*-browser.md` preenchido
-- [ ] `git commit`
+- [x] `git commit` — em `main`
 
 ## Auditoria Pré-Implementação
 

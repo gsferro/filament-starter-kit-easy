@@ -21,4 +21,4 @@
 - [x] `vendor/bin/pest tests/Kit --compact`
 - [ ] `/ponytail:ponytail-review` no diff
 - [ ] `vendor/bin/pest --parallel --tia`
-- [ ] `git commit` dos arquivos alterados individualizados
+- [x] `git commit` dos arquivos alterados individualizados — commitado e mergeado em `main` (`git branch --no-merged main` vazio)

@@ -120,7 +120,7 @@ PHPStan level 6 limpo, Pint limpo, árvore limpa depois de duas execuções da s
       `Paineis::permissoes('app')` tem 37, das quais 24 são das duas telas novas
 - [ ] Conferência manual no navegador (Ana em `/app/acme`, Bruno em `/app/globex`) — não
       executada; o equivalente está coberto por CT-01, CT-04 e CT-12
-- [ ] `git commit` — deixado na árvore de trabalho, por instrução
+- [x] `git commit` — deixado na árvore de trabalho naquela sessão, por instrução; commitado e mergeado em `main` (`git branch --no-merged main` vazio)
 
 ## Blockers
 

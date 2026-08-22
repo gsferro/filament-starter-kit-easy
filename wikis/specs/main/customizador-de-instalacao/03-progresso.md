@@ -73,11 +73,16 @@
       2. o `artisan` rodou sem terminal, o que também pulou o convite da estrela (ADR-11).
       Corrigido na v0.16.1: o gate passou a ser `APP_KEY` vazia, e o pulo por falta de terminal
       virou aviso com o comando que refaz a instalação com as perguntas.
-- [ ] **PENDENTE — reteste da v0.16.1.** `composer create-project` real, a partir de um
-      checkout local, com as perguntas aparecendo. Nenhum teste automatizado alcança a camada de
-      TTY do Composer; o que está provado é que o Composer **repassa** o TTY
-      (`EventDispatcher::executeTty`, verificado no `composer.phar` 2.9.5) e que o customizador
-      pergunta quando `input->isInteractive()`
+- [ ] **PENDENTE desde a v0.16.1 — hoje a árvore está na v0.18.1, 7 versões de deriva sobre a
+      única camada não provada.** `composer create-project` real, a partir de um checkout local,
+      com as perguntas aparecendo. Nenhum teste automatizado alcança a camada de TTY do Composer;
+      o que está provado é que o Composer **repassa** o TTY (`EventDispatcher::executeTty`,
+      verificado no `composer.phar` 2.9.5) e que o customizador pergunta quando
+      `input->isInteractive()`.
+      O job `instalacao` do `.github/workflows/ci.yml:83` **não cobre isto**: ele faz
+      `cp .env.example .env` e roda `kit:install --ansi` sem terminal, então o customizador se
+      pula pelo próprio guarda de `isInteractive()` — prova a instalação headless, não as
+      perguntas. Só um terminal humano fecha este item.
 - [ ] Resultado registrado em Notas de Implementação (SO, terminal, versão do Composer)
 
 ## Testes
@@ -102,7 +107,7 @@
       (**não** `composer test:kit`: o `--group=kit` dele pendura na coleta do Playwright)
 - [x] `composer types:check` — PHPStan, 0 erros
 - [x] `vendor/bin/pest --mutate --path=app/Support --covered-only` — **275 mutantes, score 100%**
-- [ ] `git commit` — não commitado; o usuário revisa antes
+- [x] `git commit` — não commitado **naquela sessão**, para o usuário revisar; commitado e mergeado em `main` (`git branch --no-merged main` vazio)
 
 ## Auditoria Pré-Implementação
 

@@ -106,7 +106,7 @@
 - [x] `composer types:check` — 0 erros
 - [x] `php artisan test --group=kit` — 173 passando, 461 asserções (152 antes + 21 novos)
 - [x] Suíte rodada duas vezes; `git status --short` sem sujeira nova
-- [ ] `git commit`
+- [x] `git commit` — commitado e mergeado em `main` (`git branch --no-merged main` vazio)
 
 ## Blockers
 

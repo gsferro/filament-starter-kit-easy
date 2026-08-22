@@ -95,7 +95,7 @@
 - [x] `vendor/bin/pint --dirty --format agent`
 - [x] `php artisan test --group=kit` — 110 passando
 - [x] `composer types:check` — 0 erros
-- [ ] `git commit`
+- [x] `git commit` — commitado e mergeado em `main` (`git branch --no-merged main` vazio)
 
 ## Blockers
 
