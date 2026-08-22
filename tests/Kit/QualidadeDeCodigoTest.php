@@ -17,6 +17,9 @@
  *
  * Ver ADR-02 em wikis/specs/feature/v1-enriquecimento-kit/rector/.
  */
+use Illuminate\Support\Facades\Log;
+use Monolog\Handler\NullHandler;
+
 beforeEach(function (): void {
     $this->composer = json_decode((string) file_get_contents(base_path('composer.json')), true);
     $this->rector   = (string) file_get_contents(base_path('rector.php'));
@@ -137,3 +140,28 @@ it('aquece as views antes da suíte de browser', function (): void {
     expect($this->composer['scripts']['test:browser'] ?? [])
         ->toContain('@php artisan view:cache');
 })->group('kit');
+
+/**
+ * A suíte não escreve nos logs de trabalho de quem a roda.
+ *
+ * Medido antes da correção: `storage/logs/autenticacao-2026-08-14.log` com 4.463 linhas e
+ * 1,1 MB, 1.033 delas de `[User@canAccessPanel]` — tudo produzido pelas rodadas do dia.
+ *
+ * A armadilha é o remédio óbvio: `LOG_CHANNEL=null` no `phpunit.xml` troca apenas o canal
+ * **default**, e as 60 chamadas de log do kit são `Log::channel('ai'|'tenancy'|'autenticacao')`
+ * nomeadas — passavam por cima dele e continuavam gravando em `daily`. Quem resolve é o
+ * `LOG_KIT_DRIVER` no driver dos três canais (`config/logging.php`).
+ *
+ * O caso assere o **handler resolvido**, não a chave de config: assim ele cobre a corrente
+ * inteira (env do `phpunit.xml` → `env()` do config → `LogManager`), e morre se alguém
+ * errar o nome da variável, tirar o `env()` de um dos canais ou apagar a linha do
+ * `phpunit.xml`.
+ *
+ * Ver DT-10 em wikis/specs/feature/wiki-regressao-telas/regressao-de-telas/.
+ */
+it('não escreve log em disco durante a suíte', function (?string $canal): void {
+    $handlers = Log::channel($canal)->getLogger()->getHandlers();
+
+    expect($handlers)->toHaveCount(1)
+        ->and($handlers[0])->toBeInstanceOf(NullHandler::class);
+})->with(['ai', 'tenancy', 'autenticacao', null])->group('kit');
