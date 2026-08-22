@@ -255,3 +255,28 @@ Cinco armadilhas que o plano não previu. As três primeiras só aparecem execut
   a wiki `admin-da-organizacao` reusa — ela acrescenta um Resource no painel `/app`, não um
   segundo fluxo. `config(['audit.console' => true])` é o que qualquer teste de auditoria vai
   precisar.
+
+## Quality Gate — Ciclo 1 (2026-08-22)
+
+> Relatorio: `06-relatorio-qa.md`
+
+**APROVADO COM DEBITO** — Blocker 0 · Major 0 · Minor 3 · Cosmetico 0
+
+Os 16 CT do `04` tem todos teste equivalente rodando. Os achados sao de borda.
+
+- **QA-01 (Minor, destino 2 e 1)**: o rate limit do Filament esta em `Register::register()`
+  (`vendor/filament/filament/src/Auth/Pages/Register.php:73` e `:135-148`), **nao** em
+  `mount()` — e o `recusar()` do kit roda ANTES do `parent::mount()`. Medido: 12 GETs anonimos
+  em `/app/register?token=...` → 12x 302, nenhum 429, 12 linhas de `warning` no channel
+  `autenticacao`. O docblock de `RegistroPorConvite` e a linha de Dependencias do `01` dao a
+  entender que a tela inteira e limitada; nao e. Forca bruta do token esta REJEITADA (64
+  caracteres de `Str::random`); o que sobra e amplificacao de log.
+- **QA-02 (Minor, destino 3)**: `KIT_CONVITE_VALIDADE_DIAS` (passo 7) nao tem teste nenhum.
+  Mutantes que sobreviveriam em `Convite::enviar()`: trocar `config(...)` pelo literal `7`,
+  ou `addDays` por `addYears`. A unica assercao proxima e `expira_em->isFuture()`.
+- **QA-03 (Minor, destino 1)**: CT-15 do `04` ainda diz "e-mail ja cadastrado e recusado nas
+  duas pontas". A wiki irma `convite-para-usuario-existente` inverteu a decisao inteira, e o
+  teste hoje se chama `it("convida quem ja tem conta em vez de recusar")`.
+
+Debitos aceitos: QA-02, QA-03. Nao verificado: mutation score, renderizacao real do e-mail
+(debito ja registrado na retrospectiva) e dimensoes G/H.

@@ -65,12 +65,22 @@ class PapeisSeeder extends Seeder
         // recorte de organização seria um segundo `admin` com outro nome. Ver ADR-09 da
         // wiki admin-da-organizacao.
         //
-        // A matriz é a do painel INTEIRA: quem administra a organização administra tudo
-        // que o /app oferece. O recorte dele é de DADO (só a organização corrente), feito
-        // no `getEloquentQuery()` dos Resources, não de permissão.
+        // A matriz é a do painel inteira MENOS o que não é tela do /app: quem administra a
+        // organização administra tudo que o /app oferece, e o recorte dele é de DADO (só a
+        // organização corrente), feito no `getEloquentQuery()` dos Resources.
+        //
+        // A subtração de `permissoesForaDoApp()` é o que impede a matriz "inteira" de
+        // incluir Resource de vendor que só está no painel por obrigação técnica. Ver o
+        // docblock daquele método, e QA-01 do 06-relatorio-qa.md da wiki
+        // admin-da-organizacao.
+        $foraDoApp = $this->permissoesForaDoApp();
+
         if (config('kit.tenancy.enabled')) {
             $this->papel('admin_app', $guard, 'app')
-                ->syncPermissions($this->permissoesDoPainel('app', $guard));
+                ->syncPermissions(
+                    $this->permissoesDoPainel('app', $guard)
+                        ->reject(fn (string $permissao): bool => in_array($permissao, $foraDoApp, true))
+                );
         }
 
         // panel_user é o perfil básico do /app: usa o NEGÓCIO, não administra a
@@ -91,6 +101,7 @@ class PapeisSeeder extends Seeder
             ->syncPermissions(
                 $this->permissoesDoPainel('app', $guard)
                     ->reject(fn (string $permissao): bool => in_array($permissao, $administracao, true))
+                    ->reject(fn (string $permissao): bool => in_array($permissao, $foraDoApp, true))
                     ->reject(fn (string $permissao): bool => $this->ehPermissaoDeImportOuExport($permissao))
             );
 
@@ -152,18 +163,45 @@ class PapeisSeeder extends Seeder
         return array_values(Paineis::permissoesDe('app', [
             UserResource::class,
             ConviteResource::class,
+        ])->all());
+    }
 
-            /*
-             * O ExceptionResource não é tela do /app — ele existe na matriz deste painel
-             * só porque o `FilamentExceptionsPlugin` precisa estar registrado nos TRÊS
-             * painéis para o pacote não estourar `LogicException` no boot (ver o comentário
-             * no AppPanelProvider). Registrado sem navegação, mas registrado.
-             *
-             * Sem esta subtração, todo `panel_user` herdaria `ViewAny:Exception` e
-             * companhia: a rota existe neste painel, então a permission bastaria para ler
-             * stack traces da instalação inteira — que podem conter dado de request de
-             * qualquer organização.
-             */
+    /**
+     * O que existe na matriz do painel `app` e **não é tela do /app**.
+     *
+     * Lista diferente da de cima porque o MOTIVO é diferente, e o motivo decide de QUEM se
+     * subtrai. `UserResource` e `ConviteResource` são telas legítimas do /app: quem
+     * administra a organização deve tê-las, e só o `panel_user` as perde. O que entra aqui
+     * ninguém do painel deve ter — nem `admin_app`, nem `panel_user`.
+     *
+     * Hoje há um caso: o `ExceptionResource`. Ele está na matriz deste painel só porque o
+     * `FilamentExceptionsPlugin` precisa estar registrado nos TRÊS painéis para o pacote não
+     * estourar `LogicException` no boot (ver o comentário no `AppPanelProvider`). Registrado
+     * sem navegação, mas registrado — e `registerNavigation(false)` mexe apenas em
+     * `shouldRegisterNavigation()`, nunca em `canAccess()`.
+     *
+     * As rotas existem no painel (`route:list --path=app` devolve
+     * `app/{tenant:slug}/exceptions` e `.../{record}`), então a permission basta para
+     * alcançar a tela. Até a 0.18.2 a subtração pegava só o `panel_user` e o `admin_app`
+     * recebia as 14 permissions de `Exception`, `DeleteAny` inclusive.
+     *
+     * O estrago era menor do que parece, e vale registrar para ninguém "melhorar" a
+     * correção pelo motivo errado: com a tenancy ligada a tela não chega a renderizar.
+     * O global scope de tenancy chama `getTenantOwnershipRelationship()`, que lança
+     * `LogicException` em
+     * `vendor/filament/filament/src/Resources/Resource/Concerns/BelongsToTenant.php:98` —
+     * o model `Exception` do vendor não tem relação `tenant`. Logo era 500, não vazamento de
+     * stack trace. Mas a permission existir já é defeito: é `DeleteAny` num papel de
+     * cliente, e a rota responde no painel dele.
+     *
+     * Resource de vendor registrado por obrigação técnica em painel onde não é tela entra
+     * aqui, não na lista de administração.
+     *
+     * @return list<string>
+     */
+    private function permissoesForaDoApp(): array
+    {
+        return array_values(Paineis::permissoesDe('app', [
             ExceptionResource::class,
         ])->all());
     }

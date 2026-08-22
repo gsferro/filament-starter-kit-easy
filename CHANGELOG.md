@@ -3,6 +3,53 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Nao lancado]
+
+Gate de QA em tres wikis, tres dividas tecnicas pagas e uma correcao de matriz de permissao.
+
+### Corrigido
+
+- **`admin_app` deixa de receber as permissions de `Exception`** no painel `app`, `DeleteAny`
+  inclusive. O `ExceptionResource` esta naquele painel so por obrigacao tecnica (o plugin precisa
+  estar nos tres ou o pacote estoura em todo request), e `registerNavigation(false)` esconde o menu
+  sem fechar o acesso. Agora o seeder tem **duas** listas: `permissoesForaDoApp()` sai do
+  `admin_app` e do `panel_user`, `permissoesDeAdministracaoDoApp()` so do `panel_user`.
+  Nao era vazamento de stack trace — com a tenancy ligada a tela estourava 500 —, mas a permission
+  existir num papel de cliente ja era defeito.
+- **DT-01** — o botao *Clear Cache* do `/infra` ganha nome acessivel (`aria-label`), por copia da
+  blade do vendor com uma linha de `:label`. O remedio antes prescrito (JS copiando o tooltip)
+  faria a acessibilidade depender de JavaScript e nenhum teste de servidor poderia prova-la.
+- **DT-02** — contraste do indicador de ambiente sai de 4,2:1 para 5,4:1 no tema claro, por uma
+  linha de CSS. Medido: **tres das quatro** cores que o plugin escolhe reprovam no degrau 600
+  (Orange 3,39:1), e todas passam no 700.
+- **Um CT-B testava uma pagina 404 e passava.** `/infra/queue-monitors/pending` so existe quando
+  `queue.default` e `database` (`QueueJob::isSupported()`), e o `phpunit.xml` fixa `sync`. O
+  cenario visitava o 404, onde `assertNoJavaScriptErrors()` passa. As "52 telas" do kit sao 51.
+
+### Alterado
+
+- **DT-07** — o inventario de telas dos CT-B virou `telasDoKit()` em `tests/Pest.php`, com
+  `InventarioDeTelasTest` reconciliando nos dois sentidos: tela registrada fora do inventario, e
+  rota do inventario que o roteador nao resolve. Foi essa guarda que achou o CT-B do 404.
+  A derivacao automatica foi implementada e **recusada**: perde as rotas de
+  `two-factor-authentication` (nem Page nem Resource) e ignora as exclusoes deliberadas.
+- **CT-B09** sai do `->todo()` e passa a medir acessibilidade um painel por cenario.
+- **A contagem da matriz do painel `app`** estava parada em 38 em tres lugares; sao **59** (56 de
+  Resource, 3 de Page). O texto agora manda recontar em vez de confiar no numero.
+- **DT-09 estava quase paga e o ledger nao sabia**: `5511a0a` traduziu as telas de `/infra` em
+  2026-08-15. Resta um titulo de plugin sem ponto de extensao.
+- **DT-08 saiu de "investigacao" para causa endereçada**: o render hook nunca foi do painel
+  `/infra` — escopo vazio no `ViewManager` significa TODO escopo. O vazamento real e no processo de
+  teste, porque `fronteiraDeRequest()` esquece o `ViewManager`.
+
+### Adicionado
+
+- **Gate de QA** em `perfil-e-acesso-ao-painel`, `admin-da-organizacao` e `convite-de-usuario`,
+  escolhidas por triagem de risco entre as 18 wikis sem relatorio. Cinco wikis ficaram
+  **dispensadas** do gate, com o motivo escrito.
+- **`00-requisito.md` da wiki de multi-tenancy**, reconstruido e declarado como reconstrucao: 19
+  clausulas graduadas por forca de evidencia e **9 lacunas declaradas** em vez de preenchidas.
+
 ## [0.18.2] - 2026-08-22
 
 Release de correcao. Revisao das wikis, uma divida tecnica paga e uma recusa revertida. A unica

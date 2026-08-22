@@ -506,3 +506,63 @@ it('nao permite excluir usuario a partir da organizacao', function (): void {
 
     $this->assertDatabaseHas('users', ['id' => $beto->id]);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Barreira 7 — o que não é tela do /app não entra na matriz de ninguém
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * O `admin_app` recebe "a matriz do painel inteira" — e por isso herdava as 14 permissions
+ * de `Exception`, `DeleteAny:Exception` inclusive.
+ *
+ * O `ExceptionResource` está no painel `app` só por obrigação técnica: o
+ * `FilamentExceptionsPlugin` precisa estar registrado nos três painéis para o pacote não
+ * estourar `LogicException` em todo request. Ele é registrado com `registerNavigation(false)`,
+ * o que esconde o item do menu e **não** fecha o acesso — `registerNavigation` mexe em
+ * `shouldRegisterNavigation()`, nunca em `canAccess()`. As rotas existem no painel.
+ *
+ * O caso assere as duas metades da correção, porque cada uma falha por um motivo diferente:
+ * o `admin_app` perde `Exception` (a correção nova) e **mantém** `User` e `Convite` (o que
+ * não pode ser tirado junto — o recorte é por motivo, não por "tudo que não é do negócio").
+ *
+ * Ver QA-01 do `06-relatorio-qa.md` da wiki admin-da-organizacao.
+ */
+it('nao concede permissao de excecao a quem administra a organizacao', function (): void {
+    ['acme' => $acme, 'ana' => $ana] = cenario();
+
+    // Sem o tenant corrente o `can()` não resolve papel de team NENHUM e devolve false
+    // para tudo — as asserções de `Exception` passariam à toa. É por isso que a metade
+    // positiva (`User`, `Convite`) está no mesmo caso: ela é o que prova que o oráculo
+    // está vivo. Medido: sem esta linha, `ViewAny:User` também dá false.
+    noPainelDa($acme);
+    $this->actingAs($ana);
+
+    expect($ana->can('ViewAny:Exception'))->toBeFalse()
+        ->and($ana->can('View:Exception'))->toBeFalse()
+        ->and($ana->can('Delete:Exception'))->toBeFalse()
+        ->and($ana->can('DeleteAny:Exception'))->toBeFalse();
+
+    // A outra metade: administrar a organização continua possível.
+    expect($ana->can('ViewAny:User'))->toBeTrue()
+        ->and($ana->can('Create:User'))->toBeTrue()
+        ->and($ana->can('ViewAny:Convite'))->toBeTrue();
+});
+
+/**
+ * E o `panel_user` também não as tem — ele já era coberto pela subtração antiga, e este
+ * caso existe para o dia em que alguém unificar as duas listas do `PapeisSeeder` de novo:
+ * unificar volta a dar `Exception` ao `admin_app`, ou tira `User`/`Convite` dele.
+ */
+it('nao concede permissao de excecao ao usuario comum da organizacao', function (): void {
+    ['acme' => $acme, 'beto' => $beto] = cenario();
+
+    noPainelDa($acme);
+    $this->actingAs($beto);
+
+    expect($beto->can('ViewAny:Exception'))->toBeFalse()
+        ->and($beto->can('DeleteAny:Exception'))->toBeFalse()
+        // O oráculo vivo, como no caso acima: o usuário comum enxerga o negócio.
+        ->and($beto->can('ViewAny:Projeto'))->toBeTrue();
+});

@@ -215,3 +215,32 @@ Duas armadilhas que o plano não previu. As duas só aparecem executando.
   model compartilhado vai encontrar. E `PapeisSeeder::permissoesDeAdministracaoDoApp()` é
   uma lista que **cresce**: Resource de administração novo no painel `app` precisa entrar
   nela, ou `panel_user` o herda em silêncio.
+
+## Quality Gate — Ciclo 1 (2026-08-22)
+
+> Relatorio: `06-relatorio-qa.md`
+
+**APROVADO COM DEBITO** — Blocker 0 · Major 1 · Minor 2 · Cosmetico 0
+
+Suite da feature: `--testsuite=Tenancy --filter=AdminDaOrganizacao` → 19 casos, 92 assercoes, verde.
+
+- **QA-01 (Major, destino 2)**: o `admin_app` recebe a matriz INTEIRA do painel `app`, e essa
+  matriz passou a incluir as 14 permissions de `Exception` desde que o
+  `FilamentExceptionsPlugin` foi registrado no painel. Rotas `app/{tenant}/exceptions`
+  existem, `registerNavigation(false)` nao fecha `canAccess()`, e o GET responde 200. **Nao
+  ha vazamento** — o global scope nativo do Filament lanca `LogicException` ao carregar a
+  tabela — mas o `admin_app` tem uma rota que quebra em 500 e uma permission
+  `DeleteAny:Exception` que nao deveria ter. A subtracao de
+  `permissoesDeAdministracaoDoApp()` hoje so se aplica ao `panel_user`.
+- **QA-02 (Minor, destino 1)**: os quatro arquivos desta wiki falam de `admin_organizacao`
+  (39 ocorrencias); o papel se chama `admin_app` desde a migration
+  `2026_08_16_000001_rename_admin_organizacao_role.php`. A renomeacao nao tem wiki e nao foi
+  registrada aqui.
+- **QA-03 (Minor, destino 1)**: o `->unique()` do e-mail no `CreateUser` do `/app` revela a
+  existencia de conta em outra organizacao — decisao oposta a da wiki irma
+  `convite-para-usuario-existente`, que removeu o mesmo `unique` do formulario de convite.
+
+Hipotese REJEITADA: "o `admin_app` le stack traces da instalacao inteira". Reproduzida e
+negada — ver a secao "O que este achado NAO e" no relatorio.
+
+Debitos aceitos: QA-02, QA-03. Nao verificado: mutation score e dimensoes G/H.

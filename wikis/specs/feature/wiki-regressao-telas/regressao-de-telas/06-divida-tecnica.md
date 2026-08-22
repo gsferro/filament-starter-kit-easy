@@ -3,13 +3,22 @@
 > Atende RQ-07: *"use esse momento também para identificar possiveis dividas tecnicas para
 > correção, antes das proximas evoluções"*.
 
-**Uma dívida foi paga: DT-03**, por decisão explícita do usuário depois de o quality gate
-expor que ela bloqueava o `--tia` — a feature que motivou o upgrade para Pest 5. As outras
-nove seguem abertas: o requisito posiciona a correção *antes das próximas evoluções*, o que a
-coloca **depois** desta entrega.
+**Na entrega original, uma dívida foi paga: DT-03**, por decisão explícita do usuário depois de o
+quality gate expor que ela bloqueava o `--tia` — a feature que motivou o upgrade para Pest 5. As
+outras nove ficaram abertas: o requisito posiciona a correção *antes das próximas evoluções*, o
+que as coloca **depois** daquela entrega.
 
-Confirmação que continua valendo: `git diff main --stat` **não toca `app/`**. DT-03 vive só em
+Confirmação que valia então: `git diff main --stat` **não tocava `app/`**. DT-03 vivia só em
 `tests/`.
+
+**Estado em 2026-08-22: seis pagas, três abertas, uma quase.** DT-03, DT-10 e DT-11 numa primeira
+rodada; DT-01, DT-02 e DT-07 numa segunda; DT-09 quase inteira paga por um commit que não
+atualizou esta página. Seguem abertas DT-04, DT-05 e DT-06, e DT-08 deixou de ser investigação —
+a causa está isolada, com `file:line`. Cada seção diz o que foi **medido**, e nomeia as
+prescrições originais que estavam erradas.
+
+Nenhuma das seis correções tocou `app/`: elas vivem em `tests/`, `config/`, `phpunit.xml`,
+`resources/css/filament/` e `resources/views/vendor/`.
 
 ## Resumo
 
@@ -21,18 +30,27 @@ ele. O relatório está em `07-relatorio-qa.md`.
 > teria piorado o problema em silêncio. Ver a seção dela. **DT-11**: o diagnóstico original se
 > confirmou (Xdebug 3.4.4 presente, PCOV ausente) e o PCOV 1.0.12 foi instalado nesta data — a
 > seção registra a medição, e por que uma medição minha intermediária estava errada.
+>
+> **2026-08-22, segunda rodada.** **DT-01, DT-02 e DT-07 pagas.** Com isso o CT-B09 perdeu o
+> `->todo()` e passou a medir acessibilidade em todo run. Duas correções prescritas aqui
+> estavam **erradas** e estão anotadas nas respectivas seções (a de DT-02 aponta um lugar que
+> não existe neste kit; a de DT-07 perderia cobertura). A guarda de DT-07 achou **dois
+> defeitos reais no inventário** no primeiro run — um deles uma rota que não existe nesta
+> suíte e que estava sendo "coberta" havia semanas. E a revisão das cinco restantes achou
+> **DT-09 quase inteira já paga** pelo commit `5511a0a`, sem ninguém ter atualizado esta
+> tabela.
 
 | ID | Dívida | Severidade | Custo estimado | Onde |
 |----|--------|-----------|----------------|------|
 | ~~**DT-03**~~ | ~~Helpers de teste declarados dentro de arquivos de teste~~ | ~~bloqueante~~ | **PAGA** | `tests/Pest.php` |
-| **DT-01** | Botão *Clear Cache* sem texto acessível (a11y critical) | relevante | ~15 min | `vendor` + `app/Providers` |
-| **DT-08** | Render hook de plugin vaza entre painéis no mesmo processo PHP | relevante | investigação | `vendor` + `tests/Browser` |
-| **DT-04** | Assimetria de cobertura HTTP: `/app` quase sem smoke de backend | relevante | ~1 h | `tests/Kit` |
+| ~~**DT-01**~~ | ~~Botão *Clear Cache* sem texto acessível (a11y critical)~~ | ~~relevante~~ | **PAGA** | `resources/views/vendor/` |
+| **DT-08** | Render hook de plugin vaza entre painéis no mesmo processo PHP | relevante | investigação **feita** — causa isolada | `vendor` + `tests/Pest.php` |
+| **DT-04** | Assimetria de cobertura HTTP: `/app` quase sem smoke de backend | relevante | ~1 h | `tests/Tenancy` (não `tests/Kit`) |
 | **DT-06** | Suíte `tests/Kit` leva ~14 min em série | relevante | depende de DT-03 | `tests/` |
-| **DT-02** | Contraste 4.25:1 no indicador de ambiente (a11y serious) | cosmética | ~10 min | `vendor` + CSS |
+| ~~**DT-02**~~ | ~~Contraste 4.25:1 no indicador de ambiente (a11y serious)~~ | ~~cosmética~~ | **PAGA** | `resources/css/filament/kit.css` |
 | **DT-05** | Nenhum `data-testid` nas telas do kit | cosmética | ~1 h | `app/Filament` |
-| **DT-07** | Inventário de telas dos CT-B é array escrito à mão | cosmética | ~30 min | `tests/Browser` |
-| **DT-09** | Telas de `/infra` misturam inglês e português | cosmética | ~2 h | `lang/`, `vendor` |
+| ~~**DT-07**~~ | ~~Inventário de telas dos CT-B é array escrito à mão~~ | ~~cosmética~~ | **PAGA** (por reconciliação, não por derivação) | `tests/Pest.php` + `tests/Kit` |
+| **DT-09** | Telas de `/infra` misturam inglês e português | cosmética | **quase paga** — resta 1 título | `vendor` (sem saída limpa) |
 | ~~**DT-10**~~ | ~~A suíte de testes escreve no `storage/logs` real~~ | ~~cosmética~~ | **PAGA** | `config/logging.php` + `phpunit.xml` |
 | ~~**DT-11**~~ | ~~Sem PCOV: o `--tia` roda com Xdebug e fica impraticável em série~~ | ~~relevante~~ | **PAGA nesta máquina** | ambiente (não é código) |
 
@@ -149,7 +167,7 @@ desliga sozinho em CI, que é o que a doc do Pest recomenda.
 
 ---
 
-## DT-01 — Botão *Clear Cache* sem texto acessível
+## DT-01 — Botão *Clear Cache* sem texto acessível · ✅ **PAGA**
 
 **Severidade**: relevante (a11y **critical** pelo axe-core)
 **Como foi encontrada**: `assertNoAccessibilityIssues()` em **`/infra`**.
@@ -198,6 +216,60 @@ natural para o `aria-label` também.
 contraste, então o `/infra` nunca é avaliado e esta `critical` não aparece. Separar o cenário
 por painel antes de usá-lo como verificação. Ver QA-03 do `07-relatorio-qa.md`.
 
+### Resolução — 2026-08-22
+
+Nenhuma das duas saídas prescritas acima. A correção é uma **cópia da blade do pacote** em
+`resources/views/vendor/filament-clear-cache/livewire/clear-cache-button.blade.php`, com uma
+propriedade a mais:
+
+```blade
+:label="__('filament-clear-cache::general.clear_cache')"
+```
+
+**Por que não o `renderHook` com JS que a seção prescrevia.** Ele faria a acessibilidade
+depender de JavaScript — o `aria-label` não existiria no HTML servido, e nenhum teste de
+servidor poderia prová-lo. O leitor de tela leria o botão corretamente só depois de o Alpine
+rodar. Trocar um defeito de a11y por um defeito de a11y condicionado a JS não é conserto.
+
+**Por que a propriedade e não um `aria-label` escrito à mão.** Quem converte `label` em
+atributo é o próprio componente do Filament, com escape:
+`vendor/filament/support/resources/views/components/icon-button.blade.php:85`. E na linha 94 do
+mesmo arquivo o `title` sai **nulo** quando existe tooltip — então não há rótulo duplicado, que
+é o outro achado de a11y que uma correção descuidada produziria.
+
+**Por que a sobreposição funciona, lido no vendor** e não suposto: o pacote é um
+`PackageServiceProvider` com `hasViews()` (`FilamentClearCacheServiceProvider.php:18`), a view é
+resolvida por nome em `Http/Livewire/ClearCache.php:109`, o `bootPackageViews()` chama
+`loadViewsFrom()` (`vendor/spatie/laravel-package-tools/src/Concerns/PackageServiceProvider/ProcessViews.php:18`)
+e o `loadViewsFrom()` do framework registra `resources/views/vendor/<namespace>` **na frente** do
+diretório do pacote (`vendor/laravel/framework/src/Illuminate/Support/ServiceProvider.php:212-226`).
+O namespace é o `shortName()` do pacote, `filament-clear-cache`
+(`vendor/spatie/laravel-package-tools/src/Concerns/Package/HasViews.php:22`).
+
+É o caminho que o kit já usa para tela de vendor: nove pacotes em `resources/views/vendor/`.
+
+**Custo novo que a cópia cria, e como ele fica visível.** Publicar view de terceiro congela a
+versão do dia — é o mesmo custo que o cabeçalho de `resources/css/filament/kit.css` cobra ("quatro
+cópias que quebram a cada upgrade"). Por isso `tests/Kit/BotaoLimparCacheTest.php` tem três
+casos, e um deles **diffa a cópia contra o arquivo do `vendor/`**: removido o cabeçalho de
+comentário e a linha da propriedade, os dois arquivos têm de ser idênticos. Upgrade que mexa na
+blade fica vermelho nomeando a divergência, em vez de o kit servir para sempre a versão antiga.
+
+**Medido**:
+
+| O que | Antes | Depois |
+|---|---|---|
+| `aria-label` no HTML de `GET /infra` | ausente | `aria-label="Clear Cache"` |
+| `tests/Kit/BotaoLimparCacheTest.php` | não existia | 3 casos, 5 asserções, 4,5 s |
+| CT-B09 (`assertNoAccessibilityIssues` no `/infra`) | `->todo()` | verde, um cenário por painel |
+
+A guarda foi vista **falhando**: renomeando a cópia (para o vendor voltar a responder), 2 dos 3
+casos ficam vermelhos — o smoke do `/infra` e o que assere o caminho resolvido da view.
+
+**O que ficou de fora, de propósito**: o rótulo continua em inglês. A chave usada é a mesma do
+tooltip, então o texto visível e o acessível estão em paridade; traduzir é publicar
+`lang/vendor/filament-clear-cache/pt_BR/`, e isso é **DT-09**.
+
 ---
 
 ## DT-04 — Assimetria de cobertura: o painel `/app` quase sem smoke de backend
@@ -230,6 +302,35 @@ depois de um `kit:update`.
 Acrescentar a `tests/Kit/PaginasInfraTest.php` (ou arquivo novo `PaginasAppTest.php`) o dataset
 das telas de `/app`, no mesmo formato dos dois blocos que já existem. Cerca de 10 linhas.
 
+### Revisão — 2026-08-22: **continua verdadeira, e a correção prescrita não serve**
+
+A assimetria segue existindo: em `tests/Kit` não há dataset de telas de `/app`. O que há são três
+visitas incidentais (`CabecalhoDoMenuDoUsuarioTest:150`, `ConviteTest:372`, `VoltarAoTopoTest:65`,
+todas ao `/app` genérico) e uma asserção de **403** em `AdminDaOrganizacaoTest:26`.
+
+Mas a contagem da tabela (`/app`: 1) subestima o estado real, porque olhou só `tests/Kit`. Com
+`tests/Tenancy` na conta:
+
+| Rota | Onde |
+|---|---|
+| `/app/{t}` | `AdminDaOrganizacaoTest:77,409`, `IdentidadeVisualTenancyTest:116` |
+| `/app/{t}/users` | `AdminDaOrganizacaoTest:78` (200) e `:410` (403) |
+| `/app/{t}/convites` | `AdminDaOrganizacaoTest:411` (403) |
+| `/app/{t}/projetos` | `AnexosPrivadosTest:136,170,312`, `ImportExportTenancyTest:149,173,194,255` |
+
+Falta smoke HTTP de `/app/{t}/meu-perfil`, `/app/{t}/convites-recebidos`,
+`/app/{t}/convites/create`, `/app/{t}/users/create` e `/app/{t}/two-factor-authentication`.
+
+**E a correção prescrita colocaria o dataset no lugar errado.** Em `tests/Kit` a tenancy está
+desligada, e `UserResource`/`ConviteResource` do painel de negócio se escondem sem ela: um dataset
+ali responderia **403**, provando permissão em vez de "a tela abre". É o mesmo defeito que a
+guarda de DT-07 acabou de encontrar no inventário dos CT-B — 403 e 404 passam por asserções
+frouxas. O destino certo é `tests/Tenancy`, com organização, e o formato certo é o dos blocos que
+já existem lá.
+
+Custo revisado: as ~10 linhas continuam sendo ~10 linhas, mas em `tests/Tenancy` e com o arranjo
+de organização que aqueles casos já têm no `beforeEach`. A estimativa de ~1 h segue razoável.
+
 ---
 
 ## DT-06 — A suíte `tests/Kit` leva ~14 minutos em série
@@ -259,9 +360,44 @@ O que resta: 196 s ainda é muito para rodar a cada passo. Agora **vale medir** 
 `pest --profile`, que aponta o cenário lento em vez de adivinhar. Otimizar antes de medir é
 adivinhação — e era por isso que esta dívida esperava a DT-03.
 
+### Revisão — 2026-08-22: **o número que a define ficou irrelevante, e o `--profile` deixou de ser o próximo passo**
+
+O título desta dívida é *"~14 min em série"*, e série deixou de ser como alguém roda a suíte. Duas
+dívidas pagas depois, existem dois caminhos rápidos, os dois medidos:
+
+| Caminho | Tempo | Desbloqueado por |
+|---|---|---|
+| `--parallel`, só o grupo `kit` | 196 s | DT-03 |
+| `--parallel`, `Unit,Feature,Kit,Tenancy` — **medido nesta rodada** | **249 s**, 536 casos, 1.469 asserções | DT-03 |
+| `--tia`, na sequência, sem mudança de código | **6,4 s** de suíte (18,4 s de parede) | DT-11 (PCOV) |
+
+Os 818 s em série só aparecem em CI, e em CI 14 min de suíte completa é o comportamento correto —
+o pipeline **deve** rodar tudo, e é por isso que `pest()->tia()->locally()` desliga o TIA lá.
+
+**Não re-medi a série**, de propósito: são 14 min de máquina para confirmar um número que já não
+governa decisão nenhuma. Registro isso em vez de repetir o número antigo como se fosse novo.
+
+**A correção prescrita acima (`pest --profile`) é a próxima etapa errada.** Ela otimizaria o
+caminho de 196 s enquanto o caminho de 6,4 s já existe na máquina de quem desenvolve. O gargalo
+real mudou de lugar duas vezes: primeiro para os CT-B (browser em série, 168 s, e que **não**
+convivem com `--parallel`), e agora para a **primeira** execução num clone novo — que é a que
+paga a compilação dos componentes Livewire e é a única em que a suíte de navegador nasce
+vermelha. Isto foi reproduzido nesta rodada, neste worktree limpo: o primeiro
+`--testsuite=Browser` derrubou 2 dos 37 cenários (um `Timeout 45000ms` no primeiro arquivo e um
+falso achado de contraste no `/app`, com todo texto da página reportado a ~1,05:1); a **segunda**
+execução, sem mudar uma linha, deu **37 casos, 32 passados, 5 skipped, 168 s**. É exatamente o
+disfarce que `.ai/rules/testes-browser.md` descreve — "tem o formato de teste instável" — e custou
+duas execuções para separar.
+
+**Recomendação revisada**: esta dívida deixa de ser sobre tempo e passa a ser sobre **aquecimento
+determinístico** do primeiro run (o `composer test:browser` já embute `npm run build` e
+`view:cache`; falta a compilação dos componentes Livewire, que a rule manda pagar com um
+`$this->get()` no `beforeEach`). Severidade: continua **relevante**, e agora com um sintoma
+observável em vez de um número.
+
 ---
 
-## DT-02 — Contraste 4.25:1 no indicador de ambiente
+## DT-02 — Contraste 4.25:1 no indicador de ambiente · ✅ **PAGA**
 
 **Severidade**: cosmética (a11y **serious** pelo axe-core)
 **Como foi encontrada**: `assertNoAccessibilityIssues()` em `/admin`, **no tema claro**.
@@ -283,11 +419,91 @@ tipo de informação que não deveria depender de boa visão.
 
 **Origem**: `pxlrbt/filament-environment-indicator`, cor definida via `--color-*` inline.
 
-### Correção
+### Correção prescrita aqui — **certa no degrau, errada nos dois conselhos**
 
-Uma regra de CSS no tema do painel, escurecendo o texto de `--color-600` para `--color-700`
-(`oklch(0.525 …)`), que atravessa o limiar. O plugin já aceita cor customizada — vale checar
-`EnvironmentIndicatorPlugin::color()` antes de escrever CSS.
+O degrau estava certo: `--color-700` atravessa o limiar. As duas frases em volta, não.
+
+1. **"uma regra de CSS no tema do painel"** — o kit **não tem** tema Filament. `viteTheme()`
+   não é usado em nenhum dos três painéis, e é justamente por isso que existe
+   `KitServiceProvider::configureCorrecoesDeCss()` registrando CSS por
+   `FilamentAsset::register()`. A rule `.ai/rules/css-filament.md` diz isso desde antes desta
+   dívida. Quem seguisse a frase iria escrever a regra em `resources/css/app.css` — que o painel
+   **não carrega**, e a correção falharia em silêncio, que é exatamente o modo de falhar
+   documentado naquela rule.
+
+2. **"o plugin já aceita cor customizada — vale checar `EnvironmentIndicatorPlugin::color()`"**
+   — checado, e não serve. `color()` recebe uma paleta inteira
+   (`EnvironmentIndicatorPlugin.php:194-199`) e o que o badge faz com ela é sempre o mesmo par:
+   texto no degrau 600 sobre fundo no degrau 50. Trocar de cor troca o **significado** (a cor
+   codifica o ambiente) e não resolve o contraste — **três das quatro** cores que o próprio
+   plugin escolhe reprovam no 600. Medido, com `Color::convertToRgb()` do Filament:
+
+   | Cor | ambiente | 600 sobre 50 | 700 sobre 50 |
+   |---|---|---|---|
+   | Pink | `local`, `testing` (default) | **4,16:1** | 5,41:1 |
+   | Orange | `staging` | **3,39:1** | 4,92:1 |
+   | Red | `production` | **4,36:1** | 5,87:1 |
+   | Blue | `development` | 4,82:1 | 6,28:1 |
+
+   Não existe escolha de cor que conserte isto. O `Orange` do staging é **pior** que o Pink que
+   originou a dívida.
+
+### Resolução — 2026-08-22
+
+Uma linha em `resources/css/filament/kit.css`, o arquivo que o `configureCorrecoesDeCss()` já
+registra nos três painéis:
+
+```css
+.environment-indicator.fi-badge { --text: var(--color-700); }
+```
+
+**Por que `--text` e não `color`**, lido no tema compilado do Filament
+(`vendor/filament/filament/dist/theme.css`):
+
+```css
+.fi-badge.fi-color { background-color: var(--color-50); color: var(--text); }
+.fi-text-color-600 { --text: var(--color-600); }
+```
+
+A blade do plugin emite `fi-badge fi-color fi-text-color-600 dark:fi-text-color-400`
+(`badge.blade.php:4-11`). Sobrescrever a **variável** mantém tudo o mais intacto e, o que
+importa mais, **não toca o tema escuro**: no escuro a mesma regra usa `color: var(--dark-text)`,
+que é a variável preenchida por `dark:fi-text-color-400` — outra variável. O QA já havia
+verificado que o escuro passava (QA-04); a correção precisava não estragá-lo, e por construção
+não pode.
+
+Duas classes no seletor (`0,2,0`) contra a classe única de `.fi-text-color-600` (`0,1,0`): vence
+por **especificidade**, não por ordem de carregamento — que entre assets registrados não é
+garantida. Este detalhe não é preciosismo: o bloco vizinho no mesmo arquivo existe porque a
+ordem de assets *importou* uma vez.
+
+### Verificação — o que foi medido, e uma divergência que fica registrada
+
+`tests/Kit/ContrasteDoIndicadorDeAmbienteTest.php`, 3 casos, 14 asserções, 3,3 s. Ele fecha a
+corrente em três elos, todos em PHP, sem navegador:
+
+1. **lê o degrau do `kit.css`** por regex (sobre o arquivo com os comentários removidos — o
+   cabeçalho do bloco *cita* `600/50` e `700/50`, e citar não é aplicar) e recalcula o contraste
+   das quatro paletas. Redigitar `700` no teste faria ele concordar consigo mesmo;
+2. **assere que o degrau 600 reprova** em Pink, Orange e Red. Se este caso ficar vermelho, o
+   Filament mudou a paleta e o bloco do `kit.css` pode sair — é o que impede a regra de virar
+   CSS supérfluo que ninguém ousa remover;
+3. **renderiza a blade do vendor** e confere que as classes do seletor ainda estão lá. Sem este
+   elo, um upgrade que renomeie o badge transformaria a regra em CSS morto sem mover teste
+   nenhum.
+
+Visto **falhando**: baixando o degrau para 600 no `kit.css`, o caso 1 fica vermelho com
+`Pink 600 sobre 50 não alcança 4,5:1 / Failed asserting that 4.16 is equal to 4.5 or is greater`.
+
+E no navegador: o CT-B09 perdeu o `->todo()` e passou a rodar um cenário por painel, com
+`assertNoAccessibilityIssues()`.
+
+> **Divergência de medição, registrada em vez de escondida.** O axe-core reportou **4,25:1** e o
+> meu recálculo dá **4,16:1** para o mesmo par de cores (`#e60076` sobre `#fdf2f8` — os hexes
+> conferem com os do relatório de QA). Não consegui reconciliar os dois números, e **não vou
+> escrever uma explicação que não medi**. O veredito não muda: os dois estão abaixo de 4,5:1, e
+> os dois cruzam o limiar no degrau 700. Quem for mexer nisto deve saber que a diferença existe
+> e que a fonte dela é desconhecida.
 
 ---
 
@@ -319,9 +535,30 @@ Começar pelos três campos de login e pelo heading do dashboard.
 telas próprias. Nas de plugin o problema continua. A dívida é real, mas o retorno é parcial —
 por isso cosmética, e não relevante.
 
+### Revisão — 2026-08-22: **verdadeira, e é a que eu atacaria por último**
+
+Confirmado: `grep -rn "data-testid\|data-test=" app/ resources/` continua **vazio**.
+
+O contra-argumento da própria seção ficou mais forte, não mais fraco. Nesta rodada os seletores
+que de fato quebraram nada tinham a ver com `data-testid`:
+
+- em DT-01, o problema era `aria-label` **ausente** — e a correção foi acrescentar um, que é
+  contrato de acessibilidade **e** seletor estável de graça. A tabela desta seção já classifica
+  `aria-label` como *"razoável"*, e é a única das três linhas que não é frágil;
+- em DT-07, o que quebrou a cobertura foram **rotas**, não seletores. `data-testid` não teria
+  ajudado.
+
+Ou seja: o caminho que rende nos dois eixos ao mesmo tempo é continuar pagando a11y, não plantar
+`data-testid`. Cada `aria-label` que a a11y exige é um seletor estável que esta dívida quer — e o
+inverso não vale: `data-testid` não melhora acessibilidade nenhuma.
+
+Custo: as ~1 h seguem válidas para os quatro elementos citados. A recomendação é **não pagar
+sozinha**: pagar como subproduto de a11y, e só recorrer a `data-testid` onde não houver rótulo
+acessível que sirva.
+
 ---
 
-## DT-07 — O inventário de telas dos CT-B é array escrito à mão
+## DT-07 — O inventário de telas dos CT-B é array escrito à mão · ✅ **PAGA**
 
 **Severidade**: cosmética
 **Como foi encontrada**: escrevendo os CT-B (e prevista em ADR-02 como risco aceito).
@@ -332,19 +569,84 @@ por isso cosmética, e não relevante.
 alguém acrescente ao kit **não entra sozinha** — e a suíte segue verde, dando a impressão de
 cobertura completa que não existe mais.
 
-### Correção
+### Correção prescrita aqui — **implementada, medida e recusada**
 
-Derivar as rotas de `Filament::getPanel($id)->getPages()` + `getResources()`, filtrando as que
-exigem `{record}`. Cerca de 15 linhas.
+> Derivar as rotas de `Filament::getPanel($id)->getPages()` + `getResources()`, filtrando as que
+> exigem `{record}`. Cerca de 15 linhas.
 
-### Por que não foi feito agora
+A derivação foi escrita e rodada contra os três painéis. Ela funciona — e **substituir o array
+por ela perde cobertura**, em duas frentes que só aparecem depois de rodar:
 
-Ponytail: abstração antes da segunda necessidade. O array explícito falha de forma legível
-(o plugin nomeia a URL que quebrou) e é lido em dois segundos. A derivação automática é o
-caminho certo **quando** o kit ganhar o quarto painel ou quando alguém esquecer uma tela de
-verdade — o que é exatamente o gatilho a esperar.
+1. **Perde as telas que não são Page nem Resource do painel.** As três
+   `/{painel}/two-factor-authentication` são rota registrada pelo Breezy: não estão em
+   `getPages()` nem em `getResources()`, e a derivação simplesmente não as vê. Seriam 3 das 52
+   telas saindo da cobertura em silêncio — o defeito que esta dívida existe para evitar,
+   reintroduzido pela própria correção dela.
+2. **Não sabe das exclusões deliberadas.** `/app/projetos` está fora por decisão, e
+   `/app/exceptions` e `/admin/exceptions` existem por obrigação de registro
+   (`.ai/rules/providers-filament.md`), com `registerNavigation(false)`. A derivação as
+   traria de volta, então precisaria de uma lista de exceção escrita à mão — mais estado
+   manual do que o array que ela ia substituir, e menos legível.
 
-Registrado aqui para que, quando acontecer, ninguém precise redescobrir a solução.
+Somando: derivação + lista de extras + lista de exclusões, em lugar de uma lista. Pior nos
+dois eixos que importam.
+
+### Resolução — 2026-08-22: o defeito não era o array, era a ausência de conferência
+
+O array continua escrito à mão, e mudou de lugar: `telasDoKit()` em `tests/Pest.php`, porque
+agora **dois** arquivos o usam (`.ai/rules/testes.md` manda helper cruzado ir para lá). O que
+entrou de novo é `tests/Kit/InventarioDeTelasTest.php`, que reconcilia a lista com a realidade
+nos **dois sentidos**:
+
+- tela que o painel **registra** e o inventário não lista → falha nomeando a URL;
+- rota que o inventário **lista** e o roteador não resolve → falha nomeando a URL.
+
+O segundo sentido é o menos óbvio e o mais perigoso: `visit('/rota-que-nao-existe')` abre a
+página de 404, e `assertNoJavaScriptErrors()` **passa** nela. Uma tela renomeada por upgrade sai
+da cobertura sem nada ficar vermelho.
+
+O filtro de `{record}` e `{tenant}` que a seção pedia é feito pelo **próprio gerador de rotas**:
+URL que exige parâmetro estoura `UrlGenerationException`, e é isso que a distingue de uma tela de
+lista. Um regex sobre o padrão da rota faria o mesmo trabalho pior.
+
+Fica em `tests/Kit` e não em `tests/Browser` de propósito: é comparação de listas, não precisa de
+navegador, e assim roda no `composer test:kit` — o comando que se roda depois de um `kit:update`,
+que é exatamente quando uma tela aparece ou desaparece.
+
+### O que a guarda achou no primeiro run — dois defeitos reais
+
+**1. `/infra/queue-monitors/pending` não existe nesta suíte.** O `getPages()` do resource só
+registra a página de pendentes quando `config('queue.default') === 'database'`
+(`vendor/croustibat/filament-jobs-monitor/src/Models/QueueJob.php:59-64`, chamado em
+`.../Resources/QueueMonitorResource.php:386`), e o `phpunit.xml` fixa `QUEUE_CONNECTION=sync`.
+A linha estava no inventário desde a rodada original, **visitando a página de 404 e passando**.
+Removida, com o motivo escrito na própria lista.
+
+**2. O comentário sobre `/app/projetos` estava errado.** Ele dizia que a tela "só existe com a
+demo ligada". Não: o resource é descoberto sempre — o que a demo desliga é o `canAccess()`
+(`app/Filament/App/Resources/Projetos/ProjetoResource.php:80-88`). A rota existe, e visitá-la
+nesta suíte renderiza um **403** — e `assertNoJavaScriptErrors()` passa num 403 também. Ficou em
+`FORA_DO_INVENTARIO` com o motivo medido e o apontamento para onde a tela é coberta de verdade
+(`tests/BrowserTenancy/AnexosDoProjetoTest.php`, `ImportExportDeProjetosTest.php`).
+
+**3. E três telas registradas que ninguém tinha notado**, agora nomeadas na lista de exclusão em
+vez de esquecidas: os três hubs em cartões (`/app/hub-do-negocio`, `/admin/hub-de-administracao`,
+`/infra/hub-de-infraestrutura`), que o kit entrega desligados (`KIT_HUB=false`) e que têm
+cobertura própria mais forte que smoke.
+
+Nota de rigor: o item 2 e o item 3 dizem que `assertNoJavaScriptErrors()` passa em 403 e em 404.
+Isso já estava escrito no próprio inventário para `/app/convites` e `/app/users` — a novidade não
+é o fato, é que agora **três outras rotas na mesma situação apareceram sozinhas**.
+
+### Medido
+
+| Comando | Resultado |
+|---|---|
+| `pest tests/Kit/InventarioDeTelasTest.php` | 6 casos (2 × 3 painéis), 6 asserções, 2,2 s |
+| suíte de backend com as três guardas novas | 536 casos (era 524), 1.469 asserções, 249 s em `--parallel` |
+| a mesma guarda, com `/admin/users` tirado do inventário | vermelha: *"Telas registradas no painel /admin e ausentes de telasDoKit(): /admin/users"* |
+| a mesma guarda, com `/infra/tela-que-nao-existe` posto no inventário | vermelha: *"Rotas listadas em telasDoKit() que o roteador não resolve"* |
+| `tests/Kit/HelpersDeTesteTest.php` (o helper novo é cruzado) | verde |
 
 ---
 
@@ -391,6 +693,53 @@ Duas frentes, e a ordem importa:
 
 **Verificacao**: os cenarios da tabela acima, num teste efemero.
 
+### Investigação — 2026-08-22: a hipótese estava vaga, e a causa é precisa
+
+A frase *"o hook sobrevive à troca de painel dentro do processo"* descreve o sintoma. A causa é
+uma cadeia de quatro elos, e cada um foi lido no `vendor/`:
+
+1. O plugin chama `$panel->renderHook('panels::user-menu.before', $hook)` **sem escopo**
+   (`vendor/cms-multi/filament-clear-cache/src/FilamentClearCachePlugin.php:61-69` — o terceiro
+   parâmetro, `$scopes`, não é passado).
+2. `Panel::renderHook()` com `$scopes === null` guarda o hook sob a chave de escopo **`''`**
+   (`vendor/filament/filament/src/Panel/Concerns/HasRenderHooks.php:18-33`).
+3. No **boot** do painel, `registerRenderHooks()` repassa cada hook para o registro global,
+   mantendo o escopo `''` (`HasRenderHooks.php:35-43`, chamado em
+   `vendor/filament/filament/src/Panel.php:102`).
+4. O registro global é o `ViewManager`, e escopo `''` significa **"todo escopo"**: o
+   `renderHook()` dele renderiza `$this->renderHooks[$name][''] ?? []` sem consultar escopo
+   nenhum (`vendor/filament/support/src/View/ViewManager.php:74-96`, com o array em `:17`).
+
+Ou seja: **o hook nunca foi "do painel infra"**. Ele é registrado globalmente no instante em que
+o `/infra` boota, com um escopo que casa com qualquer painel, e nada o remove. Não é o painel que
+vaza — é o registro que nunca foi escopado.
+
+**A correção "no pacote" que esta seção prescrevia está errada.** Mover o `renderHook` de
+`register()` para `boot()` não muda nada: o elo 3 já roda no boot, e o escopo `''` continuaria
+`''`. O que consertaria é passar o **escopo** — `$panel->renderHook($nome, $hook, $panel->getId())`
+—, e isso é uma linha diferente da prescrita, no mesmo arquivo.
+
+**E o risco em produção é menor do que esta seção estimava.** O `ViewManager` é registrado com
+`$this->app->scoped()`, não `singleton`
+(`vendor/filament/support/src/SupportServiceProvider.php:104-107`). `scoped` é exatamente o
+binding que os runtimes de processo longo descartam entre unidades de trabalho — o próprio
+framework faz `$app->forgetScopedInstances()` no laço do worker de fila
+(`vendor/laravel/framework/src/Illuminate/Queue/QueueServiceProvider.php:263`). Octane não está
+instalado aqui, então não cito o listener dele; o que se pode afirmar do que está no `vendor/` é
+que a escolha de `scoped` é a que cobre esse caso. A frase *"ligar um worker persistente o torna
+real"* precisa então de medição antes de valer.
+
+**Onde o vazamento é real hoje: o processo de teste.** Nada descarta `scoped` ali. E o
+`fronteiraDeRequest()` de `tests/Pest.php:344-357`, que existe para simular a fronteira entre
+requests, esquece **justamente** o `ViewManager` — descarta `ColorManager`, `AssetManager`,
+`FilamentManager` e `SpotlightActionRegistry`, e não o registro de render hooks. Duas linhas
+fechariam o buraco (`app()->forgetInstance(ViewManager::class)` e
+`Facade::clearResolvedInstance(ViewManager::class)`; o accessor da facade `FilamentView` é a
+própria classe, `vendor/filament/support/src/Facades/FilamentView.php:20-23`).
+
+**Não foi consertado**, porque a tarefa desta rodada era isolar a causa. Mas a dívida deixa de
+ser "investigação" e passa a ser uma correção de duas linhas com endereço.
+
 ---
 
 ## DT-09 - Telas de `/infra` misturam ingles e portugues
@@ -420,6 +769,38 @@ pelos setters de plugin que ja sao usados para outros - o `InfraPanelProvider` j
 Command Center (`CommandCenterCommands::navigationLabel('Comandos')`).
 
 Nenhuma das outras nove dividas cobre i18n, e o projeto e pt-BR por decisao.
+
+### Revisão — 2026-08-22: **quase toda paga, e ninguém atualizou esta seção**
+
+A dívida foi conferida linha por linha contra o repositório de hoje. Das quatro entradas da
+tabela acima, **as quatro estão traduzidas**, pelo commit `5511a0a` (*"traduz as telas de plugin
+que ainda saiam em ingles no /infra"*, 2026-08-15) — que é **posterior** à escrita desta seção e
+não a atualizou:
+
+| Entrada da tabela | Hoje |
+|---|---|
+| `/infra/logs`: *"Logs explorer"*, a descrição, *"1 file"*/*"3 files"*, *"Refresh"* | `lang/vendor/filament-logs-explorer/pt_BR/filament-logs-explorer.php` — 60+ chaves, inclusive `'heading' => 'Explorador de logs'`, `'refresh' => 'Atualizar'`, `'file_count'` com pluralização, e `'modified' => 'Modificado :time'` (o híbrido) |
+| `/infra` (dashboard): *"Composer releases"*, *"From composer.json…"*, *"Informational — no auto-updates"* | `lang/pt_BR.json`, linhas 5, 29 e 30 — o pacote resolve por `__()` sem arquivo de lang próprio |
+| Tela de 403: *"Message no. SNT-403-783"* | `resources/views/errors/sentinel-layout.blade.php:153-155` — *"Mensagem nº"* e *"ID da requisição"* |
+
+E a **causa da terceira estava mal atribuída** nesta seção: a tabela põe o *"Message no."* na
+conta do `sentinel`, e a correção proposta é publicar `lang/vendor/`. A tradução do pacote sempre
+esteve certa e completa — o kit **ejetou** as páginas de erro para `resources/views/errors/`, que
+têm prioridade, e as duas strings estavam escritas à mão no layout do próprio kit. Publicar
+`lang/vendor/sentinel/` não teria mudado nada na tela. É o mesmo modo de errar que
+`.ai/rules/specs.md` descreve: conclusão certa (*"está em inglês"*), causa errada, e o conserto
+pelo motivo escrito conserta a coisa errada.
+
+**O que resta**, e está documentado no corpo daquele commit: o título/`<h1>` das telas do Command
+Center. `Commands.php:44` do pacote é `protected static ?string $title = 'Commands';` — literal,
+`protected`, sem setter, e o heading vem de `getHeading()` dentro do componente de página, então
+não passa pela Blade publicada nem por `lang/`. Não há saída limpa sem subclassificar a página e
+reregistrá-la. O `InfraPanelProvider` já ajusta o rótulo de **navegação**
+(`CommandCenterCommands::navigationLabel('Comandos')`), que é o que dá para ajustar de fora.
+
+**Proposta**: rebaixar esta dívida para *"1 título de plugin sem ponto de extensão"* e fechá-la
+como **não-defeito do kit** (destino "especificação"), ou abrir um PR upstream pedindo um setter.
+Não é mais uma dívida de ~2 h de tradução.
 
 ---
 

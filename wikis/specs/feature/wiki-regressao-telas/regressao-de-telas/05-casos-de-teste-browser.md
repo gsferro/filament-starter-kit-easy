@@ -258,28 +258,51 @@ Rotas: os três dashboards (`/app`, `/admin`, `/infra`).
 
 ---
 
-## CT-B09: Acessibilidade dos dashboards — `->todo()`, dívida conhecida
+## CT-B09: Acessibilidade dos dashboards — ✅ **ativo desde 2026-08-22**
 
 **Arquivo**: `tests/Browser/TemaEscuroTest.php`
-**Método**: `it('nao tem problema de acessibilidade nos dashboards')->todo()`
+**Método**: `it('nao tem problema de acessibilidade no dashboard')` com dataset de `/app`,
+`/admin` e `/infra` — **um cenário por painel**, como a correção QA-03 abaixo exigia
+
+### Estado atual
+
+O `->todo()` saiu: DT-01 e DT-02 foram pagas e o cenário mede acessibilidade em todo run. Verde
+nos três painéis (`--testsuite=Browser`: 37 casos, 32 passados, 5 skipped, 168 s).
+
+O que mudou em cada dívida está em `06-divida-tecnica.md` → DT-01 (cópia da blade em
+`resources/views/vendor/filament-clear-cache/`, com a propriedade `label`) e DT-02 (uma regra em
+`resources/css/filament/kit.css` subindo o degrau de `--color-600` para `--color-700`).
+
+**Atenção ao primeiro run num clone novo**: reproduzido nesta rodada que a versão de `/app` deste
+cenário reprova com a suíte fria — todo texto da página reportado a ~1,05:1 —, e passa na segunda
+execução sem mudança de código. É o sintoma de compilação dentro do cronômetro descrito em
+`.ai/rules/testes-browser.md`, não um achado de contraste. Ver a revisão de DT-06.
 
 ### Precondições
 
 - Seeders rodados; `actingAs(usuarioDoKit('master_global'))`
 
-### Estado
+### Histórico — por que nasceu `->todo()`
 
-**Marcado `->todo()` deliberadamente.** Rodando, ele falha — e a falha é real:
+Rodando na entrega original, ele falhava — e a falha era real:
 
 | Severidade | Problema | Painel | Origem |
 |---|---|---|---|
 | **critical** | `<button wire:click="clear">` do *Clear Cache* sem texto acessível: sem `aria-label`, sem `title`, sem texto interno | **`/infra`** | `cms-multi/filament-clear-cache` |
 | **serious** | contraste 4.25:1 no `.environment-indicator` (`#e60076` sobre `#fdf2f8`); mínimo WCAG é 4.5:1 | os três, **só no tema claro** | `pxlrbt/filament-environment-indicator` |
 
-Ambas em `vendor/`. Corrigir mexeria em `app/`, que RQ-07 coloca fora desta entrega.
+Ambas em `vendor/`. Corrigir mexeria em `app/`, que RQ-07 coloca fora daquela entrega.
 
-`->todo()` e não comentado: assim a pendência aparece nomeada na saída de **todo** run, em vez
+`->todo()` e não comentado: assim a pendência aparecia nomeada na saída de **todo** run, em vez
 de dormir num comentário. Ver ADR-07 e `06-divida-tecnica.md` → DT-01, DT-02.
+
+> **Correção de medição, 2026-08-22.** O `4.25:1` da linha *serious* é o que o axe-core reportou.
+> Recalculando o mesmo par de cores a partir das paletas do Filament (`Color::convertToRgb()`), dá
+> **4,16:1** — e a divergência não foi reconciliada. O veredito não muda (ambos abaixo de 4,5:1), e
+> o degrau 700 cruza o limiar nos dois cálculos. Detalhe em `06-divida-tecnica.md` → DT-02.
+>
+> E a correção **não** mexeu em `app/`: foi uma regra de CSS em `resources/css/filament/kit.css`
+> (que o `KitServiceProvider` já registrava) e uma cópia de blade em `resources/views/vendor/`.
 
 > **Duas correções que o `feature-quality-gate` fez nesta descrição** — ver `07-relatorio-qa.md`:
 >
@@ -292,9 +315,10 @@ de dormir num comentário. Ver ADR-07 e `06-divida-tecnica.md` → DT-01, DT-02.
 > 3. A `serious` some no tema escuro: o elemento é `dark:fi-text-color-400`, que atravessa o
 >    limiar (QA-04).
 
-### Assertions (quando a dívida for paga)
+### Assertions
 
-- `assertNoAccessibilityIssues()` nos três dashboards
+- `assertNoAccessibilityIssues()` em cada um dos três dashboards, um cenário por painel
+  (QA-03 atendida: em lote, o `/app` abortava o laço antes de o `/infra` ser medido)
 
 ---
 
