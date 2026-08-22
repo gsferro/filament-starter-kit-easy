@@ -3,10 +3,11 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Nao lancado]
+## [0.18.2] - 2026-08-22
 
-Revisao das wikis, uma divida tecnica paga e uma recusa revertida. A unica mudanca de
-comportamento e a do log em teste.
+Release de correcao. Revisao das wikis, uma divida tecnica paga e uma recusa revertida. A unica
+mudanca de comportamento e a do log em teste — quem ja esta na v0.18.1 nao precisa fazer nada em
+producao.
 
 ### Corrigido
 
