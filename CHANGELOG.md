@@ -3,6 +3,64 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.18.1] - 2026-08-22
+
+Release de ferramenta e de medição. **Nada muda no comportamento do kit** — quem já está na
+v0.18.0 não precisa fazer nada.
+
+### Adicionado
+
+- **`pestphp/pest-plugin-phpstan`** (dev), incluído no `phpstan.neon`. Ele tipa `expect()`, o
+  `$this` das closures de teste e o higher-order testing. Vale mesmo com `tests` fora dos `paths`,
+  e custa zero enquanto está fora.
+
+### Alterado
+
+- **`wikis/qualidade-de-codigo.md`** ganha duas seções: por que `tests` **não** está nos `paths` do
+  PHPStan, com o custo medido, e o que foi medido e **recusado** — para ninguém refazer a medição
+  daqui a três meses.
+
+### Medido
+
+O número que decide a inclusão de `tests` no PHPStan:
+
+| Configuração | Erros |
+|---|---|
+| `tests` nos paths, **com** o plugin | **117**, em 26 dos 62 arquivos |
+| `tests` nos paths, **sem** o plugin | **566** |
+
+O plugin não adiciona ruído — ele **remove 449 falsos positivos**. Os 117 que sobram não são
+defeito: são level 7 vendo código de teste pela primeira vez, e três padrões respondem por 33 deles
+(`artisan()` devolve `PendingCommand|int`, spy do Mockery em `LoggerInterface`, fake de Mail em
+`TransportInterface`). `tests/Kit/ConviteTest.php` sozinho tem 35.
+
+**As regras próprias do plugin acusaram zero** — nenhuma expectation impossível, nenhuma descrição
+de teste duplicada, nenhum `covers()` com classe inexistente. O ganho de incluir `tests` é
+prevenção, não um lote de defeito esperando; e `types:check` é gate dentro do `composer test`.
+
+### Recusado, com número
+
+- **TIA (`--tia`) não dá agilidade neste projeto.** Três motivos independentes: é inerte em comando
+  filtrado (`--testsuite` está em `PARTIAL_SELECTION_FLAGS` do Pest); exige PCOV ou Xdebug, e o
+  ambiente não tem nenhum dos dois; e sem filtro arrasta o Playwright já na coleta.
+- **Não existe teste lento para consertar.** `tests/Kit`: 398 testes, 665,8s em série, top-10 =
+  **6,6%**, máximo de 6,98s numa distribuição chata. E o topo do `tests/Tenancy` é **artefato de
+  medição** — o caso de 33,30s custa **5,8s** rodado sozinho, porque o `--profile` atribui a
+  compilação de componente Livewire a quem renderizou painel primeiro.
+- **Ajustar `--processes` não ganha nada.** 10 processos → 277s; 20 (o default, igual aos núcleos)
+  → **227s**. Menos worker é mais lento.
+- **Sharding no CI não paga.** Os jobs reais são 3,4 / 2,2 / 0,8 min e rodam em paralelo. `--shard`
+  funciona (verificado: `--shard=1/4` do Kit roda 8 de 31 arquivos), mas pede
+  `tests/.pest/shards.json` commitado e aviso a cada teste novo até regerar.
+
+### Armadilhas registradas
+
+- **O Pest troca de printer quando `AI_AGENT` está no ambiente**, e a saída vira
+  `{"tool":"pest",...}` — engolindo a tabela de `--profile`, `--coverage` e `--type-coverage`.
+  Redirecionar para arquivo **não** contorna: o printer é escolhido no processo do Pest. Para ver
+  saída humana: `(unset AI_AGENT CLAUDECODE; vendor/bin/pest --profile ...)`.
+- **`--profile` não agrega em `--parallel`** — a tabela simplesmente não sai. Perfil exige série.
+
 ## [0.18.0] - 2026-08-21
 
 ### Alterado
