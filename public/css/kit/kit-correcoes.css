@@ -46,3 +46,38 @@
 
 .dark :root .text-primary-400,
 :root .dark .text-primary-400 { color: var(--primary-400); }
+
+/*
+| DT-02 — contraste do indicador de ambiente no tema CLARO.
+|
+| O badge do `pxlrbt/filament-environment-indicator` sai com
+| `fi-badge fi-color fi-text-color-600 dark:fi-text-color-400`
+| (`vendor/pxlrbt/filament-environment-indicator/resources/views/badge.blade.php:4-11`).
+| No tema Filament isso resolve para texto `--color-600` sobre fundo `--color-50`
+| (`vendor/filament/filament/dist/theme.css`:
+| `.fi-badge.fi-color{background-color:var(--color-50);color:var(--text)}` e
+| `.fi-text-color-600{--text:var(--color-600)}`), e o par não alcança o mínimo WCAG
+| AA de 4,5:1 para texto pequeno. Medido com as paletas do próprio Filament, via
+| `Color::convertToRgb()`:
+|
+|     Pink   600/50 = 4,16:1     Pink   700/50 = 5,41:1
+|     Orange 600/50 = 3,39:1     Orange 700/50 = 4,92:1
+|     Red    600/50 = 4,36:1     Red    700/50 = 5,87:1
+|     Blue   600/50 = 4,82:1     Blue   700/50 = 6,28:1
+|
+| São as quatro cores que o plugin pode escolher, e `Color::Pink` é o default do
+| ambiente `local`/`testing` (`EnvironmentIndicatorPlugin.php:54-59`). Três das
+| quatro reprovavam; subir um degrau resolve as quatro.
+|
+| Só o tema claro é tocado, de propósito: no escuro o `.fi-badge.fi-color` usa
+| `color: var(--dark-text)`, que a utilitária `dark:fi-text-color-400` preenche —
+| variável DIFERENTE, e aquele lado já passa o limiar.
+|
+| `.environment-indicator.fi-badge` são duas classes (0,2,0) contra a classe única
+| de `.fi-text-color-600` (0,1,0): vence por especificidade, não por ordem de
+| carregamento — que entre assets registrados não é garantida.
+|
+| Guarda: `tests/Kit/ContrasteDoIndicadorDeAmbienteTest.php` lê o degrau DESTE
+| arquivo e recalcula o contraste. Depois de editar: `php artisan filament:assets`.
+*/
+.environment-indicator.fi-badge { --text: var(--color-700); }
