@@ -184,6 +184,126 @@ pest()->browser()->timeout(45_000);
 | arquivo.
 */
 
+/**
+ * O inventário de telas alcançáveis por URL fixa nos três painéis.
+ *
+ * Aqui, e não dentro de `tests/Browser/TelasDoKitTest.php`, porque DOIS arquivos o usam: o
+ * smoke em navegador visita a lista, e `tests/Kit/InventarioDeTelasTest.php` a reconcilia
+ * contra o que os painéis realmente registram. Era essa reconciliação que faltava (DT-07):
+ * tela nova não entrava sozinha e a suíte seguia verde, dando a impressão de cobertura
+ * completa.
+ *
+ * A lista continua escrita à mão de propósito. Derivar de `getPages()` + `getResources()`
+ * cobre quase tudo, mas **perde** as telas que não são Page nem Resource do painel — as três
+ * `two-factor-authentication`, que o Breezy registra como rota — e não sabe das exclusões
+ * deliberadas. Ver a resolução de DT-07 em
+ * `wikis/specs/feature/wiki-regressao-telas/regressao-de-telas/06-divida-tecnica.md`.
+ *
+ * @return array<string, list<string>>
+ */
+function telasDoKit(): array
+{
+    return [
+        // O painel /app é o único dos três que não tinha nenhuma cobertura de tela: o
+        // PaginasInfraTest cobria 15 rotas de /infra e 3 de /admin, e o painel de negócio
+        // tinha só o `GET /app` genérico do PaineisTest.
+        'app' => [
+            '/app',
+            '/app/meu-perfil',
+            '/app/two-factor-authentication',
+            '/app/convites',
+            '/app/convites/create',
+            '/app/convites-recebidos',
+            '/app/users',
+            '/app/users/create',
+            /*
+             * `/app/projetos` saiu daqui: o resource de exemplo só existe com a demo
+             * ligada (`config('kit.demo')` + tenancy), e esta suíte roda single-tenant.
+             *
+             * ⚠️ As rotas `/app/convites` e `/app/users` acima estão na MESMA situação —
+             * `UserResource` e `ConviteResource` do painel de negócio se escondem sem
+             * tenancy, então aqui elas respondem 403. Elas continuam na lista porque
+             * `assertNoJavaScriptErrors()` passa numa página de 403 (ela não tem erro de
+             * JS nenhum), o que significa que estas três linhas nunca provaram nada
+             * sobre as telas. Mover para `tests/BrowserTenancy` é o conserto; fica
+             * registrado em vez de removido em silêncio.
+             */
+        ],
+        'admin' => [
+            '/admin',
+            '/admin/meu-perfil',
+            '/admin/two-factor-authentication',
+            '/admin/users',
+            '/admin/users/create',
+            // Shield e onboarding são Resources de plugin, e incompatibilidade de versão de
+            // plugin aparece na primeira visita, não no boot.
+            '/admin/shield/roles',
+            '/admin/shield/roles/create',
+            '/admin/convites',
+            '/admin/convites/create',
+            '/admin/organizacoes',
+            '/admin/organizacoes/create',
+            '/admin/agentes-ia',
+            '/admin/agentes-ia/create',
+            '/admin/onboarding-flows',
+            '/admin/onboarding-flows/create',
+            '/admin/onboarding-conditions',
+            '/admin/onboarding-conditions/create',
+        ],
+        // No /infra quase toda tela vem de um pacote de terceiro.
+        'infra' => [
+            '/infra',
+            '/infra/meu-perfil',
+            '/infra/two-factor-authentication',
+            '/infra/health-check-results',
+            '/infra/backup-runs',
+            '/infra/queue-monitors',
+            '/infra/queue-monitors/failures',
+            /*
+             * `/infra/queue-monitors/pending` saiu daqui, e não por escolha de escopo: a
+             * rota NÃO EXISTE nesta suíte. O `getPages()` do resource só registra a página
+             * de pendentes quando `config('queue.default') === 'database'`
+             * (`vendor/croustibat/filament-jobs-monitor/src/Models/QueueJob.php:59-64`,
+             * chamado em `.../Resources/QueueMonitorResource.php:386`), e o `phpunit.xml`
+             * fixa `QUEUE_CONNECTION=sync`.
+             *
+             * A linha ficou aqui desde a rodada original visitando a página de 404 — e
+             * `assertNoJavaScriptErrors()` passa num 404. Foi o primeiro achado da guarda
+             * de DT-07, e é exatamente o defeito que ela existe para pegar.
+             */
+            '/infra/audits',
+            '/infra/authentication-logs',
+            '/infra/logs',
+            '/infra/dependency-graph',
+            '/infra/composer-release-packages',
+            '/infra/execucoes-ia',
+            // Roda com PULSE_ENABLED=false (phpunit.xml): a tela precisa abrir mesmo assim,
+            // porque Pulse desligado não é Pulse quebrado.
+            '/infra/pulse',
+            '/infra/command-center/commands',
+            '/infra/command-center/history',
+            '/infra/command-center/definitions',
+            '/infra/command-center/definitions/create',
+            /*
+             * As três telas da 0.17.0.
+             *
+             * A de exceções é a que mais precisa estar aqui, e não pelo motivo óbvio: o
+             * plugin dela resolve o painel CORRENTE, e um registro errado não quebra esta
+             * tela — quebra a aplicação inteira, em todo request e em todo comando artisan.
+             * Um smoke em navegador é justamente o que pega isso de um jeito que nenhum
+             * `$this->get()` isolado pegaria.
+             *
+             * A Lixeira e a trilha de e-mail abrem VAZIAS numa instalação nova, e é assim
+             * mesmo: o que se prova aqui é que a tela renderiza sem erro de JS, não que há
+             * dado nela.
+             */
+            '/infra/exceptions',
+            '/infra/mail-logs',
+            '/infra/recycle-bin',
+        ],
+    ];
+}
+
 function tenant(string $nome, string $slug, bool $ativo = true): Tenant
 {
     return Tenant::create(['nome' => $nome, 'slug' => $slug, 'ativo' => $ativo]);
