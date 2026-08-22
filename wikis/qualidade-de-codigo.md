@@ -31,7 +31,9 @@ Rode `vendor/bin/pint --dirty` antes de commitar. O `composer test` roda `--test
 
 ## PHPStan — tipos, no level 7
 
-`phpstan.neon`, com `larastan`. Analisa `app`, `bootstrap/app.php`, `config`, `database` e `routes`.
+`phpstan.neon`, com `larastan` e o `pest-plugin-phpstan`. Analisa `app`, `bootstrap/app.php`,
+`config`, `database` e `routes` — **`tests` fica fora, e a ausência é medida**: ver
+"Analisar `tests`" abaixo.
 
 **Level 7, com zero erros e sem baseline.** A maioria dos projetos Laravel para no 5 ou 6. O que o 7
 cobra a mais:
@@ -176,6 +178,105 @@ não reimplementar vendor.
 `filament-v6`. Duas linhas.
 
 ---
+
+## Analisar `tests` — medido, e ainda não pago
+
+O `pest-plugin-phpstan` **está instalado e incluído** no `phpstan.neon`. O que não está feito é
+acrescentar `tests` aos `paths`, e a decisão tem número:
+
+| Configuração | Erros |
+|---|---|
+| `tests` nos paths, **com** o plugin | **117**, em 26 dos 62 arquivos |
+| `tests` nos paths, **sem** o plugin | **566** |
+
+O plugin não adiciona ruído — ele **remove 449 falsos positivos**. Sem ele o PHPStan não entende
+`expect()`, nem o `$this` das closures de teste, nem higher-order testing. É por isso que ele fica
+incluído mesmo com `tests` fora: é pré-requisito para o dia em que entrar, e custa zero enquanto
+não entra.
+
+Os 117 que sobram **não são defeito**. São level 7 vendo código de teste pela primeira vez, e três
+padrões respondem por 33 deles:
+
+| Ocorrências | Erro |
+|---|---|
+| 19 | `assertSuccessful()` em `PendingCommand\|int` — o retorno de `artisan()` |
+| 10 | `LoggerInterface::shouldHaveReceived()` — spy do Mockery em interface tipada |
+| 4 | `TransportInterface::messages()` — fake de Mail |
+
+Concentração: `tests/Kit/ConviteTest.php` sozinho tem **35** dos 117.
+
+**As regras próprias do plugin acusaram zero.** Nenhuma expectation impossível, nenhuma descrição de
+teste duplicada, nenhum `covers()` com classe inexistente — e é justamente o `covers()` errado que
+manda o mutation score a 0% em silêncio. O ganho de incluir `tests` é **prevenção**, não um lote de
+defeito esperando.
+
+O custo é triar 117 em 26 arquivos, e `types:check` é gate dentro do `composer test`: incluir sem
+pagar a triagem deixa o gate vermelho, e gate vermelho por ruído ensina a ignorar gate.
+
+## Medido e recusado — para não ser proposto de novo
+
+Duas ideias que parecem óbvias, foram medidas e **não pagam**. O número está aqui para poupar a
+próxima pessoa de refazer a medição.
+
+### TIA (`--tia`) não dá agilidade neste projeto
+
+Três motivos independentes, e qualquer um deles basta:
+
+1. **Ele é inerte no comando que mais se roda.** `--testsuite`, `--group` e `--filter` estão na
+   lista `PARTIAL_SELECTION_FLAGS` do Pest, que desliga o TIA com
+   `TIA does not apply to partial runs`. O `composer test:kit` usa `--testsuite=Kit,Tenancy`.
+2. **Exige driver de cobertura**, PCOV ou Xdebug, e o ambiente não tem nenhum dos dois. Com Xdebug
+   em série, não termina — medido, abortado após 35 min.
+3. **Sem filtro, ele arrasta o browser.** Um `pest` sem `--testsuite` inclui `tests/Browser`, e o
+   `pest-plugin-browser` sobe o Playwright já na COLETA.
+
+Ele segue ligado localmente pelo `tests/Pest.php` (`pest()->tia()->locally()`), que é grátis, e
+desligado em CI, onde o pipeline deve rodar a suíte completa.
+
+### Não existe teste lento para consertar
+
+`--profile` em série, com o printer humano:
+
+| Suíte | Testes | Tempo | Top-10 |
+|---|---|---|---|
+| `tests/Kit` | 398 | 665,8s | 43,9s = **6,6%** |
+| `tests/Tenancy` | 119 | 452,3s | 84,2s = 18,6% |
+
+O máximo do Kit é **6,98s** e a distribuição é chata — 6,98 até 3,64. Média de 1,67s. O custo é
+uniforme: cada teste sobe a aplicação, boota painel Filament e semeia.
+
+E o topo do Tenancy é **artefato de medição**: o caso de 33,30s custa **5,8s** rodado sozinho
+(5806ms e 5997ms, duas medições). O `--profile` atribui a compilação de componente Livewire do
+processo a quem renderizou painel primeiro. Perseguir o top-10 seria otimizar o mensageiro.
+
+### Ajustar `--processes` não ganha nada
+
+| Processos | Tempo |
+|---|---|
+| 10 | 277s |
+| 20 (default, = núcleos da máquina) | **227s** |
+
+Menos workers é **mais** lento. O default já é o ótimo.
+
+### Sharding no CI não paga
+
+Os tempos reais da última execução, e os jobs rodam em paralelo:
+
+| Job | Duração |
+|---|---|
+| `qualidade` (Pint + PHPStan + 517 testes) | **3,4 min** |
+| `telas` (29 testes em navegador) | 2,2 min |
+| `instalacao` (`create-project` + curl) | 0,8 min |
+
+Wall-clock do CI: **3,4 min**. `--shard` funciona (verificado: `--shard=1/4` do Kit roda 8 de 31
+arquivos, 66 testes) e exige commitar `tests/.pest/shards.json`, com aviso a cada arquivo de teste
+novo até regerar. Complexidade que não se paga num job de 2,2 min.
+
+> Cuidado ao medir localmente: **o Pest troca de printer quando `AI_AGENT` está no ambiente** e a
+> saída vira `{"tool":"pest",...}`, engolindo a tabela de `--profile`, de `--coverage` e de
+> `--type-coverage`. Redirecionar para arquivo não contorna — o printer é escolhido no processo do
+> Pest. Para ver saída humana: `(unset AI_AGENT CLAUDECODE; vendor/bin/pest --profile ...)`.
+> E `--profile` **não agrega em `--parallel`**: perfil exige série.
 
 ## Ordem de leitura ao entrar no projeto
 
