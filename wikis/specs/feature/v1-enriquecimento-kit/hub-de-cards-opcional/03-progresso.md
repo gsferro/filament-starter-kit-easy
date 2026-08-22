@@ -105,7 +105,7 @@ Ver ADR-05 (reescrita) e "Notas de Implementação".
       (**não** `--parallel --tia`: ver a divergência declarada no `04`)
 - [x] `php artisan config:show kit.hub` devolve `false` num `.env` limpo
 - [x] roteiro "Desenhado × Implementado" do `05-casos-de-teste-browser.md` preenchido — 7 linhas, 6 ✅ e 1 ⚠️ (tema escuro, LB1)
-- [ ] `git commit` — cinco commits, na ordem do passo 12 do PRD
+- [x] `git commit` — cinco commits, na ordem do passo 12 do PRD; commitado e mergeado em `main` (`git branch --no-merged main` vazio)
 
 ## Auditoria Pré-Implementação
 

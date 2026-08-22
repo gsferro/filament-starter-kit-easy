@@ -17,6 +17,11 @@ Sete dívidas nasceram da rodada de CT-B; três (**DT-08**, **DT-09**, **DT-10**
 `feature-quality-gate` depois, e duas entradas (**DT-01**, **DT-02**) foram **corrigidas** por
 ele. O relatório está em `07-relatorio-qa.md`.
 
+> **2026-08-22.** **DT-10 paga** — e a correção prescrita aqui estava **errada**: a de uma linha
+> teria piorado o problema em silêncio. Ver a seção dela. **DT-11**: o diagnóstico original se
+> confirmou (Xdebug 3.4.4 presente, PCOV ausente) e o PCOV 1.0.12 foi instalado nesta data — a
+> seção registra a medição, e por que uma medição minha intermediária estava errada.
+
 | ID | Dívida | Severidade | Custo estimado | Onde |
 |----|--------|-----------|----------------|------|
 | ~~**DT-03**~~ | ~~Helpers de teste declarados dentro de arquivos de teste~~ | ~~bloqueante~~ | **PAGA** | `tests/Pest.php` |
@@ -28,8 +33,8 @@ ele. O relatório está em `07-relatorio-qa.md`.
 | **DT-05** | Nenhum `data-testid` nas telas do kit | cosmética | ~1 h | `app/Filament` |
 | **DT-07** | Inventário de telas dos CT-B é array escrito à mão | cosmética | ~30 min | `tests/Browser` |
 | **DT-09** | Telas de `/infra` misturam inglês e português | cosmética | ~2 h | `lang/`, `vendor` |
-| **DT-10** | A suíte de testes escreve no `storage/logs` real | cosmética | ~5 min | `phpunit.xml` |
-| **DT-11** | Sem PCOV: o `--tia` roda com Xdebug e fica impraticável em série | relevante | ~10 min | ambiente / CI |
+| ~~**DT-10**~~ | ~~A suíte de testes escreve no `storage/logs` real~~ | ~~cosmética~~ | **PAGA** | `config/logging.php` + `phpunit.xml` |
+| ~~**DT-11**~~ | ~~Sem PCOV: o `--tia` roda com Xdebug e fica impraticável em série~~ | ~~relevante~~ | **PAGA nesta máquina** | ambiente (não é código) |
 
 ---
 
@@ -418,7 +423,7 @@ Nenhuma das outras nove dividas cobre i18n, e o projeto e pt-BR por decisao.
 
 ---
 
-## DT-10 - A suite de testes escreve no `storage/logs` real
+## DT-10 - A suite de testes escreve no `storage/logs` real · ✅ **PAGA**
 
 **Severidade**: cosmetica, destino **infra**
 **Como foi encontrada**: `feature-quality-gate`, ciclo 1 - QA-07.
@@ -437,21 +442,79 @@ storage/logs/autenticacao-2026-08-14.log  ->  4.463 linhas, 1,1 MB
 Tudo produzido pelas rodadas de teste do dia. Precede esta branch (vem de `tests/Kit`), e a suite
 de browser nova soma ao volume.
 
-### Correcao
+### Correcao prescrita aqui — **estava errada**
 
-Uma linha em `phpunit.xml`:
+O que esta secao mandava fazer era uma linha em `phpunit.xml`:
 
 ```xml
 <env name="LOG_CHANNEL" value="null"/>
 ```
 
-**Cuidado**: isso desligaria a assercao de log de `tests/Kit/PaineisTest.php:81-90` se ela
-dependesse do arquivo - ela **nao** depende, usa `Log::shouldReceive()`. Confirmar antes de
-aplicar.
+Nao resolve, e **piora em silencio**. Duas razoes, as duas medidas contra o vendor:
+
+1. `LOG_CHANNEL` troca so o canal **default**. As **60** chamadas de log do kit sao
+   `Log::channel('ai'|'tenancy'|'autenticacao')` nomeadas (21 + 16 + 23, contadas com
+   `grep -rho "Log::channel('[a-z_]*'" app/`) e passam por cima dele. Os tres canais eram
+   `daily` fixo em `config/logging.php` — continuavam gravando.
+
+2. A extensao obvia — `<env name="LOG_KIT_DRIVER" value="null"/>` com `'driver' => env(...)` —
+   **tambem** nao funciona, e foi medida falhando. Nao existe `createNullDriver` no
+   `LogManager` (os drivers vao de `:260` a `:433` em
+   `vendor/laravel/framework/src/Illuminate/Log/LogManager.php`; `resolve()` estoura em `:240`),
+   e o `env()` do Laravel converte a string `"null"` em `null` de verdade. O `resolve()` lanca,
+   o `get()` captura o `Throwable` e devolve o **emergency logger** — que grava em
+   `storage/logs/laravel.log`. O log continuaria em disco, no arquivo errado, com um
+   `emergency` a cada resolucao de canal. O `null` do `config/logging.php` e um **canal**
+   (`driver: monolog` + `NullHandler`), nunca um driver.
+
+### Resolucao — aplicada em 2026-08-22
+
+Driver dos tres canais por env, com o `handler` sempre presente:
+
+```php
+// config/logging.php — nos canais 'ai', 'tenancy' e 'autenticacao'
+'driver'  => env('LOG_KIT_DRIVER', 'daily'),
+'handler' => NullHandler::class,
+```
+
+```xml
+<!-- phpunit.xml -->
+<env name="LOG_CHANNEL" value="null"/>
+<env name="LOG_KIT_DRIVER" value="monolog" force="true"/>
+```
+
+`createDailyDriver` ignora a chave `handler`; quem a usa e o `createMonologDriver`
+(`LogManager.php:433`). Verificado nos dois lados:
+
+| Contexto | Handler resolvido |
+|---|---|
+| suite (`LOG_KIT_DRIVER=monolog`) | `Monolog\Handler\NullHandler` |
+| producao (env ausente, driver `daily`) | `Monolog\Handler\RotatingFileHandler` |
+
+**Guarda**: `tests/Kit/QualidadeDeCodigoTest.php` — *"nao escreve log em disco durante a suite"*,
+dataset de `ai`, `tenancy`, `autenticacao` e do canal default. Assere o **handler resolvido**, nao
+a chave de config, entao cobre a corrente inteira (env do `phpunit.xml` -> `env()` -> `LogManager`)
+e morre se alguem errar o nome da variavel, tirar o `env()` de um canal ou apagar a linha do
+`phpunit.xml`. Foi visto **falhando** com `StreamHandler` antes da correcao final.
+
+**Medido depois de aplicar**, e nao so pelo teste-guarda:
+
+- `php artisan test tests/Kit/PaineisTest.php` — o arquivo que produzia
+  `[User@canAccessPanel]` — deixou `autenticacao-2026-08-22.log` em **2.304 linhas antes e 2.304
+  depois**: zero escrita.
+- `php artisan test --testsuite=Unit,Feature,Kit,Tenancy --parallel` — **524/524, 1.444
+  asseroes**, e nenhuma escrita nova em `autenticacao-*`, `tenancy-*` ou `laravel.log` (a ultima
+  linha dos tres e anterior a rodada). Vale tambem em `--parallel`, onde os workers sao processos
+  proprios.
+- Pint e PHPStan verdes.
+
+O aviso original se confirmou inofensivo: `tests/Kit/PaineisTest.php` usa `Log::shouldReceive()`,
+nao arquivo, e nenhum teste da suite le `storage/logs` (`grep -rn "storage_path('logs" tests/` =
+vazio).
 
 ---
 
-## DT-11 — Sem PCOV, o `--tia` é impraticável em série
+## DT-11 — Sem PCOV, o `--tia` é impraticável em série · ✅ **PAGA nesta máquina**
 
 **Severidade**: relevante
 **Como foi encontrada**: tentando fechar a Verificação Final com `pest --tia` em série, que é a
@@ -459,9 +522,25 @@ aplicar.
 
 ### O problema
 
-O `--tia` exige driver de cobertura. O ambiente tem **Xdebug 3.4.4 e não tem PCOV**
+> **Confirmada em 2026-08-22, e o diagnóstico original estava certo.** Registro aqui uma medição
+> minha que estava **errada**, porque o modo de errar se repete: `php -m | grep -i -e pcov -e
+> xdebug` devolveu **vazio** neste ambiente (Git Bash no Windows) e eu li isso como "não há driver
+> algum". Não era. O pipe do `grep` aborta contra a saída do `php -m` aqui — a mensagem
+> `Aborted` aparece no stderr e o exit code é de erro, não de "zero linhas". O `php.ini`
+> declarava `zend_extension = xdebug` com `xdebug.mode = debug,develop,coverage`, e o próprio
+> `php -v` imprime `with Xdebug v3.4.4` na quarta linha. **Sinal de alerta**: concluir ausência a
+> partir de um `grep` vazio sem checar o exit code — leia a fonte (`php.ini`, `php -v`), não o
+> filtro.
+>
+> O que o TIA diz quando de fato falta driver está em
+> `vendor/pestphp/pest/src/Plugins/Tia.php:741-742` — *"Recorded zero edges — coverage driver
+> likely missing"*. Não era o caso: o `--tia` sobe e roda neste checkout (`vendor/bin/pest --tia`
+> imprime `─ Running in TIA mode.`), só era lento, exatamente como esta seção dizia desde o
+> começo.
+
+O `--tia` exige driver de cobertura. O ambiente tinha **Xdebug 3.4.4 e não tinha PCOV**
 (`php -m | grep -i pcov` → vazio). Xdebug com cobertura ativa é ordens de magnitude mais lento
-que PCOV, e o efeito é este:
+que PCOV, e o efeito era este:
 
 | Combinação | Tempo |
 |---|---|
@@ -480,20 +559,66 @@ Instalar PCOV no ambiente de desenvolvimento e no job de baseline do CI:
 pecl install pcov
 ```
 
-E, no CI, o job dedicado que a doc do Pest recomenda — nunca `--tia` no job que roda a suíte,
-que deve rodar tudo:
+No Windows não é `pecl install`: é baixar a DLL de PCOV que casa com a assinatura do PHP
+(8.4, **ZTS**, VC22, x64), pôr em `ext/` e declarar `extension=pcov` + `pcov.enabled=1` no
+`php.ini`.
+
+E, no CI, um job dedicado — nunca `--tia` no job que roda a suíte, que deve rodar tudo. **Mas a
+linha abaixo é palpite, não medição**, e está aqui só como ponto de partida:
 
 ```yaml
 - run: vendor/bin/pest --tia --coverage --fresh   # job de baseline, artefato pest-tia-baseline
 ```
 
-O `.github/workflows/ci.yml` hoje usa `coverage: none` nos três jobs, que é o correto para eles —
-o baseline do TIA seria um quarto job.
+O TIA do Pest 5 **não** é um artefato solto: ele guarda estado próprio (`coverage.bin.gz`,
+`Tia.php:89`), resolve o *default branch* de que os outros branches herdam o baseline (daí
+`TiaRequiresRemote` e `TiaRequiresDefaultBranch`, e o `pest()->tia()->defaultBranch()` que as duas
+sugerem) e tem `--baselined` / `--refetch` / `--locally` para isso (`Tia.php:55-63`). Um quarto
+job só entrega ganho se esse estado **persistir entre execuções**; sem isso ele reconstrói o
+baseline toda vez, gasta minutos e não acelera nada. Quem for fazer, lê o `Tia.php` primeiro.
 
-### Por que não foi feito agora
+O `.github/workflows/ci.yml` hoje usa `coverage: none` nos três jobs, que é o correto para eles.
+**Deliberadamente não foi adicionado um quarto**: a suíte inteira já roda verde em minutos, o
+ganho do TIA é local, e um job de baseline sem persistência seria custo sem benefício.
+
+### Resolução — 2026-08-22, e por que ela não vale para as outras máquinas
+
+PCOV **1.0.12** instalado, com autorização explícita do usuário. No Windows não é
+`pecl install`: é a DLL que casa com a assinatura exata do PHP.
+
+| Item | Valor |
+|---|---|
+| Assinatura do PHP | `API20240924`, **TS**, `VS17`, x64 (PHP 8.4.10 ZTS VC22) |
+| Artefato | `php_pcov-1.0.12-8.4-**ts**-vs17-x64.zip`, de `windows.php.net/downloads/pecl/releases/pcov/1.0.12/` |
+| DLL | `C:\php-8.4.10\ext\php_pcov.dll` |
+| `php.ini` | `extension=pcov` + `pcov.enabled=1` |
+| Backup do ini | `C:\php-8.4.10\php.ini.bak-2026-08-22-pcov` |
+
+**O `xdebug.mode` não foi tocado, de propósito.** O `Selector::select()` do php-code-coverage testa
+PCOV **antes** do Xdebug quando a granularidade é por linha
+(`vendor/phpunit/php-code-coverage/src/Driver/Selector.php:30-34`), então os dois convivem: Xdebug
+segue servindo debug/step, PCOV atende cobertura. Confirmado — o `Selector` devolve
+`PCOV 1.0.12`. As duas linhas do ini são obrigatórias porque `Runtime::hasPCOV()` exige extensão
+carregada **e** `pcov.enabled === '1'` (`vendor/sebastian/environment/src/Runtime.php:243`).
+
+### O ganho, medido
+
+| Comando | Antes (Xdebug) | Depois (PCOV) |
+|---|---|---|
+| `pest --tia` em série, run completo | **abortado após 35 min** sem terminar | `--tia --fresh`: **24m59s**, 559 casos, 553 passados, 6 skipped, 1.603 asserções |
+| `pest --tia` na sequência, sem mudança de código | não chegava a existir | **6,4 s** de suíte (18,4 s de parede, com boot) |
+
+É o ponto todo do TIA: o `--fresh` grava o grafo uma vez e caro; a partir daí a suíte inteira
+custa segundos. A matriz de comandos da seção seguinte continua valendo para `--parallel` × browser
+— o que mudou aqui é só o driver de cobertura.
+
+### Por que continua aberta para os outros
 
 Instalar extensão PHP é mudança de **ambiente**, não de código: não entra num commit, não é
-revisável em PR, e afeta a máquina de quem rodar. É decisão de quem mantém o ambiente.
+revisável em PR, e afeta a máquina de quem rodar. É a razão de a coluna "Onde" dizer *ambiente
+(não é código)*, e **nenhum commit fecha este item para quem clonar o kit** — cada máquina precisa
+da DLL que casa com a própria assinatura de PHP. O CI segue com `coverage: none` nos três jobs, que
+é o correto para eles.
 
 O contorno usado nesta wiki: `pest --parallel --group=kit` para o backend (196 s, verde) e
 `pest --testsuite=Browser` em série para as telas (120 s, verde). Cobre o mesmo, sem o TIA.

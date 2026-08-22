@@ -82,8 +82,38 @@ return [
         |------------------------------------------------------------------
         */
 
+        /*
+        |------------------------------------------------------------------
+        | Por que os três canais do kit têm driver por env e um `handler`
+        |------------------------------------------------------------------
+        |
+        | Os canais 'ai', 'tenancy' e 'autenticacao' leem o driver de LOG_KIT_DRIVER, e o
+        | phpunit.xml fixa `monolog` nele. Sem isso a suíte escreve nos logs de trabalho de
+        | quem a roda — medido: 4.463 linhas e 1,1 MB num dia em `autenticacao-*.log`, 1.033
+        | delas de `[User@canAccessPanel]`. Ver DT-10 em
+        | wikis/specs/feature/wiki-regressao-telas/regressao-de-telas/06-divida-tecnica.md.
+        |
+        | Duas armadilhas, as duas medidas contra o vendor:
+        |
+        | 1. `LOG_CHANNEL=null` **não** basta. Ele troca só o canal DEFAULT, e as 60 chamadas
+        |    de log do kit são `Log::channel('ai'|'tenancy'|'autenticacao')` nomeadas.
+        |
+        | 2. `LOG_KIT_DRIVER=null` **não** funciona, e falha em SILÊNCIO. Não existe
+        |    `createNullDriver` no `LogManager` (os drivers estão em
+        |    `vendor/laravel/framework/src/Illuminate/Log/LogManager.php:260-433`; `resolve()`
+        |    estoura em `:240`), e o `env()` do Laravel converte a string "null" em `null` de
+        |    verdade — então `resolve()` lança, o `get()` (`:213`) captura o Throwable e
+        |    devolve o **emergency logger**, que grava em `storage/logs/laravel.log`. O log
+        |    continuaria em disco, no arquivo errado, com um `emergency` por canal.
+        |
+        | O `null` é um CANAL (abaixo), não um driver: `monolog` + `NullHandler`. Daí a forma
+        | usada aqui — driver por env e `handler` sempre presente. `createDailyDriver` ignora
+        | a chave `handler`; `createMonologDriver` (`:433`) é quem a usa.
+        */
+
         'ai' => [
-            'driver'               => 'daily',
+            'driver'               => env('LOG_KIT_DRIVER', 'daily'),
+            'handler'              => NullHandler::class,
             'path'                 => storage_path('logs/ai.log'),
             'level'                => env('LOG_AI_LEVEL', env('LOG_LEVEL', 'debug')),
             'days'                 => 14,
@@ -91,7 +121,8 @@ return [
         ],
 
         'tenancy' => [
-            'driver'               => 'daily',
+            'driver'               => env('LOG_KIT_DRIVER', 'daily'),
+            'handler'              => NullHandler::class,
             'path'                 => storage_path('logs/tenancy.log'),
             'level'                => env('LOG_TENANCY_LEVEL', env('LOG_LEVEL', 'debug')),
             'days'                 => 14,
@@ -99,7 +130,8 @@ return [
         ],
 
         'autenticacao' => [
-            'driver'               => 'daily',
+            'driver'               => env('LOG_KIT_DRIVER', 'daily'),
+            'handler'              => NullHandler::class,
             'path'                 => storage_path('logs/autenticacao.log'),
             'level'                => env('LOG_LEVEL', 'debug'),
             'days'                 => 14,

@@ -151,8 +151,8 @@
 - [x] `vendor/bin/pint --dirty --format agent` limpo, `composer types:check` 0 erros
 - [x] `php artisan test --group=kit` — **197 passando, 0 falhando** (baseline medido antes de tocar
       em qualquer coisa: 173, e 173 + 24 casos novos = 197); suíte rodada duas vezes
-- [ ] `git commit` — três, na ordem do plano. **Não feito**: a instrução da execução pediu a árvore
-      suja
+- [x] `git commit` — três, na ordem do plano. Não feito **naquela sessão** (a instrução pediu a árvore
+      suja); commitado e mergeado em `main` (`git branch --no-merged main` vazio)
 
 ## Desvios do Plano
 

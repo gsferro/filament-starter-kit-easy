@@ -72,14 +72,14 @@
 - [x] `364c767` — `:memo:` dívida técnica
 - [x] `7b7a4e8` — `:recycle:` fusão dos CT-B de smoke + ordem das assertions
 - [x] `9bc437a` — `:memo:` wiki
-- [ ] `:memo:` relatório de QA + correções que ele exigiu
+- [x] `:memo:` relatório de QA + correções que ele exigiu — `07-relatorio-qa.md`
 
 ## Testes
 
-- [ ] `tests/Browser/TelasDoKitTest.php` — CT-B01 a CT-B04
+- [x] `tests/Browser/TelasDoKitTest.php` — CT-B01 a CT-B03 (`:39`, dataset de rotas) e CT-B04 (`:146`, telas públicas)
 - [x] `tests/Browser/PerfisTest.php` — CT-B05 (dataset de 3), CT-B06 — **verdes**
 - [x] `admin`, `infra` e `panel_user` entram no seu painel e veem `403` legível no negado
-- [ ] `tests/Browser/TemaEscuroTest.php` — CT-B07, CT-B08, CT-B09
+- [x] `tests/Browser/TemaEscuroTest.php` — CT-B07 (`:26`) e CT-B08 (`:44`) verdes; **CT-B09 nasce `->todo()`** de propósito (`:74`, ver QA-03 do `07`)
 
 ## Verificação Final
 
@@ -103,7 +103,7 @@
 - [x] Candidatos a rule apresentados ao usuário — **ambos aprovados**:
       `.ai/rules/testes.md` (glob `tests/**`) e `.ai/rules/testes-browser.md`
       (glob `tests/Browser/**`), com o `index.md` atualizado
-- [ ] `git commit`
+- [x] `git commit` — branch mergeada em `main`; CI verde em `1a83eec`, com o job `Testes de tela (Pest browser)`
 
 ## Blockers
 

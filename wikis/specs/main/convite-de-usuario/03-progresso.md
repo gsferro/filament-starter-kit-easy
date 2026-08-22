@@ -156,7 +156,7 @@ PHPStan level 6 limpo, Pint limpo.
 - [x] `php artisan test --group=kit` — 130/130
 - [x] `composer types:check` — 0 erros
 - [x] `git status --short` limpo depois da suíte (o `--ignore-existing-policies` segurou as policies)
-- [ ] `git commit` — deixado na árvore de trabalho, por instrução
+- [x] `git commit` — deixado na árvore de trabalho naquela sessão, por instrução; commitado e mergeado em `main` (`git branch --no-merged main` vazio)
 
 ## Blockers
 

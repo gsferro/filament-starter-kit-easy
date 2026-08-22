@@ -75,6 +75,17 @@
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>
+        <!--
+            DT-10: sem estas duas a suíte escreve no storage/logs real.
+
+            A segunda é a que importa: os canais do kit são Log::channel() nomeado, e
+            LOG_CHANNEL só troca o default. E o valor é `monolog`, NÃO `null` — não existe
+            driver `null` no LogManager, e o env() do Laravel converteria a string "null" em
+            null de verdade, caindo no emergency logger (= storage/logs/laravel.log). O
+            porquê completo está no comentário de config/logging.php.
+        -->
+        <env name="LOG_CHANNEL" value="null"/>
+        <env name="LOG_KIT_DRIVER" value="monolog" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

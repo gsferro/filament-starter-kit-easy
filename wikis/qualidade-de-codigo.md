@@ -215,23 +215,44 @@ pagar a triagem deixa o gate vermelho, e gate vermelho por ruído ensina a ignor
 
 ## Medido e recusado — para não ser proposto de novo
 
-Duas ideias que parecem óbvias, foram medidas e **não pagam**. O número está aqui para poupar a
+Ideias que parecem óbvias, foram medidas e **não pagam**. O número está aqui para poupar a
 próxima pessoa de refazer a medição.
 
-### TIA (`--tia`) não dá agilidade neste projeto
+> Uma delas — o TIA — **foi revertida** em 2026-08-22, quando a medição que a sustentava se
+> mostrou errada. Recusa registrada não é recusa permanente: ela vale enquanto o número vale.
 
-Três motivos independentes, e qualquer um deles basta:
+### TIA (`--tia`) — recusa **revista** em 2026-08-22
+
+> Esta entrada já não pertence a "recusado". O motivo 2 abaixo estava **errado em duas frentes** e
+> era o que sustentava a recusa: dizia que o ambiente não tinha driver de cobertura nenhum, e na
+> mesma frase media com Xdebug — contradição dentro do próprio item. O ambiente **tinha** Xdebug
+> 3.4.4 (`php -v` sempre imprimiu `with Xdebug v3.4.4`), e desde 2026-08-22 tem **PCOV 1.0.12**.
+> Com PCOV, o TIA **dá** agilidade, e muita. Ver DT-11 em
+> `wikis/specs/feature/wiki-regressao-telas/regressao-de-telas/06-divida-tecnica.md`.
+
+| Comando | Antes (Xdebug) | Depois (PCOV 1.0.12) |
+|---|---|---|
+| `pest --tia --fresh`, série, run completo | abortado após 35 min | **24m59s** — 559 casos, 553 passados, 6 skipped |
+| `pest --tia` na sequência, sem mudança de código | não chegava a existir | **6,4 s** de suíte (18,4 s de parede) |
+
+O `--fresh` grava o grafo uma vez e caro; a partir dele a suíte inteira custa segundos.
+
+**O que continua verdadeiro**, e é o que resta da recusa original:
 
 1. **Ele é inerte no comando que mais se roda.** `--testsuite`, `--group` e `--filter` estão na
    lista `PARTIAL_SELECTION_FLAGS` do Pest, que desliga o TIA com
    `TIA does not apply to partial runs`. O `composer test:kit` usa `--testsuite=Kit,Tenancy`.
-2. **Exige driver de cobertura**, PCOV ou Xdebug, e o ambiente não tem nenhum dos dois. Com Xdebug
-   em série, não termina — medido, abortado após 35 min.
-3. **Sem filtro, ele arrasta o browser.** Um `pest` sem `--testsuite` inclui `tests/Browser`, e o
-   `pest-plugin-browser` sobe o Playwright já na COLETA.
+   Ou seja: o ganho existe, mas **só para quem trocar o hábito** e rodar `pest --tia` puro.
+2. **Sem filtro, ele arrasta o browser.** Um `pest` sem `--testsuite` inclui `tests/Browser`, e o
+   `pest-plugin-browser` sobe o Playwright já na COLETA. No run medido acima isso funcionou — mas é
+   o que faz o `--fresh` custar 25 minutos em vez de poucos.
+3. **PCOV é por máquina, não por commit.** Nenhum `composer install` o traz; quem clonar o kit
+   precisa instalar a DLL que casa com a própria assinatura de PHP. O CI segue com
+   `coverage: none`, que é o correto para ele.
 
-Ele segue ligado localmente pelo `tests/Pest.php` (`pest()->tia()->locally()`), que é grátis, e
-desligado em CI, onde o pipeline deve rodar a suíte completa.
+O TIA já vem configurado em `tests/Pest.php:128` —
+`pest()->tia()->defaultBranch('main')->locally()` —, ligado no desenvolvimento e desligado sozinho
+em CI, onde o pipeline deve rodar a suíte completa.
 
 ### Não existe teste lento para consertar
 

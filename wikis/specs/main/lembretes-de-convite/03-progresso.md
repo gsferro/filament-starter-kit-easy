@@ -138,7 +138,7 @@
       mantido foi `'enviado_em'` no `$context` de `enviar()` (é sempre "agora" naquele instante, e a
       própria linha de log tem timestamp) — fica porque o plano o pede e porque ele marca, no mesmo
       registro, de onde o cronograma passa a contar.
-- [ ] `git commit`
+- [x] `git commit` — commitado e mergeado em `main` (`git branch --no-merged main` vazio)
 
 ## Blockers
 

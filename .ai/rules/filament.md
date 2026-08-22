@@ -139,3 +139,10 @@ Em **Resource** são dois: `canAccess()` E `shouldRegisterNavigation()` — é o
 Exemplo do padrão certo: `App\Filament\Admin\Pages\HubDeAdministracao::canAccess()`.
 
 A rota fica registrada e responde 403 (não 404). Tirá-la do ar exigiria recortar o `discoverPages()` do provider, e aí o Shield deixa de gerar a permission — a descoberta dele usa `$panel->getPages()` cru (`vendor/bezhansalleh/filament-shield/src/Concerns/HasEntityDiscovery.php:30-34`). Ver ADR-02 de `wikis/specs/feature/v1-enriquecimento-kit/hub-de-cards-opcional/`.
+
+## CardItem do hub sempre por DescobreCardsDoPainel, nunca à mão
+`CardItem` **não verifica autorização**. `vendor/harvirsidhu/filament-cards/src/CardItem.php:22` não tem `canAccess()` — a única guarda da classe é `Concerns/CanBeHidden.php:13,20`, que avalia só `visible`/`hidden`. A verificação de acesso do pacote vive apenas dentro de `CardsPage::discoverClusterCards()` (`src/Filament/Pages/CardsPage.php:89,94`) e da descoberta de páginas de Resource (`:151`), que exigem Cluster ou página de Resource.
+
+Consequência de escrever um cartão à mão: ele aparece para **todo mundo** e só devolve 403 no clique. Vaza a existência da tela e oferece um caminho que falha depois.
+
+Regra: todo cartão de hub sai de `app/Filament/Concerns/DescobreCardsDoPainel.php`, que filtra pelo `canAccess()` de cada destino. `CardItem::make()` direto num `->cards()` é o defeito, não o atalho.
