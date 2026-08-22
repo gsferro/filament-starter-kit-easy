@@ -167,7 +167,7 @@ alcançáveis por URL fixa, e são estas:
 | Backups | `/infra/backup-runs` | Page (plugin) | Sim |
 | Filas | `/infra/queue-monitors` | Resource (plugin) | Sim |
 | Filas — falhas | `/infra/queue-monitors/failures` | Resource (plugin) | Sim |
-| Filas — pendentes | `/infra/queue-monitors/pending` | Resource (plugin) | Sim |
+| Filas — pendentes | `/infra/queue-monitors/pending` | Resource (plugin) | **Não — a rota não existe na suíte** ⁽¹⁾ |
 | Auditoria | `/infra/audits` | Resource (plugin) | Sim |
 | Trilha de acesso | `/infra/authentication-logs` | Resource (plugin) | Sim |
 | Logs | `/infra/logs` | Page (plugin) | Sim |
@@ -178,6 +178,14 @@ alcançáveis por URL fixa, e são estas:
 | Comandos | `/infra/command-center/commands` | Page (plugin) | Sim |
 | Histórico de comandos | `/infra/command-center/history` | Page (plugin) | Sim |
 | Definições de comando (lista / criar) | `/infra/command-center/definitions`, `.../create` | Resource (plugin) | Sim |
+
+> ⁽¹⁾ **Correção de 2026-08-22, achada pela guarda de DT-07.** Esta linha estava errada desde a
+> escrita: a página de pendentes só é registrada quando `config('queue.default') === 'database'`
+> (`vendor/croustibat/filament-jobs-monitor/src/Models/QueueJob.php:59-64`), e o `phpunit.xml` fixa
+> `QUEUE_CONNECTION=sync`. O CT-B visitava a página de **404**, onde
+> `assertNoJavaScriptErrors()` passa. A rota saiu do inventário; as **52 telas** citadas neste
+> arquivo e no `00-requisito.md` são portanto **51** nesta suíte. Ver a resolução de DT-07 em
+> `06-divida-tecnica.md`.
 
 ### Fora do lote — e por quê
 
