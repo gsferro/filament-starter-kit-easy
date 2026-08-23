@@ -69,9 +69,9 @@ o ultimo item da fila da auditoria aberta na 0.18.3.
   cadastrado e **convidado**, nao recusado. A wiki `convite-para-usuario-existente` havia previsto
   esta inversao por escrito e o laco nunca foi fechado.
 
-## [Nao lancado]
+## [0.18.7] - 2026-08-23
 
-Fecha o ledger de divida tecnica — 11 de 11 — e encerra o item de TTY do instalador.
+Release de correcao. Fecha o ledger de divida tecnica — 11 de 11 — e encerra o item de TTY do instalador.
 
 ### Corrigido
 
