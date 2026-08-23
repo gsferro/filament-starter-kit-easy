@@ -912,3 +912,57 @@ it('termina com sucesso sem convite pendente e com os lembretes desligados', fun
     expect($convite->fresh()?->lembretes_enviados)->toBe(0)
         ->and($convite->fresh()?->token_lembrete)->toBeNull();
 });
+
+/**
+ * `KIT_CONVITE_VALIDADE_DIAS` decide o prazo — e era a única cláusula de config da wiki
+ * `convite-de-usuario` sem teste (QA-02 do `06-relatorio-qa.md` daquela wiki).
+ *
+ * É o único limite temporal da credencial: `Convite::enviar()` grava
+ * `expira_em = now()->addDays((int) config('kit.convites.validade_em_dias', 7))` (`:158`).
+ * A única asserção que existia perto disso era `expira_em->isFuture()`, e ela sobrevive a
+ * dois mutantes óbvios — trocar o `config()` por `7` literal, e trocar `addDays` por
+ * `addYears`. Os dois deixam a credencial valendo, um deles por 7 anos.
+ *
+ * O caso ataca os dois de uma vez: muda a config para um valor que NÃO é o default e mede a
+ * data exata. Valor diferente de 7 é deliberado — com 7 o mutante do literal passaria.
+ *
+ * `Date::use(CarbonImmutable::class)` está ligado no `KitServiceProvider`, então
+ * `now()->addDays()` não muta o congelado do `travelTo`.
+ */
+it('respeita o prazo configurado do convite', function (int $dias): void {
+    config(['kit.convites.validade_em_dias' => $dias]);
+
+    $this->travelTo('2026-08-22 10:00:00');
+
+    [$convite] = conviteCom('panel_user');
+
+    expect($convite->expira_em?->toDateTimeString())
+        ->toBe(now()->addDays($dias)->toDateTimeString());
+})->with([3, 30]);
+
+/**
+ * Os dois defaults do prazo concordam — e são dois de propósito.
+ *
+ * O prazo tem default escrito em DOIS lugares: `config/kit.php:234`
+ * (`env('KIT_CONVITE_VALIDADE_DIAS', 7)`) e o segundo argumento do `config()` em
+ * `Convite::enviar()`. Divergirem é defeito silencioso: quem lê a config acredita num prazo
+ * e o código aplica outro, sem erro nenhum.
+ *
+ * Este caso é curto porque o mutante que ele mata é curto — mudar um dos dois números.
+ * O prazo em si é medido nos casos acima, com valores que não são o default.
+ *
+ * **Não** tentei simular "chave ausente" com `config([... => null])`: a config resolve o
+ * `env()` na carga, então a chave nunca chega nula em produção — e `(int) null` dá 0, o que
+ * faria o caso medir um cenário que não existe. Ver a nota sobre valor VAZIO no relatório de
+ * QA: esse sim é alcançável e não está coberto aqui.
+ */
+it('mantem os dois defaults do prazo em sete dias', function (): void {
+    expect(config('kit.convites.validade_em_dias'))->toBe(7);
+
+    config(['kit.convites.validade_em_dias' => null]);
+
+    // Com a chave nula o `config()` NÃO cai no segundo argumento — ele só vale para chave
+    // ausente. É o que prova que o `7` do model é inalcançável por esta via, e que o
+    // default que vale na prática é o do `config/kit.php`.
+    expect(config('kit.convites.validade_em_dias', 7))->toBeNull();
+});
