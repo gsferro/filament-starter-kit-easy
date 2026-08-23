@@ -88,8 +88,8 @@ por `aceito_em`, prazo por `expira_em`, e o `where(closure)` que impede o `OR` d
   `enviar()`, `expect($convite->expira_em->diffInDays(now()))->toBe(1)` — e o irmão que
   prova o default 7 sem env.
 
-### QA-03 — CT-15 do `04` diz o contrário do que o código faz hoje · Minor · destino 1
-
+### QA-03 — CT-15 do `04` diz o contrário do que o código faz hoje · Minor · destino 1 · ✅ **RESOLVIDO em 2026-08-23**
+ · ✅ **RESOLVIDO em 2026-08-23**
 - **Dimensão**: A (rastreabilidade)
 - **Relacionado a**: `04:535-573` (CT-15: *"e-mail já cadastrado é recusado nas duas
   pontas"*), `03-progresso.md:175`, `App\Models\Convite::aceitar()`
@@ -125,7 +125,7 @@ o que a wiki declara e a realidade contradiz, mais a cláusula de plano sem CT.
 | CT-11/12 contexto do papel | 2 | `contextoDoPapel()` | `atribui papel de app…`, `atribui papel de admin…` | OK |
 | CT-13 layout do auth designer | 6 | `$layout` redeclarado | `veste o layout do auth designer sem vazar…` | OK |
 | CT-14 login sem "Cadastre-se" | 5 | `TelaLogin` | `nao oferece cadastro na tela de login` | OK |
-| CT-15 e-mail já cadastrado | 2 | **invertido** por wiki irmã | `convida quem ja tem conta em vez de recusar` | ⚠️ **QA-03** |
+| CT-15 e-mail já cadastrado | 2 | **invertido** por wiki irmã | `convida quem ja tem conta em vez de recusar` | ✅ |
 | CT-16 URL fora do segmento de org | 3 | rota nativa do painel | `mantem a url de aceite fora do segmento…` | OK |
 | **passo 7 — `KIT_CONVITE_VALIDADE_DIAS`** | **7** | `Convite.php:158`, `config/kit.php:234` | `ConviteTest` — *respeita o prazo configurado* (3 e 30 dias) + *mantem os dois defaults* | ✅ |
 | **rota pública sem throttle** | **4** | `RegistroPorConvite::mount/recusar` | **— nenhum** | ❌ **QA-01** |

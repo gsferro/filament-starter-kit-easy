@@ -12,7 +12,7 @@ O efeito é uma parede no caso mais comum de SaaS multi-tenant: a consultora que
 clientes, a funcionária que trabalha em duas unidades. Hoje só o `master_global` resolve, por
 `/admin` → Organizações → *Vincular usuário*
 (`app/Filament/Admin/Resources/Tenants/RelationManagers/UsersRelationManager.php:56`). O
-`admin_organizacao` — a persona criada justamente para dar autonomia à organização — **não
+`admin_app` — a persona criada justamente para dar autonomia à organização — **não
 consegue**.
 
 Depois deste plano, convidar um endereço que já tem conta deixa de ser erro e passa a ser
