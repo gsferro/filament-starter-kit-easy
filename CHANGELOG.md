@@ -69,6 +69,35 @@ o ultimo item da fila da auditoria aberta na 0.18.3.
   cadastrado e **convidado**, nao recusado. A wiki `convite-para-usuario-existente` havia previsto
   esta inversao por escrito e o laco nunca foi fechado.
 
+## [Nao lancado]
+
+Um caminho nao destrutivo para refazer a customizacao, e a correcao de uma recomendacao
+perigosa que a 0.18.7 escreveu no README.
+
+### Corrigido
+
+- **O README recomendava `kit:install --force` sem dizer que ele APAGA o banco.** A 0.18.7
+  documentou o caminho do Windows como "instale normalmente e rode a configuracao depois, que da
+  no mesmo" — verdade no minuto seguinte a instalacao, destrutivo depois: o `--force` apaga o
+  SQLite antes de perguntar (`KitInstall.php`). Quem lesse aquela linha uma semana depois perdia
+  o banco. Agora o README diz a ordem ("rode logo depois de instalar, com o banco so com dados de
+  seed") e oferece a alternativa nao destrutiva.
+- **O aviso do instalador** tambem apontava para o `--force` sem ressalva. Passa a dizer que ele
+  recria o banco — "inocuo neste instante, destrutivo depois" — e a oferecer o `--custom`.
+
+### Adicionado
+
+- **`php artisan kit:install --custom`**: refaz **nome e cor** sem tocar em banco, seeder nem
+  asset. Sai antes de `prepararBancoSqlite()`, entao nao passa perto do `File::delete()`.
+
+  O recorte e conservador de proposito, e o comando imprime o motivo de cada corte: **banco**
+  exige recriar (trocar SQLite por PostgreSQL depois do `migrate` e outra instalacao);
+  **multi-organizacao** idem (as tabelas de permissao so nascem com a coluna de contexto antes do
+  `migrate`); e **credenciais do administrador** passam pelo `UsuarioAdminSeeder`, que faz
+  `firstOrCreate` por e-mail — mudar o endereco criaria um SEGUNDO `master_global` com o primeiro
+  vivo. Um comando que promete "refazer as perguntas" e entrega dois administradores e pior que
+  nao existir.
+
 ## [0.18.7] - 2026-08-23
 
 Release de correcao. Fecha o ledger de divida tecnica — 11 de 11 — e encerra o item de TTY do instalador.

@@ -168,6 +168,88 @@ final class CustomizadorDaInstalacao
     }
 
     /**
+     * As perguntas que podem ser refeitas SEM tocar no banco — e por que são só duas.
+     *
+     * O `--force` do `kit:install` refaz as cinco perguntas, mas apaga o SQLite antes
+     * (`KitInstall.php:229-231`). Isso é inócuo no minuto seguinte à instalação e destrutivo
+     * depois. Este caminho existe para o "depois", e por isso o recorte é conservador:
+     *
+     * - **nome** e **cor** são reescrita de `.env`, e valem no próximo request. Entram aqui.
+     * - **banco** exige recriar: trocar SQLite por PostgreSQL depois do `migrate` não é
+     *   reescrita de config, é outra instalação.
+     * - **multi-organização** idem, e a razão está no `kit:tenancy`: as tabelas de permissão só
+     *   nascem com a coluna de contexto se a flag estiver ativa ANTES do migrate.
+     * - **credenciais do admin** são a menos obvia das três, e a mais perigosa. O
+     *   `UsuarioAdminSeeder` faz `User::firstOrCreate(['email' => config('kit.admin.email')], …)`:
+     *   mudar o e-mail no `.env` e semear de novo cria um SEGUNDO `master_global` e deixa o
+     *   primeiro vivo, com a senha antiga. Um comando que promete "refazer as perguntas" e
+     *   entrega dois administradores é pior que não existir.
+     *
+     * Quem precisa das três de fora tem caminho, e o comando o imprime: `--force` para recomeçar
+     * do zero, `kit:tenancy` para a multi-organização, e a tela de perfil para a senha.
+     *
+     * @return array{nome: string, cor: string}|null `null` quando o usuário desistiu
+     */
+    public function perguntarSemBanco(): ?array
+    {
+        note(
+            'Refazendo só o que não toca o banco: nome e cor. '
+            .'Banco, multi-organização e credenciais exigem recriar — veja o aviso no fim.'
+        );
+
+        if (! confirm('Personalizar nome e cor agora?', default: true)) {
+            $this->pulou('usuario');
+
+            return null;
+        }
+
+        return [
+            'nome' => text(
+                label: 'Nome do projeto',
+                default: (string) config('app.name'),
+                required: true,
+                hint: 'Vai para APP_NAME, e é o que aparece no topo dos painéis.',
+            ),
+            /*
+             * O `(string)` não é para calar o analisador: o `select()` do Prompts devolve
+             * `int|string`, porque uma lista de opções sem chaves explícitas vem com índice
+             * numérico. Aqui as chaves são strings por construção (`''` mais o
+             * `array_combine`), e o valor vai direto para o `.env` — normalizar na fronteira é
+             * o que torna o tipo declarado verdadeiro em vez de suposto.
+             */
+            'cor' => (string) select(
+                label: 'Cor primária dos painéis',
+                options: ['' => 'Padrão do Filament (âmbar)', ...array_combine(self::CORES, self::CORES)],
+                default: (string) config('kit.cor_primaria', ''),
+            ),
+        ];
+    }
+
+    /**
+     * Aplica o par nome/cor e devolve o resumo. Não toca em banco, seeder nem asset.
+     *
+     * @param  array{nome: string, cor: string}  $respostas
+     * @return list<array{0: string, 1: string}>
+     */
+    public function aplicarSemBanco(array $respostas): array
+    {
+        $env = $this->base.DIRECTORY_SEPARATOR.'.env';
+
+        SubstituicaoEmArquivo::definirNoEnv($env, 'APP_NAME', $respostas['nome']);
+        SubstituicaoEmArquivo::definirNoEnv($env, 'KIT_COR_PRIMARIA', $respostas['cor']);
+
+        Log::debug(
+            '[CustomizadorDaInstalacao@aplicarSemBanco] Nome e cor reescritos | cor: '
+            .($respostas['cor'] === '' ? 'padrao' : $respostas['cor']),
+        );
+
+        return [
+            ['Nome do projeto', $respostas['nome']],
+            ['Cor primária', $respostas['cor'] === '' ? 'Padrão do Filament' : $respostas['cor']],
+        ];
+    }
+
+    /**
      * Escreve as respostas e devolve o resumo, já pronto para impressão.
      *
      * @param  array<string, mixed>  $respostas

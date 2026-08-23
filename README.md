@@ -38,13 +38,28 @@ Antes de tocar no banco, ele **pergunta cinco coisas** — como o `laravel new` 
 > `TTY mode is not supported on Windows platform`. O `artisan` recebe pipes, e o instalador se
 > pula pelo próprio guarda de terminal, avisando na tela.
 >
-> **O que fazer**: instale normalmente e rode a configuração depois, que dá no mesmo:
+> **O que fazer**, e a ordem importa:
 >
 > ```bash
-> php artisan kit:install --force
+> php artisan kit:install --force    # as cinco perguntas — RECRIA o banco
 > ```
 >
-> Em Linux, macOS e WSL as perguntas aparecem no `create-project`.
+> Rode **logo depois de instalar**, com o banco ainda só com os dados de seed: aí o `--force` é
+> inócuo. Mais tarde ele é destrutivo, porque apaga o SQLite antes de perguntar.
+>
+> Se já tem dado no banco e quer só o nome e a cor:
+>
+> ```bash
+> php artisan kit:install --custom   # nome e cor, sem tocar em nada
+> ```
+>
+> As outras três perguntas não têm versão não destrutiva, e o comando explica por quê: banco e
+> multi-organização exigem recriar (as tabelas de permissão só nascem com a coluna de contexto
+> antes do `migrate`), e as credenciais do administrador passam pelo seeder, que faz
+> `firstOrCreate` por e-mail — mudar o endereço criaria um segundo administrador em vez de
+> renomear o primeiro. Para trocar senha, use a tela de perfil do painel.
+>
+> Em Linux, macOS e WSL as perguntas aparecem no `create-project` e nada disso é necessário.
 
 > A multi-organização é o item que mais compensa decidir agora: ligada na instalação, ela custa zero; ligada depois, o `kit:tenancy` **recria o banco** (as tabelas de permissão só nascem com a coluna de contexto se a flag estiver ativa antes do migrate).
 

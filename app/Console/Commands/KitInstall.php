@@ -36,7 +36,8 @@ class KitInstall extends Command
     protected $signature = 'kit:install
         {--no-npm : Pula a instalação e o build dos assets front-end}
         {--no-seed : Não popula o banco (papéis, usuário inicial, agentes de IA)}
-        {--force : Recria o banco SQLite do zero (apaga os dados existentes) e refaz as perguntas}
+        {--force : Recria o banco SQLite do zero (APAGA os dados existentes) e refaz as cinco perguntas}
+        {--custom : Refaz só o que não toca o banco — nome e cor — e sai. Não apaga nada}
         {--no-custom : Pula as perguntas de customização e instala com os padrões}
         {--no-support : Pula o convite para dar uma estrela ao kit no GitHub}';
 
@@ -63,6 +64,18 @@ class KitInstall extends Command
         $this->components->info('Instalando o starter-kit-easy...');
 
         $this->prepararEnv();
+
+        /*
+         * `--custom` sai daqui, e é o ponto: ele existe para quem JÁ instalou.
+         *
+         * O `--force` refaz as cinco perguntas, mas apaga o SQLite antes (ver
+         * `prepararBancoSqlite()`) — inócuo no minuto seguinte à instalação, destrutivo depois.
+         * Este ramo cobre o "depois" sem tocar em banco, seeder nem asset.
+         */
+        if ($this->option('custom')) {
+            return $this->customizarSemBanco();
+        }
+
         $this->customizar();
         $this->gerarAppKey();
         $this->prepararBancoSqlite();
@@ -117,6 +130,45 @@ class KitInstall extends Command
     }
 
     /**
+     * O caminho do `--custom`: reescreve nome e cor, e diz o que ele NÃO faz.
+     *
+     * O aviso final não é rodapé: é o que impede alguém de concluir que "refazer as perguntas"
+     * cobre as cinco. As outras três exigem recriar o banco, cada uma por um motivo diferente —
+     * e o das credenciais é o menos obvio, porque o `UsuarioAdminSeeder` faz `firstOrCreate` por
+     * e-mail: mudar o endereço e semear de novo criaria um SEGUNDO `master_global`, com o
+     * primeiro vivo e a senha antiga.
+     */
+    private function customizarSemBanco(): int
+    {
+        $customizador = new CustomizadorDaInstalacao;
+        $respostas    = $customizador->perguntarSemBanco();
+
+        if ($respostas === null) {
+            $this->components->info('Nada alterado.');
+
+            return self::SUCCESS;
+        }
+
+        $this->components->twoColumnDetail('<fg=gray>O que mudou</>', '');
+
+        foreach ($customizador->aplicarSemBanco($respostas) as [$rotulo, $valor]) {
+            $this->components->twoColumnDetail($rotulo, $valor);
+        }
+
+        $this->newLine();
+        $this->components->warn('O que este comando NÃO faz, e por onde vai cada um:');
+        $this->components->bulletList([
+            'Banco de dados — trocar depois do migrate é outra instalação: `php artisan kit:install --force` (APAGA os dados).',
+            'Multi-organização — as tabelas de permissão só nascem com a coluna de contexto antes do migrate: rode `php artisan kit:tenancy` (recria o banco).',
+            'Credenciais do administrador — troque pela tela de perfil do painel; refazer pelo seeder criaria um segundo administrador.',
+        ]);
+
+        $this->components->info('Rode `php artisan config:clear` se estiver com config em cache.');
+
+        return self::SUCCESS;
+    }
+
+    /**
      * As perguntas — só num projeto nascendo, ou numa reinstalação explícita.
      *
      * A decisão inteira vive em `CustomizadorDaInstalacao::devePerguntar()`, com
@@ -153,8 +205,10 @@ class KitInstall extends Command
         }
 
         $this->avisos[] = 'Instalado com os padrões: este terminal não aceitou perguntas '
-            .'(o Composer nem sempre consegue repassá-lo ao script). Para escolher nome, banco, '
-            .'cor, credenciais e multi-organização agora, rode: php artisan kit:install --force';
+            .'(no Windows o Composer nunca repassa o terminal ao script). Para escolher as cinco '
+            .'AGORA, com o banco ainda vazio: php artisan kit:install --force (recria o banco — '
+            .'inócuo neste instante, destrutivo depois). Só nome e cor, sem tocar no banco, a '
+            .'qualquer momento: php artisan kit:install --custom';
     }
 
     /**
