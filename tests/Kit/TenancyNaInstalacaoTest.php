@@ -33,8 +33,27 @@ it('roda a customização antes de preparar o banco e de migrar', function (): v
 it('não recria o banco durante a instalação', function (): void {
     $fonte = File::get((new ReflectionClass(KitInstall::class))->getFileName());
 
-    expect($fonte)->not->toContain('migrate:fresh')
-        ->and($fonte)->not->toContain('kit:tenancy');
+    // `migrate:fresh` segue como busca de texto crua: não existe motivo legítimo para essa
+    // string aparecer neste arquivo, nem em comentário. Se aparecer, é para ser investigado.
+    expect($fonte)->not->toContain('migrate:fresh');
+
+    /*
+     * `kit:tenancy` precisa de oráculo mais fino, e a mudança é para ESTREITAR, não afrouxar.
+     *
+     * A versão anterior proibia a string em qualquer lugar do arquivo, e isso confundia
+     * INVOCAR com CITAR: o `--custom` imprime `php artisan kit:tenancy` como orientação para
+     * quem quer ligar a multi-organização depois — mencionar o comando ao usuário é o oposto de
+     * executá-lo escondido. O oráculo antigo dava falso positivo justamente na mensagem que
+     * existe para evitar que alguém rode o destrutivo sem saber.
+     *
+     * O que a dívida original protege é "a instalação não CHAMA o comando destrutivo", e é isso
+     * que se assere agora, nas duas formas que o kit usa para chamar comando de dentro de
+     * comando. Uma terceira forma (variável, constante) escaparia — e é por isso que o
+     * `migrate:fresh` acima continua cru: as duas asserções juntas cobrem o caminho real, já que
+     * qualquer recriação de banco passa por ele.
+     */
+    expect($fonte)->not->toContain("->call('kit:tenancy'")
+        ->and($fonte)->not->toContain("Artisan::call('kit:tenancy'");
 })->group('kit');
 
 it('alinha as três chaves e o contexto de papéis em memória', function (): void {

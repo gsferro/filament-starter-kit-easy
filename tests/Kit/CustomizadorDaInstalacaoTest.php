@@ -395,3 +395,47 @@ it('cai no palpite "+s" só quando o rótulo é novo', function (string $novo, s
     'Escola'  => ['Escola', 'Escolas'],
     'Loja'    => ['Loja', 'Lojas'],
 ])->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| R9 — o caminho não destrutivo (`--custom`)
+|--------------------------------------------------------------------------
+| O `--force` refaz as cinco perguntas e APAGA o SQLite antes. Isso é inócuo no
+| minuto seguinte à instalação e destrutivo depois — e o README recomendava o
+| `--force` sem dizer isso. O `--custom` cobre o "depois", e o recorte dele é
+| conservador de propósito: só o que vale por reescrita de `.env`.
+*/
+
+it('aplica nome e cor sem tocar em mais nada', function (): void {
+    $env = test()->base.DIRECTORY_SEPARATOR.'.env';
+
+    file_put_contents($env, "APP_NAME=Antigo\nKIT_COR_PRIMARIA=\nDB_CONNECTION=sqlite\n");
+
+    $resumo = customizadorNoTemp()->aplicarSemBanco(['nome' => 'Meu Projeto', 'cor' => 'Blue']);
+
+    $conteudo = (string) file_get_contents($env);
+
+    // Com aspas porque é o que o `SubstituicaoEmArquivo::definirNoEnv()` escreve — asserir a
+    // forma sem aspas passaria a medir a minha expectativa em vez do escritor de `.env`.
+    expect($conteudo)->toContain('APP_NAME="Meu Projeto"')
+        ->and($conteudo)->toContain('KIT_COR_PRIMARIA="Blue"')
+        // A terceira asserção é a que importa: o que ele NÃO mexeu. Um `aplicarSemBanco()` que
+        // reescrevesse DB_CONNECTION quebraria a promessa do nome do método.
+        ->and($conteudo)->toContain('DB_CONNECTION=sqlite');
+
+    expect($resumo)->toHaveCount(2);
+});
+
+/**
+ * A cor vazia volta a ser "Padrão do Filament" no resumo, e não uma linha em branco.
+ *
+ * O `.env` recebe a chave vazia de propósito — é assim que o kit expressa "usa o default do
+ * Filament" —, mas o resumo impresso precisa dizer isso em palavras.
+ */
+it('descreve a cor vazia como padrao do filament', function (): void {
+    file_put_contents(test()->base.DIRECTORY_SEPARATOR.'.env', "APP_NAME=x\nKIT_COR_PRIMARIA=Blue\n");
+
+    $resumo = customizadorNoTemp()->aplicarSemBanco(['nome' => 'x', 'cor' => '']);
+
+    expect($resumo[1])->toBe(['Cor primária', 'Padrão do Filament']);
+});
