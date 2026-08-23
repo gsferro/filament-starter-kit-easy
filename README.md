@@ -32,6 +32,20 @@ Antes de tocar no banco, ele **pergunta cinco coisas** — como o `laravel new` 
 
 **Enter em tudo instala exatamente como antes** — nenhuma pergunta é obrigatória, e a primeira delas é "personalizar agora?", que pula todas de uma vez. Sem terminal (CI, Docker, `--no-interaction`) nada é perguntado. Ao final o instalador mostra o resumo do que mudou, o que continua sendo editado à mão, e oferece rodar os testes do kit.
 
+> **No Windows as perguntas não aparecem, e isso não é bug do kit.** Medido nos dois shells,
+> PowerShell e Git Bash: o Composer nunca liga TTY em Windows — `ProcessExecutor::runProcess()`
+> descarta o modo TTY quando `Platform::isWindows()`, porque o `symfony/process` lançaria
+> `TTY mode is not supported on Windows platform`. O `artisan` recebe pipes, e o instalador se
+> pula pelo próprio guarda de terminal, avisando na tela.
+>
+> **O que fazer**: instale normalmente e rode a configuração depois, que dá no mesmo:
+>
+> ```bash
+> php artisan kit:install --force
+> ```
+>
+> Em Linux, macOS e WSL as perguntas aparecem no `create-project`.
+
 > A multi-organização é o item que mais compensa decidir agora: ligada na instalação, ela custa zero; ligada depois, o `kit:tenancy` **recria o banco** (as tabelas de permissão só nascem com a coluna de contexto se a flag estiver ativa antes do migrate).
 
 ![Instalação do starter-kit-easy em um comando](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/install.gif)
