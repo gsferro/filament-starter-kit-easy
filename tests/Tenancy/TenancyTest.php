@@ -378,3 +378,60 @@ it('exige organizacao ao criar usuario', function (): void {
         'user_id'   => $novo->getKey(),
     ]);
 });
+
+/**
+ * DT-04 — smoke HTTP das telas do `/app`, que era o painel menos coberto dos três.
+ *
+ * A dívida media 15 rotas de `/infra`, 3 de `/admin` e **1** de `/app` em `tests/Kit` — o painel
+ * de negócio, o único que o consumidor do kit usa todo dia, era o menos visitado. Os CT-B cobrem
+ * essas telas em navegador real, que prova mais; mas browser é caro e vive em job separado,
+ * enquanto o smoke HTTP é o que roda no `composer test:kit` depois de um `kit:update`.
+ *
+ * **Aqui, e não em `tests/Kit`, e é o ponto que a correção prescrita errava.** Sem tenancy, o
+ * `UserResource` e o `ConviteResource` do painel de negócio se escondem: um dataset em
+ * `tests/Kit` responderia **403** e passaria por uma asserção frouxa, provando permissão em vez
+ * de "a tela abre". É o mesmo modo de falha que a guarda de DT-07 achou no inventário dos CT-B,
+ * onde um cenário visitava um 404 e passava.
+ *
+ * `assertSuccessful()` e não `assertOk()`: qualquer 2xx serve, o que interessa é não ser 403,
+ * 404 nem 500. E a persona é `admin_app`, que tem a matriz do painel — com `panel_user` metade
+ * destas telas responderia 403 por desenho.
+ *
+ * Fora do dataset, de propósito:
+ * - `hub-do-negocio` — só existe com `KIT_HUB=true`, e o `phpunit.xml` fixa `false`;
+ * - `exceptions` — não é tela do `/app`; está no painel por obrigação técnica do plugin, e o
+ *   `admin_app` **não** tem a permissão (ver a barreira 7 em `AdminDaOrganizacaoTest`);
+ * - `users/{record}/edit` — exige registro, e a edição já tem caso próprio que GRAVA.
+ */
+it('abre as telas do painel de negocio', function (string $rota): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    /*
+     * Só `/projetos` depende disto, e vale para o dataset inteiro por ser inócuo no resto:
+     * `ProjetoResource::canAccess()` exige `kit.demo` (`ProjetoResource.php:81-88`) e o
+     * `phpunit.xml` o fixa em `false`. Sem a linha, aquele caso responde **403** — e foi o que
+     * ele fez na primeira execução. Registro porque é o próprio valor deste smoke: sem ele,
+     * ninguém sabe de cabeça quais telas do `/app` existem sob qual flag.
+     */
+    config(['kit.demo' => true]);
+
+    $acme = tenant('Acme', 'acme');
+    $ana  = papelNaOrganizacao(usuario('ana@example.com'), 'admin_app', $acme);
+
+    $ana->tenants()->attach($acme);
+
+    noPainelDa($acme);
+
+    $this->actingAs($ana)
+        ->get("/app/{$acme->slug}{$rota}")
+        ->assertSuccessful();
+})->with([
+    ''                   => [''],
+    'projetos'           => ['/projetos'],
+    'usuarios'           => ['/users'],
+    'usuario novo'       => ['/users/create'],
+    'convites'           => ['/convites'],
+    'convite novo'       => ['/convites/create'],
+    'convites recebidos' => ['/convites-recebidos'],
+    'meu perfil'         => ['/meu-perfil'],
+]);
