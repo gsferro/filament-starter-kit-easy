@@ -532,7 +532,15 @@ get('/app/login')
 
 ---
 
-## CT-15: e-mail já cadastrado é recusado nas duas pontas
+## CT-15: e-mail já cadastrado é CONVIDADO, não recusado
+
+> **Invertido em 2026-08-23.** Este caso provava as duas barreiras contra e-mail já cadastrado
+> — o `->unique('users','email')` do form e a `RuntimeException` do `aceitar()`. A feature
+> `convite-para-usuario-existente` **removeu as duas de propósito**, e a tabela "Impacto em
+> Features Existentes" do plano dela (`01:155`) previu esta inversão por escrito. O teste real
+> mudou de nome na mesma entrega (`it('convida quem ja tem conta em vez de recusar')`) e este
+> documento ficou para trás. O que se prova hoje: o convite **é criado** para endereço
+> existente, e o aceite **vincula** em vez de recusar.
 
 **Tipo**: `Feature`
 **Arquivo**: `tests/Kit/ConviteTest.php`
@@ -620,7 +628,7 @@ Filament::getPanel('app')->route('auth.register', ['token' => $token]);
 | CT-12 | papel de `/admin` no contexto global | Feature | `tests/Tenancy/ConviteTenancyTest.php` |
 | CT-13 | layout do auth designer, sem vazamento | Feature | `tests/Kit/ConviteTest.php` |
 | CT-14 | login não oferece "Cadastre-se" | Feature | `tests/Kit/ConviteTest.php` |
-| CT-15 | e-mail já cadastrado nas duas pontas | Feature | `tests/Kit/ConviteTest.php` |
+| CT-15 | e-mail já cadastrado é convidado, não recusado | Feature | `tests/Kit/ConviteTest.php` |
 | CT-16 | URL de aceite fora do segmento de organização | Feature | `tests/Tenancy/ConviteTenancyTest.php` |
 
 ### Cobertura dos métodos públicos

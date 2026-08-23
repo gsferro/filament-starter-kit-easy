@@ -983,3 +983,38 @@ it('mantem o default do prazo em sete dias', function (): void {
     expect(ValidadeDoConvite::DIAS_PADRAO)->toBe(7)
         ->and(config('kit.convites.validade_em_dias'))->toBe(7);
 });
+
+/**
+ * A recusa anônima para de escrever uma linha de log por request (QA-01).
+ *
+ * A repro do achado, invertida em guarda: doze `GET` anônimos com token inventado escreviam
+ * **doze** `warning` no channel `autenticacao` — driver `daily`, 14 dias de retenção, e o mesmo
+ * arquivo que o Logs Explorer do `/infra` abre. Um `curl` em laço enchia o disco sem
+ * autenticação nenhuma.
+ *
+ * O que o caso assere, e a ordem importa:
+ *
+ * 1. **as doze continuam sendo recusadas** — o throttle protege o log, não a resposta. Se
+ *    alguém trocar isto por um 429, este caso cai, e é essa a intenção: quem tem token válido
+ *    não pode ser barrado pelo vizinho de NAT, e a pessoa com link expirado tem de continuar
+ *    vendo a mensagem clara em vez de uma tela de erro;
+ * 2. **o log para em cinco** — o teto da janela de 10 minutos.
+ *
+ * Asserir só a segunda deixaria passar a "correção" que barra o request; asserir só a primeira
+ * é o estado anterior ao conserto.
+ */
+it('nao escreve uma linha de log por recusa anonima', function (): void {
+    $canal = espiarAutenticacao();
+
+    $respostas = collect(range(1, 12))
+        ->map(fn (): int => $this->get('/app/register?token='.bin2hex(random_bytes(32)))->getStatusCode())
+        ->countBy()
+        ->all();
+
+    expect($respostas)->toBe([302 => 12]);
+
+    $canal->shouldHaveReceived('warning')
+        ->withArgs(fn (string $mensagem, array $contexto): bool => str_starts_with($mensagem, '[RegistroPorConvite@mount]')
+            && $contexto['motivo'] === 'convite_invalido')
+        ->times(5);
+});

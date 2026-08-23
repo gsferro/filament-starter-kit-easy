@@ -135,7 +135,7 @@
   `App\Filament\App\Resources\Convites\ConviteResource::form()`, com o comentário "quem
   preenche já administra a organização e um convite para quem já tem conta falharia no
   aceite". Resultado: a feature estava **desligada exatamente para a persona que a motivou** —
-  o `admin_organizacao` continuava sem caminho para convidar quem já tem conta. CT-17 foi
+  o `admin_app` continuava sem caminho para convidar quem já tem conta. CT-17 foi
   escrito como a wiki manda, falhou com
   `"data.email" => ["O valor indicado para o campo e-mail já se encontra registrado."]`, e a
   correção foi remover a regra e trocar o `helperText` pelo texto da bifurcação. **É a única

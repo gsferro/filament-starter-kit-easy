@@ -467,7 +467,7 @@ dataset('situacoes', [
 
 ### Precondições
 
-- Ana com `admin_organizacao` na `acme`.
+- Ana com `admin_app` na `acme`.
 - `carla@example.test` existente, membro só da `globex`.
 
 ### Dados de Entrada
@@ -484,7 +484,7 @@ livewire(App\Filament\App\Resources\Convites\Pages\CreateConvite::class)
 - `assertHasNoFormErrors()`.
 - O convite nasce com `tenant_id` da `acme` — carimbado à força, ignorando o formulário
   (barreira 6 da wiki `admin-da-organizacao`).
-- **É a razão de a feature existir**: hoje o `admin_organizacao` não tem nenhum caminho para
+- **É a razão de a feature existir**: hoje o `admin_app` não tem nenhum caminho para
   trazer alguém que já tem conta.
 
 ---
