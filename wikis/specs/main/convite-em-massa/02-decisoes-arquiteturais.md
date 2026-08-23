@@ -155,7 +155,7 @@ painel passa a esconder as falhas que o outro mostra.
    telas convergirem para o mesmo formulário, o trait vira uma classe de Action.
 3. **Ação em massa da tabela** (`bulkActions`), sobre registros selecionados. Descartada: os
    endereços a convidar **não existem** como registro para selecionar.
-4. **Só no `/admin`.** Descartada: o `admin_organizacao` é a persona que mais precisa disso, e ele
+4. **Só no `/admin`.** Descartada: o `admin_app` é a persona que mais precisa disso, e ele
    não entra no `/admin`.
 
 ### Consequências

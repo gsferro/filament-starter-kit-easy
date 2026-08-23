@@ -38,8 +38,8 @@ class ValidadeDoConvite
      */
     public static function emDias(mixed $bruto): int
     {
-        // `?:` e não `??`: o `??` só pega `null` e deixaria passar a string vazia e o zero,
-        // que são justamente os dois valores que produziam o convite morto.
-        return max(1, (int) ($bruto ?: self::DIAS_PADRAO));
+        // Delega para não existirem duas versões da mesma regra: `NumeroDoEnv::positivo()`
+        // nasceu daqui, quando a varredura achou o mesmo padrão em outras quatro chaves.
+        return NumeroDoEnv::positivo($bruto, self::DIAS_PADRAO);
     }
 }
