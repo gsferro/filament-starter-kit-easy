@@ -192,8 +192,29 @@ O segundo argumento do `env()` só vale para chave **ausente**, não para valor 
 no futuro — rejeita o convite **no primeiro clique**. O convite nasce morto, o e-mail sai, o log
 registra sucesso, e quem recebe vê "convite expirado".
 
-Não corrigi porque é mudança de comportamento fora do escopo desta rodada (que era escrever os
-testes que faltavam). O conserto é uma linha, no model ou no config —
-`(int) (config(...) ?: 7)` —, e a decisão de qual dos dois é do dono do kit. Registrado aqui para
-não se perder: **destino 2 (implementação)**, severidade Minor, e um teste de regressão óbvio
-(`config([... => ''])` e asserir que o prazo não é zero).
+**✅ Corrigido em 2026-08-22**, por decisão do usuário, na fronteira onde o valor entra —
+`config/kit.php`, e não no model, para valer para qualquer leitor da chave:
+
+```php
+'validade_em_dias' => max(1, (int) (env('KIT_CONVITE_VALIDADE_DIAS') ?: 7)),
+```
+
+`?:` trata vazio, `null` e `0` como não configurado — convite de zero dia nunca é intenção.
+`max(1, …)` cobre negativo e texto (`(int) 'abc'` é 0), que produziriam o mesmo convite morto. O
+pior caso passa a ser um convite de **um dia**: curto e visível, em vez de inválido ao nascer.
+
+| `.env` | Antes | Depois |
+|---|---|---|
+| `KIT_CONVITE_VALIDADE_DIAS=` | **0** — convite morto | 7 |
+| `=0` | 0 — convite morto | 7 |
+| `=-5` | −5 — convite morto | 1 |
+| `=abc` | 0 — convite morto | 1 |
+| ausente | 7 | 7 |
+| `=30` | 30 | 30 |
+
+**Guarda**: `tests/Kit/ConviteTest.php`, caso *"nunca resolve o prazo do convite para zero ou
+negativo"*, dataset dos seis. Ele dá `require` no arquivo de config com o ambiente montado à mão,
+e não `config([...])`: escrever por cima do valor resolvido mediria o teste, não o kit — a
+expressão `max(1, (int) (env(...) ?: 7))` nunca seria exercitada. Visto falhando: revertida a
+guarda, **4 dos 6 datasets** quebram, o do valor vazio com *"Failed asserting that 0 is identical
+to 7"*.

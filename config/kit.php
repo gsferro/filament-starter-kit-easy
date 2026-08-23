@@ -231,7 +231,25 @@ return [
     */
 
     'convites' => [
-        'validade_em_dias' => (int) env('KIT_CONVITE_VALIDADE_DIAS', 7),
+        /*
+         * O `?:` e o `max(1, …)` existem por um defeito medido, não por precaução.
+         *
+         * `KIT_CONVITE_VALIDADE_DIAS=` — a chave presente com valor VAZIO, que é o que sobra
+         * quando alguém apaga o número e esquece de apagar o `=` — devolve string vazia, e o
+         * segundo argumento do `env()` **não** a alcança: ele só vale para chave ausente.
+         * `(int) ''` é 0, e `now()->addDays(0)` grava `expira_em` igual ao instante do envio. O
+         * `Convite::valido()` exige prazo no futuro, então o convite nasce morto: o e-mail sai,
+         * o log registra sucesso, e quem recebe vê "convite expirado" no primeiro clique.
+         * Nenhum erro em lugar nenhum.
+         *
+         * `?:` trata vazio, `null` e `0` como não configurado — convite de zero dia nunca é
+         * intenção. `max(1, …)` cobre o resto do lixo possível: negativo e texto
+         * (`(int) 'abc'` é 0), que produziriam o mesmo convite morto. O pior caso passa a ser um
+         * convite de um dia — curto e visível — em vez de um que já nasceu inválido.
+         *
+         * Guarda em `tests/Kit/ConviteTest.php`, dataset dos seis casos.
+         */
+        'validade_em_dias' => max(1, (int) (env('KIT_CONVITE_VALIDADE_DIAS') ?: 7)),
 
         /*
          * Máximo de endereços por lote na tela "Convidar em massa". Com

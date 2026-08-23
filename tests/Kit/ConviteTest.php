@@ -966,3 +966,52 @@ it('mantem os dois defaults do prazo em sete dias', function (): void {
     // default que vale na prática é o do `config/kit.php`.
     expect(config('kit.convites.validade_em_dias', 7))->toBeNull();
 });
+
+/**
+ * O prazo nunca sai zero ou negativo do `config/kit.php` — nem com lixo no `.env`.
+ *
+ * Regressão de um defeito medido: `KIT_CONVITE_VALIDADE_DIAS=` (chave presente, valor vazio)
+ * devolvia string vazia, o segundo argumento do `env()` não a alcançava — ele só vale para
+ * chave **ausente** — e `(int) ''` dava 0. O convite nascia com `expira_em` igual ao instante
+ * do envio, o `valido()` o rejeitava no primeiro clique, e o e-mail saía com o log registrando
+ * sucesso. Convite morto ao nascer, sem erro em lugar nenhum.
+ *
+ * O caso **reavalia o arquivo de config**, não o valor já resolvido: `config([...])` no teste
+ * escreveria por cima da expressão e mediria o teste, não o kit. É por isso que ele dá
+ * `require` no arquivo com o ambiente montado à mão — é o único jeito de exercitar o
+ * `max(1, (int) (env(...) ?: 7))` de verdade.
+ *
+ * @param  string|null  $bruto  o que está no `.env`; `null` é a chave ausente
+ */
+it('nunca resolve o prazo do convite para zero ou negativo', function (?string $bruto, int $esperado): void {
+    $anterior = getenv('KIT_CONVITE_VALIDADE_DIAS');
+
+    try {
+        if ($bruto === null) {
+            putenv('KIT_CONVITE_VALIDADE_DIAS');
+            unset($_ENV['KIT_CONVITE_VALIDADE_DIAS'], $_SERVER['KIT_CONVITE_VALIDADE_DIAS']);
+        } else {
+            putenv("KIT_CONVITE_VALIDADE_DIAS={$bruto}");
+            $_ENV['KIT_CONVITE_VALIDADE_DIAS'] = $bruto;
+        }
+
+        $config = require config_path('kit.php');
+
+        expect($config['convites']['validade_em_dias'])->toBe($esperado);
+    } finally {
+        if ($anterior === false) {
+            putenv('KIT_CONVITE_VALIDADE_DIAS');
+            unset($_ENV['KIT_CONVITE_VALIDADE_DIAS'], $_SERVER['KIT_CONVITE_VALIDADE_DIAS']);
+        } else {
+            putenv("KIT_CONVITE_VALIDADE_DIAS={$anterior}");
+            $_ENV['KIT_CONVITE_VALIDADE_DIAS'] = $anterior;
+        }
+    }
+})->with([
+    'vazio — o defeito medido' => ['', 7],
+    'zero — nunca é intenção'  => ['0', 7],
+    'negativo'                 => ['-5', 1],
+    'texto'                    => ['abc', 1],
+    'ausente'                  => [null, 7],
+    'valor legítimo'           => ['30', 30],
+]);
