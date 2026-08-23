@@ -3,6 +3,36 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Nao lancado]
+
+Throttle na recusa anonima do convite, e o gate de QA da wiki que faltava.
+
+### Corrigido
+
+- **A recusa anonima do convite parava de escrever uma linha de log por request.** Um `curl` em
+  laco com token inventado gravava um `warning` no channel `autenticacao` por tentativa — driver
+  `daily`, 14 dias, e e o arquivo que o Logs Explorer do `/infra` abre. Agora `rateLimit()` de
+  cinco por dez minutos por IP, com a trait que ja estava na classe pai.
+  O throttle protege o **log**, nao a resposta: quem tem token valido nao pode ser barrado pelo
+  vizinho de NAT, e um 429 numa tela de aceite trocaria uma mensagem clara por uma tela de erro.
+  Forca bruta de token segue descartada — `Str::random(64)` sobre 62 caracteres, com resposta
+  identica para os tres motivos de recusa.
+
+### Adicionado
+
+- **Gate de QA em `convite-para-usuario-existente`** — o primeiro desta auditoria que fecha
+  **sem defeito de codigo**: 16 dos 16 CT tem teste, a lacuna do CT-03 ja estava declarada, e a
+  barreira da feature (asserecao de e-mail no model, nao na query da tela) tem teste que a chama
+  direto. Quatro hipoteses foram testadas e rejeitadas, e estao registradas.
+
+### Alterado
+
+- **`admin_organizacao` -> `admin_app`** em quatro pontos da wiki `convite-para-usuario-existente`;
+  o papel foi renomeado por migration e nenhuma wiki soube.
+- **O CT-15 de `convite-de-usuario` foi invertido** para dizer o que o codigo faz: e-mail ja
+  cadastrado e **convidado**, nao recusado. A wiki `convite-para-usuario-existente` havia previsto
+  esta inversao por escrito e o laco nunca foi fechado.
+
 ## [0.18.4] - 2026-08-23
 
 Release de correcao. Os testes que faltavam nas wikis auditadas, uma divida fechada sem codigo e
