@@ -69,10 +69,50 @@ o ultimo item da fila da auditoria aberta na 0.18.3.
   cadastrado e **convidado**, nao recusado. A wiki `convite-para-usuario-existente` havia previsto
   esta inversao por escrito e o laco nunca foi fechado.
 
+## [Nao lancado]
+
+Fecha o ledger de divida tecnica — 11 de 11 — e encerra o item de TTY do instalador.
+
+### Corrigido
+
+- **DT-06 — a suite de navegador nascia vermelha na primeira execucao.** Compilar as ~590 views
+  custa dezenas de segundos, e o primeiro cenario que renderiza um painel pagava a conta DENTRO
+  do timeout de 45 s do Playwright. A conta passa a ser paga num `$this->get()` pelo kernel,
+  fora do cronometro — a receita que `.ai/rules/testes-browser.md` ja prescrevia.
+- **O falso achado de contraste do CT-B09 tinha outra causa, e a 0.18.4 errou o diagnostico.**
+  Nao era cache frio: era a emulacao de `prefers-color-scheme` do cenario anterior alcancando o
+  seguinte, o que produz paleta escura sobre fundo claro. O caso passa a **declarar** o tema com
+  `->inLightMode()`. Ver a retificacao na secao da 0.18.4.
+
+### Adicionado
+
+- **Smoke HTTP das telas do `/app`** (DT-04), dataset de 8 rotas em `tests/Tenancy` — e nao em
+  `tests/Kit`, onde sem tenancy a resposta seria 403 e provaria permissao em vez de "a tela
+  abre". Na primeira execucao ele documentou que `/projetos` exige `kit.demo`.
+- **README**: bloco explicando que **no Windows as perguntas do instalador nao aparecem** — o
+  Composer nunca liga TTY ali — e que `php artisan kit:install --force` faz o mesmo depois.
+
+### Alterado
+
+- **DT-05 recusada, com medicao**: em ~20 episodios de teste desta auditoria, nenhuma falha veio
+  de seletor fragil. `data-testid` fica disponivel sob demanda, como o `data-voltar-ao-topo` que
+  o kit ja usa, em vez de espalhado por todas as telas antes de existir um teste que precise.
+- **Item de TTY do instalador encerrado por decisao do usuario**, com o resultado medido nos dois
+  shells do Windows: as perguntas nao aparecem em nenhum, e a causa esta no `vendor/` do Composer.
+  Instalar e rodar `kit:install --force` depois e o caminho aceito por ora.
+
 ## [0.18.4] - 2026-08-23
 
 Release de correcao. Os testes que faltavam nas wikis auditadas, uma divida fechada sem codigo e
 um convite que nascia morto.
+
+> **RETIFICACAO (0.18.7).** Esta release atribuiu a instabilidade do CT-B09 a cache frio — "varre
+> antes de a folha de estilo assentar" — e acrescentou um `waitForEvent('networkidle')`. **O
+> diagnostico estava errado.** A causa era emulacao de tema vazando entre cenarios: o caso
+> anterior chama `->inDarkMode()` e a emulacao alcancava o seguinte, produzindo paleta escura
+> sobre fundo claro. Medido na 0.18.7, com a matriz frio/quente x com/sem a correcao. O conserto
+> de verdade e o caso DECLARAR o tema (`->inLightMode()`). O `networkidle` nao fez mal, mas nao
+> era o que faltava.
 
 ### Corrigido
 

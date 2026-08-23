@@ -11,13 +11,24 @@ que as coloca **depois** daquela entrega.
 Confirmação que valia então: `git diff main --stat` **não tocava `app/`**. DT-03 vivia só em
 `tests/`.
 
-**Estado em 2026-08-22: seis pagas, uma fechada sem código, três abertas, uma quase.** DT-03,
+**Estado em 2026-08-23: ledger fechado, 11 de 11.** Oito pagas com código (DT-01, DT-02,
+DT-03, DT-04, DT-06, DT-07, DT-10, DT-11), uma fechada **sem** código porque a correção que
+ela prescrevia era no-op (DT-08), uma fechada com resíduo declarado — um título de plugin sem
+ponto de extensão (DT-09) — e uma **recusada com medição** (DT-05). DT-03,
 DT-10 e DT-11 numa primeira rodada; DT-01, DT-02 e DT-07 numa segunda; DT-09 quase inteira paga
 por um commit que não atualizou esta página. **DT-08 fechada numa terceira rodada — e sem
 conserto**, porque a correção de duas linhas que ela mesma passou a prescrever é no-op: a facade
 `FilamentView` re-registra os hooks em toda instância nova, então descartar o `ViewManager` não
 remove nada. O que ela chamava de vazamento é o mecanismo deliberado do "Voltar ao topo", e a
-guarda contra a regressão já existia. Seguem abertas DT-04, DT-05 e DT-06.
+guarda contra a regressão já existia. **Fechadas numa quarta rodada, em 2026-08-23**: DT-04 paga com o smoke do `/app` em
+`tests/Tenancy`, DT-06 paga com o aquecimento pelo kernel — e nela a correção da v0.18.4 se
+revelou **errada**, porque o falso contraste não era cache frio, era emulação de tema vazando
+entre cenários. DT-05 **recusada com medição**: em ~20 episódios de teste desta auditoria,
+nenhuma falha veio de seletor frágil.
+
+**O ledger está zerado.** Reabrir qualquer uma exige um exemplo novo, não uma estimativa — e
+cinco das prescrições originais estavam erradas, então a próxima também merece ser medida
+antes de ser aplicada.
 
 Cada seção diz o que foi **medido**, e nomeia as prescrições originais que estavam erradas — são
 **cinco** até aqui: DT-10 (uma linha que piorava em silêncio), DT-01 (a11y dependendo de JS),
@@ -53,12 +64,12 @@ ele. O relatório está em `07-relatorio-qa.md`.
 | ~~**DT-03**~~ | ~~Helpers de teste declarados dentro de arquivos de teste~~ | ~~bloqueante~~ | **PAGA** | `tests/Pest.php` |
 | ~~**DT-01**~~ | ~~Botão *Clear Cache* sem texto acessível (a11y critical)~~ | ~~relevante~~ | **PAGA** | `resources/views/vendor/` |
 | ~~**DT-08**~~ | ~~Render hook de plugin vaza entre painéis no mesmo processo PHP~~ | ~~relevante~~ | **FECHADA** — aceita por escrito, nada a consertar no kit | `vendor` (upstream) |
-| **DT-04** | Assimetria de cobertura HTTP: `/app` quase sem smoke de backend | relevante | ~1 h | `tests/Tenancy` (não `tests/Kit`) |
-| **DT-06** | Suíte `tests/Kit` leva ~14 min em série | relevante | depende de DT-03 | `tests/` |
+| ~~**DT-04**~~ | ~~Assimetria de cobertura HTTP: `/app` quase sem smoke de backend~~ | ~~relevante~~ | **PAGA** | `tests/Tenancy` |
+| ~~**DT-06**~~ | ~~Suíte `tests/Kit` leva ~14 min em série~~ | ~~relevante~~ | **PAGA** — e o defeito era outro | `tests/Browser` |
 | ~~**DT-02**~~ | ~~Contraste 4.25:1 no indicador de ambiente (a11y serious)~~ | ~~cosmética~~ | **PAGA** | `resources/css/filament/kit.css` |
-| **DT-05** | Nenhum `data-testid` nas telas do kit | cosmética | ~1 h | `app/Filament` |
+| ~~**DT-05**~~ | ~~Nenhum `data-testid` nas telas do kit~~ | ~~cosmética~~ | **RECUSADA**, com medição | `app/Filament` |
 | ~~**DT-07**~~ | ~~Inventário de telas dos CT-B é array escrito à mão~~ | ~~cosmética~~ | **PAGA** (por reconciliação, não por derivação) | `tests/Pest.php` + `tests/Kit` |
-| **DT-09** | Telas de `/infra` misturam inglês e português | cosmética | **quase paga** — resta 1 título | `vendor` (sem saída limpa) |
+| ~~**DT-09**~~ | ~~Telas de `/infra` misturam inglês e português~~ | ~~cosmética~~ | **FECHADA** — resta 1 título sem ponto de extensão | `vendor` (upstream) |
 | ~~**DT-10**~~ | ~~A suíte de testes escreve no `storage/logs` real~~ | ~~cosmética~~ | **PAGA** | `config/logging.php` + `phpunit.xml` |
 | ~~**DT-11**~~ | ~~Sem PCOV: o `--tia` roda com Xdebug e fica impraticável em série~~ | ~~relevante~~ | **PAGA nesta máquina** | ambiente (não é código) |
 
@@ -1102,3 +1113,83 @@ Três coisas que pareceriam dívida numa leitura rápida:
    defensável. Sem requisito contra. Ver R-2 do `07-relatorio-qa.md`.
 6. **N+1 em `/admin/users`** — medido: **13 queries constantes** com 1, 10 e 30 usuários. A
    aparência de N+1 vinha de deriva de medição no mesmo processo. Ver R-4.
+
+---
+
+## Fechamento das três últimas — 2026-08-23
+
+### DT-04 · ✅ **PAGA**
+
+Dataset de **8 telas** do `/app` em `tests/Tenancy/TenancyTest.php`, no caso
+*"abre as telas do painel de negocio"* — e não em `tests/Kit`, como esta seção prescrevia. A
+revisão de 2026-08-22 já tinha apontado que ali a resposta seria **403**, provando permissão em
+vez de "a tela abre".
+
+**O smoke rendeu na primeira execução**: `/projetos` respondeu 403 porque
+`ProjetoResource::canAccess()` exige `kit.demo` e o `phpunit.xml` o fixa em `false`
+(`ProjetoResource.php:81-88`). Não é defeito — é a forma do ambiente, e agora está escrita no
+teste com o motivo. Era o tipo de coisa que ninguém sabe de cabeça.
+
+Fora do dataset, com razão declarada: `hub-do-negocio` (exige `KIT_HUB=true`), `exceptions` (não é
+tela do `/app`, e o `admin_app` perdeu a permissão na v0.18.3) e `users/{record}/edit` (já tem
+caso que **grava**).
+
+### DT-06 · ✅ **PAGA — e o defeito era outro, pela terceira vez**
+
+A revisão anterior acertou que a dívida deixou de ser sobre tempo e passou a ser sobre
+aquecimento do primeiro run. A correção foi a que `.ai/rules/testes-browser.md` já prescrevia e
+ninguém tinha aplicado: pagar a compilação num `$this->get()` pelo **kernel**, fora do cronômetro
+do Playwright. Aplicada nos dois arquivos que falhavam frios.
+
+Resultado no cenário exato da falha (`npm run build` + `view:clear`): **o `Timeout 45000ms`
+desapareceu.**
+
+**Mas apareceu o resto — e aí a v0.18.4 se revelou errada.** No mesmo run frio voltou o falso
+achado de contraste no `/app`, quatro `serious` com todo o texto em `#d0d0d0` sobre `#fafafa`. A
+v0.18.4 atribuiu isso a cache frio ("varre antes de a folha de estilo assentar") e acrescentou um
+`waitForEvent('networkidle')`. **Diagnóstico errado, e a release note dizia isso.**
+
+O experimento que o derruba, e a matriz que faltava:
+
+| Estado | `inLightMode()` no caso | Resultado |
+|---|---|---|
+| frio | não | **falha** — medido duas vezes |
+| frio | **sim** | passa |
+| quente | não | passa |
+| quente | sim | passa |
+
+Cold + isolado **passa**; cold + arquivo inteiro **falha**. Não é o cache: é o cenário anterior.
+O primeiro caso do arquivo chama `->inDarkMode()`, e a emulação de `prefers-color-scheme` alcança
+o cenário seguinte — o Filament emite os tokens de texto do tema escuro (`#d0d0d0` é cinza-claro,
+correto sobre fundo escuro) enquanto o fundo continua claro. **Paleta escura sobre fundo claro**,
+não página sem CSS. Todo o texto trocado ao mesmo tempo é assinatura de tema, não de um elemento
+com cor mal escolhida.
+
+A correção é o caso **declarar** o tema em vez de herdá-lo: `->inLightMode()`. O próprio docblock
+dele já dizia que "o tema claro é o eixo que interessa aqui" — só não estava pedindo isso ao
+navegador. O `networkidle` ficou, porque não custa nada e é pré-condição honesta, mas não era ele
+que faltava.
+
+**O que não está provado**: o frio é o que abre a janela, então a falha é uma corrida. Um único
+run frio verde com a correção reduz a suspeita; não a elimina. O que a correção remove é a
+**dependência de estado herdado**, que é a causa estrutural.
+
+### DT-05 · ❌ **RECUSADA, com medição**
+
+Não vou pagar, e o motivo é evidência acumulada em vez de preferência.
+
+Seis releases desta auditoria produziram cerca de vinte episódios de escrita ou conserto de
+teste. Em **nenhum** deles a falha veio de seletor frágil. As causas reais foram: painel não
+bootado em teste de componente Livewire, emulação de tema herdada entre cenários, compilação de
+view dentro do cronômetro, `env()` que o runner não enxerga, e rota que não existe sob a flag do
+ambiente. `data-testid` não teria evitado nenhuma.
+
+E o kit **já usa** âncora estável onde houve motivo: `data-voltar-ao-topo`, escrita quando um
+caso precisou dela. Isso é o padrão sendo adotado sob demanda, que é o comportamento saudável.
+Espalhar `data-testid` por todas as telas antes de existir um teste que precise é inventário sem
+consumidor — e cada atributo é uma linha que alguém mantém.
+
+**Fica disponível, não pendente**: no dia em que um caso quebrar por seletor, o atributo entra
+naquela tela, com o caso que o justifica. Reabrir esta dívida exige um exemplo, não uma
+estimativa.
+

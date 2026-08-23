@@ -27,6 +27,22 @@ it('abre o dropdown do usuário e mostra o cabeçalho de identidade', function (
 
     $this->actingAs($user);
 
+    /*
+     * DT-06 — paga a compilação dos componentes do painel num request pelo KERNEL, antes de
+     * abrir o navegador. Compilar as ~590 views do kit custa dezenas de segundos, e o primeiro
+     * cenário que renderiza um painel paga a conta inteira DENTRO do timeout de 45 s do
+     * Playwright — falhando por um motivo que não é o dele.
+     *
+     * Medido: numa árvore recém-buildada, este arquivo estourou `Timeout 45000ms exceeded`; a
+     * execução seguinte, sem mudar uma linha, passou. É o disfarce que
+     * `.ai/rules/testes-browser.md` descreve — "tem o formato de teste instável" — e que custou
+     * duas execuções completas para separar de um defeito real.
+     *
+     * O `get()` é descartado de propósito: o que interessa é o efeito colateral em disco, que o
+     * servidor do navegador reusa.
+     */
+    $this->get('/admin');
+
     visit('/admin')
         /*
          * Fechado, o painel do dropdown existe no DOM mas está escondido. Fixar isto

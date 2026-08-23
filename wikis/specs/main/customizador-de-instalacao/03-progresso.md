@@ -73,17 +73,39 @@
       2. o `artisan` rodou sem terminal, o que também pulou o convite da estrela (ADR-11).
       Corrigido na v0.16.1: o gate passou a ser `APP_KEY` vazia, e o pulo por falta de terminal
       virou aviso com o comando que refaz a instalação com as perguntas.
-- [ ] **PENDENTE desde a v0.16.1 — hoje a árvore está na v0.18.1, 7 versões de deriva sobre a
-      única camada não provada.** `composer create-project` real, a partir de um checkout local,
-      com as perguntas aparecendo. Nenhum teste automatizado alcança a camada de TTY do Composer;
-      o que está provado é que o Composer **repassa** o TTY (`EventDispatcher::executeTty`,
-      verificado no `composer.phar` 2.9.5) e que o customizador pergunta quando
-      `input->isInteractive()`.
-      O job `instalacao` do `.github/workflows/ci.yml:83` **não cobre isto**: ele faz
-      `cp .env.example .env` e roda `kit:install --ansi` sem terminal, então o customizador se
-      pula pelo próprio guarda de `isInteractive()` — prova a instalação headless, não as
-      perguntas. Só um terminal humano fecha este item.
-- [ ] Resultado registrado em Notas de Implementação (SO, terminal, versão do Composer)
+- [x] **FECHADO em 2026-08-23 — testado pelo usuário, e o resultado é "não funciona no Windows".**
+      Medido nos dois shells, `PowerShell` e `Git Bash`: as perguntas **não aparecem** em nenhum
+      dos dois. E isso não é falha do kit nem do teste — é a plataforma. O Composer nunca liga
+      TTY em Windows, e a linha que decide é `Composer\Util\ProcessExecutor::runProcess()`:
+
+      ```php
+      if (!Platform::isWindows() && $tty) {
+          $process->setTty(true);
+      }
+      ```
+
+      O `$tty` é **descartado** quando `Platform::isWindows()`, e o motivo está no outro lado:
+      `symfony/process` lança `RuntimeException('TTY mode is not supported on Windows platform.')`
+      quando `'\' === DIRECTORY_SEPARATOR`. O Composer se protege de uma exceção que aconteceria
+      de qualquer jeito. O filho — `php artisan kit:install` — recebe **pipes**, então
+      `stream_isatty(STDIN)` é falso, `KitInstall::temTerminal()` devolve falso, e o customizador
+      se pula pelo próprio guarda. Comportamento correto do kit encontrando um limite do sistema.
+
+      **Detalhe que engana, e que a versão anterior desta linha comprou**: `Platform::isTty()` tem
+      um caso especial que devolve `true` de cara quando `MSYSTEM` é `MINGW32`/`MINGW64`, ou seja
+      no Git Bash. Isso faz o `executeTty` *parecer* que vai propagar. Não vai — o `runProcess`
+      descarta o `$tty` antes de chegar lá. E a afirmação antiga desta wiki, de que "está provado
+      que o Composer **repassa** o TTY", provava que o método existe, não que ele é usado. É o
+      padrão que `.ai/rules/specs.md` registra.
+
+- [x] **Decisão do usuário**: por ora, **instalar e rodar a configuração à mão é suficiente** —
+      `php artisan kit:install --force`, que é exatamente o comando que
+      `KitInstall::avisarSePerdeuAsPerguntas()` já imprime quando detecta projeto novo sem
+      terminal. Nada a construir. Uma abordagem diferente (prompt no primeiro request do painel,
+      ou um `kit:setup` separado do `create-project`) fica para outra oportunidade.
+
+      Onde isto **poderia** ser provado de verdade: Linux, macOS ou WSL, onde o `setTty(true)`
+      acontece. Não em Windows — ali o resultado já está decidido pelo `vendor/`.
 
 ## Testes
 

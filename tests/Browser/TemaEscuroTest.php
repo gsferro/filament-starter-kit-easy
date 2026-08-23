@@ -26,6 +26,24 @@ beforeEach(function (): void {
 it('renderiza em tema escuro', function (): void {
     $this->actingAs(usuarioDoKit('master_global'));
 
+    /*
+     * DT-06 — paga a compilação dos componentes do painel num request pelo KERNEL, antes de
+     * abrir o navegador. Compilar as ~590 views do kit custa dezenas de segundos, e o primeiro
+     * cenário que renderiza um painel paga a conta inteira DENTRO do timeout de 45 s do
+     * Playwright — falhando por um motivo que não é o dele.
+     *
+     * Medido: numa árvore recém-buildada, este arquivo estourou `Timeout 45000ms exceeded`; a
+     * execução seguinte, sem mudar uma linha, passou. É o disfarce que
+     * `.ai/rules/testes-browser.md` descreve — "tem o formato de teste instável" — e que custou
+     * duas execuções completas para separar de um defeito real.
+     *
+     * O `get()` é descartado de propósito: o que interessa é o efeito colateral em disco, que o
+     * servidor do navegador reusa.
+     */
+    foreach (['/app', '/admin', '/infra'] as $painel) {
+        $this->get($painel);
+    }
+
     visit(['/app', '/admin', '/infra'])
         ->inDarkMode()
         // Título do Dashboard do Filament em pt_BR — o mesmo nos três painéis, porque
@@ -67,30 +85,46 @@ it('alterna o tema pela tela de login', function (): void {
  *
  * O tema claro é o eixo que interessa aqui: é onde os dois achados viviam.
  *
- * **O `waitForEvent('networkidle')` não é tempero — sem ele o caso é flaky por construção.**
- * O `assertNoAccessibilityIssues()` varre o DOM quando é chamado, e o axe julga **cor
- * computada**: varrer antes da folha de estilo assentar mede uma página sem CSS. Medido numa
- * execução de cache frio, no `/app`:
+ * **O `inLightMode()` é o que conserta a instabilidade, e a explicação anterior estava errada.**
+ *
+ * Este caso falhava com quatro achados `serious` no `/app`, todo o texto da página reportado em
+ * `#d0d0d0` sobre `#fafafa`. A v0.18.4 atribuiu isso a cache frio — "varre antes de a folha de
+ * estilo assentar" — e acrescentou o `waitForEvent('networkidle')`. **Diagnóstico errado.** O
+ * experimento que o derruba: com a árvore recém-buildada e `view:clear` (cache frio de verdade),
+ * rodar **só este caso** passa 3 de 3; rodar o ARQUIVO inteiro falha no `/app`. Não é o cache —
+ * é o cenário anterior.
+ *
+ * O primeiro caso deste arquivo chama `->inDarkMode()`, e a emulação de `prefers-color-scheme`
+ * **vaza para o cenário seguinte**. O Filament então emite os tokens de texto do tema escuro
+ * (`#d0d0d0` é cinza-claro, correto sobre fundo escuro) enquanto o fundo continua claro. Não é
+ * página sem CSS: é paleta escura sobre fundo claro.
+ *
+ * Daí a correção ser declarar o tema em vez de herdá-lo — e o docblock deste caso já dizia, na
+ * última linha, que "o tema claro é o eixo que interessa aqui". Ele só não estava pedindo isso ao
+ * navegador.
+ *
+ * O `networkidle` ficou: não custa nada e a rede sossegada continua sendo a pré-condição honesta
+ * para o axe julgar cor computada. Mas não era ele que faltava.
+ *
+ * Os quatro achados, para quem os encontrar de novo:
  *
  *     h1.fi-header-heading          #d0d0d0 sobre #fafafa   1,47:1
  *     .fi-account-widget-heading    #d0d0d0 sobre #fbfbfb   1,49:1
  *     .fi-account-widget-user-name  #e2e2e4 sobre #fbfbfb   1,25:1
  *     .fi-btn                       #d0d0d0 sobre #fbfbfb   1,49:1
  *
- * Quatro achados `serious`, e o que os denuncia como falsos é **todo** o texto da página estar
- * em cinza-claro: título, subtítulo, parágrafo e botão. O texto do Filament no tema claro é
- * quase preto — 1,25:1 uniforme é ausência de CSS, não escolha de paleta. A mesma suíte
- * passou na execução seguinte, com os assets quentes e sem uma linha mudada.
- *
- * O `networkidle` espera a rede sossegar, que é quando a folha de estilo já chegou e foi
- * aplicada. É o estado que o caso precisa, e não um `sleep` disfarçado: se o CSS nunca chegar,
- * a espera estoura com essa causa em vez de produzir quatro achados de contraste que mandam
- * quem lê procurar defeito de paleta onde não há.
+ * O que os denuncia como falsos é **todo** o texto da página estar em cinza-claro ao mesmo tempo:
+ * título, subtítulo, parágrafo e botão. Paleta inteira trocada é sinal de tema, não de um
+ * elemento com cor mal escolhida.
  */
 it('nao tem problema de acessibilidade no dashboard', function (string $painel): void {
     $this->actingAs(usuarioDoKit('master_global'));
 
+    // DT-06 — mesma razão do primeiro caso: compila o painel fora do cronômetro do Playwright.
+    $this->get($painel);
+
     visit($painel)
+        ->inLightMode()
         ->waitForEvent('networkidle')
         ->assertNoAccessibilityIssues();
 })->with(['/app', '/admin', '/infra']);
