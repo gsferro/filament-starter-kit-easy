@@ -5,6 +5,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | Applies to | Rule file |
 | --- | --- |
 | app/Filament/Pages/Auth/** | .ai/rules/auth.md |
+| config/** | .ai/rules/config.md |
 | resources/css/filament/** | .ai/rules/css-filament.md |
 | app/Filament/** | .ai/rules/filament.md |
 | app/Models/** | .ai/rules/models.md |
