@@ -1,5 +1,7 @@
 <?php
 
+use App\Support\ValidadeDoConvite;
+
 return [
 
     /*
@@ -231,7 +233,14 @@ return [
     */
 
     'convites' => [
-        'validade_em_dias' => (int) env('KIT_CONVITE_VALIDADE_DIAS', 7),
+        /*
+         * A coerção vive em `App\Support\ValidadeDoConvite` e não aqui, por dois motivos
+         * medidos — o defeito que ela conserta e o teste que ela viabiliza. Os dois estão
+         * escritos no docblock da classe. Resumo: valor VAZIO na env fazia o convite nascer
+         * expirado, e a regra escrita nesta linha só era testável montando `putenv()` à mão,
+         * o que passava localmente e falhava no CI.
+         */
+        'validade_em_dias' => ValidadeDoConvite::emDias(env('KIT_CONVITE_VALIDADE_DIAS')),
 
         /*
          * Máximo de endereços por lote na tela "Convidar em massa". Com

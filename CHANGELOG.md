@@ -3,6 +3,44 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Nao lancado]
+
+Os testes que faltavam nas wikis auditadas, uma divida fechada sem codigo e um convite que
+nascia morto.
+
+### Corrigido
+
+- **Prazo vazio no `.env` deixava o convite nascer morto.** `KIT_CONVITE_VALIDADE_DIAS=` (chave
+  presente, valor vazio) devolvia string vazia, e o segundo argumento do `env()` nao alcanca esse
+  caso — so vale para chave ausente. `(int) ''` da 0, `addDays(0)` grava `expira_em` igual ao
+  instante do envio, e o `valido()` rejeita no primeiro clique: o e-mail sai, o log registra
+  sucesso, e quem recebe ve "convite expirado". Agora
+  `max(1, (int) (env(...) ?: 7))` no `config/kit.php`: vazio, `0` e ausente caem em 7; negativo e
+  texto caem em 1. Guarda com dataset dos seis casos.
+
+### Adicionado
+
+- **CT-11, CT-14 e CT-15 de `perfil-e-acesso-ao-painel` ganham teste.** O CT-11 e o que a wiki
+  chama de *"a falha silenciosa mais provavel de todo este plano"*: sem `painel` nas listas de
+  exclusao, o `afterCreate` do Shield cria uma permission **chamada `app`** e nada falha. As duas
+  metades (`CreateRole` e `EditRole`) sao separadas de proposito — as listas sao duas, e corrigir
+  uma e esquecer a outra e o cenario realista.
+- **`KIT_CONVITE_VALIDADE_DIAS` ganha teste**, com dataset de 3 e 30 dias — valores diferentes do
+  default, porque com 7 o mutante do literal passaria.
+
+Os quatro casos foram **vistos falhando** contra mutantes cirurgicos antes de serem aceitos.
+
+### Alterado
+
+- **DT-08 fechada sem conserto**, porque a correcao de duas linhas que ela prescrevia e no-op: o
+  `FilamentView` embrulha o registro em `Facade::resolved()`, que instala um `afterResolving`
+  persistente — toda instancia nova de `ViewManager` recebe de volta todos os hooks. O que a
+  divida chamava de vazamento e o mecanismo deliberado do "Voltar ao topo", e a guarda contra
+  regressao ja existia. Com esta, sao **cinco** prescricoes de divida que estavam erradas.
+- **O `04-casos-de-teste.md` de `perfil-e-acesso` nomeava dois arquivos que nunca existiram**
+  (`PerfilEAcessoTest.php` e `PerfilEAcessoTenancyTest.php`); 30 ocorrencias corrigidas para os
+  arquivos reais.
+
 ## [0.18.3] - 2026-08-22
 
 Release de correcao. Gate de QA em tres wikis, tres dividas tecnicas pagas e uma correcao de

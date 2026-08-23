@@ -11,11 +11,19 @@ que as coloca **depois** daquela entrega.
 Confirmação que valia então: `git diff main --stat` **não tocava `app/`**. DT-03 vivia só em
 `tests/`.
 
-**Estado em 2026-08-22: seis pagas, três abertas, uma quase.** DT-03, DT-10 e DT-11 numa primeira
-rodada; DT-01, DT-02 e DT-07 numa segunda; DT-09 quase inteira paga por um commit que não
-atualizou esta página. Seguem abertas DT-04, DT-05 e DT-06, e DT-08 deixou de ser investigação —
-a causa está isolada, com `file:line`. Cada seção diz o que foi **medido**, e nomeia as
-prescrições originais que estavam erradas.
+**Estado em 2026-08-22: seis pagas, uma fechada sem código, três abertas, uma quase.** DT-03,
+DT-10 e DT-11 numa primeira rodada; DT-01, DT-02 e DT-07 numa segunda; DT-09 quase inteira paga
+por um commit que não atualizou esta página. **DT-08 fechada numa terceira rodada — e sem
+conserto**, porque a correção de duas linhas que ela mesma passou a prescrever é no-op: a facade
+`FilamentView` re-registra os hooks em toda instância nova, então descartar o `ViewManager` não
+remove nada. O que ela chamava de vazamento é o mecanismo deliberado do "Voltar ao topo", e a
+guarda contra a regressão já existia. Seguem abertas DT-04, DT-05 e DT-06.
+
+Cada seção diz o que foi **medido**, e nomeia as prescrições originais que estavam erradas — são
+**cinco** até aqui: DT-10 (uma linha que piorava em silêncio), DT-01 (a11y dependendo de JS),
+DT-02 duas vezes (tema que não existe, e `color()` que não resolve) e DT-08 (duas linhas
+inócuas). O padrão é o mesmo: remédio escrito a partir do que se esperava do vendor, sem abrir o
+`vendor/`.
 
 Nenhuma das seis correções tocou `app/`: elas vivem em `tests/`, `config/`, `phpunit.xml`,
 `resources/css/filament/` e `resources/views/vendor/`.
@@ -44,7 +52,7 @@ ele. O relatório está em `07-relatorio-qa.md`.
 |----|--------|-----------|----------------|------|
 | ~~**DT-03**~~ | ~~Helpers de teste declarados dentro de arquivos de teste~~ | ~~bloqueante~~ | **PAGA** | `tests/Pest.php` |
 | ~~**DT-01**~~ | ~~Botão *Clear Cache* sem texto acessível (a11y critical)~~ | ~~relevante~~ | **PAGA** | `resources/views/vendor/` |
-| **DT-08** | Render hook de plugin vaza entre painéis no mesmo processo PHP | relevante | investigação **feita** — causa isolada | `vendor` + `tests/Pest.php` |
+| ~~**DT-08**~~ | ~~Render hook de plugin vaza entre painéis no mesmo processo PHP~~ | ~~relevante~~ | **FECHADA** — aceita por escrito, nada a consertar no kit | `vendor` (upstream) |
 | **DT-04** | Assimetria de cobertura HTTP: `/app` quase sem smoke de backend | relevante | ~1 h | `tests/Tenancy` (não `tests/Kit`) |
 | **DT-06** | Suíte `tests/Kit` leva ~14 min em série | relevante | depende de DT-03 | `tests/` |
 | ~~**DT-02**~~ | ~~Contraste 4.25:1 no indicador de ambiente (a11y serious)~~ | ~~cosmética~~ | **PAGA** | `resources/css/filament/kit.css` |
@@ -737,8 +745,57 @@ fechariam o buraco (`app()->forgetInstance(ViewManager::class)` e
 `Facade::clearResolvedInstance(ViewManager::class)`; o accessor da facade `FilamentView` é a
 própria classe, `vendor/filament/support/src/Facades/FilamentView.php:20-23`).
 
-**Não foi consertado**, porque a tarefa desta rodada era isolar a causa. Mas a dívida deixa de
-ser "investigação" e passa a ser uma correção de duas linhas com endereço.
+### Medição — 2026-08-22, segunda rodada: **as duas linhas não consertam nada**
+
+A investigação acima acertou a cadeia e errou o remédio. As duas linhas propostas —
+`forgetInstance(ViewManager::class)` + `Facade::clearResolvedInstance(...)` no
+`fronteiraDeRequest()` — são **no-op para render hooks**. Medido antes de escrever:
+
+Aplicado o experimento e sondado com um caso efêmero que renderiza `/admin`, chama
+`fronteiraDeRequest()` e renderiza de novo:
+
+    antes  do forget → data-voltar-ao-topo presente
+    depois do forget → data-voltar-ao-topo presente
+
+O hook sobrevive ao descarte da instância. O elo que faltava na cadeia de quatro está no
+`FilamentView`: ele **não** chama o `ViewManager` direto, embrulha tudo em
+`static::resolved(...)` (`vendor/filament/support/src/Facades/FilamentView.php`, método
+`registerRenderHook`). E `Facade::resolved()` registra um
+`afterResolving` no container
+(`vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php`, método `resolved`), que
+**persiste**: toda instância nova de `ViewManager` recebe de volta todos os hooks já
+registrados.
+
+Logo a cadeia real tem **cinco** elos, e o quinto inverte a conclusão:
+
+1. o plugin chama `$panel->renderHook(...)` sem escopo;
+2. `Panel::renderHook()` normaliza `null` para o bucket `''`
+   (`vendor/filament/filament/src/Panel/Concerns/HasRenderHooks.php`, o `if ($scopes === null)`);
+3. `Panel::registerRenderHooks()` repassa cada um para `FilamentView::registerRenderHook()`;
+4. o `ViewManager::renderHook()` lê o bucket `''` **sempre**, antes de qualquer escopo;
+5. **e a facade re-registra tudo em cada instância nova** — então descartar a instância não
+   remove hook nenhum. Nada em `fronteiraDeRequest()` poderia removê-los: não existe API de
+   `unregister`.
+
+### Conclusão: não há o que consertar no kit, e a guarda que importa já existe
+
+O que esta dívida chamava de vazamento é o **mecanismo deliberado** do botão "Voltar ao topo":
+o kit registra três hooks globais de propósito (`ConfiguraFilamentGlobal`, no
+`KitServiceProvider`) exatamente porque o bucket `''` alcança tela de vendor, que é onde o kit
+não tem como colar trait. Escopar o registro do plugin de terceiro é decisão upstream; escopar
+os do kit **quebraria** a feature.
+
+O risco que sobra é o de leitura, e ele já cobrou preço uma vez: foi esta dívida que fez a sonda
+atribuir o botão de limpar cache ao painel errado. A defesa contra isso não é código novo — é
+`tests/Kit/VoltarAoTopoTest.php`, que já tem o caso *"injeta o botão em todos os painéis"* com
+dataset dos três e o caso *"alcança também as telas que vêm de plugin"*, com o comentário que
+diz em voz alta: *"Se alguém trocar o hook por um registro por painel ou por um trait, este caso
+é o que cai."*
+
+**Fica aceita por escrito**, que é a frente 1 que esta seção pedia: o lote de CT-B valida um DOM
+onde hooks globais de qualquer painel visitado estão presentes — porque é isso que o usuário vê
+também, em qualquer painel. O que NÃO se pode concluir daquele DOM é a **proveniência** de um
+hook global. Quem precisar disso mede num processo por painel.
 
 ---
 

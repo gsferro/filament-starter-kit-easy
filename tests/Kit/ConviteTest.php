@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\ConviteDeAcesso;
+use App\Support\ValidadeDoConvite;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Actions\Testing\TestAction;
@@ -911,4 +912,74 @@ it('termina com sucesso sem convite pendente e com os lembretes desligados', fun
 
     expect($convite->fresh()?->lembretes_enviados)->toBe(0)
         ->and($convite->fresh()?->token_lembrete)->toBeNull();
+});
+
+/**
+ * `KIT_CONVITE_VALIDADE_DIAS` decide o prazo — e era a única cláusula de config da wiki
+ * `convite-de-usuario` sem teste (QA-02 do `06-relatorio-qa.md` daquela wiki).
+ *
+ * É o único limite temporal da credencial: `Convite::enviar()` grava
+ * `expira_em = now()->addDays((int) config('kit.convites.validade_em_dias', 7))` (`:158`).
+ * A única asserção que existia perto disso era `expira_em->isFuture()`, e ela sobrevive a
+ * dois mutantes óbvios — trocar o `config()` por `7` literal, e trocar `addDays` por
+ * `addYears`. Os dois deixam a credencial valendo, um deles por 7 anos.
+ *
+ * O caso ataca os dois de uma vez: muda a config para um valor que NÃO é o default e mede a
+ * data exata. Valor diferente de 7 é deliberado — com 7 o mutante do literal passaria.
+ *
+ * `Date::use(CarbonImmutable::class)` está ligado no `KitServiceProvider`, então
+ * `now()->addDays()` não muta o congelado do `travelTo`.
+ */
+it('respeita o prazo configurado do convite', function (int $dias): void {
+    config(['kit.convites.validade_em_dias' => $dias]);
+
+    $this->travelTo('2026-08-22 10:00:00');
+
+    [$convite] = conviteCom('panel_user');
+
+    expect($convite->expira_em?->toDateTimeString())
+        ->toBe(now()->addDays($dias)->toDateTimeString());
+})->with([3, 30]);
+
+/**
+ * A tabela de decisão da coerção do prazo — e por que ela não mora mais no `config/kit.php`.
+ *
+ * Regressão de um defeito medido: `KIT_CONVITE_VALIDADE_DIAS=` (chave presente, valor vazio)
+ * devolvia string vazia, o segundo argumento do `env()` não a alcançava — ele só vale para
+ * chave **ausente** — e `(int) ''` dava 0. O convite nascia com `expira_em` igual ao instante
+ * do envio, o `valido()` o rejeitava no primeiro clique, e o e-mail saía com o log registrando
+ * sucesso. Convite morto ao nascer, sem erro em lugar nenhum.
+ *
+ * **A primeira versão deste caso estava errada, e o CI provou.** Ela montava
+ * `putenv()`/`$_ENV` à mão e dava `require` no `config/kit.php` para exercitar a expressão.
+ * Passava nesta máquina e falhou no runner, com três datasets devolvendo o default: o que o
+ * `env()` do Laravel enxerga depende dos adaptadores de ambiente, então o caso media o runner,
+ * não a regra. A regra virou um método puro e o dataset passou a ser determinístico em
+ * qualquer máquina.
+ *
+ * O piso de 1 dia é deliberado: pior caso curto e visível, que faz alguém corrigir o `.env`,
+ * em vez de convite inválido ao nascer, que se disfarça de "link expirado".
+ */
+it('nunca resolve o prazo do convite para zero ou negativo', function (mixed $bruto, int $esperado): void {
+    expect(ValidadeDoConvite::emDias($bruto))->toBe($esperado);
+})->with([
+    'vazio — o defeito medido' => ['', 7],
+    'zero — nunca é intenção'  => ['0', 7],
+    'zero como int'            => [0, 7],
+    'negativo'                 => ['-5', 1],
+    'texto'                    => ['abc', 1],
+    'ausente'                  => [null, 7],
+    'valor legítimo'           => ['30', 30],
+    'valor legítimo como int'  => [30, 30],
+]);
+
+/**
+ * O default do kit está escrito num lugar só, e o `config/kit.php` o repassa.
+ *
+ * `ValidadeDoConvite::DIAS_PADRAO` é a fonte. Divergir do que o `config` entrega seria
+ * silencioso — quem lê a constante acreditaria num prazo e a aplicação usaria outro.
+ */
+it('mantem o default do prazo em sete dias', function (): void {
+    expect(ValidadeDoConvite::DIAS_PADRAO)->toBe(7)
+        ->and(config('kit.convites.validade_em_dias'))->toBe(7);
 });

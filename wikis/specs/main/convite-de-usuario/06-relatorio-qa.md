@@ -67,7 +67,7 @@ por `aceito_em`, prazo por `expira_em`, e o `where(closure)` que impede o `OR` d
   `debug`. **Severidade sobe a Major** numa instalação sem throttle de borda: o disco enche
   com `curl` num laço.
 
-### QA-02 — cláusula `KIT_CONVITE_VALIDADE_DIAS` (passo 7) sem nenhum teste · Minor · destino 3
+### QA-02 — cláusula `KIT_CONVITE_VALIDADE_DIAS` (passo 7) sem nenhum teste · Minor · destino 3 · ✅ **RESOLVIDO em 2026-08-22**
 
 - **Dimensão**: A (omissão silenciosa) + K
 - **Relacionado a**: passo 7 do PRD, `01:217-222` (seção "Variáveis de Ambiente"),
@@ -127,7 +127,7 @@ o que a wiki declara e a realidade contradiz, mais a cláusula de plano sem CT.
 | CT-14 login sem "Cadastre-se" | 5 | `TelaLogin` | `nao oferece cadastro na tela de login` | OK |
 | CT-15 e-mail já cadastrado | 2 | **invertido** por wiki irmã | `convida quem ja tem conta em vez de recusar` | ⚠️ **QA-03** |
 | CT-16 URL fora do segmento de org | 3 | rota nativa do painel | `mantem a url de aceite fora do segmento…` | OK |
-| **passo 7 — `KIT_CONVITE_VALIDADE_DIAS`** | **7** | `Convite.php:158`, `config/kit.php:234` | **— nenhum** | ❌ **QA-02** |
+| **passo 7 — `KIT_CONVITE_VALIDADE_DIAS`** | **7** | `Convite.php:158`, `config/kit.php:234` | `ConviteTest` — *respeita o prazo configurado* (3 e 30 dias) + *mantem os dois defaults* | ✅ |
 | **rota pública sem throttle** | **4** | `RegistroPorConvite::mount/recusar` | **— nenhum** | ❌ **QA-01** |
 
 Nenhum passo do PRD ficou sem código. Nenhum código novo ficou sem passo.
@@ -165,3 +165,67 @@ Nenhum passo do PRD ficou sem código. Nenhum código novo ficou sem passo.
 - Entrega real de e-mail (`MAIL_MAILER=array` na suíte; `log` no `.env.example`) — a wiki já
   registra isso como risco documentado, não como defeito.
 - Dimensões G/H por screenshot — app não servido; Playwright MCP não usado.
+
+---
+
+## Fechamento parcial — 2026-08-22
+
+**QA-02 resolvido.** `tests/Kit/ConviteTest.php` ganhou *"respeita o prazo configurado do
+convite"*, com dataset de **3 e 30 dias** — valores diferentes do default de propósito, porque
+com 7 o mutante do literal passaria. Visto falhando: trocado o `config()` de `Convite.php:158`
+por `addDays(7)` literal, os dois datasets quebram com a data errada.
+
+O segundo caso, *"mantem os dois defaults do prazo em sete dias"*, existe porque o default está
+escrito em dois lugares (`config/kit.php:234` e o segundo argumento do `config()` no model) e
+divergirem seria silencioso.
+
+### Achado novo, não coberto e não corrigido: valor VAZIO na env
+
+Ao escrever o caso apareceu um cenário que **nenhum teste cobre e que é alcançável**:
+`KIT_CONVITE_VALIDADE_DIAS=` (chave presente, valor vazio) no `.env`. Medido:
+
+    env('KIT_CONVITE_VALIDADE_DIAS', 7)  →  string(0) ""
+    (int) ""                             →  0
+
+O segundo argumento do `env()` só vale para chave **ausente**, não para valor vazio. Então
+`now()->addDays(0)` grava `expira_em` igual ao instante do envio, e `valido()` — que exige prazo
+no futuro — rejeita o convite **no primeiro clique**. O convite nasce morto, o e-mail sai, o log
+registra sucesso, e quem recebe vê "convite expirado".
+
+**✅ Corrigido em 2026-08-22**, por decisão do usuário, na fronteira onde o valor entra —
+`config/kit.php`, e não no model, para valer para qualquer leitor da chave:
+
+```php
+'validade_em_dias' => max(1, (int) (env('KIT_CONVITE_VALIDADE_DIAS') ?: 7)),
+```
+
+`?:` trata vazio, `null` e `0` como não configurado — convite de zero dia nunca é intenção.
+`max(1, …)` cobre negativo e texto (`(int) 'abc'` é 0), que produziriam o mesmo convite morto. O
+pior caso passa a ser um convite de **um dia**: curto e visível, em vez de inválido ao nascer.
+
+| `.env` | Antes | Depois |
+|---|---|---|
+| `KIT_CONVITE_VALIDADE_DIAS=` | **0** — convite morto | 7 |
+| `=0` | 0 — convite morto | 7 |
+| `=-5` | −5 — convite morto | 1 |
+| `=abc` | 0 — convite morto | 1 |
+| ausente | 7 | 7 |
+| `=30` | 30 | 30 |
+
+A coerção vive em `App\Support\ValidadeDoConvite::emDias()`, não na linha do `config/kit.php` —
+e a razão de estar numa classe é a segunda metade desta história.
+
+**A primeira guarda que eu escrevi estava errada, e o CI provou.** Ela montava
+`putenv()`/`$_ENV` à mão e dava `require` no `config/kit.php`, para exercitar a expressão em vez
+do valor já resolvido (que `config([...])` mediria). Passou na máquina local e **falhou no
+runner**, com três datasets devolvendo o default: o que o `env()` do Laravel enxerga depende dos
+adaptadores de ambiente em uso, então o caso media o runner, não a regra. Teste de coerção que
+depende de plumbing de ambiente é teste do ambiente.
+
+Com a regra num método puro, o dataset ficou determinístico em qualquer máquina — e ganhou dois
+casos que a versão anterior não conseguia expressar (`0` e `30` já como `int`, não só como
+string).
+
+**Guarda**: `tests/Kit/ConviteTest.php`, caso *"nunca resolve o prazo do convite para zero ou
+negativo"*, dataset de oito. Visto falhando: trocado o corpo do método por `(int) $bruto`,
+**6 dos 8** quebram — o do valor vazio com *"Failed asserting that 0 is identical to 7"*.
