@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\ConviteDeAcesso;
+use App\Support\ValidadeDoConvite;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Actions\Testing\TestAction;
@@ -941,34 +942,7 @@ it('respeita o prazo configurado do convite', function (int $dias): void {
 })->with([3, 30]);
 
 /**
- * Os dois defaults do prazo concordam — e são dois de propósito.
- *
- * O prazo tem default escrito em DOIS lugares: `config/kit.php:234`
- * (`env('KIT_CONVITE_VALIDADE_DIAS', 7)`) e o segundo argumento do `config()` em
- * `Convite::enviar()`. Divergirem é defeito silencioso: quem lê a config acredita num prazo
- * e o código aplica outro, sem erro nenhum.
- *
- * Este caso é curto porque o mutante que ele mata é curto — mudar um dos dois números.
- * O prazo em si é medido nos casos acima, com valores que não são o default.
- *
- * **Não** tentei simular "chave ausente" com `config([... => null])`: a config resolve o
- * `env()` na carga, então a chave nunca chega nula em produção — e `(int) null` dá 0, o que
- * faria o caso medir um cenário que não existe. Ver a nota sobre valor VAZIO no relatório de
- * QA: esse sim é alcançável e não está coberto aqui.
- */
-it('mantem os dois defaults do prazo em sete dias', function (): void {
-    expect(config('kit.convites.validade_em_dias'))->toBe(7);
-
-    config(['kit.convites.validade_em_dias' => null]);
-
-    // Com a chave nula o `config()` NÃO cai no segundo argumento — ele só vale para chave
-    // ausente. É o que prova que o `7` do model é inalcançável por esta via, e que o
-    // default que vale na prática é o do `config/kit.php`.
-    expect(config('kit.convites.validade_em_dias', 7))->toBeNull();
-});
-
-/**
- * O prazo nunca sai zero ou negativo do `config/kit.php` — nem com lixo no `.env`.
+ * A tabela de decisão da coerção do prazo — e por que ela não mora mais no `config/kit.php`.
  *
  * Regressão de um defeito medido: `KIT_CONVITE_VALIDADE_DIAS=` (chave presente, valor vazio)
  * devolvia string vazia, o segundo argumento do `env()` não a alcançava — ele só vale para
@@ -976,42 +950,36 @@ it('mantem os dois defaults do prazo em sete dias', function (): void {
  * do envio, o `valido()` o rejeitava no primeiro clique, e o e-mail saía com o log registrando
  * sucesso. Convite morto ao nascer, sem erro em lugar nenhum.
  *
- * O caso **reavalia o arquivo de config**, não o valor já resolvido: `config([...])` no teste
- * escreveria por cima da expressão e mediria o teste, não o kit. É por isso que ele dá
- * `require` no arquivo com o ambiente montado à mão — é o único jeito de exercitar o
- * `max(1, (int) (env(...) ?: 7))` de verdade.
+ * **A primeira versão deste caso estava errada, e o CI provou.** Ela montava
+ * `putenv()`/`$_ENV` à mão e dava `require` no `config/kit.php` para exercitar a expressão.
+ * Passava nesta máquina e falhou no runner, com três datasets devolvendo o default: o que o
+ * `env()` do Laravel enxerga depende dos adaptadores de ambiente, então o caso media o runner,
+ * não a regra. A regra virou um método puro e o dataset passou a ser determinístico em
+ * qualquer máquina.
  *
- * @param  string|null  $bruto  o que está no `.env`; `null` é a chave ausente
+ * O piso de 1 dia é deliberado: pior caso curto e visível, que faz alguém corrigir o `.env`,
+ * em vez de convite inválido ao nascer, que se disfarça de "link expirado".
  */
-it('nunca resolve o prazo do convite para zero ou negativo', function (?string $bruto, int $esperado): void {
-    $anterior = getenv('KIT_CONVITE_VALIDADE_DIAS');
-
-    try {
-        if ($bruto === null) {
-            putenv('KIT_CONVITE_VALIDADE_DIAS');
-            unset($_ENV['KIT_CONVITE_VALIDADE_DIAS'], $_SERVER['KIT_CONVITE_VALIDADE_DIAS']);
-        } else {
-            putenv("KIT_CONVITE_VALIDADE_DIAS={$bruto}");
-            $_ENV['KIT_CONVITE_VALIDADE_DIAS'] = $bruto;
-        }
-
-        $config = require config_path('kit.php');
-
-        expect($config['convites']['validade_em_dias'])->toBe($esperado);
-    } finally {
-        if ($anterior === false) {
-            putenv('KIT_CONVITE_VALIDADE_DIAS');
-            unset($_ENV['KIT_CONVITE_VALIDADE_DIAS'], $_SERVER['KIT_CONVITE_VALIDADE_DIAS']);
-        } else {
-            putenv("KIT_CONVITE_VALIDADE_DIAS={$anterior}");
-            $_ENV['KIT_CONVITE_VALIDADE_DIAS'] = $anterior;
-        }
-    }
+it('nunca resolve o prazo do convite para zero ou negativo', function (mixed $bruto, int $esperado): void {
+    expect(ValidadeDoConvite::emDias($bruto))->toBe($esperado);
 })->with([
     'vazio — o defeito medido' => ['', 7],
     'zero — nunca é intenção'  => ['0', 7],
+    'zero como int'            => [0, 7],
     'negativo'                 => ['-5', 1],
     'texto'                    => ['abc', 1],
     'ausente'                  => [null, 7],
     'valor legítimo'           => ['30', 30],
+    'valor legítimo como int'  => [30, 30],
 ]);
+
+/**
+ * O default do kit está escrito num lugar só, e o `config/kit.php` o repassa.
+ *
+ * `ValidadeDoConvite::DIAS_PADRAO` é a fonte. Divergir do que o `config` entrega seria
+ * silencioso — quem lê a constante acreditaria num prazo e a aplicação usaria outro.
+ */
+it('mantem o default do prazo em sete dias', function (): void {
+    expect(ValidadeDoConvite::DIAS_PADRAO)->toBe(7)
+        ->and(config('kit.convites.validade_em_dias'))->toBe(7);
+});

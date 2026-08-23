@@ -212,9 +212,20 @@ pior caso passa a ser um convite de **um dia**: curto e visível, em vez de inv�
 | ausente | 7 | 7 |
 | `=30` | 30 | 30 |
 
+A coerção vive em `App\Support\ValidadeDoConvite::emDias()`, não na linha do `config/kit.php` —
+e a razão de estar numa classe é a segunda metade desta história.
+
+**A primeira guarda que eu escrevi estava errada, e o CI provou.** Ela montava
+`putenv()`/`$_ENV` à mão e dava `require` no `config/kit.php`, para exercitar a expressão em vez
+do valor já resolvido (que `config([...])` mediria). Passou na máquina local e **falhou no
+runner**, com três datasets devolvendo o default: o que o `env()` do Laravel enxerga depende dos
+adaptadores de ambiente em uso, então o caso media o runner, não a regra. Teste de coerção que
+depende de plumbing de ambiente é teste do ambiente.
+
+Com a regra num método puro, o dataset ficou determinístico em qualquer máquina — e ganhou dois
+casos que a versão anterior não conseguia expressar (`0` e `30` já como `int`, não só como
+string).
+
 **Guarda**: `tests/Kit/ConviteTest.php`, caso *"nunca resolve o prazo do convite para zero ou
-negativo"*, dataset dos seis. Ele dá `require` no arquivo de config com o ambiente montado à mão,
-e não `config([...])`: escrever por cima do valor resolvido mediria o teste, não o kit — a
-expressão `max(1, (int) (env(...) ?: 7))` nunca seria exercitada. Visto falhando: revertida a
-guarda, **4 dos 6 datasets** quebram, o do valor vazio com *"Failed asserting that 0 is identical
-to 7"*.
+negativo"*, dataset de oito. Visto falhando: trocado o corpo do método por `(int) $bruto`,
+**6 dos 8** quebram — o do valor vazio com *"Failed asserting that 0 is identical to 7"*.
