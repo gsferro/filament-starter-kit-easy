@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\NumeroDoEnv;
 use App\Support\ValidadeDoConvite;
 
 return [
@@ -169,8 +170,8 @@ return [
     */
 
     'retencao' => [
-        'excecoes_em_dias' => (int) env('KIT_RETENCAO_EXCECOES_DIAS', 14),
-        'emails_em_dias'   => (int) env('KIT_RETENCAO_EMAILS_DIAS', 14),
+        'excecoes_em_dias' => NumeroDoEnv::diasOuDesligado(env('KIT_RETENCAO_EXCECOES_DIAS'), 14),
+        'emails_em_dias'   => NumeroDoEnv::diasOuDesligado(env('KIT_RETENCAO_EMAILS_DIAS'), 14),
 
         /*
          * Histórico de import e export (`imports`, `exports`, `failed_import_rows`).
@@ -185,8 +186,8 @@ return [
          *
          * Zero ou negativo desliga a poda, sem apagar nada por engano.
          */
-        'importacoes_em_dias' => (int) env('KIT_RETENCAO_IMPORTACOES_DIAS', 30),
-        'exportacoes_em_dias' => (int) env('KIT_RETENCAO_EXPORTACOES_DIAS', 30),
+        'importacoes_em_dias' => NumeroDoEnv::diasOuDesligado(env('KIT_RETENCAO_IMPORTACOES_DIAS'), 30),
+        'exportacoes_em_dias' => NumeroDoEnv::diasOuDesligado(env('KIT_RETENCAO_EXPORTACOES_DIAS'), 30),
     ],
 
     /*
@@ -249,7 +250,7 @@ return [
          * o operador leva 504 com metade do lote enviada. Subir daqui exige worker
          * de fila rodando.
          */
-        'limite_do_lote' => (int) env('KIT_CONVITE_LIMITE_LOTE', 100),
+        'limite_do_lote' => NumeroDoEnv::positivo(env('KIT_CONVITE_LIMITE_LOTE'), 100),
 
         /*
         | Dias, contados do ENVIO, em que cada lembrete do convite pendente é
