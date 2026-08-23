@@ -69,9 +69,9 @@ o ultimo item da fila da auditoria aberta na 0.18.3.
   cadastrado e **convidado**, nao recusado. A wiki `convite-para-usuario-existente` havia previsto
   esta inversao por escrito e o laco nunca foi fechado.
 
-## [Nao lancado]
+## [0.18.8] - 2026-08-23
 
-Um caminho nao destrutivo para refazer a customizacao, e a correcao de uma recomendacao
+Release de correcao. Um caminho nao destrutivo para refazer a customizacao, e a correcao de uma recomendacao
 perigosa que a 0.18.7 escreveu no README.
 
 ### Corrigido
