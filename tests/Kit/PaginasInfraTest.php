@@ -2,6 +2,8 @@
 
 use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Models\User;
+use App\Support\RetencaoDeExcecoes;
+use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
@@ -107,3 +109,38 @@ it('salva os papéis do usuário no painel admin', function (): void {
 
     expect($alvo->fresh()->hasRole('admin'))->toBeTrue();
 });
+
+/**
+ * A poda de exceções com prazo zero NÃO apaga a trilha — o contrário do que fazia.
+ *
+ * `Exception::prunable()` faz `whereDate('created_at', '<=', $intervalo)`
+ * (`vendor/bezhansalleh/filament-exceptions/src/Models/Exception.php:44`), e `whereDate` compara
+ * só a data. Com `subDays(0)` o corte era HOJE, então casava com a tabela inteira, inclusive as
+ * linhas do dia; `subDays(-5)` punha o corte no futuro. E o bloco `retencao` do `config/kit.php`
+ * promete que zero ou negativo **desliga** a poda — as três de `routes/console.php` honram com
+ * `if ($dias <= 0) return;`, esta era a quarta e fazia o oposto.
+ *
+ * **A primeira versão deste caso não provava nada**, e vale registrar: ela media
+ * `FilamentExceptionsPlugin::get()->getModelPruneInterval()` depois de mudar a config. Só que o
+ * provider registra o plugin **uma vez, no boot** — o corte medido era o do boot, com o valor do
+ * `.env`, e a config nova não chegava lá. Ficava vermelho por motivo errado. A decisão saiu do
+ * provider para `RetencaoDeExcecoes::corte()`, que lê a config na chamada.
+ */
+it('desliga a poda de excecoes com prazo zero ou negativo', function (mixed $dias): void {
+    config(['kit.retencao.excecoes_em_dias' => $dias]);
+
+    expect(RetencaoDeExcecoes::corte()->lessThan(now()->subYears(50)))->toBeTrue();
+})->with([0, -5, '0', ''])->group('kit');
+
+/**
+ * E com prazo válido a poda continua ligada, no dia certo.
+ *
+ * A metade positiva, e ela não é decoração: sem este caso, devolver `subYears(100)` sempre
+ * passaria no caso acima e desligaria a poda para todo mundo — a tabela cresceria sem teto, que
+ * é exatamente o que a retenção existe para evitar.
+ */
+it('mantem a poda de excecoes no prazo configurado', function (): void {
+    config(['kit.retencao.excecoes_em_dias' => 14]);
+
+    expect(RetencaoDeExcecoes::corte()->toDateString())->toBe(now()->subDays(14)->toDateString());
+})->group('kit');

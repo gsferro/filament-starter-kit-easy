@@ -8,6 +8,7 @@ use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Models\Projeto;
 use App\Support\CorPrimaria;
+use App\Support\RetencaoDeExcecoes;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Bityukov\CommandCenter\Filament\CommandCenterPlugin;
@@ -294,9 +295,24 @@ class InfraPanelProvider extends PanelProvider
                      * `now()` devolve `CarbonImmutable` — e a assinatura do pacote pede
                      * `Carbon` (o mutável). O PHPStan pega; em runtime seria TypeError.
                      */
-                    ->modelPruneInterval(
-                        Carbon::now()->subDays((int) config('kit.retencao.excecoes_em_dias', 14)),
-                    ),
+                    /*
+                     * O ramo do zero NÃO é preciosismo: sem ele, `subDays(0)` devolve AGORA, e
+                     * o `Exception::prunable()` do pacote faz
+                     * `whereDate('created_at', '<=', $intervalo)`
+                     * (`vendor/bezhansalleh/filament-exceptions/src/Models/Exception.php:44`).
+                     * `whereDate` compara só a DATA, então o corte de hoje casa com **toda** a
+                     * tabela, inclusive as linhas de hoje — o `model:prune` seguinte apagava a
+                     * trilha inteira. Negativo é pior: `subDays(-5)` joga o corte no futuro.
+                     *
+                     * E o bloco `retencao` do `config/kit.php` promete, por escrito, que "zero
+                     * ou negativo desliga a poda daquela trilha". As três podas de
+                     * `routes/console.php` honram isso com `if ($dias <= 0) return;`. Esta era
+                     * a quarta, e fazia o oposto do documentado: apagava tudo.
+                     *
+                     * Um corte de cem anos atrás desliga de verdade, mantendo o contrato do
+                     * pacote, que exige uma data e não aceita nulo.
+                     */
+                    ->modelPruneInterval(RetencaoDeExcecoes::corte()),
 
                 /*
                  * Trilha de e-mail enviado.
