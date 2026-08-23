@@ -333,7 +333,7 @@ Convite::convidarEmMassa(
 
 ---
 
-## CT-09: o `admin_organizacao` convida em massa, e o `tenant_id` é carimbado à força
+## CT-09: o `admin_app` convida em massa, e o `tenant_id` é carimbado à força
 
 **Tipo**: `Feature`
 **Arquivo**: `tests/Tenancy/ConviteEmMassaTenancyTest.php`
@@ -342,7 +342,7 @@ Convite::convidarEmMassa(
 ### Precondições
 
 - Seeders no `beforeEach`; `$acme` e `$globex` criadas.
-- `$ana = usuarioComPapel('admin_organizacao', $acme, 'ana@example.com');`
+- `$ana = usuarioComPapel('admin_app', $acme, 'ana@example.com');`
 - `Notification::fake()`; `Filament::setCurrentPanel('app')`; `Filament::setTenant($acme)`;
   `actingAs($ana)`.
 
@@ -367,7 +367,7 @@ Livewire::test(App\Filament\App\Resources\Convites\Pages\ListConvites::class)
   **dentro** do `$fillable` (`app/Models/Convite.php:59-70`) e não usa `BelongsToTenant`, então o
   mass assignment aceitaria o valor forjado. Quem sobrescreve é o trait do lote, no padrão de
   `app/Filament/App/Resources/Convites/Pages/CreateConvite.php:27-35`.
-- `admin_organizacao` tem `Create:Convite` porque recebe a matriz inteira do painel `app`
+- `admin_app` tem `Create:Convite` porque recebe a matriz inteira do painel `app`
   (`database/seeders/PapeisSeeder.php:70-73`).
 
 ---
@@ -527,7 +527,7 @@ Convite::convidarEmMassa(
 ### Precondições
 
 - Seeders no `beforeEach`; `Notification::fake()`.
-- `$acme` criada; `$ana = usuarioComPapel('admin_organizacao', $acme, …)` autenticada, painel
+- `$acme` criada; `$ana = usuarioComPapel('admin_app', $acme, …)` autenticada, painel
   `app`, tenant `acme`.
 
 ### Dados de Entrada
@@ -640,7 +640,7 @@ $doPanelUser = Role::findByName('panel_user')->permissions->pluck('name');
 | CT-06 | acima do limite: nada enviado, modal aberta | `tests/Kit/ConviteEmMassaTest.php` |
 | CT-07 | uma notificação por enviado, nenhuma por pulado | `tests/Kit/ConviteEmMassaTest.php` |
 | CT-08 | resumo do lote no log, mascarado e sem token | `tests/Kit/ConviteEmMassaTest.php` |
-| CT-09 | `admin_organizacao` com `tenant_id` carimbado | `tests/Tenancy/ConviteEmMassaTenancyTest.php` |
+| CT-09 | `admin_app` com `tenant_id` carimbado | `tests/Tenancy/ConviteEmMassaTenancyTest.php` |
 | CT-10 | **o lote não aborta com exceção no envio** | `tests/Kit/ConviteEmMassaTest.php` |
 | CT-11 | repetido no texto vira um só | `tests/Kit/ConviteEmMassaTest.php` |
 | CT-12 | ação escondida sem `Create:Convite` | `tests/Kit/ConviteEmMassaTest.php` |
