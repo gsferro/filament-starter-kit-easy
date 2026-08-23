@@ -3,9 +3,10 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Nao lancado]
+## [0.18.5] - 2026-08-23
 
-Throttle na recusa anonima do convite, e o gate de QA da wiki que faltava.
+Release de correcao. Throttle na recusa anonima do convite, e o gate de QA da wiki que faltava —
+o ultimo item da fila da auditoria aberta na 0.18.3.
 
 ### Corrigido
 
