@@ -30,7 +30,7 @@ exercitaram os três CT sem teste mostraram o **código correto**.
 
 ## Achados
 
-### QA-01 — CT-11 (a "falha silenciosa mais provável do plano") não tem teste nenhum · Major · destino 3
+### QA-01 — CT-11 (a "falha silenciosa mais provável do plano") não tem teste nenhum · Major · destino 3 · ✅ **RESOLVIDO em 2026-08-22**
 
 - **Dimensão**: A (omissão silenciosa) + K (adequação da suíte)
 - **Relacionado a**: CT-11, passo 6/7d do PRD, `app/Filament/Admin/Resources/Roles/Pages/CreateRole.php`
@@ -56,7 +56,7 @@ exercitaram os três CT sem teste mostraram o **código correto**.
 - **Ação exigida**: invocar a `feature-test-design` com o achado; a classe de lacuna é
   "efeito colateral de vendor não asserido" — mesma classe do CT-10, que existe.
 
-### QA-02 — CT-14 e CT-15 sem teste; o `->required()` dos dois campos não tem oráculo · Minor · destino 3
+### QA-02 — CT-14 e CT-15 sem teste; o `->required()` dos dois campos não tem oráculo · Minor · destino 3 · ✅ **RESOLVIDO em 2026-08-22**
 
 - **Dimensão**: A + K
 - **Relacionado a**: CT-14, CT-15, passo 7 do PRD
@@ -122,10 +122,10 @@ Oráculo = `01-plano-acao.md` (fraco). Só as linhas com lacuna.
 | CT-08 | painel nulo não é coringa | 3 | `User::canAccessPanel` | `PaineisTest` `não trata painel nulo como coringa` | OK |
 | CT-09 | tela agrupa por painel | 6 | `Roles/RoleResource::getResourceEntitiesSchema` | `PaineisTest` `agrupa as permissões por painel…` | OK |
 | CT-10 | Resource publicado é o registrado | 6a | idem | `PaineisTest` `registra o RoleResource publicado…` | OK |
-| **CT-11** | **painel salva sem virar permission** | **7d** | `CreateRole.php:28,34,37` / `EditRole.php:36,42,45` | **— nenhum** | ❌ **QA-01** |
+| **CT-11** | **painel salva sem virar permission** | **7d** | `CreateRole.php:28,34,37` / `EditRole.php:36,42,45` | `PaineisTest` — *salva o painel do papel sem virar permission* + a metade `EditRole` | ✅ |
 | CT-12/13 | papel `app` em qualquer org; papel de org não abre `/admin` | 3 | `User::canAccessPanel` | `TenancyTest` `exige papel no contexto global…` | OK |
-| **CT-14** | **papel obrigatório ao criar usuário** | **7** | `Admin/…/UserResource.php:70` | **— nenhum** | ❌ **QA-02** |
-| **CT-15** | **organização obrigatória ao criar usuário** | **7** | `Admin/…/UserResource.php:124-130` | **— nenhum** | ❌ **QA-02** |
+| **CT-14** | **papel obrigatório ao criar usuário** | **7** | `Admin/…/UserResource.php:70` | `PaineisTest` — *exige papel ao criar usuario* | ✅ |
+| **CT-15** | **organização obrigatória ao criar usuário** | **7** | `Admin/…/UserResource.php:124-130` | `TenancyTest` — *exige organizacao ao criar usuario* | ✅ |
 | CT-16 | `app/Support` no `kit:update` | 10 | `KitUpdate.php:91` | `KitUpdateTest` (varredura da árvore) | OK |
 | — | passo 11: rule de IA | 11 | `.ai/rules/filament.md` §31, §58, §64 | `QualidadeDeCodigoTest` (indireto) | OK |
 
@@ -163,3 +163,34 @@ Nenhum passo do PRD ficou sem código. Nenhum código novo ficou sem passo.
 - Dimensões G/H por screenshot — app não servido; Playwright MCP não usado.
 - CT-09 no navegador — o `assertSee('Painel /admin')` do `PaineisTest` prova o texto no
   DOM, não que os três grupos estejam visíveis nos dois temas.
+
+---
+
+## Fechamento — 2026-08-22
+
+QA-01 e QA-02 resolvidos. Os quatro casos foram escritos, e cada um **visto falhando** contra um
+mutante cirúrgico antes de ser aceito:
+
+| Caso | Onde | Mutante que o mata | O que apareceu |
+|---|---|---|---|
+| CT-11 (`CreateRole`) | `tests/Kit/PaineisTest.php` | tirar `'painel'` do `Arr::only` | `painel` gravado como `null` |
+| CT-11 (permission fantasma) | idem | tirar `'painel'` **só** do `filter()` | permission chamada `app` criada — *"Failed asserting that true is false"* |
+| CT-11 (`EditRole`) | idem | as listas do `EditRole` são separadas das do `CreateRole` | (metade escrita para o cenário "corrige uma e esquece a outra") |
+| CT-14 | idem | remover `->required()` de `roles` | *"Component has no errors"* |
+| CT-15 | `tests/Tenancy/TenancyTest.php` | remover `->required()` de `tenants` | *"Component has no errors"* |
+
+**Onde foram escritos, e por que não nos arquivos que o `04` nomeia**: QA-03 registrou que
+`tests/Kit/PerfilEAcessoTest.php` e `tests/Tenancy/PerfilEAcessoTenancyTest.php` **nunca
+existiram** — os casos da feature vivem em `PaineisTest.php` e `TenancyTest.php`. Seguir o `04`
+criaria dois arquivos novos para separar casos que pertencem ao mesmo contrato. O `04` foi
+corrigido para nomear os arquivos reais.
+
+**Uma armadilha que quase deixou os três casos passarem à toa**: teste de componente Livewire não
+atravessa o middleware que define e **boota** o painel, então o painel corrente era o default
+(`infra`) e as páginas morriam em *"Plugin [filament-shield] is not registered for panel
+[infra]"*. Resolvido com o helper `noPainelBootado('admin')`, que já existia em `tests/Pest.php`
+para exatamente isto.
+
+**A dimensão K sai de ⚠️**: os três CT sem oráculo eram o motivo dela. O `--mutate` continua não
+rodado como ferramenta, mas os mutantes que importavam foram construídos e mortos à mão, um por
+asserção.

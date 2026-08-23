@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Admin\Resources\Users\Pages\CreateUser;
 use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Models\Projeto;
 use App\Models\Tenant;
@@ -324,3 +325,56 @@ function projeto(Tenant $tenant, string $nome): Projeto
 
     return $projeto;
 }
+
+/**
+ * CT-15 — com a tenancy ligada, criar usuário exige organização.
+ *
+ * Era a **única** cláusula de requisito rastreável da wiki `perfil-e-acesso-ao-painel` — o
+ * pedido de "adicionar ao cadastro do usuário o tenant a que ele pertence, para evitar acesso
+ * indevido a outros dados" — e estava sem teste (QA-02 do `06-relatorio-qa.md` daquela wiki).
+ *
+ * O campo é `Select::make('tenants')->required()->visible(fn () => config('kit.tenancy.enabled'))`
+ * (`UserResource:124-132`). São **duas** propriedades a proteger, e por isso o caso tem duas
+ * metades: sem organização é erro de formulário, e com organização a pivot `tenant_user` nasce.
+ *
+ * A segunda metade não é decoração. `->required()` sozinho passaria num formulário que valida e
+ * depois não grava o vínculo — e usuário sem linha em `tenant_user` não vê organização nenhuma
+ * no seletor e toma 404 na URL direta. O erro de formulário protege contra a conta órfã; a
+ * asserção da pivot protege contra a gravação silenciosamente perdida.
+ */
+it('exige organizacao ao criar usuario', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class, UsuarioAdminSeeder::class]);
+
+    $master = User::where('email', config('kit.admin.email'))->firstOrFail();
+    $papel  = Role::findByName('panel_user');
+    $acme   = tenant('Acme', 'acme');
+
+    Filament::setCurrentPanel('admin');
+    $this->actingAs($master);
+
+    $dados = [
+        'name'     => 'Fulano',
+        'email'    => 'fulano@example.com',
+        'password' => 'secret1234',
+        'roles'    => [$papel->getKey()],
+    ];
+
+    Livewire::test(CreateUser::class)
+        ->fillForm($dados)
+        ->call('create')
+        ->assertHasFormErrors(['tenants' => 'required']);
+
+    expect(User::where('email', 'fulano@example.com')->exists())->toBeFalse();
+
+    Livewire::test(CreateUser::class)
+        ->fillForm([...$dados, 'tenants' => [$acme->getKey()]])
+        ->call('create')
+        ->assertHasNoFormErrors();
+
+    $novo = User::where('email', 'fulano@example.com')->firstOrFail();
+
+    $this->assertDatabaseHas('tenant_user', [
+        'tenant_id' => $acme->getKey(),
+        'user_id'   => $novo->getKey(),
+    ]);
+});

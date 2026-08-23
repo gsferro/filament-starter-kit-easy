@@ -1,5 +1,8 @@
 <?php
 
+use App\Filament\Admin\Resources\Roles\Pages\CreateRole;
+use App\Filament\Admin\Resources\Roles\Pages\EditRole;
+use App\Filament\Admin\Resources\Users\Pages\CreateUser;
 use App\Filament\App\Resources\Convites\ConviteResource;
 use App\Models\User;
 use App\Support\Paineis;
@@ -9,6 +12,7 @@ use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Log;
 use Jeffgreco13\FilamentBreezy\Pages\MyProfilePage;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -172,4 +176,102 @@ it('agrupa as permissões por painel na tela de papéis', function (): void {
         ->assertSee('Painel /admin')
         ->assertSee('Painel /app')
         ->assertSee('Painel /infra');
+});
+
+/**
+ * CT-11 — gravar papel preserva o `painel` e NÃO cria permission fantasma.
+ *
+ * O `04-casos-de-teste.md` desta wiki chama isto de "a falha silenciosa mais provável de todo
+ * este plano", e até aqui era o único CT dela sem teste — `grep -rn 'CreateRole\|EditRole'
+ * tests/` voltava vazio (QA-01 do `06-relatorio-qa.md`).
+ *
+ * O mecanismo: o formulário de papel do Shield trata cada chave do estado como uma permission
+ * a sincronizar. A coluna `painel` é campo do kit, não permission — se ela não estiver nas
+ * listas de exclusão de `CreateRole::mutateFormDataBeforeCreate()` (`:28` e `:34-37`) e do
+ * `EditRole` (`:36` e `:42-45`), o `afterCreate` do Shield cria uma permission **chamada
+ * `app`**. Nada falha: o papel grava, a tela responde, e a matriz de permissões ganha uma
+ * linha que não é de ninguém.
+ *
+ * Por isso o caso assere as duas coisas juntas — o `painel` gravado E a ausência da
+ * permission. Asserir só a primeira deixaria o defeito passar inteiro.
+ */
+it('salva o painel do papel sem virar permission', function (): void {
+    // As tres paginas sao do /admin, e teste de componente Livewire nao atravessa o
+    // middleware que define e BOOTA o painel: sem isto o painel corrente e o default e a
+    // pagina morre em "Plugin [filament-shield] is not registered for panel [infra]".
+    noPainelBootado('admin');
+    $this->actingAs(usuarioCom('master_global'));
+
+    Livewire::test(CreateRole::class)
+        ->fillForm(['name' => 'suporte', 'guard_name' => 'web', 'painel' => 'app'])
+        ->call('create')
+        ->assertHasNoFormErrors();
+
+    $this->assertDatabaseHas(config('permission.table_names.roles', 'roles'), [
+        'name'   => 'suporte',
+        'painel' => 'app',
+    ]);
+
+    expect(Permission::where('name', 'app')->exists())->toBeFalse();
+});
+
+/**
+ * A metade `EditRole` do CT-11 — e ela não é redundante.
+ *
+ * São duas classes com duas listas de exclusão **separadas** (`CreateRole:28,34-37` e
+ * `EditRole:36,42-45`). Corrigir uma e esquecer a outra é o cenário realista, e produz o
+ * defeito só na edição: quem criar o papel pela tela de criação nunca vê nada errado.
+ *
+ * Sem `assertRedirect()`: tela de edição do Filament não redireciona depois de salvar.
+ */
+it('salva o painel do papel na edicao sem virar permission', function (): void {
+    // As tres paginas sao do /admin, e teste de componente Livewire nao atravessa o
+    // middleware que define e BOOTA o painel: sem isto o painel corrente e o default e a
+    // pagina morre em "Plugin [filament-shield] is not registered for panel [infra]".
+    noPainelBootado('admin');
+    $this->actingAs(usuarioCom('master_global'));
+
+    $papel = Role::create(['name' => 'suporte', 'guard_name' => 'web', 'painel' => 'app']);
+
+    Livewire::test(EditRole::class, ['record' => $papel->getKey()])
+        ->fillForm(['name' => 'suporte', 'guard_name' => 'web', 'painel' => 'infra'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $this->assertDatabaseHas(config('permission.table_names.roles', 'roles'), [
+        'id'     => $papel->getKey(),
+        'painel' => 'infra',
+    ]);
+
+    expect(Permission::where('name', 'infra')->exists())->toBeFalse();
+});
+
+/**
+ * CT-14 — criar usuário sem papel é erro de formulário, não conta órfã.
+ *
+ * Papel é o que dá acesso a painel (`User::canAccessPanel()` lê `roles.painel`), então
+ * usuário sem papel é conta morta: autentica na tela de login e leva 403 nos três painéis.
+ * O `->required()` do Select vive em `UserResource:70`; este caso é o que impede alguém de
+ * removê-lo por achar que papel é opcional.
+ *
+ * A segunda asserção importa tanto quanto a primeira: erro de formulário que ainda assim
+ * grava o usuário seria pior que nenhum erro.
+ */
+it('exige papel ao criar usuario', function (): void {
+    // As tres paginas sao do /admin, e teste de componente Livewire nao atravessa o
+    // middleware que define e BOOTA o painel: sem isto o painel corrente e o default e a
+    // pagina morre em "Plugin [filament-shield] is not registered for panel [infra]".
+    noPainelBootado('admin');
+    $this->actingAs(usuarioCom('master_global'));
+
+    Livewire::test(CreateUser::class)
+        ->fillForm([
+            'name'     => 'Fulano',
+            'email'    => 'fulano@example.com',
+            'password' => 'secret1234',
+        ])
+        ->call('create')
+        ->assertHasFormErrors(['roles' => 'required']);
+
+    expect(User::where('email', 'fulano@example.com')->exists())->toBeFalse();
 });

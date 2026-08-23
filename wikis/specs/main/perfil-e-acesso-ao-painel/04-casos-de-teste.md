@@ -1,5 +1,12 @@
 # Casos de Teste — Perfil × permissão × acesso ao painel
 
+> **Correção de 2026-08-22 (QA-03).** Este documento nomeava `tests/Kit/PerfilEAcessoTest.php` e
+> `tests/Tenancy/PerfilEAcessoTenancyTest.php`, que **nunca existiram**: os casos da feature
+> foram escritos em `PaineisTest.php` e `TenancyTest.php`, junto do resto do contrato de acesso,
+> e nada registrou a mudança. Os caminhos abaixo foram corrigidos para os arquivos reais.
+> Especificação que aponta para arquivo inexistente é pior que especificação sem arquivo: ela faz
+> quem procura o teste concluir que ele foi apagado.
+
 ## Setup Global
 
 ### Estratégia de DB
@@ -68,7 +75,7 @@ Sem tenancy o `setPermissionsTeamId()` é inofensivo (o spatie ignora quando
 ## CT-01: master_global entra nos três painéis
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Kit/PerfilEAcessoTest.php`
+**Arquivo**: `tests/Kit/PaineisTest.php`
 **Método**: `it('master_global entra nos tres paineis')`
 
 ### Precondições
@@ -94,7 +101,7 @@ actingAs($user)->get('/admin'), get('/app'), get('/infra')
 ## CT-02: cada papel entra só no painel que declara
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Kit/PerfilEAcessoTest.php`
+**Arquivo**: `tests/Kit/PaineisTest.php`
 **Método**: `it('papel abre so o painel que declara')` — com `dataset`
 
 ### Precondições
@@ -123,7 +130,7 @@ dataset('papel_x_painel', [
 ## CT-03: usuário sem papel nenhum não entra em painel nenhum
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Kit/PerfilEAcessoTest.php`
+**Arquivo**: `tests/Kit/PaineisTest.php`
 **Método**: `it('usuario sem papel leva 403 nos tres paineis')`
 
 ### Precondições
@@ -149,7 +156,7 @@ actingAs($user)->get('/admin'), get('/app'), get('/infra')
 ## CT-04: negativa de painel vira log com motivo
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Kit/PerfilEAcessoTest.php`
+**Arquivo**: `tests/Kit/PaineisTest.php`
 **Método**: `it('nega painel e registra o motivo no log')`
 
 ### Precondições
@@ -176,7 +183,7 @@ actingAs($user)->get('/admin')
 ## CT-05: `Paineis::permissoes()` devolve conjuntos diferentes por painel
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Kit/PerfilEAcessoTest.php`
+**Arquivo**: `tests/Kit/PaineisTest.php`
 **Método**: `it('mapeia permissoes por painel')`
 
 ### Precondições
@@ -202,7 +209,7 @@ Paineis::permissoes('admin'); Paineis::permissoes('app'); Paineis::permissoes('i
 ## CT-06: as permissões dos três painéis existem no banco
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Kit/PerfilEAcessoTest.php`
+**Arquivo**: `tests/Kit/PaineisTest.php`
 **Método**: `it('gera permission para os tres paineis')`
 
 ### Precondições
@@ -226,7 +233,7 @@ Permission::pluck('name');
 ## CT-07: matriz do `PapeisSeeder` é exatamente a do painel
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Kit/PerfilEAcessoTest.php`
+**Arquivo**: `tests/Kit/PaineisTest.php`
 **Método**: `it('recorta a matriz de papeis pelo painel')`
 
 ### Precondições
@@ -255,7 +262,7 @@ Role::findByName('master_global')->permissions;
 ## CT-08: papel com painel nulo não abre painel algum
 
 **Tipo**: `Unit`
-**Arquivo**: `tests/Kit/PerfilEAcessoTest.php`
+**Arquivo**: `tests/Kit/PaineisTest.php`
 **Método**: `it('papel sem painel vale em qualquer painel')`
 
 ### Precondições
@@ -283,7 +290,7 @@ $user->canAccessPanel(Filament::getPanel('admin'));
 ## CT-09: tela de papéis agrupa por painel
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Kit/PerfilEAcessoTest.php`
+**Arquivo**: `tests/Kit/PaineisTest.php`
 **Método**: `it('a tela de papeis mostra um grupo por painel')`
 
 ### Precondições
@@ -308,7 +315,7 @@ actingAs($user)->get('/admin/shield/roles/create')
 ## CT-10: o Resource de papéis é o do projeto
 
 **Tipo**: `Unit`
-**Arquivo**: `tests/Kit/PerfilEAcessoTest.php`
+**Arquivo**: `tests/Kit/PaineisTest.php`
 **Método**: `it('usa o RoleResource publicado no projeto')`
 
 ### Precondições
@@ -333,7 +340,7 @@ Filament::getPanel('admin')->getResources();
 ## CT-11: gravar papel preserva o painel e não cria permission fantasma
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Kit/PerfilEAcessoTest.php`
+**Arquivo**: `tests/Kit/PaineisTest.php`
 **Método**: `it('salva o painel do papel sem virar permission')`
 
 ### Precondições
@@ -364,7 +371,7 @@ livewire(CreateRole::class)
 ## CT-12: papel do painel `app` vale em qualquer organização
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Tenancy/PerfilEAcessoTenancyTest.php`
+**Arquivo**: `tests/Tenancy/TenancyTest.php`
 **Método**: `it('papel do painel app vale em qualquer organizacao')`
 
 ### Precondições
@@ -394,7 +401,7 @@ actingAs($user)->get('/app/globex')
 ## CT-13: papel de organização não abre `/admin`
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Tenancy/PerfilEAcessoTenancyTest.php`
+**Arquivo**: `tests/Tenancy/TenancyTest.php`
 **Método**: `it('papel admin dentro de uma organizacao nao abre o painel admin')`
 
 ### Precondições
@@ -422,7 +429,7 @@ actingAs($user)->get('/admin')
 ## CT-14: criar usuário sem papel é erro de formulário
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Kit/PerfilEAcessoTest.php`
+**Arquivo**: `tests/Kit/PaineisTest.php`
 **Método**: `it('exige papel ao criar usuario')`
 
 ### Precondições
@@ -448,7 +455,7 @@ livewire(CreateUser::class)
 ## CT-15: com tenancy, criar usuário exige organização
 
 **Tipo**: `Feature`
-**Arquivo**: `tests/Tenancy/PerfilEAcessoTenancyTest.php`
+**Arquivo**: `tests/Tenancy/TenancyTest.php`
 **Método**: `it('exige organizacao ao criar usuario')`
 
 ### Precondições
@@ -497,21 +504,21 @@ esteja coberto por `CAMINHOS_DO_KIT`.
 
 | ID | Cenário | Tipo | Arquivo |
 | --- | --- | --- | --- |
-| CT-01 | master_global nos três painéis | Feature | `tests/Kit/PerfilEAcessoTest.php` |
-| CT-02 | papel abre só o painel que declara | Feature | `tests/Kit/PerfilEAcessoTest.php` |
-| CT-03 | sem papel, 403 nos três | Feature | `tests/Kit/PerfilEAcessoTest.php` |
-| CT-04 | negativa vira log com motivo | Feature | `tests/Kit/PerfilEAcessoTest.php` |
-| CT-05 | mapa de permissões por painel | Feature | `tests/Kit/PerfilEAcessoTest.php` |
-| CT-06 | permission dos três painéis no banco | Feature | `tests/Kit/PerfilEAcessoTest.php` |
-| CT-07 | matriz do papel = matriz do painel | Feature | `tests/Kit/PerfilEAcessoTest.php` |
-| CT-08 | painel nulo não abre painel | Unit | `tests/Kit/PerfilEAcessoTest.php` |
-| CT-09 | tela de papéis agrupa por painel | Feature | `tests/Kit/PerfilEAcessoTest.php` |
-| CT-10 | RoleResource publicado é o registrado | Unit | `tests/Kit/PerfilEAcessoTest.php` |
-| CT-11 | painel salva sem virar permission | Feature | `tests/Kit/PerfilEAcessoTest.php` |
-| CT-12 | papel `app` vale em qualquer organização | Feature | `tests/Tenancy/PerfilEAcessoTenancyTest.php` |
-| CT-13 | papel de organização não abre `/admin` | Feature | `tests/Tenancy/PerfilEAcessoTenancyTest.php` |
-| CT-14 | papel obrigatório ao criar usuário | Feature | `tests/Kit/PerfilEAcessoTest.php` |
-| CT-15 | organização obrigatória ao criar usuário | Feature | `tests/Tenancy/PerfilEAcessoTenancyTest.php` |
+| CT-01 | master_global nos três painéis | Feature | `tests/Kit/PaineisTest.php` |
+| CT-02 | papel abre só o painel que declara | Feature | `tests/Kit/PaineisTest.php` |
+| CT-03 | sem papel, 403 nos três | Feature | `tests/Kit/PaineisTest.php` |
+| CT-04 | negativa vira log com motivo | Feature | `tests/Kit/PaineisTest.php` |
+| CT-05 | mapa de permissões por painel | Feature | `tests/Kit/PaineisTest.php` |
+| CT-06 | permission dos três painéis no banco | Feature | `tests/Kit/PaineisTest.php` |
+| CT-07 | matriz do papel = matriz do painel | Feature | `tests/Kit/PaineisTest.php` |
+| CT-08 | painel nulo não abre painel | Unit | `tests/Kit/PaineisTest.php` |
+| CT-09 | tela de papéis agrupa por painel | Feature | `tests/Kit/PaineisTest.php` |
+| CT-10 | RoleResource publicado é o registrado | Unit | `tests/Kit/PaineisTest.php` |
+| CT-11 | painel salva sem virar permission | Feature | `tests/Kit/PaineisTest.php` |
+| CT-12 | papel `app` vale em qualquer organização | Feature | `tests/Tenancy/TenancyTest.php` |
+| CT-13 | papel de organização não abre `/admin` | Feature | `tests/Tenancy/TenancyTest.php` |
+| CT-14 | papel obrigatório ao criar usuário | Feature | `tests/Kit/PaineisTest.php` |
+| CT-15 | organização obrigatória ao criar usuário | Feature | `tests/Tenancy/TenancyTest.php` |
 | CT-16 | `app/Support` no `kit:update` | Unit | `tests/Kit/KitUpdateTest.php` (já existe) |
 
 ## Testes existentes que mudam de expectativa
