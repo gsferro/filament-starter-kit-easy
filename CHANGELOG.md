@@ -3,6 +3,41 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Nao lancado]
+
+Dois defeitos de fronteira de configuracao — um deles apagava dado — e os dois ultimos gates de
+QA da fila.
+
+### Corrigido
+
+- **Prazo de retencao vazio ou zero apagava a trilha de excecoes inteira.**
+  `modelPruneInterval()` recebe uma DATA, e `Exception::prunable()` faz
+  `whereDate('created_at', '<=', $intervalo)`, que compara so a data:
+  `KIT_RETENCAO_EXCECOES_DIAS=` dava `subDays(0)` = hoje, e o corte de hoje casa com a tabela
+  inteira. Negativo era pior — punha o corte no futuro. E o `config/kit.php` promete por escrito
+  que zero ou negativo **desliga** a poda: as tres podas de `routes/console.php` honram, esta era
+  a quarta e fazia o oposto. **Se o seu `.env` tem essa chave vazia ou em 0 e o agendador roda,
+  a trilha ja foi apagada.**
+- **Valor vazio no `.env` desligava features em silencio, em cinco chaves.** O segundo argumento
+  do `env()` so vale para chave AUSENTE; com valor vazio, `(int) ''` da 0 e o default nunca
+  entra. O pior caso: `KIT_CONVITE_LIMITE_LOTE=` dava limite 0 e o convite em massa recusava
+  **todo** lote, com a modal culpando a entrada da pessoa. A v0.18.4 corrigiu uma chave e nao
+  varreu as outras — esta e a varredura.
+
+### Adicionado
+
+- **`App\Support\NumeroDoEnv`** com duas regras nomeadas: `positivo()` recusa o zero,
+  `diasOuDesligado()` o respeita. A distincao e o ponto — unificar obriga a escolher um
+  significado para o zero, e as retencoes precisam do oposto do que um limite de lote precisa.
+- **Gate de QA em `convite-em-massa` e `lembretes-de-convite`**, os dois ultimos da fila. Os dois
+  fecharam com cobertura **completa** (16/16 e 11/11 CT). Os defeitos acima nao vieram dos casos
+  de teste: vieram de investigar como uma das features le a config.
+
+### Alterado
+
+- `admin_organizacao` -> `admin_app` em seis pontos de `convite-em-massa` — 43 no total somando
+  as wikis desta auditoria.
+
 ## [0.18.5] - 2026-08-23
 
 Release de correcao. Throttle na recusa anonima do convite, e o gate de QA da wiki que faltava —
