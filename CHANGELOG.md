@@ -106,13 +106,19 @@ Release de correcao. Fecha o ledger de divida tecnica — 11 de 11 — e encerra
 Release de correcao. Os testes que faltavam nas wikis auditadas, uma divida fechada sem codigo e
 um convite que nascia morto.
 
-> **RETIFICACAO (0.18.7).** Esta release atribuiu a instabilidade do CT-B09 a cache frio — "varre
-> antes de a folha de estilo assentar" — e acrescentou um `waitForEvent('networkidle')`. **O
-> diagnostico estava errado.** A causa era emulacao de tema vazando entre cenarios: o caso
-> anterior chama `->inDarkMode()` e a emulacao alcancava o seguinte, produzindo paleta escura
-> sobre fundo claro. Medido na 0.18.7, com a matriz frio/quente x com/sem a correcao. O conserto
-> de verdade e o caso DECLARAR o tema (`->inLightMode()`). O `networkidle` nao fez mal, mas nao
-> era o que faltava.
+> **RETIFICACAO (0.18.7).** O trabalho desta release incluiu um `waitForEvent('networkidle')` no
+> CT-B09, justificado — no PR #5, na mensagem do commit `456d97e` e no docblock do proprio caso —
+> como conserto de um falso achado de contraste atribuido a **cache frio** ("varre antes de a
+> folha de estilo assentar"). **O diagnostico estava errado.**
+>
+> A causa e emulacao de tema vazando entre cenarios: o caso anterior chama `->inDarkMode()` e a
+> emulacao de `prefers-color-scheme` alcanca o seguinte, entao o Filament emite os tokens de
+> texto do tema escuro sobre fundo claro. O experimento que derruba: em cache frio, rodar so
+> aquele cenario passa; rodar o arquivo inteiro falha.
+>
+> O conserto de verdade e o caso DECLARAR o tema (`->inLightMode()`), na 0.18.7. O `networkidle`
+> nao fez mal e ficou, mas nao era o que faltava. Esta entrada e as notas desta release **nao**
+> afirmaram a causa errada — quem a afirmou foi o PR e o commit, e a retificacao esta la tambem.
 
 ### Corrigido
 
