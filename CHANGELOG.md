@@ -3,10 +3,10 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Nao lancado]
+## [0.18.4] - 2026-08-23
 
-Os testes que faltavam nas wikis auditadas, uma divida fechada sem codigo e um convite que
-nascia morto.
+Release de correcao. Os testes que faltavam nas wikis auditadas, uma divida fechada sem codigo e
+um convite que nascia morto.
 
 ### Corrigido
 
