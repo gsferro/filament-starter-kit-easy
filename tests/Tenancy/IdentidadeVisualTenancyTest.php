@@ -165,3 +165,46 @@ it('recusa cor fora do formato hexadecimal', function (string $corInvalida): voi
     'formato rgb'      => 'rgb(124, 58, 237)',
     'tentativa de xss' => '"><script>alert(1)</script>',
 ]);
+
+/**
+ * CT-29 — a cor da organização vence a cor LIVRE do kit dentro de /app/{slug}.
+ *
+ * A regressão que este caso protege é RQ-18 do requisito de settings: "não confundir
+ * com o settings do tenant". A tela `/admin/configuracoes-do-kit` passou a oferecer
+ * uma cor livre em hexadecimal, no mesmo formato da cor de uma organização — se a
+ * precedência regredir, o cliente abre o painel DELE e vê a cor da instalação.
+ *
+ * O caso vizinho ("não vaza a cor entre organizações e painéis") prova que o
+ * /admin não recebe cor de cliente. Este prova o sentido inverso, que só passou a
+ * ser possível com a cor livre: o kit não invade o /app.
+ *
+ * A cor do kit é registrada por `$panel->colors()`, avaliada no `Panel::boot()`
+ * (middleware, primeiro da pilha); a da organização, por `FilamentColor::register()`
+ * no `bootUsing()`, avaliada no render. Quem registra por último vence — e o
+ * `/admin` é a prova de que o kit continua valendo onde não há organização.
+ */
+it('mantem a cor da organizacao vencendo a cor livre do kit', function (): void {
+    ['usuario' => $usuario] = duasOrganizacoes();
+
+    config(['kit.cor_primaria_hex' => '#7c3aed', 'kit.cor_primaria' => '']);
+
+    $this->actingAs($usuario);
+
+    $corPrimariaApos = function (string $url): array {
+        fronteiraDeRequest();
+
+        $this->get($url)->assertSuccessful();
+
+        return FilamentColor::getColors()['primary'];
+    };
+
+    // A Acme é #7c3aed de propósito: é a MESMA cor livre do kit, então esta
+    // asserção sozinha não distinguiria nada. Quem discrimina é a Globex.
+    $daGlobex = $corPrimariaApos('/app/globex');
+    $doAdmin  = $corPrimariaApos('/admin');
+
+    expect($daGlobex)->toBe(Color::generatePalette('#059669'))
+        ->and($daGlobex)->not->toBe(Color::generatePalette('#7c3aed'))
+        // E o kit continua valendo onde não existe organização.
+        ->and($doAdmin)->toBe(Color::generatePalette('#7c3aed'));
+});

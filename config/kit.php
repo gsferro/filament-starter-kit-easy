@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\BooleanoDoEnv;
 use App\Support\NumeroDoEnv;
 use App\Support\ValidadeDoConvite;
 
@@ -51,6 +52,102 @@ return [
     */
 
     'cor_primaria' => env('KIT_COR_PRIMARIA'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cor primária livre (hexadecimal)
+    |--------------------------------------------------------------------------
+    | A alternativa à lista fechada de cima, para quem tem uma cor de marca que
+    | não está na paleta do Filament. Formato `#rgb` ou `#rrggbb`.
+    |
+    | **Esta chave VENCE a `cor_primaria`** quando as duas estão preenchidas. A
+    | razão é que ela é a mais específica: quem digita um hexadecimal escolheu
+    | aquela cor, enquanto o seletor da lista tem valor padrão e pode nunca ter
+    | sido tocado. A precedência inversa tornaria a cor livre inalcançável em
+    | toda instalação que escolheu cor no `kit:install`.
+    |
+    | Valor fora do formato é IGNORADO e a resolução cai para a `cor_primaria` —
+    | mesma tolerância deliberada do nome, e pelo mesmo motivo: isto roda no boot
+    | de todo painel, e `Color::generatePalette()` não valida nada antes de
+    | passar o valor para `convertToOklch()`.
+    |
+    | O caminho normal de gravação é a tela /admin/configuracoes-do-kit; esta
+    | chave é a semente e o plano B.
+    */
+
+    'cor_primaria_hex' => env('KIT_COR_PRIMARIA_HEX'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Identidade visual da instalação
+    |--------------------------------------------------------------------------
+    | Caminhos no disco `public` (não URLs), gravados pela tela
+    | /admin/configuracoes-do-kit. `App\Support\IdentidadeDoKit` os resolve para
+    | URL e cai no padrão quando o arquivo declarado não existe no disco — um
+    | <link rel="icon"> apontando para 404 no <head> de TODA página é pior que o
+    | ícone padrão.
+    |
+    | `null` significa "sem arquivo próprio": logo e favicon somem (o Filament usa
+    | o brand em texto e o ícone dele), e a arte do login cai em
+    | `IdentidadeDoKit::ARTE_PADRAO`.
+    |
+    | O default da arte NÃO mora aqui de propósito: ele é um arquivo servido de
+    | `public/`, e estas três chaves são caminhos no DISCO `public`
+    | (storage/app/public). Misturar as duas origens numa chave só produziria um
+    | valor que às vezes é `asset()` e às vezes é `Storage::url()` — o resolvedor
+    | trata cada origem no lugar dela. Quem quiser outro padrão substitui o
+    | arquivo public/images/auth/login.svg, como sempre.
+    |
+    | Sem `env()`: são caminhos de arquivo enviado pela tela, não escolha de
+    | ambiente.
+    |
+    | Não confundir com a logo de uma ORGANIZAÇÃO (multi-tenancy): aquela é a
+    | coluna `logo` do model Tenant, editada em /admin/organizacoes.
+    */
+
+    'identidade' => [
+        'logo'          => null,
+        'favicon'       => null,
+        'arte_do_login' => null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Defaults de TODA tabela do projeto
+    |--------------------------------------------------------------------------
+    | Lidos por `ConfiguraFilamentGlobal::configuraTable()`, que roda num
+    | `Table::configureUsing()` — então valem também para as tabelas dos plugins
+    | de terceiros, onde não há como editar o `table()` do resource.
+    |
+    | Editáveis em /admin/configuracoes-do-kit. Estas chaves fecham o TODO que
+    | vivia no topo daquele trait. "Densidade de tabela" NÃO está aqui porque não
+    | existe no Filament 5: nenhuma ocorrência de `density` em
+    | vendor/filament/tables/src, e `Enums/` não tem enum de densidade. O que o
+    | framework oferece de controle visual de aperto é `striped()`, abaixo.
+    |
+    | ## Por que `BooleanoDoEnv` e não `(bool) env()`
+    |
+    | `(bool) env('CHAVE', true)` é o MESMO defeito que .ai/rules/config.md
+    | documenta para inteiros: o segundo argumento do `env()` só vale para chave
+    | AUSENTE. Com `CHAVE=` (presente, vazia — o que sobra quando alguém apaga o
+    | valor e esquece o `=`), `env()` devolve string vazia, `(bool) ''` é false, e
+    | o default `true` nunca entra.
+    |
+    | E `filter_var(..., FILTER_NULL_ON_FAILURE) ?? true` NÃO conserta: foi a
+    | primeira correção escrita aqui, e as três chaves nasceram DESLIGADAS com
+    | ela. O filtro do PHP trata `null` e `''` como false, não como falha, e o
+    | `??` nunca dispara. Está medido no docblock de App\Support\BooleanoDoEnv.
+    |
+    | O `KIT_HUB` mais abaixo continua com `(bool) env()` porque o default dele é
+    | `false` — ali o defeito é inócuo, e trocar por trocar esconderia a regra.
+    */
+
+    'tabelas' => [
+        'paginacao'                => NumeroDoEnv::positivo(env('KIT_TABELA_PAGINACAO'), 10),
+        'listrada'                 => BooleanoDoEnv::comPadrao(env('KIT_TABELA_LISTRADA'), true),
+        'persistir_filtros'        => BooleanoDoEnv::comPadrao(env('KIT_TABELA_PERSISTIR_FILTROS'), true),
+        'colunas_redimensionaveis' => BooleanoDoEnv::comPadrao(env('KIT_TABELA_COLUNAS_REDIMENSIONAVEIS'), true),
+    ],
 
     /*
     |--------------------------------------------------------------------------

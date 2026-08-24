@@ -4,6 +4,8 @@ use App\Models\Convite;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Providers\KitServiceProvider;
+use App\Settings\ConfiguracoesDoKit;
 use Filament\Facades\Filament;
 use Filament\FilamentManager;
 use Filament\Support\Assets\AssetManager;
@@ -12,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Log;
 use Psr\Log\LoggerInterface;
+use Spatie\LaravelSettings\Models\SettingsProperty;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TenancyTestCase;
 use Tests\TestCase;
@@ -245,6 +248,13 @@ function telasDoKit(): array
             '/admin/convites/create',
             '/admin/organizacoes',
             '/admin/organizacoes/create',
+            /*
+             * A tela de configurações da instalação. Entra aqui porque é Page do
+             * painel, e o `InventarioDeTelasTest` reprova enquanto ela não estiver
+             * listada — o que também lhe dá o smoke de navegador de graça, no lote
+             * de `TelasDoKitTest`.
+             */
+            '/admin/configuracoes-do-kit',
             '/admin/agentes-ia',
             '/admin/agentes-ia/create',
             '/admin/onboarding-flows',
@@ -304,6 +314,56 @@ function telasDoKit(): array
             '/infra/recycle-bin',
         ],
     ];
+}
+
+/**
+ * Grava uma configuração do kit direto na tabela, SEM passar por `Settings::save()`.
+ *
+ * Duas razões, e as duas mudam resultado: `save()` dispara `SavingSettings`, o que criaria
+ * trilha de auditoria já no ARRANJO e estragaria a contagem absoluta de CT-34; e o container
+ * guarda a instância de settings como singleton, então sem o `forgetInstance` o objeto
+ * devolvido depois seria o de antes da escrita.
+ *
+ * Aqui, e não dentro de um arquivo de teste, porque QUATRO usam:
+ * `ConfiguracoesDoKitTest`, `ConfiguracoesDoKitTelaTest`, `DefaultsDeTabelaTest` e
+ * `IdentidadeDoKitTest`.
+ */
+function gravarConfiguracao(string $propriedade, mixed $valor): void
+{
+    SettingsProperty::query()
+        ->where('group', ConfiguracoesDoKit::group())
+        ->where('name', $propriedade)
+        ->update(['payload' => json_encode($valor)]);
+
+    app()->forgetInstance(ConfiguracoesDoKit::class);
+}
+
+/**
+ * Chama o alinhamento da config como o boot chamaria.
+ *
+ * Com `RefreshDatabase` o `KitServiceProvider::boot()` roda ANTES das migrations — a tabela
+ * `settings` ainda não existe, o alinhamento é no-op, e é justamente isso que mantém os
+ * valores forçados no `phpunit.xml` valendo para a suíte inteira. Quem quer exercitar o
+ * alinhamento o chama.
+ *
+ * `Closure::call()` no provider porque o método é protegido de propósito: ele não é API, é
+ * um passo do boot. Quem prova que o boot o chama de verdade é CT-37, por varredura.
+ */
+function alinharConfiguracoesDoKit(): void
+{
+    $provider = new KitServiceProvider(app());
+
+    (fn () => $this->configureSettingsDoKit())->call($provider);
+}
+
+/** Espia só o channel `configuracoes`; os outros continuam reais. */
+function espiarConfiguracoes(): LoggerInterface
+{
+    $canal = Mockery::spy(LoggerInterface::class);
+
+    Log::partialMock()->shouldReceive('channel')->with('configuracoes')->andReturn($canal);
+
+    return $canal;
 }
 
 function tenant(string $nome, string $slug, bool $ativo = true): Tenant

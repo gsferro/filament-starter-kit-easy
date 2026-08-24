@@ -8,6 +8,7 @@ use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Support\CorPrimaria;
+use App\Support\IdentidadeDoKit;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
@@ -59,7 +60,23 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->passwordReset()
-            ->brandName(config('app.name').' • Admin')
+            ->brandName(fn (): string => config('app.name').' • Admin')
+            /*
+             * Marca e ícone vindos de /admin/configuracoes-do-kit.
+             *
+             * `Closure` nos três, e não escalar: o argumento escalar é resolvido
+             * quando o `Panel` é construído e CONGELA. Medido — `config(['app.name' => X])`
+             * depois do boot não muda `getPanel()->getBrandName()`. A Closure é
+             * avaliada no render, depois do alinhamento do KitServiceProvider. É a
+             * mesma razão que `->colors()` acima já documenta. Ver ADR-02.
+             *
+             * `IdentidadeDoKit` devolve `null` quando não há arquivo utilizável, e
+             * aí o Filament cai no brand em texto e no favicon dele — que é o
+             * comportamento do kit antes desta feature.
+             */
+            ->brandLogo(fn (): ?string => IdentidadeDoKit::logo())
+            ->brandLogoHeight('2rem')
+            ->favicon(fn (): ?string => IdentidadeDoKit::favicon())
             ->colors(fn (): array => CorPrimaria::paleta())
             ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth(Width::Full)
@@ -111,13 +128,13 @@ class AdminPanelProvider extends PanelProvider
                 // Login split: mídia à esquerda, formulário à direita.
                 AuthDesignerPlugin::make()
                     ->login(fn (AuthPageConfig $config): AuthPageConfig => $config
-                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Left)
                         ->mediaSize('70%')
                         ->themeToggle()
                     )
                     ->passwordReset(fn (AuthPageConfig $config): AuthPageConfig => $config
-                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Right)
                         ->mediaSize('70%')
                         ->themeToggle()
@@ -127,7 +144,7 @@ class AdminPanelProvider extends PanelProvider
                     // decide se ela entra no ar é o `->emailVerification(null, ...)` depois do
                     // `->plugins([...])` — ver a nota longa no AppPanelProvider e ADR-03.
                     ->emailVerification(fn (AuthPageConfig $config): AuthPageConfig => $config
-                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Right)
                         ->mediaSize('70%')
                         ->themeToggle()

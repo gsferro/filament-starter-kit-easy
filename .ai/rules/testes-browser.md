@@ -172,3 +172,20 @@ Por isso `art/admin-papeis-import-export.png` ficou errada do commit `04642b0` a
 Regra: **o `beforeEach` não arranja painel**. Cada cenário arranja o seu, imediatamente antes de visitar. Ver `arranjarPainelApp()` em `tests/BrowserTenancy/CapturaDeArteTest.php`.
 
 E ao revisar captura de tela, confira a **barra lateral** — nenhum `assertSee` afirma sobre ela, então o defeito passa verde.
+
+## O ColorPicker dentro de Tabs emite ResizeObserver no headless do CI, e não é defeito seu
+
+`assertNoJavaScriptErrors()` numa tela com `ColorPicker` dentro de `Tabs` reprova **só no CI**:
+o Chrome headless do Linux emite `ResizeObserver loop completed with undelivered notifications`
+duas vezes na montagem, e o Chrome do Windows não. É ruído do navegador — observers reagindo em
+cascata —, não erro da aplicação.
+
+O plugin não oferece filtro: `assertNoJavaScriptErrors()` compara com array vazio
+(`vendor/pestphp/pest-plugin-browser/src/Api/Concerns/MakesConsoleAssertions.php:78-89`).
+
+Então, em tela com esse par de componentes, **não use a asserção** e escreva por que ela não
+está ali. Os oráculos que provam o comportamento são os de visibilidade do campo, e esses ficam.
+Mesmo espírito da nota sobre `assertNoSmoke()` em tela de plugin: suíte vermelha por dívida
+alheia ninguém conserta, e o que ela ensina é a ignorar o vermelho.
+
+Custou um CI vermelho na feature `settings-do-kit`, com a suíte passando local.

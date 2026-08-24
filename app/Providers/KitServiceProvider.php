@@ -7,6 +7,7 @@ use App\Ai\Listeners\RegistrarAiRun;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Providers\Concerns\ConfiguraFilamentGlobal;
+use App\Settings\ConfiguracoesDoKit;
 use Carbon\CarbonImmutable;
 use CmsMulti\FilamentClearCache\Facades\FilamentClearCache;
 use Filament\Actions\Exports\Models\Export;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Ai\Events\AgentPrompted;
@@ -34,6 +36,7 @@ use Spatie\Health\Checks\Checks\ScheduleCheck;
 use Spatie\Health\Checks\Checks\UsedDiskSpaceCheck;
 use Spatie\Health\Facades\Health;
 use Spatie\Permission\PermissionRegistrar;
+use Throwable;
 
 /**
  * Provider "cola" do starter-kit: defaults do framework, gates, health checks
@@ -47,6 +50,13 @@ class KitServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        /*
+         * ANTES de `configuraFilamentGlobal()`, e a ordem é requisito: aquele
+         * método lê `kit.tabelas.*`, que é justamente o que este alinha.
+         */
+        $this->configureSettingsDoKit();
+
         $this->configureTenancy();
         $this->configureGates();
         $this->configureAiLedger();
@@ -87,6 +97,54 @@ class KitServiceProvider extends ServiceProvider
         }
 
         app(PermissionRegistrar::class)->setPermissionsTeamId(Tenant::CONTEXTO_GLOBAL);
+    }
+
+    /**
+     * A configuração gravada em /admin/configuracoes-do-kit, aplicada ao processo.
+     *
+     * Este é o ponto único que faz o banco vencer o `.env` em tempo de execução —
+     * e o que permite que NENHUM consumidor mude: `CorPrimaria::paleta()`, os três
+     * painéis, `configuraTable()` e o MailManager do Laravel continuam lendo
+     * `config()` sem saber que o settings existe. Ver ADR-01 da wiki
+     * `settings-do-kit`.
+     *
+     * ## Falha para o lado do `.env`, sempre
+     *
+     * Isto roda em TODO request e TODO comando artisan. Um `Throwable` aqui
+     * derrubaria a aplicação inteira, não uma tela — então o `catch` é de
+     * `Throwable` (não `Exception`: `TypeError` e `Error` escapariam) e envolve
+     * inclusive o `Schema::hasTable()`, que num banco inexistente **lança antes de
+     * responder**. É exatamente o que acontece no primeiro `migrate` de uma
+     * instalação nova.
+     *
+     * O `hasTable()` falso sai em SILÊNCIO, sem log: tabela ausente é o estado
+     * normal de uma instalação nova, e um `warning` ali gritaria em todo `migrate`
+     * de todo mundo — canal que grita no caminho feliz é canal que ninguém lê.
+     * Banco quebrado, ao contrário, é anomalia e precisa aparecer.
+     *
+     * ## Efeito colateral desejado na suíte de testes
+     *
+     * Com `RefreshDatabase`, o `boot()` roda ANTES das migrations, então a tabela
+     * não existe e este método é inerte. É por isso que os valores forçados no
+     * `phpunit.xml` (`KIT_COR_PRIMARIA`, `KIT_HUB`, os rótulos de organização)
+     * continuam valendo e a suíte não precisou de arranjo nenhum.
+     */
+    protected function configureSettingsDoKit(): void
+    {
+        try {
+            $tabela = config('settings.repositories.database.table') ?? 'settings';
+
+            if (! Schema::hasTable($tabela)) {
+                return;
+            }
+
+            app(ConfiguracoesDoKit::class)->aplicarNaConfig();
+        } catch (Throwable $e) {
+            Log::channel('configuracoes')->warning(
+                '[KitServiceProvider@configureSettingsDoKit] Configuração do banco ignorada, valendo o .env | motivo: '.$e->getMessage(),
+                ['exception' => $e],
+            );
+        }
     }
 
     protected function configureGates(): void

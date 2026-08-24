@@ -2,10 +2,13 @@
 
 namespace App\Support;
 
+use App\Settings\ConfiguracoesDoKit;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Throwable;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\note;
@@ -241,6 +244,8 @@ final class CustomizadorDaInstalacao
         SubstituicaoEmArquivo::definirNoEnv($env, 'APP_NAME', $respostas['nome']);
         SubstituicaoEmArquivo::definirNoEnv($env, 'KIT_COR_PRIMARIA', $respostas['cor']);
 
+        $this->propagarParaOSettings($respostas);
+
         Log::debug(
             '[CustomizadorDaInstalacao@aplicarSemBanco] Nome e cor reescritos | cor: '
             .($respostas['cor'] === '' ? 'padrao' : $respostas['cor']),
@@ -314,14 +319,66 @@ final class CustomizadorDaInstalacao
     }
 
     /**
-     * Os sete itens que continuam sendo editados à mão, com o arquivo de cada um.
+     * O `--custom` também grava no settings, senão a resposta não tem efeito.
+     *
+     * Este método existe por causa do conflito entre as duas fontes de
+     * configuração. O `--custom` reescreve o `.env`; o banco vence o `.env` em
+     * tempo de execução (ADR-01). Sem esta propagação, quem rodasse
+     * `kit:install --custom` num projeto já instalado veria o comando dizer
+     * "Nome do projeto: X" e a tela continuar mostrando o nome antigo — a
+     * resposta pareceria não ter efeito nenhum, sem erro nenhum.
+     *
+     * A gravação é **condicional à tabela existir**: o `--custom` também roda em
+     * projeto que ainda não migrou, e ali o `.env` é a única fonte de qualquer
+     * forma. O `catch (Throwable)` está aqui pelo mesmo motivo do alinhamento no
+     * boot — um comando de instalação não pode morrer por causa da tela de
+     * configurações.
+     *
+     * `refresh()` depois do `save()`: a gravação altera a config em memória do
+     * processo do COMANDO, e o `alinharConfigEmMemoria()` do caminho completo
+     * não passa por aqui.
+     *
+     * @param  array{nome: string, cor: string}  $respostas
+     */
+    private function propagarParaOSettings(array $respostas): void
+    {
+        try {
+            if (! Schema::hasTable(config('settings.repositories.database.table') ?? 'settings')) {
+                return;
+            }
+
+            $settings = app(ConfiguracoesDoKit::class);
+
+            $settings->nome_da_aplicacao = $respostas['nome'];
+            $settings->cor_primaria      = $respostas['cor'] !== '' ? $respostas['cor'] : null;
+            $settings->save();
+
+            Log::channel('configuracoes')->info(
+                '[CustomizadorDaInstalacao@propagarParaOSettings] Nome e cor propagados para o settings | cor: '
+                .($respostas['cor'] === '' ? 'padrao' : $respostas['cor']),
+                ['nome' => $respostas['nome'], 'cor' => $respostas['cor']],
+            );
+        } catch (Throwable $e) {
+            Log::channel('configuracoes')->warning(
+                '[CustomizadorDaInstalacao@propagarParaOSettings] Settings não atualizado, valendo o .env | motivo: '.$e->getMessage(),
+                ['exception' => $e],
+            );
+        }
+    }
+
+    /**
+     * Os itens que continuam sendo editados à mão, com o lugar de cada um.
+     *
+     * A arte do login saiu desta lista: ela virou campo em
+     * /admin/configuracoes-do-kit, junto com logo, favicon, nome, cor, dados de
+     * e-mail e os defaults de tabela.
      *
      * @return list<string>
      */
     public static function itensManuais(): array
     {
         return [
-            'Arte do login .............. public/images/auth/login.svg',
+            'Identidade e e-mail ........ /admin → Configurações do kit (logo, favicon, arte do login, SMTP)',
             'Acesso aos painéis ......... /admin → Funções (o campo Painel de cada papel)',
             'Matriz de permissões ....... database/seeders/PapeisSeeder.php',
             'Health checks .............. KitServiceProvider::configureHealthChecks()',

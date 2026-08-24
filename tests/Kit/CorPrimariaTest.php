@@ -57,3 +57,74 @@ it('registra a cor configurada nos três painéis', function (string $painel): v
     expect(FilamentColor::getColors()['primary'])
         ->toBe(Color::all()['emerald']);
 })->with(['app', 'admin', 'infra'])->group('kit');
+
+/**
+ * CT-05 — a cor livre em hexadecimal vence a seleção pelo enum.
+ *
+ * Tabela de decisão completa: duas condições, seis linhas sobreviventes. As duas
+ * que discriminam são a 1 (hex e nome preenchidos — separa "hex vence" de "nome
+ * vence") e a 3 (hex inválido com nome válido — separa "cai para o nome" de "zera
+ * tudo"). As outras quatro são âncoras.
+ *
+ * O hexadecimal é devolvido como STRING, não como paleta: o `ColorManager` chama
+ * `Color::generatePalette()` sozinho quando recebe string (`ColorManager.php:84-85`),
+ * que é o mesmo caminho da cor de uma organização.
+ */
+it('resolve a paleta pela fonte de maior precedencia disponivel', function (?string $hex, ?string $nome, mixed $esperado): void {
+    config(['kit.cor_primaria_hex' => $hex, 'kit.cor_primaria' => $nome]);
+
+    expect(CorPrimaria::paleta())->toBe($esperado);
+})->with([
+    'hex e nome preenchidos'     => ['#7c3aed', 'Blue', ['primary' => '#7c3aed']],
+    'só o hex'                   => ['#7c3aed', '', ['primary' => '#7c3aed']],
+    'hex inválido, nome válido'  => ['azul', 'Blue', ['primary' => Color::Blue]],
+    'só o nome'                  => ['', 'Blue', ['primary' => Color::Blue]],
+    'os dois inválidos'          => ['azul', 'Roxo', []],
+    'os dois vazios'             => ['', '', []],
+])->group('kit');
+
+/**
+ * CT-06 — hexadecimal fora do formato é recusado, sem lançar.
+ *
+ * `#abcd` é a linha que existe por um motivo só: ela separa `{3,6}` (frouxo,
+ * aceita 4 e 5 dígitos) de `{3}|{6}` (correto). Sem ela, as duas expressões
+ * passam — e `Color::generatePalette()` receberia algo que não é cor.
+ *
+ * `#7C3AED` cobre o alfabeto maiúsculo, que é o que manual de marca costuma
+ * entregar: uma classe de caracteres `[0-9a-f]` sem `A-F` recusaria a cor da
+ * empresa sem dizer por quê.
+ */
+it('recusa hexadecimal fora do formato em vez de repassar lixo para a paleta', function (string $hex, mixed $esperado): void {
+    config(['kit.cor_primaria_hex' => $hex, 'kit.cor_primaria' => '']);
+
+    expect(CorPrimaria::paleta())->toBe($esperado);
+})->with([
+    'três dígitos'          => ['#abc', ['primary' => '#abc']],
+    'seis dígitos'          => ['#aabbcc', ['primary' => '#aabbcc']],
+    'maiúsculas'            => ['#7C3AED', ['primary' => '#7C3AED']],
+    'dois dígitos'          => ['#ab', []],
+    'quatro dígitos'        => ['#abcd', []],
+    'sete dígitos'          => ['#aabbccd', []],
+    'sem o #'               => ['aabbcc', []],
+    'fora do alfabeto hexa' => ['#gggggg', []],
+])->group('kit');
+
+/**
+ * CT-07 — o painel sobe com as duas cores inválidas, em vez de morrer em toda página.
+ *
+ * A tolerância é deliberada e está documentada no docblock de `CorPrimaria` e no
+ * `config/kit.php`: `constant()` num nome inexistente lança `Error: Undefined
+ * constant`, e `Color::generatePalette()` não valida nada antes de passar o valor
+ * para `convertToOklch()`. Como isto roda no boot de TODO painel, qualquer um dos
+ * dois derrubaria toda página do projeto — não uma tela.
+ */
+it('sobe o painel com cor invalida nas duas fontes', function (): void {
+    config(['kit.cor_primaria' => 'Roxo', 'kit.cor_primaria_hex' => 'vermelho']);
+
+    fronteiraDeRequest();
+    noPainelBootado('admin');
+
+    expect(CorPrimaria::paleta())->toBe([]);
+
+    $this->get('/admin/login')->assertOk();
+})->group('kit');

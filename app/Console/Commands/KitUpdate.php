@@ -88,6 +88,19 @@ class KitUpdate extends Command
         'app/Notifications',
         'app/Policies',
         'app/Providers',
+        /*
+         * Settings do kit e os listeners que os auditam. Diretorios inteiros, pelo
+         * mesmo motivo de `app/Policies` e `app/Notifications`: o SEU settings e o
+         * SEU listener nao existem na arvore do kit, entao nunca entram no diff
+         * entre duas versoes.
+         *
+         * Entraram com as Configuracoes do Kit. Sem estas linhas, quem JA instalou
+         * receberia a pagina de settings e a migration, e nao a classe
+         * `ConfiguracoesDoKit` que a pagina edita nem o listener que grava a trilha
+         * de auditoria. Foi `tests/Kit/KitUpdateTest.php` que pegou.
+         */
+        'app/Listeners',
+        'app/Settings',
         'app/Support',
         'app/Traits',
         'config/kit.php',

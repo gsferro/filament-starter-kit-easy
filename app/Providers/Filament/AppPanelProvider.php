@@ -13,6 +13,7 @@ use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Http\Middleware\DefinirTenantDePermissoes;
 use App\Models\Tenant;
 use App\Support\CorPrimaria;
+use App\Support\IdentidadeDoKit;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
@@ -66,7 +67,23 @@ class AppPanelProvider extends PanelProvider
             ->path('app')
             ->login()
             ->passwordReset()
-            ->brandName(config('app.name'))
+            ->brandName(fn (): string => config('app.name'))
+            /*
+             * Marca e ícone vindos de /admin/configuracoes-do-kit.
+             *
+             * `Closure` nos três, e não escalar: o argumento escalar é resolvido
+             * quando o `Panel` é construído e CONGELA. Medido — `config(['app.name' => X])`
+             * depois do boot não muda `getPanel()->getBrandName()`. A Closure é
+             * avaliada no render, depois do alinhamento do KitServiceProvider. É a
+             * mesma razão que `->colors()` acima já documenta. Ver ADR-02.
+             *
+             * `IdentidadeDoKit` devolve `null` quando não há arquivo utilizável, e
+             * aí o Filament cai no brand em texto e no favicon dele — que é o
+             * comportamento do kit antes desta feature.
+             */
+            ->brandLogo(fn (): ?string => IdentidadeDoKit::logo())
+            ->brandLogoHeight('2rem')
+            ->favicon(fn (): ?string => IdentidadeDoKit::favicon())
             // Closure, e não array: o valor precisa vir da config resolvida no
             // request, não da que existia quando o provider foi registrado.
             // A cor da organização, registrada no bootUsing() abaixo, vence esta.
@@ -189,7 +206,7 @@ class AppPanelProvider extends PanelProvider
                         // "Cadastre-se", que o Filament acrescenta sozinho assim que o
                         // painel ganha registro.
                         ->usingPage(TelaLogin::class)
-                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Left)
                         ->mediaSize('70%')
                         ->themeToggle()
@@ -217,7 +234,7 @@ class AppPanelProvider extends PanelProvider
                      */
                     ->registration(fn (AuthPageConfig $config): AuthPageConfig => $config
                         ->usingPage(RegistroPorConvite::class)
-                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Right)
                         ->mediaSize('70%')
                         ->themeToggle()
@@ -238,7 +255,7 @@ class AppPanelProvider extends PanelProvider
                      * erro nenhum. Ver ADR-06.
                      */
                     ->passwordReset(fn (AuthPageConfig $config): AuthPageConfig => $config
-                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Right)
                         ->mediaSize('70%')
                         ->themeToggle()
@@ -261,7 +278,7 @@ class AppPanelProvider extends PanelProvider
                      * `auth-designer-telas`.
                      */
                     ->emailVerification(fn (AuthPageConfig $config): AuthPageConfig => $config
-                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Right)
                         ->mediaSize('70%')
                         ->themeToggle()
