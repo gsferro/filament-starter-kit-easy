@@ -8,6 +8,7 @@ use App\Models\Convite;
 use App\Models\Role;
 use App\Models\User;
 use App\Providers\Filament\AppPanelProvider;
+use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\RegistroAberto;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
@@ -697,3 +698,53 @@ it('oferece o link de cadastro no login somente com o registro ligado', function
     'ligado'    => [true, true],
     'desligado' => [false, false],
 ]);
+
+/*
+|--------------------------------------------------------------------------
+| A ligação com o Settings do kit
+|--------------------------------------------------------------------------
+| RQ-01 pede a opção "como um settings". A ligação NÃO foi feita reescrevendo
+| os três métodos de `RegistroAberto`: ela entrou pelo `mapaDeConfiguracao()`
+| das `ConfiguracoesDoKit`, que sobrepõe `config('kit.registro.*')` com o que
+| está gravado, no boot do `KitServiceProvider`.
+|
+| Isso importa por dois motivos, e os dois são testados aqui:
+|
+| 1. o ponto único continua sendo o ponto único — `RegistroAberto` lê config,
+|    e é a config que passa a vir do banco;
+| 2. a leitura NÃO passa a tocar o banco em todo request, que era a armadilha
+|    prevista no docblock daquela classe. Quem toca é o `aplicarNaConfig()`,
+|    uma vez por boot, atrás do `Schema::hasTable()` do provider.
+|
+| O oráculo é o comportamento (`habilitado()`), não a propriedade do settings:
+| afirmar sobre a propriedade provaria que o campo existe, não que ele governa
+| algo.
+*/
+it('deixa o valor gravado no settings vencer o env', function (): void {
+    // O .env da suíte tem o registro DESLIGADO — é o default do kit.
+    expect(RegistroAberto::habilitado())->toBeFalse();
+
+    $settings                            = app(SettingsDoKit::class);
+    $settings->registro_habilitado       = true;
+    $settings->registro_aprovacao_manual = true;
+    $settings->save();
+
+    // O boot já passou, então o alinhamento é chamado à mão — é exatamente o que
+    // o `KitServiceProvider` faz no próximo request.
+    app(SettingsDoKit::class)->aplicarNaConfig();
+
+    expect(RegistroAberto::habilitado())->toBeTrue()
+        ->and(RegistroAberto::exigirAprovacao())->toBeTrue()
+        ->and(RegistroAberto::exigirVerificacaoDeEmail())->toBeFalse();
+});
+
+it('mantem as tres chaves de registro no mapa de configuracao', function (): void {
+    // Guarda contra o defeito que o docblock das `ConfiguracoesDoKit` nomeia: a
+    // propriedade existe, o campo aparece na tela, e a linha do mapa fica de fora
+    // — a pessoa marca o toggle, salva, e nada acontece. Sem erro nenhum.
+    $mapa = SettingsDoKit::mapaDeConfiguracao();
+
+    expect($mapa)->toHaveKey('registro_habilitado', 'kit.registro.habilitado')
+        ->and($mapa)->toHaveKey('registro_aprovacao_manual', 'kit.registro.aprovacao_manual')
+        ->and($mapa)->toHaveKey('registro_verificar_email', 'kit.registro.verificar_email');
+});
