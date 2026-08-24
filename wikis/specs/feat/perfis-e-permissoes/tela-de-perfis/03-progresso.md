@@ -37,7 +37,8 @@
 - [x] `tests/BrowserTenancy/CapturaDeArteTest.php` de `getKey()` para `getRouteKey()`
 - [x] `tests/Kit/PaineisTest.php` (`EditRole`) de `getKey()` para `getRouteKey()`
 - [x] `database/seeders/PapeisSeeder.php` passa a escrever pelo model configurado (achado em execução — ver Desvios)
-- [x] Auditoria: nenhum outro `id` em URL de registro
+- [x] Auditoria de RQ-09 — **e ela achou outros três**, ao contrário do que esta linha dizia
+  antes (ver Desvios do Plano, item 10)
 
 ## 7. Guard como seleção (RQ-11)
 
@@ -252,6 +253,31 @@ extração de closure inline ou têm mais de um chamador.
 9. **RQ-12 não foi atendida** (Playwright MCP + skills de design). Ver "Degradações e desvios
    declarados", acima. Não há substituto: `pest-plugin-browser` prova comportamento, não diagramação.
 
+10. **RQ-09 é parcial, e a versão anterior daquela linha era uma afirmação FALSA.** Ela dizia
+    "auditoria: nenhum outro `id` em URL de registro". O quality gate rodou `route:list` e achou
+    três: `infra/exceptions/{record}`, `infra/audits/{record}` e
+    `infra/command-center/definitions/{record}/edit`, todas resolvendo por PK inteira — o model de
+    exceções do vendor não tem `uuid` nem `getRouteKeyName()`
+    (`vendor/bezhansalleh/filament-exceptions/src/Models/Exception.php:33`).
+
+    RQ-09 é cláusula geral ("NUNCA ... qualquer registro"), então isto é **escopo não entregue**, e
+    não engano de leitura. Fica como **dívida declarada**: são três models de **vendor**, e trocar a
+    route key deles é entrega própria — precisa de migration na tabela do pacote, ou de um model
+    intermediário como o `App\Models\Role` desta feature, e de decidir o que acontece num
+    `vendor:publish`. Não bloqueia RQ-08, que é sobre `roles` e está fechado.
+
+    O que a auditoria original fez de errado: procurou `getKey()` em URL dentro de `app/` e
+    `tests/`, e não perguntou ao **roteador**. `php artisan route:list --path=infra` responde em
+    segundos e é a fonte certa.
+
+11. **Três afirmações falsas de docblock, achadas pelo gate.** O docblock do CT-19 dizia que o
+    `Select` não valida `in:` sozinho (diz o oposto do código, e o código está certo);
+    `Papeis::rotulo()` documentava `master_global → "Master Global"` quando o mapa devolve
+    "Administrador Geral"; e o docblock de `Papeis` dizia "dezessete" cópias quando eram dezenove.
+    As três são da classe que `.ai/rules/specs.md` persegue — conclusão certa, justificativa errada
+    — e a primeira é a pior, porque induziria o próximo agente a reintroduzir o `->in()` que a
+    auditoria do diff acabou de remover.
+
 ## Notas de Implementação
 
 1. **`PapeisSeeder` escrevia papel pela classe do vendor, e por isso todo papel semeado nasceria
@@ -340,6 +366,35 @@ A gravação é do usuário; o agente principal a executa. Nada foi escrito em `
    `app/Filament/**`. Registrado aqui como candidato **recusado pelo próprio agente**, para não
    parecer omissão.
 
+## Quality Gate (step 8)
+
+Executado por agente independente, que não escreveu o código nem a wiki. Relatório completo em
+`06-relatorio-qa.md`.
+
+**Veredito: APROVADO COM DÉBITO.** Um ciclo, sem reciclagem — nenhum achado exigiu reimplementar um
+passo do PRD.
+
+| Achado | Severidade | Destino | Situação |
+|---|---|---|---|
+| 1 — chave crua na confirmação do aceite de convite | média | implementação | **corrigido**, com caso próprio |
+| 2 — chaves cruas no bloco de diagnóstico do 403 | baixa | não-defeito | escopo declarado no `00` |
+| 3 — RQ-09: três rotas de vendor ainda por `id` | média | especificação | dívida declarada (Desvios, item 10) |
+| 4 — `acaoDePapeis()` sem `->authorize()`, e ela CONCEDE papel | **alta** | fora desta wiki | → `feat/permissoes-de-telas-e-acoes` |
+| 5 — `ConvitesTable::reenviar` sem `->authorize()` | baixa | fora desta wiki | → `feat/permissoes-de-telas-e-acoes` |
+| 6, 7, 8 — três docblocks falsos | baixa | teste / implementação | **corrigidos** |
+| 9 — CT-12 provava só o status HTTP | baixa | teste | **corrigido** |
+| 10, 11 — dois oráculos fracos | baixa | não-defeito | lacuna já declarada no `04` |
+
+**O achado 4 é o mais grave do relatório e não é desta entrega**: o `UsersRelationManager` deixa
+quem tem apenas `View:Tenant` conceder papel numa organização, porque
+`RelationManager::isReadOnly()` só neutraliza as actions padrão
+(`vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php:220-237`). Sinalizado
+para a fila.
+
+**O que o gate não cobriu**: aparência (as duas lacunas de oráculo declaradas), mutation testing
+(sem PCOV no ambiente) e a regressão contra `feat/permissoes-de-telas-e-acoes`, que mergeia antes
+desta e toca os mesmos quatro arquivos — só observável num segundo rebase.
+
 ## Retrospectiva
 
 - **Funcionou bem**: a revisão profunda (step 5) pagou por si sozinha. Seis das sete premissas
@@ -356,6 +411,16 @@ A gravação é do usuário; o agente principal a executa. Nada foi escrito em `
   como se Select fosse barreira. A lição generaliza: **componente de formulário do Filament não é
   validação** — nem `Select`, nem `Action` (que não consulta policy), nem `->visible()`. Nas três,
   a barreira é uma linha explícita, e as três aparecem nesta entrega.
+
+- **Faltou no plano**: varrer RQ-06 pelo **acesso ao atributo**, não pelo nome da coluna. O
+  `grep "roles\.name\|papel\.name"` que produziu a lista dos cinco pontos crus não casa com
+  `->getAttribute('name')`, e foi assim que a confirmação do aceite de convite passou. Vale como
+  regra de varredura: procure `getAttribute('name')`, `->name`, `pluck('name'` e `implode` sobre
+  `pluck` — não o nome da coluna.
+
+- **Faltou no plano**: perguntar ao **roteador** na auditoria de RQ-09. `php artisan route:list`
+  responde em segundos e teria mostrado as três rotas de vendor que ainda usam `id`. A auditoria
+  original procurou `getKey()` em URL dentro de `app/` e `tests/` — que é onde o defeito não estava.
 
 - **Faltou no plano**: que **widget de painel é lazy por default**
   (`vendor/filament/support/src/Concerns/CanBeLazy.php:9`), então `GET /admin` devolve

@@ -95,6 +95,17 @@
   - **Assumido**: nome e e-mail, porque é o que a listagem de usuários do `/admin` já mostra.
   - **Se negado**: o schema do slide-over ganha colunas; CT-B02 ganha asserções.
 
+### Declarado fora do "sempre" de RQ-06 (achado 2 do quality gate)
+
+- **O bloco de diagnóstico do 403** (`resources/views/errors/403.blade.php`) exibe `Papel ausente`
+  e `Seus papéis` com as **chaves cruas**, e continua assim de propósito. O bloco inteiro está sob
+  `$mostrarDiagnostico = ! app()->isProduction()` (`:15`) e o comentário do próprio arquivo
+  (`:9-13`) diz que ele existe para o desenvolvedor e que por isso não pode chegar ao usuário
+  final. A chave é o valor útil ali — é o que se põe em `assignRole()` — e a classe CSS `mono` já
+  a marca como identificador.
+  - **Se negado**: o bloco passa a usar `Papeis::rotulo()` e perde a serventia de depuração; nesse
+    caso o certo é mostrar os dois, chave e rótulo.
+
 ## Fora desta entrega
 
 - **RQ-12 (Playwright MCP)** — o MCP do Playwright é uma instância única de navegador compartilhada

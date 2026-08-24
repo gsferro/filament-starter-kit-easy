@@ -26,7 +26,7 @@
 | RQ-06 | Rótulo em toda exibição de papel | 5 | cinco pontos crus, listados no passo |
 | RQ-07 | Contagem de permissões selecionadas por grupo | 4 | dois níveis: painel e Resource |
 | RQ-08 | `uuid` na URL de alteração | 6 | migration + trait + ajuste do teste de arte |
-| RQ-09 | Nenhum `id` em URL, no kit todo | 6 | auditoria no passo 6; nenhum outro caso achado |
+| RQ-09 | Nenhum `id` em URL, no kit todo | 6 | ⚠️ **parcial** — `roles` fechado; três rotas de vendor no `/infra` ficam como dívida declarada (achado 3 do QA) |
 | RQ-10 | Painéis viram tab vertical no tab "Recursos" | 4 | `Tabs::make()->vertical()` |
 | RQ-11 | Guard vira seleção de `config('auth.guards')` | 7 | |
 | RQ-12 | Playwright MCP + skills de design | — | ⚠️ **fora desta entrega** — ver `00-requisito.md` → Fora desta entrega |
@@ -561,6 +561,13 @@ cinco:
 | 5.3 | `app/Filament/Admin/Widgets/UsuariosPorPapel.php:58-59` | `BreakdownItem::make((string) $papel->getAttribute('name'), …)` | `Papeis::rotulo(...)` no primeiro argumento |
 | 5.4 | `app/Filament/Admin/Resources/Tenants/RelationManagers/UsersRelationManager.php:99` | `Role::query()->where('painel','app')->pluck('name','id')` | `->get()->mapWithKeys(fn (Role $p): array => [$p->getKey() => Papeis::rotulo((string) $p->getAttribute('name'))])->all()` |
 | 5.5 | `app/Filament/App/Resources/Users/UserResource.php:174-186` | `Select::make('roles')->relationship('roles','name', …)` sem rótulo | acrescentar `->getOptionLabelFromRecordUsing(fn (Role $record): string => Papeis::rotulo($record->name))`, igual ao irmão do `/admin` (`Admin/…/UserResource.php:61`) |
+| 5.6 | `app/Filament/App/Pages/ConvitesRecebidos.php` | `modalDescription` do aceite imprime `$record->papel?->getAttribute('name')` — chave crua, na mesma tela cuja coluna já usa o rótulo | `Papeis::rotulo(...)` |
+
+> ⚠️ **A linha 5.6 não estava aqui: foi achado do quality gate.** A varredura que produziu esta
+> tabela usou `grep "roles\.name\|papel\.name"`, e `->getAttribute('name')` não casa com nenhum
+> dos dois. A lição, e o que a próxima varredura precisa fazer diferente: **procurar pelo ACESSO ao
+> atributo, não pelo nome da coluna** — `getAttribute('name')`, `->name`, `pluck('name'`, `implode`
+> sobre `pluck`. Ver `06-relatorio-qa.md`, achado 1.
 
 Nos doze pontos que já usam o helper: nada muda. Lista, para o quality gate não reabrir a varredura:
 `Admin/Resources/Convites/Pages/ListConvites.php:44`,
