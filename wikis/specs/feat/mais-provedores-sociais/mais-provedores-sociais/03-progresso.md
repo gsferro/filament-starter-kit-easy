@@ -44,6 +44,7 @@ Branch: `feat/mais-provedores-sociais` · base `origin/main` = `cc3afd8` (v0.19.
 - [x] `botao-google.blade.php` removido
 - [x] Render hook do `KitServiceProvider` apontando para a view nova
 - [x] Nenhuma diretiva escrita dentro de comentário de blade (`.ai/rules/views.md`)
+- [x] `data-provedor` em cada partial de ícone — o único oráculo de RQ-03 nas marcas monocromáticas
 
 ## 7. Settings
 

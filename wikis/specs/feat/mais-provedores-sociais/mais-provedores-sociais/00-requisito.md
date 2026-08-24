@@ -85,6 +85,56 @@ liga **só aquele**, e o inverso também — desligar o Google não pode derruba
   `config/services.php` e nunca fica vazio na prática, mas é conferido de propósito: conferir
   duas e esquecer uma é o mutante mais provável aqui.
 
+### Devolvidas pela derivação dos casos de teste (segunda rodada)
+
+A skill de derivação dos casos derivou do texto original, sem ler a implementação, e devolveu
+seis perguntas. Cinco foram respondidas mudando o **código**; uma foi aceita como limitação.
+
+- **RQ-03 / o ícone das marcas monocromáticas não tinha oráculo.** O do Google é reconhecível
+  pelas quatro cores da marca no próprio SVG; GitHub, LinkedIn e X usam `currentColor`, e nada no
+  HTML dizia qual marca aquele desenho é — um Heroicon genérico, ou o ícone do provedor errado no
+  botão, passaria em qualquer asserção disponível. RQ-03 ficava sem oráculo em 3 dos 4.
+  - **Respondido no código**: cada partial de ícone carrega `data-provedor="{value}"` no `<svg>`.
+    Uma palavra por arquivo compra o caso de teste. Sem `@premissa`.
+
+- **RQ-04 / o `redirect` é conferido pelo predicado e não tem campo na tela.** O predicado confere
+  as três chaves; a aba "Login" expõe duas por provedor.
+  - **Assumido**: correto assim. `redirect` é derivado do `APP_URL`, e editá-lo pela tela
+    permitiria apontar o callback para fora do domínio. O predicado continua conferindo as três —
+    há cenário com `redirect` vazio por `config()`.
+  - **Se negado**: mais três propriedades de Settings, e o ADR-07 muda.
+
+- **RQ-09 / o X autenticava com `email_verified => false` explícito no payload.** O ramo era
+  `filled($doProvedor->getEmail())`, então o nível de garantia passava a depender de qual botão a
+  pessoa clicou — exatamente o argumento com que o ADR-05 recusou o Facebook.
+  - **Respondido no código**: um desmentido no bruto agora **vence** a presença do e-mail. A
+    presença continua sendo a prova (o X só devolve endereço confirmado), mas ela não sobrevive a
+    uma negação explícita. Ver `ProvedorSocial::naoDesmentidoNoBruto()`.
+
+- **ADR-06 tinha um terceiro sintoma que a decisão não listava: a trilha de auditoria.**
+  `AuditarConfiguracoesDoKit:127` decide o mascaramento por `in_array($prop, encrypted(), true)`,
+  então o `client_secret` do Google foi para `audits.old_values`/`new_values` **em texto claro**
+  desde a v0.19.2 — visível na tela de auditoria, que é onde o valor é exibido para leitura.
+  - **Respondido no código**: o conserto de `encrypted()` fecha o vazamento daqui para a frente
+    (uma lista, três consumidores), e uma migration mascara o que já está gravado, preservando a
+    linha da trilha e avisando no log que o segredo precisa ser **rotacionado**. ADR-06, ponto 3.
+
+- **RQ-09 / o painel de destino de quem entra por login social.** O botão está nas três telas de
+  login (o render hook é único), e o destino é sempre o painel `/app` — quem clica em
+  `/infra/login` acaba noutro painel.
+  - **Assumido**: **limitação pré-existente aceita**, não corrigida nesta entrega. O
+    comportamento é herdado sem alteração da entrega do Google, e guardar o painel de origem
+    entre a ida e a volta do OAuth é feature nova, não conserto desta. Registrado no ADR-09,
+    item 7, e nos READMEs.
+  - **Se negado**: exige guardar o painel de origem na sessão antes do redirect, e um cenário por
+    painel afirmando o destino.
+
+- **RQ-07 apontava para um caso inexistente.** A `## Cobertura do Requisito` do PRD dizia
+  "coberto por regressão (CT-R1)", e `CT-R1` não existe em wiki nenhuma.
+  - **Corrigido**: o caso real é `tests/Kit/RegistroAbertoTest.php:140`,
+    `it('nasce com as tres opcoes de registro desligadas')`. Resíduo de redação; nenhum passo
+    muda.
+
 ## Fora de Escopo (declarado)
 
 - **Discord** — sem driver no Socialite; exigiria dependência nova (ver Ambiguidades).

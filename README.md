@@ -689,6 +689,17 @@ O que muda de provedor para provedor é **onde** a prova está, e a diferença �
 Consequência a conhecer, em todos: se a pessoa **trocar o e-mail** na conta do provedor, o vínculo
 se perde e ela volta a entrar por senha.
 
+### Limitação conhecida: o destino é sempre o painel `/app`
+
+Os botões aparecem nas telas de login dos **três** painéis, porque o render hook é único. Mas quem
+entra por login social cai sempre no `/app`, mesmo tendo clicado em `/admin/login` ou
+`/infra/login` — e uma recusa também volta para o login do `/app`.
+
+Não é furo de segurança: a pessoa é autenticada e o papel dela continua governando o que ela
+alcança. É atrito de navegação, e está registrado como limitação aceita porque guardar o painel de
+origem entre a ida e a volta do OAuth é feature nova, não conserto desta. Quem administra e quem
+opera infra normalmente entra por senha; o login social existe para o caminho do `/app`.
+
 ### Facebook e Discord: por que não estão aqui
 
 O requisito original pedia os dois. Nenhum entrou, e cada um por um motivo diferente.

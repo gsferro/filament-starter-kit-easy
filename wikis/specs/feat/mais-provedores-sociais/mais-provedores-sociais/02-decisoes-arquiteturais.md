@@ -534,6 +534,14 @@ investigação:
 4. **`registro_verificar_email` continua fora do Settings** — chave de boot, ver
    `.ai/rules/settings.md`. Nada nesta entrega muda isso.
 5. **O vínculo continua por e-mail**, sem coluna `provider_id`. ADR-07 da wiki do Google.
-6. **O driver `twitter` (OAuth 1.0) não é oferecido** — o `One\TwitterProvider` não põe o e-mail
+6. **O painel de destino continua sendo o `/app`, para os três painéis de origem.** O botão está
+   nas três telas de login, porque o render hook é único e sem escopo — e o `recusar()` e o
+   caminho de sucesso levam ao `/app` em todos os casos. Quem clica em `/infra/login` acaba noutro
+   painel. É **limitação pré-existente aceita**: o comportamento vem sem alteração da entrega do
+   Google, e guardar o painel de origem entre a ida e a volta do OAuth é feature nova. Não é furo
+   de segurança — a pessoa é autenticada e o papel dela continua governando o que ela alcança —,
+   é atrito de navegação. Achado da revisão adversarial dos casos de teste, registrado nas
+   Ambiguidades do `00-requisito.md` e nos READMEs.
+7. **O driver `twitter` (OAuth 1.0) não é oferecido** — o `One\TwitterProvider` não põe o e-mail
    nem no payload bruto (`src/One/TwitterProvider.php:23`), então a barreira de verificação não
    tem onde encostar.

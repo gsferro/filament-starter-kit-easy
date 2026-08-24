@@ -28,7 +28,7 @@
 | RQ-04 | botão só com todos os dados preenchidos | 2, 4 | `ConfiguracaoDoLogin::disponivel()` confere interruptor + 3 chaves |
 | RQ-05 | ligar a opção abre os campos | 7 | `Section` por provedor + `visible()` no toggle `->live()` (ADR-07) |
 | RQ-06 | campos para todos os provedores, não só o Google | 5, 7 | 9 propriedades novas de Settings + migration |
-| RQ-07 | default `false` no registro aberto | — | já é o estado do kit; coberto por regressão (CT-R1) |
+| RQ-07 | default `false` no registro aberto | — | já é o estado do kit; coberto por regressão em `tests/Kit/RegistroAbertoTest.php:140` (`it('nasce com as tres opcoes de registro desligadas')`). A redação original apontava para um `CT-R1` que não existe em wiki nenhuma — achado da derivação dos casos |
 | RQ-08 | default `false` em **cada** provedor | 3, 5 | `filter_var(env(...), false)` por provedor; migration semeia do `.env` |
 | RQ-09 | ligado reflete em tudo que vem | 2, 4, 6 | o predicado governa a **rota** (404), não só o botão; e liga um provedor sem ligar os outros |
 | RQ-10 | muito bem documentado nos READMEs | 10 | `README.md` + `README.en.md` + `.env.example` |

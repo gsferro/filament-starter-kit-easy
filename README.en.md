@@ -663,6 +663,17 @@ What changes from provider to provider is **where** the proof lives, and the dif
 One consequence to know, for all of them: if the person **changes the e-mail** on the provider
 account, the link is lost and they go back to signing in with a password.
 
+### Known limitation: the destination is always the `/app` panel
+
+The buttons appear on the login screens of **all three** panels, because the render hook is a
+single one. But anyone arriving through social login lands on `/app`, even having clicked on
+`/admin/login` or `/infra/login` — and a refusal also returns to the `/app` login.
+
+This is not a security hole: the person is authenticated and their role still governs what they can
+reach. It is navigation friction, recorded as an accepted limitation because carrying the origin
+panel across the OAuth round trip is a new feature, not a fix to this one. Administrators and infra
+operators normally sign in with a password; social login exists for the `/app` path.
+
 ### Facebook and Discord: why they are not here
 
 The original requirement asked for both. Neither made it, each for a different reason.
