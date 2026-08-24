@@ -64,6 +64,22 @@ use Spatie\LaravelSettings\Models\SettingsProperty;
  * Não é a `Auditable` do owen-it: não existe `$settings->audits()` e não há
  * restauração. É gravação direta na mesma tabela, para aparecer no mesmo lugar
  * que o resto. Declarado, não escondido.
+ *
+ * ## O registro é automático, e NÃO deve ser repetido no provider
+ *
+ * O Laravel descobre listeners em `app/Listeners` pela assinatura do `handle()`.
+ * Acrescentar `Event::listen(SavingSettings::class, self::class)` num provider
+ * registra o listener **duas vezes** e grava **duas linhas idênticas de
+ * auditoria** por alteração — foi o que aconteceu na primeira versão desta
+ * feature, e só apareceu porque um caso contava os registros. Medido:
+ * `app('events')->getListeners(SavingSettings::class)` devolvia 2.
+ *
+ * `App\Ai\Listeners\RegistrarAiRun` é registrado à mão porque vive FORA de
+ * `app/Listeners` e a descoberta não o alcança — os dois padrões convivem, e o
+ * que decide qual usar é o diretório.
+ *
+ * A guarda disso é o caso "registra o listener da trilha uma única vez" em
+ * `tests/Kit/ConfiguracoesDoKitTest.php`.
  */
 final class AuditarConfiguracoesDoKit
 {

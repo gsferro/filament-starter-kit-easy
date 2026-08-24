@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use App\Ai\Health\LocalAiCheck;
 use App\Ai\Listeners\RegistrarAiRun;
-use App\Listeners\AuditarConfiguracoesDoKit;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Providers\Concerns\ConfiguraFilamentGlobal;
@@ -36,7 +35,6 @@ use Spatie\Health\Checks\Checks\QueueCheck;
 use Spatie\Health\Checks\Checks\ScheduleCheck;
 use Spatie\Health\Checks\Checks\UsedDiskSpaceCheck;
 use Spatie\Health\Facades\Health;
-use Spatie\LaravelSettings\Events\SavingSettings;
 use Spatie\Permission\PermissionRegistrar;
 use Throwable;
 
@@ -62,7 +60,6 @@ class KitServiceProvider extends ServiceProvider
         $this->configureTenancy();
         $this->configureGates();
         $this->configureAiLedger();
-        $this->configureTrilhaDeConfiguracoes();
         $this->configureRastroDeImportExport();
         $this->configureHealthChecks();
         $this->configureClearCacheButton();
@@ -190,20 +187,6 @@ class KitServiceProvider extends ServiceProvider
     protected function configureAiLedger(): void
     {
         Event::listen([AgentPrompted::class, AgentStreamed::class], RegistrarAiRun::class);
-    }
-
-    /**
-     * Trilha de alteração das configurações do kit.
-     *
-     * `SavingSettings` e não um observer de model: um settings do spatie não é
-     * model Eloquent, e a gravação de propriedade existente passa por `upsert()`,
-     * que não dispara evento de Eloquent nenhum. Este é o único evento do pacote
-     * que carrega valor antigo e valor novo juntos. O porquê completo está no
-     * docblock de `AuditarConfiguracoesDoKit` e em ADR-07.
-     */
-    protected function configureTrilhaDeConfiguracoes(): void
-    {
-        Event::listen(SavingSettings::class, AuditarConfiguracoesDoKit::class);
     }
 
     /**
