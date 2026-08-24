@@ -34,3 +34,10 @@ Thumbs.db
 
 # Worktrees de sub-agentes: contêm cópia de vendor/ e node_modules, jamais versionar
 /.claude/worktrees/
+
+# Artefatos de orquestração de agente: requisito capturado (a cópia que vale está no
+# `00-requisito.md` de cada wiki), script de setup de worktree e snapshots do
+# Playwright MCP. São rastro de processo, não do projeto.
+/.claude/requisitos/
+/.claude/setup-worktree.sh
+/.playwright-mcp/

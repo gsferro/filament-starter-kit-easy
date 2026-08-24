@@ -1,3 +1,0 @@
-Quando o usuário ativa o 2FA no perfil dele, a tela de exibição para inserir o codigo, não esta usando o pacote de auth designer
-- adicione o auth design na tela de register do lado inverso ao de login (como esta o esqueci a senha)
-- adicione também na tela de confirmação do email (não é usada como default, mas caso use, já esta implemetado o auth designer nela também)

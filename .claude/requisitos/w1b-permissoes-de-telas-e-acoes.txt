@@ -1,3 +1,0 @@
-vamos melhorar a tela: "/admin/shield/roles"
-[...]
-- ver quais outras modais ainda não tem permissões disponiveis para selecionar, cria-las e deixar disponivel para seleção, além de aplica-las nas telas para estarem cobertas por uma permissão especifica. TODAS as telas, links e actions do sistema precisa ter sua permissão especifica desde o inicio no starter-kit como padrão, para o maximo controle e total flexibilidade a quem for usar o kit nos seus projetos
