@@ -187,6 +187,29 @@ mesma lição que `.ai/rules/testes.md` já registra para asserção de ausênci
 documentado, agora numa variante nova: **asserção de ausência sobre canal compartilhado precisa
 filtrar o emissor.** Candidata a linha nova na rule de `tests/**`.
 
+**O achado mais valioso da execução não era desta feature: CT-37 não podia falhar.** O caso
+*"liga o alinhamento no provider da aplicacao e em nenhum painel"* de `ConfiguracoesDoKitTest`
+reprovou porque o docblock do middleware novo menciona `aplicarNaConfig()` — a quarta ocorrência do
+padrão que `.ai/rules/testes.md` já registra (asserção de ausência sobre arquivo documentado precisa
+filtrar comentário). Ao consertar, apareceu o defeito de baixo:
+
+```php
+->not->toContain('aplicarNaConfig', "O painel {$painel} chama o alinhamento — ...")
+```
+
+`toContain()` é **variádico**: a explicação não era mensagem de falha, era uma segunda **agulha**. E
+o `->not` do Pest passa assim que a asserção positiva lança — bastava a mensagem longa não estar no
+arquivo. O laço dos painéis, que existe para impedir que alguém pendure o alinhamento no
+`bootUsing()` de um painel, **não podia falhar com nenhum conteúdo**. O `AppPanelProvider` desta
+própria branch cita `aplicarNaConfig()` e passava.
+
+Consertado: uma agulha por chamada, filtro de comentário nos dois laços, e a explicação no docblock
+do caso. As asserções do caso subiram de 4 para 7. **Este defeito é anterior à feature e não teria
+sido encontrado sem ela** — foi o docblock do middleware que forçou a leitura do caso.
+
+Candidata a linha nova em `.ai/rules/testes.md`: *"mensagem de falha não existe em `toContain()`;
+o segundo argumento é outra agulha, e `->not` variádico passa se qualquer uma faltar"*.
+
 **O `.env` do worktree tem `KIT_TENANCY=true`, e isso não afeta a suíte `Kit`.** `Tests\TestCase`
 escreve a flag no ambiente **antes** do bootstrap (`createApplication()`), então `tests/Kit` roda
 single-tenant e `/app` é a URL do dashboard. Foi conferido antes de escrever os cenários HTTP, para
@@ -238,6 +261,36 @@ Gates avaliados: **durável** ✅ (vale para toda chave de boot futura) · **esc
 (`app/Settings/**`, e talvez `app/Providers/Filament/**`) · **não-inferível** ✅ (ninguém acha
 `emailVerifiedMiddlewareName()` lendo o código do kit) · **não-redundante** ✅ (atualiza rule
 existente em vez de criar outra, que é o preferido).
+
+## Quality Gate (step 8)
+
+Perfil **completo** (natureza `correção` + domínio sensível: a feature decide fronteira de acesso a
+painel). Relatório em `06-relatorio-qa.md`.
+
+- **Ciclo 1 — APROVADO COM DÉBITO**: 1 Major (QA-01) e 1 Minor (QA-02).
+  - **QA-01**, dimensão K: o caso que prova que `/admin` e `/infra` não regrediram usava
+    `assertSuccessful()` sozinho. Como o que ele nega é justamente um **redirecionamento**, o oráculo
+    era cego para o modo de falha mais próximo — um 200 que não é o painel. Os cenários do `/app` já
+    tinham âncora de conteúdo; os de fora dele ficaram sem. Destino 3.
+  - **QA-02**, dimensão D: `ip` em claro no context do log. Destino 5 (não-defeito) — é o padrão
+    vigente do canal `autenticacao`, e o valor forense da trilha depende dele. Aceito como débito.
+- **Ciclo 2 — APROVADO**: QA-01 fechado com `assertSeeLivewire(Dashboard::class)`; nenhum achado
+  novo. Loop encerrado em 2 de 3 ciclos.
+
+Duas coisas que o gate registrou e que não viraram achado, por serem comportamento correto:
+
+- **`master_global` sem e-mail validado É barrado no `/app`** — o middleware não consulta o
+  `Gate::before`. Correto pelo requisito (*"todo usuário do /app"*) e **sem risco de trancar alguém
+  fora**: o `/admin`, onde o toggle mora, não é afetado, então quem ligou por acidente consegue
+  desligar.
+- **Zero query acrescentada.** O middleware faz uma leitura de `config()` (array em memória) e
+  `hasVerifiedEmail()` sobre o usuário que o `Authenticate` já resolveu.
+
+## Débitos Aceitos
+
+- **QA-02** (Minor): `ip` em claro no context do log de barramento, consistente com o padrão do
+  canal `autenticacao`. Se o kit adotar política de mascaramento de IP, o lugar é o canal, não este
+  middleware.
 
 ## Retrospectiva
 

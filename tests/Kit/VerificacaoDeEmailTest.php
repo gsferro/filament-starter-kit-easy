@@ -318,9 +318,16 @@ it('nao leva o middleware do kit para fora do painel de negocio', function (): v
 it('deixa os paineis de administracao entrarem sem email validado', function (string $painel, string $papel): void {
     exigenciaDeEmail(true);
 
+    /*
+     * A âncora de conteúdo não é enfeite, e foi achado do quality gate (QA-01): `assertSuccessful()`
+     * sozinho passa com 200 que não é o painel — um redirecionamento já resolvido, uma tela de erro
+     * renderizada com 200, um shell vazio. Como o que este caso nega é justamente um
+     * REDIRECIONAMENTO, o oráculo tem de afirmar que a tela de destino é a do painel.
+     */
     $this->actingAs(usuarioDoKit($papel))
         ->get($painel)
-        ->assertSuccessful();
+        ->assertSuccessful()
+        ->assertSeeLivewire(Dashboard::class);
 })->with([
     'administração da instalação' => ['/admin', 'admin'],
     'infraestrutura'              => ['/infra', 'infra'],
