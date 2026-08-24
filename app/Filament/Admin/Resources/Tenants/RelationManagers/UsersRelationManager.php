@@ -28,6 +28,30 @@ use Spatie\Permission\PermissionRegistrar;
  * Attach/detach são registrados no canal `tenancy` — mudar quem enxerga os
  * dados de um cliente é exatamente o tipo de evento que se precisa auditar
  * depois, e o pivot não tem timestamps para contar essa história.
+ *
+ * ## As três Actions têm permissão própria, e duas delas são NATIVAS
+ *
+ * "Action nativa já consulta a policy do model" vale em Resource e em Page de Resource. **Em
+ * RelationManager não vale**, e o vendor diz isso em comentário:
+ *
+ * > `vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php:348-353`
+ * > *"Security: `AssociateAction`, `AttachAction`, `DetachAction`, and `DissociateAction` only check
+ * > `isReadOnly()` — they do not check specific policy methods."*
+ *
+ * O arm do `match` em `:359` confirma: para essas classes a resposta é
+ * `$this->isReadOnly() ? Response::deny() : null`, e `null` significa "sem opinião", que
+ * `CanBeAuthorized::resolveIsAuthorized()` (`:106-107`) converte em **permitido**. Até a 0.18.9,
+ * quem conseguia abrir `/admin/tenants/{id}` — permissão `View:Tenant` — podia vincular qualquer
+ * usuário da instalação àquela organização e desvincular qualquer um.
+ *
+ * As três permissões nascem em `config('filament-shield.resources.manage')` sob o `TenantResource`,
+ * o que as escopa ao painel `/admin`. Ver ADR-04 de
+ * `wikis/specs/feat/permissoes-de-telas-e-acoes/permissoes-de-telas-e-acoes/`.
+ *
+ * **Não** tente `->authorize('update', $tenant)` para cair na `TenantPolicy`:
+ * `parseAuthorizationArguments()` (`vendor/filament/actions/src/Concerns/CanBeAuthorized.php:80-89`)
+ * empurra o record — ou o model da relação, aqui `User` — para a FRENTE dos argumentos, e o Gate
+ * resolve a `UserPolicy`. O nome da permission é o caminho que não depende dessa ordem.
  */
 class UsersRelationManager extends RelationManager
 {
@@ -57,6 +81,10 @@ class UsersRelationManager extends RelationManager
             ->headerActions([
                 AttachAction::make()
                     ->label('Vincular usuário')
+                    // Action NATIVA e ainda assim sem autorização nenhuma: em RelationManager,
+                    // `AttachAction` e `DetachAction` só checam `isReadOnly()`. Ver o docblock da
+                    // classe.
+                    ->authorize('VincularUsuario:Tenant')
                     ->preloadRecordSelect()
                     ->recordSelectSearchColumns(['name', 'email'])
                     ->after(fn (User $record): null => $this->registrar('vinculado', $record)),
@@ -65,6 +93,7 @@ class UsersRelationManager extends RelationManager
                 $this->acaoDePapeis(),
                 DetachAction::make()
                     ->label('Desvincular')
+                    ->authorize('DesvincularUsuario:Tenant')
                     ->after(fn (User $record): null => $this->registrar('desvinculado', $record)),
             ])
             ->emptyStateHeading('Nenhum usuário vinculado')
@@ -89,6 +118,10 @@ class UsersRelationManager extends RelationManager
         return Action::make('papeisNaOrganizacao')
             ->label('Papéis nesta organização')
             ->icon(Heroicon::OutlinedShieldCheck)
+            // Atribuir papel é o ato mais sensível desta tela — é aqui que nasce o primeiro
+            // `admin_app` de uma organização. O filtro `where('painel','app')` abaixo continua
+            // sendo defesa em profundidade: ter a permissão não deixa pedir papel de `/admin`.
+            ->authorize('AtribuirPapeis:Tenant')
             ->schema([
                 Select::make('roles')
                     ->label('Papéis')

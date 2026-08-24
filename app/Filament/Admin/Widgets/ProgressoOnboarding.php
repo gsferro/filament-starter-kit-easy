@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use LaBoiteACode\FilamentDashboardWidgets\Data\Goal;
@@ -23,6 +24,8 @@ use LaBoiteACode\FilamentDashboardWidgets\Widgets\GoalProgressWidget;
  */
 class ProgressoOnboarding extends GoalProgressWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 60;
 
     protected int|string|array $columnSpan = 1;
@@ -32,7 +35,7 @@ class ProgressoOnboarding extends GoalProgressWidget
      * tabelas podem simplesmente não existir. Sem elas o widget some em vez de
      * derrubar o dashboard.
      */
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable(self::tabelaDeProgresso()),

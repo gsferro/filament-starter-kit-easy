@@ -2,6 +2,7 @@
 
 namespace App\Filament\Infra\Pages;
 
+use App\Filament\Concerns\ExigePermissaoDaTela;
 use BackedEnum;
 use Dotswan\FilamentLaravelPulse\Widgets\PulseCache;
 use Dotswan\FilamentLaravelPulse\Widgets\PulseExceptions;
@@ -19,14 +20,27 @@ use UnitEnum;
  * Laravel Pulse dentro do painel infra.
  *
  * Os widgets são listados à mão porque o dotswan/filament-laravel-pulse não
- * expõe classe de plugin. A rota nativa /pulse continua existindo e é protegida
- * pelo gate `viewPulse` (KitServiceProvider); esta página evita sair do painel.
+ * expõe classe de plugin.
+ *
+ * ## Duas barreiras diferentes, e elas não se substituem
+ *
+ * A rota nativa `/pulse`, do pacote, é protegida pelo gate `viewPulse` (KitServiceProvider).
+ * **Esta Page é outra rota** — `/infra/pulse` — e até a 0.18.9 ela não consultava nada: o
+ * `canAccess()` default do Filament é `return true`
+ * (`vendor/filament/filament/src/Pages/Concerns/CanAuthorizeAccess.php:17-24`), então quem abria o
+ * `/infra` via servidores, filas, cache, slow queries e exceções. A permissão `View:Pulse` existia
+ * no banco, aparecia como checkbox em `/admin/shield/roles` e não decidia nada.
+ *
+ * Agora decide, por `ExigePermissaoDaTela`. O gate `viewPulse` continua onde estava, para a rota do
+ * pacote.
  *
  * Os dados só aparecem com o daemon rodando: `php artisan pulse:check`
  * (ou o serviço `pulse` do docker compose --profile app/realtime).
  */
 class Pulse extends Dashboard
 {
+    use ExigePermissaoDaTela;
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
 
     protected static ?string $title = 'Pulse';

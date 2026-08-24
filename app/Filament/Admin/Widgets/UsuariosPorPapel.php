@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use App\Models\User;
 use LaBoiteACode\FilamentDashboardWidgets\Data\BreakdownItem;
 use LaBoiteACode\FilamentDashboardWidgets\Widgets\BreakdownWidget;
@@ -20,6 +21,8 @@ use Spatie\Permission\Models\Role;
  */
 class UsuariosPorPapel extends BreakdownWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 20;
 
     protected int|string|array $columnSpan = 1;

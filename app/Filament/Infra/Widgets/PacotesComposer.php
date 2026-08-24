@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use LaBoiteACode\FilamentDashboardWidgets\Data\Bullet;
@@ -20,11 +21,13 @@ use MominAlZaraa\FilamentComposerReleaseNotifier\Models\ComposerReleasePackageSn
  */
 class PacotesComposer extends BulletWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 60;
 
     protected int|string|array $columnSpan = 1;
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable('composer_release_package_snapshots'),

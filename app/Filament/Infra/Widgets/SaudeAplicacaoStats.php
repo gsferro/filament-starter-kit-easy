@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Gsferro\FilamentStatPlusEasy\Widgets\StatPlus;
@@ -21,6 +22,8 @@ use Spatie\Health\ResultStores\ResultStore;
  */
 class SaudeAplicacaoStats extends StatsOverviewWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 10;
 
     protected int|string|array $columnSpan = 'full';
@@ -32,7 +35,7 @@ class SaudeAplicacaoStats extends StatsOverviewWidget
      * do store Eloquent consulta direto o model, então chamá-lo antes da
      * migration rodar estouraria a página.
      */
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable((new HealthCheckResultHistoryItem)->getTable()),

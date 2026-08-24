@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use App\Models\AgenteIa;
 use LaBoiteACode\FilamentDashboardWidgets\Data\BreakdownItem;
 use LaBoiteACode\FilamentDashboardWidgets\Widgets\SegmentBarWidget;
@@ -18,6 +19,8 @@ use LaBoiteACode\FilamentDashboardWidgets\Widgets\SegmentBarWidget;
  */
 class AgentesIaPorProvider extends SegmentBarWidget
 {
+    use ExigePermissaoDoWidget;
+
     /** Cores cicladas por ordem de tamanho — o pacote não escolhe cor sozinho. */
     private const CORES = ['primary', 'success', 'info', 'warning', 'danger', 'gray'];
 

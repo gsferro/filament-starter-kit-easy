@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use App\Models\AgenteIa;
 use Filament\Widgets\StatsOverviewWidget;
 use Gsferro\FilamentStatPlusEasy\Widgets\StatPlus;
@@ -17,6 +18,8 @@ use Gsferro\FilamentStatPlusEasy\Widgets\StatPlus;
  */
 class AgentesIaStats extends StatsOverviewWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 40;
 
     protected int|string|array $columnSpan = 'full';

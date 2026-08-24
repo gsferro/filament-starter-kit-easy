@@ -6,6 +6,7 @@ use App\Filament\App\Resources\Convites\ConviteResource;
 use App\Filament\App\Resources\Users\UserResource;
 use App\Support\Paineis;
 use BezhanSalleh\FilamentExceptions\Resources\ExceptionResource;
+use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Permission;
@@ -207,6 +208,39 @@ class PapeisSeeder extends Seeder
     }
 
     /**
+     * Painel a que cada permissão de `config('filament-shield.custom_permissions')` pertence.
+     *
+     * Existe porque o Shield **não** escopa custom permission por painel: o
+     * `transformCustomPermissions()` lê a config sem consultar painel algum
+     * (`vendor/bezhansalleh/filament-shield/src/Concerns/HasEntityTransformers.php:88-112`) e o
+     * `getEntitiesPermissions()` faz merge das chaves na matriz de TODOS os painéis
+     * (`vendor/bezhansalleh/filament-shield/src/FilamentShield.php:119`). Sem este mapa, uma chave
+     * custom nova cai em `admin`, `infra`, `admin_app` **e `panel_user`** — o over-grant silencioso
+     * que `.ai/rules/filament.md` §4 chama de a falha mais cara desta parte do kit.
+     *
+     * Hoje as duas chaves são as Actions de `App\Filament\App\Pages\ConvitesRecebidos`, e elas ficam
+     * no painel `app`: quem aceita ou recusa o convite é quem opera o negócio.
+     *
+     * **Fail-closed de propósito**: chave sem entrada aqui não vai para papel nenhum. Quem
+     * acrescenta uma custom permission e esquece o mapa vê o botão sumir para todos — e é a falha
+     * segura, não a que promove usuário comum a administrador. O caso CT-19 de
+     * `tests/Kit/PermissoesDeAcoesTest.php` fica vermelho nomeando a chave faltante.
+     *
+     * Action de RESOURCE não passa por aqui: ela nasce em `config('filament-shield.resources.manage')`,
+     * que é escopado por painel de graça. Ver ADR-02 e ADR-03 de
+     * `wikis/specs/feat/permissoes-de-telas-e-acoes/permissoes-de-telas-e-acoes/`.
+     *
+     * @return array<string, list<string>>
+     */
+    private function paineisDasPermissoesCustomizadas(): array
+    {
+        return [
+            'Aceitar:Convite' => ['app'],
+            'Recusar:Convite' => ['app'],
+        ];
+    }
+
+    /**
      * As permissões do painel que EXISTEM no banco.
      *
      * A interseção não é preciosismo: `syncPermissions()` recebendo um nome que não está
@@ -218,14 +252,35 @@ class PapeisSeeder extends Seeder
      * `Permission::pluck('name')` e um banco sem permissions simplesmente dava papel
      * vazio, em vez de erro.
      *
+     * O `reject` final é o recorte de painel das custom permissions — ver
+     * `paineisDasPermissoesCustomizadas()`. Ele fica AQUI, e não nas quatro chamadas de
+     * `syncPermissions()`, porque este é o ponto único por onde toda permissão passa antes de chegar
+     * a um papel: um recorte por papel seria quatro cópias, e a próxima copiaria mal.
+     *
      * @return Collection<int, string>
      */
     private function permissoesDoPainel(string $painel, string $guard): Collection
     {
+        $declarado = $this->paineisDasPermissoesCustomizadas();
+
+        /*
+         * O mapa é montado sobre as chaves que o Shield REALMENTE gera a partir da config, e não
+         * sobre as chaves declaradas acima. É o que torna o recorte fail-closed: custom permission
+         * nova sem entrada no mapa cai aqui com lista de painéis VAZIA e é rejeitada em todos os
+         * painéis. Se o mapa fosse a única fonte, a chave sem entrada escaparia do `reject` e iria
+         * para os quatro papéis — fail-open, exatamente o defeito que este método fecha.
+         */
+        $paineisPorCustom = collect(array_keys((array) FilamentShield::getCustomPermissions()))
+            ->mapWithKeys(fn (string $chave): array => [$chave => $declarado[$chave] ?? []])
+            ->all();
+
         return Permission::query()
             ->where('guard_name', $guard)
             ->whereIn('name', Paineis::permissoes($painel))
-            ->pluck('name');
+            ->pluck('name')
+            ->reject(fn (string $permissao): bool => array_key_exists($permissao, $paineisPorCustom)
+                && ! in_array($painel, $paineisPorCustom[$permissao], true))
+            ->values();
     }
 
     /**

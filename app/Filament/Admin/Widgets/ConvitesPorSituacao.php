@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use App\Models\Convite;
 use Illuminate\Support\Facades\Schema;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
@@ -16,6 +17,8 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
  */
 class ConvitesPorSituacao extends ApexChartWidget
 {
+    use ExigePermissaoDoWidget;
+
     /**
      * Ordem e cor FIXAS, com zero para a situação sem nenhum convite.
      *
@@ -43,7 +46,7 @@ class ConvitesPorSituacao extends ApexChartWidget
     // seria 5 s, por aba aberta — ver ADR-04 da wiki `graficos-com-apexcharts`.
     protected ?string $pollingInterval = null;
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable((new Convite)->getTable()),

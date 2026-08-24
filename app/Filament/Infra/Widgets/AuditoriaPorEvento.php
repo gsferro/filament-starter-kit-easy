@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Illuminate\Support\Facades\Schema;
 use LaBoiteACode\FilamentDashboardWidgets\Data\BreakdownItem;
 use LaBoiteACode\FilamentDashboardWidgets\Widgets\BreakdownWidget;
@@ -19,6 +20,8 @@ use OwenIt\Auditing\Models\Audit;
  */
 class AuditoriaPorEvento extends BreakdownWidget
 {
+    use ExigePermissaoDoWidget;
+
     /** Cor e rótulo pt-BR por evento do owen-it/laravel-auditing. */
     private const EVENTOS = [
         'created'  => ['Criações', 'success', 'heroicon-o-plus-circle'],
@@ -31,7 +34,7 @@ class AuditoriaPorEvento extends BreakdownWidget
 
     protected int|string|array $columnSpan = 1;
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable(self::tabela()),

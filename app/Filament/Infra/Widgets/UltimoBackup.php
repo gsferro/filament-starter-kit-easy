@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Brimham\BackupMonitor\Models\BackupRun;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
@@ -23,6 +24,8 @@ use LaBoiteACode\FilamentDashboardWidgets\Widgets\MetricWidget;
  */
 class UltimoBackup extends MetricWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 30;
 
     protected int|string|array $columnSpan = 1;
@@ -31,7 +34,7 @@ class UltimoBackup extends MetricWidget
      * A tabela vem do brimham/backup-monitor via `loadMigrationsFrom()`. Se o
      * pacote sair do composer.json, o widget some junto em vez de estourar.
      */
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable('backup_runs'),

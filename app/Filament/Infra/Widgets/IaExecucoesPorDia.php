@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use DateTimeInterface;
 use Fomvasss\AiTasks\Models\AiRun;
 use Illuminate\Contracts\Support\Htmlable;
@@ -28,6 +29,8 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
  */
 class IaExecucoesPorDia extends ApexChartWidget
 {
+    use ExigePermissaoDoWidget;
+
     private const DIAS = 14;
 
     protected static ?string $chartId = 'iaExecucoesPorDia';
@@ -45,7 +48,7 @@ class IaExecucoesPorDia extends ApexChartWidget
      */
     protected ?string $pollingInterval = null;
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable((string) config('ai-tasks.table', 'ai_runs')),

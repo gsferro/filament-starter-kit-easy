@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Pages;
 
+use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Models\Convite;
 use App\Models\User;
 use App\Support\Papeis;
@@ -42,6 +43,7 @@ use Illuminate\Support\Facades\Auth;
  */
 class ConvitesRecebidos extends Page implements HasTable
 {
+    use ExigePermissaoDaTela;
     use InteractsWithTable;
 
     protected string $view = 'filament.pages.convites-recebidos';
@@ -51,7 +53,15 @@ class ConvitesRecebidos extends Page implements HasTable
     /** Fora da navegação: o caminho é o item no menu do usuário, com a contagem. */
     protected static bool $shouldRegisterNavigation = false;
 
-    public static function canAccess(): bool
+    /**
+     * Hook de `ExigePermissaoDaTela`: tenancy e sessão, ALÉM da permissão `View:ConvitesRecebidos`.
+     *
+     * A permissão nasce com o `panel_user` e com o `admin_app` — é a caixa de entrada de quem opera
+     * o negócio, não tela de administração, então ela NÃO entra em
+     * `PapeisSeeder::permissoesDeAdministracaoDoApp()`. Numa subtração o erro é espelhado:
+     * acrescentá-la "por precaução" deixaria o usuário comum sem como aceitar o convite dele.
+     */
+    protected static function regraLocalDeAcesso(): bool
     {
         return (bool) config('kit.tenancy.enabled') && Auth::check();
     }
@@ -80,6 +90,17 @@ class ConvitesRecebidos extends Page implements HasTable
                     ->label('Aceitar')
                     ->icon(Heroicon::OutlinedCheck)
                     ->color('success')
+                    /*
+                     * Permissão de configuração, não barreira de identidade. Quem garante que o
+                     * convite é DESTA pessoa continua sendo `Convite::exigirDono()`, chamado na
+                     * primeira linha de `aceitarComoUsuarioExistente()` — a permissão não substitui
+                     * a asserção do model, e a ordem importa: ter `Aceitar:Convite` não deixa
+                     * ninguém aceitar convite de outro. Ver `.ai/rules/filament.md` §2.
+                     *
+                     * `Aceitar:Convite` nasce em `config('filament-shield.custom_permissions')` e
+                     * chega ao `panel_user` e ao `admin_app` pelo mapa de painéis do `PapeisSeeder`.
+                     */
+                    ->authorize('Aceitar:Convite')
                     // Entrar numa organização é ato explícito — a confirmação é a razão de
                     // o aceite pós-login não ser automático.
                     ->requiresConfirmation()
@@ -95,6 +116,10 @@ class ConvitesRecebidos extends Page implements HasTable
                     ->label('Recusar')
                     ->icon(Heroicon::OutlinedXMark)
                     ->color('danger')
+                    // Permissão própria, e não a de aceitar: são verbos irmãos, e verbo irmão não
+                    // herda autorização. A barreira de identidade é `Convite::exigirDono()` dentro
+                    // de `recusar()`.
+                    ->authorize('Recusar:Convite')
                     ->requiresConfirmation()
                     ->modalHeading('Recusar convite')
                     ->modalDescription('A recusa fica registrada e este convite deixa de valer. Quem convidou pode enviar outro.')

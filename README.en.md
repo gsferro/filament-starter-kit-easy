@@ -841,6 +841,9 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 | F-12 | Roles and permissions grouped by panel | `/admin/shield/roles` | `admin` | the screen separates *Panel /admin*, */app* and */infra* | 🟢 |
 | F-13 | `panel_user` **does not** administer | `/app{/org}` | `panel_user` | they use the business and don't see Users or Invitations — their matrix is the panel's **minus** the admin screens | 🟢 |
 | F-14 | Without a role, nobody enters | the three | — | authenticated user without a role takes 403 on the three. Null **is not** a wildcard | 🟢 |
+| F-62 | **Every screen in the kit has its own permission, and it is enforced** | `/admin/shield/roles` → *Pages* and *Widgets* tabs | `admin` | uncheck `View:Pulse` on the `infra` role: the screen answers 403 and the menu item is gone. Holds for the 5 Pages and the 23 Widgets written in the kit | 🟢 |
+| F-63 | **Every action and every link in the kit has its own permission** | `/admin/shield/roles` → *Resources* and *Custom* tabs | `admin` | uncheck `Reenviar:Convite`: the *Resend* button leaves the invitations listing. The RelationManager ones (attach, detach, assign roles) likewise | 🟢 |
+| F-64 | A new action or link **does not** ship open by forgetfulness | `tests/Kit/PermissoesDeAcoesTest.php` | — | add an `Action::make('x')` under `app/Filament/` and run the suite: the inventory case turns red naming the file | 🟢 |
 
 ### Invitations
 
@@ -1256,6 +1259,77 @@ php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
 ```
 
 **Both, in this order, every time.** The first runs `shield:generate --all` on **each** panel and writes the policies; the second slices the matrix by the panel the Resource is registered on and hands the permissions back to the roles. The first one alone creates the permission and gives it to nobody — the screen stays at 403 for anyone who isn't `master_global`. Both are idempotent: running them again is normal operation.
+
+### New Page, Widget and Action
+
+Resource is the easy case: the two seeders handle it. The other three families need one line of code,
+because Filament's defaults are **permissive** — the vendor says so in a comment, in
+`Pages/Concerns/CanAuthorizeAccess.php` (`canAccess()` returns `true`), in `Widget.php` (`canView()`
+returns `true`) and in `Actions/Concerns/CanBeAuthorized.php` (authorization defaults to `null`, i.e.
+allowed).
+
+Shield **generates** `View:{Page}` and `View:{Widget}` by discovery, `PapeisSeeder` **hands them** to
+the panel's roles and the roles screen **shows** the checkbox — none of which makes the permission be
+consulted. Without the trait, unchecking the box changes nothing.
+
+```php
+// New panel Page
+use App\Filament\Concerns\ExigePermissaoDaTela;
+
+class MyPage extends Page
+{
+    use ExigePermissaoDaTela;
+
+    // Local rule (config flag, tenancy) goes IN THE HOOK, never overriding canAccess():
+    protected static function regraLocalDeAcesso(): bool
+    {
+        return (bool) config('kit.my_flag');
+    }
+}
+
+// New Widget
+use App\Filament\Concerns\ExigePermissaoDoWidget;
+
+class MyWidget extends StatsOverviewWidget
+{
+    use ExigePermissaoDoWidget;
+
+    // Optional data-source check goes IN THE HOOK, never overriding canView():
+    protected static function fonteDeDadosDisponivel(): bool
+    {
+        return (bool) rescue(fn (): bool => Schema::hasTable('my_table'), false);
+    }
+}
+```
+
+> ⚠️ **Overriding `canAccess()`/`canView()` on the class silently disables the permission.** A class
+> method wins over a trait method, with no error and no warning. That is why both concerns publish a
+> **hook** for the local rule, and why `tests/Kit/PermissoesDeTelasTest.php` and
+> `PermissoesDeWidgetsTest.php` each have a case that walks EVERY class and fails the one that does
+> not consult it.
+
+**Action** is an explicit declaration, because Shield discovers no Action at all:
+
+| The Action belongs to… | The permission is born in | And on the Action |
+|---|---|---|
+| A Resource (table, header, RelationManager) | `config('filament-shield.resources.manage')` on that panel's Resource | `->authorize('MyAction:MyModel')` |
+| A Page | `config('filament-shield.custom_permissions')` **and** `PapeisSeeder::paineisDasPermissoesCustomizadas()` | `->authorize('MyAction:MyModel')` |
+
+The second row has two halves because `custom_permissions` **knows nothing about panels**: without the
+seeder's map, the new key lands on `admin`, `infra`, `admin_app` **and `panel_user`**. A key with no
+entry in the map reaches no role at all (fail-closed) and case `CT-19` of
+`tests/Kit/PermissoesDeAcoesTest.php` turns red naming the key.
+
+> ⚠️ **In a RelationManager, not even the NATIVE Action is covered.** `AttachAction`, `DetachAction`,
+> `AssociateAction` and `DissociateAction` only check `isReadOnly()` — the comment is in the vendor's
+> `getDefaultActionAuthorizationResponse()`. In the kit, the `tenant_user` link that `AttachAction`
+> creates is exactly what `User::canAccessTenant()` consults to unlock `/app/{slug}`, so both carry
+> `->authorize()`.
+
+**Vendor Pages and Widgets stay out**: they are package classes, with no extension point. Their
+permission exists in the database and in the checkbox, and **is not consulted** — the barrier is
+`canAccessPanel()` plus the named gates from `KitServiceProvider` (`ver-logs`,
+`command-center:access`, `viewPulse`, `ver-ai-tasks`).
 
 > **Shield does not see RelationManagers.** Its discovery covers Resources, Pages and Widgets only, so no permission is generated and authorization falls back to the **related model's policy**. If that model already has a Resource on some panel, there is nothing to do. If it doesn't, write the policy by hand (`php artisan make:policy`) and declare the keys in `config('filament-shield.custom_permissions')` **before** running the seeders — otherwise the RelationManager is open to anyone who can open the parent Resource.
 

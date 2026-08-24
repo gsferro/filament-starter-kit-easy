@@ -71,6 +71,17 @@ class ConvitesTable
                 Action::make('reenviar')
                     ->label('Reenviar')
                     ->icon(Heroicon::OutlinedPaperAirplane)
+                    /*
+                     * `->visible()` abaixo é regra de ESTADO (só pendente ou expirado); esta é a
+                     * autorização, e as duas são necessárias. Sem ela a Action ficava liberada para
+                     * todo mundo que abrisse a listagem: o default de
+                     * `vendor/filament/actions/src/Concerns/CanBeAuthorized.php:21` é `null`, que o
+                     * `resolveIsAuthorized()` (`:106-107`) converte em permitido.
+                     *
+                     * Reenviar não é "editar convite": dispara e-mail e INVALIDA o token anterior.
+                     * A permissão nasce em `config('filament-shield.resources.manage')`.
+                     */
+                    ->authorize('Reenviar:Convite')
                     ->requiresConfirmation()
                     ->modalDescription('O link anterior deixa de funcionar e um novo é enviado.')
                     ->visible(fn (Convite $record): bool => $record->situacao() === 'Pendente' || $record->situacao() === 'Expirado')

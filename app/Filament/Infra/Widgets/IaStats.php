@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Filament\Widgets\StatsOverviewWidget;
 use Fomvasss\AiTasks\Models\AiRun;
 use Gsferro\FilamentStatPlusEasy\Widgets\StatPlus;
@@ -18,13 +19,15 @@ use Illuminate\Support\Facades\Schema;
  */
 class IaStats extends StatsOverviewWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 70;
 
     protected int|string|array $columnSpan = 'full';
 
     protected ?string $heading = 'Execuções de IA';
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable(self::tabela()),

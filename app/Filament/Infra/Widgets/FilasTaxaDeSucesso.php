@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Query\Builder;
@@ -22,6 +23,8 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
  */
 class FilasTaxaDeSucesso extends ApexChartWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?string $chartId = 'filasTaxaDeSucesso';
 
     protected static ?string $heading = 'Taxa de sucesso das filas';
@@ -34,7 +37,7 @@ class FilasTaxaDeSucesso extends ApexChartWidget
     // Ainda assim explícito, nunca herdado — o default do pacote é 5 s (ADR-04 da wiki).
     protected ?string $pollingInterval = '30s';
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable('queue_monitors'),

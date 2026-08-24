@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Fomvasss\AiTasks\Models\AiRun;
 use Illuminate\Support\Facades\Schema;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
@@ -21,6 +22,8 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
  */
 class IaExecucoesPorStatus extends ApexChartWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?string $chartId = 'iaExecucoesPorStatus';
 
     protected static ?string $heading = 'Execuções de IA por status';
@@ -35,7 +38,7 @@ class IaExecucoesPorStatus extends ApexChartWidget
     // consulta contínua. O default do pacote seria 5 s — ver ADR-04 da wiki.
     protected ?string $pollingInterval = '60s';
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable((string) config('ai-tasks.table', 'ai_runs')),

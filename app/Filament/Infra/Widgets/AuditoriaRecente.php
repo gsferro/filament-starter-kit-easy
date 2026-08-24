@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
@@ -22,11 +23,13 @@ use OwenIt\Auditing\Models\Audit;
  */
 class AuditoriaRecente extends TimelineWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 140;
 
     protected int|string|array $columnSpan = 'full';
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable((string) config('audit.drivers.database.table', 'audits')),

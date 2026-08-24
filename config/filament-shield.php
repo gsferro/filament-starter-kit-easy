@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use App\Filament\Admin\Resources\Convites\ConviteResource;
+use App\Filament\Admin\Resources\Tenants\TenantResource;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
 use Filament\Pages\Dashboard;
 use Filament\Widgets\AccountWidget;
@@ -27,7 +29,13 @@ return [
             'pages'              => true,
             'widgets'            => true,
             'resources'          => true,
-            'custom_permissions' => false,
+
+            /*
+             * Ligada porque o kit USA `custom_permissions` (bloco no fim deste arquivo).
+             * Desligada, `Aceitar:Convite` e `Recusar:Convite` existem no banco e ficam
+             * INVISÍVEIS na tela de papéis — ninguém concede nem revoga, sem erro nenhum.
+             */
+            'custom_permissions' => true,
         ],
     ],
 
@@ -208,15 +216,70 @@ return [
     |
     */
 
+    /*
+     * `manage` é onde nasce a permissão de ACTION de Resource.
+     *
+     * Com `policies.merge => true` (acima), a lista aqui é SOMADA às 14 chaves default daquele
+     * Resource — `HasEntityTransformers::getDefaultPolicyMethodsOrFor()` faz `array_merge()`
+     * (`vendor/bezhansalleh/filament-shield/src/Concerns/HasEntityTransformers.php:179-181`). Então
+     * `'reenviar'` no `ConviteResource` do /admin gera `Reenviar:Convite`, e mais nada muda.
+     *
+     * ## Por que aqui, e não em `custom_permissions`
+     *
+     * Porque Resource pertence a um PAINEL, e a permissão nasce escopada de graça:
+     * `Paineis::permissoes('admin')` a inclui e `Paineis::permissoes('app')` não. O `PapeisSeeder`
+     * colhe a matriz do painel, então a permissão chega ao papel `admin` **sem nenhuma mudança de
+     * seeder**. `custom_permissions` não tem noção de painel nenhuma — ver o bloco lá embaixo.
+     *
+     * Regra de escolha, em uma frase: **Action de Resource vem para cá; Action de Page vai para
+     * `custom_permissions` + o mapa de painel do `PapeisSeeder`.**
+     *
+     * O nome do método entra em camelCase e sai em pascal com o separador (`atribuirPapeis` →
+     * `AtribuirPapeis:Tenant`). NENHUM dos três abaixo entra em
+     * `policies.single_parameter_methods`: os três agem sobre registro.
+     *
+     * **Ressemeie depois de mexer aqui**, ou a Action fica oculta para todo mundo sem erro nenhum:
+     *
+     *   php artisan db:seed --class=Database\Seeders\ShieldPermissionsSeeder
+     *   php artisan db:seed --class=Database\Seeders\PapeisSeeder
+     */
     'resources' => [
         'subject' => 'model',
         'manage'  => [
+            /*
+             * Esta entrada é do RoleResource do VENDOR, e o painel usa o publicado do kit
+             * (`App\Filament\Admin\Resources\Roles\RoleResource`) — logo ela nunca casa. Mesmo que
+             * casasse, `policies.merge => true` faz `array_merge` e as 14 voltariam. Mantida como
+             * estava: mexer nela é assunto da tela de papéis, não desta lista.
+             */
             RoleResource::class => [
                 'viewAny',
                 'view',
                 'create',
                 'update',
                 'delete',
+            ],
+
+            // Reenviar dispara e-mail e INVALIDA o token anterior — não é "editar convite".
+            ConviteResource::class => [
+                'reenviar',
+            ],
+
+            /*
+             * As três do `UsersRelationManager`. Duas delas são Action NATIVA, e é o ponto:
+             * `AttachAction`/`DetachAction` em RelationManager só checam `isReadOnly()`, sem
+             * policy — o vendor diz isso em comentário em
+             * `vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php:348-353`,
+             * e o arm do `match` em `:359` confirma. A linha do pivot `tenant_user` que elas criam é
+             * exatamente o que `User::canAccessTenant()` consulta para liberar `/app/{slug}`.
+             *
+             * `atribuirPapeis` grava papéis via `syncRoles()` — é onde nasce o primeiro
+             * `admin_app` de uma organização.
+             */
+            TenantResource::class => [
+                'vincularUsuario',
+                'desvincularUsuario',
+                'atribuirPapeis',
             ],
         ],
         'exclude' => [
@@ -277,7 +340,41 @@ return [
     |
     */
 
-    'custom_permissions' => [],
+    /*
+     * Aqui ficam as permissões de Action de PAGE — as que não pendem de nenhum Resource.
+     *
+     * `aceitar` e `recusar` são as duas Actions de `App\Filament\App\Pages\ConvitesRecebidos`. Elas
+     * NÃO podem nascer no `ConviteResource` do painel `app`, que seria o caminho natural: a lista
+     * `PapeisSeeder::permissoesDeAdministracaoDoApp()` subtrai do `panel_user` **todas** as
+     * permissões daquele Resource, em bloco, por FQCN — e é justamente o usuário comum que aceita o
+     * convite dele. A subtração é assim de propósito (o docblock daquele método explica por quê), e
+     * afiná-la reintroduziria casamento por nome numa subtração.
+     *
+     * As chaves saem em minúsculo e o Shield formata cada segmento com `permissions.case`
+     * (`HasEntityTransformers::formatCustomPermissionKey()`, `:155-164`), gerando `Aceitar:Convite`
+     * e `Recusar:Convite`.
+     *
+     * ## ARMADILHA: custom permission não conhece painel
+     *
+     * `transformCustomPermissions()` lê esta lista sem consultar painel nenhum
+     * (`vendor/bezhansalleh/filament-shield/src/Concerns/HasEntityTransformers.php:88-112`), e
+     * `getEntitiesPermissions()` faz merge das chaves na matriz de **todo** painel
+     * (`FilamentShield.php:119`). Sem recorte, chave nova aqui cai em `admin`, `infra`, `admin_app`
+     * **e `panel_user`** — o over-grant silencioso que `.ai/rules/filament.md` §4 chama de a falha
+     * mais cara desta parte do kit.
+     *
+     * Por isso toda chave desta lista PRECISA de entrada em
+     * `PapeisSeeder::paineisDasPermissoesCustomizadas()`. Sem entrada ela não vai para papel nenhum
+     * (fail-closed) e o caso CT-19 de `tests/Kit/PermissoesDeAcoesTest.php` fica vermelho nomeando
+     * a chave.
+     *
+     * Ver ADR-02 e ADR-03 de
+     * `wikis/specs/feat/permissoes-de-telas-e-acoes/permissoes-de-telas-e-acoes/`.
+     */
+    'custom_permissions' => [
+        'aceitar:convite' => 'Aceitar convite recebido',
+        'recusar:convite' => 'Recusar convite recebido',
+    ],
 
     /*
     |--------------------------------------------------------------------------

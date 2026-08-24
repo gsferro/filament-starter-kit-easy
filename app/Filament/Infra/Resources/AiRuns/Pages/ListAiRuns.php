@@ -21,7 +21,14 @@ class ListAiRuns extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            // Dashboard do fomvasss/laravel-ai-tasks (rota do pacote, fora do Filament).
+            /*
+             * Dashboard do fomvasss/laravel-ai-tasks (rota do pacote, fora do Filament).
+             *
+             * SEM `->visible()` de propósito: `AiRunResource::canAccess()` é
+             * `Auth::user()?->can('ver-ai-tasks')` (`AiRunResource.php:81-84`), o MESMO gate que
+             * protege a rota de destino — quem chega aqui já passou nele, e a linha seria no-op
+             * infalsificável. Ver QA-02 em `wikis/specs/feat/permissoes-de-telas-e-acoes/`.
+             */
             Action::make('dashboardAiTasks')
                 ->label('Dashboard de estatísticas')
                 ->icon('heroicon-o-chart-bar')

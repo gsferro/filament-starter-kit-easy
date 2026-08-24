@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use LaBoiteACode\FilamentDashboardWidgets\Data\BreakdownItem;
@@ -22,11 +23,13 @@ use LaBoiteACode\FilamentDashboardWidgets\Widgets\BreakdownWidget;
  */
 class FilasPorFila extends BreakdownWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 50;
 
     protected int|string|array $columnSpan = 1;
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable('queue_monitors'),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Infra\Pages;
 
 use App\Filament\Concerns\DescobreCardsDoPainel;
+use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Filament\Infra\Resources\AiRuns\AiRunResource;
 use BackedEnum;
 use BezhanSalleh\FilamentExceptions\Resources\ExceptionResource;
@@ -52,10 +53,19 @@ use Tapp\FilamentMailLog\Resources\MailLogResource;
  * **Não acrescente `canAccess()` com a flag aqui**: há um caso de teste que fica vermelho se
  * alguém "corrigir" a inconsistência (`tests/Kit/HubDeCardsTest.php`, o cenário com a flag
  * desligada).
+ *
+ * ## A PERMISSÃO é outra coisa, e ela vale
+ *
+ * A proibição acima é sobre a **flag**. `View:HubDeInfraestrutura` sempre existiu no banco e no
+ * checkbox de `/admin/shield/roles`, e até a 0.18.9 não decidia nada — o `canAccess()` default do
+ * Filament é `return true`. Agora decide, por `ExigePermissaoDaTela`, e o cenário guarda de ADR-03
+ * (`tests/Kit/HubDeCardsTest.php:110`, com a flag desligada) segue verde porque a persona dele tem o
+ * papel `infra`, que carrega a permissão. Ver ADR-06 da wiki `permissoes-de-telas-e-acoes`.
  */
 class HubDeInfraestrutura extends CardsPage
 {
     use DescobreCardsDoPainel;
+    use ExigePermissaoDaTela;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-squares-2x2';
 
