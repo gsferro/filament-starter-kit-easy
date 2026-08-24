@@ -163,6 +163,35 @@ Segunda rodada **não** executada: o fechamento criou 8 cenários novos, mas o t
 existe para conter o loop e não para obrigá-lo. Lacuna nova em CT-25..CT-32 entra pelo destino 3 do
 `feature-quality-gate`.
 
+## Quality Gate (step 8)
+
+**Ciclo 1 — `APROVADO COM DÉBITO`.** Perfil **completo** (natureza `nova`, UI com JS, domínio
+sensível). Relatório em `06-relatorio-qa.md`.
+
+- Blocker **0** · Major **0** · Minor **2** · Cosmético 0
+- Matriz de Rastreabilidade: as 9 cláusulas `RQ` têm passo, CT e código. Nenhum passo, CT ou arquivo
+  ficou **sem** `RQ`. Duas cláusulas parciais, as duas por premissa declarada no `00` antes de
+  implementar (RQ-05 e RQ-09).
+- Dimensões rodadas: A, B, C, D, E, F, I, J, K. Puladas com motivo: **G** e **H** (o diff não toca
+  marcação, CSS nem classe de cor — verificável por `git diff --stat`).
+- Não verificado, declarado: `--mutate` (fora do escopo desde o `04`, com motivo), a segunda sonda
+  de performance (timeout disputando CPU com a suíte), Playwright MCP (proibido) e as tools do Boost
+  (nunca expostas).
+
+**Débitos aceitos**, os dois replicados aqui:
+
+1. **QA-01** — Page e Widget de **vendor** do `/infra` (10 Pages + 1 Widget) têm a permissão gerada
+   e selecionável, e ela **não é consultada**. Premissa de escopo declarada em ADR-05, com o custo da
+   alternativa escrito. CT-24 assere a lacuna e **fica vermelho no dia em que alguém a fechar** — é
+   o sinal de que ADR-05 precisa ser revisada, não de que o teste está errado.
+2. **QA-03** — RQ-09 ("conceder/revogar por papel sem editar código") está provada em três peças
+   separadas (CT-16 oferece a opção, CT-01/CT-02 mudam o resultado, `tests/Kit/PaineisTest.php:198,228`
+   provam que a tela grava), e falta o cenário que marca o checkbox em `/admin/shield/roles` e vê a
+   tela passar de 403 para 200. **Escrever depois do merge de `feat/perfis-e-permissoes`**: um
+   `Livewire::test(EditRole::class)` agora é conflito de merge garantido naquele diretório.
+
+Nenhum achado exigiu volta ao step 4 nem ao passo do PRD. Um ciclo, sem reciclagem.
+
 ## Blockers
 
 <!-- vazio -->
