@@ -62,6 +62,20 @@
 
 ## Verificação Final
 
+Tudo rodado **depois** do rebase sobre `origin/main` = `0d423dd`.
+
+| Comando | Resultado |
+|---|---|
+| `vendor/bin/pint --dirty --format agent` | limpo |
+| `vendor/bin/phpstan analyse --no-progress` | **0 erros** |
+| `php artisan test --testsuite=Unit,Feature,Kit,Tenancy` | **735/735**, 1919 asserções, 43 min |
+| `composer test:browser` | ver abaixo |
+| auditoria Ponytail do diff (sub-agente) | 0 achados estruturais; 2 de 9 comentários aplicados |
+| matriz papel × permissão, por query no banco do worktree | 4 em `admin`, 2 em `admin_app`+`panel_user`; totais 61/127/142 |
+
+Os 735 incluem os **73** casos desta feature (16 telas + 9 widgets + 33 ações Kit + 15 ações
+Tenancy) e os 2 CT-B. A base que o coordenador reportou era 662 antes desta branch.
+
 - [x] `/ponytail:ponytail-review` no diff
 - [x] `vendor/bin/pint --dirty --format agent`
 - [x] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy`
