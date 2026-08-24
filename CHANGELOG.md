@@ -2,6 +2,68 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [Nao lancado]
+Sem numero de versao de proposito: outras branches estao em voo e o numero sai no merge.
+### Adicionado
+- **Registro aberto no painel `/app`, desligado por default** (`KIT_REGISTRO=false`). Ate aqui o
+  `/app/register` respondia **so** a quem trazia token de convite valido; agora a mesma tela
+  atende as duas portas, e o garfo e por **ausencia** do parametro `token`. Token invalido,
+  expirado ou usado **continua recusando** mesmo com o registro ligado — se caisse no modo
+  aberto, `?token=qualquer-coisa` seria uma segunda entrada para a porta publica, e justamente a
+  que nao passa pelo limite de tentativas da recusa nem pela mensagem generica que nao revela
+  qual dos tres motivos ocorreu.
+  Quem entra por essa porta recebe **um unico** papel — `panel_user`, o perfil basico do painel
+  de negocio — e leva **403** em `/admin` e `/infra`. A atribuicao acontece num lugar so e vale
+  tambem para quem chamar o registro de fora da tela (job, comando, seeder), porque barreira que
+  so existe na tela nao e barreira.
+- **Aprovacao manual de cadastro** (`KIT_REGISTRO_APROVACAO_MANUAL=false`). Com a chave ligada o
+  cadastro nasce **pendente**: sem papel nenhum, com a sessao encerrada na hora e uma mensagem
+  dizendo que a conta aguarda liberacao — em vez de um 403 depois de um cadastro que funcionou. A
+  guarda e a **primeira** instrucao de `User::canAccessPanel()`, antes do atalho do
+  `master_global`, porque "pendente" tem de significar painel nenhum sem excecao.
+  A liberacao vive na tela de usuarios que **ja existe**, nos dois paineis: coluna de situacao,
+  filtro *"somente pendentes"* e acao **Aprovar** — nenhuma tela nova, logo nenhuma permissao
+  nova e nenhum risco de esquecer a lista de subtracao do `PapeisSeeder`. A acao exige permissao
+  de editar usuario e e idempotente.
+  Nao ha dependencia nova: nem o Filament 5 nem os pacotes ja instalados
+  (`filament-sentinel`, `filament-onboarding`, `filament-breezy`) oferecem moderacao de cadastro
+  — o primeiro e pagina de erro, o segundo e checklist **depois** do login, o terceiro e perfil e
+  2FA.
+- **Validacao de e-mail opcional no `/app`** (`KIT_REGISTRO_VERIFICAR_EMAIL=false`). Liga a tela
+  de confirmacao que o kit ja trazia vestida com a rota desligada, e o middleware que a exige.
+  `App\Models\User` passa a implementar `MustVerifyEmail` — era o passo que faltava para a tela
+  nao responder 500.
+  **Quem vem de convite nunca e afetado**, e o motivo e o que tornou esta opcao implementavel:
+  `Convite::aceitar()` grava `email_verified_at` de proposito (o token ja provou posse do
+  endereco), e o Filament so envia o pedido de confirmacao para quem ainda nao validou. A
+  condicao ja estava no dado, sem precisar de flag nem de sobrescrever metodo do vendor.
+- **Cadastro por organizacao**, com multi-tenancy ligada: campo *"Aceita cadastro publico"* em
+  cada organizacao, com default **nao**. As duas condicoes valem juntas — ligar a chave global
+  nao abre cadastro em nenhuma organizacao existente sem alguem decidir. O endereco carrega o
+  slug (`/app/register?org=acme`), e as quatro formas de errar o parametro (ausente, slug
+  desconhecido, organizacao inativa, cadastro desligado nela) devolvem **a mesma** recusa.
+  Nao se confunde com criar organizacao: registrar-se **numa** organizacao nao e cria-la.
+### Corrigido
+- **O campo *Papeis* impedia editar cadastro pendente.** Ele e `->required()` nos dois
+  `UserResource`, e cadastro pendente **nao tem papel por desenho**. Abrir a edicao de um
+  pendente e trocar so o nome devolvia *"E obrigatoria a indicacao de um valor para o campo
+  papeis"*, e a unica saida era atribuir um papel a mao — o que **da acesso sem passar pela
+  aprovacao** e deixa o registro incoerente. Agora o campo deixa de ser exigido nesse caso; na
+  pagina de **criacao** segue obrigatorio.
+- **Uma afirmacao falsa no comentario do `AppPanelProvider`.** Ele dizia que "NENHUM usuario
+  semeado tem `email_verified_at`", e era isso que sustentava a decisao de nao ligar a
+  verificacao de e-mail. **Cinco** dos sete caminhos que criam usuario no kit gravam a coluna:
+  `UsuarioAdminSeeder`, `UserFactory`, `DemoTenancySeeder`, `Convite::aceitar()` e `kit:admin`.
+  O comentario foi corrigido, com a lista e com a consequencia real de ligar a opcao — o
+  middleware vale para **todo** usuario do `/app`, nao so para os recem-cadastrados.
+### Notas
+- As tres opcoes sao lidas por **um ponto unico**, `App\Support\RegistroAberto`, com teste
+  varrendo `app/` para garantir que ninguem mais as le. E o ponto de ligacao para a pagina de
+  Settings: trocar `config()` pelo Settings e reescrever o corpo de tres metodos num arquivo so.
+- Documentado por extenso no `README.md` e no `README.en.md`, inclusive a tabela do que ligar
+  cada chave faz refletir e o comando de reparo para quem ligar a validacao de e-mail numa base
+  que ja tem gente dentro.
+
 ## [0.19.0] - 2026-08-24
 
 O que era pergunta do `kit:install` gravada no `.env` passa a ser editavel em
