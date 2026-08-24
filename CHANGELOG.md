@@ -2,9 +2,9 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
-## [Nao lancado]
+## [0.18.9] - 2026-08-23
 
-O seeder do administrador para de duplicar, e a troca de credencial ganha comando proprio.
+Release de correcao. O seeder do administrador para de duplicar, e a troca de credencial ganha comando proprio.
 
 ### Corrigido
 
