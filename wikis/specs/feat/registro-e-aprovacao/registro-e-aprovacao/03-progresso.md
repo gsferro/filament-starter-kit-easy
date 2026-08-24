@@ -125,6 +125,24 @@ autopoda pela tabela *Cogitado e cortado*).
 
 **Saldo**: −10 arquivos tocados, −1 `Section`, −1 linha de `Esquema`, 0 cenário perdido.
 
+### Auditoria Ponytail do DIFF (pós-implementação) — sub-agente independente
+
+Segunda rodada, sobre o código em vez do plano. Escopo: `app/`, `config/`, `database/`, `tests/`.
+
+| # | Achado | Aplicado? | Onde |
+|---|---|---|---|
+| 1 | **SIMPLIFIQUE** `RegistroAberto::atribuirPapel()` é a **quinta** cópia do padrão de contexto de papéis (as outras em `Convite`, `UsersRelationManager`, `DemoTenancySeeder`) | **sim, e além** — extraído `App\Support\ContextoDePapeis::em()` e as **quatro** chamadas convertidas, não só a minha. Meia conversão reintroduziria o problema que o achado nomeia (o guard divergindo num dos lugares) | `app/Support/ContextoDePapeis.php`; Notas, achado 7 |
+| 2 | **SIMPLIFIQUE** `RecursiveIteratorIterator`/`RecursiveDirectoryIterator` montados à mão para listar `.php` de `app/` | **sim** — `File::allFiles()` | `tests/Kit/RegistroAbertoTest.php` (CT-01) |
+| 3 | **SIMPLIFIQUE** `helperText()` concatenando três literais sem motivo | **sim** | `TenantForm.php` |
+
+Nada apontado em `AprovacaoDeCadastro`, `RegistroPorConvite`, `TelaLogin`, `User`,
+`AppPanelProvider`, `config/kit.php`, nas duas migrations nem no resto da suíte. O revisor
+registrou explicitamente que a **trait** é reuso legítimo (mesma regra de negócio nos dois
+painéis) e que os casos de teste, mesmo numerosos, não repetem oráculo entre si — as duas coisas
+que eu mais esperava ver questionadas.
+
+**Saldo**: −40 linhas líquidas, −4 cópias de um guard de segurança, +1 primitiva compartilhada.
+
 ## Blockers
 
 - *(nenhum)*
@@ -219,7 +237,30 @@ CT-17 passou a afirmar as **duas condições** que o vendor consulta (`Register.
 é decidido; CT-18 e CT-22 provam a direção que importa para segurança — que nada é enviado quando
 não deve.
 
-### 7. PR #24 (`v0.18.10`) mergeou durante a implementação — e não pede nada aqui
+### 7. Eu escrevi a QUINTA cópia do contexto de papéis — e a auditoria do diff pegou
+
+A auditoria independente do diff (`ponytail-review`) achou que
+`RegistroAberto::atribuirPapel()` reimplementava, pela quinta vez no projeto, o mesmo padrão:
+`getPermissionsTeamId()` → `setPermissionsTeamId()` → `try/finally` → `unsetRelation('roles')` nas
+duas pontas. As outras quatro: `Convite::atribuirPapel()`,
+`UsersRelationManager::noContextoDe()`, `DemoTenancySeeder::papelDoApp()` e a minha.
+
+É exatamente a slop que a escada nomeia — reimplementar o que mora alguns arquivos ao lado —, e o
+agravante é o assunto: errar o contexto **não dá erro**. Dá alguém que autentica e leva 403, ou um
+papel invisível dentro do `/app`. Quatro cópias de um guard cuja divergência não quebra teste
+nenhum dos quatro, porque cada um testa o seu.
+
+Extraído para `App\Support\ContextoDePapeis::em()`, com as quatro chamadas convertidas. Cada
+chamador mantém a única coisa que é decisão dele: **qual** contexto.
+
+Efeito colateral bom: o registro aberto perdeu um `if (! config('permission.teams'))` que o
+`Convite` já havia concluído ser desnecessário — com teams desligado o spatie ignora o team
+fixado, então é um caminho para os dois modos. Menos uma ramificação sem efeito para testar.
+
+Verificado com 130 casos nos sete arquivos que cobrem os quatro caminhos, a suíte inteira do
+convite incluída.
+
+### 8. PR #24 (`v0.18.10`) mergeou durante a implementação — e não pede nada aqui
 
 A regra nova é: Page e Widget do kit consultam permissão, e Action customizada exige
 `->authorize(...)`. Esta feature **não cria Page nem Widget**, e a única Action customizada dela
@@ -232,9 +273,31 @@ acrescentar no rebase. A base de testes passou de 662 para 735.
 > Teto de 3 candidatos; cada um foi checado contra os 4 gates e contra o `.ai/rules/index.md`
 > existente.
 
-### Candidato 1 — direção do default numa coluna de fronteira de acesso
+### Candidato 1 — contexto de papel se fixa por `ContextoDePapeis`, nunca à mão
 
-- **Glob**: `database/migrations/**`, `app/Models/**`
+- **Glob**: `app/**`, `database/seeders/**`
+- **Nota proposta**: para atribuir ou sincronizar papel fora de um request de painel, use
+  `App\Support\ContextoDePapeis::em()`. Não escreva o par
+  `setPermissionsTeamId()` / `try-finally` à mão: errar o contexto **não dá erro** — dá alguém que
+  autentica e leva 403, ou um papel invisível dentro do `/app`, porque a `roles()` do spatie
+  filtra por `wherePivot(team_id, …)`. O `unsetRelation('roles')` vai nas **duas** pontas (o cache
+  do Eloquent contamina leitura e escrita). As únicas chamadas legítimas de
+  `setPermissionsTeamId()` fora dessa classe são as de **mão única**, que fixam o contexto do
+  request inteiro: `DefinirTenantDePermissoes`, `KitServiceProvider` e `AtivadorDeTenancy`.
+- **Evidência**: `app/Support/ContextoDePapeis.php`; `03-progresso.md` → Notas, achado 7. O padrão
+  existia **cinco** vezes antes desta feature (quatro delas anteriores a ela)
+- **Gates**: durável ✅ | escopável ✅ | não-inferível ✅ | não-redundante ✅
+- **Enforço automático — este é o candidato que ganha um teste**, e por isso é a
+  recomendação: um caso varrendo `app/` e `database/` por `setPermissionsTeamId` fora da
+  allowlist de três arquivos + `ContextoDePapeis` transforma a rule em reprovação, e a prosa fica
+  só apontando para ela. É a escada do Ponytail aplicada a rule: máquina onde a máquina alcança.
+
+### Candidato 2 — direção do default numa coluna de fronteira de acesso
+
+> Não como rule nova: **como segunda seção dentro de `.ai/rules/config.md`**, que já trata
+> exatamente desta família — default silenciosamente errado.
+
+- **Glob** (o da `config.md`, mais): `database/migrations/**`, `app/Models/**`
 - **Nota proposta**: coluna que decide acesso (pendência, bloqueio, aprovação) nasce **boolean
   com default `false`**, não timestamp nullable. Com o nullable, "estado ruim" passa a ser o
   default e **todo** caminho existente de criação tem de lembrar de preencher — no kit são seis
@@ -250,7 +313,7 @@ acrescentar no rebase. A base de testes passou de 662 para 735.
   default silenciosamente errado. Se aprovado, talvez caiba **na** `config.md` como segunda
   seção, em vez de rule nova.
 
-### Candidato 2 — campo obrigatório × estado que não pode tê-lo
+### Candidato 3 — campo obrigatório × estado que não pode tê-lo
 
 - **Glob**: `app/Filament/**`
 - **Nota proposta**: ao introduzir um estado em que um campo `->required()` **não pode** estar
@@ -267,7 +330,7 @@ acrescentar no rebase. A base de testes passou de 662 para 735.
 - **Enforço automático**: não há — nem PHPStan nem `pest --arch` alcançam. É prosa, com o caso
   concreto ao lado.
 
-### Candidato 3 — persona que não abre a tela não falsifica a autorização da ação
+### Candidato 4 — persona que não abre a tela não falsifica a autorização da ação
 
 - **Glob**: `tests/**`
 - **Nota proposta**: caso que prova *"X não pode executar a ação Y"* precisa de uma persona que
@@ -284,7 +347,7 @@ acrescentar no rebase. A base de testes passou de 662 para 735.
   dessa regra, e talvez caiba como parágrafo dentro dela ou em `.ai/rules/testes.md`, ao lado de
   *"uma tela aberta não é uma tela que grava"*, que é o parente direto.
 
-**Recomendação**: se for para aprovar um só, o **candidato 2** é o de maior alavancagem — é o
+**Recomendação**: são **4** propostos e o teto da skill é 3, então a escolha é explícita. Se for um só, o **candidato 1** — é o único que ganha enforço automático (um caso de teste substitui a prosa) e o único cujo defeito já existia no projeto **cinco** vezes. Se forem três, o 1, o 3 e o 4; o **candidato 2** cabe melhor como seção nova dentro da `.ai/rules/config.md` que já existe, e não como rule própria.
 único que descreve um defeito que já produziu um caminho de escalada de privilégio, e o único
 que nenhuma rule atual insinua.
 
