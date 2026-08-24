@@ -746,5 +746,8 @@ it('mantem as tres chaves de registro no mapa de configuracao', function (): voi
 
     expect($mapa)->toHaveKey('registro_habilitado', 'kit.registro.habilitado')
         ->and($mapa)->toHaveKey('registro_aprovacao_manual', 'kit.registro.aprovacao_manual')
-        ->and($mapa)->toHaveKey('registro_verificar_email', 'kit.registro.verificar_email');
+        // E a terceira NÃO entra: `verificar_email` é lida no boot do painel e o middleware é
+        // fixado no registro da rota, então um campo dela gravaria sem fazer efeito. A asserção
+        // negativa é o que impede alguém de "completar" o mapa achando que faltou uma linha.
+        ->and($mapa)->not->toHaveKey('registro_verificar_email');
 });

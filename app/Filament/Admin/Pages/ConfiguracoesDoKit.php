@@ -13,6 +13,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Pages\SettingsPage;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -389,9 +390,17 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->helperText('Quem se cadastra não recebe papel nenhum até alguém aprovar em /admin/usuarios — e sem papel não abre painel nenhum.')
                     ->visible($aberto),
 
-                Toggle::make('registro_verificar_email')
-                    ->label('Exigir e-mail validado')
-                    ->helperText('Vale só para quem entra pela porta aberta. Quem vem por convite já chega com o endereço confirmado pelo próprio convite.')
+                /*
+                 * A verificação de e-mail NÃO é editável aqui, e isso é decisão, não
+                 * esquecimento: o `AppPanelProvider` lê a chave no BOOT, e o middleware é
+                 * fixado no array da rota no momento do registro
+                 * (`vendor/filament/filament/src/Pages/Concerns/HasRoutes.php:91`) — não por
+                 * request. Um toggle aqui gravaria e não faria efeito até o próximo deploy,
+                 * que é pior que campo ausente.
+                 */
+                TextEntry::make('aviso_verificacao_email')
+                    ->hiddenLabel()
+                    ->state('A exigência de e-mail validado fica no `.env`, em `KIT_REGISTRO_VERIFICAR_EMAIL` — ela decide o middleware das rotas no boot da aplicação, e por isso não pode mudar em tempo de execução.')
                     ->visible($aberto),
             ]);
     }

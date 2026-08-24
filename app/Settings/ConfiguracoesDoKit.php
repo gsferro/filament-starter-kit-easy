@@ -124,8 +124,6 @@ final class ConfiguracoesDoKit extends Settings
 
     public bool $registro_aprovacao_manual;
 
-    public bool $registro_verificar_email;
-
     public static function group(): string
     {
         return 'kit';
@@ -191,10 +189,18 @@ final class ConfiguracoesDoKit extends Settings
              * tocar o banco em todo request. Quem toca é o `aplicarNaConfig()`, uma vez por
              * boot, já com o `Schema::hasTable()` e o try/catch do provider — então
              * `migrate` em base nova, clone e CI seguem lendo o `.env`.
+             *
+             * **`verificar_email` NAO esta aqui, e a ausencia e medida.** O
+             * `AppPanelProvider` a le no BOOT, e o painel e montado antes de
+             * `aplicarNaConfig()` rodar; pior, o middleware de e-mail verificado e fixado
+             * no array da rota no momento do registro
+             * (`vendor/filament/filament/src/Pages/Concerns/HasRoutes.php:91`), nao por
+             * request — entao nem Closure resolveria. Um campo dela na tela seria um
+             * toggle que grava e nao faz nada, que e pior que campo ausente. Continua no
+             * `.env` (`KIT_REGISTRO_VERIFICAR_EMAIL`), e o README diz por que.
              */
             'registro_habilitado'       => 'kit.registro.habilitado',
             'registro_aprovacao_manual' => 'kit.registro.aprovacao_manual',
-            'registro_verificar_email'  => 'kit.registro.verificar_email',
         ];
     }
 

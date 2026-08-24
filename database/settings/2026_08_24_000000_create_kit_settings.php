@@ -77,7 +77,6 @@ return new class extends SettingsMigration
             // porta fechada até alguém abrir. Semear do `.env` mantém quem já ligou por lá.
             $kit->add('registro_habilitado', (bool) config('kit.registro.habilitado', false));
             $kit->add('registro_aprovacao_manual', (bool) config('kit.registro.aprovacao_manual', false));
-            $kit->add('registro_verificar_email', (bool) config('kit.registro.verificar_email', false));
         });
     }
 

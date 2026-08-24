@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ContextoDePapeis;
 use App\Support\RegistroAberto;
 use App\Traits\AuditsFillables;
 use App\Traits\ModeloCacheavel;
@@ -236,8 +237,30 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
 
         $papel = RegistroAberto::papel();
 
-        if (! $this->hasRole($papel)) {
-            $this->assignRole($papel);
+        /*
+         * O papel vai no contexto da ORGANIZAÇÃO, não no do request.
+         *
+         * `assignRole()` cru grava em `model_has_roles.team_id` o contexto corrente, e quem
+         * aprova está no `/admin`, cujo contexto é o global. Resultado medido pelo quality
+         * gate: `team_id = 0` com a organização em `id = 1`; dentro do `/app` o `wherePivot`
+         * do spatie filtra pelo team do request, `roles` volta vazia, e a pessoa **autentica
+         * e não vê nada** — `GET /app/{slug}` responde 200 com um painel vazio.
+         *
+         * E o estado é sem saída pela própria tela: a ação de aprovar tem
+         * `->visible(fn () => $record->aprovacao_pendente)`, e a pendência já foi baixada
+         * na linha acima — a mesma tela não conserta o que acabou de fazer.
+         *
+         * Cada organização do usuário recebe o papel no contexto dela. É o que `Convite`
+         * já fazia por `contextoDoPapel()` (`app/Models/Convite.php:785-789`) e o que
+         * `RegistroAberto::atribuirPapel()` faz no cadastro. Sem tenancy, `contextos()`
+         * devolve só o global, e o spatie ignora o team quando a flag está desligada.
+         */
+        foreach ($this->contextosDePapelDoApp() as $contexto) {
+            ContextoDePapeis::em($contexto, $this, function () use ($papel): void {
+                if (! $this->hasRole($papel)) {
+                    $this->assignRole($papel);
+                }
+            });
         }
 
         Log::channel('autenticacao')->info(
@@ -250,6 +273,35 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
                 'papel'       => $papel,
             ],
         );
+    }
+
+    /**
+     * Em quais contextos o papel do painel `app` deve ser gravado para este usuário.
+     *
+     * Sem tenancy, um: o global — e o spatie ignora o team quando `permission.teams` está
+     * desligado, então o valor é indiferente ali. Com tenancy, um por organização do usuário,
+     * porque é o `team_id` que decide se o papel é visível dentro de `/app/{slug}`.
+     *
+     * Usuário com tenancy e **nenhuma** organização cai no global. Não é caminho do registro
+     * aberto (`RegistroAberto::exigirPortaAberta()` recusa antes), mas é alcançável por quem
+     * marcou a pendência à mão — e nesse caso o global é o menos errado: não concede acesso a
+     * organização nenhuma, e `canAccessPanel()` continua sendo a barreira.
+     *
+     * @return list<int>
+     */
+    private function contextosDePapelDoApp(): array
+    {
+        if (! (bool) config('kit.tenancy.enabled')) {
+            return [Tenant::CONTEXTO_GLOBAL];
+        }
+
+        $organizacoes = array_values(
+            array_map(intval(...), $this->tenants()->pluck('tenants.id')->all()),
+        );
+
+        return $organizacoes === []
+            ? [Tenant::CONTEXTO_GLOBAL]
+            : $organizacoes;
     }
 
     /** Papel guarda-chuva do kit — o "super admin" do Shield (define_via_gate). */

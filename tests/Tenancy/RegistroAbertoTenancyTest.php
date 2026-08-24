@@ -6,6 +6,7 @@ use App\Filament\Pages\Auth\RegistroPorConvite;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\ContextoDePapeis;
 use App\Support\RegistroAberto;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
@@ -338,3 +339,77 @@ it('esconde o toggle de registro da organizacao quando a opcao global esta desli
     Livewire::test(EditTenant::class, ['record' => $acme->getRouteKey()])
         ->assertFormFieldHidden('registro_habilitado');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Os dois Blocker do quality gate
+|--------------------------------------------------------------------------
+| Ver `06-relatorio-qa.md`. Os dois só aparecem COM tenancy, que é por isso
+| que moram nesta suíte.
+*/
+
+/**
+ * Blocker 2 — aprovar pelo /admin gravava o papel no contexto GLOBAL.
+ *
+ * `User::aprovar()` chamava `assignRole()` cru, e quem aprova está no /admin, cujo contexto é o
+ * global. O papel ia para `model_has_roles.team_id = 0` com a organização em `id = 1`; dentro do
+ * /app o `wherePivot` do spatie filtra pelo team do request, a relação volta vazia, e a pessoa
+ * **autentica e não vê nada**.
+ *
+ * O oráculo é o papel visível DENTRO do contexto da organização — não o `team_id` cru. Afirmar
+ * sobre a coluna provaria a implementação; afirmar sobre `hasRole()` no contexto certo prova o
+ * que o usuário experimenta.
+ *
+ * E o estado era sem saída pela própria tela: a ação tem `visible = aprovacao_pendente`, e a
+ * pendência é baixada antes. A segunda metade do caso cobre isso — depois de aprovar, o acesso
+ * funciona de primeira, sem segundo passo.
+ */
+it('grava o papel no contexto da organizacao ao aprovar pelo admin', function (): void {
+    ligarRegistroAbertoTenancy(aprovacaoManual: true);
+    $organizacao = organizacaoComRegistro();
+
+    registrarNaOrganizacao($organizacao->slug);
+
+    $novo = User::query()->where('email', 'novo@example.com')->sole();
+
+    expect($novo->aprovacao_pendente)->toBeTrue();
+
+    $novo->aprovar();
+
+    // O papel tem de estar visível NO CONTEXTO DA ORGANIZAÇÃO, que é onde o /app o consulta.
+    $temPapelNaOrganizacao = ContextoDePapeis::em(
+        (int) $organizacao->getKey(),
+        $novo,
+        fn (): bool => $novo->fresh()->hasRole(RegistroAberto::papel()),
+    );
+
+    expect($temPapelNaOrganizacao)->toBeTrue()
+        ->and($novo->fresh()->aprovacao_pendente)->toBeFalse();
+});
+
+/**
+ * Major — `registrar()` aceitava organização que não optou pelo registro.
+ *
+ * `organizacao()` já filtra por `ativo` e `registro_habilitado`, mas ela é o caminho da TELA.
+ * `registrar()` existe para o chamador que não passou pela tela — job, comando, seeder — e esse
+ * entrega um `Tenant` já construído. As duas variantes eram aceitas.
+ *
+ * O dataset tem as duas, e não uma amostra: são colunas diferentes, e cobrir só uma deixaria a
+ * outra viva.
+ */
+it('recusa registrar em organizacao que nao aceita cadastro', function (bool $ativo, bool $registro): void {
+    ligarRegistroAbertoTenancy();
+    $organizacao = organizacaoComRegistro('fechada', ativo: $ativo, registro: $registro);
+
+    expect(fn () => RegistroAberto::registrar([
+        'name'     => 'Direto',
+        'email'    => 'direto@example.com',
+        'password' => 'senha-que-nao-importa',
+    ], $organizacao))->toThrow(RuntimeException::class);
+
+    expect(User::query()->where('email', 'direto@example.com')->exists())->toBeFalse();
+})->with([
+    'organizacao inativa'          => [false, true],
+    'registro desligado nela'      => [true, false],
+    'inativa e com registro fora'  => [false, false],
+]);

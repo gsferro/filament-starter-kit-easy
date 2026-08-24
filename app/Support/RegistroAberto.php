@@ -12,25 +12,36 @@ use SensitiveParameter;
 /**
  * O registro aberto do painel /app: a configuração dele, e o ato de registrar.
  *
- * ## Esta classe é o PONTO ÚNICO DE LIGAÇÃO com o Settings do kit
+ * ## Esta classe é o PONTO ÚNICO de leitura da configuração de registro
  *
  * As três primeiras funções — `habilitado()`, `exigirAprovacao()` e
  * `exigirVerificacaoDeEmail()` — são as **únicas** leituras de `config('kit.registro.*')` em
- * todo o projeto, e isso é enforçado por caso de teste, não por disciplina.
+ * todo o projeto, e isso é enforçado por caso de teste, não por disciplina. A página de
+ * registro, a tela de login, o provider do painel e o formulário de organização perguntam aqui.
  *
- * O requisito pede a opção "como um settings". Quando a página de Settings do /admin existir,
- * trocar a fonte é reescrever o corpo **destes três métodos** e nada mais: a página de registro,
- * a tela de login, o provider do painel e o formulário de organização perguntam aqui. A
- * alternativa — cinco arquivos lendo `config()` direto — transforma essa troca em cinco edições,
- * com a chance de sobrar uma; e sobrar uma significa a feature metade no Settings e metade no
- * `.env`, sem erro nenhum para acusar.
+ * ## Duas das três são editáveis no Settings; a terceira não, e isso é medido
  *
- * Quando ligar no Settings, lembre que a leitura passa a tocar o BANCO em todo request (o
- * `AppPanelProvider` chama `exigirVerificacaoDeEmail()` durante o boot, para decidir se registra
- * as rotas de confirmação de e-mail). Ou seja: a implementação nova precisa tolerar tabela
- * inexistente — durante `migrate`, num clone novo, no CI — em vez de derrubar todo comando
- * artisan. É o mesmo tipo de armadilha que `.ai/rules/providers-filament.md` documenta para
- * plugin resolvido no boot.
+ * A ligação com as `ConfiguracoesDoKit` **não** exigiu reescrever nenhum destes métodos: as
+ * chaves entraram no `mapaDeConfiguracao()`, que sobrepõe a config do processo com o que está
+ * gravado, no boot do `KitServiceProvider`. Eles continuam lendo `config()` e passam a receber
+ * o valor do banco. O mapa É a ligação.
+ *
+ * Isso também dissolveu a armadilha que este docblock previa antes ("a leitura passa a tocar o
+ * banco em todo request"): quem toca o banco é `aplicarNaConfig()`, uma vez por boot, atrás do
+ * `Schema::hasTable()` e do try/catch do provider. `migrate` em base nova, clone e CI seguem
+ * lendo o `.env`.
+ *
+ * **`exigirVerificacaoDeEmail()` ficou FORA do Settings, de propósito.** Ela é lida no BOOT,
+ * pelo `AppPanelProvider`, e o painel é montado antes de `aplicarNaConfig()` rodar. Pior: o
+ * middleware de e-mail verificado é fixado no array da rota no momento do registro
+ * (`vendor/filament/filament/src/Pages/Concerns/HasRoutes.php:91`), não por request — então nem
+ * uma Closure em `isRequired` resolveria. Um campo dela na tela seria um toggle que grava e não
+ * faz efeito até o próximo deploy, e toggle que mente é pior que campo ausente. Continua no
+ * `.env`, em `KIT_REGISTRO_VERIFICAR_EMAIL`.
+ *
+ * O quality gate desta wiki reprovou exatamente esse ponto, com a tela já construída. Se alguém
+ * quiser torná-la editável, o caminho é um middleware próprio do kit que decida por request — e
+ * aí a decisão sai do array da rota.
  *
  * ## E por que `registrar()` mora aqui, e não na página
  *
@@ -200,7 +211,22 @@ class RegistroAberto
             // procura o tenant de destino e não acha. Registrar alguém num estado inalcançável é
             // pior que recusar.
             (bool) config('kit.tenancy.enabled') && ! $organizacao instanceof Tenant => 'sem_organizacao',
-            default                                                                  => null,
+            /*
+             * A organização RECEBIDA é reconferida, e não só a que `organizacao()` resolveu.
+             *
+             * `organizacao()` já filtra por `ativo` e `registro_habilitado`, mas ela é o
+             * caminho da TELA. Este método existe justamente para o chamador que não passou
+             * pela tela — job, comando, seeder, action em massa —, e esse chamador entrega um
+             * `Tenant` já construído. Sem esta linha, ele cadastrava em organização inativa
+             * ou que nunca optou pelo registro, e as duas variantes foram reproduzidas pelo
+             * quality gate.
+             *
+             * É o mesmo motivo pelo qual `habilitado()` é reconferido aqui em vez de confiar
+             * na tela: barreira que só existe na tela não é barreira, e o mutation score não
+             * acusa a ausência — checagem que não existe não gera mutante.
+             */
+            $organizacao instanceof Tenant && ! self::organizacaoAceitaRegistro($organizacao) => 'organizacao_fechada',
+            default                                                                           => null,
         };
 
         if ($motivo === null) {
@@ -216,6 +242,20 @@ class RegistroAberto
         );
 
         throw new RuntimeException('Registro aberto indisponível.');
+    }
+
+    /**
+     * A organização está ativa E optou pelo registro?
+     *
+     * Lê do objeto recebido em vez de refazer a query: quem chama pode ter acabado de mudar
+     * o estado na mesma transação, e reconsultar o banco devolveria o valor antigo. As duas
+     * colunas são as mesmas que `organizacao()` filtra — se um dia divergirem, é aqui que a
+     * divergência aparece.
+     */
+    private static function organizacaoAceitaRegistro(Tenant $organizacao): bool
+    {
+        return (bool) $organizacao->ativo
+            && (bool) $organizacao->getAttribute('registro_habilitado');
     }
 
     /**
