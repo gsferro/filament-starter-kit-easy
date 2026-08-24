@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\BooleanoDoEnv;
 use App\Support\NumeroDoEnv;
 use App\Support\ValidadeDoConvite;
 
@@ -124,24 +125,28 @@ return [
     | vendor/filament/tables/src, e `Enums/` não tem enum de densidade. O que o
     | framework oferece de controle visual de aperto é `striped()`, abaixo.
     |
-    | ## Por que `filter_var` e não `(bool) env()`
+    | ## Por que `BooleanoDoEnv` e não `(bool) env()`
     |
     | `(bool) env('CHAVE', true)` é o MESMO defeito que .ai/rules/config.md
     | documenta para inteiros: o segundo argumento do `env()` só vale para chave
     | AUSENTE. Com `CHAVE=` (presente, vazia — o que sobra quando alguém apaga o
     | valor e esquece o `=`), `env()` devolve string vazia, `(bool) ''` é false, e
-    | o default `true` nunca entra. `filter_var` com FILTER_NULL_ON_FAILURE
-    | devolve null para ausente E para vazio, e o `??` entrega o default nos dois.
+    | o default `true` nunca entra.
+    |
+    | E `filter_var(..., FILTER_NULL_ON_FAILURE) ?? true` NÃO conserta: foi a
+    | primeira correção escrita aqui, e as três chaves nasceram DESLIGADAS com
+    | ela. O filtro do PHP trata `null` e `''` como false, não como falha, e o
+    | `??` nunca dispara. Está medido no docblock de App\Support\BooleanoDoEnv.
     |
     | O `KIT_HUB` mais abaixo continua com `(bool) env()` porque o default dele é
-    | `false` — ali o defeito é inócuo.
+    | `false` — ali o defeito é inócuo, e trocar por trocar esconderia a regra.
     */
 
     'tabelas' => [
         'paginacao'                => NumeroDoEnv::positivo(env('KIT_TABELA_PAGINACAO'), 10),
-        'listrada'                 => filter_var(env('KIT_TABELA_LISTRADA'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true,
-        'persistir_filtros'        => filter_var(env('KIT_TABELA_PERSISTIR_FILTROS'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true,
-        'colunas_redimensionaveis' => filter_var(env('KIT_TABELA_COLUNAS_REDIMENSIONAVEIS'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true,
+        'listrada'                 => BooleanoDoEnv::comPadrao(env('KIT_TABELA_LISTRADA'), true),
+        'persistir_filtros'        => BooleanoDoEnv::comPadrao(env('KIT_TABELA_PERSISTIR_FILTROS'), true),
+        'colunas_redimensionaveis' => BooleanoDoEnv::comPadrao(env('KIT_TABELA_COLUNAS_REDIMENSIONAVEIS'), true),
     ],
 
     /*

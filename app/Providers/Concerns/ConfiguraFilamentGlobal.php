@@ -32,10 +32,27 @@ use Illuminate\Contracts\View\View;
  * É este arquivo que define como TODA tabela, toggle e modal do projeto se comporta.
  * Mudou aqui, mudou em todo lugar — inclusive nas telas dos plugins de terceiros.
  *
- * TODO: transformar estes defaults num Settings editável em `/admin`
- *       (filament/spatie-laravel-settings-plugin já está instalado). A ideia é
- *       que paginação, densidade da tabela, persistência de filtros e colunas
- *       redimensionáveis virem preferência do projeto pela UI, sem editar código.
+ * ## Quatro destes defaults são editáveis em /admin/configuracoes-do-kit
+ *
+ * Paginação, linhas listradas, persistência do recorte do usuário e colunas
+ * arrastáveis saem de `config('kit.tabelas.*')`, que o `KitServiceProvider`
+ * alinha com o banco no boot — ANTES de chamar este método, e a ordem é
+ * requisito. Ver `App\Settings\ConfiguracoesDoKit`.
+ *
+ * Isto fecha o TODO que vivia aqui, com uma ressalva que não pode ser omitida:
+ * ele prometia quatro itens e um deles **não existe no Filament 5**. Não há API
+ * de densidade de tabela na versão instalada — varredura em
+ * `vendor/filament/tables/src` não devolve nenhuma ocorrência de `density`, e
+ * `vendor/filament/tables/src/Enums/` traz `ColumnManagerLayout`,
+ * `ColumnManagerResetActionPosition`, `FiltersLayout`,
+ * `FiltersResetActionPosition`, `PaginationMode`, `RecordActionsPosition` e
+ * `RecordCheckboxPosition`, nenhum de densidade. O que o framework oferece de
+ * controle visual de aperto é `striped()`, e é ele que ficou configurável.
+ * Ver ADR-09 da wiki `settings-do-kit`.
+ *
+ * O resto do que está aqui continua sendo decisão de código, de propósito: são
+ * escolhas com motivo escrito (o filtro em modal, o `deferLoading`, a ausência
+ * das ações de filtro) e não preferência de gosto.
  */
 trait ConfiguraFilamentGlobal
 {
@@ -176,16 +193,26 @@ trait ConfiguraFilamentGlobal
      */
     private function configuraTable(Table $table): Table
     {
+        $persistir = (bool) config('kit.tabelas.persistir_filtros', true);
+
         $table = $table
             // Carrega os dados de forma assíncrona: a tela aparece antes da query.
             ->deferLoading()
-            ->striped()
 
-            // O recorte do usuário sobrevive à navegação.
-            ->persistFiltersInSession()
-            ->persistSearchInSession()
-            ->persistSortInSession()
-            ->persistColumnSearchesInSession()
+            // Configurável em /admin/configuracoes-do-kit. É o único controle de
+            // densidade visual que o Filament 5 tem — ver o docblock do trait.
+            ->striped((bool) config('kit.tabelas.listrada', true))
+
+            /*
+             * O recorte do usuário sobrevive à navegação. Os quatro andam juntos
+             * de propósito: são a mesma promessa ("o que eu filtrei continua
+             * filtrado"), e ligar dois e esquecer dois produz uma tela que lembra
+             * o filtro e esquece a busca — pior que não lembrar nada.
+             */
+            ->persistFiltersInSession($persistir)
+            ->persistSearchInSession($persistir)
+            ->persistSortInSession($persistir)
+            ->persistColumnSearchesInSession($persistir)
 
             // Colunas: reordenar pelo gerenciador (nativo). Arrastar e fixar são
             // macros do resized-column, aplicadas logo abaixo.
@@ -219,7 +246,7 @@ trait ConfiguraFilamentGlobal
             // Filtrar não desmarca o que já estava selecionado.
             ->deselectAllRecordsWhenFiltered(false)
 
-            ->defaultPaginationPageOption(10)
+            ->defaultPaginationPageOption((int) config('kit.tabelas.paginacao', 10))
             ->extremePaginationLinks();
 
         return $this->aplicaMacrosDeColuna($table);
@@ -239,9 +266,18 @@ trait ConfiguraFilamentGlobal
      * sozinho. Dois botões para o mesmo objetivo é escolha a mais na cara de
      * quem só quer ver a listagem. Para trazer de volta, acrescente
      * `'stickableColumns'` à lista abaixo.
+     *
+     * Desligável em /admin/configuracoes-do-kit. O `hasMacro()` continua sendo
+     * necessário mesmo com a chave ligada: ele degrada sem quebrar a tabela se o
+     * pacote for removido, e é o que dispensa fingir para o PHPStan que o método
+     * existe.
      */
     private function aplicaMacrosDeColuna(Table $table): Table
     {
+        if (! config('kit.tabelas.colunas_redimensionaveis', true)) {
+            return $table;
+        }
+
         foreach (['dragReorderableColumns'] as $macro) {
             if (Table::hasMacro($macro)) {
                 $table = $table->{$macro}();

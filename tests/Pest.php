@@ -245,6 +245,13 @@ function telasDoKit(): array
             '/admin/convites/create',
             '/admin/organizacoes',
             '/admin/organizacoes/create',
+            /*
+             * A tela de configurações da instalação. Entra aqui porque é Page do
+             * painel, e o `InventarioDeTelasTest` reprova enquanto ela não estiver
+             * listada — o que também lhe dá o smoke de navegador de graça, no lote
+             * de `TelasDoKitTest`.
+             */
+            '/admin/configuracoes-do-kit',
             '/admin/agentes-ia',
             '/admin/agentes-ia/create',
             '/admin/onboarding-flows',
