@@ -128,7 +128,18 @@ class UsersRelationManager extends RelationManager
                     ->multiple()
                     ->preload()
                     ->searchable()
-                    ->options(fn (): array => Role::query()->where('painel', 'app')->pluck('name', 'id')->all())
+                    /*
+                     * `mapWithKeys` e não `pluck('name', 'id')`: o `pluck` devolveria a CHAVE
+                     * do papel (`panel_user`) como rótulo da opção, enquanto a coluna logo
+                     * acima nesta mesma tela mostra "Painel App".
+                     */
+                    ->options(fn (): array => Role::query()
+                        ->where('painel', 'app')
+                        ->get()
+                        ->mapWithKeys(fn (Role $papel): array => [
+                            $papel->getKey() => Papeis::rotulo((string) $papel->getAttribute('name')),
+                        ])
+                        ->all())
                     ->helperText('Só papéis do painel /app. Papel de instalação (admin, infra) se dá no cadastro do usuário.'),
             ])
             ->fillForm(fn (User $record): array => ['roles' => $this->papeisNoTenant($record)])

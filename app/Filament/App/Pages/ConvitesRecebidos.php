@@ -105,8 +105,14 @@ class ConvitesRecebidos extends Page implements HasTable
                     // o aceite pós-login não ser automático.
                     ->requiresConfirmation()
                     ->modalHeading('Aceitar convite')
+                    // `Papeis::rotulo()` aqui também, e não só na coluna acima: a chave crua
+                    // (`panel_user`) aparecia na confirmação do aceite — na MESMA tela em que a
+                    // coluna já mostrava "Painel App". Escapou da varredura original porque o
+                    // acesso é `$record->papel?->getAttribute('name')`, que nenhum grep por
+                    // `papel.name` alcança.
                     ->modalDescription(fn (Convite $record): string => 'Você passa a fazer parte de '
-                        .($record->tenant->nome ?? config('app.name')).' com o papel '.$record->papel?->getAttribute('name').'.')
+                        .($record->tenant->nome ?? config('app.name')).' com o papel '
+                        .Papeis::rotulo((string) $record->papel?->getAttribute('name')).'.')
                     ->action(function (Convite $record): void {
                         $record->aceitarComoUsuarioExistente($this->usuario());
                     })

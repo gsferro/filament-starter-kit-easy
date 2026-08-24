@@ -535,6 +535,11 @@ function inventarioDeAutorizacao(): array
     return [
         // Painel /admin
         'app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php::reenviar'                            => 'permissao',
+        // Slide-over de leitura que lista quem tem o papel — logo, nome e e-mail de terceiros.
+        // `->authorize('view')` resolve contra o record, ou seja `View:Role`: quem alcança UM papel
+        // vê quem o tem. Não é `ViewAny:User` de propósito (ADR-07 da wiki `tela-de-perfis`), e o
+        // contrapeso é o log em `Log::channel('autenticacao')` registrando quem consultou a lista.
+        'app/Filament/Admin/Resources/Roles/RoleResource.php::usuarios'                                       => 'policy',
         'app/Filament/Admin/Resources/Tenants/RelationManagers/UsersRelationManager.php::papeisNaOrganizacao' => 'permissao',
         'app/Filament/Concerns/ConvidaEmMassa.php::convidarEmMassa'                                           => 'policy',
 

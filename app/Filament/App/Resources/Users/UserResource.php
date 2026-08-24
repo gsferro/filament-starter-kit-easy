@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Role;
 use UnitEnum;
 
 /**
@@ -178,6 +179,8 @@ class UserResource extends Resource
                  * `admin` e `infra` nunca aparecem.
                  */
                 ->relationship('roles', 'name', fn (Builder $query): Builder => $query->where('painel', 'app'))
+                // Rótulo, não chave — igual ao irmão do /admin (Admin/.../UserResource.php).
+                ->getOptionLabelFromRecordUsing(fn (Role $record): string => Papeis::rotulo($record->name))
                 ->multiple()
                 ->preload()
                 ->searchable()
