@@ -2,6 +2,72 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.19.3] - 2026-08-24
+
+O rescaldo da rodada: o que a inspecao visual da tela de papeis pegou, cinco licoes viradas
+Project Rule, e a documentacao alinhada com a tela.
+
+### Corrigido
+
+- **O caminho da classe aparecia cru sob cada secao de permissao** na tela de papeis:
+  `App\Models\Convite`, `Wallacemartinss\FilamentOnboarding\Models\OnboardingCondition` e assim
+  por diante, em cerca de vinte secoes. Numa tela cujo trabalho e escolher checkbox, isso e
+  ruido tecnico — ocupa altura, repete o titulo e nao ajuda quem decide quem pode o que.
+  `shield_resource.show_model_path` passa a `false`.
+
+- **A barra lateral do /admin exibia "Filament Shield"** — nome do PACOTE, ao lado de
+  "Administracao" e "IA", que sao nomes do negocio. Papeis e assunto de Administracao. Trocado
+  pela API do plugin (`->navigationGroup()`), e nao publicando a traducao do vendor: publicar
+  criaria um arquivo que `vendor:publish --force` sobrescreve. E nao por sobrescrita de metodo,
+  que e a armadilha registrada na rule de `app/Filament/**`.
+
+  Os dois foram achados na inspeção da tela em navegador real — a clausula do pedido que ficou
+  marcada como NAO atendida na 0.18.11, porque o Playwright e instancia unica e estava proibido
+  aos cinco agentes da rodada. Feita agora, serializada. Ela tambem fechou as duas lacunas de
+  oraculo que o quality gate daquela wiki deixou abertas: orientacao do tab vertical e
+  slide-over vs modal central, que sao sobre o que a tela PARECE e nenhuma assercao barata
+  alcanca.
+
+- **O CHANGELOG e a release da 0.18.11 diziam que a tela virava "Perfis".** Ela virou
+  **Papeis** — o pedido deixava a escolha entre os dois termos e a implementacao escolheu
+  Papeis. Documentacao que discorda da tela e pior que documentacao ausente.
+
+- **O README mandava o leitor a um lugar que nao existe**: sete ocorrencias de "`/admin` →
+  Funcoes", que e o nome do vendor trocado na 0.18.11. Quem segue nao acha o item de menu e
+  conclui que o kit esta errado.
+
+- **A pagina de boas-vindas na rota `/` nao estava documentada em lugar nenhum.** Entrou na
+  0.18.10, a wiki dela mergeou antes das outras e o requisito dela nao pedia README — passou
+  batido. Ganhou secao propria nos dois idiomas e duas linhas no roteiro de features (F-65,
+  F-66), incluindo o que ela deliberadamente NAO mostra por ser rota anonima, e por que o
+  `panel:app` da rota nao e decoracao.
+
+- **Contagens do README, medidas com critério explicito**: project rules 7 → **13**, features
+  especificadas 15 → **28**, arquivos de teste 51 → **94**. Duas delas ja estavam velhas antes
+  desta rodada.
+
+### Adicionado
+
+- **Cinco Project Rules** (`.ai/rules/`), colhidas dos 12 candidatos que as wikis propuseram e
+  nao gravaram — a skill nao grava rule sem aprovacao. Cinco, e nao doze: rule demais e imposto
+  de contexto em todo arquivo que casa o glob.
+
+  | Glob | Licao |
+  |---|---|
+  | `app/Filament/**` | Page, Widget e Action nascem com a permissao consultada; `->visible()` bloqueia igual a `->authorize()` |
+  | `app/Settings/**` | Chave lida no BOOT nao pode virar Settings; lida por request pode |
+  | `app/**` | Papel se atribui dentro de `ContextoDePapeis`, nunca com `assignRole()` cru |
+  | `config/**` | Interruptor de superficie publica falha FECHADO, e a chave tem uma dona so |
+  | `app/Filament/Admin/Pages/**` | Segredo em formulario: esconder na tela nao e esconder no HTML |
+
+  Recusado o candidato de somar arquivo em `KitUpdate::CAMINHOS_DO_KIT`: ja existe enforco
+  automatico, o `KitUpdateTest` varre a arvore e reprova com a mensagem certa. Maquina vence
+  prosa.
+
+- Rastro de processo de agente entra no `.gitignore` — requisitos capturados, script de setup de
+  worktree e snapshots do Playwright MCP. A copia que vale de cada requisito e o
+  `00-requisito.md` da wiki.
+
 ## [0.19.2] - 2026-08-24
 
 Entrar com Google, atras de um interruptor desligado por default. Fecha a rodada de cinco
