@@ -4,7 +4,6 @@ use App\Filament\Admin\Resources\Tenants\Pages\EditTenant;
 use App\Filament\Admin\Resources\Tenants\RelationManagers\UsersRelationManager;
 use App\Filament\App\Pages\ConvitesRecebidos;
 use App\Filament\App\Pages\HubDoNegocio;
-use App\Models\Convite;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
@@ -202,20 +201,6 @@ it('recusa papel de fora do painel de negócio mesmo com a permissão de atribui
 |--------------------------------------------------------------------------
 */
 
-/** Convite pendente endereçado a um e-mail, naquela organização. */
-function ofertaDeAcesso(Tenant $tenant, string $email): Convite
-{
-    $convite = Convite::factory()->create([
-        'email'     => $email,
-        'tenant_id' => $tenant->getKey(),
-        'role_id'   => Role::findByName('panel_user')->getKey(),
-    ]);
-
-    $convite->enviar();
-
-    return $convite->fresh() ?? $convite;
-}
-
 /**
  * CT-13 — @premissa o usuário comum aceita o convite dele, porque a permissão nasce concedida.
  *
@@ -230,7 +215,7 @@ it('deixa o usuário comum aceitar o convite endereçado a ele', function (): vo
     $carla = usuarioComPapel('panel_user', $globex, 'carla@example.test');
     $globex->users()->attach($carla);
 
-    $oferta = ofertaDeAcesso($acme, 'carla@example.test');
+    $oferta = ofertaPara('carla@example.test', $acme);
 
     noPainelDa($globex);
     $this->actingAs($carla);
@@ -258,7 +243,7 @@ it('impede o aceite pela tela quando a permissão de aceitar é revogada', funct
     $carla = usuarioComPapel('panel_user', $globex, 'carla@example.test');
     $globex->users()->attach($carla);
 
-    $oferta = ofertaDeAcesso($acme, 'carla@example.test');
+    $oferta = ofertaPara('carla@example.test', $acme);
 
     noPainelDa($globex);
     $this->actingAs($carla);
@@ -291,7 +276,7 @@ it('não deixa quem tem a permissão de aceite assumir o convite de outra pessoa
     $intruso = usuarioComPapel('panel_user', $globex, 'intruso@example.test');
     $globex->users()->attach($intruso);
 
-    $daOutra = ofertaDeAcesso($acme, 'dono@example.test');
+    $daOutra = ofertaPara('dono@example.test', $acme);
 
     // Contexto da organização do intruso ANTES do `can()`: com `permission.teams` ligado, a relação
     // `roles` do spatie é filtrada pelo team corrente, e no contexto global ele não tem papel algum.

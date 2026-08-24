@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Convite;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
@@ -573,4 +574,31 @@ function papelDoKit(string $nome): Role
     $role = Role::findByName($nome, config('auth.defaults.guard', 'web'));
 
     return $role;
+}
+
+/**
+ * Convite pendente para um e-mail, SEM enviar — quem envia é quem precisa do token em claro.
+ *
+ * `role_id` explícito sempre: o default da `ConviteFactory` é
+ * `Config::roleModel()::query()->value('id')` — o PRIMEIRO papel da tabela, que é o
+ * `master_global`. Um convite criado sem esta linha concede o papel guarda-chuva.
+ *
+ * `$tenant` nulo serve às suítes single-tenant, onde não há organização a que vincular.
+ *
+ * Aqui, e não dentro de um arquivo de teste, porque QUATRO arquivos usam. Antes eram dois
+ * near-clones locais — `convitePara()` em `tests/Kit/ConviteUsuarioExistenteTest.php` e
+ * `ofertaPara()` em `tests/Tenancy/...`, este um superconjunto daquele. `.ai/rules/testes.md` é
+ * explícita: clone com outro nome troca um erro que estoura por duas funções idênticas que
+ * ninguém percebe.
+ *
+ * @param  array<string, mixed>  $atributos
+ */
+function ofertaPara(string $email, ?Tenant $tenant = null, string $papel = 'panel_user', array $atributos = []): Convite
+{
+    return Convite::factory()->create([
+        'email'     => $email,
+        'role_id'   => Role::findByName($papel)->getKey(),
+        'tenant_id' => $tenant?->getKey(),
+        ...$atributos,
+    ]);
 }

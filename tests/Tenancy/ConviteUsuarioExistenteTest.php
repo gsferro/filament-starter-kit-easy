@@ -44,25 +44,6 @@ beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
 
-/**
- * Oferta pendente, SEM enviar (quem envia é quem precisa do token).
- *
- * `role_id` explícito sempre: o default da `ConviteFactory` é
- * `Config::roleModel()::query()->value('id')` — o PRIMEIRO papel da tabela, que é o
- * `master_global`. Um convite criado sem esta linha concede o papel guarda-chuva.
- *
- * @param  array<string, mixed>  $atributos
- */
-function ofertaPara(string $email, ?Tenant $tenant = null, string $papel = 'panel_user', array $atributos = []): Convite
-{
-    return Convite::factory()->create([
-        'email'     => $email,
-        'role_id'   => Role::findByName($papel)->getKey(),
-        'tenant_id' => $tenant?->getKey(),
-        ...$atributos,
-    ]);
-}
-
 /** A consultora do caso de uso: já tem conta e já é usuária de OUTRA organização. */
 function carlaDaGlobex(Tenant $globex): User
 {
@@ -290,7 +271,12 @@ it('conta as ofertas pendentes no menu do usuario', function (): void {
     ofertaPara('carla@example.test', $acme, atributos: ['aceito_em' => 'now']);
     ofertaPara('carla@example.test', $acme, atributos: ['recusado_em' => 'now']);
 
-    Filament::setCurrentPanel('app');
+    // `noPainelDa()` e nao `setCurrentPanel('app')`: o item de menu consulta
+    // `ConvitesRecebidos::canAccess()`, que agora exige `View:ConvitesRecebidos`, e com
+    // `permission.teams` ligado a relacao `roles` do spatie e filtrada pelo team corrente. Sem
+    // fixar o team, `can()` nao acha papel nenhum e o item some — medindo o arranjo, nao a regra.
+    // E o que o middleware `DefinirTenantDePermissoes` faz num request real.
+    noPainelDa($globex);
     $this->actingAs($carla);
 
     // O badge sai do Filament como string — o cast é o que deixa a asserção falar de

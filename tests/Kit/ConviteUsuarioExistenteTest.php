@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Convite;
-use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
@@ -24,24 +23,6 @@ beforeEach(function (): void {
 });
 
 /**
- * Convite pendente, SEM enviar.
- *
- * `role_id` explícito sempre: o default da `ConviteFactory` é
- * `Config::roleModel()::query()->value('id')` — o PRIMEIRO papel da tabela, que é o
- * `master_global`. Um convite criado sem esta linha concede o papel guarda-chuva.
- *
- * @param  array<string, mixed>  $atributos
- */
-function convitePara(string $email, string $papel = 'panel_user', array $atributos = []): Convite
-{
-    return Convite::factory()->create([
-        'email'   => $email,
-        'role_id' => Role::findByName($papel)->getKey(),
-        ...$atributos,
-    ]);
-}
-
-/**
  * CT-04 — a asserção de e-mail vive no MODEL, e este caso a chama direto.
  *
  * É o caso central da feature. Ele existe porque a query da caixa de entrada já filtra por
@@ -55,7 +36,7 @@ it('recusa aceite quando o e-mail nao corresponde', function (): void {
     $canal = Mockery::spy(LoggerInterface::class);
     Log::shouldReceive('channel')->with('autenticacao')->andReturn($canal);
 
-    $convite = convitePara('dona@example.test');
+    $convite = ofertaPara('dona@example.test');
     $outra   = User::factory()->create(['email' => 'outra@example.test']);
 
     expect(fn (): User => $convite->aceitarComoUsuarioExistente($outra))
@@ -88,13 +69,13 @@ it('recusa aceite quando o e-mail nao corresponde', function (): void {
 it('compara e-mail sem depender de caixa', function (): void {
     $carla = User::factory()->create(['email' => 'Carla@Example.test']);
 
-    convitePara('  carla@example.TEST  ')->aceitarComoUsuarioExistente($carla);
+    ofertaPara('  carla@example.TEST  ')->aceitarComoUsuarioExistente($carla);
 
     expect($carla->fresh()?->hasRole('panel_user'))->toBeTrue();
 
     // O desvio de `aceitar()` reconhece a mesma conta: devolve a existente, com o mesmo id,
     // e não cria uma segunda linha para o endereço.
-    $aceito = convitePara(' CARLA@example.test ')->aceitar([
+    $aceito = ofertaPara(' CARLA@example.test ')->aceitar([
         'name'     => 'Ignorada',
         'password' => 'senha-forte-123',
     ]);
@@ -112,7 +93,7 @@ it('compara e-mail sem depender de caixa', function (): void {
  * mass assignment o descartaria em silêncio e só o `forceFill` grava. Ver ADR-06.
  */
 it('cria o usuario com o e-mail ja verificado', function (): void {
-    $novo = convitePara('nova@example.test')->aceitar([
+    $novo = ofertaPara('nova@example.test')->aceitar([
         'name'     => 'Nova',
         'password' => 'senha-forte-123',
     ]);
@@ -134,7 +115,7 @@ it('cria o usuario com o e-mail ja verificado', function (): void {
  * enviado — falha fechado como expirado.
  */
 it('deriva a situacao do convite', function (array $atributos, string $esperado): void {
-    expect(convitePara('quem@example.test', atributos: $atributos)->situacao())->toBe($esperado);
+    expect(ofertaPara('quem@example.test', atributos: $atributos)->situacao())->toBe($esperado);
 })->with([
     'pendente'         => [['expira_em' => '+1 day'], 'Pendente'],
     'aceito'           => [['expira_em' => '+1 day', 'aceito_em' => 'now'], 'Aceito'],

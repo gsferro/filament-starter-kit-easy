@@ -4,7 +4,6 @@ use App\Filament\Admin\Resources\Convites\ConviteResource;
 use App\Filament\Admin\Resources\Convites\Pages\ListConvites;
 use App\Filament\Admin\Resources\Tenants\TenantResource;
 use App\Filament\Infra\Resources\AiRuns\Pages\ListAiRuns;
-use App\Models\Convite;
 use App\Support\Paineis;
 use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use Database\Seeders\PapeisSeeder;
@@ -38,16 +37,6 @@ beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
 
-/** Convite pendente já enviado uma vez, com o token em claro descartado. */
-function convitePendente(string $email = 'alvo@example.com'): Convite
-{
-    $convite = Convite::factory()->create(['email' => $email]);
-
-    $convite->enviar();
-
-    return $convite->fresh() ?? $convite;
-}
-
 /*
 |--------------------------------------------------------------------------
 | R4 — a Action só aparece e só executa para quem tem a permissão dela
@@ -65,7 +54,10 @@ it('mostra a Action de reenvio só para quem tem a permissão dela', function (b
         semAPermissao('admin', 'Reenviar:Convite');
     }
 
-    $convite = convitePendente();
+    // `ofertaPara()` vem do `tests/Pest.php`; o `enviar()` e o que grava o hash do token,
+    // que e o oraculo de CT-11.
+    $convite = ofertaPara('alvo@example.com')->fresh();
+    $convite->enviar();
 
     $this->actingAs(usuarioDoKit('admin', 'admin@example.com'));
     noPainelDoShield('admin');
@@ -103,8 +95,9 @@ it('mostra a Action de reenvio só para quem tem a permissão dela', function (b
 it('não reenvia nem notifica quando a permissão de reenvio foi revogada', function (): void {
     semAPermissao('admin', 'Reenviar:Convite');
 
-    $convite   = convitePendente();
-    $hashAntes = $convite->getRawOriginal('token');
+    $convite = ofertaPara('alvo@example.com')->fresh();
+    $convite->enviar();
+    $hashAntes = $convite->fresh()->getRawOriginal('token');
 
     // O fake entra DEPOIS do arranjo: `convitePendente()` chama `enviar()`, que notifica de
     // verdade. Fakear antes tornaria a asserção de "nada foi enviado" falsa por construção.
