@@ -1634,6 +1634,62 @@ Uma só: **`View:ConfiguracoesDoKit`**, gerada pelo `ShieldPermissionsSeeder` e 
 
 É uma permissão para abrir **e** para salvar, de propósito. O `canEdit()` do plugin desabilita o formulário mas **não esconde valor** — o próprio README do pacote diz isso por escrito —, e esta tela guarda a senha do SMTP. Um papel "só leitura" aqui seria um papel que lê credencial.
 
+### Teto de upload: 10 MB, e onde mudar
+
+Todo upload do kit — a logo, o favicon e a arte do login desta tela, a logo da organização em
+`/admin/organizacoes` e os anexos de Projeto — aceita arquivo de **até 10 MB**, e **recusa SVG**.
+
+O número é **uma** chave, no `.env`:
+
+```dotenv
+# Em MEGABYTES. Vazio, 0 ou ausente = 10.
+KIT_UPLOAD_MAXIMO_MB=10
+```
+
+Ela alimenta `config('kit.uploads.maximo_em_kb')` — a config guarda **kilobytes**, porque é a
+unidade que o `->maxSize()` do Filament e a regra de upload temporário do Livewire recebem. A
+multiplicação por 1024 vive num lugar só, no `config/kit.php`, e quem lê a chave é
+`App\Support\TetoDeUpload`. Não há campo na tela para isto de propósito: é decisão de
+instalação, não de operação diária.
+
+**Um upload atravessa quatro limites, e o menor manda.** Eles não recusam igual, e é isso que
+torna o desalinhamento caro:
+
+| Camada | Onde | Valor no kit | Como aparece o erro |
+|---|---|---|---|
+| nginx | `docker/nginx/nginx.conf` | `client_max_body_size 60M` | falha de rede no console |
+| PHP | `docker/php/uploads.ini` | `upload_max_filesize=52M`, `post_max_size=60M` | idem |
+| Livewire (upload temporário) | alinhado à chave do kit por `KitServiceProvider` | 10 MB | 422 no XHR, erro genérico |
+| Filament (`->maxSize()`) | a chave do kit | 10 MB | **mensagem em português, no campo** |
+
+Só a última recusa com mensagem clara — por isso o kit alinha o Livewire à chave em vez de deixar
+o default dele (12 MB) mais frouxo que a tela.
+
+**Para subir muito o teto**, mude junto:
+
+1. `KIT_UPLOAD_MAXIMO_MB` — cobre a tela e o Livewire de uma vez;
+2. acima de 52 MB, `docker/php/uploads.ini` (`upload_max_filesize` e `post_max_size`);
+3. acima de 60 MB, `docker/nginx/nginx.conf` (`client_max_body_size`).
+
+⚠️ **Fora do Docker do kit, o PHP costuma vir com `upload_max_filesize=2M` de fábrica.** Ali o
+teto real é 2 MB, não o da chave — e o erro aparece como falha de rede, sem mencionar tamanho.
+Confira com `php -i | grep upload_max_filesize` antes de culpar o kit.
+
+### Por que SVG é recusado
+
+SVG é XML, e XML aceita `<script>`. A logo, o favicon e a arte do login são servidos pelo
+**mesmo origin** da aplicação, com visibilidade pública: abrir a URL de um SVG enviado executaria
+o script com acesso ao cookie de sessão — XSS armazenado. Quem envia é o `admin`, que já tem
+acesso total, então é escalada de insider e não porta anônima; num starter kit vale fechar.
+
+A barreira é a regra `image` do **Laravel** (não o `->image()` do Filament, que é outra coisa e
+aceita `image/*`, SVG incluído). Ela aceita jpg, jpeg, png, gif, bmp, webp, avif, heic e heif — e
+`.ico` e `.tiff` ficam de fora, o que na prática só afeta quem quer favicon em `.ico`.
+
+E ela **não** olha a extensão: o MIME vem do conteúdo do arquivo no disco temporário, então
+renomear `logo.svg` para `logo.png` não passa. Nos anexos de Projeto, onde uma allow-list fecharia
+o campo para PDF e planilha, a regra recusa apenas `image/svg+xml`.
+
 ### Trilha de alterações
 
 Toda alteração aparece em **`/infra/audits`**, com quem mudou, quando, o nome da propriedade e os valores antigo e novo. Uma linha por propriedade alterada; salvar sem mudar nada não gera registro.

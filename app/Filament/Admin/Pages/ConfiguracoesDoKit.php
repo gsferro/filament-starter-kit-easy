@@ -7,6 +7,7 @@ namespace App\Filament\Admin\Pages;
 use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\CustomizadorDaInstalacao;
+use App\Support\TetoDeUpload;
 use BackedEnum;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
@@ -232,14 +233,11 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->helperText('Cor de marca em hexadecimal. VENCE a seleção acima quando preenchida. Valor inválido é ignorado.')
                     ->regex('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'),
 
-                $this->arquivo('logo', 'Logo da marca')
-                    ->helperText('Substitui o nome no topo dos painéis. Em branco, o nome é usado.'),
+                $this->arquivo('logo', 'Logo da marca', 'Substitui o nome no topo dos painéis. Em branco, o nome é usado.'),
 
-                $this->arquivo('favicon', 'Favicon')
-                    ->helperText('O ícone da aba do navegador. Em branco, o do Filament.'),
+                $this->arquivo('favicon', 'Favicon', 'O ícone da aba do navegador. Em branco, o do Filament.'),
 
-                $this->arquivo('arte_do_login', 'Arte das telas de autenticação')
-                    ->helperText('A imagem ao lado do formulário de login, recuperação de senha e confirmação de e-mail. Em branco, a arte que vem no kit.'),
+                $this->arquivo('arte_do_login', 'Arte das telas de autenticação', 'A imagem ao lado do formulário de login, recuperação de senha e confirmação de e-mail. Em branco, a arte que vem no kit.'),
             ]);
     }
 
@@ -491,18 +489,68 @@ class ConfiguracoesDoKit extends SettingsPage
     }
 
     /**
-     * Campo de imagem no disco `public`.
+     * Campo de imagem no disco `public`, com teto de tamanho e sem SVG.
      *
      * `->disk('public')->visibility('public')` explícito, e não por default: no
      * Filament o default é `private`, e favicon, logo e arte aparecem ANTES de
      * haver sessão — na tela de login. Arquivo privado existe no disco e responde
-     * 403 no `<head>` de toda página. Ver `.ai/rules/models.md` e ADR-03.
+     * 403 no `<head>` de toda página. Ver `.ai/rules/models.md` e ADR-03 da wiki
+     * `settings-do-kit`.
+     *
+     * ## `->image()` E `->rule('image')`, e os dois são necessários
+     *
+     * São coisas diferentes com o mesmo nome. O `->image()` do Filament é
+     * açúcar para `acceptedFileTypes(['image/*'])`
+     * (vendor/filament/forms/src/Components/FileUpload.php:130-134): ele vira o
+     * `accept` do seletor de arquivo do sistema e a regra `mimetypes:image/*` —
+     * e `image/svg+xml` CASA com esse curinga
+     * (.../Validation/Concerns/ValidatesAttributes.php:1781-1783). Era por isso
+     * que SVG passava aqui.
+     *
+     * A regra `image` do LARAVEL é a barreira: ela é uma lista fechada de nove
+     * extensões e o SVG só entra com o parâmetro `allow_svg`
+     * (.../Validation/Concerns/ValidatesAttributes.php:1531-1540). A doc do
+     * framework diz o motivo com estas palavras: *"By default, the image rule
+     * does not allow SVG files due to the possibility of XSS vulnerabilities."*
+     * SVG carrega `<script>`, e estes três arquivos são servidos pelo MESMO
+     * origin da aplicação, com visibilidade pública — abrir a URL executaria o
+     * script com acesso ao cookie de sessão.
+     *
+     * O custo do trade-off é `.ico` e `.tiff`, que a lista do Laravel não tem.
+     * Favicon moderno é PNG. Quem precisar de `.ico` troca esta linha por um
+     * `acceptedFileTypes()` com `image/x-icon` NAQUELE campo — e volta a aceitar
+     * SVG se usar `image/*`.
+     *
+     * ## O teto vem de `TetoDeUpload`, em KILOBYTES
+     *
+     * `->maxSize()` monta a regra `max:{$size}` do Laravel
+     * (vendor/filament/forms/src/Components/BaseFileUpload.php:413-421), e essa
+     * regra divide o tamanho do arquivo por 1024
+     * (.../Validation/Concerns/ValidatesAttributes.php:2822). Quem sabe disso é
+     * `App\Support\TetoDeUpload`, a dona da conversão — aqui e nos outros dois
+     * campos de upload do kit.
+     *
+     * ## O texto de ajuda vem por argumento, e não encadeado
+     *
+     * As três chamadas encadeavam `->helperText()` DEPOIS de `arquivo()`, o que
+     * sobrescreveria qualquer texto definido aqui. Recebendo o texto como
+     * argumento, o teto e o aviso de SVG entram nos três de uma vez e
+     * acompanham a config.
      */
-    private function arquivo(string $nome, string $rotulo): FileUpload
+    private function arquivo(string $nome, string $rotulo, string $ajuda): FileUpload
     {
+        $maximoEmMb = TetoDeUpload::emMb();
+
         return FileUpload::make($nome)
             ->label($rotulo)
             ->image()
+            ->rule('image')
+            ->maxSize(TetoDeUpload::emKb())
+            ->validationMessages([
+                'max'   => "O arquivo passa de {$maximoEmMb} MB.",
+                'image' => 'SVG não é aceito. Envie PNG, JPEG, WEBP, GIF, BMP, AVIF ou HEIC.',
+            ])
+            ->helperText("{$ajuda} Até {$maximoEmMb} MB, e SVG não é aceito.")
             ->disk('public')
             ->directory('kit')
             ->visibility('public');
