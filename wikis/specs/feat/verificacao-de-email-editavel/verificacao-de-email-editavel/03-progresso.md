@@ -1,58 +1,60 @@
 # Progresso — W7: validação de e-mail editável
 
+> Concluído em 2026-08-24.
+
 ## 1. O middleware que decide por request
 
-- [ ] `app/Http/Middleware/ExigirEmailVerificado.php` criado, estendendo `EnsureEmailIsVerified`
-- [ ] guarda `if (! RegistroAberto::exigirVerificacaoDeEmail()) return $next($request);`
-- [ ] log de barramento no channel `autenticacao`, no formato `[Classe@Método]`, com e-mail mascarado
-- [ ] nenhum log no caminho liberado (decisão, não esquecimento)
+- [x] `app/Http/Middleware/ExigirEmailVerificado.php` criado, estendendo `EnsureEmailIsVerified`
+- [x] guarda `if (! RegistroAberto::exigirVerificacaoDeEmail()) return $next($request);`
+- [x] log de barramento no channel `autenticacao`, no formato `[Classe@Método]`, com e-mail mascarado
+- [x] nenhum log no caminho liberado (decisão, não esquecimento)
 
 ## 2. O painel aplica sempre e delega a decisão
 
-- [ ] `AppPanelProvider`: `->emailVerification(EmailVerification::class)` sem condição
-- [ ] `->emailVerifiedMiddlewareName(ExigirEmailVerificado::class)`
-- [ ] import novo
-- [ ] bloco de comentário reescrito (o anterior descreve mecanismo que deixou de existir)
+- [x] `AppPanelProvider`: `->emailVerification(EmailVerification::class)` sem condição
+- [x] `->emailVerifiedMiddlewareName(ExigirEmailVerificado::class)`
+- [x] import novo
+- [x] bloco de comentário reescrito (o anterior descreve mecanismo que deixou de existir)
 
 ## 3. A propriedade e a linha do mapa
 
-- [ ] `public bool $registro_verificar_email;` em `App\Settings\ConfiguracoesDoKit`
-- [ ] `'registro_verificar_email' => 'kit.registro.verificar_email'` em `mapaDeConfiguracao()`
-- [ ] comentário que justificava a ausência substituído pela justificativa da presença
+- [x] `public bool $registro_verificar_email;` em `App\Settings\ConfiguracoesDoKit`
+- [x] `'registro_verificar_email' => 'kit.registro.verificar_email'` em `mapaDeConfiguracao()`
+- [x] comentário que justificava a ausência substituído pela justificativa da presença
 
 ## 4. A migration de settings
 
-- [ ] `database/settings/2026_08_25_000000_add_registro_verificar_email_to_kit_settings.php`
-- [ ] `up()` semeia de `config('kit.registro.verificar_email')`
-- [ ] `down()` com `deleteIfExists`
+- [x] `database/settings/2026_08_25_000000_add_registro_verificar_email_to_kit_settings.php`
+- [x] `up()` semeia de `config('kit.registro.verificar_email')`
+- [x] `down()` com `deleteIfExists`
 
 ## 5. O toggle na tela
 
-- [ ] `TextEntry::make('aviso_verificacao_email')` removido de `abaRegistro()`
-- [ ] `Toggle::make('registro_verificar_email')` acrescentado, com `->visible($aberto)`
-- [ ] `helperText` diz as duas coisas: vale para todo usuário do `/app`, e convite não é afetado
-- [ ] import de `TextEntry` removido se ficou sem uso
+- [x] `TextEntry::make('aviso_verificacao_email')` removido de `abaRegistro()`
+- [x] `Toggle::make('registro_verificar_email')` acrescentado — **sem** `->visible($aberto)`, ver *Desvios do Plano* → desvio 4
+- [x] `helperText` diz as duas coisas: vale para todo usuário do `/app`, e convite não é afetado
+- [x] import de `TextEntry` removido se ficou sem uso
 
 ## 6. Os docblocks que passam a mentir
 
-- [ ] `app/Support/RegistroAberto.php` — o bloco da dívida
-- [ ] `app/Support/ConfiguracaoDoLogin.php` — a citação do contraexemplo
-- [ ] `config/kit.php` — o bloco de `'verificar_email'`
+- [x] `app/Support/RegistroAberto.php` — o bloco da dívida
+- [x] `app/Support/ConfiguracaoDoLogin.php` — a citação do contraexemplo
+- [x] `config/kit.php` — o bloco de `'verificar_email'`
 
 ## 7. Testes
 
-- [ ] `tests/Kit/VerificacaoDeEmailTest.php` — CT-01…CT-12, CT-14
-- [ ] `tests/Kit/RegistroAbertoTest.php` — as duas **inversões** (ver *Desvios do Plano*)
-- [ ] `tests/Kit/ConfiguracoesDoKitTest.php` — o caso de desfazer/refazer generalizado para
+- [x] `tests/Kit/VerificacaoDeEmailTest.php` — CT-01…CT-14 + os 8 cenários da revisão adversarial
+- [x] `tests/Kit/RegistroAbertoTest.php` — as duas **inversões** (ver *Desvios do Plano*)
+- [x] `tests/Kit/ConfiguracoesDoKitTest.php` — o caso de desfazer/refazer generalizado para
       todas as migrations de settings
-- [ ] CT-13 confirmado como coberto pelo caso invariante existente
+- [x] CT-13 ganhou cenário próprio (o caso invariante prova existência de linha, não o valor semeado)
 
 ## 8. README (pt e en) e proposta de rule
 
-- [ ] `README.md` §"Validação de e-mail (opcional)" + linha `F-03c` da matriz
-- [ ] `README.en.md` — as duas seções equivalentes
-- [ ] proposta de atualização de `.ai/rules/settings.md` escrita abaixo (**não gravada**)
-- [ ] `CHANGELOG.md`
+- [x] `README.md` §"Validação de e-mail (opcional)" + linha `F-03c` da matriz
+- [x] `README.en.md` — as duas seções equivalentes
+- [x] proposta de atualização de `.ai/rules/settings.md` escrita abaixo (**não gravada**)
+- [x] `CHANGELOG.md`
 
 ## Verificação Final
 
@@ -94,11 +96,30 @@
 ### Revisão adversarial (perfil completo)
 
 Delegada a agente independente, com acesso **apenas** ao `00-requisito.md` e ao
-`04-casos-de-teste.md`. Achados e fechamento: preenchido abaixo durante a execução.
+`04-casos-de-teste.md` — sem o PRD, sem as ADRs, sem código. **13 achados**, 12 fechados com
+cenário novo ou oráculo reescrito, 1 refutado com medição. A tabela completa está em
+`04-casos-de-teste.md` → `## Revisão Adversarial — achados e fechamento`.
+
+Os três que mais valeram o custo:
+
+1. **RQ-03 não tinha nenhum cenário falsificador.** A cláusula pede *"um middleware proprio do
+   kit"*, e o conjunto inteiro media só comportamento — um decisor escrito como Closure no provider
+   passaria em tudo. Virou CT-03b, uma asserção sobre a string que está no array de middleware da
+   rota.
+2. **A coluna do JSON estava colapsada por asserção, não por prova.** A implementação que lê a
+   opção depois de checar `expectsJson()` responde 403 a requisição AJAX com a exigência
+   DESLIGADA — o default do kit —, e isso quebraria todo Livewire do `/app` sem nenhum cenário de
+   HTML acusar.
+3. **O `Dado` não fixava o registro aberto**, e daí saiu a única mudança de implementação que a
+   revisão provocou (ver *Desvios do Plano* → desvio 4).
 
 ## Blockers
 
-<!-- preenchido durante a execução -->
+Nenhum. A hipótese de bloqueio que o requisito previa — *"se você concluir que não dá para resolver
+sem quebrar algo, pare"* — não se materializou: o ponto de extensão
+`Panel::emailVerifiedMiddlewareName()` (`vendor/filament/filament/src/Panel/Concerns/HasAuth.php:174-178`)
+existe e é público, e é ele que torna a inversão possível sem tocar em vendor, sem macro e sem
+dependência nova.
 
 ## Desvios do Plano
 
@@ -125,6 +146,14 @@ dívida foi paga, então a asserção negativa vira **positiva**. Cobre CT-12.
 Em ambos os casos o comentário do teste é reescrito apontando para esta wiki, para que a próxima
 pessoa não leia a inversão como afrouxamento.
 
+**Desvio 4 — o toggle NÃO se esconde com o registro aberto desligado, ao contrário do plano.**
+O passo 5 do PRD dizia `->visible($aberto)`, copiando o vizinho. A revisão adversarial mostrou por
+que isso estava errado: o middleware não consulta `RegistroAberto::habilitado()`, então a exigência
+vale mesmo com o cadastro aberto fechado — e o campo escondido produziria exigência **ligada e
+invisível**, sem como desligá-la pela tela. É o defeito espelhado do que a feature vem consertar.
+`aprovacao_manual` continua oculto, porque aprovação de cadastro realmente só existe com porta
+aberta. Coberto por CT-01c (comportamento) e CT-11b (tela).
+
 **Desvio 3 — `tests/Kit/ConfiguracoesDoKitTest.php` → *"desfaz e refaz a migration de settings sem
 quebrar"*.**
 Ele fixava o nome de uma migration e afirmava `count(linhas) === count(mapa)` depois do `up()`.
@@ -135,7 +164,33 @@ e futura, e remove um nome de arquivo fixado.
 
 ## Notas de Implementação
 
-<!-- preenchido durante a execução -->
+**A medição que fecha o risco maior da feature.** `php artisan route:list` depois da mudança:
+
+- **12** rotas carregam `ExigirEmailVerificado:filament.app.auth.email-verification.prompt`;
+- **todas** sob `/app` — `/admin` e `/infra` ficam com **zero**, o que prova RQ-08 estruturalmente
+  (e não só por comportamento);
+- a rota `filament.app.auth.email-verification.prompt` **não** está entre elas. É o que descarta o
+  laço de redirecionamento, e a razão é estrutural: ela nasce de um `Route::get()` direto no
+  `routes/web.php` do Filament (`:75-84`), não de `Page::registerRoutes()`, então nunca passa por
+  `getRouteMiddleware()`.
+
+**PHPStan pediu uma correção real, não cosmética.** A primeira versão do log fazia
+`$user instanceof Authenticatable` para obter o id com segurança; o Larastan já resolve
+`$request->user()` como `App\Models\User`, e apontou o `instanceof` como sempre-verdadeiro. A
+guarda que ficou é a que tem conteúdo semântico (`instanceof MustVerifyEmail`, a mesma do
+middleware do Laravel), e o id sai de `getAuthIdentifier()`.
+
+**O channel `autenticacao` tem outros escritores.** `shouldNotHaveReceived('warning')` cru reprovou:
+um `GET /app` bem-sucedido já emite dois `warning` nesse canal (log de autenticação e bloqueio de
+sessão). A asserção de ausência passou a nomear o prefixo `[ExigirEmailVerificado@handle]` — é a
+mesma lição que `.ai/rules/testes.md` já registra para asserção de ausência sobre arquivo
+documentado, agora numa variante nova: **asserção de ausência sobre canal compartilhado precisa
+filtrar o emissor.** Candidata a linha nova na rule de `tests/**`.
+
+**O `.env` do worktree tem `KIT_TENANCY=true`, e isso não afeta a suíte `Kit`.** `Tests\TestCase`
+escreve a flag no ambiente **antes** do bootstrap (`createApplication()`), então `tests/Kit` roda
+single-tenant e `/app` é a URL do dashboard. Foi conferido antes de escrever os cenários HTTP, para
+não derivar rota com `{tenant}`.
 
 ## Proposta de atualização de `.ai/rules/settings.md` (NÃO gravada)
 
@@ -186,4 +241,14 @@ existente em vez de criar outra, que é o preferido).
 
 ## Retrospectiva
 
-<!-- preenchido no fim -->
+- **Funcionou bem**: começar confirmando o diagnóstico no vendor em vez de redescobri-lo. As duas
+  linhas que decidiram a feature inteira (`HasAuth.php:174-178` e `HasAuth.php:367-370`) foram
+  achadas na primeira leitura de `HasRoutes.php:91` — o `getEmailVerifiedMiddleware($panel)` que o
+  requisito citava como parte do problema era, ele mesmo, o ponto de extensão da solução.
+- **Funcionou bem**: a revisão adversarial com contexto amputado. Ela produziu 13 achados, um deles
+  mudou a implementação, e nenhum era ruído.
+- **Faltou no plano**: prever que uma migration de settings nova quebraria um caso de teste por
+  **aritmética** (`count(linhas) === count(mapa)` com o `up()` de uma migration só). A revisão
+  profunda do step 5 pegou, mas só porque foi procurar — não estava na lista de impacto.
+- **Faltou no plano**: a asserção de ausência sobre canal de log compartilhado. Custou uma rodada
+  de teste vermelho, e é generalizável o suficiente para virar rule.

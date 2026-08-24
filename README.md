@@ -378,7 +378,7 @@ e **nasce desligada**:
 ```dotenv
 KIT_REGISTRO=false                      # a porta pública
 KIT_REGISTRO_APROVACAO_MANUAL=false     # nasce pendente até alguém aprovar?
-KIT_REGISTRO_VERIFICAR_EMAIL=false      # exige e-mail validado no /app?
+KIT_REGISTRO_VERIFICAR_EMAIL=false      # exige e-mail validado no /app? (tambem editavel na tela)
 ```
 
 Com `KIT_REGISTRO=false`, `/app/register` responde **só** a quem traz um token de convite
@@ -462,15 +462,23 @@ quem cria organização continua sendo quem administra a instalação, pelo `/ad
 
 ### Validação de e-mail (opcional)
 
-`KIT_REGISTRO_VERIFICAR_EMAIL=true` liga a tela de confirmação de e-mail do painel `/app` — que
-o kit já trazia vestida, com a rota desligada — e o middleware que a exige.
+Exige e-mail confirmado para entrar no `/app`. **Editável em `/admin/configuracoes-do-kit` → aba
+Registro**, e o valor gravado vale no **request seguinte** — sem deploy. `KIT_REGISTRO_VERIFICAR_EMAIL`
+continua existindo: ele semeia a instalação nova e é o plano B, como as outras 24 configurações da
+tela.
 
-**Leia esta parte antes de ligar em ambiente com gente dentro.** O middleware vale para **todo**
-usuário do `/app`, não só para os recém-cadastrados: quem estiver sem `email_verified_at` é
-levado à tela de confirmação. Numa instalação limpa isso não atinge ninguém, porque os caminhos
-que o kit usa para criar usuário já gravam a coluna — o seeder do administrador, a factory, o
-seeder da demo, o aceite de convite e o `kit:admin`. Quem **não** grava é a criação manual pela
-tela de usuários.
+> Até a v0.19.3 esta chave valia **só** pelo `.env`, e a tela dizia isso. O motivo era real: o
+> Filament fixa o middleware de e-mail verificado no array da rota no momento do registro, então a
+> decisão era tomada no boot e um toggle na tela gravava sem fazer efeito. O conserto foi tirar a
+> *decisão* do array da rota e pôr lá um *decisor* — `App\Http\Middleware\ExigirEmailVerificado`,
+> que pergunta a cada request. A tela de confirmação, por consequência, passou a existir sempre.
+
+**Leia esta parte antes de ligar em ambiente com gente dentro — agora um clique basta.** A
+exigência vale para **todo** usuário do `/app`, não só para os recém-cadastrados, e **não** depende
+de o cadastro aberto estar ligado: quem estiver sem `email_verified_at` é levado à tela de
+confirmação. Numa instalação limpa isso não atinge ninguém, porque os caminhos que o kit usa para
+criar usuário já gravam a coluna — o seeder do administrador, a factory, o seeder da demo, o
+aceite de convite e o `kit:admin`. Quem **não** grava é a criação manual pela tela de usuários.
 
 Para marcar como validada a base que já existe, antes de ligar:
 
@@ -1172,7 +1180,7 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-03 | Registro por convite | `/app/register?token=…` | quem tem token válido | sem token na query, a tela recusa e manda para o login (com `KIT_REGISTRO=false`, o default) | 🟢 |
 | F-03a | Cadastro aberto (opt-in) | `/app/register` | qualquer um, com `KIT_REGISTRO=true` | o formulário aparece; quem se cadastra recebe **só** `panel_user` e leva 403 em `/admin` e `/infra` | 🟢 |
 | F-03b | Aprovação de cadastro (opt-in) | tela de usuários → ação *Aprovar* | quem pode editar usuário | com `KIT_REGISTRO_APROVACAO_MANUAL=true` o cadastro nasce pendente e não entra em painel nenhum | 🟢 |
-| F-03c | Validação de e-mail (opt-in) | `/app/email-verification/prompt` | autenticado, com `KIT_REGISTRO_VERIFICAR_EMAIL=true` | a rota só existe com a chave ligada; quem vem de convite nunca é barrado | 🟢 |
+| F-03c | Validação de e-mail (opt-in) | `/app/email-verification/prompt` | autenticado, com a exigência ligada (na tela ou no `.env`) | a rota existe sempre — quem decide é um middleware do kit, por request; quem vem de convite nunca é barrado | 🟢 |
 | F-04 | Autenticação em dois fatores | `/{painel}/two-factor-authentication` | autenticado | a tela abre e oferece o QR | 🔵 |
 | F-05 | Passkeys | Meu perfil | autenticado | cadastro de chave, no perfil do Breezy | ⚪ |
 | F-06 | Bloqueio de sessão | menu do usuário → *Bloquear sessão* | autenticado | trava sem deslogar; volta com a senha. Usa o layout do login, não a `SimplePage` | 🟢 |

@@ -263,15 +263,12 @@ return [
     |   'aprovacao_manual' — o cadastro nasce PENDENTE e não entra em painel
     |   nenhum até alguém aprovar na tela de usuários. Com `false`, entra na hora.
     |
-    |   'verificar_email'  — exige e-mail validado no /app. A tela de confirmação
-    |   existe SEMPRE; esta chave decide se alguém é levado até ela, e a decisão é
-    |   tomada por request por `App\Http\Middleware\ExigirEmailVerificado` (é o que
-    |   torna a chave editável em /admin/configuracoes-do-kit). ATENÇÃO: ela vale
-    |   para TODO usuário do /app, não só para os recém-registrados — quem estiver
-    |   sem `email_verified_at` é barrado, e ao contrário das duas de cima isso não
-    |   depende de o registro aberto estar ligado. Quem vem de convite nunca é
-    |   afetado: `Convite::aceitar()` grava a coluna, porque o token já prova posse
-    |   do endereço.
+    |   'verificar_email'  — exige e-mail validado no /app. Liga a tela de
+    |   confirmação (que nasceu vestida e com a rota desligada) e o middleware do
+    |   Filament. ATENÇÃO: o middleware vale para TODO usuário do /app, não só
+    |   para os recém-registrados — quem estiver sem `email_verified_at` é barrado.
+    |   Quem vem de convite nunca é afetado: `Convite::aceitar()` grava a coluna,
+    |   porque o token já prova posse do endereço.
     |
     | Com multi-organização ligada, cada organização ainda precisa habilitar o
     | registro na tela dela (`tenants.registro_habilitado`), e o link carrega o

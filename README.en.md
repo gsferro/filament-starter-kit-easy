@@ -344,7 +344,7 @@ exists, and it **ships off**:
 ```dotenv
 KIT_REGISTRO=false                      # the public door
 KIT_REGISTRO_APROVACAO_MANUAL=false     # born pending until someone approves?
-KIT_REGISTRO_VERIFICAR_EMAIL=false      # require a verified e-mail on /app?
+KIT_REGISTRO_VERIFICAR_EMAIL=false      # require a verified e-mail on /app? (also editable in the UI)
 ```
 
 With `KIT_REGISTRO=false`, `/app/register` answers **only** to whoever brings a valid invitation
@@ -430,11 +430,21 @@ and creating organizations remains the job of whoever administers the installati
 
 ### E-mail verification (optional)
 
-`KIT_REGISTRO_VERIFICAR_EMAIL=true` turns on the `/app` panel's e-mail confirmation screen —
-which the kit already shipped styled, with the route off — and the middleware that enforces it.
+Requires a confirmed e-mail address to enter `/app`. **Editable in
+`/admin/configuracoes-do-kit` → Registro tab**, and the stored value applies on the **next
+request** — no deploy. `KIT_REGISTRO_VERIFICAR_EMAIL` still exists: it seeds a fresh installation
+and is the fallback, like the other 24 settings on that screen.
 
-**Read this part before turning it on with people inside.** The middleware applies to **every**
-`/app` user, not only to newly registered ones: anyone without `email_verified_at` is taken to
+> Up to v0.19.3 this key worked **only** through `.env`, and the screen said so. The reason was
+> real: Filament pins the e-mail-verified middleware into the route's middleware array at
+> registration time, so the decision was made at boot and a toggle on the screen saved without
+> taking effect. The fix was to take the *decision* out of the route array and put a *decider*
+> there instead — `App\Http\Middleware\ExigirEmailVerificado`, which asks on every request. As a
+> consequence, the confirmation screen now always exists.
+
+**Read this part before turning it on with people inside — one click is now enough.** The
+requirement applies to **every** `/app` user, not only to newly registered ones, and it does
+**not** depend on open sign-up being enabled: anyone without `email_verified_at` is taken to
 the confirmation screen. On a clean installation that hits nobody, because the paths the kit uses
 to create users already fill the column — the admin seeder, the factory, the demo seeder,
 invitation acceptance and `kit:admin`. The one that does **not** is manual creation through the
@@ -1142,7 +1152,7 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 | F-03 | Registration by invitation | `/app/register?token=…` | whoever has a valid token | without a token in the query, the screen refuses and goes to login (with `KIT_REGISTRO=false`, the default) | 🟢 |
 | F-03a | Open sign-up (opt-in) | `/app/register` | anyone, with `KIT_REGISTRO=true` | the form shows up; whoever signs up gets **only** `panel_user` and hits 403 on `/admin` and `/infra` | 🟢 |
 | F-03b | Sign-up approval (opt-in) | users screen → *Approve* action | whoever can edit users | with `KIT_REGISTRO_APROVACAO_MANUAL=true` the account is born pending and enters no panel at all | 🟢 |
-| F-03c | E-mail verification (opt-in) | `/app/email-verification/prompt` | authenticated, with `KIT_REGISTRO_VERIFICAR_EMAIL=true` | the route only exists with the key on; invited users are never blocked | 🟢 |
+| F-03c | E-mail verification (opt-in) | `/app/email-verification/prompt` | authenticated, with the requirement on (in the UI or in `.env`) | the route always exists — a kit middleware decides, per request; invited users are never blocked | 🟢 |
 | F-04 | Two-factor authentication | `/{panel}/two-factor-authentication` | authenticated | the screen opens and offers the QR | 🔵 |
 | F-05 | Passkeys | My profile | authenticated | key registration, in Breezy's profile | ⚪ |
 | F-06 | Session lock | user menu → *Lock session* | authenticated | locks without logging out; returns with password. Uses the login layout, not `SimplePage` | 🟢 |

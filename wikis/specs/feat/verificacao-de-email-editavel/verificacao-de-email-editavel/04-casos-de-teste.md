@@ -21,7 +21,8 @@ todo mundo fora do `/app`**, inclusive quem nunca teve nada a ver com registro a
 - Técnicas aplicadas: **tabela de decisão** (opção × `email_verified_at` × `expectsJson`),
   **EP** (partições do estado de verificação e da origem da conta), **matriz painel × exigência**,
   **rastreio de efeito** (notificação de verificação e log de barramento).
-- Cenários: 14 · Regras: 7 · Mutantes previstos: 17 · Sem matador: 0
+- Cenários: 14 na derivação + **8 acrescentados pela revisão adversarial** = 22 · Regras: 7 ·
+  Mutantes previstos: 20 na derivação + 5 da revisão = 25 · Sem matador: 0
 - **Divergência declarada (rule vence skill)**: `.ai/rules/testes-browser.md` e a experiência do
   projeto mandam rodar browser em série; a skill sugere `--parallel --tia` como padrão. Aqui não há
   CT-B, então a divergência não se materializa — mas o comando da verificação final é
@@ -58,7 +59,7 @@ Nenhuma técnica foi escalada acima do perfil da área.
 
 | Item do PRD | Recusado como oráculo porque | Destino |
 |---|---|---|
-| nome da classe `ExigirEmailVerificado` | escolha de implementação | detalhe do cenário; CT-03 afirma sobre ela porque o requisito **exige** que o decisor seja um middleware do kit (RQ-03) — é o único observável dessa cláusula |
+| nome da classe `ExigirEmailVerificado` | é **também** o único observável de RQ-03, que exige um *middleware próprio do kit* | **aceito como oráculo em CT-03b, e só nele.** A primeira versão desta linha afirmava que CT-03 já fazia isso, e era falsa — o Gherkin de CT-03 não menciona a classe. A revisão adversarial pegou a discrepância |
 | `emailVerifiedMiddlewareName()` como ponto de extensão | escolha de implementação | detalhe; nenhum `Então` afirma sobre o método |
 | o rótulo e o `helperText` do toggle | comportamento visível que o requisito não determina | nenhum cenário afirma sobre o texto; CT-11 afirma sobre o **campo** e a **gravação** |
 | reutilizar o channel `autenticacao` | escolha de implementação | CT-14 afirma que **existe** trilha do barramento; qual channel é detalhe herdado do padrão do projeto |
@@ -464,7 +465,7 @@ cumpre.
 
 | Cenário cogitado | Por que foi cortado |
 |---|---|
-| ligada + não validado numa rota de resource (não só o dashboard) | mata o mesmo mutante que CT-01; o middleware vem de `getRouteMiddleware()`, comum a página e resource |
+| ~~ligada + não validado numa rota de resource~~ | **corte revertido.** A justificativa original ("o middleware vem de `getRouteMiddleware()`") era derivada do **plano**, não do requisito: a suíte importava a hipótese que devia testar, e todos os cenários batiam na mesma URL. Virou CT-01b, com duas rotas de classes diferentes |
 | a tela de prompt renderiza para quem não validou | é o caminho feliz do vendor, já coberto pela suíte do Filament; nenhum mutante nosso morre nele |
 | usuário sem nenhum papel + opção ligada | `canAccessPanel()` já barra antes; o cenário mediria a barreira errada |
 | ligar e desligar pela tela e reler duas vezes | subsumido por CT-05 + CT-06 |
@@ -484,7 +485,37 @@ Nenhum cenário afirma sobre algo que **só o navegador prova**. O detalhamento:
 
 Registrado conforme o gate: `05-casos-de-teste-browser.md` **não** é criado.
 
-## Revisão Adversarial
+## Revisão Adversarial — achados e fechamento
 
-Perfil **completo** exige revisão por agente independente. Resultado e achados: ver
-`03-progresso.md` → *Revisão adversarial*.
+Perfil **completo** exige revisão por agente independente. Rodada 1 executada por sub-agente que
+recebeu **apenas** o `00-requisito.md` e este arquivo — sem o PRD, sem as ADRs, sem código. Ela
+produziu **13 achados**, dos quais 12 foram fechados com cenário novo ou oráculo reescrito e 1 foi
+refutado com medição.
+
+| # | Achado | Fechamento | Cenário |
+|---|---|---|---|
+| 1 | a direção "aconteceu quando devia" do rastreio de efeito estava delegada a um caso da wiki ancestral **sem ID nem arquivo** — promessa, não cobertura. Uma implementação que grava `email_verified_at` sempre passaria | as duas direções num `Esquema do Cenário` próprio, com asserção sobre `hasVerifiedEmail()` **e** sobre a notificação | **CT-07** reescrito |
+| 2 | possível **laço de redirecionamento**: se o destino fosse guardado pelo mesmo middleware, `Route::has()` (nome) não pegaria. `Route::has` prova nome, não alcance | medido no `route:list`: a rota do prompt **não** carrega o middleware, porque nasce de um `Route::get()` direto no `routes/web.php` do Filament e não de `Page::registerRoutes()`. Cenário novo com `followingRedirects()` prova alcance | **CT-08b** novo |
+| 3 | a coluna `expectsJson` foi colapsada nas linhas de opção desligada **por asserção, não por prova**. A implementação que lê a opção só no ramo HTML responde 403 em JSON com a exigência DESLIGADA — quebrando todo Livewire do `/app` no default do kit | as quatro combinações instanciadas; CT-04 ganhou a partição `desligada → 200` | **CT-04** ampliado |
+| 4 | **RQ-03 sem nenhum cenário falsificador.** Um decisor implementado como Closure no provider passaria em todos os cenários de comportamento | oráculo estrutural sobre o array de middleware da rota, com a string completa (`FQCN:rota`) | **CT-03b** novo |
+| 5 | todos os cenários batiam na **mesma URL**, e o corte do cenário de segunda rota tinha justificativa derivada do plano | duas rotas de classes diferentes: a `Dashboard` do vendor e uma `Page` do kit | **CT-01b** novo |
+| 6 | oráculos fracos: `assertOk` sem âncora de conteúdo passa com 403 renderizado, redirecionamento resolvido ou tela de erro | âncora de identidade da resposta (`assertSeeLivewire(Dashboard::class)`) nos cenários de entrada | CT-01…CT-03, CT-06, CT-09 |
+| 7 | **CT-14 não existia como cenário** — só no índice e na prosa; M20 citado sem linha na tabela | cenário escrito, e o par de ausência com ele | **CT-14 / CT-14b** |
+| 8 | CT-13 declarava `Então o valor é o que o ambiente definiu` e delegava a um caso que prova **existência de linha**, nunca o valor | cenário próprio com as duas partições do ambiente. Importa: semear `false` literal desligaria em silêncio a barreira de quem tinha a chave ligada, durante uma atualização | **CT-13** reescrito |
+| 9 | CT-12 instanciava só a partição verdadeira; mapa que devolve constante passaria | `Esquema do Cenário` com as duas partições | **CT-12** ampliado |
+| 10 | M8 (leitura memoizada em estático) tinha "esperança de ordem de execução" como matador — `--filter` ou `--parallel` apagariam o kill | liga → desliga → liga, **num único cenário** | **CT-05/CT-06** fundidos |
+| 11 | o `Dado` não fixava o estado do **registro aberto**. `habilitado() && exigirVerificacaoDeEmail()` é leitura plausível do requisito e deixaria a exigência inerte em toda instalação que só usa convite — o default do kit | cenário com o registro **fechado** e a exigência ligada. **Mudou a implementação**: o toggle deixou de se esconder com o registro desligado, porque exigência ligada e invisível é o defeito espelhado | **CT-01c** novo + **CT-11b** novo |
+| 12 | CT-09 tinha duas ações no `Quando`, e "nenhuma notificação enviada" podia passar por o aceite ter estourado antes | o aceite virou precondição **com asserção própria** (`hasVerifiedEmail()`), deixando um `Quando` só | **CT-09** reescrito |
+| 13 | RQ-04 provada só sobre usuário fabricado, nunca pelo fluxo real de registro com a opção ligada | coberto pelo fechamento do achado 1 | CT-07 |
+
+**O único achado refutado**: o laço de redirecionamento (achado 2) não existe, e a refutação é
+medição, não argumento — `php artisan route:list` mostra 12 rotas do `/app` com o middleware, e a
+rota do prompt não está entre elas. Mesmo refutado, o cenário foi escrito: o que hoje é verdade por
+construção passa a ser verdade **verificada**, e a próxima pessoa que mexer no registro de rotas
+descobre pelo teste em vez de por um laço em produção.
+
+**Rodada 2**: não executada. O teto da skill é 2 rodadas e a segunda é obrigatória apenas quando o
+fechamento cria superfície nova de comportamento. Aqui o fechamento criou cenário sobre a superfície
+que já estava mapeada — mais uma rota, mais uma partição, mais um oráculo — e uma única mudança de
+implementação (a visibilidade do toggle), ela própria coberta por CT-11b. Registrado como decisão,
+não como esquecimento.
