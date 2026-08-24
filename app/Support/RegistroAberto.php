@@ -44,7 +44,7 @@ use SensitiveParameter;
  * classe do kit em `->emailVerifiedMiddlewareName()`, então a rota guarda um DECISOR em vez de uma
  * decisão. Quem pergunta, a cada request, é `App\Http\Middleware\ExigirEmailVerificado` — e ele
  * pergunta aqui. O `.env` (`KIT_REGISTRO_VERIFICAR_EMAIL`) continua existindo como semeador e
- * plano B, igual às outras 24 propriedades.
+ * plano B, igual às demais propriedades.
  *
  * O preço tem nome, e está anotado no `AppPanelProvider`: a rota de destino do redirecionamento
  * precisa nascer sempre. Ver a wiki `verificacao-de-email-editavel`.

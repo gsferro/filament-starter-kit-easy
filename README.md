@@ -464,7 +464,7 @@ quem cria organização continua sendo quem administra a instalação, pelo `/ad
 
 Exige e-mail confirmado para entrar no `/app`. **Editável em `/admin/configuracoes-do-kit` → aba
 Registro**, e o valor gravado vale no **request seguinte** — sem deploy. `KIT_REGISTRO_VERIFICAR_EMAIL`
-continua existindo: ele semeia a instalação nova e é o plano B, como as outras 24 configurações da
+continua existindo: ele semeia a instalação nova e é o plano B, como as demais configurações da
 tela.
 
 > Até a v0.19.3 esta chave valia **só** pelo `.env`, e a tela dizia isso. O motivo era real: o

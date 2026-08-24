@@ -433,7 +433,7 @@ and creating organizations remains the job of whoever administers the installati
 Requires a confirmed e-mail address to enter `/app`. **Editable in
 `/admin/configuracoes-do-kit` → Registro tab**, and the stored value applies on the **next
 request** — no deploy. `KIT_REGISTRO_VERIFICAR_EMAIL` still exists: it seeds a fresh installation
-and is the fallback, like the other 24 settings on that screen.
+and is the fallback, like the other settings on that screen.
 
 > Up to v0.19.3 this key worked **only** through `.env`, and the screen said so. The reason was
 > real: Filament pins the e-mail-verified middleware into the route's middleware array at

@@ -4,7 +4,7 @@ use Spatie\LaravelSettings\Migrations\SettingsBlueprint;
 use Spatie\LaravelSettings\Migrations\SettingsMigration;
 
 /**
- * A 25ª propriedade do grupo `kit`: a exigência de e-mail validado no /app.
+ * A propriedade que faltava no grupo `kit`: a exigência de e-mail validado no /app.
  *
  * ## Por que uma migration nova, e não uma linha na anterior
  *

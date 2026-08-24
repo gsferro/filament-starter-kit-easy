@@ -93,6 +93,10 @@ presença, apontando para o middleware.
 `abaRegistro()`: o `TextEntry::make('aviso_verificacao_email')` sai e um `Toggle` entra, com a
 mesma condição de visibilidade das outras duas (`$aberto`).
 
+> **Corrigido durante a execução** — ver `03-progresso.md` → *Desvios do Plano*, desvio 4. O toggle
+> ficou **sem** `->visible($aberto)`: a exigência de e-mail não depende do cadastro aberto estar
+> ligado, e esconder o campo produziria exigência ligada e invisível.
+
 ### `database/settings/`
 
 Existe **uma** migration (`2026_08_24_000000_create_kit_settings.php`) e o docblock dela é
@@ -129,7 +133,7 @@ exatamente isso que continua valendo.
 
 | Tela / Componente | Tipo | Rota | Interação do usuário | Depende de JS? |
 |---|---|---|---|---|
-| `ConfiguracoesDoKit` → aba Registro | Filament (Page + Settings form) | `/admin/configuracoes-do-kit` | marca/desmarca "Exigir e-mail validado" e salva | Sim (o toggle só aparece com `registro_habilitado` ligado, via `->live()`) |
+| `ConfiguracoesDoKit` → aba Registro | Filament (Page + Settings form) | `/admin/configuracoes-do-kit` | marca/desmarca "Exigir e-mail validado" e salva | Não — ver o desvio 4 |
 | `EmailVerification` (prompt) | Filament (SimplePage, Auth Designer) | `/app/email-verification/prompt` | lê o aviso, pede reenvio, sai | Não |
 
 **Gate de CT-B**: a visibilidade condicional do toggle depende de `->live()`, que é reatividade
@@ -145,7 +149,7 @@ de gravação por componente (CT-02), que é o que prova que o toggle governa al
 
 | Key | Default | Descrição |
 |-----|---------|-----------|
-| `KIT_REGISTRO_VERIFICAR_EMAIL` | `false` | **mantida.** Passa a ser semeadora e plano B, como as outras 24 propriedades do Settings |
+| `KIT_REGISTRO_VERIFICAR_EMAIL` | `false` | **mantida.** Passa a ser semeadora e plano B, como as demais propriedades do Settings |
 
 ## Eventos / Listeners / Observers
 
@@ -171,7 +175,7 @@ Nenhum.
   continua sendo o caminho. O que muda é o risco de **acionamento acidental**: antes exigia editar
   o `.env` e reiniciar; agora um clique basta. Mitigação: o `helperText` do toggle avisa, e o
   README ganha a advertência ao lado do comando.
-- **Tela de Configurações do Kit**: 25 propriedades em vez de 24. `ConfiguracoesDoKitTest` conta
+- **Tela de Configurações do Kit**: uma propriedade a mais. `ConfiguracoesDoKitTest` conta
   propriedades? — verificar na revisão profunda (step 5).
 
 ## Rollback

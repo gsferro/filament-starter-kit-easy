@@ -44,7 +44,7 @@
 
 - **RQ-01** — a chave continua existindo no `.env` depois de virar editável?
   - **Assumido**: sim. `KIT_REGISTRO_VERIFICAR_EMAIL` continua sendo o **semeador** e o plano B,
-    exatamente como as outras 24 propriedades do Settings (regra dura do docblock de
+    exatamente como as demais propriedades do Settings (regra dura do docblock de
     `App\Settings\ConfiguracoesDoKit`: *"o banco vence em tempo de execução; o .env semeia e é o
     plano B"*).
   - **Se negado**: a chave sairia de `config/kit.php` e da migration de settings, e
