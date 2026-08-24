@@ -8,6 +8,7 @@ use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\TetoDeUpload;
+use App\Support\ProvedorSocial;
 use BackedEnum;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
@@ -16,6 +17,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Pages\SettingsPage;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
@@ -147,8 +149,17 @@ class ConfiguracoesDoKit extends SettingsPage
      */
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        $data['mail_password']              = null;
-        $data['login_google_client_secret'] = null;
+        $data['mail_password'] = null;
+
+        /*
+         * Todos os `client_secret`, por laço sobre o enum. Zerar por laço em vez de listar à mão
+         * é o que impede o defeito de esquecer UM provedor: o campo esquecido continuaria
+         * serializando o segredo gravado no `wire:snapshot`, com 200 e sem clique em "revelar",
+         * e nenhum caso de teste dos outros provedores acusaria. Ver `.ai/rules/pages.md`.
+         */
+        foreach (ProvedorSocial::cases() as $provedor) {
+            $data[$provedor->propriedadeDeSettings('client_secret')] = null;
+        }
 
         return $data;
     }
@@ -185,10 +196,18 @@ class ConfiguracoesDoKit extends SettingsPage
         return $opcoes + [$atual => $atual.' — '.$rotulo];
     }
 
-    /** Existe segredo do Google guardado? — para o placeholder dizer "em branco mantém". */
-    private function segredoDoGoogleGuardado(): ?string
+    /**
+     * Existe segredo guardado deste provedor? — para o placeholder dizer "em branco mantém".
+     *
+     * Lê do settings e não do formulário, justamente porque o formulário não o tem (ele é zerado
+     * em `mutateFormDataBeforeFill()`). Devolve o valor e não um booleano só para o chamador
+     * poder usar `filled()`; o valor não é exibido em lugar nenhum.
+     */
+    private function segredoGuardadoDe(ProvedorSocial $provedor): ?string
     {
-        return app(static::getSettings())->login_google_client_secret;
+        $propriedade = $provedor->propriedadeDeSettings('client_secret');
+
+        return app(static::getSettings())->{$propriedade};
     }
 
     /**
@@ -421,55 +440,104 @@ class ConfiguracoesDoKit extends SettingsPage
     /**
      * Login social e o rodapé da tela de login.
      *
-     * Ao contrário de `registro_verificar_email`, estas chaves PODEM viver aqui: as duas que
-     * decidem algo são lidas por request — o `abort_unless()` do `LoginComGoogleController` e a
-     * closure do render hook do botão. Nada é decidido no boot do painel.
+     * Ao contrário de `registro_verificar_email`, estas chaves PODEM viver aqui: as que decidem
+     * algo são lidas por request — o `abort_unless()` do `LoginSocialController` e a closure do
+     * render hook dos botões. Nada é decidido no boot do painel.
      *
-     * O botão só entra no ar com o interruptor ligado E as três credenciais preenchidas, e é
-     * `ConfiguracaoDoLogin::googleDisponivel()` que decide — os campos aqui só alimentam a
-     * config que ela lê. Com ele desligado, `/auth/google/*` responde 404: esconder o botão não
-     * é barreira, porque a URL é pública.
+     * Uma SEÇÃO por provedor, e não treze campos soltos: com quatro provedores são doze campos de
+     * credencial, nove deles condicionais a um toggle acima. Solto, o campo que aparece empurra
+     * os outros para baixo sem indicar de quem ele é. Ver ADR-07 da wiki
+     * `mais-provedores-sociais`.
+     *
+     * As seções vêm de um laço sobre `ProvedorSocial::cases()`: provedor novo aparece na tela sem
+     * ninguém tocar nesta tela.
      */
     private function abaLogin(): Tab
     {
-        $comGoogle = fn (Get $get): bool => (bool) $get('login_google_habilitado');
+        $secoes = array_map(
+            fn (ProvedorSocial $provedor): Section => $this->secaoDoProvedor($provedor),
+            ProvedorSocial::cases(),
+        );
 
         return Tab::make('Login')
             ->icon('heroicon-o-arrow-right-on-rectangle')
             ->schema([
-                Toggle::make('login_google_habilitado')
-                    ->label('Entrar com Google')
-                    ->helperText('Ligar aqui não põe o botão no ar sozinho: as credenciais abaixo também precisam estar preenchidas. O login social AUTENTICA quem já tem conta — criar conta depende do registro aberto, na aba anterior.')
-                    ->live(),
-
-                TextInput::make('login_google_client_id')
-                    ->label('Client ID')
-                    ->helperText('console.cloud.google.com → APIs e serviços → Credenciais. A URI de redirecionamento a cadastrar lá é o seu domínio + /auth/google/callback.')
-                    ->maxLength(255)
-                    ->visible($comGoogle),
-
-                /*
-                 * Mesmo tratamento da senha de SMTP, pelo mesmo motivo: `->password()` esconde
-                 * na tela e o valor continua em `$this->data`, que o Livewire serializa no
-                 * `wire:snapshot`. O segredo é zerado no fill e só chega ao save quando
-                 * preenchido. Ver `mutateFormDataBeforeFill()`.
-                 */
-                TextInput::make('login_google_client_secret')
-                    ->label('Client Secret')
-                    ->helperText('Guardado cifrado. Deixe em branco para manter o atual — ele não é exibido aqui, nem no código-fonte da página.')
-                    ->placeholder(fn (): string => filled($this->segredoDoGoogleGuardado()) ? 'Já configurado — em branco mantém' : 'Nenhum segredo configurado')
-                    ->password()
-                    ->revealable()
-                    ->dehydrated(fn (?string $estado): bool => filled($estado))
-                    ->maxLength(255)
-                    ->visible($comGoogle),
+                ...$secoes,
 
                 Textarea::make('login_rodape')
                     ->label('Rodapé da tela de login')
                     ->helperText('Aparece nas telas de login dos três painéis. É TEXTO e sai escapado: a tela de login é pública e não autenticada, e HTML cru ali seria XSS armazenado.')
                     ->rows(2)
-                    ->maxLength(500),
+                    ->maxLength(500)
+                    ->columnSpanFull(),
             ]);
+    }
+
+    /**
+     * O bloco de um provedor de login social: o interruptor e as duas credenciais.
+     *
+     * O botão só entra no ar com o interruptor ligado E as três credenciais preenchidas, e é
+     * `ConfiguracaoDoLogin::disponivel()` que decide — os campos aqui só alimentam a config que
+     * ela lê. Com o interruptor desligado, `/auth/{provedor}/*` responde 404: esconder o botão
+     * não é barreira, porque a URL é pública.
+     *
+     * `->columnSpanFull()` explícito na `Section`: `Grid`, `Section` e `Fieldset` NÃO ocupam todas
+     * as colunas por default, e sem isto a seção fica numa das duas colunas do `defaultForm()`.
+     *
+     * O `client_secret` tem o mesmo tratamento da senha de SMTP, pelo mesmo motivo: `->password()`
+     * esconde na TELA e o valor continua em `$this->data`, que o Livewire serializa no
+     * `wire:snapshot`. São dois pontos, e nenhum é visual — o segredo é zerado no fill (por laço,
+     * em `mutateFormDataBeforeFill()`) e só chega ao save quando preenchido (`->dehydrated()`).
+     * Ver `.ai/rules/pages.md`.
+     */
+    private function secaoDoProvedor(ProvedorSocial $provedor): Section
+    {
+        $habilitado = $provedor->propriedadeDeSettings('habilitado');
+        $ligado     = fn (Get $get): bool => (bool) $get($habilitado);
+
+        return Section::make("Entrar com {$provedor->rotulo()}")
+            ->description($this->ondeCriarOApp($provedor))
+            ->collapsible()
+            ->columnSpanFull()
+            ->schema([
+                Toggle::make($habilitado)
+                    ->label("Oferecer o botão do {$provedor->rotulo()}")
+                    ->helperText('Ligar aqui não põe o botão no ar sozinho: as credenciais abaixo também precisam estar preenchidas. O login social AUTENTICA quem já tem conta — criar conta depende do registro aberto, na aba anterior.')
+                    ->live(),
+
+                TextInput::make($provedor->propriedadeDeSettings('client_id'))
+                    ->label('Client ID')
+                    ->helperText('A URI de redirecionamento a cadastrar no provedor é o seu domínio + '.$this->uriDeRedirecionamento($provedor))
+                    ->maxLength(255)
+                    ->visible($ligado),
+
+                TextInput::make($provedor->propriedadeDeSettings('client_secret'))
+                    ->label('Client Secret')
+                    ->helperText('Guardado cifrado. Deixe em branco para manter o atual — ele não é exibido aqui, nem no código-fonte da página.')
+                    ->placeholder(fn (): string => filled($this->segredoGuardadoDe($provedor)) ? 'Já configurado — em branco mantém' : 'Nenhum segredo configurado')
+                    ->password()
+                    ->revealable()
+                    ->dehydrated(fn (?string $estado): bool => filled($estado))
+                    ->maxLength(255)
+                    ->visible($ligado),
+            ]);
+    }
+
+    /** Onde criar o app OAuth de cada provedor — o mesmo roteiro que os READMEs detalham. */
+    private function ondeCriarOApp(ProvedorSocial $provedor): string
+    {
+        return match ($provedor) {
+            ProvedorSocial::Google   => 'console.cloud.google.com → APIs e serviços → Credenciais → ID do cliente OAuth.',
+            ProvedorSocial::Github   => 'github.com/settings/developers → OAuth Apps → New OAuth App. O kit pede o escopo user:email, e é ele que permite confirmar que o e-mail está verificado.',
+            ProvedorSocial::LinkedIn => 'linkedin.com/developers → Create app → Products → Sign In with LinkedIn using OpenID Connect. Sem esse produto, o provedor não devolve email_verified.',
+            ProvedorSocial::X        => 'developer.x.com → Projects & Apps → User authentication settings, tipo Web App com OAuth 2.0. Pedir o e-mail exige users.email, e o X só devolve endereço que ele já confirmou.',
+        };
+    }
+
+    /** O caminho relativo que vive em `config/services.php` — cadastre-o absoluto no provedor. */
+    private function uriDeRedirecionamento(ProvedorSocial $provedor): string
+    {
+        return "/auth/{$provedor->value}/callback";
     }
 
     private function abaKit(): Tab

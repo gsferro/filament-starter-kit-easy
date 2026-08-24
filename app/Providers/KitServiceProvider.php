@@ -382,14 +382,18 @@ class KitServiceProvider extends ServiceProvider
      * tela de todo painel. Ver ADR-05.
      *
      * Duas registracoes e nao um blade com dois blocos: as duas superficies tem condicoes
-     * independentes — o botao depende das credenciais, o rodape do texto. A ordem de render e
-     * a ordem de registro, entao o botao vem antes do rodape.
+     * independentes — os botoes dependem das credenciais de cada provedor, o rodape do texto. A
+     * ordem de render e a ordem de registro, entao os botoes vem antes do rodape.
+     *
+     * A view dos botoes e UMA para os quatro provedores: ela percorre
+     * `ConfiguracaoDoLogin::disponiveis()`. Provedor novo aparece na tela de login sem tocar
+     * neste metodo. Ver ADR-08 da wiki mais-provedores-sociais.
      */
     protected function configureTelaDeLogin(): void
     {
         FilamentView::registerRenderHook(
             PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
-            fn (): string => view('filament.auth.botao-google')->render(),
+            fn (): string => view('filament.auth.botoes-sociais')->render(),
         );
 
         FilamentView::registerRenderHook(

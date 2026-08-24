@@ -1,7 +1,7 @@
 <?php
 
 use App\Filament\Pages\BoasVindas;
-use App\Http\Controllers\Auth\LoginComGoogleController;
+use App\Http\Controllers\Auth\LoginSocialController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,30 +25,42 @@ Route::get('/', BoasVindas::class)
 
 /*
 |--------------------------------------------------------------------------
-| Login social com Google (laravel/socialite)
+| Login social (laravel/socialite) — quatro provedores, duas rotas
 |--------------------------------------------------------------------------
-| A segunda e a terceira rotas PÚBLICAS do kit — antes desta feature havia
-| só a de boas-vindas acima.
+| As rotas PÚBLICAS do kit, além da de boas-vindas acima.
 |
-| O caminho do callback é literal do requisito e é o MESMO valor que está em
-| `config/services.php` → `services.google.redirect`. Cadastre-o, absoluto,
-| como URI de redirecionamento autorizada no console do Google.
+| `{provedor}` é tipado como `App\Support\ProvedorSocial` no controller, e é isso
+| que faz o **implicit enum binding** do Laravel devolver 404 automático para
+| qualquer segmento que não seja caso do enum. A lista branca é o enum — não é
+| código que alguém escreve e mantém em sincronia com ele. É por isso que o
+| ADR-02 desta wiki reabriu a decisão do ADR-10 da wiki do Google, que havia
+| recusado a rota genérica justamente pelo custo de validar o parâmetro.
 |
-| As rotas são registradas SEMPRE, e quem as tira do ar é o `abort_unless`
-| do controller. Registrar dentro de um `if` faria `route('auth.google.*')`
-| deixar de existir — estourando `RouteNotFoundException` em `route:list` e
-| em qualquer `route:cache` feito com o .env de outro momento — e faria o
-| comportamento depender da ordem entre carregar config e carregar rotas.
-| A barreira fica no controller de propósito: um lugar, duas rotas. ADR-03.
+| As URIs resultantes são LITERAIS e não mudaram: /auth/google/callback continua
+| /auth/google/callback. Os irmãos novos são /auth/github/*,
+| /auth/linkedin-openid/* e /auth/x/*. Cadastre cada um, absoluto, como URI de
+| redirecionamento autorizada no console do provedor correspondente — os READMEs
+| dizem onde, provedor por provedor. O caminho vive em `config/services.php` e é
+| relativo de propósito, para acompanhar o APP_URL de cada ambiente.
 |
-| `throttle:10,1`: superfície pública que dispara chamada HTTP externa. Dez
-| por minuto por IP é folgado para uma pessoa e apertado para um script.
+| As rotas são registradas SEMPRE, e quem tira um provedor do ar é o
+| `abort_unless` do controller, por provedor. Registrar dentro de um `if` faria
+| `route('auth.social.*')` deixar de existir — estourando `RouteNotFoundException`
+| em `route:list` e em qualquer `route:cache` feito com o .env de outro momento —
+| e faria o comportamento depender da ordem entre carregar config e carregar
+| rotas. A barreira fica no controller de propósito: um lugar, duas rotas, quatro
+| provedores. ADR-03 da wiki login-social-google.
+|
+| `throttle:10,1`: superfície pública que dispara chamada HTTP externa. Dez por
+| minuto por IP é folgado para uma pessoa e apertado para um script. O limite é
+| do GRUPO, então ele soma os quatro provedores — quem alterna quatro provedores
+| em um minuto é script, que é exatamente quem o limite existe para conter.
 */
 
 Route::middleware('throttle:10,1')
-    ->prefix('auth/google')
-    ->name('auth.google.')
+    ->prefix('auth/{provedor}')
+    ->name('auth.social.')
     ->group(function (): void {
-        Route::get('redirect', [LoginComGoogleController::class, 'redirecionar'])->name('redirect');
-        Route::get('callback', [LoginComGoogleController::class, 'retorno'])->name('callback');
+        Route::get('redirect', [LoginSocialController::class, 'redirecionar'])->name('redirect');
+        Route::get('callback', [LoginSocialController::class, 'retorno'])->name('callback');
     });
