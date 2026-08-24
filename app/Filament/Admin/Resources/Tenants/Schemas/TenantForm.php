@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Tenants\Schemas;
 
+use App\Support\RegistroAberto;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
@@ -51,6 +52,24 @@ class TenantForm
                             ->label('Ativo')
                             ->helperText('Inativo some do seletor de todos os usuários, sem perder dados.')
                             ->default(true)
+                            ->columnSpanFull(),
+
+                        /*
+                         * Registro aberto DESTA organização — aqui, ao lado do `ativo`, e não
+                         * numa `Section` própria: são dois booleanos da mesma natureza ("está
+                         * no ar" / "aceita cadastro"), e uma seção inteira para um campo é
+                         * cerimônia.
+                         *
+                         * Só aparece quando a instalação liberou o registro, porque o requisito
+                         * amarra as duas condições ("se tiver um tenancy, **e** o register
+                         * estiver liberado"). Toggle que não pode ter efeito é pior que toggle
+                         * ausente: ele promete um controle que não existe.
+                         */
+                        Toggle::make('registro_habilitado')
+                            ->label('Aceita cadastro público')
+                            ->helperText('Libera /app/register?org='.'{slug}'.' para quem tiver o link. A pessoa nasce nesta organização, com o perfil básico do painel de negócio — e, se a instalação exigir aprovação, fica pendente até alguém liberar.')
+                            ->default(false)
+                            ->visible(fn (): bool => RegistroAberto::habilitado())
                             ->columnSpanFull(),
                     ]),
 

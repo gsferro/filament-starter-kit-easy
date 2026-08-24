@@ -5,6 +5,7 @@ namespace App\Filament\App\Resources\Users;
 use App\Filament\App\Resources\Users\Pages\CreateUser;
 use App\Filament\App\Resources\Users\Pages\EditUser;
 use App\Filament\App\Resources\Users\Pages\ListUsers;
+use App\Filament\Concerns\AprovacaoDeCadastro;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\Tenant;
 use App\Models\User;
@@ -39,6 +40,7 @@ use UnitEnum;
  */
 class UserResource extends Resource
 {
+    use AprovacaoDeCadastro;
     use BadgeContagemNavegacao;
 
     protected static ?string $model = User::class;
@@ -184,7 +186,9 @@ class UserResource extends Resource
                 ->multiple()
                 ->preload()
                 ->searchable()
-                ->required()
+                // Obrigatório, MENOS para cadastro pendente de aprovação, que não tem papel por
+                // desenho. Ver `AprovacaoDeCadastro::papelObrigatorioNaEdicao()`.
+                ->required(self::papelObrigatorioNaEdicao())
                 ->helperText('Os papéis valem apenas dentro desta '.mb_strtolower((string) config('kit.tenancy.label', 'Organização')).'.')
                 ->saveRelationshipsUsing(self::gravarPapeis(...)),
 
@@ -218,10 +222,15 @@ class UserResource extends Resource
                 TextColumn::make('roles.name')->label('Papéis')->badge()
                     ->formatStateUsing(fn (?string $state): string => Papeis::rotulo($state)),
                 TextColumn::make('created_at')->label('Criado em')->dateTime('d/m/Y H:i')->sortable(),
+                self::colunaDeSituacao(),
+            ])
+            ->filters([
+                self::filtroDePendentes(),
             ])
             // Sem Impersonate (é privilégio do master_global) e sem DeleteAction nem
             // DeleteBulkAction (ADR-08) — ver canDelete() acima.
             ->recordActions([
+                self::acaoDeAprovar(),
                 EditAction::make(),
             ])
             ->emptyStateHeading('Nenhum usuário nesta '.mb_strtolower((string) config('kit.tenancy.label', 'Organização')))
