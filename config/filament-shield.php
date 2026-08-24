@@ -31,14 +31,9 @@ return [
             'resources'          => true,
 
             /*
-             * Ligada porque o kit USA `custom_permissions` — ver o bloco no fim deste arquivo.
-             * Desligá-la deixa `Aceitar:Convite` e `Recusar:Convite` existindo no banco e
-             * **invisíveis** na tela de papéis: ninguém consegue conceder nem revogar, e as duas
-             * Actions da caixa de convites recebidos ficam presas no que o seeder decidiu.
-             *
-             * A aba é montada pelo vendor
-             * (`HasShieldFormComponents::getTabFormComponentForCustomPermissions()`), então ligar
-             * aqui basta — nada em `app/Filament/Admin/Resources/Roles/` precisa mudar.
+             * Ligada porque o kit USA `custom_permissions` (bloco no fim deste arquivo).
+             * Desligada, `Aceitar:Convite` e `Recusar:Convite` existem no banco e ficam
+             * INVISÍVEIS na tela de papéis — ninguém concede nem revoga, sem erro nenhum.
              */
             'custom_permissions' => true,
         ],

@@ -146,6 +146,44 @@ são `pest-plugin-browser`.
 | 8 | não construir o mapa de painel de custom permission (YAGNI: hoje o vazamento é inócuo) | **recusada** | o mecanismo é o over-grant silencioso que `.ai/rules/filament.md` nomeia como a falha mais cara desta parte do kit, e fechar custa ~15 linhas num arquivo que já existe. Ponytail não corta segurança |
 | 9 | não escrever CT-24 (caso que afirma a ausência de cobertura) | **recusada** | sem ele, a "correção" da inconsistência é descobrir em produção o `LogicException` de plugin não registrado |
 
+### Auditoria Ponytail do DIFF (step 7) — sub-agente independente
+
+Rodada sobre `git diff origin/main...HEAD -- app/ config/ database/ tests/`, com os cortes já
+rejeitados passados como contexto para não voltarem.
+
+**Resultado estrutural: zero achados.** Nenhuma abstração de uso único, nenhum hook morto, nenhuma
+reimplementação de coisa do vendor, nenhum teste duplicando o que outro já mata, nenhuma linha de
+dataset não-discriminante. Os 9 achados foram todos do mesmo eixo: **comentário longo**.
+
+| # | Achado | Aplicado? |
+|---|---|---|
+| 1 | `ListAiRuns.php` — 27 linhas de comentário para 3 de código | **sim**, cortado para 6. O conteúdo era a hipótese rejeitada, que já está inteira em `## Desvios` e em QA-02 — inline era terceira cópia. Ficou o fato que carrega a decisão (`AiRunResource.php:81-84` é o mesmo gate) e o ponteiro |
+| 2 | `config/filament-shield.php` — 14 linhas numa chave booleana | **sim**, cortado para 5. Ficou a consequência ("existe no banco e ninguém consegue marcar"), que é o que alguém a ponto de desligar a flag precisa ler |
+| 3-9 | os comentários de `ConvitesTable`, `ConvitesRecebidos`, `UsersRelationManager` e os dois blocos grandes de `config/filament-shield.php` | **recusados**, com motivo abaixo |
+
+**Por que os sete foram recusados.** Duas razões, e nenhuma é gosto.
+
+A primeira é convenção: o `CLAUDE.md` manda seguir a convenção existente, e neste repositório
+comentar densamente o *porquê* É a convenção — `app/Support/Paineis.php` abre com 40 linhas de
+docblock, os métodos do `PapeisSeeder` têm 25 cada, e o `config/filament-shield.php` **já** tinha um
+comentário de 15 linhas em `policies.methods` antes desta feature. Medir só a razão
+comentário/código mede o arquivo contra o Ponytail e não contra o projeto.
+
+A segunda é o conteúdo. Cada um dos sete encoda uma **armadilha silenciosa**, não uma decisão de
+desenho:
+
+- `ConvitesTable` e `ConvitesRecebidos`: por que a permissão **não substitui** `Convite::exigirDono()`.
+  `.ai/rules/filament.md` §2 diz que o raciocínio que produz o furo é "a tabela já filtra, então
+  conferir de novo é redundância" — e o lugar onde alguém a ponto de apagar a linha lê é ao lado dela.
+- `UsersRelationManager`: a citação do vendor de que Action **nativa** de RelationManager não
+  autoriza nada. É o fato mais caro da entrega inteira.
+- `resources.manage` e `custom_permissions`: a regra de escolha entre os dois mecanismos em uma
+  frase, e o vazamento de painel que `.ai/rules/filament.md` §4 chama de a falha mais cara desta
+  parte do kit.
+
+O Ponytail não corta segurança, e comentário que impede over-grant silencioso é dessa família. O
+critério aplicado foi: **corta o que só repete a wiki; fica o que impede alguém de apagar a linha.**
+
 ### Revisão adversarial do `04` (step 6 da `feature-test-design`)
 
 Delegada a sub-agente que não derivou os cenários e recebeu **só** o `00` e o `04` — nunca o PRD,
