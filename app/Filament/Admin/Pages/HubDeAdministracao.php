@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Admin\Pages;
 
 use App\Filament\Concerns\DescobreCardsDoPainel;
+use App\Filament\Concerns\ExigePermissaoDaTela;
 use BackedEnum;
 use Filament\Pages\Dashboard;
 use Harvirsidhu\FilamentCards\CardGroup;
@@ -22,6 +23,7 @@ use Harvirsidhu\FilamentCards\Filament\Pages\CardsPage;
 class HubDeAdministracao extends CardsPage
 {
     use DescobreCardsDoPainel;
+    use ExigePermissaoDaTela;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-squares-2x2';
 
@@ -55,20 +57,26 @@ class HubDeAdministracao extends CardsPage
     /**
      * Some do menu, da URL e da busca ⌘K quando `kit.hub` está desligado — que é o default do kit.
      *
-     * **Só `canAccess()`, sem `shouldRegisterNavigation()`.** Em Page do Filament 5 um método basta
-     * para os três efeitos: `Page::registerNavigationItems()` já retorna cedo quando `canAccess()`
-     * é falso (`vendor/filament/filament/src/Pages/Page.php:133-135`), e a categoria
+     * **Este método é o hook de `ExigePermissaoDaTela`, não o `canAccess()`.** O trait publica
+     * `canAccess()` como `permissão && regraLocalDeAcesso()`, e sobrescrever `canAccess()` aqui
+     * desligaria a permissão **em silêncio** — método de classe vence método de trait, sem erro
+     * nenhum. A flag e a permissão são ortogonais e valem as duas (ADR-06 da wiki
+     * `permissoes-de-telas-e-acoes`): com a flag desligada nem o `master_global` entra, porque ele
+     * vence permissão pelo `Gate::before` e não vence config.
+     *
+     * **Um método só, sem `shouldRegisterNavigation()` à mão.** Em Page do Filament 5 o
+     * `canAccess()` basta para os três efeitos: `Page::registerNavigationItems()` retorna cedo
+     * quando ele é falso (`vendor/filament/filament/src/Pages/Page.php:133-135`), e a categoria
      * `PagesAutorizadasCategory` do Spotlight consulta o mesmo método. Em RESOURCE são dois — é por
-     * isso que `ProjetoResource` sobrescreve os dois e esta Page, um. Acrescentar o segundo aqui é
-     * ruído que sugere uma barreira que não existe.
+     * isso que `ProjetoResource` sobrescreve os dois e esta Page, um.
      *
      * A rota continua registrada e responde 403, com a tela branda do filament-sentinel. Tirar a
      * rota exigiria recortar o `discoverPages()` do provider, e aí o Shield deixaria de gerar
      * `View:HubDeAdministracao` — ver ADR-02 da wiki `hub-de-cards-opcional`.
      */
-    public static function canAccess(): bool
+    protected static function regraLocalDeAcesso(): bool
     {
-        return (bool) config('kit.hub') && parent::canAccess();
+        return (bool) config('kit.hub');
     }
 
     /**

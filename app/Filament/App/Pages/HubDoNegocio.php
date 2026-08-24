@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\App\Pages;
 
 use App\Filament\Concerns\DescobreCardsDoPainel;
+use App\Filament\Concerns\ExigePermissaoDaTela;
 use BackedEnum;
 use Filament\Pages\Dashboard;
 use Harvirsidhu\FilamentCards\CardGroup;
@@ -35,6 +36,7 @@ use Harvirsidhu\FilamentCards\Filament\Pages\CardsPage;
 class HubDoNegocio extends CardsPage
 {
     use DescobreCardsDoPainel;
+    use ExigePermissaoDaTela;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-squares-2x2';
 
@@ -64,12 +66,13 @@ class HubDoNegocio extends CardsPage
     /**
      * Some do menu, da URL e da busca ⌘K quando `kit.hub` está desligado — que é o default do kit.
      *
-     * Um método só, e não dois: o motivo está no docblock do mesmo método em
-     * `App\Filament\Admin\Pages\HubDeAdministracao`.
+     * Hook de `ExigePermissaoDaTela`, e não `canAccess()`: sobrescrever o `canAccess()` aqui
+     * desligaria a permissão em silêncio. Um método só, e não dois — o motivo está no docblock do
+     * mesmo método em `App\Filament\Admin\Pages\HubDeAdministracao`.
      */
-    public static function canAccess(): bool
+    protected static function regraLocalDeAcesso(): bool
     {
-        return (bool) config('kit.hub') && parent::canAccess();
+        return (bool) config('kit.hub');
     }
 
     /**
