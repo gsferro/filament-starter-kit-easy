@@ -344,56 +344,65 @@ extração de closure inline ou têm mais de um chamador.
 
 ## Candidatos a Project Rule (PROPOSTA — decisão do usuário)
 
-A gravação é do usuário; o agente principal a executa. Nada foi escrito em `.ai/rules/`.
+Nada foi escrito em `.ai/rules/`. O teto da skill é **3 candidatos**, porque cada rule é imposto
+permanente de contexto em todo arquivo que casa com o glob. Os três abaixo passaram os quatro gates
+(durável / escopável por path / não-inferível / não-redundante); o que não passou está listado
+depois, com o motivo.
 
-1. **`Role` conta pessoas, não linhas de pivot** — `glob: app/Filament/Admin/Resources/Roles/**, app/Models/Role.php`
-   Contagem ou listagem de usuários de um papel precisa de `distinct`: com `permission.teams`, a PK
-   de `model_has_roles` inclui `team_id`, então a mesma pessoa com o mesmo papel em duas
-   organizações são duas linhas, e `count(*)` mostra 2 para uma pessoa.
-   Evidência: ADR-04 + `create_permission_tables.php:88-93` + `spatie/.../Models/Role.php:100-109`.
-   Gates: durável ✅ | escopável ✅ | não-inferível ✅ | não-redundante ✅
+### 1 — Escreva pelo model CONFIGURADO, não pela classe do vendor
 
-2. **Título de registro é rótulo, não chave** — `glob: app/Filament/**/Resources/**`
-   Resource cujo `$recordTitleAttribute` aponta para uma coluna que é **chave** (`roles.name`,
-   qualquer slug/enum) precisa sobrescrever `getRecordTitle()`. O default devolve o atributo cru
-   (`Resource/Concerns/HasLabels.php:105-108`) e é ele que alimenta breadcrumb, título da página de
-   edição e busca global — três telas mostrando a chave sem nada acusar.
-   Gates: durável ✅ | escopável ✅ | não-inferível ✅ | não-redundante ✅
+- **Glob**: `app/Models/**`, `database/seeders/**`, `app/Filament/**`
+- **Nota**: quando o kit publica um model sobre um de pacote (`App\Models\Role` sobre
+  `Spatie\Permission\Models\Role`, e o mesmo vale para qualquer `config('pacote.models.x')`), as
+  duas classes escrevem na **mesma tabela** e os hooks de model são **por classe**. Escrever pela
+  do vendor pula trait, observer e cast do model do kit — sem erro nenhum. Foi assim que o
+  `PapeisSeeder` ia deixar todo papel semeado com `uuid` nulo: rota que não resolve, tela 404,
+  `EditAction` gerando URL sem parâmetro, e o seeder terminando verde. Leitura pela classe do
+  vendor é inofensiva; **escrita não é**. Ao varrer, separe as duas.
+- **Evidência**: `03-progresso.md` → Notas de Implementação, item 1; `database/seeders/PapeisSeeder.php`;
+  `tests/Kit/UuidDoPapelTest.php` ("preenche o uuid dos papeis que ja existiam")
+- **Gates**: durável ✅ | escopável ✅ | não-inferível ✅ (nada no arquivo do seeder sugere que a
+  classe importada é a errada) | não-redundante ✅
+- **Por que é o mais forte dos três**: custou um defeito real nesta feature, o modo de falhar é
+  silencioso, e generaliza para media library, exceções e qualquer outro model publicado.
 
-3. **`#[Override]` só para método de classe pai** — já está registrado *no arquivo*
-   (`RoleResource.php:190-191`), não em rule. Proposta: **não** virar rule — é armadilha de um
-   arquivo, e o comentário no ponto certo é mais eficaz que um imposto de contexto em
-   `app/Filament/**`. Registrado aqui como candidato **recusado pelo próprio agente**, para não
-   parecer omissão.
+### 2 — Título de registro é rótulo, nunca a chave
 
-## Quality Gate (step 8)
+- **Glob**: `app/Filament/**/Resources/**`
+- **Nota**: Resource cujo `$recordTitleAttribute` aponta para uma coluna que é **chave** (nome de
+  papel, slug, enum) precisa sobrescrever `getRecordTitle()`. O default devolve o atributo cru
+  (`vendor/filament/filament/src/Resources/Resource/Concerns/HasLabels.php:105-108`) e alimenta
+  **três** superfícies de uma vez: breadcrumb, título da tela de edição e busca global. Trate o
+  ramo `$record === null` — a busca global chama com nulo.
+- **Evidência**: ADR-01/RQ-03 desta wiki; `app/Filament/Admin/Resources/Roles/RoleResource.php`
+- **Gates**: durável ✅ | escopável ✅ | não-inferível ✅ | não-redundante ✅
 
-Executado por agente independente, que não escreveu o código nem a wiki. Relatório completo em
-`06-relatorio-qa.md`.
+### 3 — Emenda a `.ai/rules/testes.md`, não rule nova
 
-**Veredito: APROVADO COM DÉBITO.** Um ciclo, sem reciclagem — nenhum achado exigiu reimplementar um
-passo do PRD.
+A skill diz que **atualizar rule existente é sempre preferível a criar uma nova**, e esta é
+exatamente uma frase a mais na rule que já existe (*"Uma tela aberta não é uma tela que grava"* /
+*"Teste de componente de painel"*):
 
-| Achado | Severidade | Destino | Situação |
-|---|---|---|---|
-| 1 — chave crua na confirmação do aceite de convite | média | implementação | **corrigido**, com caso próprio |
-| 2 — chaves cruas no bloco de diagnóstico do 403 | baixa | não-defeito | escopo declarado no `00` |
-| 3 — RQ-09: três rotas de vendor ainda por `id` | média | especificação | dívida declarada (Desvios, item 10) |
-| 4 — `acaoDePapeis()` sem `->authorize()`, e ela CONCEDE papel | **alta** | fora desta wiki | → `feat/permissoes-de-telas-e-acoes` |
-| 5 — `ConvitesTable::reenviar` sem `->authorize()` | baixa | fora desta wiki | → `feat/permissoes-de-telas-e-acoes` |
-| 6, 7, 8 — três docblocks falsos | baixa | teste / implementação | **corrigidos** |
-| 9 — CT-12 provava só o status HTTP | baixa | teste | **corrigido** |
-| 10, 11 — dois oráculos fracos | baixa | não-defeito | lacuna já declarada no `04` |
+> **Uma página aberta não é um widget renderizado.** `CanBeLazy::$isLazy` é `true` por default
+> (`vendor/filament/support/src/Concerns/CanBeLazy.php:9`), então `GET /painel` devolve o
+> placeholder Livewire do widget, não o conteúdo. Widget se testa por
+> `Livewire::test(SeuWidget::class)`. É a irmã do `->loadTable()`, e o modo de falhar é o mesmo:
+> asserção de **ausência** fica verde medindo uma página sem widget nenhum. Sempre em par com a
+> asserção positiva.
 
-**O achado 4 é o mais grave do relatório e não é desta entrega**: o `UsersRelationManager` deixa
-quem tem apenas `View:Tenant` conceder papel numa organização, porque
-`RelationManager::isReadOnly()` só neutraliza as actions padrão
-(`vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php:220-237`). Sinalizado
-para a fila.
+- **Evidência**: `03-progresso.md` → Retrospectiva; `tests/Kit/ExibicaoDePapeisTest.php` (CT-09,
+  que nasceu como visita HTTP e falhou por isso)
+- **Gates**: durável ✅ | escopável ✅ (`tests/**`) | não-inferível ✅ | não-redundante ✅ **como
+  emenda** — como rule nova seria redundante com o parágrafo vizinho
 
-**O que o gate não cobriu**: aparência (as duas lacunas de oráculo declaradas), mutation testing
-(sem PCOV no ambiente) e a regressão contra `feat/permissoes-de-telas-e-acoes`, que mergeia antes
-desta e toca os mesmos quatro arquivos — só observável num segundo rebase.
+### Recusados pelo próprio agente
+
+| Candidato | Por que não |
+|---|---|
+| Contagem de usuários de papel precisa de `distinct` (ADR-04) | verdadeiro e caro de redescobrir, mas o escopo é **uma coluna de uma tela**. O comentário no ponto (12 linhas, com o `file:line` da migration e da relação do spatie) resolve melhor que um imposto de contexto em `app/Filament/Admin/Resources/Roles/**`. Se aparecer um segundo lugar que conte papéis, promova |
+| `#[Override]` só vale para método de classe pai | é armadilha de **um** arquivo, e o comentário já está no ponto exato (`RoleResource.php:190-191`, explicando que o atributo aborta o request). Rule aqui seria imposto em `app/Filament/**` por um caso |
+| `Select` do Filament valida `in:` sozinho / Action não consulta policy / widget é lazy | são três instâncias de um padrão ("o componente parece ser a barreira e não é"), mas duas já estão cobertas: `->authorize()` está em `.ai/rules/filament.md` e a de widget virou o candidato 3. A do `Select` é fato de vendor, não convenção do projeto — vive no comentário do campo |
+| RQ-09 como teste de arquitetura (`pest --arch`) proibindo `id` em route key | o gate mostrou que os três casos restantes são models de **vendor**, então a rule nasceria com três exceções declaradas — e rule que começa com lista de exceção não é enforço, é prosa |
 
 ## Retrospectiva
 
