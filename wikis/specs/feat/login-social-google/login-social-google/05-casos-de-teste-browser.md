@@ -146,8 +146,13 @@ prova — que o botão e o rodapé estão de fato **visíveis**.
 | 5 | botão ausente quando falta uma credencial | idem, com `client_secret` **vazio** (não ausente) | ✅ | CT-01 linha 3, CT-02 linhas 3–4 |
 | 6 | rodapé ausente quando não há texto | idem, e também com **só espaços** | ✅ | CT-14 linhas 2–3 |
 
-**Visibilidade renderizada** (o que só o navegador prova): CT-B01 — ver o resultado da execução
-registrado no `03-progresso.md` → `## Verificação Final`.
+**Visibilidade renderizada** (o que só o navegador prova): CT-B01 **verde** — 7 asserções em
+10,5 s. `assertVisible` no campo de senha, no botão e no rodapé, `assertAttributeContains` no
+`href` e `assertSeeIn` no texto do rodapé, mais o console limpo. Ou seja: o botão e o rodapé não
+estão só no DOM, estão na tela.
+
+A suíte de navegador inteira: **42 casos, 37 verdes, 5 pulados** (os de captura de arte, que
+dependem de `KIT_ART=1`), **0 vermelhos** — o cenário novo não derrubou nenhum vizinho.
 
 ### Divergências para o `03-progresso.md`
 
