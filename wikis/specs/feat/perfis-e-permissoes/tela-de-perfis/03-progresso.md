@@ -404,6 +404,75 @@ exatamente uma frase a mais na rule que já existe (*"Uma tela aberta não é um
 | `Select` do Filament valida `in:` sozinho / Action não consulta policy / widget é lazy | são três instâncias de um padrão ("o componente parece ser a barreira e não é"), mas duas já estão cobertas: `->authorize()` está em `.ai/rules/filament.md` e a de widget virou o candidato 3. A do `Select` é fato de vendor, não convenção do projeto — vive no comentário do campo |
 | RQ-09 como teste de arquitetura (`pest --arch`) proibindo `id` em route key | o gate mostrou que os três casos restantes são models de **vendor**, então a rule nasceria com três exceções declaradas — e rule que começa com lista de exceção não é enforço, é prosa |
 
+## Rebases sobre a `main`
+
+A feature nasceu em `eb9a589` e foi rebaseada **três** vezes enquanto a fila andava. Nenhum rebase
+gerou conflito de merge, e isso não é o mesmo que nenhum rebase gerar risco: nos três casos os dois
+lados tocaram o **mesmo arquivo**, e a conferência foi manual, arquivo por arquivo.
+
+| Para | O que entrou | Sobreposição com esta branch | Verificado |
+|---|---|---|---|
+| `285e8c2` | #21 auth designer (mexeu nos três PanelProviders), #22 página de boas-vindas | `AdminPanelProvider.php` — o `->emailVerification(...)` deles fica logo antes do `FilamentShieldPlugin::make()` que esta branch configurou | os dois blocos presentes: `emailVerification` nas duas posições + os três labels do plugin |
+| `0d423dd` | #23 `env('X') ?: 'default'` em `config/kit.php` | nenhuma — esta branch não toca `config/kit.php`, então a varredura de `tests/Kit/TextoDoEnvTest.php` não a alcança | — |
+| `33e4a30` | #24 permissões de tela e action, tag `v0.18.10` | **cinco arquivos**: `PapeisSeeder`, os dois widgets do `/admin`, `UsersRelationManager` e `ConvitesRecebidos` | ver abaixo |
+
+No terceiro, os dois lados sobreviveram em todos os cinco:
+
+- `PapeisSeeder`: o `use App\Models\Role` desta branch (com o docblock que explica por que não é a
+  classe do vendor) **e** as seis permissões de Action recortadas por painel.
+- `UsuariosPorPapel` e `UltimosUsuariosCadastrados`: o `Papeis::rotulo()` desta branch **e** o
+  `HasWidgetShield` deles.
+- `UsersRelationManager`: o `mapWithKeys` com rótulo desta branch **e** os três `->authorize()`
+  deles — inclusive o `AtribuirPapeis:Tenant` na `acaoDePapeis`, que era o **achado 4** do quality
+  gate desta wiki. Fechou na branch certa.
+- `ConvitesRecebidos`: o `Papeis::rotulo()` na `modalDescription` desta branch **e** os
+  `->authorize('Aceitar:Convite')` / `Recusar:Convite` deles.
+
+> Nota de método: a primeira conferência do `PapeisSeeder` deu **falso negativo** — o grep do Git
+> Bash devolveu vazio para o `use App\Models\Role` e por um instante pareceu que o rebase tinha
+> comido este lado. É exatamente o que a nota de memória do projeto registra: *pipe vazio de grep
+> não prova ausência*. A confirmação veio de um `sed -n '1,20p'` no arquivo.
+
+## Débito recebido de outra branch
+
+`feat/permissoes-de-telas-e-acoes` mergeou antes desta e deixou **QA-03** aberto: o cenário que
+marca o checkbox em `/admin/shield/roles`, salva, e prova que uma tela passa de 403 para 200. Ele
+não foi escrito lá para não conflitar com a reescrita do `RoleResource` que acontece aqui.
+
+Fechado nesta branch como **CT-23** (`tests/Kit/TelaDePapeisTest.php`). É o único caso da suíte que
+liga as duas metades do ciclo de autorização — ver `04-casos-de-teste.md` → CT-23.
+
+## Quality Gate (step 8)
+
+Executado por agente independente, que não escreveu o código nem a wiki. Relatório completo em
+`06-relatorio-qa.md`.
+
+**Veredito: APROVADO COM DÉBITO.** Um ciclo, sem reciclagem — nenhum achado exigiu reimplementar um
+passo do PRD.
+
+| Achado | Severidade | Destino | Situação |
+|---|---|---|---|
+| 1 — chave crua na confirmação do aceite de convite | média | implementação | **corrigido**, com caso próprio |
+| 2 — chaves cruas no bloco de diagnóstico do 403 | baixa | não-defeito | escopo declarado no `00` |
+| 3 — RQ-09: três rotas de vendor ainda por `id` | média | especificação | dívida declarada (Desvios, item 10) |
+| 4 — `acaoDePapeis()` sem `->authorize()`, e ela CONCEDE papel | **alta** | fora desta wiki | ✅ **fechado** por `feat/permissoes-de-telas-e-acoes` (`->authorize('AtribuirPapeis:Tenant')`), confirmado no rebase para `33e4a30` |
+| 5 — `ConvitesTable::reenviar` sem `->authorize()` | baixa | fora desta wiki | ✅ **fechado** pela mesma branch |
+| 6, 7, 8 — três docblocks falsos | baixa | teste / implementação | **corrigidos** |
+| 9 — CT-12 provava só o status HTTP | baixa | teste | **corrigido** |
+| 10, 11 — dois oráculos fracos | baixa | não-defeito | lacuna já declarada no `04` |
+
+**O achado 4 era o mais grave do relatório e não era desta entrega**: o `UsersRelationManager`
+deixava quem tem apenas `View:Tenant` conceder papel numa organização, porque
+`RelationManager::isReadOnly()` só neutraliza as actions padrão
+(`vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php:220-237`). Foi
+sinalizado para a fila e voltou corrigido.
+
+**O que o gate não cobriu**: aparência (as duas lacunas de oráculo declaradas) e mutation testing
+(sem PCOV no ambiente). A terceira lacuna que ele declarou — a regressão contra
+`feat/permissoes-de-telas-e-acoes` — **foi fechada**: aquela branch mergeou, o rebase para
+`33e4a30` foi feito, os cinco arquivos sobrepostos foram conferidos um a um e a suíte inteira rodou
+verde por cima.
+
 ## Retrospectiva
 
 - **Funcionou bem**: a revisão profunda (step 5) pagou por si sozinha. Seis das sete premissas

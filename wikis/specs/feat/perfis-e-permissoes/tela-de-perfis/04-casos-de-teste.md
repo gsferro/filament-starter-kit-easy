@@ -633,6 +633,7 @@ implementação que devolvesse `['web']` fixo — que é exatamente o mutante M2
 | CT-18 | as opções de guard vêm da configuração | R9 | EP | Kit (componente) | `tests/Kit/TelaDePapeisTest.php` | R9/M2, M3 |
 | CT-19 | guard fora da lista é recusado | R9 | EP inválida | Kit (componente) | `tests/Kit/TelaDePapeisTest.php` | R9/M1, M5 |
 | CT-20 | guard vazio é recusado | R9 | EP inválida | Kit (componente) | `tests/Kit/TelaDePapeisTest.php` | R9/M4 |
+| CT-23 | marcar a permissão na tela de papéis destrava a tela protegida (403 → 200) | R6 | rastreio de efeito ponta a ponta | Kit (componente + HTTP) | `tests/Kit/TelaDePapeisTest.php` | R6/M1, M3 e a ligação que nenhum outro caso cobre |
 
 CT-B01 e CT-B02 em `05-casos-de-teste-browser.md`.
 
@@ -688,6 +689,27 @@ edicao…") e, logo depois, **CT-11**, que é o guarda permanente: ele reprova q
 que crie papel sem `uuid`, seja qual for a classe. CT-11 nasceu de uma frase sobre o requisito
 ("nunca id na url" ⇒ "papel que já existia recebe uuid"), não sobre o plano — um caso derivado do
 PRD teria testado a migration, que estava certa.
+
+### CT-23 — o único caso que fecha o ciclo inteiro
+
+Débito herdado de `feat/permissoes-de-telas-e-acoes` (QA-03 do `03-progresso.md` daquela wiki): o
+gate daquela branch deixou o cenário pendente **de propósito**, para não conflitar com a reescrita
+do `RoleResource` que acontece aqui. Como esta branch é a dona do diretório, o caso nasceu aqui.
+
+O que ele prova e nenhum outro prova: que a tela de papéis grava a permissão, o `spatie` recarrega,
+a policy responde diferente e o HTTP passa de **403 para 200**. Cada metade já tinha cobertura
+própria — CT-16 prova que o checkbox move o contador, e a branch paralela prova que a policy barra.
+A **ligação** entre as duas não tinha caso: um `syncPermissions()` gravando na pivot errada, ou uma
+chave de `CheckboxList` que não fosse o FQCN do Resource, passaria por todos os outros casos desta
+feature.
+
+Duas decisões de arranjo que fazem o caso valer:
+
+- **o 403 ANTES não é cerimônia.** Sem ele, um papel que já tivesse a permissão por acidente — ou
+  uma policy devolvendo `true` para todo mundo — faria o 200 depois parecer prova.
+- **`forgetCachedPermissions()` + `unsetRelation()` entre as duas metades.** O `PermissionRegistrar`
+  e o Eloquent cacheiam dentro do mesmo processo; num request real o cache nasce limpo, e sem isso o
+  caso mediria o cache em vez do banco.
 
 ### Índice de cenários — arquivos reais
 
