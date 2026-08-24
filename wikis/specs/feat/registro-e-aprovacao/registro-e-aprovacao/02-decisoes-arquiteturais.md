@@ -275,7 +275,7 @@ existe.**
 ### Por que o convite não dispara e-mail — o fato do vendor
 
 `Register::sendEmailVerificationNotification()`
-(`vendor/filament/filament/src/Auth/Pages/Register.php:157-176`) retorna cedo em dois casos:
+(`vendor/filament/filament/src/Auth/Pages/Register.php:161-180`) retorna cedo em dois casos:
 `! $user instanceof MustVerifyEmail` **e** `$user->hasVerifiedEmail()`.
 
 `Convite::aceitar()` já grava `email_verified_at` antes de devolver o usuário
@@ -321,7 +321,7 @@ exatamente o padrão que `.ai/rules/specs.md` manda vigiar.
 
 1. **Entregar a opção desligada com justificativa** ("não dá para condicionar sem quebrar o
    convite") — recusado porque a premissa é falsa. Foi verificada lendo
-   `Register.php:157-176` e `Convite.php:591`, não presumida.
+   `Register.php:161-180` e `Convite.php:591`, não presumida.
 2. **Sobrescrever `sendEmailVerificationNotification()` na `TelaRegistro`** para não enviar no
    modo convite — recusado: resolve com override o que o dado já resolve, e valeria só para
    quem passa pela tela. `Convite::aceitar()` chamado por job ou comando ficaria de fora.
@@ -343,7 +343,7 @@ exatamente o padrão que `.ai/rules/specs.md` manda vigiar.
 
 ### Referências
 
-- `vendor/filament/filament/src/Auth/Pages/Register.php:157-176`
+- `vendor/filament/filament/src/Auth/Pages/Register.php:161-180`
 - `vendor/filament/filament/src/Auth/Pages/EmailVerification/EmailVerificationPrompt.php:36-43`
 - `vendor/filament/filament/src/Pages/Concerns/HasRoutes.php:91,116-118`
 - `vendor/laravel/framework/src/Illuminate/Auth/Middleware/EnsureEmailIsVerified.php:32-40`
@@ -545,7 +545,7 @@ Nada novo. Os dois que já existem cobrem os dois caminhos:
 
 | Caminho | Limite | Origem |
 |---|---|---|
-| envio do formulário (`register()`) | `rateLimit(2)` por IP **+** 2 por e-mail (`filament-register:{sha1(email)}`) | vendor, `Register.php:71-79` e `:126-148` |
+| envio do formulário (`register()`) | `rateLimit(2)` por IP **+** 2 por e-mail (`filament-register:{sha1(email)}`) | vendor, `Register.php:72-78` e `:129-148` |
 | recusa no `mount()` (`recusar()`) | 5 por 600 s por IP | kit, `TelaRegistro::recusar()` |
 
 O throttle da recusa protege o **log**, não a resposta — a justificativa completa está no
@@ -580,7 +580,7 @@ cadastro e é o default do Filament.
 
 ### Referências
 
-- `vendor/filament/filament/src/Auth/Pages/Register.php:71-79,126-148`
+- `vendor/filament/filament/src/Auth/Pages/Register.php:72-78,129-148`
 - `app/Filament/Pages/Auth/TelaRegistro.php` (`recusar()`)
 - QA-01 de `wikis/specs/main/convite-de-usuario/06-relatorio-qa.md`
 
@@ -595,7 +595,7 @@ cadastro e é o default do Filament.
 
 `Register::register()` do vendor termina com `Filament::auth()->login($user)` +
 `session()->regenerate()` e devolve um `RegistrationResponse`, que redireciona ao painel
-(`Register.php:105-111`). Um usuário pendente não pode entrar em painel nenhum.
+(`Register.php:106-112`). Um usuário pendente não pode entrar em painel nenhum.
 
 ### Decisão
 
@@ -634,5 +634,5 @@ HTTP, e o request morre em 500) é específica do `mount()`.
 
 ### Referências
 
-- `vendor/filament/filament/src/Auth/Pages/Register.php:69-111`
+- `vendor/filament/filament/src/Auth/Pages/Register.php:70-113`
 - `app/Filament/Pages/Auth/TelaRegistro.php` (`register()`, `recusar()`)

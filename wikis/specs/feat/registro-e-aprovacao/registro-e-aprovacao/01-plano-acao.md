@@ -83,7 +83,7 @@ Estado medido em `0d423dd`:
 ### Um fato do vendor que decide a feature inteira
 
 `Register::sendEmailVerificationNotification()`
-(`vendor/filament/filament/src/Auth/Pages/Register.php:157-176`) só dispara o e-mail quando
+(`vendor/filament/filament/src/Auth/Pages/Register.php:161-180`) só dispara o e-mail quando
 `$user instanceof MustVerifyEmail` **E** `! $user->hasVerifiedEmail()`.
 
 `Convite::aceitar()` já grava `email_verified_at` (`Convite.php:591`, com o motivo escrito
@@ -346,7 +346,7 @@ final class RegistroAberto
   3. `User::create([...$dados])` (o `$fillable` recorta a nome/e-mail/senha);
   4. `forceFill()` do que **não** é fillable: `email_verified_at = now()` quando
      `! exigirVerificacaoDeEmail()` (é isto que faz o vendor pular o envio do e-mail —
-     `Register.php:157-176`), e `aprovacao_pendente = true` quando `exigirAprovacao()`;
+     `Register.php:161-180`), e `aprovacao_pendente = true` quando `exigirAprovacao()`;
   5. `$organizacao` presente ⇒ `$user->tenants()->syncWithoutDetaching([$organizacao->id])`
      — antes da aprovação, de propósito: sem o vínculo o `getEloquentQuery()` do
      `UserResource` do `/app` não lista a pessoa e ninguém tem como aprová-la;

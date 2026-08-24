@@ -192,6 +192,50 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Registro aberto no painel /app
+    |--------------------------------------------------------------------------
+    | Desligado por default, e isso não é cautela genérica: enquanto for `false`,
+    | `/app/register` só responde a quem traz um token de convite válido — o
+    | comportamento que o kit sempre teve. Ligar aqui abre uma porta PÚBLICA que
+    | cria conta, e é a única superfície anônima de escrita do kit.
+    |
+    | Quem se registra por ela recebe UM papel, o `panel_user`, e nada além:
+    | nenhum acesso a /admin nem a /infra. Quem administra pode mudar isso depois,
+    | na tela de usuários.
+    |
+    |   'aprovacao_manual' — o cadastro nasce PENDENTE e não entra em painel
+    |   nenhum até alguém aprovar na tela de usuários. Com `false`, entra na hora.
+    |
+    |   'verificar_email'  — exige e-mail validado no /app. Liga a tela de
+    |   confirmação (que nasceu vestida e com a rota desligada) e o middleware do
+    |   Filament. ATENÇÃO: o middleware vale para TODO usuário do /app, não só
+    |   para os recém-registrados — quem estiver sem `email_verified_at` é barrado.
+    |   Quem vem de convite nunca é afetado: `Convite::aceitar()` grava a coluna,
+    |   porque o token já prova posse do endereço.
+    |
+    | Com multi-organização ligada, cada organização ainda precisa habilitar o
+    | registro na tela dela (`tenants.registro_habilitado`), e o link carrega o
+    | slug: /app/register?org={slug}. As duas condições valem juntas.
+    |
+    | `(bool) env()` é seguro aqui, ao contrário do `(int) env()` que
+    | `.ai/rules/config.md` proíbe: com a chave presente e vazia (`KIT_REGISTRO=`)
+    | o `env()` devolve string vazia, e `(bool) ''` é `false` — que é exatamente o
+    | default desejado. Vazio e ausente colapsam no mesmo valor. O `(int) ''` é
+    | `0`, e ali o zero significava outra coisa: era isso que matava o default.
+    |
+    | NÃO leia estas chaves direto. O ponto único é `App\Support\RegistroAberto`,
+    | e há um caso de teste que reprova qualquer outro leitor — é ele que mantém a
+    | troca para a página de Settings do /admin num arquivo só.
+    */
+
+    'registro' => [
+        'habilitado'       => (bool) env('KIT_REGISTRO', false),
+        'aprovacao_manual' => (bool) env('KIT_REGISTRO_APROVACAO_MANUAL', false),
+        'verificar_email'  => (bool) env('KIT_REGISTRO_VERIFICAR_EMAIL', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Cenário de demonstração
     |--------------------------------------------------------------------------
     | Ligado por `php artisan kit:tenancy --demo`, que cria duas organizações,

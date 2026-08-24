@@ -355,7 +355,7 @@ justamente para exercitar a armadilha da unicidade contra o próprio registro.
 > ela for esquecida em um painel.
 >
 > **Por que CT-12 assere "não fica autenticado"**: a página de registro do Filament termina em
-> `Filament::auth()->login($user)` (`Register.php:105`). Sem desfazer isso, a sessão fica
+> `Filament::auth()->login($user)` (`Register.php:108`). Sem desfazer isso, a sessão fica
 > autenticada para alguém que não pode nada — e o próximo request vira 403 sem explicação.
 
 #### Mutantes previstos
@@ -483,7 +483,7 @@ o painel pelo próprio provider, pelo motivo explicado em *"A armadilha de arnê
 >
 > **A quarta direção (atomicidade)** — o e-mail não sai se a gravação falhar — é **lacuna
 > declarada**: o envio acontece **fora** da transação, depois dela
-> (`Register.php:84-107`: `wrapInDatabaseTransaction()` fecha, e só então
+> (`Register.php:84-102`: `wrapInDatabaseTransaction()` fecha, e só então
 > `sendEmailVerificationNotification()`). É comportamento do vendor, não do kit, e alterá-lo
 > exigiria sobrescrever `register()` inteiro. Tentado: falhar por `unique` de e-mail duplicado
 > — o `handleRegistration()` estoura dentro da transação e o envio nunca é alcançado, então o
@@ -497,7 +497,7 @@ o painel pelo próprio provider, pelo motivo explicado em *"A armadilha de arnê
 | M27 | `email_verified_at` **nunca** é gravado no registro aberto | CT-18 ("já validado" + nenhuma notificação) |
 | M28 | `Convite::aceitar()` deixa de gravar `email_verified_at` | **CT-22** |
 | M29 | a exigência do painel é ligada sempre (independe da opção) | CT-22b (linha "desligada") |
-| M30 | `User` não implementa o contrato de validação de e-mail | CT-17 (o vendor pula o envio quando o modelo não implementa — `Register.php:157-161`) |
+| M30 | `User` não implementa o contrato de validação de e-mail | CT-17 (o vendor pula o envio quando o modelo não implementa — `Register.php:163-165`) |
 
 ---
 
@@ -586,7 +586,7 @@ o painel pelo próprio provider, pelo motivo explicado em *"A armadilha de arnê
 ```
 
 > **A borda é 2, não 10**: o limite é o do vendor — `rateLimit(2)` por IP mais 2 por e-mail
-> (`Register.php:71-79` e `:126-148`). O BVA usa o **valor efetivo lido**, e o incremento é 1
+> (`Register.php:72-78` e `:129-148`). O BVA usa o **valor efetivo lido**, e o incremento é 1
 > tentativa (o tipo do campo é contagem inteira).
 >
 > **CT-20b é regressão dirigida** ao caminho que o rename e o garfo novo podem quebrar: o
@@ -724,7 +724,7 @@ o painel pelo próprio provider, pelo motivo explicado em *"A armadilha de arnê
 **Mutantes sem matador — lacunas declaradas** (2):
 
 1. **Atomicidade da notificação de verificação** — o envio está fora da transação, no vendor
-   (`Register.php:84-107`). Tentado: falhar por `unique` de e-mail; o cenário passaria por
+   (`Register.php:84-102`). Tentado: falhar por `unique` de e-mail; o cenário passaria por
    construção. Fechar exigiria sobrescrever `register()` inteiro, o que ADR-10 recusa.
 2. **`master_global` pendente** — a guarda de pendência vence o atalho do `master_global`, mas
    não há cenário que crie um `master_global` pendente: a via aberta nunca atribui esse papel, e
