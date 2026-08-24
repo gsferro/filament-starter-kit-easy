@@ -119,15 +119,15 @@ The other two already come complete.
 |---|---:|
 | Test cases (`Kit` + `Tenancy`) | **411**, with 1138 assertions |
 | Screens swept in a real browser | **55** |
-| Test files | **51** |
+| Test files | **94** |
 | PHPStan | **level 7**, zero errors |
 | FilaCheck | **17** rules, all passing |
 
 | Documentation | |
 |---|---:|
 | Reference documents (`wikis/`) | **9** |
-| Specified features (`wikis/specs/`) | **15** |
-| Project rules for AI agents (`.ai/rules/`) | **7** |
+| Specified features (`wikis/specs/`) | **28** |
+| Project rules for AI agents (`.ai/rules/`) | **13** |
 
 ### PHPStan at level 7 — and why that's a strong point
 
@@ -173,6 +173,10 @@ Going from 6 to 7 exposed **29 real errors** in the kit, and one of them was a g
 > trading away: the 29 errors above were all real.
 
 ## What's already there
+
+**Front door**
+- **Welcome page on the `/` route**, replacing Laravel's default welcome: one card per panel plus
+  what `kit:install` customised ([details](#the--route-is-public-and-shows-no-secrets))
 
 **Administration and security**
 - Shield (roles and permissions with a UI) on top of spatie/laravel-permission
@@ -305,6 +309,32 @@ The invitation's role decides the context of the assignment: a role of the `/app
 granted inside the invitation's organization; a role of `/admin` or `/infra` is granted in
 the global context — being an admin of one organization is not a credential to administer
 the installation.
+
+## The `/` route is public and shows no secrets
+
+Instead of Laravel's `welcome.blade.php`, the root serves `App\Filament\Pages\BoasVindas`: one
+card per panel (`/app`, `/admin`, `/infra`) and an infolist with what the installation
+customised — name, colour, tenancy, retention windows, kit version.
+
+It is **anonymous**, like the page it replaces, which is why the list of what it does **not**
+show matters: the admin's e-mail, name and password, the database host and user, the repository
+URL, `app.env`, `app.debug`, `app.url` and the mail configuration. A test plants a sentinel in
+each of those values and asserts it is absent from the HTML — alongside an `assertOk()`, because
+otherwise a 500 would pass every line by accident.
+
+The "show everything outside production" alternative was deliberately rejected: security that
+depends on `APP_ENV` being right is not security.
+
+The route carries the `panel:app` middleware, and that is not decoration — it is the alias for
+`SetUpPanel`, which boots the panel and therefore brings in Filament's stylesheet, the project
+palette and the theme switcher. Measured: `@filamentStyles` alone does not bring the stylesheet
+and the page renders amber even with `KIT_COR_PRIMARIA=Violet`. The middleware authenticates
+nobody.
+
+```php
+// routes/web.php
+Route::get('/', BoasVindas::class)->middleware('panel:app')->name('boas-vindas');
+```
 
 ## Open registration and approval
 
@@ -1132,6 +1162,8 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 | F-62 | **Every screen in the kit has its own permission, and it is enforced** | `/admin/shield/roles` → *Pages* and *Widgets* tabs | `admin` | uncheck `View:Pulse` on the `infra` role: the screen answers 403 and the menu item is gone. Holds for the 5 Pages and the 23 Widgets written in the kit | 🟢 |
 | F-63 | **Every action and every link in the kit has its own permission** | `/admin/shield/roles` → *Resources* and *Custom* tabs | `admin` | uncheck `Reenviar:Convite`: the *Resend* button leaves the invitations listing. The RelationManager ones (attach, detach, assign roles) likewise | 🟢 |
 | F-64 | A new action or link **does not** ship open by forgetfulness | `tests/Kit/PermissoesDeAcoesTest.php` | — | add an `Action::make('x')` under `app/Filament/` and run the suite: the inventory case turns red naming the file | 🟢 |
+| F-65 | **Welcome page at the root**, with what the installation customised | `/` | anonymous | open it unauthenticated: the three cards and the config show up, and no secrets — the test plants a sentinel in 8 values and asserts its absence | 🟢 |
+| F-66 | The root inherits the project theme and colour | `/` | anonymous | change `KIT_COR_PRIMARIA`, run `npm run build` and reload: the button changes colour. Without the route's `panel:app` it would render amber | 🟢 |
 
 ### Invitations
 

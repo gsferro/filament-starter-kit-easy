@@ -107,7 +107,7 @@ Para testar o recorte de acesso, crie um usuário só com o papel `admin` ou `in
 | **Admin** | `/admin` | Usuários, papéis e permissões (Shield), catálogo de agentes de IA, autoria de onboarding | `master_global`, `admin` |
 | **Infra** | `/infra` | Health checks, backups, filas, logs, exceções, trilha de e-mails, lixeira, auditoria, caches, comandos, Pulse, custos de IA | `master_global`, `infra` |
 
-**Quem entra vem do papel, não de uma lista no código.** Cada papel declara em qual painel vale, na coluna `roles.painel` — é o campo **Painel** na tela `/admin` → Funções. `App\Models\User::canAccessPanel()` compara essa coluna com o painel que está sendo aberto. Criar um papel e escolher o painel dele **é** o ato de dar acesso.
+**Quem entra vem do papel, não de uma lista no código.** Cada papel declara em qual painel vale, na coluna `roles.painel` — é o campo **Painel** na tela `/admin` → Papéis. `App\Models\User::canAccessPanel()` compara essa coluna com o painel que está sendo aberto. Criar um papel e escolher o painel dele **é** o ato de dar acesso.
 
 Nulo **não** é coringa: papel sem painel só carrega permissões e não abre painel algum. O papel `master_global` entra nos três de outro jeito — ele vence qualquer gate via `Gate::before` (`App\Providers\KitServiceProvider`), sem precisar de permissions no banco, e o `canAccessPanel()` o libera antes de olhar a coluna.
 
@@ -158,15 +158,15 @@ dois já vêm completos.
 |---|---:|
 | Casos de teste (`Kit` + `Tenancy`) | **411**, com 1138 asserções |
 | Telas varridas em navegador real | **55** |
-| Arquivos de teste | **51** |
+| Arquivos de teste | **94** |
 | PHPStan | **level 7**, zero erros |
 | FilaCheck | **17** regras, todas passando |
 
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **9** |
-| Features especificadas (`wikis/specs/`) | **15** |
-| Project rules para agentes de IA (`.ai/rules/`) | **7** |
+| Features especificadas (`wikis/specs/`) | **28** |
+| Project rules para agentes de IA (`.ai/rules/`) | **13** |
 
 ### PHPStan no level 7 — e por que isso é um ponto forte
 
@@ -211,6 +211,10 @@ Subir de 6 para 7 expôs **29 erros reais** no kit, e um deles era bug latente d
 > os 29 erros acima eram todos reais.
 
 ## O que já vem pronto
+
+**Porta de entrada**
+- **Página de boas-vindas na rota `/`**, no lugar da welcome padrão do Laravel: um cartão por
+  painel e as informações do que o `kit:install` personalizou ([detalhes](#a-rota--é-pública-e-não-mostra-segredo))
 
 **Administração e segurança**
 - Shield (papéis e permissões com UI) sobre spatie/laravel-permission
@@ -340,6 +344,31 @@ cadastro aberto.
 O papel do convite decide o contexto da atribuição: papel do painel `/app` nasce dentro da
 organização do convite; papel de `/admin` ou `/infra` nasce no contexto global — ser
 administrador de uma organização não é credencial para administrar a instalação.
+
+## A rota `/` é pública e não mostra segredo
+
+No lugar da `welcome.blade.php` do Laravel, a raiz serve `App\Filament\Pages\BoasVindas`: um
+cartão por painel (`/app`, `/admin`, `/infra`) e uma infolist com o que a instalação
+personalizou — nome, cor, tenancy, prazos de retenção, versão do kit.
+
+Ela é **anônima**, como a página que substitui, e é por isso que a lista do que ela **não**
+mostra importa: e-mail, nome e senha do administrador, host e usuário do banco, URL do
+repositório, `app.env`, `app.debug`, `app.url` e a configuração de e-mail. Há caso de teste que
+planta uma sentinela em cada um desses valores e assere a ausência dela no HTML — junto de um
+`assertOk()`, senão um 500 passaria em todas as linhas por engano.
+
+Foi recusada, de propósito, a alternativa "exibir tudo fora de produção": segurança que depende
+de `APP_ENV` estar certo não é segurança.
+
+A rota carrega o middleware `panel:app`, e isso não é decoração — é o alias de `SetUpPanel`, que
+boota o painel e com isso traz a folha do Filament, a paleta do projeto e o alternador de tema.
+Foi medido: `@filamentStyles` sozinho não traz a folha e a página sai âmbar mesmo com
+`KIT_COR_PRIMARIA=Violet`. O middleware não autentica ninguém.
+
+```php
+// routes/web.php
+Route::get('/', BoasVindas::class)->middleware('panel:app')->name('boas-vindas');
+```
 
 ## Registro aberto e aprovação
 
@@ -894,7 +923,7 @@ resource.
 
 Na tela de papéis, `Import` e `Export` aparecem lado a lado com `View Any`, `Create` e `Delete` —
 para **todo** resource, inclusive os que não ligaram as Actions. É o que permite conceder ou tirar
-cada lado por papel, em `/admin` → Funções, sem tocar em código.
+cada lado por papel, em `/admin` → Papéis, sem tocar em código.
 
 Elas são necessárias porque **Action do Filament não consulta policy sozinha** — o próprio vendor
 diz isso em `Actions/Concerns/CanBeAuthorized.php`: a autorização default é `null`, ou seja,
@@ -917,7 +946,7 @@ fora do usuário comum sem ninguém precisar lembrar de acrescentá-lo a lista n
 o que cada uma é de fato: import é **escrita em massa**; export **tira o dado da organização da
 aplicação** num arquivo. Quem usa o negócio faz isso um registro por vez; quem move planilha é quem
 opera a organização. O `admin_app` fica com as duas, porque recebe a matriz inteira do painel — e
-conceder ao `panel_user` é um clique em `/admin` → Funções, se fizer sentido no seu caso.
+conceder ao `panel_user` é um clique em `/admin` → Papéis, se fizer sentido no seu caso.
 
 ### Quem tem o quê hoje
 
@@ -1154,7 +1183,7 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 
 | # | Feature | Onde | Quem alcança | Como conferir | Teste |
 |---|---|---|---|---|---|
-| F-09 | **O papel decide o painel** (`roles.painel`) | `/admin` → Funções | `admin`, `master_global` | crie um papel com painel `infra`: quem o tem entra no `/infra` e toma 403 no `/admin` | 🟢 |
+| F-09 | **O papel decide o painel** (`roles.painel`) | `/admin` → Papéis | `admin`, `master_global` | crie um papel com painel `infra`: quem o tem entra no `/infra` e toma 403 no `/admin` | 🟢 |
 | F-10 | 403 legível no painel errado | qualquer painel | — | a tela de 403 diz a conta, os papéis e oferece saída — e **não** revela permissão em produção | 🔵 |
 | F-11 | `master_global` vence por `Gate::before` | os três | `master_global` | ele entra em tudo **sem** nenhuma permission no banco | 🟢 |
 | F-12 | Papéis e permissões agrupados por painel | `/admin/shield/roles` | `admin` | a tela separa *Painel /admin*, */app* e */infra* | 🟢 |
@@ -1163,6 +1192,8 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-62 | **Toda tela do kit tem permissão própria, e ela é consultada** | `/admin/shield/roles` → abas *Pages* e *Widgets* | `admin` | desmarque `View:Pulse` no papel `infra`: a tela responde 403 e o item sai do menu. Vale para as 5 Pages e os 23 Widgets escritos no kit | 🟢 |
 | F-63 | **Toda action e todo link do kit tem permissão própria** | `/admin/shield/roles` → aba *Resources* e *Custom* | `admin` | desmarque `Reenviar:Convite`: o botão *Reenviar* sai da listagem de convites. As de RelationManager (vincular, desvincular, atribuir papéis) idem | 🟢 |
 | F-64 | Action e link novos **não** nascem abertos por esquecimento | `tests/Kit/PermissoesDeAcoesTest.php` | — | acrescente uma `Action::make('x')` em `app/Filament/` e rode a suíte: o caso do inventário fica vermelho nomeando o arquivo | 🟢 |
+| F-65 | **Boas-vindas na raiz**, com o que a instalação personalizou | `/` | anônimo | abra sem autenticar: os três cartões e a config aparecem, e nada de segredo — o caso planta sentinela em 8 valores e assere a ausência | 🟢 |
+| F-66 | A raiz herda tema e cor do projeto | `/` | anônimo | troque `KIT_COR_PRIMARIA`, rode `npm run build` e recarregue: o botão muda de cor. Sem o `panel:app` da rota, sairia âmbar | 🟢 |
 
 ### Convites
 
@@ -1497,7 +1528,7 @@ O benefício está em não derivar os testes só do "caminho feliz". O que escap
 | 4 | **Cor primária** | `KIT_COR_PRIMARIA` no `.env` (nome de uma cor da paleta do Filament) | ✅ |
 | 5 | **[Multi-tenancy](#multi-tenancy-opt-in)** | `php artisan kit:tenancy`, e o termo exibido em `config/kit.php` → `tenancy.label` | ✅ |
 | 6 | **Arte do login** | `public/images/auth/login.svg` | — |
-| 7 | **Acesso aos painéis** | o papel de cada usuário (`/admin` → Funções, campo *Painel*); a regra que o lê é `App\Models\User::canAccessPanel()` | — |
+| 7 | **Acesso aos painéis** | o papel de cada usuário (`/admin` → Papéis, campo *Painel*); a regra que o lê é `App\Models\User::canAccessPanel()` | — |
 | 8 | **Matriz de permissões** | `database/seeders/PapeisSeeder.php` | — |
 | 9 | **Health checks** | `KitServiceProvider::configureHealthChecks()` | — |
 | 10 | **Comandos da UI** | `config/command-center.php` | — |
@@ -1775,7 +1806,7 @@ class ListProdutos extends ListRecords
 
 Todos os Resources **do kit** já têm badge no menu (Usuários, Agentes de IA, Execuções de IA). A contagem sai de `getEloquentQuery()`, nunca de `Model::count()`: a query do resource carrega os escopos que valem para aquele painel, e contar direto no model mostraria um número que a listagem não confirma. Zero não vira badge — um "0" cinza em todo item só polui.
 
-Resources de **plugins de terceiros** (Auditoria, Logins, Filas, Pacotes do Composer, Comandos, Funções do Shield, Onboarding) ficam sem badge: `getNavigationBadge()` é um método estático do resource, e o Filament não oferece API para sobrescrevê-lo de fora — a `ResourceConfiguration` do painel só permite trocar o slug. Dar badge a eles exigiria estender cada resource de vendor e impedir o plugin de registrar o seu, o que quebra a cada atualização do pacote. Se algum for importante no seu projeto, o caminho é esse — resource por resource, conscientemente.
+Resources de **plugins de terceiros** (Auditoria, Logins, Filas, Pacotes do Composer, Comandos, Papéis do Shield, Onboarding) ficam sem badge: `getNavigationBadge()` é um método estático do resource, e o Filament não oferece API para sobrescrevê-lo de fora — a `ResourceConfiguration` do painel só permite trocar o slug. Dar badge a eles exigiria estender cada resource de vendor e impedir o plugin de registrar o seu, o que quebra a cada atualização do pacote. Se algum for importante no seu projeto, o caminho é esse — resource por resource, conscientemente.
 
 ## Atualizando um projeto que já nasceu do kit
 
@@ -1880,7 +1911,7 @@ Faça isso num branch (`git switch -c atualiza-kit`) e rode `composer test` ante
 
 ## Solução de problemas
 
-- **403 em todos os painéis, logo depois de autenticar** — o usuário não tem papel nenhum, ou o papel dele está sem painel declarado (`roles.painel` vazio não é coringa: não abre nada). Dê o papel em `/admin` → Usuários, ou preencha o campo *Painel* em `/admin` → Funções.
+- **403 em todos os painéis, logo depois de autenticar** — o usuário não tem papel nenhum, ou o papel dele está sem painel declarado (`roles.painel` vazio não é coringa: não abre nada). Dê o papel em `/admin` → Usuários, ou preencha o campo *Painel* em `/admin` → Papéis.
 - **`/infra` ou `/admin` dando 403** — seu usuário precisa de um papel cujo painel seja esse (`master_global`, `admin` ou `infra`), e com a tenancy ligada o papel tem de estar atribuído no contexto global. A tela de 403 mostra qual permissão faltou, mas **só fora de produção**: em produção ela não revela papéis nem permissões.
 - **Assets do Filament sumidos** — `php artisan filament:assets`.
 - **Pulse sem dados** — falta o daemon: `php artisan pulse:check` (ou o serviço `pulse` do compose).
