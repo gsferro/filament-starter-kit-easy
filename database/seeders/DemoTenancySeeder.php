@@ -5,9 +5,9 @@ namespace Database\Seeders;
 use App\Models\Projeto;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\ContextoDePapeis;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\PermissionRegistrar;
 
 /**
  * DEMONSTRAÇÃO do modo multi-tenant — `php artisan kit:tenancy --demo`.
@@ -78,17 +78,9 @@ class DemoTenancySeeder extends Seeder
     {
         $papel ??= (string) config('filament-shield.panel_user.name', 'panel_user');
 
-        $registrar = app(PermissionRegistrar::class);
-        $anterior  = $registrar->getPermissionsTeamId();
-
-        try {
-            $registrar->setPermissionsTeamId($tenant->getKey());
-            $usuario->unsetRelation('roles');
+        ContextoDePapeis::em($tenant->getKey(), $usuario, function () use ($usuario, $papel): void {
             $usuario->assignRole($papel);
-        } finally {
-            $registrar->setPermissionsTeamId($anterior);
-            $usuario->unsetRelation('roles');
-        }
+        });
     }
 
     private function tenant(string $nome, string $slug): Tenant

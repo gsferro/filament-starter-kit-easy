@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Users;
 use App\Filament\Admin\Resources\Users\Pages\CreateUser;
 use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Filament\Admin\Resources\Users\Pages\ListUsers;
+use App\Filament\Concerns\AprovacaoDeCadastro;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\User;
 use App\Support\Papeis;
@@ -24,6 +25,7 @@ use STS\FilamentImpersonate\Actions\Impersonate;
 
 class UserResource extends Resource
 {
+    use AprovacaoDeCadastro;
     use BadgeContagemNavegacao;
 
     protected static ?string $model = User::class;
@@ -67,7 +69,9 @@ class UserResource extends Resource
                  * (User::canAccessPanel lê `roles.painel`). Usuário sem papel é conta
                  * morta: entra na tela de login, autentica e leva 403 nos três painéis.
                  */
-                ->required()
+                // Obrigatório, MENOS para cadastro pendente de aprovação, que não tem papel por
+                // desenho. Ver `AprovacaoDeCadastro::papelObrigatorioNaEdicao()`.
+                ->required(self::papelObrigatorioNaEdicao())
                 ->helperText('O acesso aos painéis vem do papel — o painel de cada um aparece ao lado do nome.')
                 // O painel no rótulo da opção, e não um select agrupado: agrupar exigiria
                 // abandonar o ->relationship(), que é quem hidrata o estado na edição e
@@ -162,8 +166,13 @@ class UserResource extends Resource
                 TextColumn::make('roles.name')->label('Papéis')->badge()
                     ->formatStateUsing(fn (?string $state): string => Papeis::rotulo($state)),
                 TextColumn::make('created_at')->label('Criado em')->dateTime('d/m/Y H:i')->sortable(),
+                self::colunaDeSituacao(),
+            ])
+            ->filters([
+                self::filtroDePendentes(),
             ])
             ->recordActions([
+                self::acaoDeAprovar(),
                 Impersonate::make(),
                 EditAction::make(),
                 DeleteAction::make(),

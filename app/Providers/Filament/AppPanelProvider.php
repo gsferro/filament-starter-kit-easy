@@ -14,11 +14,13 @@ use App\Http\Middleware\DefinirTenantDePermissoes;
 use App\Models\Tenant;
 use App\Support\CorPrimaria;
 use App\Support\IdentidadeDoKit;
+use App\Support\RegistroAberto;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
 use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
+use Caresome\FilamentAuthDesigner\Pages\Auth\EmailVerification;
 use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -263,19 +265,19 @@ class AppPanelProvider extends PanelProvider
                     /*
                      * Confirmação de e-mail: este bloco VESTE a tela, e só isso.
                      *
-                     * O kit não exige verificação de e-mail — quem entra é convidado. O bloco
-                     * existe para que, no dia em que alguém ligue a verificação, a tela já
-                     * saia com a mesma arte das outras em vez de crua: quem grava a chave
-                     * 'email-verification' no AuthDesignerConfigRepository é o `boot()` do
-                     * plugin (AuthDesignerPlugin.php:99-101).
+                     * A verificação é OPCIONAL — `KIT_REGISTRO_VERIFICAR_EMAIL`, lida por
+                     * `RegistroAberto::exigirVerificacaoDeEmail()`. Este bloco garante que,
+                     * quando ela estiver ligada, a tela saia com a mesma arte das outras em vez
+                     * de crua: quem grava a chave 'email-verification' no
+                     * AuthDesignerConfigRepository é o `boot()` do plugin
+                     * (AuthDesignerPlugin.php:99-101), e a gravação não depende da rota existir.
                      *
                      * Ele também faz o plugin chamar `$panel->emailVerification($classe)`
                      * (AuthDesignerPlugin.php:45-47) — com UM argumento, então o
                      * `bool $isRequired = true` do Filament (HasAuth.php:110) entra de
-                     * tabela. Quem decide o que vai para o ar é o
-                     * `->emailVerification(null, isRequired: false)` logo depois do
-                     * `->plugins([...])`, onde está a nota longa. Ver ADR-03 da wiki
-                     * `auth-designer-telas`.
+                     * tabela. Quem decide o que vai para o ar é o `->emailVerification(...)`
+                     * logo depois do `->plugins([...])`, onde está a nota longa. Ver ADR-03 da
+                     * wiki `auth-designer-telas` e ADR-05 da wiki `registro-e-aprovacao`.
                      */
                     ->emailVerification(fn (AuthPageConfig $config): AuthPageConfig => $config
                         ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
@@ -356,42 +358,59 @@ class AppPanelProvider extends PanelProvider
                     ->registerNavigation(false),
             ])
             /*
-             * Confirmação de e-mail: o Auth Designer configurado, a ROTA desligada.
+             * Confirmação de e-mail: OPCIONAL, e a chave decide se a rota existe.
              *
-             * `null` no primeiro parâmetro é o ponto desta linha. Ela roda DEPOIS do
-             * `->plugins([...])` — `Panel::plugin()` registra o plugin na hora
-             * (Panel/Concerns/HasPlugins.php:15-21), então quem fala por último vence — e
-             * apaga a AÇÃO da rota que o plugin havia registrado. Sem ação,
-             * `hasEmailVerification()` é falso (HasAuth.php:620-623) e nenhuma rota nasce
-             * (vendor/filament/filament/routes/web.php:75-84).
+             * Esta linha roda DEPOIS do `->plugins([...])` — `Panel::plugin()` registra o
+             * plugin na hora (Panel/Concerns/HasPlugins.php:15-21), então quem fala por último
+             * vence, e é aqui que se decide. Com `null` no primeiro parâmetro a AÇÃO da rota
+             * que o plugin havia registrado é apagada: `hasEmailVerification()` é
+             * `filled($action)` (HasAuth.php:620-623), fica falso, e nenhuma rota nasce
+             * (vendor/filament/filament/routes/web.php:75-84). Com a classe, as duas rotas
+             * nascem e o `isRequired: true` acrescenta o middleware de verificação a cada rota
+             * de página do painel (Pages/Concerns/HasRoutes.php:91).
              *
-             * O que SOBREVIVE é o que o requisito pede: o `->emailVerification(...)` do
-             * AuthDesignerPlugin acima já gravou a chave 'email-verification' no
-             * AuthDesignerConfigRepository, com mídia, eixo e alternador de tema — a gravação
-             * acontece no `boot()` do plugin (AuthDesignerPlugin.php:99-101) e não depende da
-             * rota. A tela já está vestida; ela só não está no ar.
+             * Sobrevive dos dois lados o que o Auth Designer gravou: a chave
+             * 'email-verification' no AuthDesignerConfigRepository, com mídia, eixo e
+             * alternador de tema — a gravação acontece no `boot()` do plugin
+             * (AuthDesignerPlugin.php:99-101) e não depende da rota. A tela nasce vestida;
+             * a chave decide se ela está no ar.
              *
-             * Por que não deixá-la no ar com `isRequired: false`: MEDIDO — a tela do Filament
-             * responde 500. `EmailVerificationPrompt::getVerifiable()` declara retorno
-             * `MustVerifyEmail`
-             * (vendor/filament/filament/src/Auth/Pages/EmailVerification/EmailVerificationPrompt.php:36-43)
-             * e é chamada no `mount()` (:31); `App\Models\User` não implementa a interface, e
-             * o request morre em `TypeError`. Rota que sempre erra é pior que rota que não
-             * existe.
+             * Não use CLOSURE no primeiro parâmetro para tentar adiar a decisão: a assinatura
+             * aceita (HasAuth.php:110), mas `filled(Closure)` é sempre `true` e a rota
+             * nasceria SEMPRE, inclusive com a opção desligada.
              *
-             * PARA LIGAR a verificação de e-mail são três passos deliberados:
-             *   1. `App\Models\User implements Illuminate\Contracts\Auth\MustVerifyEmail` —
-             *      sem ela a tela estoura, e o middleware do Laravel não barra ninguém
+             * Os três passos que este arquivo listava para "ligar um dia" viraram código:
+             *   1. `App\Models\User implements MustVerifyEmail` — feito. Sem ele a tela
+             *      responde 500, porque `EmailVerificationPrompt::getVerifiable()` declara
+             *      retorno `MustVerifyEmail`
+             *      (vendor/filament/filament/src/Auth/Pages/EmailVerification/EmailVerificationPrompt.php:36-43)
+             *      e é chamada no `mount()` (:31), e o middleware do Laravel não barra ninguém
              *      (Illuminate/Auth/Middleware/EnsureEmailIsVerified.php:32-40);
-             *   2. troque o `null` abaixo por
-             *      `\Caresome\FilamentAuthDesigner\Pages\Auth\EmailVerification::class`;
-             *   3. troque `isRequired: false` por `true`.
-             * Antes de ligar, lembre que NENHUM usuário semeado tem `email_verified_at` —
-             * todos seriam barrados no primeiro request.
+             *   2. a classe da tela, condicionada abaixo;
+             *   3. o `isRequired`, condicionado pela mesma chave.
              *
-             * Ver ADR-03 da wiki `auth-designer-telas`.
+             * CORREÇÃO DE FATO: a versão anterior desta nota afirmava que "NENHUM usuário
+             * semeado tem `email_verified_at`". Era falso, e a afirmação sustentava a decisão
+             * de não ligar. Cinco dos sete caminhos que criam usuário no kit gravam a coluna:
+             * UsuarioAdminSeeder.php:45, UserFactory.php:30, DemoTenancySeeder.php:103,
+             * Convite::aceitar() em Convite.php:591 e KitAdmin.php:204. Os dois que NÃO gravam
+             * são a tela de usuários do /admin e a do /app — quem for criado por ali com a
+             * opção ligada recebe o prompt de verificação, que é o comportamento correto.
+             *
+             * O que ligar a opção realmente custa: o middleware barra TODO usuário do /app sem
+             * `email_verified_at`, não só os recém-registrados. Numa instalação limpa isso não
+             * atinge ninguém; numa base legada, atinge quem foi criado pela tela. O README traz
+             * o reparo.
+             *
+             * Quem NUNCA é afetado é o convidado: `Convite::aceitar()` grava a coluna de
+             * propósito (o token já prova posse do endereço), então
+             * `Register::sendEmailVerificationNotification()` pula o envio para ele
+             * (Register.php:167-169). Ver ADR-05 da wiki `registro-e-aprovacao`.
              */
-            ->emailVerification(null, isRequired: false)
+            ->emailVerification(
+                RegistroAberto::exigirVerificacaoDeEmail() ? EmailVerification::class : null,
+                isRequired: RegistroAberto::exigirVerificacaoDeEmail(),
+            )
             /*
              * Gatilho da busca ⌘K, no lugar exato do campo nativo.
              *

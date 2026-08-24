@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use App\Support\ContextoDePapeis;
+use App\Support\RegistroAberto;
 use App\Traits\AuditsFillables;
 use App\Traits\ModeloCacheavel;
 use App\Traits\TemUuid;
 use Database\Factories\UserFactory;
+use Filament\Facades\Filament;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -17,8 +21,10 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Jeffgreco13\FilamentBreezy\Traits\TwoFactorAuthenticatable;
 use OwenIt\Auditing\Contracts\Auditable;
 use Rappasoft\LaravelAuthenticationLog\Traits\AuthenticationLoggable;
@@ -26,7 +32,25 @@ use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Support\Config;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants
+/**
+ * `MustVerifyEmail` é o CONTRATO, e ele é global — vale nos três painéis.
+ *
+ * Ligá-lo não exige e-mail de ninguém: quem exige é o painel, por
+ * `->emailVerification(…, isRequired: true)`, e só o /app o liga, e só quando
+ * `RegistroAberto::exigirVerificacaoDeEmail()`. Sem o contrato, porém, a tela de confirmação
+ * responde 500 — `EmailVerificationPrompt::getVerifiable()` declara retorno `MustVerifyEmail`
+ * (`vendor/filament/filament/src/Auth/Pages/EmailVerification/EmailVerificationPrompt.php:36-43`)
+ * — e o middleware do Laravel não barra ninguém
+ * (`Illuminate/Auth/Middleware/EnsureEmailIsVerified.php:32-40`). Era o passo 1 dos três que o
+ * `AppPanelProvider` deixou escritos em comentário.
+ *
+ * O que o contrato NÃO faz, e é o que permitiu ligá-lo sem quebrar o convite: ele não dispara
+ * e-mail sozinho. `Register::sendEmailVerificationNotification()` retorna cedo para quem já tem
+ * o endereço validado (`Register.php:167-169`), e `Convite::aceitar()` grava `email_verified_at`
+ * de propósito (`Convite.php:591`) — o token já provou posse do endereço. Convidado nasce
+ * validado, vendor pula o envio.
+ */
+class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail
 {
     use AuditsFillables;
     use AuthenticationLoggable;
@@ -55,8 +79,15 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            /*
+             * `aprovacao_pendente` fica FORA do `$fillable`, como `email_verified_at`: é estado
+             * de fronteira de acesso, e estado de fronteira não se escreve por atribuição em
+             * massa vinda de formulário. Só `forceFill`, e só em `RegistroAberto::registrar()`
+             * e em `aprovar()`.
+             */
+            'aprovacao_pendente' => 'boolean',
+            'email_verified_at'  => 'datetime',
+            'password'           => 'hashed',
         ];
     }
 
@@ -75,6 +106,31 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
 
     public function canAccessPanel(Panel $panel): bool
     {
+        /*
+         * PRIMEIRA instrução, antes até do master_global — e a ordem é a decisão.
+         *
+         * "Pendente de aprovação" tem de significar painel NENHUM, sem exceção. Posta depois do
+         * atalho do `master_global`, esta guarda teria um furo que ninguém veria: o atalho
+         * devolve `true` sem consultar mais nada.
+         *
+         * Na prática, quem nasce pendente nasce SEM papel — `RegistroAberto::registrar()` só
+         * atribui o papel depois da aprovação —, então nenhum painel abriria de qualquer forma.
+         * Esta é a segunda barreira, deliberadamente redundante: ela vale para qualquer caminho
+         * futuro que marque alguém como pendente, inclusive um que já tenha papel.
+         */
+        if ($this->aprovacao_pendente) {
+            Log::channel('autenticacao')->warning(
+                "[User@canAccessPanel] Acesso negado: cadastro pendente de aprovacao | user: {$this->id} - painel: {$panel->getId()}",
+                [
+                    'user_id' => $this->id,
+                    'painel'  => $panel->getId(),
+                    'motivo'  => 'aprovacao_pendente',
+                ],
+            );
+
+            return false;
+        }
+
         if ($this->isMasterGlobal()) {
             return true;
         }
@@ -153,6 +209,99 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
             ->first();
 
         return $papel?->getAttribute('name');
+    }
+
+    /**
+     * Libera um cadastro que estava pendente, dando-lhe o papel do painel de negócio.
+     *
+     * **No model, e não no corpo da Action da tabela**, pela regra de
+     * `.ai/rules/filament.md`: enquanto a tela for o único chamador funciona, e o primeiro job,
+     * comando ou seeder chama o método direto. Aqui a transição é uma só, para todos.
+     *
+     * **Idempotente**, e isto não é zelo: a Action pode ser disparada duas vezes (duplo clique,
+     * retry), e sem a saída antecipada o `assignRole()` rodaria de novo. O oráculo do caso de
+     * teste é o agregado — "o usuário tem exatamente um papel depois de duas execuções".
+     *
+     * O contexto de papéis vem do request: no /app o middleware `DefinirTenantDePermissoes` já
+     * fixou a organização corrente, que é justamente a organização de quem está aprovando. No
+     * /admin (sem tenancy) o contexto é o global. Nos dois casos o `assignRole()` grava no lugar
+     * certo sem esta função precisar saber onde está.
+     */
+    public function aprovar(): void
+    {
+        if (! $this->aprovacao_pendente) {
+            return;
+        }
+
+        $this->forceFill(['aprovacao_pendente' => false])->save();
+
+        $papel = RegistroAberto::papel();
+
+        /*
+         * O papel vai no contexto da ORGANIZAÇÃO, não no do request.
+         *
+         * `assignRole()` cru grava em `model_has_roles.team_id` o contexto corrente, e quem
+         * aprova está no `/admin`, cujo contexto é o global. Resultado medido pelo quality
+         * gate: `team_id = 0` com a organização em `id = 1`; dentro do `/app` o `wherePivot`
+         * do spatie filtra pelo team do request, `roles` volta vazia, e a pessoa **autentica
+         * e não vê nada** — `GET /app/{slug}` responde 200 com um painel vazio.
+         *
+         * E o estado é sem saída pela própria tela: a ação de aprovar tem
+         * `->visible(fn () => $record->aprovacao_pendente)`, e a pendência já foi baixada
+         * na linha acima — a mesma tela não conserta o que acabou de fazer.
+         *
+         * Cada organização do usuário recebe o papel no contexto dela. É o que `Convite`
+         * já fazia por `contextoDoPapel()` (`app/Models/Convite.php:785-789`) e o que
+         * `RegistroAberto::atribuirPapel()` faz no cadastro. Sem tenancy, `contextos()`
+         * devolve só o global, e o spatie ignora o team quando a flag está desligada.
+         */
+        foreach ($this->contextosDePapelDoApp() as $contexto) {
+            ContextoDePapeis::em($contexto, $this, function () use ($papel): void {
+                if (! $this->hasRole($papel)) {
+                    $this->assignRole($papel);
+                }
+            });
+        }
+
+        Log::channel('autenticacao')->info(
+            "[User@aprovar] Cadastro aprovado | alvo: {$this->id}",
+            [
+                'alvo_id'     => $this->id,
+                'executor_id' => Auth::id(),
+                'email'       => Str::mask($this->email, '*', 3),
+                'tenant_id'   => Filament::getTenant()?->getKey(),
+                'papel'       => $papel,
+            ],
+        );
+    }
+
+    /**
+     * Em quais contextos o papel do painel `app` deve ser gravado para este usuário.
+     *
+     * Sem tenancy, um: o global — e o spatie ignora o team quando `permission.teams` está
+     * desligado, então o valor é indiferente ali. Com tenancy, um por organização do usuário,
+     * porque é o `team_id` que decide se o papel é visível dentro de `/app/{slug}`.
+     *
+     * Usuário com tenancy e **nenhuma** organização cai no global. Não é caminho do registro
+     * aberto (`RegistroAberto::exigirPortaAberta()` recusa antes), mas é alcançável por quem
+     * marcou a pendência à mão — e nesse caso o global é o menos errado: não concede acesso a
+     * organização nenhuma, e `canAccessPanel()` continua sendo a barreira.
+     *
+     * @return list<int>
+     */
+    private function contextosDePapelDoApp(): array
+    {
+        if (! (bool) config('kit.tenancy.enabled')) {
+            return [Tenant::CONTEXTO_GLOBAL];
+        }
+
+        $organizacoes = array_values(
+            array_map(intval(...), $this->tenants()->pluck('tenants.id')->all()),
+        );
+
+        return $organizacoes === []
+            ? [Tenant::CONTEXTO_GLOBAL]
+            : $organizacoes;
     }
 
     /** Papel guarda-chuva do kit — o "super admin" do Shield (define_via_gate). */

@@ -13,6 +13,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Pages\SettingsPage;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -106,6 +107,7 @@ class ConfiguracoesDoKit extends SettingsPage
                         $this->abaIdentidade(),
                         $this->abaEmail(),
                         $this->abaTabelas(),
+                        $this->abaRegistro(),
                         $this->abaKit(),
                     ]),
             ]);
@@ -355,6 +357,51 @@ class ConfiguracoesDoKit extends SettingsPage
                 Toggle::make('colunas_redimensionaveis')
                     ->label('Colunas arrastáveis')
                     ->helperText('Arrastar a largura das colunas. Sem efeito se o pacote resized-column for removido.'),
+            ]);
+    }
+
+    /**
+     * A porta de entrada do painel /app — fechada por default.
+     *
+     * As três chaves governam `App\Support\RegistroAberto`, e chegam lá pelo
+     * `mapaDeConfiguracao()`: a classe lê `config('kit.registro.*')` e o
+     * `aplicarNaConfig()` sobrepõe essa config com o que está gravado aqui. Nenhuma linha
+     * daquela classe precisou mudar.
+     *
+     * As duas de baixo ficam ocultas com o registro desligado, e isso não é só estética:
+     * "exigir aprovação" e "exigir e-mail validado" não significam nada sem porta aberta, e
+     * um toggle que não faz efeito é pior que um toggle ausente — a pessoa acha que
+     * configurou algo.
+     */
+    private function abaRegistro(): Tab
+    {
+        $aberto = fn (Get $get): bool => (bool) $get('registro_habilitado');
+
+        return Tab::make('Registro')
+            ->icon('heroicon-o-user-plus')
+            ->schema([
+                Toggle::make('registro_habilitado')
+                    ->label('Permitir cadastro sem convite no /app')
+                    ->helperText('Desligado, o /app só aceita quem tem convite — que é o default do kit. Ligado, a tela de cadastro passa a aceitar visitante, e cada organização ainda decide se aceita o seu (em /admin/organizacoes).')
+                    ->live(),
+
+                Toggle::make('registro_aprovacao_manual')
+                    ->label('Cadastro nasce pendente de aprovação')
+                    ->helperText('Quem se cadastra não recebe papel nenhum até alguém aprovar em /admin/usuarios — e sem papel não abre painel nenhum.')
+                    ->visible($aberto),
+
+                /*
+                 * A verificação de e-mail NÃO é editável aqui, e isso é decisão, não
+                 * esquecimento: o `AppPanelProvider` lê a chave no BOOT, e o middleware é
+                 * fixado no array da rota no momento do registro
+                 * (`vendor/filament/filament/src/Pages/Concerns/HasRoutes.php:91`) — não por
+                 * request. Um toggle aqui gravaria e não faria efeito até o próximo deploy,
+                 * que é pior que campo ausente.
+                 */
+                TextEntry::make('aviso_verificacao_email')
+                    ->hiddenLabel()
+                    ->state('A exigência de e-mail validado fica no `.env`, em `KIT_REGISTRO_VERIFICAR_EMAIL` — ela decide o middleware das rotas no boot da aplicação, e por isso não pode mudar em tempo de execução.')
+                    ->visible($aberto),
             ]);
     }
 

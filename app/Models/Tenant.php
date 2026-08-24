@@ -76,6 +76,10 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         'nome',
         'slug',
         'ativo',
+        // Fillable, ao contrário de `users.aprovacao_pendente`: aqui o campo É a decisão de
+        // quem administra a instalação, tomada no formulário. Lá era estado de fronteira que
+        // nenhum formulário deve escrever. A auditoria de `AuditsFillables` cobre esta.
+        'registro_habilitado',
         'cor_primaria',
         'logo',
     ];
@@ -111,7 +115,8 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
     protected function casts(): array
     {
         return [
-            'ativo' => 'boolean',
+            'ativo'               => 'boolean',
+            'registro_habilitado' => 'boolean',
         ];
     }
 

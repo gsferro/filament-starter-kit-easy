@@ -542,6 +542,11 @@ function inventarioDeAutorizacao(): array
         'app/Filament/Admin/Resources/Roles/RoleResource.php::usuarios'                                       => 'policy',
         'app/Filament/Admin/Resources/Tenants/RelationManagers/UsersRelationManager.php::papeisNaOrganizacao' => 'permissao',
         'app/Filament/Concerns/ConvidaEmMassa.php::convidarEmMassa'                                           => 'policy',
+        // Aprovar cadastro pendente. `->authorize('update')` resolve contra o record: quem pode
+        // editar o cadastro e quem pode liberá-lo, e `panel_user` nao tem `Update:User` porque o
+        // `PapeisSeeder` subtrai a administracao do painel `app`. A trait e compartilhada pelos
+        // dois `UserResource`, entao a entrada e uma so, no arquivo do concern.
+        'app/Filament/Concerns/AprovacaoDeCadastro.php::aprovar'                                              => 'policy',
 
         // Painel /app
         'app/Filament/App/Pages/ConvitesRecebidos.php::aceitar'           => 'permissao',

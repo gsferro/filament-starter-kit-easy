@@ -72,6 +72,11 @@ return new class extends SettingsMigration
             $kit->add('hub_de_navegacao', (bool) config('kit.hub', false));
             $kit->add('rotulo_da_organizacao', (string) config('kit.tenancy.label', 'Organização'));
             $kit->add('rotulo_das_organizacoes', (string) config('kit.tenancy.label_plural', 'Organizações'));
+
+            // O default de todas as três é `false`, e o requisito é explícito quanto a isso:
+            // porta fechada até alguém abrir. Semear do `.env` mantém quem já ligou por lá.
+            $kit->add('registro_habilitado', (bool) config('kit.registro.habilitado', false));
+            $kit->add('registro_aprovacao_manual', (bool) config('kit.registro.aprovacao_manual', false));
         });
     }
 
