@@ -324,11 +324,18 @@ class RegistroPorConvite extends Register
             return 'Aceitar convite';
         }
 
-        // O nome da organização no título é o que diz à pessoa ONDE ela está entrando — com
-        // tenancy o cadastro sempre pertence a uma, e o `?org=` não é legível na URL.
+        /*
+         * "Criar SUA conta", e não "Criar conta": o rótulo do BOTÃO de envio já é "Criar conta"
+         * (`vendor/filament/filament/resources/lang/pt_BR/auth/pages/register.php`, chave
+         * `form.actions.register.label`). Título idêntico ao botão deixa a tela com o mesmo
+         * texto duas vezes, e faz qualquer asserção por texto ficar ambígua.
+         *
+         * Com organização, o nome dela entra no título: é o que diz à pessoa ONDE ela está
+         * entrando, e o `?org=` da URL não é legível.
+         */
         return $this->organizacao instanceof Tenant
-            ? "Criar conta em {$this->organizacao->nome}"
-            : 'Criar conta';
+            ? "Criar sua conta em {$this->organizacao->nome}"
+            : 'Criar sua conta';
     }
 
     /** O convite desta tela, ou a saída — nunca um null que vaze para o resto do fluxo. */
