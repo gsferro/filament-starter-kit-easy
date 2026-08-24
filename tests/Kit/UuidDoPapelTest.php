@@ -3,6 +3,7 @@
 use App\Filament\Admin\Resources\Roles\Pages\CreateRole;
 use App\Filament\Admin\Resources\Roles\Pages\EditRole;
 use App\Models\Role;
+use App\Support\Papeis;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Livewire\Livewire;
@@ -46,15 +47,23 @@ it('preenche o uuid dos papeis que ja existiam', function (): void {
  * A linha do `id` é a cláusula do requisito, escrita como asserção: 404, não 200. Sem ela, a
  * migration e a trait podem estar no lugar e a rota continuar aceitando `id` — o que é
  * exatamente o mutante de aplicar a coluna e esquecer a trait no model.
+ *
+ * E a linha do `uuid` não se contenta com 200: ela confere que a tela abriu O PAPEL PEDIDO.
+ * `assertStatus(200)` sozinho passaria com um `resolveRouteBinding` que devolvesse qualquer
+ * registro — e "qualquer registro" numa tela de permissão é o defeito, não o detalhe.
  */
 it('resolve a tela do papel por uuid e recusa o id', function (string $sufixo, string $chave, int $status): void {
     $papel = Role::findByName('panel_user');
 
     $parametro = $chave === 'uuid' ? $papel->getRouteKey() : (string) $papel->getKey();
 
-    $this->actingAs(usuarioCom('master_global'))
+    $resposta = $this->actingAs(usuarioCom('master_global'))
         ->get("/admin/shield/roles/{$parametro}{$sufixo}")
         ->assertStatus($status);
+
+    if ($status === 200) {
+        $resposta->assertSee(Papeis::rotulo('panel_user'));
+    }
 })->with([
     'alteração por uuid'     => ['/edit', 'uuid', 200],
     'alteração por id'       => ['/edit', 'id', 404],

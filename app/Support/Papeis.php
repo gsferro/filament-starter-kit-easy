@@ -16,10 +16,11 @@ use Illuminate\Support\Str;
  * eram sete pontos quando esta classe nasceu, são DEZESSETE hoje — a tabela de papéis e o
  * título do registro dela, o cadastro de usuários dos dois painéis, os dois de convites, o
  * vínculo por organização, as caixas de entrada e dois widgets do dashboard /admin.
- * Dezessete cópias divergem, e a que divergir vai mostrar `panel_user` numa tela e
+ * Vinte e cinco cópias divergem, e a que divergir vai mostrar `panel_user` numa tela e
  * "Panel User" na de baixo.
  *
- * Não confie neste número: recontar com
+ * Não confie neste número — ele já nasceu errado uma vez nesta própria feature, escrito como
+ * "dezessete" quando eram dezenove. Medido em 2026-08-24; recontar com
  * `grep -rn 'Papeis::rotulo' app/ resources/ | wc -l`. Número parado em docblock é o que faz
  * o próximo agente concluir que a varredura está completa quando não está — o mesmo defeito
  * que `.ai/rules/filament.md` registra para a lista de subtração do `panel_user`.
@@ -44,7 +45,7 @@ final class Papeis
         'master_global' => 'Administrador Geral',
     ];
 
-    /** `master_global` → "Master Global"; `panel_user` → "Painel App". */
+    /** `master_global` → "Administrador Geral"; `gerente_de_contas` → "Gerente De Contas". */
     public static function rotulo(?string $nome): string
     {
         if (blank($nome)) {

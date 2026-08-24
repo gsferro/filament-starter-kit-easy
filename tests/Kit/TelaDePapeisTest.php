@@ -319,11 +319,17 @@ it('aceita qualquer guard configurado na aplicacao', function (): void {
 /**
  * CT-19 — guard fora da lista é recusado, e nada é gravado.
  *
- * `Select` do Filament **não** acrescenta regra `in:` sozinho — `Select::setUp()`
- * (`vendor/filament/forms/src/Components/Select.php:147-166`) só configura placeholder,
- * transformação de opções e actions de sufixo. Sem o `->in()` explícito no campo, um
- * `guard_name` forjado no state do Livewire é gravado sem erro, e o Select vira barreira só
- * de UX. É a mesma dobradinha UX+servidor de `ConviteResource::role_id`.
+ * O `Select` do Filament valida no SERVIDOR sozinho, e é isso que este caso prova:
+ * `Select::getInValidationRuleValues()` (`vendor/filament/forms/src/Components/Select.php:1742-1774`)
+ * devolve `[]` quando o state não casa com nenhuma opção, e
+ * `CanBeValidated::getInValidationRule()` (`:808-815`) transforma isso em `Rule::in([])`, que
+ * reprova qualquer valor. Um `->in()` nosso no campo SOBRESCREVERIA essa lógica por uma pior
+ * — a nativa também cobre opção desabilitada. A primeira versão desta feature acrescentou o
+ * `->in()`, com um comentário afirmando o contrário; a auditoria do diff derrubou os dois.
+ *
+ * Não confunda com `ConviteResource::role_id`, que PRECISA de `->rule()` explícito: lá o
+ * Select é de `->relationship()` e a trava é de ESCOPO (só papéis do painel app), não de
+ * domínio — `Rule::in` das opções não saberia recortar por painel.
  *
  * A segunda asserção não é redundante: uma implementação que valide DEPOIS de gravar passa
  * num caso que só confere o erro de formulário.

@@ -3,10 +3,13 @@
 use App\Filament\Admin\Resources\Roles\Pages\ListRoles;
 use App\Filament\Admin\Resources\Tenants\Pages\EditTenant;
 use App\Filament\Admin\Resources\Tenants\RelationManagers\UsersRelationManager;
+use App\Filament\App\Pages\ConvitesRecebidos;
+use App\Models\Convite;
 use App\Models\Role;
 use App\Support\Papeis;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Actions\Action;
 use Filament\Actions\Testing\TestAction;
 use Filament\Forms\Components\Select;
 use Illuminate\Support\Facades\DB;
@@ -102,6 +105,48 @@ it('exibe o rotulo do papel no seletor de papeis da organizacao', function (): v
 
                 return in_array(Papeis::rotulo('panel_user'), $opcoes, true)
                     && ! in_array('panel_user', $opcoes, true);
+            },
+        );
+})->group('kit');
+
+/**
+ * O terceiro lugar onde o papel é exibido, e o que a varredura original não alcançou.
+ *
+ * A confirmação do aceite de convite imprimia a CHAVE (`panel_user`) na mesma tela em que a
+ * coluna logo acima já mostrava "Painel App" — `app/Filament/App/Pages/ConvitesRecebidos.php`.
+ * Escapou porque o acesso é `$record->papel?->getAttribute('name')`, que nenhum grep por
+ * `papel.name` ou `roles.name` casa. Foi achado do quality gate, não da derivação.
+ *
+ * É uma terceira FAMÍLIA de renderização, depois da coluna de tabela (CT-04) e da opção de
+ * Select (CT-10): texto de modal. Por isso ganha caso próprio em vez de virar uma asserção a
+ * mais num caso existente.
+ *
+ * O oráculo é `getModalDescription()` do action resolvido, e não `assertSee`: o Filament não
+ * imprime o conteúdo do modal no HTML do componente pai — a mesma razão de CT-10 e CT-21
+ * asserirem sobre o componente.
+ */
+it('exibe o rotulo do papel na confirmacao do aceite de convite', function (): void {
+    $organizacao = tenant('Acme', 'acme');
+    $pessoa      = usuarioComPapel('panel_user', $organizacao, 'carla@example.test');
+
+    $convite = Convite::factory()->create([
+        'email'     => 'carla@example.test',
+        'role_id'   => Role::query()->where('name', 'panel_user')->firstOrFail()->getKey(),
+        'tenant_id' => $organizacao->getKey(),
+    ]);
+
+    noPainelDa($organizacao);
+    $this->actingAs($pessoa);
+
+    Livewire::test(ConvitesRecebidos::class)
+        ->loadTable()
+        ->assertActionExists(
+            TestAction::make('aceitar')->table($convite),
+            function (Action $acao): bool {
+                $descricao = (string) $acao->getModalDescription();
+
+                return str_contains($descricao, Papeis::rotulo('panel_user'))
+                    && ! str_contains($descricao, 'panel_user');
             },
         );
 })->group('kit');
