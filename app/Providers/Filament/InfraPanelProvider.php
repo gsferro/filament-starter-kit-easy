@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\TelaBloqueio;
+use App\Filament\Pages\Auth\TelaDoisFatores;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
@@ -154,11 +155,24 @@ class InfraPanelProvider extends PanelProvider
                         ->mediaPosition(MediaPosition::Right)
                         ->mediaSize('70%')
                         ->themeToggle()
+                    )
+                    // Confirmação de e-mail: este bloco VESTE a tela (grava a chave
+                    // 'email-verification' no AuthDesignerConfigRepository) e nada mais. Quem
+                    // decide se ela entra no ar é o `->emailVerification(null, ...)` depois do
+                    // `->plugins([...])` — ver a nota longa no AppPanelProvider e ADR-03.
+                    ->emailVerification(fn (AuthPageConfig $config): AuthPageConfig => $config
+                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->mediaPosition(MediaPosition::Right)
+                        ->mediaSize('70%')
+                        ->themeToggle()
                     ),
 
                 BreezyCore::make()
                     ->myProfile(shouldRegisterUserMenu: true, hasAvatars: true, slug: 'meu-perfil', userMenuLabel: 'Meu perfil')
-                    ->enableTwoFactorAuthentication(),
+                    // A tela do desafio de 2FA com o layout do login — ver a nota no
+                    // AppPanelProvider. `action:` nomeado de propósito: posicional cairia
+                    // em `$condition`.
+                    ->enableTwoFactorAuthentication(action: TelaDoisFatores::class),
 
                 // Obrigatório em todos os painéis — ver nota no AdminPanelProvider.
                 Lockscreen::make()
@@ -366,6 +380,16 @@ class InfraPanelProvider extends PanelProvider
                 // Este painel NAO depende de config('kit.hub') — ver o docblock da Page.
                 FilamentCardsPlugin::make(),
             ])
+            /*
+             * Confirmação de e-mail: o Auth Designer configurado, a ROTA desligada — ver a
+             * nota longa no AppPanelProvider, inclusive os três passos para ligar.
+             *
+             * Em resumo: o `->emailVerification(...)` do plugin acima grava a chave
+             * 'email-verification' no AuthDesignerConfigRepository (a tela já está vestida), e
+             * este `null` apaga a ação da rota, para não expor uma tela que responde 500
+             * enquanto `App\Models\User` não implementa `MustVerifyEmail`.
+             */
+            ->emailVerification(null, isRequired: false)
             /*
              * Rótulos da Central de comandos em pt-BR. Precisa ser em bootUsing():
              * o register() do plugin escreve 'Commands'/'Run history' nas mesmas

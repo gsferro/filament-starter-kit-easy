@@ -72,3 +72,36 @@ it('abre as telas publicas dos tres paineis', function (): void {
         '/infra/password-reset/request',
     ])->assertNoSmoke();
 });
+
+/**
+ * CT-B05 — o desafio de 2FA RENDERIZA o layout do Auth Designer, e continua operável.
+ *
+ * O que este cenário acrescenta, com precisão — porque `/{painel}/two-factor-authentication`
+ * já está em `telasDoKit()` e já passa pelo lote do CT-B01 acima:
+ *
+ * - o lote prova que a tela não registra erro de JavaScript. Isso ele já provava antes desta
+ *   feature, e continua provando agora que a classe da rota é a nossa;
+ * - `tests/Kit/TelasDeAutenticacaoTest.php` prova que as classes do layout estão no HTML;
+ * - **nenhum dos dois** prova que o layout do Auth Designer RENDERIZA o que ele injeta. O
+ *   `.fi-auth-theme-switcher-wrapper` só existe no layout do pacote
+ *   (`vendor/caresome/filament-auth-designer/resources/views/components/partials/theme-toggle.blade.php:20`),
+ *   e `assertVisible` sobre ele é a única asserção da suíte que diz que a tela de 2FA saiu
+ *   de fato vestida num navegador — não só com a classe no DOM.
+ *
+ * O `$this->get()` antes do `visit()` paga a compilação dos componentes do painel FORA do
+ * cronômetro do Playwright — ver a rule do `view:cache` em `.ai/rules/testes-browser.md`.
+ *
+ * `assertNoJavaScriptErrors()` e não `assertNoSmoke()`: tela de terceiro (Breezy) dentro de
+ * layout de terceiro (Auth Designer). E o console não é o oráculo — os dois `assertVisible`
+ * são, porque página em branco e 403 renderizado passam por um console limpo.
+ */
+it('abre o desafio de 2FA vestido pelo auth designer, sem erro de JavaScript', function (): void {
+    $this->actingAs(usuarioDoKit('master_global'));
+
+    $this->get('/admin');
+
+    visit('/admin/two-factor-authentication')
+        ->assertVisible('#form\.code')
+        ->assertVisible('.fi-auth-theme-switcher-wrapper')
+        ->assertNoJavaScriptErrors();
+});

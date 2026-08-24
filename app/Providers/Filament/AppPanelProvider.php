@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\App\Pages\ConvitesRecebidos;
 use App\Filament\Pages\Auth\RegistroPorConvite;
 use App\Filament\Pages\Auth\TelaBloqueio;
+use App\Filament\Pages\Auth\TelaDoisFatores;
 use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
@@ -208,11 +209,16 @@ class AppPanelProvider extends PanelProvider
                      *
                      * Para fechar o cadastro por completo, remova este bloco: a rota
                      * deixa de existir e a superfície pública desaparece.
+                     *
+                     * `MediaPosition::Right` — ESPELHADO em relação ao login, igual à
+                     * recuperação de senha logo abaixo e pela mesma razão: o eixo
+                     * invertido é o sinal imediato de que se saiu do login, sem trocar
+                     * cor, texto ou marca.
                      */
                     ->registration(fn (AuthPageConfig $config): AuthPageConfig => $config
                         ->usingPage(RegistroPorConvite::class)
                         ->media(asset('images/auth/login.svg'), alt: config('app.name'))
-                        ->mediaPosition(MediaPosition::Left)
+                        ->mediaPosition(MediaPosition::Right)
                         ->mediaSize('70%')
                         ->themeToggle()
                     )
@@ -236,11 +242,38 @@ class AppPanelProvider extends PanelProvider
                         ->mediaPosition(MediaPosition::Right)
                         ->mediaSize('70%')
                         ->themeToggle()
+                    )
+                    /*
+                     * Confirmação de e-mail: este bloco VESTE a tela, e só isso.
+                     *
+                     * O kit não exige verificação de e-mail — quem entra é convidado. O bloco
+                     * existe para que, no dia em que alguém ligue a verificação, a tela já
+                     * saia com a mesma arte das outras em vez de crua: quem grava a chave
+                     * 'email-verification' no AuthDesignerConfigRepository é o `boot()` do
+                     * plugin (AuthDesignerPlugin.php:99-101).
+                     *
+                     * Ele também faz o plugin chamar `$panel->emailVerification($classe)`
+                     * (AuthDesignerPlugin.php:45-47) — com UM argumento, então o
+                     * `bool $isRequired = true` do Filament (HasAuth.php:110) entra de
+                     * tabela. Quem decide o que vai para o ar é o
+                     * `->emailVerification(null, isRequired: false)` logo depois do
+                     * `->plugins([...])`, onde está a nota longa. Ver ADR-03 da wiki
+                     * `auth-designer-telas`.
+                     */
+                    ->emailVerification(fn (AuthPageConfig $config): AuthPageConfig => $config
+                        ->media(asset('images/auth/login.svg'), alt: config('app.name'))
+                        ->mediaPosition(MediaPosition::Right)
+                        ->mediaSize('70%')
+                        ->themeToggle()
                     ),
 
                 BreezyCore::make()
                     ->myProfile(shouldRegisterUserMenu: true, hasAvatars: true, slug: 'meu-perfil', userMenuLabel: 'Meu perfil')
-                    ->enableTwoFactorAuthentication(),
+                    // `action:` é o ponto de extensão do Breezy para a tela do desafio de
+                    // 2FA — a rota do pacote pergunta ao plugin qual classe usar. A nossa
+                    // troca o layout simples pelo do login. NOMEADO de propósito: `action`
+                    // é o 3º parâmetro, e posicional cairia em `$condition`.
+                    ->enableTwoFactorAuthentication(action: TelaDoisFatores::class),
 
                 // Obrigatório em todos os painéis — ver nota no AdminPanelProvider.
                 Lockscreen::make()
@@ -305,6 +338,43 @@ class AppPanelProvider extends PanelProvider
                 FilamentExceptionsPlugin::make()
                     ->registerNavigation(false),
             ])
+            /*
+             * Confirmação de e-mail: o Auth Designer configurado, a ROTA desligada.
+             *
+             * `null` no primeiro parâmetro é o ponto desta linha. Ela roda DEPOIS do
+             * `->plugins([...])` — `Panel::plugin()` registra o plugin na hora
+             * (Panel/Concerns/HasPlugins.php:15-21), então quem fala por último vence — e
+             * apaga a AÇÃO da rota que o plugin havia registrado. Sem ação,
+             * `hasEmailVerification()` é falso (HasAuth.php:620-623) e nenhuma rota nasce
+             * (vendor/filament/filament/routes/web.php:75-84).
+             *
+             * O que SOBREVIVE é o que o requisito pede: o `->emailVerification(...)` do
+             * AuthDesignerPlugin acima já gravou a chave 'email-verification' no
+             * AuthDesignerConfigRepository, com mídia, eixo e alternador de tema — a gravação
+             * acontece no `boot()` do plugin (AuthDesignerPlugin.php:99-101) e não depende da
+             * rota. A tela já está vestida; ela só não está no ar.
+             *
+             * Por que não deixá-la no ar com `isRequired: false`: MEDIDO — a tela do Filament
+             * responde 500. `EmailVerificationPrompt::getVerifiable()` declara retorno
+             * `MustVerifyEmail`
+             * (vendor/filament/filament/src/Auth/Pages/EmailVerification/EmailVerificationPrompt.php:36-43)
+             * e é chamada no `mount()` (:31); `App\Models\User` não implementa a interface, e
+             * o request morre em `TypeError`. Rota que sempre erra é pior que rota que não
+             * existe.
+             *
+             * PARA LIGAR a verificação de e-mail são três passos deliberados:
+             *   1. `App\Models\User implements Illuminate\Contracts\Auth\MustVerifyEmail` —
+             *      sem ela a tela estoura, e o middleware do Laravel não barra ninguém
+             *      (Illuminate/Auth/Middleware/EnsureEmailIsVerified.php:32-40);
+             *   2. troque o `null` abaixo por
+             *      `\Caresome\FilamentAuthDesigner\Pages\Auth\EmailVerification::class`;
+             *   3. troque `isRequired: false` por `true`.
+             * Antes de ligar, lembre que NENHUM usuário semeado tem `email_verified_at` —
+             * todos seriam barrados no primeiro request.
+             *
+             * Ver ADR-03 da wiki `auth-designer-telas`.
+             */
+            ->emailVerification(null, isRequired: false)
             /*
              * Gatilho da busca ⌘K, no lugar exato do campo nativo.
              *
