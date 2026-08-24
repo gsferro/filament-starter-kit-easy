@@ -57,3 +57,30 @@ it('abre em tema escuro, com conteudo, e sem erro de javascript', function (): v
         ->assertSee((string) config('kit.version'))
         ->assertNoJavaScriptErrors();
 });
+
+/**
+ * CT-B02 — a página é legível nos dois temas.
+ *
+ * Nasceu de um achado do quality gate (QA-01, `06-relatorio-qa.md`): CT-B01 sozinho **não valida
+ * tema**. `inDarkMode()->assertSee(...)` prova que a página ABRE sob `prefers-color-scheme: dark`,
+ * e nada sobre cor — o texto pode estar branco em fundo branco, que ele continua no DOM e o
+ * `assertSee` continua verde (`.ai/rules/testes-browser.md`). Sem este cenário, RQ-11 ("herda o
+ * darkmode") ficava com oráculo apenas estático: a PRESENÇA do script de tema no HTML (CT-14).
+ *
+ * O axe é a verificação de contraste que existe sem pagar screenshot e olhar. Ele não pega tudo —
+ * ícone que desaparece, sombra invertida — mas pega o defeito que importa aqui, que é cor de texto
+ * sobre cor de fundo.
+ *
+ * **O tema é DECLARADO em cada linha, nunca herdado.** `tests/Browser/TemaEscuroTest.php` mediu
+ * que a emulação de `prefers-color-scheme` **vaza** para o cenário seguinte: um cenário escuro
+ * antes de um cenário sem declaração produzia quatro achados `serious` falsos — paleta escura sobre
+ * fundo claro, com TODO o texto da página em cinza-claro ao mesmo tempo. Foi preciso duas execuções
+ * completas da suíte para separar isso de um defeito real.
+ */
+it('nao tem problema de acessibilidade nos dois temas', function (string $tema): void {
+    $pagina = visit('/');
+
+    ($tema === 'escuro' ? $pagina->inDarkMode() : $pagina->inLightMode())
+        ->assertSee('Bem-vindo ao Starter Kit Easy')
+        ->assertNoAccessibilityIssues();
+})->with(['claro', 'escuro']);
