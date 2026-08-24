@@ -148,3 +148,18 @@ A rota fica registrada e responde 403 (não 404). Tirá-la do ar exigiria recort
 Consequência de escrever um cartão à mão: ele aparece para **todo mundo** e só devolve 403 no clique. Vaza a existência da tela e oferece um caminho que falha depois.
 
 Regra: todo cartão de hub sai de `app/Filament/Concerns/DescobreCardsDoPainel.php`, que filtra pelo `canAccess()` de cada destino. `CardItem::make()` direto num `->cards()` é o defeito, não o atalho.
+
+## Page, Widget e Action novos nascem com a permissão consultada
+Os defaults do Filament são permissivos POR DESIGN, e o vendor diz isso em comentário: `Pages/Concerns/CanAuthorizeAccess.php:17-23` retorna `true` ("Custom pages default to allowing access for all authenticated panel users"), `widgets/src/Widget.php:34-37` idem, e `actions/src/Concerns/CanBeAuthorized.php:15-22` nasce `null` = liberada.
+
+Consequência medida na v0.18.10: o `shield:generate` criava `View:{Page}` e `View:{Widget}`, elas apareciam como checkbox na tela de papéis, e **nada as consultava**. Quem abria /infra via servidores, filas, slow queries, trilha de auditoria e IP de acessos; quem abria /admin via a lista de nomes e e-mails dos últimos cadastrados. A única barreira era `canAccessPanel()`.
+
+Então: Page usa `ExigePermissaoDaTela` (o trait do kit, não `HasPageShield` direto — método na classe vence método de trait sem avisar, e o dia em que a Page ganhar um `canAccess()` próprio a permissão para de ser consultada com o diff parecendo correto). Widget consulta a permissão dele. Action declara `->authorize(...)`.
+
+Dois detalhes que já custaram caro:
+- `canView()` que só faz `rescue(fn () => Schema::hasTable(...))` NÃO é autorização — é proteção contra migration ausente. As duas coisas convivem.
+- `->visible()` e `->authorize()` **bloqueiam igual** (`mountAction()` checa os dois). A diferença é semântica e tooltip, não enforço — não troque um pelo outro achando que ganhou barreira.
+
+Permissão que não entra na matriz do `database/seeders/PapeisSeeder.php` nasce órfã: ninguém a tem, inclusive o `admin` pode ficar trancado fora da tela que você acabou de criar.
+
+Enforço automático: `tests/Kit/PermissoesDeAcoesTest.php` tem um inventário que fica VERMELHO quando nasce Action ou item de navegação novo, e obriga a declarar COMO ele é autorizado. Ele pegou três Actions em três branches diferentes nesta rodada. Se ficar vermelho, a linha a acrescentar é uma — não contorne.
