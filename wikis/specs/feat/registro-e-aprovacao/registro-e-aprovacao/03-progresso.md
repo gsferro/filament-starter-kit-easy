@@ -145,7 +145,37 @@ que eu mais esperava ver questionadas.
 
 ## Blockers
 
-- *(nenhum)*
+Abertos pelo **quality gate, ciclo 1** — ver `06-relatorio-qa.md` para repro e evidência.
+
+- **QA-01 (Blocker)** — o toggle *"Exigir e-mail validado"* das `ConfiguracoesDoKit` é **inerte**:
+  gravado no Settings, `config()` e `RegistroAberto::exigirVerificacaoDeEmail()` viram `true`, mas o
+  painel `/app` já foi montado antes do alinhamento (`KitServiceProvider::boot()`) e nasce sem as
+  rotas de verificação. Pelo `.env` funciona. Atinge RQ-02, RQ-09 e RQ-12.
+- **QA-02 (Blocker)** — aprovar pelo `/admin` com tenancy ligada grava `panel_user` em
+  `Tenant::CONTEXTO_GLOBAL`: a pessoa entra no `/app` (200) e **não vê nada**, e a ação `aprovar`
+  se esconde depois, então a mesma tela não conserta. `User::aprovar()` é o único caminho novo que
+  atribui papel de `/app` sem `App\Support\ContextoDePapeis`. Atinge RQ-04 e RQ-07.
+- **QA-03 (Major)** — `RegistroAberto::registrar()` não reconfere `ativo`/`registro_habilitado` do
+  `$organizacao` recebido: chamador direto (job, comando, seeder) cadastra em organização que não
+  optou. Atinge RQ-03.
+
+## Débitos Aceitos (quality gate, ciclo 1)
+
+- **QA-04 (Minor)** — a guarda de pendência em `canAccessPanel()` está **correta** (medido: 403 nos
+  três painéis, inclusive para `master_global` pendente) e **sem oráculo**: toda persona pendente da
+  suíte tem zero papéis, então apagar o bloco mantém a suíte verde. Faltam dois casos: pendente
+  **com** papel do painel, e `master_global` pendente.
+- **QA-05 (Minor)** — o throttle `5/600s` de `recusar()` funciona (8 GETs ⇒ 5 linhas) e **nenhum CT
+  reprova se ele for removido**.
+- **QA-06 (Cosmético)** — `RegistroPorConvite::recusar()` e ADR-09 citavam *"QA-01 do relatório desta
+  wiki"* quando o `06` não existia. O achado herdado ficou registrado como **QA-00**; ao encostar
+  nesses pontos, corrigir a citação.
+
+## Veredito do Quality Gate
+
+- **Ciclo 1: REPROVADO → teste** (2 Blocker, 1 Major, 2 Minor, 1 Cosmético). Cada Blocker começa
+  pelo CT que falha; o roteamento completo, as 11 dimensões, as 11 hipóteses rejeitadas e o que
+  **não** foi verificado estão em `06-relatorio-qa.md`.
 
 ## Desvios do Plano
 
