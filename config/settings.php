@@ -1,5 +1,6 @@
 <?php
 
+use App\Settings\ConfiguracoesDoKit;
 use Spatie\LaravelSettings\SettingsCasts\DateTimeInterfaceCast;
 use Spatie\LaravelSettings\SettingsCasts\DateTimeZoneCast;
 use Spatie\LaravelSettings\SettingsRepositories\DatabaseSettingsRepository;
@@ -10,9 +11,15 @@ return [
     /*
      * Each settings class used in your application must be registered, you can
      * put them (manually) here.
+     *
+     * O registro explícito é redundante com `auto_discover_settings` (mais
+     * abaixo), que já varre app/Settings — e é redundante DE PROPÓSITO: a
+     * descoberta é cacheada em `discovered_settings_cache_path`
+     * (bootstrap/cache), e um cache velho de um deploy anterior deixaria a
+     * classe invisível. A linha aqui é o que sobrevive a isso.
      */
     'settings' => [
-
+        ConfiguracoesDoKit::class,
     ],
 
     /*

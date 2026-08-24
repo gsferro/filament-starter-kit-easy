@@ -957,9 +957,93 @@ O achado estrutural foi um só, e ele explica quatro dos cinco: **CT-01 particio
 | CT-14 é quase-tautologia de framework | verdade, e por isso ele foi **rebaixado a asserção de apoio** no índice em vez de removido: continua sendo o único que mata M29, e custa um `assertSee` |
 | CT-27 cobre só nome e cor de RQ-03 | não é lacuna: `aplicarSemBanco()` do `kit:install --custom` **oferece** só nome e cor, e o recorte está argumentado em `CustomizadorDaInstalacao.php:170-192`. Os outros itens de RQ-03 chegam à config por CT-01, não pelo instalador |
 
-### Rodada 2
+### Rodada 2 — a lacuna de segunda ordem
 
-O fechamento criou quatro cenários novos (CT-33 a CT-36), o que dispara a re-revisão prevista. Resultado registrado em `03-progresso.md`.
+O fechamento criou cinco cenários, o que disparou a re-revisão prevista (teto: 2 rodadas). Ela achou **três implementações erradas que ainda passavam, cinco oráculos novos fracos ou vacuosos, seis redundâncias/contradições introduzidas pelo próprio fechamento e três cláusulas ainda sem falsificador**. Esta é a última rodada: o que sobra vai para lacuna declarada, não para uma rodada 3.
+
+Duas observações que mudam como ler a lista:
+
+1. **Os três "ainda passava" são lacunas de TESTE, não de código.** O código já estava escrito quando a rodada 2 rodou, e nos três casos ele faz o certo — o alinhamento está no `boot()` do `KitServiceProvider` (alcança comando artisan), o mapa grava a chave **sem** condicionar a valor não-nulo, e a trilha sai do listener de `SavingSettings` (alcança gravação fora da tela). O que faltava era o cenário capaz de reprovar a alternativa. É exatamente o valor de uma revisão cega: ela não sabia o que o código faz e apontou onde o conjunto não olhava.
+2. **Um achado da rodada 1 foi um erro meu, e a rodada 2 o desfez.** CT-33 foi criado para separar "abrir" de "gravar" pela regra do verbo irmão. Sob a decisão de RQ-14 (**uma** permissão governa as duas), `mount()` aborta em `canAccess()` antes de `save()` existir — as duas personas de CT-33 são as mesmas que CT-15 já barra, e `canEdit()` fixo em `true` é **inobservável por qualquer cenário possível**. A regra do verbo irmão é válida em geral e foi aplicada a um par de verbos que a própria decisão de escopo fundiu.
+
+#### Fechamento da rodada 2
+
+| Achado | Destino |
+|---|---|
+| **E-1** — o alinhamento poderia estar pendurado no `bootUsing()` de um painel ou num middleware `web`, e nenhum cenário roda comando artisan. Consequência: convite e lembrete sairiam da fila/CLI com o `MAIL_MAILER` do `.env`, e a aba E-mail ficaria decorativa fora do navegador | **CT-37, novo** — afirma **onde** o alinhamento está ligado, por varredura dos providers. É uma asserção estrutural, e está declarada como tal: o falsificador comportamental exigiria um processo separado (`Process::run('php artisan …')`), lento e frágil na suíte. O kit já usa esse padrão de teste em `CacheDeViewsNoDockerTest` e `QualidadeDeCodigoTest` |
+| **E-2** — `if (! is_null($valor))` no alinhamento é a guarda que qualquer dev escreve depois de pensar em M4, e as 21 linhas de CT-01 usam valor **não-nulo**. Consequência: escolher "padrão" na cor, limpar a logo ou apagar o usuário de SMTP grava, gera trilha, e **não tem efeito** — não há caminho de volta ao default pela tela | **CT-38, novo** — três linhas de propriedade limpada (cor, logo, usuário de SMTP), afirmando que a chave de config vira nula |
+| **E-3** — a trilha poderia estar dentro do `save()` da Page: CT-22, CT-23, CT-24, CT-25 e CT-34 gravam **todos pela tela**, e o `Então` de CT-27 não menciona auditoria | **CT-39, novo** — grava pela API do settings, fora de qualquer tela, e afirma a trilha |
+| **CT-33** não mata mutante nenhum sob a decisão de uma permissão | **removido.** M27 e M73 passam a **lacuna declarada**: `canEdit()` só é observável separadamente se um dia houver duas permissões, e aí o cenário nasce com a decisão |
+| **CT-34** conta registros em termos absolutos, sem declarar que a tabela começa vazia | o `Dado` passa a arranjar pelos valores **semeados pela migration** (o migrator escreve direto no repositório, não por `Settings::save()`, logo não dispara o listener), e o `Então` conta apenas os registros com a etiqueta `configuracoes-do-kit` |
+| **CT-35** não separa `brandName` de `<title>`: com a marca literal no provider e o alinhamento funcionando, o HTML contém **as duas** coisas | o `Dado` passa a exigir que o nome gravado **difira** do `APP_NAME` do ambiente, e o `Então` ganha `assertDontSee` do valor do ambiente. É o mesmo par discriminante que CT-35b já usava, e cuja ausência aqui a própria revisão apontou como contradição interna do arquivo |
+| **CT-35b** não tem `Dado` — Gherkin só compartilha arranjo por `Contexto:` | ganha `Contexto:` explícito, compartilhado com CT-35 |
+| **CT-36** afirma o conjunto de opções: derivar a lista esperada da constante é tautologia, fixar `16` é número mágico — e o defeito real é o **formato da chave** (uma opção com chave em slug grava `emerald` e `CorPrimaria` cai em paleta vazia, em silêncio) | **oráculo reescrito para comportamento**: escolher uma cor pelo formulário, salvar, e afirmar que `CorPrimaria::paleta()` devolve a paleta daquela cor. Mata M79 e o mutante de formato de chave, sem contagem |
+| **CT-11** reescrito passou a medir o ambiente: comparar o gravado com `config()` é auto-referencial, e para paginação (10), os três booleanos (`true`) e o hub (`false`) uma migration com literais produz exatamente o valor que a config já tem | o cenário passa a **arranjar valores discriminantes na config, apagar o grupo e rodar o `up()` da migration**, afirmando o que foi semeado. Sem isso M12 não tinha matador — a reescrita da rodada 1 tirou o número mágico e, com ele, a única asserção que podia falhar |
+| **CT-20** perdeu o que o tornava único quando ganhou a asserção dos interruptores | asserção revertida. CT-20 volta a ser só a fumaça das telas de vendor (M55); o oráculo dos interruptores é de CT-18 e CT-19 |
+| **RQ-11** — CT-32 afirma a **ausência** da promessa, e um README que apaga a linha da densidade em silêncio passa. É o mutante M67 sem matador | **CT-32 ganha uma asserção de presença**: os dois READMEs precisam **dizer** que densidade de tabela não existe no Filament 5. Presença é falsificável; ausência não distinguia apagar de explicar |
+| **RQ-12** — a tabela "O que mudou" prometeu linhas de `logo` em CT-26 e elas não foram escritas; e CT-26 tem dois comportamentos opostos para "ausente no disco" (favicon → nulo, arte → padrão do kit) | linhas escritas abaixo, com a regra explícita: **logo e favicon devolvem nulo** (o Filament cai no brand em texto e no ícone dele); **só a arte tem fallback**, porque `->media()` do Auth Designer com nulo deixaria a tela de login sem imagem |
+| **RQ-16** — "pontos adicionais de valor identificados na análise" foi marcado como fechado apontando linhas de CT-01 que existem por RQ-03/RQ-09; nenhuma delas pode ficar vermelha *por causa* de RQ-16 | **passa a lacuna declarada.** A cláusula não é falsificável por teste: ela julga o *julgamento* de quem analisou o kit. O que dá para verificar — que hub, rótulos e defaults de tabela existem e chegam à config — já está em CT-01, e está registrado ali. Marcar como fechado era relabelagem de cobertura, e a revisão está certa em recusar |
+| CT-01 absorveu asserções de CT-21 (`mail_password`) e de CT-18 (os três interruptores) | redundância aceita e registrada: é o preço de a matriz ser completa. M51 e M56 continuam atribuídos aos cenários originais, que os matam por outro caminho |
+| CT-34 e CT-35 dependiam de estado inicial do arnês sem declarar | declarado nos dois `Dado` |
+
+#### Cenários da rodada 2
+
+```gherkin
+# language: pt
+
+  Regra: o alinhamento vale para todo processo, não só para o request HTTP
+
+    Cenário: [CT-37] o alinhamento está ligado no provider da aplicação, não num painel
+      Quando o código dos provedores do projeto é lido
+      Então o provider da aplicação chama o alinhamento das configurações
+      E nenhum provedor de painel o chama
+      E nenhum middleware do projeto o chama
+
+  Regra: limpar uma propriedade devolve o consumidor ao padrão
+
+    Esquema do Cenário: [CT-38] propriedade limpada zera a chave de configuração
+      Dado que a chave de configuração "<chave>" vale "<antes>"
+      E que a propriedade "<propriedade>" do grupo "kit" está gravada como vazia
+      Quando o kit alinha a configuração do processo
+      Então a chave de configuração "<chave>" está vazia
+
+      Exemplos:
+        | propriedade    | chave                      | antes        | # o que o usuário fez |
+        | cor_primaria   | kit.cor_primaria           | Blue         | escolheu "padrão"     |
+        | logo           | kit.identidade.logo        | kit/logo.png | removeu a logo        |
+        | mail_username  | mail.mailers.smtp.username | usuario      | apagou o usuário      |
+
+  Regra: a trilha registra a alteração, não o clique
+
+    Cenário: [CT-39] gravação fora de qualquer tela também deixa trilha
+      Dado que o nome da aplicação gravado é "Antes"
+      Quando o nome "Depois" é gravado pela API de configurações, sem passar pela tela
+      Então existe um registro de auditoria com "nome_da_aplicacao" de "Antes" para "Depois"
+```
+
+#### Linhas de `logo` acrescentadas a CT-26
+
+```gherkin
+      Exemplos:
+        | chave   | valor         | existe_no_disco | resultado                    | # partição       |
+        | logo    | kit/logo.png  | kit/logo.png    | URL pública de kit/logo.png  | presente         |
+        | logo    | kit/logo.png  |                 | nulo                         | ausente no disco |
+```
+
+**A regra que a revisão cobrou por escrito**: `logo` e `favicon` devolvem **nulo** quando não há arquivo utilizável — o Filament cai no brand em texto e no ícone próprio. **Só `arte_do_login` tem fallback**, e o motivo é assimétrico de propósito: `->media()` do Auth Designer recebendo nulo deixaria a tela de autenticação sem imagem, que é regressão visível, não default.
+
+#### Mutantes da rodada 2
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M80 | o alinhamento é registrado no `bootUsing()` de um painel ou num middleware `web`, e comando/fila/scheduler seguem com o `.env` — **origem: revisão adversarial rodada 2** | CT-37 |
+| M81 | `if (! is_null($valor))` no alinhamento: não há caminho de volta ao default pela tela — **origem: revisão adversarial rodada 2** | CT-38 |
+| M82 | a trilha é escrita no `save()` da Page e toda gravação fora da tela fica sem rastro — **origem: revisão adversarial rodada 2** | CT-39 |
+| M83 | as opções do campo de cor usam chave em slug (`emerald`) e `CorPrimaria` cai em paleta vazia, em silêncio — **origem: revisão adversarial rodada 2** | CT-36 (oráculo reescrito) |
+| M84 | a migration semeia com literais que **coincidem** com o valor de fábrica da config, e o defeito fica invisível — **origem: revisão adversarial rodada 2** | CT-11 (arranjo discriminante) |
+| M85 | o README apaga a linha da densidade em silêncio, como se tivesse sido entregue — **origem: revisão adversarial rodada 2** | CT-32 (asserção de presença) |
+
+**Totais finais**: **41 cenários** (CT-33 removido; CT-37, CT-38, CT-39 acrescentados) · 17 regras · **85 mutantes previstos** · **5 sem matador, todos declarados**: M27 e M73 (`canEdit()` inobservável com uma permissão só), M49 (heurística de máscara de segredo — só há um campo de segredo), M70 (alinhamento duplicado, defeito de performance sem efeito funcional) e a cláusula **RQ-16**, que não é falsificável por teste.
 
 ---
 

@@ -144,9 +144,16 @@ O segundo achado mais caro foi de camada, não de partição: **a classe de reso
 
 Totais depois do fechamento: **39 cenários, 17 regras, 79 mutantes previstos, 2 sem matador** (M49 e M70, declarados com o que foi tentado).
 
-**Rodada 2** — disparada porque o fechamento criou cenário novo (a skill re-revisa uma vez nesse caso, com teto de 2 rodadas).
+**Rodada 2 — 17 achados** (teto de 2 rodadas atingido; o que sobrou virou lacuna declarada, não uma rodada 3): 3 implementações erradas que ainda passavam, 5 oráculos novos fracos ou vacuosos, 6 redundâncias/contradições introduzidas pelo próprio fechamento da rodada 1, e 3 cláusulas ainda sem falsificador.
 
-<!-- preenchido quando a rodada 2 retornar -->
+Duas coisas que essa rodada provou, e nenhuma delas era esperada:
+
+1. **Os três "ainda passava" eram lacunas de TESTE, não de código.** O código já estava escrito quando ela rodou, e nos três casos ele faz o certo: o alinhamento está no `boot()` do `KitServiceProvider` (alcança comando artisan e fila), o mapa grava a chave **sem** condicionar a valor não-nulo, e a trilha sai do listener de `SavingSettings` (alcança gravação fora da tela). Faltava o cenário capaz de reprovar a alternativa. É o valor de uma revisão cega: ela não sabia o que o código faz e apontou onde o conjunto não olhava.
+2. **Um achado da rodada 1 era erro meu, e a rodada 2 o desfez.** CT-33 nasceu da regra do verbo irmão ("evidência de `abrir` não cobre `gravar`"). Sob a decisão de RQ-14 — uma permissão governa as duas —, `mount()` aborta em `canAccess()` antes de `save()` existir, e `canEdit()` fixo em `true` é **inobservável por qualquer cenário possível**. A regra é válida em geral e foi aplicada a um par de verbos que a própria decisão de escopo fundiu. CT-33 foi removido e M27/M73 passaram a lacuna declarada.
+
+Fechamento: **3 cenários novos** (CT-37 varre onde o alinhamento está ligado; CT-38 cobre a propriedade limpada, que era o caminho de volta ao default inexistente; CT-39 grava fora da tela), **1 removido** (CT-33), **7 oráculos reescritos** (CT-11 passa a arranjar valor discriminante antes de semear, CT-20 volta a ser só fumaça de tela de vendor, CT-32 troca asserção de ausência por presença, CT-34/CT-35/CT-35b declaram o arranjo, CT-36 troca contagem de opções por comportamento), **2 linhas escritas** que a rodada 1 prometeu e não escreveu (a `logo` em CT-26), **6 mutantes acrescentados** (M80…M85).
+
+Totais finais: **41 cenários, 17 regras, 85 mutantes, 5 sem matador — todos declarados**: M27 e M73 (`canEdit()` inobservável com uma permissão só), M49 (heurística de máscara de segredo, com um campo de segredo só), M70 (alinhamento duplicado — performance, sem efeito funcional) e **RQ-16**, que não é falsificável por teste porque julga o julgamento de quem analisou o kit. Marcá-la como fechada, como a rodada 1 fez, era relabelagem de cobertura.
 
 ---
 
