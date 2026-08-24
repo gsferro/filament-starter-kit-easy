@@ -1,8 +1,11 @@
 <?php
 
+use App\Filament\Admin\Widgets\UltimosUsuariosCadastrados;
+use App\Filament\Admin\Widgets\UsuariosPorPapel;
 use App\Support\Papeis;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Livewire\Livewire;
 
 /**
  * Como um papel é exibido — e por que a chave não muda.
@@ -74,17 +77,31 @@ it('traduz os papéis do kit em vez de derivar da chave', function (string $chav
  * aparecia como "Painel App" na tabela de papéis e como `panel_user` no badge de últimos
  * usuários e na barra de usuários por papel — duas telas acima e abaixo uma da outra.
  *
- * A asserção de AUSÊNCIA é a que importa aqui, e ela é segura nesta tela: o dashboard não tem
- * campo de formulário com a chave do papel, ao contrário da tela de alteração do papel.
+ * **Por componente, e não por `GET /admin`.** A primeira versão deste caso visitava o
+ * dashboard e falhou: `CanBeLazy::$isLazy` é `true` por default no Filament
+ * (`vendor/filament/support/src/Concerns/CanBeLazy.php:9`), então widget de painel renderiza
+ * como placeholder Livewire e o conteúdo dele NÃO está no HTML da página. O caso media o
+ * esqueleto — a mesma armadilha que `.ai/rules/testes.md` registra para tabela sem
+ * `->loadTable()`. E note o modo de falhar: se o `assertDontSee` da chave fosse a única
+ * asserção, o caso passaria **verde** medindo uma página sem widget nenhum.
+ *
+ * `noPainelBootado('admin')` porque `UltimosUsuariosCadastrados::urlDeEdicao()` chama
+ * `UserResource::getUrl()`, que precisa do painel corrente.
  */
 it('exibe o rotulo do papel nos widgets do dashboard admin', function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 
+    noPainelBootado('admin');
+
     usuario('cliente@example.com')->assignRole('panel_user');
 
-    $this->actingAs(usuarioCom('master_global'))
-        ->get('/admin')
-        ->assertSuccessful()
+    $this->actingAs(usuarioCom('master_global'));
+
+    Livewire::test(UltimosUsuariosCadastrados::class)
+        ->assertSee(Papeis::rotulo('panel_user'))
+        ->assertDontSee('panel_user');
+
+    Livewire::test(UsuariosPorPapel::class)
         ->assertSee(Papeis::rotulo('panel_user'))
         ->assertDontSee('panel_user');
 })->group('kit');

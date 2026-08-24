@@ -111,8 +111,26 @@ Fallback usado, na ordem que a skill manda:
    `php artisan tinker --execute '… toRawSql()'` antes de a ADR-04 ser escrita, em vez de descrito
    de memória.
 
-Consequência: a exigência formal da skill (consultar `search-docs` para cada stack) **não foi
-cumprida como escrita**; foi cumprida pelo fallback que a própria skill prevê para as lacunas dela.
+**Resolvido no fim da entrega.** O MCP do Boost passou a responder, e o `search-docs` foi
+consultado (`filament/filament@5.x`) para os quatro pontos que mais dependiam de doc: validação de
+Select, `Tabs` vertical com badge, `slideOver()` + `modalSubmitAction(false)` com entradas de
+infolist, e o ciclo de vida de Action. Ele **confirmou** `afterFormFilled` como hook oficial
+(*Actions → Create → Lifecycle hooks*) e o `slideOver()`; sobre validação de Select a doc é um
+stub (*"Select validation"* sem corpo), então ali a leitura do `vendor/` continua sendo a evidência
+mais forte — e é ela que está citada no código.
+
+Consequência: a exigência formal da skill foi cumprida, mas **atrasada** — as decisões já estavam
+tomadas quando a tool voltou. O que salvou a entrega não foi a doc, foi a regra de
+`.ai/rules/specs.md`: citar `file:line` do `vendor/` para toda afirmação sobre pacote. Os dois erros
+de fato desta wiki foram pegos por releitura de vendor, não por doc.
+
+**Armadilha registrada: o `database-query` do Boost aponta para o banco do repositório RAIZ**
+(`starter-kit-easy/database/database.sqlite`), não para o do worktree. Um `SELECT ... FROM roles`
+por ele devolveu `no such column: uuid` **depois** de a migration ter rodado com sucesso aqui — o
+que parece defeito da migration e é diferença de banco. A verificação do backfill foi feita pelo
+`php artisan tinker` do próprio worktree: 5 papéis, 0 uuid nulo, 5 uuid distintos, índice
+`roles_uuid_unique` criado e os índices anteriores (`roles_painel_index`,
+`roles_name_guard_name_unique`) intactos.
 
 ### Divergência entre a skill e a Project Rule do projeto
 
