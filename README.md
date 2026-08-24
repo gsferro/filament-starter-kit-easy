@@ -735,6 +735,30 @@ motivo fica no log, para você.
 O login social também entra na **trilha de acesso** do painel `/infra` (quem entrou, quando, de
 onde), como qualquer outro login — sem configuração nenhuma.
 
+### O segredo do Google ficou em claro na trilha de auditoria até a v0.19.3
+
+**Se você configurou o `GOOGLE_CLIENT_SECRET` pela tela `/admin/configuracoes-do-kit` em alguma
+versão entre a 0.19.2 e a 0.19.3, rotacione esse segredo no console do Google.**
+
+O motivo: a máscara de segredo da trilha de auditoria decide o que esconder consultando a lista
+`ConfiguracoesDoKit::encrypted()`, e o `client_secret` do Google estava fora dessa lista. Então
+cada gravação pela tela escreveu o valor **em claro** nas colunas `old_values`/`new_values` da
+tabela `audits` — e a tela de auditoria exibe essas colunas para leitura.
+
+O que esta versão faz por você:
+
+- **corrige a lista**, o que fecha o vazamento daqui para a frente nos quatro segredos de provedor
+  e na senha de SMTP, de uma vez (uma lista, três consumidores: o decifrador da leitura, o
+  cifrador da gravação e a máscara da trilha);
+- **mascara o que já está gravado**, numa migration que substitui o valor pela mesma máscara que a
+  trilha usa hoje. A linha da trilha é preservada — quem alterou, quando e de onde continua
+  registrado; sai só o valor que nunca deveria ter entrado;
+- **avisa no log** (channel `configuracoes`) quantas linhas foram mascaradas, com a instrução de
+  rotacionar.
+
+Mascarar a trilha **não desfaz** o fato de o valor ter estado legível. Por isso a rotação é sua, e
+é o único passo que o kit não pode fazer no seu lugar.
+
 ### Acrescentando o próximo provedor
 
 O kit **tem** abstração de provedor agora, e ela é um enum: `App\Support\ProvedorSocial`. A decisão

@@ -180,8 +180,16 @@ enum ProvedorSocial: string
              * outro — para `email` (`TwitterProvider.php:61,74`). Então ter e-mail já É a
              * prova, e o ramo diz isso por escrito em vez de devolver um `true` que pareceria
              * descuido na revisão.
+             *
+             * A segunda metade é a guarda contra o próprio argumento envelhecer: se o X
+             * passar a mandar um campo de verificação, ele VENCE a presença. Sem ela, este
+             * ramo autenticaria alguém com `email_verified => false` explícito no payload —
+             * exatamente o que o ADR-05 recusou o Facebook por permitir, e o argumento não
+             * pode valer num provedor e não valer no outro. Achado da revisão adversarial
+             * dos casos de teste.
              */
-            self::X => filled($doProvedor->getEmail()),
+            self::X => filled($doProvedor->getEmail())
+                && $this->naoDesmentidoNoBruto($doProvedor, ['email_verified']),
 
             self::Github => $this->emailVerificadoNoGithub($doProvedor),
         };
@@ -206,6 +214,34 @@ enum ProvedorSocial: string
         }
 
         return false;
+    }
+
+    /**
+     * O bruto NÃO desmente a verificação? — a guarda do ramo do X.
+     *
+     * Diferente de `booleanoDoBruto()` na direção do default: lá a ausência é `false` (exige
+     * prova), aqui a ausência é `true` (não há desmentido). Os dois são falha fechada em
+     * contextos opostos, e é por isso que são dois métodos e não um com bandeira: um parâmetro
+     * `$padrao` faria a chamada de cada ramo depender de um booleano na assinatura, que é o
+     * jeito mais fácil de inverter uma decisão de segurança sem ninguém notar na revisão.
+     *
+     * **Só chave BOOLEANA entra aqui.** `confirmed_email` do X parece candidata e não é: ela
+     * guarda o ENDEREÇO, e `filter_var('a@b.com', FILTER_VALIDATE_BOOLEAN)` é `false` — passá-la
+     * faria este método recusar todo login do X. Custou uma correção antes do commit.
+     *
+     * @param  array<int, string>  $chaves  nomes de chaves cujo valor é booleano
+     */
+    private function naoDesmentidoNoBruto(AbstractUser $doProvedor, array $chaves): bool
+    {
+        $bruto = $doProvedor->getRaw();
+
+        foreach ($chaves as $chave) {
+            if (array_key_exists($chave, $bruto) && ! filter_var($bruto[$chave], FILTER_VALIDATE_BOOLEAN)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

@@ -12,7 +12,7 @@ deliberadamente NAO fez.
   numa secao propria da aba "Login" em `/admin/configuracoes-do-kit`, e **aparecem quando o
   interruptor daquele provedor e ligado**.
 - **`App\Support\ProvedorSocial`, um enum — a abstracao que o ADR-10 da wiki do Google mandou
-  esperar.** Aquele ADR recusou toda abstracao com um provedor so e escreveu o critterio de
+  esperar.** Aquele ADR recusou toda abstracao com um provedor so e escreveu o criterio de
   reabertura: "enum de um caso e abstracao sem segundo caso. Quando o GitHub (ou outro) entrar, a
   decisao de extrair se toma com DOIS casos na mao — feita com um, ela adivinha a forma."
   Com quatro na mao, a forma que eles revelam **nao** e a que se adivinharia com um. O redirect,
@@ -59,6 +59,19 @@ deliberadamente NAO fez.
   instalacao de desenvolvimento e em toda a suite de testes: **o defeito so existe quando ha
   valor**. Os dois casos que cobriam o campo verificavam o HTML e a sobrevivencia do valor —
   nenhum verificava que o gravado era criptograma.
+  **E ha um terceiro sintoma, achado na revisao adversarial dos casos de teste, que e o pior dos
+  tres**: `AuditarConfiguracoesDoKit` decide se mascara um valor com
+  `in_array($propriedade, ConfiguracoesDoKit::encrypted(), true)`. Entao desde a v0.19.2 toda
+  gravacao do segredo do Google pela tela escreveu o valor **em claro** nas colunas
+  `old_values`/`new_values` da tabela `audits` — e a tela de auditoria exibe essas colunas para
+  leitura. Uma lista, tres consumidores; nenhum dos tres foi escrito pensando nos outros.
+  Uma migration mascara o que ja esta gravado, preservando a linha da trilha (apaga-la destruiria
+  a auditoria para consertar um vazamento) e **avisando no log** que o `GOOGLE_CLIENT_SECRET`
+  precisa ser **ROTACIONADO** — mascarar a trilha nao desfaz o fato de o valor ter estado
+  legivel. Os dois READMEs tem o aviso e o passo que so o operador pode dar.
+  `encrypted()` passa a listar os quatro segredos, e a migration de settings desta entrega
+  **normaliza** o valor do Google que ja estava gravado: tenta decifrar, e se estourar `DecryptException` era
+
   `encrypted()` passa a listar os quatro segredos, e a migration desta entrega **normaliza** o
   valor do Google que ja estava gravado: tenta decifrar, e se estourar `DecryptException` era
   texto claro e e cifrado agora. Sem essa normalizacao, o conserto da lista faria o

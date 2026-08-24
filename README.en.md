@@ -709,6 +709,30 @@ reason stays in the log, for you.
 Social login also lands in the `/infra` panel's **access trail** (who signed in, when, from where),
 like any other login — with no configuration at all.
 
+### The Google secret was stored in cleartext in the audit trail up to v0.19.3
+
+**If you configured `GOOGLE_CLIENT_SECRET` through the `/admin/configuracoes-do-kit` screen on any
+version between 0.19.2 and 0.19.3, rotate that secret in the Google console.**
+
+Why: the audit trail's secret mask decides what to hide by consulting the
+`ConfiguracoesDoKit::encrypted()` list, and the Google `client_secret` was not on that list. So
+every save through the screen wrote the value **in cleartext** into the `old_values`/`new_values`
+columns of the `audits` table — and the audit screen displays those columns for reading.
+
+What this version does for you:
+
+- **fixes the list**, which closes the leak going forward for all four provider secrets and the
+  SMTP password at once (one list, three consumers: the read decryptor, the write encryptor and
+  the trail's mask);
+- **masks what is already stored**, in a migration that replaces the value with the same mask the
+  trail uses today. The trail row is preserved — who changed it, when and from where stays on
+  record; only the value that should never have been there goes;
+- **warns in the log** (`configuracoes` channel) how many rows were masked, with the instruction
+  to rotate.
+
+Masking the trail does **not** undo the fact that the value was readable. That is why the rotation
+is yours, and it is the one step the kit cannot take for you.
+
 ### Adding the next provider
 
 The kit **does** have a provider abstraction now, and it is an enum:

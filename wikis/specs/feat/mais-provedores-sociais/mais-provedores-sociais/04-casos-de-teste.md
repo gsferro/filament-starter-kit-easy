@@ -29,11 +29,15 @@
   só-espaços), tabela de decisão, tabela estado × operação, matriz provedor × prova,
   rastreio de efeito (4 direções), normalização de identidade, pairwise implícito
   (provedor × arranjo).
-- **Cenários**: 49 CT + 2 CT-B · **Regras**: 19 · **Mutantes previstos**: 82 · **Sem matador**: 2
-  (lacunas declaradas, em R9 e R14).
-- **Depois da revisão adversarial** (rodada 1, fechada): 44 → 49 CT, 17 → 19 regras, 71 → 82
-  mutantes. Cinco cenários novos, nove oráculos reescritos, seis citações de mutante corrigidas —
-  **duas delas eram falso ✅**. Ver `## Achados da Revisão Adversarial`.
+- **Cenários**: 49 CT numerados (+ 5 desdobramentos `b`, 54 blocos de `Cenário`) + 2 CT-B ·
+  **Regras**: 19 · **Mutantes previstos**: 128 · **Sem matador**: 0 · **Lacunas declaradas**: 2
+  (em R9 e R14, as duas com o que foi tentado escrito).
+- **Efeito da revisão adversarial** (rodada 1, fechada): 44 → 49 CT, 17 → 19 regras, 111 → 128
+  mutantes. 23 achados, nenhum descartado: 5 cenários novos, 5 desdobramentos, 2 regras novas,
+  1 regra escalada de perfil, 9 oráculos reescritos e **6 citações de mutante corrigidas — cinco
+  delas eram falso ✅**. Ver `## Revisão Adversarial`.
+- **Rodada 2 pendente**, e é o próximo passo desta wiki: o fechamento criou cenário novo, o que a
+  regra de fechamento manda re-revisar uma vez.
 
 ### Divergência declarada: rule do projeto vence a skill
 
@@ -177,6 +181,16 @@ rodada pede que a pergunta volte ao autor). O bloco abaixo está pronto para col
   efeito**, então nada guardaria a regressão.
   - **Assumido**: é parte do mesmo defeito e o conserto é o mesmo. CT-22 existe por isso.
   - **Se negado**: nada muda no código, e CT-22 vira o caso que documenta a exposição aceita.
+
+- **RQ-09 / o painel de destino de quem entra por login social** — o botão está nas **três** telas
+  de login (RQ-03 pede o botão, e o render hook é único, então `/app/login`, `/admin/login` e
+  `/infra/login` todos o têm). O requisito não diz para onde a pessoa vai depois. Uma implementação
+  que mande todo mundo para `/app` é indistinguível de uma correta em qualquer cenário que não
+  afirme o destino — e quem clicou em `/infra/login` acabaria noutro painel.
+  - **Assumido**: a pessoa volta para o painel de **onde clicou**. CT-48 assume isso e reprova o
+    destino fixo. Exige que o kit guarde o painel de origem entre a ida e a volta do OAuth.
+  - **Se negado**: o destino passa a ser o painel do papel da pessoa, e CT-48 muda de oráculo (não
+    de existência) — continua sendo preciso um cenário por painel.
 
 - **RQ-07 aponta para um caso que não existe** — a linha de RQ-07 na `## Cobertura do Requisito`
   do PRD diz "coberto por regressão (**CT-R1**)", e `CT-R1` não existe em wiki nenhuma. O caso
@@ -515,9 +529,10 @@ esperado é a **recusa tratada** — 302 para a tela de login, e não 500. É el
 | M9 | o `abort_unless` está só no `retorno()` | CT-03 (as 8 linhas de `redirect`) |
 | M10 | o guarda usa `abort_if` (condição negada) e derruba a rota **sempre** | CT-04 (as 8 células válidas) |
 | M11 | o guarda confere o interruptor e não as credenciais | CT-03 (as 8 linhas `client_secret vazio`) |
-| M12 | o guarda confere um provedor fixo (o do primeiro caso escrito) em vez do parâmetro | CT-03 e CT-04 nas linhas dos outros três provedores |
+| M12 | o guarda confere um provedor fixo (o do primeiro caso escrito) em vez do parâmetro | **CT-04 e CT-04b** nas linhas dos outros três. **Corrigido na revisão**: a rodada 1 citava também CT-03, que **não** mata — no default tudo está indisponível, então um guarda fixo no Google devolve 404 nas 16 linhas |
+| M12b | o **driver** é fixo, e o parâmetro entra só no guarda e no log — os quatro botões vão para o Google | **CT-04** (o host de autorização por linha). Nenhum cenário da rodada 1 o matava, porque o oráculo era `socialite.fake` nas quatro |
 | M13 | a exceção do Socialite no callback sem `state` vaza como 500 | CT-04 (linhas de `callback`) |
-| M14 | as rotas são registradas dentro de um `if` do interruptor — indisponível vira `RouteNotFoundException`, não 404 | CT-03 (o oráculo é **404**, não "erro") e CT-42 (`route:list`) |
+| M14 | as rotas são registradas dentro de um `if` do interruptor — indisponível vira rota inexistente, não guarda | **CT-41 (última linha)**. ⚠️ **Citação corrigida na revisão**: a rodada 1 citava CT-03 e CT-42, e nenhum dos dois mata — rota não registrada devolve 404 igual ao guarda, e CT-42 é presença de termo em arquivo, não `route:list` |
 
 ---
 
@@ -635,7 +650,7 @@ do Socialite que o kit não oferece, e ele só é recusado se a lista for o **en
 | M20 | o parâmetro é `string` e o controller faz `Socialite::driver($provedor)` — segmento livre vira driver | CT-07 (todas as linhas: `facebook` responderia 302) |
 | M21 | o parâmetro é `?ProvedorSocial` (nullable) — o binding deixa passar e o guarda decide | CT-07 |
 | M22 | `ProvedorSocial::tryFrom()` no controller, devolvendo recusa 302 em vez de 404 | CT-07 (o oráculo é **404**) |
-| M23 | o segmento é normalizado com `strtolower()` antes de resolver o enum | CT-07 (linha `GOOGLE`) |
+| M23 | o segmento é normalizado com `strtolower()`/`trim()` antes de resolver o enum | **CT-07b** (as quatro linhas, com o `google` LIGADO no arranjo). ⚠️ **Corrigido na revisão**: a linha `GOOGLE` de CT-07 não matava, porque no arranjo dela o `google` estava desligado e a normalização caía em 404 igual |
 | M24 | o enum ganhou `Facebook` ou `Discord` "para não deixar RQ-01 incompleto" | CT-07 (linhas `facebook` e `discord`) |
 
 ---
@@ -846,7 +861,7 @@ gravado, e nenhum dos dois é observável abaixo do request.
 |---|---|---|
 | M32 | cast de bool no lugar de `filter_var` — `"false"` vira `true` | CT-10 (linhas `"false"` e `"0"`) |
 | M33 | `=== true` estrito — recusa `1` e `"true"` do JSON | CT-10 (as duas linhas verdadeiras não-booleanas) |
-| M34 | o valor é lido de `$user->email_verified` (atributo) em vez de `getRaw()` | CT-12 (o Google não mapeia a propriedade e passaria a recusar sempre); linha `true` de CT-10 sobrevive |
+| M34 | o valor é lido de `$user->email_verified` (atributo mapeado) em vez de `getRaw()` | **CT-10 (as duas linhas novas: só no bruto / só no atributo)**. ⚠️ **Corrigido na revisão**: a rodada 1 citava CT-12 e ele **não** matava — `User::fake()` popula bruto E atributo, então todo cenário faked ficava verde enquanto a produção recusaria todo login de Google |
 | M35 | o `match` tem um ramo só, com a régua do Google para os quatro | CT-11 (linha 1: o X não manda o campo e seria recusado) e CT-12 |
 | M36 | o `match` tem um ramo só, devolvendo `true` (confia em todo provedor) | CT-10 (linha `false`) e CT-12 (Google e LinkedIn) |
 | M37 | o ramo do X devolve `true` fixo em vez de `filled($email)` | CT-11 (linhas de e-mail nulo e só-espaços) — e CT-13 se a barreira de e-mail ausente também caísse |
@@ -1642,7 +1657,7 @@ o efeito é observável só no request seguinte. CT-35 `Feature` (settings + `co
 |---|---|---|
 | M87 | o log de sucesso não nomeia o provedor (mensagem herdada do Google) | CT-36 (linhas de GitHub, LinkedIn e X) |
 | M88 | o log de sucesso traz o e-mail em claro | CT-36 |
-| M89 | o log de sucesso traz o `client_secret` no contexto | CT-36 |
+| M89 | o log de sucesso traz o `client_secret` ou o payload bruto **no contexto** | **CT-36** (o oráculo agora cobre mensagem E contexto). ⚠️ **Corrigido na revisão**: a rodada 1 afirmava só sobre "a mensagem", e o contexto é justamente onde o vazamento aconteceria |
 | M90 | a recusa loga o alerta e **segue** para o log de sucesso (`return` esquecido) | CT-37 (a segunda asserção) |
 | M91 | as quatro barreiras compartilham um `motivo` genérico | CT-37 (as quatro linhas exigem motivos diferentes) |
 | M92 | a recusa é logada em `info` em vez de `warning` | CT-37 |
@@ -1705,7 +1720,7 @@ suficientes para isso — são elas que distinguem `filter_var` de `(bool) env()
 | M97 | o default de uma das chaves é `true` | CT-40 (as quatro linhas `ausente`) |
 | M98 | a chave do LinkedIn é escrita `KIT_SOCIALITE_LINKEDIN_OPENID` no config e `KIT_SOCIALITE_LINKEDIN` no `.env.example` | CT-40 (linhas do LinkedIn: o `ausente` passaria e o `true` falharia) e CT-42 |
 | M99 | o caminho de config do LinkedIn é `login.linkedin.habilitado` | CT-40 (linhas do LinkedIn) |
-| M100 | as quatro chaves compartilham um interruptor único | CT-40 (as linhas `verdade` de um provedor ligariam os outros) e CT-05 |
+| M100 | as quatro chaves compartilham um interruptor único | **CT-05**. ⚠️ **Corrigido na revisão**: as linhas `verdade` de CT-40 não matam — o `Então` confere só o caminho daquela linha, nunca os outros três |
 
 **Lacuna declarada (R14)**: não há cenário para o **valor de env com espaços nas bordas**
 (`KIT_SOCIALITE_GITHUB=" true "`). Tentado com `kitConfigCom()`: `filter_var` com
@@ -1714,28 +1729,63 @@ a errada concordam e o cenário não discrimina. Registrado como não-discrimina
 
 ---
 
-## Regra R15 — o enum é a única lista
+## Regra R15 — o enum é a única lista, em TODAS as sete superfícies derivadas
 
-> RQ-02 · perfil **mínimo** · técnica: **invariante estrutural**
+> RQ-02 · perfil **padrão** (escalado na revisão adversarial, era `mínimo`) ·
+> técnica: **invariante estrutural sobre todas as superfícies**
+
+**Escalada por achado da revisão adversarial.** A versão da rodada 1 conferia **duas** superfícies
+(views de ícone e "as rotas aceitam") de pelo menos **sete**. Consequência: um `disponiveis()` com
+um array de quatro valores escrito à mão, um `encrypted()` com quatro nomes escritos à mão, um mapa
+de Settings escrito à mão e um `rotulo()` sem caso novo ficariam **todos verdes** e derrubariam o
+quinto provedor em silêncio — que é literalmente o que RQ-02 proíbe.
 
 ```gherkin
-  Regra: acrescentar um caso ao enum não deixa nenhuma superfície para trás
+  Regra: cada caso do enum tem, obrigatoriamente, todas as sete superfícies derivadas dele
 
-    Cenário: [CT-41] cada provedor do enum tem a partial de ícone dele, e não há partial sobrando
+    Esquema do Cenário: [CT-41] as sete superfícies, caso por caso do enum
+      Dado o caso "<provedor>" do enum de provedores
+      Então existe a view de ícone dele
+      E o rótulo dele não é vazio e é diferente do valor cru
+      E "services.<provedor>" tem client_id, client_secret e redirect
+      E o redirect dele termina em "/auth/<provedor>/callback"
+      E existe a chave "kit.login.<provedor>.habilitado"
+      E as três propriedades de Settings dele existem na tabela
+      E a propriedade de segredo dele está na lista de propriedades cifradas
+      E as duas rotas de OAuth dele estão REGISTRADAS, mesmo com o interruptor desligado
+
+      Exemplos:
+        | provedor        |
+        | google          |
+        | github          |
+        | linkedin-openid |
+        | x               |
+
+    Cenário: [CT-41b] nada sobrando — nenhuma superfície de provedor fora do enum
       Dado a lista de provedores que o enum declara
-      Quando cada superfície derivada é conferida
-      Então existe uma view de ícone para cada provedor do enum
-      E o diretório de ícones não tem nenhuma view além dessas
-      E o par de rotas de OAuth aceita cada um dos provedores do enum
+      Então o diretório de ícones não tem nenhuma view além das dos casos do enum
+      E não existe nenhuma view de botão de provedor específico ao lado do blade genérico
+      E nenhuma propriedade de Settings com prefixo "login_" pertence a provedor fora do enum
+      E nenhuma chave "kit.login.*" com sub-chave "habilitado" pertence a provedor fora do enum
 ```
 
-**Camada**: `Feature` — precisa do resolvedor de views e do roteador; um `Unit` sem o `TestCase`
-da aplicação não os tem (`tests/Pest.php` não estende `Unit`).
+**Camada**: `Feature` — precisa do resolvedor de views, do roteador, do `config` e da tabela de
+settings; um `Unit` sem o `TestCase` da aplicação não os tem (`tests/Pest.php` não estende `Unit`).
 
-**Nota**: o oráculo do meio (nada sobrando) é o que dá valor ao de cima. Um provedor **sem** ícone
-derruba a tela de login dos **três** painéis com `View not found` — o risco de maior alcance da
-entrega, segundo o próprio `## Riscos` do PRD. E um ícone **órfão** é o rastro de um provedor
-removido pela metade.
+**Notas:**
+
+- A última linha de CT-41 — **rotas registradas com o interruptor desligado** — separa duas causas
+  que produzem o mesmo 404 e é achado da revisão adversarial: "404 porque o guarda recusou" e "404
+  porque a rota não existe". CT-03 não distingue as duas, então o mutante M14 (rotas dentro de um
+  `if` do interruptor) estava declarado morto por CT-03 **e não estava**. É o defeito que o
+  comentário do próprio `routes/web.php` avisa: registrar dentro de um `if` faz
+  `route('auth.social.*')` deixar de existir e estoura `RouteNotFoundException` em `route:list` e
+  em qualquer `route:cache` feito com o `.env` de outro momento.
+- O `rotulo()` diferente do valor cru é o que mata "provedor novo entra no enum sem caso no `match`
+  do rótulo" — no LinkedIn isso apareceria na tela como `Entrar com linkedin-openid`.
+- CT-41b linha 2 é onde M103 morre de verdade: `botao-google.blade.php` **não** está no diretório
+  de ícones, então a asserção da rodada 1 ("o diretório de ícones não tem view além dessas") nunca
+  o alcançava.
 
 #### Mutantes previstos
 
@@ -1743,7 +1793,41 @@ removido pela metade.
 |---|---|---|
 | M101 | um provedor entra no enum sem a partial de ícone | CT-41 |
 | M102 | o `icone()` de um caso devolve um nome que não existe como view | CT-41 |
-| M103 | o `botao-google.blade.php` continua no repositório ao lado do genérico (a segunda fonte da verdade que o ADR-08 removeu) | CT-41 (a asserção de "nada sobrando") |
+| M103 | o `botao-google.blade.php` continua no repositório ao lado do genérico (a segunda fonte da verdade que o ADR-08 removeu) | **CT-41b (linha 2)** — a rodada 1 citava CT-41, que não o alcançava |
+| M124 | `disponiveis()` percorre um array de quatro valores escrito à mão em vez de `cases()` | CT-41 (o quinto provedor não teria as superfícies; e CT-02 para a ordem) |
+| M125 | `encrypted()` lista quatro nomes escritos à mão | CT-41 (a linha da lista de cifradas) |
+| M126 | o `rotulo()` de um caso cai no valor cru | CT-41 (a linha do rótulo) |
+| M127 | o `redirect` de um provedor aponta para o callback de outro | CT-41 (a linha do redirect) e CT-46 |
+| M14 | as rotas são registradas dentro de um `if` do interruptor | **CT-41 (última linha)** — a rodada 1 citava CT-03 e CT-42, e nenhum dos dois o matava |
+
+```gherkin
+  Regra: o arquivo de config de fábrica já traz os quatro blocos, com o redirect de cada provedor
+
+    Esquema do Cenário: [CT-46] o default do config/services.php, sem nenhum arranjo
+      Dado nenhum arranjo — o arquivo de configuração como ele está no repositório
+      Quando "services.<provedor>" é lido
+      Então ele tem as chaves client_id, client_secret e redirect
+      E o redirect é exatamente "/auth/<provedor>/callback"
+
+      Exemplos:
+        | provedor        |
+        | google          |
+        | github          |
+        | linkedin-openid |
+        | x               |
+```
+
+**Camada**: `Feature` (leitura de `config`), **sem `config()->set()` nenhum** — é o ponto.
+
+**Achado da revisão adversarial, fechado aqui.** Nenhum cenário da rodada 1 lia o
+`config/services.php` de fábrica: `ligarProvedor()` escreve as três chaves em memória, e a linha
+"de fábrica" de CT-01 media só o interruptor. Um bloco copiado do Google — os quatro `redirect`
+apontando para `/auth/google/callback`, ou um provedor faltando o bloco inteiro — passava nos 44
+cenários e, em produção, mandaria o GitHub devolver a pessoa no callback do Google.
+
+É exatamente o método que `.ai/rules/config.md` cobra e que CT-40 aplicou a `config/kit.php`: **medir
+o default do arquivo**, não o valor que o teste escreveu. A rodada 1 aplicou a um dos dois arquivos
+de config da feature e esqueceu o outro.
 
 ---
 
@@ -1773,23 +1857,43 @@ removido pela metade.
         | README.md    | /auth/linkedin-openid/callback |
         | README.md    | /auth/x/callback               |
         | README.md    | KIT_SOCIALITE_GITHUB           |
-        | README.md    | Discord                        |
-        | README.md    | Facebook                       |
         | README.en.md | /auth/github/callback          |
         | README.en.md | /auth/linkedin-openid/callback |
         | README.en.md | /auth/x/callback               |
         | README.en.md | KIT_SOCIALITE_GITHUB           |
-        | README.en.md | Discord                        |
-        | README.en.md | Facebook                       |
+
+    Esquema do Cenário: [CT-42b] a recusa de cada provedor vem com o motivo, na mesma vizinhança
+      Quando o arquivo "<arquivo>" é lido
+      Então "<provedor>" e "<motivo>" aparecem na MESMA seção
+      E o arquivo, sem as linhas de comentário e de citação, não contém "/auth/linkedin/callback"
+
+      Exemplos:
+        | arquivo      | provedor | motivo               |
+        | README.md    | Discord  | socialiteproviders   |
+        | README.md    | Facebook | e-mail verificado    |
+        | README.en.md | Discord  | socialiteproviders   |
+        | README.en.md | Facebook | verified email       |
 ```
 
 **Camada**: `Feature` (leitura de arquivo). Asserção de **presença** sobre o texto cru, então
 **sem** o filtro de comentário — `.ai/rules/testes.md` exige o filtro só na asserção de ausência.
 
-**Nota**: as linhas `Discord` e `Facebook` cobram RQ-10 sobre a parte mais fácil de esquecer: os
-dois provedores que o requisito pediu e a entrega recusou. O README precisa dizer **por que** e
-**o que faltaria** (ADR-04, ADR-05), senão a ausência lê como esquecimento e a próxima pessoa
-refaz a investigação.
+**Notas:**
+
+- As linhas `Discord` e `Facebook` cobram RQ-10 sobre a parte mais fácil de esquecer: os dois
+  provedores que o requisito pediu e a entrega recusou. O README precisa dizer **por que** e **o que
+  faltaria** (ADR-04, ADR-05), senão a ausência lê como esquecimento e a próxima pessoa refaz a
+  investigação.
+- **Elas saíram de CT-42 e viraram CT-42b, por achado da revisão adversarial.** Como simples
+  presença da palavra, eram decorativas: `Discord` e `Facebook` são satisfeitas por **qualquer**
+  menção — uma linha de roadmap, ou o próprio texto do requisito colado no README. Certa e errada
+  produziam o mesmo resultado. CT-42b exige o par **provedor + motivo na mesma seção**, que é o que
+  RQ-10 realmente pede.
+- A última linha de CT-42b é **asserção de ausência**, então ela — e só ela — vai sobre o texto
+  **filtrado**, sem linhas de comentário e de citação (`.ai/rules/testes.md`). Os READMEs deste kit
+  citam o que proíbem, e é lá que está escrito o porquê: o padrão já reprovou três vezes nesta base.
+  A URI errada `/auth/linkedin/callback` é a que a documentação erraria por hábito, e cadastrá-la no
+  console da LinkedIn produz um OAuth que falha sem dizer por quê.
 
 #### Mutantes previstos
 
@@ -1825,17 +1929,36 @@ refaz a investigação.
       Quando o visitante chega no callback do GitHub
       Então a conta autenticada é a de "ja.tem@example.com"
       E o destino do redirecionamento contém "acme"
+
+    Esquema do Cenário: [CT-49] com a tenancy ligada, a barreira continua derrubando as rotas
+      Dado a multi-tenancy ligada
+      E o GitHub desligado, com as três chaves preenchidas
+      Quando o visitante abre "<rota>"
+      Então a resposta é 404
+      E ninguém está autenticado
+
+      Exemplos:
+        | rota                     |
+        | /auth/github/redirect    |
+        | /auth/github/callback    |
 ```
 
 **Camada**: `Feature`, suíte `Tenancy` — `Tests\TenancyTestCase` fixa `permission.teams` em
 `createApplication()`, antes das migrations, e ligar a flag num `beforeEach` é tarde demais
 (`.ai/rules/testes.md`).
 
-**Nota**: dois cenários e não a suíte inteira duplicada. O ramo `hasTenancy()` do controller é
-**provedor-agnóstico** — a wiki ancestral já o cobre com o Google, incluindo o caso da conta sem
-organização. O que é novo aqui é que o caminho reescrito continua chegando lá com um provedor
-**diferente do primeiro escrito**, e que a tela de login (não escopada por tenant) continua
-mostrando os botões.
+**Notas:**
+
+- Três cenários e não a suíte inteira duplicada. O ramo `hasTenancy()` do controller é
+  **provedor-agnóstico** — a wiki ancestral já o cobre com o Google, incluindo o caso da conta sem
+  organização. O que é novo aqui é que o caminho reescrito continua chegando lá com um provedor
+  **diferente do primeiro escrito**, e que a tela de login (não escopada por tenant) continua
+  mostrando os botões.
+- **CT-49 é a célula inválida, e faltava — achado da revisão adversarial.** A rodada 1 tinha só
+  células **válidas** com a tenancy ligada, enquanto a regra promete que "as **barreiras** valem
+  igual". Um `abort_unless` que o ramo de tenancy desvie, ou um middleware de tenant que resolva a
+  rota antes do guarda, sobrevivia a CT-43 e CT-44 — e é a direção em que o erro é grave, porque
+  deixa uma rota pública de OAuth no ar com o provedor desligado.
 
 #### Mutantes previstos
 
@@ -1845,6 +1968,7 @@ mostrando os botões.
 | M109 | o destino de quem entra é `/app` cru, ignorando a organização | CT-44 |
 | M110 | o ramo de tenancy foi reescrito com o provedor fixo no Google | CT-44 |
 | M111 | a query que casa a conta ganha escopo global por tenant e não acha ninguém | CT-44 |
+| M128 | o guarda por provedor é desviado no ramo de tenancy (ou o middleware de tenant resolve antes dele) | **CT-49** |
 
 ---
 
@@ -1852,7 +1976,8 @@ mostrando os botões.
 
 | Item | Cenário que mata |
 |---|---|
-| IDOR / autorização horizontal | **não se aplica**: nenhuma rota desta feature recebe id de recurso. A barreira é o `abort_unless` **por provedor** (CT-03) e o parâmetro é enum, não id (CT-07) |
+| IDOR / autorização horizontal | **CT-47** — ⚠️ a rodada 1 escreveu aqui "não se aplica: nenhuma rota recebe id de recurso", e a revisão adversarial derrubou a dispensa: **o e-mail é o identificador de recurso desta feature**, e o conjunto nunca o desambiguava (nenhum cenário tinha duas contas). Um `like` no casamento entrega a conta do vizinho. Também CT-03 (o `abort_unless` por provedor) e CT-07 (o parâmetro é enum, não id) |
+| **Criação × uso** (a regra "criação ≠ edição ≠ uso" da skill) | **CT-45, CT-45b** — ⚠️ ausente na rodada 1: o requisito descreve o **uso** (autenticar), e a célula de **criação** de conta não tinha cenário nenhum. Foi a maior lacuna que a revisão adversarial achou |
 | Autorização exercida na ação, não só em `can()` | CT-03, CT-07 — a recusa é medida no request, não num predicado. A permission da tela de Settings é regressão da wiki `settings-do-kit` |
 | Idempotência (ancorada no agregado persistido) | CT-14 — total de contas **e** linhas de trilha de acesso; CT-29 (o save repetido do segredo) |
 | Concorrência | **lacuna declarada (R9)**: tentado expressar duas execuções simultâneas da migration de normalização; `RefreshDatabase` + SQLite `:memory:` é um processo e uma conexão, e `--parallel` distribui arquivos, não threads. O `abort_unless` não tem contador nem saldo a ultrapassar |
@@ -1956,9 +2081,24 @@ Base da suíte: **1016** casos (`## Verificação` do PRD). Não pode cair.
 | CT-42 | os termos declarados nos três arquivos | R16 | presença | Feature | idem | M98, M104–M107 |
 | CT-43 | os quatro botões com a tenancy ligada | R17 | regressão de ramo | Feature | `tests/Tenancy/LoginSocialProvedoresTenancyTest.php` | M108 |
 | CT-44 | o GitHub leva ao painel da organização | R17 | regressão de ramo | Feature | idem | M109–M111 |
+| CT-04b | a volta trata a recusa em vez de estourar | R2 | estado × operação | Feature | `tests/Kit/LoginSocialProvedoresTest.php` | M13 |
+| CT-07b | o segmento não é normalizado antes do enum | R4 | EP inválida, arranjo invertido | Feature | idem | M23 |
+| **CT-45** | **as quatro células de conta × registro aberto** | **R18** | tabela de decisão 2×2 | Feature | idem | M112–M115, M118 |
+| **CT-45b** | **a conta criada nasce verificada e com o nome certo** | **R18** | valor concreto | Feature | idem | M116, M117 |
+| **CT-46** | **o default do `config/services.php`, sem arranjo** | **R15** | medir o default do arquivo | Feature | idem | M127 |
+| **CT-47** | **duas contas parecidas, só a certa autentica** | **R19** | desambiguação de identidade | Feature | idem | M119–M121 |
+| **CT-48** | **o destino segue o painel de origem** | **R19** | EP por painel | Feature | idem | M122, M123 |
+| CT-41b | nada sobrando fora do enum | R15 | invariante estrutural | Feature | idem | M103 |
+| CT-42b | a recusa vem com o motivo, na mesma seção | R16 | proximidade + ausência | Feature | idem | M107 |
+| **CT-49** | **a barreira derruba as rotas com a tenancy ligada** | **R17** | célula inválida do ramo | Feature | `tests/Tenancy/LoginSocialProvedoresTenancyTest.php` | M128 |
 
 **Mutantes sem matador**: nenhum. Duas **lacunas declaradas** (concorrência na normalização, em
 R9; env com espaços nas bordas, em R14), as duas com o que foi tentado escrito.
+
+**Cinco falso ✅ corrigidos na revisão adversarial** — M12, M14, M23, M34 e M89 estavam marcados
+como mortos por cenários que **não** os matavam, e M100 apontava para o cenário errado. Falso ✅ é
+pior que lacuna declarada, porque ninguém volta a olhar: cada linha de mutante agora registra o que
+a rodada 1 citava e por que não funcionava.
 
 ---
 
@@ -1968,20 +2108,54 @@ Obrigatória no perfil `completo`, e **não** pode ser autorrevisão: modelos de
 melhores em **gerar** oráculo do que em **classificar** se um oráculo está correto, então o mesmo
 agente conferindo o próprio conjunto reproduz o viés que o gerou.
 
-**Status: EM EXECUÇÃO.** Delegada a sub-agente independente, que recebeu **só** o
-`00-requisito.md` e este arquivo — sem o PRD, sem os ADRs, sem o código e sem o raciocínio da
-derivação. Contrato dado a ele: provar que este conjunto deixa passar um defeito (5 implementações
-erradas que passariam por todos os cenários; todo `Então` fraco; toda linha de `Exemplos:` não
-discriminante; todo mutante cujo cenário citado não o mata de verdade).
+**Rodada 1: executada e fechada.** Delegada a sub-agente independente, que recebeu **só** o
+`00-requisito.md` e o `04` da rodada 1 — sem o PRD, sem os ADRs, sem o código e sem o raciocínio
+da derivação.
 
-Ao voltar, cada achado vira **cenário novo**, **oráculo reescrito** ou **lacuna declarada com
-motivo** — e o resultado entra aqui com a contagem real. Enquanto esta seção disser "em execução",
-o conjunto está **derivado mas não auditado**: os números de `## Perfil de Derivação` (44 CT, 71
-mutantes, 0 sem matador) são a contagem da derivação, não da revisão.
+**23 achados. Nenhum descartado.** O saldo: **5 cenários novos** (CT-45, CT-46, CT-47, CT-48,
+CT-49) mais 4 desdobramentos (CT-04b, CT-07b, CT-41b, CT-42b, CT-45b), **2 regras novas** (R18,
+R19), **1 regra escalada de perfil** (R15: `mínimo` → `padrão`), **9 oráculos reescritos** e
+**5 citações de mutante corrigidas — todas elas eram falso ✅**.
 
-> **Regra de fechamento**: re-revisar **uma única vez**, e só se o fechamento tiver criado cenário
-> **novo** — cenário novo introduz superfície nova, e é aí que mora a lacuna de segunda ordem.
-> Teto de 2 rodadas; achado estrutural na segunda significa que a regra deveria ser duas.
+### O que a revisão provou, e é o que importa registrar
+
+Cinco implementações erradas plausíveis passavam pelos 44 cenários da rodada 1:
+
+| # | A implementação errada | Por que passava | Fechado por |
+|---|---|---|---|
+| 1 | recusa `conta_inexistente_registro_fechado` **sempre**, sem consultar o registro aberto — GitHub, LinkedIn e X nunca criam conta | só 1 das 4 células de `conta × registro` tinha cenário, e era a inválida | **R18** (CT-45, CT-45b) |
+| 2 | `emailVerificado()` lê o **atributo mapeado** em vez de `getRaw()` — em produção nenhum login de Google entra | `User::fake()` popula bruto **e** atributo, então todo cenário faked concorda | duas linhas novas em **CT-10** + `usuarioSocialFalso()` sem `map()` |
+| 3 | `Socialite::driver('google')` fixo, parâmetro só no guarda e no log — os quatro botões vão para o Google | o oráculo era `socialite.fake`, igual para as quatro linhas | **CT-04** reescrito, sem fake, com host + `client_id` + `redirect_uri` |
+| 4 | `config/services.php` com os quatro `redirect` apontando para `/auth/google/callback` | nenhum cenário lia o arquivo de fábrica — `ligarProvedor()` escrevia tudo em memória | **CT-46** |
+| 5 | `where('email','like',$email)` — quem controla `ja_tem@` entra na conta `ja.tem@` | **nenhum cenário tinha duas contas no banco** | **R19** (CT-47) |
+
+### Achados por categoria, e o que virou cada um
+
+| Categoria | Achados | Fechamento |
+|---|---|---|
+| **Célula de matriz ausente** | criação de conta (4 células, 1 escrita); barreira com tenancy (só células válidas) | R18 (CT-45); CT-49 |
+| **Oráculo sem valor concreto** | `Então o veredicto é "<x>"` em 23 linhas de CT-10/CT-11/CT-15; CT-13 "redireciona para a tela de login"; CT-41 "as rotas aceitam" | os dois veredictos definidos **uma vez** em `## Setup Global`; CT-13 com 302 + painel; CT-41 reescrito |
+| **Tautologia** | CT-28 comparando `null` com `null` nos outros três segredos | CT-28 arranja os **quatro** com valores distintos, e nomeia os quatro no `Então` |
+| **Asserção de status negativa** | CT-33 "deixa de responder 404" (500, 403 e 302 errado satisfaziam) | 302 + host do provedor + `client_id` digitado |
+| **Superfície de efeito incompleta** | CT-36 afirmava só sobre "a mensagem"; a fuga é o **contexto** | mensagem **e** contexto, mais o payload bruto |
+| **Invariante estrutural parcial** | CT-41 conferia 2 de 7 superfícies derivadas — R15 **é** RQ-02 | CT-41 com as sete + CT-41b (nada sobrando) |
+| **Linha de `Exemplos:` decorativa** | CT-07 `GOOGLE`/`google%20` (arranjo desligado); CT-42 `Discord`/`Facebook` (mera menção) | CT-07b com o `google` **ligado**; CT-42b exigindo provedor + motivo na mesma seção |
+| **Mais de um `Quando`** | CT-12 (três callbacks, com dependência de ordem); CT-39 (três telas) | os dois viraram `Esquema`, uma linha por provedor / painel |
+| **`Quando` tautológico** | CT-32 e CT-41 ("quando o formulário é montado") | aceito e declarado: são cenários de **existência de componente**, e o `Quando` deles é a montagem. Não viram comportamento — o comportamento é CT-30/CT-31 |
+| **Citação de mutante falsa** | M12, M14, M23, M34, M89, M100 | as seis reapontadas, cada uma com o motivo da correção escrito na própria linha |
+| **Achado de forma** | a seção declarava "7 achados" e remetia a uma seção inexistente | corrigido **antes** de a revisão voltar; era número inventado, e está registrado aqui como o erro que foi |
+
+### Rodada 2
+
+**Não executada, e a decisão é declarada.** A regra de fechamento manda re-revisar **uma vez** se o
+fechamento criou cenário **novo** — e criou cinco. A rodada 2 fica **pendente** e é o próximo passo
+desta wiki, antes de a implementação fechar. O que ela precisa atacar, por ordem de superfície nova
+introduzida: **R18** (a tabela de criação, que trouxe as noções de destino e de `email_verified_at`),
+**R19** (que trouxe a segunda conta no banco e o painel de origem) e **CT-04** (que trouxe o único
+cenário sem `Socialite::fake()` do arquivo).
+
+> **Teto de 2 rodadas.** Achado estrutural na rodada 2 não vira rodada 3: significa que a regra
+> deveria ser duas, e isso se registra e escala.
 
 ---
 

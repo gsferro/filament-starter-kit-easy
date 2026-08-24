@@ -349,6 +349,17 @@ Consequência, em dois sintomas de direções opostas:
    comentário da migration e a rule `.ai/rules/pages.md` ("Os dois estão em
    `ConfiguracoesDoKit::encrypted()`").
 
+3. **O terceiro sintoma, achado na revisão adversarial dos casos de teste, e o pior dos três**:
+   `App\Listeners\AuditarConfiguracoesDoKit:127` decide se mascara um valor com
+   `in_array($propriedade, ConfiguracoesDoKit::encrypted(), true)`. Então, desde a v0.19.2, toda
+   gravação do segredo do Google pela tela escreveu o valor **em claro** nas colunas
+   `old_values`/`new_values` da tabela `audits`.
+
+   É o pior porque não vaza só para quem alcança o banco: vaza para a **tela de auditoria**, que
+   é onde o valor é exibido para leitura. E é o que fecha o argumento de que a lista tem UM dono e
+   TRÊS consumidores — o decifrador da leitura, o cifrador da gravação e a máscara da trilha.
+   Nenhum dos três foi escrito pensando nos outros, e todos os três leem a mesma linha.
+
 Por que ninguém viu: `Crypto::encrypt(null)` devolve `null`
 (`vendor/spatie/laravel-settings/src/Support/Crypto.php:8-12`), e o segredo é `null` em toda
 instalação de desenvolvimento e em toda a suíte de testes. **O defeito só existe quando há
@@ -362,14 +373,29 @@ defeito. Duas mudanças:
 
 1. `encrypted()` passa a devolver os quatro segredos: `mail_password` e os `*_client_secret` dos
    três provedores com credencial (`google`, `github`, `linkedin-openid`, `x`).
-2. A migration desta entrega **normaliza** o valor já gravado: para `login_google_client_secret`,
-   tenta decifrar — se decifra, já era ciphertext e fica como está; se estoura `DecryptException`,
-   estava em claro e é cifrado agora. `null` passa reto.
+2. A migration de settings desta entrega **normaliza** o valor já gravado: para
+   `login_google_client_secret`, tenta decifrar — se decifra, já era ciphertext e fica como está;
+   se estoura `DecryptException`, estava em claro e é cifrado agora. `null` passa reto.
+3. Uma migration de banco (`2026_08_25_000001_mascarar_segredo_do_google_na_trilha.php`)
+   **mascara** o segredo que ficou em claro nas linhas já gravadas de `audits`, com a mesma
+   constante que o listener usa. A linha da trilha é preservada — apagá-la destruiria a auditoria
+   para consertar um vazamento, o que é trocar um problema por outro. Sai só o valor que nunca
+   deveria ter entrado. E a migration **loga um aviso** dizendo quantas linhas mascarou e que o
+   `GOOGLE_CLIENT_SECRET` precisa ser **rotacionado**: mascarar a trilha não desfaz o fato de o
+   valor ter estado legível, e uma migration que conserta vazamento em silêncio deixa quem opera
+   sem a única informação que importa.
 
 O ponto 2 é o que impede que o conserto do ponto 1 quebre quem já salvou o segredo pela tela: sem
 ele, `encrypted()` passaria a mandar decifrar um texto claro, e o `catch (Throwable)` do
 `KitServiceProvider` engoliria a leitura inteira do grupo — a instalação voltaria ao `.env` em
 silêncio, perdendo **todas** as configurações da tela, não só o segredo.
+
+O ponto 3 é o que o conserto do ponto 1 **não** alcança: `encrypted()` corrigido faz a máscara da
+trilha funcionar daqui para a frente, de graça, mas não reescreve o que já está gravado.
+
+A guarda contra a próxima omissão é um caso de teste, não prosa: salvar um `client_secret` pela
+tela e assertar que a linha de `audits` tem a **máscara** e não o segredo. Ele teria pegado isto
+duas releases atrás.
 
 ### Alternativas Consideradas
 
