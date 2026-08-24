@@ -1,6 +1,8 @@
 <?php
 
 use App\Support\Papeis;
+use Database\Seeders\PapeisSeeder;
+use Database\Seeders\ShieldPermissionsSeeder;
 
 /**
  * Como um papel é exibido — e por que a chave não muda.
@@ -63,3 +65,26 @@ it('traduz os papéis do kit em vez de derivar da chave', function (string $chav
     ['admin_app', 'Administrador App'],
     ['master_global', 'Administrador Geral'],
 ])->group('kit');
+
+/**
+ * CT-09 — os dois widgets do dashboard /admin exibem o rótulo, não a chave.
+ *
+ * Este é o caso que fecha o "sempre" do requisito, e ele é sobre o ponto que NÃO parece tela
+ * de papel: os widgets do painel de controle. Antes desta feature, o mesmo `panel_user`
+ * aparecia como "Painel App" na tabela de papéis e como `panel_user` no badge de últimos
+ * usuários e na barra de usuários por papel — duas telas acima e abaixo uma da outra.
+ *
+ * A asserção de AUSÊNCIA é a que importa aqui, e ela é segura nesta tela: o dashboard não tem
+ * campo de formulário com a chave do papel, ao contrário da tela de alteração do papel.
+ */
+it('exibe o rotulo do papel nos widgets do dashboard admin', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    usuario('cliente@example.com')->assignRole('panel_user');
+
+    $this->actingAs(usuarioCom('master_global'))
+        ->get('/admin')
+        ->assertSuccessful()
+        ->assertSee(Papeis::rotulo('panel_user'))
+        ->assertDontSee('panel_user');
+})->group('kit');

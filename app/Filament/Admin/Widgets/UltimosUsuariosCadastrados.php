@@ -7,6 +7,7 @@ namespace App\Filament\Admin\Widgets;
 use App\Filament\Admin\Resources\Users\UserResource;
 use App\Filament\Concerns\ExigePermissaoDoWidget;
 use App\Models\User;
+use App\Support\Papeis;
 use Filament\Actions\Action;
 use LaBoiteACode\FilamentDashboardWidgets\Data\RecentItem;
 use LaBoiteACode\FilamentDashboardWidgets\Widgets\RecentItemsWidget;
@@ -84,11 +85,16 @@ class UltimosUsuariosCadastrados extends RecentItemsWidget
         return parent::viewAllAction()->label('Ver todos');
     }
 
+    /**
+     * O rótulo sai de `Papeis::rotulo()`, nunca da chave: `panel_user` é identificador, e um
+     * badge de dashboard é exibição. Sem isto, esta tela e a tabela de usuários logo abaixo
+     * mostrariam a mesma pessoa como "Painel App" numa e "panel_user" na outra.
+     */
     private function rotuloDosPapeis(User $usuario): string
     {
         $papeis = $usuario->roles
             ->pluck('name')
-            ->map(fn (mixed $nome): string => (string) $nome)
+            ->map(fn (mixed $nome): string => Papeis::rotulo((string) $nome))
             ->all();
 
         return $papeis === [] ? 'sem papel' : implode(', ', $papeis);

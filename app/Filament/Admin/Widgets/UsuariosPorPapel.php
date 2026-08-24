@@ -6,6 +6,7 @@ namespace App\Filament\Admin\Widgets;
 
 use App\Filament\Concerns\ExigePermissaoDoWidget;
 use App\Models\User;
+use App\Support\Papeis;
 use LaBoiteACode\FilamentDashboardWidgets\Data\BreakdownItem;
 use LaBoiteACode\FilamentDashboardWidgets\Widgets\BreakdownWidget;
 use Spatie\Permission\Models\Role;
@@ -59,7 +60,8 @@ class UsuariosPorPapel extends BreakdownWidget
             ->withCount('users')
             ->get()
             ->map(fn (Role $papel): BreakdownItem => BreakdownItem::make(
-                (string) $papel->getAttribute('name'),
+                // Rótulo, não chave: `Papeis::rotulo()` é a mesma fonte da tabela de papéis.
+                Papeis::rotulo((string) $papel->getAttribute('name')),
                 // `users_count` só existe por causa do withCount() acima — vem
                 // por getAttribute() porque não é coluna da tabela.
                 (int) $papel->getAttribute('users_count'),

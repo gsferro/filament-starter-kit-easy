@@ -12,11 +12,17 @@ use Illuminate\Support\Str;
  * policies, e mudá-lo quebraria tudo isso de uma vez. O que não serve é mostrar a chave
  * para quem opera: "admin_app" é identificador, não rótulo.
  *
- * Então a chave fica, e a exibição vira Title Case. Aqui, e não repetido em cada tabela,
- * porque a regra aparece em sete telas — a tabela de papéis, o cadastro de usuários, os
- * dois de convites, o vínculo por organização e as caixas de entrada. Sete cópias
- * divergem, e a que divergir vai mostrar `panel_user` numa tela e "Panel User" na de
- * baixo.
+ * Então a chave fica, e a exibição vira Title Case. Aqui, e não repetido em cada tabela:
+ * eram sete pontos quando esta classe nasceu, são DEZESSETE hoje — a tabela de papéis e o
+ * título do registro dela, o cadastro de usuários dos dois painéis, os dois de convites, o
+ * vínculo por organização, as caixas de entrada e dois widgets do dashboard /admin.
+ * Dezessete cópias divergem, e a que divergir vai mostrar `panel_user` numa tela e
+ * "Panel User" na de baixo.
+ *
+ * Não confie neste número: recontar com
+ * `grep -rn 'Papeis::rotulo' app/ resources/ | wc -l`. Número parado em docblock é o que faz
+ * o próximo agente concluir que a varredura está completa quando não está — o mesmo defeito
+ * que `.ai/rules/filament.md` registra para a lista de subtração do `panel_user`.
  */
 final class Papeis
 {
