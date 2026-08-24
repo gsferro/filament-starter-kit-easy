@@ -16,7 +16,8 @@ Espelha os 12 passos de `01-plano-acao.md` → `## Estrutura de Implementação`
 
 - [x] `login.google.habilitado` com `filter_var(..., FILTER_VALIDATE_BOOLEAN)`
 - [x] `login.rodape`
-- [x] Comentário de bloco: default false, por que não `(bool) env()`, e que o login autentica sem criar conta
+- [x] Comentário de bloco: default false, por que a coerção falha **fechada** (e por que as três
+      chaves irmãs com cast de bool **não** estão erradas), e que o login autentica sem criar conta
 
 ## 4. `App\Support\ConfiguracaoDoLogin` — o ponto único de ligação com o Settings
 
@@ -69,7 +70,8 @@ Espelha os 12 passos de `01-plano-acao.md` → `## Estrutura de Implementação`
 
 ## 12. Testes
 
-- [x] `tests/Kit/LoginSocialGoogleTest.php` — CT-01 a CT-23
+- [x] `tests/Kit/LoginSocialGoogleTest.php` — CT-01 a CT-23 + CT-18b (54 casos executados, porque
+      cada `Esquema do Cenário` expande em linhas)
 - [x] `tests/Browser/LoginSocialGoogleTest.php` — CT-B01
 
 ## Verificação Final
@@ -98,7 +100,7 @@ Espelha os 12 passos de `01-plano-acao.md` → `## Estrutura de Implementação`
 | "`Auth::login()` pode contornar o 2FA" | não contorna: `MustTwoFactor` está no stack por default (`filament-breezy/src/Concerns/Plugin/HasTwoFactorAuthentication.php:29`) e redireciona ao desafio (`Middleware/MustTwoFactor.php:42-43`) | virou CT-16 em vez de comentário — barreira de terceiro não é barreira garantida |
 | "`Auth::login()` precisa de `session()->regenerate()` contra fixação" | o `SessionGuard::login()` já faz `migrate(true)` | passo removido do plano |
 | "a trilha de acesso precisa de código nesta feature" | o `rappasoft/laravel-authentication-log` já escuta `Illuminate\Auth\Events\Login` (`LaravelAuthenticationLogServiceProvider.php:35`) e grava em `authentication_log` (`Models/AuthenticationLog.php:33`) | nenhuma linha escrita; virou CT-21, que é o único cenário que mata "abrir a sessão por fora do `Auth::login()`" |
-| "`(bool) env()` serve para o interruptor" | `.ai/rules/config.md`: `(bool) "false"` é `true` — o jeito errado **liga** a feature quando a pessoa escreveu que não queria | `filter_var(..., FILTER_VALIDATE_BOOLEAN)`; ADR-08 e CT-18 |
+| "`(bool) env()` serve para o interruptor" | ⚠️ **esta linha estava errada** e só foi desmentida na implementação: o `Env::getOption()` do Laravel já converte `"false"` (`.../Support/Env.php:252-262`). A diferença real é de direção — `off`/`no`/lixo | `filter_var` mantido, **justificativa reescrita**; ver Notas de Implementação, item 1 |
 | "o `.env.example` é o único lugar de env fixada em teste" | o `phpunit.xml` fixa seis chaves `KIT_*` com `force="true"` | CT-01 ganhou o `Dado` declarando que `KIT_SOCIALITE_GOOGLE` **não** está fixado — sem isso o cenário mediria o `phpunit.xml` |
 
 ### Auditoria Ponytail (step 6)
@@ -125,11 +127,83 @@ Nenhum. A dependência da tela de Settings foi resolvida por desenho (ADR-02) em
 
 ## Desvios do Plano
 
-Preenchido durante a implementação.
+| Passo | O que o plano dizia | O que foi feito | Por quê |
+|---|---|---|---|
+| 3 e ADR-08 | `filter_var` porque `(bool) env()` transformaria a string `"false"` em `true` | `filter_var` **mantido**, com a justificativa **reescrita** | A justificativa era **factualmente falsa** — ver Notas de Implementação, item 1. É o desvio mais importante desta wiki |
+| 5 | `retorno()` com seis barreiras | **sete**: entrou o `instanceof AbstractUser` antes de ler o payload bruto | O PHPStan reprovou `getRaw()` no contrato `Socialite\Contracts\User`. A correção **não** foi alargar o tipo: provedor que não exponha o bruto não permite conferir a verificação, e a resposta é **não**. A estreiteza do tipo virou a barreira |
+| 5 | destino da conta nova é a URL do perfil | a URL do perfil **quando resolvível**; painel quando não | Com multi-tenancy ligada a rota do perfil exige o slug de uma organização, e conta recém-criada por login social não pertence a nenhuma. Marcado com comentário `ponytail:` nomeando o teto e o caminho de upgrade |
+| 12 | um arquivo de teste com 23 casos | 54 casos executados (os `Esquema do Cenário` expandem em linhas) | Nenhum CT novo: são as linhas de `Exemplos` contadas pelo Pest |
+| `04`, R14 | varredura de `(bool) env(` no `config/kit.php` inteiro | varredura **removida**; ficou a presença da coerção + um caso comportamental | A varredura reprovou e estava certa em reprovar. Ver Notas de Implementação, item 1 |
+| `04`, Setup Global | `Http::preventStrayRequests()` como rede de segurança | **removido**, com o motivo escrito | O Socialite usa o Guzzle dele, não o cliente do Laravel; a facade `Http` não intercepta nada dele. A promessa era falsa |
+| `05` | mutante MB5 (SVG malformado) sem matador | mantido sem matador | Débito DL-05, já declarado |
 
 ## Notas de Implementação
 
-Preenchido durante a implementação.
+### 1. A ADR-08 estava errada, e foi o teste dela que a denunciou
+
+O caso de teste que a própria ADR pediu — varrer o `config/kit.php` afirmando a ausência de
+`(bool) env(` — **reprovou**, porque três chaves irmãs do mesmo arquivo usam exatamente isso:
+`kit.tenancy.enabled` (`:83`), `kit.demo` (`:115`) e `kit.hub` (`:144`).
+
+Medido no vendor **depois** da reprovação, que é a ordem errada e é justamente o que
+`.ai/rules/specs.md` proíbe: o `Env::getOption()` do Laravel já converte `"true"`, `"false"`,
+`"(false)"`, `"null"` e `"empty"` em valor PHP antes de devolver
+(`vendor/laravel/framework/src/Illuminate/Support/Env.php:252-262`). Medido no projeto:
+
+| Valor | `env()` devolve | `(bool)` | `filter_var` |
+|---|---|---|---|
+| `false` | `false` | `false` | `false` |
+| (vazio) | `''` | `false` | `false` |
+| `off` | `'off'` | **`true`** | **`false`** |
+| `no` | `'no'` | **`true`** | **`false`** |
+| `lixo` | `'lixo'` | **`true`** | **`false`** |
+
+Ou seja: para **todo valor documentado** os dois jeitos empatam, e a diferença real é de
+**direção** — o cast falha aberto, o `filter_var` falha fechado. A decisão (`filter_var`) segue
+valendo, por ser um interruptor de segurança que abre superfície pública de OAuth; as três irmãs
+**não** estão erradas e o comentário do `config/kit.php` agora diz para não "consertá-las".
+
+**Esta é a forma exata do defeito que `.ai/rules/specs.md` descreve**: a conclusão certa
+sustentada por um motivo errado. Se a varredura tivesse sido "corrigida" no sentido oposto — em
+nome da consistência — esta feature teria mexido em `kit.tenancy.enabled`, a chave mais
+consequente do kit.
+
+### 2. `Socialite::fake()` não passa pela verificação de `state`
+
+`FakeProvider::user()` devolve o usuário falso direto
+(`vendor/laravel/socialite/src/Testing/FakeProvider.php:71-78`), sem chamar `hasInvalidState()`.
+Nenhum cenário faked pode falsificar a proteção de CSRF, então CT-05 usa o provedor **real** — e
+ainda assim não toca a rede, porque `hasInvalidState()` roda antes de `getAccessTokenResponse()`
+(`Two/AbstractProvider.php:230-241`).
+
+Junto vem a segunda correção: **`Http::preventStrayRequests()` não protege contra o Socialite**.
+Ele usa o Guzzle dele (`AbstractProvider::getHttpClient()`), não o cliente do Laravel, e a facade
+`Http` não intercepta nem impede nada. A wiki prometia essa rede de segurança e estava errada.
+
+### 3. `getRaw()` não está no contrato — e a correção virou barreira
+
+O PHPStan reprovou `Laravel\Socialite\Contracts\User::getRaw()`. O contorno óbvio (alargar o tipo
+ou anotar) estava proibido, e a saída certa era melhor que o código original: `instanceof
+AbstractUser`, e **`false` quando não é**. Provedor que não exponha o payload bruto não permite
+conferir a verificação de e-mail, e aí a resposta é não. O tipo estreito é a decisão de segurança.
+
+### 4. Quatro premissas do plano que o kit já resolvia
+
+Confirmadas na implementação, e **nenhuma linha foi escrita** para elas:
+
+- `Auth::login()` já regenera o id de sessão (`SessionGuard::login()` → `migrate(true)`);
+- o 2FA já é imposto pelo `MustTwoFactor` do Breezy em todo request de painel;
+- a trilha de acesso do `/infra` já escuta `Illuminate\Auth\Events\Login`;
+- o channel `autenticacao` já existia, com a régua de e-mail mascarado.
+
+As duas primeiras viraram **caso de teste** (CT-16) e a terceira também (CT-21) — não porque o kit
+possa perdê-las, mas porque uma implementação que abra a sessão por fora do `Auth::login()` passa
+em todos os outros casos e desaparece da trilha, sem erro nenhum.
+
+### 5. `assertSeeInOrder` sobre `form.password`
+
+A âncora de "abaixo do formulário" é o `id` gerado do campo de senha, e não o rótulo traduzido: o
+texto do rótulo aparece mais de uma vez na tela vestida pelo Auth Designer, e o `id` é único.
 
 ## Débitos declarados
 

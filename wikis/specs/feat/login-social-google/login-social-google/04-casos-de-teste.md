@@ -19,8 +19,8 @@
 - **Técnica escalada acima do perfil da área**: o rodapé é `mínimo` (1 cenário por regra) e
   recebe **dois** — o cenário de escape (CT-15) existe porque a implementação defeituosa plausível
   (`{!! !!}`) é XSS numa página pública, e EP sobre "tem texto / não tem texto" não a distingue.
-- **Cenários**: 23 CT (`04`) + 2 CT-B (`05`) · **Regras**: 15 · **Mutantes previstos**: 41 ·
-  **Sem matador**: 2 (declarados em R4 e R7).
+- **Cenários**: 24 CT (`04`) + 1 CT-B (`05`) · **Regras**: 15 · **Mutantes previstos**: 63 ·
+  **Sem matador**: 2 (declarados em R4 e R7) · **Retirados por serem falsos**: 1 (M59 — ver R14).
 
 ### Divergência declarada: rule do projeto vence a skill
 
@@ -131,9 +131,14 @@ que passar `email_verified => false` chega ao `getRaw()` e torna R8 testável se
   `autenticacao` e deixa os outros reais.
 - `Notification::fake()` **não** é usado: as notificações do Filament nesta feature são flash de
   sessão, não `Illuminate\Notifications`.
-- `Http::preventStrayRequests()` no `beforeEach` do arquivo — rede de segurança contra qualquer
-  cenário que acidentalmente escape para a internet. É o oposto de `Http::fake()` sem stub, que
-  devolveria 200 vazio e deixaria o teste verde sem provar nada.
+- **Nenhum `Http::fake()` nem `Http::preventStrayRequests()`**, e é preciso dizer por quê: o
+  Socialite usa o Guzzle **dele** (`AbstractProvider::getHttpClient()`), não o cliente do
+  Laravel, então a facade `Http` não intercepta nem impede nada que ele faça. Uma versão
+  anterior deste arquivo prometia `preventStrayRequests()` como rede de segurança do CT-05 —
+  era falso. Quem garante que nenhum caso sai para a rede são duas coisas verificadas no
+  vendor: o `FakeProvider` nunca chama HTTP (`Testing/FakeProvider.php:61-78`), e no CT-05 a
+  `InvalidStateException` é lançada **antes** da primeira chamada
+  (`Two/AbstractProvider.php:230-241`).
 
 ### Configuração por cenário
 
@@ -347,8 +352,9 @@ falsificar esta regra.
 Com o provedor **real** também não há rede: `AbstractProvider::user()` chama `hasInvalidState()`
 **antes** de `getAccessTokenResponse()` (`vendor/laravel/socialite/src/Two/AbstractProvider.php:230-241`),
 e `hasInvalidState()` só lê a sessão e o input (`:282-290`). A `InvalidStateException` é lançada
-sem um único byte de rede — e o `Http::preventStrayRequests()` do arquivo é a rede de segurança
-que prova isso: se a implementação chegar ao token, o cenário falha com "stray request".
+sem um único byte de rede. **Não há rede de segurança de `Http`** para isso: o Socialite usa o
+Guzzle dele e a facade `Http` não o intercepta. A garantia é a ordem lida no vendor, e é por isso
+que ela está citada com `arquivo:linha` em vez de assumida.
 
 - "nenhuma conta nova" é a metade do não-efeito que separa "recusa" de "recusa **depois** de
   gravar", que é o anti-padrão que a skill nomeia.
@@ -810,47 +816,80 @@ Notas:
 
 ---
 
-## Regra R14 — a coerção do interruptor não usa `(bool) env()`
+## Regra R14 — o interruptor falha FECHADO diante de valor irreconhecível
 
-> `RQ-13` · área **Disponibilidade** · técnica: **varredura de padrão de fronteira**
-> (`.ai/rules/config.md` + `.ai/rules/specs.md`, método: ao achar defeito de fronteira, varrer o
-> padrão no repo antes de consertar o ponto)
+> `RQ-13` · área **Disponibilidade** · técnica: **EP sobre o valor da env** (a técnica original
+> era "varredura de padrão de fronteira", e ela foi **abandonada** — o motivo está abaixo, e é o
+> achado mais útil deste arquivo)
+
+### Por que esta regra foi reescrita durante a implementação
+
+A versão original afirmava que `(bool) env('KIT_SOCIALITE_GOOGLE', false)` era antipadrão, com a
+justificativa de que a string `"false"` viraria `true`, e mandava **varrer o `config/kit.php`
+inteiro** afirmando a ausência do padrão — aplicando o método de `.ai/rules/specs.md` ("ao achar
+defeito numa fronteira, varra o padrão no repo antes de consertar o ponto").
+
+**O caso reprovou, e estava certo em reprovar**: três chaves irmãs do mesmo arquivo usam
+`(bool) env(...)` — `kit.tenancy.enabled` (`:83`), `kit.demo` (`:115`) e `kit.hub` (`:144`) — e
+**nenhuma delas está errada**. O `Env::getOption()` do Laravel já converte `"true"`, `"false"`,
+`"(false)"`, `"null"` e `"empty"` em valor PHP antes de devolver
+(`vendor/laravel/framework/src/Illuminate/Support/Env.php:252-262`).
+
+É a armadilha que a própria `.ai/rules/specs.md` descreve, vivida aqui: a **conclusão** (usar
+`filter_var`) continua certa, e o **motivo** escrito estava factualmente errado. Se a varredura
+tivesse sido "corrigida" no sentido oposto — trocando as três irmãs — a feature teria mexido em
+`kit.tenancy.enabled`, a chave mais consequente do kit, para consertar o que não estava quebrado.
+
+O que a medição mostrou, e que é a regra de verdade: a diferença é de **direção**, não de
+correção. `off`, `no` e qualquer lixo dão `true` no cast (falha **aberta**) e `false` no
+`filter_var` (falha **fechada**).
 
 ```gherkin
 # language: pt
 
 Funcionalidade: Coerção do interruptor do login social
 
-  Regra: o interruptor é coagido com FILTER_VALIDATE_BOOLEAN, nunca com um cast de bool
+  Regra: valor irreconhecível mantém o interruptor DESLIGADO
 
-    Cenário: [CT-18] o interruptor usa a coerção que entende a string "false"
-      Dado o arquivo config/kit.php, sem os comentários
+    Cenário: [CT-18] a coerção declarada no config é a que falha fechado
+      Dado o arquivo config/kit.php
       Quando a chave do interruptor do login social é procurada
       Então a expressão usa FILTER_VALIDATE_BOOLEAN
-      E nenhuma parte do arquivo faz um cast de bool direto sobre uma chamada de env
+
+    Esquema do Cenário: [CT-18b] valor irreconhecível não liga o interruptor
+      Dado o valor "<valor>" vindo do ambiente
+      Quando ele é coagido pela regra do config
+      Então o resultado é falso
+      E um cast de bool sobre o mesmo valor daria verdadeiro
+
+      Exemplos:
+        | valor | # partição              |
+        | off   | negação que o Laravel não reconhece |
+        | no    | negação que o Laravel não reconhece |
+        | lixo  | valor arbitrário        |
 ```
 
 Notas:
 
-- **A asserção de ausência filtra comentário antes de afirmar**, como `.ai/rules/testes.md` obriga:
-  o `config/kit.php` é um arquivo densamente comentado e o próprio comentário do bloco `login`
-  vai **citar** o antipadrão para explicar por que ele é proibido. Sem o filtro
-  (`preg_replace('~/\*.*?\*/~s', '', $codigo)` e as linhas `//`), o cenário reprova pela própria
-  documentação. A asserção de **presença** roda sobre o texto cru.
-- A segunda asserção é a varredura: ela cobre o arquivo inteiro, não só a chave nova, porque a
-  rule de config mede que consertar um ponto e não varrer deixou o defeito irmão vivo por duas
-  releases.
-- Camada: `tests/Kit`, leitura de arquivo.
+- **CT-18 é asserção de PRESENÇA**, sobre o texto cru — e por isso não precisa mais do filtro de
+  comentário que `.ai/rules/testes.md` exige. O filtro era necessário para a asserção de
+  **ausência** que foi removida; o comentário do bloco `login` cita o antipadrão para explicar a
+  divergência, e teria reprovado o caso pela própria documentação.
+- **CT-18b é o contrapeso comportamental**: sem ele, CT-18 afirma apenas sobre texto de arquivo, e
+  uma implementação que escrevesse a linha certa e lesse outra chave passaria. A segunda asserção
+  (`(bool) $valor` seria `true`) é o que torna o caso **discriminante** — ela prova que os dois
+  jeitos divergem naquele valor, que é a única razão de a divergência com as três irmãs existir.
+- **Nenhum `putenv()`**: teste que mexe em ambiente passa local e falha no CI, e o `phpunit.xml`
+  do kit fixa env com `force="true"` justamente para não depender disso.
+- Camada: `tests/Kit`.
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata |
 |---|---|---|
-| M57 | `(bool) env('KIT_SOCIALITE_GOOGLE', false)` | CT-18 (as duas asserções) |
-| M58 | `env('KIT_SOCIALITE_GOOGLE', false)` cru, e a comparação `== true` em outro lugar | CT-18 (presença do filtro) |
-| M59 | a coerção certa na chave nova e um `(bool) env(` acrescentado em outra chave depois | CT-18 (a varredura) |
-
----
+| M57 | `(bool) env('KIT_SOCIALITE_GOOGLE', false)` | CT-18 (presença) + CT-18b (a divergência medida) |
+| M58 | `env('KIT_SOCIALITE_GOOGLE', false)` cru, e a comparação `== true` em outro lugar | CT-18 |
+| M59 | ~~a coerção certa na chave nova e um `(bool) env(` acrescentado depois em outra chave~~ | **retirado**: não é mutante, é o padrão legítimo de três chaves do arquivo. Mantê-lo transformaria o gate em pressão para uma "correção" que pioraria o kit |
 
 ## Regra R15 — o login por Google deixa rastro
 
@@ -973,7 +1012,8 @@ Todos em `tests/Kit/LoginSocialGoogleTest.php`, grupo `kit`.
 | CT-15 | HTML no rodapé sai escapado | R11 | EP discriminante | Feature | M49, M50 |
 | CT-16 | 2FA confirmado ⇒ desafio mesmo entrando pelo Google | R12 | estado × operação | Feature | M51–M53 |
 | CT-17 | chaves no `.env.example` e nos dois READMEs (8 linhas) | R13 | EP | Feature (leitura de arquivo) | M54–M56 |
-| CT-18 | coerção do interruptor com `FILTER_VALIDATE_BOOLEAN` | R14 | varredura de padrão | Feature (leitura de arquivo) | M57–M59 |
+| CT-18 | a coerção declarada no config é a que falha fechado | R14 | EP | Feature (leitura de arquivo) | M57, M58 |
+| CT-18b | valor irreconhecível não liga o interruptor (3 linhas) | R14 | EP discriminante | Unit-em-Kit | M57 |
 | CT-19 | log informativo no sucesso | R15 | rastreio de efeito | Feature | M60, M61 |
 | CT-20 | alerta com motivo na recusa, sem log de sucesso | R15 | rastreio de efeito | Feature | M62, M63 |
 | CT-21 | login pelo Google entra na trilha de acesso | R15 | rastreio de efeito | Feature | M64 |

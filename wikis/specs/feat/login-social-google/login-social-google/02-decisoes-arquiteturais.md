@@ -425,53 +425,87 @@ também não.
 
 ---
 
-## ADR-08: `filter_var` no interruptor, nunca `(bool) env()`
+## ADR-08: o interruptor falha FECHADO — `filter_var`, e as três chaves irmãs estão certas
 
-**Status**: Aceita
+**Status**: Aceita (**corrigida** durante a implementação — a versão original desta ADR estava
+factualmente errada)
 **Data**: 2026-08-24
 
 ### Contexto
 
-`.ai/rules/config.md` é explícita: o segundo argumento do `env()` só vale para chave **ausente**.
-Com `KIT_SOCIALITE_GOOGLE=` (presente, valor vazio — o que sobra quando alguém apaga o valor), o
-`env()` devolve string vazia e o default nunca entra. A rule documenta cinco chaves do kit que
-nasceram com esse defeito, uma delas apagando dado.
+A primeira redação desta ADR afirmava que `(bool) env('KIT_SOCIALITE_GOOGLE', false)` era padrão
+defeituoso porque `KIT_SOCIALITE_GOOGLE=false` chegaria como a **string** `"false"` e
+`(bool) "false"` é `true` — o jeito errado ligando a feature exatamente quando a pessoa escreveu
+que não queria.
 
-Para booleano o caso é mais traiçoeiro que para inteiro: `(bool) ''` é `false`, que **por acidente**
-é o default correto aqui — mas `KIT_SOCIALITE_GOOGLE=false` chega como a **string** `"false"`, e
-`(bool) "false"` é `true`. O jeito errado liga a feature exatamente quando a pessoa escreveu que
-não queria.
+**Isso é falso**, e quem o denunciou foi o próprio caso de teste que a ADR pediu: ele varria o
+`config/kit.php` afirmando a ausência do padrão e **reprovou**, porque três chaves irmãs do mesmo
+arquivo o usam (`kit.tenancy.enabled`, `kit.demo`, `kit.hub`).
+
+O `Env::getOption()` do Laravel converte `"true"`, `"(true)"`, `"false"`, `"(false)"`, `"empty"`,
+`"(empty)"`, `"null"` e `"(null)"` em valor PHP de verdade **antes** de devolver
+(`vendor/laravel/framework/src/Illuminate/Support/Env.php:252-262`). Medido no projeto:
+
+| Valor no `.env` | `env()` devolve | `(bool)` | `filter_var(…, BOOLEAN)` |
+|---|---|---|---|
+| `true` | `true` | `true` | `true` |
+| `false` | `false` | `false` | `false` |
+| `(false)` | `false` | `false` | `false` |
+| (vazio) | `''` | `false` | `false` |
+| `0` | `'0'` | `false` | `false` |
+| `1` | `'1'` | `true` | `true` |
+| `off` | `'off'` | **`true`** | **`false`** |
+| `no` | `'no'` | **`true`** | **`false`** |
+| `lixo` | `'lixo'` | **`true`** | **`false`** |
+
+Para **todo valor documentado** no `.env.example`, os dois jeitos dão o mesmo resultado. As três
+chaves irmãs **não estão erradas**, e isto fica escrito no comentário do `config/kit.php` para que
+ninguém as "conserte".
 
 ### Decisão
 
-`filter_var(env('KIT_SOCIALITE_GOOGLE', false), FILTER_VALIDATE_BOOLEAN)` em `config/kit.php`.
-Ele devolve `false` para `""`, `"false"`, `"0"`, `"off"`, `"no"` e `null`, e `true` para `"true"`,
-`"1"`, `"on"`, `"yes"`. É a mesma coerção que o próprio Laravel usa no helper `env()` para os
-literais que ele reconhece — a diferença é que aqui ela é aplicada ao **valor**, não à ausência.
+Manter `filter_var(env('KIT_SOCIALITE_GOOGLE', false), FILTER_VALIDATE_BOOLEAN)` — mas pelo motivo
+verdadeiro, que é mais estreito e é de **direção**, não de correção:
 
-Não se cria uma classe em `app/Support/` para isso, como `NumeroDoEnv` fez para inteiros: uma
-função da stdlib resolve, e `NumeroDoEnv` existe porque o zero tem **significado diferente** por
-chave, o que não acontece com booleano.
+> O cast de bool falha **ABERTO** nos valores que o Laravel não reconhece. O `filter_var` falha
+> **FECHADO**.
+
+Para `kit.demo` e `kit.hub` isso é gosto. Para este interruptor não é: ele **abre uma superfície
+pública de OAuth**, e `off` e `no` são valores que gente escreve de verdade. Um interruptor de
+segurança que liga sozinho por causa de um valor irreconhecível é o tipo de default que ninguém
+descobre a tempo.
+
+Nenhuma classe é extraída para isto. `App\Support\NumeroDoEnv` existe porque, para inteiro, o
+**significado do zero muda por chave** (prazo em que zero desliga × limite de lote em que zero é
+absurdo); em booleano o significado é o mesmo em toda chave, e uma chamada da stdlib resolve.
 
 ### Alternativas Consideradas
 
-1. **`(bool) env(...)`** — o defeito descrito acima.
-2. **`env('KIT_SOCIALITE_GOOGLE', false)` cru** — `config()` devolveria a string `"true"`, e o
-   `if` funcionaria por coincidência, mas `=== true` não.
+1. **`(bool) env(...)`, como as três irmãs** — a mais consistente com a casa, e correta para todo
+   valor documentado. Recusada só pela direção da falha, e só porque esta chave é de segurança.
+2. **Trocar as três irmãs para `filter_var` também** — mudança de comportamento em
+   `kit.tenancy.enabled`, que é a chave mais consequente do kit, dentro de uma feature de login
+   social. Fora de escopo, e o tipo de "varredura" que conserta o que não está quebrado.
 3. **`App\Support\BooleanoDoEnv`** — classe nova para uma chamada de `filter_var`.
 
 ### Consequências
 
-- **Positivas**: `KIT_SOCIALITE_GOOGLE=false` desliga, que é o que quem escreve espera.
-- **Negativas**: nenhuma.
-- **Riscos**: se o kit ganhar mais interruptores booleanos por env, a linha se repete. Aí vale
-  extrair — hoje é uma.
+- **Positivas**: o interruptor da superfície pública falha fechado; a divergência com as irmãs
+  está justificada por escrito, no arquivo e aqui.
+- **Negativas**: `config/kit.php` passa a ter dois jeitos de coagir booleano. É inconsistência
+  real, documentada no lugar onde alguém a notaria.
+- **Riscos**: alguém "unificar" para o cast de bool por consistência. Mitigação: o comentário do
+  bloco diz explicitamente por que estes dois jeitos coexistem, e há caso de teste na presença da
+  coerção.
 
 ### Referências
 
-- `.ai/rules/config.md`
-- `config/kit.php` — bloco `login`
-- CT-02, CT-03
+- `vendor/laravel/framework/src/Illuminate/Support/Env.php:252-262`
+- `config/kit.php` — bloco `login`, e as três irmãs em `:83`, `:115`, `:144`
+- CT-18 e CT-18b — e o docblock de CT-18, que conta o erro e a correção
+- `.ai/rules/specs.md` — "justificativa de comportamento de pacote se escreve **depois** de ler o
+  vendor". Esta ADR é o caso: a conclusão (usar `filter_var`) estava certa e o **motivo** estava
+  errado, que é exatamente a forma invisível do defeito que a rule descreve
 
 ---
 
