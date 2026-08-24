@@ -81,7 +81,9 @@ Espelha os 12 passos de `01-plano-acao.md` → `## Estrutura de Implementação`
 - [x] `vendor/bin/phpstan analyse --no-progress` — 0 erros
 - [x] `composer filament:check` — 17/17 regras · `composer lint:check` — limpo
 - [x] `php artisan test --testsuite=Kit --filter=LoginSocialGoogle --compact`
-- [x] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy` — a base tinha 662
+- [x] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy` — **723 testes, 723 passando**,
+      1.914 asserções. A base desta branch (`origin/main` = `0d423dd`) tinha **662**; os 61 a mais
+      são desta feature (57 em `tests/Kit` + 4 em `tests/Tenancy`). Zero regressão
 - [x] `composer test:browser` — **42 casos, 37 verdes, 5 pulados, 0 vermelhos**; CT-B01 com 7 asserções
 - [x] Roteiro "Desenhado × Implementado" do `05` preenchido
 - [x] `git push -u origin feat/login-social-google` (sem PR, sem merge)
