@@ -1221,7 +1221,104 @@ Also global: modals that do **not** close on Esc (an accidental tap would discar
 > }
 > ```
 
-> 📌 **TODO:** turn these defaults into **Settings under `/admin`**, so pagination, density, filter persistence and resizable columns become a project preference set through the interface, with no code editing. `filament/spatie-laravel-settings-plugin` is already installed for that.
+> **Four of these defaults are editable in [Kit settings](#kit-settings-under-admin)**, on the *Tables* tab: rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns. The rest stays a code decision on purpose — those are choices with a written reason, not matters of taste.
+>
+> ⚠️ **Table density does not exist in Filament 5**, so it is not on the screen. The old TODO here promised four items and one of them has no API: a sweep over `vendor/filament/tables/src` returns no occurrence of `density`, and `vendor/filament/tables/src/Enums/` holds seven enums, none for density. What the framework does offer as a visual tightness control is `striped()`, and that is the one that became configurable.
+
+## Kit settings under `/admin`
+
+What the installer asked — plus a handful of things you previously could only change by editing a file — now lives at **`/admin/configuracoes-do-kit`**, in four tabs. No `.env`, no deploy.
+
+| Tab | What you change |
+|---|---|
+| **Identidade** (identity) | application name, primary colour (the Filament palette **or** a free hex value), brand logo, favicon and the artwork on the authentication screens |
+| **E-mail** | transport (`log`, `array`, `smtp`), host, port, encryption, username, password and sender |
+| **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns — the defaults for **every** table in all three panels |
+| **Kit** | card navigation hub, and what your business calls each organisation (singular and plural) |
+
+Everything is stored by `spatie/laravel-settings` in the `settings` table, with the screen coming from `filament/spatie-laravel-settings-plugin` — both were already installed in the kit and unused until this version.
+
+### Who wins: the database or `.env`?
+
+This is the question that decides whether the screen is useful or decorative, and there is a single answer:
+
+> **The database wins at runtime. `.env` seeds the first write and is the fallback.**
+
+How that works without any consumer knowing the settings exist:
+
+1. The `database/settings/*_create_kit_settings.php` migration seeds each property with the value **from `config(...)`**, which comes from `.env`. On a fresh install, the colour and name you picked during `kit:install` reach the database on their own — `migrate` runs after the installer wrote the file.
+2. `App\Providers\KitServiceProvider::configureSettingsDoKit()` overlays the process configuration with what the database holds, once per request and per artisan command.
+3. `App\Support\CorPrimaria`, the three `PanelProvider`s, the global table configuration and Laravel's own `MailManager` all keep reading `config()`. None of them changed.
+
+What happens in each situation:
+
+| Situation | Who wins |
+|---|---|
+| the property has a row in the database | **the database** |
+| the property has no row (you added one and didn't migrate) | `.env`, with a `warning` in the log |
+| the `settings` table does not exist (before the first `migrate`) | `.env`, silently |
+| the database is unreachable | `.env`, with a `warning` |
+| `kit:install` on a fresh install | `.env` → the migration carries the values into the database |
+| `kit:install --force` | drops the database, rewrites `.env` and re-migrates → the database is born matching the new `.env` |
+| `kit:install --custom` on an installed project | rewrites `.env` **and** writes to the settings — both sources end up equal |
+
+**There is no switch for "use the settings or not"**, and that is a decision, not an omission: a flag would be a third source of truth, which is exactly the problem the rule above solves. To turn it off, `php artisan migrate:rollback` on the settings migration — with no rows in the table the overlay is a no-op and `.env` is the only source again.
+
+### Colour: closed list and free colour
+
+Two fields, with a declared precedence:
+
+**valid hex → palette name → Filament default.**
+
+Hex wins because it is the more specific field: someone typing `#7c3aed` chose that colour, whereas the list selector has a default value and may never have been touched. A value outside the format (`#abcd`, `blue`, `#gggggg`) is **ignored** and resolution falls back to the name — the same tolerance the kit already had for an invalid colour name, and for the same reason: this runs in every panel's boot, and an exception there would take down **every** page in the project, not one screen.
+
+Inside `/app/{organisation}`, the **organisation's** colour still beats both.
+
+### Permission
+
+Just one: **`View:ConfiguracoesDoKit`**, generated by `ShieldPermissionsSeeder` and handed to the `admin` role by `PapeisSeeder` — with no list to edit, because a role's matrix is the whole panel's. `master_global` gets in through `Gate::before`; `infra` and `panel_user` do not receive it.
+
+It is one permission for opening **and** saving, on purpose. The plugin's `canEdit()` disables the form but **does not hide values** — the package's own README says so in writing — and this screen holds the SMTP password. A "read-only" role here would be a role that reads a credential.
+
+### Change trail
+
+Every change shows up in **`/infra/audits`**, with who changed it, when, the property name and the old and new values. One row per changed property; saving without changing anything creates no record.
+
+The mail password is **encrypted** in the `settings` table and enters the trail **masked** (`••••••`): the record says the secret changed, never what it is.
+
+Two details worth knowing before touching this:
+
+- The trail does **not** come from the `App\Traits\AuditsFillables` trait. A spatie settings class is not an Eloquent model, and pointing its repository at a model with the trait would audit only **creation** — changing an existing property goes through `upsert()`, which fires no Eloquent event. The trail comes from a `SavingSettings` listener, the only point in the package carrying old and new values together.
+- The recorded event is `settings-updated`, not `updated`, so the trail's "restore" button does **not** appear: it would `fill(['nome_da_aplicacao' => …])` into a row whose columns are `group`/`name`/`payload`.
+
+### This is not an organisation's settings
+
+A tenant's visual identity (per-organisation colour and logo) is still plain CRUD at **`/admin/organizacoes`**, in the `cor_primaria` and `logo` columns of the `Tenant` model, and it beats the kit's inside `/app/{slug}`. Nothing was moved here.
+
+### What was left out, and why
+
+| Item | Why |
+|---|---|
+| database driver, host and name | changing it after `migrate` is not a config rewrite, it is a different installation |
+| turning **multi-tenancy** on/off | the permission tables only get the context column if `permission.teams` is active **before** migrate; the path is `php artisan kit:tenancy` |
+| **admin e-mail and password** | `UsuarioAdminSeeder` does not sync, on purpose (it runs on every `db:seed`, and updating the password there would silently revert a change made in the profile screen). A field that does not change the credential is worse than no field — the path is the profile screen |
+| organisations CRUD **slug** | it is read at route registration, not at render, and the URL is a permanent identifier |
+| panel **languages** | the kit's internationalisation is not done: turning on a second language today switches half the screen. See the `idiomas` block in `config/kit.php` |
+| trail **retention** | not an installation question; it stays in `.env`, where zero has documented semantics |
+
+### Performance
+
+The overlay costs **one** query per boot (the whole group comes from a single read). If that bothers you, `SETTINGS_CACHE_ENABLED=true` in `.env` — bearing in mind that with the cache on, saving through the screen requires `php artisan settings:clear-cache`.
+
+### Adding a property
+
+Three places, always, and `tests/Kit/ConfiguracoesDoKitTest.php` fails if you forget one:
+
+1. the typed property in `app/Settings/ConfiguracoesDoKit.php`;
+2. the line in `ConfiguracoesDoKit::mapaDeConfiguracao()` (property → `config()` key);
+3. the `add()` / `deleteIfExists()` pair in a new migration under `database/settings/`.
+
+Plus the field on the right tab of `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`.
 
 ## Kit conventions
 
