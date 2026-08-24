@@ -37,7 +37,7 @@
 
 ## 5. `App\Filament\Pages\Auth\TelaRegistro`
 
-- [ ] `git mv` de `RegistroPorConvite.php`; `$layout` redeclarado
+- [ ] `$layout` redeclarado (regra do kit); NENHUM rename — ver ADR-04
 - [ ] `mount()` com o garfo por **ausência** de token
 - [ ] token presente e inválido continua recusando
 - [ ] tenancy ligada exige organização resolvida
@@ -47,7 +47,7 @@
 - [ ] `handleRegistration()` nos dois modos
 - [ ] `register()` sobrescrito só para o pendente (trata `null` do throttle)
 - [ ] docblock da classe reescrito
-- [ ] rename propagado: `AppPanelProvider` (3 pontos), 4 testes, `wikis/arquitetura.md`
+- [ ] docblock da classe abre com os dois modos e a tabela do garfo (substitui o rename)
 
 ## 6. `TelaLogin` — o link "Cadastre-se"
 
@@ -105,13 +105,26 @@
 
 | Premissa do plano | O código real diz | Correção aplicada na wiki |
 |---|---|---|
-| *(a preencher no step 5)* | | |
+| `Register.php:157-176` é `sendEmailVerificationNotification()` | o método vai de `:161` a `:180`; as duas saídas antecipadas são `:163-165` e `:167-169` | citações corrigidas em `01`, `02` e `04` |
+| throttle do registro em `Register.php:71-79` e `:126-148` | `rateLimit(2)` em `:73`, dentro do `try` de `:72-78`; o limitador por e-mail é `:129-148`, chamado em `:80-82` | corrigido em `02` (ADR-09) e `04` (CT-13) |
+| transação `:84-107`, login `:105` | transação `:84-102`, evento `:104`, envio `:106`, login `:108` | corrigido em `02` (ADR-10) e `04` |
+| **CT-22b é escrevível?** — o plano supôs que dava para montar o painel pelo provider | **confirmado**: `(new AppPanelProvider(app()))->panel(Panel::make())` devolve um painel utilizável fora do boot — medido, `hasEmailVerification() === false`, `hasRegistration() === true`, `isEmailVerificationRequired() === false` | premissa mantida; o `04` já registra as duas alternativas descartadas |
+| `pest --agent` disponível para sondagem | **não instalado** (`pestphp/pest-plugin-agent` não está no `composer.json`) | sondagens feitas por `php artisan tinker --execute`; nenhuma dependência nova foi adicionada |
+| `phpunit.xml` não fixa `KIT_REGISTRO*` | confirmado — nenhuma das três chaves aparece no arquivo | premissa de CT-26 mantida, e a dependência está declarada no `04` |
 
-### Auditoria Ponytail (step 6)
+### Auditoria Ponytail (step 6) — sub-agente independente
 
 | # | Sugestão de corte | Aplicada? | Onde |
 |---|---|---|---|
-| *(a preencher no step 6)* | | | |
+| 1 | **CORTE** o rename `RegistroPorConvite → TelaRegistro`: ~10 arquivos, nenhum RQ pede, e 2 dos arquivos são asserções de prefixo de log de testes do convite | **sim** | ADR-04 reescrita (decisão invertida, registrada como substituição em vez de apagada); `01` passos 5 e Riscos; `03` seção 5 |
+| 2 | **SIMPLIFIQUE** o `TenantForm`: `Section::make('Registro')` só para um `Toggle` contraria o arquivo, onde `ativo` (mesma natureza) já vive na `Section` de Identificação | **sim** | `01` passo 8 |
+| 3 | **CORTE** CT-16: provava `->unique(ignoreRecord: true)` que já existe e não tem relação com esta feature | **parcialmente** — o cenário ficou, com o oráculo trocado para o risco que **esta** feature cria ("editar pendente não o aprova em silêncio"), que é o par comportamental do CT-02 estrutural. Cortar por inteiro deixaria M18 sem matador comportamental | `04` R4, CT-16, M18, taxonomia |
+| 4 | **SIMPLIFIQUE** CT-06: a linha "desligado" do `Esquema` repete `tests/Kit/ConviteTest.php:199`, que já roda sob o default | **sim** — virou cenário simples, só a partição "ligado" (a coexistência, que é o que a feature introduz) | `04` R2 |
+
+Nada apontado em `00-requisito.md` nem em `05-casos-de-teste-browser.md` (o segundo já se
+autopoda pela tabela *Cogitado e cortado*).
+
+**Saldo**: −10 arquivos tocados, −1 `Section`, −1 linha de `Esquema`, 0 cenário perdido.
 
 ## Blockers
 

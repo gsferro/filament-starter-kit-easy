@@ -29,7 +29,7 @@ O gate não é "tem tela", é "só o navegador prova". Duas coisas caem nisso:
 - [ ] `beforeEach` com `$this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class])` —
       sem `panel_user` no banco o cadastro morre no arranjo.
 - [ ] `config(['kit.registro.habilitado' => true])` **antes** do `visit()`. Funciona porque o
-      servidor do plugin é in-process e `TelaRegistro::mount()` lê a opção em tempo de
+      servidor do plugin é in-process e `RegistroPorConvite::mount()` lê a opção em tempo de
       execução. (O que **não** funciona assim é a rota de verificação de e-mail — ver
       *cogitado e cortado*.)
 - [ ] Sem `actingAs()`: os dois cenários são de **visitante anônimo**, que é a persona da
@@ -167,8 +167,8 @@ Nenhum mutante do `04` ficou dependendo de browser.
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | `TelaRegistro` modo aberto em `/app/register`, campo de e-mail habilitado e vazio | | | |
-| 2 | `TelaRegistro` modo convite em `/app/register?token=…`, e-mail desabilitado | | | |
+| 1 | `RegistroPorConvite` modo aberto em `/app/register`, campo de e-mail habilitado e vazio | | | |
+| 2 | `RegistroPorConvite` modo convite em `/app/register?token=…`, e-mail desabilitado | | | |
 | 3 | link "Cadastre-se" no login, só com o registro ligado | | | |
 | 4 | ação Aprovar na tabela de usuários do `/app` | | | |
 | 5 | ação Aprovar na tabela de usuários do `/admin` | | | |

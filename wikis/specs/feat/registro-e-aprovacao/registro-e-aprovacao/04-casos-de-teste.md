@@ -39,7 +39,7 @@ não amostrado sem barreira.
 
 | Letra | O que existe nesta feature | Cenários gerados |
 |---|---|---|
-| **S** | `App\Support\RegistroAberto`; 2 migrations (`users.aprovacao_pendente`, `tenants.registro_habilitado`); `App\Models\User` (contrato, cast, guarda, `aprovar()`); `TelaRegistro` (renomeada); `TelaLogin`; `AppPanelProvider`; 2 `UserResource`; `TenantForm`; bloco `kit.registro` | CT-01, CT-02, CT-25, CT-26 |
+| **S** | `App\Support\RegistroAberto`; 2 migrations (`users.aprovacao_pendente`, `tenants.registro_habilitado`); `App\Models\User` (contrato, cast, guarda, `aprovar()`); `RegistroPorConvite` (o garfo novo); `TelaLogin`; `AppPanelProvider`; 2 `UserResource`; `TenantForm`; bloco `kit.registro` | CT-01, CT-02, CT-25, CT-26 |
 | **F** | ligar/desligar registro; resolver organização; criar usuário; atribuir papel; marcar pendência; aprovar; exigir verificação de e-mail; recusar; oferecer o link no login | CT-03…CT-24 |
 | **D** | dado que ENTRA: nome, e-mail, senha, `?token`, `?org`. Dado que JÁ EXISTE: usuário com o mesmo e-mail, convite pendente para o mesmo e-mail, organização inativa, organização com registro desligado, usuário legado sem `email_verified_at`. Dado de OUTRO tenant: organização cujo registro está desligado | CT-05…CT-09, CT-14…CT-18, CT-22 |
 | **I** | uma rota HTTP pública (`GET /app/register`); um componente Livewire (`register`); duas Actions de tabela; **e o chamador direto** — `RegistroAberto::registrar()` e `User::aprovar()` chamados fora da tela (job, comando, seeder) | CT-10, CT-11, CT-19, CT-21 |
@@ -52,7 +52,7 @@ não amostrado sem barreira.
 | Regra | Área (perfil herdado) | Origem (`RQ`) | Técnica | Cenários |
 |---|---|---|---|---|
 | **R1** — sem token, o registro só existe quando a opção está ligada | A1 (completo) | RQ-01, RQ-11, RQ-12 | tabela de decisão | CT-03, CT-04, CT-05 |
-| **R2** — o caminho do convite não muda, com a opção ligada ou desligada | A1 (completo) | RQ-01, RQ-12 | tabela de decisão + regressão | CT-06, CT-07 |
+| **R2** — o caminho do convite não muda com o registro aberto ligado | A1 (completo) | RQ-01, RQ-12 | tabela de decisão + regressão | CT-06, CT-07 |
 | **R3** — o registrado recebe `panel_user` e **nada além** | A2 (padrão↑) | RQ-04, RQ-05 | matriz papel × painel | CT-08, CT-09, CT-10 |
 | **R4** — com aprovação manual, o cadastro nasce pendente e não entra em painel nenhum | A3 (completo) | RQ-07, RQ-12 | tabela estado × operação | CT-11, CT-12, CT-15, CT-16 |
 | **R5** — a aprovação libera o acesso, é idempotente e exige quem pode | A3 (completo) | RQ-06, RQ-07 | estado × operação + matriz papel × ação | CT-19, CT-20, CT-21, CT-23 |
@@ -69,7 +69,7 @@ não amostrado sem barreira.
 | nome da coluna `aprovacao_pendente` | escolha de implementação (ADR-06) | detalhe. O `Então` de CT-11 afirma **"não entra em painel nenhum"**, não "a coluna é `true`" |
 | `?org={slug}` como forma de passar a organização | escolha de implementação (ADR-07) | detalhe. O `Então` de CT-14 afirma o **vínculo com a organização**, não o formato da URL |
 | rótulos "Pendente"/"Ativo" e o texto da notificação de aprovação pendente | comportamento visível que o requisito **não** determina | **pergunta ao usuário** (abaixo). Os cenários afirmam a **existência** da mensagem e o estado, nunca a string exata |
-| classe renomeada para `TelaRegistro` e prefixo de log `[TelaRegistro@…]` | escolha de implementação (ADR-04) | detalhe. CT-20 afirma o **channel, o nível e os campos do context**, não o prefixo |
+| o prefixo de log `[RegistroPorConvite@…]` | escolha de implementação (ADR-04 recusou o rename) | detalhe. CT-20 afirma o **channel, o nível e os campos do context**, não o prefixo |
 | `panel_user` como "o perfil de acesso ao /app" | o requisito **também** o determina ("somente o perfil de acesso ao /app") — o PRD só deu o nome | **pode** virar `Então` |
 | default `false` | o requisito o determina literalmente ("o default é false") | **pode** virar `Então`, e CT-26 usa o valor de fábrica |
 
@@ -120,7 +120,7 @@ single-tenant; `tests/Tenancy` roda com `permission.teams` ligado desde
 ### A armadilha de arnês desta feature — e o que foi tentado
 
 `config(['kit.registro.habilitado' => true])` **funciona** para tudo que é lido em tempo de
-execução: `TelaRegistro::mount()`, `TelaLogin::getSubheading()`, `RegistroAberto::registrar()`,
+execução: `RegistroPorConvite::mount()`, `TelaLogin::getSubheading()`, `RegistroAberto::registrar()`,
 `TenantForm`. Não funciona para o **registro de rotas** da verificação de e-mail, que o
 `AppPanelProvider` decide durante o boot (`vendor/filament/filament/routes/web.php:75-84`, sob
 `if ($panel->hasEmailVerification())`, e `hasEmailVerification()` é
@@ -212,18 +212,13 @@ Funcionalidade: registro aberto no painel de negócio
 ```gherkin
   Regra: o aceite de convite funciona igual, com o registro aberto ligado ou desligado
 
-    Esquema do Cenário: [CT-06] o convite é aceito nas duas configurações
+    Cenário: [CT-06] o convite continua sendo aceito com o registro aberto LIGADO
       Dado um convite pendente para "convidado@example.com" com o papel "panel_user"
-      E que a instalação está com o registro aberto <registro>
+      E que a instalação está com o registro aberto ligado
       Quando a pessoa aceita o convite pelo link recebido
       Então existe um usuário com o e-mail "convidado@example.com"
       E esse usuário tem o papel "panel_user"
       E o convite está marcado como aceito
-
-      Exemplos:
-        | registro   | # partição       |
-        | desligado  | o default        |
-        | ligado     | a coexistência   |
 
     Cenário: [CT-07] o convite vence o formulário na escolha do e-mail
       Dado um convite pendente para "convidado@example.com"
@@ -233,6 +228,11 @@ Funcionalidade: registro aberto no painel de negócio
       E nenhum usuário com o e-mail "outro@example.com" existe
 ```
 
+> **Só a partição "ligado", e não as duas.** A auditoria do step 6 cortou a linha "desligado":
+> ela repetia exatamente `tests/Kit/ConviteTest.php:199` (*"aceita o convite e cria o usuario
+> com o papel"*), que já roda sob o default e continua na suíte. Regressão do default coberta
+> por fora não precisa de linha própria aqui — o que esta feature introduz é a **coexistência**.
+>
 > CT-07 é regressão dirigida ao mutante que a coexistência introduz: tornar
 > `mutateFormDataBeforeRegister()` condicional é exatamente onde alguém pode inverter a
 > condição e deixar o formulário escolher o e-mail de um convite.
@@ -243,7 +243,7 @@ Funcionalidade: registro aberto no painel de negócio
 |---|---|---|
 | M5 | `mutateFormDataBeforeRegister()` deixa de forçar o e-mail (condição invertida) | **CT-07** |
 | M6 | `handleRegistration()` chama `RegistroAberto::registrar()` também no modo convite | CT-06 (o convite não ficaria aceito) |
-| M7 | com o registro aberto ligado, o `mount()` deixa de resolver o convite | CT-06 (linha "ligado") |
+| M7 | com o registro aberto ligado, o `mount()` deixa de resolver o convite | CT-06 |
 
 ---
 
@@ -311,11 +311,14 @@ Funcionalidade: registro aberto no painel de negócio
 | Estado | entrar no `/app` | entrar no `/admin` | entrar no `/infra` | ser aprovado | ser editado |
 |---|---|---|---|---|---|
 | **pendente** | 403 (CT-11) | 403 (CT-11) | 403 (CT-11) | **válido** (CT-19) | válido (CT-16) |
-| **aprovado** | entra (CT-08) | 403 (CT-09) | 403 (CT-09) | no-op (CT-21) | válido (CT-16) |
+| **aprovado** | entra (CT-08) | 403 (CT-09) | 403 (CT-09) | no-op (CT-21) | fora de escopo: o form não toca a coluna |
 
 Cada coluna tem **ao menos uma célula válida exercitada** — a metade que a skill cobra e que
 "toda célula vazia vira cenário negativo" não cobre sozinha. A coluna "ser editado" tem CT-16
-justamente para exercitar a armadilha da unicidade contra o próprio registro.
+para exercitar o risco que **esta feature** introduz nela: salvar um cadastro pendente pela tela
+não pode aprová-lo em silêncio. A auditoria do step 6 cortou a versão anterior de CT-16, que
+provava o `->unique(ignoreRecord: true)` já existente nos dois `UserResource` — cobertura de
+outra feature, disfarçada de célula desta matriz.
 
 ```gherkin
   Regra: enquanto o cadastro aguarda aprovação, ele não entra em painel nenhum
@@ -343,11 +346,12 @@ justamente para exercitar a armadilha da unicidade contra o próprio registro.
       Então o usuário pendente aparece na listagem
       E um usuário já aprovado não aparece
 
-    Cenário: [CT-16] o cadastro pendente pode ser editado sem colidir com o próprio e-mail
+    Cenário: [CT-16] editar um cadastro pendente pela tela não o aprova em silêncio
       Dado um usuário pendente com o e-mail "pendente@example.com"
       Quando quem administra salva o cadastro trocando apenas o nome
       Então o nome gravado é o novo
-      E o e-mail gravado continua "pendente@example.com"
+      E o cadastro continua pendente
+      E ele continua sem papel nenhum
 ```
 
 > **CT-11 é a cláusula RQ-05 na sua forma mais forte.** Ele é o cenário que reprova se a guarda
@@ -367,7 +371,7 @@ justamente para exercitar a armadilha da unicidade contra o próprio registro.
 | M15 | a pendência é gravada mas o registro segue autenticado | **CT-12** |
 | M16 | a pendência é ignorada quando a opção está ligada (condição invertida) | CT-11 |
 | M17 | o filtro de pendentes devolve todo mundo | CT-15 ("um usuário já aprovado não aparece") |
-| M18 | a validação de unicidade do e-mail não ignora o próprio registro na edição | **CT-16** |
+| M18 | `aprovacao_pendente` entra no `$fillable` e a edição pela tela zera a pendência | **CT-16** (o par comportamental do CT-02, que é estrutural) |
 
 ---
 
@@ -673,7 +677,7 @@ o painel pelo próprio provider, pelo motivo explicado em *"A armadilha de arnê
 | Autorização exercida na **ação** (não só `can()`) | **CT-23** (o usuário comum dispara a Action e é recusado) |
 | Idempotência (ancorada no agregado persistido) | **CT-21** |
 | Concorrência | **não se aplica além do existente**: dois registros simultâneos do mesmo e-mail são barrados pelo `unique` de `users.email`; duas aprovações simultâneas são idempotentes (CT-21). Não há contador, saldo nem limite de uso nesta feature |
-| Fronteira no ponto de entrada (**gravação**) | CT-13 (limite de tentativas), CT-16 (edição) |
+| Fronteira no ponto de entrada (**gravação**) | CT-13 (limite de tentativas) |
 | Domínio condicionado (um campo depende de outro) | **CT-14** (`registro_habilitado` só importa com tenancy e com o registro global ligado) e CT-22b |
 | Estado × operação de escrita (pendente ainda funciona?) | **CT-11** (pendente não entra), **CT-16** (pendente é editável) |
 | Ausente ≠ `null` ≠ `""` | **CT-14** (linha E5, `?org` ausente) e CT-03/CT-05 (`?token` ausente × inválido) |
@@ -681,8 +685,8 @@ o painel pelo próprio provider, pelo motivo explicado em *"A armadilha de arnê
 | Timezone / DST | **não se aplica**: a feature não compara datas. O único campo temporal é `email_verified_at`, e o que decide é nulidade (`hasVerifiedEmail()`), não instante — ver a dimensão **T** do SFDIPOT |
 | Unicode / limite de varchar | **não se aplica**: nenhum campo de texto novo. Nome, e-mail e senha usam os componentes e as regras do Filament, já cobertos pelo convite |
 | Unicidade + soft delete | **não se aplica**: `User` não usa `SoftDeletes` (a lista do `RevivePlugin` no `InfraPanelProvider` o exclui de propósito) |
-| CRUD combinado | CT-16 (editar sem alterar o campo único), CT-21 (operar duas vezes) |
-| **Mass assignment** | **CT-02** (`aprovacao_pendente` fora do `$fillable`) e **CT-07** (o e-mail do formulário é descartado no modo convite) |
+| CRUD combinado | CT-21 (operar duas vezes); editar sem alterar campo único **não se aplica**: o form não toca a coluna desta feature — corte da auditoria do step 6 |
+| **Mass assignment** | **CT-02** (estrutural), **CT-16** (comportamental, pela tela) e **CT-07** (o e-mail do formulário é descartado no modo convite) |
 | Upload | **não se aplica** |
 | Precisão monetária | **não se aplica**: nenhum valor numérico de domínio |
 | **Efeito colateral pelo canal certo** | **CT-17** (a notificação de validação de e-mail, do tipo que o Filament nomeia) e **CT-20** (o channel `autenticacao`, não o default) |
@@ -697,7 +701,7 @@ o painel pelo próprio provider, pelo motivo explicado em *"A armadilha de arnê
 | CT-03 | registro desligado → login | R1 | tabela de decisão | Kit (Livewire) | idem | M2, M3 |
 | CT-04 | registro ligado → formulário | R1 | tabela de decisão | Kit (Livewire) | idem | M2, M4 |
 | CT-05 | token inválido continua recusando | R1 | tabela de decisão | Kit (Livewire) | idem | **M1** |
-| CT-06 | convite aceito nas duas configurações | R2 | `Esquema` + regressão | Kit (Livewire) | idem | M6, M7 |
+| CT-06 | convite aceito com o registro ligado | R2 | regressão dirigida | Kit (Livewire) | idem | M6, M7 |
 | CT-07 | o convite vence o formulário no e-mail | R2 | mass assignment | Kit (Livewire) | idem | M5 |
 | CT-08 | aprovado automaticamente entra no `/app` | R3 | matriz papel × painel | Kit (Livewire+HTTP) | idem | M8, M9, M11 |
 | CT-09 | não alcança `/admin` nem `/infra` | R3 | matriz papel × painel | Kit (HTTP) | idem | M8 |
@@ -707,7 +711,7 @@ o painel pelo próprio provider, pelo motivo explicado em *"A armadilha de arnê
 | CT-13 | limite de tentativas | R8 | BVA (contagem) | Kit (Livewire) | idem | M35, M36 |
 | CT-14 | organização sem registro recusa | R7 | tabela de decisão | Tenancy (Livewire) | `tests/Tenancy/RegistroAbertoTenancyTest.php` | M31, M32, M33 |
 | CT-15 | pendente aparece no filtro | R4 | estado × operação | Kit (Livewire) | `tests/Kit/RegistroAbertoTest.php` | M17 |
-| CT-16 | pendente editável sem colidir consigo | R4 | CRUD/unicidade | Kit (Livewire) | idem | **M18** |
+| CT-16 | editar pendente não o aprova | R4 | mass assignment | Kit (Livewire) | idem | **M18** |
 | CT-17 | validação ligada → notificação | R6 | rastreio de efeito | Kit (Livewire) | idem | M26, M30 |
 | CT-18 | validação desligada → nada enviado | R6 | rastreio de efeito | Kit (Livewire) | idem | M27 |
 | CT-19 | aprovação libera o painel | R5 | estado × operação | Kit (Livewire+HTTP) | idem | M19, M20 |

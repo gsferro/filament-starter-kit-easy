@@ -96,7 +96,7 @@ Isto é o que torna RQ-09 implementável sem quebrar o convite, e é a razão pe
 
 ## Análise dos Arquivos Existentes
 
-### `app/Filament/Pages/Auth/RegistroPorConvite.php` → renomeado para `TelaRegistro`
+### `app/Filament/Pages/Auth/RegistroPorConvite.php` → renomeado para `RegistroPorConvite`
 
 O `mount()` ganha um garfo por **ausência de token**, não por config: token presente ⇒ fluxo
 de convite, byte por byte o de hoje; token ausente ⇒ consulta o registro aberto. Os quatro
@@ -105,7 +105,7 @@ métodos do convite (`mutateFormDataBeforeRegister`, `handleRegistration`,
 
 Renomeado porque o nome é a documentação primária de uma superfície de autenticação:
 `RegistroPorConvite` que também faz registro aberto é convite para o próximo agente
-implementar registro aberto **de novo** em outro lugar. `TelaRegistro` segue a convenção do
+implementar registro aberto **de novo** em outro lugar. `RegistroPorConvite` segue a convenção do
 kit (`TelaLogin`, `TelaBloqueio`).
 
 ### `app/Models/User.php`
@@ -163,8 +163,8 @@ Nenhuma rota escrita à mão. As que passam a existir/mudar:
 
 | Tela / Componente | Tipo | Rota | Interação do usuário | Depende de JS? |
 |---|---|---|---|---|
-| `TelaRegistro` (modo convite) | Filament (Page) | `/app/register?token=…` | preenche nome e senha | Sim |
-| `TelaRegistro` (modo aberto) | Filament (Page) | `/app/register` (+ `?org=slug`) | preenche nome, e-mail e senha | Sim |
+| `RegistroPorConvite` (modo convite) | Filament (Page) | `/app/register?token=…` | preenche nome e senha | Sim |
+| `RegistroPorConvite` (modo aberto) | Filament (Page) | `/app/register` (+ `?org=slug`) | preenche nome, e-mail e senha | Sim |
 | `TelaLogin` — link "Cadastre-se" | Filament (Page) | `/app/login` | clica no link | Não |
 | `UsersTable` do `/app` — ação Aprovar | Filament (Table action) | `/app/{tenant}/users` | confirma a aprovação | Sim |
 | `UsersTable` do `/admin` — ação Aprovar | Filament (Table action) | `/admin/users` | confirma a aprovação | Sim |
@@ -204,9 +204,10 @@ Nenhum job. O e-mail de verificação usa o `Notifiable` do usuário, no driver 
 
 ## Impacto em Features Existentes
 
-- **Convite de usuário** (`Convite`, `TelaRegistro` modo convite, `ConvitesRecebidos`): o
-  caminho com token não consulta o registro aberto em momento nenhum. O risco real é o
-  **rename da classe** — 4 arquivos de teste a acompanhar.
+- **Convite de usuário** (`Convite`, `RegistroPorConvite` modo convite, `ConvitesRecebidos`): o
+  caminho com token não consulta o registro aberto em momento nenhum, e a classe **não é
+  renomeada** (ADR-04), então nenhum teste do convite é editado. O risco residual é o garfo
+  novo no `mount()` — coberto por CT-06, CT-07 e CT-20b.
 - **Verificação de e-mail nos três painéis**: `User` passa a ser `MustVerifyEmail`
   globalmente. `/admin` e `/infra` mantêm `emailVerification(null, false)` ⇒ nenhum
   middleware ⇒ ninguém barrado. Só o `/app`, e só com a opção ligada.
@@ -249,8 +250,10 @@ Nenhum job. O e-mail de verificação usa o `Notifiable` do usuário, no driver 
 - **Registro aberto é superfície anônima que cria conta.** Mitigação: throttle do vendor (2
   por IP + 2 por e-mail), papel único, guarda de pendência, log no `autenticacao` com e-mail
   mascarado, e CT para cada um.
-- **Rename de classe em superfície de auth.** Mitigação: `grep` fechado (o rename só toca
-  `app/`, `tests/` e `wikis/arquitetura.md`; wikis históricas ficam intactas) + a suíte.
+- **Risco eliminado, e vale registrar por quê**: a primeira versão do plano renomeava a página
+  para `TelaRegistro`. A auditoria do step 6 cortou o rename (ADR-04) — era ~10 arquivos, dois
+  deles asserções de log de testes do convite, em troca de nada observável. Renomear era a
+  opção maior **e** a mais arriscada ao mesmo tempo.
 
 ## Channel de Log da Feature
 
@@ -259,7 +262,7 @@ Nenhum job. O e-mail de verificação usa o `Notifiable` do usuário, no driver 
 `grep -n autenticacao config/logging.php` ⇒ o channel **existe** (`config/logging.php:132`),
 driver de `LOG_KIT_DRIVER`, path `storage/logs/autenticacao.log`. É o channel de toda
 fronteira de acesso do kit: `User::canAccessPanel()`, `Convite::aceitar()`,
-`UserResource::gravarPapeis()`, `TelaRegistro::recusar()`.
+`UserResource::gravarPapeis()`, `RegistroPorConvite::recusar()`.
 
 ### Decisão
 
@@ -403,9 +406,9 @@ public function aprovar(): void   // idempotente; sem pendência, no-op silencio
 
 > Skills: `laravel-best-practices`, `pest-testing`
 
-- **Path**: `app/Filament/Pages/Auth/TelaRegistro.php` (`git mv` de
-  `RegistroPorConvite.php`); o rename acompanha `AppPanelProvider` (3 pontos), 4 arquivos de
-  teste e `wikis/arquitetura.md:128`.
+- **Path**: `app/Filament/Pages/Auth/RegistroPorConvite.php` — **sem rename** (ADR-04). O
+  docblock da classe é reescrito para abrir com os dois modos e a tabela do garfo; é ele que
+  substitui o nome como documentação.
 - `protected static string $layout` **permanece redeclarado** — regra do kit
   (`.ai/rules/auth.md`), e o par de testes que a cobra continua valendo.
 - `public ?Tenant $organizacao = null;` ao lado do `?Convite $convite`.
@@ -467,9 +470,9 @@ public function register(): ?RegistrationResponse
 - Docblock da classe reescrito: os dois modos, por que o garfo é por ausência de token, e o
   que **não** muda no caminho do convite.
 - **Logs**: `recusar()` mantém o `warning` de hoje (mensagem passa a
-  `[TelaRegistro@mount]`). O log do sucesso vive em `RegistroAberto::registrar()`. Novo
+  `[RegistroPorConvite@mount]`). O log do sucesso vive em `RegistroAberto::registrar()`. Novo
   `warning` no ramo pendente:
-  `'[TelaRegistro@register] Registro pendente de aprovacao — sessao encerrada | user: {id}'`.
+  `'[RegistroPorConvite@register] Registro pendente de aprovacao — sessao encerrada | user: {id}'`.
 
 ### 6. `TelaLogin` — o link "Cadastre-se"
 
@@ -509,8 +512,12 @@ public function register(): ?RegistrationResponse
 > Skills: `laravel-best-practices`
 
 - **Path**: `app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php`
-- `Toggle::make('registro_habilitado')` numa `Section::make('Registro')`, com
-  `->visible(fn (): bool => RegistroAberto::habilitado())` — RQ-03 amarra a opção do tenant à
+- `Toggle::make('registro_habilitado')` **dentro da `Section::make('Identificação')` que já
+  existe**, ao lado do `Toggle::make('ativo')` — não numa seção nova. Os dois são booleanos de
+  fronteira da organização, da mesma natureza ("está no ar" / "aceita cadastro"), e uma
+  `Section` inteira para um campo contraria o próprio arquivo. *(Corte aplicado pela auditoria
+  do step 6.)*
+- `->visible(fn (): bool => RegistroAberto::habilitado())` — RQ-03 amarra a opção do tenant à
   global ("**e** o register estiver liberado"), e um toggle inerte é pior que nenhum.
 - `helperText` dizendo o endereço exato que passa a funcionar: `/app/register?org={slug}`.
 - `App\Models\Tenant`: `registro_habilitado` no `$fillable` e `'boolean'` nos `casts()`.

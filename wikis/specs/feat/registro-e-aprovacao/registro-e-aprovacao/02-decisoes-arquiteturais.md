@@ -98,7 +98,7 @@ métodos no topo da classe, marcados com o comentário
 
 ### Alternativas Consideradas
 
-1. **Ler `config()` direto em cada consumidor** (`TelaRegistro`, `TelaLogin`,
+1. **Ler `config()` direto em cada consumidor** (`RegistroPorConvite`, `TelaLogin`,
    `AppPanelProvider`, `TenantForm`, `RegistroAberto::registrar()`) — recusado: cinco arquivos
    a trocar no rebase, e a chance de sobrar um é exatamente a chance de a feature ficar
    metade no Settings e metade no `.env`, sem erro nenhum.
@@ -144,7 +144,7 @@ feature.
 
 ### Decisão
 
-**Uma tela** (`TelaRegistro`), com o garfo no `mount()` decidido pela **presença** do
+**Uma tela** (`RegistroPorConvite`), com o garfo no `mount()` decidido pela **presença** do
 parâmetro `token`:
 
 | Query string | Caminho |
@@ -190,55 +190,77 @@ token não existe, expirou ou já foi usado (ADR-02 da wiki `convite-de-usuario`
 
 ### Referências
 
-- `app/Filament/Pages/Auth/TelaRegistro.php` (`mount()`)
+- `app/Filament/Pages/Auth/RegistroPorConvite.php` (`mount()`)
 - `app/Providers/Filament/AppPanelProvider.php:212-224`
 - ADR-02 e ADR-06 de `wikis/specs/main/convite-de-usuario/02-decisoes-arquiteturais.md`
 
 ---
 
-## ADR-04: A classe muda de nome — `RegistroPorConvite` → `TelaRegistro`
+## ADR-04: A classe NÃO muda de nome — `RegistroPorConvite` fica
 
 **Status**: Aceita
 **Data**: 2026-08-24
+**Substitui**: a primeira versão desta ADR, que decidia renomear para `RegistroPorConvite`
 
 ### Contexto
 
-A classe passa a atender registro aberto **e** convite. `RegistroPorConvite` deixa de
-descrever o que ela faz.
+A classe passa a atender registro aberto **e** convite, então `RegistroPorConvite` deixa de
+descrever metade do que ela faz. A primeira versão desta ADR decidiu renomear para
+`RegistroPorConvite`, seguindo a convenção do kit (`TelaLogin`, `TelaBloqueio`).
+
+A auditoria de over-engineering do plano (step 6 da wiki, sub-agente independente) reprovou a
+decisão, e com razão.
 
 ### Decisão
 
-Renomear para `TelaRegistro`, seguindo a convenção do kit (`TelaLogin`, `TelaBloqueio`). O
-prefixo dos logs acompanha: `[TelaRegistro@mount]`, `[TelaRegistro@register]`.
+**Manter `RegistroPorConvite`**, com o docblock da classe reescrito descrevendo os dois modos.
 
-Alcance do rename: `app/` (a página + 3 pontos no `AppPanelProvider`), `tests/` (4 arquivos) e
-`wikis/arquitetura.md:128`. **Wikis históricas não são editadas** — elas registram o que era
-verdade quando foram escritas, e reescrever histórico é pior que um nome antigo num documento
-datado.
+### Por que a decisão virou
+
+Três argumentos, e o terceiro é o que decide:
+
+1. **Nenhuma cláusula do requisito pede o rename.** Ele é diff sem comportamento: ~10 arquivos
+   tocados — a página, 3 pontos no `AppPanelProvider`, 4 arquivos de teste e
+   `wikis/arquitetura.md:128` — para zero mudança observável.
+2. **Dois casos de teste do convite asseram o PREFIXO DE LOG** (`ConviteTest.php:190` e
+   `:1017`, ambos `str_starts_with($mensagem, '[RegistroPorConvite@mount]')`). Renomear obriga
+   a editar asserção de teste de uma feature que esta wiki não deveria estar tocando.
+3. **O rename aumenta o risco exatamente onde ele não pode aumentar.** A instrução desta
+   entrega é *não quebrar o caminho do convite*, que é o fluxo padrão do kit. Um rename numa
+   superfície de autenticação compartilhada, com edição em 4 arquivos de teste, é risco de
+   regressão pago em troca de estética de nome. Renomear é ao mesmo tempo a opção **maior** e
+   a **mais arriscada** — é raro as duas coincidirem, e quando coincidem a discussão acaba.
+
+### O que substitui o rename
+
+O argumento a favor dele era real, e continua: *nome que mente sobre metade do comportamento
+convida o próximo agente a implementar registro aberto de novo, em outro arquivo*. O que fecha
+esse risco sem tocar em nada é o **docblock da classe**, que passa a abrir com os dois modos e
+com a tabela do garfo (ADR-03) — quem abre o arquivo lê nas primeiras linhas que a classe
+atende as duas portas. Documentação no lugar onde o leitor já vai olhar custa zero arquivo.
 
 ### Alternativas Consideradas
 
-1. **Manter `RegistroPorConvite`** — recusado. O nome é a documentação primária de uma
-   superfície de autenticação, e um nome que mente sobre metade do comportamento é o convite
-   mais eficiente que existe para o próximo agente implementar registro aberto **de novo**,
-   em outro arquivo. O custo evitado seria ~10 edições mecânicas; o custo aceito seria uma
-   segunda porta pública descoberta meses depois.
-2. **`Registro`** — recusado: colide visualmente com `App\Support\RegistroAberto` e não segue
-   o prefixo `Tela` das outras duas páginas de auth do kit.
+1. **Renomear para `RegistroPorConvite`** — recusado pelos três motivos acima. Era a decisão original
+   desta wiki, e está registrada como revertida em vez de apagada: quem tiver a mesma ideia
+   encontra o custo já medido.
+2. **Renomear só o prefixo de log**, mantendo a classe — recusado: o padrão do kit é
+   `[Classe@Método]`, e prefixo que não casa com a classe quebra o `grep` que o padrão existe
+   para permitir.
 
 ### Consequências
 
-- **Positivas**: nome honesto; convenção do kit mantida; o prefixo de log fica coerente com a
-  classe (o padrão `[Classe@Método]` do kit depende disso para ser grepável).
-- **Negativas**: dois CT do convite asseram o prefixo antigo (`ConviteTest.php:190` e
-  `:1017`) e precisam ser atualizados junto — mudança de asserção, não de comportamento.
-- **Riscos**: um `grep` incompleto deixaria uma referência morta. Mitigação: o rename é
-  verificado por `grep -rn RegistroPorConvite app/ tests/` vazio, e pela suíte.
+- **Positivas**: o diff da feature encolhe ~10 arquivos; nenhum teste do convite é editado; o
+  risco de regressão na porta do convite cai a zero por construção.
+- **Negativas**: o nome da classe descreve um dos dois modos. Mitigado pelo docblock, e o custo
+  real é um leitor surpreso, não um defeito.
+- **Riscos**: o próximo agente pode não ler o docblock. Risco aceito, e ele já existia — o
+  arquivo tem ~150 linhas de comentário que só funcionam se alguém as ler.
 
 ### Referências
 
-- `app/Filament/Pages/Auth/TelaRegistro.php`
-- `app/Filament/Pages/Auth/TelaLogin.php`, `app/Filament/Pages/Auth/TelaBloqueio.php`
+- `app/Filament/Pages/Auth/RegistroPorConvite.php` (docblock da classe)
+- `tests/Kit/ConviteTest.php:190,1017`
 
 ---
 
@@ -322,7 +344,7 @@ exatamente o padrão que `.ai/rules/specs.md` manda vigiar.
 1. **Entregar a opção desligada com justificativa** ("não dá para condicionar sem quebrar o
    convite") — recusado porque a premissa é falsa. Foi verificada lendo
    `Register.php:161-180` e `Convite.php:591`, não presumida.
-2. **Sobrescrever `sendEmailVerificationNotification()` na `TelaRegistro`** para não enviar no
+2. **Sobrescrever `sendEmailVerificationNotification()` na `RegistroPorConvite`** para não enviar no
    modo convite — recusado: resolve com override o que o dado já resolve, e valeria só para
    quem passa pela tela. `Convite::aceitar()` chamado por job ou comando ficaria de fora.
 3. **`isRequired: false` sempre** (tela no ar, sem middleware) — recusado: a opção viraria
@@ -546,7 +568,7 @@ Nada novo. Os dois que já existem cobrem os dois caminhos:
 | Caminho | Limite | Origem |
 |---|---|---|
 | envio do formulário (`register()`) | `rateLimit(2)` por IP **+** 2 por e-mail (`filament-register:{sha1(email)}`) | vendor, `Register.php:72-78` e `:129-148` |
-| recusa no `mount()` (`recusar()`) | 5 por 600 s por IP | kit, `TelaRegistro::recusar()` |
+| recusa no `mount()` (`recusar()`) | 5 por 600 s por IP | kit, `RegistroPorConvite::recusar()` |
 
 O throttle da recusa protege o **log**, não a resposta — a justificativa completa está no
 comentário de `recusar()`, medida em QA-01: 12 GETs anônimos escreviam 12 linhas de `warning`
@@ -581,7 +603,7 @@ cadastro e é o default do Filament.
 ### Referências
 
 - `vendor/filament/filament/src/Auth/Pages/Register.php:72-78,129-148`
-- `app/Filament/Pages/Auth/TelaRegistro.php` (`recusar()`)
+- `app/Filament/Pages/Auth/RegistroPorConvite.php` (`recusar()`)
 - QA-01 de `wikis/specs/main/convite-de-usuario/06-relatorio-qa.md`
 
 ---
@@ -599,7 +621,7 @@ cadastro e é o default do Filament.
 
 ### Decisão
 
-Sobrescrever `register()` na `TelaRegistro` **só** para o caso pendente: chamar
+Sobrescrever `register()` na `RegistroPorConvite` **só** para o caso pendente: chamar
 `parent::register()` (que faz throttle, transação, evento e login) e, se o usuário autenticado
 estiver pendente, desfazer — `logout()`, `session()->invalidate()`, `regenerateToken()` —,
 notificar *"Cadastro recebido, aguarde a aprovação"* e redirecionar ao login.
@@ -635,4 +657,4 @@ HTTP, e o request morre em 500) é específica do `mount()`.
 ### Referências
 
 - `vendor/filament/filament/src/Auth/Pages/Register.php:70-113`
-- `app/Filament/Pages/Auth/TelaRegistro.php` (`register()`, `recusar()`)
+- `app/Filament/Pages/Auth/RegistroPorConvite.php` (`register()`, `recusar()`)
