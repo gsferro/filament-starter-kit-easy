@@ -133,13 +133,23 @@ Funcionalidade: Botão de entrar com Google na tela de login renderizada
 
 ## Roteiro de Validação: Desenhado × Implementado
 
-Preenchido depois de rodar o CT-B, no step 7 da `feature-wiki`.
+Cada linha é uma promessa da `## Superfície de UI` do PRD, conferida contra a tela real.
+As seis são provadas em HTTP (suíte `Kit`); o navegador acrescenta **uma** coisa que o HTML não
+prova — que o botão e o rodapé estão de fato **visíveis**.
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | botão "Entrar com Google" abaixo do formulário, nos três painéis | | | |
-| 2 | ícone do Google (SVG inline, quatro cores) no botão | | | |
-| 3 | rodapé de texto na base da tela de login | | | |
-| 4 | botão ausente quando o interruptor está desligado | | | |
-| 5 | botão ausente quando falta uma credencial | | | |
-| 6 | rodapé ausente quando não há texto | | | |
+| 1 | botão "Entrar com Google" abaixo do formulário, nos três painéis | idem, via render hook `AUTH_LOGIN_FORM_AFTER` registrado **uma vez** sem escopo | ✅ | CT-04, `assertSeeInOrder(['form.password', 'Entrar com Google'])` nos três painéis |
+| 2 | ícone do Google (SVG inline, quatro cores) no botão | idem; o `<span>` flex que envolvia o SVG **saiu** — `.fi-btn` já é `inline-grid grid-flow-col items-center gap-1.5` (`button.css:3`) | ✅ com desvio | CT-04, as quatro cores da marca asseridas uma a uma |
+| 3 | rodapé de texto na base da tela de login | idem, `.fi-login-rodape`, saída escapada | ✅ | CT-14 (presença), CT-15 (escape) |
+| 4 | botão ausente quando o interruptor está desligado | idem, e **a rota também cai** (404) — não só o botão | ✅ **acima do desenhado** | CT-01 linha 2, CT-02 linhas 1–2 |
+| 5 | botão ausente quando falta uma credencial | idem, com `client_secret` **vazio** (não ausente) | ✅ | CT-01 linha 3, CT-02 linhas 3–4 |
+| 6 | rodapé ausente quando não há texto | idem, e também com **só espaços** | ✅ | CT-14 linhas 2–3 |
+
+**Visibilidade renderizada** (o que só o navegador prova): CT-B01 — ver o resultado da execução
+registrado no `03-progresso.md` → `## Verificação Final`.
+
+### Divergências para o `03-progresso.md`
+
+Uma, e é subtrativa: o `<span>` de layout do ícone foi removido depois de a revisão de
+over-engineering apontar que `.fi-btn` já o faz. Nada do que o PRD prometeu deixou de existir.
