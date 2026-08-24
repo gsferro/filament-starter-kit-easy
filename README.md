@@ -514,77 +514,126 @@ laço anônimo, sem mudar o que a pessoa vê.
 > arquivo — nenhum outro lugar do projeto lê essas chaves, e há um teste que reprova se alguém
 > passar a ler.
 
-## Login social com Google (opt-in)
+## Login social: quatro provedores (opt-in, um por um)
 
-Um segundo caminho de entrada, ao lado da senha: o botão **Entrar com Google** abaixo do
-formulário de login dos três painéis. Ele nasce **desligado** e, ligado, faz uma coisa só —
-autenticar quem **já tem conta**.
+Um segundo caminho de entrada, ao lado da senha: os botões **Entrar com…** abaixo do formulário de
+login dos três painéis. Cada provedor nasce **desligado**, é ligado **individualmente**, e ligado
+faz uma coisa só — autenticar quem **já tem conta**.
 
-### O que ele faz, e o que ele deliberadamente não faz
+| Provedor | Driver do Socialite | URI de redirecionamento | Como o kit confirma o e-mail verificado |
+|---|---|---|---|
+| **Google** | `google` | `/auth/google/callback` | campo `email_verified` no payload |
+| **GitHub** | `github` | `/auth/github/callback` | o kit consulta `/user/emails` e exige `primary` + `verified` |
+| **LinkedIn** | `linkedin-openid` | `/auth/linkedin-openid/callback` | campo `email_verified` do userinfo OpenID |
+| **X** (antigo Twitter) | `x` | `/auth/x/callback` | o X só devolve `confirmed_email` — a presença é a prova |
+
+**Facebook e Discord ficaram de fora**, e não por esquecimento. A seção
+[Facebook e Discord: por que não estão aqui](#facebook-e-discord-por-que-não-estão-aqui) explica o
+que faltaria para incluí-los.
+
+### O que o login social faz, e o que ele deliberadamente não faz
+
+Vale para os **quatro** provedores, sem exceção:
 
 | | |
 |---|---|
-| **Autentica** quem já tem conta com o e-mail que o Google devolve | ✅ sempre, quando ligado |
+| **Autentica** quem já tem conta com o e-mail que o provedor devolve | ✅ sempre, quando ligado |
 | **Cria** conta para quem não tem | ❌ só com o registro aberto ligado, que nasce desligado |
-| Aceita e-mail **não verificado** no Google | ❌ nunca — recusa e registra o motivo |
+| Aceita e-mail **não verificado** no provedor | ❌ nunca — recusa e registra o motivo |
 | Contorna o **segundo fator** | ❌ nunca — quem tem 2FA confirmado cai no desafio igual |
-| Guarda token de acesso ou `refresh_token` do Google | ❌ nada é gravado |
+| Guarda token de acesso ou `refresh_token` | ❌ nada é gravado |
 | Cria coluna nova em `users` | ❌ nenhuma; o vínculo é pelo e-mail verificado |
 
 A linha que mais importa é a segunda, e ela não é timidez: **o convite é a única porta de entrada
 do kit**. O exemplo que a documentação do Laravel Socialite dá para o callback é
-`User::updateOrCreate()` — copiado para cá, ele transformaria qualquer pessoa com uma conta Google
-em usuária do sistema, contornando convite, verificação e atribuição de papel. Isso é furo de
-autorização, não conveniência. Se você **quer** cadastro por login social, ligue o registro
-aberto: o kit passa a criar a conta e a levar a pessoa para a tela do perfil dela, onde ela
-completa o que falta.
+`User::updateOrCreate()` — copiado para cá, ele transformaria qualquer pessoa com uma conta em
+**qualquer** um dos provedores em usuária do sistema, contornando convite, verificação e atribuição
+de papel. Isso é furo de autorização, não conveniência. Se você **quer** cadastro por login social,
+ligue o registro aberto: o kit passa a criar a conta e a levar a pessoa para a tela do perfil dela,
+onde ela completa o que falta.
 
 E lembre do resto do kit: **conta sem papel não abre painel nenhum** (`User::canAccessPanel()`).
 Quem entra por login social precisa de papel como qualquer outra pessoa.
 
-### Ligando em quatro passos
+### Ligando um provedor, em quatro passos
 
-**1. Crie a credencial no Google.** No [console](https://console.cloud.google.com) → *APIs e
-serviços* → *Credenciais* → *Criar credenciais* → *ID do cliente OAuth*, tipo **Aplicativo da
-Web**. Em **URIs de redirecionamento autorizados**, cadastre o seu `APP_URL` mais
-`/auth/google/callback`:
+O roteiro é o mesmo para os quatro; só muda onde se cria o app OAuth. Você pode fazer tudo pelo
+`.env` **ou** pela tela `/admin/configuracoes-do-kit` → aba **Login** (o valor gravado na tela vence
+o `.env` em tempo de execução).
+
+**1. Crie o app OAuth no provedor** e cadastre a URI de redirecionamento — que é o seu `APP_URL`
+mais o caminho da tabela acima:
+
+| Provedor | Onde criar | O que pedir lá |
+|---|---|---|
+| **Google** | [console.cloud.google.com](https://console.cloud.google.com) → *APIs e serviços* → *Credenciais* → *ID do cliente OAuth*, tipo **Aplicativo da Web** | nada além do padrão |
+| **GitHub** | [github.com/settings/developers](https://github.com/settings/developers) → *OAuth Apps* → *New OAuth App* | nada a marcar; o kit pede o escopo `user:email` no código, e é ele que permite confirmar a verificação |
+| **LinkedIn** | [linkedin.com/developers](https://www.linkedin.com/developers) → *Create app* → aba *Products* | **habilite o produto _Sign In with LinkedIn using OpenID Connect_**. Sem ele o provedor não devolve `email_verified`, e o kit recusa todo login |
+| **X** | [developer.x.com](https://developer.x.com) → *Projects & Apps* → *User authentication settings* | tipo **Web App**, **OAuth 2.0**, e os escopos `users.read` e `users.email` |
+
+Exemplo de URI a cadastrar:
 
 ```text
-https://seu-dominio.com.br/auth/google/callback
-http://localhost:8000/auth/google/callback     # para desenvolvimento
+https://seu-dominio.com.br/auth/github/callback
+http://localhost:8000/auth/github/callback     # para desenvolvimento
 ```
 
 Esse caminho não é escolha: ele está em `config/services.php` como caminho **relativo**, de
 propósito, para acompanhar o `APP_URL` de cada ambiente sem uma variável a mais para esquecer.
 
-**2. Escreva as três chaves no `.env`:**
+**2. Escreva as três chaves do provedor no `.env`:**
 
 ```dotenv
+# Google
 KIT_SOCIALITE_GOOGLE=true
 GOOGLE_CLIENT_ID=1234567890-abc.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-seu-segredo
+
+# GitHub
+KIT_SOCIALITE_GITHUB=true
+GITHUB_CLIENT_ID=Iv1.abc123
+GITHUB_CLIENT_SECRET=seu-segredo
+
+# LinkedIn (driver linkedin-openid)
+KIT_SOCIALITE_LINKEDIN=true
+LINKEDIN_CLIENT_ID=86abc123
+LINKEDIN_CLIENT_SECRET=seu-segredo
+
+# X (antigo Twitter)
+KIT_SOCIALITE_X=true
+X_CLIENT_ID=seu-client-id
+X_CLIENT_SECRET=seu-segredo
 ```
 
 **3. Limpe a config** (`php artisan config:clear`) e recarregue a tela de login.
 
 **4. Confirme que o botão apareceu.** Se não apareceu, é uma das duas condições abaixo.
 
-### O botão só aparece com TUDO preenchido
+> **Pela tela, em vez do `.env`**: em `/admin/configuracoes-do-kit` → **Login** há uma seção por
+> provedor. Ligar o interruptor **abre** os campos de *Client ID* e *Client Secret* daquele
+> provedor — e só dele. O *Client Secret* é guardado **cifrado**, nunca é exibido de volta e não
+> aparece no código-fonte da página; deixar o campo em branco **mantém** o que estava gravado.
+
+### O botão só aparece com TUDO preenchido — e por provedor
 
 São **duas** condições, em conjunção, e elas falham por motivos diferentes:
 
-- `KIT_SOCIALITE_GOOGLE=true` — interruptor desligado é escolha de quem instalou;
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e o `redirect` **todos preenchidos** — credencial
-  vazia é descuido de quem configurou.
+- o interruptor daquele provedor ligado — desligado é escolha de quem instalou;
+- o `client_id`, o `client_secret` e o `redirect` **todos preenchidos** — credencial vazia é
+  descuido de quem configurou.
 
 Interruptor ligado com o `client_secret` vazio mantém o botão fora do ar, e é de propósito: botão
 que leva a um OAuth inexistente é uma promessa que a tela não pode cumprir.
 
-**E o desligamento derruba a rota, não só o botão.** Com a feature indisponível,
-`/auth/google/redirect` e `/auth/google/callback` respondem **404**. Esconder o botão não seria
-barreira nenhuma — a URL é fixa, pública e conhecida.
+**E o desligamento derruba a ROTA, não só o botão.** Com um provedor indisponível,
+`/auth/{provedor}/redirect` e `/auth/{provedor}/callback` respondem **404** — e só os dele, os
+outros seguem no ar. Esconder o botão não seria barreira nenhuma: a URL é fixa, pública e conhecida.
 
-O interruptor também **falha fechado**: `false`, `0`, `off`, `no`, vazio e qualquer valor
+**Provedor fora da lista responde 404 sem nem chegar ao controller.** `/auth/facebook/callback`,
+`/auth/discord/callback` ou qualquer outro segmento devolvem 404 porque o parâmetro da rota é
+tipado como `App\Support\ProvedorSocial` — a lista branca é o próprio enum, e o roteador a consulta.
+
+Cada interruptor também **falha fechado**: `false`, `0`, `off`, `no`, vazio e qualquer valor
 irreconhecível o mantêm desligado. Só `true` e `1` ligam.
 
 ### O rodapé da tela de login
@@ -602,64 +651,122 @@ cru vindo de um campo editável ali seria XSS armazenado com o pior alcance poss
 onde todo mundo entra. Se você precisar de link no rodapé, o caminho é um campo estruturado
 (texto + URL, com validação), não um campo de HTML solto.
 
-### E-mail não verificado no Google: por que recusamos
+### E-mail não verificado: por que recusamos, e como cada provedor prova
 
 O vínculo com a conta do kit é feito **pelo e-mail**, comparado sem diferenciar caixa nem espaços
 nas bordas. Isso é simples e não custa coluna nova — mas tem um risco conhecido: se o provedor
-devolvesse um e-mail **não verificado**, bastaria criar uma conta Google com o e-mail de outra
-pessoa para entrar na conta dela.
+devolvesse um e-mail **não verificado**, bastaria criar uma conta naquele provedor com o e-mail de
+outra pessoa para entrar na conta dela. Com o registro do kit fechado — o default — esse é
+justamente o caminho principal, não um caso de borda.
 
-O Google informa a verificação, e o kit **exige** que ela seja verdadeira. Ausente, falsa ou com
-um valor que não seja claramente verdadeiro ⇒ **recusa**, com aviso na tela e o motivo
-`email_nao_verificado` no log. Falha fechado.
+Então o kit **exige prova positiva** em todos os provedores. Ausente, falsa, ou com um valor que
+não seja claramente verdadeiro ⇒ **recusa**, com aviso na tela e o motivo `email_nao_verificado` no
+log. Falha fechado, sempre.
 
-Consequência a conhecer: se a pessoa **trocar o e-mail** na conta Google, o vínculo se perde e ela
-volta a entrar por senha.
+O que muda de provedor para provedor é **onde** a prova está, e a diferença é grande:
+
+- **Google** — informa `email_verified` no payload (e um alias `verified_email`). O kit lê e exige
+  verdadeiro.
+- **LinkedIn** — o userinfo do OpenID Connect traz `email_verified`. É por isso que o kit usa o
+  driver `linkedin-openid` e não o `linkedin` legado: o legado **não informa verificação nenhuma**,
+  e os escopos dele foram descontinuados pela própria LinkedIn.
+- **X** — não tem campo de verificação, porque não precisa: o X só devolve `confirmed_email`, ou
+  seja, um endereço que ele já confirmou. **A presença do e-mail é a prova.** Se o X não devolver
+  e-mail (app sem o escopo `users.email`, ou conta sem endereço confirmado), o kit recusa com o
+  motivo `email_ausente`.
+- **GitHub** — este é o caso interessante. O GitHub **verifica** e depois **descarta a evidência**:
+  o Socialite consulta `/user/emails`, escolhe a entrada `primary` **e** `verified`, e guarda só a
+  string do endereço. Pior, se aquela consulta falhar ele engole o erro e deixa no lugar o e-mail do
+  **perfil público**. Ou seja, "e-mail não vazio" **não** é prova de verificação: é prova de que ou
+  a verificação passou, ou a chamada falhou — e de fora os dois casos são idênticos.
+
+  Por isso o kit **refaz a consulta** a `https://api.github.com/user/emails` com o token que acabou
+  de receber, e exige uma entrada `primary: true` **e** `verified: true` cujo endereço case com o
+  que veio. É uma requisição HTTP a mais por login, e é o que torna a garantia do GitHub igual à
+  dos outros. Se a API do GitHub estiver fora, o login é **recusado** — a direção certa do erro — e
+  o motivo (`github_emails_indisponivel`) vai para o log.
+
+Consequência a conhecer, em todos: se a pessoa **trocar o e-mail** na conta do provedor, o vínculo
+se perde e ela volta a entrar por senha.
+
+### Facebook e Discord: por que não estão aqui
+
+O requisito original pedia os dois. Nenhum entrou, e cada um por um motivo diferente.
+
+**Facebook — não há como confirmar o e-mail.** O Socialite tem o driver, e ele funciona; o que não
+existe é um campo que afirme que **aquele endereço** foi confirmado. O `verified` que o provider
+pede é de nível de **conta**, legado, e ausente na versão da Graph API que ele usa; o caminho
+OIDC/Limited Login devolve claims sem `email_verified`. Aceitar o Facebook faria o nível de garantia
+do seu login depender de **qual botão a pessoa clicou** — e o botão mais fraco seria o vetor. Se
+você aceitar esse risco conscientemente, o que falta é: um caso em `App\Support\ProvedorSocial` com
+o ramo de verificação declarando a premissa, o bloco em `config/services.php` (chave `facebook`) e
+em `config/kit.php`, e as três propriedades no Settings. **Leia o ADR-05 antes** — ele lista as
+alternativas que foram consideradas e por que cada uma é pior.
+
+**Discord — não é driver do Socialite.** A documentação oficial suporta Facebook, X, LinkedIn,
+Google, GitHub, GitLab, Bitbucket e Slack; o resto vem do catálogo comunitário
+[socialiteproviders.com](https://socialiteproviders.com). Incluí-lo exige
+`composer require socialiteproviders/discord` **e** o registro de um listener de `SocialiteWasCalled`
+— uma dependência nova e um segundo mecanismo de extensão. O kit não adiciona dependência por
+conta própria; se você quiser, o caminho é esse mais um caso no enum (o Discord expõe um campo
+`verified` no payload, então a barreira tem onde encostar).
 
 ### Onde ficam os registros
 
 Tudo no channel **`autenticacao`** (`storage/logs/autenticacao-*.log`), no mesmo formato do resto
-do kit — `[Classe@Método] mensagem | chave: valor`, com **e-mail mascarado** e um `motivo` legível
-em cada recusa:
+do kit — `[Classe@Método] mensagem | chave: valor`, com **e-mail mascarado**, o `provedor` em todas
+as linhas e um `motivo` legível em cada recusa:
 
 | `motivo` | O que aconteceu |
 |---|---|
-| `falha_no_provedor` | `state` de CSRF inválido, rede fora, ou credencial recusada pelo Google |
-| `email_ausente` | o Google não devolveu e-mail |
-| `email_nao_verificado` | o e-mail não está verificado no Google |
+| `falha_no_provedor` | `state` de CSRF inválido, rede fora, ou credencial recusada pelo provedor |
+| `email_ausente` | o provedor não devolveu e-mail (no X, é o caso de escopo faltando) |
+| `email_nao_verificado` | o e-mail não está verificado no provedor |
+| `github_emails_indisponivel` | a consulta a `/user/emails` do GitHub não respondeu 2xx |
+| `github_email_nao_verificado` | nenhum e-mail `primary` + `verified` do GitHub casou com o recebido |
 | `conta_inexistente_registro_fechado` | não há conta e o registro aberto está desligado |
 | `conta_criada_por_login_social` | conta nova criada (registro aberto ligado) |
 
-O **`GOOGLE_CLIENT_SECRET` nunca aparece** — não em log, não em tela, não em mensagem de erro. E as
-mensagens devolvidas ao visitante são propositalmente genéricas: dizer qual barreira reprovou é
-entregar informação de reconhecimento a quem estiver sondando. O motivo fica no log, para você.
+Nenhum **`client_secret` aparece** — não em log, não em tela, não em mensagem de erro, e não no
+HTML da tela de configuração. E as mensagens devolvidas ao visitante são propositalmente genéricas:
+dizer qual barreira reprovou é entregar informação de reconhecimento a quem estiver sondando. O
+motivo fica no log, para você.
 
-O login por Google também entra na **trilha de acesso** do painel `/infra` (quem entrou, quando, de
+O login social também entra na **trilha de acesso** do painel `/infra` (quem entrou, quando, de
 onde), como qualquer outro login — sem configuração nenhuma.
 
-### Acrescentando outro provedor
+### Acrescentando o próximo provedor
 
-Google é o primeiro. GitHub, Facebook, LinkedIn, X e Discord são drivers que o Socialite já traz —
-o kit **não** tem abstração de provedor, de propósito: interface com uma implementação é
-complexidade sem segundo caso. Para o segundo, o roteiro é:
+O kit **tem** abstração de provedor agora, e ela é um enum: `App\Support\ProvedorSocial`. A decisão
+foi tomada com quatro casos na mão, não com um — o que revelou que o eixo a abstrair não era o
+redirect nem o botão (idênticos em todos), mas a **verificação de e-mail** (radicalmente diferente
+em cada um).
 
-1. bloco novo em `config/services.php`, no formato que o Socialite espera;
-2. chave nova em `config/kit.php` → `login`, e o interruptor no `.env.example`;
-3. um método no ponto único (`App\Support\ConfiguracaoDoLogin`);
-4. um par de rotas em `routes/web.php`;
-5. um blade com o SVG da marca (o ícone do Google é SVG inline — Heroicons não tem logo de marca, e
-   o kit não ganha um pacote de ícones para usar um).
+O roteiro do quinto provedor, e é curto de propósito:
 
-**Copie as barreiras junto**, não só o caminho feliz: o `abort_unless` das duas rotas, a exigência
-de e-mail verificado (e **cuidado**: nem todo provedor informa isso — quem não informa exige uma
-decisão nova, não um `?? true`), o mascaramento do e-mail no log e a ausência do segredo em toda
-saída.
+1. um caso novo no enum, com o `value` = **nome do driver do Socialite** (esse mesmo valor é o
+   segmento da URL e a chave nos dois arquivos de config), mais os ramos de `rotulo()`, `icone()` e
+   **`emailVerificado()`**;
+2. um bloco em `config/services.php` e um em `config/kit.php` → `login`, e as chaves no
+   `.env.example`;
+3. três propriedades em `App\Settings\ConfiguracoesDoKit`, a linha de cada uma em
+   `mapaDeConfiguracao()`, o `client_secret` em **`encrypted()`**, e o par `add`/`addEncrypted` numa
+   migration nova em `database/settings/`;
+4. uma partial de SVG em `resources/views/filament/auth/icones/`.
 
-Com dois ou três provedores na mão, aí sim vale extrair o que se repetir de fato — a extração feita
-com um caso adivinha a forma.
+**Nenhum arquivo de lógica muda**: as rotas, o controller, o blade dos botões e a aba Login da tela
+de Settings percorrem `ProvedorSocial::cases()`. E o `match` exaustivo de `emailVerificado()`
+**cobra** o ramo novo — esquecê-lo não compila em análise estática.
 
-> O raciocínio completo, com as alternativas recusadas e o que foi medido no `vendor/`, está em
-> `wikis/specs/feat/login-social-google/login-social-google/`.
+**Se o provedor não permitir confirmar a verificação do e-mail, essa é uma decisão de arquitetura,
+não um `?? true`.** Foi o que tirou o Facebook da lista. Registre a escolha antes de escrever o
+ramo.
+
+> O raciocínio completo, com as alternativas recusadas e o `file:line` do `vendor/` de cada
+> afirmação sobre o Socialite, está em
+> `wikis/specs/feat/mais-provedores-sociais/mais-provedores-sociais/`. A decisão anterior — a de
+> **não** abstrair, com um provedor só — está em
+> `wikis/specs/feat/login-social-google/login-social-google/`, ADR-10.
 
 ## Trilhas do `/infra`: exceções, e-mails e lixeira
 
