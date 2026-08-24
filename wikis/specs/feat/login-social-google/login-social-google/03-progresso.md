@@ -218,6 +218,7 @@ Cada um tem a razão de não ter sido fechado agora e o gatilho para fechar.
 | DL-05 | **SVG malformado do ícone** (mutante MB5) não tem matador: nem `assertNoJavaScriptErrors` nem o Pint enxergam | se o ícone quebrar uma vez, virar caso com âncora no `<svg>` |
 | DL-06 | **Legibilidade do rodapé em tema escuro** (mutante MB4, metade "cor sobre cor"): `assertSee` não valida tema e para defeito de cor não há saída barata | screenshot e olhar, se alguém reclamar |
 | DL-07 | **Acessibilidade da tela de login** com a superfície nova: a tela é de plugin de terceiro e já tem achados próprios; um cenário aqui mediria a dívida do vendor | auditoria de acessibilidade do kit, quando houver |
+| DL-09 | **Volume de comentário** acima do que o código sustenta em alguns trechos (QA-04). Os piores foram cortados; o restante segue o estilo da casa — `config/kit.php` tem 291 linhas majoritariamente de comentário | revisão de estilo do kit, se alguém a fizer |
 | DL-08 | **Nível do channel `autenticacao`**: fica em `debug` durante o desenvolvimento da feature. Reduzir depois de a feature estabilizar | duas releases depois do merge |
 
 ## Candidatos a Rule de Projeto (step 9 — decisão do usuário)
@@ -258,6 +259,34 @@ Avaliados nos quatro gates. Teto de três por feature, respeitado.
 
 **Nada foi gravado.** A skill não grava rule sem aprovação explícita, e a instrução desta rodada é
 apenas **propor** aqui.
+
+## Quality Gate (step 8)
+
+Relatório completo em `06-relatorio-qa.md`. Perfil **completo** (domínio sensível), 2 ciclos.
+
+| Ciclo | Veredito | Achados |
+|---|---|---|
+| 1 | **REPROVADO → implementação** (Blocker) e **→ teste** (Major) | QA-01, QA-02, QA-03, QA-04 |
+| 2 | **APROVADO COM DÉBITO** | nenhum achado novo; 2 débitos aceitos |
+
+Os dois achados que valeram o gate inteiro:
+
+- **QA-01 (Blocker)** — `app/Http/Controllers` não estava em `KitUpdate::CAMINHOS_DO_KIT`, e quem
+  já instalou o kit receberia a config, a rota e o botão **sem** o controller que a rota aponta.
+  Quem pegou foi um teste do próprio kit (`tests/Kit/KitUpdateTest.php:142`) — o gate só leu o
+  vermelho. O kit não tinha nenhum controller próprio até agora, então a linha nunca existiu.
+- **QA-02 (Major)** — a feature estava coberta **só em single-tenant**, e todo o ramo
+  `hasTenancy()` nunca era executado. Escrito o teste primeiro, como manda o destino 3: os quatro
+  casos passaram, então **não houve correção de código** — a lacuna era de prova, não de produto.
+  O caso que importa é "conta criada por login social sem organização nenhuma", onde um `route()`
+  sem guarda responderia 500 no exato caminho de quem acabou de se cadastrar.
+
+Dois riscos investigados e **fechados como não-defeito**, com leitura de `vendor/`:
+
+- a notificação de recusa **chega** à tela de login (o `layout.base` do Filament renderiza o
+  componente, e ele puxa da sessão);
+- o `'exception' => $e` do `catch` **não** vaza o `client_secret` (o channel não inclui stack
+  trace, o segredo viaja dentro de array, e a mensagem do Guzzle traz o corpo da resposta).
 
 ## Retrospectiva
 
