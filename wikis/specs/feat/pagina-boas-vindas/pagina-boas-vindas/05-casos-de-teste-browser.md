@@ -110,6 +110,64 @@ risco que o ADR-01 assumiu, e este é o instrumento que o mede.
 
 ---
 
+## CT-B02: a página é legível nos dois temas
+
+**Origem**: **achado do quality gate**, QA-01 do `06-relatorio-qa.md`. Este cenário **não** estava
+neste arquivo no ciclo 1 — ele foi cortado, e o corte estava errado.
+
+**Por que o corte estava errado**: a tabela "cogitados e cortados" abaixo dizia que
+`assertNoAccessibilityIssues()` não mataria nenhum mutante previsto. O argumento confundia dois
+mutantes diferentes. **M30** ("o tema é forçado em claro") morre em CT-B01, porque a página abriria
+clara sob preferência escura. Um **defeito de contraste próprio** é outra coisa, e nenhum cenário o
+matava: `inDarkMode()->assertSee(...)` passa com texto branco em fundo branco — o texto está no DOM
+e na árvore de acessibilidade, só está invisível. RQ-11 ficava, portanto, com oráculo apenas
+estático: a presença do `<script>` de tema no HTML (CT-14).
+
+**Por que browser**: contraste é cor computada. Nenhuma camada mais barata a observa.
+
+```gherkin
+# language: pt
+
+  Esquema do Cenário: [CT-B02] a página não tem problema de acessibilidade no tema <tema>
+    Dado que ninguém está autenticado
+    E que o navegador anuncia preferência pelo tema <tema>
+    Quando o visitante abre a rota "/"
+    Então a página mostra o título "Bem-vindo ao Starter Kit Easy"
+    E a varredura de acessibilidade não encontra nenhum problema
+
+    Exemplos:
+      | tema   |
+      | claro  |
+      | escuro |
+```
+
+**Assertions**
+
+- O `assertSee` do título vem **antes** do axe, e não é enfeite: `assertNoAccessibilityIssues()`
+  passa numa página em branco. É a âncora que separa "acessível" de "vazio".
+- **O tema é declarado em cada linha, nunca herdado.** `tests/Browser/TemaEscuroTest.php` mediu que
+  a emulação de `prefers-color-scheme` **vaza** para o cenário seguinte: um cenário escuro antes de
+  um cenário sem declaração produziu quatro achados `serious` falsos — paleta escura sobre fundo
+  claro, com todo o texto da página em cinza-claro ao mesmo tempo. O sinal que denuncia o falso
+  positivo é justamente esse: paleta inteira trocada é defeito de tema, não de um elemento.
+- **Sem `waitForEvent('networkidle')`**, ao contrário do que o `TemaEscuroTest` faz: numa página que
+  carrega um painel Filament a rede nunca fica ociosa. Lá ele sobrevive porque o painel tem
+  polling de notificações que eventualmente assenta; aqui é risco sem retorno, e o plugin já
+  reexecuta a asserção até o teto.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M32 | um par de cor do kit com contraste abaixo do limiar sob tema escuro | CT-B02 (linha `escuro`) |
+| M33 | idem sob tema claro — o caso do `pxlrbt/filament-environment-indicator`, que já produziu um achado `serious` real neste kit e **só** no tema claro | CT-B02 (linha `claro`) |
+
+**Estouro de teto declarado**: o perfil `padrão` dá teto de 1 CT-B, e agora há 2. O gate de
+falsificabilidade da skill `feature-test-design` vence o teto — mutante vivo é pior que cenário a
+mais, e M32/M33 não tinham matador nenhum.
+
+---
+
 ## Cenários cogitados e cortados
 
 O teto de CT-B do perfil `padrão` é **1 happy path**. Os candidatos abaixo foram cortados com
@@ -119,7 +177,7 @@ motivo, para que "só há 1 CT-B" não se confunda com "só pensamos em 1":
 |---|---|
 | clicar num cartão e chegar ao login do painel | o `href` já é provado por CT-03, mais barato; o clique só exercitaria o `<a>` do navegador |
 | alternar o tema pelo botão e ver a página continuar utilizável | **não há botão de tema nesta página** — o `layout.simple` só mostra chrome sob `filament()->auth()->check()`, e o alternador vive na topbar. Já coberto para o kit em `tests/Browser/TemaEscuroTest.php` CT-B08, na tela de login |
-| `assertNoAccessibilityIssues()` na página | nenhum mutante previsto morre com ele, e o teto do perfil é 1. Registrado como candidato para quando a página ganhar conteúdo próprio além de cartão e infolist — e com a ressalva medida em `tests/Browser/TemaEscuroTest.php` de que `inDarkMode()` **vaza para o cenário seguinte** e produz quatro achados falsos de contraste |
+| ~~`assertNoAccessibilityIssues()` na página~~ | **corte revertido.** O argumento original — "nenhum mutante previsto morre com ele" — confundia M30 (tema forçado em claro, que CT-B01 mata) com um defeito de contraste próprio, que nada matava. Virou **CT-B02** por achado do quality gate (QA-01) |
 | screenshot comparado com baseline | o kit não versiona baseline de screenshot, e `tests/Browser/Screenshots` é limpo a cada run |
 | acrescentar `/` ao lote do CT-B04 de `TelasDoKitTest` | ADR-05: aquele cenário usa `assertNoSmoke()`, e a `/` o deixaria vermelho por `console.log` de vendor. Relaxar o `assertNoSmoke()` de lá enfraqueceria as sete telas que já estão no cenário, e o relaxamento seria invisível no diff |
 | um cenário em tema **claro** | `assertSee` devolve o mesmo HTML nos dois temas: o cenário claro não distingue nenhuma implementação da outra. E `.ai/rules/testes-browser.md` registra que declarar o tema é obrigatório quando o arquivo tem mais de um — com um cenário só, `inDarkMode()` é suficiente e não vaza para ninguém |

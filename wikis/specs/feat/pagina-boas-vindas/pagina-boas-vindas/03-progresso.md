@@ -40,15 +40,36 @@ Branch: `feat/pagina-boas-vindas` · base: `main` (`eb9a589`)
 
 ## 6. Casos de teste de navegador
 
-- [x] `tests/Browser/BoasVindasTest.php` — CT-B01 → **1 caso, 1 verde, 6 asserções**
+- [x] `tests/Browser/BoasVindasTest.php` — CT-B01 e **CT-B02** → **3 casos, 3 verdes, 10 asserções**
+      (CT-B02 é um `Esquema do Cenário` com as linhas `claro` e `escuro`, e nasceu do achado QA-01
+      do quality gate)
+
+## 7. Quality gate (step 8 da `feature-wiki`)
+
+- [x] `feature-quality-gate` invocado — perfil **completo** (UI com JS + domínio sensível)
+- [x] Matriz de rastreabilidade montada: **12 de 12 `RQ` com rastro**, nenhuma omissão silenciosa,
+      nenhum passo/CT/código sem `RQ` de origem
+- [x] Onze dimensões percorridas; as duas fora de alcance declaradas com motivo
+- [x] `06-relatorio-qa.md` escrito
+- [x] **Veredito: APROVADO COM DÉBITO** — 0 Blocker, 0 Major, 2 Minor, 1 ciclo
+- [x] QA-01 (destino 3 — teste) **fechado no mesmo ciclo**: CT-B02
+- [x] QA-02 (destino 4 — não é defeito desta feature) aceito como débito, abaixo
 
 ## Verificação Final
 
 - [x] `/ponytail:ponytail-review` no diff — a auditoria do step 6 foi refeita sobre o código escrito
 - [x] `vendor/bin/pint --dirty --format agent` → `passed`
 - [x] `vendor/bin/phpstan analyse --no-progress` → `0 errors` (level 7)
-- [x] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy`
-- [x] `php artisan test --testsuite=Browser --filter=BoasVindas` (com `npm run build` + `view:cache`)
+- [x] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy --parallel` → **632 casos, 632 verdes,
+      1675 asserções**, 397 s. Nenhuma regressão nas telas dos três painéis.
+      Rodado com `--parallel` e **sem** `--tia`: `.ai/rules/testes-browser.md` mediu que sem PCOV o
+      `--tia` em série não termina (abortado após 35 min), e a primeira tentativa desta feature em
+      série sem paralelismo foi abortada aos 25 min sem sair do lugar
+- [x] `composer test:browser` (embute `npm run build` + `view:cache`) → **40 casos, 35 verdes,
+      5 pulados, 171 asserções**, 410 s, exit 0. Os 5 pulados são pré-existentes e esperados: são
+      as capturas de arte de `tests/BrowserTenancy/CapturaDeArteTest.php`, com
+      `markTestSkipped()` sob `if (! env('KIT_ART'))` (linha 56) — só `composer art` liga a flag.
+      Nenhuma regressão nas 52 telas dos painéis
 - [x] `php artisan route:list --name=boas-vindas` → `GET|HEAD / … boas-vindas › App\Filament\Pages\BoasVindas`
 - [x] Roteiro "Desenhado × Implementado" do `05` preenchido
 - [ ] `git commit` + `git push -u origin feat/pagina-boas-vindas`
@@ -123,7 +144,35 @@ Nenhuma sugestão foi recusada: as oito viraram corte.
 
 ## Blockers
 
-Nenhum até aqui.
+Nenhum.
+
+## Débitos Aceitos
+
+### QA-02 — `config/kit.php` lê rótulo de organização com `env()` direto (Minor, destino 4)
+
+`KIT_TENANCY_LABEL=` (presente, valor vazio) faz `env()` devolver string vazia, e o default
+`'Organização'` **nunca** entra. **Medido**:
+
+```
+$ php artisan config:show kit.tenancy.label
+kit.tenancy.label .. Organização              # chave AUSENTE: o default entra
+
+$ KIT_TENANCY_LABEL= php artisan tinker --execute \
+    'var_dump(env("KIT_TENANCY_LABEL"), config("kit.tenancy.label"));'
+string(0) ""
+string(0) ""                                   # chave VAZIA: o default NAO entra
+```
+
+É o padrão que `.ai/rules/config.md` documenta, e a varredura mostra que ele **não é** desta
+feature nem o pior caso da família: as chaves numéricas já estão guardadas por `NumeroDoEnv` e
+`ValidadeDoConvite`; as de **string** não têm equivalente no kit. Os três casos graves são
+`KIT_TENANCY_SLUG` (o segmento do CRUD vira vazio: `/admin/organizacoes` → `/admin/`),
+`KIT_ADMIN_EMAIL` e `KIT_ADMIN_PASSWORD` (o `UsuarioAdminSeeder` nasce sem credencial de login).
+
+**Não corrigido aqui, deliberadamente.** A rule do projeto manda varrer o padrão inteiro antes de
+tocar num ponto, e a varredura devolveu seis chaves em `config/kit.php` — o que é uma entrega
+própria (um `TextoDoEnv` irmão do `NumeroDoEnv`), não um remendo dentro de uma feature de
+boas-vindas. A tabela completa está no `06-relatorio-qa.md` → QA-02.
 
 ## Desvios do Plano
 
@@ -217,17 +266,30 @@ avaliadas nos quatro gates.
   `KIT_COR_PRIMARIA` — medido. E não tente medir isso por `tinker`: `bootCurrentPanel()` fora de um
   request morre com `Call to a member function parameter() on null`."*
 
-### Candidato 3 — atualizar `.ai/rules/testes-browser.md` sobre o pré-requisito do Vite
+### Candidato 3 — `env()` de STRING sem guarda: vazio engole o default (atualiza `.ai/rules/config.md`)
 
-- **Glob**: `tests/Browser/**`, `tests/BrowserTenancy/**` (rule **existente**, a atualizar — não
-  uma nova)
-- **Evidência**: a nota de implementação acima
-- **Gates**: durável ✅ | escopável ✅ | não-inferível ✅ | **não-redundante ⚠️** — é atualização de
-  rule existente, que a skill diz ser sempre preferível a criar outra
-- **Status**: **não recomendado agora.** A afirmação da rule pode continuar verdadeira por causa de
-  uma blade de vendor, e não medi isso. Proposta é **medir primeiro** (`grep -rn '@vite' vendor/`
-  restrito às blades que os painéis renderizam), não editar a rule com base numa inferência. Uma
-  rule corrigida para o lado errado é pior que uma rule desatualizada.
+- **Glob**: `config/**` (rule **existente**, a estender — a skill diz que atualizar é sempre
+  preferível a criar outra)
+- **Evidência**: QA-02 do `06-relatorio-qa.md`, com a medição e a tabela das seis chaves
+- **Gates**: durável ✅ | escopável ✅ | não-inferível ✅ (a rule atual só fala de número, e a leitura
+  natural dela é "resolvido pelo `NumeroDoEnv`") | não-redundante ✅ (é o **complemento** do que já
+  está lá, não uma repetição)
+- **Nota curta proposta**: *"A regra do valor vazio vale para STRING também, e o kit não tem
+  equivalente do `NumeroDoEnv` para ela. `env('CHAVE', 'padrão')` com `CHAVE=` no `.env` devolve
+  string vazia e o default nunca entra — medido em `KIT_TENANCY_LABEL`. Seis chaves de
+  `config/kit.php` estão nessa situação, e três com consequência real:
+  `KIT_TENANCY_SLUG` (o segmento do CRUD vira vazio, `/admin/organizacoes` → `/admin/`),
+  `KIT_ADMIN_EMAIL` e `KIT_ADMIN_PASSWORD` (o seeder nasce sem credencial de login). Ao ler string
+  de env, guarde: `filled($v = env('X')) ? $v : 'padrão'`."*
+- **Observação para o dono do kit**: esta rule só vale a pena junto com a correção. Rule que
+  descreve um defeito vivo em seis lugares é lembrete, não barreira.
+
+### Observação que NÃO virou candidato
+
+A nota sobre `@vite` (acima) **não** foi proposta como rule. A afirmação de
+`.ai/rules/testes-browser.md` pode continuar verdadeira por causa de uma blade de vendor, e isso não
+foi medido — o grep cobriu `resources/` e `app/`, não `vendor/`. Corrigir uma rule com base em
+inferência é pior que deixá-la desatualizada. O que fica é a pergunta, no lugar certo.
 
 ## Retrospectiva
 

@@ -28,8 +28,11 @@ Justificativa dos números que não são óbvios:
   segredos), **BVA 2-valores com incremento de 1 dia** (prazo em que zero significa "desligado"),
   **ausente ≠ null ≠ vazio**, **rastreio de efeito** — não se aplica (a página não tem efeito
   colateral).
-- Cenários: **17** + **1** CT-B · Regras: **7** · Mutantes previstos: **24** · Sem matador: **1**
-  (M6, lacuna declarada)
+- Cenários: **17** em HTTP + **2** CT-B · Regras: **7** · Mutantes previstos: **33** (M1–M30 aqui,
+  M31–M33 no `05`) · Sem matador: **1** (M6, lacuna declarada)
+- O segundo CT-B (CT-B02) **não** estava aqui no ciclo 1: ele nasceu do achado QA-01 do
+  `06-relatorio-qa.md`, junto com os mutantes M32 e M33. O corte original dele, e por que estava
+  errado, estão no `05`.
 
 ### Técnica escalada acima do perfil da área
 
@@ -638,7 +641,8 @@ qualidade do conjunto, e um score baixo aponta para o formatador. Escopar em
 | CT-15 | a cor primária do projeto chega até a página | R7 | discriminante | Feature (HTTP) | `tests/Kit/BoasVindasTest.php` | **M28** |
 | CT-16 | cor primária ausente ≠ vazia ≠ escolhida | R4 | ausente≠null≠vazio | Feature (HTTP) | `tests/Kit/BoasVindasTest.php` | M16 |
 | CT-17 | o nome da aplicação é escapado | R4 | injeção em texto livre | Feature (HTTP) | `tests/Kit/BoasVindasTest.php` | M17 |
-| CT-B01 | abre em tema escuro, legível e sem erro de JS | R7 | — | **Browser** | `tests/Browser/BoasVindasTest.php` | M29, M30 |
+| CT-B01 | abre em tema escuro, legível e sem erro de JS | R7 | — | **Browser** | `tests/Browser/BoasVindasTest.php` | M29, M30, M31 |
+| CT-B02 | sem problema de acessibilidade nos dois temas | R7 | — | **Browser** | `tests/Browser/BoasVindasTest.php` | M32, M33 |
 
 Não existe CT-09: a numeração foi mantida contígua no `Esquema do Cenário` de CT-07/CT-08 e o
 identificador ficou vago durante a poda. Registrado em vez de renumerado — renumerar quebraria as
