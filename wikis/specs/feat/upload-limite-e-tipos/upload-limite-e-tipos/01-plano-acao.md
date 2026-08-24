@@ -22,15 +22,16 @@
 | RQ-02 | acima do teto é recusado | 3, 4, 5 | `->maxSize()`, e o teto global do Livewire no passo 2 |
 | RQ-03 | upload recusa SVG | 3, 4 | `rule('image')` nos campos de imagem; regra de recusa no `anexos` |
 | RQ-04 | qualquer outro tipo de imagem é aceito | 3 | `rule('image')` cobre jpg/jpeg/png/bmp/gif/webp/avif/heic/heif |
-| RQ-05 | o teto vive na config do kit | 1, 2 | e o `10 * 1024` cravado no `ProjetoResource` deixa de existir (passo 4) |
+| RQ-05 | o teto vive na config do kit | 1, 2 | e os dois números cravados (`1024` no `TenantForm`, `10 * 1024` no `ProjetoResource`) deixam de existir (passos 4 e 5) |
 | RQ-06 | documentado para aumentar/diminuir com facilidade | 2, 6 | `.env.example`, comentário do `config/kit.php` e os dois READMEs |
 
 ## Objetivo
 
 Fechar duas lacunas de fronteira nos cinco campos de upload do kit: **nenhum teto de tamanho** em
-quatro deles, e **SVG aceito** em quatro deles. Fazer o teto nascer de **uma** chave de
-configuração documentada, para quem instala o kit mudar o número num lugar só — inclusive o teto
-global do Livewire, que hoje é um 12 MB de fábrica invisível e desalinhado.
+três deles (e teto cravado no código, sem justificativa, nos outros dois), e **SVG aceito** em
+quatro deles. Fazer o teto nascer de **uma** chave de configuração documentada, para quem instala
+o kit mudar o número num lugar só — inclusive o teto global do Livewire, que hoje é um 12 MB de
+fábrica invisível e desalinhado.
 
 ## Contexto
 
@@ -42,8 +43,9 @@ armazenado: abrir a URL do SVG executa o script com acesso ao cookie de sessão.
 gate classificou como Minor e não Blocker. Num starter kit, superfície nova não nasce com isso.
 
 O `logo` da organização (`TenantForm`) já tinha a allow-list e o comentário explicando esta mesma
-armadilha — o que faltava ali era só o teto. O `anexos` do Projeto tinha o teto **cravado no
-código** (`10 * 1024`), que é o número que RQ-05 manda tirar de lá.
+armadilha — o problema dele era o teto de **1 MB cravado no código**, sem nada justificando o
+número. O `anexos` do Projeto tinha o teto cravado também (`10 * 1024`). Os dois são o número que
+RQ-05 manda tirar do código.
 
 ## Análise dos Arquivos Existentes
 
@@ -62,7 +64,13 @@ ela. É a razão de o SVG passar hoje.
 ### `app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php`
 
 `FileUpload::make('logo')` (linha 119) já tem `acceptedFileTypes(['image/png','image/jpeg','image/webp'])`
-e um comentário longo explicando por que não usou `->image()`. Falta só `maxSize()`.
+e um comentário longo explicando por que não usou `->image()` — SVG já era recusado ali. O que ele
+tem de errado é o teto: `->maxSize(1024)` na linha 144, **1 MB**, sem nenhum comentário
+justificando o número, entre encadeamentos que explicam tipo, disco e visibilidade.
+
+> **Correção da revisão pós-escrita (step 5).** A primeira versão desta seção dizia "falta só
+> `maxSize()`". Errado — ele existia, com 1 MB. Ver a nota no `00-requisito.md` e a ambiguidade
+> "RQ-01 no campo `logo` da organização".
 
 ### `app/Filament/App/Resources/Projetos/ProjetoResource.php`
 
@@ -89,7 +97,7 @@ Um upload atravessa quatro limites, e **o menor manda**. O que o kit tem hoje:
 | nginx | `docker/nginx/nginx.conf:11` | `client_max_body_size 60M` | MB |
 | PHP | `docker/php/uploads.ini:2-3` | `upload_max_filesize=52M`, `post_max_size=60M` | MB |
 | Livewire (upload temporário) | default do pacote, `vendor/livewire/livewire/src/Features/SupportFileUploads/FileUploadConfiguration.php:116` | `max:12288` | **KB** (12 MB) |
-| Filament (`->maxSize()`) | os cinco campos | ausente em 4, `10*1024` em 1 | **KB** |
+| Filament (`->maxSize()`) | os cinco campos | ausente em 3, `1024` em 1, `10*1024` em 1 | **KB** |
 
 **Quando discordam, o erro muda de qualidade.** O limite do Filament é validação de formulário:
 recusa com mensagem no campo, em português, na tela. Os outros três recusam **antes**: o Livewire
@@ -152,8 +160,9 @@ Nenhum.
   (`favicon.png` no disco público) precisa continuar verde: PNG é aceito por `rule('image')`.
 - **`anexos-privados`** — o `anexos` perde o `10 * 1024` cravado e ganha o valor da config, que é
   **o mesmo número**. Nenhuma mudança de comportamento esperada, exceto SVG passar a ser recusado.
-- **Organizações (tenancy)** — a logo ganha teto. A allow-list de lá já recusava SVG; nada muda
-  em tipo.
+- **Organizações (tenancy)** — a logo troca o teto de 1 MB pelo da config (10 MB de fábrica): é
+  **afrouxamento**, e um arquivo entre 1 e 10 MB que era recusado passa a ser aceito. A
+  allow-list de lá já recusava SVG; nada muda em tipo.
 - **Todo upload temporário do Livewire** — o default global cai de 12 MB para o valor da chave
   (10 MB de fábrica). Nenhum outro campo de upload existe no kit além dos cinco varridos, então o
   efeito é só fechar a folga entre as duas camadas. O importador do Filament (`ImportAction`) usa
@@ -206,6 +215,7 @@ pelo requisito.
 > Skills: `laravel-best-practices`
 
 - **Path**: `config/kit.php`
+- Também: `app/Support/TetoDeUpload.php` (classe nova — ver a nota de desvio abaixo)
 - Novo bloco, **imediatamente depois de `identidade`** (é o vizinho temático: aquele guarda os
   caminhos dos arquivos enviados, este o teto de quem os envia):
 
@@ -225,6 +235,12 @@ pelo requisito.
 - Comentário de bloco obrigatório, no estilo do arquivo, contendo: a unidade de cada ponta, o
   `file:line` do `maxSize()` do Filament, a escada de tetos da seção acima e o que mais mudar
   para passar de 52 MB.
+- **Desvio do plano original, aplicado na implementação**: a leitura da chave e a conversão para
+  MB são consultadas em **três** arquivos e em duas unidades. `intdiv((int) config('kit.uploads.maximo_em_kb'), 1024)`
+  copiado cinco vezes é como um teto acaba divergindo do texto que o anuncia, então a pergunta
+  ganhou uma dona: `App\Support\TetoDeUpload`, com `emKb()` e `emMb()`. É o mesmo padrão de
+  classe pequena de `NumeroDoEnv`, `BooleanoDoEnv`, `CorPrimaria` e `RegistroAberto`, e o mesmo
+  remédio que `.ai/rules/config.md` prescreve para o login social ("uma pergunta, uma dona").
 - **Logs**: nenhum (arquivo de config).
 
 ### 2. O teto global do Livewire e o `.env.example`
@@ -336,8 +352,10 @@ private function arquivo(string $nome, string $rotulo, string $ajuda): FileUploa
 > Skills: `laravel-best-practices`, `pest-testing`
 
 - **Path**: `app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php`
-- Acrescentar `->maxSize((int) config('kit.uploads.maximo_em_kb'))` e o `validationMessages(['max' => …])`
-  em MB, e citar o limite no `helperText` que já existe.
+- **Trocar** `->maxSize(1024)` por `->maxSize(TetoDeUpload::emKb())`, acrescentar
+  `validationMessages(['max' => …])` em MB e citar o limite no `helperText` que já existe. O
+  campo passa de 1 MB para o teto da config (10 MB de fábrica) — é afrouxamento, e está declarado
+  como premissa em `## Ambiguidades` do `00-requisito.md`.
 - **Não** mexer no `acceptedFileTypes(['image/png','image/jpeg','image/webp'])`: o comentário
   daquele bloco é a decisão anterior, com justificativa de segurança, e RQ-04 não pede para
   afrouxar. Registrado em `## Ambiguidades` do `00-requisito.md`.

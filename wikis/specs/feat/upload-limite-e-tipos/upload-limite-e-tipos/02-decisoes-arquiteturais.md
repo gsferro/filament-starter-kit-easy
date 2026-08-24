@@ -53,9 +53,37 @@ conversão vive num lugar.
   comportamento documentado da classe (o pior caso é um teto curto e visível, que faz alguém
   corrigir o `.env`), e não uma surpresa desta feature.
 
+### Adendo da implementação: `App\Support\TetoDeUpload`
+
+A chave é uma, mas é lida em **duas unidades** (KB para `->maxSize()` e para a regra do Livewire,
+MB para o texto que a pessoa lê) e em **três arquivos**. Escrever
+`intdiv((int) config('kit.uploads.maximo_em_kb'), 1024)` cinco vezes é como um teto acaba
+divergindo do texto que o anuncia — e é o mesmo defeito de fronteira por cópia que
+`.ai/rules/specs.md` mede.
+
+Então a pergunta ganhou uma dona, com `emKb()` e `emMb()`. É o padrão de classe pequena que o kit
+já usa (`NumeroDoEnv`, `BooleanoDoEnv`, `CorPrimaria`, `RegistroAberto`, `IdentidadeDoKit`) e o
+remédio que a própria rule de config prescreve: *"a correção foi delegar para a classe dona da
+pergunta"*. Ela também fica testável em unidade, sem tela.
+
+Recusado no caminho: uma terceira chave `kit.uploads.maximo_em_mb`. Seriam duas donas do mesmo
+número na config, que é o que ADR-01 acabou de rejeitar — a conversão pertence a código, não a
+uma segunda linha de config.
+
+### Também aceito aqui: o teto de 1 MB da logo de organização foi AFROUXADO
+
+`TenantForm` tinha `->maxSize(1024)`, sem nenhum comentário justificando o número, entre
+encadeamentos que explicavam tipo, disco e visibilidade. Ele passa ao teto da config (10 MB de
+fábrica).
+
+Não é neutro: um arquivo entre 1 e 10 MB que era recusado passa a ser aceito. A decisão vem de
+RQ-01 ("pode subir arquivos de ate 10mb" — um campo travado em 1 MB não permite) e de RQ-05
+("o tamanho maximo de upload", singular, na config). Quem quiser a logo mais apertada volta um
+número naquele campo — e reintroduz, deliberadamente, uma segunda dona da pergunta.
+
 ### Referências
 
-- `.ai/rules/config.md`, `app/Support/NumeroDoEnv.php`
+- `.ai/rules/config.md`, `app/Support/NumeroDoEnv.php`, `app/Support/TetoDeUpload.php`
 - `vendor/filament/forms/src/Components/BaseFileUpload.php:413-421`
 - `vendor/laravel/framework/src/Illuminate/Validation/Concerns/ValidatesAttributes.php:2822`
 
