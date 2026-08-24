@@ -55,9 +55,19 @@ Antes de tocar no banco, ele **pergunta cinco coisas** — como o `laravel new` 
 >
 > As outras três perguntas não têm versão não destrutiva, e o comando explica por quê: banco e
 > multi-organização exigem recriar (as tabelas de permissão só nascem com a coluna de contexto
-> antes do `migrate`), e as credenciais do administrador passam pelo seeder, que faz
-> `firstOrCreate` por e-mail — mudar o endereço criaria um segundo administrador em vez de
-> renomear o primeiro. Para trocar senha, use a tela de perfil do painel.
+> antes do `migrate`), e as credenciais do administrador **não são sincronizadas pelo seeder** —
+> ele garante que exista um administrador, e não que ele espelhe o `.env`, porque roda em todo
+> `db:seed` e sobrescrever ali reverteria a senha trocada à mão.
+>
+> Para trocar e-mail ou senha do administrador, o caminho é deliberado:
+>
+> ```bash
+> php artisan kit:admin
+> ```
+>
+> Ele pede confirmação, nunca ecoa a senha, recusa e-mail que já pertence a outra conta e **para**
+> se houver mais de um `master_global` — em vez de escolher um por ordenação. A tela de perfil do
+> painel também serve.
 >
 > Em Linux, macOS e WSL as perguntas aparecem no `create-project` e nada disso é necessário.
 
@@ -1021,8 +1031,10 @@ composer lint         # formata o código
 composer filament:check   # só o lint específico de Filament (FilaCheck)
 composer refactor:preview # o que o Rector reescreveria (dry-run) — FORA do composer test
 composer refactor:apply   # aplica a reescrita do Rector — FORA do composer test
-php artisan kit:install --force   # reinstala do zero (apaga o SQLite) e refaz as perguntas
+php artisan kit:install --force   # reinstala do zero (APAGA o SQLite) e refaz as perguntas
+php artisan kit:install --custom   # refaz só nome e cor, sem tocar no banco
 php artisan kit:install --no-custom   # instala sem perguntar nada
+php artisan kit:admin             # troca e-mail e senha do administrador (pede confirmação)
 php artisan kit:update            # traz melhorias de uma versão nova do kit
 php artisan kit:tenancy           # liga o modo multi-tenant (opt-in)
 ```

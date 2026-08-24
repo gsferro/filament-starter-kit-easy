@@ -179,11 +179,14 @@ final class CustomizadorDaInstalacao
      *   reescrita de config, é outra instalação.
      * - **multi-organização** idem, e a razão está no `kit:tenancy`: as tabelas de permissão só
      *   nascem com a coluna de contexto se a flag estiver ativa ANTES do migrate.
-     * - **credenciais do admin** são a menos obvia das três, e a mais perigosa. O
-     *   `UsuarioAdminSeeder` faz `User::firstOrCreate(['email' => config('kit.admin.email')], …)`:
-     *   mudar o e-mail no `.env` e semear de novo cria um SEGUNDO `master_global` e deixa o
-     *   primeiro vivo, com a senha antiga. Um comando que promete "refazer as perguntas" e
-     *   entrega dois administradores é pior que não existir.
+     * - **credenciais do admin** ficam de fora porque o `UsuarioAdminSeeder` **não sincroniza**:
+     *   ele busca pelo PAPEL e, achando administrador, não faz nada. É deliberado — ele roda em
+     *   todo `db:seed`, e atualizar senha ali reverteria, em silêncio, a troca feita pela tela de
+     *   perfil. Reescrever o `.env` aqui daria a impressão de ter trocado a credencial sem trocar
+     *   nada, que é pior que não oferecer.
+     *
+     *   (Até a 0.18.8 era pior ainda: o seeder buscava pelo E-MAIL, então mudar o endereço e
+     *   semear criava um SEGUNDO `master_global`, com o primeiro vivo e a senha antiga.)
      *
      * Quem precisa das três de fora tem caminho, e o comando o imprime: `--force` para recomeçar
      * do zero, `kit:tenancy` para a multi-organização, e a tela de perfil para a senha.

@@ -2,6 +2,35 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [Nao lancado]
+
+O seeder do administrador para de duplicar, e a troca de credencial ganha comando proprio.
+
+### Corrigido
+
+- **`UsuarioAdminSeeder` criava um SEGUNDO administrador da instalacao.** Ele fazia
+  `firstOrCreate(['email' => config('kit.admin.email')], …)`: trocar `KIT_ADMIN_EMAIL` no `.env` e
+  semear de novo criava outro `master_global`, com o primeiro vivo e a senha antiga. Dois
+  administradores de acesso total, sem erro nenhum — e o esquecido e o perigoso, porque ninguem
+  troca a senha de uma conta que nao sabe que existe. Agora a busca e pelo **papel**: existe
+  administrador? nao faz nada. Nao existe? cria.
+
+  O seeder **nao sincroniza** credencial, e isso e deliberado: ele roda em todo `db:seed`, e
+  atualizar senha ali reverteria em silencio a troca feita pela tela de perfil.
+
+### Adicionado
+
+- **`php artisan kit:admin`** — o caminho deliberado para trocar e-mail e senha do administrador
+  da instalacao. E a unica coisa no kit que reescreve credencial de acesso total pela linha de
+  comando, entao: pede confirmacao, nunca ecoa a senha (`password()` do Prompts), recusa e-mail
+  que ja pertence a outra conta em vez de estourar na constraint, **para** quando ha mais de um
+  `master_global` (escolher o primeiro seria trocar a credencial de alguem por sorteio de
+  ordenacao) e sem terminal nem flag nao altera nada. O log vai para o channel `autenticacao`
+  com e-mail mascarado e sem mencao a senha.
+- **`App\Support\AdministradorDaInstalacao`** — a consulta de duas etapas que o seeder e o
+  comando compartilham: `whereHas` pelo nome do papel (barato) e `isMasterGlobal()` do model para
+  conferir o CONTEXTO, porque com `permission.teams` ligado um papel de mesmo nome dentro de uma
+  organizacao nao e administrador da instalacao.
 
 ## [0.18.6] - 2026-08-23
 
