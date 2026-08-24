@@ -16,6 +16,7 @@ use Filament\Auth\Notifications\VerifyEmail;
 use Filament\Facades\Filament;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -103,9 +104,7 @@ function registrarAberto(string $email = 'novo@example.com', string $nome = 'Ful
 it('le as opcoes de registro por um ponto unico', function (): void {
     $pontoUnico = realpath(app_path('Support/RegistroAberto.php'));
 
-    $arquivos = collect(
-        iterator_to_array(new RecursiveIteratorIterator(new RecursiveDirectoryIterator(app_path())))
-    )
+    $arquivos = collect(File::allFiles(app_path()))
         ->filter(fn (SplFileInfo $arquivo): bool => $arquivo->getExtension() === 'php')
         ->reject(fn (SplFileInfo $arquivo): bool => $arquivo->getRealPath() === $pontoUnico);
 

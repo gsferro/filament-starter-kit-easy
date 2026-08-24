@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
 use SensitiveParameter;
-use Spatie\Permission\PermissionRegistrar;
 
 /**
  * O registro aberto do painel /app: a configuração dele, e o ato de registrar.
@@ -222,35 +221,26 @@ class RegistroAberto
     /**
      * O papel, no CONTEXTO certo.
      *
-     * Com `permission.teams` ligado, `model_has_roles.team_id` guarda o contexto e
-     * `assignRole()` carimba o que estiver fixado no `PermissionRegistrar`. Num request de
-     * painel quem fixa é o middleware `DefinirTenantDePermissoes`; fora dele (job, comando,
-     * seeder — e a rota de registro, que é do PAINEL e não tem tenant no caminho) o contexto
-     * corrente pode ser o global, e papel gravado em `Tenant::CONTEXTO_GLOBAL` fica **invisível
-     * dentro do /app**, porque o `wherePivot` do spatie filtra pelo team do request. A pessoa
-     * autentica e não vê nada. Ver ADR-10 da wiki `admin-da-organizacao`.
+     * A rota de registro é do PAINEL, não do tenant, então nenhum middleware fixou a organização
+     * — e papel gravado em `Tenant::CONTEXTO_GLOBAL` fica **invisível dentro do /app**, porque o
+     * `wherePivot` do spatie filtra pelo team do request. A pessoa autentica e não vê nada. Ver
+     * ADR-10 da wiki `admin-da-organizacao`.
      *
-     * Por isso o contexto é fixado à mão e restaurado no `finally`: este método roda dentro do
-     * request de outra pessoa, e deixar o registrar sujo contaminaria o resto dele.
+     * O mecanismo (fixar, restaurar no `finally`, limpar o cache da relação nas duas pontas) é
+     * `App\Support\ContextoDePapeis`, compartilhado com o convite, o gerenciador de usuários da
+     * organização e o seeder da demo. Sem organização, o contexto é o global — que o spatie
+     * ignora quando `permission.teams` está desligado.
      */
     private static function atribuirPapel(User $user, ?Tenant $organizacao): void
     {
-        if (! config('permission.teams') || ! $organizacao instanceof Tenant) {
-            $user->assignRole(self::papel());
-
-            return;
-        }
-
-        $registrar = app(PermissionRegistrar::class);
-        $anterior  = $registrar->getPermissionsTeamId();
-
-        try {
-            $registrar->setPermissionsTeamId($organizacao->getKey());
-            $user->unsetRelation('roles');
-            $user->assignRole(self::papel());
-        } finally {
-            $registrar->setPermissionsTeamId($anterior);
-            $user->unsetRelation('roles');
-        }
+        ContextoDePapeis::em(
+            $organizacao?->getKey() ?? Tenant::CONTEXTO_GLOBAL,
+            $user,
+            function () use ($user): void {
+                // assignRole(), NUNCA sync() na relação: o sync escreve só as colunas da chave e
+                // estoura `NOT NULL constraint failed: model_has_roles.team_id`.
+                $user->assignRole(self::papel());
+            },
+        );
     }
 }

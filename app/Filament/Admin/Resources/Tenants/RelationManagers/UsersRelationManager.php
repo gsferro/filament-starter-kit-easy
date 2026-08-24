@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Tenants\RelationManagers;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\ContextoDePapeis;
 use App\Support\Papeis;
 use Filament\Actions\Action;
 use Filament\Actions\AttachAction;
@@ -17,7 +18,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Vínculo usuário ↔ tenant.
@@ -197,18 +197,7 @@ class UsersRelationManager extends RelationManager
      */
     private function noContextoDe(Tenant $tenant, User $usuario, callable $callback): mixed
     {
-        $registrar = app(PermissionRegistrar::class);
-        $anterior  = $registrar->getPermissionsTeamId();
-
-        try {
-            $registrar->setPermissionsTeamId($tenant->getKey());
-            $usuario->unsetRelation('roles');
-
-            return $callback();
-        } finally {
-            $registrar->setPermissionsTeamId($anterior);
-            $usuario->unsetRelation('roles');
-        }
+        return ContextoDePapeis::em($tenant->getKey(), $usuario, $callback);
     }
 
     private function registrar(string $acao, User $usuario): null

@@ -67,7 +67,7 @@ class TenantForm
                          */
                         Toggle::make('registro_habilitado')
                             ->label('Aceita cadastro público')
-                            ->helperText('Libera /app/register?org='.'{slug}'.' para quem tiver o link. A pessoa nasce nesta organização, com o perfil básico do painel de negócio — e, se a instalação exigir aprovação, fica pendente até alguém liberar.')
+                            ->helperText('Libera /app/register?org={slug} para quem tiver o link. A pessoa nasce nesta organização, com o perfil básico do painel de negócio — e, se a instalação exigir aprovação, fica pendente até alguém liberar.')
                             ->default(false)
                             ->visible(fn (): bool => RegistroAberto::habilitado())
                             ->columnSpanFull(),

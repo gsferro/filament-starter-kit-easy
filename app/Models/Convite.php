@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\ConviteDeAcesso;
+use App\Support\ContextoDePapeis;
 use App\Traits\AuditsFillables;
 use App\Traits\ModeloCacheavel;
 use App\Traits\TemUuid;
@@ -20,7 +21,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use OwenIt\Auditing\Contracts\Auditable;
 use RuntimeException;
-use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Support\Config;
 use Throwable;
 
@@ -759,23 +759,20 @@ class Convite extends Model implements Auditable
      *
      * Extraído porque as duas vias de aceite usam exatamente isto, e é a decisão mais
      * fácil de errar da feature.
+     *
+     * O mecanismo (fixar, restaurar no `finally`, limpar o cache da relação nas duas pontas)
+     * mora em `App\Support\ContextoDePapeis` desde que ele passou a ter QUATRO cópias no
+     * projeto — aqui, no gerenciador de usuários da organização, no seeder da demo e no
+     * registro aberto. O que fica aqui é a única coisa que é decisão do convite: **qual**
+     * contexto.
      */
     private function atribuirPapel(User $user): void
     {
-        $registrar = app(PermissionRegistrar::class);
-        $anterior  = $registrar->getPermissionsTeamId();
-
-        try {
-            // Sem `permission.teams` o spatie ignora — um caminho para os dois modos.
-            $registrar->setPermissionsTeamId($this->contextoDoPapel());
-
+        ContextoDePapeis::em($this->contextoDoPapel(), $user, function () use ($user): void {
             // assignRole(), NUNCA sync() na relação: o sync escreve só as colunas da chave
             // e estoura `NOT NULL constraint failed: model_has_roles.team_id`.
             $user->assignRole($this->papel);
-        } finally {
-            $registrar->setPermissionsTeamId($anterior);
-            $user->unsetRelation('roles');
-        }
+        });
     }
 
     /**
