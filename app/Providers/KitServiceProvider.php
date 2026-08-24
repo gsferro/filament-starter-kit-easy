@@ -16,6 +16,8 @@ use Filament\Actions\Imports\Events\ImportStarted;
 use Filament\Facades\Filament;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -66,6 +68,7 @@ class KitServiceProvider extends ServiceProvider
         $this->configureProcessEnvNoWindows();
         $this->configuraFilamentGlobal();
         $this->configureCorrecoesDeCss();
+        $this->configureTelaDeLogin();
     }
 
     protected function configureDefaults(): void
@@ -313,6 +316,46 @@ class KitServiceProvider extends ServiceProvider
                 Css::make('kit-cards', resource_path('css/filament/cards.css')),
             ],
             package: 'kit',
+        );
+    }
+
+    /**
+     * As superficies que o kit acrescenta a tela de login dos TRES paineis: o botao de login
+     * social e o rodape.
+     *
+     * `FilamentView::registerRenderHook()` e nao `$panel->renderHook()`: sem `$scopes` o hook
+     * cai no escopo vazio (`vendor/filament/support/src/View/ViewManager.php:32-34`), e o
+     * `renderHook()` renderiza o escopo vazio em QUALQUER escopo pedido (`:93-96`). Uma
+     * registracao cobre os tres paineis. Pelo painel seriam tres blocos identicos em tres
+     * providers — e o defeito historico do kit nessa area e exatamente configurar um painel e
+     * esquecer os outros dois, como diz o docblock de
+     * `tests/Kit/TelasDeAutenticacaoTest.php`.
+     *
+     * `AUTH_LOGIN_FORM_AFTER` e a chave que a `content()` da tela de login do Filament emite
+     * DEPOIS do componente do formulario
+     * (`vendor/filament/filament/src/Auth/Pages/Login.php:458-466`), que e onde o requisito
+     * pede o botao. Registrar global e seguro porque essa chave nao e emitida em nenhuma
+     * outra tela.
+     *
+     * O rodape NAO usa o hook `FOOTER`, apesar de o layout do Auth Designer renderizar aquele
+     * hook (`filament-auth-designer/resources/views/components/layouts/auth.blade.php:63`):
+     * o layout de painel autenticado tambem renderiza `FOOTER`, e o rodape apareceria em toda
+     * tela de todo painel. Ver ADR-05.
+     *
+     * Duas registracoes e nao um blade com dois blocos: as duas superficies tem condicoes
+     * independentes — o botao depende das credenciais, o rodape do texto. A ordem de render e
+     * a ordem de registro, entao o botao vem antes do rodape.
+     */
+    protected function configureTelaDeLogin(): void
+    {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+            fn (): string => view('filament.auth.botao-google')->render(),
+        );
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+            fn (): string => view('filament.auth.rodape-login')->render(),
         );
     }
 
