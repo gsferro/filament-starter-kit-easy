@@ -1,0 +1,5 @@
+- adicione a opção de Register, dentro do painel "/app" como um settings, sendo que se tiver um tenancy, e o register estiver liberado, também pode optar por habilitar ou não o uso de register no seu tenant. Ao se regitrar assim, a pessoa recebe somente o perfil de acesso ao "/app" e nenhuma outro perfil ou acesso além disso. caso o administrado queria, ele mesmo mexe no cadastro e altera a permissão futuramente
+- podemos pensar em um outro settings para autorização de registro automatico ou se ele fica pendente ate alguem aprovar (pesquise na documentação do filament se já tem algo nativo ou se existe algum pacote pronto para isso, caso não tenha, implementamos). Ao liberar o register, abra opções se deve usar a validação de email.
+- deixe toda essa parte muito bem documentado nos @README.md
+- o default é false para register e do socialite, mas se tiver true, precisa refletir em tudo que vem
+- caso essa parte fuga do contexto dessa wiki, pode criar uma nova

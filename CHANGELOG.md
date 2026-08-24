@@ -231,12 +231,13 @@ O que era pergunta do `kit:install` gravada no `.env` passa a ser editavel em
 
 ## [0.18.11] - 2026-08-24
 
-A tela de papeis vira **Perfis**: rotulo legivel em toda exibicao, contagem de usuarios,
+A tela de papeis ganha nome, rotulo legivel em toda exibicao, contagem de usuarios,
 slide-over de quem tem o perfil, uuid na URL, tab vertical por painel e o Guard como selecao.
 
 ### Alterado
 
-- **`/admin/shield/roles` deixa de se chamar "Funcoes" e passa a "Perfis"** — label, navegacao e
+- **`/admin/shield/roles` deixa de se chamar "Funcoes" e passa a "Papeis"** — o requisito
+  deixava a escolha entre os dois termos, e a implementacao escolheu "Papeis" — label, navegacao e
   breadcrumb, **inclusive o segmento do registro**, que mostrava a chave crua (`panel_user`).
 
 - **O rotulo legivel passa a valer em TODA exibicao de papel**, nao so na listagem. A varredura do
@@ -259,7 +260,7 @@ slide-over de quem tem o perfil, uuid na URL, tab vertical por painel e o Guard 
 
 ### Adicionado
 
-- **Coluna com a quantidade de usuarios de cada perfil**, e um **slide-over de leitura** listando
+- **Coluna com a quantidade de usuarios de cada papel**, e um **slide-over de leitura** listando
   quem tem aquele perfil.
 
   A action expoe nome e e-mail de terceiros, e Action do Filament **nao** consulta policy sozinha —
@@ -271,7 +272,7 @@ slide-over de quem tem o perfil, uuid na URL, tab vertical por painel e o Guard 
   existe botao que dispare `callMountedAction`, entao um log em `->action()` seria codigo morto —
   verde no teste e inexistente na tela, que e a pior forma de trilha de auditoria.
 
-- **Cada grupo da tela de permissoes exibe quantas permissoes daquele grupo o perfil ja tem.**
+- **Cada grupo da tela de permissoes exibe quantas permissoes daquele grupo o papel ja tem.**
 
 - **O cenario que faltava da v0.18.10**: marcar o checkbox em `/admin/shield/roles` e ver a tela
   passar de 403 para 200. Ele nao pudera ser escrito na entrega anterior porque colidiria com esta

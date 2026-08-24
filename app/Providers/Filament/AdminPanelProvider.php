@@ -163,7 +163,19 @@ class AdminPanelProvider extends PanelProvider
                 FilamentShieldPlugin::make()
                     ->modelLabel('Papel')
                     ->pluralModelLabel('Papéis')
-                    ->navigationLabel('Papéis'),
+                    ->navigationLabel('Papéis')
+                    /*
+                     * O grupo, senão a barra lateral exibe "Filament Shield" — nome do PACOTE
+                     * vazando na navegação, do lado de "Administração" e "IA", que são nomes do
+                     * negócio. O default vem do idioma do vendor
+                     * (`vendor/bezhansalleh/filament-shield/resources/lang/pt_BR/filament-shield.php:36`),
+                     * e a API do plugin é o lugar de trocar: publicar a tradução criaria um
+                     * arquivo que `vendor:publish --force` sobrescreve.
+                     *
+                     * Papéis é assunto de Administração, ao lado de Convites e Organizações.
+                     * Achado na inspeção visual da tela (RQ-12 da wiki `tela-de-perfis`).
+                     */
+                    ->navigationGroup('Administração'),
 
                 // Perfil do usuário + 2FA. O label explícito evita repetir o nome
                 // do usuário duas vezes no dropdown.

@@ -1,0 +1,109 @@
+- generic [active] [ref=f2e1]:
+  - link "Pular para o conteúdo" [ref=f2e2] [cursor=pointer]:
+    - /url: "#fi-main-content"
+  - navigation "Barra superior" [ref=f2e4]:
+    - generic [ref=f2e5]:
+      - button "Recolher barra lateral" [expanded] [ref=f2e7] [cursor=pointer]
+      - link "Starter Kit • Admin" [ref=f2e10] [cursor=pointer]:
+        - /url: http://127.0.0.1:8123/admin
+    - generic [ref=f2e12]:
+      - generic [ref=f2e13]: Local
+      - generic [ref=f2e14]:
+        - generic [ref=f2e15]: Pesquisa global
+        - generic [ref=f2e16]:
+          - searchbox "Pesquisa global" [ref=f2e21] [cursor=pointer]
+          - generic [ref=f2e22]: Ctrl+K
+      - button "Administração" [ref=f2e27] [cursor=pointer]
+      - generic [ref=f2e30]:
+        - button "Abrir notificações" [disabled]
+      - button "Menu do usuário" [ref=f2e33] [cursor=pointer]:
+        - img "Avatar de Administrador" [ref=f2e34]
+  - generic [ref=f2e35]:
+    - navigation "Navegação da barra lateral" [ref=f2e38]:
+      - list [ref=f2e39]:
+        - listitem [ref=f2e40]:
+          - list [ref=f2e41]:
+            - listitem [ref=f2e42]:
+              - link "Painel de Controle" [ref=f2e43] [cursor=pointer]:
+                - /url: http://127.0.0.1:8123/admin
+            - listitem [ref=f2e47]:
+              - link "Usuários 0" [ref=f2e48] [cursor=pointer]:
+                - /url: http://127.0.0.1:8123/admin/users
+                - generic [ref=f2e51]: Usuários
+                - generic [ref=f2e52]: "0"
+            - listitem [ref=f2e62]:
+              - link "Onboarding" [ref=f2e63] [cursor=pointer]:
+                - /url: http://127.0.0.1:8123/admin/onboarding-flows
+            - listitem [ref=f2e67]:
+              - link "Condições" [ref=f2e68] [cursor=pointer]:
+                - /url: http://127.0.0.1:8123/admin/onboarding-conditions
+        - listitem [ref=f2e72]:
+          - generic [ref=f2e73] [cursor=pointer]:
+            - generic [ref=f2e74]: IA
+            - button "IA" [expanded] [ref=f2e75]
+          - list [ref=f2e78]:
+            - listitem [ref=f2e79]:
+              - link "Agentes de IA 0" [ref=f2e80] [cursor=pointer]:
+                - /url: http://127.0.0.1:8123/admin/agentes-ia
+                - generic [ref=f2e83]: Agentes de IA
+                - generic [ref=f2e84]: "0"
+        - listitem [ref=f2e94]:
+          - generic [ref=f2e95] [cursor=pointer]:
+            - generic [ref=f2e96]: Administração
+            - button "Administração" [expanded] [ref=f2e97]
+          - list [ref=f2e100]:
+            - listitem [ref=f2e101]:
+              - link "Convites" [ref=f2e102] [cursor=pointer]:
+                - /url: http://127.0.0.1:8123/admin/convites
+            - listitem [ref=f2e106]:
+              - link "Organizações 0" [ref=f2e107] [cursor=pointer]:
+                - /url: http://127.0.0.1:8123/admin/organizacoes
+                - generic [ref=f2e110]: Organizações
+                - generic [ref=f2e111]: "0"
+        - listitem [ref=f2e121]:
+          - generic [ref=f2e122] [cursor=pointer]:
+            - generic [ref=f2e123]: Filament Shield
+            - button "Filament Shield" [expanded] [ref=f2e124]
+          - list [ref=f2e127]:
+            - listitem [ref=f2e128]:
+              - link "Papéis" [ref=f2e129] [cursor=pointer]:
+                - /url: http://127.0.0.1:8123/admin/shield/roles
+    - main [ref=f2e134]:
+      - generic [ref=f2e136]:
+        - generic [ref=f2e137]:
+          - generic [ref=f2e138]:
+            - navigation "Breadcrumb" [ref=f2e139]:
+              - list [ref=f2e140]:
+                - listitem [ref=f2e141]:
+                  - link "Papéis" [ref=f2e142] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8123/admin/shield/roles
+                - listitem [ref=f2e143]:
+                  - link "Admin" [ref=f2e146] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8123/admin/shield/roles/01a03500-b7eb-71be-8ab7-c366e972e2d2
+                - listitem [ref=f2e147]:
+                  - generic [ref=f2e150]: Editar
+            - heading "Editar Admin" [level=1] [ref=f2e151]
+          - button "Excluir" [ref=f2e154] [cursor=pointer]
+        - generic [ref=f2e160]:
+          - generic [ref=f2e174]:
+            - generic [ref=f2e177]:
+              - generic [ref=f2e181]:
+                - text: Nome
+                - superscript [ref=f2e182]: "*"
+              - textbox "Nome*" [ref=f2e186]: admin
+            - generic [ref=f2e193]:
+              - text: Guard
+              - superscript [ref=f2e194]: "*"
+            - generic [ref=f2e202]:
+              - generic [ref=f2e203]: Acesso ao painel
+              - generic [ref=f2e207]: "É este campo que dá acesso ao painel. Papel sem painel só carrega permissões: quem o tiver sozinho não entra em lugar nenhum."
+            - generic [ref=f2e218]:
+              - generic [ref=f2e221]:
+                - switch "Selecionar todos" [ref=f2e222] [cursor=pointer]
+                - generic [ref=f2e223]: Selecionar todos
+              - generic [ref=f2e224]: Habilitar todas as permissões para essa função
+          - generic [ref=f2e233]:
+            - button "Salvar alterações" [ref=f2e234] [cursor=pointer]
+            - button "Cancelar" [ref=f2e236] [cursor=pointer]
+  - generic:
+    - status

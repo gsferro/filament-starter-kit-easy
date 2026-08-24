@@ -1,0 +1,6 @@
+vamos criar modificar a view @resources/views/welcome.blade.php padrão do laravel quando acessa a rota "/" para uma pagina de bem-vindo ao starter-kit, com cards para acessar os paines e infos do kit
+- podemos exibir as informações da config e os dados que foram atualizados (caso tenham sido rodado o kit:install)
+- essa view sera exibida no lugar d welcome padrão
+- use a skill de design para gerar uma otima tela.
+- pode ser uma infolist: https://filamentphp.com/docs/5.x/infolists/overview ou outra estrutura nativa do filament, desde que a pagina use os componentes nativos, herdando o css e o darkmode já implemetados no starter-kit, além das informações customizadas
+- use o pacote de Cards para ser os links para os paines internos

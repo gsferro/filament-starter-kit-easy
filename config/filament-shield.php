@@ -23,7 +23,18 @@ return [
 
     'shield_resource' => [
         'slug'            => 'shield/roles',
-        'show_model_path' => true,
+        /*
+         * O caminho da classe NÃO aparece embaixo de cada seção de permissão.
+         *
+         * Com `true`, cada uma das ~20 seções da tela de papéis ganha uma linha como
+         * `Wallacemartinss\FilamentOnboarding\Models\OnboardingCondition` sob o título. Numa
+         * tela cujo trabalho é escolher checkbox de permissão, isso é ruído técnico: ocupa
+         * altura, repete o que o título já diz e não ajuda quem está decidindo quem pode o quê.
+         *
+         * Medido na inspeção visual da tela (RQ-12 da wiki `tela-de-perfis`) — só o navegador
+         * mostra isso, porque nenhuma asserção de conteúdo repara em linha a mais.
+         */
+        'show_model_path' => false,
         'cluster'         => null,
         'tabs'            => [
             'pages'              => true,

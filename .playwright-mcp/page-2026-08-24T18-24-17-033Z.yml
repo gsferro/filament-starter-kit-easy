@@ -1,0 +1,38 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic:
+        - img "Starter Kit"
+    - generic [ref=e7]:
+      - banner [ref=e8]:
+        - generic [ref=e9]: Starter Kit • Admin
+        - heading "Faça login" [level=1] [ref=e10]
+      - generic [ref=e14]:
+        - generic [ref=e18]:
+          - generic [ref=e21]:
+            - generic [ref=e25]:
+              - text: E-mail
+              - superscript [ref=e26]: "*"
+            - textbox "E-mail*" [ref=e30]: admin@example.com
+          - generic [ref=e33]:
+            - generic [ref=e35]:
+              - generic [ref=e37]:
+                - text: Senha
+                - superscript [ref=e38]: "*"
+              - link "Esqueceu sua senha?" [ref=e43] [cursor=pointer]:
+                - /url: http://127.0.0.1:8123/admin/password-reset/request
+            - generic [ref=e46]:
+              - textbox "Senha*" [ref=e48]: password
+              - generic [ref=e50]:
+                - button "Mostrar senha" [disabled]
+          - generic [ref=e60]:
+            - checkbox "Lembre de mim" [disabled]
+            - generic [ref=e62]: Lembre de mim
+        - generic [ref=e67]:
+          - button "Login" [disabled]
+  - group "Tema" [ref=e71]:
+    - button "Mudar para tema claro" [ref=e72] [cursor=pointer]
+    - button "Mudar para tema escuro" [ref=e75] [cursor=pointer]
+    - button "Mudar para tema do sistema" [pressed] [ref=e78] [cursor=pointer]
+  - generic:
+    - status
