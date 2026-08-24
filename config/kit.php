@@ -29,7 +29,7 @@ return [
     | tudo ao final — o projeto não fica com remote nem tags de terceiros.
     */
 
-    'repository' => env('KIT_REPOSITORY', 'https://github.com/gsferro/filament-starter-kit-easy.git'),
+    'repository' => env('KIT_REPOSITORY') ?: 'https://github.com/gsferro/filament-starter-kit-easy.git',
 
     /*
     |--------------------------------------------------------------------------
@@ -83,13 +83,13 @@ return [
         'enabled' => (bool) env('KIT_TENANCY', false),
 
         // Rótulos exibidos na interface (menu, títulos, formulários, mensagens).
-        'label'        => env('KIT_TENANCY_LABEL', 'Organização'),
-        'label_plural' => env('KIT_TENANCY_LABEL_PLURAL', 'Organizações'),
+        'label'        => env('KIT_TENANCY_LABEL') ?: 'Organização',
+        'label_plural' => env('KIT_TENANCY_LABEL_PLURAL') ?: 'Organizações',
 
         // Segmento do cadastro no painel admin: /admin/organizacoes.
         // Só a URL do CRUD — o endereço do painel de negócio é /app/{slug do
         // próprio registro}, definido em cada tenant.
-        'slug' => env('KIT_TENANCY_SLUG', 'organizacoes'),
+        'slug' => env('KIT_TENANCY_SLUG') ?: 'organizacoes',
 
     ],
 
@@ -283,9 +283,9 @@ return [
     */
 
     'admin' => [
-        'name'     => env('KIT_ADMIN_NAME', 'Administrador'),
-        'email'    => env('KIT_ADMIN_EMAIL', 'admin@example.com'),
-        'password' => env('KIT_ADMIN_PASSWORD', 'password'),
+        'name'     => env('KIT_ADMIN_NAME') ?: 'Administrador',
+        'email'    => env('KIT_ADMIN_EMAIL') ?: 'admin@example.com',
+        'password' => env('KIT_ADMIN_PASSWORD') ?: 'password',
     ],
 
 ];
