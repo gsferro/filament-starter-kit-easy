@@ -125,6 +125,73 @@ class ConfiguracoesDoKit extends SettingsPage
         );
     }
 
+    /**
+     * O segredo não entra no formulário — e por isso não entra no HTML.
+     *
+     * Este é o primeiro dos dois pontos que impedem o vazamento descrito no campo
+     * `mail_password`. O `fillForm()` do plugin faz `$this->form->fill($data)` com o
+     * `toArray()` do settings, e o que vai para `$data` vai para o `wire:snapshot`. Zerar aqui é
+     * o que garante que o valor guardado nunca é serializado para o navegador — nem para o
+     * administrador que abriu a tela.
+     *
+     * Zerar aqui NÃO apaga a senha: o segundo ponto (`->dehydrated()`) mantém a chave fora do
+     * save quando o campo fica em branco, e o `$settings->fill()` do plugin só aplica as chaves
+     * presentes (`vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:83`).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['mail_password'] = null;
+
+        return $data;
+    }
+
+    /**
+     * As opções do campo, mais o valor que JÁ está configurado, quando ele não está na lista.
+     *
+     * `Select` acrescenta um `Rule::in()` das próprias opções sozinho
+     * (`vendor/filament/forms/src/Components/Select.php:1742-1748`). Isso torna a tela
+     * **impossível de salvar** — nem o nome da aplicação grava — sempre que o valor vindo do
+     * `.env` é legítimo mas está fora da lista curta que a tela oferece. E isso não é hipótese:
+     * `config/mail.php` tem 9 transportes e a tela oferece 3; `Color` tem 26 cores e a lista
+     * fechada do kit tem 16. Quem instalou com `MAIL_MAILER=ses` abria a tela e não conseguia
+     * mudar nada.
+     *
+     * As duas saídas óbvias são piores. Ampliar a lista para tudo transforma a tela num
+     * formulário de tudo-que-o-Laravel-suporta. Normalizar o valor para o default rebaixa, em
+     * silêncio, o transporte de produção de alguém no primeiro salvamento — perda de dado
+     * disfarçada de validação.
+     *
+     * Então o valor configurado entra como opção, marcado. A lista curta continua guiando quem
+     * escolhe; quem já tem algo fora dela vê o que tem, mantém se quiser, e consegue salvar o
+     * resto da tela.
+     *
+     * @param  array<string, string>  $opcoes
+     * @return array<string, string>
+     */
+    private function comValorConfigurado(array $opcoes, ?string $atual, string $rotulo): array
+    {
+        if (blank($atual) || array_key_exists($atual, $opcoes)) {
+            return $opcoes;
+        }
+
+        return $opcoes + [$atual => $atual.' — '.$rotulo];
+    }
+
+    /**
+     * Existe senha de SMTP guardada? — para o placeholder dizer "em branco mantém".
+     *
+     * Lê do settings e não do formulário, justamente porque o formulário não a tem. Devolve o
+     * valor e não um booleano só para o chamador poder usar `filled()`; o valor não é exibido em
+     * lugar nenhum.
+     */
+    private function senhaDeSmtpGuardada(): ?string
+    {
+        return app(static::getSettings())->mail_password;
+    }
+
     private function abaIdentidade(): Tab
     {
         return Tab::make('Identidade')
@@ -142,9 +209,10 @@ class ConfiguracoesDoKit extends SettingsPage
                     // A lista fechada do kit, e não reflection sobre `Color`: aquela
                     // classe também expõe constantes que não são cor (`WCAG_AA_TEXT`)
                     // e neutros que ninguém escolhe como primária.
-                    ->options(array_combine(
-                        CustomizadorDaInstalacao::CORES,
-                        CustomizadorDaInstalacao::CORES,
+                    ->options(fn (): array => $this->comValorConfigurado(
+                        array_combine(CustomizadorDaInstalacao::CORES, CustomizadorDaInstalacao::CORES),
+                        app(static::getSettings())->cor_primaria,
+                        'fora da lista do kit',
                     ))
                     ->placeholder('Padrão do Filament (âmbar)'),
 
@@ -174,11 +242,15 @@ class ConfiguracoesDoKit extends SettingsPage
                 Select::make('mail_mailer')
                     ->label('Transporte')
                     ->helperText('`log` só escreve em storage/logs — convite e lembrete não chegam a ninguém.')
-                    ->options([
-                        'log'   => 'Log (não envia — escreve em storage/logs)',
-                        'array' => 'Array (descarta — só para teste)',
-                        'smtp'  => 'SMTP',
-                    ])
+                    ->options(fn (): array => $this->comValorConfigurado(
+                        [
+                            'log'   => 'Log (não envia — escreve em storage/logs)',
+                            'array' => 'Array (descarta — só para teste)',
+                            'smtp'  => 'SMTP',
+                        ],
+                        app(static::getSettings())->mail_mailer,
+                        'configurado no .env',
+                    ))
                     ->required()
                     ->live(),
 
@@ -205,7 +277,11 @@ class ConfiguracoesDoKit extends SettingsPage
 
                 Select::make('mail_scheme')
                     ->label('Criptografia')
-                    ->options(['tls' => 'TLS', 'ssl' => 'SSL'])
+                    ->options(fn (): array => $this->comValorConfigurado(
+                        ['tls' => 'TLS', 'ssl' => 'SSL'],
+                        app(static::getSettings())->mail_scheme,
+                        'configurado no .env',
+                    ))
                     ->placeholder('Nenhuma')
                     ->visible($smtp),
 
@@ -214,11 +290,35 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->maxLength(255)
                     ->visible($smtp),
 
+                /*
+                 * A senha NUNCA e hidratada — e `->password()` nao resolve isso.
+                 *
+                 * `->password()` e `->revealable()` mexem no `type` do input, ou seja, na TELA.
+                 * O valor continua em `$this->data`, que e propriedade publica da Page
+                 * (`vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:33`),
+                 * e o Livewire serializa `$data` inteiro no `wire:snapshot` do HTML. Resultado
+                 * medido pelo quality gate: `GET /admin/configuracoes-do-kit` devolvia a senha em
+                 * claro no corpo da resposta, com 200 e sem clique em "revelar".
+                 *
+                 * Por isso a barreira e em DOIS pontos, e nenhum deles e visual:
+                 *
+                 * 1. `mutateFormDataBeforeFill()` zera a chave antes de o formulario ser
+                 *    preenchido — o segredo nao entra em `$data`, logo nao entra no snapshot;
+                 * 2. `->dehydrated()` so deixa a chave chegar ao save quando o campo foi
+                 *    preenchido. Ausente do `$data` do save, o `$settings->fill()` do plugin nao
+                 *    mexe no valor guardado (ele aplica so as chaves presentes), e a senha atual
+                 *    sobrevive a um salvamento em que ninguem a tocou.
+                 *
+                 * `->revealable()` fica: agora o que ele revela e o que a PESSOA acabou de
+                 * digitar, que e conferencia de digitacao, nao exposicao do que estava gravado.
+                 */
                 TextInput::make('mail_password')
                     ->label('Senha')
-                    ->helperText('Guardada cifrada. A trilha de auditoria registra que ela mudou, nunca o valor.')
+                    ->helperText('Guardada cifrada. Deixe em branco para manter a senha atual — ela nao e exibida aqui, nem no codigo-fonte da pagina. A trilha de auditoria registra que ela mudou, nunca o valor.')
+                    ->placeholder(fn (): string => filled($this->senhaDeSmtpGuardada()) ? 'Ja configurada — em branco mantem' : 'Nenhuma senha configurada')
                     ->password()
                     ->revealable()
+                    ->dehydrated(fn (?string $estado): bool => filled($estado))
                     ->maxLength(255)
                     ->visible($smtp),
             ]);
@@ -234,7 +334,14 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->helperText('O default de TODA tabela dos três painéis, inclusive as dos pacotes de terceiros.')
                     ->numeric()
                     ->minValue(1)
-                    ->maxValue(100)
+                    /*
+                     * Teto de 100 para quem ESCOLHE, e o valor já configurado quando ele é maior.
+                     * `NumeroDoEnv::positivo()` não tem teto, então `KIT_PAGINACAO=500` é estado
+                     * alcançável — e um `maxValue(100)` fixo travaria a tela inteira por causa de
+                     * um número que a pessoa nem veio mexer. Mesmo raciocínio de
+                     * `comValorConfigurado()`.
+                     */
+                    ->maxValue(fn (): int => max(100, (int) app(static::getSettings())->paginacao_padrao))
                     ->required(),
 
                 Toggle::make('tabela_listrada')

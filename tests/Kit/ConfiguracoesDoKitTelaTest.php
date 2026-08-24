@@ -268,3 +268,120 @@ it('leva a cor escolhida no formulario para a paleta resolvida', function (): vo
 
     expect(CorPrimaria::paleta())->toBe(['primary' => constant(Color::class.'::'.$cor)]);
 })->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| A senha de SMTP não sai da instalação — nem para quem pode editá-la
+|--------------------------------------------------------------------------
+| Estes três casos fecham o achado QA-02 do `06-relatorio-qa.md`, que era
+| Blocker: a senha decifrada ia para `$this->data`, propriedade pública da
+| Page, e o Livewire a serializava no `wire:snapshot` do HTML. Resposta 200,
+| senha em claro no corpo, sem clique em "revelar".
+|
+| O roteiro do `05` prometia por escrito "nunca em claro no HTML inicial" e a
+| linha ficou em branco — era ela que teria pegado. Está escrita agora.
+|
+| O par importa: provar que o segredo NÃO aparece, sozinho, ficaria verde
+| também se a senha tivesse sido apagada. Por isso o terceiro caso prova que
+| ela sobrevive a um salvamento que não a tocou.
+*/
+it('nao serializa a senha de smtp no html da tela', function (): void {
+    $settings                = app(SettingsDoKit::class);
+    $settings->mail_mailer   = 'smtp';
+    $settings->mail_password = 'SENHA-SUPER-SECRETA-42';
+    $settings->save();
+
+    $this->actingAs(usuarioDoKit('admin'));
+
+    $resposta = $this->get('/admin/configuracoes-do-kit');
+
+    $resposta->assertOk();
+
+    // `assertDontSee` com `escape: false` porque o snapshot do Livewire chega
+    // com as aspas escapadas como `&quot;` — procurar a string crua acharia
+    // nada mesmo com o vazamento presente, e o caso passaria por engano.
+    expect($resposta->getContent())->not->toContain('SENHA-SUPER-SECRETA-42');
+});
+
+it('nao entrega a senha de smtp no estado do formulario', function (): void {
+    $settings                = app(SettingsDoKit::class);
+    $settings->mail_mailer   = 'smtp';
+    $settings->mail_password = 'SENHA-SUPER-SECRETA-42';
+    $settings->save();
+
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->assertFormFieldExists('mail_password')
+        ->assertFormSet(['mail_password' => null]);
+});
+
+it('mantem a senha guardada quando o campo fica em branco', function (): void {
+    $settings                  = app(SettingsDoKit::class);
+    $settings->mail_mailer     = 'smtp';
+    $settings->mail_host       = 'smtp.exemplo.test';
+    $settings->mail_password   = 'SENHA-SUPER-SECRETA-42';
+    $settings->save();
+
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->fillForm(['nome_da_aplicacao' => 'Outro Nome'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(app(SettingsDoKit::class)->mail_password)->toBe('SENHA-SUPER-SECRETA-42')
+        ->and(configuracaoGravada('nome_da_aplicacao'))->toBe('Outro Nome');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Valor legítimo fora do domínio do campo não trava a tela
+|--------------------------------------------------------------------------
+| Fecha o achado QA-01 do `06-relatorio-qa.md` (Major): `Select` acrescenta
+| um `Rule::in()` das próprias opções sozinho, então um valor gravado que a
+| tela não oferece reprovava o formulário INTEIRO — nem o nome da aplicação
+| gravava. E o valor não era inválido: `config/mail.php` tem 9 transportes e
+| a tela oferece 3; `Color` tem 26 cores e a lista do kit tem 16.
+|
+| O dataset é a tabela do achado. Cada linha grava um valor fora do domínio
+| direto no settings (como o `.env` faria), abre a tela e muda OUTRO campo.
+| O oráculo é duplo de propósito: o outro campo gravou **e** o valor de fora
+| sobreviveu. Sem a segunda metade, "normalizar para o default" passaria —
+| e normalizar em silêncio é perda de dado, não validação.
+*/
+it('grava a tela mesmo com valor configurado fora da lista oferecida', function (string $campo, mixed $valorDeFora): void {
+    $settings         = app(SettingsDoKit::class);
+    $settings->$campo = $valorDeFora;
+    $settings->save();
+
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->fillForm(['nome_da_aplicacao' => 'Gravou Mesmo Assim'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(configuracaoGravada('nome_da_aplicacao'))->toBe('Gravou Mesmo Assim')
+        ->and(app(SettingsDoKit::class)->$campo)->toBe($valorDeFora);
+})->with([
+    // 6 dos 9 mailers de config/mail.php ficam fora da lista de 3 da tela.
+    'transporte real fora da lista'   => ['mail_mailer', 'ses'],
+    // 10 cores reais de Color ficam fora das 16 do kit.
+    'cor real fora da lista do kit'   => ['cor_primaria', 'Green'],
+    // NumeroDoEnv::positivo() não tem teto, então 500 é estado alcançável.
+    'paginacao acima do teto da tela' => ['paginacao_padrao', 500],
+]);
+
+it('oferece o valor configurado como opcao, marcado, quando ele esta fora da lista', function (): void {
+    $settings              = app(SettingsDoKit::class);
+    $settings->mail_mailer = 'ses';
+    $settings->save();
+
+    $this->actingAs(usuarioDoKit('admin'));
+
+    // A marca importa: sem ela o valor de fora fica indistinguível de uma opção
+    // que o kit recomenda, e a lista curta perde a função de guiar a escolha.
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->assertSee('ses — configurado no .env');
+});
