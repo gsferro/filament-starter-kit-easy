@@ -472,12 +472,7 @@ it('recusa quando o Google não devolve e-mail', function (): void {
     ligarLoginComGoogleDoKit();
     usuario('ja.tem@example.com');
 
-    Socialite::fake('google', UsuarioDoGoogle::fake([
-        'id'             => 'google-sub-123',
-        'name'           => 'Sem E-mail',
-        'email'          => null,
-        'email_verified' => true,
-    ]));
+    Socialite::fake('google', usuarioDoGoogleFalso(['email' => null]));
 
     $this->get('/auth/google/callback')->assertRedirectContains('/app/login');
 
@@ -498,14 +493,14 @@ it('recusa quando o Google não devolve e-mail', function (): void {
  * O valor é escolhido para ser discriminante: uma string que não aparece por acidente em
  * lugar nenhum. Usar `secret` ou `password` produziria falso vermelho pelo próprio formulário.
  */
-it('não deixa o client_secret aparecer no HTML da tela de login', function (string $painel): void {
+it('não deixa o client_secret aparecer no HTML da tela de login', function (): void {
     ligarLoginComGoogleDoKit(['client_secret' => 'segredo-irreconhecivel-42']);
 
-    $this->get("/{$painel}/login")
+    $this->get('/app/login')
         ->assertOk()
         ->assertSee('Entrar com Google')
         ->assertDontSee('segredo-irreconhecivel-42', escape: false);
-})->with(['app', 'admin', 'infra'])->group('kit');
+})->group('kit');
 
 /**
  * CT-13 — nem o segredo nem o e-mail em claro chegam ao log; o mascarado chega.
@@ -658,50 +653,48 @@ it('declara as chaves do login social no .env.example e nos dois READMEs', funct
 ])->group('kit');
 
 /**
- * CT-18 — a coercao do interruptor falha FECHADO.
+ * CT-18 — o interruptor falha FECHADO, medido no proprio config.
  *
- * Este caso nasceu errado e a correcao vale mais que ele: a versao original tambem varria o
- * arquivo inteiro afirmando que `(bool) env(` era antipadrao, e REPROVOU — porque tres chaves
- * irmas do `config/kit.php` (`tenancy.enabled`, `demo`, `hub`) usam exatamente isso.
+ * Este caso nasceu errado duas vezes, e as duas correcoes valem mais que ele.
  *
- * Medido no vendor antes de reescrever, que e o que `.ai/rules/specs.md` cobra: o
- * `Env::getOption()` do Laravel JA converte "true"/"false"/"(false)"/"null"/"empty" em valor
- * PHP (`vendor/laravel/framework/src/Illuminate/Support/Env.php:252-262`), entao para todo
- * valor documentado no `.env.example` o cast de bool acerta e as tres irmas nao estao erradas.
+ * **Primeira**: a versao original varria o arquivo afirmando que `(bool) env(` era
+ * antipadrao, e REPROVOU — porque tres chaves irmas do `config/kit.php` usam exatamente isso
+ * (`tenancy.enabled`, `demo`, `hub`) e **nenhuma esta errada**. O `Env::getOption()` do Laravel
+ * ja converte "true"/"false"/"(false)"/"null"/"empty" em valor PHP
+ * (`vendor/laravel/framework/src/Illuminate/Support/Env.php:252-262`), entao para todo valor
+ * documentado no `.env.example` os dois jeitos empatam. A diferenca real e de DIRECAO: "off",
+ * "no" e qualquer lixo dao `true` no cast (falha ABERTA) e `false` no `filter_var` (falha
+ * FECHADA). E por isso que a chave usa `filter_var` — ela abre superficie publica de OAuth.
  *
- * A diferenca real e de DIRECAO, e aparece so no que o Laravel nao reconhece:
+ * **Segunda**: a correcao seguinte afirmava sobre o TEXTO do arquivo e sobre `filter_var`
+ * puro, o que prende a redacao e testa a stdlib do PHP, nao o kit. Agora o caso e
+ * comportamental: `kitConfigCom()` (`tests/Pest.php`) rele o `config/kit.php` com a variavel
+ * forcada e devolve o array resolvido, restaurando o ambiente no `finally`. E o mesmo helper
+ * que `TextoDoEnvTest` usa para as chaves de texto — mudou de arquivo para o `Pest.php`
+ * justamente porque passou a ter dois consumidores (`.ai/rules/testes.md`).
  *
- *   valor    | (bool) | filter_var
- *   "off"    | true   | false
- *   "no"     | true   | false
- *   "lixo"   | true   | false
- *
- * O cast falha ABERTO; o `filter_var` falha FECHADO. Para as irmas isso e gosto; aqui nao e,
- * porque este interruptor abre uma superficie PUBLICA de OAuth e "off" e um valor que gente
- * escreve.
- *
- * Por isso a assercao e de PRESENCA da coercao que falha fechado, e nao mais uma varredura de
- * ausencia — que era a assercao errada, sobre um padrao que nao e defeito.
+ * As tres primeiras linhas provam o default e o desligamento explicito; as tres ultimas sao as
+ * discriminantes — sao elas que distinguem `filter_var` de um cast de bool, e que reprovam o
+ * mutante.
  */
-it('coage o interruptor do login social por uma regra que falha fechado', function (): void {
-    expect(file_get_contents(config_path('kit.php')))
-        ->toContain("filter_var(env('KIT_SOCIALITE_GOOGLE', false), FILTER_VALIDATE_BOOLEAN)");
-})->group('kit');
+it('mantém o interruptor do login social desligado, exceto em valor claramente verdadeiro', function (
+    ?string $valor,
+    bool $esperado,
+): void {
+    $config = kitConfigCom('KIT_SOCIALITE_GOOGLE', $valor);
 
-/**
- * CT-18b — e o interruptor fica DESLIGADO diante de valor irreconhecivel.
- *
- * O contrapeso comportamental de CT-18: sem ele, a asercao de presenca acima e sobre TEXTO do
- * arquivo, e uma implementacao que escrevesse a linha certa e lesse outra chave passaria.
- *
- * Nao ha `putenv()` aqui de proposito — `.ai/rules` e a propria skill de teste registram que
- * teste que mexe em env passa local e falha no CI. O que se exercita e a coercao com o valor
- * que discrimina, na mesma expressao que o `config/kit.php` usa.
- */
-it('mantém o interruptor desligado diante de valor irreconhecível', function (string $valor): void {
-    expect(filter_var($valor, FILTER_VALIDATE_BOOLEAN))->toBeFalse()
-        ->and((bool) $valor)->toBeTrue();
-})->with(['off', 'no', 'lixo'])->group('kit');
+    expect(data_get($config, 'login.google.habilitado'))->toBe($esperado);
+})->with([
+    'ausente'         => [null, false],
+    'vazio'           => ['', false],
+    'false'           => ['false', false],
+    'zero'            => ['0', false],
+    'off'             => ['off', false],
+    'no'              => ['no', false],
+    'lixo'            => ['lixo', false],
+    'true'            => ['true', true],
+    'um'              => ['1', true],
+])->group('kit');
 
 /*
 |--------------------------------------------------------------------------

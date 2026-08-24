@@ -16,7 +16,7 @@ use Jeffgreco13\FilamentBreezy\BreezyCore;
 use Laravel\Socialite\AbstractUser;
 use Laravel\Socialite\Contracts\User as UsuarioDoProvedor;
 use Laravel\Socialite\Socialite;
-use Symfony\Component\HttpFoundation\RedirectResponse as RespostaDeRedirecionamento;
+use Symfony\Component\HttpFoundation\RedirectResponse as RedirecionamentoDoProvedor;
 use Throwable;
 
 /**
@@ -48,8 +48,13 @@ final class LoginComGoogleController extends Controller
      * Desligar isso "para simplificar o teste" abriria um CSRF de login — e há caso de teste
      * que reprova exatamente esse atalho.
      */
-    public function redirecionar(): RedirectResponse|RespostaDeRedirecionamento
+    public function redirecionar(): RedirecionamentoDoProvedor
     {
+        /*
+         * O tipo e o do Symfony, e nao o `RedirectResponse` do Laravel que estende dele: e o
+         * que o contrato `Socialite\Contracts\Provider::redirect()` promete. Estreitar para o
+         * do Laravel reprova no PHPStan, e uma uniao dos dois e tautologia.
+         */
         abort_unless(ConfiguracaoDoLogin::googleDisponivel(), 404);
 
         Log::channel('autenticacao')->info(
@@ -96,7 +101,8 @@ final class LoginComGoogleController extends Controller
             return $this->recusar('Não foi possível concluir a entrada com o Google. Tente novamente.');
         }
 
-        $email = mb_strtolower(trim((string) $doProvedor->getEmail()));
+        $email     = mb_strtolower(trim((string) $doProvedor->getEmail()));
+        $mascarado = Str::mask($email, '*', 3);
 
         if ($email === '') {
             Log::channel('autenticacao')->warning(
@@ -113,10 +119,10 @@ final class LoginComGoogleController extends Controller
 
         if (! $this->emailVerificadoNoProvedor($doProvedor)) {
             Log::channel('autenticacao')->warning(
-                '[LoginComGoogleController@retorno] Recusado: e-mail não verificado no Google | email: '.Str::mask($email, '*', 3),
+                '[LoginComGoogleController@retorno] Recusado: e-mail não verificado no Google | email: '.$mascarado,
                 [
                     'motivo'   => 'email_nao_verificado',
-                    'email'    => Str::mask($email, '*', 3),
+                    'email'    => $mascarado,
                     'provedor' => ConfiguracaoDoLogin::PROVEDOR_GOOGLE,
                 ],
             );
@@ -134,10 +140,10 @@ final class LoginComGoogleController extends Controller
                  * kit deixa de ser o que ele diz que é.
                  */
                 Log::channel('autenticacao')->warning(
-                    '[LoginComGoogleController@retorno] Recusado: não há conta e o registro está fechado | email: '.Str::mask($email, '*', 3),
+                    '[LoginComGoogleController@retorno] Recusado: não há conta e o registro está fechado | email: '.$mascarado,
                     [
                         'motivo'   => 'conta_inexistente_registro_fechado',
-                        'email'    => Str::mask($email, '*', 3),
+                        'email'    => $mascarado,
                         'provedor' => ConfiguracaoDoLogin::PROVEDOR_GOOGLE,
                     ],
                 );
@@ -145,7 +151,7 @@ final class LoginComGoogleController extends Controller
                 return $this->recusar('Não há conta com este e-mail. O acesso a este sistema é por convite.');
             }
 
-            $user = $this->criarConta($email, $doProvedor->getName());
+            $user = $this->criarConta($email, $mascarado, $doProvedor->getName());
             $novo = true;
         }
 
@@ -166,10 +172,10 @@ final class LoginComGoogleController extends Controller
         Auth::login($user);
 
         Log::channel('autenticacao')->info(
-            "[LoginComGoogleController@retorno] Autenticado pelo Google | user: {$user->getKey()} - email: ".Str::mask($email, '*', 3),
+            "[LoginComGoogleController@retorno] Autenticado pelo Google | user: {$user->getKey()} - email: ".$mascarado,
             [
                 'user_id'    => $user->getKey(),
-                'email'      => Str::mask($email, '*', 3),
+                'email'      => $mascarado,
                 'conta_nova' => $novo,
                 'provedor'   => ConfiguracaoDoLogin::PROVEDOR_GOOGLE,
             ],
@@ -242,7 +248,7 @@ final class LoginComGoogleController extends Controller
      * feature de registro e aprovação, não desta. Conta sem papel não abre painel algum, e
      * esse é o comportamento correto do kit. Ver ADR-06 e as Ambiguidades do `00-requisito`.
      */
-    private function criarConta(string $email, ?string $nome): User
+    private function criarConta(string $email, string $mascarado, ?string $nome): User
     {
         $user = User::create([
             'name'     => filled($nome) ? $nome : $email,
@@ -251,10 +257,10 @@ final class LoginComGoogleController extends Controller
         ]);
 
         Log::channel('autenticacao')->info(
-            "[LoginComGoogleController@criarConta] Conta criada por login social | user: {$user->getKey()} - email: ".Str::mask($email, '*', 3),
+            "[LoginComGoogleController@criarConta] Conta criada por login social | user: {$user->getKey()} - email: ".$mascarado,
             [
                 'user_id'  => $user->getKey(),
-                'email'    => Str::mask($email, '*', 3),
+                'email'    => $mascarado,
                 'motivo'   => 'conta_criada_por_login_social',
                 'provedor' => ConfiguracaoDoLogin::PROVEDOR_GOOGLE,
             ],
