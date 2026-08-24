@@ -665,6 +665,7 @@ ausência, que é a forma mais comum de cobertura ilusória.
 | CT-21, CT-22 | `assertSee` do texto do estado vazio | visibilidade dos dois componentes, por `assertSchemaComponentExists` | o Filament não renderiza o conteúdo do modal no HTML do componente pai; ele vai por partial separado |
 | CT-02 | `Role::create(...)` no arranjo | `Role::query()->firstOrCreate(...)` | três dos quatro papéis do dataset já vêm do `PapeisSeeder`, e o `create` do spatie lança `RoleAlreadyExists` |
 | CT-B01 | `assertSee('Exception')` para o `/infra` | `assertSee('Audit')->assertDontSee('Tenant')` | `Exception` tem Resource nos **três** painéis — não discrimina. Conferido em `Paineis::resources()` |
+| CT-09 | `GET /admin` + `assertSee`/`assertDontSee` | `Livewire::test()` nos dois widgets | widget de painel é **lazy** por default (`vendor/filament/support/src/Concerns/CanBeLazy.php:9`): `GET /admin` devolve placeholder, não o conteúdo. O caso falhou na asserção POSITIVA — com só o `assertDontSee` da chave ele passaria verde medindo uma página sem widget nenhum |
 | CT-08 | `callAction(...)` | `mountAction(...)` | `callAction` faz montar **e** executar. O slide-over não tem submit, então a tela só monta — e um log escrito em `->action()` ficava verde com `callAction` e nunca acontecia de verdade. `mountAction` reproduz o clique |
 
 ### Um caso a mais em R8, e ele não veio do requisito

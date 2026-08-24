@@ -357,6 +357,15 @@ A gravação é do usuário; o agente principal a executa. Nada foi escrito em `
   validação** — nem `Select`, nem `Action` (que não consulta policy), nem `->visible()`. Nas três,
   a barreira é uma linha explícita, e as três aparecem nesta entrega.
 
+- **Faltou no plano**: que **widget de painel é lazy por default**
+  (`vendor/filament/support/src/Concerns/CanBeLazy.php:9`), então `GET /admin` devolve
+  placeholder e não o conteúdo do widget. CT-09 nasceu como visita HTTP e falhou por isso — e
+  quem denunciou foi a asserção **positiva**: com apenas o `assertDontSee` da chave, o caso
+  passaria verde medindo uma página sem widget nenhum. É a mesma família de
+  *"uma tela aberta não é uma tela que grava"* que `.ai/rules/testes.md` registra, com outra
+  cara: **uma página aberta não é um widget renderizado**. Virou teste de componente nos dois
+  widgets, com o par (vê o rótulo / não vê a chave) em cada um.
+
 - **Faltou no plano**: a existência de duas classes de model para a tabela `roles`. O PRD leu
   `App\Models\Role` e assumiu que era a única porta de escrita. A pergunta que teria evitado:
   *"quem mais escreve nesta tabela, e por qual classe?"* — e ela vale para toda tabela de vendor
