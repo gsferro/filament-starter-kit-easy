@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use Filament\Facades\Filament;
@@ -500,4 +501,76 @@ function papelNaOrganizacao(User $user, string $papel, ?Tenant $tenant = null): 
     }
 
     return $user;
+}
+
+/**
+ * Revoga uma ou mais permissões do papel — a persona discriminante de toda checagem de permissão.
+ *
+ * O par que uma feature de autorização precisa é "quem tem entra, quem não tem toma 403", e o
+ * segundo lado dele **não** pode ser um papel criado à mão sem permissão nenhuma: um papel assim
+ * perde também o `canAccessPanel()`, e o 403 passa a vir da porta do painel em vez da tela. O
+ * cenário ficaria verde com a feature inteira removida.
+ *
+ * Revogar do papel REAL é o único arranjo em que a única variável é a permissão.
+ *
+ * `master_global` não serve para nada disto: ele vence toda permissão pelo `Gate::before`
+ * (`App\Providers\KitServiceProvider`). Ele é a linha de CONTROLE, nunca a de prova.
+ *
+ * Aqui, e não dentro de um arquivo de teste, porque mais de um arquivo usa
+ * (`.ai/rules/testes.md` §"Helper de teste usado por mais de um arquivo").
+ */
+function semAPermissao(string $papel, string ...$permissoes): Role
+{
+    $role = papelDoKit($papel);
+
+    foreach ($permissoes as $permissao) {
+        $role->revokePermissionTo($permissao);
+    }
+
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    return $role;
+}
+
+/**
+ * Fixa o painel corrente E descarta a instância memoizada do Shield.
+ *
+ * Necessário em QUALQUER caso que percorra mais de um painel no mesmo processo, e a razão é a mesma
+ * que `App\Support\Paineis` documenta: `FilamentShield` é registrado como `scoped` e memoiza com
+ * `once()`, que é por INSTÂNCIA. Trocar o painel corrente não invalida nada — e a **facade** ainda
+ * guarda o objeto em `Facade::$resolvedInstance`, então nem o `forgetInstance()` do container basta.
+ *
+ * Sem os dois descartes, `FilamentShield::getPages()`/`getWidgets()` devolve o conjunto do PRIMEIRO
+ * painel em todas as voltas. E a consequência é pior que um resultado errado: as traits
+ * `HasPageShield`/`HasWidgetShield` **falham abertas** quando não acham a classe na lista — caem em
+ * `parent::canAccess()`/`parent::canView()`, que é `true`. O caso mediria "a tela abre" e concluiria
+ * que a permissão não está sendo consultada, quando o que aconteceu foi o arranjo consultar o painel
+ * errado.
+ *
+ * Em request real isso não acontece: um request é um painel só, e o middleware `SetUpPanel` fixa o
+ * painel antes de qualquer Page ou Widget ser tocado.
+ */
+function noPainelDoShield(string $painel): void
+{
+    app()->forgetInstance('filament-shield');
+    Facade::clearResolvedInstance('filament-shield');
+
+    Filament::setCurrentPanel($painel);
+}
+
+/**
+ * O papel semeado, para asserção direta sobre a matriz de permissões.
+ *
+ * `Role::findByName()` e não `Role::where('name', …)->first()`: o segundo devolve `null` em silêncio
+ * quando o papel não existe naquela suíte, e a asserção seguinte falha com "call to a member
+ * function on null" — que esconde a causa real, que é suíte errada. `findByName()` lança
+ * `RoleDoesNotExist` com o nome do papel, e é `.ai/rules/testes.md` §"Nem todo papel do kit existe
+ * em toda suíte" que diz o que fazer com essa mensagem.
+ */
+function papelDoKit(string $nome): Role
+{
+    /** @var Role $role */
+    $role = Role::findByName($nome, config('auth.defaults.guard', 'web'));
+
+    return $role;
 }
