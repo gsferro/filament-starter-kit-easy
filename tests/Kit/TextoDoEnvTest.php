@@ -34,40 +34,13 @@ $chavesDeTexto = [
     'KIT_ADMIN_PASSWORD'       => ['kit.admin.password', 'password'],
 ];
 
-/**
- * Relê o `config/kit.php` com uma variável de ambiente forçada.
- *
- * O `require` direto no arquivo, e não `config()`, porque a config do processo de teste já foi
- * resolvida no boot: mexer em `putenv()` depois não a reavalia. É a mesma manobra que o kit já
- * usou para exercitar coerção de env, e ela funciona porque o arquivo é uma expressão pura —
- * devolve array e não depende de estado do container além do helper `env()`.
+/*
+ * O helper `kitConfigCom()` vivia aqui e foi para `tests/Pest.php` quando
+ * `tests/Kit/LoginSocialGoogleTest.php` passou a usa-lo: helper usado por mais de um
+ * arquivo vive no `Pest.php`, senao vaza pelo carregamento global e o acoplamento fica
+ * invisivel ate alguem rodar um subconjunto (`--parallel`, `--tia`, um arquivo so).
+ * Ver `.ai/rules/testes.md` e o enforco em `tests/Kit/HelpersDeTesteTest.php`.
  */
-function kitConfigCom(string $chave, ?string $valor): array
-{
-    $anterior = $_ENV[$chave] ?? null;
-
-    if ($valor === null) {
-        unset($_ENV[$chave], $_SERVER[$chave]);
-        putenv($chave);
-    } else {
-        $_ENV[$chave]    = $valor;
-        $_SERVER[$chave] = $valor;
-        putenv("{$chave}={$valor}");
-    }
-
-    try {
-        return require base_path('config/kit.php');
-    } finally {
-        if ($anterior === null) {
-            unset($_ENV[$chave], $_SERVER[$chave]);
-            putenv($chave);
-        } else {
-            $_ENV[$chave]    = $anterior;
-            $_SERVER[$chave] = $anterior;
-            putenv("{$chave}={$anterior}");
-        }
-    }
-}
 
 it('cai no valor de fabrica quando a chave de texto esta presente e vazia', function (string $chave, string $caminho, string $padrao): void {
     $config = kitConfigCom($chave, '');

@@ -72,6 +72,17 @@ class KitUpdate extends Command
         // aqui só produziu esquecimento: os resources de Users, AgentesIa e
         // AiRuns ficaram de fora justamente por não ter linha própria.
         'app/Filament',
+        /*
+         * Controllers do kit. Diretorio inteiro, pelo mesmo motivo de
+         * `app/Console/Commands` e `app/Policies`: o SEU controller nao existe na
+         * arvore do kit, entao nunca entra no diff entre duas versoes.
+         *
+         * Entrou com o login social (o callback do OAuth e um controller, nao uma
+         * Page do Filament). Sem esta linha, quem JA instalou o kit nunca receberia
+         * o `LoginComGoogleController` — a config, a rota e o botao chegariam e o
+         * destino da rota, nao. Foi `tests/Kit/KitUpdateTest.php` que pegou.
+         */
+        'app/Http/Controllers',
         'app/Http/Middleware',
         'app/Livewire',
         // Models do kit, um a um: `app/Models` inteiro convidaria colisão com

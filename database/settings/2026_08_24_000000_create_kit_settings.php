@@ -77,6 +77,11 @@ return new class extends SettingsMigration
             // porta fechada até alguém abrir. Semear do `.env` mantém quem já ligou por lá.
             $kit->add('registro_habilitado', (bool) config('kit.registro.habilitado', false));
             $kit->add('registro_aprovacao_manual', (bool) config('kit.registro.aprovacao_manual', false));
+
+            $kit->add('login_google_habilitado', (bool) config('kit.login.google.habilitado', false));
+            $kit->add('login_google_client_id', $this->textoOuNulo('services.google.client_id'));
+            $kit->addEncrypted('login_google_client_secret', $this->textoOuNulo('services.google.client_secret'));
+            $kit->add('login_rodape', $this->textoOuNulo('kit.login.rodape'));
         });
     }
 

@@ -455,6 +455,41 @@ function usuarioDoKit(string $papel, string $email = 'user@example.com'): User
     return $user;
 }
 
+/**
+ * Relê o `config/kit.php` com uma variável de ambiente forçada.
+ *
+ * O `require` direto no arquivo, e não `config()`, porque a config do processo de teste já foi
+ * resolvida no boot: mexer em `putenv()` depois não a reavalia. É a mesma manobra que o kit já
+ * usou para exercitar coerção de env, e ela funciona porque o arquivo é uma expressão pura —
+ * devolve array e não depende de estado do container além do helper `env()`.
+ */
+function kitConfigCom(string $chave, ?string $valor): array
+{
+    $anterior = $_ENV[$chave] ?? null;
+
+    if ($valor === null) {
+        unset($_ENV[$chave], $_SERVER[$chave]);
+        putenv($chave);
+    } else {
+        $_ENV[$chave]    = $valor;
+        $_SERVER[$chave] = $valor;
+        putenv("{$chave}={$valor}");
+    }
+
+    try {
+        return require base_path('config/kit.php');
+    } finally {
+        if ($anterior === null) {
+            unset($_ENV[$chave], $_SERVER[$chave]);
+            putenv($chave);
+        } else {
+            $_ENV[$chave]    = $anterior;
+            $_SERVER[$chave] = $anterior;
+            putenv("{$chave}={$anterior}");
+        }
+    }
+}
+
 /** Espia só o channel `autenticacao`; os outros continuam reais. */
 function espiarAutenticacao(): LoggerInterface
 {

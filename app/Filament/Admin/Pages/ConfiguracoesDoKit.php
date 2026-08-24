@@ -11,6 +11,7 @@ use BackedEnum;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\TextEntry;
@@ -108,6 +109,7 @@ class ConfiguracoesDoKit extends SettingsPage
                         $this->abaEmail(),
                         $this->abaTabelas(),
                         $this->abaRegistro(),
+                        $this->abaLogin(),
                         $this->abaKit(),
                     ]),
             ]);
@@ -145,7 +147,8 @@ class ConfiguracoesDoKit extends SettingsPage
      */
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        $data['mail_password'] = null;
+        $data['mail_password']              = null;
+        $data['login_google_client_secret'] = null;
 
         return $data;
     }
@@ -180,6 +183,12 @@ class ConfiguracoesDoKit extends SettingsPage
         }
 
         return $opcoes + [$atual => $atual.' — '.$rotulo];
+    }
+
+    /** Existe segredo do Google guardado? — para o placeholder dizer "em branco mantém". */
+    private function segredoDoGoogleGuardado(): ?string
+    {
+        return app(static::getSettings())->login_google_client_secret;
     }
 
     /**
@@ -402,6 +411,60 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->hiddenLabel()
                     ->state('A exigência de e-mail validado fica no `.env`, em `KIT_REGISTRO_VERIFICAR_EMAIL` — ela decide o middleware das rotas no boot da aplicação, e por isso não pode mudar em tempo de execução.')
                     ->visible($aberto),
+            ]);
+    }
+
+    /**
+     * Login social e o rodapé da tela de login.
+     *
+     * Ao contrário de `registro_verificar_email`, estas chaves PODEM viver aqui: as duas que
+     * decidem algo são lidas por request — o `abort_unless()` do `LoginComGoogleController` e a
+     * closure do render hook do botão. Nada é decidido no boot do painel.
+     *
+     * O botão só entra no ar com o interruptor ligado E as três credenciais preenchidas, e é
+     * `ConfiguracaoDoLogin::googleDisponivel()` que decide — os campos aqui só alimentam a
+     * config que ela lê. Com ele desligado, `/auth/google/*` responde 404: esconder o botão não
+     * é barreira, porque a URL é pública.
+     */
+    private function abaLogin(): Tab
+    {
+        $comGoogle = fn (Get $get): bool => (bool) $get('login_google_habilitado');
+
+        return Tab::make('Login')
+            ->icon('heroicon-o-arrow-right-on-rectangle')
+            ->schema([
+                Toggle::make('login_google_habilitado')
+                    ->label('Entrar com Google')
+                    ->helperText('Ligar aqui não põe o botão no ar sozinho: as credenciais abaixo também precisam estar preenchidas. O login social AUTENTICA quem já tem conta — criar conta depende do registro aberto, na aba anterior.')
+                    ->live(),
+
+                TextInput::make('login_google_client_id')
+                    ->label('Client ID')
+                    ->helperText('console.cloud.google.com → APIs e serviços → Credenciais. A URI de redirecionamento a cadastrar lá é o seu domínio + /auth/google/callback.')
+                    ->maxLength(255)
+                    ->visible($comGoogle),
+
+                /*
+                 * Mesmo tratamento da senha de SMTP, pelo mesmo motivo: `->password()` esconde
+                 * na tela e o valor continua em `$this->data`, que o Livewire serializa no
+                 * `wire:snapshot`. O segredo é zerado no fill e só chega ao save quando
+                 * preenchido. Ver `mutateFormDataBeforeFill()`.
+                 */
+                TextInput::make('login_google_client_secret')
+                    ->label('Client Secret')
+                    ->helperText('Guardado cifrado. Deixe em branco para manter o atual — ele não é exibido aqui, nem no código-fonte da página.')
+                    ->placeholder(fn (): string => filled($this->segredoDoGoogleGuardado()) ? 'Já configurado — em branco mantém' : 'Nenhum segredo configurado')
+                    ->password()
+                    ->revealable()
+                    ->dehydrated(fn (?string $estado): bool => filled($estado))
+                    ->maxLength(255)
+                    ->visible($comGoogle),
+
+                Textarea::make('login_rodape')
+                    ->label('Rodapé da tela de login')
+                    ->helperText('Aparece nas telas de login dos três painéis. É TEXTO e sai escapado: a tela de login é pública e não autenticada, e HTML cru ali seria XSS armazenado.')
+                    ->rows(2)
+                    ->maxLength(500),
             ]);
     }
 

@@ -359,6 +359,68 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tela de login: login social e rodape
+    |--------------------------------------------------------------------------
+    | Antes do bloco de convites de proposito: quem le este arquivo de cima para
+    | baixo precisa encontrar o interruptor do login social ANTES de ler que "o
+    | convite e a unica forma de alguem de fora virar usuario". As duas coisas
+    | conversam, e a ordem evita a leitura errada.
+    |
+    | DEFAULT DESLIGADO. Ligar aqui nao poe o botao no ar sozinho: as tres chaves
+    | de `services.google` tambem precisam estar preenchidas. Sao duas condicoes
+    | em conjuncao, e a razao de serem duas e que elas falham por motivos
+    | diferentes - interruptor desligado e escolha, credencial vazia e descuido.
+    |
+    | Com o interruptor desligado as rotas /auth/google/* respondem 404. Esconder
+    | o botao nao basta: a URL e fixa, publica e conhecida, e "escondido no HTML"
+    | nao e barreira. Ver ADR-03.
+    |
+    | O QUE O LOGIN SOCIAL FAZ, e o que ele nao faz: ele AUTENTICA quem ja tem
+    | conta com aquele e-mail, verificado no provedor. Ele NAO cria conta enquanto
+    | o registro aberto estiver desligado - o exemplo updateOrCreate da propria
+    | documentacao do Socialite transformaria qualquer pessoa com conta Google em
+    | usuaria do sistema, contornando o convite. Ver ADR-06.
+    |
+    | Por que filter_var e nao um cast de bool - MEDIDO, e mais estreito do que
+    | parece. O Env::getOption() do Laravel ja converte "true"/"false"/"(false)"/
+    | "null"/"empty" em valor PHP de verdade
+    | (vendor/laravel/framework/src/Illuminate/Support/Env.php:252-262), entao
+    | KIT_SOCIALITE_GOOGLE=false ja chega aqui como boolean false e um cast de
+    | bool acertaria. Os tres irmaos deste arquivo - tenancy.enabled, demo e hub -
+    | usam cast de bool e NAO estao errados: para todo valor documentado no
+    | .env.example os dois jeitos dao o mesmo resultado. Nao "conserte" os tres.
+    |
+    | A diferenca aparece so nos valores que o Laravel NAO reconhece, e ela e de
+    | direcao: "off", "no" e qualquer lixo dao TRUE no cast de bool e FALSE no
+    | filter_var. Ou seja, o cast falha ABERTO e o filter_var falha FECHADO.
+    |
+    | Para as tres chaves irmas isso e gosto. Aqui nao e: este interruptor abre
+    | uma superficie PUBLICA de OAuth, e "off" e um valor que gente escreve. Um
+    | interruptor de seguranca que liga sozinho por causa de um valor
+    | irreconhecivel e o tipo de default que ninguem descobre a tempo.
+    |
+    | Nao vale extrair uma classe para isto (ha App\Support\NumeroDoEnv para
+    | inteiro, porque la o significado do zero muda por chave): aqui e uma
+    | chamada da stdlib, e o significado e o mesmo em toda chave booleana.
+    |
+    | O rodape e TEXTO, nunca HTML: ele e renderizado numa pagina publica e nao
+    | autenticada, e sai escapado. Ver ADR-09.
+    |
+    | Estas chaves sao o DESTINO da tela de Settings, nao o lugar final. Quem le
+    | as tres e App\Support\ConfiguracaoDoLogin, o ponto unico de ligacao: no dia
+    | em que o Settings existir, so o corpo daqueles tres metodos muda.
+    */
+
+    'login' => [
+        'google' => [
+            'habilitado' => filter_var(env('KIT_SOCIALITE_GOOGLE', false), FILTER_VALIDATE_BOOLEAN),
+        ],
+
+        'rodape' => env('KIT_LOGIN_RODAPE'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Convites de acesso
     |--------------------------------------------------------------------------
     | O convite é a única forma de alguém de fora virar usuário: a tela de

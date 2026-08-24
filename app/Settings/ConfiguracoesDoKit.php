@@ -124,6 +124,16 @@ final class ConfiguracoesDoKit extends Settings
 
     public bool $registro_aprovacao_manual;
 
+    // Login social e rodapé --------------------------------------------------
+
+    public bool $login_google_habilitado;
+
+    public ?string $login_google_client_id;
+
+    public ?string $login_google_client_secret;
+
+    public ?string $login_rodape;
+
     public static function group(): string
     {
         return 'kit';
@@ -201,6 +211,18 @@ final class ConfiguracoesDoKit extends Settings
              */
             'registro_habilitado'       => 'kit.registro.habilitado',
             'registro_aprovacao_manual' => 'kit.registro.aprovacao_manual',
+            /*
+             * Login social e rodapé. Ao contrário de `registro_verificar_email`, estas quatro
+             * PODEM ser editadas: as duas que decidem algo são lidas por request — o
+             * `abort_unless()` do `LoginComGoogleController` e a closure do render hook do
+             * botão. Nada aqui é decidido no boot do painel, e as rotas de `/auth/google/*`
+             * nascem sempre de propósito (registrá-las dentro de um `if` quebraria
+             * `route('auth.google.*')`); quem recusa é o controller, com 404.
+             */
+            'login_google_habilitado'    => 'kit.login.google.habilitado',
+            'login_google_client_id'     => 'services.google.client_id',
+            'login_google_client_secret' => 'services.google.client_secret',
+            'login_rodape'               => 'kit.login.rodape',
         ];
     }
 

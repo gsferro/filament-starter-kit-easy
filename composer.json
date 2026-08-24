@@ -48,6 +48,7 @@
         "laravel/framework": "^13.17",
         "laravel/pulse": "^1.8",
         "laravel/reverb": "^1.0",
+        "laravel/socialite": "^5.30",
         "laravel/tinker": "^3.0",
         "leandrocfe/filament-apex-charts": "^5.0",
         "livewire/blaze": "^1.0",
