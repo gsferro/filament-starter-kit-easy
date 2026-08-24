@@ -133,8 +133,20 @@ class AdminPanelProvider extends PanelProvider
                         ->themeToggle()
                     ),
 
-                // Papéis e permissões com UI (spatie/laravel-permission).
-                FilamentShieldPlugin::make(),
+                /**
+                 * Papéis e permissões com UI (spatie/laravel-permission).
+                 *
+                 * Os três rótulos existem porque a tradução pt_BR do Shield diz "Funções"
+                 * (`vendor/bezhansalleh/filament-shield/resources/lang/pt_BR/filament-shield.php:37`)
+                 * e esse termo não aparece em nenhum outro lugar do kit: a coluna se chama
+                 * "Papéis" em quatro tabelas, o helper de exibição é `App\Support\Papeis` e o
+                 * seeder é o `PapeisSeeder`. Configurar aqui, e não publicar a tradução, porque
+                 * `vendor:publish --force` sobrescreveria o arquivo de idioma.
+                 */
+                FilamentShieldPlugin::make()
+                    ->modelLabel('Papel')
+                    ->pluralModelLabel('Papéis')
+                    ->navigationLabel('Papéis'),
 
                 // Perfil do usuário + 2FA. O label explícito evita repetir o nome
                 // do usuário duas vezes no dropdown.
