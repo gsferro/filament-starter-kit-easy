@@ -19,7 +19,7 @@ use SensitiveParameter;
  * todo o projeto, e isso é enforçado por caso de teste, não por disciplina. A página de
  * registro, a tela de login, o provider do painel e o formulário de organização perguntam aqui.
  *
- * ## Duas das três são editáveis no Settings; a terceira não, e isso é medido
+ * ## As três são editáveis no Settings, e a terceira custou uma inversão
  *
  * A ligação com as `ConfiguracoesDoKit` **não** exigiu reescrever nenhum destes métodos: as
  * chaves entraram no `mapaDeConfiguracao()`, que sobrepõe a config do processo com o que está
@@ -31,17 +31,23 @@ use SensitiveParameter;
  * `Schema::hasTable()` e do try/catch do provider. `migrate` em base nova, clone e CI seguem
  * lendo o `.env`.
  *
- * **`exigirVerificacaoDeEmail()` ficou FORA do Settings, de propósito.** Ela é lida no BOOT,
- * pelo `AppPanelProvider`, e o painel é montado antes de `aplicarNaConfig()` rodar. Pior: o
- * middleware de e-mail verificado é fixado no array da rota no momento do registro
+ * **`exigirVerificacaoDeEmail()` ficou FORA do Settings por uma versão, e o motivo importa.** Ela
+ * era lida no BOOT, pelo `AppPanelProvider`, e o painel é montado antes de `aplicarNaConfig()`
+ * rodar. Pior: o middleware de e-mail verificado é fixado no array da rota no momento do registro
  * (`vendor/filament/filament/src/Pages/Concerns/HasRoutes.php:91`), não por request — então nem
- * uma Closure em `isRequired` resolveria. Um campo dela na tela seria um toggle que grava e não
- * faz efeito até o próximo deploy, e toggle que mente é pior que campo ausente. Continua no
- * `.env`, em `KIT_REGISTRO_VERIFICAR_EMAIL`.
+ * uma Closure em `isRequired` resolveria, porque quem avalia é o REGISTRO da rota. O campo na tela
+ * era um toggle que gravava e não fazia efeito até o próximo deploy, e o quality gate da v0.19.1
+ * o reprovou com a tela já construída.
  *
- * O quality gate desta wiki reprovou exatamente esse ponto, com a tela já construída. Se alguém
- * quiser torná-la editável, o caminho é um middleware próprio do kit que decida por request — e
- * aí a decisão sai do array da rota.
+ * O que a v0.20 mudou não foi este método — ele continua lendo `config()`, como os outros dois. Foi
+ * o que está fixado no array da rota: o painel passou a aplicar a exigência SEMPRE e a declarar a
+ * classe do kit em `->emailVerifiedMiddlewareName()`, então a rota guarda um DECISOR em vez de uma
+ * decisão. Quem pergunta, a cada request, é `App\Http\Middleware\ExigirEmailVerificado` — e ele
+ * pergunta aqui. O `.env` (`KIT_REGISTRO_VERIFICAR_EMAIL`) continua existindo como semeador e
+ * plano B, igual às outras 24 propriedades.
+ *
+ * O preço tem nome, e está anotado no `AppPanelProvider`: a rota de destino do redirecionamento
+ * precisa nascer sempre. Ver a wiki `verificacao-de-email-editavel`.
  *
  * ## E por que `registrar()` mora aqui, e não na página
  *
