@@ -73,6 +73,21 @@
   - **Se negado**: usar `isRequired: false` (tela no ar, sem middleware) e a opção passa a
     ser só informativa — o que não atende "precisa refletir em tudo que vem" (RQ-12).
 
+- **RQ-07 — quem aprova?** O requisito diz *"pendente ate alguem aprovar"*, sem nomear quem.
+  *(devolvida pela `feature-test-design`)*
+  - **Assumido**: quem tem `Update:User` no painel — `admin`/`master_global` no `/admin`,
+    `admin_app` no `/app`. `panel_user` não aprova.
+  - **Se negado**: muda o `->authorize()` da ação; CT-19 e CT-23 são refeitos.
+
+- **RQ-07/RQ-09 — qual o texto das mensagens?** O requisito não determina a redação da
+  mensagem ao pendente nem os rótulos da coluna de situação. *(devolvida pela
+  `feature-test-design`)*
+  - **Assumido**: existe mensagem dizendo que o cadastro foi recebido e aguarda aprovação, e
+    existe rótulo distinguível para pendente. Os casos de teste afirmam a **existência** e o
+    sentido, nunca a string exata (CT-12, CT-19 e CT-B02 marcados `@premissa`).
+  - **Se negado**: troca-se o texto sem tocar em nenhum caso de teste — é o efeito de a
+    asserção não ter sido presa à redação.
+
 - **RQ-12 — o que é "tudo que vem"?** Interpretado como as consequências observáveis de
   ligar a chave, enumeradas em `## Cobertura do Requisito` do PRD: rota pública, link
   "Cadastre-se" no login, papel atribuído, verificação de e-mail, pendência de aprovação,
