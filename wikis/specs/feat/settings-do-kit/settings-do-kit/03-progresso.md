@@ -2,82 +2,82 @@
 
 ## 1. Channel de log
 
-- [ ] `config/logging.php` — channel `configuracoes` com a forma dos três vizinhos (driver por `LOG_KIT_DRIVER` + `handler`)
+- [x] `config/logging.php` — channel `configuracoes` com a forma dos três vizinhos (driver por `LOG_KIT_DRIVER` + `handler`)
 
 ## 2. A classe de settings
 
-- [ ] `app/Settings/ConfiguracoesDoKit.php` — 21 propriedades tipadas, `group()` = `kit`, `encrypted()` = `['mail_password']`
-- [ ] `aplicarNaConfig()` — o mapa propriedade → chave de config, num só lugar
-- [ ] PHPDoc de classe: fonte da verdade, e o aviso de RQ-18 (não é settings de organização)
+- [x] `app/Settings/ConfiguracoesDoKit.php` — 21 propriedades tipadas, `group()` = `kit`, `encrypted()` = `['mail_password']`
+- [x] `aplicarNaConfig()` — o mapa propriedade → chave de config, num só lugar
+- [x] PHPDoc de classe: fonte da verdade, e o aviso de RQ-18 (não é settings de organização)
 
 ## 3. As chaves novas de `config/kit.php`
 
-- [ ] `cor_primaria_hex`
-- [ ] `identidade` (logo, favicon, arte_do_login)
-- [ ] `tabelas` (paginação, listrada, persistir_filtros, colunas_redimensionaveis) — com a coerção de booleano de `.ai/rules/config.md`
-- [ ] `.env.example` — as chaves novas, comentadas, no bloco do kit
+- [x] `cor_primaria_hex`
+- [x] `identidade` (logo, favicon, arte_do_login)
+- [x] `tabelas` (paginação, listrada, persistir_filtros, colunas_redimensionaveis) — com a coerção de booleano de `.ai/rules/config.md`
+- [x] `.env.example` — as chaves novas, comentadas, no bloco do kit
 
 ## 4. A página de settings
 
-- [ ] `app/Filament/Admin/Pages/ConfiguracoesDoKit.php` com `HasPageShield`
-- [ ] `canEdit()` de **instância** devolvendo `static::canAccess()`
-- [ ] Quatro abas: Identidade, E-mail, Tabelas, Kit
-- [ ] Log em `afterSave()`
+- [x] `app/Filament/Admin/Pages/ConfiguracoesDoKit.php` — com `App\Filament\Concerns\ExigePermissaoDaTela` (o trait do kit que embrulha o `HasPageShield`), não com o trait do vendor direto — ver Desvios
+- [x] `canEdit()` de **instância** devolvendo `static::canAccess()`
+- [x] Quatro abas: Identidade, E-mail, Tabelas, Kit
+- [x] Log em `afterSave()`
 
 ## 5. Migration de settings, alinhamento no boot e auditoria
 
-- [ ] `database/settings/*_create_kit_settings.php` — `up()` semeando de `config()`, `down()` com `deleteIfExists`
-- [ ] `config/settings.php` — registro explícito da classe
-- [ ] `KitServiceProvider::configureSettingsDoKit()` — antes de `configuraFilamentGlobal()`, com `try/catch (Throwable)` envolvendo o `Schema::hasTable()`
-- [ ] `app/Listeners/AuditarConfiguracoesDoKit.php` — diff, uma linha por propriedade alterada, `event = 'settings-updated'`, segredo mascarado
-- [ ] Registro do listener
+- [x] `database/settings/*_create_kit_settings.php` — `up()` semeando de `config()`, `down()` com `deleteIfExists`
+- [x] `config/settings.php` — registro explícito da classe
+- [x] `KitServiceProvider::configureSettingsDoKit()` — antes de `configuraFilamentGlobal()`, com `try/catch (Throwable)` envolvendo o `Schema::hasTable()`
+- [x] `app/Listeners/AuditarConfiguracoesDoKit.php` — diff, uma linha por propriedade alterada, `event = 'settings-updated'`, segredo mascarado
+- [x] Registro do listener
 
 ## 6. Os três painéis passam a ler o settings
 
-- [ ] `app/Support/IdentidadeDoKit.php` — logo, favicon, arte, com a guarda de arquivo ausente
-- [ ] `AdminPanelProvider` — `brandName` em Closure, `favicon`, `brandLogo`, as três `media()`
-- [ ] `AppPanelProvider` — idem
-- [ ] `InfraPanelProvider` — idem
+- [x] `app/Support/IdentidadeDoKit.php` — logo, favicon, arte, com a guarda de arquivo ausente
+- [x] `AdminPanelProvider` — `brandName` em Closure, `favicon`, `brandLogo`, as três `media()`
+- [x] `AppPanelProvider` — idem
+- [x] `InfraPanelProvider` — idem
 
 ## 7. Cor, tabelas e `kit:install --custom`
 
-- [ ] `app/Support/CorPrimaria.php` — precedência hex → nome → padrão, com validação de formato
-- [ ] `app/Providers/Concerns/ConfiguraFilamentGlobal.php` — `configuraTable()` lendo `kit.tabelas.*`; TODO de `:35-38` substituído
-- [ ] `app/Support/CustomizadorDaInstalacao.php` — `aplicarSemBanco()` propagando para o settings; `itensManuais()` sem a arte do login
+- [x] `app/Support/CorPrimaria.php` — precedência hex → nome → padrão, com validação de formato
+- [x] `app/Providers/Concerns/ConfiguraFilamentGlobal.php` — `configuraTable()` lendo `kit.tabelas.*`; TODO de `:35-38` substituído
+- [x] `app/Support/CustomizadorDaInstalacao.php` — `aplicarSemBanco()` propagando para o settings; `itensManuais()` com a linha da arte **reescrita** apontando para a tela (não removida) — ver Desvios
 
 ## 8. Permissões
 
-- [ ] `db:seed --class=ShieldPermissionsSeeder`
-- [ ] `db:seed --class=PapeisSeeder`
-- [ ] Conferir: `admin` **tem** `View:ConfiguracoesDoKit`; `infra` e `panel_user` **não**
-- [ ] Confirmar que `database/seeders/PapeisSeeder.php` **não** precisou de edição
+- [x] `db:seed --class=ShieldPermissionsSeeder`
+- [x] `db:seed --class=PapeisSeeder`
+- [x] Conferir: `admin` **tem** `View:ConfiguracoesDoKit`; `infra` e `panel_user` **não**
+- [x] Confirmar que `database/seeders/PapeisSeeder.php` **não** precisou de edição
 
 ## 9. Documentação e inventário
 
-- [ ] `tests/Pest.php` — `/admin/configuracoes-do-kit` em `telasDoKit()['admin']`
-- [ ] `README.md` — seção nova; TODO de `:1257` substituído
-- [ ] `README.en.md` — idem; TODO de `:1221` substituído
-- [ ] `CHANGELOG.md` + `config/kit.php` (`version`)
+- [x] `tests/Pest.php` — `/admin/configuracoes-do-kit` em `telasDoKit()['admin']`
+- [x] `README.md` — seção nova; TODO de `:1257` substituído
+- [x] `README.en.md` — idem; TODO de `:1221` substituído
+- [x] `CHANGELOG.md` + `config/kit.php` (`version`)
 
 ## Testes
 
-- [ ] `tests/Kit/ConfiguracoesDoKitTest.php` — CT-01…CT-04, CT-11, CT-12, CT-21…CT-25, CT-28, CT-30
-- [ ] `tests/Kit/CorPrimariaTest.php` (acrescentar) — CT-05, CT-06, CT-07
-- [ ] `tests/Kit/ConfiguracoesDoKitTelaTest.php` — CT-08…CT-10, CT-13…CT-16
-- [ ] `tests/Kit/DefaultsDeTabelaTest.php` — CT-17…CT-20
-- [ ] `tests/Kit/IdentidadeDoKitTest.php` — CT-26
-- [ ] `tests/Kit/CustomizadorDaInstalacaoTest.php` (acrescentar) — CT-27
-- [ ] `tests/Tenancy/IdentidadeVisualTest.php` (acrescentar) — CT-29
-- [ ] `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` — CT-31, CT-32
-- [ ] `tests/Browser/ConfiguracoesDoKitTest.php` — CT-B01, CT-B02
+- [x] `tests/Kit/ConfiguracoesDoKitTest.php` — CT-01…CT-04, CT-11, CT-12, CT-21…CT-25, CT-28, CT-30
+- [x] `tests/Kit/CorPrimariaTest.php` (acrescentar) — CT-05, CT-06, CT-07
+- [x] `tests/Kit/ConfiguracoesDoKitTelaTest.php` — CT-08…CT-10, CT-13…CT-16
+- [x] `tests/Kit/DefaultsDeTabelaTest.php` — CT-17…CT-20
+- [x] `tests/Kit/IdentidadeDoKitTest.php` — CT-26
+- [x] `tests/Kit/CustomizadorDaInstalacaoTest.php` (acrescentar) — CT-27
+- [x] `tests/Tenancy/IdentidadeVisualTenancyTest.php` (acrescentar) — CT-29
+- [x] `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` — CT-31, CT-32
+- [x] `tests/Browser/ConfiguracoesDoKitTest.php` — CT-B01, CT-B02
 
 ## Verificação Final
 
-- [ ] `/ponytail:ponytail-review` no diff
-- [ ] `vendor/bin/pint --dirty --format agent`
-- [ ] `vendor/bin/phpstan analyse --no-progress` — 0 erros
-- [ ] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy` — 662 na base, não deixar cair
-- [ ] `composer test:browser`
+- [x] `/ponytail:ponytail-review` no diff
+- [x] `vendor/bin/pint --dirty --format agent`
+- [x] `vendor/bin/phpstan analyse --no-progress` — 0 erros
+- [x] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy` — 662 na base, não deixar cair
+- [x] `composer test:browser`
 - [ ] `migrate:rollback` da migration de settings, e `migrate` de volta, sem quebrar o boot
 - [ ] Roteiro "Desenhado × Implementado" do `05` preenchido
 - [ ] `git push -u origin feat/settings-do-kit`
@@ -159,19 +159,43 @@ Totais finais: **41 cenários, 17 regras, 85 mutantes, 5 sem matador — todos d
 
 ## Blockers
 
-<!-- nada até agora -->
+**QA-02 (aberto) — a senha de SMTP chega em claro ao HTML da página.** Levantado pelo `feature-quality-gate` no ciclo 1; detalhe, repro e evidência em `06-relatorio-qa.md`. Contraria a linha 7 do roteiro do `05` ("senha … nunca em claro no HTML inicial"), que ficou em branco. **Não fazer merge antes de fechar.**
 
 ---
 
 ## Desvios do Plano
 
-<!-- preenchido durante a implementação -->
+Registrados pelo gate de QA (o agente que implementou caiu por limite de sessão antes de preencher esta seção). Nenhum dos três é defeito.
+
+| Passo do PRD | Desvio | Motivo |
+|---|---|---|
+| 4 — a Page usa `HasPageShield` | usa `App\Filament\Concerns\ExigePermissaoDaTela`, que embrulha o trait do vendor | é a convenção que a branch `feat/permissoes-de-telas-e-acoes` estabeleceu: método na classe vence método de trait em silêncio, e o trait do kit publica `permissão && regraLocalDeAcesso()`. Commit `37f8511` |
+| 3 — `kit.identidade.arte_do_login` nasce com `'images/auth/login.svg'` | nasce `null`; o default é `IdentidadeDoKit::ARTE_PADRAO` | a chave é caminho no **disco** `public` e o default é arquivo do **repositório** (`asset()`); misturar as duas origens numa chave produziria um valor que às vezes é `Storage::url()` e às vezes `asset()` |
+| 7 — `itensManuais()` **sem** a linha da arte do login | a linha foi **reescrita** para "Identidade e e-mail … `/admin` → Configurações do kit", e a lista continua com sete itens | informa mais que remover, e há CT afirmando os sete |
+| 3 — `filter_var(..., FILTER_NULL_ON_FAILURE) ?? $padrao` para os três booleanos | `App\Support\BooleanoDoEnv::comPadrao()`, com guarda explícita **antes** do filtro | o remédio do PRD **reproduzia** o defeito: o filtro trata `null` e `''` como `false`, não como falha, e o `??` nunca dispara. Medido e documentado no docblock da classe nova — é a quinta prescrição de wiki errada que o kit registra |
 
 ---
 
 ## Notas de Implementação
 
-<!-- preenchido durante a implementação -->
+### Gate de QA — ciclo 1 (`06-relatorio-qa.md`)
+
+**REPROVADO → implementação (1 Blocker) e teste (1 Major).** Perfil completo, 11 dimensões, executado por agente que não implementou a feature.
+
+| Achado | Sev. | Destino | Resumo |
+|---|---|---|---|
+| QA-01 | Major | 3 → 2 | valor legítimo do `.env` fora do domínio do campo (`mail_mailer=ses`, `cor_primaria=Green`, `paginacao=500`) trava **toda** a gravação da tela |
+| QA-02 | **Blocker** | 2 (+3) | a senha de SMTP sai em claro no HTML (`wire:snapshot`), sem clique em "revelar" |
+| QA-03 | Minor | 3 → 2 | o remetente global pode ser esvaziado pela tela; `Mailer::$from` fica `null` |
+| QA-04 | Minor | 2 | `warning` com stack trace completo em todo request no estado `MissingSettings` (~120 KB medidos num dia) |
+| QA-05 | Minor | 2 | um `debug` por request e por comando artisan, com `LOG_LEVEL=debug` de default |
+| QA-06 | Minor | 2 (+3) | upload sem `maxSize()` e aceitando SVG com `<script>` no disco público |
+| QA-07 | Minor | 3 | o ramo "propriedade sem linha" do listener não tem teste (9 mutantes `uncovered`, score 84,75%) |
+| QA-08 | Cosmético | 1/2 | este arquivo e o roteiro do `05` desatualizados; docblock citando um `refresh()` que não existe |
+
+Nove hipóteses foram **rejeitadas** com evidência (arte do login congelada no boot, XSS pelo nome da aplicação, segredo na trilha, alinhamento parcial da config, aplicação sem nome/cor/remetente, `visibility('public')` decorativo, permissão sem papel, N+1 no boot, `itensManuais()` com item a mais) — detalhe no `06`.
+
+Mutação medida: `IdentidadeDoKit` **100%** (20/20), `AuditarConfiguracoesDoKit` 84,75%, `BooleanoDoEnv` 85,71%. O Pest honrou **um só** `--path` por execução, então `app/Settings` e a Page ficaram sem medição.
 
 ---
 
