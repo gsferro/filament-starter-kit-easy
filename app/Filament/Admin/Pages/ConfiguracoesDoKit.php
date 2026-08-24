@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\CustomizadorDaInstalacao;
 use BackedEnum;
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -34,9 +34,17 @@ use Illuminate\Support\Facades\Log;
  *
  * ## Autorização: uma permissão só
  *
- * `HasPageShield` liga a Page à permission `View:ConfiguracoesDoKit`, que o
- * `ShieldPermissionsSeeder` gera e o `PapeisSeeder` entrega ao papel `admin`
- * junto com o resto da matriz do painel — nenhuma lista precisou ser editada.
+ * `ExigePermissaoDaTela` — e não `HasPageShield` direto — porque é a convenção do
+ * kit e porque ela é à prova do defeito silencioso: método definido na classe vence
+ * método vindo de trait, sem erro nem aviso, então o dia em que esta Page ganhar um
+ * `canAccess()` próprio (uma flag de config, por exemplo) a permissão deixaria de
+ * ser consultada e o diff pareceria correto. Com o trait do kit, a regra local vai
+ * no hook `regraLocalDeAcesso()` e as duas convivem. Esta tela não tem regra local
+ * hoje, e por isso não sobrescreve o hook.
+ *
+ * A permission é `View:ConfiguracoesDoKit`, que o `ShieldPermissionsSeeder` gera e o
+ * `PapeisSeeder` entrega ao papel `admin` junto com o resto da matriz do painel —
+ * nenhuma lista precisou ser editada.
  *
  * `canEdit()` devolve `canAccess()`: uma permissão governa abrir e salvar. Um
  * papel "só leitura" aqui seria um papel que LÊ a senha de SMTP, porque o
@@ -60,7 +68,7 @@ use Illuminate\Support\Facades\Log;
  */
 class ConfiguracoesDoKit extends SettingsPage
 {
-    use HasPageShield;
+    use ExigePermissaoDaTela;
 
     protected static string $settings = SettingsDoKit::class;
 
