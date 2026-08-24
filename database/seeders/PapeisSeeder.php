@@ -4,13 +4,13 @@ namespace Database\Seeders;
 
 use App\Filament\App\Resources\Convites\ConviteResource;
 use App\Filament\App\Resources\Users\UserResource;
+use App\Models\Role;
 use App\Support\Paineis;
 use BezhanSalleh\FilamentExceptions\Resources\ExceptionResource;
 use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -297,6 +297,13 @@ class PapeisSeeder extends Seeder
      *
      * `updateOrCreate` e não `firstOrCreate`: papel que já existe precisa receber o
      * painel, senão quem atualiza o kit fica com papéis sem painel — ou seja, sem acesso.
+     *
+     * E `App\Models\Role`, não `Spatie\Permission\Models\Role`: as duas classes escrevem na
+     * MESMA tabela, e só a do kit tem `App\Traits\TemUuid`. Escrevendo pela do vendor, todo
+     * papel semeado nasce com `uuid` nulo — e aí a rota dele não resolve, a tela de alteração
+     * responde 404 e o `EditAction` da listagem gera URL sem parâmetro. Nada disso dá erro no
+     * seeder. O caso que cobre é `tests/Kit/UuidDoPapelTest.php`
+     * ("preenche o uuid dos papeis que ja existiam").
      */
     private function papel(string $nome, string $guard, ?string $painel): Role
     {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\TemUuid;
 use Spatie\Permission\Models\Role as SpatieRole;
 
 /**
@@ -16,11 +17,29 @@ use Spatie\Permission\Models\Role as SpatieRole;
  * `permission.models.role` para cá basta — spatie e Shield resolvem o model pela config
  * (`Config::roleModel()`, `Utils::getRoleModel()`), então nada mais precisa saber disto.
  *
+ * ## O `uuid` na rota
+ *
+ * `TemUuid` faz a rota do papel usar `uuid` em vez de `id`, que é a convenção do kit
+ * (`app/Traits/TemUuid.php:14-18`). A PK continua `id` int: `uniqueIds()` devolve
+ * `['uuid']`, e o `HasUniqueStringIds` do Laravel só troca `getKeyType()`/`getIncrementing()`
+ * quando a chave primária está nessa lista — as foreign keys de `model_has_roles` e
+ * `role_has_permissions` seguem numéricas.
+ *
+ * O item 3 do checklist da trait ("`uuid` fica FORA do `$fillable`") é atendido por
+ * ausência: o `Model` do spatie usa `$guarded = []` e **não** tem `$fillable`. Declarar um
+ * aqui quebraria o `Role::create()` do spatie e dos dois seeders, que passam chaves
+ * variáveis. Consequência aceita e registrada em ADR-03: `uuid` é mass-assignable. O risco
+ * é baixo porque nenhum formulário do kit tem campo `uuid` e
+ * `CreateRole::mutateFormDataBeforeCreate()` faz `Arr::only()` antes de gravar
+ * (`app/Filament/Admin/Resources/Roles/Pages/CreateRole.php:34-37`).
+ *
  * @property ?string $painel
+ * @property string $uuid
  */
 class Role extends SpatieRole
 {
-    // Sem nada além do @property acima: a coluna é `$guarded = []` no spatie, então
-    // mass assignment, casts e queries já funcionam. Scope e helper entram quando
-    // houver um segundo chamador.
+    // Fora da trait, nada: a coluna `painel` é `$guarded = []` no spatie, então mass
+    // assignment, casts e queries já funcionam. Scope e helper entram quando houver um
+    // segundo chamador.
+    use TemUuid;
 }

@@ -4,6 +4,7 @@ use App\Filament\Admin\Resources\Roles\Pages\CreateRole;
 use App\Filament\Admin\Resources\Roles\Pages\EditRole;
 use App\Filament\Admin\Resources\Users\Pages\CreateUser;
 use App\Filament\App\Resources\Convites\ConviteResource;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\Paineis;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
@@ -14,7 +15,6 @@ use Illuminate\Support\Facades\Log;
 use Jeffgreco13\FilamentBreezy\Pages\MyProfilePage;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 /**
  * Contrato de acesso do kit: cada painel abre para quem deve e fecha para o
@@ -233,7 +233,7 @@ it('salva o painel do papel na edicao sem virar permission', function (): void {
 
     $papel = Role::create(['name' => 'suporte', 'guard_name' => 'web', 'painel' => 'app']);
 
-    Livewire::test(EditRole::class, ['record' => $papel->getKey()])
+    Livewire::test(EditRole::class, ['record' => $papel->getRouteKey()])
         ->fillForm(['name' => 'suporte', 'guard_name' => 'web', 'painel' => 'infra'])
         ->call('save')
         ->assertHasNoFormErrors();

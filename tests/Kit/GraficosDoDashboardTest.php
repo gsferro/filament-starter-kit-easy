@@ -7,6 +7,7 @@ use App\Filament\Infra\Widgets\FilasTaxaDeSucesso;
 use App\Filament\Infra\Widgets\IaExecucoesPorDia;
 use App\Filament\Infra\Widgets\IaExecucoesPorStatus;
 use App\Models\Convite;
+use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
@@ -16,7 +17,6 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 use Livewire\Livewire;
-use Spatie\Permission\Models\Role;
 
 /**
  * Os gráficos do dashboard (leandrocfe/filament-apex-charts).

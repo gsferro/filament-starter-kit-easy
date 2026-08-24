@@ -2,10 +2,10 @@
 
 use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Models\Projeto;
+use App\Models\Role;
 use App\Models\Tenant;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
-use Spatie\Permission\Models\Role;
 use Tests\TenancyTestCase;
 
 /**
@@ -138,7 +138,7 @@ it('captura a matriz de papéis com Import e Export', function (): void {
     // elemento para a viewport antes de posicionar o mouse. Sem isso a captura pega a
     // seção do painel /admin, onde o `admin_app` não tem permissão nenhuma marcada —
     // tecnicamente correto e ilegivelmente confuso num README.
-    visit("/admin/shield/roles/{$papel->getKey()}/edit")
+    visit("/admin/shield/roles/{$papel->getRouteKey()}/edit")
         ->resize(1400, 875)
         ->assertSee('Projeto')
         // Seletor por atributo, e não `text=`: o texto "Painel /app" também casa com o
