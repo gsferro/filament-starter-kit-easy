@@ -32,15 +32,6 @@ beforeEach(function (): void {
     Filament::setCurrentPanel('admin');
 });
 
-/** O valor gravado de uma propriedade, lido da tabela. */
-function configuracaoGravada(string $propriedade): mixed
-{
-    return json_decode((string) SettingsProperty::query()
-        ->where('group', SettingsDoKit::group())
-        ->where('name', $propriedade)
-        ->value('payload'), associative: true);
-}
-
 /**
  * CT-08 — o formulário grava as quatro famílias de campo de uma vez.
  *
