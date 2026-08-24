@@ -477,6 +477,153 @@ laço anônimo, sem mudar o que a pessoa vê.
 > arquivo — nenhum outro lugar do projeto lê essas chaves, e há um teste que reprova se alguém
 > passar a ler.
 
+## Login social com Google (opt-in)
+
+Um segundo caminho de entrada, ao lado da senha: o botão **Entrar com Google** abaixo do
+formulário de login dos três painéis. Ele nasce **desligado** e, ligado, faz uma coisa só —
+autenticar quem **já tem conta**.
+
+### O que ele faz, e o que ele deliberadamente não faz
+
+| | |
+|---|---|
+| **Autentica** quem já tem conta com o e-mail que o Google devolve | ✅ sempre, quando ligado |
+| **Cria** conta para quem não tem | ❌ só com o registro aberto ligado, que nasce desligado |
+| Aceita e-mail **não verificado** no Google | ❌ nunca — recusa e registra o motivo |
+| Contorna o **segundo fator** | ❌ nunca — quem tem 2FA confirmado cai no desafio igual |
+| Guarda token de acesso ou `refresh_token` do Google | ❌ nada é gravado |
+| Cria coluna nova em `users` | ❌ nenhuma; o vínculo é pelo e-mail verificado |
+
+A linha que mais importa é a segunda, e ela não é timidez: **o convite é a única porta de entrada
+do kit**. O exemplo que a documentação do Laravel Socialite dá para o callback é
+`User::updateOrCreate()` — copiado para cá, ele transformaria qualquer pessoa com uma conta Google
+em usuária do sistema, contornando convite, verificação e atribuição de papel. Isso é furo de
+autorização, não conveniência. Se você **quer** cadastro por login social, ligue o registro
+aberto: o kit passa a criar a conta e a levar a pessoa para a tela do perfil dela, onde ela
+completa o que falta.
+
+E lembre do resto do kit: **conta sem papel não abre painel nenhum** (`User::canAccessPanel()`).
+Quem entra por login social precisa de papel como qualquer outra pessoa.
+
+### Ligando em quatro passos
+
+**1. Crie a credencial no Google.** No [console](https://console.cloud.google.com) → *APIs e
+serviços* → *Credenciais* → *Criar credenciais* → *ID do cliente OAuth*, tipo **Aplicativo da
+Web**. Em **URIs de redirecionamento autorizados**, cadastre o seu `APP_URL` mais
+`/auth/google/callback`:
+
+```text
+https://seu-dominio.com.br/auth/google/callback
+http://localhost:8000/auth/google/callback     # para desenvolvimento
+```
+
+Esse caminho não é escolha: ele está em `config/services.php` como caminho **relativo**, de
+propósito, para acompanhar o `APP_URL` de cada ambiente sem uma variável a mais para esquecer.
+
+**2. Escreva as três chaves no `.env`:**
+
+```dotenv
+KIT_SOCIALITE_GOOGLE=true
+GOOGLE_CLIENT_ID=1234567890-abc.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-seu-segredo
+```
+
+**3. Limpe a config** (`php artisan config:clear`) e recarregue a tela de login.
+
+**4. Confirme que o botão apareceu.** Se não apareceu, é uma das duas condições abaixo.
+
+### O botão só aparece com TUDO preenchido
+
+São **duas** condições, em conjunção, e elas falham por motivos diferentes:
+
+- `KIT_SOCIALITE_GOOGLE=true` — interruptor desligado é escolha de quem instalou;
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e o `redirect` **todos preenchidos** — credencial
+  vazia é descuido de quem configurou.
+
+Interruptor ligado com o `client_secret` vazio mantém o botão fora do ar, e é de propósito: botão
+que leva a um OAuth inexistente é uma promessa que a tela não pode cumprir.
+
+**E o desligamento derruba a rota, não só o botão.** Com a feature indisponível,
+`/auth/google/redirect` e `/auth/google/callback` respondem **404**. Esconder o botão não seria
+barreira nenhuma — a URL é fixa, pública e conhecida.
+
+O interruptor também **falha fechado**: `false`, `0`, `off`, `no`, vazio e qualquer valor
+irreconhecível o mantêm desligado. Só `true` e `1` ligam.
+
+### O rodapé da tela de login
+
+A mesma configuração traz um rodapé de texto na base da tela de login dos três painéis:
+
+```dotenv
+KIT_LOGIN_RODAPE="Fiotec · Todos os direitos reservados"
+```
+
+Vazio (ou só espaços) = sem rodapé, sem faixa vazia.
+
+É **texto, não HTML**, e o valor sai escapado. A tela de login é pública e não autenticada: HTML
+cru vindo de um campo editável ali seria XSS armazenado com o pior alcance possível — a tela por
+onde todo mundo entra. Se você precisar de link no rodapé, o caminho é um campo estruturado
+(texto + URL, com validação), não um campo de HTML solto.
+
+### E-mail não verificado no Google: por que recusamos
+
+O vínculo com a conta do kit é feito **pelo e-mail**, comparado sem diferenciar caixa nem espaços
+nas bordas. Isso é simples e não custa coluna nova — mas tem um risco conhecido: se o provedor
+devolvesse um e-mail **não verificado**, bastaria criar uma conta Google com o e-mail de outra
+pessoa para entrar na conta dela.
+
+O Google informa a verificação, e o kit **exige** que ela seja verdadeira. Ausente, falsa ou com
+um valor que não seja claramente verdadeiro ⇒ **recusa**, com aviso na tela e o motivo
+`email_nao_verificado` no log. Falha fechado.
+
+Consequência a conhecer: se a pessoa **trocar o e-mail** na conta Google, o vínculo se perde e ela
+volta a entrar por senha.
+
+### Onde ficam os registros
+
+Tudo no channel **`autenticacao`** (`storage/logs/autenticacao-*.log`), no mesmo formato do resto
+do kit — `[Classe@Método] mensagem | chave: valor`, com **e-mail mascarado** e um `motivo` legível
+em cada recusa:
+
+| `motivo` | O que aconteceu |
+|---|---|
+| `falha_no_provedor` | `state` de CSRF inválido, rede fora, ou credencial recusada pelo Google |
+| `email_ausente` | o Google não devolveu e-mail |
+| `email_nao_verificado` | o e-mail não está verificado no Google |
+| `conta_inexistente_registro_fechado` | não há conta e o registro aberto está desligado |
+| `conta_criada_por_login_social` | conta nova criada (registro aberto ligado) |
+
+O **`GOOGLE_CLIENT_SECRET` nunca aparece** — não em log, não em tela, não em mensagem de erro. E as
+mensagens devolvidas ao visitante são propositalmente genéricas: dizer qual barreira reprovou é
+entregar informação de reconhecimento a quem estiver sondando. O motivo fica no log, para você.
+
+O login por Google também entra na **trilha de acesso** do painel `/infra` (quem entrou, quando, de
+onde), como qualquer outro login — sem configuração nenhuma.
+
+### Acrescentando outro provedor
+
+Google é o primeiro. GitHub, Facebook, LinkedIn, X e Discord são drivers que o Socialite já traz —
+o kit **não** tem abstração de provedor, de propósito: interface com uma implementação é
+complexidade sem segundo caso. Para o segundo, o roteiro é:
+
+1. bloco novo em `config/services.php`, no formato que o Socialite espera;
+2. chave nova em `config/kit.php` → `login`, e o interruptor no `.env.example`;
+3. um método no ponto único (`App\Support\ConfiguracaoDoLogin`);
+4. um par de rotas em `routes/web.php`;
+5. um blade com o SVG da marca (o ícone do Google é SVG inline — Heroicons não tem logo de marca, e
+   o kit não ganha um pacote de ícones para usar um).
+
+**Copie as barreiras junto**, não só o caminho feliz: o `abort_unless` das duas rotas, a exigência
+de e-mail verificado (e **cuidado**: nem todo provedor informa isso — quem não informa exige uma
+decisão nova, não um `?? true`), o mascaramento do e-mail no log e a ausência do segredo em toda
+saída.
+
+Com dois ou três provedores na mão, aí sim vale extrair o que se repetir de fato — a extração feita
+com um caso adivinha a forma.
+
+> O raciocínio completo, com as alternativas recusadas e o que foi medido no `vendor/`, está em
+> `wikis/specs/feat/login-social-google/login-social-google/`.
+
 ## Trilhas do `/infra`: exceções, e-mails e lixeira
 
 O painel de infraestrutura já mostrava **saúde** (Health), **desempenho** (Pulse), **arquivo de

@@ -444,6 +444,152 @@ loop without changing what the person sees.
 > single read point. Swapping `config()` for Settings means rewriting the body of three methods in
 > that file — nowhere else in the project reads those keys, and a test fails if anything starts to.
 
+## Social login with Google (opt-in)
+
+A second way in, next to the password: a **Sign in with Google** button below the login form on
+all three panels. It ships **turned off** and, once on, does exactly one thing — authenticate
+someone who **already has an account**.
+
+### What it does, and what it deliberately does not
+
+| | |
+|---|---|
+| **Authenticates** an existing account matching the e-mail Google returns | ✅ always, when enabled |
+| **Creates** an account for someone who has none | ❌ only with open registration on, which ships off |
+| Accepts an **unverified** Google e-mail | ❌ never — it refuses and records the reason |
+| Bypasses **two-factor** | ❌ never — a confirmed-2FA account still hits the challenge |
+| Stores the Google access token or `refresh_token` | ❌ nothing is stored |
+| Adds a new column to `users` | ❌ none; the link is the verified e-mail |
+
+The second row is the important one, and it is not timidity: **the invitation is the kit's only
+front door**. The callback example in the Laravel Socialite documentation is
+`User::updateOrCreate()` — copied here, it would turn anyone with a Google account into a user of
+your system, bypassing the invitation, the verification and the role assignment. That is an
+authorization hole, not a convenience. If you **do** want sign-up through social login, turn open
+registration on: the kit then creates the account and takes the person to their own profile screen
+to fill in what is missing.
+
+And remember the rest of the kit: **an account with no role opens no panel at all**
+(`User::canAccessPanel()`). Someone arriving through social login needs a role like anyone else.
+
+### Turning it on, in four steps
+
+**1. Create the credential at Google.** In the [console](https://console.cloud.google.com) → *APIs
+& Services* → *Credentials* → *Create credentials* → *OAuth client ID*, type **Web application**.
+Under **Authorized redirect URIs**, register your `APP_URL` plus `/auth/google/callback`:
+
+```text
+https://your-domain.com/auth/google/callback
+http://localhost:8000/auth/google/callback     # for development
+```
+
+That path is not a choice: it lives in `config/services.php` as a **relative** path, on purpose, so
+it follows the `APP_URL` of each environment without one more variable to forget.
+
+**2. Write the three keys in `.env`:**
+
+```dotenv
+KIT_SOCIALITE_GOOGLE=true
+GOOGLE_CLIENT_ID=1234567890-abc.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-your-secret
+```
+
+**3. Clear the config** (`php artisan config:clear`) and reload the login screen.
+
+**4. Confirm the button showed up.** If it did not, it is one of the two conditions below.
+
+### The button only shows with EVERYTHING filled in
+
+There are **two** conditions, in conjunction, and they fail for different reasons:
+
+- `KIT_SOCIALITE_GOOGLE=true` — a switch left off is a choice made by whoever installed;
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and the `redirect` **all filled in** — an empty
+  credential is an oversight by whoever configured it.
+
+Switch on with an empty `client_secret` keeps the button off the air, and that is deliberate: a
+button leading to an OAuth that does not exist is a promise the screen cannot keep.
+
+**And turning it off takes the route down, not just the button.** With the feature unavailable,
+`/auth/google/redirect` and `/auth/google/callback` answer **404**. Hiding the button would be no
+barrier at all — the URL is fixed, public and known.
+
+The switch also **fails closed**: `false`, `0`, `off`, `no`, empty and any unrecognized value keep
+it off. Only `true` and `1` turn it on.
+
+### The login screen footer
+
+The same configuration brings a text footer to the bottom of the login screen on all three panels:
+
+```dotenv
+KIT_LOGIN_RODAPE="Fiotec · All rights reserved"
+```
+
+Empty (or whitespace only) = no footer, and no empty strip.
+
+It is **text, not HTML**, and the value is escaped on output. The login screen is public and
+unauthenticated: raw HTML from an editable field there would be stored XSS with the worst possible
+reach — the screen everybody comes in through. If you need a link in the footer, the way is a
+structured field (text + URL, validated), not a free HTML field.
+
+### Unverified Google e-mail: why we refuse
+
+The link to the kit's account is made **by e-mail**, compared without regard to case or surrounding
+whitespace. That is simple and costs no new column — but it carries a known risk: if the provider
+returned an **unverified** e-mail, creating a Google account with someone else's address would be
+enough to get into their account.
+
+Google reports the verification, and the kit **requires** it to be true. Missing, false, or holding
+a value that is not clearly true ⇒ **refused**, with a notice on screen and the reason
+`email_nao_verificado` in the log. It fails closed.
+
+One consequence to know: if the person **changes the e-mail** on their Google account, the link is
+lost and they go back to signing in with a password.
+
+### Where the records go
+
+Everything goes to the **`autenticacao`** channel (`storage/logs/autenticacao-*.log`), in the same
+format as the rest of the kit — `[Class@method] message | key: value`, with a **masked e-mail** and
+a readable `motivo` (reason) on every refusal:
+
+| `motivo` | What happened |
+|---|---|
+| `falha_no_provedor` | invalid CSRF `state`, network down, or credential rejected by Google |
+| `email_ausente` | Google returned no e-mail |
+| `email_nao_verificado` | the e-mail is not verified at Google |
+| `conta_inexistente_registro_fechado` | no account exists and open registration is off |
+| `conta_criada_por_login_social` | a new account was created (open registration on) |
+
+The **`GOOGLE_CLIENT_SECRET` never appears** — not in a log, not on screen, not in an error message.
+And the messages returned to the visitor are deliberately generic: naming which barrier refused
+hands reconnaissance to anyone probing. The reason stays in the log, for you.
+
+Google logins also land in the `/infra` panel's **access trail** (who came in, when, from where),
+like any other login — with no configuration at all.
+
+### Adding another provider
+
+Google is the first. GitHub, Facebook, LinkedIn, X and Discord are drivers Socialite already
+ships — the kit has **no** provider abstraction, on purpose: an interface with one implementation is
+complexity without a second case. For the second one, the script is:
+
+1. a new block in `config/services.php`, in the shape Socialite expects;
+2. a new key in `config/kit.php` → `login`, and the switch in `.env.example`;
+3. one method on the single read point (`App\Support\ConfiguracaoDoLogin`);
+4. a pair of routes in `routes/web.php`;
+5. a blade with the brand's SVG (the Google icon is inline SVG — Heroicons has no brand logos, and
+   the kit does not gain an icon package to use one).
+
+**Copy the barriers along with it**, not just the happy path: the `abort_unless` on both routes, the
+verified-e-mail requirement (and **careful**: not every provider reports it — one that does not
+requires a fresh decision, not a `?? true`), the e-mail masking in the log, and the absence of the
+secret from every output.
+
+With two or three providers in hand, then it is worth extracting whatever actually repeats — an
+extraction done with one case is guessing at the shape.
+
+> The full reasoning, with the rejected alternatives and what was measured in `vendor/`, is in
+> `wikis/specs/feat/login-social-google/login-social-google/`.
+
 ## The `/infra` trails: exceptions, mail and recycle bin
 
 The infrastructure panel already showed **health** (Health), **performance** (Pulse), **the log
