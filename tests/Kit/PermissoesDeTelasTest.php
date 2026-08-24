@@ -2,6 +2,7 @@
 
 use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Filament\Infra\Pages\HubDeInfraestrutura;
+use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
@@ -88,6 +89,30 @@ it('fecha a tela e esconde o item de menu quando a permissão é revogada do pap
     'hub sem flag' => ['infra', '/infra/hub-de-infraestrutura', 'View:HubDeInfraestrutura', 'Central de infraestrutura', '/infra', false],
     'Page simples' => ['infra', '/infra/pulse', 'View:Pulse', 'Pulse', '/infra', false],
     'hub com flag' => ['admin', '/admin/hub-de-administracao', 'View:HubDeAdministracao', 'Hub de administração', '/admin', true],
+    /*
+     * As telas de PACOTE, uma por MECANISMO — não uma amostra de conveniência.
+     *
+     * Cada pacote fecha a tela de um jeito diferente, e o erro mais plausível de todos é
+     * copiar a linha para três dos quatro e esquecer o quarto:
+     *
+     *   - saúde  → `FilamentSpatieLaravelHealthPlugin::authorize()`
+     *   - grafo  → `DependencyGraphPlugin::canAccessUsing()`
+     *   - lixeira→ `RevivePlugin::authorize()`
+     *   - backups→ subclasse do kit (`App\Filament\Infra\Pages\BackupRunsPage`), porque o pacote
+     *              não publica callback nenhum
+     *
+     * Ver ADR-01 e ADR-04 de
+     * `wikis/specs/feat/permissoes-de-telas-de-pacote/permissoes-de-telas-de-pacote/`.
+     *
+     * `/infra/logs` e `/infra/meu-perfil` NÃO entram aqui, e não é esquecimento: o rótulo de
+     * navegação deles ("Logs", "Perfil") aparece em outros itens da mesma barra lateral, então a
+     * asserção `assertDontSee($rotulo)` seria falso-vermelho. Os dois estão no caso seguinte,
+     * que assere só o 403.
+     */
+    'pacote com authorize()'      => ['infra', '/infra/health-check-results', 'View:HealthCheckResults', 'Saúde da aplicação', '/infra', false],
+    'pacote com canAccessUsing()' => ['infra', '/infra/dependency-graph', 'View:DependencyGraphPage', 'Grafo de dependências', '/infra', false],
+    'pacote com authorize() 2'    => ['infra', '/infra/recycle-bin', 'View:RecycleBin', 'Lixeira', '/infra', false],
+    'pacote por subclasse'        => ['infra', '/infra/backup-runs', 'View:BackupRunsPage', 'Backups', '/infra', false],
 ]);
 
 /**
@@ -261,31 +286,156 @@ it('faz cada Page de painel do kit negar acesso a quem não tem permissão nenhu
 });
 
 /**
- * CT-24 — a Page de VENDOR fica declaradamente fora, e a lacuna é observável.
+ * CT-24 — a Page de PACOTE consulta a permissão, e a permissão continua selecionável.
  *
- * ADR-05 recusou subclassear as dez Pages de pacote do `/infra`: são classes de terceiro, sem ponto
- * de extensão, e `.ai/rules/providers-filament.md` documenta que mexer no registro delas derruba a
- * aplicação inteira. A permissão existe no banco e no checkbox, e não é consultada.
+ * ## A inversão, e por que o caso não foi apagado
  *
- * Este caso afirma isso de forma **observável** — revogar `View:LogsExplorer` e a tela ainda abrir —
- * em vez de tautologicamente ("a classe é de vendor, logo não consulta"). Duas consequências
- * deliberadas:
+ * Até a 0.19.3 este caso afirmava o OPOSTO: `assertSuccessful()` com a permissão revogada, porque
+ * ADR-05 da wiki `permissoes-de-telas-e-acoes` havia declarado as telas de pacote fora de escopo.
+ * O docblock de lá dizia, por escrito, que ele ficaria vermelho no dia em que alguém fechasse a
+ * lacuna de verdade. Ficou. Ver ADR-01 de
+ * `wikis/specs/feat/permissoes-de-telas-de-pacote/permissoes-de-telas-de-pacote/`.
  *
- *  - a "correção" errada nº 1 (subclassear) passa a ter um lugar onde a decisão está escrita;
- *  - a "correção" errada nº 2 (pôr a classe em `pages.exclude` para o checkbox parar de mentir)
- *    fica vermelha na segunda asserção, porque removeria a alavanca do banco.
+ * O ORÁCULO é o mesmo, com o sinal trocado — e é exatamente a repro que o requisito nomeia:
+ * *"revogar `View:LogsExplorer` do papel `infra` e abrir /infra/logs responde 200"*. Agora
+ * responde 403.
  *
- * **Quando alguém fechar a lacuna de verdade, este caso fica vermelho** — e o sinal é que ADR-05
- * precisa ser revisada, não que o teste está errado.
+ * ## A segunda asserção não mudou, e é a que importa preservar
+ *
+ * A permissão continua EXISTINDO na tabela. Ela mantém vermelha a "correção" errada de pôr a
+ * classe em `config('filament-shield.pages.exclude')` para o checkbox parar de mentir: aquilo
+ * removeria a alavanca do banco em vez de ligá-la.
+ *
+ * ## Por que estas duas rotas
+ *
+ * `/infra/logs` é a repro literal do requisito, e é a única tela em que a permissão convive com um
+ * gate (`ver-logs`) — o `&&` do `InfraPanelProvider`. `/{painel}/meu-perfil` é UMA classe
+ * registrada em TRÊS painéis com UMA permissão só, e é a única linha capaz de falsificar um helper
+ * que resolvesse a chave pelo painel errado: `FilamentShield::getPages()` é memoizado por
+ * instância, e um request é um painel só.
  */
-it('deixa a Page de vendor do infra fora da checagem, com a permissão ainda selecionável', function (): void {
-    semAPermissao('infra', 'View:LogsExplorer');
+it('faz a Page de pacote negar acesso sem a permissão, mantendo a permissão selecionável', function (string $papel, string $rota, string $permissao): void {
+    semAPermissao($papel, $permissao);
 
-    $this->actingAs(usuarioDoKit('infra', 'infra@example.com'))
-        ->get('/infra/logs')
-        ->assertSuccessful();
+    $this->actingAs(usuarioDoKit($papel, "{$papel}@example.com"))
+        ->get($rota)
+        ->assertForbidden();
 
-    expect(Permission::query()->where('name', 'View:LogsExplorer')->exists())->toBeTrue();
+    expect(Permission::query()->where('name', $permissao)->exists())->toBeTrue();
+})->with([
+    'a repro do requisito'     => ['infra', '/infra/logs', 'View:LogsExplorer'],
+    'uma classe, painel infra' => ['infra', '/infra/meu-perfil', 'View:MyProfilePage'],
+    'a mesma, painel admin'    => ['admin', '/admin/meu-perfil', 'View:MyProfilePage'],
+]);
+
+/**
+ * CT-25 — o coringa e a permissão ausente do banco, no caminho das telas de PACOTE.
+ *
+ * CT-04 e CT-26 acima cobrem estas duas partições para as Pages do KIT, que decidem pela trait
+ * `HasPageShield` do Shield. As telas de pacote decidem por outro código — o predicado
+ * `App\Support\PermissaoDaTela`, chamado do callback de autorização de cada plugin —, e é ele que
+ * este caso exercita.
+ *
+ * As quatro linhas são o produto de duas partições, e cada uma mata um mutante diferente:
+ *
+ *  - `revogada` × `master_global` mata "a checagem usa `hasPermissionTo()` em vez de `can()`",
+ *    que ignora o `Gate::before` e trancaria o coringa fora do painel dele;
+ *  - `revogada` × `infra` mata "o predicado devolve `true` sempre";
+ *  - `apagada` × `infra` mata a guarda `if (! Permission::exists()) return true;`, escrita para
+ *    "não travar instalação nova" e que passa em todos os outros casos deste arquivo;
+ *  - `apagada` × `master_global` é o controle: sem ela, um erro de resolução de chave que negasse
+ *    a TODOS também ficaria verde.
+ *
+ * `View:RecycleBin` e não `View:LogsExplorer`: a Lixeira é fechada por `RevivePlugin::authorize()`,
+ * sem gate nenhum ao lado, então o oráculo mede só a permissão.
+ */
+it('nega a tela de pacote a quem não tem a permissão, tendo ela sido revogada ou apagada', function (string $arranjo, string $papel, int $status): void {
+    if ($arranjo === 'apagada') {
+        Permission::query()->where('name', 'View:RecycleBin')->delete();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+    } else {
+        semAPermissao('infra', 'View:RecycleBin');
+    }
+
+    $this->actingAs(usuarioDoKit($papel, "{$papel}@example.com"))
+        ->get('/infra/recycle-bin')
+        ->assertStatus($status);
+})->with([
+    'revogada do papel'   => ['revogada', 'infra', 403],
+    'revogada, coringa'   => ['revogada', 'master_global', 200],
+    'apagada da tabela'   => ['apagada', 'infra', 403],
+    'apagada, coringa'    => ['apagada', 'master_global', 200],
+]);
+
+/**
+ * CT-27 — o inventário do que AINDA não consulta a permissão, no painel /infra.
+ *
+ * O substituto honesto do antigo CT-24, e o enforço que `.ai/rules/specs.md` pede no lugar de
+ * prosa: em vez de uma lista escrita à mão de "telas fechadas" e "telas declaradas" — duas listas
+ * para manter em sincronia com a wiki —, o caso PERGUNTA ao painel e compara com a única lista que
+ * é uma decisão: as três telas da Central de comandos, declaradas em ADR-05.
+ *
+ * O arranjo é o que faz o caso discriminar: papel `infra` REAL, com todas as permissões de tela de
+ * pacote revogadas. Assim `canAccessPanel()` continua valendo (usuário sem papel levaria 403 na
+ * porta do painel e o caso mediria a porta) e o gate `command-center:access`, que é
+ * `temPapelDoPainel('infra')` (`app/Providers/KitServiceProvider.php:173`), continua passando —
+ * que é exatamente por que as três da Central seguem abrindo.
+ *
+ * **Este caso fica vermelho em dois eventos, e os dois são o que se quer saber:**
+ *
+ *  - um upgrade de plugin registra uma tela nova no `/infra` e ninguém liga a permissão dela — ela
+ *    aparece na lista com o nome, e a mensagem diz qual;
+ *  - alguém fecha a Central de comandos (o pacote publicou o setter por Page) — a lista fica menor
+ *    que o esperado, e o sinal é revisar ADR-05, não consertar o teste.
+ *
+ * O filtro pelo mapa do Shield tira a `Dashboard` e as telas de autenticação: elas estão em
+ * `config('filament-shield.pages.exclude')`, não têm permissão gerada, e não há o que consultar.
+ */
+it('deixa só as três telas da Central de comandos sem consultar a permissão', function (): void {
+    $usuario = usuarioDoKit('infra', 'infra@example.com');
+
+    // O painel PRIMEIRO: `FilamentShield::getPages()` responde pelo painel corrente, e ler o mapa
+    // antes de fixá-lo devolveria as Pages de outro painel.
+    noPainelDoShield('infra');
+
+    $doShield = collect(FilamentShield::getPages() ?? []);
+
+    /*
+     * As chaves do mapa são FQCN; a permission é a primeira chave de `permissions` — o mesmo
+     * caminho que `HasPageShield::getPagePermission()` (`:29-37`) e `Paineis::entidadesDoPainel()`
+     * usam. `array_column($…, 'key')` aqui devolveria `[]` sem erro: Page guarda
+     * `[chave => rótulo]`, e é só Resource que guarda `['key' => …]`.
+     *
+     * O `intersect` com o que o papel realmente tem existe porque a matriz do painel `infra`
+     * inclui Pages de OUTROS painéis quando o Shield já foi resolvido lá, e `revokePermissionTo()`
+     * lança `PermissionDoesNotExist` para chave que o papel não carrega.
+     */
+    $daMatriz = collect($usuario->getAllPermissions())->pluck('name');
+
+    $chaves = $doShield
+        ->map(fn (array $e): ?string => array_key_first($e['permissions']))
+        ->filter(fn (?string $chave): bool => is_string($chave) && $daMatriz->contains($chave))
+        ->values()
+        ->all();
+
+    semAPermissao('infra', ...$chaves);
+
+    $this->actingAs($usuario);
+
+    $abertas = collect(Filament::getPanel('infra')->getPages())
+        ->reject(fn (string $classe): bool => str_starts_with($classe, 'App\\Filament\\'))
+        ->filter(fn (string $classe): bool => $doShield->has($classe))
+        ->filter(fn (string $classe): bool => $classe::canAccess())
+        ->map(fn (string $classe): string => class_basename($classe))
+        ->values()
+        ->sort()
+        ->values()
+        ->all();
+
+    expect($abertas)->toBe(
+        ['Commands', 'History', 'RunView'],
+        'telas de pacote que ainda abrem sem a permissão: '.implode(', ', $abertas),
+    );
 });
 
 /**

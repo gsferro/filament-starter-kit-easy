@@ -7,6 +7,7 @@ use App\Filament\Pages\Auth\RegistroPorConvite;
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\Auth\TelaDoisFatores;
 use App\Filament\Pages\Auth\TelaLogin;
+use App\Filament\Pages\MyProfilePage;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
@@ -288,6 +289,22 @@ class AppPanelProvider extends PanelProvider
 
                 BreezyCore::make()
                     ->myProfile(shouldRegisterUserMenu: true, hasAvatars: true, slug: 'meu-perfil', userMenuLabel: 'Meu perfil')
+                    /*
+                     * A tela de perfil do KIT no lugar da do pacote, e o motivo e' so' um: a do
+                     * pacote nao declara `canAccess()`, entao `View:MyProfilePage` existia no banco
+                     * e no checkbox de `/admin/shield/roles` sem decidir nada.
+                     *
+                     * `customMyProfilePage()` e' o ponto de extensao publicado
+                     * (`src/Concerns/Plugin/HasMyProfile.php:30-38`), lido por
+                     * `getMyProfilePageClass()` (`:151-154`) tanto no registro da Page
+                     * (`BreezyCore.php:70`) quanto na URL do item do menu do usuario (`:115,120`)
+                     * — os dois passam a apontar para a mesma classe.
+                     *
+                     * Nos TRES paineis, porque a tela existe nos tres com UMA permissao so'. Ver
+                     * ADR-04 de
+                     * `wikis/specs/feat/permissoes-de-telas-de-pacote/permissoes-de-telas-de-pacote/`.
+                     */
+                    ->customMyProfilePage(MyProfilePage::class)
                     // `action:` é o ponto de extensão do Breezy para a tela do desafio de
                     // 2FA — a rota do pacote pergunta ao plugin qual classe usar. A nossa
                     // troca o layout simples pelo do login. NOMEADO de propósito: `action`

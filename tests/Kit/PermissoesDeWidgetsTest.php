@@ -3,6 +3,7 @@
 use App\Filament\Admin\Widgets\UltimosUsuariosCadastrados;
 use App\Filament\Admin\Widgets\UsuariosPorPapel;
 use App\Filament\Concerns\ExigePermissaoDoWidget;
+use App\Filament\Infra\Widgets\ComposerReleaseOverviewWidget;
 use App\Filament\Infra\Widgets\UltimosAcessos;
 use App\Models\User;
 use Database\Seeders\PapeisSeeder;
@@ -63,9 +64,15 @@ beforeEach(function (): void {
  * a permissão presente** — a célula que prova que o `&&` não virou `||`. A quarta célula (sem
  * permissão e sem fonte) é implicada pelas outras duas e não gera cenário.
  */
-it('decide o widget pela permissão E pela fonte de dados', function (string $papel, string $painel, string $widget, string $permissao, bool $fonte, bool $esperado): void {
+/*
+ * `?string $tabela` com `null` = a trilha de acesso, cujo nome vem de config.
+ *
+ * A resolução fica no CORPO e não no dataset: o dataset é avaliado na coleta dos testes, antes de a
+ * aplicação bootar, e um `config()` ali estoura `Target class [config] does not exist`.
+ */
+it('decide o widget pela permissão E pela fonte de dados', function (string $papel, string $painel, string $widget, string $permissao, ?string $tabela, bool $fonte, bool $esperado): void {
     if (! $fonte) {
-        Schema::dropIfExists((string) config('authentication-log.table_name', 'authentication_log'));
+        Schema::dropIfExists($tabela ?? (string) config('authentication-log.table_name', 'authentication_log'));
     }
 
     $usuario = usuarioDoKit($papel, "{$papel}@example.com");
@@ -77,9 +84,23 @@ it('decide o widget pela permissão E pela fonte de dados', function (string $pa
 
     expect($widget::canView())->toBe($esperado);
 })->with([
-    'widget sem checagem própria'       => ['admin', 'admin', UsuariosPorPapel::class, 'View:UsuariosPorPapel', true, true],
-    'widget com checagem própria'       => ['infra', 'infra', UltimosAcessos::class, 'View:UltimosAcessos', true, true],
-    'fonte ausente, permissão presente' => ['infra', 'infra', UltimosAcessos::class, 'View:UltimosAcessos', false, false],
+    'widget sem checagem própria'       => ['admin', 'admin', UsuariosPorPapel::class, 'View:UsuariosPorPapel', null, true, true],
+    'widget com checagem própria'       => ['infra', 'infra', UltimosAcessos::class, 'View:UltimosAcessos', null, true, true],
+    'fonte ausente, permissão presente' => ['infra', 'infra', UltimosAcessos::class, 'View:UltimosAcessos', null, false, false],
+
+    /*
+     * O widget de PACOTE, agora uma subclasse do kit
+     * (`App\Filament\Infra\Widgets\ComposerReleaseOverviewWidget`).
+     *
+     * A célula que só ele cobre é a da fonte ausente: o `canView()` da classe do pacote é
+     * `auth()->check()` e não conferia tabela nenhuma (`.../Filament/Widgets/ComposerReleaseOverviewWidget.php:18-21`),
+     * então numa instalação sem as migrations do pacote o dashboard do /infra morria inteiro.
+     * O guarda entrou em `fonteDeDadosDisponivel()` — e é nesse ponto que o mutante mora:
+     * escrevê-lo em `canView()` desligaria a permissão em silêncio, porque método da classe vence
+     * método de trait.
+     */
+    'pacote, fonte presente' => ['infra', 'infra', ComposerReleaseOverviewWidget::class, 'View:ComposerReleaseOverviewWidget', 'composer_release_package_snapshots', true, true],
+    'pacote, fonte ausente'  => ['infra', 'infra', ComposerReleaseOverviewWidget::class, 'View:ComposerReleaseOverviewWidget', 'composer_release_package_snapshots', false, false],
 ]);
 
 /**
@@ -118,6 +139,16 @@ it('tira o widget da grade do painel quando a permissão é revogada', function 
     $linhas = [
         'sem checagem própria' => ['admin', 'admin', Dashboard::class, UltimosUsuariosCadastrados::class, 'View:UltimosUsuariosCadastrados'],
         'com checagem própria' => ['infra', 'infra', Dashboard::class, UltimosAcessos::class, 'View:UltimosAcessos'],
+        /*
+         * A terceira partição: widget de PACOTE, cuja classe PAI declara `canView()`.
+         *
+         * É a única linha que falsifica duas coisas de uma vez — o `canView()` da subclasse não
+         * sobrescrever o do pai (e o cartão aparecer para quem não tem a permissão), e o widget do
+         * pacote continuar registrado ao lado do do kit (`->widget(enabled: true)` mantido no
+         * `InfraPanelProvider`), caso em que a grade exibiria a classe do pacote e a permissão
+         * seguiria inerte.
+         */
+        'pacote com subclasse' => ['infra', 'infra', Dashboard::class, ComposerReleaseOverviewWidget::class, 'View:ComposerReleaseOverviewWidget'],
     ];
 
     foreach ($linhas as $rotulo => $linha) {

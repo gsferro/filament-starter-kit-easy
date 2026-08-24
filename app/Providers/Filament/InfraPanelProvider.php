@@ -4,19 +4,21 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\Auth\TelaDoisFatores;
+use App\Filament\Pages\MyProfilePage;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Models\Projeto;
 use App\Support\CorPrimaria;
 use App\Support\IdentidadeDoKit;
+use App\Support\PermissaoDaTela;
 use App\Support\RetencaoDeExcecoes;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Bityukov\CommandCenter\Filament\CommandCenterPlugin;
 use Bityukov\CommandCenter\Filament\Pages\Commands as CommandCenterCommands;
 use Bityukov\CommandCenter\Filament\Pages\History as CommandCenterHistory;
-use Brimham\FilamentBackupMonitor\FilamentBackupMonitorPlugin;
+use Brimham\FilamentBackupMonitor\Widgets\LatestBackupsWidget;
 use Carbon\Carbon;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
 use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
@@ -46,14 +48,18 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
 use LaBoiteACode\DependencyGraph\DependencyGraphPlugin;
+use LaBoiteACode\DependencyGraph\Filament\Pages\DependencyGraphPage;
 use LaBoiteACode\FilamentLogsExplorer\FilamentLogsExplorerPlugin;
+use LaBoiteACode\FilamentLogsExplorer\Pages\LogsExplorer;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use lockscreen\FilamentLockscreen\Lockscreen;
 use MominAlZaraa\FilamentComposerReleaseNotifier\FilamentComposerReleaseNotifierPlugin;
 use Prodstarter\FilamentNotificationCenter\FilamentNotificationCenterPlugin;
+use Promethys\Revive\Pages\RecycleBin;
 use Promethys\Revive\RevivePlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
 use ShuvroRoy\FilamentSpatieLaravelHealth\FilamentSpatieLaravelHealthPlugin;
+use ShuvroRoy\FilamentSpatieLaravelHealth\Pages\HealthCheckResults;
 use SolutionForest\FilamentSimpleLightBox\SimpleLightBoxPlugin;
 use Tapp\FilamentAuditing\FilamentAuditingPlugin;
 use Tapp\FilamentAuthenticationLog\FilamentAuthenticationLogPlugin;
@@ -121,6 +127,24 @@ class InfraPanelProvider extends PanelProvider
                 AccountWidget::class,
                 FilamentInfoWidget::class,
             ])
+            /*
+             * O header widget de `App\Filament\Infra\Pages\BackupRunsPage`.
+             *
+             * Era o `FilamentBackupMonitorPlugin` quem registrava, e o comentário dele explica por
+             * que é obrigatório (`FilamentBackupMonitorPlugin.php:22-25`): o widget é ISOLADO,
+             * então o Livewire faz o commit dele por um request próprio, por nome; sem o registro
+             * o painel só o renderiza inline e o request seguinte responde 419 (release-token
+             * mismatch). O plugin saiu do painel por ADR-04 — esta linha é a parte dele que
+             * continua necessária.
+             *
+             * O guarda é o cenário de navegador em `tests/Browser/TelasDoKitTest.php` que assere o
+             * CABEÇALHO do widget: um `$this->get()` fica verde sem esta linha, porque o 419
+             * acontece no request seguinte, e `assertNoJavaScriptErrors()` sozinho passa numa
+             * página cujo widget nunca carregou.
+             */
+            ->livewireComponents([
+                LatestBackupsWidget::class,
+            ])
             ->navigationItems([
                 // Dashboard de estatísticas do fomvasss/laravel-ai-tasks (rota do
                 // pacote, fora do Filament) — mesmo gate do resource Execuções de IA.
@@ -186,6 +210,22 @@ class InfraPanelProvider extends PanelProvider
 
                 BreezyCore::make()
                     ->myProfile(shouldRegisterUserMenu: true, hasAvatars: true, slug: 'meu-perfil', userMenuLabel: 'Meu perfil')
+                    /*
+                     * A tela de perfil do KIT no lugar da do pacote, e o motivo e' so' um: a do
+                     * pacote nao declara `canAccess()`, entao `View:MyProfilePage` existia no banco
+                     * e no checkbox de `/admin/shield/roles` sem decidir nada.
+                     *
+                     * `customMyProfilePage()` e' o ponto de extensao publicado
+                     * (`src/Concerns/Plugin/HasMyProfile.php:30-38`), lido por
+                     * `getMyProfilePageClass()` (`:151-154`) tanto no registro da Page
+                     * (`BreezyCore.php:70`) quanto na URL do item do menu do usuario (`:115,120`)
+                     * — os dois passam a apontar para a mesma classe.
+                     *
+                     * Nos TRES paineis, porque a tela existe nos tres com UMA permissao so'. Ver
+                     * ADR-04 de
+                     * `wikis/specs/feat/permissoes-de-telas-de-pacote/permissoes-de-telas-de-pacote/`.
+                     */
+                    ->customMyProfilePage(MyProfilePage::class)
                     // A tela do desafio de 2FA com o layout do login — ver a nota no
                     // AppPanelProvider. `action:` nomeado de propósito: posicional cairia
                     // em `$condition`.
@@ -199,11 +239,34 @@ class InfraPanelProvider extends PanelProvider
 
                 // --- Observabilidade -------------------------------------------
 
+                /*
+                 * `->authorize()` é o ponto de extensão publicado do pacote
+                 * (`FilamentSpatieLaravelHealthPlugin.php:41-51`), e a Page decide só por ele:
+                 * `HealthCheckResults::canAccess()` é `...Plugin::get()->isAuthorized()`
+                 * (`.../Pages/HealthCheckResults.php:86-89`). O default do plugin é `true` — daí
+                 * `View:HealthCheckResults` existir no banco e no checkbox sem decidir nada até
+                 * aqui. Ver ADR-01 de
+                 * `wikis/specs/feat/permissoes-de-telas-de-pacote/permissoes-de-telas-de-pacote/`.
+                 */
                 FilamentSpatieLaravelHealthPlugin::make()
-                    ->navigationGroup('Observabilidade'),
-                // Backup Monitor e Auditing não expõem grupo de navegação nem
-                // rótulo traduzível: ficam soltos no topo do menu, antes dos grupos.
-                FilamentBackupMonitorPlugin::make(),
+                    ->navigationGroup('Observabilidade')
+                    ->authorize(fn (): bool => PermissaoDaTela::permite(HealthCheckResults::class)),
+                /*
+                 * Backup Monitor: o PLUGIN não está aqui, de propósito.
+                 *
+                 * Ele não publica callback de autorização nenhum, e `BackupRunsPage` não declara
+                 * `canAccess()` — cai no `true` do Filament. A saída foi
+                 * `App\Filament\Infra\Pages\BackupRunsPage`, subclasse do kit com o MESMO nome de
+                 * classe (é o `class_basename` que produz `View:BackupRunsPage`), descoberta pelo
+                 * `discoverPages()` acima. Registrar o plugin junto criaria duas Pages disputando
+                 * o slug `backup-runs`. Ver ADR-04.
+                 *
+                 * Tirar o plugin é seguro porque nada no pacote resolve
+                 * `filament('filament-backup-monitor')` — é o oposto do caso de
+                 * `.ai/rules/providers-filament.md`, cujo sintoma é a classe RESOLVER o plugin.
+                 * O que ele fazia além de registrar a Page está no `->livewireComponents()` lá
+                 * embaixo.
+                 */
                 // Grupo vem de config/filament-jobs-monitor.php.
                 FilamentJobsMonitorPlugin::make(),
 
@@ -221,7 +284,22 @@ class InfraPanelProvider extends PanelProvider
                 FilamentLogsExplorerPlugin::make()
                     ->navigationGroup('Trilhas')
                     ->navigationSort(210)
-                    ->canAccessUsing(fn (): bool => auth()->user()?->can('ver-logs') ?? false)
+                    /*
+                     * As DUAS condições valem, e não é redundância decorativa.
+                     *
+                     * `ver-logs` é a barreira do PAINEL: `KitServiceProvider.php:172` o define
+                     * como `temPapelDoPainel('infra')`, então ele responde igual para todo papel
+                     * que abre o /infra. `View:LogsExplorer` é a barreira da TELA, e é a que o
+                     * checkbox de `/admin/shield/roles` promete. O `&&` é a mesma coexistência
+                     * que ADR-06 da wiki `permissoes-de-telas-e-acoes` decidiu para a flag
+                     * `kit.hub`.
+                     *
+                     * `canAccessUsing()` é o ponto de extensão do pacote
+                     * (`FilamentLogsExplorerPlugin.php:250-255`), consultado por
+                     * `LogsExplorer::canAccess()` (`.../Pages/LogsExplorer.php:107-110`).
+                     */
+                    ->canAccessUsing(fn (): bool => (auth()->user()?->can('ver-logs') ?? false)
+                        && PermissaoDaTela::permite(LogsExplorer::class))
                     ->deletable(false),
 
                 /**
@@ -233,12 +311,37 @@ class InfraPanelProvider extends PanelProvider
                 DependencyGraphPlugin::make()
                     ->navigationGroup('Sistema')
                     ->navigationSort(220)
-                    ->canAccessUsing(fn (): bool => auth()->check()),
+                    /*
+                     * `auth()->check()` FICA: este callback substitui a regra local-only do
+                     * pacote (ver o bloco acima), e `PermissaoDaTela::permite()` falha ABERTO sem
+                     * usuário — semântica herdada da trait do Shield, documentada no docblock do
+                     * helper e em ADR-03.
+                     *
+                     * `canAccessUsing()` cai em `visible()` (`DependencyGraphPlugin.php:122-125`),
+                     * que `DependencyGraphPage::canAccess()` lê via `isVisible()`
+                     * (`.../Filament/Pages/DependencyGraphPage.php:107-110`).
+                     */
+                    ->canAccessUsing(fn (): bool => auth()->check()
+                        && PermissaoDaTela::permite(DependencyGraphPage::class)),
 
-                // Releases dos pacotes Composer (informativo, nunca atualiza nada).
+                /*
+                 * Releases dos pacotes Composer (informativo, nunca atualiza nada).
+                 *
+                 * `widget(enabled: false)`: o widget do PACOTE tem
+                 * `canView(): bool { return auth()->check(); }`
+                 * (`.../Filament/Widgets/ComposerReleaseOverviewWidget.php:18-21`) e o plugin não
+                 * expõe callback para trocar isso. Quem entra na grade é
+                 * `App\Filament\Infra\Widgets\ComposerReleaseOverviewWidget`, subclasse do kit com
+                 * o MESMO nome de classe — logo a MESMA permissão
+                 * `View:ComposerReleaseOverviewWidget` —, descoberta pelo `discoverWidgets()`
+                 * acima. Ver ADR-04.
+                 *
+                 * `resource(enabled: true)` continua: Resource é autorizado por policy, e o Shield
+                 * gera a dele. Ali não havia lacuna.
+                 */
                 FilamentComposerReleaseNotifierPlugin::make()
                     ->resource(enabled: true)
-                    ->widget(enabled: true)
+                    ->widget(enabled: false)
                     ->mailReports(enabled: false),
 
                 // `cache:clear` só limpa o store default; os comandos extras
@@ -253,6 +356,29 @@ class InfraPanelProvider extends PanelProvider
                  *
                  * SEM ->cluster(): com cluster a página raiz devolve 500
                  * ("Redirector could not be converted to int").
+                 *
+                 * ## `View:Commands`, `View:History` e `View:RunView` seguem INERTES — e por quê
+                 *
+                 * Esta é a única lacuna que a feature W6 não fechou, e ela está declarada em
+                 * ADR-05 de
+                 * `wikis/specs/feat/permissoes-de-telas-de-pacote/permissoes-de-telas-de-pacote/`.
+                 *
+                 * O pacote tem TRÊS Pages e UM ponto de decisão. As três chamam o mesmo
+                 * `CommandCenterPlugin::forCurrentPanel()?->canAccess()`
+                 * (`.../Filament/Pages/Commands.php:137-140`, `.../History.php:67-70`,
+                 * `.../RunView.php:72-75`), e `canAccess()` invoca
+                 * `($this->authorizeUsing)(Auth::user())` — o único argumento é o usuário, nada
+                 * identifica QUAL das três perguntou (`CommandCenterPlugin.php:81-85,129-142`).
+                 * Subclassear exigiria não registrar o plugin, e a lista de Pages é fixa no
+                 * `register()` dele (`:176`), que também registra o `CommandRecordResource`, o
+                 * cluster e os rótulos.
+                 *
+                 * Consequência escrita, para ninguém ler o checkbox errado: a barreira das três é
+                 * `config('command-center.enabled')` + `command-center:access`, e esse gate é
+                 * `temPapelDoPainel('infra')` (`KitServiceProvider.php:173`) — barreira de PAINEL,
+                 * não permissão por tela. `tests/Kit/PermissoesDeTelasDePacoteTest.php` tem o caso
+                 * que assere a lacuna; ele fica VERMELHO no dia em que o pacote publicar o setter
+                 * por Page, e é o sinal de revisar ADR-05.
                  */
                 CommandCenterPlugin::make()
                     ->navigationGroup('Sistema')
@@ -388,6 +514,16 @@ class InfraPanelProvider extends PanelProvider
                     ->navigationGroup('Sistema')
                     ->navigationLabel('Lixeira')
                     ->navigationSort(250)
+                    /*
+                     * `->authorize()` é o ponto de extensão do pacote (`RevivePlugin.php:155-168`),
+                     * e `RecycleBin::canAccess()` decide só por ele
+                     * (`.../Pages/RecycleBin.php:66-69`). O default é `true`.
+                     *
+                     * Das dez telas de pacote, esta é a que mais precisava: ela LISTA tudo o que
+                     * foi apagado na instalação inteira. A allow-list de `->models()` abaixo é a
+                     * primeira trava; a permissão é a segunda.
+                     */
+                    ->authorize(fn (): bool => PermissaoDaTela::permite(RecycleBin::class))
                     ->models([
                         Projeto::class,
                     ])
