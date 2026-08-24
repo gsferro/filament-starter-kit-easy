@@ -95,6 +95,23 @@ A doc oficial **não contradisse** nada que o PRD assumia. O único ponto em que
 default de `canView()` quando não sobrescrito — respondido pelo vendor
 (`vendor/filament/widgets/src/Widget.php:34-37`: `return true`).
 
+**Atualização ao fim da entrega**: as tools do Boost ficaram expostas **depois** que a
+implementação e os testes já estavam prontos, então os substitutos acima é que sustentaram as
+decisões — e continuam sendo a evidência citada nas ADRs. Duas notas para quem vier depois:
+
+- **`search-docs` não teria mudado nada de material.** As sete decisões vêm de `vendor/` com
+  `file:line` (o comentário de segurança do `CanAuthorizeAccess`, o do `RelationManager`, o
+  `array_merge` do `getDefaultPolicyMethodsOrFor`, o merge de `custom_permissions` em
+  `getEntitiesPermissions`), e nenhuma delas está na doc oficial — `bezhansalleh/filament-shield`
+  não é coberto pela Documentation API, e o comportamento do vendor é justamente o que
+  `.ai/rules/specs.md` manda ler no fonte em vez de na doc.
+- **`database-query` do Boost aponta para o banco do repositório PRINCIPAL, não para o do
+  worktree.** Rodado depois do rebase, devolveu `[]` para as 6 permissões novas — não porque elas
+  não existem, mas porque o servidor MCP roda a partir da raiz do projeto e lê o `.env` de lá. Num
+  worktree, a verificação de banco é `php artisan tinker` **dentro do worktree**. Confirmado assim:
+  as 4 de administração só em `admin`, as 2 de convite em `admin_app` e `panel_user`, totais
+  61/127/142 (app/admin/infra) — idênticos aos de antes do rebase.
+
 **Playwright MCP não foi usado** (proibido nesta rodada — instância única compartilhada). Os CT-B
 são `pest-plugin-browser`.
 
