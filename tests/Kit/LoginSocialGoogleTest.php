@@ -1,11 +1,16 @@
 <?php
 
+use App\Filament\Admin\Pages\ConfiguracoesDoKit;
 use App\Models\User;
+use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
+use App\Support\ConfiguracaoDoLogin;
+use App\Support\RegistroAberto;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Socialite;
 use Laravel\Socialite\Two\User as UsuarioDoGoogle;
+use Livewire\Livewire;
 
 /**
  * Login social com Google — as barreiras, a tela e o rastro.
@@ -376,7 +381,10 @@ it('recusa o Google de quem não tem conta enquanto o registro está fechado', f
  */
 it('cria a conta e manda para o perfil quando o registro aberto está ligado', function (): void {
     ligarLoginComGoogleDoKit();
-    config()->set('kit.registro.aberto', true);
+    // `kit.registro.habilitado` — a chave REAL, criada pela feature de registro. Este caso
+    // media `kit.registro.aberto`, que a branch imaginou e o config nunca teve: `config()->set()`
+    // aceita qualquer chave, entao ele ficava verde enquanto a producao recusava o cadastro.
+    config()->set('kit.registro.habilitado', true);
 
     Socialite::fake('google', usuarioDoGoogleFalso([
         'email' => 'novo@example.com',
@@ -767,3 +775,84 @@ it('registra o login pelo Google na trilha de acesso', function (): void {
         'authenticatable_type' => $user->getMorphClass(),
     ]);
 })->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| A ligação com o Settings do kit, e a chave que estava errada
+|--------------------------------------------------------------------------
+| Esta branch foi escrita antes da feature de registro existir, e leu a chave
+| que ela imaginou: `kit.registro.aberto`. A feature nasceu com outro nome,
+| `kit.registro.habilitado`, então o método lia chave INEXISTENTE e devolvia
+| `false` para sempre.
+|
+| O sintoma seria mudo: ligar o registro aberto na tela liberaria o cadastro
+| pelo formulário e não pelo login social. Alguém abriria a porta e ela
+| continuaria fechada de um lado — e o lado fechado é o que não tem tela para
+| conferir.
+|
+| O caso abaixo é o que impede a divergência de voltar: ele liga a porta pela
+| dona da configuração e cobra a resposta do consumidor.
+*/
+it('enxerga o registro aberto pela mesma fonte que a feature de registro', function (): void {
+    expect(ConfiguracaoDoLogin::registroAberto())->toBeFalse();
+
+    config(['kit.registro.habilitado' => true]);
+
+    expect(ConfiguracaoDoLogin::registroAberto())->toBeTrue()
+        ->and(ConfiguracaoDoLogin::registroAberto())->toBe(RegistroAberto::habilitado());
+});
+
+it('deixa o settings governar o botao do google e o rodape', function (): void {
+    // Desligado por default, e sem credencial.
+    expect(ConfiguracaoDoLogin::googleDisponivel())->toBeFalse();
+
+    $settings                             = app(SettingsDoKit::class);
+    $settings->login_google_habilitado    = true;
+    $settings->login_google_client_id     = 'id-do-projeto.apps.googleusercontent.com';
+    $settings->login_google_client_secret = 'SEGREDO-DO-GOOGLE-42';
+    $settings->login_rodape               = 'Fundação Exemplo · Todos os direitos reservados';
+    $settings->save();
+
+    app(SettingsDoKit::class)->aplicarNaConfig();
+
+    expect(ConfiguracaoDoLogin::googleDisponivel())->toBeTrue()
+        ->and(ConfiguracaoDoLogin::rodapeDoLogin())->toBe('Fundação Exemplo · Todos os direitos reservados');
+});
+
+it('nao serializa o segredo do google no html da tela de configuracoes', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    $settings                             = app(SettingsDoKit::class);
+    $settings->login_google_habilitado    = true;
+    $settings->login_google_client_secret = 'SEGREDO-DO-GOOGLE-42';
+    $settings->save();
+
+    $this->actingAs(usuarioDoKit('admin'));
+
+    $resposta = $this->get('/admin/configuracoes-do-kit');
+
+    $resposta->assertOk();
+
+    // Mesma barreira da senha de SMTP: `->password()` esconde na tela, e o valor
+    // continua no `wire:snapshot` se não for zerado no fill.
+    expect($resposta->getContent())->not->toContain('SEGREDO-DO-GOOGLE-42');
+});
+
+it('mantem o segredo do google quando o campo fica em branco', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    $settings                             = app(SettingsDoKit::class);
+    $settings->login_google_habilitado    = true;
+    $settings->login_google_client_id     = 'id-do-projeto.apps.googleusercontent.com';
+    $settings->login_google_client_secret = 'SEGREDO-DO-GOOGLE-42';
+    $settings->save();
+
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->fillForm(['nome_da_aplicacao' => 'Outro Nome'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(app(SettingsDoKit::class)->login_google_client_secret)->toBe('SEGREDO-DO-GOOGLE-42');
+});

@@ -90,14 +90,17 @@ it('leva quem já tem conta e organização para o painel da organização', fun
  * `UrlGenerationException` e o callback responde 500 — no exato caminho em que a pessoa acabou
  * de se cadastrar.
  *
- * O registro aberto é forçado aqui porque é o único jeito de alcançar o ramo de criação; a chave
- * é da branch de registro e aprovação e nasce ausente (ADR-02).
+ * O registro aberto é forçado aqui porque é o único jeito de alcançar o ramo de criação. A chave
+ * é `kit.registro.habilitado`, da feature de registro e aprovação, e nasce `false`. Este caso
+ * media `kit.registro.aberto` — nome que esta branch imaginou antes daquela feature existir — e
+ * ficava verde por acidente: `config()->set()` aceita qualquer chave, então o teste media uma
+ * que o `config/kit.php` nunca teve.
  *
  * Duas asserções, e a segunda é a que importa: não é 500, e a conta existe.
  */
 it('não estoura quando a conta criada por login social não tem organização', function (): void {
     ligarLoginComGoogleTenancy();
-    config()->set('kit.registro.aberto', true);
+    config()->set('kit.registro.habilitado', true);
 
     Socialite::fake('google', UsuarioDoGoogle::fake([
         'id'             => 'google-sub-456',

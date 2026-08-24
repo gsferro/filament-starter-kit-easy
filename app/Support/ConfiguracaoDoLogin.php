@@ -5,16 +5,25 @@ namespace App\Support;
 /**
  * O ÚNICO ponto do código que lê configuração da tela de login.
  *
- * Este é o contrato, e ele é o motivo de a classe existir: a tela de Settings do kit —
- * que é quem vai editar estas três coisas — está sendo criada em outra branch. Enquanto
- * ela não existe, os três métodos abaixo leem de `config()`. No dia em que ela existir,
- * **só o corpo destes três métodos muda**: nem o controller, nem as rotas, nem os dois
- * blades, nem um único caso de teste é tocado.
+ * Este é o contrato, e ele é o motivo de a classe existir: nada mais no kit consulta
+ * `config('kit.login...')` nem `config('services.google')` direto.
  *
- * Por isso nada mais no kit consulta `config('kit.login...')` nem `config('services.google')`
- * direto. Espalhar essas leituras pelo controller, pelas rotas e pelos blades transformaria
- * a migração numa caça a chamadas de `config()` e deixaria a auditoria sem um lugar para
- * olhar. Aqui há um lugar.
+ * A tela de Settings chegou, e a ligação custou menos do que este docblock previa: as chaves
+ * entraram no `mapaDeConfiguracao()` das `ConfiguracoesDoKit`, que sobrepõe a config do
+ * processo com o que está gravado, no boot. `googleDisponivel()` e `rodapeDoLogin()` seguem
+ * lendo `config()` e passam a receber o valor do banco — nem o controller, nem as rotas, nem
+ * os blades, nem um caso de teste foi tocado.
+ *
+ * Isso funciona aqui porque as duas são lidas POR REQUEST: o `abort_unless()` do controller e
+ * a closure do render hook do botão. A feature de registro tentou o mesmo com
+ * `verificar_email` e não pôde — aquela é lida no boot do painel, e o middleware é fixado no
+ * array da rota. Ler por request é o que separa uma chave editável de um toggle que mente.
+ *
+ * `registroAberto()` é o caso especial: ela não lê config nenhuma, delega para a dona da
+ * pergunta. Ver o docblock dela.
+ *
+ * Espalhar essas leituras pelo controller, pelas rotas e pelos blades deixaria a auditoria sem
+ * um lugar para olhar. Aqui há um lugar.
  *
  * O que ela deliberadamente NÃO é: uma interface com uma implementação, nem uma fábrica de
  * provedores. `Socialite::driver($nome)` já é a abstração de provedor, e um provedor só não
@@ -81,10 +90,20 @@ final class ConfiguracaoDoLogin
     /**
      * O registro aberto está ligado? Default false.
      *
-     * **A chave que este método lê ainda não existe.** Quem a cria é a feature de registro
-     * e aprovação, em outra branch. Ausente, `config()` devolve o default e a resposta é
-     * `false` — que é exatamente o default que o requisito pede ("o default é false para
-     * register e do socialite").
+     * **Delega para `RegistroAberto::habilitado()`, e a delegação corrige um defeito real.**
+     * Esta branch foi escrita antes de a feature de registro existir e leu a chave que ela
+     * imaginou: `kit.registro.aberto`. A feature nasceu com outro nome —
+     * `kit.registro.habilitado` — então este método lia uma chave **inexistente** e devolvia
+     * `false` para sempre.
+     *
+     * O sintoma seria mudo e caro: ligar o registro aberto na aba "Registro" das Configurações
+     * do Kit liberaria o cadastro pelo formulário e **não** pelo login social, sem erro nenhum
+     * para acusar. Alguém abriria a porta e ela continuaria fechada de um lado — e o lado
+     * fechado é justamente o que não tem tela para conferir.
+     *
+     * Duas fontes para a mesma pergunta é o defeito; a resposta tem uma dona só.
+     * `RegistroAberto` é a dona da configuração de registro — ela também governa a aprovação
+     * manual e é o que aquela aba edita —, então quem quer saber pergunta a ela.
      *
      * Por que o login social pergunta isto: com o registro fechado, e-mail do Google que
      * não tem conta no sistema é RECUSADO, não cadastrado. O kit é por convite obrigatório
@@ -95,6 +114,6 @@ final class ConfiguracaoDoLogin
      */
     public static function registroAberto(): bool
     {
-        return (bool) config('kit.registro.aberto', false);
+        return RegistroAberto::habilitado();
     }
 }
