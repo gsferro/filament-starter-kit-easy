@@ -923,7 +923,217 @@ O kit já tem esse padrão de teste (`tests/Kit/AnexosPrivadosDocumentacaoTest.p
 
 ## Revisão Adversarial
 
-Delegada a sub-agente independente, sem acesso ao PRD nem ao raciocínio da derivação. Resultado e fechamento registrados em `03-progresso.md` → `## Auditoria Pré-Implementação`.
+Delegada a sub-agente independente, sem acesso ao PRD, ao ADR nem a código. **Rodada 1: 5 implementações erradas que passavam em tudo, 10 oráculos fracos, 3 cenários com `Quando` múltiplo, 10 cláusulas `RQ` com cobertura insuficiente.** Todos fechados abaixo.
+
+O achado estrutural foi um só, e ele explica quatro dos cinco: **CT-01 particionava por tipo de PHP (string, aninhada, inteiro, booleano) quando a unidade de falha é a chave de config**. Cada chave é uma linha de código independente — não existe classe de equivalência entre `mail.from.address` e `mail.mailers.smtp.host`. Com 6 das 21 propriedades exercitadas, um mapa de alinhamento que cobrisse só aquelas seis passava no conjunto inteiro, e a tela prometia 21 configurações entregando 6.
+
+### O que mudou
+
+| # | Achado | Fechamento |
+|---|---|---|
+| I-1 | mapa erra as chaves aninhadas de `mail.mailers.smtp.*` e o kit segue com `MAIL_MAILER=log` | **CT-01 passa a ter uma linha por propriedade — 21, não 6** |
+| I-2 | 14 propriedades semeadas, salvas e nunca alinhadas; os três interruptores de tabela entre elas | idem CT-01; e CT-17/CT-18/CT-19 continuam arranjando a config direto **de propósito** (eles provam que `configuraTable()` lê a config), com CT-01 e CT-30 fechando o laço banco → config |
+| I-3 | identidade resolvida corretamente e **nunca consumida** pelos painéis; `brandLogo` e a arte do Auth Designer continuam literais | **CT-35, novo** — renderiza os três painéis e afirma as URLs no HTML |
+| I-4 | as opções da seleção de cor podem ser um array escrito à mão em vez da lista do kit | **CT-36, novo** |
+| I-5 | uma linha de auditoria por salvamento com o diff inteiro dentro passa, porque nenhum cenário altera **duas** propriedades | **CT-34, novo** — a cardinalidade tinha só 0 e 1; o limite que separa as duas implementações é 2 |
+| CT-11 | `expect(...)->toHaveCount(21)` é asserção de cardinalidade, e o `21` vem do PRD, não do requisito | passa a iterar as propriedades **declaradas na classe** por reflexão, afirmando que cada uma tem linha e valor igual ao da config. Sem número mágico e sem confiar no mapa |
+| CT-12 | o segundo `Então` era tautológico e o matador de M15 (`add()` sem `deleteIfExists()`) estava só na prosa | ganha o `Quando` de **remigrar** |
+| CT-13, CT-15 | "abre **e** grava" num só `Quando` funde as duas colunas da matriz: barrado no `abrir`, o `save()` nunca é chamado e a coluna "salvar" fica sem cenário nas três personas negativas | **CT-15 fica só com `abrir`; CT-33, novo, chama `save()` direto.** É a regra do verbo irmão: evidência de um verbo não cobre o outro |
+| CT-16 | invoca os seeders à mão, e RQ-15 pede "sem passo manual" | passa pelo `DatabaseSeeder`, que é o ponto de entrada de `db:seed` e do `kit:install` |
+| CT-20 | `assertOk` sozinho | ganha asserção de que os três interruptores estavam de fato desligados na tabela configurada |
+| CT-24 | metade `assertOk`, metade afirmando o valor da coluna `event` — que a própria `## Fronteira com o Plano` declara detalhe de implementação | o oráculo passa a ser o **renderizado**: a ação de restauração não aparece na listagem |
+| CT-26 | só `favicon` e `arte_do_login` na tabela; RQ-12 (logo) sem nenhuma linha | ganha as linhas de `logo` |
+| CT-28 | registro de Page é indistinguível de implementação artesanal, e RQ-02 exige o pacote | afirma que a Page **estende** `Filament\Pages\SettingsPage` e que `getSettings()` devolve a classe de settings do kit |
+| CT-08, CT-B02 | `Quando` múltiplo sem justificativa declarada | justificativa escrita (um salvamento único; e a sequência é o comportamento sob teste) |
+| RQ-16 | **não aparecia em nenhuma linha do Mapa de Regras** — zero cobertura, nem nominal | entra em R1, exercitada pelas linhas de CT-01 que são os "pontos adicionais": hub, rótulos da organização e os quatro defaults de tabela |
+| RQ-05 | ninguém afirmava que o nome gravado chega ao `brandName` e ao `<title>` | CT-35 |
+| RQ-13 | só a partição de **fallback** era exercitada | CT-35 (arte presente e servida) |
+
+### Achados recusados, com o motivo
+
+| Achado | Por que não virou cenário |
+|---|---|
+| CT-05 e CT-06 têm oráculo em função pura | é o oráculo **certo** aqui: `CorPrimaria::paleta()` é literalmente o valor que os três painéis passam a `->colors()`, então a paleta **é** o observável, não um intermediário. CT-07 fecha o caminho até o painel no caso inválido, que é o que derruba página |
+| CT-14 é quase-tautologia de framework | verdade, e por isso ele foi **rebaixado a asserção de apoio** no índice em vez de removido: continua sendo o único que mata M29, e custa um `assertSee` |
+| CT-27 cobre só nome e cor de RQ-03 | não é lacuna: `aplicarSemBanco()` do `kit:install --custom` **oferece** só nome e cor, e o recorte está argumentado em `CustomizadorDaInstalacao.php:170-192`. Os outros itens de RQ-03 chegam à config por CT-01, não pelo instalador |
+
+### Rodada 2
+
+O fechamento criou quatro cenários novos (CT-33 a CT-36), o que dispara a re-revisão prevista. Resultado registrado em `03-progresso.md`.
+
+---
+
+## Cenários acrescentados e reescritos no fechamento
+
+### CT-01 (reescrito) — uma linha por propriedade
+
+```gherkin
+# language: pt
+
+    Esquema do Cenário: [CT-01] cada propriedade gravada chega à sua chave de configuração
+      Dado que a propriedade "<propriedade>" do grupo "kit" está gravada com "<gravado>"
+      Quando o kit alinha a configuração do processo
+      Então a chave de configuração "<chave>" vale "<gravado>", com o mesmo tipo
+
+      Exemplos:
+        | propriedade              | gravado                | chave                             |
+        | nome_da_aplicacao        | Meu Projeto            | app.name                          |
+        | cor_primaria             | Emerald                | kit.cor_primaria                  |
+        | cor_primaria_hex         | #7c3aed                | kit.cor_primaria_hex              |
+        | logo                     | kit/logo.png           | kit.identidade.logo               |
+        | favicon                  | kit/favicon.png        | kit.identidade.favicon            |
+        | arte_do_login            | kit/arte.svg           | kit.identidade.arte_do_login      |
+        | mail_mailer              | smtp                   | mail.default                      |
+        | mail_host               | smtp.exemplo.test      | mail.mailers.smtp.host            |
+        | mail_port                | 587                    | mail.mailers.smtp.port            |
+        | mail_scheme              | tls                    | mail.mailers.smtp.scheme          |
+        | mail_username            | usuario@exemplo.test   | mail.mailers.smtp.username        |
+        | mail_password            | senha-do-smtp          | mail.mailers.smtp.password        |
+        | mail_from_address        | contato@exemplo.test   | mail.from.address                 |
+        | mail_from_name           | Remetente              | mail.from.name                    |
+        | paginacao_padrao         | 25                     | kit.tabelas.paginacao             |
+        | tabela_listrada          | false                  | kit.tabelas.listrada              |
+        | persistir_filtros        | false                  | kit.tabelas.persistir_filtros     |
+        | colunas_redimensionaveis | false                  | kit.tabelas.colunas_redimensionaveis |
+        | hub_de_navegacao         | true                   | kit.hub                           |
+        | rotulo_da_organizacao    | Empresa                | kit.tenancy.label                 |
+        | rotulo_das_organizacoes  | Empresas               | kit.tenancy.label_plural          |
+```
+
+**Toda linha usa valor que difere do que o ambiente já entrega**: `mail.default` é `log` no `phpunit.xml`, então `smtp` discrimina; os três booleanos de tabela nascem `true` na config, então `false` discrimina; `hub_de_navegacao` nasce `false`, então `true` discrimina; `paginacao_padrao` é `10` hoje, então `25` discrimina. Um alinhamento que não faça nada reprova em **todas** as 21 linhas.
+
+**"com o mesmo tipo"** no `Então` é o que mata M5 e M6: `"25"` e `"true"` como string satisfazem uma comparação frouxa e quebram `defaultPaginationPageOption()` e todo `===`.
+
+> Um `Esquema do Cenário` conta como **1 cenário**, não 21 — é a forma canônica de expressar a matriz dentro do teto do perfil.
+
+#### Mutante acrescentado
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M71 | o mapa escreve `mail.host`/`mail.port`/`mail.username` (chaves que não existem) em vez de `mail.mailers.smtp.*`, e o kit segue com o mailer `log` sem erro nenhum — **origem: revisão adversarial** | CT-01 (linhas de `mail_*`) |
+| M72 | o mapa cobre só as propriedades de identidade e ignora as de tabela e de kit — **origem: revisão adversarial** | CT-01 (linhas de `kit.tabelas.*` e `kit.hub`) |
+
+### CT-33 (novo) — a coluna "salvar" da matriz, por chamada própria
+
+> R6 · fecha a fusão de `Quando` apontada na revisão
+
+```gherkin
+# language: pt
+
+    Esquema do Cenário: [CT-33] quem não tem a permissão não grava, mesmo chamando a gravação direto
+      Dado "<persona>" autenticado no painel de administração
+      E que o nome da aplicação gravado é "Antes"
+      Quando a gravação da tela é chamada com o nome "Invadido"
+      Então a propriedade "nome_da_aplicacao" do grupo "kit" continua valendo "Antes"
+
+      Exemplos:
+        | persona                          |
+        | o usuário comum do negócio       |
+        | o administrador sem a permissão  |
+```
+
+CT-15 fica com **abrir** (403); este fica com **gravar**. `SettingsPage::save()` consulta `canEdit()` (`vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:64`), não `canAccess()` — são dois métodos e duas barreiras, e evidência de um não cobre o outro.
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M73 | `canEdit()` devolve `true` fixo — **origem: revisão adversarial** | CT-33 |
+
+### CT-34 (novo) — a cardinalidade da trilha
+
+> R9 · fecha I-5
+
+```gherkin
+# language: pt
+
+    Cenário: [CT-34] duas propriedades alteradas geram duas linhas, cada uma com a sua
+      Dado o administrador da aplicação autenticado no painel de administração
+      E que o nome gravado é "Antes" e a paginação gravada é 10
+      Quando ele grava o nome "Depois" e a paginação 25 no mesmo salvamento
+      Então existem exatamente dois registros de auditoria
+      E o registro do nome não menciona a paginação
+      E o registro da paginação não menciona o nome
+```
+
+A dimensão "quantas propriedades mudaram" tinha só **0** (CT-23) e **1** (CT-22) — e com cardinalidade 1 as duas implementações são indistinguíveis. **2 é o limite** que as separa.
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M74 | uma linha por salvamento, com o diff inteiro dentro — **origem: revisão adversarial** | CT-34 |
+| M75 | uma linha por propriedade, mas incluindo as **não** alteradas nos valores — **origem: revisão adversarial** | CT-34 |
+
+### CT-35 (novo) — a identidade gravada chega ao HTML dos três painéis
+
+> R13, e também RQ-04, RQ-05, RQ-12, RQ-13 · fecha I-3
+
+```gherkin
+# language: pt
+
+  Regra: o nome e os arquivos de identidade gravados aparecem nas telas dos painéis
+
+    Esquema do Cenário: [CT-35] o painel serve o nome, a logo, o favicon e a arte gravados
+      Dado que o nome, a logo, o favicon e a arte do login estão gravados
+      E que os três arquivos existem no disco público
+      Quando a tela inicial do painel "<painel>" é visitada
+      Então a resposta contém o nome gravado
+      E a resposta contém a URL pública da logo
+      E a resposta contém a URL pública do favicon
+
+      Exemplos:
+        | painel |
+        | admin  |
+        | app    |
+        | infra  |
+
+    Esquema do Cenário: [CT-35b] a tela de login serve a arte gravada
+      Quando a tela de login do painel "<painel>" é visitada
+      Então a resposta contém a URL pública da arte gravada
+      E a resposta não contém o caminho da arte padrão do kit
+
+      Exemplos:
+        | painel |
+        | admin  |
+        | app    |
+        | infra  |
+```
+
+Este é o cenário que a revisão adversarial cobrava e que não existia: CT-26 tem o oráculo no **retorno** do resolvedor, e uma implementação em que a classe de resolução está perfeita e **nenhum painel a consome** passava no conjunto inteiro. O `assertDontSee` do caminho padrão é a asserção discriminante — sem ele, uma resposta que sirva as duas coisas passaria.
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M76 | `IdentidadeDoKit` correta e nenhum painel a consome (`brandLogo` ausente, arte literal) — **origem: revisão adversarial** | CT-35, CT-35b |
+| M77 | só o favicon é ligado; logo e arte continuam literais — **origem: revisão adversarial** | CT-35 (logo), CT-35b (arte) |
+| M78 | `brandName` continua escalar e o nome gravado não aparece — **origem: revisão adversarial** | CT-35 |
+
+### CT-36 (novo) — a seleção de cor oferece a lista do kit
+
+> R4 / R8 · fecha I-4 e RQ-06
+
+```gherkin
+# language: pt
+
+    Cenário: [CT-36] o campo de seleção de cor oferece exatamente as cores do kit
+      Dado o administrador da aplicação autenticado no painel de administração
+      Quando o formulário de configurações é montado
+      Então as opções do campo de cor são as 16 cores da lista do kit, mais a opção de padrão
+```
+
+A lista do kit é `App\Support\CustomizadorDaInstalacao::CORES`, e `tests/Kit/CorPrimariaTest.php` já afirma que **toda** entrada dela existe em `Filament\Support\Colors\Color`. As duas asserções em cadeia é o que entrega RQ-06 ("use o Enum Color como opção de seleção") sem oferecer as constantes que não são cor (`WCAG_AA_TEXT` e os neutros), que é a razão da lista ser fechada.
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M79 | as opções são um array escrito à mão com as cinco cores "que alguém usa" — **origem: revisão adversarial** | CT-36 |
+
+### Índice dos acrescentados
+
+| ID | Cenário | Regra | Camada | Arquivo | Mata |
+|----|---------|-------|--------|---------|------|
+| CT-33 | gravação recusada por chamada própria | R6 | componente | `tests/Kit/ConfiguracoesDoKitTelaTest.php` | M73 |
+| CT-34 | duas propriedades, duas linhas de trilha | R9 | componente | `tests/Kit/ConfiguracoesDoKitTest.php` | M74, M75 |
+| CT-35 | identidade no HTML dos três painéis | R13 | Feature | `tests/Kit/IdentidadeDoKitTest.php` | M76, M77, M78 |
+| CT-35b | arte gravada nas telas de login | R13 | Feature | idem | M76, M77 |
+| CT-36 | opções do campo de cor | R4 | componente | `tests/Kit/ConfiguracoesDoKitTelaTest.php` | M79 |
+
+**Totais após o fechamento**: 39 cenários · 17 regras · 79 mutantes previstos · 2 sem matador (M49, M70 — declarados).
 
 ---
 

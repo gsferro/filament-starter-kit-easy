@@ -54,6 +54,88 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Cor primária livre (hexadecimal)
+    |--------------------------------------------------------------------------
+    | A alternativa à lista fechada de cima, para quem tem uma cor de marca que
+    | não está na paleta do Filament. Formato `#rgb` ou `#rrggbb`.
+    |
+    | **Esta chave VENCE a `cor_primaria`** quando as duas estão preenchidas. A
+    | razão é que ela é a mais específica: quem digita um hexadecimal escolheu
+    | aquela cor, enquanto o seletor da lista tem valor padrão e pode nunca ter
+    | sido tocado. A precedência inversa tornaria a cor livre inalcançável em
+    | toda instalação que escolheu cor no `kit:install`.
+    |
+    | Valor fora do formato é IGNORADO e a resolução cai para a `cor_primaria` —
+    | mesma tolerância deliberada do nome, e pelo mesmo motivo: isto roda no boot
+    | de todo painel, e `Color::generatePalette()` não valida nada antes de
+    | passar o valor para `convertToOklch()`.
+    |
+    | O caminho normal de gravação é a tela /admin/configuracoes-do-kit; esta
+    | chave é a semente e o plano B.
+    */
+
+    'cor_primaria_hex' => env('KIT_COR_PRIMARIA_HEX'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Identidade visual da instalação
+    |--------------------------------------------------------------------------
+    | Caminhos no disco `public` (não URLs), gravados pela tela
+    | /admin/configuracoes-do-kit. `App\Support\IdentidadeDoKit` os resolve para
+    | URL e cai no padrão quando o arquivo declarado não existe no disco — um
+    | <link rel="icon"> apontando para 404 no <head> de TODA página é pior que o
+    | ícone padrão.
+    |
+    | Sem `env()` de propósito: são caminhos de arquivo enviado pela tela, não
+    | escolha de ambiente. Quem quiser trocar sem passar pela tela substitui o
+    | arquivo em public/images/auth/login.svg, que é o default da arte.
+    |
+    | Não confundir com a logo de uma ORGANIZAÇÃO (multi-tenancy): aquela é a
+    | coluna `logo` do model Tenant, editada em /admin/organizacoes.
+    */
+
+    'identidade' => [
+        'logo'          => null,
+        'favicon'       => null,
+        'arte_do_login' => 'images/auth/login.svg',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Defaults de TODA tabela do projeto
+    |--------------------------------------------------------------------------
+    | Lidos por `ConfiguraFilamentGlobal::configuraTable()`, que roda num
+    | `Table::configureUsing()` — então valem também para as tabelas dos plugins
+    | de terceiros, onde não há como editar o `table()` do resource.
+    |
+    | Editáveis em /admin/configuracoes-do-kit. Estas chaves fecham o TODO que
+    | vivia no topo daquele trait. "Densidade de tabela" NÃO está aqui porque não
+    | existe no Filament 5: nenhuma ocorrência de `density` em
+    | vendor/filament/tables/src, e `Enums/` não tem enum de densidade. O que o
+    | framework oferece de controle visual de aperto é `striped()`, abaixo.
+    |
+    | ## Por que `filter_var` e não `(bool) env()`
+    |
+    | `(bool) env('CHAVE', true)` é o MESMO defeito que .ai/rules/config.md
+    | documenta para inteiros: o segundo argumento do `env()` só vale para chave
+    | AUSENTE. Com `CHAVE=` (presente, vazia — o que sobra quando alguém apaga o
+    | valor e esquece o `=`), `env()` devolve string vazia, `(bool) ''` é false, e
+    | o default `true` nunca entra. `filter_var` com FILTER_NULL_ON_FAILURE
+    | devolve null para ausente E para vazio, e o `??` entrega o default nos dois.
+    |
+    | O `KIT_HUB` mais abaixo continua com `(bool) env()` porque o default dele é
+    | `false` — ali o defeito é inócuo.
+    */
+
+    'tabelas' => [
+        'paginacao'                => NumeroDoEnv::positivo(env('KIT_TABELA_PAGINACAO'), 10),
+        'listrada'                 => filter_var(env('KIT_TABELA_LISTRADA'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true,
+        'persistir_filtros'        => filter_var(env('KIT_TABELA_PERSISTIR_FILTROS'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true,
+        'colunas_redimensionaveis' => filter_var(env('KIT_TABELA_COLUNAS_REDIMENSIONAVEIS'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Multi-tenancy
     |--------------------------------------------------------------------------
     | Desligado por default: o kit nasce single-tenant. Ligue com

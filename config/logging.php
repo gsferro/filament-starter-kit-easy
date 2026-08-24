@@ -138,6 +138,27 @@ return [
             'replace_placeholders' => true,
         ],
 
+        /*
+         * Configurações do kit gravadas em /admin (spatie/laravel-settings).
+         *
+         * Mesma forma dos três acima, pelo mesmo motivo — ver a nota longa logo antes do
+         * canal 'ai'. O `handler` não é opcional: sem ele, com LOG_KIT_DRIVER=monolog, a
+         * suíte escreve no storage/logs de quem a roda.
+         *
+         * O que cai aqui: o alinhamento da configuração do processo com o banco (debug), a
+         * gravação pela tela (info), a trilha de auditoria (info) e as duas condições em
+         * que o banco é ignorado e vale o .env (warning). Nada por ABERTURA de tela — um
+         * info por request é o ruído que a nota do canal 'autenticacao' mediu em 1,1 MB/dia.
+         */
+        'configuracoes' => [
+            'driver'               => env('LOG_KIT_DRIVER', 'daily'),
+            'handler'              => NullHandler::class,
+            'path'                 => storage_path('logs/configuracoes.log'),
+            'level'                => env('LOG_LEVEL', 'debug'),
+            'days'                 => 14,
+            'replace_placeholders' => true,
+        ],
+
         'monthly' => [
             'driver'               => 'monthly',
             'path'                 => storage_path('logs/laravel.log'),

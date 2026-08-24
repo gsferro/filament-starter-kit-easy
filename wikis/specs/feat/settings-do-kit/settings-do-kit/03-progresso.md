@@ -123,9 +123,30 @@
 
 ### Revisão adversarial (step 6 do `feature-test-design`)
 
-Delegada a sub-agente independente, sem acesso ao `01`, ao `02` nem a código. Resultado e fechamento abaixo.
+Delegada a sub-agente independente, sem acesso ao `01`, ao `02` nem a código.
 
-<!-- preenchido quando a revisão retornar -->
+**Rodada 1 — 28 achados**: 5 implementações erradas que passavam em todos os 34 cenários, 10 oráculos fracos, 3 cenários com `Quando` múltiplo indevido e 10 cláusulas `RQ` com cobertura insuficiente. **Zero cenários sem `Então`.**
+
+O achado estrutural foi um só, e explica quatro dos cinco: **CT-01 particionava por tipo de PHP (string, aninhada, inteiro, booleano) quando a unidade de falha é a chave de config**. Cada chave é uma linha de código independente — não há classe de equivalência entre `mail.from.address` e `mail.mailers.smtp.host`. Com 6 das 21 propriedades exercitadas, um mapa que cobrisse só aquelas seis passava no conjunto inteiro, e a tela prometia 21 configurações entregando 6.
+
+O segundo achado mais caro foi de camada, não de partição: **a classe de resolução de identidade tinha oráculo no próprio retorno**, e uma implementação em que ela está perfeita e **nenhum painel a consome** passava — `brandLogo` ausente, arte do Auth Designer literal. Nenhum cenário renderizava uma página e olhava o HTML.
+
+**Fechamento** (detalhe caso a caso em `04-casos-de-teste.md` → `## Revisão Adversarial`):
+
+| Destino | Quantidade |
+|---|---|
+| cenário novo | 5 (CT-33, CT-34, CT-35, CT-35b, CT-36) |
+| cenário reescrito | 8 (CT-01 de 6 para 21 linhas; CT-11 por reflexão em vez de contagem; CT-12 com remigração; CT-15 sem a fusão de verbos; CT-16 pelo `DatabaseSeeder`; CT-20, CT-24 e CT-28 com oráculo forte) |
+| justificativa escrita acrescentada | 2 (CT-08 e CT-B02, `Quando` múltiplo declarado) |
+| rebaixado a asserção de apoio | 1 (CT-14 — quase-tautologia de framework, mantido porque é o único matador de M29) |
+| recusado com motivo | 3 (oráculo de função pura em CT-05/CT-06 é o observável certo; CT-27 cobre o que o `--custom` de fato oferece) |
+| mutantes acrescentados | 9 (M71…M79, marcados "origem: revisão adversarial") |
+
+Totais depois do fechamento: **39 cenários, 17 regras, 79 mutantes previstos, 2 sem matador** (M49 e M70, declarados com o que foi tentado).
+
+**Rodada 2** — disparada porque o fechamento criou cenário novo (a skill re-revisa uma vez nesse caso, com teto de 2 rodadas).
+
+<!-- preenchido quando a rodada 2 retornar -->
 
 ---
 
