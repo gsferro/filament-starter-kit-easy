@@ -1,0 +1,15 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1280, "h": 1260, "title": "Boas-vindas — rota /", "expand": "fill" }
+  ],
+  "annotations": [
+    {
+      "id": "premissas",
+      "x": 1400,
+      "y": 0,
+      "w": 320,
+      "text": "Tokens lidados do projeto, não inventados:\noklch exatos do runtime do Filament 5 e as classes de resources/css/filament/cards.css.\n\nO chip \"dark\" acima do artboard troca o tema — é o mesmo par claro/escuro que o Filament aplica pela classe .dark no <html>.\n\nNada de segredo na tela: sem e-mail do admin, sem senha, sem banco, sem URL de repositório. A rota / é anônima."
+    }
+  ],
+  "launch": { "view": "focused", "file": "Main.dc.html" }
+}
