@@ -99,8 +99,13 @@ it('mostra os quatro botoes de provedor visiveis, com icone e destino, na tela d
             /*
              * O ícone COM DIMENSÃO, que é o que o HTML não prova: um `<svg>` sem `width`/`height`
              * está no DOM e ocupa zero. É o mutante MB1, e é o único matador dele.
+             *
+             * E o `data-provedor` no seletor é o que faz este passo afirmar que é o ícone DAQUELE
+             * provedor. Sem ele, GitHub, LinkedIn e X — que são `currentColor` — passariam com o
+             * ícone de outra marca, ou com um Heroicon genérico: nada mais no HTML distingue um
+             * `<path>` monocromático de outro. Achado da derivação dos casos.
              */
-            ->assertVisible($botao.' svg');
+            ->assertVisible($botao.' svg[data-provedor="'.$provedor->value.'"]');
     }
 
     $pagina
