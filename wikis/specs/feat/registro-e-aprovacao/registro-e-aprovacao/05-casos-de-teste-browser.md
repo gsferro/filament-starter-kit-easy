@@ -167,10 +167,17 @@ Nenhum mutante do `04` ficou dependendo de browser.
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | `RegistroPorConvite` modo aberto em `/app/register`, campo de e-mail habilitado e vazio | | | |
-| 2 | `RegistroPorConvite` modo convite em `/app/register?token=…`, e-mail desabilitado | | | |
-| 3 | link "Cadastre-se" no login, só com o registro ligado | | | |
-| 4 | ação Aprovar na tabela de usuários do `/app` | | | |
-| 5 | ação Aprovar na tabela de usuários do `/admin` | | | |
-| 6 | toggle de registro no formulário de organização | | | |
-| 7 | tela de verificação de e-mail no ar só com a opção ligada | | | |
+| 1 | modo aberto em `/app/register`, campo de e-mail habilitado e vazio | idem | ✅ | CT-04 (`assertFormFieldEnabled` + `assertSchemaStateSet`), CT-B01 (preenchido no navegador) |
+| 2 | modo convite em `/app/register?token=…`, e-mail desabilitado e preenchido | idem, inalterado | ✅ | `ConviteTest` inteiro segue verde; CT-06 e CT-07 com o registro **ligado** |
+| 3 | link "Cadastre-se" no login, só com o registro ligado | idem — `TelaLogin::getSubheading()` devolve o do pai quando ligado | ✅ | CT-04b, nas duas partições |
+| 4 | ação Aprovar na tabela de usuários do `/app` | idem, pela trait `AprovacaoDeCadastro` | ✅ | CT-19b (`admin_app` aprova), CT-23a/CT-23b (as duas negativas) |
+| 5 | ação Aprovar na tabela de usuários do `/admin` | idem, mesma trait | ✅ | CT-19 (`master_global` aprova pela listagem) |
+| 6 | toggle de registro no formulário de organização | ⚠️ **divergiu**: entrou na `Section` de *Identificação* já existente, ao lado de `ativo`, e não numa `Section::make('Registro')` própria | ⚠️ | corte 2 da auditoria do step 6 — registrado em *Auditoria Ponytail* do `03`. CT-25 (grava) e CT-25b (escondido com a opção global desligada) |
+| 7 | tela de verificação de e-mail no ar só com a opção ligada | idem, mas **não coberta por navegador** | ⚠️ | CT-22b mede a decisão no provider. A visita em navegador é a lacuna declarada em *Cogitado e cortado* — a rota nasce no boot e `config()` no caso chega tarde |
+| 8 | *(não desenhado)* título do modo aberto | ⚠️ **acréscimo**: o plano dizia "Criar conta", que é o rótulo do próprio botão de envio; virou "Criar sua conta" | ⚠️ | *Desvios do Plano* no `03`. Descoberto ao escrever CT-B01 |
+| 9 | *(não desenhado)* campo *Papéis* obrigatório | ⚠️ **acréscimo**: deixa de ser obrigatório para cadastro pendente, que não tem papel por desenho — sem isso a edição de um pendente era impossível de salvar | ⚠️ | *Notas de Implementação*, achado 1. CT-16 |
+
+**Divergências**: 4 (itens 6, 7, 8 e 9). Nenhuma é implementação contradizendo o desenho por
+descuido: 6 é corte aprovado da auditoria, 7 é limite de arnês declarado, e 8 e 9 são defeitos
+que os CT-B e os CT acharam **antes** de a feature ir para o ar. Todas replicadas em
+`03-progresso.md`.
