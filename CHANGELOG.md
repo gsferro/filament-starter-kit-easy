@@ -2,6 +2,91 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [Nao publicado]
+Login social com mais provedores — e a extracao da abstracao que a entrega do Google
+deliberadamente NAO fez.
+### Adicionado
+- **Tres provedores de login social novos: GitHub, LinkedIn e X.** Cada um com o seu
+  interruptor, todos DESLIGADOS por default, cada um ligado individualmente. Ligar um nao liga
+  os outros, e desligar um nao derruba os outros. Os campos de credencial de cada provedor vivem
+  numa secao propria da aba "Login" em `/admin/configuracoes-do-kit`, e **aparecem quando o
+  interruptor daquele provedor e ligado**.
+- **`App\Support\ProvedorSocial`, um enum — a abstracao que o ADR-10 da wiki do Google mandou
+  esperar.** Aquele ADR recusou toda abstracao com um provedor so e escreveu o critterio de
+  reabertura: "enum de um caso e abstracao sem segundo caso. Quando o GitHub (ou outro) entrar, a
+  decisao de extrair se toma com DOIS casos na mao — feita com um, ela adivinha a forma."
+  Com quatro na mao, a forma que eles revelam **nao** e a que se adivinharia com um. O redirect,
+  o botao e o predicado de disponibilidade sao IDENTICOS em todos — nao precisavam de abstracao
+  nenhuma. O que varia, e radicalmente, e **como cada provedor prova que o e-mail esta
+  verificado**. Uma interface desenhada em cima do Google teria abstraido os tres primeiros e
+  deixado de fora o unico que precisava.
+  Dai um enum com `emailVerificado()` e sem `redirect()`. E uma regra que elimina toda tabela de
+  mapeamento: o `value` de cada caso e ao mesmo tempo o nome do driver do Socialite, o segmento
+  da URL, a chave em `config/services.php` e a chave em `config/kit.php`.
+- **A conferencia de e-mail verificado, provedor por provedor**, com `file:line` do vendor no
+  ADR-03 da wiki:
+  | Provedor | Como o kit prova |
+  |---|---|
+  | Google | `email_verified` no payload bruto |
+  | LinkedIn | `email_verified` do userinfo OpenID — dai o driver `linkedin-openid`, e nao o `linkedin` legado, que nao informa verificacao nenhuma |
+  | X | o X so devolve `confirmed_email`, entao a PRESENCA do e-mail e a prova |
+  | GitHub | o kit **refaz** a consulta a `/user/emails` e exige `primary` + `verified` |
+  O GitHub e o caso que precisou de trabalho: o Socialite consulta `/user/emails`, escolhe a
+  entrada `primary && verified` e **descarta a evidencia**, guardando so a string do endereco. E
+  se aquela consulta falhar, ele engole o erro e deixa no lugar o e-mail do PERFIL PUBLICO. Ou
+  seja, "e-mail nao vazio" nao e prova de verificacao: e prova de que ou verificou, ou falhou — e
+  de fora os dois casos sao identicos. Uma requisicao HTTP a mais por login iguala a garantia
+  dele a dos outros. API do GitHub fora = login recusado, com o motivo no log.
+- **Uma unica rota para os quatro**, `/auth/{provedor}/{redirect,callback}`, decisao que o
+  ADR-10 havia recusado pelo custo de validar o parametro contra uma lista branca. Com
+  **implicit enum binding** o parametro se valida sozinho: segmento fora do enum responde **404**
+  sem nem chegar ao controller, e a lista branca e o proprio enum. As URIs literais nao mudaram —
+  `/auth/google/callback` continua igual, e nenhuma URI cadastrada em console de provedor precisa
+  ser tocada.
+### Corrigido
+- **O `client_secret` do Google estava cifrado so na IDA.** Defeito anterior a esta entrega,
+  achado ao seguir a instrucao "imite o campo do Google" — imitar literalmente teria replicado o
+  problema em tres segredos novos.
+  A migration original semeava com `addEncrypted`, mas `ConfiguracoesDoKit::encrypted()` nao
+  listava a chave. E e essa lista, via `SettingsConfig::isEncrypted()`, que decide nas DUAS
+  direcoes: `SettingsMapper::fetchProperties()` decifra na leitura e `save()` cifra na gravacao.
+  Com o nome fora da lista, os dois se omitiam, e o resultado tinha duas caras:
+  1. instalacao nova com o segredo no `.env` — gravado cifrado, **lido como ciphertext**,
+     `filled()` verdadeiro, botao no ar, e o OAuth falhando no Google com credencial invalida;
+  2. depois de um salvamento pela tela — regravado em **texto claro**, contrariando por escrito o
+     `helperText` do campo, o comentario da migration e a Project Rule de `app/Filament/Admin/Pages/**`.
+  Ninguem viu porque `Crypto::encrypt(null)` devolve `null`, e o segredo e `null` em toda
+  instalacao de desenvolvimento e em toda a suite de testes: **o defeito so existe quando ha
+  valor**. Os dois casos que cobriam o campo verificavam o HTML e a sobrevivencia do valor —
+  nenhum verificava que o gravado era criptograma.
+  `encrypted()` passa a listar os quatro segredos, e a migration desta entrega **normaliza** o
+  valor do Google que ja estava gravado: tenta decifrar, e se estourar `DecryptException` era
+  texto claro e e cifrado agora. Sem essa normalizacao, o conserto da lista faria o
+  `catch (Throwable)` do provider engolir a leitura do GRUPO INTEIRO — a instalacao voltaria ao
+  `.env` em silencio, perdendo TODAS as configuracoes da tela.
+### Fora desta entrega, com ADR
+- **Facebook** — nao expoe nenhum sinal de e-mail verificado. O `verified` que o provider pede e
+  de nivel de CONTA, legado, e ausente na Graph v23.0 que ele usa; o caminho OIDC/Limited Login
+  devolve claims sem `email_verified`. Aceita-lo faria o nivel de garantia do login depender de
+  QUAL BOTAO a pessoa clicou — e com o registro do kit fechado, o caminho principal e justamente
+  o casamento com conta existente, que e o lado perigoso do e-mail nao verificado. ADR-05.
+- **Discord** — nao e driver do Socialite. A documentacao oficial suporta Facebook, X, LinkedIn,
+  Google, GitHub, GitLab, Bitbucket e Slack; o resto vem do catalogo comunitario. Entraria com
+  uma dependencia nova mais um listener de evento. ADR-04.
+  As duas ausencias estao documentadas nos dois READMEs com **o que faltaria** para incluir cada
+  uma. Ausencia sem explicacao escrita e indistinguivel de esquecimento.
+### Documentacao
+- Os dois READMEs ganham, por provedor: onde criar o app OAuth, qual URI de redirecionamento
+  cadastrar, o que pedir no console (o produto OpenID no LinkedIn, os escopos no X) e o que
+  acontece quando o provedor nao devolve e-mail verificado. Mais o roteiro do proximo provedor —
+  quatro passos, e **nenhum arquivo de logica muda**.
+- `.env.example` com as chaves dos tres provedores novos, vazias, cada bloco dizendo onde criar o
+  app e como a verificacao e conferida ali.
+- Wiki completa em `wikis/specs/feat/mais-provedores-sociais/mais-provedores-sociais/`: nove
+  ADRs, os casos derivados do requisito por agente independente da implementacao, e a tabela das
+  **oito premissas do plano que o `vendor/` contradisse** antes de virar codigo — duas delas
+  mudando o escopo da entrega.
+
 ## [0.19.8] - 2026-08-25
 ### Adicionado
 - **A exigencia de e-mail validado no `/app` voltou a ser editavel na tela**, em
