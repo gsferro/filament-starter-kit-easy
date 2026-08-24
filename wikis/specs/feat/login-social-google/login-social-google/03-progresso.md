@@ -238,16 +238,24 @@ Avaliados nos quatro gates. Teto de três por feature, respeitado.
 - **Observação**: candidato mais forte dos três — é o inverso exato de uma rule que já existe, e
   quem lê a rule de plugin conclui "logo, replique nos três", que aqui é o caminho errado
 
-### 2. `filter_var(..., FILTER_VALIDATE_BOOLEAN)` para interruptor booleano de env
+### 2. Interruptor de env que abre superfície pública falha FECHADO
 
 - **Glob**: `config/**`
-- **Evidência**: ADR-08 + `.ai/rules/config.md` (que já cobre inteiro, via `NumeroDoEnv`, e **não**
-  cobre booleano)
-- **Gates**: durável ✅ · escopável ✅ · não-inferível ✅ (`(bool) "false"` é `true`, e o `(bool)`
-  acerta o default por acidente, o que esconde o defeito) · não-redundante ⚠️ — é **acréscimo** à
-  rule existente, não rule nova
-- **Forma preferida**: **atualizar** `.ai/rules/config.md` com um parágrafo de booleano, não criar
-  arquivo. A skill diz que atualizar rule existente é sempre preferível
+- **Evidência**: ADR-08 (**reescrita** durante a implementação) + o medido em
+  `vendor/laravel/framework/src/Illuminate/Support/Env.php:252-262`
+- **Enunciado correto** (o primeiro estava errado): não é que `(bool) env()` seja antipadrão — o
+  Laravel já converte `"true"`/`"false"` em valor PHP, e as três chaves irmãs do `config/kit.php`
+  que usam cast de bool **estão certas**. A diferença é de **direção**: `off`, `no` e qualquer
+  valor irreconhecível dão `true` no cast (falha **aberta**) e `false` no `filter_var` (falha
+  **fechada**). Para chave que **abre superfície pública**, o lado certo é o fechado
+- **Gates**: durável ✅ · escopável ✅ · não-inferível ✅ (a intuição é que os dois empatam, e
+  para todo valor documentado eles empatam — só divergem onde importa) · não-redundante ⚠️ é
+  **acréscimo** a `.ai/rules/config.md`, que cobre inteiro via `NumeroDoEnv` e **não** cobre
+  booleano
+- **Forma preferida**: **atualizar** `.ai/rules/config.md` com um parágrafo, não criar arquivo. E
+  o parágrafo precisa dizer as duas coisas — quando usar `filter_var` **e** que as chaves com cast
+  de bool não devem ser "consertadas" —, senão a rule produz exatamente a varredura errada que
+  esta feature quase fez
 
 ### 3. Superfície pública nova derruba a ROTA, não só o botão
 
@@ -256,6 +264,14 @@ Avaliados nos quatro gates. Teto de três por feature, respeitado.
 - **Gates**: durável ✅ · escopável ✅ · não-inferível ⚠️ — um dev competente **pode** acertar
   sozinho · não-redundante ✅
 - **Observação**: o mais fraco dos três, justamente pelo gate 3. Fica proposto, com a ressalva.
+
+### Rejeitado — "arquivo novo do kit entra em `KitUpdate::CAMINHOS_DO_KIT`"
+
+Seria o candidato óbvio depois de QA-01 (Blocker). **Recusado**: já existe enforço automático —
+`tests/Kit/KitUpdateTest.php` varre a árvore e reprova o arquivo fora da lista, com mensagem que
+diz exatamente o que fazer. A escada do Ponytail aplicada a rules manda preferir a máquina à
+prosa, e uma rule aqui seria imposto de contexto em todo arquivo do kit para repetir o que o teste
+já grita no momento certo.
 
 **Nada foi gravado.** A skill não grava rule sem aprovação explícita, e a instrução desta rodada é
 apenas **propor** aqui.
