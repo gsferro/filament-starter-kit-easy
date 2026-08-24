@@ -2,6 +2,66 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.18.11] - 2026-08-24
+
+A tela de papeis vira **Perfis**: rotulo legivel em toda exibicao, contagem de usuarios,
+slide-over de quem tem o perfil, uuid na URL, tab vertical por painel e o Guard como selecao.
+
+### Alterado
+
+- **`/admin/shield/roles` deixa de se chamar "Funcoes" e passa a "Perfis"** — label, navegacao e
+  breadcrumb, **inclusive o segmento do registro**, que mostrava a chave crua (`panel_user`).
+
+- **O rotulo legivel passa a valer em TODA exibicao de papel**, nao so na listagem. A varredura do
+  plano tinha uma lista fechada de cinco pontos, e ela estava incompleta: a confirmacao de aceite de
+  convite em `app/Filament/App/Pages/ConvitesRecebidos.php` imprimia `panel_user` na mesma tela cuja
+  coluna, tres linhas acima, ja mostrava "Painel App". Escapou porque o `grep` do plano procurava
+  `roles.name`/`papel.name` e o acesso real e `$record->papel?->getAttribute('name')`. E uma
+  TERCEIRA familia de renderizacao (texto de modal), depois de coluna de tabela e opcao de Select, e
+  o oraculo do caso e `getModalDescription()` do action resolvido — o Filament nao imprime conteudo
+  de modal no HTML do componente pai.
+
+- **A URL de alteracao do papel usa `uuid`, nao `id`.** Migration em `roles` + a trait `TemUuid`,
+  fechando a regra do kit de nunca usar `id` em URL. `Role` era a unica excecao: os outros 6 models
+  com Resource ja tinham a trait.
+
+- **O campo "Guard" deixa de ser texto livre** e vira selecao lida das chaves de
+  `config('auth.guards')`.
+
+- **No tab "Recursos", os paineis viram tab vertical** em vez de um collapse por painel.
+
+### Adicionado
+
+- **Coluna com a quantidade de usuarios de cada perfil**, e um **slide-over de leitura** listando
+  quem tem aquele perfil.
+
+  A action expoe nome e e-mail de terceiros, e Action do Filament **nao** consulta policy sozinha —
+  o default de `CanBeAuthorized` e `null`, isto e, liberada. Entao ela declara `->authorize('view')`
+  (resolve contra o record, ou seja `View:Role`) e registra em `Log::channel('autenticacao')` quem
+  consultou a lista de quem.
+
+  O log vive em `->afterFormFilled()` e **nao** em `->action()`: com `->modalSubmitAction(false)` nao
+  existe botao que dispare `callMountedAction`, entao um log em `->action()` seria codigo morto —
+  verde no teste e inexistente na tela, que e a pior forma de trilha de auditoria.
+
+- **Cada grupo da tela de permissoes exibe quantas permissoes daquele grupo o perfil ja tem.**
+
+- **O cenario que faltava da v0.18.10**: marcar o checkbox em `/admin/shield/roles` e ver a tela
+  passar de 403 para 200. Ele nao pudera ser escrito na entrega anterior porque colidiria com esta
+  reescrita.
+
+### Sabido
+
+- **A inspecao da tela pelo MCP do Playwright nao foi feita** (era uma clausula do pedido). O
+  Playwright MCP e instancia unica e foi proibido aos agentes desta rodada para nao colidirem entre
+  si. Nao esta marcada como atendida por substituto: as duas lacunas de oraculo que sobraram —
+  orientacao do tab vertical e slide-over vs modal central — sao sobre o que a tela PARECE, e
+  nenhuma assercao barata as alcanca.
+
+- **Mutation testing nao rodou**: sem PCOV no ambiente, `--tia` e `--mutate` sao inviaveis aqui
+  (`.ai/rules/testes-browser.md` registra um run abortado apos 35 min com Xdebug). O gate de
+  mutantes desta entrega e o PREVISTO no `04`, nao o medido.
+
 ## [0.18.10] - 2026-08-24
 
 Release de seguranca. Toda tela, widget e action ESCRITA NO KIT passa a exigir a permissao
