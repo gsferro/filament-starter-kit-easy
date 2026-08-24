@@ -160,7 +160,7 @@ class KitInstall extends Command
         $this->components->bulletList([
             'Banco de dados — trocar depois do migrate é outra instalação: `php artisan kit:install --force` (APAGA os dados).',
             'Multi-organização — as tabelas de permissão só nascem com a coluna de contexto antes do migrate: rode `php artisan kit:tenancy` (recria o banco).',
-            'Credenciais do administrador — troque pela tela de perfil do painel; refazer pelo seeder criaria um segundo administrador.',
+            'Credenciais do administrador — `php artisan kit:admin` (ou a tela de perfil do painel). Semear de novo NÃO aplica: o seeder garante que exista administrador, não que ele espelhe o .env.',
         ]);
 
         $this->components->info('Rode `php artisan config:clear` se estiver com config em cache.');
