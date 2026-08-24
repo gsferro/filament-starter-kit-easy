@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget;
 use Gsferro\FilamentStatPlusEasy\Widgets\StatPlus;
@@ -24,6 +25,8 @@ use Spatie\Permission\Models\Role;
  */
 class UsuariosVisaoGeralStats extends StatsOverviewWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 10;
 
     protected int|string|array $columnSpan = 'full';

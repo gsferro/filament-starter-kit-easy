@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Illuminate\Support\Facades\Schema;
 use LaBoiteACode\FilamentDashboardWidgets\Data\BreakdownItem;
 use LaBoiteACode\FilamentDashboardWidgets\Widgets\SegmentBarWidget;
@@ -21,11 +22,13 @@ use Spatie\Health\ResultStores\StoredCheckResults\StoredCheckResult;
  */
 class SaudeAplicacaoPorStatus extends SegmentBarWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 20;
 
     protected int|string|array $columnSpan = 1;
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable((new HealthCheckResultHistoryItem)->getTable()),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Admin\Widgets;
 
 use App\Filament\Admin\Resources\Users\UserResource;
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use App\Models\User;
 use Filament\Actions\Action;
 use LaBoiteACode\FilamentDashboardWidgets\Data\RecentItem;
@@ -19,6 +20,8 @@ use LaBoiteACode\FilamentDashboardWidgets\Widgets\RecentItemsWidget;
  */
 class UltimosUsuariosCadastrados extends RecentItemsWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 30;
 
     protected int|string|array $columnSpan = 1;

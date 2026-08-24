@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -25,11 +26,13 @@ use Rappasoft\LaravelAuthenticationLog\Models\AuthenticationLog;
  */
 class UltimosAcessos extends RecentItemsWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 120;
 
     protected int|string|array $columnSpan = 1;
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable((string) config('authentication-log.table_name', 'authentication_log')),

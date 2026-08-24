@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Filament\Widgets\StatsOverviewWidget;
 use Gsferro\FilamentStatPlusEasy\Widgets\StatPlus;
 use Illuminate\Support\Facades\Schema;
@@ -18,13 +19,15 @@ use Rappasoft\LaravelAuthenticationLog\Models\AuthenticationLog;
  */
 class AutenticacaoStats extends StatsOverviewWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 110;
 
     protected int|string|array $columnSpan = 'full';
 
     protected ?string $heading = 'Acessos nas últimas 24 horas';
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable((string) config('authentication-log.table_name', 'authentication_log')),

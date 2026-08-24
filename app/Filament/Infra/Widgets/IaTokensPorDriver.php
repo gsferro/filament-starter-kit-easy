@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Fomvasss\AiTasks\Models\AiRun;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Number;
@@ -19,11 +20,13 @@ use LaBoiteACode\FilamentDashboardWidgets\Widgets\BreakdownWidget;
  */
 class IaTokensPorDriver extends BreakdownWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 100;
 
     protected int|string|array $columnSpan = 1;
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable((string) config('ai-tasks.table', 'ai_runs')),

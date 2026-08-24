@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Widgets;
 
+use App\Filament\Concerns\ExigePermissaoDoWidget;
 use Filament\Widgets\StatsOverviewWidget;
 use Gsferro\FilamentStatPlusEasy\Widgets\StatPlus;
 use Illuminate\Database\Query\Builder;
@@ -23,13 +24,15 @@ use Illuminate\Support\Facades\Schema;
  */
 class FilasStats extends StatsOverviewWidget
 {
+    use ExigePermissaoDoWidget;
+
     protected static ?int $sort = 40;
 
     protected int|string|array $columnSpan = 'full';
 
     protected ?string $heading = 'Filas e jobs';
 
-    public static function canView(): bool
+    protected static function fonteDeDadosDisponivel(): bool
     {
         return (bool) rescue(
             fn (): bool => Schema::hasTable('queue_monitors'),
