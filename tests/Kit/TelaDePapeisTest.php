@@ -1,8 +1,10 @@
 <?php
 
 use App\Filament\Admin\Resources\Roles\Pages\CreateRole;
+use App\Filament\Admin\Resources\Roles\Pages\EditRole;
 use App\Filament\Admin\Resources\Roles\Pages\ListRoles;
 use App\Filament\Admin\Resources\Roles\RoleResource;
+use App\Filament\Admin\Resources\Users\UserResource as AdminUserResource;
 use App\Models\Role;
 use App\Support\Paineis;
 use App\Support\Papeis;
@@ -12,6 +14,7 @@ use Filament\Actions\Testing\TestAction;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Schemas\Components\EmptyState;
 use Livewire\Livewire;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * A tela de papéis do /admin — rótulo, contagem de usuários, slide-over, contador de
@@ -421,4 +424,57 @@ it('mostra a tabela de usuarios no slide-over de papel com usuario', function ()
             'mountedActionSchema0',
             fn (EmptyState $componente): bool => ! $componente->isVisible(),
         );
+})->group('kit');
+
+/**
+ * QA-03 — marcar a permissão NA TELA de papéis destrava a tela protegida.
+ *
+ * Débito herdado de `feat/permissoes-de-telas-e-acoes`: o QA daquela branch deixou este cenário
+ * pendente de propósito, para não conflitar com a reescrita do `RoleResource` que acontece aqui.
+ *
+ * É o único caso da suíte que fecha o ciclo inteiro de ponta a ponta — tela de papéis grava
+ * permissão, `spatie` recarrega, policy responde diferente, HTTP muda de 403 para 200. Cada
+ * metade tem cobertura própria em outro lugar; o que só este caso prova é que as duas se
+ * ligam. Um `syncPermissions()` que gravasse na pivot errada, ou uma chave de CheckboxList que
+ * não fosse o FQCN do Resource, passariam por todos os outros casos.
+ *
+ * O 403 ANTES não é cerimônia: sem ele, um papel que já tivesse a permissão por acidente (ou uma
+ * policy que devolvesse `true` para todo mundo) faria o 200 depois parecer prova.
+ *
+ * `forgetCachedPermissions()` + `unsetRelation()` porque o `PermissionRegistrar` e o Eloquent
+ * cacheiam permissões e papéis dentro do MESMO processo — num request real o cache nasce limpo, e
+ * sem isto o caso mediria o cache em vez do banco.
+ */
+it('destrava a tela protegida ao marcar a permissao na tela de papeis', function (): void {
+    noPainelBootado('admin');
+
+    $papel  = Role::create(['name' => 'operador', 'guard_name' => 'web', 'painel' => 'admin']);
+    $pessoa = usuario('operador@example.com');
+    $pessoa->assignRole('operador');
+
+    // Antes: o papel abre o painel (a coluna `painel` casa) e nenhuma tela dentro dele.
+    $this->actingAs($pessoa)->get('/admin/users')->assertForbidden();
+
+    $this->actingAs(usuarioCom('master_global'));
+
+    Livewire::test(EditRole::class, ['record' => $papel->getRouteKey()])
+        ->fillForm([
+            'name'                 => 'operador',
+            'guard_name'           => 'web',
+            'painel'               => 'admin',
+            // A chave do grupo é o FQCN do Resource — é esse o `name` que o Shield dá ao
+            // CheckboxList. Se um upgrade trocar isso, este caso é o que cai.
+            AdminUserResource::class => ['ViewAny:User'],
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($papel->fresh()->hasPermissionTo('ViewAny:User'))->toBeTrue();
+
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+    $pessoa->unsetRelation('roles');
+    $pessoa->unsetRelation('permissions');
+
+    // Depois: a MESMA tela, o MESMO usuário, 200.
+    $this->actingAs($pessoa)->get('/admin/users')->assertSuccessful();
 })->group('kit');
