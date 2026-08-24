@@ -1,0 +1,63 @@
+# Política do Snyk — o que esta instalação aceita conviver, e por quanto tempo.
+#
+# ATENÇÃO, e leia antes de confiar neste arquivo: o bloco `ignore` do Snyk casa por
+# **issue ID** (`SNYK-PHP-PACOTE-1234567`), não por nome de pacote. Não existe curinga.
+# Então este arquivo, como está, NÃO silencia nada — ele registra a decisão e é onde os
+# IDs entram. Um `.snyk` que promete silenciar e não silencia é pior que arquivo nenhum,
+# por isso o aviso está no topo.
+#
+# ## A decisão registrada (2026-08-24)
+#
+# O PR check do Snyk reprovou a entrega do login social com Google (PR #25), e o merge foi
+# feito com ele vermelho, por decisão explícita do dono do projeto. Os outros três jobs do
+# CI passaram — `qualidade`, `telas` e `instalacao`.
+#
+# ## O que foi apurado antes de aceitar
+#
+# As cinco dependências que o `laravel/socialite` trouxe foram conferidas uma a uma, e
+# NENHUMA tem advisory aplicável à versão instalada:
+#
+#   laravel/socialite        5.30.0     advisories corrigidos em 2.0.9 / 2.0.10
+#   firebase/php-jwt          7.1.0     CVE-2025-45769 afeta < 7.0.0 (e está disputada no NVD)
+#   phpseclib/phpseclib      3.0.56     CVE-2024-27354/27355 e CVE-2023-49316 corrigidas até 3.0.36
+#   paragonie/random_compat  9.99.100   advisory afeta < 2.0.0
+#   league/oauth1-client     1.11.0     nada encontrado
+#
+# `composer audit` local: **zero advisories**.
+#
+# ## A suspeita que ficou aberta, e que importa mais que o socialite
+#
+# Nas PRs anteriores desta rodada o Snyk reportava "No manifest changes detected" e **não
+# escaneava**. A #25 foi a primeira em muito tempo a mexer no `composer.lock`, ou seja, a
+# primeira em que ele rodou de verdade. Isso deixa uma hipótese em aberto: o achado pode ser
+# **pré-existente no projeto** — ou uma regra de licença/política da organização — e não ter
+# relação nenhuma com o socialite.
+#
+# Se for esse o caso, ignorar seria esconder um achado que ninguém viu ainda. É exatamente
+# por isso que nenhum ID foi inventado aqui.
+#
+# ## O que fazer (o próximo que abrir isto)
+#
+# 1. Abrir o painel do achado e anotar pacote, severidade e o ID `SNYK-...`:
+#    https://app.snyk.io/org/gsferro/pr-checks/a8b0afb8-cbda-4c6a-be60-1c2e33270940
+# 2. Se for de uma das cinco acima e não houver versão corrigida: acrescentar o ID no bloco
+#    `ignore` abaixo, com `reason` e `expires` curto (90 dias), no formato comentado.
+# 3. Se for **pré-existente** ou de outro pacote: NÃO ignorar. Corrigir em PR próprio.
+#
+# ponytail: sem os IDs este arquivo é só o rastro da decisão. O teto é conhecido e está
+# escrito; o próximo passo é um clique no painel, não código.
+
+version: v1.25.0
+
+# Formato, para quando os IDs chegarem:
+#
+# ignore:
+#   SNYK-PHP-FIREBASEPHPJWT-11356865:
+#     - '*':
+#         reason: >-
+#           Transitiva do laravel/socialite, sem versão corrigida disponível. Revisar
+#           quando o socialite subir a restrição.
+#         expires: 2026-11-24T00:00:00.000Z
+ignore: {}
+
+patch: {}

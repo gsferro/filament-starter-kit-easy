@@ -2,6 +2,79 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.19.2] - 2026-08-24
+
+Entrar com Google, atras de um interruptor desligado por default. Fecha a rodada de cinco
+entregas que comecou na 0.18.10.
+
+### Adicionado
+
+- **Login com Google via `laravel/socialite`** (a unica dependencia nova da rodada). O botao
+  entra abaixo do formulario, com o icone da marca em SVG inline — Heroicons nao tem logo de
+  marca e nenhum pacote de icone foi acrescentado por isso.
+
+  **O interruptor governa a ROTA, nao so o botao**: desligado, `/auth/google/*` responde 404.
+  Esconder o botao nao e barreira, porque a URL e publica. E o botao so aparece com o
+  interruptor ligado E as tres credenciais preenchidas — `client_secret` vazio, nao ausente,
+  e o caso testado, porque e o que sobra de quem preencheu o `.env` pela metade.
+
+  **Ele AUTENTICA quem ja tem conta; nao cria conta.** O `updateOrCreate` que a propria
+  documentacao do Socialite sugere contornaria o convite obrigatorio do kit — e isso e furo de
+  autorizacao, nao conveniencia. Criar conta exige o registro aberto ligado (0.19.1), e o
+  default dele e `false`.
+
+  `verified_email` falso do provedor **recusa**, e a leitura usa `filter_var` sobre os dois
+  aliases, porque a string `"false"` num cast de bool e `true` — o bug classico dessa
+  integracao, coberto em 6 particoes.
+
+- **Login social e o rodape da tela de login editaveis em `/admin/configuracoes-do-kit`**, aba
+  "Login". Isso foi possivel porque as chaves sao lidas POR REQUEST — o `abort_unless()` do
+  controller e a closure do render hook. A 0.19.1 tentou o mesmo com a verificacao de e-mail e
+  nao pode, porque aquela e lida no boot do painel: **ler por request e o que separa uma chave
+  editavel de um toggle que mente.**
+
+  O `client_secret` recebe o mesmo tratamento da senha de SMTP: cifrado no banco, zerado antes
+  de o formulario ser preenchido e so gravado quando preenchido de novo.
+
+- **Rodape na tela de login dos tres paineis**, vindo do Settings. E TEXTO e sai escapado: a
+  tela de login e publica e nao autenticada, e HTML cru ali seria XSS armazenado com o pior
+  alcance possivel.
+
+### Corrigido
+
+- **A chave que o login social lia nao existia — e dois casos de teste provavam que
+  funcionava.** Esta feature foi escrita antes da 0.19.1 e leu `kit.registro.aberto`; a
+  feature de registro nasceu com `kit.registro.habilitado`. O metodo lia chave **inexistente**
+  e devolvia `false` para sempre.
+
+  O sintoma seria mudo: ligar o registro aberto na tela liberaria o cadastro pelo formulario e
+  **nao** pelo login social, sem erro nenhum — e do lado que nao tem tela para conferir. Agora
+  ha uma dona so para a pergunta: `RegistroAberto::habilitado()`.
+
+  O que faz este achado valer registro e o **teste**: `config()->set()` aceita qualquer chave,
+  entao os dois casos que exercitavam a criacao de conta setavam a chave imaginaria e ficavam
+  VERDES, enquanto a producao recusava. Teste verde sobre configuracao que nunca existiu.
+
+- **`app/Http/Controllers` nao estava em `KitUpdate::CAMINHOS_DO_KIT`.** Quem JA instalou
+  receberia, no `kit:update`, a config, a rota e o botao — e nao o controller que e o destino
+  da rota. Foi o `KitUpdateTest` que pegou, o mesmo teste que pegou `app/Settings` na 0.19.0.
+
+### Sabido
+
+- **O PR check do Snyk reprovou esta entrega, e o merge foi feito com ele vermelho, por decisao
+  explicita.** Os outros tres jobs do CI passaram. As cinco dependencias que o socialite trouxe
+  foram conferidas uma a uma e nenhuma tem advisory aplicavel a versao instalada; `composer
+  audit` local devolve zero.
+
+  Fica uma suspeita aberta e ela importa: nas PRs anteriores o Snyk reportava "No manifest
+  changes detected" e **nao escaneava**. Esta foi a primeira em muito tempo a mexer no
+  `composer.lock`, ou seja a primeira em que ele rodou — o achado pode ser **pre-existente no
+  projeto**, e nao do socialite. O `.snyk` na raiz registra a decisao, o que foi apurado e o
+  que fazer com o ID em maos.
+
+- Os outros provedores (GitHub, Facebook, LinkedIn, X, Discord) ficaram fora: o pedido diz
+  "depois", e a decisao de extrair a abstracao se toma com DOIS casos na mao.
+
 ## [0.19.1] - 2026-08-24
 
 O painel `/app` passa a aceitar cadastro sem convite — desligado por default —, com aprovacao
