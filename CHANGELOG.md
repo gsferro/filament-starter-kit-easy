@@ -2,6 +2,65 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.19.0] - 2026-08-24
+
+O que era pergunta do `kit:install` gravada no `.env` passa a ser editavel em
+`/admin/configuracoes-do-kit`. Minor porque a superficie e nova, nao porque quebra algo: o
+`.env` continua funcionando como plano B.
+
+### Adicionado
+
+- **Pagina de configuracoes do kit em `/admin`**, com 19 propriedades em quatro abas: identidade
+  (nome, cor da paleta, cor livre em hex, logo, favicon, arte do login), e-mail (transporte, host,
+  porta, criptografia, usuario, senha, remetente), tabelas (paginacao, listrado, persistir filtros,
+  colunas redimensionaveis) e kit (hub de navegacao, rotulos da organizacao).
+
+  A infra do `spatie/laravel-settings` e do plugin do Filament **ja estava instalada e sem uso** —
+  `config/settings.php` vazio, migration presente, `app/Settings/` inexistente. Esta entrega liga o
+  que estava la, e fecha o TODO de `ConfiguraFilamentGlobal` e dos dois READMEs.
+
+  Decisoes que governam o comportamento: **o banco vence em tempo de execucao e o `.env` semeia**,
+  auditado em quatro cenarios (tabela ausente, grupo vazio, banco quebrado, `kit:install --force`) —
+  em nenhum a aplicacao sobe sem nome, sem cor ou sem remetente. `brandName`, `favicon` e
+  `brandLogo` recebem **Closure** e nao escalar, senao o valor congela no boot e a troca pela tela
+  so aparece depois de limpar cache. A trilha de auditoria sai de um **listener de
+  `SavingSettings`**, porque um Settings do spatie nao e Eloquent Model e a trait do kit nao se
+  aplica. Uma permissao so, `View:ConfiguracoesDoKit`, entregue ao papel `admin` pela matriz que ja
+  existia — nenhuma lista precisou ser editada.
+
+### Corrigido
+
+- **A senha de SMTP vazava no HTML da tela.** `->password()` e `->revealable()` mexem no `type` do
+  input, ou seja na TELA; o valor continuava em `$this->data`, que e propriedade PUBLICA da Page do
+  plugin, e o Livewire serializa isso inteiro no `wire:snapshot`. Medido: `GET
+  /admin/configuracoes-do-kit` devolvia a senha em claro no corpo da resposta, com 200 e sem clique
+  em "revelar". Banco (cifrado) e trilha (mascarada) estavam corretos — vazava so no navegador.
+
+  A barreira agora e em dois pontos, nenhum visual: a chave e zerada antes de o formulario ser
+  preenchido, e so chega ao save quando preenchida — entao a senha sobrevive a um salvamento que nao
+  a tocou. Achado pelo quality gate independente da propria wiki, que reprovou a entrega.
+
+- **Valor legitimo do `.env` fora da lista da tela travava TODA a gravacao** — nem o nome da
+  aplicacao gravava. `Select` acrescenta um `Rule::in()` das proprias opcoes sozinho, e a tela
+  oferece 3 dos 9 transportes de `config/mail.php` e 16 das 26 cores de `Color`. Quem instalou com
+  `MAIL_MAILER=ses` abria a tela e nao conseguia mudar nada. Agora o valor configurado entra como
+  opcao, marcado; normalizar para o default foi recusado porque rebaixaria em silencio o transporte
+  de producao de alguem.
+
+- **`app/Settings` e `app/Listeners` nao estavam em `KitUpdate::CAMINHOS_DO_KIT`.** Quem JA
+  instalou receberia no `kit:update` a pagina e a migration, e nao a classe que a pagina edita nem o
+  listener da auditoria. Foi o `KitUpdateTest` que pegou.
+
+### Sabido
+
+- Upload de favicon e logo sem `maxSize()` e aceitando SVG com `<script>`. Os arquivos sao servidos
+  publicamente, entao e XSS armazenado; quem sobe e o `admin`, que ja tem acesso total, e por isso o
+  risco real e baixo. Fica declarado em vez de corrigido junto: a entrega ja carregava um Blocker.
+
+- Remetente esvaziavel (`Mailer::$from` vira null), stack trace no log a cada request no estado
+  `MissingSettings` (~120 KB/dia medidos) e um ramo do listener sem teste. Todos no
+  `06-relatorio-qa.md`.
+
 ## [0.18.11] - 2026-08-24
 
 A tela de papeis vira **Perfis**: rotulo legivel em toda exibicao, contagem de usuarios,
