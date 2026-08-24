@@ -507,7 +507,9 @@ class ConfiguracoesDoKit extends SettingsPage
 
                 TextInput::make($provedor->propriedadeDeSettings('client_id'))
                     ->label('Client ID')
-                    ->helperText('A URI de redirecionamento a cadastrar no provedor é o seu domínio + '.$this->uriDeRedirecionamento($provedor))
+                    // O caminho é o que vive em `config/services.php`, relativo de propósito —
+                    // cadastre-o ABSOLUTO no console do provedor.
+                    ->helperText("A URI de redirecionamento a cadastrar no provedor é o seu domínio + /auth/{$provedor->value}/callback")
                     ->maxLength(255)
                     ->visible($ligado),
 
@@ -532,12 +534,6 @@ class ConfiguracoesDoKit extends SettingsPage
             ProvedorSocial::LinkedIn => 'linkedin.com/developers → Create app → Products → Sign In with LinkedIn using OpenID Connect. Sem esse produto, o provedor não devolve email_verified.',
             ProvedorSocial::X        => 'developer.x.com → Projects & Apps → User authentication settings, tipo Web App com OAuth 2.0. Pedir o e-mail exige users.email, e o X só devolve endereço que ele já confirmou.',
         };
-    }
-
-    /** O caminho relativo que vive em `config/services.php` — cadastre-o absoluto no provedor. */
-    private function uriDeRedirecionamento(ProvedorSocial $provedor): string
-    {
-        return "/auth/{$provedor->value}/callback";
     }
 
     private function abaKit(): Tab

@@ -119,6 +119,18 @@ Branch: `feat/mais-provedores-sociais` · base `origin/main` = `cc3afd8` (v0.19.
 | 6 | não criar serviço só para hospedar a consulta do GitHub | sim, com `ponytail:` e teto declarado | `ProvedorSocial` |
 | 7 | não criar migration de dados separada da que acrescenta as propriedades | sim | ADR-06, alternativa 3 |
 | 8 | usar `filter_var` da stdlib, não coerção própria | sim | enum e `config/kit.php` |
+| 9 | `uriDeRedirecionamento()` — método de uma linha com um chamador | sim, inlinado | tela de Settings |
+| 10 | `icone()` — um `match` de quatro linhas que só difere do `value` no LinkedIn; renomear a partial para `linkedin-openid.blade.php` deletaria o método | **recusada** | ver abaixo |
+
+**Por que a 10 foi recusada** (registrar hipótese rejeitada é o que `.ai/rules/specs.md` cobra):
+o corte é real — dez linhas a menos, um nome a menos para manter em sincronia, e a regra do
+ADR-01 ("o `value` é ao mesmo tempo driver, URL e chave de config") ficaria mais forte, não mais
+fraca. O que mudou o veredicto foi um caso de teste: `tests/Kit/LoginSocialProvedoresTest.php`
+percorre `cases()` e assere que a partial de cada `icone()` **existe**. O risco que o corte
+eliminaria — `icone()` divergir do nome do arquivo — já tem guarda automática, e o corte custaria
+renomear arquivo, blade, caso de browser e três trechos de wiki no meio de duas branches de teste
+em voo. Corte que troca dez linhas por churn coordenado não é o corte mais barato. Reavaliar
+quando a próxima partial de ícone entrar.
 
 ## Blockers
 
