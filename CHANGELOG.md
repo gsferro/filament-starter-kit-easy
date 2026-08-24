@@ -2,6 +2,73 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.18.10] - 2026-08-24
+
+Release de seguranca. Toda tela, widget e action ESCRITA NO KIT passa a exigir a permissao
+especifica dela — antes as permissoes existiam no checkbox e nao decidiam nada. Inclui tambem
+tres entregas que entraram na main antes desta tag.
+
+### Corrigido
+
+- **Nenhuma classe do app usava `HasPageShield` nem `HasWidgetShield`.** A config tem
+  `tabs.pages` e `tabs.widgets` ligadas, entao o `shield:generate` criava `View:{Page}` e
+  `View:{Widget}`, elas apareciam como checkbox na tela de papeis — e **nada as consultava**. Os
+  defaults do framework sao permissivos por design: `CanAuthorizeAccess.php:17-23` retorna `true`
+  ("Security: Custom pages default to allowing access for all authenticated panel users") e
+  `Widget.php:34-37` idem.
+
+  Na pratica: quem abria `/infra` via servidores, filas, slow queries, excecoes, trilha de
+  auditoria e IP/user-agent de acessos. Quem abria `/admin` via contagem de usuarios por papel e a
+  lista de nomes e e-mails dos ultimos cadastrados. A unica barreira era o `canAccessPanel()`.
+
+  Agora **5 Pages** e **23 Widgets** do kit consultam a permissao, e as Actions customizadas e de
+  RelationManager exigem autorizacao — o default de `CanBeAuthorized` e `null`, que e liberado.
+  Nasceram **6 permissoes de Action**, recortadas por painel na matriz do `PapeisSeeder`.
+
+  Os 18 `canView()` que so faziam `rescue(fn () => Schema::hasTable(...), false)` continuam
+  verificando a tabela: aquilo e protecao contra migration ausente, nao autorizacao. O que mudou e
+  que agora tambem consultam a permissao.
+
+- **Valor vazio no `.env` volta a cair no valor de fabrica.** O segundo argumento do `env()` so
+  vale para chave AUSENTE; com a chave presente e vazia (`KIT_ALGUMA_COISA=`) ele devolve string
+  vazia, e o default nunca entra. O `NumeroDoEnv` ja resolvia isso para inteiro — as sete chaves de
+  TEXTO ficaram sem dono, e tres doiam: `KIT_TENANCY_SLUG` vazio quebra o prefixo de rota da
+  multi-organizacao, e `KIT_ADMIN_EMAIL`/`KIT_ADMIN_PASSWORD` vazios criavam o administrador da
+  instalacao sem credencial de entrada. Correcao: `?:` no lugar da virgula, com uma varredura em
+  teste que impede a oitava chave de nascer com o defeito.
+
+- **2FA, register e confirmacao de e-mail vestidos pelo auth designer.** Quem entrava pelo login
+  split caia, na segunda etapa, numa tela de 2FA sem midia, sem marca e sem alternador de tema — o
+  Breezy entrega a pagina como `SimplePage`, que fixa o proprio `$layout`. A subclasse
+  `TelaDoisFatores` redeclara `$layout` (sem isso a atribuicao da trait veste TODA pagina simples
+  do processo, que e a armadilha registrada em `.ai/rules/auth.md`) e entra na rota pelo parametro
+  `action:` de `enableTwoFactorAuthentication()`. O register ganhou a midia no lado espelhado do
+  login.
+
+### Adicionado
+
+- **Pagina de boas-vindas do kit na rota `/`**, no lugar da welcome padrao do Laravel: um cartao
+  por painel e uma infolist com o que o `kit:install` personalizou. Publica e anonima, como a
+  pagina que substitui — e sem segredo nenhum: e-mail, nome e senha do admin, host e usuario de
+  banco, URL do repositorio e config de e-mail ficaram deliberadamente fora, com caso de teste
+  assertando a ausencia por sentinela plantada. A rota carrega `panel:app` porque
+  `@filamentStyles` sozinho nao traz a folha do Filament e ignora `KIT_COR_PRIMARIA`.
+
+- **`php artisan kit:admin`** — o caminho deliberado para trocar e-mail e senha do administrador
+  da instalacao, com confirmacao, sem ecoar a senha e recusando e-mail que ja pertence a outra
+  conta.
+
+### Sabido
+
+- **10 Pages e 1 Widget vindos de PACOTES no `/infra`** tem a permissao no banco e no checkbox, e
+  ela nao decide nada: revogar `View:LogsExplorer` do papel `infra` e abrir `/infra/logs` ainda
+  responde 200. Cobri-las exige subclassear classe de plugin, com o `LogicException` que
+  `.ai/rules/providers-filament.md` documenta. Quatro das dez ja tem barreira propria por gate
+  (`ver-logs`, `command-center:access`, `viewPulse`). A lacuna foi declarada ANTES de implementar e
+  tem caso de teste que a assere — ele fica vermelho no dia em que alguem a fechar.
+
+  Ou seja: o kit entrega "toda tela DO KIT nasce com permissao", nao "toda tela do painel".
+
 ## [0.18.9] - 2026-08-23
 
 Release de correcao. O seeder do administrador para de duplicar, e a troca de credencial ganha comando proprio.
