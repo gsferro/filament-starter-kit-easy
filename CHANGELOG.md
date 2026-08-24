@@ -2,8 +2,11 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
-## [Nao lancado]
-Sem numero de versao de proposito: outras branches estao em voo e o numero sai no merge.
+## [0.19.1] - 2026-08-24
+
+O painel `/app` passa a aceitar cadastro sem convite — desligado por default —, com aprovacao
+manual opcional e verificacao de e-mail.
+
 ### Adicionado
 - **Registro aberto no painel `/app`, desligado por default** (`KIT_REGISTRO=false`). Ate aqui o
   `/app/register` respondia **so** a quem trazia token de convite valido; agora a mesma tela
@@ -63,6 +66,36 @@ Sem numero de versao de proposito: outras branches estao em voo e o numero sai n
 - Documentado por extenso no `README.md` e no `README.en.md`, inclusive a tabela do que ligar
   cada chave faz refletir e o comando de reparo para quem ligar a validacao de e-mail numa base
   que ja tem gente dentro.
+
+### Corrigido
+
+- **Aprovar cadastro pelo `/admin` gravava o papel no contexto GLOBAL, e a pessoa entrava sem ver
+  nada.** `User::aprovar()` chamava `assignRole()` cru, e quem aprova esta no `/admin`, cujo
+  contexto e o global: o papel ia para `model_has_roles.team_id = 0` com a organizacao em `id = 1`.
+  Dentro do `/app` o `wherePivot` do spatie filtra pelo team do request, a relacao volta vazia, e
+  `GET /app/{slug}` responde **200** com painel vazio.
+
+  E o estado era sem saida pela propria tela: a acao tem `visible = aprovacao_pendente` e a
+  pendencia e baixada antes, entao a mesma tela nao conserta o que acabou de fazer. Agora o papel
+  vai no contexto de cada organizacao do usuario, pelo `ContextoDePapeis` que o convite ja usava —
+  `aprovar()` era o unico caminho novo que nao passava por ele.
+
+- **O toggle "Exigir e-mail validado" gravava e nao fazia efeito.** A chave e lida no BOOT pelo
+  `AppPanelProvider`, e o painel e montado antes do alinhamento da config; pior, o middleware de
+  e-mail verificado e fixado no array da rota no momento do registro
+  (`vendor/filament/filament/src/Pages/Concerns/HasRoutes.php:91`), nao por request — nem Closure
+  resolveria. A chave saiu da tela de Settings e continua no `.env`
+  (`KIT_REGISTRO_VERIFICAR_EMAIL`), com a tela dizendo onde ela mora. Toggle que grava sem efeito
+  ate o proximo deploy e pior que campo ausente.
+
+- **`RegistroAberto::registrar()` aceitava organizacao que nunca optou pelo registro.** A guarda
+  existia no caminho da TELA (`organizacao()` filtra `ativo` e `registro_habilitado`), e este
+  metodo existe justamente para o chamador que nao passou pela tela — job, comando, seeder —, que
+  entrega um `Tenant` construido. `RegistroAberto` tinha 100% de mutation score em 44 mutantes e
+  convivia com isso: checagem que nao existe nao gera mutante.
+
+  Os tres foram achados por um quality gate rodado por agente INDEPENDENTE, que reprovou a
+  entrega, e os tres tem caso de teste verificado por mutacao manual.
 
 ## [0.19.0] - 2026-08-24
 
