@@ -378,9 +378,7 @@ final class CustomizadorDaInstalacao
     public static function itensManuais(): array
     {
         return [
-            'Nome, cor, logo e favicon .. /admin → Configurações do kit',
-            'Arte do login .............. /admin → Configurações do kit',
-            'Dados de e-mail ............ /admin → Configurações do kit',
+            'Identidade e e-mail ........ /admin → Configurações do kit (logo, favicon, arte do login, SMTP)',
             'Acesso aos painéis ......... /admin → Funções (o campo Painel de cada papel)',
             'Matriz de permissões ....... database/seeders/PapeisSeeder.php',
             'Health checks .............. KitServiceProvider::configureHealthChecks()',

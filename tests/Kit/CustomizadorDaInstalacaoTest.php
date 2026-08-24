@@ -6,6 +6,7 @@ use App\Support\SubstituicaoEmArquivo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * O customizador de instalação — as perguntas do `kit:install` e a escrita delas.
@@ -334,7 +335,9 @@ it('aponta os sete itens que continuam manuais, cada um com o seu arquivo', func
 
     expect($itens)->toHaveCount(7);
 
-    foreach (['login.svg', 'Funções', 'PapeisSeeder', 'configureHealthChecks', 'command-center', 'backup.php', 'Agentes de IA'] as $referencia) {
+    // `login.svg` saiu da lista: a arte do login virou campo em
+    // /admin/configuracoes-do-kit, e a linha que a substituiu aponta para lá.
+    foreach (['Configurações do kit', 'Funções', 'PapeisSeeder', 'configureHealthChecks', 'command-center', 'backup.php', 'Agentes de IA'] as $referencia) {
         expect(implode(' ', $itens))->toContain($referencia);
     }
 })->group('kit');
@@ -438,4 +441,69 @@ it('descreve a cor vazia como padrao do filament', function (): void {
     $resumo = customizadorNoTemp()->aplicarSemBanco(['nome' => 'x', 'cor' => '']);
 
     expect($resumo[1])->toBe(['Cor primária', 'Padrão do Filament']);
+});
+
+/**
+ * CT-27 — o `--custom` propaga nome e cor para o settings, não só para o `.env`.
+ *
+ * Este caso existe por causa do conflito entre as DUAS fontes de configuração que a
+ * feature de settings criou. O banco vence o `.env` em tempo de execução (ADR-01),
+ * então um `aplicarSemBanco()` que só reescrevesse o arquivo faria o comando
+ * imprimir "Nome do projeto: Refeito" e a tela continuar mostrando o nome antigo —
+ * a resposta do usuário pareceria não ter efeito nenhum, sem erro nenhum.
+ *
+ * As duas metades no mesmo `Então` são o ponto: afirmar só o `.env` é exatamente o
+ * que o caso vizinho já faz, e ele passa com a propagação removida.
+ */
+it('propaga nome e cor para o settings, alem do env', function (): void {
+    $env = test()->base.DIRECTORY_SEPARATOR.'.env';
+
+    file_put_contents($env, "APP_NAME=Antigo\nKIT_COR_PRIMARIA=\n");
+
+    customizadorNoTemp()->aplicarSemBanco(['nome' => 'Refeito', 'cor' => 'Teal']);
+
+    $conteudo = (string) file_get_contents($env);
+
+    expect($conteudo)->toContain('APP_NAME="Refeito"')
+        ->and($conteudo)->toContain('KIT_COR_PRIMARIA="Teal"');
+
+    expect(json_decode((string) DB::table('settings')->where('group', 'kit')->where('name', 'nome_da_aplicacao')->value('payload')))
+        ->toBe('Refeito')
+        ->and(json_decode((string) DB::table('settings')->where('group', 'kit')->where('name', 'cor_primaria')->value('payload')))
+        ->toBe('Teal');
+});
+
+/**
+ * A cor vazia chega ao settings como NULO, não como string vazia.
+ *
+ * É a mesma semântica que o `.env` expressa com a chave vazia, e a propriedade é
+ * `?string`: `''` num campo de cor é um valor que parece configurado e não é —
+ * `CorPrimaria::paleta()` teria de tratar os dois casos em vez de um.
+ */
+it('propaga a cor vazia para o settings como nulo', function (): void {
+    file_put_contents(test()->base.DIRECTORY_SEPARATOR.'.env', "APP_NAME=x\nKIT_COR_PRIMARIA=Blue\n");
+
+    customizadorNoTemp()->aplicarSemBanco(['nome' => 'x', 'cor' => '']);
+
+    expect(json_decode((string) DB::table('settings')->where('group', 'kit')->where('name', 'cor_primaria')->value('payload')))
+        ->toBeNull();
+});
+
+/**
+ * Sem a tabela de settings, o instalador segue — o `.env` é a única fonte ali.
+ *
+ * O `--custom` também roda em projeto que ainda não migrou, e um comando de
+ * instalação não pode morrer por causa da tela de configurações. É o mesmo
+ * raciocínio do `try/catch` do alinhamento no boot.
+ */
+it('aplica nome e cor mesmo sem a tabela de settings', function (): void {
+    $env = test()->base.DIRECTORY_SEPARATOR.'.env';
+
+    file_put_contents($env, "APP_NAME=Antigo\nKIT_COR_PRIMARIA=\n");
+
+    Schema::drop('settings');
+
+    customizadorNoTemp()->aplicarSemBanco(['nome' => 'Refeito', 'cor' => 'Teal']);
+
+    expect((string) file_get_contents($env))->toContain('APP_NAME="Refeito"');
 });
