@@ -290,6 +290,30 @@ request é um painel só.
   chave nova sem entrada escaparia do `reject` e iria para os quatro papéis. Corrigido antes de
   commitar; o comentário no método registra a inversão.
 
+## Nota de rebase (main avançou durante a entrega)
+
+Rebase sobre `origin/main` = `0d423dd`, **sem conflito**. Três merges entraram desde o início:
+`#21` (auth designer nos três PanelProviders), `#22` (página de boas-vindas, com `routes/web.php` e
+uma Page nova) e `#23` (fix do `env()` vazio em `config/kit.php`).
+
+**A `BoasVindas` do `#22` NÃO entra na conta desta feature, e a decisão está registrada** no
+`00-requisito.md` → `## Fora desta entrega`. Em resumo: ela vive em `app/Filament/Pages/`, que
+nenhum `discoverPages()` varre, e é registrada como rota simples em `routes/web.php` com o
+middleware `panel:app`. O Shield não gera permissão para ela — não há o que consultar. E ela é
+servida em `/` para visitante **anônimo**: registrá-la num painel "por coerência" faria o `mount()`
+chamar `authorizeAccess()` e devolveria **403 na home pública**.
+
+Os dois testes de arquitetura desta feature (CT-21, CT-23) derivam a lista de
+`Filament::getPanels()->getPages()`, e não do sistema de arquivos — então eles **nem a alcançam**,
+por construção. Confirmado rodando os dois depois do rebase.
+
+Verificado também que os três merges **não** trouxeram Action nem item de navegação novo: a
+varredura de CT-25 sobre `app/Filament` + `app/Providers/Filament` devolve as mesmas 9 superfícies
+nomeadas de antes do rebase. O `TelaDoisFatores` do `#21` é Page de autenticação, mesma família da
+`BoasVindas`.
+
+Pós-rebase: PHPStan 0 erros, os 73 casos desta feature verdes.
+
 ## Candidatos a Rule de Projeto (PROPOSTA — decisão do usuário)
 
 Nenhuma rule foi gravada. `record-rule` não ficou disponível e, por instrução do coordenador, a

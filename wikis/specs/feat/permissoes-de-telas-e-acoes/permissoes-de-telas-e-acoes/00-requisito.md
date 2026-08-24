@@ -83,6 +83,15 @@ Fora por decisão registrada nas Ambiguidades acima:
   `DeleteBulkAction`) em Resource e Page de Resource — já consultam a policy do model pelo
   `getDefaultActionAuthorizationResponse()` do Filament. **Exceção**: as de RelationManager, que
   o vendor documenta como não-autorizadas — essas entram na entrega (ver ADR-04).
-- **`TelaLogin`, `TelaBloqueio`, `RegistroPorConvite`** (`app/Filament/Pages/Auth/`) — telas
-  públicas ou de sessão própria, por definição sem permissão. Não são Pages de painel e o Shield
-  não gera permissão para elas.
+- **`Page` que não é de painel** — `app/Filament/Pages/**`: `TelaLogin`, `TelaBloqueio`,
+  `RegistroPorConvite`, `TelaDoisFatores` e a `BoasVindas` da rota `/`. São telas públicas ou de
+  sessão própria, e nenhum `discoverPages()` do kit varre aquele diretório (os três apontam para
+  `Filament/{Admin,App,Infra}/Pages`) — logo **o Shield não gera permissão nenhuma para elas** e não
+  há o que consultar.
+
+  A cláusula "toda tela tem permissão específica" **não se aplica** a esta família, e a diferença é
+  material, não formal: `BoasVindas` é servida em `/` para visitante **anônimo**. Registrá-la num
+  painel para "ficar coerente" criaria a permissão — e o `mount()` da Page passaria a chamar
+  `authorizeAccess()`, devolvendo **403 na home pública**. Quem tentar isso encontra
+  `tests/Kit/BoasVindasTest.php` CT-01 vermelho (`GET /` anônimo → 200), que já é a barreira: não
+  foi preciso caso novo.
