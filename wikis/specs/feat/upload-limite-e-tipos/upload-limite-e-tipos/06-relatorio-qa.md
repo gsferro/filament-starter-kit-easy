@@ -8,11 +8,11 @@ um débito declarado.
 
 | RQ | Cláusula | Passo do PRD | Casos | Código | Situação |
 |----|----------|--------------|-------|--------|----------|
-| RQ-01 | todo upload aceita até 10 MB | 1, 3, 4, 5 | CT-02, CT-04, CT-10, CT-12, CT-21 | `config/kit.php`, os cinco campos | ✅ |
+| RQ-01 | todo upload aceita até 10 MB | 1, 3, 4, 5 | CT-02, CT-04, CT-10, CT-12, CT-21, CT-24 | `config/kit.php`, os cinco campos | ✅ |
 | RQ-02 | acima do teto é recusado | 3, 4, 5 | CT-04, CT-05, CT-06, CT-10, CT-12, CT-21 | `->maxSize()` + regra global do Livewire | ✅ |
 | RQ-03 | upload recusa SVG | 3, 4 | CT-07, CT-07b, CT-09, CT-11, CT-13, CT-16 | `mimes:` nos de imagem, regra de recusa no `anexos` | ✅ |
 | RQ-04 | qualquer outro tipo de imagem é aceito | 3 | CT-08 (12 partições), CT-23 | `FORMATOS_DE_IMAGEM` | ✅ **após correção — ver QA-01** |
-| RQ-05 | o teto vive na config do kit | 1, 2 | CT-01, CT-02, CT-21, CT-22 | `kit.uploads.maximo_em_kb`, `TetoDeUpload` | ✅ |
+| RQ-05 | o teto vive na config do kit | 1, 2 | CT-01, CT-02, CT-24, CT-25 | `kit.uploads.maximo_em_kb`, `TetoDeUpload` | ✅ |
 | RQ-06 | documentado para mudar com facilidade | 2, 6 | CT-18, CT-19, CT-20 | `.env.example`, os dois READMEs | ✅ |
 
 **Nenhuma cláusula órfã.** Todo `RQ` tem passo, caso e código, e nenhum caso existe sem `RQ` de
@@ -121,7 +121,7 @@ Cada regra declara os mutantes plausíveis e o caso que os mata; os que importam
 | Mutante | Morre em |
 |---|---|
 | `->maxSize()` removido de um dos três campos | CT-04 (dataset por campo) |
-| `->maxSize(10240)` literal no lugar da config | CT-21, CT-22 |
+| `->maxSize(10240)` literal no lugar da config | CT-24, CT-25 |
 | teto do Livewire com número cravado | CT-03 (segundo `Quando`) |
 | folga do Livewire removida (tetos iguais) | CT-05 |
 | teto do Livewire afrouxado para um número enorme | CT-06 |

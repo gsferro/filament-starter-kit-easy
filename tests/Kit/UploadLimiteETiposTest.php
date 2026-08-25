@@ -391,7 +391,7 @@ it('[CT-09] recusa SVG renomeado para .png, onde o mimetypes:image/* aceitava', 
 */
 
 /**
- * CT-21 - a fronteira do campo acompanha a config, e nao um numero cravado.
+ * CT-24 - a fronteira do campo acompanha a config, e nao um numero cravado.
  *
  * CT-04 prova que existe uma fronteira; este prova que ela é **a da config**. Sem
  * ele, `->maxSize(10240)` escrito literalmente passaria em tudo — e RQ-05 ("o
@@ -403,7 +403,7 @@ it('[CT-09] recusa SVG renomeado para .png, onde o mimetypes:image/* aceitava', 
  * porque o provider já rodou no boot deste processo — o que se está exercitando
  * aqui é o CAMPO lendo a config, não o alinhamento (que é CT-03).
  */
-it('[CT-21] move a fronteira do campo quando a config muda', function (int $tamanhoEmKb, bool $recusado): void {
+it('[CT-24] move a fronteira do campo quando a config muda', function (int $tamanhoEmKb, bool $recusado): void {
     config()->set('kit.uploads.maximo_em_kb', 2048);
     config()->set('livewire.temporary_file_upload.rules', ['required', 'file', 'max:1048576']);
 
@@ -425,9 +425,9 @@ it('[CT-21] move a fronteira do campo quando a config muda', function (int $tama
 ])->group('kit');
 
 /**
- * CT-22 - nenhum `maxSize()` do kit recebe numero literal.
+ * CT-25 - nenhum `maxSize()` do kit recebe numero literal.
  *
- * Varredura, não cenário: CT-21 prova que UM campo lê a config, e o kit tem
+ * Varredura, não cenário: CT-24 prova que UM campo lê a config, e o kit tem
  * cinco. A alternativa seria um caso de fronteira por campo com a config mexida,
  * o que multiplica cinco cenários lentos de componente para provar uma
  * propriedade estática do código.
@@ -442,7 +442,7 @@ it('[CT-21] move a fronteira do campo quando a config muda', function (int $tama
  * `token_get_all()` e não regex de comentário: regex não distingue `//` dentro de
  * string de `//` iniciando comentário, e o kit tem URLs em docblock.
  */
-it('[CT-22] nao deixa nenhum maxSize do kit com numero cravado', function (): void {
+it('[CT-25] nao deixa nenhum maxSize do kit com numero cravado', function (): void {
     $comLiteral = [];
 
     foreach (Finder::create()->in(app_path())->files()->name('*.php') as $arquivo) {

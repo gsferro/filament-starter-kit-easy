@@ -42,9 +42,10 @@
 
 ## Testes
 
-- [x] `tests/Kit/UploadLimiteETiposTest.php` — CT-01..CT-09, CT-21, CT-22, CT-23 (45 casos com datasets)
+- [x] `tests/Kit/UploadLimiteETiposTest.php` — CT-01..CT-09, CT-23, CT-24, CT-25 (45 casos com datasets)
 - [x] `tests/Kit/UploadLimiteETiposDocumentacaoTest.php` — CT-18, CT-19, CT-20
 - [x] `tests/Tenancy/UploadLimiteETiposTenancyTest.php` — CT-10..CT-13, CT-16, CT-21 (11 casos)
+- [x] Mapa cenário derivado × caso implementado, no fim do `04` (as numerações divergiram)
 
 ## Verificação Final
 

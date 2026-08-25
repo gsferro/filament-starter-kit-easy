@@ -1549,3 +1549,41 @@ e o gate de mutantes de especificação, que nasceram do requisito.
 
 ✅ `pestphp/pest-plugin-mutate` está declarado **direto** no `composer.json` (`^5.0`, linha 93) —
 verificado, e não assumido. O comando não depende de acidente da árvore de dependências.
+
+---
+
+## Mapa: cenários derivados × casos implementados
+
+> Escrito na implementação, não na derivação. Ele existe porque a numeração dos dois lados
+> divergiu, e wiki que numera diferente do código manda a próxima pessoa procurar um caso que não
+> existe com aquele nome.
+
+Onde a numeração coincide, coincide de fato. Onde não, esta tabela é a autoridade.
+
+| Cenário derivado | Caso implementado | Arquivo |
+|---|---|---|
+| CT-01 (`.env` → teto sempre > 0) | `[CT-02]` (sete valores) | Kit |
+| CT-02 (teto de fábrica = 10 MB) | `[CT-01]` (em KB **e** em MB) | Kit |
+| CT-03, CT-04 (BVA no campo, três campos) | `[CT-04]` (dataset campo × tamanho) | Kit |
+| CT-05 (o par fora da tela de configurações) | `[CT-10]`, `[CT-12]` | Tenancy |
+| CT-06 (a fronteira acompanha a config) | `[CT-24]` | Kit |
+| CT-07 (nenhum `maxSize` com literal) | `[CT-25]` (varredura com `token_get_all`) | Kit |
+| CT-08 (upload temporário limitado pela chave) | `[CT-03]` | Kit |
+| CT-09 (acima do teto não chega ao formulário) | `[CT-06]` | Kit |
+| CT-10 (SVG nos três campos de imagem) | `[CT-07]`, `[CT-07b]` | Kit |
+| CT-11 (SVG na logo da organização) | `[CT-11]` | Tenancy |
+| CT-12, CT-13 (SVG renomeado; detector por conteúdo) | `[CT-09]` (as duas metades no mesmo caso) | Kit |
+| CT-14 (formatos aceitos, um por partição) | `[CT-08]` (doze partições) | Kit |
+| CT-15 (`.ico` e `.tiff` fora, como premissa) | **invertido** → `[CT-23]`, que prova que `.ico` **entra**. Ver QA-01: a premissa era falsa | Kit |
+| CT-16 (SVG no anexo, qualquer posição) | `[CT-16]` | Tenancy |
+| CT-17 (documento continua aceito) | `[CT-13]` (a metade do PDF) | Tenancy |
+| CT-18, CT-19, CT-20 (documentação) | `[CT-18]`, `[CT-19]`, `[CT-20]` | Kit (arquivo de documentação) |
+| CT-21 (logo na edição) | `[CT-21]` | Tenancy |
+
+**O único cenário que mudou de sinal é CT-15.** A derivação o escreveu como premissa falsificável
+("`.ico` fica de fora, e é decisão registrada"), exatamente para que a decisão não crescesse em
+silêncio. O quality gate o falsificou: o kit serve `public/favicon.ico`. O caso virou `[CT-23]`, que
+prova o oposto — e é o melhor resultado possível para um caso de premissa.
+
+**Cenário sem caso**: nenhum. **Caso sem cenário derivado**: `[CT-05]` (mensagem em MB no
+formulário) e `[CT-23]`, os dois nascidos de achados do quality gate.
