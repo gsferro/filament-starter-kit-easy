@@ -798,7 +798,21 @@ it('não cria segunda conta quando a mesma volta chega duas vezes', function (
 
     expect(User::query()->count())->toBe(1);
 
-    $this->assertDatabaseCount('authentication_log', 2);
+    /*
+     * UMA linha, e não duas — o pacote de trilha de acesso DEDUPLICA. Com
+     * `prevent_session_restoration_logging` ligado (default) e `session_restoration_window_minutes`
+     * em 5, a segunda entrada do mesmo dispositivo dentro da janela é tratada como restauração de
+     * sessão e só bumpa `last_activity_at`
+     * (`vendor/rappasoft/laravel-authentication-log/src/Listeners/LoginListener.php:59-80`).
+     *
+     * A primeira versão deste caso esperava 2 e reprovava. Vale registrar: a asserção estava
+     * errada sobre um PACOTE, exatamente o que `.ai/rules/specs.md` manda conferir no `vendor/`
+     * antes de escrever — a regra vale para caso de teste tanto quanto para wiki.
+     *
+     * O oráculo da idempotência é o `User::count()` acima; esta linha é o contrapeso que
+     * documenta a janela, e é ela que fica vermelha se alguém desligar a deduplicação.
+     */
+    $this->assertDatabaseCount('authentication_log', 1);
 })->with([
     'github'   => [ProvedorSocial::Github],
     'linkedin' => [ProvedorSocial::LinkedIn],

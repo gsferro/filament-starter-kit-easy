@@ -166,6 +166,33 @@ Nenhum.
   Ganho colateral: o kit deixou de chamar API de provedor nenhuma, o que apagou um modo de falha
   (API do GitHub fora = login recusado) que a ausência da chamada não tem.
 
+- **Três defeitos que os casos de teste pegaram no código, não no plano.** Todos cause (b) — a
+  implementação divergia do que o requisito exige — e nenhum estava previsto:
+
+  1. **O segredo não podia ser salvo pela tela** (pré-existente, v0.19.0 para o SMTP e v0.19.2
+     para o Google). `fn (?string $estado)` na closure de `->dehydrated()`: o Filament resolve por
+     NOME, `$estado` não é nome conhecido, a closure recebia `null` e `filled(null)` era sempre
+     falso. Ver ADR-06, "o quarto sintoma".
+  2. **A conta criada por login social nascia sem `email_verified_at`.** O callback só chega a
+     `criarConta()` depois de o provedor PROVAR que o endereço está verificado — deixar a coluna
+     nula prende a pessoa numa tela de "verifique seu e-mail" no instante seguinte a um OAuth
+     bem-sucedido, pedindo a mesma prova duas vezes. `Convite::aceitar()` já grava a coluna pelo
+     mesmo argumento (o token prova posse), e o `config/kit.php` promete por escrito que "quem
+     vem de convite nunca é afetado". Login social tem prova igual ou melhor.
+  3. **`null` no bruto era tratado como desmentido** na guarda dos ramos de presença, então o X
+     recusava quando o payload traz `email_verified: null` — que é ausência de informação, não
+     negação. Corrigido com `blank()`, que trata `false` como informação (`blank(false)` é
+     `false` no Laravel) e `null`/`''` como ausência.
+
+- **Um defeito no próprio caso de teste**, cause (a): a idempotência do callback esperava **duas**
+  linhas em `authentication_log` para duas voltas. O pacote **deduplica** — com
+  `prevent_session_restoration_logging` ligado (default) e janela de 5 minutos, a segunda entrada
+  do mesmo dispositivo só bumpa `last_activity_at`
+  (`vendor/rappasoft/laravel-authentication-log/src/Listeners/LoginListener.php:59-80`). A
+  asserção estava errada sobre um PACOTE, que é exatamente o que `.ai/rules/specs.md` manda
+  conferir no `vendor/` antes de escrever — a regra vale para caso de teste tanto quanto para
+  wiki.
+
 ## Notas de Implementação
 
 - **O defeito do `encrypted()` é o achado mais caro desta rodada**, e ele não estava no requisito.

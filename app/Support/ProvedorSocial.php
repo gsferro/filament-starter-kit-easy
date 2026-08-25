@@ -247,7 +247,25 @@ enum ProvedorSocial: string
         $bruto = $doProvedor->getRaw();
 
         foreach ($chaves as $chave) {
-            if (array_key_exists($chave, $bruto) && ! filter_var($bruto[$chave], FILTER_VALIDATE_BOOLEAN)) {
+            if (! array_key_exists($chave, $bruto)) {
+                continue;
+            }
+
+            /*
+             * `null` e string vazia NÃO são desmentido — são ausência de informação, e o ramo de
+             * presença já tem a prova dele. `blank()` e não `filled()` invertido porque
+             * `blank(false)` é FALSE no Laravel: o booleano `false` é informação, e é exatamente
+             * o desmentido que este método existe para pegar.
+             *
+             * A assimetria com `booleanoDoBruto()` é deliberada: lá a pergunta é "há prova?" e
+             * `null` responde não; aqui é "há desmentido?" e `null` responde não também. Os dois
+             * são falha fechada em contextos opostos.
+             */
+            if (blank($bruto[$chave])) {
+                continue;
+            }
+
+            if (! filter_var($bruto[$chave], FILTER_VALIDATE_BOOLEAN)) {
                 return false;
             }
         }

@@ -243,6 +243,25 @@ final class LoginSocialController extends Controller
             'password' => Str::password(32),
         ]);
 
+        /*
+         * O provedor JÁ provou que o endereço está verificado — é a barreira que a pessoa
+         * atravessou para chegar a esta linha. Pedir verificação depois disso é pedir a mesma
+         * prova duas vezes, e a segunda por e-mail.
+         *
+         * É o mesmo argumento e a mesma linha de `Convite::aceitar()`, que grava a coluna porque
+         * o token prova posse do endereço (ver o comentário de lá). O `config/kit.php` diz por
+         * escrito que "quem vem de convite nunca é afetado" pelo middleware de e-mail
+         * verificado; quem vem de login social tem prova igual ou melhor, e merece o mesmo.
+         *
+         * `email_verified_at` está FORA do `$fillable` do User — é estado, não entrada —, então
+         * mass assignment o descartaria em silêncio. Daí o `forceFill`.
+         *
+         * Sem esta linha, com KIT_REGISTRO_VERIFICAR_EMAIL ligado, a conta nasce presa na tela
+         * de "verifique seu e-mail" no instante seguinte a um OAuth bem-sucedido. Foi um caso de
+         * teste que pegou.
+         */
+        $user->forceFill(['email_verified_at' => now()])->save();
+
         Log::channel('autenticacao')->info(
             "[LoginSocialController@criarConta] Conta criada por login social | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
             [

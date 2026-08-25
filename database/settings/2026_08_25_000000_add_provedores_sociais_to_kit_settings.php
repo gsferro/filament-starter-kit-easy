@@ -138,7 +138,21 @@ return new class extends SettingsMigration
 
         try {
             $this->migrator->update($propriedade, function ($valor) {
-                if ($valor === null || $valor === '') {
+                /*
+                 * SÓ `null` passa reto, e a estreiteza é medida. A string vazia tem de ser
+                 * CIFRADA como qualquer outro texto claro: `Crypto::decrypt()` só devolve sem
+                 * mexer quando o payload é `null`
+                 * (`vendor/spatie/laravel-settings/src/Support/Crypto.php:14-19`), então um `''`
+                 * deixado em claro faz `decrypt('')` estourar na LEITURA — e o
+                 * `catch (Throwable)` do `KitServiceProvider` engole a leitura do GRUPO INTEIRO,
+                 * derrubando a instalação de volta ao `.env` em silêncio e perdendo TODAS as
+                 * configurações da tela.
+                 *
+                 * Ou seja: um `blank()` ou um `=== ''` aqui reintroduz exatamente o modo de
+                 * falha que esta normalização existe para evitar. Foi um caso de teste que pegou
+                 * — a linha "string vazia, a fronteira".
+                 */
+                if ($valor === null) {
                     return $valor;
                 }
 

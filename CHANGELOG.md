@@ -91,6 +91,25 @@ deliberadamente NAO fez.
   texto claro e e cifrado agora. Sem essa normalizacao, o conserto da lista faria o
   `catch (Throwable)` do provider engolir a leitura do GRUPO INTEIRO — a instalacao voltaria ao
   `.env` em silencio, perdendo TODAS as configuracoes da tela.
+- **A senha de SMTP e o `client_secret` do Google eram impossiveis de gravar pela tela.**
+  Pre-existente: v0.19.0 para a senha, v0.19.2 para o segredo. A closure de `->dehydrated()` era
+  `fn (?string $estado)`, e o Filament resolve dependencia de closure por NOME do parametro
+  (`schemas/src/Components/Component.php:87-98`); nome desconhecido com tipo escalar nao resolve
+  para nada (`support/src/Concerns/EvaluatesClosures.php:143-160`). A closure recebia `null`,
+  `filled(null)` era `false` SEMPRE, e a chave nunca chegava ao save. Corrigido renomeando o
+  parametro para `$state`.
+  O que deixou isso passar merece registro, porque e sobre a FORMA do par de testes que a rule
+  `.ai/rules/pages.md` pede: "o segredo nao aparece no HTML" e "o segredo sobrevive a um save que
+  nao o tocou" **afirmam os dois o que NAO acontece**, e um `dehydrated` sempre-falso satisfaz os
+  dois. Dois casos de ausencia nao fazem um par. Faltava o terceiro — campo PREENCHIDO grava — e
+  ele entrou agora, para a senha de SMTP e para os quatro provedores.
+- **A conta criada por login social nascia sem `email_verified_at`.** O callback so cria conta
+  depois de o provedor PROVAR que o endereco esta verificado; deixar a coluna nula prende a pessoa
+  numa tela de "verifique seu e-mail" no instante seguinte a um OAuth bem-sucedido — a mesma prova
+  duas vezes, a segunda por e-mail. `Convite::aceitar()` ja gravava a coluna pelo mesmo argumento,
+  e o `config/kit.php` promete por escrito que quem vem de convite nunca e afetado. Login social
+  tem prova igual ou melhor.
+
 ### Fora desta entrega, com ADR
 - **Facebook** — nao expoe nenhum sinal de e-mail verificado. O `verified` que o provider pede e
   de nivel de CONTA, legado, e ausente na Graph v23.0 que ele usa; o caminho OIDC/Limited Login

@@ -423,6 +423,31 @@ A guarda contra a próxima omissão é um caso de teste, não prosa: salvar um `
 tela e assertar que a linha de `audits` tem a **máscara** e não o segredo. Ele teria pegado isto
 duas releases atrás.
 
+### O quarto sintoma, e o mais bobo: o segredo não podia ser salvo
+
+Ao escrever o caso acima — "salvar um `client_secret` pela tela" — ele **reprovou**, e por um
+motivo que não tem nada a ver com criptografia: o segredo nunca chegava ao `save()`.
+
+A closure de `->dehydrated()` era `fn (?string $estado): bool => filled($estado)`. O Filament
+resolve dependência de closure por **NOME** do parâmetro
+(`vendor/filament/schemas/src/Components/Component.php:87-98` lista os nomes conhecidos:
+`state`, `get`, `set`, `record`, …), e nome desconhecido com tipo **escalar** não resolve para
+nada (`vendor/filament/support/src/Concerns/EvaluatesClosures.php:143-160`). Com `$estado`, a
+closure recebia `null`, `filled(null)` era `false` **sempre**, e a chave nunca era dehidratada.
+
+Efeito, em silêncio e desde a v0.19.0: **a senha de SMTP era impossível de gravar pela tela**. E
+desde a v0.19.2, o `client_secret` do Google também.
+
+Por que os testes não pegaram, e esta é a parte que vale como regra: `.ai/rules/pages.md` pede o
+par "o segredo não aparece no HTML" + "o segredo sobrevive a um save que não o tocou". **Os dois
+afirmam o que NÃO acontece**, e um `dehydrated` sempre-falso satisfaz os dois perfeitamente. Dois
+casos de ausência não fazem um par — o contrapeso de "não grava quando em branco" é "grava quando
+preenchido", e esse caso não existia.
+
+Corrigido renomeando o parâmetro para `$state`, nos dois campos, e o caso que faltava entrou em
+`tests/Kit/ConfiguracoesDoKitTelaTest.php` para a senha de SMTP e em
+`tests/Kit/SegredosDoSettingsTest.php` para os quatro provedores.
+
 ### Alternativas Consideradas
 
 1. **Tirar o `addEncrypted` da migration e assumir texto claro** — mais simples e para o lado

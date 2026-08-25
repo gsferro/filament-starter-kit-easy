@@ -513,6 +513,7 @@ True for all **four** providers, without exception:
 | Bypasses **two-factor** | ❌ never — a confirmed-2FA account still hits the challenge |
 | Stores the access token or `refresh_token` | ❌ nothing is stored |
 | Adds a new column to `users` | ❌ none; the link is the verified e-mail |
+| Marks a created account as **e-mail verified** | ✅ yes — the provider already proved it, and asking again would be the same proof twice |
 
 The second row is the important one, and it is not timidity: **the invitation is the kit's only
 front door**. The callback example in the Laravel Socialite documentation is

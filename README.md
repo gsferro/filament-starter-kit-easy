@@ -543,6 +543,7 @@ Vale para os **quatro** provedores, sem exceção:
 | Contorna o **segundo fator** | ❌ nunca — quem tem 2FA confirmado cai no desafio igual |
 | Guarda token de acesso ou `refresh_token` | ❌ nada é gravado |
 | Cria coluna nova em `users` | ❌ nenhuma; o vínculo é pelo e-mail verificado |
+| Marca a conta criada como **e-mail verificado** | ✅ sim — o provedor já provou, e pedir de novo seria a mesma prova duas vezes |
 
 A linha que mais importa é a segunda, e ela não é timidez: **o convite é a única porta de entrada
 do kit**. O exemplo que a documentação do Laravel Socialite dá para o callback é

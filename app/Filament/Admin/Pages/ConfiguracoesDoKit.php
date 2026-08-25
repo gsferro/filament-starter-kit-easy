@@ -331,6 +331,20 @@ class ConfiguracoesDoKit extends SettingsPage
                  *
                  * 1. `mutateFormDataBeforeFill()` zera a chave antes de o formulario ser
                  *    preenchido — o segredo nao entra em `$data`, logo nao entra no snapshot;
+                 * **O parametro da closure PRECISA se chamar `$state`.** O Filament resolve
+                 * dependencia de closure por NOME
+                 * (`vendor/filament/schemas/src/Components/Component.php:87-98`), e nome
+                 * desconhecido com tipo escalar nao resolve para nada
+                 * (`vendor/filament/support/src/Concerns/EvaluatesClosures.php:143-160`). Com
+                 * `$estado`, a closure recebia `null`, `filled(null)` era sempre `false` e a
+                 * chave NUNCA chegava ao save: a senha de SMTP era impossivel de gravar pela
+                 * tela, em silencio, desde a v0.19.0.
+                 *
+                 * O par de casos que a rule `.ai/rules/pages.md` pede — "nao aparece no HTML" e
+                 * "sobrevive a um save que nao o tocou" — passa com esse defeito, porque os dois
+                 * afirmam o que NAO acontece. Falta o terceiro: campo PREENCHIDO grava. Foi ele
+                 * que pegou.
+                 *
                  * 2. `->dehydrated()` so deixa a chave chegar ao save quando o campo foi
                  *    preenchido. Ausente do `$data` do save, o `$settings->fill()` do plugin nao
                  *    mexe no valor guardado (ele aplica so as chaves presentes), e a senha atual
@@ -345,7 +359,7 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->placeholder(fn (): string => filled($this->senhaDeSmtpGuardada()) ? 'Ja configurada — em branco mantem' : 'Nenhuma senha configurada')
                     ->password()
                     ->revealable()
-                    ->dehydrated(fn (?string $estado): bool => filled($estado))
+                    ->dehydrated(fn (?string $state): bool => filled($state))
                     ->maxLength(255)
                     ->visible($smtp),
             ]);
@@ -519,7 +533,7 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->placeholder(fn (): string => filled($this->segredoGuardadoDe($provedor)) ? 'Já configurado — em branco mantém' : 'Nenhum segredo configurado')
                     ->password()
                     ->revealable()
-                    ->dehydrated(fn (?string $estado): bool => filled($estado))
+                    ->dehydrated(fn (?string $state): bool => filled($state))
                     ->maxLength(255)
                     ->visible($ligado),
             ]);
