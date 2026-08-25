@@ -332,6 +332,7 @@ it('semeia todas as propriedades que a classe de settings declara', function ():
  *
  * `down()` na ordem inversa e `up()` na ordem direta — é o que o migrator faz.
  */
+<<<<<<< HEAD
 it('desfaz e refaz as migrations de settings sem quebrar', function (): void {
     $migrations = collect(File::files(base_path('database/settings')))
         ->sortBy(fn (SplFileInfo $arquivo): string => $arquivo->getFilename())
@@ -339,11 +340,37 @@ it('desfaz e refaz as migrations de settings sem quebrar', function (): void {
         ->values();
 
     expect($migrations)->not->toBeEmpty();
+=======
+it('desfaz e refaz a migration de settings sem quebrar', function (): void {
+    /*
+     * TODAS as migrations de settings, em ordem — e não a primeira pelo nome.
+     *
+     * O caso nasceu quando existia uma só, e comparava a contagem com o mapa inteiro. A
+     * segunda migration (os provedores sociais) quebrou essa premissa sem quebrar nada em
+     * produção: `up()` da primeira cria 27 propriedades, o mapa tem 33, e o caso reprovava
+     * apontando para um defeito que não existe.
+     *
+     * `glob` ordenado resolve de vez: migration nova entra no caso sem ninguém precisar
+     * lembrar, que é o mesmo motivo pelo qual a contagem esperada sai de
+     * `mapaDeConfiguracao()` em vez de um número escrito à mão.
+     */
+    $migrations = collect(glob(base_path('database/settings/*.php')))
+        ->sort()
+        ->map(fn (string $arquivo): object => require $arquivo)
+        ->values();
+
+    expect($migrations)->not->toBeEmpty('nenhuma migration de settings encontrada');
+>>>>>>> 9b160b5 (:white_check_mark: fix(testes): o caso de rollback do settings passa a aplicar TODAS as migrations)
 
     gravarConfiguracao('nome_da_aplicacao', 'Gravado no banco');
     config(['app.name' => 'Vindo do env']);
 
+<<<<<<< HEAD
     $migrations->reverse()->each(fn (object $migration) => $migration->down());
+=======
+    // Desfaz na ordem INVERSA, como o migrator faria.
+    $migrations->reverse()->each(fn (object $m) => $m->down());
+>>>>>>> 9b160b5 (:white_check_mark: fix(testes): o caso de rollback do settings passa a aplicar TODAS as migrations)
 
     expect(SettingsProperty::query()->where('group', ConfiguracoesDoKit::group())->count())->toBe(0);
 
@@ -352,7 +379,11 @@ it('desfaz e refaz as migrations de settings sem quebrar', function (): void {
 
     expect(config('app.name'))->toBe('Vindo do env');
 
+<<<<<<< HEAD
     $migrations->each(fn (object $migration) => $migration->up());
+=======
+    $migrations->each(fn (object $m) => $m->up());
+>>>>>>> 9b160b5 (:white_check_mark: fix(testes): o caso de rollback do settings passa a aplicar TODAS as migrations)
 
     expect(SettingsProperty::query()->where('group', ConfiguracoesDoKit::group())->count())
         ->toBe(count(ConfiguracoesDoKit::mapaDeConfiguracao()));
