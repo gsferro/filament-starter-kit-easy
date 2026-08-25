@@ -4,6 +4,7 @@ use App\Filament\Admin\Resources\Roles\Pages\CreateRole;
 use App\Filament\Admin\Resources\Roles\Pages\EditRole;
 use App\Filament\Admin\Resources\Users\Pages\CreateUser;
 use App\Filament\App\Resources\Convites\ConviteResource;
+use App\Filament\Pages\MyProfilePage;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\Paineis;
@@ -12,7 +13,6 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Log;
-use Jeffgreco13\FilamentBreezy\Pages\MyProfilePage;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 

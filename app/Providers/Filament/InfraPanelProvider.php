@@ -245,12 +245,21 @@ class InfraPanelProvider extends PanelProvider
                  * `HealthCheckResults::canAccess()` é `...Plugin::get()->isAuthorized()`
                  * (`.../Pages/HealthCheckResults.php:86-89`). O default do plugin é `true` — daí
                  * `View:HealthCheckResults` existir no banco e no checkbox sem decidir nada até
-                 * aqui. Ver ADR-01 de
+                 * aqui.
+                 *
+                 * `auth()->check() &&` nos três callbacks desta feature, e não por simetria
+                 * estética: `PermissaoDaTela::permite()` falha ABERTO sem usuário (semântica
+                 * herdada da trait do Shield, ADR-03), e `canAccess()` também é consultado fora do
+                 * request de painel — categoria do Spotlight, cartão de hub, console. O
+                 * `authMiddleware` cobre a rota; esta linha cobre o resto.
+                 *
+                 * Ver ADR-01 de
                  * `wikis/specs/feat/permissoes-de-telas-de-pacote/permissoes-de-telas-de-pacote/`.
                  */
                 FilamentSpatieLaravelHealthPlugin::make()
                     ->navigationGroup('Observabilidade')
-                    ->authorize(fn (): bool => PermissaoDaTela::permite(HealthCheckResults::class)),
+                    ->authorize(fn (): bool => auth()->check()
+                        && PermissaoDaTela::permite(HealthCheckResults::class)),
                 /*
                  * Backup Monitor: o PLUGIN não está aqui, de propósito.
                  *
@@ -312,10 +321,9 @@ class InfraPanelProvider extends PanelProvider
                     ->navigationGroup('Sistema')
                     ->navigationSort(220)
                     /*
-                     * `auth()->check()` FICA: este callback substitui a regra local-only do
-                     * pacote (ver o bloco acima), e `PermissaoDaTela::permite()` falha ABERTO sem
-                     * usuário — semântica herdada da trait do Shield, documentada no docblock do
-                     * helper e em ADR-03.
+                     * O `auth()->check() &&` aqui tem um motivo EXTRA, além do que vale para os
+                     * três callbacks: este substitui a regra local-only do pacote (ver o bloco
+                     * acima), então sem ele a tela voltaria a decidir por `config enabled` sozinho.
                      *
                      * `canAccessUsing()` cai em `visible()` (`DependencyGraphPlugin.php:122-125`),
                      * que `DependencyGraphPage::canAccess()` lê via `isVisible()`
@@ -376,8 +384,8 @@ class InfraPanelProvider extends PanelProvider
                  * Consequência escrita, para ninguém ler o checkbox errado: a barreira das três é
                  * `config('command-center.enabled')` + `command-center:access`, e esse gate é
                  * `temPapelDoPainel('infra')` (`KitServiceProvider.php:173`) — barreira de PAINEL,
-                 * não permissão por tela. `tests/Kit/PermissoesDeTelasDePacoteTest.php` tem o caso
-                 * que assere a lacuna; ele fica VERMELHO no dia em que o pacote publicar o setter
+                 * não permissão por tela. `tests/Kit/PermissoesDeTelasTest.php` tem o caso
+                 * que assere a lacuna (`it('deixa só as três telas da Central de comandos…')`); ele fica VERMELHO no dia em que o pacote publicar o setter
                  * por Page, e é o sinal de revisar ADR-05.
                  */
                 CommandCenterPlugin::make()
@@ -523,7 +531,8 @@ class InfraPanelProvider extends PanelProvider
                      * foi apagado na instalação inteira. A allow-list de `->models()` abaixo é a
                      * primeira trava; a permissão é a segunda.
                      */
-                    ->authorize(fn (): bool => PermissaoDaTela::permite(RecycleBin::class))
+                    ->authorize(fn (): bool => auth()->check()
+                        && PermissaoDaTela::permite(RecycleBin::class))
                     ->models([
                         Projeto::class,
                     ])

@@ -3,9 +3,9 @@
 use App\Filament\Admin\Pages\HubDeAdministracao;
 use App\Filament\Admin\Resources\Roles\RoleResource;
 use App\Filament\Admin\Resources\Users\UserResource;
+use App\Filament\Infra\Pages\BackupRunsPage;
 use App\Filament\Infra\Pages\HubDeInfraestrutura;
 use App\Filament\Infra\Resources\AiRuns\AiRunResource;
-use Brimham\FilamentBackupMonitor\Pages\BackupRunsPage;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
