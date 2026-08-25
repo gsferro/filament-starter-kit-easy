@@ -53,6 +53,21 @@
 #    advisories, o que torna essa hipotese real. `snyk test --json` separa os dois casos:
 #    vulnerabilidade traz `id`, licenca vem em `licensesPolicy`.
 #
+# ## Quem escaneia, e quando (mudou)
+#
+# Sao DOIS, e eles nao veem a mesma coisa:
+#
+#   app do Snyk no GitHub   check `security/snyk`   so quando o MANIFESTO muda
+#   job `seguranca` do CI   `snyk test`             todo push e todo PR
+#
+# O job existe por causa da coluna da direita: tres PRs seguidos desta rodada voltaram
+# "No manifest changes detected" e passaram VERDES sem escanear nada. Ele reprova em high e
+# critical, e le este arquivo por default.
+#
+# Ele precisa do secret `SNYK_TOKEN` no repositorio. Sem o secret ele AVISA e passa — de
+# proposito, para PR de fork e clone novo nao ficarem vermelhos por configuracao. Se o aviso
+# "Varredura nao executada" aparecer no Actions, o secret e que falta.
+#
 # ponytail: sem os IDs este arquivo é só o rastro da decisão. O teto é conhecido e está
 # escrito; o próximo passo é um clique no painel, não código.
 

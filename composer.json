@@ -188,7 +188,7 @@
         ],
         "post-create-project-cmd": [
             "Composer\\Config::disableProcessTimeout",
-            "@php artisan kit:install --ansi"
+            "@php artisan kit:install --ansi --create-project"
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
