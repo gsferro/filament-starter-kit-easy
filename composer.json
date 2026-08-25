@@ -159,6 +159,14 @@
             "@php artisan config:clear --ansi",
             "@php artisan test --testsuite=Kit,Tenancy"
         ],
+        "bp:on": [
+            "composer config repositories.filament composer https://packages.filamentphp.com/composer",
+            "composer require --dev filament/blueprint"
+        ],
+        "bp:off": [
+            "composer remove --dev filament/blueprint",
+            "composer config --unset repositories.filament"
+        ],
         "art": [
             "Composer\\Config::disableProcessTimeout",
             "@php artisan config:clear --ansi",
