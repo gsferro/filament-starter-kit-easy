@@ -5,7 +5,9 @@ namespace App\Filament\App\Resources\Projetos;
 use App\Filament\App\Resources\Projetos\Pages\ListProjetos;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\Projeto;
+use App\Support\TetoDeUpload;
 use BackedEnum;
+use Closure;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -16,6 +18,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 /**
  * DEMONSTRAÇÃO — o primeiro (e único) resource do painel /app, criado por
@@ -131,8 +134,50 @@ class ProjetoResource extends Resource
                 ->openable()
                 ->downloadable()
                 ->visibility('private')
-                ->maxSize(10 * 1024)
-                ->helperText('Até 10 MB por arquivo. Os anexos pertencem a este projeto e só são vistos por quem alcança a organização dele.')
+                /*
+                 * O teto vem da config do kit, não de um `10 * 1024` cravado aqui: quem
+                 * instala muda `KIT_UPLOAD_MAXIMO_MB` e espera que valha para todo
+                 * upload. Em KILOBYTES — `->maxSize()` monta a regra `max:` do Laravel,
+                 * que divide o tamanho do arquivo por 1024. Ver `App\Support\TetoDeUpload`.
+                 */
+                ->maxSize(TetoDeUpload::emKb())
+                /*
+                 * SVG fora, e por que a forma é diferente aqui.
+                 *
+                 * Nos campos de IMAGEM do kit a barreira é `->rule('image')`, a regra do
+                 * Laravel, que é uma allow-list de nove extensões de imagem. Aqui ela
+                 * recusaria PDF e planilha, que é a razão deste campo existir — e
+                 * `acceptedFileTypes()` teria o mesmo efeito, porque é allow-list também.
+                 * O que se quer é recusar UM formato, então a regra recusa um formato.
+                 *
+                 * ⚠️ O `Closure` vem DENTRO de outro `Closure`, e não é estilo: o
+                 * `getValidationRules()` do Filament faz `$rule = $this->evaluate($rule)`
+                 * (vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:872),
+                 * então uma regra passada crua é AVALIADA com injeção de utilitários em vez
+                 * de entregue ao validador — e a tela morre com "an attempt was made to
+                 * evaluate a closure ... but [$atributo] was unresolvable". O wrapper faz o
+                 * `evaluate()` devolver a regra. Quem pegou isso foi CT-12; o campo abria
+                 * normalmente e só quebrava no envio.
+                 *
+                 * O `Closure` é validado por ARQUIVO, não pelo array: o
+                 * `isArrayValidationRule()` do Filament só classifica como regra de array
+                 * as STRINGS de uma lista fechada
+                 * (vendor/filament/forms/src/Components/BaseFileUpload.php:101-114,776-785),
+                 * e o resto vai para o validador aninhado `["{$name}.*" => ['file', ...]]`
+                 * (mesma classe, :752-763). Por isso o campo é `->multiple()` e a regra
+                 * ainda vê um `TemporaryUploadedFile` por vez.
+                 *
+                 * O `getMimeType()` desse objeto lê o DISCO temporário, não o cabeçalho do
+                 * cliente (`vendor/livewire/livewire/.../TemporaryUploadedFile.php:63-90`),
+                 * então renomear o `.svg` para `.png` não passa. Ver ADR-03 da wiki
+                 * `upload-limite-e-tipos` para o que isso significa no teste.
+                 */
+                ->rule(static fn (): Closure => static function (string $atributo, mixed $arquivo, Closure $falhar): void {
+                    if ($arquivo instanceof TemporaryUploadedFile && $arquivo->getMimeType() === 'image/svg+xml') {
+                        $falhar('SVG não é aceito: o formato carrega script e o anexo é servido pela própria aplicação.');
+                    }
+                })
+                ->helperText('Até '.TetoDeUpload::emMb().' MB por arquivo, e SVG não é aceito. Os anexos pertencem a este projeto e só são vistos por quem alcança a organização dele.')
                 ->columnSpanFull(),
         ]);
     }

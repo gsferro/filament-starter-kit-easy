@@ -113,6 +113,63 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Teto de tamanho de TODO upload do kit
+    |--------------------------------------------------------------------------
+    | Vale para os cinco campos de upload do kit — logo, favicon e arte do login
+    | (/admin/configuracoes-do-kit), a logo da organização (/admin/organizacoes)
+    | e os anexos de Projeto — e para o upload TEMPORÁRIO do Livewire, alinhado
+    | a esta chave por `KitServiceProvider::configureDefaults()`.
+    |
+    | ## Duas unidades, e é de propósito
+    |
+    | A env é em MEGABYTES porque é o que uma pessoa escreve. A chave é em
+    | KILOBYTES porque é o que os consumidores recebem: o `->maxSize()` do
+    | Filament monta a regra `max:{$size}` do Laravel
+    | (vendor/filament/forms/src/Components/BaseFileUpload.php:413-421), e essa
+    | regra divide o tamanho do arquivo por 1024
+    | (.../Illuminate/Validation/Concerns/ValidatesAttributes.php:2822). O
+    | `max:12288` do upload temporário do Livewire também é KB.
+    |
+    | A multiplicação vive AQUI, num lugar só. Não crie uma segunda chave em MB:
+    | seriam duas donas da mesma pergunta, e .ai/rules/config.md documenta o que
+    | acontece quando uma é editada e a outra não.
+    |
+    | ## Por que `NumeroDoEnv::positivo()`
+    |
+    | `(int) env('KIT_UPLOAD_MAXIMO_MB', 10)` é o defeito que .ai/rules/config.md
+    | descreve: o segundo argumento do `env()` só vale para chave AUSENTE. Com
+    | `KIT_UPLOAD_MAXIMO_MB=` (presente, vazia — o que sobra quando alguém apaga
+    | o número), `env()` devolve string vazia, `(int) ''` é 0, e `->maxSize(0)`
+    | recusa TODO arquivo. Teto zero não é configuração, é a feature desligada
+    | por acidente — que é exatamente o caso de `positivo()`.
+    |
+    | ## A escada de tetos: o MENOR manda
+    |
+    | Um upload atravessa quatro limites, e quando eles discordam o erro muda de
+    | QUALIDADE, não só de valor:
+    |
+    | | Camada                | Onde                          | Como recusa                           |
+    | |-----------------------|-------------------------------|---------------------------------------|
+    | | nginx                 | docker/nginx/nginx.conf (60M) | corta o corpo do POST — falha de rede |
+    | | PHP                   | docker/php/uploads.ini (52M)  | idem                                  |
+    | | Livewire (temporário) | alinhado a esta chave         | 422 no XHR, erro genérico no FilePond |
+    | | Filament (`maxSize`)  | esta chave                    | mensagem em português, no campo       |
+    |
+    | Só a última recusa com mensagem clara. Por isso o Livewire é alinhado: a
+    | camada imediatamente acima da tela nunca fica mais estreita que ela.
+    |
+    | Para passar de 52 MB, mude também `docker/php/uploads.ini`
+    | (`upload_max_filesize` e `post_max_size`) e `docker/nginx/nginx.conf`
+    | (`client_max_body_size`). E fora do Docker do kit, o PHP costuma vir com
+    | `upload_max_filesize=2M` de fábrica — ali o teto real é 2 MB, não o daqui.
+    */
+
+    'uploads' => [
+        'maximo_em_kb' => NumeroDoEnv::positivo(env('KIT_UPLOAD_MAXIMO_MB'), 10) * 1024,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Defaults de TODA tabela do projeto
     |--------------------------------------------------------------------------
     | Lidos por `ConfiguraFilamentGlobal::configuraTable()`, que roda num

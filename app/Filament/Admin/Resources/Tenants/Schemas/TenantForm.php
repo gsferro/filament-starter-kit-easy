@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Tenants\Schemas;
 
 use App\Support\RegistroAberto;
+use App\Support\TetoDeUpload;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
@@ -141,8 +142,17 @@ class TenantForm
                             // espera bool|Closure, a string é só truthy, e a visibility nunca é
                             // declarada. Funciona lá por acidente, porque o disk já é público.
                             ->visibility('public')
-                            ->maxSize(1024)
-                            ->helperText('Exibida na tela de bloqueio de sessão do painel de negócio. Em branco, usa a imagem padrão.'),
+                            // O teto vem da config do kit, e não de um número cravado aqui (era
+                            // `1024`, 1 MB, sem nada explicando o valor). Um teto por campo são
+                            // vários donos da mesma pergunta: quem instala o kit muda
+                            // `KIT_UPLOAD_MAXIMO_MB` e espera que valha para todo upload. Em
+                            // KILOBYTES — `->maxSize()` monta a regra `max:` do Laravel, que
+                            // divide o tamanho do arquivo por 1024.
+                            ->maxSize(TetoDeUpload::emKb())
+                            ->validationMessages([
+                                'max' => 'O arquivo passa de '.TetoDeUpload::emMb().' MB.',
+                            ])
+                            ->helperText('Exibida na tela de bloqueio de sessão do painel de negócio. Em branco, usa a imagem padrão. Até '.TetoDeUpload::emMb().' MB, e SVG não é aceito.'),
                     ]),
             ]);
     }

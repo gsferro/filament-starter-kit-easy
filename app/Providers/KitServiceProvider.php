@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Providers\Concerns\ConfiguraFilamentGlobal;
 use App\Settings\ConfiguracoesDoKit;
+use App\Support\TetoDeUpload;
 use Carbon\CarbonImmutable;
 use CmsMulti\FilamentClearCache\Facades\FilamentClearCache;
 use Filament\Actions\Exports\Models\Export;
@@ -80,6 +81,44 @@ class KitServiceProvider extends ServiceProvider
         Password::defaults(fn (): Password => app()->isProduction()
             ? Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()
             : Password::min(8));
+
+        $this->configureTetoDeUpload();
+    }
+
+    /**
+     * O teto do upload TEMPORÁRIO do Livewire, alinhado à chave do kit.
+     *
+     * Um upload atravessa quatro limites e o MENOR manda, mas eles não recusam
+     * igual: o `->maxSize()` do campo devolve mensagem em português no
+     * formulário, enquanto o do Livewire devolve 422 no XHR do upload
+     * temporário e o FilePond mostra um erro genérico — e o do PHP e do nginx
+     * cortam o corpo do POST, o que aparece como falha de rede no console.
+     *
+     * Sem esta linha, o default do Livewire é `max:12288`
+     * (vendor/livewire/livewire/src/Features/SupportFileUploads/FileUploadConfiguration.php:116)
+     * — 12 MB, fixo. É mais frouxo que os 10 MB de fábrica do kit e mais
+     * ESTREITO no instante em que alguém sobe `KIT_UPLOAD_MAXIMO_MB` acima de 12:
+     * todo arquivo entre 12 MB e o novo teto falharia sem nenhuma mensagem sobre
+     * tamanho. A promessa de que a chave é fácil de mudar só vale se ela mudar as
+     * duas camadas.
+     *
+     * E a conta é `emKbComFolgaDoLivewire()`, não `emKb()`: igualar os dois tetos
+     * torna a mensagem de erro do campo INALCANÇÁVEL, porque o Livewire recusa
+     * antes de o formulário validar. O docblock daquele método tem a medição.
+     *
+     * `config()->set()` em vez de publicar o `config/livewire.php`: o projeto
+     * não tem esse arquivo, e publicá-lo traria ~130 linhas de configuração
+     * alheia para o repositório só para mudar um número — que passaria a ter
+     * duas donas. Ver ADR-04 em
+     * wikis/specs/feat/upload-limite-e-tipos/upload-limite-e-tipos/.
+     */
+    protected function configureTetoDeUpload(): void
+    {
+        config()->set('livewire.temporary_file_upload.rules', [
+            'required',
+            'file',
+            'max:'.TetoDeUpload::emKbComFolgaDoLivewire(),
+        ]);
     }
 
     /**
