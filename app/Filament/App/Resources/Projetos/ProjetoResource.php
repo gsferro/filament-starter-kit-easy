@@ -150,6 +150,15 @@ class ProjetoResource extends Resource
                  * `acceptedFileTypes()` teria o mesmo efeito, porque é allow-list também.
                  * O que se quer é recusar UM formato, então a regra recusa um formato.
                  *
+                 * ⚠️ O `Closure` vem DENTRO de outro `Closure`, e não é estilo: o
+                 * `getValidationRules()` do Filament faz `$rule = $this->evaluate($rule)`
+                 * (vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:872),
+                 * então uma regra passada crua é AVALIADA com injeção de utilitários em vez
+                 * de entregue ao validador — e a tela morre com "an attempt was made to
+                 * evaluate a closure ... but [$atributo] was unresolvable". O wrapper faz o
+                 * `evaluate()` devolver a regra. Quem pegou isso foi CT-12; o campo abria
+                 * normalmente e só quebrava no envio.
+                 *
                  * O `Closure` é validado por ARQUIVO, não pelo array: o
                  * `isArrayValidationRule()` do Filament só classifica como regra de array
                  * as STRINGS de uma lista fechada
@@ -163,7 +172,7 @@ class ProjetoResource extends Resource
                  * então renomear o `.svg` para `.png` não passa. Ver ADR-03 da wiki
                  * `upload-limite-e-tipos` para o que isso significa no teste.
                  */
-                ->rule(static function (string $atributo, mixed $arquivo, Closure $falhar): void {
+                ->rule(static fn (): Closure => static function (string $atributo, mixed $arquivo, Closure $falhar): void {
                     if ($arquivo instanceof TemporaryUploadedFile && $arquivo->getMimeType() === 'image/svg+xml') {
                         $falhar('SVG não é aceito: o formato carrega script e o anexo é servido pela própria aplicação.');
                     }

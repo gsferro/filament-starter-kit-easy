@@ -50,11 +50,17 @@ beforeEach(function (): void {
  *    `request()->route()->parameter('tenant')` no boot. Teste de componente não
  *    atravessa middleware, e o arranjo morre ali sem a rota.
  *
- * Mesma sequência de `tests/Tenancy/AnexosPrivadosTest.php:123-137`.
+ * Mesma sequência de `tests/Tenancy/AnexosPrivadosTest.php:36-44,123-137`.
  */
 function noFormDeProjetoDa(Tenant $organizacao): void
 {
     config(['kit.demo' => true]);
+
+    // Painel corrente ANTES do `getUrl()`: sem isto o Filament resolve a rota no
+    // painel default do processo (`infra` nesta suíte) e o arranjo morre em
+    // "Route [filament.infra.resources.projetos.index] not defined" — erro que não
+    // fala nem de painel nem de tenant.
+    noPainelDa($organizacao);
 
     $usuario = usuarioComPapel('admin_app', $organizacao);
     $usuario->tenants()->attach($organizacao);
