@@ -2,7 +2,7 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
-## [Nao publicado]
+## [0.19.8] - 2026-08-25
 ### Adicionado
 - **A exigencia de e-mail validado no `/app` voltou a ser editavel na tela**, em
   `/admin/configuracoes-do-kit` -> aba Registro, e agora com efeito no **request seguinte** em vez
