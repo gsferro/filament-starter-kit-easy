@@ -84,7 +84,7 @@ use Spatie\LaravelSettings\Models\SettingsProperty;
 final class AuditarConfiguracoesDoKit
 {
     /** O que aparece no lugar do valor de uma propriedade cifrada. */
-    private const SEGREDO_MASCARADO = '••••••';
+    public const SEGREDO_MASCARADO = '••••••';
 
     public function handle(SavingSettings $evento): void
     {

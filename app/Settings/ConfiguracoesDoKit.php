@@ -138,11 +138,41 @@ final class ConfiguracoesDoKit extends Settings
 
     // Login social e rodapé --------------------------------------------------
 
+    /*
+     * Três propriedades por provedor, uma linha por provedor no `mapaDeConfiguracao()`, e um
+     * par `add`/`addEncrypted` na migration. São os TRÊS lugares do contrato desta classe, e o
+     * provedor novo os cumpre sem tocar em mais nada — a tela e o blade percorrem
+     * `App\Support\ProvedorSocial::cases()`.
+     *
+     * O nome sai de `ProvedorSocial::propriedadeDeSettings()`, que troca o hífen do valor do
+     * caso por sublinhado (nome de propriedade PHP não aceita hífen). É por isso que o do
+     * LinkedIn é `login_linkedin_openid_*` e não `login_linkedin_*`: o driver é
+     * `linkedin-openid`, e a chave de config precisa casar com ele.
+     */
+
     public bool $login_google_habilitado;
 
     public ?string $login_google_client_id;
 
     public ?string $login_google_client_secret;
+
+    public bool $login_github_habilitado;
+
+    public ?string $login_github_client_id;
+
+    public ?string $login_github_client_secret;
+
+    public bool $login_linkedin_openid_habilitado;
+
+    public ?string $login_linkedin_openid_client_id;
+
+    public ?string $login_linkedin_openid_client_secret;
+
+    public bool $login_x_habilitado;
+
+    public ?string $login_x_client_id;
+
+    public ?string $login_x_client_secret;
 
     public ?string $login_rodape;
 
@@ -152,7 +182,7 @@ final class ConfiguracoesDoKit extends Settings
     }
 
     /**
-     * A senha do SMTP é cifrada no `payload`.
+     * Os segredos cifrados no `payload`: a senha do SMTP e o `client_secret` de cada provedor.
      *
      * A tabela `settings` guarda JSON em claro, e um dump de banco, um backup e a
      * tela de auditoria são três caminhos que a permissão da tela não cobre.
@@ -160,11 +190,43 @@ final class ConfiguracoesDoKit extends Settings
      * valor cifrado no Laravel, e o `catch (Throwable)` do provider garante que
      * isso derrube a leitura, não a aplicação.
      *
+     * ## Esta lista é a única coisa que decide se um valor é cifrado — nas DUAS direções
+     *
+     * O `addEncrypted` da migration cifra na SEMEADURA e nada mais. Quem decide na leitura e na
+     * gravação é `SettingsConfig::isEncrypted()`
+     * (`vendor/spatie/laravel-settings/src/SettingsConfig.php:84-87`), alimentado por este
+     * método mais o atributo `ShouldBeEncrypted` (`:57-59`), e consultado nos dois
+     * consumidores: `SettingsMapper::fetchProperties()` decifra na leitura (`:92`) e
+     * `SettingsMapper::save()` cifra na gravação (`:67`).
+     *
+     * **Nome fora desta lista com `addEncrypted` na migration é um defeito de duas caras**, e o
+     * kit teve exatamente isso com `login_google_client_secret` até a v0.19.3:
+     *
+     *  1. instalação nova com o segredo no `.env` — a migration cifra, a leitura devolve o
+     *     TEXTO CIFRADO, `config('services.google.client_secret')` recebe o ciphertext,
+     *     `filled()` é verdadeiro, o botão entra no ar e o OAuth falha no provedor;
+     *  2. depois de alguém salvar pela tela — `save()` também consulta `isEncrypted()`, então
+     *     grava em TEXTO CLARO, e o segredo fica legível na tabela.
+     *
+     * Ninguém viu porque `Crypto::encrypt(null)` devolve `null`
+     * (`vendor/spatie/laravel-settings/src/Support/Crypto.php:8-12`), e o segredo é `null` em
+     * toda instalação de desenvolvimento e em toda a suíte — o defeito só existe quando há
+     * valor. Ver ADR-06 da wiki `mais-provedores-sociais`, e o caso de teste que assere que o
+     * `payload` gravado NÃO é o texto claro.
+     *
+     * Ao acrescentar provedor, o `client_secret` dele entra aqui. Esquecer é o defeito acima.
+     *
      * @return array<int, string>
      */
     public static function encrypted(): array
     {
-        return ['mail_password'];
+        return [
+            'mail_password',
+            'login_google_client_secret',
+            'login_github_client_secret',
+            'login_linkedin_openid_client_secret',
+            'login_x_client_secret',
+        ];
     }
 
     /**
@@ -230,17 +292,37 @@ final class ConfiguracoesDoKit extends Settings
             'registro_aprovacao_manual' => 'kit.registro.aprovacao_manual',
             'registro_verificar_email'  => 'kit.registro.verificar_email',
             /*
-             * Login social e rodapé. Estas quatro nunca tiveram o problema de
-             * `registro_verificar_email`: as duas que decidem algo são lidas por request — o
-             * `abort_unless()` do `LoginComGoogleController` e a closure do render hook do
-             * botão. Nada aqui é decidido no boot do painel, e as rotas de `/auth/google/*`
-             * nascem sempre de propósito (registrá-las dentro de um `if` quebraria
-             * `route('auth.google.*')`); quem recusa é o controller, com 404.
+             * Login social e rodapé — três chaves por provedor, mais o rodapé.
+             *
+             * Ao contrário de `registro_verificar_email`, estas PODEM ser editadas: as que
+             * decidem algo são lidas por request — o `abort_unless()` do
+             * `LoginSocialController` e a closure do render hook dos botões. Nada aqui é
+             * decidido no boot do painel, e as rotas de `/auth/{provedor}/*` nascem sempre de
+             * propósito (registrá-las dentro de um `if` quebraria `route('auth.social.*')`);
+             * quem recusa é o controller, com 404, por provedor.
+             *
+             * A chave de config do LinkedIn tem HÍFEN (`linkedin-openid`) porque é o nome do
+             * driver que o Socialite exige, e a propriedade tem SUBLINHADO porque PHP não
+             * aceita hífen em nome de propriedade. A tradução mecânica entre as duas está em
+             * `ProvedorSocial::propriedadeDeSettings()`, e é a única do desenho.
              */
             'login_google_habilitado'    => 'kit.login.google.habilitado',
             'login_google_client_id'     => 'services.google.client_id',
             'login_google_client_secret' => 'services.google.client_secret',
-            'login_rodape'               => 'kit.login.rodape',
+
+            'login_github_habilitado'    => 'kit.login.github.habilitado',
+            'login_github_client_id'     => 'services.github.client_id',
+            'login_github_client_secret' => 'services.github.client_secret',
+
+            'login_linkedin_openid_habilitado'    => 'kit.login.linkedin-openid.habilitado',
+            'login_linkedin_openid_client_id'     => 'services.linkedin-openid.client_id',
+            'login_linkedin_openid_client_secret' => 'services.linkedin-openid.client_secret',
+
+            'login_x_habilitado'    => 'kit.login.x.habilitado',
+            'login_x_client_id'     => 'services.x.client_id',
+            'login_x_client_secret' => 'services.x.client_secret',
+
+            'login_rodape' => 'kit.login.rodape',
         ];
     }
 

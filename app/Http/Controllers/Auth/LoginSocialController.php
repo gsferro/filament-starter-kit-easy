@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\ConfiguracaoDoLogin;
+use App\Support\ProvedorSocial;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Illuminate\Http\RedirectResponse;
@@ -13,92 +14,102 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
-use Laravel\Socialite\AbstractUser;
-use Laravel\Socialite\Contracts\User as UsuarioDoProvedor;
 use Laravel\Socialite\Socialite;
 use Symfony\Component\HttpFoundation\RedirectResponse as RedirecionamentoDoProvedor;
 use Throwable;
 
 /**
- * As duas pontas do login com Google: a saída para o provedor e a volta dele.
+ * As duas pontas do login social: a saída para o provedor e a volta dele. Para os QUATRO.
+ *
+ * Este controller era `LoginComGoogleController` e servia um provedor. O nome mudou quando o
+ * segundo entrou, porque o antigo passaria a mentir. O que NÃO mudou é o corpo das barreiras:
+ * elas estavam certas com um provedor e continuam certas com quatro — o que ficou por provedor
+ * é qual driver chamar e como conferir a verificação do e-mail, e as duas coisas moram em
+ * `App\Support\ProvedorSocial`.
  *
  * O que este controller **não** faz, e é o ponto dele: ele não cadastra ninguém. O exemplo da
  * documentação do Socialite faz `User::updateOrCreate()` no callback, e copiado para este kit
- * isso significaria que qualquer pessoa com uma conta Google se torna usuária do sistema —
- * contornando o convite, que é a única porta de entrada (`RegistroPorConvite`,
- * `config/kit.php` → bloco de convites). Criar conta aqui só acontece com o registro aberto
- * ligado, e ele nasce desligado. Ver ADR-06.
+ * isso significaria que qualquer pessoa com uma conta em qualquer um dos quatro provedores se
+ * torna usuária do sistema — contornando o convite, que é a única porta de entrada
+ * (`RegistroPorConvite`, `config/kit.php` → bloco de convites). Criar conta aqui só acontece
+ * com o registro aberto ligado, e ele nasce desligado. Ver ADR-06 da wiki
+ * `login-social-google`.
  *
  * A ordem das barreiras do `retorno()` importa, e cada uma existe por um motivo escrito ao
  * lado dela. Nenhuma mensagem devolvida ao usuário diz QUAL barreira reprovou além do
  * necessário: detalhar o motivo na tela é dizer a um atacante em qual delas ele encostou. O
- * motivo vai para o log, com o e-mail mascarado e sem o segredo do OAuth. Ver ADR-09.
+ * motivo vai para o log, com o e-mail mascarado e sem o segredo do OAuth.
  *
- * Wiki: `wikis/specs/feat/login-social-google/login-social-google/`.
+ * Wiki: `wikis/specs/feat/mais-provedores-sociais/mais-provedores-sociais/`.
  */
-final class LoginComGoogleController extends Controller
+final class LoginSocialController extends Controller
 {
     /**
-     * Manda a pessoa para o Google.
+     * Manda a pessoa para o provedor.
+     *
+     * O `$provedor` chega pelo implicit enum binding do Laravel — o que significa que segmento
+     * fora do enum **nunca chega aqui**: o roteador devolve 404 antes. É essa a lista branca, e
+     * ela não é código que alguém mantém em sincronia (ADR-02).
      *
      * Nada de `->stateless()`. O `state` de CSRF é do Socialite e fica LIGADO: o
      * `AbstractProvider` nasce com `$stateless = false`, o `redirect()` grava o `state` na
      * sessão e o `user()` compara com `hash_equals`, lançando `InvalidStateException` quando
      * não casa (`vendor/laravel/socialite/src/Two/AbstractProvider.php:83,166,236-237,288-290`).
      * Desligar isso "para simplificar o teste" abriria um CSRF de login — e há caso de teste
-     * que reprova exatamente esse atalho.
+     * que reprova exatamente esse atalho. No X é pior ainda: o `getCodeFields()` dele manda a
+     * string literal `'state'` quando stateless (`.../Two/TwitterProvider.php:116-125`).
      */
-    public function redirecionar(): RedirecionamentoDoProvedor
+    public function redirecionar(ProvedorSocial $provedor): RedirecionamentoDoProvedor
     {
         /*
          * O tipo e o do Symfony, e nao o `RedirectResponse` do Laravel que estende dele: e o
          * que o contrato `Socialite\Contracts\Provider::redirect()` promete. Estreitar para o
          * do Laravel reprova no PHPStan, e uma uniao dos dois e tautologia.
          */
-        abort_unless(ConfiguracaoDoLogin::googleDisponivel(), 404);
+        abort_unless(ConfiguracaoDoLogin::disponivel($provedor), 404);
 
         Log::channel('autenticacao')->info(
-            '[LoginComGoogleController@redirecionar] Redirecionando para o Google | ip: '.request()->ip(),
+            "[LoginSocialController@redirecionar] Redirecionando para o provedor | provedor: {$provedor->value} - ip: ".request()->ip(),
             [
                 'ip'       => request()->ip(),
-                'provedor' => ConfiguracaoDoLogin::PROVEDOR_GOOGLE,
+                'provedor' => $provedor->value,
             ],
         );
 
-        return Socialite::driver(ConfiguracaoDoLogin::PROVEDOR_GOOGLE)->redirect();
+        return Socialite::driver($provedor->value)->redirect();
     }
 
     /**
-     * A volta do Google.
+     * A volta do provedor.
      *
-     * Seis barreiras, nesta ordem: a feature está no ar; o provedor devolveu alguém; o
-     * e-mail está verificado NO PROVEDOR; o e-mail existe; há conta com ele; e — quando não
-     * há — o registro aberto permite criar.
+     * Seis barreiras, nesta ordem: o provedor está no ar; ele devolveu alguém; o e-mail existe;
+     * o e-mail está verificado NO PROVEDOR; há conta com ele; e — quando não há — o registro
+     * aberto permite criar.
      */
-    public function retorno(): RedirectResponse
+    public function retorno(ProvedorSocial $provedor): RedirectResponse
     {
-        abort_unless(ConfiguracaoDoLogin::googleDisponivel(), 404);
+        abort_unless(ConfiguracaoDoLogin::disponivel($provedor), 404);
 
         try {
-            $doProvedor = Socialite::driver(ConfiguracaoDoLogin::PROVEDOR_GOOGLE)->user();
+            $doProvedor = Socialite::driver($provedor->value)->user();
         } catch (Throwable $e) {
             /*
              * Uma cláusula para os três casos — `state` inválido, rede fora e credencial
-             * recusada pelo Google — porque a resposta ao usuário é a mesma nos três, e
-             * distingui-la na tela é entregar informação de reconhecimento. O `motivo` no
-             * log é o que o operador usa para descobrir qual foi.
+             * recusada pelo provedor — porque a resposta ao usuário é a mesma nos três, e
+             * distingui-la na tela é entregar informação de reconhecimento. O `motivo` no log é
+             * o que o operador usa para descobrir qual foi.
              */
             Log::channel('autenticacao')->warning(
-                '[LoginComGoogleController@retorno] Falha ao obter o usuário no Google | ip: '.request()->ip(),
+                "[LoginSocialController@retorno] Falha ao obter o usuário no provedor | provedor: {$provedor->value} - ip: ".request()->ip(),
                 [
                     'exception' => $e,
                     'motivo'    => 'falha_no_provedor',
                     'ip'        => request()->ip(),
-                    'provedor'  => ConfiguracaoDoLogin::PROVEDOR_GOOGLE,
+                    'provedor'  => $provedor->value,
                 ],
             );
 
-            return $this->recusar('Não foi possível concluir a entrada com o Google. Tente novamente.');
+            return $this->recusar("Não foi possível concluir a entrada com o {$provedor->rotulo()}. Tente novamente.");
         }
 
         $email     = mb_strtolower(trim((string) $doProvedor->getEmail()));
@@ -106,28 +117,37 @@ final class LoginComGoogleController extends Controller
 
         if ($email === '') {
             Log::channel('autenticacao')->warning(
-                '[LoginComGoogleController@retorno] Recusado: provedor não devolveu e-mail | ip: '.request()->ip(),
+                "[LoginSocialController@retorno] Recusado: provedor não devolveu e-mail | provedor: {$provedor->value} - ip: ".request()->ip(),
                 [
                     'motivo'   => 'email_ausente',
                     'ip'       => request()->ip(),
-                    'provedor' => ConfiguracaoDoLogin::PROVEDOR_GOOGLE,
+                    'provedor' => $provedor->value,
                 ],
             );
 
-            return $this->recusar('O Google não informou um e-mail para esta conta.');
+            return $this->recusar("O {$provedor->rotulo()} não informou um e-mail para esta conta.");
         }
 
-        if (! $this->emailVerificadoNoProvedor($doProvedor)) {
+        /*
+         * A barreira que MUDA de provedor para provedor, e a única que muda — é por isso que
+         * ela mora no enum e não aqui. A tabela de como cada um expõe (ou esconde) a
+         * verificação, com `file:line` do vendor, está no ADR-03 desta wiki.
+         *
+         * Falha FECHADO em todos os ramos. Casar conta por e-mail que o provedor não verificou
+         * é a tomada de conta clássica do login social, e com o registro do kit fechado — o
+         * default — o caminho principal é exatamente o casamento com conta existente.
+         */
+        if (! $provedor->emailVerificado($doProvedor)) {
             Log::channel('autenticacao')->warning(
-                '[LoginComGoogleController@retorno] Recusado: e-mail não verificado no Google | email: '.$mascarado,
+                "[LoginSocialController@retorno] Recusado: e-mail não verificado no provedor | provedor: {$provedor->value} - email: ".$mascarado,
                 [
                     'motivo'   => 'email_nao_verificado',
                     'email'    => $mascarado,
-                    'provedor' => ConfiguracaoDoLogin::PROVEDOR_GOOGLE,
+                    'provedor' => $provedor->value,
                 ],
             );
 
-            return $this->recusar('A sua conta do Google não tem o e-mail verificado.');
+            return $this->recusar("A sua conta do {$provedor->rotulo()} não tem o e-mail verificado.");
         }
 
         $user = $this->contaCom($email);
@@ -136,22 +156,22 @@ final class LoginComGoogleController extends Controller
         if (! $user instanceof User) {
             if (! ConfiguracaoDoLogin::registroAberto()) {
                 /*
-                 * A barreira do convite. Sem ela o login social vira cadastro aberto, e o
-                 * kit deixa de ser o que ele diz que é.
+                 * A barreira do convite. Sem ela o login social vira cadastro aberto, e o kit
+                 * deixa de ser o que ele diz que é.
                  */
                 Log::channel('autenticacao')->warning(
-                    '[LoginComGoogleController@retorno] Recusado: não há conta e o registro está fechado | email: '.$mascarado,
+                    "[LoginSocialController@retorno] Recusado: não há conta e o registro está fechado | provedor: {$provedor->value} - email: ".$mascarado,
                     [
                         'motivo'   => 'conta_inexistente_registro_fechado',
                         'email'    => $mascarado,
-                        'provedor' => ConfiguracaoDoLogin::PROVEDOR_GOOGLE,
+                        'provedor' => $provedor->value,
                     ],
                 );
 
                 return $this->recusar('Não há conta com este e-mail. O acesso a este sistema é por convite.');
             }
 
-            $user = $this->criarConta($email, $mascarado, $doProvedor->getName());
+            $user = $this->criarConta($provedor, $email, $mascarado, $doProvedor->getName());
             $novo = true;
         }
 
@@ -172,50 +192,16 @@ final class LoginComGoogleController extends Controller
         Auth::login($user);
 
         Log::channel('autenticacao')->info(
-            "[LoginComGoogleController@retorno] Autenticado pelo Google | user: {$user->getKey()} - email: ".$mascarado,
+            "[LoginSocialController@retorno] Autenticado pelo provedor | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
             [
                 'user_id'    => $user->getKey(),
                 'email'      => $mascarado,
                 'conta_nova' => $novo,
-                'provedor'   => ConfiguracaoDoLogin::PROVEDOR_GOOGLE,
+                'provedor'   => $provedor->value,
             ],
         );
 
         return redirect()->to($novo ? $this->urlDoPerfil($user) : $this->urlDoPainel());
-    }
-
-    /**
-     * O e-mail está verificado no provedor?
-     *
-     * Falha FECHADO: ausente, textual-falso ou não-booleano recusa. Casar conta por e-mail
-     * que o provedor não verificou é a tomada de conta clássica do login social — bastaria
-     * criar uma conta Google com o e-mail de outra pessoa.
-     *
-     * As duas chaves porque o `GoogleProvider` popula as duas: `email_verified` é a do
-     * userinfo v3 e `verified_email` é o alias que ele mantém por compatibilidade
-     * (`vendor/laravel/socialite/src/Two/GoogleProvider.php:90-92`).
-     *
-     * `filter_var` e não um cast de bool, pelo mesmo motivo do interruptor em
-     * `config/kit.php`: o valor chega do JSON do provedor e a string "false" viraria `true`.
-     */
-    private function emailVerificadoNoProvedor(UsuarioDoProvedor $doProvedor): bool
-    {
-        /*
-         * `getRaw()` NAO esta no contrato `Socialite\Contracts\User` — ele e de `AbstractUser`.
-         * Provedor que nao exponha o payload bruto nao permite conferir a verificacao, e ai a
-         * resposta e NAO, nunca "assume que sim". E a mesma falha fechada do resto do metodo, e
-         * foi o PHPStan que a tornou explicita: a estreiteza do tipo aqui e a decisao de
-         * seguranca, nao um contorno dela.
-         */
-        if (! $doProvedor instanceof AbstractUser) {
-            return false;
-        }
-
-        $bruto = $doProvedor->getRaw();
-
-        $verificado = $bruto['email_verified'] ?? $bruto['verified_email'] ?? false;
-
-        return filter_var($verificado, FILTER_VALIDATE_BOOLEAN);
     }
 
     /**
@@ -237,18 +223,19 @@ final class LoginComGoogleController extends Controller
     }
 
     /**
-     * Cria a conta de quem chegou pelo Google, com o registro aberto ligado.
+     * Cria a conta de quem chegou pelo provedor, com o registro aberto ligado.
      *
      * Senha aleatória e descartada: a conta nasce sem senha utilizável, e quem quiser uma
-     * usa a recuperação de senha. Guardar o token de acesso do Google seria mais um segredo
-     * em repouso sem nenhum uso — o kit não chama API do Google em nome de ninguém.
+     * usa a recuperação de senha. Guardar o token de acesso do provedor seria mais um segredo
+     * em repouso sem nenhum uso — o kit não chama API de provedor em nome de ninguém. (A
+     * consulta a `/user/emails` do GitHub usa o token do request e o descarta.)
      *
      * **Nenhum papel é atribuído**, e isso é deliberado: papel é o que dá acesso a painel
      * (`User::canAccessPanel()`), e decidir qual papel um registro aberto concede é da
      * feature de registro e aprovação, não desta. Conta sem papel não abre painel algum, e
-     * esse é o comportamento correto do kit. Ver ADR-06 e as Ambiguidades do `00-requisito`.
+     * esse é o comportamento correto do kit. Ver ADR-06 da wiki `login-social-google`.
      */
-    private function criarConta(string $email, string $mascarado, ?string $nome): User
+    private function criarConta(ProvedorSocial $provedor, string $email, string $mascarado, ?string $nome): User
     {
         $user = User::create([
             'name'     => filled($nome) ? $nome : $email,
@@ -256,13 +243,32 @@ final class LoginComGoogleController extends Controller
             'password' => Str::password(32),
         ]);
 
+        /*
+         * O provedor JÁ provou que o endereço está verificado — é a barreira que a pessoa
+         * atravessou para chegar a esta linha. Pedir verificação depois disso é pedir a mesma
+         * prova duas vezes, e a segunda por e-mail.
+         *
+         * É o mesmo argumento e a mesma linha de `Convite::aceitar()`, que grava a coluna porque
+         * o token prova posse do endereço (ver o comentário de lá). O `config/kit.php` diz por
+         * escrito que "quem vem de convite nunca é afetado" pelo middleware de e-mail
+         * verificado; quem vem de login social tem prova igual ou melhor, e merece o mesmo.
+         *
+         * `email_verified_at` está FORA do `$fillable` do User — é estado, não entrada —, então
+         * mass assignment o descartaria em silêncio. Daí o `forceFill`.
+         *
+         * Sem esta linha, com KIT_REGISTRO_VERIFICAR_EMAIL ligado, a conta nasce presa na tela
+         * de "verifique seu e-mail" no instante seguinte a um OAuth bem-sucedido. Foi um caso de
+         * teste que pegou.
+         */
+        $user->forceFill(['email_verified_at' => now()])->save();
+
         Log::channel('autenticacao')->info(
-            "[LoginComGoogleController@criarConta] Conta criada por login social | user: {$user->getKey()} - email: ".$mascarado,
+            "[LoginSocialController@criarConta] Conta criada por login social | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
             [
                 'user_id'  => $user->getKey(),
                 'email'    => $mascarado,
                 'motivo'   => 'conta_criada_por_login_social',
-                'provedor' => ConfiguracaoDoLogin::PROVEDOR_GOOGLE,
+                'provedor' => $provedor->value,
             ],
         );
 
@@ -276,7 +282,7 @@ final class LoginComGoogleController extends Controller
     }
 
     /**
-     * A tela do próprio perfil — o destino de quem acabou de se registrar pelo Google.
+     * A tela do próprio perfil — o destino de quem acabou de se registrar pelo provedor.
      *
      * O requisito pede isto porque quem entra por login social pode ainda ter dados a
      * preencher. O nome da rota sai da FÓRMULA do próprio Breezy, e não de uma string fixa:

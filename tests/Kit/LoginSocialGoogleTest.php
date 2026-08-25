@@ -4,6 +4,7 @@ use App\Filament\Admin\Pages\ConfiguracoesDoKit;
 use App\Models\User;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\ConfiguracaoDoLogin;
+use App\Support\ProvedorSocial;
 use App\Support\RegistroAberto;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
@@ -725,7 +726,7 @@ it('grava log informativo no channel de autenticação ao entrar pelo Google', f
 
     $canal->shouldHaveReceived('info', fn (string $mensagem): bool => str_contains(
         $mensagem,
-        "[LoginComGoogleController@retorno] Autenticado pelo Google | user: {$user->getKey()}",
+        "[LoginSocialController@retorno] Autenticado pelo provedor | provedor: google - user: {$user->getKey()}",
     ));
 })->group('kit');
 
@@ -747,7 +748,7 @@ it('grava alerta com o motivo na recusa, sem log de autenticação', function ()
     $canal->shouldHaveReceived('warning', fn (string $mensagem, array $contexto): bool => str_contains($mensagem, 'Recusado')
         && ($contexto['motivo'] ?? null) === 'conta_inexistente_registro_fechado');
 
-    $canal->shouldNotHaveReceived('info', fn (string $mensagem): bool => str_contains($mensagem, 'Autenticado pelo Google'));
+    $canal->shouldNotHaveReceived('info', fn (string $mensagem): bool => str_contains($mensagem, 'Autenticado pelo provedor'));
 })->group('kit');
 
 /**
@@ -804,7 +805,7 @@ it('enxerga o registro aberto pela mesma fonte que a feature de registro', funct
 
 it('deixa o settings governar o botao do google e o rodape', function (): void {
     // Desligado por default, e sem credencial.
-    expect(ConfiguracaoDoLogin::googleDisponivel())->toBeFalse();
+    expect(ConfiguracaoDoLogin::disponivel(ProvedorSocial::Google))->toBeFalse();
 
     $settings                             = app(SettingsDoKit::class);
     $settings->login_google_habilitado    = true;
@@ -815,7 +816,7 @@ it('deixa o settings governar o botao do google e o rodape', function (): void {
 
     app(SettingsDoKit::class)->aplicarNaConfig();
 
-    expect(ConfiguracaoDoLogin::googleDisponivel())->toBeTrue()
+    expect(ConfiguracaoDoLogin::disponivel(ProvedorSocial::Google))->toBeTrue()
         ->and(ConfiguracaoDoLogin::rodapeDoLogin())->toBe('Fundação Exemplo · Todos os direitos reservados');
 });
 

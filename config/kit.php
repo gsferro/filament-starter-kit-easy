@@ -423,20 +423,32 @@ return [
     | convite e a unica forma de alguem de fora virar usuario". As duas coisas
     | conversam, e a ordem evita a leitura errada.
     |
-    | DEFAULT DESLIGADO. Ligar aqui nao poe o botao no ar sozinho: as tres chaves
-    | de `services.google` tambem precisam estar preenchidas. Sao duas condicoes
-    | em conjuncao, e a razao de serem duas e que elas falham por motivos
-    | diferentes - interruptor desligado e escolha, credencial vazia e descuido.
+    | DEFAULT DESLIGADO, em CADA provedor. Ligar aqui nao poe o botao no ar
+    | sozinho: as tres chaves de `services.{provedor}` tambem precisam estar
+    | preenchidas. Sao duas condicoes em conjuncao, e a razao de serem duas e que
+    | elas falham por motivos diferentes - interruptor desligado e escolha,
+    | credencial vazia e descuido.
     |
-    | Com o interruptor desligado as rotas /auth/google/* respondem 404. Esconder
-    | o botao nao basta: a URL e fixa, publica e conhecida, e "escondido no HTML"
-    | nao e barreira. Ver ADR-03.
+    | Com o interruptor de um provedor desligado, as rotas /auth/{provedor}/*
+    | respondem 404 - e so as dele. Esconder o botao nao basta: a URL e fixa,
+    | publica e conhecida, e "escondido no HTML" nao e barreira. Ver ADR-03 da
+    | wiki login-social-google e ADR-02 da wiki mais-provedores-sociais.
+    |
+    | Provedor FORA da lista responde 404 sem passar pelo controller: o parametro
+    | da rota e tipado como `App\Support\ProvedorSocial`, e o implicit enum
+    | binding do Laravel recusa o que nao e caso do enum. A lista branca e o enum.
     |
     | O QUE O LOGIN SOCIAL FAZ, e o que ele nao faz: ele AUTENTICA quem ja tem
     | conta com aquele e-mail, verificado no provedor. Ele NAO cria conta enquanto
     | o registro aberto estiver desligado - o exemplo updateOrCreate da propria
-    | documentacao do Socialite transformaria qualquer pessoa com conta Google em
-    | usuaria do sistema, contornando o convite. Ver ADR-06.
+    | documentacao do Socialite transformaria qualquer pessoa com conta em um dos
+    | provedores em usuaria do sistema, contornando o convite. Ver ADR-06.
+    |
+    | "Verificado no provedor" custa diferente em cada um, e a tabela com file:line
+    | esta no ADR-03 da wiki mais-provedores-sociais: o Google e o LinkedIn dao um
+    | booleano; o X so devolve e-mail que ele confirmou; o GitHub verifica e
+    | DESCARTA a evidencia, entao o kit refaz a consulta a /user/emails. Facebook
+    | nao da sinal nenhum, e por isso nao esta na lista.
     |
     | Por que filter_var e nao um cast de bool - MEDIDO, e mais estreito do que
     | parece. O Env::getOption() do Laravel ja converte "true"/"false"/"(false)"/
@@ -463,14 +475,48 @@ return [
     | O rodape e TEXTO, nunca HTML: ele e renderizado numa pagina publica e nao
     | autenticada, e sai escapado. Ver ADR-09.
     |
-    | Estas chaves sao o DESTINO da tela de Settings, nao o lugar final. Quem le
-    | as tres e App\Support\ConfiguracaoDoLogin, o ponto unico de ligacao: no dia
-    | em que o Settings existir, so o corpo daqueles tres metodos muda.
+    | Estas chaves JA sao editaveis em /admin/configuracoes-do-kit, aba "Login" -
+    | elas entraram no `mapaDeConfiguracao()` das ConfiguracoesDoKit e o valor do
+    | banco vence este arquivo em tempo de execucao. Quem le todas e
+    | App\Support\ConfiguracaoDoLogin, o ponto unico: nada mais no kit consulta
+    | `kit.login.*` nem `services.{provedor}` direto.
     */
 
     'login' => [
+
+        /*
+         * Um interruptor POR PROVEDOR, e a chave de cada um é o nome do driver do
+         * Socialite — a mesma string que abre o bloco correspondente em
+         * `config/services.php`, que é o segmento da URL e que é o valor do caso em
+         * `App\Support\ProvedorSocial`. Uma string, quatro usos.
+         *
+         * Cada default é `false` (RQ-08): quatro portas fechadas até alguém abrir uma. E
+         * ligar uma não liga as outras — o predicado é por provedor, e há caso de teste
+         * para o isolamento nas duas direções.
+         *
+         * `linkedin-openid` e não `linkedin` porque são dois drivers diferentes no
+         * Socialite, e só o OpenID devolve `email_verified`. Ver o bloco de login social
+         * em `config/services.php`.
+         *
+         * Facebook e Discord não estão aqui: o Facebook não expõe sinal de e-mail
+         * verificado e o Discord não é driver do Socialite. ADR-04 e ADR-05 de
+         * wikis/specs/feat/mais-provedores-sociais/mais-provedores-sociais/.
+         */
+
         'google' => [
             'habilitado' => filter_var(env('KIT_SOCIALITE_GOOGLE', false), FILTER_VALIDATE_BOOLEAN),
+        ],
+
+        'github' => [
+            'habilitado' => filter_var(env('KIT_SOCIALITE_GITHUB', false), FILTER_VALIDATE_BOOLEAN),
+        ],
+
+        'linkedin-openid' => [
+            'habilitado' => filter_var(env('KIT_SOCIALITE_LINKEDIN', false), FILTER_VALIDATE_BOOLEAN),
+        ],
+
+        'x' => [
+            'habilitado' => filter_var(env('KIT_SOCIALITE_X', false), FILTER_VALIDATE_BOOLEAN),
         ],
 
         'rodape' => env('KIT_LOGIN_RODAPE'),

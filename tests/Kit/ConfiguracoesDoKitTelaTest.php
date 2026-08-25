@@ -11,7 +11,6 @@ use Filament\Support\Colors\Color;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
-use Spatie\LaravelSettings\Models\SettingsProperty;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -31,15 +30,6 @@ beforeEach(function (): void {
 
     Filament::setCurrentPanel('admin');
 });
-
-/** O valor gravado de uma propriedade, lido da tabela. */
-function configuracaoGravada(string $propriedade): mixed
-{
-    return json_decode((string) SettingsProperty::query()
-        ->where('group', SettingsDoKit::group())
-        ->where('name', $propriedade)
-        ->value('payload'), associative: true);
-}
 
 /**
  * CT-08 — o formulário grava as quatro famílias de campo de uma vez.
@@ -332,6 +322,44 @@ it('mantem a senha guardada quando o campo fica em branco', function (): void {
 
     expect(app(SettingsDoKit::class)->mail_password)->toBe('SENHA-SUPER-SECRETA-42')
         ->and(configuracaoGravada('nome_da_aplicacao'))->toBe('Outro Nome');
+});
+
+/**
+ * O TERCEIRO caso do par de segredo — e o que faltava para o par valer.
+ *
+ * `.ai/rules/pages.md` pede dois: o segredo não aparece no HTML, e ele sobrevive a um
+ * salvamento que não o tocou. Os dois acima afirmam o que NÃO acontece, e por isso os dois
+ * passam com um `->dehydrated()` que devolve `false` para sempre — em que a senha simplesmente
+ * **não pode ser gravada pela tela**.
+ *
+ * Foi o que aconteceu: a closure era `fn (?string $estado)`, e o Filament resolve dependência de
+ * closure por NOME (`vendor/filament/schemas/src/Components/Component.php:87-98`). Nome
+ * desconhecido com tipo escalar não resolve para nada
+ * (`vendor/filament/support/src/Concerns/EvaluatesClosures.php:143-160`), então a closure recebia
+ * `null`, `filled(null)` era `false`, e a chave nunca chegava ao `save()`. A senha de SMTP foi
+ * impossível de configurar pela tela, em silêncio, desde a v0.19.0 — e as duas asserções de
+ * cima ficaram verdes o tempo todo.
+ *
+ * A lição é sobre a FORMA do par: dois casos que afirmam ausência não fazem um par. O
+ * contrapeso de "não grava quando em branco" é "grava quando preenchido", e é este.
+ */
+it('grava a senha de smtp quando o campo e preenchido', function (): void {
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->fillForm([
+            'mail_mailer'   => 'smtp',
+            'mail_host'     => 'smtp.exemplo.test',
+            'mail_password' => 'SENHA-NOVA-42',
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    app()->forgetInstance(SettingsDoKit::class);
+
+    expect(app(SettingsDoKit::class)->mail_password)->toBe('SENHA-NOVA-42')
+        // E cifrada na tabela, que é a outra metade da promessa do campo.
+        ->and((string) configuracaoGravada('mail_password'))->not->toContain('SENHA-NOVA-42');
 });
 
 /*

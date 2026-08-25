@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Providers\KitServiceProvider;
 use App\Settings\ConfiguracoesDoKit;
+use App\Support\ProvedorSocial;
 use Filament\Facades\Filament;
 use Filament\FilamentManager;
 use Filament\Support\Assets\AssetManager;
@@ -13,6 +14,7 @@ use Filament\Support\Colors\ColorManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Log;
+use Laravel\Socialite\Two\User as UsuarioDoProvedor;
 use Psr\Log\LoggerInterface;
 use Spatie\LaravelSettings\Models\SettingsProperty;
 use Spatie\Permission\PermissionRegistrar;
@@ -488,6 +490,105 @@ function kitConfigCom(string $chave, ?string $valor): array
             putenv("{$chave}={$anterior}");
         }
     }
+}
+
+/**
+ * Liga um provedor de login social para o caso corrente, com as três chaves preenchidas.
+ *
+ * Aqui e não num arquivo de teste porque TRÊS arquivos usam
+ * (`tests/Kit/LoginSocialProvedoresTest.php`, `tests/Kit/SegredosDoSettingsTest.php` e
+ * `tests/Tenancy/LoginSocialProvedoresTenancyTest.php`) — `.ai/rules/testes.md`. Em PHP a
+ * função é global no processo, então declarar num arquivo e usar noutro fica VERDE quando o
+ * Pest carrega todos e estoura `Call to undefined function` sob `--parallel`, `--tia` e arquivo
+ * isolado, que são os três comandos mais usados.
+ *
+ * `$credenciais` sobrescreve chaves de `services.{provedor}` — passar `client_secret => ''` é o
+ * caso do `.env` preenchido pela metade, que é o que o par de CT-01 exige por provedor.
+ *
+ * @param  array<string, mixed>  $credenciais
+ */
+function ligarProvedor(ProvedorSocial $provedor, array $credenciais = []): void
+{
+    config()->set("kit.login.{$provedor->value}.habilitado", true);
+
+    config()->set('services.'.$provedor->value, array_merge([
+        'client_id'     => 'id-de-teste',
+        'client_secret' => 'segredo-de-teste',
+        'redirect'      => "/auth/{$provedor->value}/callback",
+    ], $credenciais));
+}
+
+/**
+ * O usuário do provedor com o campo de verificação SÓ no bruto — como o driver real entrega.
+ *
+ * Existe porque **o bruto muda de provedor para provedor**, e é justamente essa diferença que a
+ * barreira de e-mail verificado atravessa (ADR-03 da wiki `mais-provedores-sociais`):
+ *
+ * | Provedor | O que o helper monta no bruto |
+ * |---|---|
+ * | `google` | `email_verified => true` (o alias `verified_email` é do provider) |
+ * | `linkedin-openid` | `email_verified => true` |
+ * | `x` | só `email` — a PRESENÇA é a prova, o X não tem campo de verificação |
+ * | `github` | nada de verificação; quem prova é o `Http::fake()` de `/user/emails` |
+ *
+ * ## Por que NÃO basta `Two\User::fake()` com o campo dentro
+ *
+ * `fake()` faz `setRaw($atributos)` **e** `map($atributos)`
+ * (`vendor/laravel/socialite/src/Two/User.php:58`). Ou seja, ele popula o **bruto** e o
+ * **atributo** — e aí uma implementação que leia `$doProvedor->email_verified` em vez de
+ * `getRaw()` fica **verde em todo cenário**, e em produção recusa **todo** login de Google:
+ * `AbstractUser::map()` só atribui a propriedade quando `property_exists` (`:138-149`), e o
+ * `GoogleProvider` real não a mapeia. O duplo esconderia exatamente o defeito que a barreira
+ * existe para impedir.
+ *
+ * Daí a ordem aqui: `fake()` recebe só os campos que o provedor real MAPEIA, e o `setRaw()`
+ * depois substitui o bruto pelo que o provedor real ENTREGA. Um sobrescreve o outro
+ * (`AbstractUser::setRaw()` devolve `$this`), e o campo de verificação nunca vira atributo.
+ *
+ * `token = 'fake-token'` continua vindo do `fake()` — é esse token que o `Http::assertSent()` do
+ * caso do GitHub confere.
+ *
+ * @param  array<string, mixed>  $bruto  acrescenta/sobrescreve o payload bruto
+ * @param  array<string, mixed>  $mapeados  acrescenta/sobrescreve o que o provedor mapeia
+ */
+function usuarioSocialFalso(ProvedorSocial $provedor, array $bruto = [], array $mapeados = []): UsuarioDoProvedor
+{
+    $mapeados = array_merge([
+        'id'    => "{$provedor->value}-123",
+        'name'  => 'Quem Já Tem',
+        'email' => 'ja.tem@example.com',
+    ], $mapeados);
+
+    $verificacao = match ($provedor) {
+        ProvedorSocial::Google, ProvedorSocial::LinkedIn => ['email_verified' => true],
+
+        // O X não tem campo de verificação e o GitHub não expõe nenhum no bruto — de propósito,
+        // e é o que os casos daquelas duas regras exercitam.
+        ProvedorSocial::X, ProvedorSocial::Github => [],
+    };
+
+    return UsuarioDoProvedor::fake($mapeados)
+        ->setRaw(array_merge($mapeados, $verificacao, $bruto));
+}
+
+/**
+ * O valor gravado de uma propriedade do settings, lido DIRETO da tabela.
+ *
+ * Veio de `tests/Kit/ConfiguracoesDoKitTelaTest.php`, onde era declarada localmente, quando
+ * ganhou o segundo consumidor (`tests/Kit/SegredosDoSettingsTest.php`, que precisa provar que o
+ * `payload` de cada `client_secret` é criptograma e não texto claro). Mover foi obrigatório, não
+ * escolha: a alternativa era um clone com outro nome, que `.ai/rules/testes.md` proíbe por nome
+ * — "troca um erro que estoura por duas funções idênticas que ninguém percebe".
+ *
+ * Lê o `payload` cru justamente para NÃO passar pelo decifrador do spatie: quem pergunta se o
+ * valor está cifrado não pode perguntar para quem decifra.
+ */
+function configuracaoGravada(string $propriedade): mixed
+{
+    return json_decode((string) SettingsProperty::query()
+        ->where('group', ConfiguracoesDoKit::group())
+        ->where('name', $propriedade)
+        ->value('payload'), associative: true);
 }
 
 /** Espia só o channel `autenticacao`; os outros continuam reais. */
