@@ -275,7 +275,18 @@ registra.
 
 ## ADR-05: Page e Widget de vendor ficam com a permissão gerada e não consultada
 
-**Status**: Aceita
+**Status**: **Substituída em parte** (2026-08-24, v0.19.5) por ADR-01 e ADR-04 de
+`wikis/specs/feat/permissoes-de-telas-de-pacote/permissoes-de-telas-de-pacote/` — sete das dez
+classes passaram a consultar a permissão. O corpo abaixo fica, e continua correto para as **três**
+que sobraram (`Commands`, `History`, `RunView`), cujo motivo está em ADR-05 daquela wiki.
+
+> Duas coisas que esta ADR não avaliou, e que abriram o caminho: **quatro dos pacotes publicam um
+> callback de autorização** (`->authorize()`, `->canAccessUsing()`) e a Page deles decide só por
+> ele, sem tocar no registro do plugin; e a objeção da chave renomeada
+> (`View:LogsExplorerDoKit`) vale **só se a subclasse tiver outro nome** — a chave sai do
+> `class_basename`, não do namespace, então uma subclasse chamada `BackupRunsPage` produz
+> `View:BackupRunsPage`.
+
 **Data**: 2026-08-24
 
 ### Contexto

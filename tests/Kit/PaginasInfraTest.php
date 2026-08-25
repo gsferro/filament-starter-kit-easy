@@ -48,6 +48,30 @@ it('abre as telas do painel infra com o papel infra', function (string $rota): v
     'logins'          => '/infra/authentication-logs',
     'filas'           => '/infra/queue-monitors',
     'execuções de IA' => '/infra/execucoes-ia',
+    /*
+     * As telas que vêm de PACOTE, acrescentadas quando a permissão `View:{Tela}` passou a
+     * DECIDIR o acesso a elas (antes o checkbox existia e não decidia nada).
+     *
+     * É a metade "quem TEM a permissão entra" do par. A outra metade — quem não tem leva 403 —
+     * está em `tests/Kit/PermissoesDeTelasTest.php`, e o par é o que impede as duas leituras
+     * erradas: uma tela que abre para todos, e uma tela que tranca o papel `infra` fora da
+     * observabilidade justamente durante um incidente.
+     *
+     * Aqui, e não num arquivo novo, porque este `it()` já é exatamente esta pergunta com o
+     * papel `infra` real — `master_global` vence pelo `Gate::before` e não prova permissão.
+     *
+     * `/infra/command-center/*` entra porque as três telas da Central de comandos são a lacuna
+     * declarada (ADR-05 da wiki `permissoes-de-telas-de-pacote`): o papel `infra` precisa
+     * continuar abrindo, e é isto que garante que a declaração não virou bloqueio por acidente.
+     */
+    'saúde da aplicação'    => '/infra/health-check-results',
+    'backups'               => '/infra/backup-runs',
+    'logs'                  => '/infra/logs',
+    'grafo de dependências' => '/infra/dependency-graph',
+    'lixeira'               => '/infra/recycle-bin',
+    'meu perfil'            => '/infra/meu-perfil',
+    'comandos'              => '/infra/command-center/commands',
+    'histórico de comandos' => '/infra/command-center/history',
 ]);
 
 it('abre as telas do painel infra', function (string $rota): void {
