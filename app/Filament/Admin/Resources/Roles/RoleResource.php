@@ -28,6 +28,7 @@ use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Panel;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\EmptyState;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -504,6 +505,63 @@ class RoleResource extends Resource
      *
      * @param  array<string, mixed>  $entity
      */
+    /**
+     * O CheckboxList da entidade, com as opções vindas do MAPA — não do painel corrente.
+     *
+     * ## O defeito que isto conserta, e ele apagava dado
+     *
+     * `getCheckBoxListComponentForResource()` do vendor monta as opções com
+     * `FilamentShield::getResourcePermissionsWithLabels($fqcn)`
+     * (`vendor/bezhansalleh/filament-shield/src/Traits/HasShieldFormComponents.php:68-71`), e o
+     * `FilamentShield` é **scoped ao painel corrente**. Esta tela vive no `/admin`, então para
+     * todo resource de `/app` e `/infra` aquele getter devolvia `[]`.
+     *
+     * Consequência: o CheckboxList nascia **sem opção nenhuma**, o state daquela chave ficava
+     * vazio, e o `syncPermissions()` do `EditRole::afterSave()` sincroniza com o state — ou
+     * seja, apagava. Medido: abrir o papel `infra` e clicar em Salvar **sem tocar em nada**
+     * levava 140 permissões para 15; `panel_user` ia de 17 para 3. Sobrevivia só o que caía em
+     * resource de vendor registrado nos três painéis, como `ExceptionResource`.
+     *
+     * O agrupamento por painel (a `getResourceEntitiesSchema()` acima) é do kit e sempre foi:
+     * ele monta seções para os três painéis. O que faltava era alimentar essas seções com uma
+     * fonte que conheça os três — e `App\Support\Paineis` conhece, porque troca o painel
+     * corrente durante a varredura e guarda o resultado.
+     *
+     * `$entity['permissions']` vem daquele mapa no formato do Shield:
+     * `['viewAny' => ['key' => 'ViewAny:AiRun', 'label' => 'View Any'], …]`. O CheckboxList
+     * quer `chave => rótulo`, então a transformação é aqui.
+     *
+     * @param  array<string, mixed>  $entity
+     */
+    private static function checkboxListDaEntidade(array $entity): Component
+    {
+        $permissoes = $entity['permissions'] ?? null;
+
+        $opcoes = [];
+
+        foreach (is_array($permissoes) ? $permissoes : [] as $permissao) {
+            if (! is_array($permissao)) {
+                continue;
+            }
+
+            $chave  = $permissao['key'] ?? null;
+            $rotulo = $permissao['label'] ?? null;
+
+            if (is_string($chave) && is_string($rotulo)) {
+                $opcoes[$chave] = $rotulo;
+            }
+        }
+
+        return static::getCheckboxListFormComponent(
+            name: $entity['resourceFqcn'],
+            options: $opcoes,
+            searchable: false,
+            columns: static::shield()->getResourceCheckboxListColumns(),
+            columnSpan: static::shield()->getResourceCheckboxListColumnSpan(),
+        );
+    }
+
+    /** @param  array<string, mixed>  $entity */
     public static function secaoDoResource(array $entity): Section
     {
         $rotulo = strval(
@@ -529,7 +587,7 @@ class RoleResource extends Resource
             ])
             ->compact()
             ->schema([
-                static::getCheckBoxListComponentForResource($entity),
+                self::checkboxListDaEntidade($entity),
             ])
             ->columnSpan(static::shield()->getSectionColumnSpan())
             ->collapsible();

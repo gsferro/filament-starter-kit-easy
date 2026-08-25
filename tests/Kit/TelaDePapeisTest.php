@@ -478,3 +478,118 @@ it('destrava a tela protegida ao marcar a permissao na tela de papeis', function
     // Depois: a MESMA tela, o MESMO usuário, 200.
     $this->actingAs($pessoa)->get('/admin/users')->assertSuccessful();
 })->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| Abrir e salvar sem mexer devolve o que recebeu
+|--------------------------------------------------------------------------
+| O caso que faltava, e que custou perda de dado em produção.
+|
+| Toda a cobertura desta tela media MARCAR permissão: o cenário do checkbox
+| que destranca a tela, o do select_all, o da contagem por grupo. Nenhum media
+| a identidade — abrir um papel, não tocar em nada, salvar, e receber de volta
+| exatamente o que estava lá.
+|
+| O defeito que isso esconde é do vendor, na fronteira com a customização do
+| kit: `HasShieldFormComponents::setPermissionStateForRecordPermissions()`
+| (`vendor/bezhansalleh/filament-shield/src/Traits/HasShieldFormComponents.php:81`)
+| só hidrata o CheckboxList `if ($component->isVisible() ...)`. Com o collapse
+| por painel do vendor, todas as seções estavam visíveis. Com o tab vertical
+| que esta tela passou a usar, só a aba ativa está — as abas dos outros dois
+| painéis nascem VAZIAS, e o `syncPermissions()` do `afterSave` remove o que
+| não veio no state.
+|
+| Medido antes da correção, no papel `admin_app`: 47 permissões antes de
+| salvar, 31 depois. As 14 de `Projeto` desapareceram porque `Projeto` só
+| existe no painel /app — as de `Convite` e `User` sobreviveram por acidente,
+| porque também aparecem na aba do /admin, que estava visível.
+|
+| O papel de OUTRO painel é o oráculo certo: um papel do /admin não falsifica
+| nada, porque a aba dele é a que abre.
+*/
+it('preserva as permissoes de um papel de outro painel ao salvar sem alterar nada', function (string $papel): void {
+    $registro = Role::query()->where('name', $papel)->sole();
+    $antes    = $registro->permissions()->pluck('name')->sort()->values()->all();
+
+    expect($antes)->not->toBeEmpty("o papel {$papel} precisa ter permissões para este caso valer");
+
+    $this->actingAs(usuarioCom('master_global'));
+
+    Livewire::test(EditRole::class, ['record' => $registro->getRouteKey()])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $depois = $registro->fresh()->permissions()->pluck('name')->sort()->values()->all();
+
+    expect($depois)->toBe($antes);
+})->with([
+    // Papel do /app editado pelo /admin: a aba dele NÃO é a que abre. `admin_app` seria o
+    // caso mais gordo, mas ele só existe em `tests/Tenancy` (ver `.ai/rules/testes.md`), e
+    // `panel_user` prova a mesma propriedade — é do painel /app e tem permissões.
+    'panel_user' => ['panel_user'],
+    // O de infra, pelo mesmo motivo.
+    'infra' => ['infra'],
+    // E o do próprio painel, que é o controle: se este quebrar, o problema é outro.
+    'admin' => ['admin'],
+]);
+
+/*
+|--------------------------------------------------------------------------
+| A regra de conjunto do salvamento, provada direto
+|--------------------------------------------------------------------------
+| `EditRole::permissoesFinais()` é a única parte desta tela que dá para provar
+| sem subir Livewire — e é a parte onde o erro custa dado.
+|
+| Por que não pelo componente: `fillForm()` refaz o preenchimento, e o
+| preenchimento passa por `mutateFormDataBeforeFill()`, que semeia o state a
+| partir do banco — ou seja, desfaz qualquer desmarcação que o caso tente
+| arranjar. `set('data', …)` também não vence, porque as chaves são FQCN com
+| barras invertidas e o caminho do Livewire é por pontos. Medido: as marcadas
+| chegavam ao save ainda contendo `ViewAny:User`, e o caso reprovava com o
+| código CORRETO.
+|
+| No navegador nada disso acontece: o fill roda uma vez, no mount, e o clique
+| no checkbox altera o state sem refazer o fill. O par abaixo prova a regra; a
+| ida ao banco fica com os três casos de preservação acima, que passam pelo
+| componente de verdade.
+*/
+it('resolve o salvamento pela regra de conjunto', function (array $atuais, array $oferecidas, array $marcadas, array $esperado): void {
+    $final = EditRole::permissoesFinais($atuais, $oferecidas, $marcadas);
+
+    sort($final);
+    sort($esperado);
+
+    expect($final)->toBe($esperado);
+})->with([
+    // O defeito original: o formulário não mostrou nada do /infra, então não pode apagar nada.
+    'o que o formulario nao mostrou fica' => [
+        ['View:LogsExplorer', 'View:Pulse', 'ViewAny:User'],
+        ['ViewAny:User'],
+        ['ViewAny:User'],
+        ['View:LogsExplorer', 'View:Pulse', 'ViewAny:User'],
+    ],
+    // O contrapeso: o que ele mostrou e voltou desmarcado SAI. Sem isto a tela vira
+    // somente-adição e revogar acesso deixa de funcionar — igualmente grave, e mais silencioso.
+    'o que ele mostrou e foi desmarcado sai' => [
+        ['View:LogsExplorer', 'ViewAny:User', 'View:User'],
+        ['ViewAny:User', 'View:User'],
+        ['View:User'],
+        ['View:LogsExplorer', 'View:User'],
+    ],
+    // Marcar algo novo entra.
+    'o que foi marcado entra' => [
+        ['ViewAny:User'],
+        ['ViewAny:User', 'Create:User'],
+        ['ViewAny:User', 'Create:User'],
+        ['ViewAny:User', 'Create:User'],
+    ],
+    // Papel sem permissão nenhuma continua sem, e não estoura.
+    'papel vazio continua vazio' => [[], ['ViewAny:User'], [], []],
+    // Desmarcar tudo o que o formulário mostrou esvazia SÓ o alcance dele.
+    'desmarcar tudo esvazia so o alcance' => [
+        ['View:LogsExplorer', 'ViewAny:User'],
+        ['ViewAny:User'],
+        [],
+        ['View:LogsExplorer'],
+    ],
+]);
