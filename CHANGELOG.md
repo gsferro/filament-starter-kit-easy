@@ -2,6 +2,53 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.19.11] - 2026-08-25
+O que e do repositorio do kit para de viajar no pacote — e o caso do Blueprint mostrou que
+"remover na instalacao" tem um limite duro.
+
+### Adicionado
+- **Varredura de dependencias em todo push e PR**, no workflow proprio `seguranca.yml`. Ela
+  existe porque a integracao do app do Snyk no GitHub so escaneia quando o MANIFESTO muda:
+  tres PRs seguidos voltaram `No manifest changes detected` e passaram verdes sem escanear
+  nada. Reprova em high e critical, le o `.snyk` por default, e sem o secret `SNYK_TOKEN`
+  AVISA e passa — PR de fork e clone novo nao devem ficar vermelhos por configuracao.
+- **`kit:install --create-project` apaga o vinculo com o Snyk** (`.snyk` e `seguranca.yml`).
+  O `.snyk` nao e configuracao: e o registro de uma decisao deste repositorio, com URL da
+  organizacao, ID do projeto e IDs de PR check. O `ignore` que um dia entre ali silencia
+  achado por ID — herdar seria herdar uma excecao de seguranca que ninguem do outro lado
+  concedeu.
+- **`composer bp:on` / `bp:off`** para o `filament/blueprint`, que e pago e vive em
+  repositorio privado. O estado commitado e sempre "desligado", e
+  `tests/Kit/BlueprintForaDoPacoteTest.php` reprova se o pacote, o repositorio privado ou o
+  lock escaparem. Com o Blueprint ligado local esses casos ficam VERMELHOS de proposito: sao
+  o lembrete de rodar `bp:off` antes de commitar.
+
+### Alterado
+- **A varredura saiu do `ci.yml` para workflow proprio.** Assim o instalador apaga UM ARQUIVO
+  em vez de operar dentro de um YAML que o usuario tambem edita.
+- **`.snyk`**: o link de PR check vencido deu lugar ao link do PROJETO, que nao expira, mais a
+  distincao que custou uma ida e volta — o ID do projeto NAO vai no bloco `ignore`; la vai o
+  ID do ACHADO. E o aviso de preferir `snyk ignore --id=...` a editar o bloco a mao, porque a
+  indentacao errada do `- '*':` faz o scan ignorar o arquivo EM SILENCIO.
+
+### Corrigido
+- **Nada disso serviria para o Blueprint, e o desenho mudou por causa da medicao.**
+  `composer create-project` instala `require-dev` por DEFAULT (o proprio `--help` diz
+  "enabled by default") e resolve tudo ANTES do `post-create-project-cmd`. Com o Blueprint no
+  `composer.json` ou no `composer.lock` publicados, quem nao tem licenca leva 403 na resolucao
+  e o kit fica NAO-INSTALAVEL — o gancho que limparia nunca roda. Arquivo inerte sai no
+  gancho; dependencia privada nunca pode estar no estado commitado.
+- **Dois defeitos nos meus proprios oraculos, ambos achados por mutacao.** O caso que guarda o
+  `composer.json` passava a explicacao como segundo argumento de `toContain(mixed ...$needles)`
+  — que e VARIADICO e nao aceita mensagem —, entao a frase virou um needle que nunca existe e o
+  `not` passava sempre: caso verde medindo nada, e a mutacao (flag no `setup`) continuou verde.
+  E a guarda do Blueprint lia o TEXTO BRUTO do `composer.json` procurando
+  `packages.filamentphp.com`, reprovando por causa da URL dentro do proprio script `bp:on`.
+- **O flag `--create-project` foi para o script `setup` por engano**, porque
+  `kit:install --ansi` aparece duas vezes no `composer.json` e a primeira e a do `setup` — que
+  roda em clone do KIT e apagaria o `.snyk` da propria fonte. Ha caso de teste guardando os
+  dois scripts.
+
 ## [0.19.10] - 2026-08-25
 A tela de boas-vindas entra na galeria dos READMEs, e duas rules ganham a emenda que a
 rodada anterior tornou necessaria.
