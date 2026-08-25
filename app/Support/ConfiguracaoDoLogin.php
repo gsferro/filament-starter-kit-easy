@@ -15,9 +15,10 @@ namespace App\Support;
  * os blades, nem um caso de teste foi tocado.
  *
  * Isso funciona aqui porque as duas são lidas POR REQUEST: o `abort_unless()` do controller e
- * a closure do render hook do botão. A feature de registro tentou o mesmo com
- * `verificar_email` e não pôde — aquela é lida no boot do painel, e o middleware é fixado no
- * array da rota. Ler por request é o que separa uma chave editável de um toggle que mente.
+ * a closure do render hook do botão. Ler por request é o que separa uma chave editável de um
+ * toggle que mente — e quando a leitura é de boot, como era `verificar_email`, o caminho é
+ * trocar a decisão fixada na rota por um decisor que pergunta a cada request (foi o que
+ * `App\Http\Middleware\ExigirEmailVerificado` fez).
  *
  * `registroAberto()` é o caso especial: ela não lê config nenhuma, delega para a dona da
  * pergunta. Ver o docblock dela.

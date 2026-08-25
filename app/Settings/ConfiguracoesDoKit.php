@@ -60,8 +60,12 @@ use Spatie\LaravelSettings\Settings;
  * ## Ao acrescentar uma propriedade
  *
  * Três lugares, sempre: a propriedade aqui, a linha em `mapaDeConfiguracao()` e
- * o `add()`/`deleteIfExists()` na migration de settings. O mapa mora nesta classe
+ * o `add()`/`deleteIfExists()` numa migration de settings. O mapa mora nesta classe
  * de propósito — esquecer a linha fica visível no mesmo arquivo.
+ *
+ * A migration é NOVA, nunca a que já rodou: instalação de terceiro que só roda
+ * `migrate` ficaria sem a linha, e `aplicarNaConfig()` estoura `MissingSettings`
+ * no boot de todo request. Ver ADR-05 da wiki `verificacao-de-email-editavel`.
  */
 final class ConfiguracoesDoKit extends Settings
 {
@@ -123,6 +127,14 @@ final class ConfiguracoesDoKit extends Settings
     public bool $registro_habilitado;
 
     public bool $registro_aprovacao_manual;
+
+    /**
+     * Exige e-mail validado no /app.
+     *
+     * Editável desde que a decisão saiu do array da rota — ver
+     * `App\Http\Middleware\ExigirEmailVerificado` e a nota no `mapaDeConfiguracao()`.
+     */
+    public bool $registro_verificar_email;
 
     // Login social e rodapé --------------------------------------------------
 
@@ -200,20 +212,26 @@ final class ConfiguracoesDoKit extends Settings
              * boot, já com o `Schema::hasTable()` e o try/catch do provider — então
              * `migrate` em base nova, clone e CI seguem lendo o `.env`.
              *
-             * **`verificar_email` NAO esta aqui, e a ausencia e medida.** O
-             * `AppPanelProvider` a le no BOOT, e o painel e montado antes de
-             * `aplicarNaConfig()` rodar; pior, o middleware de e-mail verificado e fixado
-             * no array da rota no momento do registro
+             * **`verificar_email` ESTA aqui desde a v0.20, e entrar custou uma inversao.**
+             * Ela nao podia estar: o `AppPanelProvider` a lia no BOOT, e o middleware de
+             * e-mail verificado e fixado no array da rota no momento do registro
              * (`vendor/filament/filament/src/Pages/Concerns/HasRoutes.php:91`), nao por
-             * request — entao nem Closure resolveria. Um campo dela na tela seria um
-             * toggle que grava e nao faz nada, que e pior que campo ausente. Continua no
-             * `.env` (`KIT_REGISTRO_VERIFICAR_EMAIL`), e o README diz por que.
+             * request — nem Closure em `isRequired` resolveria, porque quem avalia e o
+             * REGISTRO da rota. O campo na tela era um toggle que gravava e nao fazia nada.
+             *
+             * O que mudou nao foi o mapa, foi o que esta fixado no array da rota: o painel
+             * aplica a exigencia SEMPRE e declara a classe do kit em
+             * `emailVerifiedMiddlewareName()`, entao a rota guarda um DECISOR em vez de uma
+             * decisao. `App\Http\Middleware\ExigirEmailVerificado` pergunta a cada request,
+             * e a linha abaixo e o que faz a resposta vir do banco. Ver a wiki
+             * `verificacao-de-email-editavel`.
              */
             'registro_habilitado'       => 'kit.registro.habilitado',
             'registro_aprovacao_manual' => 'kit.registro.aprovacao_manual',
+            'registro_verificar_email'  => 'kit.registro.verificar_email',
             /*
-             * Login social e rodapé. Ao contrário de `registro_verificar_email`, estas quatro
-             * PODEM ser editadas: as duas que decidem algo são lidas por request — o
+             * Login social e rodapé. Estas quatro nunca tiveram o problema de
+             * `registro_verificar_email`: as duas que decidem algo são lidas por request — o
              * `abort_unless()` do `LoginComGoogleController` e a closure do render hook do
              * botão. Nada aqui é decidido no boot do painel, e as rotas de `/auth/google/*`
              * nascem sempre de propósito (registrá-las dentro de um `if` quebraria

@@ -2,6 +2,62 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [Nao publicado]
+### Adicionado
+- **A exigencia de e-mail validado no `/app` voltou a ser editavel na tela**, em
+  `/admin/configuracoes-do-kit` -> aba Registro, e agora com efeito no **request seguinte** em vez
+  de no proximo deploy. Paga a divida declarada na 0.19.1 (Blocker QA-01 da wiki
+  `registro-e-aprovacao`), onde o toggle foi removido porque gravava sem fazer efeito.
+  O motivo de antes era real e nao era ordem de boot apenas: o Filament fixa o middleware de
+  e-mail verificado no **array da rota** no momento do registro
+  (`vendor/filament/filament/src/Pages/Concerns/HasRoutes.php:91`), e array de rota registrada nao
+  e reavaliado por request — nem Closure em `isRequired` resolvia, porque quem avalia e o registro
+  da rota.
+  O conserto nao combate o array fixo: muda **o que esta fixado nele**. O painel aplica a
+  exigencia SEMPRE e declara a classe do kit em `emailVerifiedMiddlewareName()`, entao a rota passa
+  a guardar um *decisor* em vez de uma *decisao*. `App\Http\Middleware\ExigirEmailVerificado`
+  herda o `EnsureEmailIsVerified` do Laravel — que ja trata quem nao implementa `MustVerifyEmail`,
+  o 403 para quem espera JSON e a URL pretendida — e acrescenta uma guarda de duas linhas.
+  `KIT_REGISTRO_VERIFICAR_EMAIL` continua existindo como semeador e plano B, como as outras 24
+  propriedades do Settings.
+### Alterado
+- **A tela de confirmacao de e-mail do `/app` passa a existir SEMPRE.** E consequencia
+  obrigatoria, nao efeito colateral: middleware que decide por request pode redirecionar em
+  qualquer request, e destino que so existe com a opcao ligada no boot daria
+  `RouteNotFoundException` — um 500 em vez de tela. Quem decide se alguem e levado ate ela e o
+  middleware. Nao ha laco de redirecionamento: a rota do prompt nasce de um `Route::get()` direto
+  no `routes/web.php` do Filament, nao de `Page::registerRoutes()`, e por isso nao recebe o
+  middleware que redireciona para ela.
+- **O toggle da exigencia NAO se esconde com o cadastro aberto desligado**, ao contrario do
+  vizinho "cadastro nasce pendente". A diferenca e medida: aprovacao de cadastro so significa algo
+  com porta aberta, mas a exigencia de e-mail alcanca **todo** usuario do `/app` — venha ele de
+  cadastro aberto, de convite ou da tela de usuarios. Esconder o campo produziria o defeito
+  espelhado: exigencia ligada e invisivel, sem como desliga-la pela tela.
+- **`registro_verificar_email` entrou no `mapaDeConfiguracao()`**, e a assercao de teste que
+  guardava a AUSENCIA dela virou positiva. Idem o caso que afirmava que o painel so exigia
+  verificacao com a opcao ligada: as duas eram guardioes da divida, e a inversao delas e o
+  conserto. O comportamento (quem e barrado, quando) ganhou arquivo proprio em
+  `tests/Kit/VerificacaoDeEmailTest.php`.
+- **A tela de confirmacao passou a existir no `/app` e continua NAO existindo em `/admin` e
+  `/infra`.** O caso que afirmava "em nenhum painel" era o terceiro guardiao da divida e o unico
+  que so a suite completa pegou -- o nome do arquivo nao tem relacao com a feature, entao nenhuma
+  rodada filtrada o alcancava. O `app` saiu do dataset e ganhou um caso espelhado; `admin` e
+  `infra` continuam nele, onde a assercao GANHOU importancia: `MustVerifyEmail` no `User` e
+  contrato global, e e ela que impede os dois de passarem a exigir e-mail validado.
+
+- **`/admin` e `/infra` nao mudam**, e agora ha caso de teste provando as duas metades: nenhuma
+  rota daqueles paineis carrega o middleware, e com a exigencia LIGADA quem nao validou o e-mail
+  entra neles. `App\Models\User implements MustVerifyEmail` e contrato global — o que protege os
+  dois e aqueles paineis nao pedirem verificacao.
+- **Quem vem de convite continua entrando sem barreira e sem receber e-mail de validacao.**
+  `Convite::aceitar()` grava `email_verified_at` de proposito, porque o token ja prova posse do
+  endereco. Nada naquele caminho foi tocado.
+- **Migration de settings NOVA** (`..._add_registro_verificar_email_to_kit_settings.php`), e nao
+  uma linha na que ja rodou: instalacao de terceiro que so roda `migrate` ficaria sem a
+  propriedade, e `aplicarNaConfig()` estouraria `MissingSettings` no boot de todo request. O caso
+  de teste que refazia "a migration de settings" passou a percorrer **todas** as migrations da
+  pasta, em vez de fixar um nome de arquivo.
+
 ## [0.19.7] - 2026-08-25
 Release de seguranca. Sete das dez telas que o painel `/infra` recebe de PACOTES de terceiro
 passam a exigir a permissao especifica delas — a divida declarada na 0.19.4 e nas anteriores

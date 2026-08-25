@@ -15,7 +15,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Pages\SettingsPage;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -375,10 +374,15 @@ class ConfiguracoesDoKit extends SettingsPage
      * `aplicarNaConfig()` sobrepõe essa config com o que está gravado aqui. Nenhuma linha
      * daquela classe precisou mudar.
      *
-     * As duas de baixo ficam ocultas com o registro desligado, e isso não é só estética:
-     * "exigir aprovação" e "exigir e-mail validado" não significam nada sem porta aberta, e
-     * um toggle que não faz efeito é pior que um toggle ausente — a pessoa acha que
-     * configurou algo.
+     * "Cadastro nasce pendente" fica OCULTO com o registro desligado, e isso não é estética:
+     * aprovação de cadastro não significa nada sem porta aberta, e toggle que não faz efeito é
+     * pior que toggle ausente — a pessoa acha que configurou algo.
+     *
+     * "Exigir e-mail validado" NÃO segue a mesma regra, e a diferença é medida: a exigência
+     * alcança todo usuário do /app, venha ele de cadastro aberto, de convite ou da tela de
+     * usuários. Esconder o campo com o registro fechado produziria o defeito espelhado —
+     * exigência LIGADA e invisível, com quem administra sem como desligá-la pela tela. Ver a
+     * revisão adversarial na wiki `verificacao-de-email-editavel`.
      */
     private function abaRegistro(): Tab
     {
@@ -398,17 +402,19 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->visible($aberto),
 
                 /*
-                 * A verificação de e-mail NÃO é editável aqui, e isso é decisão, não
-                 * esquecimento: o `AppPanelProvider` lê a chave no BOOT, e o middleware é
-                 * fixado no array da rota no momento do registro
-                 * (`vendor/filament/filament/src/Pages/Concerns/HasRoutes.php:91`) — não por
-                 * request. Um toggle aqui gravaria e não faria efeito até o próximo deploy,
-                 * que é pior que campo ausente.
+                 * A verificação de e-mail voltou a ser editável, e o que mudou não foi este
+                 * arquivo: até a v0.19.3 um toggle aqui gravava e não fazia efeito, porque o
+                 * `AppPanelProvider` lia a chave no BOOT e o middleware ficava fixado no array
+                 * da rota (`.../Pages/Concerns/HasRoutes.php:91`). Agora a rota guarda um
+                 * decisor — `App\Http\Middleware\ExigirEmailVerificado` —, que pergunta a cada
+                 * request. Ver a wiki `verificacao-de-email-editavel`.
+                 *
+                 * O `helperText` avisa o que o README avisa, porque aqui um clique basta: a
+                 * exigência alcança TODO usuário do /app, não só quem se cadastrar depois.
                  */
-                TextEntry::make('aviso_verificacao_email')
-                    ->hiddenLabel()
-                    ->state('A exigência de e-mail validado fica no `.env`, em `KIT_REGISTRO_VERIFICAR_EMAIL` — ela decide o middleware das rotas no boot da aplicação, e por isso não pode mudar em tempo de execução.')
-                    ->visible($aberto),
+                Toggle::make('registro_verificar_email')
+                    ->label('Exigir e-mail validado no /app')
+                    ->helperText('Ligado, quem ainda não confirmou o e-mail é levado à tela de confirmação ao entrar no /app — e isso vale para TODO usuário do painel, não só para os novos. Numa base que já tem gente dentro, valide antes quem foi criado pela tela de usuários (o README traz o comando). Quem vem de convite nunca é afetado: o token já provou a posse do endereço.'),
             ]);
     }
 

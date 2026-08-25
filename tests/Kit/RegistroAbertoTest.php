@@ -4,6 +4,7 @@ use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Filament\Admin\Resources\Users\Pages\ListUsers;
 use App\Filament\Pages\Auth\RegistroPorConvite;
 use App\Filament\Pages\Auth\TelaLogin;
+use App\Http\Middleware\ExigirEmailVerificado;
 use App\Models\Convite;
 use App\Models\Role;
 use App\Models\User;
@@ -620,27 +621,33 @@ it('nao pede validacao de email a quem aceita convite', function (): void {
 });
 
 /**
- * CT-22b — o painel só EXIGE validação quando a opção está ligada.
+ * CT-22b — INVERTIDO na v0.20, e a inversão é o conserto, não um afrouxamento.
  *
- * Medido onde a decisão é tomada, e não pela rota: o registro das rotas de confirmação acontece
- * no BOOT do painel (`vendor/filament/filament/routes/web.php:75-84`, sob
- * `if ($panel->hasEmailVerification())`), e `config()` ajustado no teste chega tarde. Montar o
- * painel pelo próprio provider mede a mesma condição que a rota consome, sem exigir um
- * `TestCase` e uma suíte novos só para um cenário.
+ * A versão anterior deste caso afirmava que, com a opção DESLIGADA, o painel não tinha
+ * verificação e a rota não nascia. Aquela asserção era o guardião da dívida: era exatamente ela
+ * que travava o mecanismo que tornava `KIT_REGISTRO_VERIFICAR_EMAIL` ineditável — a decisão ficava
+ * fixada no array da rota, no boot (`.../Pages/Concerns/HasRoutes.php:91`).
  *
- * Closure no primeiro parâmetro não resolveria: `filled(Closure)` é sempre `true`, e a rota
- * nasceria sempre.
+ * Agora as duas coisas valem nos DOIS estados, de propósito: o painel aplica a exigência sempre e
+ * quem decide é `App\Http\Middleware\ExigirEmailVerificado`, por request. É isso que faz a rota de
+ * destino existir sempre — sem ela, ligar a opção pela tela mandaria a pessoa para uma rota
+ * inexistente, e o resultado seria um 500 em vez de tela.
+ *
+ * O comportamento (quem é barrado, quando) vive em `tests/Kit/VerificacaoDeEmailTest.php`. Aqui
+ * fica só a afirmação estrutural, que é a que pertence ao assunto deste arquivo. Ver a wiki
+ * `verificacao-de-email-editavel`.
  */
-it('exige validacao de email no painel de negocio somente com a opcao ligada', function (bool $ligada, bool $esperado): void {
+it('exige validacao de email no painel de negocio independentemente da opcao', function (bool $ligada): void {
     config(['kit.registro.verificar_email' => $ligada]);
 
     $painel = (new AppPanelProvider($this->app))->panel(Panel::make());
 
-    expect($painel->hasEmailVerification())->toBe($esperado)
-        ->and($painel->isEmailVerificationRequired())->toBe($esperado);
+    expect($painel->hasEmailVerification())->toBeTrue()
+        ->and($painel->isEmailVerificationRequired())->toBeTrue()
+        ->and($painel->getEmailVerifiedMiddlewareName())->toBe(ExigirEmailVerificado::class);
 })->with([
-    'ligada'    => [true, true],
-    'desligada' => [false, false],
+    'ligada'    => [true],
+    'desligada' => [false],
 ]);
 
 /*
@@ -735,6 +742,9 @@ it('deixa o valor gravado no settings vencer o env', function (): void {
 
     expect(RegistroAberto::habilitado())->toBeTrue()
         ->and(RegistroAberto::exigirAprovacao())->toBeTrue()
+        // A terceira segue `false` porque não foi gravada — o que se afirma aqui é que ela também
+        // passou a vir do banco, e não que o default mudou. As duas partições dela estão em
+        // `tests/Kit/VerificacaoDeEmailTest.php`.
         ->and(RegistroAberto::exigirVerificacaoDeEmail())->toBeFalse();
 });
 
@@ -746,8 +756,14 @@ it('mantem as tres chaves de registro no mapa de configuracao', function (): voi
 
     expect($mapa)->toHaveKey('registro_habilitado', 'kit.registro.habilitado')
         ->and($mapa)->toHaveKey('registro_aprovacao_manual', 'kit.registro.aprovacao_manual')
-        // E a terceira NÃO entra: `verificar_email` é lida no boot do painel e o middleware é
-        // fixado no registro da rota, então um campo dela gravaria sem fazer efeito. A asserção
-        // negativa é o que impede alguém de "completar" o mapa achando que faltou uma linha.
-        ->and($mapa)->not->toHaveKey('registro_verificar_email');
+        /*
+         * A terceira ENTRA desde a v0.20, e esta linha era a asserção NEGATIVA que guardava a
+         * dívida — ela existia para "impedir alguém de completar o mapa achando que faltou uma
+         * linha", porque um campo de `verificar_email` gravava sem fazer efeito. A dívida foi
+         * paga tirando a decisão do array da rota (ver `App\Http\Middleware\ExigirEmailVerificado`
+         * e a wiki `verificacao-de-email-editavel`), então a asserção virou positiva. O que prova
+         * que a linha GOVERNA algo, e não só que ela existe, é
+         * `tests/Kit/VerificacaoDeEmailTest.php`.
+         */
+        ->and($mapa)->toHaveKey('registro_verificar_email', 'kit.registro.verificar_email');
 });

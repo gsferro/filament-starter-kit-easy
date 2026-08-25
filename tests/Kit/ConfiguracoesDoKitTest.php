@@ -9,11 +9,13 @@ use Filament\Facades\Filament;
 use Filament\Pages\SettingsPage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\LaravelSettings\Events\SavingSettings;
 use Spatie\LaravelSettings\Models\SettingsProperty;
+use Symfony\Component\Finder\SplFileInfo;
 
 /**
  * As configurações da instalação gravadas no banco, e o alinhamento com a config.
@@ -206,18 +208,50 @@ it('zera a chave de configuracao quando a propriedade e limpada', function (stri
  * exigiria um processo separado (`php artisan` de verdade), lento e frágil na
  * suíte. O kit já usa este padrão em `CacheDeViewsNoDockerTest` e
  * `QualidadeDeCodigoTest`.
+ *
+ * ## Duas correções, e as duas vieram de defeito medido
+ *
+ * **1. Comentário fora antes de afirmar ausência.** É a regra de
+ * `.ai/rules/testes.md`, agora na quarta ocorrência: os arquivos bem comentados
+ * do kit CITAM o que proíbem, e é lá que está escrito o porquê. O middleware
+ * `ExigirEmailVerificado` explica a ordem de boot que o levou a existir, e o
+ * `AppPanelProvider` explica por que a decisão saiu do array da rota — os dois
+ * mencionam `aplicarNaConfig()` em docblock. Sem o filtro, este caso reprovava
+ * pela documentação, não pelo comportamento.
+ *
+ * **2. A mensagem virou agulha, e neutralizava o laço dos painéis.** A versão
+ * anterior passava a explicação como SEGUNDO argumento de `toContain()`, achando
+ * que era mensagem de falha. `toContain()` é variádico: o texto entrava como
+ * outra agulha. E `->not` do Pest passa assim que a asserção positiva lança —
+ * ou seja, bastava a mensagem longa não estar no arquivo para o caso passar.
+ * O laço dos painéis **não podia falhar**, com qualquer conteúdo. Uma agulha por
+ * chamada, e a explicação onde ela pertence: aqui.
+ *
+ * Se este caso reprovar, o que ele quer dizer é: alguém pendurou o alinhamento num
+ * painel ou num middleware, e aí comando artisan, fila e agendador seguem lendo o
+ * `.env` — a aba E-mail da tela fica decorativa exatamente onde o convite é enviado.
  */
 it('liga o alinhamento no provider da aplicacao e em nenhum painel', function (): void {
+    $semComentario = static fn (string $arquivo): string => (string) preg_replace(
+        ['~/\*.*?\*/~s', '~//[^\n]*~'],
+        '',
+        (string) file_get_contents($arquivo),
+    );
+
+    // Presença continua rodando sobre o texto cru: citar não é executar, mas executar também
+    // aparece no texto cru. É só a ausência que precisa do filtro.
     expect(file_get_contents(base_path('app/Providers/KitServiceProvider.php')))
         ->toContain('aplicarNaConfig()');
 
-    foreach (glob(base_path('app/Providers/Filament/*.php')) ?: [] as $painel) {
-        expect(file_get_contents($painel))
-            ->not->toContain('aplicarNaConfig', "O painel {$painel} chama o alinhamento — ele precisa ficar no KitServiceProvider, senão comando artisan e fila seguem com o .env.");
-    }
+    $arquivos = [
+        ...glob(base_path('app/Providers/Filament/*.php')) ?: [],
+        ...glob(base_path('app/Http/Middleware/*.php')) ?: [],
+    ];
 
-    foreach (glob(base_path('app/Http/Middleware/*.php')) ?: [] as $middleware) {
-        expect(file_get_contents($middleware))->not->toContain('aplicarNaConfig');
+    expect($arquivos)->not->toBeEmpty();
+
+    foreach ($arquivos as $arquivo) {
+        expect($semComentario($arquivo))->not->toContain('aplicarNaConfig');
     }
 })->group('kit');
 
@@ -281,19 +315,35 @@ it('semeia todas as propriedades que a classe de settings declara', function ():
 })->group('kit');
 
 /**
- * CT-12 — a migration é reversível, e o desfazer devolve o `.env` como fonte única.
+ * CT-12 — as migrations de settings são reversíveis, e o desfazer devolve o `.env` como fonte
+ * única.
  *
  * O segundo `Quando` (remigrar) é o que mata o mutante de `add()` sem
  * `deleteIfExists()` no `down()`: sem ele o segundo `migrate` estoura
  * `SettingAlreadyExists`. Estava só na prosa antes da revisão.
+ *
+ * **Percorre TODAS as migrations de `database/settings/`, e não uma fixada pelo nome.** A versão
+ * anterior fixava `2026_08_24_000000_create_kit_settings.php` e afirmava
+ * `count(linhas) === count(mapa)` depois do `up()` — o que se tornou aritmeticamente impossível
+ * quando `registro_verificar_email` entrou por uma migration nova (obrigatoriamente nova: a
+ * primeira já rodou em instalação de terceiro, e editá-la deixaria essas bases sem a
+ * propriedade). Generalizar mata o mesmo mutante para toda migration presente e futura, e tira um
+ * nome de arquivo de dentro do teste.
+ *
+ * `down()` na ordem inversa e `up()` na ordem direta — é o que o migrator faz.
  */
-it('desfaz e refaz a migration de settings sem quebrar', function (): void {
-    $migration = require base_path('database/settings/2026_08_24_000000_create_kit_settings.php');
+it('desfaz e refaz as migrations de settings sem quebrar', function (): void {
+    $migrations = collect(File::files(base_path('database/settings')))
+        ->sortBy(fn (SplFileInfo $arquivo): string => $arquivo->getFilename())
+        ->map(fn (SplFileInfo $arquivo): object => require $arquivo->getRealPath())
+        ->values();
+
+    expect($migrations)->not->toBeEmpty();
 
     gravarConfiguracao('nome_da_aplicacao', 'Gravado no banco');
     config(['app.name' => 'Vindo do env']);
 
-    $migration->down();
+    $migrations->reverse()->each(fn (object $migration) => $migration->down());
 
     expect(SettingsProperty::query()->where('group', ConfiguracoesDoKit::group())->count())->toBe(0);
 
@@ -302,7 +352,7 @@ it('desfaz e refaz a migration de settings sem quebrar', function (): void {
 
     expect(config('app.name'))->toBe('Vindo do env');
 
-    $migration->up();
+    $migrations->each(fn (object $migration) => $migration->up());
 
     expect(SettingsProperty::query()->where('group', ConfiguracoesDoKit::group())->count())
         ->toBe(count(ConfiguracoesDoKit::mapaDeConfiguracao()));
