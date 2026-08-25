@@ -2,7 +2,7 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
-## [Nao publicado]
+## [0.19.9] - 2026-08-25
 Login social com mais provedores — e a extracao da abstracao que a entrega do Google
 deliberadamente NAO fez.
 ### Adicionado
