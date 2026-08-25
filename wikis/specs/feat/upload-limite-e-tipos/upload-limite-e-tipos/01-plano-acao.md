@@ -20,8 +20,8 @@
 |----|----------|------------------------|------------|
 | RQ-01 | teto de 10 MB em todo upload | 1, 3, 4, 5 | default da chave nova |
 | RQ-02 | acima do teto é recusado | 3, 4, 5 | `->maxSize()`, e o teto global do Livewire no passo 2 |
-| RQ-03 | upload recusa SVG | 3, 4 | `rule('image')` nos campos de imagem; regra de recusa no `anexos` |
-| RQ-04 | qualquer outro tipo de imagem é aceito | 3 | `rule('image')` cobre jpg/jpeg/png/bmp/gif/webp/avif/heic/heif |
+| RQ-03 | upload recusa SVG | 3, 4 | `mimes:FORMATOS_DE_IMAGEM` nos campos de imagem; regra de recusa no `anexos` |
+| RQ-04 | qualquer outro tipo de imagem é aceito | 3 | `FORMATOS_DE_IMAGEM` cobre jpg/jpeg/png/gif/bmp/webp/avif/heic/heif/**ico**/tif/tiff |
 | RQ-05 | o teto vive na config do kit | 1, 2 | e os dois números cravados (`1024` no `TenantForm`, `10 * 1024` no `ProjetoResource`) deixam de existir (passos 4 e 5) |
 | RQ-06 | documentado para aumentar/diminuir com facilidade | 2, 6 | `.env.example`, comentário do `config/kit.php` e os dois READMEs |
 
@@ -157,7 +157,7 @@ Nenhum.
 ## Impacto em Features Existentes
 
 - **`settings-do-kit`** — os três campos ganham teto e recusa de SVG. CT-10 daquela wiki
-  (`favicon.png` no disco público) precisa continuar verde: PNG é aceito por `rule('image')`.
+  (`favicon.png` no disco público) precisa continuar verde: PNG está em `FORMATOS_DE_IMAGEM`.
 - **`anexos-privados`** — o `anexos` perde o `10 * 1024` cravado e ganha o valor da config, que é
   **o mesmo número**. Nenhuma mudança de comportamento esperada, exceto SVG passar a ser recusado.
 - **Organizações (tenancy)** — a logo troca o teto de 1 MB pelo da config (10 MB de fábrica): é
@@ -181,11 +181,11 @@ Nenhuma nova, composer ou npm. `NumeroDoEnv` já existe; a regra `image` é do L
 
 ## Riscos
 
-- **A regra `image` do Laravel é uma allow-list de nove extensões**, não "qualquer image": jpg,
-  jpeg, png, bmp, gif, webp, avif, heic, heif
-  (`vendor/laravel/framework/src/Illuminate/Validation/Concerns/ValidatesAttributes.php:1533`).
-  `.ico` e `.tiff` deixam de ser aceitos no favicon. Mitigação: favicon moderno é PNG, e o campo
-  aceita PNG; registrado em ADR-02 como trade-off explícito, não como omissão.
+- **Toda allow-list de formato envelhece, e a do framework decide por conta própria.** Risco
+  **materializado**: a regra `image` do Laravel não tem `ico`, e o kit serve `public/favicon.ico` —
+  a tela de favicon recusava o formato de favicon do próprio kit. Achado QA-01, corrigido com lista
+  escrita. O risco residual é o inverso: formato novo que o Laravel adotar não entra aqui sozinho, e
+  é o caso de partição por formato que expõe a defasagem.
 - **Recusa por MIME não é inspeção de conteúdo — mas neste caminho o MIME VEM do conteúdo.**
   Medido, não suposto: `TemporaryUploadedFile::getMimeType()` lê o disco temporário
   (`vendor/livewire/livewire/src/Features/SupportFileUploads/TemporaryUploadedFile.php:63-90`) e
@@ -252,9 +252,14 @@ pelo requisito.
 
 ```php
 config()->set('livewire.temporary_file_upload.rules', [
-    'required', 'file', 'max:'.config('kit.uploads.maximo_em_kb'),
+    'required', 'file', 'max:'.TetoDeUpload::emKbComFolgaDoLivewire(),
 ]);
 ```
+
+> **Correção da implementação**: a primeira versão usava `emKb()` — o **mesmo** número do campo.
+> Medido, isso torna a mensagem de erro do campo inalcançável, porque o Livewire recusa antes de o
+> formulário validar. A folga de 1 MB é o que preserva a mensagem para o caso comum. Ver a correção
+> em ADR-04.
 
 - **Por que `config()->set()` e não publicar `config/livewire.php`**: o projeto não tem esse
   arquivo, e publicá-lo traria ~130 linhas de configuração alheia para o repositório só para
@@ -289,7 +294,7 @@ private function arquivo(string $nome, string $rotulo, string $ajuda): FileUploa
     return FileUpload::make($nome)
         ->label($rotulo)
         ->image()
-        ->rule('image')
+        ->rule('mimes:'.self::FORMATOS_DE_IMAGEM)
         ->maxSize($maximoEmKb)
         ->validationMessages([
             'max'   => "O arquivo passa de {$maximoEmMb} MB.",
@@ -304,11 +309,18 @@ private function arquivo(string $nome, string $rotulo, string $ajuda): FileUploa
 
 - As três chamadas (linhas 235, 238, 241) passam o texto de ajuda como **terceiro argumento** e
   perdem o `->helperText()` encadeado.
-- **`->rule('image')` junto do `->image()`, e os dois são necessários**: o `->image()` do Filament
-  é o `accept="image/*"` do seletor de arquivo do sistema (e a regra `mimetypes:image/*`), que é a
-  conveniência para quem escolhe o arquivo; a regra `image` do Laravel é a barreira, e é ela que
-  recusa SVG (`ValidatesAttributes.php:1531-1540`, e a doc do Laravel 13 avisa: *"By default, the
-  image rule does not allow SVG files due to the possibility of XSS vulnerabilities"*).
+- **A barreira e o `->image()` são coisas diferentes, e as duas são necessárias**: o `->image()` do
+  Filament é o `accept="image/*"` do seletor de arquivo do sistema (e a regra `mimetypes:image/*`),
+  conveniência para quem escolhe o arquivo — e `image/svg+xml` **casa** com aquele curinga, que é
+  por isso que SVG passava. A barreira é uma regra de validação por cima.
+- **A barreira final é `mimes:` com lista escrita, não `->rule('image')`.** A primeira versão usava
+  `image` (nove extensões, mantida pelo framework); o quality gate a derrubou — ela recusa `.ico`, e
+  o kit serve `public/favicon.ico`. Ver ADR-02 e o achado QA-01. A lista é
+  `ConfiguracoesDoKit::FORMATOS_DE_IMAGEM` = os nove + `ico`, `tif`, `tiff`, e `tif` está lá porque
+  `guessExtension()` devolve a primeira extensão do MIME, que para `image/tiff` é `tif`.
+- **O mecanismo não muda com a troca**: `validateMimes()` compara `guessExtension()`
+  (`ValidatesAttributes.php:1746-1761`), derivado do MIME do **conteúdo** — então a resistência a
+  arquivo renomeado, que é o argumento de ADR-03, continua valendo (medido).
 - **`->maxSize()` recebe KILOBYTES** — `BaseFileUpload.php:413-421` monta `max:{$size}`, e
   `ValidatesAttributes.php:2822` divide `getSize()` por 1024. Confirmado também na doc do
   Filament 5 via `search-docs`: *"restrict the size of uploaded files in kilobytes"*.
@@ -326,7 +338,7 @@ private function arquivo(string $nome, string $rotulo, string $ajuda): FileUploa
 - **Path**: `app/Filament/App/Resources/Projetos/ProjetoResource.php`
 - Trocar `->maxSize(10 * 1024)` por `->maxSize((int) config('kit.uploads.maximo_em_kb'))` e o
   `helperText` fixo por um que leia o mesmo valor — o `10` sai do código, que é RQ-05.
-- Acrescentar a recusa de SVG. Aqui **não** cabe `rule('image')` (recusaria PDF e planilha, que é
+- Acrescentar a recusa de SVG. Aqui **não** cabe a lista de imagem (recusaria PDF e planilha, que é
   a razão do campo existir) nem `acceptedFileTypes()` (allow-list fecharia o campo). Regra de
   recusa de **um formato**:
 
