@@ -109,10 +109,13 @@ nada.
 
 ## Roteiro de Validação: Desenhado × Implementado
 
-<!-- Preenchido no step 7 da feature-wiki, depois de rodar os CT-B. -->
+Onde o CT-B foi escrito: `tests/Browser/TelasDoKitTest.php`, como `it('carrega o header widget da
+tela de backups depois do commit do livewire')` — arquivo novo cortado na auditoria do step 6
+(`03-progresso.md`, corte 6): os seeders e o helper de papel já estavam lá.
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | `/infra/backup-runs` continua na mesma URL | | | |
-| 2 | o header widget carrega sem o plugin no painel | | | |
-| 3 | as 6 telas restantes de `## Superfície de UI` abrem para o papel `infra` | | | |
+| 1 | `/infra/backup-runs` continua na mesma URL | a subclasse herda `$slug = 'backup-runs'`; a rota resolve para `App\Filament\Infra\Pages\BackupRunsPage` | ✅ | `php artisan route:list --path=infra` |
+| 2 | o header widget carrega sem o plugin no painel | `->livewireComponents([LatestBackupsWidget::class])` no `InfraPanelProvider`; o cabeçalho aparece na tela | ✅ | CT-B01 |
+| 3 | as 6 telas restantes de `## Superfície de UI` abrem para o papel `infra` | 8 rotas de pacote no dataset do papel `infra` | ✅ | `tests/Kit/PaginasInfraTest.php` |
+| 4 | nenhuma tela de pacote fica sem barreira sem que alguém saiba | as que ainda abrem são exatamente `Commands`, `History`, `RunView` | ✅ | CT-27 |

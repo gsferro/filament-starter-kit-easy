@@ -2,6 +2,88 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [Nao lancado]
+Release de seguranca. Sete das dez telas que o painel `/infra` recebe de PACOTES de terceiro
+passam a exigir a permissao especifica delas — a divida declarada na 0.19.4 e nas anteriores
+desde a 0.18.10. As tres que sobram ficam declaradas, com o motivo e o `file:line`.
+### Corrigido
+- **A permissao das telas de pacote do `/infra` existia no banco e no checkbox e nao decidia
+  nada.** A repro do requisito era exata: revogar `View:LogsExplorer` do papel `infra` e abrir
+  `/infra/logs` respondia **200**. Agora responde 403, e o item sai do menu.
+  Fechadas as sete: `HealthCheckResults`, `BackupRunsPage`, `LogsExplorer`,
+  `DependencyGraphPage`, `RecycleBin`, `MyProfilePage` e o widget
+  `ComposerReleaseOverviewWidget`.
+  **A objecao que bloqueava tinha uma metade certa e uma metade incompleta.** ADR-05 da wiki
+  `permissoes-de-telas-e-acoes` recusou por dois argumentos: subclassear classe de plugin dispara
+  o `LogicException` que `.ai/rules/providers-filament.md` documenta, e a subclasse mudaria a
+  chave da permissao (`View:LogsExplorerDoKit`), quebrando o checkbox que ja existe. O primeiro
+  segue verdadeiro. O segundo vale **so se a subclasse tiver outro nome**: a chave sai de
+  `FilamentShield::getDefaultPermissionKeys()` e o subject vem do `class_basename`, nao do
+  namespace. Subclasse chamada `BackupRunsPage` produz `View:BackupRunsPage`.
+  E o que ADR-05 nao avaliou: **quatro dos pacotes publicam um callback de autorizacao**, e a Page
+  deles decide so por ele. Nenhum registro de plugin precisou mudar nesses quatro.
+  | Tela | Barreira antes | Como fechou |
+  |---|---|---|
+  | `HealthCheckResults` | nenhuma (`isAuthorized()` default `true`) | `FilamentSpatieLaravelHealthPlugin::authorize()` |
+  | `RecycleBin` | nenhuma (`isAuthorized()` default `true`) | `RevivePlugin::authorize()` |
+  | `LogsExplorer` | `ver-logs` | `canAccessUsing()`, em `&&` com o gate |
+  | `DependencyGraphPage` | `auth()->check()` | `canAccessUsing()` |
+  | `BackupRunsPage` | nenhuma (sem `canAccess()`) | subclasse do kit; o plugin sai do painel |
+  | `MyProfilePage` | nenhuma (sem `canAccess()`) | subclasse do kit, via `->customMyProfilePage()` nos tres paineis |
+  | `ComposerReleaseOverviewWidget` | `auth()->check()` | subclasse do kit; `->widget(enabled: false)` no plugin |
+  **Os quatro gates que a divida contava como barreira nao discriminavam papel.** `ver-logs`,
+  `command-center:access`, `viewPulse` e `ver-ai-tasks` sao definidos como
+  `temPapelDoPainel('infra')` (`app/Providers/KitServiceProvider.php:171-174`) — sao equivalentes
+  a `canAccessPanel()` neste painel, nao a permissao de tela. O `ver-logs` ficou, em `&&`, porque
+  as duas perguntas sao diferentes: uma e o painel, a outra e a tela.
+  **Nenhuma chave de permissao nasceu nem morreu**, e isso foi medido no banco antes e depois:
+  `admin` 126, `infra` 140, `admin_app` 47, `panel_user` 17, tabela `permissions` com 269 linhas —
+  identicos. Nao houve mudanca em `PapeisSeeder`, porque as dez permissoes ja estavam na matriz do
+  painel.
+- **O widget de releases do Composer podia derrubar o dashboard inteiro.** O `canView()` do pacote
+  era `auth()->check()` e nao conferia a tabela `composer_release_package_snapshots`. Numa
+  instalacao que ainda nao rodou as migrations do pacote, o `/infra` ficava em branco. O guarda
+  entrou em `fonteDeDadosDisponivel()` — e nao em `canView()`, que desligaria a permissao em
+  silencio.
+### Adicionado
+- **`App\Support\PermissaoDaTela`** — o predicado "o usuario corrente tem a permissao desta Page?",
+  para tela que vem de pacote e nao aceita `use`. Ele PERGUNTA ao Shield qual e a chave em vez de
+  montar `'View:'.class_basename()`: a string montada dependeria de quatro chaves de
+  `config/filament-shield.php` que dessincronizam em silencio, e o sintoma seria a tela abrir para
+  todos com o diff parecendo correto.
+  Nao virou metodo de `App\Support\Paineis` de proposito: `Paineis::mapa()` troca o painel corrente
+  e descarta a instancia do Shield a cada volta, e este predicado roda em laco de render.
+### Sabido
+- **`Commands`, `History` e `RunView`, da Central de comandos, seguem sem permissao por tela** — e
+  agora isso esta declarado em codigo, no comentario do plugin, com `file:line`. O pacote tem TRES
+  Pages e UM ponto de decisao: as tres chamam o mesmo
+  `CommandCenterPlugin::forCurrentPanel()?->canAccess()`, e `canAccess()` invoca o callback com o
+  usuario e nada que identifique qual delas perguntou
+  (`CommandCenterPlugin.php:81-85,129-142`). A lista de Pages e fixa no `register()` dele (`:176`),
+  entao subclassear exigiria nao registrar o plugin — que tambem registra o resource, o cluster e
+  os rotulos.
+  A barreira das tres continua sendo `config('command-center.enabled')` +
+  `command-center:access`, que e papel de painel. `tests/Kit/PermissoesDeTelasTest.php` tem o caso
+  que assere a lacuna, e ele fica **vermelho** no dia em que o pacote publicar o setter por Page —
+  o sinal e revisar a decisao, nao consertar o teste.
+- **O caso que assere a lacuna foi INVERTIDO, nao apagado.** O CT-24 da 0.18.10 afirmava
+  `assertSuccessful()` com `View:LogsExplorer` revogada, e o docblock dele dizia por escrito que
+  ficaria vermelho no dia em que alguem fechasse a lacuna. Ficou. O oraculo e o mesmo com o sinal
+  trocado, e a segunda assercao — a permissao continua existindo na tabela — nao mudou: e ela que
+  mantem vermelha a "correcao" errada de por a classe em `pages.exclude` para o checkbox parar de
+  mentir.
+- **`RunView` nao tem caso proprio**: a rota dela exige um registro de execucao, e forjar um so'
+  para provar que uma tela **nao** esta protegida seria arranjo caro para um oraculo que as outras
+  duas linhas ja sustentam. Fica como lacuna declarada, nao como cobertura.
+- **A anotacao de `BreezyCore::customMyProfilePage()` e insatisfazivel** e ganhou excecao
+  documentada no `phpstan.neon`: ela pede
+  `class-string<Concerns\Plugin\Pages\MyProfilePage>`, e o prefixo `Pages\` e resolvido relativo ao
+  namespace do trait — a classe pedida nao existe. O `use` no topo do arquivo do pacote mostra qual
+  era a intencao.
+- **Mutation testing nao rodou**: sem PCOV no ambiente, `--mutate` e inviavel aqui
+  (`.ai/rules/testes-browser.md` registra um run abortado apos 35 min com Xdebug). O gate de
+  mutantes desta entrega e o PREVISTO no `04`, nao o medido.
+
 ## [0.19.6] - 2026-08-25
 
 Teto de tamanho e restricao de formato em todos os cinco campos de upload do kit, com a chave em

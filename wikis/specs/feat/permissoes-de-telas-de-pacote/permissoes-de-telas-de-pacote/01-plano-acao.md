@@ -244,16 +244,9 @@ Nenhuma nova. Proibido acrescentar.
 
 ## Channel de Log da Feature
 
-**Nenhum channel novo e nenhuma linha de log nova** — mesma decisão de ADR-07 da wiki ancestral, e
-pelo mesmo motivo, agora com número: `canAccess()` é consultado uma vez por item de navegação, por
-cartão de hub e por categoria do Spotlight, e o `/infra` tem 10 telas de pacote + as do kit. Um
-`Log::info` em `canAccess()` produz dezenas de linhas por carregamento de página, todas dizendo
-"alguém tem permissão", o que é ruído que **apaga** a trilha útil.
-
-O que já existe e cobre o caso: o `403` fica no log de acesso do servidor, e
-`app/Providers/KitServiceProvider.php` já tem o channel `autenticacao` para as decisões de
-fronteira que **falham fechadas por defeito** (tenant ausente), que é uma classe diferente de
-evento. Ver ADR-05.
+**Nenhum channel novo e nenhuma linha de log nova.** A justificativa completa, com o número que a
+sustenta, está em ADR-06 — em resumo: `canAccess()` roda em laço de render e um `Log::info` ali
+produz dezenas de linhas por carregamento de página dizendo "alguém tem permissão".
 
 ## Estrutura de Implementação
 

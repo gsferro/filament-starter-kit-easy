@@ -466,24 +466,27 @@ Se ficarem vermelhos, a implementação está errada.
 
 ## Índice de Cenários
 
-| ID | Cenário | Regra | Técnica | Camada | Arquivo | Mata |
-|----|---------|-------|---------|--------|---------|------|
-| CT-01 | quem tem a permissão abre a tela (7 linhas) | R1 | matriz papel × tela | Kit (HTTP) | `tests/Kit/PermissoesDeTelasDePacoteTest.php` | M6 |
-| CT-02 | revogar a permissão fecha a tela (7 linhas) | R1 | matriz papel × tela | Kit (HTTP) | `tests/Kit/PermissoesDeTelasDePacoteTest.php` | M1, M2, M3, M4, M5, M8 |
-| CT-03 | o item de menu some junto | R2 | rastreio de efeito | Kit (HTTP) | `tests/Kit/PermissoesDeTelasDePacoteTest.php` | M7, M9 |
-| CT-04 | só o `master_global` atravessa | R6 | partição de persona | Kit (HTTP) | `tests/Kit/PermissoesDeTelasDePacoteTest.php` | M19, M20 |
-| CT-05 | o widget obedece às duas condições (3 linhas) | R3 | EP 2×2 | Livewire | `tests/Kit/PermissoesDeWidgetsTest.php` | M10, M11, M12, M13 |
-| CT-06 | a matriz de permissões não muda | R4 | invariante numérico | Kit (query) | `tests/Kit/PermissoesDeTelasDePacoteTest.php` | M14, M15, M16 |
-| CT-07 | a Central de comandos segue sem permissão por tela (2 linhas) | R5 | caso negativo declarado | Kit (HTTP) | `tests/Kit/PermissoesDeTelasDePacoteTest.php` | M17 |
-| CT-08 | permissão ausente do banco fecha a tela (2 linhas) | R7 | partição de estado do dado | Kit (HTTP) | `tests/Kit/PermissoesDeTelasDePacoteTest.php` | M21, M22 |
-| CT-30 | inventário: nenhuma tela de pacote fora das duas listas | — | inventário estrutural | Kit | `tests/Kit/PermissoesDeTelasDePacoteTest.php` | M23 |
-| CT-31 | CT-21/CT-23 adotam as classes novas | — | verificação de escopo | Kit | (casos existentes) | — |
+Preenchido DEPOIS da auditoria Ponytail do step 6, que trocou o arquivo novo por linhas nos casos
+que já existiam — ver `03-progresso.md` → "Auditoria Ponytail", cortes 1 a 6. O ID de CT que não tem
+arquivo é o que **não foi escrito**, com o motivo na mesma linha.
 
-**Onde CT-24 foi**: reescrito como **CT-02**, linha `/infra/logs` — de `assertSuccessful()` para
-`assertForbidden()`, mantendo a asserção de que a permissão continua no banco. O `it()` original
-sai de `tests/Kit/PermissoesDeTelasTest.php` e o docblock dele é reescrito no arquivo novo,
-explicando a inversão. **Não é deleção**: é o mesmo oráculo com o sinal trocado, e o
-`03-progresso.md` registra a troca (RQ-08).
+| ID | Cenário | Regra | Camada | Onde ficou |
+|----|---------|-------|--------|-----------|
+| CT-01 | quem tem a permissão abre a tela (8 linhas de pacote) | R1 | Kit (HTTP) | `tests/Kit/PaginasInfraTest.php` → `it('abre as telas do painel infra com o papel infra')` |
+| CT-02 + CT-03 | revogar fecha a tela **e** tira o item do menu (4 linhas de pacote, uma por mecanismo) | R1, R2 | Kit (HTTP) | `tests/Kit/PermissoesDeTelasTest.php` → `it('fecha a tela e esconde o item de menu…')` |
+| CT-24 | a repro do requisito, invertida (3 linhas) | R1 | Kit (HTTP) | `tests/Kit/PermissoesDeTelasTest.php` → `it('faz a Page de pacote negar acesso sem a permissão…')` |
+| CT-04 + CT-08 | persona × arranjo, no caminho do pacote (4 linhas) | R6, R7 | Kit (HTTP) | `tests/Kit/PermissoesDeTelasTest.php` → `it('nega a tela de pacote a quem não tem a permissão…')` |
+| CT-05 | o widget obedece às duas condições (3 linhas novas) | R3 | Livewire | `tests/Kit/PermissoesDeWidgetsTest.php`, nos dois casos existentes |
+| CT-06 | invariante numérico da matriz | R4 | — | **não escrito** (corte 4). Número congelado em `expect()` envelhece; a asserção nominal de CT-24 + a medição registrada no `01` e no CHANGELOG cobrem M14/M16 sem a fragilidade |
+| CT-07 → CT-27 | a lacuna que sobra, e o inventário do que a produz | R5 | Kit | `tests/Kit/PermissoesDeTelasTest.php` → `it('deixa só as três telas da Central de comandos…')` |
+| CT-30 | inventário por duas listas escritas à mão | — | — | **não escrito** (corte 3): virou o CT-27 acima, que pergunta ao painel e compara com UMA lista |
+| CT-31 | CT-21/CT-23 adotam as classes novas | — | — | **não é caso de teste** (corte 5): é a verificação de que os casos existentes seguem verdes com escopo maior |
+| CT-B01 | o header widget isolado carrega | — | Browser | `tests/Browser/TelasDoKitTest.php` → `it('carrega o header widget da tela de backups…')` |
+
+**Onde CT-24 foi**: o mesmo `it()` de `tests/Kit/PermissoesDeTelasTest.php`, com `assertSuccessful()`
+trocado por `assertForbidden()`, dataset de 3 linhas e o docblock reescrito para explicar a inversão.
+A segunda asserção — a permissão continua na tabela — não mudou. **Não é deleção**: é o mesmo oráculo
+com o sinal trocado, e o `03-progresso.md` registra a troca (RQ-08).
 
 ## Cogitado e cortado
 
