@@ -146,6 +146,23 @@ dívida foi paga, então a asserção negativa vira **positiva**. Cobre CT-12.
 Em ambos os casos o comentário do teste é reescrito apontando para esta wiki, para que a próxima
 pessoa não leia a inversão como afrouxamento.
 
+**Inversão 3 (encontrada só pela suíte completa) — `tests/Kit/TelasDeAutenticacaoTest.php` → CT-08,
+*"não põe a confirmação de e-mail no ar em nenhum painel"*.**
+Era o **terceiro** guardião da dívida, e o único que as rodadas filtradas não pegaram: ele afirmava,
+para os três painéis, que `hasEmailVerification()` e `isEmailVerificationRequired()` eram `false` e
+que a rota do prompt **não existia**. Para o `app` isso deixou de ser verdade por requisito
+(RQ-09 — sem a rota, ligar a opção pela tela dá `RouteNotFoundException`).
+
+Resolvido **sem perder cobertura**, e este é o ponto: o `app` saiu do dataset e ganhou um caso
+espelhado (CT-08b) que afirma o oposto com o motivo escrito; `admin` e `infra` continuam no dataset
+original — e ali a asserção **ganhou** importância, porque `MustVerifyEmail` no `User` é contrato
+global e é essa asserção que impede os dois painéis de administração de passarem a exigir e-mail
+validado. Apagar o caso inteiro teria sido a saída errada.
+
+Lição para o processo: as três inversões foram achadas por três meios diferentes — duas pela leitura
+do código, uma **só** pela suíte completa. Rodada filtrada por nome de feature não encontra guardião
+que vive num arquivo cujo nome não tem relação com a feature.
+
 **Desvio 4 — o toggle NÃO se esconde com o registro aberto desligado, ao contrário do plano.**
 O passo 5 do PRD dizia `->visible($aberto)`, copiando o vizinho. A revisão adversarial mostrou por
 que isso estava errado: o middleware não consulta `RegistroAberto::habilitado()`, então a exigência

@@ -136,6 +136,30 @@ agulha de `toContain()`, que é variádico. Detalhado em `03-progresso.md` → *
 - **Comportamento em processo separado** (`php artisan` de verdade lendo o valor do banco): ver a
   limitação declarada de RQ-06.
 
+## Ciclo 3 — rebase sobre a v0.19.4
+
+A `main` andou 4 commits (hotfix de perda de dado na tela de papéis, `v0.19.4`). Rebase feito; único
+conflito em `CHANGELOG.md`, de ordenação de seção. `composer.lock` **intacto** — nenhum diff contra
+`origin/main`.
+
+**QA-03 — terceiro guardião da dívida, achado só pela suíte completa · Major · destino 3 · fechado**
+
+- **Dimensão**: J (regressão adjacente)
+- **Relacionado a**: RQ-09, `tests/Kit/TelasDeAutenticacaoTest.php` CT-08
+- **Esperado**: a rota de confirmação do `/app` existe sempre (RQ-09).
+- **Observado**: o caso afirmava, para os **três** painéis, que a rota não existia e que o painel não
+  exigia verificação. Falhou no dataset `('app')` com *"Failed asserting that true is false"*.
+- **Por que as rodadas filtradas não pegaram**: o arquivo não tem no nome nada que casasse com
+  `VerificacaoDeEmail|RegistroAberto|ConfiguracoesDoKit`. **Guardião de invariante costuma morar
+  longe do nome da feature** — é o argumento contra confiar em `--filter` para fechar uma entrega.
+- **Fechamento**: o `app` saiu do dataset e ganhou um caso espelhado (CT-08b); `admin` e `infra`
+  permanecem, onde a asserção protege o contrato global de `MustVerifyEmail`. Cobertura preservada,
+  não removida.
+
+Varredura por um quarto guardião: `grep` por `hasEmailVerification|isEmailVerificationRequired|email-verification|emailVerification`
+em `tests/` — nenhum outro. Um comentário obsoleto em `ConviteUsuarioExistenteTest.php:89`
+(*"hoje nenhum painel liga `->emailVerification()`"*) foi atualizado.
+
 ## Veredito — Ciclo 2
 
 **APROVADO**
@@ -143,4 +167,9 @@ agulha de `toContain()`, que é variádico. Detalhado em `03-progresso.md` → *
 - QA-01 fechado: `tests/Kit/VerificacaoDeEmailTest.php`, caso *"deixa os paineis de administracao
   entrarem sem email validado"*, agora com `assertSeeLivewire(Dashboard::class)`.
 - QA-02 permanece como débito aceito (destino 5).
-- Nenhum achado novo no ciclo 2. Loop encerrado em 2 de 3 ciclos.
+- Nenhum achado novo no ciclo 2.
+
+## Veredito — Ciclo 3 (pós-rebase)
+
+**APROVADO** — ver o ciclo 3 acima: QA-03 fechado, nenhum achado novo além dele. Loop encerrado em
+3 de 3 ciclos, com o terceiro consumido pelo rebase e não por defeito da feature.

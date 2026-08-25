@@ -38,6 +38,13 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   verificacao com a opcao ligada: as duas eram guardioes da divida, e a inversao delas e o
   conserto. O comportamento (quem e barrado, quando) ganhou arquivo proprio em
   `tests/Kit/VerificacaoDeEmailTest.php`.
+- **A tela de confirmacao passou a existir no `/app` e continua NAO existindo em `/admin` e
+  `/infra`.** O caso que afirmava "em nenhum painel" era o terceiro guardiao da divida e o unico
+  que so a suite completa pegou -- o nome do arquivo nao tem relacao com a feature, entao nenhuma
+  rodada filtrada o alcancava. O `app` saiu do dataset e ganhou um caso espelhado; `admin` e
+  `infra` continuam nele, onde a assercao GANHOU importancia: `MustVerifyEmail` no `User` e
+  contrato global, e e ela que impede os dois de passarem a exigir e-mail validado.
+
 - **`/admin` e `/infra` nao mudam**, e agora ha caso de teste provando as duas metades: nenhuma
   rota daqueles paineis carrega o middleware, e com a exigencia LIGADA quem nao validou o e-mail
   entra neles. `App\Models\User implements MustVerifyEmail` e contrato global — o que protege os

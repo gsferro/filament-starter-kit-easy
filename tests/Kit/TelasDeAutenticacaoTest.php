@@ -1,6 +1,7 @@
 <?php
 
 use App\Filament\Pages\Auth\TelaDoisFatores;
+use App\Http\Middleware\ExigirEmailVerificado;
 use App\Models\Convite;
 use Caresome\FilamentAuthDesigner\AuthDesignerConfigRepository;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
@@ -266,22 +267,54 @@ it('deixa a confirmação de e-mail já vestida pelo auth designer nos três pai
 })->with(['app', 'admin', 'infra'])->group('kit');
 
 /**
- * CT-08 — e a tela NÃO entra no ar, em nenhum painel.
+ * CT-08 — e a tela NÃO entra no ar nos painéis de ADMINISTRAÇÃO.
  *
  * O plugin chama `$panel->emailVerification($classe)` com um argumento só
  * (`AuthDesignerPlugin.php:45-47`), e o segundo parâmetro do Filament é
  * `bool $isRequired = true` (`vendor/filament/filament/src/Panel/Concerns/HasAuth.php:110`).
- * Quem desfaz é a chamada com `null` DEPOIS do `->plugins([...])`, porque `Panel::plugin()`
- * registra na hora (`vendor/filament/filament/src/Panel/Concerns/HasPlugins.php:15-21`).
+ * Quem desarma no `/admin` e no `/infra` é o simples fato de aqueles providers não chamarem
+ * `->emailVerification()` — o default do Filament é `isEmailVerificationRequired = false`
+ * (`HasAuth.php:56`).
+ *
+ * **O `app` saiu deste dataset na v0.20, e a saída é o conserto.** Ver o caso logo abaixo: lá a
+ * tela está no ar de propósito, e quem decide se alguém é levado até ela é um middleware do kit,
+ * por request. Este caso continua valendo — e ganhou importância — para os dois painéis de
+ * administração: `App\Models\User implements MustVerifyEmail` é contrato GLOBAL, então o que
+ * protege `/admin` e `/infra` de exigir e-mail validado é exatamente esta asserção.
  *
  * Três asserções, nenhuma redundante: a exigência desarmada, a rota inexistente (é ela que
  * denuncia se alguém devolver a classe ao primeiro parâmetro) e — em CT-07 — a configuração
  * preservada. Sem a terceira, apagar o bloco inteiro deixaria estes dois casos verdes.
  */
-it('não põe a confirmação de e-mail no ar em nenhum painel', function (string $painel): void {
+it('não põe a confirmação de e-mail no ar nos paineis de administracao', function (string $painel): void {
     $panel = Filament::getPanel($painel);
 
     expect($panel->isEmailVerificationRequired())->toBeFalse()
         ->and($panel->hasEmailVerification())->toBeFalse()
         ->and(Route::has("filament.{$painel}.auth.email-verification.prompt"))->toBeFalse();
-})->with(['app', 'admin', 'infra'])->group('kit');
+})->with(['admin', 'infra'])->group('kit');
+
+/**
+ * CT-08b — no `/app` a tela está no ar SEMPRE, e isso é requisito, não descuido.
+ *
+ * A metade invertida de CT-08, e o motivo dela está em
+ * `wikis/specs/feat/verificacao-de-email-editavel/`: a exigência de e-mail validado voltou a ser
+ * editável na tela, e para isso a decisão saiu do array da rota — o painel aplica a exigência
+ * sempre e declara a classe do kit em `->emailVerifiedMiddlewareName()`, então a rota guarda um
+ * decisor (`App\Http\Middleware\ExigirEmailVerificado`) em vez de uma decisão.
+ *
+ * A rota tem de existir nos dois estados da opção porque um middleware que decide por request
+ * pode redirecionar em qualquer request: destino inexistente é `RouteNotFoundException`, um 500
+ * em vez de tela.
+ *
+ * Aqui só a EXISTÊNCIA é afirmada — quem é barrado, e quando, é
+ * `tests/Kit/VerificacaoDeEmailTest.php`.
+ */
+it('põe a confirmação de e-mail no ar no painel de negocio', function (): void {
+    $panel = Filament::getPanel('app');
+
+    expect($panel->isEmailVerificationRequired())->toBeTrue()
+        ->and($panel->hasEmailVerification())->toBeTrue()
+        ->and($panel->getEmailVerifiedMiddlewareName())->toBe(ExigirEmailVerificado::class)
+        ->and(Route::has('filament.app.auth.email-verification.prompt'))->toBeTrue();
+})->group('kit');

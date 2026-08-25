@@ -87,8 +87,10 @@ it('compara e-mail sem depender de caixa', function (): void {
 /**
  * CT-13 — o token PROVA posse do endereço, então a conta nasce verificada.
  *
- * Hoje nenhum painel liga `->emailVerification()`, então isto é inócuo; no dia em que
- * ligar, sem esta linha todo usuário nascido de convite é barrado na porta sem motivo. A
+ * O "dia em que ligar" que esta nota previa **chegou na v0.20**: o `/app` exige e-mail validado
+ * quando a opção está ligada, e sem esta linha todo usuário nascido de convite seria barrado na
+ * porta sem motivo. Deixou de ser inócuo — quem prova o efeito é
+ * `tests/Kit/VerificacaoDeEmailTest.php`, no caso do convidado. A
  * segunda asserção é a que trava o COMO: `email_verified_at` está fora do `$fillable`, logo
  * mass assignment o descartaria em silêncio e só o `forceFill` grava. Ver ADR-06.
  */
