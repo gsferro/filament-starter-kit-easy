@@ -1649,9 +1649,10 @@ would run the script with access to the session cookie — stored XSS. The uploa
 already has full access, so this is insider escalation rather than an anonymous door; in a starter
 kit it is worth closing anyway.
 
-The barrier is **Laravel's** `image` rule (not Filament's `->image()`, which is a different thing
-and accepts `image/*`, SVG included). It accepts jpg, jpeg, png, gif, bmp, webp, avif, heic and
-heif — `.ico` and `.tiff` are out, which in practice only affects anyone wanting an `.ico` favicon.
+The barrier is **Laravel's** `mimes` rule (not Filament's `->image()`, which is a different thing
+and accepts `image/*`, SVG included), with the format list in
+`ConfiguracoesDoKit::FORMATOS_DE_IMAGEM`: jpg, jpeg, png, gif, bmp, webp, avif, heic, heif, **ico**,
+**tif** and **tiff**. SVG is the only image format left out, and it is the only one that carries script.
 
 And it does **not** look at the extension: the MIME type comes from the file's content on the
 temporary disk, so renaming `logo.svg` to `logo.png` does not get through. On Projeto attachments,

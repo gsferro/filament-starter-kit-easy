@@ -273,7 +273,7 @@ it('[CT-07] recusa SVG e aceita PNG no mesmo campo e no mesmo tamanho', function
 it('[CT-07b] recusa SVG em todo campo de arquivo, dizendo o que enviar', function (string $campo): void {
     enviarNaTelaDeConfiguracoes($campo, UploadedFile::fake()->create('arte.svg', 4, 'image/svg+xml'))
         ->assertHasFormErrors([$campo])
-        ->assertSee('SVG não é aceito. Envie PNG, JPEG, WEBP, GIF, BMP, AVIF ou HEIC.');
+        ->assertSee('SVG não é aceito. Envie JPG, JPEG, PNG, GIF, BMP, WEBP, AVIF, HEIC, HEIF, ICO, TIF, TIFF.');
 
     expect(configuracaoDeUploadGravada($campo))->toBeNull();
 })->with(['logo', 'favicon', 'arte_do_login'])->group('kit');
@@ -303,7 +303,50 @@ it('[CT-08] aceita os demais formatos de imagem', function (UploadedFile $arquiv
     'bmp'  => fn (): UploadedFile => UploadedFile::fake()->create('marca.bmp', 16, 'image/bmp'),
     'avif' => fn (): UploadedFile => UploadedFile::fake()->create('marca.avif', 16, 'image/avif'),
     'heic' => fn (): UploadedFile => UploadedFile::fake()->create('marca.heic', 16, 'image/heic'),
+    'heif' => fn (): UploadedFile => UploadedFile::fake()->create('marca.heif', 16, 'image/heif'),
+    'tiff' => fn (): UploadedFile => UploadedFile::fake()->create('marca.tiff', 16, 'image/tiff'),
+    'ico'  => fn (): UploadedFile => UploadedFile::fake()->create('marca.ico', 16, 'image/vnd.microsoft.icon'),
 ])->group('kit');
+
+/**
+ * CT-23 - o favicon aceita `.ico` de verdade, com os bytes de um icone.
+ *
+ * CT-08 cobre as partições com arquivo falso, cujo MIME vem do NOME. Este cobre
+ * `.ico` com CONTEÚDO, porque foi a partição que expôs o defeito e ela merece a
+ * prova forte: a regra `image` do Laravel — a primeira barreira escrita nesta
+ * feature — recusava um `.ico` real, e a justificativa da ADR ("favicon moderno é
+ * PNG, e é o que o kit já usa") era **falsa**: o kit serve `public/favicon.ico`.
+ *
+ * Medido antes de trocar a regra: `guessExtension()` de um ICO real é `ico`, e a
+ * regra `image` reprova. É o caso que morre se alguém voltar `->rule('image')`
+ * achando que a lista do framework basta.
+ *
+ * O ICO é montado à mão porque nem o GD nem o `fake()` geram um: o formato aceita
+ * um PNG embutido desde o Vista, e é essa a forma que os geradores de favicon
+ * entregam hoje.
+ *
+ * Roda no `Validator` e não pela tela pelo mesmo motivo de CT-09, e por um a mais:
+ * um `UploadedFile` REAL não atravessa o arnês de upload do Livewire — o
+ * `Testable::upload()` acessa `$file->name`, propriedade que só existe no
+ * `Illuminate\Http\Testing\File`, e o caso morre em "Undefined property". A
+ * partição `.ico` pela tela, com arquivo falso, é CT-08.
+ */
+it('[CT-23] aceita um .ico de verdade no favicon', function (): void {
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', strict: true);
+    $ico = pack('vvv', 0, 1, 1).pack('CCCCvvVV', 1, 1, 0, 0, 1, 32, strlen((string) $png), 22).$png;
+
+    $caminho = tempnam(sys_get_temp_dir(), 'kit-ico').'-marca.ico';
+    file_put_contents($caminho, $ico);
+
+    $icone = new UploadedFile($caminho, 'marca.ico', 'image/x-icon', null, test: true);
+    $lista = 'mimes:jpg,jpeg,png,gif,bmp,webp,avif,heic,heif,ico,tif,tiff';
+
+    expect($icone->guessExtension())->toBe('ico')
+        ->and(Validator::make(['f' => $icone], ['f' => 'image'])->fails())->toBeTrue()
+        ->and(Validator::make(['f' => $icone], ['f' => $lista])->fails())->toBeFalse();
+
+    unlink($caminho);
+})->group('kit');
 
 /**
  * CT-09 — a barreira lê o CONTEÚDO, então renomear não passa.
@@ -335,7 +378,7 @@ it('[CT-09] recusa SVG renomeado para .png, onde o mimetypes:image/* aceitava', 
 
     expect($renomeado->getMimeType())->toBe('image/svg+xml')
         ->and($renomeado->getClientMimeType())->toBe('image/png')
-        ->and(Validator::make(['f' => $renomeado], ['f' => 'image'])->fails())->toBeTrue()
+        ->and(Validator::make(['f' => $renomeado], ['f' => 'mimes:jpg,jpeg,png,gif,bmp,webp,avif,heic,heif,ico,tiff'])->fails())->toBeTrue()
         ->and(Validator::make(['f' => $renomeado], ['f' => 'mimetypes:image/*'])->fails())->toBeFalse();
 
     unlink($caminho);

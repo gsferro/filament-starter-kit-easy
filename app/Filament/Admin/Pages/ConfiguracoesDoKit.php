@@ -489,6 +489,35 @@ class ConfiguracoesDoKit extends SettingsPage
     }
 
     /**
+     * Os formatos de imagem aceitos nos campos de arquivo — todos, menos SVG.
+     *
+     * São os nove da regra `image` do Laravel
+     * (`.../Validation/Concerns/ValidatesAttributes.php:1531-1540`) MAIS `ico` e
+     * `tiff`, e as duas adições não são capricho: `.ico` é o formato que a maioria
+     * dos kits de marca ainda entrega para favicon, o requisito diz que "o
+     * restante pode ser qualquer tipo de image", e **este kit serve um
+     * `public/favicon.ico`**. Recusar `.ico` na tela de favicon do kit que embarca
+     * um `.ico` é a inconsistência que o quality gate achou.
+     *
+     * A lista é escrita e não herdada da regra `image` por isso mesmo: `image` é
+     * mantida pelo framework, o que é bom, mas ela decide por conta própria que
+     * `.ico` não é imagem — e aqui essa decisão é do requisito. O preço é revisitar
+     * esta linha quando um formato novo virar comum; o teste de formatos aceitos é
+     * onde isso aparece.
+     *
+     * SVG fica fora, e é o único que fica: ele carrega `<script>` e estes arquivos
+     * são servidos pelo mesmo origin da aplicação.
+     *
+     * ⚠️ `tif` E `tiff`, e o primeiro não é redundância. A regra `mimes` compara
+     * `guessExtension()`, que devolve a PRIMEIRA extensão que o Symfony associa ao
+     * MIME — e para `image/tiff` a primeira é `tif`, não `tiff`
+     * (`MimeTypes::getExtensions('image/tiff')` → `['tif', 'tiff', …]`). Com só
+     * `tiff` na lista, um TIFF era recusado com a mensagem dizendo que TIFF é
+     * aceito. Quem pegou isso foi o caso de partição por formato.
+     */
+    private const FORMATOS_DE_IMAGEM = 'jpg,jpeg,png,gif,bmp,webp,avif,heic,heif,ico,tif,tiff';
+
+    /**
      * Campo de imagem no disco `public`, com teto de tamanho e sem SVG.
      *
      * `->disk('public')->visibility('public')` explícito, e não por default: no
@@ -507,19 +536,14 @@ class ConfiguracoesDoKit extends SettingsPage
      * (.../Validation/Concerns/ValidatesAttributes.php:1781-1783). Era por isso
      * que SVG passava aqui.
      *
-     * A regra `image` do LARAVEL é a barreira: ela é uma lista fechada de nove
-     * extensões e o SVG só entra com o parâmetro `allow_svg`
-     * (.../Validation/Concerns/ValidatesAttributes.php:1531-1540). A doc do
-     * framework diz o motivo com estas palavras: *"By default, the image rule
-     * does not allow SVG files due to the possibility of XSS vulnerabilities."*
-     * SVG carrega `<script>`, e estes três arquivos são servidos pelo MESMO
-     * origin da aplicação, com visibilidade pública — abrir a URL executaria o
-     * script com acesso ao cookie de sessão.
+     * A barreira é a regra `mimes` do LARAVEL, com a lista de `FORMATOS_DE_IMAGEM`.
+     * Ela compara `guessExtension()`, que vem do MIME derivado do CONTEÚDO do
+     * arquivo (`.../Validation/Concerns/ValidatesAttributes.php:1746-1761`), então
+     * renomear um `.svg` para `.png` não passa.
      *
-     * O custo do trade-off é `.ico` e `.tiff`, que a lista do Laravel não tem.
-     * Favicon moderno é PNG. Quem precisar de `.ico` troca esta linha por um
-     * `acceptedFileTypes()` com `image/x-icon` NAQUELE campo — e volta a aceitar
-     * SVG se usar `image/*`.
+     * SVG carrega `<script>`, e estes três arquivos são servidos pelo MESMO origin
+     * da aplicação, com visibilidade pública — abrir a URL executaria o script com
+     * acesso ao cookie de sessão. É a razão de a lista ser fechada.
      *
      * ## O teto vem de `TetoDeUpload`, em KILOBYTES
      *
@@ -539,16 +563,18 @@ class ConfiguracoesDoKit extends SettingsPage
      */
     private function arquivo(string $nome, string $rotulo, string $ajuda): FileUpload
     {
+        $formatos = mb_strtoupper(str_replace(',', ', ', self::FORMATOS_DE_IMAGEM));
+
         $maximoEmMb = TetoDeUpload::emMb();
 
         return FileUpload::make($nome)
             ->label($rotulo)
             ->image()
-            ->rule('image')
+            ->rule('mimes:'.self::FORMATOS_DE_IMAGEM)
             ->maxSize(TetoDeUpload::emKb())
             ->validationMessages([
                 'max'   => "O arquivo passa de {$maximoEmMb} MB.",
-                'image' => 'SVG não é aceito. Envie PNG, JPEG, WEBP, GIF, BMP, AVIF ou HEIC.',
+                'mimes' => "SVG não é aceito. Envie {$formatos}.",
             ])
             ->helperText("{$ajuda} Até {$maximoEmMb} MB, e SVG não é aceito.")
             ->disk('public')

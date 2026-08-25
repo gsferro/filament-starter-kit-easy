@@ -90,14 +90,13 @@ três arquivos, e só um deles documentado.
   `vendor/laravel/framework/src/Illuminate/Validation/Concerns/ValidatesAttributes.php:2822`, que
   divide o tamanho por 1024). Sem ambiguidade real, mas é onde a feature erra se ninguém escrever.
 
-- **RQ-04 × `.ico` e `.tiff`** (devolvido pela `feature-test-design`) — a regra `image` do Laravel
-  é uma allow-list de nove formatos (`ValidatesAttributes.php:1533`), e `.ico` e `.tiff` não estão
-  nela. Os dois **são** tipos de imagem, então recusá-los contraria a letra de RQ-04, e `.ico` é
-  plausível num campo de favicon.
-  - **Assumido**: o trade-off de ADR-02 vale — a lista mantida pelo framework é preferível a nove
-    strings congeladas, e favicon moderno é PNG.
-  - **Se negado**: trocar `->rule('image')` por `->acceptedFileTypes([… 'image/x-icon', 'image/tiff'])`
-    no campo `favicon`, e o caso que fixa a premissa inverte de sinal.
+- **RQ-04 × `.ico` e `.tiff`** (devolvido pela `feature-test-design`, **resolvido pelo quality
+  gate**) — a regra `image` do Laravel é uma allow-list de nove formatos
+  (`ValidatesAttributes.php:1533`), e `.ico` e `.tiff` não estão nela.
+  - **RESOLVIDO, não assumido.** A ambiguidade deixou de existir quando o quality gate olhou o
+    disco: **o kit serve `public/favicon.ico`**. A tela de favicon do kit recusava o formato de
+    favicon que o kit distribui, e isso não é trade-off, é RQ-04 violada. A barreira passou a ser
+    `mimes:` com os nove formatos **mais `ico` e `tiff`**. Ver a correção em ADR-02.
 
 - **Arquivo de 0 byte** (devolvido pela `feature-test-design`) — o requisito define teto e **não
   define piso**. Medido: um arquivo de 0 KB com nome `.png` passa `max`, passa `image` (o MIME vem

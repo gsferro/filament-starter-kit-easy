@@ -1682,9 +1682,10 @@ SVG é XML, e XML aceita `<script>`. A logo, o favicon e a arte do login são se
 o script com acesso ao cookie de sessão — XSS armazenado. Quem envia é o `admin`, que já tem
 acesso total, então é escalada de insider e não porta anônima; num starter kit vale fechar.
 
-A barreira é a regra `image` do **Laravel** (não o `->image()` do Filament, que é outra coisa e
-aceita `image/*`, SVG incluído). Ela aceita jpg, jpeg, png, gif, bmp, webp, avif, heic e heif — e
-`.ico` e `.tiff` ficam de fora, o que na prática só afeta quem quer favicon em `.ico`.
+A barreira é a regra `mimes` do **Laravel** (não o `->image()` do Filament, que é outra coisa e
+aceita `image/*`, SVG incluído), com a lista de formatos em
+`ConfiguracoesDoKit::FORMATOS_DE_IMAGEM`: jpg, jpeg, png, gif, bmp, webp, avif, heic, heif, **ico**,
+**tif** e **tiff**. SVG é o único formato de imagem fora, e é o único que carrega script.
 
 E ela **não** olha a extensão: o MIME vem do conteúdo do arquivo no disco temporário, então
 renomear `logo.svg` para `logo.png` não passa. Nos anexos de Projeto, onde uma allow-list fecharia

@@ -89,7 +89,7 @@ número naquele campo — e reintroduz, deliberadamente, uma segunda dona da per
 
 ---
 
-## ADR-02: A recusa de SVG é a regra `image` do Laravel, não uma allow-list de MIME escrita à mão
+## ADR-02: SVG é o único formato de imagem recusado, por lista de extensões validada no conteúdo
 
 **Status**: Aceita
 **Data**: 2026-08-24
@@ -125,12 +125,15 @@ files due to the possibility of XSS vulnerabilities."*
 ### Alternativas Consideradas
 
 1. **Allow-list explícita de MIME, como no `TenantForm`** —
-   `acceptedFileTypes(['image/png','image/jpeg','image/webp'])`. É o padrão que já existe na casa,
-   e foi a alternativa mais forte. Descartada por RQ-04: três tipos não são "qualquer outro tipo
-   de image", e a lista teria de crescer à mão a cada formato novo (avif, heic já estariam
-   faltando). A regra do Laravel é mantida pelo framework.
-2. **`acceptedFileTypes()` com a lista de nove tipos da regra `image`** — mesma cobertura, mas
-   nove strings para manter em vez de uma palavra, e a lista congela na versão de hoje.
+   `acceptedFileTypes(['image/png','image/jpeg','image/webp'])`. É o padrão que já existe na casa.
+   Descartada por RQ-04: três tipos não são "qualquer outro tipo de image".
+2. **`->rule('image')` puro** — foi a primeira decisão, e o quality gate a derrubou: ela recusa
+   `.ico`, que o kit embarca. Ver a correção acima.
+3. **`acceptedFileTypes()` com a lista completa** — funciona, mas `acceptedFileTypes()` também
+   reescreve o `accept` do seletor de arquivo, e aí o seletor deixaria de oferecer imagem que a
+   lista não cita. Como `mimes:` só valida, o `->image()` continua abrindo o seletor para
+   `image/*` e a recusa é explicada por mensagem — o que é preferível a um seletor que esconde
+   arquivos sem dizer por quê.
 3. **Regra de recusa de `image/svg+xml` (um `Closure`), mantendo `image/*`** — é literalmente o
    que a cláusula diz, e cobre formato de imagem que a regra `image` não conhece. Descartada nos
    campos de imagem por ser mais código para menos garantia: qualquer coisa que o finfo não
@@ -139,14 +142,53 @@ files due to the possibility of XSS vulnerabilities."*
 4. **Sanitizar o SVG no upload** (`spatie/image`, DOMPurify, reescrever o XML) — fora de escopo
    declarado no `00-requisito.md` e dependência nova, que o requisito não pede.
 
+### ⚠️ Correção do quality gate: a justificativa do `.ico` era FALSA, e a regra mudou
+
+A primeira versão desta ADR aceitava perder `.ico` e `.tiff` com esta frase:
+
+> *"Trade-off aceito e escrito no `helperText` do campo: favicon moderno é PNG, e é o que o kit já
+> usa."*
+
+**O kit serve `public/favicon.ico`.** A frase foi escrita a partir do que se esperava encontrar, e
+não de um `ls` — exatamente o padrão que `.ai/rules/specs.md` manda desconfiar, e desta vez a
+conclusão também estava errada, não só o motivo.
+
+Medido, com um ICO real (cabeçalho de ícone + PNG embutido, que é a forma que os geradores de
+favicon entregam hoje):
+
+```
+mime por conteúdo   → image/vnd.microsoft.icon
+guessExtension()    → ico
+regra `image`       → RECUSA
+regra `mimes:…,ico` → aceita
+```
+
+Ou seja: a tela de favicon do kit recusava o formato de favicon que o próprio kit embarca, e
+RQ-04 ("o restante pode ser qualquer tipo de image") ficava violada num caso concreto e provável —
+`.ico` é o que a maioria dos kits de marca entrega.
+
+**Decisão revisada**: a barreira passa a ser `mimes:` com uma lista escrita —
+`ConfiguracoesDoKit::FORMATOS_DE_IMAGEM` = os nove da regra `image` **mais `ico` e `tiff`**.
+
+O mecanismo é o mesmo: `validateMimes()` compara `guessExtension()`
+(`ValidatesAttributes.php:1746-1761`), que vem do MIME derivado do **conteúdo** — então a
+resistência a arquivo renomeado, que é o argumento de ADR-03, **não muda** (medido: o SVG chamado
+`logo.png` continua recusado pela lista).
+
+O que se perde é a herança automática: um formato novo que o Laravel adicionar à regra `image` não
+aparece aqui sozinho. É um preço menor que recusar o formato que o kit distribui, e o caso de
+formatos aceitos é onde a defasagem aparece.
+
 ### Consequências
 
-- **Positivas**: uma palavra, mantida pelo framework, com a lista de formatos crescendo com o
-  Laravel. Cobre avif/heic/heif, que uma lista escrita hoje esqueceria.
-- **Negativas**: `.ico` e `.tiff` deixam de ser aceitos — e `.ico` é plausível num campo de
-  favicon. Trade-off aceito e escrito no `helperText` do campo: favicon moderno é PNG, e é o que
-  o kit já usa. Quem precisar de `.ico` troca `->rule('image')` por
-  `->acceptedFileTypes([... 'image/x-icon'])` naquele campo.
+- **Positivas**: RQ-03 e RQ-04 atendidas ao mesmo tempo — SVG é o único formato de imagem fora, e
+  ele é o único que carrega script. `.ico` e `.tiff` entram, incluindo o `.ico` que o kit embarca.
+- **Negativas**: onze extensões escritas à mão, que envelhecem. Mitigado por serem uma constante
+  única, com o motivo de cada adição no docblock, e por haver caso de teste por partição.
+- **Negativas**: o kit passa a ter duas listas de formato de imagem — esta e a do `TenantForm`
+  (`png`, `jpeg`, `webp`). Não é duplicação de decisão (lá a lista é estreita de propósito, com
+  justificativa própria no arquivo), mas exige o comentário nos dois lugares para não parecer
+  descuido.
 - **Negativas**: o kit passa a ter **duas** formas de recusar SVG — a allow-list do `TenantForm` e
   a regra `image` aqui. Não é duplicação de decisão (são requisitos diferentes: lá a lista é
   fechada de propósito, aqui é aberta por cláusula), mas é uma inconsistência visível que
