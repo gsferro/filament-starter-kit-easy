@@ -2,7 +2,7 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
-## [Nao lancado]
+## [0.19.10] - 2026-08-25
 A tela de boas-vindas entra na galeria dos READMEs, e duas rules ganham a emenda que a
 rodada anterior tornou necessaria.
 
