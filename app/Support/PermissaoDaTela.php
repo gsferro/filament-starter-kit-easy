@@ -71,7 +71,9 @@ final class PermissaoDaTela
             ? array_key_first($entidade['permissions'])
             : null;
 
-        $usuario = Filament::auth()?->user();
+        // `Filament::auth()` é non-nullable (`Panel::auth()` devolve `StatefulGuard`), então sem
+        // `?->` aqui. `HasPageShield` usa o nullsafe e o PHPStan do kit acusaria `nullsafe.neverNull`.
+        $usuario = Filament::auth()->user();
 
         return is_string($chave) && $usuario instanceof Authorizable
             ? $usuario->can($chave)

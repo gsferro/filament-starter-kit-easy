@@ -105,3 +105,41 @@ it('abre o desafio de 2FA vestido pelo auth designer, sem erro de JavaScript', f
         ->assertVisible('.fi-auth-theme-switcher-wrapper')
         ->assertNoJavaScriptErrors();
 });
+
+/**
+ * CT-B06 — a tela de backups CARREGA o header widget isolado, sem o plugin no painel.
+ *
+ * O que este cenário acrescenta, e por que ele é o único desta feature que precisa de navegador:
+ *
+ * A feature `permissoes-de-telas-de-pacote` trocou a Page do `brimham/filament-backup-monitor` por
+ * `App\Filament\Infra\Pages\BackupRunsPage`, e para isso tirou o plugin do painel — ele registrava
+ * a Page e não expõe callback de autorização nenhum (ADR-04). Com o plugin saiu o
+ * `->livewireComponents([LatestBackupsWidget::class])`, que o `InfraPanelProvider` agora faz na mão.
+ *
+ * O comentário do próprio pacote diz o que acontece sem esse registro
+ * (`vendor/brimham/filament-backup-monitor/src/FilamentBackupMonitorPlugin.php:22-25`): o header
+ * widget é ISOLADO, o Livewire faz o commit dele por um request PRÓPRIO, por nome, e sem o registro
+ * o request seguinte responde **419** (release-token mismatch).
+ *
+ * Nenhum teste de request pega isso: `$this->get('/infra/backup-runs')` devolve 200 com o HTML
+ * íntegro e o widget como placeholder — o 419 acontece depois, e só existe quando há um navegador
+ * executando Livewire. O lote do CT-B01 acima também não basta: ele visita esta rota, mas
+ * `assertNoJavaScriptErrors()` é asserção de APOIO e passa numa página cujo widget nunca carregou.
+ *
+ * O oráculo é o `assertSee` do CABEÇALHO do widget — conteúdo que só existe DEPOIS do commit.
+ *
+ * Papel `infra` e não `master_global`: custa o mesmo e exercita a permissão real da tela em vez do
+ * `Gate::before`.
+ */
+it('carrega o header widget da tela de backups depois do commit do livewire', function (): void {
+    $this->actingAs(usuarioDoKit('infra', 'infra@example.com'));
+
+    // Paga a compilação dos componentes do painel FORA do cronômetro do Playwright — mesma razão
+    // do cenário acima, e a rule do `view:cache` em `.ai/rules/testes-browser.md`.
+    $this->get('/infra');
+
+    visit('/infra/backup-runs')
+        ->assertSee(__('filament-backup-monitor::backups.title'))
+        ->assertSee(__('filament-backup-monitor::backups.widget.heading'))
+        ->assertNoJavaScriptErrors();
+});

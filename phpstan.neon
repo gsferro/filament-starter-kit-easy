@@ -31,6 +31,31 @@ parameters:
             paths:
                 - app/Filament/*/Resources/**
 
+        # `customMyProfilePage()` do filament-breezy tem a ANOTAÇÃO errada, e ela é
+        # insatisfazível: `@param class-string<Pages\MyProfilePage> $class`
+        # (vendor/jeffgreco13/filament-breezy/src/Concerns/Plugin/HasMyProfile.php:29-33). O
+        # prefixo `Pages\` é resolvido relativo ao namespace do trait, então o tipo pedido é
+        # `Jeffgreco13\FilamentBreezy\Concerns\Plugin\Pages\MyProfilePage` — uma classe que NÃO
+        # EXISTE. O `use Jeffgreco13\FilamentBreezy\Pages\MyProfilePage;` no topo do arquivo (`:10`)
+        # mostra qual era a intenção, e é dela que `App\Filament\Pages\MyProfilePage` herda.
+        #
+        # Nenhum argumento pode satisfazer o tipo declarado. Tentado e descartado antes desta
+        # exceção:
+        #   - `stubFiles`: sobrescreveria a assinatura, mas o método vem de um TRAIT usado por
+        #     `BreezyCore`, e o stub teria de replicar o trait inteiro — que quebra calado no
+        #     primeiro upgrade que acrescentar um método a ele.
+        #   - herdar da classe do namespace errado: ela não existe.
+        #
+        # A cobertura de verdade é o teste: `tests/Kit/PermissoesDeTelasTest.php` assere 403 em
+        # `/{painel}/meu-perfil` com `View:MyProfilePage` revogada, nos painéis `infra` e `admin`.
+        # Se o registro parar de valer, ele fica vermelho.
+        -
+            message: '#customMyProfilePage\(\) expects class-string<Jeffgreco13\\FilamentBreezy\\Concerns\\Plugin\\Pages\\MyProfilePage>#'
+            paths:
+                - app/Providers/Filament/AdminPanelProvider.php
+                - app/Providers/Filament/AppPanelProvider.php
+                - app/Providers/Filament/InfraPanelProvider.php
+
     # `tests` NAO esta nos paths, e a ausencia e medida.
     #
     # Com o `pest-plugin-phpstan` incluido acima: 117 erros em 26 dos 62 arquivos.
