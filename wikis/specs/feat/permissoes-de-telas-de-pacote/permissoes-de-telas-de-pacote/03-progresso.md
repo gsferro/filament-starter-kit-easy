@@ -178,6 +178,29 @@ dataset é avaliado na **coleta** dos testes, antes de a aplicação bootar. A r
 `config('authentication-log.table_name')` voltou para o corpo do `it()`, com `null` no dataset
 significando "a tabela da trilha de acesso".
 
+## Quality Gate (step 8)
+
+**Veredito: APROVADO COM DÉBITO**, em **1 ciclo**. Relatório completo em `06-relatorio-qa.md`.
+
+Sete achados. **Dois ALTO, ambos corrigidos, e ambos da mesma causa** — a subclasse homônima
+preserva a **chave** da permissão (`class_basename`) e **não** preserva o **FQCN**, e dois lugares
+do kit casavam por FQCN: o mapa de descrições de `HubDeInfraestrutura` (o cartão "Backups" ficava
+sem frase, e `HubDeCardsTest` estourava chave indefinida) e uma asserção de `PaineisTest` que pedia
+`permissoesDe('app', [classe do Breezy])`.
+
+É a lição da entrega, e é a rule de varredura de `.ai/rules/specs.md` vista de outro ângulo: ao
+trocar a classe registrada, **varra o repo por FQCN antes de considerar a troca feita**.
+
+Três MÉDIO corrigidos (referência a arquivo de teste inexistente, ID `F-65` duplicado no README,
+`auth()->check() &&` faltando em dois dos três callbacks). Um BAIXO virou **débito declarado** (o
+link "Meu perfil" do menu do usuário) e um BAIXO foi classificado como **não-defeito** (as linhas de
+`PaginasInfraTest` são guarda de over-block; quem discrimina é CT-24/CT-25).
+
+O gate também **rejeitou oito hipóteses** — entre elas a que o coordenador levantou: a troca de FQCN
+**não** altera o que o formulário de papéis oferece nem o que o save preserva, porque
+`getPageOptions()`/`getWidgetOptions()` são indexados por chave de permissão e não por FQCN. Nenhuma
+linha nova em `it('resolve o salvamento pela regra de conjunto')`.
+
 ## Resultado dos testes
 
 <!-- preenchido ao fim do run completo -->

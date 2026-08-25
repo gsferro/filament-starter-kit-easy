@@ -80,6 +80,21 @@ desde a 0.18.10. As tres que sobram ficam declaradas, com o motivo e o `file:lin
   `class-string<Concerns\Plugin\Pages\MyProfilePage>`, e o prefixo `Pages\` e resolvido relativo ao
   namespace do trait — a classe pedida nao existe. O `use` no topo do arquivo do pacote mostra qual
   era a intencao.
+
+- **O link "Meu perfil" do menu do usuario continua visivel para quem perdeu a permissao.** O item
+  e' registrado pelo `BreezyCore` (`BreezyCore.php:110-120`) e nao tem `->visible()`; quem nao tem
+  `View:MyProfilePage` ve o link e leva 403 no clique. A barreira existe e funciona -- o que sobra
+  e' vazamento de affordance. Sobrescrever exigiria replicar rotulo, URL e avatar em
+  `userMenuItems()` nos tres providers. A promessa de F-62 nos READMEs e' sobre o item da BARRA
+  LATERAL, e `MyProfilePage::shouldRegisterNavigation()` e' `false` -- ela nunca teve um.
+
+- **A metade "e no checkbox" da divida nao esta testada**, e para Page de `/infra` o checkbox nao
+  aparece em `/admin/shield/roles`: as abas de Paginas e Widgets do Shield sao scoped ao painel
+  corrente (`EditRole.php:126-131`). Isso e' anterior a esta entrega e e' a mesma lacuna que a
+  secao "Sabido" da 0.19.4 nomeia. Fechar exigiria alargar o alcance do formulario -- e a 0.19.4
+  registra que, nesse dia, a conta de `oferecidas` em
+  `EditRole::permissoesQueOFormularioOferece()` tem de crescer junto.
+
 - **Mutation testing nao rodou**: sem PCOV no ambiente, `--mutate` e inviavel aqui
   (`.ai/rules/testes-browser.md` registra um run abortado apos 35 min com Xdebug). O gate de
   mutantes desta entrega e o PREVISTO no `04`, nao o medido.
