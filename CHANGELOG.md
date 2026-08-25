@@ -2,7 +2,7 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
-## [Nao lancado]
+## [0.19.7] - 2026-08-25
 Release de seguranca. Sete das dez telas que o painel `/infra` recebe de PACOTES de terceiro
 passam a exigir a permissao especifica delas — a divida declarada na 0.19.4 e nas anteriores
 desde a 0.18.10. As tres que sobram ficam declaradas, com o motivo e o `file:line`.
