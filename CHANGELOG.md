@@ -2,6 +2,63 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.19.4] - 2026-08-24
+
+Release de correcao urgente. **Se voce esta em 0.18.11, 0.19.0, 0.19.1, 0.19.2 ou 0.19.3,
+atualize antes de editar papel pela tela** — e confira os papeis que voce editou desde a
+0.18.11.
+
+### Corrigido
+
+- **Salvar um papel de OUTRO painel na tela de papeis apagava as permissoes dele.** Abrir
+  `/admin/shield/roles/{papel}/edit` e clicar em Salvar **sem tocar em nada** bastava. Medido no
+  banco: `infra` de **140 para 15**, `panel_user` de **17 para 3**, `admin_app` de **47 para
+  31**. Sem erro, sem aviso, e quem salvou acha que nao mudou nada.
+
+  Sobrevivia so o que calhava de estar numa secao da aba aberta: `Convite` e `User` escapavam
+  porque tambem aparecem no /admin; `Projeto`, que so existe no /app, sumia inteiro.
+
+  **Duas causas, e a mais obvia nao era a principal.** A primeira e que
+  `HasShieldFormComponents::setPermissionStateForRecordPermissions()` so hidrata o CheckboxList
+  `if ($component->isVisible() ...)`
+  (`vendor/bezhansalleh/filament-shield/src/Traits/HasShieldFormComponents.php:81`) — com o
+  collapse por painel do vendor todas as secoes estavam visiveis, e com o tab vertical da
+  0.18.11 so a aba ativa esta. Corrigir isso levou o `infra` de 15 para 113: melhor, ainda
+  errado.
+
+  A principal: `getResourcePermissionOptions()` monta as opcoes com `FilamentShield`, que e
+  **scoped ao painel corrente**. Esta tela vive no /admin, entao para todo resource de /app e
+  /infra ele devolvia `[]` — o CheckboxList nascia SEM OPCAO NENHUMA, o state ficava vazio, e o
+  `syncPermissions()` apagava.
+
+  A correcao tem duas partes: as opcoes passam a vir de `App\Support\Paineis`, que varre os
+  tres paineis; e o save deixa de usar `sync` puro e segue uma **regra de conjunto** —
+  `final = (atuais - oferecidas) ∪ marcadas`. O que o formulario nao pode mostrar e preservado;
+  o que ele mostrou e foi desmarcado sai. A segunda parte e a que fecha a classe inteira: as
+  abas de **Paginas e Widgets** continuam scoped ao painel corrente, e a primeira correcao nao
+  as alcancava.
+
+### Sabido
+
+- **Como isso passou na 0.18.11**: toda a cobertura daquela tela media MARCAR permissao — o
+  checkbox que destranca a tela, o `select_all`, a contagem por grupo. Nenhum caso media a
+  IDENTIDADE: abrir, nao tocar em nada, salvar, e receber de volta o que estava la. Esse caso
+  existe agora, com os quatro papeis do kit no dataset.
+
+  E o que expos foi a inspecao visual da tela em navegador: um papel com 47 permissoes no banco
+  exibia `0/56` na aba dele, e nenhuma assercao olhava para esse numero.
+
+- **O caso de remocao nao pode ser arranjado por Livewire**, e o motivo esta escrito no teste:
+  `fillForm()` refaz o preenchimento, que passa por `mutateFormDataBeforeFill()` e re-semeia do
+  banco, desfazendo a desmarcacao; `set('data', ...)` nao vence porque as chaves sao FQCN com
+  barras invertidas e o caminho do Livewire e por pontos. As marcadas chegavam ao save ainda
+  contendo a permissao — o teste reprovava com o codigo CORRETO. Por isso a regra saiu para
+  `EditRole::permissoesFinais()`, metodo puro provado com 5 cenarios.
+
+  O par importou duas vezes: o caso de remocao pegou que a primeira tentativa de correcao tinha
+  virado **somente-adicao** — preservava tudo, e revogar acesso deixaria de funcionar. Sem ele
+  eu teria trocado um defeito por outro, mais silencioso.
+
 ## [0.19.3] - 2026-08-24
 
 O rescaldo da rodada: o que a inspecao visual da tela de papeis pegou, cinco licoes viradas
