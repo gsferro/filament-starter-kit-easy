@@ -2,6 +2,54 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.20.0] - 2026-08-25
+Auditoria de seguranca com o catalogo do Filament Blueprint, e duas travas que a aplicacao
+acreditava ter e nao tinha.
+
+### Corrigido
+- **A negacao de exclusao de usuario e de convite no `/app` nao negava nada.** Os dois resources
+  sobrescreviam `canDelete()` e `canDeleteAny()`, e no Filament v5 esses metodos sao INVOLUCROS que
+  leem a resposta (`HasAuthorization.php:154-162`): quem decide a acao chama a resposta direto —
+  `Pages/Page.php:313` para a `DeleteAction`, `:329` para a `DeleteBulkAction`. Buscar chamadores de
+  `canDelete()` em `vendor/filament/filament/src/` devolve ZERO linhas. O que impedia a exclusao era
+  ausencia de SUPERFICIE (nenhuma `DeleteAction` registrada), e o gerador do Filament inclui uma por
+  default. A negacao passou para `getDeleteAuthorizationResponse()` e
+  `getDeleteAnyAuthorizationResponse()`, com mensagem em vez de 403 mudo — e NAO na policy, que e
+  global e proibiria tambem o `/admin`, onde excluir usuario e legitimo.
+- **O docblock do `EditUser` INSTRUIA o proximo mantenedor a confiar na trava inexistente**
+  ("a trava de verdade e `UserResource::canDelete()`"). Ha varredura em todo o `app/` guardando
+  contra a volta da frase.
+- **A rota publica `/` expunha o RPC de upload do Livewire a visitante anonimo.** `BoasVindas` e
+  servida sem `auth` (o `panel:app` boota o painel, nao autentica) e herda `InteractsWithSchemas`
+  pela cadeia ate `BasePage`, o que expoe `_startUpload`/`_finishUpload`. A pagina nao tem campo de
+  upload nenhum: o canal existia sem destino legitimo. `RestrictsFileUploadsToSchemaComponents`
+  fecha, e `ConvitesRecebidos` recebe o mesmo por defesa em profundidade.
+
+### Adicionado
+- **`wikis/specs/feat/auditoria-de-seguranca/travas-de-exclusao-e-upload-anonimo/`** com o relatorio
+  no formato que a skill do Blueprint especifica (§1 a §5): os 21 checks com `Finding`/`Pass`/`N/A` e
+  o motivo de cada um. B (uploads/RCE) e C (XSS) zerados — os campos de upload do kit ja chegam com
+  allow-list explicita e SVG recusado, e o unico `{!! !!}` sobre conteudo de usuario ja passa por
+  `html_input: escape`.
+- **14 casos de teste em `TravaDeExclusaoTest`, `UploadAnonimoTest` e
+  `AuditoriaDeSegurancaTenancyTest`**, com mutacao verificada nas seis correcoes.
+
+### Alterado
+- **`composer bp:on` / `bp:off`** ganharam uso real nesta rodada: o Blueprint foi instalado, usado e
+  desligado, e a guarda de `BlueprintForaDoPacoteTest` reprovou corretamente enquanto ele esteve
+  ligado.
+
+### Notas de qualidade
+- **A revisao adversarial dos casos achou tres defeitos nos MEUS oraculos**, e o pior deles era o
+  caso que eu havia chamado de "o mais importante do conjunto": ele usava o `master_global`, que
+  vence por `Gate::before` e mascararia uma negacao plantada na policy.
+- **A mutacao provou o que a revisao previu**: na primeira rodada, TRES dos quatro casos de negacao
+  ficaram verdes com a correcao removida — sem ator autenticado com a permissao, a policy nega
+  sozinha e o caso passa pelo motivo errado.
+- **`Filament::getCurrentPanel()` e o cache de permissao do Spatie vazam entre arquivos de teste.**
+  Isso fazia a sensibilidade dos casos depender da ordem de execucao, que e o pior tipo de teste
+  verde: honesto isolado, mentiroso em conjunto.
+
 ## [0.19.11] - 2026-08-25
 O que e do repositorio do kit para de viajar no pacote — e o caso do Blueprint mostrou que
 "remover na instalacao" tem um limite duro.
