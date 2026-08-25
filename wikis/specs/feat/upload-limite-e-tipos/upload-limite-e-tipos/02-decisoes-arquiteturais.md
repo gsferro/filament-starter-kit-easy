@@ -294,14 +294,50 @@ passaria a ser o teto real.
    descartada: o upload temporário do Livewire vale para **toda** a aplicação, inclusive
    superfícies sem `maxSize()`. Afrouxar o global para apertar no específico é a direção errada.
 
+### Correção da implementação: a folga de 1 MB, e por que igualar os tetos era ERRADO
+
+A primeira versão desta ADR alinhava o teto do Livewire **ao mesmo número** do campo. Medido no
+worktree, isso quebra a própria consequência que a ADR promete:
+
+```
+teto do campo = 10240 KB, teto do Livewire = 10240 KB
+favicon de 20 MB  →  erros=[]   gravado=NULL
+
+teto do campo = 10240 KB, teto do Livewire = 102400 KB
+favicon de 20 MB  →  erros={"data.favicon":["O arquivo passa de 10 MB."]}   gravado=NULL
+```
+
+Com os tetos iguais, o upload temporário recusa **antes** de o formulário existir
+(`FileUploadController::validateAndStore()` aplica `FileUploadConfiguration::rules()` antes de o
+arquivo virar propriedade do componente), e o `validationMessages(['max' => …])` do campo fica
+**inalcançável**: no navegador é 422 no XHR e erro genérico do FilePond; num teste de componente é
+"nenhum erro e nada gravado", que é indistinguível de aceito e ignorado.
+
+Ou seja: o alinhamento ingênuo trocava um erro obscuro por outro, e ainda apagava a única camada
+que sabia falar em português.
+
+A correção é `TetoDeUpload::emKbComFolgaDoLivewire()` — o teto do campo **mais 1 MB**:
+
+- arquivo pouco acima do teto (o caso comum, alguém que mandou 11 MB) → recusado pelo **campo**,
+  com mensagem no formulário;
+- arquivo muito acima → cortado pelo Livewire, e é o que se quer: ninguém deve transferir meio
+  gigabyte para o servidor dizer que era grande.
+
+A folga não afrouxa nada que o requisito prometa: o teto que vale para o que **entra** continua
+sendo o do campo, e nenhum arquivo acima dele é gravado. O que a folga compra é a mensagem.
+
 ### Consequências
 
-- **Positivas**: um número controla as duas camadas. Erro de tamanho aparece como mensagem no
-  campo, não como 422 no console. Nenhum arquivo de config alheio no repositório.
-- **Negativas**: o teto global do upload temporário **cai** de 12 MB para 10 MB de fábrica. Isso
-  atinge qualquer upload que passe pelo Livewire e não tenha `maxSize()` próprio — hoje, o CSV do
-  `ImportAction` do Filament. Um CSV entre 10 e 12 MB que passava, passa a ser recusado. Aceito:
-  10 MB é o teto que o requisito define para "todo upload", e o CSV de importação é upload.
+- **Positivas**: um número controla as duas camadas, com a mensagem legível preservada para o caso
+  comum. Nenhum arquivo de config alheio no repositório.
+- **Negativas**: o teto global do upload temporário **cai** de 12 MB para 11 MB de fábrica (10 + 1
+  de folga). Isso atinge qualquer upload que passe pelo Livewire e não tenha `maxSize()` próprio —
+  hoje, o CSV do `ImportAction` do Filament. Um CSV entre 11 e 12 MB que passava, passa a ser
+  recusado. Aceito: 10 MB é o teto que o requisito define para "todo upload", e o CSV de importação
+  é upload.
+- **Negativas**: a folga é um número escolhido (1 MB), não derivado. Grande demais e o Livewire
+  para de proteger; pequena demais e a mensagem do campo volta a ser inalcançável para arquivos
+  pouco acima do teto. 1 MB cobre o caso comum e mantém o corte de fora em ordem de grandeza.
 - **Riscos**: `config()->set()` em `boot()` é sobrescrito por qualquer coisa que rode depois e
   mexa na mesma chave. Nada no kit mexe (`grep -rn "temporary_file_upload" app/ config/` só acha
   esta linha), e um teste asserta o valor efetivo no processo.
@@ -350,3 +386,50 @@ Nenhum channel novo em `config/logging.php`, nenhuma chamada a `Log::` no diff.
 
 - `app/Providers/KitServiceProvider.php` (`configureSettingsDoKit`, o precedente do silêncio
   deliberado)
+
+---
+
+## ADR-06: A conversão de unidade vive numa classe, não repetida em cada consumidor
+
+**Status**: Aceita
+**Data**: 2026-08-24
+
+### Contexto
+
+Registrada a pedido da `feature-test-design`, que apontou a divergência: o PRD prescreve
+`(int) config('kit.uploads.maximo_em_kb')` nos cinco campos, a implementação usa
+`App\Support\TetoDeUpload::emKb()`, e os dois READMEs já documentavam a classe — a decisão tinha
+sido escrita para quem usa o kit e não para a wiki. Discordância entre wiki e código em texto é
+exatamente o achado de especificação que o `feature-quality-gate` procura, então ela vira ADR em
+vez de ficar só como adendo.
+
+### Decisão
+
+`App\Support\TetoDeUpload`, com três métodos: `emKb()` (o que Filament e Livewire recebem),
+`emMb()` (o que a pessoa lê) e `emKbComFolgaDoLivewire()` (ver ADR-04).
+
+### Alternativas Consideradas
+
+1. **`config()` direto nos cinco campos, como o PRD escreveu** — funciona, e RQ-05 fica atendida.
+   Descartada quando a conta apareceu: `intdiv((int) config('kit.uploads.maximo_em_kb'), 1024)`
+   repetido em cinco encadeamentos, em três arquivos, é conversão de unidade por cópia — a forma
+   como um teto acaba divergindo do texto que o anuncia.
+2. **Uma segunda chave de config em MB** — recusada em ADR-01: duas donas do mesmo número.
+3. **Helper global (`function tetoDeUpload()`)** — o kit não tem helpers globais de aplicação, e
+   uma classe é testável em unidade sem bootar tela.
+
+### Consequências
+
+- **Positivas**: um lugar para a conversão, um lugar para a folga do Livewire, e cada decisão com o
+  docblock ao lado do código que a implementa. Segue o padrão de `NumeroDoEnv`, `BooleanoDoEnv`,
+  `CorPrimaria`, `RegistroAberto` e `IdentidadeDoKit`.
+- **Negativas**: uma classe a mais para quem lê o kit pela primeira vez. Mitigado por ela ter três
+  métodos e nenhum estado.
+- **Riscos**: nenhum de comportamento — se a classe sair e os campos voltarem a ler `config()`
+  direto, nenhum caso de teste muda de sinal. É a definição de refactor neutro.
+
+### Referências
+
+- `app/Support/TetoDeUpload.php`
+- `.ai/rules/config.md` ("uma pergunta, uma dona")
+- `04-casos-de-teste.md` → `## Fronteira com o Plano`

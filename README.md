@@ -1659,7 +1659,7 @@ torna o desalinhamento caro:
 |---|---|---|---|
 | nginx | `docker/nginx/nginx.conf` | `client_max_body_size 60M` | falha de rede no console |
 | PHP | `docker/php/uploads.ini` | `upload_max_filesize=52M`, `post_max_size=60M` | idem |
-| Livewire (upload temporário) | alinhado à chave do kit por `KitServiceProvider` | 10 MB | 422 no XHR, erro genérico |
+| Livewire (upload temporário) | alinhado à chave do kit por `KitServiceProvider`, com 1 MB de folga | 11 MB | 422 no XHR, erro genérico |
 | Filament (`->maxSize()`) | a chave do kit | 10 MB | **mensagem em português, no campo** |
 
 Só a última recusa com mensagem clara — por isso o kit alinha o Livewire à chave em vez de deixar

@@ -35,6 +35,34 @@ class TetoDeUpload
     }
 
     /**
+     * O teto do upload TEMPORÁRIO do Livewire: o do campo, mais 1 MB de folga.
+     *
+     * A folga não é frouxidão, é o que mantém a mensagem de erro legível — e foi
+     * medida, não suposta.
+     *
+     * O upload temporário do Livewire acontece ANTES de o formulário existir.
+     * Quando os dois tetos são iguais, o arquivo um kilobyte acima do teto é
+     * recusado LÁ, e o campo nunca chega a validar: no navegador é 422 no XHR e
+     * um erro genérico do FilePond, e num teste de componente é "nenhum erro e
+     * nada gravado" — indistinguível de aceito e ignorado. Ou seja: igualar os
+     * tetos torna o `validationMessages(['max' => …])` do campo **inalcançável**.
+     *
+     * Com 1 MB de folga, o arquivo pouco acima do teto — o caso comum, alguém que
+     * mandou um PNG de 11 MB — é recusado pelo CAMPO, com "O arquivo passa de 10
+     * MB." no formulário. Acima da folga, o Livewire corta antes, e é o que se
+     * quer: ninguém deve transferir 500 MB para o servidor dizer que era grande.
+     *
+     * O default do pacote, sem esta conta, é `max:12288`
+     * (vendor/livewire/livewire/src/Features/SupportFileUploads/FileUploadConfiguration.php:116)
+     * — fixo, e mais ESTREITO que o teto do kit no instante em que alguém sobe
+     * `KIT_UPLOAD_MAXIMO_MB` acima de 12.
+     */
+    public static function emKbComFolgaDoLivewire(): int
+    {
+        return static::emKb() + 1024;
+    }
+
+    /**
      * O teto em megabytes, para o texto que a pessoa lê.
      *
      * `intdiv()` e não divisão comum: a mensagem "O arquivo passa de 9.5 MB" é

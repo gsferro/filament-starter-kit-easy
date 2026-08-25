@@ -1625,7 +1625,7 @@ and that is what makes a mismatch expensive:
 |---|---|---|---|
 | nginx | `docker/nginx/nginx.conf` | `client_max_body_size 60M` | network failure in the console |
 | PHP | `docker/php/uploads.ini` | `upload_max_filesize=52M`, `post_max_size=60M` | same |
-| Livewire (temporary upload) | aligned to the kit key by `KitServiceProvider` | 10 MB | 422 on the XHR, generic error |
+| Livewire (temporary upload) | aligned to the kit key by `KitServiceProvider`, with 1 MB of headroom | 11 MB | 422 on the XHR, generic error |
 | Filament (`->maxSize()`) | the kit key | 10 MB | **a proper message, on the field** |
 
 Only the last one refuses with a clear message — which is why the kit aligns Livewire to the key

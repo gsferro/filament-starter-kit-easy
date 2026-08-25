@@ -96,11 +96,15 @@ class KitServiceProvider extends ServiceProvider
      *
      * Sem esta linha, o default do Livewire é `max:12288`
      * (vendor/livewire/livewire/src/Features/SupportFileUploads/FileUploadConfiguration.php:116)
-     * — 12 MB, contra os 10 MB de fábrica do kit. A folga é inócua enquanto o
-     * teto do kit é menor, e vira erro obscuro no instante em que alguém sobe
-     * `KIT_UPLOAD_MAXIMO_MB` acima de 12: todo arquivo entre 12 MB e o novo teto
-     * falharia sem nenhuma mensagem sobre tamanho. A promessa de que a chave é
-     * fácil de mudar só vale se ela mudar as duas camadas.
+     * — 12 MB, fixo. É mais frouxo que os 10 MB de fábrica do kit e mais
+     * ESTREITO no instante em que alguém sobe `KIT_UPLOAD_MAXIMO_MB` acima de 12:
+     * todo arquivo entre 12 MB e o novo teto falharia sem nenhuma mensagem sobre
+     * tamanho. A promessa de que a chave é fácil de mudar só vale se ela mudar as
+     * duas camadas.
+     *
+     * E a conta é `emKbComFolgaDoLivewire()`, não `emKb()`: igualar os dois tetos
+     * torna a mensagem de erro do campo INALCANÇÁVEL, porque o Livewire recusa
+     * antes de o formulário validar. O docblock daquele método tem a medição.
      *
      * `config()->set()` em vez de publicar o `config/livewire.php`: o projeto
      * não tem esse arquivo, e publicá-lo traria ~130 linhas de configuração
@@ -113,7 +117,7 @@ class KitServiceProvider extends ServiceProvider
         config()->set('livewire.temporary_file_upload.rules', [
             'required',
             'file',
-            'max:'.TetoDeUpload::emKb(),
+            'max:'.TetoDeUpload::emKbComFolgaDoLivewire(),
         ]);
     }
 

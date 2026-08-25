@@ -90,6 +90,38 @@ três arquivos, e só um deles documentado.
   `vendor/laravel/framework/src/Illuminate/Validation/Concerns/ValidatesAttributes.php:2822`, que
   divide o tamanho por 1024). Sem ambiguidade real, mas é onde a feature erra se ninguém escrever.
 
+- **RQ-04 × `.ico` e `.tiff`** (devolvido pela `feature-test-design`) — a regra `image` do Laravel
+  é uma allow-list de nove formatos (`ValidatesAttributes.php:1533`), e `.ico` e `.tiff` não estão
+  nela. Os dois **são** tipos de imagem, então recusá-los contraria a letra de RQ-04, e `.ico` é
+  plausível num campo de favicon.
+  - **Assumido**: o trade-off de ADR-02 vale — a lista mantida pelo framework é preferível a nove
+    strings congeladas, e favicon moderno é PNG.
+  - **Se negado**: trocar `->rule('image')` por `->acceptedFileTypes([… 'image/x-icon', 'image/tiff'])`
+    no campo `favicon`, e o caso que fixa a premissa inverte de sinal.
+
+- **Arquivo de 0 byte** (devolvido pela `feature-test-design`) — o requisito define teto e **não
+  define piso**. Medido: um arquivo de 0 KB com nome `.png` passa `max`, passa `image` (o MIME vem
+  do nome), grava no disco `public`, e um favicon de 0 byte quebra o `<head>` de toda página sem
+  erro em lugar nenhum.
+  - **Assumido**: fora desta entrega. Não há cláusula, e inventar `min:1` seria chutar valor.
+  - **Consequência declarada**: fica como **lacuna** no checklist de taxonomia do `04`, com o
+    mutante correspondente sem matador. É dívida registrada, não defeito escondido.
+  - **Se confirmado como defeito**: um cenário por família de campo, na fronteira 0 KB / 1 KB.
+
+- **O piso de 1 MB quando a env é inválida** (devolvido pela `feature-test-design`) — o requisito
+  diz "pode subir arquivos de ate 10mb" e não diz o que fazer com valor **inválido**.
+  `NumeroDoEnv::positivo()`, que `.ai/rules/config.md` obriga a usar, manda negativo e texto para
+  **1 MB**, não para o default. Um typo plausível (`KIT_UPLOAD_MAXIMO_MB=10 MB`, com a unidade
+  escrita junto) derrubaria o teto da instalação inteira, em silêncio.
+  - **Assumido**: é o comportamento documentado da classe, e o argumento de ADR-01 vale — o pior
+    caso passa a ser um teto curto e **visível**, que faz alguém corrigir o `.env`.
+  - **Se negado**: valor inválido cai no default (10240) em vez do piso, o que exige uma regra nova
+    em `NumeroDoEnv` — infra compartilhada, decisão do dono do kit e não desta wiki.
+
+- **Texto das mensagens de erro e do `helperText`** — o requisito não determina nenhuma frase.
+  - **Assumido**: detalhe de implementação. As asserções sobre texto existem para provar que a
+    mensagem em MB (e não em kilobytes) chega ao formulário, não para congelar a redação.
+
 ## Fora de Escopo (declarado)
 
 - Anti-vírus, sanitização de SVG (DOMPurify e afins) ou reescrita de imagem no upload — o
