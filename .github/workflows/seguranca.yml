@@ -1,0 +1,65 @@
+name: Seguranca
+
+# Workflow SEPARADO do `ci.yml` de proposito, e o motivo e o instalador: `kit:install
+# --create-project` APAGA este arquivo junto com o `.snyk`. A varredura e o gate DESTE
+# repositorio — ela olha a org e o projeto do Snyk do starter-kit —, e quem instala o kit
+# nao herda nem o vinculo nem um job que avisaria "falta SNYK_TOKEN" para sempre.
+#
+# Arquivo proprio significa que o instalador apaga UM ARQUIVO. Enquanto o job vivia dentro
+# do `ci.yml`, remover exigiria cirurgia de YAML num arquivo que o usuario tambem edita.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  seguranca:
+    # Varredura de dependencias em TODO push e PR, e existe por um motivo especifico: a
+    # integracao do app do Snyk no GitHub so escaneia quando o manifesto MUDA. Tres PRs
+    # seguidos desta rodada voltaram "No manifest changes detected" e passaram sem escanear
+    # nada — check verde que nao olhou. Este job olha sempre.
+    #
+    # Sem PHP e sem `composer install`: o Snyk le `composer.lock` e `package-lock.json`
+    # diretamente, e `--all-projects` cobre os dois. Instalar dependencias aqui so gastaria
+    # minuto de runner.
+    #
+    # O `.snyk` da raiz e lido por default — nao passamos `--policy-path`. Achado aceito se
+    # silencia LA, com issue ID, `reason` e `expires`, nunca afrouxando o threshold aqui.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+
+      # PR de fork nao recebe secret, e repositorio recem-clonado tambem nao tem. Nos dois
+      # casos o job AVISA e passa, em vez de ficar vermelho para sempre por falta de
+      # configuracao. O aviso e deliberado: varredura que nao roda em silencio e pior que
+      # varredura nenhuma, porque o check verde diz que olhou.
+      - name: Verificar o token
+        id: token
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -z "$SNYK_TOKEN" ]; then
+            echo "::warning title=Varredura nao executada::SNYK_TOKEN ausente. Adicione o secret (app.snyk.io/account -> Auth Token) para o Snyk rodar."
+            echo "tem=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "tem=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Instalar o Snyk
+        if: steps.token.outputs.tem == 'true'
+        run: npm install -g snyk
+
+      # Reprova em high e critical. Para afrouxar, troque por `--severity-threshold=critical`
+      # — mas a resposta certa para um achado aceito e o bloco `ignore` do `.snyk`, que
+      # registra QUEM aceitou, POR QUE e ATE QUANDO.
+      - name: Varredura de dependencias (Snyk)
+        if: steps.token.outputs.tem == 'true'
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk test --all-projects --severity-threshold=high

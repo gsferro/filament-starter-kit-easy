@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Support\CustomizadorDaInstalacao;
+use App\Support\VinculoDoSnyk;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -39,7 +40,8 @@ class KitInstall extends Command
         {--force : Recria o banco SQLite do zero (APAGA os dados existentes) e refaz as cinco perguntas}
         {--custom : Refaz só o que não toca o banco — nome e cor — e sai. Não apaga nada}
         {--no-custom : Pula as perguntas de customização e instala com os padrões}
-        {--no-support : Pula o convite para dar uma estrela ao kit no GitHub}';
+        {--no-support : Pula o convite para dar uma estrela ao kit no GitHub}
+        {--create-project : Uso interno do post-create-project-cmd: apaga o que so serve ao repositorio do kit}';
 
     protected $description = 'Instala o starter-kit: banco, migrations, seeders, permissões e assets';
 
@@ -94,6 +96,10 @@ class KitInstall extends Command
 
         if (! $this->option('no-npm')) {
             $this->construirFrontend();
+        }
+
+        if ($this->option('create-project')) {
+            $this->desvincularDoSnyk();
         }
 
         $this->banner();
@@ -430,6 +436,37 @@ class KitInstall extends Command
      * README: sete itens que são código ou dado de tela e não cabem num prompt.
      * Se este resumo encolher, eles deixam de ser descobertos.
      */
+    /**
+     * Apaga o vínculo com o Snyk do kit — que é do kit, e não de quem instala.
+     *
+     * O porquê de cada arquivo está em `App\Support\VinculoDoSnyk`. O que importa AQUI é
+     * quando isto roda, e a resposta é: só quando o `post-create-project-cmd` pede.
+     *
+     * Este comando roda nos DOIS lados — no `composer create-project` de quem instala e, à
+     * mão, dentro do repositório do kit: o job `instalacao` do CI faz exatamente isso, e
+     * `composer setup` é o que se roda depois de clonar. Apagar sempre destruiria os arquivos
+     * da própria fonte e sujaria a árvore no CI.
+     *
+     * Quem sabe a diferença é o CHAMADOR, não o comando. Então o `post-create-project-cmd`
+     * passa `--create-project`, e mais ninguém passa — nem o `setup`, que é de clone. Sem
+     * heurística de `.git` ou de nome de pasta: essas erram, um flag não. Há caso de teste
+     * guardando os dois scripts do `composer.json`, porque escrever o flag no `setup` por
+     * engano é fácil e o estrago é exatamente o que este desenho evita.
+     */
+    private function desvincularDoSnyk(): void
+    {
+        $apagados = VinculoDoSnyk::remover(base_path());
+
+        if ($apagados === []) {
+            return;
+        }
+
+        $this->components->task(
+            'Removendo o vínculo com o Snyk do kit ('.count($apagados).' arquivo(s))',
+            fn (): bool => true,
+        );
+    }
+
     private function resumoDaCustomizacao(): void
     {
         if ($this->resumo === []) {
