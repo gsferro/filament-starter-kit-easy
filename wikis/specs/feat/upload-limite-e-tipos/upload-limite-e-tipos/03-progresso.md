@@ -1,6 +1,6 @@
 # Progresso — Limite e tipos de upload
 
-**Concluída em** 2026-08-24. Base: `origin/main` em `21cbb80` (v0.19.4), depois de rebase.
+**Concluída em** 2026-08-25. Base: `origin/main` em `21cbb80` (v0.19.4), depois de rebase.
 
 ## 1. A chave de configuração
 
@@ -18,7 +18,7 @@
 ## 3. Os três campos da tela de configurações
 
 - [x] `arquivo()` recebe o texto de ajuda por argumento
-- [x] `->rule('image')` (recusa SVG), `->maxSize(TetoDeUpload::emKb())`
+- [x] `->rule('mimes:'.FORMATOS_DE_IMAGEM)` (recusa SVG e só SVG), `->maxSize(TetoDeUpload::emKb())`
 - [x] `validationMessages()` com o número em MB
 - [x] `helperText` citando teto e recusa de SVG nos três campos
 
@@ -42,7 +42,7 @@
 
 ## Testes
 
-- [x] `tests/Kit/UploadLimiteETiposTest.php` — CT-01..CT-09, CT-21, CT-22 (41 casos com datasets)
+- [x] `tests/Kit/UploadLimiteETiposTest.php` — CT-01..CT-09, CT-21, CT-22, CT-23 (45 casos com datasets)
 - [x] `tests/Kit/UploadLimiteETiposDocumentacaoTest.php` — CT-18, CT-19, CT-20
 - [x] `tests/Tenancy/UploadLimiteETiposTenancyTest.php` — CT-10..CT-13, CT-16, CT-21 (11 casos)
 
@@ -50,7 +50,7 @@
 
 - [x] `vendor/bin/pint --dirty --format agent` → passed
 - [x] `vendor/bin/phpstan analyse --no-progress` → 0 erros
-- [x] `php artisan test --testsuite=Kit --filter=UploadLimiteETipos` → 41/41
+- [x] `php artisan test --testsuite=Kit --filter=UploadLimiteETipos` → 45/45
 - [x] `php artisan test --testsuite=Tenancy --filter=UploadLimiteETipos` → 11/11
 - [x] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy` → base não caiu
 - [x] `composer test:browser`
@@ -79,6 +79,21 @@
 | 5 | não criar segunda chave de config em MB — a conversão é código, não config | sim | ADR-01 |
 | 6 | recusada: "deixar a conversão inline nos cinco campos em vez de criar `TetoDeUpload`" | recusada — `intdiv((int) config(…), 1024)` apareceria em cinco encadeamentos, em três arquivos, e conversão de unidade por cópia é como um teto diverge do texto que o anuncia | ADR-06 |
 
+## Quality Gate (step 8)
+
+**Veredito: `APROVADO COM DÉBITO`**, ciclo 1 de 3. Relatório em `06-relatorio-qa.md`.
+
+| Achado | Severidade | Destino | Situação |
+|---|---|---|---|
+| QA-01 — `.ico` recusado no favicon, com o kit embarcando um `.ico` | Major | implementação + especificação | corrigido no ciclo |
+| QA-02 — mensagem do campo inalcançável com os tetos iguais | Major | implementação | corrigido no ciclo |
+| QA-03 — regra crua avaliada como closure do Filament (quebrava no envio) | Blocker | implementação | corrigido no ciclo |
+| QA-04 — `public/favicon.ico` do repo tem 0 byte | Minor | não-defeito desta feature | pré-existente, fora do diff |
+| QA-05 — arquivo de 0 byte é aceito | Minor | especificação | **débito declarado** |
+
+O débito é QA-05: o requisito define teto e não define piso, e inventar `min:1` seria chutar valor.
+Registrado em `## Ambiguidades` do `00-requisito.md`, com o mutante declarado sem matador no `04`.
+
 ## Blockers
 
 Nenhum aberto.
@@ -105,6 +120,10 @@ Nenhum aberto.
   (`vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:872`), então regra passada crua é
   **avaliada** com injeção de utilitários em vez de entregue ao validador. A tela abria normalmente e
   quebrava no envio, com `"[$atributo] was unresolvable"`.
+
+- **A barreira de tipo mudou de `rule('image')` para `mimes:` com lista escrita.** Achado QA-01 do
+  quality gate: a regra `image` do Laravel recusa `.ico`, e o kit serve `public/favicon.ico`. Ver
+  ADR-02, que teve a justificativa corrigida junto — ela afirmava que o kit usava PNG.
 
 - **Os casos de documentação foram para arquivo próprio.** O plano os punha no arquivo principal; a
   `feature-test-design` os separou, seguindo o padrão de `ConfiguracoesDoKitDocumentacaoTest` e
