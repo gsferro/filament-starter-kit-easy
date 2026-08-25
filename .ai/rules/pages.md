@@ -19,6 +19,16 @@ O valor guardado sobrevive porque `$settings->fill($data)` aplica só as chaves 
 
 `->revealable()` pode ficar: o que ele revela agora é o que a PESSOA acabou de digitar, que é conferência de digitação, não exposição do que estava gravado.
 
-Cubra em par, sempre: um caso assertando que o segredo NÃO está no HTML (`assertOk()` junto, senão um 500 passa por engano), e outro provando que ele **sobrevive** a um salvamento que não o tocou. Sem o segundo, apagar o segredo passaria no primeiro.
+Cubra em **trio**, e o terceiro caso é o que faltou e custou um Blocker:
+
+1. o segredo NÃO está no HTML (`assertOk()` junto, senão um 500 passa por engano);
+2. ele **sobrevive** a um salvamento que não o tocou;
+3. ele **é gravado e lido de volta** quando a pessoa digita um valor novo.
+
+Sem o (3), os dois primeiros passam num campo que **nunca grava** — e foi exatamente o que aconteceu. Na v0.19.9 o quality gate achou que `client_secret` e a senha de SMTP não podiam ser gravados pela tela: a closure era `fn (?string $estado)`, e o Filament resolve parâmetro de closure **por nome** (`schemas/src/Components/Component.php:87-98`); nome desconhecido com tipo escalar não resolve (`support/src/Concerns/EvaluatesClosures.php:143-160`), a closure recebia `null`, `filled(null)` era `false` sempre. O nome é `$state`.
+
+O caso (2) passava por construção: o valor sobrevivia porque nunca era escrito.
+
+E há um quarto ponto, fora do formulário: **a chave precisa estar em `encrypted()`**. Duas vezes ela ficou de fora e produziu defeito diferente — segredo em texto claro na trilha de `audits` (o listener mascara comparando com essa lista), e `addEncrypted` na migration sem o par na classe, o que cifra na ida e devolve ciphertext na volta. Ao acrescentar campo de segredo, confira os quatro: fill, dehydrate, `encrypted()`, e o trio de casos.
 
 Vale para `mail_password` e `login_google_client_secret` hoje, e para o próximo. Os dois estão em `ConfiguracoesDoKit::encrypted()`.

@@ -2,6 +2,40 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [Nao lancado]
+A tela de boas-vindas entra na galeria dos READMEs, e duas rules ganham a emenda que a
+rodada anterior tornou necessaria.
+
+### Adicionado
+- **`art/boas-vindas.png` na galeria dos dois READMEs**, com thumb clicavel. A captura mostra a
+  rota `/` como ela e: os tres cartoes de painel, o que o `kit:install` personalizou, e a config
+  do kit — sem nenhum segredo, que e exatamente o que a wiki daquela tela prometeu.
+- **A captura `boas-vindas` entrou na allowlist de `KitArte`**, entao ela e publicada e nao
+  apenas gerada. Arquivo nao declarado continua sendo reportado e nunca publicado.
+
+### Corrigido
+- **A captura `admin-papeis-import-export` voltou a passar.** Ela estourava
+  `Timeout 45000ms exceeded` tentando clicar na aba do painel `/app`:
+  `[role="tab"]:has-text("Painel /app")` nao tem seletor estavel, e `text=` e ambiguo com o
+  select "Acesso ao painel" — ambiguidade que o comentario do proprio teste ja documentava.
+  Agora ela mira o papel `admin`, cujas 126 permissoes vivem na aba que abre sozinha: nenhum
+  clique em aba, e a imagem mostra caixas MARCADAS em vez de uma secao `/admin` vazia.
+
+### Alterado
+- **`.ai/rules/settings.md`**: "chave lida no boot nao pode virar Settings" ganhou a metade que
+  faltava — ela PODE, com um decisor por request na frente, e o padrao tem tres partes
+  (estender o middleware existente, aplicar SEMPRE e decidir dentro, provar por `route:list`).
+  A referencia e `ExigirEmailVerificado`, da v0.19.8.
+- **`.ai/rules/pages.md`**: o par de casos de teste para campo de segredo virou TRIO. O terceiro
+  — gravar e ler de volta do banco — e o que faltava, e a falta dele deixou passar um
+  `client_secret` que nunca gravava: a closure era `fn (?string $estado)`, e o Filament resolve
+  parametro de closure por NOME. Os dois primeiros casos passavam por construcao.
+- **Tres contradicoes de documentacao no proprio codigo**, todas criadas pela v0.19.8 e nenhuma
+  detectada por teste: um comentario datava a mudanca na "v0.20", versao que nunca existiu (e
+  v0.19.8), e outros dois diziam "ao contrario de `registro_verificar_email`, estas chaves PODEM
+  ser editadas" — falso desde que ela mesma passou a ser editavel. O contraste real e outro:
+  estas nunca precisaram de decisor.
+
 ## [0.19.9] - 2026-08-25
 Login social com mais provedores — e a extracao da abstracao que a entrega do Google
 deliberadamente NAO fez.

@@ -312,6 +312,8 @@ the installation.
 
 ## The `/` route is public and shows no secrets
 
+[![Welcome page on the / route: three cards for the /app, /admin and /infra panels, plus two sections with what kit:install customised](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/boas-vindas.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/boas-vindas.png)
+
 Instead of Laravel's `welcome.blade.php`, the root serves `App\Filament\Pages\BoasVindas`: one
 card per panel (`/app`, `/admin`, `/infra`) and an infolist with what the installation
 customised — name, colour, tenancy, retention windows, kit version.

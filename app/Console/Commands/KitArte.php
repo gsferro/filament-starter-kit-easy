@@ -65,6 +65,7 @@ class KitArte extends Command
      */
     private const IMAGENS = [
         'admin-papeis-import-export',
+        'boas-vindas',
         'app-projetos-anexos',
         'export-modal',
         'import-modal',

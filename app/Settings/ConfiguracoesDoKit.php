@@ -274,7 +274,7 @@ final class ConfiguracoesDoKit extends Settings
              * boot, já com o `Schema::hasTable()` e o try/catch do provider — então
              * `migrate` em base nova, clone e CI seguem lendo o `.env`.
              *
-             * **`verificar_email` ESTA aqui desde a v0.20, e entrar custou uma inversao.**
+             * **`verificar_email` ESTA aqui desde a v0.19.8, e entrar custou uma inversao.**
              * Ela nao podia estar: o `AppPanelProvider` a lia no BOOT, e o middleware de
              * e-mail verificado e fixado no array da rota no momento do registro
              * (`vendor/filament/filament/src/Pages/Concerns/HasRoutes.php:91`), nao por
@@ -294,7 +294,7 @@ final class ConfiguracoesDoKit extends Settings
             /*
              * Login social e rodapé — três chaves por provedor, mais o rodapé.
              *
-             * Ao contrário de `registro_verificar_email`, estas PODEM ser editadas: as que
+             * Estas nunca precisaram do decisor que `registro_verificar_email` precisou: as que
              * decidem algo são lidas por request — o `abort_unless()` do
              * `LoginSocialController` e a closure do render hook dos botões. Nada aqui é
              * decidido no boot do painel, e as rotas de `/auth/{provedor}/*` nascem sempre de

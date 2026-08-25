@@ -126,24 +126,31 @@ it('captura o modal de export', function (): void {
  * ponto inteiro de elas existirem.
  */
 it('captura a matriz de papéis com Import e Export', function (): void {
-    $papel = Role::query()->where('name', 'admin_app')->firstOrFail();
+    /*
+     * O papel `admin`, e não o `admin_app` — e a troca é o conserto de uma captura que ficou
+     * impossível de tirar.
+     *
+     * Desde a v0.18.11 os painéis são um tab VERTICAL, e a aba que abre é a do painel do próprio
+     * /admin. Para fotografar as permissões de um papel do /app era preciso clicar na aba dele, e
+     * o clique não tem seletor estável: `[role="tab"]:has-text("Painel /app")` estoura o teto de
+     * 45 s, e `text=` é ambíguo com o select "Acesso ao painel" lá em cima — o Playwright recusa.
+     *
+     * A imagem que o README precisa é "a matriz com Import e Export", e o papel `admin` a dá
+     * melhor: as 126 permissões dele são todas do painel que já está aberto, então a captura sai
+     * com as caixas MARCADAS. A do `admin_app` saía com a seção do /admin vazia — tecnicamente
+     * correta e ilegível numa galeria.
+     *
+     * Sem `hover()`: ele existia para rolar até a seção do /app, que não é mais o alvo.
+     */
+    $papel = Role::query()->where('name', 'admin')->firstOrFail();
 
-    // Aquece o /admin, e SÓ ele: este cenário visita o /admin, então é o /admin que o processo
-    // precisa ter visto. Aquecer o /app aqui é exatamente o que publicava a captura errada.
+    // Aquece o /admin, e só ele: aquecer o /app aqui é o que publicava a captura errada.
     $this->get('/admin/shield/roles');
 
-    // O RoleResource do Shield vive sob `/admin/shield/roles`, não `/admin/roles`.
-    //
-    // `hover()` antes do screenshot: o plugin não tem `scrollTo()`, e o Playwright rola o
-    // elemento para a viewport antes de posicionar o mouse. Sem isso a captura pega a
-    // seção do painel /admin, onde o `admin_app` não tem permissão nenhuma marcada —
-    // tecnicamente correto e ilegivelmente confuso num README.
     visit("/admin/shield/roles/{$papel->getRouteKey()}/edit")
         ->resize(1400, 875)
-        ->assertSee('Projeto')
-        // Seletor por atributo, e não `text=`: o texto "Painel /app" também casa com o
-        // select "Acesso ao painel" lá em cima, e o Playwright recusa seletor ambíguo.
-        ->hover('[id="form.painel-app::data::section-heading"]')
+        ->assertSee('Convite')
+        ->assertSee('Import')
         ->screenshot(fullPage: false, filename: 'admin-papeis-import-export');
 })->group('browser', 'art');
 
@@ -238,3 +245,25 @@ function anexoColorido(array $cor): string
 
     return $caminho;
 }
+
+/**
+ * A tela de boas-vindas da rota `/` — a primeira coisa que alguém vê depois de instalar.
+ *
+ * Sem `arranjarPainelApp()` e sem `actingAs` relevante: a rota é **anônima** por desenho, e é
+ * assim que ela precisa aparecer na documentação. O `beforeEach` autentica alguém, então o
+ * `logout()` é o que garante que a captura mostre o que o visitante vê — com o usuário logado,
+ * o menu de usuário apareceria no canto e a imagem mentiria sobre a tela.
+ *
+ * `assertSee` antes do screenshot, e não `wait()`: os cartões vêm de `harvirsidhu/filament-cards`
+ * e a infolist é renderizada no servidor, mas o painel bootado pelo `panel:app` carrega CSS e o
+ * script de tema — capturar antes disso produz uma tela sem estilo, que é o defeito clássico
+ * destas capturas.
+ */
+it('captura a tela de boas-vindas da raiz', function (): void {
+    auth()->logout();
+
+    visit('/')
+        ->resize(1400, 875)
+        ->assertSee('Painel')
+        ->screenshot(fullPage: false, filename: 'boas-vindas');
+})->group('browser', 'art');

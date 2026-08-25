@@ -454,7 +454,7 @@ class ConfiguracoesDoKit extends SettingsPage
     /**
      * Login social e o rodapé da tela de login.
      *
-     * Ao contrário de `registro_verificar_email`, estas chaves PODEM viver aqui: as que decidem
+     * Estas nunca precisaram do decisor que `registro_verificar_email` precisou: as que decidem
      * algo são lidas por request — o `abort_unless()` do `LoginSocialController` e a closure do
      * render hook dos botões. Nada é decidido no boot do painel.
      *

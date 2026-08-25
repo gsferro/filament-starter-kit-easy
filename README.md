@@ -347,6 +347,8 @@ administrador de uma organização não é credencial para administrar a instala
 
 ## A rota `/` é pública e não mostra segredo
 
+[![Tela de boas-vindas na rota /: tres cartoes para os paineis /app, /admin e /infra, e duas secoes com o que o kit:install personalizou](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/boas-vindas.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/boas-vindas.png)
+
 No lugar da `welcome.blade.php` do Laravel, a raiz serve `App\Filament\Pages\BoasVindas`: um
 cartão por painel (`/app`, `/admin`, `/infra`) e uma infolist com o que a instalação
 personalizou — nome, cor, tenancy, prazos de retenção, versão do kit.
