@@ -2,6 +2,58 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.19.6] - 2026-08-25
+
+Teto de tamanho e restricao de formato em todos os cinco campos de upload do kit, com a chave em
+`config/kit.php` para quem instala mudar sem tocar em codigo.
+
+### Adicionado
+
+- **Teto de upload configuravel**, valendo para os cinco campos do kit — logo, favicon, arte do
+  login e os anexos de Projeto — e para o upload TEMPORARIO do Livewire, alinhados.
+
+  A unidade e **KILOBYTE**, e isso e deliberado: e o que os consumidores recebem (`->maxSize()` do
+  Filament e o `max:` do Livewire sao os dois em KB), entao traduzir de MB no meio do caminho so
+  criaria um lugar a mais para errar. O valor passa por `NumeroDoEnv`, senao chave vazia daria
+  `->maxSize(0)`.
+
+- **SVG e recusado**; os outros formatos de imagem entram, e `.ico` tambem — ver abaixo.
+
+### Corrigido
+
+- **A tela abria e quebrava no ENVIO** (era Blocker). `CanBeValidated::getValidationRules()` faz
+  `$rule = $this->evaluate($rule)`
+  (`vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:872`), entao regra entregue
+  crua a `->rule()` era avaliada como closure do Filament em vez de repassada ao validador:
+  *"An attempt was made to evaluate a closure for [SpatieMediaLibraryFileUpload], but [$atributo]
+  was unresolvable."*
+
+  Quem pegou foi o par de casos que **envia** de verdade. Nenhum caso de "a tela abre" pegaria — e
+  e a regra *uma tela aberta nao e uma tela que grava*, de `.ai/rules/testes.md`, aplicada ao anexo.
+
+- **`.ico` era recusado, e o kit embarca um `.ico`.** Um `.ico` real tem
+  `getMimeType() === 'image/vnd.microsoft.icon'`, e a regra `image` do Laravel tem nove extensoes —
+  `ico` nao e uma delas. A ADR aceitava a perda com a frase *"favicon moderno e PNG, e e o que o
+  kit ja usa"*, escrita a partir do que se esperava encontrar. **O kit serve
+  `public/favicon.ico`**: desta vez a conclusao tambem estava errada, nao so o motivo. O achado nao
+  saiu de caso de teste — saiu de um `ls public/`.
+
+- **A mensagem de erro do campo era inalcancavel** quando os dois tetos coincidiam: o Livewire
+  recusa antes de o formulario existir, e o resultado era `erros=[]` com `gravado=NULL` — no
+  navegador, 422 no XHR com erro generico; num teste, indistinguivel de aceito e ignorado. Agora ha
+  **1 MB de folga** entre os tetos: pouco acima e recusado pelo CAMPO, com mensagem em portugues;
+  muito acima e cortado pelo Livewire. Os dois lados tem caso.
+
+### Sabido
+
+- **`public/favicon.ico` do repositorio tem 0 byte.** Existe, e referenciado, e esta vazio —
+  indistinguivel de ausente para o navegador. E pre-existente e fora do diff desta entrega, entao
+  nao foi tocado. Agora ha caminho para substituir: a tela de configuracoes passou a aceitar `.ico`.
+
+- O teto do PHP (`upload_max_filesize`, `post_max_size`) **nao** e governado por esta config, e um
+  teto de tela acima do teto do servidor produz erro obscuro em vez de mensagem. Os dois READMEs
+  dizem o que mudar junto para quem quiser um teto muito maior.
+
 ## [0.19.5] - 2026-08-25
 
 As oito atualizacoes de dependencia de agosto, numa passada.
