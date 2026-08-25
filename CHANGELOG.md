@@ -2,6 +2,47 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.19.5] - 2026-08-25
+
+As oito atualizacoes de dependencia de agosto, numa passada.
+
+### Alterado
+
+| Pacote | De | Para |
+|---|---|---|
+| `laravel/framework` | 13.25.0 | **13.26.1** |
+| `spatie/laravel-backup` | 10.3.1 | 10.3.2 |
+| `livewire/blaze` | 1.0.15 | **1.0.18** |
+| `laravel/boost` | 2.5.3 | 2.5.5 |
+| `fomvasss/laravel-ai-tasks` | 3.21.3 | 3.24.2 |
+| `vite` | 8.2.1 | 8.2.2 |
+| `concurrently` | 10.0.4 | 10.0.5 |
+| `@laravel/multiplex` | 0.4.2 | 0.4.3 |
+
+Fecha os 8 PRs do dependabot (#13 a #20) numa branch so. Oito merges em cadeia custariam 7
+rebases do `composer.lock` e 8 rodadas de CI para o mesmo resultado.
+
+O `livewire/blaze` foi para **1.0.18**, uma a mais que o PR pedia, porque e a que a restricao
+resolve hoje.
+
+O unico item com risco real e o `laravel/framework` subindo de MINOR debaixo de todo o kit.
+Suite completa depois do upgrade: **1024 passando**, 2691 assercoes, PHPStan 0, `composer audit`
+sem advisory — e o numero foi tirado DEPOIS do rebase sobre a 0.19.4, exercitando a combinacao
+deps novas + o hotfix da tela de papeis, que nenhuma das duas branches tinha testado sozinha.
+
+### Sabido
+
+- **O PR check do Snyk PASSOU neste PR** ("2 security tests have passed"), e ele muda o manifest
+  — ou seja, escaneou de verdade, ao contrario dos PRs sem mudanca de lock, em que ele reporta
+  "No manifest changes detected".
+
+  Isso e informacao nova sobre a pendencia aberta na 0.19.2, onde o mesmo check reprovou: a
+  suspeita de que o achado fosse **pre-existente no projeto** fica mais fraca, porque um scan
+  completo agora passa. Continua sem o ID que so o painel mostra, e o `.snyk` na raiz segue com
+  o aviso de que nao silencia nada enquanto nao tiver. Quem for fechar aquele item tem este dado
+  a mais: o achado provavelmente vive nas dependencias que o `laravel/socialite` trouxe, e nao
+  no resto do projeto.
+
 ## [0.19.4] - 2026-08-24
 
 Release de correcao urgente. **Se voce esta em 0.18.11, 0.19.0, 0.19.1, 0.19.2 ou 0.19.3,
