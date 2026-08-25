@@ -38,11 +38,20 @@
 #
 # ## O que fazer (o próximo que abrir isto)
 #
-# 1. Abrir o painel do achado e anotar pacote, severidade e o ID `SNYK-...`:
-#    https://app.snyk.io/org/gsferro/pr-checks/a8b0afb8-cbda-4c6a-be60-1c2e33270940
+# 1. Abrir o PROJETO no painel — o link de PR check que estava aqui venceu e nao serve:
+#    https://app.snyk.io/org/gsferro/project/a07058e0-1bff-4b06-8d33-578a7ae71120
+#    Anotar, de cada achado: pacote, severidade e o ID `SNYK-PHP-...`. Cuidado com a
+#    confusao que ja aconteceu: `a07058e0-...` e o ID do PROJETO, e ele NAO vai no bloco
+#    `ignore`. O que vai la e o ID do ACHADO, no formato `SNYK-PHP-PACOTE-1234567`.
 # 2. Se for de uma das cinco acima e não houver versão corrigida: acrescentar o ID no bloco
-#    `ignore` abaixo, com `reason` e `expires` curto (90 dias), no formato comentado.
+#    `ignore` abaixo, com `reason` e `expires` curto (90 dias), no formato comentado. Prefira
+#    `snyk ignore --id=... --reason=... --expiry=...` a editar a mao: o bloco tem um `- '*':`
+#    cuja indentacao errada faz o scan ignorar o arquivo EM SILENCIO.
 # 3. Se for **pré-existente** ou de outro pacote: NÃO ignorar. Corrigir em PR próprio.
+# 4. Se a reprovacao for de LICENCA ou politica da org, nao existe issue ID e este bloco nao
+#    serve — o ajuste e em Settings/Licenses da organizacao. O `composer audit` local da zero
+#    advisories, o que torna essa hipotese real. `snyk test --json` separa os dois casos:
+#    vulnerabilidade traz `id`, licenca vem em `licensesPolicy`.
 #
 # ponytail: sem os IDs este arquivo é só o rastro da decisão. O teto é conhecido e está
 # escrito; o próximo passo é um clique no painel, não código.
