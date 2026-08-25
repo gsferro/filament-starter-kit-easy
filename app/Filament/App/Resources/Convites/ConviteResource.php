@@ -18,6 +18,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Auth\Access\Response;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -40,6 +41,9 @@ use UnitEnum;
 class ConviteResource extends Resource
 {
     use BadgeContagemNavegacao;
+
+    /** Motivo da negação, e ela existe para não haver 403 mudo em tela. */
+    private const MOTIVO_DA_NEGACAO = 'Convite não se exclui a partir da organização: reenvio e revogação vivem no /admin.';
 
     protected static ?string $model = Convite::class;
 
@@ -170,7 +174,23 @@ class ConviteResource extends Resource
     /**
      * Convite não se edita nem se exclui a partir da organização: reenvio e revogação
      * vivem no /admin. Sem página de edição também não há rota para alcançar.
+     *
+     * A negação vive em `getDeleteAuthorizationResponse()` porque é ela que o Filament v5
+     * consulta ao autorizar a ação — `canDelete()` é invólucro de leitura e o framework nunca
+     * o chama. O raciocínio completo está no docblock equivalente do `UserResource` do /app e
+     * na ADR-01 da wiki `travas-de-exclusao-e-upload-anonimo` (achado F-01 da auditoria).
      */
+    public static function getDeleteAuthorizationResponse(Model $record): Response
+    {
+        return Response::deny(self::MOTIVO_DA_NEGACAO);
+    }
+
+    public static function getDeleteAnyAuthorizationResponse(): Response
+    {
+        return Response::deny(self::MOTIVO_DA_NEGACAO);
+    }
+
+    /** Ficam pela navegação e pela busca global; não é aqui que a ação é autorizada. */
     public static function canDelete(Model $record): bool
     {
         return false;

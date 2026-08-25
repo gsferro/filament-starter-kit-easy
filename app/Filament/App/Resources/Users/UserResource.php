@@ -21,6 +21,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Auth\Access\Response;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -42,6 +43,9 @@ class UserResource extends Resource
 {
     use AprovacaoDeCadastro;
     use BadgeContagemNavegacao;
+
+    /** Motivo da negação, e ela existe para não haver 403 mudo em tela. */
+    private const MOTIVO_DA_NEGACAO = 'Excluir usuário é ato global e não se faz a partir de uma organização.';
 
     protected static ?string $model = User::class;
 
@@ -93,7 +97,40 @@ class UserResource extends Resource
      * administra UMA organização não pode alcançar isso.
      *
      * A permissão `Delete:User` existe no papel — a matriz é a do painel inteiro. A trava
-     * é aqui, no resource, onde a decisão se lê. Ver ADR-08.
+     * é por PAINEL, e é isto que a nega. Ver ADR-08 e ADR-01 da wiki
+     * `travas-de-exclusao-e-upload-anonimo`.
+     *
+     * ## Por que aqui, e não em `canDelete()`
+     *
+     * `canDelete()` devolvia `false` e não negava nada: no Filament v5 ele é um invólucro que
+     * **lê** esta resposta (`Resource/Concerns/HasAuthorization.php:154-157`), e quem decide a
+     * ação chama a resposta DIRETO — `Resources/Pages/Page.php:313` para a `DeleteAction` e
+     * `:329` para a `DeleteBulkAction`. O framework nunca chama `canDelete()`: buscar
+     * chamadores em `vendor/filament/filament/src/` devolve zero linhas.
+     *
+     * A auditoria do Blueprint pegou isso (F-01). O que impedia a exclusão até aqui era a
+     * ausência de `DeleteAction` em `recordActions()` — barreira por falta de superfície, que
+     * o gerador do Filament desfaz sozinho no próximo `make:filament-resource`.
+     *
+     * ## Por que NÃO na policy
+     *
+     * `UserPolicy::delete()` é global: negar lá proibiria também o `/admin`, onde excluir
+     * usuário é legítimo. A assimetria por painel é a feature.
+     */
+    public static function getDeleteAuthorizationResponse(Model $record): Response
+    {
+        return Response::deny(self::MOTIVO_DA_NEGACAO);
+    }
+
+    public static function getDeleteAnyAuthorizationResponse(): Response
+    {
+        return Response::deny(self::MOTIVO_DA_NEGACAO);
+    }
+
+    /**
+     * Ficam, e não são redundantes: `can*()` continua gateando navegação, badge e busca global,
+     * que são caminhos de request reais. O que eles NÃO fazem é autorizar a ação — ver o
+     * docblock acima.
      */
     public static function canDelete(Model $record): bool
     {
