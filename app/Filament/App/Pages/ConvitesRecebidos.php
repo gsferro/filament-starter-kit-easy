@@ -10,6 +10,7 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Pages\Page;
+use Filament\Schemas\Concerns\RestrictsFileUploadsToSchemaComponents;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -45,6 +46,16 @@ class ConvitesRecebidos extends Page implements HasTable
 {
     use ExigePermissaoDaTela;
     use InteractsWithTable;
+
+    /**
+     * Mesma correção da `BoasVindas`, e pelo mesmo motivo estrutural: a página herda o RPC de
+     * upload do Livewire pela cadeia até `BasePage` e não tem campo de upload no schema.
+     *
+     * Gravidade menor — aqui há sessão, e quem tem sessão já sobe arquivo em outras telas do
+     * painel. Entra como defesa em profundidade, no mesmo achado F-02 da auditoria. O porquê
+     * completo está no docblock da `BoasVindas`.
+     */
+    use RestrictsFileUploadsToSchemaComponents;
 
     protected string $view = 'filament.pages.convites-recebidos';
 
