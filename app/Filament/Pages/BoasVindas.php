@@ -7,6 +7,7 @@ namespace App\Filament\Pages;
 use Filament\Facades\Filament;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Concerns\RestrictsFileUploadsToSchemaComponents;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
@@ -53,6 +54,30 @@ use Illuminate\Contracts\View\View;
  */
 class BoasVindas extends CardsPage
 {
+    /**
+     * Fecha o RPC de upload do Livewire nesta página.
+     *
+     * A cadeia `CardsPage -> Filament\Pages\Page -> BasePage` compõe `InteractsWithSchemas`
+     * (`BasePage.php:8,23`), que compõe o `WithFileUploads` do Livewire e expõe
+     * `_startUpload` / `_finishUpload` no componente. Esta página **não tem campo de upload**:
+     * o RPC existe sem destino legítimo.
+     *
+     * E aqui a rota é PÚBLICA — `routes/web.php` monta esta classe em `/` com `panel:app`, que
+     * é o alias de `SetUpPanel` e boota o painel sem autenticar ninguém. Ou seja: um visitante
+     * sem conta alcançava o RPC. A auditoria do Filament Blueprint pegou (achado F-02).
+     *
+     * O catálogo da auditoria exclui da busca as classes que estendem `Page`, com a
+     * justificativa de que "páginas de painel reautorizam todo request". A premissa não vale
+     * aqui: esta não é página registrada em painel, é classe montada em rota própria, sem
+     * `canAccess()` e sem middleware de autenticação. Não há nada para reautorizar.
+     *
+     * O trait faz `abort_unless(isFileUploadForSchemaComponent(...), 403)` num hook `on('call')`
+     * do Livewire (`SchemasServiceProvider.php:63-77`). Sem campo de upload no schema, ele fecha
+     * o canal por completo. Ver ADR-02 e ADR-03 da wiki
+     * `travas-de-exclusao-e-upload-anonimo`.
+     */
+    use RestrictsFileUploadsToSchemaComponents;
+
     protected static string $layout = 'filament-panels::components.layout.simple';
 
     protected static ?string $title = 'Bem-vindo ao Starter Kit Easy';
