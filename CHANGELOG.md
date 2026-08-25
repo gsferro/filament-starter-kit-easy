@@ -30,6 +30,20 @@ deliberadamente NAO fez.
   | Google | `email_verified` no payload bruto |
   | LinkedIn | `email_verified` do userinfo OpenID — dai o driver `linkedin-openid`, e nao o `linkedin` legado, que nao informa verificacao nenhuma |
   | X | o X so devolve `confirmed_email`, entao a PRESENCA do e-mail e a prova |
+  | GitHub | o Socialite sobrescreve o e-mail com a entrada `primary` + `verified`, ou com nada — a presenca e a prova |
+  O GitHub parecia o caso que precisava de trabalho, e nao precisava — a primeira versao desta
+  entrega escreveu ~85 linhas para refazer a consulta a `/user/emails`, sobre uma leitura ERRADA
+  do vendor. A linha 48 do `GithubProvider` e uma atribuicao INCONDICIONAL: o e-mail e
+  sobrescrito com a entrada `primary && verified` ou com `null`, tanto no catch quanto quando
+  nada casa. Entao e-mail preenchido JA significa verificado, e nulo cai na barreira de
+  `email_ausente`. A chamada foi removida: o kit nao chama API de provedor nenhuma.
+  O que a garantia do GitHub depende e do escopo `user:email` — default do driver, e a chave
+  `scopes` da config SOMA em vez de substituir. Essa invariante e enforcada por CASO DE TESTE, e
+  nao por codigo em execucao: um `in_array` em `getApprovedScopes()` no runtime dependeria de o
+  GitHub sempre devolver `scope` na resposta do token, e se essa suposicao estivesse errada o
+  login do GitHub morreria inteiro. Invariante de configuracao se guarda com teste, nao com
+  indisponibilidade.
+
   | GitHub | o kit **refaz** a consulta a `/user/emails` e exige `primary` + `verified` |
   O GitHub e o caso que precisou de trabalho: o Socialite consulta `/user/emails`, escolhe a
   entrada `primary && verified` e **descarta a evidencia**, guardando so a string do endereco. E

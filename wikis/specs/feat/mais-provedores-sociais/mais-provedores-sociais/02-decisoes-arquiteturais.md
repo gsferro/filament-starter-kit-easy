@@ -170,8 +170,8 @@ isso do mesmo jeito**, e dois não expõem de jeito nenhum.
 |---|---|---|
 | **Google** | `src/Two/GoogleProvider.php:90-92` põe `email_verified` e o alias `verified_email` no payload; `setRaw()` em `:94` | booleano no bruto |
 | **LinkedIn OpenID** | `src/Two/LinkedInOpenIdProvider.php:61` pede a projeção, `:73` faz `setRaw()`, `:80` mapeia `email_verified` no objeto | booleano no bruto **e** no objeto |
-| **X** | `src/Two/TwitterProvider.php:61` pede `user.fields=…,confirmed_email`; `:74` mapeia `confirmed_email` para `email`; `XProvider.php:8` herda e só troca as URLs (`:15,:23,:31`) | **presença** do valor É a prova |
-| **GitHub** | `src/Two/GithubProvider.php:73` avalia `$email['primary'] && $email['verified']` — **e descarta a evidência**: `:48` guarda só a string | nenhuma, no bruto |
+| **X** | `src/Two/TwitterProvider.php:61` pede `user.fields=…,confirmed_email`; `:74` mapeia `confirmed_email` — e nada mais — para `email`; `XProvider.php:8` herda e reescreve as URLs e o próprio `getUserByToken()` (`:29`), com a **mesma** query (`:33`) | **presença** do valor É a prova |
+| **GitHub** | `src/Two/GithubProvider.php:47-49` **sobrescreve** o e-mail com o primeiro `primary && verified` (`:73`) ou com `null` (`:70` e `:76`) | **presença**: e-mail preenchido já é `primary && verified` |
 | **Facebook** | `src/Two/FacebookProvider.php:34` pede `verified` (nível de conta, legado na Graph v23.0 `:27`); o caminho OIDC `:134-167` não traz `email_verified` | nenhuma → **recusado**, ADR-05 |
 
 Dois detalhes que mudam o desenho e não são óbvios:
@@ -183,11 +183,20 @@ Dois detalhes que mudam o desenho e não são óbvios:
    (`ArrayAccess`, `:170-173`) lê o **bruto**, não os atributos — os dois acessores apontam para
    arrays diferentes. Ler pelo lugar errado devolveria `null` e, com falha fechada, recusaria
    todo login: um defeito que se manifesta como "o provedor nunca deixa ninguém entrar".
-2. **O GitHub tem um `catch` que engole.** `GithubProvider.php:62` chama `/user/emails` só quando
-   `'user:email'` está nos escopos (`:47`), e em qualquer falha faz `catch → return` (`:68-70`),
-   deixando em `$response['email']` o que `/user` devolveu — o e-mail do **perfil público**.
-   Então "e-mail não vazio" **não** é prova de verificação: é prova de que ou a verificação
-   passou, ou a chamada falhou. Indistinguível de fora.
+2. **O GitHub sobrescreve, e é isso que torna a presença uma prova.** `GithubProvider.php:47-49`
+   é uma atribuição **incondicional**: `$user['email'] = $this->getEmailByToken($token)`, sempre
+   que `'user:email'` está nos escopos. E `getEmailByToken()` devolve o primeiro
+   `primary && verified` (`:73`) ou **`null`** — tanto no `catch` (`:70`) quanto ao sair pelo fim
+   do método sem casar nada (`:76`). Então, para o GitHub, e-mail **preenchido** já significa
+   `primary && verified`, e e-mail **nulo** cai na barreira de `email_ausente` do controller.
+
+   **Esta leitura corrige uma anterior, e a correção encolheu o código em ~85 linhas.** A primeira
+   versão deste ADR afirmava que o `catch` deixava no lugar o e-mail do *perfil público*, e daí
+   concluía que o kit tinha de refazer a consulta a `/user/emails` para obter prova positiva. A
+   afirmação era falsa — a linha 48 atribui incondicionalmente — e a conclusão, portanto,
+   redundante. É exatamente o padrão que `.ai/rules/specs.md` nomeia: explicação escrita a partir
+   do que se esperava encontrar, com a conclusão parecendo certa por outro motivo. Custou uma
+   implementação inteira antes de alguém abrir a linha 48.
 
 ### Decisão
 
@@ -199,17 +208,32 @@ O enum ganha `emailVerificado(AbstractUser $doProvedor): bool`, com um `match` s
 - **X** — a presença de e-mail já é a prova (o X só devolve `confirmed_email`), então o ramo
   devolve `filled($doProvedor->getEmail())`. Documentado como tal, não escondido atrás de um
   `true`.
-- **GitHub** — o kit **refaz a chamada** a `https://api.github.com/user/emails` com o token, e
-  exige uma entrada com `primary === true`, `verified === true` e `email` igual ao que veio. É
-  prova positiva, não presumida, e fecha o buraco do `catch`.
+- **GitHub** — a presença também, pelo motivo do item 2 acima: o provider já entregou um
+  `primary && verified`, ou entregou `null`. O ramo é o **mesmo** do X.
+
+A invariante em que os dois ramos de presença se apoiam, no caso do GitHub, é uma só:
+`user:email` está sempre nos escopos. É o default do provider (`GithubProvider.php:16`), e a
+chave `scopes` de `config/services.php` passa por `scopes()`, que **soma**
+(`AbstractProvider.php:398`) — só `setScopes()` **substitui** (`:410`), e o kit não a chama.
+
+Essa invariante é enforçada por **caso de teste** (`CT-17`, que lê `getScopes()` do driver real),
+e não por código em execução. Um `in_array('user:email', $doProvedor->getApprovedScopes())` no
+runtime pareceria mais seguro e seria pior: ele depende de o GitHub sempre devolver `scope` na
+resposta do token (`AbstractProvider.php:261` monta o valor a partir dali), e se essa suposição
+estivesse errada o login do GitHub morreria inteiro. **Invariante de configuração se guarda com
+teste, não com indisponibilidade** — e trocar uma suposição de vendor não verificada por outra
+seria repetir o erro que este ADR acabou de corrigir.
 
 `filter_var` e não cast de bool, pelo motivo já medido no kit: o valor vem do JSON do provedor, e
 a string `"false"` num cast de bool é `true`.
 
 ### Alternativas Consideradas
 
-1. **Aceitar o e-mail do GitHub como verificado** — é o que a maioria dos tutoriais faz, e é
-   exatamente o furo que o `catch` abre. Recusada.
+1. **Refazer a consulta a `/user/emails` do lado do kit** — foi o que a primeira versão desta
+   entrega implementou, ~85 linhas, sobre a leitura errada do item 2. Recusada depois de ler a
+   linha 48: é redundante, custa uma requisição HTTP por login e cria um modo de falha (API do
+   GitHub fora = login recusado) que a ausência dela não tem — porque, sem ela, a mesma
+   indisponibilidade já faz o Socialite devolver `null` e a barreira de `email_ausente` recusar.
 2. **Confiar em `approvedScopes` para o GitHub** — `AbstractProvider::userInstance()` popula
    `setApprovedScopes()` em `:261`, então dá para saber se `user:email` foi concedido. Mas isso
    prova que o **escopo** foi concedido, não que a **chamada** funcionou — o `catch` continua
@@ -221,11 +245,13 @@ a string `"false"` num cast de bool é `true`.
 
 - **Positivas**: a barreira que o Google já tinha vale igual para os quatro, com prova positiva
   em todos.
-- **Negativas**: o GitHub custa **uma requisição HTTP a mais** por login, na mesma rota em que o
-  Socialite já bateu duas vezes. Aceito.
-- **Riscos**: a chamada do GitHub pode falhar por rede e recusar um login legítimo. É a direção
-  correta do erro (falha fechada), e o motivo vai para o log com o e-mail mascarado. Em teste,
-  `Http::fake()` — **nenhum caso sai para a rede**.
+- **Negativas**: dois provedores dependem de um argumento de **semântica do provedor** em vez de
+  um campo no payload, e argumento de semântica envelhece sem avisar. Mitigado por duas coisas: a
+  guarda de desmentido (um `email_verified` falso no bruto vence a presença, nos dois) e, no
+  GitHub, o caso de teste da invariante de escopo.
+- **Riscos**: o kit **não faz chamada de API de provedor nenhuma**, o que é uma consequência boa
+  da correção — não há modo de falha de rede próprio, e o caso `CT-19` assere isso com
+  `Http::preventStrayRequests()` no arquivo inteiro.
 
 ---
 

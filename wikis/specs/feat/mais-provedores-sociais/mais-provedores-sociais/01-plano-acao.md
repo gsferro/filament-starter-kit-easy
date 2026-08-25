@@ -234,15 +234,15 @@ autenticação em quatro arquivos, que é o oposto do que o channel serve.
 - `propriedadeDeSettings(string $sufixo): string` — `'login_'.str_replace('-', '_', $this->value).'_'.$sufixo`.
 - `emailVerificado(AbstractUser $doProvedor): bool` — o `match` do ADR-03, falha fechada em todos
   os ramos. O ramo do GitHub chama o método privado abaixo.
-- `private function emailVerificadoNoGithub(AbstractUser $doProvedor): bool` —
-  `Http::withToken($doProvedor->token)->acceptJson()->get('https://api.github.com/user/emails')`,
-  exige `$resposta->successful()` e uma entrada com `primary === true`, `verified === true` e
-  `email` igual (comparação normalizada, `mb_strtolower(trim(...))`) ao e-mail do provedor. Qualquer
-  outra coisa → `false`.
-- **Logs**: o ramo do GitHub loga a falha da conferência, porque é a única que pode recusar um
-  login legítimo:
-  - `Log::channel('autenticacao')->warning('[ProvedorSocial@emailVerificadoNoGithub] Não foi possível confirmar o e-mail verificado no GitHub | email: '.$mascarado, ['motivo' => 'github_emails_indisponivel', 'status' => $resposta->status(), 'email' => $mascarado, 'provedor' => $this->value])`
-  - Nenhum log no caminho de sucesso: quem loga o sucesso é o controller, uma vez.
+- `private function naoDesmentidoNoBruto(AbstractUser $doProvedor, array $chaves): bool` — a
+  guarda dos ramos de presença: um `email_verified` **falso** no bruto vence a presença do e-mail.
+  Só chave booleana entra na lista (`confirmed_email` do X guarda o ENDEREÇO, e `filter_var` de um
+  e-mail é `false`).
+- **Sem chamada HTTP nenhuma.** O plano original previa que o ramo do GitHub refizesse a consulta
+  a `/user/emails`; a revisão do `vendor/` mostrou que era redundante — ver ADR-03, item 2, e a
+  seção "Desvios do Plano" do `03-progresso.md`.
+- **Logs**: nenhum no enum. Quem loga a recusa por e-mail não verificado é o controller, uma vez,
+  com o `motivo` e o e-mail mascarado.
 
 ### 2. `ConfiguracaoDoLogin` generalizado
 

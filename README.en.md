@@ -493,7 +493,7 @@ exactly one thing — authenticate someone who **already has an account**.
 | Provider | Socialite driver | Redirect URI | How the kit confirms the e-mail is verified |
 |---|---|---|---|
 | **Google** | `google` | `/auth/google/callback` | `email_verified` field in the payload |
-| **GitHub** | `github` | `/auth/github/callback` | the kit queries `/user/emails` and requires `primary` + `verified` |
+| **GitHub** | `github` | `/auth/github/callback` | Socialite already hands over only the `primary` + `verified` address, or nothing — presence is the proof |
 | **LinkedIn** | `linkedin-openid` | `/auth/linkedin-openid/callback` | `email_verified` from the OpenID userinfo |
 | **X** (formerly Twitter) | `x` | `/auth/x/callback` | X only ever returns `confirmed_email` — presence is the proof |
 
@@ -647,18 +647,21 @@ What changes from provider to provider is **where** the proof lives, and the dif
   `confirmed_email`, that is, an address it has already confirmed. **The presence of the e-mail is
   the proof.** If X returns no e-mail (an app without the `users.email` scope, or an account with no
   confirmed address), the kit refuses with the `email_ausente` reason.
-- **GitHub** — this is the interesting one. GitHub **verifies** and then **throws the evidence
-  away**: Socialite queries `/user/emails`, picks the entry that is `primary` **and** `verified`, and
-  keeps only the address string. Worse, if that query fails it swallows the error and leaves the
-  **public profile** e-mail in place. So "e-mail is not empty" is **not** proof of verification: it
-  is proof that either the verification passed, or the call failed — and from the outside the two
-  are identical.
+- **GitHub** — presence as well, by a route worth understanding before you touch the scopes.
+  Socialite queries `/user/emails`, picks the entry that is `primary` **and** `verified`, and
+  **overwrites** the e-mail with it — or with **nothing**, if the query fails or no entry matches.
+  There is no verification field in the payload, and none is needed: a filled e-mail already means
+  `primary` + `verified`, and an empty one falls into the `email_ausente` refusal.
 
-  That is why the kit **re-runs the query** against `https://api.github.com/user/emails` with the
-  token it has just received, and requires an entry with `primary: true` **and** `verified: true`
-  whose address matches the one it got. It costs one extra HTTP request per login, and it is what
-  makes GitHub's guarantee equal to the others'. If GitHub's API is down, the login is **refused** —
-  the correct direction for the error — and the reason (`github_emails_indisponivel`) goes to the log.
+  This rests on **one** condition: the `user:email` scope. It is the driver's default, and the
+  `scopes` key in `config/services.php` **merges** with the defaults rather than replacing them, so
+  adding scopes is safe. What would break the guarantee is a `setScopes()` in the kit's code
+  dropping `user:email` — GitHub would then hand over the **public profile** e-mail, unverified,
+  silently. There is a test guarding exactly that; do not turn that scope off.
+
+  > Earlier versions of this section said the kit re-ran the `/user/emails` query itself. It did,
+  > and it was redundant: the reading of Socialite's code that justified the call was wrong. The
+  > call was removed — the kit calls **no** provider API at all.
 
 One consequence to know, for all of them: if the person **changes the e-mail** on the provider
 account, the link is lost and they go back to signing in with a password.
@@ -707,8 +710,6 @@ the `provedor` on every line and a readable `motivo` on each refusal:
 | `falha_no_provedor` | invalid CSRF `state`, network down, or credential rejected by the provider |
 | `email_ausente` | the provider returned no e-mail (on X, this is the missing-scope case) |
 | `email_nao_verificado` | the e-mail is not verified at the provider |
-| `github_emails_indisponivel` | GitHub's `/user/emails` query did not answer 2xx |
-| `github_email_nao_verificado` | no `primary` + `verified` GitHub e-mail matched the one received |
 | `conta_inexistente_registro_fechado` | there is no account and open registration is off |
 | `conta_criada_por_login_social` | a new account was created (open registration on) |
 

@@ -4,13 +4,8 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Laravel\Socialite\AbstractUser;
 use Laravel\Socialite\Contracts\User as UsuarioDoProvedor;
-use Laravel\Socialite\Two\User as UsuarioDeOAuth2;
-use Throwable;
 
 /**
  * Os provedores de login social do kit — e a única coisa que varia de verdade entre eles.
@@ -146,8 +141,12 @@ enum ProvedorSocial: string
      *   - **X** — a PRESENÇA do e-mail é a prova: o provider pede `confirmed_email`
      *     (`TwitterProvider.php:61`) e mapeia esse campo — e só esse — para `email` (`:74`).
      *     O X não devolve endereço que ele não tenha confirmado.
-     *   - **GitHub** — não dá prova nenhuma no bruto, e é o ramo que precisa de trabalho. Ver
-     *     `emailVerificadoNoGithub()`.
+     *   - **GitHub** — também a PRESENÇA, e por um caminho menos óbvio: o provider SEMPRE
+     *     sobrescreve o e-mail quando `user:email` está nos escopos
+     *     (`GithubProvider.php:47-49`), com o primeiro `primary && verified` (`:73`) ou com
+     *     **`null`** — na exceção (`:70`) e também quando nenhum casa (`:76`). Não há sinal de
+     *     verificação no bruto, e não precisa: e-mail preenchido já significa verificado, e
+     *     e-mail nulo cai na barreira de `email_ausente` do controller.
      *
      * `getRaw()` NÃO está no contrato `Socialite\Contracts\User` — ele é de `AbstractUser`.
      * Provedor que não exponha o payload bruto não permite conferir a verificação, e aí a
@@ -176,22 +175,34 @@ enum ProvedorSocial: string
             self::LinkedIn => $this->booleanoDoBruto($doProvedor, ['email_verified']),
 
             /*
-             * O X só devolve `confirmed_email`, e o provider mapeia esse campo — e nenhum
-             * outro — para `email` (`TwitterProvider.php:61,74`). Então ter e-mail já É a
-             * prova, e o ramo diz isso por escrito em vez de devolver um `true` que pareceria
-             * descuido na revisão.
+             * Os dois em que a PRESENÇA do e-mail é a prova — por motivos diferentes, os dois
+             * lidos no `vendor/` e citados abaixo.
              *
-             * A segunda metade é a guarda contra o próprio argumento envelhecer: se o X
+             * **X**: o provider pede `confirmed_email` e mapeia esse campo, e nenhum outro,
+             * para `email` (`TwitterProvider.php:61,74`). O X não devolve endereço que ele não
+             * tenha confirmado.
+             *
+             * **GitHub**: o provider SEMPRE sobrescreve o e-mail quando `user:email` está nos
+             * escopos (`GithubProvider.php:47-49`), e o valor que ele escreve é o primeiro
+             * `primary && verified` (`:73`) ou **`null`** — tanto na exceção (`:70`) quanto
+             * quando nenhum e-mail casa (`:76`, saindo pelo fim do método). Então, para o
+             * GitHub, e-mail preenchido significa `primary && verified`; e-mail nulo cai na
+             * barreira de `email_ausente` do controller.
+             *
+             * O `user:email` está SEMPRE nos escopos: é o default do provider (`:16`), e a
+             * chave `scopes` de `config/services.php` passa por `scopes()`, que **soma**
+             * (`AbstractProvider.php:398`) — só `setScopes()` substitui (`:410`), e o kit não
+             * a chama. Essa é a invariante em que este ramo se apoia, e ela é enforçada por
+             * caso de teste, não por código em execução.
+             *
+             * A segunda condição é a guarda contra o argumento envelhecer: se o provedor
              * passar a mandar um campo de verificação, ele VENCE a presença. Sem ela, este
              * ramo autenticaria alguém com `email_verified => false` explícito no payload —
              * exatamente o que o ADR-05 recusou o Facebook por permitir, e o argumento não
-             * pode valer num provedor e não valer no outro. Achado da revisão adversarial
-             * dos casos de teste.
+             * pode valer num provedor e não valer no outro.
              */
-            self::X => filled($doProvedor->getEmail())
+            self::X, self::Github => filled($doProvedor->getEmail())
                 && $this->naoDesmentidoNoBruto($doProvedor, ['email_verified']),
-
-            self::Github => $this->emailVerificadoNoGithub($doProvedor),
         };
     }
 
@@ -242,120 +253,5 @@ enum ProvedorSocial: string
         }
 
         return true;
-    }
-
-    /**
-     * O GitHub verifica o e-mail e DESCARTA a evidência — então o kit refaz a conferência.
-     *
-     * O `GithubProvider` chama `/user/emails` (`GithubProvider.php:62`), escolhe a entrada com
-     * `$email['primary'] && $email['verified']` (`:73`) e guarda apenas a **string** do
-     * endereço (`:48`). O payload bruto que chega aqui não tem `verified` nenhum.
-     *
-     * Pior: a chamada acontece só quando `'user:email'` está nos escopos (`:47`), e qualquer
-     * falha cai num `catch` que faz `return` (`:68-70`) — deixando em `email` o que `/user`
-     * devolveu, que é o e-mail do PERFIL PÚBLICO. Então "e-mail não vazio" não é prova de
-     * verificação: é prova de que ou a verificação passou, ou a chamada falhou. De fora, os
-     * dois casos são indistinguíveis.
-     *
-     * Confiar em `getApprovedScopes()` não resolve — ele diria que o escopo foi concedido, não
-     * que a chamada funcionou, e é justamente a chamada que o `catch` engole.
-     *
-     * Então: uma requisição a mais, com o token que o provedor acabou de nos dar, exigindo uma
-     * entrada `primary` E `verified` cujo endereço case com o que veio. É prova positiva.
-     *
-     * Falha fechada em tudo: token vazio, resposta não-2xx, rede fora, corpo inesperado. O
-     * preço é recusar um login legítimo quando a API do GitHub estiver fora — que é a direção
-     * certa do erro, e o motivo vai para o log.
-     *
-     * ponytail: uma chamada HTTP dentro de um enum é estranho de ver. A alternativa era um
-     * serviço só para hospedar este método, e aí o nome do provedor deixaria de ficar ao lado
-     * da regra dele — que é a única coisa que este enum existe para juntar. Teto conhecido: se
-     * um segundo provedor precisar de chamada própria, os dois saem para um serviço junto.
-     *
-     * O tipo é `Two\User` e não `AbstractUser`, e a estreiteza é do próprio Socialite: o
-     * `$token` é declarado em `vendor/laravel/socialite/src/Two/User.php:14`, não na classe
-     * abstrata — usuário de OAuth 1.0 tem `token` e `tokenSecret`, que é outra coisa. Sem
-     * token não há como refazer a consulta, então a resposta é NÃO. Foi o PHPStan que tornou
-     * isso explícito, e a estreiteza aqui É a decisão de segurança.
-     */
-    private function emailVerificadoNoGithub(AbstractUser $doProvedor): bool
-    {
-        if (! $doProvedor instanceof UsuarioDeOAuth2) {
-            return false;
-        }
-
-        $email = mb_strtolower(trim((string) $doProvedor->getEmail()));
-        $token = (string) $doProvedor->token;
-
-        if ($email === '' || $token === '') {
-            return false;
-        }
-
-        $mascarado = Str::mask($email, '*', 3);
-
-        try {
-            $resposta = Http::withToken($token)
-                ->withHeaders(['Accept' => 'application/vnd.github.v3+json'])
-                ->timeout(10)
-                ->get('https://api.github.com/user/emails');
-
-            if ($resposta->failed()) {
-                Log::channel('autenticacao')->warning(
-                    '[ProvedorSocial@emailVerificadoNoGithub] Não foi possível confirmar o e-mail verificado no GitHub | email: '.$mascarado,
-                    [
-                        'motivo'   => 'github_emails_indisponivel',
-                        'status'   => $resposta->status(),
-                        'email'    => $mascarado,
-                        'provedor' => $this->value,
-                    ],
-                );
-
-                return false;
-            }
-
-            $enderecos = $resposta->json();
-        } catch (Throwable $e) {
-            Log::channel('autenticacao')->warning(
-                '[ProvedorSocial@emailVerificadoNoGithub] Falha ao consultar os e-mails do GitHub | email: '.$mascarado,
-                [
-                    'exception' => $e,
-                    'motivo'    => 'github_emails_falhou',
-                    'email'     => $mascarado,
-                    'provedor'  => $this->value,
-                ],
-            );
-
-            return false;
-        }
-
-        if (! is_array($enderecos)) {
-            return false;
-        }
-
-        foreach ($enderecos as $endereco) {
-            if (! is_array($endereco)) {
-                continue;
-            }
-
-            $mesmo = mb_strtolower(trim((string) ($endereco['email'] ?? ''))) === $email;
-
-            if ($mesmo
-                && filter_var($endereco['primary'] ?? false, FILTER_VALIDATE_BOOLEAN)
-                && filter_var($endereco['verified'] ?? false, FILTER_VALIDATE_BOOLEAN)
-            ) {
-                return true;
-            }
-        }
-
-        Log::channel('autenticacao')->warning(
-            '[ProvedorSocial@emailVerificadoNoGithub] Nenhum e-mail primário e verificado casou com o do provedor | email: '.$mascarado,
-            [
-                'motivo'   => 'github_email_nao_verificado',
-                'email'    => $mascarado,
-                'provedor' => $this->value,
-            ],
-        );
-
-        return false;
     }
 }

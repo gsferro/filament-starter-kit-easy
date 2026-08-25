@@ -523,7 +523,7 @@ faz uma coisa só — autenticar quem **já tem conta**.
 | Provedor | Driver do Socialite | URI de redirecionamento | Como o kit confirma o e-mail verificado |
 |---|---|---|---|
 | **Google** | `google` | `/auth/google/callback` | campo `email_verified` no payload |
-| **GitHub** | `github` | `/auth/github/callback` | o kit consulta `/user/emails` e exige `primary` + `verified` |
+| **GitHub** | `github` | `/auth/github/callback` | o Socialite já entrega só o e-mail `primary` + `verified`, ou nada — a presença é a prova |
 | **LinkedIn** | `linkedin-openid` | `/auth/linkedin-openid/callback` | campo `email_verified` do userinfo OpenID |
 | **X** (antigo Twitter) | `x` | `/auth/x/callback` | o X só devolve `confirmed_email` — a presença é a prova |
 
@@ -674,17 +674,21 @@ O que muda de provedor para provedor é **onde** a prova está, e a diferença �
   seja, um endereço que ele já confirmou. **A presença do e-mail é a prova.** Se o X não devolver
   e-mail (app sem o escopo `users.email`, ou conta sem endereço confirmado), o kit recusa com o
   motivo `email_ausente`.
-- **GitHub** — este é o caso interessante. O GitHub **verifica** e depois **descarta a evidência**:
-  o Socialite consulta `/user/emails`, escolhe a entrada `primary` **e** `verified`, e guarda só a
-  string do endereço. Pior, se aquela consulta falhar ele engole o erro e deixa no lugar o e-mail do
-  **perfil público**. Ou seja, "e-mail não vazio" **não** é prova de verificação: é prova de que ou
-  a verificação passou, ou a chamada falhou — e de fora os dois casos são idênticos.
+- **GitHub** — a presença também, e por um caminho que vale entender antes de mexer nos escopos.
+  O Socialite consulta `/user/emails`, escolhe a entrada `primary` **e** `verified`, e
+  **sobrescreve** o e-mail com ela — ou com **nada**, se a consulta falhar ou se nenhuma entrada
+  casar. Não há campo de verificação no payload, e não precisa: e-mail preenchido já significa
+  `primary` + `verified`, e e-mail vazio cai na recusa por `email_ausente`.
 
-  Por isso o kit **refaz a consulta** a `https://api.github.com/user/emails` com o token que acabou
-  de receber, e exige uma entrada `primary: true` **e** `verified: true` cujo endereço case com o
-  que veio. É uma requisição HTTP a mais por login, e é o que torna a garantia do GitHub igual à
-  dos outros. Se a API do GitHub estiver fora, o login é **recusado** — a direção certa do erro — e
-  o motivo (`github_emails_indisponivel`) vai para o log.
+  Isso depende de **uma** condição: o escopo `user:email`. Ele é o default do driver, e a chave
+  `scopes` de `config/services.php` **soma** aos defaults em vez de substituí-los, então
+  acrescentar escopos é seguro. O que quebraria a garantia é um `setScopes()` no código do kit
+  removendo `user:email` — aí o GitHub passaria a entregar o e-mail do **perfil público**, não
+  verificado, em silêncio. Há caso de teste guardando exatamente isso; não desligue esse escopo.
+
+  > Versões anteriores desta seção diziam que o kit refazia a consulta a `/user/emails` por conta
+  > própria. Ele fazia, e era redundante: a leitura do código do Socialite que justificava a
+  > chamada estava errada. A chamada foi removida — o kit **não** chama API de provedor nenhuma.
 
 Consequência a conhecer, em todos: se a pessoa **trocar o e-mail** na conta do provedor, o vínculo
 se perde e ela volta a entrar por senha.
@@ -733,8 +737,6 @@ as linhas e um `motivo` legível em cada recusa:
 | `falha_no_provedor` | `state` de CSRF inválido, rede fora, ou credencial recusada pelo provedor |
 | `email_ausente` | o provedor não devolveu e-mail (no X, é o caso de escopo faltando) |
 | `email_nao_verificado` | o e-mail não está verificado no provedor |
-| `github_emails_indisponivel` | a consulta a `/user/emails` do GitHub não respondeu 2xx |
-| `github_email_nao_verificado` | nenhum e-mail `primary` + `verified` do GitHub casou com o recebido |
 | `conta_inexistente_registro_fechado` | não há conta e o registro aberto está desligado |
 | `conta_criada_por_login_social` | conta nova criada (registro aberto ligado) |
 

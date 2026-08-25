@@ -7,8 +7,8 @@ Branch: `feat/mais-provedores-sociais` · base `origin/main` = `cc3afd8` (v0.19.
 - [x] `app/Support/ProvedorSocial.php` com os quatro casos
 - [x] `rotulo()`, `icone()`, `propriedadeDeSettings()`
 - [x] `emailVerificado()` com o `match` de quatro ramos, falha fechada em todos
-- [x] `emailVerificadoNoGithub()` — a consulta a `/user/emails` com prova positiva
-- [x] Log de alerta nos dois motivos de recusa do GitHub
+- [x] `naoDesmentidoNoBruto()` — a guarda dos ramos de presença (X e GitHub)
+- [x] **Nenhuma chamada de API de provedor** — a do GitHub foi escrita e removida (ver Desvios)
 
 ## 2. `ConfiguracaoDoLogin` generalizado
 
@@ -148,6 +148,24 @@ Nenhum.
   `00-requisito.md` → Ambiguidades, no `## Cobertura do Requisito` do PRD e nos ADR-04/ADR-05.
   **Não** foi marcado como atendido.
 
+- **A chamada HTTP do GitHub foi escrita e depois REMOVIDA.** O plano previa que o ramo do
+  GitHub refizesse a consulta a `/user/emails` para obter prova positiva de verificação. Foi
+  implementado (~85 linhas, com log de dois motivos de recusa e `Http::fake()` nos testes) e
+  depois removido, porque a premissa era falsa.
+
+  A premissa: "o `catch → return` do `GithubProvider` deixa em `email` o e-mail do perfil
+  público, então e-mail não vazio não prova verificação". A linha 48 diz outra coisa —
+  `$user['email'] = $this->getEmailByToken($token)` é atribuição **incondicional**, e
+  `getEmailByToken()` devolve o primeiro `primary && verified` ou **`null`**. Logo e-mail
+  preenchido já significa verificado, e nulo cai na barreira de `email_ausente` que já existia.
+
+  O que ficou no lugar: o ramo do GitHub passou a ser **o mesmo do X** (presença é prova), mais
+  um caso de teste que enforça a única invariante de que isso depende — `user:email` nos escopos
+  efetivos do driver.
+
+  Ganho colateral: o kit deixou de chamar API de provedor nenhuma, o que apagou um modo de falha
+  (API do GitHub fora = login recusado) que a ausência da chamada não tem.
+
 ## Notas de Implementação
 
 - **O defeito do `encrypted()` é o achado mais caro desta rodada**, e ele não estava no requisito.
@@ -165,6 +183,18 @@ Nenhum.
   usuário de OAuth 1.0 não tem token utilizável aqui, e sem token não há como refazer a consulta
   do GitHub, logo a resposta é NÃO. Mesmo padrão do `instanceof AbstractUser` que a wiki ancestral
   já tinha registrado.
+- **A leitura errada do `vendor/` sobreviveu a quatro revisões desta wiki**, e vale registrar
+  por que: ela veio de um resumo de sub-agente, foi escrita no ADR com `file:line` que
+  **existiam** (`:68-70` é mesmo o `catch`), e a conclusão parecia certa — o kit ficava seguro.
+  É o padrão exato que `.ai/rules/specs.md` nomeia: "a CONCLUSÃO estava certa por outro motivo. É
+  isso que torna o erro invisível". O que a pegou foi abrir a linha 48 para escrever o relatório
+  final, ou seja, tarde.
+
+  A lição operacional: `file:line` correto não é o mesmo que leitura correta. Citar a linha do
+  `catch` não obriga ninguém a ler a linha da **atribuição** — e era a atribuição que decidia.
+  Quando a conclusão de uma leitura de vendor é "então precisamos de código novo", ler as cinco
+  linhas ao redor custa menos que o código.
+
 - **O `throttle:10,1` passou a ser compartilhado** pelo grupo de rotas: dez por minuto por IP
   somando os quatro provedores, não dez por provedor. Registrado no ADR-02 como consequência
   aceita.
