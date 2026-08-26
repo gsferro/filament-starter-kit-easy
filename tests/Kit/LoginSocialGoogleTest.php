@@ -404,7 +404,10 @@ it('cria a conta e manda para o perfil quando o registro aberto está ligado', f
         ->and($novo->name)->toBe('Pessoa do Google')
         ->and($novo->hasRole(RegistroAberto::papel()))->toBeTrue()
         ->and($novo->aprovacao_pendente)->toBeFalse()
-        ->and($novo->email_verified_at)->not->toBeNull();
+        ->and($novo->email_verified_at)->not->toBeNull()
+        // A porta gravou 'registro'; o provedor sobrescreve com o próprio driver.
+        ->and($novo->origem)->toBe('google')
+        ->and($novo->rotuloDaOrigem())->toBe('Google');
 
     $this->assertAuthenticatedAs($novo);
 

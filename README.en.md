@@ -555,7 +555,7 @@ True for all **four** providers, without exception:
 | Accepts an **unverified** e-mail from the provider | ❌ never — it refuses and records the reason |
 | Bypasses **two-factor** | ❌ never — a confirmed-2FA account still hits the challenge |
 | Stores the access token or `refresh_token` | ❌ nothing is stored |
-| Adds a new column to `users` | ❌ none; the link is the verified e-mail |
+| Adds a new column to `users` | ✅ **one**, `origem` — it only says which door the account came through (`google`, `github`, `convite`, `registro`, `interno`), shown on the users list and the dashboard. **Not a link**: no provider id, no token; the link is still the verified e-mail |
 | Marks a created account as **e-mail verified** | ✅ yes — the provider already proved it, and asking again would be the same proof twice |
 
 The second row is the important one, and it is not timidity: **the invitation is the kit's only

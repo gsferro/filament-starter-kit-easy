@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\ContextoDePapeis;
+use App\Support\ProvedorSocial;
 use App\Support\RegistroAberto;
 use App\Traits\AuditsFillables;
 use App\Traits\ModeloCacheavel;
@@ -227,6 +228,31 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
      * /admin (sem tenancy) o contexto é o global. Nos dois casos o `assignRole()` grava no lugar
      * certo sem esta função precisar saber onde está.
      */
+    /** Valores de `origem` que não são provedor social. O provedor grava o próprio driver. */
+    public const ORIGEM_INTERNO = 'interno';
+
+    public const ORIGEM_CONVITE = 'convite';
+
+    public const ORIGEM_REGISTRO = 'registro';
+
+    /**
+     * Por qual porta a conta entrou, por extenso — para a lista de usuários e o dashboard.
+     *
+     * Provedor social devolve o rótulo da marca; o resto, a porta do kit. Valor desconhecido
+     * (coluna editada à mão, provedor removido do enum) cai em "Interno", e não em erro: é
+     * exibição, nunca autorização.
+     */
+    public function rotuloDaOrigem(): string
+    {
+        $origem = (string) ($this->origem ?? self::ORIGEM_INTERNO);
+
+        return ProvedorSocial::tryFrom($origem)?->rotulo() ?? match ($origem) {
+            self::ORIGEM_CONVITE  => 'Convite',
+            self::ORIGEM_REGISTRO => 'Registro aberto',
+            default               => 'Interno',
+        };
+    }
+
     public function aprovar(): void
     {
         if (! $this->aprovacao_pendente) {

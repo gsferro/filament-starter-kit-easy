@@ -307,7 +307,8 @@ final class LoginSocialController extends Controller
          * de "verifique seu e-mail" no instante seguinte a um OAuth bem-sucedido. Foi um caso de
          * teste que pegou.
          */
-        $user->forceFill(['email_verified_at' => now()])->save();
+        // `origem` = o driver: a porta gravou 'registro', mas quem trouxe a pessoa foi o provedor.
+        $user->forceFill(['email_verified_at' => now(), 'origem' => $provedor->value])->save();
 
         Log::channel('autenticacao')->info(
             "[LoginSocialController@criarConta] Conta criada por login social | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,

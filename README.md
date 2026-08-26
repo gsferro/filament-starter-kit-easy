@@ -546,7 +546,7 @@ Vale para os **quatro** provedores, sem exceção:
 | Aceita e-mail **não verificado** no provedor | ❌ nunca — recusa e registra o motivo |
 | Contorna o **segundo fator** | ❌ nunca — quem tem 2FA confirmado cai no desafio igual |
 | Guarda token de acesso ou `refresh_token` | ❌ nada é gravado |
-| Cria coluna nova em `users` | ❌ nenhuma; o vínculo é pelo e-mail verificado |
+| Cria coluna nova em `users` | ✅ **uma**, `origem` — só diz por qual porta a conta entrou (`google`, `github`, `convite`, `registro`, `interno`), exibida na lista de usuários e no dashboard. **Não é vínculo**: nada de id do provedor nem token; o vínculo continua sendo o e-mail verificado |
 | Marca a conta criada como **e-mail verificado** | ✅ sim — o provedor já provou, e pedir de novo seria a mesma prova duas vezes |
 
 A linha que mais importa é a segunda, e ela não é timidez: **o convite é a única porta de entrada

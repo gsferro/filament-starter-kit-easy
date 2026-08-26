@@ -59,7 +59,8 @@ class UltimosUsuariosCadastrados extends RecentItemsWidget
                 (string) $usuario->email,
             )
                 ->avatar($usuario->getFilamentAvatarUrl())
-                ->meta($usuario->created_at?->diffForHumans())
+                // "há 2 horas · Google": a porta de entrada ao lado do quando.
+                ->meta(implode(' · ', array_filter([$usuario->created_at?->diffForHumans(), $usuario->rotuloDaOrigem()])))
                 // Papéis viram badge: é a informação que decide se o cadastro
                 // ficou pela metade (usuário criado, acesso não atribuído).
                 ->badge($this->rotuloDosPapeis($usuario))
