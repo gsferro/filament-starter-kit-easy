@@ -303,7 +303,7 @@ it('nao entrega a senha de smtp no estado do formulario', function (): void {
 
     Livewire::test(ConfiguracoesDoKit::class)
         ->assertFormFieldExists('mail_password')
-        ->assertFormSet(['mail_password' => null]);
+        ->assertSchemaStateSet(['mail_password' => null]);
 });
 
 it('mantem a senha guardada quando o campo fica em branco', function (): void {

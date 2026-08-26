@@ -37,7 +37,7 @@ class AgenteIaForm
                             ->helperText('Chave estável lida pela classe do agente (ex.: assistente). Mudar quebra o vínculo com o código.')
                             ->required()
                             ->maxLength(120)
-                            ->unique(ignoreRecord: true),
+                            ->unique(),
                         Textarea::make('descricao')
                             ->label('Descrição')
                             ->rows(2)
