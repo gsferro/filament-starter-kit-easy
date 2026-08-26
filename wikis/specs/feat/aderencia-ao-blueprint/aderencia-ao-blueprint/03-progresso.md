@@ -62,7 +62,7 @@ Ver seção própria abaixo.
 - [x] Regressão dos 11 arquivos que tocam as telas cujas policies acordaram: **262/263** — o único vermelho foi o enforço do hub (`HubDeCardsTest`: "nenhum cartão sem descrição") acusando que `HubDeInfraestrutura::descricoesDosDestinos()` ainda apontava para o FQCN do **vendor** do Composer, e quem entra agora é a subclasse do kit. Um `use` trocado; 16/16. É o enforço existente pegando a minha própria mudança — exatamente para o que ele existe
 - [x] Suíte `Tenancy` completa — ver linha do CI; rodada local em background durante a escrita
 - [x] `composer.json`/`lock` fora de todos os commits (só carregam o `bp:on`)
-- [ ] CI 100% verde no PR → merge → tag → release
+- [x] CI 100% verde no PR → merge → tag → release — PR #40 (`qualidade`, `seguranca`, `telas`, `instalacao` verdes), merge `b55910f` em 2026-08-26, tag `v0.21.0`, release publicada 2026-08-26T04:57Z
 
 ## Auditoria Pré-Implementação
 
