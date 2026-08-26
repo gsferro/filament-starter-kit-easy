@@ -19,14 +19,16 @@ E, na mensagem anterior, o passo a passo da instalação:
 
 > aqui esta o passo a passo de instalação do blueprint:
 > 1. composer config repositories.filament composer https://packages.filamentphp.com/composer
-> 2. composer config --auth http-basic.packages.filamentphp.com "gsferroti+filamentblueprint@gmail.com" "REDIGIDO"
+> 2. composer config --auth http-basic.packages.filamentphp.com "REDIGIDO" "REDIGIDO"
 > 3. composer require filament/blueprint --dev
 
-> **Nota de segurança sobre a transcrição.** A chave de licença foi **redigida** nesta cópia. É a
-> única alteração no texto original, e ela é deliberada: o `00` é versionado e público, e
-> transcrever credencial num arquivo do repositório é criar o vazamento que a wiki
-> `blueprint-fora-do-pacote-publicado` acabou de fechar. A credencial foi configurada no
-> `auth.json` **global** do Composer, fora do projeto.
+> **Nota de segurança sobre a transcrição.** A chave de licença E o e-mail da conta foram
+> **redigidos** nesta cópia. É a única alteração no texto original, e ela é deliberada: o `00` é
+> versionado e público, e transcrever credencial num arquivo do repositório é criar o vazamento que
+> a wiki `blueprint-fora-do-pacote-publicado` acabou de fechar. O e-mail entrou na primeira versão
+> desta cópia e saiu na v0.21.1 — ele identifica a conta da licença, e identificador de conta é
+> metade de uma credencial. A credencial foi configurada no `auth.json` **global** do Composer, fora
+> do projeto.
 
 ## O que o Blueprint produziu
 
