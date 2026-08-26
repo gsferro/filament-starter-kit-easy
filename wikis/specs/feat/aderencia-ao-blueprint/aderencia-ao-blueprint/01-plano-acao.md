@@ -170,9 +170,9 @@ Um por passo, na ordem de peso:
 
 ## Verificação Final
 
-- [ ] `vendor/bin/pint --dirty`
-- [ ] `vendor/bin/phpstan analyse`
-- [ ] testes novos, cada um com mutação verificada
-- [ ] `composer bp:off` — Blueprint fora do pacote antes do commit
-- [ ] CI 100% verde no PR
-- [ ] merge, tag, release
+- [x] `vendor/bin/pint --dirty` — passa (re-confirmado no repo inteiro em 2026-08-26, pós v0.21.1)
+- [x] `vendor/bin/phpstan analyse` — 0 erros
+- [x] testes novos, cada um com mutação verificada — ver "Matriz de Mutação" em `03-progresso.md`
+- [x] `composer bp:off` — Blueprint fora do pacote antes do commit — sem `filament/blueprint` no `require-dev`, sem `repositories.filament`, sem `vendor/filament/blueprint`, sem `auth.json`; guardado por `BlueprintForaDoPacoteTest`
+- [x] CI 100% verde no PR — #40: `qualidade`, `seguranca`, `telas`, `instalacao`
+- [x] merge, tag, release — `b55910f`, `v0.21.0`, release publicada 2026-08-26T04:57Z
