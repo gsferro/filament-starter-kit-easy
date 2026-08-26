@@ -353,4 +353,31 @@ final class ConfiguracoesDoKit extends Settings
             ['chaves' => array_values($mapa)],
         );
     }
+
+    /**
+     * O inverso de `aplicarNaConfig()`: as chaves do mapa voltam ao que os arquivos de
+     * config (e o `.env` que eles leem) dizem, como se o banco não existisse.
+     *
+     * Existe para o `kit:install --force`. O processo sobe com o banco VELHO já aplicado à
+     * config, apaga o banco, e a migration de settings semeia o banco novo lendo `config()`
+     * — que ainda dizia o que o banco velho dizia. Medido numa instalação real:
+     * `KIT_SOCIALITE_GOOGLE=true` no `.env` chegava ao banco novo como `false`, e o README
+     * prometia o contrário ("o banco nasce igual ao `.env` novo"). Só nome, cor e admin
+     * escapavam, porque o customizador os realinha em memória — as outras dezenas de chaves
+     * (login social, e-mail, tabelas, identidade) herdavam o banco apagado.
+     *
+     * Relê os ARQUIVOS, e não `env()` direto, porque é neles que mora a coerção de cada chave
+     * (`FILTER_VALIDATE_BOOLEAN`, `(int)`, default).
+     */
+    public static function devolverConfigAoEnv(): void
+    {
+        $arquivos = [];
+
+        foreach (self::mapaDeConfiguracao() as $chave) {
+            [$arquivo, $caminho] = explode('.', $chave, 2);
+            $arquivos[$arquivo] ??= require config_path($arquivo.'.php');
+
+            config([$chave => data_get($arquivos[$arquivo], $caminho)]);
+        }
+    }
 }

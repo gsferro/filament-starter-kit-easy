@@ -563,8 +563,9 @@ Quem entra por login social precisa de papel como qualquer outra pessoa.
 ### Ligando um provedor, em quatro passos
 
 O roteiro é o mesmo para os quatro; só muda onde se cria o app OAuth. Você pode fazer tudo pelo
-`.env` **ou** pela tela `/admin/configuracoes-do-kit` → aba **Login** (o valor gravado na tela vence
-o `.env` em tempo de execução).
+`.env` **ou** pela tela `/admin/configuracoes-do-kit` → aba **Login** — mas saiba quem manda: **o
+banco vence o `.env` em tempo de execução, e o `.env` só semeia** (ver
+[Quem manda: o banco ou o `.env`?](#quem-manda-o-banco-ou-o-env)). O passo 3 é onde isso pesa.
 
 **1. Crie o app OAuth no provedor** e cadastre a URI de redirecionamento — que é o seu `APP_URL`
 mais o caminho da tabela acima:
@@ -610,7 +611,14 @@ X_CLIENT_ID=seu-client-id
 X_CLIENT_SECRET=seu-segredo
 ```
 
-**3. Limpe a config** (`php artisan config:clear`) e recarregue a tela de login.
+**3. Leve as chaves ao banco.** Numa instalação **nova** o `migrate` faz isso sozinho — a
+migration de settings semeia cada propriedade do `config()`, que vem do `.env`. Num kit **já
+instalado**, o `.env` sozinho **não** liga nada, e `config:clear` não muda isso: a tabela
+`settings` já tem a linha (`false`, credencial vazia) e ela vence em todo request. Aí são dois
+caminhos: gravar pela tela `/admin/configuracoes-do-kit` → **Login**, ou
+`php artisan kit:install --force` com o `.env` já preenchido — que **recria o banco** (APAGA os
+dados; inócuo só no minuto seguinte à instalação). Medido numa instalação real: o `.env` com as
+três chaves do Google, `config:clear`, e nenhum botão — até a migration reler o `.env`.
 
 **4. Confirme que o botão apareceu.** Se não apareceu, é uma das duas condições abaixo.
 

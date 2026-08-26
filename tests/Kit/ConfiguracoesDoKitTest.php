@@ -621,3 +621,39 @@ it('tem a tabela de settings migrada e o grupo do kit semeado', function (): voi
 it('registra o listener da trilha uma unica vez', function (): void {
     expect(Event::getListeners(SavingSettings::class))->toHaveCount(1);
 })->group('kit');
+
+/**
+ * O inverso do alinhamento — a guarda do `kit:install --force`.
+ *
+ * Medido numa instalação real (rodada de login social, 2026-08-26): o processo do `--force`
+ * sobe com o banco VELHO aplicado à config, apaga o banco, e a migration de settings semeia
+ * o banco novo lendo `config()` — que ainda dizia o que o banco velho dizia.
+ * `KIT_SOCIALITE_GOOGLE=true` no `.env` chegava ao banco novo como `false`.
+ *
+ * Uma chave de cada arquivo do mapa (`app`, `kit`, `services`, `mail`), com controle: o
+ * banco venceu antes de ser desfeito. Sem `devolverConfigAoEnv()` o `app.name` fica
+ * "Do Banco" e o caso reprova.
+ */
+it('devolve a config ao que os arquivos dizem, desfazendo o banco', function (): void {
+    $antes = [
+        'app.name'                    => config('app.name'),
+        'kit.login.google.habilitado' => config('kit.login.google.habilitado'),
+        'services.google.client_id'   => config('services.google.client_id'),
+        'mail.mailers.smtp.host'      => config('mail.mailers.smtp.host'),
+    ];
+
+    gravarConfiguracao('nome_da_aplicacao', 'Do Banco');
+    gravarConfiguracao('login_google_habilitado', ! $antes['kit.login.google.habilitado']);
+    gravarConfiguracao('login_google_client_id', 'id-do-banco');
+    gravarConfiguracao('mail_host', 'smtp.do-banco.test');
+    alinharConfiguracoesDoKit();
+
+    expect(config('app.name'))->toBe('Do Banco')
+        ->and(config('services.google.client_id'))->toBe('id-do-banco');
+
+    ConfiguracoesDoKit::devolverConfigAoEnv();
+
+    foreach ($antes as $chave => $valor) {
+        expect(config($chave))->toBe($valor, $chave);
+    }
+})->group('kit');

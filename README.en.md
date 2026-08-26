@@ -572,8 +572,9 @@ And remember the rest of the kit: **an account with no role opens no panel**
 ### Turning a provider on, in four steps
 
 The steps are the same for all four; only the place where you create the OAuth app changes. You can
-do everything through `.env` **or** through `/admin/configuracoes-do-kit` → the **Login** tab
-(a value saved on the screen wins over `.env` at runtime).
+do everything through `.env` **or** through `/admin/configuracoes-do-kit` → the **Login** tab — but
+know who is in charge: **the database wins over `.env` at runtime, and `.env` only seeds it** (see
+[Who wins: the database or `.env`?](#who-wins-the-database-or-env)). Step 3 is where that matters.
 
 **1. Create the OAuth app at the provider** and register the redirect URI — your `APP_URL` plus the
 path from the table above:
@@ -619,7 +620,14 @@ X_CLIENT_ID=your-client-id
 X_CLIENT_SECRET=your-secret
 ```
 
-**3. Clear the config** (`php artisan config:clear`) and reload the login screen.
+**3. Get the keys into the database.** On a **fresh** install `migrate` does it by itself — the
+settings migration seeds every property from `config()`, which comes from `.env`. On a kit that is
+**already installed**, `.env` alone turns **nothing** on, and `config:clear` does not change that:
+the `settings` table already has the row (`false`, empty credential) and it wins on every request.
+Two ways out: save through `/admin/configuracoes-do-kit` → **Login**, or run
+`php artisan kit:install --force` with `.env` already filled in — which **recreates the database**
+(DELETES the data; harmless only in the minute after installing). Measured on a real install: the
+three Google keys in `.env`, `config:clear`, and no button — until the migration re-read `.env`.
 
 **4. Confirm the button showed up.** If it did not, it is one of the two conditions below.
 
