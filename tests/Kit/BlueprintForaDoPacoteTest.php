@@ -101,3 +101,23 @@ it('o auth.json nao esta rastreado pelo git', function (): void {
         .'o antigo está no histórico.'
     );
 })->group('kit');
+
+/*
+ * O `composer.lock` em sincronia com o `composer.json` — e é o `bp:on`/`bp:off` quem dessincroniza.
+ *
+ * A primeira versão do `bp:off` fazia `composer remove` (que grava o `content-hash`) e SÓ DEPOIS
+ * `config --unset repositories.filament`, que edita o json sem tocar o lock. Resultado: lock com hash
+ * defasado, `composer validate` reprovando, e um `composer install` em CI avisando que o lock está
+ * velho. Medido ao desligar o Blueprint depois da auditoria de aderência. A ordem foi invertida; este
+ * caso impede a volta.
+ *
+ * `composer validate` e não comparar hash à mão: o algoritmo do hash é do Composer, e a flag
+ * `--no-check-all` deixa só a checagem de lock (sem alertar sobre versões soltas).
+ */
+it('mantem o composer.lock em sincronia com o composer.json', function (): void {
+    exec('composer validate --no-check-publish --no-check-all --no-interaction 2>&1', $saida, $codigo);
+
+    expect($codigo)->toBe(0,
+        "O lock está defasado do json — normalmente é o `bp:on`/`bp:off` fora de ordem. Rode `composer update --lock`.\n".implode("\n", $saida)
+    );
+})->group('kit');

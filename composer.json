@@ -164,8 +164,8 @@
             "composer require --dev filament/blueprint"
         ],
         "bp:off": [
-            "composer remove --dev filament/blueprint",
-            "composer config --unset repositories.filament"
+            "composer config --unset repositories.filament",
+            "composer remove --dev filament/blueprint"
         ],
         "art": [
             "Composer\\Config::disableProcessTimeout",
