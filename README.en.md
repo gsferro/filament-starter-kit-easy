@@ -704,11 +704,17 @@ provider identity belongs to one account only.
 > first stumble: the "link sent" notice showed up, and the e-mail sat in the `jobs` table until
 > `queue:work`.
 
-**With multi-tenancy on**, an existing account logs in normally (its organisations are the ones
-already linked to it, and Filament opens the default one); a **new** account with no organisation is
-**refused** — OAuth does not carry the `?org=` of the registration form, and creating someone with
-no `/app` to enter would be worse than refusing. Social registration per organisation is a declared
-evolution, not an omission.
+**Signing up through the provider, from the registration screen.** `/app/register` shows the same
+buttons (with open registration on), and the click carries the screen's context until OAuth comes
+back: with multi-tenancy, `/app/register?org=acme` creates the account **in `acme`**, with the
+open-registration role there — the same door as the form, with the same refusals (unknown or closed
+organisation). From an **invitation link** (`?token=`), signing in through the provider **accepts the
+invitation**: the account is born with (or the existing one gains) the invitation's organisation and
+role, and the invitation is consumed — as long as the provider's verified e-mail is the invited one;
+if it is another, it refuses and the invitation stays intact. No password in any case: the provider
+proved the e-mail. An **existing** account logs in normally in any mode; a new account **without**
+`?org=` under multi-tenancy is still refused.
+Decisions and cases: `wikis/specs/feat/cadastro-social-por-convite-e-organizacao/`.
 
 Decisions and cases: `wikis/specs/feat/vinculo-de-provedor-social/`.
 

@@ -692,10 +692,16 @@ já for de **outra** conta a confirmação recusa — uma identidade de provedor
 > — `composer dev` sobe um. Na validação real isso foi o primeiro tropeço: o aviso "link enviado"
 > apareceu, e o e-mail ficou na tabela `jobs` até o `queue:work`.
 
-**Com a multi-organização ligada**, conta existente entra normalmente (as organizações são as já
-vinculadas a ela, e o Filament abre a padrão); conta **nova** sem organização é **recusada** — o
-OAuth não carrega o `?org=` do formulário de cadastro, e criar alguém sem `/app` para entrar seria
-pior que recusar. Cadastro social por organização é evolução declarada, não omissão.
+**Cadastro pelo provedor, a partir da tela de registro.** `/app/register` mostra os mesmos botões
+(com o registro aberto ligado), e o clique carrega o contexto da tela até a volta do OAuth: com a
+multi-organização, `/app/register?org=acme` cria a conta **na `acme`**, com o papel do registro
+aberto nela — a mesma porta do formulário, com as mesmas recusas (organização inexistente ou
+fechada). A partir do **link de um convite** (`?token=`), entrar pelo provedor **aceita o convite**:
+a conta nasce (ou a existente ganha) a organização e o papel do convite, e o convite é consumido —
+desde que o e-mail verificado do provedor seja o e-mail convidado; se for outro, recusa e o convite
+fica intacto. Sem senha em nenhum dos casos: o provedor provou o e-mail. Conta **existente** entra
+normalmente em qualquer modo; conta nova **sem** `?org=` na multi-organização continua recusada.
+Decisões e casos: `wikis/specs/feat/cadastro-social-por-convite-e-organizacao/`.
 
 Decisões e casos: `wikis/specs/feat/vinculo-de-provedor-social/`.
 
