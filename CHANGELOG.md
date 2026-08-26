@@ -2,7 +2,7 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
-## [Nao lancado]
+## [0.21.0] - 2026-08-26
 Auditoria de aderencia total ao Filament Blueprint — as 23 referencias de planejamento traduzidas
 em 43 normas verificaveis, o kit medido contra cada uma, e o que a medicao achou corrigido.
 
