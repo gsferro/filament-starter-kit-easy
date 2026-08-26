@@ -5,11 +5,13 @@ namespace App\Filament\App\Resources\Projetos;
 use App\Filament\App\Resources\Projetos\Pages\ListProjetos;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\Projeto;
+use App\Models\Tenant;
 use App\Support\TetoDeUpload;
 use BackedEnum;
 use Closure;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -18,6 +20,9 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 /**
@@ -106,7 +111,7 @@ class ProjetoResource extends Resource
                 ->required()
                 ->maxLength(120)
                 // scopedUnique, não unique: a regra do Laravel ignora o tenant.
-                ->scopedUnique(ignoreRecord: true),
+                ->scopedUnique(),
 
             /*
              * A camada de mídia do kit, demonstrada no único lugar em que cabe.
@@ -222,6 +227,45 @@ class ProjetoResource extends Resource
             ])
             ->emptyStateHeading('Nenhum projeto aqui')
             ->emptyStateDescription('Cada registro pertence ao tenant selecionado no topo — troque de tenant e a lista muda.');
+    }
+
+    /**
+     * Sem organização corrente a query FECHA — como nos dois irmãos deste painel.
+     *
+     * ## Por que a trait não basta
+     *
+     * `Projeto` usa `BelongsToTenant`, e o escopo global dela recorta por `Filament::getTenant()`.
+     * Só que ele **falha aberto por desenho**: sem tenant, o `if` não entra e nenhum `where` é
+     * aplicado (`app/Traits/BelongsToTenant.php:64-70`, declarado em `:48-52`). Em request de
+     * painel isso nunca acontece — o middleware de tenancy identifica a organização antes. Fora
+     * dele — job, comando, busca global sem contexto — este resource devolvia **todos** os projetos
+     * de **todas** as organizações. Medido na auditoria de aderência ao Blueprint: 4 de 4, enquanto
+     * `UserResource` e `ConviteResource` do mesmo painel devolviam 0.
+     *
+     * A auditoria do Blueprint (N-04) pegou a assimetria: três resources no mesmo painel, dois
+     * fechando e um não, e nada escrito decidindo. Agora os três falam a mesma língua — o
+     * `whereRaw('1 = 0')` é o mesmo de `App/Users/UserResource.php`, e a rule
+     * `.ai/rules/filament.md` passa a exigir isto de todo resource do /app.
+     *
+     * Com tenant, delega ao pai: é o escopo global da trait (e o do Filament) quem recorta, e
+     * duplicar o `where` aqui seria o "recorte na query da tela" que a rule proíbe.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        if (! Filament::getTenant() instanceof Tenant) {
+            Log::channel('autenticacao')->warning(
+                '[ProjetoResource@getEloquentQuery] Consulta de projetos sem organização corrente — recorte fechado | painel: app',
+                [
+                    'painel'      => 'app',
+                    'executor_id' => Auth::id(),
+                    'motivo'      => 'sem_tenant_corrente',
+                ],
+            );
+
+            return parent::getEloquentQuery()->whereRaw('1 = 0');
+        }
+
+        return parent::getEloquentQuery();
     }
 
     public static function getPages(): array
