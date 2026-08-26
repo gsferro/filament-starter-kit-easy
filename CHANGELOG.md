@@ -2,6 +2,89 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [Nao lancado]
+Auditoria de aderencia total ao Filament Blueprint — as 23 referencias de planejamento traduzidas
+em 43 normas verificaveis, o kit medido contra cada uma, e o que a medicao achou corrigido.
+
+### Segurança
+- **Dez policies do kit para modelos de VENDOR nunca eram consultadas.** O Laravel descobre policy
+  por convencao so para `App\Models\*`; para `Tapp\FilamentAuditing\Models\Audit` ele procura
+  `Tapp\...\Models\Policies\AuditPolicy`, nao acha, e `Gate::getPolicyFor()` devolve `null`. As
+  `App\Policies\*Policy` de Audit, MailLog, QueueMonitor, AuthenticationLog, Exception,
+  ComposerReleasePackageSnapshot, CommandRecord e AiRun existiam, o Shield gerava as permissoes, a
+  checkbox aparecia em `/admin/shield/roles` — e nada decidia. Medido com controle, um teste por
+  caso: **oito indices abriam com `ViewAny:X` revogada** (200) enquanto `/admin/users`, modelo do
+  kit, fechava (403). Qualquer `infra` via auditoria, e-mails, filas, logins e excecoes com essas
+  permissoes desmarcadas; qualquer `admin` via excecoes e onboarding. A barreira real era so
+  `canAccessPanel()`. Mais duas do onboarding, registradas pelo proprio pacote com `return true` em
+  tudo. Correcao: `App\Support\PoliciesDeVendor`, dez `Gate::policy()` explicitos no boot — e NAO o
+  `enforcePolicies()` do Shield, que le `getResources()` memoizado por `once()` e deixaria os outros
+  paineis sem registro em silencio.
+- **`AiRunResource::canAccess()` sobrescrito so com o gate `ver-ai-tasks`**, sem
+  `parent::canAccess()`. `CanAuthorizeResourceAccess::authorizeResourceAccess()` chama
+  `canAccess()`, entao a policy nunca era consultada para o indice — o F-01 da v0.20.0 em outra roupa.
+- **O resource do Composer Release vinha do vendor com `$shouldSkipAuthorization = true`**, e
+  `HasAuthorization::getAuthorizationResponse()` devolve `allow()` antes de olhar a policy. O
+  comentario do kit dizia "ali nao havia lacuna". Havia. Agora e subclasse do kit com a flag
+  desligada E a pagina propria — a pagina do vendor aponta `$resource` para a classe do vendor, e e
+  ela que autoriza.
+- **`ProjetoResource` falhava aberto sem organizacao corrente.** Confiava no escopo global de
+  `BelongsToTenant`, que por desenho nao aplica `where` nenhum sem tenant. Medido numa instalacao
+  real com o demo: sem tenant, 4 de 4 projetos de duas organizacoes; `UserResource` e
+  `ConviteResource` do mesmo painel devolviam 0. Em request de painel o middleware sempre identifica
+  a organizacao — o alcance era job, comando, busca sem contexto. Agora os tres resources do `/app`
+  falam a mesma lingua (`whereRaw('1 = 0')`).
+- **`PermissaoDaTela::permite()` passa a falhar FECHADO quando a chave nao resolve.** Era `true`
+  declarado. O mapa do Shield e `once()` por processo; qualquer provider que o toque antes do
+  `SetUpPanel` congela o mapa no painel errado e toda pagina com o trait abria sem consultar nada.
+  Em request real nao acontece (medido via Playwright: 403); fora dele acontecia. Fechar custa zero.
+
+### Adicionado
+- **Quatro sweeps de teste que nao existiam** — e a ausencia deles e o que explica os achados:
+  Pages e Widgets tinham sweep (100% de cobertura); Resources nao (cinco sem teste negativo, dez
+  policies mortas). `PermissoesDeResourcesTest` (47 casos: ancora de populacao, policy registrada
+  por modelo, indice abre com permissao, fecha sem), `EscopoFailClosedTest` (todo resource do `/app`
+  vazio sem tenant), `PermissaoDaTelaTest`, `AderenciaAoBlueprintTest` (varredura textual pelas
+  normas do v5). Mutacao verificada em cada correcao — remover o registro das policies derruba 19.
+- **Testes de validacao com dataset, de acoes e de filtros** para o que a auditoria achou sem
+  cobertura: `AgenteIaResource` (zero linhas de teste ate aqui), 6 dos 7 filtros de tabela, a acao
+  `recusar` nunca executada pela tela, `CreateConvite` e `CreateUser` do `/app` com dataset nomeado.
+- **`.ai/rules/policies.md`** (policy de vendor precisa de `Gate::policy()`),
+  **`.ai/rules/resources.md`** (resource do `/app` fecha sem organizacao), e a varredura textual em
+  `filament.md`. Duas emendas em `filament.md`: Resource entra no enforco "nasce com a permissao
+  consultada", e acesso a tela (`canAccess`) e separado de autorizacao de acao
+  (`get*AuthorizationResponse`).
+- **Secao "Pacote novo com Resource: a policy precisa ser registrada"** nos dois READMEs.
+- **Wiki `aderencia-ao-blueprint`** com a norma extraida (43 itens com origem), o comparativo
+  norma a norma com evidencia `arquivo:linha`, e a lista de 37 divergencias de documentacao.
+
+### Alterado
+- **Aderencia ao Blueprint nos formularios e tabelas**: seis `ignoreRecord: true` removidos (o
+  v4+ ignora o registro corrente por default — `CanBeValidated.php:34`); `->integer()` em
+  `mail_port` e `paginacao_padrao`; `->sortable()` na coluna de data dos papeis; `assertFormSet`
+  (depreciado) trocado por `assertSchemaStateSet`.
+- **37 divergencias entre o que os READMEs afirmavam e o que o kit faz**, corrigidas nos dois
+  idiomas: 10 chaves `KIT_*` lidas pela config e ausentes da documentacao (`KIT_HUB`, as 4
+  `KIT_TABELA_*`, as 4 `KIT_TENANCY*`, `KIT_COR_PRIMARIA_HEX`); flags de `kit:install`, `kit:admin`,
+  `kit:tenancy` e `kit:update` nao documentadas; "4 comandos kit" (sao 7), "48 migrations" (54),
+  "20 widgets" (24), "quatro abas" na tela de configuracoes (sao seis), "quatro papeis" com tabela
+  de cinco; o bloco Windows/sem-TTY inteiro que nao existia em ingles; e o hub de cartoes, uma
+  feature completa sem secao. `KIT_ADMIN_NAME` e `KIT_REPOSITORY` entram no `.env.example`.
+
+### Notas de qualidade
+- **Duas instalacoes reais do pacote publicado** em `TESTES KIT/` (`padrao` e `tenancy` com demo),
+  servidor HTTP e sessao real via Playwright. Os cinco paineis/rotas de saude respondem 200; a
+  fronteira de organizacao segura em HTTP (`/app/padrao` para quem nao pertence = 404); revogar
+  `View:Pulse` fecha com 403 na sessao viva.
+- **Dois falsos achados meus, retirados com a medicao**: "Pulse nao fecha" era o `once()` do Shield
+  congelado pela minha propria sonda em processo unico; "`@laravel/multiplex` nao esta no
+  package.json" e "`general.md` fora do indice" eram erros do sub-agente de documentacao. E um
+  falso PASS: o comparativo dizia "nenhum achado exploravel em request HTTP" — estava errado, porque
+  a medicao parou em "falta teste" sem escrever o teste. O teste escrito achou o achado.
+- **O `kit:tenancy` recusa sem `.git`** — e o `create-project` nao cria um. E deliberado e
+  documentado (o comando imprime o `git init` a fazer), mas fica registrado: e o primeiro tropeço
+  de quem liga a tenancy no dia 1.
+
 ## [0.20.0] - 2026-08-25
 Auditoria de seguranca com o catalogo do Filament Blueprint, e duas travas que a aplicacao
 acreditava ter e nao tinha.
