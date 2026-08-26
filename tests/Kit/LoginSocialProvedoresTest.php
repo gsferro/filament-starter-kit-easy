@@ -1630,3 +1630,26 @@ it('explica a recusa de Facebook e Discord na mesma seção em que os nomeia', f
     'discord no README en'  => ['README.en.md', 'Discord', 'socialiteproviders'],
     'facebook no README en' => ['README.en.md', 'Facebook', 'email_verified'],
 ])->group('kit');
+
+/**
+ * A partial do ícone não vaza o próprio comentário para a tela.
+ *
+ * Medido no navegador do solicitante, numa instalação real (2026-08-26): o botão "Entrar com
+ * Google" exibia o texto do comentário de cabeçalho da partial. As quatro partials abriam com
+ * `{--` e fechavam com `--}` — uma chave só, que o Blade não reconhece como comentário e
+ * imprime. Nenhum teste via, porque `assertSee('Entrar com Google')` continua verdadeiro com
+ * o comentário ao lado. Este caso renderiza cada partial e exige o SVG sem o rastro.
+ */
+it('renderiza o icone do provedor sem vazar o comentario da partial', function (ProvedorSocial $provedor): void {
+    $html = view('filament.auth.icones.'.$provedor->icone())->render();
+
+    expect($html)
+        ->toContain('data-provedor="'.$provedor->value.'"')
+        ->not->toContain('{--')
+        ->not->toContain('--}')
+        ->not->toContain('Icone de marca');
+})->with(function (): iterable {
+    foreach (ProvedorSocial::cases() as $provedor) {
+        yield $provedor->value => [$provedor];
+    }
+})->group('kit');
