@@ -41,12 +41,12 @@ class DefinirSenhaPorEmail extends MyProfileComponent
     use WithRateLimiting;
 
     /**
-     * Logo abaixo do bloco "Senha" do Breezy (20): é a alternativa a ele. Sem tipo nativo porque
+     * Entre "Informações pessoais" (10) e "Senha" (20) do Breezy: quem não tem senha lê isto antes de tropeçar no bloco que a exige. Sem tipo nativo porque
      * o pai declara a propriedade sem tipo, e o PHP proíbe o filho de acrescentar um.
      *
      * @var int
      */
-    public static $sort = 21;
+    public static $sort = 15;
 
     protected string $view = 'livewire.definir-senha-por-email';
 

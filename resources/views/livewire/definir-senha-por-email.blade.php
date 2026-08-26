@@ -1,5 +1,5 @@
 {{--
-    Bloco do perfil que manda o link de definição de senha por e-mail. Vive logo abaixo do
+    Bloco do perfil que manda o link de definição de senha por e-mail. Vive logo acima do
     bloco "Senha" do Breezy porque é a alternativa a ele: quem entrou por login social não tem
     senha atual para digitar. Ver o docblock de App\Livewire\DefinirSenhaPorEmail.
 --}}
