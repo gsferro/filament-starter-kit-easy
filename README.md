@@ -558,7 +558,15 @@ ligue o registro aberto: o kit passa a criar a conta e a levar a pessoa para a t
 onde ela completa o que falta.
 
 E lembre do resto do kit: **conta sem papel não abre painel nenhum** (`User::canAccessPanel()`).
-Quem entra por login social precisa de papel como qualquer outra pessoa.
+Quem entra por login social precisa de papel como qualquer outra pessoa — a conta criada pelo
+registro aberto recebe o papel único dele, pela mesma porta do formulário.
+
+**A conta criada pelo provedor não tem senha que a pessoa conheça** (nasce com uma aleatória), e
+três coisas pedem a senha atual: trocar a senha, ligar o 2FA e desbloquear a sessão. Por isso o
+perfil (`/app/meu-perfil`, e o dos outros dois painéis) tem o bloco **Definir senha por e-mail**:
+ele envia o mesmo link do "Esqueceu a senha?", encerra a sessão — a página que define a senha só
+abre para quem está fora — e, com a senha definida, os três passam a funcionar. Medido numa
+instalação real: era o primeiro tropeço de quem entrava pelo Google.
 
 ### Ligando um provedor, em quatro passos
 

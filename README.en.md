@@ -567,7 +567,16 @@ social login, turn open registration on: the kit then creates the account and ta
 their own profile screen to fill in what is missing.
 
 And remember the rest of the kit: **an account with no role opens no panel**
-(`User::canAccessPanel()`). Someone arriving through social login needs a role like everybody else.
+(`User::canAccessPanel()`). Someone arriving through social login needs a role like everybody else —
+the account created by open registration gets its single role, through the same door as the form.
+
+**The account the provider creates has no password the person knows** (it is born with a random
+one), and three things ask for the current password: changing it, turning on 2FA and unlocking the
+session. That is why the profile (`/app/meu-perfil`, and the other two panels') has the **Set a
+password by e-mail** block: it sends the same link as "Forgot your password?", ends the session —
+the page that sets the password only opens for someone logged out — and, once the password is set,
+all three work. Measured on a real install: it was the first stumble for whoever came in through
+Google.
 
 ### Turning a provider on, in four steps
 

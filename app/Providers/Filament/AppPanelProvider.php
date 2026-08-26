@@ -13,6 +13,7 @@ use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Http\Middleware\DefinirTenantDePermissoes;
 use App\Http\Middleware\ExigirEmailVerificado;
+use App\Livewire\DefinirSenhaPorEmail;
 use App\Models\Tenant;
 use App\Support\CorPrimaria;
 use App\Support\IdentidadeDoKit;
@@ -290,6 +291,9 @@ class AppPanelProvider extends PanelProvider
 
                 BreezyCore::make()
                     ->myProfile(shouldRegisterUserMenu: true, hasAvatars: true, slug: 'meu-perfil', userMenuLabel: 'Meu perfil')
+                    // Quem entrou por login social não tem senha atual — e a troca de senha, o 2FA e o
+                    // desbloqueio da sessão pedem uma. O bloco manda o link de definição por e-mail.
+                    ->myProfileComponents(['definir_senha_por_email' => DefinirSenhaPorEmail::class])
                     /*
                      * A tela de perfil do KIT no lugar da do pacote, e o motivo e' so' um: a do
                      * pacote nao declara `canAccess()`, entao `View:MyProfilePage` existia no banco
