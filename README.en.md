@@ -555,6 +555,7 @@ True for all **four** providers, without exception:
 | Accepts an **unverified** e-mail from the provider | ❌ never — it refuses and records the reason |
 | Bypasses **two-factor** | ❌ never — a confirmed-2FA account still hits the challenge |
 | Stores the access token or `refresh_token` | ❌ nothing is stored |
+| Stores the **identity** at the provider (`sub`) | ✅ in `vinculos_sociais` — that is how the account is recognised from the second time on ([details](#linking-to-the-provider-the-first-time-and-the-next-ones)) |
 | Adds a new column to `users` | ✅ **one**, `origem` — it only says which door the account came through (`google`, `github`, `convite`, `registro`, `interno`), shown on the users list and the dashboard. **Not a link**: no provider id, no token; the link is still the verified e-mail |
 | Marks a created account as **e-mail verified** | ✅ yes — the provider already proved it, and asking again would be the same proof twice |
 
@@ -646,6 +647,70 @@ three Google keys in `.env`, `config:clear`, and no button — until the migrati
 > for that provider — and only that one. The *Client Secret* is stored **encrypted**, is never
 > displayed back and does not appear in the page source; leaving the field blank **keeps** whatever
 > was already stored.
+
+### The screens
+
+| | |
+|---|---|
+| [![Login with the social buttons](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login-social.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-social.png) | [![Login tab of the kit settings](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-login.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-login.png) |
+| The login screen with **Sign in with Google** and **Sign in with GitHub**, and the Markdown footer | `/admin/configuracoes-do-kit` → **Login**: one collapsed block per provider with the status icon, the linking switch and the footer |
+| [![Set a password by e-mail, on the profile](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-perfil-definir-senha.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-perfil-definir-senha.png) | [![Lock screen with social login](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-bloqueio-social.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-bloqueio-social.png) |
+| The profile: **Set a password by e-mail** above "Password" — whoever came through a provider has no current password | The session lock screen offers the same buttons; coming back from the provider unlocks it |
+| [![Users list with the Origin column](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-users-origem.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-users-origem.png) | |
+| `/admin/users`: the **Origin** column says which door each account came through (Google, GitHub, Invite, Open registration, Internal) | |
+
+### Linking to the provider: the first time, and the next ones
+
+The question that motivated this section: *"could I create a Google account with someone else's
+e-mail and get into their account?"* **No** — and it is worth understanding why before reading
+what the kit does on top of that.
+
+The kit only accepts an e-mail the provider declares **verified** (table above). Google, GitHub,
+LinkedIn and X only mark an e-mail as verified after sending a code or a link **to that mailbox**.
+So whoever gets a "verified" identity with somebody else's e-mail already controls that person's
+mailbox — and whoever controls the mailbox already gets in through the kit's own **"Forgot your
+password?"**. Social login does not open a door that did not exist: it accepts the same proof. It
+is the model Auth0 calls *trusted providers*.
+
+Two residual risks remain, and they are what the link addresses: a **recycled address** at the
+e-mail provider (the new owner verifies the address at Google and would reach the previous owner's
+account — but would also reset that password), and a **bug or compromise of the OAuth provider**.
+
+**The link.** Every social login stores, in the `vinculos_sociais` table, the person's identity
+**at the provider** — the `sub`, the account id over there, stable even when the e-mail changes —
+next to the kit account. No token: it is recognition, not a credential. From the second login on
+the account is recognised **by the link, before looking at the e-mail**: an e-mail change at the
+provider, or a recycled address, does not lead to another account.
+
+**The first time.** When a provider shows up for the first time on an account that **already
+existed**, what happens depends on a switch — `KIT_SOCIALITE_VINCULO_CONFIRMAR` in `.env`, or the
+`/admin/configuracoes-do-kit` → **Login** → "Require e-mail confirmation…" screen:
+
+| | Default mode (`false`) | Strict mode (`true`) |
+|---|---|---|
+| Account exists, first time for this provider | links, **logs in**, and sends the e-mail *"your account was accessed through Google for the first time — wasn't you? change your password and tell the administrator"* | **does not log in**; sends the e-mail *"confirm signing in through Google"* with a signed **30-minute** link; opening it creates the link and starts the session |
+| Account exists, already linked | logs in through the link, no e-mail | same |
+| Account does not exist, open registration on | creates through the open-registration door and is born linked — there is no previous account to protect | same |
+| Account does not exist, registration closed | refuses ("access is by invitation") | same |
+
+The default-mode e-mail is **detection**: it makes the residual risk visible to the person
+themselves. Strict mode is **prevention**: it demands the proof (the mailbox) at the exact moment
+it matters. The confirmation link is valid only for that account and that identity, is signed,
+expires, and if the identity already belongs to **another** account the confirmation refuses — a
+provider identity belongs to one account only.
+
+> Both e-mails go through the **queue** (`ShouldQueue`, like the invitation). Without a worker
+> running nothing goes out — `composer dev` starts one. On the real-install validation that was the
+> first stumble: the "link sent" notice showed up, and the e-mail sat in the `jobs` table until
+> `queue:work`.
+
+**With multi-tenancy on**, an existing account logs in normally (its organisations are the ones
+already linked to it, and Filament opens the default one); a **new** account with no organisation is
+**refused** — OAuth does not carry the `?org=` of the registration form, and creating someone with
+no `/app` to enter would be worse than refusing. Social registration per organisation is a declared
+evolution, not an omission.
+
+Decisions and cases: `wikis/specs/feat/vinculo-de-provedor-social/`.
 
 ### The button only shows with EVERYTHING filled in — per provider
 

@@ -45,19 +45,19 @@ Implementada em 2026-08-26, na mesma sessão da rodada de validação real dos p
 ## 8. README e ADR
 
 - [x] `02-decisoes-arquiteturais.md` ADR-01..04
-- [ ] README PT/EN — seção "Vínculo com o provedor" (commit próprio, com as capturas)
+- [x] README PT/EN — seções "As telas" e "Vínculo com o provedor: a primeira vez, e as seguintes", linha da tabela "identidade no provedor"
 
 ## 9. Capturas para o README
 
-- [ ] `CapturaDeArteTest` + `KitArte::IMAGENS` + `composer art`
+- [x] `CapturaDeArteTest` (5 cenários) + `KitArte::IMAGENS` + `kit:arte` — `login-social`, `admin-configuracoes-login`, `app-perfil-definir-senha`, `app-bloqueio-social`, `admin-users-origem`
 
 ## Verificação Final
 
 - [x] `vendor/bin/pint --dirty`
 - [x] `vendor/bin/phpstan analyse` (0 erros nos arquivos tocados)
 - [x] testes novos + regressão
-- [ ] capturas
-- [ ] commit, PR #45
+- [x] capturas (10/10 no `CapturaDeArte`, publicadas em `art/`)
+- [x] commit, PR #45 (`1e71fc6` código; README e capturas no commit seguinte)
 
 ## Auditoria Pré-Implementação
 
