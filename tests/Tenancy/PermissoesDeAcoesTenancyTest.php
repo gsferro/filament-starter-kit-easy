@@ -9,8 +9,11 @@ use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Actions\Action;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
@@ -339,4 +342,129 @@ it('entrega as duas permissões de convite ao administrador da organização', f
 })->with([
     ['Aceitar:Convite'],
     ['Recusar:Convite'],
+]);
+
+/*
+|--------------------------------------------------------------------------
+| A Action `recusar` e o item de menu `convitesRecebidos`
+|--------------------------------------------------------------------------
+| A auditoria de aderência ao Blueprint (N-30) achou a Action `recusar` de
+| `ConvitesRecebidos` (`:139`) declarada, autorizada — e NUNCA executada pela tela: os casos
+| acima só a veem (`assertActionVisible`). E o item de menu (`:162`) não tinha oráculo nenhum.
+*/
+
+/**
+ * A recusa pela tela chega ao model: `recusado_em` carimbado, `situacao()` diz "Recusado", e a
+ * pessoa NÃO entra na organização — recusar não pode vincular por engano.
+ */
+it('deixa o usuário comum recusar o convite endereçado a ele', function (): void {
+    $acme   = tenant('Acme', 'acme');
+    $globex = tenant('Globex', 'globex');
+
+    $carla = usuarioComPapel('panel_user', $globex, 'carla@example.test');
+    $globex->users()->attach($carla);
+
+    $oferta = ofertaPara('carla@example.test', $acme);
+
+    noPainelDa($globex);
+    $this->actingAs($carla);
+
+    Livewire::test(ConvitesRecebidos::class)
+        ->loadTable()
+        ->callAction(TestAction::make('recusar')->table($oferta))
+        ->assertNotified('Convite recusado');
+
+    $oferta->refresh();
+
+    expect($oferta->recusado_em)->not->toBeNull('a Action rodou e o convite continua sem `recusado_em` — a recusa não chegou ao model')
+        ->and($oferta->situacao())->toBe('Recusado')
+        ->and($oferta->aceito_em)->toBeNull('recusar carimbou `aceito_em` — os dois verbos se misturaram')
+        ->and($acme->users()->whereKey($carla->getKey())->exists())->toBeFalse('recusar vinculou a pessoa à organização');
+});
+
+/**
+ * A metade negativa: sem `Recusar:Convite` a Action some da tela e o convite não muda.
+ *
+ * `callAction()` não serve como oráculo do não-efeito — o helper assere a visibilidade ANTES de
+ * chamar (ver o comentário de CT-11 em `tests/Kit/PermissoesDeAcoesTest.php`). O que prova é o par
+ * "existe na definição" + "oculta", mais o não-efeito no registro. O verbo irmão continua visível:
+ * revogar a recusa não pode levar o aceite junto.
+ */
+it('impede a recusa pela tela quando a permissão de recusar é revogada', function (): void {
+    semAPermissao('panel_user', 'Recusar:Convite');
+
+    $acme   = tenant('Acme', 'acme');
+    $globex = tenant('Globex', 'globex');
+
+    $carla = usuarioComPapel('panel_user', $globex, 'carla@example.test');
+    $globex->users()->attach($carla);
+
+    $oferta = ofertaPara('carla@example.test', $acme);
+
+    noPainelDa($globex);
+    $this->actingAs($carla);
+
+    Livewire::test(ConvitesRecebidos::class)
+        ->loadTable()
+        ->assertActionExists(TestAction::make('recusar')->table($oferta))
+        ->assertActionHidden(TestAction::make('recusar')->table($oferta))
+        ->assertActionVisible(TestAction::make('aceitar')->table($oferta));
+
+    expect($oferta->fresh()?->recusado_em)->toBeNull('a Action estava oculta e o convite foi recusado mesmo assim')
+        ->and($oferta->fresh()?->situacao())->toBe('Pendente');
+});
+
+/**
+ * O item `convitesRecebidos` do menu do usuário (`ConvitesRecebidos::itemDeMenu()`).
+ *
+ * É Action de PAINEL, registrada em `AppPanelProvider::bootUsing()` — não é Action de componente,
+ * então `assertActionVisible` não a alcança. O oráculo é o próprio painel: `getUserMenuItemGroups()`
+ * é a DEFINIÇÃO (o item existe, com ou sem permissão) e `getUserMenuItems()` é o que o menu
+ * RENDERIZA — ele já filtra por `isVisible()` (`HasUserMenu.php:206`), então "está na lista" é
+ * "aparece no menu".
+ *
+ * A pessoa TEM um convite pendente nos dois lados: sem isso `visible()` devolveria `false` pela
+ * contagem, e o caso negativo ficaria verde sem consultar a permissão.
+ *
+ * ## Por que o request ganha uma rota
+ *
+ * `Panel::boot()` do painel `app` passa pelo Breezy, que com tenancy lê
+ * `request()->route()->parameter('tenant')` (`BreezyCore.php:112`) para montar a URL de "Meu
+ * perfil". Fora de um request HTTP não há rota e o boot morre em `parameter() on null` — no
+ * ARRANJO, sem defeito nenhum no código. A rota ligada abaixo é o mínimo que um request real teria.
+ */
+it('mostra o item de convites recebidos no menu só para quem tem View:ConvitesRecebidos', function (bool $comPermissao): void {
+    if (! $comPermissao) {
+        semAPermissao('panel_user', 'View:ConvitesRecebidos');
+    }
+
+    $acme   = tenant('Acme', 'acme');
+    $globex = tenant('Globex', 'globex');
+
+    $carla = usuarioComPapel('panel_user', $globex, 'carla@example.test');
+    $globex->users()->attach($carla);
+
+    ofertaPara('carla@example.test', $acme);
+
+    $this->actingAs($carla);
+    noPainelDoShield('app');
+    noPainelDa($globex);
+
+    $rota = (new Route('GET', '/app/{tenant}', fn (): null => null))->bind(Request::create("/app/{$globex->slug}"));
+    request()->setRouteResolver(fn (): Route => $rota);
+
+    Filament::bootCurrentPanel();
+
+    $panel = Filament::getPanel('app');
+    $nome  = fn (Action $acao): bool => $acao->getName() === 'convitesRecebidos';
+
+    expect(collect($panel->getUserMenuItemGroups())->collapse()->contains($nome))
+        ->toBeTrue('o item `convitesRecebidos` saiu do `userMenuItems()` do painel app')
+        ->and(collect($panel->getUserMenuItems())->contains($nome))
+        ->toBe($comPermissao, $comPermissao
+            ? 'com a permissão e um convite pendente, o item sumiu do menu'
+            : 'sem View:ConvitesRecebidos o item continua no menu — o `visible()` não consulta `canAccess()`');
+})->with([
+    'com a permissão' => [true],
+    'sem a permissão' => [false],
 ]);

@@ -402,6 +402,50 @@ it('vincula o usuario criado a organizacao corrente', function (): void {
         ->and($novo->canAccessTenant($globex))->toBeFalse();
 });
 
+/**
+ * As regras do formulário de criação de usuário do /app, uma linha por regra.
+ *
+ * A auditoria de aderência ao Blueprint (N-32) apontou que a única asserção de validação sobre
+ * este resource era o `assertHasFormErrors()` SEM chave do caso "descarta papel de outro painel"
+ * — que prova que algo reprovou, não o quê. Aqui cada linha nomeia a REGRA: `['email' => 'unique']`
+ * fica vermelho se alguém trocar o `->unique()` por nada, mesmo com o `required` no lugar.
+ *
+ * O payload de base é o do caso acima, que grava. O não-efeito: nenhum usuário novo nasce, e a
+ * pivot `tenant_user` da Acme continua com as pessoas de `cenario()`, sem mais ninguém.
+ *
+ * @param  array<string, mixed>  $estragado
+ * @param  array<string, string>  $regras
+ */
+it('recusa o usuario com o campo fora da regra e nao grava nada', function (array $estragado, array $regras): void {
+    ['acme' => $acme, 'ana' => $ana] = cenario();
+
+    $antes = User::count();
+
+    noPainelDa($acme);
+    $this->actingAs($ana);
+
+    Livewire::test(CreateUser::class)
+        ->fillForm(array_merge([
+            'name'     => 'Fulano',
+            'email'    => 'fulano@example.com',
+            'password' => 'password1234',
+            'roles'    => [Role::findByName('panel_user')->getKey()],
+        ], $estragado))
+        ->call('create')
+        ->assertHasFormErrors($regras);
+
+    expect(User::count())->toBe($antes, 'o formulário reprovou e mesmo assim um usuário foi gravado')
+        ->and($acme->users()->count())->toBe(3, 'um usuário reprovado foi vinculado à organização');
+})->with([
+    '`name` é obrigatório'                  => [['name' => null], ['name' => 'required']],
+    '`name` passa de 255 caracteres'        => [['name' => str_repeat('a', 256)], ['name' => 'max']],
+    '`email` é obrigatório'                 => [['email' => null], ['email' => 'required']],
+    '`email` precisa ser e-mail'            => [['email' => 'nao-e-um-email'], ['email' => 'email']],
+    '`email` já tem conta'                  => [['email' => 'beto@example.com'], ['email' => 'unique']],
+    '`password` é obrigatório na criação'   => [['password' => null], ['password' => 'required']],
+    '`roles` é obrigatório'                 => [['roles' => []], ['roles' => 'required']],
+]);
+
 it('mantem o usuario comum fora da administracao da organizacao', function (): void {
     ['beto' => $beto] = cenario();
 

@@ -319,6 +319,10 @@ it('gate a tela do ledger de IA com o mesmo gate do destino do link dela', funct
  * CT-20 (segunda metade) — para quem alcança a tela, o link está lá.
  *
  * Sem esta metade, o caso acima ficaria verde com o botão removido do `getHeaderActions()`.
+ *
+ * E o DESTINO do link, que a auditoria de aderência ao Blueprint (N-30) achou sem oráculo: é uma
+ * Action de `->url()`, então "visível" não diz para onde ela leva. `assertActionHasUrl` fica
+ * vermelho se alguém apontar o botão para outra rota — ou trocar a rota do pacote sem mexer aqui.
  */
 it('oferece o link do dashboard de IA para quem alcança o ledger', function (): void {
     $this->actingAs(usuarioDoKit('infra', 'infra@example.com'));
@@ -326,7 +330,9 @@ it('oferece o link do dashboard de IA para quem alcança o ledger', function ():
     noPainelDoShield('infra');
     noPainelBootado('infra');
 
-    Livewire::test(ListAiRuns::class)->assertActionVisible('dashboardAiTasks');
+    Livewire::test(ListAiRuns::class)
+        ->assertActionVisible('dashboardAiTasks')
+        ->assertActionHasUrl('dashboardAiTasks', route('ai-tasks.index'));
 });
 
 /*
