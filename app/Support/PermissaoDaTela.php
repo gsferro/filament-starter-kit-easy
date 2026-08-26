@@ -75,8 +75,30 @@ final class PermissaoDaTela
         // `?->` aqui. `HasPageShield` usa o nullsafe e o PHPStan do kit acusaria `nullsafe.neverNull`.
         $usuario = Filament::auth()->user();
 
-        return is_string($chave) && $usuario instanceof Authorizable
-            ? $usuario->can($chave)
-            : true;
+        /*
+         * Sem usuário, este predicado não decide: a página de painel já exige `auth`, e é o
+         * middleware quem responde por anônimo.
+         */
+        if (! $usuario instanceof Authorizable) {
+            return true;
+        }
+
+        /*
+         * Chave que NÃO resolve falha FECHADO — e isto era `true` até a v0.20.0.
+         *
+         * A chave não resolve quando a página não está no mapa do Shield. Em request de painel
+         * isso não acontece: o `SetUpPanel` roda antes, e `FilamentShield::getPages()` monta o
+         * mapa do painel certo. Mas o mapa é `once()` — memoizado por processo no PRIMEIRO
+         * acesso. Qualquer provider ou plugin que o toque antes do `SetUpPanel` congela o mapa no
+         * painel errado, e aí TODA página com o trait devolvia `true` sem consultar permissão
+         * nenhuma. Medido numa sonda em processo único durante a auditoria de aderência ao
+         * Blueprint: as 12 páginas do /infra abrindo com a permissão revogada.
+         *
+         * Fechar custa zero em request (a chave sempre resolve) e elimina a classe inteira fora
+         * dele. O preço: página com o trait cuja permissão não foi gerada passa a NEGAR em vez
+         * de abrir — que é o comportamento certo, e o sweep de `PermissoesDeTelasTest` acusa.
+         * Ver ADR-02 da wiki `aderencia-ao-blueprint`.
+         */
+        return is_string($chave) && $usuario->can($chave);
     }
 }

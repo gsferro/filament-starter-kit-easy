@@ -47,7 +47,7 @@ class TenantForm
                             ->required()
                             ->maxLength(120)
                             ->alphaDash()
-                            ->unique(ignoreRecord: true),
+                            ->unique(),
 
                         Toggle::make('ativo')
                             ->label('Ativo')

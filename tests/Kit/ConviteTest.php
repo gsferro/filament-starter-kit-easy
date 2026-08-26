@@ -1018,3 +1018,44 @@ it('nao escreve uma linha de log por recusa anonima', function (): void {
             && $contexto['motivo'] === 'convite_invalido')
         ->times(5);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Validação do formulário de convite do /admin
+|--------------------------------------------------------------------------
+| A auditoria de aderência ao Blueprint (N-32) achou o `ConviteForm` sem UMA linha de
+| validação testada: os casos acima só passam pelo caminho feliz. Uma linha por regra, e a
+| asserção nomeia a REGRA — `assertHasFormErrors(['email'])` sem ela ficaria verde com o
+| `->email()` removido, porque o `required` seguiria reprovando o vazio.
+*/
+
+/**
+ * O payload de base é válido; cada linha estraga UM campo. O não-efeito é o mesmo para todas:
+ * nenhum convite nasce e nenhum e-mail sai — o `afterCreate()` é quem envia, e ele não pode
+ * rodar sobre um formulário reprovado.
+ *
+ * @param  array<string, mixed>  $estragado
+ * @param  array<string, string>  $regras
+ */
+it('recusa o convite com o campo fora da regra e não grava nem envia nada', function (array $estragado, array $regras): void {
+    Notification::fake();
+
+    Filament::setCurrentPanel('admin');
+    $this->actingAs(usuarioDoKit('master_global'));
+
+    Livewire::test(CreateConvite::class)
+        ->fillForm(array_merge([
+            'email'   => 'novo@example.com',
+            'role_id' => Role::findByName('panel_user')->getKey(),
+        ], $estragado))
+        ->call('create')
+        ->assertHasFormErrors($regras);
+
+    expect(Convite::count())->toBe(0, 'o formulário reprovou e mesmo assim um convite foi gravado');
+
+    Notification::assertNothingSent();
+})->with([
+    '`email` é obrigatório'      => [['email' => null], ['email' => 'required']],
+    '`email` precisa ser e-mail' => [['email' => 'nao-e-um-email'], ['email' => 'email']],
+    '`role_id` é obrigatório'    => [['role_id' => null], ['role_id' => 'required']],
+]);

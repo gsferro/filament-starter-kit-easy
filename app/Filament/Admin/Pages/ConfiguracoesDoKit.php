@@ -298,6 +298,7 @@ class ConfiguracoesDoKit extends SettingsPage
                 TextInput::make('mail_port')
                     ->label('Porta')
                     ->numeric()
+                    ->integer()
                     ->minValue(1)
                     ->maxValue(65535)
                     ->visible($smtp),
@@ -374,6 +375,7 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->label('Linhas por página')
                     ->helperText('O default de TODA tabela dos três painéis, inclusive as dos pacotes de terceiros.')
                     ->numeric()
+                    ->integer()
                     ->minValue(1)
                     /*
                      * Teto de 100 para quem ESCOLHE, e o valor já configurado quando ele é maior.

@@ -12,7 +12,9 @@ Before planning or editing, find the row whose globs match the file's path and r
 | composer.json | .ai/rules/general.md |
 | app/Models/** | .ai/rules/models.md |
 | app/Filament/Admin/Pages/** | .ai/rules/pages.md |
+| app/Policies/** | .ai/rules/policies.md |
 | app/Providers/Filament/** | .ai/rules/providers-filament.md |
+| app/Filament/App/Resources/** | .ai/rules/resources.md |
 | app/Settings/** | .ai/rules/settings.md |
 | wikis/specs/** | .ai/rules/specs.md |
 | tests/Browser/**, tests/BrowserTenancy/** | .ai/rules/testes-browser.md |

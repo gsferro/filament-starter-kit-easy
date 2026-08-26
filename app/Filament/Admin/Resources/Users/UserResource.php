@@ -49,7 +49,7 @@ class UserResource extends Resource
                 ->label('E-mail')
                 ->email()
                 ->required()
-                ->unique(ignoreRecord: true),
+                ->unique(),
             TextInput::make('password')
                 ->label('Senha')
                 ->password()

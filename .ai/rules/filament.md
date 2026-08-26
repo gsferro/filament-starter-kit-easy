@@ -142,6 +142,8 @@ Exemplo do padrão certo: `App\Filament\Admin\Pages\HubDeAdministracao::canAcces
 
 A rota fica registrada e responde 403 (não 404). Tirá-la do ar exigiria recortar o `discoverPages()` do provider, e aí o Shield deixa de gerar a permission — a descoberta dele usa `$panel->getPages()` cru (`vendor/bezhansalleh/filament-shield/src/Concerns/HasEntityDiscovery.php:30-34`). Ver ADR-02 de `wikis/specs/feature/v1-enriquecimento-kit/hub-de-cards-opcional/`.
 
+Uma distinção que esta rule não fazia e a v0.20.0 cobrou: `canAccess()` e os `can*()` decidem **acesso à tela, navegação e busca global**. Eles NÃO autorizam ação — `DeleteAction`, `DeleteBulkAction`, `EditAction` resolvem por `get*AuthorizationResponse()` (`Resources/Pages/Page.php:312-329`), e o framework nunca chama `canDelete()`. Negar ação é sobrescrever `getDeleteAuthorizationResponse()`; sobrescrever `canDelete()` não nega nada. E em Resource, `canAccess()` sobrescrito **sem `&& parent::canAccess()`** desliga a policy para o índice (`CanAuthorizeResourceAccess:19` chama `canAccess()`) — o `AiRunResource` fazia isso.
+
 ## CardItem do hub sempre por DescobreCardsDoPainel, nunca à mão
 `CardItem` **não verifica autorização**. `vendor/harvirsidhu/filament-cards/src/CardItem.php:22` não tem `canAccess()` — a única guarda da classe é `Concerns/CanBeHidden.php:13,20`, que avalia só `visible`/`hidden`. A verificação de acesso do pacote vive apenas dentro de `CardsPage::discoverClusterCards()` (`src/Filament/Pages/CardsPage.php:89,94`) e da descoberta de páginas de Resource (`:151`), que exigem Cluster ou página de Resource.
 
@@ -162,4 +164,19 @@ Dois detalhes que já custaram caro:
 
 Permissão que não entra na matriz do `database/seeders/PapeisSeeder.php` nasce órfã: ninguém a tem, inclusive o `admin` pode ficar trancado fora da tela que você acabou de criar.
 
+**E Resource — que esta rule não citava, e foi onde a falta de enforço custou mais.** Pages e Widgets tinham sweep de teste (`PermissoesDeTelasTest`, `PermissoesDeWidgetsTest`) e 100% de cobertura; Resources não tinham nenhum, e a auditoria de aderência ao Blueprint achou dez policies mortas (modelo de vendor não é descoberto pelo Laravel — ver `.ai/rules/policies.md`), um `canAccess()` sem `parent::` e um resource de vendor com `$shouldSkipAuthorization = true`. Resource novo entra em `tests/Kit/PermissoesDeResourcesTest.php` (a âncora de população fica vermelha até entrar) e tem de fechar com `ViewAny` revogada.
+
 Enforço automático: `tests/Kit/PermissoesDeAcoesTest.php` tem um inventário que fica VERMELHO quando nasce Action ou item de navegação novo, e obriga a declarar COMO ele é autorizado. Ele pegou três Actions em três branches diferentes nesta rodada. Se ficar vermelho, a linha a acrescentar é uma — não contorne.
+
+## Construções que o Filament Blueprint marca como erradas no v5 — a varredura reprova
+`tests/Kit/AderenciaAoBlueprintTest.php` varre `app/` e `tests/` e reprova, com o arquivo:
+
+- `->unique(ignoreRecord: true)` / `->scopedUnique(ignoreRecord: true)` — redundante: o v4+ ignora o registro corrente por default (`CanBeValidated.php:34`, `$shouldUniqueValidationIgnoreRecordByDefault = true`). Escreva `->unique()`. A auditoria achou seis, todas ruído.
+- `->reactive()` — não existe no v5; é `->live()`.
+- `use Filament\Forms\Get` / `Set` — namespace antigo; é `Filament\Schemas\Components\Utilities\{Get,Set}`.
+- `BelongsToSelect`, `MultiSelect`, `BadgeColumn`, `BooleanColumn`, `DateColumn` — não existem no v5.
+- Em testes: `assertFormSet`, `callTableAction`, `assertTableActionExists`, `assertTableBulkActionExists` — `@deprecated` nos `.stubs.php` do Filament; use `assertSchemaStateSet`, `callAction`, `assertActionExists`.
+
+Também do Blueprint, sem varredura automática: campo inteiro é `->numeric()->integer()`, não só `->numeric()`; coluna de data é `->date()/->dateTime()` COM `->sortable()`; status/enum em coluna é `->badge()`.
+
+A varredura ignora comentários — explicar o erro não é cometê-lo.
