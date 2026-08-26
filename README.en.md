@@ -32,6 +32,46 @@ Before touching the database, it **asks five questions** — the same way `larav
 
 **Hitting Enter on everything installs exactly as before** — no question is mandatory, and the first one is "customize now?", which skips them all at once. With no terminal (CI, Docker, `--no-interaction`) nothing is asked. At the end the installer prints a summary of what changed, what is still edited by hand, and offers to run the kit's test suite.
 
+> **On Windows the questions don't show up, and that is not a kit bug.** Measured in both shells,
+> PowerShell and Git Bash: Composer never enables TTY on Windows — `ProcessExecutor::runProcess()`
+> drops TTY mode when `Platform::isWindows()`, because `symfony/process` would throw
+> `TTY mode is not supported on Windows platform`. `artisan` receives pipes, and the installer skips
+> itself through its own terminal guard, saying so on screen.
+>
+> **What to do**, and the order matters:
+>
+> ```bash
+> php artisan kit:install --force    # the five questions — RECREATES the database
+> ```
+>
+> Run it **right after installing**, while the database holds nothing but seed data: there the
+> `--force` is harmless. Later on it is destructive, because it deletes the SQLite file before asking.
+>
+> If the database already has data and you only want the name and the colour:
+>
+> ```bash
+> php artisan kit:install --custom   # name and colour, touching nothing else
+> ```
+>
+> The other three questions have no non-destructive version, and the command explains why: database
+> and multi-tenancy require recreating (the permission tables only get the tenant column before
+> `migrate`), and the administrator credentials **are not synced by the seeder** — it guarantees that
+> an administrator exists, not that it mirrors `.env`, because it runs on every `db:seed` and
+> overwriting there would revert a password changed by hand.
+>
+> To change the administrator's e-mail or password, the path is deliberate:
+>
+> ```bash
+> php artisan kit:admin
+> php artisan kit:admin --email=new@example.com --senha=secret --force   # no prompts — avoid it: the password lands in the shell history
+> ```
+>
+> It asks for confirmation, never echoes the password, refuses an e-mail that already belongs to
+> another account and **stops** if there is more than one `master_global` — instead of picking one by
+> ordering. The panel's profile screen works too.
+>
+> On Linux, macOS and WSL the questions show up during `create-project` and none of this is needed.
+
 > Multi-tenancy is the item that pays off most to decide now: switched on during installation it costs nothing; switched on later, `kit:tenancy` **recreates the database** (the permission tables only get the tenant column if the flag is active before the migration).
 
 ![Installing starter-kit-easy in a single command](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/install.gif)
@@ -100,9 +140,9 @@ Not a showcase: it's the inventory of everything that already exists, and of wha
 |---|---:|---:|---:|---:|
 | **Navigable screens** | 12 | 28 | 27 | **67** |
 | Resources | 4 | 8 | 8 | **20** |
-| Standalone pages | 4 | 3 | 12 | **19** |
+| Standalone pages | 4 | 4 | 12 | **20** |
 | Widgets | 1 | 9 | 19 | **29** |
-| `GET` routes | 19 | 34 | 33 | **86** |
+| `GET` routes | 21 | 35 | 33 | **89** |
 
 `/app` is the smallest on purpose — it is born **empty**, because that's where your business comes in.
 The other two already come complete.
@@ -110,16 +150,16 @@ The other two already come complete.
 | Foundation | |
 |---|---:|
 | Production packages | **55** |
-| Development packages | **15** |
-| Migrations | **48** |
+| Development packages | **19** |
+| Migrations | **54** |
 | Policies | **14** |
-| `kit:*` commands | **4** |
+| `kit:*` commands | **7** |
 
 | Quality | |
 |---|---:|
-| Test cases (`Kit` + `Tenancy`) | **411**, with 1138 assertions |
+| Test cases (`Kit` suite, measured on 2026-08-26) | **over 1,200**, with over 3,500 assertions |
 | Screens swept in a real browser | **55** |
-| Test files | **94** |
+| Test files | **84** in `Kit` + `Tenancy` (105 in total) |
 | PHPStan | **level 7**, zero errors |
 | FilaCheck | **17** rules, all passing |
 
@@ -127,7 +167,7 @@ The other two already come complete.
 |---|---:|
 | Reference documents (`wikis/`) | **9** |
 | Specified features (`wikis/specs/`) | **28** |
-| Project rules for AI agents (`.ai/rules/`) | **13** |
+| Project rules for AI agents (`.ai/rules/`) | **14** |
 
 ### PHPStan at level 7 — and why that's a strong point
 
@@ -163,8 +203,9 @@ Going from 6 to 7 exposed **29 real errors** in the kit, and one of them was a g
 > | `env('ALGUMA_COISA')` straight into a `str_*` | `(string) env(...)`, or `config()` with a typed default |
 > | a method with no return type | declare the type; the kit requires it everywhere |
 >
-> **Don't solve it with `@phpstan-ignore` or a baseline.** The kit has exactly **one** exception in
-> `phpstan.neon`, and it is for a vendor macro resolved at runtime — with the reason, the two
+> **Don't solve it with `@phpstan-ignore` or a baseline.** The kit has exactly **two** exceptions in
+> `phpstan.neon`: one for a vendor macro resolved at runtime (`simpleLightbox()`), the other for the
+> unsatisfiable annotation of filament-breezy's `customMyProfilePage()` — each with the reason, the
 > alternatives that were tried and dropped, and the test that covers the point for real. That's the
 > standard: if an exception is needed, it comes with the justification and with the test that
 > replaces it.
@@ -188,7 +229,7 @@ Going from 6 to 7 exposed **29 real errors** in the kit, and one of them was a g
 - Panel Switch: switch panels from the user menu
 
 **Observability and maintenance (infra panel)**
-- Spatie Health with checks for database, cache, queues, scheduler, disk, debug mode and local AI
+- Spatie Health with checks for database, cache, queues, scheduler, disk (except on Windows), debug mode, environment, optimized app and local AI
 - Backup Monitor (spatie/laravel-backup), Jobs Monitor, Logs Explorer (no delete button — a trail is evidence)
 - **Grouped exceptions** by type and frequency — what Health, Pulse and the log file don't answer
 - **Sent-mail trail**: separates "it was never sent" from "it was sent and landed in spam"
@@ -208,7 +249,7 @@ Going from 6 to 7 exposed **29 real errors** in the kit, and one of them was a g
 **Productivity**
 - **⌘K search** in place of the topbar's native field: finds records, screens, pages and creation actions — all scoped by permission (details below)
 - Animated count badges in the menu, notification center with tabs, environment indicator
-- **Dashboards already filled in** on the admin and infra panels: 20 widgets (stat cards with an animated counter, funnels, goals, breakdowns, timelines) over the data the panels already have — no empty screen waiting for you
+- **Dashboards already filled in** on the admin and infra panels: 24 widgets (stat cards with an animated counter, funnels, goals, breakdowns, timelines) over the data the panels already have — no empty screen waiting for you
 - Branded error pages (Sentinel) in Portuguese (pt-BR) — the 403 one only shows the permission diagnosis outside production
 - 100% pt-BR UI, including plugins that ship English only (translations in `lang/vendor/`)
 - **Language switcher** on all three panels and on the login screens — driven by data, not by a flag (details below)
@@ -242,7 +283,7 @@ The language button (`bezhansalleh/filament-language-switch`) is registered on *
 
 With a **single language** — the default — the switcher does not appear: there is nowhere to switch to. That is why this is a list and not a boolean; nobody forgets a flag left on with only one language.
 
-> ⚠️ **The switcher translates Filament's layer and the packages', not the kit's own labels.** The coverage comes from Filament and `laravel-lang/common`. "Administrador Geral", "Acesso ao painel /app", the hub titles and the resource labels are pt-BR strings written in the code — there are ten `__()` calls in the whole app. Turning `en` on today makes **half the screen switch language and the other half not**. Internationalizing the kit is declared work, not yet done.
+> ⚠️ **The switcher translates Filament's layer and the packages', not the kit's own labels.** The coverage comes from Filament and `laravel-lang/common`. "Administrador Geral", "Acesso ao painel /app", the hub titles and the resource labels are pt-BR strings written in the code — there are eleven `__()` calls in the whole app. Turning `en` on today makes **half the screen switch language and the other half not**. Internationalizing the kit is declared work, not yet done.
 
 ## User invitation
 
@@ -796,8 +837,10 @@ screens answer one of those each:
 
 ### Both trails store sensitive data
 
-That is why they live **only** on `/infra`, where getting in already requires the `master_global`
-or `infra` role — on `/app` any panel role would see them:
+That is why they are only **reachable** on `/infra`, where getting in already requires the `master_global`
+or `infra` role — on `/app` any panel role would see them. The `ExceptionResource` route exists on all
+three panels (`/admin/exceptions`, `/app/{tenant}/exceptions`, `/infra/exceptions`); the barrier is the
+permission subtraction in `database/seeders/PapeisSeeder.php`, not the absence of the screen:
 
 - the exception's **stack trace** can carry request parameters, therefore personal data;
 - the e-mail's **body** is stored, and the access invitation carries the acceptance link.
@@ -849,7 +892,13 @@ The kit is born **single-tenant**. One command turns multi-tenancy on — and th
 ```bash
 php artisan kit:tenancy          # turn it on
 php artisan kit:tenancy --demo   # turn it on + create a demo scenario
+php artisan kit:tenancy --force  # confirms the database recreation without asking
 ```
+
+> `--demo` also writes `KIT_DEMO=true` to `.env`. That key is what makes the sample **Projetos**
+> resource show up on `/app` — without it the business panel stays empty, which is the kit's design.
+> To hide the demo without deleting anything, `KIT_DEMO=false`; to remove it for good, delete the
+> files the command lists at the end.
 
 | Panel | With the mode on |
 |---|---|
@@ -859,7 +908,7 @@ php artisan kit:tenancy --demo   # turn it on + create a demo scenario
 
 ### Administering one organization is not administering the installation
 
-The kit's roles, and what each one means with the mode on:
+The kit's five roles, and what each one means with the mode on:
 
 | Role | Panel | Assignment context | What it does |
 |---|---|---|---|
@@ -885,6 +934,9 @@ The code follows Filament's API vocabulary — model `Tenant`, table `tenants`, 
     'slug'         => 'companies',  // /admin/companies
 ],
 ```
+
+The same four entries exist in `.env`, as seed and fallback: `KIT_TENANCY` (the flag, written by
+`kit:tenancy`), `KIT_TENANCY_LABEL`, `KIT_TENANCY_LABEL_PLURAL` and `KIT_TENANCY_SLUG`.
 
 ### In your models
 
@@ -1264,7 +1316,7 @@ produces a file that the next step checks.
 **What this changes in practice:**
 
 - **The agent reads before writing.** `wikis/` and `.ai/rules` answer what already exists, and the
-  [feature roadmap](#feature-roadmap) below lists the 61 ready screens. A feature
+  [feature roadmap](#feature-roadmap) below lists the 68 ready features. A feature
   reimplemented from scratch because the agent didn't know it existed is the most expensive and most invisible cost.
 - **Context becomes a file, not chat history.** Switching agent, machine or person does not
   lose the why of the decision — it is in the ADR, versioned in the same commit as the code.
@@ -1326,6 +1378,7 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 | F-65 | **Welcome page at the root**, with what the installation customised | `/` | anonymous | open it unauthenticated: the three cards and the config show up, and no secrets — the test plants a sentinel in 8 values and asserts its absence | 🟢 |
 | F-66 | The root inherits the project theme and colour | `/` | anonymous | change `KIT_COR_PRIMARIA`, run `npm run build` and reload: the button changes colour. Without the route's `panel:app` it would render amber | 🟢 |
 | F-67 | The three exceptions are **declared**, not hidden | `/infra/command-center/commands` | `infra` | uncheck `View:Commands`: the screen **still** opens. The package exposes a single callback for all three of its Pages, so their barrier is `command-center:access`. `tests/Kit/PermissoesDeTelasTest.php` has the case that asserts this gap and turns red the day it closes | 🔵 |
+| F-68 | **[Card navigation hub](#card-navigation-hub)** | `/infra/hub-de-infraestrutura` (always); `/admin/hub-de-administracao` and `/app{/org}/hub-do-negocio` with `KIT_HUB=true` | whoever enters the panel | open the `/infra` hub: a grid of cards, one per destination your role can reach. With `KIT_HUB=false` the `/admin` and `/app` hubs leave the menu, the URL and the ⌘K search | 🟢 |
 
 ### Invitations
 
@@ -1478,13 +1531,22 @@ Reverb uses 8090 instead of the default 8080 so it doesn't collide with llama.cp
 ```bash
 composer dev          # server + queue + vite together
 composer test         # pint + phpstan + filacheck + the whole suite
-composer test:kit     # only the kit's tests (the foundation)
+composer test:kit     # only the kit's tests (the foundation), in parallel
 composer lint         # formats the code
+composer lint:check   # only checks the formatting, changing nothing (what CI runs)
 composer filament:check   # only the Filament-specific lint (FilaCheck)
 composer refactor:preview # what Rector would rewrite (dry-run) — OUTSIDE composer test
 composer refactor:apply   # applies Rector's rewrite — OUTSIDE composer test
+composer upgrade:filament # runs vendor/bin/filament-v5 (filament/upgrade is already in require-dev)
 php artisan kit:install --force   # reinstalls from scratch (deletes the SQLite file) and asks again
+php artisan kit:install --custom   # redoes only name and colour, without touching the database
 php artisan kit:install --no-custom   # installs without asking anything
+php artisan kit:install --no-npm      # skips installing and building the front-end assets
+php artisan kit:install --no-seed     # doesn't seed the database (roles, initial user, AI agents)
+php artisan kit:install --no-support  # skips the invitation to star the kit on GitHub
+#   --create-project is internal to post-create-project-cmd: removes what only serves the kit's own repository
+php artisan kit:admin             # changes the administrator's e-mail and password (asks for confirmation)
+php artisan kit:admin --email=x --senha=y --force   # no prompts — avoid it: the password lands in the shell history
 php artisan kit:update            # brings in improvements from a new kit version
 php artisan kit:tenancy           # turns on multi-tenancy (opt-in)
 ```
@@ -1557,8 +1619,7 @@ if a quality set is turned on.
 gap: Filament ships its **own** tool, also based on Rector.
 
 ```bash
-composer require filament/upgrade --dev -W
-vendor/bin/filament-vN     # N = the target major
+composer upgrade:filament   # runs vendor/bin/filament-v5 — filament/upgrade is already in require-dev
 ```
 
 It is kept in lockstep with the framework — whoever writes the rules is whoever breaks the API.
@@ -1618,7 +1679,8 @@ the kit that no longer exists.
 
 Three decisions worth knowing before you touch it:
 
-- **`KIT_ART=1` is not decoration.** Without the variable the file is *skipped*. It writes into
+- **`KIT_ART=1` is not decoration.** It is a test-only variable — it exists neither in `config/` nor
+  in `.env.example`; the test file itself reads it. Without the variable the file is *skipped*. It writes into
   `art/`, and a CI suite that dirties the working tree is worse than a slow one.
 - **The sizes are fixed: 1400x875 full, 760x475 thumb.** That is the ratio of the images already in
   `art/`, and the gallery puts two thumbs per row — a thumb with a different ratio breaks the table.
@@ -1653,7 +1715,7 @@ The benefit is in not deriving tests only from the "happy path". What slips thro
 | 1 | **Name** | `APP_NAME` in `.env` | ✅ |
 | 2 | **Database** | the `DB_*` block in `.env` | ✅ |
 | 3 | **Seeder credentials** | `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` in `.env` | ✅ |
-| 4 | **Primary color** | `KIT_COR_PRIMARIA` in `.env` (a color name from the Filament palette) | ✅ |
+| 4 | **Primary color** | `KIT_COR_PRIMARIA` in `.env` (a color name from the Filament palette), or `KIT_COR_PRIMARIA_HEX` with a free hex value — the hex beats the name when both are filled | ✅ |
 | 5 | **[Multi-tenancy](#multi-tenancy-opt-in)** | `php artisan kit:tenancy`, and the displayed term in `config/kit.php` → `tenancy.label` | ✅ |
 | 6 | **Login artwork** | `public/images/auth/login.svg` | — |
 | 7 | **Panel access** | each user's role (`/admin` → Roles, the *Painel* field); the rule that reads it is `App\Models\User::canAccessPanel()` | — |
@@ -1703,19 +1765,21 @@ Also global: modals that do **not** close on Esc (an accidental tap would discar
 > }
 > ```
 
-> **Four of these defaults are editable in [Kit settings](#kit-settings-under-admin)**, on the *Tables* tab: rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns. The rest stays a code decision on purpose — those are choices with a written reason, not matters of taste.
+> **Four of these defaults are editable in [Kit settings](#kit-settings-under-admin)**, on the *Tables* tab: rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns. The same four exist in `.env` as seed and fallback — `KIT_TABELA_PAGINACAO`, `KIT_TABELA_LISTRADA`, `KIT_TABELA_PERSISTIR_FILTROS` and `KIT_TABELA_COLUNAS_REDIMENSIONAVEIS` — and the value stored in the database wins. The rest stays a code decision on purpose — those are choices with a written reason, not matters of taste.
 >
 > ⚠️ **Table density does not exist in Filament 5**, so it is not on the screen. The old TODO here promised four items and one of them has no API: a sweep over `vendor/filament/tables/src` returns no occurrence of `density`, and `vendor/filament/tables/src/Enums/` holds seven enums, none for density. What the framework does offer as a visual tightness control is `striped()`, and that is the one that became configurable.
 
 ## Kit settings under `/admin`
 
-What the installer asked — plus a handful of things you previously could only change by editing a file — now lives at **`/admin/configuracoes-do-kit`**, in four tabs. No `.env`, no deploy.
+What the installer asked — plus a handful of things you previously could only change by editing a file — now lives at **`/admin/configuracoes-do-kit`**, in six tabs. No `.env`, no deploy.
 
 | Tab | What you change |
 |---|---|
 | **Identidade** (identity) | application name, primary colour (the Filament palette **or** a free hex value), brand logo, favicon and the artwork on the authentication screens |
 | **E-mail** | transport (`log`, `array`, `smtp`), host, port, encryption, username, password and sender |
 | **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns — the defaults for **every** table in all three panels |
+| **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](#open-registration-and-approval)) |
+| **Login** | the four social login providers, each with its switch, *Client ID* and *Client Secret* (encrypted), and the login screen footer ([details](#social-login-four-providers-opt-in-one-at-a-time)) |
 | **Kit** | card navigation hub, and what your business calls each organisation (singular and plural) |
 
 Everything is stored by `spatie/laravel-settings` in the `settings` table, with the screen coming from `filament/spatie-laravel-settings-plugin` — both were already installed in the kit and unused until this version.
@@ -1896,6 +1960,25 @@ php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder
 php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
 ```
 
+### New package with a Resource: the policy must be registered
+
+Laravel discovers policies by convention only for `App\Models\*`. A **package** resource — the audit
+trail, mail logs, queues — has its model in a vendor namespace, and the `App\Policies\XPolicy` you
+write for it **is consulted by nothing** until someone calls `Gate::policy()`. The permission shows up
+on the roles screen, and decides nothing.
+
+That is how the kit shipped for several versions, and the Blueprint adherence audit (v0.21) caught
+it: eight `/infra` and `/admin` screens opened with the permission revoked. The fix is
+`App\Support\PoliciesDeVendor`, a `model => policy` map registered at boot. When installing a package
+with a resource, add the line there — and check two things on the package's resource:
+
+- `$shouldSkipAuthorization = true` disables the policy entirely (Composer Release had it; the kit
+  subclasses it with `false` **and** with the page pointing at the subclass);
+- `canAccess()` overridden without `&& parent::canAccess()` disables the policy for the index only.
+
+`tests/Kit/PermissoesDeResourcesTest.php` fails for a new resource without a registered policy and
+for a resource that opens with `ViewAny` revoked — naming the resource.
+
 **Both, in this order, every time.** The first runs `shield:generate --all` on **each** panel and writes the policies; the second slices the matrix by the panel the Resource is registered on and hands the permissions back to the roles. The first one alone creates the permission and gives it to nobody — the screen stays at 403 for anyone who isn't `master_global`. Both are idempotent: running them again is normal operation.
 
 ### New Page, Widget and Action
@@ -2055,6 +2138,7 @@ The distinction is the point: **a new file has nothing to overwrite**, so applyi
 | `--branch=name` | choose the temporary branch's name |
 | `--no-branch` | apply on the current branch |
 | `--keep-remote` | keep the kit's remote and tags at the end |
+| `--repo=URL` | compare against another kit repository (a fork, for instance); the default is `config('kit.repository')`, which reads `KIT_REPOSITORY` from `.env` |
 
 With no terminal (CI, `--no-interaction`) the command becomes a report and changes nothing — unless you pass `--only-new` or `--all`, which **are** the approval, given on the command line.
 
@@ -2144,6 +2228,32 @@ with `git add -f`.
 `tests/Kit/BlueprintForaDoPacoteTest.php` guards this. **With Blueprint enabled those cases go
 red** — deliberately: it is the reminder to run `composer bp:off` before committing.
 
+## Card navigation hub
+
+Each panel has a **hub** page: a grid of cards, one per destination in the panel, instead of the
+sidebar tree — for when the question "where do I see X?" is real. There are three:
+
+| Hub | Panel | URL | Born |
+|---|---|---|---|
+| `HubDeInfraestrutura` | `/infra` | `/infra/hub-de-infraestrutura` | **on** — sixteen destinations in four groups, half of them with untranslated plugin labels |
+| `HubDeAdministracao` | `/admin` | `/admin/hub-de-administracao` | off |
+| `HubDoNegocio` | `/app` | `/app{/org}/hub-do-negocio` | off |
+
+The flag is **`KIT_HUB`** (`config/kit.php` → `hub`, default `false`). It turns on the `/admin` and
+`/app` hubs; off, both pages leave the menu, the URL and the ⌘K search. `/infra` **does not depend
+on it**: it is the only panel where the grid beats the tree by default, and the asymmetry is a
+recorded decision (ADR-03 of the `hub-de-cards-opcional` wiki). Setting `KIT_HUB=true` needs
+nothing else — `FilamentCardsPlugin` is already registered on all three panels and the cards' CSS is
+already published.
+
+The cards come from `App\Filament\Concerns\DescobreCardsDoPainel`, which scans the panel's resources
+and pages and **filters by each destination's `canAccess()`** — whoever can't reach the screen doesn't
+see the card. The hub adds to the sidebar, it doesn't replace it: no item leaves the navigation.
+
+The browser test is `tests/Browser/HubDeCardsTest.php`: the `/infra` grid **painted**, with the
+description inside the card — because the package registers no CSS and without
+`resources/css/filament/cards.css` the HTML is the same and the grid becomes a list of loose links.
+
 ## Installed packages
 
 Everything below comes installed, published and registered on the panels — there is no "now install plugin X" step. The source of truth for versions is `composer.json`; the table tells you **what each one is for inside the kit**.
@@ -2171,6 +2281,7 @@ Everything below comes installed, published and registered on the panels — the
 | [tapp/filament-auditing](https://packagist.org/packages/tapp/filament-auditing) | the screen for that trail inside the panel |
 | [syriable/filament-activitylog](https://packagist.org/packages/syriable/filament-activitylog) | activity log (spatie/laravel-activitylog) in Filament |
 | [bezhansalleh/filament-panel-switch](https://packagist.org/packages/bezhansalleh/filament-panel-switch) | panel switching from the user menu |
+| [laravel/socialite](https://packagist.org/packages/laravel/socialite) | social login (Google, GitHub, LinkedIn, X), opt-in per provider |
 
 ### Observability and maintenance
 
@@ -2217,6 +2328,9 @@ Everything below comes installed, published and registered on the panels — the
 | [anselmokossa/filament-sentinel](https://packagist.org/packages/anselmokossa/filament-sentinel) | error pages (403, 404, 419, 500, 503) that look like the panel |
 | [flowframe/laravel-trend](https://packagist.org/packages/flowframe/laravel-trend) | period aggregation for the widgets' charts |
 | [bezhansalleh/filament-language-switch](https://packagist.org/packages/bezhansalleh/filament-language-switch) | language switcher on the three panels and on the login screens |
+| [harvirsidhu/filament-cards](https://packagist.org/packages/harvirsidhu/filament-cards) | the card grid of the [navigation hubs](#card-navigation-hub) |
+| [leandrocfe/filament-apex-charts](https://packagist.org/packages/leandrocfe/filament-apex-charts) | ApexCharts charts in the dashboard widgets |
+| [solution-forest/filament-simplelightbox](https://packagist.org/packages/solution-forest/filament-simplelightbox) | lightbox to enlarge images in tables and infolists |
 
 ### Data and services
 
@@ -2259,6 +2373,12 @@ php artisan modelCache:clear      # clears the model cache
 | [nunomaduro/collision](https://packagist.org/packages/nunomaduro/collision) | readable errors in the terminal |
 | [mockery/mockery](https://packagist.org/packages/mockery/mockery) | mocks in tests |
 | [fakerphp/faker](https://packagist.org/packages/fakerphp/faker) | fake data **in tests only** — the kit's seeders never use it |
+| [pestphp/pest-plugin-browser](https://packagist.org/packages/pestphp/pest-plugin-browser) | the browser tests (`tests/Browser`, `tests/BrowserTenancy`) |
+| [pestphp/pest-plugin-mutate](https://packagist.org/packages/pestphp/pest-plugin-mutate) | mutation testing (`pest --mutate`) |
+| [pestphp/pest-plugin-phpstan](https://packagist.org/packages/pestphp/pest-plugin-phpstan) | PHPStan inside `pest` |
+| [rector/rector](https://packagist.org/packages/rector/rector) + [driftingly/rector-laravel](https://packagist.org/packages/driftingly/rector-laravel) | automated rewrites (`composer refactor:preview` / `refactor:apply`) |
+| [filament/upgrade](https://packagist.org/packages/filament/upgrade) | Filament's upgrade tool (`composer upgrade:filament`) |
+| [laravel/boost](https://packagist.org/packages/laravel/boost) | MCP server and guidelines for the AI agents (`.ai/rules`) |
 
 ### Front-end (`package.json`)
 
@@ -2267,6 +2387,7 @@ php artisan modelCache:clear      # clears the model cache
 | [vite](https://www.npmjs.com/package/vite) + [laravel-vite-plugin](https://www.npmjs.com/package/laravel-vite-plugin) | the asset build |
 | [tailwindcss](https://www.npmjs.com/package/tailwindcss) + [@tailwindcss/vite](https://www.npmjs.com/package/@tailwindcss/vite) | the CSS (v4, no config file) |
 | [concurrently](https://www.npmjs.com/package/concurrently) | runs server, queue and vite together in `composer dev` |
+| [playwright](https://www.npmjs.com/package/playwright) | the browser behind the `pest-plugin-browser` tests |
 | [@laravel/multiplex](https://www.npmjs.com/package/@laravel/multiplex) | batches Livewire requests (optional) |
 
 ## License

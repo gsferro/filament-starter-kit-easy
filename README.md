@@ -63,6 +63,7 @@ Antes de tocar no banco, ele **pergunta cinco coisas** — como o `laravel new` 
 >
 > ```bash
 > php artisan kit:admin
+> php artisan kit:admin --email=novo@example.com --senha=segredo --force   # sem perguntas — evite: a senha fica no histórico do shell
 > ```
 >
 > Ele pede confirmação, nunca ecoa a senha, recusa e-mail que já pertence a outra conta e **para**
@@ -139,9 +140,9 @@ Não é vitrine: é o inventário de tudo que já existe, e o que você não vai
 |---|---:|---:|---:|---:|
 | **Telas navegáveis** | 12 | 28 | 27 | **67** |
 | Resources | 4 | 8 | 8 | **20** |
-| Páginas próprias | 4 | 3 | 12 | **19** |
+| Páginas próprias | 4 | 4 | 12 | **20** |
 | Widgets | 1 | 9 | 19 | **29** |
-| Rotas `GET` | 19 | 34 | 33 | **86** |
+| Rotas `GET` | 21 | 35 | 33 | **89** |
 
 O `/app` é o menor de propósito — ele nasce **vazio**, porque é onde o seu negócio entra. Os outros
 dois já vêm completos.
@@ -149,16 +150,16 @@ dois já vêm completos.
 | Fundação | |
 |---|---:|
 | Pacotes de produção | **55** |
-| Pacotes de desenvolvimento | **15** |
-| Migrations | **48** |
+| Pacotes de desenvolvimento | **19** |
+| Migrations | **54** |
 | Policies | **14** |
-| Comandos `kit:*` | **4** |
+| Comandos `kit:*` | **7** |
 
 | Qualidade | |
 |---|---:|
-| Casos de teste (`Kit` + `Tenancy`) | **411**, com 1138 asserções |
+| Casos de teste (suíte `Kit`, medida em 2026-08-26) | **mais de 1.200**, com mais de 3.500 asserções |
 | Telas varridas em navegador real | **55** |
-| Arquivos de teste | **94** |
+| Arquivos de teste | **84** em `Kit` + `Tenancy` (105 no total) |
 | PHPStan | **level 7**, zero erros |
 | FilaCheck | **17** regras, todas passando |
 
@@ -166,7 +167,7 @@ dois já vêm completos.
 |---|---:|
 | Documentos de referência (`wikis/`) | **9** |
 | Features especificadas (`wikis/specs/`) | **28** |
-| Project rules para agentes de IA (`.ai/rules/`) | **13** |
+| Project rules para agentes de IA (`.ai/rules/`) | **14** |
 
 ### PHPStan no level 7 — e por que isso é um ponto forte
 
@@ -202,8 +203,9 @@ Subir de 6 para 7 expôs **29 erros reais** no kit, e um deles era bug latente d
 > | `env('ALGUMA_COISA')` direto num `str_*` | `(string) env(...)`, ou `config()` com default tipado |
 > | método sem tipo de retorno | declare o tipo; o kit exige em tudo |
 >
-> **Não resolva com `@phpstan-ignore` nem baseline.** O kit tem exatamente **uma** exceção em
-> `phpstan.neon`, e ela é para um macro de vendor resolvido em runtime — com o motivo, as duas
+> **Não resolva com `@phpstan-ignore` nem baseline.** O kit tem exatamente **duas** exceções em
+> `phpstan.neon`: uma para um macro de vendor resolvido em runtime (`simpleLightbox()`), outra para
+> a anotação insatisfazível de `customMyProfilePage()` do filament-breezy — cada uma com o motivo, as
 > alternativas testadas e descartadas, e o teste que cobre o ponto de verdade. Esse é o padrão:
 > se precisar de exceção, ela vem com a justificativa e com o teste que a substitui.
 >
@@ -226,7 +228,7 @@ Subir de 6 para 7 expôs **29 erros reais** no kit, e um deles era bug latente d
 - Panel Switch: troca de painel pelo menu do usuário
 
 **Observabilidade e manutenção (painel infra)**
-- Spatie Health com checks de banco, cache, filas, agendador, disco, debug mode e IA local
+- Spatie Health com checks de banco, cache, filas, agendador, disco (exceto no Windows), debug mode, ambiente, app otimizado e IA local
 - Backup Monitor (spatie/laravel-backup), Jobs Monitor, Logs Explorer (sem botão de apagar — trilha é evidência)
 - **Exceções agrupadas** por tipo e frequência — o que Health, Pulse e arquivo de log não respondem
 - **Trilha de e-mails enviados**: separa "não foi enviado" de "foi enviado e caiu no spam"
@@ -246,7 +248,7 @@ Subir de 6 para 7 expôs **29 erros reais** no kit, e um deles era bug latente d
 **Produtividade**
 - **Busca ⌘K** no lugar do campo nativo da topbar: encontra registros, telas, páginas e ações de criação — tudo recortado por permissão (detalhes abaixo)
 - Badges de contagem animados no menu, centro de notificações com abas, indicador de ambiente
-- **Dashboards já preenchidos** nos painéis admin e infra: 20 widgets (stat cards com contador animado, funis, metas, breakdowns, timelines) sobre os dados que os painéis já têm — nada de tela vazia esperando você
+- **Dashboards já preenchidos** nos painéis admin e infra: 24 widgets (stat cards com contador animado, funis, metas, breakdowns, timelines) sobre os dados que os painéis já têm — nada de tela vazia esperando você
 - Páginas de erro brandadas (Sentinel) em pt-BR — a de 403 só mostra o diagnóstico de permissão fora de produção
 - UI 100% em pt-BR, inclusive nos plugins que só trazem inglês (traduções em `lang/vendor/`)
 - **Seletor de idioma** nos três painéis e nas telas de login — dirigido por dado, não por flag (detalhes abaixo)
@@ -280,7 +282,7 @@ O botão de idioma (`bezhansalleh/filament-language-switch`) está registrado no
 
 Com **um único idioma** — que é o padrão — o seletor não aparece: não há para onde trocar. É a razão de isto ser uma lista e não um booleano; ninguém esquece uma flag ligada com um idioma só.
 
-> ⚠️ **O seletor traduz a camada do Filament e dos pacotes, não os rótulos do kit.** A cobertura vem do Filament e do `laravel-lang/common`. "Administrador Geral", "Acesso ao painel /app", os títulos dos hubs e os labels dos resources são strings pt-BR escritas no código — há dez `__()` em todo o app. Com `en` ligado hoje, **metade da tela troca de idioma e a outra metade não**. Internacionalizar o kit é trabalho declarado e ainda não feito.
+> ⚠️ **O seletor traduz a camada do Filament e dos pacotes, não os rótulos do kit.** A cobertura vem do Filament e do `laravel-lang/common`. "Administrador Geral", "Acesso ao painel /app", os títulos dos hubs e os labels dos resources são strings pt-BR escritas no código — há onze `__()` em todo o app. Com `en` ligado hoje, **metade da tela troca de idioma e a outra metade não**. Internacionalizar o kit é trabalho declarado e ainda não feito.
 
 ## Convite de usuário
 
@@ -823,8 +825,10 @@ respondem cada uma dessas perguntas:
 
 ### As duas trilhas guardam dado sensível
 
-É por isso que elas vivem **só** no `/infra`, onde entrar já exige papel `master_global` ou
-`infra` — no `/app` qualquer papel do painel as veria:
+É por isso que elas só são **alcançáveis** no `/infra`, onde entrar já exige papel `master_global` ou
+`infra` — no `/app` qualquer papel do painel as veria. A rota do `ExceptionResource` existe nos três
+painéis (`/admin/exceptions`, `/app/{tenant}/exceptions`, `/infra/exceptions`); a barreira é a
+subtração de permissão em `database/seeders/PapeisSeeder.php`, não a ausência da tela:
 
 - o **stack trace** da exceção pode carregar parâmetro de request, logo pode carregar dado pessoal;
 - o **corpo do e-mail** é gravado, e o convite de acesso carrega o link de aceite.
@@ -876,6 +880,7 @@ O kit nasce **single-tenant**. Um comando liga o modo multi-tenant — e quem n�
 ```bash
 php artisan kit:tenancy          # liga o modo
 php artisan kit:tenancy --demo   # liga + cria um cenário de demonstração
+php artisan kit:tenancy --force  # confirma a recriação do banco sem perguntar
 ```
 
 > O `--demo` também escreve `KIT_DEMO=true` no `.env`. É essa chave que faz o resource de exemplo
@@ -891,7 +896,7 @@ php artisan kit:tenancy --demo   # liga + cria um cenário de demonstração
 
 ### Quem administra uma organização não administra a instalação
 
-Os quatro papéis do kit, e o que cada um significa com o modo ligado:
+Os cinco papéis do kit, e o que cada um significa com o modo ligado:
 
 | Papel | Painel | Contexto da atribuição | O que faz |
 |---|---|---|---|
@@ -917,6 +922,9 @@ O código segue o vocabulário da API do Filament — model `Tenant`, tabela `te
     'slug'         => 'empresas',   // /admin/empresas
 ],
 ```
+
+As mesmas quatro entradas existem no `.env`, como semente e plano B: `KIT_TENANCY` (a flag, escrita
+pelo `kit:tenancy`), `KIT_TENANCY_LABEL`, `KIT_TENANCY_LABEL_PLURAL` e `KIT_TENANCY_SLUG`.
 
 ### Nas suas models
 
@@ -1286,7 +1294,7 @@ arquivo que a etapa seguinte confere.
 **O que isso muda na prática:**
 
 - **O agente lê antes de escrever.** `wikis/` e `.ai/rules` respondem o que já existe, e o
-  [roteiro de features](#roteiro-de-features) abaixo lista as 61 telas prontas. Feature
+  [roteiro de features](#roteiro-de-features) abaixo lista as 68 features prontas. Feature
   reimplementada do zero porque o agente não sabia que existia é o custo mais caro e mais invisível.
 - **Contexto vira arquivo, não histórico de chat.** Trocar de agente, de máquina ou de pessoa não
   perde o porquê da decisão — ele está no ADR, versionado no mesmo commit do código.
@@ -1350,6 +1358,7 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-65 | **Boas-vindas na raiz**, com o que a instalação personalizou | `/` | anônimo | abra sem autenticar: os três cartões e a config aparecem, e nada de segredo — o caso planta sentinela em 8 valores e assere a ausência | 🟢 |
 | F-66 | A raiz herda tema e cor do projeto | `/` | anônimo | troque `KIT_COR_PRIMARIA`, rode `npm run build` e recarregue: o botão muda de cor. Sem o `panel:app` da rota, sairia âmbar | 🟢 |
 | F-67 | As três exceções estão **declaradas**, não escondidas | `/infra/command-center/commands` | `infra` | desmarque `View:Commands`: a tela **continua** abrindo. O pacote expõe um callback só para as três Pages dele, e a barreira delas é `command-center:access`. `tests/Kit/PermissoesDeTelasTest.php` tem o caso que assere essa lacuna e fica vermelho no dia em que ela fechar | 🔵 |
+| F-68 | **[Hub de navegação em cartões](#hub-de-navegação-em-cartões)** | `/infra/hub-de-infraestrutura` (sempre); `/admin/hub-de-administracao` e `/app{/org}/hub-do-negocio` com `KIT_HUB=true` | quem entra no painel | abra o hub do `/infra`: uma grade de cartões, um por destino que o seu papel alcança. Com `KIT_HUB=false` os hubs de `/admin` e `/app` somem do menu, da URL e da busca ⌘K | 🟢 |
 
 ### Convites
 
@@ -1505,13 +1514,20 @@ composer dev          # servidor + fila + vite juntos
 composer test         # pint + phpstan + filacheck + a suíte inteira
 composer test:kit     # só os testes do kit (a fundação), em paralelo
 composer lint         # formata o código
+composer lint:check   # só verifica a formatação, sem alterar nada (o que a CI roda)
 composer filament:check   # só o lint específico de Filament (FilaCheck)
 composer refactor:preview # o que o Rector reescreveria (dry-run) — FORA do composer test
 composer refactor:apply   # aplica a reescrita do Rector — FORA do composer test
+composer upgrade:filament # roda o vendor/bin/filament-v5 (filament/upgrade já está no require-dev)
 php artisan kit:install --force   # reinstala do zero (APAGA o SQLite) e refaz as perguntas
 php artisan kit:install --custom   # refaz só nome e cor, sem tocar no banco
 php artisan kit:install --no-custom   # instala sem perguntar nada
+php artisan kit:install --no-npm      # pula a instalação e o build dos assets front-end
+php artisan kit:install --no-seed     # não popula o banco (papéis, usuário inicial, agentes de IA)
+php artisan kit:install --no-support  # pula o convite para dar uma estrela ao kit no GitHub
+#   --create-project é uso interno do post-create-project-cmd: apaga o que só serve ao repositório do kit
 php artisan kit:admin             # troca e-mail e senha do administrador (pede confirmação)
+php artisan kit:admin --email=x --senha=y --force   # sem perguntas — evite: a senha fica no histórico do shell
 php artisan kit:update            # traz melhorias de uma versão nova do kit
 php artisan kit:tenancy           # liga o modo multi-tenant (opt-in)
 ```
@@ -1584,8 +1600,7 @@ um set de qualidade for ligado.
 Filament distribui a **própria** ferramenta, também baseada em Rector.
 
 ```bash
-composer require filament/upgrade --dev -W
-vendor/bin/filament-vN     # N = major de destino
+composer upgrade:filament   # roda o vendor/bin/filament-v5 — o filament/upgrade já está no require-dev
 ```
 
 Ela é mantida em lockstep com o framework — quem escreve as regras é quem quebra a API.
@@ -1645,7 +1660,8 @@ não existe mais.
 
 Três decisões que valem saber antes de mexer:
 
-- **`KIT_ART=1` não é enfeite.** Sem a variável o arquivo é *skipped*. Ele escreve em `art/`, e uma
+- **`KIT_ART=1` não é enfeite.** É variável só de teste — não existe em `config/` nem no
+  `.env.example`; o próprio arquivo de teste a lê. Sem a variável o arquivo é *skipped*. Ele escreve em `art/`, e uma
   suíte de CI que suja a árvore de trabalho é pior que uma suíte lenta.
 - **As medidas são fixas: 1400x875 no cheio, 760x475 na thumb.** É a proporção das imagens que já
   estavam no `art/`, e a galeria põe duas thumbs por linha — thumb com outra proporção desalinha a
@@ -1681,7 +1697,7 @@ O benefício está em não derivar os testes só do "caminho feliz". O que escap
 | 1 | **Nome** | `APP_NAME` no `.env` | ✅ |
 | 2 | **Banco de dados** | bloco `DB_*` no `.env` | ✅ |
 | 3 | **Credenciais do seeder** | `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` no `.env` | ✅ |
-| 4 | **Cor primária** | `KIT_COR_PRIMARIA` no `.env` (nome de uma cor da paleta do Filament) | ✅ |
+| 4 | **Cor primária** | `KIT_COR_PRIMARIA` no `.env` (nome de uma cor da paleta do Filament), ou `KIT_COR_PRIMARIA_HEX` com um hexadecimal livre — o hex vence o nome quando os dois estão preenchidos | ✅ |
 | 5 | **[Multi-tenancy](#multi-tenancy-opt-in)** | `php artisan kit:tenancy`, e o termo exibido em `config/kit.php` → `tenancy.label` | ✅ |
 | 6 | **Arte do login** | `public/images/auth/login.svg` | — |
 | 7 | **Acesso aos painéis** | o papel de cada usuário (`/admin` → Papéis, campo *Painel*); a regra que o lê é `App\Models\User::canAccessPanel()` | — |
@@ -1731,19 +1747,21 @@ Também são globais: modal que **não** fecha no Esc (um toque acidental descar
 > }
 > ```
 
-> **Quatro desses defaults são editáveis em [Configurações do kit](#configurações-do-kit-em-admin)**, na aba *Tabelas*: linhas por página, linhas listradas, persistência do recorte e colunas arrastáveis. O resto continua sendo decisão de código, de propósito — são escolhas com motivo escrito, não preferência de gosto.
+> **Quatro desses defaults são editáveis em [Configurações do kit](#configurações-do-kit-em-admin)**, na aba *Tabelas*: linhas por página, linhas listradas, persistência do recorte e colunas arrastáveis. No `.env` as mesmas quatro existem como semente e plano B — `KIT_TABELA_PAGINACAO`, `KIT_TABELA_LISTRADA`, `KIT_TABELA_PERSISTIR_FILTROS` e `KIT_TABELA_COLUNAS_REDIMENSIONAVEIS` — e o valor gravado no banco vence. O resto continua sendo decisão de código, de propósito — são escolhas com motivo escrito, não preferência de gosto.
 >
 > ⚠️ **Densidade de tabela não existe no Filament 5** e por isso não está na tela. O TODO antigo daqui prometia os quatro itens, e um deles não tem API: varredura em `vendor/filament/tables/src` não devolve nenhuma ocorrência de `density`, e `vendor/filament/tables/src/Enums/` traz sete enums, nenhum de densidade. O que o framework oferece de controle visual de aperto é o `striped()`, e é ele que ficou configurável.
 
 ## Configurações do kit em `/admin`
 
-O que a instalação perguntou — e mais um punhado de coisas que antes só se mudava editando arquivo — vive em **`/admin/configuracoes-do-kit`**, em quatro abas. Nada de `.env`, nada de deploy.
+O que a instalação perguntou — e mais um punhado de coisas que antes só se mudava editando arquivo — vive em **`/admin/configuracoes-do-kit`**, em seis abas. Nada de `.env`, nada de deploy.
 
 | Aba | O que você troca |
 |---|---|
 | **Identidade** | nome da aplicação, cor primária (a paleta do Filament **ou** um hexadecimal livre), logo da marca, favicon e a arte das telas de autenticação |
 | **E-mail** | transporte (`log`, `array`, `smtp`), servidor, porta, criptografia, usuário, senha e remetente |
 | **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário e colunas arrastáveis — os defaults de **toda** tabela dos três painéis |
+| **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](#registro-aberto-e-aprovação)) |
+| **Login** | os quatro provedores de login social, cada um com interruptor, *Client ID* e *Client Secret* (cifrado), e o rodapé da tela de login ([detalhes](#login-social-quatro-provedores-opt-in-um-por-um)) |
 | **Kit** | hub de navegação em cartões, e como o seu negócio chama cada organização (singular e plural) |
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
@@ -1922,6 +1940,25 @@ php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder
 php artisan db:seed --class=Database\\Seeders\\PapeisSeeder
 ```
 
+### Pacote novo com Resource: a policy precisa ser registrada
+
+O Laravel descobre policy por convenção só para `App\Models\*`. Um resource de **pacote** — a trilha
+de auditoria, os logs de e-mail, as filas — tem modelo em namespace de vendor, e a
+`App\Policies\XPolicy` que você escrever para ele **não é consultada por nada** até alguém chamar
+`Gate::policy()`. A permissão aparece na tela de papéis, e não decide.
+
+Foi assim que o kit ficou por várias versões, e a auditoria de aderência ao Blueprint (v0.21) pegou:
+oito telas do `/infra` e do `/admin` abriam com a permissão revogada. A correção é
+`App\Support\PoliciesDeVendor`, um mapa `modelo => policy` registrado no boot. Ao instalar um pacote
+com resource, acrescente a linha lá — e confira duas coisas no resource do pacote:
+
+- `$shouldSkipAuthorization = true` desliga a policy inteira (o do Composer Release tinha; o kit o
+  subclassifica com `false` **e** com a página apontando para a subclasse);
+- `canAccess()` sobrescrito sem `&& parent::canAccess()` desliga a policy só para o índice.
+
+`tests/Kit/PermissoesDeResourcesTest.php` reprova resource novo sem policy registrada e resource que
+abre com `ViewAny` revogada — com o nome do resource.
+
 **Os dois, nesta ordem, sempre.** O primeiro roda `shield:generate --all` em **cada** painel e escreve as policies; o segundo recorta a matriz pelo painel em que o Resource está registrado e devolve as permissões aos papéis. Só o primeiro cria a permission e não a entrega a ninguém — a tela continua em 403 para quem não é `master_global`. Os dois são idempotentes: rodar de novo é operação normal.
 
 ### Page, Widget e Action novos
@@ -2079,6 +2116,7 @@ A distinção é o ponto: **arquivo novo não tem o que sobrescrever**, então a
 | `--branch=nome` | escolher o nome do branch temporário |
 | `--no-branch` | aplicar no branch atual |
 | `--keep-remote` | manter o remote e as tags do kit ao final |
+| `--repo=URL` | comparar com outro repositório do kit (um fork, por exemplo); o padrão é `config('kit.repository')`, que lê `KIT_REPOSITORY` do `.env` |
 
 Sem terminal (CI, `--no-interaction`) o comando vira relatório e não altera nada — a menos que você passe `--only-new` ou `--all`, que **são** a aprovação, dada na linha de comando.
 
@@ -2169,6 +2207,31 @@ linha de defesa, mas o global é melhor: o arquivo nem existe ali para alguém c
 `tests/Kit/BlueprintForaDoPacoteTest.php` guarda isso. **Com o Blueprint ligado, esses casos
 ficam vermelhos** — de propósito: é o lembrete de rodar `composer bp:off` antes de commitar.
 
+## Hub de navegação em cartões
+
+Cada painel tem uma página **hub**: uma grade de cartões, um por destino do painel, no lugar da
+árvore da barra lateral — para quando a pergunta "onde vejo X?" é real. São três:
+
+| Hub | Painel | URL | Nasce |
+|---|---|---|---|
+| `HubDeInfraestrutura` | `/infra` | `/infra/hub-de-infraestrutura` | **ligado** — dezesseis destinos em quatro grupos, metade com rótulo de plugin não traduzido |
+| `HubDeAdministracao` | `/admin` | `/admin/hub-de-administracao` | desligado |
+| `HubDoNegocio` | `/app` | `/app{/org}/hub-do-negocio` | desligado |
+
+A flag é **`KIT_HUB`** (`config/kit.php` → `hub`, default `false`). Ela liga os hubs de `/admin` e
+`/app`; desligada, as duas páginas somem do menu, da URL e da busca ⌘K. O `/infra` **não depende
+dela**: é o único painel onde a grade ganha da árvore no default, e a assimetria é decisão
+registrada (ADR-03 da wiki `hub-de-cards-opcional`). Ligar `KIT_HUB=true` não exige mais nada — o
+`FilamentCardsPlugin` já está registrado nos três painéis e o CSS dos cartões já é publicado.
+
+Os cartões saem de `App\Filament\Concerns\DescobreCardsDoPainel`, que varre os resources e páginas
+do painel e **filtra por `canAccess()` de cada destino** — quem não alcança a tela não vê o cartão.
+O hub soma à barra lateral, não a substitui: nenhum item sai da navegação.
+
+O teste de navegador é `tests/Browser/HubDeCardsTest.php`: a grade do `/infra` **pintada**, com a
+descrição dentro do cartão — porque o pacote não registra CSS e sem
+`resources/css/filament/cards.css` o HTML é o mesmo e a grade vira lista de links soltos.
+
 ## Pacotes instalados
 
 Tudo abaixo já vem instalado, publicado e registrado nos painéis — não existe passo de "agora instale o plugin X". A fonte da verdade das versões é o `composer.json`; a tabela diz **para que serve cada um dentro do kit**.
@@ -2196,6 +2259,7 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | [tapp/filament-auditing](https://packagist.org/packages/tapp/filament-auditing) | a tela dessa trilha no painel |
 | [syriable/filament-activitylog](https://packagist.org/packages/syriable/filament-activitylog) | log de atividades (spatie/laravel-activitylog) no Filament |
 | [bezhansalleh/filament-panel-switch](https://packagist.org/packages/bezhansalleh/filament-panel-switch) | troca de painel pelo menu do usuário |
+| [laravel/socialite](https://packagist.org/packages/laravel/socialite) | login social (Google, GitHub, LinkedIn, X), opt-in por provedor |
 
 ### Observabilidade e manutenção
 
@@ -2242,6 +2306,9 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | [anselmokossa/filament-sentinel](https://packagist.org/packages/anselmokossa/filament-sentinel) | páginas de erro (403, 404, 419, 500, 503) com a cara do painel |
 | [flowframe/laravel-trend](https://packagist.org/packages/flowframe/laravel-trend) | agregação por período para os gráficos dos widgets |
 | [bezhansalleh/filament-language-switch](https://packagist.org/packages/bezhansalleh/filament-language-switch) | seletor de idioma nos três painéis e nas telas de login |
+| [harvirsidhu/filament-cards](https://packagist.org/packages/harvirsidhu/filament-cards) | a grade de cartões dos [hubs de navegação](#hub-de-navegação-em-cartões) |
+| [leandrocfe/filament-apex-charts](https://packagist.org/packages/leandrocfe/filament-apex-charts) | gráficos ApexCharts nos widgets dos dashboards |
+| [solution-forest/filament-simplelightbox](https://packagist.org/packages/solution-forest/filament-simplelightbox) | lightbox para ampliar imagem em tabela e infolist |
 
 ### Dados e serviços
 
@@ -2285,6 +2352,12 @@ php artisan modelCache:clear      # limpa o cache das models
 | [nunomaduro/collision](https://packagist.org/packages/nunomaduro/collision) | erros legíveis no terminal |
 | [mockery/mockery](https://packagist.org/packages/mockery/mockery) | mocks nos testes |
 | [fakerphp/faker](https://packagist.org/packages/fakerphp/faker) | dados falsos **só em teste** — seeder do kit nunca usa |
+| [pestphp/pest-plugin-browser](https://packagist.org/packages/pestphp/pest-plugin-browser) | os testes de navegador (`tests/Browser`, `tests/BrowserTenancy`) |
+| [pestphp/pest-plugin-mutate](https://packagist.org/packages/pestphp/pest-plugin-mutate) | mutation testing (`pest --mutate`) |
+| [pestphp/pest-plugin-phpstan](https://packagist.org/packages/pestphp/pest-plugin-phpstan) | o PHPStan dentro do `pest` |
+| [rector/rector](https://packagist.org/packages/rector/rector) + [driftingly/rector-laravel](https://packagist.org/packages/driftingly/rector-laravel) | reescrita automática (`composer refactor:preview` / `refactor:apply`) |
+| [filament/upgrade](https://packagist.org/packages/filament/upgrade) | a ferramenta de upgrade do Filament (`composer upgrade:filament`) |
+| [laravel/boost](https://packagist.org/packages/laravel/boost) | MCP server e guidelines para os agentes de IA (`.ai/rules`) |
 
 ### Front-end (`package.json`)
 
@@ -2293,6 +2366,7 @@ php artisan modelCache:clear      # limpa o cache das models
 | [vite](https://www.npmjs.com/package/vite) + [laravel-vite-plugin](https://www.npmjs.com/package/laravel-vite-plugin) | o build dos assets |
 | [tailwindcss](https://www.npmjs.com/package/tailwindcss) + [@tailwindcss/vite](https://www.npmjs.com/package/@tailwindcss/vite) | o CSS (v4, sem arquivo de config) |
 | [concurrently](https://www.npmjs.com/package/concurrently) | roda servidor, fila e vite juntos no `composer dev` |
+| [playwright](https://www.npmjs.com/package/playwright) | o navegador dos testes do `pest-plugin-browser` |
 | [@laravel/multiplex](https://www.npmjs.com/package/@laravel/multiplex) | agrupa requests do Livewire (opcional) |
 
 ## Licença
