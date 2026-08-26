@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Support\BancoSqlite;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\VinculoDoSnyk;
 use Illuminate\Console\Command;
@@ -286,13 +287,19 @@ class KitInstall extends Command
             return;
         }
 
-        if ($this->option('force') && File::exists($caminho)) {
-            File::delete($caminho);
+        /*
+         * `BancoSqlite` desconecta antes de apagar e FALHA se o arquivo sobreviver — no Windows,
+         * arquivo aberto não se apaga, e o boot do kit já abre o SQLite. Sem isso o `--force` migrava
+         * o banco velho e o resumo mentia sobre o login inicial. Ver o docblock da classe.
+         */
+        if ($this->option('force')) {
+            BancoSqlite::recriar($caminho);
+            $criado = true;
+        } else {
+            $criado = BancoSqlite::criarSeFaltar($caminho);
         }
 
-        if (! File::exists($caminho)) {
-            File::ensureDirectoryExists(dirname($caminho));
-            File::put($caminho, '');
+        if ($criado) {
             $this->components->task('Criando banco SQLite', fn (): bool => true);
         }
     }
