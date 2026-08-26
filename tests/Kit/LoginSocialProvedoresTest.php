@@ -1027,6 +1027,8 @@ it('cria conta na volta do provedor se e somente se o registro aberto está liga
     int $total,
     string $destino,
 ): void {
+    // O papel único do registro aberto precisa existir: a conta nova passa pela mesma porta do formulário.
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
     ligarProvedor($provedor);
 
     if ($contaExiste) {
@@ -1070,6 +1072,7 @@ it('cria conta na volta do provedor se e somente se o registro aberto está liga
  * deixar a conta nova sem a marca é pedir a mesma prova duas vezes, e a segunda por e-mail.
  */
 it('cria a conta do login social com o e-mail verificado e o nome do provedor', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
     ligarProvedor(ProvedorSocial::Github);
     config()->set('kit.registro.habilitado', true);
 

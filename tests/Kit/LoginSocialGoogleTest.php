@@ -8,6 +8,7 @@ use App\Support\ProvedorSocial;
 use App\Support\RegistroAberto;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Socialite;
 use Laravel\Socialite\Two\User as UsuarioDoGoogle;
@@ -371,16 +372,19 @@ it('recusa o Google de quem não tem conta enquanto o registro está fechado', f
 /**
  * CT-09 — com o registro aberto ligado, a conta nova nasce e o destino é o perfil.
  *
- * `@premissa` em duas frentes: o interruptor de registro aberto é da branch
- * `feat/registro-e-aprovacao` e a chave que ele grava ainda não existe — aqui ela é forçada; e
- * a conta nova NÃO recebe papel, porque decidir qual papel o registro aberto concede é daquela
- * feature. Por isso o oráculo é o DESTINO do redirecionamento, e não "consegue abrir a tela":
- * conta sem papel recebe 403 no painel, e isso é o comportamento correto do kit.
+ * A premissa original deste caso ("a conta nova NÃO recebe papel, porque decidir o papel é da
+ * feature de registro") caducou quando `RegistroAberto` nasceu — e ninguém voltou aqui. O oráculo
+ * era o DESTINO do redirecionamento, nunca a tela: medido numa instalação real, a pessoa era
+ * mandada para `/app/meu-perfil` e recebia 403, porque a conta nascia sem papel. Agora o caso
+ * SEGUE o redirecionamento e exige o papel único do registro aberto — a mesma porta do
+ * formulário. "Uma tela aberta não é uma tela que grava" tem um primo: um redirect não é uma
+ * tela que abre.
  *
  * "o nome Pessoa do Google" é `Então` de valor concreto: sem ele, uma implementação que grava
  * o e-mail no campo do nome passa.
  */
 it('cria a conta e manda para o perfil quando o registro aberto está ligado', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
     ligarLoginComGoogleDoKit();
     // `kit.registro.habilitado` — a chave REAL, criada pela feature de registro. Este caso
     // media `kit.registro.aberto`, que a branch imaginou e o config nunca teve: `config()->set()`
@@ -392,14 +396,47 @@ it('cria a conta e manda para o perfil quando o registro aberto está ligado', f
         'name'  => 'Pessoa do Google',
     ]));
 
-    $this->get('/auth/google/callback')->assertRedirectContains('meu-perfil');
+    $resposta = $this->get('/auth/google/callback')->assertRedirectContains('meu-perfil');
 
     $novo = User::query()->where('email', 'novo@example.com')->first();
 
     expect($novo)->not->toBeNull()
-        ->and($novo->name)->toBe('Pessoa do Google');
+        ->and($novo->name)->toBe('Pessoa do Google')
+        ->and($novo->hasRole(RegistroAberto::papel()))->toBeTrue()
+        ->and($novo->aprovacao_pendente)->toBeFalse()
+        ->and($novo->email_verified_at)->not->toBeNull();
 
     $this->assertAuthenticatedAs($novo);
+
+    // O destino abre. Era aqui que a instalação real respondia 403.
+    $this->get((string) $resposta->headers->get('Location'))->assertOk();
+})->group('kit');
+
+/**
+ * Aprovação manual ligada: a conta nasce pendente, sem papel e SEM sessão — como no formulário.
+ *
+ * O contrapeso do caso acima. Sem ele, "criar pela porta do registro aberto" fica verde com uma
+ * implementação que loga a pessoa pendente e a manda para o perfil — onde `canAccessPanel()`
+ * nega, e ela vê um 403 sem saber que a conta existe e espera alguém.
+ */
+it('cria a conta pendente e nao abre sessao quando a aprovacao manual esta ligada', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+    ligarLoginComGoogleDoKit();
+    config()->set('kit.registro.habilitado', true);
+    config()->set('kit.registro.aprovacao_manual', true);
+
+    Socialite::fake('google', usuarioDoGoogleFalso(['email' => 'pendente@example.com']));
+
+    $this->get('/auth/google/callback')->assertRedirect(Filament::getPanel('app')->getLoginUrl());
+
+    $novo = User::query()->where('email', 'pendente@example.com')->first();
+
+    expect($novo)->not->toBeNull()
+        ->and($novo->aprovacao_pendente)->toBeTrue()
+        ->and($novo->roles)->toHaveCount(0)
+        ->and($novo->email_verified_at)->not->toBeNull();
+
+    $this->assertGuest();
 })->group('kit');
 
 /**

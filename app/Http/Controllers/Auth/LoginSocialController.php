@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\ConfiguracaoDoLogin;
 use App\Support\ProvedorSocial;
+use App\Support\RegistroAberto;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Illuminate\Http\RedirectResponse;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
 use Laravel\Socialite\Socialite;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\RedirectResponse as RedirecionamentoDoProvedor;
 use Throwable;
 
@@ -171,8 +173,33 @@ final class LoginSocialController extends Controller
                 return $this->recusar('Não há conta com este e-mail. O acesso a este sistema é por convite.');
             }
 
-            $user = $this->criarConta($provedor, $email, $mascarado, $doProvedor->getName());
+            try {
+                $user = $this->criarConta($provedor, $email, $mascarado, $doProvedor->getName());
+            } catch (RuntimeException $e) {
+                /*
+                 * `RegistroAberto::registrar()` recusa o que a porta do formulário recusa — com a
+                 * tenancy ligada, uma conta sem organização não tem /app para entrar — e já
+                 * registrou o motivo. Aqui só se fecha a volta com a mesma mensagem da conta
+                 * inexistente: quem está do outro lado não escolheu organização nenhuma.
+                 */
+                Log::channel('autenticacao')->warning(
+                    "[LoginSocialController@retorno] Recusado: o registro aberto não aceitou a conta | provedor: {$provedor->value} - email: ".$mascarado,
+                    [
+                        'motivo'    => 'registro_aberto_recusou',
+                        'email'     => $mascarado,
+                        'provedor'  => $provedor->value,
+                        'exception' => $e,
+                    ],
+                );
+
+                return $this->recusar('Não há conta com este e-mail. O acesso a este sistema é por convite.');
+            }
+
             $novo = true;
+
+            if ($user->aprovacao_pendente) {
+                return $this->aguardarAprovacao($provedor, $user, $mascarado);
+            }
         }
 
         /*
@@ -237,7 +264,17 @@ final class LoginSocialController extends Controller
      */
     private function criarConta(ProvedorSocial $provedor, string $email, string $mascarado, ?string $nome): User
     {
-        $user = User::create([
+        /*
+         * A MESMA porta do formulário. `RegistroAberto::registrar()` concede o papel único do
+         * registro aberto, marca a pendência de aprovação quando ela está ligada, e recusa o que
+         * a porta recusa. Medido numa instalação real: o `User::create()` cru que morava aqui
+         * criava a conta SEM papel, e a tela de perfil para onde ela era mandada respondia 403 —
+         * `canAccessPanel()` exige papel do painel. O README prometia o perfil.
+         *
+         * Sem organização, de propósito: o OAuth não carrega o `?org=` do formulário. Com a
+         * tenancy ligada a porta recusa (`sem_organizacao`), e quem chama trata.
+         */
+        $user = RegistroAberto::registrar([
             'name'     => filled($nome) ? $nome : $email,
             'email'    => $email,
             'password' => Str::password(32),
@@ -276,6 +313,35 @@ final class LoginSocialController extends Controller
     }
 
     /** Onde quem já tinha conta cai: o painel de negócio, com a organização default resolvida. */
+    /**
+     * Conta criada com a aprovação manual ligada: nasce sem papel e sem sessão.
+     *
+     * Espelha `RegistroPorConvite::register()`, mesma mensagem — quem se cadastra pelo
+     * formulário e quem se cadastra pelo provedor esperam a mesma coisa. Logar aqui seria
+     * mandar a pessoa para um 403: `canAccessPanel()` nega cadastro pendente.
+     */
+    private function aguardarAprovacao(ProvedorSocial $provedor, User $user, string $mascarado): RedirectResponse
+    {
+        Log::channel('autenticacao')->warning(
+            "[LoginSocialController@retorno] Conta criada, pendente de aprovação — sem sessão | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
+            [
+                'user_id'  => $user->getKey(),
+                'email'    => $mascarado,
+                'motivo'   => 'aprovacao_pendente',
+                'provedor' => $provedor->value,
+            ],
+        );
+
+        Notification::make()
+            ->title('Cadastro recebido')
+            ->body('Sua conta foi criada e aguarda aprovação de quem administra o sistema. Você poderá entrar assim que ela for liberada.')
+            ->success()
+            ->persistent()
+            ->send();
+
+        return redirect()->to(Filament::getPanel('app')->getLoginUrl());
+    }
+
     private function urlDoPainel(): string
     {
         return Filament::getPanel('app')->getUrl() ?? url('/');

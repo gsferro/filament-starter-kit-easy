@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Filament\Facades\Filament;
 use Laravel\Socialite\Socialite;
 use Laravel\Socialite\Two\User as UsuarioDoGoogle;
 
@@ -96,9 +97,14 @@ it('leva quem já tem conta e organização para o painel da organização', fun
  * ficava verde por acidente: `config()->set()` aceita qualquer chave, então o teste media uma
  * que o `config/kit.php` nunca teve.
  *
- * Duas asserções, e a segunda é a que importa: não é 500, e a conta existe.
+ * Este caso mudou de lado. Ele nasceu exigindo que a conta fosse CRIADA sem organização, e a
+ * rodada de validação real (2026-08-26) mostrou que isso era um estado inalcançável: o
+ * `RegistroAberto` do formulário recusa cadastro sem organização com a tenancy ligada
+ * ("registrar alguém num estado inalcançável é pior que recusar"), e o login social passou a
+ * usar a mesma porta. Então o oráculo virou o do formulário: nada criado, ninguém logado, volta
+ * ao login com a recusa — e continua não sendo 500.
  */
-it('não estoura quando a conta criada por login social não tem organização', function (): void {
+it('recusa criar conta sem organização com a tenancy ligada, em vez de criar quem não tem /app', function (): void {
     ligarLoginComGoogleTenancy();
     config()->set('kit.registro.habilitado', true);
 
@@ -109,14 +115,11 @@ it('não estoura quando a conta criada por login social não tem organização',
         'email_verified' => true,
     ]));
 
-    $this->get('/auth/google/callback')->assertStatus(302);
+    $this->get('/auth/google/callback')->assertRedirect(Filament::getPanel('app')->getLoginUrl());
 
-    $novo = User::query()->where('email', 'novo@example.com')->first();
+    expect(User::query()->where('email', 'novo@example.com')->exists())->toBeFalse();
 
-    expect($novo)->not->toBeNull()
-        ->and($novo->name)->toBe('Pessoa Nova');
-
-    $this->assertAuthenticatedAs($novo);
+    $this->assertGuest();
 })->group('kit');
 
 /**
