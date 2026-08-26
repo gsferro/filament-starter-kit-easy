@@ -78,9 +78,24 @@ class AiRunResource extends Resource
         ]);
     }
 
+    /**
+     * O gate do pacote E a permissão do Shield — as duas, e a ordem do `&&` importa.
+     *
+     * Até a auditoria de aderência ao Blueprint este método devolvia SÓ o gate `ver-ai-tasks`. Era
+     * o mesmo defeito do F-01 em outra roupa: `CanAuthorizeResourceAccess::authorizeResourceAccess()`
+     * chama `canAccess()` (`:19`), então sobrescrever `canAccess()` sem delegar ao pai **desliga a
+     * policy** para o índice. `ViewAny:AiRun` existia no banco, aparecia na tela de papéis, a
+     * `AiRunPolicy` estava escrita — e o sweep de `PermissoesDeResourcesTest` mostrou o índice
+     * abrindo com a permissão revogada.
+     *
+     * `parent::canAccess()` é quem consulta `getViewAnyAuthorizationResponse()` → policy. O gate
+     * fica: ele é a porta do pacote `ai-tasks` inteiro (a rota `/ai-tasks` usa o mesmo), e as duas
+     * barreiras respondem a perguntas diferentes — "este painel pode ver IA?" e "este papel pode
+     * listar execuções?".
+     */
     public static function canAccess(): bool
     {
-        return Auth::user()?->can('ver-ai-tasks') ?? false;
+        return (Auth::user()?->can('ver-ai-tasks') ?? false) && parent::canAccess();
     }
 
     public static function canCreate(): bool

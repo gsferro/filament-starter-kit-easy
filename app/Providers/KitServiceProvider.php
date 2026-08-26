@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Providers\Concerns\ConfiguraFilamentGlobal;
 use App\Settings\ConfiguracoesDoKit;
+use App\Support\PoliciesDeVendor;
 use App\Support\TetoDeUpload;
 use Carbon\CarbonImmutable;
 use CmsMulti\FilamentClearCache\Facades\FilamentClearCache;
@@ -211,6 +212,12 @@ class KitServiceProvider extends ServiceProvider
         Gate::define('ver-logs', $doPainelInfra);
         Gate::define('command-center:access', $doPainelInfra);
         Gate::define('viewPulse', $doPainelInfra);
+
+        /*
+         * As policies dos modelos de VENDOR não são descobertas pelo Laravel (só `App\Models\*`
+         * é). Sem esta linha, oito resources abriam com a permissão revogada — ver a classe.
+         */
+        PoliciesDeVendor::registrar();
 
         // command-center:prune-history e :manage-commands ficam deliberadamente
         // SEM define: um `fn () => false` seria vencido pelo Gate::before do

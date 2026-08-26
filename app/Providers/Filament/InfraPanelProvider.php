@@ -344,11 +344,16 @@ class InfraPanelProvider extends PanelProvider
                  * `View:ComposerReleaseOverviewWidget` —, descoberta pelo `discoverWidgets()`
                  * acima. Ver ADR-04.
                  *
-                 * `resource(enabled: true)` continua: Resource é autorizado por policy, e o Shield
-                 * gera a dele. Ali não havia lacuna.
+                 * `resource(enabled: false)` TAMBÉM — e este comentário dizia o contrário ("ali não
+                 * havia lacuna"). Havia: o resource do pacote declara
+                 * `$shouldSkipAuthorization = true`, então a policy que o Shield gera nunca era
+                 * consultada, e o índice abria com `ViewAny:ComposerReleasePackageSnapshot`
+                 * revogada (auditoria de aderência ao Blueprint, N-29). Quem entra é
+                 * `App\Filament\Infra\Resources\ComposerReleasePackages\ComposerReleasePackageResource`,
+                 * subclasse com a flag desligada e a página própria, pelo `discoverResources()` acima.
                  */
                 FilamentComposerReleaseNotifierPlugin::make()
-                    ->resource(enabled: true)
+                    ->resource(enabled: false)
                     ->widget(enabled: false)
                     ->mailReports(enabled: false),
 
