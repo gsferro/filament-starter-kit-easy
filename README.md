@@ -566,7 +566,9 @@ três coisas pedem a senha atual: trocar a senha, ligar o 2FA e desbloquear a se
 perfil (`/app/meu-perfil`, e o dos outros dois painéis) tem o bloco **Definir senha por e-mail**:
 ele envia o mesmo link do "Esqueceu a senha?", encerra a sessão — a página que define a senha só
 abre para quem está fora — e, com a senha definida, os três passam a funcionar. Medido numa
-instalação real: era o primeiro tropeço de quem entrava pelo Google.
+instalação real: era o primeiro tropeço de quem entrava pelo Google. E quem escolhe **viver sem
+senha local** não fica preso na tela de bloqueio de sessão: ela oferece os mesmos botões do
+login, e a volta do provedor destrava.
 
 ### Ligando um provedor, em quatro passos
 
@@ -1354,7 +1356,7 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-03c | Validação de e-mail (opt-in) | `/app/email-verification/prompt` | autenticado, com a exigência ligada (na tela ou no `.env`) | a rota existe sempre — quem decide é um middleware do kit, por request; quem vem de convite nunca é barrado | 🟢 |
 | F-04 | Autenticação em dois fatores | `/{painel}/two-factor-authentication` | autenticado | a tela abre e oferece o QR | 🔵 |
 | F-05 | Passkeys | Meu perfil | autenticado | cadastro de chave, no perfil do Breezy | ⚪ |
-| F-06 | Bloqueio de sessão | menu do usuário → *Bloquear sessão* | autenticado | trava sem deslogar; volta com a senha. Usa o layout do login, não a `SimplePage` | 🟢 |
+| F-06 | Bloqueio de sessão | menu do usuário → *Bloquear sessão* | autenticado | trava sem deslogar; volta com a senha **ou** com o login social (os mesmos botões do login). Usa o layout do login, não a `SimplePage` | 🟢 |
 | F-07 | Meu perfil, avatar e senha | `/{painel}/meu-perfil` | autenticado | edita nome, e-mail, senha e avatar | 🔵 |
 | F-08 | Impersonate | `/admin/users` → ação na linha | `master_global` | entra como outro usuário e volta pela faixa no topo | ⚪ |
 

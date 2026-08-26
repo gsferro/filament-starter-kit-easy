@@ -576,7 +576,8 @@ session. That is why the profile (`/app/meu-perfil`, and the other two panels') 
 password by e-mail** block: it sends the same link as "Forgot your password?", ends the session —
 the page that sets the password only opens for someone logged out — and, once the password is set,
 all three work. Measured on a real install: it was the first stumble for whoever came in through
-Google.
+Google. And whoever chooses to **live without a local password** is not stuck at the session lock
+screen: it offers the same buttons as the login, and coming back from the provider unlocks it.
 
 ### Turning a provider on, in four steps
 

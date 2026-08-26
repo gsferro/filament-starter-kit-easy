@@ -218,6 +218,16 @@ final class LoginSocialController extends Controller
          */
         Auth::login($user);
 
+        /*
+         * A volta do provedor também DESTRAVA o bloqueio de sessão: `TelaBloqueio` oferece os
+         * mesmos botões do login, para quem não tem senha local. Espelha o que o desbloqueio
+         * por senha faz (`LockerScreen::sessionRegenerate()`,
+         * vendor/marjose123/filament-lockscreen/src/Http/Livewire/LockerScreen.php:118-123);
+         * o `Auth::login()` acima já migrou o id da sessão.
+         */
+        session()->put('lockscreen', false);
+        session()->put('session_last_activity', time());
+
         Log::channel('autenticacao')->info(
             "[LoginSocialController@retorno] Autenticado pelo provedor | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
             [
