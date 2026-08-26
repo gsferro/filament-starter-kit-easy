@@ -606,23 +606,35 @@ it('exibe o rodapé da tela de login só quando há texto configurado', function
 ])->group('kit');
 
 /**
- * CT-15 — HTML no rodapé sai ESCAPADO.
+ * CT-15 — o rodapé é Markdown: formata o que o Markdown formata, e DESCARTA HTML cru e link
+ * com esquema inseguro.
  *
  * Escalonamento declarado acima do perfil da área: a implementação defeituosa plausível é a
  * saída crua do Blade "para permitir link no rodapé", e ela é XSS armazenado numa página
- * PÚBLICA e NÃO AUTENTICADA — a tela por onde todo mundo entra. Nenhum exemplo de CT-14 a
- * distingue. Ver ADR-09.
+ * PÚBLICA e NÃO AUTENTICADA — a tela por onde todo mundo entra. Até 2026-08-26 o campo era
+ * texto escapado; o solicitante pediu formatação na validação real, e a resposta foi
+ * Markdown com `html_input: strip` e `allow_unsafe_links: false` — não HTML. Ver ADR-09.
  *
- * O par de asserções é o oráculo: o escapado presente E o executável ausente. Só a segunda
- * ficaria verde com o rodapé não renderizado.
+ * Três oráculos: o negrito presente (prova que o Markdown rendeu), a tag ausente (o HTML
+ * cru foi descartado, não escapado — escapado apareceria como texto) e o `javascript:`
+ * ausente (o link inseguro não virou href). Só o segundo ficaria verde com o rodapé não
+ * renderizado; por isso o primeiro.
+ *
+ * A tag fica no MEIO do texto de propósito: no CommonMark, linha que COMEÇA com `<script>`
+ * é bloco HTML inteiro, e o `strip` descarta a linha toda — inclusive o negrito. Foi o que
+ * a primeira versão deste caso mediu, achando que era defeito.
  */
-it('escapa o HTML do rodapé da tela de login', function (): void {
-    config()->set('kit.login.rodape', '<script>alert(1)</script>Fiotec');
+it('renderiza o rodapé como Markdown e descarta HTML cru e link inseguro', function (): void {
+    config()->set('kit.login.rodape', 'Fiotec <script>alert(1)</script> **direitos reservados** [x](javascript:alert(1)) [ok](https://fiotec.org.br)');
 
     $this->get('/app/login')
         ->assertOk()
-        ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;Fiotec', escape: false)
-        ->assertDontSee('<script>alert(1)</script>', escape: false);
+        ->assertSee('<strong>direitos reservados</strong>', escape: false)
+        ->assertSee('href="https://fiotec.org.br"', escape: false)
+        // `<script>alert(1)` e não `<script>`: a página tem scripts legítimos (Livewire, tema).
+        ->assertDontSee('<script>alert(1)', escape: false)
+        ->assertDontSee('&lt;script&gt;', escape: false)
+        ->assertDontSee('javascript:alert', escape: false);
 })->group('kit');
 
 /*

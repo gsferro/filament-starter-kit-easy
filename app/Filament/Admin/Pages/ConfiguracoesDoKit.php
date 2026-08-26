@@ -12,8 +12,8 @@ use App\Support\TetoDeUpload;
 use BackedEnum;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Pages\SettingsPage;
@@ -478,14 +478,33 @@ class ConfiguracoesDoKit extends SettingsPage
         return Tab::make('Login')
             ->icon('heroicon-o-arrow-right-on-rectangle')
             ->schema([
-                ...$secoes,
+                // Duas seções, dois assuntos: os provedores (um bloco fechado por provedor,
+                // com o ícone de status no cabeçalho) e o rodapé. Pedido do solicitante na
+                // validação real dos provedores (2026-08-26).
+                Section::make('Login social')
+                    ->description('Um bloco por provedor, fechado. O ícone no cabeçalho diz se o botão está habilitado; abra para ver as credenciais.')
+                    ->columnSpanFull()
+                    ->schema($secoes),
 
-                Textarea::make('login_rodape')
-                    ->label('Rodapé da tela de login')
-                    ->helperText('Aparece nas telas de login dos três painéis. É TEXTO e sai escapado: a tela de login é pública e não autenticada, e HTML cru ali seria XSS armazenado.')
-                    ->rows(2)
-                    ->maxLength(500)
-                    ->columnSpanFull(),
+                Section::make('Rodapé da tela de login')
+                    ->description('Aparece na base das telas de login dos três painéis.')
+                    ->columnSpanFull()
+                    ->schema([
+                        /*
+                         * Markdown, e não HTML: a tela de login é pública e não autenticada, e HTML
+                         * cru ali seria XSS armazenado. O Markdown dá negrito, itálico e link — o que
+                         * um rodapé precisa — e a view descarta qualquer HTML cru e qualquer link com
+                         * esquema inseguro (`Str::markdown` com `html_input: strip`,
+                         * `allow_unsafe_links: false`). A barra tem só esses botões de propósito:
+                         * título, tabela e anexo não cabem num rodapé de duas linhas.
+                         */
+                        MarkdownEditor::make('login_rodape')
+                            ->hiddenLabel()
+                            ->helperText('Aceita Markdown (negrito, itálico, link). HTML cru é descartado, porque a tela de login é pública.')
+                            ->toolbarButtons([['bold', 'italic', 'strike', 'link']])
+                            ->maxLength(500)
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 
@@ -513,11 +532,15 @@ class ConfiguracoesDoKit extends SettingsPage
 
         return Section::make("Entrar com {$provedor->rotulo()}")
             ->description($this->ondeCriarOApp($provedor))
-            ->collapsible()
+            // Fechada ao abrir a tela; o status vive no cabeçalho, então não precisa abrir para
+            // saber. O interruptor é `live()`, e o ícone acompanha na hora.
+            ->collapsed()
+            ->icon(fn (Get $get): string => $ligado($get) ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+            ->iconColor(fn (Get $get): string => $ligado($get) ? 'success' : 'gray')
             ->columnSpanFull()
             ->schema([
                 Toggle::make($habilitado)
-                    ->label("Oferecer o botão do {$provedor->rotulo()}")
+                    ->label("Habilitar botão do {$provedor->rotulo()}")
                     ->helperText('Ligar aqui não põe o botão no ar sozinho: as credenciais abaixo também precisam estar preenchidas. O login social AUTENTICA quem já tem conta — criar conta depende do registro aberto, na aba anterior.')
                     ->live(),
 

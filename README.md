@@ -661,7 +661,7 @@ irreconhecível o mantêm desligado. Só `true` e `1` ligam.
 
 ### O rodapé da tela de login
 
-A mesma configuração traz um rodapé de texto na base da tela de login dos três painéis:
+A mesma configuração traz um rodapé em Markdown (negrito, itálico, link; HTML cru é descartado) na base da tela de login dos três painéis:
 
 ```dotenv
 KIT_LOGIN_RODAPE="Fiotec · Todos os direitos reservados"
