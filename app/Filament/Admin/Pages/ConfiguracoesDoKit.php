@@ -484,7 +484,18 @@ class ConfiguracoesDoKit extends SettingsPage
                 Section::make('Login social')
                     ->description('Um bloco por provedor, fechado. O ícone no cabeçalho diz se o botão está habilitado; abra para ver as credenciais.')
                     ->columnSpanFull()
-                    ->schema($secoes),
+                    ->schema([
+                        /*
+                         * Vale para os quatro provedores. Lida por request no callback, então pode
+                         * viver aqui (`.ai/rules/settings.md`). ADR-03 de vinculo-de-provedor-social.
+                         */
+                        Toggle::make('login_vinculo_confirmar')
+                            ->label('Exigir confirmação por e-mail na primeira entrada social em uma conta que já existe')
+                            ->helperText('Desligado: a pessoa entra e recebe um aviso por e-mail ("sua conta foi acessada pelo Google pela primeira vez"). Ligado: ela recebe um link de 30 minutos e só entra depois de confirmar. Nas entradas seguintes a conta é reconhecida pela identidade no provedor, em qualquer modo.')
+                            ->columnSpanFull(),
+
+                        ...$secoes,
+                    ]),
 
                 Section::make('Rodapé da tela de login')
                     ->description('Aparece na base das telas de login dos três painéis.')

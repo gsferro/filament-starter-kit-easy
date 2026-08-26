@@ -176,6 +176,9 @@ final class ConfiguracoesDoKit extends Settings
 
     public ?string $login_rodape;
 
+    /** Primeira entrada social em conta existente exige confirmação por e-mail? ADR-03 de vinculo-de-provedor-social. */
+    public bool $login_vinculo_confirmar;
+
     public static function group(): string
     {
         return 'kit';
@@ -322,7 +325,8 @@ final class ConfiguracoesDoKit extends Settings
             'login_x_client_id'     => 'services.x.client_id',
             'login_x_client_secret' => 'services.x.client_secret',
 
-            'login_rodape' => 'kit.login.rodape',
+            'login_rodape'            => 'kit.login.rodape',
+            'login_vinculo_confirmar' => 'kit.login.vinculo_confirmar',
         ];
     }
 

@@ -136,4 +136,16 @@ final class ConfiguracaoDoLogin
     {
         return RegistroAberto::habilitado();
     }
+
+    /**
+     * A primeira entrada de um provedor numa conta que já existe exige confirmação por e-mail?
+     *
+     * `false` (padrão): entra e avisa. `true`: recebe o link e só entra depois. Lida por request,
+     * no `LoginSocialController::retorno()`, por isso pode ser governada pela tela de Settings.
+     * ADR-03 da wiki `vinculo-de-provedor-social`.
+     */
+    public static function vinculoExigeConfirmacao(): bool
+    {
+        return (bool) config('kit.login.vinculo_confirmar', false);
+    }
 }

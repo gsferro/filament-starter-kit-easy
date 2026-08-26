@@ -520,6 +520,13 @@ return [
         ],
 
         'rodape' => env('KIT_LOGIN_RODAPE'),
+
+        /*
+         * Vínculo com o provedor (wiki vinculo-de-provedor-social, ADR-03/04). `false`: a primeira
+         * entrada de um provedor numa conta que já existe ENTRA e avisa por e-mail. `true`: não
+         * entra — envia o link de confirmação e só entra depois dele. Falha fechado no padrão.
+         */
+        'vinculo_confirmar' => filter_var(env('KIT_SOCIALITE_VINCULO_CONFIRMAR', false), FILTER_VALIDATE_BOOLEAN),
     ],
 
     /*

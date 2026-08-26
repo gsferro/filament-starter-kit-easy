@@ -18,6 +18,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -418,6 +419,16 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
     public function tenants(): BelongsToMany
     {
         return $this->belongsToMany(Tenant::class);
+    }
+
+    /**
+     * As identidades desta conta nos provedores de login social — ver `VinculoSocial`.
+     *
+     * @return HasMany<VinculoSocial, $this>
+     */
+    public function vinculosSociais(): HasMany
+    {
+        return $this->hasMany(VinculoSocial::class);
     }
 
     /**

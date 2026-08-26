@@ -63,4 +63,7 @@ Route::middleware('throttle:10,1')
     ->group(function (): void {
         Route::get('redirect', [LoginSocialController::class, 'redirecionar'])->name('redirect');
         Route::get('callback', [LoginSocialController::class, 'retorno'])->name('callback');
+        // O link do e-mail de confirmação do vínculo (modo estrito). `signed` — URL temporária de
+        // 30 minutos; inválida ou vencida responde 403. Wiki vinculo-de-provedor-social, ADR-03.
+        Route::get('confirmar', [LoginSocialController::class, 'confirmarVinculo'])->middleware('signed')->name('confirmar');
     });
