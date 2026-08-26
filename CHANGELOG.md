@@ -2,6 +2,41 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.21.1] - 2026-08-26
+Correções que a validação de instalação (8 instalações reais, terminal + navegador) e o uso real do
+`bp:off` expuseram. Nenhuma muda API; todas fecham uma fresta de instalação ou de sincronia.
+
+### Corrigido
+- **`kit:install --force` não recriava o SQLite no Windows — e o resumo mentia sobre o login.**
+  `File::delete()` tinha o retorno ignorado; no Windows arquivo aberto não se apaga, e o boot do kit
+  JÁ abre o SQLite (`ConfiguracoesDoKit::aplicarNaConfig()` lê a tabela de settings no
+  `KitServiceProvider`). O `--force` seguia migrando o banco VELHO: o admin antigo sobrevivia e o
+  resumo imprimia "Login inicial: {credencial nova}", uma credencial que não existia. No Linux o
+  `unlink` funciona com handle aberto, e por isso o CI (Ubuntu) nunca viu. `App\Support\BancoSqlite`
+  desconecta a conexão antes de apagar e **falha alto** com a causa quando o arquivo sobrevive — as
+  duas formas do problema no Windows tratadas (o `unlink` recusar; o `unlink` "passar" e o
+  `file_put_contents` seguinte dar `Permission denied`). Guarda em `tests/Kit/BancoSqliteTest.php`.
+- **`composer bp:off` deixava o `composer.lock` defasado.** `composer remove` grava o `content-hash`
+  do lock a partir do `composer.json` daquele instante, e o `bp:off` fazia o `remove` ANTES do
+  `config --unset repositories.filament` — que edita o json sem tocar o lock. Ordem invertida
+  (`unset` → `remove`), e `BlueprintForaDoPacoteTest` ganhou o caso "lock em sincronia com o json"
+  via `composer validate`.
+
+### Segurança
+- **O e-mail da conta do Filament Blueprint foi redigido** na transcrição do requisito em
+  `wikis/specs/feat/auditoria-de-seguranca/.../00-requisito.md`. A chave já estava redigida; o
+  e-mail, não — e identificador de conta é metade de uma credencial, num arquivo versionado e
+  público. Confirmado no mesmo passo que nada do Blueprint viaja para quem instala o kit: sem o
+  pacote, sem `vendor/filament/blueprint`, sem `auth.json`, sem o repositório privado nas 8
+  instalações reais.
+
+### Adicionado
+- **`wikis/specs/feat/aderencia-ao-blueprint/.../06-matriz-de-instalacoes.md`** — a matriz das 8
+  instalações (4 padrão, 4 tenancy), cada uma por um caminho de opt-in diferente, verificada em
+  terminal e navegador. Registra a divisão de prova (o navegador prova render/console/cor; gravação
+  é camada de aplicação) e por que o submit de formulário não foi pelo Playwright MCP — limitação do
+  combo `artisan serve` + MCP, não do kit.
+
 ## [0.21.0] - 2026-08-26
 Auditoria de aderencia total ao Filament Blueprint — as 23 referencias de planejamento traduzidas
 em 43 normas verificaveis, o kit medido contra cada uma, e o que a medicao achou corrigido.
