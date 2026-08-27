@@ -5,58 +5,58 @@ Worktree isolado a partir da `main` + merge de `fix/kit-install-force-semeia-do-
 
 ## 1. Config e `.env.example`
 
-- [ ] `config/kit.php` → `login.anti_robo.*`
-- [ ] `.env.example` → bloco `KIT_ANTI_ROBO*`
+- [x] `config/kit.php` → `login.anti_robo.*`
+- [x] `.env.example` → bloco `KIT_ANTI_ROBO*`
 
 ## 2. Enum do provedor e ponto único de leitura
 
-- [ ] `app/Support/ProvedorAntiRobo.php`
-- [ ] `ConfiguracaoDoLogin::antiRobo()`, `chaveDoSiteAntiRobo()`, `chaveSecretaAntiRobo()`
+- [x] `app/Support/ProvedorAntiRobo.php`
+- [x] `ConfiguracaoDoLogin::antiRobo()`, `chaveDoSiteAntiRobo()`, `chaveSecretaAntiRobo()`
 
 ## 3. Settings: propriedades, mapa, cifra e migration
 
-- [ ] quatro propriedades + `mapaDeConfiguracao()` + `encrypted()`
-- [ ] `database/settings/2026_08_26_100000_add_anti_robo_to_kit_settings.php`
+- [x] quatro propriedades + `mapaDeConfiguracao()` + `encrypted()`
+- [x] `database/settings/2026_08_26_100000_add_anti_robo_to_kit_settings.php`
 
 ## 4. O campo de formulário e a view
 
-- [ ] `app/Filament/Forms/Components/CampoAntiRobo.php`
-- [ ] `resources/views/filament/forms/components/campo-anti-robo.blade.php`
+- [x] `app/Filament/Forms/Components/CampoAntiRobo.php`
+- [x] `resources/views/filament/forms/components/campo-anti-robo.blade.php`
 
 ## 5. As três páginas
 
-- [ ] `TelaLogin::form()`
-- [ ] `RegistroPorConvite::form()`
-- [ ] `app/Filament/Pages/Auth/TelaRecuperarSenha.php`
+- [x] `TelaLogin::form()`
+- [x] `RegistroPorConvite::form()`
+- [x] `app/Filament/Pages/Auth/TelaRecuperarSenha.php`
 
 ## 6. Os três `PanelProvider`
 
-- [ ] `usingPage(TelaLogin::class)` no login de `/admin` e `/infra`
-- [ ] `usingPage(TelaRecuperarSenha::class)` na recuperação dos três
+- [x] `usingPage(TelaLogin::class)` no login de `/admin` e `/infra`
+- [x] `usingPage(TelaRecuperarSenha::class)` na recuperação dos três
 
 ## 7. A tela de Settings
 
-- [ ] seção "Proteção anti-robô" em `abaLogin()`
-- [ ] `mutateFormDataBeforeFill()` zera a chave secreta
+- [x] seção "Proteção anti-robô" em `abaLogin()`
+- [x] `mutateFormDataBeforeFill()` zera a chave secreta
 
 ## 8. Testes
 
-- [ ] `tests/Kit/ProtecaoAntiRoboTest.php` — CT-01..CT-18
-- [ ] regressão: `TelasDeAutenticacaoTest`, `BloqueioDeSessaoTest`, `ConviteTest`, `RegistroAbertoTest`, `LoginSocialProvedoresTest`, `SegredosDoSettingsTest`, `ConfiguracoesDoKitTest`, `ConfiguracoesDoKitTelaTest`
-- [ ] mutação manual (três mutantes do plano)
+- [x] `tests/Kit/ProtecaoAntiRoboTest.php` — CT-01..CT-18
+- [x] regressão: `TelasDeAutenticacaoTest`, `BloqueioDeSessaoTest`, `ConviteTest`, `RegistroAbertoTest`, `LoginSocialProvedoresTest`, `SegredosDoSettingsTest`, `ConfiguracoesDoKitTest`, `ConfiguracoesDoKitTelaTest`
+- [x] mutação manual (três mutantes do plano)
 
 ## 9. README
 
-- [ ] `README.md`
-- [ ] `README.en.md`
+- [x] `README.md`
+- [x] `README.en.md`
 
 ## Verificação Final
 
-- [ ] `/ponytail:ponytail-review` no diff
-- [ ] `vendor/bin/pint --dirty --format agent`
-- [ ] `vendor/bin/phpstan analyse <tocados> --no-progress`
-- [ ] testes novos + regressão
-- [ ] `git push -u origin feat/recaptcha-nas-telas-publicas`
+- [x] `/ponytail:ponytail-review` no diff
+- [x] `vendor/bin/pint --dirty --format agent`
+- [x] `vendor/bin/phpstan analyse <tocados> --no-progress`
+- [x] testes novos + regressão
+- [x] mergeado na `main` via `feat/recaptcha-nas-telas-publicas`
 
 ## Auditoria Pré-Implementação
 
@@ -101,21 +101,25 @@ Plano" do `04`, que lista o que foi recusado como oráculo.
 
 ## Desvios do Plano
 
-- (preencher na implementação)
+- O enum abrange três provedores (reCAPTCHA v2, Turnstile, hCaptcha) em vez de um só: o protocolo é idêntico, o custo foi três URLs/nomes por caso, e o ganho cobre quem já usa Cloudflare ou prefere hCaptcha.
+- A página de redefinição de senha que o link do e-mail abre não recebeu desafio: ela exige token assinado, então foi considerado fora do escopo do RQ-01.
 
 ## Notas de Implementação
 
-- (preencher na implementação)
+- `CampoAntiRobo::acrescentarA()` retorna o schema original quando a proteção está desligada, deixando as telas inalteradas.
+- O campo é `dehydrated(false)` para não poluir `$data` que chega a `Convite::aceitar()` / `RegistroAberto::registrar()`, mas continua validado.
+- Após qualquer verificação, dispara `kit-anti-robo-redefinir` para resetar o widget, porque o token é de uso único.
+- reCAPTCHA v3 foi deliberadamente deixado de fora: ele devolve pontuação, exigiria limiar e `action` por tela; ver seção dedicada no `README.md`/`README.en.md` e possível feature futura.
 
 ## Pendências para quem valida no navegador
 
-- Ligar a proteção com as chaves de teste do reCAPTCHA (site `6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI`,
+- [ ] Ligar a proteção com as chaves de teste do reCAPTCHA (site `6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI`,
   secreta `6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe`) e confirmar nas três telas: widget renderiza,
   envio sem marcar reprova, marcar e enviar passa, errar a senha e enviar de novo funciona (o widget
   se redefine).
-- Repetir com Turnstile (`1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`).
-- Capturas para o README via `kit:arte`.
+- [ ] Repetir com Turnstile (`1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`).
+- [ ] Capturas para o README via `kit:arte`.
 
 ## Retrospectiva
 
-- (preencher ao final)
+- Feature mergeada e testada. reCAPTCHA/Turnstile/hCaptcha compartilham enum e campo; a única dívida ativa são capturas manuais e validação em navegador com chaves reais de teste.

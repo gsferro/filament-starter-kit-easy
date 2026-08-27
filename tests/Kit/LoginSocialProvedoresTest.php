@@ -59,6 +59,12 @@ beforeEach(function (): void {
      * linhas "DEFAULT de fábrica" de CT-45 medirem o default de verdade em vez do `phpunit.xml`.
      */
     config()->set('kit.login.rodape', null);
+
+    /*
+     * Registro aberto atribui o papel `panel_user` ao criar a conta. O papel só existe depois
+     * do seeder; sem ele, `assignRole()` estoura "There is no role named `panel_user`".
+     */
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
 
 /*

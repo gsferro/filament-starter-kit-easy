@@ -66,6 +66,25 @@
         <env name="KIT_TENANCY_LABEL" value="Organização" force="true"/>
         <env name="KIT_TENANCY_LABEL_PLURAL" value="Organizações" force="true"/>
         <env name="KIT_TENANCY_SLUG" value="organizacoes" force="true"/>
+        <!--
+            Provedores sociais precisam nascer desligados e sem credenciais nos testes.
+            Senão, um .env com GOOGLE_CLIENT_ID real faz o teste `disponivel()`
+            devolver true no início e falhar a asserção de "desligado por padrão".
+            Cada caso de teste liga explicitamente o que precisa.
+        -->
+        <env name="KIT_SOCIALITE_GOOGLE" value="false" force="true"/>
+        <env name="GOOGLE_CLIENT_ID" value="" force="true"/>
+        <env name="GOOGLE_CLIENT_SECRET" value="" force="true"/>
+        <env name="KIT_SOCIALITE_GITHUB" value="false" force="true"/>
+        <env name="GITHUB_CLIENT_ID" value="" force="true"/>
+        <env name="GITHUB_CLIENT_SECRET" value="" force="true"/>
+        <env name="KIT_SOCIALITE_LINKEDIN" value="false" force="true"/>
+        <env name="LINKEDIN_CLIENT_ID" value="" force="true"/>
+        <env name="LINKEDIN_CLIENT_SECRET" value="" force="true"/>
+        <env name="KIT_SOCIALITE_X" value="false" force="true"/>
+        <env name="X_CLIENT_ID" value="" force="true"/>
+        <env name="X_CLIENT_SECRET" value="" force="true"/>
+        <env name="KIT_SOCIALITE_VINCULO_CONFIRMAR" value="false" force="true"/>
 
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>

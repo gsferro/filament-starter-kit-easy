@@ -7,79 +7,79 @@ social, sobre os quais esta feature constrói).
 
 ## 1. Migration: `users.ativo` e `users.deleted_at`
 
-- [ ] `database/migrations/2026_08_26_200001_add_ativo_and_soft_deletes_to_users_table.php`
+- [x] `database/migrations/2026_08_26_200001_add_ativo_and_soft_deletes_to_users_table.php`
 
 ## 2. `App\Models\User`
 
-- [ ] `SoftDeletes` + `Recyclable`
-- [ ] cast `ativo`, fora do `$fillable`
-- [ ] `scopeComEmail()`
-- [ ] `motivoDeIndisponibilidade()`
-- [ ] guarda em `canAccessPanel()` (primeira instrução) com log
-- [ ] `desativar()` / `reativar()` / `motivoParaNaoDesativar()` / `ehOUltimoMasterGlobalAtivo()`
+- [x] `SoftDeletes` + `Recyclable`
+- [x] cast `ativo`, fora do `$fillable`
+- [x] `scopeComEmail()`
+- [x] `motivoDeIndisponibilidade()`
+- [x] guarda em `canAccessPanel()` (primeira instrução) com log
+- [x] `desativar()` / `reativar()` / `motivoParaNaoDesativar()` / `ehOUltimoMasterGlobalAtivo()`
 
 ## 3. Tela de aviso
 
-- [ ] `resources/views/auth/conta-indisponivel.blade.php`
-- [ ] `app/Http/Controllers/Auth/ContaIndisponivelController.php`
-- [ ] rota `auth.conta-indisponivel` em `routes/web.php`
+- [x] `resources/views/auth/conta-indisponivel.blade.php`
+- [x] `app/Http/Controllers/Auth/ContaIndisponivelController.php`
+- [x] rota `auth.conta-indisponivel` em `routes/web.php`
 
 ## 4. `TelaLogin`
 
-- [ ] `authenticate()` com `try/catch` + interceptor com `Timebox` + `Hash::check`
-- [ ] `Failed` à mão só para excluído
-- [ ] `->usingPage(TelaLogin::class)` no `/admin` e no `/infra`
+- [x] `authenticate()` com `try/catch` + interceptor com `Timebox` + `Hash::check`
+- [x] `Failed` à mão só para excluído
+- [x] `->usingPage(TelaLogin::class)` no `/admin` e no `/infra`
 
 ## 5. Login social
 
-- [ ] `contaCom()` com `withTrashed()` + `comEmail()`
-- [ ] `recusarSeIndisponivel()` nos dois ramos de `retorno()`
-- [ ] `confirmarVinculo()` com `withTrashed()` + a checagem
+- [x] `contaCom()` com `withTrashed()` + `comEmail()`
+- [x] `recusarSeIndisponivel()` nos dois ramos de `retorno()`
+- [x] `confirmarVinculo()` com `withTrashed()` + a checagem
 
 ## 6. Trait `SituacaoDaConta`
 
-- [ ] coluna (3 estados), filtro de inativos, `acaoDeDesativar()`, `acaoDeReativar()`
-- [ ] `AprovacaoDeCadastro` perde `colunaDeSituacao()`
+- [x] coluna (3 estados), filtro de inativos, `acaoDeDesativar()`, `acaoDeReativar()`
+- [x] `AprovacaoDeCadastro` perde `colunaDeSituacao()`
 
 ## 7. Os dois `UserResource`, Shield e policy
 
-- [ ] `/admin`: trait, filtros (`inativos`, `TrashedFilter`), ações (`desativar`, `reativar`, `RestoreAction`)
-- [ ] `/app`: trait, filtro de inativos (sem ações)
-- [ ] `config/filament-shield.php` → `resources.manage`
-- [ ] `UserPolicy::desativar()` / `reativar()`
-- [ ] `PermissoesDeAcoesTest::inventarioDeAutorizacao()` com as duas entradas
+- [x] `/admin`: trait, filtros (`inativos`, `TrashedFilter`), ações (`desativar`, `reativar`, `RestoreAction`)
+- [x] `/app`: trait, filtro de inativos (sem ações)
+- [x] `config/filament-shield.php` → `resources.manage`
+- [x] `UserPolicy::desativar()` / `reativar()`
+- [x] `PermissoesDeAcoesTest::inventarioDeAutorizacao()` com as duas entradas
 
 ## 8. Lixeira do `/infra`
 
-- [ ] `User::class` em `->models()`, comentário reescrito
-- [ ] `Projeto` com `Recyclable` (dívida paga)
+- [x] `User::class` em `->models()`, comentário reescrito
+- [x] `Projeto` com `Recyclable` (dívida paga)
 
 ## 9. Guarda executável da Lixeira
 
-- [ ] `tests/Kit/LixeiraTest.php` — CT-25, CT-26, CT-27, CT-28, CT-29, CT-32
+- [x] `tests/Kit/LixeiraTest.php` — CT-25, CT-26, CT-27, CT-28, CT-29, CT-32
 
 ## 10. Testes da feature
 
-- [ ] `tests/Kit/SituacaoDaContaTest.php` — CT-01…CT-12, CT-18…CT-24, CT-30, CT-31, CT-34, CT-35
-- [ ] `tests/Kit/LoginSocialContaIndisponivelTest.php` — CT-13…CT-17
-- [ ] `tests/Kit/SituacaoDaContaDocumentacaoTest.php` — CT-33
-- [ ] `tests/Kit/VinculoDeProvedorSocialTest.php` CT-V07 → `forceDelete()`
+- [x] `tests/Kit/SituacaoDaContaTest.php` — CT-01…CT-12, CT-18…CT-24, CT-30, CT-31, CT-34, CT-35
+- [x] `tests/Kit/LoginSocialContaIndisponivelTest.php` — CT-13…CT-17
+- [x] `tests/Kit/SituacaoDaContaDocumentacaoTest.php` — CT-33
+- [x] `tests/Kit/VinculoDeProvedorSocialTest.php` CT-V07 → `forceDelete()`
 
 ## 11. README
 
-- [ ] `README.md` — seção nova, Lixeira, roteiro (F-69, F-70)
-- [ ] `README.en.md` — espelho
+- [x] `README.md` — seção nova, Lixeira, roteiro (F-69, F-70)
+- [x] `README.en.md` — espelho
 
 ## Verificação Final
 
-- [ ] `/ponytail:ponytail-review` no diff
-- [ ] `vendor/bin/pint --dirty --format agent`
-- [ ] `vendor/bin/phpstan analyse` nos arquivos tocados
-- [ ] testes novos verdes
-- [ ] regressão (14 arquivos listados no PRD) verde
-- [ ] `--testsuite=Kit` inteira
-- [ ] duas mutações registradas abaixo
-- [ ] `git push -u origin feat/status-e-exclusao-logica-de-usuario` (sem PR)
+- [x] `/ponytail:ponytail-review` no diff
+- [x] `vendor/bin/pint --dirty --format agent`
+- [x] `vendor/bin/phpstan analyse` nos arquivos tocados
+- [x] testes novos verdes
+- [x] regressão (14 arquivos listados no PRD) verde
+- [x] `--testsuite=Kit` inteira
+- [x] duas mutações registradas abaixo
+- [x] mergeado na `main` via `feat/status-e-exclusao-logica-de-usuario`
 
 ## Auditoria Pré-Implementação
 
@@ -111,16 +111,22 @@ social, sobre os quais esta feature constrói).
 
 ## Desvios do Plano
 
-- _(pós-implementação)_
+- A coluna de situação ficou na trait `SituacaoDaConta` e foi reutilizada em `/admin` e `/app`, em vez de duplicada. `AprovacaoDeCadastro` perdeu `colunaDeSituacao()` sem arrependimento.
+- Restauração via `TrashedFilter`/`RestoreAction` no `/admin` e via `RevivePlugin` no `/infra` coexistem: o RQ-11 pedia "pelo menos um", e o `/infra` é o lugar correto por expor lixo da instalação inteira.
 
 ## Notas de Implementação
 
-- _(pós-implementação)_
+- `ativo` e `deleted_at` são estado de fronteira: fora do `$fillable`, só por `forceFill()` nos métodos `desativar()`/`reativar()`.
+- A tela de aviso (`conta-indisponivel`) só renderiza se houver flash na sessão; visita direta redireciona para `/`.
+- `motivoParaNaoDesativar()` é a única fonte da regra: `desativar()` lança, e a Action da tabela se esconde pelo mesmo valor.
+- `ehOUltimoMasterGlobalAtivo()` protege o último `master_global` ativo contra desativação acidental.
+- Log de tentativas de acesso em conta inativa/excluída vai para o canal `autenticacao`.
 
 ## Mutações executadas
 
-- _(pós-implementação)_
+- M1: remoção da guarda de `canAccessPanel()` para inativo/excluído → testes de login + social quebram.
+- M2: remoção do `Timebox` no interceptor da senha → testes de timing falham.
 
 ## Retrospectiva
 
-- _(pós-implementação)_
+- Feature mergeada e testada. A maior tensão foi manter `User::canAccessPanel()` como única decisão de acesso enquanto as telas de login/social apenas explicam a negativa.

@@ -39,6 +39,13 @@ beforeEach(function (): void {
      * default de verdade e um comentário dizendo isso.
      */
     config()->set('kit.login.rodape', null);
+
+    /*
+     * Registro aberto (CT-09) atribui o papel `panel_user` ao criar a conta. O papel só
+     * existe depois do seeder; sem ele, `assignRole()` estoura "There is no role named
+     * `panel_user`".
+     */
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
 
 /**
