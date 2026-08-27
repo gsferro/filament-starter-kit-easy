@@ -85,4 +85,16 @@ class UserPolicy
     {
         return $authUser->can('Export:User');
     }
+
+    /** Desativar tira o acesso a todos os painéis — permissão própria, separada de `update`. */
+    public function desativar(AuthUser $authUser): bool
+    {
+        return $authUser->can('Desativar:User');
+    }
+
+    /** Reativar concede acesso de volta — separada de `desativar` de propósito. */
+    public function reativar(AuthUser $authUser): bool
+    {
+        return $authUser->can('Reativar:User');
+    }
 }

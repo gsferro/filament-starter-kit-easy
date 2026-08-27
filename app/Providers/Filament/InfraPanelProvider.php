@@ -12,6 +12,7 @@ use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Livewire\DefinirSenhaPorEmail;
 use App\Models\Projeto;
+use App\Models\User;
 use App\Support\CorPrimaria;
 use App\Support\IdentidadeDoKit;
 use App\Support\PermissaoDaTela;
@@ -188,7 +189,8 @@ class InfraPanelProvider extends PanelProvider
 
                 AuthDesignerPlugin::make()
                     ->login(fn (AuthPageConfig $config): AuthPageConfig => $config
-                        // A tela de login do kit, pelo desafio anti-robô — ver TelaLogin.
+                        // A tela de login do kit: desafio anti-robô quando ligado e explicação
+                        // de conta inativa/excluída em vez do erro genérico. Ver TelaLogin.
                         ->usingPage(TelaLogin::class)
                         ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Left)
@@ -520,17 +522,27 @@ class InfraPanelProvider extends PanelProvider
                  * exige `master_global` ou `infra`; no /app qualquer papel do painel veria.
                  *
                  * `models()` explícito em vez de `modelsNamespace()`: a varredura automática
-                 * de `app/Models` alcançaria `User`, `Role` e `Tenant`, cuja restauração tem
-                 * consequência de AUTORIZAÇÃO — um usuário volta com papel numa organização
-                 * que pode não existir mais. Lista explícita é a mesma escolha da allow-list
-                 * do command-center: a trava é a lista, não o gate.
+                 * de `app/Models` alcançaria `Role` e `Tenant`, que não têm `SoftDeletes` e
+                 * não têm o que restaurar. Lista explícita é a mesma escolha da allow-list do
+                 * command-center: a trava é a lista, não o gate.
+                 *
+                 * `User` ENTROU nesta lista com a exclusão lógica de usuário. A versão anterior
+                 * deste comentário o recusava porque "um usuário volta com papel numa organização
+                 * que pode não existir mais" — a premissa era exclusão FÍSICA com cascata. Com
+                 * `SoftDeletes` as pivots `tenant_user` e `model_has_roles` ficam, restaurar devolve
+                 * exatamente o que havia, e `Tenant` nunca é apagado (tem `ativo`). ADR-06 da wiki
+                 * `status-e-exclusao-logica-de-usuario`.
+                 *
+                 * E a lista NÃO basta: o model precisa usar `Promethys\Revive\Concerns\Recyclable`,
+                 * que é quem grava `recycle_bin_items` no `deleted`. `Projeto` ficou sem ela da
+                 * 0.17.0 até aqui, e a Lixeira listava vazio. `tests/Kit/LixeiraTest.php` reprova
+                 * model com `SoftDeletes` fora daqui ou sem a trait.
                  *
                  * `withoutScoping()` porque o /infra não tem tenancy: escopo por tenant aqui
                  * não teria de onde sair. Se um dia a lixeira for para o /app, é
                  * `enableTenantScoping()` que entra — e com CT provando o isolamento.
                  *
-                 * Hoje só `Projeto` usa `SoftDeletes` no kit. A tela nasce com um model e
-                 * cresce com o seu: acrescente aqui toda model que ganhar a trait.
+                 * Acrescente aqui toda model que ganhar `SoftDeletes` + `Recyclable`.
                  */
                 RevivePlugin::make()
                     ->navigationGroup('Sistema')
@@ -549,6 +561,7 @@ class InfraPanelProvider extends PanelProvider
                         && PermissaoDaTela::permite(RecycleBin::class))
                     ->models([
                         Projeto::class,
+                        User::class,
                     ])
                     ->withoutScoping(),
 

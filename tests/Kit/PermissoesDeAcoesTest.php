@@ -553,6 +553,10 @@ function inventarioDeAutorizacao(): array
         // `PapeisSeeder` subtrai a administracao do painel `app`. A trait e compartilhada pelos
         // dois `UserResource`, entao a entrada e uma so, no arquivo do concern.
         'app/Filament/Concerns/AprovacaoDeCadastro.php::aprovar'                                              => 'policy',
+        // Desativar/Reativar: `->authorize('desativar'|'reativar')` → `UserPolicy` → `Desativar:User` /
+        // `Reativar:User`, nascidas em `filament-shield.resources.manage` para o UserResource do /admin.
+        'app/Filament/Concerns/SituacaoDaConta.php::desativar'                                                => 'permissao',
+        'app/Filament/Concerns/SituacaoDaConta.php::reativar'                                                 => 'permissao',
 
         // Painel /app
         'app/Filament/App/Pages/ConvitesRecebidos.php::aceitar'           => 'permissao',

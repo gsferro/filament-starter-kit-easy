@@ -132,8 +132,8 @@ class AdminPanelProvider extends PanelProvider
                 // Login split: mídia à esquerda, formulário à direita.
                 AuthDesignerPlugin::make()
                     ->login(fn (AuthPageConfig $config): AuthPageConfig => $config
-                        // A tela de login do kit, pelo desafio anti-robô; para painel sem registro
-                        // ela é idêntica à do vendor. Ver o docblock de TelaLogin.
+                        // A tela de login do kit: desafio anti-robô quando ligado e explicação
+                        // de conta inativa/excluída em vez do erro genérico. Ver TelaLogin.
                         ->usingPage(TelaLogin::class)
                         ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Left)

@@ -6,7 +6,6 @@ use App\Models\User;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -64,20 +63,8 @@ trait AprovacaoDeCadastro
         return static fn (?User $record): bool => $record === null || ! $record->aprovacao_pendente;
     }
 
-    /**
-     * "Pendente" ou "Ativo" — a coluna que faz o estado existir para quem olha a tela.
-     *
-     * Sem ela a pendência é invisível: a pessoa aparece na listagem como qualquer outra, e
-     * quem administra não tem como saber que alguém está esperando.
-     */
-    protected static function colunaDeSituacao(): TextColumn
-    {
-        return TextColumn::make('aprovacao_pendente')
-            ->label('Situação')
-            ->badge()
-            ->formatStateUsing(fn (bool $state): string => $state ? 'Pendente' : 'Ativo')
-            ->color(fn (bool $state): string => $state ? 'warning' : 'success');
-    }
+    // A coluna "Situação" (Pendente/Inativo/Ativo) vive em `SituacaoDaConta::colunaDeSituacao()`:
+    // o estado ganhou um terceiro valor e foi morar onde ele é decidido.
 
     /**
      * O filtro de pendentes — a metade operacional de "alguém aprova".

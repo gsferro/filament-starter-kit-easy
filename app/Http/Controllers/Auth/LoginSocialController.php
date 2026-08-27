@@ -14,6 +14,7 @@ use App\Support\ProvedorSocial;
 use App\Support\RegistroAberto;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
+use Illuminate\Auth\Events\Failed;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -184,6 +185,10 @@ final class LoginSocialController extends Controller
 
         // `$user instanceof User` além do vínculo: a FK apaga em cascata, mas o tipo não sabe.
         if ($vinculo instanceof VinculoSocial && $user instanceof User) {
+            if (($redirecionamento = $this->redirecionarSeIndisponivel($user, $mascarado, $provedor)) !== null) {
+                return $redirecionamento;
+            }
+
             $vinculo->registrarAcesso();
             $this->aceitarConviteSeHouver($contexto, $user, $email, $provedor);
 
@@ -258,6 +263,8 @@ final class LoginSocialController extends Controller
                 }
 
                 $novo = true;
+            } elseif (($redirecionamento = $this->redirecionarSeIndisponivel($user, $mascarado, $provedor)) !== null) {
+                return $redirecionamento;
             } elseif (ConfiguracaoDoLogin::vinculoExigeConfirmacao()) {
                 return $this->pedirConfirmacaoDoVinculo($provedor, $user, $sub, $mascarado);
             } else {
@@ -277,6 +284,10 @@ final class LoginSocialController extends Controller
                     ['user_id' => $user->getKey(), 'provedor' => $provedor->value, 'motivo' => 'sub_ausente'],
                 );
             }
+        }
+
+        if (($redirecionamento = $this->redirecionarSeIndisponivel($user, $mascarado, $provedor)) !== null) {
+            return $redirecionamento;
         }
 
         // Cadastro pendente de aprovação não abre sessão — conta nova OU existente.
@@ -322,7 +333,7 @@ final class LoginSocialController extends Controller
      */
     private function contaCom(string $email): ?User
     {
-        return User::query()
+        return User::withTrashed()
             ->whereRaw('lower(email) = ?', [$email])
             ->first();
     }
@@ -464,7 +475,7 @@ final class LoginSocialController extends Controller
     {
         abort_unless(ConfiguracaoDoLogin::disponivel($provedor), 404);
 
-        $user = User::query()->find($request->integer('user'));
+        $user = User::withTrashed()->find($request->integer('user'));
         $sub  = trim((string) $request->query('sub'));
 
         if (! $user instanceof User || $sub === '') {
@@ -482,9 +493,13 @@ final class LoginSocialController extends Controller
             return $this->recusar("Esta conta do {$provedor->rotulo()} já está vinculada a outro usuário.");
         }
 
-        VinculoSocial::vincular($user, $provedor, $sub);
-
         $mascarado = Str::mask((string) $user->email, '*', 3);
+
+        if (($redirecionamento = $this->redirecionarSeIndisponivel($user, $mascarado, $provedor)) !== null) {
+            return $redirecionamento;
+        }
+
+        VinculoSocial::vincular($user, $provedor, $sub);
 
         if ($user->aprovacao_pendente) {
             return $this->aguardarAprovacao($provedor, $user, $mascarado);
@@ -526,6 +541,35 @@ final class LoginSocialController extends Controller
     private function conviteEhPara(Convite $convite, string $email): bool
     {
         return mb_strtolower(trim((string) $convite->email)) === $email;
+    }
+
+    /**
+     * Se a conta não pode entrar, grava o aviso e manda para a tela de conta indisponível.
+     */
+    private function redirecionarSeIndisponivel(User $user, string $mascarado, ProvedorSocial $provedor): ?RedirectResponse
+    {
+        $motivo = $user->motivoDeIndisponibilidade();
+
+        if ($motivo === null) {
+            return null;
+        }
+
+        Log::channel('autenticacao')->warning(
+            "[LoginSocialController@retorno] Login recusado: {$motivo} | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
+            [
+                'user_id'     => $user->getKey(),
+                'email'       => $mascarado,
+                'motivo'      => $motivo,
+                'provedor'    => $provedor->value,
+                'excluida_em' => $user->deleted_at?->toIso8601String(),
+            ],
+        );
+
+        event(new Failed(Filament::getAuthGuard(), $user, []));
+
+        return redirect()->to(
+            ContaIndisponivelController::redirecionar($user, Filament::getPanel('app')->getLoginUrl()),
+        );
     }
 
     /**
