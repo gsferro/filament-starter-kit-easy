@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\Auth\TelaDoisFatores;
+use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Pages\MyProfilePage;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
@@ -130,6 +131,9 @@ class AdminPanelProvider extends PanelProvider
                 // Login split: mídia à esquerda, formulário à direita.
                 AuthDesignerPlugin::make()
                     ->login(fn (AuthPageConfig $config): AuthPageConfig => $config
+                        // A tela de login do kit: explica conta inativa/excluída em vez do erro
+                        // genérico (ADR-02 da wiki status-e-exclusao-logica-de-usuario).
+                        ->usingPage(TelaLogin::class)
                         ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Left)
                         ->mediaSize('70%')

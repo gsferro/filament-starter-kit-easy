@@ -7,18 +7,21 @@ use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Filament\Admin\Resources\Users\Pages\ListUsers;
 use App\Filament\Concerns\AprovacaoDeCadastro;
 use App\Filament\Concerns\BadgeContagemNavegacao;
+use App\Filament\Concerns\SituacaoDaConta;
 use App\Models\User;
 use App\Support\Papeis;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\RestoreAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Spatie\Permission\Models\Role;
 use STS\FilamentImpersonate\Actions\Impersonate;
@@ -27,6 +30,7 @@ class UserResource extends Resource
 {
     use AprovacaoDeCadastro;
     use BadgeContagemNavegacao;
+    use SituacaoDaConta;
 
     protected static ?string $model = User::class;
 
@@ -179,12 +183,26 @@ class UserResource extends Resource
             ])
             ->filters([
                 self::filtroDePendentes(),
+                self::filtroDeInativos(),
+                /*
+                 * A lixeira DESTA tela. `TrashedFilter` chama `withTrashed()`/`onlyTrashed()`,
+                 * que removem o `SoftDeletingScope` sozinhos — por isso `getEloquentQuery()` não
+                 * é tocada, e o badge de contagem do menu (que conta por ela) segue sem excluídos.
+                 */
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 self::acaoDeAprovar(),
+                // Desativar/Reativar: só aqui, não no /app — ato global, mesma régua da exclusão
+                // (ADR-04 da wiki status-e-exclusao-logica-de-usuario).
+                self::acaoDeDesativar(),
+                self::acaoDeReativar(),
                 Impersonate::make(),
                 EditAction::make(),
+                // Excluir é LÓGICO (`SoftDeletes` no model); Restaurar só aparece em linha excluída e
+                // autoriza por `Restore:User`, via `getRestoreAuthorizationResponse()` → policy.
                 DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->toolbarActions([
                 DeleteBulkAction::make(),
