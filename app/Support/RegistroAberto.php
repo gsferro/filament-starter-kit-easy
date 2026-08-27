@@ -158,7 +158,7 @@ class RegistroAberto
          * `aprovacao_pendente`: estado de fronteira de acesso. Fora do `$fillable` para que
          * nenhum formulário possa escrevê-lo, aqui ou em qualquer lugar futuro.
          */
-        $foraDoFillable = ['aprovacao_pendente' => $pendente];
+        $foraDoFillable = ['aprovacao_pendente' => $pendente, 'origem' => User::ORIGEM_REGISTRO];
 
         if (! self::exigirVerificacaoDeEmail()) {
             $foraDoFillable['email_verified_at'] = now();

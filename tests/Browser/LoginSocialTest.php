@@ -163,10 +163,12 @@ it('abre os campos de credencial de um provedor ao ligar o interruptor dele, e s
     $pagina = visit('/admin/configuracoes-do-kit')
         ->click('Login')
         /*
-         * O interruptor tem de estar ALCANÇÁVEL sem clique a mais: se a seção do provedor nascesse
-         * colapsada, o `click()` do passo seguinte falharia no seletor. É o mutante MB10, e é este
-         * `assertVisible` que registra quantos cliques a tela custa.
+         * Desde 2026-08-26 a seção de cada provedor nasce FECHADA, com o ícone de status no
+         * cabeçalho (pedido do solicitante na validação real dos provedores) — então a tela custa
+         * UM clique a mais, no cabeçalho da seção, e este cenário o registra. O mutante MB10
+         * ("interruptor alcançável") virou: o interruptor aparece depois de abrir a seção.
          */
+        ->click('Entrar com GitHub')
         ->assertVisible($campo(ProvedorSocial::Github, 'habilitado'))
         // O estado ANTES: sem esta linha, campos sempre visíveis passariam no oráculo abaixo.
         ->assertMissing($campo(ProvedorSocial::Github, 'client_id'))

@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Facades\Log;
+
 /**
  * O ÚNICO ponto do código que lê configuração da tela de login.
  *
@@ -135,5 +137,71 @@ final class ConfiguracaoDoLogin
     public static function registroAberto(): bool
     {
         return RegistroAberto::habilitado();
+    }
+
+    /**
+     * A primeira entrada de um provedor numa conta que já existe exige confirmação por e-mail?
+     *
+     * `false` (padrão): entra e avisa. `true`: recebe o link e só entra depois. Lida por request,
+     * no `LoginSocialController::retorno()`, por isso pode ser governada pela tela de Settings.
+     * ADR-03 da wiki `vinculo-de-provedor-social`.
+     */
+    public static function vinculoExigeConfirmacao(): bool
+    {
+        return (bool) config('kit.login.vinculo_confirmar', false);
+    }
+
+    /**
+     * O desafio anti-robô das telas públicas está no ar? Se sim, com qual provedor.
+     *
+     * `null` = desligado, e é o default. Quatro condições em conjunção, pela mesma razão das duas
+     * de `disponivel()`: interruptor desligado é escolha; chave vazia é descuido; e aqui o descuido
+     * custa mais caro que no login social — um campo obrigatório que nunca se preenche trancaria o
+     * login dos três painéis, inclusive o de quem administra. Provedor fora da lista também desliga,
+     * em vez de cair no `recaptcha`: chave do Turnstile com widget do Google não renderiza, e o
+     * resultado seria o mesmo campo impreenchível. Ver ADR-03 da wiki `recaptcha-nas-telas-publicas`.
+     *
+     * Lida por request — no `->visible()` do campo e na regra de validação —, então pode viver na
+     * tela de Settings (`.ai/rules/settings.md`).
+     *
+     * Sem log nos ramos normais: isto roda em todo render das três telas. Só o provedor
+     * desconhecido loga, porque é o único estado que não é escolha nem normalidade.
+     */
+    public static function antiRobo(): ?ProvedorAntiRobo
+    {
+        if (! config('kit.login.anti_robo.habilitado')) {
+            return null;
+        }
+
+        if (blank(config('kit.login.anti_robo.chave_do_site')) || blank(config('kit.login.anti_robo.chave_secreta'))) {
+            return null;
+        }
+
+        $valor    = (string) config('kit.login.anti_robo.provedor');
+        $provedor = ProvedorAntiRobo::tryFrom($valor);
+
+        if ($provedor === null) {
+            Log::channel('autenticacao')->warning(
+                "[ConfiguracaoDoLogin@antiRobo] Provedor anti-robô desconhecido — proteção tratada como desligada | provedor: {$valor}",
+                [
+                    'provedor'   => $valor,
+                    'conhecidos' => array_column(ProvedorAntiRobo::cases(), 'value'),
+                ],
+            );
+        }
+
+        return $provedor;
+    }
+
+    /** A chave pública do widget — vai para o HTML. Só faz sentido com `antiRobo()` não nulo. */
+    public static function chaveDoSiteAntiRobo(): string
+    {
+        return trim((string) config('kit.login.anti_robo.chave_do_site'));
+    }
+
+    /** A chave do servidor — SEGREDO. Só a regra de validação a lê, e nunca a loga. */
+    public static function chaveSecretaAntiRobo(): string
+    {
+        return trim((string) config('kit.login.anti_robo.chave_secreta'));
     }
 }

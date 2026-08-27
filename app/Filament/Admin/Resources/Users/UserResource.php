@@ -165,6 +165,15 @@ class UserResource extends Resource
                 TextColumn::make('email')->label('E-mail')->searchable()->sortable(),
                 TextColumn::make('roles.name')->label('Papéis')->badge()
                     ->formatStateUsing(fn (?string $state): string => Papeis::rotulo($state)),
+                // Por qual porta a conta entrou: provedor social, convite, registro aberto ou
+                // interno. Exibição, nunca autorização — ver `User::rotuloDaOrigem()`.
+                TextColumn::make('origem')
+                    ->label('Origem')
+                    ->badge()
+                    ->state(fn (User $record): string => $record->rotuloDaOrigem())
+                    ->color(fn (User $record): string => ($record->origem ?? User::ORIGEM_INTERNO) === User::ORIGEM_INTERNO ? 'gray' : 'info')
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('created_at')->label('Criado em')->dateTime('d/m/Y H:i')->sortable(),
                 self::colunaDeSituacao(),
             ])

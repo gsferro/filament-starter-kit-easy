@@ -88,11 +88,16 @@ it('F-13: nao oferece administracao a quem so usa o negocio', function (): void 
 it('F-45: abre o overlay da busca pelo gatilho da topbar', function (): void {
     $this->actingAs(usuarioDoKit('master_global'));
 
+    // O oráculo é o overlay ABERTO — o campo de busca dele visível —, não só "clicou sem erro".
+    // Medido em 2026-08-26 depois de um relato de "não abre" numa instalação real: abria; o
+    // relato era estado do navegador. Este caso passa a existir de verdade (era `todo`).
     visit('/admin')
         ->assertSee('Painel de Controle')
-        ->click('[data-spotlight-trigger], .fi-global-search-field, [x-on\\:click*="spotlight"]')
+        ->assertPresent('input[placeholder="Buscar registros e telas..."]')
+        ->click('.fi-global-search-field')
+        ->assertVisible('input[placeholder="Buscar registros e telas..."]')
         ->assertNoJavaScriptErrors();
-})->todo('Depende do seletor do gatilho, que hoje não tem data-testid — ver DT-05 da wiki regressao-de-telas.');
+})->group('browser');
 
 /**
  * F-52 — a página de 403 é uma tela, não um stack trace.

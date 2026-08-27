@@ -8,6 +8,7 @@ use App\Support\ProvedorSocial;
 use App\Support\RegistroAberto;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Socialite;
 use Laravel\Socialite\Two\User as UsuarioDoGoogle;
@@ -371,16 +372,19 @@ it('recusa o Google de quem não tem conta enquanto o registro está fechado', f
 /**
  * CT-09 — com o registro aberto ligado, a conta nova nasce e o destino é o perfil.
  *
- * `@premissa` em duas frentes: o interruptor de registro aberto é da branch
- * `feat/registro-e-aprovacao` e a chave que ele grava ainda não existe — aqui ela é forçada; e
- * a conta nova NÃO recebe papel, porque decidir qual papel o registro aberto concede é daquela
- * feature. Por isso o oráculo é o DESTINO do redirecionamento, e não "consegue abrir a tela":
- * conta sem papel recebe 403 no painel, e isso é o comportamento correto do kit.
+ * A premissa original deste caso ("a conta nova NÃO recebe papel, porque decidir o papel é da
+ * feature de registro") caducou quando `RegistroAberto` nasceu — e ninguém voltou aqui. O oráculo
+ * era o DESTINO do redirecionamento, nunca a tela: medido numa instalação real, a pessoa era
+ * mandada para `/app/meu-perfil` e recebia 403, porque a conta nascia sem papel. Agora o caso
+ * SEGUE o redirecionamento e exige o papel único do registro aberto — a mesma porta do
+ * formulário. "Uma tela aberta não é uma tela que grava" tem um primo: um redirect não é uma
+ * tela que abre.
  *
  * "o nome Pessoa do Google" é `Então` de valor concreto: sem ele, uma implementação que grava
  * o e-mail no campo do nome passa.
  */
 it('cria a conta e manda para o perfil quando o registro aberto está ligado', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
     ligarLoginComGoogleDoKit();
     // `kit.registro.habilitado` — a chave REAL, criada pela feature de registro. Este caso
     // media `kit.registro.aberto`, que a branch imaginou e o config nunca teve: `config()->set()`
@@ -392,14 +396,50 @@ it('cria a conta e manda para o perfil quando o registro aberto está ligado', f
         'name'  => 'Pessoa do Google',
     ]));
 
-    $this->get('/auth/google/callback')->assertRedirectContains('meu-perfil');
+    $resposta = $this->get('/auth/google/callback')->assertRedirectContains('meu-perfil');
 
     $novo = User::query()->where('email', 'novo@example.com')->first();
 
     expect($novo)->not->toBeNull()
-        ->and($novo->name)->toBe('Pessoa do Google');
+        ->and($novo->name)->toBe('Pessoa do Google')
+        ->and($novo->hasRole(RegistroAberto::papel()))->toBeTrue()
+        ->and($novo->aprovacao_pendente)->toBeFalse()
+        ->and($novo->email_verified_at)->not->toBeNull()
+        // A porta gravou 'registro'; o provedor sobrescreve com o próprio driver.
+        ->and($novo->origem)->toBe('google')
+        ->and($novo->rotuloDaOrigem())->toBe('Google');
 
     $this->assertAuthenticatedAs($novo);
+
+    // O destino abre. Era aqui que a instalação real respondia 403.
+    $this->get((string) $resposta->headers->get('Location'))->assertOk();
+})->group('kit');
+
+/**
+ * Aprovação manual ligada: a conta nasce pendente, sem papel e SEM sessão — como no formulário.
+ *
+ * O contrapeso do caso acima. Sem ele, "criar pela porta do registro aberto" fica verde com uma
+ * implementação que loga a pessoa pendente e a manda para o perfil — onde `canAccessPanel()`
+ * nega, e ela vê um 403 sem saber que a conta existe e espera alguém.
+ */
+it('cria a conta pendente e nao abre sessao quando a aprovacao manual esta ligada', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+    ligarLoginComGoogleDoKit();
+    config()->set('kit.registro.habilitado', true);
+    config()->set('kit.registro.aprovacao_manual', true);
+
+    Socialite::fake('google', usuarioDoGoogleFalso(['email' => 'pendente@example.com']));
+
+    $this->get('/auth/google/callback')->assertRedirect(Filament::getPanel('app')->getLoginUrl());
+
+    $novo = User::query()->where('email', 'pendente@example.com')->first();
+
+    expect($novo)->not->toBeNull()
+        ->and($novo->aprovacao_pendente)->toBeTrue()
+        ->and($novo->roles)->toHaveCount(0)
+        ->and($novo->email_verified_at)->not->toBeNull();
+
+    $this->assertGuest();
 })->group('kit');
 
 /**
@@ -569,23 +609,35 @@ it('exibe o rodapé da tela de login só quando há texto configurado', function
 ])->group('kit');
 
 /**
- * CT-15 — HTML no rodapé sai ESCAPADO.
+ * CT-15 — o rodapé é Markdown: formata o que o Markdown formata, e DESCARTA HTML cru e link
+ * com esquema inseguro.
  *
  * Escalonamento declarado acima do perfil da área: a implementação defeituosa plausível é a
  * saída crua do Blade "para permitir link no rodapé", e ela é XSS armazenado numa página
- * PÚBLICA e NÃO AUTENTICADA — a tela por onde todo mundo entra. Nenhum exemplo de CT-14 a
- * distingue. Ver ADR-09.
+ * PÚBLICA e NÃO AUTENTICADA — a tela por onde todo mundo entra. Até 2026-08-26 o campo era
+ * texto escapado; o solicitante pediu formatação na validação real, e a resposta foi
+ * Markdown com `html_input: strip` e `allow_unsafe_links: false` — não HTML. Ver ADR-09.
  *
- * O par de asserções é o oráculo: o escapado presente E o executável ausente. Só a segunda
- * ficaria verde com o rodapé não renderizado.
+ * Três oráculos: o negrito presente (prova que o Markdown rendeu), a tag ausente (o HTML
+ * cru foi descartado, não escapado — escapado apareceria como texto) e o `javascript:`
+ * ausente (o link inseguro não virou href). Só o segundo ficaria verde com o rodapé não
+ * renderizado; por isso o primeiro.
+ *
+ * A tag fica no MEIO do texto de propósito: no CommonMark, linha que COMEÇA com `<script>`
+ * é bloco HTML inteiro, e o `strip` descarta a linha toda — inclusive o negrito. Foi o que
+ * a primeira versão deste caso mediu, achando que era defeito.
  */
-it('escapa o HTML do rodapé da tela de login', function (): void {
-    config()->set('kit.login.rodape', '<script>alert(1)</script>Fiotec');
+it('renderiza o rodapé como Markdown e descarta HTML cru e link inseguro', function (): void {
+    config()->set('kit.login.rodape', 'Fiotec <script>alert(1)</script> **direitos reservados** [x](javascript:alert(1)) [ok](https://fiotec.org.br)');
 
     $this->get('/app/login')
         ->assertOk()
-        ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;Fiotec', escape: false)
-        ->assertDontSee('<script>alert(1)</script>', escape: false);
+        ->assertSee('<strong>direitos reservados</strong>', escape: false)
+        ->assertSee('href="https://fiotec.org.br"', escape: false)
+        // `<script>alert(1)` e não `<script>`: a página tem scripts legítimos (Livewire, tema).
+        ->assertDontSee('<script>alert(1)', escape: false)
+        ->assertDontSee('&lt;script&gt;', escape: false)
+        ->assertDontSee('javascript:alert', escape: false);
 })->group('kit');
 
 /*

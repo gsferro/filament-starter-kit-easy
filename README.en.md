@@ -555,7 +555,8 @@ True for all **four** providers, without exception:
 | Accepts an **unverified** e-mail from the provider | ❌ never — it refuses and records the reason |
 | Bypasses **two-factor** | ❌ never — a confirmed-2FA account still hits the challenge |
 | Stores the access token or `refresh_token` | ❌ nothing is stored |
-| Adds a new column to `users` | ❌ none; the link is the verified e-mail |
+| Stores the **identity** at the provider (`sub`) | ✅ in `vinculos_sociais` — that is how the account is recognised from the second time on ([details](#linking-to-the-provider-the-first-time-and-the-next-ones)) |
+| Adds a new column to `users` | ✅ **one**, `origem` — it only says which door the account came through (`google`, `github`, `convite`, `registro`, `interno`), shown on the users list and the dashboard. **Not a link**: no provider id, no token; the link is still the verified e-mail |
 | Marks a created account as **e-mail verified** | ✅ yes — the provider already proved it, and asking again would be the same proof twice |
 
 The second row is the important one, and it is not timidity: **the invitation is the kit's only
@@ -567,13 +568,24 @@ social login, turn open registration on: the kit then creates the account and ta
 their own profile screen to fill in what is missing.
 
 And remember the rest of the kit: **an account with no role opens no panel**
-(`User::canAccessPanel()`). Someone arriving through social login needs a role like everybody else.
+(`User::canAccessPanel()`). Someone arriving through social login needs a role like everybody else —
+the account created by open registration gets its single role, through the same door as the form.
+
+**The account the provider creates has no password the person knows** (it is born with a random
+one), and three things ask for the current password: changing it, turning on 2FA and unlocking the
+session. That is why the profile (`/app/meu-perfil`, and the other two panels') has the **Set a
+password by e-mail** block: it sends the same link as "Forgot your password?", ends the session —
+the page that sets the password only opens for someone logged out — and, once the password is set,
+all three work. Measured on a real install: it was the first stumble for whoever came in through
+Google. And whoever chooses to **live without a local password** is not stuck at the session lock
+screen: it offers the same buttons as the login, and coming back from the provider unlocks it.
 
 ### Turning a provider on, in four steps
 
 The steps are the same for all four; only the place where you create the OAuth app changes. You can
-do everything through `.env` **or** through `/admin/configuracoes-do-kit` → the **Login** tab
-(a value saved on the screen wins over `.env` at runtime).
+do everything through `.env` **or** through `/admin/configuracoes-do-kit` → the **Login** tab — but
+know who is in charge: **the database wins over `.env` at runtime, and `.env` only seeds it** (see
+[Who wins: the database or `.env`?](#who-wins-the-database-or-env)). Step 3 is where that matters.
 
 **1. Create the OAuth app at the provider** and register the redirect URI — your `APP_URL` plus the
 path from the table above:
@@ -619,7 +631,14 @@ X_CLIENT_ID=your-client-id
 X_CLIENT_SECRET=your-secret
 ```
 
-**3. Clear the config** (`php artisan config:clear`) and reload the login screen.
+**3. Get the keys into the database.** On a **fresh** install `migrate` does it by itself — the
+settings migration seeds every property from `config()`, which comes from `.env`. On a kit that is
+**already installed**, `.env` alone turns **nothing** on, and `config:clear` does not change that:
+the `settings` table already has the row (`false`, empty credential) and it wins on every request.
+Two ways out: save through `/admin/configuracoes-do-kit` → **Login**, or run
+`php artisan kit:install --force` with `.env` already filled in — which **recreates the database**
+(DELETES the data; harmless only in the minute after installing). Measured on a real install: the
+three Google keys in `.env`, `config:clear`, and no button — until the migration re-read `.env`.
 
 **4. Confirm the button showed up.** If it did not, it is one of the two conditions below.
 
@@ -628,6 +647,76 @@ X_CLIENT_SECRET=your-secret
 > for that provider — and only that one. The *Client Secret* is stored **encrypted**, is never
 > displayed back and does not appear in the page source; leaving the field blank **keeps** whatever
 > was already stored.
+
+### The screens
+
+| | |
+|---|---|
+| [![Login with the social buttons](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login-social.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-social.png) | [![Login tab of the kit settings](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-login.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-login.png) |
+| The login screen with **Sign in with Google** and **Sign in with GitHub**, and the Markdown footer | `/admin/configuracoes-do-kit` → **Login**: one collapsed block per provider with the status icon, the linking switch and the footer |
+| [![Set a password by e-mail, on the profile](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-perfil-definir-senha.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-perfil-definir-senha.png) | [![Lock screen with social login](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-bloqueio-social.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-bloqueio-social.png) |
+| The profile: **Set a password by e-mail** above "Password" — whoever came through a provider has no current password | The session lock screen offers the same buttons; coming back from the provider unlocks it |
+| [![Users list with the Origin column](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-users-origem.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-users-origem.png) | |
+| `/admin/users`: the **Origin** column says which door each account came through (Google, GitHub, Invite, Open registration, Internal) | |
+
+### Linking to the provider: the first time, and the next ones
+
+The question that motivated this section: *"could I create a Google account with someone else's
+e-mail and get into their account?"* **No** — and it is worth understanding why before reading
+what the kit does on top of that.
+
+The kit only accepts an e-mail the provider declares **verified** (table above). Google, GitHub,
+LinkedIn and X only mark an e-mail as verified after sending a code or a link **to that mailbox**.
+So whoever gets a "verified" identity with somebody else's e-mail already controls that person's
+mailbox — and whoever controls the mailbox already gets in through the kit's own **"Forgot your
+password?"**. Social login does not open a door that did not exist: it accepts the same proof. It
+is the model Auth0 calls *trusted providers*.
+
+Two residual risks remain, and they are what the link addresses: a **recycled address** at the
+e-mail provider (the new owner verifies the address at Google and would reach the previous owner's
+account — but would also reset that password), and a **bug or compromise of the OAuth provider**.
+
+**The link.** Every social login stores, in the `vinculos_sociais` table, the person's identity
+**at the provider** — the `sub`, the account id over there, stable even when the e-mail changes —
+next to the kit account. No token: it is recognition, not a credential. From the second login on
+the account is recognised **by the link, before looking at the e-mail**: an e-mail change at the
+provider, or a recycled address, does not lead to another account.
+
+**The first time.** When a provider shows up for the first time on an account that **already
+existed**, what happens depends on a switch — `KIT_SOCIALITE_VINCULO_CONFIRMAR` in `.env`, or the
+`/admin/configuracoes-do-kit` → **Login** → "Require e-mail confirmation…" screen:
+
+| | Default mode (`false`) | Strict mode (`true`) |
+|---|---|---|
+| Account exists, first time for this provider | links, **logs in**, and sends the e-mail *"your account was accessed through Google for the first time — wasn't you? change your password and tell the administrator"* | **does not log in**; sends the e-mail *"confirm signing in through Google"* with a signed **30-minute** link; opening it creates the link and starts the session |
+| Account exists, already linked | logs in through the link, no e-mail | same |
+| Account does not exist, open registration on | creates through the open-registration door and is born linked — there is no previous account to protect | same |
+| Account does not exist, registration closed | refuses ("access is by invitation") | same |
+
+The default-mode e-mail is **detection**: it makes the residual risk visible to the person
+themselves. Strict mode is **prevention**: it demands the proof (the mailbox) at the exact moment
+it matters. The confirmation link is valid only for that account and that identity, is signed,
+expires, and if the identity already belongs to **another** account the confirmation refuses — a
+provider identity belongs to one account only.
+
+> Both e-mails go through the **queue** (`ShouldQueue`, like the invitation). Without a worker
+> running nothing goes out — `composer dev` starts one. On the real-install validation that was the
+> first stumble: the "link sent" notice showed up, and the e-mail sat in the `jobs` table until
+> `queue:work`.
+
+**Signing up through the provider, from the registration screen.** `/app/register` shows the same
+buttons (with open registration on), and the click carries the screen's context until OAuth comes
+back: with multi-tenancy, `/app/register?org=acme` creates the account **in `acme`**, with the
+open-registration role there — the same door as the form, with the same refusals (unknown or closed
+organisation). From an **invitation link** (`?token=`), signing in through the provider **accepts the
+invitation**: the account is born with (or the existing one gains) the invitation's organisation and
+role, and the invitation is consumed — as long as the provider's verified e-mail is the invited one;
+if it is another, it refuses and the invitation stays intact. No password in any case: the provider
+proved the e-mail. An **existing** account logs in normally in any mode; a new account **without**
+`?org=` under multi-tenancy is still refused.
+Decisions and cases: `wikis/specs/feat/cadastro-social-por-convite-e-organizacao/`.
+
+Decisions and cases: `wikis/specs/feat/vinculo-de-provedor-social/`.
 
 ### The button only shows with EVERYTHING filled in — per provider
 
@@ -655,7 +744,7 @@ keep it off. Only `true` and `1` turn it on.
 
 ### The login screen footer
 
-The same configuration brings a text footer to the bottom of the login screen on all three panels:
+The same configuration brings a Markdown footer (bold, italic, link; raw HTML is discarded) to the bottom of the login screen on all three panels:
 
 ```dotenv
 KIT_LOGIN_RODAPE="Fiotec · All rights reserved"

@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Admin\Resources\Users\Pages\ListUsers;
 use App\Filament\Admin\Widgets\UltimosUsuariosCadastrados;
 use App\Filament\Admin\Widgets\UsuariosPorPapel;
 use App\Support\Papeis;
@@ -93,15 +94,43 @@ it('exibe o rotulo do papel nos widgets do dashboard admin', function (): void {
 
     noPainelBootado('admin');
 
-    usuario('cliente@example.com')->assignRole('panel_user');
+    $cliente = usuario('cliente@example.com');
+    $cliente->assignRole('panel_user');
+    $cliente->forceFill(['origem' => 'google'])->save();
 
     $this->actingAs(usuarioCom('master_global'));
 
     Livewire::test(UltimosUsuariosCadastrados::class)
         ->assertSee(Papeis::rotulo('panel_user'))
-        ->assertDontSee('panel_user');
+        ->assertDontSee('panel_user')
+        // A porta de entrada ao lado do quando: o provedor por extenso, e o interno como "Interno".
+        ->assertSee('Google')
+        ->assertSee('Interno');
 
     Livewire::test(UsuariosPorPapel::class)
         ->assertSee(Papeis::rotulo('panel_user'))
         ->assertDontSee('panel_user');
+})->group('kit');
+
+/**
+ * A lista de usuários do `/admin` mostra por qual porta cada conta entrou.
+ *
+ * Pedido do solicitante na validação real dos provedores (2026-08-26). O oráculo é o rótulo
+ * por extenso — "Google", não `google` — e o "Interno" de quem foi criado pelo admin.
+ */
+it('mostra a origem da conta na lista de usuarios do admin', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    noPainelBootado('admin');
+
+    usuario('social@example.com')->forceFill(['origem' => 'github'])->save();
+
+    $this->actingAs(usuarioCom('master_global'));
+
+    // `loadTable()`: a tabela do Filament carrega adiada; sem ele o HTML vem sem linhas.
+    Livewire::test(ListUsers::class)
+        ->loadTable()
+        ->assertTableColumnExists('origem')
+        ->assertSee('GitHub')
+        ->assertSee('Interno');
 })->group('kit');

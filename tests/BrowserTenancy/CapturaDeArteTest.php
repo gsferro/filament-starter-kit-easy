@@ -4,6 +4,7 @@ use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Models\Projeto;
 use App\Models\Role;
 use App\Models\Tenant;
+use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Tests\TenancyTestCase;
@@ -266,4 +267,74 @@ it('captura a tela de boas-vindas da raiz', function (): void {
         ->resize(1400, 875)
         ->assertSee('Painel')
         ->screenshot(fullPage: false, filename: 'boas-vindas');
+})->group('browser', 'art');
+
+/*
+|--------------------------------------------------------------------------
+| Login social e vínculo de provedor — as telas do README
+|--------------------------------------------------------------------------
+| `ligarProvedor()` põe os botões no ar por config (sem credencial real); nenhuma captura
+| chega ao provedor. Cada cenário arranja o SEU painel antes do `visit()` — a barra lateral
+| sai do painel do arranjo (.ai/rules/testes-browser.md).
+*/
+
+it('captura a tela de login com os botões sociais e o rodapé', function (): void {
+    ligarProvedor(ProvedorSocial::Google);
+    ligarProvedor(ProvedorSocial::Github);
+    config(['kit.login.rodape' => '**Starter Kit Easy** — [documentação](https://github.com/gsferro/filament-starter-kit-easy)']);
+    auth()->logout();
+
+    visit('/app/login')
+        ->resize(1400, 875)
+        ->assertSee('Entrar com Google')
+        ->assertSee('Entrar com GitHub')
+        ->screenshot(fullPage: false, filename: 'login-social');
+})->group('browser', 'art');
+
+it('captura a aba Login das configurações do kit', function (): void {
+    // Aquece o /admin, e só ele.
+    $this->get('/admin/configuracoes-do-kit');
+
+    visit('/admin/configuracoes-do-kit')
+        ->resize(1400, 875)
+        ->click('Login')
+        ->assertSee('Login social')
+        ->assertSee('Rodapé da tela de login')
+        ->screenshot(fullPage: false, filename: 'admin-configuracoes-login');
+})->group('browser', 'art');
+
+it('captura o bloco Definir senha por e-mail no perfil', function (): void {
+    arranjarPainelApp($this, $this->organizacao);
+
+    visit("/app/{$this->organizacao->slug}/meu-perfil")
+        ->resize(1400, 875)
+        ->assertSee('Definir senha por e-mail')
+        ->screenshot(fullPage: false, filename: 'app-perfil-definir-senha');
+})->group('browser', 'art');
+
+it('captura a tela de bloqueio com o login social', function (): void {
+    ligarProvedor(ProvedorSocial::Google);
+    ligarProvedor(ProvedorSocial::Github);
+    arranjarPainelApp($this, $this->organizacao);
+    session(['lockscreen' => true, 'tenant_corrente' => $this->organizacao->getKey()]);
+
+    visit(route('lockscreen.app.page'))
+        ->resize(1400, 875)
+        ->assertSee('Entrar com Google')
+        ->screenshot(fullPage: false, filename: 'app-bloqueio-social');
+})->group('browser', 'art');
+
+it('captura a lista de usuários com a coluna Origem', function (): void {
+    usuarioComPapel('panel_user', $this->organizacao, 'ana@example.com')->forceFill(['origem' => 'google'])->save();
+    usuarioComPapel('panel_user', $this->organizacao, 'bruno@example.com')->forceFill(['origem' => 'github'])->save();
+    usuarioComPapel('panel_user', $this->organizacao, 'carla@example.com')->forceFill(['origem' => 'convite'])->save();
+
+    // Aquece o /admin, e só ele.
+    $this->get('/admin/users');
+
+    visit('/admin/users')
+        ->resize(1400, 875)
+        ->assertSee('Origem')
+        ->assertSee('Google')
+        ->screenshot(fullPage: false, filename: 'admin-users-origem');
 })->group('browser', 'art');

@@ -4,10 +4,13 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\Auth\TelaDoisFatores;
+use App\Filament\Pages\Auth\TelaLogin;
+use App\Filament\Pages\Auth\TelaRecuperarSenha;
 use App\Filament\Pages\MyProfilePage;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
+use App\Livewire\DefinirSenhaPorEmail;
 use App\Models\Projeto;
 use App\Support\CorPrimaria;
 use App\Support\IdentidadeDoKit;
@@ -185,6 +188,8 @@ class InfraPanelProvider extends PanelProvider
 
                 AuthDesignerPlugin::make()
                     ->login(fn (AuthPageConfig $config): AuthPageConfig => $config
+                        // A tela de login do kit, pelo desafio anti-robô — ver TelaLogin.
+                        ->usingPage(TelaLogin::class)
                         ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Left)
                         ->mediaSize('70%')
@@ -192,6 +197,7 @@ class InfraPanelProvider extends PanelProvider
                     )
                     // Recuperação de senha espelhada — ver a nota no AppPanelProvider.
                     ->passwordReset(fn (AuthPageConfig $config): AuthPageConfig => $config
+                        ->usingPage(TelaRecuperarSenha::class)
                         ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Right)
                         ->mediaSize('70%')
@@ -210,6 +216,9 @@ class InfraPanelProvider extends PanelProvider
 
                 BreezyCore::make()
                     ->myProfile(shouldRegisterUserMenu: true, hasAvatars: true, slug: 'meu-perfil', userMenuLabel: 'Meu perfil')
+                    // Quem entrou por login social não tem senha atual — e a troca de senha, o 2FA e o
+                    // desbloqueio da sessão pedem uma. O bloco manda o link de definição por e-mail.
+                    ->myProfileComponents(['definir_senha_por_email' => DefinirSenhaPorEmail::class])
                     /*
                      * A tela de perfil do KIT no lugar da do pacote, e o motivo e' so' um: a do
                      * pacote nao declara `canAccess()`, entao `View:MyProfilePage` existia no banco

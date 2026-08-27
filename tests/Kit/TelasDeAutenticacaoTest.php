@@ -94,20 +94,25 @@ it('veste o desafio de 2FA com o layout de autenticação nos três painéis', f
 })->with(['app', 'admin', 'infra'])->group('kit');
 
 /**
- * CT-02 — e com a MESMA arte do login, do mesmo lado.
+ * CT-02 — e com a MESMA arte, no eixo das telas de formulário curto: arte à direita,
+ * formulário à esquerda, como "esqueci a senha" e o registro.
  *
  * O contrapeso do caso acima: `fi-auth-layout` fica verde com a tela vestida e vazia, que é
- * o que uma chave de configuração errada produz. Aqui o oráculo é a mídia e o eixo.
+ * o que uma chave de configuração errada produz. Aqui o oráculo é a mídia e o eixo. Até
+ * 2026-08-26 o desafio herdava o eixo do LOGIN (`media-left`); o solicitante passou pelo
+ * desafio numa instalação real e pediu o eixo do "esqueci a senha". Exaustivo nos três
+ * painéis porque a configuração é copiada à mão em três providers.
  */
-it('herda a arte e o eixo do login no desafio de 2FA', function (): void {
+it('veste o desafio de 2FA com a arte à direita e o formulário à esquerda', function (string $painel): void {
     $this->actingAs(usuario());
 
-    $this->get('/admin/two-factor-authentication')
+    $this->get("/{$painel}/two-factor-authentication")
         ->assertOk()
         ->assertSee('has-media', escape: false)
         ->assertDontSee('no-media', escape: false)
-        ->assertSee('media-left', escape: false);
-})->group('kit');
+        ->assertSee('media-right', escape: false)
+        ->assertDontSee('media-left', escape: false);
+})->with(['app', 'admin', 'infra'])->group('kit');
 
 /**
  * CT-03 — a linha de base do par: página comum de painel, no mesmo processo, sem nenhuma

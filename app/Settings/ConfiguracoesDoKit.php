@@ -176,6 +176,26 @@ final class ConfiguracoesDoKit extends Settings
 
     public ?string $login_rodape;
 
+    /** Primeira entrada social em conta existente exige confirmação por e-mail? ADR-03 de vinculo-de-provedor-social. */
+    public bool $login_vinculo_confirmar;
+
+    // Proteção anti-robô ------------------------------------------------------
+
+    /*
+     * Quatro propriedades, quatro linhas no mapa, uma migration — e a chave secreta em
+     * `encrypted()`. Quem lê é `App\Support\ConfiguracaoDoLogin::antiRobo()`, por request, então
+     * a tela governa de verdade (`.ai/rules/settings.md`). Wiki `recaptcha-nas-telas-publicas`.
+     */
+
+    public bool $login_anti_robo_habilitado;
+
+    /** Um `value` de `App\Support\ProvedorAntiRobo`. */
+    public string $login_anti_robo_provedor;
+
+    public ?string $login_anti_robo_chave_do_site;
+
+    public ?string $login_anti_robo_chave_secreta;
+
     public static function group(): string
     {
         return 'kit';
@@ -226,6 +246,7 @@ final class ConfiguracoesDoKit extends Settings
             'login_github_client_secret',
             'login_linkedin_openid_client_secret',
             'login_x_client_secret',
+            'login_anti_robo_chave_secreta',
         ];
     }
 
@@ -322,7 +343,13 @@ final class ConfiguracoesDoKit extends Settings
             'login_x_client_id'     => 'services.x.client_id',
             'login_x_client_secret' => 'services.x.client_secret',
 
-            'login_rodape' => 'kit.login.rodape',
+            'login_rodape'            => 'kit.login.rodape',
+            'login_vinculo_confirmar' => 'kit.login.vinculo_confirmar',
+
+            'login_anti_robo_habilitado'    => 'kit.login.anti_robo.habilitado',
+            'login_anti_robo_provedor'      => 'kit.login.anti_robo.provedor',
+            'login_anti_robo_chave_do_site' => 'kit.login.anti_robo.chave_do_site',
+            'login_anti_robo_chave_secreta' => 'kit.login.anti_robo.chave_secreta',
         ];
     }
 
@@ -352,5 +379,32 @@ final class ConfiguracoesDoKit extends Settings
             '[ConfiguracoesDoKit@aplicarNaConfig] Configuração do processo alinhada com o banco | grupo: '.self::group(),
             ['chaves' => array_values($mapa)],
         );
+    }
+
+    /**
+     * O inverso de `aplicarNaConfig()`: as chaves do mapa voltam ao que os arquivos de
+     * config (e o `.env` que eles leem) dizem, como se o banco não existisse.
+     *
+     * Existe para o `kit:install --force`. O processo sobe com o banco VELHO já aplicado à
+     * config, apaga o banco, e a migration de settings semeia o banco novo lendo `config()`
+     * — que ainda dizia o que o banco velho dizia. Medido numa instalação real:
+     * `KIT_SOCIALITE_GOOGLE=true` no `.env` chegava ao banco novo como `false`, e o README
+     * prometia o contrário ("o banco nasce igual ao `.env` novo"). Só nome, cor e admin
+     * escapavam, porque o customizador os realinha em memória — as outras dezenas de chaves
+     * (login social, e-mail, tabelas, identidade) herdavam o banco apagado.
+     *
+     * Relê os ARQUIVOS, e não `env()` direto, porque é neles que mora a coerção de cada chave
+     * (`FILTER_VALIDATE_BOOLEAN`, `(int)`, default).
+     */
+    public static function devolverConfigAoEnv(): void
+    {
+        $arquivos = [];
+
+        foreach (self::mapaDeConfiguracao() as $chave) {
+            [$arquivo, $caminho] = explode('.', $chave, 2);
+            $arquivos[$arquivo] ??= require config_path($arquivo.'.php');
+
+            config([$chave => data_get($arquivos[$arquivo], $caminho)]);
+        }
     }
 }

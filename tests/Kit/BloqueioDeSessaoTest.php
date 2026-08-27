@@ -2,9 +2,12 @@
 
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Models\User;
+use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
+use Laravel\Socialite\Socialite;
+use Laravel\Socialite\Two\User as UsuarioDoProvedor;
 use Livewire\Livewire;
 
 /**
@@ -164,4 +167,46 @@ it('redireciona em vez de estourar quando a tela é aberta sem a sessão travada
     $this->get('/admin')->assertOk();
 
     $this->get(route('lockscreen.admin.page'))->assertRedirect(url('admin'));
+});
+
+/**
+ * A tela de bloqueio oferece os mesmos botões sociais do login — nos três painéis.
+ *
+ * Medido na validação real dos provedores (2026-08-26): quem entrou pelo Google e escolheu
+ * viver sem senha local bloqueava a sessão e ficava preso — a tela só pedia a senha. Sem
+ * provedor disponível a view renderiza vazia, então o caso liga o Google antes.
+ */
+it('oferece os botões de login social na tela de bloqueio', function (string $painel): void {
+    ligarProvedor(ProvedorSocial::Google);
+    $this->actingAs(usuarioMaster());
+    session(['lockscreen' => true]);
+
+    $this->get(route("lockscreen.{$painel}.page"))
+        ->assertOk()
+        ->assertSee('Entrar com Google')
+        ->assertSee(route('auth.social.redirect', ProvedorSocial::Google), escape: false);
+})->with(['app', 'admin', 'infra']);
+
+/**
+ * E a volta do provedor destrava: sem isto o botão seria um laço — o callback loga e o
+ * middleware do lockscreen devolve a pessoa à tela de bloqueio.
+ */
+it('destrava a sessão bloqueada na volta do provedor', function (): void {
+    ligarProvedor(ProvedorSocial::Google);
+    $user = usuarioMaster();
+    $this->actingAs($user);
+    session(['lockscreen' => true]);
+
+    Socialite::fake('google', UsuarioDoProvedor::fake([
+        'id'             => 'google-sub-lock',
+        'name'           => $user->name,
+        'email'          => $user->email,
+        'email_verified' => true,
+    ]));
+
+    $this->get('/auth/google/callback')->assertRedirect();
+
+    expect(session('lockscreen'))->toBeFalse();
+
+    $this->get('/admin')->assertOk();
 });

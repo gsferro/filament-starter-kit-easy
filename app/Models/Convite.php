@@ -588,7 +588,7 @@ class Convite extends Model implements Auditable
          * Hoje nenhum painel liga `->emailVerification()`, então isto é inócuo; no dia em
          * que ligar, sem esta linha todo usuário nascido de convite é barrado na porta.
          */
-        $user->forceFill(['email_verified_at' => now()])->save();
+        $user->forceFill(['email_verified_at' => now(), 'origem' => User::ORIGEM_CONVITE])->save();
 
         if ($this->tenant_id !== null) {
             $user->tenants()->syncWithoutDetaching([$this->tenant_id]);

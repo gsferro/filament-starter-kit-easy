@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Settings\ConfiguracoesDoKit;
 use App\Support\BancoSqlite;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\VinculoDoSnyk;
@@ -67,6 +68,16 @@ class KitInstall extends Command
         $this->components->info('Instalando o starter-kit-easy...');
 
         $this->prepararEnv();
+
+        /*
+         * O boot aplicou o banco VELHO à config, e é dele que o `--force` vai se livrar. Sem
+         * devolver a config ao `.env` ANTES das perguntas (o customizador realinha em memória o
+         * que respondem), a migration de settings semearia o banco novo com o que o banco velho
+         * dizia. Ver `ConfiguracoesDoKit::devolverConfigAoEnv()`.
+         */
+        if ($this->option('force')) {
+            ConfiguracoesDoKit::devolverConfigAoEnv();
+        }
 
         /*
          * `--custom` sai daqui, e é o ponto: ele existe para quem JÁ instalou.

@@ -3,18 +3,27 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Convite;
+use App\Models\Tenant;
 use App\Models\User;
+use App\Models\VinculoSocial;
+use App\Notifications\ConfirmarVinculoSocial;
+use App\Notifications\PrimeiroAcessoSocial;
 use App\Support\ConfiguracaoDoLogin;
 use App\Support\ProvedorSocial;
+use App\Support\RegistroAberto;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
 use Laravel\Socialite\Socialite;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\RedirectResponse as RedirecionamentoDoProvedor;
 use Throwable;
 
@@ -68,11 +77,17 @@ final class LoginSocialController extends Controller
          */
         abort_unless(ConfiguracaoDoLogin::disponivel($provedor), 404);
 
+        // `org`/`token` da tela de registro viajam pela sessão até a volta (ADR-02 da wiki
+        // cadastro-social-por-convite-e-organizacao). O token NÃO vai para o log.
+        $contexto = $this->contextoDeCadastro();
+        session()->put('login_social.contexto', $contexto);
+
         Log::channel('autenticacao')->info(
             "[LoginSocialController@redirecionar] Redirecionando para o provedor | provedor: {$provedor->value} - ip: ".request()->ip(),
             [
                 'ip'       => request()->ip(),
                 'provedor' => $provedor->value,
+                'contexto' => ['org' => $contexto['org'] ?? null, 'com_token' => isset($contexto['token'])],
             ],
         );
 
@@ -112,6 +127,12 @@ final class LoginSocialController extends Controller
             return $this->recusar("Não foi possível concluir a entrada com o {$provedor->rotulo()}. Tente novamente.");
         }
 
+        /*
+         * O contexto da tela de registro (`org`, `token`) morre AQUI, em qualquer desfecho — inclusive
+         * recusa. Só o ramo "sem conta" usa `org`; o `token` vale também para conta existente. ADR-02.
+         */
+        $contexto = is_array($c = session()->pull('login_social.contexto', [])) ? $c : [];
+
         $email     = mb_strtolower(trim((string) $doProvedor->getEmail()));
         $mascarado = Str::mask($email, '*', 3);
 
@@ -150,46 +171,130 @@ final class LoginSocialController extends Controller
             return $this->recusar("A sua conta do {$provedor->rotulo()} não tem o e-mail verificado.");
         }
 
-        $user = $this->contaCom($email);
-        $novo = false;
+        /*
+         * O vínculo decide antes do e-mail. Quem já entrou por este provedor é reconhecido pela
+         * identidade nele (`sub`), estável quando o e-mail muda — um endereço reciclado no correio
+         * não leva a outra conta. Sem vínculo, vale o e-mail verificado (a mesma prova do
+         * "Esqueceu a senha?") e o vínculo nasce aqui. ADR-01/02/03 de vinculo-de-provedor-social.
+         */
+        $sub     = trim((string) $doProvedor->getId());
+        $vinculo = $sub !== '' ? VinculoSocial::de($provedor, $sub) : null;
+        $user    = $vinculo?->user;
+        $novo    = false;
 
-        if (! $user instanceof User) {
-            if (! ConfiguracaoDoLogin::registroAberto()) {
-                /*
-                 * A barreira do convite. Sem ela o login social vira cadastro aberto, e o kit
-                 * deixa de ser o que ele diz que é.
-                 */
-                Log::channel('autenticacao')->warning(
-                    "[LoginSocialController@retorno] Recusado: não há conta e o registro está fechado | provedor: {$provedor->value} - email: ".$mascarado,
-                    [
-                        'motivo'   => 'conta_inexistente_registro_fechado',
-                        'email'    => $mascarado,
-                        'provedor' => $provedor->value,
-                    ],
-                );
+        // `$user instanceof User` além do vínculo: a FK apaga em cascata, mas o tipo não sabe.
+        if ($vinculo instanceof VinculoSocial && $user instanceof User) {
+            $vinculo->registrarAcesso();
+            $this->aceitarConviteSeHouver($contexto, $user, $email, $provedor);
 
-                return $this->recusar('Não há conta com este e-mail. O acesso a este sistema é por convite.');
+            Log::channel('autenticacao')->info(
+                "[LoginSocialController@retorno] Conta reconhecida pelo vínculo | provedor: {$provedor->value} - user: {$user->getKey()}",
+                ['user_id' => $user->getKey(), 'provedor' => $provedor->value, 'vinculo_id' => $vinculo->getKey()],
+            );
+        } else {
+            $user = $this->contaCom($email);
+
+            if ($user instanceof User) {
+                $this->aceitarConviteSeHouver($contexto, $user, $email, $provedor);
             }
 
-            $user = $this->criarConta($provedor, $email, $mascarado, $doProvedor->getName());
-            $novo = true;
+            if (! $user instanceof User) {
+                /*
+                 * Duas portas de criação, as MESMAS do formulário (ADR-01): o convite válido do
+                 * `?token=` (organização e papel do convite, e-mail tem de ser o convidado) ou o
+                 * registro aberto com a organização do `?org=` (com tenancy, sem ela a porta recusa).
+                 */
+                $convite = Convite::valido($contexto['token'] ?? null);
+
+                if ($convite instanceof Convite && ! $this->conviteEhPara($convite, $email)) {
+                    Log::channel('autenticacao')->warning(
+                        "[LoginSocialController@retorno] Recusado: o convite é para outro e-mail | provedor: {$provedor->value} - convite: {$convite->getKey()} - email: ".$mascarado,
+                        ['motivo' => 'convite_para_outro_email', 'convite_id' => $convite->getKey(), 'email' => $mascarado, 'provedor' => $provedor->value],
+                    );
+
+                    return $this->recusar('Este convite é para outro e-mail. Entre com a conta do provedor que usa o e-mail convidado, ou cadastre-se pelo formulário.');
+                }
+
+                if (! $convite instanceof Convite && ! ConfiguracaoDoLogin::registroAberto()) {
+                    /*
+                     * A barreira do convite. Criar a conta aqui — o `updateOrCreate` da documentação do
+                     * Socialite — transformaria qualquer pessoa com conta no provedor em usuária do
+                     * sistema. Ver ADR-06 da wiki login-social-google.
+                     */
+                    Log::channel('autenticacao')->warning(
+                        "[LoginSocialController@retorno] Recusado: não há conta e o registro está fechado | provedor: {$provedor->value} - email: ".$mascarado,
+                        [
+                            'motivo'   => 'conta_inexistente_registro_fechado',
+                            'email'    => $mascarado,
+                            'provedor' => $provedor->value,
+                        ],
+                    );
+
+                    return $this->recusar('Não há conta com este e-mail. O acesso a este sistema é por convite.');
+                }
+
+                try {
+                    $user = $convite instanceof Convite
+                        ? $this->criarContaPorConvite($provedor, $convite, $email, $mascarado, $doProvedor->getName())
+                        : $this->criarConta($provedor, $email, $mascarado, $doProvedor->getName(), RegistroAberto::organizacao($contexto['org'] ?? null));
+                } catch (RuntimeException $e) {
+                    /*
+                     * `RegistroAberto::registrar()` recusa o que a porta do formulário recusa — com a
+                     * tenancy ligada, uma conta sem organização não tem /app para entrar — e já
+                     * registrou o motivo. Aqui só se fecha a volta com a mesma mensagem da conta
+                     * inexistente: quem está do outro lado não escolheu organização nenhuma.
+                     */
+                    Log::channel('autenticacao')->warning(
+                        "[LoginSocialController@retorno] Recusado: o registro aberto não aceitou a conta | provedor: {$provedor->value} - email: ".$mascarado,
+                        [
+                            'motivo'    => 'registro_aberto_recusou',
+                            'email'     => $mascarado,
+                            'provedor'  => $provedor->value,
+                            'exception' => $e,
+                        ],
+                    );
+
+                    return $this->recusar('Não há conta com este e-mail. O acesso a este sistema é por convite.');
+                }
+
+                $novo = true;
+            } elseif (ConfiguracaoDoLogin::vinculoExigeConfirmacao()) {
+                return $this->pedirConfirmacaoDoVinculo($provedor, $user, $sub, $mascarado);
+            } else {
+                $user->notify(new PrimeiroAcessoSocial($provedor, (string) request()->ip()));
+
+                Log::channel('autenticacao')->info(
+                    "[LoginSocialController@retorno] Primeiro acesso por este provedor — vínculo criado e aviso enviado | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
+                    ['user_id' => $user->getKey(), 'email' => $mascarado, 'provedor' => $provedor->value, 'ip' => request()->ip()],
+                );
+            }
+
+            if ($sub !== '') {
+                VinculoSocial::vincular($user, $provedor, $sub);
+            } else {
+                Log::channel('autenticacao')->warning(
+                    "[LoginSocialController@retorno] Provedor não devolveu identificador; sem vínculo, valendo o e-mail | provedor: {$provedor->value} - user: {$user->getKey()}",
+                    ['user_id' => $user->getKey(), 'provedor' => $provedor->value, 'motivo' => 'sub_ausente'],
+                );
+            }
         }
 
-        /*
-         * `Auth::login()` e não uma escrita na sessão à mão: é ele que dispara
-         * `Illuminate\Auth\Events\Login`, que o `rappasoft/laravel-authentication-log` escuta
-         * (`LaravelAuthenticationLogServiceProvider.php:35`) para gravar a trilha de acesso
-         * que o painel /infra exibe. Abrir a sessão por fora funciona e desaparece da
-         * trilha, sem erro nenhum — há caso de teste só para isso.
-         *
-         * Fixação de sessão não precisa de linha própria: o `SessionGuard::login()` já faz
-         * `migrate(true)`, que regenera o id da sessão.
-         *
-         * E isto não contorna o segundo fator: o middleware `MustTwoFactor` do Breezy
-         * redireciona para o desafio sempre que a conta tem 2FA confirmado e a sessão de 2FA
-         * não está aberta (`filament-breezy/src/Middleware/MustTwoFactor.php:42-43`).
-         */
+        // Cadastro pendente de aprovação não abre sessão — conta nova OU existente.
+        if ($user->aprovacao_pendente) {
+            return $this->aguardarAprovacao($provedor, $user, $mascarado);
+        }
+
         Auth::login($user);
+
+        /*
+         * A volta do provedor também DESTRAVA o bloqueio de sessão: `TelaBloqueio` oferece os
+         * mesmos botões do login, para quem não tem senha local. Espelha o que o desbloqueio
+         * por senha faz (`LockerScreen::sessionRegenerate()`,
+         * vendor/marjose123/filament-lockscreen/src/Http/Livewire/LockerScreen.php:118-123);
+         * o `Auth::login()` acima já migrou o id da sessão.
+         */
+        session()->put('lockscreen', false);
+        session()->put('session_last_activity', time());
 
         Log::channel('autenticacao')->info(
             "[LoginSocialController@retorno] Autenticado pelo provedor | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
@@ -235,13 +340,24 @@ final class LoginSocialController extends Controller
      * feature de registro e aprovação, não desta. Conta sem papel não abre painel algum, e
      * esse é o comportamento correto do kit. Ver ADR-06 da wiki `login-social-google`.
      */
-    private function criarConta(ProvedorSocial $provedor, string $email, string $mascarado, ?string $nome): User
+    private function criarConta(ProvedorSocial $provedor, string $email, string $mascarado, ?string $nome, ?Tenant $organizacao = null): User
     {
-        $user = User::create([
+        /*
+         * A MESMA porta do formulário. `RegistroAberto::registrar()` concede o papel único do
+         * registro aberto, marca a pendência de aprovação quando ela está ligada, e recusa o que
+         * a porta recusa. Medido numa instalação real: o `User::create()` cru que morava aqui
+         * criava a conta SEM papel, e a tela de perfil para onde ela era mandada respondia 403 —
+         * `canAccessPanel()` exige papel do painel. O README prometia o perfil.
+         *
+         * A organização vem do `?org=` da tela de registro, pela sessão (ADR-02 da wiki
+         * cadastro-social-por-convite-e-organizacao). Sem ela, com a tenancy ligada, a porta recusa
+         * (`sem_organizacao`) e quem chama trata.
+         */
+        $user = RegistroAberto::registrar([
             'name'     => filled($nome) ? $nome : $email,
             'email'    => $email,
             'password' => Str::password(32),
-        ]);
+        ], $organizacao);
 
         /*
          * O provedor JÁ provou que o endereço está verificado — é a barreira que a pessoa
@@ -260,7 +376,8 @@ final class LoginSocialController extends Controller
          * de "verifique seu e-mail" no instante seguinte a um OAuth bem-sucedido. Foi um caso de
          * teste que pegou.
          */
-        $user->forceFill(['email_verified_at' => now()])->save();
+        // `origem` = o driver: a porta gravou 'registro', mas quem trouxe a pessoa foi o provedor.
+        $user->forceFill(['email_verified_at' => now(), 'origem' => $provedor->value])->save();
 
         Log::channel('autenticacao')->info(
             "[LoginSocialController@criarConta] Conta criada por login social | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
@@ -276,6 +393,193 @@ final class LoginSocialController extends Controller
     }
 
     /** Onde quem já tinha conta cai: o painel de negócio, com a organização default resolvida. */
+    /**
+     * Conta criada com a aprovação manual ligada: nasce sem papel e sem sessão.
+     *
+     * Espelha `RegistroPorConvite::register()`, mesma mensagem — quem se cadastra pelo
+     * formulário e quem se cadastra pelo provedor esperam a mesma coisa. Logar aqui seria
+     * mandar a pessoa para um 403: `canAccessPanel()` nega cadastro pendente.
+     */
+    private function aguardarAprovacao(ProvedorSocial $provedor, User $user, string $mascarado): RedirectResponse
+    {
+        Log::channel('autenticacao')->warning(
+            "[LoginSocialController@retorno] Conta criada, pendente de aprovação — sem sessão | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
+            [
+                'user_id'  => $user->getKey(),
+                'email'    => $mascarado,
+                'motivo'   => 'aprovacao_pendente',
+                'provedor' => $provedor->value,
+            ],
+        );
+
+        Notification::make()
+            ->title('Cadastro recebido')
+            ->body('Sua conta foi criada e aguarda aprovação de quem administra o sistema. Você poderá entrar assim que ela for liberada.')
+            ->success()
+            ->persistent()
+            ->send();
+
+        return redirect()->to(Filament::getPanel('app')->getLoginUrl());
+    }
+
+    /**
+     * Modo estrito: a primeira entrada de um provedor numa conta existente não vira sessão.
+     *
+     * Envia o link assinado (30 minutos) para o e-mail DA CONTA — a mesma prova do "Esqueceu a
+     * senha?", exigida no momento em que importa — e devolve a pessoa ao login com o aviso.
+     * ADR-03 da wiki vinculo-de-provedor-social.
+     */
+    private function pedirConfirmacaoDoVinculo(ProvedorSocial $provedor, User $user, string $sub, string $mascarado): RedirectResponse
+    {
+        $url = URL::temporarySignedRoute('auth.social.confirmar', now()->addMinutes(30), [
+            'provedor' => $provedor->value,
+            'user'     => $user->getKey(),
+            'sub'      => $sub,
+        ]);
+
+        $user->notify(new ConfirmarVinculoSocial($provedor, $url));
+
+        Log::channel('autenticacao')->warning(
+            "[LoginSocialController@retorno] Primeira entrada por este provedor aguarda confirmação por e-mail | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
+            ['user_id' => $user->getKey(), 'email' => $mascarado, 'provedor' => $provedor->value, 'motivo' => 'vinculo_aguardando_confirmacao', 'ip' => request()->ip()],
+        );
+
+        Notification::make()
+            ->title('Confirme pelo e-mail')
+            ->body("Esta é a primeira entrada pelo {$provedor->rotulo()} nesta conta. Enviamos um link para o e-mail dela — abra-o para confirmar e entrar. O link vale 30 minutos.")
+            ->info()
+            ->persistent()
+            ->send();
+
+        return redirect()->to(Filament::getPanel('app')->getLoginUrl());
+    }
+
+    /**
+     * O link do e-mail de confirmação (modo estrito). A assinatura já foi checada pelo `signed`.
+     *
+     * `sub` já vinculado a OUTRA conta (dois links em corrida) recusa em vez de re-vincular: uma
+     * identidade de provedor pertence a uma conta só.
+     */
+    public function confirmarVinculo(ProvedorSocial $provedor, Request $request): RedirectResponse
+    {
+        abort_unless(ConfiguracaoDoLogin::disponivel($provedor), 404);
+
+        $user = User::query()->find($request->integer('user'));
+        $sub  = trim((string) $request->query('sub'));
+
+        if (! $user instanceof User || $sub === '') {
+            return $this->recusar('Este link não é válido.');
+        }
+
+        $existente = VinculoSocial::de($provedor, $sub);
+
+        if ($existente instanceof VinculoSocial && $existente->user_id !== $user->getKey()) {
+            Log::channel('autenticacao')->warning(
+                "[LoginSocialController@confirmarVinculo] Recusado: identidade do provedor já vinculada a outra conta | provedor: {$provedor->value} - user: {$user->getKey()}",
+                ['user_id' => $user->getKey(), 'provedor' => $provedor->value, 'vinculo_de' => $existente->user_id, 'motivo' => 'sub_ja_vinculado'],
+            );
+
+            return $this->recusar("Esta conta do {$provedor->rotulo()} já está vinculada a outro usuário.");
+        }
+
+        VinculoSocial::vincular($user, $provedor, $sub);
+
+        $mascarado = Str::mask((string) $user->email, '*', 3);
+
+        if ($user->aprovacao_pendente) {
+            return $this->aguardarAprovacao($provedor, $user, $mascarado);
+        }
+
+        Auth::login($user);
+
+        session()->put('lockscreen', false);
+        session()->put('session_last_activity', time());
+
+        Log::channel('autenticacao')->info(
+            "[LoginSocialController@confirmarVinculo] Vínculo confirmado pelo e-mail | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
+            ['user_id' => $user->getKey(), 'email' => $mascarado, 'provedor' => $provedor->value],
+        );
+
+        return redirect()->to($this->urlDoPainel());
+    }
+
+    /**
+     * `org` e `token` da tela de registro, para a volta do OAuth. Só strings não vazias.
+     *
+     * @return array{org?: string, token?: string}
+     */
+    private function contextoDeCadastro(): array
+    {
+        $contexto = [];
+
+        foreach (['org', 'token'] as $chave) {
+            $valor = request()->query($chave);
+
+            if (is_string($valor) && trim($valor) !== '') {
+                $contexto[$chave] = trim($valor);
+            }
+        }
+
+        return $contexto;
+    }
+
+    private function conviteEhPara(Convite $convite, string $email): bool
+    {
+        return mb_strtolower(trim((string) $convite->email)) === $email;
+    }
+
+    /**
+     * A porta do convite, a mesma do formulário: o e-mail é o do convite (já conferido), a
+     * organização e o papel são os dele, e o convite é consumido. O provedor provou o e-mail.
+     */
+    private function criarContaPorConvite(ProvedorSocial $provedor, Convite $convite, string $email, string $mascarado, ?string $nome): User
+    {
+        $user = $convite->aceitar([
+            'name'     => filled($nome) ? $nome : $email,
+            'email'    => $email,
+            'password' => Str::password(32),
+        ]);
+
+        $user->forceFill(['email_verified_at' => now(), 'origem' => $provedor->value])->save();
+
+        Log::channel('autenticacao')->info(
+            "[LoginSocialController@criarContaPorConvite] Conta criada por login social a partir de convite | provedor: {$provedor->value} - user: {$user->getKey()} - convite: {$convite->getKey()} - email: ".$mascarado,
+            ['user_id' => $user->getKey(), 'convite_id' => $convite->getKey(), 'tenant_id' => $convite->tenant_id, 'email' => $mascarado, 'provedor' => $provedor->value, 'motivo' => 'conta_criada_por_convite_social'],
+        );
+
+        return $user;
+    }
+
+    /**
+     * Conta existente (ou reconhecida pelo vínculo) que voltou com um convite válido para o SEU
+     * e-mail aceita o convite — organização e papel — como o "Entrar e aceitar" do formulário.
+     * Falha aqui não barra a entrada: só registra. ADR-04.
+     *
+     * @param  array<string, mixed>  $contexto
+     */
+    private function aceitarConviteSeHouver(array $contexto, User $user, string $email, ProvedorSocial $provedor): void
+    {
+        $convite = Convite::valido(is_string($contexto['token'] ?? null) ? $contexto['token'] : null);
+
+        if (! $convite instanceof Convite || ! $this->conviteEhPara($convite, $email)) {
+            return;
+        }
+
+        try {
+            $convite->aceitarComoUsuarioExistente($user);
+
+            Log::channel('autenticacao')->info(
+                "[LoginSocialController@retorno] Convite aceito na volta do provedor por conta existente | provedor: {$provedor->value} - user: {$user->getKey()} - convite: {$convite->getKey()}",
+                ['user_id' => $user->getKey(), 'convite_id' => $convite->getKey(), 'tenant_id' => $convite->tenant_id, 'provedor' => $provedor->value],
+            );
+        } catch (RuntimeException $e) {
+            Log::channel('autenticacao')->warning(
+                "[LoginSocialController@retorno] Convite não aceito na volta do provedor | provedor: {$provedor->value} - user: {$user->getKey()} - convite: {$convite->getKey()}",
+                ['user_id' => $user->getKey(), 'convite_id' => $convite->getKey(), 'provedor' => $provedor->value, 'exception' => $e],
+            );
+        }
+    }
+
     private function urlDoPainel(): string
     {
         return Filament::getPanel('app')->getUrl() ?? url('/');

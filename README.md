@@ -546,7 +546,8 @@ Vale para os **quatro** provedores, sem exceção:
 | Aceita e-mail **não verificado** no provedor | ❌ nunca — recusa e registra o motivo |
 | Contorna o **segundo fator** | ❌ nunca — quem tem 2FA confirmado cai no desafio igual |
 | Guarda token de acesso ou `refresh_token` | ❌ nada é gravado |
-| Cria coluna nova em `users` | ❌ nenhuma; o vínculo é pelo e-mail verificado |
+| Guarda a **identidade** no provedor (`sub`) | ✅ em `vinculos_sociais` — é por ela que a conta é reconhecida da segunda vez em diante ([detalhes](#vínculo-com-o-provedor-a-primeira-vez-e-as-seguintes)) |
+| Cria coluna nova em `users` | ✅ **uma**, `origem` — só diz por qual porta a conta entrou (`google`, `github`, `convite`, `registro`, `interno`), exibida na lista de usuários e no dashboard. **Não é vínculo**: nada de id do provedor nem token; o vínculo continua sendo o e-mail verificado |
 | Marca a conta criada como **e-mail verificado** | ✅ sim — o provedor já provou, e pedir de novo seria a mesma prova duas vezes |
 
 A linha que mais importa é a segunda, e ela não é timidez: **o convite é a única porta de entrada
@@ -558,13 +559,24 @@ ligue o registro aberto: o kit passa a criar a conta e a levar a pessoa para a t
 onde ela completa o que falta.
 
 E lembre do resto do kit: **conta sem papel não abre painel nenhum** (`User::canAccessPanel()`).
-Quem entra por login social precisa de papel como qualquer outra pessoa.
+Quem entra por login social precisa de papel como qualquer outra pessoa — a conta criada pelo
+registro aberto recebe o papel único dele, pela mesma porta do formulário.
+
+**A conta criada pelo provedor não tem senha que a pessoa conheça** (nasce com uma aleatória), e
+três coisas pedem a senha atual: trocar a senha, ligar o 2FA e desbloquear a sessão. Por isso o
+perfil (`/app/meu-perfil`, e o dos outros dois painéis) tem o bloco **Definir senha por e-mail**:
+ele envia o mesmo link do "Esqueceu a senha?", encerra a sessão — a página que define a senha só
+abre para quem está fora — e, com a senha definida, os três passam a funcionar. Medido numa
+instalação real: era o primeiro tropeço de quem entrava pelo Google. E quem escolhe **viver sem
+senha local** não fica preso na tela de bloqueio de sessão: ela oferece os mesmos botões do
+login, e a volta do provedor destrava.
 
 ### Ligando um provedor, em quatro passos
 
 O roteiro é o mesmo para os quatro; só muda onde se cria o app OAuth. Você pode fazer tudo pelo
-`.env` **ou** pela tela `/admin/configuracoes-do-kit` → aba **Login** (o valor gravado na tela vence
-o `.env` em tempo de execução).
+`.env` **ou** pela tela `/admin/configuracoes-do-kit` → aba **Login** — mas saiba quem manda: **o
+banco vence o `.env` em tempo de execução, e o `.env` só semeia** (ver
+[Quem manda: o banco ou o `.env`?](#quem-manda-o-banco-ou-o-env)). O passo 3 é onde isso pesa.
 
 **1. Crie o app OAuth no provedor** e cadastre a URI de redirecionamento — que é o seu `APP_URL`
 mais o caminho da tabela acima:
@@ -610,7 +622,14 @@ X_CLIENT_ID=seu-client-id
 X_CLIENT_SECRET=seu-segredo
 ```
 
-**3. Limpe a config** (`php artisan config:clear`) e recarregue a tela de login.
+**3. Leve as chaves ao banco.** Numa instalação **nova** o `migrate` faz isso sozinho — a
+migration de settings semeia cada propriedade do `config()`, que vem do `.env`. Num kit **já
+instalado**, o `.env` sozinho **não** liga nada, e `config:clear` não muda isso: a tabela
+`settings` já tem a linha (`false`, credencial vazia) e ela vence em todo request. Aí são dois
+caminhos: gravar pela tela `/admin/configuracoes-do-kit` → **Login**, ou
+`php artisan kit:install --force` com o `.env` já preenchido — que **recria o banco** (APAGA os
+dados; inócuo só no minuto seguinte à instalação). Medido numa instalação real: o `.env` com as
+três chaves do Google, `config:clear`, e nenhum botão — até a migration reler o `.env`.
 
 **4. Confirme que o botão apareceu.** Se não apareceu, é uma das duas condições abaixo.
 
@@ -618,6 +637,73 @@ X_CLIENT_SECRET=seu-segredo
 > provedor. Ligar o interruptor **abre** os campos de *Client ID* e *Client Secret* daquele
 > provedor — e só dele. O *Client Secret* é guardado **cifrado**, nunca é exibido de volta e não
 > aparece no código-fonte da página; deixar o campo em branco **mantém** o que estava gravado.
+
+### As telas
+
+| | |
+|---|---|
+| [![Login com os botões sociais](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login-social.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-social.png) | [![Aba Login das configurações do kit](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-login.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-login.png) |
+| A tela de login com **Entrar com Google** e **Entrar com GitHub**, e o rodapé em Markdown | `/admin/configuracoes-do-kit` → **Login**: um bloco fechado por provedor com o ícone de status, o interruptor do vínculo e o rodapé |
+| [![Definir senha por e-mail, no perfil](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-perfil-definir-senha.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-perfil-definir-senha.png) | [![Tela de bloqueio com login social](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-bloqueio-social.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-bloqueio-social.png) |
+| O perfil: **Definir senha por e-mail** acima de "Senha" — quem entrou pelo provedor não tem senha atual | A tela de bloqueio de sessão oferece os mesmos botões; a volta do provedor destrava |
+| [![Lista de usuários com a coluna Origem](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-users-origem.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-users-origem.png) | |
+| `/admin/users`: a coluna **Origem** diz por qual porta cada conta entrou (Google, GitHub, Convite, Registro aberto, Interno) | |
+
+### Vínculo com o provedor: a primeira vez, e as seguintes
+
+A pergunta que motivou esta seção: *"eu poderia criar uma conta no Google com o e-mail de outra
+pessoa e entrar na conta dela?"* **Não** — e vale entender por quê antes de ler o que o kit faz a
+mais.
+
+O kit só aceita e-mail que o provedor declara **verificado** (tabela acima). Google, GitHub,
+LinkedIn e X só marcam um e-mail como verificado depois de mandar um código ou link **para aquela
+caixa postal**. Então quem consegue uma identidade "verificada" com o e-mail de outra pessoa já
+controla a caixa postal dela — e quem controla a caixa postal já entra pelo **"Esqueceu a senha?"**
+do próprio kit. O login social não abre uma porta que não existisse: ele aceita a mesma prova. É o
+modelo que o Auth0 chama de *trusted providers*.
+
+Sobram dois riscos residuais, e são eles que o vínculo endereça: um **endereço reciclado** pelo
+provedor de correio (o novo dono verifica o endereço no Google e chegaria à conta do antigo — mas
+também resetaria a senha dele), e um **bug ou comprometimento do provedor OAuth**.
+
+**O vínculo.** Toda entrada social grava, na tabela `vinculos_sociais`, a identidade da pessoa
+**no provedor** — o `sub`, o id da conta lá, estável mesmo quando o e-mail muda — junto da conta do
+kit. Nada de token: é reconhecimento, não credencial. Da segunda entrada em diante a conta é
+reconhecida **pelo vínculo, antes de olhar o e-mail**: uma troca de e-mail no provedor, ou um
+endereço reciclado, não leva a outra conta.
+
+**A primeira vez.** Quando um provedor aparece pela primeira vez numa conta que **já existia**, o
+que acontece depende de um interruptor — `KIT_SOCIALITE_VINCULO_CONFIRMAR` no `.env`, ou a tela
+`/admin/configuracoes-do-kit` → **Login** → "Exigir confirmação por e-mail…":
+
+| | Modo padrão (`false`) | Modo estrito (`true`) |
+|---|---|---|
+| Conta existe, primeira vez deste provedor | vincula, **entra**, e envia o e-mail *"sua conta foi acessada pelo Google pela primeira vez — não foi você? troque a senha e avise quem administra"* | **não entra**; envia o e-mail *"confirme a entrada pelo Google"* com um link assinado de **30 minutos**; ao abri-lo, o vínculo nasce e a sessão começa |
+| Conta existe, já vinculada | entra pelo vínculo, sem e-mail | idem |
+| Conta não existe, registro aberto ligado | cria pela porta do registro aberto e já nasce vinculada — não há conta anterior a proteger | idem |
+| Conta não existe, registro fechado | recusa ("o acesso é por convite") | idem |
+
+O aviso do modo padrão é **detecção**: torna o risco residual visível para a própria pessoa. O modo
+estrito é **prevenção**: exige a prova (a caixa postal) no exato momento em que ela importa. O link
+de confirmação vale só para aquela conta e aquela identidade, é assinado, expira, e se a identidade
+já for de **outra** conta a confirmação recusa — uma identidade de provedor pertence a uma conta só.
+
+> Os dois e-mails vão pela **fila** (`ShouldQueue`, como o convite). Sem um worker rodando nada sai
+> — `composer dev` sobe um. Na validação real isso foi o primeiro tropeço: o aviso "link enviado"
+> apareceu, e o e-mail ficou na tabela `jobs` até o `queue:work`.
+
+**Cadastro pelo provedor, a partir da tela de registro.** `/app/register` mostra os mesmos botões
+(com o registro aberto ligado), e o clique carrega o contexto da tela até a volta do OAuth: com a
+multi-organização, `/app/register?org=acme` cria a conta **na `acme`**, com o papel do registro
+aberto nela — a mesma porta do formulário, com as mesmas recusas (organização inexistente ou
+fechada). A partir do **link de um convite** (`?token=`), entrar pelo provedor **aceita o convite**:
+a conta nasce (ou a existente ganha) a organização e o papel do convite, e o convite é consumido —
+desde que o e-mail verificado do provedor seja o e-mail convidado; se for outro, recusa e o convite
+fica intacto. Sem senha em nenhum dos casos: o provedor provou o e-mail. Conta **existente** entra
+normalmente em qualquer modo; conta nova **sem** `?org=` na multi-organização continua recusada.
+Decisões e casos: `wikis/specs/feat/cadastro-social-por-convite-e-organizacao/`.
+
+Decisões e casos: `wikis/specs/feat/vinculo-de-provedor-social/`.
 
 ### O botão só aparece com TUDO preenchido — e por provedor
 
@@ -643,7 +729,7 @@ irreconhecível o mantêm desligado. Só `true` e `1` ligam.
 
 ### O rodapé da tela de login
 
-A mesma configuração traz um rodapé de texto na base da tela de login dos três painéis:
+A mesma configuração traz um rodapé em Markdown (negrito, itálico, link; HTML cru é descartado) na base da tela de login dos três painéis:
 
 ```dotenv
 KIT_LOGIN_RODAPE="Fiotec · Todos os direitos reservados"
@@ -1338,7 +1424,7 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-03c | Validação de e-mail (opt-in) | `/app/email-verification/prompt` | autenticado, com a exigência ligada (na tela ou no `.env`) | a rota existe sempre — quem decide é um middleware do kit, por request; quem vem de convite nunca é barrado | 🟢 |
 | F-04 | Autenticação em dois fatores | `/{painel}/two-factor-authentication` | autenticado | a tela abre e oferece o QR | 🔵 |
 | F-05 | Passkeys | Meu perfil | autenticado | cadastro de chave, no perfil do Breezy | ⚪ |
-| F-06 | Bloqueio de sessão | menu do usuário → *Bloquear sessão* | autenticado | trava sem deslogar; volta com a senha. Usa o layout do login, não a `SimplePage` | 🟢 |
+| F-06 | Bloqueio de sessão | menu do usuário → *Bloquear sessão* | autenticado | trava sem deslogar; volta com a senha **ou** com o login social (os mesmos botões do login). Usa o layout do login, não a `SimplePage` | 🟢 |
 | F-07 | Meu perfil, avatar e senha | `/{painel}/meu-perfil` | autenticado | edita nome, e-mail, senha e avatar | 🔵 |
 | F-08 | Impersonate | `/admin/users` → ação na linha | `master_global` | entra como outro usuário e volta pela faixa no topo | ⚪ |
 

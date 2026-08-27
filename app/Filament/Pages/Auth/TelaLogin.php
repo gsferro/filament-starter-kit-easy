@@ -2,12 +2,22 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Filament\Forms\Components\CampoAntiRobo;
 use App\Support\RegistroAberto;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Login;
+use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
 
 /**
- * O login do painel /app, com o link "Cadastre-se" **condicionado ao registro aberto**.
+ * O login dos TRÊS painéis, com o link "Cadastre-se" **condicionado ao registro aberto** e o
+ * desafio anti-robô quando ele está ligado.
+ *
+ * Até a proteção anti-robô, só o /app usava esta classe; /admin e /infra ficavam com a `Login` do
+ * Auth Designer. Passaram para cá porque o campo precisa entrar no `form()`, e três páginas
+ * idênticas em três painéis é o defeito histórico do kit nessa área (configurar um e esquecer os
+ * outros dois). Para os painéis sem registro nada muda: `parent::getSubheading()` já devolve `null`
+ * quando o painel não tem registro (`vendor/filament/filament/src/Auth/Pages/Login.php:445-456`),
+ * e é isso que `RegistroAberto::habilitado()` decide para o /app.
  *
  * O `Login` do Filament exibe o link sempre que o painel tem registro
  * (`vendor/filament/filament/src/Auth/Pages/Login.php:445-456`), e o /app sempre tem — a rota
@@ -29,5 +39,16 @@ class TelaLogin extends Login
     public function getSubheading(): string|Htmlable|null
     {
         return RegistroAberto::habilitado() ? parent::getSubheading() : null;
+    }
+
+    /**
+     * Os três campos do Filament mais o desafio anti-robô — que decide sozinho se aparece.
+     *
+     * Sem `if`: o campo é `->visible()` pela configuração, avaliada no render e na validação, e
+     * oculto ele não é renderizado nem validado. Ver o docblock de `CampoAntiRobo`.
+     */
+    public function form(Schema $schema): Schema
+    {
+        return CampoAntiRobo::acrescentarA(parent::form($schema));
     }
 }
