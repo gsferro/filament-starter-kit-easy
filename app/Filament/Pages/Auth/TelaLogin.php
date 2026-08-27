@@ -2,12 +2,14 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Filament\Forms\Components\CampoAntiRobo;
 use App\Http\Controllers\Auth\ContaIndisponivelController;
 use App\Models\User;
 use App\Support\RegistroAberto;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Login;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Facades\Filament;
+use Filament\Schemas\Schema;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Hash;

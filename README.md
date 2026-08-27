@@ -896,6 +896,20 @@ ramo.
 > **não** abstrair, com um provedor só — está em
 > `wikis/specs/feat/login-social-google/login-social-google/`, ADR-10.
 
+## Proteção anti-robô
+
+As telas públicas de **login**, **recuperação de senha** e **registro** podem receber um desafio do tipo caixa (Google reCAPTCHA v2, Cloudflare Turnstile ou hCaptcha). A proteção nasce **desligada** e, quando desligada, as telas são exatamente as mesmas de antes — sem scripts externos e sem campos extras.
+
+Quem tiver a permissão `View:ConfiguracoesDoKit` liga e configura o provedor em `/admin/configuracoes-do-kit`:
+
+- provedor (`recaptcha`, `turnstile` ou `hcaptcha`);
+- chave do site (exibida no HTML);
+- chave secreta (criptografada no banco).
+
+A verificação acontece no envio do formulário. Token ausente, recusado pelo provedor ou impossível de verificar → o formulário não avança e uma mensagem de `warning` vai para o canal `autenticacao`. O widget se reinicia sozinho depois de cada tentativa, porque o token é de uso único.
+
+> O estudo de implantação e as alternativas recusadas estão em `wikis/specs/feat/recaptcha-nas-telas-publicas/recaptcha-nas-telas-publicas/`.
+
 ## Usuário ativo, inativo e excluído
 
 A conta de cada usuário tem **três estados** e eles vencem o acesso a qualquer painel:
@@ -2464,6 +2478,12 @@ php artisan modelCache:clear      # limpa o cache das models
 | [concurrently](https://www.npmjs.com/package/concurrently) | roda servidor, fila e vite juntos no `composer dev` |
 | [playwright](https://www.npmjs.com/package/playwright) | o navegador dos testes do `pest-plugin-browser` |
 | [@laravel/multiplex](https://www.npmjs.com/package/@laravel/multiplex) | agrupa requests do Livewire (opcional) |
+
+## Estudo: Advanced Tables e alternativas
+
+O kit mantém um estudo de viabilidade para capacidades avançadas de tabelas no Filament (agrupamento de linhas, seleção persistente, expansão de detalhes, colunas fixas, exportação em múltiplas abas etc.). O estudo compara o pacote **Advanced Tables** (pago) com alternativas gratuitas, documenta a decisão de **não incluir uma dependência paga por padrão** e deixa um roteiro de implementação caso o projeto opte por elas.
+
+> O estudo completo, com a análise de custo e as alternativas, está em `wikis/specs/feat/estudo-advanced-tables/estudo-advanced-tables/`.
 
 ## Licença
 

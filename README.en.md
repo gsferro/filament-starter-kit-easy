@@ -911,6 +911,20 @@ branch.
 > to abstract, with a single provider — is in
 > `wikis/specs/feat/login-social-google/login-social-google/`, ADR-10.
 
+## Anti-robot protection
+
+The public **login**, **password reset** and **register** screens can include a checkbox-style challenge (Google reCAPTCHA v2, Cloudflare Turnstile or hCaptcha). The protection starts **disabled**, and when disabled the screens are exactly the same as before — no external scripts, no extra fields.
+
+Anyone with the `View:ConfiguracoesDoKit` permission can enable and configure the provider in `/admin/configuracoes-do-kit`:
+
+- provider (`recaptcha`, `turnstile` or `hcaptcha`);
+- site key (rendered in the HTML);
+- secret key (encrypted in the database).
+
+The verification runs on form submit. A missing token, a token rejected by the provider or an unreachable provider stops the form and sends a `warning` to the `autenticacao` channel. The widget resets itself after every attempt, because the token is single-use.
+
+> The implementation study and rejected alternatives are in `wikis/specs/feat/recaptcha-nas-telas-publicas/recaptcha-nas-telas-publicas/`.
+
 ## Active, inactive and deleted users
 
 Every user account has **three states**, and they override access to any panel:
@@ -2488,6 +2502,12 @@ php artisan modelCache:clear      # clears the model cache
 | [concurrently](https://www.npmjs.com/package/concurrently) | runs server, queue and vite together in `composer dev` |
 | [playwright](https://www.npmjs.com/package/playwright) | the browser behind the `pest-plugin-browser` tests |
 | [@laravel/multiplex](https://www.npmjs.com/package/@laravel/multiplex) | batches Livewire requests (optional) |
+
+## Study: Advanced Tables and alternatives
+
+The kit keeps a feasibility study for advanced table capabilities in Filament (row grouping, persistent selection, detail expansion, fixed columns, multi-sheet export, etc.). The study compares the **Advanced Tables** (paid) package with free alternatives, documents the decision **not to include a paid dependency by default** and leaves an implementation roadmap for projects that choose it.
+
+> The full study, including cost analysis and alternatives, is in `wikis/specs/feat/estudo-advanced-tables/estudo-advanced-tables/`.
 
 ## License
 

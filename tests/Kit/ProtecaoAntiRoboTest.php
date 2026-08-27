@@ -80,7 +80,7 @@ function convitePendente(): string
 }
 
 /** O login do /app pela tela, com ou sem token. */
-function enviarLogin(User $user, ?string $token): Testable
+function enviarLoginComAntiRobo(User $user, ?string $token): Testable
 {
     Filament::setCurrentPanel('app');
 
@@ -263,7 +263,7 @@ it('carrega o script do provedor escolhido e nunca a chave secreta nas telas pú
 it('autentica sem token com a proteção desligada', function (): void {
     $user = usuarioDoKit('panel_user');
 
-    enviarLogin($user, null)->assertHasNoFormErrors();
+    enviarLoginComAntiRobo($user, null)->assertHasNoFormErrors();
 
     $this->assertAuthenticatedAs($user);
 })->group('kit');
@@ -307,7 +307,7 @@ it('reprova o login sem token com a proteção ligada, sem chamar o provedor', f
 
     $user = usuarioDoKit('panel_user');
 
-    enviarLogin($user, null)->assertHasFormErrors(['anti_robo' => 'required']);
+    enviarLoginComAntiRobo($user, null)->assertHasFormErrors(['anti_robo' => 'required']);
 
     $this->assertGuest();
     Http::assertNothingSent();
@@ -329,7 +329,7 @@ it('reprova o login com token recusado pelo provedor e registra o motivo', funct
 
     $user = usuarioDoKit('panel_user');
 
-    enviarLogin($user, 'token-ruim')->assertHasFormErrors(['anti_robo']);
+    enviarLoginComAntiRobo($user, 'token-ruim')->assertHasFormErrors(['anti_robo']);
 
     $this->assertGuest();
 
@@ -392,7 +392,7 @@ it('autentica com token aceito e verifica uma vez no endpoint do provedor', func
 
     $user = usuarioDoKit('panel_user');
 
-    enviarLogin($user, 'token-bom')->assertHasNoFormErrors();
+    enviarLoginComAntiRobo($user, 'token-bom')->assertHasNoFormErrors();
 
     $this->assertAuthenticatedAs($user);
 
@@ -462,7 +462,7 @@ it('reprova o login quando o provedor não responde, e registra a indisponibilid
 
     $user = usuarioDoKit('panel_user');
 
-    enviarLogin($user, 'token-qualquer')->assertHasFormErrors(['anti_robo']);
+    enviarLoginComAntiRobo($user, 'token-qualquer')->assertHasFormErrors(['anti_robo']);
 
     $this->assertGuest();
 
@@ -477,7 +477,7 @@ it('reprova o login quando o provedor responde erro de servidor', function (): v
 
     $user = usuarioDoKit('panel_user');
 
-    enviarLogin($user, 'token-qualquer')->assertHasFormErrors(['anti_robo']);
+    enviarLoginComAntiRobo($user, 'token-qualquer')->assertHasFormErrors(['anti_robo']);
 
     $this->assertGuest();
 })->group('kit');
@@ -495,7 +495,7 @@ it('manda o widget se redefinir depois de verificar o token', function (): void 
 
     $user = usuarioDoKit('panel_user');
 
-    enviarLogin($user, 'token-ruim')->assertDispatched(CampoAntiRobo::EVENTO_REDEFINIR);
+    enviarLoginComAntiRobo($user, 'token-ruim')->assertDispatched(CampoAntiRobo::EVENTO_REDEFINIR);
 })->group('kit');
 
 /*
