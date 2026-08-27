@@ -179,6 +179,23 @@ final class ConfiguracoesDoKit extends Settings
     /** Primeira entrada social em conta existente exige confirmação por e-mail? ADR-03 de vinculo-de-provedor-social. */
     public bool $login_vinculo_confirmar;
 
+    // Proteção anti-robô ------------------------------------------------------
+
+    /*
+     * Quatro propriedades, quatro linhas no mapa, uma migration — e a chave secreta em
+     * `encrypted()`. Quem lê é `App\Support\ConfiguracaoDoLogin::antiRobo()`, por request, então
+     * a tela governa de verdade (`.ai/rules/settings.md`). Wiki `recaptcha-nas-telas-publicas`.
+     */
+
+    public bool $login_anti_robo_habilitado;
+
+    /** Um `value` de `App\Support\ProvedorAntiRobo`. */
+    public string $login_anti_robo_provedor;
+
+    public ?string $login_anti_robo_chave_do_site;
+
+    public ?string $login_anti_robo_chave_secreta;
+
     public static function group(): string
     {
         return 'kit';
@@ -229,6 +246,7 @@ final class ConfiguracoesDoKit extends Settings
             'login_github_client_secret',
             'login_linkedin_openid_client_secret',
             'login_x_client_secret',
+            'login_anti_robo_chave_secreta',
         ];
     }
 
@@ -327,6 +345,11 @@ final class ConfiguracoesDoKit extends Settings
 
             'login_rodape'            => 'kit.login.rodape',
             'login_vinculo_confirmar' => 'kit.login.vinculo_confirmar',
+
+            'login_anti_robo_habilitado'    => 'kit.login.anti_robo.habilitado',
+            'login_anti_robo_provedor'      => 'kit.login.anti_robo.provedor',
+            'login_anti_robo_chave_do_site' => 'kit.login.anti_robo.chave_do_site',
+            'login_anti_robo_chave_secreta' => 'kit.login.anti_robo.chave_secreta',
         ];
     }
 

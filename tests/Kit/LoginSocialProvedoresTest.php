@@ -1511,17 +1511,26 @@ it('não deixa nenhuma superfície de provedor fora do enum', function (): void 
         ->pluck('name')
         ->all();
 
-    expect(array_values(array_diff($gravadas, $propriedadesDoEnum)))->toBe([]);
+    // O anti-robô não é provedor social, mas compartilha o prefixo `login_*`.
+    $excecoesDasPropriedades = [
+        'login_anti_robo_habilitado',
+        'login_anti_robo_provedor',
+        'login_anti_robo_chave_do_site',
+        'login_anti_robo_chave_secreta',
+    ];
+
+    expect(array_values(array_diff($gravadas, $propriedadesDoEnum, $excecoesDasPropriedades)))->toBe([]);
 
     $doConfig = array_keys(array_filter(
         (array) config('kit.login'),
         static fn (mixed $bloco): bool => is_array($bloco) && array_key_exists('habilitado', $bloco),
     ));
 
+    // O bloco de configuração do anti-robô também tem o interruptor `habilitado`, mas não é provedor.
     expect(array_values(array_diff($doConfig, array_map(
         static fn (ProvedorSocial $provedor): string => $provedor->value,
         ProvedorSocial::cases(),
-    ))))->toBe([]);
+    ), ['anti_robo'])))->toBe([]);
 })->group('kit');
 
 /**

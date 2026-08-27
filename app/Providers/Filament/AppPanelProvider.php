@@ -7,6 +7,7 @@ use App\Filament\Pages\Auth\RegistroPorConvite;
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\Auth\TelaDoisFatores;
 use App\Filament\Pages\Auth\TelaLogin;
+use App\Filament\Pages\Auth\TelaRecuperarSenha;
 use App\Filament\Pages\MyProfilePage;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
@@ -259,6 +260,9 @@ class AppPanelProvider extends PanelProvider
                      * erro nenhum. Ver ADR-06.
                      */
                     ->passwordReset(fn (AuthPageConfig $config): AuthPageConfig => $config
+                        // A página do PEDIDO é a do kit, por causa do desafio anti-robô; a de
+                        // redefinição (com token do e-mail) continua a do vendor. Ver TelaRecuperarSenha.
+                        ->usingPage(TelaRecuperarSenha::class)
                         ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Right)
                         ->mediaSize('70%')

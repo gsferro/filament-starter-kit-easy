@@ -7,6 +7,7 @@ namespace App\Filament\Admin\Pages;
 use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\CustomizadorDaInstalacao;
+use App\Support\ProvedorAntiRobo;
 use App\Support\ProvedorSocial;
 use App\Support\TetoDeUpload;
 use BackedEnum;
@@ -161,6 +162,9 @@ class ConfiguracoesDoKit extends SettingsPage
             $data[$provedor->propriedadeDeSettings('client_secret')] = null;
         }
 
+        // A chave secreta do anti-robô: mesmo segredo, mesmos dois pontos (`.ai/rules/pages.md`).
+        $data['login_anti_robo_chave_secreta'] = null;
+
         return $data;
     }
 
@@ -220,6 +224,12 @@ class ConfiguracoesDoKit extends SettingsPage
     private function senhaDeSmtpGuardada(): ?string
     {
         return app(static::getSettings())->mail_password;
+    }
+
+    /** Existe chave secreta do anti-robô guardada? — para o placeholder dizer "em branco mantém". */
+    private function chaveSecretaAntiRoboGuardada(): ?string
+    {
+        return app(static::getSettings())->login_anti_robo_chave_secreta;
     }
 
     private function abaIdentidade(): Tab
@@ -497,6 +507,8 @@ class ConfiguracoesDoKit extends SettingsPage
                         ...$secoes,
                     ]),
 
+                $this->secaoAntiRobo(),
+
                 Section::make('Rodapé da tela de login')
                     ->description('Aparece na base das telas de login dos três painéis.')
                     ->columnSpanFull()
@@ -516,6 +528,74 @@ class ConfiguracoesDoKit extends SettingsPage
                             ->maxLength(500)
                             ->columnSpanFull(),
                     ]),
+            ]);
+    }
+
+    /**
+     * O desafio anti-robô das três telas públicas: interruptor, provedor e o par de chaves.
+     *
+     * Quem decide se a proteção está no ar é `ConfiguracaoDoLogin::antiRobo()`, com quatro
+     * condições — interruptor, chave do site, chave secreta e provedor conhecido —, e o
+     * `helperText` do toggle diz isso por escrito: ligar aqui sem as chaves não liga nada, e é de
+     * propósito (um campo obrigatório que ninguém consegue preencher trancaria o login dos três
+     * painéis). ADR-03 da wiki `recaptcha-nas-telas-publicas`.
+     *
+     * A chave secreta tem o tratamento da senha de SMTP e dos `client_secret`: zerada no fill e
+     * dehidratada só quando preenchida (`.ai/rules/pages.md`). As opções do `Select` saem do enum,
+     * que implementa `HasLabel` — o `Rule::in()` que o `Select` acrescenta sozinho casa com
+     * `ProvedorAntiRobo::tryFrom()`, então não há valor que grave e não governe.
+     */
+    private function secaoAntiRobo(): Section
+    {
+        $ligado = fn (Get $get): bool => (bool) $get('login_anti_robo_habilitado');
+
+        return Section::make('Proteção anti-robô')
+            ->description('Um desafio "não sou um robô" nas telas de login, "esqueceu a senha?" e registro dos três painéis. Desligado, as telas ficam como sempre: nenhum script externo é carregado.')
+            ->collapsible()
+            ->columnSpanFull()
+            ->schema([
+                Toggle::make('login_anti_robo_habilitado')
+                    ->label('Exigir o desafio anti-robô nas telas públicas')
+                    ->helperText('Ligar aqui não liga sozinho: o provedor e as DUAS chaves abaixo também precisam estar preenchidos — sem elas a proteção fica desligada, porque um desafio que não renderiza trancaria o login de todo mundo, inclusive o seu. Se o provedor cair, o envio é recusado até ele voltar ou você desligar aqui.')
+                    ->live(),
+
+                Select::make('login_anti_robo_provedor')
+                    ->label('Provedor')
+                    ->options(array_reduce(ProvedorAntiRobo::cases(), function (array $carry, ProvedorAntiRobo $provedor): array {
+                        $carry[$provedor->value] = $provedor->getLabel();
+
+                        return $carry;
+                    }, []))
+                    ->helperText(function (Get $get): string {
+                        $provedor = $get('login_anti_robo_provedor');
+
+                        if (is_string($provedor) && $provedor !== '') {
+                            return ProvedorAntiRobo::tryFrom($provedor)?->ondeCriarAsChaves()
+                                ?? 'Os três falam o mesmo protocolo; o reCAPTCHA é o padrão, o Turnstile não rastreia e não tem custo.';
+                        }
+
+                        return 'Os três falam o mesmo protocolo; o reCAPTCHA é o padrão, o Turnstile não rastreia e não tem custo.';
+                    })
+                    ->required()
+                    ->native(false)
+                    ->live()
+                    ->visible($ligado),
+
+                TextInput::make('login_anti_robo_chave_do_site')
+                    ->label('Chave do site')
+                    ->helperText('A chave pública: vai para o HTML das telas.')
+                    ->maxLength(255)
+                    ->visible($ligado),
+
+                TextInput::make('login_anti_robo_chave_secreta')
+                    ->label('Chave secreta')
+                    ->helperText('Guardada cifrada. Deixe em branco para manter a atual — ela não é exibida aqui, nem no código-fonte da página.')
+                    ->placeholder(fn (): string => filled($this->chaveSecretaAntiRoboGuardada()) ? 'Já configurada — em branco mantém' : 'Nenhuma chave configurada')
+                    ->password()
+                    ->revealable()
+                    ->dehydrated(fn (?string $state): bool => filled($state))
+                    ->maxLength(255)
+                    ->visible($ligado),
             ]);
     }
 
