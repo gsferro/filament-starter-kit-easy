@@ -255,7 +255,7 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
      */
     public function scopeComEmail(Builder $query, string $email): Builder
     {
-        return $query->whereRaw('lower('.$query->qualifyColumn('email').') = ?', [mb_strtolower(trim($email))]);
+        return $query->whereRaw('lower('.$query->qualifyColumn('email').') = ?', [mb_strtolower(trim($email))]); // @phpstan-ignore argument.type
     }
 
     /**
