@@ -576,22 +576,44 @@ it('liga os campos de um provedor sem abrir os dos outros', function (): void {
  * de provedor. `assertSchemaComponentVisible('login_rodape')` sozinho ficaria verde com quatro
  * rodapés colapsados dentro dos quatro provedores.
  */
-it('monta uma secao por provedor na aba de login, com o rodape fora delas', function (): void {
+it('monta uma secao por provedor dentro de "Login social", e o rodape em secao propria', function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
     $this->actingAs(usuarioDoKit('admin'));
 
     $componente = Livewire::test(ConfiguracoesDoKit::class);
 
     foreach (ProvedorSocial::cases() as $provedor) {
-        foreach (['habilitado', 'client_id', 'client_secret'] as $sufixo) {
+        foreach (['client_id', 'client_secret'] as $sufixo) {
             $componente->assertSchemaComponentExists($provedor->propriedadeDeSettings($sufixo));
         }
+
+        // O interruptor mora na seção do provedor, que nasce FECHADA e mora na seção "Login social".
+        $componente->assertSchemaComponentExists(
+            $provedor->propriedadeDeSettings('habilitado'),
+            null,
+            function (Component $interruptor) use ($provedor): bool {
+                $secaoDoProvedor = $interruptor->getContainer()->getParentComponent();
+                $secaoPai        = $secaoDoProvedor?->getContainer()->getParentComponent();
+
+                return $secaoDoProvedor instanceof Section
+                    && $secaoDoProvedor->getHeading() === "Entrar com {$provedor->rotulo()}"
+                    && $secaoDoProvedor->isCollapsed()
+                    && $secaoPai instanceof Section
+                    && $secaoPai->getHeading() === 'Login social';
+            },
+        );
     }
 
+    // O rodapé tem seção própria, separada da dos provedores — pedido do solicitante (2026-08-26).
     $componente->assertSchemaComponentExists(
         'login_rodape',
         null,
-        fn (Component $rodape): bool => ! $rodape->getContainer()->getParentComponent() instanceof Section,
+        function (Component $rodape): bool {
+            $secao = $rodape->getContainer()->getParentComponent();
+
+            return $secao instanceof Section
+                && $secao->getHeading() === 'Rodapé da tela de login';
+        },
     );
 });
 

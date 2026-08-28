@@ -1,6 +1,7 @@
 <?php
 
 use App\Filament\Pages\BoasVindas;
+use App\Http\Controllers\Auth\ContaIndisponivelController;
 use App\Http\Controllers\Auth\LoginSocialController;
 use Illuminate\Support\Facades\Route;
 
@@ -63,4 +64,19 @@ Route::middleware('throttle:10,1')
     ->group(function (): void {
         Route::get('redirect', [LoginSocialController::class, 'redirecionar'])->name('redirect');
         Route::get('callback', [LoginSocialController::class, 'retorno'])->name('callback');
+        // O link do e-mail de confirmação do vínculo (modo estrito). `signed` — URL temporária de
+        // 30 minutos; inválida ou vencida responde 403. Wiki vinculo-de-provedor-social, ADR-03.
+        Route::get('confirmar', [LoginSocialController::class, 'confirmarVinculo'])->middleware('signed')->name('confirmar');
     });
+
+/*
+|--------------------------------------------------------------------------
+| Aviso de conta desativada ou excluída
+|--------------------------------------------------------------------------
+| Pública porque quem a vê está justamente SEM sessão: a tela de login (por senha) e o
+| login social mandam para cá quem tentou entrar com a senha certa numa conta inativa
+| ou excluída. Só renderiza com o aviso deixado na sessão pelo request anterior; visitada
+| solta, manda para a raiz. Wiki `status-e-exclusao-logica-de-usuario`, ADR-02.
+*/
+
+Route::get('/conta-indisponivel', ContaIndisponivelController::class)->name('auth.conta-indisponivel');

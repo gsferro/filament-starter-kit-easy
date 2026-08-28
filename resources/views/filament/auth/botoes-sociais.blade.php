@@ -11,6 +11,12 @@
     login social, e presenca no HTML com display desligado seria uma affordance para um caminho
     que responde 404.
 
+    Na tela de REGISTRO (hook do formulario de registro, registrado no mesmo metodo do provider)
+    o link carrega o `org` e o `token` da query corrente ate o `redirect`, que os guarda na sessao
+    para a volta do OAuth — e assim o cadastro pelo provedor cai na organizacao certa e aceita o
+    convite. No login e na tela de bloqueio nao ha query, e o link sai limpo. Ver a wiki
+    cadastro-social-por-convite-e-organizacao.
+
     Este arquivo substituiu o botao-google.blade.php. Um blade especifico ao lado de um generico
     seria a segunda fonte da verdade que o kit ja pagou uma vez — ver .ai/rules/config.md, "uma
     pergunta, uma dona". Ver ADR-08 da wiki mais-provedores-sociais.
@@ -47,7 +53,7 @@
             @foreach ($provedores as $provedor)
                 <x-filament::button
                     tag="a"
-                    :href="route('auth.social.redirect', $provedor)"
+                    :href="route('auth.social.redirect', array_filter(['provedor' => $provedor->value, 'org' => request()->query('org'), 'token' => request()->query('token')], 'is_string'))"
                     color="gray"
                     size="lg"
                     outlined

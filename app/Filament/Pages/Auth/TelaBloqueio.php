@@ -7,6 +7,8 @@ use Caresome\FilamentAuthDesigner\Concerns\HasAuthDesignerLayout;
 use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
+use Filament\Schemas\Components\View;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
@@ -167,6 +169,22 @@ class TelaBloqueio extends LockerScreen
      * `label` e rota são as do pacote — nenhuma string de UI nova nasce aqui. A `url` fica em
      * closure porque a rota só existe com o plugin ligado.
      */
+    /**
+     * Os mesmos botões sociais do login, abaixo do formulário da senha.
+     *
+     * Quem entrou por um provedor pode não ter senha local — e escolher viver sem uma. A tela
+     * de bloqueio não pode ser a parede onde isso termina: a volta do provedor DESTRAVA a
+     * sessão (`LoginSocialController::retorno()`). A view é a do login e renderiza VAZIA sem
+     * provedor disponível, então a tela continua igual para quem só tem senha.
+     */
+    public function content(Schema $schema): Schema
+    {
+        return $schema->components([
+            $this->getFormContentComponent(),
+            View::make('filament.auth.botoes-sociais'),
+        ]);
+    }
+
     public static function itemDeMenu(string $panelId): Action
     {
         return Action::make('lockSession')

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 use App\Filament\Admin\Resources\Convites\ConviteResource;
 use App\Filament\Admin\Resources\Tenants\TenantResource;
+use App\Filament\Admin\Resources\Users\UserResource;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
 use Filament\Pages\Dashboard;
 use Filament\Widgets\AccountWidget;
@@ -291,6 +292,16 @@ return [
                 'vincularUsuario',
                 'desvincularUsuario',
                 'atribuirPapeis',
+            ],
+
+            /*
+             * Desativar e reativar um usuário — as ações de `SituacaoDaConta`, só no /admin.
+             * Duas permissões e não uma: reativar é conceder acesso, desativar é retirar. O
+             * `panel_user` já perde as duas pela subtração por FQCN do `UserResource` do /app.
+             */
+            UserResource::class => [
+                'desativar',
+                'reativar',
             ],
         ],
         'exclude' => [

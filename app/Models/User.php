@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\ContextoDePapeis;
+use App\Support\ProvedorSocial;
 use App\Support\RegistroAberto;
 use App\Traits\AuditsFillables;
 use App\Traits\ModeloCacheavel;
@@ -14,10 +15,13 @@ use Filament\Models\Contracts\HasAvatar;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
@@ -27,7 +31,9 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Jeffgreco13\FilamentBreezy\Traits\TwoFactorAuthenticatable;
 use OwenIt\Auditing\Contracts\Auditable;
+use Promethys\Revive\Concerns\Recyclable;
 use Rappasoft\LaravelAuthenticationLog\Traits\AuthenticationLoggable;
+use RuntimeException;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Support\Config;
 use Spatie\Permission\Traits\HasRoles;
@@ -61,6 +67,22 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
     use HasRoles;
     use ModeloCacheavel;
     use Notifiable;
+
+    /**
+     * Excluir é LÓGICO: `delete()` grava `deleted_at`, a linha fica, e as pivots (`tenant_user`,
+     * `model_has_roles`) e `vinculos_sociais` ficam com ela — restaurar devolve o que havia.
+     *
+     * `Recyclable` é o que faz a Lixeira do /infra (`promethys/revive`) enxergar a exclusão: a
+     * tela lista `recycle_bin_items`, e quem grava a linha ali é o evento `deleted` desta trait
+     * (`vendor/promethys/revive/src/Concerns/Recyclable.php:29-45`). `SoftDeletes` sozinho é
+     * exclusão sem tela para desfazer. Guarda: `tests/Kit/LixeiraTest.php`.
+     *
+     * Ela sobrescreve `booted()` — uma `booted()` futura nesta classe precisa chamar a da trait.
+     * Wiki `status-e-exclusao-logica-de-usuario`, ADR-06.
+     */
+    use Recyclable;
+
+    use SoftDeletes;
     use TemUuid;
     use TwoFactorAuthenticatable;
 
@@ -76,6 +98,15 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
         'remember_token',
     ];
 
+    /**
+     * Defaults de atributos que vivem FORA do $fillable mas nascem com valor na migration.
+     * Sem isso, instâncias recém-criadas em memória leem `null` antes do primeiro refresh,
+     * e `ativo` vira `false` no cast boolean — trancando o usuário fora.
+     */
+    protected $attributes = [
+        'ativo' => true,
+    ];
+
     protected function casts(): array
     {
         return [
@@ -86,6 +117,8 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
              * e em `aprovar()`.
              */
             'aprovacao_pendente' => 'boolean',
+            // Mesmo regime: fora do `$fillable`, só `forceFill` em `desativar()`/`reativar()`.
+            'ativo'              => 'boolean',
             'email_verified_at'  => 'datetime',
             'password'           => 'hashed',
         ];
@@ -107,7 +140,30 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
     public function canAccessPanel(Panel $panel): bool
     {
         /*
-         * PRIMEIRA instrução, antes até do master_global — e a ordem é a decisão.
+         * Conta inativa ou excluída não entra em painel NENHUM — antes até da pendência, pelo
+         * mesmo argumento de ordem escrito logo abaixo. É a única decisão: a tela de login por
+         * senha, o login social e o middleware do painel (a cada request de quem já está dentro)
+         * perguntam aqui. Quem EXPLICA a negativa para a pessoa é `TelaLogin` e o
+         * `LoginSocialController`, via `motivoDeIndisponibilidade()`. ADR-01 da wiki
+         * `status-e-exclusao-logica-de-usuario`.
+         */
+        if (($motivo = $this->motivoDeIndisponibilidade()) !== null) {
+            Log::channel('autenticacao')->warning(
+                "[User@canAccessPanel] Acesso negado: {$motivo} | user: {$this->id} - painel: {$panel->getId()}",
+                [
+                    'user_id'     => $this->id,
+                    'painel'      => $panel->getId(),
+                    'motivo'      => $motivo,
+                    'email'       => Str::mask((string) $this->email, '*', 3),
+                    'excluida_em' => $this->deleted_at?->toIso8601String(),
+                ],
+            );
+
+            return false;
+        }
+
+        /*
+         * Depois da indisponibilidade e antes do master_global — e a ordem é a decisão.
          *
          * "Pendente de aprovação" tem de significar painel NENHUM, sem exceção. Posta depois do
          * atalho do `master_global`, esta guarda teria um furo que ninguém veria: o atalho
@@ -158,6 +214,154 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
         );
 
         return false;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Estado da conta: ativo/inativo e exclusão lógica
+    |--------------------------------------------------------------------------
+    | `ativo` e `deleted_at` são estado de fronteira de acesso, fora do `$fillable`.
+    | As transições vivem aqui, no model, para valer para qualquer chamador — a tela
+    | só as espelha. Wiki `status-e-exclusao-logica-de-usuario`.
+    */
+
+    /**
+     * Por que esta conta não pode entrar — ou `null` quando pode.
+     *
+     * Excluída vence inativa: a mensagem com a data é a mais informativa, e uma conta excluída
+     * que também estava inativa não deve ouvir "reative", e sim "restaure".
+     *
+     * @return 'conta_excluida'|'conta_inativa'|null
+     */
+    public function motivoDeIndisponibilidade(): ?string
+    {
+        return match (true) {
+            $this->trashed() => 'conta_excluida',
+            ! $this->ativo   => 'conta_inativa',
+            default          => null,
+        };
+    }
+
+    /**
+     * A conta com este e-mail, comparada de forma normalizada nos dois lados.
+     *
+     * `lower()` no SQL e `mb_strtolower()` no valor: e-mail não é case-sensitive na prática. Em
+     * MySQL `_ci` o `lower()` é redundante; em SQLite e Postgres não é, e o kit roda nos três.
+     * Um escopo só para as três perguntas que existiam em cópia (login social, convite e agora
+     * a tela de login) — quem quiser incluir excluídos encadeia `withTrashed()` antes.
+     *
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeComEmail(Builder $query, string $email): Builder
+    {
+        return $query->whereRaw('lower('.$query->qualifyColumn('email').') = ?', [mb_strtolower(trim($email))]); // @phpstan-ignore argument.type
+    }
+
+    /**
+     * Desativa a conta: ela deixa de entrar em qualquer painel até `reativar()`.
+     *
+     * Idempotente, como `aprovar()`. As duas recusas estão aqui, e não só no `->visible()` da
+     * ação, porque barreira que só existe na tela não é barreira (`.ai/rules/filament.md`).
+     *
+     * @throws RuntimeException quando é a própria conta ou o último `master_global` ativo
+     */
+    public function desativar(): void
+    {
+        if (! $this->ativo) {
+            return;
+        }
+
+        if (($razao = $this->motivoParaNaoDesativar()) !== null) {
+            Log::channel('autenticacao')->warning(
+                "[User@desativar] Desativação recusada | alvo: {$this->id} - razao: {$razao}",
+                [
+                    'alvo_id'     => $this->id,
+                    'executor_id' => Auth::id(),
+                    'motivo'      => 'desativacao_recusada',
+                    'razao'       => $razao,
+                ],
+            );
+
+            throw new RuntimeException($razao === 'propria_conta'
+                ? 'Você não pode desativar a própria conta.'
+                : 'Este é o último master_global ativo da instalação.');
+        }
+
+        $this->forceFill(['ativo' => false])->save();
+
+        Log::channel('autenticacao')->info(
+            "[User@desativar] Usuário desativado | alvo: {$this->id}",
+            [
+                'alvo_id'     => $this->id,
+                'executor_id' => Auth::id(),
+                'email'       => Str::mask((string) $this->email, '*', 3),
+            ],
+        );
+    }
+
+    /** O inverso de `desativar()`. Idempotente. */
+    public function reativar(): void
+    {
+        if ($this->ativo) {
+            return;
+        }
+
+        $this->forceFill(['ativo' => true])->save();
+
+        Log::channel('autenticacao')->info(
+            "[User@reativar] Usuário reativado | alvo: {$this->id}",
+            [
+                'alvo_id'     => $this->id,
+                'executor_id' => Auth::id(),
+                'email'       => Str::mask((string) $this->email, '*', 3),
+            ],
+        );
+    }
+
+    /**
+     * Por que esta conta NÃO pode ser desativada agora — ou `null` quando pode.
+     *
+     * A única fonte da regra: `desativar()` lança quando não é nulo, e a Action da tela se
+     * esconde pelo mesmo valor. `Auth::user()` nulo (job, comando) nunca é "a própria conta".
+     *
+     * @return 'propria_conta'|'ultimo_master_global'|null
+     */
+    public function motivoParaNaoDesativar(): ?string
+    {
+        return match (true) {
+            $this->is(Auth::user())             => 'propria_conta',
+            $this->ehOUltimoMasterGlobalAtivo() => 'ultimo_master_global',
+            default                             => null,
+        };
+    }
+
+    /**
+     * É `master_global` e não existe OUTRO `master_global` ativo (e não excluído) no contexto global?
+     *
+     * Uma consulta só, pela mesma relação de `canAccessPanel()`. Colunas qualificadas porque a
+     * subconsulta do `whereHas` junta `roles` a `users`, e `name` existe nas duas.
+     */
+    public function ehOUltimoMasterGlobalAtivo(): bool
+    {
+        if (! $this->isMasterGlobal()) {
+            return false;
+        }
+
+        $outrosAtivos = self::query()
+            ->where('ativo', true)
+            ->whereKeyNot($this->getKey())
+            ->whereHas('papeisEmQualquerContexto', function (Builder $papeis): void {
+                $papeis
+                    ->where($papeis->qualifyColumn('name'), config('filament-shield.super_admin.name', 'master_global'))
+                    ->where($papeis->qualifyColumn('guard_name'), $this->getDefaultGuardName());
+
+                if (config('permission.teams')) {
+                    $papeis->where(Config::modelHasRolesTable().'.'.$this->colunaDeTeam(), Tenant::CONTEXTO_GLOBAL);
+                }
+            });
+
+        return $outrosAtivos->doesntExist();
     }
 
     /**
@@ -227,6 +431,31 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
      * /admin (sem tenancy) o contexto é o global. Nos dois casos o `assignRole()` grava no lugar
      * certo sem esta função precisar saber onde está.
      */
+    /** Valores de `origem` que não são provedor social. O provedor grava o próprio driver. */
+    public const ORIGEM_INTERNO = 'interno';
+
+    public const ORIGEM_CONVITE = 'convite';
+
+    public const ORIGEM_REGISTRO = 'registro';
+
+    /**
+     * Por qual porta a conta entrou, por extenso — para a lista de usuários e o dashboard.
+     *
+     * Provedor social devolve o rótulo da marca; o resto, a porta do kit. Valor desconhecido
+     * (coluna editada à mão, provedor removido do enum) cai em "Interno", e não em erro: é
+     * exibição, nunca autorização.
+     */
+    public function rotuloDaOrigem(): string
+    {
+        $origem = (string) ($this->origem ?? self::ORIGEM_INTERNO);
+
+        return ProvedorSocial::tryFrom($origem)?->rotulo() ?? match ($origem) {
+            self::ORIGEM_CONVITE  => 'Convite',
+            self::ORIGEM_REGISTRO => 'Registro aberto',
+            default               => 'Interno',
+        };
+    }
+
     public function aprovar(): void
     {
         if (! $this->aprovacao_pendente) {
@@ -392,6 +621,16 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
     public function tenants(): BelongsToMany
     {
         return $this->belongsToMany(Tenant::class);
+    }
+
+    /**
+     * As identidades desta conta nos provedores de login social — ver `VinculoSocial`.
+     *
+     * @return HasMany<VinculoSocial, $this>
+     */
+    public function vinculosSociais(): HasMany
+    {
+        return $this->hasMany(VinculoSocial::class);
     }
 
     /**

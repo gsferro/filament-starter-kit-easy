@@ -7,13 +7,14 @@ namespace App\Filament\Admin\Pages;
 use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\CustomizadorDaInstalacao;
+use App\Support\ProvedorAntiRobo;
 use App\Support\ProvedorSocial;
 use App\Support\TetoDeUpload;
 use BackedEnum;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Pages\SettingsPage;
@@ -161,6 +162,9 @@ class ConfiguracoesDoKit extends SettingsPage
             $data[$provedor->propriedadeDeSettings('client_secret')] = null;
         }
 
+        // A chave secreta do anti-robô: mesmo segredo, mesmos dois pontos (`.ai/rules/pages.md`).
+        $data['login_anti_robo_chave_secreta'] = null;
+
         return $data;
     }
 
@@ -220,6 +224,12 @@ class ConfiguracoesDoKit extends SettingsPage
     private function senhaDeSmtpGuardada(): ?string
     {
         return app(static::getSettings())->mail_password;
+    }
+
+    /** Existe chave secreta do anti-robô guardada? — para o placeholder dizer "em branco mantém". */
+    private function chaveSecretaAntiRoboGuardada(): ?string
+    {
+        return app(static::getSettings())->login_anti_robo_chave_secreta;
     }
 
     private function abaIdentidade(): Tab
@@ -478,14 +488,114 @@ class ConfiguracoesDoKit extends SettingsPage
         return Tab::make('Login')
             ->icon('heroicon-o-arrow-right-on-rectangle')
             ->schema([
-                ...$secoes,
+                // Duas seções, dois assuntos: os provedores (um bloco fechado por provedor,
+                // com o ícone de status no cabeçalho) e o rodapé. Pedido do solicitante na
+                // validação real dos provedores (2026-08-26).
+                Section::make('Login social')
+                    ->description('Um bloco por provedor, fechado. O ícone no cabeçalho diz se o botão está habilitado; abra para ver as credenciais.')
+                    ->columnSpanFull()
+                    ->schema([
+                        /*
+                         * Vale para os quatro provedores. Lida por request no callback, então pode
+                         * viver aqui (`.ai/rules/settings.md`). ADR-03 de vinculo-de-provedor-social.
+                         */
+                        Toggle::make('login_vinculo_confirmar')
+                            ->label('Exigir confirmação por e-mail na primeira entrada social em uma conta que já existe')
+                            ->helperText('Desligado: a pessoa entra e recebe um aviso por e-mail ("sua conta foi acessada pelo Google pela primeira vez"). Ligado: ela recebe um link de 30 minutos e só entra depois de confirmar. Nas entradas seguintes a conta é reconhecida pela identidade no provedor, em qualquer modo.')
+                            ->columnSpanFull(),
 
-                Textarea::make('login_rodape')
-                    ->label('Rodapé da tela de login')
-                    ->helperText('Aparece nas telas de login dos três painéis. É TEXTO e sai escapado: a tela de login é pública e não autenticada, e HTML cru ali seria XSS armazenado.')
-                    ->rows(2)
-                    ->maxLength(500)
-                    ->columnSpanFull(),
+                        ...$secoes,
+                    ]),
+
+                $this->secaoAntiRobo(),
+
+                Section::make('Rodapé da tela de login')
+                    ->description('Aparece na base das telas de login dos três painéis.')
+                    ->columnSpanFull()
+                    ->schema([
+                        /*
+                         * Markdown, e não HTML: a tela de login é pública e não autenticada, e HTML
+                         * cru ali seria XSS armazenado. O Markdown dá negrito, itálico e link — o que
+                         * um rodapé precisa — e a view descarta qualquer HTML cru e qualquer link com
+                         * esquema inseguro (`Str::markdown` com `html_input: strip`,
+                         * `allow_unsafe_links: false`). A barra tem só esses botões de propósito:
+                         * título, tabela e anexo não cabem num rodapé de duas linhas.
+                         */
+                        MarkdownEditor::make('login_rodape')
+                            ->hiddenLabel()
+                            ->helperText('Aceita Markdown (negrito, itálico, link). HTML cru é descartado, porque a tela de login é pública.')
+                            ->toolbarButtons([['bold', 'italic', 'strike', 'link']])
+                            ->maxLength(500)
+                            ->columnSpanFull(),
+                    ]),
+            ]);
+    }
+
+    /**
+     * O desafio anti-robô das três telas públicas: interruptor, provedor e o par de chaves.
+     *
+     * Quem decide se a proteção está no ar é `ConfiguracaoDoLogin::antiRobo()`, com quatro
+     * condições — interruptor, chave do site, chave secreta e provedor conhecido —, e o
+     * `helperText` do toggle diz isso por escrito: ligar aqui sem as chaves não liga nada, e é de
+     * propósito (um campo obrigatório que ninguém consegue preencher trancaria o login dos três
+     * painéis). ADR-03 da wiki `recaptcha-nas-telas-publicas`.
+     *
+     * A chave secreta tem o tratamento da senha de SMTP e dos `client_secret`: zerada no fill e
+     * dehidratada só quando preenchida (`.ai/rules/pages.md`). As opções do `Select` saem do enum,
+     * que implementa `HasLabel` — o `Rule::in()` que o `Select` acrescenta sozinho casa com
+     * `ProvedorAntiRobo::tryFrom()`, então não há valor que grave e não governe.
+     */
+    private function secaoAntiRobo(): Section
+    {
+        $ligado = fn (Get $get): bool => (bool) $get('login_anti_robo_habilitado');
+
+        return Section::make('Proteção anti-robô')
+            ->description('Um desafio "não sou um robô" nas telas de login, "esqueceu a senha?" e registro dos três painéis. Desligado, as telas ficam como sempre: nenhum script externo é carregado.')
+            ->collapsible()
+            ->columnSpanFull()
+            ->schema([
+                Toggle::make('login_anti_robo_habilitado')
+                    ->label('Exigir o desafio anti-robô nas telas públicas')
+                    ->helperText('Ligar aqui não liga sozinho: o provedor e as DUAS chaves abaixo também precisam estar preenchidos — sem elas a proteção fica desligada, porque um desafio que não renderiza trancaria o login de todo mundo, inclusive o seu. Se o provedor cair, o envio é recusado até ele voltar ou você desligar aqui.')
+                    ->live(),
+
+                Select::make('login_anti_robo_provedor')
+                    ->label('Provedor')
+                    ->options(array_reduce(ProvedorAntiRobo::cases(), function (array $carry, ProvedorAntiRobo $provedor): array {
+                        $carry[$provedor->value] = $provedor->getLabel();
+
+                        return $carry;
+                    }, []))
+                    ->helperText(function (Get $get): string {
+                        $provedor = $get('login_anti_robo_provedor');
+
+                        if (is_string($provedor) && $provedor !== '') {
+                            return ProvedorAntiRobo::tryFrom($provedor)?->ondeCriarAsChaves()
+                                ?? 'Os três falam o mesmo protocolo; o reCAPTCHA é o padrão, o Turnstile não rastreia e não tem custo.';
+                        }
+
+                        return 'Os três falam o mesmo protocolo; o reCAPTCHA é o padrão, o Turnstile não rastreia e não tem custo.';
+                    })
+                    ->required()
+                    ->native(false)
+                    ->live()
+                    ->visible($ligado),
+
+                TextInput::make('login_anti_robo_chave_do_site')
+                    ->label('Chave do site')
+                    ->helperText('A chave pública: vai para o HTML das telas.')
+                    ->maxLength(255)
+                    ->visible($ligado),
+
+                TextInput::make('login_anti_robo_chave_secreta')
+                    ->label('Chave secreta')
+                    ->helperText('Guardada cifrada. Deixe em branco para manter a atual — ela não é exibida aqui, nem no código-fonte da página.')
+                    ->placeholder(fn (): string => filled($this->chaveSecretaAntiRoboGuardada()) ? 'Já configurada — em branco mantém' : 'Nenhuma chave configurada')
+                    ->password()
+                    ->revealable()
+                    ->dehydrated(fn (?string $state): bool => filled($state))
+                    ->maxLength(255)
+                    ->visible($ligado),
             ]);
     }
 
@@ -513,11 +623,15 @@ class ConfiguracoesDoKit extends SettingsPage
 
         return Section::make("Entrar com {$provedor->rotulo()}")
             ->description($this->ondeCriarOApp($provedor))
-            ->collapsible()
+            // Fechada ao abrir a tela; o status vive no cabeçalho, então não precisa abrir para
+            // saber. O interruptor é `live()`, e o ícone acompanha na hora.
+            ->collapsed()
+            ->icon(fn (Get $get): string => $ligado($get) ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+            ->iconColor(fn (Get $get): string => $ligado($get) ? 'success' : 'gray')
             ->columnSpanFull()
             ->schema([
                 Toggle::make($habilitado)
-                    ->label("Oferecer o botão do {$provedor->rotulo()}")
+                    ->label("Habilitar botão do {$provedor->rotulo()}")
                     ->helperText('Ligar aqui não põe o botão no ar sozinho: as credenciais abaixo também precisam estar preenchidas. O login social AUTENTICA quem já tem conta — criar conta depende do registro aberto, na aba anterior.')
                     ->live(),
 

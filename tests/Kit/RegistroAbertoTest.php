@@ -332,7 +332,9 @@ it('da um papel so quando o registro e chamado fora da tela', function (): void 
     ]);
 
     expect($novo->roles)->toHaveCount(1)
-        ->and($novo->hasRole(RegistroAberto::papel()))->toBeTrue();
+        ->and($novo->hasRole(RegistroAberto::papel()))->toBeTrue()
+        ->and($novo->origem)->toBe(User::ORIGEM_REGISTRO)
+        ->and($novo->rotuloDaOrigem())->toBe('Registro aberto');
 });
 
 /** CT-10b — e com a porta fechada, o chamador direto é recusado. */

@@ -64,6 +64,12 @@ class KitArte extends Command
      * @var list<string>
      */
     private const IMAGENS = [
+        // Login social e vínculo de provedor (wiki vinculo-de-provedor-social, passo 9).
+        'login-social',
+        'admin-configuracoes-login',
+        'app-perfil-definir-senha',
+        'app-bloqueio-social',
+        'admin-users-origem',
         'admin-papeis-import-export',
         'boas-vindas',
         'app-projetos-anexos',

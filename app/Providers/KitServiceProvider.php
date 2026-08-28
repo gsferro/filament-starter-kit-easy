@@ -407,6 +407,14 @@ class KitServiceProvider extends ServiceProvider
             PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
             fn (): string => view('filament.auth.rodape-login')->render(),
         );
+
+        // A tela de registro (registro aberto e aceite de convite) oferece os mesmos botoes; a
+        // view carrega o `org`/`token` da query ate o `redirect`. Sem o rodape, que e do login.
+        // Wiki cadastro-social-por-convite-e-organizacao.
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::AUTH_REGISTER_FORM_AFTER,
+            fn (): string => view('filament.auth.botoes-sociais')->render(),
+        );
     }
 
     protected function configureHealthChecks(): void

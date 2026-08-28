@@ -65,11 +65,14 @@ it('leva junto o dashboard pessoal de quem foi excluído', function (): void {
 })->group('kit');
 
 /**
- * O contorno do caso acima: dashboard COMPARTILHADO sobrevive, com o autor virando nulo
- * pelo `nullOnDelete` da FK. Apagar o painel da equipe junto com quem o criou seria perda
- * de dado de outras pessoas.
+ * O contorno do caso acima: dashboard COMPARTILHADO sobrevive.
+ *
+ * Com `SoftDeletes`, a linha do user permanece no banco — `ON DELETE SET NULL` da FK não
+ * dispara. `created_by` mantém o ID original, e isso é o correto: o vínculo continua
+ * válido (o user está soft-deleted, não removido). Apagar o painel da equipe junto com
+ * quem o criou seria perda de dado de outras pessoas.
  */
-it('preserva o dashboard compartilhado e só solta o autor', function (): void {
+it('preserva o dashboard compartilhado e mantém o autor', function (): void {
     $user = usuario('autor@example.com');
     $id   = ($this->dashboardPara)($user->getKey(), pessoal: false);
 
@@ -78,7 +81,7 @@ it('preserva o dashboard compartilhado e só solta o autor', function (): void {
     $dashboard = DB::table('dashboards')->find($id);
 
     expect($dashboard)->not->toBeNull()
-        ->and($dashboard->created_by)->toBeNull();
+        ->and($dashboard->created_by)->toBe($user->getKey());
 })->group('kit');
 
 /**

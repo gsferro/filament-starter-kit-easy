@@ -7,6 +7,7 @@ use App\Filament\App\Resources\Users\Pages\EditUser;
 use App\Filament\App\Resources\Users\Pages\ListUsers;
 use App\Filament\Concerns\AprovacaoDeCadastro;
 use App\Filament\Concerns\BadgeContagemNavegacao;
+use App\Filament\Concerns\SituacaoDaConta;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Papeis;
@@ -43,6 +44,7 @@ class UserResource extends Resource
 {
     use AprovacaoDeCadastro;
     use BadgeContagemNavegacao;
+    use SituacaoDaConta;
 
     /** Motivo da negação, e ela existe para não haver 403 mudo em tela. */
     private const MOTIVO_DA_NEGACAO = 'Excluir usuário é ato global e não se faz a partir de uma organização.';
@@ -258,14 +260,26 @@ class UserResource extends Resource
                 // põe em `roles()` faz o recorte por team sozinho.
                 TextColumn::make('roles.name')->label('Papéis')->badge()
                     ->formatStateUsing(fn (?string $state): string => Papeis::rotulo($state)),
+                // Por qual porta a conta entrou: provedor social, convite, registro aberto ou
+                // interno. Exibição, nunca autorização — ver `User::rotuloDaOrigem()`.
+                TextColumn::make('origem')
+                    ->label('Origem')
+                    ->badge()
+                    ->state(fn (User $record): string => $record->rotuloDaOrigem())
+                    ->color(fn (User $record): string => ($record->origem ?? User::ORIGEM_INTERNO) === User::ORIGEM_INTERNO ? 'gray' : 'info')
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('created_at')->label('Criado em')->dateTime('d/m/Y H:i')->sortable(),
                 self::colunaDeSituacao(),
             ])
             ->filters([
                 self::filtroDePendentes(),
+                self::filtroDeInativos(),
             ])
             // Sem Impersonate (é privilégio do master_global) e sem DeleteAction nem
-            // DeleteBulkAction (ADR-08) — ver canDelete() acima.
+            // DeleteBulkAction (ADR-08) — ver canDelete() acima. Sem Desativar/Reativar pela
+            // mesma régua: desativar tira a pessoa de TODAS as organizações (ADR-04 da wiki
+            // status-e-exclusao-logica-de-usuario). A coluna e o filtro mostram o estado.
             ->recordActions([
                 self::acaoDeAprovar(),
                 EditAction::make(),

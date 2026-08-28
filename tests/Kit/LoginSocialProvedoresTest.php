@@ -59,6 +59,12 @@ beforeEach(function (): void {
      * linhas "DEFAULT de fábrica" de CT-45 medirem o default de verdade em vez do `phpunit.xml`.
      */
     config()->set('kit.login.rodape', null);
+
+    /*
+     * Registro aberto atribui o papel `panel_user` ao criar a conta. O papel só existe depois
+     * do seeder; sem ele, `assignRole()` estoura "There is no role named `panel_user`".
+     */
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
 
 /*
@@ -1027,6 +1033,8 @@ it('cria conta na volta do provedor se e somente se o registro aberto está liga
     int $total,
     string $destino,
 ): void {
+    // O papel único do registro aberto precisa existir: a conta nova passa pela mesma porta do formulário.
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
     ligarProvedor($provedor);
 
     if ($contaExiste) {
@@ -1070,6 +1078,7 @@ it('cria conta na volta do provedor se e somente se o registro aberto está liga
  * deixar a conta nova sem a marca é pedir a mesma prova duas vezes, e a segunda por e-mail.
  */
 it('cria a conta do login social com o e-mail verificado e o nome do provedor', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
     ligarProvedor(ProvedorSocial::Github);
     config()->set('kit.registro.habilitado', true);
 
@@ -1508,17 +1517,26 @@ it('não deixa nenhuma superfície de provedor fora do enum', function (): void 
         ->pluck('name')
         ->all();
 
-    expect(array_values(array_diff($gravadas, $propriedadesDoEnum)))->toBe([]);
+    // O anti-robô não é provedor social, mas compartilha o prefixo `login_*`.
+    $excecoesDasPropriedades = [
+        'login_anti_robo_habilitado',
+        'login_anti_robo_provedor',
+        'login_anti_robo_chave_do_site',
+        'login_anti_robo_chave_secreta',
+    ];
+
+    expect(array_values(array_diff($gravadas, $propriedadesDoEnum, $excecoesDasPropriedades)))->toBe([]);
 
     $doConfig = array_keys(array_filter(
         (array) config('kit.login'),
         static fn (mixed $bloco): bool => is_array($bloco) && array_key_exists('habilitado', $bloco),
     ));
 
+    // O bloco de configuração do anti-robô também tem o interruptor `habilitado`, mas não é provedor.
     expect(array_values(array_diff($doConfig, array_map(
         static fn (ProvedorSocial $provedor): string => $provedor->value,
         ProvedorSocial::cases(),
-    ))))->toBe([]);
+    ), ['anti_robo'])))->toBe([]);
 })->group('kit');
 
 /**
@@ -1630,3 +1648,26 @@ it('explica a recusa de Facebook e Discord na mesma seção em que os nomeia', f
     'discord no README en'  => ['README.en.md', 'Discord', 'socialiteproviders'],
     'facebook no README en' => ['README.en.md', 'Facebook', 'email_verified'],
 ])->group('kit');
+
+/**
+ * A partial do ícone não vaza o próprio comentário para a tela.
+ *
+ * Medido no navegador do solicitante, numa instalação real (2026-08-26): o botão "Entrar com
+ * Google" exibia o texto do comentário de cabeçalho da partial. As quatro partials abriam com
+ * `{--` e fechavam com `--}` — uma chave só, que o Blade não reconhece como comentário e
+ * imprime. Nenhum teste via, porque `assertSee('Entrar com Google')` continua verdadeiro com
+ * o comentário ao lado. Este caso renderiza cada partial e exige o SVG sem o rastro.
+ */
+it('renderiza o icone do provedor sem vazar o comentario da partial', function (ProvedorSocial $provedor): void {
+    $html = view('filament.auth.icones.'.$provedor->icone())->render();
+
+    expect($html)
+        ->toContain('data-provedor="'.$provedor->value.'"')
+        ->not->toContain('{--')
+        ->not->toContain('--}')
+        ->not->toContain('Icone de marca');
+})->with(function (): iterable {
+    foreach (ProvedorSocial::cases() as $provedor) {
+        yield $provedor->value => [$provedor];
+    }
+})->group('kit');

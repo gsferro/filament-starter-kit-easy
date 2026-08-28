@@ -9,6 +9,7 @@ use App\Traits\TemUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Contracts\Auditable;
+use Promethys\Revive\Concerns\Recyclable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -39,6 +40,14 @@ class Projeto extends Model implements Auditable, HasMedia
     use ModeloCacheavel;
 
     /**
+     * Sem esta trait a Lixeira lista VAZIO: a tela lê `recycle_bin_items`, e quem grava a linha
+     * ali é o evento `deleted` dela (`vendor/promethys/revive/src/Concerns/Recyclable.php:29-45`).
+     * Este model ficou só com `SoftDeletes` da 0.17.0 até a feature de status do usuário, e a
+     * Lixeira nunca mostrou um projeto. Guarda: `tests/Kit/LixeiraTest.php`.
+     */
+    use Recyclable;
+
+    /**
      * Apagar aqui é reversível — e é o que dá conteúdo à Lixeira do /infra
      * (`promethys/revive`, registrado no InfraPanelProvider).
      *
@@ -51,8 +60,8 @@ class Projeto extends Model implements Auditable, HasMedia
      *    que roda ANTES do escopo de tenant do `BelongsToTenant`. Os dois convivem;
      *    a ordem não importa porque ambos são `where`.
      *
-     * Model nova com esta trait precisa entrar na lista `models()` do `RevivePlugin`,
-     * senão fica apagada sem tela para restaurar.
+     * Model nova com esta trait precisa entrar na lista `models()` do `RevivePlugin` E usar
+     * `Recyclable` (abaixo), senão fica apagada sem tela para restaurar.
      */
     use SoftDeletes;
 

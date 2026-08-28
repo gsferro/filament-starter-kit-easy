@@ -1059,3 +1059,19 @@ it('recusa o convite com o campo fora da regra e não grava nem envia nada', fun
     '`email` precisa ser e-mail' => [['email' => 'nao-e-um-email'], ['email' => 'email']],
     '`role_id` é obrigatório'    => [['role_id' => null], ['role_id' => 'required']],
 ]);
+
+/**
+ * A conta aceita por convite sabe de onde veio — e quem o admin cria pela tela é "Interno".
+ *
+ * Coluna `origem`, pedida na validação real dos provedores (2026-08-26): exibição para a lista
+ * de usuários e o dashboard, nunca autorização.
+ */
+it('marca a origem da conta como convite ao aceitar', function (): void {
+    [$convite] = conviteCom('panel_user');
+
+    $aceito = $convite->aceitar(['name' => 'Convidada', 'password' => 'segredo-bem-longo-123']);
+
+    expect($aceito->origem)->toBe(User::ORIGEM_CONVITE)
+        ->and($aceito->rotuloDaOrigem())->toBe('Convite')
+        ->and(usuario('interno@example.com')->rotuloDaOrigem())->toBe('Interno');
+});

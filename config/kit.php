@@ -520,6 +520,45 @@ return [
         ],
 
         'rodape' => env('KIT_LOGIN_RODAPE'),
+
+        /*
+         * Vínculo com o provedor (wiki vinculo-de-provedor-social, ADR-03/04). `false`: a primeira
+         * entrada de um provedor numa conta que já existe ENTRA e avisa por e-mail. `true`: não
+         * entra — envia o link de confirmação e só entra depois dele. Falha fechado no padrão.
+         */
+        'vinculo_confirmar' => filter_var(env('KIT_SOCIALITE_VINCULO_CONFIRMAR', false), FILTER_VALIDATE_BOOLEAN),
+
+        /*
+         * Desafio anti-robô nas três telas públicas com formulário — login, "esqueceu a senha?"
+         * e registro — dos três painéis. DESLIGADO por default, como cada provedor social.
+         *
+         * Ligar aqui não liga sozinho: as duas chaves também precisam estar preenchidas, e o
+         * provedor precisa ser um dos três conhecidos. A razão é a mesma do login social, com o
+         * preço invertido: lá, credencial vazia deixaria um botão apontando para um OAuth que não
+         * existe; aqui deixaria um campo OBRIGATÓRIO que nunca se preenche, nas telas de entrada
+         * dos três painéis. Quem decide é `App\Support\ConfiguracaoDoLogin::antiRobo()`, o ponto
+         * único; ninguém mais lê estas chaves.
+         *
+         * `recaptcha` é o Google reCAPTCHA v2 (a caixa "não sou um robô"); `turnstile` é o da
+         * Cloudflare (sem rastreamento, sem custo); `hcaptcha` é o hCaptcha. Os três falam o mesmo
+         * protocolo, e é por isso que cabem numa chave só — ver `App\Support\ProvedorAntiRobo`.
+         * Valor fora da lista = proteção desligada, com aviso no canal `autenticacao`.
+         *
+         * `?:` no provedor, e não o segundo argumento do `env()`: chave presente e vazia devolve
+         * string vazia, e o default nunca entraria (`.ai/rules/config.md`).
+         *
+         * A chave SECRETA é segredo: cifrada no banco quando gravada pela tela, fora de log e de
+         * tela. A do SITE é pública por natureza — ela vai para o HTML.
+         *
+         * Editáveis em /admin/configuracoes-do-kit, aba "Login", seção "Proteção anti-robô". O
+         * banco vence este arquivo em tempo de execução.
+         */
+        'anti_robo' => [
+            'habilitado'    => filter_var(env('KIT_ANTI_ROBO', false), FILTER_VALIDATE_BOOLEAN),
+            'provedor'      => env('KIT_ANTI_ROBO_PROVEDOR') ?: 'recaptcha',
+            'chave_do_site' => env('KIT_ANTI_ROBO_CHAVE_DO_SITE'),
+            'chave_secreta' => env('KIT_ANTI_ROBO_CHAVE_SECRETA'),
+        ],
     ],
 
     /*

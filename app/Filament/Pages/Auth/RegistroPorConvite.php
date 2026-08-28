@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Filament\Forms\Components\CampoAntiRobo;
 use App\Models\Convite;
 use App\Models\Tenant;
 use App\Models\User;
@@ -13,6 +14,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Field;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -83,6 +85,18 @@ class RegistroPorConvite extends Register
 
     /** A organização de destino no modo aberto com tenancy. Nula no modo convite. */
     public ?Tenant $organizacao = null;
+
+    /**
+     * Os quatro campos do Filament mais o desafio anti-robô, nos dois modos.
+     *
+     * O campo é `->dehydrated(false)`: o token não entra no `$data` que chega a
+     * `handleRegistration()`, então `Convite::aceitar()` e `RegistroAberto::registrar()` recebem o
+     * mesmo array de antes. Ver o docblock de `CampoAntiRobo`.
+     */
+    public function form(Schema $schema): Schema
+    {
+        return CampoAntiRobo::acrescentarA(parent::form($schema));
+    }
 
     public function mount(): void
     {

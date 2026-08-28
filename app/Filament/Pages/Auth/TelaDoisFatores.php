@@ -50,8 +50,15 @@ class TelaDoisFatores extends TwoFactorPage
      * Chave não configurada não estoura: o repositório devolve um `AuthPageConfig` vazio e a
      * tela sai vestida e VAZIA, sem mídia e sem alternador — sem erro nenhum. Ver ADR-02.
      */
+    /**
+     * `password-reset`, e não `login`: a chave escolhe o LAYOUT, não a semântica. O desafio de
+     * 2FA é um passo do login, mas é um formulário curto de um campo — como "esqueci a senha" e
+     * o registro, que nos três painéis põem a arte à direita e o formulário à esquerda
+     * (`MediaPosition::Right`). O login é o único com a arte à esquerda. Pedido do solicitante
+     * na validação real de 2026-08-26, depois de passar pelo desafio numa instalação.
+     */
     protected function getAuthDesignerPageKey(): string
     {
-        return 'login';
+        return 'password-reset';
     }
 }
