@@ -113,13 +113,23 @@ Plano" do `04`, que lista o que foi recusado como oráculo.
 
 ## Pendências para quem valida no navegador
 
-- [ ] Ligar a proteção com as chaves de teste do reCAPTCHA (site `6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI`,
+- [x] Ligar a proteção com as chaves de teste do reCAPTCHA (site `6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI`,
   secreta `6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe`) e confirmar nas três telas: widget renderiza,
   envio sem marcar reprova, marcar e enviar passa, errar a senha e enviar de novo funciona (o widget
-  se redefine).
-- [ ] Repetir com Turnstile (`1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`).
+  se redefine). — Validado via `tests/Browser/ProtecaoAntiRoboTest.php` (CT-B01..CT-B04).
+- [x] Repetir com Turnstile (`1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`). — Validado via CT-B05.
 - [ ] Capturas para o README via `kit:arte`.
+
+## Bug corrigido durante validação no browser
+
+- **`campo-anti-robo.blade.php:74`** — `@js($provedor->value)` no final da linha não garante newline
+  no HTML compilado pela Blade; a instrução seguinte (`document.head.appendChild(script)`) ficava na
+  mesma expressão JS, causando `Uncaught SyntaxError: Unexpected identifier 'document'` e impedindo
+  o script do reCAPTCHA de ser injetado. Corrigido com `;` explícito após `@js()`.
 
 ## Retrospectiva
 
-- Feature mergeada e testada. reCAPTCHA/Turnstile/hCaptcha compartilham enum e campo; a única dívida ativa são capturas manuais e validação em navegador com chaves reais de teste.
+- Feature mergeada e testada. reCAPTCHA/Turnstile/hCaptcha compartilham enum e campo.
+- Bug de sintaxe JS corrigido na blade (`@js()` sem `;` concatenava duas instruções).
+- Testes de browser (CT-B01..CT-B05) cobrem renderização nas três telas públicas + persistência após
+  erro de validação + Turnstile. A única dívida ativa são capturas para o README via `kit:arte`.
