@@ -71,7 +71,7 @@
                 script.src = '{{ $script }}'
                 script.async = true
                 script.defer = true
-                script.dataset.kitAntiRobo = @js($provedor->value)
+                script.dataset.kitAntiRobo = @js($provedor->value);
                 document.head.appendChild(script)
             },
         }"
