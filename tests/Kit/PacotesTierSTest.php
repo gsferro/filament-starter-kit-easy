@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Projeto;
+use App\Models\User;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Database\Seeders\PapeisSeeder;
@@ -114,14 +115,15 @@ it('registra a trilha de e-mail e a lixeira só no /infra', function (string $pl
 /**
  * A lixeira lista o que foi declarado, não o que ela descobre sozinha.
  *
- * `modelsNamespace()` varreria `app/Models` e alcançaria `User`, `Role` e `Tenant` —
+ * `modelsNamespace()` varreria `app/Models` e alcançaria `Role` e `Tenant` —
  * restaurar qualquer um deles tem consequência de autorização. A lista explícita é a
- * trava, do mesmo jeito que a allow-list do command-center.
+ * trava, do mesmo jeito que a allow-list do command-center. `User` entrou com a
+ * exclusão lógica (wiki `status-e-exclusao-logica-de-usuario`, ADR-06).
  */
 it('restringe a lixeira à lista explícita de models', function (): void {
     noPainelBootado('infra');
 
-    expect(RevivePlugin::get()->getModels())->toBe([Projeto::class]);
+    expect(RevivePlugin::get()->getModels())->toBe([Projeto::class, User::class]);
 })->group('kit');
 
 /**
