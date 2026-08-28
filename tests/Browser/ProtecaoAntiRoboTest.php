@@ -95,3 +95,27 @@ it('mantem o widget visivel apos erro de validacao', function (): void {
         ->assertVisible('.fi-fo-anti-robo iframe[title="reCAPTCHA"]')
         ->assertNoJavaScriptErrors();
 })->group('browser', 'kit');
+
+/**
+ * CT-B05 — o widget Turnstile renderiza na tela de login com o provedor trocado.
+ *
+ * As chaves de teste oficiais do Cloudflare Turnstile:
+ * - site: 1x00000000000000000000AA (always passes, visible)
+ * - secret: 1x0000000000000000000000000000000AA (always succeeds)
+ */
+it('renderiza o widget turnstile na tela de login', function (): void {
+    $settings                                = app(ConfiguracoesDoKit::class);
+    $settings->login_anti_robo_provedor      = 'turnstile';
+    $settings->login_anti_robo_chave_do_site = '1x00000000000000000000AA';
+    $settings->login_anti_robo_chave_secreta = '1x0000000000000000000000000000000AA';
+    $settings->save();
+    $settings->aplicarNaConfig();
+
+    // Aquece com o novo provedor
+    $this->get('/app/login');
+
+    visit('/app/login')
+        ->assertVisible('.fi-fo-anti-robo')
+        ->assertVisible('[data-anti-robo="turnstile"]')
+        ->assertNoJavaScriptErrors();
+})->group('browser', 'kit');
