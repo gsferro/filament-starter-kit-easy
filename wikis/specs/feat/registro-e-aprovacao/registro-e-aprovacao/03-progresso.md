@@ -93,10 +93,10 @@
 - [x] `/ponytail:ponytail-review` no diff
 - [x] `vendor/bin/pint --dirty --format agent`
 - [x] `vendor/bin/phpstan analyse --no-progress` — 0 erros
-- [ ] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy` — 735 na base, nenhuma queda
-- [ ] `composer test:browser`
-- [ ] Roteiro "Desenhado × Implementado" do `05` preenchido
-- [ ] `git push -u origin feat/registro-e-aprovacao`
+- [x] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy` — 735 na base, nenhuma queda
+- [x] `composer test:browser`
+- [x] Roteiro "Desenhado × Implementado" do `05` preenchido
+- [x] `git push -u origin feat/registro-e-aprovacao` — mergeado via PR #28
 
 ## Auditoria Pré-Implementação
 

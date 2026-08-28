@@ -58,13 +58,13 @@
 
 ## Verificação Final
 
-- [ ] `/ponytail:ponytail-review` no diff
-- [ ] `vendor/bin/pint --dirty --format agent`
-- [ ] `php artisan test --testsuite=Kit --filter="VerificacaoDeEmail|RegistroAberto|ConfiguracoesDoKit" --compact`
-- [ ] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy` — base **1016**, não cair
-- [ ] `vendor/bin/phpstan analyse` — 0 erros
-- [ ] `composer test:browser`
-- [ ] `git commit` por bloco concluído
+- [x] `/ponytail:ponytail-review` no diff
+- [x] `vendor/bin/pint --dirty --format agent`
+- [x] `php artisan test --testsuite=Kit --filter="VerificacaoDeEmail|RegistroAberto|ConfiguracoesDoKit" --compact`
+- [x] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy` — base **1016**, não cair
+- [x] `vendor/bin/phpstan analyse` — 0 erros
+- [x] `composer test:browser`
+- [x] `git commit` por bloco concluído — mergeado via PR #32
 
 ## Auditoria Pré-Implementação
 

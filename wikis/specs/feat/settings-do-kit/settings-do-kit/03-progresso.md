@@ -78,9 +78,9 @@
 - [x] `vendor/bin/phpstan analyse --no-progress` — 0 erros
 - [x] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy` — 662 na base, não deixar cair
 - [x] `composer test:browser`
-- [ ] `migrate:rollback` da migration de settings, e `migrate` de volta, sem quebrar o boot
-- [ ] Roteiro "Desenhado × Implementado" do `05` preenchido
-- [ ] `git push -u origin feat/settings-do-kit`
+- [x] `migrate:rollback` da migration de settings, e `migrate` de volta, sem quebrar o boot
+- [x] Roteiro "Desenhado × Implementado" do `05` preenchido
+- [x] `git push -u origin feat/settings-do-kit` — mergeado via PR #27
 
 ---
 

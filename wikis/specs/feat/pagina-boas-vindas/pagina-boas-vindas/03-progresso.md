@@ -72,7 +72,7 @@ Branch: `feat/pagina-boas-vindas` · base: `main` (`eb9a589`)
       Nenhuma regressão nas 52 telas dos painéis
 - [x] `php artisan route:list --name=boas-vindas` → `GET|HEAD / … boas-vindas › App\Filament\Pages\BoasVindas`
 - [x] Roteiro "Desenhado × Implementado" do `05` preenchido
-- [ ] `git commit` + `git push -u origin feat/pagina-boas-vindas`
+- [x] `git commit` + `git push -u origin feat/pagina-boas-vindas` — mergeado via PR #22
 
 ## Degradações de ferramenta declaradas
 
