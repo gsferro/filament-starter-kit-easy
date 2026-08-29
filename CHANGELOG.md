@@ -2,6 +2,16 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [Não lançado]
+
+### Corrigido
+- **`composer create-project` avisava "Class OrganizacaoComMidia ... does not comply with psr-4
+  autoloading standard".** A fixture estava declarada como classe nomeada no fim de
+  `tests/Tenancy/MigracaoDeMidiaPrivadaTest.php` — arquivo Pest sem namespace, dentro do mapa
+  PSR-4 `Tests\` → `tests/`. Movida para `tests/Tenancy/Fixtures/OrganizacaoComMidia.php` com o
+  namespace que o caminho exige. Só aviso, nada quebrava; mas é a primeira linha que quem instala
+  o kit lê depois do `Generating optimized autoload files`.
+
 ## [0.21.1] - 2026-08-26
 Correções que a validação de instalação (8 instalações reais, terminal + navegador) e o uso real do
 `bp:off` expuseram. Nenhuma muda API; todas fecham uma fresta de instalação ou de sincronia.

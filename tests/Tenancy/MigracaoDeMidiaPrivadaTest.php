@@ -1,15 +1,13 @@
 <?php
 
 use App\Models\Projeto;
-use App\Models\Tenant;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
+use Tests\Tenancy\Fixtures\OrganizacaoComMidia;
 
 /**
  * `kit:midia-privada` — a janela que a correção do default deixaria aberta.
@@ -266,23 +264,3 @@ it('[CT-19] o prefixo de URI do disco de mídia é o mesmo do symlink — limite
     expect($prefixoDoPrivado)->toBe($prefixoDoSymlink)
         ->and(config('filesystems.disks.local.serve'))->toBeTrue();
 });
-
-/**
- * Fixture: um model que NÃO é `Projeto` e tem as duas naturezas de coleção — uma que
- * declara disco público (identidade visual) e uma que não declara nada (cai no default).
- *
- * Herda de `Tenant` pela tabela: a media library só precisa de `model_type` e `model_id`,
- * e criar migration de teste para isso seria carregar schema para nada.
- */
-class OrganizacaoComMidia extends Tenant implements HasMedia
-{
-    use InteractsWithMedia;
-
-    protected $table = 'tenants';
-
-    public function registerMediaCollections(): void
-    {
-        $this->addMediaCollection('identidade')->useDisk('public');
-        $this->addMediaCollection('documentos');
-    }
-}
