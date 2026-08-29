@@ -541,3 +541,13 @@ Funcionalidade: Regressão pós-migração
 ## CT-B → `05-casos-de-teste-browser.md`
 
 O gate de CT-B **passa**: as 3 telas de auth dependem de JavaScript externo para renderizar o widget captcha. O que só o navegador prova: o widget renderiza, o iframe aparece, o token é capturado pelo Alpine. Ver `05`.
+
+## Cortes na implementação (2026-08-29)
+
+| CT | Motivo |
+|---|---|
+| CT-04 (env vars do pacote como fallback) | ADR-08: as env vars do pacote são IGNORADAS. Substituído por CT-03 reforçado: `RECAPTCHA_V2_SITEKEY` preenchido + kit desligado ⇒ driver sem chave. |
+| CT-22, CT-23 (arquivos removidos) | ADR-09: `CampoAntiRobo` e `ProvedorAntiRobo` mantidos. CT-24 (blade) coberto pelo diff, sem caso. |
+| — | Acrescentados: CT-07b (ambiente local × opt-in `local`, 4 linhas), CT-13 valor limite (pontuação igual ao limiar passa), CT-19 validação 0..1, "escuta o evento de redefinição em cada view publicada". |
+
+Mapeamento `04` → `tests/Kit/ProtecaoAntiRoboTest.php`: 94 casos (datasets expandidos), 405 asserções, todos verdes.

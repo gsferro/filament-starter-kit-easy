@@ -1523,6 +1523,8 @@ it('não deixa nenhuma superfície de provedor fora do enum', function (): void 
         'login_anti_robo_provedor',
         'login_anti_robo_chave_do_site',
         'login_anti_robo_chave_secreta',
+        'login_anti_robo_pontuacao_minima',
+        'login_anti_robo_local',
     ];
 
     expect(array_values(array_diff($gravadas, $propriedadesDoEnum, $excecoesDasPropriedades)))->toBe([]);

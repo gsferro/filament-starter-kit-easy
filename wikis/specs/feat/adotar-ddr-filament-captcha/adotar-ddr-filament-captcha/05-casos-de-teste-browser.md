@@ -215,8 +215,10 @@ As 3 telas de auth carregam script externo (Google reCAPTCHA, Cloudflare Turnsti
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | Widget renderiza nas 3 telas | | | |
-| 2 | Turnstile renderiza | | | |
-| 3 | reCAPTCHA v3 é invisível | | | |
-| 4 | Widget persiste após erro | | | |
-| 5 | Proteção desligada = sem script | | | |
+| 1 | Widget renderiza nas 3 telas | reCAPTCHA v2 com chaves de teste do Google em login, recuperação e registro aberto | sim | `tests/Browser/ProtecaoAntiRoboTest.php` · CT-B01/B02/B03 (`renderiza o widget recaptcha na tela de ...`) |
+| 2 | Turnstile renderiza | chaves de teste do Cloudflare (`1x000...AA`) no login; **e** chaves reais do solicitante (`0x4AAAAAAEg-8n2jt9JkRG14`) em `localhost:8765` com `local` ligado | sim | CT-B05 `renderiza o widget turnstile na tela de login`; teste manual via Playwright (2026-08-29, screenshot `turnstile-login.png`) |
+| 3 | reCAPTCHA v3 é invisível | badge `.grecaptcha-badge` presente, nenhum `iframe[title="reCAPTCHA"]`, container de 0 px (`assertPresent`) | sim | `renderiza o recaptcha v3 invisivel, com badge e sem caixa` |
+| 4 | Widget persiste após erro | submit vazio → iframe continua (`wire:ignore` da view publicada) | sim | CT-B04 `mantem o widget visivel apos erro de validacao` |
+| 5 | Proteção desligada = sem script | sete telas sem host de script nem `anti_robo` | sim (camada Kit, não browser) | `tests/Kit/ProtecaoAntiRoboTest.php` · `não carrega script de provedor nenhum ...` — HTTP prova ausência no HTML; browser não acrescenta oráculo |
+
+Suíte: `php artisan test tests/Browser/ProtecaoAntiRoboTest.php` → 6 passed (90 s), após `npm run build` + `view:cache`.

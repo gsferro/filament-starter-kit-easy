@@ -256,3 +256,106 @@ banco quando `login_anti_robo_habilitado` estiver ativo.
 - `.env.example`
 - `config/captcha.php` (publicado do pacote)
 - `app/Support/CaptchaBridge.php`
+
+---
+
+## ADR-07: Em `APP_ENV=local` a proteção fica desligada, salvo opt-in `local`
+
+**Status**: Aceita
+**Data**: 2026-08-29
+
+### Contexto
+
+Pedido do usuário durante a implementação: "+1 config de usar no local, caso ele queira ter o
+recaptcha sendo aplicado quando rodar localmente. use `app()->isLocal()`". Chave de provedor é presa
+ao domínio: a de produção não aceita `localhost`, e quem desenvolve com `KIT_ANTI_ROBO=true` no
+`.env` (ou com o banco copiado de produção) veria "ERROR for site owner: Invalid domain" no lugar
+da caixa — com o campo obrigatório e impreenchível, nas três telas de entrada.
+
+### Decisão
+
+Quinta condição em `ConfiguracaoDoLogin::antiRobo()`, depois de `habilitado`:
+`if (app()->isLocal() && ! config('kit.login.anti_robo.local')) return null;`. Propriedade
+`login_anti_robo_local` (bool, default `false`) nas Settings, env `KIT_ANTI_ROBO_LOCAL`, toggle
+"Aplicar também em ambiente local" na tela, visível só com a proteção ligada.
+
+### Alternativas Consideradas
+
+1. **Deixar como está e documentar "desligue no local"** — descartado: a pessoa precisaria mexer no
+   banco/`.env` a cada troca de ambiente, e o defeito aparece justamente em quem clonou produção.
+2. **Detectar `localhost` no request em vez de `APP_ENV`** — descartado: o requisito nomeou
+   `app()->isLocal()`, e `APP_ENV` é a fronteira que o Laravel já usa para todo o resto.
+
+### Consequências
+
+- **Positivas**: `composer create-project` + `KIT_ANTI_ROBO=true` continua com login usável no local;
+  quem quer testar liga um toggle.
+- **Negativas**: uma condição a mais na tabela de decisão (coberta por CT-07b, com `app()['env']`).
+
+---
+
+## ADR-08: Manager do kit em vez de bridge no boot (substitui a mecânica da ADR-02)
+
+**Status**: Aceita — refina ADR-02
+**Data**: 2026-08-29
+
+### Contexto
+
+A ADR-02 desenhou `CaptchaBridge::aplicar()` chamado após `aplicarNaConfig()`, projetando
+`kit.login.anti_robo.*` para `config('captcha.*')` no boot. Dois problemas apareceram ao
+implementar: a ordem (o bridge precisa rodar depois do mapa e antes de qualquer uso do pacote) e
+o `config()->set()` em runtime — que é como os 90+ casos de teste ligam a proteção — não passa pelo
+bridge.
+
+### Decisão
+
+`App\Support\GerenciadorAntiRobo extends CaptchaManager`, registrado como singleton no
+`AppServiceProvider` (vence o do pacote porque app providers registram depois dos descobertos).
+`getDefaultDriver()` devolve `ConfiguracaoDoLogin::antiRobo()`; `createDriver()` escreve
+`captcha.{driver}.sitekey|secret|score` a partir de `ConfiguracaoDoLogin` **no momento de criar o
+driver** (por request, sem o cache de `$drivers` do pai) e devolve o driver embrulhado em
+`VerificacaoAntiRobo` (ADR-03). Desligado, sitekey e secret vão `null` — o próprio componente do
+pacote se esconde e a regra dele não verifica.
+
+As env vars do pacote (`CAPTCHA_DRIVER`, `RECAPTCHA_V2_SITEKEY`, ...) passam a ser **ignoradas**
+(a ADR-06 previa fallback): duas fontes para a mesma resposta é o defeito que `.ai/rules/config.md`
+registra. CT-03 prova que `RECAPTCHA_V2_SITEKEY` preenchido com o kit desligado não liga nada.
+
+### Consequências
+
+- **Positivas**: zero preocupação com ordem de boot; `config()->set()` em teste funciona; uma
+  classe a menos (`CaptchaBridge` não existe); o `config/captcha.php` não precisa ser publicado.
+- **Negativas**: `createDriver()` escreve na config como efeito colateral (marcado `ponytail:`);
+  `verify_url` continua vindo do config do pacote — é o único dado dele que o kit usa.
+
+---
+
+## ADR-09: `CampoAntiRobo` vira subclasse do `Captcha`; `ProvedorAntiRobo` fica, encolhido
+
+**Status**: Aceita — desvio de RQ-09
+**Data**: 2026-08-29
+
+### Contexto
+
+RQ-09 (derivado como "implícito" na decomposição, não das palavras do usuário) pedia remover
+`CampoAntiRobo.php` e `ProvedorAntiRobo.php` e criar `CaptchaField` + lista de drivers. Ao
+implementar, o menor diff era outro.
+
+### Decisão
+
+- `App\Filament\Forms\Components\CampoAntiRobo extends Ddr\FilamentCaptcha\Forms\Components\Captcha`:
+  mesma API `acrescentarA()`, as três telas de auth **não mudam uma linha**; o corpo encolheu de 173
+  para ~60 linhas (só `visible`, `required`, rótulo, seletores dos CT-B e a regra de reset).
+- `App\Support\ProvedorAntiRobo` continua sendo o enum dos provedores, com o `value` igual ao nome
+  do driver no pacote (`recaptcha_v2`, `recaptcha_v3`, `turnstile`, `hcaptcha`); perdeu
+  `urlDoScript()`, `urlDeVerificacao()` e `objetoJs()` (agora são do pacote) e ganhou
+  `RecaptchaV3` e `usaPontuacao()`. Rótulo em português e "onde criar as chaves" continuam nele —
+  o pacote não tem isso, e o `Select` da tela e o `helperText` precisam.
+- A blade própria `campo-anti-robo.blade.php` foi removida; as 4 views publicadas do pacote
+  receberam tema escuro + reset (ADR-05).
+
+### Consequências
+
+- **Positivas**: diff menor; `ConfiguracaoDoLogin::antiRobo()` mantém a assinatura
+  `?ProvedorAntiRobo`; testes e tela reaproveitam o enum.
+- **Negativas**: CT-22/CT-23 do `04` (arquivos removidos) deixam de fazer sentido — cortados.

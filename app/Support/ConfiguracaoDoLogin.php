@@ -161,8 +161,17 @@ final class ConfiguracaoDoLogin
      * em vez de cair no `recaptcha`: chave do Turnstile com widget do Google não renderiza, e o
      * resultado seria o mesmo campo impreenchível. Ver ADR-03 da wiki `recaptcha-nas-telas-publicas`.
      *
-     * Lida por request — no `->visible()` do campo e na regra de validação —, então pode viver na
-     * tela de Settings (`.ai/rules/settings.md`).
+     * Lida por request — no `->visible()` do campo, na regra de validação e no
+     * `App\Support\GerenciadorAntiRobo` que monta o driver do pacote —, então pode viver na tela
+     * de Settings (`.ai/rules/settings.md`).
+     *
+     * **Em ambiente local a proteção fica desligada, a menos que `local` esteja ligado.** Chave de
+     * provedor é presa ao domínio: a de produção não aceita `localhost`, e o widget renderizaria
+     * "ERROR for site owner: Invalid domain" na tela de quem está desenvolvendo — com o campo
+     * obrigatório e impreenchível. Quem quer ver o desafio no `APP_ENV=local` (com chaves que
+     * aceitam localhost) liga `KIT_ANTI_ROBO_LOCAL` ou o toggle da tela. `app()->isLocal()` e não
+     * `app()->environment('local')` — é o mesmo predicado, e é o que o requisito nomeou.
+     * ADR-07 da wiki `adotar-ddr-filament-captcha`.
      *
      * Sem log nos ramos normais: isto roda em todo render das três telas. Só o provedor
      * desconhecido loga, porque é o único estado que não é escolha nem normalidade.
@@ -170,6 +179,10 @@ final class ConfiguracaoDoLogin
     public static function antiRobo(): ?ProvedorAntiRobo
     {
         if (! config('kit.login.anti_robo.habilitado')) {
+            return null;
+        }
+
+        if (app()->isLocal() && ! config('kit.login.anti_robo.local')) {
             return null;
         }
 
@@ -199,9 +212,24 @@ final class ConfiguracaoDoLogin
         return trim((string) config('kit.login.anti_robo.chave_do_site'));
     }
 
-    /** A chave do servidor — SEGREDO. Só a regra de validação a lê, e nunca a loga. */
+    /** A chave do servidor — SEGREDO. Só o driver do pacote a lê, e o kit nunca a loga. */
     public static function chaveSecretaAntiRobo(): string
     {
         return trim((string) config('kit.login.anti_robo.chave_secreta'));
+    }
+
+    /**
+     * O limiar do reCAPTCHA v3: a pontuação (0,0 = robô, 1,0 = pessoa) abaixo da qual o envio é
+     * recusado. Só o driver `recaptcha_v3` do pacote a usa (`RecaptchaV3Driver::verify()`,
+     * `vendor/ddr/filament-captcha/src/Drivers/RecaptchaV3Driver.php:41-46`).
+     *
+     * `is_numeric()` e não `(float)`: chave presente e vazia no `.env` viraria `0.0`, que aceita
+     * qualquer token — o oposto de falha fechada (`.ai/rules/config.md`). 0,5 é o sugerido pelo Google.
+     */
+    public static function pontuacaoMinimaAntiRobo(): float
+    {
+        $valor = config('kit.login.anti_robo.pontuacao_minima');
+
+        return is_numeric($valor) ? (float) $valor : 0.5;
     }
 }

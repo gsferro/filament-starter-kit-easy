@@ -5,24 +5,21 @@ declare(strict_types=1);
 namespace App\Filament\Forms\Components;
 
 use App\Support\ConfiguracaoDoLogin;
-use App\Support\ProvedorAntiRobo;
 use Closure;
-use Filament\Forms\Components\Field;
+use Ddr\FilamentCaptcha\Forms\Components\Captcha;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use Throwable;
 
 /**
- * O desafio anti-robô das telas públicas — um campo para os três provedores e as três telas.
+ * O desafio anti-robô das telas públicas — o `Captcha` do `ddr/filament-captcha` com as regras do kit.
  *
  * ## O que ele é
  *
- * Um `Field` cuja view renderiza o widget do provedor (`App\Support\ProvedorAntiRobo`) e cuja
- * regra de validação leva o token que o widget devolveu ao `siteverify` do provedor, com a chave
- * secreta. `success: true` passa; qualquer outra coisa — token recusado, provedor fora do ar,
- * resposta 5xx — reprova com a mesma mensagem (falha FECHADA, ADR-04) e um `warning` distinto no
- * canal `autenticacao`.
+ * Uma subclasse do componente do pacote (`vendor/ddr/filament-captcha/src/Forms/Components/Captcha.php`).
+ * Widget, script, `siteverify` e a pontuação do reCAPTCHA v3 são do pacote; o kit acrescenta o que
+ * a wiki `recaptcha-nas-telas-publicas` decidiu e o pacote não faz: a decisão de aparecer vinda
+ * de `ConfiguracaoDoLogin::antiRobo()`, o rótulo de validação em português, os seletores que os
+ * testes de navegador usam, e a redefinição do widget depois de cada verificação. O driver que o
+ * pacote resolve é o do kit — `App\Support\GerenciadorAntiRobo`, com falha fechada e log.
  *
  * ## Por que `->visible()` e não um `if` na página
  *
@@ -34,30 +31,21 @@ use Throwable;
  * formulário. É esse detalhe que deixa a chave viver na tela de Settings (`.ai/rules/settings.md`),
  * e é por isso que as três páginas chamam `acrescentarA()` sempre, sem condição. ADR-05.
  *
- * ## Por que `->dehydrated(false)`
- *
- * `Register::register()` entrega `$this->form->getState()` a `handleRegistration()`, que no kit
- * vira `Convite::aceitar($data)` ou `RegistroAberto::registrar($data)`, que chegam a
- * `User::create()`. Uma chave a mais nesse array não é bem-vinda. O campo continua VALIDADO:
- * `isNeitherDehydratedNorValidated()` devolve `false` quando `isValidatedWhenNotDehydrated()` é
- * verdadeiro, que é o default (`HasState.php:796-810`). ADR-06.
+ * O pacote já faz `->dehydrated(false)` (ADR-06: o token não pode chegar a `User::create()`) e o
+ * `->required()` fica reafirmado aqui de propósito: o Laravel só executa regra de objeto ou
+ * closure quando o campo está presente, e sem `required()` um envio SEM token pularia a
+ * verificação inteira. É o mutante mais barato desta classe (M14 do `04`).
  *
  * ## O token é de uso único
  *
  * Depois de uma senha errada, o Filament re-renderiza o formulário e o widget continua marcado —
- * com um token que a nossa verificação já gastou. O segundo envio falharia por "token já usado".
- * Por isso a regra, em QUALQUER resultado, despacha `kit-anti-robo-redefinir`; a view escuta na
- * janela e chama `reset()` do provedor. ADR-06.
- *
- * ## `required()` não é redundante com a regra
- *
- * O Laravel só executa regra de closure quando o campo está presente; sem `required()`, um envio
- * SEM token pularia a verificação inteira. É o mutante mais barato desta classe (M14 do `04`).
+ * com um token que a verificação já gastou. Por isso há uma regra a mais, depois da do pacote,
+ * que em QUALQUER resultado despacha `kit-anti-robo-redefinir`; as views publicadas em
+ * `resources/views/vendor/filament-captcha/drivers/` escutam na janela e chamam `reset()` do
+ * provedor (o v3 pede um token novo). ADR-06.
  */
-final class CampoAntiRobo extends Field
+final class CampoAntiRobo extends Captcha
 {
-    protected string $view = 'filament.forms.components.campo-anti-robo';
-
     public const string EVENTO_REDEFINIR = 'kit-anti-robo-redefinir';
 
     public static function getDefaultName(): string
@@ -86,87 +74,16 @@ final class CampoAntiRobo extends Field
             ->hiddenLabel()
             ->validationAttribute('verificação anti-robô')
             ->visible(fn (): bool => ConfiguracaoDoLogin::antiRobo() !== null)
-            ->required()
-            ->dehydrated(false)
+            ->required(fn (): bool => ConfiguracaoDoLogin::antiRobo() !== null)
+            ->extraFieldWrapperAttributes(fn (): array => [
+                'class'          => 'fi-fo-anti-robo',
+                'data-anti-robo' => ConfiguracaoDoLogin::antiRobo()?->value,
+            ], merge: true)
             ->rules([
+                // Em qualquer resultado: o token foi gasto, o widget precisa de outro.
                 fn (): Closure => function (string $attribute, mixed $value, Closure $fail): void {
-                    $confirmado = $this->confirmarToken(is_string($value) ? $value : '');
-
-                    // Em qualquer resultado: o token foi gasto, o widget precisa de outro.
                     $this->getLivewire()->dispatch(self::EVENTO_REDEFINIR);
-
-                    if (! $confirmado) {
-                        $fail('Não foi possível confirmar que você não é um robô. Marque a caixa de novo e tente outra vez.');
-                    }
                 },
             ]);
-    }
-
-    /** Para a view. Só é chamado com o campo visível, ou seja, com `antiRobo()` não nulo. */
-    public function getProvedor(): ProvedorAntiRobo
-    {
-        return ConfiguracaoDoLogin::antiRobo() ?? ProvedorAntiRobo::Recaptcha;
-    }
-
-    /** Para a view. A chave PÚBLICA — a secreta não tem método aqui de propósito. */
-    public function getChaveDoSite(): string
-    {
-        return ConfiguracaoDoLogin::chaveDoSiteAntiRobo();
-    }
-
-    /**
-     * O `POST` ao `siteverify` do provedor. `true` só com HTTP 2xx E `success: true` — o Google
-     * responde 200 com `success: false` para token inválido, então `successful()` sozinho não basta.
-     *
-     * `timeout(5)` e sem `retry`: a pessoa está esperando numa tela pública, e três tentativas
-     * sobre um provedor caído triplicariam o tempo até o erro (ADR-04). `asForm()` porque o Google
-     * exige `application/x-www-form-urlencoded`; os outros dois aceitam os dois formatos.
-     *
-     * Nem o token nem a chave secreta entram no log — o token é credencial de uso único e a chave
-     * é segredo.
-     */
-    private function confirmarToken(string $token): bool
-    {
-        $provedor = $this->getProvedor();
-        $ip       = request()->ip();
-
-        try {
-            $resposta = Http::asForm()
-                ->timeout(5)
-                ->post($provedor->urlDeVerificacao(), [
-                    'secret'   => ConfiguracaoDoLogin::chaveSecretaAntiRobo(),
-                    'response' => $token,
-                    'remoteip' => $ip,
-                ]);
-        } catch (Throwable $e) {
-            Log::channel('autenticacao')->warning(
-                "[CampoAntiRobo@confirmarToken] Verificação anti-robô indisponível — envio recusado | provedor: {$provedor->value} - ip: {$ip}",
-                [
-                    'motivo'    => 'verificacao_indisponivel',
-                    'provedor'  => $provedor->value,
-                    'ip'        => $ip,
-                    'exception' => $e,
-                ],
-            );
-
-            return false;
-        }
-
-        if ($resposta->successful() && $resposta->json('success') === true) {
-            return true;
-        }
-
-        Log::channel('autenticacao')->warning(
-            "[CampoAntiRobo@confirmarToken] Token anti-robô recusado pelo provedor | provedor: {$provedor->value} - ip: {$ip}",
-            [
-                'motivo'   => $resposta->successful() ? 'token_invalido' : 'verificacao_indisponivel',
-                'provedor' => $provedor->value,
-                'ip'       => $ip,
-                'status'   => $resposta->status(),
-                'erros'    => $resposta->json('error-codes'),
-            ],
-        );
-
-        return false;
     }
 }

@@ -182,19 +182,26 @@ final class ConfiguracoesDoKit extends Settings
     // Proteção anti-robô ------------------------------------------------------
 
     /*
-     * Quatro propriedades, quatro linhas no mapa, uma migration — e a chave secreta em
+     * Seis propriedades, seis linhas no mapa, duas migrations — e a chave secreta em
      * `encrypted()`. Quem lê é `App\Support\ConfiguracaoDoLogin::antiRobo()`, por request, então
-     * a tela governa de verdade (`.ai/rules/settings.md`). Wiki `recaptcha-nas-telas-publicas`.
+     * a tela governa de verdade (`.ai/rules/settings.md`). Wikis `recaptcha-nas-telas-publicas` e
+     * `adotar-ddr-filament-captcha`.
      */
 
     public bool $login_anti_robo_habilitado;
 
-    /** Um `value` de `App\Support\ProvedorAntiRobo`. */
+    /** Um `value` de `App\Support\ProvedorAntiRobo` — o nome do driver no `ddr/filament-captcha`. */
     public string $login_anti_robo_provedor;
 
     public ?string $login_anti_robo_chave_do_site;
 
     public ?string $login_anti_robo_chave_secreta;
+
+    /** Limiar do reCAPTCHA v3, de 0 a 1. Os outros provedores ignoram. */
+    public float $login_anti_robo_pontuacao_minima;
+
+    /** Aplicar também com `APP_ENV=local`. Default false: chave de produção não aceita localhost. */
+    public bool $login_anti_robo_local;
 
     public static function group(): string
     {
@@ -346,10 +353,12 @@ final class ConfiguracoesDoKit extends Settings
             'login_rodape'            => 'kit.login.rodape',
             'login_vinculo_confirmar' => 'kit.login.vinculo_confirmar',
 
-            'login_anti_robo_habilitado'    => 'kit.login.anti_robo.habilitado',
-            'login_anti_robo_provedor'      => 'kit.login.anti_robo.provedor',
-            'login_anti_robo_chave_do_site' => 'kit.login.anti_robo.chave_do_site',
-            'login_anti_robo_chave_secreta' => 'kit.login.anti_robo.chave_secreta',
+            'login_anti_robo_habilitado'       => 'kit.login.anti_robo.habilitado',
+            'login_anti_robo_provedor'         => 'kit.login.anti_robo.provedor',
+            'login_anti_robo_chave_do_site'    => 'kit.login.anti_robo.chave_do_site',
+            'login_anti_robo_chave_secreta'    => 'kit.login.anti_robo.chave_secreta',
+            'login_anti_robo_pontuacao_minima' => 'kit.login.anti_robo.pontuacao_minima',
+            'login_anti_robo_local'            => 'kit.login.anti_robo.local',
         ];
     }
 

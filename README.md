@@ -226,6 +226,7 @@ Subir de 6 para 7 expôs **29 erros reais** no kit, e um deles era bug latente d
 - Lockscreen: bloqueio de sessão por inatividade (30 min), registrado nos 3 painéis — a tela de bloqueio usa o mesmo layout do login (Auth Designer), não o layout simples do Filament
 - Impersonate, log de autenticação, auditoria de alterações (owen-it)
 - Panel Switch: troca de painel pelo menu do usuário
+- **Proteção anti-robô opcional** (desligada por default): reCAPTCHA v2/v3, Turnstile ou hCaptcha nas telas de login, recuperação de senha e registro, via `ddr/filament-captcha` ([detalhes](#proteção-anti-robô))
 
 **Observabilidade e manutenção (painel infra)**
 - Spatie Health com checks de banco, cache, filas, agendador, disco (exceto no Windows), debug mode, ambiente, app otimizado e IA local
@@ -898,17 +899,26 @@ ramo.
 
 ## Proteção anti-robô
 
-As telas públicas de **login**, **recuperação de senha** e **registro** podem receber um desafio do tipo caixa (Google reCAPTCHA v2, Cloudflare Turnstile ou hCaptcha). A proteção nasce **desligada** e, quando desligada, as telas são exatamente as mesmas de antes — sem scripts externos e sem campos extras.
+As telas públicas de **login**, **recuperação de senha** e **registro** dos três painéis podem receber um desafio anti-robô. A proteção nasce **desligada** e, quando desligada, as telas são exatamente as mesmas de antes — sem scripts externos e sem campos extras.
 
-Quem tiver a permissão `View:ConfiguracoesDoKit` liga e configura o provedor em `/admin/configuracoes-do-kit`:
+Quem renderiza o widget e fala com o provedor é o pacote [`ddr/filament-captcha`](https://github.com/danie1net0/filament-captcha); o kit acrescenta o que o pacote não faz: a decisão de aparecer vem da tela de Settings, a falha é **fechada** (provedor fora do ar = envio recusado, não liberado), toda recusa vai para o canal `autenticacao`, e o widget se redefine depois de cada tentativa (o token é de uso único). Um provedor por vez:
 
-- provedor (`recaptcha`, `turnstile` ou `hcaptcha`);
-- chave do site (exibida no HTML);
-- chave secreta (criptografada no banco).
+| Provedor | Valor | Como é |
+|---|---|---|
+| Google reCAPTCHA v2 | `recaptcha_v2` | a caixa "não sou um robô" (padrão) |
+| Google reCAPTCHA v3 | `recaptcha_v3` | invisível; o Google devolve uma pontuação de 0 a 1 e o kit recusa abaixo da **pontuação mínima** (0,5 por padrão) |
+| Cloudflare Turnstile | `turnstile` | sem rastreamento, sem custo |
+| hCaptcha | `hcaptcha` | — |
 
-A verificação acontece no envio do formulário. Token ausente, recusado pelo provedor ou impossível de verificar → o formulário não avança e uma mensagem de `warning` vai para o canal `autenticacao`. O widget se reinicia sozinho depois de cada tentativa, porque o token é de uso único.
+Quem tiver a permissão `View:ConfiguracoesDoKit` liga e configura em `/admin/configuracoes-do-kit` › Login › Proteção anti-robô: provedor, chave do site (vai para o HTML), chave secreta (cifrada no banco, nunca exibida) e, para o v3, a pontuação mínima. No `.env` as mesmas chaves são `KIT_ANTI_ROBO`, `KIT_ANTI_ROBO_PROVEDOR`, `KIT_ANTI_ROBO_CHAVE_DO_SITE`, `KIT_ANTI_ROBO_CHAVE_SECRETA` e `KIT_ANTI_ROBO_PONTUACAO_MINIMA` — o banco vence. As env vars próprias do pacote (`CAPTCHA_DRIVER`, `RECAPTCHA_V2_SITEKEY`, ...) são ignoradas de propósito: uma configuração, uma dona.
 
-> O estudo de implantação e as alternativas recusadas estão em `wikis/specs/feat/recaptcha-nas-telas-publicas/recaptcha-nas-telas-publicas/`.
+Ligar não liga sozinho: sem as duas chaves, ou com provedor fora da lista, a proteção fica desligada (com aviso no log) — um campo obrigatório que ninguém consegue preencher trancaria o login de todo mundo, inclusive o seu.
+
+**Em ambiente local o desafio fica desligado por padrão**, mesmo com tudo configurado: chave de produção não aceita `localhost`, e o widget renderizaria um erro no lugar da caixa. Para ver o desafio com `APP_ENV=local` (com chaves que aceitam localhost, ou as [chaves de teste do Google](https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha.-what-should-i-do) / [do Cloudflare](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)), ligue `KIT_ANTI_ROBO_LOCAL=true` ou o toggle "Aplicar também em ambiente local" na mesma seção.
+
+Se você já usava a proteção antes da v0.22 com o valor `recaptcha`, a migration de settings converte para `recaptcha_v2` sozinha — rode `php artisan migrate`.
+
+> O estudo de adoção do pacote e as alternativas recusadas estão em `wikis/specs/feat/adotar-ddr-filament-captcha/adotar-ddr-filament-captcha/`; a decisão original de ter a proteção, em `wikis/specs/feat/recaptcha-nas-telas-publicas/recaptcha-nas-telas-publicas/`.
 
 ## Usuário ativo, inativo e excluído
 
@@ -2370,6 +2380,7 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | [syriable/filament-activitylog](https://packagist.org/packages/syriable/filament-activitylog) | log de atividades (spatie/laravel-activitylog) no Filament |
 | [bezhansalleh/filament-panel-switch](https://packagist.org/packages/bezhansalleh/filament-panel-switch) | troca de painel pelo menu do usuário |
 | [laravel/socialite](https://packagist.org/packages/laravel/socialite) | login social (Google, GitHub, LinkedIn, X), opt-in por provedor |
+| [ddr/filament-captcha](https://packagist.org/packages/ddr/filament-captcha) | desafio anti-robô nas telas públicas (reCAPTCHA v2/v3, Turnstile, hCaptcha), opt-in; o kit embrulha com falha fechada e log ([detalhes](#proteção-anti-robô)) |
 
 ### Observabilidade e manutenção
 

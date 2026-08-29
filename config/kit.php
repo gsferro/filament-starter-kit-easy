@@ -308,6 +308,10 @@ return [
     |
     | Só tem efeito com a multi-organização ligada: a demo É o cenário de
     | tenancy, e um Projeto sem tenant não demonstra isolamento nenhum.
+    |
+    | Fica no `.env` por decisão — não é configuração de operação do dia a dia;
+    | virar Settings é uma linha no mapa se algum dia precisar
+    | (`.ai/rules/settings.md`).
     */
 
     'demo' => (bool) env('KIT_DEMO', false),
@@ -539,10 +543,20 @@ return [
          * dos três painéis. Quem decide é `App\Support\ConfiguracaoDoLogin::antiRobo()`, o ponto
          * único; ninguém mais lê estas chaves.
          *
-         * `recaptcha` é o Google reCAPTCHA v2 (a caixa "não sou um robô"); `turnstile` é o da
-         * Cloudflare (sem rastreamento, sem custo); `hcaptcha` é o hCaptcha. Os três falam o mesmo
-         * protocolo, e é por isso que cabem numa chave só — ver `App\Support\ProvedorAntiRobo`.
-         * Valor fora da lista = proteção desligada, com aviso no canal `autenticacao`.
+         * Quem renderiza o widget e fala com o provedor é o pacote `ddr/filament-captcha`; o
+         * provedor é o nome do driver dele: `recaptcha_v2` (a caixa "não sou um robô"),
+         * `recaptcha_v3` (invisível, por pontuação), `turnstile` (Cloudflare, sem rastreamento e
+         * sem custo) ou `hcaptcha`. Ver `App\Support\ProvedorAntiRobo`. Valor fora da lista =
+         * proteção desligada, com aviso no canal `autenticacao`. As env vars PRÓPRIAS do pacote
+         * (`CAPTCHA_DRIVER`, `RECAPTCHA_V2_SITEKEY`, ...) são ignoradas de propósito: uma pergunta,
+         * uma dona (`.ai/rules/config.md`) — ver `App\Support\GerenciadorAntiRobo`.
+         *
+         * `pontuacao_minima` só vale para o reCAPTCHA v3: pontuação (0 = robô, 1 = pessoa) abaixo
+         * dela recusa o envio. `is_numeric` e não `(float)`: chave vazia viraria 0, que aceita tudo.
+         *
+         * `local`: com `APP_ENV=local` o desafio fica desligado por default — chave de produção não
+         * aceita localhost e o campo obrigatório ficaria impreenchível. Ligue para testar com
+         * chaves que aceitam localhost. Ver `ConfiguracaoDoLogin::antiRobo()`.
          *
          * `?:` no provedor, e não o segundo argumento do `env()`: chave presente e vazia devolve
          * string vazia, e o default nunca entraria (`.ai/rules/config.md`).
@@ -554,10 +568,12 @@ return [
          * banco vence este arquivo em tempo de execução.
          */
         'anti_robo' => [
-            'habilitado'    => filter_var(env('KIT_ANTI_ROBO', false), FILTER_VALIDATE_BOOLEAN),
-            'provedor'      => env('KIT_ANTI_ROBO_PROVEDOR') ?: 'recaptcha',
-            'chave_do_site' => env('KIT_ANTI_ROBO_CHAVE_DO_SITE'),
-            'chave_secreta' => env('KIT_ANTI_ROBO_CHAVE_SECRETA'),
+            'habilitado'       => filter_var(env('KIT_ANTI_ROBO', false), FILTER_VALIDATE_BOOLEAN),
+            'local'            => filter_var(env('KIT_ANTI_ROBO_LOCAL', false), FILTER_VALIDATE_BOOLEAN),
+            'provedor'         => env('KIT_ANTI_ROBO_PROVEDOR') ?: 'recaptcha_v2',
+            'chave_do_site'    => env('KIT_ANTI_ROBO_CHAVE_DO_SITE'),
+            'chave_secreta'    => env('KIT_ANTI_ROBO_CHAVE_SECRETA'),
+            'pontuacao_minima' => is_numeric(env('KIT_ANTI_ROBO_PONTUACAO_MINIMA')) ? (float) env('KIT_ANTI_ROBO_PONTUACAO_MINIMA') : 0.5,
         ],
     ],
 
@@ -576,6 +592,10 @@ return [
     | Lembre que o envio depende de MAIL_MAILER configurado (o default `log`
     | escreve o convite em storage/logs e não manda nada) e de um worker de
     | fila rodando, porque a notificação é enfileirável.
+    |
+    | Fica no `.env` por decisão — não é configuração de operação do dia a dia;
+    | virar Settings é uma linha no mapa se algum dia precisar
+    | (`.ai/rules/settings.md`).
     */
 
     'convites' => [

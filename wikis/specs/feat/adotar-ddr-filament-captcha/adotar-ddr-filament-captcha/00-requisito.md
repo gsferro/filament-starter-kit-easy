@@ -47,6 +47,24 @@
   - **Assumido**: manter as nossas e criar bridge no `aplicarNaConfig()` que mapeia para `captcha.*`
   - **Se negado**: migration de `.env` necessária + atualizar `.env.example` + documentar breaking change
 
+## Acréscimo do solicitante (2026-08-29, durante a implementação)
+
+> "lembre-se que ele vem desativado por padrão, so fica ativo quando é ativado pelo usuário do kit"
+> "adicione também +1 config de usar no local, caso ele queria ter o recpatcha sendo aplicado quando
+> rodar localmente. use app()->isLocal() como verificador ao implementar"
+> "vamos testar também o uso do outro driver Cloudflare Turnstile [...] o kit deve dar a opção de
+> escolher qual"
+
+| ID | Cláusula | Tipo |
+|----|----------|------|
+| RQ-14 | Proteção nasce desligada; só o usuário do kit liga | não-funcional (já coberto por R4) |
+| RQ-15 | Config `local` (env + Settings): em `app()->isLocal()` a proteção só vale com ela ligada | funcional → ADR-07 |
+| RQ-16 | Um provedor por vez, escolhido na tela; Turnstile testado com as chaves do solicitante | funcional → CT-B02, teste manual |
+
+**Resolução das ambiguidades acima**: RQ-04 → v3 é opção adicional, default segue `recaptcha_v2`
+(assumido confirmado). RQ-11 → env vars do kit mantidas; as do pacote são IGNORADAS, não fallback
+(ADR-08).
+
 ## Fora de Escopo (declarado)
 
 - Captcha de imagem (GD/Imagick) — fora do protocolo e do pacote
