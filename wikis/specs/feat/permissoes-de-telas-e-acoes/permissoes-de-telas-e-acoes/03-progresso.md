@@ -263,7 +263,7 @@ Nenhum achado exigiu volta ao step 4 nem ao passo do PRD. Um ciclo, sem reciclag
 
 ## Blockers
 
-<!-- vazio -->
+Nenhum.
 
 ## Desvios do Plano
 

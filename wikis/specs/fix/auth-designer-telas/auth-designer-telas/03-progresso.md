@@ -38,7 +38,7 @@
 - [x] `vendor/bin/phpstan analyse --no-progress`
 - [x] `composer test:browser` — 33/38, 5 pulados, 0 falhas
 - [x] Roteiro "Desenhado × Implementado" do `05` preenchido
-- [ ] `git commit` + `git push -u origin fix/auth-designer-telas`
+- [x] `git commit` + `git push -u origin fix/auth-designer-telas` — PR #21 mergeada em `main`, commit `541ff20`
 
 ## Degradações de ferramenta declaradas
 

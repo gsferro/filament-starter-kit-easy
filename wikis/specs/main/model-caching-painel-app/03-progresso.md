@@ -22,3 +22,14 @@
 - [ ] `/ponytail:ponytail-review` no diff
 - [ ] `vendor/bin/pest --parallel --tia`
 - [x] `git commit` dos arquivos alterados individualizados — commitado e mergeado em `main` (`git branch --no-merged main` vazio)
+
+## Blockers
+
+Nenhum.
+
+## Retrospectiva
+
+- Entregou a trait `ModeloCacheavel` em `User`, `Convite` e `Projeto`, a rule em `.ai/rules/models.md`
+  e `tests/Kit/ModelCachingTest.php` (CT-01 a CT-05) provando os dois estados de `MODEL_CACHE_ENABLED`.
+- `ponytail-review` e `pest --parallel --tia` não foram rodados antes do merge; ficam como dívida
+  registrada, não como blocker.

@@ -103,9 +103,10 @@ PHPStan level 6 limpo, Pint limpo, árvore limpa depois de duas execuções da s
       a delegar; `tenant()` e `usuario()` **reusados**
 - [x] `it('cria o cenário completo da demo, de forma idempotente')` ganha a asserção do
       papel da Ana, com contagem `=== 1` (a idempotência)
-- [ ] CT-16 visto falhando com o `LogicException` literal — **não** executado nessa ordem,
-      ver Desvios
-- [ ] CT-12 visto falhando antes da subtração — **não** executado nessa ordem, ver Desvios
+- [ ] ~~CT-16 visto falhando com o `LogicException` literal~~ — não cumprível retroativamente:
+      **não** executado nessa ordem, ver Desvios
+- [ ] ~~CT-12 visto falhando antes da subtração~~ — não cumprível retroativamente: **não**
+      executado nessa ordem, ver Desvios
 
 ## Verificação Final
 

@@ -108,6 +108,18 @@
 | **L3** | audit por linha | ADR-04 |
 | **L4** | conteúdo do CSV exportado, célula por célula | o oráculo escolhido é a declaração das colunas, que é onde o defeito entra |
 
+## Blockers
+
+Nenhum.
+
+## Retrospectiva
+
+- Nada de mecanismo próprio: as actions nativas do Filament fizeram RQ-08 a RQ-11 sozinhas; a entrega
+  ficou no que o vendor não faz — fronteira de organização, `authorize()`, rastro e retenção — em duas
+  classes-base (`ImportadorDoKit`, `ExportadorDoKit`).
+- 4 resources ligados, 4 comentados, 1 fora; 25 casos verdes (23 de componente + 2 de browser) e a
+  convenção gravada em `.ai/rules/filament.md`, como a RQ-20 pediu.
+
 ## Candidatos a Rule de Projeto
 
 **Um, e foi gravado** como parte do passo 7, em `.ai/rules/filament.md`:
