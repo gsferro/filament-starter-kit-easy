@@ -1,9 +1,12 @@
 <?php
 
+use App\Filament\Admin\Pages\ConfiguracoesDoKit;
 use App\Models\User;
 use App\Models\VinculoSocial;
 use App\Notifications\ConfirmarVinculoSocial;
 use App\Notifications\PrimeiroAcessoSocial;
+use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
+use App\Support\ConfiguracaoDoLogin;
 use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
@@ -11,6 +14,7 @@ use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Laravel\Socialite\Socialite;
+use Livewire\Livewire;
 
 /**
  * O vínculo entre a conta e a identidade no provedor — `wikis/specs/feat/vinculo-de-provedor-social/`.
@@ -176,4 +180,38 @@ it('nao abre sessao para conta existente pendente de aprovacao', function (): vo
     $this->get('/auth/google/callback')->assertRedirect(Filament::getPanel('app')->getLoginUrl());
 
     $this->assertGuest();
+})->group('kit');
+
+/**
+ * CT-V10 — o modo estrito gravado no Settings chega à config e ao ponto único de leitura.
+ *
+ * Os CT-V04/05/08 acima ligam o modo por `config()->set()`, o que prova o controller mas não a
+ * linha do `mapaDeConfiguracao()` — esquecê-la é o defeito silencioso de `.ai/rules/settings.md`:
+ * o toggle grava e não governa nada. `alinharConfiguracoesDoKit()` é o boot chamado à mão.
+ */
+it('leva o modo estrito gravado no settings para a config e para o ponto unico de leitura', function (): void {
+    $settings                          = app(SettingsDoKit::class);
+    $settings->login_vinculo_confirmar = true;
+    $settings->save();
+
+    alinharConfiguracoesDoKit();
+
+    expect(config('kit.login.vinculo_confirmar'))->toBeTrue()
+        ->and(ConfiguracaoDoLogin::vinculoExigeConfirmacao())->toBeTrue();
+})->group('kit');
+
+/** CT-V11 — o toggle da tela /admin/configuracoes-do-kit grava a propriedade. */
+it('grava o modo estrito pelo toggle da tela de configuracoes do kit', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->fillForm(['login_vinculo_confirmar' => true])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    app()->forgetInstance(SettingsDoKit::class);
+
+    expect(app(SettingsDoKit::class)->login_vinculo_confirmar)->toBeTrue()
+        ->and(configuracaoGravada('login_vinculo_confirmar'))->toBeTrue();
 })->group('kit');

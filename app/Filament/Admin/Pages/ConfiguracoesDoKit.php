@@ -278,7 +278,7 @@ class ConfiguracoesDoKit extends SettingsPage
             ->schema([
                 Select::make('mail_mailer')
                     ->label('Transporte')
-                    ->helperText('`log` só escreve em storage/logs — convite e lembrete não chegam a ninguém.')
+                    ->helperText('`log` só escreve em storage/logs — convite e lembrete não chegam a ninguém. Salvar aqui vale para o próximo request; um worker de fila em execução (`queue:work`) mantém a configuração antiga em memória — rode `php artisan queue:restart` para os e-mails enfileirados saírem pelo transporte novo.')
                     ->options(fn (): array => $this->comValorConfigurado(
                         [
                             'log'   => 'Log (não envia — escreve em storage/logs)',
