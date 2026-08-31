@@ -13,6 +13,16 @@
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
 
+# `wikis/specs/` é o histórico de planejamento DO KIT — 250 arquivos com as ADRs das
+# features que construíram o próprio kit. É o mesmo critério do `.github` acima, e a
+# mesma decisão que `KitUpdate::CAMINHOS_DO_KIT` já toma do outro lado: ele entrega os
+# dez documentos de topo de `wikis/` um a um e nunca a `specs/`. Sem esta linha o
+# `create-project` entregava o que o `kit:update` recusa entregar — e o agente do
+# projeto instalado varre 250 wikis alheias antes de escrever a primeira dele.
+# `wikis/*.md` NÃO entra aqui: a wiki de referência é material de trabalho de quem
+# instala, e o README a trata como tal.
+/wikis/specs export-ignore
+
 # `phpstan.neon`, `phpunit.xml` e `pint.json` NÃO entram aqui: os scripts `lint`,
 # `types:check` e `test` do composer.json seguem no dist e sem esses arquivos
 # nenhum deles roda no projeto instalado. Os três estão em

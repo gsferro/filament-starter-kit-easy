@@ -1345,6 +1345,8 @@ O kit já vem preparado para você desenvolver com um agente de código (Claude 
 
 É também a pasta onde **você** escreve o que for do seu projeto: `wikis/specs/{branch}/{feature}/` recebe uma pasta por feature, criada pela skill abaixo.
 
+> As `wikis/specs/` **do kit** — as ADRs das features que construíram o próprio kit, citadas ao longo deste README — ficam só no repositório do kit: o `.gitattributes` as marca com `export-ignore`, e o `kit:update` entrega apenas os documentos de topo de `wikis/`. No seu projeto a pasta `wikis/specs/` nasce vazia, para as suas features. Para consultar uma decisão citada aqui, veja o repositório: <https://github.com/gsferro/filament-starter-kit-easy>.
+
 ### As skills instaladas
 
 O [Laravel Boost](https://github.com/laravel/boost) está configurado (`boost.json`) para cinco agentes, com servidor MCP (`php artisan boost:mcp`) e nove skills sincronizadas — entre elas `laravel-best-practices`, `pest-testing`, `ai-sdk-development`, `tailwindcss-development`, `pulse-development`, `laravel-backup` e `blaze-optimize`.
