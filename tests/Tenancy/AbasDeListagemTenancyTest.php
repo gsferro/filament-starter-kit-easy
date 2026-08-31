@@ -9,7 +9,6 @@ use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
-use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 /**
@@ -109,17 +108,6 @@ it('[CT-10] sem organização corrente a query fecha e o badge é zero', functio
 it('[CT-12] a aba "Pendentes" de convites da Acme não mostra convite da Globex', function (): void {
     $daAcme   = ofertaPara('convidado.acme@example.com', $this->acme);
     $daGlobex = ofertaPara('convidado.globex@example.com', $this->globex);
-
-    /*
-     * O `tenant_id` do convite é carimbado com a organização CORRENTE na criação, e o valor
-     * passado à factory é descartado — comportamento pré-existente do kit, não desta feature
-     * (medido: `Convite::factory()->create(['tenant_id' => globex])` grava o id da Acme). Para
-     * o convite da Globex existir de verdade, o arranjo corrige a coluna no banco.
-     *
-     * Achado adjacente, registrado em `03-progresso.md` → Notas de Implementação.
-     */
-    DB::table('convites')->where('id', $daGlobex->getKey())->update(['tenant_id' => $this->globex->getKey()]);
-    $daGlobex->refresh();
 
     // A fonte antes da tela: se o recorte do Resource já estiver errado, o defeito não é da aba.
     expect(ConviteResource::getEloquentQuery()->pluck('email')->all())
