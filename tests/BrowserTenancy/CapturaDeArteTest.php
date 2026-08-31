@@ -4,6 +4,7 @@ use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Models\Projeto;
 use App\Models\Role;
 use App\Models\Tenant;
+use App\Settings\ConfiguracoesDoKit;
 use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
@@ -301,6 +302,58 @@ it('captura a aba Login das configurações do kit', function (): void {
         ->assertSee('Login social')
         ->assertSee('Rodapé da tela de login')
         ->screenshot(fullPage: false, filename: 'admin-configuracoes-login');
+})->group('browser', 'art');
+
+/**
+ * A seção "Proteção anti-robô" das configurações — e por que ela, e não a tela de login.
+ *
+ * A foto óbvia seria o widget na tela de login. Ela não serve: **todo provedor marca a própria
+ * chave de teste**. O Google desenha um banner vermelho sobre o widget ("This reCAPTCHA is for
+ * testing purposes only") e a Cloudflare uma faixa embaixo ("For testing only. If seen, report to
+ * site owner") — medido nos dois. Captura de README com aviso de erro ensina a coisa errada, e
+ * chave real com domínio autorizado é coisa que o kit não tem.
+ *
+ * Esta tela mostra o que interessa e não depende de terceiro: o toggle, o provedor, as duas chaves
+ * e a pontuação mínima do v3. É também onde o README manda ir para ligar a proteção.
+ *
+ * O provedor fica em `recaptcha_v3` — o default do kit — para a captura mostrar o campo de
+ * pontuação mínima, que só aparece com o v3.
+ */
+it('captura a seção Proteção anti-robô das configurações', function (): void {
+    /*
+     * A proteção LIGADA nas settings, porque os campos são condicionais: o provedor, as chaves e a
+     * pontuação mínima só existem no schema com `login_anti_robo_habilitado` verdadeiro
+     * (`ConfiguracoesDoKit.php:550`), e a pontuação, só com o v3. Sem isto a captura seria um
+     * toggle desligado e mais nada.
+     *
+     * As chaves são de demonstração e não saem daqui: a do site vai para a foto, a secreta é
+     * cifrada e a tela nunca a exibe.
+     */
+    $settings                                = app(ConfiguracoesDoKit::class);
+    $settings->login_anti_robo_habilitado    = true;
+    $settings->login_anti_robo_provedor      = 'recaptcha_v3';
+    $settings->login_anti_robo_chave_do_site = '6LcExemploDaDocumentacaoDoKit000000000';
+    $settings->login_anti_robo_chave_secreta = '6LcExemploSecretoDaDocumentacao00000000';
+    $settings->save();
+
+    // Aquece o /admin, e só ele — mesma razão do cenário da aba Login acima.
+    $this->get('/admin/configuracoes-do-kit');
+
+    /*
+     * `screenshotElement()`, e não a captura da viewport.
+     *
+     * A seção fica abaixo da dobra na aba Login, e as duas tentativas de trazê-la para cima
+     * falharam: clicar nela a COLAPSA (as seções nascem abertas, `->collapsible()` sem
+     * `->collapsed()`), e clicar em "Login social" para fechar a de cima não colapsa nada — o
+     * texto do título não é o gatilho. Capturar o elemento resolve sem depender de layout.
+     *
+     * O seletor vem do `id` que o Filament dá à Section pelo rótulo.
+     */
+    visit('/admin/configuracoes-do-kit')
+        ->resize(1400, 875)
+        ->click('Login')
+        ->assertSee('Pontuação mínima')
+        ->screenshotElement('.fi-sc-section:has-text("Proteção anti-robô")', 'admin-anti-robo');
 })->group('browser', 'art');
 
 it('captura o bloco Definir senha por e-mail no perfil', function (): void {

@@ -19,7 +19,7 @@ return [
     | contra a árvore de trabalho, que é mais ruidosa.
     */
 
-    'version' => '0.21.1',
+    'version' => '0.22.0',
 
     /*
     |--------------------------------------------------------------------------
@@ -544,9 +544,14 @@ return [
          * único; ninguém mais lê estas chaves.
          *
          * Quem renderiza o widget e fala com o provedor é o pacote `ddr/filament-captcha`; o
-         * provedor é o nome do driver dele: `recaptcha_v2` (a caixa "não sou um robô"),
-         * `recaptcha_v3` (invisível, por pontuação), `turnstile` (Cloudflare, sem rastreamento e
-         * sem custo) ou `hcaptcha`. Ver `App\Support\ProvedorAntiRobo`. Valor fora da lista =
+         * provedor é o nome do driver dele: `recaptcha_v3` (invisível, por pontuação — o
+         * DEFAULT), `recaptcha_v2` (a caixa "não sou um robô"), `turnstile` (Cloudflare, sem
+         * rastreamento e sem custo) ou `hcaptcha`.
+         *
+         * O default ser o v3 NÃO liga nada: ele só diz qual provedor vale se alguém habilitar a
+         * proteção E gravar as duas chaves. Sem isso o campo não aparece em tela nenhuma — é a
+         * mesma decisão de `habilitado => false` logo acima. O v3 é o default porque, uma vez
+         * ligado, é o que não pede clique de quem entra. Ver `App\Support\ProvedorAntiRobo`. Valor fora da lista =
          * proteção desligada, com aviso no canal `autenticacao`. As env vars PRÓPRIAS do pacote
          * (`CAPTCHA_DRIVER`, `RECAPTCHA_V2_SITEKEY`, ...) são ignoradas de propósito: uma pergunta,
          * uma dona (`.ai/rules/config.md`) — ver `App\Support\GerenciadorAntiRobo`.
@@ -570,7 +575,7 @@ return [
         'anti_robo' => [
             'habilitado'       => filter_var(env('KIT_ANTI_ROBO', false), FILTER_VALIDATE_BOOLEAN),
             'local'            => filter_var(env('KIT_ANTI_ROBO_LOCAL', false), FILTER_VALIDATE_BOOLEAN),
-            'provedor'         => env('KIT_ANTI_ROBO_PROVEDOR') ?: 'recaptcha_v2',
+            'provedor'         => env('KIT_ANTI_ROBO_PROVEDOR') ?: 'recaptcha_v3',
             'chave_do_site'    => env('KIT_ANTI_ROBO_CHAVE_DO_SITE'),
             'chave_secreta'    => env('KIT_ANTI_ROBO_CHAVE_SECRETA'),
             'pontuacao_minima' => is_numeric(env('KIT_ANTI_ROBO_PONTUACAO_MINIMA')) ? (float) env('KIT_ANTI_ROBO_PONTUACAO_MINIMA') : 0.5,

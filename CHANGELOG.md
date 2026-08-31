@@ -37,6 +37,83 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   namespace que o caminho exige. Só aviso, nada quebrava; mas é a primeira linha que quem instala
   o kit lê depois do `Generating optimized autoload files`.
 
+### Segurança
+Achados de uma rodada da skill `filament-security-audit` do **Filament Blueprint** sobre `app/`,
+`config/`, `routes/` e os três painéis. Wiki `travas-de-escalada-de-papeis`.
+
+- **Auto-promoção a `master_global` pela tela de papéis (Critical, explorável).** O teto de escalada
+  casa o administrador da instalação por **nome**, e a mesma tela edita nome e exclui registro: com
+  `Update:Role` — que o papel `admin` tem, porque recebe a matriz inteira do painel — bastava
+  renomear `master_global` para outra coisa e depois renomear o próprio papel. `RolePolicy` passa a
+  guardar o registro (é ela que toda Action do Filament consulta) e o campo `name` recusa o nome
+  reservado, com caixa e espaços normalizados — o `unique` é case-insensitive em MySQL e sensível
+  em SQLite.
+- **Cunhagem de papel de outro painel (High, explorável).** O editor expõe o Select de painel e a
+  matriz dos três, e a concessão só barrava pelo nome: um `admin` criava papel `painel = infra` e o
+  atribuía a si mesmo. Quem não é `master_global` passa a conceder apenas papel **sem painel**, do
+  **painel de negócio** (o `->default()`) ou de painel que ele **próprio acessa**. A trava é na
+  escrita, nos dois métodos que os três caminhos de concessão já consumiam — nenhuma tela mudou.
+  Fecha também `admin_app` concedendo papel de `/admin`.
+- **BulkAction não consultava a policy do registro.** `BulkAction` pergunta só o verbo `*Any` e
+  ignora a policy de cada registro selecionado sem `authorizeIndividualRecords()`
+  (`Concerns/CanBeAuthorized.php:252-266`): a exclusão em massa apagava o papel do administrador da
+  instalação com `RolePolicy::delete()` fechado, e o teste de exclusão individual estava verde.
+  Fechado nos dois Resources, com varredura em `tests/Kit/AderenciaAoBlueprintTest.php` que reprova
+  `BulkAction::make()` sem a declaração.
+- **Convite consumido sem consentimento no login social (Medium, explorável).** O `?token=` entra
+  pela rota GET pública do `redirecionar()`, sem CSRF — com SSO silencioso do provedor o convite era
+  aceito **sem clique da vítima** (o `state` do Socialite protege o callback, não o início do
+  fluxo). E o aceite rodava **antes** da barreira de conta indisponível, então conta desativada ou
+  excluída queimava o convite sem entrar. Conta **existente** deixa de consumir convite nesse
+  caminho; o aceite fica na tela autenticada **Convites recebidos**, que exige o dono e pede
+  confirmação. Conta **nova** por convite não mudou.
+- **Link de confirmação de vínculo social reutilizável por 30 minutos (Low).** `ValidateSignature`
+  confere assinatura e expiração, nunca unicidade, e `VinculoSocial::vincular()` é `firstOrCreate` —
+  o reuso não deixava rastro. Uso único por `Cache::add()` atômico, com TTL igual ao da assinatura.
+- **`ImportadorDoKit` consulta a policy do model por linha**, no contexto da organização e com o
+  operador da importação (`imports.user_id`): o `Importer` do Filament roda sem policy, e
+  `Import:Projeto` abria a Action sem autorizar criar ou alterar cada linha.
+- **`->strictAuthorization()` nos três painéis** — falta de policy passa a lançar em vez de liberar.
+- **`RestrictsFileUploadsToSchemaComponents` em `DefinirSenhaPorEmail`**, que não tem campo de
+  upload — fecha o canal `_startUpload` do Livewire.
+
+### Adicionado
+- **Abas de recorte nas listagens de usuários e convites**, nos painéis `/admin` e `/app` — nível
+  (a) do estudo `advanced-tables`, entregue com o mecanismo nativo (`getTabs()`), sem pacote e sem
+  tabela. Usuários ganham "Todos" e "Pendentes de aprovação", esta com badge contado pela query do
+  Resource (no `/app` ele carrega o recorte de organização). Convites ganham "Todos", "Pendentes" e
+  "Aceitos". O recorte tem **uma** definição, compartilhada com o filtro que já existia, e um caso
+  de teste reprova quem escrever a query de novo dentro do `getTabs()`. `/infra/ai-runs` fica de
+  fora de propósito. Wiki `abas-nas-listagens`.
+- **Captura de tela da proteção anti-robô** no README (`art/admin-anti-robo.png`), gerada pelo
+  `composer art`. É a seção das configurações, e não o widget na tela de login: **todo provedor
+  marca a própria chave de teste** — o Google desenha um banner vermelho sobre o widget e a
+  Cloudflare uma faixa embaixo, medido nos dois —, e captura de README com aviso de erro ensina a
+  coisa errada.
+
+### Alterado
+- **O provedor anti-robô padrão passou de `recaptcha_v2` para `recaptcha_v3`** — uma vez ligado, é o
+  que não pede clique de quem entra. **Isto não liga nada**: o padrão só diz qual provedor vale se
+  alguém habilitar a proteção E gravar as duas chaves; ela continua nascendo desligada, e sem as
+  chaves segue desligada mesmo com o toggle ligado. Instalação existente não muda — o valor já
+  gravado nas settings vence o default.
+- **`wikis/specs/` não vai mais no pacote distribuído.** `git archive` respeitava só `.github`,
+  `CHANGELOG.md` e `.styleci.yml`, então quem instalava por `create-project` recebia 250 arquivos
+  com as ADRs das features que construíram o próprio kit — e a skill `feature-wiki` manda varrer
+  essa pasta antes de escrever a primeira wiki do projeto. É a decisão que `KitUpdate::CAMINHOS_DO_KIT`
+  já tomava do outro lado (ele entrega os documentos de topo de `wikis/` um a um e nunca a `specs/`);
+  agora os dois lados concordam. `wikis/*.md` continua no dist.
+
+### Corrigido
+- **`ofertaPara()` entrega o convite na organização que promete.** Com o painel bootado, o Filament
+  carimba o `tenant_id` do registro com a organização corrente e descarta o valor passado
+  (`Resources\Resource\Concerns\BelongsToTenant::observeTenancyModelCreation()` faz
+  `associate($tenant)` sem checar se a coluna já veio preenchida). O comportamento é **do vendor e
+  fail-safe** — dentro do `/app` um payload forjado não cria registro de outra organização —, e o
+  modo de falha era vermelho **longe da causa**: "o registro da Globex apareceu na listagem da Acme",
+  que se lê como vazamento. `CarimboDeOrganizacaoTest` mede o comportamento direto e a rule de testes
+  nomeia a armadilha. Wiki `convite-carimba-organizacao-corrente`.
+
 ## [0.21.1] - 2026-08-26
 Correções que a validação de instalação (8 instalações reais, terminal + navegador) e o uso real do
 `bp:off` expuseram. Nenhuma muda API; todas fecham uma fresta de instalação ou de sincronia.
