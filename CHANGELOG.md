@@ -2,7 +2,7 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
-## [Não lançado]
+## [0.22.0] - 2026-08-31
 
 ### Adicionado
 - **Proteção anti-robô sobre o pacote `ddr/filament-captcha`**, com **reCAPTCHA v3** como quarto
