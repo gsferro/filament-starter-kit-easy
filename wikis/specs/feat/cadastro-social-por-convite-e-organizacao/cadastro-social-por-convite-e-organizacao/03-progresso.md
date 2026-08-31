@@ -26,7 +26,10 @@ Implementada em 2026-08-26, na branch da PR #45, durante a validação real com 
 - [ ] (a) conta vinculada entra pelo Google em `/app/acme`
 - [ ] (b) `/app/register?org=acme` → GitHub → conta nova na `acme`
 - [ ] (c) sem org → recusa
-- [ ] (d) convite em `globex` → GitHub → membro
+- [ ] ~~(d) convite em `globex` → GitHub → membro~~ — **não vale mais**: desde 2026-08-31 conta
+  existente não consome convite na volta do provedor. O roteiro equivalente é: convite em `globex`
+  → GitHub → entra **sem** virar membro, e o convite aparece pendente em `ConvitesRecebidos`, onde
+  é aceito. Ver "Desvios do Plano" abaixo.
 
 ## 7. README
 - [x] PT/EN — parágrafo da multi-organização na seção "Vínculo com o provedor" reescrito
@@ -50,7 +53,16 @@ Não invocada como skill; o plano já é o mínimo (transporte de contexto + dua
 - nenhum.
 
 ## Desvios do Plano
-- Nenhum: o plano previa `criarContaPorConvite()` e `aceitarConviteSeHouver()`, e é o que existe.
+- Nenhum na entrega original: o plano previa `criarContaPorConvite()` e `aceitarConviteSeHouver()`, e
+  foi o que existiu.
+- **2026-08-31 — `aceitarConviteSeHouver()` removido.** A auditoria com o Filament Blueprint achou
+  dois defeitos nele (F-03: convite queimado por conta indisponível, porque o aceite rodava antes da
+  barreira; F-04: aceite sem consentimento, porque o `?token=` entra por rota GET pública sem CSRF e
+  o SSO silencioso dispensa o clique). O método virou `avisarConvitePendente()`, que só registra. É
+  o "Se negado" da ambiguidade RQ-04 do `00-requisito.md` sendo acionado — a premissa "é a mesma
+  prova do formulário" era falsa. Conta **nova** por convite não mudou (RQ-04 preservada nessa
+  metade). Teste afetado: `tests/Tenancy/CadastroSocialPorOrganizacaoTenancyTest.php` CT-C08 inverte
+  o oráculo. Wiki da correção: `wikis/specs/feat/travas-de-escalada-de-papeis/`.
 
 ## Notas de Implementação
 - `Convite::factory()` em teste com tenancy: `Role::query()->where('name', …)->value('id')` em vez de `Role::findByName()`, que aplica o filtro de team do Spatie.

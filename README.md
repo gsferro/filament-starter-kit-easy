@@ -697,11 +697,17 @@ já for de **outra** conta a confirmação recusa — uma identidade de provedor
 (com o registro aberto ligado), e o clique carrega o contexto da tela até a volta do OAuth: com a
 multi-organização, `/app/register?org=acme` cria a conta **na `acme`**, com o papel do registro
 aberto nela — a mesma porta do formulário, com as mesmas recusas (organização inexistente ou
-fechada). A partir do **link de um convite** (`?token=`), entrar pelo provedor **aceita o convite**:
-a conta nasce (ou a existente ganha) a organização e o papel do convite, e o convite é consumido —
-desde que o e-mail verificado do provedor seja o e-mail convidado; se for outro, recusa e o convite
-fica intacto. Sem senha em nenhum dos casos: o provedor provou o e-mail. Conta **existente** entra
-normalmente em qualquer modo; conta nova **sem** `?org=` na multi-organização continua recusada.
+fechada). A partir do **link de um convite** (`?token=`), entrar pelo provedor **cria a conta pelo
+convite**: ela nasce com a organização e o papel do convite, e o convite é consumido — desde que o
+e-mail verificado do provedor seja o e-mail convidado; se for outro, recusa e o convite fica intacto.
+Sem senha em nenhum dos casos: o provedor provou o e-mail. Conta nova **sem** `?org=` na
+multi-organização continua recusada.
+
+Conta **existente** entra normalmente em qualquer modo, mas **não consome convite** nesse caminho: o
+`?token=` viaja numa rota GET pública sem CSRF, e com SSO silencioso do provedor o aceite aconteceria
+sem clique da pessoa. Quem já tem conta aceita o convite na tela autenticada **Convites recebidos**,
+que exige o dono e pede confirmação. Auditoria e decisão em
+`wikis/specs/feat/travas-de-escalada-de-papeis/` (F-03 e F-04).
 Decisões e casos: `wikis/specs/feat/cadastro-social-por-convite-e-organizacao/`.
 
 Decisões e casos: `wikis/specs/feat/vinculo-de-provedor-social/`.
