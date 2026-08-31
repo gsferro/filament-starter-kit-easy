@@ -8,6 +8,7 @@ use App\Filament\Admin\Resources\Roles\Pages\CreateRole;
 use App\Filament\Admin\Resources\Roles\Pages\EditRole;
 use App\Filament\Admin\Resources\Roles\Pages\ListRoles;
 use App\Filament\Admin\Resources\Roles\Pages\ViewRole;
+use App\Support\AdministradorDaInstalacao;
 use App\Support\Paineis;
 use App\Support\Papeis;
 use BezhanSalleh\FilamentShield\Facades\FilamentShield;
@@ -113,7 +114,15 @@ class RoleResource extends Resource
                                         modifyRuleUsing: fn (Unique $rule): Unique => Utils::isTenancyEnabled() ? $rule->where(Utils::getTenantModelForeignKey(), Filament::getTenant()?->id) : $rule
                                     )
                                     ->required()
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    /*
+                                     * O nome do papel super-admin é reservado. O `unique()`
+                                     * acima só impede DUPLICAR o nome; sozinho ele deixa passar
+                                     * o caminho de duas edições — renomear o `master_global`
+                                     * para outra coisa e depois renomear o próprio papel para
+                                     * `master_global`. F-01 da auditoria Blueprint.
+                                     */
+                                    ->rule(AdministradorDaInstalacao::regraDeNomeDePapel()),
 
                                 Select::make('guard_name')
                                     ->label(__('filament-shield::filament-shield.field.guard_name'))

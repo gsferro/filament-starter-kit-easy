@@ -18,6 +18,7 @@ use Illuminate\Auth\Events\Failed;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
@@ -190,7 +191,7 @@ final class LoginSocialController extends Controller
             }
 
             $vinculo->registrarAcesso();
-            $this->aceitarConviteSeHouver($contexto, $user, $email, $provedor);
+            $this->avisarConvitePendente($contexto, $user, $email, $provedor);
 
             Log::channel('autenticacao')->info(
                 "[LoginSocialController@retorno] Conta reconhecida pelo vínculo | provedor: {$provedor->value} - user: {$user->getKey()}",
@@ -200,7 +201,7 @@ final class LoginSocialController extends Controller
             $user = $this->contaCom($email);
 
             if ($user instanceof User) {
-                $this->aceitarConviteSeHouver($contexto, $user, $email, $provedor);
+                $this->avisarConvitePendente($contexto, $user, $email, $provedor);
             }
 
             if (! $user instanceof User) {
@@ -499,6 +500,24 @@ final class LoginSocialController extends Controller
             return $redirecionamento;
         }
 
+        /*
+         * Uso único. `ValidateSignature` confere assinatura e expiração, nunca unicidade — o
+         * link do e-mail era um magic-link de login reutilizável por 30 minutos, e
+         * `VinculoSocial::vincular()` é `firstOrCreate`, então o reuso não deixava rastro.
+         * `Cache::add()` é atômico e devolve `false` quando a chave já existe. Sem coluna: o
+         * TTL é o mesmo da assinatura, então a janela da marca cobre exatamente a janela em
+         * que o link vale. F-05 da auditoria Blueprint; ADR-04 da wiki
+         * travas-de-escalada-de-papeis.
+         */
+        if (! Cache::add('vinculo-social:'.hash('sha256', (string) $request->query('signature')), true, now()->addMinutes(30))) {
+            Log::channel('autenticacao')->warning(
+                "[LoginSocialController@confirmarVinculo] Link de confirmação reutilizado | provedor: {$provedor->value} - user: {$user->getKey()}",
+                ['user_id' => $user->getKey(), 'provedor' => $provedor->value, 'motivo' => 'link_ja_usado'],
+            );
+
+            return $this->recusar('Este link já foi usado.');
+        }
+
         VinculoSocial::vincular($user, $provedor, $sub);
 
         if ($user->aprovacao_pendente) {
@@ -595,13 +614,21 @@ final class LoginSocialController extends Controller
     }
 
     /**
-     * Conta existente (ou reconhecida pelo vínculo) que voltou com um convite válido para o SEU
-     * e-mail aceita o convite — organização e papel — como o "Entrar e aceitar" do formulário.
-     * Falha aqui não barra a entrada: só registra. ADR-04.
+     * Conta EXISTENTE não aceita convite na volta do provedor — só registra que há um pendente.
+     *
+     * O aceite acontecia aqui, e eram dois defeitos numa linha. O `?token=` entra na sessão no
+     * `redirecionar()`, que é rota GET pública sem CSRF: com SSO silencioso do provedor, o
+     * convite era aceito sem clique nem consentimento da pessoa (o `state` do Socialite protege
+     * o CALLBACK, não o início do fluxo). E o aceite rodava ANTES de `redirecionarSeIndisponivel()`,
+     * então conta desativada ou excluída queimava o convite sem entrar.
+     *
+     * Quem já tem conta aceita na tela autenticada `ConvitesRecebidos`, que exige o dono e pede
+     * confirmação. Conta NOVA continua nascendo pelo convite em `criarContaPorConvite()`.
+     * F-03 e F-04 da auditoria Blueprint; ADR-03 da wiki travas-de-escalada-de-papeis.
      *
      * @param  array<string, mixed>  $contexto
      */
-    private function aceitarConviteSeHouver(array $contexto, User $user, string $email, ProvedorSocial $provedor): void
+    private function avisarConvitePendente(array $contexto, User $user, string $email, ProvedorSocial $provedor): void
     {
         $convite = Convite::valido(is_string($contexto['token'] ?? null) ? $contexto['token'] : null);
 
@@ -609,19 +636,10 @@ final class LoginSocialController extends Controller
             return;
         }
 
-        try {
-            $convite->aceitarComoUsuarioExistente($user);
-
-            Log::channel('autenticacao')->info(
-                "[LoginSocialController@retorno] Convite aceito na volta do provedor por conta existente | provedor: {$provedor->value} - user: {$user->getKey()} - convite: {$convite->getKey()}",
-                ['user_id' => $user->getKey(), 'convite_id' => $convite->getKey(), 'tenant_id' => $convite->tenant_id, 'provedor' => $provedor->value],
-            );
-        } catch (RuntimeException $e) {
-            Log::channel('autenticacao')->warning(
-                "[LoginSocialController@retorno] Convite não aceito na volta do provedor | provedor: {$provedor->value} - user: {$user->getKey()} - convite: {$convite->getKey()}",
-                ['user_id' => $user->getKey(), 'convite_id' => $convite->getKey(), 'provedor' => $provedor->value, 'exception' => $e],
-            );
-        }
+        Log::channel('autenticacao')->info(
+            "[LoginSocialController@retorno] Convite pendente não consumido no fluxo social — aceite pela tela | provedor: {$provedor->value} - user: {$user->getKey()} - convite: {$convite->getKey()}",
+            ['user_id' => $user->getKey(), 'convite_id' => $convite->getKey(), 'tenant_id' => $convite->tenant_id, 'provedor' => $provedor->value, 'motivo' => 'aceite_so_na_tela_autenticada'],
+        );
     }
 
     private function urlDoPainel(): string

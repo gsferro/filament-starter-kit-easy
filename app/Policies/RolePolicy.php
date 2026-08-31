@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Models\Role;
+use App\Support\AdministradorDaInstalacao;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Foundation\Auth\User as AuthUser;
 
@@ -27,14 +28,24 @@ class RolePolicy
         return $authUser->can('Create:Role');
     }
 
+    /**
+     * O registro do papel super-admin não é editado por quem não é `master_global`.
+     *
+     * A guarda é AQUI, e não nas Actions: `EditAction`, `DeleteAction` e
+     * `DeleteBulkAction` consultam a policy do registro, então uma trava por
+     * `->visible()` seria só UX — o `mountAction` do Livewire alcança ação escondida.
+     * Sem isto, `admin` renomeia `master_global`, renomeia o próprio papel para
+     * `master_global` e vira administrador da instalação em duas edições. F-01 da
+     * auditoria Blueprint; ADR-01 da wiki travas-de-escalada-de-papeis.
+     */
     public function update(AuthUser $authUser, Role $role): bool
     {
-        return $authUser->can('Update:Role');
+        return $authUser->can('Update:Role') && AdministradorDaInstalacao::papelEditavelPor($role, $authUser);
     }
 
     public function delete(AuthUser $authUser, Role $role): bool
     {
-        return $authUser->can('Delete:Role');
+        return $authUser->can('Delete:Role') && AdministradorDaInstalacao::papelEditavelPor($role, $authUser);
     }
 
     public function deleteAny(AuthUser $authUser): bool
@@ -42,14 +53,17 @@ class RolePolicy
         return $authUser->can('DeleteAny:Role');
     }
 
+    // `restore` e `forceDelete` não têm caminho de execução hoje — `App\Models\Role` não
+    // usa `SoftDeletes` e nenhuma Action os alcança. A guarda entra assim mesmo: ligar
+    // `SoftDeletes` amanhã reabriria o buraco sem ninguém notar. Sem CT por isso mesmo.
     public function restore(AuthUser $authUser, Role $role): bool
     {
-        return $authUser->can('Restore:Role');
+        return $authUser->can('Restore:Role') && AdministradorDaInstalacao::papelEditavelPor($role, $authUser);
     }
 
     public function forceDelete(AuthUser $authUser, Role $role): bool
     {
-        return $authUser->can('ForceDelete:Role');
+        return $authUser->can('ForceDelete:Role') && AdministradorDaInstalacao::papelEditavelPor($role, $authUser);
     }
 
     public function forceDeleteAny(AuthUser $authUser): bool
