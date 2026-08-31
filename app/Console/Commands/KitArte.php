@@ -76,6 +76,9 @@ class KitArte extends Command
         'export-modal',
         'import-modal',
         'infra-hub',
+
+        // Proteção anti-robô (wiki recaptcha-nas-telas-publicas).
+        'admin-anti-robo',
     ];
 
     public function handle(): int
