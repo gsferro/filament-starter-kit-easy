@@ -164,13 +164,11 @@ class AdministradorDaInstalacao
     | do Filament pergunta; `regraDeNomeDePapel()` fecha o nome na escrita.
     */
 
-    public static function papelEditavelPor(Role $papel, ?Authenticatable $operador = null): bool
+    public static function papelEditavelPor(Role $papel, Authenticatable $operador): bool
     {
         if (! self::ehNomeReservado((string) $papel->getAttribute('name'))) {
             return true;
         }
-
-        $operador ??= Auth::user();
 
         return $operador instanceof User && $operador->isMasterGlobal();
     }
