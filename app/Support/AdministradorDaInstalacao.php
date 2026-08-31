@@ -81,22 +81,39 @@ class AdministradorDaInstalacao
     }
 
     /**
+     * O recorte é sobre o que se CONCEDE, nunca sobre o que a pessoa já tem.
+     *
+     * `$alvo` entra na alternativa porque a ficha de quem já tem papel fora do alcance
+     * precisa continuar salvável: sem ele o papel nem aparece nas opções, o estado
+     * carregado reprova no `in` implícito do Select ("não contém um valor válido") e um
+     * `admin` deixa de conseguir editar o nome de quem tem `infra`. Pior, se passasse, o
+     * `syncRoles()` de `gravarPapeis()` REVOGARIA o papel alheio a cada Salvar.
+     *
+     * Acrescentar continua fechado: papel fora do alcance que o alvo não tem não entra na
+     * alternativa, então não vira opção nem sobrevive à escrita.
+     *
      * @template TModel of \Illuminate\Database\Eloquent\Model
      *
      * @param  Builder<TModel>  $papeis
      * @return Builder<TModel>
      */
-    public static function recortarConcessao(Builder $papeis): Builder
+    public static function recortarConcessao(Builder $papeis, ?User $alvo = null): Builder
     {
         if (self::operadorPodeConceder()) {
             return $papeis;
         }
 
         $alcance = self::paineisAoAlcance();
+        $jaTem   = $alvo instanceof User
+            ? $alvo->papeisEmQualquerContexto()->pluck($alvo->papeisEmQualquerContexto()->getRelated()->getQualifiedKeyName())->all()
+            : [];
 
         return $papeis
             ->where('name', '!=', self::papel())
-            ->where(fn (Builder $consulta): Builder => $consulta->whereNull('painel')->orWhereIn('painel', $alcance));
+            ->where(fn (Builder $consulta): Builder => $consulta
+                ->whereNull('painel')
+                ->orWhereIn('painel', $alcance)
+                ->orWhereIn('id', $jaTem));
     }
 
     public static function regraDeConcessao(): Exists

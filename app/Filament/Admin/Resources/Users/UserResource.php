@@ -73,8 +73,11 @@ class UserResource extends Resource
             Select::make('roles')
                 ->label('Papéis')
                 // Recorte de UX do teto de escalada: quem não é master_global não vê o
-                // master_global. A trava que vale é em gravarPapeis().
-                ->relationship('roles', 'name', fn (Builder $query): Builder => AdministradorDaInstalacao::recortarConcessao($query))
+                // master_global, nem papel de painel fora do alcance dele. A trava que vale
+                // é em gravarPapeis(). O `$record` entra no recorte para que o papel que a
+                // pessoa JÁ tem continue sendo opção válida — senão a ficha de quem tem
+                // `infra` não salva mais.
+                ->relationship('roles', 'name', fn (Builder $query, ?User $record): Builder => AdministradorDaInstalacao::recortarConcessao($query, $record))
                 /*
                  * A UNIÃO dos papéis em qualquer contexto, não a relação `roles` do spatie:
                  * ela filtra pelo team do request, e no /admin (sem tenant) só mostraria os
@@ -265,6 +268,7 @@ class UserResource extends Resource
     {
         $selecionados = AdministradorDaInstalacao::recortarConcessao(
             $record->roles()->getRelated()->newQuery()->whereKey($state),
+            $record,
         )->get();
 
         if ($selecionados->count() !== count($state)) {

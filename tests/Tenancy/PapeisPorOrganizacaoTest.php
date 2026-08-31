@@ -1,14 +1,17 @@
 <?php
 
 use App\Filament\Admin\Resources\Convites\Pages\CreateConvite;
+use App\Filament\Admin\Resources\Convites\Pages\ListConvites;
 use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Filament\Admin\Resources\Users\UserResource;
+use App\Models\Convite;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\ContextoDePapeis;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Features\SupportTesting\Testable;
@@ -210,3 +213,214 @@ it('nao deixa quem nao e master_global convidar com master_global', function ():
 
     $this->assertDatabaseHas('convites', ['email' => 'novo@example.com', 'role_id' => $master->getKey()]);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Teto de escalada por PAINEL (F-02) — R3 e R4
+|--------------------------------------------------------------------------
+| Quem não é `master_global` concede papel SEM painel, papel do painel de
+| NEGÓCIO (o `->default()` do kit, hoje `/app`) e papel de painel que ele
+| PRÓPRIO acessa — nunca de painel que governa a instalação e ao qual ele não
+| tem acesso. Ver Q1 do `00-requisito.md` da wiki travas-de-escalada-de-papeis.
+|
+| O oráculo é sempre `model_has_roles`, nunca as opções renderizadas: opção é
+| UX, e a trava que vale é na ESCRITA.
+*/
+
+/** O papel que só carrega permissões — `painel = null`, a partição declarada da premissa 2. */
+function papelSemPainel(): Role
+{
+    return Role::create(['name' => 'etiquetador', 'guard_name' => 'web', 'painel' => null]);
+}
+
+/**
+ * CT-08 — o alcance do operador recorta o papel concedido na ficha do usuário.
+ *
+ * A tabela de decisão inteira numa linha por regra. As linhas `recebe` afirmam a presença em
+ * `model_has_roles`; as `não recebe`, a ausência EM CONTEXTO ALGUM — sem isso, gravar o papel
+ * noutro `team_id` passaria.
+ */
+it('[CT-08] recorta pelo alcance do operador o papel concedido na ficha', function (string $papel, bool $recebe): void {
+    papelSemPainel();
+
+    $this->actingAs(usuarioDoKit('admin', 'admin@example.com'));
+
+    $registro = Role::findByName($papel);
+
+    salvarFichaNoAdmin($this->dani, [$registro->getKey()], [$this->acme->getKey()]);
+
+    $chave = ['model_id' => $this->dani->id, 'role_id' => $registro->getKey()];
+
+    $recebe
+        ? $this->assertDatabaseHas(pivotDePapeis(), $chave)
+        : $this->assertDatabaseMissing(pivotDePapeis(), $chave);
+})->with([
+    'painel do próprio operador (regra 4)'      => ['admin', true],
+    'papel sem painel (regra 3)'                => ['etiquetador', true],
+    'painel de negócio, o default (regra 3b)'   => ['panel_user', true],
+    'painel que governa a instalação (regra 5)' => ['infra', false],
+    'trava por nome, que continua valendo (2)'  => ['master_global', false],
+]);
+
+/**
+ * CT-09 — o alcance soma os painéis dos papéis do operador em QUALQUER organização.
+ *
+ * O /admin não tem tenant na rota, então o contexto do request é o global: um operador cujo
+ * papel de /app vive na Acme só é reconhecido por uma leitura "em qualquer contexto".
+ */
+it('[CT-09] soma os paineis dos papeis do operador em qualquer organizacao', function (): void {
+    $operador = usuarioDoKit('admin', 'admin@example.com');
+    papelNaOrganizacao($operador, 'panel_user', $this->acme);
+
+    $this->actingAs($operador);
+
+    $panelUser = Role::findByName('panel_user');
+
+    salvarFichaNoAdmin($this->dani, [$panelUser->getKey()], [$this->acme->getKey()])
+        ->assertHasNoFormErrors();
+
+    $this->assertDatabaseHas(pivotDePapeis(), [
+        'model_id' => $this->dani->id, 'role_id' => $panelUser->getKey(), 'team_id' => $this->acme->id,
+    ]);
+});
+
+/** CT-10 — a linha de controle: o master_global concede papel de qualquer painel. */
+it('[CT-10] deixa o master_global conceder papel de qualquer painel', function (): void {
+    $this->actingAs(usuarioDoKit('master_global', 'master@example.com'));
+
+    $infra = Role::findByName('infra');
+
+    salvarFichaNoAdmin($this->dani, [$infra->getKey()], [$this->acme->getKey()])
+        ->assertHasNoFormErrors();
+
+    $this->assertDatabaseHas(pivotDePapeis(), [
+        'model_id' => $this->dani->id, 'role_id' => $infra->getKey(), 'team_id' => Tenant::CONTEXTO_GLOBAL,
+    ]);
+});
+
+/**
+ * CT-11 — o payload forjado não contorna o recorte, e o legítimo do MESMO payload é gravado.
+ *
+ * A segunda asserção é o que separa "recorta" de "aborta": descartar o payload inteiro por
+ * causa de um item recusado também fecharia a escalada, e quebraria a tela para todo mundo.
+ */
+it('[CT-11] recorta o payload forjado sem descartar o papel legitimo do mesmo payload', function (): void {
+    $this->actingAs(usuarioDoKit('admin', 'admin@example.com'));
+
+    $infra = Role::findByName('infra');
+    $admin = Role::findByName('admin');
+
+    UserResource::gravarPapeis($this->dani, [$infra->getKey(), $admin->getKey()], []);
+
+    $this->assertDatabaseMissing(pivotDePapeis(), ['model_id' => $this->dani->id, 'role_id' => $infra->getKey()]);
+    $this->assertDatabaseHas(pivotDePapeis(), ['model_id' => $this->dani->id, 'role_id' => $admin->getKey()]);
+});
+
+/**
+ * CT-12 — o convite individual herda a mesma trava.
+ *
+ * `fillForm()` escreve o state do componente direto, sem passar pela lista renderizada: a
+ * linha `infra` já é o payload forjado. A linha `admin` é a célula válida, sem a qual a trava
+ * poderia recusar TODO papel.
+ */
+it('[CT-12] aplica a trava de painel no convite individual', function (string $papel, bool $aceita): void {
+    Notification::fake();
+
+    $this->actingAs(usuarioDoKit('admin', 'admin@example.com'));
+
+    $registro = Role::findByName($papel);
+
+    $componente = Livewire::test(CreateConvite::class)
+        ->fillForm(['email' => 'nova@example.com', 'role_id' => $registro->getKey()])
+        ->call('create');
+
+    if ($aceita) {
+        $componente->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('convites', ['email' => 'nova@example.com', 'role_id' => $registro->getKey()]);
+
+        return;
+    }
+
+    $componente->assertHasFormErrors(['role_id']);
+
+    $this->assertDatabaseMissing('convites', ['email' => 'nova@example.com']);
+})->with([
+    'painel fora do alcance' => ['infra', false],
+    'painel do operador'     => ['admin', true],
+]);
+
+/**
+ * CT-13 — o convite em massa herda a mesma trava (verbo irmão).
+ *
+ * A linha `infra` afirma sobre OS DOIS endereços: um lote que grave e só depois valide
+ * deixaria o primeiro entrar.
+ */
+it('[CT-13] aplica a trava de painel no convite em massa', function (string $papel, bool $aceita): void {
+    Notification::fake();
+
+    $this->actingAs(usuarioDoKit('admin', 'admin@example.com'));
+
+    $registro = Role::findByName($papel);
+
+    $componente = Livewire::test(ListConvites::class)
+        ->callAction(TestAction::make('convidarEmMassa'), [
+            'emails'  => "um@example.com\ndois@example.com",
+            'role_id' => $registro->getKey(),
+        ]);
+
+    if ($aceita) {
+        $componente->assertHasNoActionErrors();
+
+        expect(Convite::query()->where('role_id', $registro->getKey())->whereNull('aceito_em')->count())->toBe(2);
+
+        return;
+    }
+
+    $componente->assertHasActionErrors(['role_id']);
+
+    $this->assertDatabaseMissing('convites', ['email' => 'um@example.com']);
+    $this->assertDatabaseMissing('convites', ['email' => 'dois@example.com']);
+})->with([
+    'painel fora do alcance' => ['infra', false],
+    'painel do operador'     => ['admin', true],
+]);
+
+/**
+ * CT-23 — salvar a ficha não REVOGA o que o operador não poderia conceder.
+ *
+ * Escalada por subtração: um recorte aplicado ao conjunto enviado, seguido de `sync`, derruba
+ * o `infra` alheio com um clique em Salvar. A linha `escrita efetiva` é a que mata o mutante —
+ * a `no-op` sozinha não mataria uma gravação que só rodasse quando o campo mudasse.
+ */
+it('[CT-23] nao revoga o papel fora do alcance ao salvar a ficha', function (bool $acrescentaAdmin): void {
+    papelNaOrganizacao($this->dani, 'infra');
+    papelNaOrganizacao($this->dani, 'panel_user', $this->acme);
+    $this->dani->tenants()->attach($this->acme);
+
+    $infra     = Role::findByName('infra');
+    $panelUser = Role::findByName('panel_user');
+    $admin     = Role::findByName('admin');
+
+    $this->actingAs(usuarioDoKit('admin', 'admin@example.com'));
+
+    salvarFichaNoAdmin(
+        $this->dani,
+        $acrescentaAdmin ? [$infra->getKey(), $panelUser->getKey(), $admin->getKey()] : null,
+        [$this->acme->getKey()],
+    )->assertHasNoFormErrors();
+
+    $this->assertDatabaseHas(pivotDePapeis(), [
+        'model_id' => $this->dani->id, 'role_id' => $infra->getKey(), 'team_id' => Tenant::CONTEXTO_GLOBAL,
+    ]);
+    $this->assertDatabaseHas(pivotDePapeis(), [
+        'model_id' => $this->dani->id, 'role_id' => $panelUser->getKey(), 'team_id' => $this->acme->id,
+    ]);
+
+    $acrescentaAdmin
+        ? $this->assertDatabaseHas(pivotDePapeis(), ['model_id' => $this->dani->id, 'role_id' => $admin->getKey()])
+        : $this->assertDatabaseMissing(pivotDePapeis(), ['model_id' => $this->dani->id, 'role_id' => $admin->getKey()]);
+})->with([
+    'sem mexer no campo de papéis' => [false],
+    'acrescentando o papel admin'  => [true],
+]);

@@ -16,6 +16,7 @@ use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use BezhanSalleh\FilamentShield\Support\Utils;
 use BezhanSalleh\FilamentShield\Traits\HasShieldFormComponents;
 use BezhanSalleh\PluginEssentials\Concerns\Resource as Essentials;
+use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -121,8 +122,15 @@ class RoleResource extends Resource
                                      * o caminho de duas edições — renomear o `master_global`
                                      * para outra coisa e depois renomear o próprio papel para
                                      * `master_global`. F-01 da auditoria Blueprint.
+                                     *
+                                     * A closure vai DENTRO de outra: `->rule()` do Filament
+                                     * avalia o argumento como closure de configuração, com
+                                     * injeção por NOME de parâmetro — passar a regra direto
+                                     * estoura "[$atributo] was unresolvable"
+                                     * (`EvaluatesClosures.php:102`). O `fn (): Closure` devolve
+                                     * a regra, e é ela que a validação executa.
                                      */
-                                    ->rule(AdministradorDaInstalacao::regraDeNomeDePapel()),
+                                    ->rule(fn (): Closure => AdministradorDaInstalacao::regraDeNomeDePapel()),
 
                                 Select::make('guard_name')
                                     ->label(__('filament-shield::filament-shield.field.guard_name'))
@@ -268,7 +276,15 @@ class RoleResource extends Resource
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    /*
+                     * `authorizeIndividualRecords('delete')` porque a BulkAction pergunta só
+                     * `deleteAny` — a policy do REGISTRO nunca é consultada sem isto
+                     * (`Concerns/CanBeAuthorized.php:252-266`), e o `master_global` saía na
+                     * seleção em massa mesmo com `RolePolicy::delete()` fechado. Foi um teste
+                     * de exclusão em massa que mostrou; a guarda por registro sozinha não
+                     * cobre o verbo irmão.
+                     */
+                    DeleteBulkAction::make()->authorizeIndividualRecords('delete'),
                 ]),
             ]);
     }

@@ -917,3 +917,22 @@ transitiva, o comando não some num `composer update`.
 
 Mutante sobrevivente é traduzido de volta para lacuna de derivação e vira cenário novo aqui, não
 "asserção a mais" no teste que sobrou.
+
+
+---
+
+## Cenários não implementados, com o motivo
+
+Escritos na derivação e **não** transformados em teste, porque as premissas que os sustentavam
+foram resolvidas em sentido contrário depois — em `00-requisito.md` → `## Ambiguidades`. Ficam
+aqui, e não apagados, porque cada um vira teste no dia em que a premissa mudar.
+
+| CT | Por que não foi escrito | O que o faria voltar |
+|---|---|---|
+| **CT-24** (aceite do convite não concede papel fora do alcance) | Q6 pôs a trava na **criação** do convite, não no aceite. Revalidar no aceite exigiria consultar o alcance de **quem gravou** o convite num momento em que esse operador não está autenticado — e, depois desta wiki, é impossível gravar convite com papel fora do alcance. Sobra a **janela histórica**: convites gravados antes, ainda pendentes, concedem no aceite o papel que têm. | Decidir que o aceite revalida; ou uma migration que expire convites pendentes com papel fora do alcance de quem os gravou |
+| **CT-26** (conta que nasce pendente não queima o convite) | Medido no código: `Convite::aceitar()` cria a conta sem `aprovacao_pendente` (`app/Models/Convite.php`, `User::create` + `forceFill`). Cadastro por convite **é** a aprovação, então a conta nunca nasce pendente e o cenário não tem caso observável. | Passar a marcar conta de convite como pendente em alguma configuração |
+
+**CT-17 e CT-19 não precisaram ser escritos**: são controles positivos que a suíte já tem — a conta
+nova nascendo pelo convite no fluxo social (`tests/Tenancy/CadastroSocialPorOrganizacaoTenancyTest.php`)
+e o link de confirmação funcionando no primeiro uso (`tests/Kit/VinculoDeProvedorSocialTest.php`,
+CT-V04). Escrever cópia deles seria cobertura duplicada.
