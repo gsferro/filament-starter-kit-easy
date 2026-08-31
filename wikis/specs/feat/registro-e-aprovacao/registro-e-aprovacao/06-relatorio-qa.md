@@ -17,6 +17,10 @@
 - Baseline herdado e conferido: backend 947/947 (2480 asserções), browser 49 casos (44 verdes,
   5 pulados pré-existentes), Pint verde, PHPStan 0.
 
+## Veredito — Ciclo 2: APROVADO
+
+QA-01, QA-02 e QA-03 corrigidos no commit `81d7112` — `app/Providers/Filament/AppPanelProvider.php` (toggle de verificação lido por middleware), `app/Models/User.php::aprovar()` (papel gravado no contexto da organização) e `app/Support/RegistroAberto.php::organizacaoAceitaRegistro()` (reconfere `ativo`/`registro_habilitado` do `$organizacao` recebido).
+
 ## Achados
 
 ### QA-00 — throttle do log da recusa · herdado do ciclo anterior · já corrigido

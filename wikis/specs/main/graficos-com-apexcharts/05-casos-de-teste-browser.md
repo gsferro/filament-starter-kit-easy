@@ -139,5 +139,3 @@ derruba o Alpine dos demais, e nenhum teste de componente enxerga isso.
 | 7 | nenhum gráfico atualizando a cada 5 s | igual | ✅ | CT-11, derivado dos widgets registrados |
 | 8 | dashboard com banco vazio: gráficos zerados, sem erro | igual | ✅ | CT-02 (rosca zerada), CT-05 (radial em 0%) |
 | 9 | *(não desenhado)* widget carrega **adiado**, por viewport | ⚠️ o CT-B precisa de `->resize(1440, 4000)`: com janela padrão os gráficos ficam abaixo da dobra e nunca são pedidos | ⚠️ | ver Notas de Implementação no `03` |
-| 8 | nenhum gráfico atualizando a cada 5 s (conferir na aba Network) | | | |
-| 9 | dashboard com banco vazio: gráficos zerados, com legenda de estado vazio, sem erro | | | |

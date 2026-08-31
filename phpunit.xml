@@ -85,6 +85,34 @@
         <env name="X_CLIENT_ID" value="" force="true"/>
         <env name="X_CLIENT_SECRET" value="" force="true"/>
         <env name="KIT_SOCIALITE_VINCULO_CONFIRMAR" value="false" force="true"/>
+        <!--
+            O resto das chaves do kit, cada uma no DEFAULT do config/kit.php — pelo
+            mesmo motivo do bloco de cima: um .env local com KIT_REGISTRO=true ou
+            KIT_ANTI_ROBO=true faria a suíte medir o projeto, não o kit. Quem quer
+            outro valor liga no próprio caso (`config()->set()` ou `kitConfigCom()`).
+        -->
+        <env name="KIT_REGISTRO" value="false" force="true"/>
+        <env name="KIT_REGISTRO_APROVACAO_MANUAL" value="false" force="true"/>
+        <env name="KIT_REGISTRO_VERIFICAR_EMAIL" value="false" force="true"/>
+        <env name="KIT_TABELA_PAGINACAO" value="10" force="true"/>
+        <env name="KIT_TABELA_LISTRADA" value="true" force="true"/>
+        <env name="KIT_TABELA_PERSISTIR_FILTROS" value="true" force="true"/>
+        <env name="KIT_TABELA_COLUNAS_REDIMENSIONAVEIS" value="true" force="true"/>
+        <env name="KIT_COR_PRIMARIA_HEX" value="" force="true"/>
+        <env name="KIT_LOGIN_RODAPE" value="" force="true"/>
+        <env name="KIT_ANTI_ROBO" value="false" force="true"/>
+        <env name="KIT_ANTI_ROBO_LOCAL" value="false" force="true"/>
+        <env name="KIT_ANTI_ROBO_PROVEDOR" value="recaptcha_v2" force="true"/>
+        <env name="KIT_ANTI_ROBO_CHAVE_DO_SITE" value="" force="true"/>
+        <env name="KIT_ANTI_ROBO_CHAVE_SECRETA" value="" force="true"/>
+        <env name="KIT_ANTI_ROBO_PONTUACAO_MINIMA" value="0.5" force="true"/>
+        <env name="KIT_CONVITE_VALIDADE_DIAS" value="7" force="true"/>
+        <env name="KIT_CONVITE_LIMITE_LOTE" value="100" force="true"/>
+        <env name="KIT_CONVITE_LEMBRETES_DIAS" value="3,5" force="true"/>
+        <env name="KIT_RETENCAO_EXCECOES_DIAS" value="14" force="true"/>
+        <env name="KIT_RETENCAO_EMAILS_DIAS" value="14" force="true"/>
+        <env name="KIT_RETENCAO_IMPORTACOES_DIAS" value="30" force="true"/>
+        <env name="KIT_RETENCAO_EXPORTACOES_DIAS" value="30" force="true"/>
 
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>

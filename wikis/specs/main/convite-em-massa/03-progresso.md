@@ -95,8 +95,9 @@
       intacta
 - [x] `.ai/rules/filament.md` reescrita para **Resource, Page OU Widget**, com os números medidos, o
       sintoma e a armadilha do formato de `permissions`
-- [ ] CT-16 escrito e **visto falhando** antes — não cumprido: escrito depois do método. O que ficou
-      provado é o contrário (ver Desvios): com `array_column` na Page o caso fica vermelho
+- [ ] ~~CT-16 escrito e **visto falhando** antes~~ — não cumprível retroativamente: escrito depois
+      do método. O que ficou provado é o contrário (ver Desvios): com `array_column` na Page o caso
+      fica vermelho
 - [x] Os dois seeders rodados (`ShieldPermissionsSeeder`, depois `PapeisSeeder`)
 - [x] Contagem de `permissions` (199) e matrizes dos quatro papéis **idênticas** antes e depois —
       diff byte a byte de um dump JSON (`permissions_total`, permissões de cada papel, total do
@@ -131,8 +132,8 @@
 - [x] `tests/Kit/PaineisTest.php` — **CT-16**, no arquivo que já existe
 - [x] Helpers locais com nomes que não colidem (`chamarLote()`, `papelDoLote()`,
       `papelDoLoteTenancy()`, `entrarNoPainelDa()`)
-- [ ] CT-02 e CT-12 vistos falhando antes — não cumprido nesta rodada (código escrito antes dos
-      testes). Duas falhas reais fizeram o papel, ver Notas
+- [ ] ~~CT-02 e CT-12 vistos falhando antes~~ — não cumprível retroativamente (código escrito
+      antes dos testes). Duas falhas reais fizeram o papel, ver Notas
 - [x] CT-10 visto **falhando** com o `catch` estreitado para `QueryException` — o único caso que
       fica vermelho
 - [x] CT-06 confere que a modal **continuou montada** (`assertActionMounted`)
@@ -219,6 +220,10 @@ Widget, que é o caminho que `entidadesDoPainel()` copiou.
 | `permissoes('app')` | 38 | 38 |
 | Alcançáveis pela subtração no `app` | 36 | **38** |
 | Permissions do `panel_user` | 14 | 14, as mesmas |
+
+## Blockers
+
+Nenhum.
 
 ## Retrospectiva
 

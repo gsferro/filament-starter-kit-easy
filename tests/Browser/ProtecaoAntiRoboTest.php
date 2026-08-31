@@ -17,6 +17,10 @@ use Database\Seeders\ShieldPermissionsSeeder;
  *    destrói o DOM interno; sem `wire:ignore` o iframe do reCAPTCHA desaparece depois do
  *    primeiro submit — e o campo vira impossível de preencher.
  *
+ * A implementação é o `ddr/filament-captcha` com as views publicadas em
+ * `resources/views/vendor/filament-captcha/drivers/` — os seletores `.fi-fo-anti-robo` e
+ * `data-anti-robo` vêm do `CampoAntiRobo` (wrapper attributes), não da view.
+ *
  * Usa as chaves de teste oficiais do reCAPTCHA v2:
  * - site: 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI (sempre passa)
  * - secreta: 6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe (sempre aceita)
@@ -31,7 +35,7 @@ beforeEach(function (): void {
 
     $settings                                = app(ConfiguracoesDoKit::class);
     $settings->login_anti_robo_habilitado    = true;
-    $settings->login_anti_robo_provedor      = 'recaptcha';
+    $settings->login_anti_robo_provedor      = 'recaptcha_v2';
     $settings->login_anti_robo_chave_do_site = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
     $settings->login_anti_robo_chave_secreta = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe';
     $settings->save();
@@ -118,4 +122,27 @@ it('renderiza o widget turnstile na tela de login', function (): void {
         ->assertVisible('.fi-fo-anti-robo')
         ->assertVisible('[data-anti-robo="turnstile"]')
         ->assertNoJavaScriptErrors();
+})->group('browser', 'kit');
+
+/**
+ * CT-B03 (v3) — o reCAPTCHA v3 é invisível: badge presente, nenhuma caixa.
+ *
+ * O Google não publica chave de teste para o v3; a chave de teste do v2 carrega o `api.js` no
+ * modo `render={chave}` e o badge aparece — é o que prova que a view `recaptcha-v3` publicada
+ * está no ar e sem `render=explicit`. A pontuação em si é provada com `Http::fake()` em
+ * `tests/Kit/ProtecaoAntiRoboTest.php`.
+ */
+it('renderiza o recaptcha v3 invisivel, com badge e sem caixa', function (): void {
+    $settings                           = app(ConfiguracoesDoKit::class);
+    $settings->login_anti_robo_provedor = 'recaptcha_v3';
+    $settings->save();
+    $settings->aplicarNaConfig();
+
+    $this->get('/app/login');
+
+    // `assertPresent`, não `assertVisible`: o container do v3 só tem um input oculto, e ocupa 0 px.
+    visit('/app/login')
+        ->assertPresent('[data-anti-robo="recaptcha_v3"]')
+        ->assertPresent('.grecaptcha-badge')
+        ->assertMissing('.fi-fo-anti-robo iframe[title="reCAPTCHA"]');
 })->group('browser', 'kit');

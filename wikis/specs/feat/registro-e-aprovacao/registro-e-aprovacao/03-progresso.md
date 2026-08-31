@@ -145,7 +145,7 @@ que eu mais esperava ver questionadas.
 
 ## Blockers
 
-Abertos pelo **quality gate, ciclo 1** — ver `06-relatorio-qa.md` para repro e evidência.
+Nenhum. Os três abaixo, abertos pelo **quality gate, ciclo 1**, foram **corrigidos no commit `81d7112`** — QA-01: `app/Providers/Filament/AppPanelProvider.php` (toggle lido por middleware, não no boot); QA-02: `app/Models/User.php::aprovar()` atribui o papel no contexto da organização; QA-03: `app/Support/RegistroAberto.php::organizacaoAceitaRegistro()` reconfere `ativo`/`registro_habilitado`. Veredito do ciclo 2 em `06-relatorio-qa.md`. Texto original mantido como histórico:
 
 - **QA-01 (Blocker)** — o toggle *"Exigir e-mail validado"* das `ConfiguracoesDoKit` é **inerte**:
   gravado no Settings, `config()` e `RegistroAberto::exigirVerificacaoDeEmail()` viram `true`, mas o

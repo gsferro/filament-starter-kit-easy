@@ -83,6 +83,17 @@ o default seria público (`SpatieMediaLibraryFileUpload::getDiskName()`); quem d
 | **L2** | falha no meio da migração (mutante M16: linha do banco antes do arquivo) | sem matador. A ordem correta está no código e comentada; o cenário que a prova é o primeiro a escrever se a migração falhar em campo |
 | **L3** | autorização por organização na rota assinada | decisão do ADR-03. **CT-11 fixa o limite** em vez de fechá-lo, e a documentação o declara (CT-21) |
 
+## Blockers
+
+Nenhum.
+
+## Retrospectiva
+
+- Entregou o que o requisito pediu: os dois caminhos de escrita concordam (`MEDIA_DISK` default `local`,
+  `useDisk()` na coleção), `kit:midia-privada` migra o legado com `--dry-run`, 28 casos verdes.
+- Três afirmações sobre o vendor estavam erradas e sustentavam decisões — virou a rule de
+  `.ai/rules/specs.md`: justificativa de pacote se escreve depois de abrir o `vendor/`, com `file:line`.
+
 ## Candidatos a Rule de Projeto
 
 **Dois**, e os dois estão gravados.

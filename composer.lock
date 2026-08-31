@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6e1ca6c2708bec95797b47b786746367",
+    "content-hash": "05a008e88592265fdfc7549ab39a1478",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -2114,6 +2114,73 @@
                 "source": "https://github.com/DASPRiD/Enum/tree/1.0.7"
             },
             "time": "2025-09-16T12:23:56+00:00"
+        },
+        {
+            "name": "ddr/filament-captcha",
+            "version": "v1.1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/danie1net0/filament-captcha.git",
+                "reference": "0d551eba5bb863d0142ee1065c9ab11fd1990653"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/danie1net0/filament-captcha/zipball/0d551eba5bb863d0142ee1065c9ab11fd1990653",
+                "reference": "0d551eba5bb863d0142ee1065c9ab11fd1990653",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^3.0|^4.0|^5.0",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.16"
+            },
+            "require-dev": {
+                "driftingly/rector-laravel": "^2.0",
+                "larastan/larastan": "^2.9|^3.0",
+                "laravel/pint": "^1.0",
+                "orchestra/testbench": "^9.0|^10.0|^11.0",
+                "pestphp/pest": "^2.0|^3.0|^4.0",
+                "pestphp/pest-plugin-laravel": "^2.0|^3.0|^4.0",
+                "rector/rector": "^2.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Ddr\\FilamentCaptcha\\FilamentCaptchaServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Ddr\\FilamentCaptcha\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Daniel Rodrigues",
+                    "email": "daniel@example.com"
+                }
+            ],
+            "description": "Multi-provider captcha integration for Filament forms (hCaptcha, reCAPTCHA v2/v3, Turnstile)",
+            "homepage": "https://github.com/danie1net0/filament-captcha",
+            "keywords": [
+                "captcha",
+                "filament",
+                "hcaptcha",
+                "laravel",
+                "recaptcha",
+                "turnstile"
+            ],
+            "support": {
+                "issues": "https://github.com/danie1net0/filament-captcha/issues",
+                "source": "https://github.com/danie1net0/filament-captcha/tree/v1.1.2"
+            },
+            "time": "2026-03-30T01:52:52+00:00"
         },
         {
             "name": "dflydev/dot-access-data",

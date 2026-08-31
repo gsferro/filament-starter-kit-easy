@@ -159,7 +159,7 @@ Totais finais: **41 cenários, 17 regras, 85 mutantes, 5 sem matador — todos d
 
 ## Blockers
 
-**QA-02 (aberto) — a senha de SMTP chega em claro ao HTML da página.** Levantado pelo `feature-quality-gate` no ciclo 1; detalhe, repro e evidência em `06-relatorio-qa.md`. Contraria a linha 7 do roteiro do `05` ("senha … nunca em claro no HTML inicial"), que ficou em branco. **Não fazer merge antes de fechar.**
+Nenhum. **QA-02 (senha de SMTP em claro no HTML) fechado no commit `768ea1e`** — `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`: senha zerada em `mutateFormDataBeforeFill()` + `dehydrated` condicional (campo em branco mantém a guardada). Prova: `tests/Kit/ConfiguracoesDoKitTelaTest.php`. Veredito do ciclo 2 em `06-relatorio-qa.md`.
 
 ---
 

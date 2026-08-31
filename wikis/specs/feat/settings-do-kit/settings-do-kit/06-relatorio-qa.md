@@ -14,6 +14,10 @@
 - Playwright MCP: **proibido nesta execução** (instância compartilhada) — ver "Não Verificado"
 - Sonda: arquivo de teste efêmero criado e **removido**; nenhuma linha de código de aplicação ou de teste alterada. Dados de sonda no banco de desenvolvimento foram revertidos (`paginacao_padrao` = 10, `mail_password` = null, trilhas de sonda apagadas).
 
+## Veredito — Ciclo 2: APROVADO
+
+QA-02 fechado no commit `768ea1e` — `app/Filament/Admin/Pages/ConfiguracoesDoKit.php` zera a senha em `mutateFormDataBeforeFill()` e só a desidrata quando preenchida; `tests/Kit/ConfiguracoesDoKitTelaTest.php` prova que ela não sai no HTML nem no estado do formulário.
+
 ---
 
 ## Achados

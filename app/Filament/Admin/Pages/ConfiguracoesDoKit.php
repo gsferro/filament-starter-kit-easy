@@ -278,7 +278,7 @@ class ConfiguracoesDoKit extends SettingsPage
             ->schema([
                 Select::make('mail_mailer')
                     ->label('Transporte')
-                    ->helperText('`log` só escreve em storage/logs — convite e lembrete não chegam a ninguém.')
+                    ->helperText('`log` só escreve em storage/logs — convite e lembrete não chegam a ninguém. Salvar aqui vale para o próximo request; um worker de fila em execução (`queue:work`) mantém a configuração antiga em memória — rode `php artisan queue:restart` para os e-mails enfileirados saírem pelo transporte novo.')
                     ->options(fn (): array => $this->comValorConfigurado(
                         [
                             'log'   => 'Log (não envia — escreve em storage/logs)',
@@ -559,6 +559,11 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->helperText('Ligar aqui não liga sozinho: o provedor e as DUAS chaves abaixo também precisam estar preenchidos — sem elas a proteção fica desligada, porque um desafio que não renderiza trancaria o login de todo mundo, inclusive o seu. Se o provedor cair, o envio é recusado até ele voltar ou você desligar aqui.')
                     ->live(),
 
+                Toggle::make('login_anti_robo_local')
+                    ->label('Aplicar também em ambiente local (APP_ENV=local)')
+                    ->helperText('Desligado, o desafio não aparece enquanto a aplicação roda com APP_ENV=local — chave de produção não aceita localhost, e o campo obrigatório ficaria impreenchível. Ligue só para testar com chaves que aceitam localhost.')
+                    ->visible($ligado),
+
                 Select::make('login_anti_robo_provedor')
                     ->label('Provedor')
                     ->options(array_reduce(ProvedorAntiRobo::cases(), function (array $carry, ProvedorAntiRobo $provedor): array {
@@ -571,15 +576,26 @@ class ConfiguracoesDoKit extends SettingsPage
 
                         if (is_string($provedor) && $provedor !== '') {
                             return ProvedorAntiRobo::tryFrom($provedor)?->ondeCriarAsChaves()
-                                ?? 'Os três falam o mesmo protocolo; o reCAPTCHA é o padrão, o Turnstile não rastreia e não tem custo.';
+                                ?? 'Um provedor de cada vez. O reCAPTCHA v2 é a caixa clássica; o v3 é invisível e decide por pontuação; o Turnstile não rastreia e não tem custo.';
                         }
 
-                        return 'Os três falam o mesmo protocolo; o reCAPTCHA é o padrão, o Turnstile não rastreia e não tem custo.';
+                        return 'Um provedor de cada vez. O reCAPTCHA v2 é a caixa clássica; o v3 é invisível e decide por pontuação; o Turnstile não rastreia e não tem custo.';
                     })
                     ->required()
                     ->native(false)
                     ->live()
                     ->visible($ligado),
+
+                TextInput::make('login_anti_robo_pontuacao_minima')
+                    ->label('Pontuação mínima (reCAPTCHA v3)')
+                    ->helperText('O Google devolve uma pontuação de 0 (robô) a 1 (pessoa); abaixo deste valor o envio é recusado. 0,5 é o sugerido. Só o reCAPTCHA v3 usa isto.')
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(1)
+                    ->step(0.05)
+                    ->required()
+                    ->dehydrateStateUsing(fn (mixed $state): float => (float) $state)
+                    ->visible(fn (Get $get): bool => $ligado($get) && ProvedorAntiRobo::tryFrom((string) $get('login_anti_robo_provedor'))?->usaPontuacao() === true),
 
                 TextInput::make('login_anti_robo_chave_do_site')
                     ->label('Chave do site')

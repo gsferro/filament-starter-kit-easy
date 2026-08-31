@@ -2,6 +2,41 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [Não lançado]
+
+### Adicionado
+- **Proteção anti-robô sobre o pacote `ddr/filament-captcha`**, com **reCAPTCHA v3** como quarto
+  provedor (`recaptcha_v3`, invisível, por pontuação) ao lado de reCAPTCHA v2, Turnstile e hCaptcha.
+  O kit embrulha o pacote com o que ele não tem: decisão de aparecer vinda das Settings
+  (`App\Support\GerenciadorAntiRobo` lê `kit.login.anti_robo.*` por request), **falha fechada**
+  e log no canal `autenticacao` (`App\Support\VerificacaoAntiRobo`), reset do widget após cada
+  verificação e tema escuro nas 4 views publicadas. `CampoAntiRobo` virou subclasse do `Captcha`
+  do pacote — as três telas de auth não mudaram. Wiki `adotar-ddr-filament-captcha`.
+- **Pontuação mínima do reCAPTCHA v3** editável: `login_anti_robo_pontuacao_minima` nas Settings
+  (campo visível só com o v3), `KIT_ANTI_ROBO_PONTUACAO_MINIMA` no `.env` (default 0,5).
+- **Opt-in para ambiente local** (`KIT_ANTI_ROBO_LOCAL` / toggle "Aplicar também em ambiente
+  local"): com `APP_ENV=local` o desafio fica desligado por default — chave de produção não aceita
+  `localhost` e o campo obrigatório ficaria impreenchível. `app()->isLocal()` decide.
+
+### Alterado
+- **O valor do provedor `recaptcha` virou `recaptcha_v2`** (nome do driver no pacote). A migration
+  de settings `2026_08_31_100000` converte o valor gravado; rode `php artisan migrate`. No `.env`,
+  troque `KIT_ANTI_ROBO_PROVEDOR=recaptcha` por `recaptcha_v2` — o valor antigo é tratado como
+  desconhecido (proteção desligada, com aviso no log). As env vars próprias do pacote
+  (`CAPTCHA_DRIVER`, `RECAPTCHA_V2_SITEKEY`, ...) são ignoradas de propósito.
+
+### Removido
+- `resources/views/filament/forms/components/campo-anti-robo.blade.php` — substituída pelas views
+  publicadas em `resources/views/vendor/filament-captcha/drivers/`.
+
+### Corrigido
+- **`composer create-project` avisava "Class OrganizacaoComMidia ... does not comply with psr-4
+  autoloading standard".** A fixture estava declarada como classe nomeada no fim de
+  `tests/Tenancy/MigracaoDeMidiaPrivadaTest.php` — arquivo Pest sem namespace, dentro do mapa
+  PSR-4 `Tests\` → `tests/`. Movida para `tests/Tenancy/Fixtures/OrganizacaoComMidia.php` com o
+  namespace que o caminho exige. Só aviso, nada quebrava; mas é a primeira linha que quem instala
+  o kit lê depois do `Generating optimized autoload files`.
+
 ## [0.21.1] - 2026-08-26
 Correções que a validação de instalação (8 instalações reais, terminal + navegador) e o uso real do
 `bp:off` expuseram. Nenhuma muda API; todas fecham uma fresta de instalação ou de sincronia.

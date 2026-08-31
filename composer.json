@@ -29,6 +29,7 @@
         "caresome/filament-auth-designer": "^3.1",
         "cms-multi/filament-clear-cache": "^3.0",
         "croustibat/filament-jobs-monitor": "^4.5",
+        "ddr/filament-captcha": "^1.1",
         "dotswan/filament-laravel-pulse": "^2.2",
         "filament/filament": "^5.6",
         "filament/spatie-laravel-media-library-plugin": "^5.7",

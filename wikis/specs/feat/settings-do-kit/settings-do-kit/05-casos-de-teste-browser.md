@@ -147,11 +147,11 @@ Preenchido no step 7 da `feature-wiki`, depois de rodar os CT-B.
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | tela em `/admin/configuracoes-do-kit`, quatro abas | | | |
-| 2 | aba Identidade: nome, cor por seleção, cor livre, logo, favicon, arte do login | | | |
-| 3 | aba E-mail: mailer, host, porta, esquema, usuário, senha, remetente | | | |
-| 4 | aba Tabelas: paginação, listras, persistência, colunas arrastáveis | | | |
-| 5 | aba Kit: hub, rótulo da organização (singular e plural) | | | |
-| 6 | campos de SMTP visíveis só com o mailer `smtp` | | | |
-| 7 | senha com revelação, nunca em claro no HTML inicial | | | |
-| 8 | item no menu do painel de administração | | | |
+| 1 | tela em `/admin/configuracoes-do-kit`, quatro abas | igual — a rota abre e o clique em outra aba troca os campos visíveis (a contagem de abas não é asserida) | sim | `tests/Browser/ConfiguracoesDoKitTest.php` · `it('troca os campos visiveis ao acionar outra aba, com o seletor de cor montado')` |
+| 2 | aba Identidade: nome, cor por seleção, cor livre, logo, favicon, arte do login | primeira aba, com `nome_da_aplicacao` e `cor_primaria_hex` (Alpine) montados | não verificado — o CT-B01 só assere nome e cor livre; logo, favicon e arte sem CT-B | `tests/Browser/ConfiguracoesDoKitTest.php` · `it('troca os campos visiveis ao acionar outra aba, com o seletor de cor montado')` (parcial) |
+| 3 | aba E-mail: mailer, host, porta, esquema, usuário, senha, remetente | — | não verificado | nenhum CT-B abre a aba E-mail |
+| 4 | aba Tabelas: paginação, listras, persistência, colunas arrastáveis | aba alcançável por clique, `paginacao_padrao` visível | não verificado — só `paginacao_padrao` é asserido | `tests/Browser/ConfiguracoesDoKitTest.php` · `it('troca os campos visiveis ao acionar outra aba, com o seletor de cor montado')` (parcial) |
+| 5 | aba Kit: hub, rótulo da organização (singular e plural) | — | não verificado | nenhum CT-B abre a aba Kit |
+| 6 | campos de SMTP visíveis só com o mailer `smtp` | — | não verificado | nenhum CT-B; comportamento coberto só por componente no `04` |
+| 7 | senha com revelação, nunca em claro no HTML inicial | senha zerada em `mutateFormDataBeforeFill()` + `dehydrated` condicional (commit `768ea1e`, QA-02) | não verificado — sem CT-B; provado por componente | `tests/Kit/ConfiguracoesDoKitTelaTest.php` · `it('nao serializa a senha de smtp no html da tela')` |
+| 8 | item no menu do painel de administração | — | não verificado | nenhum CT-B abre o menu |

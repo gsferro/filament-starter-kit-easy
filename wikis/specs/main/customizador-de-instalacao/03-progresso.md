@@ -204,8 +204,7 @@ alternativa é duplicar o método privado. É reutilização, não camada.
 
 ## Blockers
 
-- Nenhum. O único item em aberto é a verificação manual do `create-project` (passo 9), que depende
-  de um terminal humano e não de código.
+- Nenhum.
 
 ## Notas de Implementação
 

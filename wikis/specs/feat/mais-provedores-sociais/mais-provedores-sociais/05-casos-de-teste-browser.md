@@ -252,13 +252,13 @@ está certa".
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | quatro botões, um por provedor disponível, abaixo do formulário | | | CT-B01 |
-| 2 | divisor "ou" renderizado **uma vez**, antes do laço | | | CT-B01 + CT-09 do `04` |
-| 3 | ícone da marca em cada botão, 18×18, `aria-hidden` | | | CT-B01 passo 7 |
-| 4 | os três ícones novos em `currentColor`, seguindo tema claro/escuro | | | screenshot, claro e escuro |
-| 5 | espaçamento entre botões quando há mais de um | | | screenshot — MB4, lacuna declarada |
-| 6 | uma `Section` colapsável por provedor na aba Login, rotulada com o nome do provedor | | | CT-B02 + CT-32 do `04` |
-| 7 | interruptor `->live()` e as duas credenciais abrindo com ele | | | CT-B02 |
-| 8 | `placeholder` do client_secret dizendo que em branco mantém | | | inspeção — CT-28 do `04` prova o comportamento, não o texto |
-| 9 | `helperText` do client_id citando **onde** criar o app OAuth e **qual** URI cadastrar, por provedor | | | inspeção; RQ-10 pelo lado da tela |
-| 10 | o rodapé fora das seções de provedor | | | CT-B02 + CT-32 do `04` |
+| 1 | quatro botões, um por provedor disponível, abaixo do formulário | igual — laço sobre `ProvedorSocial::cases()`, cada botão visível com `href` para `/auth/{provedor}/redirect`; a posição "abaixo do form" não é asserida | sim | `tests/Browser/LoginSocialTest.php` · `it('mostra os quatro botoes de provedor visiveis, com icone e destino, na tela de login')` |
+| 2 | divisor "ou" renderizado **uma vez**, antes do laço | — | não verificado — o CT-B01 não assere o divisor; fica no CT-09 do `04` | CT-09 do `04` |
+| 3 | ícone da marca em cada botão, 18×18, `aria-hidden` | `svg[data-provedor]` visível com dimensão em cada botão; 18×18 e `aria-hidden` não asseridos | sim | `tests/Browser/LoginSocialTest.php` · `it('mostra os quatro botoes de provedor visiveis, com icone e destino, na tela de login')` |
+| 4 | os três ícones novos em `currentColor`, seguindo tema claro/escuro | — | não verificado | screenshot, claro e escuro — não há CT-B |
+| 5 | espaçamento entre botões quando há mais de um | — | não verificado | MB4, lacuna declarada — não há CT-B |
+| 6 | uma `Section` colapsável por provedor na aba Login, rotulada com o nome do provedor | igual — aba `Login`, seção `Entrar com GitHub` nasce fechada e abre por clique; ligar o GitHub não abre campos de outro provedor | sim | `tests/Browser/LoginSocialTest.php` · `it('abre os campos de credencial de um provedor ao ligar o interruptor dele, e so os dele')` |
+| 7 | interruptor `->live()` e as duas credenciais abrindo com ele | igual — `client_id` e `client_secret` ausentes antes do clique e visíveis depois, sem segundo evento | sim | `tests/Browser/LoginSocialTest.php` · `it('abre os campos de credencial de um provedor ao ligar o interruptor dele, e so os dele')` |
+| 8 | `placeholder` do client_secret dizendo que em branco mantém | — | não verificado | inspeção — CT-28 do `04` prova o comportamento, não o texto |
+| 9 | `helperText` do client_id citando **onde** criar o app OAuth e **qual** URI cadastrar, por provedor | — | não verificado | inspeção; RQ-10 pelo lado da tela |
+| 10 | o rodapé fora das seções de provedor | — | não verificado — nenhum CT-B assere o campo do rodapé nas settings (o CT-B01 assere o rodapé **renderizado** na tela de login, que é outra coisa) | CT-32 do `04` |
