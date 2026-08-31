@@ -5,6 +5,9 @@ namespace App\Support;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
 
 /**
  * Quem administra a INSTALAÇÃO — o `master_global`, não o administrador de uma organização.
@@ -51,5 +54,40 @@ class AdministradorDaInstalacao
     public static function existe(): bool
     {
         return self::todos()->isNotEmpty();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Teto de escalada do /admin (F-01 da auditoria Blueprint)
+    |--------------------------------------------------------------------------
+    | Só quem já é `master_global` concede `master_global`. Sem isto um `admin` se
+    | promovia pela tela de usuários ou por convite. O recorte das opções é UX; a
+    | trava que vale é na escrita — `regraDeConcessao()` nos convites e
+    | `Admin\Resources\Users\UserResource::gravarPapeis()` no cadastro.
+    */
+
+    public static function operadorPodeConceder(): bool
+    {
+        $operador = Auth::user();
+
+        return $operador instanceof User && $operador->isMasterGlobal();
+    }
+
+    /**
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $papeis
+     * @return Builder<TModel>
+     */
+    public static function recortarConcessao(Builder $papeis): Builder
+    {
+        return self::operadorPodeConceder() ? $papeis : $papeis->where('name', '!=', self::papel());
+    }
+
+    public static function regraDeConcessao(): Exists
+    {
+        $regra = Rule::exists((string) config('permission.table_names.roles', 'roles'), 'id');
+
+        return self::operadorPodeConceder() ? $regra : $regra->whereNot('name', self::papel());
     }
 }

@@ -70,6 +70,7 @@ class AppPanelProvider extends PanelProvider
             ->default()
             ->id('app')
             ->path('app')
+            ->strictAuthorization()
             ->login()
             ->passwordReset()
             ->brandName(fn (): string => config('app.name'))

@@ -5,6 +5,8 @@ use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Filament\Exports\ProjetoExporter;
 use App\Filament\Imports\ProjetoImporter;
 use App\Models\Projeto;
+use App\Models\Tenant;
+use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Actions\Exports\ExportColumn;
@@ -39,12 +41,17 @@ beforeEach(function (): void {
  * `$options` é o que a Action captura no request; passar `[]` reproduz a Action escrita
  * errado, e é o cenário do fail-closed.
  *
+ * O operador default é `admin_app` da Acme: o importador consulta a policy do model por
+ * linha, no contexto da organização das options.
+ *
  * @param  array<string, mixed>  $linha
  * @param  array<string, mixed>  $options
  */
-function importarLinha(array $linha, array $options): void
+function importarLinha(array $linha, array $options, ?User $operador = null): void
 {
     Filament::setTenant(null, isQuiet: true);
+
+    $operador ??= usuarioComPapel('admin_app', Tenant::where('slug', 'acme')->firstOrFail(), 'operador@example.com');
 
     $import = Import::create([
         'importer'   => ProjetoImporter::class,
@@ -52,7 +59,7 @@ function importarLinha(array $linha, array $options): void
         'file_path'  => 'projetos.csv',
         'total_rows' => 1,
         // `imports.user_id` é NOT NULL com FK: a Action sempre associa quem clicou.
-        'user_id'    => usuario('operador@example.com')->getKey(),
+        'user_id'    => $operador->getKey(),
     ]);
 
     $importador = new ProjetoImporter($import, ['nome' => 'nome'], $options);
@@ -104,6 +111,21 @@ it('preenche a organização no registro criado pelo import', function (): void 
  */
 it('recusa a linha quando a organização não chega nas options', function (): void {
     expect(fn () => importarLinha(['nome' => 'Sem organização'], []))
+        ->toThrow(RowImportFailedException::class);
+
+    expect(Projeto::withoutGlobalScope('tenant')->count())->toBe(0);
+});
+
+/**
+ * O `Importer` do Filament avisa: "runs without policy checks". `Import:Projeto` abre a
+ * Action; criar ou alterar CADA linha exige a policy do model — senão quem só pode importar
+ * edita por CSV o que a tela não deixa. Achado da auditoria Blueprint.
+ */
+it('recusa a linha quando o operador não pode criar nem alterar o registro', function (): void {
+    $semPapel = usuario('sem-papel@example.com');
+    $semPapel->tenants()->attach($this->acme);
+
+    expect(fn () => importarLinha(['nome' => 'Pela planilha'], ['tenant_id' => $this->acme->getKey()], $semPapel))
         ->toThrow(RowImportFailedException::class);
 
     expect(Projeto::withoutGlobalScope('tenant')->count())->toBe(0);

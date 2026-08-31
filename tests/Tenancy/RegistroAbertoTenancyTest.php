@@ -337,7 +337,7 @@ it('esconde o toggle de registro da organizacao quando a opcao global esta desli
     $this->actingAs(usuarioDoKit('master_global', 'master@example.com'));
 
     Livewire::test(EditTenant::class, ['record' => $acme->getRouteKey()])
-        ->assertFormFieldHidden('registro_habilitado');
+        ->assertSchemaComponentHidden('registro_habilitado');
 });
 
 /*

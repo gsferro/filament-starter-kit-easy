@@ -38,12 +38,15 @@ use Spatie\Permission\Models\Role;
  * feature inteira no modo single-tenant — e passaria toda a suíte `Tenancy`.
  */
 it('importa sem exigir organização quando não há tenancy', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
     $import = Import::create([
         'importer'   => AgenteIaImporter::class,
         'file_name'  => 'agentes.csv',
         'file_path'  => 'agentes.csv',
         'total_rows' => 1,
-        'user_id'    => usuario('operador@example.com')->getKey(),
+        // `admin` porque o importador consulta a policy do model por linha (Create/Update).
+        'user_id'    => usuarioDoKit('admin', 'operador@example.com')->getKey(),
     ]);
 
     $importador = new AgenteIaImporter($import, [
@@ -63,12 +66,15 @@ it('importa sem exigir organização quando não há tenancy', function (): void
 
 /** Reimportar o mesmo slug atualiza — a resolução é por `colunaDeResolucao()`, não por ID. */
 it('reimportar o mesmo slug atualiza em vez de duplicar', function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
     $import = Import::create([
         'importer'   => AgenteIaImporter::class,
         'file_name'  => 'agentes.csv',
         'file_path'  => 'agentes.csv',
         'total_rows' => 2,
-        'user_id'    => usuario('operador@example.com')->getKey(),
+        // `admin` porque o importador consulta a policy do model por linha (Create/Update).
+        'user_id'    => usuarioDoKit('admin', 'operador@example.com')->getKey(),
     ]);
 
     $mapa       = ['slug' => 'slug', 'nome' => 'nome', 'instrucoes' => 'instrucoes'];
