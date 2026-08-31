@@ -2,13 +2,14 @@
 
 namespace App\Filament\Admin\Resources\Convites\Schemas;
 
-use App\Models\Role;
+use App\Support\AdministradorDaInstalacao;
 use App\Support\Papeis;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Support\Config;
 
@@ -48,11 +49,14 @@ class ConviteForm
 
                         Select::make('role_id')
                             ->label('Papel')
-                            ->relationship('papel', 'name')
-                            ->getOptionLabelFromRecordUsing(fn (Role $record): string => Papeis::rotulo($record->name))
+                            // Recorte de UX do teto de escalada (F-01); a trava é o `->rule()`.
+                            ->relationship('papel', 'name', fn (Builder $query): Builder => AdministradorDaInstalacao::recortarConcessao($query))
                             ->required()
                             ->preload()
                             ->searchable()
+                            // Quem não é master_global não convida master_global — na
+                            // ESCRITA, como o `role_id` do ConviteResource do /app (ADR-07).
+                            ->rule(fn (): object => AdministradorDaInstalacao::regraDeConcessao())
                             // `->live()` porque o campo de organização depende do painel
                             // deste papel. O parâmetro TEM de se chamar `$record`: o
                             // Filament injeta closure de opção por NOME, não por tipo.
@@ -60,9 +64,7 @@ class ConviteForm
                             ->getOptionLabelFromRecordUsing(function (Model $record): string {
                                 $painel = $record->getAttribute('painel');
 
-                                return is_string($painel)
-                                    ? "{$record->getAttribute('name')} — /{$painel}"
-                                    : "{$record->getAttribute('name')} — sem painel";
+                                return Papeis::rotulo((string) $record->getAttribute('name')).' — '.(is_string($painel) ? "/{$painel}" : 'sem painel');
                             })
                             ->helperText('É o papel que dá acesso ao painel — quem aceitar nasce com ele.'),
 

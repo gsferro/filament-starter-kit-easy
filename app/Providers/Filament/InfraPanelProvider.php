@@ -84,6 +84,7 @@ class InfraPanelProvider extends PanelProvider
         return $panel
             ->id('infra')
             ->path('infra')
+            ->strictAuthorization()
             ->login()
             ->passwordReset()
             ->brandName(fn (): string => config('app.name').' • Infra')

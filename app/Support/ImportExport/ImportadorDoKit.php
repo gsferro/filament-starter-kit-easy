@@ -2,6 +2,9 @@
 
 namespace App\Support\ImportExport;
 
+use App\Models\Tenant;
+use App\Models\User;
+use App\Support\ContextoDePapeis;
 use App\Traits\BelongsToTenant;
 use Filament\Actions\Imports\Exceptions\RowImportFailedException;
 use Filament\Actions\Imports\Importer;
@@ -100,6 +103,8 @@ abstract class ImportadorDoKit extends Importer
      */
     protected function beforeSave(): void
     {
+        $this->exigirPermissaoDoOperador();
+
         if (! $this->exigeEscopoDeTenant()) {
             return;
         }
@@ -109,6 +114,40 @@ abstract class ImportadorDoKit extends Importer
         }
 
         $this->record->setAttribute('tenant_id', $this->tenantId());
+    }
+
+    /**
+     * A policy que o `Importer` do Filament avisa não consultar ("runs without policy checks").
+     *
+     * `Import:Projeto` abre a Action; criar ou alterar cada linha exige `Create:`/`Update:` do
+     * model — senão quem só pode importar edita por CSV o que a tela não deixa. O operador é
+     * o da importação (`imports.user_id`), não o `auth()` do worker, e a consulta roda no
+     * contexto da organização: com teams ligado, `can()` só enxerga os papéis do team fixado.
+     *
+     * @throws RowImportFailedException
+     */
+    private function exigirPermissaoDoOperador(): void
+    {
+        $operador = $this->import->user;
+        $acao     = $this->record->exists ? 'update' : 'create';
+        $contexto = $this->exigeEscopoDeTenant() ? (int) $this->tenantId() : Tenant::CONTEXTO_GLOBAL;
+
+        $autorizado = $operador instanceof User
+            && ContextoDePapeis::em($contexto, $operador, fn (): bool => $operador->can($acao, $this->record));
+
+        if ($autorizado) {
+            return;
+        }
+
+        Log::channel('tenancy')->warning(
+            "[ImportadorDoKit@exigirPermissaoDoOperador] Linha recusada: operador sem permissão de {$acao}"
+            ." | import_id: {$this->import->getKey()} | importer: ".static::class,
+            ['import_id' => $this->import->getKey(), 'importer' => static::class, 'user_id' => $this->import->getAttribute('user_id'), 'acao' => $acao],
+        );
+
+        throw new RowImportFailedException(
+            $acao === 'update' ? 'Sem permissão para alterar este registro.' : 'Sem permissão para criar este registro.'
+        );
     }
 
     /**

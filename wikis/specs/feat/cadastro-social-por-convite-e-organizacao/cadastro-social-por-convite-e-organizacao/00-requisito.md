@@ -38,6 +38,17 @@ E, antes, a preocupação que motivou (mesma conversa):
     organização e papel, e entra. É a mesma prova do formulário (token do e-mail + dono do e-mail).
   - **Se negado**: o ramo "conta existe + token" só entra, sem aceitar; o convite continua pendente
     para a tela. Um caso muda.
+  - **NEGADO em 2026-08-31** pela auditoria de segurança com o Filament Blueprint (F-03 e F-04, wiki
+    `wikis/specs/feat/travas-de-escalada-de-papeis/`). Dois defeitos na mesma linha: o `?token=` entra
+    pela rota GET pública do `redirecionar()`, sem CSRF, e com SSO silencioso do provedor o convite
+    era aceito **sem clique da vítima** — o `state` do Socialite protege o callback, não o início do
+    fluxo; e o aceite rodava **antes** de `redirecionarSeIndisponivel()`, então conta desativada ou
+    excluída queimava o convite sem entrar. A premissa "é a mesma prova do formulário" estava errada:
+    no formulário há um POST autenticado pela própria pessoa; aqui não havia clique nenhum.
+    O ramo de conta existente passou a só **registrar** que há convite pendente
+    (`LoginSocialController::avisarConvitePendente()`), e o aceite por conta existente é na tela
+    autenticada `ConvitesRecebidos`. **RQ-04 continua valendo para conta NOVA**, que é o caminho de
+    `criarContaPorConvite()` e não mudou.
 - **RQ-03** — sem `?org=` na multi-organização: o formulário recusa (`RegistroPorConvite::mount()`).
   - **Assumido**: o provedor recusa igual (já é o comportamento desde `8c92658`) — a mensagem é a
     da conta inexistente.

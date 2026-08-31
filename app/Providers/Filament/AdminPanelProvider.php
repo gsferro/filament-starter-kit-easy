@@ -62,6 +62,7 @@ class AdminPanelProvider extends PanelProvider
         return $panel
             ->id('admin')
             ->path('admin')
+            ->strictAuthorization()
             ->login()
             ->passwordReset()
             ->brandName(fn (): string => config('app.name').' • Admin')

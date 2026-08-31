@@ -8,6 +8,7 @@ use App\Filament\Admin\Resources\Roles\Pages\CreateRole;
 use App\Filament\Admin\Resources\Roles\Pages\EditRole;
 use App\Filament\Admin\Resources\Roles\Pages\ListRoles;
 use App\Filament\Admin\Resources\Roles\Pages\ViewRole;
+use App\Support\AdministradorDaInstalacao;
 use App\Support\Paineis;
 use App\Support\Papeis;
 use BezhanSalleh\FilamentShield\Facades\FilamentShield;
@@ -15,7 +16,9 @@ use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use BezhanSalleh\FilamentShield\Support\Utils;
 use BezhanSalleh\FilamentShield\Traits\HasShieldFormComponents;
 use BezhanSalleh\PluginEssentials\Concerns\Resource as Essentials;
+use Closure;
 use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -112,7 +115,22 @@ class RoleResource extends Resource
                                         modifyRuleUsing: fn (Unique $rule): Unique => Utils::isTenancyEnabled() ? $rule->where(Utils::getTenantModelForeignKey(), Filament::getTenant()?->id) : $rule
                                     )
                                     ->required()
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    /*
+                                     * O nome do papel super-admin é reservado. O `unique()`
+                                     * acima só impede DUPLICAR o nome; sozinho ele deixa passar
+                                     * o caminho de duas edições — renomear o `master_global`
+                                     * para outra coisa e depois renomear o próprio papel para
+                                     * `master_global`. F-01 da auditoria Blueprint.
+                                     *
+                                     * A closure vai DENTRO de outra: `->rule()` do Filament
+                                     * avalia o argumento como closure de configuração, com
+                                     * injeção por NOME de parâmetro — passar a regra direto
+                                     * estoura "[$atributo] was unresolvable"
+                                     * (`EvaluatesClosures.php:102`). O `fn (): Closure` devolve
+                                     * a regra, e é ela que a validação executa.
+                                     */
+                                    ->rule(fn (): Closure => AdministradorDaInstalacao::regraDeNomeDePapel()),
 
                                 Select::make('guard_name')
                                     ->label(__('filament-shield::filament-shield.field.guard_name'))
@@ -257,7 +275,17 @@ class RoleResource extends Resource
                 DeleteAction::make(),
             ])
             ->toolbarActions([
-                DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    /*
+                     * `authorizeIndividualRecords('delete')` porque a BulkAction pergunta só
+                     * `deleteAny` — a policy do REGISTRO nunca é consultada sem isto
+                     * (`Concerns/CanBeAuthorized.php:252-266`), e o `master_global` saía na
+                     * seleção em massa mesmo com `RolePolicy::delete()` fechado. Foi um teste
+                     * de exclusão em massa que mostrou; a guarda por registro sozinha não
+                     * cobre o verbo irmão.
+                     */
+                    DeleteBulkAction::make()->authorizeIndividualRecords('delete'),
+                ]),
             ]);
     }
 

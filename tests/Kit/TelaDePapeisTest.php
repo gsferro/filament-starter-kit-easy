@@ -10,6 +10,8 @@ use App\Support\Paineis;
 use App\Support\Papeis;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\Testing\TestAction;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Schemas\Components\EmptyState;
@@ -593,3 +595,235 @@ it('resolve o salvamento pela regra de conjunto', function (array $atuais, array
         ['View:LogsExplorer'],
     ],
 ]);
+
+/*
+|--------------------------------------------------------------------------
+| Travas de escalada — R1 e R2 da wiki travas-de-escalada-de-papeis
+|--------------------------------------------------------------------------
+| Os casos acima operam inteiros como `master_global`, que atravessa tudo pelo
+| `Gate::before` do Shield — eles são a evidência de que estas travas não trancam
+| o dono da instalação fora da própria tela. A persona discriminante daqui para
+| baixo é `admin`, que tem `Create/Update/Delete:Role` e NÃO é master.
+|
+| F-01 da auditoria Blueprint: enquanto esta tela puder renomear ou apagar o
+| papel super-admin, o teto de escalada (que casa por NOME) é contornável em
+| duas edições.
+*/
+
+/**
+ * CT-01 — o nome reservado é recusado na criação E na renomeação.
+ *
+ * As duas primeiras linhas são a partição inválida exata; as duas últimas são a premissa Q2
+ * (caixa e espaços das bordas): em SQLite o `unique` do `name` é case-sensitive, então
+ * `MASTER_GLOBAL` passa por ele — quem tem de barrar é a regra, que normaliza. Em MySQL
+ * `..._ci` essa variante É o papel super-admin para o `Gate::before`.
+ *
+ * O oráculo não é só o erro de formulário: a lista inteira de papéis do banco antes e depois,
+ * mais o nome do registro renomeado. Uma implementação que valide DEPOIS de gravar passa num
+ * caso que só confere `assertHasFormErrors`.
+ */
+it('[CT-01] recusa o nome reservado ao criar e ao renomear papel', function (string $operacao, string $nome): void {
+    $suporte = Role::create(['name' => 'suporte', 'guard_name' => 'web', 'painel' => 'admin']);
+    $antes   = Role::query()->pluck('name')->sort()->values()->all();
+
+    $this->actingAs(usuarioDoKit('admin', 'admin@example.com'));
+
+    $componente = $operacao === 'cria'
+        ? Livewire::test(CreateRole::class)
+            ->fillForm(['name' => $nome, 'guard_name' => 'web', 'painel' => 'admin'])
+            ->call('create')
+        : Livewire::test(EditRole::class, ['record' => $suporte->getRouteKey()])
+            ->fillForm(['name' => $nome, 'guard_name' => 'web', 'painel' => 'admin'])
+            ->call('save');
+
+    $componente->assertHasFormErrors(['name']);
+
+    expect(Role::query()->pluck('name')->sort()->values()->all())->toBe($antes)
+        ->and($suporte->fresh()->name)->toBe('suporte');
+})->with([
+    'cria com o nome reservado'       => ['cria', 'master_global'],
+    'renomeia para o nome reservado'  => ['renomeia', 'master_global'],
+    'cria com variante de caixa'      => ['cria', 'MASTER_GLOBAL'],
+    'renomeia com espaços nas bordas' => ['renomeia', ' master_global '],
+])->group('kit');
+
+/**
+ * CT-02 — o master_global salva o papel super-admin sem alterar o nome, e GRAVA outro campo.
+ *
+ * A gravação da permissão é o ponto: uma guarda condicionada a "o nome mudou" isentaria o
+ * master por acidente, e um caso que só passasse sem erro ficaria verde com ela. Aqui a tela
+ * precisa concluir a escrita.
+ */
+it('[CT-02] deixa o master_global salvar o papel super-admin e gravar permissao', function (): void {
+    $superAdmin = Role::findByName('master_global');
+
+    expect($superAdmin->permissions()->pluck('name')->all())->not->toContain('View:Role');
+
+    $this->actingAs(usuarioDoKit('master_global', 'master@example.com'));
+
+    Livewire::test(EditRole::class, ['record' => $superAdmin->getRouteKey()])
+        ->fillForm([
+            'name'              => 'master_global',
+            'guard_name'        => 'web',
+            'painel'            => null,
+            RoleResource::class => ['View:Role'],
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    $this->assertDatabaseHas(config('permission.table_names.roles', 'roles'), ['name' => 'master_global']);
+
+    expect($superAdmin->fresh()->permissions()->pluck('name')->all())->toContain('View:Role');
+})->group('kit');
+
+/**
+ * CT-03 — o nome reservado acompanha a CONFIGURAÇÃO, não um literal.
+ *
+ * É a única forma de separar "compara com `AdministradorDaInstalacao::papel()`" de "compara
+ * com a string `master_global`": no valor de fábrica os dois coincidem, e o mutante literal
+ * ficaria verde para sempre.
+ */
+it('[CT-03] recusa o nome reservado configurado, e nao um literal', function (): void {
+    config()->set('filament-shield.super_admin.name', 'dono_da_instalacao');
+
+    $this->actingAs(usuarioDoKit('admin', 'admin@example.com'));
+
+    Livewire::test(CreateRole::class)
+        ->fillForm(['name' => 'dono_da_instalacao', 'guard_name' => 'web', 'painel' => 'admin'])
+        ->call('create')
+        ->assertHasFormErrors(['name']);
+
+    $this->assertDatabaseMissing(config('permission.table_names.roles', 'roles'), ['name' => 'dono_da_instalacao']);
+})->group('kit');
+
+/**
+ * CT-04 — a partição válida: o operador comum continua criando papel com qualquer outro nome.
+ *
+ * Sem ela a guarda poderia recusar TODO nome e os casos acima continuariam verdes.
+ */
+it('[CT-04] deixa o operador comum criar papel com qualquer outro nome', function (): void {
+    $this->actingAs(usuarioDoKit('admin', 'admin@example.com'));
+
+    Livewire::test(CreateRole::class)
+        ->fillForm(['name' => 'auditor', 'guard_name' => 'web', 'painel' => 'admin'])
+        ->call('create')
+        ->assertHasNoFormErrors();
+
+    $this->assertDatabaseHas(config('permission.table_names.roles', 'roles'), [
+        'name'   => 'auditor',
+        'painel' => 'admin',
+    ]);
+})->group('kit');
+
+/**
+ * CT-05 — o operador comum não alcança o REGISTRO do papel super-admin.
+ *
+ * `mountAction`/`callMountedAction`, e não `callAction`: o segundo afirma a visibilidade antes
+ * de montar, e esconder é UX (ADR-01) — o oráculo tem de ser o registro no banco DEPOIS de o
+ * clique ter sido forjado, porque no navegador o `mountAction` do Livewire alcança ação
+ * escondida.
+ *
+ * As asserções por atributo (matriz de permissões e `painel` idênticos) fecham o furo de uma
+ * guarda posta como `->disabled()` no campo `name`: a tela continuaria salvando permissões e
+ * painel do papel super-admin.
+ */
+it('[CT-05] nao deixa o operador comum editar nem excluir o papel super-admin', function (string $operacao): void {
+    $superAdmin = Role::findByName('master_global');
+    $superAdmin->givePermissionTo('View:Role');
+
+    $dono = usuarioDoKit('master_global', 'master@example.com');
+
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    $permissoesAntes = $superAdmin->fresh()->permissions()->pluck('name')->sort()->values()->all();
+    $painelAntes     = $superAdmin->fresh()->getAttribute('painel');
+
+    $this->actingAs(usuarioDoKit('admin', 'admin@example.com'));
+
+    match ($operacao) {
+        'update' => Livewire::test(EditRole::class, ['record' => $superAdmin->getRouteKey()])
+            ->assertForbidden(),
+
+        'delete' => Livewire::test(ListRoles::class)
+            ->loadTable()
+            ->mountAction(TestAction::make(DeleteAction::class)->table($superAdmin))
+            ->callMountedAction(),
+
+        'deleteAny' => Livewire::test(ListRoles::class)
+            ->loadTable()
+            ->selectTableRecords([$superAdmin->getKey()])
+            ->mountAction(TestAction::make(DeleteBulkAction::class)->table()->bulk())
+            ->callMountedAction(),
+    };
+
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    $this->assertDatabaseHas(config('permission.table_names.roles', 'roles'), ['name' => 'master_global']);
+
+    expect($superAdmin->fresh()->permissions()->pluck('name')->sort()->values()->all())->toBe($permissoesAntes)
+        ->and($superAdmin->fresh()->getAttribute('painel'))->toBe($painelAntes)
+        ->and($dono->fresh()->isMasterGlobal())->toBeTrue();
+})->with([
+    'abrir e salvar a tela de alteração' => ['update'],
+    'exclusão pela linha da tabela'      => ['delete'],
+    'exclusão em massa (verbo irmão)'    => ['deleteAny'],
+])->group('kit');
+
+/**
+ * CT-06 — a célula VÁLIDA de cada coluna: o operador comum continua editando e excluindo papel
+ * comum.
+ *
+ * É ela que impede a guarda de virar "ninguém edita papel algum". Uma operação por linha,
+ * porque a asserção da renomeação é sobre o registro PRESENTE com o nome novo, e a da exclusão
+ * é de ausência.
+ */
+it('[CT-06] deixa o operador comum editar e excluir papel comum', function (string $operacao): void {
+    $suporte = Role::create(['name' => 'suporte', 'guard_name' => 'web', 'painel' => 'admin']);
+
+    $this->actingAs(usuarioDoKit('admin', 'admin@example.com'));
+
+    if ($operacao === 'renomeia') {
+        Livewire::test(EditRole::class, ['record' => $suporte->getRouteKey()])
+            ->fillForm(['name' => 'suporte_n1', 'guard_name' => 'web', 'painel' => 'admin'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas(config('permission.table_names.roles', 'roles'), [
+            'name'   => 'suporte_n1',
+            'painel' => 'admin',
+        ]);
+
+        return;
+    }
+
+    Livewire::test(ListRoles::class)
+        ->loadTable()
+        ->mountAction(TestAction::make(DeleteAction::class)->table($suporte))
+        ->callMountedAction();
+
+    $this->assertDatabaseMissing(config('permission.table_names.roles', 'roles'), ['name' => 'suporte']);
+})->with([
+    'renomeia (célula válida do update)' => ['renomeia'],
+    'exclui (célula válida do delete)'   => ['exclui'],
+])->group('kit');
+
+/**
+ * CT-07 — a linha de controle: o master_global continua alcançando o papel super-admin.
+ *
+ * Sem ela, uma guarda que perguntasse a permissão em vez de "é o master?" passaria em CT-05 e
+ * trancaria o dono da instalação fora do próprio papel.
+ */
+it('[CT-07] deixa o master_global excluir o papel super-admin', function (): void {
+    $superAdmin = Role::findByName('master_global');
+
+    $this->actingAs(usuarioDoKit('master_global', 'master@example.com'));
+
+    Livewire::test(ListRoles::class)
+        ->loadTable()
+        ->mountAction(TestAction::make(DeleteAction::class)->table($superAdmin))
+        ->callMountedAction();
+
+    $this->assertDatabaseMissing(config('permission.table_names.roles', 'roles'), ['name' => 'master_global']);
+})->group('kit');

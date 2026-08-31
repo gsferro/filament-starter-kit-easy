@@ -11,6 +11,7 @@ use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Laravel\Socialite\Socialite;
@@ -215,3 +216,171 @@ it('grava o modo estrito pelo toggle da tela de configuracoes do kit', function 
     expect(app(SettingsDoKit::class)->login_vinculo_confirmar)->toBeTrue()
         ->and(configuracaoGravada('login_vinculo_confirmar'))->toBeTrue();
 })->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| R7 — o link de confirmação de vínculo é de USO ÚNICO
+|--------------------------------------------------------------------------
+| F-05 da auditoria Blueprint: `ValidateSignature` confere assinatura e
+| expiração, nunca unicidade de uso — o link do e-mail era um magic-link de
+| login reutilizável por 30 minutos, e `VinculoSocial::vincular()` é
+| `firstOrCreate`, então o reuso não deixava rastro nenhum no banco.
+|
+| CT-19 (o primeiro uso vincula e entra) já existe acima como CT-V04, e entra
+| aqui como linha de controle — sem teste novo.
+|
+| O oráculo é sempre a SESSÃO mais os vínculos persistidos, nunca o retorno da
+| chamada: o `firstOrCreate` esconde o segundo uso na tabela.
+*/
+
+/**
+ * O link assinado que o e-mail de confirmação carrega.
+ *
+ * Montado pela mesma rota e com a mesma janela de `pedirConfirmacaoDoVinculo()` — é o padrão
+ * que CT-V08 acima já usa. Emitir pelo callback não serve aos casos de DOIS links: depois do
+ * primeiro uso o vínculo existe, e a volta do provedor passa a ser reconhecida pelo ramo do
+ * vínculo, que não envia notificação nenhuma.
+ *
+ * Local, e não em `tests/Pest.php`: um arquivo só usa (`.ai/rules/testes.md`).
+ */
+function linkDeVinculo(User $user, ProvedorSocial $provedor, string $sub): string
+{
+    return URL::temporarySignedRoute('auth.social.confirmar', now()->addMinutes(30), [
+        'provedor' => $provedor->value,
+        'user'     => $user->getKey(),
+        'sub'      => $sub,
+    ]);
+}
+
+/**
+ * CT-20 — o segundo uso do mesmo link é recusado.
+ *
+ * `assertRedirect` para o login do /app, e não `assertForbidden`: o 403 é o que o middleware
+ * `signed` devolve para assinatura inválida ou vencida, e sem essa distinção o caso ficaria
+ * verde com a marca de uso removida — bastaria deixar o link expirar.
+ */
+it('[CT-20] recusa o segundo uso do mesmo link de confirmacao', function (): void {
+    config()->set('kit.login.vinculo_confirmar', true);
+
+    $dona = usuario('dona@example.com');
+    $url  = linkDeVinculo($dona, ProvedorSocial::Google, 'sub-1');
+
+    $this->get($url)->assertRedirect();
+    $this->assertAuthenticatedAs($dona);
+
+    Auth::logout();
+    $this->flushSession();
+
+    $this->get($url)->assertRedirect(Filament::getPanel('app')->getLoginUrl());
+
+    $this->assertGuest();
+
+    expect(VinculoSocial::query()->count())->toBe(1)
+        ->and(VinculoSocial::de(ProvedorSocial::Google, 'sub-1')?->user_id)->toBe($dona->id);
+})->group('kit');
+
+/**
+ * CT-21 — o link de uma pessoa não invalida o da outra.
+ *
+ * Duas pessoas distintas, porque persona colapsada não exercita barreira de identidade
+ * nenhuma: uma marca fixa por ROTA queimaria o link de todo mundo depois do primeiro uso de
+ * qualquer um.
+ */
+it('[CT-21] nao invalida o link de outra pessoa', function (): void {
+    config()->set('kit.login.vinculo_confirmar', true);
+
+    $dona  = usuario('dona@example.com');
+    $outra = usuario('outra@example.com');
+
+    $this->get(linkDeVinculo($dona, ProvedorSocial::Google, 'sub-1'))->assertRedirect();
+    $this->assertAuthenticatedAs($dona);
+
+    Auth::logout();
+    $this->flushSession();
+
+    $this->get(linkDeVinculo($outra, ProvedorSocial::Google, 'sub-2'))->assertRedirect();
+
+    $this->assertAuthenticatedAs($outra);
+
+    expect(VinculoSocial::query()->count())->toBe(2)
+        ->and(VinculoSocial::de(ProvedorSocial::Google, 'sub-1')?->user_id)->toBe($dona->id)
+        ->and(VinculoSocial::de(ProvedorSocial::Google, 'sub-2')?->user_id)->toBe($outra->id);
+})->group('kit');
+
+/**
+ * CT-22 — o link continua queimado em TODA a janela de validade da assinatura.
+ *
+ * BVA sobre a janela de tempo. A linha `29` é a que importa: com só o ponto interior, qualquer
+ * janela de marca entre 21 e 30 minutos passaria, e o link voltaria a valer dentro da própria
+ * validade da assinatura. Fora dos 30 minutos o middleware `signed` já recusa, e o caso mediria
+ * o middleware em vez da marca de uso.
+ */
+it('[CT-22] mantem o link queimado por toda a janela da assinatura', function (int $minutos): void {
+    config()->set('kit.login.vinculo_confirmar', true);
+
+    $dona = usuario('dona@example.com');
+    $url  = linkDeVinculo($dona, ProvedorSocial::Google, 'sub-1');
+
+    $this->get($url)->assertRedirect();
+    $this->assertAuthenticatedAs($dona);
+
+    Auth::logout();
+    $this->flushSession();
+
+    $this->travel($minutos)->minutes();
+
+    $this->get($url)->assertRedirect(Filament::getPanel('app')->getLoginUrl());
+
+    $this->assertGuest();
+
+    expect(VinculoSocial::query()->count())->toBe(1);
+
+    $this->travelBack();
+})->with([
+    'interior da janela'                 => [20],
+    'borda−1 da validade da assinatura'  => [29],
+])->group('kit');
+
+/**
+ * CT-27 — o segundo link LEGÍTIMO da mesma pessoa continua valendo.
+ *
+ * As duas partições existem por mutantes diferentes: `mesmo provedor` mata a marca por
+ * `(usuário, provedor)`, que faria o reenvio nascer morto; `outro provedor` mata a marca por
+ * usuário. E o último `Então` — o primeiro link segue recusado — mata a marca sobrescrita a
+ * cada confirmação, em que usar o segundo link revive o primeiro.
+ */
+it('[CT-27] deixa valer o segundo link legitimo da mesma pessoa', function (string $provedor, string $sub): void {
+    config()->set('kit.login.vinculo_confirmar', true);
+    ligarProvedor(ProvedorSocial::Github);
+
+    $dona     = usuario('dona@example.com');
+    $primeiro = linkDeVinculo($dona, ProvedorSocial::Google, 'sub-1');
+
+    $this->get($primeiro)->assertRedirect();
+    $this->assertAuthenticatedAs($dona);
+
+    Auth::logout();
+    $this->flushSession();
+
+    // O reenvio acontece DEPOIS: sem a passagem de tempo a rota assinada nasceria com o mesmo
+    // `expires`, logo com a mesma assinatura — e o "segundo link" seria o primeiro.
+    $this->travel(1)->minutes();
+
+    $segundo = linkDeVinculo($dona, ProvedorSocial::from($provedor), $sub);
+
+    $this->get($segundo)->assertRedirect();
+
+    $this->assertAuthenticatedAs($dona);
+
+    Auth::logout();
+    $this->flushSession();
+
+    $this->get($primeiro)->assertRedirect(Filament::getPanel('app')->getLoginUrl());
+
+    $this->assertGuest();
+
+    $this->travelBack();
+})->with([
+    'reenviado para o mesmo provedor' => ['google', 'sub-1'],
+    'emitido para outro provedor'     => ['github', 'gh-1'],
+])->group('kit');

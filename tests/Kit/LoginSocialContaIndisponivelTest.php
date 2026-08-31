@@ -1,10 +1,13 @@
 <?php
 
+use App\Models\Convite;
 use App\Models\VinculoSocial;
 use App\Notifications\ConfirmarVinculoSocial;
 use App\Notifications\PrimeiroAcessoSocial;
 use App\Support\ProvedorSocial;
 use Carbon\Carbon;
+use Database\Seeders\PapeisSeeder;
+use Database\Seeders\ShieldPermissionsSeeder;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
@@ -128,3 +131,52 @@ it('[CT-17] recusa social vai para o log e para a trilha', function (): void {
         'login_successful'     => false,
     ]);
 })->group('kit');
+
+/**
+ * CT-18 — a conta indisponível não QUEIMA o convite.
+ *
+ * O oráculo que faltava nos CT-13..CT-15 acima: eles recusam a sessão e não afirmam nada sobre
+ * o convite, e é exatamente por baixo deles que o defeito F-03 atravessava — o convite era
+ * consumido ANTES da barreira de indisponibilidade, então uma conta desativada queimava o
+ * convite sem entrar.
+ *
+ * A linha `ativa` é o que impede o caso de virar tautologia: sem ela, uma implementação que
+ * nunca consumisse convite em caso algum passaria em todas as linhas. Ela é também o que
+ * separa R6 de R5 — nas duas o convite fica pendente, mas aqui a sessão NÃO abre.
+ *
+ * `Convite::valido()` de volta não-nulo é o oráculo compacto das quatro metades: `aceito_em`
+ * vazio, sem marca de recusa, dentro da validade e com o token intacto.
+ */
+it('[CT-18] nao queima o convite quando a conta esta indisponível', function (string $estado): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    $user = usuario('ja.tem@example.com');
+
+    match ($estado) {
+        'ativa'     => null,
+        'inativa'   => $user->forceFill(['ativo' => false])->save(),
+        'excluída'  => $user->delete(),
+        'pendente'  => $user->forceFill(['aprovacao_pendente' => true])->save(),
+    };
+
+    $convite  = ofertaPara('ja.tem@example.com');
+    $token    = $convite->enviar();
+    $lembrete = $convite->fresh()->token_lembrete;
+
+    $this->withSession(['login_social.contexto' => ['token' => $token]]);
+
+    callbackDoGoogle($this, 'ja.tem@example.com', 'sub-1');
+
+    $estado === 'ativa'
+        ? $this->assertAuthenticatedAs($user)
+        : $this->assertGuest();
+
+    expect(Convite::valido($token))->not->toBeNull()
+        ->and($convite->fresh()->aceito_em)->toBeNull()
+        ->and($convite->fresh()->token_lembrete)->toBe($lembrete);
+})->with([
+    'ativa (célula de controle)' => ['ativa'],
+    'desativada'                 => ['inativa'],
+    'excluída logicamente'       => ['excluída'],
+    'pendente de aprovação'      => ['pendente'],
+])->group('kit');

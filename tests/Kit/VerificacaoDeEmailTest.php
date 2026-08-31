@@ -518,8 +518,8 @@ it('mostra o campo de exigencia de email mesmo com o registro aberto desligado',
 
     Livewire::test(TelaDeConfiguracoes::class)
         ->fillForm(['registro_habilitado' => false])
-        ->assertFormFieldVisible('registro_verificar_email')
-        ->assertFormFieldHidden('registro_aprovacao_manual');
+        ->assertSchemaComponentVisible('registro_verificar_email')
+        ->assertSchemaComponentHidden('registro_aprovacao_manual');
 });
 
 /**

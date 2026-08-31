@@ -8,9 +8,13 @@ use App\Filament\Admin\Resources\Users\Pages\ListUsers;
 use App\Filament\Concerns\AprovacaoDeCadastro;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Filament\Concerns\SituacaoDaConta;
+use App\Models\Tenant;
 use App\Models\User;
+use App\Support\AdministradorDaInstalacao;
+use App\Support\ContextoDePapeis;
 use App\Support\Papeis;
 use BackedEnum;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -18,11 +22,16 @@ use Filament\Actions\RestoreAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
 use STS\FilamentImpersonate\Actions\Impersonate;
 
@@ -63,8 +72,30 @@ class UserResource extends Resource
                 ->maxLength(255),
             Select::make('roles')
                 ->label('Papéis')
-                ->relationship('roles', 'name')
-                ->getOptionLabelFromRecordUsing(fn (Role $record): string => Papeis::rotulo($record->name))
+                // Recorte de UX do teto de escalada: quem não é master_global não vê o
+                // master_global, nem papel de painel fora do alcance dele. A trava que vale
+                // é em gravarPapeis(). O `$record` entra no recorte para que o papel que a
+                // pessoa JÁ tem continue sendo opção válida — senão a ficha de quem tem
+                // `infra` não salva mais.
+                ->relationship('roles', 'name', fn (Builder $query, ?User $record): Builder => AdministradorDaInstalacao::recortarConcessao($query, $record))
+                /*
+                 * A UNIÃO dos papéis em qualquer contexto, não a relação `roles` do spatie:
+                 * ela filtra pelo team do request, e no /admin (sem tenant) só mostraria os
+                 * globais — e gravar a partir dessa lista apagaria os papéis do /app de toda
+                 * organização. Ver gravarPapeis().
+                 */
+                ->loadStateFromRelationshipsUsing(function (Select $component, ?User $record): void {
+                    if ($record === null) {
+                        return;
+                    }
+
+                    $papeis = $record->papeisEmQualquerContexto();
+
+                    $component->state(array_values(array_unique(array_map(
+                        strval(...),
+                        $papeis->pluck($papeis->getRelated()->getQualifiedKeyName())->all(),
+                    ))));
+                })
                 ->multiple()
                 ->preload()
                 ->searchable()
@@ -90,9 +121,7 @@ class UserResource extends Resource
                 ->getOptionLabelFromRecordUsing(function (Role $record): string {
                     $painel = $record->getAttribute('painel');
 
-                    return $painel === null
-                        ? "{$record->name} — sem painel"
-                        : "{$record->name} — /{$painel}";
+                    return Papeis::rotulo($record->name).' — '.($painel === null ? 'sem painel' : "/{$painel}");
                 })
                 /*
                  * Gravar papel é pela API do spatie, NUNCA pelo sync da relação.
@@ -104,19 +133,12 @@ class UserResource extends Resource
                  * alimenta escrita. Resultado era 500 ao salvar o usuário —
                  * `NOT NULL constraint failed: model_has_roles.team_id`.
                  *
-                 * O `syncRoles()` resolve os dois lados: passa o `team_id` do
-                 * contexto corrente no attach e invalida o cache de papéis, que
-                 * o `sync()` deixava velho mesmo em modo single-tenant.
-                 *
-                 * Os papéis são resolvidos em modelos antes de entrar: o state
-                 * vem do Livewire como string, e o `collectRoles()` do spatie
-                 * trata string como NOME de papel — `"4"` viraria
-                 * `RoleDoesNotExist`.
+                 * E o contexto de cada papel é decidido em gravarPapeis(), nunca
+                 * herdado do request. O campo `tenants` do MESMO form diz em quais
+                 * organizações o papel do /app deve ser gravado.
                  */
-                ->saveRelationshipsUsing(function (User $record, array $state): void {
-                    $record->syncRoles(
-                        $record->roles()->getRelated()->newQuery()->whereKey($state)->get()
-                    );
+                ->saveRelationshipsUsing(function (User $record, array $state, Get $get): void {
+                    self::gravarPapeis($record, array_values($state), array_values((array) ($get('tenants') ?? [])));
                 }),
 
             /*
@@ -205,8 +227,87 @@ class UserResource extends Resource
                 RestoreAction::make(),
             ])
             ->toolbarActions([
-                DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
             ]);
+    }
+
+    /**
+     * Grava os papéis do /admin no contexto CERTO de cada um — nunca no do request.
+     *
+     * O /admin não tem tenant, então o contexto do request é o global (`team_id = 0`).
+     * Papel de painel SEM tenancy (`admin`, `infra`, `master_global`) mora aí. Papel do
+     * painel `app` mora no `team_id` de cada organização selecionada em `tenants`: gravado
+     * em 0 produzia alguém que autentica no /app e não vê nada — o mesmo sintoma da
+     * v0.19.1 corrigido em `User::aprovar()`. Rule "Papel se atribui dentro de
+     * ContextoDePapeis" (`.ai/rules/app.md`). Sem tenancy, tudo vai no global, como antes.
+     *
+     * Limitação assumida: o form mostra a UNIÃO dos papéis e não expressa papel DIFERENTE
+     * por organização. Para não achatar o que já existe, a gravação por organização é por
+     * DIFERENÇA — tira o que saiu da união, põe o que entrou, não mexe no que ficou — e a
+     * organização em que a pessoa ainda não tem papel nenhum recebe a lista inteira (senão
+     * ela entraria e não veria nada). Papel diferente por organização se dá no /app ou em
+     * Organizações → Usuários → "Papéis nesta organização".
+     *
+     * Teto de escalada (F-01): `master_global` só entra pela mão de quem já o tem; vindo de
+     * outro operador é descartado e logado, mesmo que o payload o traga. Efeito colateral
+     * aceito: quem não é master não consegue salvar a ficha de um master — o papel dele
+     * está fora das opções e a validação do Select recusa.
+     *
+     * Pública porque é a barreira, e barreira sem teste direto não é barreira.
+     *
+     * Os papéis são resolvidos em modelos antes de entrar: o state vem do Livewire como
+     * string, e o `collectRoles()` do spatie trata string como NOME — `"4"` viraria
+     * `RoleDoesNotExist`.
+     *
+     * @param  list<int|string>  $state  ids dos papéis selecionados
+     * @param  list<int|string>  $organizacoes  ids das organizações do campo `tenants`
+     */
+    public static function gravarPapeis(User $record, array $state, array $organizacoes): void
+    {
+        $selecionados = AdministradorDaInstalacao::recortarConcessao(
+            $record->roles()->getRelated()->newQuery()->whereKey($state),
+            $record,
+        )->get();
+
+        if ($selecionados->count() !== count($state)) {
+            Log::channel('autenticacao')->warning(
+                "[UserResource@gravarPapeis] master_global descartado: operador não é master_global | alvo: {$record->id}",
+                ['alvo_id' => $record->id, 'executor_id' => Auth::id(), 'ids_enviados' => $state, 'ids_aceitos' => $selecionados->modelKeys()],
+            );
+        }
+
+        $antes = $record->papeisEmQualquerContexto()->get()->unique(fn (Model $papel): mixed => $papel->getKey());
+
+        $doApp   = config('kit.tenancy.enabled') ? $selecionados->where('painel', 'app') : $selecionados->take(0);
+        $globais = $selecionados->reject(fn (Model $papel): bool => $doApp->contains($papel));
+
+        ContextoDePapeis::em(Tenant::CONTEXTO_GLOBAL, $record, fn () => $record->syncRoles($globais));
+
+        $removidos   = $antes->filter(fn (Model $papel): bool => $papel->getAttribute('painel') === 'app' && ! $selecionados->contains($papel));
+        $adicionados = $doApp->reject(fn (Model $papel): bool => $antes->contains($papel));
+
+        foreach ($organizacoes as $organizacao) {
+            ContextoDePapeis::em((int) $organizacao, $record, function () use ($record, $doApp, $removidos, $adicionados): void {
+                $atuais = $record->roles()->get();
+
+                $record->syncRoles($atuais->isEmpty()
+                    ? $doApp
+                    : $atuais->reject(fn (Model $papel): bool => $removidos->contains($papel))->merge($adicionados));
+            });
+        }
+
+        Log::channel('autenticacao')->info(
+            "[UserResource@gravarPapeis] Papéis atualizados pelo /admin | alvo: {$record->id}",
+            [
+                'alvo_id'      => $record->id,
+                'executor_id'  => Auth::id(),
+                'globais'      => $globais->pluck('name')->all(),
+                'do_app'       => $doApp->pluck('name')->all(),
+                'organizacoes' => array_map(intval(...), $organizacoes),
+            ],
+        );
     }
 
     public static function getPages(): array

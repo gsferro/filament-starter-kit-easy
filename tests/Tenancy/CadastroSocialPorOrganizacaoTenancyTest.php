@@ -1,16 +1,21 @@
 <?php
 
+use App\Filament\App\Pages\ConvitesRecebidos;
 use App\Models\Convite;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\VinculoSocial;
+use App\Notifications\ConfirmarVinculoSocial;
 use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Socialite\Socialite;
+use Livewire\Livewire;
 
 /**
  * Cadastro pelo provedor social com a multi-organização ligada: `?org=` e `?token=`.
@@ -122,13 +127,51 @@ it('consome o contexto da sessao no callback mesmo quando recusa', function (): 
     expect(User::query()->where('email', 'nova@example.com')->exists())->toBeFalse();
 })->group('kit');
 
-/** CT-C08 — conta existente aceita o convite pelo botão social. */
-it('faz a conta existente aceitar o convite na volta do provedor', function (): void {
-    $user    = usuario('ja.tem@example.com');
-    $convite = Convite::factory()->create(['email' => 'ja.tem@example.com', 'tenant_id' => $this->acme->getKey(), 'role_id' => Role::query()->where('name', 'panel_user')->value('id')]);
-    $token   = $convite->enviar();
+/*
+|--------------------------------------------------------------------------
+| R5 — conta existente NÃO consome convite na volta do provedor
+|--------------------------------------------------------------------------
+| Era o CT-C08 desta suíte, que afirmava o contrário: a conta existente virava
+| membro da Acme na volta do provedor. O `?token=` entra na sessão pelo
+| `redirecionar()`, que é rota GET pública sem CSRF — com SSO silencioso do
+| provedor o convite era aceito sem clique nem consentimento da pessoa. F-04 da
+| auditoria Blueprint; RQ-06 da wiki travas-de-escalada-de-papeis.
+|
+| O aceite migrou para a tela autenticada `ConvitesRecebidos` (CT-15), que exige
+| o dono e pede confirmação.
+*/
 
-    Socialite::fake('google', usuarioSocialFalso(ProvedorSocial::Google, [], ['id' => 'sub-e', 'email' => 'ja.tem@example.com']));
+/** A pessoa que já tem conta e já opera OUTRA organização — o convite dela é para a Acme. */
+function quemJaTemConta(Tenant $globex): User
+{
+    $user = usuarioComPapel('panel_user', $globex, 'ja.tem@example.com');
+
+    $user->tenants()->attach($globex);
+
+    return $user;
+}
+
+/**
+ * CT-14/CT-16 — a volta do provedor não consome o convite de quem já tem conta.
+ *
+ * Os dois ramos de reconhecimento de conta existente, porque são verbos irmãos: pelo e-mail
+ * verificado (CT-14) e pelo vínculo social já registrado (CT-16). Remover o aceite de um e
+ * esquecer o outro é o mutante mais provável.
+ *
+ * O oráculo é o AGREGADO, não só `aceito_em`: uma implementação que deixasse de gravar a data
+ * e continuasse filiando a pessoa à organização de terceiro é o mesmo furo com outra cara.
+ * `Convite::valido()` de volta não-nulo prova as três metades de uma vez — pendente, dentro da
+ * validade e sem marca de recusa.
+ */
+it('[CT-14/CT-16] nao consome o convite de conta existente na volta do provedor', function (bool $jaVinculada): void {
+    $user  = quemJaTemConta($this->globex);
+    $token = ofertaPara('ja.tem@example.com', $this->acme)->enviar();
+
+    if ($jaVinculada) {
+        VinculoSocial::vincular($user, ProvedorSocial::Google, 'sub-1');
+    }
+
+    Socialite::fake('google', usuarioSocialFalso(ProvedorSocial::Google, [], ['id' => 'sub-1', 'email' => 'ja.tem@example.com']));
 
     $this->withSession(['login_social.contexto' => ['token' => $token]])
         ->get('/auth/google/callback')
@@ -136,7 +179,81 @@ it('faz a conta existente aceitar o convite na volta do provedor', function (): 
 
     $this->assertAuthenticatedAs($user);
 
-    expect($user->fresh()->tenants->pluck('slug')->all())->toBe(['acme'])
-        ->and(papelNaOrganizacaoExiste($user, $this->acme, 'panel_user'))->toBeTrue()
-        ->and($convite->fresh()->aceito_em)->not->toBeNull();
+    expect(Convite::valido($token))->not->toBeNull()
+        ->and($user->fresh()->tenants->pluck('slug')->all())->not->toContain('acme')
+        ->and(papelNaOrganizacaoExiste($user, $this->acme, 'panel_user'))->toBeFalse();
+})->with([
+    'reconhecida pelo e-mail'  => [false],
+    'reconhecida pelo vínculo' => [true],
+])->group('kit');
+
+/**
+ * CT-15 — o convite que SOBROU da volta do provedor é aceito na tela autenticada.
+ *
+ * Encadeia a partir de CT-14 de propósito, em vez de usar fixture própria: é o que prova que o
+ * convite deixado lá continua aceitável, e não apenas que existe um convite qualquer que a tela
+ * aceita. Sem este caso a correção do RQ-06 viraria "o convite some".
+ */
+it('[CT-15] aceita na tela autenticada o convite que sobrou da volta do provedor', function (): void {
+    $user  = quemJaTemConta($this->globex);
+    $token = ofertaPara('ja.tem@example.com', $this->acme)->enviar();
+
+    Socialite::fake('google', usuarioSocialFalso(ProvedorSocial::Google, [], ['id' => 'sub-1', 'email' => 'ja.tem@example.com']));
+
+    $this->withSession(['login_social.contexto' => ['token' => $token]])
+        ->get('/auth/google/callback')
+        ->assertRedirect();
+
+    $convite = Convite::valido($token);
+
+    expect($convite)->not->toBeNull();
+
+    noPainelDa($this->globex);
+    $this->actingAs($user);
+
+    Livewire::test(ConvitesRecebidos::class)
+        ->loadTable()
+        ->callAction(TestAction::make('aceitar')->table($convite));
+
+    expect($convite->fresh()->aceito_em)->not->toBeNull()
+        ->and($user->fresh()->tenants->pluck('slug')->all())->toContain('acme')
+        ->and(papelNaOrganizacaoExiste($user, $this->acme, 'panel_user'))->toBeTrue();
+})->group('kit');
+
+/**
+ * CT-25 — o link de confirmação de vínculo também não consome o convite.
+ *
+ * É o TERCEIRO ramo de autenticação de conta existente, e ele enxerga o mesmo contexto de
+ * sessão: tirar o aceite do retorno do provedor e deixá-lo aqui reabriria o furo inteiro pelo
+ * modo estrito.
+ */
+it('[CT-25] nao consome o convite pelo link de confirmacao de vinculo', function (): void {
+    config()->set('kit.login.vinculo_confirmar', true);
+
+    $user  = quemJaTemConta($this->globex);
+    $token = ofertaPara('ja.tem@example.com', $this->acme)->enviar();
+
+    Socialite::fake('google', usuarioSocialFalso(ProvedorSocial::Google, [], ['id' => 'sub-1', 'email' => 'ja.tem@example.com']));
+
+    $this->withSession(['login_social.contexto' => ['token' => $token]])
+        ->get('/auth/google/callback')
+        ->assertRedirect(Filament::getPanel('app')->getLoginUrl());
+
+    $this->assertGuest();
+
+    $url = null;
+    Notification::assertSentTo($user, ConfirmarVinculoSocial::class, function (ConfirmarVinculoSocial $n) use (&$url): bool {
+        $url = $n->url;
+
+        return true;
+    });
+
+    $this->get((string) $url)->assertRedirect();
+
+    $this->assertAuthenticatedAs($user);
+
+    expect(VinculoSocial::de(ProvedorSocial::Google, 'sub-1')?->user_id)->toBe($user->id)
+        ->and(Convite::valido($token))->not->toBeNull()
+        ->and($user->fresh()->tenants->pluck('slug')->all())->not->toContain('acme')
+        ->and(papelNaOrganizacaoExiste($user, $this->acme, 'panel_user'))->toBeFalse();
 })->group('kit');

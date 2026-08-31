@@ -8,6 +8,7 @@ use DanHarrin\LivewireRateLimiting\WithRateLimiting;
 use Filament\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Concerns\RestrictsFileUploadsToSchemaComponents;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
@@ -38,6 +39,9 @@ use SensitiveParameter;
  */
 class DefinirSenhaPorEmail extends MyProfileComponent
 {
+    // Sem campo de upload no schema, fecha o canal `_startUpload` do Livewire — como
+    // `BoasVindas` e `ConvitesRecebidos`. Achado Low da auditoria Blueprint.
+    use RestrictsFileUploadsToSchemaComponents;
     use WithRateLimiting;
 
     /**
