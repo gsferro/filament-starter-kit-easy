@@ -135,3 +135,27 @@
 - **Faltou no plano**: prever que uma trava de concessão precisa distinguir **acrescentar** de
   **manter**. O plano falava só em recortar, e recortar sozinho quebra a edição de quem já tem o
   papel.
+
+## Candidatos a Rule (step 9)
+
+Um candidato, aprovado pelo solicitante e gravado em 2026-08-31.
+
+| # | Candidato | Glob | Gates | Situação |
+|---|---|---|---|---|
+| 1 | BulkAction de escrita declara `authorizeIndividualRecords()` — a policy do registro não é consultada sem ela | `app/Filament/**` | durável ✅ · escopável ✅ · não-inferível ✅ (o default do vendor é permissivo e silencioso) · não-redundante ✅ | **gravada** como emenda da rule "Page, Widget e Action novos nascem com a permissão consultada" em `.ai/rules/filament.md` |
+
+**Emenda, não rule nova**: a rule existente já cobre "o default do Filament é permissivo, declare a
+autorização"; BulkAction é o mesmo princípio no verbo irmão. Rule nova para isso seria imposto de
+contexto duplicado em todo arquivo de `app/Filament/**`.
+
+**Enforço automático antes da prosa**: a emenda é curta e aponta para
+`tests/Kit/AderenciaAoBlueprintTest.php`, que varre `app/Filament/**` e fica vermelho em
+`BulkAction::make()` sem a declaração. A varredura já pegou o caso remanescente
+(`Admin\Resources\Users\UserResource`), fechado no mesmo commit — ali `UserPolicy::delete()` ainda
+não decide por registro, então a linha não muda comportamento; ela existe para o dia em que decidir.
+
+**Degradação declarada**: a skill `requirement-to-rule` manda gravar pela tool MCP `record-rule` do
+Boost, que **regenera o `.ai/rules/index.md`**. O servidor MCP `laravel-boost` não conectou nesta
+sessão (`CONNECT_TIMEOUT` após 30s), então a emenda foi escrita à mão. Como é emenda de rule já
+indexada, o `index.md` não precisou mudar — mas vale rodar `record-rule` numa sessão com o Boost de
+pé antes de criar qualquer rule NOVA.
