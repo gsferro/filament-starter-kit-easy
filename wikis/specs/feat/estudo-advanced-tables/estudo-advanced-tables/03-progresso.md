@@ -22,11 +22,20 @@
 
 ## Níveis do plano (NÃO executados — referência para a wiki futura)
 
-### Nível (a) — abas e botões nativos — 1 a 2 dias
-- [ ] Passo 1 — abas em `ListUsers` (admin e app)
-- [ ] Passo 2 — abas em `ListConvites` (admin e app)
-- [ ] Passo 3 — testes em `tests/Kit` e `tests/Tenancy`
-- [ ] Passo 4 — README
+### Nível (a) — abas e botões nativos — 1 a 2 dias — **APROVADO E ENTREGUE em 2026-08-31**
+
+> Wiki da implementação: `wikis/specs/feat/abas-nas-listagens/abas-nas-listagens/`.
+> Os passos abaixo foram executados **lá**, com requisito, ADRs e 22 casos derivados do
+> requisito pela `feature-test-design` — não aqui, como esta wiki previa.
+
+- [x] Passo 1 — abas em `ListUsers` (admin e app)
+- [x] Passo 2 — abas em `ListConvites` (admin e app)
+- [x] Passo 3 — testes em `tests/Kit` e `tests/Tenancy`
+- [x] Passo 4 — README
+
+**Um desvio de desenho**: os recortes de convite foram para o model `Convite`, e não para
+métodos estáticos de `ConvitesTable` como o passo 2 previa — o /app tem tabela própria e não
+consome aquela classe. Ver os Desvios da wiki da implementação.
 
 ### Nível (b) — visões salvas por usuário — 4 a 6 dias
 - [ ] Passo 5 — migration e model `VisaoDeTabela`
@@ -78,6 +87,14 @@ Resultado da auditoria: 16 passos → 13; 9 colunas → 6; 1 env var → 0. Esti
 ## Blockers
 
 - Nenhum.
+
+## Situação dos níveis
+
+| Nível | Situação |
+|---|---|
+| (a) abas e botões nativos | **entregue** em 2026-08-31 — `wikis/specs/feat/abas-nas-listagens/` |
+| (b) visões salvas por usuário | não aprovado |
+| (c) pacote gratuito publicável | não aprovado |
 
 ## Desvios do Plano
 
