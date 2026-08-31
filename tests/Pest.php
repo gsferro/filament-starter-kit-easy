@@ -12,6 +12,7 @@ use Filament\FilamentManager;
 use Filament\Support\Assets\AssetManager;
 use Filament\Support\Colors\ColorManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Two\User as UsuarioDoProvedor;
@@ -787,14 +788,43 @@ function papelDoKit(string $nome): Role
  * explícita: clone com outro nome troca um erro que estoura por duas funções idênticas que
  * ninguém percebe.
  *
+ * ## A organização pedida é GARANTIDA, e não só passada
+ *
+ * Com o painel do Resource bootado, o Filament carimba o `tenant_id` do registro com a
+ * organização CORRENTE e descarta o que veio no atributo:
+ * `Resources\Resource\Concerns\BelongsToTenant::observeTenancyModelCreation()`
+ * (`vendor/filament/filament/src/.../BelongsToTenant.php:158-185`) registra um `creating` que
+ * faz `$relationship->associate($tenant)` sem verificar se a coluna já estava preenchida.
+ *
+ * Medido: sem o painel `app` bootado o valor passado é respeitado e não há listener nenhum; com
+ * o painel bootado e a Acme corrente, um convite pedido para a Globex nasce na Acme.
+ *
+ * **Isso é do vendor e é fail-safe — não "conserte" a trava.** Em produção ela impede que um
+ * payload forjado crie registro de outra organização de dentro do /app, e o /admin não é afetado
+ * (`getCurrentPanel() !== $panel` desliga o hook). Ver ADR-01 da wiki
+ * `wikis/specs/fix/convite-carimba-organizacao-corrente/`.
+ *
+ * A correção abaixo é CONDICIONAL de propósito: ela só age quando o gravado divergiu do pedido.
+ * Incondicional, ela mascararia o dia em que o Filament passasse a respeitar a coluna — e o caso
+ * que mede o carimbo diretamente (`CarimboDeOrganizacaoTest`) ficaria verde por engano.
+ *
  * @param  array<string, mixed>  $atributos
  */
 function ofertaPara(string $email, ?Tenant $tenant = null, string $papel = 'panel_user', array $atributos = []): Convite
 {
-    return Convite::factory()->create([
+    $convite = Convite::factory()->create([
         'email'     => $email,
         'role_id'   => Role::findByName($papel)->getKey(),
         'tenant_id' => $tenant?->getKey(),
         ...$atributos,
     ]);
+
+    $pedido = $atributos['tenant_id'] ?? $tenant?->getKey();
+
+    if ($pedido !== null && (int) $convite->tenant_id !== (int) $pedido) {
+        DB::table($convite->getTable())->where('id', $convite->getKey())->update(['tenant_id' => $pedido]);
+        $convite->refresh();
+    }
+
+    return $convite;
 }
