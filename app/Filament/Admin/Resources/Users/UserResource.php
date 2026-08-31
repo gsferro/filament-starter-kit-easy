@@ -228,7 +228,12 @@ class UserResource extends Resource
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    // `authorizeIndividualRecords('delete')` porque a BulkAction pergunta só
+                    // `deleteAny` e nunca consulta a policy de cada registro selecionado
+                    // (`Concerns/CanBeAuthorized.php:252-266`). Hoje `UserPolicy::delete()` não
+                    // decide por registro, então a linha não muda comportamento — ela existe
+                    // para o dia em que decidir, que é quando o buraco reabriria em silêncio.
+                    DeleteBulkAction::make()->authorizeIndividualRecords('delete'),
                 ]),
             ]);
     }

@@ -106,3 +106,60 @@ it('nao usa em tests/ nenhum helper que o Filament marca como @deprecated', func
 
     expect($violacoes)->toBe([], "Helpers depreciados:\n".implode("\n", $violacoes));
 })->group('kit');
+
+/**
+ * BulkAction de escrita autoriza registro a registro, ou não autoriza nada.
+ *
+ * `BulkAction` pergunta só o verbo `*Any` da policy (`deleteAny`, `forceDeleteAny`, …) e **nunca**
+ * consulta a policy de cada registro selecionado sem `authorizeIndividualRecords()`
+ * (`vendor/filament/actions/src/Concerns/CanBeAuthorized.php:252-266`, onde a string vira
+ * `Gate::inspect($ability, $record)`).
+ *
+ * Medido: com `RolePolicy::delete()` negando o papel `master_global` para quem não é
+ * administrador da instalação, a exclusão em massa apagava esse papel assim mesmo — a guarda por
+ * registro simplesmente não era consultada. Um teste de exclusão em MASSA achou o que o teste de
+ * exclusão individual dava por fechado.
+ *
+ * Hoje a única policy do kit que decide por registro é a de papéis. A varredura existe para o dia
+ * em que a próxima decidir: o buraco reabre em silêncio, com o diff parecendo correto.
+ *
+ * @return list<string>
+ */
+function bulkActionsSemAutorizacaoPorRegistro(): array
+{
+    $violacoes = [];
+    $arquivos  = File::allFiles(base_path('app/Filament'));
+
+    expect($arquivos)->not->toBeEmpty('Âncora de população: a varredura de app/Filament não leu arquivo nenhum.');
+
+    foreach ($arquivos as $arquivo) {
+        if ($arquivo->getExtension() !== 'php') {
+            continue;
+        }
+
+        $fonte = semComentarios($arquivo->getContents());
+
+        // O encadeamento pode quebrar linha, então a busca é sobre a chamada e o que a segue
+        // até o fim da expressão — `,` ou `;` no mesmo nível de indentação já bastam.
+        if (preg_match_all('/\b(\w*BulkAction)::make\((.*?)\)((?:\s*->\w+\([^;]*?\))*)/s', $fonte, $achados, PREG_SET_ORDER) === 0) {
+            continue;
+        }
+
+        foreach ($achados as $achado) {
+            if (str_contains($achado[3], 'authorizeIndividualRecords')) {
+                continue;
+            }
+
+            $violacoes[] = $arquivo->getRelativePathname().' — '.$achado[1]
+                .'::make() sem ->authorizeIndividualRecords(): a policy do registro não é consultada';
+        }
+    }
+
+    return $violacoes;
+}
+
+it('nao tem BulkAction de escrita sem autorizacao por registro', function (): void {
+    $violacoes = bulkActionsSemAutorizacaoPorRegistro();
+
+    expect($violacoes)->toBe([], "BulkAction sem guarda por registro:\n".implode("\n", $violacoes));
+})->group('kit');
