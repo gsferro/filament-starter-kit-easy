@@ -4,12 +4,15 @@ namespace App\Filament\App\Resources\Convites\Pages;
 
 use App\Filament\App\Resources\Convites\ConviteResource;
 use App\Filament\Concerns\ConvidaEmMassa;
+use App\Models\Convite;
 use App\Models\Role;
 use App\Support\Papeis;
 use Asmit\ResizedColumn\HasResizableColumn;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 
@@ -60,6 +63,34 @@ class ListConvites extends ListRecords
                 // `Filament::getTenant()` e falhar fechado sem organização corrente.
                 escolheOrganizacao: false,
             ),
+        ];
+    }
+
+    /**
+     * Abas de recorte: "Todos", "Pendentes" e "Aceitos".
+     *
+     * O recorte vem do model (`Convite::recorteDePendentes()` / `recorteDeAceitos()`), o
+     * mesmo que alimenta o filtro "Pendente" do /admin — uma definição, três consumidores.
+     * "Pendente" é o oposto de "aceito", como o ternário sempre foi; quem separa recusado
+     * de expirado é a coluna "Situação".
+     *
+     * Sem badge: convite pendente já é a maioria da listagem, e um número ao lado de
+     * "Pendentes" custaria uma `count()` por render para dizer quase o total.
+     *
+     * @return array<string, Tab>
+     */
+    public function getTabs(): array
+    {
+        return [
+            'todos' => Tab::make('Todos'),
+
+            'pendentes' => Tab::make('Pendentes')
+                ->icon(Heroicon::OutlinedClock)
+                ->modifyQueryUsing(Convite::recorteDePendentes(...)),
+
+            'aceitos' => Tab::make('Aceitos')
+                ->icon(Heroicon::OutlinedCheckBadge)
+                ->modifyQueryUsing(Convite::recorteDeAceitos(...)),
         ];
     }
 }

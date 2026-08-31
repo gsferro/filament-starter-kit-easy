@@ -76,7 +76,31 @@ trait AprovacaoDeCadastro
     {
         return Filter::make('aprovacao_pendente')
             ->label('Somente pendentes de aprovação')
-            ->query(fn (Builder $query): Builder => $query->where('aprovacao_pendente', true));
+            ->query(self::recorteDePendentes(...));
+    }
+
+    /**
+     * O recorte, sem a embalagem — uma definição para o filtro e para a aba.
+     *
+     * O filtro é para **combinar** (com busca, com a lixeira, com outro filtro); a aba é o
+     * recorte de **um clique**. Os dois dizem a mesma coisa, e por isso a dizem no mesmo
+     * lugar: escrever `where('aprovacao_pendente', true)` de novo dentro de cada `getTabs()`
+     * criaria quatro cópias que derivam no dia em que "pendente" mudar de definição — o
+     * filtro dizendo uma coisa, a aba outra, ambos verdes. ADR-01 da wiki abas-nas-listagens.
+     *
+     * O tipo é genérico porque o chamador é o `getEloquentQuery()` do Resource, que o
+     * Filament declara como `Builder<Model>` — e é ele que carrega o escopo de organização
+     * do /app. Estreitar para `Builder<User>` obrigaria a chamar `User::query()` na aba, que
+     * é justamente o que `.ai/rules/filament.md` proíbe.
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @return Builder<TModel>
+     */
+    public static function recorteDePendentes(Builder $query): Builder
+    {
+        return $query->where('aprovacao_pendente', true);
     }
 
     /**
