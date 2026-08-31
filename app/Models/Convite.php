@@ -535,6 +535,41 @@ class Convite extends Model implements Auditable
     }
 
     /**
+     * Os dois recortes da listagem — uma definição para as abas dos dois painéis e para o
+     * filtro do /admin.
+     *
+     * Ficam no MODEL, e não na tabela do /admin, pelo mesmo motivo que `situacao()` mora
+     * aqui: a tela do /app tem tabela própria (`App\Resources\Convites\ConviteResource`) e
+     * não consome a `ConvitesTable`. Recorte escrito nos dois lugares é exatamente como as
+     * duas telas já divergiram uma vez. Desvio declarado do plano da wiki
+     * abas-nas-listagens, que previa métodos em `ConvitesTable`.
+     *
+     * "Pendente" aqui é o oposto de "aceito", como o `TernaryFilter` sempre foi — recusado
+     * e expirado entram em "Pendentes". Quem separa os três estados é `situacao()`, na
+     * coluna.
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @return Builder<TModel>
+     */
+    public static function recorteDePendentes(Builder $query): Builder
+    {
+        return $query->whereNull('aceito_em');
+    }
+
+    /**
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @return Builder<TModel>
+     */
+    public static function recorteDeAceitos(Builder $query): Builder
+    {
+        return $query->whereNotNull('aceito_em');
+    }
+
+    /**
      * O estado do convite, derivado — não há coluna de status.
      *
      * Vive no model porque DUAS telas o mostram: a de /admin e a de /app. Elas divergiam

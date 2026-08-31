@@ -59,9 +59,11 @@ class ConvitesTable
             ->filters([
                 TernaryFilter::make('pendente')
                     ->label('Pendente')
+                    // Os dois recortes vêm do model: as abas desta tela e as do /app usam
+                    // os mesmos, e o ramo em branco continua devolvendo a listagem inteira.
                     ->queries(
-                        true: fn (Builder $query): Builder => $query->whereNull('aceito_em'),
-                        false: fn (Builder $query): Builder => $query->whereNotNull('aceito_em'),
+                        true: Convite::recorteDePendentes(...),
+                        false: Convite::recorteDeAceitos(...),
                         blank: fn (Builder $query): Builder => $query,
                     ),
             ])
