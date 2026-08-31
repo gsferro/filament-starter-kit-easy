@@ -23,6 +23,12 @@ Nunca crie um clone com outro nome para escapar da colisão de redeclaração (`
 
 `Filament::setCurrentPanel()` não boota o painel: quem chama `Panel::boot()` é o middleware `SetUpPanel`, que teste de componente não atravessa. Tela que depende de algo registrado no `boot()` de plugin precisa de `noPainelBootado()`. E toda tabela do kit carrega adiada (`deferLoading` global) — sem `->loadTable()` o HTML testado é o do esqueleto.
 
+**Com o painel bootado, o Filament carimba a organização do registro — e descarta o que você passou.** `Resources\Resource\Concerns\BelongsToTenant::observeTenancyModelCreation()` (`vendor/filament/filament/src/.../BelongsToTenant.php:158-185`) registra no boot um `creating` que faz `$relationship->associate($tenant)` **sem checar se a coluna já veio preenchida**. Vale para todo Resource com `$isScopedToTenant` — no kit, `Convite` e `Projeto`. Medido: sem boot, zero listeners e o valor passado vale; com boot e a Acme corrente, `Convite::factory()->create(['tenant_id' => globex])` grava a Acme.
+
+O modo de falha é **vermelho longe da causa**: a mensagem vira "o registro da Globex apareceu na listagem da Acme", que se lê como vazamento de dados — e já custou uma hora de investigação sendo lida assim. Para fixture de outra organização use `ofertaPara()`, que garante a organização pedida; `CarimboDeOrganizacaoTest` mede o comportamento do vendor e fica vermelho se ele mudar.
+
+**Não "conserte" a trava.** Ela é fail-safe: impede que um payload forjado crie registro de outra organização de dentro do `/app`, e o `/admin` não é afetado (`getCurrentPanel() !== $panel` desliga o hook). Em particular, `$isScopedToTenant = false` desligaria junto o global scope de LEITURA — trocaria inconveniência de teste por furo de fronteira. Ver ADR-01 de `wikis/specs/fix/convite-carimba-organizacao-corrente/`.
+
 
 ## Nem todo papel do kit existe em toda suíte de teste
 O `PapeisSeeder` cria papéis diferentes conforme a tenancy esteja ligada ou não. Escolher a suíte errada faz o caso morrer no arranjo, com `Spatie\Permission\Exceptions\RoleDoesNotExist: There is no role named 'X' for guard 'web'` — que parece defeito de código e é defeito de suíte.

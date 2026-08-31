@@ -7,7 +7,7 @@
 - **Tipo**: correção (de **suíte e documentação** — nenhuma linha de `app/` muda)
 - **Wiki ancestral**: `wikis/specs/feat/abas-nas-listagens/abas-nas-listagens/` — o achado saiu das Notas de Implementação dela
 - **Motivo**: a investigação que aquela wiki não tinha orçamento para fazer foi concluída, e a causa derruba a suposição de defeito
-- **Toca infra compartilhada?**: **sim** — `ofertaPara()` em `tests/Pest.php` é usado por quatro arquivos de teste. Regressão obrigatória em `tests/Kit` e `tests/Tenancy`.
+- **Toca infra compartilhada?**: **sim** — `ofertaPara()` em `tests/Pest.php` é chamado **52 vezes em 11 arquivos** (20 em `tests/Kit`, 32 em `tests/Tenancy`). Regressão obrigatória em `tests/Kit` e `tests/Tenancy`.
 
 ## Cobertura do Requisito
 
@@ -75,10 +75,11 @@ Nenhum.
 
 ## Impacto em Features Existentes
 
-- **Quatro arquivos consomem `ofertaPara()`**. Hoje eles passam porque criam a fixture na
-  organização corrente, ou sem painel bootado — nos dois casos o valor gravado já é o esperado, e a
-  correção não muda o resultado deles. A regressão existe para provar isso, não porque se espera
-  quebra.
+- **Onze arquivos consomem `ofertaPara()`, em 52 chamadas** — o plano dizia "quatro", número que a
+  derivação dos casos mediu e corrigiu. Hoje eles passam porque criam a fixture na organização
+  corrente, ou sem painel bootado — nos dois casos o valor gravado já é o esperado, e a correção não
+  muda o resultado deles. A regressão existe para provar isso, não porque se espera quebra. O número
+  errado subestimava o raio: é ele que define o perfil de risco da entrega.
 - **`tests/Tenancy/AbasDeListagemTenancyTest.php`** perde o contorno e o comentário longo.
 
 ## Rollback
@@ -150,7 +151,7 @@ Nenhuma.
 
 - `vendor/bin/pint --dirty --format agent`
 - `composer types:check`
-- `php artisan test --testsuite=Kit,Tenancy --parallel --compact` — os quatro consumidores de
+- `php artisan test --testsuite=Kit,Tenancy --parallel --compact` — os 11 arquivos que chamam
   `ofertaPara()` são a regressão
 
 ## Filosofia de Implementação

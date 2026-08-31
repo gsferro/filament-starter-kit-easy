@@ -78,6 +78,22 @@ continua funcionando a partir da tela de administração.
 - **RQ-02 — helper novo ou parâmetro no `ofertaPara()` existente?** **Assumido**: o helper existente ganha o comportamento correto, em vez de nascer um segundo com outro nome — `.ai/rules/testes.md` é explícita: "clone com outro nome troca um erro que estoura por duas funções idênticas que ninguém percebe". **Se negado**: helper separado, e os dois convivem.
 - **Escopo — mexer no vendor ou no `ConviteResource`?** **Assumido**: não. A trava é desejável e o pedido não a questiona; mudar `$isScopedToTenant` abriria a criação de registro de outra organização de dentro do `/app`.
 
+### Devolvidas pela derivação dos casos de teste
+
+- **Q1 — sem organização pedida, com o painel bootado: o helper força `null` ou deixa o carimbo de pé?**
+  **Assumido**: deixa de pé. A garantia do helper é sobre o que foi **pedido**; sem pedido não há o
+  que garantir, e forçar `null` desligaria a trava do vendor pelo lado do teste. Marca a linha 6 do
+  CT-01 como `@premissa`.
+- **Q2 — organização pedida pelas duas portas (`$tenant` e `$atributos['tenant_id']`) com valores
+  divergentes: qual vence?** **Assumido**: o array de atributos, porque é o que já vence no
+  `create()` (`...$atributos` vem por último) — a correção honra a mesma precedência, senão
+  "corrigiria" para o valor que o `create()` não usou. Nenhum dos 11 consumidores exercita a
+  combinação; não há cenário escrito com valor chutado.
+- **Q3 — a remoção do contorno do CT-12 deve ser enforçada por varredura?** **Assumido**: não,
+  inspeção do diff basta. Varredura aqui seria enforço especulativo e colidiria com a regra de
+  filtrar comentário — o docblock do próprio helper cita o padrão que ela proibiria. Lacuna
+  declarada M15 no `04`.
+
 ## Fora de Escopo (declarado)
 
 - Alterar o comportamento do Filament, o `$isScopedToTenant` dos Resources ou a trava em si.
