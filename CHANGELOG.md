@@ -2,6 +2,22 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.23.1] - 2026-09-01
+
+### Corrigido
+- **`kit:update` não entregava a view da arte do login, e o projeto atualizado quebrava.** A v0.23.0
+  transformou a arte num Blade (`resources/views/svg/arte-do-login.blade.php`) e entregou o
+  `IdentidadeDoKit` que o consome — mas `resources/views/svg` não estava em
+  `KitUpdate::CAMINHOS_DO_KIT`. Quem rodou `php artisan kit:update` recebeu
+  `View [svg.arte-do-login] not found` no primeiro `composer dev`. **Atualize para esta versão e rode
+  `php artisan kit:update` de novo**; se preferir resolver na hora, o arquivo pode ser copiado do
+  repositório do kit para `resources/views/svg/arte-do-login.blade.php`.
+- **`resources/views/auth` também estava fora da lista** — defeito mais antigo, achado na mesma
+  varredura: a tela de conta indisponível (`auth.conta-indisponivel`) nunca chegava a quem atualiza.
+- **A varredura que deveria ter impedido isso olhava só `app` e `database/*`.** `resources/views`
+  entrou nela (menos `vendor/`, que é publicado por pacote), então diretório de view novo passa a
+  reprovar o teste em vez de quebrar na máquina de quem atualiza. Verificado por mutação.
+
 ## [0.23.0] - 2026-09-01
 
 ### Alterado
