@@ -395,7 +395,7 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
      * @return string|null Nome do papel (`admin_app`, `panel_user`…) ou null quando
      *                     nenhum papel deste usuário abre este painel.
      */
-    public function papelDoPainel(string $painel): ?string
+    public function papelDoPainel(string $painel, ?int $contexto = null): ?string
     {
         if ($this->isMasterGlobal()) {
             return config('filament-shield.super_admin.name', 'master_global');
@@ -407,12 +407,26 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
          * de `permission.models.role` em runtime. Prometer `Role` aqui seria afirmar mais
          * do que a fonte diz, e o PHPStan reprova o acesso direto à propriedade.
          */
-        $papel = $this->papeisEmQualquerContexto()
+        $papeis = $this->papeisEmQualquerContexto()
             ->where('painel', $painel)
-            ->where('guard_name', $this->getDefaultGuardName())
-            ->first();
+            ->where('guard_name', $this->getDefaultGuardName());
 
-        return $papel?->getAttribute('name');
+        /*
+         * `$contexto` é a ORGANIZAÇÃO de quem pergunta, e existe porque a mesma pessoa pode ter
+         * papéis diferentes do mesmo painel em organizações diferentes — `panel_user` na Acme e
+         * `admin_app` na Globex, os dois com `roles.painel = 'app'`. Sem o filtro, o `first()`
+         * abaixo devolve o de menor `id` e o badge mostra o mesmo papel nas duas.
+         *
+         * Nulo é o default de propósito: quem pergunta por ACESSO ("este usuário entra no /app?")
+         * não pode depender da organização aberta, e é assim que `/admin` e `/infra` continuam
+         * respondendo — lá não há organização corrente. A separação entre as duas perguntas está
+         * na ADR-01 da wiki badge-de-papel-por-organizacao.
+         */
+        if ($contexto !== null) {
+            $papeis->wherePivot($this->colunaDeTeam(), $contexto);
+        }
+
+        return $papeis->first()?->getAttribute('name');
     }
 
     /**
