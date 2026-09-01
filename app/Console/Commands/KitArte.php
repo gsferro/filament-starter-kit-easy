@@ -64,6 +64,9 @@ class KitArte extends Command
      * @var list<string>
      */
     private const IMAGENS = [
+        // A tela de login da vitrine (wiki arte-do-login-com-nome-da-aplicacao, passo 5).
+        'login',
+
         // Login social e vínculo de provedor (wiki vinculo-de-provedor-social, passo 9).
         'login-social',
         'admin-configuracoes-login',

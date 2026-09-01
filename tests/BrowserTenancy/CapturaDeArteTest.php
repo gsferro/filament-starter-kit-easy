@@ -279,6 +279,33 @@ it('captura a tela de boas-vindas da raiz', function (): void {
 | sai do painel do arranjo (.ai/rules/testes-browser.md).
 */
 
+/*
+|--------------------------------------------------------------------------
+| A tela de login da vitrine
+|--------------------------------------------------------------------------
+| `art/login.png` é a PRIMEIRA imagem dos dois READMEs, e era a única captura de
+| tela de autenticação que o comando não gerava — vinha de antes dele. Ficou de
+| fora até a wiki `arte-do-login-com-nome-da-aplicacao`, quando a arte passou a
+| carregar o nome da aplicação e a imagem velha passou a vender "starter-kit-easy"
+| na vitrine do kit.
+|
+| Adotada aqui para não envelhecer sozinha de novo. O par é obrigatório
+| (`.ai/rules/testes-browser.md`): o `filename` daqui e a linha em
+| `KitArte::IMAGENS` — sem a segunda, o comando reporta a imagem como ignorada.
+*/
+
+it('captura a tela de login do painel de administração', function (): void {
+    auth()->logout();
+
+    visit('/admin/login')
+        ->resize(1400, 875)
+        ->assertSee('Faça login')
+        // A arte é o motivo desta captura existir: ela mostra o nome da aplicação.
+        ->assertPresent('img.fi-auth-media')
+        ->assertNoBrokenImages()
+        ->screenshot(fullPage: false, filename: 'login');
+})->group('browser', 'art');
+
 it('captura a tela de login com os botões sociais e o rodapé', function (): void {
     ligarProvedor(ProvedorSocial::Google);
     ligarProvedor(ProvedorSocial::Github);
