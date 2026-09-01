@@ -11,7 +11,12 @@
 
 <!-- IMUTÁVEL. Não editar, não corrigir ortografia, não resumir, não reordenar. -->
 
-> veja novamente o pacote: "D:\PROJECTS\FIOTEC\Mini PFF\mini-pff" e veja o botão de "Voltar ao topo" que foi implementado direto no codigo (tem uma anotação sobre o não uso de um pacote que faz isso) e traga para o starter-kit como padrão em todos os panels e pages
+> **Anonimizado em 2026-09-01.** O nome da organização real que aparecia no texto original e as
+> URLs dela foram substituídos por `Acme` / `exemplo.test` a pedido do solicitante — o
+> repositório é público. Só o identificador mudou; nenhuma cláusula, número ou ordem foi
+> alterada, e a decomposição em `RQ-##` continua a mesma.
+
+> veja novamente o pacote: "D:\PROJECTS\<interno>\Mini PFF\mini-pff" e veja o botão de "Voltar ao topo" que foi implementado direto no codigo (tem uma anotação sobre o não uso de um pacote que faz isso) e traga para o starter-kit como padrão em todos os panels e pages
 
 ## Decomposição em Cláusulas
 

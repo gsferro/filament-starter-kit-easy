@@ -658,7 +658,7 @@ Funcionalidade: Rodapé da tela de login
 
       Exemplos:
         | estado                      | visibilidade | # partição       |
-        | com o texto "Fiotec 2026"   | aparece      | preenchido       |
+        | com o texto "Acme 2026"     | aparece      | preenchido       |
         | vazio                       | não aparece  | vazio            |
         | com apenas espaços          | não aparece  | só espaço em branco |
 ```
@@ -692,7 +692,7 @@ Funcionalidade: Rodapé da tela de login
   Regra: o texto do rodapé é tratado como texto, nunca como HTML
 
     Cenário: [CT-15] HTML no rodapé sai escapado na tela de login
-      Dado que o rodapé da tela de login está com o texto "<script>alert(1)</script>Fiotec"
+      Dado que o rodapé da tela de login está com o texto "<script>alert(1)</script>Acme"
       Quando um visitante abre a tela de login do painel /app
       Então a página contém o texto escapado, com as entidades de menor e maior
       E a página não contém a tag de script executável

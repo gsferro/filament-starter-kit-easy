@@ -635,12 +635,12 @@ it('exibe o rodapé da tela de login só quando há texto configurado', function
  * a primeira versão deste caso mediu, achando que era defeito.
  */
 it('renderiza o rodapé como Markdown e descarta HTML cru e link inseguro', function (): void {
-    config()->set('kit.login.rodape', 'Fiotec <script>alert(1)</script> **direitos reservados** [x](javascript:alert(1)) [ok](https://fiotec.org.br)');
+    config()->set('kit.login.rodape', 'Acme <script>alert(1)</script> **direitos reservados** [x](javascript:alert(1)) [ok](https://exemplo.test)');
 
     $this->get('/app/login')
         ->assertOk()
         ->assertSee('<strong>direitos reservados</strong>', escape: false)
-        ->assertSee('href="https://fiotec.org.br"', escape: false)
+        ->assertSee('href="https://exemplo.test"', escape: false)
         // `<script>alert(1)` e não `<script>`: a página tem scripts legítimos (Livewire, tema).
         ->assertDontSee('<script>alert(1)', escape: false)
         ->assertDontSee('&lt;script&gt;', escape: false)

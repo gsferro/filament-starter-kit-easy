@@ -12,6 +12,11 @@
 
 <!-- IMUTÁVEL. Não editar, não corrigir ortografia, não resumir, não reordenar. -->
 
+> **Anonimizado em 2026-09-01.** O nome da organização real que aparecia no texto original e as
+> URLs dela foram substituídos por `Acme` / `exemplo.test` a pedido do solicitante — o
+> repositório é público. Só o identificador mudou; nenhuma cláusula, número ou ordem foi
+> alterada, e a decomposição em `RQ-##` continua a mesma.
+
 > - analise cuidadosamente a documentação do laravel socialite: "https://laravel.com/framework/docs/13.x/socialite"
 > - crie também a config se vai utilizar o login, com laravel/socialite, do google: "https://laraveldaily.com/post/filament-sign-in-with-google-using-laravel-socialite", "https://medium.com/@a.dhakal/filament-login-with-google-using-laravel-socialite-83c8bd476ace", "https://dev.to/tadeubdev/login-com-rede-social-usando-laravel-socialite-1i61" sendo este ultimo com uma tela de login usando icon e abaixo do form
 > - se tiver essa opção, deve abrir os campos para adicionar os dados de config e das outras opções também:
@@ -24,7 +29,7 @@
 > - se a pessoa se registar por um login social, talvez ele ainda precise preenchar mais alguns dados, então redirecione ele para a tela do perfil dele
 > - vamos disponibilizar o login com o google primeiro, depois, podemos disponibilizar mais opções como github, facebook, linkedin, x (antigo twitter), discord e etc
 > - no botão de login do google, use a icon correspondente.
-> - adicione também na tela de login, vindo da tela de settings, um rodapé. olhe esse exemplo: "https://auth.fiotec.org.br/?client_id=epf2&redirect_uri=https%3A%2F%2Fepf2.fiotec.org.br%2Fauth%2Fcallback&state=zyko9a59blat2o6cuzvx0l"
+> - adicione também na tela de login, vindo da tela de settings, um rodapé. olhe esse exemplo: "https://auth.exemplo.test/?client_id=exemplo&redirect_uri=https%3A%2F%2Fapp.exemplo.test%2Fauth%2Fcallback&state=zyko9a59blat2o6cuzvx0l"
 > - deixe toda essa parte muito bem documentado nos @README.md
 > - o default é false para register e do socialite, mas se tiver true, precisa refletir em tudo que vem
 

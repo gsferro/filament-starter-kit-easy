@@ -739,7 +739,7 @@ irreconhecível o mantêm desligado. Só `true` e `1` ligam.
 A mesma configuração traz um rodapé em Markdown (negrito, itálico, link; HTML cru é descartado) na base da tela de login dos três painéis:
 
 ```dotenv
-KIT_LOGIN_RODAPE="Fiotec · Todos os direitos reservados"
+KIT_LOGIN_RODAPE="Acme · Todos os direitos reservados"
 ```
 
 Vazio (ou só espaços) = sem rodapé, sem faixa vazia.

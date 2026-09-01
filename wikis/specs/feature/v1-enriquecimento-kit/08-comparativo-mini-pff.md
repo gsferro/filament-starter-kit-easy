@@ -1,7 +1,7 @@
 # Comparativo — `mini-pff` × starter-kit-easy
 
 > Atende RQ-01, RQ-04, RQ-05 e RQ-07 do `00-requisito.md`.
-> Levantamento por sub-agente em `D:\PROJECTS\FIOTEC\Mini PFF\mini-pff`, sem escrever nada lá.
+> Levantamento por sub-agente em `D:\PROJECTS\<interno>\Mini PFF\mini-pff`, sem escrever nada lá.
 
 ## O corte
 
@@ -53,7 +53,7 @@ Adaptações feitas na tradução do vocabulário:
 
 ### 2.1 Identidade visual: paleta fiel e botão que escurece no hover — **alto valor**
 
-O `mini-pff` tem `App\Services\PaletaFiotec`, que devolve escalas de **11 tons** por alvo, e um
+O `mini-pff` tem `App\Services\PaletaDaMarca`, que devolve escalas de **11 tons** por alvo, e um
 `App\View\Components\ButtonComponent` que sobrescreve o `ColorMap` do botão do Filament.
 
 Os dois existem por causa da mesma armadilha, medida lá: **`->colors(['primary' => '#2EA6C7'])` não

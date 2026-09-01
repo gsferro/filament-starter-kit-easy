@@ -11,7 +11,12 @@
 
 <!-- IMUTÁVEL. Não editar, não corrigir ortografia, não resumir, não reordenar. -->
 
-> veja como esta configurado o AdminPanel no projeto: "D:\PROJECTS\FIOTEC\Mini PFF\mini-pff" e importe a view que exibe so dados do usuário que ficam no dropdown do canto superior direito para ca, e coloque em todos os painels
+> **Anonimizado em 2026-09-01.** O nome da organização real que aparecia no texto original e as
+> URLs dela foram substituídos por `Acme` / `exemplo.test` a pedido do solicitante — o
+> repositório é público. Só o identificador mudou; nenhuma cláusula, número ou ordem foi
+> alterada, e a decomposição em `RQ-##` continua a mesma.
+
+> veja como esta configurado o AdminPanel no projeto: "D:\PROJECTS\<interno>\Mini PFF\mini-pff" e importe a view que exibe so dados do usuário que ficam no dropdown do canto superior direito para ca, e coloque em todos os painels
 > - veja as demais features que estão implementadas lá e que poderia ser um bom aditivo ao starter-kit
 > - ambos os projetos tem bases semelhantes, mas lá já tem muito negocio implementado, então foque somente em features que agregam ao starter-kit em si e não algo que envolva o negocio, pois não é o foco.
 > - revise todo o nosso projeto. confirme que tudo esta funcionando e pense em melhorias para o starter-kit e features que agregariam valor.

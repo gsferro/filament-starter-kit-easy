@@ -748,7 +748,7 @@ keep it off. Only `true` and `1` turn it on.
 The same configuration brings a Markdown footer (bold, italic, link; raw HTML is discarded) to the bottom of the login screen on all three panels:
 
 ```dotenv
-KIT_LOGIN_RODAPE="Fiotec · All rights reserved"
+KIT_LOGIN_RODAPE="Acme · All rights reserved"
 ```
 
 Empty (or whitespace only) = no footer, no empty strip.
