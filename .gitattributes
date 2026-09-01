@@ -23,6 +23,14 @@ CHANGELOG.md export-ignore
 # instala, e o README a trata como tal.
 /wikis/specs export-ignore
 
+# `docs/` é o SITE do kit — a documentação que hoje vive nos READMEs, publicada em
+# GitHub Pages. Mesmo critério de `/wikis/specs` e `/.github` acima: é material do
+# kit, não do projeto que nasce dele. Sem esta linha, todo projeto instalado
+# receberia dezenas de páginas sobre um kit que já virou o código dele.
+# Os READMEs NÃO entram aqui: eles encolhem, mas continuam no dist — são a
+# apresentação do pacote, e é o que o Packagist mostra.
+/docs export-ignore
+
 # `phpstan.neon`, `phpunit.xml` e `pint.json` NÃO entram aqui: os scripts `lint`,
 # `types:check` e `test` do composer.json seguem no dist e sem esses arquivos
 # nenhum deles roda no projeto instalado. Os três estão em
