@@ -114,6 +114,8 @@ Null is **not** a wildcard: a role with no panel only carries permissions and op
 
 On panels **without** tenancy (`/admin`, `/infra`) the role must be assigned in the global context: being an `admin` inside one organization is not a credential to administer the installation. On `/app` the role counts in any organization — which one you open is decided later, by `canAccessTenant()`.
 
+**The user-menu badge shows the role for the OPEN organization.** Someone who belongs to more than one may hold different roles in each — `panel_user` in one, `admin_app` in another — and the badge follows the organization switch. With no role in the open organization there is no badge: entering the panel does not depend on the organization (that is the paragraph above), but the display does. Nothing changes on panels without tenancy, since there is no current organization there.
+
 > With [multi-tenancy](#multi-tenancy-opt-in) turned on, **App** becomes `/app/{tenant}` and shows only the selected tenant's data. Admin and Infra stay global.
 
 Separating admin from infra is the whole point of the kit: whoever administers users doesn't need (and shouldn't) see logs, queues and operational commands, and vice versa.

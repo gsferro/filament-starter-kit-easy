@@ -31,8 +31,15 @@
 @php
     $painelDoBadge = filament()->getCurrentOrDefaultPanel()?->getId();
 
+    // A ORGANIZAÇÃO aberta entra na pergunta: a mesma pessoa pode ter papéis diferentes do
+    // painel `app` em organizações diferentes, e o badge afirma como ela está NESTA. Sem
+    // organização corrente (/admin, /infra, ou a tela de escolha de organização) o valor é nulo
+    // e a consulta volta a ser a de antes — que é o certo ali. Ver ADR-01 da wiki
+    // badge-de-papel-por-organizacao.
+    $contextoDoBadge = filament()->getTenant()?->getKey();
+
     $papelDoBadge = $painelDoBadge
-        ? filament()->auth()->user()?->papelDoPainel($painelDoBadge)
+        ? filament()->auth()->user()?->papelDoPainel($painelDoBadge, $contextoDoBadge)
         : null;
 
     $iconeDoBadge = $papelDoBadge === config('filament-shield.super_admin.name', 'master_global')

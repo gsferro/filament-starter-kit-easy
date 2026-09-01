@@ -114,6 +114,8 @@ Nulo **não** é coringa: papel sem painel só carrega permissões e não abre p
 
 Nos painéis **sem** tenancy (`/admin`, `/infra`) o papel precisa estar atribuído no contexto global: ser `admin` dentro de uma organização não é credencial para administrar a instalação. No `/app` vale o papel em qualquer organização — qual delas você abre é decidido depois, por `canAccessTenant()`.
 
+**O badge do menu do usuário mostra o papel da organização ABERTA.** Quem pertence a mais de uma pode ter papéis diferentes em cada — `panel_user` numa, `admin_app` noutra —, e o badge acompanha a troca de organização. Sem papel na organização aberta, não há badge: entrar no painel não depende da organização (é o parágrafo acima), mas a exibição sim. Nos painéis sem tenancy nada muda, porque lá não há organização corrente.
+
 > Com o [modo multi-tenant](#multi-tenancy-opt-in) ligado, o **App** vira `/app/{tenant}` e passa a mostrar só os dados do tenant selecionado. Admin e Infra seguem globais.
 
 Separar admin de infra é o ponto do kit: quem administra usuários não precisa (nem deve) enxergar logs, filas e comandos operacionais, e vice-versa.
