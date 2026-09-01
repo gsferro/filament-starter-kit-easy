@@ -279,6 +279,33 @@ it('captura a tela de boas-vindas da raiz', function (): void {
 | sai do painel do arranjo (.ai/rules/testes-browser.md).
 */
 
+/*
+|--------------------------------------------------------------------------
+| A tela de login da vitrine
+|--------------------------------------------------------------------------
+| `art/login.png` é a PRIMEIRA imagem dos dois READMEs, e era a única captura de
+| tela de autenticação que o comando não gerava — vinha de antes dele. Ficou de
+| fora até a wiki `arte-do-login-com-nome-da-aplicacao`, quando a arte passou a
+| carregar o nome da aplicação e a imagem velha passou a vender "starter-kit-easy"
+| na vitrine do kit.
+|
+| Adotada aqui para não envelhecer sozinha de novo. O par é obrigatório
+| (`.ai/rules/testes-browser.md`): o `filename` daqui e a linha em
+| `KitArte::IMAGENS` — sem a segunda, o comando reporta a imagem como ignorada.
+*/
+
+it('captura a tela de login do painel de administração', function (): void {
+    auth()->logout();
+
+    visit('/admin/login')
+        ->resize(1400, 875)
+        ->assertSee('Faça login')
+        // A arte é o motivo desta captura existir: ela mostra o nome da aplicação.
+        ->assertPresent('img.fi-auth-media')
+        ->assertNoBrokenImages()
+        ->screenshot(fullPage: false, filename: 'login');
+})->group('browser', 'art');
+
 it('captura a tela de login com os botões sociais e o rodapé', function (): void {
     ligarProvedor(ProvedorSocial::Google);
     ligarProvedor(ProvedorSocial::Github);
@@ -319,6 +346,121 @@ it('captura a aba Login das configurações do kit', function (): void {
  * O provedor fica em `recaptcha_v3` — o default do kit — para a captura mostrar o campo de
  * pontuação mínima, que só aparece com o v3.
  */
+/*
+|--------------------------------------------------------------------------
+| O desafio anti-robô nas telas de login — com chave real
+|--------------------------------------------------------------------------
+| Estes dois cenários existem porque o de baixo (a seção das configurações) NÃO
+| consegue mostrar o widget: com chave de teste, Google e Cloudflare carimbam o
+| widget com aviso — "for testing purposes only" e "Testing site key". Captura de
+| README com aviso de erro ensina a coisa errada.
+|
+| A saída é chave real autorizada em `localhost`/`127.0.0.1`, que é onde o
+| servidor in-process da suíte responde. A chave NÃO mora no repositório: cada
+| cenário lê a sua do ambiente e se PULA quando ela não existe, então quem clona o
+| kit roda `composer art` sem nada quebrar — só não regenera estas duas imagens.
+|
+| Só a chave DO SITE é real, e ela é pública por natureza (vai no HTML de toda
+| tela de login). A secreta é um marcador: `ConfiguracaoDoLogin::antiRobo()` exige
+| as duas preenchidas para considerar a proteção no ar, e a secreta só seria usada
+| no `siteverify` — que não roda aqui, porque a captura não envia o formulário.
+|
+| Dependem de REDE (o script vem do provedor). É aceitável neste arquivo, e só
+| neste: ele roda sob `KIT_ART=1`, nunca no CI.
+*/
+
+/** A chave do site de um provedor, para as capturas — ou `null` quando não configurada. */
+function chaveDeArteAntiRobo(string $variavel): ?string
+{
+    $chave = env($variavel);
+
+    return is_string($chave) && trim($chave) !== '' ? trim($chave) : null;
+}
+
+/**
+ * Liga a proteção no provedor e na chave pedidos.
+ *
+ * `config()` e NÃO as settings do banco, ao contrário do cenário da seção de
+ * configurações logo abaixo. O motivo está em `KitServiceProvider:169-174`: com
+ * `RefreshDatabase` o `boot()` roda ANTES das migrations, a tabela ainda não
+ * existe e `aplicarNaConfig()` é inerte — settings gravadas num cenário nunca
+ * alcançam a config do request. É o mesmo caminho de `ligarProvedor()` e do
+ * rodapé, e a captura do rodapé é a prova de que ele funciona.
+ */
+function ligarAntiRoboParaArte(string $provedor, string $chaveDoSite): void
+{
+    config([
+        'kit.login.anti_robo.habilitado'    => true,
+        'kit.login.anti_robo.provedor'      => $provedor,
+        'kit.login.anti_robo.chave_do_site' => $chaveDoSite,
+        // Marcador: `ConfiguracaoDoLogin::antiRobo()` exige as duas chaves
+        // preenchidas, e a secreta só seria usada no `siteverify` — que não roda
+        // aqui, porque a captura não submete o formulário.
+        'kit.login.anti_robo.chave_secreta' => 'nao-usada-na-captura',
+    ]);
+}
+
+/**
+ * O Cloudflare Turnstile é o que MOSTRA caixa — é a captura informativa dos dois.
+ *
+ * O widget vive num iframe de `challenges.cloudflare.com`; a asserção espera por
+ * ele antes do clique do obturador, senão a foto sai com o espaço vazio.
+ */
+it('captura a tela de login com o desafio do Cloudflare Turnstile', function (): void {
+    ligarAntiRoboParaArte('turnstile', (string) chaveDeArteAntiRobo('KIT_ART_TURNSTILE_SITE_KEY'));
+
+    auth()->logout();
+
+    visit('/app/login')
+        ->resize(1400, 875)
+        ->assertSee('Faça login')
+        // O widget monta em shadow DOM, e o iframe interno não é alcançável por
+        // seletor comum. O input de resposta que o Turnstile cria no container FICA
+        // no DOM light, e só existe depois de o widget renderizar — é o oráculo
+        // barato de "pintou", e não só de "o script baixou".
+        ->assertPresent('input[name="cf-turnstile-response"]')
+        // O input nasce assim que o widget monta, ANTES de ele terminar de desenhar:
+        // sem esta pausa a foto sai no estado transitório ("Verifying…", com spinner),
+        // que não é o que o README precisa mostrar.
+        ->wait(3)
+        ->screenshot(fullPage: false, filename: 'login-turnstile');
+})->skip(
+    fn (): bool => chaveDeArteAntiRobo('KIT_ART_TURNSTILE_SITE_KEY') === null,
+    'Defina KIT_ART_TURNSTILE_SITE_KEY com uma chave autorizada em localhost para regerar esta arte.',
+)->group('browser', 'art');
+
+/**
+ * O reCAPTCHA v3 é INVISÍVEL: não há caixa, só o emblema flutuante no canto.
+ *
+ * É exatamente isso que a captura precisa mostrar — o README compara os dois lado
+ * a lado, e a diferença entre "caixa" e "emblema discreto" é a decisão que quem
+ * instala o kit toma ao escolher o provedor.
+ */
+it('captura a tela de login com o emblema do reCAPTCHA v3', function (): void {
+    ligarAntiRoboParaArte('recaptcha_v3', (string) chaveDeArteAntiRobo('KIT_ART_RECAPTCHA_V3_SITE_KEY'));
+
+    auth()->logout();
+
+    visit('/app/login')
+        ->resize(1400, 875)
+        ->assertSee('Faça login')
+        ->assertPresent('.grecaptcha-badge')
+        /*
+         * O `hover` NÃO é enfeite. O Google mantém o emblema COLAPSADO, com boa parte
+         * dele fora da viewport de propósito — fotografado assim, ele sai cortado pela
+         * borda e parece defeito de captura. No hover ele expande e mostra o texto
+         * "protected by reCAPTCHA", que é o que o leitor do README precisa reconhecer.
+         *
+         * A pausa depois é pela animação de expansão.
+         */
+        ->hover('.grecaptcha-badge')
+        ->wait(2)
+        ->screenshot(fullPage: false, filename: 'login-recaptcha-v3');
+})->skip(
+    fn (): bool => chaveDeArteAntiRobo('KIT_ART_RECAPTCHA_V3_SITE_KEY') === null,
+    'Defina KIT_ART_RECAPTCHA_V3_SITE_KEY com uma chave autorizada em localhost para regerar esta arte.',
+)->group('browser', 'art');
+
 it('captura a seção Proteção anti-robô das configurações', function (): void {
     /*
      * A proteção LIGADA nas settings, porque os campos são condicionais: o provedor, as chaves e a

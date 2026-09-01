@@ -1,5 +1,11 @@
+{{-- Arte padrão das telas de autenticação, embutida como data URI por `IdentidadeDoKit::arteDoLogin()`.
+
+     É uma view, e não um arquivo em `public/`, porque precisa carregar um valor de runtime: o nome da
+     aplicação. Quem tem marca própria envia a imagem em `/admin/configuracoes-do-kit` e nunca chega aqui.
+
+     O nome sai por `{{ }}`, que escapa `&`, `<` e `>` — sem isso um `APP_NAME` como "Silva & Cia"
+     invalidaria o XML e a tela ficaria sem arte. --}}
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid slice">
-  <!-- Placeholder da tela de login — substitua pela imagem da sua marca. -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0f172a"/>
@@ -21,7 +27,6 @@
     <circle cx="160" cy="820" r="180"/>
   </g>
   <g fill="#e0f2fe">
-    <text x="80" y="500" font-family="ui-sans-serif, system-ui, sans-serif" font-size="44" font-weight="700">starter-kit-easy</text>
-    <text x="80" y="548" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20" fill-opacity="0.75">Laravel 13 · Filament 5 · pronto para uso</text>
+    <text x="80" y="512" font-family="ui-sans-serif, system-ui, sans-serif" font-size="44" font-weight="700">{{ $nome }}</text>
   </g>
 </svg>

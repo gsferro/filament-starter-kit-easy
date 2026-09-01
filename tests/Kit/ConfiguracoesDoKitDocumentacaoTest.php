@@ -100,3 +100,32 @@ it('fecha o TODO de settings no trait de configuracao global do filament', funct
         ->and($trait)->toContain('/admin/configuracoes-do-kit')
         ->and($trait)->toContain('densidade de tabela');
 })->group('kit');
+
+/**
+ * CT-11 — cada README diz que a arte usa o nome, e como trocá-la.
+ *
+ * Wiki `feat/arte-do-login-com-nome-da-aplicacao`, RQ-04. Mora aqui, e não em
+ * arquivo próprio, porque `readmeSemCitacao()` já vive neste arquivo: um clone
+ * com outro nome é o que `.ai/rules/testes.md` proíbe, e mover o helper para
+ * `tests/Pest.php` só para ganhar um arquivo novo não paga.
+ *
+ * A ausência precisa do FILTRO de citação: o README pode perfeitamente citar o
+ * caminho antigo num bloco `>` explicando o que mudou, e citar não é instruir.
+ * Antes desta feature o caminho aparecia três vezes por README, sempre como
+ * instrução ao leitor — "troque a arte em `public/images/auth/login.svg`". Esse
+ * arquivo não existe mais, e é essa mentira que o caso falsifica.
+ *
+ * A linha do inglês é a que importa: o `README.en.md` é o que historicamente
+ * fica para trás no kit.
+ */
+it('documenta nos dois readmes que a arte do login usa o nome da aplicacao', function (string $arquivo, string $frase): void {
+    $texto = (string) file_get_contents(base_path($arquivo));
+
+    expect($texto)->toContain('APP_NAME')
+        ->and($texto)->toContain($frase)
+        ->and($texto)->toContain('/admin/configuracoes-do-kit')
+        ->and(readmeSemCitacao($arquivo))->not->toContain('public/images/auth/login.svg');
+})->with([
+    'README.md'    => ['README.md', 'mostra o nome da aplicação'],
+    'README.en.md' => ['README.en.md', 'shows the application name'],
+])->group('kit');

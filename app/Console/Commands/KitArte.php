@@ -64,6 +64,9 @@ class KitArte extends Command
      * @var list<string>
      */
     private const IMAGENS = [
+        // A tela de login da vitrine (wiki arte-do-login-com-nome-da-aplicacao, passo 5).
+        'login',
+
         // Login social e vínculo de provedor (wiki vinculo-de-provedor-social, passo 9).
         'login-social',
         'admin-configuracoes-login',
@@ -79,6 +82,12 @@ class KitArte extends Command
 
         // Proteção anti-robô (wiki recaptcha-nas-telas-publicas).
         'admin-anti-robo',
+
+        // As duas telas de login com o desafio no ar, cada uma com chave real do
+        // provedor. Só são geradas por quem tem as chaves no ambiente — os cenários
+        // se pulam sem elas, e aí estas duas linhas simplesmente não casam com nada.
+        'login-turnstile',
+        'login-recaptcha-v3',
     ];
 
     public function handle(): int
