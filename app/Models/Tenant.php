@@ -145,8 +145,8 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         // `APP_URL . '/storage'` (config/filesystems.php:44), enquanto o `asset()` segue o host do
         // request corrente. Os dois divergem sempre que o host efetivo não é o APP_URL — domínio
         // próprio de organização, staging, `config:cache` com APP_URL velho — e aí a logo quebra
-        // enquanto o resto da página carrega. É o mesmo `asset()` que os painéis já usam para a
-        // mídia base (`asset('images/auth/login.svg')`).
+        // enquanto o resto da página carrega. (A mídia base dos painéis não usa mais `asset()`:
+        // a arte padrão virou SVG gerado com o nome da aplicação, embutido como data URI.)
         return asset('storage/'.$this->logo);
     }
 }

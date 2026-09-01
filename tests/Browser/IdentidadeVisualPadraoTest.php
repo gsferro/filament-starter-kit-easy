@@ -28,9 +28,23 @@ it('usa a midia base na tela de bloqueio sem organizacao', function (): void {
 
     visit('/app/screen/lock')
         ->assertPathIs('/app/screen/lock')
-        // `images/auth/login.svg` é a mídia configurada no `AuthDesignerPlugin` do painel. Se a
-        // troca de mídia da organização vazasse para o caso sem tenant, o `src` seria outro.
-        ->assertAttributeContains('.fi-auth-media', 'src', 'images/auth/login.svg')
+        // A arte padrão é um SVG gerado com o nome da aplicação, embutido como data URI
+        // (wiki `arte-do-login-com-nome-da-aplicacao`). Se a troca de mídia da organização
+        // vazasse para o caso sem tenant, o `src` seria a URL do arquivo dela.
+        ->assertAttributeContains('.fi-auth-media', 'src', 'data:image/svg+xml;base64,')
+        // CT-B01 — a arte PINTA, e não é o texto alternativo.
+        //
+        // Este é o único oráculo do conjunto que o HTTP não expressa: para uma resposta
+        // HTTP, "a imagem quebrou" e "a imagem pintou" são idênticas — mesmo status, mesma
+        // string. O data URI é construído por nós, e mime errado, `;base64` esquecido ou
+        // payload truncado produzem `naturalWidth === 0` com toda a suíte verde.
+        //
+        // A ordem importa: `assertNoBrokenImages()` filtra `document.images`, e conjunto
+        // vazio satisfaz "nenhuma quebrada". Se a mídia deixasse de ser `<img>` — o pacote
+        // escolhe o ramo por extensão, e data URI não tem —, a página ficaria sem arte e a
+        // asserção passaria. Por isso a existência da imagem é afirmada antes.
+        ->assertPresent('img.fi-auth-media')
+        ->assertNoBrokenImages()
         ->assertSee('Desbloquear')
         ->assertNoJavaScriptErrors();
 });

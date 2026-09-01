@@ -367,7 +367,11 @@ it('veste o layout do auth designer sem vazar para as outras paginas', function 
         ->assertSee('fi-auth-layout', escape: false)
         // A mídia acusa ADR-06: registro ligado fora do AuthDesignerPlugin faz a config
         // cair em `new AuthPageConfig` e a imagem sumir, sem erro nenhum.
-        ->assertSee('images/auth/login.svg', escape: false);
+        //
+        // Reancorada pela wiki `arte-do-login-com-nome-da-aplicacao`: a arte padrão
+        // deixou de ser um arquivo em `public/` e passou a ser um SVG gerado com o
+        // nome da aplicação, embutido como data URI.
+        ->assertSee('data:image/svg+xml;base64,', escape: false);
 
     $this->actingAs(usuarioDoKit('panel_user', 'outro@example.com'))
         ->get('/app')

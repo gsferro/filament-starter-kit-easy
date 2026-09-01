@@ -88,15 +88,15 @@ return [
     | ícone padrão.
     |
     | `null` significa "sem arquivo próprio": logo e favicon somem (o Filament usa
-    | o brand em texto e o ícone dele), e a arte do login cai em
-    | `IdentidadeDoKit::ARTE_PADRAO`.
+    | o brand em texto e o ícone dele), e a arte do login cai na arte gerada com
+    | o nome da aplicação dentro.
     |
-    | O default da arte NÃO mora aqui de propósito: ele é um arquivo servido de
-    | `public/`, e estas três chaves são caminhos no DISCO `public`
-    | (storage/app/public). Misturar as duas origens numa chave só produziria um
-    | valor que às vezes é `asset()` e às vezes é `Storage::url()` — o resolvedor
-    | trata cada origem no lugar dela. Quem quiser outro padrão substitui o
-    | arquivo public/images/auth/login.svg, como sempre.
+    | O default da arte NÃO mora aqui de propósito: ele não é arquivo nenhum, e
+    | sim a view `svg.arte-do-login` renderizada a cada chamada — estas três
+    | chaves são caminhos no DISCO `public` (storage/app/public). Misturar as
+    | duas origens numa chave só produziria um valor que às vezes é data URI e
+    | às vezes é `Storage::url()` — o resolvedor trata cada origem no lugar
+    | dela. Quem quiser outra arte envia a sua pela tela de configurações.
     |
     | Sem `env()`: são caminhos de arquivo enviado pela tela, não escolha de
     | ambiente.
