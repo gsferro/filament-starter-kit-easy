@@ -930,6 +930,8 @@ Both screenshots below are the **same** login screen with only the provider chan
 |---|---|
 | [![Login screen with the Cloudflare Turnstile challenge: the "Verify you are human" checkbox between "Remember me" and the Login button](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login-turnstile.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-turnstile.png) | [![Login screen with reCAPTCHA v3: the form with no extra field and the "protected by reCAPTCHA" badge in the bottom-right corner](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login-recaptcha-v3.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-recaptcha-v3.png) |
 
+[![The "Proteção anti-robô" section in the kit settings: the toggle that requires the challenge, the local-environment toggle, the provider (reCAPTCHA v3), the minimum score at 0.5 and the site key and secret key fields](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-anti-robo.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-anti-robo.png)
+
 The widget and the provider round-trip belong to the [`ddr/filament-captcha`](https://github.com/danie1net0/filament-captcha) package; the kit adds what the package does not do: the decision to show up comes from the Settings screen, failure is **closed** (provider down = submission refused, never allowed through), every refusal is logged to the `autenticacao` channel, and the widget resets after each attempt (the token is single-use). One provider at a time:
 
 | Provider | Value | What it looks like |
@@ -940,6 +942,8 @@ The widget and the provider round-trip belong to the [`ddr/filament-captcha`](ht
 | hCaptcha | `hcaptcha` | — |
 
 Anyone with the `View:ConfiguracoesDoKit` permission enables and configures it in `/admin/configuracoes-do-kit` › Login › Proteção anti-robô: provider, site key (rendered in the HTML), secret key (encrypted in the database, never displayed) and, for v3, the minimum score. In `.env` the same keys are `KIT_ANTI_ROBO`, `KIT_ANTI_ROBO_PROVEDOR`, `KIT_ANTI_ROBO_CHAVE_DO_SITE`, `KIT_ANTI_ROBO_CHAVE_SECRETA` and `KIT_ANTI_ROBO_PONTUACAO_MINIMA` — the database wins. The package's own env vars (`CAPTCHA_DRIVER`, `RECAPTCHA_V2_SITEKEY`, ...) are ignored on purpose: one setting, one owner.
+
+**The default provider does not turn anything on.** `recaptcha_v3` is only *which* provider applies **if** someone enables the protection and saves both keys — the protection is born disabled and, without the keys, stays disabled even with the toggle on. No challenge is loaded on any screen until that decision is made on the Settings screen (or in `.env`).
 
 Turning it on is not enough by itself: without both keys, or with a provider outside the list, the protection stays off (with a log warning) — a required field nobody can fill would lock everyone out of the login, you included.
 
@@ -1501,7 +1505,7 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 | F-03c | E-mail verification (opt-in) | `/app/email-verification/prompt` | authenticated, with the requirement on (in the UI or in `.env`) | the route always exists — a kit middleware decides, per request; invited users are never blocked | 🟢 |
 | F-04 | Two-factor authentication | `/{panel}/two-factor-authentication` | authenticated | the screen opens and offers the QR | 🔵 |
 | F-05 | Passkeys | My profile | authenticated | key registration, in Breezy's profile | ⚪ |
-| F-06 | Session lock | user menu → *Lock session* | authenticated | locks without logging out; returns with password. Uses the login layout, not `SimplePage` | 🟢 |
+| F-06 | Session lock | user menu → *Lock session* | authenticated | locks without logging out; returns with the password **or** with social login (the same buttons as the login screen). Uses the login layout, not `SimplePage` | 🟢 |
 | F-07 | My profile, avatar and password | `/{panel}/my-profile` | authenticated | edits name, e-mail, password and avatar | 🔵 |
 | F-08 | Impersonate | `/admin/users` → row action | `master_global` | enters as another user and returns via the top banner | ⚪ |
 
