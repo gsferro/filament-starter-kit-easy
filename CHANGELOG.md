@@ -2,6 +2,17 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.22.3] - 2026-09-01
+
+### Corrigido
+- **`composer test:kit` quebrava em projeto recém-instalado.** O `tests/Pest.php` ligava o Test
+  Impact Analysis do Pest 5 incondicionalmente, e o TIA diffa contra um branch — sem `.git` ele
+  estoura `MissingDependency: The [Tia mode] feature requires [git]`. Como `composer create-project`
+  não cria repositório, toda instalação nova batia nisso na PRIMEIRA vez que rodasse a suíte, e a
+  mensagem que chegava era `WorkerCrashedException` do paratest, que não diz o motivo. O TIA agora
+  só liga com `.git` presente. Medido nas duas instalações de verificação: sem git, 1512 casos da
+  suíte `Kit` passam; com git, o TIA continua ligado como antes.
+
 ## [0.22.2] - 2026-09-01
 
 ### Corrigido

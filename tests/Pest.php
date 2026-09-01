@@ -131,9 +131,18 @@ pest()->extend(TestCase::class)
 | Só funciona porque nenhum helper de teste é usado de outro arquivo — o TIA carrega
 | um SUBCONJUNTO dos arquivos, e helper cruzado estoura `Call to undefined function`.
 | A guarda disso é tests/Kit/HelpersDeTesteTest.php.
+|
+| **Só com repositório git.** O TIA diffa contra um branch, então sem `.git` ele estoura
+| `MissingDependency: The [Tia mode] feature requires [git]` — e o worker do paratest
+| morre com `WorkerCrashedException`, não com uma mensagem que explique o motivo. Isso
+| acontece em TODA instalação por `composer create-project`, que não cria repositório:
+| quem instalava o kit e rodava `composer test:kit` batia nisso antes de ver um teste.
+| Medido na instalação de verificação da v0.22.2.
 */
 
-pest()->tia()->defaultBranch('main')->locally();
+if (is_dir(__DIR__.'/../.git')) {
+    pest()->tia()->defaultBranch('main')->locally();
+}
 
 /*
 |--------------------------------------------------------------------------
