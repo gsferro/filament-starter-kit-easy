@@ -2,6 +2,14 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.22.1] - 2026-09-01
+
+### Alterado
+- **Dependências atualizadas** (Dependabot, PRs #47 a #51), com a suíte `Kit`+`Tenancy` verde
+  (1753) sobre elas: `laravel/framework` 13.26.1 → 13.29.0, `tapp/filament-auditing` 4.0.9 → 4.1.1,
+  `shuvroroy/filament-spatie-laravel-health` 3.3.1 → 3.3.3, `brimham/filament-backup-monitor`
+  0.1.6 → 0.1.7 e, em dev, `laravel/boost` 2.5.5 → 2.7.0. Só `composer.lock` mudou.
+
 ## [0.22.0] - 2026-08-31
 
 ### Adicionado
