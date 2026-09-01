@@ -918,12 +918,18 @@ branch.
 
 The public **login**, **password reset** and **register** screens of the three panels can include an anti-robot challenge. The protection starts **disabled**, and when disabled the screens are exactly the same as before — no external scripts, no extra fields.
 
+Both screenshots below are the **same** login screen with only the provider changed — and they show the difference that drives the choice: Turnstile asks for a click, reCAPTCHA v3 asks for nothing.
+
+| Cloudflare Turnstile — the checkbox shows up and asks for a click | Google reCAPTCHA v3 — no checkbox, just the badge in the corner |
+|---|---|
+| [![Login screen with the Cloudflare Turnstile challenge: the "Verify you are human" checkbox between "Remember me" and the Login button](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login-turnstile.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-turnstile.png) | [![Login screen with reCAPTCHA v3: the form with no extra field and the "protected by reCAPTCHA" badge in the bottom-right corner](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login-recaptcha-v3.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-recaptcha-v3.png) |
+
 The widget and the provider round-trip belong to the [`ddr/filament-captcha`](https://github.com/danie1net0/filament-captcha) package; the kit adds what the package does not do: the decision to show up comes from the Settings screen, failure is **closed** (provider down = submission refused, never allowed through), every refusal is logged to the `autenticacao` channel, and the widget resets after each attempt (the token is single-use). One provider at a time:
 
 | Provider | Value | What it looks like |
 |---|---|---|
-| Google reCAPTCHA v2 | `recaptcha_v2` | the "I'm not a robot" checkbox (default) |
-| Google reCAPTCHA v3 | `recaptcha_v3` | invisible; Google returns a 0–1 score and the kit refuses anything below the **minimum score** (0.5 by default) |
+| Google reCAPTCHA v2 | `recaptcha_v2` | the "I'm not a robot" checkbox |
+| Google reCAPTCHA v3 | `recaptcha_v3` | **default**; invisible — Google returns a 0–1 score and the kit refuses anything below the **minimum score** (0.5 by default). It never asks for a click |
 | Cloudflare Turnstile | `turnstile` | no tracking, no cost |
 | hCaptcha | `hcaptcha` | — |
 

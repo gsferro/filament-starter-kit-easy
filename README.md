@@ -909,6 +909,12 @@ ramo.
 
 As telas públicas de **login**, **recuperação de senha** e **registro** dos três painéis podem receber um desafio anti-robô. A proteção nasce **desligada** e, quando desligada, as telas são exatamente as mesmas de antes — sem scripts externos e sem campos extras.
 
+As duas capturas abaixo são da **mesma** tela de login, mudando só o provedor — e mostram a diferença que pesa na escolha: o Turnstile pede um clique, o reCAPTCHA v3 não pede nada.
+
+| Cloudflare Turnstile — a caixa aparece e pede o clique | Google reCAPTCHA v3 — nenhuma caixa, só o emblema no canto |
+|---|---|
+| [![Tela de login com o desafio do Cloudflare Turnstile: a caixa "Verify you are human" entre "Lembre de mim" e o botão Login](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login-turnstile.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-turnstile.png) | [![Tela de login com o reCAPTCHA v3: o formulário sem nenhum campo a mais e o emblema "protected by reCAPTCHA" no canto inferior direito](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login-recaptcha-v3.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-recaptcha-v3.png) |
+
 [![Seção "Proteção anti-robô" nas configurações do kit: o toggle que exige o desafio, o toggle de ambiente local, o provedor (reCAPTCHA v3), a pontuação mínima em 0,5 e os campos de chave do site e chave secreta](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-anti-robo.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-anti-robo.png)
 
 Quem renderiza o widget e fala com o provedor é o pacote [`ddr/filament-captcha`](https://github.com/danie1net0/filament-captcha); o kit acrescenta o que o pacote não faz: a decisão de aparecer vem da tela de Settings, a falha é **fechada** (provedor fora do ar = envio recusado, não liberado), toda recusa vai para o canal `autenticacao`, e o widget se redefine depois de cada tentativa (o token é de uso único). Um provedor por vez:

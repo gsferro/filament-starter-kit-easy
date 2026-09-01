@@ -2,6 +2,35 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.23.0] - 2026-09-01
+
+### Alterado
+- **A arte padrão das telas de autenticação exibe o NOME DA APLICAÇÃO.** Ela trazia duas linhas
+  fixas (`starter-kit-easy` e `Laravel 13 · Filament 5 · pronto para uso`), então toda instalação
+  nascia com o nome do kit na tela de login mesmo depois de o `kit:install` trocar o `APP_NAME`.
+  O SVG deixou de ser arquivo e virou a view `svg.arte-do-login`: `IdentidadeDoKit::arteDoLogin()`
+  devolve um data URI com `config('app.name')` dentro, lido a cada render. A segunda linha saiu.
+  **Quem enviou a própria arte nas configurações continua com ela** — a precedência não mudou.
+- **`public/images/auth/login.svg` foi REMOVIDO**, e com ele `public/images/`. Um projeto que
+  tenha substituído esse arquivo à mão perde a customização ao atualizar: o caminho para trocar a
+  arte passa a ser o campo `arte_do_login` em `/admin/configuracoes-do-kit`.
+- **`IdentidadeDoKit::ARTE_PADRAO` deixou de existir.** Quem a referenciava eram apenas a própria
+  classe e dois testes.
+- **`art/login.png` passou a ser gerada pelo `kit:arte`.** Era a única captura de tela de
+  autenticação fora do comando, e a primeira imagem dos dois READMEs.
+
+### Adicionado
+- **Capturas reais do desafio anti-robô nos READMEs**, uma por provedor (Cloudflare Turnstile e
+  Google reCAPTCHA v3), lado a lado na seção "Proteção anti-robô". Elas mostram a diferença que
+  decide a escolha: o Turnstile pede um clique, o v3 só deixa um emblema no canto. Os cenários
+  que as geram leem a chave do site do ambiente (`KIT_ART_TURNSTILE_SITE_KEY`,
+  `KIT_ART_RECAPTCHA_V3_SITE_KEY`) e **se pulam sozinhos** quando ela não existe — nenhuma chave
+  entra no repositório, e `composer art` continua funcionando para quem clona o kit.
+
+### Corrigido
+- **O `README.en.md` anunciava o reCAPTCHA v2 como provedor padrão.** O padrão é o v3
+  (`config/kit.php` → `kit.login.anti_robo.provedor`). O `README.md` já estava certo.
+
 ## [0.22.5] - 2026-09-01
 
 ### Alterado
