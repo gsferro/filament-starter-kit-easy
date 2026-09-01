@@ -94,6 +94,19 @@ const DIRETORIOS_DE_CODIGO = [
     'database/factories',
     'database/migrations',
     'database/seeders',
+
+    /*
+     * `resources/views` entrou depois de a v0.23.0 quebrar em projeto atualizado:
+     * a arte do login virou a view `svg/arte-do-login.blade.php`, o `IdentidadeDoKit`
+     * que a consome FOI entregue, e a view não — `resources/views/svg` não estava em
+     * `CAMINHOS_DO_KIT`. Quem rodou `kit:update` recebeu
+     * "View [svg.arte-do-login] not found" no primeiro `composer dev`.
+     *
+     * A varredura não pegou porque olhava só `app` e `database/*`. Um diretório de
+     * view novo era invisível para ela, e a mesma armadilha já tinha engolido
+     * `resources/views/auth` antes desta correção.
+     */
+    'resources/views',
 ];
 
 /**
@@ -128,6 +141,12 @@ it('cobre todo o código do kit, e não só o que alguém lembrou de listar', fu
 
         foreach ($arquivos as $arquivo) {
             $relativo = str_replace('\\', '/', substr($arquivo->getPathname(), strlen(base_path()) + 1));
+
+            // `resources/views/vendor` é o que os pacotes publicam com `vendor:publish`;
+            // não é código do kit e não deve ser entregue pelo `kit:update`.
+            if (str_starts_with($relativo, 'resources/views/vendor/')) {
+                continue;
+            }
 
             if (in_array($relativo, NAO_E_DO_KIT, true) || estaCoberto($relativo)) {
                 continue;

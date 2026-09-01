@@ -149,9 +149,11 @@ class KitUpdate extends Command
         'database/seeders',
         'docker',
         'lang/vendor',
+        'resources/views/auth',
         'resources/views/errors',
         'resources/views/filament',
         'resources/views/livewire',
+        'resources/views/svg',
         'routes/console.php',
         // Os testes do kit acompanham a atualização: é com eles que você
         // confere se a fundação continua de pé depois de aplicar.
