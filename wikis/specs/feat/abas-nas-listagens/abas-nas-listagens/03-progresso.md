@@ -109,6 +109,24 @@ compartilhada, sem helper, sem env var, sem log, e `/infra/ai-runs` fora. Nada a
   CT-12 contorna corrigindo a coluna no banco —, **mas merece wiki própria**: um convite criado no
   contexto errado nasce na organização errada.
 
+## Validação em instalação real (2026-09-01, v0.22.3)
+
+As abas foram percorridas num kit instalado do Packagist (`TESTES KIT/v0223-padrao`), servido em
+`127.0.0.1:8123`, com navegador real (Playwright MCP, `--isolated --headless`) — **observação, não
+cobertura**: quem prova comportamento continua sendo o `04-casos-de-teste.md`.
+
+| O que | Resultado |
+|---|---|
+| `/admin/users` | "Todos" ativa por default e "Pendentes de aprovação" com badge `0` — RQ-01, RQ-03 e a ADR-03 (a primeira chave é a ativa) |
+| `/admin/users?tab=pendentes` | a aba troca **pela URL** e a tabela recorta ("Sem registros", com zero pendentes) — é o mecanismo que o README indica no lugar de persistir a aba na sessão |
+| `/admin/convites` | as três abas: "Todos", "Pendentes", "Aceitos", sem badge — RQ-07 e o desvio registrado acima |
+| console | zero erros nas telas visitadas |
+
+O `/app` não pôde ser percorrido nesta instalação: sem tenancy os Resources de usuários e convites
+do painel de negócio se escondem, então as abas de lá não têm tela. A instalação com tenancy
+(`v0223-tenancy`, `kit:tenancy --demo`) rodou a suíte `Kit,Tenancy` completa — 1753 casos, que
+incluem os CT-08 a CT-12 da fronteira de organização.
+
 ## Retrospectiva
 
 - **Funcionou**: extrair o recorte ANTES de escrever a aba, e rodar os testes de aprovação no meio.

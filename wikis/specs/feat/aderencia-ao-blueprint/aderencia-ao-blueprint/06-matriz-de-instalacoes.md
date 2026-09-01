@@ -109,3 +109,69 @@ Windows, honestamente, porque só ali ele discrimina).
 - Login social — exige credencial de provedor externo; coberto por `LoginSocialTest` com fake.
 - `docker compose` (Postgres, Redis, IA local) — instalações em SQLite.
 - Windows com TTY no Composer — não existe; é o caso documentado do bloco Windows do README.
+
+---
+
+## Rodada da v0.22.x — duas instalações, e os dois defeitos que só elas pegaram
+
+> 2026-09-01, em `TESTES KIT/v0223-padrao` e `TESTES KIT/v0223-tenancy`, do pacote publicado no
+> Packagist. Esta rodada não repetiu os oito caminhos acima: ela verificou a v0.22.x recém-lançada
+> e, no caminho, encontrou **dois defeitos de instalação que a suíte do repositório não pega por
+> construção**.
+
+| Instalação | Como | Suíte |
+|---|---|---|
+| `v0223-padrao` | `create-project`, **sem** `git init`, nada tocado à mão | **1512/1512** (`Kit`) |
+| `v0223-tenancy` | `create-project` + `git init` + `kit:tenancy --demo --force` | **1753/1753** (`Kit,Tenancy`) |
+
+### D-01 — o `.env.example` anulava o default do provedor anti-robô
+
+A v0.22.0 trocou o default para `recaptcha_v3` em `config/kit.php`, mas o `.env.example` fixava
+`KIT_ANTI_ROBO_PROVEDOR=recaptcha_v2` — e `env()` vence o default do config. Toda instalação nova
+nascia com o v2, e a mudança era **inócua**.
+
+Achado com `php artisan config:show kit.login.anti_robo` na instalação da v0.22.1. **A suíte não
+pega por construção**: ela roda com o `.env` de teste, não com o do skeleton. Corrigido na v0.22.2 e
+reconferido em instalação limpa (`provedor = recaptcha_v3`, `habilitado = false`, chaves nulas).
+
+### D-02 — `composer test:kit` quebrava em projeto recém-instalado
+
+O `tests/Pest.php` ligava o TIA do Pest 5 incondicionalmente. O TIA diffa contra um branch, então
+sem `.git` estoura `MissingDependency: The [Tia mode] feature requires [git]` — e o que chega ao
+terminal é `WorkerCrashedException` do paratest, que **não diz o motivo**. `composer create-project`
+não cria repositório: toda instalação nova batia nisso na primeira vez que rodasse a suíte, antes de
+ver um único teste.
+
+**A suíte não pega por construção**: no repositório sempre há `.git`. Corrigido na v0.22.3
+(`if (is_dir(__DIR__.'/../.git'))`) e provado onde o defeito acontecia — 1512 casos passam na
+instalação sem git.
+
+### Navegação em navegador real (Playwright MCP, `--isolated --headless`, só localhost)
+
+`v0223-padrao` servida em `127.0.0.1:8123`, percorrida como observação — **não** como cobertura;
+quem prova comportamento continua sendo a suíte.
+
+| Tela | O que se viu |
+|---|---|
+| `/` | boas-vindas com a versão **0.22.3**, multi-organização desligada |
+| `/admin/login` | login com `admin@example.com` entra |
+| `/admin/users` | **as abas da v0.22.0**: "Todos" ativa e "Pendentes de aprovação" com badge `0` |
+| `/admin/users?tab=pendentes` | a aba troca **pela URL** e a tabela recorta — o mecanismo que o README indica para linkar listagem já recortada |
+| `/admin/convites` | as três abas: Todos, Pendentes, Aceitos, sem badge |
+| `/admin/shield/roles` | quatro papéis, com a coluna "Acesso ao painel" |
+| `/infra` | navegação inteira de pé |
+| `/admin/configuracoes-do-kit`, `/app` | abrem sem erro |
+
+**Zero erros de console** em todas elas.
+
+**O que a navegação não prova, e não podia**: as travas de escalada não barram nada nessa sessão
+porque `admin@example.com` é o `master_global` e atravessa pelo `Gate::before` — quem prova a
+negação são os CT-05/CT-07 da wiki `travas-de-escalada-de-papeis`. E o widget anti-robô não aparece
+porque nasce desligado, que é o comportamento correto.
+
+### A lição desta rodada
+
+Os dois defeitos são da mesma família: **estado que só existe fora do repositório** — o `.env` do
+skeleton e a ausência de `.git`. Nenhuma quantidade de teste dentro do repositório os alcança, e os
+dois chegariam a quem instala. É o argumento de existir esta matriz, e o critério para a próxima:
+procurar onde a instalação difere do repositório, não repetir o que a suíte já cobre.

@@ -133,3 +133,23 @@ Plano" do `04`, que lista o que foi recusado como oráculo.
 - Bug de sintaxe JS corrigido na blade (`@js()` sem `;` concatenava duas instruções).
 - Testes de browser (CT-B01..CT-B05) cobrem renderização nas três telas públicas + persistência após
   erro de validação + Turnstile. A dívida das capturas foi fechada na v0.22.0.
+
+## Pós-entrega — o default do provedor e a captura (v0.22.0 → v0.22.3)
+
+- **O default do provedor passou a `recaptcha_v3`** (v0.22.0) e, **na v0.22.2, passou a valer de
+  fato**: o `.env.example` fixava `KIT_ANTI_ROBO_PROVEDOR=recaptcha_v2` e `env()` vence o default do
+  config, então instalação nova nascia com o v2 e a mudança era inócua. Achado com
+  `config:show kit.login.anti_robo` numa instalação do pacote publicado — a suíte não pega isso, ela
+  roda com o `.env` de teste. **Nada disso liga a proteção**: ela continua nascendo desligada, e sem
+  as duas chaves segue desligada mesmo com o toggle ligado.
+- **A captura do README é a seção das configurações** (`art/admin-anti-robo.png`), e não o widget na
+  tela de login. Motivo medido nos dois provedores: **todo provedor marca a própria chave de teste**
+  — o Google desenha um banner vermelho sobre o widget ("This reCAPTCHA is for testing purposes
+  only") e a Cloudflare uma faixa embaixo ("For testing only. If seen, report to site owner"). Foto
+  de README com aviso de erro ensina a coisa errada, e chave real com domínio autorizado é coisa que
+  o kit não tem. A tela de Settings mostra o que interessa — toggle, provedor, chaves, pontuação
+  mínima — sem depender de terceiro, e é onde o README manda ir para ligar.
+- **A captura usa `screenshotElement()`**, e não a viewport: a seção fica abaixo da dobra, clicar
+  nela a **colapsa** (as seções nascem abertas, `->collapsible()` sem `->collapsed()`) e clicar na
+  seção de cima não a fecha — o texto do título não é o gatilho. Duas tentativas antes de chegar
+  nisso, ambas registradas no comentário do cenário em `tests/BrowserTenancy/CapturaDeArteTest.php`.
