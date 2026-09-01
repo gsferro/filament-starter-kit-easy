@@ -2,6 +2,16 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.22.2] - 2026-09-01
+
+### Corrigido
+- **O provedor anti-robô padrão não chegava em instalação nova.** A v0.22.0 trocou o default para
+  `recaptcha_v3` em `config/kit.php`, mas o `.env.example` fixava `KIT_ANTI_ROBO_PROVEDOR=recaptcha_v2`
+  — e `env()` vence o default do config, então toda instalação nascia com o v2 e a mudança era
+  inócua. Achado na instalação de verificação da v0.22.1, com `php artisan config:show`.
+  Nada muda em quem já instalou: o `.env` existente manda, e a escolha gravada nas settings vence
+  os dois.
+
 ## [0.22.1] - 2026-09-01
 
 ### Alterado
