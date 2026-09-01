@@ -708,7 +708,7 @@ it('declara as chaves do login social no .env.example e nos dois READMEs', funct
     string $arquivo,
     string $termo,
 ): void {
-    expect(file_get_contents(base_path($arquivo)))->toContain($termo);
+    expect(documentacaoDoKit(str_contains($arquivo, 'en.md') ? 'en' : 'pt'))->toContain($termo);
 })->with([
     ['.env.example', 'KIT_SOCIALITE_GOOGLE'],
     ['.env.example', 'GOOGLE_CLIENT_ID'],

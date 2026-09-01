@@ -30,7 +30,8 @@ $documentos = [
  * `public`, ou a promessa de que a visibilidade do campo protege a URL.
  */
 it('[CT-20] nenhum documento anuncia disco público como default da mídia do kit', function (string $documento): void {
-    $texto = File::get(base_path($documento));
+    // Reancorado pela migração para o site: ver documentacaoDoKit() em tests/Pest.php.
+    $texto = documentacaoDoKit(str_contains($documento, 'en.md') ? 'en' : 'pt');
 
     expect($texto)
         ->not->toContain("MEDIA_DISK', 'public'")
@@ -60,12 +61,12 @@ it('[CT-21] a documentação declara o limite aceito do link assinado', function
         ->toContain('getTemporaryUrl()')
         ->toContain('quem tem o link entra, sem sessão, durante a validade');
 
-    expect(File::get(base_path('README.md')))
+    expect(documentacaoDoKit('pt'))
         ->toContain('getTemporaryUrl()')
         ->toContain('Quem tem o link entra, durante a validade da assinatura, sem sessão');
 });
 
 /** O caminho de recuperação da mídia legada precisa estar nos dois READMEs, ou ninguém roda. */
 it('[CT-21b] os READMEs apontam o comando de migração da mídia legada', function (string $readme): void {
-    expect(File::get(base_path($readme)))->toContain('kit:midia-privada');
+    expect(documentacaoDoKit(str_contains($readme, 'en.md') ? 'en' : 'pt'))->toContain('kit:midia-privada');
 })->with(['README.md', 'README.en.md']);

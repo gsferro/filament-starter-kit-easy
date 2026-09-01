@@ -1586,7 +1586,7 @@ it('declara as chaves e as URIs de callback nos arquivos que quem instala lê', 
     string $arquivo,
     string $termo,
 ): void {
-    expect(file_get_contents(base_path($arquivo)))->toContain($termo);
+    expect(documentacaoDoKit(str_contains($arquivo, 'en.md') ? 'en' : 'pt'))->toContain($termo);
 })->with([
     ['.env.example', 'KIT_SOCIALITE_GITHUB'],
     ['.env.example', 'KIT_SOCIALITE_LINKEDIN'],

@@ -33,7 +33,8 @@ function readmeSemCitacao(string $arquivo): string
  * requisito (RQ-18).
  */
 it('documenta a tela de configuracoes nos dois readmes', function (string $arquivo, string $urlDaTela, string $precedencia, string $permissao, string $naoEhTenant): void {
-    $texto = (string) file_get_contents(base_path($arquivo));
+    // Reancorado pela migração para o site: `documentacaoDoKit()` em tests/Pest.php.
+    $texto = documentacaoDoKit(str_contains($arquivo, 'en.md') ? 'en' : 'pt');
 
     expect($texto)->toContain($urlDaTela)
         ->and($texto)->toContain($precedencia)
@@ -71,7 +72,7 @@ it('documenta a tela de configuracoes nos dois readmes', function (string $arqui
 it('substitui o TODO de settings nos dois readmes, explicando a densidade', function (string $arquivo, string $promessaAntiga, string $explicacaoDaDensidade): void {
     expect(readmeSemCitacao($arquivo))->not->toContain($promessaAntiga);
 
-    expect((string) file_get_contents(base_path($arquivo)))->toContain($explicacaoDaDensidade);
+    expect(documentacaoDoKit(str_contains($arquivo, 'en.md') ? 'en' : 'pt'))->toContain($explicacaoDaDensidade);
 })->with([
     'português' => ['README.md', 'TODO:** transformar esses defaults', 'Densidade de tabela não existe no Filament 5'],
     'inglês'    => ['README.en.md', 'TODO:** turn these defaults', 'Table density does not exist in Filament 5'],
@@ -119,7 +120,7 @@ it('fecha o TODO de settings no trait de configuracao global do filament', funct
  * fica para trás no kit.
  */
 it('documenta nos dois readmes que a arte do login usa o nome da aplicacao', function (string $arquivo, string $frase): void {
-    $texto = (string) file_get_contents(base_path($arquivo));
+    $texto = documentacaoDoKit(str_contains($arquivo, 'en.md') ? 'en' : 'pt');
 
     expect($texto)->toContain('APP_NAME')
         ->and($texto)->toContain($frase)

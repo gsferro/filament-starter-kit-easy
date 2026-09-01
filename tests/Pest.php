@@ -837,3 +837,39 @@ function ofertaPara(string $email, ?Tenant $tenant = null, string $papel = 'pane
 
     return $convite;
 }
+
+/**
+ * Toda a documentação de um idioma: o README mais as páginas do site.
+ *
+ * Existe por causa da migração para o GitHub Pages: as afirmações de
+ * comportamento que os READMEs faziam mudaram de arquivo, e as asserções que as
+ * vigiavam precisavam mudar de alvo NO MESMO COMMIT — senão elas continuariam
+ * verdes sem proteger nada, que é o modo silencioso de perder uma garantia.
+ *
+ * O oráculo continua sendo "a documentação deste idioma afirma X", que é o que
+ * as cláusulas de requisito pedem; o que deixou de importar é EM QUE ARQUIVO ela
+ * afirma. Reorganizar o site não deve reprovar teste de conteúdo.
+ *
+ * `docs/` é `export-ignore`: num projeto instalado ele não existe, e aí só o
+ * README é lido — que continua trazendo o essencial.
+ */
+function documentacaoDoKit(string $idioma): string
+{
+    $readme = $idioma === 'en' ? 'README.en.md' : 'README.md';
+    $partes = [(string) file_get_contents(base_path($readme))];
+
+    $raiz = base_path("docs/{$idioma}");
+
+    if (is_dir($raiz)) {
+        $arquivos = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($raiz));
+
+        foreach ($arquivos as $arquivo) {
+            if ($arquivo->isFile() && $arquivo->getExtension() === 'md') {
+                $partes[] = (string) file_get_contents($arquivo->getPathname());
+            }
+        }
+    }
+
+    return implode('
+', $partes);
+}
