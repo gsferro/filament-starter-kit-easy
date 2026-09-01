@@ -929,7 +929,7 @@ Anyone with the `View:ConfiguracoesDoKit` permission enables and configures it i
 
 Turning it on is not enough by itself: without both keys, or with a provider outside the list, the protection stays off (with a log warning) — a required field nobody can fill would lock everyone out of the login, you included.
 
-**In the local environment the challenge stays off by default**, even when fully configured: production keys reject `localhost`, and the widget would render an error instead of the checkbox. To see the challenge under `APP_ENV=local` (with keys that accept localhost, or Google's / Cloudflare's test keys), set `KIT_ANTI_ROBO_LOCAL=true` or the "Aplicar também em ambiente local" toggle in the same section.
+**In the local environment the challenge stays off by default**, even when fully configured: production keys reject `localhost`, and the widget would render an error instead of the checkbox. To see the challenge under `APP_ENV=local` (with keys that accept localhost, or Google's / Cloudflare's test keys), set `KIT_ANTI_ROBO_LOCAL=true` or the "Aplicar também em ambiente local" toggle in the same section — **the toggle only shows up when the app runs with `APP_ENV=local`**, because anywhere else it decides nothing: `ConfiguracaoDoLogin::antiRobo()` only reads that key in the local environment. Hiding the field does not erase the stored value; it stays in the database, and stays without effect outside local.
 
 If you were already using the protection before v0.22 with the value `recaptcha`, the settings migration converts it to `recaptcha_v2` on its own — run `php artisan migrate`.
 
