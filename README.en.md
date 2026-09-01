@@ -715,8 +715,14 @@ organisation). From an **invitation link** (`?token=`), signing in through the p
 invitation**: the account is born with (or the existing one gains) the invitation's organisation and
 role, and the invitation is consumed — as long as the provider's verified e-mail is the invited one;
 if it is another, it refuses and the invitation stays intact. No password in any case: the provider
-proved the e-mail. An **existing** account logs in normally in any mode; a new account **without**
-`?org=` under multi-tenancy is still refused.
+proved the e-mail. A new account **without** `?org=` under multi-tenancy is still refused.
+
+An **existing** account logs in normally in any mode, but **does not consume an invitation** through
+this path: `?token=` travels on a public GET route with no CSRF, and with the provider's silent SSO
+the acceptance would happen without the person clicking anything. Someone who already has an account
+accepts the invitation on the authenticated **Invitations received** screen, which requires the owner
+and asks for confirmation. Audit and decision in
+`wikis/specs/feat/travas-de-escalada-de-papeis/` (F-03 and F-04).
 Decisions and cases: `wikis/specs/feat/cadastro-social-por-convite-e-organizacao/`.
 
 Decisions and cases: `wikis/specs/feat/vinculo-de-provedor-social/`.
@@ -1377,6 +1383,12 @@ The kit ships ready for you to develop with a coding agent (Claude Code, Codex, 
 It's also the folder where **you** write your project's own docs: `wikis/specs/{branch}/{feature}/` gets one folder per feature, created by the skill below.
 
 > The wiki is written in pt-BR, like the kit's UI and code comments.
+
+> The kit's own `wikis/specs/` — the ADRs of the features that built the kit itself, cited throughout
+> this README — stay in the kit's repository only: `.gitattributes` marks them `export-ignore`, and
+> `kit:update` delivers just the top-level documents of `wikis/`. In your project the `wikis/specs/`
+> folder is born empty, for your own features. To read a decision cited here, see the repository:
+> <https://github.com/gsferro/filament-starter-kit-easy>.
 
 ### The installed skills
 
@@ -2064,6 +2076,18 @@ Plus the field on the right tab of `app/Filament/Admin/Pages/ConfiguracoesDoKit.
 - **Permissions come from a seeder, not from the interactive `shield:generate`** — that's what makes an unattended install possible. `ShieldPermissionsSeeder` generates for all **three** panels (the Shield command only sees the current panel); `PapeisSeeder` slices the matrix per panel and hands it to the roles. After creating new Resources, run both (see [below](#after-creating-your-resources)).
 - **Panel access is data on the role**, in the `roles.painel` column — not a list of names in the code. A role with no panel opens no panel: the default is closed.
 - **No affordance without permission.** Menu, search and actions consult `canAccess()`/`canCreate()` before showing up. Finding something that results in a 403 is considered a bug.
+- **A listing with distinct states gets `getTabs()`.** A tab is the **one-click** slice; the modal
+  filter is for **combining** (with search, with the trash, with another filter). Both exist, and they
+  do not compete. The slicing rule lives in **one place only**, called by both —
+  `AprovacaoDeCadastro::recorteDePendentes()` for users, `Convite::recorteDePendentes()`/
+  `recorteDeAceitos()` for invitations. Rewriting the query inside `getTabs()` is how the filter and
+  the tab start disagreeing without anyone noticing. The badge count always comes from the Resource's
+  `getEloquentQuery()`, never from the model: on `/app` it carries the organisation slice, and a badge
+  counting the whole installation would report records outside it. **The active tab does not persist
+  in the session** (that's how Filament works): to link to an already-sliced listing — from a hub card,
+  from a notification — use `?tab=` in the URL, with `ListUsers::getUrl(['tab' => 'pendentes'])`. The
+  AI ledger (`/infra/ai-runs`) is deliberately left out: it already has `SelectFilter('status')` on
+  screen, and a tab per status would duplicate it.
 - **Plugin translations go in `lang/vendor/`.** Several packages ship English only; the kit translates them without touching vendor.
 
 ### Traps already handled
