@@ -559,10 +559,24 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->helperText('Ligar aqui não liga sozinho: o provedor e as DUAS chaves abaixo também precisam estar preenchidos — sem elas a proteção fica desligada, porque um desafio que não renderiza trancaria o login de todo mundo, inclusive o seu. Se o provedor cair, o envio é recusado até ele voltar ou você desligar aqui.')
                     ->live(),
 
+                /*
+                 * Só aparece com `APP_ENV=local` — a decisão que ele governa não existe fora dali.
+                 *
+                 * O toggle diz "aplicar TAMBÉM em ambiente local": em produção ou homologação ele
+                 * é um interruptor sem efeito nenhum, e um interruptor inerte na tela é pior que
+                 * ausente — quem o vê supõe que mexer nele muda alguma coisa. Quem decide o efeito
+                 * é `ConfiguracaoDoLogin::antiRobo()`, que só consulta a chave quando
+                 * `app()->isLocal()`.
+                 *
+                 * O valor GRAVADO não é tocado: quem ligou o toggle numa máquina local e subiu o
+                 * mesmo banco para produção continua com `true` no banco, e continua sem efeito
+                 * lá. Esconder o campo não apaga a escolha, só para de oferecê-la onde ela é
+                 * inócua.
+                 */
                 Toggle::make('login_anti_robo_local')
                     ->label('Aplicar também em ambiente local (APP_ENV=local)')
                     ->helperText('Desligado, o desafio não aparece enquanto a aplicação roda com APP_ENV=local — chave de produção não aceita localhost, e o campo obrigatório ficaria impreenchível. Ligue só para testar com chaves que aceitam localhost.')
-                    ->visible($ligado),
+                    ->visible(fn (Get $get): bool => $ligado($get) && app()->isLocal()),
 
                 Select::make('login_anti_robo_provedor')
                     ->label('Provedor')

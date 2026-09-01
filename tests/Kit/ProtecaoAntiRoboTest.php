@@ -21,6 +21,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Features\SupportTesting\Testable;
@@ -885,19 +886,65 @@ it('oferece os quatro provedores do pacote na tela de configuracoes', function (
     expect(array_column(ProvedorAntiRobo::cases(), 'value'))->toBe(['recaptcha_v2', 'recaptcha_v3', 'turnstile', 'hcaptcha']);
 })->group('kit');
 
-/** Os campos seguem o interruptor — inclusive o novo `local`. */
+/** Os campos seguem o interruptor. O `local` tem regra própria — ver os dois casos abaixo. */
 it('abre os campos anti-robo conforme o interruptor', function (bool $ligado): void {
     $this->actingAs(usuarioDoKit('admin'));
 
     $componente = Livewire::test(ConfiguracoesDoKit::class)
         ->fillForm(['login_anti_robo_habilitado' => $ligado]);
 
-    foreach (['login_anti_robo_local', 'login_anti_robo_provedor', 'login_anti_robo_chave_do_site', 'login_anti_robo_chave_secreta'] as $campo) {
+    foreach (['login_anti_robo_provedor', 'login_anti_robo_chave_do_site', 'login_anti_robo_chave_secreta'] as $campo) {
         $ligado
             ? $componente->assertSchemaComponentVisible($campo)
             : $componente->assertSchemaComponentHidden($campo);
     }
 })->with(['desligado' => [false], 'ligado' => [true]])->group('kit');
+
+/**
+ * O toggle "aplicar também em ambiente local" só existe com `APP_ENV=local`.
+ *
+ * Fora dali ele é um interruptor sem efeito: quem decide é `ConfiguracaoDoLogin::antiRobo()`,
+ * que só consulta `kit.login.anti_robo.local` quando `app()->isLocal()` (`:185`). Interruptor
+ * inerte na tela é pior que ausente — quem o vê supõe que mexer nele muda alguma coisa.
+ *
+ * O oráculo é o HTML da tela, e não `assertSchemaComponentVisible` sobre um `fillForm()`: com o
+ * ambiente trocado dentro do caso, o estado reativo do componente Livewire não reflete o
+ * interruptor, e a asserção mediria o arranjo em vez da regra. Pelo GET, o que se afirma é o que
+ * a pessoa vê.
+ */
+it('mostra o toggle de ambiente local somente com APP_ENV=local', function (string $ambiente, bool $visivel): void {
+    $settings                             = app(SettingsDoKit::class);
+    $settings->login_anti_robo_habilitado = true;
+    $settings->save();
+
+    config(['app.env' => $ambiente]);
+    App::detectEnvironment(fn (): string => $ambiente);
+
+    $resposta = $this->actingAs(usuarioDoKit('admin'))->get('/admin/configuracoes-do-kit')->assertOk();
+
+    $visivel
+        ? $resposta->assertSee('Aplicar também em ambiente local')
+        : $resposta->assertDontSee('Aplicar também em ambiente local');
+})->with([
+    'local'       => ['local', true],
+    'producao'    => ['production', false],
+    'homologacao' => ['staging', false],
+])->group('kit');
+
+/** Com a proteção desligada o toggle some mesmo em local — ele segue o interruptor também. */
+it('esconde o toggle de ambiente local quando a protecao esta desligada', function (): void {
+    $settings                             = app(SettingsDoKit::class);
+    $settings->login_anti_robo_habilitado = false;
+    $settings->save();
+
+    config(['app.env' => 'local']);
+    App::detectEnvironment(fn (): string => 'local');
+
+    $this->actingAs(usuarioDoKit('admin'))
+        ->get('/admin/configuracoes-do-kit')
+        ->assertOk()
+        ->assertDontSee('Aplicar também em ambiente local');
+})->group('kit');
 
 /** CT-19 — o campo de limiar só aparece com o reCAPTCHA v3 (M25: sempre visível). */
 it('mostra o limiar só quando o provedor e o recaptcha v3', function (ProvedorAntiRobo $provedor): void {

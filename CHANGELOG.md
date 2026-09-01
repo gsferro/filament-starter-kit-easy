@@ -2,6 +2,16 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.22.5] - 2026-09-01
+
+### Alterado
+- **O toggle "Aplicar também em ambiente local" só aparece na tela com `APP_ENV=local`.** Fora
+  dali ele era um interruptor sem efeito — quem consulta `kit.login.anti_robo.local` é
+  `ConfiguracaoDoLogin::antiRobo()`, e só quando `app()->isLocal()`. Interruptor inerte na tela é
+  pior que ausente: quem o vê supõe que mexer nele muda alguma coisa. **O valor gravado não é
+  tocado** — quem ligou o toggle numa máquina local e subiu o mesmo banco para produção continua
+  com `true` no banco, e continua sem efeito lá.
+
 ## [0.22.4] - 2026-09-01
 
 ### Alterado
