@@ -2,6 +2,17 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.22.4] - 2026-09-01
+
+### Alterado
+- **Removida toda menção ao nome de uma organização real** nos exemplos: o
+  `KIT_LOGIN_RODAPE` dos dois READMEs, a URL de exemplo do provedor OAuth nos requisitos, a
+  fixture do teste de Markdown do rodapé e citações em wikis. Substituído por `Acme` e
+  `exemplo.test`, o padrão que o resto do kit já usa. Nenhum comportamento muda.
+- **As citações literais do `filament/blueprint` nas wikis viraram referência mais paráfrase.**
+  O pacote é pago e a licença não permite redistribuir o conteúdo; o repositório é público.
+  A norma continua auditável: cada item cita arquivo e seção da fonte, sem reproduzir o texto.
+
 ## [0.22.3] - 2026-09-01
 
 ### Corrigido
