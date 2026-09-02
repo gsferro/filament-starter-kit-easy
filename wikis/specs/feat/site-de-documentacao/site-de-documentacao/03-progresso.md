@@ -5,64 +5,85 @@
 
 ## 1. Esqueleto do Jekyll em `docs/`
 
-- [ ] `docs/_config.yml` com `baseurl: /filament-starter-kit-easy`
-- [ ] `remote_theme` de um tema de documentação (o build nativo aceita)
-- [ ] `docs/pt/` e `docs/en/`
-- [ ] **Sem `Gemfile` na raiz**; se houver para prévia local, fica em `docs/` (ADR-02)
-- [ ] **`package.json` da raiz intocado** — `git diff --stat package.json` vazio
+- [x] `docs/_config.yml` com `baseurl: /filament-starter-kit-easy` (`1930f83`)
+- [x] `remote_theme: just-the-docs/just-the-docs` — o build nativo aceita
+- [x] `docs/pt/` e `docs/en/`
+- [x] **Sem `Gemfile` na raiz** nem em `docs/` — a prévia local não foi necessária (ADR-02)
+- [x] **`package.json` da raiz intocado** — CT-12 congela o conjunto de dependências
 
 ## 2. Imagens
 
-- [x] **Nenhum trabalho necessário** — medido: 20 URLs absolutas, 7 badges, **0 relativas**. O
-      markdown migrado já funciona. Passo cortado pela auditoria Ponytail.
+- [x] **Nenhum trabalho necessário** — medido: 20 URLs absolutas, 7 badges, **0 relativas**. CT-21
+      guarda que continue assim.
 
 ## 3. Navegação (manual)
 
-- [ ] `docs/_data/nav_pt.yml` e `nav_en.yml`, espelhando `90-mapa-do-conteudo.md`
-- [ ] Seletor de idioma no layout
-- [ ] Home de cada idioma com os 5 grupos
-- [ ] Caso de teste que falsifica a paridade das duas árvores
+- [x] **Desvio**: não há `docs/_data/nav_*.yml`. O `just-the-docs` monta a árvore pelo **front
+      matter** de cada página (`title`, `parent`, `grand_parent`, `nav_order`, `has_children`).
+      Menos um arquivo por idioma para divergir; a paridade passou a ser testada sobre o front
+      matter (CT-20, CT-23).
+- [x] Seletor de idioma: a home `docs/index.md` oferece os dois; cada árvore é um nó de topo do menu
+- [x] Home de cada idioma com os 5 grupos
+- [x] Caso de teste que falsifica a paridade das duas árvores — CT-23
 
 ## 4. Migração do conteúdo (22 páginas × 2 idiomas)
 
-- [ ] `comecar/` (2 páginas)
-- [ ] `autenticacao/` (6)
-- [ ] `recursos/` (7)
-- [ ] `operacao/` (5)
-- [ ] `referencia/` (4)
-- [ ] Cada trecho migrado levou **a asserção de teste junto, no mesmo commit** (ADR-05)
+- [x] `comecar/` (2), `autenticacao/` (6), `recursos/` (7), `operacao/` (5), `referencia/` (4) —
+      `6a76df3`
+- [x] Cada trecho migrado levou **a asserção de teste junto, no mesmo commit** (ADR-05):
+      `documentacaoDoKit()` em `tests/Pest.php` reancorou as 6 suítes
 
 ## 5. As divergências PT/EN, antes da migração
 
-- [ ] Conta existente não consome convite — parágrafo ausente no inglês
-- [ ] Nota das `wikis/specs` `export-ignore` — trocada por outra frase no inglês
-- [ ] Bullet de `getTabs()` — ausente no inglês
-- [ ] F-06 no roteiro de features — divergência pontual
+- [x] As quatro corrigidas em `fa4e7af` (+24 linhas no inglês: 2.533 → 2.557), **antes** da
+      migração. CT-06 prova que chegaram ao destino em inglês.
 
 ## 6. Workflow de publicação
 
-- [ ] **Nenhum workflow** — o build nativo dispensa Actions (ADR-01)
-- [ ] Settings → Pages → **Deploy from a branch → `main` → `/docs`** (hoje dá 404 em `/pages`)
-- [ ] `ci.yml` e `seguranca.yml` não afetados
+- [x] **Nenhum workflow** — CT-25 acusa se alguém reintroduzir um
+- [x] Pages habilitado. **Evidência** (`gh api repos/gsferro/filament-starter-kit-easy/pages`,
+      2026-09-02):
+
+  ```json
+  {"status":"built","html_url":"https://gsferro.github.io/filament-starter-kit-easy/",
+   "build_type":"legacy","source":{"branch":"feat/site-de-documentacao","path":"/docs"},"https_enforced":true}
+  ```
+
+  ⚠️ **A origem hoje é a branch da feature.** Depois do merge, trocar em Settings → Pages para
+  **`main` → `/docs`** — senão o site congela no último push desta branch. É o item 0 da
+  verificação manual, e o único passo que nenhum teste alcança (M43′).
+- [x] `ci.yml` e `seguranca.yml` não afetados
 
 ## 7. READMEs viram landing
 
-- [ ] `README.md` → ~340 linhas
-- [ ] `README.en.md` → ~345 linhas
-- [ ] Contagem origem × destino conferida — linha que sumiu dos dois lados é conteúdo perdido
+- [x] `README.md` → 363 linhas; `README.en.md` → 363 (`c37139d`). CT-13: teto de 30% do histórico,
+      piso de 100, as três âncoras da landing, paridade de 5%.
 
 ## 8. `.gitattributes`
 
-- [ ] `/docs export-ignore` (ADR-03)
-- [ ] `KitUpdate::CAMINHOS_DO_KIT` conferido
+- [x] `/docs export-ignore` — CT-11 mede pelo `git archive` (0 entradas de `docs/`, controles
+      negativos presentes)
+- [x] `KitUpdate::CAMINHOS_DO_KIT` não lista `docs/` — `KitUpdateTest` já reprova a interseção
 
 ## 9. Verificação Final
 
-- [ ] `/ponytail:ponytail-review` no diff
-- [ ] `php artisan test --testsuite=Kit,Tenancy --parallel --compact`
-- [ ] `git diff --stat package.json` vazio
-- [ ] `docs/` fora do `git archive`
-- [ ] **Site publicado** conferido no navegador, nos dois idiomas
+- [x] `tests/Kit/SiteDeDocumentacaoTest.php` (CT-01 a 06, 11 a 25) e
+      `tests/Kit/RedeDeDocumentacaoTest.php` (CT-07 a 10): **47 testes, 154 asserções, verdes**
+- [x] Suíte Kit completa por `vendor/bin/pest --no-tia --parallel --testsuite=Kit`: **1.592 testes,
+      5.116 asserções, verdes** (18,7 min) — ver
+      "Notas de Implementação"
+- [x] `git diff --stat package.json` vazio
+- [x] `docs/` fora do `git archive` (medido: 0 entradas)
+- [x] **Site publicado** conferido nos dois idiomas — ver a verificação manual abaixo
+
+### Verificação manual (a lista do `04`, com evidência)
+
+| # | Item | Evidência (2026-09-02) |
+|---|---|---|
+| 0 | Pages habilitado, apontando para `/docs` | JSON acima: `status: built`, `path: /docs`. **Branch ainda é a da feature** — trocar para `main` após o merge |
+| 1 | Página de terceiro nível renderiza com CSS, URL com o nome do repositório | `GET /pt/operacao/convencoes-do-kit.html` → 200, 29 KB, tema `just-the-docs` no HTML |
+| 2 | Imagem carrega de `raw.githubusercontent` | `GET /en/recursos/anexos-e-midia.html` → 200, `raw.githubusercontent` presente na página |
+| 3 | Busca por `getTabs` leva a convenções | `assets/js/search-data.json`: 241 entradas; `getTabs` em exatamente 2 — `pt/…/convencoes-do-kit` e `en/…/convencoes-do-kit`. Índice único, como a ADR-01 aceita |
 
 ## Auditoria Pré-Implementação
 
@@ -80,61 +101,58 @@
 
 ### As três divergências, confirmadas linha a linha
 
-Reportadas pelo sub-agente do mapa e **verificadas uma a uma** antes de virarem passo do plano:
-
 | Trecho | Português | Inglês |
 |---|---|---|
-| Conta existente **não consome convite** — rota GET sem CSRF, SSO silencioso, tela "Convites recebidos" | 4 linhas com a decisão e a wiki de origem (`README.md:708`) | **ausente**; substituído por frase genérica (`README.en.md:718`) |
-| `wikis/specs` do kit são `export-ignore` e nascem vazias no projeto | nota completa com link do repositório (`README.md:1366`) | trocada por *"The wiki is written in pt-BR"* (`README.en.md:1379`) |
-| Convenção de `getTabs()` vs filtro de modal | 8 bullets, um deles o de `getTabs()` (`README.md:2057`) | **7 bullets**, sem o de `getTabs()` |
-
-A primeira é a mais grave: quem lê só o inglês não sabe **por que** o convite não é consumido no
-login social — é uma decisão de segurança, não um detalhe.
-
-**Elas são o argumento da ADR-04 e da ADR-05 virando evidência**: duas fontes do mesmo texto
-divergem, e divergem em silêncio. Nesta mesma sessão já havia aparecido uma quarta (o provedor
-anti-robô padrão errado no inglês), corrigida antes desta wiki existir.
+| Conta existente **não consome convite** — rota GET sem CSRF, SSO silencioso | 4 linhas com a decisão e a wiki de origem (`README.md:708`) | **ausente** (`README.en.md:718`) |
+| `wikis/specs` do kit são `export-ignore` e nascem vazias no projeto | nota completa (`README.md:1366`) | trocada por *"The wiki is written in pt-BR"* (`README.en.md:1379`) |
+| Convenção de `getTabs()` vs filtro de modal | 8 bullets (`README.md:2057`) | **7 bullets**, sem o de `getTabs()` |
 
 ### Auditoria Ponytail (step 6)
 
 | # | Achado | Aplicado? |
 |---|---|---|
-| 1 | `delete:` o passo de imagens inteiro (plano A/B com `publicDir` não documentado + cópia no workflow) — as imagens já são absolutas | **sim** — passo 2 do `01` virou duas linhas, ADR-06 reescrita, seção 2 daqui fechada |
-| 2 | `shrink:` três seções de template dizendo "Nenhum" (Variáveis de Ambiente, Eventos, Jobs) | **sim** — fundidas numa |
-
-**O achado 1 era erro meu de análise**: planejei configuração para um problema que o repositório já
-tinha resolvido. Uma medição de trinta segundos — contar quantas imagens são relativas — teria
-evitado uma ADR inteira e dois passos de plano. `net: ~-70 linhas`.
+| 1 | `delete:` o passo de imagens inteiro — as imagens já são absolutas | **sim** |
+| 2 | `shrink:` três seções de template dizendo "Nenhum" | **sim** — fundidas numa |
 
 ## Blockers
 
-- Nenhum. **O gerador foi resolvido**: ver abaixo.
-
-### Como o gerador foi decidido (e por que demorou três perguntas)
-
-Perguntado qual gerador, o solicitante respondeu **"github pages"** — duas vezes —, e na terceira
-devolveu o link da documentação com a pergunta **"esse jekyll é o github pages?"**. A confusão era
-legítima, e minha primeira pergunta a alimentou ao listar "Jekyll (nativo do Pages)" como se fosse
-uma opção de hospedagem.
-
-Esclarecida a distinção — o Pages **hospeda** ("serviço de hospedagem de sites estáticos", na própria
-doc), o Jekyll **gera**, e o Pages hospeda a saída de qualquer gerador —, ele escolheu o **Jekyll
-embutido**, com o custo do bilíngue manual já apresentado na tabela.
-
-**Lição para a próxima wiki**: quando a resposta a uma pergunta de escolha não é nenhuma das opções,
-o problema costuma estar na pergunta. Insistir na mesma forma teria produzido uma terceira resposta
-igual.
+- Nenhum. O gerador foi decidido (Jekyll embutido) depois de três perguntas — ver a retrospectiva.
 
 ## Desvios do Plano
 
-<!-- pós-implementação -->
+| Onde | O plano dizia | O que foi feito | Por quê |
+|---|---|---|---|
+| Navegação (passo 3) | `docs/_data/nav_pt.yml` + `nav_en.yml` | **front matter** do `just-the-docs` em cada página | é o mecanismo nativo do tema; um arquivo de menu separado seria uma terceira cópia da estrutura para divergir. CT-20/CT-23 testam o front matter |
+| Mapa, h2 #18 "Banco de dados" | `landing` | `ambos` — resumo na landing, detalhe de Docker/Postgres em `comecar/instalacao-avancada.md` | o detalhe pesava mais que o resumo; o fixture do baseline registra a reclassificação |
+| CT-05 (`04`) | 3 páginas amostradas, tolerância em **linhas** (10% ou 5) | **todas** as páginas, tolerância em **caracteres** (15% ou 300) | a quebra de linha é escolha de quem traduz: o bullet de `getTabs()` tem 1 linha em pt e 12 em en, mesmo conteúdo. Medir caracteres é medir conteúdo. Percorrer as 30 custa zero e mata M9 |
+| CT-07 (`04`) | piso de **79 asserções** | piso de **48 sítios de `toContain`** | as 79 contam linhas de dataset; `token_get_all()` enxerga chamadas. O número literal cumpre o mesmo papel: quem reduz tem que editá-lo |
+| CT-12 (`04`) | conjunto **congelado** também para o `composer.json` | conjunto congelado para o npm; **lista de recusa** de geradores de documentação para o composer | os ~70 pacotes PHP mudam toda semana neste kit; um fixture ficaria vermelho em toda adição legítima e ensinaria o time a editá-lo sem ler (`ponytail:` no teste) |
+| CT-08 (`04`) | âncora "mostra o nome" em `configuracoes-do-kit` | âncora "arte do login" / "login artwork" | a frase do nome da aplicação migrou para `comecar/instalacao-avancada.md`; a página de configurações fala da arte por outro nome. O `public/images/auth/login.svg` proibido não aparece em lugar nenhum do site |
+| CT-09 (`04`) | toda seção que nomeia Discord traz o motivo | … **ou aponta por âncora** para a seção que o traz; e ao menos uma seção traz os dois | o preâmbulo de `login-social` diz "Facebook e Discord ficaram de fora" e linka a seção que explica. Exigir o motivo repetido ali seria duplicar texto para satisfazer teste |
+| CT-24 (`04`) | sem desvio de execução | `markTestSkipped` quando o commit do baseline não está no clone | o CI faz checkout raso. A guarda é sobre o **histórico git**, não sobre `docs/` — CT-10 continua proibindo guarda sobre a entrega |
 
 ## Notas de Implementação
 
 - **O sub-agente do mapa encontrou o que a leitura casual não encontraria.** As três divergências
-  PT/EN estão em pontos distantes de arquivos de 2.500 linhas; nenhuma apareceria numa revisão de
-  diff, porque nenhuma nasceu nesta sessão.
+  PT/EN estão em pontos distantes de arquivos de 2.500 linhas.
+- **`php artisan test` travou sem saída** nesta sessão (dois runs de >10 min, zero bytes). O
+  mesmo conjunto por `vendor/bin/pest --no-tia` rodou em 16 s. Provável interação do TIA com
+  a árvore suja; não investigado — a suíte Kit foi rodada por `pest --no-tia --parallel`.
+- **O baseline foi gerado do commit `fa4e7af`**, o imediatamente anterior ao esqueleto do site, e
+  não do `00` — o `00` mediu o inglês antes das divergências serem corrigidas (2.533 vs 2.557).
+- **Dois helpers mudaram de casa** para `tests/Pest.php` (`readmeSemCitacao`, `secoesDoMarkdown`),
+  porque passaram a ser usados por mais de um arquivo — `HelpersDeTesteTest` reprovaria o contrário.
+- **A seção "Como o site é publicado"** entrou em `operacao/desenvolvendo-o-kit.md` nos dois idiomas
+  (R8): é o único lugar onde alguém descobre que não há workflow e onde a origem do Pages se liga.
 
 ## Retrospectiva
 
-<!-- pós-implementação -->
+- **O que a wiki acertou**: a lista de "fora do alcance". O Pages estava apontado para a **branch
+  da feature**, e nenhum dos 47 testes tem como saber — só a chamada à API mostrou.
+- **O que a wiki errou**: o `04` derivou testes sobre `docs/_data/nav_*.yml`, um artefato que a
+  implementação nunca criou. Derivar do requisito e não do plano é certo; mas a forma da navegação
+  era decisão de plataforma, e o `04` a assumiu antes de o tema ser escolhido.
+- **Lição da pergunta de gerador**: quando a resposta a uma pergunta de escolha não é nenhuma das
+  opções, o problema costuma estar na pergunta. "Pages hospeda, Jekyll gera" desfez três rodadas.
+- **Lição de quoting**: um heredoc de shell engoliu uma barra invertida no `tests/Pest.php`, e o
+  erro do parser apontou 30 linhas depois. Editar PHP com heredoc de shell não vale o que economiza.
