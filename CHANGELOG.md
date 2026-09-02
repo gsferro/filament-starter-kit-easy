@@ -2,7 +2,7 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
-## [0.24.0] - 2026-09-01
+## [0.24.0] - 2026-09-02
 
 ### Adicionado
 - **Site de documentação em GitHub Pages**: <https://gsferro.github.io/filament-starter-kit-easy/>.
@@ -24,6 +24,10 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   o diff passaria a acusar as edições do próprio usuário. `--tag` continua aceitando qualquer versão.
 
 ### Corrigido
+- **`config('kit.version')` voltou a acompanhar a versão publicada.** As v0.23.0 e v0.23.1 saíram
+  com `0.22.5` na chave — e `kit:update` usa essa chave como versão de ORIGEM padrão, então um
+  projeto nascido da 0.23.x se via um passo atrás do que era. Quem instalou uma dessas pode passar
+  `--from=0.23.1` na primeira atualização.
 - **Seis divergências entre `README.md` e `README.en.md`**, todas pré-existentes e todas omissões no
   inglês: o provedor anti-robô padrão (já corrigido na 0.23.0), o motivo de uma conta existente não
   consumir convite pelo login social (decisão de segurança), a nota de que as `wikis/specs` do kit
