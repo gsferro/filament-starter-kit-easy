@@ -11,15 +11,6 @@
  * `README.en.md` é o que costuma ficar para trás.
  */
 
-/** O README sem as linhas de citação (`>`), para asserção de AUSÊNCIA. */
-function readmeSemCitacao(string $arquivo): string
-{
-    return implode("\n", array_filter(
-        explode("\n", (string) file_get_contents(base_path($arquivo))),
-        static fn (string $linha): bool => ! str_starts_with(ltrim($linha), '>'),
-    ));
-}
-
 /**
  * CT-31 — cada README cita a tela e a regra de precedência.
  *
