@@ -360,6 +360,14 @@ class KitServiceProvider extends ServiceProvider
                  * Ver o cabeçalho de `resources/css/filament/cards.css`.
                  */
                 Css::make('kit-cards', resource_path('css/filament/cards.css')),
+                /*
+                 * O overlay da busca ⌘K (`wezlo/filament-search-spotlight`). Mesmo caso do
+                 * `cards.css`, mais grave: a blade do pacote emite 66 utilitárias e a CSS do
+                 * Filament não tem NENHUMA — sem isto o overlay abre `fixed` sem `inset-0`,
+                 * a 1.800 px do topo, fora da tela. Escopado no atributo Alpine da raiz do
+                 * componente. Ver o cabeçalho de `resources/css/filament/spotlight.css`.
+                 */
+                Css::make('kit-spotlight', resource_path('css/filament/spotlight.css')),
             ],
             package: 'kit',
         );
