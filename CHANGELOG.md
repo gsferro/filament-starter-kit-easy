@@ -2,6 +2,18 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+
+## [Unreleased]
+
+### Adicionado
+- **`php artisan kit:info`** mostra como o projeto foi customizado, num lugar só: as cinco respostas
+  da instalação, as 44 configurações do kit com os valores **vigentes** (segredos como
+  "definida/vazia", e-mail do administrador mascarado, senha nunca exibida), qual fonte está valendo
+  — o banco de `/admin/configuracoes-do-kit` ou o `.env` — e a lista curta de onde os dois discordam,
+  que só aparece quando discordam. É **somente leitura**: aponta o comando ou a tela que muda cada
+  coisa, e funciona **antes do primeiro `migrate`** (o que depende de banco sai como "indisponível",
+  em vez de derrubar o comando).
+
 ## [0.24.0] - 2026-09-02
 
 ### Adicionado

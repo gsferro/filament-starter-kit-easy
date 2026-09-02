@@ -304,6 +304,7 @@ php artisan kit:install --no-support  # pula o convite para dar uma estrela ao k
 #   --create-project é uso interno do post-create-project-cmd: apaga o que só serve ao repositório do kit
 php artisan kit:admin             # troca e-mail e senha do administrador (pede confirmação)
 php artisan kit:admin --email=x --senha=y --force   # sem perguntas — evite: a senha fica no histórico do shell
+php artisan kit:info              # mostra como o projeto está customizado e de onde cada valor vem
 php artisan kit:update            # traz melhorias de uma versão nova do kit
 php artisan kit:tenancy           # liga o modo multi-tenant (opt-in)
 ```

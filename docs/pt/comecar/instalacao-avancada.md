@@ -49,6 +49,7 @@ php artisan kit:install --no-support  # pula o convite para dar uma estrela ao k
 #   --create-project é uso interno do post-create-project-cmd: apaga o que só serve ao repositório do kit
 php artisan kit:admin             # troca e-mail e senha do administrador (pede confirmação)
 php artisan kit:admin --email=x --senha=y --force   # sem perguntas — evite: a senha fica no histórico do shell
+php artisan kit:info              # mostra como o projeto está customizado e de onde cada valor vem
 php artisan kit:update            # traz melhorias de uma versão nova do kit
 php artisan kit:tenancy           # liga o modo multi-tenant (opt-in)
 ```
@@ -59,6 +60,8 @@ as imagens do README e a varredura SFDIPOT — estão em
 ## Personalize seu projeto
 
 **Os cinco primeiros o instalador já pergunta** (ver [a instalação](https://github.com/gsferro/filament-starter-kit-easy#starter-kit-easy)) — a lista abaixo é para mudar depois, ou para quem pulou as perguntas.
+
+`php artisan kit:info` mostra o valor atual de cada item abaixo, e se ele está vindo do banco ou do `.env`.
 
 | # | O quê | Onde | Perguntado na instalação? |
 |---|---|---|---|

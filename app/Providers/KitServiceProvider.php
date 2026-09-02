@@ -25,7 +25,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Ai\Events\AgentPrompted;
@@ -156,9 +155,9 @@ class KitServiceProvider extends ServiceProvider
      * Isto roda em TODO request e TODO comando artisan. Um `Throwable` aqui
      * derrubaria a aplicação inteira, não uma tela — então o `catch` é de
      * `Throwable` (não `Exception`: `TypeError` e `Error` escapariam) e envolve
-     * inclusive o `Schema::hasTable()`, que num banco inexistente **lança antes de
-     * responder**. É exatamente o que acontece no primeiro `migrate` de uma
-     * instalação nova.
+     * inclusive o `ConfiguracoesDoKit::gravadoNoBanco()`, cujo `Schema::hasTable()` num banco
+     * inexistente **lança antes de responder**. É exatamente o que acontece no primeiro
+     * `migrate` de uma instalação nova.
      *
      * O `hasTable()` falso sai em SILÊNCIO, sem log: tabela ausente é o estado
      * normal de uma instalação nova, e um `warning` ali gritaria em todo `migrate`
@@ -175,9 +174,7 @@ class KitServiceProvider extends ServiceProvider
     protected function configureSettingsDoKit(): void
     {
         try {
-            $tabela = config('settings.repositories.database.table') ?? 'settings';
-
-            if (! Schema::hasTable($tabela)) {
+            if (! ConfiguracoesDoKit::gravadoNoBanco()) {
                 return;
             }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Settings;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Spatie\LaravelSettings\Settings;
 
 /**
@@ -209,6 +210,18 @@ final class ConfiguracoesDoKit extends Settings
     }
 
     /**
+     * A tabela de settings existe? É o que decide se o banco está valendo sobre o `.env`.
+     *
+     * Lança em banco inexistente — `Schema::hasTable()` conecta antes de responder. Quem chama
+     * decide o que fazer com isso: o provider silencia (é o primeiro `migrate` de uma instalação
+     * nova), o customizador também, e o `kit:info` imprime "indisponível".
+     */
+    public static function gravadoNoBanco(): bool
+    {
+        return Schema::hasTable(config('settings.repositories.database.table') ?? 'settings');
+    }
+
+    /**
      * Os segredos cifrados no `payload`: a senha do SMTP e o `client_secret` de cada provedor.
      *
      * A tabela `settings` guarda JSON em claro, e um dump de banco, um backup e a
@@ -407,13 +420,32 @@ final class ConfiguracoesDoKit extends Settings
      */
     public static function devolverConfigAoEnv(): void
     {
+        config(self::valoresDosArquivos());
+    }
+
+    /**
+     * O que os ARQUIVOS de `config/` (e o `.env` que eles leem) dizem para cada chave do mapa,
+     * como se o banco não existisse. Não escreve nada — é a metade de leitura de
+     * `devolverConfigAoEnv()`, separada para o `kit:info` comparar `.env` × banco sem alterar a
+     * config do processo.
+     *
+     * Relê os ARQUIVOS, e não `env()` direto, porque é neles que mora a coerção de cada chave
+     * (`FILTER_VALIDATE_BOOLEAN`, `NumeroDoEnv`, default).
+     *
+     * @return array<string, mixed> chave de `config()` → valor do arquivo
+     */
+    public static function valoresDosArquivos(): array
+    {
         $arquivos = [];
+        $valores  = [];
 
         foreach (self::mapaDeConfiguracao() as $chave) {
             [$arquivo, $caminho] = explode('.', $chave, 2);
             $arquivos[$arquivo] ??= require config_path($arquivo.'.php');
 
-            config([$chave => data_get($arquivos[$arquivo], $caminho)]);
+            $valores[$chave] = data_get($arquivos[$arquivo], $caminho);
         }
+
+        return $valores;
     }
 }
