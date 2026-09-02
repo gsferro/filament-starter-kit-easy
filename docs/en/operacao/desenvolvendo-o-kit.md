@@ -42,3 +42,31 @@ with `git add -f`.
 `tests/Kit/BlueprintForaDoPacoteTest.php` guards this. **With Blueprint enabled those cases go
 red** — deliberately: it is the reminder to run `composer bp:off` before committing.
 
+
+## How the documentation site is published
+
+This site — <https://gsferro.github.io/filament-starter-kit-easy/> — is the content of `docs/`
+built by the **Jekyll bundled with GitHub Pages**. The whole update cycle is:
+
+1. edit the markdown in `docs/pt/` and `docs/en/` — **always both languages**, in the same commit;
+2. commit and push to the default branch (`main`);
+3. GitHub builds and publishes on its own, in about a minute.
+
+**There is no workflow in Actions and no local build to run.** Do not look for a `docs.yml` in
+`.github/workflows/` or an `npm run docs:build`: they do not exist, deliberately — the native
+Pages build resolves the gems on its own server, and a workflow would be a second publication
+competing with the first (ADR-01 in the `site-de-documentacao` wiki).
+
+The only part that is **not** in any file is the site source, which is repository configuration:
+**Settings → Pages → Build and deployment → Source: Deploy from a branch → branch `main` →
+folder `/docs`**. It is the one step a `git revert` cannot undo and no test can reach — if the
+site disappears with every file in place, that is where to look.
+
+The native build runs in `--safe` mode: only the gems on the Pages allowlist work, the theme
+comes through `remote_theme`, and no i18n plugin is allowed — which is why the two language trees
+are maintained by hand, in each page's front matter. And Liquid processes double braces **even
+inside code blocks**: a Blade example on a page must sit inside Liquid's `raw` block, otherwise
+the snippet vanishes from the published page with no error anywhere.
+
+`docs/` is `export-ignore`: the site is kit material and never reaches a project born from
+`create-project`. The guards for that live in `tests/Kit/SiteDeDocumentacaoTest.php`.

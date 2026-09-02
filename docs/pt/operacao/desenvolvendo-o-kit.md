@@ -43,3 +43,31 @@ linha de defesa, mas o global é melhor: o arquivo nem existe ali para alguém c
 `tests/Kit/BlueprintForaDoPacoteTest.php` guarda isso. **Com o Blueprint ligado, esses casos
 ficam vermelhos** — de propósito: é o lembrete de rodar `composer bp:off` antes de commitar.
 
+
+## Como o site de documentação é publicado
+
+Este site — <https://gsferro.github.io/filament-starter-kit-easy/> — é o conteúdo de `docs/`
+construído pelo **Jekyll embutido do GitHub Pages**. O ciclo de atualização inteiro é:
+
+1. editar o markdown em `docs/pt/` e `docs/en/` — **sempre nos dois idiomas**, no mesmo commit;
+2. commitar e fazer push para a branch padrão (`main`);
+3. o GitHub constrói e publica sozinho, em cerca de um minuto.
+
+**Não há workflow de Actions nem build local a rodar.** Não procure um `docs.yml` em
+`.github/workflows/` nem um `npm run docs:build`: eles não existem, de propósito — o build nativo
+do Pages resolve as gems no servidor dele, e um workflow seria uma segunda publicação competindo
+com a primeira (ADR-01 da wiki `site-de-documentacao`).
+
+A única parte que **não** está em arquivo nenhum é a origem do site, que é configuração do
+repositório: **Settings → Pages → Build and deployment → Source: Deploy from a branch →
+branch `main` → pasta `/docs`**. É o único passo que um `git revert` não desfaz e que nenhum
+teste alcança — se o site sumir com todos os arquivos no lugar, é ali que se olha.
+
+O build nativo roda em modo `--safe`: só as gems da lista do Pages funcionam, o tema vem por
+`remote_theme` e nenhum plugin de i18n é permitido — por isso as duas árvores de idioma são
+mantidas à mão, no front matter de cada página. E o Liquid processa chaves duplas **até dentro
+de bloco de código**: exemplo de Blade numa página precisa ficar dentro do bloco `raw` do
+Liquid, senão o trecho some da página publicada sem erro em lugar nenhum.
+
+`docs/` é `export-ignore`: o site é material do kit e não chega ao projeto que nasce do
+`create-project`. As guardas disso ficam em `tests/Kit/SiteDeDocumentacaoTest.php`.
