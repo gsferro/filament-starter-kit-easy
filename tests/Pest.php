@@ -12,6 +12,7 @@ use Filament\FilamentManager;
 use Filament\Support\Assets\AssetManager;
 use Filament\Support\Colors\ColorManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Log;
@@ -934,4 +935,57 @@ function readmeSemCitacao(string $arquivo): string
 function secoesDoMarkdown(string $caminho): array
 {
     return preg_split('~^#{1,6} ~m', (string) file_get_contents(base_path($caminho))) ?: [];
+}
+
+/*
+|--------------------------------------------------------------------------
+| `kit:info` — a saída do comando, e uma linha dela
+|--------------------------------------------------------------------------
+| Aqui, e não no arquivo de teste, porque DOIS usam: `tests/Kit/KitInfoTest.php` e
+| `tests/Tenancy/KitInfoTenancyTest.php`. Helper cruzado declarado dentro de um arquivo de teste
+| vaza para o vizinho e só estoura sob `--parallel`, `--tia` ou arquivo isolado — ver
+| `.ai/rules/testes.md` e a guarda em `tests/Kit/HelpersDeTesteTest.php`.
+*/
+
+/** A saída de `kit:info`, em texto cru. */
+function saidaDoKitInfo(): string
+{
+    Artisan::call('kit:info');
+
+    return Artisan::output();
+}
+
+/**
+ * A linha da saída de `kit:info` que começa por este rótulo.
+ *
+ * ## Por que quase todo caso de `kit:info` afirma sobre a LINHA
+ *
+ * Dois motivos independentes, os dois medidos numa execução vermelha.
+ *
+ * **1. O comando exibe cerca de cinquenta linhas, e o mesmo texto aparece legitimamente em mais de
+ * uma.** `Starter Kit` está no nome do projeto e no remetente de e-mail (`mail_from_name` nasce de
+ * `${APP_NAME}`); `#zz` está na linha da cor e na linha `Cor Primaria Hex`, que mostra o valor
+ * vigente de propósito. `doesntExpectOutputToContain()` sobre a saída inteira reprova o comando
+ * CORRETO.
+ *
+ * **2. `expectsOutputToContain()` casa no máximo UMA substring esperada por linha impressa.**
+ * `PendingCommand::createABufferedOutputMock()` registra uma expectativa de Mockery por substring
+ * (`vendor/laravel/framework/src/Illuminate/Testing/PendingCommand.php:615-622`), e o Mockery
+ * satisfaz **uma** expectativa por chamada de `doWrite` — a primeira que casa. Duas substrings
+ * esperadas na mesma linha deixam a segunda pendente, e `verifyExpectations()` (`:531-533`) falha
+ * com `Output does not contain "..."` **mesmo com o texto na tela**. Foi assim que
+ * `mail.mailers.smtp.password` + `valores não exibidos` (uma linha só) e `ligada` +
+ * `Organizações` + `3 cadastrada` (idem) reprovaram sem defeito nenhum no comando.
+ *
+ * Empilhar `expectsOutputToContain()` continua valendo para substrings em linhas DIFERENTES.
+ */
+function linhaDoKitInfo(string $saida, string $rotulo): string
+{
+    foreach (explode("\n", $saida) as $linha) {
+        if (str_starts_with(trim($linha), $rotulo)) {
+            return trim($linha);
+        }
+    }
+
+    return '';
 }

@@ -304,6 +304,7 @@ php artisan kit:install --no-support  # skips the invitation to star the kit on 
 #   --create-project is internal to post-create-project-cmd: removes what only serves the kit's own repository
 php artisan kit:admin             # changes the administrator's e-mail and password (asks for confirmation)
 php artisan kit:admin --email=x --senha=y --force   # no prompts — avoid it: the password lands in the shell history
+php artisan kit:info              # shows how the project is customized and where each value comes from
 php artisan kit:update            # brings in improvements from a new kit version
 php artisan kit:tenancy           # turns on multi-tenancy (opt-in)
 ```

@@ -6,7 +6,6 @@ use App\Settings\ConfiguracoesDoKit;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -343,7 +342,7 @@ final class CustomizadorDaInstalacao
     private function propagarParaOSettings(array $respostas): void
     {
         try {
-            if (! Schema::hasTable(config('settings.repositories.database.table') ?? 'settings')) {
+            if (! ConfiguracoesDoKit::gravadoNoBanco()) {
                 return;
             }
 
