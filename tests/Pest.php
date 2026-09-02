@@ -837,3 +837,101 @@ function ofertaPara(string $email, ?Tenant $tenant = null, string $papel = 'pane
 
     return $convite;
 }
+
+/**
+ * Toda a documentação de um idioma: o README mais as páginas do site.
+ *
+ * Existe por causa da migração para o GitHub Pages: as afirmações de
+ * comportamento que os READMEs faziam mudaram de arquivo, e as asserções que as
+ * vigiavam precisavam mudar de alvo NO MESMO COMMIT — senão elas continuariam
+ * verdes sem proteger nada, que é o modo silencioso de perder uma garantia.
+ *
+ * O oráculo continua sendo "a documentação deste idioma afirma X", que é o que
+ * as cláusulas de requisito pedem; o que deixou de importar é EM QUE ARQUIVO ela
+ * afirma. Reorganizar o site não deve reprovar teste de conteúdo.
+ *
+ * `docs/` é `export-ignore`: num projeto instalado ele não existe, e aí só o
+ * README é lido — que continua trazendo o essencial.
+ */
+function documentacaoDoKit(string $idioma): string
+{
+    $readme = $idioma === 'en' ? 'README.en.md' : 'README.md';
+    $partes = [(string) file_get_contents(base_path($readme))];
+
+    $raiz = base_path("docs/{$idioma}");
+
+    if (is_dir($raiz)) {
+        $arquivos = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($raiz));
+
+        foreach ($arquivos as $arquivo) {
+            if ($arquivo->isFile() && $arquivo->getExtension() === 'md') {
+                $partes[] = (string) file_get_contents($arquivo->getPathname());
+            }
+        }
+    }
+
+    return implode('
+', $partes);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Site de documentação (docs/) — helpers compartilhados
+|--------------------------------------------------------------------------
+| `docs/` é `export-ignore`: existe na árvore do kit e não no projeto instalado.
+| A sentinela é `.github`, pelo mesmo motivo de `tests/Kit/KitUpdateTest.php` —
+| e NÃO `is_dir('docs')`, que seria auto-anulante: se a migração não acontecer,
+| tudo é ignorado e a suíte fica verde com zero entrega (CT-10 da wiki
+| `site-de-documentacao` inspeciona os arquivos de teste para impedir isso).
+*/
+
+/** Estamos na árvore do kit (e não num projeto nascido do `create-project`)? */
+function naArvoreDoKit(): bool
+{
+    return is_dir(base_path('.github'));
+}
+
+/**
+ * As páginas do site de um idioma, indexadas pelo caminho relativo a `docs/{idioma}/`
+ * (sempre com `/`, mesmo no Windows), em ordem alfabética.
+ *
+ * @return array<string, string>
+ */
+function paginasDoSite(string $idioma): array
+{
+    $raiz    = base_path("docs/{$idioma}");
+    $paginas = [];
+
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($raiz, FilesystemIterator::SKIP_DOTS)) as $arquivo) {
+        if ($arquivo->isFile() && $arquivo->getExtension() === 'md') {
+            $relativo           = str_replace('\\', '/', substr($arquivo->getPathname(), strlen($raiz) + 1));
+            $paginas[$relativo] = (string) file_get_contents($arquivo->getPathname());
+        }
+    }
+
+    ksort($paginas);
+
+    return $paginas;
+}
+
+/** Um documento markdown sem as linhas de citação (`>`), para asserção de AUSÊNCIA. */
+function readmeSemCitacao(string $arquivo): string
+{
+    return implode("\n", array_filter(
+        explode("\n", (string) file_get_contents(base_path($arquivo))),
+        static fn (string $linha): bool => ! str_starts_with(ltrim($linha), '>'),
+    ));
+}
+
+/**
+ * As seções de um arquivo Markdown, quebradas nos títulos.
+ *
+ * "Na mesma seção" é o que separa uma recusa EXPLICADA de uma menção decorativa numa linha
+ * de roadmap — o achado da revisão adversarial de `LoginSocialProvedoresTest` (CT-42b).
+ *
+ * @return array<int, string>
+ */
+function secoesDoMarkdown(string $caminho): array
+{
+    return preg_split('~^#{1,6} ~m', (string) file_get_contents(base_path($caminho))) ?: [];
+}

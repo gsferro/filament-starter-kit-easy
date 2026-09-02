@@ -234,3 +234,67 @@ it('não lista caminho que o pacote distribuído deixa de fora', function (): vo
     expect($exportIgnore)->not->toBeEmpty('.gitattributes sem export-ignore: o teste perdeu o alvo.')
         ->and(array_values(array_intersect(caminhosDoKit(), $exportIgnore)))->toBe([]);
 });
+
+/*
+|--------------------------------------------------------------------------
+| O piso de exibição do menu de versões
+|--------------------------------------------------------------------------
+|
+| O kit passou de quarenta tags publicadas, e o `select()` de destino listava
+| todas. `KitUpdate::PISO_DE_EXIBICAO` corta a lista — mas só a LISTA.
+|
+| Estes casos existem por causa da assimetria que o corte cria, e que é onde ele
+| erra silencioso: filtrar demais não deixa o comando vermelho, deixa o projeto
+| antigo sem referência de origem, comparando contra a árvore de trabalho e
+| culpando o usuário pelas próprias edições.
+|
+*/
+
+/**
+ * O piso é uma versão real e comparável — senão o filtro reprova tudo ou nada.
+ */
+it('tem um piso de exibição em formato de versão comparável', function (): void {
+    $piso = (new ReflectionClassConstant(KitUpdate::class, 'PISO_DE_EXIBICAO'))->getValue();
+
+    expect($piso)->toBeString()
+        ->and(preg_match('/^\d+\.\d+\.\d+$/', (string) $piso))->toBe(1)
+        ->and(version_compare((string) $piso, '0.0.0', '>'))->toBeTrue();
+})->group('kit');
+
+/**
+ * A regra do corte, exercida sobre a mesma expressão que o comando usa.
+ *
+ * O caso da lista vazia é o que impede o piso de virar um menu sem opção: se
+ * nenhuma tag alcança o piso, o comando devolve a lista inteira. Um menu longo
+ * é ruim; um menu vazio é um comando quebrado.
+ */
+it('corta do menu as versões abaixo do piso, e nunca devolve menu vazio', function (): void {
+    $piso = (string) (new ReflectionClassConstant(KitUpdate::class, 'PISO_DE_EXIBICAO'))->getValue();
+
+    $filtrar = fn (array $tags): array => array_values(array_filter(
+        $tags,
+        fn (string $tag): bool => version_compare(ltrim(str_replace('kit-', '', $tag), 'v'), $piso, '>='),
+    ));
+
+    $tags = ['kit-v0.23.0', 'kit-v0.22.5', 'kit-v0.20.1', 'kit-v0.9.0'];
+
+    expect($filtrar($tags))->toBe(['kit-v0.23.0'])
+        ->and($filtrar(['kit-v0.22.5', 'kit-v0.9.0']))->toBe([]);
+})->group('kit');
+
+/**
+ * A metade que protege quem está atrasado.
+ *
+ * `resolverOrigem()` procura a tag de onde o projeto partiu na lista COMPLETA.
+ * Se alguém "simplificar" aplicando o piso em `tagsDoKit()`, um projeto na v0.20
+ * deixa de encontrar a própria origem — e este caso fica vermelho antes de o
+ * usuário descobrir sozinho.
+ */
+it('mantém a lista completa disponível para resolver a origem do projeto', function (): void {
+    $fonte = (string) file_get_contents(base_path('app/Console/Commands/KitUpdate.php'));
+
+    $tagsDoKit = mb_substr($fonte, (int) mb_strpos($fonte, 'private function tagsDoKit'));
+    $tagsDoKit = mb_substr($tagsDoKit, 0, (int) mb_strpos($tagsDoKit, 'private function escolherDestino'));
+
+    expect($tagsDoKit)->not->toContain('PISO_DE_EXIBICAO');
+})->group('kit');

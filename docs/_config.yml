@@ -1,0 +1,44 @@
+# Site de documentação do starter-kit-easy.
+#
+# Construído pelo Jekyll EMBUTIDO do GitHub Pages — não há workflow de Actions.
+# Publicação: Settings → Pages → Deploy from a branch → main → /docs.
+#
+# O build nativo roda em `--safe`: só as gems da lista do GitHub Pages funcionam
+# (https://pages.github.com/versions/). É por isso que o tema vem por
+# `remote_theme` e não por Gemfile, e é por isso que NÃO há plugin de i18n aqui —
+# nenhum é permitido. O bilíngue é manual, e a decisão está em
+# `wikis/specs/feat/site-de-documentacao/.../02-decisoes-arquiteturais.md` (ADR-01).
+
+title: Starter Kit Easy
+description: Kit inicial Laravel 13 + Filament 5, com três painéis, convites, login social e multi-tenancy opcional.
+lang: pt-BR
+
+# `baseurl` é o que faz o site funcionar em `usuario.github.io/repositorio/`.
+# Errado, ele quebra TUDO no publicado e NADA no local — por isso a conferência do
+# site no ar é passo obrigatório, não zelo.
+url: https://gsferro.github.io
+baseurl: /filament-starter-kit-easy
+
+repository: gsferro/filament-starter-kit-easy
+
+# Tema por `remote_theme`: suportado pelo build nativo, sem publicar gem.
+# Jekyll do Pages é 3.10.0; o tema exige >= 3.8.5, e suas três dependências
+# (jekyll-seo-tag, jekyll-include-cache, jekyll-remote-theme) estão na lista.
+remote_theme: just-the-docs/just-the-docs
+
+# A busca é gerada no build, a partir do conteúdo. Índice ÚNICO: ela mistura
+# português e inglês, e não há como separar sem plugin. Limitação aceita na ADR-01.
+search_enabled: true
+search:
+  heading_level: 2
+  previews: 2
+
+aux_links:
+  "Repositório no GitHub":
+    - "https://github.com/gsferro/filament-starter-kit-easy"
+aux_links_new_tab: true
+
+color_scheme: dark
+
+exclude:
+  - README.md

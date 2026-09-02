@@ -43,6 +43,24 @@ class KitUpdate extends Command
     private const REMOTE = 'kit';
 
     /**
+     * A partir de qual versão o menu de atualização oferece opções.
+     *
+     * O kit tem mais de quarenta tags publicadas, e listar todas transformava a
+     * escolha num rolo de versões que ninguém vai querer. O piso corta a lista
+     * para as versões que fazem sentido como destino hoje.
+     *
+     * **Só a EXIBIÇÃO é cortada.** `resolverOrigem()` continua recebendo a lista
+     * inteira: ela precisa encontrar a tag de onde o projeto partiu para comparar
+     * tag→tag, e um projeto parado na v0.20 é exatamente quem mais precisa do
+     * comando. Filtrar a lista toda faria a origem sumir e o diff cair na árvore
+     * de trabalho, que é o modo ruidoso.
+     *
+     * `--tag` também ignora o piso: quem pede uma versão antiga por nome sabe o
+     * que quer.
+     */
+    private const PISO_DE_EXIBICAO = '0.23.0';
+
+    /**
      * Caminhos que pertencem ao kit — a "cola" que evolui entre versões.
      *
      * Fora desta lista está o que é seu (seus models, seus resources de
@@ -429,13 +447,25 @@ class KitUpdate extends Command
             return $tags[0];
         }
 
+        // O piso corta só o que aparece no menu. Se ele filtrar tudo — projeto
+        // apontando para um kit sem versão nova —, a lista inteira volta, porque
+        // um menu vazio seria pior que um menu longo.
+        $oferecidas = array_values(array_filter(
+            $tags,
+            fn (string $tag): bool => version_compare(ltrim(str_replace('kit-', '', $tag), 'v'), self::PISO_DE_EXIBICAO, '>='),
+        ));
+
+        if ($oferecidas === []) {
+            $oferecidas = $tags;
+        }
+
         // `(string)`: o `select()` dos Prompts devolve `int|string` porque a chave da opção
         // pode ser inteira. Aqui `$tags` é `list<string>` de valores (sem chave declarada),
         // então o que volta é sempre o próprio nome da tag.
         return (string) select(
             label: 'Atualizar para qual versão do kit?',
-            options: $tags,
-            default: $tags[0],
+            options: $oferecidas,
+            default: $oferecidas[0],
         );
     }
 

@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\File;
  *
  * Wiki: `wikis/specs/feat/status-e-exclusao-logica-de-usuario/`, CT-33.
  */
-it('[CT-33] o README tem a seção de usuário ativo, inativo e excluído e cita cada mecanismo', function (
+it('[CT-33] a documentação tem a seção de usuário ativo, inativo e excluído e cita cada mecanismo', function (
     string $arquivo,
     string $titulo,
     array $termos,
@@ -36,13 +36,16 @@ it('[CT-33] o README tem a seção de usuário ativo, inativo e excluído e cita
     }
 })->with([
     'pt' => [
-        'README.md',
-        '## Usuário ativo, inativo e excluído',
+        // Reancorado: a seção migrou para o site (GitHub Pages) e o h2 virou o h1 da
+        // página. A co-localização — cada termo DENTRO da seção — é o que este caso
+        // protege, e ela é preservada apontando para a página em vez do README.
+        'docs/pt/autenticacao/estados-de-usuario.md',
+        '# Usuário ativo, inativo e excluído',
         ['Reativar', 'Lixeira', 'Restaurar', 'senha', 'contato com o administrador', 'Desativar:User'],
     ],
     'en' => [
-        'README.en.md',
-        '## Active, inactive and deleted users',
+        'docs/en/autenticacao/estados-de-usuario.md',
+        '# Active, inactive and deleted users',
         ['Reactivate', 'Recycle bin', 'Restore', 'password', 'contact the administrator', 'Desativar:User'],
     ],
 ])->group('kit');

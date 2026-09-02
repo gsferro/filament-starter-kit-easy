@@ -144,19 +144,6 @@ function usuarioDoLinkedInComVerificacaoSoEm(string $lado, string $email): Usuar
         : $mapeados);
 }
 
-/**
- * As seções de um arquivo Markdown, quebradas nos títulos — para CT-42b.
- *
- * "Na mesma seção" é o que separa a recusa EXPLICADA de uma menção decorativa numa linha de
- * roadmap, que é o que a revisão adversarial achou em CT-42.
- *
- * @return array<int, string>
- */
-function secoesDoMarkdown(string $caminho): array
-{
-    return preg_split('~^#{1,6} ~m', (string) file_get_contents(base_path($caminho))) ?: [];
-}
-
 /*
 |--------------------------------------------------------------------------
 | R1 — o botão aparece se e somente se o interruptor está ligado E as três
@@ -1586,7 +1573,7 @@ it('declara as chaves e as URIs de callback nos arquivos que quem instala lê', 
     string $arquivo,
     string $termo,
 ): void {
-    expect(file_get_contents(base_path($arquivo)))->toContain($termo);
+    expect(documentacaoDoKit(str_contains($arquivo, 'en.md') ? 'en' : 'pt'))->toContain($termo);
 })->with([
     ['.env.example', 'KIT_SOCIALITE_GITHUB'],
     ['.env.example', 'KIT_SOCIALITE_LINKEDIN'],
@@ -1645,10 +1632,10 @@ it('explica a recusa de Facebook e Discord na mesma seção em que os nomeia', f
 
     expect($semCitacao)->not->toContain('/auth/linkedin/callback');
 })->with([
-    'discord no README pt'  => ['README.md', 'Discord', 'socialiteproviders'],
-    'facebook no README pt' => ['README.md', 'Facebook', 'email_verified'],
-    'discord no README en'  => ['README.en.md', 'Discord', 'socialiteproviders'],
-    'facebook no README en' => ['README.en.md', 'Facebook', 'email_verified'],
+    'discord no site pt'    => ['docs/pt/autenticacao/login-social.md', 'Discord', 'socialiteproviders'],
+    'facebook no site pt'   => ['docs/pt/autenticacao/login-social.md', 'Facebook', 'email_verified'],
+    'discord no site en'    => ['docs/en/autenticacao/login-social.md', 'Discord', 'socialiteproviders'],
+    'facebook no site en'   => ['docs/en/autenticacao/login-social.md', 'Facebook', 'email_verified'],
 ])->group('kit');
 
 /**

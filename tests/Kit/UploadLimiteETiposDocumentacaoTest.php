@@ -34,7 +34,9 @@ use App\Support\TetoDeUpload;
  *   não é sobre tamanho.
  */
 it('[CT-18] documenta a chave do teto de upload nos dois readmes', function (string $arquivo, string $unidade, string $svg): void {
-    $texto = (string) file_get_contents(base_path($arquivo));
+    // Reancorado: o conteúdo migrou para o site (GitHub Pages). O oráculo continua
+    // sendo 'a documentação deste idioma afirma isto', não 'o README afirma isto'.
+    $texto = documentacaoDoKit(str_contains($arquivo, 'en.md') ? 'en' : 'pt');
 
     expect($texto)->toContain('KIT_UPLOAD_MAXIMO_MB')
         ->and($texto)->toContain($unidade)
@@ -77,7 +79,7 @@ it('[CT-19] oferece a chave comentada no .env.example', function (): void {
  * acompanha a config: mudar o default sem mudar os READMEs reprova aqui.
  */
 it('[CT-20] promete nos readmes o mesmo teto que o kit entrega', function (string $arquivo, string $frase): void {
-    expect((string) file_get_contents(base_path($arquivo)))
+    expect(documentacaoDoKit(str_contains($arquivo, 'en.md') ? 'en' : 'pt'))
         ->toContain(str_replace('{mb}', (string) TetoDeUpload::emMb(), $frase));
 })->with([
     'português — o título da seção' => ['README.md', 'Teto de upload: {mb} MB, e onde mudar'],

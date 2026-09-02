@@ -2,6 +2,38 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.24.0] - 2026-09-02
+
+### Adicionado
+- **Site de documentação em GitHub Pages**: <https://gsferro.github.io/filament-starter-kit-easy/>.
+  A documentação que vivia nos dois READMEs — mais de duas mil linhas cada — virou 44 páginas
+  navegáveis, com busca, em cinco grupos (começar, autenticação, recursos, operação, referência) e
+  nos dois idiomas. Construído pelo **Jekyll embutido do Pages**, sem workflow de Actions: editar o
+  markdown em `docs/` e commitar na `main` publica.
+- **`docs/` é `export-ignore`**: o site é material do kit e **não** vai para o projeto que nasce do
+  `create-project`, mesmo critério já aplicado a `/wikis/specs` e `/.github`.
+
+### Alterado
+- **Os dois READMEs encolheram de ~2.500 para 363 linhas** e passaram a ser a apresentação do
+  pacote: identidade, instalação, capturas, os três painéis, requisitos, Docker, solução de
+  problemas e licença — mais uma tabela de links para o site. **O README não esvaziou de propósito**:
+  é o que o Packagist mostra, e quem descobre o kit por lá nunca vê o site.
+- **`php artisan kit:update` passa a listar as versões da v0.23.0 em diante.** O kit passou de
+  quarenta tags e o menu listava todas. **Só o menu é cortado**: a resolução da versão de origem
+  continua vendo a lista inteira, senão um projeto parado numa versão antiga perderia a referência e
+  o diff passaria a acusar as edições do próprio usuário. `--tag` continua aceitando qualquer versão.
+
+### Corrigido
+- **`config('kit.version')` voltou a acompanhar a versão publicada.** As v0.23.0 e v0.23.1 saíram
+  com `0.22.5` na chave — e `kit:update` usa essa chave como versão de ORIGEM padrão, então um
+  projeto nascido da 0.23.x se via um passo atrás do que era. Quem instalou uma dessas pode passar
+  `--from=0.23.1` na primeira atualização.
+- **Seis divergências entre `README.md` e `README.en.md`**, todas pré-existentes e todas omissões no
+  inglês: o provedor anti-robô padrão (já corrigido na 0.23.0), o motivo de uma conta existente não
+  consumir convite pelo login social (decisão de segurança), a nota de que as `wikis/specs` do kit
+  são `export-ignore`, a convenção de `getTabs()`, o retorno do bloqueio de sessão também por login
+  social, e o parágrafo que explica que "provedor padrão" não significa proteção ativa.
+
 ## [0.23.1] - 2026-09-01
 
 ### Corrigido
