@@ -107,6 +107,15 @@ const DIRETORIOS_DE_CODIGO = [
      * `resources/views/auth` antes desta correção.
      */
     'resources/views',
+
+    /*
+     * O CSS que o kit registra por `FilamentAsset`. Entrou com a correção do overlay da busca
+     * ⌘K: `spotlight.css` seria o TERCEIRO arquivo do diretório fora de `CAMINHOS_DO_KIT` —
+     * `kit.css` e `cards.css` já estavam, e nunca chegaram a projeto atualizado. Só o
+     * diretório `filament/`: `resources/css/app.css` é do skeleton (ponto de extensão de
+     * quem instala) e `resources/css/vendor/` é o que os pacotes publicam.
+     */
+    'resources/css/filament',
 ];
 
 /**
@@ -201,6 +210,26 @@ it('não entrega o histórico de planejamento do kit', function (): void {
     // instalado carregar o planejamento de outro projeto, que só cresce.
     expect(estaCoberto('wikis/specs/main/convite-de-usuario/01-plano-acao.md'))->toBeFalse();
 });
+
+/**
+ * CT-04 (`wikis/specs/fix/spotlight-sem-estilo/`) — o CSS do kit é entregue, fonte e
+ * publicado, e o CSS do usuário não.
+ *
+ * As linhas de `cards.css` e `kit.css` são o que separa "listei o arquivo desta correção" de
+ * "listei o diretório": arquivo a arquivo é a granularidade que o comentário de `app/Filament`
+ * já condenou, e foi ela que deixou os dois de fora até aqui. Os controles negativos são o que
+ * impede a saída oposta — `resources/css` inteiro entregaria o `app.css` por cima do do usuário.
+ */
+it('entrega o css do kit — fonte e publicado — e não o css do usuário', function (string $arquivo, bool $coberto): void {
+    expect(estaCoberto($arquivo))->toBe($coberto);
+})->with([
+    'spotlight.css (fonte)'      => ['resources/css/filament/spotlight.css', true],
+    'cards.css (nunca entregue)' => ['resources/css/filament/cards.css', true],
+    'kit.css (nunca entregue)'   => ['resources/css/filament/kit.css', true],
+    'spotlight.css (publicado)'  => ['public/css/kit/kit-spotlight.css', true],
+    'app.css do skeleton'        => ['resources/css/app.css', false],
+    'css publicado por pacote'   => ['resources/css/vendor/filament-onboarding/onboarding.css', false],
+]);
 
 it('só lista caminhos que existem de fato', function (): void {
     $ausentes = array_values(array_filter(

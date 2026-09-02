@@ -167,6 +167,19 @@ class KitUpdate extends Command
         'database/seeders',
         'docker',
         'lang/vendor',
+        /*
+         * O CSS que o kit registra nos painéis por `FilamentAsset` — a fonte em
+         * `resources/css/filament` e o publicado em `public/css/kit`, que é versionado.
+         *
+         * Nenhum dos dois estava aqui: `kit.css` (cores dos plugins) e `cards.css` (hub em
+         * cartões) NUNCA chegaram a projeto atualizado, e a varredura de
+         * `tests/Kit/KitUpdateTest.php` não pegou porque não olhava `resources/css`. Apareceu
+         * ao corrigir o overlay da busca ⌘K (`spotlight.css`), que seria o terceiro arquivo
+         * a ficar de fora. O publicado vai junto para a correção valer sem depender de
+         * `php artisan filament:assets` — que continua no aviso pós-update para os demais.
+         */
+        'public/css/kit',
+        'resources/css/filament',
         'resources/views/auth',
         'resources/views/errors',
         'resources/views/filament',
