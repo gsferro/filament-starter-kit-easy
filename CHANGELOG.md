@@ -21,6 +21,16 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   coisa, e funciona **antes do primeiro `migrate`** (o que depende de banco sai como "indisponível",
   em vez de derrubar o comando).
 
+### Corrigido
+- **Conta indisponível não pode mais ser personificada.** `User::canBeImpersonated()` só olhava se
+  o alvo era `master_global`, então um administrador entrava, pela lista de usuários do `/admin`,
+  **como** uma conta inativa, pendente de aprovação ou excluída — as três que o kit recusa no
+  login por senha, no login social e no middleware do painel. A pessoa desativada via o aviso
+  "procure o administrador"; o administrador entrava por ela. A régua passou a ser a mesma de
+  `canAccessPanel()`. A conta excluída, em particular, estava protegida apenas pelo default de
+  `filament-impersonate.allow_soft_deleted` — config do pacote que o kit nunca publicou e que um
+  `.env` reabriria.
+
 ## [0.24.0] - 2026-09-02
 
 ### Adicionado
