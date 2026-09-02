@@ -51,21 +51,39 @@
 
 ## 5. CHANGELOG
 
-- [ ] `### Corrigido` em `[Unreleased]`: defeito, causa, correção, instrução para quem já instalou
-      (`kit:update` + `filament:assets`), e a nota de `kit.css`/`cards.css` passarem a ser entregues
+- [x] `### Corrigido` em `[Unreleased]`: três entradas — o overlay fora da tela, o `kit:update` sem
+      CSS nenhum, o F-45 verde com o defeito
+
+## 6. (Não planejado) O aviso da segunda rodada do `kit:update`
+
+- [x] `encerrar()` recebe a origem e imprime o comando pronto:
+      `php artisan kit:update --from=X --tag=Y --no-branch`, com o motivo. Ver "Desvios do Plano".
 
 ## Verificação Final
 
-- [ ] `/ponytail:ponytail-review` no diff
-- [ ] `vendor/bin/pint --dirty --format agent`
-- [ ] `vendor/bin/pest --no-tia tests/Kit/SpotlightCssTest.php tests/Kit/KitUpdateTest.php tests/Kit/BoasVindasTest.php --compact`
-- [ ] `npm run build && php artisan view:cache && vendor/bin/pest --no-tia tests/Browser/RoteiroDoKitTest.php --filter=F-45`
-- [ ] Screenshots `spotlight-claro.png` e `spotlight-escuro.png` olhados
-- [ ] `git diff` vazio depois de `php artisan filament:assets` (publicado = fonte)
-- [ ] Numa instalação de `TESTES KIT/` (v0223-padrao): `php artisan kit:update` traz os três CSS
-      e os publicados; o overlay abre — saída colada aqui
-- [ ] Roteiro "Desenhado × Implementado" do `05` preenchido
-- [ ] `git commit`
+- [x] Revisão Ponytail no diff: um achado (CSS nesting/`:is()` cortaria a duplicação
+      composta+descendente pela metade), **recusado** — a forma plana é greppável e CT-01 lê o
+      escopo por regex. `net: 0`
+- [x] `vendor/bin/pint --dirty --format agent` — passed
+- [x] `pest --no-tia tests/Kit/SpotlightCssTest.php tests/Kit/KitUpdateTest.php tests/Kit/BoasVindasTest.php tests/Kit/HelpersDeTesteTest.php` — **84 testes, 156 asserções, verdes**
+- [x] `view:cache && pest --no-tia tests/Browser/RoteiroDoKitTest.php --filter=F-45` — **2 passed, 28 assertions**
+- [x] Screenshots `spotlight-claro.png` e `spotlight-escuro.png` olhados — overlay centralizado,
+      blur no fundo, caixa no tema certo
+- [x] `cmp resources/css/filament/spotlight.css public/css/kit/kit-spotlight.css` — idênticos
+- [x] **`kit:update` numa instalação real** (`TESTES KIT/v0223-padrao`, v0.22.3, `git init` feito
+      nela, `--repo` apontando para o clone local com a tag `v0.24.1-rc.spotlight`):
+
+  | Rodada | Comando | Resultado |
+  |---|---|---|
+  | 1 | `--tag=v0.24.1-rc.spotlight --all` | 4 novos + 21 modificados; **nenhum CSS** — a lista é a do `KitUpdate.php` antigo |
+  | — | `php artisan …` qualquer | **`View [svg.arte-do-login] not found`** — a rodada 1 entregou `IdentidadeDoKit.php` sem a view (lista antiga sem `resources/views/svg`). Destravado copiando a view do kit, como o CHANGELOG 0.23.1 instrui |
+  | 2 sem `--from` | `--dry-run --no-branch` | **"Nada a atualizar"** — `config/kit.php` já dizia a versão nova |
+  | 2 | `--from=0.22.3 --all --no-branch` (após commit da rodada 1) | `public/css/kit/kit-spotlight.css`, `resources/css/filament/spotlight.css`, `SpotlightCssTest.php` novos; `cmp` com o kit: **idênticos** |
+
+- [x] Roteiro "Desenhado × Implementado" do `05` preenchido
+- [x] Instalação nova a partir da branch (`TESTES KIT/spotlight-fix`, `composer create-project …
+      dev-fix/spotlight-sem-estilo --repository=vcs local`) — ver "Notas de Implementação"
+- [x] `git commit` — 5 commits na `fix/spotlight-sem-estilo`
 
 ## Auditoria Pré-Implementação
 
@@ -118,12 +136,49 @@
 
 ## Desvios do Plano
 
-<!-- pós-implementação -->
+| Onde | O plano dizia | O que foi feito | Por quê |
+|---|---|---|---|
+| `spotlight.css`, forma dos seletores | raiz como seletor composto, descendentes com espaço — o que exigia saber quais classes estão na raiz | **toda** classe nas duas formas (`[escopo].x, [escopo] .x`) | dispensa a distinção, custa uma vírgula por regra; CT-01 ficou mais simples (o 3º `Então` sobre a raiz caiu na auditoria Ponytail) |
+| `spotlight.css`, `x-cloak` | não previsto | regra `[escopo][x-cloak] { display: none !important }` | a CSS do Filament não traz `[x-cloak]`; com o overlay `fixed` ele cobriria a página até o Alpine iniciar |
+| Cores | `rgb(var(--gray-N))` | `var(--gray-N)` | o Filament 5 emite a cor pronta (oklch), não canais — é como o `cards.css` já faz |
+| Passo 6, não planejado | — | o aviso pós-update imprime `--from=X --tag=Y --no-branch` | descoberto na validação de RQ-04: sem `--from` explícito a 2ª rodada não entrega nada. Sem isso, a correção **não chega** a quem atualiza — está dentro de RQ-04, não fora |
 
 ## Notas de Implementação
 
-<!-- pós-implementação -->
+- **CT-02 pegou defeito antes de existir código para pegar.** O cabeçalho do CSS citava o glob
+  `views/**/*` do README do pacote; `*/` fecha o comentário CSS e o resto do cabeçalho virava
+  regra inválida. O teste reportou o texto do comentário como "seletor fora do escopo".
+- **Primeiro cenário de arquivo de browser isolado estoura 45 s** (rule "aqueça pelo kernel").
+  Um `$this->get('/admin')` antes do `visit()` resolve; entrou no F-45.
+- **Dívida encontrada, fora desta entrega**: atualizar de v0.22.x direto para ≥ v0.23.0 pelo
+  `kit:update` **quebra o boot** do projeto entre as duas rodadas — a lista antiga entrega
+  `IdentidadeDoKit.php` sem `resources/views/svg`, e o service provider renderiza a view no boot.
+  O CHANGELOG 0.23.1 documenta o contorno (copiar a view), mas o comando poderia (a) ler a lista
+  da versão **destino** antes de aplicar, ou (b) o provider tolerar a view ausente. Candidata a
+  wiki própria.
+- **Instalação nova**: `composer create-project` a partir do clone local
+  (`--repository='{"type":"vcs","url":"…/starter-kit-easy"}' dev-fix/spotlight-sem-estilo
+  --stability=dev`) funciona — é a forma de validar uma branch antes da tag. **Não** respeita o
+  `export-ignore`: para `dev-*` o Composer clona (source) em vez de baixar o dist, e `docs/` e
+  `wikis/specs/` vieram junto. Artefato do método; a tag publicada vem por zip do GitHub, que
+  respeita. Resultado em `TESTES KIT/spotlight-fix` (2026-09-02): `kit:install` completo
+  (`Pronto!`, npm build 6 s, `kit-spotlight.css` publicado), e **dentro da instalação**
+  `SpotlightCssTest` + `KitUpdateTest` = 45 testes verdes; F-45 nos dois temas = 2 passed, 28
+  assertions.
+- **Menu do `kit:update` com versões antigas** (relato do solicitante durante a sessão): o piso
+  `PISO_DE_EXIBICAO = 0.23.0` está no kit desde a 0.24.0, mas o menu é montado pelo `KitUpdate.php`
+  **da instalação**, que na v0.22.x não tem piso. Encurta na primeira atualização — e é mais um
+  motivo para a 2ª rodada funcionar sem surpresa.
 
 ## Retrospectiva
 
-<!-- pós-implementação -->
+- **Funcionou**: medir antes de escrever. A hipótese inicial ("HTML cru no rodapé") estava
+  errada em um detalhe que importava — o overlay fica **abaixo** do fim da página, invisível —, e
+  foi a medição via `script()` que virou o oráculo do teste. O mesmo `script()` já estava no `04`
+  antes de qualquer código existir.
+- **Funcionou**: o gate R5 (rodar o teste novo contra o código velho). Custou 90 s e é a única
+  prova de que RQ-03 foi atendida.
+- **Faltou no plano**: validar o `kit:update` numa instalação **antes** de escrever o plano.
+  Teria mostrado as duas armadilhas da segunda rodada na pesquisa, não na verificação final.
+- **Faltou no plano**: prever que instalação de `create-project` não é repositório git, e que
+  o `kit:update` exige um. O `git init` na instalação de teste é reversível, mas não estava escrito.

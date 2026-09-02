@@ -135,11 +135,12 @@ três das seis asserções de geometria reprovam. É a evidência de que CT-B01 
 
 ## Roteiro de Validação: Desenhado × Implementado
 
-<!-- preencher no step 7 da feature-wiki, depois de rodar os CT-B -->
+Preenchido em 2026-09-02, depois de rodar o F-45 nos dois temas.
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | overlay ancorado, `z-50`, backdrop `gray-900/70` | | | `spotlight-claro.png` |
-| 2 | caixa branca no claro, `gray-900` no escuro | | | `spotlight-escuro.png` |
-| 3 | input focado ao abrir | | | (comportamento do pacote — só olhar) |
-| 4 | CT-B01 vermelho antes / verde depois (R5) | | | linhas do Pest coladas no `03` |
+| 1 | overlay ancorado, `z-50`, backdrop `gray-900/70` | idem: `position: fixed`, `top/left 0`, viewport inteira, `z-index 50`, fundo com alfa, blur visível | ✅ | `spotlight-claro.png`; F-45 `claro` verde, 14 asserções |
+| 2 | caixa branca no claro, `gray-900` no escuro | idem — caixa `rgb(255,255,255)` no claro; escura sob `.dark` | ✅ | `spotlight-escuro.png`; F-45 `escuro` verde |
+| 3 | input focado ao abrir | focado (placeholder visível, `esc` à direita) — comportamento do pacote | ✅ | os dois PNGs |
+| 4 | CT-B01 vermelho antes / verde depois (R5) | vermelho na geometria (`1833` ≠ `0`) antes; `2 passed, 28 assertions` depois | ✅ | linhas coladas no `03`, seção 4 |
+| 5 | cada classe declarada nas duas formas (composta e descendente) | desvio do plano: o `01` previa distinguir raiz de descendente; declarar ambas custa uma vírgula por regra e dispensa a distinção | ⚠️ desvio aceito | `03` → Desvios do Plano |
