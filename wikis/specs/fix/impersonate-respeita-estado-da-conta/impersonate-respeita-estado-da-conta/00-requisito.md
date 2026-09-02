@@ -104,6 +104,30 @@ A funcionalidade está registrada e sem cobertura nenhuma.
   - **Assumido**: **a opção não aparece** (é o comportamento do `visible()` do vendor, e é como
     as outras ações de estado do kit se comportam). Nenhuma mensagem nova.
   - **Se negado**: entra uma notificação e um cenário para ela.
+- **P1 — a recusa de personificação deve deixar rastro?** (devolvida pela `feature-test-design`)
+  O `01-plano-acao.md` prevê um `warning` no canal `autenticacao`. O texto original não pede efeito
+  colateral nenhum, e o método é chamado **uma vez por linha renderizada** da lista.
+  - **Assumido**: o requisito **não** determina o log. Nenhum caso de teste o assere — seria teste
+    do PRD, não do requisito.
+  - **Se confirmado que é requisito**: entra um cenário de rastreio de efeito, e a lacuna L2 do
+    `04` fecha.
+
+- **P2 — a conta excluída deve continuar recusada mesmo com
+  `FILAMENT_IMPERSONATE_ALLOW_SOFT_DELETED=true`?** (devolvida pela `feature-test-design`)
+  - **Assumido**: **sim** — a régua do kit é independente da config do vendor. É o que dá sentido
+    a A1 e A3 juntas.
+  - **Por que importa para o teste**: com a config no default, a guarda do vendor roda **antes** de
+    `canBeImpersonated()`, então nenhum cenário de UI sobre conta excluída distinguiria a correção
+    do kit da guarda do vendor. CT-06 e CT-07 invertem a config no teste para discriminar.
+  - **Se negado**: CT-06 e CT-07 saem, e a única prova passa a ser CT-02, no model.
+
+- **P3 — aceitar como dívida a sessão de personificação já em curso?** (devolvida pela
+  `feature-test-design`, e é o mesmo achado da seção *Fora de Escopo* abaixo)
+  - **Assumido**: lacuna declarada e aceita (mutante M10 do `04`, sem matador).
+  - **Se negado**: entra uma regra nova — a régua reavaliada por request **dentro** da
+    personificação — com cenário de dois eventos, espelho do CT-34 da wiki
+    `status-e-exclusao-logica-de-usuario`.
+
 - **A3 — publicar `config/filament-impersonate.php` para fixar `allow_soft_deleted = false`?**
   - **Assumido**: **não**. Com A1 assumida, o `canBeImpersonated()` do kit já recusa a conta
     excluída por conta própria, e a config do vendor deixa de ser a única guarda. Publicar um
