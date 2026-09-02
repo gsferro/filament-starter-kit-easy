@@ -128,3 +128,24 @@ it('sobe o painel com cor invalida nas duas fontes', function (): void {
 
     $this->get('/admin/login')->assertOk();
 })->group('kit');
+
+/**
+ * CT-05 (wiki `paleta-do-filament-na-organizacao`) — a regra é UMA: o que `paleta()` resolve para
+ * a config, `resolver()` resolve para dois argumentos. A organização chama `resolver()` com as
+ * colunas dela, então esta identidade é o que garante que kit e organização nunca divergem. A
+ * tabela é a de "resolve a paleta pela fonte de maior precedencia disponivel", reaproveitada.
+ */
+it('resolve para dois argumentos o que a regra do kit resolve para a config', function (?string $hex, ?string $nome, mixed $esperado): void {
+    config(['kit.cor_primaria_hex' => $hex, 'kit.cor_primaria' => $nome]);
+
+    expect(CorPrimaria::resolver($hex, $nome))->toBe(CorPrimaria::paleta())
+        ->and(CorPrimaria::resolver($hex, $nome))->toBe($esperado);
+})->with([
+    'hex e nome preenchidos'    => ['#7c3aed', 'Blue', ['primary' => '#7c3aed']],
+    'só o hex'                  => ['#7c3aed', '', ['primary' => '#7c3aed']],
+    'hex inválido, nome válido' => ['azul', 'Blue', ['primary' => Color::Blue]],
+    'só o nome'                 => ['', 'Blue', ['primary' => Color::Blue]],
+    'os dois inválidos'         => ['azul', 'Roxo', []],
+    'os dois vazios'            => ['', '', []],
+    'os dois nulos'             => [null, null, []],
+])->group('kit');

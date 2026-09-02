@@ -134,7 +134,7 @@ Two details worth knowing before touching this:
 
 ## This is not an organisation's settings
 
-A tenant's visual identity (per-organisation colour and logo) is still plain CRUD at **`/admin/organizacoes`**, in the `cor_primaria` and `logo` columns of the `Tenant` model, and it beats the kit's inside `/app/{slug}`. Nothing was moved here.
+A tenant's visual identity (per-organisation colour and logo) is still plain CRUD at **`/admin/organizacoes`**, in the `cor_primaria` (free hexadecimal), `cor_primaria_nome` (the same Filament palette as this settings screen — the hexadecimal wins when filled) and `logo` columns of the `Tenant` model, and it beats the kit's inside `/app/{slug}`. Nothing was moved here.
 
 ## What was left out, and why
 

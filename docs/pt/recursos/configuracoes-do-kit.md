@@ -132,7 +132,7 @@ Dois detalhes que valem para quem for mexer nisso:
 
 ## Isto não é o settings de uma organização
 
-A identidade visual de um tenant (cor e logo por organização) continua sendo CRUD comum em **`/admin/organizacoes`**, nas colunas `cor_primaria` e `logo` do model `Tenant`, e ela vence a do kit dentro de `/app/{slug}`. Nada foi movido para cá.
+A identidade visual de um tenant (cor e logo por organização) continua sendo CRUD comum em **`/admin/organizacoes`**, nas colunas `cor_primaria` (hexadecimal livre), `cor_primaria_nome` (a mesma paleta do Filament deste settings — o hexadecimal vence quando preenchido) e `logo` do model `Tenant`, e ela vence a do kit dentro de `/app/{slug}`. Nada foi movido para cá.
 
 ## O que ficou fora, e por quê
 

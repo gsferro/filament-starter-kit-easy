@@ -2,6 +2,18 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+
+## [Unreleased]
+
+### Adicionado
+- **A organização escolhe uma cor da paleta do Filament**, como o settings do kit já permitia
+  para a instalação. A tela `/admin/organizacoes` ganha o `Select` com a mesma lista de 16 cores
+  (`CustomizadorDaInstalacao::CORES`), ao lado da cor livre em hexadecimal que já existia — e com
+  a mesma precedência: o hexadecimal vence quando preenchido; hexadecimal inválido cai para a
+  paleta; paleta que não existe cai para a cor da aplicação, sem derrubar o painel. A regra é uma
+  só, `CorPrimaria::resolver()`, para o kit e para a organização. Coluna nova
+  `tenants.cor_primaria_nome` (migration; nasce nula, a feature é inerte até alguém escolher).
+
 ## [0.24.0] - 2026-09-02
 
 ### Adicionado
