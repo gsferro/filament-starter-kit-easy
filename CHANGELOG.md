@@ -2,6 +2,26 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
+
+## [Unreleased]
+
+### Corrigido
+- **A busca ⌘K abria fora da tela — em toda instalação, desde sempre.** O overlay do
+  `wezlo/filament-search-spotlight` é uma blade com 66 utilitárias Tailwind, e a CSS que o
+  Filament publica não tem nenhuma: o painel abria com `position: fixed` sem `inset-0`, a
+  1.800 px do topo, sem fundo e sem `z-index` — para quem olha, "nada acontece". O kit não tem
+  tema Tailwind compilado de propósito (os painéis funcionam sem `npm run build`), então a
+  solução é a mesma do hub em cartões: `resources/css/filament/spotlight.css`, escrito à mão e
+  registrado por `FilamentAsset`. **Quem já instalou**: `php artisan kit:update` traz o arquivo
+  e o publicado; nada mais a rodar.
+- **`kit:update` não entregava CSS nenhum do kit.** `resources/css/filament` e `public/css/kit`
+  não estavam em `CAMINHOS_DO_KIT` — `kit.css` (cores dos plugins) e `cards.css` (hub em
+  cartões) nunca chegaram a projeto atualizado. Os dois diretórios entraram, e a varredura de
+  `KitUpdateTest` passa a olhar CSS.
+- **O teste da busca ⌘K (F-45) ficava verde com o defeito.** `assertVisible` não considera
+  posição fora da viewport. Agora ele mede a geometria do overlay aberto (`fixed`, `top 0`,
+  `z-index`, fundo, campo na tela) nos dois temas, e uma guarda nova lê a blade do pacote e
+  reprova se ela emitir classe que o CSS do kit não declara — é o que acusa um upgrade.
 ## [0.24.0] - 2026-09-02
 
 ### Adicionado
