@@ -154,24 +154,33 @@ class AppPanelProvider extends PanelProvider
 
                     // `instanceof Tenant` e não `?->`: `getTenant()` devolve `?Model`, e o model de
                     // tenancy é configurável — o narrowing é guarda real, não cerimônia de tipo.
-                    if (Filament::getCurrentPanel()?->getId() !== 'app'
-                        || ! $tenant instanceof Tenant
-                        || blank($tenant->cor_primaria)) {
+                    if (Filament::getCurrentPanel()?->getId() !== 'app' || ! $tenant instanceof Tenant) {
+                        return [];
+                    }
+
+                    // A MESMA regra do kit, sobre as duas colunas da organização: hex válido vence,
+                    // senão a paleta pelo nome, senão nada. Devolve string (o `ColorManager` gera a
+                    // paleta) ou a paleta pronta de `Color::{Nome}` — ele aceita as duas.
+                    $paleta = CorPrimaria::resolver($tenant->cor_primaria, $tenant->cor_primaria_nome);
+
+                    if ($paleta === []) {
                         // Array vazio é o neutro: `getColors()` faz foreach sobre o resultado
-                        // (ColorManager.php:82), então nada é sobrescrito e o default sobrevive.
+                        // (ColorManager.php:82), então nada é sobrescrito e a cor da aplicação sobrevive.
                         return [];
                     }
 
                     Log::channel('tenancy')->debug(
                         '[AppPanelProvider@bootUsing] Cor da organização aplicada | tenant: '.$tenant->getKey(),
                         [
-                            'tenant_id'    => $tenant->getKey(),
-                            'tenant_slug'  => $tenant->slug,
-                            'cor_primaria' => $tenant->cor_primaria,
+                            'tenant_id'         => $tenant->getKey(),
+                            'tenant_slug'       => $tenant->slug,
+                            'cor_primaria'      => $tenant->cor_primaria,
+                            'cor_primaria_nome' => $tenant->cor_primaria_nome,
+                            'fonte'             => is_string($paleta['primary']) ? 'hex' : 'paleta',
                         ],
                     );
 
-                    return ['primary' => $tenant->cor_primaria];
+                    return $paleta;
                 });
 
                 // "Bloquear sessão" logo abaixo do "Meu perfil" — ver
