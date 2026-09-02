@@ -3,6 +3,43 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Adicionado
+- **MySQL ganhou container no `docker-compose.yml`.** O `kit:install` oferece três bancos e um
+  deles não tinha container — a própria opção dizia "traga o seu servidor". Agora
+  `docker compose up -d mysql redis` sobe o servidor, com healthcheck e volume próprios. É o
+  **único banco em profile**, porque a instalação escolhe um banco só: sem profile, toda
+  instalação subiria Postgres e MySQL juntos. Nomear os serviços liga o profile do MySQL e
+  restringe a subida ao que foi nomeado, então o Postgres do profile padrão não sobe.
+- **Os containers passaram a levar o nome do seu projeto.** O prefixo vem de
+  `COMPOSE_PROJECT_NAME` no `.env`, que o `kit:install` grava com o nome que você escolheu
+  (`minha-app-pgsql-1` em vez de `starter-kit-pgsql`). Sem a chave vale `starter-kit`, como antes.
+  Projeto já instalado recebe a chave rodando `php artisan kit:install --custom` — o `kit:update`
+  não mexe em `.env`.
+
+### Alterado
+- **Os onze `container_name:` saíram do `docker-compose.yml`.** É o que permite o prefixo acima:
+  `container_name` fixo ignora o `COMPOSE_PROJECT_NAME`. Sem eles o Compose nomeia
+  `<projeto>-<serviço>-<índice>`, então **todo container ganhou o sufixo `-1`**, inclusive em
+  quem não customizou nada. Nenhum teste, doc ou código referenciava container por nome; quem
+  tiver atalho com `docker logs starter-kit-app` precisa ajustar.
+- **O profile `app` deixou de fixar o Postgres.** `DB_CONNECTION` e `DB_HOST` dos cinco serviços
+  (`app`, `queue`, `scheduler`, `reverb`, `pulse`) passam por `DOCKER_DB_SERVICE`, cujo default é
+  `pgsql` — o comportamento anterior, para quem não define nada. Com `DOCKER_DB_SERVICE=mysql` a
+  aplicação containerizada fala com o MySQL. Nessa combinação um Postgres sobe ocioso, e é
+  proposital: a alternativa foi medida e faz `--profile app up -d` subir a aplicação **sem banco
+  nenhum**, sem erro.
+- **A senha do MySQL deixou de nascer vazia no `.env`.** A imagem recusa inicializar sem senha de
+  root, e o instalador passou a gravar `secret` — o usuário continua `root`. Quem traz o próprio
+  servidor ajusta o `.env`, como já faz com um Postgres externo. **Projeto MySQL já instalado**
+  tem `DB_PASSWORD=` vazio: ao subir o container, a imagem recusa e diz o que falta, em vez de
+  subir com uma senha que a aplicação não conhece. Preencha `DB_PASSWORD` antes do primeiro
+  `docker compose up -d mysql redis`.
+- **O MySQL publica a porta do host por `FORWARD_MYSQL_PORT`** (default 3306), e não pelo
+  `FORWARD_DB_PORT` do Postgres: no profile `app` com MySQL os dois bancos sobem juntos, e uma
+  variável só faria os dois disputarem a mesma porta.
+
 ## [0.25.0] - 2026-09-02
 
 ### Adicionado

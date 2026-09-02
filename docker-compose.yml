@@ -5,6 +5,7 @@
 # Docker entra quando você quiser Postgres/Redis, IA local, e-mail ou runtime completo:
 #
 #   docker compose up -d                            # pgsql + redis (infra base)
+#   docker compose up -d mysql redis                # MySQL em vez do Postgres
 #   docker compose --profile ai up -d               # + llama.cpp (chat e embeddings)
 #   docker compose --profile mail up -d             # + mailpit
 #   docker compose --profile full up -d             # infra completa (sem app)
@@ -14,6 +15,9 @@
 # Ao usar as stacks, copie as variáveis de .env.docker para o seu .env.
 # =============================================================================
 
+# PISO: `COMPOSE_PROJECT_NAME` no .env vence, e é ele que o `kit:install` grava.
+# Nenhum serviço declara `container_name:` de propósito — fixo, ele IGNORA o nome do
+# projeto; sem ele o Compose nomeia `<projeto>-<serviço>-<índice>` sozinho.
 name: starter-kit
 
 services:
@@ -24,7 +28,6 @@ services:
   # pgvector já embutido: habilita a extensão `vector` para a evolução com RAG.
   pgsql:
     image: pgvector/pgvector:pg17
-    container_name: starter-kit-pgsql
     restart: unless-stopped
     ports:
       - '${FORWARD_DB_PORT:-5432}:5432'
@@ -41,11 +44,46 @@ services:
       timeout: 5s
       retries: 5
 
+  # `docker compose up -d mysql redis` — nomear serviço com profile liga o profile
+  # dele E restringe a subida, então o `pgsql` do default não sobe. Ver ADR-01.
+  #
+  # `MYSQL_USER` não aparece de propósito: o instalador grava `root`, e a imagem recusa
+  # ("MYSQL_USER and MYSQL_PASSWORD ... cannot be used for the root user").
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    profiles: [mysql]
+    ports:
+      # Chave PRÓPRIA, e não o `FORWARD_DB_PORT` do Postgres: no profile `app` com
+      # MySQL os dois bancos sobem juntos, e uma variável só para os dois faria os
+      # dois publicarem na mesma porta do host — "port is already allocated".
+      - '${FORWARD_MYSQL_PORT:-3306}:3306'
+    environment:
+      MYSQL_DATABASE: '${DB_DATABASE:-starter_kit}'
+      # Default VAZIO de propósito, e não uma senha. Um default com valor aqui valeria
+      # só para o CONTAINER: um .env com DB_PASSWORD vazio — todo projeto MySQL
+      # instalado antes desta versão — daria container com a senha do default e
+      # aplicação conectando com vazio, "Access denied" sem nenhuma pista.
+      #
+      # Vazio, a imagem recusa subir e diz o que falta: "Database is uninitialized and
+      # password option is not specified". Falha barulhenta na subida vence falha
+      # silenciosa na conexão. O `:-` continua ali só para não emitir aviso de variável
+      # ausente em quem instalou com SQLite e nunca definiu a chave.
+      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD:-}'
+    volumes:
+      - 'mysql-data:/var/lib/mysql'
+    healthcheck:
+      # O dólar dobrado escapa a interpolação do Compose: a variável é lida DENTRO
+      # do container, onde o entrypoint da imagem já a definiu.
+      test: ['CMD-SHELL', 'mysqladmin ping -h localhost -u root -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Container EXCLUSIVO de cache (filas ficam em `database`, visíveis no Jobs Monitor).
   # Eviction agressiva é segura porque só há cache descartável aqui.
   redis:
     image: redis:7-alpine
-    container_name: starter-kit-redis
     restart: unless-stopped
     command: ['redis-server', '--maxmemory', '256mb', '--maxmemory-policy', 'allkeys-lru', '--appendonly', 'no']
     ports:
@@ -64,7 +102,6 @@ services:
 
   llamacpp:
     image: 'ghcr.io/ggml-org/llama.cpp:${LLAMACPP_IMAGE:-server-b9967}'
-    container_name: starter-kit-llamacpp
     restart: unless-stopped
     profiles: [ai, full]
     command: >-
@@ -93,7 +130,6 @@ services:
   # nunca mean; 1024 dims → coluna vector(1024).
   llamacpp-embeddings:
     image: 'ghcr.io/ggml-org/llama.cpp:${LLAMACPP_IMAGE:-server-b9967}'
-    container_name: starter-kit-embeddings
     restart: unless-stopped
     profiles: [ai, full]
     command: >-
@@ -124,7 +160,6 @@ services:
 
   mailpit:
     image: axllent/mailpit:v1.27
-    container_name: starter-kit-mailpit
     restart: unless-stopped
     profiles: [mail, full]
     ports:
@@ -141,7 +176,6 @@ services:
       context: .
       dockerfile: Dockerfile.laravel
       target: app
-    container_name: starter-kit-app
     restart: unless-stopped
     profiles: [app]
     # Sem `user: www-data`, `docker compose exec app php artisan ...` roda como root
@@ -166,8 +200,11 @@ services:
              php-fpm"
     env_file: .env
     environment:
-      DB_CONNECTION: pgsql
-      DB_HOST: pgsql
+      # O `DB_HOST` precisa deste override: o .env diz 127.0.0.1, e na rede do Compose
+      # o endereço é o nome do serviço. Uma variável para os dois campos porque os nomes
+      # coincidem — as conexões do config/database.php são `pgsql` e `mysql`. Ver ADR-06.
+      DB_CONNECTION: ${DOCKER_DB_SERVICE:-pgsql}
+      DB_HOST: ${DOCKER_DB_SERVICE:-pgsql}
       REDIS_HOST: redis
       LLAMACPP_URL: 'http://llamacpp:8080/v1'
       LLAMACPP_EMBED_URL: 'http://llamacpp-embeddings:8080/v1'
@@ -192,6 +229,9 @@ services:
     depends_on:
       pgsql:
         condition: service_healthy
+      mysql:
+        condition: service_healthy
+        required: false   # fora da subida quando o profile `mysql` não está ligado
       redis:
         condition: service_healthy
 
@@ -200,7 +240,6 @@ services:
       context: .
       dockerfile: Dockerfile.laravel
       target: web
-    container_name: starter-kit-nginx
     restart: unless-stopped
     profiles: [app]
     # Único container do profile rodando como root: auto-repara o volume compartilhado.
@@ -229,15 +268,14 @@ services:
       context: .
       dockerfile: Dockerfile.laravel
       target: app
-    container_name: starter-kit-queue
     restart: unless-stopped
     profiles: [app]
     user: www-data
     command: ['php', '/var/www/artisan', 'queue:work', '--queue=ai,ai-post,default', '--tries=3', '--timeout=600', '--max-time=3600']
     env_file: .env
     environment:
-      DB_CONNECTION: pgsql
-      DB_HOST: pgsql
+      DB_CONNECTION: ${DOCKER_DB_SERVICE:-pgsql}
+      DB_HOST: ${DOCKER_DB_SERVICE:-pgsql}
       REDIS_HOST: redis
       LLAMACPP_URL: 'http://llamacpp:8080/v1'
       LLAMACPP_EMBED_URL: 'http://llamacpp-embeddings:8080/v1'
@@ -247,6 +285,9 @@ services:
     depends_on:
       pgsql:
         condition: service_healthy
+      mysql:
+        condition: service_healthy
+        required: false   # fora da subida quando o profile `mysql` não está ligado
       redis:
         condition: service_healthy
       app:
@@ -257,15 +298,14 @@ services:
       context: .
       dockerfile: Dockerfile.laravel
       target: app
-    container_name: starter-kit-scheduler
     restart: unless-stopped
     profiles: [app]
     user: www-data
     command: ['php', '/var/www/artisan', 'schedule:work']
     env_file: .env
     environment:
-      DB_CONNECTION: pgsql
-      DB_HOST: pgsql
+      DB_CONNECTION: ${DOCKER_DB_SERVICE:-pgsql}
+      DB_HOST: ${DOCKER_DB_SERVICE:-pgsql}
       REDIS_HOST: redis
     volumes:
       - './.env:/var/www/.env'
@@ -273,6 +313,9 @@ services:
     depends_on:
       pgsql:
         condition: service_healthy
+      mysql:
+        condition: service_healthy
+        required: false   # fora da subida quando o profile `mysql` não está ligado
       redis:
         condition: service_healthy
       app:
@@ -288,7 +331,6 @@ services:
       context: .
       dockerfile: Dockerfile.laravel
       target: app
-    container_name: starter-kit-reverb
     restart: unless-stopped
     profiles: [app, realtime]
     user: www-data
@@ -297,8 +339,8 @@ services:
       - '${FORWARD_REVERB_PORT:-8090}:8090'
     env_file: .env
     environment:
-      DB_CONNECTION: pgsql
-      DB_HOST: pgsql
+      DB_CONNECTION: ${DOCKER_DB_SERVICE:-pgsql}
+      DB_HOST: ${DOCKER_DB_SERVICE:-pgsql}
       REDIS_HOST: redis
     volumes:
       - './.env:/var/www/.env'
@@ -306,6 +348,9 @@ services:
     depends_on:
       pgsql:
         condition: service_healthy
+      mysql:
+        condition: service_healthy
+        required: false   # fora da subida quando o profile `mysql` não está ligado
       app:
         condition: service_started
         required: false   # permite `--profile realtime` sem o serviço app
@@ -316,15 +361,14 @@ services:
       context: .
       dockerfile: Dockerfile.laravel
       target: app
-    container_name: starter-kit-pulse
     restart: unless-stopped
     profiles: [app, realtime]
     user: www-data
     command: ['php', '/var/www/artisan', 'pulse:check']
     env_file: .env
     environment:
-      DB_CONNECTION: pgsql
-      DB_HOST: pgsql
+      DB_CONNECTION: ${DOCKER_DB_SERVICE:-pgsql}
+      DB_HOST: ${DOCKER_DB_SERVICE:-pgsql}
       REDIS_HOST: redis
     volumes:
       - './.env:/var/www/.env'
@@ -332,12 +376,16 @@ services:
     depends_on:
       pgsql:
         condition: service_healthy
+      mysql:
+        condition: service_healthy
+        required: false   # fora da subida quando o profile `mysql` não está ligado
       app:
         condition: service_started
         required: false
 
 volumes:
   pgsql-data:
+  mysql-data:
   redis-data:
   llamacpp-cache:
   app-storage:

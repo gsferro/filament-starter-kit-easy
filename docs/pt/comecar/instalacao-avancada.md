@@ -28,6 +28,85 @@ docker compose up -d              # pgsql (com pgvector) + redis
 php artisan migrate --seed
 ```
 
+### MySQL também tem container
+
+Escolhendo MySQL, o `.env` sai apontando para `127.0.0.1:3306` com usuário `root`, e o kit sobe o
+servidor para você. O comando é diferente do de Postgres, e o motivo importa:
+
+```bash
+docker compose up -d mysql redis
+php artisan migrate --seed
+```
+
+O MySQL é o **único banco em profile próprio**, porque a instalação escolhe um banco só — deixá-lo
+sem profile faria toda instalação subir Postgres e MySQL juntos. Nomear os serviços na linha de
+comando liga o profile do MySQL **e** restringe a subida ao que foi nomeado, então o Postgres do
+profile padrão não sobe. Por isso o `redis` precisa estar escrito ali: nomear serviços desliga o
+resto do padrão junto.
+
+Dois detalhes da imagem, que explicam o que o instalador grava:
+
+- **O usuário é `root`.** A imagem oficial recusa criar `root` por `MYSQL_USER` — mantido esse
+  usuário, o único caminho é a senha de root.
+- **A senha não é vazia.** `mysql:8.0` recusa inicializar sem senha de root, e o instalador grava
+  `secret`, a mesma que o container lê. Trazendo o seu próprio servidor, ajuste `DB_PASSWORD` no
+  `.env` — como já se faz com um Postgres externo.
+
+- **A porta do host é `FORWARD_MYSQL_PORT`**, com default 3306, e não o `FORWARD_DB_PORT` do
+  Postgres. São chaves separadas porque no profile `app` os dois bancos sobem juntos, e uma variável
+  só faria os dois disputarem a mesma porta. Se já houver um MySQL na sua máquina, o Docker recusa
+  com `Bind for 0.0.0.0:3306 failed: port is already allocated` — troque a chave:
+
+  ```bash
+  FORWARD_MYSQL_PORT=3399 docker compose up -d mysql redis
+  ```
+
+  e ajuste `DB_PORT` no `.env` para a mesma porta.
+
+A opção da IA local não muda: busca semântica e embeddings dependem de `pgvector`, que só existe no
+Postgres.
+
+## O nome dos containers
+
+Nenhum serviço do `docker-compose.yml` declara `container_name`. O prefixo de todo container e de
+toda rede vem de `COMPOSE_PROJECT_NAME`, no `.env`, e o `kit:install` grava ali o nome que você
+escolheu — em minúsculas e com hífen, que é o formato que o Compose aceita:
+
+```bash
+$ docker compose ps
+minha-app-pgsql-1
+minha-app-redis-1
+```
+
+Sem essa chave vale `starter-kit`, que é o piso escrito no próprio `docker-compose.yml`.
+
+Dois pontos práticos:
+
+- **Projeto que já nasceu de uma versão anterior do kit** não recebe a chave pelo `kit:update`, que
+  não mexe em `.env`. Rode `php artisan kit:install --custom`, que refaz nome e cor, ou acrescente a
+  linha à mão.
+- **Trocar o nome depois de já ter subido containers cria volumes novos.** Os dados antigos
+  continuam no volume do nome anterior; migre-os antes, ou troque o nome antes do primeiro `up`.
+
+## A aplicação containerizada e o banco
+
+O profile `app` sobe a aplicação inteira em container. Ele fala com o Postgres por padrão; para
+apontá-lo ao MySQL, defina no `.env`:
+
+```
+DOCKER_DB_SERVICE=mysql
+```
+
+e ligue os dois profiles juntos, senão o container do banco não sobe e o host não existe:
+
+```bash
+docker compose --profile app --profile mysql up -d --build
+```
+
+Um aviso honesto: nessa combinação um container de Postgres sobe ocioso, porque os serviços do
+profile `app` dependem dele para ordenar o boot. A alternativa foi medida e é pior — sem essa
+dependência, `docker compose --profile app up -d` sobe a aplicação **sem banco nenhum** e sem erro.
+
 ## Comandos
 
 ```bash

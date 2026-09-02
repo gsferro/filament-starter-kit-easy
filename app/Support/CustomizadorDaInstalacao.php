@@ -240,7 +240,10 @@ final class CustomizadorDaInstalacao
     {
         $env = $this->base.DIRECTORY_SEPARATOR.'.env';
 
+        $projeto = $this->nomeDeProjetoDocker($respostas['nome']);
+
         SubstituicaoEmArquivo::definirNoEnv($env, 'APP_NAME', $respostas['nome']);
+        SubstituicaoEmArquivo::definirNoEnv($env, 'COMPOSE_PROJECT_NAME', $projeto);
         SubstituicaoEmArquivo::definirNoEnv($env, 'KIT_COR_PRIMARIA', $respostas['cor']);
 
         $this->propagarParaOSettings($respostas);
@@ -248,6 +251,7 @@ final class CustomizadorDaInstalacao
         Log::debug(
             '[CustomizadorDaInstalacao@aplicarSemBanco] Nome e cor reescritos | cor: '
             .($respostas['cor'] === '' ? 'padrao' : $respostas['cor']),
+            ['compose_project' => $projeto],
         );
 
         return [
@@ -272,7 +276,10 @@ final class CustomizadorDaInstalacao
         $cor    = (string) $respostas['cor'];
         $resumo = [];
 
+        $projeto = $this->nomeDeProjetoDocker($nome);
+
         SubstituicaoEmArquivo::definirNoEnv($env, 'APP_NAME', $nome);
+        SubstituicaoEmArquivo::definirNoEnv($env, 'COMPOSE_PROJECT_NAME', $projeto);
         $resumo[] = ['Nome do projeto', $nome];
 
         $this->aplicarBanco($env, $banco, $nome);
@@ -307,10 +314,11 @@ final class CustomizadorDaInstalacao
         Log::info(
             '[CustomizadorDaInstalacao@aplicar] Customização aplicada | banco: '.$banco,
             [
-                'banco'       => $banco,
-                'cor'         => $cor,
-                'tenancy'     => (bool) ($respostas['tenancy'] ?? false),
-                'admin_email' => $email,
+                'banco'           => $banco,
+                'cor'             => $cor,
+                'tenancy'         => (bool) ($respostas['tenancy'] ?? false),
+                'admin_email'     => $email,
+                'compose_project' => $projeto,
             ],
         );
 
@@ -402,7 +410,7 @@ final class CustomizadorDaInstalacao
             options: [
                 'sqlite' => 'SQLite — padrão, não depende de nenhum serviço externo',
                 'pgsql'  => 'PostgreSQL — recomendado: único com pgvector, exigido pelas funções de IA local',
-                'mysql'  => 'MySQL / MariaDB — traga o seu servidor (o kit não sobe container MySQL)',
+                'mysql'  => 'MySQL / MariaDB — container próprio: docker compose up -d mysql redis',
             ],
             default: 'sqlite',
         );
@@ -468,10 +476,11 @@ final class CustomizadorDaInstalacao
     /**
      * O bloco `DB_*` do driver escolhido.
      *
-     * Postgres usa os valores que o `docker-compose.yml` lê do próprio .env, para
-     * que `docker compose up -d` suba o container já com este banco. MySQL usa
-     * `root` sem senha, que é o mesmo default que o instalador do Laravel grava —
-     * o kit não sobe container MySQL, então o servidor é o de quem instalou.
+     * Os dois drivers com container usam os valores que o `docker-compose.yml` lê do
+     * próprio .env, para que a subida traga o container já com este banco.
+     *
+     * MySQL mantém `root`, e a senha deixou de ser vazia porque a imagem recusa as
+     * duas coisas contrárias. Ver ADR-05 de wikis/specs/feat/mysql-no-docker/.
      */
     private function aplicarBanco(string $env, string $banco, string $nome): void
     {
@@ -507,7 +516,7 @@ final class CustomizadorDaInstalacao
                 'DB_PORT'     => '3306',
                 'DB_DATABASE' => $this->nomeDeBanco($nome),
                 'DB_USERNAME' => 'root',
-                'DB_PASSWORD' => '',
+                'DB_PASSWORD' => 'secret',
             ],
             default => [],
         };
@@ -529,6 +538,12 @@ final class CustomizadorDaInstalacao
         }
 
         return ctype_digit($identificador[0]) ? '_'.$identificador : $identificador;
+    }
+
+    /** Slug do nome, com piso — o prefixo dos containers. Ver ADR-03. */
+    private function nomeDeProjetoDocker(string $nome): string
+    {
+        return Str::slug($nome) ?: 'starter-kit';
     }
 
     private function rotuloDoBanco(string $banco): string

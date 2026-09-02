@@ -235,13 +235,15 @@ The Portuguese version lives at **[https://gsferro.github.io/filament-starter-ki
 
 - PHP 8.3+ and Composer 2
 - Node 20+ (optional — without it the installation still goes through and tells you how to build later)
-- Docker (optional — only for Postgres, Redis, local AI and e-mail)
+- Docker (optional — only for Postgres/MySQL, Redis, local AI and e-mail)
 
 ## Database
 
 **The installation asks** — SQLite, PostgreSQL or MySQL. The default is **SQLite**, so it depends on nothing.
 
 **PostgreSQL is the recommended one**, for a functional reason: it is the only one shipping `pgvector`, which the local AI features that use semantic search (embeddings) depend on. With SQLite or MySQL the rest of the kit runs the same — only those features are unavailable.
+
+**Postgres and MySQL both ship a container** — MySQL in its own profile, because the installation picks a single database. The commands are in the [Docker](#docker) section.
 
 If you pick Postgres during installation, the `.env` already comes with the block `docker-compose.yml` reads. If the container is not up at that moment, the kit warns you, **skips the migrations** and prints the command to finish:
 
@@ -264,6 +266,7 @@ Everything is opt-in per profile. One container per feature:
 
 ```bash
 docker compose up -d                            # pgsql + redis
+docker compose up -d mysql redis                # MySQL instead of Postgres
 docker compose --profile ai up -d               # + llama.cpp (chat and embeddings)
 docker compose --profile mail up -d             # + mailpit (1025 / 8025)
 docker compose --profile full up -d             # the whole infrastructure
@@ -274,6 +277,7 @@ docker compose --profile realtime up -d reverb pulse
 | Service | Port | Profile |
 |---|---|---|
 | PostgreSQL 17 + pgvector | 5432 | base |
+| MySQL 8 | 3306 | `mysql` |
 | Redis 7 (cache only) | 6379 | base |
 | llama.cpp (chat) | 8080 | `ai` |
 | llama.cpp (embeddings) | 8081 | `ai` |
@@ -282,6 +286,8 @@ docker compose --profile realtime up -d reverb pulse
 | Reverb (WebSocket) | 8090 | `app`, `realtime` |
 
 Reverb uses 8090 instead of the default 8080 so it doesn't collide with llama.cpp.
+
+No service declares a fixed `container_name`: the prefix comes from `COMPOSE_PROJECT_NAME`, which `kit:install` writes with your project's name. [Details on the site](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/instalacao-avancada.html).
 
 ## Commands
 
