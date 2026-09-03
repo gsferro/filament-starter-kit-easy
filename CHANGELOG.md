@@ -3,7 +3,7 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.26.0] - 2026-09-02
 
 ### Adicionado
 - **MySQL ganhou container no `docker-compose.yml`.** O `kit:install` oferece três bancos e um
