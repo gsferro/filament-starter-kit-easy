@@ -3,6 +3,17 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.27.1] - 2026-09-03
+
+### Corrigido
+- **O gate `composer filament:check` voltou a passar, e com ele o `composer test`.** A regra
+  `deprecated-test-methods` do FilaCheck reprovava dois asserts depreciados em
+  `tests/Tenancy/PapeisPorOrganizacaoTest.php` (`assertHasActionErrors()` e
+  `assertHasNoActionErrors()`, agora `assertHasFormErrors()` e `assertHasNoFormErrors()`). O
+  `composer test` roda o gate **antes** da suíte, então ele saía vermelho sem chegar a executar
+  um teste — em qualquer instalação, desde a v0.26.0. Os dois datasets do CT-13 continuam
+  provando os dois sentidos da trava de painel no convite em massa. FilaCheck: 17 de 17.
+
 ## [0.27.0] - 2026-09-03
 
 ### Adicionado
