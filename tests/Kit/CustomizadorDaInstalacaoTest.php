@@ -507,3 +507,180 @@ it('aplica nome e cor mesmo sem a tabela de settings', function (): void {
 
     expect((string) file_get_contents($env))->toContain('APP_NAME="Refeito"');
 });
+
+/*
+|--------------------------------------------------------------------------
+| R5 a R11 — o MySQL com container, e o nome do projeto Compose
+|--------------------------------------------------------------------------
+| O kit passou a subir um container MySQL, e isso muda o que o instalador grava:
+| a senha deixou de nascer vazia (a imagem recusa inicializar sem ela), e o nome
+| do projeto passou a ir para o `.env` como `COMPOSE_PROJECT_NAME`, que é o que
+| prefixa todo container.
+|
+| O lado do `docker-compose.yml` mora em `tests/Kit/MysqlNoDockerTest.php`.
+| Ver `wikis/specs/feat/mysql-no-docker/mysql-no-docker/`.
+*/
+
+/**
+ * CT-08 — a instalação com MySQL grava um bloco de banco UTILIZÁVEL.
+ *
+ * `secret` literal, e não `config()`: é o valor que o requisito fixa, e o único jeito de um
+ * default errado ficar vermelho é alguém escrever o valor do requisito.
+ *
+ * `DB_DATABASE` entra junto porque a regra "uma fonte só" vale para o nome do banco também: um
+ * container que sobe, fica saudável e aceita `root` — mas sem o banco criado — faz o `migrate`
+ * morrer em "Unknown database".
+ */
+it('[CT-08] a instalação com MySQL grava um bloco de banco utilizável', function (): void {
+    customizadorNoTemp()->aplicar(respostasDeCustomizacao(['banco' => 'mysql', 'nome' => 'Loja do Ferro']));
+
+    expect(valorNoEnv('DB_CONNECTION'))->toBe('mysql')
+        ->and(valorNoEnv('DB_PASSWORD'))->toBe('secret')
+        ->and(valorNoEnv('DB_USERNAME'))->toBe('root')
+        ->and(valorNoEnv('DB_PORT'))->toBe('3306')
+        ->and(valorNoEnv('DB_DATABASE'))->toBe('loja_do_ferro')
+        ->and(valorNoEnv('DB_HOST'))->toBe('127.0.0.1');
+})->group('kit');
+
+/**
+ * CT-11 — as DUAS chaves, e a linha crua.
+ *
+ * `APP_NAME` continuar com o nome cru é o que separa "derivei um nome de projeto" de "estraguei
+ * o nome da aplicação": gravar o slug nas duas passaria numa asserção só.
+ *
+ * A linha é afirmada CRUA, com aspas, porque é assim que o escritor de `.env` do kit grava toda
+ * chave — e é essa forma que o Compose vai ler. Medido: a chave com aspas produz o nome de
+ * projeto sem elas, porque o Compose as remove.
+ */
+it('[CT-11] a instalação grava o nome do projeto Compose no .env', function (): void {
+    customizadorNoTemp()->aplicar(respostasDeCustomizacao(['nome' => 'Loja do Ferro']));
+
+    expect(envDoTeste())->toContain('COMPOSE_PROJECT_NAME="loja-do-ferro"')
+        ->and(valorNoEnv('APP_NAME'))->toBe('Loja do Ferro');
+})->group('kit');
+
+/**
+ * CT-12 — toda classe de nome digitado produz um nome que o Compose aceita.
+ *
+ * A linha do dígito inicial é a mais importante do conjunto: a implementação errada mais
+ * provável é reusar o `nomeDeBanco()` que existe ao lado, e ele acerta a maioria dos nomes —
+ * erra EXATAMENTE os que começam com dígito, porque prefixa underscore, e o Compose exige
+ * começar por letra ou número.
+ *
+ * O invariante não substitui os valores exatos: o padrão aceito também é satisfeito por
+ * `loja_do_ferro`, que é o que o reuso produziria.
+ */
+it('[CT-12] toda classe de nome digitado produz um nome de projeto válido', function (string $digitado, string $gravado): void {
+    $chavesAntes = count(Dotenv\Dotenv::parse(envDoTeste()));
+
+    customizadorNoTemp()->aplicar(respostasDeCustomizacao(['nome' => $digitado]));
+
+    expect(valorNoEnv('COMPOSE_PROJECT_NAME'))->toBe($gravado)
+        ->and($gravado)->toMatch('/^[a-z0-9][a-z0-9_-]*$/')
+        ->and(count(Dotenv\Dotenv::parse(envDoTeste())))->toBe($chavesAntes);
+})->with([
+    'espaço vira hífen, não underscore' => ['Loja do Ferro', 'loja-do-ferro'],
+    'dígito inicial é aceito'           => ['2026 Kit', '2026-kit'],
+    'acento e símbolo'                  => ['Ação & Cia', 'acao-cia'],
+    'aspas'                             => ['Loja "do" Ferro', 'loja-do-ferro'],
+    'cifrão'                            => ['Kit $APP_ENV', 'kit-app-env'],
+    'slug vazio cai no piso'            => ['###', 'starter-kit'],
+    'injeção de linha'                  => ["Loja\nAPP_DEBUG=false", 'loja-app-debugfalse'],
+])->group('kit');
+
+it('[CT-13] o nome sugerido produz exatamente o prefixo de hoje', function (): void {
+    customizadorNoTemp()->aplicar(respostasDeCustomizacao(['nome' => 'Starter Kit']));
+
+    expect(valorNoEnv('COMPOSE_PROJECT_NAME'))->toBe('starter-kit');
+})->group('kit');
+
+/**
+ * CT-16 (adaptado) — o instalador NÃO grava a chave do serviço de banco do Compose.
+ *
+ * O plano original mandava gravá-la no ramo `mysql`. A auditoria cortou, e por um motivo de
+ * correção: gravada, ela sobreviveria a uma reinstalação que trocasse o banco — e faria o
+ * profile `app` procurar um host morto. Pior: quem escolhesse MySQL e rodasse o profile `app`
+ * sem ligar o profile do MySQL teria o `DB_HOST` apontando para um container que não subiu.
+ *
+ * A chave passou a viver comentada no `.env.docker`, onde quem containeriza a aplicação já está
+ * copiando variáveis. Este caso trava a decisão nos três bancos.
+ */
+it('[CT-16] o instalador não grava a chave do serviço de banco do Compose', function (string $banco): void {
+    customizadorNoTemp()->aplicar(respostasDeCustomizacao(['banco' => $banco]));
+
+    expect(envDoTeste())->not->toContain('DOCKER_DB_SERVICE');
+})->with(['sqlite', 'pgsql', 'mysql'])->group('kit');
+
+/**
+ * CT-17 — reaplicar não duplica a chave nova.
+ *
+ * O `.env` perde a chave de propósito antes: é o estado de um projeto instalado por uma versão
+ * anterior do kit, que é justamente quem exercita o caminho de append do escritor.
+ */
+it('[CT-17] reaplicar a customização não duplica a chave do nome do projeto', function (): void {
+    File::put(test()->base.'/.env', str_replace(
+        'COMPOSE_PROJECT_NAME=starter-kit',
+        '',
+        envDoTeste(),
+    ));
+
+    customizadorNoTemp()->aplicar(respostasDeCustomizacao(['nome' => 'Primeiro']));
+    customizadorNoTemp()->aplicar(respostasDeCustomizacao(['nome' => 'Segundo']));
+
+    expect(substr_count(envDoTeste(), 'COMPOSE_PROJECT_NAME='))->toBe(1)
+        ->and(valorNoEnv('COMPOSE_PROJECT_NAME'))->toBe('segundo');
+})->group('kit');
+
+/**
+ * CT-18 — o caminho NÃO destrutivo também renomeia os containers.
+ *
+ * Sem isso, `kit:install --custom` renomeia a aplicação e deixa todos os containers com o
+ * prefixo antigo — o mesmo modo de falha que o docblock de `propagarParaOSettings()` já
+ * documenta para o settings: a resposta parece não ter efeito, e sem erro nenhum.
+ *
+ * A terceira asserção é a promessa do nome do método, e impede o conserto errado: copiar o
+ * bloco de `aplicar()` para cá traria o bloco de banco junto, e o `--custom` passaria a
+ * reescrever o banco de um projeto em produção.
+ */
+it('[CT-18] renomear a aplicação num projeto já instalado renomeia os containers', function (): void {
+    File::put(test()->base.'/.env', "APP_NAME=Antigo\nDB_CONNECTION=sqlite\nKIT_COR_PRIMARIA=\n");
+
+    customizadorNoTemp()->aplicarSemBanco(['nome' => 'Meu Projeto', 'cor' => '']);
+
+    expect(envDoTeste())->toContain('COMPOSE_PROJECT_NAME="meu-projeto"')
+        ->and(envDoTeste())->toContain('APP_NAME="Meu Projeto"')
+        ->and(envDoTeste())->toContain('DB_CONNECTION=sqlite');
+})->group('kit');
+
+/**
+ * CT-19 — o instalador deixa de afirmar que o kit não sobe container MySQL.
+ *
+ * Este é o único caso do conjunto em que a ausência NÃO filtra comentário: aqui o comentário É
+ * o artefato sob teste. O docblock afirma um fato sobre o produto, e o fato deixou de ser
+ * verdadeiro. Por isso o recorte é dos DOIS trechos — a linha do rótulo e o docblock do método
+ * — em vez de varrer o arquivo, que proibiria qualquer comentário futuro citando a frase antiga
+ * para explicar a mudança.
+ *
+ * A presença é o que fecha o buraco do sinônimo: proibir uma frase literal em português é
+ * contornável por "o kit não provê MySQL", e o cenário ficaria verde com a mesma mentira na
+ * tela. Exigir que o rótulo CITE o comando que a pessoa vai digitar não é.
+ */
+it('[CT-19] o instalador anuncia o container em vez de negá-lo', function (): void {
+    $fonte = (string) file_get_contents(
+        (string) (new ReflectionClass(CustomizadorDaInstalacao::class))->getFileName()
+    );
+
+    $rotulos = preg_grep('/^\s+.mysql.\s+=> ./', explode("\n", $fonte));
+    $rotulo  = (string) reset($rotulos);
+
+    $docblock = (string) (new ReflectionMethod(CustomizadorDaInstalacao::class, 'aplicarBanco'))->getDocComment();
+
+    expect($rotulo)->toContain('docker compose up -d mysql redis');
+
+    foreach (['rotulo' => $rotulo, 'docblock' => $docblock] as $onde => $trecho) {
+        expect($trecho)->not->toMatch(
+            '/\bnão\b(?:\W+\w+){0,4}\W+container/iu',
+            "O {$onde} continua negando que o kit sobe container.",
+        )->and($trecho)->not->toContain('o kit não sobe container MySQL');
+    }
+})->group('kit');
