@@ -3,6 +3,22 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Adicionado
+- **`deploy_docker_local.sh`: atualizar a stack Docker na máquina que a hospeda.** Roda no host
+  dos containers, não na máquina de desenvolvimento, e faz a sequência inteira numa chamada:
+  `git pull`, rebuild da imagem, `--profile app up -d`, migrations (com retry, porque `up -d`
+  retorna antes do php-fpm aceitar `exec`), `optimize:clear`, health check em `/up` e sonda TCP do
+  Reverb. A saída é duplicada em `storage/logs/deploy_docker_local.log`, sem cores quando não é
+  tty. **O rebuild vem depois do pull** porque a imagem do profile `app` é self-contained — o
+  código é assado nela, e rebuild antes reassa o código velho, subindo verde sem entregar a
+  evolução. E como o rebuild recria `reverb` e `pulse`, que estão no mesmo profile, não há comando
+  de restart à parte. `--recreate` acrescenta `--force-recreate`, necessário quando o `.env` mudou:
+  o Compose lê o `env_file` na **criação** do container, então um container já existente mantém os
+  valores antigos — o script avisa quando o `.env.example` muda no pull. Documentado nos dois
+  READMEs, na seção Docker.
+
 ## [0.26.0] - 2026-09-02
 
 ### Adicionado

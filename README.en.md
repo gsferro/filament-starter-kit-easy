@@ -289,6 +289,19 @@ Reverb uses 8090 instead of the default 8080 so it doesn't collide with llama.cp
 
 No service declares a fixed `container_name`: the prefix comes from `COMPOSE_PROJECT_NAME`, which `kit:install` writes with your project's name. [Details on the site](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/instalacao-avancada.html).
 
+### Updating the stack on the machine that hosts it
+
+`./deploy_docker_local.sh` runs **on the container host** (not on your development machine) and does the whole sequence: `git pull`, image rebuild, `--profile app up -d`, migrations, `optimize:clear`, a health check on `/up` and a TCP probe of Reverb. Output is appended to `storage/logs/deploy_docker_local.log`.
+
+```bash
+./deploy_docker_local.sh
+./deploy_docker_local.sh --recreate   # when .env changed
+```
+
+The rebuild comes **after** the pull because the image is self-contained (the code is baked into it) — rebuilding first would bake the old code. And since it recreates `reverb` and `pulse`, both in the same `app` profile, there is no separate restart command: a long-running process won't see new code without restarting.
+
+`--recreate` adds `--force-recreate`, needed when `.env` changed: Compose reads `env_file` when the container is **created**, so an existing container keeps the old values. If `.env.example` changed in the pull, the script warns you.
+
 ## Commands
 
 ```bash
