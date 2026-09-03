@@ -3,7 +3,7 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.27.0] - 2026-09-03
 
 ### Adicionado
 - **`deploy_docker_local.sh`: atualizar a stack Docker na máquina que a hospeda.** Roda no host
