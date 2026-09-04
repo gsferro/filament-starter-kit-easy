@@ -164,7 +164,7 @@ it('mostra a tela de configuracoes no painel de quem tem a permissao', function 
 
     $this->get('/admin')
         ->assertOk()
-        ->assertSee('Configurações do kit');
+        ->assertSee('Configurações da aplicação');
 })->group('kit');
 
 /**

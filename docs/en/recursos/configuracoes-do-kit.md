@@ -7,7 +7,7 @@ nav_order: 6
 
 # Kit settings under `/admin`
 
-What the installer asked — plus a handful of things you previously could only change by editing a file — now lives at **`/admin/configuracoes-do-kit`**, in six tabs. No `.env`, no deploy.
+What the installer asked — plus a handful of things you previously could only change by editing a file — now lives at **`/admin/configuracoes-do-kit`** — the panel menu labels the screen **Configurações da aplicação**, because once installed the kit is the provenance, not the product —, in six tabs. No `.env`, no deploy.
 
 | Tab | What you change |
 |---|---|

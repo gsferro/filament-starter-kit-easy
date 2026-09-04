@@ -337,7 +337,7 @@ it('aponta os sete itens que continuam manuais, cada um com o seu arquivo', func
 
     // `login.svg` saiu da lista: a arte do login virou campo em
     // /admin/configuracoes-do-kit, e a linha que a substituiu aponta para lá.
-    foreach (['Configurações do kit', 'Funções', 'PapeisSeeder', 'configureHealthChecks', 'command-center', 'backup.php', 'Agentes de IA'] as $referencia) {
+    foreach (['Configurações da aplicação', 'Funções', 'PapeisSeeder', 'configureHealthChecks', 'command-center', 'backup.php', 'Agentes de IA'] as $referencia) {
         expect(implode(' ', $itens))->toContain($referencia);
     }
 })->group('kit');

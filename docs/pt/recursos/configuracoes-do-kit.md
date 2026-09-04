@@ -7,7 +7,7 @@ nav_order: 6
 
 # Configurações do kit em `/admin`
 
-O que a instalação perguntou — e mais um punhado de coisas que antes só se mudava editando arquivo — vive em **`/admin/configuracoes-do-kit`**, em seis abas. Nada de `.env`, nada de deploy.
+O que a instalação perguntou — e mais um punhado de coisas que antes só se mudava editando arquivo — vive em **`/admin/configuracoes-do-kit`** — no menu do painel a tela se chama **Configurações da aplicação**, porque depois de instalado o kit é a procedência, não o produto —, em seis abas. Nada de `.env`, nada de deploy.
 
 | Aba | O que você troca |
 |---|---|

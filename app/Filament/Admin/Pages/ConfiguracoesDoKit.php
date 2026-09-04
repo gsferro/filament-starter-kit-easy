@@ -79,9 +79,9 @@ class ConfiguracoesDoKit extends SettingsPage
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static ?string $title = 'Configurações do kit';
+    protected static ?string $title = 'Configurações da aplicação';
 
-    protected static ?string $navigationLabel = 'Configurações do kit';
+    protected static ?string $navigationLabel = 'Configurações da aplicação';
 
     protected static ?int $navigationSort = 90;
 
@@ -127,7 +127,7 @@ class ConfiguracoesDoKit extends SettingsPage
     protected function afterSave(): void
     {
         Log::channel('configuracoes')->info(
-            '[ConfiguracoesDoKit@afterSave] Configurações do kit salvas | usuario: '.auth()->id(),
+            '[ConfiguracoesDoKit@afterSave] Configurações da aplicação salvas | usuario: '.auth()->id(),
             ['user_id' => auth()->id(), 'campos' => array_keys($this->data ?? [])],
         );
     }

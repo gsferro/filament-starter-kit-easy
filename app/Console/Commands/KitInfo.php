@@ -45,7 +45,7 @@ class KitInfo extends Command
 {
     protected $signature = 'kit:info';
 
-    protected $description = 'Mostra como este projeto foi customizado: instalação, configurações do kit e de onde cada valor vem';
+    protected $description = 'Mostra como este projeto foi customizado: instalação, configurações da aplicação e de onde cada valor vem';
 
     public function handle(): int
     {
@@ -100,7 +100,7 @@ class KitInfo extends Command
 
     private function configuracoes(): void
     {
-        $this->components->info('Configurações do kit (/admin/configuracoes-do-kit):');
+        $this->components->info('Configurações da aplicação (/admin/configuracoes-do-kit):');
 
         foreach (ConfiguracoesDoKit::mapaDeConfiguracao() as $propriedade => $chave) {
             $this->linha(Str::headline($propriedade), $this->exibir($propriedade, config($chave)));

@@ -12,7 +12,7 @@ use Spatie\LaravelSettings\Events\SavingSettings;
 use Spatie\LaravelSettings\Models\SettingsProperty;
 
 /**
- * A trilha de alteração das configurações do kit, em `audits`.
+ * A trilha de alteração das configurações da aplicação, em `audits`.
  *
  * ## Por que um listener, e não a trait do kit
  *
