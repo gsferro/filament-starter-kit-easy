@@ -3,6 +3,18 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.29.0] - 2026-09-04
+
+### Adicionado
+- **Login social configurável por painel.** Cada provedor pode ser liberado separadamente em `/admin`, `/app` e `/infra`; o botão, a barreira HTTP e o destino do fluxo respeitam o painel de origem. Lista vazia preserva o comportamento anterior e significa todos os painéis.
+- **Insights das organizações.** A listagem recebe visão geral, usuários únicos por organização, acessos por painel e timeline de alterações; a visualização de uma organização recebe números próprios e últimos acessos. O log de autenticação passa a registrar o painel em coluna aditiva e nullable.
+- **Stat de logins de hoje.** O widget "Usuários e acesso" ganha a sexta caixa, com histórico dos últimos sete dias dentro do próprio stat.
+
+### Corrigido
+- **Organizações sem acesso elegível permanecem visíveis com zero no breakdown.** O quality gate encontrou um `INNER JOIN` e um teste que codificavam a omissão como comportamento esperado; o teste passou a exigir zero e a consulta usa `LEFT JOIN` com agregado condicional.
+
+### Alterado
+- **O login social termina no painel de origem.** Entradas iniciadas no `/admin` ou `/infra` não são mais redirecionadas obrigatoriamente ao `/app`; a autorização normal de cada painel continua sendo a barreira final.
 ## [0.28.0] - 2026-09-04
 
 ### Adicionado
