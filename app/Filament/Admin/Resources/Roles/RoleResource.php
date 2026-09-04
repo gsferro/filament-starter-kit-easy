@@ -8,6 +8,7 @@ use App\Filament\Admin\Resources\Roles\Pages\CreateRole;
 use App\Filament\Admin\Resources\Roles\Pages\EditRole;
 use App\Filament\Admin\Resources\Roles\Pages\ListRoles;
 use App\Filament\Admin\Resources\Roles\Pages\ViewRole;
+use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Support\AdministradorDaInstalacao;
 use App\Support\Paineis;
 use App\Support\Papeis;
@@ -90,11 +91,28 @@ use Spatie\Permission\Models\Role as SpatieRole;
  */
 class RoleResource extends Resource
 {
+    /*
+     * NÃO simplifique este bloco para dois `use` em linhas separadas.
+     *
+     * `Essentials\HasNavigation` declara os TRÊS métodos de badge (`:41`, `:46`, `:51`), todos
+     * delegando ao plugin do Shield, e `BadgeContagemNavegacao` declara os mesmos três. Dois traits
+     * com o mesmo método numa classe que não o declara é erro FATAL de compilação — a aplicação
+     * inteira para de bootar, `php artisan about` incluído. Não é teste vermelho: é o boot morrendo.
+     *
+     * Os outros quatro `use Essentials\...` logo abaixo ficam separados porque não colidem.
+     *
+     * Ver ADR-02 de `wikis/specs/main/badge-de-contagem-em-todo-resource/`, com a mensagem de erro
+     * transcrita.
+     */
+    use BadgeContagemNavegacao, Essentials\HasNavigation {
+        BadgeContagemNavegacao::getNavigationBadge insteadof Essentials\HasNavigation;
+        BadgeContagemNavegacao::getNavigationBadgeColor insteadof Essentials\HasNavigation;
+        BadgeContagemNavegacao::getNavigationBadgeTooltip insteadof Essentials\HasNavigation;
+    }
     use Essentials\BelongsToParent;
     use Essentials\BelongsToTenant;
     use Essentials\HasGlobalSearch;
     use Essentials\HasLabels;
-    use Essentials\HasNavigation;
     use HasShieldFormComponents;
 
     protected static ?string $recordTitleAttribute = 'name';
