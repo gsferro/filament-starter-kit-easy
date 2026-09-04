@@ -3,6 +3,45 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.28.0] - 2026-09-04
+
+### Adicionado
+- **Badge de contagem em TODO Resource escrito no kit, nos três painéis — e agora é invariante,
+  não hábito.** `RoleResource` (Papéis) e `ComposerReleasePackageResource` estavam de fora, e não
+  por decisão: nada reprovava a ausência. `tests/Kit/BadgeDeNavegacaoTest.php` passa a varrer
+  `getResources()` dos três painéis, filtrar o namespace `App\Filament` e **reprovar com o FQCN**
+  de quem devolver badge nulo — medido: comentar o trait num resource deixa o caso vermelho
+  nomeando a classe. Resource de pacote de terceiro fica fora do escopo, e há caso de teste
+  guardando essa fronteira: sem ele, alguém "conserta" a varredura incluindo `vendor/`, nove
+  classes intocáveis ficam vermelhas e a reação provável é desligar o enforço inteiro.
+  A contagem continua saindo de `getEloquentQuery()`, nunca de `getModel()::count()` — é isso que
+  impede o badge do `/app` de somar uma organização na outra, com caso de teste na suíte
+  `Tenancy` provando os dois sentidos (3 na Acme, 1 na Globex) e outro provando que registro
+  excluído por soft delete não conta.
+  **A armadilha que isso desenterrou não tem teste e é fatal**: `RoleResource` usa
+  `PluginEssentials\Concerns\Resource\HasNavigation`, que declara os **três** métodos de badge,
+  e dois traits com o mesmo método é erro de **compilação** — a aplicação inteira para de bootar,
+  `php artisan about` incluído. A resolução são três `insteadof`, registrada em
+  `.ai/rules/filament-resources.md` com a mensagem de erro transcrita, porque nenhuma assertion
+  alcança um fatal: o processo morre antes de o Pest carregar.
+
+### Alterado
+- **O zero passa a aparecer no badge, em cinza.** Até aqui `BadgeContagemNavegacao` devolvia `null`
+  quando a contagem era zero, com o argumento — legítimo — de que "um `0` cinza em todo item só
+  polui o menu". O efeito colateral não tinha sido previsto: **badge ausente não distingue "está
+  vazio" de "o badge quebrou"**. Alguém olhou "Convites" sem badge, com a tabela em zero, e
+  concluiu que a feature não existia. A concessão é a cor: zero em `gray`, contagem maior que zero
+  na cor default do Filament. Vale para os **oito** resources que já usavam o trait, nos três
+  painéis — numa instalação recém-criada quase todo item passa a exibir `0`.
+- **"Configurações do kit" passa a "Configurações da aplicação" em tudo que o usuário lê.** Depois
+  de instalado, o kit é a procedência do projeto, não o produto — quem abre `/admin` vê o sistema
+  dele. Mudou o título e o rótulo de menu da tela, o cabeçalho da seção no `kit:info`, o item
+  "Identidade e e-mail" do resumo de customização e as duas páginas de documentação.
+  **Nada de identificador mudou**: as classes, o slug `/admin/configuracoes-do-kit`, a permission
+  `View:ConfiguracoesDoKit` e o grupo `kit` da tabela de settings continuam iguais — renomeá-los
+  quebraria instalação já existente (permission semeada no banco, links salvos) sem entregar nada
+  a quem usa. A aba **Kit** dentro da tela também fica: ali procedência é o assunto correto.
+
 ## [0.27.1] - 2026-09-03
 
 ### Corrigido
