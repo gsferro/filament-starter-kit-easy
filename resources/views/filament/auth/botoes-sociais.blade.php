@@ -37,7 +37,23 @@
     escopada em .fi-login-social naquele arquivo.
 --}}
 @php
-    $provedores = \App\Support\ConfiguracaoDoLogin::disponiveis();
+    /*
+        O PAINEL CORRENTE decide quais provedores aparecem, e ele viaja na URL do botao ate o
+        controller. Provedor liberado so no /admin nao renderiza na tela de login do /app.
+
+        `getCurrentPanel()?->getId()` e nao uma string fixa: este blade e o mesmo nos tres
+        paineis, injetado pelo render hook do KitServiceProvider. Nulo (fora de painel) cai no
+        comportamento anterior a esta feature -- lista vazia significa todos.
+
+        O `painel` entra por ULTIMO na query, depois de `org` e `token`. Nao e estilo: o caso
+        `it carrega org e token da tela de registro no link do botao` afirma o prefixo
+        `auth/google/redirect?org=acme`, e por o painel na frente quebraria uma assercao que ja
+        existia sem que nada no comportamento tivesse mudado.
+
+        Ver wikis/specs/feat/login-social-por-painel/login-social-por-painel/.
+    */
+    $painelCorrente = \Filament\Facades\Filament::getCurrentPanel()?->getId();
+    $provedores     = \App\Support\ConfiguracaoDoLogin::disponiveis($painelCorrente);
 @endphp
 
 @if ($provedores !== [])
@@ -53,7 +69,7 @@
             @foreach ($provedores as $provedor)
                 <x-filament::button
                     tag="a"
-                    :href="route('auth.social.redirect', array_filter(['provedor' => $provedor->value, 'org' => request()->query('org'), 'token' => request()->query('token')], 'is_string'))"
+                    :href="route('auth.social.redirect', array_filter(['provedor' => $provedor->value, 'org' => request()->query('org'), 'token' => request()->query('token'), 'painel' => $painelCorrente], 'is_string'))"
                     color="gray"
                     size="lg"
                     outlined

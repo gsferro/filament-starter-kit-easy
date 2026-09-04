@@ -322,9 +322,10 @@ O que se quer auditar já está em `audits` (quem mexeu no cadastro) e em `authe
   ```php
   Tenant::query()
       ->select('tenants.id', 'tenants.nome')
-      ->selectRaw('COUNT(DISTINCT tenant_user.user_id) as usuarios')
-      ->join('tenant_user', 'tenant_user.tenant_id', '=', 'tenants.id')
-      ->join($tabelaDeLog, function (JoinClause $join) use ($tabelaDeLog, $desde): void {
+      ->selectRaw("COUNT(DISTINCT CASE WHEN users.deleted_at IS NULL AND {$tabelaDeLog}.authenticatable_id IS NOT NULL THEN {$tabelaDeLog}.authenticatable_id END) as usuarios")
+      ->leftJoin('tenant_user', 'tenant_user.tenant_id', '=', 'tenants.id')
+      ->leftJoin('users', 'users.id', '=', 'tenant_user.user_id')
+      ->leftJoin($tabelaDeLog, function (JoinClause $join) use ($tabelaDeLog, $desde): void {
           $join->on($tabelaDeLog.'.authenticatable_id', '=', 'tenant_user.user_id')
               ->where($tabelaDeLog.'.authenticatable_type', '=', (new User)->getMorphClass())
               ->where($tabelaDeLog.'.login_successful', '=', true)

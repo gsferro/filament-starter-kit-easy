@@ -157,11 +157,27 @@ final class ConfiguracoesDoKit extends Settings
 
     public ?string $login_google_client_secret;
 
+    /**
+     * Painéis em que este provedor vale. **Vazio = todos.**
+     *
+     * A tradução de "vazio significa todos" é de `App\Support\ConfiguracaoDoLogin`, não desta
+     * classe — aqui é só uma lista. O default vazio faz a feature nascer inerte: quem já usa login
+     * social não perde nada num update.
+     *
+     * FORA de `encrypted()`: não é segredo.
+     *
+     * @var array<int, string>
+     */
+    public array $login_google_paineis;
+
     public bool $login_github_habilitado;
 
     public ?string $login_github_client_id;
 
     public ?string $login_github_client_secret;
+
+    /** @var array<int, string> Painéis em que este provedor vale. Vazio = todos. */
+    public array $login_github_paineis;
 
     public bool $login_linkedin_openid_habilitado;
 
@@ -169,11 +185,17 @@ final class ConfiguracoesDoKit extends Settings
 
     public ?string $login_linkedin_openid_client_secret;
 
+    /** @var array<int, string> Painéis em que este provedor vale. Vazio = todos. */
+    public array $login_linkedin_openid_paineis;
+
     public bool $login_x_habilitado;
 
     public ?string $login_x_client_id;
 
     public ?string $login_x_client_secret;
+
+    /** @var array<int, string> Painéis em que este provedor vale. Vazio = todos. */
+    public array $login_x_paineis;
 
     public ?string $login_rodape;
 
@@ -350,18 +372,22 @@ final class ConfiguracoesDoKit extends Settings
             'login_google_habilitado'    => 'kit.login.google.habilitado',
             'login_google_client_id'     => 'services.google.client_id',
             'login_google_client_secret' => 'services.google.client_secret',
+            'login_google_paineis'       => 'kit.login.google.paineis',
 
             'login_github_habilitado'    => 'kit.login.github.habilitado',
             'login_github_client_id'     => 'services.github.client_id',
             'login_github_client_secret' => 'services.github.client_secret',
+            'login_github_paineis'       => 'kit.login.github.paineis',
 
             'login_linkedin_openid_habilitado'    => 'kit.login.linkedin-openid.habilitado',
             'login_linkedin_openid_client_id'     => 'services.linkedin-openid.client_id',
             'login_linkedin_openid_client_secret' => 'services.linkedin-openid.client_secret',
+            'login_linkedin_openid_paineis'       => 'kit.login.linkedin-openid.paineis',
 
             'login_x_habilitado'    => 'kit.login.x.habilitado',
             'login_x_client_id'     => 'services.x.client_id',
             'login_x_client_secret' => 'services.x.client_secret',
+            'login_x_paineis'       => 'kit.login.x.paineis',
 
             'login_rodape'            => 'kit.login.rodape',
             'login_vinculo_confirmar' => 'kit.login.vinculo_confirmar',

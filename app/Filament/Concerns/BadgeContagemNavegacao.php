@@ -69,7 +69,7 @@ trait BadgeContagemNavegacao
      * no mesmo worker do Octane, e o badge congelaria no valor do primeiro request até o worker
      * reciclar — "o número não atualiza" só em produção. Ver ADR-03.
      */
-    private static function contagemDoBadge(): int
+    protected static function contagemDoBadge(): int
     {
         return once(fn (): int => static::getEloquentQuery()->count());
     }

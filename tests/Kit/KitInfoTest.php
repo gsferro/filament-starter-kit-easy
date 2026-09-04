@@ -169,7 +169,13 @@ it('[CT-06] exibe uma linha para cada propriedade do settings, na ordem do mapa'
     $propriedades = array_keys(ConfiguracoesDoKit::mapaDeConfiguracao());
     $saida        = saidaDoKitInfo();
 
-    expect($propriedades)->toHaveCount(44);
+    /*
+     * A ÂNCORA. O loop abaixo é gerado do próprio mapa, então propriedade nova entra no teste
+     * sozinha — só este número é escrito à mão, e é ele que fica vermelho para obrigar a decisão.
+     *
+     * 44 → 48 na feature `login-social-por-painel`: os quatro `login_{provedor}_paineis`.
+     */
+    expect($propriedades)->toHaveCount(48);
 
     foreach ($propriedades as $propriedade) {
         expect($saida)->toContain(Str::headline($propriedade));
