@@ -189,9 +189,13 @@ class UserResource extends Resource
         // por URL. Sem isto o `admin_app` abria a ficha do `master_global` (que o
         // `TenantsSeeder` vincula a toda organização) e trocava a senha dele. A query é a
         // primeira camada; a segunda é `getEditAuthorizationResponse()`, abaixo.
+        //
+        // Subquery e não `->queNaoGovernamAInstalacao()` direto: o pai devolve `Builder<Model>`,
+        // e o scope só existe em `User` — encadeado, o PHPStan não o enxerga, e o template
+        // do Builder não é covariante para trocar o tipo no retorno.
         return parent::getEloquentQuery()
             ->whereHas('tenants', fn (Builder $query): Builder => $query->whereKey($tenant->getKey()))
-            ->queNaoGovernamAInstalacao();
+            ->whereIn((new User)->getQualifiedKeyName(), User::queNaoGovernamAInstalacao()->select('id'));
     }
 
     /**
