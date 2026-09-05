@@ -11,7 +11,6 @@ use App\Filament\Admin\Resources\Tenants\Widgets\UsuariosUnicosPorOrganizacao;
 use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
-use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Carbon;
