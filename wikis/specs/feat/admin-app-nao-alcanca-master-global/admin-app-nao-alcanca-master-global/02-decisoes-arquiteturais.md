@@ -71,7 +71,12 @@ wiki das travas mediu que `canDelete()` não era consultado pelo framework — q
 
 ### Decisão
 
-1. `UserResource::getEloquentQuery()` (app) acrescenta `->queNaoGovernamAInstalacao()`.
+1. `UserResource::getEloquentQuery()` (app) aplica o recorte por subquery:
+   `->whereIn(users.id, User::queNaoGovernamAInstalacao()->select('id'))`. **Não encadeado**: o pai
+   devolve `Builder<Model>` e o scope só existe em `User` — o PHPStan (level 7) reprovava com "Call to
+   an undefined method", e trocar o tipo no retorno não é opção porque o template do Builder não é
+   covariante. A definição continua única, no model. (Ajuste feito no merge do PR #54, que chegou com
+   o gate `qualidade` vermelho por isso; `whereKey(Builder)` foi tentado e vira `=`, não `IN`.)
 2. `UserResource::getEditAuthorizationResponse(Model $record)` (app) devolve `Response::deny()` com
    motivo quando `$record->governaAInstalacao()`, com `warning` no channel `autenticacao` — e só aí,
    porque só se chega a esse ponto se a primeira camada foi contornada.

@@ -28,3 +28,8 @@ A resolução é `insteadof`, e são TRÊS — aquele `HasNavigation` declara `g
 Declarar os três métodos direto na classe também compila e foi recusado: duplica o corpo do trait, e o dia em que o trait mudar a classe fica para trás em silêncio. Depois de mexer nesse bloco, rode `php artisan about` — é a única prova de que ele compila.
 
 Ver `wikis/specs/main/badge-de-contagem-em-todo-resource/` (ADR-01 e ADR-02).
+
+## Scope de model não encadeia em parent::getEloquentQuery() — o PHPStan não enxerga
+`parent::getEloquentQuery()` devolve `Builder<Model>`, e o Larastan só resolve scope (`scopeFoo`) em `Builder<ModelQueTemOScope>`. Encadear `->meuScope()` passa nos testes e reprova em `types:check` com "Call to an undefined method Builder<Model>::meuScope()" — foi o gate `qualidade` vermelho do PR #54. Não adianta `@var Builder<User>` nem `@return Builder<User>`: o template do Builder não é covariante e o erro vira `return.type`.
+
+Aplique o recorte por subquery, mantendo a definição única no model: `->whereIn((new User)->getQualifiedKeyName(), User::meuScope()->select('id'))`. NÃO `whereKey(Builder)`: vira `=`, não `IN` — medido, badge 1 em vez de 6. Molde: `App/Users/UserResource::getEloquentQuery()`.
