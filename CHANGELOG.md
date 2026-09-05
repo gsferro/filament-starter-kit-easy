@@ -3,7 +3,7 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.30.0] - 2026-09-05
 
 ### Segurança
 - **O `admin_app` não alcança mais quem governa a instalação.** No painel `/app`, quem tem papel de
@@ -34,6 +34,9 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   posição fora da viewport. Agora ele mede a geometria do overlay aberto (`fixed`, `top 0`,
   `z-index`, fundo, campo na tela) nos dois temas, e uma guarda nova lê a blade do pacote e
   reprova se ela emitir classe que o CSS do kit não declara — é o que acusa um upgrade.
+- **`composer test:kit` voltou a rodar em `--parallel`.** Um `use DateTimeInterface;` sem efeito em
+  `InsightsDasOrganizacoesTest` (arquivo sem namespace) emitia aviso que o carregador do Pest
+  converte em exceção — a suíte `Tenancy` inteira não subia.
 
 ## [0.29.0] - 2026-09-04
 
