@@ -3,7 +3,7 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.30.1] - 2026-09-05
 
 ### Corrigido
 - **`kit:update` lê a lista de caminhos da versão destino — diretório novo chega na primeira

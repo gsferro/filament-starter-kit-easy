@@ -448,10 +448,11 @@ it('documenta a lista do destino e o contorno para instalações anteriores, nos
         ->toContain('0.22');
 
     $changelog  = (string) file_get_contents(base_path('CHANGELOG.md'));
-    $naoLancado = mb_substr($changelog, (int) mb_strpos($changelog, '## [Unreleased]'));
-    $naoLancado = mb_substr($naoLancado, 0, (int) mb_strpos($naoLancado, "\n## [", 1));
+    // A seção mais recente do CHANGELOG: `[Unreleased]` antes do release, a versão depois.
+    $topo = mb_substr($changelog, (int) mb_strpos($changelog, "\n".'## ['));
+    $topo = mb_substr($topo, 0, (int) mb_strpos($topo, "\n".'## [', 1));
 
-    expect($naoLancado)->toContain('kit:update')->toContain('destino');
+    expect($topo)->toContain('kit:update')->toContain('destino');
 })->with([
     'pt' => ['docs/pt/comecar/atualizando-o-projeto.md', 'versão destino'],
     'en' => ['docs/en/comecar/atualizando-o-projeto.md', 'target version'],
