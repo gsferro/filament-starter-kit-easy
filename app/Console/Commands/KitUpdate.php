@@ -79,6 +79,15 @@ class KitUpdate extends Command
      * apareceram os resources de Users, AgentesIa e AiRuns, fora daqui por três
      * versões (a correção da tela de usuários na 0.9.7 não chegou a ninguém).
      *
+     * A lista que FILTRA O DIFF não é só esta: é a união desta com a que a versão
+     * DESTINO declara — ver `caminhosDoKit()`. Esta constante é a lista da versão
+     * instalada, que é sempre a antiga na hora de atualizar.
+     *
+     * A FORMA TEXTUAL desta constante é contrato: `caminhosDeclaradosEm()` a lê de
+     * outras versões por expressão regular (um caminho por linha, entre aspas
+     * simples, vírgula no fim, fechamento `];` com quatro espaços). Mudar a forma
+     * reprova `tests/Kit/KitUpdateTest.php` antes da tag.
+     *
      * @var list<string>
      */
     private const CAMINHOS_DO_KIT = [
@@ -261,6 +270,9 @@ class KitUpdate extends Command
     ];
 
     private string $git;
+
+    /** Se a lista de caminhos da versão destino foi lida — decide o aviso da segunda rodada. */
+    private bool $listaDoDestinoLida = false;
 
     public function handle(): int
     {
@@ -522,7 +534,7 @@ class KitUpdate extends Command
             ? ['diff', '--name-status', $origem, $destino, '--']
             : ['diff', '--name-status', $destino, '--'];
 
-        $saida = trim($this->git([...$args, ...self::CAMINHOS_DO_KIT]));
+        $saida = trim($this->git([...$args, ...$this->caminhosDoKit($destino)]));
 
         if ($saida === '') {
             return [];
@@ -558,6 +570,80 @@ class KitUpdate extends Command
         ksort($arquivos);
 
         return $arquivos;
+    }
+
+    /**
+     * A lista que filtra o diff: a desta classe UNIDA à da versão destino.
+     *
+     * A classe que roda é a da instalação — a versão ANTIGA. Caminho que entrou na
+     * lista depois dela era invisível na primeira rodada, e na 0.23.0 isso deixou o
+     * projeto sem boot entre as rodadas: `IdentidadeDoKit.php` chegou (coberto por
+     * `app/Support`) e a view que ele renderiza no boot não (`resources/views/svg`
+     * ainda não estava na lista). Ler a lista do destino fecha isso. Ver
+     * `wikis/specs/fix/kit-update-lista-do-destino/`.
+     *
+     * Só age em instalação que JÁ tem este código: quem está numa versão anterior
+     * roda a classe dela na primeira rodada, e para essa continua valendo o aviso
+     * da segunda rodada em `encerrar()`.
+     *
+     * @return list<string>
+     */
+    private function caminhosDoKit(string $destino): array
+    {
+        $doDestino = self::caminhosDeclaradosEm(
+            $this->git(['show', "{$destino}:app/Console/Commands/KitUpdate.php"]),
+        );
+
+        $this->listaDoDestinoLida = $doDestino !== [];
+
+        if (! $this->listaDoDestinoLida) {
+            $this->components->warn(
+                "Não foi possível ler a lista de caminhos da versão {$destino}; usando a desta versão. "
+                .'Se o próprio kit:update for atualizado, rode o comando de novo — o aviso final traz o comando pronto.'
+            );
+        }
+
+        return self::caminhosUnidos($doDestino);
+    }
+
+    /**
+     * A lista desta versão unida à do destino, sem repetição e reindexada.
+     *
+     * União, e não substituição: caminho removido do kit precisa continuar no diff
+     * para aparecer como "removido do kit", e com `[]` o resultado é exatamente
+     * `CAMINHOS_DO_KIT` — o fallback de `caminhosDoKit()` sem um `if` a mais.
+     *
+     * @param  list<string>  $doDestino
+     * @return list<string>
+     */
+    public static function caminhosUnidos(array $doDestino): array
+    {
+        return array_values(array_unique([...self::CAMINHOS_DO_KIT, ...$doDestino]));
+    }
+
+    /**
+     * Os caminhos declarados em `CAMINHOS_DO_KIT` num fonte deste arquivo — o desta
+     * versão ou o de qualquer tag publicada.
+     *
+     * ponytail: regex, e não `include` — o fonte vem de `git show`, e a constante tem
+     * a mesma forma textual em todas as tags desde a 0.9.x (medido: 55 caminhos na
+     * v0.22.3 e na v0.23.0, 57 na v0.23.1 e na v0.29.0). O teto é a forma: se ela
+     * mudar, isto devolve `[]`, quem chama cai no fallback, e o caso "o fonte desta
+     * versão produz a mesma lista que a constante" reprova antes da tag. A regex de
+     * linha exige aspas logo após a indentação, então comentário de bloco e `//` que
+     * citem um caminho ficam de fora por construção.
+     *
+     * @return list<string>
+     */
+    public static function caminhosDeclaradosEm(string $fonte): array
+    {
+        if (preg_match('/CAMINHOS_DO_KIT = \[(.*?)\n    \];/s', $fonte, $bloco) !== 1) {
+            return [];
+        }
+
+        preg_match_all("/^\s+'([^']+)',/m", $bloco[1], $caminhos);
+
+        return $caminhos[1];
     }
 
     /** @param  array<string, string>  $arquivos */
@@ -871,31 +957,39 @@ class KitUpdate extends Command
          * mensagens acima — vem da versão anterior. Avisar evita a conclusão
          * errada de que a versão nova não funcionou.
          *
-         * E a consequência prática é maior do que parecer cosmética: a LISTA de
-         * caminhos que filtra o diff é uma constante desta classe. Se a versão
-         * nova cobre caminho que a antiga não cobria, o arquivo desse caminho
-         * NÃO entrou nesta rodada — foi o que aconteceu na 0.9.8, com metade do
-         * Filament do kit. Só a rodada seguinte enxerga.
+         * A consequência prática costumava ser maior do que cosmética: a LISTA de
+         * caminhos que filtra o diff é uma constante desta classe, e arquivo coberto
+         * só pela lista NOVA não entrava nesta rodada — foi o que aconteceu na 0.9.8,
+         * com metade do Filament do kit, e na 0.23.0, com a view da arte do login.
+         * Desde que `caminhosDoKit()` lê a lista do DESTINO, isso só acontece quando
+         * essa leitura falha — e é só nesse caso que o parágrafo "rode de novo" faz
+         * sentido; com a lista lida, a segunda rodada responderia "Nada a atualizar".
          *
-         * E a segunda rodada precisa do `--from` EXPLÍCITO: `marcarVersao()` acima já
-         * gravou a versão nova em `config/kit.php`, então sem ele o default lê a versão de
-         * destino como origem e o comando responde "Nada a atualizar" — com os arquivos da
-         * lista nova ainda faltando. Medido numa instalação v0.22.3 → v0.24.1: o CSS do kit
-         * só chegou com `--from=0.22.3`. Por isso o aviso imprime o comando pronto, e
-         * `--no-branch`, porque o branch temporário já foi criado nesta rodada.
+         * Quando ela é necessária, a segunda rodada precisa do `--from` EXPLÍCITO:
+         * `marcarVersao()` acima já gravou a versão nova em `config/kit.php`, então sem
+         * ele o default lê a versão de destino como origem e o comando responde "Nada a
+         * atualizar" — com os arquivos da lista nova ainda faltando. Medido numa
+         * instalação v0.22.3 → v0.24.1: o CSS do kit só chegou com `--from=0.22.3`. Por
+         * isso o aviso imprime o comando pronto, e `--no-branch`, porque o branch
+         * temporário já foi criado nesta rodada.
          */
         if (in_array('app/Console/Commands/KitUpdate.php', $aplicados, true)) {
-            $from = $origem === null ? '' : ' --from='.str_replace('kit-v', '', $origem);
-
             note(
                 "O próprio `kit:update` foi atualizado nesta rodada.\n"
-                ."O que você viu acima ainda é o comportamento da versão anterior; a nova vale a partir da próxima execução.\n\n"
-                ."RODE O COMANDO DE NOVO: a lista de caminhos do kit é parte deste arquivo, e arquivo\n"
-                ."coberto só pela lista NOVA não entrou agora. Commite (ou `git stash`) o que entrou e rode\n\n"
-                ."  php artisan kit:update{$from} --tag={$versao} --no-branch\n\n"
-                ."O `--from` é obrigatório aí: a versão em `config/kit.php` já é a nova, e sem ele a segunda\n"
-                .'rodada responde "Nada a atualizar" antes de entregar o que faltou.'
+                .'O que você viu acima ainda é o comportamento da versão anterior; a nova vale a partir da próxima execução.'
             );
+
+            if (! $this->listaDoDestinoLida) {
+                $from = $origem === null ? '' : ' --from='.str_replace('kit-v', '', $origem);
+
+                note(
+                    "RODE O COMANDO DE NOVO: a lista de caminhos do kit é parte deste arquivo, e arquivo\n"
+                    ."coberto só pela lista NOVA não entrou agora. Commite (ou `git stash`) o que entrou e rode\n\n"
+                    ."  php artisan kit:update{$from} --tag={$versao} --no-branch\n\n"
+                    ."O `--from` é obrigatório aí: a versão em `config/kit.php` já é a nova, e sem ele a segunda\n"
+                    .'rodada responde "Nada a atualizar" antes de entregar o que faltou.'
+                );
+            }
         }
 
         note(
