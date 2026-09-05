@@ -72,6 +72,21 @@ it('nao reintroduz env com default de texto no config do kit', function (): void
         // lembretes, e `KIT_CONVITE_LEMBRETES_DIAS=` é justamente como se escreve isso. Trocar
         // por `?:` tiraria a única forma de desligar a feature pelo .env.
         'KIT_CONVITE_LEMBRETES_DIAS',
+
+        /*
+         * Mesmo caso, e pelo mesmo motivo: para os painéis do login social, lista VAZIA significa
+         * TODOS os painéis — é o que faz a feature nascer inerte e não tirar nada de quem já usa
+         * login social. `KIT_SOCIALITE_GOOGLE_PAINEIS=` é como se escreve "sem restrição", e um
+         * `?:` aqui não teria default nenhum para oferecer: o default É o vazio.
+         *
+         * A tradução de "vazio = todos" vive em `ConfiguracaoDoLogin::painelAutorizado()`, com
+         * caso de teste nas duas direções. Ver ADR-04 de
+         * `wikis/specs/feat/login-social-por-painel/login-social-por-painel/`.
+         */
+        'KIT_SOCIALITE_GOOGLE_PAINEIS',
+        'KIT_SOCIALITE_GITHUB_PAINEIS',
+        'KIT_SOCIALITE_LINKEDIN_PAINEIS',
+        'KIT_SOCIALITE_X_PAINEIS',
     ];
 
     preg_match_all(

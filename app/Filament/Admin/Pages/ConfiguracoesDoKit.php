@@ -7,6 +7,7 @@ namespace App\Filament\Admin\Pages;
 use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\CustomizadorDaInstalacao;
+use App\Support\Paineis;
 use App\Support\ProvedorAntiRobo;
 use App\Support\ProvedorSocial;
 use App\Support\TetoDeUpload;
@@ -79,9 +80,9 @@ class ConfiguracoesDoKit extends SettingsPage
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static ?string $title = 'Configurações do kit';
+    protected static ?string $title = 'Configurações da aplicação';
 
-    protected static ?string $navigationLabel = 'Configurações do kit';
+    protected static ?string $navigationLabel = 'Configurações da aplicação';
 
     protected static ?int $navigationSort = 90;
 
@@ -127,7 +128,7 @@ class ConfiguracoesDoKit extends SettingsPage
     protected function afterSave(): void
     {
         Log::channel('configuracoes')->info(
-            '[ConfiguracoesDoKit@afterSave] Configurações do kit salvas | usuario: '.auth()->id(),
+            '[ConfiguracoesDoKit@afterSave] Configurações da aplicação salvas | usuario: '.auth()->id(),
             ['user_id' => auth()->id(), 'campos' => array_keys($this->data ?? [])],
         );
     }
@@ -681,6 +682,28 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->revealable()
                     ->dehydrated(fn (?string $state): bool => filled($state))
                     ->maxLength(255)
+                    ->visible($ligado),
+
+                /*
+                 * EM QUAIS PAINEIS este provedor vale. Vazio = todos, e a tradução é de
+                 * `App\Support\ConfiguracaoDoLogin::painelAutorizado()` — o campo só guarda a
+                 * lista.
+                 *
+                 * `Paineis::opcoes()` como `options()`: a chave é o id do painel (`admin`) e o
+                 * rótulo é o path (`/admin`). A lista sai de `Filament::getPanels()`, então painel
+                 * novo no kit aparece aqui sozinho.
+                 *
+                 * `->visible($ligado)` como os dois campos de credencial: escolher painéis de um
+                 * provedor desligado não decide nada. É UX — a barreira de verdade é a do
+                 * `LoginSocialController`.
+                 *
+                 * Ver `wikis/specs/feat/login-social-por-painel/login-social-por-painel/`.
+                 */
+                Select::make($provedor->propriedadeDeSettings('paineis'))
+                    ->label('Painéis onde este provedor vale')
+                    ->helperText('Em branco = todos os painéis. Escolha para restringir — por exemplo, o Google empresarial só no /admin.')
+                    ->multiple()
+                    ->options(Paineis::opcoes())
                     ->visible($ligado),
             ]);
     }

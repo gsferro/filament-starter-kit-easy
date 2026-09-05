@@ -42,6 +42,19 @@ The kit's five roles, and what each one means with the mode on:
 
 The role only exists with tenancy on, and it is granted in `/admin` → organizations → **Linked users** → *Roles in this organization*. **Not** from the user record: there the assignment goes to the global context and the person enters `/app` seeing nothing. The full recipe, with the symptom, is in [`wikis/receitas.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/receitas.md#promover-alguém-a-admin-de-uma-organização).
 
+## Organization insights under `/admin`
+
+The organization list includes four widgets for global operations:
+
+- an overview with totals and active organizations;
+- unique users per organization in the recent window — organizations with no eligible access remain visible with zero;
+- successful accesses broken down by panel;
+- a timeline of recent changes.
+
+Opening an organization shows its linked users, active users and activation rate, together with its
+members' recent accesses. The numbers respect soft deletes and count successful logins only; the
+authentication log records the panel of origin to support the breakdown.
+
 ## English in the code, your language in the UI
 
 The code follows Filament's API vocabulary — model `Tenant`, table `tenants`, `getTenants()`, `canAccessTenant()` — so the official docs read without mental translation. **What the user sees is configurable**, and defaults to "Organização":
@@ -76,4 +89,3 @@ class Projeto extends Model
 It provides the `tenant()` relationship, a **global scope** and automatic `tenant_id` filling. The scope matters because Filament only scopes what goes through a Resource — jobs, commands, listeners and APIs would be left out, and that's exactly where one client's data leaks into another's.
 
 > ⚠️ **`kit:tenancy` recreates the database.** It turns on `permission.teams`, and the spatie migration only creates the tenant columns if the flag is active **before** the migrate. That's why it requires a clean git tree, an explicit confirmation, and runs `migrate:fresh --seed`. **The time to run it is day 1 of the project.** The detailed path — including global vs. per-tenant roles and `scopedUnique()` — is in [`wikis/arquitetura.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/arquitetura.md#multi-tenancy-opt-in) (pt-BR).
-

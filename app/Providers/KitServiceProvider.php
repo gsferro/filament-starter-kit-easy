@@ -30,6 +30,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Ai\Events\AgentPrompted;
 use Laravel\Ai\Events\AgentStreamed;
+use Rappasoft\LaravelAuthenticationLog\Models\AuthenticationLog;
 use Spatie\Health\Checks\Checks\CacheCheck;
 use Spatie\Health\Checks\Checks\DatabaseCheck;
 use Spatie\Health\Checks\Checks\DebugModeCheck;
@@ -71,6 +72,73 @@ class KitServiceProvider extends ServiceProvider
         $this->configuraFilamentGlobal();
         $this->configureCorrecoesDeCss();
         $this->configureTelaDeLogin();
+        $this->registrarPainelNoLogDeAcesso();
+    }
+
+    /**
+     * De qual painel veio cada acesso, carimbado quando a linha do log nasce.
+     *
+     * `authentication_log` (rappasoft) não sabe de painel — o registro é um `morphTo` para `User`
+     * e mais nada sobre origem. Sem esta coluna, "quantos acessos cada painel teve" não é uma
+     * pergunta que o dado responda.
+     *
+     * ## Por que hook de model, e não o listener do pacote
+     *
+     * O pacote permite trocar cada listener por config (`authentication-log.listeners.login` e
+     * irmãos), mas `LoginListener::handle()` tem ~120 linhas — fingerprint de dispositivo,
+     * detecção de restauração de sessão, atividade suspeita, notificação com rate limit e três
+     * webhooks — e a criação da linha está no meio do método. Estendê-lo para carimbar exigiria
+     * COPIAR essas 120 linhas, e toda correção futura do pacote passaria a ser ignorada em
+     * silêncio.
+     *
+     * O hook de model cobre TODAS as origens de linha de uma vez — login com sucesso, tentativa
+     * falha, logout — sem conhecer o interior de nenhum listener. Ver ADR-01 de
+     * `wikis/specs/main/insights-das-organizacoes/`.
+     *
+     * ## A guarda fica DENTRO do closure, e isso é correção do plano
+     *
+     * O PRD mandava guardar o REGISTRO do hook com `Schema::hasColumn()`. Está errado, e o motivo
+     * está no docblock de `configureSettingsDoKit()` logo acima: com `RefreshDatabase` o `boot()`
+     * roda ANTES das migrations, então nenhuma tabela existe nesse instante — o hook nunca se
+     * registraria em teste nenhum, e a feature seria inverificável.
+     *
+     * Dentro do closure, a checagem acontece no primeiro login do request e é memoizada com
+     * `once()`. `setAttribute` numa coluna inexistente só estoura no `INSERT`, e estourar ali
+     * quebraria **o login** de uma instalação que atualizou o código sem rodar `migrate`.
+     *
+     * `DB::table(...)->insert(...)` **não** dispara este hook — é o único uso assim no projeto
+     * (arranjo de `tests/Kit/PermissoesDeWidgetsTest.php`), e lá o painel nulo é irrelevante.
+     */
+    protected function registrarPainelNoLogDeAcesso(): void
+    {
+        AuthenticationLog::creating(function (AuthenticationLog $acesso): void {
+            if (filled($acesso->getAttribute('painel')) || ! $this->logDeAcessoTemColunaDePainel()) {
+                return;
+            }
+
+            $acesso->setAttribute(
+                'painel',
+                rescue(fn (): ?string => Filament::getCurrentPanel()?->getId(), null, report: false),
+            );
+        });
+    }
+
+    /**
+     * A coluna existe? Uma consulta por request, no máximo.
+     *
+     * `once()` e não propriedade estática: estática sobrevive entre requests no worker do Octane, e
+     * uma instalação que rodasse `migrate` com o worker vivo continuaria sem carimbar até reciclar.
+     */
+    protected function logDeAcessoTemColunaDePainel(): bool
+    {
+        return once(fn (): bool => (bool) rescue(
+            fn (): bool => Schema::hasColumn(
+                (string) config('authentication-log.table_name', 'authentication_log'),
+                'painel',
+            ),
+            false,
+            report: false,
+        ));
     }
 
     protected function configureDefaults(): void
@@ -156,9 +224,9 @@ class KitServiceProvider extends ServiceProvider
      * Isto roda em TODO request e TODO comando artisan. Um `Throwable` aqui
      * derrubaria a aplicação inteira, não uma tela — então o `catch` é de
      * `Throwable` (não `Exception`: `TypeError` e `Error` escapariam) e envolve
-     * inclusive o `Schema::hasTable()`, que num banco inexistente **lança antes de
-     * responder**. É exatamente o que acontece no primeiro `migrate` de uma
-     * instalação nova.
+     * inclusive o `ConfiguracoesDoKit::gravadoNoBanco()`, cujo `Schema::hasTable()` num banco
+     * inexistente **lança antes de responder**. É exatamente o que acontece no primeiro
+     * `migrate` de uma instalação nova.
      *
      * O `hasTable()` falso sai em SILÊNCIO, sem log: tabela ausente é o estado
      * normal de uma instalação nova, e um `warning` ali gritaria em todo `migrate`
@@ -175,9 +243,7 @@ class KitServiceProvider extends ServiceProvider
     protected function configureSettingsDoKit(): void
     {
         try {
-            $tabela = config('settings.repositories.database.table') ?? 'settings';
-
-            if (! Schema::hasTable($tabela)) {
+            if (! ConfiguracoesDoKit::gravadoNoBanco()) {
                 return;
             }
 
@@ -360,6 +426,14 @@ class KitServiceProvider extends ServiceProvider
                  * Ver o cabeçalho de `resources/css/filament/cards.css`.
                  */
                 Css::make('kit-cards', resource_path('css/filament/cards.css')),
+                /*
+                 * O overlay da busca ⌘K (`wezlo/filament-search-spotlight`). Mesmo caso do
+                 * `cards.css`, mais grave: a blade do pacote emite 66 utilitárias e a CSS do
+                 * Filament não tem NENHUMA — sem isto o overlay abre `fixed` sem `inset-0`,
+                 * a 1.800 px do topo, fora da tela. Escopado no atributo Alpine da raiz do
+                 * componente. Ver o cabeçalho de `resources/css/filament/spotlight.css`.
+                 */
+                Css::make('kit-spotlight', resource_path('css/filament/spotlight.css')),
             ],
             package: 'kit',
         );

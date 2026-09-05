@@ -370,14 +370,14 @@ it('[CT-13] aplica a trava de painel no convite em massa', function (string $pap
         ]);
 
     if ($aceita) {
-        $componente->assertHasNoActionErrors();
+        $componente->assertHasNoFormErrors();
 
         expect(Convite::query()->where('role_id', $registro->getKey())->whereNull('aceito_em')->count())->toBe(2);
 
         return;
     }
 
-    $componente->assertHasActionErrors(['role_id']);
+    $componente->assertHasFormErrors(['role_id']);
 
     $this->assertDatabaseMissing('convites', ['email' => 'um@example.com']);
     $this->assertDatabaseMissing('convites', ['email' => 'dois@example.com']);

@@ -19,7 +19,7 @@ return [
     | contra a árvore de trabalho, que é mais ruidosa.
     */
 
-    'version' => '0.24.0',
+    'version' => '0.29.0',
 
     /*
     |--------------------------------------------------------------------------
@@ -460,7 +460,7 @@ return [
     | (vendor/laravel/framework/src/Illuminate/Support/Env.php:252-262), entao
     | KIT_SOCIALITE_GOOGLE=false ja chega aqui como boolean false e um cast de
     | bool acertaria. Os tres irmaos deste arquivo - tenancy.enabled, demo e hub -
-    | usam cast de bool e NAO estao errados: para todo valor documentado no
+    | usam cast de bool e NAO estam errados: para todo valor documentado no
     | .env.example os dois jeitos dao o mesmo resultado. Nao "conserte" os tres.
     |
     | A diferenca aparece so nos valores que o Laravel NAO reconhece, e ela e de
@@ -507,20 +507,50 @@ return [
          * wikis/specs/feat/mais-provedores-sociais/mais-provedores-sociais/.
          */
 
+        /*
+         * EM QUAIS PAINÉIS cada provedor vale. Lista de ids separados por vírgula no `.env`,
+         * mesma forma de `kit.convites.lembretes_dias`.
+         *
+         * **Vazio significa TODOS**, e a tradução é de quem lê (`App\Support\ConfiguracaoDoLogin`),
+         * não desta config: aqui `[]` é só uma lista vazia. O default vazio é o que faz a feature
+         * nascer INERTE — quem já usa login social não perde nada num update.
+         *
+         * A condição é CONJUNTIVA com as que já existem: o provedor precisa estar `habilitado`,
+         * ter as credenciais, **e** o painel corrente precisa estar autorizado.
+         *
+         * Ver `wikis/specs/feat/login-social-por-painel/login-social-por-painel/` — ADR-04.
+         */
+
         'google' => [
             'habilitado' => filter_var(env('KIT_SOCIALITE_GOOGLE', false), FILTER_VALIDATE_BOOLEAN),
+            'paineis'    => array_values(array_filter(array_map(
+                'trim',
+                explode(',', (string) env('KIT_SOCIALITE_GOOGLE_PAINEIS', '')),
+            ))),
         ],
 
         'github' => [
             'habilitado' => filter_var(env('KIT_SOCIALITE_GITHUB', false), FILTER_VALIDATE_BOOLEAN),
+            'paineis'    => array_values(array_filter(array_map(
+                'trim',
+                explode(',', (string) env('KIT_SOCIALITE_GITHUB_PAINEIS', '')),
+            ))),
         ],
 
         'linkedin-openid' => [
             'habilitado' => filter_var(env('KIT_SOCIALITE_LINKEDIN', false), FILTER_VALIDATE_BOOLEAN),
+            'paineis'    => array_values(array_filter(array_map(
+                'trim',
+                explode(',', (string) env('KIT_SOCIALITE_LINKEDIN_PAINEIS', '')),
+            ))),
         ],
 
         'x' => [
             'habilitado' => filter_var(env('KIT_SOCIALITE_X', false), FILTER_VALIDATE_BOOLEAN),
+            'paineis'    => array_values(array_filter(array_map(
+                'trim',
+                explode(',', (string) env('KIT_SOCIALITE_X_PAINEIS', '')),
+            ))),
         ],
 
         'rodape' => env('KIT_LOGIN_RODAPE'),

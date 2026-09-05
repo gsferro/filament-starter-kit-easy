@@ -60,19 +60,58 @@ final class ConfiguracaoDoLogin
      * As três chaves são conferidas, `client_secret` incluído. Conferir duas e esquecer uma é
      * o mutante mais provável aqui, e há caso de teste com o secret vazio — por provedor — só
      * para ele.
+     *
+     * ## A terceira condição: em quais painéis
+     *
+     * `$painel` nulo significa "não estou perguntando por painel", e é o que a tela de Settings
+     * quer: ela pergunta se o provedor está CONFIGURADO, não se vale num painel. O default nulo é
+     * o que preserva todo chamador anterior a esta wiki.
+     *
+     * O painel não autorizado é o TERCEIRO motivo possível para a mesma resposta, e ele é escolha
+     * de quem configurou — como o interruptor, e diferente da credencial vazia.
      */
-    public static function disponivel(ProvedorSocial $provedor): bool
+    public static function disponivel(ProvedorSocial $provedor, ?string $painel = null): bool
     {
         if (! config("kit.login.{$provedor->value}.habilitado")) {
             return false;
         }
 
+        /*
+         * A inversão de `filled()` para `blank()` é para caber a terceira condição sem uma
+         * expressão de quatro termos. MESMA semântica — há caso de teste por provedor com cada
+         * credencial vazia, e eles são a guarda desta reescrita.
+         */
         /** @var array<string, mixed> $credenciais */
         $credenciais = config('services.'.$provedor->value, []);
 
-        return filled($credenciais['client_id'] ?? null)
-            && filled($credenciais['client_secret'] ?? null)
-            && filled($credenciais['redirect'] ?? null);
+        if (blank($credenciais['client_id'] ?? null)
+            || blank($credenciais['client_secret'] ?? null)
+            || blank($credenciais['redirect'] ?? null)) {
+            return false;
+        }
+
+        return $painel === null || self::painelAutorizado($provedor, $painel);
+    }
+
+    /**
+     * Este provedor vale NESTE painel?
+     *
+     * **Lista vazia = todos os painéis**, não nenhum. É a tradução que faz a feature nascer
+     * inerte: provedor recém-semeado, ou `.env` com a chave apagada, continua valendo onde valia.
+     * Ver ADR-04 de `wikis/specs/feat/login-social-por-painel/login-social-por-painel/`.
+     *
+     * `in_array` ESTRITO: a lista vem de config e de settings, e comparação frouxa casaria
+     * `0 == 'admin'`.
+     *
+     * Pública porque `LoginSocialController` a chama direto — lá a resposta precisa distinguir
+     * "provedor desligado" de "painel não autorizado" para o log da recusa.
+     */
+    public static function painelAutorizado(ProvedorSocial $provedor, string $painel): bool
+    {
+        /** @var array<int, string> $paineis */
+        $paineis = (array) config("kit.login.{$provedor->value}.paineis", []);
+
+        return $paineis === [] || in_array($painel, $paineis, true);
     }
 
     /**
@@ -83,11 +122,11 @@ final class ConfiguracaoDoLogin
      *
      * @return array<int, ProvedorSocial>
      */
-    public static function disponiveis(): array
+    public static function disponiveis(?string $painel = null): array
     {
         return array_values(array_filter(
             ProvedorSocial::cases(),
-            static fn (ProvedorSocial $provedor): bool => self::disponivel($provedor),
+            static fn (ProvedorSocial $provedor): bool => self::disponivel($provedor, $painel),
         ));
     }
 

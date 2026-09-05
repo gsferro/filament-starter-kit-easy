@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Settings;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Spatie\LaravelSettings\Settings;
 
 /**
@@ -156,11 +157,27 @@ final class ConfiguracoesDoKit extends Settings
 
     public ?string $login_google_client_secret;
 
+    /**
+     * Painéis em que este provedor vale. **Vazio = todos.**
+     *
+     * A tradução de "vazio significa todos" é de `App\Support\ConfiguracaoDoLogin`, não desta
+     * classe — aqui é só uma lista. O default vazio faz a feature nascer inerte: quem já usa login
+     * social não perde nada num update.
+     *
+     * FORA de `encrypted()`: não é segredo.
+     *
+     * @var array<int, string>
+     */
+    public array $login_google_paineis;
+
     public bool $login_github_habilitado;
 
     public ?string $login_github_client_id;
 
     public ?string $login_github_client_secret;
+
+    /** @var array<int, string> Painéis em que este provedor vale. Vazio = todos. */
+    public array $login_github_paineis;
 
     public bool $login_linkedin_openid_habilitado;
 
@@ -168,11 +185,17 @@ final class ConfiguracoesDoKit extends Settings
 
     public ?string $login_linkedin_openid_client_secret;
 
+    /** @var array<int, string> Painéis em que este provedor vale. Vazio = todos. */
+    public array $login_linkedin_openid_paineis;
+
     public bool $login_x_habilitado;
 
     public ?string $login_x_client_id;
 
     public ?string $login_x_client_secret;
+
+    /** @var array<int, string> Painéis em que este provedor vale. Vazio = todos. */
+    public array $login_x_paineis;
 
     public ?string $login_rodape;
 
@@ -206,6 +229,18 @@ final class ConfiguracoesDoKit extends Settings
     public static function group(): string
     {
         return 'kit';
+    }
+
+    /**
+     * A tabela de settings existe? É o que decide se o banco está valendo sobre o `.env`.
+     *
+     * Lança em banco inexistente — `Schema::hasTable()` conecta antes de responder. Quem chama
+     * decide o que fazer com isso: o provider silencia (é o primeiro `migrate` de uma instalação
+     * nova), o customizador também, e o `kit:info` imprime "indisponível".
+     */
+    public static function gravadoNoBanco(): bool
+    {
+        return Schema::hasTable(config('settings.repositories.database.table') ?? 'settings');
     }
 
     /**
@@ -337,18 +372,22 @@ final class ConfiguracoesDoKit extends Settings
             'login_google_habilitado'    => 'kit.login.google.habilitado',
             'login_google_client_id'     => 'services.google.client_id',
             'login_google_client_secret' => 'services.google.client_secret',
+            'login_google_paineis'       => 'kit.login.google.paineis',
 
             'login_github_habilitado'    => 'kit.login.github.habilitado',
             'login_github_client_id'     => 'services.github.client_id',
             'login_github_client_secret' => 'services.github.client_secret',
+            'login_github_paineis'       => 'kit.login.github.paineis',
 
             'login_linkedin_openid_habilitado'    => 'kit.login.linkedin-openid.habilitado',
             'login_linkedin_openid_client_id'     => 'services.linkedin-openid.client_id',
             'login_linkedin_openid_client_secret' => 'services.linkedin-openid.client_secret',
+            'login_linkedin_openid_paineis'       => 'kit.login.linkedin-openid.paineis',
 
             'login_x_habilitado'    => 'kit.login.x.habilitado',
             'login_x_client_id'     => 'services.x.client_id',
             'login_x_client_secret' => 'services.x.client_secret',
+            'login_x_paineis'       => 'kit.login.x.paineis',
 
             'login_rodape'            => 'kit.login.rodape',
             'login_vinculo_confirmar' => 'kit.login.vinculo_confirmar',
@@ -407,13 +446,32 @@ final class ConfiguracoesDoKit extends Settings
      */
     public static function devolverConfigAoEnv(): void
     {
+        config(self::valoresDosArquivos());
+    }
+
+    /**
+     * O que os ARQUIVOS de `config/` (e o `.env` que eles leem) dizem para cada chave do mapa,
+     * como se o banco não existisse. Não escreve nada — é a metade de leitura de
+     * `devolverConfigAoEnv()`, separada para o `kit:info` comparar `.env` × banco sem alterar a
+     * config do processo.
+     *
+     * Relê os ARQUIVOS, e não `env()` direto, porque é neles que mora a coerção de cada chave
+     * (`FILTER_VALIDATE_BOOLEAN`, `NumeroDoEnv`, default).
+     *
+     * @return array<string, mixed> chave de `config()` → valor do arquivo
+     */
+    public static function valoresDosArquivos(): array
+    {
         $arquivos = [];
+        $valores  = [];
 
         foreach (self::mapaDeConfiguracao() as $chave) {
             [$arquivo, $caminho] = explode('.', $chave, 2);
             $arquivos[$arquivo] ??= require config_path($arquivo.'.php');
 
-            config([$chave => data_get($arquivos[$arquivo], $caminho)]);
+            $valores[$chave] = data_get($arquivos[$arquivo], $caminho);
         }
+
+        return $valores;
     }
 }

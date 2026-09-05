@@ -132,6 +132,27 @@ O kit não tem `data-testid` (dívida conhecida). O disponível hoje:
 
 Use `assertNoSmoke()` só em tela de autoria própria; nas de plugin de terceiro, `assertNoJavaScriptErrors()`, senão a suíte fica vermelha por `console.log` que ninguém vai corrigir.
 
+## `assertVisible` não prova posição — para layout, meça geometria via `script()`
+
+`assertVisible` do Playwright passa para qualquer elemento com caixa não-vazia que não esteja `display:none`/`visibility:hidden`. **Posição fora da viewport não conta.** O F-45 (busca ⌘K) ficou verde por um mês com o overlay a 1.833 px do topo numa viewport de 1.117 px: o HTML era correto, faltava o CSS inteiro, e o usuário via "nada acontece".
+
+Quando o cenário afirma sobre **onde** ou **como** algo aparece — ancorado, sobreposto, centralizado, com fundo —, o oráculo é número, não presença. `script()` devolve o que o Chromium calculou:
+
+```php
+$medida = json_decode((string) $pagina->script(<<<'JS'
+    (() => {
+        const el = document.querySelector('[x-on\\:open-spotlight\\.window]');
+        const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+        return JSON.stringify({ position: cs.position, zIndex: cs.zIndex, fundo: cs.backgroundColor,
+                                top: r.top, altura: r.height, viewportH: innerHeight });
+    })()
+JS), true, flags: JSON_THROW_ON_ERROR);
+
+expect($medida['position'])->toBe('fixed')->and($medida['top'])->toEqual(0);
+```
+
+Diferente de cor (onde continua sendo screenshot e olhar), geometria discrimina: `top: 1833`, `z-index: auto` e `rgba(0, 0, 0, 0)` reprovam com mensagem. Rode o cenário novo contra o código **sem** a correção antes de aceitá-lo — se não ficar vermelho, ele não mede o defeito. Padrão em `tests/Browser/RoteiroDoKitTest.php` (F-45); origem em `wikis/specs/fix/spotlight-sem-estilo/`.
+
 ## `kit:arte` publica de uma lista declarada — captura nova precisa da linha
 
 `tests/Browser/Screenshots` é caminho fixo do `pest-plugin-browser` e recebe TUDO: as capturas de

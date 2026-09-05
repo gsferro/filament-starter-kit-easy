@@ -1,0 +1,163 @@
+/*
+|--------------------------------------------------------------------------
+| Estilo do overlay da busca ⌘K (wezlo/filament-search-spotlight)
+|--------------------------------------------------------------------------
+| Registrado por `KitServiceProvider::configureCorrecoesDeCss()` via
+| `FilamentAsset::register()` — o MESMO mecanismo e o MESMO motivo de `kit.css` e
+| `cards.css` ao lado: o painel Filament não carrega o Vite da aplicação, então
+| regra escrita em `resources/css/app.css` nunca chega à tela.
+|
+| ## Por que este arquivo existe
+|
+| O pacote renderiza o overlay como componente Livewire no render hook `BODY_END`
+| (`FilamentSearchSpotlightPlugin.php:274`), e a blade dele emite 66 utilitárias
+| Tailwind cruas: `fixed inset-0 z-50 backdrop-blur-sm rounded-xl …`. O README do
+| pacote manda acrescentar
+|
+|     @source '…/vendor/wezlo/filament-search-spotlight/resources/views' (todas as blades)
+|
+| a um tema Tailwind COMPILADO do painel. (Sem o glob aqui de propósito: `*` seguido de
+| `/` fecha este comentário — foi CT-02 quem pegou.) O kit não tem tema compilado, de
+| propósito — nenhum painel chama `viteTheme()`, para que os três funcionem logo
+| depois do `create-project`, sem `npm run build` (ver `.ai/rules/css-filament.md`).
+| E a CSS pré-compilada do Filament 5 tem ZERO dessas 66 classes.
+|
+| O resultado, medido em 2026-09-02 no `/admin`: `position: fixed` sem `inset-0`
+| deixa o overlay no fluxo normal, a 1.833 px do topo numa viewport de 1.117 px,
+| com `z-index: auto` e fundo transparente. Ele abre FORA DA TELA — para quem olha,
+| "nada acontece". Ver `wikis/specs/fix/spotlight-sem-estilo/`.
+|
+| ## Escopo
+|
+| TUDO fica sob `[x-on\:open-spotlight\.window]`, o atributo Alpine da raiz do
+| componente (`spotlight.blade.php:60`). O pacote não dá classe própria estável à
+| raiz, e o kit não controla a blade; esse atributo é o evento que o gatilho do kit
+| (`resources/views/filament/spotlight-trigger.blade.php`) dispara — se o pacote o
+| renomear, o gatilho quebra antes do CSS. O Alpine NÃO remove `x-on:*` do DOM.
+|
+| Como a raiz é o próprio overlay, cada classe é declarada nas duas formas:
+| composta (`[escopo].fixed`, a raiz) e descendente (`[escopo] .fixed`). Definir
+| `.flex` ou `.p-4` fora do escopo mudaria toda blade de vendor que hoje emite essas
+| classes sem estilo.
+|
+| ## Cores
+|
+| Os cinzas saem das variáveis que o Filament emite em runtime (`--gray-*`), para
+| acompanhar a paleta do painel e o tema escuro. `bg-white` fica branco literal: é
+| o que o Tailwind faz e o que o pacote desenha no tema claro. Opacidade (`/70`,
+| `/10`, `/5`) via `color-mix`, como no `cards.css`. As variantes `dark:` casam com
+| a classe `.dark` que o Filament põe no `<html>`.
+|
+| ## O que fica de fora, e por quê
+|
+| `x-cloak`: a CSS do Filament não traz `[x-cloak]`, e com este arquivo a raiz
+| ficaria `fixed` cobrindo a página até o Alpine iniciar. Por isso a primeira regra
+| abaixo esconde a raiz enquanto `x-cloak` existir — o Alpine remove o atributo ao
+| iniciar, e `x-show` passa a mandar.
+|
+| Depois de mexer aqui: `php artisan filament:assets`. O publicado vive em
+| `public/css/kit/kit-spotlight.css` e é versionado, como os outros dois.
+|
+| `tests/Kit/SpotlightCssTest.php` lê a blade do vendor e reprova se ela emitir
+| uma classe que este arquivo não declara — é o que acusa um upgrade do pacote antes
+| de alguém abrir a tela. `tests/Browser/RoteiroDoKitTest.php` (F-45) mede a
+| geometria do overlay aberto.
+*/
+
+/* Sem flash antes do Alpine iniciar --------------------------------------- */
+
+[x-on\:open-spotlight\.window][x-cloak] { display: none !important; }
+
+/* Posicionamento e caixa --------------------------------------------------- */
+
+[x-on\:open-spotlight\.window].fixed,          [x-on\:open-spotlight\.window] .fixed          { position: fixed; }
+[x-on\:open-spotlight\.window].inset-0,        [x-on\:open-spotlight\.window] .inset-0        { inset: 0; }
+[x-on\:open-spotlight\.window].z-50,           [x-on\:open-spotlight\.window] .z-50           { z-index: 50; }
+
+[x-on\:open-spotlight\.window].flex,           [x-on\:open-spotlight\.window] .flex           { display: flex; }
+[x-on\:open-spotlight\.window].flex-1,         [x-on\:open-spotlight\.window] .flex-1         { flex: 1 1 0%; }
+[x-on\:open-spotlight\.window].flex-col,       [x-on\:open-spotlight\.window] .flex-col       { flex-direction: column; }
+[x-on\:open-spotlight\.window].flex-shrink-0,  [x-on\:open-spotlight\.window] .flex-shrink-0  { flex-shrink: 0; }
+[x-on\:open-spotlight\.window].items-start,    [x-on\:open-spotlight\.window] .items-start    { align-items: flex-start; }
+[x-on\:open-spotlight\.window].items-center,   [x-on\:open-spotlight\.window] .items-center   { align-items: center; }
+[x-on\:open-spotlight\.window].justify-center, [x-on\:open-spotlight\.window] .justify-center { justify-content: center; }
+[x-on\:open-spotlight\.window].gap-2,          [x-on\:open-spotlight\.window] .gap-2          { gap: 0.5rem; }
+
+[x-on\:open-spotlight\.window].w-full,         [x-on\:open-spotlight\.window] .w-full         { width: 100%; }
+[x-on\:open-spotlight\.window].w-5,            [x-on\:open-spotlight\.window] .w-5            { width: 1.25rem; }
+[x-on\:open-spotlight\.window].h-5,            [x-on\:open-spotlight\.window] .h-5            { height: 1.25rem; }
+[x-on\:open-spotlight\.window].min-w-0,        [x-on\:open-spotlight\.window] .min-w-0        { min-width: 0; }
+[x-on\:open-spotlight\.window].max-h-\[60vh\], [x-on\:open-spotlight\.window] .max-h-\[60vh\] { max-height: 60vh; }
+
+[x-on\:open-spotlight\.window].overflow-hidden, [x-on\:open-spotlight\.window] .overflow-hidden { overflow: hidden; }
+[x-on\:open-spotlight\.window].overflow-y-auto, [x-on\:open-spotlight\.window] .overflow-y-auto { overflow-y: auto; }
+
+/* Espaçamento ------------------------------------------------------------- */
+
+[x-on\:open-spotlight\.window].p-4,    [x-on\:open-spotlight\.window] .p-4    { padding: 1rem; }
+[x-on\:open-spotlight\.window].pt-24,  [x-on\:open-spotlight\.window] .pt-24  { padding-top: 6rem; }
+[x-on\:open-spotlight\.window].pt-2,   [x-on\:open-spotlight\.window] .pt-2   { padding-top: 0.5rem; }
+[x-on\:open-spotlight\.window].pb-1,   [x-on\:open-spotlight\.window] .pb-1   { padding-bottom: 0.25rem; }
+[x-on\:open-spotlight\.window].px-1\.5, [x-on\:open-spotlight\.window] .px-1\.5 { padding-inline: 0.375rem; }
+[x-on\:open-spotlight\.window].px-3,   [x-on\:open-spotlight\.window] .px-3   { padding-inline: 0.75rem; }
+[x-on\:open-spotlight\.window].px-4,   [x-on\:open-spotlight\.window] .px-4   { padding-inline: 1rem; }
+[x-on\:open-spotlight\.window].py-2,   [x-on\:open-spotlight\.window] .py-2   { padding-block: 0.5rem; }
+[x-on\:open-spotlight\.window].py-3,   [x-on\:open-spotlight\.window] .py-3   { padding-block: 0.75rem; }
+[x-on\:open-spotlight\.window].py-10,  [x-on\:open-spotlight\.window] .py-10  { padding-block: 2.5rem; }
+
+/* Fundo, borda, anel e sombra --------------------------------------------- */
+
+[x-on\:open-spotlight\.window].bg-gray-900\/70, [x-on\:open-spotlight\.window] .bg-gray-900\/70 { background-color: color-mix(in oklab, var(--gray-900) 70%, transparent); }
+[x-on\:open-spotlight\.window].bg-white,        [x-on\:open-spotlight\.window] .bg-white        { background-color: #fff; }
+[x-on\:open-spotlight\.window].bg-gray-100,     [x-on\:open-spotlight\.window] .bg-gray-100     { background-color: var(--gray-100); }
+[x-on\:open-spotlight\.window].bg-gray-200,     [x-on\:open-spotlight\.window] .bg-gray-200     { background-color: var(--gray-200); }
+[x-on\:open-spotlight\.window].bg-transparent,  [x-on\:open-spotlight\.window] .bg-transparent  { background-color: transparent; }
+[x-on\:open-spotlight\.window].backdrop-blur-sm, [x-on\:open-spotlight\.window] .backdrop-blur-sm { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+
+[x-on\:open-spotlight\.window].border,          [x-on\:open-spotlight\.window] .border          { border-width: 1px; border-style: solid; }
+[x-on\:open-spotlight\.window].border-b,        [x-on\:open-spotlight\.window] .border-b        { border-bottom-width: 1px; border-bottom-style: solid; }
+[x-on\:open-spotlight\.window].border-0,        [x-on\:open-spotlight\.window] .border-0        { border-width: 0; }
+[x-on\:open-spotlight\.window].border-gray-200, [x-on\:open-spotlight\.window] .border-gray-200 { border-color: var(--gray-200); }
+[x-on\:open-spotlight\.window].border-gray-300, [x-on\:open-spotlight\.window] .border-gray-300 { border-color: var(--gray-300); }
+
+[x-on\:open-spotlight\.window].rounded,    [x-on\:open-spotlight\.window] .rounded    { border-radius: 0.25rem; }
+[x-on\:open-spotlight\.window].rounded-xl, [x-on\:open-spotlight\.window] .rounded-xl { border-radius: 0.75rem; }
+
+/*
+| A caixa leva `shadow-2xl ring-1 ring-black/10` no mesmo elemento, e os dois são
+| `box-shadow`. O anel entra como variável que a sombra compõe.
+*/
+[x-on\:open-spotlight\.window].ring-1,        [x-on\:open-spotlight\.window] .ring-1        { --kit-spotlight-ring: 0 0 0 1px var(--kit-spotlight-ring-color, transparent); box-shadow: var(--kit-spotlight-ring); }
+[x-on\:open-spotlight\.window].ring-black\/10, [x-on\:open-spotlight\.window] .ring-black\/10 { --kit-spotlight-ring-color: rgb(0 0 0 / 0.1); }
+[x-on\:open-spotlight\.window].shadow-2xl,    [x-on\:open-spotlight\.window] .shadow-2xl    { box-shadow: var(--kit-spotlight-ring, 0 0 #0000), 0 25px 50px -12px rgb(0 0 0 / 0.25); }
+
+[x-on\:open-spotlight\.window] .focus\:ring-0:focus { box-shadow: none; }
+[x-on\:open-spotlight\.window].outline-none, [x-on\:open-spotlight\.window] .outline-none { outline: none; }
+
+/* Texto ------------------------------------------------------------------- */
+
+[x-on\:open-spotlight\.window].text-base, [x-on\:open-spotlight\.window] .text-base { font-size: 1rem; line-height: 1.5rem; }
+[x-on\:open-spotlight\.window].text-sm,   [x-on\:open-spotlight\.window] .text-sm   { font-size: 0.875rem; line-height: 1.25rem; }
+[x-on\:open-spotlight\.window].text-xs,   [x-on\:open-spotlight\.window] .text-xs   { font-size: 0.75rem; line-height: 1rem; }
+
+[x-on\:open-spotlight\.window].font-medium,   [x-on\:open-spotlight\.window] .font-medium   { font-weight: 500; }
+[x-on\:open-spotlight\.window].font-semibold, [x-on\:open-spotlight\.window] .font-semibold { font-weight: 600; }
+[x-on\:open-spotlight\.window].uppercase,     [x-on\:open-spotlight\.window] .uppercase     { text-transform: uppercase; }
+[x-on\:open-spotlight\.window].tracking-wide, [x-on\:open-spotlight\.window] .tracking-wide { letter-spacing: 0.025em; }
+[x-on\:open-spotlight\.window].text-center,   [x-on\:open-spotlight\.window] .text-center   { text-align: center; }
+[x-on\:open-spotlight\.window].truncate,      [x-on\:open-spotlight\.window] .truncate      { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+[x-on\:open-spotlight\.window].text-gray-400, [x-on\:open-spotlight\.window] .text-gray-400 { color: var(--gray-400); }
+[x-on\:open-spotlight\.window].text-gray-500, [x-on\:open-spotlight\.window] .text-gray-500 { color: var(--gray-500); }
+[x-on\:open-spotlight\.window].text-gray-900, [x-on\:open-spotlight\.window] .text-gray-900 { color: var(--gray-900); }
+[x-on\:open-spotlight\.window] .placeholder-gray-400::placeholder { color: var(--gray-400); }
+
+/* Tema escuro — a classe `.dark` que o Filament põe no <html> --------------- */
+
+.dark [x-on\:open-spotlight\.window].dark\:bg-gray-900,    .dark [x-on\:open-spotlight\.window] .dark\:bg-gray-900    { background-color: var(--gray-900); }
+.dark [x-on\:open-spotlight\.window].dark\:bg-white\/10,   .dark [x-on\:open-spotlight\.window] .dark\:bg-white\/10   { background-color: rgb(255 255 255 / 0.1); }
+.dark [x-on\:open-spotlight\.window].dark\:bg-white\/5,    .dark [x-on\:open-spotlight\.window] .dark\:bg-white\/5    { background-color: rgb(255 255 255 / 0.05); }
+.dark [x-on\:open-spotlight\.window].dark\:border-white\/10, .dark [x-on\:open-spotlight\.window] .dark\:border-white\/10 { border-color: rgb(255 255 255 / 0.1); }
+.dark [x-on\:open-spotlight\.window].dark\:ring-white\/10, .dark [x-on\:open-spotlight\.window] .dark\:ring-white\/10 { --kit-spotlight-ring-color: rgb(255 255 255 / 0.1); }
+.dark [x-on\:open-spotlight\.window].dark\:text-gray-400,  .dark [x-on\:open-spotlight\.window] .dark\:text-gray-400  { color: var(--gray-400); }
+.dark [x-on\:open-spotlight\.window].dark\:text-white,     .dark [x-on\:open-spotlight\.window] .dark\:text-white     { color: #fff; }

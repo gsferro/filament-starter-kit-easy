@@ -44,6 +44,19 @@ class TenantResource extends Resource
 {
     use BadgeContagemNavegacao;
 
+    /**
+     * A janela das métricas de insight, em dias.
+     *
+     * Mora aqui e não em cada widget porque os quatro que a usam precisam ser COMPARÁVEIS entre si
+     * — foi o argumento de ADR-05 da wiki `insights-das-organizacoes`, e quatro cópias do número
+     * não o garantem: bastava alguém mudar uma para dois widgets passarem a medir períodos
+     * diferentes lado a lado na mesma tela, sem nada avisar.
+     *
+     * `TenantResource` é o lugar mais barato: os quatro widgets já o importam, porque é dele que
+     * sai a barreira `canAccess()`.
+     */
+    public const DIAS_DE_INSIGHT = 30;
+
     protected static ?string $model = Tenant::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;

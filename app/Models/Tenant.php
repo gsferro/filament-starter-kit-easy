@@ -43,6 +43,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $slug
  * @property bool $ativo
  * @property ?string $cor_primaria
+ * @property ?string $cor_primaria_nome
  * @property ?string $logo
  */
 class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
@@ -81,6 +82,9 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         // nenhum formulário deve escrever. A auditoria de `AuditsFillables` cobre esta.
         'registro_habilitado',
         'cor_primaria',
+        // O nome de uma cor da paleta do Filament — a mesma lista do settings do kit. Coluna
+        // separada da do hex de propósito; ver a migration `add_cor_primaria_nome`.
+        'cor_primaria_nome',
         'logo',
     ];
 

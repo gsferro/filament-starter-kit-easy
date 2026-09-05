@@ -36,7 +36,8 @@ use Filament\Support\Colors\Color;
  * (`ColorManager.php:84-85`) — é o mesmo caminho que a cor de uma organização já
  * usa.
  *
- * Não confundir com a cor de uma ORGANIZAÇÃO (multi-tenancy): aquela é
+ * A cor de uma ORGANIZAÇÃO (multi-tenancy) segue a MESMA regra, por `resolver()`,
+ * sobre as colunas `tenants.cor_primaria` e `tenants.cor_primaria_nome` — mas é
  * registrada mais tarde no ciclo, no `bootUsing()` do AppPanelProvider, e por
  * isso vence esta dentro de /app/{slug}. O `Panel::boot()` registra as cores do
  * painel (`Panel.php:95`) ANTES de rodar os `bootCallbacks`, e o
@@ -56,17 +57,31 @@ final class CorPrimaria
     private const FORMATO_HEX = '/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/';
 
     /**
+     * A cor do KIT: as duas chaves de config, pela regra abaixo.
+     *
      * @return array<string, array<int, string>|string> vazio = mantém o padrão do Filament
      */
     public static function paleta(): array
     {
-        $hex = config('kit.cor_primaria_hex');
+        return self::resolver(config('kit.cor_primaria_hex'), config('kit.cor_primaria'));
+    }
 
+    /**
+     * A REGRA, para qualquer par (hexadecimal livre, nome da paleta): hex válido vence; hex
+     * inválido ou vazio cai para o nome; nome vazio ou inexistente em `Color` devolve vazio.
+     *
+     * Existe como método separado porque a organização (`tenants.cor_primaria` e
+     * `tenants.cor_primaria_nome`, aplicadas no `bootUsing()` do `/app`) precisa exatamente da
+     * mesma decisão — e uma segunda cópia da precedência é a forma de ela divergir no primeiro
+     * ajuste. Ver ADR-01 da wiki `paleta-do-filament-na-organizacao`.
+     *
+     * @return array<string, array<int, string>|string> vazio = não registra nada
+     */
+    public static function resolver(mixed $hex, mixed $nome): array
+    {
         if (is_string($hex) && preg_match(self::FORMATO_HEX, $hex) === 1) {
             return ['primary' => $hex];
         }
-
-        $nome = config('kit.cor_primaria');
 
         if (! is_string($nome) || $nome === '') {
             return [];

@@ -107,6 +107,15 @@ const DIRETORIOS_DE_CODIGO = [
      * `resources/views/auth` antes desta correção.
      */
     'resources/views',
+
+    /*
+     * O CSS que o kit registra por `FilamentAsset`. Entrou com a correção do overlay da busca
+     * ⌘K: `spotlight.css` seria o TERCEIRO arquivo do diretório fora de `CAMINHOS_DO_KIT` —
+     * `kit.css` e `cards.css` já estavam, e nunca chegaram a projeto atualizado. Só o
+     * diretório `filament/`: `resources/css/app.css` é do skeleton (ponto de extensão de
+     * quem instala) e `resources/css/vendor/` é o que os pacotes publicam.
+     */
+    'resources/css/filament',
 ];
 
 /**
@@ -202,6 +211,26 @@ it('não entrega o histórico de planejamento do kit', function (): void {
     expect(estaCoberto('wikis/specs/main/convite-de-usuario/01-plano-acao.md'))->toBeFalse();
 });
 
+/**
+ * CT-04 (`wikis/specs/fix/spotlight-sem-estilo/`) — o CSS do kit é entregue, fonte e
+ * publicado, e o CSS do usuário não.
+ *
+ * As linhas de `cards.css` e `kit.css` são o que separa "listei o arquivo desta correção" de
+ * "listei o diretório": arquivo a arquivo é a granularidade que o comentário de `app/Filament`
+ * já condenou, e foi ela que deixou os dois de fora até aqui. Os controles negativos são o que
+ * impede a saída oposta — `resources/css` inteiro entregaria o `app.css` por cima do do usuário.
+ */
+it('entrega o css do kit — fonte e publicado — e não o css do usuário', function (string $arquivo, bool $coberto): void {
+    expect(estaCoberto($arquivo))->toBe($coberto);
+})->with([
+    'spotlight.css (fonte)'      => ['resources/css/filament/spotlight.css', true],
+    'cards.css (nunca entregue)' => ['resources/css/filament/cards.css', true],
+    'kit.css (nunca entregue)'   => ['resources/css/filament/kit.css', true],
+    'spotlight.css (publicado)'  => ['public/css/kit/kit-spotlight.css', true],
+    'app.css do skeleton'        => ['resources/css/app.css', false],
+    'css publicado por pacote'   => ['resources/css/vendor/filament-onboarding/onboarding.css', false],
+]);
+
 it('só lista caminhos que existem de fato', function (): void {
     $ausentes = array_values(array_filter(
         caminhosDoKit(),
@@ -253,6 +282,24 @@ it('não lista caminho que o pacote distribuído deixa de fora', function (): vo
 /**
  * O piso é uma versão real e comparável — senão o filtro reprova tudo ou nada.
  */
+/**
+ * O aviso da segunda rodada traz o comando pronto, com `--from` e `--no-branch`.
+ *
+ * Medido numa instalação v0.22.3 atualizada para a 0.24.1: a primeira rodada grava a versão
+ * nova em `config/kit.php` (`marcarVersao()`), então a segunda, sem `--from`, lê o destino como
+ * origem e responde "Nada a atualizar" — com o CSS do kit ainda faltando. E o branch temporário
+ * já existe, então sem `--no-branch` a segunda rodada nem começa. Um aviso que diga só "rode de
+ * novo" produz exatamente a atualização pela metade que ele existe para evitar.
+ */
+it('manda a segunda rodada com --from explícito e --no-branch', function (): void {
+    $fonte = (string) file_get_contents(base_path('app/Console/Commands/KitUpdate.php'));
+    $aviso = mb_substr($fonte, (int) mb_strpos($fonte, 'O próprio `kit:update` foi atualizado nesta rodada'));
+    $aviso = mb_substr($aviso, 0, (int) mb_strpos($aviso, 'Próximos passos'));
+
+    expect($aviso)->toContain('php artisan kit:update{$from} --tag={$versao} --no-branch')
+        ->and($fonte)->toContain("' --from='.str_replace('kit-v', '', \$origem)");
+});
+
 it('tem um piso de exibição em formato de versão comparável', function (): void {
     $piso = (new ReflectionClassConstant(KitUpdate::class, 'PISO_DE_EXIBICAO'))->getValue();
 

@@ -2,10 +2,12 @@
 
 namespace App\Filament\Admin\Resources\Tenants\Schemas;
 
+use App\Support\CustomizadorDaInstalacao;
 use App\Support\RegistroAberto;
 use App\Support\TetoDeUpload;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
@@ -98,8 +100,23 @@ class TenantForm
                     ->description('Aplicadas no painel de negócio desta organização. As demais não são afetadas.')
                     ->columns(2)
                     ->components([
+                        /*
+                         * A mesma escolha do settings do kit: uma cor da paleta do Filament, da
+                         * lista fechada `CustomizadorDaInstalacao::CORES` — a lista tem um dono só.
+                         * O `in()` que o Filament aplica a todo Select é a barreira de dado: nome
+                         * fora da lista não grava. A precedência com a cor livre ao lado é a do
+                         * kit (`CorPrimaria::resolver()`): o hexadecimal vence quando preenchido.
+                         */
+                        Select::make('cor_primaria_nome')
+                            ->label('Cor primária (paleta do Filament)')
+                            ->options(array_combine(CustomizadorDaInstalacao::CORES, CustomizadorDaInstalacao::CORES))
+                            ->placeholder('Cor da aplicação (padrão)')
+                            ->native(false)
+                            ->searchable()
+                            ->helperText('A mesma lista do settings do kit. Em branco, a organização usa a cor da aplicação. A cor livre ao lado VENCE quando preenchida.'),
+
                         ColorPicker::make('cor_primaria')
-                            ->label('Cor primária')
+                            ->label('Cor primária livre')
                             ->hex()
                             // `hex()` NÃO valida: ele só troca o formato do picker
                             // (vendor/filament/forms/src/Components/ColorPicker.php:31-36). Sem a
@@ -115,7 +132,7 @@ class TenantForm
                             ->validationMessages([
                                 'regex' => 'Informe uma cor no formato #RRGGBB.',
                             ])
-                            ->helperText('O Filament deriva as 11 tonalidades desta cor e escolhe a legível por contraste. Em branco, usa a cor padrão da aplicação.'),
+                            ->helperText('Cor de marca em hexadecimal. VENCE a paleta escolhida ao lado quando preenchida. O Filament deriva as 11 tonalidades e escolhe a legível por contraste.'),
 
                         FileUpload::make('logo')
                             ->label('Logo')
@@ -152,7 +169,10 @@ class TenantForm
                             ->validationMessages([
                                 'max' => 'O arquivo passa de '.TetoDeUpload::emMb().' MB.',
                             ])
-                            ->helperText('Exibida na tela de bloqueio de sessão do painel de negócio. Em branco, usa a imagem padrão. Até '.TetoDeUpload::emMb().' MB, e SVG não é aceito.'),
+                            ->helperText('Exibida na tela de bloqueio de sessão do painel de negócio. Em branco, usa a imagem padrão. Até '.TetoDeUpload::emMb().' MB, e SVG não é aceito.')
+                            // Linha inteira: com os dois campos de cor na primeira linha, a logo
+                            // espremida ao lado de um vazio ficava feia.
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

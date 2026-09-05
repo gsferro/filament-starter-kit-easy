@@ -146,7 +146,7 @@ Não é vitrine: é o inventário de tudo que já existe, e o que você não vai
 | Widgets | 1 | 9 | 19 | **29** |
 | Rotas `GET` | 21 | 35 | 33 | **89** |
 
-O `/app` é o menor de propósito — ele nasce **vazio**, porque é onde o seu negócio entra. Os outros
+O `/app` é o menor de propósito — ele nasce **vazio**, porque é onde o seu projeto entra. Os outros
 dois já vêm completos.
 
 | Fundação | |
@@ -188,6 +188,7 @@ dois já vêm completos.
 - Impersonate, log de autenticação, auditoria de alterações (owen-it)
 - Panel Switch: troca de painel pelo menu do usuário
 - **Proteção anti-robô opcional** (desligada por default): reCAPTCHA v2/v3, Turnstile ou hCaptcha nas telas de login, recuperação de senha e registro, via `ddr/filament-captcha` ([detalhes](#proteção-anti-robô))
+- **Login social por painel**: cada provedor pode ser liberado separadamente em `/app`, `/admin` e `/infra`; botão, rota e destino respeitam o painel de origem
 
 **Observabilidade e manutenção (painel infra)**
 - Spatie Health com checks de banco, cache, filas, agendador, disco (exceto no Windows), debug mode, ambiente, app otimizado e IA local
@@ -210,7 +211,7 @@ dois já vêm completos.
 **Produtividade**
 - **Busca ⌘K** no lugar do campo nativo da topbar: encontra registros, telas, páginas e ações de criação — tudo recortado por permissão (detalhes abaixo)
 - Badges de contagem animados no menu, centro de notificações com abas, indicador de ambiente
-- **Dashboards já preenchidos** nos painéis admin e infra: 24 widgets (stat cards com contador animado, funis, metas, breakdowns, timelines) sobre os dados que os painéis já têm — nada de tela vazia esperando você
+- **Dashboards já preenchidos** nos painéis admin e infra: 29 widgets (stat cards com contador animado, funis, metas, breakdowns, timelines) sobre os dados que os painéis já têm — incluindo logins de hoje com histórico de sete dias e, com tenancy, insights e acessos das organizações
 - Páginas de erro brandadas (Sentinel) em pt-BR — a de 403 só mostra o diagnóstico de permissão fora de produção
 - UI 100% em pt-BR, inclusive nos plugins que só trazem inglês (traduções em `lang/vendor/`)
 - **Seletor de idioma** nos três painéis e nas telas de login — dirigido por dado, não por flag (detalhes abaixo)
@@ -235,13 +236,15 @@ A versão em inglês fica em **[https://gsferro.github.io/filament-starter-kit-e
 
 - PHP 8.3+ e Composer 2
 - Node 20+ (opcional — sem ele a instalação segue e avisa como fazer o build depois)
-- Docker (opcional — só para Postgres, Redis, IA local e e-mail)
+- Docker (opcional — só para Postgres/MySQL, Redis, IA local e e-mail)
 
 ## Banco de dados
 
 **A instalação pergunta** — SQLite, PostgreSQL ou MySQL. O padrão é **SQLite**, para não depender de nada.
 
 **PostgreSQL é o recomendado**, e por um motivo funcional: ele é o único que traz `pgvector`, de que dependem as funções de IA local que usam busca semântica (embeddings). Com SQLite ou MySQL o resto do kit roda igual — só essas funções ficam indisponíveis.
+
+**Postgres e MySQL têm container no kit** — o MySQL em profile próprio, porque a instalação escolhe um banco só. Os comandos estão na seção [Docker](#docker).
 
 Escolhendo Postgres na instalação, o `.env` já sai com o bloco que o `docker-compose.yml` lê, e falta só subir o container. Se ele não estiver de pé na hora da instalação, o kit avisa, **pula as migrations** e diz o comando para refazer:
 
@@ -264,6 +267,7 @@ Tudo é opt-in por profile. Um container por feature:
 
 ```bash
 docker compose up -d                            # pgsql + redis
+docker compose up -d mysql redis                # MySQL em vez do Postgres
 docker compose --profile ai up -d               # + llama.cpp (chat e embeddings)
 docker compose --profile mail up -d             # + mailpit (1025 / 8025)
 docker compose --profile full up -d             # infra completa
@@ -274,6 +278,7 @@ docker compose --profile realtime up -d reverb pulse
 | Serviço | Porta | Profile |
 |---|---|---|
 | PostgreSQL 17 + pgvector | 5432 | base |
+| MySQL 8 | 3306 | `mysql` |
 | Redis 7 (só cache) | 6379 | base |
 | llama.cpp (chat) | 8080 | `ai` |
 | llama.cpp (embeddings) | 8081 | `ai` |
@@ -282,6 +287,21 @@ docker compose --profile realtime up -d reverb pulse
 | Reverb (WebSocket) | 8090 | `app`, `realtime` |
 
 O Reverb usa 8090 e não o default 8080 para não colidir com o llama.cpp.
+
+Nenhum serviço tem `container_name` fixo: o prefixo vem de `COMPOSE_PROJECT_NAME`, que o `kit:install` grava com o nome do seu projeto. [Detalhes no site](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/instalacao-avancada.html).
+
+### Atualizando a stack na máquina que a hospeda
+
+`./deploy_docker_local.sh` roda **no host dos containers** (não na máquina de desenvolvimento) e faz a sequência inteira: `git pull`, rebuild da imagem, `--profile app up -d`, migrations, `optimize:clear`, health check em `/up` e sonda TCP do Reverb. A saída fica em `storage/logs/deploy_docker_local.log`.
+
+```bash
+./deploy_docker_local.sh
+./deploy_docker_local.sh --recreate   # quando o .env mudou
+```
+
+O rebuild vem **depois** do pull porque a imagem é self-contained (o código é assado nela) — rebuild antes reassa o código velho. E como ele recria `reverb` e `pulse`, que estão no mesmo profile `app`, não há comando de restart à parte: processo long-running não vê código novo sem reiniciar.
+
+`--recreate` acrescenta `--force-recreate`, e é necessário quando o `.env` mudou: o Compose lê o `env_file` na **criação** do container, então um container já existente mantém os valores antigos. Se o `.env.example` mudou no pull, o script avisa.
 
 ## Comandos
 
@@ -304,6 +324,7 @@ php artisan kit:install --no-support  # pula o convite para dar uma estrela ao k
 #   --create-project é uso interno do post-create-project-cmd: apaga o que só serve ao repositório do kit
 php artisan kit:admin             # troca e-mail e senha do administrador (pede confirmação)
 php artisan kit:admin --email=x --senha=y --force   # sem perguntas — evite: a senha fica no histórico do shell
+php artisan kit:info              # mostra como o projeto está customizado e de onde cada valor vem
 php artisan kit:update            # traz melhorias de uma versão nova do kit
 php artisan kit:tenancy           # liga o modo multi-tenant (opt-in)
 ```

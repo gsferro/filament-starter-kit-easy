@@ -167,6 +167,19 @@ class KitUpdate extends Command
         'database/seeders',
         'docker',
         'lang/vendor',
+        /*
+         * O CSS que o kit registra nos painéis por `FilamentAsset` — a fonte em
+         * `resources/css/filament` e o publicado em `public/css/kit`, que é versionado.
+         *
+         * Nenhum dos dois estava aqui: `kit.css` (cores dos plugins) e `cards.css` (hub em
+         * cartões) NUNCA chegaram a projeto atualizado, e a varredura de
+         * `tests/Kit/KitUpdateTest.php` não pegou porque não olhava `resources/css`. Apareceu
+         * ao corrigir o overlay da busca ⌘K (`spotlight.css`), que seria o terceiro arquivo
+         * a ficar de fora. O publicado vai junto para a correção valer sem depender de
+         * `php artisan filament:assets` — que continua no aviso pós-update para os demais.
+         */
+        'public/css/kit',
+        'resources/css/filament',
         'resources/views/auth',
         'resources/views/errors',
         'resources/views/filament',
@@ -320,7 +333,7 @@ class KitUpdate extends Command
             $this->repararPastasDeTeste();
             $this->relatarComposerJson($origem, $destino);
 
-            $this->encerrar($destino, $aplicados);
+            $this->encerrar($destino, $aplicados, $origem);
         } finally {
             if (! $this->option('keep-remote')) {
                 $this->desvincularKit();
@@ -836,7 +849,7 @@ class KitUpdate extends Command
     }
 
     /** @param  list<string>  $aplicados */
-    private function encerrar(string $destino, array $aplicados): void
+    private function encerrar(string $destino, array $aplicados, ?string $origem): void
     {
         $versao = str_replace('kit-v', '', $destino);
 
@@ -863,14 +876,25 @@ class KitUpdate extends Command
          * nova cobre caminho que a antiga não cobria, o arquivo desse caminho
          * NÃO entrou nesta rodada — foi o que aconteceu na 0.9.8, com metade do
          * Filament do kit. Só a rodada seguinte enxerga.
+         *
+         * E a segunda rodada precisa do `--from` EXPLÍCITO: `marcarVersao()` acima já
+         * gravou a versão nova em `config/kit.php`, então sem ele o default lê a versão de
+         * destino como origem e o comando responde "Nada a atualizar" — com os arquivos da
+         * lista nova ainda faltando. Medido numa instalação v0.22.3 → v0.24.1: o CSS do kit
+         * só chegou com `--from=0.22.3`. Por isso o aviso imprime o comando pronto, e
+         * `--no-branch`, porque o branch temporário já foi criado nesta rodada.
          */
         if (in_array('app/Console/Commands/KitUpdate.php', $aplicados, true)) {
+            $from = $origem === null ? '' : ' --from='.str_replace('kit-v', '', $origem);
+
             note(
                 "O próprio `kit:update` foi atualizado nesta rodada.\n"
                 ."O que você viu acima ainda é o comportamento da versão anterior; a nova vale a partir da próxima execução.\n\n"
-                ."RODE O COMANDO DE NOVO, com o mesmo `--from`: a lista de caminhos do kit é\n"
-                ."parte deste arquivo, e arquivo coberto só pela lista NOVA não entrou agora.\n"
-                .'A segunda rodada termina em "Nada a atualizar" quando não houver mais nada.'
+                ."RODE O COMANDO DE NOVO: a lista de caminhos do kit é parte deste arquivo, e arquivo\n"
+                ."coberto só pela lista NOVA não entrou agora. Commite (ou `git stash`) o que entrou e rode\n\n"
+                ."  php artisan kit:update{$from} --tag={$versao} --no-branch\n\n"
+                ."O `--from` é obrigatório aí: a versão em `config/kit.php` já é a nova, e sem ele a segunda\n"
+                .'rodada responde "Nada a atualizar" antes de entregar o que faltou.'
             );
         }
 

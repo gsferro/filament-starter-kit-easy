@@ -15,3 +15,5 @@ Every user account has **three states**, and they override access to any panel:
 
 Users with the `Desativar:User` permission see the deactivate action in the `/admin` user list, and the `Reativar:User` permission sees the matching action. No one can deactivate their own account, and the system refuses to deactivate the last active `master_global`. The protection applies on **password** login, social login and link confirmation.
 
+An unavailable account also **cannot be impersonated**: the *Impersonate* action does not appear on the row of anyone who is inactive, pending approval or deleted. It is the same rule as panel access — if the person cannot sign in on their own, nobody signs in as them.
+

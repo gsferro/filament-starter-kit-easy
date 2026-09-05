@@ -16,6 +16,168 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   some da própria listagem no `/app` — administra-se pelo `/admin`. A definição de "papel de
   instalação" é a mesma de `canAccessPanel()` (`roles.painel` ≠ `app`, no contexto global), não uma
   lista de nomes.
+
+### Corrigido
+- **A busca ⌘K abria fora da tela — em toda instalação, desde sempre.** O overlay do
+  `wezlo/filament-search-spotlight` é uma blade com 66 utilitárias Tailwind, e a CSS que o
+  Filament publica não tem nenhuma: o painel abria com `position: fixed` sem `inset-0`, a
+  1.800 px do topo, sem fundo e sem `z-index` — para quem olha, "nada acontece". O kit não tem
+  tema Tailwind compilado de propósito (os painéis funcionam sem `npm run build`), então a
+  solução é a mesma do hub em cartões: `resources/css/filament/spotlight.css`, escrito à mão e
+  registrado por `FilamentAsset`. **Quem já instalou**: `php artisan kit:update` traz o arquivo
+  e o publicado; nada mais a rodar.
+- **`kit:update` não entregava CSS nenhum do kit.** `resources/css/filament` e `public/css/kit`
+  não estavam em `CAMINHOS_DO_KIT` — `kit.css` (cores dos plugins) e `cards.css` (hub em
+  cartões) nunca chegaram a projeto atualizado. Os dois diretórios entraram, e a varredura de
+  `KitUpdateTest` passa a olhar CSS.
+- **O teste da busca ⌘K (F-45) ficava verde com o defeito.** `assertVisible` não considera
+  posição fora da viewport. Agora ele mede a geometria do overlay aberto (`fixed`, `top 0`,
+  `z-index`, fundo, campo na tela) nos dois temas, e uma guarda nova lê a blade do pacote e
+  reprova se ela emitir classe que o CSS do kit não declara — é o que acusa um upgrade.
+
+## [0.29.0] - 2026-09-04
+
+### Adicionado
+- **Login social configurável por painel.** Cada provedor pode ser liberado separadamente em `/admin`, `/app` e `/infra`; o botão, a barreira HTTP e o destino do fluxo respeitam o painel de origem. Lista vazia preserva o comportamento anterior e significa todos os painéis.
+- **Insights das organizações.** A listagem recebe visão geral, usuários únicos por organização, acessos por painel e timeline de alterações; a visualização de uma organização recebe números próprios e últimos acessos. O log de autenticação passa a registrar o painel em coluna aditiva e nullable.
+- **Stat de logins de hoje.** O widget "Usuários e acesso" ganha a sexta caixa, com histórico dos últimos sete dias dentro do próprio stat.
+
+### Corrigido
+- **Organizações sem acesso elegível permanecem visíveis com zero no breakdown.** O quality gate encontrou um `INNER JOIN` e um teste que codificavam a omissão como comportamento esperado; o teste passou a exigir zero e a consulta usa `LEFT JOIN` com agregado condicional.
+
+### Alterado
+- **O login social termina no painel de origem.** Entradas iniciadas no `/admin` ou `/infra` não são mais redirecionadas obrigatoriamente ao `/app`; a autorização normal de cada painel continua sendo a barreira final.
+## [0.28.0] - 2026-09-04
+
+### Adicionado
+- **Badge de contagem em TODO Resource escrito no kit, nos três painéis — e agora é invariante,
+  não hábito.** `RoleResource` (Papéis) e `ComposerReleasePackageResource` estavam de fora, e não
+  por decisão: nada reprovava a ausência. `tests/Kit/BadgeDeNavegacaoTest.php` passa a varrer
+  `getResources()` dos três painéis, filtrar o namespace `App\Filament` e **reprovar com o FQCN**
+  de quem devolver badge nulo — medido: comentar o trait num resource deixa o caso vermelho
+  nomeando a classe. Resource de pacote de terceiro fica fora do escopo, e há caso de teste
+  guardando essa fronteira: sem ele, alguém "conserta" a varredura incluindo `vendor/`, nove
+  classes intocáveis ficam vermelhas e a reação provável é desligar o enforço inteiro.
+  A contagem continua saindo de `getEloquentQuery()`, nunca de `getModel()::count()` — é isso que
+  impede o badge do `/app` de somar uma organização na outra, com caso de teste na suíte
+  `Tenancy` provando os dois sentidos (3 na Acme, 1 na Globex) e outro provando que registro
+  excluído por soft delete não conta.
+  **A armadilha que isso desenterrou não tem teste e é fatal**: `RoleResource` usa
+  `PluginEssentials\Concerns\Resource\HasNavigation`, que declara os **três** métodos de badge,
+  e dois traits com o mesmo método é erro de **compilação** — a aplicação inteira para de bootar,
+  `php artisan about` incluído. A resolução são três `insteadof`, registrada em
+  `.ai/rules/filament-resources.md` com a mensagem de erro transcrita, porque nenhuma assertion
+  alcança um fatal: o processo morre antes de o Pest carregar.
+
+### Alterado
+- **O zero passa a aparecer no badge, em cinza.** Até aqui `BadgeContagemNavegacao` devolvia `null`
+  quando a contagem era zero, com o argumento — legítimo — de que "um `0` cinza em todo item só
+  polui o menu". O efeito colateral não tinha sido previsto: **badge ausente não distingue "está
+  vazio" de "o badge quebrou"**. Alguém olhou "Convites" sem badge, com a tabela em zero, e
+  concluiu que a feature não existia. A concessão é a cor: zero em `gray`, contagem maior que zero
+  na cor default do Filament. Vale para os **oito** resources que já usavam o trait, nos três
+  painéis — numa instalação recém-criada quase todo item passa a exibir `0`.
+- **"Configurações do kit" passa a "Configurações da aplicação" em tudo que o usuário lê.** Depois
+  de instalado, o kit é a procedência do projeto, não o produto — quem abre `/admin` vê o sistema
+  dele. Mudou o título e o rótulo de menu da tela, o cabeçalho da seção no `kit:info`, o item
+  "Identidade e e-mail" do resumo de customização e as duas páginas de documentação.
+  **Nada de identificador mudou**: as classes, o slug `/admin/configuracoes-do-kit`, a permission
+  `View:ConfiguracoesDoKit` e o grupo `kit` da tabela de settings continuam iguais — renomeá-los
+  quebraria instalação já existente (permission semeada no banco, links salvos) sem entregar nada
+  a quem usa. A aba **Kit** dentro da tela também fica: ali procedência é o assunto correto.
+
+## [0.27.1] - 2026-09-03
+
+### Corrigido
+- **O gate `composer filament:check` voltou a passar, e com ele o `composer test`.** A regra
+  `deprecated-test-methods` do FilaCheck reprovava dois asserts depreciados em
+  `tests/Tenancy/PapeisPorOrganizacaoTest.php` (`assertHasActionErrors()` e
+  `assertHasNoActionErrors()`, agora `assertHasFormErrors()` e `assertHasNoFormErrors()`). O
+  `composer test` roda o gate **antes** da suíte, então ele saía vermelho sem chegar a executar
+  um teste — em qualquer instalação, desde a v0.26.0. Os dois datasets do CT-13 continuam
+  provando os dois sentidos da trava de painel no convite em massa. FilaCheck: 17 de 17.
+
+## [0.27.0] - 2026-09-03
+
+### Adicionado
+- **`deploy_docker_local.sh`: atualizar a stack Docker na máquina que a hospeda.** Roda no host
+  dos containers, não na máquina de desenvolvimento, e faz a sequência inteira numa chamada:
+  `git pull`, rebuild da imagem, `--profile app up -d`, migrations (com retry, porque `up -d`
+  retorna antes do php-fpm aceitar `exec`), `optimize:clear`, health check em `/up` e sonda TCP do
+  Reverb. A saída é duplicada em `storage/logs/deploy_docker_local.log`, sem cores quando não é
+  tty. **O rebuild vem depois do pull** porque a imagem do profile `app` é self-contained — o
+  código é assado nela, e rebuild antes reassa o código velho, subindo verde sem entregar a
+  evolução. E como o rebuild recria `reverb` e `pulse`, que estão no mesmo profile, não há comando
+  de restart à parte. `--recreate` acrescenta `--force-recreate`, necessário quando o `.env` mudou:
+  o Compose lê o `env_file` na **criação** do container, então um container já existente mantém os
+  valores antigos — o script avisa quando o `.env.example` muda no pull. Documentado nos dois
+  READMEs, na seção Docker.
+
+## [0.26.0] - 2026-09-02
+
+### Adicionado
+- **MySQL ganhou container no `docker-compose.yml`.** O `kit:install` oferece três bancos e um
+  deles não tinha container — a própria opção dizia "traga o seu servidor". Agora
+  `docker compose up -d mysql redis` sobe o servidor, com healthcheck e volume próprios. É o
+  **único banco em profile**, porque a instalação escolhe um banco só: sem profile, toda
+  instalação subiria Postgres e MySQL juntos. Nomear os serviços liga o profile do MySQL e
+  restringe a subida ao que foi nomeado, então o Postgres do profile padrão não sobe.
+- **Os containers passaram a levar o nome do seu projeto.** O prefixo vem de
+  `COMPOSE_PROJECT_NAME` no `.env`, que o `kit:install` grava com o nome que você escolheu
+  (`minha-app-pgsql-1` em vez de `starter-kit-pgsql`). Sem a chave vale `starter-kit`, como antes.
+  Projeto já instalado recebe a chave rodando `php artisan kit:install --custom` — o `kit:update`
+  não mexe em `.env`.
+
+### Alterado
+- **Os onze `container_name:` saíram do `docker-compose.yml`.** É o que permite o prefixo acima:
+  `container_name` fixo ignora o `COMPOSE_PROJECT_NAME`. Sem eles o Compose nomeia
+  `<projeto>-<serviço>-<índice>`, então **todo container ganhou o sufixo `-1`**, inclusive em
+  quem não customizou nada. Nenhum teste, doc ou código referenciava container por nome; quem
+  tiver atalho com `docker logs starter-kit-app` precisa ajustar.
+- **O profile `app` deixou de fixar o Postgres.** `DB_CONNECTION` e `DB_HOST` dos cinco serviços
+  (`app`, `queue`, `scheduler`, `reverb`, `pulse`) passam por `DOCKER_DB_SERVICE`, cujo default é
+  `pgsql` — o comportamento anterior, para quem não define nada. Com `DOCKER_DB_SERVICE=mysql` a
+  aplicação containerizada fala com o MySQL. Nessa combinação um Postgres sobe ocioso, e é
+  proposital: a alternativa foi medida e faz `--profile app up -d` subir a aplicação **sem banco
+  nenhum**, sem erro.
+- **A senha do MySQL deixou de nascer vazia no `.env`.** A imagem recusa inicializar sem senha de
+  root, e o instalador passou a gravar `secret` — o usuário continua `root`. Quem traz o próprio
+  servidor ajusta o `.env`, como já faz com um Postgres externo. **Projeto MySQL já instalado**
+  tem `DB_PASSWORD=` vazio: ao subir o container, a imagem recusa e diz o que falta, em vez de
+  subir com uma senha que a aplicação não conhece. Preencha `DB_PASSWORD` antes do primeiro
+  `docker compose up -d mysql redis`.
+- **O MySQL publica a porta do host por `FORWARD_MYSQL_PORT`** (default 3306), e não pelo
+  `FORWARD_DB_PORT` do Postgres: no profile `app` com MySQL os dois bancos sobem juntos, e uma
+  variável só faria os dois disputarem a mesma porta.
+
+## [0.25.0] - 2026-09-02
+
+### Adicionado
+- **A organização escolhe uma cor da paleta do Filament**, como o settings do kit já permitia
+  para a instalação. A tela `/admin/organizacoes` ganha o `Select` com a mesma lista de 16 cores
+  (`CustomizadorDaInstalacao::CORES`), ao lado da cor livre em hexadecimal que já existia — e com
+  a mesma precedência: o hexadecimal vence quando preenchido; hexadecimal inválido cai para a
+  paleta; paleta que não existe cai para a cor da aplicação, sem derrubar o painel. A regra é uma
+  só, `CorPrimaria::resolver()`, para o kit e para a organização. Coluna nova
+  `tenants.cor_primaria_nome` (migration; nasce nula, a feature é inerte até alguém escolher).
+- **`php artisan kit:info`** mostra como o projeto foi customizado, num lugar só: as cinco respostas
+  da instalação, as 44 configurações do kit com os valores **vigentes** (segredos como
+  "definida/vazia", e-mail do administrador mascarado, senha nunca exibida), qual fonte está valendo
+  — o banco de `/admin/configuracoes-do-kit` ou o `.env` — e a lista curta de onde os dois discordam,
+  que só aparece quando discordam. É **somente leitura**: aponta o comando ou a tela que muda cada
+  coisa, e funciona **antes do primeiro `migrate`** (o que depende de banco sai como "indisponível",
+  em vez de derrubar o comando).
+
+### Corrigido
+- **Conta indisponível não pode mais ser personificada.** `User::canBeImpersonated()` só olhava se
+  o alvo era `master_global`, então um administrador entrava, pela lista de usuários do `/admin`,
+  **como** uma conta inativa, pendente de aprovação ou excluída — as três que o kit recusa no
+  login por senha, no login social e no middleware do painel. A pessoa desativada via o aviso
+  "procure o administrador"; o administrador entrava por ela. A régua passou a ser a mesma de
+  `canAccessPanel()`. A conta excluída, em particular, estava protegida apenas pelo default de
+  `filament-impersonate.allow_soft_deleted` — config do pacote que o kit nunca publicou e que um
+  `.env` reabriria.
+
 ## [0.24.0] - 2026-09-02
 
 ### Adicionado

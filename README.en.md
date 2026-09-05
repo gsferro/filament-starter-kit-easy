@@ -188,6 +188,7 @@ The other two already come complete.
 - Impersonate, authentication log, change auditing (owen-it)
 - Panel Switch: switch panels from the user menu
 - **Optional anti-robot protection** (off by default): reCAPTCHA v2/v3, Turnstile or hCaptcha on the login, password reset and register screens, via `ddr/filament-captcha` ([details](#anti-robot-protection))
+- **Social login per panel**: each provider can be enabled separately for `/app`, `/admin` and `/infra`; button, route and destination respect the panel of origin
 
 **Observability and maintenance (infra panel)**
 - Spatie Health with checks for database, cache, queues, scheduler, disk (except on Windows), debug mode, environment, optimized app and local AI
@@ -210,7 +211,7 @@ The other two already come complete.
 **Productivity**
 - **⌘K search** in place of the topbar's native field: finds records, screens, pages and creation actions — all scoped by permission (details below)
 - Animated count badges in the menu, notification center with tabs, environment indicator
-- **Dashboards already filled in** on the admin and infra panels: 24 widgets (stat cards with an animated counter, funnels, goals, breakdowns, timelines) over the data the panels already have — no empty screen waiting for you
+- **Dashboards already filled in** on the admin and infra panels: 29 widgets (stat cards with an animated counter, funnels, goals, breakdowns, timelines) over the data the panels already have — including today's logins with a seven-day history and, with tenancy, organization insights and accesses
 - Branded error pages (Sentinel) in Portuguese (pt-BR) — the 403 one only shows the permission diagnosis outside production
 - 100% pt-BR UI, including plugins that ship English only (translations in `lang/vendor/`)
 - **Language switcher** on all three panels and on the login screens — driven by data, not by a flag (details below)
@@ -235,13 +236,15 @@ The Portuguese version lives at **[https://gsferro.github.io/filament-starter-ki
 
 - PHP 8.3+ and Composer 2
 - Node 20+ (optional — without it the installation still goes through and tells you how to build later)
-- Docker (optional — only for Postgres, Redis, local AI and e-mail)
+- Docker (optional — only for Postgres/MySQL, Redis, local AI and e-mail)
 
 ## Database
 
 **The installation asks** — SQLite, PostgreSQL or MySQL. The default is **SQLite**, so it depends on nothing.
 
 **PostgreSQL is the recommended one**, for a functional reason: it is the only one shipping `pgvector`, which the local AI features that use semantic search (embeddings) depend on. With SQLite or MySQL the rest of the kit runs the same — only those features are unavailable.
+
+**Postgres and MySQL both ship a container** — MySQL in its own profile, because the installation picks a single database. The commands are in the [Docker](#docker) section.
 
 If you pick Postgres during installation, the `.env` already comes with the block `docker-compose.yml` reads. If the container is not up at that moment, the kit warns you, **skips the migrations** and prints the command to finish:
 
@@ -264,6 +267,7 @@ Everything is opt-in per profile. One container per feature:
 
 ```bash
 docker compose up -d                            # pgsql + redis
+docker compose up -d mysql redis                # MySQL instead of Postgres
 docker compose --profile ai up -d               # + llama.cpp (chat and embeddings)
 docker compose --profile mail up -d             # + mailpit (1025 / 8025)
 docker compose --profile full up -d             # the whole infrastructure
@@ -274,6 +278,7 @@ docker compose --profile realtime up -d reverb pulse
 | Service | Port | Profile |
 |---|---|---|
 | PostgreSQL 17 + pgvector | 5432 | base |
+| MySQL 8 | 3306 | `mysql` |
 | Redis 7 (cache only) | 6379 | base |
 | llama.cpp (chat) | 8080 | `ai` |
 | llama.cpp (embeddings) | 8081 | `ai` |
@@ -282,6 +287,21 @@ docker compose --profile realtime up -d reverb pulse
 | Reverb (WebSocket) | 8090 | `app`, `realtime` |
 
 Reverb uses 8090 instead of the default 8080 so it doesn't collide with llama.cpp.
+
+No service declares a fixed `container_name`: the prefix comes from `COMPOSE_PROJECT_NAME`, which `kit:install` writes with your project's name. [Details on the site](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/instalacao-avancada.html).
+
+### Updating the stack on the machine that hosts it
+
+`./deploy_docker_local.sh` runs **on the container host** (not on your development machine) and does the whole sequence: `git pull`, image rebuild, `--profile app up -d`, migrations, `optimize:clear`, a health check on `/up` and a TCP probe of Reverb. Output is appended to `storage/logs/deploy_docker_local.log`.
+
+```bash
+./deploy_docker_local.sh
+./deploy_docker_local.sh --recreate   # when .env changed
+```
+
+The rebuild comes **after** the pull because the image is self-contained (the code is baked into it) — rebuilding first would bake the old code. And since it recreates `reverb` and `pulse`, both in the same `app` profile, there is no separate restart command: a long-running process won't see new code without restarting.
+
+`--recreate` adds `--force-recreate`, needed when `.env` changed: Compose reads `env_file` when the container is **created**, so an existing container keeps the old values. If `.env.example` changed in the pull, the script warns you.
 
 ## Commands
 
@@ -304,6 +324,7 @@ php artisan kit:install --no-support  # skips the invitation to star the kit on 
 #   --create-project is internal to post-create-project-cmd: removes what only serves the kit's own repository
 php artisan kit:admin             # changes the administrator's e-mail and password (asks for confirmation)
 php artisan kit:admin --email=x --senha=y --force   # no prompts — avoid it: the password lands in the shell history
+php artisan kit:info              # shows how the project is customized and where each value comes from
 php artisan kit:update            # brings in improvements from a new kit version
 php artisan kit:tenancy           # turns on multi-tenancy (opt-in)
 ```

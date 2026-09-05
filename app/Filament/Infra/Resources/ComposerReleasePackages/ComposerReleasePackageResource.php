@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Resources\ComposerReleasePackages;
 
+use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Filament\Infra\Resources\ComposerReleasePackages\Pages\ListComposerReleasePackages;
 use MominAlZaraa\FilamentComposerReleaseNotifier\Filament\Resources\ComposerReleasePackageResource as ResourceDoPacote;
 
@@ -37,6 +38,12 @@ use MominAlZaraa\FilamentComposerReleaseNotifier\Filament\Resources\ComposerRele
  */
 class ComposerReleasePackageResource extends ResourceDoPacote
 {
+    /*
+     * Sem `insteadof`: o resource do pacote estende `Filament\Resources\Resource` puro e não
+     * declara nenhum método de badge, então não há colisão. Contraste com `RoleResource`.
+     */
+    use BadgeContagemNavegacao;
+
     protected static bool $shouldSkipAuthorization = false;
 
     public static function getPages(): array

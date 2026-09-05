@@ -319,7 +319,7 @@ it('captura a tela de login com os botões sociais e o rodapé', function (): vo
         ->screenshot(fullPage: false, filename: 'login-social');
 })->group('browser', 'art');
 
-it('captura a aba Login das configurações do kit', function (): void {
+it('captura a aba Login das configurações da aplicação', function (): void {
     // Aquece o /admin, e só ele.
     $this->get('/admin/configuracoes-do-kit');
 
