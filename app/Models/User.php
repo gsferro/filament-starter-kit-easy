@@ -706,10 +706,64 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
         return $this->isMasterGlobal();
     }
 
+    /**
+     * Quem pode ser ALVO de personificação.
+     *
+     * Três recusas, e as duas últimas são a correção: personificar não pode ser o caminho lateral
+     * em volta de `canAccessPanel()`. A conta inativa, a pendente e a excluída são recusadas no
+     * login — por senha, por login social e pelo middleware do painel — e entrar nelas pelo
+     * `/admin` contornava a decisão da wiki `status-e-exclusao-logica-de-usuario` sem nada acusar:
+     * a pessoa desativada via o aviso "procure o administrador", e o administrador entrava por ela.
+     *
+     * A pergunta é a MESMA de `canAccessPanel()`, e de propósito: `motivoDeIndisponibilidade()`
+     * mais `aprovacao_pendente`. Reler `ativo` e `deleted_at` aqui seria a segunda cópia de uma
+     * regra que já tem dona, e a cópia divergiria no primeiro ajuste. A pendência fica fora
+     * daquele método porque ele alimenta a MENSAGEM que a tela de login mostra, e um terceiro
+     * valor mudaria o texto que a pessoa pendente vê hoje — ver ADR-03 da wiki deste fix.
+     *
+     * **Isto não é barreira de tela.** O pacote consulta este método no `visible()` da ação
+     * (`vendor/stechstudio/filament-impersonate/src/Actions/Impersonate.php:37`) E outra vez
+     * antes de executar (`:112` → `:167`), então esconder e recusar vêm da mesma linha.
+     *
+     * E ele fecha uma guarda que era do vendor: a conta excluída só estava protegida pelo default
+     * de `config('filament-impersonate.allow_soft_deleted')` (`:157-159`), config que o kit nunca
+     * publicou — um `FILAMENT_IMPERSONATE_ALLOW_SOFT_DELETED=true` no `.env` a reabriria.
+     */
     public function canBeImpersonated(): bool
     {
         // Master global nunca é alvo de impersonação.
-        return ! $this->isMasterGlobal();
+        if ($this->isMasterGlobal()) {
+            return false;
+        }
+
+        $razao = $this->motivoDeIndisponibilidade()
+            ?? ($this->aprovacao_pendente ? 'aprovacao_pendente' : null);
+
+        if ($razao === null) {
+            return true;
+        }
+
+        /*
+         * Log só na recusa, e só com operador autenticado — este método é chamado pelo
+         * `visible()` de CADA linha da tabela de usuários, então registrar o caminho feliz
+         * produziria uma linha por usuário listado, por render. É o ruído que a nota do canal
+         * `autenticacao` mediu em 1,1 MB/dia. Sem `Auth::id()` (comando, fila, teste de model
+         * direto) não há ato humano a auditar. Ver ADR-05.
+         */
+        if (Auth::hasUser()) {
+            Log::channel('autenticacao')->warning(
+                "[User@canBeImpersonated] Personificação recusada | alvo: {$this->id} - razao: {$razao}",
+                [
+                    'alvo_id'     => $this->id,
+                    'executor_id' => Auth::id(),
+                    'motivo'      => 'personificacao_recusada',
+                    'razao'       => $razao,
+                    'email'       => Str::mask((string) $this->email, '*', 3),
+                ],
+            );
+        }
+
+        return false;
     }
 
     /*

@@ -139,7 +139,7 @@ return [
         ],
 
         /*
-         * Configurações do kit gravadas em /admin (spatie/laravel-settings).
+         * Configurações da aplicação gravadas em /admin (spatie/laravel-settings).
          *
          * Mesma forma dos três acima, pelo mesmo motivo — ver a nota longa logo antes do
          * canal 'ai'. O `handler` não é opcional: sem ele, com LOG_KIT_DRIVER=monolog, a

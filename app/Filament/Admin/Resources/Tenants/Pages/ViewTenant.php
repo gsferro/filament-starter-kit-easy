@@ -3,6 +3,8 @@
 namespace App\Filament\Admin\Resources\Tenants\Pages;
 
 use App\Filament\Admin\Resources\Tenants\TenantResource;
+use App\Filament\Admin\Resources\Tenants\Widgets\OrganizacaoStats;
+use App\Filament\Admin\Resources\Tenants\Widgets\OrganizacaoUltimosAcessos;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -31,5 +33,28 @@ class ViewTenant extends ViewRecord
         return [
             EditAction::make(),
         ];
+    }
+
+    /**
+     * Os dois widgets do registro aberto.
+     *
+     * Os dois declaram `public ?Tenant $record = null;` e o Filament os preenche sozinho:
+     * `InteractsWithRecord::getWidgetData()` devolve `['record' => $this->getRecord()]`, e
+     * `Page::getWidgetsSchemaComponents()` (`Page.php:431`) espalha isso nos parâmetros de mount
+     * do Livewire. Não há parâmetro a passar à mão.
+     *
+     * @return array<int, class-string>
+     */
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            OrganizacaoStats::class,
+            OrganizacaoUltimosAcessos::class,
+        ];
+    }
+
+    public function getHeaderWidgetsColumns(): int|array
+    {
+        return 2;
     }
 }

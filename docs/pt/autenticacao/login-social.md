@@ -186,13 +186,13 @@ aberto nela — a mesma porta do formulário, com as mesmas recusas (organizaç�
 fechada). A partir do **link de um convite** (`?token=`), entrar pelo provedor **cria a conta pelo
 convite**: ela nasce com a organização e o papel do convite, e o convite é consumido — desde que o
 e-mail verificado do provedor seja o e-mail convidado; se for outro, recusa e o convite fica intacto.
-Sem senha em nenhum dos casos: o provedor provou o e-mail. Conta nova **sem** `?org=` na
+Sem senha em nenhum dos casos: o provedor provou o e-mail. Conta nova **sem** ?org= na
 multi-organização continua recusada.
 
-Conta **existente** entra normalmente em qualquer modo, mas **não consome convite** nesse caminho: o
-`?token=` viaja numa rota GET pública sem CSRF, e com SSO silencioso do provedor o aceite aconteceria
-sem clique da pessoa. Quem já tem conta aceita o convite na tela autenticada **Convites recebidos**,
-que exige o dono e pede confirmação. Auditoria e decisão em
+Conta **existente** entra normalmente em qualquer modo, mas **não consome convite** nesse caminho: o `?token=` viaja numa rota GET pública sem
+CSRF, e com SSO silencioso do provedor o aceite aconteceria sem clique da pessoa. Quem já tem conta
+aceita o convite na tela autenticada **Convites recebidos**, que exige o dono e pede confirmação.
+Auditoria e decisão em
 `wikis/specs/feat/travas-de-escalada-de-papeis/` (F-03 e F-04).
 Decisões e casos: `wikis/specs/feat/cadastro-social-por-convite-e-organizacao/`.
 
@@ -200,9 +200,10 @@ Decisões e casos: `wikis/specs/feat/vinculo-de-provedor-social/`.
 
 ## O botão só aparece com TUDO preenchido — e por provedor
 
-São **duas** condições, em conjunção, e elas falham por motivos diferentes:
+São **três** condições, em conjunção, e elas falham por motivos diferentes:
 
 - o interruptor daquele provedor ligado — desligado é escolha de quem instalou;
+- o painel atual (`app`, `admin` ou `infra`) autorizado para aquele provedor — lista vazia significa todos, preservando instalações anteriores;
 - o `client_id`, o `client_secret` e o `redirect` **todos preenchidos** — credencial vazia é
   descuido de quem configurou.
 
@@ -219,6 +220,25 @@ tipado como `App\Support\ProvedorSocial` — a lista branca é o próprio enum, 
 
 Cada interruptor também **falha fechado**: `false`, `0`, `off`, `no`, vazio e qualquer valor
 irreconhecível o mantêm desligado. Só `true` e `1` ligam.
+
+## Cada provedor escolhe seus painéis
+
+Na tela `/admin/configuracoes-do-kit` → **Login**, o campo **Painéis permitidos** de cada provedor
+controla separadamente onde seu botão e suas rotas ficam disponíveis: `/app`, `/admin` e `/infra`.
+Lista vazia significa todos os painéis, preservando o comportamento das instalações anteriores.
+
+A barreira vale no servidor, não apenas na interface. Alterar a URL manualmente para iniciar ou
+concluir o OAuth por um painel não autorizado retorna **404**. O painel de origem é mantido na
+sessão durante a ida ao provedor, inclusive quando o `/app` usa multi-tenancy.
+
+## O destino respeita o painel de origem
+
+Quem inicia o login social em `/admin/login` volta ao `/admin`; quem inicia no `/infra/login` volta
+ao `/infra`; e quem inicia no `/app/login` volta ao `/app` — ou à organização correta quando a
+multi-tenancy está ligada. Uma recusa também retorna à tela de login de origem.
+
+A autenticação não ignora autorização: depois do callback, `User::canAccessPanel()` continua sendo
+a barreira final. Ter um provedor habilitado em um painel não concede acesso a esse painel.
 
 ## O rodapé da tela de login
 
@@ -279,14 +299,7 @@ se perde e ela volta a entrar por senha.
 
 ## Limitação conhecida: o destino é sempre o painel `/app`
 
-Os botões aparecem nas telas de login dos **três** painéis, porque o render hook é único. Mas quem
-entra por login social cai sempre no `/app`, mesmo tendo clicado em `/admin/login` ou
-`/infra/login` — e uma recusa também volta para o login do `/app`.
-
-Não é furo de segurança: a pessoa é autenticada e o papel dela continua governando o que ela
-alcança. É atrito de navegação, e está registrado como limitação aceita porque guardar o painel de
-origem entre a ida e a volta do OAuth é feature nova, não conserto desta. Quem administra e quem
-opera infra normalmente entra por senha; o login social existe para o caminho do `/app`.
+**Resolvida na v0.29.0:** o destino agora respeita o painel de origem, como descrito acima.
 
 ## Facebook e Discord: por que não estão aqui
 
@@ -388,4 +401,3 @@ ramo.
 > `wikis/specs/feat/mais-provedores-sociais/mais-provedores-sociais/`. A decisão anterior — a de
 > **não** abstrair, com um provedor só — está em
 > `wikis/specs/feat/login-social-google/login-social-google/`, ADR-10.
-

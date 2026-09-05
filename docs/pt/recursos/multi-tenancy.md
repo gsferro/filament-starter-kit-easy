@@ -42,6 +42,19 @@ Os cinco papéis do kit, e o que cada um significa com o modo ligado:
 
 O papel só existe com a tenancy ligada, e a concessão é em `/admin` → organizações → **Usuários vinculados** → *Papéis nesta organização*. **Não** pelo cadastro do usuário: ali a atribuição vai para o contexto global e a pessoa entra no `/app` sem enxergar nada. A receita completa, com o sintoma, está em [`wikis/receitas.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/receitas.md#promover-alguém-a-admin-de-uma-organização).
 
+## Insights das organizações no `/admin`
+
+A listagem de organizações traz quatro widgets para operação global:
+
+- visão geral com totais e organizações ativas;
+- usuários únicos por organização na janela recente — organizações sem acesso elegível continuam visíveis com zero;
+- acessos bem-sucedidos separados por painel;
+- timeline das alterações recentes.
+
+Ao abrir uma organização, o cabeçalho mostra seus usuários vinculados, usuários ativos e taxa de
+ativação, além dos acessos recentes dos membros. Os números respeitam soft deletes e contam apenas
+logins bem-sucedidos; o log de autenticação registra o painel de origem para sustentar o breakdown.
+
 ## Código em inglês, interface no seu idioma
 
 O código segue o vocabulário da API do Filament — model `Tenant`, tabela `tenants`, `getTenants()`, `canAccessTenant()` — para que a documentação oficial se leia sem tradução mental. **O que o usuário vê é configurável**, e nasce como "Organização":
@@ -76,4 +89,3 @@ class Projeto extends Model
 Ela dá a relação `tenant()`, um **escopo global** e o preenchimento automático de `tenant_id`. O escopo importa porque o Filament só recorta o que passa por um Resource — job, comando, listener e API ficariam de fora, e é aí que dado de um cliente vaza para outro.
 
 > ⚠️ **`kit:tenancy` recria o banco.** Ele liga `permission.teams`, e a migration do spatie só cria as colunas de tenant se a flag estiver ativa **antes** do migrate. Por isso exige árvore git limpa, confirmação explícita e roda `migrate:fresh --seed`. **A hora de rodar é o dia 1 do projeto.** O caminho detalhado — inclusive papéis globais × por tenant e `scopedUnique()` — está em [`wikis/arquitetura.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/arquitetura.md#multi-tenancy-opt-in).
-

@@ -6,6 +6,7 @@ namespace App\Filament\Infra\Widgets;
 
 use App\Filament\Concerns\ExigePermissaoDoWidget;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
@@ -90,13 +91,31 @@ class AuditoriaRecente extends TimelineWidget
     }
 
     /**
+     * A consulta da timeline, isolada para que uma subclasse possa recortá-la.
+     *
+     * É um SEAM, e existe por um consumidor concreto:
+     * `App\Filament\Admin\Resources\Tenants\Widgets\AtualizacoesDasOrganizacoes` é este widget
+     * mais um `where('auditable_type', …)` — `getEvents()`, o agrupamento por dia, os rótulos
+     * "Hoje"/"Ontem", a resolução dos nomes dos autores numa consulta só, os ícones e as cores
+     * por evento são todos idênticos. Sem o seam, aquela classe copiaria ~120 linhas para
+     * acrescentar uma cláusula.
+     *
+     * Extrair não mudou comportamento nenhum aqui: o corpo é o mesmo que estava inline.
+     *
+     * @return Builder<Audit>
+     */
+    protected function consulta(): Builder
+    {
+        return Audit::query()->latest('created_at');
+    }
+
+    /**
      * @return array<int, TimelineEvent>
      */
     protected function getEvents(): array
     {
-        $registros = Audit::query()
-            ->latest('created_at')
-            ->limit(8)
+        $registros = $this->consulta()
+            ->limit($this->getLimit() ?? 8)
             ->get();
 
         $autores = $this->nomesDosAutores($registros);

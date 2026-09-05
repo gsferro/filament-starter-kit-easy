@@ -7,7 +7,7 @@ nav_order: 6
 
 # Configurações do kit em `/admin`
 
-O que a instalação perguntou — e mais um punhado de coisas que antes só se mudava editando arquivo — vive em **`/admin/configuracoes-do-kit`**, em seis abas. Nada de `.env`, nada de deploy.
+O que a instalação perguntou — e mais um punhado de coisas que antes só se mudava editando arquivo — vive em **`/admin/configuracoes-do-kit`** — no menu do painel a tela se chama **Configurações da aplicação**, porque depois de instalado o kit é a procedência, não o produto —, em seis abas. Nada de `.env`, nada de deploy.
 
 | Aba | O que você troca |
 |---|---|
@@ -15,7 +15,7 @@ O que a instalação perguntou — e mais um punhado de coisas que antes só se 
 | **E-mail** | transporte (`log`, `array`, `smtp`), servidor, porta, criptografia, usuário, senha e remetente |
 | **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário e colunas arrastáveis — os defaults de **toda** tabela dos três painéis |
 | **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../autenticacao/registro-aberto.md)) |
-| **Login** | os quatro provedores de login social, cada um com interruptor, *Client ID* e *Client Secret* (cifrado), e o rodapé da tela de login ([detalhes](../autenticacao/login-social.md)) |
+| **Login** | os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../autenticacao/login-social.md)) |
 | **Kit** | hub de navegação em cartões, e como o seu negócio chama cada organização (singular e plural) |
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
@@ -132,7 +132,7 @@ Dois detalhes que valem para quem for mexer nisso:
 
 ## Isto não é o settings de uma organização
 
-A identidade visual de um tenant (cor e logo por organização) continua sendo CRUD comum em **`/admin/organizacoes`**, nas colunas `cor_primaria` e `logo` do model `Tenant`, e ela vence a do kit dentro de `/app/{slug}`. Nada foi movido para cá.
+A identidade visual de um tenant (cor e logo por organização) continua sendo CRUD comum em **`/admin/organizacoes`**, nas colunas `cor_primaria` (hexadecimal livre), `cor_primaria_nome` (a mesma paleta do Filament deste settings — o hexadecimal vence quando preenchido) e `logo` do model `Tenant`, e ela vence a do kit dentro de `/app/{slug}`. Nada foi movido para cá.
 
 ## O que ficou fora, e por quê
 
@@ -158,4 +158,3 @@ Três lugares, sempre, e o teste `tests/Kit/ConfiguracoesDoKitTest.php` reprova 
 3. o par `add()` / `deleteIfExists()` numa migration nova em `database/settings/`.
 
 E o campo na aba certa de `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`.
-

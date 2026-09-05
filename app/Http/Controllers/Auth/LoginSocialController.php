@@ -10,10 +10,12 @@ use App\Models\VinculoSocial;
 use App\Notifications\ConfirmarVinculoSocial;
 use App\Notifications\PrimeiroAcessoSocial;
 use App\Support\ConfiguracaoDoLogin;
+use App\Support\Paineis;
 use App\Support\ProvedorSocial;
 use App\Support\RegistroAberto;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
+use Filament\Panel;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -79,16 +81,39 @@ final class LoginSocialController extends Controller
          */
         abort_unless(ConfiguracaoDoLogin::disponivel($provedor), 404);
 
+        /*
+         * A BARREIRA por painel, separada do `abort_unless` acima de propósito: aqui há um ato
+         * deliberado a auditar — alguém chegou à rota de um provedor que não vale no painel de
+         * onde veio. O 404 é o mesmo, o log é diferente.
+         */
+        $painel = $this->painelDaRequisicao();
+
+        if ($painel !== null && ! ConfiguracaoDoLogin::painelAutorizado($provedor, $painel)) {
+            Log::channel('autenticacao')->warning(
+                "[LoginSocialController@redirecionar] Provedor nao autorizado neste painel | provedor: {$provedor->value} - painel: {$painel} - ip: ".request()->ip(),
+                [
+                    'ip'       => request()->ip(),
+                    'provedor' => $provedor->value,
+                    'painel'   => $painel,
+                    'motivo'   => 'painel_nao_autorizado',
+                ],
+            );
+
+            abort(404);
+        }
+
         // `org`/`token` da tela de registro viajam pela sessão até a volta (ADR-02 da wiki
         // cadastro-social-por-convite-e-organizacao). O token NÃO vai para o log.
-        $contexto = $this->contextoDeCadastro();
+        // O `painel` viaja no mesmo mecanismo: é ele que decide o DESTINO na volta.
+        $contexto = $this->contextoDeCadastro() + array_filter(['painel' => $painel]);
         session()->put('login_social.contexto', $contexto);
 
         Log::channel('autenticacao')->info(
-            "[LoginSocialController@redirecionar] Redirecionando para o provedor | provedor: {$provedor->value} - ip: ".request()->ip(),
+            "[LoginSocialController@redirecionar] Redirecionando para o provedor | provedor: {$provedor->value} - painel: ".($painel ?? 'default').' - ip: '.request()->ip(),
             [
                 'ip'       => request()->ip(),
                 'provedor' => $provedor->value,
+                'painel'   => $painel,
                 'contexto' => ['org' => $contexto['org'] ?? null, 'com_token' => isset($contexto['token'])],
             ],
         );
@@ -431,7 +456,7 @@ final class LoginSocialController extends Controller
             ->persistent()
             ->send();
 
-        return redirect()->to(Filament::getPanel('app')->getLoginUrl());
+        return redirect()->to($this->urlDeLoginDoPainel());
     }
 
     /**
@@ -463,7 +488,7 @@ final class LoginSocialController extends Controller
             ->persistent()
             ->send();
 
-        return redirect()->to(Filament::getPanel('app')->getLoginUrl());
+        return redirect()->to($this->urlDeLoginDoPainel());
     }
 
     /**
@@ -587,7 +612,7 @@ final class LoginSocialController extends Controller
         event(new Failed(Filament::getAuthGuard(), $user, []));
 
         return redirect()->to(
-            ContaIndisponivelController::redirecionar($user, Filament::getPanel('app')->getLoginUrl()),
+            ContaIndisponivelController::redirecionar($user, $this->urlDeLoginDoPainel()),
         );
     }
 
@@ -642,9 +667,61 @@ final class LoginSocialController extends Controller
         );
     }
 
+    /**
+     * O painel pedido na query, se ele existe de fato.
+     *
+     * Devolve `null` para query AUSENTE e para painel INEXISTENTE — o chamador trata os dois do
+     * mesmo jeito, porque a diferença não muda a resposta: sem painel válido, o fluxo segue no
+     * painel default, que é o comportamento anterior a esta feature.
+     *
+     * `Paineis::opcoes()` é a lista branca, e ela sai de `Filament::getPanels()` — painel novo no
+     * kit entra aqui sozinho, e string forjada na query não passa.
+     */
+    private function painelDaRequisicao(): ?string
+    {
+        $painel = request()->query('painel');
+
+        return is_string($painel) && array_key_exists($painel, Paineis::opcoes())
+            ? $painel
+            : null;
+    }
+
+    /** O painel que viajou na sessão desde a ida, quando houve um. */
+    private function painelDoContexto(): ?string
+    {
+        $contexto = session('login_social.contexto', []);
+
+        return is_array($contexto) && is_string($contexto['painel'] ?? null)
+            ? $contexto['painel']
+            : null;
+    }
+
+    /**
+     * O painel de destino: o da sessão quando válido, o default do Filament quando não.
+     *
+     * **Revalida, e não confia na sessão.** O valor já foi validado na ida e a sessão é do próprio
+     * usuário, mas revalidar custa um `array_key_exists` e fecha a porta de uma sessão manipulada —
+     * `Filament::getPanel()` com id inexistente LANÇA, e isso viraria 500 no meio do callback de
+     * OAuth.
+     */
+    private function painelDeDestino(): Panel
+    {
+        $id = $this->painelDoContexto();
+
+        return $id !== null && array_key_exists($id, Paineis::opcoes())
+            ? Filament::getPanel($id)
+            : Filament::getDefaultPanel();
+    }
+
     private function urlDoPainel(): string
     {
-        return Filament::getPanel('app')->getUrl() ?? url('/');
+        return $this->painelDeDestino()->getUrl() ?? url('/');
+    }
+
+    /** O login do painel de onde a pessoa tentou entrar — não o do `app` fixo. */
+    private function urlDeLoginDoPainel(): string
+    {
+        return $this->painelDeDestino()->getLoginUrl();
     }
 
     /**
@@ -663,7 +740,7 @@ final class LoginSocialController extends Controller
      */
     private function urlDoPerfil(User $user): string
     {
-        $painel = Filament::getPanel('app');
+        $painel = $this->painelDeDestino();
         $breezy = $painel->getPlugin('filament-breezy');
         $slug   = $breezy instanceof BreezyCore ? $breezy->slug() : 'meu-perfil';
         $rota   = "filament.{$painel->getId()}.pages.{$slug}";
@@ -691,6 +768,6 @@ final class LoginSocialController extends Controller
             ->danger()
             ->send();
 
-        return redirect()->to(Filament::getPanel('app')->getLoginUrl());
+        return redirect()->to($this->urlDeLoginDoPainel());
     }
 }

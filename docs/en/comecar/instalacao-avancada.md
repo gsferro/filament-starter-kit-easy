@@ -28,6 +28,88 @@ docker compose up -d              # pgsql (with pgvector) + redis
 php artisan migrate --seed
 ```
 
+### MySQL ships a container too
+
+If you pick MySQL, the `.env` comes pointing at `127.0.0.1:3306` with user `root`, and the kit
+brings the server up for you. The command differs from the Postgres one, and the reason matters:
+
+```bash
+docker compose up -d mysql redis
+php artisan migrate --seed
+```
+
+MySQL is the **only database in a profile of its own**, because the installation picks a single
+database — leaving it profile-less would make every install bring Postgres and MySQL up together.
+Naming the services on the command line enables the MySQL profile **and** restricts the run to what
+was named, so the default-profile Postgres stays down. That is why `redis` has to be written there:
+naming services turns off the rest of the default set along with it.
+
+Two details of the image, which explain what the installer writes:
+
+- **The user is `root`.** The official image refuses to create `root` through `MYSQL_USER` — keeping
+  that user, the only way is the root password.
+- **The password is not empty.** `mysql:8.0` refuses to initialize without a root password, and the
+  installer writes `secret`, the same one the container reads. Bringing your own server, adjust
+  `DB_PASSWORD` in the `.env` — just as you already would with an external Postgres.
+
+- **The host port is `FORWARD_MYSQL_PORT`**, defaulting to 3306, not Postgres' `FORWARD_DB_PORT`.
+  They are separate keys because under the `app` profile both databases come up together, and a
+  single variable would make them fight over the same port. If a MySQL is already running on your
+  machine, Docker refuses with `Bind for 0.0.0.0:3306 failed: port is already allocated` — change
+  the key:
+
+  ```bash
+  FORWARD_MYSQL_PORT=3399 docker compose up -d mysql redis
+  ```
+
+  and point `DB_PORT` in the `.env` at the same port.
+
+The local AI caveat does not change: semantic search and embeddings depend on `pgvector`, which only
+Postgres has.
+
+## Container names
+
+No service in `docker-compose.yml` declares a `container_name`. The prefix of every container and
+every network comes from `COMPOSE_PROJECT_NAME`, in the `.env`, and `kit:install` writes your chosen
+name there — lowercased and hyphenated, which is the format Compose accepts:
+
+```bash
+$ docker compose ps
+minha-app-pgsql-1
+minha-app-redis-1
+```
+
+Without that key, `starter-kit` applies — the floor written in `docker-compose.yml` itself.
+
+Two practical points:
+
+- **A project born from an earlier version of the kit** does not get the key through `kit:update`,
+  which never touches `.env`. Run `php artisan kit:install --custom`, which redoes name and colour,
+  or add the line by hand.
+- **Changing the name after containers are already up creates new volumes.** The old data stays in
+  the volume under the previous name; migrate it first, or change the name before the first `up`.
+
+## The containerized application and the database
+
+The `app` profile brings the whole application up in a container. It talks to Postgres by default;
+to point it at MySQL, set in the `.env`:
+
+```
+DOCKER_DB_SERVICE=mysql
+```
+
+and enable both profiles together, otherwise the database container never starts and the host does
+not exist:
+
+```bash
+docker compose --profile app --profile mysql up -d --build
+```
+
+One honest caveat: in that combination an idle Postgres container comes up, because the `app`
+profile services depend on it to order the boot. The alternative was measured and is worse — without
+that dependency, `docker compose --profile app up -d` brings the application up with **no database at
+all**, and without an error.
+
 ## Commands
 
 ```bash
@@ -49,6 +131,7 @@ php artisan kit:install --no-support  # skips the invitation to star the kit on 
 #   --create-project is internal to post-create-project-cmd: removes what only serves the kit's own repository
 php artisan kit:admin             # changes the administrator's e-mail and password (asks for confirmation)
 php artisan kit:admin --email=x --senha=y --force   # no prompts — avoid it: the password lands in the shell history
+php artisan kit:info              # shows how the project is customized and where each value comes from
 php artisan kit:update            # brings in improvements from a new kit version
 php artisan kit:tenancy           # turns on multi-tenancy (opt-in)
 ```
@@ -59,6 +142,8 @@ the README images and the SFDIPOT sweep — are in
 ## Customize your project
 
 **The installer already asks the first five** — the list below is for changing them later, or for whoever skipped the questions.
+
+`php artisan kit:info` shows the current value of every item below, and whether it comes from the database or the `.env`.
 
 | # | What | Where | Asked during installation? |
 |---|---|---|---|

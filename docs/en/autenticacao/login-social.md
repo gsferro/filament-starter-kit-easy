@@ -202,11 +202,31 @@ Decisions and cases: `wikis/specs/feat/cadastro-social-por-convite-e-organizacao
 
 Decisions and cases: `wikis/specs/feat/vinculo-de-provedor-social/`.
 
+## Each provider chooses its panels
+
+On `/admin/configuracoes-do-kit` → **Login**, each provider's **Allowed panels** field separately
+controls where its button and routes are available: `/app`, `/admin` and `/infra`. An empty list
+means all panels, preserving the behavior of existing installations.
+
+The barrier is enforced by the server, not only by the interface. Manually changing the URL to
+start or finish OAuth through a disallowed panel returns **404**. The panel of origin is kept in the
+session during the round trip to the provider, including when `/app` uses multi-tenancy.
+
+## The destination respects the panel of origin
+
+Someone who starts social login at `/admin/login` returns to `/admin`; from `/infra/login` they
+return to `/infra`; and from `/app/login` they return to `/app` — or to the correct organization
+when multi-tenancy is enabled. A refusal also returns to the login screen of origin.
+
+Authentication does not bypass authorization: after the callback, `User::canAccessPanel()` remains
+the final barrier. Enabling a provider on a panel does not grant access to that panel.
+
 ## The button only shows with EVERYTHING filled in — per provider
 
-There are **two** conditions, in conjunction, and they fail for different reasons:
+There are **three** conditions, in conjunction, and they fail for different reasons:
 
 - that provider's switch on — off is a choice made by whoever installed;
+- the current panel (`app`, `admin` or `infra`) allowed for that provider — an empty list means all panels, preserving existing installations;
 - its `client_id`, `client_secret` and `redirect` **all filled in** — an empty credential is an
   oversight by whoever configured.
 
@@ -285,14 +305,7 @@ account, the link is lost and they go back to signing in with a password.
 
 ## Known limitation: the destination is always the `/app` panel
 
-The buttons appear on the login screens of **all three** panels, because the render hook is a
-single one. But anyone arriving through social login lands on `/app`, even having clicked on
-`/admin/login` or `/infra/login` — and a refusal also returns to the `/app` login.
-
-This is not a security hole: the person is authenticated and their role still governs what they can
-reach. It is navigation friction, recorded as an accepted limitation because carrying the origin
-panel across the OAuth round trip is a new feature, not a fix to this one. Administrators and infra
-operators normally sign in with a password; social login exists for the `/app` path.
+**Resolved in v0.29.0:** the destination now respects the panel of origin, as described above.
 
 ## Facebook and Discord: why they are not here
 
@@ -394,4 +407,3 @@ branch.
 > `wikis/specs/feat/mais-provedores-sociais/mais-provedores-sociais/`. The previous decision — **not**
 > to abstract, with a single provider — is in
 > `wikis/specs/feat/login-social-google/login-social-google/`, ADR-10.
-
