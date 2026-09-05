@@ -188,6 +188,7 @@ The other two already come complete.
 - Impersonate, authentication log, change auditing (owen-it)
 - Panel Switch: switch panels from the user menu
 - **Optional anti-robot protection** (off by default): reCAPTCHA v2/v3, Turnstile or hCaptcha on the login, password reset and register screens, via `ddr/filament-captcha` ([details](#anti-robot-protection))
+- **Social login per panel**: each provider can be enabled separately for `/app`, `/admin` and `/infra`; button, route and destination respect the panel of origin
 
 **Observability and maintenance (infra panel)**
 - Spatie Health with checks for database, cache, queues, scheduler, disk (except on Windows), debug mode, environment, optimized app and local AI
@@ -210,7 +211,7 @@ The other two already come complete.
 **Productivity**
 - **⌘K search** in place of the topbar's native field: finds records, screens, pages and creation actions — all scoped by permission (details below)
 - Animated count badges in the menu, notification center with tabs, environment indicator
-- **Dashboards already filled in** on the admin and infra panels: 24 widgets (stat cards with an animated counter, funnels, goals, breakdowns, timelines) over the data the panels already have — no empty screen waiting for you
+- **Dashboards already filled in** on the admin and infra panels: 29 widgets (stat cards with an animated counter, funnels, goals, breakdowns, timelines) over the data the panels already have — including today's logins with a seven-day history and, with tenancy, organization insights and accesses
 - Branded error pages (Sentinel) in Portuguese (pt-BR) — the 403 one only shows the permission diagnosis outside production
 - 100% pt-BR UI, including plugins that ship English only (translations in `lang/vendor/`)
 - **Language switcher** on all three panels and on the login screens — driven by data, not by a flag (details below)

@@ -15,7 +15,7 @@ What the installer asked — plus a handful of things you previously could only 
 | **E-mail** | transport (`log`, `array`, `smtp`), host, port, encryption, username, password and sender |
 | **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns — the defaults for **every** table in all three panels |
 | **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](../autenticacao/registro-aberto.md)) |
-| **Login** | the four social login providers, each with its switch, *Client ID* and *Client Secret* (encrypted), and the login screen footer ([details](../autenticacao/login-social.md)) |
+| **Login** | the four social login providers, each with its switch, allowed panels, *Client ID* and encrypted *Client Secret*, plus the login screen footer ([details](../autenticacao/login-social.md)) |
 | **Kit** | card navigation hub, and what your business calls each organisation (singular and plural) |
 
 Everything is stored by `spatie/laravel-settings` in the `settings` table, with the screen coming from `filament/spatie-laravel-settings-plugin` — both were already installed in the kit and unused until this version.
@@ -160,4 +160,3 @@ Three places, always, and `tests/Kit/ConfiguracoesDoKitTest.php` fails if you fo
 3. the `add()` / `deleteIfExists()` pair in a new migration under `database/settings/`.
 
 Plus the field on the right tab of `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`.
-

@@ -146,7 +146,7 @@ Não é vitrine: é o inventário de tudo que já existe, e o que você não vai
 | Widgets | 1 | 9 | 19 | **29** |
 | Rotas `GET` | 21 | 35 | 33 | **89** |
 
-O `/app` é o menor de propósito — ele nasce **vazio**, porque é onde o seu negócio entra. Os outros
+O `/app` é o menor de propósito — ele nasce **vazio**, porque é onde o seu projeto entra. Os outros
 dois já vêm completos.
 
 | Fundação | |
@@ -188,6 +188,7 @@ dois já vêm completos.
 - Impersonate, log de autenticação, auditoria de alterações (owen-it)
 - Panel Switch: troca de painel pelo menu do usuário
 - **Proteção anti-robô opcional** (desligada por default): reCAPTCHA v2/v3, Turnstile ou hCaptcha nas telas de login, recuperação de senha e registro, via `ddr/filament-captcha` ([detalhes](#proteção-anti-robô))
+- **Login social por painel**: cada provedor pode ser liberado separadamente em `/app`, `/admin` e `/infra`; botão, rota e destino respeitam o painel de origem
 
 **Observabilidade e manutenção (painel infra)**
 - Spatie Health com checks de banco, cache, filas, agendador, disco (exceto no Windows), debug mode, ambiente, app otimizado e IA local
@@ -210,7 +211,7 @@ dois já vêm completos.
 **Produtividade**
 - **Busca ⌘K** no lugar do campo nativo da topbar: encontra registros, telas, páginas e ações de criação — tudo recortado por permissão (detalhes abaixo)
 - Badges de contagem animados no menu, centro de notificações com abas, indicador de ambiente
-- **Dashboards já preenchidos** nos painéis admin e infra: 24 widgets (stat cards com contador animado, funis, metas, breakdowns, timelines) sobre os dados que os painéis já têm — nada de tela vazia esperando você
+- **Dashboards já preenchidos** nos painéis admin e infra: 29 widgets (stat cards com contador animado, funis, metas, breakdowns, timelines) sobre os dados que os painéis já têm — incluindo logins de hoje com histórico de sete dias e, com tenancy, insights e acessos das organizações
 - Páginas de erro brandadas (Sentinel) em pt-BR — a de 403 só mostra o diagnóstico de permissão fora de produção
 - UI 100% em pt-BR, inclusive nos plugins que só trazem inglês (traduções em `lang/vendor/`)
 - **Seletor de idioma** nos três painéis e nas telas de login — dirigido por dado, não por flag (detalhes abaixo)
