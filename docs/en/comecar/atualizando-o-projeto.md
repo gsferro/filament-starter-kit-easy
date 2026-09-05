@@ -40,7 +40,7 @@ What it does, in order:
 Two details that show up in practice:
 
 - **`config/kit.php` always shows up as "modified"** (it carries the version mark). Applying it brings the kit's new keys, but **replaces the whole file** — if you changed seeder credentials or added your own keys there, read the diff and copy only what matters instead of applying.
-- **`kit:update` updates itself.** Since PHP already loaded the class into memory, the new behavior (and the new messages) only take effect on the following run. The command tells you when that happens.
+- **`kit:update` updates itself.** Since PHP already loaded the class into memory, the new behavior (and the new messages) only take effect on the following run. The command tells you when that happens. The **path list** that filters the diff is read from the **target version** (since v0.30.1), so a directory only the new version covers arrives in the same run — the "run the command again" notice only appears when that read failed. **An installation older than v0.30.1** still runs the old list on its first pass: run the second one with the command the notice prints. The known case is v0.22.x → v0.23.0 or later, which left `View [svg.arte-do-login] not found` between the two runs; the second run fixes it, or copy `resources/views/svg/arte-do-login.blade.php` from the kit repository.
 
 At the end nothing is committed: you review with `git diff`, run `composer test:kit` (the foundation) and commit. Went wrong? `git checkout -- .` undoes it, or delete the branch and go back to yours.
 

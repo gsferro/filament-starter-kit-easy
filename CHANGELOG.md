@@ -3,6 +3,21 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Corrigido
+- **`kit:update` lê a lista de caminhos da versão destino — diretório novo chega na primeira
+  rodada.** A lista que filtra o diff era só a constante da classe em execução, que é a da
+  instalação (a versão antiga). Caminho que entrou na lista depois dela ficava para a segunda
+  rodada — três vezes (0.9.1-0.9.3, 0.9.8, 0.23.0), e na terceira o projeto ficou **sem boot**
+  entre as rodadas: `IdentidadeDoKit.php` chegou e a view que ele renderiza
+  (`resources/views/svg`) não. Agora o comando lê `KitUpdate.php` da tag destino (`git show`),
+  extrai a constante e filtra pela **união** das duas listas; o aviso "rode o comando de novo"
+  só aparece quando essa leitura falhou. **Alcance**: vale para instalação que já tem esta
+  versão; quem atualiza **de** uma versão anterior ainda roda a classe antiga na primeira rodada
+  e passa pela segunda uma vez, com o comando que o aviso imprime.
+  Wiki: `wikis/specs/fix/kit-update-lista-do-destino/`.
+
 ## [0.30.0] - 2026-09-05
 
 ### Segurança

@@ -40,7 +40,7 @@ O que ele faz, em ordem:
 Dois detalhes que aparecem na prática:
 
 - **`config/kit.php` sempre consta como "modificado"** (ele carrega a marca de versão). Aplicá-lo traz as chaves novas do kit, mas **substitui o arquivo inteiro** — se você mudou credenciais do seeder ou adicionou chaves próprias ali, veja o diff e copie só o que interessa em vez de aplicar.
-- **O próprio `kit:update` se atualiza.** Como o PHP já carregou a classe em memória, o comportamento novo (e as mensagens novas) só valem a partir da execução seguinte. O comando avisa quando isso acontece.
+- **O próprio `kit:update` se atualiza.** Como o PHP já carregou a classe em memória, o comportamento novo (e as mensagens novas) só valem a partir da execução seguinte. O comando avisa quando isso acontece. A **lista de caminhos** que filtra o diff é lida da **versão destino** (a partir da v0.30.1), então diretório que só a versão nova cobre chega na mesma rodada — o aviso "rode o comando de novo" só aparece quando essa leitura falhou. **Instalação anterior à v0.30.1** ainda roda a lista antiga na primeira rodada: rode a segunda com o comando que o aviso imprime. O caso conhecido é v0.22.x → v0.23.0 ou posterior, que deixava `View [svg.arte-do-login] not found` entre as duas rodadas; a segunda rodada resolve, ou copie `resources/views/svg/arte-do-login.blade.php` do repositório do kit.
 
 Ao final nada está commitado: você revisa com `git diff`, roda `composer test:kit` (a fundação) e commita. Deu errado? `git checkout -- .` desfaz, ou apague o branch e volte para o seu.
 

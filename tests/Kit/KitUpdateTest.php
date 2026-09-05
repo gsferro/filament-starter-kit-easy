@@ -345,3 +345,114 @@ it('mantém a lista completa disponível para resolver a origem do projeto', fun
 
     expect($tagsDoKit)->not->toContain('PISO_DE_EXIBICAO');
 })->group('kit');
+
+/*
+ * A lista que filtra o diff é a UNIÃO da constante desta versão com a que a versão
+ * DESTINO declara — lida do fonte dela por `git show`. A classe que roda é a da
+ * instalação (a antiga); sem isso, diretório que só a lista nova cobre ficava para a
+ * segunda rodada, e na 0.23.0 o projeto ficou sem boot entre as duas.
+ *
+ * Ver `wikis/specs/fix/kit-update-lista-do-destino/`. Os casos abaixo são o `04` daquela
+ * wiki: CT-01…CT-03 (parser), CT-05…CT-07 (união), CT-08 (o fonte), CT-09 (docs).
+ */
+
+/** Fonte na forma da v0.22.3: comentário citando caminho, caminho comentado, e uma segunda constante depois. */
+const FONTE_ANTIGA_DO_KIT_UPDATE = <<<'PHP'
+    private const CAMINHOS_DO_KIT = [
+        /*
+         * Comentário citando 'app/Comentado' — não é declaração.
+         */
+        'app/Filament',
+        // 'app/Desligado',
+        'app/Support',
+        'resources/views/errors',
+        'config/kit.php',
+    ];
+
+    private const CAMINHOS_SO_RELATORIO = [
+        'composer.json',
+    ];
+PHP;
+
+it('extrai do fonte desta versão exatamente a lista da constante — a forma textual é contrato', function (): void {
+    $fonte = (string) file_get_contents(base_path('app/Console/Commands/KitUpdate.php'));
+
+    expect(KitUpdate::caminhosDeclaradosEm($fonte))->toBe(caminhosDoKit());
+})->group('kit');
+
+it('extrai de um fonte antigo só o que está declarado — comentário não é declaração, e para na primeira constante', function (): void {
+    expect(KitUpdate::caminhosDeclaradosEm(FONTE_ANTIGA_DO_KIT_UPDATE))
+        ->toBe(['app/Filament', 'app/Support', 'resources/views/errors', 'config/kit.php']);
+})->group('kit');
+
+it('devolve lista vazia quando o fonte não tem a constante em forma reconhecível', function (string $fonte): void {
+    expect(KitUpdate::caminhosDeclaradosEm($fonte))->toBe([]);
+})->with([
+    'arquivo de outra classe' => ["<?php\n\nclass Outra\n{\n    private const OUTRA = [\n        'a/b',\n    ];\n}\n"],
+    'forma irreconhecível'    => ["    private const CAMINHOS_DO_KIT = array_merge(self::A, self::B);\n"],
+    'git show falhou'         => [''],
+])->group('kit');
+
+it('caminho que só o destino cobre entra na lista unida, junto com toda a constante', function (): void {
+    expect(KitUpdate::caminhosUnidos(['resources/views/kit-prova']))
+        ->toBe([...caminhosDoKit(), 'resources/views/kit-prova']);
+})->group('kit');
+
+it('caminho que só esta versão cobre não se perde quando o destino declara menos', function (): void {
+    expect(KitUpdate::caminhosUnidos(['app/Filament']))->toBe(caminhosDoKit())
+        ->and(KitUpdate::caminhosUnidos(['app/Filament']))->toContain('public/css/kit');
+})->group('kit');
+
+it('lista do destino vazia devolve exatamente a constante — sem repetição e reindexada', function (): void {
+    $unida = KitUpdate::caminhosUnidos([]);
+
+    expect($unida)->toBe(caminhosDoKit())
+        ->and(array_keys($unida))->toBe(range(0, count($unida) - 1))
+        ->and(array_unique($unida))->toHaveCount(count($unida));
+})->group('kit');
+
+/**
+ * O que a suíte não consegue provar com git de verdade, prova no fonte: o diff usa a lista
+ * unida (e não a constante direta), a lista do destino vem de `git show` do próprio
+ * `KitUpdate.php`, e o parágrafo "rode de novo" é condicional — o de "comportamento
+ * anterior" não. Ausência com comentários filtrados (`.ai/rules/testes.md`).
+ */
+it('filtra o diff pela lista unida lida do destino, e só manda rodar de novo quando ela faltou', function (): void {
+    $fonte         = (string) file_get_contents(base_path('app/Console/Commands/KitUpdate.php'));
+    $semComentario = (string) preg_replace('~^\s*//.*$~m', '', (string) preg_replace('~/\*.*?\*/~s', '', $fonte));
+
+    $trecho = static function (string $texto, string $de, string $ate): string {
+        $inicio = (int) mb_strpos($texto, $de);
+
+        return mb_substr($texto, $inicio, (int) mb_strpos($texto, $ate, $inicio) - $inicio);
+    };
+
+    $arquivosAlterados = $trecho($semComentario, 'private function arquivosAlterados', 'private function caminhosDoKit');
+    $caminhosDoKit     = $trecho($semComentario, 'private function caminhosDoKit', 'public static function caminhosUnidos');
+    $encerrar          = $trecho($fonte, 'private function encerrar', 'private function marcarVersao');
+
+    expect($arquivosAlterados)->toContain('$this->caminhosDoKit($destino)')
+        ->not->toContain('self::CAMINHOS_DO_KIT')
+        ->and($caminhosDoKit)->toContain('\'show\', "{$destino}:app/Console/Commands/KitUpdate.php"')
+        ->and((int) mb_strpos($encerrar, 'comportamento da versão anterior'))
+        ->toBeLessThan((int) mb_strpos($encerrar, 'if (! $this->listaDoDestinoLida)'))
+        ->and((int) mb_strpos($encerrar, 'if (! $this->listaDoDestinoLida)'))
+        ->toBeLessThan((int) mb_strpos($encerrar, 'RODE O COMANDO DE NOVO'));
+})->group('kit');
+
+it('documenta a lista do destino e o contorno para instalações anteriores, nos dois idiomas e no CHANGELOG', function (string $pagina, string $destino): void {
+    $texto = (string) file_get_contents(base_path($pagina));
+
+    expect($texto)->toContain($destino)
+        ->toContain('svg.arte-do-login')
+        ->toContain('0.22');
+
+    $changelog  = (string) file_get_contents(base_path('CHANGELOG.md'));
+    $naoLancado = mb_substr($changelog, (int) mb_strpos($changelog, '## [Unreleased]'));
+    $naoLancado = mb_substr($naoLancado, 0, (int) mb_strpos($naoLancado, "\n## [", 1));
+
+    expect($naoLancado)->toContain('kit:update')->toContain('destino');
+})->with([
+    'pt' => ['docs/pt/comecar/atualizando-o-projeto.md', 'versão destino'],
+    'en' => ['docs/en/comecar/atualizando-o-projeto.md', 'target version'],
+])->group('kit');
