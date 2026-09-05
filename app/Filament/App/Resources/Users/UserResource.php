@@ -49,6 +49,8 @@ class UserResource extends Resource
     /** Motivo da negação, e ela existe para não haver 403 mudo em tela. */
     private const MOTIVO_DA_NEGACAO = 'Excluir usuário é ato global e não se faz a partir de uma organização.';
 
+    private const MOTIVO_DA_NEGACAO_DE_INSTALACAO = 'Quem governa a instalação não se edita a partir de uma organização.';
+
     protected static ?string $model = User::class;
 
     /**
@@ -181,8 +183,53 @@ class UserResource extends Resource
         // parent::getEloquentQuery() e não User::query(): o pai é quem lida com o global
         // scope de tenancy do Filament. Aqui é no-op, mas User::query() quebraria em
         // silêncio se alguém religasse $isScopedToTenant um dia.
+        //
+        // `queNaoGovernamAInstalacao()`: quem administra o sistema (`master_global`, `admin`,
+        // `infra`) NÃO EXISTE para o `/app` — nem na lista, nem na busca, nem no badge, nem
+        // por URL. Sem isto o `admin_app` abria a ficha do `master_global` (que o
+        // `TenantsSeeder` vincula a toda organização) e trocava a senha dele. A query é a
+        // primeira camada; a segunda é `getEditAuthorizationResponse()`, abaixo.
+        //
+        // Subquery e não `->queNaoGovernamAInstalacao()` direto: o pai devolve `Builder<Model>`,
+        // e o scope só existe em `User` — encadeado, o PHPStan não o enxerga, e o template
+        // do Builder não é covariante para trocar o tipo no retorno.
         return parent::getEloquentQuery()
-            ->whereHas('tenants', fn (Builder $query): Builder => $query->whereKey($tenant->getKey()));
+            ->whereHas('tenants', fn (Builder $query): Builder => $query->whereKey($tenant->getKey()))
+            ->whereIn((new User)->getQualifiedKeyName(), User::queNaoGovernamAInstalacao()->select('id'));
+    }
+
+    /**
+     * A segunda camada da mesma fronteira: editar quem governa a instalação é negado pelo
+     * ALVO, independente de como o registro chegou aqui.
+     *
+     * A query acima já esconde; mas query é falha de um só ponto — uma action nova que receba
+     * um `User` de fora da tabela, um `mount()` com registro já carregado, passam por fora
+     * dela. Sobrescrever a RESPOSTA e não `canEdit()`: é a resposta que `EditRecord::mount()`
+     * (`Resources/Pages/EditRecord.php:100`, via `canEdit()`) e a `EditAction` da tabela
+     * (`Resources/Pages/Page.php:314`) lêem — a mesma lição de `getDeleteAuthorizationResponse()`.
+     *
+     * Só chega aqui com alvo de instalação quem contornou a primeira camada; por isso o log é
+     * `warning`, e não `info`. Por painel, e não na `UserPolicy`: no `/admin` editar o
+     * `master_global` é legítimo.
+     */
+    public static function getEditAuthorizationResponse(Model $record): Response
+    {
+        if ($record instanceof User && $record->governaAInstalacao()) {
+            Log::channel('autenticacao')->warning(
+                "[UserResource@getEditAuthorizationResponse] Edição de quem governa a instalação recusada no painel app | alvo: {$record->id}",
+                [
+                    'alvo_id'     => $record->id,
+                    'executor_id' => Auth::id(),
+                    'tenant_id'   => Filament::getTenant()?->getKey(),
+                    'painel'      => 'app',
+                    'motivo'      => 'alvo_governa_a_instalacao',
+                ],
+            );
+
+            return Response::deny(self::MOTIVO_DA_NEGACAO_DE_INSTALACAO);
+        }
+
+        return parent::getEditAuthorizationResponse($record);
     }
 
     /**

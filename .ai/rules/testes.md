@@ -69,3 +69,16 @@ O padrão já custou três vezes nesta base:
 | `resources/views/filament/perfil-indicator.blade.php` | pior variante: o comentário `{{-- --}}` do Blade **não protege** diretiva — a menção a um `@include` virou código no arquivo compilado e derrubou três telas com `ParseError` |
 
 O último caso é o que mostra a regra maior: em Blade, a menção nem chega ao teste — ela vira código. Ver `.ai/rules/views.md`.
+
+## noPainelBootado() não serve para o painel /app — boote com um GET real antes do primeiro Livewire::test()
+`noPainelBootado('app')` chama `Filament::bootCurrentPanel()` sem request, e o `BreezyCore::boot()` lê `route()->parameter()` — `route()` é null e o boot morre com "Call to a member function parameter() on null". Vale para o `/app` (Breezy registrado); `/admin` e `/infra` não tropeçam.
+
+Tela do `/app` que depende de macro registrado no boot de plugin (`ImageColumn::simpleLightbox()` na listagem de usuários, por exemplo) precisa do painel bootado ANTES do `Livewire::test()`. O jeito que funciona é um request real pelo kernel, que boota pelo middleware e com rota:
+
+```php
+$this->actingAs($ana)->get('/app/acme/users')->assertOk();
+noPainelDa($acme);
+Livewire::test(ListUsers::class)->loadTable()->…
+```
+
+O sintoma é de ORDEM: `AdminDaOrganizacaoTest` nunca caiu nisso porque os casos HTTP anteriores bootam o painel antes dos casos Livewire — o primeiro caso Livewire do `/app` num arquivo NOVO é quem estoura. Medido em `tests/Tenancy/FronteiraDoAdminAppTest.php` (CT-01/CT-08).

@@ -558,6 +558,72 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
     }
 
     /**
+     * Governa a instalação: tem, no contexto GLOBAL, papel de painel sem tenancy —
+     * `master_global` (painel nulo), `admin`, `infra` ou qualquer papel futuro cujo
+     * `roles.painel` não seja `app`.
+     *
+     * É a mesma pergunta que `canAccessPanel()` responde para `/admin` e `/infra`, e de
+     * propósito não é uma lista de nomes: um quarto painel de instalação entra na regra
+     * sem ninguém lembrar. O contexto importa — `admin` atribuído DENTRO de uma
+     * organização não governa nada (`canAccessPanel()` já o ignora) e por isso fica de fora.
+     *
+     * Quem consome: o `UserResource` do `/app`, para que o `admin_app` não veja nem edite a
+     * conta de quem administra o sistema. Ver `wikis/specs/feat/admin-app-nao-alcanca-master-global/`.
+     */
+    public function governaAInstalacao(): bool
+    {
+        return $this->restringirAosPapeisDeInstalacao($this->papeisEmQualquerContexto())->exists();
+    }
+
+    /**
+     * Os usuários que NÃO governam a instalação — o recorte que o `/app` aplica.
+     *
+     * Scope local, nunca global: no `/admin` e no guard de autenticação quem governa a
+     * instalação precisa continuar existindo. `whereDoesntHave` sobre a MESMA relação e as
+     * MESMAS condições de `governaAInstalacao()`, pelo mesmo helper — duas formas, uma
+     * definição.
+     *
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeQueNaoGovernamAInstalacao(Builder $query): Builder
+    {
+        return $query->whereDoesntHave(
+            'papeisEmQualquerContexto',
+            fn (Builder $papeis): Builder => $this->restringirAosPapeisDeInstalacao($papeis),
+        );
+    }
+
+    /**
+     * As condições de "papel de instalação", aplicáveis à relação e ao builder de um
+     * `whereDoesntHave` — que é por isso que a coluna de team vem QUALIFICADA e não por
+     * `wherePivot()`: dentro do closure chega o `Eloquent\Builder` do papel, onde
+     * `wherePivot()` não existe (a lição de `temPapelOnde()`).
+     *
+     * `whereNull('painel')` é obrigatório e não redundante: em SQL, `NULL != 'app'` não é
+     * verdadeiro, e o `master_global` — o papel que motivou a regra — tem `painel` nulo.
+     *
+     * @template TQuery of Builder|MorphToMany
+     *
+     * @param  TQuery  $papeis
+     * @return TQuery
+     */
+    private function restringirAosPapeisDeInstalacao(Builder|MorphToMany $papeis): Builder|MorphToMany
+    {
+        $papeis
+            ->where($papeis->qualifyColumn('guard_name'), $this->getDefaultGuardName())
+            ->where(fn (Builder $painel): Builder => $painel
+                ->whereNull($papeis->qualifyColumn('painel'))
+                ->orWhere($papeis->qualifyColumn('painel'), '!=', 'app'));
+
+        if (($contexto = $this->contextoGlobal()) !== null) {
+            $papeis->where(Config::modelHasRolesTable().'.'.$this->colunaDeTeam(), $contexto);
+        }
+
+        return $papeis;
+    }
+
+    /**
      * A pergunta única: existe papel deste usuário com `$coluna = $valor`?
      *
      * **Nada de `->when()` aqui.** `when()` é encaminhado da relação para o

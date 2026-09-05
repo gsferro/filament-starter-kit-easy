@@ -5,6 +5,18 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Segurança
+- **O `admin_app` não alcança mais quem governa a instalação.** No painel `/app`, quem tem papel de
+  instalação — `master_global`, `admin`, `infra`, ou qualquer papel de painel sem tenancy — deixa de
+  existir para o administrador da organização: não aparece na lista de usuários, na busca ⌘K nem
+  no badge, e a URL direta responde 404. Antes, como o `TenantsSeeder` vincula o `master_global` a
+  toda organização, o `admin_app` abria a ficha dele e podia trocar a senha. A edição é negada
+  também por resposta de autorização, independente da query, com `warning` no canal
+  `autenticacao`. Consequência: quem é `admin_app` numa organização **e** `admin` da instalação
+  some da própria listagem no `/app` — administra-se pelo `/admin`. A definição de "papel de
+  instalação" é a mesma de `canAccessPanel()` (`roles.painel` ≠ `app`, no contexto global), não uma
+  lista de nomes.
+
 ### Corrigido
 - **A busca ⌘K abria fora da tela — em toda instalação, desde sempre.** O overlay do
   `wezlo/filament-search-spotlight` é uma blade com 66 utilitárias Tailwind, e a CSS que o
