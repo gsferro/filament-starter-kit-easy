@@ -51,7 +51,7 @@ php artisan kit:update --only-new   # só o que ainda não existe no projeto
 php artisan kit:update --all        # tudo, inclusive o que sobrescreve
 ```
 
-A distinção é o ponto: **arquivo novo não tem o que sobrescrever**, então aplicá-los em massa é seguro — é o caso dos widgets, do Spotlight e das concerns. Já um **modificado** substitui o conteúdo atual, e se você editou aquele arquivo a sua versão se perde (recuperável com `git checkout -- <arquivo>`, já que nada é commitado). Por isso `--only-new` é o lote recomendado para a primeira passada, deixando os modificados para revisar com calma.
+A distinção é o ponto: **arquivo novo não tem o que sobrescrever**, então aplicá-los em massa é seguro — é o caso dos widgets, do Spotlight, das concerns e do CSS do kit (`resources/css/filament/` e `public/css/kit/`, entregues a partir da v0.30.0). Já um **modificado** substitui o conteúdo atual, e se você editou aquele arquivo a sua versão se perde (recuperável com `git checkout -- <arquivo>`, já que nada é commitado). Por isso `--only-new` é o lote recomendado para a primeira passada, deixando os modificados para revisar com calma.
 
 | Opção | Para quê |
 |---|---|

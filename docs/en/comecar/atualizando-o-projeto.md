@@ -51,7 +51,7 @@ php artisan kit:update --only-new   # only what doesn't exist in the project yet
 php artisan kit:update --all        # everything, including what overwrites
 ```
 
-The distinction is the point: **a new file has nothing to overwrite**, so applying those in bulk is safe — that's the case for the widgets, the Spotlight and the concerns. A **modified** one replaces the current content, and if you edited that file your version is lost (recoverable with `git checkout -- <file>`, since nothing is committed). That's why `--only-new` is the recommended bulk for a first pass, leaving the modified ones to review calmly.
+The distinction is the point: **a new file has nothing to overwrite**, so applying those in bulk is safe — that's the case for the widgets, the Spotlight, the concerns and the kit's CSS (`resources/css/filament/` and `public/css/kit/`, delivered from v0.30.0 on). A **modified** one replaces the current content, and if you edited that file your version is lost (recoverable with `git checkout -- <file>`, since nothing is committed). That's why `--only-new` is the recommended bulk for a first pass, leaving the modified ones to review calmly.
 
 | Option | What for |
 |---|---|

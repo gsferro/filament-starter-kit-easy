@@ -22,6 +22,8 @@ O campo na topbar é o **nativo do Filament** — mesma marcação, mesma aparê
 
 O filtro por permissão é a razão de existirem `App\Filament\Spotlight\*` no kit: as categorias do pacote **não** chamam `canAccess()`, e sem isso a busca oferece telas que resultariam em 403 — vazamento de affordance. As sugestões "Criar X" também são do kit (`AcoesDeCriacao`), pelo mesmo motivo e mais um: o discovery do pacote resolve URLs sem checar contexto e derruba a tela de login com 500.
 
+**O estilo do overlay também é do kit.** A blade do pacote emite utilitárias Tailwind e conta com um tema compilado — que o kit não tem de propósito (os painéis funcionam sem `npm run build`). Sem CSS, o overlay abria `fixed` sem `inset-0`, fora da tela: "nada acontece" ao clicar. `resources/css/filament/spotlight.css` cobre essas classes, escopado na raiz do componente, e `tests/Kit/SpotlightCssTest.php` lê a blade do vendor e reprova classe sem regra — acusa um upgrade do pacote antes de alguém abrir a tela. **Projeto criado antes da v0.30.0**: `php artisan kit:update` traz o arquivo e o publicado em `public/css/kit/`.
+
 ## O seletor de idioma
 
 O botão de idioma (`bezhansalleh/filament-language-switch`) está registrado nos **três painéis e também nas telas de login** — que é justamente onde alguém que não lê português precisa trocar, antes de existir sessão.
