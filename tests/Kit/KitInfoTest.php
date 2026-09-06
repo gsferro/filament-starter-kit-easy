@@ -174,8 +174,9 @@ it('[CT-06] exibe uma linha para cada propriedade do settings, na ordem do mapa'
      * sozinha — só este número é escrito à mão, e é ele que fica vermelho para obrigar a decisão.
      *
      * 44 → 48 na feature `login-social-por-painel`: os quatro `login_{provedor}_paineis`.
+     * 48 → 49 na feature `login-unificado`: `login_unificado`.
      */
-    expect($propriedades)->toHaveCount(48);
+    expect($propriedades)->toHaveCount(49);
 
     foreach ($propriedades as $propriedade) {
         expect($saida)->toContain(Str::headline($propriedade));
