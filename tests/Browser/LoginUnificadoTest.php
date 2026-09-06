@@ -38,4 +38,4 @@ it('CT-B01: quem tem dois painéis entra por /login, escolhe Administração e c
     $pagina->click('Administração')
         ->assertPathIs('/admin')
         ->assertNoJavaScriptErrors();
-})->group('kit');
+})->group('browser');

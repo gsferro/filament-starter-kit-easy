@@ -4,6 +4,7 @@ use App\Filament\Admin\Pages\ConfiguracoesDoKit;
 use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Pages\Auth\TelaLoginUnificada;
 use App\Models\User;
+use App\Support\DestinoAposLogin;
 use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
@@ -12,6 +13,7 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Socialite\Facades\Socialite;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use Rappasoft\LaravelAuthenticationLog\Models\AuthenticationLog;
 
 beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
@@ -362,7 +364,7 @@ it('[CT-17] a tela mostra um cartão por painel acessível, e nenhum a mais', fu
 
     foreach ($presentes as $rotulo => $painel) {
         expect(substr_count($html, $rotulo))->toBe(1, "cartão {$rotulo}");
-        $resposta->assertSee(urlDoPainel($painel), false);
+        $resposta->assertSee(route('login.painel.entrar', ['painel' => $painel]), false);
     }
 
     foreach ($ausentes as $rotulo) {
@@ -494,4 +496,126 @@ it('[CT-28] o convite válido continua abrindo o registro no modo unificado', fu
     $token = ofertaPara('novo@example.com')->enviar();
 
     $this->get("/app/register?token={$token}")->assertOk();
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| R9 — o log de acesso recebe o painel em que a pessoa DE FATO entrou
+|--------------------------------------------------------------------------
+| O `authentication_log` nasce carimbado com o painel corrente (KitServiceProvider). Na página
+| única o corrente é o default emprestado pelo middleware — não é o painel de entrada. Os
+| widgets de "acessos por painel" dependem disto.
+*/
+
+function painelDoUltimoAcesso(User $pessoa): ?string
+{
+    return AuthenticationLog::query()
+        ->where('authenticatable_type', $pessoa->getMorphClass())
+        ->where('authenticatable_id', $pessoa->getKey())
+        ->latest('login_at')
+        ->first()
+        ?->getAttribute('painel');
+}
+
+it('[CT-33] o login pela página única com um só painel carimba esse painel no log de acesso', function (string $papel, string $painel): void {
+    ligarLoginUnificado();
+    $pessoa = personaDoKit($papel);
+    session()->put(DestinoAposLogin::SESSAO_EM_CURSO, true); // o que o mount() de /login grava
+
+    entrarPelaPaginaUnica($pessoa->email)->assertRedirect(urlDoPainel($painel));
+
+    expect(painelDoUltimoAcesso($pessoa))->toBe($painel)
+        ->and(session()->has(DestinoAposLogin::SESSAO_EM_CURSO))->toBeFalse();
+})->with([
+    'admin → admin' => ['admin', 'admin'],
+    'infra → infra' => ['infra', 'infra'],
+])->group('kit');
+
+it('[CT-34] com dois painéis o acesso fica sem painel até o clique no cartão, que carimba o escolhido', function (): void {
+    ligarLoginUnificado();
+    $pessoa = personaDoKit('admin+infra');
+    session()->put(DestinoAposLogin::SESSAO_EM_CURSO, true);
+
+    entrarPelaPaginaUnica($pessoa->email)->assertRedirect(route('login.painel'));
+    expect(painelDoUltimoAcesso($pessoa))->toBeNull();
+
+    $this->get('/login/painel')->assertOk()->assertSee(route('login.painel.entrar', ['painel' => 'infra']), false);
+
+    $this->get(route('login.painel.entrar', ['painel' => 'app']))->assertRedirect(route('login.painel'));
+    expect(painelDoUltimoAcesso($pessoa))->toBeNull();
+
+    $this->get(route('login.painel.entrar', ['painel' => 'infra']))->assertRedirect(urlDoPainel('infra'));
+    expect(painelDoUltimoAcesso($pessoa))->toBe('infra');
+})->group('kit');
+
+it('[CT-35] a URL pretendida decide o painel carimbado', function (): void {
+    ligarLoginUnificado();
+    $pessoa = personaDoKit('admin+infra');
+    session()->put(DestinoAposLogin::SESSAO_EM_CURSO, true);
+    session()->put('url.intended', url('/infra/health'));
+
+    entrarPelaPaginaUnica($pessoa->email)->assertRedirect(url('/infra/health'));
+
+    expect(painelDoUltimoAcesso($pessoa))->toBe('infra');
+})->group('kit');
+
+it('[CT-36] o login social pela página única carimba o painel de entrada', function (): void {
+    ligarLoginUnificado();
+    $pessoa = personaDoKit('admin', 'social@example.com');
+    session()->put(DestinoAposLogin::SESSAO_EM_CURSO, true);
+
+    voltaDoGoogle($pessoa->email)->assertRedirect(urlDoPainel('admin'));
+
+    expect(painelDoUltimoAcesso($pessoa))->toBe('admin');
+})->group('kit');
+
+it('[CT-37] a marca da página única não anula o carimbo de um login feito na tela do painel', function (): void {
+    ligarLoginUnificado(false);
+    $pessoa = personaDoKit('admin+infra');
+    session()->put(DestinoAposLogin::SESSAO_EM_CURSO, true); // sobra de uma visita anterior a /login
+    Filament::auth()->logout();
+    Filament::setCurrentPanel('admin');
+
+    Livewire::test(TelaLogin::class)
+        ->fillForm(['email' => $pessoa->email, 'password' => 'password'])
+        ->call('authenticate')
+        ->assertRedirect(urlDoPainel('admin'));
+
+    expect(painelDoUltimoAcesso($pessoa))->toBe('admin');
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| RQ-07 — lock screen e reset de senha continuam funcionando; e o layout de auth não vaza
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-38] o layout de autenticação da página única não veste as páginas comuns do painel', function (): void {
+    ligarLoginUnificado();
+
+    $this->get('/login')->assertOk()->assertSee('fi-auth-layout', false);
+
+    $this->actingAs(personaDoKit('admin'));
+    $this->get('/admin')->assertOk()->assertDontSee('fi-auth-layout', false);
+})->group('kit');
+
+it('[CT-39] a tela de bloqueio continua dentro do painel, e sair dela termina em /login', function (): void {
+    ligarLoginUnificado();
+    $this->actingAs(personaDoKit('admin'));
+
+    $this->post('/admin/lock-session')->assertRedirect();
+    $this->get('/admin')->assertRedirect(route('lockscreen.admin.page'));
+    $this->get(route('lockscreen.admin.page'))->assertOk()->assertSee('fi-auth-layout', false);
+
+    $this->post('/admin/logout')->assertRedirect(Filament::getPanel('admin')->getLoginUrl());
+    $this->assertGuest();
+    $this->followingRedirects()->get('/admin/login')->assertSeeLivewire(TelaLoginUnificada::class);
+})->group('kit');
+
+it('[CT-40] a recuperação de senha continua por painel e a página única aponta para ela', function (): void {
+    ligarLoginUnificado();
+    $reset = (string) Filament::getPanel('app')->getRequestPasswordResetUrl();
+
+    $this->get('/login')->assertOk()->assertSee($reset, false);
+    $this->get($reset)->assertOk()->assertSee('fi-auth-layout', false);
 })->group('kit');
