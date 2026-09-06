@@ -24,6 +24,13 @@ ou, em `/admin/configuracoes-do-kit` → aba **Login** → "Unificar o login em 
 na hora, sem deploy: a chave é lida a cada request, não no boot. Só `true` e `1` ligam — qualquer
 outro valor no `.env` mantém desligado.
 
+**Depois de instalado, quem manda é a tela.** Como toda chave de login do kit, o `.env` só dá o
+valor **inicial**: a migration de Settings semeia `login_unificado` com o que estava no `.env` no
+momento da instalação, e daí em diante o valor do banco sobrepõe o `.env` a cada boot
+(`ConfiguracoesDoKit::aplicarNaConfig()`). Trocar `KIT_LOGIN_UNIFICADO` numa instalação existente
+**não** liga nem desliga nada — use o toggle (ou `kit:install --force`, que recria o banco). Medido
+nas instalações de teste da feature.
+
 ## O que muda para quem entra
 
 | Situação | O que acontece |
@@ -50,19 +57,33 @@ acessa e do próprio host. Fora disso é descartada, e vale a regra acima.
   desafio é exigido normalmente.
 - **Login social**: com a chave ligada, o botão na página única não carrega painel de origem (o
   provedor precisa estar habilitado, em qualquer painel), e o destino da volta segue a mesma regra
-  da tabela acima. Com a chave desligada, tudo como em [Login social](login-social.md).
+  da tabela acima **restrita aos painéis em que o provedor está autorizado** — GitHub liberado só
+  no `/infra` não entrega ninguém no `/admin`; sem painel autorizado acessível, a sessão é
+  encerrada. Com a chave desligada, tudo como em [Login social](login-social.md).
 
-## Uma consequência para o log de acessos
+## O log de acessos registra o painel em que a pessoa entrou
 
-A página única roda no contexto do painel default (`app`) — é o que dá tema, cores e o layout de
-login a uma tela fora dos painéis. Por isso, com a chave ligada, o log de autenticação registra o
-painel `app` para todo login por senha, e não o painel que a pessoa escolheu depois. O breakdown
-por painel nos insights das organizações reflete isso.
+O `authentication_log` carimba o painel de cada acesso (é o que alimenta "acessos por painel" nos
+insights das organizações e o stat de logins do dia). A página única roda no contexto do painel
+default só para ter tema e layout — isso **não** vai para o log: o login que começa em `/login`
+nasce sem painel e recebe o painel de **entrada** — o único acessível, o da URL pretendida, ou o
+cartão clicado na escolha. Enquanto a pessoa está na tela de escolha, o acesso fica sem painel; se
+ela fechar a aba sem escolher, fica assim (é um login que não entrou em painel nenhum).
+
+## Atenção: SSO externo ainda não está pré-configurado
+
+A página única cobre o login por senha e o login social do kit (Google, GitHub, LinkedIn, X). Um
+**SSO externo** — SAML, OpenID Connect corporativo, Keycloak, Entra ID — que autentique a pessoa
+fora do Filament e a devolva já com sessão **não passa** por `/login` nem pela regra de destino:
+ela cairia no painel default e, sem acesso a ele, veria 403. Se você integrar um SSO por conta
+própria, faça o callback dele redirecionar para o mesmo decisor da página única (a classe de
+destino após login, documentada em `wikis/specs/feat/login-unificado/`) em vez de para uma URL
+fixa de painel. SSOs externos pré-configurados são um item planejado do kit.
 
 ## Se quiser voltar
 
-Desligue a chave (ou o toggle). Nada foi migrado nem gravado além da propriedade no Settings; as
-rotas `/login` e `/login/painel` continuam existindo — desligadas, `/login` só redireciona para o
-login do painel default.
+Desligue o toggle. Nada foi migrado nem gravado além da propriedade no Settings; as rotas `/login`
+e `/login/painel` continuam existindo — desligadas, `/login` redireciona para o login do painel
+default e `/login/painel` para o próprio painel default.
 
 Detalhes e decisões: `wikis/specs/feat/login-unificado/` no repositório.

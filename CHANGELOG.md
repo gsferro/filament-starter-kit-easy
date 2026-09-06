@@ -14,9 +14,11 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   cartões da boas-vindas — só os painéis acessíveis. Quem não acessa nenhum é recusado como hoje.
   O login social segue a mesma regra de destino; 2FA, lock screen, registro por convite e reset de
   senha continuam funcionando (todos chegam ao login do painel, que leva a `/login`). O Panel
-  Switch não tem modo página — por isso os cartões (ADR-01). **Nota**: com a chave ligada, o log
-  de autenticação registra o painel `app` (o contexto da página única) para todo login por senha.
-  Wiki: `wikis/specs/feat/login-unificado/`.
+  Switch não tem modo página — por isso os cartões (ADR-01). O log de acesso recebe o painel em
+  que a pessoa **de fato** entrou (direto, pela URL pretendida ou pelo cartão clicado), e não o
+  painel default que dá tema à página única — os widgets de acessos por painel continuam certos.
+  **Atenção**: SSO externo (SAML, OIDC corporativo) ainda não é pré-configurado e não passa pela
+  regra de destino; ver a página de docs. Wiki: `wikis/specs/feat/login-unificado/`.
 
 ### Corrigido
 - **`kit:update` passa a entregar `database/settings`.** As migrations de Settings (sete até
