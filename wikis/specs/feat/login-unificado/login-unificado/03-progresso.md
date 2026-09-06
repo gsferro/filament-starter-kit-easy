@@ -1,6 +1,6 @@
 # Progresso — Página única de login (`/login`)
 
-> Branch: `feat/login-unificado` · Wiki criada em 2026-09-05 · Implementação: **concluída em 2026-09-05** (PR aberto; quality gate e candidatos a rule ficam para o passo seguinte)
+> Branch: `feat/login-unificado` · Wiki criada em 2026-09-05 · Implementação: **concluída em 2026-09-05** · **Entregue na v0.31.0** (PR #56 mergeado em 2026-09-05; rules gravadas em 2026-09-06)
 
 ## 1. A chave: `config/kit.php`, `.env.example`, `ConfiguracaoDoLogin::unificado()`
 
@@ -180,3 +180,11 @@ Contrato: ler `00`–`05` + código citado + `.ai/rules` dos paths tocados; devo
 - **Faltou no plano**: a guarda do laço por rota corrente — bastava lembrar que `Livewire::test()` não tem rota. E a checagem de que `fi-simple-layout-header` é do layout simples, não do painel.
 - **Faltou no plano**: prever a carga da máquina (outras sessões rodando suítes) ao escolher `--parallel` para a regressão; em série foi mais lento, mas terminou.
 - **Faltou no processo (skill)**: (1) desvio registrado no `03` sem propagar para `01`/`02`/`04`/docs — a wiki ficou contradizendo o código até a revisão cega; (2) citações `file:line` sem reverificação após o Pint; (3) requisito que chegou no meio (carimbo) virou teste escrito a partir do código — a skill não tem procedimento de **adendo**; (4) checkboxes do `03` marcados em lote; (5) nenhum passo confere o código novo contra as `.ai/rules` existentes. Propostas de melhoria entregues ao solicitante para o PR na skill.
+
+## Encerramento
+
+- **PR #56** mergeado na `main` (`11a0d54`) com CI verde nos quatro jobs (`qualidade`, `seguranca`, `telas`, `instalacao`).
+- **Release v0.31.0** (`d7b28ce`): CHANGELOG `[0.31.0] - 2026-09-05`, `config/kit.php` em `0.31.0`, release no GitHub marcada como Latest. CI da `main` verde.
+- **Rules gravadas** (`5e41d23`, decisão do usuário): `.ai/rules/filament.md` (cartão de painel via `Paineis::cartoes()` filtrado por `canAccessPanel()`), `.ai/rules/auth.md` (guarda de laço em `mount()` por método sobrescrevível), `.ai/rules/providers.md` (rota do kit no `KitServiceProvider` com `web` explícito). Fecha o step 9 da skill.
+- **Site** (`5c7e7e3`): guia de atualização passa a mandar `php artisan migrate` quando chega migration nova — a partir da v0.31.0 o `kit:update` entrega `database/settings/`; página do login unificado orienta projeto criado antes da v0.31.0. Páginas publicadas conferidas.
+- **Quality gate**: coberto pelas auditorias registradas acima (revisão cega da wiki, Blueprint, revisão de código, instalações reais). Sem pendências.
