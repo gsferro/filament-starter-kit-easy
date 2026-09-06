@@ -31,6 +31,11 @@ boot (`ConfiguracoesDoKit::aplicarNaConfig()`). Changing `KIT_LOGIN_UNIFICADO` o
 installation does **not** turn anything on or off — use the toggle (or `kit:install --force`,
 which recreates the database). Measured on the feature's test installations.
 
+**Project created before v0.31.0**: `php artisan kit:update` brings the migration
+`database/settings/*_add_login_unificado_to_kit_settings.php` along with the code. Run
+`php artisan migrate` before opening the settings screen — without the row in the database it
+breaks. The seeded value is whatever the `.env` said at that moment (`false` if the key is absent).
+
 ## What changes for whoever signs in
 
 | Situation | What happens |

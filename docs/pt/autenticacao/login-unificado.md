@@ -31,6 +31,11 @@ momento da instalação, e daí em diante o valor do banco sobrepõe o `.env` a 
 **não** liga nem desliga nada — use o toggle (ou `kit:install --force`, que recria o banco). Medido
 nas instalações de teste da feature.
 
+**Projeto criado antes da v0.31.0**: `php artisan kit:update` traz a migration
+`database/settings/*_add_login_unificado_to_kit_settings.php` junto com o código. Rode
+`php artisan migrate` antes de abrir a tela de configurações — sem a linha no banco, ela quebra.
+O valor semeado é o do `.env` naquele momento (`false` se a chave não existir).
+
 ## O que muda para quem entra
 
 | Situação | O que acontece |

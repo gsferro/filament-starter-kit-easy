@@ -42,7 +42,7 @@ Two details that show up in practice:
 - **`config/kit.php` always shows up as "modified"** (it carries the version mark). Applying it brings the kit's new keys, but **replaces the whole file** — if you changed seeder credentials or added your own keys there, read the diff and copy only what matters instead of applying.
 - **`kit:update` updates itself.** Since PHP already loaded the class into memory, the new behavior (and the new messages) only take effect on the following run. The command tells you when that happens. The **path list** that filters the diff is read from the **target version** (since v0.30.1), so a directory only the new version covers arrives in the same run — the "run the command again" notice only appears when that read failed. **An installation older than v0.30.1** still runs the old list on its first pass: run the second one with the command the notice prints. The known case is v0.22.x → v0.23.0 or later, which left `View [svg.arte-do-login] not found` between the two runs; the second run fixes it, or copy `resources/views/svg/arte-do-login.blade.php` from the kit repository.
 
-At the end nothing is committed: you review with `git diff`, run `composer test:kit` (the foundation) and commit. Went wrong? `git checkout -- .` undoes it, or delete the branch and go back to yours.
+At the end nothing is committed: you review with `git diff`, run `php artisan migrate` if a new migration arrived (from v0.31.0 on the command also delivers `database/settings/`, and the settings screen breaks while the new property has no row in the database), run `composer test:kit` (the foundation) and commit. Went wrong? `git checkout -- .` undoes it, or delete the branch and go back to yours.
 
 **You don't have to approve 30 files one by one.** During the review the menu offers *"Apply all NEW files from here on"* and *"Apply EVERYTHING from here on"* — one confirmation covers the set. And you can start in bulk already:
 
@@ -51,7 +51,7 @@ php artisan kit:update --only-new   # only what doesn't exist in the project yet
 php artisan kit:update --all        # everything, including what overwrites
 ```
 
-The distinction is the point: **a new file has nothing to overwrite**, so applying those in bulk is safe — that's the case for the widgets, the Spotlight, the concerns and the kit's CSS (`resources/css/filament/` and `public/css/kit/`, delivered from v0.30.0 on). A **modified** one replaces the current content, and if you edited that file your version is lost (recoverable with `git checkout -- <file>`, since nothing is committed). That's why `--only-new` is the recommended bulk for a first pass, leaving the modified ones to review calmly.
+The distinction is the point: **a new file has nothing to overwrite**, so applying those in bulk is safe — that's the case for the widgets, the Spotlight, the concerns, the kit's CSS (`resources/css/filament/` and `public/css/kit/`, delivered from v0.30.0 on) and the Settings migrations (`database/settings/`, from v0.31.0 on). A **modified** one replaces the current content, and if you edited that file your version is lost (recoverable with `git checkout -- <file>`, since nothing is committed). That's why `--only-new` is the recommended bulk for a first pass, leaving the modified ones to review calmly.
 
 | Option | What for |
 |---|---|

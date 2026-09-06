@@ -42,7 +42,7 @@ Dois detalhes que aparecem na prática:
 - **`config/kit.php` sempre consta como "modificado"** (ele carrega a marca de versão). Aplicá-lo traz as chaves novas do kit, mas **substitui o arquivo inteiro** — se você mudou credenciais do seeder ou adicionou chaves próprias ali, veja o diff e copie só o que interessa em vez de aplicar.
 - **O próprio `kit:update` se atualiza.** Como o PHP já carregou a classe em memória, o comportamento novo (e as mensagens novas) só valem a partir da execução seguinte. O comando avisa quando isso acontece. A **lista de caminhos** que filtra o diff é lida da **versão destino** (a partir da v0.30.1), então diretório que só a versão nova cobre chega na mesma rodada — o aviso "rode o comando de novo" só aparece quando essa leitura falhou. **Instalação anterior à v0.30.1** ainda roda a lista antiga na primeira rodada: rode a segunda com o comando que o aviso imprime. O caso conhecido é v0.22.x → v0.23.0 ou posterior, que deixava `View [svg.arte-do-login] not found` entre as duas rodadas; a segunda rodada resolve, ou copie `resources/views/svg/arte-do-login.blade.php` do repositório do kit.
 
-Ao final nada está commitado: você revisa com `git diff`, roda `composer test:kit` (a fundação) e commita. Deu errado? `git checkout -- .` desfaz, ou apague o branch e volte para o seu.
+Ao final nada está commitado: você revisa com `git diff`, roda `php artisan migrate` se chegou migration nova (a partir da v0.31.0 o comando entrega também `database/settings/`, e a tela de configurações quebra enquanto a propriedade nova não tiver linha no banco), roda `composer test:kit` (a fundação) e commita. Deu errado? `git checkout -- .` desfaz, ou apague o branch e volte para o seu.
 
 **Não precisa aprovar 30 arquivos um a um.** Durante a revisão, o menu oferece *"Aplicar todos os arquivos NOVOS daqui em diante"* e *"Aplicar TUDO daqui em diante"* — uma confirmação vale para o conjunto. E dá para começar já em lote:
 
@@ -51,7 +51,7 @@ php artisan kit:update --only-new   # só o que ainda não existe no projeto
 php artisan kit:update --all        # tudo, inclusive o que sobrescreve
 ```
 
-A distinção é o ponto: **arquivo novo não tem o que sobrescrever**, então aplicá-los em massa é seguro — é o caso dos widgets, do Spotlight, das concerns e do CSS do kit (`resources/css/filament/` e `public/css/kit/`, entregues a partir da v0.30.0). Já um **modificado** substitui o conteúdo atual, e se você editou aquele arquivo a sua versão se perde (recuperável com `git checkout -- <arquivo>`, já que nada é commitado). Por isso `--only-new` é o lote recomendado para a primeira passada, deixando os modificados para revisar com calma.
+A distinção é o ponto: **arquivo novo não tem o que sobrescrever**, então aplicá-los em massa é seguro — é o caso dos widgets, do Spotlight, das concerns, do CSS do kit (`resources/css/filament/` e `public/css/kit/`, entregues a partir da v0.30.0) e das migrations de Settings (`database/settings/`, a partir da v0.31.0). Já um **modificado** substitui o conteúdo atual, e se você editou aquele arquivo a sua versão se perde (recuperável com `git checkout -- <arquivo>`, já que nada é commitado). Por isso `--only-new` é o lote recomendado para a primeira passada, deixando os modificados para revisar com calma.
 
 | Opção | Para quê |
 |---|---|
