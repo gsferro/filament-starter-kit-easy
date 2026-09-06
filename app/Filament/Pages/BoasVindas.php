@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Support\Paineis;
 use Filament\Facades\Filament;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -151,74 +152,11 @@ class BoasVindas extends CardsPage
      */
     protected static function getCards(): array
     {
-        return [
-            static::cardDoPainel(
-                painel: 'app',
-                rotulo: 'Painel do negócio',
-                icone: Heroicon::OutlinedBuildingOffice2,
-                cor: 'primary',
-                descricao: 'Onde o seu produto vive. Multi-organização, convites e o cadastro do dia a dia.',
-            ),
-            static::cardDoPainel(
-                painel: 'admin',
-                rotulo: 'Administração',
-                icone: Heroicon::OutlinedUsers,
-                cor: 'info',
-                descricao: 'Usuários, papéis e permissões, convites, organizações e agentes de IA.',
-            ),
-            static::cardDoPainel(
-                painel: 'infra',
-                rotulo: 'Infraestrutura',
-                icone: Heroicon::OutlinedServerStack,
-                cor: 'gray',
-                descricao: 'Filas, logs, exceções, backups, saúde da aplicação e o Pulse.',
-            ),
-        ];
+        // Os três cartões vivem em `Paineis::cartoes()`, compartilhados com a escolha de painel
+        // após o login (`EscolhaDePainel`), que os filtra por acesso. Aqui, pública, mostra todos.
+        return array_values(Paineis::cartoes());
     }
 
-    /**
-     * O cartão de um painel, com a URL resolvida pelo próprio painel.
-     *
-     * `getUrl()` e não `url('/app')` escrito à mão: é ele que resolve domínio próprio e prefixo de
-     * organização. E ele é seguro para o visitante anônimo mesmo com a multi-organização ligada —
-     * sem usuário autenticado o tenant fica nulo, os dois ramos de tenant não entram, o ramo da
-     * rota `home` exige tenant e também não entra, e sobra o `url($this->getPath())` de
-     * `vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:196`.
-     *
-     * O `??` existe só porque a assinatura devolve `?string`; nesses ramos ela não devolve nulo.
-     *
-     * As três cores de borda usadas em `getCards()` — `primary`, `info` e `gray` — são as que
-     * `resources/css/filament/cards.css` cobre. Cor fora dessa lista produz um cartão sem borda,
-     * com o HTML correto.
-     */
-    protected static function cardDoPainel(
-        string $painel,
-        string $rotulo,
-        Heroicon $icone,
-        string $cor,
-        string $descricao,
-    ): CardItem {
-        $instancia = Filament::getPanel($painel);
-
-        return CardItem::make($instancia->getUrl() ?? url($instancia->getPath()))
-            ->label($rotulo)
-            ->description($descricao)
-            ->icon($icone)
-            ->color($cor)
-            ->badge('/'.$instancia->getPath());
-    }
-
-    /**
-     * As informações do kit, em duas seções: o que este projeto personalizou e o que a config do
-     * kit define.
-     *
-     * Resolvido pelo nome do método: `InteractsWithSchemas::cacheSchema()` reflete um método com
-     * parâmetro `Schema` (`vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php:231-260`),
-     * e é por isso que a view do rodapé consegue fazer `{{ $this->informacoesDoKit }}`.
-     *
-     * Sem registro Eloquent: `->state()` é o caminho documentado para valor estático
-     * (doc do Filament 5, infolists/overview).
-     */
     public function informacoesDoKit(Schema $schema): Schema
     {
         $tenancy = (bool) config('kit.tenancy.enabled');
