@@ -13,13 +13,15 @@
     "packages": [
         "filament/filament",
         "livewire/blaze",
-        "spatie/laravel-backup"
+        "spatie/laravel-backup",
+        "laraveldaily/filacheck"
     ],
     "sail": false,
     "skills": [
         "infer-conventions",
         "ai-sdk-development",
         "laravel-best-practices",
+        "testing-best-practices",
         "pulse-development",
         "socialite-development",
         "pest-testing",

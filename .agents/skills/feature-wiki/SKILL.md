@@ -1,6 +1,6 @@
 ---
 name: feature-wiki
-version: 3.0.0
+version: 3.1.0
 description: >
   Cria estrutura de documentação wiki para uma feature antes de implementá-la.
   Invoque SEMPRE ao iniciar implementação de qualquer feature nova.
@@ -17,6 +17,11 @@ description: >
   auditoria automática da wiki via /ponytail:ponytail-review, e integração com
   Caveman (comunicação terse, modo padrão `ultra`) e Ponytail (execução minimalista).
   Usa Pest 5 (--parallel --tia, --agent, --mutate) na verificação.
+  O quality gate roda ANTES do PR e antes de o 03 dizer "concluída". O step 7 reconcilia
+  wiki, docs de usuário, CHANGELOG e .ai/rules com o código: checkbox só fecha com evidência
+  inline, desvio corrige o 01/02 de origem, citação é arquivo:símbolo:linha conferida por grep,
+  IDs de CT do teste e do 04 são sincronizados nos dois sentidos. Requisito que cresce no meio
+  da implementação vira Adendo numerado no 00, com feature-test-design reinvocada só para ele.
   Após os testes passarem, aciona a skill feature-quality-gate (etapa de QA no
   agente), que confronta 00-requisito x PRD x app rodando. No fim, avalia se
   alguma decisão da wiki deve virar Project Rule do Boost e
@@ -50,8 +55,8 @@ description: >
   - [4. Criar os Arquivos](#4-criar-os-arquivos)
   - [5. Revisão Profunda Pós-Escrita](#5-revisão-profunda-pós-escrita-obrigatório)
   - [6. Auditoria da Wiki com Ponytail-review](#6-auditoria-da-wiki-com-ponytail-review-obrigatório)
-  - [7. Pós-Implementação](#7-pós-implementação-obrigatório)
-  - [8. Quality Gate](#8-quality-gate-obrigatório-quando-houver-superfície-validável)
+  - [7. Pós-Implementação e Reconciliação](#7-pós-implementação-e-reconciliação-obrigatório-antes-do-pr)
+  - [8. Quality Gate e abertura do PR](#8-quality-gate-e-abertura-do-pr-obrigatório-antes-do-pr)
   - [9. Candidatos a Rule](#9-candidatos-a-rule-de-projeto-decisão-do-usuário)
 - [Arquivo 00: Requisito](#arquivo-00-requisito--fonte-da-verdade)
 - [Arquivo 01: PRD](#arquivo-01-plano-de-ação-prd)
@@ -61,6 +66,7 @@ description: >
 - [Arquivos 04 e 05: Casos de Teste (delegados)](#arquivos-04-e-05-casos-de-teste--delegados-à-feature-test-design)
   - [Playwright MCP na validação](#playwright-mcp-na-validação-opcional--ferramenta-de-observação)
 - [Execução de Testes com Pest 5](#execução-de-testes-com-pest-5)
+- [Citações de código](#citações-de-código--arquivosímbololinha)
 - [Arquivos Extras](#arquivos-extras-conforme-necessidade)
 - [Skills Companheiras](#skills-companheiras)
 - [Checklist Final](#checklist-final-da-skill)
@@ -305,6 +311,7 @@ Criar os **5 arquivos obrigatórios** + extras se necessário.
 - **Perguntar ao usuário** se deseja sobrescrever, incrementar (v2) ou retomar
 - Se retomar: ler `03-progresso.md` para ver o que já foi feito e continuar de onde parou
 - Se sobrescrever: backup manual pelo usuário antes de criar a nova (a skill não arquiva automaticamente)
+- **Requisito novo no meio da implementação** (mesma branch, mesmo PR): não é wiki nova nem "incrementar" — é **Adendo** ao `00`. Ver [Adendo ao requisito](#adendo-ao-requisito--quando-o-pedido-cresce-durante-a-implementação). Sem isso o pedido vai direto para o código e os testes dele nascem do código
 
 ### 5. Revisão Profunda Pós-Escrita (OBRIGATÓRIO)
 
@@ -339,26 +346,72 @@ Após a revisão profunda (step 5), **invocar automaticamente** `/ponytail:ponyt
 >
 > **Comando correto**: `/ponytail:ponytail-review` (com namespace `ponytail:`). NUNCA usar `/ponytail-review` sem o namespace — o comando não será encontrado.
 
-### 7. Pós-Implementação (OBRIGATÓRIO)
+### 7. Pós-Implementação e Reconciliação (OBRIGATÓRIO, antes do PR)
 
-Após a implementação ser concluída e testes passarem:
+Após a implementação e os testes passarem — e **antes de abrir o PR e antes de escrever
+"concluída" no `03`**. A ordem é **7 → 8 → PR**. Abrir o PR antes foi o que produziu, num caso
+real, uma feature "concluída" com quality gate "para o passo seguinte", quatro quebras reais e 27
+afirmações defasadas na wiki e nas docs.
 
-1. **Atualizar `03-progresso.md`**: marcar todos os checkboxes como `[x]`, adicionar data de conclusão
-2. **Adicionar seção "Desvios do Plano"** em `03-progresso.md`: documentar onde a implementação divergiu do PRD e por quê (ex: "Passo 3 alterado: API retornava campo `uuid` em vez de `id` — ajustado mapeamento")
-3. **Adicionar seção "Notas de Implementação"** em `03-progresso.md**: descobertas durante o código que não estavam no plano (ex: "Descoberto que `Enrollment::find()` aplica scope global de tenant — documentado em `02-decisoes-arquiteturais.md`")
-4. **Preencher o roteiro "Desenhado × Implementado"** em `05-casos-de-teste-browser.md` (se existir): rodar os CT-B, conferir cada linha da tabela `## Superfície de UI` do PRD contra a tela real e marcar ✅/⚠️/❌. Divergências vão para "Desvios do Plano" no `03-progresso.md`
+**Fontes a reconciliar** — a lista é fechada; o que não está nela não é reconciliado por acidente:
+`01`, `02`, `04`, `05`, `03`, docs de usuário (pt **e** en), `CHANGELOG.md`, `README`, e as rules
+de `.ai/rules/` cujos globs casam com o diff.
 
-5. **Confirmar impacto real com TIA**: `vendor/bin/pest --parallel --tia` e comparar o que foi marcado como afetado com a seção `## Impacto em Features Existentes` do PRD — divergência é nota de implementação
+1. **Checkbox só fecha com evidência inline.** Formato `- [x] {item} — {evidência}, {data}`
+   (ex.: `— 677/677 verdes, 2026-09-05`). Item sem evidência continua `[ ]`. É proibido fechar a
+   `## Verificação Final` por substituição em lote: cada linha fecha quando o comando dela roda.
 
-6. **Linkar wiki ao PR**: incluir link da wiki na descrição do PR para rastreabilidade
-7. **Retrospectiva breve**: anotar na wiki o que funcionou bem no planejamento e o que faltou — serve para melhorar futuras invocações da skill
-8. **Limpeza de channel de log**: se a feature foi mergeada e está estável, considerar reduzir o level do channel de `debug` para `info` ou remover o channel se não for mais necessário
+   Conferência: `grep -n '^- \[x\]' 03-progresso.md | grep -v ' — '` tem de voltar vazio
+2. **Desvio corrige a fonte; o `03` só aponta.** Cada item de "Desvios do Plano" exige a edição
+   correspondente no `01`, `02`, `04` ou `05` de origem, marcada inline com
+   `*(alterado em {data}: {motivo curto})*`. Registrar o desvio só no `03` deixa o PRD e a ADR
+   afirmando o que o código não faz — e é o PRD que a próxima pessoa lê. Critério de saída:
+   **nenhuma afirmação do `01`/`02` contradiz o código**
+3. **Reverificar toda citação `arquivo:símbolo:linha`** com o grep de
+   [Citações de código](#citações-de-código--arquivosímbololinha). Pint e imports novos deslocam
+   linhas; a conferência é mecânica e o resultado (`— 14/14 ok`) vai para a Verificação Final
+4. **Sincronizar `04`/`05` com o teste real, nos dois sentidos.** Todo `[CT-nn]`/`[CT-Bnn]` do
+   arquivo de teste existe no `04`/`05`; todo CT do índice aponta um teste existente ou declara
+   "fundido em CT-nn"; linha de dataset nova no teste existe como Exemplo no Gherkin. Cenário que
+   nasceu durante a implementação **nasce no `04` primeiro** (Proibição 11 da
+   `feature-test-design`). Se o projeto tiver o teste de arquitetura sugerido por ela, rodá-lo;
+   se não, `grep -o '\[CT-B\?[0-9]*\]'` nos dois lados e `diff`
+5. **Conformidade com as rules do projeto.** Para cada rule em `.ai/rules/index.md` cujo glob
+   casa com um arquivo do diff, uma linha na tabela `## Conformidade com Rules` do `03`:
 
-### 8. Quality Gate (OBRIGATÓRIO quando houver superfície validável)
+   `rule → aplicada / n.a. / violada`, com evidência (`arquivo:símbolo:linha` ou nome do CT).
+   Rule violada é blocker do PR. O step 3 manda **ler** as rules antes de planejar; este item
+   confere se o **código** as cumpre — são coisas diferentes, e a segunda nunca era feita
+   (medido: `group('kit')` em teste de browser, chave `KIT_*` fora do `phpunit.xml`, par de
+   cenário exigido pela rule de auth ausente — três rules lidas no step 3, três violadas no código)
+6. **Docs de usuário e CHANGELOG × comportamento × rastro.** Toda consequência que a wiki
+   descreveu e depois mudou (ex.: "o log registra o painel `app`") é procurada nas docs pt/en, no
+   CHANGELOG, no README e na ADR que a originou. Frase nova em doc de usuário **sem `RQ` nem ADR
+   de origem** é crescimento sem rastro: vira Adendo no `00` ou sai da doc
+7. **Notas de Implementação** no `03`: descobertas durante o código que não estavam no plano
+   (ex.: "`Enrollment::find()` aplica scope global de tenant — documentado em `02`")
+8. **Roteiro "Desenhado × Implementado"** em `05-casos-de-teste-browser.md` (se existir): rodar os
+   CT-B, conferir cada linha da `## Superfície de UI` do PRD contra a tela real, marcar ✅/⚠️/❌;
 
-Após os testes passarem e o step 7 estar concluído, **invocar a skill `feature-quality-gate`**. Este step é função direta da skill — o agente NÃO deve esperar o usuário pedir.
+   divergência vai para "Desvios do Plano" **e** para a fonte (item 2)
+9. **Confirmar impacto real com TIA**: `vendor/bin/pest --parallel --tia` × `## Impacto em
 
-**O que ela faz que os steps 5, 6 e 7 não fazem**: os três tomam o PRD como verdade. O quality gate confronta **`00-requisito.md` × PRD × app rodando** e detecta a classe de defeito que nenhum teste pode pegar — a **omissão silenciosa**: cláusula `RQ` que nunca virou passo, nunca virou CT, nunca virou código. Tudo verde, feature incompleta.
+   Features Existentes` do PRD — divergência é nota de implementação
+10. **Retrospectiva breve** no `03`: o que funcionou no planejamento e o que faltou
+11. **Limpeza de channel de log** — só **depois do merge** e da estabilização: reduzir o level de
+    `debug` para `info` ou remover o channel
+
+> **Autolimpeza não é auditoria.** Os itens 2, 5 e 6 são julgamento sobre texto que o mesmo
+> agente escreveu, e ele tende a lê-lo como certo. Por isso a `feature-quality-gate` (step 8)
+> repete os três como **dimensão L — Consistência Documental**, por quem não escreveu a wiki.
+> Fazer só um dos dois não basta: sem o 7 o quality gate afoga em defasagem trivial; sem o 8
+> ninguém confere quem escreveu.
+
+### 8. Quality Gate e abertura do PR (OBRIGATÓRIO, antes do PR)
+
+Após os testes passarem e o step 7 estar concluído, **invocar a skill `feature-quality-gate`**. Este step é função direta da skill — o agente NÃO deve esperar o usuário pedir. **O PR não abre antes do veredito**, e o `03` não diz "concluída" antes de a seção `## Quality Gate` estar preenchida.
+
+**O que ela faz que os steps 5, 6 e 7 não fazem**: os três tomam o PRD como verdade. O quality gate confronta **`00-requisito.md` × PRD × app rodando** e detecta a classe de defeito que nenhum teste pode pegar — a **omissão silenciosa**: cláusula `RQ` que nunca virou passo, nunca virou CT, nunca virou código. Tudo verde, feature incompleta. E a **dimensão L** dela repete, por quem não escreveu a wiki, o que o step 7 declarou reconciliado: PRD/ADR × código, rules × diff, docs × comportamento, citações e IDs de CT.
 
 **Entrada que a skill espera**:
 
@@ -380,6 +433,18 @@ Após os testes passarem e o step 7 estar concluído, **invocar a skill `feature
 **Quando pular**: feature sem nenhuma superfície validável (ex.: só refactor interno já coberto por CT verde) — registrar o motivo no `03-progresso.md`. Não pular por pressa.
 
 > **Teto do loop**: no máximo **3 ciclos** de quality gate por feature. Ao estourar, escalar ao usuário com o que ficou aberto. Ver a skill `feature-quality-gate` para as regras de convergência.
+
+**Depois do veredito, e só então**:
+
+1. Registrar ciclo, veredito e data na seção `## Quality Gate` do `03-progresso.md`
+
+2. **Abrir o PR** com o link da wiki e o veredito do `06-relatorio-qa.md` na descrição
+3. Marcar o `03` como "concluída"
+
+> Por que a ordem é dura: "linkar ao PR" ficava no step 7 e o quality gate no step 8, e o
+> checklist chamava a seção de "após merge". Lido ao pé da letra, o QA acontecia depois do merge
+> — e foi exatamente o que uma sessão real fez: PR aberto, `03` "concluída", quality gate nunca
+> executado. O veredito é parte do PR, não um passo depois dele.
 
 ### 9. Candidatos a Rule de Projeto (DECISÃO DO USUÁRIO)
 
@@ -438,13 +503,15 @@ Virar rule? (1, 2, ambos, nenhum)
 
 **Propósito**: guardar o requisito **como ele chegou**, sem interpretação, e decompô-lo em cláusulas rastreáveis. É a única linha de base independente do agente — todo o resto da wiki é derivado e, portanto, contaminável por interpretação errada.
 
-**Duas seções com regimes opostos**:
+**Três seções, dois regimes**:
 
 | Seção | Regime |
 |---|---|
 | `## Texto Original` | **imutável.** Nunca editar, corrigir, resumir ou reordenar |
 
 | `## Decomposição em Cláusulas` | derivada e revisável. Pode ser corrigida se a leitura estiver errada |
+
+| `## Adendo N — {data}` | **imutável** como o Texto Original; um por pedido novo que chegou durante a implementação, com fonte e data. A numeração de `RQ` continua da última. Ver [Adendo ao requisito](#adendo-ao-requisito--quando-o-pedido-cresce-durante-a-implementação) |
 
 **Obrigatório incluir**:
 
@@ -494,6 +561,61 @@ Virar rule? (1, 2, ambos, nenhum)
 ```
 
 > **Wiki antiga sem `00`**: wikis criadas antes da v2.10.0 não têm o arquivo. Ao retomar uma delas, reconstruir o `00` **pedindo o requisito original ao usuário** — não derivar do PRD. PRD derivado de PRD não é oráculo, e o `feature-quality-gate` vai marcar o relatório como *oráculo degradado*.
+
+### Adendo ao requisito — quando o pedido cresce durante a implementação
+
+O `## Texto Original` é imutável, e a skill só previa "sobrescrever / incrementar / retomar" a
+
+wiki inteira. Entre os dois cabia o caso mais comum: o usuário pede **mais uma coisa** no meio da
+implementação, na mesma branch e no mesmo PR. Sem procedimento, o pedido novo vai direto para o
+código, e os testes dele nascem **do código** — a inversão exata que a `feature-test-design`
+existe para proibir. Caso real: o "carimbo do painel no log de acesso" chegou depois da wiki
+pronta; cinco cenários foram escritos a partir da implementação e nenhuma cláusula do `00` os
+sustentava.
+
+**Procedimento**, na ordem:
+
+1. **Registrar no `00`** uma seção `## Adendo N — {YYYY-MM-DD}` com Fonte (quem, como chegou,
+
+   fidelidade), o Texto Original **verbatim** do pedido novo (mesmo regime de imutabilidade) e a
+   decomposição em `RQ` novos, **continuando a numeração** (`RQ-09`, `RQ-10`…). Nunca reescrever
+   `RQ` existente para "acomodar" o adendo: se ele muda uma cláusula antiga, a antiga fica e o
+   adendo declara qual ela substitui
+2. **`## Cobertura do Requisito` do `01`** ganha as linhas dos `RQ` novos; o PRD ganha os passos
+
+   novos ao final (`N+1`…), citando o adendo. Passo antigo que muda por causa do adendo é marcado
+   inline com `*(alterado em {data}: adendo N)*`
+3. **Reinvocar a `feature-test-design` só para o adendo**: entrada é o `00` (com o adendo) e o
+   `04` existente; saída são cenários `CT` novos, em numeração contínua, com mutantes.
+   **Antes** de escrever qualquer linha de código do adendo
+4. **`03`** ganha a seção do passo novo e o item "Adendo N incorporado" na Verificação Final
+5. Só então implementar
+
+**Critério adendo × wiki nova**: mesma branch e mesmo PR → adendo. Branch nova ou PR novo → wiki
+nova com `## Natureza da Wiki: evolução` e a ancestral apontada.
+
+**Template**:
+
+```markdown
+
+## Adendo 1 — 2026-09-05
+
+- **Fonte**: pedido do solicitante no chat, durante a implementação do passo 9
+- **Fidelidade**: alta (texto escrito)
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> {texto verbatim do pedido novo}
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-09 | {…} | "{…}" | funcional | — |
+| RQ-10 | {…} | "{…}" | restrição | RQ-04 (parcial) |
+```
 
 ---
 
@@ -1067,7 +1189,11 @@ Se o projeto possuir uma trait de logging (ex: `UnicoLogging`), verificar:
 
 **Propósito**: Checklist de implementação para rastrear o que foi feito e retomar de onde parou.
 
-**Estrutura**: Seções com checkboxes `- [ ]` agrupadas pelos mesmos passos do `01-plano-acao.md`. Atualizar os checkboxes **em tempo real** durante a implementação — não em lote no final.
+**Estrutura**: Seções com checkboxes `- [ ]` agrupadas pelos mesmos passos do `01-plano-acao.md`.
+
+**Checkbox só fecha com evidência inline.** Formato `- [x] {item} — {evidência}, {data}`; item sem evidência continua `[ ]`. "Atualizar em tempo real, não em lote" já estava escrito aqui e foi ignorado: num caso real a Verificação Final foi fechada por substituição em lote antes de alguns comandos rodarem, e um teste marcado verde estava vermelho. A evidência inline é o que torna o lote impossível — não há o que colar. Conferência: `grep -n '^- \[x\]' 03-progresso.md | grep -v ' — '` tem de voltar vazio na Verificação Final.
+
+**Duas seções que só existem para o step 7 e o step 8**: `## Conformidade com Rules` (uma linha por rule cujo glob casa o diff) e `## Quality Gate` (ciclo, veredito, data). Enquanto a segunda estiver vazia, a feature **não** está concluída e o PR não abre.
 
 **Validação de espelho**: verificar que a estrutura de seções do `03-progresso.md` espelha exatamente os passos do `01-plano-acao.md` — se o plano tem 8 passos, o progresso tem 8 seções correspondentes.
 
@@ -1098,7 +1224,28 @@ Se o projeto possuir uma trait de logging (ex: `UnicoLogging`), verificar:
 - [ ] `vendor/bin/pest tests/Browser --filter={Feature}` <!-- se houver CT-B -->
 - [ ] `vendor/bin/pest --parallel --tia` — nada mais no suite quebrou
 - [ ] Roteiro "Desenhado × Implementado" do `05-*-browser.md` preenchido <!-- se houver CT-B -->
+- [ ] Desvios propagados ao `01`/`02`/`04`/`05` de origem, marcados `*(alterado em …)*`
+- [ ] Citações `arquivo:símbolo:linha` reverificadas — {n}/{n} ok
+- [ ] IDs `[CT-nn]` do teste ⊆ `04`/`05` e vice-versa
+- [ ] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final
 - [ ] `git commit`
+
+<!-- Cada [x] acima leva " — {evidência}, {data}". Ex.: `- [x] composer test:kit — 677/677, 2026-09-05` -->
+
+## Conformidade com Rules
+
+<!-- Uma linha por rule de .ai/rules/index.md cujo glob casa com um arquivo do diff. "violada" = blocker do PR. -->
+
+| Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
+|---|---|---|---|
+| `auth.md` — cobrir `fi-auth-layout` em par | `app/Filament/Pages/Auth/**` | aplicada | CT-07 + CT-38 |
+
+## Quality Gate
+
+<!-- Preenchido no step 8. Enquanto vazio, a feature NÃO está concluída e o PR não abre. -->
+
+- **Ciclo**: {n} · **Veredito**: {APROVADO | APROVADO COM DÉBITO | REPROVADO → destino} · **Data**: {YYYY-MM-DD}
+- **Relatório**: `06-relatorio-qa.md`
 
 ## Auditoria Pré-Implementação
 
@@ -1442,6 +1589,51 @@ Regras: aspas simples envolvendo o snippet, aspas duplas para strings PHP intern
 
 ---
 
+## Citações de código — `arquivo:símbolo:linha`
+
+O step 3 desta skill (e a rule `specs.md` do projeto-cobaia) exige `arquivo:linha` para toda
+afirmação sobre vendor ou padrão interno. O formato só com linha falha de dois jeitos distintos,
+medidos na mesma feature:
+
+| Classe | Exemplo real | O que pega |
+|---|---|---|
+| **Errada ao nascer** | `Login.php:165` para `return app(LoginResponse::class)`, que está na 169 — e o `composer.lock` não mudou em nenhum commit da feature | conferir **ao escrever** (step 5) |
+| **Deslocada depois** | citações de arquivos da própria app, 3 a 10 linhas fora após Pint e imports novos | conferir **no step 7** |
+
+"Reverificar depois" não pega a primeira classe; "conferir ao escrever" não pega a segunda. São
+dois momentos, e o mesmo comando serve aos dois.
+
+**Formato obrigatório**: `{path relativo à raiz do projeto}:{símbolo}():{linha}` ou, para
+intervalo, `:{inicial}-{final}`. O símbolo é o método, função, constante ou chave de array que a
+linha (ou a primeira linha do intervalo) contém — é ele que sobrevive ao deslocamento e que
+permite conferir sem abrir o arquivo.
+
+```text
+vendor/filament/filament/src/Auth/Pages/Login.php:isUserAllowedToAccessPanel():172
+app/Support/DestinoAposLogin.php:urlPara():41-58
+config/logging.php:'autenticacao':132
+```
+
+Path curto (`Login.php:172`) é aceito só depois de o path completo ter aparecido no mesmo
+documento. Citação sem símbolo não passa no step 5 nem no step 7.
+
+**Conferência mecânica** — rodar na raiz do projeto; toda linha `ERRO` é uma citação a corrigir
+na fonte, nunca a apagar para "passar":
+
+```bash
+grep -rhoE "[A-Za-z0-9_./-]+\.php:[A-Za-z_'\"][A-Za-z0-9_'\"]*(\(\))?:[0-9]+" wikis/specs/{branch}/{feature}/ \
+  | sort -u | while IFS=: read -r arquivo simbolo linha; do
+    simbolo="${simbolo%()}"; simbolo="${simbolo//\'/}"; simbolo="${simbolo//\"/}"
+    if sed -n "${linha}p" "$arquivo" 2>/dev/null | grep -q -- "$simbolo"; then echo "ok   $arquivo:$simbolo:$linha"
+    else echo "ERRO $arquivo:$simbolo:$linha"; fi
+  done
+```
+
+Registrar o resultado na Verificação Final do `03` (`— 14/14 ok, {data}`). A dimensão L da
+`feature-quality-gate` roda o mesmo comando e compara.
+
+---
+
 ## Arquivos Extras (conforme necessidade)
 
 Criar apenas quando a feature exige:
@@ -1520,19 +1712,33 @@ Antes de encerrar a invocação:
 - [ ] Filosofia de Implementação (Ponytail) incluída no PRD
 - [ ] Confirmar com usuário se o plano está correto antes de implementar
 
-### Pós-Implementação (após merge)
+### Pós-Implementação e Reconciliação (antes do PR)
 
-- [ ] `03-progresso.md` atualizado com checkboxes `[x]` + data de conclusão
-- [ ] Roteiro "Desenhado × Implementado" do `05-*-browser.md` preenchido, com divergências replicadas em "Desvios do Plano"
-- [ ] Desvios do plano e notas de implementação documentados
-- [ ] Wiki linkada no PR
-- [ ] Retrospectiva breve escrita
-- [ ] Channel de log ajustado (level reduzido ou removido)
+- [ ] Todo `[x]` do `03-progresso.md` tem evidência inline (`— {resultado}, {data}`); nenhum fechado em lote
+- [ ] Cada desvio do `03` tem a edição correspondente no `01`/`02`/`04`/`05` de origem, marcada `*(alterado em …)*` — nenhuma afirmação do `01`/`02` contradiz o código
+- [ ] Toda citação `arquivo:símbolo:linha` da wiki reverificada pelo grep — resultado no `03`
+- [ ] IDs `[CT-nn]`/`[CT-Bnn]` do teste ⊆ `04`/`05` e vice-versa; linha de dataset nova existe como Exemplo no Gherkin
+- [ ] Requisito que cresceu virou `## Adendo N` no `00`, com `RQ` novos, e a `feature-test-design` foi reinvocada para ele **antes** do código
+
+- [ ] Tabela `## Conformidade com Rules` do `03` preenchida para toda rule cujo glob casa o diff — nenhuma `violada`
+
+- [ ] Docs de usuário (pt **e** en), CHANGELOG e README reconciliados; nenhuma frase neles sem `RQ` ou ADR de origem
+- [ ] Roteiro "Desenhado × Implementado" do `05-*-browser.md` preenchido, com divergências replicadas em "Desvios do Plano" e na fonte
+- [ ] Notas de implementação e retrospectiva breve escritas
 - [ ] CT-B escritos e rodados via sub-agente; divergências classificadas (CT errado / implementação divergente / flake)
 - [ ] Se o Playwright MCP foi usado: só como observação (`--isolated --headless --caps=testing`), nenhum ref em arquivo de teste, nenhuma sessão MCP registrada como cobertura
-- [ ] **`feature-quality-gate` invocado** (step 8) e veredito registrado no `03-progresso.md`
+
+### Quality Gate e PR
+
+- [ ] **`feature-quality-gate` invocado** (step 8) e ciclo/veredito/data registrados na seção `## Quality Gate` do `03-progresso.md`
+
 - [ ] Se `REPROVADO`: achado roteado para o destino correto (especificação / implementação / teste) e reciclado
+- [ ] **Só depois do veredito**: PR aberto com link da wiki e veredito do `06` na descrição; `03` marcado "concluída"
 - [ ] Candidatos a rule avaliados nos 4 gates e **apresentados ao usuário** — gravados via `requirement-to-rule` só se aprovados
+
+### Após o merge
+
+- [ ] Channel de log ajustado (level reduzido ou removido)
 
 ## Skills Companheiras
 
@@ -1544,7 +1750,7 @@ A feature-wiki é a primeira estação de uma esteira de skills que cobrem o cic
 | **Planejamento** (estrutura de documentação) | feature-wiki | requisito + PRD + ADR + tracking + padrão de log | não deriva caso de teste — testar o próprio plano confirma o plano |
 | **Especificação de teste** | `feature-test-design` | deriva o `04`/`05` do **`00-requisito.md`**, com técnica formal e gate de mutantes | não escreve código nem corrige implementação |
 | **Execução** (código) | [Ponytail](https://github.com/DietrichGebert/ponytail) | Mínimo código que funciona — escada de simplicidade | Não corta validação, segurança, tratamento de erros |
-| **Qualidade** (QA no agente) | `feature-quality-gate` | Confronta `00-requisito` × PRD × app rodando; roteia achado para especificação / implementação / teste | Não corrige nada — só lê, reproduz e reporta |
+| **Qualidade** (QA no agente) | `feature-quality-gate` | Confronta `00-requisito` × PRD × app rodando; audita a consistência wiki × código × docs × rules (dimensão L); roteia achado para especificação / implementação / teste. Roda **antes do PR** | Não corrige nada — só lê, reproduz e reporta |
 | **Memória de projeto** (rules) | `requirement-to-rule` | Decisão da wiki vira Project Rule do Boost em `.ai/rules/` | Só o que é específico da aplicação; ecossistema é guideline do Boost |
 
 ### Caveman + feature-wiki: fronteira clara

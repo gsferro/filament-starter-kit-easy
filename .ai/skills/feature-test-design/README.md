@@ -1,6 +1,6 @@
 # feature-test-design — Casos de Teste que Matam Defeito
 
-> **Skill**: [`SKILL.md`](SKILL.md) · versão **1.0.0**
+> **Skill**: [`SKILL.md`](SKILL.md) · versão **1.10.0**
 > Este README fala com a **pessoa**: por que a skill existe, que problema ela resolve, a
 > evidência por trás de cada decisão e o que ela não faz. O procedimento que o agente segue
 > está no `SKILL.md` e não é duplicado aqui.
@@ -58,22 +58,6 @@ que responde à pergunta que interessa: *este conjunto pega defeito?*
 | **5. Gherkin pt-BR** | `Funcionalidade` → `Regra` → `Cenário`, com Dado/Quando/Então | força um oráculo observável e linguagem de domínio |
 | **6. Gate de falsificabilidade** | toda regra declara os mutantes plausíveis e aponta quem mata cada um | **o passo que não existia** |
 | **7. Camada e poda** | o nível mais barato que prova; teto por perfil | evita empurrar para browser o que um teste de componente resolve |
-
-### A varredura SFDIPOT
-
-A varredura SFDIPOT é uma heurística de teste de software criada por James Bach para dividir problemas complexos em perspectivas menores e distintas durante o planejamento e exploração de aplicações. Cada letra do acrônimo representa um ponto de vista diferente para analisar o sistema:
-
-| Letra | Ponto de vista | O que cobre |
-|---|---|---|
-| **S** — Structure | Estrutura | Código, arquivos, componentes físicos ou lógicos |
-| **F** — Function | Função | O que o software faz, suas funcionalidades |
-| **D** — Data | Dados | O que o sistema processa, armazena ou manipula |
-| **I** — Interfaces | Interfaces | Telas, APIs, integrações, entradas e saídas |
-| **P** — Platform | Plataforma | Sistema operacional, hardware ou ambiente onde roda |
-| **O** — Operations | Operações | Como o usuário ou administrador usa o sistema no dia a dia |
-| **T** — Time | Tempo | Concorrência, desempenho, histórico ou a sequência dos eventos |
-
-O passo 1 do pipeline existe porque o que escapa quase nunca é um caso a mais — é uma **dimensão inteira esquecida**. A varredura força o agente a olhar o requisito por essas sete lentes antes de escrever qualquer regra ou cenário.
 
 ### O passo 6 é o coração
 
@@ -254,6 +238,8 @@ que atravessaram os conjuntos, e a versão seguinte fechou exatamente aqueles:
 | 1.5.0 | criação ≠ **edição** ≠ uso, partição repetida em cada efeito | quatro defeitos que viviam só no `save` |
 | 1.6.0 | parâmetro livre é o instante/contexto; matriz é 3D; canal do efeito | fuso que virou lacuna cega; barreira de identidade nunca exercitada |
 | 1.7.0 | campo fora do estado inicial; célula argumentada não conta; verbo irmão | valor alterado após o envio sem reavaliar a alçada |
+| 1.8.0 | cenário por fora da UI; premissa de mecanismo não apaga cenário; matriz cartesiana fechada; oráculo invertido | policy só no form; excluído ainda aplicável; aprovar em rascunho |
+| 1.9.0 | premissa de comportamento falha fechado; não-efeito exige destinatário real; legenda da matriz auditada | validade no passado assumida como aceita; e-mail fora da transação |
 
 Os três defeitos mais teimosos do cenário 2 — ciclo de volta, tela mentindo o estado e e-mail fora
 da transação — sobreviveram a **dois** conjuntos e caíram no terceiro, cada um pelo mecanismo que

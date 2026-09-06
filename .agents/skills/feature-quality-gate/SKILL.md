@@ -1,16 +1,18 @@
 ---
 name: feature-quality-gate
-version: 1.1.0
+version: 1.2.0
 description: >
   Etapa de QA dentro do agente — a próxima estação da esteira depois de
   implementar e rodar os testes. Invoque no step 8 da skill feature-wiki, ou
   sempre que precisar validar se uma feature entregue atende de fato ao que foi
   pedido. Confronta 00-requisito.md x 01-plano-acao.md x app rodando, monta a
   Matriz de Rastreabilidade para detectar omissão silenciosa (cláusula que nunca
-  virou passo, teste nem código), e valida 11 dimensões que CT e CT-B não cobrem:
+  virou passo, teste nem código), e valida 12 dimensões que CT e CT-B não cobrem:
   fronteiras, matriz de permissão, log real, N+1, UX de erro, tema/dark mode,
-  acessibilidade, segurança da superfície nova, regressão adjacente e adequação da
-  própria suíte de testes (oráculo fraco + mutation score via pest --mutate).
+  acessibilidade, segurança da superfície nova, regressão adjacente, adequação da
+  própria suíte de testes (oráculo fraco + mutation score via pest --mutate) e
+  consistência documental (PRD/ADR x código, rules x diff, docs pt x en x CHANGELOG,
+  citações arquivo:símbolo:linha e IDs de CT do teste x 04). Roda ANTES do PR.
   Cada achado é classificado por severidade e roteado para um de 5 destinos — especificação,
   implementação, teste, infra ou não-defeito. NÃO corrige nada: lê, reproduz e
   reporta em 06-relatorio-qa.md. Loop converge em no máximo 3 ciclos.
@@ -37,7 +39,7 @@ description: >
 - [Entradas e Gate de Entrada](#entradas-e-gate-de-entrada)
 - [Gate de Esforço por Risco](#gate-de-esforço-por-risco)
 - [Fluxo de Execução](#fluxo-de-execução)
-- [As 11 Dimensões](#as-11-dimensões)
+- [As 12 Dimensões](#as-12-dimensões)
 - [Classificação e Roteamento](#classificação-e-roteamento)
 - [Convergência do Loop](#convergência-do-loop)
 - [Arquivo 06: Relatório de QA](#arquivo-06-relatório-de-qa)
@@ -71,7 +73,7 @@ Máximo **3 ciclos**. Ciclo que não traz achado novo encerra. Estourar o teto e
 
 ### 4. Teto por risco — profundidade proporcional
 
-Feature de ajuste sem UI não merece 11 dimensões. O [gate de esforço](#gate-de-esforço-por-risco) decide o escopo **antes** de começar.
+Feature de ajuste sem UI não merece 12 dimensões. O [gate de esforço](#gate-de-esforço-por-risco) decide o escopo **antes** de começar.
 
 ### 5. Degradação graciosa — nada é dependência dura
 
@@ -81,7 +83,7 @@ Playwright MCP, skills de `qa-skills`, Pest 5, PCOV: **todos opcionais**. Sem el
 
 ## Quando Invocar
 
-- **Step 8 da `feature-wiki`** — automático, após implementação concluída e testes verdes
+- **Step 8 da `feature-wiki`** — automático, após implementação e testes verdes, **antes de abrir o PR** e antes de o `03` dizer "concluída"
 - Quando o usuário pedir para "validar", "revisar como QA", "conferir se atende ao requisito"
 - Antes de abrir PR de feature com superfície de UI ou regra de negócio sensível
 - Ao retomar uma feature entregue há tempo, para conferir se ainda atende
@@ -138,13 +140,16 @@ Determinar o escopo **antes** de começar. Três fatores:
 
 | Perfil | Dimensões a rodar | Ciclos |
 |---|---|---|
-| **Mínimo** — ajuste, sem UI, domínio comum | A, D, J, **K** (só o passo estático) | 1 |
-| **Padrão** — nova/evolução, sem UI ou UI simples | A, B, C, D, E, F, I, **K** (estático) | até 2 |
-| **Completo** — UI com JS **ou** domínio sensível | A a K (todas), **K com `--mutate`** | até 3 |
+| **Mínimo** — ajuste, sem UI, domínio comum | A, D, J, **K** (só o passo estático), **L** | 1 |
+| **Padrão** — nova/evolução, sem UI ou UI simples | A, B, C, D, E, F, I, **K** (estático), **L** | até 2 |
+| **Completo** — UI com JS **ou** domínio sensível | A a L (todas), **K com `--mutate`** | até 3 |
 
 > **A dimensão K nunca é pulada por inteiro.** O passo estático dela (procurar teste sem oráculo)
 > é grep, custa segundos, e é a checagem com melhor razão achado/esforço da skill inteira. O que
 > o perfil decide é se roda também a medição por mutação.
+>
+> **A dimensão L tampouco é pulada.** É leitura de texto contra código, sem app servido, e a
+> defasagem que ela pega foi, no caso medido, 27 dos 31 achados de uma revisão pós-entrega.
 
 **Dimensão pulada é dimensão declarada.** No relatório, cada dimensão fora do escopo aparece com o motivo (`fora do perfil {X}` / `projeto sem dark mode` / `app não servido`). Nunca omitir em silêncio — omissão silenciosa no relatório de QA é ironia dispensável.
 
@@ -154,7 +159,7 @@ Determinar o escopo **antes** de começar. Três fatores:
 
 ### 1. Verificar entradas
 
-Ler `00`, `01`, `04`, `05` (se existir), `03`. Rodar `git diff --stat` para delimitar o escopo. Aplicar o gate de entrada; se faltar o `00`, decidir entre pedir ou modo degradado.
+Ler `00`, `01`, `04`, `05` (se existir), `03`. Rodar `git diff --stat` para delimitar o escopo. Ler também `.ai/rules/index.md` e as rules cujos globs casam o diff, as docs de usuário e o `CHANGELOG` tocados pelo diff, e a tabela `## Conformidade com Rules` do `03` — entradas da dimensão L. Aplicar o gate de entrada; se faltar o `00`, decidir entre pedir ou modo degradado.
 
 ### 2. Auditar o requisito ANTES de validar qualquer coisa
 
@@ -204,7 +209,7 @@ Registrar: veredito, número do ciclo, achados abertos e débitos aceitos. O `03
 
 ---
 
-## As 11 Dimensões
+## As 12 Dimensões
 
 ### A — Cobertura do Requisito (omissão silenciosa)
 
@@ -432,6 +437,54 @@ operador diz qual lacuna de derivação o deixou vivo:
 
 ---
 
+### L — Consistência Documental (wiki × código × docs × rules)
+
+**O que é**: as dimensões A–K perguntam se o produto e o instrumento estão certos. Esta pergunta
+se o que está **escrito** sobre eles ainda é verdade: PRD, ADR, `04`, docs de usuário, CHANGELOG
+e as rules do projeto, contra o código que foi entregue.
+
+**Por que escapa**: o step 7 da `feature-wiki` manda registrar "Desvios do Plano", e o agente
+registra — no `03`. O PRD e a ADR continuam afirmando o que o código não faz, e são eles que a
+próxima pessoa lê. Quem escreveu o texto tende a lê-lo como certo, então a autolimpeza do step 7
+não basta. Medido numa feature real, depois de o step 7 "concluído": **31 achados** numa revisão
+independente, **27 desta dimensão** — PRD e ADR com a guarda antiga, oito IDs de CT só no teste,
+citação de vendor 4 linhas fora, consequência invalidada ainda nas docs pt/en e na ADR, e duas
+rules do projeto violadas no código novo.
+
+**Entrada**: `00`–`05`, `git diff`, `.ai/rules/index.md` + as rules cujos globs casam o diff,
+docs de usuário e CHANGELOG tocados, e a tabela `## Conformidade com Rules` do `03` — o que o
+
+implementador **declarou**; esta dimensão confere a declaração.
+
+**Como verificar** — cinco checagens, todas estáticas, na ordem de custo:
+
+| # | Checagem | Como | Achado se |
+
+|---|---|---|---|
+| L1 | IDs de CT | `grep -o '\[CT-B\?[0-9]*\]'` nos arquivos de teste × índice do `04`/`05` | ID num lado só; linha de dataset sem Exemplo no Gherkin; contagem do cabeçalho do `04` diferente da real |
+| L2 | Citações `arquivo:símbolo:linha` | o grep da seção *Citações de código* da `feature-wiki` | símbolo não está na linha citada; citação sem símbolo |
+| L3 | PRD/ADR × código | para cada passo do `01` e cada "Decisão"/"Consequências" do `02`, abrir o arquivo citado e conferir a afirmação | afirmação que o código contradiz sem marca `*(alterado em …)*`; desvio que existe só no `03` |
+| L4 | Rules × diff | para cada rule cujo glob casa um arquivo do diff, conferir a linha da tabela do `03` **e** o código | rule sem linha na tabela; "aplicada" sem evidência; rule violada (`group` errado, chave de env fora do `phpunit.xml`, par de cenário exigido pela rule ausente) |
+| L5 | Docs × comportamento × rastro | docs pt × en × CHANGELOG × README contra o comportamento final; cada frase nova procurada no `00`/`02` | pt e en dizem coisas diferentes; consequência invalidada ainda descrita; frase em doc de usuário **sem `RQ` nem ADR** de origem — crescimento sem rastro, o mesmo padrão que a matriz chama de "código sem `RQ`" |
+
+**Severidade e destino**:
+
+| Achado | Severidade | Destino |
+|---|---|---|
+| L4 rule violada | **Major**; **Blocker** se a rule é de autenticação/autorização ou de fronteira de dados | **2** |
+| L3 PRD/ADR contradizendo o código | Major | **1** — corrigir o texto e marcar a data; se a contradição esconder comportamento não pedido, também **2** |
+| L1 CT só no teste | Major | **3** — o cenário nasce no `04` via `feature-test-design`, com mutante; teste sem cenário é teste derivado do código |
+| L5 frase sem rastro | Major | **1** — vira Adendo no `00` ou sai da doc |
+| L5 pt × en divergentes; consequência invalidada ainda descrita | Minor | **1** |
+| L2 citação errada | Minor | **1** |
+| L1 contagem do cabeçalho errada | Cosmético | **1** — ou remover a contagem manual |
+
+> **Esta dimensão não corrige nada**, como as outras. Devolve a lista com `arquivo:linha` dos
+> dois lados — o texto e o código — e o destino. Quem corrige é o step 7 da `feature-wiki`, na
+> volta do loop.
+
+---
+
 ## Classificação e Roteamento
 
 ### Severidade
@@ -515,7 +568,7 @@ A Matriz de Rastreabilidade transforma roteamento em consequência, não opiniã
 
 ### QA-01 — {título curto} · {Blocker|Major|Minor|Cosmético} · destino {1-5}
 
-- **Dimensão**: {A-K}
+- **Dimensão**: {A-L}
 - **Relacionado a**: RQ-02, CT-05, passo 4 do PRD
 - **Esperado**: {o que o requisito/PRD determina, com citação}
 - **Observado**: {o que o app faz}
@@ -541,6 +594,7 @@ A Matriz de Rastreabilidade transforma roteamento em consequência, não opiniã
 
 |---|----------|--------|------------|
 | A | Cobertura do requisito | ✅ / ⚠️ / ❌ | {n} achados |
+| L | Consistência documental | ✅ / ⚠️ / ❌ | {n} achados — L1…L5 |
 | B | Fronteiras e dados | ⏭️ pulada | fora do perfil `mínimo` |
 | G | Tema e cor | ⏭️ pulada | projeto sem dark mode |
 | … | | | |
@@ -678,6 +732,8 @@ Violação de qualquer uma invalida a execução:
 - [ ] `01` lido: `## Natureza da Wiki` e `## Cobertura do Requisito`
 
 - [ ] `04` e `05` lidos; diff delimitado
+- [ ] `.ai/rules/index.md` (rules que casam o diff), docs de usuário e CHANGELOG tocados lidos; tabela `## Conformidade com Rules` do `03` em mãos
+
 - [ ] Perfil de esforço definido pelo gate de risco
 
 ### Execução
@@ -686,6 +742,7 @@ Violação de qualquer uma invalida a execução:
 - [ ] Matriz de Rastreabilidade montada e conferida contra a realidade (não só contra o mapa declarado)
 - [ ] Todas as dimensões do perfil executadas; as fora do perfil **declaradas com motivo**
 - [ ] Dimensão D verificou log real, incluindo **PII no context**
+- [ ] Dimensão L conferiu IDs de CT, citações `arquivo:símbolo:linha`, PRD/ADR × código, rules × diff e docs pt × en × CHANGELOG — inclusive a declaração do `03`
 - [ ] Dimensão G detectou o mecanismo de tema do projeto antes de validar
 - [ ] Achados do MCP convertidos em CT-B novo ou em achado roteado
 
