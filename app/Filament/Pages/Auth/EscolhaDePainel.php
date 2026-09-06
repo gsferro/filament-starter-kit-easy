@@ -81,7 +81,15 @@ class EscolhaDePainel extends CardsPage
             ? array_map(fn (Panel $painel): string => $painel->getId(), DestinoAposLogin::paineisDe($user))
             : [];
 
-        return array_values(array_intersect_key(Paineis::cartoes(), array_flip($ids)));
+        // O cartão passa pela rota que CARIMBA o painel escolhido no log de acesso antes de
+        // redirecionar — o link direto para o painel deixaria o acesso sem painel.
+        $cartoes = array_intersect_key(Paineis::cartoes(), array_flip($ids));
+
+        return array_map(
+            fn (CardItem $cartao, string $id): CardItem => $cartao->url(route('login.painel.entrar', ['painel' => $id])),
+            array_values($cartoes),
+            array_keys($cartoes),
+        );
     }
 
     private function entrarDireto(?User $user, Panel $painel): string

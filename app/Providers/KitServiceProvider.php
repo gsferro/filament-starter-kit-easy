@@ -6,11 +6,13 @@ use App\Ai\Health\LocalAiCheck;
 use App\Ai\Listeners\RegistrarAiRun;
 use App\Filament\Pages\Auth\EscolhaDePainel;
 use App\Filament\Pages\Auth\TelaLoginUnificada;
+use App\Http\Controllers\Auth\EntrarNoPainelController;
 use App\Http\Responses\RespostaDeLogin;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Providers\Concerns\ConfiguraFilamentGlobal;
 use App\Settings\ConfiguracoesDoKit;
+use App\Support\DestinoAposLogin;
 use App\Support\PoliciesDeVendor;
 use App\Support\TetoDeUpload;
 use Carbon\CarbonImmutable;
@@ -119,6 +121,13 @@ class KitServiceProvider extends ServiceProvider
     {
         AuthenticationLog::creating(function (AuthenticationLog $acesso): void {
             if (filled($acesso->getAttribute('painel')) || ! $this->logDeAcessoTemColunaDePainel()) {
+                return;
+            }
+
+            // Login pela página única (/login): o painel corrente é o default emprestado pelo
+            // middleware, não o painel em que a pessoa vai entrar. Fica nulo; o carimbo certo
+            // entra em `DestinoAposLogin` (destino direto ou cartão escolhido).
+            if (session()->get(DestinoAposLogin::SESSAO_EM_CURSO) === true) {
                 return;
             }
 
@@ -517,6 +526,7 @@ class KitServiceProvider extends ServiceProvider
         Route::middleware(['web', 'panel:app'])->group(function (): void {
             Route::get('/login', TelaLoginUnificada::class)->name('login');
             Route::get('/login/painel', EscolhaDePainel::class)->middleware('auth')->name('login.painel');
+            Route::get('/login/painel/{painel}', EntrarNoPainelController::class)->middleware('auth')->name('login.painel.entrar');
         });
     }
 

@@ -6,6 +6,7 @@ use App\Filament\Forms\Components\CampoAntiRobo;
 use App\Http\Controllers\Auth\ContaIndisponivelController;
 use App\Models\User;
 use App\Support\ConfiguracaoDoLogin;
+use App\Support\DestinoAposLogin;
 use App\Support\RegistroAberto;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Login;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
@@ -54,6 +55,12 @@ class TelaLogin extends Login
     {
         if (ConfiguracaoDoLogin::unificado() && ! $this->ehAPaginaUnica()) {
             throw new HttpResponseException(new RedirectResponse(route('login')));
+        }
+
+        if (! $this->ehAPaginaUnica()) {
+            // Tela de painel: o login que vier daqui tem painel de origem. Uma marca deixada por
+            // uma visita anterior a /login não pode anular o carimbo deste login.
+            session()->forget(DestinoAposLogin::SESSAO_EM_CURSO);
         }
 
         parent::mount();

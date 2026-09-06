@@ -46,6 +46,10 @@ class TelaLoginUnificada extends TelaLogin
             throw new HttpResponseException(new RedirectResponse(DestinoAposLogin::urlPara($user)));
         }
 
+        // O login que começa aqui não tem painel de origem: o `authentication_log` nasce com
+        // painel nulo e o carimbo entra no painel de fato (ver `DestinoAposLogin`).
+        session()->put(DestinoAposLogin::SESSAO_EM_CURSO, true);
+
         parent::mount();
     }
 
