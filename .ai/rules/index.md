@@ -15,6 +15,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Filament/Admin/Pages/** | .ai/rules/pages.md |
 | app/Policies/** | .ai/rules/policies.md |
 | app/Providers/Filament/** | .ai/rules/providers-filament.md |
+| app/Providers/** | .ai/rules/providers.md |
 | app/Filament/App/Resources/** | .ai/rules/resources.md |
 | app/Settings/** | .ai/rules/settings.md |
 | wikis/specs/** | .ai/rules/specs.md |

@@ -182,3 +182,6 @@ Enforço automático: `tests/Kit/PermissoesDeAcoesTest.php` tem um inventário q
 Também do Blueprint, sem varredura automática: campo inteiro é `->numeric()->integer()`, não só `->numeric()`; coluna de data é `->date()/->dateTime()` COM `->sortable()`; status/enum em coluna é `->badge()`.
 
 A varredura ignora comentários — explicar o erro não é cometê-lo.
+
+## Cartão de painel (BoasVindas, EscolhaDePainel) sai de Paineis::cartoes() filtrado por canAccessPanel()
+Exceção à regra "CardItem só via DescobreCardsDoPainel": cartão cujo destino é um PAINEL (não uma tela) não tem `canAccess()` para o trait consultar. Esses cartões saem de `app/Support/Paineis.php::cartoes()` (fonte única dos três textos) e quem os exibe filtra por `$user->canAccessPanel($painel)` antes de montar — `EscolhaDePainel::getCards()` é o modelo; `BoasVindas` é pública e mostra os três de propósito. `CardItem::make()` direto num `->cards()` continua sendo o defeito. Origem: v0.31.0, login unificado (ADR-01/ADR-08 em `wikis/specs/feat/login-unificado/`).
