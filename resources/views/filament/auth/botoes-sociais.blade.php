@@ -52,7 +52,12 @@
 
         Ver wikis/specs/feat/login-social-por-painel/login-social-por-painel/.
     */
-    $painelCorrente = \Filament\Facades\Filament::getCurrentPanel()?->getId();
+    // Na pagina unica de login (wiki login-unificado) nao ha painel de origem: o corrente e o
+    // default, emprestado pelo middleware. Nulo = provedor habilitado em qualquer painel, e o
+    // destino da volta e decidido por DestinoAposLogin, como no login por senha (ADR-04).
+    $painelCorrente = \App\Support\ConfiguracaoDoLogin::unificado()
+        ? null
+        : \Filament\Facades\Filament::getCurrentPanel()?->getId();
     $provedores     = \App\Support\ConfiguracaoDoLogin::disponiveis($painelCorrente);
 @endphp
 
