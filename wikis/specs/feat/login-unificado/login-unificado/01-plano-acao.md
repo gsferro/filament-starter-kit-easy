@@ -21,6 +21,8 @@
 | RQ-06 | um só painel → direto | 4, 5 | — |
 | RQ-07 | 2FA, lock screen, registro etc. continuam funcionando | 6 | todos chamam `getLoginUrl()` → `TelaLogin` → `/login`; 2FA e lock screen acontecem **dentro** do painel escolhido |
 | RQ-08 | escolha só após login e antes de entrar | 7, 8 | rota com `auth`; um painel → nunca renderiza; zero painéis → volta ao login |
+| RQ-09 | o log de acesso recebe o painel de entrada | 13 | adendo 1 do `00` |
+| RQ-10 | alerta de SSO externo no README e no site | 14 | adendo 1 do `00` |
 
 ## Objetivo
 
@@ -52,7 +54,7 @@ Hoje cada painel tem a própria porta, e quem administra a instalação precisa 
 
 ### `app/Http/Controllers/Auth/LoginSocialController.php`
 
-- `retorno()` termina em `redirect()->to($novo ? $this->urlDoPerfil($user) : $this->urlDoPainel())` (`:346`); `confirmarVinculo()` idem (`:562`). `urlDoPainel()` → `painelDeDestino()->getUrl() ?? url('/')` (`:716-719`). **Muda** `urlDoPainel()`: quando unificado, devolve `DestinoAposLogin::urlPara($user)`; senão, o de hoje. Precisa do `$user` — os três chamadores o têm (`retorno()`, `confirmarVinculo()`, `urlDoPerfil()` `:751`).
+- `retorno()` termina em `redirect()->to($novo ? $this->urlDoPerfil($user) : $this->urlDoPainel())` (`:347`); `confirmarVinculo()` idem (`:563`); `urlDoPerfil()` também (`:761`). `urlDoPainel()` → `painelDeDestino()->getUrl() ?? url('/')` (`:722-729`). **Muda** `urlDoPainel()`: quando unificado, devolve `DestinoAposLogin::urlPara($user)`; senão, o de hoje. Precisa do `$user` — os três chamadores o têm (`retorno()`, `confirmarVinculo()`, `urlDoPerfil()` `:751`).
 - `urlDeLoginDoPainel()` (`:722`) continua: o login do painel redireciona para `/login` quando unificado.
 
 ### `resources/views/filament/auth/botoes-sociais.blade.php`
@@ -65,7 +67,7 @@ Hoje cada painel tem a própria porta, e quem administra a instalação precisa 
 
 ### `app/Providers/KitServiceProvider.php`
 
-- `configureTelaDeLogin()` (`:473`) registra os render hooks dos botões sociais e do rodapé, sem escopo de painel. **Ganha** `configureLoginUnificado()`: bind de `LoginResponse` e as duas rotas (ADR-05).
+- `configureTelaDeLogin()` (`:488`) registra os render hooks dos botões sociais e do rodapé, sem escopo de painel. **Ganha** `configureLoginUnificado()`: bind de `LoginResponse` e as duas rotas (ADR-05).
 
 ### `app/Console/Commands/KitUpdate.php` e `tests/Kit/KitUpdateTest.php`
 
@@ -122,7 +124,7 @@ Nenhum.
 - **Toda tela de login por painel** ganha um `mount()` com uma leitura de config. Desligado: nenhuma mudança observável (`parent::mount()`).
 - **Todo login por senha** passa pela `RespostaDeLogin` do kit. Desligado: `parent::toResponse()` — idêntico ao Filament.
 - **Login social**: desligado, `urlDoPainel()` e os botões são os de hoje. Ligado: destino pela regra unificada; botões sem `painel`.
-- **Stat de logins do dia / log de autenticação (`tapp`)**: gravam o painel do login a partir do painel corrente. Na página única o painel corrente é `app` (`panel:app`). **Consequência aceita**: com a chave ligada, o breakdown por painel registra `app` para todo login por senha — registrar nos docs. Se isso incomodar, é wiki própria (gravar o painel **escolhido**).
+- **Stat de logins do dia / acessos por painel**: o `authentication_log` nasce carimbado com o painel corrente (`KitServiceProvider::registrarPainelNoLogDeAcesso()`). Na página única o corrente é o default emprestado — por isso o passo 13 deixa o registro **sem painel** enquanto a marca de sessão da página única existir e carimba o painel de **entrada** no destino (RQ-09, adendo 1). Era "consequência aceita" na primeira versão deste plano; deixou de ser.
 - **`LoginSocialContaIndisponivelTest`, `BloqueioDeSessaoTest`, `RegistroAbertoTest`, `RoteiroDoKitTest` F-03** (`/app/register` → `/app/login`): com a chave desligada, inalterados. O `04` precisa de um cenário por fluxo com a chave **ligada** (RQ-07).
 - **`BoasVindasTest`**: a refatoração para `Paineis::cartoes()` não muda textos nem URLs.
 - **`KitUpdateTest` varredura**: `app/Http/Responses` novo é acusado se faltar na lista; `database/settings` passa a ser varrido e listado.
@@ -141,7 +143,7 @@ Nenhuma nova. `harvirsidhu/filament-cards` (cartões), `caresome/filament-auth-d
 
 - **Recusa na página única**: `Login::authenticate()` do Filament recusa quem não acessa o painel **corrente** (`app`). Sem sobrescrever `isUserAllowedToAccessPanel()`, um `admin` sem papel no `/app` **não conseguiria entrar** pela página única. Mitigação: passo 6 sobrescreve para "acessa ao menos um painel"; CT com usuário só-admin.
 - **`canAccessPanel()` loga `warning` por painel negado**: calcular os painéis acessíveis loga até dois avisos por login (quem só tem `app` recebe "negado" em `admin` e `infra`). O Panel Switch já faz exatamente isso a **cada request** de página (`getPanels()` → `canUserAccessPanel`), então o ruído não é novo. Registrar; não filtrar o log.
-- **Laço de redirecionamento**: `TelaLogin::mount()` redireciona para `route('login')`; a página única **estende** `TelaLogin`. Guarda: a condição inclui `! request()->routeIs('login')`, e a página única desligada redireciona para o login do painel **default** (que, desligado, não redireciona de volta). CT nos dois sentidos.
+- **Laço de redirecionamento**: `TelaLogin::mount()` redireciona para `route('login')`; a página única **estende** `TelaLogin`. Guarda: `TelaLogin::ehAPaginaUnica()` (a página única devolve `true` — a rota corrente é nula em `Livewire::test()` e no `livewire.update`, então não serve de guarda), e a página única desligada redireciona para o login do painel **default** (que, desligado, não redireciona de volta). CT nos dois sentidos.
 - **Livewire fora de rota de painel**: `BoasVindas` prova que uma `Page` do Filament serve como ação de rota com `panel:app`, mas ela não tem ação Livewire; a `TelaLoginUnificada` tem **formulário** (`/livewire/update`). Medido: o Filament registra `SetUpPanel` como **middleware persistente** do Livewire (`vendor/filament/filament/src/FilamentServiceProvider.php:106-116`), e middleware persistente é reaplicado pelo Livewire no update a partir da rota **original** do componente — o `panel:app` da rota `/login` volta a rodar no `authenticate()`. Ainda assim, **medir** no primeiro item do passo 6 (submeter o formulário com a chave ligada) e registrar no `03`; o `04` cobre com o cenário de login por componente.
 - **`redirect()->intended()`** lê `url.intended` da sessão; o `Authenticate` do Filament grava. A URL pretendida pode ser de um painel que a pessoa **não** acessa (ex.: colou `/admin`); `DestinoAposLogin` só honra a pretendida se o painel dela estiver na lista acessível. Comparação por **prefixo de path** do painel (`/admin/...`), não por igualdade.
 
@@ -374,7 +376,7 @@ Nenhuma nova. `harvirsidhu/filament-cards` (cartões), `caresome/filament-auth-d
    */
   public function mount(): void
   {
-      if (ConfiguracaoDoLogin::unificado() && ! request()->routeIs('login')) {
+      if (ConfiguracaoDoLogin::unificado() && ! $this->ehAPaginaUnica()) { // ehAPaginaUnica(): false aqui, true na página única
           throw new HttpResponseException(new RedirectResponse(route('login')));
       }
 
@@ -385,7 +387,7 @@ Nenhuma nova. `harvirsidhu/filament-cards` (cartões), `caresome/filament-auth-d
 - **`app/Filament/Pages/Auth/TelaLoginUnificada.php`**:
 
   ```php
-  final class TelaLoginUnificada extends TelaLogin
+  class TelaLoginUnificada extends TelaLogin
   {
       protected static string $layout = 'filament-auth-designer::components.layouts.auth'; // .ai/rules/auth.md
 
@@ -421,7 +423,7 @@ Nenhuma nova. `harvirsidhu/filament-cards` (cartões), `caresome/filament-auth-d
 - **Path**: `app/Filament/Pages/Auth/EscolhaDePainel.php`
 
   ```php
-  final class EscolhaDePainel extends CardsPage
+  class EscolhaDePainel extends CardsPage
   {
       use RestrictsFileUploadsToSchemaComponents;
 
@@ -530,6 +532,23 @@ Nenhuma nova. `harvirsidhu/filament-cards` (cartões), `caresome/filament-auth-d
 - **`docs/pt|en/recursos/configuracoes-do-kit.md`** `:18`: a linha da aba **Login** na tabela lista o que ela controla — acrescentar "página única de login".
 - **`README.md` `:191` / `README.en.md`**: bullet novo logo após "**Login social por painel**" — "**Página única de login** (desligada por default): …".
 
+### 13. O log de acesso recebe o painel de entrada (RQ-09, adendo 1)
+
+> Skills: `laravel-best-practices`, `ponytail`
+
+- **Mecanismo**: `TelaLoginUnificada::mount()` grava `session(DestinoAposLogin::SESSAO_EM_CURSO, true)`; o `creating` do `authentication_log` em `KitServiceProvider::registrarPainelNoLogDeAcesso()` devolve cedo (painel **nulo**) quando a marca existe; `TelaLogin::mount()` (tela de painel) **apaga** a marca — uma visita anterior a `/login` não anula o carimbo de um login feito pela tela do painel.
+- **Carimbo** — `DestinoAposLogin::carimbarAcesso(User, Panel)`: apaga a marca e faz `UPDATE` no último registro do usuário com `painel IS NULL`, ordenado por `login_at`, `LIMIT 1`; sem a coluna (`Schema::hasColumn` com `rescue`), não faz nada — a mesma tolerância do `creating`. Chamado por `urlPara()` quando o destino é um painel (único ou pretendida) e por `entrarEm(User, string $painelId)` no clique do cartão.
+- **Rota do cartão**: `GET /login/painel/{painel}` (`login.painel.entrar`, `web` + `panel:app` + `auth`) → `App\Http\Controllers\Auth\EntrarNoPainelController::__invoke()` → `redirect()->to(DestinoAposLogin::entrarEm($user, $painel))`. Painel não acessível volta à escolha **sem** carimbo, com `warning`. `EscolhaDePainel::getCards()` aponta cada cartão para essa rota (`CardItem::url()`).
+- **Logs**: `[DestinoAposLogin@entrarEm] Painel escolhido após o login | user - painel` (`info`) e `… Painel pedido não é acessível — de volta à escolha` (`warning`, `motivo: painel_nao_acessivel`).
+
+### 14. Alerta de SSO externo (RQ-10, adendo 1)
+
+> Skills: nenhuma
+
+- `README.md` / `README.en.md`: frase de **Atenção** no bullet da página única, com link para a página de docs.
+- `docs/{pt,en}/autenticacao/login-unificado.md`: seção "Atenção: SSO externo ainda não está pré-configurado" — o que não passa por `/login`, o que acontece (painel default → 403), o que fazer se integrar por conta própria (redirecionar o callback para o decisor de destino), e que SSOs pré-configurados são item planejado.
+- `CHANGELOG.md`: a nota do log corrigida + a frase de atenção.
+
 ### 12. Testes
 
 > Skills: `pest-testing`
@@ -541,7 +560,7 @@ Nenhuma nova. `harvirsidhu/filament-cards` (cartões), `caresome/filament-auth-d
 
 > **Ponytail ativo em modo `full`.** Dois arquivos novos de código (`DestinoAposLogin`, `RespostaDeLogin`), duas páginas novas (uma estende a tela que já existe; a outra é a boas-vindas filtrada), um método por classe tocada, zero middleware, zero dependência, zero migration de schema. A extração de `Paineis::cartoes()` existe porque há **dois** consumidores — não é abstração antecipada.
 >
-> Atalhos deliberados com `ponytail:`: o painel `app` como contexto da página única (`panel:app`, herdado da boas-vindas) em vez de um "painel de autenticação" próprio — teto: o log de autenticação registra `app` para logins pela página única.
+> Atalho deliberado (registrado no docblock de `TelaLoginUnificada`, sem marcador `ponytail:` no código): o painel `app` como contexto da página única (`panel:app`, herdado da boas-vindas) em vez de um "painel de autenticação" próprio. O teto que ele tinha — o log registrar `app` — foi removido pelo passo 13.
 >
 > **Caveman** na conversa; arquivos desta wiki, código e commits em prosa normal.
 
@@ -549,7 +568,7 @@ Nenhuma nova. `harvirsidhu/filament-cards` (cartões), `caresome/filament-auth-d
 
 | Painéis acessíveis | URL pretendida acessível? | Destino |
 |---|---|---|
-| 0 | — | login do painel default (`TelaLoginUnificada` recusa antes; `EscolhaDePainel` encerra a sessão) |
+| 0 | — | `/login/painel`, que encerra a sessão e volta ao login (`TelaLoginUnificada` recusa antes por senha; o login social chega aqui autenticado) — ir direto ao login faria laço com o `mount()` da página única |
 | 1 | sim | a pretendida |
 | 1 | não | `Panel::getUrl() ?? url(path)` do único |
 | ≥2 | sim | a pretendida |

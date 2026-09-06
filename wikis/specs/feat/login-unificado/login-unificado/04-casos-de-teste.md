@@ -22,7 +22,7 @@
 | G — entrega pelo `kit:update` (`database/settings`) | 1 | 2 — quem atualiza não recebe a migration | 2 | **mínimo** |
 
 - Técnicas aplicadas: **EP** (valores do `.env`; formas de fonte), **matriz papel × resultado** (C), **tabela de decisão** (D: painéis × pretendida), **rastreio de efeito** (log, sessão consumida, não-efeito na recusa), **controle negativo** (chave desligada em cada área), asserção sobre o fonte onde a operação exige git (G reutiliza `estaCoberto()`).
-- Cenários: **22** na derivação + **9** da revisão adversarial (CT-23…CT-30, CT-32; CT-31 fundido em CT-03) + **1** CT-B (`05`) · Regras: 8 · Mutantes previstos: 31 (+ os da revisão) · Sem matador na suíte: **1** (M-C7, timing — declarado).
+- Cenários: **22** na derivação + **9** da revisão adversarial (CT-23…CT-30, CT-32; CT-31 fundido em CT-03) + **8** do adendo 1 e da revisão da wiki (CT-33…CT-40) + **1** CT-B (`05`) · Regras: 10 · Mutantes previstos: 35 na derivação + 10 (R9, R10) · Sem matador na suíte: **1** (M-C7, timing — declarado).
 
 ## Varredura SFDIPOT
 
@@ -184,10 +184,15 @@ Funcionalidade: página única de login para os três painéis
       Exemplos:
         | situação                                        | ação                                   | primeiro destino |
         | um visitante anônimo                            | abre /admin/users                      | /admin/login     |
-        | um visitante anônimo                            | abre /infra/two-factor-authentication  | /infra/login     |
+        | um visitante anônimo                            | abre a raiz /infra                     | /infra/login     |
         | um visitante anônimo sem token de convite       | abre /app/register                     | /app/login       |
-        | uma pessoa autenticada no /admin                | faz logout pelo /admin                 | /admin/login     |
-        | uma sessão bloqueada no /admin (lock screen)    | escolhe "sair" na tela de bloqueio     | /admin/login     |
+
+    Cenário: [CT-05] o logout de um painel encerra a sessão e termina em /login
+      Dado a chave ligada e uma pessoa autenticada no /admin
+      Quando ela faz logout pelo /admin
+      Então a primeira resposta é um redirect para /admin/login
+      E ela não está mais autenticada
+      E seguir /admin/login termina em /login
 
     Cenário: [CT-06] @premissa /login com a chave desligada leva ao login do painel default, e não volta
       Dado a chave desligada
@@ -203,12 +208,11 @@ Funcionalidade: página única de login para os três painéis
       E contém a arte da tela de login e o layout de autenticação (fi-auth-layout)
 ```
 
-> CT-05: a linha do lock screen depende de como o pacote expõe "sair" (`TelaBloqueio::sairPara`); se
-> a ação não for alcançável por HTTP simples, a linha vira asserção sobre o **destino** que a tela
-> usa (`getLoginUrl()` do painel), que CT-04 já prova redirecionar. Registrar no `03` qual das duas.
-> A linha do 2FA usa a rota `/infra/two-factor-authentication` como **rota autenticada** — é o
-> `Authenticate` que redireciona; o desafio 2FA em si acontece na tela de login (Filament MFA) e é
-> coberto pelo pacote, não por esta wiki.
+> CT-05, como implementado (2026-09-05): a linha do 2FA virou a raiz `/infra` — a rota do desafio do
+> Breezy é `/{painel}/two-factor-authentication` sob o middleware do painel, não do `authMiddleware`,
+> e responde 200 a qualquer autenticado (`TelasDeAutenticacaoTest`); o que se quer provar aqui é o
+> `Authenticate`, e a raiz basta. O lock screen saiu deste esquema e virou **CT-39** (R10), com a
+> sessão bloqueada de verdade; o logout virou cenário próprio pela asserção de não-efeito.
 
 #### Mutantes previstos
 
@@ -333,10 +337,11 @@ Funcionalidade: página única de login para os três painéis
       Então é redirecionada para <pretendida>
 
       Exemplos:
-        | papel       | pretendida    |
-        | admin       | /admin/users  |
-        | admin+infra | /infra/health |
-        | admin+infra | /admin        |
+        | papel         | pretendida    | # discriminante                          |
+        | admin         | /admin/users  | um painel                                 |
+        | admin+infra   | /infra/health | dois painéis, nenhum o default            |
+        | admin+infra   | /admin        | a raiz, igualdade exata                   |
+        | master_global | /app/users    | acessa sem papel do painel (adversarial #3) |
 
     Esquema do Cenário: [CT-15] @premissa a URL pretendida de painel inacessível, ou de prefixo enganoso, é descartada
       Dado a chave ligada
@@ -407,7 +412,12 @@ Funcionalidade: página única de login para os três painéis
         | situação                                                  | destino | # partição                         |
         | uma pessoa autenticada só com admin, chave ligada          | /admin  | um painel                          |
         | um visitante anônimo, chave ligada                         | /login  | anônimo                            |
-        | uma pessoa autenticada admin+infra, chave desligada        | 200 com dois cartões (@premissa) | a rota não é gateada pela chave |
+
+    Cenário: [CT-26] @premissa a escolha não é gateada pela chave
+      Dado a chave desligada
+      E uma pessoa autenticada com admin e infra
+      Quando ela abre /login/painel
+      Então a resposta é 200 com os cartões Administração e Infraestrutura
 
     Cenário: [CT-19] quem entrou e não tem painel nenhum tem a sessão encerrada e volta ao login
       Dado a chave ligada
@@ -536,7 +546,7 @@ Funcionalidade: página única de login para os três painéis
 | CT-02 | valores do `.env` (7 linhas) | R1 | EP | Kit (config) | idem | M-A1, M-A2 |
 | CT-03 | toggle grava e governa | R1 | gravação por componente + efeito | Kit (Livewire + HTTP) | idem | M-A3, M-A4 |
 | CT-04 | telas por painel × chave (6 linhas) | R2 | EP | Kit (HTTP) | idem | M-B3, M-B4 |
-| CT-05 | fluxos vizinhos terminam em `/login` (5 linhas) | R2 | rastreio por origem | Kit (HTTP) | idem | M-B5 |
+| CT-05 | fluxos vizinhos terminam em `/login` (3 linhas + logout) | R2 | rastreio por origem | Kit (HTTP) | idem | M-B5 |
 | CT-06 | `/login` desligada → default, sem laço | R2 | controle negativo | Kit (HTTP) | idem | M-B2 |
 | CT-07 | `/login` ligada responde a tela | R2 | controle negativo | Kit (HTTP) | idem | M-B1 |
 | CT-08 | entra quem acessa algum painel (5 linhas) | R3 | matriz papel × resultado | Kit (Livewire) | idem | M-C1, M-C3 |
@@ -545,18 +555,165 @@ Funcionalidade: página única de login para os três painéis
 | CT-11 | conta inativa explicada | R3 | regressão do embrulho | Kit (Livewire) | idem | M-C6 |
 | CT-12 | um painel → direto (3 linhas) | R4 | tabela de decisão | Kit (Livewire) | idem | M-D4, M-D5, M-D7 |
 | CT-13 | ≥2 → escolha (2 linhas) | R4 | tabela de decisão | Kit (Livewire) | idem | M-D7 |
-| CT-14 | pretendida acessível vence (3 linhas) | R4 | tabela de decisão | Kit (Livewire) | idem | M-D2 |
-| CT-15 | pretendida inacessível/enganosa/externa descartada (4 linhas) | R4 | tabela de decisão | Kit (Livewire) | idem | M-D1, M-D3 |
+| CT-14 | pretendida acessível vence (4 linhas) | R4 | tabela de decisão | Kit (Livewire) | idem | M-D2 |
+| CT-15 | pretendida inacessível/enganosa/externa descartada (8 linhas: + `//evil`, barra invertida, host com `@`, `javascript:`) | R4 | tabela de decisão + hardening | Kit (Livewire) | idem | M-D1, M-D3, M-D8 |
 | CT-16 | pretendida consumida | R4 | rastreio de efeito | Kit (Livewire) | idem | M-D6 |
-| CT-17 | cartões só dos acessíveis (2 linhas) | R5 | matriz | Kit (HTTP) | idem | M-E1, M-E2, M-E6 |
-| CT-18 | um painel / anônimo / chave desligada (3 linhas) | R5 | matriz | Kit (HTTP) | idem | M-E3, M-E4 |
+| CT-17 | cartões só dos acessíveis, apontando para a rota que carimba (2 linhas) | R5 | matriz | Kit (HTTP) | idem | M-E1, M-E2, M-E6 |
+| CT-18 | um painel / anônimo (2 linhas) | R5 | matriz | Kit (HTTP) | idem | M-E3, M-E4 |
+| CT-26 | escolha e cartão com a chave desligada → painel default (auditoria Blueprint #4) | R5 | controle | Kit (HTTP) | idem | M-E7 |
 | CT-19 | zero painéis encerra a sessão | R5 | não-efeito | Kit (HTTP + spy) | idem | M-E5 |
 | CT-20 | callback social segue a regra (2 linhas) | R6 | EP | Kit (HTTP + Socialite falso) | idem | M-F1, M-F2 |
 | CT-21 | botão com/sem `painel=` (2 linhas) | R6 | EP | Kit (HTTP) | idem | M-F3, M-F4 |
 | CT-22 | caminhos cobertos pelo `kit:update` (2 linhas) | R7 | lista | Kit | `tests/Kit/KitUpdateTest.php` | M-G1, M-G2 |
 | CT-23…CT-30, CT-32 | cenários da revisão adversarial (rate limit, e-mail inexistente, chave desligada no destino, escolha desligada, 2FA, convite válido, pós-escolha, recusa social, `/login` autenticado) | R2…R6 | ver Rodada 1 | Kit | `tests/Kit/LoginUnificadoTest.php` | achados #1, #2, #4, #14, #18-#21, #23 |
 
-**Resultado (2026-09-05)**: `tests/Kit/LoginUnificadoTest.php` **63/63**; CT-22 dentro de `KitUpdateTest` verde; CT-B01 verde (9 assertions).
+| CT-33 | um painel → o log recebe esse painel (2 linhas) | R9 | rastreio de efeito | Kit (Livewire + DB) | idem | M-I1, M-I2 |
+| CT-34 | dois painéis → nulo até o clique; painel inacessível não carimba; clique carimba | R9 | rastreio (não antes / não indevido / uma vez) | Kit (HTTP + DB) | idem | M-I3, M-I4, M-I5 |
+| CT-35 | pretendida decide o painel carimbado | R9 | tabela de decisão | Kit (Livewire + DB) | idem | M-I2 |
+| CT-36 | login social pela página única carimba | R9 | EP | Kit (HTTP + Socialite) | idem | M-I6 |
+| CT-37 | marca sobrando não anula o login pela tela do painel | R9 | controle negativo | Kit (Livewire + DB) | idem | M-I7 |
+| CT-38 | `fi-auth-layout` não veste página comum (par de `.ai/rules/auth.md`) | R10 | par obrigatório | Kit (HTTP) | idem | M-J1 |
+| CT-39 | lock screen dentro do painel; sair termina em `/login` | R10 (RQ-07) | rastreio por origem | Kit (HTTP) | idem | M-J2 |
+| CT-40 | reset de senha por painel; link na página única | R10 (RQ-07) | EP | Kit (HTTP) | idem | M-J3 |
+| CT-41 | login social respeita os painéis autorizados do provedor (3 linhas) + recusa total encerra a sessão | R6 | tabela de decisão | Kit (HTTP + Socialite) | idem | M-F5 |
+| CT-42 | `{painel}` mal formado responde 404 (3 linhas) | R5 | constraint | Kit (HTTP) | idem | M-E8 |
+
+**Resultado (2026-09-05, após Blueprint)**: `tests/Kit/LoginUnificadoTest.php` **86/86** (+ `CarimboDePainelNoAcessoTest`, `LoginSocialPorPainelTest`, `BoasVindasTest` = 146/146); CT-22 dentro de `KitUpdateTest` verde; CT-B01 verde.
+
+Mutantes acrescentados pela auditoria Blueprint: **M-D8** `painelDe()` compara só o host do `parse_url()` (CT-15 linhas novas); **M-E7** escolha/cartão ativos com a chave desligada (CT-26); **M-E8** `{painel}` sem constraint, interpolado no log (CT-42); **M-F5** destino do login social ignora `kit.login.{provedor}.paineis` (CT-41).
+
+    Cenário: [CT-26] com a chave desligada a escolha e o cartão não existem
+      Dado a chave desligada
+      E uma pessoa autenticada com admin e infra
+      Quando ela abre /login/painel ou /login/painel/infra
+      Então é redirecionada para o painel default, sem cartões e sem carimbo
+
+    Esquema do Cenário: [CT-41] o login social pela página única respeita os painéis autorizados do provedor
+      Dado a chave ligada e o Google autorizado só em <paineis>
+      E uma conta existente com papel <papel>
+      Quando o provedor devolve o callback
+      Então ela é redirecionada para <destino>
+
+      Exemplos:
+        | papel       | paineis   | destino                        |
+        | admin+infra | infra     | /infra (o único autorizado)    |
+        | admin+infra | (todos)   | /login/painel                  |
+        | admin       | infra     | /login/painel → sessão encerrada, de volta a /login |
+
+    Esquema do Cenário: [CT-42] o cartão só aceita id de painel bem formado
+      Dado a chave ligada e uma pessoa autenticada
+      Quando ela pede /login/painel/<id>
+      Então a resposta é 404
+
+      Exemplos:
+        | id                 |
+        | ADMIN%0Ainjetado   |
+        | a%20b              |
+        | 40 caracteres      |
+
+---
+
+## Regra R9 — o log de acesso recebe o painel em que a pessoa de fato entrou (adendo 1, RQ-09)
+
+> `RQ-09` · perfil **padrão** (P2: integra com o `creating` existente; I2: widgets contam errado) · técnica: **rastreio de efeito** — carimbou o certo / não carimbou antes da hora / não carimbou o inacessível / uma vez — em cada partição de destino (direto, pretendida, cartão, social)
+
+> **Nota de processo**: estes cenários foram escritos **depois** do código, quando o adendo chegou — a inversão que esta skill proíbe. Ficam registrados como tal; a revisão cega da wiki (achado #25) foi quem acusou.
+
+```gherkin
+# language: pt
+
+  Regra: o registro do acesso recebe o painel de entrada, não o painel que deu contexto à página única
+
+    Esquema do Cenário: [CT-33] um só painel: o registro nasce sem painel e recebe o painel de entrada
+      Dado a chave ligada e a marca da página única na sessão
+      E uma pessoa com papel <papel>
+      Quando ela entra pelo formulário de /login
+      Então é redirecionada para /<painel>
+      E o último registro de acesso dela tem painel "<painel>"
+      E a marca da página única saiu da sessão
+
+      Exemplos:
+        | papel | painel |
+        | admin | admin  |
+        | infra | infra  |
+
+    Cenário: [CT-34] dois painéis: sem painel até o clique; o cartão carimba o escolhido; painel inacessível não carimba
+      Dado a chave ligada, a marca na sessão, e uma pessoa com admin e infra que entrou por /login
+      E o último registro de acesso dela está sem painel
+      Quando ela clica no cartão de Infraestrutura (/login/painel/infra)
+      Então é redirecionada para /infra
+      E o registro passa a ter painel "infra"
+      E um pedido a /login/painel/app (que ela não acessa) antes disso voltava à escolha sem carimbar
+
+    Cenário: [CT-35] a URL pretendida decide o painel carimbado
+      Dado a chave ligada, a marca na sessão, a pretendida /infra/health e uma pessoa com admin e infra
+      Quando ela entra pelo formulário de /login
+      Então é redirecionada para /infra/health
+      E o registro tem painel "infra"
+
+    Cenário: [CT-36] o login social pela página única carimba o painel de entrada
+      Dado a chave ligada, a marca na sessão e uma conta admin existente
+      Quando o provedor devolve o callback dessa conta
+      Então ela é redirecionada para /admin
+      E o registro tem painel "admin"
+
+    Cenário: [CT-37] uma marca esquecida não anula o carimbo de um login feito na tela do painel
+      Dado a chave desligada e a marca da página única sobrando na sessão
+      E uma pessoa com admin e infra
+      Quando ela entra pelo formulário de /admin/login
+      Então é redirecionada para /admin
+      E o registro tem painel "admin"
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M-I1 | `creating` continua carimbando o painel corrente (`app`) na página única | CT-33 (`admin` teria `app`) |
+| M-I2 | destino direto/pretendida decidido sem carimbar | CT-33, CT-35 |
+| M-I3 | cartão como link direto para o painel — nunca carimba | CT-34 |
+| M-I4 | `entrarEm()` carimba antes de validar acesso | CT-34 (pedido a `/app`) |
+| M-I5 | carimbo grava em **todos** os registros do usuário, não só no último sem painel | CT-34 (o `UPDATE` com `LIMIT 1`; um segundo registro antigo permanece) — coberto parcialmente; declarado |
+| M-I6 | login social não passa pela regra e carimba `app` | CT-36 |
+| M-I7 | tela de painel não apaga a marca — o login por ela nasce sem painel | CT-37 |
+
+---
+
+## Regra R10 — os fluxos vizinhos com a chave ligada e o par do layout de auth (revisão da wiki)
+
+> `RQ-07` + `.ai/rules/auth.md` · perfil **padrão** · técnica: rastreio por origem (lock screen, reset) e **par obrigatório** (layout de auth não vaza)
+
+```gherkin
+# language: pt
+
+  Regra: lock screen e recuperação de senha continuam por painel com a chave ligada, e o layout de auth não veste página comum
+
+    Cenário: [CT-38] o layout de autenticação da página única não veste as páginas comuns do painel
+      Dado a chave ligada e /login já renderizado com fi-auth-layout
+      Quando uma pessoa admin autenticada abre /admin
+      Então a resposta é 200 sem fi-auth-layout
+
+    Cenário: [CT-39] a tela de bloqueio continua dentro do painel, e sair dela termina em /login
+      Dado a chave ligada e uma pessoa admin autenticada com a sessão bloqueada
+      Quando ela abre /admin
+      Então é redirecionada para a tela de bloqueio do /admin, que responde 200 com fi-auth-layout
+      E o logout a partir dali leva a /admin/login, encerra a sessão, e /admin/login termina em /login
+
+    Cenário: [CT-40] a recuperação de senha continua por painel e a página única aponta para ela
+      Dado a chave ligada
+      Quando um visitante anônimo abre /login
+      Então a página contém o link da recuperação de senha do painel default
+      E esse link responde 200 com fi-auth-layout — não é redirecionado a /login
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M-J1 | `$layout` não redeclarado na página única — o layout de auth vaza para toda página (`.ai/rules/auth.md`) | CT-38 |
+| M-J2 | o redirect de `TelaLogin::mount()` aplicado também à `TelaBloqueio`/`TelaRecuperarSenha` (ex.: posto na classe base do Auth Designer) | CT-39, CT-40 |
+| M-J3 | link "esqueceu a senha" da página única apontando para `/login/…` inexistente | CT-40 |
+
 
 CT-10 não mata mutante próprio; fica como **controle** de CT-08 (mesmo formulário, mesma persona, resultado oposto) — sem ele, um `isUserAllowedToAccessPanel()` que devolve `true` antes da senha passaria despercebido em CT-08.
 

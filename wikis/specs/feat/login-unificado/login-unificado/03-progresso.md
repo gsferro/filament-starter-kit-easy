@@ -70,6 +70,16 @@
 - [x] `README.md` / `README.en.md` — bullet, se houver lista equivalente
 - [x] Testes de documentação verdes
 
+## 13. O log de acesso recebe o painel de entrada (adendo 1)
+
+- [x] `SESSAO_EM_CURSO` gravada em `TelaLoginUnificada::mount()`, lida no `creating`, apagada em `TelaLogin::mount()` e em `carimbarAcesso()`
+- [x] `DestinoAposLogin::carimbarAcesso()` e `entrarEm()`; rota `login.painel.entrar` + `EntrarNoPainelController`; cartões apontam para a rota
+- [x] CT-33…CT-37 verdes; `CarimboDePainelNoAcessoTest` continua verde
+
+## 14. Alerta de SSO externo (adendo 1)
+
+- [x] README pt/en (bullet), docs pt/en (seção), CHANGELOG
+
 ## 12. Testes
 
 - [x] `tests/Kit/LoginUnificadoTest.php` — CT-01…CT-21 + CT-23…CT-30, CT-32 (revisão adversarial); CT-22 em `tests/Kit/KitUpdateTest.php`
@@ -115,6 +125,32 @@
 | 4 | `01` passo 11: página nova de docs em dois idiomas + índice + configurações + README (6 arquivos) | **recusada** | é a convenção do kit para feature de autenticação (`login-social.md` existe nos dois idiomas); cortar deixaria a chave só no `.env.example` |
 | 5 | `04` CT-10 (senha errada) não mata mutante próprio | **recusada** | é o controle de CT-08 — sem ele, `isUserAllowedToAccessPanel()` devolvendo `true` antes da senha passaria; declarado no índice |
 
+### Revisão da wiki por sub-agente cego (2026-09-05, pós-PR) — 31 achados
+
+Contrato: ler `00`–`05` + código citado + `.ai/rules` dos paths tocados; devolver só achados com `arquivo:linha`. Fechamento:
+
+| Achado | Destino |
+|---|---|
+| desvios registrados só no `03` (zero painéis → escolha; `ehAPaginaUnica()`; consequência do log) | `01`, `02` (ADR-03, ADR-08) e docs corrigidos na fonte |
+| 7 citações `file:line` defasadas (Pint, imports) | corrigidas no `00`, `01`, `02` |
+| `final class` no PRD, código sem `final`; marcador `ponytail:` prometido e ausente | PRD ajustado ao código |
+| `04`: 31 mutantes (são 35); CT-14 com 3 linhas (teste tem 4); CT-18 não dividido em CT-26; CT-05 com 5 linhas (teste tem 3 + logout) | `04` sincronizado com o teste real |
+| `.ai/rules/auth.md` — faltava o par "página comum sem `fi-auth-layout`" | **CT-38** |
+| `.ai/rules/testes-browser.md` — CT-B no `group('kit')` | `group('browser')` |
+| `phpunit.xml` — `KIT_LOGIN_UNIFICADO` sem default forçado | acrescentado |
+| CT-17 vermelho após a rota do cartão | asserção passou a ser a rota `login.painel.entrar` |
+| RQ-07 sem lock screen nem reset de senha com a chave ligada | **CT-39**, **CT-40** |
+| carimbo do painel sem cláusula RQ (testes escritos do código) | adendo 1 no `00` (RQ-09, RQ-10) — inversão registrada na retrospectiva |
+| `.ai/rules/filament.md` "CardItem à mão" vs `Paineis::cartoes()` | candidato a emenda da rule (decisão do usuário) |
+
+### Auditoria Blueprint (2026-09-05) — sub-agente com o `filament-security-audit` do pacote extraído
+
+10 achados: 1 Medium (provedor social restrito por painel contornado no modo unificado), 5 Low (hardening da pretendida; constraint do `{painel}`; escolha/cartão ativos com a chave desligada; um painel via escolha sem carimbo; marca de sessão honrada com a chave desligada), 4 Info (chamadas repetidas de `paineisDe()`; GET com efeito colateral; helper `Paineis::url()`; pretendida com tenant alheio). **Todos os Medium/Low corrigidos** (ADR-09, emendas) com CT-15 (+4 linhas), CT-26 (invertido), CT-41 (4 casos), CT-42 (3 linhas). Infos: `Paineis::url()` extraído; os demais aceitos e registrados. Revisão de código do diff (sub-agente): 2 riscos, 2 perguntas — CT-19 ganhou `assertSessionHas('filament.notifications')`; os demais confirmados sem mudança.
+
+### Instalações reais em `TESTES KIT` (2026-09-05) — sub-agente
+
+`create-project` da branch (commit `4491715`) em `login-unificado-sem-tenancy` e `login-unificado-com-tenancy` (`kit:tenancy --force --demo`). Testes dentro das instalações: **80/80** e **96/96**. Smoke HTTP igual nas duas: chave ligada → `/admin|infra|app/login` 302 `/login`, `/login` 200, `/login/painel` anônimo 302 `/login`; desligada → `/admin/login` 200, `/login` 302 `/app/login`. Toggle via Settings (tinker) com efeito imediato nos dois sentidos, sem reiniciar o servidor. Logs limpos. **Achado**: o `.env` não liga a chave depois de instalado — a migration semeia o Settings com o valor do `.env` **da instalação** e `aplicarNaConfig()` sobrepõe no boot (convenção de toda chave de login do kit). Foi para os docs (pt/en) e para o `.env.example`.
+
 ## Blockers
 
 - nenhum
@@ -136,9 +172,11 @@
 - **Regressão com a chave desligada** (14 arquivos, em série): 676/677 — a única falha foi a âncora do `KitInfoTest` (acima). Rodada em série porque a primeira tentativa foi morta por falta de memória: outras sessões rodavam `pest --parallel` na máquina ao mesmo tempo.
 - **CT-B01 na primeira rodada**: seletor errado (`fill('email')`; o padrão do kit é `#form\.email`) e depois timeout de 45 s no `assertPathIs('/admin')` com a máquina carregada — o screenshot da falha mostrava o dashboard já carregado. Passou na rodada seguinte em 9 s.
 - **Docs**: `SiteDeDocumentacaoTest` + `RedeDeDocumentacaoTest` 46/46 com a página nova (`nav_order: 7`).
+- **Adendo 1 (carimbo do painel)**: implementado depois do PR aberto. `LoginUnificadoTest` 72/72 com CT-33…CT-40; `CarimboDePainelNoAcessoTest` continua verde. A marca de sessão é o mecanismo mais barato que distingue "login pela página única" no `creating` do log — `request()->route()` no `livewire.update` não diz de onde o componente veio.
 
 ## Retrospectiva
 
 - **Funcionou**: medir o Panel Switch e o `LoginResponse` no vendor antes de decidir — as duas decisões que dão forma à feature (cartões; resposta no container em vez de middleware) nasceram de `file:line`. A revisão adversarial por sub-agente pagou-se: achou um laço real (#21) que nenhum dos 22 cenários originais pegaria.
 - **Faltou no plano**: a guarda do laço por rota corrente — bastava lembrar que `Livewire::test()` não tem rota. E a checagem de que `fi-simple-layout-header` é do layout simples, não do painel.
 - **Faltou no plano**: prever a carga da máquina (outras sessões rodando suítes) ao escolher `--parallel` para a regressão; em série foi mais lento, mas terminou.
+- **Faltou no processo (skill)**: (1) desvio registrado no `03` sem propagar para `01`/`02`/`04`/docs — a wiki ficou contradizendo o código até a revisão cega; (2) citações `file:line` sem reverificação após o Pint; (3) requisito que chegou no meio (carimbo) virou teste escrito a partir do código — a skill não tem procedimento de **adendo**; (4) checkboxes do `03` marcados em lote; (5) nenhum passo confere o código novo contra as `.ai/rules` existentes. Propostas de melhoria entregues ao solicitante para o PR na skill.

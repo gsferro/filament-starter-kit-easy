@@ -1,7 +1,7 @@
 # Casos de Teste de Browser — Página única de login (`/login`)
 
 > Runtime: `pest-plugin-browser` (Playwright). O plugin sobe o próprio servidor.
-> Comando: `composer test:browser` (em série — nunca `--parallel`; `npm run build` e `view:cache` são pré-requisitos — `.ai/rules/testes-browser.md`).
+> Comando: `composer test:browser` (em série — nunca `--parallel`; `npm run build` e `view:cache` são pré-requisitos — `.ai/rules/testes-browser.md`). Arquivo no `group('browser')`, como os irmãos — o `group('kit')` o arrastaria para o `--parallel` do `composer test:kit`.
 
 ## Gate
 

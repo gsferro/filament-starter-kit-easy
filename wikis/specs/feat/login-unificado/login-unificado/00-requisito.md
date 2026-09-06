@@ -30,11 +30,11 @@ Registrado aqui porque a decomposição e as premissas dependem disso, e nada es
 
 | Fato | Onde |
 |---|---|
-| Os três painéis têm `->login()` e usam a **mesma** classe de tela, `TelaLogin`, via `AuthDesignerPlugin::login(fn (AuthPageConfig) => ->usingPage(TelaLogin::class))` | `app/Providers/Filament/{Admin,App,Infra}PanelProvider.php:66,74,88` e `:135,219,192` |
+| Os três painéis têm `->login()` e usam a **mesma** classe de tela, `TelaLogin`, via `AuthDesignerPlugin::login(fn (AuthPageConfig) => ->usingPage(TelaLogin::class))` | `app/Providers/Filament/{Admin,App,Infra}PanelProvider.php:66,74,88` e `usingPage()` em `AdminPanelProvider.php:138`, `AppPanelProvider.php:223`, `InfraPanelProvider.php:195` |
 | Os três painéis usam o **mesmo guard** (`web`, default do `config/auth.php:19`); nenhum `->authGuard()` | `config/auth.php:19`; grep em `app/Providers/Filament` |
 | A URL de login "corrente" é a do painel corrente ou default: `Filament::getLoginUrl()` → `getCurrentOrDefaultPanel()->getLoginUrl()` → rota `filament.{painel}.auth.login`. O middleware `Authenticate` do Filament redireciona anônimo para ela | `vendor/filament/filament/src/FilamentManager.php:292-295`, `Panel/Concerns/HasAuth.php:380-387`, `Http/Middleware/Authenticate.php:43-45` |
-| A tela de login **recusa** quem não pode acessar o painel corrente: `Login::authenticate()` → `isUserAllowedToAccessPanel()` → `canAccessPanel(Filament::getCurrentOrDefaultPanel())`, dentro do `Timebox` e de novo no `attemptWhen()`. O método é `protected` e pode ser sobrescrito | `vendor/filament/filament/src/Auth/Pages/Login.php:92-104,159-162,172-179` |
-| O destino após o login é uma classe do container: `return app(LoginResponse::class)`, cujo `toResponse()` faz `redirect()->intended(Filament::getUrl())` | `Login.php:165`; `vendor/filament/filament/src/Auth/Http/Responses/LoginResponse.php` |
+| A tela de login **recusa** quem não pode acessar o painel corrente: `Login::authenticate()` → `isUserAllowedToAccessPanel()` → `canAccessPanel(Filament::getCurrentOrDefaultPanel())`, dentro do `Timebox` e de novo no `attemptWhen()`. O método é `protected` e pode ser sobrescrito | `vendor/filament/filament/src/Auth/Pages/Login.php` — `authenticate()` `:107-114` (dentro do `Timebox`) e `:163-166` (`attemptWhen()`); `isUserAllowedToAccessPanel()` `:172-179` |
+| O destino após o login é uma classe do container: `return app(LoginResponse::class)`, cujo `toResponse()` faz `redirect()->intended(Filament::getUrl())` | `Login.php:169`; `vendor/filament/filament/src/Auth/Http/Responses/LoginResponse.php` |
 | `User::canAccessPanel()` decide por conta indisponível, aprovação pendente, `master_global` e papel do painel — e **loga `warning`** em cada negativa, inclusive "sem papel do painel" | `app/Models/User.php:140-205` |
 | O Panel Switch já é configurado global e renderiza **só** como dropdown (`simple()`) ou modal em render hook da topbar; a API tem `simple()`, `slideOver()`, `modalWidth()`, `renderHook()` — **não há modo página**. `getPanels()` filtra por `canUserAccessPanel` e exige usuário autenticado | `app/Providers/Concerns/ConfiguraFilamentGlobal.php:332-345`; `vendor/bezhansalleh/filament-panel-switch/src/PanelSwitch.php:83-160,238-270`; `resources/views/panel-switch-menu.blade.php` |
 | A tela de boas-vindas (`/`) já monta **um cartão por painel** (`cardDoPainel()`) com `CardItem` do `harvirsidhu/filament-cards`, em `CardsPage` com layout `simple`, servida **fora** dos painéis com o middleware `panel:app` para bootar o painel | `app/Filament/Pages/BoasVindas.php`; `routes/web.php` (rota `boas-vindas`) |
@@ -92,8 +92,25 @@ Não são cláusulas: *"provavelmente sera necessário uma middleware"* (sugest�
   - **Se negado**: 403 seco.
 
 - **`/login/painel` com a chave desligada** (pergunta devolvida pela derivação dos casos de teste): autenticado com dois painéis abre a escolha ou é mandado ao painel default?
-  - **Assumido**: **abre**. A rota exige `auth`, não expõe nada que a topbar do Panel Switch já não mostre a quem está dentro, e gatear por chave é um `if` a mais sem cláusula que o exija. CT-18 (linha "desligada") marcado `@premissa`.
-  - **Se negado**: `EscolhaDePainel::mount()` ganha `if (! unificado()) → redirect ao painel default`; a linha de CT-18 inverte.
+  - **Assumido inicialmente**: abre. **Revertido em 2026-09-05 pela auditoria Blueprint** (achado Low #4): com a chave desligada, `/login/painel` e `/login/painel/{painel}` renderizavam a escolha, carimbavam o log e derrubavam a sessão de quem não tem painel — superfície da feature ligada num modo em que ela deveria não existir. Agora ambos redirecionam para o painel default (CT-26).
+
+## Adendo 1 — o log de acesso carimba o painel de entrada (2026-09-05)
+
+- **Origem**: mensagem do solicitante no chat, depois do PR #56 aberto. **Fidelidade alta** (texto escrito).
+- **Texto original** (imutável):
+
+> - eu pedi uma feature que conta o login por cada painel para widgets e contagem de acessos, veja em log de acesso que foi adicionado uma coluna de painel
+> - confirme que ao selecionar o painel que o usuário vai entrar (seja unicou ou escolhido) adiciona o valor corretamente ao log de acesso
+> - […] temos um TODO aqui para quando for utilizado um SSO externo, deixar um alerta no readme e no site para ter atenção sobre isso. no futuro iremos disponibilizar aqui SSOs externos pre-configurados
+
+| ID | Cláusula | Trecho literal de origem | Tipo |
+|----|----------|--------------------------|------|
+| RQ-09 | O registro do acesso (`authentication_log.painel`) recebe o painel em que a pessoa **de fato** entrou pela página única — o único acessível, o da URL pretendida ou o cartão escolhido — e não o painel default que dá contexto à página | "ao selecionar o painel que o usuário vai entrar (seja unico ou escolhido) adiciona o valor corretamente ao log de acesso" | funcional |
+| RQ-10 | README e site avisam que SSO externo ainda não é pré-configurado e não passa pela regra de destino da página única | "deixar um alerta no readme e no site para ter atenção sobre isso" | documentação |
+
+Ambiguidade do adendo — **acesso que fica na tela de escolha sem escolher**: o registro fica sem painel (nulo). **Assumido**: correto — é um login que não entrou em painel nenhum; os widgets já toleram nulo (`CarimboDePainelNoAcessoTest` CT-03). **Se negado**: carimbar o primeiro painel da lista no login (mente sobre o que a pessoa fez).
+
+> **Nota de processo**: o adendo chegou com a implementação já em andamento e os casos CT-33…CT-37 foram escritos **antes** desta cláusula existir no `00` — a inversão que a `feature-test-design` proíbe. Registrado no `03` (retrospectiva) e como proposta de melhoria da skill.
 
 ## Fora de Escopo (declarado)
 

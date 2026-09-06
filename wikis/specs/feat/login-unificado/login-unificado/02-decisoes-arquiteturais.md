@@ -76,12 +76,12 @@ O requisito pede o Panel Switch "em modo full da página", com a alternativa exp
 O requisito sugere "provavelmente será necessário uma middleware". Medido:
 
 - **todos** os caminhos que levam à tela de login de um painel passam pela **mesma classe** `TelaLogin` (é a `usingPage()` do Auth Designer nos três painéis): `Authenticate` do Filament (`redirectTo()` → `Filament::getLoginUrl()`), `TelaBloqueio::sairPara($panel->getLoginUrl())`, `RegistroPorConvite` (3 pontos), `LoginSocialController::urlDeLoginDoPainel()`, `LogoutResponse`, `PasswordResetResponse`;
-- o destino após login é `app(LoginResponse::class)` (`vendor/filament/filament/src/Auth/Pages/Login.php:165`), um contrato do container;
+- o destino após login é `app(LoginResponse::class)` (`vendor/filament/filament/src/Auth/Pages/Login.php:169`), um contrato do container;
 - a tela de escolha precisa de sessão autenticada — o middleware `auth` do Laravel já é isso.
 
 ### Decisão
 
-1. `TelaLogin::mount()` redireciona para `route('login')` quando a chave está ligada e a rota corrente não é `login`. Um ponto, todos os fluxos.
+1. `TelaLogin::mount()` redireciona para `route('login')` quando a chave está ligada e `$this->ehAPaginaUnica()` é falso (a página única sobrescreve para `true`). Um ponto, todos os fluxos. **Alterado em 2026-09-05**: a primeira versão usava `request()->routeIs('login')`, que é nulo em `Livewire::test()` e no `livewire.update` — dispararia o redirect na própria página única.
 2. `RespostaDeLogin` (estende a `LoginResponse` do Filament) decide o destino pela chave; desligada, `parent::toResponse()`.
 3. `/login/painel` leva `auth`. Anônimo é mandado ao login pelo Laravel.
 4. `EscolhaDePainel::mount()` cobre os dois casos que não devem ver a tela: um painel (redireciona) e nenhum (encerra a sessão e volta ao login).
@@ -96,7 +96,7 @@ O requisito sugere "provavelmente será necessário uma middleware". Medido:
 
 - **Positivas**: nenhum arquivo em `app/Http/Middleware`; o fluxo é legível em duas classes; RQ-07 sai de graça (tudo que chama `getLoginUrl()` cai no `mount()`).
 - **Negativas**: com a chave ligada, o anônimo faz dois redirects (`/admin/x` → `/admin/login` → `/login`). Aceito.
-- **Riscos**: laço `TelaLogin ↔ TelaLoginUnificada`. A condição `! request()->routeIs('login')` e a página única desligada redirecionando para o login do painel default (que desligado não redireciona) fecham os dois sentidos; o `04` tem os dois casos.
+- **Riscos**: laço `TelaLogin ↔ TelaLoginUnificada`. A condição `! $this->ehAPaginaUnica()` e a página única desligada redirecionando para o login do painel default (que desligado não redireciona) fecham os dois sentidos; o `04` tem os dois casos.
 
 ---
 
@@ -184,7 +184,7 @@ A wiki `login-social-por-painel` fez o painel de origem viajar na sessão e deci
 
 ### Contexto
 
-`Login::authenticate()` do Filament recusa quem não acessa `Filament::getCurrentOrDefaultPanel()` — duas vezes: dentro do `Timebox` e no `attemptWhen()` (`Login.php:92-104,159-162`). Na página única o painel corrente é `app`. Um `admin` sem papel no `/app` seria recusado com "credenciais inválidas".
+`Login::authenticate()` do Filament recusa quem não acessa `Filament::getCurrentOrDefaultPanel()` — duas vezes: dentro do `Timebox` e no `attemptWhen()` (`Login.php:107-114,163-166`). Na página única o painel corrente é `app`. Um `admin` sem papel no `/app` seria recusado com "credenciais inválidas".
 
 ### Decisão
 
@@ -213,7 +213,7 @@ Uma `Page` do Filament fora de rota de painel precisa de um painel corrente para
 
 ### Decisão
 
-`/login` e `/login/painel` usam `panel:app`. É um atalho deliberado (`ponytail:`): o painel default empresta o contexto; nenhum "painel de autenticação" é criado.
+`/login` e `/login/painel` usam `panel:app`. É um atalho deliberado (registrado no docblock da página): o painel default empresta o contexto; nenhum "painel de autenticação" é criado.
 
 ### Alternativas Consideradas
 
@@ -223,5 +223,52 @@ Uma `Page` do Filament fora de rota de painel precisa de um painel corrente para
 ### Consequências
 
 - **Positivas**: molde já provado; zero configuração.
-- **Negativas**: o log de autenticação do `tapp/filament-authentication-log` e o stat de logins do dia registram `app` para todo login pela página única — o painel **corrente**, não o escolhido. Documentado; candidata a wiki própria se o breakdown importar.
+- **Negativas**: o `authentication_log` nasceria carimbado com `app` (o painel corrente) para todo login pela página única. **Resolvido pela ADR-09** (adendo 1): o registro nasce sem painel e recebe o painel de entrada.
 - **Riscos**: a hidratação do Livewire no `/livewire/update` fora da rota original (risco 4 do PRD). Medir no primeiro item do passo 6.
+
+---
+
+## ADR-09: O painel do log de acesso é o de entrada — marca de sessão na página única, carimbo no destino
+
+**Status**: Aceita
+**Data**: 2026-09-05 (adendo 1 do `00`)
+
+### Contexto
+
+`KitServiceProvider::registrarPainelNoLogDeAcesso()` carimba `authentication_log.painel` no `creating` com `Filament::getCurrentPanel()`. Na página única o painel corrente é o default emprestado pelo `panel:app` — todo login por senha viraria `app` no breakdown de acessos por painel (insights, stat de logins). O painel de entrada só é conhecido **depois** do `Login` event: no destino direto, na pretendida ou no clique do cartão.
+
+### Decisão
+
+1. `TelaLoginUnificada::mount()` grava a marca `login_unificado.em_curso` na sessão; o `creating` devolve cedo (painel nulo) quando ela existe; `TelaLogin::mount()` das telas de painel a apaga.
+2. `DestinoAposLogin::carimbarAcesso()` apaga a marca e atualiza o último registro sem painel do usuário. Chamado em `urlPara()` (destino direto ou pretendida) e em `entrarEm()` (cartão).
+3. O cartão da escolha aponta para `GET /login/painel/{painel}` (`EntrarNoPainelController`), que valida acesso, carimba e redireciona; painel inacessível volta à escolha sem carimbo.
+
+### Alternativas Consideradas
+
+1. **Listener do `Login` event decidindo o painel** — descartada: no momento do evento o destino não existe (pode ser a escolha).
+2. **Middleware persistente nos três painéis carimbando na primeira request** — descartada: mais um middleware em três `authMiddleware`, rodando em toda request para agir uma vez; e o clique do cartão já é um ponto natural de servidor.
+3. **Cartão como link direto para o painel e carimbo pela pretendida** — descartada: o clique não passa pelo servidor do kit; o registro ficaria nulo para quem escolhe.
+4. **Carimbar o primeiro painel acessível no login** — descartada: mente sobre o que a pessoa fez quando ela tem mais de um.
+
+### Emendas da auditoria Blueprint (2026-09-05)
+
+- **Medium** — o login social pela página única não enviava `painel=`, e a barreira `painelAutorizado()` do `LoginSocialController` só valia na ida com `?painel=`: GitHub restrito ao `/infra` entregava a pessoa no `/admin`. `DestinoAposLogin::restringirAosPaineisAutorizados(ProvedorSocial)` grava na sessão os painéis em que o provedor vale (lista vazia = todos, nada gravado); `paineisDe()` intersecta; o carimbo apaga a marca. Sem painel autorizado acessível → escolha → sessão encerrada (CT-41).
+- **Low** — `painelDe()` comparava só o host do `parse_url()`, que aceita `https://evil\@host/admin`, `javascript://host/…` e `//evil`. Agora aceita só URL absoluta que começa por `url('/')` mais barra, ou path relativo que começa por `/` e não por `//` nem barra invertida (CT-15, 4 linhas novas).
+- **Low** — `{painel}` da rota do cartão sem constraint: `->where('painel', '[a-z0-9_-]{1,32}')` (CT-42).
+- **Low** — `/login/painel` e `/login/painel/{painel}` funcionavam com a chave desligada: redirecionam ao painel default (CT-26; a premissa do `00` foi revertida).
+- **Low** — `EscolhaDePainel` com um painel só devolvia a URL sem carimbar: passou a usar `entrarEm()`.
+- **Low** — a marca `SESSAO_EM_CURSO` era honrada no `creating` mesmo com a chave desligada: agora exige `unificado()`.
+- **Info aceitos**: `paineisDe()` chamado mais de uma vez por login (até 4 `warning` de `canAccessPanel` — o Panel Switch já faz o mesmo a cada request); `GET` com efeito colateral no carimbo (afeta só o registro da própria pessoa; um `<form>` com CSRF é a saída se incomodar); pretendida `/app/{tenant alheio}` cai no 404 do tenant (só a própria pessoa).
+
+### Consequências
+
+- **Positivas**: os widgets de acessos por painel continuam corretos com a chave ligada; quem entra pela tela do painel não muda nada.
+- **Negativas**: um registro pode ficar sem painel (fechou a aba na escolha) — é um login que não entrou em painel nenhum; os widgets já toleram nulo. Uma rota a mais (`login.painel.entrar`).
+- **Riscos**: `UPDATE … LIMIT 1` ordenado por `login_at` pega o último acesso sem painel do usuário — dois logins simultâneos do mesmo usuário em navegadores diferentes poderiam trocar o carimbo entre si. Aceito: mesma pessoa, mesma contagem por painel no agregado.
+
+### Referências
+
+- `app/Support/DestinoAposLogin.php` (`SESSAO_EM_CURSO`, `entrarEm()`, `carimbarAcesso()`)
+- `app/Http/Controllers/Auth/EntrarNoPainelController.php`; `app/Providers/KitServiceProvider.php` (`registrarPainelNoLogDeAcesso()`)
+- `tests/Kit/LoginUnificadoTest.php` CT-33…CT-37; `tests/Kit/CarimboDePainelNoAcessoTest.php`
+
