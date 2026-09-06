@@ -12,6 +12,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Providers\Concerns\ConfiguraFilamentGlobal;
 use App\Settings\ConfiguracoesDoKit;
+use App\Support\ConfiguracaoDoLogin;
 use App\Support\DestinoAposLogin;
 use App\Support\PoliciesDeVendor;
 use App\Support\TetoDeUpload;
@@ -127,7 +128,7 @@ class KitServiceProvider extends ServiceProvider
             // Login pela página única (/login): o painel corrente é o default emprestado pelo
             // middleware, não o painel em que a pessoa vai entrar. Fica nulo; o carimbo certo
             // entra em `DestinoAposLogin` (destino direto ou cartão escolhido).
-            if (session()->get(DestinoAposLogin::SESSAO_EM_CURSO) === true) {
+            if (ConfiguracaoDoLogin::unificado() && session()->get(DestinoAposLogin::SESSAO_EM_CURSO) === true) {
                 return;
             }
 
@@ -526,7 +527,7 @@ class KitServiceProvider extends ServiceProvider
         Route::middleware(['web', 'panel:app'])->group(function (): void {
             Route::get('/login', TelaLoginUnificada::class)->name('login');
             Route::get('/login/painel', EscolhaDePainel::class)->middleware('auth')->name('login.painel');
-            Route::get('/login/painel/{painel}', EntrarNoPainelController::class)->middleware('auth')->name('login.painel.entrar');
+            Route::get('/login/painel/{painel}', EntrarNoPainelController::class)->middleware('auth')->where('painel', '[a-z0-9_-]{1,32}')->name('login.painel.entrar');
         });
     }
 

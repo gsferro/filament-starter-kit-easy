@@ -6,7 +6,9 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\ConfiguracaoDoLogin;
 use App\Support\DestinoAposLogin;
+use App\Support\Paineis;
 use Filament\Facades\Filament;
 use Illuminate\Http\RedirectResponse;
 
@@ -24,6 +26,10 @@ final class EntrarNoPainelController extends Controller
 {
     public function __invoke(string $painel): RedirectResponse
     {
+        if (! ConfiguracaoDoLogin::unificado()) {
+            return redirect()->to(Paineis::url(Filament::getDefaultPanel()));
+        }
+
         $user = Filament::auth()->user();
 
         if (! $user instanceof User) {

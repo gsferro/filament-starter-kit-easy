@@ -322,6 +322,11 @@ final class LoginSocialController extends Controller
             return $this->aguardarAprovacao($provedor, $user, $mascarado);
         }
 
+        if (ConfiguracaoDoLogin::unificado()) {
+            // Só os painéis em que ESTE provedor está autorizado (ADR-09 da wiki login-unificado).
+            DestinoAposLogin::restringirAosPaineisAutorizados($provedor);
+        }
+
         Auth::login($user);
 
         /*
@@ -548,6 +553,11 @@ final class LoginSocialController extends Controller
 
         if ($user->aprovacao_pendente) {
             return $this->aguardarAprovacao($provedor, $user, $mascarado);
+        }
+
+        if (ConfiguracaoDoLogin::unificado()) {
+            // Só os painéis em que ESTE provedor está autorizado (ADR-09 da wiki login-unificado).
+            DestinoAposLogin::restringirAosPaineisAutorizados($provedor);
         }
 
         Auth::login($user);

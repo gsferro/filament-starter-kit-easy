@@ -234,6 +234,15 @@ final class Paineis
     }
 
     /**
+     * A URL de entrada de um painel. `Panel::getUrl()` devolve `null` com tenancy sem tenant
+     * resolvido; o path cru deixa o próprio painel resolver a organização.
+     */
+    public static function url(Panel $painel): string
+    {
+        return $painel->getUrl() ?? url($painel->getPath());
+    }
+
+    /**
      * Um cartão por painel — os da tela de boas-vindas. Keyed pelo id do painel para quem
      * precisa filtrar: a escolha de painel após o login (`EscolhaDePainel`) mostra só os
      * acessíveis.
@@ -249,7 +258,7 @@ final class Paineis
         $cartao = static function (string $painel, string $rotulo, Heroicon $icone, string $cor, string $descricao): CardItem {
             $instancia = Filament::getPanel($painel);
 
-            return CardItem::make($instancia->getUrl() ?? url($instancia->getPath()))
+            return CardItem::make(self::url($instancia))
                 ->label($rotulo)
                 ->description($descricao)
                 ->icon($icone)

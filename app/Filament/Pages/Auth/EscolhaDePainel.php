@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Pages\Auth;
 
 use App\Models\User;
+use App\Support\ConfiguracaoDoLogin;
 use App\Support\DestinoAposLogin;
 use App\Support\Paineis;
 use Filament\Facades\Filament;
@@ -57,14 +58,24 @@ class EscolhaDePainel extends CardsPage
 
     public function mount(): void
     {
-        $user    = Filament::auth()->user();
-        $paineis = $user instanceof User ? DestinoAposLogin::paineisDe($user) : [];
+        // Desligada, a escolha não existe (auditoria Blueprint): o painel default recebe a pessoa.
+        if (! ConfiguracaoDoLogin::unificado()) {
+            throw new HttpResponseException(new RedirectResponse(Paineis::url(Filament::getDefaultPanel())));
+        }
+
+        $user = Filament::auth()->user();
+
+        if (! $user instanceof User) {
+            throw new HttpResponseException(new RedirectResponse(route('login')));
+        }
+
+        $paineis = DestinoAposLogin::paineisDe($user);
 
         // Dois ou mais: a tela existe para isso. Um: nunca mostra a escolha. Nenhum: encerra a
         // sessão e volta ao login com aviso — o 403 do painel seria uma tela em branco.
         $destino = match (count($paineis)) {
             0       => $this->encerrarSemPainel($user),
-            1       => $this->entrarDireto($user, $paineis[0]),
+            1       => DestinoAposLogin::entrarEm($user, $paineis[0]->getId()),
             default => null,
         };
 
@@ -92,21 +103,11 @@ class EscolhaDePainel extends CardsPage
         );
     }
 
-    private function entrarDireto(?User $user, Panel $painel): string
-    {
-        Log::channel('autenticacao')->info(
-            "[EscolhaDePainel@mount] Um só painel acessível — sem escolha | user: {$user?->getKey()} - painel: {$painel->getId()}",
-            ['user_id' => $user?->getKey(), 'painel' => $painel->getId()],
-        );
-
-        return $painel->getUrl() ?? url($painel->getPath());
-    }
-
-    private function encerrarSemPainel(?User $user): string
+    private function encerrarSemPainel(User $user): string
     {
         Log::channel('autenticacao')->warning(
-            "[EscolhaDePainel@mount] Autenticado sem nenhum painel acessível — sessão encerrada | user: {$user?->getKey()}",
-            ['user_id' => $user?->getKey(), 'motivo' => 'nenhum_painel_acessivel'],
+            "[EscolhaDePainel@mount] Autenticado sem nenhum painel acessível — sessão encerrada | user: {$user->getKey()}",
+            ['user_id' => $user->getKey(), 'motivo' => 'nenhum_painel_acessivel'],
         );
 
         Filament::auth()->logout();

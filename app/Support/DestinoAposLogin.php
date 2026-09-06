@@ -31,6 +31,15 @@ final class DestinoAposLogin
     public const SESSAO_EM_CURSO = 'login_unificado.em_curso';
 
     /**
+     * Restrição de painéis herdada do login social: `kit.login.{provedor}.paineis`. Quem entrou
+     * pelo GitHub liberado só no /infra não pode ser entregue no /admin só porque tem papel lá.
+     * Gravada por `restringirAosPaineisAutorizados()`, lida por `paineisDe()`, apagada no carimbo.
+     *
+     * @var string
+     */
+    public const SESSAO_PAINEIS_PERMITIDOS = 'login_unificado.paineis_permitidos';
+
+    /**
      * Os painéis em que a pessoa pode entrar, na ordem de `Filament::getPanels()`.
      *
      * A pergunta é `User::canAccessPanel()`, a mesma do middleware de cada painel — não uma
@@ -42,10 +51,35 @@ final class DestinoAposLogin
      */
     public static function paineisDe(User $user): array
     {
+        $permitidos = session()->get(self::SESSAO_PAINEIS_PERMITIDOS);
+
         return array_values(array_filter(
             Filament::getPanels(),
-            fn (Panel $painel): bool => $user->canAccessPanel($painel),
+            fn (Panel $painel): bool => (! is_array($permitidos) || in_array($painel->getId(), $permitidos, true))
+                && $user->canAccessPanel($painel),
         ));
+    }
+
+    /**
+     * O login social restringe os destinos aos painéis em que o provedor está autorizado
+     * (`ConfiguracaoDoLogin::painelAutorizado()`). Lista vazia no config significa todos — aí
+     * nada é gravado. Achado Medium da auditoria Blueprint: sem isto, a barreira por painel do
+     * login social valia só na ida com `?painel=`, e a página única não envia painel.
+     */
+    public static function restringirAosPaineisAutorizados(ProvedorSocial $provedor): void
+    {
+        $autorizados = array_values(array_filter(
+            array_keys(Filament::getPanels()),
+            fn (string $id): bool => ConfiguracaoDoLogin::painelAutorizado($provedor, $id),
+        ));
+
+        if (count($autorizados) === count(Filament::getPanels())) {
+            session()->forget(self::SESSAO_PAINEIS_PERMITIDOS);
+
+            return;
+        }
+
+        session()->put(self::SESSAO_PAINEIS_PERMITIDOS, $autorizados);
     }
 
     public static function urlPara(User $user): string
@@ -60,7 +94,7 @@ final class DestinoAposLogin
 
         $destino = match (true) {
             $painelDaPretendida instanceof Panel => $pretendida,
-            count($paineis) === 1                => $paineis[0]->getUrl() ?? url($paineis[0]->getPath()),
+            count($paineis) === 1                => Paineis::url($paineis[0]),
             default                              => route('login.painel'),
         };
 
@@ -108,7 +142,7 @@ final class DestinoAposLogin
                     ['user_id' => $user->getKey(), 'painel' => $painelId],
                 );
 
-                return $painel->getUrl() ?? url($painel->getPath());
+                return Paineis::url($painel);
             }
         }
 
@@ -130,7 +164,7 @@ final class DestinoAposLogin
      */
     private static function carimbarAcesso(User $user, Panel $painel): void
     {
-        session()->forget(self::SESSAO_EM_CURSO);
+        session()->forget([self::SESSAO_EM_CURSO, self::SESSAO_PAINEIS_PERMITIDOS]);
 
         $tabela = (string) config('authentication-log.table_name', 'authentication_log');
 
@@ -150,16 +184,23 @@ final class DestinoAposLogin
     /**
      * O painel acessível de que a URL pretendida faz parte, ou `null`.
      *
-     * Só URL do próprio host (open redirect não passa), e o path precisa ser a raiz do painel
-     * ou começar por ela COM a barra: `/administracao/x` não é `/admin`.
+     * Aceita só duas formas: URL absoluta que começa exatamente por `url('/')` mais barra, ou path
+     * relativo que começa por uma barra e não por `//` nem `/\`. Comparar só o host do
+     * `parse_url()` aceitava `https://evil.com\@host/admin` e `javascript://host/...` (achado da
+     * auditoria Blueprint). E o path precisa ser a raiz do painel ou começar por ela COM a barra:
+     * `/administracao/x` não é `/admin`.
      *
      * @param  list<Panel>  $paineis
      */
     private static function painelDe(string $url, array $paineis): ?Panel
     {
-        $host = parse_url($url, PHP_URL_HOST);
+        $raizDoApp = rtrim(url('/'), '/').'/';
 
-        if (is_string($host) && $host !== parse_url(url('/'), PHP_URL_HOST)) {
+        if (str_starts_with($url, $raizDoApp)) {
+            $url = '/'.substr($url, strlen($raizDoApp));
+        }
+
+        if (preg_match('#^/(?![/\\\\])#', $url) !== 1) {
             return null;
         }
 
