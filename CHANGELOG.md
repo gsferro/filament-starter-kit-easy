@@ -3,7 +3,7 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.31.0] - 2026-09-05
 
 ### Adicionado
 - **Página única de login (`/login`) para os três painéis, opcional e desligada por default.**
