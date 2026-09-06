@@ -308,6 +308,10 @@ it('[CT-15] @premissa a URL pretendida de painel inacessível, prefixo enganoso 
     'admin+infra, /app/users → escolha'          => ['admin+infra', fn (): string => url('/app/users'), fn (): string => route('login.painel')],
     'admin, /administracao/x → /admin'           => ['admin', fn (): string => url('/administracao/x'), fn (): string => urlDoPainel('admin')],
     'admin, host externo → /admin'               => ['admin', 'https://evil.test/admin', fn (): string => urlDoPainel('admin')],
+    'admin, //evil.test/admin → /admin'          => ['admin', '//evil.test/admin', fn (): string => urlDoPainel('admin')],
+    'admin, barra invertida → /admin'            => ['admin', '/\evil.test/admin', fn (): string => urlDoPainel('admin')],
+    'admin, host com @ → /admin'                 => ['admin', 'https://evil.test\@localhost/admin', fn (): string => urlDoPainel('admin')],
+    'admin, javascript: → /admin'                => ['admin', 'javascript://localhost/admin', fn (): string => urlDoPainel('admin')],
 ])->group('kit');
 
 it('[CT-16] a URL pretendida é consumida no login e não vaza para o seguinte', function (): void {
@@ -388,11 +392,12 @@ it('[CT-18] quem tem um só painel nunca vê a tela; quem não entrou também n�
     'anônimo → /login'     => [null, fn (): string => route('login')],
 ])->group('kit');
 
-it('[CT-26] @premissa a escolha não é gateada pela chave: autenticado com dois painéis a abre mesmo desligada', function (): void {
+it('[CT-26] com a chave desligada a escolha e o cartão não existem: vão para o painel default', function (): void {
     ligarLoginUnificado(false);
     $this->actingAs(personaDoKit('admin+infra'));
 
-    $this->get('/login/painel')->assertOk()->assertSee('Administração')->assertSee('Infraestrutura');
+    $this->get('/login/painel')->assertRedirect(urlDoPainel('app'));
+    $this->get(route('login.painel.entrar', ['painel' => 'infra']))->assertRedirect(urlDoPainel('app'));
 })->group('kit');
 
 it('[CT-19] quem entrou e não tem painel nenhum tem a sessão encerrada e volta ao login', function (): void {
@@ -401,7 +406,9 @@ it('[CT-19] quem entrou e não tem painel nenhum tem a sessão encerrada e volta
     $pessoa = personaDoKit('sem papel');
     $this->actingAs($pessoa);
 
-    $this->get('/login/painel')->assertRedirect(route('login'));
+    $this->get('/login/painel')
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('filament.notifications'); // o aviso sobrevive ao encerramento da sessão
 
     $this->assertGuest();
     $canal->shouldHaveReceived('warning')
@@ -619,3 +626,40 @@ it('[CT-40] a recuperação de senha continua por painel e a página única apon
     $this->get('/login')->assertOk()->assertSee($reset, false);
     $this->get($reset)->assertOk()->assertSee('fi-auth-layout', false);
 })->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| Auditoria Blueprint — provedor restrito por painel, constraint da rota
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-41] o login social pela página única respeita os painéis autorizados do provedor', function (string $papel, array $paineisDoGoogle, string $destino): void {
+    ligarLoginUnificado();
+    $pessoa = personaDoKit($papel, 'social@example.com');
+    config()->set('kit.login.google.paineis', $paineisDoGoogle);
+
+    voltaDoGoogle($pessoa->email)->assertRedirect($destino);
+})->with([
+    'admin+infra, Google só no infra → /infra'          => ['admin+infra', ['infra'], fn (): string => urlDoPainel('infra')],
+    'admin+infra, Google em qualquer painel → escolha'  => ['admin+infra', [], fn (): string => route('login.painel')],
+    'admin, Google só no infra → escolha (que encerra)' => ['admin', ['infra'], fn (): string => route('login.painel')],
+])->group('kit');
+
+it('[CT-41] quem entra por provedor não autorizado em nenhum painel acessível termina deslogado', function (): void {
+    ligarLoginUnificado();
+    $pessoa = personaDoKit('admin', 'social@example.com');
+    config()->set('kit.login.google.paineis', ['infra']);
+    ligarProvedor(ProvedorSocial::Google);
+    Socialite::fake(ProvedorSocial::Google->value, usuarioSocialFalso(ProvedorSocial::Google, [], ['id' => 'sub-1', 'email' => $pessoa->email]));
+
+    $this->followingRedirects()->get('/auth/google/callback')->assertOk()->assertSeeLivewire(TelaLoginUnificada::class);
+
+    $this->assertGuest();
+})->group('kit');
+
+it('[CT-42] o cartão só aceita id de painel bem formado', function (string $painel): void {
+    ligarLoginUnificado();
+    $this->actingAs(personaDoKit('admin+infra'));
+
+    $this->get('/login/painel/'.$painel)->assertNotFound();
+})->with(['ADMIN%0Ainjetado', 'a%20b', str_repeat('x', 40)])->group('kit');
