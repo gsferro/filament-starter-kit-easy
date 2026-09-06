@@ -173,6 +173,15 @@ final class ConfiguracaoDoLogin
      * autorização, não conveniência. E vale para os QUATRO provedores. Ver ADR-06 da wiki
      * `login-social-google`.
      */
+    /**
+     * Página única de login em `/login` para os três painéis. Lida por request — pode vir do
+     * Settings. Wiki `login-unificado`.
+     */
+    public static function unificado(): bool
+    {
+        return (bool) config('kit.login.unificado', false);
+    }
+
     public static function registroAberto(): bool
     {
         return RegistroAberto::habilitado();

@@ -10,6 +10,7 @@ use App\Models\VinculoSocial;
 use App\Notifications\ConfirmarVinculoSocial;
 use App\Notifications\PrimeiroAcessoSocial;
 use App\Support\ConfiguracaoDoLogin;
+use App\Support\DestinoAposLogin;
 use App\Support\Paineis;
 use App\Support\ProvedorSocial;
 use App\Support\RegistroAberto;
@@ -321,6 +322,11 @@ final class LoginSocialController extends Controller
             return $this->aguardarAprovacao($provedor, $user, $mascarado);
         }
 
+        if (ConfiguracaoDoLogin::unificado()) {
+            // Só os painéis em que ESTE provedor está autorizado (ADR-09 da wiki login-unificado).
+            DestinoAposLogin::restringirAosPaineisAutorizados($provedor);
+        }
+
         Auth::login($user);
 
         /*
@@ -343,7 +349,7 @@ final class LoginSocialController extends Controller
             ],
         );
 
-        return redirect()->to($novo ? $this->urlDoPerfil($user) : $this->urlDoPainel());
+        return redirect()->to($novo ? $this->urlDoPerfil($user) : $this->urlDoPainel($user));
     }
 
     /**
@@ -549,6 +555,11 @@ final class LoginSocialController extends Controller
             return $this->aguardarAprovacao($provedor, $user, $mascarado);
         }
 
+        if (ConfiguracaoDoLogin::unificado()) {
+            // Só os painéis em que ESTE provedor está autorizado (ADR-09 da wiki login-unificado).
+            DestinoAposLogin::restringirAosPaineisAutorizados($provedor);
+        }
+
         Auth::login($user);
 
         session()->put('lockscreen', false);
@@ -559,7 +570,7 @@ final class LoginSocialController extends Controller
             ['user_id' => $user->getKey(), 'email' => $mascarado, 'provedor' => $provedor->value],
         );
 
-        return redirect()->to($this->urlDoPainel());
+        return redirect()->to($this->urlDoPainel($user));
     }
 
     /**
@@ -713,8 +724,17 @@ final class LoginSocialController extends Controller
             : Filament::getDefaultPanel();
     }
 
-    private function urlDoPainel(): string
+    /**
+     * Com a página única de login ligada, o destino segue a mesma regra do login por senha
+     * (`DestinoAposLogin`): um painel acessível → ele; mais de um → a escolha. Desligada, o
+     * painel da sessão ou o default, como antes (ADR-06 de `login-social-por-painel`).
+     */
+    private function urlDoPainel(User $user): string
     {
+        if (ConfiguracaoDoLogin::unificado()) {
+            return DestinoAposLogin::urlPara($user);
+        }
+
         return $this->painelDeDestino()->getUrl() ?? url('/');
     }
 
@@ -748,7 +768,7 @@ final class LoginSocialController extends Controller
         $organizacao = $painel->hasTenancy() ? $user->getTenants($painel)->first() : null;
 
         if (! Route::has($rota) || ($painel->hasTenancy() && $organizacao === null)) {
-            return $this->urlDoPainel();
+            return $this->urlDoPainel($user);
         }
 
         return route($rota, $organizacao ? ['tenant' => $organizacao] : []);

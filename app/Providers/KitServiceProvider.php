@@ -4,10 +4,16 @@ namespace App\Providers;
 
 use App\Ai\Health\LocalAiCheck;
 use App\Ai\Listeners\RegistrarAiRun;
+use App\Filament\Pages\Auth\EscolhaDePainel;
+use App\Filament\Pages\Auth\TelaLoginUnificada;
+use App\Http\Controllers\Auth\EntrarNoPainelController;
+use App\Http\Responses\RespostaDeLogin;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Providers\Concerns\ConfiguraFilamentGlobal;
 use App\Settings\ConfiguracoesDoKit;
+use App\Support\ConfiguracaoDoLogin;
+use App\Support\DestinoAposLogin;
 use App\Support\PoliciesDeVendor;
 use App\Support\TetoDeUpload;
 use Carbon\CarbonImmutable;
@@ -15,6 +21,7 @@ use CmsMulti\FilamentClearCache\Facades\FilamentClearCache;
 use Filament\Actions\Exports\Models\Export;
 use Filament\Actions\Imports\Events\ImportCompleted;
 use Filament\Actions\Imports\Events\ImportStarted;
+use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Facades\Filament;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
@@ -25,6 +32,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -72,6 +80,7 @@ class KitServiceProvider extends ServiceProvider
         $this->configuraFilamentGlobal();
         $this->configureCorrecoesDeCss();
         $this->configureTelaDeLogin();
+        $this->configureLoginUnificado();
         $this->registrarPainelNoLogDeAcesso();
     }
 
@@ -113,6 +122,13 @@ class KitServiceProvider extends ServiceProvider
     {
         AuthenticationLog::creating(function (AuthenticationLog $acesso): void {
             if (filled($acesso->getAttribute('painel')) || ! $this->logDeAcessoTemColunaDePainel()) {
+                return;
+            }
+
+            // Login pela página única (/login): o painel corrente é o default emprestado pelo
+            // middleware, não o painel em que a pessoa vai entrar. Fica nulo; o carimbo certo
+            // entra em `DestinoAposLogin` (destino direto ou cartão escolhido).
+            if (ConfiguracaoDoLogin::unificado() && session()->get(DestinoAposLogin::SESSAO_EM_CURSO) === true) {
                 return;
             }
 
@@ -489,6 +505,30 @@ class KitServiceProvider extends ServiceProvider
             PanelsRenderHook::AUTH_REGISTER_FORM_AFTER,
             fn (): string => view('filament.auth.botoes-sociais')->render(),
         );
+    }
+
+    /**
+     * A página única de login e a escolha de painel (wiki `login-unificado`).
+     *
+     * Rotas registradas SEMPRE — rota dentro de `if` quebra `route()` e `route:cache` (ver o
+     * bloco do login social em `routes/web.php`) — e decididas por request pela chave
+     * `kit.login.unificado`. Aqui e não em `routes/web.php` porque aquele arquivo é do usuário
+     * e o `kit:update` não o entrega (ADR-05). `web` explícito: rota de provider não ganha o
+     * grupo sozinha. `panel:app` boota o painel default — tema, cores, layout do Auth Designer
+     * —, o mesmo molde da rota `boas-vindas`.
+     *
+     * A resposta de login é de TODO login por senha nos três painéis; com a chave desligada ela
+     * é idêntica à do Filament.
+     */
+    protected function configureLoginUnificado(): void
+    {
+        $this->app->bind(LoginResponse::class, RespostaDeLogin::class);
+
+        Route::middleware(['web', 'panel:app'])->group(function (): void {
+            Route::get('/login', TelaLoginUnificada::class)->name('login');
+            Route::get('/login/painel', EscolhaDePainel::class)->middleware('auth')->name('login.painel');
+            Route::get('/login/painel/{painel}', EntrarNoPainelController::class)->middleware('auth')->where('painel', '[a-z0-9_-]{1,32}')->name('login.painel.entrar');
+        });
     }
 
     protected function configureHealthChecks(): void

@@ -5,6 +5,8 @@ namespace App\Filament\Pages\Auth;
 use App\Filament\Forms\Components\CampoAntiRobo;
 use App\Http\Controllers\Auth\ContaIndisponivelController;
 use App\Models\User;
+use App\Support\ConfiguracaoDoLogin;
+use App\Support\DestinoAposLogin;
 use App\Support\RegistroAberto;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Login;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
@@ -12,6 +14,8 @@ use Filament\Facades\Filament;
 use Filament\Schemas\Schema;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -36,6 +40,37 @@ class TelaLogin extends Login
 {
     /** Regra do kit: página de auth redeclara o `$layout`. Ver `.ai/rules/auth.md`. */
     protected static string $layout = 'filament-auth-designer::components.layouts.auth';
+
+    /**
+     * Com a página única ligada, as telas de login dos painéis não são mais a porta: quem chega
+     * aqui por qualquer caminho — `Authenticate`, lock screen, registro, logout, reset de senha,
+     * todos passam por `getLoginUrl()` — é levado a `/login`. Um ponto cobre todos (ADR-03).
+     *
+     * `TelaLoginUnificada` ESTENDE esta classe e responde `ehAPaginaUnica()`: é isso que evita o
+     * laço — e não a rota corrente, que é nula em `Livewire::test()` e `livewire.update` no
+     * navegador. Sai por `HttpResponseException`, como `RegistroPorConvite::recusar()`: dentro
+     * de `mount()` de página Livewire um `redirect()` solto não interrompe.
+     */
+    public function mount(): void
+    {
+        if (ConfiguracaoDoLogin::unificado() && ! $this->ehAPaginaUnica()) {
+            throw new HttpResponseException(new RedirectResponse(route('login')));
+        }
+
+        if (! $this->ehAPaginaUnica()) {
+            // Tela de painel: o login que vier daqui tem painel de origem. Uma marca deixada por
+            // uma visita anterior a /login não pode anular o carimbo deste login.
+            session()->forget(DestinoAposLogin::SESSAO_EM_CURSO);
+        }
+
+        parent::mount();
+    }
+
+    /** A página única (`/login`) sobrescreve para `true`; as telas dos painéis são `false`. */
+    protected function ehAPaginaUnica(): bool
+    {
+        return false;
+    }
 
     public function getSubheading(): string|Htmlable|null
     {

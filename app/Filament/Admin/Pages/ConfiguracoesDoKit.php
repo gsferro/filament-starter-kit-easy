@@ -492,6 +492,15 @@ class ConfiguracoesDoKit extends SettingsPage
                 // Duas seções, dois assuntos: os provedores (um bloco fechado por provedor,
                 // com o ícone de status no cabeçalho) e o rodapé. Pedido do solicitante na
                 // validação real dos provedores (2026-08-26).
+                Section::make('Página única de login')
+                    ->description('Uma tela em /login para os três painéis, em vez de /admin/login, /infra/login e /app/login.')
+                    ->columnSpanFull()
+                    ->schema([
+                        Toggle::make('login_unificado')
+                            ->label('Unificar o login em /login')
+                            ->helperText('Desligado: cada painel tem a própria tela de login (padrão do Filament). Ligado: as três telas levam a /login; quem tem acesso a mais de um painel escolhe qual abrir depois de entrar, quem tem um só entra direto. Vale na hora, sem deploy.')
+                            ->columnSpanFull(),
+                    ]),
                 Section::make('Login social')
                     ->description('Um bloco por provedor, fechado. O ícone no cabeçalho diz se o botão está habilitado; abra para ver as credenciais.')
                     ->columnSpanFull()

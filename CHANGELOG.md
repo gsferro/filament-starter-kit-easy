@@ -3,6 +3,29 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Adicionado
+- **Página única de login (`/login`) para os três painéis, opcional e desligada por default.**
+  `KIT_LOGIN_UNIFICADO=true` (ou o toggle "Unificar o login em /login" na aba Login das
+  configurações, que vale na hora) faz `/admin/login`, `/infra/login` e `/app/login` levarem a
+  `/login`. Depois de entrar, quem acessa **um** painel vai direto para ele (ou para a URL que
+  tinha pedido); quem acessa **mais de um** escolhe em `/login/painel`, uma tela com os mesmos
+  cartões da boas-vindas — só os painéis acessíveis. Quem não acessa nenhum é recusado como hoje.
+  O login social segue a mesma regra de destino; 2FA, lock screen, registro por convite e reset de
+  senha continuam funcionando (todos chegam ao login do painel, que leva a `/login`). O Panel
+  Switch não tem modo página — por isso os cartões (ADR-01). O log de acesso recebe o painel em
+  que a pessoa **de fato** entrou (direto, pela URL pretendida ou pelo cartão clicado), e não o
+  painel default que dá tema à página única — os widgets de acessos por painel continuam certos.
+  **Atenção**: SSO externo (SAML, OIDC corporativo) ainda não é pré-configurado e não passa pela
+  regra de destino; ver a página de docs. Wiki: `wikis/specs/feat/login-unificado/`.
+
+### Corrigido
+- **`kit:update` passa a entregar `database/settings`.** As migrations de Settings (sete até
+  aqui) nunca estiveram em `CAMINHOS_DO_KIT`: quem atualiza recebia a propriedade nova no
+  `ConfiguracoesDoKit` e a tela quebrava sem a linha no banco. A varredura do `KitUpdateTest`
+  passa a olhar o diretório.
+
 ## [0.30.1] - 2026-09-05
 
 ### Corrigido

@@ -5,6 +5,8 @@ namespace App\Support;
 use BezhanSalleh\FilamentShield\FilamentShield;
 use Filament\Facades\Filament;
 use Filament\Panel;
+use Filament\Support\Icons\Heroicon;
+use Harvirsidhu\FilamentCards\CardItem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Facade;
 use RuntimeException;
@@ -229,5 +231,45 @@ final class Paineis
                 .'Com a descoberta global o mapa painel × permissão deixa de separar coisa alguma.'
             );
         }
+    }
+
+    /**
+     * A URL de entrada de um painel. `Panel::getUrl()` devolve `null` com tenancy sem tenant
+     * resolvido; o path cru deixa o próprio painel resolver a organização.
+     */
+    public static function url(Panel $painel): string
+    {
+        return $painel->getUrl() ?? url($painel->getPath());
+    }
+
+    /**
+     * Um cartão por painel — os da tela de boas-vindas. Keyed pelo id do painel para quem
+     * precisa filtrar: a escolha de painel após o login (`EscolhaDePainel`) mostra só os
+     * acessíveis.
+     *
+     * `CardItem` não verifica autorização (`.ai/rules/filament.md`, "CardItem do hub"). Aqui
+     * isso é deliberado nos dois consumidores: a boas-vindas é pública e mostra os três de
+     * propósito; a escolha filtra por `canAccessPanel()` ANTES de montar.
+     *
+     * @return array<string, CardItem>
+     */
+    public static function cartoes(): array
+    {
+        $cartao = static function (string $painel, string $rotulo, Heroicon $icone, string $cor, string $descricao): CardItem {
+            $instancia = Filament::getPanel($painel);
+
+            return CardItem::make(self::url($instancia))
+                ->label($rotulo)
+                ->description($descricao)
+                ->icon($icone)
+                ->color($cor)
+                ->badge('/'.$instancia->getPath());
+        };
+
+        return [
+            'app'   => $cartao('app', 'Painel do negócio', Heroicon::OutlinedBuildingOffice2, 'primary', 'Onde o seu produto vive. Multi-organização, convites e o cadastro do dia a dia.'),
+            'admin' => $cartao('admin', 'Administração', Heroicon::OutlinedUsers, 'info', 'Usuários, papéis e permissões, convites, organizações e agentes de IA.'),
+            'infra' => $cartao('infra', 'Infraestrutura', Heroicon::OutlinedServerStack, 'gray', 'Filas, logs, exceções, backups, saúde da aplicação e o Pulse.'),
+        ];
     }
 }

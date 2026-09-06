@@ -85,6 +85,8 @@
         <env name="X_CLIENT_ID" value="" force="true"/>
         <env name="X_CLIENT_SECRET" value="" force="true"/>
         <env name="KIT_SOCIALITE_VINCULO_CONFIRMAR" value="false" force="true"/>
+        <!-- Página única de login (wiki login-unificado): a suíte mede o kit desligado; os casos ligam por config()->set(). -->
+        <env name="KIT_LOGIN_UNIFICADO" value="false" force="true"/>
         <!--
             O resto das chaves do kit, cada uma no DEFAULT do config/kit.php — pelo
             mesmo motivo do bloco de cima: um .env local com KIT_REGISTRO=true ou

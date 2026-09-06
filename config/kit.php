@@ -553,6 +553,18 @@ return [
             ))),
         ],
 
+        /*
+         * PÁGINA ÚNICA DE LOGIN. Desligada, cada painel tem a própria tela (/admin/login,
+         * /infra/login, /app/login) — o default do Filament. Ligada, as três redirecionam para
+         * /login, e depois do login o kit decide o destino: um painel acessível → entra nele;
+         * mais de um → /login/painel escolhe.
+         *
+         * Lida POR REQUEST (mount da tela de login, resposta do login, a rota /login), por isso
+         * pode ser editada na tela de configurações. `filter_var`: só `true`/`1` ligam — muda o
+         * fluxo de acesso, então falha fechado. Ver wikis/specs/feat/login-unificado/.
+         */
+        'unificado' => filter_var(env('KIT_LOGIN_UNIFICADO', false), FILTER_VALIDATE_BOOLEAN),
+
         'rodape' => env('KIT_LOGIN_RODAPE'),
 
         /*

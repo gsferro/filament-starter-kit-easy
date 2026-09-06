@@ -111,6 +111,7 @@ class KitUpdate extends Command
          */
         'app/Http/Controllers',
         'app/Http/Middleware',
+        'app/Http/Responses',
         'app/Livewire',
         // Models do kit, um a um: `app/Models` inteiro convidaria colisão com
         // os seus.
@@ -174,6 +175,9 @@ class KitUpdate extends Command
         'database/factories',
         'database/migrations',
         'database/seeders',
+        // Migrations de Settings (spatie). Ficaram fora por sete migrations — nunca chegaram
+        // a quem atualiza. Wiki login-unificado.
+        'database/settings',
         'docker',
         'lang/vendor',
         /*

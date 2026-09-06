@@ -151,6 +151,9 @@ final class ConfiguracoesDoKit extends Settings
      * `linkedin-openid`, e a chave de config precisa casar com ele.
      */
 
+    /** Página única de login (`/login`) para os três painéis. Wiki `login-unificado`. */
+    public bool $login_unificado;
+
     public bool $login_google_habilitado;
 
     public ?string $login_google_client_id;
@@ -389,6 +392,7 @@ final class ConfiguracoesDoKit extends Settings
             'login_x_client_secret' => 'services.x.client_secret',
             'login_x_paineis'       => 'kit.login.x.paineis',
 
+            'login_unificado'         => 'kit.login.unificado',
             'login_rodape'            => 'kit.login.rodape',
             'login_vinculo_confirmar' => 'kit.login.vinculo_confirmar',
 

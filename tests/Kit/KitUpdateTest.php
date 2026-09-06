@@ -73,6 +73,9 @@ it('cobre os arquivos da fundação na lista de caminhos do kit', function (stri
     'tests/TenancyTestCase.php',
     'tests/Kit/FundacaoTest.php',
     'tests/Tenancy/TenancyTest.php',
+    // Wiki login-unificado, CT-22: a migration de Settings e a resposta de login chegam a quem atualiza.
+    'database/settings/2026_09_05_100000_add_login_unificado_to_kit_settings.php',
+    'app/Http/Responses/RespostaDeLogin.php',
 ]);
 
 /**
@@ -94,6 +97,7 @@ const DIRETORIOS_DE_CODIGO = [
     'database/factories',
     'database/migrations',
     'database/seeders',
+    'database/settings',
 
     /*
      * `resources/views` entrou depois de a v0.23.0 quebrar em projeto atualizado:
