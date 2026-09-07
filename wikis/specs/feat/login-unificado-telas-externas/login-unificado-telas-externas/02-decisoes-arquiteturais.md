@@ -9,7 +9,7 @@
 
 ### Contexto
 
-A ADR-01 da ancestral escolheu cartões em vez do Panel Switch porque o pacote não tem modo página. Os cartões, porém, foram escritos como uma lista fixa de três (`app/Support/Paineis.php:cartoes():256-274`), com rótulos e ícones **diferentes** dos que o Panel Switch mostra (`app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraPanelSwitch():324-346`). O requisito pede paridade (RQ-01) e lista dinâmica (RQ-02); o `projeto-3` tem cinco painéis e precisou editar o arquivo à mão.
+A ADR-01 da ancestral escolheu cartões em vez do Panel Switch porque o pacote não tem modo página. Os cartões, porém, foram escritos como uma lista fixa de três (`app/Support/Paineis.php:cartoes():317-337`), com rótulos e ícones **diferentes** dos que o Panel Switch mostra (`app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraPanelSwitch():325-345`). O requisito pede paridade (RQ-01) e lista dinâmica (RQ-02); o `projeto-3` tem cinco painéis e precisou editar o arquivo à mão.
 
 O Panel Switch decide a lista em `vendor/bezhansalleh/filament-panel-switch/src/PanelSwitch.php:getPanels():242-262`: `Filament::getPanels()` filtrado por `canAccessPanel()`, rótulo de `labels()` com fallback `str($id)->ucfirst()` e ícone de `icons()` com fallback `heroicon-o-square-2-stack` (`resources/views/panel-switch-menu.blade.php:33-34`). Não há `excludes()` nem `visible()` na 3.1.0.
 
@@ -76,8 +76,8 @@ Os links da tela de login vêm do Filament: `Login::registerAction()` usa `filam
 
 ### Referências
 
-- `app/Filament/Pages/Auth/TelaLogin.php:mount():54-67`, `app/Filament/Pages/Auth/TelaLoginUnificada.php:mount():35-54` — o molde
-- `app/Providers/KitServiceProvider.php:configureLoginUnificado():523-532`
+- `app/Filament/Pages/Auth/TelaLogin.php:mount():60-73`, `app/Filament/Pages/Auth/TelaLoginUnificada.php:mount():35-54` — o molde
+- `app/Providers/KitServiceProvider.php:configureLoginUnificado():527-546`
 - Refina: ADR-03, ADR-05 e ADR-08 da ancestral
 
 ---
@@ -124,7 +124,7 @@ Ninguém chama `ConfiguracoesDoKit::getUrl()`; 20 linhas de teste, o inventário
 
 ### Contexto
 
-A ADR-07 de `registro-e-aprovacao` decidiu que, com tenancy, a organização de destino vem por `?org={slug}` e a tela recusa sem ela — de propósito, com a mesma mensagem do convite inválido para não revelar qual condição falhou. Mas a tela de login mostra "Cadastre-se" sempre que `RegistroAberto::habilitado()` (`app/Filament/Pages/Auth/TelaLogin.php:getSubheading():75-78`), apontando para `/app/register` **sem** `?org=`. Com tenancy, esse link é um beco sem saída — foi exatamente o que o `projeto-3` viu (cinco recusas `convite_invalido` no log), e vale para `/app/login` desde antes do login unificado.
+A ADR-07 de `registro-e-aprovacao` decidiu que, com tenancy, a organização de destino vem por `?org={slug}` e a tela recusa sem ela — de propósito, com a mesma mensagem do convite inválido para não revelar qual condição falhou. Mas a tela de login mostra "Cadastre-se" sempre que `RegistroAberto::habilitado()` (`app/Filament/Pages/Auth/TelaLogin.php:getSubheading():90-97`), apontando para `/app/register` **sem** `?org=`. Com tenancy, esse link é um beco sem saída — foi exatamente o que o `projeto-3` viu (cinco recusas `convite_invalido` no log), e vale para `/app/login` desde antes do login unificado.
 
 ### Decisão
 
@@ -147,8 +147,8 @@ A ADR-07 de `registro-e-aprovacao` decidiu que, com tenancy, a organização de 
 
 ### Referências
 
-- `app/Filament/Pages/Auth/RegistroPorConvite.php:mount():101-137`, `recusar():375-431`
-- `app/Support/RegistroAberto.php:organizacao():115-127`
+- `app/Filament/Pages/Auth/RegistroPorConvite.php:mount():102-151`, `recusar():375-431`
+- `app/Support/RegistroAberto.php:organizacao():136-147`
 - `wikis/specs/feat/registro-e-aprovacao/registro-e-aprovacao/02-decisoes-arquiteturais.md:434-462` (ADR-07)
 - `docs/pt/autenticacao/registro-aberto.md:85-92`
 
@@ -163,7 +163,7 @@ A ADR-07 de `registro-e-aprovacao` decidiu que, com tenancy, a organização de 
 
 Achado da revisão das telas externas (RQ-07), medido por CT-61. O `request()` do Filament só envia
 o e-mail quando `$user->canAccessPanel(Filament::getCurrentOrDefaultPanel())`
-(`vendor/filament/filament/src/Auth/Pages/PasswordReset/RequestPasswordReset.php:request():71-77`).
+(`vendor/filament/filament/src/Auth/Pages/PasswordReset/RequestPasswordReset.php:request():56-104`).
 Na página única o painel corrente é o `app`, emprestado pelo `panel:app` da rota (ADR-08 da
 ancestral): quem só acessa o `/admin` recebia a mensagem genérica de "se a conta existir, enviamos"
 e **nenhum e-mail**. A falha é silenciosa nos dois lados — a tela não distingue, e o log não registra.
@@ -202,5 +202,5 @@ Efeito colateral desejado: o link do e-mail passa a apontar para o painel **da p
 
 ### Referências
 
-- `app/Filament/Pages/Auth/TelaRecuperarSenhaUnificada.php:request():77-86`
+- `app/Filament/Pages/Auth/TelaRecuperarSenhaUnificada.php:request():68-77`
 - Refina: ADR-02 desta wiki e ADR-07/ADR-08 da ancestral

@@ -16,7 +16,7 @@
 > `getIcons():166`, `getLabels():193`, `getPanels():238`, `canAccessPanel:309-310`;
 > `resources/views/panel-switch-menu.blade.php:33` (fallback `ucfirst(id)`) e `:5,7`
 > (`heroicon-o-square-2-stack`); `vendor/filament/filament/src/Auth/Pages/Register.php:mount():57-61` e
-> `PasswordReset/RequestPasswordReset.php:mount():47-52` (autenticado → `redirect()->intended(Filament::getUrl())`).
+> `vendor/filament/filament/src/Auth/Pages/PasswordReset/RequestPasswordReset.php:mount():47-54` (autenticado → `redirect()->intended(Filament::getUrl())`).
 > Numeração contínua à ancestral: começa em **CT-43**.
 
 ## Perfil de Derivação
@@ -104,7 +104,7 @@ Técnica escalada: **R6** usa tabela de decisão numa área cujo perfil já é c
 ### Personas
 
 - `admin`, `infra`, `panel_user`, `admin+infra`, `master_global`, `sem papel` — `personaDoKit()` de `tests/Kit/LoginUnificadoTest.php:43-50` (sobre `usuarioDoKit()` e `usuario()` de `tests/Pest.php:462,387`).
-- **Discriminante de R1/R2**: `master_global` acessa **qualquer** painel registrado, inclusive o falso, sem papel dele (`app/Models/User.php:canAccessPanel():190-192`, `isMasterGlobal()` → `true`); `admin+infra` **não** acessa o falso (sem papel `financeiro`). É o par que separa "lista os registrados que a pessoa acessa" de "lista todos os registrados".
+- **Discriminante de R1/R2**: `master_global` acessa **qualquer** painel registrado, inclusive o falso, sem papel dele (`app/Models/User.php:canAccessPanel():140-217`, `isMasterGlobal()` → `true`); `admin+infra` **não** acessa o falso (sem papel `financeiro`). É o par que separa "lista os registrados que a pessoa acessa" de "lista todos os registrados".
 - `admin+panel_user` — `usuarioDoKit('admin')->assignRole('panel_user')`: acessa o `app` por um papel cujo **nome** não é o id do painel (revisão #2). Discriminante contra "papel com nome igual ao id, ou master".
 - `admin+financeiro` — `usuarioDoKit('admin')` + `Role::create(['name' => 'financeiro', 'guard_name' => 'web', 'painel' => 'financeiro'])` atribuído: dois painéis, um deles registrado só em teste (CT-65). `roles.painel` é a coluna que `canAccessPanel()` compara (`database/migrations/2026_08_13_000001_add_painel_to_roles_table.php:8-14`).
 - `admin inativa` — `personaDoKit('admin')->forceFill(['ativo' => false])->save()` (molde de CT-11 da ancestral), para a tela de conta indisponível (CT-63).

@@ -43,8 +43,8 @@
 
 ## 7. Revisão das telas externas com a chave ligada
 
-- [ ] Tabela do passo 7 do `01` fechada com o resultado dos CT (cada linha ✅/⚠️ com evidência)
-- [ ] Conta indisponível conferida (link de volta para `/login`)
+- [x] Tabela do passo 7 do `01` fechada — a linha da redefinição de senha virou ❌→✅ (o e-mail não saía para quem não acessa o painel da rota; ADR-05), 2026-09-07
+- [x] Conta indisponível conferida — `resources/views/auth/conta-indisponivel.blade.php:38` tem "Voltar ao login"; CT-63 assere o texto e a cadeia até `/login`, 2026-09-07
 
 ## 8. Docs, CHANGELOG, `kit:update` e wiki ancestral
 
@@ -59,22 +59,22 @@
 - [ ] `tests/Kit/LoginUnificadoTest.php` — CT-43…CT-65 sem tenancy (23 cenários, 10 regras, 49 mutantes; CT-17→CT-43, CT-05/CT-28→CT-51, CT-40→CT-59)
 - [ ] `tests/Tenancy/LoginUnificadoTenancyTest.php` (novo) — células com tenancy da tabela de decisão (CT-52/53/55/56/58); helpers `ligarLoginUnificado()` e `organizacaoComRegistro()` migram para `tests/Pest.php` (`.ai/rules/testes.md`)
 - [ ] `tests/Kit/BoasVindasTest.php:56` → CT-46; `tests/Browser/BoasVindasTest.php:54-56` e `tests/Browser/LoginUnificadoTest.php:33-38` — rótulo do `app` e ausência por `href`
-- [ ] `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` → CT-50; 20 URLs literais + `tests/Pest.php:270` (forçados por `InventarioDeTelasTest`)
+- [x] `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` → CT-50; 20 URLs literais + inventário — 34/34 (Tela + Documentacao + Inventario), 2026-09-07
 - [ ] Lacunas declaradas do `04`: M-A6 (ícone renderizado — tentar `svg()->contents()`), M-A7 (estrutural, só `arch()`)
 
 ## Verificação Final
 
 - [ ] `/ponytail:ponytail-review` no diff
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] `vendor/bin/pint --dirty --format agent` — passed, 2026-09-07
 - [ ] `vendor/bin/filacheck --fix`
 - [ ] Testes da feature (lista do `01`)
 - [ ] Regressão em série com a chave desligada
 - [ ] CT-B de regressão (`LoginUnificadoTest`, `BoasVindasTest`, `ConfiguracoesDoKitTest`)
-- [ ] `vendor/bin/phpstan analyse --memory-limit=1G`
-- [ ] Desvios propagados ao `01`/`02`/`04` de origem, marcados `*(alterado em …)*`
-- [ ] Citações `arquivo:símbolo:linha` reverificadas — {n}/{n} ok
-- [ ] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa
-- [ ] Docs pt/en, CHANGELOG e README reconciliados
+- [x] `vendor/bin/phpstan analyse app --memory-limit=1G` — 0 erros, 2026-09-07
+- [x] Desvios propagados ao `01`/`02`/`04` e às docs, marcados `*(alterado em …)*` — três desvios: reset (ADR-05), guarda de autenticado, arranjo de CT-52, 2026-09-07
+- [x] Citações `arquivo:símbolo:linha` reverificadas — **28/28 ok** (12 tinham deslocado com a implementação), 2026-09-07
+- [x] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa — CT-43…CT-65 nos dois lados; CT-17/CT-28/CT-40 saíram do teste e ficaram no `04` só como referência de "atualiza", 2026-09-07
+- [x] Docs pt/en, CHANGELOG e README reconciliados — inclui a correção do painel do link de reset depois de ADR-05, 2026-09-07
 - [ ] `git commit` (individualizados, lista do `01`)
 
 <!-- Cada [x] acima leva " — {evidência}, {data}". -->
@@ -85,24 +85,29 @@
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
-| `auth.md` — redeclarar `$layout` | `app/Filament/Pages/Auth/**` | | |
-| `auth.md` — guarda de laço por método sobrescrevível | `app/Filament/Pages/Auth/**` | | |
-| `auth.md` — par `fi-auth-layout` | `app/Filament/Pages/Auth/**` | | |
-| `filament.md` — cartão de painel via `Paineis::cartoes()` filtrado | `app/Filament/**` | | |
-| `providers.md` — rota do kit no provider com `web` | `app/Providers/**` | | |
-| `pages.md` — segredo em formulário | `app/Filament/Admin/Pages/**` | | (só `$slug`; n.a. previsto) |
-| `app.md` — papel via `ContextoDePapeis` | `app/**` | | n.a. previsto |
-| `config.md` — env fail-closed | `config/**` | | só texto de comentário; n.a. previsto |
-| `testes.md` — helper cruzado em `tests/Pest.php` | `tests/**` | | |
-| `testes-browser.md` — grupo `browser`, `assertPathIs` primeiro | `tests/Browser/**` | | |
-| `specs.md` — vendor citado com `file:line` | `wikis/specs/**` | aplicada (pré) | 21/21 citações ok, 2026-09-06 |
+| `auth.md` — redeclarar `$layout` | `app/Filament/Pages/Auth/**` | aplicada | `CadastroUnificado.php:25` e `TelaRecuperarSenhaUnificada.php:26` redeclaram; CT-62 mede o par nas duas |
+| `auth.md` — guarda de laço por método sobrescrevível | `app/Filament/Pages/Auth/**` | aplicada | `ehAPaginaUnica()` em `RegistroPorConvite` e `TelaRecuperarSenha`, sobrescrito nas duas subclasses; CT-51/52 e CT-59/60 cobrem os dois sentidos |
+| `auth.md` — par `fi-auth-layout` | `app/Filament/Pages/Auth/**` | aplicada | CT-62: `/cadastro` e `/esqueci-minha-senha` com o layout, `/admin` sem ele depois |
+| `filament.md` — cartão de painel via `Paineis::cartoes()` filtrado | `app/Filament/**` | aplicada | `EscolhaDePainel::getCards():91-107` continua filtrando por `paineisDe()`; CT-45 mede o filtro com painel novo |
+| `providers.md` — rota do kit no provider com `web` | `app/Providers/**` | aplicada | `KitServiceProvider::configureLoginUnificado():527-546` — `/cadastro`, `/esqueci-minha-senha` e o redirect do slug, todos com `web` |
+| `pages.md` — segredo em formulário | `app/Filament/Admin/Pages/**` | n.a. | só o `$slug` mudou; nenhum campo tocado, `SegredosDoSettingsTest` verde |
+| `app.md` — papel via `ContextoDePapeis` | `app/**` | n.a. | nenhuma atribuição de papel na entrega; o teste de tenancy usa `ContextoDePapeis::em()` para LER |
+| `config.md` — env fail-closed | `config/**` | n.a. | só texto de comentário em `config/kit.php`; nenhuma chave nova |
+| `testes.md` — helper cruzado em `tests/Pest.php` | `tests/**` | aplicada | `ligarLoginUnificado()`, `organizacaoComRegistro()`, `painelRegistradoEmTeste()` e `corpoDepoisDoTitulo()` movidos; `HelpersDeTesteTest` 1/1 |
+| `testes.md` — uma tela aberta não é uma tela que grava | `tests/**` | aplicada | CT-55 grava por componente nas três partições (aberto, convite, organização) |
+| `testes.md` — boote o painel `app` com um GET real | `tests/**` | aplicada | CT-61 faz `get('/esqueci-minha-senha')` antes do `Livewire::test()`; sem isso o broker não resolvia |
+| `testes-browser.md` — grupo `browser`, `assertPathIs` primeiro | `tests/Browser/**` | aplicada | CT-B01 inalterado na ordem; só a asserção de ausência trocou de texto para `href` |
+| `specs.md` — vendor citado com `file:line` | `wikis/specs/**` | aplicada | 28/28 citações ok, 2026-09-07 |
 
 ## Quality Gate
 
 <!-- Preenchido no step 8. Enquanto vazio, a feature NÃO está concluída e o PR não abre. -->
 
-- **Ciclo**: — · **Veredito**: — · **Data**: —
-- **Relatório**: `06-relatorio-qa.md`
+- **Ciclo**: 1 · **Veredito**: **APROVADO COM DÉBITO** · **Data**: 2026-09-07
+- **Relatório**: `06-relatorio-qa.md` — 0 blocker, 0 major em aberto; QA-01 e QA-02 (defeitos
+  reais encontrados pelos CT antes do PR) quitados no ciclo e propagados às fontes; QA-03 e
+  QA-04 quitados; QA-05 é lacuna já declarada na derivação (M-A6, M-A7).
+- **Matriz de rastreabilidade**: 7 `RQ`, todas com passo, CT e código. Nenhuma omissão silenciosa.
 
 ## Auditoria Pré-Implementação
 
@@ -139,10 +144,36 @@
 
 ## Desvios do Plano
 
-- nenhum ainda
+1. **A recuperação de senha não enviava e-mail para quem não acessa o painel da rota** (medido por
+   CT-61). O `request()` do Filament condiciona o envio a
+   `canAccessPanel(Filament::getCurrentOrDefaultPanel())`, e sob `panel:app` o corrente é o `app`.
+   Corrigido com `TelaRecuperarSenhaUnificada::request()` reposicionando o painel corrente no
+   primeiro painel da conta. Propagado: **ADR-05** nova, passo 6 do `01`, linha da redefinição na
+   tabela do passo 7, mutante **M-D8** e a linha de CT-61 no `04`, docs pt/en.
+2. **Quem já estava autenticado ia para o `/app`** em `/cadastro` e `/esqueci-minha-senha` (o
+   `mount()` do vendor manda para `Filament::getUrl()`), onde um `admin` toma 403 — medido por
+   CT-54. As duas páginas passaram a seguir a regra de destino do login. Propagado: passo 5 e 6 do
+   `01`, consequências da ADR-02.
+3. **CT-52 estava mal especificado**: na linha sem convite, `/app/register` recusa (sem token e sem
+   cadastro aberto) e o 302 da recusa não distingue "não voltou" de "voltou". A linha ganhou o
+   cadastro aberto ligado. Corrigido no `04` (causa (a): CT errado, não implementação).
+4. **`tests/Kit/KitUpdateTest.php` corrigido, fora do escopo previsto**: a asserção do CHANGELOG
+   recortava só a seção do topo, então qualquer `[Unreleased]` novo reprovava um caso alheio. Passou
+   a olhar o arquivo inteiro, sem relaxar nada. Mesmo defeito e mesma correção que a branch
+   `feat/entidades-widgets-ordem-e-titulo` aplicou em paralelo.
 
 ## Notas de Implementação
 
+- **`Filament::registerPanel()` pela facade não registra dentro do teste.** O `PanelRegistry` é
+  singleton e é o mesmo objeto antes e depois, mas `Filament::getPanels()` não vê o painel; pelo
+  registry direto (`app(PanelRegistry::class)->register()`) funciona. `painelRegistradoEmTeste()`
+  em `tests/Pest.php` usa o registry, com o motivo escrito ao lado. A facade continua sendo o
+  caminho de produção.
+- **`Login::getPasswordFormComponent()` devolve `Component`, e `hint()` é de `Field`.** O
+  `TelaLogin` faz narrow para `TextInput` antes de chamar `hint()` — sem isso o PHPStan level 7
+  reprova, e o motivo é real (a assinatura do pai não garante o método).
+- **`getRawState()` devolve `array|Arrayable`**: acesso por índice não passa no PHPStan; `collect()`
+  resolve em uma linha.
 - **`projeto-3` (RQ-05)**: a correção do kit chega por `kit:update`; a instalação ainda precisa (1) ligar "Aceita cadastro público" na organização `padrao` e (2) divulgar `/login?org=padrao` ou `/cadastro?org=padrao`. `Paineis.php` está customizado lá — o `kit:update` vai acusar conflito; com esta entrega a customização deixa de ser necessária.
 
 ## Retrospectiva
