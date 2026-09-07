@@ -288,21 +288,26 @@ it('[CT-11] lista as alterações das organizações, da mais recente para a mai
 */
 
 /**
- * CT-12 — a listagem declara os quatro widgets agregados.
+ * CT-12 — a listagem declara os quatro widgets agregados, em duas listas.
  *
  * Este caso existe porque CT-06 a CT-11 montam os componentes DIRETO: um widget escrito e nunca
  * ligado à página passaria em todos eles.
+ *
+ * *(alterado em 2026-09-06: wiki `entidades-widgets-ordem-e-titulo` — a visão geral fica no
+ * cabeçalho e os outros três no rodapé.)*
  */
-it('[CT-12] declara os quatro widgets agregados na listagem', function (): void {
+it('[CT-12] declara a visão geral no cabeçalho e os três widgets de detalhe no rodapé', function (): void {
     $admin = usuarioComPapel('admin', null, 'adm@example.com');
     $this->actingAs($admin);
     noPainelBootado('admin');
 
-    $pagina  = Livewire::test(ListTenants::class)->instance();
-    $widgets = (fn (): array => $this->getHeaderWidgets())->call($pagina);
+    $pagina = Livewire::test(ListTenants::class)->instance();
 
-    expect($widgets)->toBe([
+    expect((fn (): array => $this->getHeaderWidgets())->call($pagina))->toBe([
         OrganizacoesStats::class,
+    ]);
+
+    expect((fn (): array => $this->getFooterWidgets())->call($pagina))->toBe([
         UsuariosUnicosPorOrganizacao::class,
         AcessosPorPainel::class,
         AtualizacoesDasOrganizacoes::class,
