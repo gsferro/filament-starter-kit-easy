@@ -152,7 +152,7 @@ the README images and the SFDIPOT sweep — are in
 | 3 | **Seeder credentials** | `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` in `.env` | ✅ |
 | 4 | **Primary color** | `KIT_COR_PRIMARIA` in `.env` (a color name from the Filament palette), or `KIT_COR_PRIMARIA_HEX` with a free hex value — the hex beats the name when both are filled | ✅ |
 | 5 | **[Multi-tenancy](../recursos/multi-tenancy.md)** | `php artisan kit:tenancy`, and the displayed term in `config/kit.php` → `tenancy.label` | ✅ |
-| 6 | **Login artwork** | none: it **shows the application name** (`APP_NAME`) on its own. To replace it with your own image, upload it at `/admin/configuracoes-do-kit` | ✅ (via the name) |
+| 6 | **Login artwork** | none: it **shows the application name** (`APP_NAME`) on its own. To replace it with your own image, upload it at `/admin/configuracoes-da-aplicacao` | ✅ (via the name) |
 | 7 | **Panel access** | each user's role (`/admin` → Roles, the *Painel* field); the rule that reads it is `App\Models\User::canAccessPanel()` | — |
 | 8 | **Permission matrix** | `database/seeders/PapeisSeeder.php` | — |
 | 9 | **Health checks** | `KitServiceProvider::configureHealthChecks()` | — |

@@ -26,7 +26,7 @@ The widget and the provider round-trip belong to the [`ddr/filament-captcha`](ht
 | Cloudflare Turnstile | `turnstile` | no tracking, no cost |
 | hCaptcha | `hcaptcha` | — |
 
-Anyone with the `View:ConfiguracoesDoKit` permission enables and configures it in `/admin/configuracoes-do-kit` › Login › Proteção anti-robô: provider, site key (rendered in the HTML), secret key (encrypted in the database, never displayed) and, for v3, the minimum score. In `.env` the same keys are `KIT_ANTI_ROBO`, `KIT_ANTI_ROBO_PROVEDOR`, `KIT_ANTI_ROBO_CHAVE_DO_SITE`, `KIT_ANTI_ROBO_CHAVE_SECRETA` and `KIT_ANTI_ROBO_PONTUACAO_MINIMA` — the database wins. The package's own env vars (`CAPTCHA_DRIVER`, `RECAPTCHA_V2_SITEKEY`, ...) are ignored on purpose: one setting, one owner.
+Anyone with the `View:ConfiguracoesDoKit` permission enables and configures it in `/admin/configuracoes-da-aplicacao` › Login › Proteção anti-robô: provider, site key (rendered in the HTML), secret key (encrypted in the database, never displayed) and, for v3, the minimum score. In `.env` the same keys are `KIT_ANTI_ROBO`, `KIT_ANTI_ROBO_PROVEDOR`, `KIT_ANTI_ROBO_CHAVE_DO_SITE`, `KIT_ANTI_ROBO_CHAVE_SECRETA` and `KIT_ANTI_ROBO_PONTUACAO_MINIMA` — the database wins. The package's own env vars (`CAPTCHA_DRIVER`, `RECAPTCHA_V2_SITEKEY`, ...) are ignored on purpose: one setting, one owner.
 
 **The default provider does not turn anything on.** `recaptcha_v3` is only *which* provider applies **if** someone enables the protection and saves both keys — the protection is born disabled and, without the keys, stays disabled even with the toggle on. No challenge is loaded on any screen until that decision is made on the Settings screen (or in `.env`).
 

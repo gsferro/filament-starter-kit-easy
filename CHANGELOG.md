@@ -3,6 +3,32 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Adicionado
+- **A escolha de painel do login unificado lista os painéis registrados, não uma lista fixa.** Um
+  `PanelProvider` que a aplicação registre depois da instalação aparece sozinho na escolha e na
+  boas-vindas, sem editar arquivo do kit. Rótulo e ícone de cada cartão passam a sair da **mesma
+  fonte** que alimenta o Panel Switch (`App\Support\Paineis`), com os mesmos fallbacks do pacote —
+  o cartão do `/app` deixa de dizer "Painel do negócio" e passa a dizer o nome da aplicação.
+- **`/cadastro` e `/esqueci-minha-senha`**, sem prefixo de painel, quando a página única de login
+  está ligada. As rotas dos painéis redirecionam para elas preservando a query (o `?token=` de um
+  convite antigo continua valendo), e a chave desligada devolve tudo às rotas dos painéis. A
+  redefinição de senha (o link do e-mail) e a verificação de e-mail continuam por painel.
+
+### Corrigido
+- **O link "Cadastre-se" da tela de login não leva mais a uma recusa em instalação com
+  multi-organização.** Ele exige `?org={slug}` de uma organização ativa que aceitou cadastro
+  público; sem organização resolvível o link **não aparece**, e quando aparece carrega o `?org=`.
+  Antes ele aparecia sempre que o registro estava ligado e apontava para `/app/register` sem a
+  organização — toda visita terminava em "Convite inválido ou expirado". Vale também com a página
+  única desligada: o defeito é anterior a ela.
+
+### Alterado
+- **A página de configurações responde em `/admin/configuracoes-da-aplicacao`**, o nome que ela já
+  exibia no menu e no título. O endereço antigo (`/admin/configuracoes-do-kit`) responde 301 para o
+  novo, então favoritos continuam funcionando.
+
 ## [0.31.0] - 2026-09-05
 
 ### Adicionado

@@ -94,13 +94,25 @@ screen returns **the same** refusal — a visitor cannot tell which condition fa
 means: on a multi-organization installation, publishing `/app/register` without `?org=` leads
 people to the refusal; publish the organization's link.
 
+**The "Sign up" link on the login screen follows the same rule.** It only shows when there is a
+resolvable destination organization, and it carries it: open the login screen with the slug
+(`/app/login?org=acme`, or `/login?org=acme` with the [single page](login-unificado.md)) and the
+link points to that organization's sign-up. With no `?org=`, or with the organization refusing
+sign-up, the link **does not show** — before, it showed and led to the same refusal, a dead end
+measured on a real installation. If the button vanished on a multi-organization installation, that
+is why: either *"Accepts public sign-up"* is off on the organization, or the published address is
+missing the `?org=`.
+
+With [the single login page](login-unificado.md) on, the sign-up address is `/cadastro`
+(`/cadastro?org=acme`), and `/app/register` redirects there preserving the query.
+
 This is not the same as *creating* an organization: signing up **into** one is not creating it,
 and creating organizations remains the job of whoever administers the installation, via `/admin`.
 
 ## E-mail verification (optional)
 
 Requires a confirmed e-mail address to enter `/app`. **Editable in
-`/admin/configuracoes-do-kit` → Registro tab**, and the stored value applies on the **next
+`/admin/configuracoes-da-aplicacao` → Registro tab**, and the stored value applies on the **next
 request** — no deploy. `KIT_REGISTRO_VERIFICAR_EMAIL` still exists: it seeds a fresh installation
 and is the fallback, like the other settings on that screen.
 

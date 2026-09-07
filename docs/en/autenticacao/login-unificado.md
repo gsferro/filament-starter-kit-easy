@@ -20,7 +20,7 @@ Two ways, same key:
 KIT_LOGIN_UNIFICADO=true
 ```
 
-or, in `/admin/configuracoes-do-kit` → **Login** tab → "Unificar o login em /login". The toggle
+or, in `/admin/configuracoes-da-aplicacao` → **Login** tab → "Unificar o login em /login". The toggle
 takes effect immediately, no deploy: the key is read on every request, not at boot. Only `true`
 and `1` turn it on — any other value in the `.env` keeps it off.
 
@@ -53,10 +53,41 @@ the single page asks about **any** panel instead of the current one. An `admin` 
 The intended URL (you opened `/admin/users` without a session) only wins when it belongs to a
 panel you can access, on the same host. Otherwise it is discarded and the rule above applies.
 
+## A panel added after installation
+
+The choice screen lists **one card per registered panel** — the same ones the Panel Switch shows
+inside Filament, with the same label and the same icon. If your application registers a new
+`PanelProvider` after installation, it shows up on its own, with no kit file to edit; the default
+label is the capitalized id and the icon is the generic one, exactly as the Panel Switch would do
+it. To give it a name and an icon of its own, add the line to the maps in `App\Support\Paineis` —
+the same ones that feed the Panel Switch, so the two never drift apart.
+
+Only the panels the person can access show up: the filter is the same `canAccessPanel()` as always.
+
+## The other screens without a panel prefix
+
+With the switch on, besides `/login`:
+
+| Screen | Address | The panel route |
+|---|---|---|
+| Registration (invitation and open sign-up) | `/cadastro` | `/{panel}/register` redirects there, query intact |
+| Forgot my password | `/esqueci-minha-senha` | `/{panel}/password-reset/request` redirects there |
+
+The invitation's `?token=` and the organization's `?org=` survive the redirect — an old invitation
+link keeps working. Turn the switch off and both go back to the panel routes, with nothing to
+migrate.
+
+**Sign-up with multi-organization**: the "Sign up" link on the login screen only shows when there
+is a destination organization, and it carries the `?org=`. Publish `/login?org={slug}` (or
+`/cadastro?org={slug}`) and turn on "Accepts public sign-up" on the organization's screen — without
+that the sign-up refuses, and the link disappears instead of leading to the refusal. See
+[Open registration](registro-aberto.md).
+
 ## What stays per panel
 
-- **Password reset, invitation-based registration, e-mail verification**: the screens stay inside
-  the panels. They redirect to the panel login when needed, and that login leads to `/login`.
+- **Password redefinition (the e-mail link) and e-mail verification**: they stay inside the panels.
+  Both arrive through a signed link or already authenticated, so there is nothing to unify; the
+  e-mail link opens normally with the switch on.
 - **2FA (Breezy) and the lock screen**: happen **inside** the chosen panel, as today. The choice
   screen shows up before the second-factor challenge — it only lists panels; entering one triggers
   the challenge as usual.
@@ -89,8 +120,8 @@ are a planned kit item.
 
 ## If you want to go back
 
-Turn the toggle off. Nothing was migrated or stored beyond the Settings property; the `/login` and
-`/login/painel` routes keep existing — when off, `/login` redirects to the default panel's login
-and `/login/painel` to the default panel itself.
+Turn the toggle off. Nothing was migrated or stored beyond the Settings property; the `/login`,
+`/login/painel`, `/cadastro` and `/esqueci-minha-senha` routes keep existing — when off, each one
+redirects to the equivalent route of the default panel.
 
 Details and decisions: `wikis/specs/feat/login-unificado/` in the repository.
