@@ -56,7 +56,7 @@ php artisan kit:update --only-new   # only what doesn't exist in the project yet
 php artisan kit:update --all        # everything, including what overwrites
 ```
 
-The distinction is the point: **a new file has nothing to overwrite**, so applying those in bulk is safe — that's the case for the widgets, the Spotlight, the concerns, the kit's CSS (`resources/css/filament/` and `public/css/kit/`, delivered from v0.30.0 on) and the Settings migrations (`database/settings/`, from v0.31.0 on). A **modified** one replaces the current content, and if you edited that file your version is lost (recoverable with `git checkout -- <file>`, since nothing is committed). That's why `--only-new` is the recommended bulk for a first pass, leaving the modified ones to review calmly.
+The distinction is the point: **a new file has nothing to overwrite**, so applying those in bulk is safe — that's the case for the widgets, the Spotlight, the concerns, the kit's CSS (`resources/css/filament/` and `public/css/kit/`, delivered from v0.30.0 on) and the Settings migrations (`database/settings/`, from v0.31.0 on). The **`.env.example`** is delivered too (from v0.32.2 on): it is a suggestion file, it is where the kit documents every new key, and your `.env` is never touched — but it arrives as **modified**, so review the diff if you added keys of your own to it. A **modified** one replaces the current content, and if you edited that file your version is lost (recoverable with `git checkout -- <file>`, since nothing is committed). That's why `--only-new` is the recommended bulk for a first pass, leaving the modified ones to review calmly.
 
 | Option | What for |
 |---|---|
