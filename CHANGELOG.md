@@ -3,7 +3,7 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.32.1] - 2026-09-07
 
 ### Corrigido
 - **As suítes que leem o README e o site do kit passam a ser puladas fora da árvore do kit.** O
@@ -27,6 +27,19 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   quem lê a documentação. Foi a ausência dessa varredura que deixou dez arquivos nascerem sem
   sentinela.
 
+- **A organização atravessa a volta do cadastro para o login.** Quem chegava em
+  `/cadastro?org={slug}` e clicava em "faça login" caía num `/login` sem organização: sem o link
+  de volta ao cadastro e sem pista do motivo. Duas metades do mesmo defeito — o `mount()` da tela
+  de login do painel redirecionava com `route('login')` puro, e o `loginAction()` do Filament monta
+  `getLoginUrl()` sem query nenhuma. Medido na instalação de validação com multi-organização.
+- **O `helperText` do toggle "Aceita cadastro público" deixa de escrever a URL à mão.** Ele
+  prometia `/app/register?org={slug}` numa instalação onde o endereço público passou a ser
+  `/cadastro?org={slug}`; agora sai de `RegistroAberto::urlDoCadastro()`, que conhece a chave.
+- **`composer test` deixa de arrastar a suíte de navegador.** O script rodava `php artisan test`
+  sem escopo e o `phpunit.xml` não define `defaultTestSuite`: entravam `Browser` e
+  `BrowserTenancy`, que exigem `npm run build` e um navegador. Medido nas instalações de
+  validação: não terminou em 2h20 numa e em 40 min na outra, sem imprimir uma linha. Agora roda
+  `Unit,Feature,Kit,Tenancy`; `composer test:browser` continua separado, como já era o desenho.
 ## [0.32.0] - 2026-09-07
 
 ### Adicionado
