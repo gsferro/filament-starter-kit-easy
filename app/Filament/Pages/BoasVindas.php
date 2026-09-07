@@ -114,7 +114,7 @@ class BoasVindas extends CardsPage
 
     public function getSubheading(): ?string
     {
-        return 'Três painéis prontos para usar. O acesso a cada um continua pedindo login.';
+        return 'Um cartão por painel. O acesso a cada um continua pedindo login.';
     }
 
     /**
@@ -132,7 +132,7 @@ class BoasVindas extends CardsPage
     }
 
     /**
-     * Um cartão por painel do kit, apontando para a raiz de cada um.
+     * Um cartão por painel registrado, apontando para a raiz de cada um.
      *
      * ## Estes cartões NÃO filtram por autorização, e isso é decisão
      *
@@ -152,8 +152,9 @@ class BoasVindas extends CardsPage
      */
     protected static function getCards(): array
     {
-        // Os três cartões vivem em `Paineis::cartoes()`, compartilhados com a escolha de painel
-        // após o login (`EscolhaDePainel`), que os filtra por acesso. Aqui, pública, mostra todos.
+        // Os cartões vivem em `Paineis::cartoes()`, um por painel REGISTRADO, compartilhados com
+        // a escolha de painel após o login (`EscolhaDePainel`), que os filtra por acesso. Aqui,
+        // pública, mostra todos — inclusive painel que a aplicação registrou depois da instalação.
         return array_values(Paineis::cartoes());
     }
 
