@@ -527,6 +527,31 @@ Funcionalidade: telas externas com o login unificado
 
 ---
 
+### Adendo da validação em instalação real (2026-09-07)
+
+```gherkin
+# language: pt
+
+    Cenário: [CT-66] a organização atravessa a volta do cadastro para o login, e o caminho de ida reaparece
+      Dado a chave ligada e a acme ativa com cadastro público
+      Quando um visitante anônimo abre /cadastro?org=acme
+      Então a tela oferece a volta ao login com a organização no endereço
+      E /app/login?org=acme redireciona para /login?org=acme — sem perder a query
+      E /login?org=acme volta a oferecer /cadastro?org=acme
+```
+
+> CT-58 provava só a **ida** (o link do login carrega o `?org=`). A volta ficou sem cenário, e é
+> onde o defeito estava: `TelaLogin::mount()` redirecionava com `route('login')` puro e o
+> `loginAction()` do vendor monta `getLoginUrl()` sem query — quem clicava em "faça login" na tela
+> de cadastro perdia a organização e o caminho de volta ao cadastro desaparecia. Medido na
+> instalação de teste com multi-organização, não previsto na derivação.
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M-C26 | o redirect da tela de login do painel descarta a query (`route('login')` puro) | CT-66 (`Então` 2) |
+| M-C27 | o `loginAction()` da tela de cadastro não carrega o `?org=` | CT-66 (`Então` 1) |
+
+---
 ## Regra R7 — "Esqueci minha senha" na página única: `/esqueci-minha-senha` serve a tela e envia o e-mail; as rotas de painel redirecionam; desligada, o inverso; o link do e-mail abre
 
 > `RQ-06` · perfil **padrão** · técnica: **EP por painel** (os três) + **controle negativo** (laço nos dois sentidos) + **rastreio de efeito** (notificação de reset enviada ao destinatário certo, com URL que abre)

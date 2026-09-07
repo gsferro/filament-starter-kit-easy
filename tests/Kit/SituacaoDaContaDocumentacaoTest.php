@@ -15,6 +15,20 @@ use Illuminate\Support\Facades\File;
  * inteiro passaria sem a seção existir — achado da revisão adversarial do `04`.
  *
  * Wiki: `wikis/specs/feat/status-e-exclusao-logica-de-usuario/`, CT-33.
+ *
+ * O arquivo inteiro é de documentação, então a sentinela é um `beforeEach` — mesma forma de
+ * `RedeDeDocumentacaoTest` e `SiteDeDocumentacaoTest`. Fora da árvore do kit não há o que ler: o
+ * `kit:update` não entrega `docs/` (export-ignore) nem o README, e a suíte que a atualização
+ * acabou de instalar acusaria o projeto por documentação que é do kit.
+ */
+beforeEach(function (): void {
+    if (! naArvoreDoKit()) {
+        $this->markTestSkipped('O kit:update não entrega o site do kit: o diretório do site é export-ignore e não existe no projeto instalado.');
+    }
+});
+
+/**
+ * CT-33 — a seção existe e cada mecanismo é citado DENTRO dela.
  */
 it('[CT-33] a documentação tem a seção de usuário ativo, inativo e excluído e cita cada mecanismo', function (
     string $arquivo,

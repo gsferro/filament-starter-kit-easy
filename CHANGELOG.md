@@ -3,6 +3,30 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Corrigido
+- **As suítes que leem o README e o site do kit passam a ser puladas fora da árvore do kit.** O
+  `kit:update` não entrega esses arquivos: `docs/` é o site do kit e é `export-ignore` (não existe
+  no projeto instalado), e o README passa a ser do projeto no `create-project` — a lista
+  `KitUpdate::CAMINHOS_DO_KIT` só traz `wikis/README.md`. Como `tests/Kit` **é** entregue, toda
+  atualização que mexesse em texto documentado instalava o código novo, instalava o teste novo e
+  não instalava nenhum dos dois documentos: a instalação ficava vermelha acusando o projeto por
+  documentação que é do kit. Medido numa v0.30.1 → v0.32.0, quatro casos em vermelho. A sentinela é
+  `naArvoreDoKit()` (o padrão que a rede de documentação já usava), aplicada **por caso** — os
+  casos que leem arquivo entregue (`.env.example`, `CHANGELOG.md`, `wikis/`, `app/`, `config/`)
+  continuam rodando em toda instalação, e onde um caso mistura os dois a sentinela fica no meio do
+  corpo para não apagar a metade que É entregue.
+- **O caso do bit de execução do `deploy_docker_local.sh` também é pulado fora da árvore do kit.**
+  Ele afirma `100755` no índice do git, que é propriedade do repositório do kit: numa instalação de
+  Windows o `git init` que o `kit:update` pede nasce com `core.filemode=false` e o `git add -A`
+  grava `100644` — o caso reprovava sempre, sem defeito nenhum do projeto.
+- **A auditoria estática passou a cobrir todas as suítes de documentação.** O CT-10 de
+  `tests/Kit/RedeDeDocumentacaoTest.php` exigia a sentinela de dois arquivos escritos à mão;
+  agora ele a exige de toda suíte devolvida por `suitesDeDocumentacao()`, que descobre sozinha
+  quem lê a documentação. Foi a ausência dessa varredura que deixou dez arquivos nascerem sem
+  sentinela.
+
 ## [0.32.0] - 2026-09-07
 
 ### Adicionado

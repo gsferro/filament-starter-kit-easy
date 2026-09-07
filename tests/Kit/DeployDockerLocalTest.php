@@ -69,16 +69,28 @@ it('[CT-02] o --help imprime o cabeçalho inteiro, e só o cabeçalho', function
     expect(str_contains($ajuda, '--recreate'))->toBeTrue('O --help não explica a única opção do script.');
 })->group('kit');
 
+/**
+ * O modo no índice é propriedade do REPOSITÓRIO DO KIT, não do projeto instalado — daí a
+ * sentinela, pelo mesmo motivo dos casos de documentação deste arquivo.
+ *
+ * Numa instalação real este caso não passa nunca, e não por defeito: o `kit:update` manda rodar
+ * `git init` (`app/Console/Commands/KitUpdate.php:378-381`), e no Windows o `core.filemode` nasce
+ * `false` — o `git add -A` grava `100644` para todo arquivo, inclusive este. Medido nas duas
+ * instalações de teste; reproduz com `git -C <projeto> ls-files -s deploy_docker_local.sh`.
+ *
+ * O que o caso protege continua protegido onde importa: o bit é do commit do kit, e é aqui que ele
+ * pode ser perdido.
+ */
 it('[CT-03] está executável no índice do git', function (): void {
     $modo = Process::path(base_path())->run('git ls-files -s deploy_docker_local.sh');
 
     expect($modo->successful())->toBeTrue('Não consegui ler o índice do git.')
         ->and($modo->output())->toStartWith('100755', 'O script não está executável no índice: quem clona não consegue rodá-lo.');
-})->group('kit');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'O modo do arquivo no índice é propriedade do repositório do kit; instalação em Windows grava 100644 com core.filemode=false.')->group('kit');
 
 it('[CT-04] os dois READMEs documentam o script e a opção --recreate', function (string $readme): void {
     $texto = (string) file_get_contents(base_path($readme));
 
     expect(str_contains($texto, './deploy_docker_local.sh'))->toBeTrue("{$readme} não cita o script.")
         ->and(str_contains($texto, '--recreate'))->toBeTrue("{$readme} cita o script e omite a opção que existe.");
-})->with(['README.md', 'README.en.md'])->group('kit');
+})->with(['README.md', 'README.en.md'])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README: depois do create-project ele é do projeto.')->group('kit');

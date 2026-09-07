@@ -236,3 +236,30 @@ it('[CT-58] com tenancy o link de cadastro só existe com organização resolví
         null,
     ],
 ])->group('tenancy');
+
+/*
+|--------------------------------------------------------------------------
+| R6 — a organização sobrevive à ida E à volta
+|--------------------------------------------------------------------------
+| CT-58 provou a ida (o link do login carrega o `?org=`). A volta não estava coberta, e é
+| onde estava o defeito: quem chegava em `/cadastro?org=acme` e clicava em "faça login" caía
+| num `/login` sem organização — sem o link de volta ao cadastro e sem pista do motivo.
+| Medido na instalação de teste com multi-organização.
+*/
+
+it('[CT-66] a organização atravessa a volta do cadastro para o login, e o caminho de ida reaparece', function (): void {
+    ligarLoginUnificado();
+    organizacaoComRegistro('acme');
+
+    // A tela de cadastro oferece a volta com a organização no endereço.
+    $cadastro = (string) $this->get('/cadastro?org=acme')->assertOk()->getContent();
+    expect($cadastro)->toContain((string) Filament::getPanel('app')->getLoginUrl(['org' => 'acme']));
+
+    // A rota do painel devolve para a página única SEM perder a query.
+    $this->get('/app/login?org=acme')->assertRedirect(route('login', ['org' => 'acme']));
+
+    // E o destino volta a oferecer o cadastro daquela organização: a ida reaparece.
+    $this->get('/login?org=acme')
+        ->assertOk()
+        ->assertSee(route('cadastro', ['org' => 'acme']), false);
+})->group('tenancy');

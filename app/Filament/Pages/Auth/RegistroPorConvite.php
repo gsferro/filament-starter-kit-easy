@@ -10,6 +10,7 @@ use App\Support\ConfiguracaoDoLogin;
 use App\Support\RegistroAberto;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Register;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
+use Filament\Actions\Action;
 use Filament\Auth\Http\Responses\Contracts\RegistrationResponse;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Field;
@@ -154,6 +155,24 @@ class RegistroPorConvite extends Register
     protected function ehAPaginaUnica(): bool
     {
         return false;
+    }
+
+    /**
+     * O link "faça login" carrega a organização, para a volta não perder o caminho de ida.
+     *
+     * O `loginAction()` do Filament monta `filament()->getLoginUrl()` sem query nenhuma
+     * (`vendor/filament/filament/src/Auth/Pages/Register.php:loginAction():243-249`). Sem o
+     * `?org=`, a tela de login não sabe de qual organização o visitante veio, deixa de
+     * oferecer o "Cadastre-se" e a volta ao cadastro desaparece — a outra metade do defeito
+     * que `TelaLogin::mount()` fecha ao preservar a query no redirect.
+     */
+    public function loginAction(): Action
+    {
+        $org = request()->query('org');
+
+        return parent::loginAction()->url(
+            Filament::getPanel('app')->getLoginUrl(is_string($org) && filled($org) ? ['org' => $org] : []),
+        );
     }
 
     /** O `mount()` do modo convite, extraído só para o garfo caber numa leitura. */

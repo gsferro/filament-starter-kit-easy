@@ -47,7 +47,7 @@ it('[CT-18] documenta a chave do teto de upload nos dois readmes', function (str
 })->with([
     'português' => ['README.md', 'Em MEGABYTES', 'Por que SVG é recusado'],
     'inglês'    => ['README.en.md', 'In MEGABYTES', 'Why SVG is refused'],
-])->group('kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README (que passa a ser do projeto) nem o site (export-ignore).')->group('kit');
 
 /**
  * CT-19 — a chave aparece no `.env.example`, comentada.
@@ -86,4 +86,4 @@ it('[CT-20] promete nos readmes o mesmo teto que o kit entrega', function (strin
     'português — o valor da chave'  => ['README.md', 'KIT_UPLOAD_MAXIMO_MB={mb}'],
     'inglês — o título da seção'    => ['README.en.md', 'Upload ceiling: {mb} MB, and where to change it'],
     'inglês — o valor da chave'     => ['README.en.md', 'KIT_UPLOAD_MAXIMO_MB={mb}'],
-])->group('kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README (que passa a ser do projeto) nem o site (export-ignore).')->group('kit');

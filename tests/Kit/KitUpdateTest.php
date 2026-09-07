@@ -465,4 +465,4 @@ it('documenta a lista do destino e o contorno para instalações anteriores, nos
 })->with([
     'pt' => ['docs/pt/comecar/atualizando-o-projeto.md', 'versão destino'],
     'en' => ['docs/en/comecar/atualizando-o-projeto.md', 'target version'],
-])->group('kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o site do kit: o diretório do site é export-ignore e não existe no projeto instalado.')->group('kit');
