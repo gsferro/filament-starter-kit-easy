@@ -609,6 +609,11 @@ it('[CT-51] a rota de registro do painel redireciona para /cadastro preservando 
 
 it('[CT-52] com a chave desligada /cadastro devolve à rota do painel, com a query, e não volta', function (bool $comConvite): void {
     ligarLoginUnificado(false);
+
+    // O registro aberto precisa estar ligado na linha sem convite: sem token e sem cadastro
+    // aberto a tela do painel RECUSA, e um 302 de recusa não distingue "não volta" de "voltou".
+    config(['kit.registro.habilitado' => ! $comConvite]);
+
     $query = $comConvite ? '?token='.ofertaPara('novo@example.com')->enviar() : '';
 
     $this->get("/cadastro{$query}")->assertRedirect(Filament::getPanel('app')->getRegistrationUrl().$query);
@@ -919,7 +924,10 @@ it('[CT-61] o pedido em /esqueci-minha-senha envia o e-mail só à conta pedida,
     $admin = usuarioDoKit('admin', 'admin@example.com');
     $outra = usuario('outra@example.com');
 
-    Filament::setCurrentPanel('app');
+    // O GET real boota o painel pelo middleware — `setCurrentPanel()` sozinho não boota, e o
+    // broker de senha sai da configuração do painel (`.ai/rules/testes.md`).
+    $this->get('/esqueci-minha-senha')->assertOk();
+
     Livewire::test(TelaRecuperarSenhaUnificada::class)
         ->fillForm(['email' => $pedido])
         ->call('request')
@@ -933,9 +941,10 @@ it('[CT-61] o pedido em /esqueci-minha-senha envia o e-mail só à conta pedida,
     }
 
     NotificationFacade::assertSentTo($admin, ResetPassword::class, function (ResetPassword $notificacao): bool {
-        expect($notificacao->url)->toStartWith(url('/app/password-reset/reset'));
+        // O link continua por painel (premissa RQ-06) — e é o painel DA PESSOA, não o `app`
+        // emprestado pela rota: quem só acessa o /admin não recebia e-mail nenhum antes disso.
+        expect($notificacao->url)->toStartWith(url('/admin/password-reset/reset'));
 
-        // O link do e-mail continua por painel (premissa RQ-06) e PRECISA abrir com a chave ligada.
         $this->get($notificacao->url)->assertOk()->assertSee('fi-auth-layout', false);
 
         return true;

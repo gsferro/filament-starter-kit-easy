@@ -2,7 +2,9 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Models\User;
 use App\Support\ConfiguracaoDoLogin;
+use App\Support\DestinoAposLogin;
 use Filament\Facades\Filament;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
@@ -30,6 +32,19 @@ class CadastroUnificado extends RegistroPorConvite
             throw new HttpResponseException(new RedirectResponse(
                 Filament::getPanel('app')->getRegistrationUrl(request()->query()) ?? url('/'),
             ));
+        }
+
+        /*
+         * Quem já entrou vai para o destino DELA, não para o painel corrente.
+         *
+         * O `mount()` do Filament manda o autenticado para `Filament::getUrl()` — aqui, o /app
+         * emprestado pelo `panel:app` —, e um `admin` sem papel no /app toma 403: um beco sem
+         * saída aberto por clicar num link de convite já logado. A guarda vem ANTES do
+         * `parent::mount()` por isso, e antes de qualquer leitura do token: o convite continua
+         * não aceito. Mesmo molde de `TelaLoginUnificada`.
+         */
+        if (($user = Filament::auth()->user()) instanceof User) {
+            throw new HttpResponseException(new RedirectResponse(DestinoAposLogin::urlPara($user)));
         }
 
         parent::mount();
