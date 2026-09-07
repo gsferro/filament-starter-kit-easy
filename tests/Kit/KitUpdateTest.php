@@ -451,12 +451,17 @@ it('documenta a lista do destino e o contorno para instalações anteriores, nos
         ->toContain('svg.arte-do-login')
         ->toContain('0.22');
 
-    $changelog  = (string) file_get_contents(base_path('CHANGELOG.md'));
-    // A seção mais recente do CHANGELOG: `[Unreleased]` antes do release, a versão depois.
-    $topo = mb_substr($changelog, (int) mb_strpos($changelog, "\n".'## ['));
-    $topo = mb_substr($topo, 0, (int) mb_strpos($topo, "\n".'## [', 1));
+    /*
+     * O CHANGELOG inteiro, não só a seção do topo.
+     *
+     * O recorte original só passava enquanto a versão desta feature fosse a mais recente: a
+     * primeira seção `[Unreleased]` de qualquer entrega seguinte empurrava a v0.30.1 para baixo e
+     * reprovava um caso que nada tem a ver com ela. O que este caso protege é "a entrega da lista
+     * do destino está registrada no CHANGELOG" — e isso não expira.
+     */
+    $changelog = (string) file_get_contents(base_path('CHANGELOG.md'));
 
-    expect($topo)->toContain('kit:update')->toContain('destino');
+    expect($changelog)->toContain('kit:update')->toContain('destino');
 })->with([
     'pt' => ['docs/pt/comecar/atualizando-o-projeto.md', 'versão destino'],
     'en' => ['docs/en/comecar/atualizando-o-projeto.md', 'target version'],
