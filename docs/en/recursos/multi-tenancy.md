@@ -44,7 +44,7 @@ The role only exists with tenancy on, and it is granted in `/admin` → organiza
 
 ## Organization insights under `/admin`
 
-The organization list includes four widgets for global operations:
+The organization list includes four widgets for global operations — the overview above the table and the three detail widgets below it:
 
 - an overview with totals and active organizations;
 - unique users per organization in the recent window — organizations with no eligible access remain visible with zero;

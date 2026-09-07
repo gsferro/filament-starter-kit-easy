@@ -3,6 +3,25 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Alterado
+- **Listagem de organizações: a visão geral abre a tela, a tabela vem em seguida e os três widgets
+  de detalhe passam para baixo dela.** Antes os quatro ficavam empilhados acima da tabela, que só
+  aparecia depois de rolar. Nada muda no que os widgets mostram. Wiki:
+  `wikis/specs/feat/entidades-widgets-ordem-e-titulo/`.
+
+### Corrigido
+- **Título da página e breadcrumb das organizações deixam de aparecer em minúsculas.** O
+  `TenantResource` punha o rótulo configurado em `mb_strtolower()` desde que o modo multi-tenant
+  nasceu; enquanto o Title Case do Filament esteve ligado, ele recapitalizava por cima. Ao
+  desligarmos o Title Case (v0.16, porque `ucwords` capitaliza preposição — "Agentes **De** IA"),
+  toda instalação passou a exibir "organizações" no `<h1>`, na aba do navegador e no breadcrumb
+  das quatro páginas do recurso, enquanto o menu seguia certo. Agora o rótulo sai **como foi
+  configurado** — "Entidades" continua "Entidades", "Unidades de Negócio" continua "Unidades de
+  Negócio". A tela de criação passa a se chamar "Criar Organização", igual aos demais cadastros
+  do kit.
+
 ## [0.31.0] - 2026-09-05
 
 ### Adicionado

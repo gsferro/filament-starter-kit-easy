@@ -44,7 +44,7 @@ O papel só existe com a tenancy ligada, e a concessão é em `/admin` → organ
 
 ## Insights das organizações no `/admin`
 
-A listagem de organizações traz quatro widgets para operação global:
+A listagem de organizações traz quatro widgets para operação global — a visão geral acima da tabela e os três de detalhe abaixo dela:
 
 - visão geral com totais e organizações ativas;
 - usuários únicos por organização na janela recente — organizações sem acesso elegível continuam visíveis com zero;
