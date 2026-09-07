@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Tenants\Schemas;
 
+use App\Models\Tenant;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\RegistroAberto;
 use App\Support\TetoDeUpload;
@@ -70,7 +71,14 @@ class TenantForm
                          */
                         Toggle::make('registro_habilitado')
                             ->label('Aceita cadastro público')
-                            ->helperText('Libera /app/register?org={slug} para quem tiver o link. A pessoa nasce nesta organização, com o perfil básico do painel de negócio — e, se a instalação exigir aprovação, fica pendente até alguém liberar.')
+                            // O endereço muda com a página única de login (`/cadastro?org=`), então
+                            // sai de `RegistroAberto::urlDoCadastro()` em vez de estar escrito aqui:
+                            // helperText que promete uma URL que a instalação não usa é pior que
+                            // helperText genérico.
+                            ->helperText(fn (?Tenant $record): string => sprintf(
+                                'Libera %s para quem tiver o link. A pessoa nasce nesta organização, com o perfil básico do painel de negócio — e, se a instalação exigir aprovação, fica pendente até alguém liberar.',
+                                RegistroAberto::urlDoCadastro($record->slug ?? '{slug}'),
+                            ))
                             ->default(false)
                             ->visible(fn (): bool => RegistroAberto::habilitado())
                             ->columnSpanFull(),

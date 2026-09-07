@@ -59,8 +59,17 @@ class TelaLogin extends Login
      */
     public function mount(): void
     {
+        /*
+         * A query atravessa o redirect, como no caminho do cadastro.
+         *
+         * O `?org=` decide se a tela de login mostra o link "Cadastre-se" e para onde ele
+         * aponta. Descartá-lo aqui fechava a volta: quem estava em `/cadastro?org=acme`,
+         * clicava em "faça login" e caía num `/login` sem organização — sem link de volta ao
+         * cadastro e sem pista do que tinha acontecido. Medido numa instalação de teste com
+         * multi-organização.
+         */
         if (ConfiguracaoDoLogin::unificado() && ! $this->ehAPaginaUnica()) {
-            throw new HttpResponseException(new RedirectResponse(route('login')));
+            throw new HttpResponseException(new RedirectResponse(route('login', request()->query())));
         }
 
         if (! $this->ehAPaginaUnica()) {
