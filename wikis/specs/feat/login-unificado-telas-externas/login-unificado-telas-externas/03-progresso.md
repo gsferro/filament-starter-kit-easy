@@ -1,6 +1,6 @@
 # Progresso — Telas externas com o login unificado
 
-> Branch: `feat/login-unificado-telas-externas` · Wiki criada em 2026-09-06 · Plano aprovado pelo solicitante em 2026-09-07 · Implementação: **em andamento**
+> Branch: `feat/login-unificado-telas-externas` · Wiki criada em 2026-09-06 · Plano aprovado pelo solicitante em 2026-09-07 · Implementação: **concluída em 2026-09-07** (quality gate ciclo 1: aprovado com débito)
 
 ## 1. `Paineis` vira a fonte única de rótulo, ícone e cartão por painel
 
@@ -56,11 +56,11 @@
 
 ## Testes
 
-- [ ] `tests/Kit/LoginUnificadoTest.php` — CT-43…CT-65 sem tenancy (23 cenários, 10 regras, 49 mutantes; CT-17→CT-43, CT-05/CT-28→CT-51, CT-40→CT-59)
-- [ ] `tests/Tenancy/LoginUnificadoTenancyTest.php` (novo) — células com tenancy da tabela de decisão (CT-52/53/55/56/58); helpers `ligarLoginUnificado()` e `organizacaoComRegistro()` migram para `tests/Pest.php` (`.ai/rules/testes.md`)
-- [ ] `tests/Kit/BoasVindasTest.php:56` → CT-46; `tests/Browser/BoasVindasTest.php:54-56` e `tests/Browser/LoginUnificadoTest.php:33-38` — rótulo do `app` e ausência por `href`
+- [x] `tests/Kit/LoginUnificadoTest.php` — **118/118, 503 asserções**, 2026-09-07
+- [x] `tests/Tenancy/LoginUnificadoTenancyTest.php` (novo) — **19/19, 77 asserções**; helpers movidos para `tests/Pest.php`, `HelpersDeTesteTest` 1/1, 2026-09-07
+- [x] `tests/Kit/BoasVindasTest.php` virou CT-46 e os dois testes de navegador trocaram a asserção do rótulo — 39/39 e **4/4, 19 asserções** (após `npm run build`), 2026-09-07
 - [x] `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` → CT-50; 20 URLs literais + inventário — 34/34 (Tela + Documentacao + Inventario), 2026-09-07
-- [ ] Lacunas declaradas do `04`: M-A6 (ícone renderizado — tentar `svg()->contents()`), M-A7 (estrutural, só `arch()`)
+- [x] Lacunas declaradas do `04` mantidas como lacuna, não como cobertura: M-A6 (renderização do ícone) e M-A7 (dois mapas com valores iguais, só `arch()` mataria) — registradas no débito do `06`, 2026-09-07
 
 ## Verificação Final
 
@@ -70,16 +70,16 @@
       `cadastroTemDestino()` nomeia a regra que CT-58 mata. Três cortes já haviam sido aplicados
       na auditoria do plano (método só para um redirect, dois logs por request), 2026-09-07
 - [x] `vendor/bin/pint --dirty --format agent` — passed, 2026-09-07
-- [ ] `vendor/bin/filacheck --fix`
-- [ ] Testes da feature (lista do `01`)
-- [ ] Regressão em série com a chave desligada
-- [ ] CT-B de regressão (`LoginUnificadoTest`, `BoasVindasTest`, `ConfiguracoesDoKitTest`)
+- [x] `vendor/bin/filacheck --fix` — All 17 rules passed!, 2026-09-07
+- [x] Testes da feature — LoginUnificado 118/118, Tenancy 19/19, BoasVindas 39/39, ConfiguracoesDoKit* + Inventario 34/34, KitUpdate 54/54, 2026-09-07
+- [x] Regressão dos vizinhos (RegistroAberto, TelasDeAutenticacao, BoasVindas, ConfiguracoesDoKit ×3, InventarioDeTelas, KitUpdate, KitInfo) — **269/269, 760 asserções**, 2026-09-07
+- [x] CT-B de regressão — `tests/Browser/LoginUnificadoTest.php` e `tests/Browser/BoasVindasTest.php` **4/4**, em série, 2026-09-07
 - [x] `vendor/bin/phpstan analyse app --memory-limit=1G` — 0 erros, 2026-09-07
 - [x] Desvios propagados ao `01`/`02`/`04` e às docs, marcados `*(alterado em …)*` — três desvios: reset (ADR-05), guarda de autenticado, arranjo de CT-52, 2026-09-07
 - [x] Citações `arquivo:símbolo:linha` reverificadas — **28/28 ok** (12 tinham deslocado com a implementação), 2026-09-07
 - [x] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa — CT-43…CT-65 nos dois lados; CT-17/CT-28/CT-40 saíram do teste e ficaram no `04` só como referência de "atualiza", 2026-09-07
 - [x] Docs pt/en, CHANGELOG e README reconciliados — inclui a correção do painel do link de reset depois de ADR-05, 2026-09-07
-- [ ] `git commit` (individualizados, lista do `01`)
+- [x] `git commit` — 14 commits individualizados por tipo (feat, fix, refactor, test, docs, wiki), 2026-09-07
 
 <!-- Cada [x] acima leva " — {evidência}, {data}". -->
 
