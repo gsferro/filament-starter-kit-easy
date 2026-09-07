@@ -155,12 +155,12 @@ it('abre os campos de credencial de um provedor ao ligar o interruptor dele, e s
     $this->actingAs(usuarioDoKit('admin'));
 
     // DT-06 outra vez, agora para a tela do /admin. Ver a nota do CT-B01.
-    $this->get('/admin/configuracoes-do-kit');
+    $this->get('/admin/configuracoes-da-aplicacao');
 
     $campo = static fn (ProvedorSocial $provedor, string $sufixo): string => '#form\\.'
         .$provedor->propriedadeDeSettings($sufixo);
 
-    $pagina = visit('/admin/configuracoes-do-kit')
+    $pagina = visit('/admin/configuracoes-da-aplicacao')
         ->click('Login')
         /*
          * Desde 2026-08-26 a seção de cada provedor nasce FECHADA, com o ícone de status no

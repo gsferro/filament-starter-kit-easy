@@ -61,7 +61,7 @@ screen: it offers the same buttons as the login, and coming back from the provid
 ## Turning a provider on, in four steps
 
 The steps are the same for all four; only the place where you create the OAuth app changes. You can
-do everything through `.env` **or** through `/admin/configuracoes-do-kit` → the **Login** tab — but
+do everything through `.env` **or** through `/admin/configuracoes-da-aplicacao` → the **Login** tab — but
 know who is in charge: **the database wins over `.env` at runtime, and `.env` only seeds it** (see
 [Who wins: the database or `.env`?](../recursos/configuracoes-do-kit.md#who-wins-the-database-or-env)). Step 3 is where that matters.
 
@@ -113,14 +113,14 @@ X_CLIENT_SECRET=your-secret
 settings migration seeds every property from `config()`, which comes from `.env`. On a kit that is
 **already installed**, `.env` alone turns **nothing** on, and `config:clear` does not change that:
 the `settings` table already has the row (`false`, empty credential) and it wins on every request.
-Two ways out: save through `/admin/configuracoes-do-kit` → **Login**, or run
+Two ways out: save through `/admin/configuracoes-da-aplicacao` → **Login**, or run
 `php artisan kit:install --force` with `.env` already filled in — which **recreates the database**
 (DELETES the data; harmless only in the minute after installing). Measured on a real install: the
 three Google keys in `.env`, `config:clear`, and no button — until the migration re-read `.env`.
 
 **4. Confirm the button showed up.** If it did not, it is one of the two conditions below.
 
-> **Through the screen instead of `.env`**: `/admin/configuracoes-do-kit` → **Login** has one
+> **Through the screen instead of `.env`**: `/admin/configuracoes-da-aplicacao` → **Login** has one
 > section per provider. Turning the switch on **opens** the *Client ID* and *Client Secret* fields
 > for that provider — and only that one. The *Client Secret* is stored **encrypted**, is never
 > displayed back and does not appear in the page source; leaving the field blank **keeps** whatever
@@ -131,7 +131,7 @@ three Google keys in `.env`, `config:clear`, and no button — until the migrati
 | | |
 |---|---|
 | [![Login with the social buttons](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login-social.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-social.png) | [![Login tab of the kit settings](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-login.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-login.png) |
-| The login screen with **Sign in with Google** and **Sign in with GitHub**, and the Markdown footer | `/admin/configuracoes-do-kit` → **Login**: one collapsed block per provider with the status icon, the linking switch and the footer |
+| The login screen with **Sign in with Google** and **Sign in with GitHub**, and the Markdown footer | `/admin/configuracoes-da-aplicacao` → **Login**: one collapsed block per provider with the status icon, the linking switch and the footer |
 | [![Set a password by e-mail, on the profile](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-perfil-definir-senha.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-perfil-definir-senha.png) | [![Lock screen with social login](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-bloqueio-social.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-bloqueio-social.png) |
 | The profile: **Set a password by e-mail** above "Password" — whoever came through a provider has no current password | The session lock screen offers the same buttons; coming back from the provider unlocks it |
 | [![Users list with the Origin column](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-users-origem.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-users-origem.png) | |
@@ -162,7 +162,7 @@ provider, or a recycled address, does not lead to another account.
 
 **The first time.** When a provider shows up for the first time on an account that **already
 existed**, what happens depends on a switch — `KIT_SOCIALITE_VINCULO_CONFIRMAR` in `.env`, or the
-`/admin/configuracoes-do-kit` → **Login** → "Require e-mail confirmation…" screen:
+`/admin/configuracoes-da-aplicacao` → **Login** → "Require e-mail confirmation…" screen:
 
 | | Default mode (`false`) | Strict mode (`true`) |
 |---|---|---|
@@ -204,7 +204,7 @@ Decisions and cases: `wikis/specs/feat/vinculo-de-provedor-social/`.
 
 ## Each provider chooses its panels
 
-On `/admin/configuracoes-do-kit` → **Login**, each provider's **Allowed panels** field separately
+On `/admin/configuracoes-da-aplicacao` → **Login**, each provider's **Allowed panels** field separately
 controls where its button and routes are available: `/app`, `/admin` and `/infra`. An empty list
 means all panels, preserving the behavior of existing installations.
 
@@ -353,7 +353,7 @@ like any other login — with no configuration at all.
 
 ## The Google secret was stored in cleartext in the audit trail up to v0.19.3
 
-**If you configured `GOOGLE_CLIENT_SECRET` through the `/admin/configuracoes-do-kit` screen on any
+**If you configured `GOOGLE_CLIENT_SECRET` through the `/admin/configuracoes-da-aplicacao` screen on any
 version between 0.19.2 and 0.19.3, rotate that secret in the Google console.**
 
 Why: the audit trail's secret mask decides what to hide by consulting the

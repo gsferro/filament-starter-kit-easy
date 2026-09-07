@@ -51,7 +51,8 @@ it('abre em tema escuro, com conteudo, e sem erro de javascript', function (): v
     visit('/')
         ->inDarkMode()
         ->assertSee('Bem-vindo ao Starter Kit Easy')
-        ->assertSee('Painel do negócio')
+        // O rótulo do cartão do /app é o nome da aplicação, o mesmo que o Panel Switch usa.
+        ->assertSee((string) config('app.name'))
         ->assertSee('Administração')
         ->assertSee('Infraestrutura')
         ->assertSee((string) config('kit.version'))

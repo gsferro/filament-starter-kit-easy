@@ -2,6 +2,7 @@
 
 namespace App\Providers\Concerns;
 
+use App\Support\Paineis;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
 use Filament\Actions\Action;
@@ -32,7 +33,7 @@ use Illuminate\Contracts\View\View;
  * É este arquivo que define como TODA tabela, toggle e modal do projeto se comporta.
  * Mudou aqui, mudou em todo lugar — inclusive nas telas dos plugins de terceiros.
  *
- * ## Quatro destes defaults são editáveis em /admin/configuracoes-do-kit
+ * ## Quatro destes defaults são editáveis em /admin/configuracoes-da-aplicacao
  *
  * Paginação, linhas listradas, persistência do recorte do usuário e colunas
  * arrastáveis saem de `config('kit.tabelas.*')`, que o `KitServiceProvider`
@@ -199,7 +200,7 @@ trait ConfiguraFilamentGlobal
             // Carrega os dados de forma assíncrona: a tela aparece antes da query.
             ->deferLoading()
 
-            // Configurável em /admin/configuracoes-do-kit. É o único controle de
+            // Configurável em /admin/configuracoes-da-aplicacao. É o único controle de
             // densidade visual que o Filament 5 tem — ver o docblock do trait.
             ->striped((bool) config('kit.tabelas.listrada', true))
 
@@ -267,7 +268,7 @@ trait ConfiguraFilamentGlobal
      * quem só quer ver a listagem. Para trazer de volta, acrescente
      * `'stickableColumns'` à lista abaixo.
      *
-     * Desligável em /admin/configuracoes-do-kit. O `hasMacro()` continua sendo
+     * Desligável em /admin/configuracoes-da-aplicacao. O `hasMacro()` continua sendo
      * necessário mesmo com a chave ligada: ele degrada sem quebrar a tabela se o
      * pacote for removido, e é o que dispensa fingir para o PHPStan que o método
      * existe.
@@ -329,19 +330,17 @@ trait ConfiguraFilamentGlobal
          * renderizada. O recorte real é o canAccessPanel(), que o próprio pacote
          * consulta; painel inacessível some sozinho.
          */
+        /*
+         * Os dois mapas vêm de `Paineis` porque a tela de escolha de painel do login
+         * unificado monta os cartões dos MESMOS painéis: duas listas com os mesmos ids
+         * divergiam em silêncio. Ver ADR-01 de
+         * `wikis/specs/feat/login-unificado-telas-externas/`.
+         */
         PanelSwitch::configureUsing(function (PanelSwitch $panelSwitch): void {
             $panelSwitch
                 ->simple()
-                ->labels([
-                    'app'   => config('app.name'),
-                    'admin' => 'Administração',
-                    'infra' => 'Infraestrutura',
-                ])
-                ->icons([
-                    'app'   => 'heroicon-o-rocket-launch',
-                    'admin' => 'heroicon-o-wrench-screwdriver',
-                    'infra' => 'heroicon-o-server-stack',
-                ]);
+                ->labels(Paineis::rotulos())
+                ->icons(Paineis::icones());
         });
     }
 

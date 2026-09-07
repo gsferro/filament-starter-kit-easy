@@ -92,12 +92,23 @@ nela, a tela devolve **a mesma** recusa — quem visita não descobre qual das c
 seja: numa instalação multi-organização, divulgar `/app/register` sem o `?org=` leva as pessoas
 à recusa; divulgue o link da organização.
 
+**O link "Cadastre-se" da tela de login segue a mesma regra.** Ele só aparece quando existe uma
+organização de destino resolvível, e a carrega: abra a tela de login com o slug
+(`/app/login?org=acme`, ou `/login?org=acme` com a [página única](login-unificado.md)) e o link vai
+para o cadastro daquela organização. Sem `?org=`, ou com a organização recusando cadastro, o link
+**não aparece** — antes ele aparecia e levava à mesma recusa, que é um beco sem saída medido numa
+instalação real. Se o botão sumiu numa instalação com multi-organização, é isto: falta ligar
+*"Aceita cadastro público"* na organização, ou falta o `?org=` no endereço divulgado.
+
+Com [a página única de login](login-unificado.md) ligada, o endereço do cadastro é `/cadastro`
+(`/cadastro?org=acme`), e `/app/register` redireciona para lá preservando a query.
+
 Isto não se confunde com *criar* organização: registrar-se **numa** organização não é criá-la, e
 quem cria organização continua sendo quem administra a instalação, pelo `/admin`.
 
 ## Validação de e-mail (opcional)
 
-Exige e-mail confirmado para entrar no `/app`. **Editável em `/admin/configuracoes-do-kit` → aba
+Exige e-mail confirmado para entrar no `/app`. **Editável em `/admin/configuracoes-da-aplicacao` → aba
 Registro**, e o valor gravado vale no **request seguinte** — sem deploy. `KIT_REGISTRO_VERIFICAR_EMAIL`
 continua existindo: ele semeia a instalação nova e é o plano B, como as demais configurações da
 tela.

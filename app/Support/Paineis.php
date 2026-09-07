@@ -5,10 +5,10 @@ namespace App\Support;
 use BezhanSalleh\FilamentShield\FilamentShield;
 use Filament\Facades\Filament;
 use Filament\Panel;
-use Filament\Support\Icons\Heroicon;
 use Harvirsidhu\FilamentCards\CardItem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Facade;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
@@ -243,33 +243,96 @@ final class Paineis
     }
 
     /**
-     * Um cartão por painel — os da tela de boas-vindas. Keyed pelo id do painel para quem
-     * precisa filtrar: a escolha de painel após o login (`EscolhaDePainel`) mostra só os
-     * acessíveis.
+     * O rótulo de cada painel do kit, para o Panel Switch e para os cartões.
+     *
+     * Fonte ÚNICA dos dois: `ConfiguraFilamentGlobal::configuraPanelSwitch()` passa este array
+     * para `PanelSwitch::labels()`, e `cartoes()` o consome por painel. Duas listas com os
+     * mesmos ids divergiam em silêncio — a escolha dizia "Painel do negócio" e a topbar dizia
+     * o nome da aplicação. Ver ADR-01 de `wikis/specs/feat/login-unificado-telas-externas/`.
+     *
+     * @return array<string, string>
+     */
+    public static function rotulos(): array
+    {
+        return [
+            'app'   => (string) config('app.name'),
+            'admin' => 'Administração',
+            'infra' => 'Infraestrutura',
+        ];
+    }
+
+    /**
+     * O ícone de cada painel do kit. Strings `heroicon-o-*`, não o enum: é o que o
+     * `PanelSwitch::icons()` aceita, e `CardItem::icon()` aceita as duas formas
+     * (`Filament\Support\Concerns\HasIcon::icon()`).
+     *
+     * @return array<string, string>
+     */
+    public static function icones(): array
+    {
+        return [
+            'app'   => 'heroicon-o-rocket-launch',
+            'admin' => 'heroicon-o-wrench-screwdriver',
+            'infra' => 'heroicon-o-server-stack',
+        ];
+    }
+
+    /**
+     * O rótulo de um painel — inclusive de um que a aplicação registrou depois da instalação.
+     *
+     * O fallback é o MESMO do Panel Switch (`str($id)->ucfirst()` na blade do pacote), para que
+     * painel novo apareça igual nos dois lugares sem ninguém configurar nada.
+     */
+    public static function rotulo(Panel $painel): string
+    {
+        $rotulo = self::rotulos()[$painel->getId()] ?? null;
+
+        return filled($rotulo) ? $rotulo : Str::ucfirst($painel->getId());
+    }
+
+    /** O ícone de um painel, com o mesmo fallback do Panel Switch. */
+    public static function icone(Panel $painel): string
+    {
+        $icone = self::icones()[$painel->getId()] ?? null;
+
+        return filled($icone) ? $icone : 'heroicon-o-square-2-stack';
+    }
+
+    /**
+     * Um cartão por painel REGISTRADO — os da tela de boas-vindas e os da escolha de painel.
+     * Keyed pelo id do painel para quem precisa filtrar: a escolha (`EscolhaDePainel`) mostra
+     * só os acessíveis.
+     *
+     * A lista sai de `Filament::getPanels()`, não de um array fixo: painel que a aplicação
+     * registra depois da instalação entra sozinho, com o rótulo e o ícone que o Panel Switch
+     * já lhe daria. Descrição e cor existem só para os três painéis do kit — painel novo vem
+     * sem descrição e em `gray`.
      *
      * `CardItem` não verifica autorização (`.ai/rules/filament.md`, "CardItem do hub"). Aqui
-     * isso é deliberado nos dois consumidores: a boas-vindas é pública e mostra os três de
+     * isso é deliberado nos dois consumidores: a boas-vindas é pública e mostra todos de
      * propósito; a escolha filtra por `canAccessPanel()` ANTES de montar.
      *
      * @return array<string, CardItem>
      */
     public static function cartoes(): array
     {
-        $cartao = static function (string $painel, string $rotulo, Heroicon $icone, string $cor, string $descricao): CardItem {
-            $instancia = Filament::getPanel($painel);
-
-            return CardItem::make(self::url($instancia))
-                ->label($rotulo)
-                ->description($descricao)
-                ->icon($icone)
-                ->color($cor)
-                ->badge('/'.$instancia->getPath());
-        };
-
-        return [
-            'app'   => $cartao('app', 'Painel do negócio', Heroicon::OutlinedBuildingOffice2, 'primary', 'Onde o seu produto vive. Multi-organização, convites e o cadastro do dia a dia.'),
-            'admin' => $cartao('admin', 'Administração', Heroicon::OutlinedUsers, 'info', 'Usuários, papéis e permissões, convites, organizações e agentes de IA.'),
-            'infra' => $cartao('infra', 'Infraestrutura', Heroicon::OutlinedServerStack, 'gray', 'Filas, logs, exceções, backups, saúde da aplicação e o Pulse.'),
+        $descricoes = [
+            'app'   => ['primary', 'Onde o seu produto vive. Multi-organização, convites e o cadastro do dia a dia.'],
+            'admin' => ['info', 'Usuários, papéis e permissões, convites, organizações e agentes de IA.'],
+            'infra' => ['gray', 'Filas, logs, exceções, backups, saúde da aplicação e o Pulse.'],
         ];
+
+        return collect(Filament::getPanels())
+            ->mapWithKeys(function (Panel $painel) use ($descricoes): array {
+                [$cor, $descricao] = $descricoes[$painel->getId()] ?? ['gray', null];
+
+                return [$painel->getId() => CardItem::make(self::url($painel))
+                    ->label(self::rotulo($painel))
+                    ->description($descricao)
+                    ->icon(self::icone($painel))
+                    ->color($cor)
+                    ->badge('/'.$painel->getPath())];
+            })
+            ->all();
     }
 }

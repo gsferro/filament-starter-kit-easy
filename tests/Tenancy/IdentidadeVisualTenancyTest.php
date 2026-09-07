@@ -170,7 +170,7 @@ it('recusa cor fora do formato hexadecimal', function (string $corInvalida): voi
  * CT-29 — a cor da organização vence a cor LIVRE do kit dentro de /app/{slug}.
  *
  * A regressão que este caso protege é RQ-18 do requisito de settings: "não confundir
- * com o settings do tenant". A tela `/admin/configuracoes-do-kit` passou a oferecer
+ * com o settings do tenant". A tela `/admin/configuracoes-da-aplicacao` passou a oferecer
  * uma cor livre em hexadecimal, no mesmo formato da cor de uma organização — se a
  * precedência regredir, o cliente abre o painel DELE e vê a cor da instalação.
  *

@@ -321,9 +321,9 @@ it('captura a tela de login com os botões sociais e o rodapé', function (): vo
 
 it('captura a aba Login das configurações da aplicação', function (): void {
     // Aquece o /admin, e só ele.
-    $this->get('/admin/configuracoes-do-kit');
+    $this->get('/admin/configuracoes-da-aplicacao');
 
-    visit('/admin/configuracoes-do-kit')
+    visit('/admin/configuracoes-da-aplicacao')
         ->resize(1400, 875)
         ->click('Login')
         ->assertSee('Login social')
@@ -479,7 +479,7 @@ it('captura a seção Proteção anti-robô das configurações', function (): v
     $settings->save();
 
     // Aquece o /admin, e só ele — mesma razão do cenário da aba Login acima.
-    $this->get('/admin/configuracoes-do-kit');
+    $this->get('/admin/configuracoes-da-aplicacao');
 
     /*
      * `screenshotElement()`, e não a captura da viewport.
@@ -491,7 +491,7 @@ it('captura a seção Proteção anti-robô das configurações', function (): v
      *
      * O seletor vem do `id` que o Filament dá à Section pelo rótulo.
      */
-    visit('/admin/configuracoes-do-kit')
+    visit('/admin/configuracoes-da-aplicacao')
         ->resize(1400, 875)
         ->click('Login')
         ->assertSee('Pontuação mínima')

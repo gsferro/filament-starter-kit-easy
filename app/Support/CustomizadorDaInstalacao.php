@@ -377,7 +377,7 @@ final class CustomizadorDaInstalacao
      * Os itens que continuam sendo editados à mão, com o lugar de cada um.
      *
      * A arte do login saiu desta lista: ela virou campo em
-     * /admin/configuracoes-do-kit, junto com logo, favicon, nome, cor, dados de
+     * /admin/configuracoes-da-aplicacao, junto com logo, favicon, nome, cor, dados de
      * e-mail e os defaults de tabela.
      *
      * @return list<string>

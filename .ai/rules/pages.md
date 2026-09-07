@@ -8,7 +8,7 @@ paths:
 ## Segredo em formulário: esconder na tela não é esconder no HTML
 `->password()` e `->revealable()` mexem no `type` do input — ou seja, na TELA. O valor continua em `$this->data`, que é propriedade **pública** do componente Livewire, e o Livewire serializa isso inteiro no `wire:snapshot` do HTML.
 
-Foi Blocker na v0.19.0: `GET /admin/configuracoes-do-kit` devolvia a senha de SMTP **em claro no corpo da resposta**, com 200 e sem clique em "revelar". O banco (cifrado) e a trilha (mascarada) estavam corretos — vazava só no navegador, que é onde ninguém pensou em olhar.
+Foi Blocker na v0.19.0: `GET /admin/configuracoes-da-aplicacao` devolvia a senha de SMTP **em claro no corpo da resposta**, com 200 e sem clique em "revelar". O banco (cifrado) e a trilha (mascarada) estavam corretos — vazava só no navegador, que é onde ninguém pensou em olhar.
 
 Campo de segredo em formulário precisa de DOIS pontos, e nenhum deles é visual:
 

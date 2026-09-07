@@ -29,10 +29,13 @@ it('CT-B01: quem tem dois painéis entra por /login, escolhe Administração e c
         ->fill('#form\.password', 'password')
         ->press('Login');
 
+    // A ausência do cartão do /app é afirmada pelo LINK, não pelo rótulo: o rótulo dele passou a
+    // ser `config('app.name')`, que aparece no <title> de toda página (wiki
+    // `login-unificado-telas-externas`, CT-43).
     $pagina->assertPathIs('/login/painel')
         ->assertSee('Administração')
         ->assertSee('Infraestrutura')
-        ->assertDontSee('Painel do negócio')
+        ->assertNotPresent('a[href$="/login/painel/app"]')
         ->assertNoJavaScriptErrors();
 
     $pagina->click('Administração')

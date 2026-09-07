@@ -201,7 +201,7 @@ it('leva o modo estrito gravado no settings para a config e para o ponto unico d
         ->and(ConfiguracaoDoLogin::vinculoExigeConfirmacao())->toBeTrue();
 })->group('kit');
 
-/** CT-V11 — o toggle da tela /admin/configuracoes-do-kit grava a propriedade. */
+/** CT-V11 — o toggle da tela /admin/configuracoes-da-aplicacao grava a propriedade. */
 it('grava o modo estrito pelo toggle da tela de configuracoes do kit', function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
     $this->actingAs(usuarioDoKit('admin'));

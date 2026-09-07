@@ -5,13 +5,24 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-### Alterado
-- **Listagem de organizações: a visão geral abre a tela, a tabela vem em seguida e os três widgets
-  de detalhe passam para baixo dela.** Antes os quatro ficavam empilhados acima da tabela, que só
-  aparecia depois de rolar. Nada muda no que os widgets mostram. Wiki:
-  `wikis/specs/feat/entidades-widgets-ordem-e-titulo/`.
+### Adicionado
+- **A escolha de painel do login unificado lista os painéis registrados, não uma lista fixa.** Um
+  `PanelProvider` que a aplicação registre depois da instalação aparece sozinho na escolha e na
+  boas-vindas, sem editar arquivo do kit. Rótulo e ícone de cada cartão passam a sair da **mesma
+  fonte** que alimenta o Panel Switch (`App\Support\Paineis`), com os mesmos fallbacks do pacote —
+  o cartão do `/app` deixa de dizer "Painel do negócio" e passa a dizer o nome da aplicação.
+- **`/cadastro` e `/esqueci-minha-senha`**, sem prefixo de painel, quando a página única de login
+  está ligada. As rotas dos painéis redirecionam para elas preservando a query (o `?token=` de um
+  convite antigo continua valendo), e a chave desligada devolve tudo às rotas dos painéis. A
+  redefinição de senha (o link do e-mail) e a verificação de e-mail continuam por painel.
 
 ### Corrigido
+- **O link "Cadastre-se" da tela de login não leva mais a uma recusa em instalação com
+  multi-organização.** Ele exige `?org={slug}` de uma organização ativa que aceitou cadastro
+  público; sem organização resolvível o link **não aparece**, e quando aparece carrega o `?org=`.
+  Antes ele aparecia sempre que o registro estava ligado e apontava para `/app/register` sem a
+  organização — toda visita terminava em "Convite inválido ou expirado". Vale também com a página
+  única desligada: o defeito é anterior a ela.
 - **Título da página e breadcrumb das organizações deixam de aparecer em minúsculas.** O
   `TenantResource` punha o rótulo configurado em `mb_strtolower()` desde que o modo multi-tenant
   nasceu; enquanto o Title Case do Filament esteve ligado, ele recapitalizava por cima. Ao
@@ -21,6 +32,15 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   configurado** — "Entidades" continua "Entidades", "Unidades de Negócio" continua "Unidades de
   Negócio". A tela de criação passa a se chamar "Criar Organização", igual aos demais cadastros
   do kit.
+
+### Alterado
+- **A página de configurações responde em `/admin/configuracoes-da-aplicacao`**, o nome que ela já
+  exibia no menu e no título. O endereço antigo (`/admin/configuracoes-do-kit`) responde 301 para o
+  novo, então favoritos continuam funcionando.
+- **Listagem de organizações: a visão geral abre a tela, a tabela vem em seguida e os três widgets
+  de detalhe passam para baixo dela.** Antes os quatro ficavam empilhados acima da tabela, que só
+  aparecia depois de rolar. Nada muda no que os widgets mostram. Wiki:
+  `wikis/specs/feat/entidades-widgets-ordem-e-titulo/`.
 
 ## [0.31.0] - 2026-09-05
 

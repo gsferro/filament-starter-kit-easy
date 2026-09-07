@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Ai\Health\LocalAiCheck;
 use App\Ai\Listeners\RegistrarAiRun;
+use App\Filament\Pages\Auth\CadastroUnificado;
 use App\Filament\Pages\Auth\EscolhaDePainel;
 use App\Filament\Pages\Auth\TelaLoginUnificada;
+use App\Filament\Pages\Auth\TelaRecuperarSenhaUnificada;
 use App\Http\Controllers\Auth\EntrarNoPainelController;
 use App\Http\Responses\RespostaDeLogin;
 use App\Models\Tenant;
@@ -227,7 +229,7 @@ class KitServiceProvider extends ServiceProvider
     }
 
     /**
-     * A configuração gravada em /admin/configuracoes-do-kit, aplicada ao processo.
+     * A configuração gravada em /admin/configuracoes-da-aplicacao, aplicada ao processo.
      *
      * Este é o ponto único que faz o banco vencer o `.env` em tempo de execução —
      * e o que permite que NENHUM consumidor mude: `CorPrimaria::paleta()`, os três
@@ -508,14 +510,16 @@ class KitServiceProvider extends ServiceProvider
     }
 
     /**
-     * A página única de login e a escolha de painel (wiki `login-unificado`).
+     * As telas de autenticação fora dos painéis (wikis `login-unificado` e
+     * `login-unificado-telas-externas`): login, escolha de painel, cadastro e recuperação.
      *
      * Rotas registradas SEMPRE — rota dentro de `if` quebra `route()` e `route:cache` (ver o
      * bloco do login social em `routes/web.php`) — e decididas por request pela chave
-     * `kit.login.unificado`. Aqui e não em `routes/web.php` porque aquele arquivo é do usuário
-     * e o `kit:update` não o entrega (ADR-05). `web` explícito: rota de provider não ganha o
-     * grupo sozinha. `panel:app` boota o painel default — tema, cores, layout do Auth Designer
-     * —, o mesmo molde da rota `boas-vindas`.
+     * `kit.login.unificado`: com ela desligada, cada página devolve para a rota do painel. Aqui
+     * e não em `routes/web.php` porque aquele arquivo é do usuário e o `kit:update` não o
+     * entrega (ADR-05). `web` explícito: rota de provider não ganha o grupo sozinha. `panel:app`
+     * boota o painel default — tema, cores, layout do Auth Designer —, o mesmo molde da rota
+     * `boas-vindas`.
      *
      * A resposta de login é de TODO login por senha nos três painéis; com a chave desligada ela
      * é idêntica à do Filament.
@@ -528,7 +532,17 @@ class KitServiceProvider extends ServiceProvider
             Route::get('/login', TelaLoginUnificada::class)->name('login');
             Route::get('/login/painel', EscolhaDePainel::class)->middleware('auth')->name('login.painel');
             Route::get('/login/painel/{painel}', EntrarNoPainelController::class)->middleware('auth')->where('painel', '[a-z0-9_-]{1,32}')->name('login.painel.entrar');
+            Route::get('/cadastro', CadastroUnificado::class)->name('cadastro');
+            Route::get('/esqueci-minha-senha', TelaRecuperarSenhaUnificada::class)->name('esqueci-minha-senha');
         });
+
+        /*
+         * A tela de configurações mudou de slug quando o menu passou a dizer "Configurações da
+         * aplicação" (ADR-03 de `login-unificado-telas-externas`). 301 porque o endereço não
+         * volta atrás — ao contrário dos redirects acima, que dependem da chave e por isso são
+         * 302. Quem tinha o endereço antigo salvo continua chegando.
+         */
+        Route::redirect('/admin/configuracoes-do-kit', '/admin/configuracoes-da-aplicacao', 301)->middleware('web');
     }
 
     protected function configureHealthChecks(): void

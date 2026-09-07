@@ -16,7 +16,7 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * A tela /admin/configuracoes-do-kit — gravação, validação e autorização.
+ * A tela /admin/configuracoes-da-aplicacao — gravação, validação e autorização.
  *
  * IDs de CT em `wikis/specs/feat/settings-do-kit/settings-do-kit/04-casos-de-teste.md`.
  *
@@ -283,7 +283,7 @@ it('nao serializa a senha de smtp no html da tela', function (): void {
 
     $this->actingAs(usuarioDoKit('admin'));
 
-    $resposta = $this->get('/admin/configuracoes-do-kit');
+    $resposta = $this->get('/admin/configuracoes-da-aplicacao');
 
     $resposta->assertOk();
 
@@ -413,3 +413,45 @@ it('oferece o valor configurado como opcao, marcado, quando ele esta fora da lis
     Livewire::test(ConfiguracoesDoKit::class)
         ->assertSee('ses — configurado no .env');
 });
+
+/*
+|--------------------------------------------------------------------------
+| R3 — a URL da tela reflete o nome que ela exibe no menu
+|--------------------------------------------------------------------------
+| A tela sempre se chamou "Configurações da aplicação" no menu e no título, mas o Filament deriva
+| o slug do NOME DA CLASSE e a URL ficou `configuracoes-do-kit`. O `$slug` corrige a URL sem
+| renomear a classe (que arrastaria o Settings homônimo, o listener de auditoria e a permissão
+| já gravada). Wiki `feat/login-unificado-telas-externas`, ADR-03.
+*/
+
+it('[CT-48] a tela de configuracoes responde na URL nova, e e a URL que o Filament gera para ela', function (): void {
+    $this->actingAs(usuarioDoKit('admin'));
+
+    $this->get('/admin/configuracoes-da-aplicacao')
+        ->assertOk()
+        ->assertSeeLivewire(ConfiguracoesDoKit::class);
+
+    expect(ConfiguracoesDoKit::getUrl(panel: 'admin'))->toEndWith('/admin/configuracoes-da-aplicacao');
+});
+
+it('[CT-49] o slug antigo redireciona para o novo e nunca serve a tela', function (bool $autenticado, bool $chegaNaTela): void {
+    if ($autenticado) {
+        $this->actingAs(usuarioDoKit('admin'));
+    }
+
+    $resposta = $this->get('/admin/configuracoes-do-kit');
+
+    // 301: o endereço não volta atrás. O redirect vive fora do grupo do painel, então vale
+    // igual para anônimo — sem ele, o anônimo tomaria 404 antes de chegar ao login.
+    expect($resposta->getStatusCode())->toBe(301);
+    $resposta->assertRedirect('/admin/configuracoes-da-aplicacao');
+
+    $seguida = $this->followingRedirects()->get('/admin/configuracoes-do-kit')->assertOk();
+
+    $chegaNaTela
+        ? $seguida->assertSeeLivewire(ConfiguracoesDoKit::class)
+        : $seguida->assertDontSeeLivewire(ConfiguracoesDoKit::class);
+})->with([
+    'pessoa admin autenticada' => [true, true],
+    'visitante anônimo'        => [false, false],
+]);

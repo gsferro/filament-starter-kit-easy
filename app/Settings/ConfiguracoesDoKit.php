@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 use Spatie\LaravelSettings\Settings;
 
 /**
- * As configurações da INSTALAÇÃO, editáveis em /admin/configuracoes-do-kit.
+ * As configurações da INSTALAÇÃO, editáveis em /admin/configuracoes-da-aplicacao.
  *
  * ## Quem é a fonte da verdade
  *

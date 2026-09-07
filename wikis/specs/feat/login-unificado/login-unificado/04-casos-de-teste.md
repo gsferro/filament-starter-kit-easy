@@ -388,6 +388,8 @@ Funcionalidade: página única de login para os três painéis
 
   Regra: a escolha só aparece para quem entrou e tem mais de um painel, e só com os painéis acessíveis
 
+    # *(alterado em 2026-09-06: virou CT-43 em `login-unificado-telas-externas` — a lista deixou
+    # de ser fixa e o rótulo do `app` passou a ser `config('app.name')`; a ausência é pelo href.)*
     Esquema do Cenário: [CT-17] a tela mostra um cartão por painel acessível, e nenhum a mais
       Dado a chave ligada
       E uma pessoa autenticada com papel <papel>
@@ -574,7 +576,7 @@ Funcionalidade: página única de login para os três painéis
 | CT-37 | marca sobrando não anula o login pela tela do painel | R9 | controle negativo | Kit (Livewire + DB) | idem | M-I7 |
 | CT-38 | `fi-auth-layout` não veste página comum (par de `.ai/rules/auth.md`) | R10 | par obrigatório | Kit (HTTP) | idem | M-J1 |
 | CT-39 | lock screen dentro do painel; sair termina em `/login` | R10 (RQ-07) | rastreio por origem | Kit (HTTP) | idem | M-J2 |
-| CT-40 | reset de senha por painel; link na página única | R10 (RQ-07) | EP | Kit (HTTP) | idem | M-J3 |
+| CT-40 | reset de senha por painel; link na página única *(alterado em 2026-09-06: invertido em CT-59 de `login-unificado-telas-externas` — a recuperação passou a `/esqueci-minha-senha`)* | R10 (RQ-07) | EP | Kit (HTTP) | idem | M-J3 |
 | CT-41 | login social respeita os painéis autorizados do provedor (3 linhas) + recusa total encerra a sessão | R6 | tabela de decisão | Kit (HTTP + Socialite) | idem | M-F5 |
 | CT-42 | `{painel}` mal formado responde 404 (3 linhas) | R5 | constraint | Kit (HTTP) | idem | M-E8 |
 
@@ -747,7 +749,7 @@ Sub-agente recebeu só o `00` e este arquivo. Fechamento:
 | 15, 16 | dois `Quando` em CT-03/CT-05 | CT-03: a gravação é `Dado`; CT-05: `followingRedirects()` é uma ação só, com o `Então` no destino final |
 | 17 | CT-10 controle; M-C7 sem matador | mantidos e declarados (timing não é medido na suíte) |
 | 18 | RQ-07 2FA sem conta com segundo fator | **CT-27** — 2FA confirmado no `/admin`: login em `/login` → escolha; `GET /admin` → desafio (`two-factor`). A escolha antes do desafio é comportamento aceito e **documentado** (a tela só lista painéis) |
-| 19 | convite válido quebrado pelo redirect | **CT-28** — `/app/register?token=…` responde 200 com a chave ligada |
+| 19 | convite válido quebrado pelo redirect | **CT-28** — `/app/register?token=…` responde 200 com a chave ligada *(alterado em 2026-09-06: absorvido por CT-51 de `login-unificado-telas-externas` — passa a 302 para `/cadastro?token=…`, que responde 200)* |
 | 20 | RQ-08 "não aparece em outro momento" | **CT-29** — depois de escolher, `/admin` e `/infra` respondem 200 sem voltar à escolha |
 | 21 | recusa no login social | **CT-30** — conta social sem painel termina deslogada em `/login`. **Achou defeito de desenho**: zero painéis autenticado ia ao login e a página única devolveria à escolha — laço; a decisão de zero painéis passou a ser sempre da `EscolhaDePainel` (encerra a sessão) |
 | 22 | toggle só liga | CT-03 desliga também |

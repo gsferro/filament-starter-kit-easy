@@ -17,7 +17,7 @@ use Throwable;
  * Mostra como ESTE projeto foi customizado — e de onde cada valor está vindo.
  *
  * Três lugares respondiam pedaços da pergunta e nenhum respondia inteira: o resumo do
- * `kit:install` aparece uma vez e some, a tela `/admin/configuracoes-do-kit` mostra o banco e nada
+ * `kit:install` aparece uma vez e some, a tela `/admin/configuracoes-da-aplicacao` mostra o banco e nada
  * do `.env`, e o `config:show kit` mostra a config efetiva sem dizer a origem. Este comando reúne
  * os três, é SOMENTE LEITURA, e aponta para quem muda cada coisa.
  *
@@ -72,7 +72,7 @@ class KitInfo extends Command
         $this->newLine();
         $this->linha('Versão do kit', (string) config('kit.version'));
         $this->linha('Fonte da configuração', $doBanco
-            ? 'banco (/admin/configuracoes-do-kit) — o .env semeia e é o plano B'
+            ? 'banco (/admin/configuracoes-da-aplicacao) — o .env semeia e é o plano B'
             : '.env — a tabela de settings ainda não existe');
         $this->newLine();
     }
@@ -100,7 +100,7 @@ class KitInfo extends Command
 
     private function configuracoes(): void
     {
-        $this->components->info('Configurações da aplicação (/admin/configuracoes-do-kit):');
+        $this->components->info('Configurações da aplicação (/admin/configuracoes-da-aplicacao):');
 
         foreach (ConfiguracoesDoKit::mapaDeConfiguracao() as $propriedade => $chave) {
             $this->linha(Str::headline($propriedade), $this->exibir($propriedade, config($chave)));
@@ -174,7 +174,7 @@ class KitInfo extends Command
 
         $this->linha(
             'Para mudar',
-            'kit:install --custom (nome e cor) · /admin/configuracoes-do-kit · kit:admin · kit:tenancy',
+            'kit:install --custom (nome e cor) · /admin/configuracoes-da-aplicacao · kit:admin · kit:tenancy',
         );
         $this->newLine();
     }

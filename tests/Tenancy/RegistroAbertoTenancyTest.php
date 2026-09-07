@@ -43,16 +43,6 @@ function ligarRegistroAbertoTenancy(bool $aprovacaoManual = false): void
     ]);
 }
 
-/** Organização que aceita cadastro público. */
-function organizacaoComRegistro(string $slug = 'acme', bool $ativo = true, bool $registro = true): Tenant
-{
-    return Tenant::factory()->create([
-        'slug'                => $slug,
-        'ativo'               => $ativo,
-        'registro_habilitado' => $registro,
-    ]);
-}
-
 /**
  * O cadastro pelo formulário apontando para uma organização — `?org={slug}`.
  *

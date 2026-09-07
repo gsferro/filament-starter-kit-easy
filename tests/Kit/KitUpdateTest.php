@@ -451,9 +451,14 @@ it('documenta a lista do destino e o contorno para instalações anteriores, nos
         ->toContain('svg.arte-do-login')
         ->toContain('0.22');
 
-    // O CHANGELOG inteiro, não só a seção do topo: a entrada do `kit:update` é de uma versão
-    // fixa, e toda entrega seguinte a empurra para baixo. Recortar o topo transformava esta
-    // asserção numa que reprova a próxima feature qualquer, não a que apagar a documentação.
+    /*
+     * O CHANGELOG inteiro, não só a seção do topo.
+     *
+     * O recorte original só passava enquanto a versão desta feature fosse a mais recente: a
+     * primeira seção `[Unreleased]` de qualquer entrega seguinte empurrava a v0.30.1 para baixo e
+     * reprovava um caso que nada tem a ver com ela. O que este caso protege é "a entrega da lista
+     * do destino está registrada no CHANGELOG" — e isso não expira.
+     */
     $changelog = (string) file_get_contents(base_path('CHANGELOG.md'));
 
     expect($changelog)->toContain('kit:update')->toContain('destino');

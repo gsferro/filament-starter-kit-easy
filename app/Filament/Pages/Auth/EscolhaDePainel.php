@@ -22,10 +22,12 @@ use Illuminate\Support\Facades\Log;
 /**
  * A escolha de painel depois do login pela página única, em `/login/painel`.
  *
- * Os cartões são os da tela de boas-vindas (`Paineis::cartoes()`), filtrados por
- * `canAccessPanel()` ANTES de montar — `CardItem` não verifica autorização
- * (`.ai/rules/filament.md`), então o filtro é desta página. Panel Switch não serve aqui: ele é um
- * gatilho de topbar com dropdown/modal, não uma página (ADR-01).
+ * Os cartões são os da tela de boas-vindas (`Paineis::cartoes()`) — um por painel REGISTRADO,
+ * com o rótulo e o ícone que o Panel Switch mostra dentro dos painéis —, filtrados por
+ * `canAccessPanel()` ANTES de montar, porque `CardItem` não verifica autorização
+ * (`.ai/rules/filament.md`). Painel que a aplicação registrar depois da instalação entra sozinho.
+ * Panel Switch não serve como tela: ele é um gatilho de topbar com dropdown/modal, não uma página
+ * (ADR-01 de `login-unificado`, refinada em `login-unificado-telas-externas`).
  *
  * A rota exige `auth` e `panel:app` (tema e layout; ver `TelaLoginUnificada`). Quem tem um só
  * painel nunca vê esta tela; quem não tem nenhum tem a sessão encerrada e volta ao login.
@@ -41,8 +43,9 @@ class EscolhaDePainel extends CardsPage
     protected static ?string $title = 'Em qual painel você quer entrar?';
 
     /**
-     * Três, como na boas-vindas: `resources/css/filament/cards.css` cobre até `xl:grid-cols-4`;
-     * acima disso a grade fica sem estilo com todo teste verde.
+     * Três por linha, como na boas-vindas: `resources/css/filament/cards.css` cobre até
+     * `xl:grid-cols-4`; acima disso a grade fica sem estilo com todo teste verde. Não é o número
+     * de painéis — a lista é dinâmica e quebra em várias linhas.
      *
      * @var int|string|array<string, int|string>
      */
