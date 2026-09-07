@@ -82,3 +82,13 @@ Livewire::test(ListUsers::class)->loadTable()->…
 ```
 
 O sintoma é de ORDEM: `AdminDaOrganizacaoTest` nunca caiu nisso porque os casos HTTP anteriores bootam o painel antes dos casos Livewire — o primeiro caso Livewire do `/app` num arquivo NOVO é quem estoura. Medido em `tests/Tenancy/FronteiraDoAdminAppTest.php` (CT-01/CT-08).
+
+## Painel de teste se registra pelo PanelRegistry, não pela facade
+`Filament::registerPanel($painel)` **não aparece** em `Filament::getPanels()` dentro do teste. Medido: o `PanelRegistry` é singleton e é o MESMO objeto antes e depois (mesmo `spl_object_id`), a lista continua com três painéis, e `Filament::getPanel('financeiro')` devolve `null` — mas `app(PanelRegistry::class)->register($painel)` registra na hora. Custou uma investigação inteira porque o sintoma é `Call to a member function getPath() on null` numa linha que não tem nada a ver.
+
+Use o helper: `painelRegistradoEmTeste($id)` em `tests/Pest.php`. Ele existe para o cenário "painel que a aplicação registrou depois da instalação" (`Paineis::cartoes()` itera `Filament::getPanels()`), e o registro morre com o container do teste, então não vaza para o vizinho. A facade continua sendo o caminho de produção.
+
+## Asserção sobre a seção do topo do CHANGELOG expira sozinha
+Recortar a primeira seção `## [` do `CHANGELOG.md` para afirmar que ela cita a feature X só passa enquanto X for a release mais recente: a primeira seção `[Unreleased]` de qualquer entrega seguinte empurra X para baixo e o caso reprova a feature nova, que nada tem a ver com ele. Aconteceu em duas branches ao mesmo tempo na v0.32.0.
+
+O que o caso protege é "a entrega está registrada no CHANGELOG", e isso não expira: assere sobre o **arquivo inteiro**. Se a intenção for de fato "está no topo", então o caso é sobre a release corrente e precisa ler a versão de `config('kit.version')`, não a posição no arquivo.
