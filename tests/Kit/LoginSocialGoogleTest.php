@@ -718,7 +718,7 @@ it('declara as chaves do login social no .env.example e nos dois READMEs', funct
     ['README.md', '/auth/google/callback'],
     ['README.en.md', 'KIT_SOCIALITE_GOOGLE'],
     ['README.en.md', '/auth/google/callback'],
-])->group('kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README (que passa a ser do projeto) nem o site (export-ignore).')->group('kit');
 
 /**
  * CT-18 — o interruptor falha FECHADO, medido no proprio config.

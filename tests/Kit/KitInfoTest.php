@@ -458,4 +458,4 @@ it('[CT-16] registra uma linha no canal de configuracoes, com as chaves e sem os
  */
 it('[CT-17] esta documentado nos dois idiomas', function (string $idioma): void {
     expect(documentacaoDoKit($idioma))->toContain('php artisan kit:info');
-})->with(['pt', 'en'])->group('kit');
+})->with(['pt', 'en'])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README (que passa a ser do projeto) nem o site (export-ignore).')->group('kit');

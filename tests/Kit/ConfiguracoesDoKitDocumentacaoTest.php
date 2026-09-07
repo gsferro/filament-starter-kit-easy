@@ -9,6 +9,16 @@
  * documentação prometida e não escrita é indistinguível de documentação escrita —
  * para todo mundo menos o leitor. RQ-19 pede os dois idiomas, no plural, e o
  * `README.en.md` é o que costuma ficar para trás.
+ *
+ * ## Os casos de documentação são pulados fora da árvore do kit
+ *
+ * O `kit:update` não entrega o README nem `docs/` (a lista `KitUpdate::CAMINHOS_DO_KIT` só traz
+ * `wikis/README.md`), então numa instalação real estes casos leem o texto ANTIGO — ou, no caso do
+ * site, nada. Foi exatamente o que aconteceu numa v0.30.1 → v0.32.0: CT-50 e o caso da arte do
+ * login ficaram vermelhos nos dois idiomas, acusando o projeto por documentação que é do kit.
+ *
+ * A granularidade é por CASO. O caso do trait continua rodando em toda instalação: ele lê
+ * `app/Providers/Concerns/ConfiguraFilamentGlobal.php`, e `app/Providers` É entregue.
  */
 
 /**
@@ -50,7 +60,7 @@ it('[CT-50] documenta a tela de configuracoes nos dois readmes, na URL nova', fu
         'View:ConfiguracoesDoKit',
         '/admin/organizacoes',
     ],
-])->group('kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README (que passa a ser do projeto) nem o site (export-ignore).')->group('kit');
 
 /**
  * CT-32 — o TODO de virada para settings não sobrevive, e a densidade é explicada.
@@ -71,7 +81,7 @@ it('substitui o TODO de settings nos dois readmes, explicando a densidade', func
 })->with([
     'português' => ['README.md', 'TODO:** transformar esses defaults', 'Densidade de tabela não existe no Filament 5'],
     'inglês'    => ['README.en.md', 'TODO:** turn these defaults', 'Table density does not exist in Filament 5'],
-])->group('kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README (que passa a ser do projeto) nem o site (export-ignore).')->group('kit');
 
 /**
  * O TODO do código também foi fechado.
@@ -124,4 +134,4 @@ it('documenta nos dois readmes que a arte do login usa o nome da aplicacao', fun
 })->with([
     'README.md'    => ['README.md', 'mostra o nome da aplicação'],
     'README.en.md' => ['README.en.md', 'shows the application name'],
-])->group('kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README (que passa a ser do projeto) nem o site (export-ignore).')->group('kit');

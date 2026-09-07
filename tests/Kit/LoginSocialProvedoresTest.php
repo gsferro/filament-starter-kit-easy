@@ -1592,7 +1592,7 @@ it('declara as chaves e as URIs de callback nos arquivos que quem instala lê', 
     ['README.en.md', '/auth/linkedin-openid/callback'],
     ['README.en.md', '/auth/x/callback'],
     ['README.en.md', 'KIT_SOCIALITE_GITHUB'],
-])->group('kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README (que passa a ser do projeto) nem o site (export-ignore).')->group('kit');
 
 /**
  * CT-42b — a recusa de cada provedor vem com o motivo, na MESMA seção.
@@ -1636,7 +1636,7 @@ it('explica a recusa de Facebook e Discord na mesma seção em que os nomeia', f
     'facebook no site pt'   => ['docs/pt/autenticacao/login-social.md', 'Facebook', 'email_verified'],
     'discord no site en'    => ['docs/en/autenticacao/login-social.md', 'Discord', 'socialiteproviders'],
     'facebook no site en'   => ['docs/en/autenticacao/login-social.md', 'Facebook', 'email_verified'],
-])->group('kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o site do kit: o diretório do site é export-ignore e não existe no projeto instalado.')->group('kit');
 
 /**
  * A partial do ícone não vaza o próprio comentário para a tela.

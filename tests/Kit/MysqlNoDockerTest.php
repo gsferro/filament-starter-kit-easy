@@ -236,6 +236,17 @@ it('[CT-21] nenhum banco novo entra no profile default', function (): void {
  * O universo são CINCO textos, não três: as duas páginas de `docs/` são as que o site publica.
  */
 it('[CT-05] o comando divulgado nomeia os serviços, e não liga um profile', function (string $arquivo): void {
+    /*
+     * A sentinela é por LINHA do dataset, e não um `->skip()` do caso todo: o
+     * `docker-compose.yml` está em `KitUpdate::CAMINHOS_DO_KIT` e tem de continuar conferido em
+     * toda instalação. Os outros quatro textos, não — o `kit:update` não entrega o README (que
+     * passa a ser do projeto) nem `docs/` (export-ignore, inexistente no projeto instalado), então
+     * lá estes textos seriam o texto antigo, ou arquivo nenhum.
+     */
+    if ($arquivo !== 'docker-compose.yml' && ! naArvoreDoKit()) {
+        $this->markTestSkipped('O kit:update não entrega o README (que passa a ser do projeto) nem o site (export-ignore).');
+    }
+
     $texto  = (string) file_get_contents(base_path($arquivo));
     $linhas = explode("\n", $texto);
 
