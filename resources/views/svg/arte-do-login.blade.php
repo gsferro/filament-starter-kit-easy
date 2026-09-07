@@ -1,7 +1,7 @@
 {{-- Arte padrão das telas de autenticação, embutida como data URI por `IdentidadeDoKit::arteDoLogin()`.
 
      É uma view, e não um arquivo em `public/`, porque precisa carregar um valor de runtime: o nome da
-     aplicação. Quem tem marca própria envia a imagem em `/admin/configuracoes-do-kit` e nunca chega aqui.
+     aplicação. Quem tem marca própria envia a imagem em `/admin/configuracoes-da-aplicacao` e nunca chega aqui.
 
      O nome sai por `{{ }}`, que escapa `&`, `<` e `>` — sem isso um `APP_NAME` como "Silva & Cia"
      invalidaria o XML e a tela ficaria sem arte. --}}
