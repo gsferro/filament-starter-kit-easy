@@ -64,7 +64,11 @@
 
 ## Verificação Final
 
-- [ ] `/ponytail:ponytail-review` no diff
+- [x] `/ponytail:ponytail-review` no diff — 454 inserções em 19 arquivos, a maior parte docblock;
+      nada a cortar que se defendesse: `rotulo()`/`icone()` têm dois consumidores e são o lugar do
+      fallback (CT-44 mede neles), `urlDoCadastro()` é a fonte única que a doc aponta, e
+      `cadastroTemDestino()` nomeia a regra que CT-58 mata. Três cortes já haviam sido aplicados
+      na auditoria do plano (método só para um redirect, dois logs por request), 2026-09-07
 - [x] `vendor/bin/pint --dirty --format agent` — passed, 2026-09-07
 - [ ] `vendor/bin/filacheck --fix`
 - [ ] Testes da feature (lista do `01`)
