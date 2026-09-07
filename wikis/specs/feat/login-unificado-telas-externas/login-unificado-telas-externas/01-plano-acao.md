@@ -307,6 +307,11 @@ Existe: `config/logging.php:'autenticacao':132`. Toda linha nova usa `Log::chann
               ));
           }
 
+          // *(alterado em 2026-09-07: o `mount()` do vendor manda autenticado para o /app.)*
+          if (($user = Filament::auth()->user()) instanceof User) {
+              throw new HttpResponseException(new RedirectResponse(DestinoAposLogin::urlPara($user)));
+          }
+
           parent::mount();
       }
   }
@@ -326,7 +331,7 @@ Existe: `config/logging.php:'autenticacao':132`. Toda linha nova usa `Log::chann
 
 > Skills: `laravel-best-practices`
 
-- **Path (novo)**: `app/Filament/Pages/Auth/TelaRecuperarSenhaUnificada.php` — `extends TelaRecuperarSenha`, redeclara `$layout`, `ehAPaginaUnica(): true`, `mount()` com chave desligada → `Filament::getPanel('app')->getRequestPasswordResetUrl()`; senão `parent::mount()`.
+- **Path (novo)**: `app/Filament/Pages/Auth/TelaRecuperarSenhaUnificada.php` — `extends TelaRecuperarSenha`, redeclara `$layout`, `ehAPaginaUnica(): true`, `mount()` com chave desligada → `Filament::getPanel('app')->getRequestPasswordResetUrl()`; autenticado → `DestinoAposLogin::urlPara()` *(alterado em 2026-09-07: sem isto o `mount()` do vendor manda para o `/app`, onde um `admin` toma 403)*; senão `parent::mount()`.
 - **Path**: `app/Filament/Pages/Auth/TelaRecuperarSenha.php` — `mount()` com a guarda (`unificado && ! ehAPaginaUnica` → `route('esqueci-minha-senha')`) e `ehAPaginaUnica(): false`. Atualizar o docblock ("dos três painéis").
 - **Path**: `app/Filament/Pages/Auth/TelaLogin.php:getPasswordFormComponent()` — `parent::getPasswordFormComponent()->hint(...)` com o mesmo Blade do vendor, trocando a URL por `self::urlDeRecuperacaoDeSenha()`:
   ```php
@@ -339,7 +344,16 @@ Existe: `config/logging.php:'autenticacao':132`. Toda linha nova usa `Log::chann
   ```
   Manter `filament()->hasPasswordReset()` como condição do hint.
 - **Path**: `app/Providers/KitServiceProvider.php:configureLoginUnificado()` — `Route::get('/esqueci-minha-senha', TelaRecuperarSenhaUnificada::class)->name('esqueci-minha-senha');`.
-- O e-mail continua com `Filament::getResetPasswordUrl()` do painel corrente (`app`) — `/app/password-reset/reset?...` (premissa RQ-06).
+- **`TelaRecuperarSenhaUnificada::request()` reposiciona o painel corrente no primeiro painel que
+  a conta acessa, antes de chamar o pai** *(alterado em 2026-09-07: achado da revisão do passo 7)*.
+  O `request()` do Filament só envia o link se
+  `$user->canAccessPanel(Filament::getCurrentOrDefaultPanel())`
+  (`vendor/filament/filament/src/Auth/Pages/PasswordReset/RequestPasswordReset.php:request():71-77`),
+  e sob `panel:app` o corrente é o `app`: quem só acessa o `/admin` não recebia e-mail nenhum.
+  O usuário sai de `PasswordBroker::getUser()`, o mesmo caminho do vendor.
+- O e-mail continua com `Filament::getResetPasswordUrl()` — agora do painel **da pessoa**
+  (`/admin/password-reset/reset?...` para quem só acessa o `/admin`), o que atende a premissa
+  RQ-06 ("continua por painel") sem o dead end.
 - **Logs**: nenhum novo (o Filament já loga o envio; a decisão de rota é determinística).
 
 ### 7. Revisão das telas externas com a chave ligada (RQ-07)
@@ -357,7 +371,7 @@ Tabela viva — preenchida agora com o que a pesquisa mediu, fechada no step 7 c
 | `RegistroPorConvite` / `CadastroUnificado` | `/app/register?token=` → `/cadastro?token=` | convite ou aberto | `loginAction()` → `/app/login` → `/login` | ❌ URL por painel | 5 |
 | Link "Esqueci minha senha" em `/login` | → `/app/password-reset/request` | funciona | — | ❌ URL por painel | 6 |
 | `TelaRecuperarSenha` / `…Unificada` | `/{painel}/password-reset/request` → `/esqueci-minha-senha` | pede e-mail | `loginAction()` → `/login` | ❌ URL por painel | 6 |
-| Redefinição (vendor) | `/app/password-reset/reset?token=…` (do e-mail) | com token assinado | após salvar → `getLoginUrl()` → `/login` | ⚠️ fica por painel (premissa RQ-06) | — |
+| Redefinição (vendor) | `/{painel da pessoa}/password-reset/reset?token=…` (do e-mail) | com token assinado | após salvar → `getLoginUrl()` → `/login` | ❌→✅ o e-mail **não saía** para quem não acessa o `/app`; corrigido em 2026-09-07 | 6 |
 | Verificação de e-mail (vendor) | `/app/email-verification/prompt` | autenticado | — | ⚠️ pós-login, dentro do painel | — |
 | `TelaDoisFatores` (Breezy) | `/{painel}/two-factor…` | após entrar no painel | — | ✅ CT da ancestral | — |
 | `TelaBloqueio` (lock screen) | `/{painel}/screen/lock` | autenticado | sair → `/login` | ✅ CT-39 ancestral | — |

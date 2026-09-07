@@ -55,7 +55,12 @@ Os links da tela de login vêm do Filament: `Login::registerAction()` usa `filam
 - `CadastroUnificado extends RegistroPorConvite` e `TelaRecuperarSenhaUnificada extends TelaRecuperarSenha`, cada uma com `$layout` redeclarado, `ehAPaginaUnica(): true` e `mount()` que devolve à rota do painel quando a chave está desligada.
 - As classes-mãe ganham a guarda inversa no `mount()` (chave ligada e não é a página única → redirect para a rota única), **preservando a query** (`token`, `org`).
 - `TelaLogin` sobrescreve `registerAction()` e `getPasswordFormComponent()` para apontar os links pela chave (`RegistroAberto::urlDoCadastro()`, `TelaLogin::urlDeRecuperacaoDeSenha()`). Vive em `TelaLogin`, não só na `Unificada`, porque a decisão é pela chave e a classe do painel redireciona antes de renderizar de qualquer forma.
-- Redefinição de senha (link do e-mail) e verificação de e-mail **ficam por painel**: chegam por link assinado ou já autenticadas, e o requisito não as citou.
+- Redefinição de senha (link do e-mail) e verificação de e-mail **ficam por painel**: chegam por
+  link assinado ou já autenticadas, e o requisito não as citou. *(alterado em 2026-09-07: o
+  painel do link passou a ser o **da pessoa**, não o `app` da rota — ver ADR-05.)*
+- As três páginas únicas mandam quem **já entrou** para o destino da regra de login, e não para
+  `Filament::getUrl()` do painel corrente. *(acrescentado em 2026-09-07: o `mount()` do vendor
+  fazia o segundo, e um `admin` tomava 403 no `/app`.)*
 
 ### Alternativas Consideradas
 
@@ -146,3 +151,56 @@ A ADR-07 de `registro-e-aprovacao` decidiu que, com tenancy, a organização de 
 - `app/Support/RegistroAberto.php:organizacao():115-127`
 - `wikis/specs/feat/registro-e-aprovacao/registro-e-aprovacao/02-decisoes-arquiteturais.md:434-462` (ADR-07)
 - `docs/pt/autenticacao/registro-aberto.md:85-92`
+
+---
+
+## ADR-05: Na página única, a recuperação de senha resolve o painel da CONTA antes de pedir o link
+
+**Status**: Aceita
+**Data**: 2026-09-07
+
+### Contexto
+
+Achado da revisão das telas externas (RQ-07), medido por CT-61. O `request()` do Filament só envia
+o e-mail quando `$user->canAccessPanel(Filament::getCurrentOrDefaultPanel())`
+(`vendor/filament/filament/src/Auth/Pages/PasswordReset/RequestPasswordReset.php:request():71-77`).
+Na página única o painel corrente é o `app`, emprestado pelo `panel:app` da rota (ADR-08 da
+ancestral): quem só acessa o `/admin` recebia a mensagem genérica de "se a conta existir, enviamos"
+e **nenhum e-mail**. A falha é silenciosa nos dois lados — a tela não distingue, e o log não registra.
+
+Medido também na tela do painel quando o painel corrente é o `app`: não é defeito do redirect novo,
+é a consequência de servir a recuperação fora do painel da pessoa.
+
+### Decisão
+
+`TelaRecuperarSenhaUnificada::request()` resolve a conta pelo **mesmo** caminho do vendor
+(`PasswordBroker::getUser()`), põe o painel corrente no primeiro painel que ela acessa
+(`DestinoAposLogin::paineisDe()`) e delega ao `parent::request()`. O método do vendor continua
+inteiro — rate limit, `Timebox` do broker, notificações de falha e de sucesso.
+
+Efeito colateral desejado: o link do e-mail passa a apontar para o painel **da pessoa**
+(`/admin/password-reset/reset?...`), que é onde ela consegue entrar depois de redefinir.
+
+### Alternativas Consideradas
+
+1. **Sobrescrever `request()` inteiro** com uma closure própria no broker — 45 linhas duplicadas do
+   vendor, incluindo rate limit e as três notificações. A cada upgrade do Filament, um diff a
+   reconciliar. Descartada.
+2. **Afrouxar `User::canAccessPanel()`** para a página de reset — mexeria na autorização global
+   para resolver um problema de contexto. Descartada de imediato.
+3. **Aceitar e documentar** ("use a tela do seu painel") — a pessoa não sabe qual é o painel dela
+   antes de entrar, e o link do login unificado é o único que ela tem. Descartada.
+
+### Consequências
+
+- **Positivas**: a recuperação volta a funcionar para todo mundo; o link do e-mail abre no painel
+  certo; nenhuma linha do vendor duplicada.
+- **Negativas**: `getUser()` roda uma vez a mais por pedido (uma consulta por e-mail), e a premissa
+  RQ-06 ("o link continua por painel") passa a significar "o painel da pessoa", não `app`.
+- **Riscos**: conta sem painel acessível não reposiciona nada e cai no comportamento do vendor — não
+  recebe e-mail. É o mesmo desfecho de `EscolhaDePainel` para quem não acessa nada, e não piora nada.
+
+### Referências
+
+- `app/Filament/Pages/Auth/TelaRecuperarSenhaUnificada.php:request():77-86`
+- Refina: ADR-02 desta wiki e ADR-07/ADR-08 da ancestral

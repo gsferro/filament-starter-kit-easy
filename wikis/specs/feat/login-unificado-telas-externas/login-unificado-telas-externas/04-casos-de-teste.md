@@ -370,9 +370,9 @@ Funcionalidade: telas externas com o login unificado
       E /app/register<query> responde 200 — não redireciona de volta
 
       Exemplos:
-        | query    |
-        |          |
-        | ?token=T |
+        | query    | # arranjo |
+        |          | cadastro aberto **ligado** *(alterado em 2026-09-07: sem token e sem aberto a tela do painel RECUSA, e o 302 da recusa não distingue "não volta" de "voltou")* |
+        | ?token=T | cadastro aberto desligado; o token basta |
 
     Esquema do Cenário: [CT-53] /cadastro sem destino recusa como hoje: termina em /login e nenhuma conta nasce
       Dado a chave ligada
@@ -570,7 +570,7 @@ Funcionalidade: telas externas com o login unificado
 
       Exemplos:
         | e-mail pedido       | envio                                                                        | link                                                                                                   | # partição |
-        | admin@example.com   | a notificação de redefinição foi enviada uma vez, à conta admin, e não à outra | a URL da notificação começa por /app/password-reset/reset e abri-la responde 200 com o formulário de redefinição e fi-auth-layout — não é redirecionada a /login | conta existente |
+        | admin@example.com   | a notificação de redefinição foi enviada uma vez, à conta admin, e não à outra | a URL da notificação começa por /admin/password-reset/reset *(alterado em 2026-09-07: o painel do link é o DA PESSOA, não o `app` da rota — sem isso o e-mail não saía; ADR-05)* e abri-la responde 200 com o formulário de redefinição e fi-auth-layout — não é redirecionada a /login | conta existente |
         | ninguem@example.com | nenhuma notificação de redefinição foi enviada a conta alguma                  | —                                                                                                      | conta inexistente (revisão #12) |
 ```
 
@@ -586,6 +586,7 @@ Funcionalidade: telas externas com o login unificado
 | M-D3 | o redirect só foi posto na tela de **um** painel (`app`) | CT-59 (linhas `admin`, `infra`) |
 | M-D4 | redirect feito também com a chave desligada, ou `/esqueci-minha-senha` desligada responde 200 / redireciona em laço | CT-60 (linhas 1 e 2) |
 | M-D5 | a página única redeclara a tela mas perde o `request()` (não envia), ou envia com URL de reset que a chave ligada redireciona para `/login` (dead end no e-mail) | CT-61 (linha `conta existente`) |
+| M-D8 | o pedido é feito no contexto do painel da ROTA (`app`): o vendor engole o envio para quem não acessa o `/app`, com a mesma mensagem de sucesso — falha silenciosa *(acrescentado em 2026-09-07: era o comportamento real; a persona `admin` é a discriminante)* | CT-61 (linha `conta existente`: a notificação chega **e** a URL é `/admin/...`) |
 | M-D6 | o redirect da rota de painel é **301** — cacheado pelo navegador, vira laço no cliente ao desligar a chave — revisão #4 | CT-59 (linhas 3–5: 302) |
 | M-D7 | a página única, com e-mail desconhecido, lança (500) ou responde diferente da tela de painel (enumeração de e-mail) — revisão #12 | CT-61 (linha `conta inexistente`) |
 

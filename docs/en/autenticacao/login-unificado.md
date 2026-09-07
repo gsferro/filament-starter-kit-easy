@@ -86,8 +86,9 @@ that the sign-up refuses, and the link disappears instead of leading to the refu
 ## What stays per panel
 
 - **Password redefinition (the e-mail link) and e-mail verification**: they stay inside the panels.
-  Both arrive through a signed link or already authenticated, so there is nothing to unify; the
-  e-mail link opens normally with the switch on.
+  Both arrive through a signed link or already authenticated, so there is nothing to unify. The
+  e-mail link opens in the person's **own** panel — someone who only has `/admin` gets an
+  `/admin/...` link and signs in through it.
 - **2FA (Breezy) and the lock screen**: happen **inside** the chosen panel, as today. The choice
   screen shows up before the second-factor challenge — it only lists panels; entering one triggers
   the challenge as usual.
@@ -124,4 +125,5 @@ Turn the toggle off. Nothing was migrated or stored beyond the Settings property
 `/login/painel`, `/cadastro` and `/esqueci-minha-senha` routes keep existing — when off, each one
 redirects to the equivalent route of the default panel.
 
-Details and decisions: `wikis/specs/feat/login-unificado/` in the repository.
+Details and decisions: `wikis/specs/feat/login-unificado/` and
+`wikis/specs/feat/login-unificado-telas-externas/` in the repository.

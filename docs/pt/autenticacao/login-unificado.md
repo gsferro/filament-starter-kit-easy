@@ -85,8 +85,9 @@ cadastro recusa, e o link some em vez de levar à recusa. Ver [Registro aberto](
 ## O que continua por painel
 
 - **Redefinição de senha (o link do e-mail) e verificação de e-mail**: continuam nos painéis. As
-  duas chegam por link assinado ou já autenticadas, então não há o que unificar; o link do e-mail
-  abre normalmente com a chave ligada.
+  duas chegam por link assinado ou já autenticadas, então não há o que unificar. O link do e-mail
+  abre no painel **da própria pessoa** — quem só acessa o `/admin` recebe um link `/admin/...` e
+  entra por ele.
 - **2FA (Breezy) e lock screen**: acontecem **dentro** do painel escolhido, como hoje. A tela de
   escolha aparece antes do desafio de segundo fator — ela só lista os painéis; ao entrar em um, o
   desafio é exigido normalmente.
