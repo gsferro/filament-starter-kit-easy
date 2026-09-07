@@ -148,7 +148,7 @@
             "@lint:check",
             "@types:check",
             "@filament:check",
-            "@php artisan test"
+            "@php artisan test --testsuite=Unit,Feature,Kit,Tenancy"
         ],
         "test:kit": [
             "Composer\\Config::disableProcessTimeout",
