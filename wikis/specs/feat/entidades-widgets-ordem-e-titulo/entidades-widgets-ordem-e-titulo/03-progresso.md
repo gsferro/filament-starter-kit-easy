@@ -38,7 +38,7 @@
 - [x] `vendor/bin/pint --dirty --format agent` — `{"tool":"pint","result":"passed"}`, 2026-09-07
 - [x] `vendor/bin/filacheck --fix` — "All 17 rules passed!" (17 regras, zero correções aplicadas), 2026-09-07
 - [x] `php artisan test tests/Tenancy/EntidadesWidgetsOrdemETituloTest.php tests/Tenancy/InsightsDasOrganizacoesTest.php --compact` — 26 testes, 26 passaram, 46 asserções, 174 s, 2026-09-07
-- [x] `composer test:kit` — 2156 testes, 2154 verdes na primeira execução; as 2 falhas eram do `KitUpdateTest` (ver Desvios do Plano), corrigidas e reexecutadas, 2026-09-07
+- [x] `composer test:kit` — **2156 testes, 2156 passaram, 7081 asserções, 1777 s**. Na primeira execução foram 2154/2156: as 2 falhas eram do `KitUpdateTest` (ver Desvios do Plano), corrigidas e a suíte reexecutada inteira, 2026-09-07
 
 ## Testes
 
@@ -60,7 +60,7 @@ Os dois mutantes foram revertidos por cópia de backup e o arquivo voltou a 5/5 
 - [x] `vendor/bin/pint --dirty --format agent` — passou, 2026-09-07
 - [x] `vendor/bin/filacheck --fix` — 17/17, 2026-09-07
 - [x] `php artisan test tests/Tenancy/EntidadesWidgetsOrdemETituloTest.php tests/Tenancy/InsightsDasOrganizacoesTest.php --compact` — 26/26, 2026-09-07
-- [x] `composer test:kit` — nada mais no kit quebrou — 2156 testes, 7079 asserções; as 2 únicas falhas foram do `tests/Kit/KitUpdateTest.php`, causadas pela seção `[Unreleased]` nova (o caso recortava só o topo do CHANGELOG), corrigidas e verdes, 2026-09-07
+- [x] `composer test:kit` — nada mais no kit quebrou — **2156/2156 verdes, 7081 asserções** na reexecução. As 2 únicas falhas da primeira rodada foram do `tests/Kit/KitUpdateTest.php`, causadas pela seção `[Unreleased]` nova (o caso recortava só o topo do CHANGELOG), 2026-09-07
 - [x] Desvios propagados ao `01`/`02`/`04` de origem, marcados `*(alterado em …)*` — 3 marcas (`01` passo 4, `02` ADR-03, `04` Setup), 2026-09-07
 - [x] Citações `arquivo:símbolo:linha` reverificadas — 35/38 ok; as 3 divergências são intencionais e estão anotadas no próprio texto (duas são a citação ERRADA que a tabela de auditoria abaixo corrige; uma é o `getHeaderWidgets():54-62` de ANTES desta entrega, citado como histórico com a linha nova ao lado), 2026-09-07
 - [x] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa; `[CT-12]` sincronizado com o `04` da ancestral — `04` declara CT-01, CT-02, CT-03; o teste declara exatamente esses três; CT-12 tem o mesmo texto nos dois lados, 2026-09-07
