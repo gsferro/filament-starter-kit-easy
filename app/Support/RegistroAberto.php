@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Tenant;
 use App\Models\User;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -84,6 +85,26 @@ class RegistroAberto
     public static function exigirVerificacaoDeEmail(): bool
     {
         return (bool) config('kit.registro.verificar_email', false);
+    }
+
+    /**
+     * O endereço do cadastro: `/cadastro` com a página única de login ligada, a rota do painel
+     * `app` sem ela — carregando `?org=` quando a organização veio no pedido.
+     *
+     * Fonte única para o link da tela de login e para quem precisar apontar o cadastro. Sem ela,
+     * o link sai de `filament()->getRegistrationUrl()`, que resolve pelo painel CORRENTE e ignora
+     * a organização — foi assim que o link da tela de login virou um beco sem saída em instalação
+     * com multi-organização (ADR-04 de `wikis/specs/feat/login-unificado-telas-externas/`).
+     */
+    public static function urlDoCadastro(?string $org = null): string
+    {
+        $query = filled($org) ? ['org' => $org] : [];
+
+        if (ConfiguracaoDoLogin::unificado()) {
+            return route('cadastro', $query);
+        }
+
+        return (string) Filament::getPanel('app')->getRegistrationUrl($query);
     }
 
     /**

@@ -4,20 +4,26 @@ namespace App\Filament\Pages\Auth;
 
 use App\Filament\Forms\Components\CampoAntiRobo;
 use App\Http\Controllers\Auth\ContaIndisponivelController;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Support\ConfiguracaoDoLogin;
 use App\Support\DestinoAposLogin;
 use App\Support\RegistroAberto;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Login;
+use Filament\Actions\Action;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Schema;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Illuminate\Support\Timebox;
 use Illuminate\Validation\ValidationException;
@@ -72,9 +78,83 @@ class TelaLogin extends Login
         return false;
     }
 
+    /**
+     * O "Cadastre-se" só aparece quando existe cadastro para onde ir.
+     *
+     * Não basta o registro estar ligado: com multi-organização, `RegistroPorConvite::mount()`
+     * exige `?org={slug}` de uma organização ativa que aceitou cadastro público, e recusa sem
+     * ela (ADR-07 de `registro-e-aprovacao`). O link sem `?org=` levava, portanto, à mesma
+     * recusa do convite inválido — medido numa instalação real. Ver ADR-04 de
+     * `wikis/specs/feat/login-unificado-telas-externas/`.
+     */
     public function getSubheading(): string|Htmlable|null
     {
-        return RegistroAberto::habilitado() ? parent::getSubheading() : null;
+        if (! RegistroAberto::habilitado() || ! $this->cadastroTemDestino()) {
+            return null;
+        }
+
+        return parent::getSubheading();
+    }
+
+    /**
+     * O link de cadastro aponta para a URL do kit — `/cadastro` com a página única ligada, a
+     * rota do painel sem ela —, carregando a organização quando ela veio no pedido.
+     *
+     * O pai usa `filament()->getRegistrationUrl()`, que resolve pelo painel corrente e não
+     * conhece o `?org=`.
+     */
+    public function registerAction(): Action
+    {
+        return parent::registerAction()->url(RegistroAberto::urlDoCadastro($this->orgDoPedido()));
+    }
+
+    /** Sem multi-organização todo cadastro tem destino; com ela, só o que resolve uma organização. */
+    protected function cadastroTemDestino(): bool
+    {
+        if (! config('kit.tenancy.enabled')) {
+            return true;
+        }
+
+        return RegistroAberto::organizacao($this->orgDoPedido()) instanceof Tenant;
+    }
+
+    /** A organização pedida na URL da tela de login, para atravessar até o cadastro. */
+    protected function orgDoPedido(): ?string
+    {
+        $org = request()->query('org');
+
+        return is_string($org) ? $org : null;
+    }
+
+    /**
+     * O "Esqueci minha senha" do campo de senha aponta para a URL do kit.
+     *
+     * O `hint` do pai monta a URL com `filament()->getRequestPasswordResetUrl()`, que resolve
+     * pelo painel corrente — na página única, servida sob `panel:app`, isso dava
+     * `/app/password-reset/request`. O restante do campo (senha, `revealable`, autocomplete)
+     * continua sendo o do Filament.
+     */
+    protected function getPasswordFormComponent(): Component
+    {
+        $componente = parent::getPasswordFormComponent();
+
+        // `hint()` é de `Field`; a assinatura do pai devolve o `Component` base.
+        if (! $componente instanceof TextInput || ! filament()->hasPasswordReset()) {
+            return $componente;
+        }
+
+        return $componente->hint(new HtmlString(Blade::render(
+            '<x-filament::link :href="$url" tabindex="-1"> {{ __(\'filament-panels::auth/pages/login.actions.request_password_reset.label\') }}</x-filament::link>',
+            ['url' => self::urlDeRecuperacaoDeSenha()],
+        )));
+    }
+
+    /** `/esqueci-minha-senha` com a página única ligada; a rota do painel corrente sem ela. */
+    public static function urlDeRecuperacaoDeSenha(): string
+    {
+        return ConfiguracaoDoLogin::unificado()
+            ? route('esqueci-minha-senha')
+            : (string) filament()->getRequestPasswordResetUrl();
     }
 
     /**
