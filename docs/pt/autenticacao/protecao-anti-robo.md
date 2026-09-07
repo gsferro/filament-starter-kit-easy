@@ -26,7 +26,7 @@ Quem renderiza o widget e fala com o provedor é o pacote [`ddr/filament-captcha
 | Cloudflare Turnstile | `turnstile` | sem rastreamento, sem custo |
 | hCaptcha | `hcaptcha` | — |
 
-Quem tiver a permissão `View:ConfiguracoesDoKit` liga e configura em `/admin/configuracoes-do-kit` › Login › Proteção anti-robô: provedor, chave do site (vai para o HTML), chave secreta (cifrada no banco, nunca exibida) e, para o v3, a pontuação mínima. No `.env` as mesmas chaves são `KIT_ANTI_ROBO`, `KIT_ANTI_ROBO_PROVEDOR`, `KIT_ANTI_ROBO_CHAVE_DO_SITE`, `KIT_ANTI_ROBO_CHAVE_SECRETA` e `KIT_ANTI_ROBO_PONTUACAO_MINIMA` — o banco vence. As env vars próprias do pacote (`CAPTCHA_DRIVER`, `RECAPTCHA_V2_SITEKEY`, ...) são ignoradas de propósito: uma configuração, uma dona.
+Quem tiver a permissão `View:ConfiguracoesDoKit` liga e configura em `/admin/configuracoes-da-aplicacao` › Login › Proteção anti-robô: provedor, chave do site (vai para o HTML), chave secreta (cifrada no banco, nunca exibida) e, para o v3, a pontuação mínima. No `.env` as mesmas chaves são `KIT_ANTI_ROBO`, `KIT_ANTI_ROBO_PROVEDOR`, `KIT_ANTI_ROBO_CHAVE_DO_SITE`, `KIT_ANTI_ROBO_CHAVE_SECRETA` e `KIT_ANTI_ROBO_PONTUACAO_MINIMA` — o banco vence. As env vars próprias do pacote (`CAPTCHA_DRIVER`, `RECAPTCHA_V2_SITEKEY`, ...) são ignoradas de propósito: uma configuração, uma dona.
 
 **O provedor padrão não liga nada.** `recaptcha_v3` é apenas qual provedor vale **se** alguém habilitar a proteção e gravar as duas chaves — a proteção nasce desligada e, sem as chaves, continua desligada mesmo com o toggle ligado. Nenhum desafio é carregado em tela nenhuma até essa decisão ser tomada na tela de Settings (ou no `.env`).
 

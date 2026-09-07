@@ -27,7 +27,7 @@ use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Log;
 
 /**
- * A tela das configurações da INSTALAÇÃO, em /admin/configuracoes-do-kit.
+ * A tela das configurações da INSTALAÇÃO, em /admin/configuracoes-da-aplicacao.
  *
  * O que era pergunta do `kit:install` gravada no `.env`, mais a arte do login
  * (que era edição de arquivo à mão) e os defaults de tabela (que eram um TODO no
@@ -83,6 +83,16 @@ class ConfiguracoesDoKit extends SettingsPage
     protected static ?string $title = 'Configurações da aplicação';
 
     protected static ?string $navigationLabel = 'Configurações da aplicação';
+
+    /**
+     * Sem isto o Filament deriva o slug do NOME DA CLASSE
+     * (`vendor/filament/filament/src/Pages/Concerns/HasRoutes.php:getDefaultSlug()`), e a URL
+     * ficaria `configuracoes-do-kit` — o nome que a tela deixou de usar no menu e no título.
+     * Renomear a classe arrastaria `App\Settings\ConfiguracoesDoKit`, o listener de auditoria e
+     * a permissão `page_ConfiguracoesDoKit` já gravada nas instalações; o `$slug` resolve só a
+     * URL. O endereço antigo continua atendido por um redirect no `KitServiceProvider`.
+     */
+    protected static ?string $slug = 'configuracoes-da-aplicacao';
 
     protected static ?int $navigationSort = 90;
 
@@ -336,7 +346,7 @@ class ConfiguracoesDoKit extends SettingsPage
                  * O valor continua em `$this->data`, que e propriedade publica da Page
                  * (`vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:33`),
                  * e o Livewire serializa `$data` inteiro no `wire:snapshot` do HTML. Resultado
-                 * medido pelo quality gate: `GET /admin/configuracoes-do-kit` devolvia a senha em
+                 * medido pelo quality gate: `GET /admin/configuracoes-da-aplicacao` devolvia a senha em
                  * claro no corpo da resposta, com 200 e sem clique em "revelar".
                  *
                  * Por isso a barreira e em DOIS pontos, e nenhum deles e visual:

@@ -182,7 +182,7 @@ The other two already come complete.
 **Administration and security**
 - Shield (roles and permissions with a UI) on top of spatie/laravel-permission
 - Breezy: user profile, avatar, 2FA and passkeys
-- Auth Designer: two-column login screen — the artwork **shows the application name**, read from `APP_NAME` on every load; to use your own image, upload it at `/admin/configuracoes-do-kit`
+- Auth Designer: two-column login screen — the artwork **shows the application name**, read from `APP_NAME` on every load; to use your own image, upload it at `/admin/configuracoes-da-aplicacao`
 - **Optional open sign-up** (off by default): registration without an invitation on `/app`, with a single role, manual approval and e-mail verification — each behind its own key ([details](#open-registration-and-approval))
 - Lockscreen: session lock on inactivity (30 min), registered on all 3 panels — the lock screen wears the same layout as the login page (Auth Designer), not Filament's simple layout
 - Impersonate, authentication log, change auditing (owen-it)
@@ -341,7 +341,7 @@ php artisan kit:tenancy           # turns on multi-tenancy (opt-in)
 | 3 | **Seeder credentials** | `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` in `.env` | ✅ |
 | 4 | **Primary color** | `KIT_COR_PRIMARIA` in `.env` (a color name from the Filament palette), or `KIT_COR_PRIMARIA_HEX` with a free hex value — the hex beats the name when both are filled | ✅ |
 | 5 | **[Multi-tenancy](#multi-tenancy-opt-in)** | `php artisan kit:tenancy`, and the displayed term in `config/kit.php` → `tenancy.label` | ✅ |
-| 6 | **Login artwork** | none: it **shows the application name** (`APP_NAME`) on its own. To replace it with your own image, upload it at `/admin/configuracoes-do-kit` | ✅ (via the name) |
+| 6 | **Login artwork** | none: it **shows the application name** (`APP_NAME`) on its own. To replace it with your own image, upload it at `/admin/configuracoes-da-aplicacao` | ✅ (via the name) |
 | 7 | **Panel access** | each user's role (`/admin` → Roles, the *Painel* field); the rule that reads it is `App\Models\User::canAccessPanel()` | — |
 | 8 | **Permission matrix** | `database/seeders/PapeisSeeder.php` | — |
 | 9 | **Health checks** | `KitServiceProvider::configureHealthChecks()` | — |

@@ -20,7 +20,7 @@ Duas formas, mesma chave:
 KIT_LOGIN_UNIFICADO=true
 ```
 
-ou, em `/admin/configuracoes-do-kit` → aba **Login** → "Unificar o login em /login". O toggle vale
+ou, em `/admin/configuracoes-da-aplicacao` → aba **Login** → "Unificar o login em /login". O toggle vale
 na hora, sem deploy: a chave é lida a cada request, não no boot. Só `true` e `1` ligam — qualquer
 outro valor no `.env` mantém desligado.
 
@@ -53,10 +53,41 @@ página única pergunta por **algum** painel em vez de pelo painel corrente. Um 
 A URL pretendida (você abriu `/admin/users` sem sessão) só vence quando é de um painel que você
 acessa e do próprio host. Fora disso é descartada, e vale a regra acima.
 
+## Painel novo depois da instalação
+
+A escolha lista **um cartão por painel registrado** — os mesmos que o Panel Switch mostra dentro do
+Filament, com o mesmo rótulo e o mesmo ícone. Se a sua aplicação registrar um `PanelProvider` novo
+depois da instalação, ele aparece sozinho, sem alterar arquivo nenhum do kit; o rótulo padrão é o
+id capitalizado e o ícone é o genérico, exatamente como o Panel Switch faria. Para dar nome e
+ícone próprios, acrescente a linha nos mapas de `App\Support\Paineis` — os mesmos que alimentam o
+Panel Switch, para os dois nunca divergirem.
+
+Só entram os painéis que a pessoa acessa: o filtro é o mesmo `canAccessPanel()` de sempre.
+
+## As outras telas sem prefixo de painel
+
+Com a chave ligada, além de `/login`:
+
+| Tela | Endereço | A rota do painel |
+|---|---|---|
+| Cadastro (convite e cadastro aberto) | `/cadastro` | `/{painel}/register` redireciona para lá, com a query intacta |
+| Esqueci minha senha | `/esqueci-minha-senha` | `/{painel}/password-reset/request` redireciona para lá |
+
+O `?token=` do convite e o `?org=` da organização atravessam o redirect — um link antigo de convite
+continua funcionando. Desligue a chave e as duas voltam para as rotas dos painéis, sem nada a
+migrar.
+
+**Cadastro com multi-organização**: o link "Cadastre-se" da tela de login só aparece quando existe
+uma organização de destino, e carrega o `?org=`. Divulgue `/login?org={slug}` (ou
+`/cadastro?org={slug}`) e ligue "Aceita cadastro público" na tela da organização — sem isso, o
+cadastro recusa, e o link some em vez de levar à recusa. Ver [Registro aberto](registro-aberto.md).
+
 ## O que continua por painel
 
-- **Recuperação de senha, registro por convite, verificação de e-mail**: as telas continuam nos
-  painéis. Elas redirecionam para o login do painel quando precisam, e ele leva a `/login`.
+- **Redefinição de senha (o link do e-mail) e verificação de e-mail**: continuam nos painéis. As
+  duas chegam por link assinado ou já autenticadas, então não há o que unificar. O link do e-mail
+  abre no painel **da própria pessoa** — quem só acessa o `/admin` recebe um link `/admin/...` e
+  entra por ele.
 - **2FA (Breezy) e lock screen**: acontecem **dentro** do painel escolhido, como hoje. A tela de
   escolha aparece antes do desafio de segundo fator — ela só lista os painéis; ao entrar em um, o
   desafio é exigido normalmente.
@@ -87,8 +118,9 @@ fixa de painel. SSOs externos pré-configurados são um item planejado do kit.
 
 ## Se quiser voltar
 
-Desligue o toggle. Nada foi migrado nem gravado além da propriedade no Settings; as rotas `/login`
-e `/login/painel` continuam existindo — desligadas, `/login` redireciona para o login do painel
-default e `/login/painel` para o próprio painel default.
+Desligue o toggle. Nada foi migrado nem gravado além da propriedade no Settings; as rotas `/login`,
+`/login/painel`, `/cadastro` e `/esqueci-minha-senha` continuam existindo — desligadas, cada uma
+redireciona para a rota equivalente do painel default.
 
-Detalhes e decisões: `wikis/specs/feat/login-unificado/` no repositório.
+Detalhes e decisões: `wikis/specs/feat/login-unificado/` e
+`wikis/specs/feat/login-unificado-telas-externas/` no repositório.

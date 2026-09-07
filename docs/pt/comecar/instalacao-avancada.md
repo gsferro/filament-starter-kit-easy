@@ -149,7 +149,7 @@ as imagens do README e a varredura SFDIPOT — estão em
 | 3 | **Credenciais do seeder** | `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` no `.env` | ✅ |
 | 4 | **Cor primária** | `KIT_COR_PRIMARIA` no `.env` (nome de uma cor da paleta do Filament), ou `KIT_COR_PRIMARIA_HEX` com um hexadecimal livre — o hex vence o nome quando os dois estão preenchidos | ✅ |
 | 5 | **[Multi-tenancy](../recursos/multi-tenancy.md)** | `php artisan kit:tenancy`, e o termo exibido em `config/kit.php` → `tenancy.label` | ✅ |
-| 6 | **Arte do login** | nenhuma: ela **mostra o nome da aplicação** (`APP_NAME`) sozinha. Para trocar por uma imagem sua, envie em `/admin/configuracoes-do-kit` | ✅ (pelo nome) |
+| 6 | **Arte do login** | nenhuma: ela **mostra o nome da aplicação** (`APP_NAME`) sozinha. Para trocar por uma imagem sua, envie em `/admin/configuracoes-da-aplicacao` | ✅ (pelo nome) |
 | 7 | **Acesso aos painéis** | o papel de cada usuário (`/admin` → Papéis, campo *Painel*); a regra que o lê é `App\Models\User::canAccessPanel()` | — |
 | 8 | **Matriz de permissões** | `database/seeders/PapeisSeeder.php` | — |
 | 9 | **Health checks** | `KitServiceProvider::configureHealthChecks()` | — |

@@ -18,7 +18,7 @@ use Filament\Support\Colors\Color;
  * ## As duas fontes, e por que o hexadecimal vence
  *
  * 1. `kit.cor_primaria_hex` — cor de marca livre (`#rgb` ou `#rrggbb`),
- *    gravada na tela /admin/configuracoes-do-kit;
+ *    gravada na tela /admin/configuracoes-da-aplicacao;
  * 2. `kit.cor_primaria` — nome de uma constante da paleta do Filament, da lista
  *    fechada de `CustomizadorDaInstalacao::CORES`.
  *

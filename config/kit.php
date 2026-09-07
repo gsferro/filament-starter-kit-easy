@@ -71,7 +71,7 @@ return [
     | de todo painel, e `Color::generatePalette()` não valida nada antes de
     | passar o valor para `convertToOklch()`.
     |
-    | O caminho normal de gravação é a tela /admin/configuracoes-do-kit; esta
+    | O caminho normal de gravação é a tela /admin/configuracoes-da-aplicacao; esta
     | chave é a semente e o plano B.
     */
 
@@ -82,7 +82,7 @@ return [
     | Identidade visual da instalação
     |--------------------------------------------------------------------------
     | Caminhos no disco `public` (não URLs), gravados pela tela
-    | /admin/configuracoes-do-kit. `App\Support\IdentidadeDoKit` os resolve para
+    | /admin/configuracoes-da-aplicacao. `App\Support\IdentidadeDoKit` os resolve para
     | URL e cai no padrão quando o arquivo declarado não existe no disco — um
     | <link rel="icon"> apontando para 404 no <head> de TODA página é pior que o
     | ícone padrão.
@@ -116,7 +116,7 @@ return [
     | Teto de tamanho de TODO upload do kit
     |--------------------------------------------------------------------------
     | Vale para os cinco campos de upload do kit — logo, favicon e arte do login
-    | (/admin/configuracoes-do-kit), a logo da organização (/admin/organizacoes)
+    | (/admin/configuracoes-da-aplicacao), a logo da organização (/admin/organizacoes)
     | e os anexos de Projeto — e para o upload TEMPORÁRIO do Livewire, alinhado
     | a esta chave por `KitServiceProvider::configureDefaults()`.
     |
@@ -176,7 +176,7 @@ return [
     | `Table::configureUsing()` — então valem também para as tabelas dos plugins
     | de terceiros, onde não há como editar o `table()` do resource.
     |
-    | Editáveis em /admin/configuracoes-do-kit. Estas chaves fecham o TODO que
+    | Editáveis em /admin/configuracoes-da-aplicacao. Estas chaves fecham o TODO que
     | vivia no topo daquele trait. "Densidade de tabela" NÃO está aqui porque não
     | existe no Filament 5: nenhuma ocorrência de `density` em
     | vendor/filament/tables/src, e `Enums/` não tem enum de densidade. O que o
@@ -479,7 +479,7 @@ return [
     | O rodape e TEXTO, nunca HTML: ele e renderizado numa pagina publica e nao
     | autenticada, e sai escapado. Ver ADR-09.
     |
-    | Estas chaves JA sao editaveis em /admin/configuracoes-do-kit, aba "Login" -
+    | Estas chaves JA sao editaveis em /admin/configuracoes-da-aplicacao, aba "Login" -
     | elas entraram no `mapaDeConfiguracao()` das ConfiguracoesDoKit e o valor do
     | banco vence este arquivo em tempo de execucao. Quem le todas e
     | App\Support\ConfiguracaoDoLogin, o ponto unico: nada mais no kit consulta
@@ -611,7 +611,7 @@ return [
          * A chave SECRETA é segredo: cifrada no banco quando gravada pela tela, fora de log e de
          * tela. A do SITE é pública por natureza — ela vai para o HTML.
          *
-         * Editáveis em /admin/configuracoes-do-kit, aba "Login", seção "Proteção anti-robô". O
+         * Editáveis em /admin/configuracoes-da-aplicacao, aba "Login", seção "Proteção anti-robô". O
          * banco vence este arquivo em tempo de execução.
          */
         'anti_robo' => [

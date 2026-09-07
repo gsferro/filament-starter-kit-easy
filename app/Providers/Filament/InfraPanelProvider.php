@@ -89,7 +89,7 @@ class InfraPanelProvider extends PanelProvider
             ->passwordReset()
             ->brandName(fn (): string => config('app.name').' • Infra')
             /*
-             * Marca e ícone vindos de /admin/configuracoes-do-kit.
+             * Marca e ícone vindos de /admin/configuracoes-da-aplicacao.
              *
              * `Closure` nos três, e não escalar: o argumento escalar é resolvido
              * quando o `Panel` é construído e CONGELA. Medido — `config(['app.name' => X])`

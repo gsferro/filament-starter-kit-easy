@@ -23,25 +23,29 @@
  * que isto não é o settings de uma organização é literalmente uma cláusula do
  * requisito (RQ-18).
  */
-it('documenta a tela de configuracoes nos dois readmes', function (string $arquivo, string $urlDaTela, string $precedencia, string $permissao, string $naoEhTenant): void {
+it('[CT-50] documenta a tela de configuracoes nos dois readmes, na URL nova', function (string $arquivo, string $urlDaTela, string $precedencia, string $permissao, string $naoEhTenant): void {
     // Reancorado pela migração para o site: `documentacaoDoKit()` em tests/Pest.php.
     $texto = documentacaoDoKit(str_contains($arquivo, 'en.md') ? 'en' : 'pt');
 
     expect($texto)->toContain($urlDaTela)
         ->and($texto)->toContain($precedencia)
         ->and($texto)->toContain($permissao)
-        ->and($texto)->toContain($naoEhTenant);
+        ->and($texto)->toContain($naoEhTenant)
+        // A doc não pode instruir a URL antiga: ela responde 301, mas mandar alguém para lá é
+        // documentar um endereço que a tela não usa mais. Citar continua permitido (CHANGELOG,
+        // wiki) — a asserção é sobre o texto que o site publica.
+        ->and($texto)->not->toContain('/admin/configuracoes-do-kit');
 })->with([
     'português' => [
         'README.md',
-        '/admin/configuracoes-do-kit',
+        '/admin/configuracoes-da-aplicacao',
         'O banco vence em tempo de execução',
         'View:ConfiguracoesDoKit',
         '/admin/organizacoes',
     ],
     'inglês' => [
         'README.en.md',
-        '/admin/configuracoes-do-kit',
+        '/admin/configuracoes-da-aplicacao',
         'The database wins at runtime',
         'View:ConfiguracoesDoKit',
         '/admin/organizacoes',
@@ -89,7 +93,7 @@ it('fecha o TODO de settings no trait de configuracao global do filament', funct
     $trait = (string) file_get_contents(base_path('app/Providers/Concerns/ConfiguraFilamentGlobal.php'));
 
     expect($trait)->not->toContain('transformar estes defaults')
-        ->and($trait)->toContain('/admin/configuracoes-do-kit')
+        ->and($trait)->toContain('/admin/configuracoes-da-aplicacao')
         ->and($trait)->toContain('densidade de tabela');
 })->group('kit');
 
@@ -115,7 +119,7 @@ it('documenta nos dois readmes que a arte do login usa o nome da aplicacao', fun
 
     expect($texto)->toContain('APP_NAME')
         ->and($texto)->toContain($frase)
-        ->and($texto)->toContain('/admin/configuracoes-do-kit')
+        ->and($texto)->toContain('/admin/configuracoes-da-aplicacao')
         ->and(readmeSemCitacao($arquivo))->not->toContain('public/images/auth/login.svg');
 })->with([
     'README.md'    => ['README.md', 'mostra o nome da aplicação'],

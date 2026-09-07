@@ -61,7 +61,7 @@ login, e a volta do provedor destrava.
 ## Ligando um provedor, em quatro passos
 
 O roteiro é o mesmo para os quatro; só muda onde se cria o app OAuth. Você pode fazer tudo pelo
-`.env` **ou** pela tela `/admin/configuracoes-do-kit` → aba **Login** — mas saiba quem manda: **o
+`.env` **ou** pela tela `/admin/configuracoes-da-aplicacao` → aba **Login** — mas saiba quem manda: **o
 banco vence o `.env` em tempo de execução, e o `.env` só semeia** (ver
 [Quem manda: o banco ou o `.env`?](../recursos/configuracoes-do-kit.md#quem-manda-o-banco-ou-o-env)). O passo 3 é onde isso pesa.
 
@@ -113,14 +113,14 @@ X_CLIENT_SECRET=seu-segredo
 migration de settings semeia cada propriedade do `config()`, que vem do `.env`. Num kit **já
 instalado**, o `.env` sozinho **não** liga nada, e `config:clear` não muda isso: a tabela
 `settings` já tem a linha (`false`, credencial vazia) e ela vence em todo request. Aí são dois
-caminhos: gravar pela tela `/admin/configuracoes-do-kit` → **Login**, ou
+caminhos: gravar pela tela `/admin/configuracoes-da-aplicacao` → **Login**, ou
 `php artisan kit:install --force` com o `.env` já preenchido — que **recria o banco** (APAGA os
 dados; inócuo só no minuto seguinte à instalação). Medido numa instalação real: o `.env` com as
 três chaves do Google, `config:clear`, e nenhum botão — até a migration reler o `.env`.
 
 **4. Confirme que o botão apareceu.** Se não apareceu, é uma das duas condições abaixo.
 
-> **Pela tela, em vez do `.env`**: em `/admin/configuracoes-do-kit` → **Login** há uma seção por
+> **Pela tela, em vez do `.env`**: em `/admin/configuracoes-da-aplicacao` → **Login** há uma seção por
 > provedor. Ligar o interruptor **abre** os campos de *Client ID* e *Client Secret* daquele
 > provedor — e só dele. O *Client Secret* é guardado **cifrado**, nunca é exibido de volta e não
 > aparece no código-fonte da página; deixar o campo em branco **mantém** o que estava gravado.
@@ -130,7 +130,7 @@ três chaves do Google, `config:clear`, e nenhum botão — até a migration rel
 | | |
 |---|---|
 | [![Login com os botões sociais](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/login-social.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-social.png) | [![Aba Login das configurações do kit](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-login.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-login.png) |
-| A tela de login com **Entrar com Google** e **Entrar com GitHub**, e o rodapé em Markdown | `/admin/configuracoes-do-kit` → **Login**: um bloco fechado por provedor com o ícone de status, o interruptor do vínculo e o rodapé |
+| A tela de login com **Entrar com Google** e **Entrar com GitHub**, e o rodapé em Markdown | `/admin/configuracoes-da-aplicacao` → **Login**: um bloco fechado por provedor com o ícone de status, o interruptor do vínculo e o rodapé |
 | [![Definir senha por e-mail, no perfil](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-perfil-definir-senha.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-perfil-definir-senha.png) | [![Tela de bloqueio com login social](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/app-bloqueio-social.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/app-bloqueio-social.png) |
 | O perfil: **Definir senha por e-mail** acima de "Senha" — quem entrou pelo provedor não tem senha atual | A tela de bloqueio de sessão oferece os mesmos botões; a volta do provedor destrava |
 | [![Lista de usuários com a coluna Origem](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-users-origem.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-users-origem.png) | |
@@ -161,7 +161,7 @@ endereço reciclado, não leva a outra conta.
 
 **A primeira vez.** Quando um provedor aparece pela primeira vez numa conta que **já existia**, o
 que acontece depende de um interruptor — `KIT_SOCIALITE_VINCULO_CONFIRMAR` no `.env`, ou a tela
-`/admin/configuracoes-do-kit` → **Login** → "Exigir confirmação por e-mail…":
+`/admin/configuracoes-da-aplicacao` → **Login** → "Exigir confirmação por e-mail…":
 
 | | Modo padrão (`false`) | Modo estrito (`true`) |
 |---|---|---|
@@ -223,7 +223,7 @@ irreconhecível o mantêm desligado. Só `true` e `1` ligam.
 
 ## Cada provedor escolhe seus painéis
 
-Na tela `/admin/configuracoes-do-kit` → **Login**, o campo **Painéis permitidos** de cada provedor
+Na tela `/admin/configuracoes-da-aplicacao` → **Login**, o campo **Painéis permitidos** de cada provedor
 controla separadamente onde seu botão e suas rotas ficam disponíveis: `/app`, `/admin` e `/infra`.
 Lista vazia significa todos os painéis, preservando o comportamento das instalações anteriores.
 
@@ -347,7 +347,7 @@ onde), como qualquer outro login — sem configuração nenhuma.
 
 ## O segredo do Google ficou em claro na trilha de auditoria até a v0.19.3
 
-**Se você configurou o `GOOGLE_CLIENT_SECRET` pela tela `/admin/configuracoes-do-kit` em alguma
+**Se você configurou o `GOOGLE_CLIENT_SECRET` pela tela `/admin/configuracoes-da-aplicacao` em alguma
 versão entre a 0.19.2 e a 0.19.3, rotacione esse segredo no console do Google.**
 
 O motivo: a máscara de segredo da trilha de auditoria decide o que esconder consultando a lista

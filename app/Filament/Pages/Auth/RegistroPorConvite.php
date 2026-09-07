@@ -6,6 +6,7 @@ use App\Filament\Forms\Components\CampoAntiRobo;
 use App\Models\Convite;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\ConfiguracaoDoLogin;
 use App\Support\RegistroAberto;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Register;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
@@ -100,6 +101,18 @@ class RegistroPorConvite extends Register
 
     public function mount(): void
     {
+        /*
+         * Com a página única ligada o cadastro vive em `/cadastro`: quem chega pela rota do
+         * painel é levado para lá com a query intacta — o `?token=` de um convite antigo e o
+         * `?org=` continuam valendo. `CadastroUnificado` ESTENDE esta classe e responde
+         * `ehAPaginaUnica()`; é isso que evita o laço, e não a rota corrente, que é nula em
+         * `Livewire::test()` e no `livewire.update` (`.ai/rules/auth.md`). Mesmo molde de
+         * `TelaLogin::mount()`.
+         */
+        if (ConfiguracaoDoLogin::unificado() && ! $this->ehAPaginaUnica()) {
+            throw new HttpResponseException(new RedirectResponse(route('cadastro', request()->query())));
+        }
+
         $token = request()->query('token');
 
         // Token na URL: é convite, e o caminho é o de sempre — nem consulta o registro aberto.
@@ -135,6 +148,12 @@ class RegistroPorConvite extends Register
         }
 
         parent::mount();
+    }
+
+    /** A página única (`/cadastro`) sobrescreve para `true`; a tela do painel é `false`. */
+    protected function ehAPaginaUnica(): bool
+    {
+        return false;
     }
 
     /** O `mount()` do modo convite, extraído só para o garfo caber numa leitura. */
