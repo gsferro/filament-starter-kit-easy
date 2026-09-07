@@ -503,9 +503,10 @@ migração dispara essa condição em **todas** de uma vez.
       E toda seção que nomeia Discord traz o motivo da recusa na mesma seção
 
     Cenário: [CT-10] nenhum cenário se guarda pela própria entrega
-      Dado os arquivos de teste desta feature
-      Quando o mantenedor inspeciona os desvios de execução declarados em cada um
-      Então o único guard usado é a sentinela da árvore do kit
+      Dado toda suíte de tests/Kit que a varredura reconhece como leitora da documentação
+      Quando o mantenedor inspeciona os desvios de execução declarados em cada uma
+      Então cada suíte declara a sentinela da árvore do kit
+      E o único guard usado é essa sentinela
       E nenhum arquivo condiciona execução à existência do diretório de documentação
 ```
 
@@ -526,6 +527,18 @@ migração dispara essa condição em **todas** de uma vez.
 > enquanto os outros 24 cenários ficavam guardados por `is_dir('docs')` e todos ignorados. **O
 > cenário atestava a si mesmo.**
 >
+> **3ª correção, de 2026-09-07 — fora de rodada, por defeito medido em campo.** O universo do caso
+> era uma lista de **dois arquivos escritos à mão**, e foi ela que deixou dez suítes de documentação
+> nascerem sem sentinela: um `kit:update` de v0.30.1 para v0.32.0 entregou `tests/Kit` (que está em
+> `KitUpdate::CAMINHOS_DO_KIT`), não entregou o README nem `docs/` (que não estão), e a instalação
+> ficou vermelha em quatro casos. O universo passou a ser **toda suíte devolvida por
+> `suitesDeDocumentacao()`** — a mesma varredura que CT-07 já usava para contar o inventário. O
+> gatilho dela é grosso de propósito (um caminho de README ou de página num literal de dataset já
+> inclui o arquivo), porque nesta base a leitura é indireta — o caminho vem do dataset e o
+> `file_get_contents` está no corpo — e nenhuma regra estática distingue esse literal de um
+> decorativo. Falso alarme custa uma linha de sentinela; falso silêncio custa uma suíte vermelha em
+> toda instalação que atualizar.
+>
 > A forma que funciona é **inspeção estática do arnês**, e o kit já tem o precedente exato:
 > `tests/Kit/HelpersDeTesteTest.php` usa `token_get_all()` para auditar o próprio código de teste,
 > justamente porque regex conta menção em comentário como chamada. O oráculo aqui é do mesmo tipo —
@@ -541,6 +554,7 @@ migração dispara essa condição em **todas** de uma vez.
 | M18 | A verificação de co-localização é reescrita concatenando `docs/**`: nome numa página, motivo em outra, e passa | CT-09 (nomeia uma única página; e o segundo `Então`) |
 | M19 | Os cenários novos varrem `docs/`, que é `export-ignore` — **toda instalação** fica vermelha em `composer test:kit` | CT-10 (ramo de fora do kit) |
 | M40 | A sentinela vira `is_dir('docs')`: se a entrega inteira não acontecer, tudo é ignorado e a suíte fica verde | **CT-10**, na forma de inspeção estática. A forma anterior — um `Então` de auto-declaração dentro do próprio CT-10 — **não o matava**: 2ª revisão adversarial |
+| M65 | Uma suíte de documentação NOVA nasce sem a sentinela: ela é entregue por `tests/Kit` e fica vermelha em toda instalação depois da primeira atualização que mexer no texto documentado | **CT-10** com o universo da varredura (`suitesDeDocumentacao()`) — a lista de dois arquivos escritos à mão não o matava: **defeito medido em campo, 2026-09-07** |
 | M41 | O inventário mantém 79 entradas trocando as guardas de segurança por 79 asserções triviais novas | **CT-07** (segundo `Então`, nominal) — revisão adversarial: `client_secret` sustentava o perfil `completo` e não estava em nenhum dataset |
 | M42 | A co-localização é afirmada por página: nome no topo, motivo 300 linhas abaixo | **CT-09** — revisão adversarial |
 | M20 | O inventário é editado para baixo junto com a asserção removida | ⚠️ **sem matador automático**. Tentado: derivar a contagem do próprio código dos testes por `token_get_all()`, como faz `HelpersDeTesteTest`; isso conta chamadas, não **guardas efetivas**, e um dataset esvaziado continua com a chamada de pé. O que resta é o número **79 literal** em CT-07, que obriga quem reduz a editá-lo — visível em revisão de diff. Lacuna declarada |
@@ -1089,7 +1103,7 @@ errada é como uma lacuna vira ✅ sem ninguém perceber.
 | CT-07 | O inventário não encolhe nem troca de conteúdo | R4 | rastreio de efeito | Kit | `tests/Kit/RedeDeDocumentacaoTest.php` | M15, M41 |
 | CT-08 | Ausência sempre acompanhada de âncora | R4 | rastreio de efeito | Kit | idem | M16, M17 |
 | CT-09 | Nome e motivo na mesma seção | R4 | rastreio de efeito (co-localização) | Kit | idem | M18, M42 |
-| CT-10 | Nenhum cenário se guarda pela própria entrega | R4 | inspeção estática do arnês | Kit | idem | M19, M40 |
+| CT-10 | Nenhum cenário se guarda pela própria entrega, e nenhuma suíte de documentação nasce sem sentinela | R4 | inspeção estática do arnês, sobre o universo da varredura | Kit | idem | M19, M40, M65 |
 | CT-11 | `docs/` fora do dist, com controle negativo | R5 | atributo de exportação | Kit | `tests/Kit/SiteDeDocumentacaoTest.php` | M22 |
 | CT-12 | Nenhuma toolchain de documentação na raiz | R5 | conjunto congelado + ausência | Kit | idem | M23, M25, M51, M62, M63 |
 | CT-13 | A landing encolhe sem se esvaziar, nos dois idiomas | R6 | BVA de dois lados | Kit | idem | M27, M28 |

@@ -156,21 +156,59 @@ it('[CT-09] toda seção que nomeia o Discord traz o motivo da recusa na mesma s
 });
 
 /**
- * CT-10 — nenhum cenário se guarda pela própria entrega. Inspeção ESTÁTICA dos dois arquivos
- * de teste da feature: a sentinela é `naArvoreDoKit()` (`.github`), e nenhum desvio de
- * execução consulta `docs/` — `is_dir('docs')` é auto-anulante: sem a migração, `docs/` não
- * existe, tudo é ignorado e `composer test:kit` fica verde com zero entrega (M40, M19).
+ * CT-10 — nenhum cenário se guarda pela própria entrega, e nenhuma suíte de documentação nasce
+ * sem sentinela. Inspeção ESTÁTICA de TODA suíte devolvida por `suitesDeDocumentacao()`: a
+ * sentinela é `naArvoreDoKit()` (`.github`), e nenhum desvio de execução consulta `docs/` —
+ * `is_dir('docs')` é auto-anulante: sem a migração, `docs/` não existe, tudo é ignorado e
+ * `composer test:kit` fica verde com zero entrega (M40, M19).
  *
  * A forma anterior (um `Então` de auto-declaração dentro deste mesmo cenário) atestava a si
  * mesma; ler o código dos arquivos, como faz `HelpersDeTesteTest`, é o que funciona.
+ *
+ * ## Por que o universo é a varredura, e não uma lista escrita à mão
+ *
+ * A versão anterior cobrava a sentinela de DOIS arquivos nomeados, e foi isso que deixou dez
+ * suítes de documentação nascerem sem ela — medido numa instalação real: o `kit:update` levou o
+ * código de v0.30.1 a v0.32.0, não levou o README nem `docs/` (a lista
+ * `KitUpdate::CAMINHOS_DO_KIT` só traz `wikis/README.md`), e a suíte que a atualização acabou de
+ * instalar ficou vermelha em quatro casos, acusando o projeto por documentação que é do kit.
+ *
+ * ## O gatilho é grosso de propósito, e é justo
+ *
+ * `suitesDeDocumentacao()` casa `documentacaoDoKit(`, `README(.en).md` e `docs/(pt|en)/` no código
+ * **sem comentário**, então um arquivo entra na lista mesmo que o caminho apareça só num literal
+ * de dataset. Isso não é imprecisão a corrigir: nesta base a leitura é quase sempre INDIRETA — o
+ * caminho vem do dataset e o `file_get_contents(base_path($arquivo))` está no corpo (CT-04 de
+ * `DeployDockerLocalTest`, CT-05 de `MysqlNoDockerTest`, CT-33 de
+ * `SituacaoDaContaDocumentacaoTest`) —, e nenhuma regra estática distingue esse literal de um
+ * decorativo. Entre cobrar uma linha de sentinela a mais e deixar passar uma suíte que quebra em
+ * toda instalação, o custo do falso alarme é uma linha; o do falso silêncio, uma suíte vermelha em
+ * cada projeto que atualizar.
+ *
+ * A granularidade da sentinela é do AUTOR: `->skip()` por caso onde o arquivo mistura documentação
+ * com código entregue, `beforeEach` onde o arquivo é todo de documentação, ou um
+ * `markTestSkipped` no meio do corpo onde uma linha do dataset (o `docker-compose.yml` de CT-05)
+ * ou uma das metades do caso (a `wikis/arquitetura.md` de CT-21) lê arquivo que É entregue e tem
+ * de continuar conferida. Este caso só cobra que a sentinela exista.
+ *
+ * Uma nota de uso: a proibição de guard sobre `docs/` casa dentro da chamada inteira, então a
+ * MENSAGEM do `skip()` não pode soletrar o nome do diretório — diga "o diretório do site". A
+ * alternativa (regex que distingue expressão de literal de string) custa mais do que a convenção.
  */
 it('[CT-10] nenhum cenário se guarda pela própria entrega', function (): void {
-    foreach (['SiteDeDocumentacaoTest.php', 'RedeDeDocumentacaoTest.php'] as $arquivo) {
-        $codigo = codigoSemComentario((string) file_get_contents(__DIR__.'/'.$arquivo));
+    $suites = suitesDeDocumentacao();
 
+    // Os dois arquivos da feature, nomeados: a varredura não pode encolher até deixá-los de fora.
+    expect(array_keys($suites))->toContain('SiteDeDocumentacaoTest.php')
+        ->toContain('RedeDeDocumentacaoTest.php');
+
+    foreach ($suites as $arquivo => $codigo) {
         preg_match_all('/\b(is_dir|file_exists|is_file|markTestSkipped|skip)\s*\([^;]*?docs/', $codigo, $guardasSobreDocs);
 
-        expect($codigo)->toContain('naArvoreDoKit()')
-            ->and($guardasSobreDocs[0])->toBe([], "{$arquivo} condiciona execução à existência de docs/");
+        // `toContain()` recebe VÁRIOS needles — uma mensagem como 2º argumento viraria needle.
+        expect(str_contains($codigo, 'naArvoreDoKit()'))
+            ->toBeTrue("{$arquivo} lê a documentação do kit e não tem a sentinela naArvoreDoKit(): fora da árvore do kit ele fica vermelho em toda instalação.");
+
+        expect($guardasSobreDocs[0])->toBe([], "{$arquivo} condiciona execução à existência de docs/");
     }
 });
