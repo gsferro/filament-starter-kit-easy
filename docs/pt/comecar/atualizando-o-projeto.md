@@ -56,7 +56,7 @@ php artisan kit:update --only-new   # só o que ainda não existe no projeto
 php artisan kit:update --all        # tudo, inclusive o que sobrescreve
 ```
 
-A distinção é o ponto: **arquivo novo não tem o que sobrescrever**, então aplicá-los em massa é seguro — é o caso dos widgets, do Spotlight, das concerns, do CSS do kit (`resources/css/filament/` e `public/css/kit/`, entregues a partir da v0.30.0) e das migrations de Settings (`database/settings/`, a partir da v0.31.0). Já um **modificado** substitui o conteúdo atual, e se você editou aquele arquivo a sua versão se perde (recuperável com `git checkout -- <arquivo>`, já que nada é commitado). Por isso `--only-new` é o lote recomendado para a primeira passada, deixando os modificados para revisar com calma.
+A distinção é o ponto: **arquivo novo não tem o que sobrescrever**, então aplicá-los em massa é seguro — é o caso dos widgets, do Spotlight, das concerns, do CSS do kit (`resources/css/filament/` e `public/css/kit/`, entregues a partir da v0.30.0) e das migrations de Settings (`database/settings/`, a partir da v0.31.0). O **`.env.example`** também passou a ser entregue (a partir da v0.32.2): ele é arquivo de sugestão, é onde o kit documenta cada chave nova, e o seu `.env` continua intocado — mas ele entra como **modificado**, então revise o diff se você acrescentou chaves próprias ali. Já um **modificado** substitui o conteúdo atual, e se você editou aquele arquivo a sua versão se perde (recuperável com `git checkout -- <arquivo>`, já que nada é commitado). Por isso `--only-new` é o lote recomendado para a primeira passada, deixando os modificados para revisar com calma.
 
 | Opção | Para quê |
 |---|---|

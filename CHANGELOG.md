@@ -3,6 +3,27 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Adicionado
+- **O `kit:update` passa a entregar o `.env.example`.** Ele é arquivo de **sugestão**, não
+  configuração: o que roda é o `.env`, que nunca entrou nem entra na lista de caminhos do kit. Fora
+  da lista, o exemplo congelava na versão da instalação — a v0.31.0 acrescentou
+  `KIT_LOGIN_UNIFICADO` e quem atualizou nunca soube que a chave existia. E seis casos de
+  `tests/Kit` afirmam o conteúdo dele, num diretório que **é** entregue: a instalação recebia o
+  teste da chave nova sem receber a linha que ele exige. Como o `kit:update` não commita nada, a
+  linha entra como qualquer outro arquivo modificado, com o menu de aplicar ou pular — quem
+  acrescentou chave própria revisa o diff antes de aceitar, como já faz com o `config/kit.php`.
+  A asserção que proibia o arquivo (`MysqlNoDockerTest` CT-23) travava duas coisas onde só uma é
+  o mecanismo: quem carrega o `COMPOSE_PROJECT_NAME` de uma instalação é o `.env`, que continua
+  proibido na lista. CT-15 e CT-22 seguem garantindo que as duas fontes do nome concordam.
+
+### Alterado
+- **Três decisões desta rodada viraram rule de projeto** em `.ai/rules/`, para o próximo agente ou
+  pessoa não redescobri-las: painel de teste se registra pelo `PanelRegistry` e não pela facade;
+  asserção sobre a seção do topo do CHANGELOG expira sozinha; e página de auth servida fora do
+  painel resolve o painel da conta antes de qualquer operação do vendor que consulte
+  `canAccessPanel()`. As três nasceram de defeito medido, não de preferência.
 ## [0.32.1] - 2026-09-07
 
 ### Corrigido

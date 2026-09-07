@@ -411,17 +411,23 @@ it('[CT-22] a instalação que não customiza nada não muda o prefixo de hoje',
 })->group('kit');
 
 /**
- * CT-23 — a premissa que sustenta o mecanismo inteiro, travada em três linhas.
+ * CT-23 — a premissa que sustenta o mecanismo inteiro, travada numa linha.
  *
- * A decisão de levar o nome pelo `.env` vale porque o `kit:update` nunca sobrescreve esse
+ * A decisão de levar o nome pelo `.env` vale porque o `kit:update` nunca sobrescreve **esse**
  * arquivo. É um fato sobre uma lista de caminhos que alguém pode editar amanhã sem perceber o
  * que derrubou.
+ *
+ * *(alterado na v0.32.2: a asserção era sobre `.env` **e** `.env.example`, e travava duas coisas
+ * onde só uma é o mecanismo. O `.env.example` passou a ser entregue de propósito — ele é arquivo
+ * de sugestão, é onde o kit documenta cada chave nova, e fora da lista congelava na versão da
+ * instalação. Quem carrega o `COMPOSE_PROJECT_NAME` de uma instalação real é o `.env`, que
+ * continua proibido aqui; o exemplo entra como arquivo modificado, com o menu de aplicar ou
+ * pular. CT-15 e CT-22 continuam garantindo que as duas fontes do nome concordam.)*
  */
 it('[CT-23] a chave do nome do projeto sobrevive ao kit:update', function (): void {
     $listas = collect((new ReflectionClass(KitUpdate::class))->getConstants())
         ->filter(fn (mixed $valor): bool => is_array($valor))
         ->flatten();
 
-    expect($listas)->not->toContain('.env')
-        ->and($listas)->not->toContain('.env.example');
+    expect($listas)->not->toContain('.env');
 })->group('kit');

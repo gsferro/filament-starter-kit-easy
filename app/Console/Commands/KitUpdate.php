@@ -258,6 +258,24 @@ class KitUpdate extends Command
         'phpstan.neon',
         'phpunit.xml',
         'pint.json',
+
+        /*
+         * O `.env.example` é ARQUIVO DE SUGESTÃO, não configuração: o que roda é o `.env`, que
+         * nunca aparece nesta lista e nunca é tocado. O exemplo é onde o kit documenta cada chave
+         * que ele passou a entender — e chave que não está no exemplo é chave que ninguém descobre.
+         *
+         * Fora da lista, ele congelava na versão da instalação: a v0.31.0 acrescentou
+         * `KIT_LOGIN_UNIFICADO` e quem atualizou nunca soube que existia. Pior, seis casos de
+         * `tests/Kit` afirmam o conteúdo dele (`UploadLimiteETiposDocumentacaoTest` CT-19,
+         * `MysqlNoDockerTest` CT-15, os dois de login social), e `tests/` É entregue: a instalação
+         * recebia o teste da chave nova sem receber a linha que ele exige. Medido na validação da
+         * v0.32.0 em quatro instalações.
+         *
+         * O `kit:update` não commita nada, então a linha entra como qualquer outro arquivo
+         * modificado: aparece no diff, com o menu de aplicar ou pular. Quem acrescentou chave
+         * própria ao exemplo revisa o diff antes de aceitar, como já faz com o `config/kit.php`.
+         */
+        '.env.example',
     ];
 
     /**
