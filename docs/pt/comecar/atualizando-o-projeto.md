@@ -45,11 +45,10 @@ Dois detalhes que aparecem na prática:
 Ao final nada está commitado: você revisa com `git diff`, roda `php artisan migrate` se chegou migration nova (a partir da v0.31.0 o comando entrega também `database/settings/`, e a tela de configurações quebra enquanto a propriedade nova não tiver linha no banco), roda `composer test:kit` (a fundação) e commita. Deu errado? `git checkout -- .` desfaz, ou apague o branch e volte para o seu.
 
 - **A URL da tela de configurações mudou na v0.32.0.** Ela passou a responder em
-  `/admin/configuracoes-da-aplicacao`, o nome que já exibia no menu; o endereço antigo
-  (`/admin/configuracoes-do-kit`) responde **301** para o novo, então favorito e link antigo
-  continuam chegando. Se o seu projeto escreveu a URL antiga à mão em algum lugar — um teste, um
-  link numa view sua, um bookmarklet —, atualize; a permissão (`View:ConfiguracoesDoKit`) e a
-  classe não mudaram, só o slug.
+  `/admin/configuracoes-da-aplicacao`, o nome que já exibia no menu. O slug antigo responde **301**
+  para o novo, então favorito e link antigo continuam chegando. Se o seu projeto escreveu o
+  endereço antigo à mão em algum lugar — um teste, um link numa view sua, um bookmarklet —,
+  atualize; a permissão (`View:ConfiguracoesDoKit`) e a classe não mudaram, só o slug.
 **Não precisa aprovar 30 arquivos um a um.** Durante a revisão, o menu oferece *"Aplicar todos os arquivos NOVOS daqui em diante"* e *"Aplicar TUDO daqui em diante"* — uma confirmação vale para o conjunto. E dá para começar já em lote:
 
 ```bash

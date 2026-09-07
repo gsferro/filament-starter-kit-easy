@@ -45,11 +45,10 @@ Two details that show up in practice:
 At the end nothing is committed: you review with `git diff`, run `php artisan migrate` if a new migration arrived (from v0.31.0 on the command also delivers `database/settings/`, and the settings screen breaks while the new property has no row in the database), run `composer test:kit` (the foundation) and commit. Went wrong? `git checkout -- .` undoes it, or delete the branch and go back to yours.
 
 - **The settings screen's URL changed in v0.32.0.** It now answers at
-  `/admin/configuracoes-da-aplicacao`, the name it already showed in the menu; the old address
-  (`/admin/configuracoes-do-kit`) returns a **301** to the new one, so old bookmarks and links
-  still arrive. If your project wrote the old URL by hand somewhere — a test, a link in one of
-  your views, a bookmarklet —, update it; the permission (`View:ConfiguracoesDoKit`) and the class
-  did not change, only the slug.
+  `/admin/configuracoes-da-aplicacao`, the name it already showed in the menu. The old slug returns
+  a **301** to the new one, so old bookmarks and links still arrive. If your project wrote the old
+  address by hand somewhere — a test, a link in one of your views, a bookmarklet —, update it; the
+  permission (`View:ConfiguracoesDoKit`) and the class did not change, only the slug.
 **You don't have to approve 30 files one by one.** During the review the menu offers *"Apply all NEW files from here on"* and *"Apply EVERYTHING from here on"* — one confirmation covers the set. And you can start in bulk already:
 
 ```bash
