@@ -14,6 +14,9 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   teste da chave nova sem receber a linha que ele exige. Como o `kit:update` não commita nada, a
   linha entra como qualquer outro arquivo modificado, com o menu de aplicar ou pular — quem
   acrescentou chave própria revisa o diff antes de aceitar, como já faz com o `config/kit.php`.
+  A asserção que proibia o arquivo (`MysqlNoDockerTest` CT-23) travava duas coisas onde só uma é
+  o mecanismo: quem carrega o `COMPOSE_PROJECT_NAME` de uma instalação é o `.env`, que continua
+  proibido na lista. CT-15 e CT-22 seguem garantindo que as duas fontes do nome concordam.
 
 ### Alterado
 - **Três decisões desta rodada viraram rule de projeto** em `.ai/rules/`, para o próximo agente ou
