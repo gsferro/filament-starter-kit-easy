@@ -2,6 +2,11 @@
 
 ## ADR-01: A escolha de painel é uma página de cartões, não o Panel Switch
 
+> *(refinada em 2026-09-06 por `wikis/specs/feat/login-unificado-telas-externas/` ADR-01: os
+> cartões deixaram de ser uma lista fixa de três e passaram a nascer de `Filament::getPanels()`,
+> lendo rótulo e ícone da mesma fonte que o Panel Switch. A escolha por cartões, decidida aqui,
+> não muda.)*
+
 **Status**: Aceita
 **Data**: 2026-09-05
 

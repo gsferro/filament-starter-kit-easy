@@ -1,45 +1,45 @@
 # Progresso — Telas externas com o login unificado
 
-> Branch: `feat/login-unificado-telas-externas` · Wiki criada em 2026-09-06 · Implementação: **não iniciada** (aguardando aprovação do plano)
+> Branch: `feat/login-unificado-telas-externas` · Wiki criada em 2026-09-06 · Plano aprovado pelo solicitante em 2026-09-07 · Implementação: **em andamento**
 
 ## 1. `Paineis` vira a fonte única de rótulo, ícone e cartão por painel
 
-- [ ] `Paineis::rotulos()`, `icones()`, `rotulo(Panel)`, `icone(Panel)` com os fallbacks do Panel Switch
-- [ ] `Paineis::cartoes()` itera `Filament::getPanels()`; mapa local de cor/descrição dos três do kit
-- [ ] Import `Heroicon` removido se sem uso; `Str` importado
+- [x] `Paineis::rotulos()`, `icones()`, `rotulo(Panel)`, `icone(Panel)` com os fallbacks do Panel Switch — `app/Support/Paineis.php`, PHPStan level 7 verde, 2026-09-07
+- [x] `Paineis::cartoes()` itera `Filament::getPanels()`; mapa local de cor/descrição dos três do kit — CT-46 verde (BoasVindas 39/39), 2026-09-07
+- [x] Import `Heroicon` removido; `Str` importado — Pint e PHPStan verdes, 2026-09-07
 
 ## 2. Panel Switch e boas-vindas leem de `Paineis`
 
-- [ ] `configuraPanelSwitch()` usa `Paineis::rotulos()`/`icones()`
-- [ ] `BoasVindas::getSubheading()` sem "Três"
-- [ ] Docblocks de `EscolhaDePainel` e `Paineis::cartoes()` sem "três"
+- [x] `configuraPanelSwitch()` usa `Paineis::rotulos()`/`icones()` — `ConfiguraFilamentGlobal.php`, 2026-09-07
+- [x] `BoasVindas::getSubheading()` sem "Três" — CT-46 assere a ausência, 39/39, 2026-09-07
+- [x] Docblocks de `EscolhaDePainel` e `Paineis::cartoes()` sem "três" — 2026-09-07
 
 ## 3. Slug `configuracoes-da-aplicacao`
 
-- [ ] `$slug` na Page + docblocks `:30`, `:339`
-- [ ] `Route::redirect` do slug antigo (premissa RQ-03)
-- [ ] Textos em `app/` (`KitInfo` ×4, docblocks ×11, providers ×3), `config/kit.php` ×6, `resources/views` ×1, `.ai/rules/pages.md:11`
-- [ ] `README.md`, `README.en.md`, `docs/{pt,en}` (24 URLs; nome do arquivo mantido)
-- [ ] Testes com URL literal (20 linhas + `tests/Pest.php:270` + `ConfiguracoesDoKitDocumentacaoTest` ×4)
+- [x] `$slug` na Page + docblocks — CT-48 e CT-49 escritos; ConfiguracoesDoKitTela+Documentacao+Inventario 34/34, 2026-09-07
+- [x] `Route::redirect` 301 do slug antigo no `KitServiceProvider` — CT-49 (anônimo e autenticado), 2026-09-07
+- [x] Textos em `app/`, `config/kit.php`, `resources/views`, `.ai/rules/pages.md` — 40 arquivos, zero ocorrências restantes fora de CHANGELOG e wikis, 2026-09-07
+- [x] `README.md`, `README.en.md`, `docs/{pt,en}` — URL nova; nome do arquivo de doc mantido, 2026-09-07
+- [x] Testes com URL literal + inventário de telas + `ConfiguracoesDoKitDocumentacaoTest` (CT-50 com a ausência da URL antiga) — 2026-09-07
 
 ## 4. `RegistroAberto::urlDoCadastro()` e o link de registro da tela de login
 
-- [ ] `RegistroAberto::urlDoCadastro(?string $org)`
-- [ ] `TelaLogin::getSubheading()` exige organização resolvível com tenancy; `cadastroTemDestino()`, `orgDoPedido()`
-- [ ] `TelaLogin::registerAction()` com a URL do kit e `?org=`
+- [x] `RegistroAberto::urlDoCadastro(?string $org)` — `app/Support/RegistroAberto.php`, 2026-09-07
+- [x] `TelaLogin::getSubheading()` exige organização resolvível com tenancy; `cadastroTemDestino()`, `orgDoPedido()` — CT-57 e CT-58 escritos, 2026-09-07
+- [x] `TelaLogin::registerAction()` com a URL do kit e `?org=` — 2026-09-07
 
 ## 5. `/cadastro` — a página única de registro
 
-- [ ] `CadastroUnificado` (`$layout`, `ehAPaginaUnica(): true`, `mount()` com chave desligada → rota do painel)
-- [ ] `RegistroPorConvite::mount()` com a guarda (query preservada) e `ehAPaginaUnica(): false`
-- [ ] Rota `cadastro` no `KitServiceProvider`
+- [x] `CadastroUnificado` (`$layout`, `ehAPaginaUnica(): true`, `mount()` com chave desligada → rota do painel) — 2026-09-07
+- [x] `RegistroPorConvite::mount()` com a guarda (query preservada) e `ehAPaginaUnica(): false` — 2026-09-07
+- [x] Rota `cadastro` no `KitServiceProvider` — 2026-09-07
 
 ## 6. `/esqueci-minha-senha` — a página única do pedido de reset
 
-- [ ] `TelaRecuperarSenhaUnificada`
-- [ ] `TelaRecuperarSenha::mount()` com a guarda e `ehAPaginaUnica(): false`; docblock atualizado
-- [ ] `TelaLogin::getPasswordFormComponent()` com `urlDeRecuperacaoDeSenha()`
-- [ ] Rota `esqueci-minha-senha` no `KitServiceProvider`
+- [x] `TelaRecuperarSenhaUnificada` — 2026-09-07
+- [x] `TelaRecuperarSenha::mount()` com a guarda e `ehAPaginaUnica(): false`; docblock atualizado — 2026-09-07
+- [x] `TelaLogin::getPasswordFormComponent()` com `urlDeRecuperacaoDeSenha()` — narrow para `TextInput` (o pai devolve `Component`), PHPStan verde, 2026-09-07
+- [x] Rota `esqueci-minha-senha` no `KitServiceProvider` — 2026-09-07
 
 ## 7. Revisão das telas externas com a chave ligada
 
@@ -48,11 +48,11 @@
 
 ## 8. Docs, CHANGELOG, `kit:update` e wiki ancestral
 
-- [ ] `docs/{pt,en}/autenticacao/login-unificado.md` — "O que continua por painel" reescrita; "Painel novo depois da instalação"
-- [ ] `docs/{pt,en}/autenticacao/registro-aberto.md` — link do login com `?org=`; caso medido
-- [ ] `CHANGELOG.md` `[Unreleased]`
-- [ ] `KitUpdate::CAMINHOS_DO_KIT` conferido
-- [ ] Nota "refinada por" na ADR-01 da ancestral
+- [x] `docs/{pt,en}/autenticacao/login-unificado.md` — "Painel novo depois da instalação", "As outras telas sem prefixo de painel" e "O que continua por painel" reescritas, 2026-09-07
+- [x] `docs/{pt,en}/autenticacao/registro-aberto.md` — link do login com `?org=`; caso medido, 2026-09-07
+- [x] `CHANGELOG.md` `[Unreleased]` — Adicionado, Corrigido e Alterado, 2026-09-07
+- [x] `KitUpdate::CAMINHOS_DO_KIT` conferido — `app/Filament`, `app/Support` e `app/Providers` já cobrem os arquivos novos; nada a acrescentar, 2026-09-07
+- [x] Nota "refinada por" na ADR-01 da ancestral, e `*(alterado em …)*` em CT-17, CT-28 e CT-40 do `04` dela — 2026-09-07
 
 ## Testes
 
