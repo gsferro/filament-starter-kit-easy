@@ -889,7 +889,7 @@ it('nao serializa o segredo do google no html da tela de configuracoes', functio
 
     $this->actingAs(usuarioDoKit('admin'));
 
-    $resposta = $this->get('/admin/configuracoes-do-kit');
+    $resposta = $this->get('/admin/configuracoes-da-aplicacao');
 
     $resposta->assertOk();
 

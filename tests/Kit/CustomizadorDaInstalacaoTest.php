@@ -336,7 +336,7 @@ it('aponta os sete itens que continuam manuais, cada um com o seu arquivo', func
     expect($itens)->toHaveCount(7);
 
     // `login.svg` saiu da lista: a arte do login virou campo em
-    // /admin/configuracoes-do-kit, e a linha que a substituiu aponta para lá.
+    // /admin/configuracoes-da-aplicacao, e a linha que a substituiu aponta para lá.
     foreach (['Configurações da aplicação', 'Funções', 'PapeisSeeder', 'configureHealthChecks', 'command-center', 'backup.php', 'Agentes de IA'] as $referencia) {
         expect(implode(' ', $itens))->toContain($referencia);
     }

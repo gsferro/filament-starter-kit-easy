@@ -734,7 +734,7 @@ it('nao serializa a chave secreta anti-robo no html da tela de configuracoes', f
 
     $this->actingAs(usuarioDoKit('admin'));
 
-    $resposta = $this->get('/admin/configuracoes-do-kit');
+    $resposta = $this->get('/admin/configuracoes-da-aplicacao');
 
     $resposta->assertOk();
 
@@ -920,7 +920,7 @@ it('mostra o toggle de ambiente local somente com APP_ENV=local', function (stri
     config(['app.env' => $ambiente]);
     App::detectEnvironment(fn (): string => $ambiente);
 
-    $resposta = $this->actingAs(usuarioDoKit('admin'))->get('/admin/configuracoes-do-kit')->assertOk();
+    $resposta = $this->actingAs(usuarioDoKit('admin'))->get('/admin/configuracoes-da-aplicacao')->assertOk();
 
     $visivel
         ? $resposta->assertSee('Aplicar também em ambiente local')
@@ -941,7 +941,7 @@ it('esconde o toggle de ambiente local quando a protecao esta desligada', functi
     App::detectEnvironment(fn (): string => 'local');
 
     $this->actingAs(usuarioDoKit('admin'))
-        ->get('/admin/configuracoes-do-kit')
+        ->get('/admin/configuracoes-da-aplicacao')
         ->assertOk()
         ->assertDontSee('Aplicar também em ambiente local');
 })->group('kit');

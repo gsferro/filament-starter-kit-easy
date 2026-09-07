@@ -44,25 +44,34 @@ it('nao tem mais a view welcome padrao do laravel', function (): void {
 });
 
 /**
- * CT-03 — um cartão por painel, apontando para a raiz do painel.
+ * CT-03 / CT-46 — um cartão por painel REGISTRADO, apontando para a raiz do painel.
  *
- * A asserção é sobre o `href`, e não sobre o rótulo: os rótulos são premissa desta wiki (o
- * requisito só diz "cards para acessar os paines"), e asserir texto de premissa fixaria uma decisão
- * que o usuário ainda pode mudar.
+ * A lista não é mais fixa: um painel que a aplicação registre depois da instalação entra sozinho
+ * (wiki `login-unificado-telas-externas`, RQ-02), e por isso o dataset inclui um painel que só
+ * existe neste teste. O rótulo passou a ser o do Panel Switch, então ele também é afirmado — no
+ * corpo, depois do `</title>`, porque `config('app.name')` aparece no título de toda página.
  *
  * A URL é montada por `url()` aqui, não escrita à mão — o mesmo caminho que a página usa quando o
  * painel não tem domínio próprio.
  */
-it('tem um cartao por painel apontando para a raiz do painel', function (string $painel): void {
+it('[CT-46] tem um cartao por painel registrado apontando para a raiz do painel', function (string $painel, string $rotulo): void {
+    config(['app.name' => 'Projeto Três']);
+    painelRegistradoEmTeste('financeiro');
+
     $destino = url(Filament::getPanel($painel)->getPath());
 
-    $this->get('/')
+    $resposta = $this->get('/')
         ->assertOk()
-        ->assertSee('href="'.$destino.'"', escape: false);
+        ->assertSee('href="'.$destino.'"', escape: false)
+        ->assertDontSee('Painel do negócio')
+        ->assertDontSee('Três painéis');
+
+    expect(corpoDepoisDoTitulo((string) $resposta->getContent()))->toContain($rotulo);
 })->with([
-    'painel de negócio'        => ['app'],
-    'painel de administração'  => ['admin'],
-    'painel de infraestrutura' => ['infra'],
+    'painel de negócio'                      => ['app', 'Projeto Três'],
+    'painel de administração'                => ['admin', 'Administração'],
+    'painel de infraestrutura'               => ['infra', 'Infraestrutura'],
+    'painel registrado depois da instalação' => ['financeiro', 'Financeiro'],
 ]);
 
 /**

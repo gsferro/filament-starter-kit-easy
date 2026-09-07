@@ -355,7 +355,7 @@ it('nao serializa o client_secret de nenhum provedor no html da tela de configur
 
     $this->actingAs(usuarioDoKit('admin'));
 
-    $resposta = $this->get('/admin/configuracoes-do-kit');
+    $resposta = $this->get('/admin/configuracoes-da-aplicacao');
 
     $resposta->assertOk();
 

@@ -105,7 +105,7 @@ it('[CT-03] rotula a cor primaria pela particao que venceu', function (string $h
  * para chamado de suporte.
  *
  * O esperado é a MÁSCARA INTEIRA (`adm` mais catorze asteriscos), não o prefixo: `adm` sozinho
- * aparece em `/admin/configuracoes-do-kit` e em mais meia dúzia de linhas, e a asserção passaria
+ * aparece em `/admin/configuracoes-da-aplicacao` e em mais meia dúzia de linhas, e a asserção passaria
  * com o mascaramento removido.
  */
 it('[CT-04] lista os administradores mascarados, em qualquer cardinalidade', function (int $quantos): void {

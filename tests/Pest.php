@@ -9,6 +9,8 @@ use App\Settings\ConfiguracoesDoKit;
 use App\Support\ProvedorSocial;
 use Filament\Facades\Filament;
 use Filament\FilamentManager;
+use Filament\Panel;
+use Filament\PanelRegistry;
 use Filament\Support\Assets\AssetManager;
 use Filament\Support\Colors\ColorManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -267,7 +269,7 @@ function telasDoKit(): array
              * listada — o que também lhe dá o smoke de navegador de graça, no lote
              * de `TelasDoKitTest`.
              */
-            '/admin/configuracoes-do-kit',
+            '/admin/configuracoes-da-aplicacao',
             '/admin/agentes-ia',
             '/admin/agentes-ia/create',
             '/admin/onboarding-flows',
@@ -466,6 +468,64 @@ function usuarioDoKit(string $papel, string $email = 'user@example.com'): User
     $user->assignRole($papel);
 
     return $user;
+}
+
+/**
+ * A chave da pagina unica de login (`kit.login.unificado`), ligada ou desligada.
+ *
+ * Vive aqui, e nao no arquivo de teste, porque dois arquivos a usam: `tests/Kit/LoginUnificadoTest.php`
+ * e `tests/Tenancy/LoginUnificadoTenancyTest.php`. Helper cruzado declarado num deles some quando o
+ * Pest carrega um subconjunto (`--parallel`, `--tia`, um arquivo so). Ver `.ai/rules/testes.md`.
+ */
+function ligarLoginUnificado(bool $ligado = true): void
+{
+    config()->set('kit.login.unificado', $ligado);
+}
+
+/**
+ * Uma organizacao com as tres condicoes que o registro aberto avalia: existe, `ativo` e
+ * `registro_habilitado` (`App\Support\RegistroAberto::organizacao()`).
+ *
+ * Usada por `tests/Tenancy/RegistroAbertoTenancyTest.php` e por
+ * `tests/Tenancy/LoginUnificadoTenancyTest.php` — por isso mora aqui (`.ai/rules/testes.md`).
+ */
+function organizacaoComRegistro(string $slug = 'acme', bool $ativo = true, bool $registro = true): Tenant
+{
+    return Tenant::factory()->create([
+        'slug'                => $slug,
+        'ativo'               => $ativo,
+        'registro_habilitado' => $registro,
+    ]);
+}
+
+/**
+ * Um painel registrado em tempo de teste, como a aplicacao registraria um `PanelProvider` novo
+ * depois da instalacao. `FilamentManager::registerPanel()` e publico e o registro morre com o
+ * container do teste.
+ */
+function painelRegistradoEmTeste(string $id): Panel
+{
+    $painel = Panel::make()->id($id)->path($id);
+
+    // Pelo `PanelRegistry`, e nao por `Filament::registerPanel()`: medido, a chamada pela facade
+    // nao aparece em `Filament::getPanels()` dentro do teste, enquanto o registry (singleton, o
+    // mesmo objeto antes e depois) registra. A facade continua sendo o caminho de producao.
+    app(PanelRegistry::class)->register($painel);
+
+    return $painel;
+}
+
+/**
+ * O HTML depois do fechamento do <title>.
+ *
+ * O nome da aplicacao aparece no titulo de toda pagina do Filament: afirmar um rotulo de cartao
+ * com `assertSee` cru passaria medindo o <title>. Este recorte poe a asserção no corpo.
+ */
+function corpoDepoisDoTitulo(string $html): string
+{
+    $fim = stripos($html, '</title>');
+
+    return $fim === false ? $html : substr($html, $fim + 8);
 }
 
 /**

@@ -4,7 +4,7 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 
 /**
- * A tela /admin/configuracoes-do-kit num navegador de verdade.
+ * A tela /admin/configuracoes-da-aplicacao num navegador de verdade.
  *
  * CT-B01 e CT-B02 de
  * `wikis/specs/feat/settings-do-kit/settings-do-kit/05-casos-de-teste-browser.md`.
@@ -41,7 +41,7 @@ beforeEach(function (): void {
      * este arquivo isolado eles cairiam dentro do teto de 45 s do Playwright,
      * falhando por um motivo que não é o do cenário.
      */
-    $this->get('/admin/configuracoes-do-kit');
+    $this->get('/admin/configuracoes-da-aplicacao');
 });
 
 /**
@@ -74,7 +74,7 @@ beforeEach(function (): void {
  * cliente. Sem `wait()`: o plugin reexecuta cada asserção até o teto de 45 s.
  */
 it('troca os campos visiveis ao acionar outra aba, com o seletor de cor montado', function (): void {
-    visit('/admin/configuracoes-do-kit')
+    visit('/admin/configuracoes-da-aplicacao')
         // Primeira aba ativa: o campo dela está visível, o da outra não.
         ->assertVisible('#form\.nome_da_aplicacao')
         ->assertMissing('#form\.paginacao_padrao')
@@ -98,7 +98,7 @@ it('troca os campos visiveis ao acionar outra aba, com o seletor de cor montado'
  * que prova que o usuário chegou até ele.
  */
 it('revela o erro de validacao na aba do campo invalido', function (): void {
-    visit('/admin/configuracoes-do-kit')
+    visit('/admin/configuracoes-da-aplicacao')
         ->fill('#form\.nome_da_aplicacao', '')
         ->click('Tabelas')
         ->press('Salvar')
