@@ -3,7 +3,7 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.32.2] - 2026-09-07
 
 ### Adicionado
 - **O `kit:update` passa a entregar o `.env.example`.** Ele é arquivo de **sugestão**, não
