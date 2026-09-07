@@ -37,6 +37,15 @@ use UnitEnum;
  * propriedades estáticas: propriedade estática é avaliada antes da config
  * existir.
  *
+ * O rótulo sai **como foi configurado**, sem `mb_strtolower()`: o kit desliga o
+ * Title Case do Filament para todos os Resources
+ * (`ConfiguraFilamentGlobal::titleCaseModelLabel()`), e sem ele
+ * `ListRecords::getTitle()` e `Resource::getBreadcrumb()` exibem exatamente o
+ * que estes métodos devolvem. O minúsculo daqui era de quando o Title Case
+ * ainda recapitalizava por cima — depois que ele saiu, título e breadcrumb
+ * passaram a mostrar "organizações". Ver
+ * `wikis/specs/feat/entidades-widgets-ordem-e-titulo/`.
+ *
  * Só aparece com o modo multi-tenant ligado — sem tenancy a tabela existe mas
  * não significa nada.
  */
@@ -67,12 +76,12 @@ class TenantResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return mb_strtolower((string) config('kit.tenancy.label', 'Organização'));
+        return (string) config('kit.tenancy.label', 'Organização');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return mb_strtolower((string) config('kit.tenancy.label_plural', 'Organizações'));
+        return (string) config('kit.tenancy.label_plural', 'Organizações');
     }
 
     public static function getNavigationLabel(): string

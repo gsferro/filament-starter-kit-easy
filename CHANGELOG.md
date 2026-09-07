@@ -23,11 +23,24 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   Antes ele aparecia sempre que o registro estava ligado e apontava para `/app/register` sem a
   organização — toda visita terminava em "Convite inválido ou expirado". Vale também com a página
   única desligada: o defeito é anterior a ela.
+- **Título da página e breadcrumb das organizações deixam de aparecer em minúsculas.** O
+  `TenantResource` punha o rótulo configurado em `mb_strtolower()` desde que o modo multi-tenant
+  nasceu; enquanto o Title Case do Filament esteve ligado, ele recapitalizava por cima. Ao
+  desligarmos o Title Case (v0.16, porque `ucwords` capitaliza preposição — "Agentes **De** IA"),
+  toda instalação passou a exibir "organizações" no `<h1>`, na aba do navegador e no breadcrumb
+  das quatro páginas do recurso, enquanto o menu seguia certo. Agora o rótulo sai **como foi
+  configurado** — "Entidades" continua "Entidades", "Unidades de Negócio" continua "Unidades de
+  Negócio". A tela de criação passa a se chamar "Criar Organização", igual aos demais cadastros
+  do kit.
 
 ### Alterado
 - **A página de configurações responde em `/admin/configuracoes-da-aplicacao`**, o nome que ela já
   exibia no menu e no título. O endereço antigo (`/admin/configuracoes-do-kit`) responde 301 para o
   novo, então favoritos continuam funcionando.
+- **Listagem de organizações: a visão geral abre a tela, a tabela vem em seguida e os três widgets
+  de detalhe passam para baixo dela.** Antes os quatro ficavam empilhados acima da tabela, que só
+  aparecia depois de rolar. Nada muda no que os widgets mostram. Wiki:
+  `wikis/specs/feat/entidades-widgets-ordem-e-titulo/`.
 
 ## [0.31.0] - 2026-09-05
 

@@ -463,7 +463,9 @@ página, não sobre o widget.
     Cenário: [CT-12] a listagem de organizações declara os quatro widgets agregados
       Dado um administrador da instalação
       Quando ele abre a listagem de organizações
-      Então os widgets de visão geral, de usuários únicos, de acessos por painel e de atualizações estão entre os widgets de cabeçalho da página
+      Então o widget de visão geral está entre os widgets de cabeçalho da página
+      E os widgets de usuários únicos, de acessos por painel e de atualizações estão entre os widgets de rodapé da página, nesta ordem
+      # *(alterado em 2026-09-06: wiki entidades-widgets-ordem-e-titulo — a visão geral fica no cabeçalho e os outros três no rodapé)*
 
     Cenário: [CT-13] a tela de uma organização declara os dois widgets do registro
       Dado um administrador da instalação e a organização Acme
@@ -596,7 +598,7 @@ comportamental, na página. CT-17 vive em `tests/Kit`; os demais em `tests/Tenan
 | CT-09 | falha e pessoa excluída não contam | R5 | EP | Livewire | `tests/Tenancy/InsightsDasOrganizacoesTest.php` | M19, M21 |
 | CT-10 | borda da janela | R6 | BVA 3-valores | Livewire | `tests/Tenancy/InsightsDasOrganizacoesTest.php` | M23, M24, M25 |
 | CT-11 | ordem e recorte da timeline | R7 | EP + ordenação | Livewire | `tests/Tenancy/InsightsDasOrganizacoesTest.php` | M26, M27 |
-| CT-12 | listagem declara os quatro widgets | R8 | EP | Livewire | `tests/Tenancy/InsightsDasOrganizacoesTest.php` | M28 |
+| CT-12 | listagem declara a visão geral no cabeçalho e os três de detalhe no rodapé *(alterado em 2026-09-06: wiki entidades-widgets-ordem-e-titulo)* | R8 | EP | Livewire | `tests/Tenancy/InsightsDasOrganizacoesTest.php` | M28 |
 | CT-13 | tela do registro declara os dois widgets | R8 | EP | Livewire | `tests/Tenancy/InsightsDasOrganizacoesTest.php` | M28, M29 |
 | CT-14 | matriz de visibilidade | R9 | matriz papel × visibilidade | Livewire | `tests/Tenancy/InsightsDasOrganizacoesTest.php` | M30, M31 |
 | CT-15 | permissão revogada tira da página | R9 | matriz | Livewire | `tests/Tenancy/InsightsDasOrganizacoesTest.php` | M30 |
