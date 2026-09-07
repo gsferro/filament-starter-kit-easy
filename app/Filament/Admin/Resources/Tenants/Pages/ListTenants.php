@@ -38,11 +38,15 @@ class ListTenants extends ListRecords
     }
 
     /**
-     * Os quatro widgets agregados desta tela.
+     * A visão geral fica ACIMA da tabela; os três widgets de detalhe, ABAIXO dela.
+     *
+     * A tabela é o que se opera nesta tela — os números de detalhe se leem depois, então só o
+     * agregado abre a página. O template do Filament é linear (cabeçalho → conteúdo → rodapé),
+     * então a divisão entre este método e `getFooterWidgets()` é a posição na tela.
      *
      * `Page::getWidgetsSchemaComponents()` filtra por `canView()` antes de montar o grid
-     * (`Page.php:427`), então widget cuja fonte não existe some sem deixar buraco — não é preciso
-     * condicionar nada aqui.
+     * (`Page.php:427`) nas DUAS listas, então widget cuja fonte não existe some sem deixar buraco
+     * — não é preciso condicionar nada aqui.
      *
      * Eles vivem em `Resources/Tenants/Widgets/` e NÃO em `app/Filament/Admin/Widgets/`, que é o
      * diretório do `discoverWidgets()`: a descoberta é recursiva e o `Dashboard` renderiza todo
@@ -55,14 +59,18 @@ class ListTenants extends ListRecords
     {
         return [
             OrganizacoesStats::class,
+        ];
+    }
+
+    /**
+     * @return array<int, class-string>
+     */
+    protected function getFooterWidgets(): array
+    {
+        return [
             UsuariosUnicosPorOrganizacao::class,
             AcessosPorPainel::class,
             AtualizacoesDasOrganizacoes::class,
         ];
-    }
-
-    public function getHeaderWidgetsColumns(): int|array
-    {
-        return 2;
     }
 }
