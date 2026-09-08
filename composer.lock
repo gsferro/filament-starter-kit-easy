@@ -4349,16 +4349,16 @@
         },
         {
             "name": "harvirsidhu/filament-cards",
-            "version": "v1.0.9",
+            "version": "v1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/harvirsidhu/filament-cards.git",
-                "reference": "71a3147a012d85cf4e1bc0ff542e6c0135e93ebc"
+                "reference": "119fe443c4862b15d5510e09c9c05a56ef59ab94"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/harvirsidhu/filament-cards/zipball/71a3147a012d85cf4e1bc0ff542e6c0135e93ebc",
-                "reference": "71a3147a012d85cf4e1bc0ff542e6c0135e93ebc",
+                "url": "https://api.github.com/repos/harvirsidhu/filament-cards/zipball/119fe443c4862b15d5510e09c9c05a56ef59ab94",
+                "reference": "119fe443c4862b15d5510e09c9c05a56ef59ab94",
                 "shasum": ""
             },
             "require": {
@@ -4426,7 +4426,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-07-26T16:25:00+00:00"
+            "time": "2026-09-03T16:52:43+00:00"
         },
         {
             "name": "jeffgreco13/filament-breezy",
@@ -6603,16 +6603,16 @@
         },
         {
             "name": "livewire/livewire",
-            "version": "v4.4.2",
+            "version": "v4.4.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/livewire/livewire.git",
-                "reference": "4a030935e6c255c89a114b00ece66326f78157c0"
+                "reference": "92f1427022714b34024459167aa6a85d4fb4af44"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/livewire/livewire/zipball/4a030935e6c255c89a114b00ece66326f78157c0",
-                "reference": "4a030935e6c255c89a114b00ece66326f78157c0",
+                "url": "https://api.github.com/repos/livewire/livewire/zipball/92f1427022714b34024459167aa6a85d4fb4af44",
+                "reference": "92f1427022714b34024459167aa6a85d4fb4af44",
                 "shasum": ""
             },
             "require": {
@@ -6667,7 +6667,7 @@
             "description": "A front-end framework for Laravel.",
             "support": {
                 "issues": "https://github.com/livewire/livewire/issues",
-                "source": "https://github.com/livewire/livewire/tree/v4.4.2"
+                "source": "https://github.com/livewire/livewire/tree/v4.4.3"
             },
             "funding": [
                 {
@@ -6675,7 +6675,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-08-24T15:02:06+00:00"
+            "time": "2026-08-31T15:40:58+00:00"
         },
         {
             "name": "maennchen/zipstream-php",
@@ -15668,16 +15668,16 @@
         },
         {
             "name": "ueberdosis/tiptap-php",
-            "version": "2.1.2",
+            "version": "2.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ueberdosis/tiptap-php.git",
-                "reference": "0561e2146edbcdc622b5d4008d0ee02582f8642b"
+                "reference": "5a2e8155c5b09c9ad4efd480550270a6924865b9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ueberdosis/tiptap-php/zipball/0561e2146edbcdc622b5d4008d0ee02582f8642b",
-                "reference": "0561e2146edbcdc622b5d4008d0ee02582f8642b",
+                "url": "https://api.github.com/repos/ueberdosis/tiptap-php/zipball/5a2e8155c5b09c9ad4efd480550270a6924865b9",
+                "reference": "5a2e8155c5b09c9ad4efd480550270a6924865b9",
                 "shasum": ""
             },
             "require": {
@@ -15717,7 +15717,7 @@
             ],
             "support": {
                 "issues": "https://github.com/ueberdosis/tiptap-php/issues",
-                "source": "https://github.com/ueberdosis/tiptap-php/tree/2.1.2"
+                "source": "https://github.com/ueberdosis/tiptap-php/tree/2.2.0"
             },
             "funding": [
                 {
@@ -15733,7 +15733,7 @@
                     "type": "open_collective"
                 }
             ],
-            "time": "2026-08-11T08:47:45+00:00"
+            "time": "2026-08-31T07:00:09+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
