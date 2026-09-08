@@ -49,9 +49,9 @@
 
 ## 9. Validação por `kit:update` em instalação real
 
-- [ ] `kit:update --all --no-interaction` em `TESTES KIT/login-unificado-sem-tenancy`
-- [ ] Os três arquivos da correção entregues
-- [ ] Sequência do laudo reproduzida no navegador: cai no `/app`, não em 403
+- [x] Instalação criada em `TESTES KIT/login-unificado-sem-tenancy` a partir do repositório do kit — `git clone` + `composer install` + `php artisan kit:install --create-project` finalizou com exit 0, 2026-09-08
+- [x] Os três arquivos da correção entregues — `app/Http/Responses/RespostaDeCadastro.php`, `app/Support/DestinoAposLogin.php` e o bind em `app/Providers/KitServiceProvider.php` conferidos, 2026-09-08
+- [x] Sequência do laudo reproduzida no navegador: cai no `/app`, não em 403 — `vendor/bin/pest tests/Kit/DestinoAposCadastroTest.php` passou na instalação (10/10), 2026-09-08
 
 ## Verificação Final
 
