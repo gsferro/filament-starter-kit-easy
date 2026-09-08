@@ -6,6 +6,7 @@ use App\Filament\Pages\Auth\CadastroUnificado;
 use App\Filament\Pages\Auth\RegistroPorConvite;
 use App\Http\Responses\RespostaDeCadastro;
 use App\Models\User;
+use App\Support\ConfiguracaoDoLogin;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Auth\Http\Responses\Contracts\RegistrationResponse;
@@ -86,6 +87,26 @@ it('com a chave desligada descarta a pretendida inacessivel', function (): void 
     expect($redirect->getTargetUrl())->toBe(url('/app'));
 });
 
+/**
+ * Registra sem token (modo aberto), escolhendo o componente correto para a chave.
+ */
+function cadastrarAberto(string $email = 'novo@example.com', string $nome = 'Fulano')
+{
+    $componente = ConfiguracaoDoLogin::unificado() ? CadastroUnificado::class : RegistroPorConvite::class;
+
+    Filament::auth()->logout();
+    Filament::setCurrentPanel('app');
+
+    return Livewire::test($componente)
+        ->fillForm([
+            'name'                 => $nome,
+            'email'                => $email,
+            'password'             => 'segredo-bem-longo-123',
+            'passwordConfirmation' => 'segredo-bem-longo-123',
+        ])
+        ->call('register');
+}
+
 /** CT-72 — a sequência medida no navegador não volta. */
 it('nao entrega 403 depois de visitar admin e se cadastrar', function (): void {
     ligarLoginUnificado();
@@ -99,3 +120,46 @@ it('nao entrega 403 depois de visitar admin e se cadastrar', function (): void {
 
     $this->get('/app')->assertOk();
 });
+
+/** CT-74 — cadastro pendente de aprovação continua encerrando a sessão. */
+it('nao autentica cadastro pendente de aprovacao', function (bool $unificado): void {
+    ligarLoginUnificado($unificado);
+
+    config([
+        'kit.registro.habilitado'       => true,
+        'kit.registro.aprovacao_manual' => true,
+    ]);
+
+    cadastrarAberto('pendente@example.com')
+        ->assertRedirect(Filament::getPanel('app')->getLoginUrl());
+
+    $novo = User::where('email', 'pendente@example.com')->firstOrFail();
+
+    expect(Filament::auth()->check())->toBeFalse()
+        ->and($novo->aprovacao_pendente)->toBeTrue()
+        ->and($novo->roles)->toHaveCount(0);
+})->with([
+    'chave ligada'    => [true],
+    'chave desligada' => [false],
+]);
+
+/** CT-75 — a pretendida é consumida nos dois ramos. */
+it('consome a url pretendida depois do cadastro', function (bool $unificado, string $papel, string $destino): void {
+    ligarLoginUnificado($unificado);
+
+    session()->put('url.intended', url('/admin/users'));
+
+    $convite = ofertaPara('novo@example.com', null, $papel);
+
+    cadastrarPorConvite(
+        $unificado ? CadastroUnificado::class : RegistroPorConvite::class,
+        $convite->enviar(),
+    )->assertRedirect($destino);
+
+    expect(session()->has('url.intended'))->toBeFalse();
+})->with([
+    'ligada panel_user' => [true, 'panel_user', '/app'],
+    'ligada admin'      => [true, 'admin', '/admin/users'],
+    'desligada panel'   => [false, 'panel_user', '/app'],
+    'desligada admin'   => [false, 'admin', '/admin/users'],
+]);
