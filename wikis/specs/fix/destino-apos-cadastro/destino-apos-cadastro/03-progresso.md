@@ -42,7 +42,7 @@
 
 ## 8. Quality gate, PR, merge, tag
 
-- [ ] `feature-quality-gate` → `06-relatorio-qa.md`
+- [x] `feature-quality-gate` → `06-relatorio-qa.md` — APROVADO, 2026-09-08
 - [ ] PR aberto com link da wiki e veredito
 - [ ] CI verde nos quatro jobs
 - [ ] Merge, tag, release marcada Latest, site conferido
@@ -82,7 +82,7 @@
 
 <!-- Preenchido no step 8. Enquanto vazio, a feature NÃO está concluída e o PR não abre. -->
 
-- **Ciclo**: · **Veredito**: · **Data**:
+- **Ciclo**: 1 · **Veredito**: APROVADO · **Data**: 2026-09-08
 - **Relatório**: `06-relatorio-qa.md`
 
 ## Auditoria Pré-Implementação
