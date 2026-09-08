@@ -3,6 +3,18 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.32.6] - 2026-09-08
+
+### Corrigido
+- **A guarda de release sai da suíte e vira job de CI no push da tag.** O caso
+  adicionado ao `KitUpdateTest` na v0.32.5 comparava o marcador de `config/kit.php`
+  com o topo do CHANGELOG — e falso-falhava nos dois lados: na janela pré-release
+  da árvore do kit (a seção do CHANGELOG entra antes do bump, pelo fluxo normal) e
+  em clones `--keep-vcs` atualizados (o `kit:update` move o marcador, mas o
+  CHANGELOG não é entregue e fica congelado na versão da instalação). Teste de
+  suíte não alcança a tag; o workflow `release.yml` roda no push de `v*` e exige
+  tag = marcador = seção própria no CHANGELOG.
+
 ## [0.32.5] - 2026-09-08
 
 ### Corrigido
@@ -10,12 +22,6 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   `config/kit.php` ainda em `0.32.3`: toda instalação dela se reportava uma versão
   atrás, e o `kit:update` seguinte re-ofereceria como novidade um diff já aplicado.
   Nenhum arquivo de código faltou na tag — só o marcador.
-
-### Adicionado
-- **Guarda de release na suíte do kit.** `KitUpdateTest` passa a exigir que a versão
-  em `config/kit.php` seja a mesma da seção mais nova do `CHANGELOG.md` — o par que
-  o commit de release deve manter junto. O caso é `skip` fora da árvore do kit, onde
-  o CHANGELOG não existe (export-ignore).
 
 ## [0.32.4] - 2026-09-08
 

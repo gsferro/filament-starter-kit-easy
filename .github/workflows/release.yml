@@ -1,0 +1,28 @@
+name: Release
+
+# Roda só no push de tag: é o único momento em que dá para comparar a versão
+# publicada com o que a árvore declara. A v0.32.4 saiu com `config/kit.php`
+# em 0.32.3 — toda instalação dela se reportou uma versão atrás e o
+# `kit:update` seguinte re-ofereceria um diff já aplicado. Teste de suíte não
+# alcança a tag (git não é alcance de teste) e qualquer comparação marcador x
+# CHANGELOG falso-falha na janela pré-release e em clones — aqui não.
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  marcador:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: A tag, o marcador e o CHANGELOG têm de contar a mesma versão
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          marcada=$(grep -oP "'version'\s*=>\s*'\K[^']+" config/kit.php)
+
+          echo "tag: $tag — marcador em config/kit.php: $marcada"
+          [ "$marcada" = "$tag" ] || { echo "::error::a tag $tag saiu sem o bump em config/kit.php"; exit 1; }
+
+          grep -q "^## \[$tag\]" CHANGELOG.md || { echo "::error::a tag $tag saiu sem seção no CHANGELOG"; exit 1; }

@@ -466,24 +466,3 @@ it('documenta a lista do destino e o contorno para instalações anteriores, nos
     'pt' => ['docs/pt/comecar/atualizando-o-projeto.md', 'versão destino'],
     'en' => ['docs/en/comecar/atualizando-o-projeto.md', 'target version'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o site do kit: o diretório do site é export-ignore e não existe no projeto instalado.')->group('kit');
-
-/**
- * A versão em `config/kit.php` é a origem que o `kit:update` lê, e o topo do
- * CHANGELOG é o que a release diz entregar — os dois andam juntos no commit de
- * release. A v0.32.4 saiu com o marcador em `0.32.3`: toda instalação dela se
- * reportou uma versão atrás, e o `kit:update` seguinte re-ofereceria um diff já
- * aplicado. Este caso não vê a tag (git não é alcance de teste), mas trava o
- * par no estado da árvore: escrita a seção da versão nova no CHANGELOG, o bump
- * não pode ficar para trás sem reprovar o CI. CHANGELOG é export-ignore — fora
- * da árvore do kit não há seção a comparar.
- */
-it('marca em config/kit.php a mesma versão da seção mais nova do CHANGELOG', function (): void {
-    $changelog = (string) file_get_contents(base_path('CHANGELOG.md'));
-
-    preg_match('/^## \[(\d+\.\d+\.\d+)\]/m', $changelog, $secao);
-
-    expect($secao[1] ?? null)->toBe(
-        config('kit.version'),
-        'config/kit.php e o topo do CHANGELOG divergem — o commit de release esqueceu um dos dois.',
-    );
-})->skip(fn (): bool => ! naArvoreDoKit(), 'O CHANGELOG é export-ignore: fora da árvore do kit não há seção de release a comparar.')->group('kit');
