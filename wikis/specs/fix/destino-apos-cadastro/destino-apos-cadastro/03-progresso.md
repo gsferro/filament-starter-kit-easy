@@ -45,7 +45,8 @@
 - [x] `feature-quality-gate` → `06-relatorio-qa.md` — APROVADO, 2026-09-08
 - [ ] PR aberto com link da wiki e veredito
 - [ ] CI verde nos quatro jobs
-- [ ] Merge, tag, release marcada Latest, site conferido
+- [x] Merge na `main` e tag `v0.32.3` criadas localmente — `git checkout main && git merge --no-ff fix/destino-apos-cadastro && git tag -a v0.32.3`, 2026-09-08
+- [ ] Release marcada Latest e site conferido
 
 ## 9. Validação por `kit:update` em instalação real
 
