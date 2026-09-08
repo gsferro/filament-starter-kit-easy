@@ -55,6 +55,14 @@ Quem administra ajusta os papéis depois, na tela de usuários, que é onde essa
 A atribuição é feita em um lugar só (`App\Support\RegistroAberto::papel()`), e vale também para
 quem chamar o registro de fora da tela — um comando, um job, um seeder.
 
+### Para onde a conta nova vai depois de se cadastrar
+
+Para um painel que ela acessa — nunca para um que ela não acessa. Isso importa porque o endereço
+que a pessoa tentou abrir antes de entrar fica guardado na sessão: quem abriu `/admin`, foi
+mandado ao login e só depois clicou no link do convite terminava o cadastro com um **403**. O kit
+verifica esse endereço guardado contra os painéis da conta e o descarta quando ele não serve. É a
+mesma verificação do login, e vale com o login unificado ligado ou desligado.
+
 ## Aprovação manual: pendente não entra em painel nenhum
 
 Com `KIT_REGISTRO_APROVACAO_MANUAL=true`, o cadastro nasce **pendente**:
