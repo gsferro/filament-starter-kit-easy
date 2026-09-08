@@ -446,7 +446,7 @@ it('[CT-13] a landing encolhe sem se esvaziar', function (string $idioma, int $l
 ]);
 
 /**
- * CT-14 — o README leva ao site, e todo link resolve para um arquivo. Com PISO por grupo:
+ * CT-14 — o README leva ao site, e todo link que ele carrega resolve para um arquivo. Com PISO por grupo:
  * "todo link resolve" sobre zero links é verdadeiro, e um README sem link nenhum deixaria 44
  * páginas sem ninguém chegar a elas. Nenhum build pega link morto neste gerador (M29).
  */
@@ -748,4 +748,34 @@ it('[CT-21] a documentação não carrega vídeo, cópia de mídia, ponteiro de 
         ->and($lfs)->toBe([], 'ponteiro de LFS')
         ->and($video)->toBe([], 'vídeo ou embed')
         ->and($relativas)->toBe([], 'imagem com caminho relativo');
+});
+
+it('mantem os numeros objetivos dos readmes sincronizados com a arvore', function (): void {
+    $composer = json_decode((string) file_get_contents(base_path('composer.json')), true);
+    $pacotes  = static fn (string $grupo): int => count(array_filter(
+        array_keys($composer[$grupo]),
+        static fn (int|string $nome): bool => is_string($nome) && str_contains($nome, '/'),
+    ));
+    $contar = static fn (string $diretorio, string $padrao): int => Finder::create()
+        ->files()
+        ->in(base_path($diretorio))
+        ->name($padrao)
+        ->count();
+    $comandos       = substr_count((string) shell_exec('php artisan list --raw'), "\nkit:");
+    $especificacoes = Finder::create()->files()->in(base_path('wikis/specs'))->name('00-requisito.md')->count();
+    $rules          = Finder::create()->files()->in(base_path('.ai/rules'))->depth('== 0')->name('*.md')->notName('index.md')->count();
+
+    foreach (['README.md', 'README.en.md'] as $arquivo) {
+        $readme = (string) file_get_contents(base_path($arquivo));
+
+        expect($readme)
+            ->toContain('| '.($arquivo === 'README.md' ? 'Pacotes de produção' : 'Production packages')." | **{$pacotes('require')}** |")
+            ->toContain('| '.($arquivo === 'README.md' ? 'Pacotes de desenvolvimento' : 'Development packages')." | **{$pacotes('require-dev')}** |")
+            ->toContain("| Migrations | **{$contar('database/migrations', '*.php')}** |")
+            ->toContain("| Policies | **{$contar('app/Policies', '*.php')}** |")
+            ->toContain('| '.($arquivo === 'README.md' ? 'Comandos `kit:*`' : '`kit:*` commands')." | **{$comandos}** |")
+            ->toContain("**{$especificacoes}**")
+            ->toContain('| '.($arquivo === 'README.md' ? 'Features especificadas (`wikis/specs/`)' : 'Specified features (`wikis/specs/`)')." | **{$especificacoes}** |")
+            ->toContain('| '.($arquivo === 'README.md' ? 'Project rules para agentes de IA (`.ai/rules/`, sem o índice)' : 'Project rules for AI agents (`.ai/rules/`, excluding the index)')." | **{$rules}** |");
+    }
 });

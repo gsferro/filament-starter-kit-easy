@@ -151,25 +151,25 @@ The other two already come complete.
 
 | Foundation | |
 |---|---:|
-| Production packages | **55** |
+| Production packages | **56** |
 | Development packages | **19** |
-| Migrations | **54** |
-| Policies | **14** |
-| `kit:*` commands | **7** |
+| Migrations | **59** |
+| Policies | **16** |
+| `kit:*` commands | **8** |
 
 | Quality | |
 |---|---:|
-| Test cases (`Kit` suite, measured on 2026-08-26) | **over 1,200**, with over 3,500 assertions |
+| Test cases (`Kit` + `Tenancy`, measured on 2026-09-08) | **2,226**, with **7,428 assertions** |
 | Screens swept in a real browser | **55** |
-| Test files | **84** in `Kit` + `Tenancy` (105 in total) |
+| Test files | **126** in `Kit` + `Tenancy` (**149** in total) |
 | PHPStan | **level 7**, zero errors |
 | FilaCheck | **17** rules, all passing |
 
 | Documentation | |
 |---|---:|
 | Reference documents (`wikis/`) | **9** |
-| Specified features (`wikis/specs/`) | **28** |
-| Project rules for AI agents (`.ai/rules/`) | **14** |
+| Specified features (`wikis/specs/`) | **55** |
+| Project rules for AI agents (`.ai/rules/`, excluding the index) | **18** |
 
 > The details moved to the site: **[Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/)** and **[Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/)**.
 
@@ -228,7 +228,7 @@ navigation: **[https://gsferro.github.io/filament-starter-kit-easy/en/](https://
 | [Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/) | advanced install, database, commands, customisation, and how to update a project born from the kit |
 | [Authentication](https://gsferro.github.io/filament-starter-kit-easy/en/autenticacao/) | invitations, open registration, social login, anti-robot protection, user states |
 | [Features](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/) | multi-tenancy, attachments and media, CSV import/export, `/infra` trails, kit settings, card hub |
-| [Operations](https://gsferro.github.io/filament-starter-kit-easy/en/operacao/) | AI agents, the 68-feature roadmap, conventions, what to do after creating a Resource |
+| [Operations](https://gsferro.github.io/filament-starter-kit-easy/en/operacao/) | AI agents, the complete feature roadmap, conventions, what to do after creating a Resource |
 | [Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/) | code quality, search and language, the ~70 installed packages |
 
 The Portuguese version lives at **[https://gsferro.github.io/filament-starter-kit-easy/pt/](https://gsferro.github.io/filament-starter-kit-easy/pt/)**.
@@ -250,7 +250,7 @@ The Portuguese version lives at **[https://gsferro.github.io/filament-starter-ki
 If you pick Postgres during installation, the `.env` already comes with the block `docker-compose.yml` reads. If the container is not up at that moment, the kit warns you, **skips the migrations** and prints the command to finish:
 
 ```bash
-docker compose up -d
+docker compose up -d              # pgsql (with pgvector) + redis
 php artisan migrate --seed
 ```
 
@@ -267,7 +267,7 @@ php artisan migrate --seed
 Everything is opt-in per profile. One container per feature:
 
 ```bash
-docker compose up -d                            # pgsql + redis
+docker compose up -d                            # pgsql (with pgvector) + redis
 docker compose up -d mysql redis                # MySQL instead of Postgres
 docker compose --profile ai up -d               # + llama.cpp (chat and embeddings)
 docker compose --profile mail up -d             # + mailpit (1025 / 8025)

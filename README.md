@@ -151,25 +151,25 @@ dois já vêm completos.
 
 | Fundação | |
 |---|---:|
-| Pacotes de produção | **55** |
+| Pacotes de produção | **56** |
 | Pacotes de desenvolvimento | **19** |
-| Migrations | **54** |
-| Policies | **14** |
-| Comandos `kit:*` | **7** |
+| Migrations | **59** |
+| Policies | **16** |
+| Comandos `kit:*` | **8** |
 
 | Qualidade | |
 |---|---:|
-| Casos de teste (suíte `Kit`, medida em 2026-08-26) | **mais de 1.200**, com mais de 3.500 asserções |
+| Casos de teste (`Kit` + `Tenancy`, medidos em 2026-09-08) | **2.226**, com **7.428 asserções** |
 | Telas varridas em navegador real | **55** |
-| Arquivos de teste | **84** em `Kit` + `Tenancy` (105 no total) |
+| Arquivos de teste | **126** em `Kit` + `Tenancy` (**149** no total) |
 | PHPStan | **level 7**, zero erros |
 | FilaCheck | **17** regras, todas passando |
 
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **9** |
-| Features especificadas (`wikis/specs/`) | **28** |
-| Project rules para agentes de IA (`.ai/rules/`) | **14** |
+| Features especificadas (`wikis/specs/`) | **55** |
+| Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **18** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
 
@@ -228,7 +228,7 @@ navegação: **[https://gsferro.github.io/filament-starter-kit-easy/pt/](https:/
 | [Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/) | instalação avançada, banco, comandos, personalização, e como atualizar um projeto que já nasceu do kit |
 | [Autenticação](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/) | convites, registro aberto, login social, proteção anti-robô, estados do usuário |
 | [Recursos](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/) | multi-tenancy, anexos e mídia, import/export CSV, trilhas do `/infra`, configurações do kit, hub de cartões |
-| [Operação](https://gsferro.github.io/filament-starter-kit-easy/pt/operacao/) | agentes de IA, roteiro das 68 features, convenções, o que fazer depois de criar um Resource |
+| [Operação](https://gsferro.github.io/filament-starter-kit-easy/pt/operacao/) | agentes de IA, roteiro completo de features, convenções, o que fazer depois de criar um Resource |
 | [Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/) | qualidade de código, busca e idioma, os ~70 pacotes instalados |
 
 A versão em inglês fica em **[https://gsferro.github.io/filament-starter-kit-easy/en/](https://gsferro.github.io/filament-starter-kit-easy/en/)**.
