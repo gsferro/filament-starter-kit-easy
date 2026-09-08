@@ -9,6 +9,7 @@ use App\Filament\Pages\Auth\EscolhaDePainel;
 use App\Filament\Pages\Auth\TelaLoginUnificada;
 use App\Filament\Pages\Auth\TelaRecuperarSenhaUnificada;
 use App\Http\Controllers\Auth\EntrarNoPainelController;
+use App\Http\Responses\RespostaDeCadastro;
 use App\Http\Responses\RespostaDeLogin;
 use App\Models\Tenant;
 use App\Models\User;
@@ -24,6 +25,7 @@ use Filament\Actions\Exports\Models\Export;
 use Filament\Actions\Imports\Events\ImportCompleted;
 use Filament\Actions\Imports\Events\ImportStarted;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
+use Filament\Auth\Http\Responses\Contracts\RegistrationResponse;
 use Filament\Facades\Filament;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
@@ -523,10 +525,17 @@ class KitServiceProvider extends ServiceProvider
      *
      * A resposta de login é de TODO login por senha nos três painéis; com a chave desligada ela
      * é idêntica à do Filament.
+     *
+     * A resposta de CADASTRO também é de todos os painéis e dos dois modos (convite e registro
+     * aberto), mas com a chave desligada ela **não** é idêntica à do Filament: a URL pretendida
+     * que aponta para painel inacessível é descartada nas duas configurações, porque o 403 depois
+     * de um cadastro que funcionou foi medido também com a chave desligada — é anterior a esta
+     * feature, não regressão dela. Ver `wikis/specs/fix/destino-apos-cadastro/` (ADR-01).
      */
     protected function configureLoginUnificado(): void
     {
         $this->app->bind(LoginResponse::class, RespostaDeLogin::class);
+        $this->app->bind(RegistrationResponse::class, RespostaDeCadastro::class);
 
         Route::middleware(['web', 'panel:app'])->group(function (): void {
             Route::get('/login', TelaLoginUnificada::class)->name('login');
