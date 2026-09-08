@@ -3,6 +3,27 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.32.5] - 2026-09-08
+
+### Corrigido
+- **O marcador de versão volta a acompanhar a release.** A v0.32.4 saiu com
+  `config/kit.php` ainda em `0.32.3`: toda instalação dela se reportava uma versão
+  atrás, e o `kit:update` seguinte re-ofereceria como novidade um diff já aplicado.
+  Nenhum arquivo de código faltou na tag — só o marcador.
+
+### Adicionado
+- **Guarda de release na suíte do kit.** `KitUpdateTest` passa a exigir que a versão
+  em `config/kit.php` seja a mesma da seção mais nova do `CHANGELOG.md` — o par que
+  o commit de release deve manter junto. O caso é `skip` fora da árvore do kit, onde
+  o CHANGELOG não existe (export-ignore).
+
+## [0.32.4] - 2026-09-08
+
+### Corrigido
+- **O botão "Voltar ao topo" deixa de sair sem CSS nos painéis** e o kit passa a
+  acompanhar o markup do `filament-cards` 1.1.0, com os testes `VoltarAoTopoCssTest`
+  e `CardsCssTest` cobrindo as duas folhas.
+
 ## [0.32.3] - 2026-09-08
 
 ### Corrigido
