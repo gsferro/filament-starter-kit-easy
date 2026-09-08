@@ -84,10 +84,10 @@ class BoasVindas extends CardsPage
     protected static ?string $title = 'Bem-vindo ao Starter Kit Easy';
 
     /**
-     * Três, e não é gosto: `resources/css/filament/cards.css` cobre `grid-cols-1`, `md:grid-cols-2`,
-     * `lg:grid-cols-3` e `xl:grid-cols-4`, e o cabeçalho dele declara que `$columns >= 5` monta o
-     * nome da classe por interpolação e NUNCA teria CSS. Subir daqui produz uma grade sem estilo,
-     * com o HTML correto e todo teste verde. CT-05 guarda isto.
+     * Três colunas no `lg` — escolha de layout, não restrição: desde o `filament-cards` 1.1.0 a
+     * grade é o macro `grid()` do Filament (`fi-grid` + `--cols-*`, compilados na CSS dele), então
+     * qualquer contagem de 1 a 12 renderiza — inclusive `>= 5`, que chega ao passo `2xl`. CT-05
+     * assere a custom property `--cols-lg` no markup.
      *
      * @var int|string|array<string, int|string>
      */

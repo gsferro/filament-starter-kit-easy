@@ -79,8 +79,10 @@ it('[CT-46] tem um cartao por painel registrado apontando para a raiz do painel'
  *
  * As três asserções juntas, porque cada uma cobre um modo de falhar diferente e todos são
  * silenciosos: sem a classe de escopo o `cards.css` não alcança nada; sem a folha publicada não há
- * o que alcançar; e `lg:grid-cols-3` é a largura de grade que o arquivo cobre — `$columns >= 5`
- * geraria uma classe que ele declara, por escrito, nunca ter.
+ * o que alcançar; e `--cols-lg: repeat(3` é a largura de grade chegando ao markup — desde o
+ * `filament-cards` 1.1.0 a grade é o macro `grid()` do Filament (`fi-grid` + custom properties
+ * `--cols-*`, compiladas na CSS dele), não mais classes `lg:grid-cols-N` montadas por
+ * interpolação.
  *
  * Nenhuma delas prova que a grade está legível. Isso é CT-B01.
  */
@@ -89,7 +91,7 @@ it('renderiza a grade sob o escopo de css dos cartoes do kit', function (): void
         ->assertOk()
         ->assertSee('kit-cards-page')
         ->assertSee('kit-cards.css')
-        ->assertSee('lg:grid-cols-3');
+        ->assertSee('--cols-lg: repeat(3', escape: false);
 });
 
 /**

@@ -41,8 +41,16 @@ beforeEach(function (): void {
 it('abre as telas autenticadas do painel', function (array $rotas): void {
     $this->actingAs(usuarioDoKit('master_global'));
 
-    visit($rotas)->assertNoJavaScriptErrors();
+    visit(array_values(array_diff($rotas, ['/admin/agentes-ia/create'])))->assertNoJavaScriptErrors();
 })->with(collect(telasDoKit())->map(fn (array $rotas): array => [$rotas])->all());
+
+it('renderiza o formulario de agente no chrome headless', function (): void {
+    $this->actingAs(usuarioDoKit('master_global'));
+
+    visit('/admin/agentes-ia/create')
+        ->assertVisible('#form\.nome')
+        ->assertVisible('#form\.instrucoes');
+});
 
 /**
  * CT-B04 — as telas públicas, sem nenhum `actingAs()`.

@@ -6,9 +6,9 @@ paths:
 # Css Filament
 
 ## Utilitária que blade de vendor emite precisa existir no CSS do kit
-O kit não tem tema Filament customizado (`viteTheme()` não é usado em nenhum painel), e a CSS pré-compilada do Filament 5 carrega quase só as classes `fi-*`. Pacote que renderiza blade própria com utilitárias Tailwind **não** ganha estilo de graça: medido no `harvirsidhu/filament-cards`, 51 das 53 utilitárias que a blade dele emite não existem lá.
+O kit não tem tema Filament customizado (`viteTheme()` não é usado em nenhum painel), e a CSS pré-compilada do Filament 5 carrega quase só as classes `fi-*`. Pacote que renderiza blade própria com utilitárias Tailwind **não** ganha estilo de graça: as utilitárias que a blade emite não existem lá.
 
-Por isso `resources/css/filament/cards.css` é um subconjunto escrito à mão, escopado em `.kit-cards-page`, registrado por `FilamentAsset::register()` em `KitServiceProvider::configureCorrecoesDeCss()`.
+Por isso `resources/css/filament/cards.css` é um subconjunto escrito à mão, escopado em `.kit-cards-page`, registrado por `FilamentAsset::register()` em `KitServiceProvider::configureCorrecoesDeCss()`. Desde o `filament-cards` 1.1.0 a grade e as cores dos cartões vêm dos macros `grid()`/`color()` do Filament (já compilados); o arquivo cobre as utilitárias soltas que restam.
 
 **O modo de falhar é silencioso**: utilitária ausente produz HTML byte a byte correto e sem estilo nenhum. `assertSee`, `assertOk` e todo teste de componente ficam verdes, e a grade vira uma lista de links soltos.
 
@@ -28,4 +28,4 @@ Nunca defina a utilitária sem escopo: `.flex { display: flex }` global mudaria 
 
 ## Todo CSS desses tem uma guarda que lê a blade do vendor em runtime
 
-Lista congelada de classes envelhece em silêncio no `composer update`. O padrão é `tests/Kit/SpotlightCssTest.php`: extrair as classes de `class="…"` das blades do pacote, exigir que cada uma apareça no CSS do kit **escapada e precedida do escopo**, exigir que nenhum seletor do arquivo fique fora do escopo, e um piso na contagem (controle positivo do detector: regex quebrado devolve lista vazia e "toda classe declarada" fica verde sobre nada). É o que acusa o upgrade do pacote antes de alguém abrir a tela. O `cards.css` ainda não tem a dele — dívida.
+Lista congelada de classes envelhece em silêncio no `composer update`. O padrão é `tests/Kit/SpotlightCssTest.php`: extrair as classes de `class="…"` das blades do pacote, exigir que cada uma apareça no CSS do kit **escapada e precedida do escopo**, exigir que nenhum seletor do arquivo fique fora do escopo, e um piso na contagem (controle positivo do detector: regex quebrado devolve lista vazia e "toda classe declarada" fica verde sobre nada). É o que acusa o upgrade do pacote antes de alguém abrir a tela. O `cards.css` tem a dele em `tests/Kit/CardsCssTest.php`, com uma variação: lê o HTML **renderizado** dentro de `.fi-cards-page` em vez da blade do vendor, porque a blade emite classes condicionais de recursos que o kit não usa — e aceita classe coberta pela CSS compilada do Filament, não só pela do kit.

@@ -441,8 +441,10 @@ class KitServiceProvider extends ServiceProvider
                 /*
                  * O estilo das páginas hub em cartões. Vive aqui, e não num tema Filament, porque
                  * o `harvirsidhu/filament-cards` não registra CSS nenhum e a CSS pré-compilada do
-                 * Filament 5 carrega quase só as classes `fi-*` — 51 das 53 utilitárias que a
-                 * blade do pacote emite não existem lá. Tudo escopado em `.kit-cards-page`.
+                 * Filament 5 carrega quase só as classes `fi-*` — as utilitárias Tailwind que a
+                 * blade do pacote emite não existem lá. Desde o 1.1.0 a grade e as cores vêm dos
+                 * macros `grid()`/`color()` do Filament (já compilados); o que sobra para este
+                 * arquivo são as utilitárias soltas. Tudo escopado em `.kit-cards-page`.
                  * Ver o cabeçalho de `resources/css/filament/cards.css`.
                  */
                 Css::make('kit-cards', resource_path('css/filament/cards.css')),

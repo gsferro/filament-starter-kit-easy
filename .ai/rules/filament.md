@@ -145,11 +145,11 @@ A rota fica registrada e responde 403 (não 404). Tirá-la do ar exigiria recort
 Uma distinção que esta rule não fazia e a v0.20.0 cobrou: `canAccess()` e os `can*()` decidem **acesso à tela, navegação e busca global**. Eles NÃO autorizam ação — `DeleteAction`, `DeleteBulkAction`, `EditAction` resolvem por `get*AuthorizationResponse()` (`Resources/Pages/Page.php:312-329`), e o framework nunca chama `canDelete()`. Negar ação é sobrescrever `getDeleteAuthorizationResponse()`; sobrescrever `canDelete()` não nega nada. E em Resource, `canAccess()` sobrescrito **sem `&& parent::canAccess()`** desliga a policy para o índice (`CanAuthorizeResourceAccess:19` chama `canAccess()`) — o `AiRunResource` fazia isso.
 
 ## CardItem do hub sempre por DescobreCardsDoPainel, nunca à mão
-`CardItem` **não verifica autorização**. `vendor/harvirsidhu/filament-cards/src/CardItem.php:22` não tem `canAccess()` — a única guarda da classe é `Concerns/CanBeHidden.php:13,20`, que avalia só `visible`/`hidden`. A verificação de acesso do pacote vive apenas dentro de `CardsPage::discoverClusterCards()` (`src/Filament/Pages/CardsPage.php:89,94`) e da descoberta de páginas de Resource (`:151`), que exigem Cluster ou página de Resource.
+Desde o `filament-cards` 1.1.0 o `CardItem::isVisible()` chama `canAccess()` do destino (`src/CardItem.php:132-161`) — cartão montado a partir de CLASSE já nasce filtrado, e `->checkAccess(false)` desliga isso. Antes do 1.1.0 o cartão aparecia para todo mundo e só devolvia 403 no clique.
 
-Consequência de escrever um cartão à mão: ele aparece para **todo mundo** e só devolve 403 no clique. Vaza a existência da tela e oferece um caminho que falha depois.
+O concern continua obrigatório pelo que o pacote não faz: filtrar por `shouldRegisterNavigation()` (destino deliberadamente fora da barra lateral não vira cartão), agrupar pela ordem declarada dos grupos de navegação e ler os metadados (rótulo, descrição, badge, sort) da própria classe.
 
-Regra: todo cartão de hub sai de `app/Filament/Concerns/DescobreCardsDoPainel.php`, que filtra pelo `canAccess()` de cada destino. `CardItem::make()` direto num `->cards()` é o defeito, não o atalho.
+Regra: todo cartão de hub sai de `app/Filament/Concerns/DescobreCardsDoPainel.php`. `CardItem::make()` direto num `->cards()` é o defeito, não o atalho.
 
 ## Page, Widget e Action novos nascem com a permissão consultada
 Os defaults do Filament são permissivos POR DESIGN, e o vendor diz isso em comentário: `Pages/Concerns/CanAuthorizeAccess.php:17-23` retorna `true` ("Custom pages default to allowing access for all authenticated panel users"), `widgets/src/Widget.php:34-37` idem, e `actions/src/Concerns/CanBeAuthorized.php:15-22` nasce `null` = liberada.

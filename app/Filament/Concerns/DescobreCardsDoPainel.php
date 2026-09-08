@@ -18,19 +18,16 @@ use UnitEnum;
  *
  * ## Por que este concern existe, e não `CardItem::make(SeuResource::class)` na página
  *
- * `CardItem` NÃO verifica autorização. O `Concerns/CanBeHidden` do pacote avalia só
- * `visible`/`hidden`, e o `CardsPage::getProcessedGroups()` filtra apenas por `isVisible()`. O
- * `canAccess()` aparece exclusivamente dentro de `discoverClusterCards()` e
- * `discoverResourceCards()` — e nenhum dos dois serve aqui: um exige que a página esteja num
- * Cluster, o outro que ela seja página de um Resource. As nossas são páginas de painel.
+ * Desde o `filament-cards` 1.1.0 o `CardItem::isVisible()` chama `canAccess()` do destino —
+ * cartão montado a partir de CLASSE já nasce filtrado. O filtro daqui continua por três motivos
+ * que o pacote não cobre: `shouldRegisterNavigation()` (destino deliberadamente fora da barra
+ * lateral, como `ConvitesRecebidos`, não vira cartão), o agrupamento pela ordem declarada dos
+ * grupos de navegação e os metadados (rótulo, descrição, badge, sort) lidos da própria classe.
+ * O `canAccess()` da lista fica como cinto e suspensório: barato, e idêntico ao que o cartão
+ * refaria no render.
  *
- * Consequência de escrever os cartões à mão: um `CardItem::make(UserResource::class)` aparece
- * para todo mundo e só devolve 403 no clique. Não é escalada de privilégio — a autorização do
- * destino continua íntegra —, mas vaza a existência de telas de administração e oferece um
- * caminho que só falha depois do clique.
- *
- * O segundo motivo é manutenção: lista escrita à mão não acompanha Resource novo, e o hub fica
- * incompleto sem nada acusar. Ver ADR-04 da wiki `hub-de-navegacao-em-cards`.
+ * O motivo de manutenção permanece: lista escrita à mão não acompanha Resource novo, e o hub
+ * fica incompleto sem nada acusar. Ver ADR-04 da wiki `hub-de-navegacao-em-cards`.
  *
  * ponytail: se o pacote ganhar um `discoverPanelCards()` oficial, este concern é substituído por
  * uma chamada e some inteiro.
