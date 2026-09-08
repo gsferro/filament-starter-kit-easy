@@ -1,0 +1,72 @@
+/*
+|--------------------------------------------------------------------------
+| Estilo do botão flutuante "Voltar ao topo"
+|--------------------------------------------------------------------------
+| Registrado por `KitServiceProvider::configureCorrecoesDeCss()` via
+| `FilamentAsset::register()` — o MESMO mecanismo dos plugins, e o mesmo motivo do
+| `kit.css` ao lado: o painel Filament não carrega o Vite da aplicação, então as
+| utilitárias que `resources/views/filament/voltar-ao-topo.blade.php` emite nunca
+| chegariam à tela. A blade guarda os literais para o Tailwind v4 do app, mas o
+| build dele não é servido nos painéis — sem este arquivo o botão sairia sem
+| `fixed`, sem posição e sem cor, um `<button>` cru no fim do `<body>`.
+|
+| ## Escopo
+|
+| A raiz é o próprio elemento estilizado e já carrega `data-voltar-ao-topo` (âncora
+| de teste, ver o cabeçalho da blade) — é ela que escopa tudo, na forma composta
+| (`[data-voltar-ao-topo].fixed`). O ícone é descendente (`[data-voltar-ao-topo] .h-5`).
+| Nenhuma regra fica sem o atributo: um `.fixed` ou `.rounded-full` global mudaria
+| toda blade de vendor que hoje emite a classe sem estilo.
+|
+| As cores saem das variáveis que o Filament emite em runtime (`--primary-*`), nunca
+| de valor literal — é o que faz o botão acompanhar a cor da organização no /app.
+|
+| Depois de mexer aqui: `php artisan filament:assets`.
+|
+| Guarda: `tests/Kit/VoltarAoTopoCssTest.php` lê o botão renderizado e exige que cada
+| classe esteja declarada aqui sob o escopo.
+*/
+
+[data-voltar-ao-topo].fixed { position: fixed; }
+[data-voltar-ao-topo].bottom-24 { bottom: 6rem; }
+[data-voltar-ao-topo].bottom-6 { bottom: 1.5rem; }
+[data-voltar-ao-topo].right-6 { right: 1.5rem; }
+[data-voltar-ao-topo].z-20 { z-index: 20; }
+
+[data-voltar-ao-topo].flex { display: flex; }
+[data-voltar-ao-topo].h-11 { height: 2.75rem; }
+[data-voltar-ao-topo].w-11 { width: 2.75rem; }
+[data-voltar-ao-topo].items-center { align-items: center; }
+[data-voltar-ao-topo].justify-center { justify-content: center; }
+[data-voltar-ao-topo].rounded-full { border-radius: 9999px; }
+
+[data-voltar-ao-topo].bg-primary-600 { background-color: var(--primary-600); }
+[data-voltar-ao-topo].text-white { color: var(--white, #fff); }
+[data-voltar-ao-topo].shadow-lg {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+[data-voltar-ao-topo].transition {
+    transition-property: color, background-color, border-color, box-shadow, transform;
+}
+
+[data-voltar-ao-topo].hover\:bg-primary-700:hover { background-color: var(--primary-700); }
+
+/*
+ * O anel de foco é box-shadow (não há preflight Tailwind nesta página): as três
+ * classes `focus-visible:*` vêm juntas na blade e compõem um anel primary de 2px
+ * com offset de 2px, por cima da `shadow-lg` que o botão já tem.
+ */
+[data-voltar-ao-topo].focus-visible\:outline-none:focus-visible { outline: none; }
+[data-voltar-ao-topo].focus-visible\:ring-2:focus-visible,
+[data-voltar-ao-topo].focus-visible\:ring-primary-600:focus-visible,
+[data-voltar-ao-topo].focus-visible\:ring-offset-2:focus-visible {
+    box-shadow:
+        0 0 0 2px var(--white, #fff),
+        0 0 0 4px var(--primary-600),
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* O ícone de seta dentro do botão. */
+[data-voltar-ao-topo] .h-5 { height: 1.25rem; }
+[data-voltar-ao-topo] .w-5 { width: 1.25rem; }

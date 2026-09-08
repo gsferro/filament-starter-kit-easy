@@ -456,6 +456,14 @@ class KitServiceProvider extends ServiceProvider
                  * componente. Ver o cabeçalho de `resources/css/filament/spotlight.css`.
                  */
                 Css::make('kit-spotlight', resource_path('css/filament/spotlight.css')),
+                /*
+                 * O botão flutuante "Voltar ao topo" (`filament/voltar-ao-topo.blade.php`). A blade
+                 * guarda os literais para o Tailwind v4 do app, mas o build dele não é servido nos
+                 * painéis — sem esta folha o botão sairia sem `fixed`, posição e cor. Escopado no
+                 * atributo `data-voltar-ao-topo` da própria raiz.
+                 * Ver o cabeçalho de `resources/css/filament/voltar-ao-topo.css`.
+                 */
+                Css::make('kit-voltar-ao-topo', resource_path('css/filament/voltar-ao-topo.css')),
             ],
             package: 'kit',
         );
