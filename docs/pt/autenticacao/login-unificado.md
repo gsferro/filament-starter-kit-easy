@@ -53,6 +53,13 @@ página única pergunta por **algum** painel em vez de pelo painel corrente. Um 
 A URL pretendida (você abriu `/admin/users` sem sessão) só vence quando é de um painel que você
 acessa e do próprio host. Fora disso é descartada, e vale a regra acima.
 
+A mesma regra vale depois do **cadastro**, e não só depois do login. Uma conta recém-criada nunca
+é entregue no endereço de um painel que ela não acessa — o caso real é banal: alguém abre `/admin`,
+é mandado ao login, e só então clica no link do convite que recebeu. Sem essa verificação o
+cadastro funcionava e a primeira tela do sistema era um erro de permissão. Com a chave
+**desligada** a verificação continua valendo: o endereço inacessível é descartado e vale o destino
+padrão do painel.
+
 ## Painel novo depois da instalação
 
 A escolha lista **um cartão por painel registrado** — os mesmos que o Panel Switch mostra dentro do

@@ -56,6 +56,14 @@ decision belongs.
 The assignment happens in a single place (`App\Support\RegistroAberto::papel()`), and it holds
 for anyone calling registration from outside the screen too — a command, a job, a seeder.
 
+### Where a new account lands after signing up
+
+In a panel it can access — never in one it cannot. This matters because the address the person
+tried to open before signing in is kept in the session: someone who opened `/admin`, was sent to
+the login screen and only then clicked the invitation link used to finish registration on a
+**403**. The kit checks that stored address against the account's panels and discards it when it
+does not fit. It is the same check the login does, and it holds with unified login on or off.
+
 ## Manual approval: pending means no panel at all
 
 With `KIT_REGISTRO_APROVACAO_MANUAL=true` the account is born **pending**:

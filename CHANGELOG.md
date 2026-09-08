@@ -3,6 +3,28 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.32.3] - 2026-09-08
+
+### Corrigido
+- **O destino depois do cadastro passa a ser decidido pelo mesmo critério do login.** Quem se
+  cadastrava podia cair num **403** logo depois de um cadastro que funcionou. A sequência é banal e
+  não envolve nenhuma sessão de administrador: um visitante abre `/admin`, o middleware do painel o
+  manda ao login e grava o endereço pretendido na sessão, e só depois ele clica no link do convite
+  que recebeu. O cadastro do Filament termina em `redirect()->intended()` sem olhar quem é a conta,
+  então entregava a conta nova no painel que ela não acessa. O kit já havia endurecido isso para o
+  **login**, em `DestinoAposLogin::urlPara()`, e a assimetria passou batida: agora a resposta de
+  cadastro passa pelo mesmo decisor. Vale para os dois pontos de entrada (`/app/register` e
+  `/cadastro`), para os dois modos (convite e registro aberto) e com a chave `KIT_LOGIN_UNIFICADO`
+  ligada **ou desligada** — o 403 foi medido nas duas configurações, ou seja, é anterior à feature
+  de login unificado e não regressão dela. Um endereço pretendido que **é** de painel acessível
+  continua sendo honrado. Ver `wikis/specs/fix/destino-apos-cadastro/`.
+
+### Alterado
+- **O primeiro acesso de uma conta criada pelo cadastro deixa de ficar sem painel no log de
+  acesso.** Como o destino agora passa por `DestinoAposLogin::urlPara()`, o carimbo de painel que
+  já existia para o login vale também para o cadastro (com a página única ligada). Os insights de
+  "acessos por painel" e o stat de logins do dia param de contar esse acesso como sem painel.
+
 ## [0.32.2] - 2026-09-07
 
 ### Adicionado

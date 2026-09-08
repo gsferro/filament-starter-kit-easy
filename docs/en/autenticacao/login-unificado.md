@@ -53,6 +53,13 @@ the single page asks about **any** panel instead of the current one. An `admin` 
 The intended URL (you opened `/admin/users` without a session) only wins when it belongs to a
 panel you can access, on the same host. Otherwise it is discarded and the rule above applies.
 
+The same rule applies after **registration**, not only after login. A freshly created account is
+never delivered to the address of a panel it cannot access — the real case is mundane: someone
+opens `/admin`, is sent to the login screen, and only then clicks the invitation link they got.
+Without this check the registration worked and the first screen of the system was a permission
+error. With the switch **off** the check still applies: the inaccessible address is discarded and
+the panel's default destination wins.
+
 ## A panel added after installation
 
 The choice screen lists **one card per registered panel** — the same ones the Panel Switch shows

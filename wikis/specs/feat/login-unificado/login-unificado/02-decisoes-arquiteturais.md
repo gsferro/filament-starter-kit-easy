@@ -161,6 +161,9 @@ A wiki `login-social-por-painel` fez o painel de origem viajar na sessão e deci
 
 **Status**: Aceita
 **Data**: 2026-09-05
+*(estendida em 2026-09-08: esta ADR valia só para o login, e o **cadastro** ficou com o
+`redirect()->intended()` cru do Filament — 403 medido em instalação real. A mesma regra passou a
+valer para a resposta de cadastro; ver `wikis/specs/fix/destino-apos-cadastro/`.)*
 
 ### Contexto
 

@@ -128,6 +128,45 @@ final class DestinoAposLogin
     }
 
     /**
+     * Esquece a URL pretendida quando ela não é de um painel que a pessoa acessa.
+     *
+     * Serve ao CADASTRO com a página única desligada, onde a escolha de painel não existe e o
+     * destino continua sendo o do Filament (`redirect()->intended(Filament::getUrl())`): a única
+     * coisa errada ali é a pretendida, então é ela que sai. Ver `RespostaDeCadastro` e
+     * `wikis/specs/fix/destino-apos-cadastro/` (ADR-04).
+     *
+     * Mora aqui, e não na resposta, porque a pergunta "esta URL é de painel acessível?" é de
+     * `painelDe()` — privada de propósito: é nela que vivem as duas defesas de URL da auditoria
+     * Blueprint. Duplicar a checagem fora daqui espalharia superfície de segurança.
+     */
+    public static function descartarPretendidaInacessivel(User $user): void
+    {
+        $pretendida = (string) session()->get('url.intended', '');
+
+        if ($pretendida === '') {
+            return;
+        }
+
+        $paineis = self::paineisDe($user);
+
+        if (self::painelDe($pretendida, $paineis) instanceof Panel) {
+            return;
+        }
+
+        session()->forget('url.intended');
+
+        Log::channel('autenticacao')->warning(
+            "[DestinoAposLogin@descartarPretendidaInacessivel] URL pretendida descartada — nao e painel acessivel | user: {$user->getKey()}",
+            [
+                'user_id'    => $user->getKey(),
+                'paineis'    => array_map(fn (Panel $painel): string => $painel->getId(), $paineis),
+                'pretendida' => parse_url($pretendida, PHP_URL_PATH),
+                'motivo'     => 'pretendida_inacessivel',
+            ],
+        );
+    }
+
+    /**
      * O clique num cartão da escolha: valida que o painel é acessível, carimba o acesso e devolve
      * a URL do painel. Painel que a pessoa não acessa (URL digitada) volta à escolha, sem carimbo.
      */
