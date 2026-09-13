@@ -119,6 +119,10 @@ class KitUpdate extends Command
         'app/Models/Role.php',
         'app/Models/Tenant.php',
         'app/Models/Convite.php',
+        // Observer e serviço do dashboard dinâmico — diretórios do kit, mesma
+        // regra de `app/Filament`: arquivo seu aqui nunca entra no diff.
+        'app/Observers',
+        'app/Services',
         'app/Models/Projeto.php',
         'app/Models/AgenteIa.php',
         'app/Models/VinculoSocial.php',
@@ -169,6 +173,14 @@ class KitUpdate extends Command
          * simplesmente não aparece na tela, sem erro nenhum.
          */
         'config/filament-shield.php',
+        /*
+         * `filament-dynamic-dashboard.php`: publicada porque o kit liga
+         * `use_spatie_permissions` (o eixo de visibilidade por papel). Sem esta
+         * linha, quem já instalou recebe as páginas e a permission mas o pacote
+         * segue lendo o default `false` do vendor — e o "Manage" nunca mostra o
+         * seletor de roles.
+         */
+        'config/filament-dynamic-dashboard.php',
         // Migrations, seeders e factories do kit. Os SEUS não entram no diff,
         // pela mesma razão dos comandos. Migration nova exige rodar
         // `php artisan migrate` depois de aplicar.
