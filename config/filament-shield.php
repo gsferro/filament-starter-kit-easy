@@ -4,6 +4,7 @@ declare(strict_types=1);
 use App\Filament\Admin\Resources\Convites\ConviteResource;
 use App\Filament\Admin\Resources\Tenants\TenantResource;
 use App\Filament\Admin\Resources\Users\UserResource;
+use App\Filament\Pages\DashboardClassico;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
 use Filament\Pages\Dashboard;
 use Filament\Widgets\AccountWidget;
@@ -325,6 +326,17 @@ return [
         'prefix'  => 'view',
         'exclude' => [
             Dashboard::class,
+            /*
+             * As quatro páginas de dashboard do kit: a tela de entrada é de TODOS,
+             * e uma permission `View:Dashboard` gerada aqui bloquearia a raiz do
+             * painel para quem não a tivesse — o defeito que a revisão adversarial
+             * pegou (P11). Quem pode MONTAR a grade é a custom `Manage:Dashboard`
+             * abaixo, consultada pelo `canEdit()` de cada página dinâmica.
+             */
+            App\Filament\App\Pages\Dashboard::class,
+            App\Filament\Admin\Pages\Dashboard::class,
+            App\Filament\Infra\Pages\Dashboard::class,
+            DashboardClassico::class,
         ],
     ],
 
@@ -396,6 +408,13 @@ return [
     'custom_permissions' => [
         'aceitar:convite' => 'Aceitar convite recebido',
         'recusar:convite' => 'Recusar convite recebido',
+        /*
+         * Quem pode MONTAR o dashboard dinâmico — o `canEdit()` das três páginas
+         * dinâmicas delega a ela. Visibilidade ("ver") é livre e fica com o eixo
+         * de roles do próprio pacote (`use_spatie_permissions`); esta chave governa
+         * só a escrita. Subtraída do `panel_user` no `PapeisSeeder`.
+         */
+        'manage:dashboard' => 'Montar o dashboard dinâmico',
     ],
 
     /*

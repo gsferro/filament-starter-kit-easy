@@ -104,6 +104,12 @@ class PapeisSeeder extends Seeder
                     ->reject(fn (string $permissao): bool => in_array($permissao, $administracao, true))
                     ->reject(fn (string $permissao): bool => in_array($permissao, $foraDoApp, true))
                     ->reject(fn (string $permissao): bool => $this->ehPermissaoDeImportOuExport($permissao))
+                    /*
+                     * `Manage:Dashboard` é escrita na grade do painel — montar, mover e
+                     * apagar widgets. O usuário comum VÊ o dashboard (visibilidade é o
+                     * eixo de roles do pacote); quem monta é quem opera a organização.
+                     */
+                    ->reject(fn (string $permissao): bool => $permissao === 'Manage:Dashboard')
             );
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -237,6 +243,12 @@ class PapeisSeeder extends Seeder
         return [
             'Aceitar:Convite' => ['app'],
             'Recusar:Convite' => ['app'],
+            /*
+             * `Manage:Dashboard` vale para os três painéis — a feature pode ser ligada
+             * em qualquer um (`kit.dashboard_dinamico.paineis`). O `panel_user` a perde
+             * na subtração explícita do `run()`: usuário comum VÊ o dashboard, não monta.
+             */
+            'Manage:Dashboard' => ['app', 'admin', 'infra'],
         ];
     }
 
