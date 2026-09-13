@@ -2,10 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Infra\Pages\Dashboard;
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\Auth\TelaDoisFatores;
 use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Pages\Auth\TelaRecuperarSenha;
+use App\Filament\Pages\DashboardClassico;
 use App\Filament\Pages\MyProfilePage;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
@@ -34,7 +36,6 @@ use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationItem;
-use Filament\Pages\Dashboard;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -126,7 +127,9 @@ class InfraPanelProvider extends PanelProvider
                 'Sistema',
             ])
             ->pages([
+                // Par sempre registrado — o decisor é por request (ver AppPanelProvider).
                 Dashboard::class,
+                DashboardClassico::class,
             ])
             ->widgets([
                 AccountWidget::class,

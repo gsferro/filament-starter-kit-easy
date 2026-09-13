@@ -3,11 +3,13 @@
 namespace App\Providers\Filament;
 
 use App\Filament\App\Pages\ConvitesRecebidos;
+use App\Filament\App\Pages\Dashboard;
 use App\Filament\Pages\Auth\RegistroPorConvite;
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\Auth\TelaDoisFatores;
 use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Pages\Auth\TelaRecuperarSenha;
+use App\Filament\Pages\DashboardClassico;
 use App\Filament\Pages\MyProfilePage;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
@@ -29,7 +31,6 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -103,7 +104,11 @@ class AppPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\Filament\App\Pages')
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\Filament\App\Widgets')
             ->pages([
+                // O par é sempre registrado: quem decide qual responde é o
+                // App\Support\DashboardDinamico, por request — nunca um
+                // ->pages() condicional (o banco só é lido no boot).
                 Dashboard::class,
+                DashboardClassico::class,
                 ConvitesRecebidos::class,
             ])
             ->widgets([
