@@ -747,6 +747,33 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->label('Hub de navegação em cartões')
                     ->helperText('Uma grade de cartões com os destinos, nos painéis /admin e /app. O /infra tem hub independente desta chave.'),
 
+                /*
+                 * O interruptor do dashboard dinâmico. A troca é por REQUEST — as duas
+                 * páginas (dinâmica e clássica) estão sempre registradas e
+                 * `App\Support\DashboardDinamico` decide qual atende — então salvar aqui
+                 * vale já no próximo F5, sem cache nem restart.
+                 *
+                 * Desligar NUNCA apaga dado: os dashboards montados ficam em
+                 * `dashboards`/`dashboard_widgets` e voltam ao religar.
+                 */
+                Section::make('Dashboard dinâmico')
+                    ->description('A tela de entrada dos painéis vira uma grade que o usuário monta, move e redimensiona (mddev31/filament-dynamic-dashboard). Desligado, responde o dashboard clássico de sempre.')
+                    ->icon('heroicon-o-squares-plus')
+                    ->columnSpanFull()
+                    ->schema([
+                        Toggle::make('dashboard_dinamico_habilitado')
+                            ->label('Dashboard dinâmico como tela de entrada')
+                            ->helperText('Ligado, a raiz de cada painel responde a grade editável; o clássico fica em /inicio. Quem pode montar é quem tem a permissão "Manage:Dashboard" — os demais só veem.')
+                            ->live(),
+
+                        Select::make('dashboard_dinamico_paineis')
+                            ->label('Painéis onde vale')
+                            ->helperText('Em branco = todos os painéis. Escolha para restringir — por exemplo, só o /app.')
+                            ->multiple()
+                            ->options(Paineis::opcoes())
+                            ->visible(fn (Get $get): bool => (bool) $get('dashboard_dinamico_habilitado')),
+                    ]),
+
                 TextInput::make('rotulo_da_organizacao')
                     ->label('Como chamar cada organização')
                     ->helperText('Vocabulário da INSTALAÇÃO (Empresa, Cliente, Escola, Unidade). Não é a configuração de uma organização — essa fica em /admin/organizacoes.')

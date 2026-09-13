@@ -119,6 +119,16 @@ final class ConfiguracoesDoKit extends Settings
 
     public bool $hub_de_navegacao;
 
+    /**
+     * Dashboard dinâmico como tela de entrada dos painéis. Lido por
+     * `App\Support\DashboardDinamico` por request — nunca no boot do painel.
+     * Desligar preserva as linhas de `dashboards`/`dashboard_widgets`.
+     */
+    public bool $dashboard_dinamico_habilitado;
+
+    /** @var array<int, string> Painéis em que a feature vale. Vazio = todos. */
+    public array $dashboard_dinamico_paineis;
+
     public string $rotulo_da_organizacao;
 
     public string $rotulo_das_organizacoes;
@@ -326,8 +336,17 @@ final class ConfiguracoesDoKit extends Settings
             'persistir_filtros'        => 'kit.tabelas.persistir_filtros',
             'colunas_redimensionaveis' => 'kit.tabelas.colunas_redimensionaveis',
             'hub_de_navegacao'         => 'kit.hub',
-            'rotulo_da_organizacao'    => 'kit.tenancy.label',
-            'rotulo_das_organizacoes'  => 'kit.tenancy.label_plural',
+            /*
+             * O interruptor do dashboard dinâmico é lido por request — `mount()` e
+             * `shouldRegisterNavigation()` das páginas consultam
+             * `App\Support\DashboardDinamico`, que lê estas duas chaves já sobrepostas
+             * pelo banco. Nada é decidido no `register()` do painel, então a tela
+             * governa de verdade sem decisor extra.
+             */
+            'dashboard_dinamico_habilitado' => 'kit.dashboard_dinamico.habilitado',
+            'dashboard_dinamico_paineis'    => 'kit.dashboard_dinamico.paineis',
+            'rotulo_da_organizacao'         => 'kit.tenancy.label',
+            'rotulo_das_organizacoes'       => 'kit.tenancy.label_plural',
             /*
              * O registro aberto entra pelo MAPA, e por isso `App\Support\RegistroAberto` não
              * muda uma linha: os três métodos dele leem `config('kit.registro.*')`, e
