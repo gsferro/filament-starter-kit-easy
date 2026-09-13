@@ -483,6 +483,22 @@ function ligarLoginUnificado(bool $ligado = true): void
 }
 
 /**
+ * Liga o dashboard dinâmico para o caso corrente — flag e, opcionalmente, a
+ * lista de painéis (`[]` = todos, a tradução de `App\Support\DashboardDinamico`).
+ *
+ * Aqui e não num arquivo de teste porque DOIS arquivos a usam
+ * (`tests/Kit/DashboardDinamicoTest.php` e
+ * `tests/Tenancy/DashboardDinamicoTenancyTest.php`) — `.ai/rules/testes.md`.
+ *
+ * @param  list<string>  $paineis
+ */
+function ligarDashboardDinamico(bool $ligado = true, array $paineis = []): void
+{
+    config()->set('kit.dashboard_dinamico.habilitado', $ligado);
+    config()->set('kit.dashboard_dinamico.paineis', $paineis);
+}
+
+/**
  * Uma organizacao com as tres condicoes que o registro aberto avalia: existe, `ativo` e
  * `registro_habilitado` (`App\Support\RegistroAberto::organizacao()`).
  *
