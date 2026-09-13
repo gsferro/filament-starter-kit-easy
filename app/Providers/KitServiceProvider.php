@@ -13,6 +13,7 @@ use App\Http\Responses\RespostaDeCadastro;
 use App\Http\Responses\RespostaDeLogin;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Observers\TenantObserver;
 use App\Providers\Concerns\ConfiguraFilamentGlobal;
 use App\Settings\ConfiguracoesDoKit;
 use App\Support\ConfiguracaoDoLogin;
@@ -31,6 +32,7 @@ use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -42,6 +44,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Ai\Events\AgentPrompted;
 use Laravel\Ai\Events\AgentStreamed;
+use MDDev\DynamicDashboard\DashboardModelHelper;
+use MDDev\DynamicDashboard\Models\Dashboard;
 use Rappasoft\LaravelAuthenticationLog\Models\AuthenticationLog;
 use Spatie\Health\Checks\Checks\CacheCheck;
 use Spatie\Health\Checks\Checks\DatabaseCheck;
@@ -75,6 +79,7 @@ class KitServiceProvider extends ServiceProvider
         $this->configureSettingsDoKit();
 
         $this->configureTenancy();
+        $this->escoparDashboardsPorTenant();
         $this->configureGates();
         $this->configureAiLedger();
         $this->configureRastroDeImportExport();
@@ -228,6 +233,62 @@ class KitServiceProvider extends ServiceProvider
         }
 
         app(PermissionRegistrar::class)->setPermissionsTeamId(Tenant::CONTEXTO_GLOBAL);
+    }
+
+    /**
+     * A fronteira de organização dos dashboards dinâmicos (mddev31/filament-dynamic-dashboard).
+     *
+     * Duas peças na classe RESOLVIDA por `DashboardModelHelper::model()` — e não em
+     * `Dashboard::class` fixo: com `use_spatie_permissions` ligado o model em uso é
+     * `DashboardWithRoles`, e global scope/evento registrados no pai NÃO alcançam a
+     * subclasse (P7 do requisito).
+     *
+     *   - global scope: em painel tenant-aware, toda query de dashboard filtra pelo
+     *     tenant corrente. A condição é `hasTenancy()`, não id fixo — vale para o /app
+     *     hoje e para qualquer painel tenant-aware que o projeto adicionar (RQ-07).
+     *     Painel sem tenancy (/admin, /infra) sai no primeiro `return`: dashboards
+     *     deles são globais.
+     *   - hook `creating`: o único escritor de `tenant_id`. A coluna fica fora do
+     *     `$fillable` do model do vendor, e o hook sobrescreve SEMPRE que há tenant
+     *     corrente — não só quando nulo — para cobrir atribuição direta (P10).
+     *
+     * `DashboardWidget` não precisa de escopo próprio: é filho, sempre alcançado via
+     * `dashboard_id` dentro de um dashboard já escopado.
+     *
+     * O observer só é registrado com a tenancy ligada — sem organizações não há o
+     * que semear. O gate da criação em si é do observer (`habilitadoPara('app')`).
+     */
+    protected function escoparDashboardsPorTenant(): void
+    {
+        $model = DashboardModelHelper::model();
+
+        $model::addGlobalScope('tenant', static function (Builder $builder): void {
+            if (! filament()->getCurrentPanel()?->hasTenancy()) {
+                return;
+            }
+
+            $tenant = Filament::getTenant();
+
+            if ($tenant) {
+                $builder->where('dashboards.tenant_id', $tenant->getKey());
+            }
+        });
+
+        $model::creating(static function (Dashboard $dashboard): void {
+            if (! filament()->getCurrentPanel()?->hasTenancy()) {
+                return;
+            }
+
+            $tenant = Filament::getTenant();
+
+            if ($tenant) {
+                $dashboard->tenant_id = $tenant->getKey();
+            }
+        });
+
+        if (config('kit.tenancy.enabled')) {
+            Tenant::observe(TenantObserver::class);
+        }
     }
 
     /**
