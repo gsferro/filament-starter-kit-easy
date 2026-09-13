@@ -347,6 +347,45 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Dashboard dinâmico nos painéis
+    |--------------------------------------------------------------------------
+    | Desligado por default — é o que torna o `kit:update` inerte: quem já tem o
+    | kit instalado não acorda com a tela de entrada trocada. Liga em
+    | /admin/configuracoes-da-aplicacao (aba Kit) ou aqui pelo `.env`.
+    |
+    | Ligado, a raiz de cada painel (`/`, ou `/app/{tenant}` com multi-
+    | organização) passa a responder a grade do mddev31/filament-dynamic-
+    | dashboard — widgets que o usuário monta, move e redimensiona. Desligado,
+    | responde o `Filament\Pages\Dashboard` de sempre, em `/inicio` quando a
+    | dinâmica está no ar. A troca é por REQUEST: as duas páginas estão sempre
+    | registradas e `App\Support\DashboardDinamico` decide qual atende.
+    |
+    | Desligar NUNCA apaga dado: as linhas de `dashboards`/`dashboard_widgets`
+    | ficam intactas e voltam ao religar.
+    |
+    |   'habilitado' — `filter_var`, não `(bool) env()`: interruptor que muda a
+    |   tela de entrada de todo painel falha FECHADO (mesmo argumento do bloco
+    |   de login social).
+    |
+    |   'paineis' — ids separados por vírgula, mesma forma de
+    |   `kit.login.*.paineis`. VAZIO significa TODOS os painéis registrados, e a
+    |   tradução é de quem lê (`App\Support\DashboardDinamico`), não da config.
+    |
+    | Quem pode MONTAR o dashboard é a permission `Manage:Dashboard` do Shield
+    | (custom_permissions), subtraída do `panel_user`: usuário comum vê, não
+    | edita. Ver `wikis/specs/main/dashboard-dinamico-nos-paineis/`.
+    */
+
+    'dashboard_dinamico' => [
+        'habilitado' => filter_var(env('KIT_DASHBOARD_DINAMICO', false), FILTER_VALIDATE_BOOLEAN),
+        'paineis'    => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('KIT_DASHBOARD_DINAMICO_PAINEIS', '')),
+        ))),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Observabilidade — retenção
     |--------------------------------------------------------------------------
     | Quanto tempo as trilhas que o kit GRAVA sobrevivem. Não é preferência de
