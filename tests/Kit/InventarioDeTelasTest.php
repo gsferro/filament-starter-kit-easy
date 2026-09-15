@@ -53,6 +53,16 @@ function telasForaDoInventario(): array
         '/admin/hub-de-administracao',
         '/infra/hub-de-infraestrutura',
         /*
+         * As grades dinâmicas. O kit as entrega DESLIGADAS
+         * (`KIT_DASHBOARD_DINAMICO=false` no `.env.example` e no `phpunit.xml`), e nesse
+         * estado a rota só devolve para a raiz do painel — que o inventário já cobre.
+         * Ligada, a tela tem cobertura própria e mais forte que smoke em
+         * `tests/Browser/DashboardDinamicoTest.php` (CT-B01/CT-B02).
+         */
+        '/app/dashboard-dinamico',
+        '/admin/dashboard-dinamico',
+        '/infra/dashboard-dinamico',
+        /*
          * A Lixeira das exceções nos painéis /app e /admin. O `ExceptionResource` é registrado
          * nos TRÊS painéis por obrigação, não por escolha: o plugin resolve o painel corrente e
          * registrar em um só derruba a aplicação inteira, em todo request e todo comando artisan

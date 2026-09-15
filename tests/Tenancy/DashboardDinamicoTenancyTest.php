@@ -1,14 +1,18 @@
 <?php
 
 use App\Filament\App\Pages\Dashboard as DashboardDoApp;
+use App\Filament\Pages\DashboardClassico;
 use App\Models\Tenant;
 use App\Services\Dashboard\CriadorDeDashboardPadrao;
 use Database\Seeders\DashboardPadraoSeeder;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
+use Livewire\Livewire;
 use MDDev\DynamicDashboard\DashboardModelHelper;
 use MDDev\DynamicDashboard\Models\Dashboard;
+use MDDev\DynamicDashboard\Models\DashboardWidget;
 
 /**
  * A fronteira de organização do dashboard dinâmico — a suíte multi-tenant.
@@ -220,13 +224,14 @@ it('nao filtra por tenant em painel sem tenancy', function (): void {
 });
 
 /*
- * CT-28 — dashboard com roles que excluem o usuário → 403.
+ * Arranjo de CT-28/CT-30: a organização tem UM dashboard, restrito a um papel
+ * que o usuário não tem. É o estado em que o vendor aborta 403
+ * (`DynamicDashboard::initializeCurrentDashboard()`, vendor :123-125).
  *
- * `use_spatie_permissions` ligado faz o model ser `DashboardWithRoles` e o
- * `canDisplay()` filtrar por papel. O único dashboard do tenant restrito a um
- * papel que o usuário não tem derruba a página em 403 — não em grade vazia.
+ * @return array{0: Tenant, 1: \App\Models\User}
  */
-it('responde 403 quando o unico dashboard exclui o papel do usuario', function (): void {
+function organizacaoComDashboardForaDoAlcance(): array
+{
     // Organização criada com a flag DESLIGADA: sem o "Padrão" do observer,
     // o único dashboard é o restrito — senão ele renderizaria no lugar (200).
     ligarDashboardDinamico(false);
@@ -246,7 +251,132 @@ it('responde 403 quando o unico dashboard exclui o papel do usuario', function (
     $usuario = usuarioComPapel('panel_user', $acme, 'comum@example.com');
     $usuario->tenants()->attach($acme->id);
 
+    return [$acme, $usuario];
+}
+
+/*
+ * CT-28 — dashboard com roles que excluem o usuário devolve para o clássico.
+ *
+ * `use_spatie_permissions` ligado faz o model ser `DashboardWithRoles` e o
+ * `canDisplay()` filtrar por papel. O vendor abortaria 403; o kit intercepta
+ * antes (`DashboardDinamico::atende()`) porque 403 na RAIZ do painel é beco
+ * sem saída — ver CT-30.
+ */
+it('devolve para o classico quando o unico dashboard exclui o papel do usuario', function (): void {
+    [$acme, $usuario] = organizacaoComDashboardForaDoAlcance();
+
     $this->actingAs($usuario);
 
-    $this->get("/app/{$acme->slug}")->assertForbidden();
+    $this->get(DashboardDoApp::getUrl(panel: 'app', tenant: $acme))
+        ->assertRedirect(DashboardClassico::getUrl(panel: 'app', tenant: $acme));
+});
+
+/*
+ * CT-30 — e o clássico ATENDE, em vez de devolver para o 403.
+ *
+ * O par dos dois redirecionamentos é o defeito que este caso mata: enquanto o
+ * clássico devolvia por `habilitado()` sozinho, o usuário batia 403 na raiz,
+ * ia para a raiz e era devolvido para o mesmo 403. Sem tela de entrada nenhuma.
+ */
+it('mantem o classico respondendo quando a dinamica nao tem dashboard exibivel', function (): void {
+    [$acme, $usuario] = organizacaoComDashboardForaDoAlcance();
+
+    $this->actingAs($usuario);
+
+    $this->get("/app/{$acme->slug}")->assertSuccessful();
+});
+
+/*
+ * CT-31 — widget de outra organização não é alcançável pelo id.
+ *
+ * As ações do vendor buscam o widget por id CRU do cliente
+ * (`DynamicDashboard.php:916,936,962`), guardadas só por `canEdit()`. Quem
+ * administra a Globex tem `Manage:Dashboard` — sem o global scope de
+ * `DashboardWidget`, `$wire.mountAction('deleteWidget', {widget: <id da Acme>})`
+ * apagava o widget da outra organização.
+ */
+it('esconde o widget de outra organizacao do find por id', function (): void {
+    ligarDashboardDinamico(false);
+
+    $acme   = tenant('Acme', 'acme');
+    $globex = tenant('Globex', 'globex');
+
+    ligarDashboardDinamico(true);
+
+    $daAcme = CriadorDeDashboardPadrao::para($acme);
+
+    $widget = DashboardWidget::create([
+        'dashboard_id' => $daAcme->getKey(),
+        'name'         => 'Indicadores da Acme',
+        'type'         => 'App\\Filament\\Widgets\\QualquerUm',
+        'section_slug' => 'main',
+        'x'            => 0,
+        'y'            => 0,
+        'w'            => 4,
+        'h'            => 2,
+    ]);
+
+    noPainelDa($globex);
+
+    // O caminho exato das ações do vendor: find pelo id que veio do cliente.
+    expect(DashboardWidget::find($widget->getKey()))->toBeNull();
+
+    // E o delete que viria depois é no-op — a linha continua no banco.
+    DashboardWidget::find($widget->getKey())?->delete();
+
+    expect(
+        DashboardWidget::withoutGlobalScope('tenant')->whereKey($widget->getKey())->exists()
+    )->toBeTrue();
+});
+
+/*
+ * CT-32 — `currentDashboardId` não aceita escrita do cliente.
+ *
+ * Sem o `#[Locked]`, um `$wire.set('currentDashboardId', <id alheio>)` fazia
+ * `persistLayout()` e `createWidget()` gravarem no dashboard de outra
+ * organização: o guard `is_locked` do vendor passa porque o dashboard alheio
+ * some pelo scope e `?? false` lê "não travado".
+ */
+it('recusa a escrita do cliente em currentDashboardId', function (): void {
+    ligarDashboardDinamico(false);
+
+    $acme   = tenant('Acme', 'acme');
+    $globex = tenant('Globex', 'globex');
+
+    ligarDashboardDinamico(true);
+
+    $daAcme = CriadorDeDashboardPadrao::para($acme);
+    CriadorDeDashboardPadrao::para($globex);
+
+    $gestor = usuarioComPapel('admin_app', $globex, 'gestor@example.com');
+    $gestor->tenants()->attach($globex->id);
+
+    noPainelDa($globex);
+    $this->actingAs($gestor);
+
+    expect(fn () => Livewire::test(DashboardDoApp::class)
+        ->set('currentDashboardId', $daAcme->getKey()))
+        ->toThrow(CannotUpdateLockedPropertyException::class);
+});
+
+/*
+ * CT-33 — painel tenant-aware sem tenant resolvido fecha a query.
+ *
+ * Há janela em que o painel já é o corrente e o `IdentifyTenant` ainda não
+ * rodou. Com `if ($tenant)` o filtro simplesmente não era aplicado e a query
+ * devolvia os dashboards de TODAS as organizações.
+ */
+it('fecha a query de dashboards em painel tenant-aware sem tenant', function (): void {
+    ligarDashboardDinamico(true);
+
+    $acme = tenant('Acme', 'acme');
+    CriadorDeDashboardPadrao::para($acme);
+
+    Filament::setCurrentPanel('app');
+    Filament::setTenant(null, isQuiet: true);
+
+    $model = modeloDeDashboard();
+
+    expect($model::query()->count())->toBe(0)
+        ->and($model::query()->withoutGlobalScope('tenant')->count())->toBeGreaterThanOrEqual(1);
 });

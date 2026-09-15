@@ -763,7 +763,7 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->schema([
                         Toggle::make('dashboard_dinamico_habilitado')
                             ->label('Dashboard dinâmico como tela de entrada')
-                            ->helperText('Ligado, a raiz de cada painel responde a grade editável; o clássico fica em /inicio. Quem pode montar é quem tem a permissão "Manage:Dashboard" — os demais só veem.')
+                            ->helperText('Ligado, a raiz de cada painel devolve para a grade editável em /dashboard-dinamico; desligado, a raiz responde o clássico de sempre. Quem pode montar é quem tem a permissão "Manage:Dashboard" — os demais só veem.')
                             ->live(),
 
                         Select::make('dashboard_dinamico_paineis')

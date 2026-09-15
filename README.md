@@ -153,7 +153,7 @@ dois já vêm completos.
 |---|---:|
 | Pacotes de produção | **56** |
 | Pacotes de desenvolvimento | **19** |
-| Migrations | **59** |
+| Migrations | **60** |
 | Policies | **16** |
 | Comandos `kit:*` | **8** |
 
@@ -168,7 +168,7 @@ dois já vêm completos.
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **9** |
-| Features especificadas (`wikis/specs/`) | **55** |
+| Features especificadas (`wikis/specs/`) | **56** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **18** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.

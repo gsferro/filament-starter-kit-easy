@@ -13,6 +13,7 @@ use Filament\Widgets\AccountWidget;
 use Livewire\Livewire;
 use MDDev\DynamicDashboard\Contracts\DynamicWidget;
 use MDDev\DynamicDashboard\Models\Dashboard;
+use MDDev\DynamicDashboard\Models\DashboardWidget;
 use Spatie\Permission\Models\Permission;
 
 /**
@@ -30,19 +31,18 @@ beforeEach(function (): void {
 /*
  * CT-01 — raiz desligada → clássico.
  *
- * O default do kit é a feature DESLIGADA: `/app` responde o dashboard clássico
- * e a página dinâmica devolve para `/inicio`. É o caso que protege quem
- * atualiza o kit de acordar com a tela de entrada trocada.
+ * O default do kit é a feature DESLIGADA: a raiz do painel é do dashboard
+ * clássico e responde 200, exatamente como antes da feature existir (RQ-08), e
+ * a página dinâmica devolve para a raiz.
  */
 it('responde o dashboard classico na raiz com a feature desligada', function (): void {
     $this->actingAs(usuarioDoKit('panel_user'));
 
-    // A raiz é da página dinâmica, que devolve para o clássico em /inicio.
-    $this->get('/app')->assertRedirect(DashboardClassico::getUrl(panel: 'app'));
-    $this->get('/app/inicio')->assertSuccessful();
+    // A raiz continua do clássico — nenhum redirect no caminho de quem atualiza.
+    $this->get('/app')->assertSuccessful();
 });
 
-it('devolve a pagina dinamica para /inicio com a feature desligada', function (): void {
+it('devolve a pagina dinamica para a raiz com a feature desligada', function (): void {
     ligarDashboardDinamico(false);
 
     $this->actingAs(usuarioDoKit('panel_user'));
@@ -63,14 +63,74 @@ it('troca a tela de entrada no request seguinte ao toggle', function (): void {
 
     ligarDashboardDinamico(true);
 
-    // Com a flag ligada e sem dashboards, a raiz responde a grade (CT-26).
-    $this->get('/app')->assertSuccessful();
+    // Com a flag ligada, a raiz devolve para a dinâmica, que responde a grade
+    // vazia (CT-26).
+    $this->get('/app')->assertRedirect(DashboardDoApp::getUrl(panel: 'app'));
+    $this->get(DashboardDoApp::getUrl(panel: 'app'))->assertSuccessful();
 
     ligarDashboardDinamico(false);
     fronteiraDeRequest();
 
     $this->get(DashboardDoApp::getUrl(panel: 'app'))
         ->assertRedirect(DashboardClassico::getUrl(panel: 'app'));
+});
+
+/*
+ * CT-03 — o ciclo ligar → montar → desligar → religar preserva tudo.
+ *
+ * Desligar a feature é decisão de ROTA, nunca de dado: as linhas de
+ * `dashboards`/`dashboard_widgets` ficam intactas enquanto o clássico atende e
+ * voltam com posição e `settings` quando a feature religa. Mata M11 ("desligar
+ * limpa as tabelas") e M12 ("widgets perdem posição/settings no ciclo").
+ */
+it('preserva dashboards e widgets ao desligar e religar a feature', function (): void {
+    ligarDashboardDinamico(true);
+
+    $this->actingAs(usuarioDoKit('panel_user'));
+
+    $dashboard = CriadorDeDashboardPadrao::para(null);
+
+    foreach ([['x' => 0, 'titulo' => 'Esquerda'], ['x' => 4, 'titulo' => 'Direita']] as $posicao) {
+        DashboardWidget::create([
+            'dashboard_id' => $dashboard->getKey(),
+            'name'         => $posicao['titulo'],
+            'type'         => 'App\\Filament\\Widgets\\QualquerUm',
+            'section_slug' => 'main',
+            'x'            => $posicao['x'],
+            'y'            => 1,
+            'w'            => 4,
+            'h'            => 2,
+            'settings'     => ['titulo' => $posicao['titulo']],
+        ]);
+    }
+
+    $this->get(DashboardDoApp::getUrl(panel: 'app'))->assertSuccessful();
+
+    // Desligada, a dinâmica devolve para a raiz e nada é apagado.
+    ligarDashboardDinamico(false);
+    fronteiraDeRequest();
+
+    $this->get(DashboardDoApp::getUrl(panel: 'app'))
+        ->assertRedirect(DashboardClassico::getUrl(panel: 'app'));
+    $this->get('/app')->assertSuccessful();
+
+    expect(Dashboard::query()->whereKey($dashboard->getKey())->exists())->toBeTrue()
+        ->and(DashboardWidget::query()->where('dashboard_id', $dashboard->getKey())->count())->toBe(2);
+
+    // Religada, a grade volta com widget, posição e settings intactos.
+    ligarDashboardDinamico(true);
+    fronteiraDeRequest();
+
+    $this->get(DashboardDoApp::getUrl(panel: 'app'))->assertSuccessful();
+
+    $widgets = DashboardWidget::query()
+        ->where('dashboard_id', $dashboard->getKey())
+        ->orderBy('x')
+        ->get();
+
+    expect($widgets->pluck('x')->all())->toBe([0, 4])
+        ->and($widgets->pluck('y')->all())->toBe([1, 1])
+        ->and($widgets->first()->settings)->toBe(['titulo' => 'Esquerda']);
 });
 
 /*
@@ -257,7 +317,10 @@ it('responde a grade vazia quando nao ha dashboard nenhum', function (): void {
 
     $this->actingAs(usuarioDoKit('panel_user'));
 
-    $this->get('/app')->assertSuccessful();
+    // Sem nenhum dashboard, a raiz devolve para a dinâmica e ela responde a
+    // grade vazia — não 403 nem 500.
+    $this->get('/app')->assertRedirect(DashboardDoApp::getUrl(panel: 'app'));
+    $this->get(DashboardDoApp::getUrl(panel: 'app'))->assertSuccessful();
 });
 
 /*

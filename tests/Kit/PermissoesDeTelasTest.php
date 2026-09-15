@@ -1,7 +1,9 @@
 <?php
 
+use App\Filament\App\Pages\Dashboard;
 use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Filament\Infra\Pages\HubDeInfraestrutura;
+use App\Filament\Pages\DashboardClassico;
 use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
@@ -457,9 +459,28 @@ function paginasDePainelDoKit(): array
 {
     $paginas = [];
 
+    /*
+     * As telas de dashboard ficam de fora POR DESENHO, e não por esquecimento: a
+     * tela de entrada do painel é de todos, e uma permission `View:Dashboard`
+     * trancaria a raiz para quem não a tivesse. É a mesma decisão que exclui as
+     * quatro da geração do Shield (`config/filament-shield.php`, P11 da wiki
+     * `dashboard-dinamico-nos-paineis`). Quem MONTA a grade é `Manage:Dashboard`,
+     * pelo `canEdit()` de cada página dinâmica.
+     */
+    $telasDeEntrada = [
+        DashboardClassico::class,
+        Dashboard::class,
+        App\Filament\Admin\Pages\Dashboard::class,
+        App\Filament\Infra\Pages\Dashboard::class,
+    ];
+
     foreach (Filament::getPanels() as $id => $painel) {
         foreach ($painel->getPages() as $classe) {
             if (! str_starts_with((string) $classe, 'App\\Filament\\')) {
+                continue;
+            }
+
+            if (in_array($classe, $telasDeEntrada, true)) {
                 continue;
             }
 

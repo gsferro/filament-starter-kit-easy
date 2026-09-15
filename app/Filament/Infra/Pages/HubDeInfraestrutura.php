@@ -8,13 +8,13 @@ use App\Filament\Concerns\DescobreCardsDoPainel;
 use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Filament\Infra\Resources\AiRuns\AiRunResource;
 use App\Filament\Infra\Resources\ComposerReleasePackages\ComposerReleasePackageResource;
+use App\Filament\Pages\DashboardClassico;
 use BackedEnum;
 use BezhanSalleh\FilamentExceptions\Resources\ExceptionResource;
 use Bityukov\CommandCenter\Filament\Pages\Commands;
 use Bityukov\CommandCenter\Filament\Pages\History;
 use Bityukov\CommandCenter\Filament\Resources\CommandRecordResource;
 use Croustibat\FilamentJobsMonitor\Resources\QueueMonitorResource;
-use Filament\Pages\Dashboard;
 use Harvirsidhu\FilamentCards\CardGroup;
 use Harvirsidhu\FilamentCards\Filament\Pages\CardsPage;
 use LaBoiteACode\DependencyGraph\Filament\Pages\DependencyGraphPage;
@@ -158,7 +158,9 @@ class HubDeInfraestrutura extends CardsPage
     protected static function getCards(): array
     {
         return static::cardsDoPainel(
-            excluir: [static::class, Dashboard::class],
+            // `Dashboard` aqui é o dinâmico deste painel (mesmo namespace); os dois
+            // são a tela de entrada, não destino de cartão.
+            excluir: [static::class, Dashboard::class, DashboardClassico::class],
             descricoes: static::descricoesDosDestinos(),
         );
     }

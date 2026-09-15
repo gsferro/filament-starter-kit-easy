@@ -149,3 +149,36 @@ original não cobria ou assumia errado:
   gate de página do Shield é opt-in via `HasPageShield` — sem o trait, a
   permission gerada não bloqueia nada, só polui a tela de papéis. Premissa:
   excluir as 4; "ver" é livre, "gerenciar" é `Manage:Dashboard`.
+
+## Adendo 2 — Revisão de código (achados que viram premissa)
+
+Rodada depois da implementação, sobre o diff inteiro da feature. Os quatro
+achados abaixo eram defeitos de código, não de especificação: nenhum caso de
+teste do 04 os cobria porque todos moram em superfície do VENDOR que a wiki
+tratou como interna.
+
+- **P12 — 403 na raiz do painel é beco sem saída.** `initializeCurrentDashboard()`
+  aborta 403 quando existem dashboards e nenhum é exibível
+  (`DynamicDashboard.php:123-125`) — e o clássico devolvia para a dinâmica só
+  por `habilitado()`, então o usuário ricocheteava entre os dois. Premissa: o
+  kit intercepta antes (`DashboardDinamico::atende()`) e o clássico atende.
+  Reescreve R13 e CT-28; nasce CT-30.
+- **P13 — `DashboardWidget` precisa de escopo próprio.** As ações do vendor
+  fazem `DashboardWidget::find($arguments['widget'])` com id cru do cliente
+  (`DynamicDashboard.php:916,936,962`), guardadas só por `canEdit()`. "É filho,
+  logo está protegido" era falso. Premissa: global scope `whereHas('dashboard')`,
+  que herda o escopo do pai. Nasce R14/CT-31.
+- **P14 — `currentDashboardId` é escrita pelo cliente.** Propriedade pública sem
+  `#[Locked]` (`DynamicDashboard.php:70-71`); o `#[Session]` só repõe no `mount()`
+  (`BaseSession.php:16-23`). Premissa: redeclarar com `#[Session] #[Locked]` nas
+  três páginas. Nasce R15/CT-32.
+- **P16 — a dinâmica na raiz quebra `RQ-08`.** Com a página dinâmica ocupando
+  `/`, a raiz dos três painéis passou a responder 302 **mesmo com a feature
+  desligada** — 98 testes do kit que abrem `/app`, `/admin` e `/infra`
+  esperando 200 ficaram vermelhos, e todo projeto que atualizasse o kit teria a
+  URL canônica dos painéis trocada sem ligar nada. Premissa: a posse da rota
+  inverte — clássica na raiz, dinâmica em `/dashboard-dinamico`, com o slug `dashboard` (e o nome de rota
+  histórico) preservado no clássico (ADR-02 reescrita).
+- **P15 — o global scope falhava ABERTO no caso nulo.** `if ($tenant)` deixava a
+  query sem filtro quando o painel é tenant-aware e o tenant ainda não foi
+  resolvido. Premissa: `1 = 0` — nenhuma linha. Nasce R16/CT-33.

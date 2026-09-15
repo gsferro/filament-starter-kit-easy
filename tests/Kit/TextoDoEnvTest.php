@@ -83,6 +83,14 @@ it('nao reintroduz env com default de texto no config do kit', function (): void
          * caso de teste nas duas direções. Ver ADR-04 de
          * `wikis/specs/feat/login-social-por-painel/login-social-por-painel/`.
          */
+        /*
+         * Terceiro caso idêntico: para o dashboard dinâmico, lista VAZIA significa TODOS os
+         * painéis — a tradução vive em `App\Support\DashboardDinamico::habilitadoPara()`, com
+         * caso de teste nas duas direções (CT-04). `KIT_DASHBOARD_DINAMICO_PAINEIS=` é como se
+         * escreve "sem restrição", e o default É o vazio.
+         */
+        'KIT_DASHBOARD_DINAMICO_PAINEIS',
+
         'KIT_SOCIALITE_GOOGLE_PAINEIS',
         'KIT_SOCIALITE_GITHUB_PAINEIS',
         'KIT_SOCIALITE_LINKEDIN_PAINEIS',

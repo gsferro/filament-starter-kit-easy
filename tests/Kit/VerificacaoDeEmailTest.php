@@ -2,6 +2,7 @@
 
 use App\Filament\Admin\Pages\ConfiguracoesDoKit as TelaDeConfiguracoes;
 use App\Filament\Pages\Auth\RegistroPorConvite;
+use App\Filament\Pages\DashboardClassico;
 use App\Http\Middleware\ExigirEmailVerificado;
 use App\Models\User;
 use App\Providers\Filament\AppPanelProvider;
@@ -11,7 +12,6 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Auth\Notifications\VerifyEmail;
 use Filament\Facades\Filament;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
@@ -112,7 +112,7 @@ it('barra no painel de negocio somente com a exigencia ligada e o email nao vali
     $resposta = $this->actingAs($user)->get('/app');
 
     if ($entra) {
-        $resposta->assertSuccessful()->assertSeeLivewire(Dashboard::class);
+        $resposta->assertSuccessful()->assertSeeLivewire(DashboardClassico::class);
 
         return;
     }
@@ -153,7 +153,7 @@ it('responde 403 a requisicao json somente com a exigencia ligada', function (bo
  * A revisão adversarial apontou que todos os cenários batiam na mesma URL, e que a justificativa
  * do corte ("o middleware vem de `getRouteMiddleware()`") era derivada do plano — a suíte
  * importava a hipótese que devia testar. Duas rotas de classes diferentes: uma `Page` do kit e a
- * `Dashboard` do vendor.
+ * tela de entrada do painel (`DashboardClassico`).
  */
 it('barra em qualquer pagina do painel de negocio, nao so na inicial', function (string $rota): void {
     exigenciaDeEmail(true);
@@ -261,7 +261,7 @@ it('leva o valor gravado no settings ao request seguinte, nas duas direcoes', fu
     $this->get('/app')->assertRedirect(route('filament.app.auth.email-verification.prompt'));
 
     exigenciaDeEmailGravada(false);
-    $this->get('/app')->assertSuccessful()->assertSeeLivewire(Dashboard::class);
+    $this->get('/app')->assertSuccessful()->assertSeeLivewire(DashboardClassico::class);
 
     exigenciaDeEmailGravada(true);
     $this->get('/app')->assertRedirect(route('filament.app.auth.email-verification.prompt'));
@@ -327,7 +327,7 @@ it('deixa os paineis de administracao entrarem sem email validado', function (st
     $this->actingAs(usuarioDoKit($papel))
         ->get($painel)
         ->assertSuccessful()
-        ->assertSeeLivewire(Dashboard::class);
+        ->assertSeeLivewire(DashboardClassico::class);
 })->with([
     'administração da instalação' => ['/admin', 'admin'],
     'infraestrutura'              => ['/infra', 'infra'],
@@ -476,7 +476,7 @@ it('deixa quem vem de convite entrar sem barreira e sem email de validacao', fun
     $this->actingAs($convidado)
         ->get('/app')
         ->assertSuccessful()
-        ->assertSeeLivewire(Dashboard::class);
+        ->assertSeeLivewire(DashboardClassico::class);
 });
 
 /*

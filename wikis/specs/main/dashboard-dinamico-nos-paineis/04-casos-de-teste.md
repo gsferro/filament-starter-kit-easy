@@ -31,7 +31,7 @@
 | S | 6 páginas novas (2 por painel), trait, decisor, observer, service, seeder, 2 migrations, settings, custom permission | CT-01…CT-26 |
 | F | redirect por request, escopo de tenant, criação de dashboard padrão, gate de edição | CT-01…CT-18 |
 | D | `dashboards`/`dashboard_widgets` persistidos; `tenant_id` nullable; dado de OUTRO tenant; dashboards órfãos de toggle | CT-03, CT-11…CT-15 |
-| I | rotas `/` e `/inicio` dos painéis, tela /admin de settings, seeder artisan, observer de model | CT-01, CT-16…CT-18, CT-22 |
+| I | rotas `/` e `/dashboard-dinamico` dos painéis, tela /admin de settings, seeder artisan, observer de model | CT-01, CT-16…CT-18, CT-22 |
 | P | GridStack (JS) — só o browser prova drag/resize | CT-B01, CT-B02 |
 | O | `panel_user` read-only; `admin_app` gestor; painel novo do projeto | CT-07…CT-10, CT-20 |
 | T | toggle muda entre requests sem restart; tenant criado depois da ativação | CT-02, CT-16 |
@@ -56,7 +56,7 @@
 
 | Item do PRD | Recusado como oráculo porque | Destino |
 |---|---|---|
-| slug `/inicio` da clássica | escolha de implementação | detalhe do cenário |
+| slug `/dashboard-dinamico` da dinâmica | escolha de implementação | detalhe do cenário |
 | nome `DashboardDinamico::habilitado()` | escolha de implementação | detalhe do cenário |
 | nome `Manage:Dashboard` | o requisito pede a permission, não o nome | detalhe + P4 |
 | "Padrão" como nome do dashboard semeado | vem da referência, não do pedido | detalhe do cenário |
@@ -472,20 +472,29 @@ Matriz (2 papéis × 4 ações = 8 células; ✅ = permitido, ❌ = recusado sem
 
 ---
 
-## Regra R13 — Dashboard sem papel visível para o usuário é 403 (contrato do vendor)
+## Regra R13 — Dashboard sem papel visível devolve para o clássico (nunca 403 na raiz)
 
-> `RQ-06` · perfil **padrão** · técnica: **EP** · `@premissa` P8
-> Nascido na revisão adversarial — fixa o contrato que a feature expõe.
+> `RQ-02`, `RQ-06` · perfil **padrão** · técnica: **EP** · `@premissa` P8, P12
+> Nascida na revisão adversarial; REESCRITA na revisão de código (P12).
+> O contrato do vendor é 403 (`DynamicDashboard.php:123-125`); o kit intercepta
+> antes, porque 403 na RAIZ do painel com o clássico devolvendo para ela deixa o
+> usuário sem tela de entrada nenhuma.
 
 ```gherkin
-  Regra: Com dashboards existentes e nenhum exibível, a página responde 403
+  Regra: Com dashboards existentes e nenhum exibível, o clássico atende
 
     @premissa
     Cenário: [CT-28] único dashboard do tenant tem roles que excluem o usuário
       Dado tenancy ligada, a feature ligada e use_spatie_permissions ativo
       E o único dashboard do tenant A tem uma role que o usuário comum não tem
       Quando o usuário comum abre a raiz do /app no tenant A
-      Então a resposta é 403
+      Então ele é devolvido para o dashboard clássico na raiz do painel
+
+    Cenário: [CT-30] o clássico atende em vez de devolver para o 403
+      Dado o mesmo estado do cenário anterior
+      Quando o usuário comum abre a raiz do painel no tenant A
+      Então a página responde com sucesso
+      E não devolve para a grade dinâmica
 ```
 
 #### Mutantes previstos
@@ -493,6 +502,87 @@ Matriz (2 papéis × 4 ações = 8 células; ✅ = permitido, ❌ = recusado sem
 | # | Implementação errada plausível | Cenário que mata |
 |---|---|---|
 | M38 | `canDisplay()` sobrescrito para sempre `true` — role vira decoração | CT-28 |
+| M39 | clássico devolve só por `habilitado()` — ping-pong entre 403 e a raiz | CT-30 |
+| M40 | dinâmica deixa o 403 do vendor subir na raiz do painel | CT-28 |
+
+---
+
+## Regra R14 — Widget é da organização do dashboard dele
+
+> `RQ-05` · perfil **completo** · técnica: **matriz papel × ação** · `@premissa` P13
+> Nascida na revisão de código. A nota original do `KitServiceProvider` dizia que
+> `DashboardWidget` não precisava de escopo "porque é filho" — falso: as ações do
+> vendor buscam o widget por id CRU do cliente
+> (`DynamicDashboard.php:916,936,962`), guardadas só por `canEdit()`.
+
+```gherkin
+  Regra: Widget de outra organização não é alcançável por id
+
+    Cenário: [CT-31] gestor da Globex tenta alcançar widget da Acme pelo id
+      Dado tenancy ligada e um widget no dashboard da Acme
+      E que o usuário corrente administra a Globex, com Manage:Dashboard
+      Quando o widget da Acme é buscado pelo id, como a ação do vendor faz
+      Então nada é encontrado
+      E o widget da Acme continua no banco depois do delete que viria a seguir
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M41 | nenhum scope em `DashboardWidget` — delete/edit cross-tenant por id | CT-31 |
+| M42 | scope por `tenant_id` copiado para o filho em vez de `whereHas` — coluna não existe | CT-31 |
+
+---
+
+## Regra R15 — O dashboard corrente não é escolhido pelo cliente
+
+> `RQ-05`, `RQ-06` · perfil **completo** · técnica: **EP** · `@premissa` P14
+> Nascida na revisão de código. `currentDashboardId` é público e sem trava no
+> vendor (`DynamicDashboard.php:70-71`), e o `#[Session]` dele só repõe o valor
+> no `mount()` (`livewire/src/Features/SupportSession/BaseSession.php:16-23`).
+
+```gherkin
+  Regra: currentDashboardId só muda no servidor
+
+    Cenário: [CT-32] gestor da Globex aponta o componente para o dashboard da Acme
+      Dado tenancy ligada, um dashboard em cada organização
+      E que o usuário corrente administra a Globex, com Manage:Dashboard
+      Quando o cliente tenta escrever o id do dashboard da Acme na propriedade
+      Então a escrita é recusada pelo Livewire
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M43 | propriedade sem `#[Locked]` — persistLayout/createWidget gravam na outra organização | CT-32 |
+| M44 | `#[Locked]` sem repetir `#[Session]` — o dashboard aberto some a cada request | CT-32 (via CT-09) |
+
+---
+
+## Regra R16 — Painel tenant-aware sem tenant resolvido não devolve nada
+
+> `RQ-05` · perfil **completo** · técnica: **valor limite (nulo)** · `@premissa` P15
+> Nascida na revisão de código: o scope falhava ABERTO no caso nulo.
+
+```gherkin
+  Regra: Sem tenant corrente em painel com tenancy, a query fecha
+
+    Cenário: [CT-33] painel /app corrente antes de o tenant ser resolvido
+      Dado tenancy ligada e dashboards de pelo menos uma organização
+      E o painel /app corrente sem tenant resolvido
+      Quando qualquer query de dashboards roda
+      Então ela não devolve nenhuma linha
+      E as linhas continuam existindo fora do escopo
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M45 | `if ($tenant)` — sem tenant, nenhum filtro e tudo vaza | CT-33 |
+| M46 | `where('tenant_id', null)` — vira `whereNull` e devolve os globais | CT-33 |
 
 ---
 
@@ -522,14 +612,14 @@ Matriz (2 papéis × 4 ações = 8 células; ✅ = permitido, ❌ = recusado sem
 
 | Item | Cenário que mata |
 |---|---|
-| IDOR / autorização horizontal | CT-11 (dashboard de outro tenant) |
+| IDOR / autorização horizontal | CT-11 (dashboard de outro tenant) + CT-31 (widget por id cru) + CT-32 (dashboard corrente forjado) |
 | Autorização exercida na ação, não só `can()` | CT-08 (ação disparada fora do caminho feliz) |
 | Idempotência (ancorada no agregado) | CT-16 (seeder 2× → 1 dashboard por tenant) |
 | Concorrência | não se aplica: sem contador/limite |
-| Fronteira no ponto de entrada (gravação) | CT-13 (tenant_id forjado no payload) |
+| Fronteira no ponto de entrada (gravação) | CT-13 (tenant_id forjado no payload) + CT-32 (propriedade Livewire pública) |
 | Domínio condicionado | CT-04 (flag × lista) |
 | Estado × operação de escrita | CT-03 (desligado → dados intactos; religado → funcionam) |
-| Ausente ≠ null ≠ vazio | CT-04 (lista vazia = todos) + CT-23 (env ausente = desligado) |
+| Ausente ≠ null ≠ vazio | CT-04 (lista vazia = todos) + CT-23 (env ausente = desligado) + CT-33 (tenant nulo fecha) |
 | Paginação / ordenação | não se aplica: sem listagem paginada própria |
 | Timezone / DST | não se aplica: sem data/hora |
 | Unicode / limite de varchar | não se aplica: sem texto livre do kit |
@@ -543,7 +633,7 @@ Matriz (2 papéis × 4 ações = 8 células; ✅ = permitido, ❌ = recusado sem
 
 | ID | Cenário | Regra | Técnica | Camada | Arquivo | Mata |
 |----|---------|-------|---------|--------|---------|------|
-| CT-01 | raiz desligada → clássico | R2 | EP | Feature | `tests/Kit/DashboardDinamico*` | M6, M7 |
+| CT-01 | raiz desligada → clássico responde 200 na própria raiz | R2 | EP | Feature | `tests/Kit/DashboardDinamico*` | M6, M7 |
 | CT-02 | toggle muda o próximo request | R3 | EP | Feature | idem | M8, M9 |
 | CT-03 | ciclo liga/desliga preserva | R4 | efeito | Feature | idem | M11, M12 |
 | CT-04 | decisão conjuntiva flag × painel | R1 | decisão | Feature | idem | M1, M2, M4 |
@@ -570,8 +660,12 @@ Matriz (2 papéis × 4 ações = 8 células; ✅ = permitido, ❌ = recusado sem
 | CT-25 | item de menu alterna | R3 | EP | Feature | idem | M10 |
 | CT-26 | ligado sem dashboards → grade vazia | R11 | EP | Feature | idem | M32 |
 | CT-27 | flag on + painel fora da lista → observer não semeia | R6 | efeito | Feature (Tenancy) | `tests/Tenancy/*` | M35 |
-| CT-28 | dashboard com role excludente → 403 | R13 | EP | Feature (Tenancy) | idem | M38 |
+| CT-28 | dashboard com role excludente → clássico | R13 | EP | Feature (Tenancy) | idem | M38, M40 |
 | CT-29 | descoberta filtra pela trait | R12 | EP | Livewire | `tests/Kit/*` | M36, M37 |
+| CT-30 | clássico atende quando a dinâmica não tem exibível | R13 | EP | Feature (Tenancy) | `tests/Tenancy/*` | M39 |
+| CT-31 | widget de outra organização não é alcançável por id | R14 | papel×ação | Feature (Tenancy) | idem | M41, M42 |
+| CT-32 | cliente não escreve `currentDashboardId` | R15 | EP | Livewire (Tenancy) | idem | M43, M44 |
+| CT-33 | painel tenant-aware sem tenant fecha a query | R16 | limite | Feature (Tenancy) | idem | M45, M46 |
 
 ## Sem CT-B?
 

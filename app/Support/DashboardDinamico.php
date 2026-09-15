@@ -6,6 +6,9 @@ namespace App\Support;
 
 use Filament\Facades\Filament;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Collection;
+use MDDev\DynamicDashboard\DashboardModelHelper;
+use MDDev\DynamicDashboard\Models\Dashboard;
 use MDDev\DynamicDashboard\Pages\DynamicDashboard;
 
 /**
@@ -86,6 +89,50 @@ final class DashboardDinamico
         }
 
         return null;
+    }
+
+    /**
+     * A página dinâmica ATENDE este request? Flag ligada para o painel corrente
+     * E dashboard exibível para quem entrou.
+     *
+     * As duas metades são necessárias: sem a segunda, o vendor aborta 403
+     * quando existem dashboards e nenhum passa pelo `canDisplay()`
+     * (`vendor/mddev31/filament-dynamic-dashboard/src/Pages/DynamicDashboard.php:123-125`)
+     * — e como o clássico devolve para a dinâmica, a raiz do painel ficava sem
+     * saída: bastava o gestor restringir o único dashboard a um papel para
+     * todo `panel_user` perder a tela de entrada (CT-28, CT-30).
+     */
+    public static function atende(string $pagina): bool
+    {
+        return self::habilitado() && self::temDashboardExibivel($pagina);
+    }
+
+    /**
+     * Existe dashboard que o usuário corrente PODE ver nesta página?
+     *
+     * Nenhum dashboard também é "sim": a grade vazia é resposta legítima
+     * (CT-26). O 403 do vendor é só o caso "existem e nenhum é exibível".
+     *
+     * A consulta reusa o scope `available()` e o `canDisplay()` do próprio
+     * pacote (`src/Models/Dashboard.php:206-224`,
+     * `src/Pages/DynamicDashboard.php:157-183`) — replicar a regra aqui seria
+     * divergir dela na primeira atualização.
+     *
+     * @param  class-string<DynamicDashboard>  $pagina
+     */
+    public static function temDashboardExibivel(string $pagina): bool
+    {
+        /** @var Collection<int, Dashboard> $disponiveis */
+        $disponiveis = DashboardModelHelper::model()::query()
+            ->available($pagina)
+            ->when(
+                (bool) config('filament-dynamic-dashboard.use_spatie_permissions'),
+                fn ($query) => $query->with('roles'),
+            )
+            ->get();
+
+        return $disponiveis->isEmpty()
+            || $disponiveis->contains(fn (Dashboard $dashboard): bool => $pagina::canDisplay($dashboard));
     }
 
     private static function flagLigada(): bool

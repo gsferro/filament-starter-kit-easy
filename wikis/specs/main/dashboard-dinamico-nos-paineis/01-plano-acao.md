@@ -69,7 +69,7 @@ Cada painel do kit passa a registrar DUAS páginas, sempre as duas, no
 | Página | Estende | Rota | Papel |
 |---|---|---|---|
 | `App\Filament\{P}\Pages\Dashboard` | `MDDev\DynamicDashboard\Pages\DynamicDashboard` | `/` | dinâmica |
-| `App\Filament\Pages\DashboardClassico` | `Filament\Pages\Dashboard` | `/inicio` | fallback |
+| `App\Filament\Pages\DashboardClassico` | `Filament\Pages\Dashboard` | `/` (raiz) | fallback *(alterado em 2026-09-15: era `/inicio`; ver ADR-02)* |
 
 `{P}` ∈ `App`, `Admin`, `Infra` — **a dinâmica é uma subclasse por painel,
 nunca uma classe compartilhada**: o escopo `available()` do pacote filtra por
@@ -113,8 +113,9 @@ final class Dashboard extends DynamicDashboard
 ```
 
 - `mount()` roda por request, depois de `canAccess()` — é o decisor. Desligado,
-  `/` redireciona para `/inicio` em vez de 403: a URL canônica do painel nunca
-  quebra (RQ-04, sentido "desligar com dado gravado").
+  `/dashboard-dinamico` redireciona para a raiz em vez de 403: a URL canônica do painel
+  nunca quebra (RQ-04, sentido "desligar com dado gravado")
+  *(alterado em 2026-09-15: a dinâmica saiu da raiz; ver ADR-02)*.
 - `shouldRegisterNavigation()` é avaliado por request na montagem do menu —
   desligado, o item some e o da clássica aparece no lugar.
 - `canEdit()` é o gancho que o pacote consulta em TODA superfície de escrita:
@@ -135,7 +136,8 @@ final class Dashboard extends DynamicDashboard
 ```php
 final class DashboardClassico extends FilamentDashboard
 {
-    protected static string $routePath = '/inicio';
+    // Sem $routePath: herda '/' do Filament\Pages\Dashboard
+    // (alterado em 2026-09-15; ver ADR-02)
 
     public function mount(): void
     {
@@ -151,7 +153,7 @@ final class DashboardClassico extends FilamentDashboard
 }
 ```
 
-- Espelho simétrico: ligado, `/inicio` devolve para `/`. As duas páginas
+- Espelho simétrico: ligado, a raiz devolve para `/dashboard-dinamico`. As duas páginas
   existem sempre; a config escolhe qual responde de verdade.
 - Herda os widgets clássicos do painel (`getWidgets()`/`getVisibleWidgets()`)
   sem uma linha a mais.
@@ -162,14 +164,14 @@ Nos três `*PanelProvider`, trocar `Dashboard::class` (o `Filament\Pages\Dashboa
 pelo par `Dashboard::class` (a dinâmica do painel) + `DashboardClassico::class`.
 Ajustar o `use` — hoje `use Filament\Pages\Dashboard;` aponta para o vendor.
 
-**Nota de rota — confirmada no vendor**: `Filament\Pages\Dashboard` ocupa `/`
-via `protected static string $routePath = '/'` + `getRoutePath()` próprio
-(`vendor/filament/filament/src/Pages/Dashboard.php:21,39-42`) — o `$slug` de
-`HasRoutes` só produziria `/dashboard`. A dinâmica replica o mesmo par
-(`$routePath` + `getRoutePath()`); a clássica sobrescreve `$routePath` para
-`'/inicio'`. Detalhe de tenancy: em painel com `hasTenancy()`, a rota `/` é
-registrada como `->fallback()` (`Pages/Concerns/HasRoutes.php:46-47`) —
-comportamento herdado de graça.
+**Nota de rota — confirmada no vendor** *(alterada em 2026-09-15; ver ADR-02)*:
+`Filament\Pages\Dashboard` ocupa `/` via `protected static string $routePath = '/'`
++ `getRoutePath()` próprio (`vendor/filament/filament/src/Pages/Dashboard.php:21,39-42`)
+— e é dele que a CLÁSSICA herda a raiz, sem escrever uma linha. A dinâmica não
+declara rota: declara `$slug = 'dashboard-dinamico'` e cai no `$slug` de `HasRoutes`
+(`Pages/Concerns/HasRoutes.php:50-53`). Detalhe de tenancy: em painel com
+`hasTenancy()`, a rota `/` é registrada como `->fallback()`
+(`HasRoutes.php:46-47`) — herdado de graça, agora pela clássica.
 
 ## 4. Widgets compatíveis — `App\Filament\Concerns\WidgetDinamico` — RQ-02, RQ-07
 

@@ -46,42 +46,65 @@ decide dentro — aplicar condicionalmente devolve o problema ao boot.
   "redirecionado". Custo medíocre, ganho de nunca haver 403/404 na `/`.
 - Testes precisam cobrir os dois sentidos do redirect por request.
 
-## ADR-02: A dinâmica fica na raiz `/`; a clássica move para `/inicio`
+## ADR-02: A clássica fica na raiz `/`; a dinâmica mora em `/dashboard-dinamico`
 
-**Status**: Aceita — mecanismo confirmado no vendor: `$routePath` +
-`getRoutePath()` (`vendor/filament/filament/src/Pages/Dashboard.php:21,39-42`)
+**Status**: Aceita *(alterado em 2026-09-15: a decisão original — dinâmica na
+raiz, clássica em `/inicio` — foi REVERTIDA. Ver "O que mudou e por quê".)*
 
 ### Contexto
 
 Duas páginas não podem dividir a mesma rota. Alguém fica com `/` e o outro
 recebe um slug. O projeto de referência colocou a dinâmica em `/` (a página
-`Dashboard` dele estende `DynamicDashboard` direto, sem toggle).
+`Dashboard` dele estende `DynamicDashboard` direto, sem toggle) — mas lá não
+existe toggle nem kit instalado, o que muda o cálculo.
 
 ### Decisão
 
-A dinâmica herda `/` — a URL canônica do painel, a que o item "Dashboard" do
-menu e o logo apontam. A clássica vai para `/inicio` e vira o destino do
-redirect quando a feature está desligada. Assim, com a feature ligada, a URL
-que o usuário vê é a mesma de sempre — e a mesma do projeto de referência.
+A **clássica** herda `/`, como o `Filament\Pages\Dashboard` que ela substituiu
+(`$routePath = '/'`, herdado). A **dinâmica** fica em `/dashboard-dinamico` (`$slug`
+próprio) — sem `$routePath` nem `getRoutePath()`. Com a feature ligada, a raiz
+devolve para `/dashboard-dinamico`; desligada, a dinâmica devolve para a raiz.
+
+O slug `dashboard` continua sendo do clássico, e não por estética: o NOME da
+rota sai do slug (`Pages/Concerns/HasRoutes.php:55-58`), então deixá-lo com o
+clássico preserva `route('filament.{painel}.pages.dashboard')` para todo projeto
+sobre o kit. RQ-08 vale para o nome da rota, não só para a URL.
+
+### O que mudou e por quê
+
+A decisão original punha a dinâmica na raiz, e com a feature DESLIGADA a raiz
+passava a responder 302 para `/inicio`. Isso quebra `RQ-08` ("update do kit é
+inerte"): a URL canônica dos três painéis mudava para todo projeto que
+atualizasse, mesmo sem ligar nada. Medido: **98 testes** do próprio kit que
+abrem `/app`, `/admin` e `/infra` esperando 200 ficaram vermelhos — e nenhum CT
+desta wiki percebeu, porque todos foram derivados do desenho novo.
+
+A alternativa 1 abaixo, preterida por estética de URL, era a correta.
 
 ### Alternativas consideradas
 
-1. **Clássica em `/`, dinâmica em `/dashboard`** — simétrico e igualmente
-   válido; foi preterido porque deixa a URL "feia" (`/dashboard`) no modo que
-   se quer que seja o padrão. Se o slug `/` não for aceito pela página do
-   pacote, esta alternativa vira o desenho — o mecanismo não muda.
-2. **Dinâmica em `/` com `canAccess()` = desligado** — devolve 403 na raiz do
+1. **Clássica em `/`, dinâmica em `/dashboard-dinamico`** — a decisão vigente. O custo é
+   a URL `/dashboard` no modo ligado; o ganho é update inerte e zero regressão
+   nas rotas existentes.
+2. **Dinâmica em `/`, clássica em `/inicio`** — a decisão original, revertida:
+   muda a URL canônica de todo painel mesmo com a feature desligada.
+3. **Dinâmica em `/` com `canAccess()` = desligado** — devolve 403 na raiz do
    painel em vez de cair na clássica. Rejeitada: a home do painel não pode
    responder 403 por configuração.
 
 ### Consequências
 
-- Com a feature ligada, `/inicio` redireciona para `/` — URL antiga de
-  bookmark continua funcionando.
+- Atualizar o kit não muda rota nenhuma: com a feature desligada, `/app`,
+  `/admin` e `/infra` respondem exatamente o que respondiam.
+- Com a feature ligada, o usuário que abre a raiz é redirecionado uma vez para
+  `/dashboard-dinamico`. Bookmark da raiz continua funcionando.
 - O item de navegação "Dashboard" alterna de dono conforme o toggle; os dois
   nunca aparecem juntos (`shouldRegisterNavigation` espelhado).
-- Em painel com tenancy, a rota `/` vira `->fallback()` automaticamente
-  (`Pages/Concerns/HasRoutes.php:46-47`) — herdado, sem código.
+- Em painel com tenancy, a rota `/` (agora da clássica) vira `->fallback()`
+  automaticamente (`Pages/Concerns/HasRoutes.php:46-47`) — herdado, sem código.
+- As três rotas `/{painel}/dashboard-dinamico` entram em `telasForaDoInventario()` do
+  `InventarioDeTelasTest`: desligadas só redirecionam, e ligadas têm CT-B
+  próprio.
 
 ## ADR-03: Uma subclasse de página por painel — a FQCN é a fronteira
 

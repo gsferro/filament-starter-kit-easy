@@ -8,11 +8,17 @@
 - [x] `00-requisito.md` — pedido transcrito + cláusulas RQ-01 a RQ-08 + Ambiguidades P1–P4
 - [x] `01-plano-acao.md` — PRD com os 10 blocos de trabalho
 - [x] `02-decisoes-arquiteturais.md` — ADR-01 a ADR-07
-- [x] `04-casos-de-teste.md` — 26 CTs, 11 regras, 34 mutantes; gate fechado
+- [x] `04-casos-de-teste.md` — 33 CTs, 16 regras, 46 mutantes; gate fechado
+  (29 CTs e 13 regras na derivação; CT-30 a CT-33 e R14 a R16 nasceram da
+  revisão de código, Adendo 2 do `00`)
 - [x] `05-casos-de-teste-browser.md` — CT-B01 (drag persiste) + CT-B02 (read-only real)
-- [ ] Revisão adversarial do 04/05 — OBRIGATÓRIA (Impacto 3 em permissão e
-  update; perfil completo em tenancy). Pendente: exige revisor que não derivou
-  o conjunto — rodar antes de implementar.
+- [x] Revisão adversarial do 04/05 — rodada antes de implementar; virou o
+  Adendo 1 do `00-requisito.md` (P5 a P11), e os achados entraram no código
+  (`config/filament-shield.php:330-336` P11, `TenantObserver` P5,
+  `KitServiceProvider` P7/P10)
+- [x] Revisão de código do diff completo — Adendo 2 do `00-requisito.md`
+  (P12 a P15): quatro defeitos, todos em superfície do vendor que a derivação
+  tratou como interna. Correções e CTs abaixo.
 - [x] Auditoria `ponytail-review` da wiki — 1 achado aplicado:
   `DashboardClassico` era ×3 por painel; virou ×1 compartilhada
   (`App\Filament\Pages\DashboardClassico`), porque não grava `dashboards.page`
@@ -59,9 +65,10 @@
 
 ## Notas de execução
 
-- Confirmado: `DynamicDashboard` aceita raiz via `getRoutePath()` retornando
-  `'/'` — não `$slug` (`app/Filament/App/Pages/Dashboard.php`). O fallback
-  clássico ficou em `/inicio` (`DashboardClassico::$routePath`).
+- ~~Confirmado: `DynamicDashboard` aceita raiz via `getRoutePath()` retornando
+  `'/'`~~ *(alterado em 2026-09-15: o mecanismo funciona, mas a posse da rota
+  foi invertida — ver ADR-02 e P16. A clássica herda `/` do
+  `Filament\Pages\Dashboard` e a dinâmica cai no slug padrão `/dashboard`.)*
 - Permission gerada pelo Shield: `Manage:Dashboard` (string fixada nos CTs de
   contrato em `tests/Kit/DashboardDinamicoTest.php`).
 - CT-B01: o gesto de mouse não engata no DD do GridStack (exige
@@ -71,3 +78,39 @@
   e faz poll no banco até o write assíncrono aterrissar. A espera pela
   instância `el.gridstack` é por Promise no `script()` — o handle é HTML
   server-side e aparece antes do Alpine bootar o grid.
+
+## Correções pós-revisão de código
+
+- [x] P12 — `DashboardDinamico::atende()` + `temDashboardExibivel()`
+  (`app/Support/DashboardDinamico.php`), consumidos pelo `mount()` das três
+  páginas dinâmicas e pelo `DashboardClassico::mount()`. CT-28 reescrito, CT-30
+  novo (`tests/Tenancy/DashboardDinamicoTenancyTest.php`)
+- [x] P13 — global scope `tenant` em `DashboardWidget` via `whereHas('dashboard')`
+  (`app/Providers/KitServiceProvider.php`), CT-31
+- [x] P14 — `#[Session] #[Locked] public ?int $currentDashboardId` nas três
+  páginas (`app/Filament/{App,Admin,Infra}/Pages/Dashboard.php`), CT-32
+- [x] P15 — scope de dashboards fecha (`1 = 0`) sem tenant em painel
+  tenant-aware (`app/Providers/KitServiceProvider.php`), CT-33
+- [x] CT-03 — o ciclo liga/desliga/religa, que estava no 04 sem teste desde a
+  implementação (`tests/Kit/DashboardDinamicoTest.php`)
+- [x] P16 — posse da rota invertida: `DashboardClassico` sem `$routePath`
+  (herda `/`), as três dinâmicas sem `$routePath`/`getRoutePath()` (slug
+  `dashboard-dinamico`; o slug `dashboard` fica com o clássico para preservar o
+  NOME da rota histórica). Conciliações que a inversão exigiu:
+  `HubDeInfraestrutura::getCards()` exclui as duas telas de entrada,
+  `PermissoesDeTelasTest` isenta as quatro por desenho (P11),
+  `TextoDoEnvTest` isenta `KIT_DASHBOARD_DINAMICO_PAINEIS` (lista vazia = todos,
+  mesmo caso do login social), `KitInfoTest` de 49 para 51 propriedades,
+  `InventarioDeTelasTest` recebe as três rotas novas
+- [x] Falsificabilidade conferida: com `git stash` das mudanças de `app/`, os
+  CTs 30, 31, 32 e 33 falham (o CT-03 passa — é guarda de regressão, não
+  conserto). Com elas, `38 passed` nas duas suítes.
+
+## Pendências conhecidas
+
+- Documentação de usuário (`docs/pt`, `docs/en`) ainda não tem página da
+  feature: `docs/*/recursos/configuracoes-do-kit.md` descreve a aba Kit sem o
+  toggle e o `roteiro-de-features.md` não tem linha própria.
+- `app/Filament/{App,Admin,Infra}/Pages/Dashboard.php` são a mesma
+  implementação três vezes (a FQCN por painel é exigência do ADR-03, o corpo
+  não). Trait compartilhada reduziria ~90 linhas.

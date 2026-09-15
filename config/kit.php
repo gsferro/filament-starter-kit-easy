@@ -356,7 +356,7 @@ return [
     | Ligado, a raiz de cada painel (`/`, ou `/app/{tenant}` com multi-
     | organização) passa a responder a grade do mddev31/filament-dynamic-
     | dashboard — widgets que o usuário monta, move e redimensiona. Desligado,
-    | responde o `Filament\Pages\Dashboard` de sempre, em `/inicio` quando a
+    | responde o dashboard clássico de sempre, na RAIZ do painel quando a
     | dinâmica está no ar. A troca é por REQUEST: as duas páginas estão sempre
     | registradas e `App\Support\DashboardDinamico` decide qual atende.
     |

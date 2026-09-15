@@ -46,6 +46,7 @@ use Laravel\Ai\Events\AgentPrompted;
 use Laravel\Ai\Events\AgentStreamed;
 use MDDev\DynamicDashboard\DashboardModelHelper;
 use MDDev\DynamicDashboard\Models\Dashboard;
+use MDDev\DynamicDashboard\Models\DashboardWidget;
 use Rappasoft\LaravelAuthenticationLog\Models\AuthenticationLog;
 use Spatie\Health\Checks\Checks\CacheCheck;
 use Spatie\Health\Checks\Checks\DatabaseCheck;
@@ -247,13 +248,21 @@ class KitServiceProvider extends ServiceProvider
      *     tenant corrente. A condição é `hasTenancy()`, não id fixo — vale para o /app
      *     hoje e para qualquer painel tenant-aware que o projeto adicionar (RQ-07).
      *     Painel sem tenancy (/admin, /infra) sai no primeiro `return`: dashboards
-     *     deles são globais.
+     *     deles são globais. Painel tenant-aware SEM tenant resolvido fecha a query
+     *     (`1 = 0`) em vez de não filtrar: há janela em que o painel já é o corrente
+     *     e o `IdentifyTenant` ainda não rodou (ver `AppPanelProvider`), e ali o
+     *     filtro ausente devolvia os dashboards de TODAS as organizações (CT-33).
      *   - hook `creating`: o único escritor de `tenant_id`. A coluna fica fora do
      *     `$fillable` do model do vendor, e o hook sobrescreve SEMPRE que há tenant
      *     corrente — não só quando nulo — para cobrir atribuição direta (P10).
      *
-     * `DashboardWidget` não precisa de escopo próprio: é filho, sempre alcançado via
-     * `dashboard_id` dentro de um dashboard já escopado.
+     * `DashboardWidget` PRECISA de escopo próprio, ao contrário do que esta nota dizia
+     * até a v0.32.7: as ações do vendor buscam o widget por id cru do cliente
+     * (`DynamicDashboard.php:916,936,962` — `DashboardWidget::find($arguments['widget'])`),
+     * guardadas só por `canEdit()`. Sem o scope, quem administra uma organização
+     * apagava e reescrevia widget de OUTRA pelo id (CT-31). O `whereHas('dashboard')`
+     * herda o scope de cima, porque a relação aponta para a classe resolvida pelo
+     * `DashboardModelHelper` (`Models/DashboardWidget.php:96-99`).
      *
      * O observer só é registrado com a tenancy ligada — sem organizações não há o
      * que semear. O gate da criação em si é do observer (`habilitadoPara('app')`).
@@ -269,9 +278,21 @@ class KitServiceProvider extends ServiceProvider
 
             $tenant = Filament::getTenant();
 
-            if ($tenant) {
-                $builder->where('dashboards.tenant_id', $tenant->getKey());
+            if (! $tenant) {
+                $builder->whereRaw('1 = 0');
+
+                return;
             }
+
+            $builder->where('dashboards.tenant_id', $tenant->getKey());
+        });
+
+        DashboardWidget::addGlobalScope('tenant', static function (Builder $builder): void {
+            if (! filament()->getCurrentPanel()?->hasTenancy()) {
+                return;
+            }
+
+            $builder->whereHas('dashboard');
         });
 
         $model::creating(static function (Dashboard $dashboard): void {

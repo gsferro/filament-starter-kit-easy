@@ -5,12 +5,30 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Corrigido
+- **Fronteira de organização dos widgets do dashboard dinâmico.** As ações do
+  pacote buscam o widget pelo id que vem do cliente, guardadas só pela permissão
+  de edição: quem administrava uma organização conseguia apagar ou reescrever
+  widget de outra pelo id. `DashboardWidget` ganhou global scope de tenant, a
+  propriedade `currentDashboardId` das páginas ganhou `#[Locked]` (sem ela, o
+  cliente apontava a gravação de layout para o dashboard de outra organização) e
+  o scope de `dashboards` passou a fechar a query quando o painel é
+  tenant-aware e ainda não há tenant resolvido — antes, nessa janela, ele não
+  filtrava nada. Cobertos por CT-31, CT-32 e CT-33.
+- **Beco sem saída na raiz do painel.** Com todos os dashboards restritos a
+  papéis que o usuário não tem, o pacote responde 403 — e o dashboard clássico
+  devolvia o usuário para lá, deixando-o sem tela de entrada. Agora a dinâmica
+  só atende quando existe dashboard exibível, e o clássico responde no lugar
+  (CT-28, CT-30).
+
 ### Adicionado
 - **Dashboard dinâmico nos três painéis** (`mddev31/filament-dynamic-dashboard`).
   Cada painel (`/admin`, `/app`, `/infra`) ganha uma grade GridStack montável
-  pelo usuário — arrastar, redimensionar, adicionar e remover widgets — com
-  fallback automático para o dashboard clássico em `/inicio` quando a feature
-  está desligada. Liga/desliga por `KIT_DASHBOARD_DINAMICO` ou pelo toggle da
+  pelo usuário — arrastar, redimensionar, adicionar e remover widgets — em
+  `/{painel}/dashboard-dinamico`. A RAIZ de cada painel continua sendo do dashboard
+  clássico: com a feature ligada ela devolve para a grade, e desligada responde
+  como sempre respondeu — atualizar o kit não muda a URL canônica de painel
+  nenhum. Liga/desliga por `KIT_DASHBOARD_DINAMICO` ou pelo toggle da
   aba Kit em `/admin/configuracoes-da-aplicacao`, com seletor de painéis
   (`KIT_DASHBOARD_DINAMICO_PAINEIS`, vazio = todos). Quem monta a grade é quem
   tem a permission `Manage:Dashboard` — o `panel_user` vê, não edita. Com
