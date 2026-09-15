@@ -30,7 +30,7 @@ final class DashboardPadraoSeeder extends Seeder
     public function run(): void
     {
         if (! DashboardDinamico::habilitadoPara('app')) {
-            $this->command?->warn('Dashboard dinâmico desligado para o /app — nada a semear.');
+            $this->command->warn('Dashboard dinâmico desligado para o /app — nada a semear.');
 
             return;
         }
@@ -41,7 +41,7 @@ final class DashboardPadraoSeeder extends Seeder
          * chamado por um comando que a declare (ex.: um `tenants:seed` do
          * projeto); por isso a leitura é condicionada à definição.
          */
-        $tenantId = $this->command?->getDefinition()->hasOption('tenant') === true
+        $tenantId = $this->command->getDefinition()->hasOption('tenant')
             ? $this->command->option('tenant')
             : null;
 

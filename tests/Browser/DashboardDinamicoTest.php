@@ -112,7 +112,17 @@ it('persiste a posicao do widget arrastado', function (): void {
                 }
 
                 grid.update(item, { x: 6, y: 3 });
-                resolve(true);
+
+                /*
+                 * A espera pelo write acontece AQUI, dentro do navegador, e não
+                 * num `usleep` do PHP: o servidor do `pest-plugin-browser` é
+                 * in-process, então enquanto o teste dorme em PHP ninguém atende
+                 * o `$wire.call('persistLayout')` que o `change` disparou —
+                 * medido: com a espera no PHP o dado nunca chega, com ela aqui
+                 * chega em ~1s. O debounce do pacote é de 150 ms; 1,5 s dá folga
+                 * para o round-trip do Livewire.
+                 */
+                setTimeout(() => resolve(true), 1500);
             };
 
             mover();
@@ -121,16 +131,10 @@ it('persiste a posicao do widget arrastado', function (): void {
 
     /*
      * O drop dispara `change` → scheduleFlush (debounce de 150 ms) →
-     * `$wire.call('persistLayout')` — escrita ASSÍNCRONA. A âncora é o banco,
-     * com poll até o write aterrissar (não um wait fixo: sai no primeiro
-     * instante em que o dado muda, e estoura o teto se nunca mudar).
+     * `$wire.call('persistLayout')` — escrita ASSÍNCRONA, já aguardada dentro
+     * do navegador acima. A âncora é o banco, não o pixel.
      */
-    $gravou = false;
-
-    for ($i = 0; $i < 40 && ! $gravou; $i++) {
-        usleep(250_000);
-        $gravou = [$primeiro->refresh()->x, $primeiro->y] !== [0, 0];
-    }
+    $gravou = [$primeiro->refresh()->x, $primeiro->y] !== [0, 0];
 
     $segundo->refresh();
 

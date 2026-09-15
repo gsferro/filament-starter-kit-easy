@@ -31,6 +31,28 @@ parameters:
             paths:
                 - app/Filament/*/Resources/**
 
+        # `WidgetDinamico` e PONTO DE EXTENSAO do kit, nao codigo consumido por ele: quem a usa e
+        # o widget do PROJETO que quer entrar na grade do dashboard dinamico
+        # (`implements DynamicWidget` + `use WidgetDinamico`). O kit nao embarca widget de
+        # negocio por desenho — o /app nasce vazio —, entao dentro de `app/` ela tem, e deve
+        # ter, zero usos.
+        #
+        # Tentado e descartado ANTES desta excecao:
+        #   - incluir `tests/` nos paths: o unico uso e o fixture
+        #     `tests/Browser/Fixtures/WidgetDeTeste.php`, e `tests` fora dos paths e decisao
+        #     medida (ver o comentario de `paths` abaixo: 117 erros de ruido para triar).
+        #   - embarcar um widget dinamico no kit so para dar um uso a trait: inventa superficie
+        #     de produto para calar analisador.
+        #
+        # A cobertura de verdade e o teste: `tests/Browser/DashboardDinamicoTest.php` (CT-B01/B02)
+        # monta a grade com um widget que usa a trait, e `tests/Kit/DashboardDinamicoTest.php`
+        # (CT-29) assere que so quem a usa aparece no seletor. Se a trait quebrar, eles ficam
+        # vermelhos.
+        -
+            message: '#Trait App\\Filament\\Concerns\\WidgetDinamico is used zero times#'
+            paths:
+                - app/Filament/Concerns/WidgetDinamico.php
+
         # `customMyProfilePage()` do filament-breezy tem a ANOTAÇÃO errada, e ela é
         # insatisfazível: `@param class-string<Pages\MyProfilePage> $class`
         # (vendor/jeffgreco13/filament-breezy/src/Concerns/Plugin/HasMyProfile.php:29-33). O
