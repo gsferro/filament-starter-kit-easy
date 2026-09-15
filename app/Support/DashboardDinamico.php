@@ -101,6 +101,8 @@ final class DashboardDinamico
      * — e como o clássico devolve para a dinâmica, a raiz do painel ficava sem
      * saída: bastava o gestor restringir o único dashboard a um papel para
      * todo `panel_user` perder a tela de entrada (CT-28, CT-30).
+     *
+     * @param  class-string<DynamicDashboard>  $pagina
      */
     public static function atende(string $pagina): bool
     {
@@ -122,13 +124,16 @@ final class DashboardDinamico
      */
     public static function temDashboardExibivel(string $pagina): bool
     {
+        /*
+         * Sem eager load de `roles`: a relação vive na subclasse
+         * `DashboardWithRoles`, que o `DashboardModelHelper` resolve em runtime
+         * e nenhuma análise estática enxerga. O `canDisplay()` carrega sob
+         * demanda, e a lista aqui é a dos dashboards de UM painel — curta por
+         * construção.
+         */
         /** @var Collection<int, Dashboard> $disponiveis */
         $disponiveis = DashboardModelHelper::model()::query()
             ->available($pagina)
-            ->when(
-                (bool) config('filament-dynamic-dashboard.use_spatie_permissions'),
-                fn ($query) => $query->with('roles'),
-            )
             ->get();
 
         return $disponiveis->isEmpty()
