@@ -291,6 +291,10 @@ O Reverb usa 8090 e não o default 8080 para não colidir com o llama.cpp.
 
 Nenhum serviço tem `container_name` fixo: o prefixo vem de `COMPOSE_PROJECT_NAME`, que o `kit:install` grava com o nome do seu projeto. [Detalhes no site](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/instalacao-avancada.html).
 
+### Endereço local por nome, em vez de IP e porta
+
+Dá para abrir o projeto em `http://meu-projeto.test` no lugar de `http://127.0.0.1:8000`: custa uma linha no arquivo `hosts` da máquina e duas chaves no `.env`. Nenhum arquivo versionado muda, a adoção é individual e quem não fizer nada continua em `http://localhost:8000`. [Receita completa, com a armadilha de elevação no Windows](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/dominio-local.html).
+
 ### Atualizando a stack na máquina que a hospeda
 
 `./deploy_docker_local.sh` roda **no host dos containers** (não na máquina de desenvolvimento) e faz a sequência inteira: `git pull`, rebuild da imagem, `--profile app up -d`, migrations, `optimize:clear`, health check em `/up` e sonda TCP do Reverb. A saída fica em `storage/logs/deploy_docker_local.log`.

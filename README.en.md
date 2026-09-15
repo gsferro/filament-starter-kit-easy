@@ -291,6 +291,10 @@ Reverb uses 8090 instead of the default 8080 so it doesn't collide with llama.cp
 
 No service declares a fixed `container_name`: the prefix comes from `COMPOSE_PROJECT_NAME`, which `kit:install` writes with your project's name. [Details on the site](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/instalacao-avancada.html).
 
+### A local hostname, instead of IP and port
+
+You can open the project at `http://my-project.test` rather than `http://127.0.0.1:8000`: it costs one line in the machine's `hosts` file and two keys in `.env`. No versioned file changes, adoption is individual, and anyone who does nothing stays on `http://localhost:8000`. [Full recipe, including the Windows elevation trap](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/dominio-local.html).
+
 ### Updating the stack on the machine that hosts it
 
 `./deploy_docker_local.sh` runs **on the container host** (not on your development machine) and does the whole sequence: `git pull`, image rebuild, `--profile app up -d`, migrations, `optimize:clear`, a health check on `/up` and a TCP probe of Reverb. Output is appended to `storage/logs/deploy_docker_local.log`.
