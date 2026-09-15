@@ -1,6 +1,6 @@
 ---
 name: feature-wiki
-version: 3.1.0
+version: 3.2.0
 description: >
   Cria estrutura de documentação wiki para uma feature antes de implementá-la.
   Invoque SEMPRE ao iniciar implementação de qualquer feature nova.
@@ -27,6 +27,10 @@ description: >
   alguma decisão da wiki deve virar Project Rule do Boost e
   submete a decisão ao usuário (skill requirement-to-rule). Exige consulta à
   Documentation API do Boost (search-docs) para cada stack que o PRD toca.
+  Quando a feature monta sobre pacote de terceiro, o step 3 exige a tabela
+  ## Superfície do Pacote no 02 (models, propriedades públicas e ações que recebem id do
+  cliente, cada uma com a fronteira aplicada e o arquivo:linha do vendor), e o step 7.5
+  roda revisão de código do diff por quem não implementou, antes do quality gate.
 ---
 
 # Feature Wiki — Documentação Antes de Implementar
@@ -56,6 +60,7 @@ description: >
   - [5. Revisão Profunda Pós-Escrita](#5-revisão-profunda-pós-escrita-obrigatório)
   - [6. Auditoria da Wiki com Ponytail-review](#6-auditoria-da-wiki-com-ponytail-review-obrigatório)
   - [7. Pós-Implementação e Reconciliação](#7-pós-implementação-e-reconciliação-obrigatório-antes-do-pr)
+  - [7.5. Revisão de Código do Diff](#75-revisão-de-código-do-diff-obrigatório-antes-do-quality-gate)
   - [8. Quality Gate e abertura do PR](#8-quality-gate-e-abertura-do-pr-obrigatório-antes-do-pr)
   - [9. Candidatos a Rule](#9-candidatos-a-rule-de-projeto-decisão-do-usuário)
 - [Arquivo 00: Requisito](#arquivo-00-requisito--fonte-da-verdade)
@@ -207,7 +212,7 @@ Antes de escrever qualquer documento:
 - Ler arquivos existentes relevantes com `Read` ou `Grep`
 - Executar `php artisan model:show ModelName` para models relacionados
 - Examinar padrões existentes com `Glob "**/[padrão]/**/*.php"`
-- **Inspecionar APIs de terceiros** antes de escrever CTs — verificar vendor source ou docs oficiais para confirmar nomes de métodos, assinaturas e restrições de schema
+- **Inspecionar APIs de terceiros** antes de escrever CTs — verificar vendor source ou docs oficiais para confirmar nomes de métodos, assinaturas e restrições de schema. Se a feature **monta sobre** um pacote (e não apenas o chama), isso não basta: ver [Superfície do Pacote de Terceiro](#superfície-do-pacote-de-terceiro-obrigatório-quando-a-feature-monta-sobre-um)
 - Para features médias/grandes: delegar o mapeamento amplo a um agent `Explore` e depois **confirmar os trechos críticos com `Read` direto** (linhas exatas, imports, assinaturas) — não confiar apenas no resumo do agent
 - **Validar dados fornecidos pelo usuário** (CSV, listas, IDs) contra o banco via `database-query` — detectar divergências de título/chave, escolher chave estável (ID) para mapeamentos e documentar as divergências no plano
 - **Verificar existência de factories** (`Glob "database/factories/{Model}*"`) e states disponíveis antes de escrever CTs; se não houver factory, especificar `Model::create([...])` no Setup Global
@@ -223,6 +228,44 @@ Antes de escrever qualquer documento:
 - **Verificar observers** — `Glob "app/Observers/*.php"` para hooks de model existentes
 - **Verificar middleware** — `Grep` em `app/Http/Middleware/` e em `bootstrap/app.php` (Laravel 11+) para middleware stack
 - **Verificar variáveis de ambiente** — `Read` em `.env.example` para chaves existentes e padrão de naming
+
+#### Superfície do Pacote de Terceiro (OBRIGATÓRIO quando a feature monta sobre um)
+
+Quando a feature é *"ligar o pacote X nos nossos painéis"*, o código que o usuário final alcança é
+majoritariamente **do pacote** — e é exatamente ele que fica fora de todo inventário, porque os
+itens acima varrem `app/`, `routes/` e `config/` **do projeto**.
+
+Produzir a tabela `## Superfície do Pacote` no `02-decisoes-arquiteturais.md`, uma linha por ponto
+que o **cliente** alcança:
+
+| Ponto de entrada (vendor) | Alcançável por | Fronteira aplicada pelo projeto | Evidência |
+|---|---|---|---|
+| `Widget::find($arguments['widget'])` | `$wire.mountAction('deleteWidget', {widget: <id>})` | global scope `whereHas('pai')` | `vendor/{pkg}/src/Pages/X.php:962` |
+| `public ?int $currentDashboardId` | `$wire.set()` em qualquer request após o `mount()` | `#[Locked]` na subclasse do projeto | `vendor/{pkg}/src/Pages/X.php:71` |
+
+Varredura mínima — os quatro greps, com o resultado colado na tabela:
+
+```bash
+grep -rn "::find(\|whereKey(\|findOrFail(" vendor/{vendor}/{pkg}/src        # busca por id cru
+grep -rn "public \$\|public ?" vendor/{vendor}/{pkg}/src | grep -v Locked   # prop que o cliente escreve
+grep -rn '\$arguments\[\|\$data\[' vendor/{vendor}/{pkg}/src              # argumento do cliente na ação
+grep -rn "extends Model" vendor/{vendor}/{pkg}/src/Models                    # models a escopar
+```
+
+**Regra dura**: **todo model do pacote que a feature persiste aparece na tabela com a própria
+fronteira.** *"É filho do outro, logo está protegido"* só vale com a evidência de que **nenhum**
+ponto de entrada o alcança direto — e essa evidência é um `grep`, não uma dedução.
+
+A tabela é **entrada obrigatória da `feature-test-design`** (step 4): cada linha vira gatilho do
+checklist de taxonomia, e a linha sem cenário correspondente é lacuna declarada, não silêncio.
+
+> **Por que este bloco existe** (caso real, 2026-09-15): uma feature com wiki completa — 29 CTs,
+> revisão adversarial, 11 regras, 38 mutantes — entregou **quatro defeitos**, dois deles de escrita
+> cross-tenant. Os quatro moravam nesta superfície: ação do pacote buscando o filho por id cru do
+> cliente, propriedade pública Livewire sem `#[Locked]`, escopo que falhava aberto no caso nulo e
+> 403 do vendor sem saída. A wiki citava o vendor corretamente para justificar desenho e **nunca o
+> inventariou como superfície de ataque**. O texto que liberou o pior deles foi uma dedução sem
+> grep: *"o filho não precisa de escopo, é sempre alcançado pelo pai"*.
 
 #### Verificação do stack de testes (define se haverá CT-B)
 
@@ -364,12 +407,22 @@ de `.ai/rules/` cujos globs casam com o diff.
 3. **Reverificar toda citação `arquivo:símbolo:linha`** com o grep de
    [Citações de código](#citações-de-código--arquivosímbololinha). Pint e imports novos deslocam
    linhas; a conferência é mecânica e o resultado (`— 14/14 ok`) vai para a Verificação Final
-4. **Sincronizar `04`/`05` com o teste real, nos dois sentidos.** Todo `[CT-nn]`/`[CT-Bnn]` do
-   arquivo de teste existe no `04`/`05`; todo CT do índice aponta um teste existente ou declara
-   "fundido em CT-nn"; linha de dataset nova no teste existe como Exemplo no Gherkin. Cenário que
-   nasceu durante a implementação **nasce no `04` primeiro** (Proibição 11 da
-   `feature-test-design`). Se o projeto tiver o teste de arquitetura sugerido por ela, rodá-lo;
-   se não, `grep -o '\[CT-B\?[0-9]*\]'` nos dois lados e `diff`
+4. **Sincronizar `04`/`05` com o teste real, nos dois sentidos — por comando, não por leitura.**
+   Todo `[CT-nn]`/`[CT-Bnn]` do arquivo de teste existe no `04`/`05`; todo CT do índice aponta um
+   teste existente ou declara "fundido em CT-nn"; linha de dataset nova no teste existe como
+   Exemplo no Gherkin. Cenário que nasceu durante a implementação **nasce no `04` primeiro**
+   (Proibição 11 da `feature-test-design`).
+
+   ```bash
+   diff <(grep -oh 'CT-B\?[0-9]\+' wikis/specs/{branch}/{feature}/0[45]-*.md | sort -u) \
+        <(grep -oh 'CT-B\?[0-9]\+' tests/**/*{Feature}*.php | sort -u)
+   ```
+
+   **Saída vazia é o critério**; linha com `<` é CT sem teste, linha com `>` é teste sem CT. A
+   saída vai colada na `## Verificação Final` — sem ela o checkbox não fecha. (Caso real: o `04`
+   declarava um CT de ciclo liga/desliga com dois mutantes exclusivos e **nenhum teste o
+   implementava**; o checkbox *"testes conforme 04/05"* fechou assim mesmo, e a lacuna só apareceu
+   numa revisão de código posterior. O `diff` acima leva segundos e a teria pego no dia.)
 5. **Conformidade com as rules do projeto.** Para cada rule em `.ai/rules/index.md` cujo glob
    casa com um arquivo do diff, uma linha na tabela `## Conformidade com Rules` do `03`:
    `rule → aplicada / n.a. / violada`, com evidência (`arquivo:símbolo:linha` ou nome do CT).
@@ -397,6 +450,48 @@ de `.ai/rules/` cujos globs casam com o diff.
 > repete os três como **dimensão L — Consistência Documental**, por quem não escreveu a wiki.
 > Fazer só um dos dois não basta: sem o 7 o quality gate afoga em defasagem trivial; sem o 8
 > ninguém confere quem escreveu.
+
+### 7.5. Revisão de Código do Diff (OBRIGATÓRIO, antes do quality gate)
+
+**Por quem não implementou** — `/code-review` ou sub-agente equivalente, sobre o **diff completo**
+da feature (`git diff {base}..HEAD`), não sobre os arquivos que o agente lembra de ter tocado.
+
+**Por que existe, e por que nenhum outro step cobre**: o step 6 audita o **plano**
+(`ponytail-review`, over-engineering); o step 8 confronta **requisito × app rodando** (omissão
+silenciosa). Nenhum dos dois lê o diff atrás de **defeito de correção**. Entre um e outro passa
+uma classe inteira: escrita cross-tenant, propriedade pública que o cliente escreve, gate que
+falha aberto no caso nulo, estado de erro sem saída. Nada disso é visível para quem pergunta *"o
+requisito foi atendido?"* nem para quem pergunta *"o plano é simples demais?"* — e tudo isso passa
+com a suíte verde, porque os testes foram derivados da mesma leitura que produziu o defeito.
+
+**Eixos obrigatórios da revisão** (além do que o revisor achar por conta):
+
+| Eixo | Pergunta |
+|---|---|
+| Fronteira de dado | toda query que o usuário alcança filtra pelo discriminante? e quando o discriminante é **nulo**, ela **fecha** ou **abre**? |
+| Ponto de entrada do vendor | as ações do pacote que recebem id/argumento do cliente estão cobertas pela mesma fronteira? conferir contra `## Superfície do Pacote` do `02` |
+| Propriedade pública Livewire | o que o cliente pode escrever **entre requests**? `#[Locked]` em toda propriedade que decide **onde** a escrita cai |
+| Estado de erro | todo 4xx/redirect novo tem saída — para onde o usuário vai depois? par "A devolve para B, B devolve para A" é blocker |
+| Afirmação de comentário | comentário que justifica a **ausência** de um controle tem `arquivo:linha` do vendor provando? |
+
+**Roteamento do achado** — igual ao do quality gate, e nesta ordem:
+
+1. Achado confirmado vira **Adendo numerado no `00`** (`## Adendo N`, premissas `Pnn`) — porque ele
+   muda o que a feature promete, não só o código
+2. Vira **CT novo no `04`** (regra, cenário Gherkin e os mutantes que ele mata), **antes** da
+   correção
+3. Só então a correção
+4. Achado **rejeitado** fica registrado com o motivo. Relatório sem rejeição parece que só procurou
+   onde achou
+
+**Falsificabilidade da correção (duro)**: antes de fechar, provar que o CT novo **falha sem** a
+correção — `git stash push -- app/`, rodar o CT, `git stash pop`. CT que passa dos dois lados não é
+oráculo, é decoração. O resultado (`4 de 5 falham sem o fix`) vai para a `## Verificação Final`.
+
+> Caso real (2026-09-15): a revisão de código do diff de uma feature já "verde e concluída" achou
+> quatro defeitos — dois de escrita cross-tenant, um de fail-open e um beco sem saída na raiz do
+> painel. Os steps 5, 6 e 7 tinham rodado; o 8 não. Nenhum dos quatro seria pego por nenhum deles,
+> porque todos os quatro estavam **corretos em relação ao plano**.
 
 ### 8. Quality Gate e abertura do PR (OBRIGATÓRIO, antes do PR)
 
@@ -1616,6 +1711,7 @@ Antes de encerrar a invocação:
 - [ ] Lacunas do `search-docs` cobertas por doc oficial: Pest 5, Playwright/`pest-plugin-browser`, pacotes de terceiros
 - [ ] Rotas, policies, config, composer, wikis existentes verificados
 - [ ] APIs de terceiros inspecionadas (vendor source ou docs) — métodos e schema confirmados
+- [ ] Se a feature monta sobre pacote de terceiro: tabela `## Superfície do Pacote` no `02` preenchida pelos quatro greps, com **um model do pacote por linha** e a fronteira de cada um
 - [ ] Dados fornecidos pelo usuário validados contra o DB (quando aplicável)
 - [ ] Factories confirmadas (existência + states) para todos os CTs
 - [ ] Stack de testes verificado: versão do Pest, `pest-plugin-browser`, Playwright, `APP_URL`, traits em `tests/Pest.php`
@@ -1651,7 +1747,10 @@ Antes de encerrar a invocação:
 - [ ] Todo `[x]` do `03-progresso.md` tem evidência inline (`— {resultado}, {data}`); nenhum fechado em lote
 - [ ] Cada desvio do `03` tem a edição correspondente no `01`/`02`/`04`/`05` de origem, marcada `*(alterado em …)*` — nenhuma afirmação do `01`/`02` contradiz o código
 - [ ] Toda citação `arquivo:símbolo:linha` da wiki reverificada pelo grep — resultado no `03`
-- [ ] IDs `[CT-nn]`/`[CT-Bnn]` do teste ⊆ `04`/`05` e vice-versa; linha de dataset nova existe como Exemplo no Gherkin
+- [ ] IDs `[CT-nn]`/`[CT-Bnn]` do teste ⊆ `04`/`05` e vice-versa — **saída do `diff` colada na Verificação Final, vazia**
+- [ ] **Revisão de código do diff executada** (step 7.5) por quem não implementou; cada achado confirmado virou Adendo no `00` + CT no `04` + correção, nessa ordem
+- [ ] Falsificabilidade dos CTs novos provada por `git stash` — cada um falha sem a correção
+- [ ] Contagens do `03` (nº de CTs, regras, mutantes) derivadas por `grep -c`, nunca digitadas — número digitado envelhece no primeiro adendo
 - [ ] Requisito que cresceu virou `## Adendo N` no `00`, com `RQ` novos, e a `feature-test-design` foi reinvocada para ele **antes** do código
 - [ ] Tabela `## Conformidade com Rules` do `03` preenchida para toda rule cujo glob casa o diff — nenhuma `violada`
 - [ ] Docs de usuário (pt **e** en), CHANGELOG e README reconciliados; nenhuma frase neles sem `RQ` ou ADR de origem
@@ -1662,6 +1761,7 @@ Antes de encerrar a invocação:
 
 ### Quality Gate e PR
 - [ ] **`feature-quality-gate` invocado** (step 8) e ciclo/veredito/data registrados na seção `## Quality Gate` do `03-progresso.md`
+- [ ] `06-relatorio-qa.md` **existe** no diretório da wiki (`ls wikis/specs/{branch}/{feature}/06-relatorio-qa.md`) — a ausência dele é blocker do PR, e é a evidência de que o step 8 rodou
 - [ ] Se `REPROVADO`: achado roteado para o destino correto (especificação / implementação / teste) e reciclado
 - [ ] **Só depois do veredito**: PR aberto com link da wiki e veredito do `06` na descrição; `03` marcado "concluída"
 - [ ] Candidatos a rule avaliados nos 4 gates e **apresentados ao usuário** — gravados via `requirement-to-rule` só se aprovados

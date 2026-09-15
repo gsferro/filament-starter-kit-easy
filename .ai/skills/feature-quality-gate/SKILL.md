@@ -1,6 +1,6 @@
 ---
 name: feature-quality-gate
-version: 1.2.0
+version: 1.3.0
 description: >
   Etapa de QA dentro do agente — a próxima estação da esteira depois de
   implementar e rodar os testes. Invoque no step 8 da skill feature-wiki, ou
@@ -353,6 +353,10 @@ Escopo: **só o que o diff introduziu**. Não é auditoria do sistema.
 | Upload | validação de mime **e** extensão, path fora do webroot |
 | Dado sensível em resposta | API Resource devolvendo hash de senha, token, campo interno |
 | Query com input direto | `DB::raw` concatenando request |
+| **Ação do pacote de terceiro com id do cliente** | conferir contra `## Superfície do Pacote` do `02`; sem a tabela, rodar os quatro greps do step 3 da `feature-wiki`. `$wire.mountAction('x', {id: <alheio>})` é ponto de entrada como qualquer rota |
+| **Propriedade pública Livewire sem `#[Locked]`** que decide **onde** a escrita cai (id de dono, tenant, agregado) | `Grep "public \$\|public ?"` nas páginas/componentes novos **e** nos do vendor que a feature estende. `#[Session]` não tranca: ele só repõe o valor no `mount()` |
+| **Escopo com discriminante nulo** | rodar a query sem tenant/owner resolvido: devolve tudo (falha **aberta**) ou nada (falha **fechada**)? |
+| **Estado de erro sem saída** | todo 403/404 novo: existe caminho alcançável a partir dele? par de redirect que se devolve mutuamente é **Blocker** |
 
 Achado de IDOR ou dado sensível exposto é **Blocker**, sempre.
 

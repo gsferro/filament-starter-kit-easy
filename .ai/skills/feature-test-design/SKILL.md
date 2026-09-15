@@ -1,6 +1,6 @@
 ---
 name: feature-test-design
-version: 1.10.0
+version: 1.11.0
 description: >
   Deriva casos de teste que MATAM defeito, a partir do requisito — não do plano e
   nunca do código. Invoque no step 4 da feature-wiki (antes de implementar), quando
@@ -144,6 +144,7 @@ invariante das duas leituras é afirmado no mesmo cenário. Não escrever o cen�
 |---|---|---|
 | `00-requisito.md` com cláusulas `RQ-##` | **sim** | pedir ao usuário. Nunca derivar do PRD |
 | `01-plano-acao.md` — `## Superfície de UI`, rotas, paths, stack | sim (no fluxo da wiki) | fora do fluxo da wiki, perguntar a superfície |
+| `02-decisoes-arquiteturais.md` — `## Superfície do Pacote` | **sim**, quando a feature monta sobre pacote de terceiro | a superfície que o cliente realmente alcança fica fora do inventário — e é onde o defeito mora |
 | `.ai/rules/` do projeto | se existir | herdar convenção pelo código de teste existente |
 | `tests/Pest.php` + 1-2 testes existentes | sim | não saber os helpers e traits do projeto |
 | Versões: Pest, Filament, Livewire, Laravel | sim | gerar API de versão errada |
@@ -667,6 +668,40 @@ tentar é que a lacuna é real — e aí ela é declarada com **o que foi tentad
 4. **Pairwise não é garantia**: 2-a-2 deixa passar de 10% a 40% das falhas de interação. Usar
    como redutor, e subir para 3-a-3 no subgrupo crítico.
 
+### Afirmação negativa é hipótese até um `grep` prová-la
+
+*"Não precisa de escopo"*, *"não se aplica: não há upload"*, *"o filho já está protegido pelo pai"*.
+Toda negativa que **dispensa um controle** entra na wiki com a mesma exigência de evidência que a
+positiva: `arquivo:linha` do vendor — e, quando dispensa um controle de **fronteira** (escopo,
+autorização, trava de escrita), também **um cenário escrito como se ela fosse falsa**.
+
+O motivo é assimétrico e vale a pena enunciar: a tabela de mutantes deriva mutantes das regras
+**escritas**. O que a wiki declara desnecessário não vira regra, não vira mutante e não vira
+cenário — fica fora do gate de falsificabilidade inteiro. É o único ponto do pipeline onde **uma
+frase sozinha remove um controle sem deixar rastro vermelho**.
+
+> Medido (2026-09-15): *"`DashboardWidget` não precisa de escopo próprio: é filho, sempre alcançado
+> via `dashboard_id` dentro de um dashboard já escopado"* — frase sem `arquivo:linha`, factualmente
+> falsa (três ações do pacote buscavam o filho por id cru do cliente), e nenhum dos 29 CTs a
+> tocava. O cenário que a falsifica cabe em 12 linhas e falha no primeiro `run`.
+
+### Todo estado de erro declara a saída
+
+Um cenário que termina em `Então a resposta é 403` está metade escrito. A outra metade é **para
+onde o usuário vai depois** — e ela pertence ao cenário irmão, nunca ao "ficou implícito".
+
+A classe de defeito que isso pega não aparece em cenário nenhum **isolado**: *A devolve para B e B
+devolve para A*. Cada um, sozinho, está certo; juntos, trancam o usuário fora da aplicação. É a
+mesma cegueira do 1-switch: o defeito mora na transição de volta.
+
+Regra: todo cenário cujo `Então` é 4xx, 5xx ou redirect ganha um par que afirma **um destino
+alcançável a partir dali**. Se não existir destino, o achado não é do teste — é de desenho, e volta
+para o `00` como pergunta.
+
+> Medido (2026-09-15): o cenário *"o único dashboard da organização exclui o papel do usuário → 403"*
+> foi escrito, passou e virou **contrato** na wiki. Ninguém escreveu que a tela de fallback devolvia
+> o usuário para o mesmo 403 — a raiz inteira do painel inacessível para o papel comum, suíte verde.
+
 ### Passo 4 — Checklist de taxonomia de defeito
 
 As técnicas do passo 3 derivam do que **está escrito**. Este passo cobre o que a especificação
@@ -701,6 +736,10 @@ não a palavra "sim".
 | formulário/payload | **mass assignment**: enviar campo não previsto (`is_admin`, `user_id`, `status`) e provar que é ignorado |
 | upload | 0 byte, extensão que mente sobre o conteúdo, acima do limite |
 | valor monetário | inteiro em centavos ou `decimal`; **nunca `float`**; arredondamento na borda de centavo |
+| feature monta sobre **pacote de terceiro** | **superfície do vendor**: para cada linha de `## Superfície do Pacote` do `02`, um cenário que dispara a ação **com id/argumento de outro tenant/usuário**, e um que escreve a **propriedade pública** do componente pelo cliente. A ação do pacote é ponto de entrada como qualquer rota |
+| **cada entidade que a feature persiste** | uma linha de IDOR **e** uma de mass assignment **por tabela** — não por feature. Fechar a linha com o CT da tabela-pai é o falso ✅ mais caro do checklist |
+| filtro de escopo (global scope, `where` por tenant/owner/discriminante) | **discriminante nulo**: a query fecha (nenhuma linha) ou abre (todas)? o cenário declara qual é o desejado. Atenção: `where('col', null)` vira `whereNull` e **abre** para os globais |
+| cenário cujo `Então` é 4xx, 5xx ou redirect | **a saída**: para onde o usuário vai depois — ver [Todo estado de erro declara a saída](#todo-estado-de-erro-declara-a-saída) |
 
 > Esta tabela é **viva**: todo defeito que escapou para produção e gerou retrabalho deve virar
 > uma linha aqui, no `.ai/rules/` do projeto. Taxonomia alimentada pelo histórico do próprio
@@ -1116,6 +1155,10 @@ Funcionalidade: {…}
 | Mass assignment | … |
 | Upload | não se aplica: sem upload |
 | Precisão monetária | CT-02 |
+| **Superfície do pacote de terceiro** (ação com id do cliente, prop pública) | CT-31, CT-32 |
+| **IDOR por entidade** (uma linha por tabela persistida) | `dashboards`: CT-11 · `dashboard_widgets`: CT-31 |
+| **Escopo com discriminante nulo** (fecha ou abre?) | CT-33 |
+| **Saída do estado de erro** (4xx/redirect tem destino) | CT-30 |
 
 ## Índice de Cenários
 
