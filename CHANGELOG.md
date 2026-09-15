@@ -3,6 +3,25 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Adicionado
+- **Dashboard dinâmico nos três painéis** (`mddev31/filament-dynamic-dashboard`).
+  Cada painel (`/admin`, `/app`, `/infra`) ganha uma grade GridStack montável
+  pelo usuário — arrastar, redimensionar, adicionar e remover widgets — com
+  fallback automático para o dashboard clássico em `/inicio` quando a feature
+  está desligada. Liga/desliga por `KIT_DASHBOARD_DINAMICO` ou pelo toggle da
+  aba Kit em `/admin/configuracoes-da-aplicacao`, com seletor de painéis
+  (`KIT_DASHBOARD_DINAMICO_PAINEIS`, vazio = todos). Quem monta a grade é quem
+  tem a permission `Manage:Dashboard` — o `panel_user` vê, não edita. Com
+  tenancy ligada, cada organização tem a própria grade (scope global +
+  `tenant_id` em `dashboards`) e organizações novas nascem com o dashboard
+  padrão semeado. Widgets do projeto entram na grade usando a trait
+  `App\Filament\Concerns\WidgetDinamico`. Coberto por
+  `tests/Kit/DashboardDinamicoTest.php`,
+  `tests/Tenancy/DashboardDinamicoTenancyTest.php` e
+  `tests/Browser/DashboardDinamicoTest.php`.
+
 ## [0.32.6] - 2026-09-08
 
 ### Corrigido
