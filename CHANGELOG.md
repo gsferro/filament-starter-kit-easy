@@ -3,42 +3,43 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
-
-### Corrigido
-- **Fronteira de organização dos widgets do dashboard dinâmico.** As ações do
-  pacote buscam o widget pelo id que vem do cliente, guardadas só pela permissão
-  de edição: quem administrava uma organização conseguia apagar ou reescrever
-  widget de outra pelo id. `DashboardWidget` ganhou global scope de tenant, a
-  propriedade `currentDashboardId` das páginas ganhou `#[Locked]` (sem ela, o
-  cliente apontava a gravação de layout para o dashboard de outra organização) e
-  o scope de `dashboards` passou a fechar a query quando o painel é
-  tenant-aware e ainda não há tenant resolvido — antes, nessa janela, ele não
-  filtrava nada. Cobertos por CT-31, CT-32 e CT-33.
-- **Beco sem saída na raiz do painel.** Com todos os dashboards restritos a
-  papéis que o usuário não tem, o pacote responde 403 — e o dashboard clássico
-  devolvia o usuário para lá, deixando-o sem tela de entrada. Agora a dinâmica
-  só atende quando existe dashboard exibível, e o clássico responde no lugar
-  (CT-28, CT-30).
+## [0.33.0] - 2026-09-15
 
 ### Adicionado
 - **Dashboard dinâmico nos três painéis** (`mddev31/filament-dynamic-dashboard`).
-  Cada painel (`/admin`, `/app`, `/infra`) ganha uma grade GridStack montável
-  pelo usuário — arrastar, redimensionar, adicionar e remover widgets — em
-  `/{painel}/dashboard-dinamico`. A RAIZ de cada painel continua sendo do dashboard
-  clássico: com a feature ligada ela devolve para a grade, e desligada responde
-  como sempre respondeu — atualizar o kit não muda a URL canônica de painel
-  nenhum. Liga/desliga por `KIT_DASHBOARD_DINAMICO` ou pelo toggle da
-  aba Kit em `/admin/configuracoes-da-aplicacao`, com seletor de painéis
-  (`KIT_DASHBOARD_DINAMICO_PAINEIS`, vazio = todos). Quem monta a grade é quem
-  tem a permission `Manage:Dashboard` — o `panel_user` vê, não edita. Com
-  tenancy ligada, cada organização tem a própria grade (scope global +
-  `tenant_id` em `dashboards`) e organizações novas nascem com o dashboard
-  padrão semeado. Widgets do projeto entram na grade usando a trait
+  Cada painel (`/admin`, `/app`, `/infra`) ganha uma grade GridStack montável pelo
+  usuário — arrastar, redimensionar, adicionar e remover widgets — em
+  `/{painel}/dashboard-dinamico`. Liga/desliga por `KIT_DASHBOARD_DINAMICO` ou pelo
+  toggle da aba Kit em `/admin/configuracoes-da-aplicacao`, com seletor de painéis
+  (`KIT_DASHBOARD_DINAMICO_PAINEIS`, vazio = todos); a troca vale no request
+  seguinte, sem restart. Desligar nunca apaga dado: os dashboards montados voltam
+  ao religar.
+
+  **A raiz do painel não muda.** `/app`, `/admin` e `/infra` continuam sendo do
+  dashboard clássico, com a mesma URL e o mesmo nome de rota
+  (`filament.{painel}.pages.dashboard`) de sempre — atualizar o kit sem ligar a
+  feature não muda nada. Com ela ligada, a raiz devolve para a grade; e quando
+  nenhum dashboard é visível para o usuário, o clássico responde no lugar em vez
+  de deixar a raiz em 403.
+
+  **Quem monta é quem tem `Manage:Dashboard`** — o `panel_user` vê e não edita, em
+  toda a superfície de escrita do pacote (botão, ação "Manage", criação de widget e
+  o drag do GridStack). Com tenancy ligada, a grade é da organização: dashboards e
+  widgets ficam atrás do escopo do tenant corrente (inclusive contra id vindo do
+  cliente), organizações novas nascem com o dashboard padrão semeado e o
+  `DashboardPadraoSeeder` faz o backfill de quem liga a feature depois.
+
+  Widgets do projeto entram na grade com a trait
   `App\Filament\Concerns\WidgetDinamico`. Coberto por
   `tests/Kit/DashboardDinamicoTest.php`,
   `tests/Tenancy/DashboardDinamicoTenancyTest.php` e
-  `tests/Browser/DashboardDinamicoTest.php`.
+  `tests/Browser/DashboardDinamicoTest.php` (CT-B01/CT-B02, grade em navegador
+  real).
+- **Página "Domínio local" na documentação (pt e en).** Como trocar
+  `127.0.0.1:8000` por `http://meu-projeto.test` com uma linha no arquivo `hosts`
+  e duas chaves no `.env` — nenhum arquivo versionado muda e quem não fizer nada
+  continua em `localhost:8000`. Inclui a armadilha medida em máquina real: o
+  `Access is denied` ao editar o `hosts` é sempre falta de elevação.
 
 ## [0.32.6] - 2026-09-08
 
