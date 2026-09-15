@@ -41,6 +41,15 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   continua em `localhost:8000`. Inclui a armadilha medida em máquina real: o
   `Access is denied` ao editar o `hosts` é sempre falta de elevação.
 
+### Alterado
+- **Dependências atualizadas** (os sete PRs do Dependabot abertos na janela desta
+  release, aplicados num `composer.lock`/`package-lock.json` só): `laravel/framework`
+  13.30.1 → **13.32.0**, `larastan/larastan` 3.11.0 → **3.12.1**, `laravel/boost`
+  2.7.0 → **2.9.0**, `tapp/filament-maillog` 2.2.3 → **2.2.4**,
+  `leandrocfe/filament-apex-charts` 5.1.3 → **5.1.4**, `vite` 8.2.2 → **8.3.0** e
+  `playwright` 1.62.1 → **1.63.0**. O bump do Playwright exige `npx playwright install`
+  local — a CI já baixa os navegadores por conta própria.
+
 ## [0.32.6] - 2026-09-08
 
 ### Corrigido
