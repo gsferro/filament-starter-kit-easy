@@ -2,6 +2,8 @@
 
 namespace App\Filament\Concerns;
 
+use App\Data\Convite\FalhaDoConviteData;
+use App\Data\Convite\ResultadoDoConviteEmMassaData;
 use App\Models\Convite;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
@@ -140,19 +142,20 @@ trait ConvidaEmMassa
      * `->persistent()` porque um resumo que some em seis segundos é inútil quando lista doze
      * falhas. `success` só quando não houve falha nenhuma.
      *
-     * @param  array{enviados: list<string>, falhas: list<array{email: string, motivo: string}>}  $resultado
+     * O parâmetro é o Data do resultado: o shape que estava redocumentado aqui e em
+     * `Convite::convidarEmMassa()` virou tipo (wiki `laravel-data-como-padrao-de-dto`, A4).
      */
-    private function notificarResultadoDoLote(array $resultado): void
+    private function notificarResultadoDoLote(ResultadoDoConviteEmMassaData $resultado): void
     {
-        $enviados = count($resultado['enviados']);
-        $falhas   = count($resultado['falhas']);
+        $enviados = $resultado->totalDeEnviados();
+        $falhas   = $resultado->totalDeFalhas();
 
         $notificacao = Notification::make()
             ->title($falhas === 0
                 ? "{$enviados} convite(s) enviado(s)"
                 : "{$enviados} convite(s) enviado(s), {$falhas} não enviado(s)")
-            ->body(collect($resultado['falhas'])
-                ->map(fn (array $falha): string => $falha['email'].' — '.$this->motivoLegivel($falha['motivo']))
+            ->body(collect($resultado->falhas)
+                ->map(fn (FalhaDoConviteData $falha): string => $falha->email.' — '.$this->motivoLegivel($falha->motivo))
                 ->implode("\n"))
             ->persistent();
 

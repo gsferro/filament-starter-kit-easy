@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Data\Social\PerfilSocialData;
 use App\Http\Controllers\Controller;
 use App\Models\Convite;
 use App\Models\Tenant;
@@ -161,10 +162,17 @@ final class LoginSocialController extends Controller
          */
         $contexto = is_array($c = session()->pull('login_social.contexto', [])) ? $c : [];
 
-        $email     = mb_strtolower(trim((string) $doProvedor->getEmail()));
+        /*
+         * A fronteira com o Socialite acaba aqui: daqui para baixo o fluxo lê o Data, não o
+         * objeto do pacote. É ele que normaliza o e-mail, distingue "sem e-mail" de string
+         * vazia e deixa credencial de fora do que trafega (ADR-04 da wiki
+         * `laravel-data-como-padrao-de-dto`).
+         */
+        $perfil    = PerfilSocialData::doSocialite($provedor, $doProvedor);
+        $email     = (string) $perfil->email;
         $mascarado = Str::mask($email, '*', 3);
 
-        if ($email === '') {
+        if ($perfil->email === null) {
             Log::channel('autenticacao')->warning(
                 "[LoginSocialController@retorno] Recusado: provedor não devolveu e-mail | provedor: {$provedor->value} - ip: ".request()->ip(),
                 [
@@ -205,7 +213,7 @@ final class LoginSocialController extends Controller
          * não leva a outra conta. Sem vínculo, vale o e-mail verificado (a mesma prova do
          * "Esqueceu a senha?") e o vínculo nasce aqui. ADR-01/02/03 de vinculo-de-provedor-social.
          */
-        $sub     = trim((string) $doProvedor->getId());
+        $sub     = $perfil->id;
         $vinculo = $sub !== '' ? VinculoSocial::de($provedor, $sub) : null;
         $user    = $vinculo?->user;
         $novo    = false;
@@ -267,8 +275,8 @@ final class LoginSocialController extends Controller
 
                 try {
                     $user = $convite instanceof Convite
-                        ? $this->criarContaPorConvite($provedor, $convite, $email, $mascarado, $doProvedor->getName())
-                        : $this->criarConta($provedor, $email, $mascarado, $doProvedor->getName(), RegistroAberto::organizacao($contexto['org'] ?? null));
+                        ? $this->criarContaPorConvite($provedor, $convite, $email, $mascarado, $perfil->nome)
+                        : $this->criarConta($provedor, $email, $mascarado, $perfil->nome, RegistroAberto::organizacao($contexto['org'] ?? null));
                 } catch (RuntimeException $e) {
                     /*
                      * `RegistroAberto::registrar()` recusa o que a porta do formulário recusa — com a

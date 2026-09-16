@@ -123,6 +123,9 @@ class KitUpdate extends Command
         // regra de `app/Filament`: arquivo seu aqui nunca entra no diff.
         'app/Observers',
         'app/Services',
+        // Os DTO do kit (spatie/laravel-data). Diretório inteiro, pela mesma regra:
+        // Data que você criar no seu projeto não entra no diff do kit.
+        'app/Data',
         'app/Models/Projeto.php',
         'app/Models/AgenteIa.php',
         'app/Models/VinculoSocial.php',

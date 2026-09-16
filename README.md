@@ -151,7 +151,7 @@ dois já vêm completos.
 
 | Fundação | |
 |---|---:|
-| Pacotes de produção | **56** |
+| Pacotes de produção | **57** |
 | Pacotes de desenvolvimento | **19** |
 | Migrations | **60** |
 | Policies | **16** |
@@ -168,7 +168,7 @@ dois já vêm completos.
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **9** |
-| Features especificadas (`wikis/specs/`) | **56** |
+| Features especificadas (`wikis/specs/`) | **57** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **18** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
@@ -187,6 +187,7 @@ dois já vêm completos.
 - Lockscreen: bloqueio de sessão por inatividade (30 min), registrado nos 3 painéis — a tela de bloqueio usa o mesmo layout do login (Auth Designer), não o layout simples do Filament
 - Impersonate, log de autenticação, auditoria de alterações (owen-it)
 - Panel Switch: troca de painel pelo menu do usuário
+- **DTO com `spatie/laravel-data`**: todo dado estruturado que cruza fronteira de classe é objeto tipado, com guarda automático — credencial não entra em DTO, e consumo/resposta de API exige um ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/dto-com-laravel-data.html))
 - **Proteção anti-robô opcional** (desligada por default): reCAPTCHA v2/v3, Turnstile ou hCaptcha nas telas de login, recuperação de senha e registro, via `ddr/filament-captcha` ([detalhes](#proteção-anti-robô))
 - **Página única de login** (desligada por default): `KIT_LOGIN_UNIFICADO=true` leva `/admin/login`, `/infra/login` e `/app/login` a `/login`; quem acessa um painel entra direto, quem acessa mais de um escolhe numa tela de cartões depois de entrar. **Atenção**: SSO externo (SAML/OIDC corporativo) ainda não é pré-configurado e não passa por essa regra — ver [a página de docs](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/login-unificado.html)
 - **Login social por painel**: cada provedor pode ser liberado separadamente em `/app`, `/admin` e `/infra`; botão, rota e destino respeitam o painel de origem
@@ -227,7 +228,7 @@ navegação: **[https://gsferro.github.io/filament-starter-kit-easy/pt/](https:/
 |---|---|
 | [Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/) | instalação avançada, banco, comandos, personalização, e como atualizar um projeto que já nasceu do kit |
 | [Autenticação](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/) | convites, registro aberto, login social, proteção anti-robô, estados do usuário |
-| [Recursos](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/) | multi-tenancy, anexos e mídia, import/export CSV, trilhas do `/infra`, configurações do kit, hub de cartões |
+| [Recursos](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/) | multi-tenancy, anexos e mídia, import/export CSV, trilhas do `/infra`, configurações do kit, hub de cartões, DTO com Laravel Data |
 | [Operação](https://gsferro.github.io/filament-starter-kit-easy/pt/operacao/) | agentes de IA, roteiro completo de features, convenções, o que fazer depois de criar um Resource |
 | [Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/) | qualidade de código, busca e idioma, os ~70 pacotes instalados |
 
