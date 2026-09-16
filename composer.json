@@ -65,6 +65,7 @@
         "shuvroroy/filament-spatie-laravel-health": "^3.3",
         "solution-forest/filament-simplelightbox": "^1.0",
         "spatie/laravel-backup": "*",
+        "spatie/laravel-data": "^4.23",
         "spatie/laravel-settings": "^3.9",
         "ssbityukov/filament-command-center": "^1.0",
         "stechstudio/filament-impersonate": "^5.5",

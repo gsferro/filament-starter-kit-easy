@@ -47,8 +47,8 @@ it('pula quem ja e membro da organizacao do lote', function (): void {
      * Ser membro de OUTRA organização não é motivo de nada: é justamente o caso de uso da
      * feature — a consultora que atende dois clientes.
      */
-    expect($resultado['falhas'])->toBe([['email' => 'dentro@example.com', 'motivo' => 'ja_e_membro']])
-        ->and($resultado['enviados'])->toBe(['fora@example.com', 'nova@example.com'])
+    expect(collect($resultado->falhas)->map->toArray()->all())->toBe([['email' => 'dentro@example.com', 'motivo' => 'ja_e_membro']])
+        ->and($resultado->enviados)->toBe(['fora@example.com', 'nova@example.com'])
         ->and(Convite::count())->toBe(2);
 
     // E sem organização a pergunta não existe: o mesmo endereço não é pulado por nada.
@@ -59,8 +59,8 @@ it('pula quem ja e membro da organizacao do lote', function (): void {
         null,
     );
 
-    expect($semOrganizacao['enviados'])->toBe(['dentro@example.com'])
-        ->and($semOrganizacao['falhas'])->toBeEmpty();
+    expect($semOrganizacao->enviados)->toBe(['dentro@example.com'])
+        ->and($semOrganizacao->falhas)->toBeEmpty();
 });
 
 it('carimba a organizacao corrente no lote do admin da organizacao', function (): void {

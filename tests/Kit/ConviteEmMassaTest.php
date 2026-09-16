@@ -90,8 +90,8 @@ it('envia os validos mesmo com um endereco torto no meio', function (): void {
 
     Notification::assertSentOnDemandTimes(ConviteDeAcesso::class, 2);
 
-    // E a forma do retorno, pelo model: duas chaves, sem `total`.
-    expect(Convite::convidarEmMassa(Convite::separarEmails("a@b.com\nxxx"), papelDoLote(), null, null))
+    // E a forma do retorno, pelo model: o Data do resultado, com as duas listas e sem `total`.
+    expect(Convite::convidarEmMassa(Convite::separarEmails("a@b.com\nxxx"), papelDoLote(), null, null)->toArray())
         ->toBe([
             'enviados' => ['a@b.com'],
             'falhas'   => [['email' => 'xxx', 'motivo' => 'formato_invalido']],
@@ -114,8 +114,8 @@ it('pula endereco que ja tem convite pendente', function (): void {
         null,
     );
 
-    expect($resultado['enviados'])->toBe(['nova@example.com'])
-        ->and($resultado['falhas'])->toBe([['email' => 'repetida@example.com', 'motivo' => 'convite_pendente']])
+    expect($resultado->enviados)->toBe(['nova@example.com'])
+        ->and(collect($resultado->falhas)->map->toArray()->all())->toBe([['email' => 'repetida@example.com', 'motivo' => 'convite_pendente']])
         ->and(Convite::where('email', 'repetida@example.com')->count())->toBe(1)
         /*
          * O token antigo continua valendo. O lote PULA em vez de chamar `enviar()` de novo,
@@ -133,8 +133,8 @@ it('pula endereco que ja tem convite pendente', function (): void {
         null,
     );
 
-    expect($depois['enviados'])->toBe(['repetida@example.com'])
-        ->and($depois['falhas'])->toBeEmpty();
+    expect($depois->enviados)->toBe(['repetida@example.com'])
+        ->and($depois->falhas)->toBeEmpty();
 });
 
 /**
@@ -164,8 +164,8 @@ it('convida quem ja tem conta como oferta de acesso', function (): void {
         null,
     );
 
-    expect($resultado['enviados'])->toBe(['terceira@example.com'])
-        ->and($resultado['falhas'])->toBeEmpty();
+    expect($resultado->enviados)->toBe(['terceira@example.com'])
+        ->and($resultado->falhas)->toBeEmpty();
 });
 
 it('recusa o lote inteiro acima do limite sem enviar nada', function (): void {
@@ -282,8 +282,8 @@ it('segue o lote quando o envio de um endereco lanca excecao', function (): void
     );
 
     // O endereço DEPOIS do que estourou é o que prova que o laço continuou.
-    expect($resultado['enviados'])->toBe(['antes@example.com', 'depois@example.com'])
-        ->and($resultado['falhas'])->toBe([['email' => 'quebra@example.com', 'motivo' => 'erro_no_envio']])
+    expect($resultado->enviados)->toBe(['antes@example.com', 'depois@example.com'])
+        ->and(collect($resultado->falhas)->map->toArray()->all())->toBe([['email' => 'quebra@example.com', 'motivo' => 'erro_no_envio']])
         /*
          * O convite do endereço que falhou EXISTE, pendente e com token: o `create()` e o
          * `forceFill` acontecem antes da notificação. É o failure mode desejado — aparece
@@ -311,8 +311,8 @@ it('deduplica endereco repetido no proprio texto', function (): void {
     );
 
     // As três variações juntas: vírgula, quebra de linha e caixa diferente.
-    expect($resultado['enviados'])->toBe(['uma@example.com'])
-        ->and($resultado['falhas'])->toBeEmpty()
+    expect($resultado->enviados)->toBe(['uma@example.com'])
+        ->and($resultado->falhas)->toBeEmpty()
         ->and(Convite::count())->toBe(1)
         ->and(Convite::first()?->email)->toBe('uma@example.com');
 
@@ -368,7 +368,7 @@ it('nao reconvida pelo lote quem recusou antes', function (): void {
         null,
     );
 
-    expect($resultado['falhas'])->toBe([['email' => 'recusou@example.com', 'motivo' => 'recusou_antes']])
+    expect(collect($resultado->falhas)->map->toArray()->all())->toBe([['email' => 'recusou@example.com', 'motivo' => 'recusou_antes']])
         ->and(Convite::where('email', 'recusou@example.com')->count())->toBe(1);
 
     /*

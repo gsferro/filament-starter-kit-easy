@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Data\Convite\ResultadoDoConviteEmMassaData;
 use App\Notifications\ConviteDeAcesso;
 use App\Support\ContextoDePapeis;
 use App\Traits\AuditsFillables;
@@ -275,15 +276,17 @@ class Convite extends Model implements Auditable
      * O limite de tamanho do lote não vive aqui: ele protege o REQUEST, não o dado, e mora na
      * ação do Filament (ADR-04). Um job futuro tem o direito de convidar mil endereços.
      *
+     * O retorno é `ResultadoDoConviteEmMassaData` e não array: o shape estava redocumentado em
+     * duas classes, e agora o contrato é o tipo (wiki `laravel-data-como-padrao-de-dto`, A4).
+     *
      * @param  Collection<int, string>  $emails  já normalizados por `separarEmails()`
-     * @return array{enviados: list<string>, falhas: list<array{email: string, motivo: string}>}
      */
     public static function convidarEmMassa(
         Collection $emails,
         int $roleId,
         ?int $tenantId,
         ?int $convidadoPorId,
-    ): array {
+    ): ResultadoDoConviteEmMassaData {
         /*
          * O formato se decide ANTES do laço, e reprovar um endereço não reprova o lote. A
          * regra é a MESMA `email` do Laravel que o campo do convite individual usa
@@ -428,10 +431,10 @@ class Convite extends Model implements Auditable
             ],
         );
 
-        // `array_values()` em `falhas`: o array nasce de um `->values()->all()` de Collection
-        // (que o analisador só sabe ser `array<int, …>`) e depois cresce por `[]=`. O contrato
-        // publicado é `list`, e `notificarResultadoDoLote()` itera por posição.
-        return ['enviados' => $enviados, 'falhas' => array_values($falhas)];
+        // A fábrica normaliza as duas listas e converte cada falha no Data dela. O
+        // `array_values()` continua necessário: `$falhas` nasce de um `->values()->all()` e
+        // depois cresce por `[]=`.
+        return ResultadoDoConviteEmMassaData::de($enviados, array_values($falhas));
     }
 
     /**

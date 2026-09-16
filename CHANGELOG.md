@@ -3,6 +3,35 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Adicionado
+- **DTO com `spatie/laravel-data` como padrão do kit.** Dado estruturado que cruza fronteira de
+  classe passa a viajar como objeto tipado, em `app/Data/{Contexto}/`, em vez de array com o
+  formato escrito no comentário. Três chegaram nesta versão: o veredito do classificador de prompt
+  (`VeredictoDoGuardrailData`), o perfil do provedor social (`PerfilSocialData`) e o resultado do
+  convite em massa (`ResultadoDoConviteEmMassaData` + `FalhaDoConviteData`) — este último acaba com
+  o mesmo formato documentado palavra por palavra em duas classes.
+
+  **Duas garantias de segurança vêm junto.** Credencial (`senha`, `password`, `token`, `secret`,
+  `api_key`) não entra em DTO, porque o objeto é serializável em `toArray()`, log e fila; e DTO não
+  é propriedade pública de componente Livewire ou página Filament, porque o pacote reconstrói essa
+  propriedade a partir do payload do navegador. O veredito do guardrail ganhou cast de booleano
+  flexível: `"false"` em texto é *truthy* em PHP e antes liberaria um prompt que deveria ser
+  bloqueado.
+
+  **A regra é enforçada, não escrita.** `App\Support\GuardaDoPadraoDeDto` confere herança, `final`,
+  `readonly`, o sufixo `Data` reservado, credencial em propriedade e `new` fora da fábrica — e fica
+  vermelho no dia em que aparecer a primeira rota de API, Resource ou controller JSON sem Data,
+  cláusula que hoje não tem sujeito porque o kit não expõe API. A convenção está em
+  `.ai/rules/app.md` e a documentação em
+  [DTO com Laravel Data](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/dto-com-laravel-data.html).
+
+### Alterado
+- O ramo "classificador respondeu fora do schema" do guardrail de IA passa a registrar `acao:
+  schema` no canal `ai`. Antes ele seguia em silêncio, e falha de contrato com o provider ficava
+  indistinguível de falha de infraestrutura na trilha.
+
 ## [0.33.0] - 2026-09-15
 
 ### Adicionado

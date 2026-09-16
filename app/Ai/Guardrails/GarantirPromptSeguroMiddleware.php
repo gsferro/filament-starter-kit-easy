@@ -5,6 +5,7 @@ namespace App\Ai\Guardrails;
 use App\Ai\Agents\AgenteBase;
 use App\Ai\Agents\GuardaPrompt;
 use App\Ai\Exceptions\PromptInjecaoBloqueadaException;
+use App\Data\Ia\VeredictoDoGuardrailData;
 use Closure;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Prompts\AgentPrompt;
@@ -33,11 +34,11 @@ final class GarantirPromptSeguroMiddleware
         // (regex) e o escopo de dados nas tools continuam de pé, e derrubar todo o
         // atendimento porque o container local caiu é pior que aceitar a janela. O warning
         // do `classificar()` é o sinal de operação.
-        if ($veredito === null || ($veredito['seguro'] ?? false) === true) {
+        if ($veredito === null || $veredito->seguro) {
             return $next($prompt);
         }
 
-        $categoria = (string) ($veredito['categoria'] ?? 'fora_de_escopo');
+        $categoria = $veredito->categoria;
         $agente    = $prompt->agent;
 
         Log::channel('ai')->warning(
@@ -49,7 +50,7 @@ final class GarantirPromptSeguroMiddleware
                 'acao'      => 'block',
                 // O MOTIVO do classificador, nunca a mensagem do usuário: a trilha explica o
                 // bloqueio sem armazenar o texto ofensor.
-                'motivo'  => (string) ($veredito['motivo'] ?? ''),
+                'motivo'  => $veredito->motivo,
                 'user_id' => $agente->user->id ?? null,
             ],
         );
@@ -61,18 +62,36 @@ final class GarantirPromptSeguroMiddleware
      * Veredito do classificador local, ou `null` quando ele não pôde opinar (paper ausente,
      * agente desativado, container fora do ar, resposta fora do schema).
      *
-     * @return array<string, mixed>|null
+     * O tipo de retorno é o Data, não `array`: o contrato do schema
+     * (`GuardaPrompt::schema():50-63`) passa a ser verificável, e o `seguro` recebe o cast que
+     * impede `"false"` em texto de virar `true` (ver `VeredictoDoGuardrailData`).
      */
-    private function classificar(AgentPrompt $prompt): ?array
+    private function classificar(AgentPrompt $prompt): ?VeredictoDoGuardrailData
     {
         try {
             $resposta = (new GuardaPrompt)->prompt($prompt->prompt);
 
             // O SDK só devolve `StructuredAgentResponse` quando o provider honrou o schema
             // (`Providers\Concerns\GeneratesText`). Provider que ignorou o structured output
-            // devolve texto solto: sem veredito confiável, cai no fail-open abaixo em vez de
-            // adivinhar o rótulo.
-            return $resposta instanceof StructuredAgentResponse ? $resposta->toArray() : null;
+            // devolve texto solto: sem veredito confiável, segue sem opinião em vez de adivinhar
+            // o rótulo.
+            if ($resposta instanceof StructuredAgentResponse) {
+                return VeredictoDoGuardrailData::de($resposta);
+            }
+
+            /*
+             * Os dois modos de "sem veredito" têm de ser distinguíveis na trilha: schema não
+             * honrado é problema de CONTRATO com o provider; exceção é problema de
+             * INFRAESTRUTURA. Um log só, genérico, apaga a diferença e o suporte olha para o
+             * lugar errado. A resposta bruta NÃO entra no contexto — ela contém o prompt do
+             * usuário.
+             */
+            Log::channel('ai')->warning(
+                '[GarantirPromptSeguroMiddleware@classificar] Classificador respondeu fora do schema, seguindo com as camadas determinísticas | agente: '.$prompt->agent::class,
+                ['agente' => $prompt->agent::class, 'acao' => 'schema'],
+            );
+
+            return null;
         } catch (Throwable $e) {
             Log::channel('ai')->warning(
                 '[GarantirPromptSeguroMiddleware@classificar] Classificador local indisponível, seguindo com as camadas determinísticas | agente: '.$prompt->agent::class,

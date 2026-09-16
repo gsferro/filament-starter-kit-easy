@@ -90,6 +90,7 @@ Everything below comes installed, published and registered on the panels — the
 |---|---|
 | [filament/spatie-laravel-settings-plugin](https://packagist.org/packages/filament/spatie-laravel-settings-plugin) | settings pages in the panel |
 | [spatie/laravel-settings](https://packagist.org/packages/spatie/laravel-settings) | the persisted settings behind them |
+| [spatie/laravel-data](https://packagist.org/packages/spatie/laravel-data) | the kit's DTO standard — see [DTOs with Laravel Data](../recursos/dto-com-laravel-data.md) |
 | [filament/spatie-laravel-media-library-plugin](https://packagist.org/packages/filament/spatie-laravel-media-library-plugin) | the media layer (uploads, collections, conversions) in the form, table and infolist components |
 | [mike-bronner/laravel-model-caching](https://packagist.org/packages/mike-bronner/laravel-model-caching) | automatic caching of Eloquent queries |
 | [predis/predis](https://packagist.org/packages/predis/predis) | pure-PHP Redis client (no extension needed) |
