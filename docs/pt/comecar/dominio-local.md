@@ -42,6 +42,10 @@ ipconfig /flushdns
 O `-Encoding ascii` é precaução: o PowerShell 7 grava UTF-8 por padrão, e o resolvedor do Windows
 espera ASCII puro nesse arquivo.
 
+Se a máquina tem Laravel Herd ou Valet instalado, rode `ping meu-projeto.test` **antes** de editar
+o `hosts`: os dois já resolvem `*.test` para `127.0.0.1` por conta própria, e a linha manual pode
+ser desnecessária.
+
 ### 2. O seu .env
 
 O `.env` não é versionado, então estas chaves ficam só na sua máquina:
