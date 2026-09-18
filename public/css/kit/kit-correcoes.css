@@ -44,8 +44,32 @@
 
 :root .ring-primary-600 { --tw-ring-color: var(--primary-600); }
 
-.dark :root .text-primary-400,
-:root .dark .text-primary-400 { color: var(--primary-400); }
+/*
+| O tema ESCURO do mesmo pacote, que é onde a classe muda de nome.
+|
+| O `croustibat/filament-jobs-monitor` emite a variante escura já com o prefixo no NOME da
+| classe, e com a paleta âmbar do build dele:
+|
+|     .dark\:text-primary-400:is(.dark *) { color: rgb(251 191 36 / …) }
+|
+| `.text-primary-400` e `.dark\:text-primary-400` são classes DIFERENTES. A primeira versão
+| deste bloco corrigia a primeira — que nenhum vendor declara — e deixava a segunda intacta: o
+| monitor de jobs saía âmbar no tema escuro de qualquer painel pintado de outra cor, com o
+| bloco de correção logo acima parecendo cuidar do assunto.
+|
+| Pior: ela escrevia o seletor como `.dark :root …` e `:root .dark …`, e as duas formas nunca
+| casam com DOM nenhum — `:root` É o `<html>`, não pode ser descendente de nada nem conter a
+| classe que o alternador de tema escreve nele próprio. A forma viva é `.dark:root`; aqui nem
+| ela é necessária, porque o `:is(.dark *)` do próprio vendor já condiciona ao tema.
+|
+| A conta: o vendor é (0,2,0) — `.dark\:text-primary-400` mais o `:is(.dark *)`, e `:is()`
+| contribui o MAIOR dos argumentos, ao contrário do `:where()`, que contribui zero. Com o
+| `:root` na frente esta regra é (0,3,0) e vence sem depender de ordem de carga.
+|
+| `tests/Kit/CorrecaoDeCorPrimariaTest.php` é a guarda: ele lê as folhas do `vendor/` em
+| runtime, exige que o kit declare a MESMA classe escapada e que vença por especificidade.
+*/
+:root .dark\:text-primary-400:is(.dark *) { color: var(--primary-400); }
 
 /*
 | DT-02 — contraste do indicador de ambiente no tema CLARO.
