@@ -3,6 +3,44 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.34.2] - 2026-09-18
+
+### Adicionado
+- **Contraste do item ativo na navegação no topo.** Painel com `->topNavigation()` pinta o item
+  ativo com `primary-600` sobre `gray-50`, e esse par **não alcança o mínimo WCAG AA de 4,5:1**
+  para texto pequeno — o rótulo tem 14 px. Medido com as vinte e uma paletas nomeadas do
+  Filament: **nove reprovam** nesse degrau, e nenhuma reprova um degrau acima. `Amber` é o
+  default quando `KIT_COR_PRIMARIA` está vazio e dá 3,06:1, então a instalação recém-feita cai
+  justamente no pior caso.
+
+  O kit passa a aplicar `primary-700` no tema claro e `primary-400` no escuro.
+
+  **Quem usa o menu lateral, que é o padrão, não é afetado**: o Filament só emite
+  `.fi-topbar-item` quando a navegação no topo está ligada, então a regra não casa com elemento
+  nenhum. Alternar entre os dois modos continua sendo decisão livre.
+
+  A guarda é `tests/Kit/ContrasteDaNavegacaoNoTopoTest.php`: ela lê os dois degraus do próprio
+  `kit.css`, recalcula o contraste com as paletas do Filament contra `gray-50` e `gray-900`, e
+  confere que a folha do vendor ainda declara as classes que o seletor pressupõe — sem isso a
+  regra viraria CSS morto sem nada acusar.
+
+### Corrigido
+- **Sobrescrita de cor escrita só para o tema claro vazava para o escuro.** É a armadilha que o
+  bloco novo documenta e que vale para qualquer regra desta família: a regra escura do Filament
+  é `…:where(.dark, .dark *)`, e **`:where()` contribui ZERO especificidade**. Uma sobrescrita
+  com especificidade suficiente para vencer no claro vence nos **dois** temas e pinta a cor clara
+  sobre fundo escuro — pior do que o defeito que veio corrigir.
+
+  Toda sobrescrita de cor do kit passa a declarar o par escuro explicitamente, e ele se escreve
+  `.dark:root`, com a classe na **própria raiz**. `.dark :root` e `:root .dark` parecem
+  equivalentes e são letra morta: `:root` É o `<html>`, não pode ser descendente de nada nem
+  conter a classe que o alternador de tema escreve nele próprio.
+
+### Documentação
+- [Configuração global do Filament](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/configuracao-global-filament.html)
+  ganhou a seção **Correções de contraste que o kit aplica por você**, com a tabela dos três
+  pares corrigidos e o par claro/escuro obrigatório. Em inglês também.
+
 ## [0.34.1] - 2026-09-18
 
 ### Corrigido

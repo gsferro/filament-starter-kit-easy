@@ -39,3 +39,33 @@ Also global: modals that do **not** close on Esc (an accidental tap would discar
 >
 > ⚠️ **Table density does not exist in Filament 5**, so it is not on the screen. The old TODO here promised four items and one of them has no API: a sweep over `vendor/filament/tables/src` returns no occurrence of `density`, and `vendor/filament/tables/src/Enums/` holds seven enums, none for density. What the framework does offer as a visual tightness control is `striped()`, and that is the one that became configurable.
 
+
+## Contrast fixes the kit applies for you
+
+Not everything that decides how a panel looks lives in PHP. Some colour pairs shipped by Filament and by plugins **fall short of the 4.5:1 WCAG AA minimum** for small text, and the failure is silent: the HTML is correct, the test passes, and it is the user who cannot read it. The kit fixes those cases in `resources/css/filament/kit.css`, loaded into all three panels through the same mechanism plugins use.
+
+| Where | What Filament/the plugin ships | What the kit applies |
+|---|---|---|
+| Active item in **top** navigation | `primary-600` on `gray-50` — 3.06:1 on the default palette | `primary-700` in light, `primary-400` in dark |
+| Environment indicator badge | `color-600` on `color-50` | `color-700` in light |
+| Plugin `*-primary-*` utilities | the **literal** amber palette from the package build | the panel's own `--primary-*` variables |
+
+### Top navigation
+
+If your panel uses `->topNavigation()`, the active item's label becomes legible in whatever palette you picked. Measured against Filament's twenty-one named palettes: **nine fail** at the step the framework applies, and none fails at the step the kit applies. `Amber` is the default when `KIT_COR_PRIMARIA` is empty and scores 3.06:1 — a fresh install lands exactly on the worst case.
+
+**If your panel uses the sidebar, which is the default, nothing changes.** Filament only emits the top items when top navigation is on, so the rule matches no element at all. You can switch between the two modes without thinking about it.
+
+### Dark mode is not a detail
+
+Every colour override in the kit ships **two** rules, one per theme, and that is not fussiness. Filament writes its dark rule as
+
+```css
+.fi-topbar-item.fi-active .fi-topbar-item-label:where(.dark, .dark *)
+```
+
+and **`:where()` contributes zero specificity**. An override written for light mode only, with enough specificity to win, wins in **both** — painting the light colour onto the dark background, making worse exactly what it came to fix.
+
+The dark counterpart is written `.dark:root`, with the class on the **root itself**. `.dark :root` and `:root .dark` look equivalent and are dead letters: `:root` *is* the `<html>` element, so it can neither descend from anything nor contain the class the theme switcher writes onto it.
+
+> **When adding your own colour override**, follow the same pairing and run `php artisan filament:assets` after editing. The guards live in `tests/Kit/ContrasteDaNavegacaoNoTopoTest.php` and `tests/Kit/CorrecaoDeCorPrimariaTest.php`: they read the CSS and the `vendor/` stylesheets at runtime, recompute contrast against Filament's own palettes, and turn red when a package upgrade changes the game.

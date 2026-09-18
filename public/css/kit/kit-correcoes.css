@@ -105,3 +105,61 @@
 | arquivo e recalcula o contraste. Depois de editar: `php artisan filament:assets`.
 */
 .environment-indicator.fi-badge { --text: var(--color-700); }
+
+/*
+| Contraste do item ATIVO da navegação no topo (`->topNavigation()`).
+|
+| Só tem efeito em painel configurado com navegação no topo. Com o menu lateral,
+| que é o padrão do kit, o Filament não emite `.fi-topbar-item` nenhum — os itens
+| ficam dentro de `@if ($hasTopNavigation …)` em
+| `vendor/filament/filament/resources/views/livewire/topbar.blade.php:120-246` —
+| e este bloco não casa com nada.
+|
+| O item ativo é pintado por
+| `vendor/filament/filament/resources/css/components/topbar.css:80-82`:
+|
+|     .fi-topbar-item.fi-active .fi-topbar-item-label { @apply text-primary-600 … }
+|
+| O fundo do botão ativo é `bg-gray-50` (mesma folha, linha 73). O par
+| primary-600/gray-50 não alcança o mínimo WCAG AA de 4,5:1 para texto pequeno — o
+| rótulo é 14 px. Medido com as paletas do próprio Filament, via
+| `Color::convertToRgb()`:
+|
+|     Amber  600/50 = 3,06:1     Amber  700/50 = 4,81:1
+|     Yellow 600/50 = 2,81:1     Yellow 700/50 = 4,72:1
+|     Lime   600/50 = 2,93:1     Lime   700/50 = 4,77:1
+|     Green  600/50 = 3,08:1     Green  700/50 = 4,73:1
+|     Blue   600/50 = 5,02:1     Blue   700/50 = 6,54:1
+|
+| Nove das vinte e uma paletas reprovam no 600; nenhuma reprova no 700. `Amber` é o
+| default quando `KIT_COR_PRIMARIA` está vazio, então a instalação recém-feita cai
+| justamente no pior caso.
+|
+| O `:root` à frente é o que faz a regra vencer: o seletor do Filament tem três
+| classes (0,3,0) e este tem (0,4,0) — vence por especificidade, não por ordem de
+| carregamento, que entre assets registrados não é garantida.
+|
+| **E é exatamente por vencer que o par ESCURO é obrigatório.** A regra escura do
+| Filament é
+|
+|     .fi-topbar-item.fi-active .fi-topbar-item-label:where(.dark,.dark *)
+|
+| e `:where()` contribui ZERO especificidade: ela também é (0,3,0), e só vence a
+| clara por ordem de origem. Sem o par escuro, a regra acima venceria nos DOIS temas
+| e pintaria `--primary-700` sobre fundo escuro — o rótulo cairia de ~6–10:1 para
+| ~2,3–3,2:1, **pior do que o defeito que ela corrige**.
+|
+| **Um seletor só, e ele é `.dark:root`** — a classe na PRÓPRIA raiz. O Filament
+| escreve `dark` no `<html>`, e `:root` É o `<html>`: `.dark :root` (descendente) e
+| `:root .dark` (a raiz contendo um `.dark`) nunca casam, e seriam letra morta.
+|
+| `.dark:root` + três classes = (0,5,0), contra os (0,4,0) da regra clara: vence por
+| especificidade, e não vaza para o claro, porque exige a classe.
+|
+| Guarda: `tests/Kit/ContrasteDaNavegacaoNoTopoTest.php` lê os DOIS degraus deste
+| arquivo e recalcula o contraste contra `gray-50` e `gray-900`. Depois de editar:
+| `php artisan filament:assets`.
+*/
+:root .fi-topbar-item.fi-active .fi-topbar-item-label { color: var(--primary-700); }
+
+.dark:root .fi-topbar-item.fi-active .fi-topbar-item-label { color: var(--primary-400); }
