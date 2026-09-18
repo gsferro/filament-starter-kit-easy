@@ -193,6 +193,37 @@
 > **Os três achados encontrados e corrigidos pelo solicitante foram reavaliados**: os três
 > procedem; o de CT-46 fechou só metade da classe. Ver `06 › Ciclo 2 › Os três achados`.
 
+### Ciclo 3 — 2026-09-18 · **TETO DA SKILL**
+
+- **Ciclo**: 3 (último) · **Veredito**: **REPROVADO → especificação · ESCALAR AO USUÁRIO** · **Data**: 2026-09-18
+- **Relatório**: `06-relatorio-qa.md` › `# Ciclo 3` (os Ciclos 1 e 2 foram preservados)
+- **Contagem**: Blocker 0 · Major 6 novos + 1 carry-over (QA-12) · Minor 2 novos + 3 carry-over · Cosmético 1
+- **Medido pelo gate**: `Kit,Tenancy --parallel` **2461/2461** (9600 asserções, 0 falhas) ·
+  `VersaoNoRodapeTest` **46/46** (1485 asserções) · **5 mutantes manuais** no blade do rodapé,
+  aplicados e revertidos (sem PCOV/Xdebug, `--mutate` indisponível nos três ciclos)
+
+**Fechado no ciclo 2**: QA-15. **Parciais**: QA-10 → QA-19 · QA-11 → QA-20/QA-21 ·
+QA-14 → QA-22 · QA-16 → QA-23. **Abertos sem avanço**: QA-08, QA-12, QA-13, QA-17, QA-18.
+
+| # | Achado | Sev. | Destino |
+|---|---|---|---|
+| QA-19 | A remediação de QA-10 corrompeu 2 citações (`UiAvatarsProvider.php:27`, em `01:228` e `02:182`) e deixou 6 intactas. As 12 âncoras do vendor conferem | **Major** | 1 |
+| QA-20 | `04:1829-1831` e `VersaoNoRodapeTest.php:457-480` ainda dizem que CT-09 não tem caso e que M11 está vivo — 250 linhas acima dos dois casos verdes | **Major** | 1 |
+| QA-21 | Cabeçalho do `04` (45 CT, 13 regras, 62 mutantes) e Mapa de Regras (sem R14) pré-Adendo 3; CT-46/CT-47 ainda fora do Índice | **Major** | 1 |
+| QA-22 | A fraqueza do oráculo de RQ-20 migrou do texto para a adjacência: CT-47 deixa M65 sobreviver (46/46 verde com a versão do kit sem rótulo); CT-46 e CT-08 reprovam rótulo sufixado que RQ-20 permite | **Major** | 3 |
+| QA-23 | O `00:105-118` fechou a premissa nº 2 e passou a citar as docs pt/en como prova — elas dizem o oposto (`docs/{pt,en}/.../configuracoes-do-kit.md:41`) | **Major** | 1 |
+| QA-24 | `## Impacto em Features Existentes`, `## Rollback` e `## Dependências` do `01` não cobrem o passo 10 — a maior superfície do branch | **Major** | 1 |
+| QA-25 | `04:103` (SFDIPOT › Platform) ainda deriva os cenários do Filament 5.7.6 | Minor | 1 |
+| QA-26 | `pacotes-candidatos.md:590` e `02:463` ainda dão "kit em 5.7.6" como gate decisivo do `page-header`; o `07-dossies:71` já riscou o motivo | Minor | 1 |
+| QA-27 | `composer test:browser` duas vezes na Verificação Final, `[x]` e `[ ]` | Cosmético | 1 |
+
+> **Teto atingido.** A skill não abre ciclo 4. O que escalar está em
+> `06 › Ciclo 3 › O que ESCALAR ao solicitante`: a frase das docs pt/en, se a posição do rótulo é
+> requisito, RQ-11 (Blueprint) e o alcance do bump.
+
+> **Padrão de processo, nos três ciclos**: a remediação fecha o ponto citado e não a classe —
+> QA-05 → QA-18 → QA-19 (citações), QA-02 → QA-12 → QA-12 (passo 3), QA-14 → QA-22 (oráculo de RQ-20).
+
 ## Auditoria Pré-Implementação
 
 ### Revisão profunda (step 5) — premissas do plano contra o código real
@@ -202,7 +233,7 @@
 | "o provider padrão do Filament é `UiAvatarsProvider` e o kit não sobrescreve" | ✔ confirmado: `HasAvatars.php:10`; `grep -rn "defaultAvatarProvider" app/` vazio | nenhuma — premissa correta |
 | "`unsavedChangesAlerts` nasce `false` e o kit não liga" | ✔ confirmado: `HasUnsavedChangesAlerts.php:9`; `grep` em `app/` vazio | nenhuma |
 | "`ativo` não é auditado" | ✔ confirmado: `AuditsFillables.php:21-23` + `User.php:89-94` (`ativo` em `$attributes`, `:106-108`) | nenhuma |
-| "`USER_MENU_BEFORE` renderiza fora do dropdown" | ✔ confirmado: `user-menu.blade.php:43` vs. `<x-filament::dropdown>` em `:40`; `USER_MENU_PROFILE_BEFORE` em `:97`, `:105`, `:128`, `:143` | nenhuma |
+| "`USER_MENU_BEFORE` renderiza fora do dropdown" | ✔ confirmado: `user-menu.blade.php:43` vs. `<x-filament::dropdown>` em `:40`; `USER_MENU_PROFILE_BEFORE` em `:97`, `:110`, `:133`, `:148` | nenhuma |
 | "o kit está em Filament 5.7.6 e o page-header exige ^5.8.1" | ✔ confirmado no `composer.lock` | nenhuma |
 | "`config('kit.version')` é a tag do release, logo serve ao RQ-02" | **errado** — é a tag **do kit**, não a do produto | RQ-02 substituída por RQ-17 no **Adendo 2**; passo 3 reescrito; ADR-04 reescrita |
 | "`Panel::configureUsing()` resolveria os dois registros num lugar só" | `Component` usa `Configurable`, mas `PanelProvider::register()` monta o painel na fase de **register** e `configuraFilamentGlobal()` roda no **boot** — a ordem não foi provada | recusada: os dois ficam explícitos nos três providers, que é o padrão já usado por `->colors()` e `->favicon()` |

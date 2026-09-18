@@ -225,7 +225,7 @@ requisição de rede externa por uma string embutida no HTML.
   rodar `composer test:kit` inteiro, não só o filtro da feature.
 - **O avatar de iniciais perder contraste** em alguma paleta — mitigação: fundo fixo em
   `gray-950` e texto branco, que é exatamente o par do provider padrão do Filament
-  (`UiAvatarsProvider.php:27-23`), e não depende da cor primária nem da cor da organização.
+  (`UiAvatarsProvider.php:27`), e não depende da cor primária nem da cor da organização.
 - **Nome com caractere que quebre o SVG** (aspas, `<`, `&`) — mitigação: `e()` no valor antes de
   compor o SVG, e CT com nome contendo `<script>`.
 
@@ -396,7 +396,7 @@ atributo é descartado pelo filtro. Desativar e reativar conta **não** aparecem
 do dropdown do usuário". No Filament 5.7.6 instalado ele é emitido em
 `vendor/filament/filament/resources/views/components/user-menu.blade.php:43`, **antes e fora** do
 `<x-filament::dropdown>` que abre na linha 40; quem renderiza dentro é `USER_MENU_PROFILE_BEFORE`
-(`:97`, `:105`, `:128`, `:143`).
+(`:97`, `:110`, `:133`, `:148`).
 
 A decisão de usar `GLOBAL_SEARCH_BEFORE` para o gatilho ⌘K continua certa por outro motivo (a
 posição exata do campo de busca), mas a justificativa escrita está errada — e é exatamente o

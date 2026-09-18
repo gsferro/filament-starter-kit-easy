@@ -38,16 +38,21 @@ does **not** appear in the footer by default; to show it next to yours, enable t
 version* switch on the **Kit** tab. `php artisan kit:info` always prints both, regardless
 of the switch.
 
-**Empty field, no version in the footer.** A project that does not version itself need not pretend
-to.
+**Empty field, no version of YOURS in the footer.** A project that does not version itself need not
+pretend to. With the kit-version switch **off** — which is how it ships — the footer renders
+nothing at all.
+
+If the switch is on and the field is empty, the footer shows **only the kit version, labelled**
+(`kit 0.35.0`). It is never presented as if it were your product's: the label is precisely what
+prevents that reading, and it is a kit requirement, not a screen detail.
 
 **`APP_VERSION` seeds ONCE, at install time. After that, the screen wins.**
 
 This is the same rule as every other key on this page — *the database wins at runtime; `.env` seeds
 and is the fallback* — and here it has a consequence worth spelling out: on an already-installed
 project, **editing `APP_VERSION` in `.env` does not change the footer**. The stored value wins,
-including when it is blank. If the field on the screen is empty, the footer shows no version even
-with `APP_VERSION=2.4.1` in the file.
+including when it is blank. If the field on the screen is empty, the footer shows no version of
+yours even with `APP_VERSION=2.4.1` in the file.
 
 So: `APP_VERSION` exists so a fresh install is born versioned. To change the version afterwards, use
 the field on the screen.

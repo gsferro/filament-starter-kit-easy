@@ -74,7 +74,7 @@ final class AvatarDeIniciais implements AvatarProvider
      *
      * Nome vazio devolve string vazia, e o SVG sai só com o fundo. Devolver algo
      * como "?" seria inventar conteúdo para um caso que o dado não tem — e o
-     * provider do vendor também não inventa (`UiAvatarsProvider.php:15-21`).
+     * provider do vendor também não inventa (`UiAvatarsProvider.php:15-25`).
      */
     private function iniciais(string $nome): string
     {

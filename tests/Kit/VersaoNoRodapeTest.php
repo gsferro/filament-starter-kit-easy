@@ -65,6 +65,59 @@ function rodapeDe(string $html): string
     return $fim === false ? '' : substr($html, $fim);
 }
 
+/**
+ * O SEGMENTO do rodapé em que uma versão aparece.
+ *
+ * ## Por que um predicado único, e não mais uma correção pontual
+ *
+ * O oráculo de RQ-20 foi corrigido três vezes, e a fraqueza **migrou** nas três: primeiro aceitava
+ * `·` como rótulo; depois virou posicional (`toStartWith('v2.4.1')`, que reprovava um rótulo
+ * renomeado, algo que RQ-20 permite); depois exigia palavra em **qualquer lugar** do rodapé — e aí
+ * `sem versao do sistema · 0.34.2` passava, com a versão do kit crua ao lado. Esse último é o M65,
+ * exatamente o mutante que CT-47 existe para matar.
+ *
+ * A lacuna de derivação era sempre a mesma: o invariante nunca virou um predicado sobre o
+ * **segmento adjacente** à versão. Este helper é esse predicado, e os três casos passam a usá-lo.
+ *
+ * ## Acoplamento declarado
+ *
+ * O corte usa o separador ` · `, que é a composição do próprio kit
+ * (`versao-do-kit.blade.php:64`, `implode(' · ', $partes)`). Trocar o separador exige atualizar
+ * este helper — é acoplamento real, e fica escrito em vez de implícito. O que ele **não** acopla é
+ * o texto do rótulo nem a posição dele: prefixo (`kit 0.35.0`) e sufixo (`0.35.0 do kit`) passam
+ * igual, porque RQ-20 não fixa nenhum dos dois.
+ */
+function segmentoDaVersao(string $html, string $versao): string
+{
+    /*
+     * A DIV, não o `rodapeDe()`.
+     *
+     * `rodapeDe()` devolve tudo depois de `</main>` — a cauda inteira da página, com menu do
+     * usuário, scripts e texto de sobra. Fatiar aquilo por `·` devolve um segmento gigante que
+     * contém palavras de qualquer jeito, e `temRotulo()` responde `true` sempre. Foi assim que a
+     * quarta redação deste oráculo nasceu inerte: M63 e M65 passavam, e a medição dizia verde.
+     *
+     * O recorte tem de ser o elemento que a feature emite, e só ele.
+     */
+    if (preg_match('~<div class="kit-versao">(.*?)</div>~s', $html, $m) !== 1) {
+        return '';
+    }
+
+    foreach (explode('·', strip_tags($m[1])) as $segmento) {
+        if (str_contains($segmento, $versao)) {
+            return trim($segmento);
+        }
+    }
+
+    return '';
+}
+
+/** O segmento tem rótulo? Palavra, não letra solta — `v` de `v2.4.1` é marcador de versão. */
+function temRotulo(string $segmento): bool
+{
+    return preg_match('/\p{L}{2,}/u', $segmento) === 1;
+}
+
 /*
 |--------------------------------------------------------------------------
 | A fronteira: visitante nunca vê versão
@@ -436,10 +489,16 @@ it('[CT-08] faz a versao do kit acompanhar a do sistema quando ligada pela tela'
      * Quem assere a EXISTÊNCIA do rótulo é CT-46, pelo critério de palavra. Aqui o oráculo é a
      * presença simultânea das duas versões, que é o que o nome do caso promete.
      */
-    expect(rodapeDe((string) $depois->getContent()))
-        ->toContain('v2.4.0')
-        ->toContain('0.34.2')
-        ->toMatch('/\p{L}{2,}\s*0\.34\.2/u');
+    $rodapeDepois = rodapeDe((string) $depois->getContent());
+
+    /*
+     * Rótulo sim, POSIÇÃO não. A redação anterior casava `/\p{L}{2,}\s*0\.34\.2/u`, que só aceita
+     * o rótulo como PREFIXO — e o ciclo 3 do quality gate mostrou que isso reprova
+     * `0.34.2 do kit`, um sufixo que RQ-20 permite. O solicitante confirmou em 2026-09-18 que
+     * posição não é requisito.
+     */
+    expect($rodapeDepois)->toContain('v2.4.0')
+        ->and(temRotulo(segmentoDaVersao($rodapeDepois, '0.34.2')))->toBeTrue();
 })->group('kit');
 
 /**
@@ -776,50 +835,17 @@ it('[CT-09] liga a exibicao da versao do kit no vocabulario de afirmativa', func
 it('[CT-46] distingue a versao do kit da versao do sistema no rodape', function (): void {
     comVersoes('2.4.1', exibirKit: true);
 
-    $html = (string) $this->actingAs(usuarioDoKit('admin'))->get('/admin')->assertOk()->getContent();
+    $rodape = rodapeDe((string) $this->actingAs(usuarioDoKit('admin'))->get('/admin')->assertOk()->getContent());
 
-    preg_match('~<div class="kit-versao">(.*?)</div>~s', $html, $m);
-    $rodape = trim($m[1] ?? '');
+    $doKit     = segmentoDaVersao($rodape, (string) config('kit.version'));
+    $doSistema = segmentoDaVersao($rodape, '2.4.1');
 
-    expect($rodape)->not->toBe('', 'o rodapé da versão não renderizou')
-        ->and($rodape)->toContain('2.4.1')
-        ->and($rodape)->toContain(config('kit.version'));
-
-    /*
-     * O trecho ENTRE a versão do sistema e a do kit precisa ter ao menos uma LETRA.
-     *
-     * A primeira redação deste caso exigia só "não vazio", e isso não matava o mutante que ele diz
-     * matar: sem rótulo o rodapé sairia `v2.4.1 · 0.34.2`, o trecho entre as duas seria `·`, e a
-     * asserção passaria. Separador não é rótulo — o que distingue é palavra.
-     */
-    $entreAsDuas = (string) mb_substr(
-        $rodape,
-        (int) (mb_strpos($rodape, '2.4.1') + mb_strlen('2.4.1')),
-        (int) mb_strpos($rodape, (string) config('kit.version')) - (int) (mb_strpos($rodape, '2.4.1') + mb_strlen('2.4.1')),
-    );
-
-    /*
-     * PALAVRA, não letra solta. A versão do sistema sai como `v2.4.1`, e o `v` é marcador de
-     * versão — uma letra. Exigir "ao menos uma letra" não discrimina os dois casos; exigir duas
-     * ou mais separa rótulo (`kit`, `starter`, o que for) de marcador (`v`).
-     */
-    expect($entreAsDuas)->toMatch('/\p{L}{2,}/u', 'a versão do kit não vem acompanhada de rótulo: entre as duas há só pontuação');
-
-    /*
-     * E o rótulo NÃO acompanha a versão do sistema — é isso que o torna discriminante.
-     *
-     * A primeira redação afirmava `toStartWith('v2.4.1')`, e isso era um oráculo **posicional**:
-     * media onde a versão está, não que ela esteja sem rótulo. Renomear o rótulo de `kit ` para
-     * qualquer outra coisa — que RQ-20 explicitamente permite, porque não fixa o texto — deixaria
-     * este caso verde e quebraria outros. O oráculo certo é simétrico ao de cima: antes da versão
-     * do sistema não pode haver letra nenhuma.
-     */
-    $antesDoSistema = (string) mb_substr($rodape, 0, (int) mb_strpos($rodape, '2.4.1'));
-
-    expect($antesDoSistema)->not->toMatch(
-        '/\p{L}{2,}/u',
-        'a versão do sistema também veio rotulada, e aí o rótulo deixa de discriminar as duas',
-    );
+    expect($doKit)->not->toBe('', 'a versão do kit não apareceu no rodapé')
+        ->and($doSistema)->not->toBe('', 'a versão do sistema não apareceu no rodapé')
+        // O que RQ-20 exige: a do kit vem com rótulo...
+        ->and(temRotulo($doKit))->toBeTrue('a versão do kit saiu sem rótulo que a identifique')
+        // ...e a do sistema não, senão o rótulo deixa de discriminar as duas.
+        ->and(temRotulo($doSistema))->toBeFalse('a versão do sistema também veio rotulada, e aí o rótulo não discrimina nada');
 })->group('kit');
 
 /**
@@ -832,22 +858,18 @@ it('[CT-46] distingue a versao do kit da versao do sistema no rodape', function 
 it('[CT-47] mantem o rotulo na versao do kit quando a do sistema nao foi informada', function (): void {
     comVersoes(null, exibirKit: true);
 
-    $html = (string) $this->actingAs(usuarioDoKit('admin'))->get('/admin')->assertOk()->getContent();
-
-    preg_match('~<div class="kit-versao">(.*?)</div>~s', $html, $m);
-    $rodape = trim($m[1] ?? '');
+    $rodape = rodapeDe((string) $this->actingAs(usuarioDoKit('admin'))->get('/admin')->assertOk()->getContent());
+    $doKit  = segmentoDaVersao($rodape, (string) config('kit.version'));
 
     /*
-     * O oráculo é o MESMO de CT-46 — presença de letra —, e isso não é repetição preguiçosa.
+     * Sobre o SEGMENTO, não sobre o rodapé inteiro — e é aqui que estava o M65 sobrevivente.
      *
-     * A primeira redação usava `not->toBe(kit.version)` mais `not->toStartWith('v')`, e o ciclo 2
-     * do quality gate mostrou que `(0.34.2)` passa nas duas sem conter letra nenhuma: a fraqueza
-     * que CT-46 tinha acabado de perder havia migrado para o vizinho. Exigir letra fecha os dois
-     * pelo mesmo critério, que é o que RQ-20 pede — distinção legível, não uma string fixa.
+     * A redação anterior media `\p{L}{2,}` no rodapé todo, então qualquer letra em qualquer lugar
+     * da div satisfazia, e a versão do kit podia sair crua ao lado de um texto vizinho. O ciclo 3
+     * do quality gate provou isso com o mutante `sem versao do sistema · 0.34.2`, que passava.
      */
-    expect($rodape)->toContain(config('kit.version'))
-        ->and($rodape)->toMatch(
-            '/\p{L}{2,}/u',
-            'a versão do kit saiu sem rótulo — sozinha no rodapé, seria lida como a do produto',
+    expect($doKit)->not->toBe('', 'a versão do kit não apareceu no rodapé')
+        ->and(temRotulo($doKit))->toBeTrue(
+            'a versão do kit saiu sozinha no segmento, sem rótulo — seria lida como a do produto',
         );
 })->group('kit');

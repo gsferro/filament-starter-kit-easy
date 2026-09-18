@@ -556,3 +556,367 @@ Nenhuma. Todo achado deste ciclo tem repro de uma linha.
   "elementos da tela × exercitados pelo CT-B" e sem screenshot nos dois temas.
 - **App servido**: nada rodou contra instância real.
 - **RQ-11 (Blueprint)**: o ciclo `bp:on` → aderência → `bp:off` segue sem execução.
+
+---
+
+# Ciclo 3 — 2026-09-18 · **TETO DA SKILL**
+
+> Requisito: `00-requisito.md` (Texto Original + **Adendos 1, 2 e 3**) · Plano: `01-plano-acao.md`
+> Perfil: **completo** · Natureza: `nova` · Regressão: **sim** (`01 › Toca infra compartilhada? sim`)
+> Executado por quem **não** implementou a feature nem executou as correções dos ciclos 1 e 2.
+> Deduplicado contra os **Ciclos 1 e 2 deste arquivo**, não contra os achados corrigidos.
+> **Terceiro de três.** A skill não abre ciclo 4: o que sobrar aberto é escalado ao solicitante.
+
+> **Nota de procedência.** Esta seção foi reescrita a partir da cópia de trabalho do gate depois de
+> um `git checkout --` acidental sobre o `06` tê-la apagado durante a remediação. O conteúdo é o
+> medido no ciclo 3, na data acima. **Os valores errados citados nos achados foram preservados de
+> propósito — eles são a evidência.** Onde a remediação posterior já os corrigiu, há uma linha
+> *"Posterior a este ciclo"* dizendo isso, com o que eu mesmo remedi. Nenhum achado foi reaberto,
+> reclassificado nem apagado por causa da correção.
+
+## Veredito — Ciclo 3
+
+**REPROVADO → especificação · ESCALAR AO USUÁRIO** (teto de ciclos atingido)
+
+- Blocker: 0 · Major: **6 novos + 1 carry-over** · Minor: 2 novos + 3 carry-over · Cosmético: 1
+- Ambiente: app **não servido**; PHP 8.4 sem PCOV/Xdebug; MCP **indisponível**.
+- Medido nesta execução: `Kit,Tenancy --parallel` **2461/2461** (9600 asserções, 0 falhas) ·
+  `VersaoNoRodapeTest` **46/46** (1485 asserções) — bate com o solicitante.
+- **Mutação rodada à mão** (sem driver de cobertura): 5 mutantes aplicados ao blade e revertidos,
+  com `git status --porcelain` vazio verificado depois de cada um. É o que sustenta QA-22.
+- Vai para **especificação** porque cinco dos seis Majors são texto contra código, e **quatro
+  deles foram criados ou deixados pela remediação do ciclo 2** — o padrão que se repete há três
+  ciclos: a correção fecha o ponto citado no achado e não varre a classe.
+
+**Nenhum Blocker.** O produto continua correto; o que não converge é o registro.
+
+---
+
+## Achados
+
+### QA-19 — A remediação de QA-10 corrompeu duas citações e deixou seis intactas · **Major** · destino 1
+
+- **Dimensão** L2 · **Relacionado a** QA-10, QA-05, `.ai/rules/specs.md`
+- **Conferido primeiro, e procede**: as **12 âncoras** que o solicitante nomeia conferem uma a uma
+  no `vendor/` da v5.8.2 — `user-menu.blade.php:43` (USER_MENU_BEFORE), `:45`
+  (`<x-filament::dropdown`), `:97`/`:110`/`:133`/`:148` (USER_MENU_PROFILE_BEFORE),
+  `layout/index.blade.php:126` e `layout/simple.blade.php:61` (FOOTER),
+  `UiAvatarsProvider.php:27` (expressão de cor) e `:29` (URL), `HasAvatars.php:10`
+  (`$defaultAvatarProvider`), `HasUnsavedChangesAlerts.php:9` (nasce `false`) e `:18-21`
+  (`hasUnsavedChangesAlerts()`), `ColorManager.php:104-107` (`getColor(): ?array`). OK.
+- **Criado pela remediação** — substituição mecânica que produziu intervalo invertido:
+  - `01:228` e `02:182` — **`UiAvatarsProvider.php:27-23`**. Não existe: 27 depois de 23.
+    `git log -S "UiAvatarsProvider.php:27-23"` devolve **`c57fcda`**, o commit da remediação.
+- **Não alcançado pela remediação** (o achado citou 11 arquivos; estes sobraram):
+
+  | Onde | Cita | Real hoje |
+  |---|---|---|
+  | `01:399` | `(:97, :105, :128, :143)` | `:97`, `:110`, `:133`, `:148` |
+  | `03:205` | dropdown em `:40`; hooks em `:97, :105, :128, :143` | `:45`; `:97, :110, :133, :148` |
+  | `05:231` | `page/index.blade.php:162-166` | `setUpUnsavedDataChangesAlert({ $wire })` em **`:168`** |
+  | `tests/Browser/AlertaDeAlteracoesNaoSalvasTest.php:14` | `page/index.blade.php:162-166` | idem `:168` |
+  | `tests/Kit/AvatarDeIniciaisTest.php:17` | `UiAvatarsProvider.php:23` para a **URL** | a URL está em `:29`; `:23` é o `mb_substr` |
+  | `app/Support/AvatarDeIniciais.php:77` | `UiAvatarsProvider.php:15-21` | o bloco das iniciais vai até **`:25`** |
+
+- **Repro**: `grep -rn "162-166\|27-23" app tests wikis/specs/feat/estudo-de-pacotes-rodada-2`
+  contra `grep -n "USER_MENU\|setUpUnsavedDataChangesAlert" vendor/filament/filament/...`.
+- **Por que Major e não Minor, ao contrário de QA-05**: é a **terceira** rodada sobre a mesma
+  classe, e `:27-23` é pior que a citação velha — a velha apontava para o lugar errado, esta não
+  aponta para lugar nenhum.
+- **Ação exigida**: conferir por `grep` do **símbolo**, não por lista de números. É a rule que
+  QA-10 já indicou para o step 9.
+- **Posterior a este ciclo — conferido por mim**: as oito citações acima foram corrigidas.
+  `01:228` e `02:182` agora trazem `UiAvatarsProvider.php:27`; `AvatarDeIniciais.php:77` traz
+  `:15-25`; `AvatarDeIniciaisTest.php:17` traz `:29`; `grep -rn "162-166\|105, :128"` não devolve
+  mais nada em `01`, `03`, `05` nem em `tests/Browser/`. **Os valores citados na tabela acima são o
+  estado medido no ciclo 3** e ficam como prova do achado, não como descrição do repositório de
+  hoje. A ação de fundo — conferir por símbolo, não por número — continua valendo: foi a quarta
+  varredura manual sobre a mesma classe.
+
+### QA-20 — O `04` e o arquivo de teste contradizem a si mesmos sobre CT-09 e M11 · **Major** · destino 1
+
+- **Dimensão** L1 / L3 · **Relacionado a** QA-11, CT-09, D2, `config/kit.php`
+- **Fechado**: `04:50-52` (cabeçalho), `04:1748` e `04:1774` (D2) descrevem o estado de hoje.
+- **Não fechado, no mesmo arquivo**: `04:1829-1831` (`## Fim do ciclo`) segue com
+  *"**2 sem teste** (CT-09, por defeito de produção; CT-25…)"* e
+  *"**M11 vivo** em `config/kit.php:250` (D2)"*. Hoje CT-09 tem dois casos verdes e
+  `config/kit.php:263` usa `BooleanoDoEnv::comPadrao(env('KIT_EXIBIR_VERSAO'), false)`.
+- **Não fechado, dentro do teste** — e é o pior dos dois:
+  `tests/Kit/VersaoNoRodapeTest.php:457-480` é um bloco de comentário que ainda diz, no presente,
+  *"CT-09 … **não tem caso**, e o motivo é achado, não preguiça: **M11 está vivo na árvore**"*,
+  *"`config/kit.php:250` lê a chave com `(bool) env('KIT_EXIBIR_VERSAO', false)`"* e
+  *"Escrever o caso aqui deixaria a suíte vermelha por um defeito de produção"*. Os dois casos
+  `[CT-09]` estão **250 linhas abaixo**, no mesmo arquivo (`:729`, `:750`), e o docblock **deles**
+  (`:703-726`) conta a história correta, no passado. Um arquivo, duas versões da verdade.
+- **Contagem que caiu junto**: `04:1751` — *"42 IDs `[CT-nn]` distintos — os 45 menos CT-09,
+  CT-25 e CT-36"*. Medido agora: **45** IDs distintos nos arquivos de teste.
+- **Repro**: `sed -n '457,480p;703,760p' tests/Kit/VersaoNoRodapeTest.php` · `sed -n '263p' config/kit.php` ·
+  `grep -ho "it('\[CT-[0-9]*\]" tests/Kit/*Test.php | sort -u | wc -l` devolve 45.
+
+### QA-21 — Cabeçalho, Mapa de Regras e Índice do `04` ficaram na contagem pré-Adendo 3 · **Major** · destino 1
+
+- **Dimensão** L1 / A · **Relacionado a** QA-11, RQ-19, RQ-20, R14
+- **Observado**:
+  - `04:3` — *"Requisito: `00-requisito.md` (incluindo **Adendo 1** e **Adendo 2**)"*. O **Adendo 3**
+    é a origem de RQ-19, RQ-20, R14, CT-46 e CT-47, e o `04` os contém.
+  - `04:56-58` — *"Cenários: **45** CT + 2 CT-B · Regras: **13** · Mutantes previstos: **62**
+    (`M1`…`M62`)"*. Real: **47** CT, **14** regras (R14 em `:1286`), **65** mutantes
+    (M63/M64/M65 em `:1330-1332`).
+  - `04:113-125` — **o `## Mapa de Regras` vai de R1 a R13. R14 não tem linha**, e é a única regra
+    do arquivo fora dele. Consequência para a dimensão A: **RQ-20 é a única das 20 cláusulas sem
+    entrada no mapa de regras**, embora tenha regra, cenários e código.
+  - **CT-46 e CT-47 continuam fora do `## Índice de Cenários` e da `## Reconciliação › Sentido 1`**
+    — era o item literal da ação exigida por QA-11, e é a única coisa dela que não foi feita.
+- **Repro**: `grep -n "CT-46\|CT-47" 04-casos-de-teste.md` devolve `:254`, `:341`, `:1300`, `:1308`,
+  `:1315`, `:1330-1332` — nenhuma linha de índice, nenhuma de reconciliação.
+- **Ação exigida**: recalcular o cabeçalho, acrescentar a linha de R14 ao mapa e as duas linhas ao
+  índice e à reconciliação. É contagem, não derivação.
+
+### QA-22 — A fraqueza do oráculo de RQ-20 migrou pela terceira vez: do texto para a adjacência · **Major** · destino 3
+
+- **Dimensão** K · **Relacionado a** QA-14, RQ-20, CT-46, CT-47, CT-08, M63, M64, M65
+- **Era a pergunta do solicitante.** Resposta: o eixo que ele consertou está consertado; a fraqueza
+  **não morreu, mudou de eixo**. Medido com cinco mutantes aplicados ao blade e revertidos.
+
+  | # | Mutante no `versao-do-kit.blade.php` | Resultado | Leitura |
+  |---|---|---|---|
+  | MX1 | `'kit '` para `'starter '` (**RQ-20 permite**) | **46/46 verde** | OK — o eixo **texto** está fechado. A correção procede |
+  | MX2 | rótulo do kit vira `'v'` | **5 vermelhos** (CT-01 x2, CT-08, CT-46, CT-47) | OK — marcador não é rótulo; o `\p{L}{2,}` discrimina |
+  | MX3 | rótulo vira **sufixo**: `0.34.2 do kit` | **2 vermelhos** (CT-08, CT-46) | FALHA — **over-assertion**: RQ-20 não fixa a posição do rótulo, e CT-46 fixa |
+  | MX5 | com a versão do sistema vazia, a do kit sai **sem rótulo**, com texto vizinho: `sem versao do sistema · 0.34.2` | **46/46 VERDE** | FALHA — **buraco**: é exatamente M65, e CT-47 existe para matá-lo |
+
+- **O buraco, por extenso**: CT-47 (`VersaoNoRodapeTest.php:832-849`) assere
+  `expect($rodape)->toMatch('/\p{L}{2,}/u')` sobre o **rodapé inteiro**. CT-46 (`:776-823`)
+  constrói uma **janela de adjacência** (`$entreAsDuas`, `:797-801`) e assere dentro dela. A
+  assimetria é o defeito: qualquer letra em qualquer lugar do `<div class="kit-versao">` satisfaz
+  CT-47, e a versão do kit pode sair crua ao lado. O dano que o próprio docblock de CT-47 descreve
+  — *"sozinha no rodapé, seria lida como a do produto"* — acontece, e a suíte fica verde.
+- **A over-assertion, por extenso**: CT-46 mede o segmento **entre** as duas versões, logo exige
+  rótulo **prefixado**. CT-08 (`:442`) repete a forma com `/\p{L}{2,}\s*0\.34\.2/u`. RQ-20 pede
+  *"rótulo que a distingue"*, não *"rótulo antes do número"*. É o mesmo defeito de duas rodadas
+  atrás — a suíte afirma mais que o requisito —, movido de **string** para **posição**.
+- **Repro (exata, reproduzida 2x)** — em `resources/views/filament/versao-do-kit.blade.php:59`,
+  trocar a linha do rótulo por:
+
+  ```php
+  $versaoDoKit = config('kit.exibir_versao')
+      ? (filled(config('app.version'))
+          ? 'kit '.config('kit.version')
+          : 'sem versao do sistema · '.config('kit.version'))
+      : null;
+  ```
+
+  `vendor/bin/pest tests/Kit/VersaoNoRodapeTest.php` devolve **46/46 passed**. Revertido em
+  seguida; `git status --porcelain` vazio.
+- **Lacuna de derivação** (é isto que a `feature-test-design` precisa fechar, não o caso):
+  *o invariante "a versão do kit vem acompanhada de rótulo" nunca virou um predicado único sobre o
+  **segmento adjacente à versão do kit**.* Cada cenário reinventou a medição, e por isso um exige
+  demais (posição) e o vizinho exige de menos (letra em qualquer lugar). O predicado certo é um só,
+  simétrico, usado por CT-46, CT-47 e CT-08: *o trecho colado à versão do kit — antes **ou** depois —
+  contém `\p{L}{2,}`, e o trecho colado à do sistema não*.
+- **Ação exigida**: `feature-test-design` com **M65** como entrada e a lacuna acima como enunciado.
+  Terceira correção pontual do mesmo cenário não fecha a classe — as duas primeiras não fecharam.
+- **Posterior a este ciclo — remedido por mim, e o desfecho confirma o diagnóstico.** A quarta
+  redação fez o que a ação exigia: extraiu **um predicado único**, `segmentoDaVersao()` +
+  `temRotulo()` (`VersaoNoRodapeTest.php:90-119`), usado por CT-46, CT-47 e CT-08. Duas coisas
+  merecem ficar registradas:
+  - **A terceira redação nasceu inerte**, e é o tipo de defeito que só aparece medindo: o predicado
+    era aplicado sobre `rodapeDe()`, que devolve a cauda inteira da página, então qualquer texto o
+    satisfazia e M63/M65 passavam com a suíte verde. O próprio helper agora documenta isso
+    (`:93-101`). É a quarta encarnação da mesma lacuna — **um oráculo que mede o lugar errado não
+    é mais forte que um oráculo fraco**, e nenhuma das duas medições anteriores teria distinguido
+    as duas coisas.
+  - **Medido por mim, no blade, com mutante aplicado e revertido** (`--filter="CT-46|CT-47|CT-08"`):
+    base **3/3 verde** · M63 (sem rótulo) **0/3 — os três vermelhos** · M65 na variante MX5 deste
+    relatório (rótulo some quando a do sistema falta, com texto vizinho) **CT-47 vermelho**, que é
+    exatamente o caso que sobrevivia · **MX3 (rótulo sufixado) 3/3 verde**, porque o solicitante
+    decidiu que **a posição não é requisito** — o que fecha o item 2 da escalada abaixo.
+    O buraco e a over-assertion estão fechados **pelo mesmo predicado**, que era a exigência.
+
+### QA-23 — O `00` passou a citar como prova uma doc de usuário que diz o contrário · **Major** · destino 1
+
+- **Dimensão** L5 / A · **Relacionado a** QA-16, RQ-20, CT-01 linha 3, CT-47
+- **Fechado**: `00:105-118` traz a `**RESOLVIDA em 2026-09-18 — a premissa foi NEGADA**`, com os
+  três motivos (Adendo 3/RQ-20; o interruptor nasce desligado; o invariante continua valendo e
+  agora é asserível). É a correção pedida, e ela está bem escrita.
+- **Criado por ela**: o texto novo afirma *"o código mostra a versão do kit **rotulada**, e isso
+  está em CT-01 linha 3, em CT-47 **e nas docs pt/en**"*. As docs dizem o oposto, e o ciclo 2 já
+  havia registrado isso como "contágio":
+  - `docs/pt/recursos/configuracoes-do-kit.md:41` — *"**Campo vazio, rodapé sem versão.** Um projeto
+    que não versiona não precisa fingir que versiona."*
+  - `docs/en/recursos/configuracoes-do-kit.md:41` — *"**Empty field, no version in the footer.**"*
+  - Com o interruptor ligado, `versao-do-kit.blade.php:58-64` emite `kit 0.34.2`.
+- **Por que Major e não Minor**: antes era uma doc desatualizada. Agora o **oráculo** (`00`) declara
+  que a doc registra o comportamento — quem for conferir a premissa pela cadeia que o próprio `00`
+  indica chega a uma afirmação falsa e a toma por confirmação.
+- **Repro**: `sed -n '105,118p' 00-requisito.md` contra `sed -n '41p' docs/pt/recursos/configuracoes-do-kit.md`.
+- **Ação exigida**: corrigir a frase das duas docs (*"campo vazio: o rodapé não mostra a versão do
+  sistema; com o interruptor ligado, mostra a do kit, rotulada"*) **ou** tirar "e nas docs pt/en"
+  do `00` por Adendo. A primeira é a correta.
+- **Posterior a este ciclo — conferido por mim**: o solicitante escolheu a primeira, que era a
+  recomendada. `docs/pt/…:41` passou a *"**Campo vazio, rodapé sem a SUA versão** … Se o
+  interruptor estiver ligado e o campo vazio, o rodapé mostra **só a versão do kit, rotulada**"*, e
+  a `en` o equivalente. A frase citada como **Observado** acima é o estado do ciclo 3 e fica como
+  prova. O `00:105-118` passou a dizer a verdade sobre as docs sem que uma linha dele mudasse.
+
+### QA-24 — O `## Impacto em Features Existentes` e o `## Rollback` não cobrem o passo 10 · **Major** · destino 1
+
+- **Dimensão** J / L3 · **Relacionado a** QA-01, QA-17, passo 10, ADR-08
+- **Esperado**: a regressão condicional manda comparar o impacto **medido** com o
+  `## Impacto em Features Existentes` do PRD; divergência entre previsto e medido é achado.
+- **Observado**: o bump é, de longe, a **maior superfície do branch** — 18 pacotes movidos, 11
+  bundles de `public/js/filament/**` regerados, 7 `.woff2` novos, `public/css/filament/filament/app.css`
+  reescrito —, e:
+  - `01:181-196` (`## Impacto`) lista cinco impactos, **nenhum do bump**. Os cinco são os dos passos
+    1 a 5, escritos antes do Adendo 1.
+  - `01:198-207` (`## Rollback`) — *"os passos **1, 3, 4 e 5** são reversíveis por `git revert`"*.
+    Passo 10 e passo 11 não aparecem, e o 10 **não** é reversível por `git revert`: exige
+    `composer` na direção oposta e `php artisan filament:assets`.
+  - `01:209-212` (`## Dependências`) — *"**Composer: nenhuma nova.** É o resultado central desta
+    rodada"*. Verdadeiro para *nova* e silencioso sobre as **18 atualizadas**, cinco delas fora da
+    família Filament (duas de runtime).
+- **Repro**: `git diff main..HEAD --stat -- public/ composer.lock` · `sed -n '181,212p' 01-plano-acao.md`.
+- **Por que Major**: é a seção que a próxima pessoa lê para saber o que quebrar e como voltar, e a
+  mudança de maior alcance da entrega não está em nenhuma das três.
+
+### QA-25 — O `04` deriva os cenários de uma plataforma que não é mais a instalada · **Minor** · destino 1
+
+- **Dimensão** L3 · `04:103` (SFDIPOT › **P**latform): *"Filament **5.7.6** — o hook `FOOTER` é
+  emitido **também** pelo layout `simple`…"*. Instalado: **v5.8.2**. A linha é a que justifica
+  CT-05, CT-07, CT-09, CT-16, CT-17, CT-37, CT-39, CT-B01 e CT-B02 — a varredura inteira de
+  plataforma aponta para um vendor que saiu da árvore. O fato citado continua verdadeiro
+  (`layout/simple.blade.php:61` emite `FOOTER`); a versão, não.
+
+### QA-26 — Dois registros permanentes ainda dão como decisivo um motivo que caiu · **Minor** · destino 1
+
+- **Dimensão** L5 · **Relacionado a** QA-01, RQ-07
+- `wikis/pacotes-candidatos.md:590` e `02:463` registram o gate do `mortalkiller/filament-page-header`
+  como *"Exige `filament ^5.8.1` (kit em **5.7.6**)"*. O kit está em 5.8.2 e a constraint é
+  satisfeita. O `07-dossies:71` **riscou** o motivo e escreveu *"motivo resolvido em 2026-09-18"*;
+  os dois registros permanentes não acompanharam.
+- **Por que importa**: `pacotes-candidatos.md` é o artefato que RQ-07 compra e o que a próxima
+  varredura lê para não reavaliar do zero. Ela vai ler um motivo que não existe mais.
+  O veredito **ADIAR segue correto** pelos motivos 2 e 3 — o defeito é só o registro.
+
+### QA-27 — `composer test:browser` aparece duas vezes na Verificação Final, com estados opostos · **Cosmético** · destino 1
+
+- **Dimensão** L4 · `03:102` — `[x] composer test:browser — **61 verdes / 14 pulados / 0 falhas**`;
+  `03:103` — `[ ] composer test:browser — CT-B`. Criado pela remediação de QA-15, que acrescentou a
+  linha medida sem retirar nem fundir a antiga.
+
+---
+
+## Ciclos 1 e 2 — o que verifiquei como fechado
+
+| # | Estado | Evidência medida agora |
+|---|---|---|
+| QA-10 | **parcial** | As **12 âncoras** do `vendor/` conferem, uma a uma, na v5.8.2. Mas 6 citações ficaram para trás e 2 foram corrompidas → **QA-19** |
+| QA-11 | **parcial** | `04:50-52`, `:1748`, `:1774` corrigidos. `04:1829-1831`, cabeçalho, mapa de regras e Índice não → **QA-20**, **QA-21**. O `[CT-38]` triplo está **declarado como deliberado** e a declaração procede: mesma regra, camadas diferentes |
+| QA-12 | **ABERTO** | Cobertura RQ-01…RQ-20 OK · passo 3 renomeado OK · `## Superfície de UI` com os dois campos OK. **Segue falso**: `01:331` ainda diz *"conteúdo: `v{{ config('kit.version') }}`"* — o código emite `config('app.version')`; `## Variáveis de Ambiente` (`:149-155`) ainda tem só `KIT_ALERTA_ALTERACOES_NAO_SALVAS` na tabela; e **o passo 3 continua sem mencionar o rótulo**, com RQ-20 apontando para ele na tabela de cobertura |
+| QA-13 | **ABERTO** | `02:166` ainda *"aparência idêntica à anterior"*; `AvatarDeIniciais.php:44-49` ainda *"Por que a aparência não muda"*. O vendor 5.8.2 pula pontuação inicial (`UiAvatarsProvider.php:19-23`), o kit não |
+| QA-14 | **parcial** | Eixo **texto** fechado, medido: MX1 (`kit ` para `starter `) **46/46 verde**. Eixo **adjacência** aberto e pior do que estava → **QA-22** |
+| QA-15 | **fechado** | `03 › ## 10.` (`:62`) e `## 11.` (`:73`) existem, com data e resultado; a linha `config.md` da tabela de rules foi reescrita e agora **confere** com `config/kit.php:263`; `composer test` registrado como **2464/2464, 9604 asserções**, pós-bump. Resíduo: **QA-27** |
+| QA-16 | **parcial** | O `00:105-118` resolveu a premissa nº 2 no ramo negado, com os três motivos — correção boa. O contágio nas docs pt/en não foi fechado, e a correção passou a citá-lo como prova → **QA-23** |
+| QA-17 | **ABERTO** | `CHANGELOG.md:41` e `01:451` seguem com *"as **nove** dependências irmãs"*. Medido agora no `composer.lock` contra `main`: **18 pacotes**, sendo **12 `filament/*` em `packages`** + `filament/upgrade` em dev + **5 fora da família** (`danharrin/livewire-rate-limiting` 2.2.1→2.3.0, `spatie/laravel-medialibrary` 11.23.5→11.23.8, `ramsey/uuid` 4.9.3→4.9.4, `phpstan/phpdoc-parser` 2.3.3→2.3.5, `rector/rector` 2.6.2→2.6.7) |
+| QA-18 | **ABERTO** | `02:329` (ADR-05 › Referências) ainda lista `app/Models/User.php:106-108`, **`:291`**, **`:310`**. `:291` é o `if (($razao = …`; os `forceFill` estão em `:307` e `:326` |
+| QA-08 | **ABERTO** | `03 › Verificação Final` segue `[ ]` em: `ponytail-review`, `--parallel --tia`, custo medido, ciclo do Blueprint (**RQ-11**), citações reverificadas, IDs `[CT-nn]` |
+
+---
+
+## Dimensão A — as 20 cláusulas, conferidas uma a uma
+
+**Nenhuma das 20 virou órfã**, e as duas do Adendo 3 estão completas:
+
+| RQ | Passo | CT | CT-B | Código | Veredito |
+|---|---|---|---|---|---|
+| RQ-19 | 1 | CT-20, 21, 22, 23, 24, 45 | CT-B02 | `App\Support\AvatarDeIniciais`, os 3 `PanelProvider` | completa; R7/R8 citam **RQ-19 (Adendo 3)** no mapa de regras (`04:119-120`) |
+| RQ-20 | 3 | CT-46, CT-47 | — | `versao-do-kit.blade.php:59` | código OK, CT OK e **verdes**; o passo 3 não a menciona (QA-12), R14 não está no mapa (QA-21), o oráculo tem buraco (QA-22) |
+
+As 18 restantes seguem como no ciclo 2: RQ-02 declarada substituída, RQ-05 fora de escopo com
+gatilho, RQ-11 parcial (Blueprint nunca rodou), RQ-16 parcial com limite declarado em ADR-08.
+**RQ-12** ("do início ao fim") é a única que este relatório mantém pendente por si mesma.
+
+---
+
+## Dimensões
+
+| # | Dimensão | Status | Observação |
+|---|----------|--------|------------|
+| A | Cobertura do requisito | atenção | Nenhuma órfã nas 20; RQ-20 sem linha no mapa de regras (QA-21); premissa nº 2 fechada no `00` |
+| B | Fronteiras e dados | OK | Reaproveitada do ciclo 1; o diff desde então é texto, config e teste |
+| C | Matriz de permissão | OK | Sem entidade nova; CT-11 e CT-41 verdes |
+| D | Observabilidade real | OK | Zero `Log::`/`logger()` novo; sem PII |
+| E | Performance | OK | Nada novo em caminho de request |
+| F | UX de erro | OK | Sem superfície de erro nova |
+| G | Tema e cor | atenção | `.kit-versao` segue sem declarar cor, de propósito. Nível visual **não rodou** (sem MCP) |
+| H | Acessibilidade | atenção | Débito dos ciclos 1 e 2 mantido |
+| I | Segurança da superfície nova | OK | Nenhuma rota, propriedade pública ou id de terceiro novo. Guard de visitante reconferido no vendor 5.8.2 |
+| J | Regressão adjacente | atenção | Medido: `Kit,Tenancy --parallel` **2461/2461**, 9600 asserções, 0 falhas. **O achado da dimensão é documental**: o plano não prevê o impacto do bump → **QA-24** |
+| K | Adequação da suíte | FALHA | **QA-22**, com mutante nomeado e reproduzido. CT-09 auditado e **sólido** (oráculo sobre a config relida, com par positivo — nada posicional). CT-01, CT-05, CT-06 e CT-08 auditados: CT-08 herdou a forma posicional de CT-46 |
+| L | Consistência documental | FALHA | QA-19 (L2), QA-20 (L1/L3), QA-21 (L1), QA-23 (L5), QA-24 (L3), QA-25 (L3), QA-26 (L5), QA-27 (L4) |
+
+---
+
+## O que ESCALAR ao solicitante
+
+O teto de 3 ciclos foi atingido com Major aberto. As decisões abaixo são de **especificação** e
+não cabem ao gate:
+
+1. ~~**A frase das docs de usuário** (QA-23)~~ — **RESOLVIDO depois deste ciclo**: o solicitante
+   corrigiu as docs pt e en, que era a saída recomendada. Conferido.
+2. ~~**A posição do rótulo é requisito?** (QA-22, MX3)~~ — **RESOLVIDO depois deste ciclo**: o
+   solicitante decidiu que **não é**, e a quarta redação do oráculo deixou de fixá-la. Medido:
+   rótulo sufixado passa 3/3. Conferido.
+3. **RQ-11 (Blueprint)** nunca rodou, em três ciclos. Ou roda, ou vira débito declarado no `00`.
+   **Aberto.**
+4. **O alcance do bump** (QA-17, QA-24): cinco pacotes fora da família Filament, dois deles de
+   runtime, entraram sem aparecer no CHANGELOG, no impacto nem no rollback. Aceita como está,
+   ou o texto passa a nomeá-los? **Aberto.**
+
+Sobram **3 e 4**. Os Majors de texto que não foram tocados pela remediação posterior — QA-12,
+QA-20, QA-21, QA-24 — continuam abertos e continuam sendo a razão do veredito.
+
+E um padrão, que é o achado sobre o processo e não sobre a entrega: **nos três ciclos, a
+remediação fechou o ponto citado e não a classe.** QA-05 → QA-18 → QA-19 (citações),
+QA-02 → QA-12 → QA-12 (o passo 3), QA-14 → QA-22 (o oráculo de RQ-20). Enquanto a correção for
+pontual, um quarto ciclo acharia o mesmo.
+
+**Adendo ao padrão, posterior a este ciclo e a favor do processo**: na quarta rodada o oráculo de
+RQ-20 foi fechado pela **classe** — um predicado único em vez de três medições ad hoc — e foi a
+primeira vez que a remediação subiu um nível em vez de emendar o caso. A terceira tentativa, a que
+nasceu inerte, é a evidência de por que o nível importava: ela era pontual, parecia verde e não
+media nada. As citações (QA-19) seguem fechadas uma a uma, e é onde o padrão continua de pé.
+
+## Débitos Aceitos (acumulados)
+
+- QA-09 (Cosmético): nome do arquivo da blade.
+- QA-27 (Cosmético): a linha duplicada da Verificação Final.
+- Dimensão H: rodapé sem `assertNoAccessibilityIssues()`.
+- Pergunta nº 10 do `04`: barreira separada de leitura e de escrita.
+- Resíduos do `00` que só saem por Adendo: `00:60` (ADR-03 no lugar de ADR-02) e a premissa de
+  RQ-16 sobre o `kit:update`.
+
+## Suspeitas Não Confirmadas
+
+- **O rótulo pode ser uma palavra que não identifica o kit** (`versao 0.34.2` passa em CT-46 e
+  CT-47). **Não é achado — destino 5**: o Adendo 3 diz por extenso que o texto do rótulo não é
+  fixado pelo requisito, então nenhum cenário pode julgar a qualidade semântica dele. Registrado
+  para não reaparecer no próximo estudo.
+- **Separador com duas letras engana CT-46 isoladamente** (`v2.4.1 ou 0.34.2`, sem rótulo). Não é
+  achado: **CT-47 o mata** — sozinha, a versão do kit sai sem letra nenhuma. O par cobre o caso.
+
+## Não Verificado
+
+- **`composer test` completo (2464/2464)**: medi `Kit,Tenancy --parallel` = **2461/2461** (9600
+  asserções). A diferença de 3 casos e 4 asserções para o número do solicitante é a soma de
+  `Unit,Feature`, que **não** rodei. O número declarado é consistente com o que medi.
+- **`composer test:browser` (61/14/0)**: não reexecutado. Era a lacuna mais cara do ciclo 2 e o
+  solicitante a fechou; aceito o número como declarado, sem confirmação independente.
+- **Mutation score por `--mutate`**: sem PCOV e sem Xdebug, igual aos ciclos 1 e 2. QA-22 saiu de
+  **mutação manual** (5 mutantes, aplicados e revertidos, `git status` limpo verificado antes e
+  depois), não de score medido. Não há piso de 70% aferido.
+- **Playwright MCP e Boost MCP**: indisponíveis (`laravel-boost` `CONNECTION_CLOSED`). Sem
+  confronto "elementos da tela × exercitados pelo CT-B" e sem screenshot nos dois temas.
+- **App servido**: nada rodou contra instância real.
+- **Nenhuma linha de código de aplicação ou de teste foi alterada por este relatório.** Os cinco
+  mutantes foram revertidos e `git status --porcelain` devolveu vazio depois de cada um.

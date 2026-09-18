@@ -38,15 +38,21 @@ comparar. Ela **não** aparece no rodapé por padrão; quem quiser vê-la ao lad
 *Mostrar também a versão do kit no rodapé*, na aba **Kit**. `php artisan kit:info` sempre mostra as
 duas, independentemente do interruptor.
 
-**Campo vazio, rodapé sem versão.** Um projeto que não versiona não precisa fingir que versiona.
+**Campo vazio, rodapé sem a SUA versão.** Um projeto que não versiona não precisa fingir que
+versiona. Com o interruptor da versão do kit **desligado** — que é como ele nasce — o rodapé não
+renderiza nada.
+
+Se o interruptor estiver ligado e o campo vazio, o rodapé mostra **só a versão do kit, rotulada**
+(`kit 0.35.0`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
+impede essa leitura, e é requisito do kit, não detalhe de tela.
 
 **`APP_VERSION` semeia UMA vez, na instalação. Depois dela, quem manda é a tela.**
 
 É a mesma regra de toda chave desta página — *o banco vence em tempo de execução; o `.env` semeia e
 é o plano B* —, e aqui ela tem uma consequência que vale escrever por extenso: num projeto já
 instalado, **editar `APP_VERSION` no `.env` não muda o rodapé**. O valor gravado no banco vence,
-inclusive quando ele está vazio. Se o campo da tela está em branco, o rodapé fica sem versão mesmo
-com `APP_VERSION=2.4.1` no arquivo.
+inclusive quando ele está vazio. Se o campo da tela está em branco, o rodapé fica sem a **sua**
+versão mesmo com `APP_VERSION=2.4.1` no arquivo.
 
 Então: `APP_VERSION` serve para a instalação nova nascer versionada. Para trocar a versão depois, o
 caminho é o campo na tela.

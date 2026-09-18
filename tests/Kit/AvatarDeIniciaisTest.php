@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
  * três painéis não sobrescreviam `defaultAvatarProvider`, então valia o `UiAvatarsProvider` do
  * Filament (`vendor/filament/filament/src/Panel/Concerns/HasAvatars.php:10`), que devolve
  * `https://ui-avatars.com/api/?name={iniciais}&…`
- * (`vendor/filament/filament/src/AvatarProviders/UiAvatarsProvider.php:23`). Como
+ * (`vendor/filament/filament/src/AvatarProviders/UiAvatarsProvider.php:29`). Como
  * `User::getFilamentAvatarUrl()` devolve `null` sem foto, o navegador de cada pessoa requisitava
  * um domínio de terceiro em toda tela, levando as iniciais e o `Referer` do painel junto.
  *

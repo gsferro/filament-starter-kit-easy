@@ -179,7 +179,7 @@ contraste garantido em qualquer paleta — e é o que o provider do vendor já f
 ### Referências
 
 - `vendor/filament/filament/src/Panel/Concerns/HasAvatars.php:10`
-- `vendor/filament/filament/src/AvatarProviders/UiAvatarsProvider.php:27-23`
+- `vendor/filament/filament/src/AvatarProviders/UiAvatarsProvider.php:27`
 - `app/Support/AvatarDeIniciais.php`
 
 ---
