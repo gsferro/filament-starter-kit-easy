@@ -342,7 +342,7 @@ Só instale quando o **seu** projeto tiver a necessidade. Nenhum destes torna o 
 | **67** | `jabir-khan/pennant-manager` | Quando adotar `laravel/pennant` |
 | **68** | `jeffersongoncalves/filament-keyable` | Quando o kit expuser API |
 | **69** | `yusuf-genc/api-forge` | Quando quiser REST automática sobre os resources |
-| **70** | `zpmlabs/api-docs` / `alex-kramarenko/openapi-docs` | Quando houver API pública |
+| **70** | ~~`zpmlabs/api-docs`~~ · ~~`alexkramse/filament-openapi-docs`~~ → **`dedoc/scramble` + `scalar/laravel`** | Quando houver API pública. **Avaliado e decidido em 18/09/2026** — ver ADR-06 de `specs/feat/estudo-de-pacotes-rodada-2/`. `zpmlabs/api-docs` **não existe**: o nome real é `zpmlabs/filament-api-docs-builder`, licença `proprietary`, **bloqueado** por `.ai/rules/general.md`. `alexkramse/filament-openapi-docs` recusado (sem CI, badge gera a spec a cada render de sidebar). O caminho escolhido é o Scramble + Scalar **fora** do painel, com `Scramble::ignoreDefaultRoutes()` |
 | **71** | `bas-van-dinther/canary` | Quando a matriz de permissão crescer a ponto de precisar de smoke em runtime |
 | **72** | `alberto-fuentes/panel-maintenance` | Quando houver janela de manutenção com usuário real |
 | **73** | `ashrafic/white-label` / `muazzambuilds/panel-branding` | Quando o kit precisar de branding por organização além da cor |
@@ -531,3 +531,6 @@ a 1.0 precisa tomar de qualquer jeito.
 > ⚠️ **Todo `vendor/pacote` desta página veio do slug da URL do diretório**, que não expõe o nome
 > Composer. Confirme no README antes de qualquer `composer require`. "Compatível com v5" também é
 > declaração do autor, não medição.
+
+> E a rodada 2 mediu isso: **dez de dez** nomes tirados do slug estavam errados. Ver a tabela de
+> correspondência em `specs/feat/estudo-de-pacotes-rodada-2/07-dossies-dos-pacotes.md`.

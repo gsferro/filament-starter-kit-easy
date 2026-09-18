@@ -572,3 +572,59 @@ O que a adoção ensinou, e que este documento não sabia:
    disso, e a razão de cada adoção continuar valendo uma wiki própria.
 
 A fila completa, com o restante dos 112, está em [`pacotes-ranking.md`](pacotes-ranking.md).
+
+---
+
+## Rodada 2 — 2026-09-18: dez indicados, nenhum adotado
+
+Segunda rodada de avaliação, com lista escolhida a dedo pelo mantenedor em vez de varredura do
+diretório. Método: cinco sub-agentes em paralelo, dois pacotes cada, **lendo o código-fonte** de
+cada um — não a descrição do card. Dossiê completo, com prós, contras, risco e gatilho de
+reabertura por pacote:
+[`specs/feat/estudo-de-pacotes-rodada-2/estudo-de-pacotes-rodada-2/07-dossies-dos-pacotes.md`](specs/feat/estudo-de-pacotes-rodada-2/estudo-de-pacotes-rodada-2/07-dossies-dos-pacotes.md).
+
+### O resultado
+
+| Pacote (nome Composer **real**) | Veredito | Motivo em uma linha |
+|---|---|---|
+| `mortalkiller/filament-page-header` | **ADIAR** | Exige `filament ^5.8.1` (kit em 5.7.6); repo de 5 dias com breaking de major em 24 h |
+| `jeffersongoncalves/filament-page-visits` | **ADIAR** | Cadeia de 3 repos com 7 dias; o kit quase não tem rota pública; quebra se registrado no `/app` |
+| `jeffersongoncalves/filament-ban` | **RECUSAR** | Quarto estado de conta paralelo ao `ativo` do kit; não bloqueia sem middleware colado à mão |
+| `packstub/filament-flow` | **ADIAR** | Bom, mas motor de automação com 2 rotas públicas e cron por minuto é superfície demais num kit redistribuído |
+| `syofyanzuhad/filament-connection-indicator` | **RECUSAR** | Mede `navigator.onLine`: fica verde com o servidor caído, e sempre verde no Safari/Firefox |
+| `matondojk/filament-avatar-picker` | **RECUSAR** | Galeria lista o diretório de avatares sem filtro — vaza foto de perfil entre usuários e organizações |
+| `vaslv/filament-app-version` | **ADIAR** | Exige PHP `^8.4` (kit declara `^8.3`) e não resolve tag nem branch, que era o pedido |
+| `ronssij/filament-simple-draft` | **RECUSAR** | `nullable()` fail-open desliga `required` em qualquer componente sem o trait; perde Enter e Ctrl+S |
+| `yousefaman/filament-autosave` | **ADIAR** | O melhor da rodada, mas gera uma linha em `audits` por pausa de digitação nos 5 models auditados |
+| `alexkramse/filament-openapi-docs` | **RECUSAR** | O kit não tem API; sem CI; o badge gera a spec inteira a cada render de sidebar |
+
+### O que entrou no lugar
+
+Cinco itens **nativos**, sem dependência nova — e três deles corrigem defeito que já estava no kit:
+
+1. `App\Support\AvatarDeIniciais` nos três painéis. **Corrige um vazamento**: o provider padrão do
+   Filament é o `UiAvatarsProvider`, e o kit não o sobrescrevia — todo usuário sem foto fazia o
+   navegador buscar as iniciais em `ui-avatars.com`, com o `Referer` do painel junto.
+2. `->unsavedChangesAlerts()` nos três painéis, governado pela tela. O Filament nasce com ele
+   `false` e o kit nunca ligou.
+3. Versão do **sistema** no rodapé (`config('app.version')`), com a versão do kit como opcional
+   desligada por padrão.
+4. `ativo` e `aprovacao_pendente` na trilha de auditoria. **Corrige um defeito**: desativar conta
+   não aparecia em `/infra/audits`, porque o filtro era o `$fillable` e fronteira de acesso nunca
+   pode ser fillable.
+5. Correção da afirmação errada sobre `USER_MENU_BEFORE` em quatro arquivos.
+
+### A lição desta rodada
+
+O gate que mais reprovou **não foi maturidade** — foi *"quanto custa fazer nativo?"*. Quando o mesmo
+valor cabe em ≤ ~30 linhas no padrão que o kit já usa, o pacote perde. O precedente já existia:
+`gboquizosanchez/filament-scroll-to-top` foi recusado em favor de um render hook.
+
+Maturidade foi o gate secundário, e pesou: **sete dos dez repositórios têm menos de 40 dias de
+vida**, nenhum passa de 14 stars e todos têm bus factor 1.
+
+E o limite nº 1 do método desta página foi confirmado em 100% dos casos: **os dez nomes tirados do
+slug da URL estavam errados**. A tabela de correspondência está no dossiê.
+
+> Três dos quatro **ADIAR** têm gatilho de reabertura escrito. `yousefaman/filament-autosave` e
+> `packstub/filament-flow` são os que mais provavelmente voltam.
