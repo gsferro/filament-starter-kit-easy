@@ -11,14 +11,68 @@ O que a instalação perguntou — e mais um punhado de coisas que antes só se 
 
 | Aba | O que você troca |
 |---|---|
-| **Identidade** | nome da aplicação, cor primária (a paleta do Filament **ou** um hexadecimal livre), logo da marca, favicon e a arte das telas de autenticação |
+| **Identidade** | nome da aplicação, **versão do sistema**, cor primária (a paleta do Filament **ou** um hexadecimal livre), logo da marca, favicon e a arte das telas de autenticação |
 | **E-mail** | transporte (`log`, `array`, `smtp`), servidor, porta, criptografia, usuário, senha e remetente |
 | **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário e colunas arrastáveis — os defaults de **toda** tabela dos três painéis |
 | **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../autenticacao/registro-aberto.md)) |
 | **Login** | a página única de login em `/login` ([detalhes](../autenticacao/login-unificado.md)), os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../autenticacao/login-social.md)) |
-| **Kit** | hub de navegação em cartões, e como o seu negócio chama cada organização (singular e plural) |
+| **Kit** | hub de navegação em cartões, aviso de alterações não salvas, exibição da versão do kit no rodapé, e como o seu negócio chama cada organização (singular e plural) |
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
+
+## A versão no rodapé: a sua, não a do kit
+
+O rodapé de toda tela dos três painéis mostra a **versão do seu sistema** — o produto que nasceu do
+kit. Ela sai do campo *Versão do sistema*, na aba **Identidade**, semeado por `APP_VERSION` no
+`.env`.
+
+São duas versões diferentes, e confundi-las é o erro que esta seção existe para evitar:
+
+| | O que é | Onde se edita |
+|---|---|---|
+| `config('app.version')` | a versão do **seu produto** | a tela, ou `APP_VERSION` no `.env` |
+| `config('kit.version')` | a versão do **starter kit** que originou o projeto | ninguém: o `kit:update` a escreve sozinho |
+
+A segunda é métrica interna do kit — o `kit:update` a usa para saber a partir de qual versão
+comparar. Ela **não** aparece no rodapé por padrão; quem quiser vê-la ao lado da sua liga
+*Mostrar também a versão do kit no rodapé*, na aba **Kit**. `php artisan kit:info` sempre mostra as
+duas, independentemente do interruptor.
+
+**Campo vazio, rodapé sem versão.** Um projeto que não versiona não precisa fingir que versiona.
+
+**`APP_VERSION` semeia UMA vez, na instalação. Depois dela, quem manda é a tela.**
+
+É a mesma regra de toda chave desta página — *o banco vence em tempo de execução; o `.env` semeia e
+é o plano B* —, e aqui ela tem uma consequência que vale escrever por extenso: num projeto já
+instalado, **editar `APP_VERSION` no `.env` não muda o rodapé**. O valor gravado no banco vence,
+inclusive quando ele está vazio. Se o campo da tela está em branco, o rodapé fica sem versão mesmo
+com `APP_VERSION=2.4.1` no arquivo.
+
+Então: `APP_VERSION` serve para a instalação nova nascer versionada. Para trocar a versão depois, o
+caminho é o campo na tela.
+
+**O kit não lê a tag nem o nome da branch do `git`** em tempo de execução — imagem de produção
+normalmente não tem `.git`, e ler de lá criaria uma segunda fonte de verdade divergente do que a
+tela mostra. Um deploy que troca para a branch `release/2.4` **não** atualiza o rodapé sozinho.
+
+**A versão nunca aparece para quem não entrou.** O rodapé é renderizado também nas telas de login,
+registro e recuperação de senha, e ali ele fica vazio de propósito: versão exata de uma instalação
+é o mapa de vulnerabilidades aplicáveis a ela.
+
+## Avisar antes de perder o que foi digitado
+
+Na aba **Kit**, *Avisar sobre alterações não salvas* liga o alerta nativo do Filament: ao sair de um
+formulário com alteração pendente, o navegador pede confirmação antes de descartar.
+
+Vale para **toda** tela de cadastro e edição dos três painéis, inclusive as que vêm de plugin de
+terceiro — quem decide é o painel, não o resource, então não há nada para colar tela a tela.
+
+Nasce **ligado**: o comportamento anterior era perder o preenchimento em silêncio, e silêncio não é
+o padrão a preservar. Desligar é um clique, sem deploy.
+
+> É alerta, não rascunho: quem confirmar a saída perde o preenchimento do mesmo jeito. O kit avaliou
+> dois pacotes de rascunho e salvamento automático e não adotou nenhum — os motivos estão em
+> [`wikis/pacotes-candidatos.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/pacotes-candidatos.md).
 
 ## Quem manda: o banco ou o `.env`?
 

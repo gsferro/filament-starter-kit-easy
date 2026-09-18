@@ -3,6 +3,101 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.35.0] - 2026-09-18
+
+### Adicionado
+- **Versão do sistema no rodapé dos painéis.** Campo *Versão do sistema* na aba Identidade de
+  `/admin/configuracoes-da-aplicacao`, semeado por `APP_VERSION` no `.env`, exibido no rodapé de
+  toda tela dos três painéis.
+
+  São **duas versões diferentes**, e o kit passa a dizer isso por escrito em três lugares:
+  `config('app.version')` é a do **seu produto**; `config('kit.version')` é a do **starter kit** que
+  originou o projeto — métrica interna que o `kit:update` usa para saber de onde comparar. A do kit
+  só aparece se o interruptor *Mostrar também a versão do kit no rodapé* (aba Kit) estiver ligado, e
+  ele nasce **desligado**: quem entrega o produto a um cliente final não tem por que anunciar de
+  qual kit ele nasceu.
+
+  Campo vazio e interruptor desligado, o rodapé não renderiza nada. **A versão nunca aparece para
+  visitante**: o render hook `FOOTER` também é emitido pelo layout das telas de autenticação, e um
+  guard por painel fecha isso — versão exata de uma instalação é o mapa de CVEs aplicáveis a ela.
+
+  O kit **não** lê tag nem branch do `git` em tempo de execução: imagem de produção costuma não ter
+  `.git`, e ler de lá criaria uma segunda fonte de verdade divergente da tela. Quem implanta grava
+  `APP_VERSION` ou atualiza o campo.
+
+- **Aviso antes de sair de formulário com alteração não salva.** O Filament tem
+  `->unsavedChangesAlerts()` e nasce com ele **desligado**
+  (`vendor/filament/filament/src/Panel/Concerns/HasUnsavedChangesAlerts.php:9`) — o kit nunca ligou,
+  e sair de um formulário preenchido perdia tudo em silêncio.
+
+  Agora ligado nos três painéis e governado por *Avisar sobre alterações não salvas*, na aba Kit.
+  Vale para **toda** tela de cadastro e edição, inclusive as de plugin de terceiro, porque quem
+  decide é o painel e não o resource. Nasce **ligado**: perder o preenchimento em silêncio não é o
+  padrão que valia a pena preservar.
+
+  A chave é lida por `Closure`, avaliada no render — a tela governa sem deploy e sem limpar cache.
+
+### Corrigido
+- **O avatar padrão deixou de ser buscado em `ui-avatars.com`.** O provider padrão do Filament é o
+  `UiAvatarsProvider` (`Panel/Concerns/HasAvatars.php:10`), que devolve
+  `https://ui-avatars.com/api/?name={iniciais}&…` (`AvatarProviders/UiAvatarsProvider.php:23`), e
+  **nenhum dos três painéis o sobrescrevia**. Como `User::getFilamentAvatarUrl()` devolve `null`
+  sem foto, o navegador de cada pessoa requisitava um domínio de terceiro em **toda tela**, levando
+  as iniciais na query string e o `Referer` do painel junto.
+
+  Vazavam três coisas sem que nada no kit dissesse isso: quem (as iniciais), de onde (a URL do
+  painel) e quando (o horário de cada carga de tela). Num kit que cifra `client_secret` no settings,
+  era incoerente — e não era decisão de ninguém, era o default do framework.
+
+  Entra `App\Support\AvatarDeIniciais`, que desenha as iniciais num SVG embutido (`data:` URI).
+  **A aparência não muda**: mesmo fundo `gray[950]` e mesmo texto branco que a URL do vendor
+  produzia. Zero requisição de rede, funciona offline, sem disco e sem limpeza de órfão.
+
+- **Desativar uma conta não entrava na trilha de auditoria.**
+  `AuditsFillables::getAuditInclude()` devolvia `getFillable()`, e `users.ativo` **nunca** é
+  fillable — atribuição em massa com ela destrancaria conta. Quem a escreve é
+  `desativar()`/`reativar()`, com `forceFill(...)->save()`: o evento dispara, o auditor observa, e o
+  atributo era descartado pelo filtro. `/infra/audits` registrava a troca do nome do usuário e
+  **não** o corte do acesso dele.
+
+  A trait ganha o ponto de extensão `auditaAlemDoFillable()`, e o `User` declara
+  `['ativo', 'aprovacao_pendente']` — os dois estados de fronteira de acesso do kit. Model que não
+  sobrescreve continua auditando exatamente o `$fillable`. A trilha passa a registrar quem
+  desativou, quando e o valor anterior.
+
+- **Quatro arquivos justificavam a escolha de render hook com uma afirmação errada sobre o vendor.**
+  Os três `PanelProvider` e `resources/views/filament/user-menu-header.blade.php` diziam que
+  `PanelsRenderHook::USER_MENU_BEFORE` "renderiza DENTRO do dropdown do usuário". Ele não renderiza:
+  é emitido em `vendor/filament/filament/resources/views/components/user-menu.blade.php:38`, **antes
+  e fora** do `<x-filament::dropdown>` da linha 40 — quem renderiza dentro é
+  `USER_MENU_PROFILE_BEFORE` (`:92`, `:105`, `:128`, `:143`).
+
+  A decisão de usar `GLOBAL_SEARCH_BEFORE` para o gatilho ⌘K continua certa, por outro motivo (a
+  posição exata do campo de busca). É o padrão que `.ai/rules/specs.md` nomeia: conclusão certa por
+  motivo errado, e por isso invisível.
+
+### Documentação
+- **Rodada 2 de avaliação de pacotes: dez indicados, nenhum adotado.** `page-header`, `page-visits`,
+  `ban`, `packstub-flow`, `connection-indicator`, `avatar-picker`, `app-version`, `simple-draft`,
+  `autosave` e `openapi-docs` foram lidos **no código-fonte**, por cinco sub-agentes em paralelo.
+  Quatro ficaram como ADIAR com gatilho de reabertura escrito, seis como RECUSAR com o motivo.
+
+  Sete dos dez repositórios têm menos de 40 dias de vida, nenhum passa de 14 stars, e **os dez
+  nomes Composer tirados do slug da URL do diretório estavam errados** — confirmando em 100% dos
+  casos o limite nº 1 que `wikis/pacotes-candidatos.md` já registrava.
+
+  O gate que mais reprovou não foi maturidade: foi *"quanto custa fazer nativo?"*. Os três defeitos
+  corrigidos acima foram achados **ao ler o código dos pacotes recusados**.
+
+  Dossiê por pacote em
+  `wikis/specs/feat/estudo-de-pacotes-rodada-2/estudo-de-pacotes-rodada-2/07-dossies-dos-pacotes.md`;
+  resumo e vereditos em `wikis/pacotes-candidatos.md`.
+- **Correção em `wikis/pacotes-ranking.md`**: a posição 70 citava `zpmlabs/api-docs`, que **não
+  existe**. O nome real é `zpmlabs/filament-api-docs-builder`, licença `proprietary` — **bloqueado**
+  por `.ai/rules/general.md`, que proíbe dependência de repositório privado no `composer.json`
+  commitado. A entrada passa a apontar o caminho decidido para quando o kit tiver API:
+  `dedoc/scramble` + `scalar/laravel`, fora do painel.
+
 ## [0.34.2] - 2026-09-18
 
 ### Adicionado

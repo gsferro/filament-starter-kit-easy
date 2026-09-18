@@ -11,14 +11,70 @@ What the installer asked — plus a handful of things you previously could only 
 
 | Tab | What you change |
 |---|---|
-| **Identidade** (identity) | application name, primary colour (the Filament palette **or** a free hex value), brand logo, favicon and the artwork on the authentication screens |
+| **Identidade** (identity) | application name, **system version**, primary colour (the Filament palette **or** a free hex value), brand logo, favicon and the artwork on the authentication screens |
 | **E-mail** | transport (`log`, `array`, `smtp`), host, port, encryption, username, password and sender |
 | **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns — the defaults for **every** table in all three panels |
 | **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](../autenticacao/registro-aberto.md)) |
 | **Login** | the single login page at `/login` ([details](../autenticacao/login-unificado.md)), the four social login providers, each with its switch, allowed panels, *Client ID* and encrypted *Client Secret*, plus the login screen footer ([details](../autenticacao/login-social.md)) |
-| **Kit** | card navigation hub, and what your business calls each organisation (singular and plural) |
+| **Kit** | card navigation hub, unsaved-changes alert, whether the kit version shows in the footer, and what your business calls each organisation (singular and plural) |
 
 Everything is stored by `spatie/laravel-settings` in the `settings` table, with the screen coming from `filament/spatie-laravel-settings-plugin` — both were already installed in the kit and unused until this version.
+
+## The version in the footer: yours, not the kit's
+
+The footer of every screen in all three panels shows **your system's version** — the product born
+from the kit. It comes from the *Versão do sistema* field on the **Identidade** tab, seeded by
+`APP_VERSION` in `.env`.
+
+These are two different versions, and conflating them is the mistake this section exists to prevent:
+
+| | What it is | Where you edit it |
+|---|---|---|
+| `config('app.version')` | **your product's** version | the screen, or `APP_VERSION` in `.env` |
+| `config('kit.version')` | the **starter kit** version the project was born from | nobody: `kit:update` writes it itself |
+
+The second is an internal kit metric — `kit:update` uses it to know which version to diff from. It
+does **not** appear in the footer by default; to show it next to yours, enable the *show kit
+version* switch on the **Kit** tab. `php artisan kit:info` always prints both, regardless
+of the switch.
+
+**Empty field, no version in the footer.** A project that does not version itself need not pretend
+to.
+
+**`APP_VERSION` seeds ONCE, at install time. After that, the screen wins.**
+
+This is the same rule as every other key on this page — *the database wins at runtime; `.env` seeds
+and is the fallback* — and here it has a consequence worth spelling out: on an already-installed
+project, **editing `APP_VERSION` in `.env` does not change the footer**. The stored value wins,
+including when it is blank. If the field on the screen is empty, the footer shows no version even
+with `APP_VERSION=2.4.1` in the file.
+
+So: `APP_VERSION` exists so a fresh install is born versioned. To change the version afterwards, use
+the field on the screen.
+
+**The kit does not read the git tag or branch name** at runtime — a production image usually has no
+`.git`, and reading from there would create a second source of truth diverging from what the screen
+shows. A deploy that checks out a `release/2.4` branch does **not** update the footer by itself.
+
+**The version never shows to signed-out visitors.** The footer also renders on the login,
+registration and password-reset screens, and there it stays empty on purpose: an installation's
+exact version is the map of vulnerabilities that apply to it.
+
+## Warning before you lose what you typed
+
+On the **Kit** tab, the *unsaved-changes* switch enables Filament's native alert: leaving a form
+with pending changes makes the browser ask for confirmation before discarding them.
+
+It applies to **every** create and edit screen across all three panels, including those coming from
+third-party plugins — the panel decides, not the resource, so there is nothing to wire up screen by
+screen.
+
+It ships **enabled**: the previous behaviour was losing the input silently, and silence is not the
+default worth preserving. Turning it off is one click, no deploy.
+
+> It is an alert, not a draft: confirming the exit still loses what you typed. The kit evaluated two
+> draft/autosave packages and adopted neither — the reasons are in
+> [`wikis/pacotes-candidatos.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/pacotes-candidatos.md).
 
 ## Who wins: the database or `.env`?
 
