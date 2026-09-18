@@ -3,6 +3,35 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.34.1] - 2026-09-18
+
+### Corrigido
+- **O tema escuro do monitor de jobs saía âmbar em painel de qualquer outra cor.** O bloco do
+  `kit.css` que devolve as utilitárias `*-primary-*` às variáveis do Filament corrigia
+  `.text-primary-400` — uma classe que **nenhum vendor declara**. O que o
+  `croustibat/filament-jobs-monitor` emite é `.dark\:text-primary-400`, com o prefixo no NOME da
+  classe, e cravada em `rgb(251 191 36)`. São classes diferentes: a correção nunca tocou nada, e o
+  bloco logo acima dava a impressão de que o assunto estava resolvido.
+
+  O seletor também estava escrito de duas formas que **nunca casam com DOM nenhum** —
+  `.dark :root …` e `:root .dark …`. `:root` **é** o `<html>`: ele não pode ser descendente de
+  nada, nem conter a classe que o alternador de tema escreve nele próprio. A forma viva é
+  `.dark:root`; aqui nem ela é necessária, porque o `:is(.dark *)` do próprio vendor já condiciona
+  ao tema.
+
+  A regra passa a ser `:root .dark\:text-primary-400:is(.dark *)`, que é (0,3,0) contra os (0,2,0)
+  do vendor — `:is()` contribui o MAIOR dos argumentos, ao contrário do `:where()`, que contribui
+  zero. Vence sem depender de ordem de carga.
+
+### Adicionado
+- **`tests/Kit/CorrecaoDeCorPrimariaTest.php` — a guarda que faltava nesta família.** Ela lê as
+  folhas do `vendor/` **em runtime**, encontra toda regra que crava cor primária literal e exige
+  duas coisas do `kit.css`: que ele declare a **mesma** classe, escapada como o vendor a escreve, e
+  que o seletor dele **vença por especificidade**. Tem controle positivo do detector (uma varredura
+  quebrada devolveria lista vazia e ficaria verde sobre nada) e um caso que barra a entrada de
+  seletor escuro que nunca casa. É ela que fica vermelha num `composer update` que acrescente uma
+  utilitária nova, antes de alguém abrir a tela.
+
 ## [0.34.0] - 2026-09-15
 
 ### Adicionado
