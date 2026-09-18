@@ -1193,3 +1193,64 @@ consumidor — e cada atributo é uma linha que alguém mantém.
 naquela tela, com o caso que o justifica. Reabrir esta dívida exige um exemplo, não uma
 estimativa.
 
+
+---
+
+## DT-12 — Acessibilidade só é medida no tema CLARO · ⚠️ **ABERTA, com tentativa documentada**
+
+**Severidade**: relevante
+**Como foi encontrada**: `tests/Browser/TemaEscuroTest.php`, CT-B09, roda `->inLightMode()`.
+Levantada como débito de um projeto que consome o kit, e atacada em 2026-09-18.
+
+### O problema
+
+O kit mede acessibilidade **só no tema claro**. O escuro tem CT-B07, que prova que ele renderiza
+e não quebra o console — nada sobre cor. Metade da superfície visual do produto não tem guarda de
+runtime nenhuma.
+
+O preço já foi cobrado uma vez, fora deste repositório: uma correção de contraste do painel `/app`,
+escrita para o tema claro, **vazou para o escuro e o piorou** — de ~6–10:1 para ~2,3–3,2:1 — e
+passou por todos os gates porque o axe olhava só o claro. A causa era o `:where(.dark, .dark *)`
+do Filament não somar especificidade. Quem pegou foi revisão manual, tarde.
+
+### Por que ainda está aberta — a tentativa, medida
+
+Acrescentar três cenários escuros (um por painel) **desestabiliza a suíte**. Medido com cache frio
+de verdade (`npm run build` + `view:clear` + `view:cache` antes de **cada** execução):
+
+| Configuração | Cenários | Execuções |
+|---|---|---|
+| Sem os casos escuros | 5 | **3 de 3 verdes** |
+| Casos escuros no mesmo arquivo | 8 | **2 de 3 vermelhos** |
+| Casos escuros em arquivo separado | 8 | **1 vermelho, 1 verde** (3ª interrompida) |
+
+**Quem fica vermelho não é o cenário novo.** É o caso CLARO do `/app`, que roda *antes* de
+qualquer escuro. Numa das execuções falharam o claro do `/app` e o escuro do `/admin` juntos.
+Falha que muda de lugar entre execuções é assinatura de **corrida**, não de defeito de cor — e os
+valores reportados são exatamente os quatro que o docblock de CT-B09 já lista como falsos
+(1,47 · 1,49 · 1,25 · 1,49), com a paleta inteira reprovando de uma vez.
+
+### Três hipóteses testadas, três derrubadas
+
+| # | Hipótese | Como caiu |
+|---|---|---|
+| 1 | vazamento de `localStorage` do cenário do alternador de tema | o `pest-plugin-browser` cria um **contexto novo** do Playwright por página, com `colorScheme` próprio — `vendor/pestphp/pest-plugin-browser/src/Api/PendingAwaitablePage.php::buildAwaitablePage()` |
+| 2 | o tema não assentou quando o axe mede | um portão que espera a cor computada do fundo do `body` virar **não dispara**, e o caso falha assim mesmo: o fundo assenta, e é o **texto** que ainda vem com tokens do outro tema |
+| 3 | o custo é mistura de temas dentro do mesmo arquivo | separar em dois arquivos **não** estabilizou |
+
+### O que sobra para a próxima tentativa
+
+O portão certo precisa medir o **texto**, não o fundo: esperar a cor computada de um elemento
+estável (`h1.fi-header-heading`) parar de mudar entre duas leituras consecutivas, e só então
+liberar o axe. Isso não foi testado. Cuidado ao escrevê-lo: o portão **não pode** assertar o
+contraste em si, senão concorda com o oráculo por construção e o caso vira tautologia.
+
+Duas coisas que não devem ser refeitas, porque já foram medidas e não resolvem: portão sobre o
+fundo, e separação em arquivos.
+
+### Enquanto não é paga
+
+O escuro tem guarda **estática**, não de runtime: um teste que lê o CSS do kit e recalcula
+contraste com as paletas do próprio Filament, no molde de
+`tests/Kit/ContrasteDoIndicadorDeAmbienteTest.php` e
+`tests/Kit/CorrecaoDeCorPrimariaTest.php`. É menos do que o axe, e é o que existe.
