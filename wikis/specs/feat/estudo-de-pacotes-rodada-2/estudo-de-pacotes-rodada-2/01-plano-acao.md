@@ -151,6 +151,8 @@ campo novo entra lá.
 | Key | Default | Descrição |
 |-----|---------|-----------|
 | `KIT_ALERTA_ALTERACOES_NAO_SALVAS` | `true` | Semente de `kit.alerta_alteracoes_nao_salvas`. O banco vence em execução; esta chave semeia a migration de settings e é o plano B |
+| `APP_VERSION` | vazio | Semente de `app.version`, a versão do **sistema**. Vazia, o rodapé não mostra a sua versão. Semeia **uma vez**, na instalação: depois disso o banco vence |
+| `KIT_EXIBIR_VERSAO` | `false` | Semente de `kit.exibir_versao`. Acrescenta a versão do **kit**, rotulada, ao lado da do sistema |
 
 Nenhuma chave nova para o avatar — ver **ADR-03** *(alterado em 2026-09-18: QA-06 — a redação anterior mandava ler "ADR-04 e ADR-05")*. Para a versão, `APP_VERSION` (chave do Laravel, semeando `app.version`) e `KIT_EXIBIR_VERSAO` *(alterado em 2026-09-18: adendo 2 — a redação anterior negava chaves que passaram a existir)*.
 
@@ -194,6 +196,24 @@ requisição de rede externa por uma string embutida no HTML.
 - **`unsavedChangesAlerts`**: liga um comportamento de navegador em **toda** tela `create`/`edit`
   dos três painéis, inclusive nas de plugin de terceiro. É a mudança de maior superfície desta
   entrega, e a razão de ela nascer governável pelo Settings.
+- **O bump do Filament (passo 10) é a maior superfície do branch**, e maior que o
+  `unsavedChangesAlerts` acima *(alterado em 2026-09-18: achado QA-24 do ciclo 3 — este bloco não
+  mencionava o passo 10)*. Medido, não estimado, com `composer.lock` antes × depois:
+
+  | | |
+  |---|---|
+  | Pacotes que mudaram de versão | **18** |
+  | Da família `filament/` | 13 (v5.7.6 → v5.8.2) |
+  | **Fora da família** | **5** |
+  | Pacotes novos ou removidos | **nenhum** |
+
+  Os cinco de fora: `ramsey/uuid` 4.9.3→4.9.4 e `spatie/laravel-medialibrary` 11.23.5→11.23.8 são
+  **de runtime** — o primeiro alimenta `App\Traits\TemUuid`, o segundo é a camada de mídia do kit;
+  `danharrin/livewire-rate-limiting` v2.2.1→v2.3.0 atende o rate limit das telas de autenticação; e
+  `phpstan/phpdoc-parser` e `rector/rector` são de desenvolvimento.
+
+  Mais 17 arquivos de asset regerados pelo `post-update-cmd` (11 bundles JS do Filament, a folha
+  `app.css`, 7 fontes Inter).
 
 ## Rollback
 
@@ -204,11 +224,28 @@ requisição de rede externa por uma string embutida no HTML.
   deploy.
 - **Reversão dos demais**: os passos 1, 3, 4 e 5 são reversíveis por `git revert` — nenhum grava
   dado novo nem altera schema.
+- **O passo 10 NÃO é reversível por `git revert`** *(alterado em 2026-09-18: achado QA-24)*.
+  Reverter o commit devolve `composer.json` e `composer.lock` ao estado anterior, mas **não**
+  reinstala o `vendor/` nem regera os assets publicados. A reversão real é:
+
+  ```bash
+  git revert {commit}          # devolve o lock
+  composer install             # reinstala o vendor a partir dele
+  php artisan filament:assets  # regera o que o post-update-cmd publicou
+  ```
+
+  E ela desfaz os 18 pacotes juntos, inclusive os 5 fora da família Filament — não há reversão
+  parcial, porque o lock é um só.
 - **Reversão de dados**: nenhuma. Nenhum passo migra dado.
 
 ## Dependências
 
-- **Composer**: **nenhuma nova.** É o resultado central desta rodada.
+- **Composer**: **nenhuma nova.** É o resultado central desta rodada — nenhum dos dez pacotes
+  avaliados entrou, e `composer.json` não ganhou linha.
+- **Composer, versões**: 18 pacotes **subiram de versão** no passo 10, sem nenhum entrar ou sair.
+  A constraint de `filament/filament` continua `^5.6` — RQ-14 proíbe travar
+  *(alterado em 2026-09-18: achado QA-24 — este bloco dizia só "nenhuma nova", o que era verdade
+  sobre entrada e silencioso sobre versão)*.
 - **NPM**: nenhuma nova.
 - **Removidas**: nenhuma.
 - **`filament/blueprint`**: entra e sai por `composer bp:on` / `bp:off` no passo 7, e **nunca**
@@ -330,7 +367,7 @@ silêncio. É a necessidade por trás de RQ-03 e RQ-04, e o Filament já a resol
     hook `FOOTER` também é emitido pelo layout `simple`
     (`vendor/filament/filament/resources/views/components/layout/simple.blade.php:61`), que é o
     das telas de autenticação — e versão exposta a visitante é mapa de CVE.
-  - conteúdo: `v{{ config('kit.version') }}`, com classes `fi-*` já compiladas na folha do
+  - conteúdo: a versão do **sistema** (`config('app.version')`) e, sob `config('kit.exibir_versao')`, a do kit **rotulada** ao lado *(alterado em 2026-09-18: adendo 2 e adendo 3)* — com classes `fi-*` já compiladas na folha do
     Filament. **Nenhuma utilitária Tailwind nova** — o kit não tem `viteTheme()`, e
     `.ai/rules/css-filament.md` documenta o que acontece com classe não compilada.
 - **Path 2**: `app/Providers/Concerns/ConfiguraFilamentGlobal.php` — método

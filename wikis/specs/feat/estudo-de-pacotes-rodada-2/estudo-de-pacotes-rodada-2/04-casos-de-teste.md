@@ -43,7 +43,7 @@ como coincidência:
   **matriz painel × chave**, normalização/identidade (iniciais do nome).
 - **Revisão adversarial**: obrigatória (Impacto 3 em A1, A4 e A5). Resultado em
   `## Revisão Adversarial`.
-- Cenários: **45** CT + **2** CT-B · Regras: **13** · Mutantes previstos: **62** neste arquivo
+- Cenários: **47** CT + **2** CT-B · Regras: **14** · Mutantes previstos: **65** neste arquivo
   (`M1`…`M62`) + **2** no `05` (`MB1`, `MB2`) · Sem matador: **3** (`M6`, `M31`, `M45`) e
   **5 parcialmente vivos** (`M5`, `M19`, `M53`, e o par de premissa das perguntas nº 9 e nº 10),
   todos em `## Lacunas declaradas` com o que foi tentado.
@@ -123,6 +123,7 @@ composer test:browser                    # os CT-B, em série, com build e view:
 | R11 — o kit não trava a versão do Filament e não a abre para major novo | A6 (mínimo) | RQ-14 | EP da constraint | CT-32 |
 | R12 — as dez decisões ficam registradas com o veredito certo, e nenhum dos dez pacotes entra | A7 (mínimo) | RQ-01, RQ-07, RQ-08 | EP por pacote + asserção de ausência com destinatário | CT-33, CT-34 |
 | R13 — o que o kit afirma sobre o render hook do menu do usuário bate com o vendor instalado | A7 (mínimo) | RQ-01, RQ-13 | medição do vendor | CT-35 |
+| R14 — a versão do kit, quando exibida, é distinguível da do sistema | A1 (padrão) | **RQ-20 (Adendo 3)** | partição + par discriminante | CT-46, CT-47 |
 
 **Técnica escalada acima do perfil da área**: R1 usa **tabela de decisão** (prevista no perfil
 completo) numa área `padrão` porque as duas chaves de versão se combinam e há uma combinação —
@@ -926,6 +927,8 @@ CT-B02, no `05`, porque HTML ausente não prova rede ausente.
 | M30 | o provider sequestra também quem **tem** foto | CT-22 |
 | M58 | o provedor remoto é trocado por **outro** provedor remoto (Gravatar, DiceBear): o domínio nomeado some da página e o dado do usuário continua saindo | CT-20, CT-21 (asserção por host, não por domínio nomeado) + CT-B02 |
 | M62 | o provider ignora o registro que recebe e desenha sempre as iniciais de quem está autenticado (ou um avatar fixo): toda listagem mostra o avatar errado, e nenhuma asserção de privacidade percebe | CT-45 |
+| CT-46 | as duas versões aparecem distinguíveis uma da outra | R14 | partição | Feature | `tests/Kit/VersaoNoRodapeTest.php` | M63, M64 |
+| CT-47 | com a do sistema vazia, a do kit continua rotulada | R14 | partição | Feature | `tests/Kit/VersaoNoRodapeTest.php` | M65 |
 | M31 | o avatar é gerado localmente e **salvo em disco**, servido por URL — volta a ser requisição, agora interna, com órfão e invalidação | ⚠️ **sem matador** — lacuna declarada. CT-21 afirma "imagem embutida na própria página", o que mata a variante de URL externa mas não distingue um `data:` URI de uma URL local servida por rota. Tentado: afirmar a ausência de qualquer `<img src>` que não comece por `data:` dentro do menu do usuário — o HTML do Filament traz outras imagens (logo, favicon) e o cenário passou a depender do markup do vendor. **O que sobra**: o `02` (ADR-03) descarta a variante em prosa; o cenário não a falsifica |
 
 ---
@@ -1828,5 +1831,9 @@ continuam com o solicitante.
 **Estado da reconciliação**: 45 CT · 28 com teste novo · 14 já cobertos, etiquetados e nove deles
 reforçados · 1 coberto por caso de outra wiki (CT-36) · 2 sem teste (CT-09, por defeito de
 produção; CT-25, fundido em CT-23). Dois achados de implementação saíram dela e **não** foram
-consertados aqui, por falta de mandato: **M11 vivo** em `config/kit.php:250` (D2) e a exclusão
-lógica repetida estourando no observer da lixeira (D6).
+consertados aqui, por falta de mandato: **M11** em `config/kit.php` (D2) e a exclusão lógica
+repetida estourando no observer da lixeira (D6).
+
+**Atualização (ciclo 2 do quality gate)**: M11 foi corrigido e CT-09 ganhou teste — hoje é **1 sem
+teste** (CT-25, fundido). D6 continua aberto e continua sem mandato desta wiki: é defeito
+pré-existente, inalcançável pela UI.

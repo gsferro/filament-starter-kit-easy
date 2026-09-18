@@ -517,24 +517,29 @@ it('[CT-08] faz a versao do kit acompanhar a do sistema quando ligada pela tela'
  * meio deles seria ambíguo nos dois sentidos. Registrado em `## Reconciliação`.
  */
 /*
- * CT-09 ("o vocabulário do .env é respeitado na exibição da versão do kit") **não tem caso**, e o
- * motivo é achado, não preguiça: **M11 está vivo na árvore**.
+ * CT-09 EXISTE, mais abaixo neste arquivo. Este bloco fica como registro de por que ele nasceu
+ * depois dos outros — e o registro importa, porque a ordem foi deliberada.
  *
- * `config/kit.php:250` lê a chave com `(bool) env('KIT_EXIBIR_VERSAO', false)`, e a medição é
- * direta — `KIT_EXIBIR_VERSAO=off`, `=no` e qualquer texto ilegível resolvem para **true**, isto
- * é, LIGAM a exibição da versão do kit em toda instalação que usar essas palavras. O contrato de
- * booleano do kit (`App\Support\BooleanoDoEnv`, que `tests/Kit/BooleanoDoEnvTest.php` trava) as
- * resolveria para o default, que é `false`.
+ * Entre a reconciliação (step 7) e o ciclo 2 do quality gate, CT-09 ficou **sem caso**, e o motivo
+ * era achado, não preguiça: **M11 estava vivo na árvore**.
  *
- * O comentário do próprio arquivo justifica o `(bool)` dizendo que "o default é `false`, que é
- * justamente o valor para o qual o defeito da chave presente-e-vazia converge" — e isso é verdade
- * para a chave VAZIA, que é o defeito que `BooleanoDoEnv` nasceu para corrigir. Não é verdade para
- * o vocabulário `off`/`no`, que é outra partição, e é a que CT-09 mede.
+ * `config/kit.php` lia a chave com `(bool) env('KIT_EXIBIR_VERSAO', false)`, e a medição era
+ * direta — `KIT_EXIBIR_VERSAO=off`, `=no` e qualquer texto ilegível resolviam para **true**, isto
+ * é, LIGAVAM a exibição da versão do kit em toda instalação que usasse essas palavras. O contrato
+ * de booleano do kit (`App\Support\BooleanoDoEnv`, que `tests/Kit/BooleanoDoEnvTest.php` trava) as
+ * resolve para o default, que é `false`.
  *
- * Escrever o caso aqui deixaria a suíte vermelha por um defeito de produção, e esta reconciliação
- * não tem mandato para mexer em `config/`. Fica registrado em `04-casos-de-teste.md` ›
- * `## Reconciliação`, com destino **implementação**. A chave irmã (`alerta_alteracoes_nao_salvas`)
- * usa o contrato certo e tem o cenário equivalente rodando: CT-17.
+ * O comentário do próprio `config/kit.php` justificava o `(bool)` dizendo que "o default é
+ * `false`, que é justamente o valor para o qual o defeito da chave presente-e-vazia converge" — e
+ * isso é verdade para a chave VAZIA, que é o defeito que `BooleanoDoEnv` nasceu para corrigir. Não
+ * era verdade para o vocabulário `off`/`no`, que é outra partição, e é a que CT-09 mede.
+ *
+ * Escrever o caso naquele momento deixaria a suíte vermelha por um defeito de produção, e a
+ * reconciliação não tinha mandato para mexer em `config/`. **Desfecho**: o ciclo 2 do quality gate
+ * cobrou; CT-09 foi escrito, confirmado vermelho em `off`/`no`/`talvez`, e só então
+ * `config/kit.php` passou a `BooleanoDoEnv::comPadrao(env('KIT_EXIBIR_VERSAO'), false)`.
+ * **M11 está morto**, e a ordem — teste vermelho primeiro, correção depois — é o que torna isso
+ * verificável em vez de alegado.
  */
 
 it('[CT-43] mostra a versao do kit no comando de informacoes mesmo com o toggle desligado', function (): void {
