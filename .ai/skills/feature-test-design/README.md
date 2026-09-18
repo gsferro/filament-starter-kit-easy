@@ -1,6 +1,6 @@
 # feature-test-design — Casos de Teste que Matam Defeito
 
-> **Skill**: [`SKILL.md`](SKILL.md) · versão **1.11.0**
+> **Skill**: [`SKILL.md`](SKILL.md) · versão **1.12.0**
 > Este README fala com a **pessoa**: por que a skill existe, que problema ela resolve, a
 > evidência por trás de cada decisão e o que ela não faz. O procedimento que o agente segue
 > está no `SKILL.md` e não é duplicado aqui.

@@ -21,45 +21,34 @@ Activate this skill when:
 ## Key Commands
 
 ```bash
-
 # Run a backup
-
 php artisan backup:run
 
 # Backup only the database
-
 php artisan backup:run --only-db
 
 # Backup specific database connections
-
 php artisan backup:run --db-name=mysql --db-name=pgsql
 
 # Backup only files (no database)
-
 php artisan backup:run --only-files
 
 # Backup to a specific disk
-
 php artisan backup:run --only-to-disk=s3
 
 # Custom filename
-
 php artisan backup:run --filename=my-backup.zip
 
 # Clean old backups
-
 php artisan backup:clean
 
 # List all backups
-
 php artisan backup:list
 
 # Monitor backup health
-
 php artisan backup:monitor
 
 # Use an alternative config key
-
 php artisan backup:run --config=backup_secondary
 ```
 

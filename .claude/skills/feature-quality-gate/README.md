@@ -53,7 +53,6 @@ Nenhum teste falhou porque **nunca existiu teste** — e nunca existiu teste por
 ### As 12 dimensões
 
 | # | Dimensão | Exemplo do que pega |
-
 |---|---|---|
 | A | Cobertura do requisito | cláusula sem plano/teste/código |
 | B | Fronteiras e dados | `-1`, string de 500 chars, upload de 0 byte, 29/02 |
@@ -111,13 +110,9 @@ E no destino "teste", a ordem importa: **escrever o CT que falha primeiro**, só
 **Técnica de QA delegada** (MIT, instalar só as usadas):
 
 ```bash
-
 # NÃO instalar as 50 — inflação de contexto. Copiar só as pastas necessárias.
-
 # risk-based-testing · exploratory-testing · ai-bug-triage
-
 # bug-reproduction · ai-qa-review · test-reliability
-
 npx skills add petrkindlmann/qa-skills
 ```
 
@@ -271,7 +266,6 @@ A linha **RQ-02** é a razão de existir da skill: **nenhum teste falhou porque 
 ## Ganho real 2 — As 12 dimensões que as camadas atuais não cobrem
 
 | # | Dimensão | Por que escapa hoje | Como verificar |
-
 |---|---|---|---|
 | **A** | Cobertura do requisito | CT só falha no especificado | a Matriz de Rastreabilidade acima |
 | **B** | Fronteiras e dados | CT cobre o caso do PRD, não os vizinhos | 0, -1, vazio, 500 chars, unicode/emoji, upload 0 byte, 29/02, timezone |
@@ -293,7 +287,6 @@ A dimensão **D** é auto-referente e reveladora: a `feature-wiki` exige log em 
 A taxonomia que não existe no mercado. Cinco destinos, não dois:
 
 | # | Achado | Diagnóstico | Volta para | Artefato |
-
 |---|---|---|---|---|
 | 1 | requisito ambíguo / incompleto / contraditório | **defeito de especificação** | escrita da wiki (`01`/`02`) | ADR nova ou revisão do PRD |
 | 2 | implementação diverge do PRD | **defeito de código** | implementação | passo do PRD reaberto |
@@ -381,7 +374,6 @@ Continuam valendo: sessão MCP não é cobertura; `ref=e5` é efêmero (*"valid 
 Rodar regressão em toda feature é caro e desnecessário. O gatilho certo é a **natureza da wiki**, declarada no `01`:
 
 ```markdown
-
 ## Natureza da Wiki
 
 - Tipo: nova | evolução | correção | ajuste
@@ -494,7 +486,6 @@ Por isso o `00-requisito.md` na `feature-wiki` é **pré-requisito**, não melho
 | Item | Motivo |
 |---|---|
 | `feature-wiki` ≥ 2.10.0 | precisa do `00-requisito.md` e da seção `## Natureza da Wiki` |
-
 | App servido e acessível na `APP_URL` | validação dinâmica |
 | Pest (4 ou 5) | rodar CT e CT-B existentes |
 

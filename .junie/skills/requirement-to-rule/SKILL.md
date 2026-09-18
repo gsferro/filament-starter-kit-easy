@@ -124,9 +124,7 @@ Candidato: "Enrollment::find() aplica scope global de tenant"
 ### 2. Verificar o estado atual das rules
 
 ```bash
-
 # existe o diretório de rules?
-
 ls .ai/rules/
 ```
 
@@ -213,7 +211,6 @@ O Boost mantém um índice que mapeia glob → arquivo de rule. **Os agentes sã
 ### Modelo oficial (doc do Boost)
 
 ```markdown
-
 # Project Rules Index
 
 Before planning or editing, find the row whose globs match the file's path and read that rule file.

@@ -1,6 +1,6 @@
 ---
 name: feature-test-design
-version: 1.11.0
+version: 1.12.0
 description: >
   Deriva casos de teste que MATAM defeito, a partir do requisito — não do plano e
   nunca do código. Invoque no step 4 da feature-wiki (antes de implementar), quando
@@ -10,7 +10,10 @@ description: >
   risco, varredura SFDIPOT, mapa de regras (Example Mapping), técnica formal por
   regra (partição, valor limite 3-valores, tabela de decisão, tabela estado x evento,
   pairwise), checklist de taxonomia de defeito (IDOR, idempotencia, concorrencia,
-  timezone, nulo/vazio/ausente, paginacao, soft delete), cenários em Gherkin pt-BR
+  timezone, nulo/vazio/ausente, paginacao, soft delete e superficie Livewire — metodo
+  publico de componente e chamavel por $wire., propriedade publica sem #[Locked] e
+  estado do framework ($filters, $pageFilters, $tableFilters) e entrada de usuario nao
+  validada que vira indice de array, argumento de parse ou nome de coluna), cenários em Gherkin pt-BR
   (Funcionalidade > Regra > Cenário) e um gate de falsificabilidade: toda regra
   declara os mutantes plausíveis e aponta qual cenário mata cada um, nenhum cenário
   positivo passa sem situação de partida declarada, e nenhuma asserção de ausência
@@ -144,9 +147,7 @@ invariante das duas leituras é afirmado no mesmo cenário. Não escrever o cen�
 |---|---|---|
 | `00-requisito.md` com cláusulas `RQ-##` | **sim** | pedir ao usuário. Nunca derivar do PRD |
 | `01-plano-acao.md` — `## Superfície de UI`, rotas, paths, stack | sim (no fluxo da wiki) | fora do fluxo da wiki, perguntar a superfície |
-
-| `02-decisoes-arquiteturais.md` — `## Superfície do Pacote` | **sim**, quando a feature monta sobre pacote de terceiro | a superfície que o cliente realmente alcança fica fora do inventário — e é onde o defeito mora |
-
+| `02-decisoes-arquiteturais.md` — `## Superfície Livewire` | **sim**, sempre que a feature cria página, widget ou componente (pacote de terceiro é uma das origens, não a condição) | a superfície que o cliente realmente alcança fica fora do inventário — e é onde o defeito mora |
 | `.ai/rules/` do projeto | se existir | herdar convenção pelo código de teste existente |
 | `tests/Pest.php` + 1-2 testes existentes | sim | não saber os helpers e traits do projeto |
 | Versões: Pest, Filament, Livewire, Laravel | sim | gerar API de versão errada |
@@ -185,20 +186,17 @@ medindo o ambiente, e o default errado sobrevive sem nada ficar vermelho. O `Dad
 **valor efetivo lido**, e o `Então` usa o número do requisito.
 
 Registrar isso não é burocracia: sem uma seção `## Fronteira com o Plano` listando **o que foi
-
 recusado como oráculo e por quê**, metade dos cenários vira teste do PRD sem ninguém perceber —
 que é exatamente o defeito que esta skill existe para evitar.
 
 ### Quando o `00-requisito.md` é somente leitura
 
 A skill obriga a devolver as perguntas novas para `## Ambiguidades` do `00`. Há casos em que isso
-
 não é possível: o `00` está fechado para edição, pertence a outra branch, ou está sendo usado como
 linha de base de comparação.
 
 Nesse caso: escrever as perguntas no próprio `04`, numa seção
 `## Perguntas para o 00-requisito.md`, **em bloco pronto para colagem** (mesmo formato da seção de
-
 destino), e **declarar o desvio** em uma linha. A pergunta continua bloqueando o que depende dela.
 O que não pode acontecer é a pergunta morrer porque o arquivo de destino estava travado.
 
@@ -228,7 +226,6 @@ diferentes — o cálculo do desconto é `completo`, a listagem é `mínimo`.
 
 **A área é o que recebe o perfil; a regra é o que recebe a técnica.** Como só o passo 2 produz as
 regras, o mapeamento **área → regra** é preenchido no `## Mapa de Regras`, e cada regra herda o
-
 perfil da sua área. Regra que atravessa duas áreas herda o **maior** perfil.
 
 **Escalar a técnica é permitido; rebaixar não.** Se a regra exige uma técnica mais forte do que o
@@ -742,11 +739,22 @@ não a palavra "sim".
 | formulário/payload | **mass assignment**: enviar campo não previsto (`is_admin`, `user_id`, `status`) e provar que é ignorado |
 | upload | 0 byte, extensão que mente sobre o conteúdo, acima do limite |
 | valor monetário | inteiro em centavos ou `decimal`; **nunca `float`**; arredondamento na borda de centavo |
-| feature monta sobre **pacote de terceiro** | **superfície do vendor**: para cada linha de `## Superfície do Pacote` do `02`, um cenário que dispara a ação **com id/argumento de outro tenant/usuário**, e um que escreve a **propriedade pública** do componente pelo cliente. A ação do pacote é ponto de entrada como qualquer rota |
-
+| **a feature cria página, widget ou componente Livewire** | **superfície do cliente**: para cada linha de `## Superfície Livewire` do `02`, um cenário que exercita o ponto de entrada **com valor fora do domínio** e um **com tipo errado**. Vale para o que o projeto escreve, para o que o framework publica e para o que o pacote expõe — a origem não muda a exposição |
+| **valor de estado do framework que vira índice, `parse`, coluna ou operador** | `$filters`, `$pageFilters`, `$tableFilters`, `$tableSearch`, `$tableSortColumn` são **entrada de usuário não validada**. Um cenário por consumo: chave inexistente num array de rótulos, texto que não é data num `parse`, nome de coluna que não existe. **A página sanitiza e o widget recebe cru** — o cenário precisa entrar pelo widget |
+| **método público de componente Livewire** | todo `public function` de Page/Widget é ação chamável por `$wire.`, e o retorno vai para o navegador: um cenário chamando-o com argumento **fora da lista fechada** |
 | **cada entidade que a feature persiste** | uma linha de IDOR **e** uma de mass assignment **por tabela** — não por feature. Fechar a linha com o CT da tabela-pai é o falso ✅ mais caro do checklist |
 | filtro de escopo (global scope, `where` por tenant/owner/discriminante) | **discriminante nulo**: a query fecha (nenhuma linha) ou abre (todas)? o cenário declara qual é o desejado. Atenção: `where('col', null)` vira `whereNull` e **abre** para os globais |
 | cenário cujo `Então` é 4xx, 5xx ou redirect | **a saída**: para onde o usuário vai depois — ver [Todo estado de erro declara a saída](#todo-estado-de-erro-declara-a-saída) |
+
+> **As três linhas de superfície Livewire vieram de um caso medido (2026-09-17).** A feature montava
+> sobre o **framework**, não sobre um pacote; a linha antiga dizia *"feature monta sobre pacote de
+> terceiro"*, o agente leu ao pé da letra, declarou *"nenhum pacote persiste entidade → não se
+> aplica"*, e o conjunto de 43 CTs saiu sem um único cenário de entrada inválida. Passaram três
+> defeitos: `$rotulos[$valor]` sem `??` (500 dentro da renderização da tabela), `Carbon::parse($valor)`
+> sem guarda (500 no widget) e um método público que devolvia coluna não exposta ao navegador. Os
+> três foram achados só no `/code-review` do diff. **A condição certa é a superfície, não a origem
+> dela** — e o discriminante que falta quase sempre é este: *a página sanitiza o valor, o widget o
+> recebe cru*, então o cenário precisa entrar pelo widget.
 
 > Esta tabela é **viva**: todo defeito que escapou para produção e gerou retrabalho deve virar
 > uma linha aqui, no `.ai/rules/` do projeto. Taxonomia alimentada pelo histórico do próprio
@@ -765,9 +773,7 @@ traduzidos para `describe()`/`it()` do Pest.
 **Estrutura:**
 
 ```gherkin
-
 # language: pt
-
 Funcionalidade: {título da feature}
 
   Regra: {a regra de negócio, em uma frase afirmativa}
@@ -809,7 +815,6 @@ Funcionalidade: {título da feature}
 
       Exemplos:
         | limite | ja_usado | resultado | # borda    |
-
         | 3      | 1        | aceito    | dentro     |
         | 3      | 2        | aceito    | borda−1    |
         | 3      | 3        | recusado  | borda      |
@@ -822,11 +827,9 @@ Para **cada `Regra:`**, escrever as implementações erradas plausíveis e apont
 morre com cada uma.
 
 ```markdown
-
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata |
-
 |---|--------------------------------|------------------|
 | M1 | `<` no lugar de `<=` no limite de usos | CT-04 (linha "borda") |
 | M2 | contador incrementado antes de validar | CT-06 |
@@ -990,7 +993,6 @@ que mais destrói o orçamento de teste de uma feature.
 
 **Gate de tela de escrita (obrigatório).** Para **toda** rota `create` / `edit` da tabela
 `## Superfície de UI` do PRD, é obrigatório existir um cenário de **gravação por componente**
-
 (`fillForm` → `->call('create'|'save')` → `assertDatabaseHas` com os campos que importam).
 Tela de escrita coberta apenas por visita é **lacuna de gate**, não decisão de escopo.
 
@@ -1054,7 +1056,6 @@ passa hoje e quebra no upgrade.
 **Path**: `wikis/specs/{branch}/{feature}/04-casos-de-teste.md`
 
 ```markdown
-
 # Casos de Teste — {Card}: {Título}
 
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md`
@@ -1103,25 +1104,20 @@ passa hoje e quebra no upgrade.
 | {texto do erro na tela} | comportamento visível que o requisito não determina | pergunta ao usuário |
 
 **Perguntas em aberto** (replicadas em `00-requisito.md` → `## Ambiguidades`):
-
 - {pergunta} — bloqueia R{n}; premissa adotada: {…} (cenários marcados `@premissa`)
 
 ## Setup Global
 
 ### Personas
-
 - `{papel}` — {como criar, com o helper real do projeto}
 
 ### Fixtures
-
 - `{Model}::factory()->{state}()` — {estado}
 
 ### Fakes
-
 - `Queue::fake()` / `Mail::fake()` / `Notification::fake()` / `Http::fake()` + `Http::preventStrayRequests()`
 
 ### Estratégia de DB
-
 - {`RefreshDatabase` global no `tests/Pest.php`, ou o que o projeto usa}
 
 ---
@@ -1131,9 +1127,7 @@ passa hoje e quebra no upgrade.
 > `RQ-01`, `RQ-04` · perfil **completo** · técnica: **BVA 3-valores** (fronteira: {campo}, granularidade {tipo})
 
 ```gherkin
-
 # language: pt
-
 Funcionalidade: {…}
 
   Regra: {…}
@@ -1147,7 +1141,6 @@ Funcionalidade: {…}
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata |
-
 |---|---|---|
 | M1 | {…} | CT-01 |
 | M2 | {…} | ⚠️ **sem matador** — {motivo / lacuna declarada} |
@@ -1177,7 +1170,8 @@ Funcionalidade: {…}
 | Mass assignment | … |
 | Upload | não se aplica: sem upload |
 | Precisão monetária | CT-02 |
-| **Superfície do pacote de terceiro** (ação com id do cliente, prop pública) | CT-31, CT-32 |
+| **Superfície Livewire** (método público, prop pública, estado do framework) | CT-31, CT-32 |
+| **Estado do framework usado sem validar** (índice de array, `parse`, coluna) | CT-33 |
 | **IDOR por entidade** (uma linha por tabela persistida) | `dashboards`: CT-11 · `dashboard_widgets`: CT-31 |
 | **Escopo com discriminante nulo** (fecha ou abre?) | CT-33 |
 | **Saída do estado de erro** (4xx/redirect tem destino) | CT-30 |
@@ -1204,7 +1198,6 @@ Funcionalidade: {…}
 ### Gate — quando criar
 
 Criar **somente** se houver linha em `## Superfície de UI` do PRD **e** o cenário afirmar sobre
-
 algo que **só o navegador prova**: JavaScript executado, console/erro de JS, acessibilidade,
 cor/tema, layout. Se o cenário puder ser provado por componente Livewire, ele pertence ao `04`.
 
@@ -1246,20 +1239,17 @@ Preferir `data-testid` / `aria-label` / texto visível a classe de CSS. Se o pro
 (`#form\.email`, com o `.` escapado) e o texto **traduzido** do rótulo.
 
 ```markdown
-
 # Casos de Teste de Browser — {Card}: {Título}
 
 > Runtime: `pest-plugin-browser` (Playwright). O plugin sobe o próprio servidor.
 > Comando: `vendor/bin/pest --testsuite=Browser` (em série — nunca `--parallel`)
 
 ## Pré-requisitos
-
 - [ ] `npm run build` executado
 - [ ] `tests/Browser/Screenshots` no `.gitignore`
 - [ ] Autenticação por `$this->actingAs($user)` — {ou o helper do projeto}
 
 ## Seletores
-
 | Elemento | Seletor | Já existe? |
 |---|---|---|
 
@@ -1270,9 +1260,7 @@ Preferir `data-testid` / `aria-label` / texto visível a classe de CSS. Se o pro
 **Por que browser e não Livewire**: {a asserção depende de JS executado / acessibilidade / cor}
 
 ```gherkin
-
 # language: pt
-
   Cenário: [CT-B01] {…}
     Dado {…}
     Quando {…}
@@ -1281,7 +1269,6 @@ Preferir `data-testid` / `aria-label` / texto visível a classe de CSS. Se o pro
 
 **Roteiro executável**
 | # | Ação | Código Pest | Resultado visível |
-
 |---|---|---|---|
 | 1 | | `visit('/…')` | |
 | 2 | | `->press('…')->assertPathIs('/…')` | |
@@ -1291,7 +1278,6 @@ Preferir `data-testid` / `aria-label` / texto visível a classe de CSS. Se o pro
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata |
-
 |---|---|---|
 
 ---
@@ -1299,7 +1285,6 @@ Preferir `data-testid` / `aria-label` / texto visível a classe de CSS. Se o pro
 ## Roteiro de Validação: Desenhado × Implementado
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
-
 |---|---|---|---|---|
 ```
 
@@ -1439,7 +1424,6 @@ cujos achados ninguém fecha é teatro caro.
 6. **Não marcar regra como coberta** enquanto houver mutante previsto sem matador — declarar a lacuna.
 7. **Não empurrar para o browser** o que um teste de componente prova.
 8. **Não editar o `00-requisito.md`** a não ser para acrescentar pergunta em `## Ambiguidades`.
-
 9. **Não autorrevisar** o conjunto no perfil completo.
 10. **Não usar cobertura de código como critério de suficiência.** "Todo método público tem ao
     menos 1 CT" e "cada branch tem um CT" são critérios sobre um código que **ainda não existe**

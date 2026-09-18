@@ -1,6 +1,6 @@
 ---
 name: feature-test-design
-version: 1.11.0
+version: 1.12.0
 description: >
   Deriva casos de teste que MATAM defeito, a partir do requisito — não do plano e
   nunca do código. Invoque no step 4 da feature-wiki (antes de implementar), quando
@@ -10,7 +10,10 @@ description: >
   risco, varredura SFDIPOT, mapa de regras (Example Mapping), técnica formal por
   regra (partição, valor limite 3-valores, tabela de decisão, tabela estado x evento,
   pairwise), checklist de taxonomia de defeito (IDOR, idempotencia, concorrencia,
-  timezone, nulo/vazio/ausente, paginacao, soft delete), cenários em Gherkin pt-BR
+  timezone, nulo/vazio/ausente, paginacao, soft delete e superficie Livewire — metodo
+  publico de componente e chamavel por $wire., propriedade publica sem #[Locked] e
+  estado do framework ($filters, $pageFilters, $tableFilters) e entrada de usuario nao
+  validada que vira indice de array, argumento de parse ou nome de coluna), cenários em Gherkin pt-BR
   (Funcionalidade > Regra > Cenário) e um gate de falsificabilidade: toda regra
   declara os mutantes plausíveis e aponta qual cenário mata cada um, nenhum cenário
   positivo passa sem situação de partida declarada, e nenhuma asserção de ausência
@@ -144,7 +147,7 @@ invariante das duas leituras é afirmado no mesmo cenário. Não escrever o cen�
 |---|---|---|
 | `00-requisito.md` com cláusulas `RQ-##` | **sim** | pedir ao usuário. Nunca derivar do PRD |
 | `01-plano-acao.md` — `## Superfície de UI`, rotas, paths, stack | sim (no fluxo da wiki) | fora do fluxo da wiki, perguntar a superfície |
-| `02-decisoes-arquiteturais.md` — `## Superfície do Pacote` | **sim**, quando a feature monta sobre pacote de terceiro | a superfície que o cliente realmente alcança fica fora do inventário — e é onde o defeito mora |
+| `02-decisoes-arquiteturais.md` — `## Superfície Livewire` | **sim**, sempre que a feature cria página, widget ou componente (pacote de terceiro é uma das origens, não a condição) | a superfície que o cliente realmente alcança fica fora do inventário — e é onde o defeito mora |
 | `.ai/rules/` do projeto | se existir | herdar convenção pelo código de teste existente |
 | `tests/Pest.php` + 1-2 testes existentes | sim | não saber os helpers e traits do projeto |
 | Versões: Pest, Filament, Livewire, Laravel | sim | gerar API de versão errada |
@@ -736,10 +739,22 @@ não a palavra "sim".
 | formulário/payload | **mass assignment**: enviar campo não previsto (`is_admin`, `user_id`, `status`) e provar que é ignorado |
 | upload | 0 byte, extensão que mente sobre o conteúdo, acima do limite |
 | valor monetário | inteiro em centavos ou `decimal`; **nunca `float`**; arredondamento na borda de centavo |
-| feature monta sobre **pacote de terceiro** | **superfície do vendor**: para cada linha de `## Superfície do Pacote` do `02`, um cenário que dispara a ação **com id/argumento de outro tenant/usuário**, e um que escreve a **propriedade pública** do componente pelo cliente. A ação do pacote é ponto de entrada como qualquer rota |
+| **a feature cria página, widget ou componente Livewire** | **superfície do cliente**: para cada linha de `## Superfície Livewire` do `02`, um cenário que exercita o ponto de entrada **com valor fora do domínio** e um **com tipo errado**. Vale para o que o projeto escreve, para o que o framework publica e para o que o pacote expõe — a origem não muda a exposição |
+| **valor de estado do framework que vira índice, `parse`, coluna ou operador** | `$filters`, `$pageFilters`, `$tableFilters`, `$tableSearch`, `$tableSortColumn` são **entrada de usuário não validada**. Um cenário por consumo: chave inexistente num array de rótulos, texto que não é data num `parse`, nome de coluna que não existe. **A página sanitiza e o widget recebe cru** — o cenário precisa entrar pelo widget |
+| **método público de componente Livewire** | todo `public function` de Page/Widget é ação chamável por `$wire.`, e o retorno vai para o navegador: um cenário chamando-o com argumento **fora da lista fechada** |
 | **cada entidade que a feature persiste** | uma linha de IDOR **e** uma de mass assignment **por tabela** — não por feature. Fechar a linha com o CT da tabela-pai é o falso ✅ mais caro do checklist |
 | filtro de escopo (global scope, `where` por tenant/owner/discriminante) | **discriminante nulo**: a query fecha (nenhuma linha) ou abre (todas)? o cenário declara qual é o desejado. Atenção: `where('col', null)` vira `whereNull` e **abre** para os globais |
 | cenário cujo `Então` é 4xx, 5xx ou redirect | **a saída**: para onde o usuário vai depois — ver [Todo estado de erro declara a saída](#todo-estado-de-erro-declara-a-saída) |
+
+> **As três linhas de superfície Livewire vieram de um caso medido (2026-09-17).** A feature montava
+> sobre o **framework**, não sobre um pacote; a linha antiga dizia *"feature monta sobre pacote de
+> terceiro"*, o agente leu ao pé da letra, declarou *"nenhum pacote persiste entidade → não se
+> aplica"*, e o conjunto de 43 CTs saiu sem um único cenário de entrada inválida. Passaram três
+> defeitos: `$rotulos[$valor]` sem `??` (500 dentro da renderização da tabela), `Carbon::parse($valor)`
+> sem guarda (500 no widget) e um método público que devolvia coluna não exposta ao navegador. Os
+> três foram achados só no `/code-review` do diff. **A condição certa é a superfície, não a origem
+> dela** — e o discriminante que falta quase sempre é este: *a página sanitiza o valor, o widget o
+> recebe cru*, então o cenário precisa entrar pelo widget.
 
 > Esta tabela é **viva**: todo defeito que escapou para produção e gerou retrabalho deve virar
 > uma linha aqui, no `.ai/rules/` do projeto. Taxonomia alimentada pelo histórico do próprio
@@ -1155,7 +1170,8 @@ Funcionalidade: {…}
 | Mass assignment | … |
 | Upload | não se aplica: sem upload |
 | Precisão monetária | CT-02 |
-| **Superfície do pacote de terceiro** (ação com id do cliente, prop pública) | CT-31, CT-32 |
+| **Superfície Livewire** (método público, prop pública, estado do framework) | CT-31, CT-32 |
+| **Estado do framework usado sem validar** (índice de array, `parse`, coluna) | CT-33 |
 | **IDOR por entidade** (uma linha por tabela persistida) | `dashboards`: CT-11 · `dashboard_widgets`: CT-31 |
 | **Escopo com discriminante nulo** (fecha ou abre?) | CT-33 |
 | **Saída do estado de erro** (4xx/redirect tem destino) | CT-30 |

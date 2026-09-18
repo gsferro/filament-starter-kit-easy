@@ -1,6 +1,6 @@
 ---
 name: feature-wiki
-version: 3.2.0
+version: 3.3.0
 description: >
   Cria estrutura de documentação wiki para uma feature antes de implementá-la.
   Invoque SEMPRE ao iniciar implementação de qualquer feature nova.
@@ -27,13 +27,46 @@ description: >
   alguma decisão da wiki deve virar Project Rule do Boost e
   submete a decisão ao usuário (skill requirement-to-rule). Exige consulta à
   Documentation API do Boost (search-docs) para cada stack que o PRD toca.
-  Quando a feature monta sobre pacote de terceiro, o step 3 exige a tabela
-  ## Superfície do Pacote no 02 (models, propriedades públicas e ações que recebem id do
-  cliente, cada uma com a fronteira aplicada e o arquivo:linha do vendor), e o step 7.5
-  roda revisão de código do diff por quem não implementou, antes do quality gate.
+  Toda feature que cria página, widget ou componente exige a tabela ## Superfície Livewire
+  no 02 — métodos públicos (que são ações chamáveis por $wire.), propriedades públicas sem
+  #[Locked] e os arrays de estado do framework que o código consome ($filters, $pageFilters,
+  $tableFilters), cada um com a fronteira aplicada e o arquivo:linha; pacote de terceiro
+  acrescenta os quatro greps do vendor. Toda classe nova passa pela varredura da classe irmã
+  (grep pelo FQCN de uma irmã já existente, para achar as listas paralelas que o projeto
+  mantém à mão em config, seeders e inventários de teste). O PRD declara o ## Modelo de
+  Execução — quantos requests a tela custa, o que é adiado, o que é memoizado por request e o
+  que é cacheado entre eles —, porque premissa de custo não escrita produz ADR coerente e
+  errada. O step 7.5 roda revisão de código do diff por quem não implementou, antes do
+  quality gate: é o ÚNICO gate que lê o diff atrás de defeito de correção, e medido numa
+  feature real foi o mais produtivo de todos.
 ---
 
 # Feature Wiki — Documentação Antes de Implementar
+
+> ## O gate que mais pega defeito é o step 7.5, e ele vem por último
+>
+> Esta skill tem oito gates. Sete deles leem **o plano, o requisito ou a tela**. Um só lê **o
+> diff**, e é o [step 7.5 — Revisão de Código do Diff](#75-revisão-de-código-do-diff-obrigatório-antes-do-quality-gate),
+> com `/code-review` por quem não implementou.
+>
+> Ele está no fim do documento e é o mais fácil de adiar. **É também o mais produtivo.** Medido em
+> 2026-09-17, numa feature com wiki completa — 43 CTs, revisão adversarial com cinco implementações
+> erradas fechadas, auditoria Ponytail com dez cortes aplicados, 61 testes verdes:
+>
+> | Gate | Achados de correção |
+> |---|---|
+> | step 5 — revisão profunda (premissas do plano) | 2 (nomes de classe e de método errados no PRD) |
+> | step 6 — `ponytail-review` (excesso no plano) | 0 — **por charter**: *"correctness bugs, security holes and performance are explicitly out of scope"* |
+> | revisão adversarial do `04` (requisito × cenários) | 0 de correção; 5 de **cobertura**, que é o trabalho dela |
+> | suíte de testes verde, 2.383 casos | 1 (enforço de arquitetura do próprio projeto) |
+> | **step 7.5 — `/code-review` no diff** | **7**, dois deles produzindo 500 em produção |
+>
+> Os sete não eram visíveis para nenhum gate anterior, e o motivo é estrutural: o step 6 exclui
+> correção por definição, a revisão adversarial só enxerga o que o **requisito** descreve, e o
+> step 8 pergunta *"o requisito foi atendido?"* — nenhum deles pergunta *"este código está certo?"*.
+>
+> **Não trate o 7.5 como formalidade de fim de fila.** Se o orçamento apertar, corte cenário
+> redundante, não este gate.
 
 ## Glossário
 
@@ -55,9 +88,11 @@ description: >
   - [1. Descobrir Branch](#1-descobrir-branch-e-estrutura-de-pasta)
   - [2. Definir Nome da Feature](#2-definir-nome-da-feature)
   - [3. Pesquisa e Contexto](#3-pesquisa-e-contexto-obrigatório-antes-de-escrever)
+    - [Superfície Livewire](#superfície-livewire-obrigatório-em-toda-feature-que-cria-página-widget-ou-componente)
     - [Documentation API do Boost](#documentation-api-do-boost-search-docs)
   - [4. Criar os Arquivos](#4-criar-os-arquivos)
   - [5. Revisão Profunda Pós-Escrita](#5-revisão-profunda-pós-escrita-obrigatório)
+    - [Varredura da classe irmã](#varredura-da-classe-irmã-obrigatória-para-toda-classe-nova)
   - [6. Auditoria da Wiki com Ponytail-review](#6-auditoria-da-wiki-com-ponytail-review-obrigatório)
   - [7. Pós-Implementação e Reconciliação](#7-pós-implementação-e-reconciliação-obrigatório-antes-do-pr)
   - [7.5. Revisão de Código do Diff](#75-revisão-de-código-do-diff-obrigatório-antes-do-quality-gate)
@@ -212,7 +247,7 @@ Antes de escrever qualquer documento:
 - Ler arquivos existentes relevantes com `Read` ou `Grep`
 - Executar `php artisan model:show ModelName` para models relacionados
 - Examinar padrões existentes com `Glob "**/[padrão]/**/*.php"`
-- **Inspecionar APIs de terceiros** antes de escrever CTs — verificar vendor source ou docs oficiais para confirmar nomes de métodos, assinaturas e restrições de schema. Se a feature **monta sobre** um pacote (e não apenas o chama), isso não basta: ver [Superfície do Pacote de Terceiro](#superfície-do-pacote-de-terceiro-obrigatório-quando-a-feature-monta-sobre-um)
+- **Inspecionar APIs de terceiros** antes de escrever CTs — verificar vendor source ou docs oficiais para confirmar nomes de métodos, assinaturas e restrições de schema. E isso nunca basta sozinho: **toda** feature que cria página, widget ou componente preenche a [Superfície Livewire](#superfície-livewire-obrigatório-em-toda-feature-que-cria-página-widget-ou-componente)
 - Para features médias/grandes: delegar o mapeamento amplo a um agent `Explore` e depois **confirmar os trechos críticos com `Read` direto** (linhas exatas, imports, assinaturas) — não confiar apenas no resumo do agent
 - **Validar dados fornecidos pelo usuário** (CSV, listas, IDs) contra o banco via `database-query` — detectar divergências de título/chave, escolher chave estável (ID) para mapeamentos e documentar as divergências no plano
 - **Verificar existência de factories** (`Glob "database/factories/{Model}*"`) e states disponíveis antes de escrever CTs; se não houver factory, especificar `Model::create([...])` no Setup Global
@@ -229,21 +264,45 @@ Antes de escrever qualquer documento:
 - **Verificar middleware** — `Grep` em `app/Http/Middleware/` e em `bootstrap/app.php` (Laravel 11+) para middleware stack
 - **Verificar variáveis de ambiente** — `Read` em `.env.example` para chaves existentes e padrão de naming
 
-#### Superfície do Pacote de Terceiro (OBRIGATÓRIO quando a feature monta sobre um)
+#### Superfície Livewire (OBRIGATÓRIO em toda feature que cria página, widget ou componente)
 
-Quando a feature é *"ligar o pacote X nos nossos painéis"*, o código que o usuário final alcança é
-majoritariamente **do pacote** — e é exatamente ele que fica fora de todo inventário, porque os
-itens acima varrem `app/`, `routes/` e `config/` **do projeto**.
+Tudo o que o **cliente** pode escrever ou chamar entre requests. Não é uma seção sobre pacotes —
+é sobre a **fronteira que o navegador alcança**, e o pacote de terceiro é só uma das origens dela.
 
-Produzir a tabela `## Superfície do Pacote` no `02-decisoes-arquiteturais.md`, uma linha por ponto
-que o **cliente** alcança:
+> **A condição desta seção já foi "quando a feature monta sobre pacote de terceiro", e essa redação
+> custou dois defeitos** (caso real, 2026-09-17). A feature montava sobre o **framework**, não sobre
+> um pacote; o agente leu a condição ao pé da letra, declarou *"nenhum pacote persiste entidade →
+> não se aplica"* e a tabela nunca foi preenchida. Passaram: um método público do componente
+> (**ação chamável por `$wire.`**, que devolvia coluna não exposta e produzia 500 com nome
+> inexistente) e um array público de filtro consumido sem validação (`$rotulos[$valor]` e
+> `Carbon::parse($valor)` → dois 500). A condição certa é a superfície, não a origem dela.
+
+Produzir a tabela `## Superfície Livewire` no `02-decisoes-arquiteturais.md`, uma linha por ponto
+que o **cliente** alcança — de qualquer origem:
+
+| Origem | O que inventariar | Por que |
+|---|---|---|
+| **o código do projeto** | todo `public function` de Page, Widget ou componente Livewire; toda `public $` sem `#[Locked]` | método público de componente Livewire **é ação chamável pelo cliente**, e o retorno vai para o navegador; propriedade pública é escrita pelo cliente **entre requests** |
+| **o framework** | os arrays de estado que o framework publica e o seu código consome — `$filters` (`HasFilters`), `$pageFilters` (`InteractsWithPageFilters`), `$tableFilters`, `$tableSearch`, `$tableSortColumn` | são **entrada de usuário não validada** que vira `where`, índice de array e parse de data. O framework os declara `public` |
+| **o pacote de terceiro** | ações que recebem id/argumento do cliente, propriedades públicas e models que a feature persiste | ver a varredura abaixo |
+
+Uma linha por ponto, com a fronteira e a evidência:
 
 | Ponto de entrada (vendor) | Alcançável por | Fronteira aplicada pelo projeto | Evidência |
 |---|---|---|---|
 | `Widget::find($arguments['widget'])` | `$wire.mountAction('deleteWidget', {widget: <id>})` | global scope `whereHas('pai')` | `vendor/{pkg}/src/Pages/X.php:962` |
 | `public ?int $currentDashboardId` | `$wire.set()` em qualquer request após o `mount()` | `#[Locked]` na subclasse do projeto | `vendor/{pkg}/src/Pages/X.php:71` |
 
-Varredura mínima — os quatro greps, com o resultado colado na tabela:
+Varredura mínima — os greps, com o resultado colado na tabela.
+
+**No código que a feature escreve** (sempre):
+
+```bash
+grep -rn "public function " app/Filament/{Painel}/{Pages,Widgets}   # ação chamável por $wire.
+grep -rn "public \$\|public ?" app/Filament app/Livewire | grep -v Locked
+```
+
+**No pacote de terceiro** (quando a feature monta sobre um):
 
 ```bash
 grep -rn "::find(\|whereKey(\|findOrFail(" vendor/{vendor}/{pkg}/src        # busca por id cru
@@ -255,6 +314,12 @@ grep -rn "extends Model" vendor/{vendor}/{pkg}/src/Models                    # m
 **Regra dura**: **todo model do pacote que a feature persiste aparece na tabela com a própria
 fronteira.** *"É filho do outro, logo está protegido"* só vale com a evidência de que **nenhum**
 ponto de entrada o alcança direto — e essa evidência é um `grep`, não uma dedução.
+
+**Segunda regra dura, do caso de 2026-09-17**: **todo valor que entra por um desses pontos e vira
+índice de array, argumento de `parse`, nome de coluna ou operador é um cenário de domínio
+inválido.** Público sem validação não é "detalhe de framework": `$rotulos[$situacao]` sem `??` e
+`Carbon::parse($filtro)` sem guarda são 500 que nenhum teste de caminho feliz vê, porque a tela
+sanitiza o valor **na página** e os widgets o recebem **direto**.
 
 A tabela é **entrada obrigatória da `feature-test-design`** (step 4): cada linha vira gatilho do
 checklist de taxonomia, e a linha sem cenário correspondente é lacuna declarada, não silêncio.
@@ -363,6 +428,36 @@ Após escrever os 4 arquivos, **re-validar cada premissa do plano contra o códi
 
 > Exemplo real (feature/implementar-carga-horaria): a revisão pós-escrita detectou que o import `MbaTrack` já existia no arquivo a editar e confirmou o padrão exato do guard de environment nas migrations com seeder — ambos corrigidos na wiki antes da implementação.
 
+#### Varredura da classe irmã (OBRIGATÓRIA para toda classe nova)
+
+A revisão acima confere o que o plano **afirma**. Este item confere o que o plano **não sabe que
+existe**: as listas paralelas que o projeto mantém à mão e que nenhuma rule enumera por completo.
+
+Procedimento, uma linha por classe nova:
+
+```bash
+# Onde uma classe IRMÃ já existente é citada? É onde a nova também precisa aparecer.
+grep -rn "App\\\\Filament\\\\Admin\\\\Pages\\\\Dashboard" --include=*.php app config database tests
+```
+
+Escolher como irmã a classe **mais parecida em papel** (outra Page de dashboard, outro Resource do
+mesmo painel, outro Widget da mesma família) e conferir **todos** os lugares onde ela aparece:
+`config/*.php`, seeders, listas de exclusão, inventários de teste, `->pages()`/`->widgets()` dos
+providers, matrizes de permissão. Cada ocorrência é uma pergunta: *a classe nova entra aqui também?*
+
+> **Caso real, 2026-09-17.** A feature criou uma Page de dashboard nova. O agente leu a rule do
+> projeto sobre tela de entrada, entendeu a decisão e atualizou **a lista do teste**
+> (`$telasDeEntrada`). Existia uma **segunda** lista, em `config/filament-shield.php`
+> (`pages.exclude`), com as outras quatro telas de entrada — e a informação de que ela existia
+> estava só num **comentário dentro do próprio config**. Sem a linha, o Shield geraria uma
+> permission `View:{Page}` que apareceria como checkbox na tela de papéis e **não mudaria nada
+> quando desmarcada** — o "checkbox que mente". O `grep` pelo FQCN da irmã devolvia as duas listas
+> em segundos; nenhum outro gate da wiki olha para listas paralelas.
+
+Registrar o resultado em `03-progresso.md` → `## Auditoria Pré-Implementação`, com a irmã escolhida
+e as ocorrências encontradas. "Nenhuma ocorrência além das previstas" é resposta válida e precisa
+estar escrita.
+
 ### 6. Auditoria da Wiki com Ponytail-review (OBRIGATÓRIO)
 
 Após a revisão profunda (step 5), **invocar automaticamente** `/ponytail:ponytail-review` para auditar a wiki criada. Este step é função direta da skill — o agente NÃO deve esperar o usuário pedir.
@@ -469,10 +564,17 @@ com a suíte verde, porque os testes foram derivados da mesma leitura que produz
 | Eixo | Pergunta |
 |---|---|
 | Fronteira de dado | toda query que o usuário alcança filtra pelo discriminante? e quando o discriminante é **nulo**, ela **fecha** ou **abre**? |
-| Ponto de entrada do vendor | as ações do pacote que recebem id/argumento do cliente estão cobertas pela mesma fronteira? conferir contra `## Superfície do Pacote` do `02` |
+| Ponto de entrada do vendor | as ações do pacote que recebem id/argumento do cliente estão cobertas pela mesma fronteira? conferir contra `## Superfície Livewire` do `02` |
 | Propriedade pública Livewire | o que o cliente pode escrever **entre requests**? `#[Locked]` em toda propriedade que decide **onde** a escrita cai |
+| **Método público de componente** | todo `public function` de Page/Widget é **ação chamável por `$wire.`**, e o retorno vai para o navegador. Tem lista fechada de argumentos, ou aceita qualquer string? |
+| **Valor de estado usado sem validar** | todo valor vindo de `$filters`, `$pageFilters`, `$tableFilters` ou `$tableSearch` que vira **índice de array**, argumento de **`parse`**, nome de **coluna** ou **operador** tem guarda? A página pode sanitizar e o widget receber cru |
+| **Lista paralela** | nasceu classe nova? o FQCN de uma classe **irmã** aparece em quantos lugares (`config/`, seeders, inventários de teste, providers)? a nova entrou em todos? |
+| **Simetria de guarda** | duas superfícies da mesma fronteira se comportam igual? uma fecha com log e a outra fecha em silêncio? |
 | Estado de erro | todo 4xx/redirect novo tem saída — para onde o usuário vai depois? par "A devolve para B, B devolve para A" é blocker |
 | Afirmação de comentário | comentário que justifica a **ausência** de um controle tem `arquivo:linha` do vendor provando? |
+
+> Os quatro eixos em negrito vieram do caso de 2026-09-17 — foram exatamente os achados que os
+> gates anteriores não tinham como ver, e cada um deles já era um 500 ou um checkbox que mente.
 
 **Roteamento do achado** — igual ao do quality gate, e nesta ordem:
 
@@ -838,6 +940,27 @@ cenário de **gravação por componente** — *uma tela aberta não é uma tela 
 
 - **Job**: {nome} → queue: {connection/name}, timeout: {s}, retries: {n}, backoff: {s}
 
+## Modelo de Execução
+
+<!-- Quantas VEZES o caminho principal roda, e o que é compartilhado entre elas.
+     Preencher "um request, sem trabalho adiado" quando for o caso — é resposta válida. -->
+
+| Pergunta | Resposta |
+|---|---|
+| Quantos requests a tela custa? | {1 · ou N, e por quê: widget lazy, tabela adiada, polling, ação assíncrona} |
+| O que é adiado, e por qual gatilho? | {`lazy` do Livewire ao entrar na viewport · `deferLoading` da tabela · nenhum} |
+| O que é memoizado **por request**? | {e o que isso NÃO alcança quando há N requests} |
+| O que é cacheado **entre** requests? | {chave, TTL, quem invalida} |
+| Custo do caminho principal | {queries do caminho comum × queries do caminho com filtro/busca} |
+
+**Este bloco existe porque uma ADR pode estar internamente coerente e apoiada numa premissa que
+ninguém escreveu.** Caso real (2026-09-17): uma ADR decidiu, com bom argumento, não cachear o
+agregado quando há filtro — e assumiu implicitamente *"uma tela = um request"*. Os widgets eram
+`lazy`, ou seja **oito requests independentes**, cada um recalculando: 48 queries viraram ~384 por
+carga filtrada. O memo por request que o código documentava **não existia**, e não teria ajudado —
+memo estático não atravessa request. Nenhum gate da wiki mede custo; declarar o modelo é o que
+torna a premissa falsificável na revisão.
+
 ## Impacto em Features Existentes
 
 - {Feature X}: {o que pode quebrar e por quê}
@@ -934,6 +1057,8 @@ cenário de **gravação por componente** — *uma tela aberta não é uma tela 
 - [ ] `vendor/bin/pest --filter={Feature} --compact` (CTs de backend)
 - [ ] `vendor/bin/pest tests/Browser --filter={Feature}` (CT-B — só se houver `05-*-browser.md`)
 - [ ] `vendor/bin/pest --parallel --tia` (Pest 5 — confirma que nada mais no suite quebrou, rodando só o afetado)
+- [ ] **Custo medido** — queries do caminho principal e do caminho com filtro/busca, contra o `## Modelo de Execução`
+- [ ] **`/code-review` no diff (step 7.5)** — o único gate que lê o diff atrás de defeito de correção
 - [ ] {outros comandos de verificação específicos}
 
 ## Commits
@@ -1284,6 +1409,8 @@ Se o projeto possuir uma trait de logging (ex: `UnicoLogging`), verificar:
 - [ ] `vendor/bin/pest --filter={Feature} --compact`
 - [ ] `vendor/bin/pest tests/Browser --filter={Feature}` <!-- se houver CT-B -->
 - [ ] `vendor/bin/pest --parallel --tia` — nada mais no suite quebrou
+- [ ] **Custo medido** — queries do caminho principal × do caminho filtrado, contra o `## Modelo de Execução`
+- [ ] **`/code-review` no diff (step 7.5)** — achados fechados ou rejeitados com motivo
 - [ ] Roteiro "Desenhado × Implementado" do `05-*-browser.md` preenchido <!-- se houver CT-B -->
 - [ ] Desvios propagados ao `01`/`02`/`04`/`05` de origem, marcados `*(alterado em …)*`
 - [ ] Citações `arquivo:símbolo:linha` reverificadas — {n}/{n} ok
@@ -1711,7 +1838,7 @@ Antes de encerrar a invocação:
 - [ ] Lacunas do `search-docs` cobertas por doc oficial: Pest 5, Playwright/`pest-plugin-browser`, pacotes de terceiros
 - [ ] Rotas, policies, config, composer, wikis existentes verificados
 - [ ] APIs de terceiros inspecionadas (vendor source ou docs) — métodos e schema confirmados
-- [ ] Se a feature monta sobre pacote de terceiro: tabela `## Superfície do Pacote` no `02` preenchida pelos quatro greps, com **um model do pacote por linha** e a fronteira de cada um
+- [ ] Tabela `## Superfície Livewire` no `02` preenchida — **sempre** que a feature cria página, widget ou componente: métodos públicos, propriedades públicas sem `#[Locked]` e os arrays de estado do framework que o código consome. Pacote de terceiro acrescenta os quatro greps do vendor, com um model por linha
 - [ ] Dados fornecidos pelo usuário validados contra o DB (quando aplicável)
 - [ ] Factories confirmadas (existência + states) para todos os CTs
 - [ ] Stack de testes verificado: versão do Pest, `pest-plugin-browser`, Playwright, `APP_URL`, traits em `tests/Pest.php`
@@ -1738,6 +1865,8 @@ Antes de encerrar a invocação:
 
 ### Validação
 - [ ] Revisão profunda pós-escrita executada — premissas do plano re-validadas contra o código
+- [ ] **Varredura da classe irmã** executada para toda classe nova, com a irmã escolhida e as ocorrências registradas no `03`
+- [ ] `## Modelo de Execução` preenchido no PRD (ou "um request, sem trabalho adiado" declarado)
 - [ ] **Auditoria da wiki executada** — `/ponytail:ponytail-review` invocado e sugestões aplicadas
 - [ ] `03-progresso.md` espelha exatamente os passos do `01-plano-acao.md`
 - [ ] Filosofia de Implementação (Ponytail) incluída no PRD

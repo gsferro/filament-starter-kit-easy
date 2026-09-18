@@ -103,7 +103,6 @@ Playwright MCP, skills de `qa-skills`, Pest 5, PCOV: **todos opcionais**. Sem el
 |---|---|---|
 | `00-requisito.md` com cláusulas `RQ-##` | **sim** | ver "oráculo degradado" abaixo |
 | `01-plano-acao.md` (+ `## Natureza da Wiki`, `## Cobertura do Requisito`) | **sim** | não roda — pedir ao usuário |
-
 | `04-casos-de-teste.md` | sim | não roda |
 | `05-casos-de-teste-browser.md` | se houver UI | dimensões G/H limitadas |
 | App servido e acessível na `APP_URL` | para dimensões dinâmicas | dimensões B, D, F, G, H, I ficam estáticas |
@@ -281,13 +280,10 @@ O último é o mais importante e o menos óbvio: o padrão da skill pede "máxim
 **Como verificar**:
 
 ```bash
-
 # N+1: se o projeto não usa preventLazyLoading, sondar contagem de queries
-
 vendor/bin/pest --agent='\DB::enableQueryLog(); $this->get("/rota")->assertOk(); dump(count(\DB::getQueryLog()));'
 
 # CT lento
-
 vendor/bin/pest --profile --filter={Feature}
 ```
 
@@ -313,9 +309,7 @@ Achado: contagem que cresce com o número de registros (N+1), query sem índice 
 **Primeiro, detectar o mecanismo do projeto**:
 
 ```bash
-
 # classe no <html> com toggle, ou prefers-color-scheme puro?
-
 grep -rn "darkMode" tailwind.config.js 2>/dev/null
 grep -rn "prefers-color-scheme" resources/css/
 grep -rln "class=\"dark\"\|classList.*dark" resources/
@@ -359,8 +353,7 @@ Escopo: **só o que o diff introduziu**. Não é auditoria do sistema.
 | Upload | validação de mime **e** extensão, path fora do webroot |
 | Dado sensível em resposta | API Resource devolvendo hash de senha, token, campo interno |
 | Query com input direto | `DB::raw` concatenando request |
-| **Ação do pacote de terceiro com id do cliente** | conferir contra `## Superfície do Pacote` do `02`; sem a tabela, rodar os quatro greps do step 3 da `feature-wiki`. `$wire.mountAction('x', {id: <alheio>})` é ponto de entrada como qualquer rota |
-
+| **Ação do pacote de terceiro com id do cliente** | conferir contra `## Superfície Livewire` do `02`; sem a tabela, rodar os greps do step 3 da `feature-wiki`. `$wire.mountAction('x', {id: <alheio>})` é ponto de entrada como qualquer rota |
 | **Propriedade pública Livewire sem `#[Locked]`** que decide **onde** a escrita cai (id de dono, tenant, agregado) | `Grep "public \$\|public ?"` nas páginas/componentes novos **e** nos do vendor que a feature estende. `#[Session]` não tranca: ele só repõe o valor no `mount()` |
 | **Escopo com discriminante nulo** | rodar a query sem tenant/owner resolvido: devolve tudo (falha **aberta**) ou nada (falha **fechada**)? |
 | **Estado de erro sem saída** | todo 403/404 novo: existe caminho alcançável a partir dele? par de redirect que se devolve mutuamente é **Blocker** |
@@ -458,13 +451,11 @@ rules do projeto violadas no código novo.
 
 **Entrada**: `00`–`05`, `git diff`, `.ai/rules/index.md` + as rules cujos globs casam o diff,
 docs de usuário e CHANGELOG tocados, e a tabela `## Conformidade com Rules` do `03` — o que o
-
 implementador **declarou**; esta dimensão confere a declaração.
 
 **Como verificar** — cinco checagens, todas estáticas, na ordem de custo:
 
 | # | Checagem | Como | Achado se |
-
 |---|---|---|---|
 | L1 | IDs de CT | `grep -o '\[CT-B\?[0-9]*\]'` nos arquivos de teste × índice do `04`/`05` | ID num lado só; linha de dataset sem Exemplo no Gherkin; contagem do cabeçalho do `04` diferente da real |
 | L2 | Citações `arquivo:símbolo:linha` | o grep da seção *Citações de código* da `feature-wiki` | símbolo não está na linha citada; citação sem símbolo |
@@ -504,7 +495,6 @@ implementador **declarou**; esta dimensão confere a declaração.
 ### Os 5 destinos
 
 | # | Achado | Diagnóstico | Volta para | O que fazer |
-
 |---|---|---|---|---|
 | **1** | requisito ambíguo, incompleto ou contraditório | defeito de **especificação** | escrita da wiki (`00`/`01`/`02`) | perguntar ao usuário; corrigir a decomposição `RQ` ou abrir ADR |
 | **2** | implementação diverge do PRD | defeito de **código** | execução do passo do PRD | corrigir o código, não o plano |
@@ -555,7 +545,6 @@ A Matriz de Rastreabilidade transforma roteamento em consequência, não opiniã
 **Teto**: veredito + achados + matriz. Se passar de ~150 linhas, cortar detalhe, não cortar achado.
 
 ```markdown
-
 # Relatório de QA — {Card}: {Título}
 
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md`
@@ -596,7 +585,6 @@ A Matriz de Rastreabilidade transforma roteamento em consequência, não opiniã
 ## Dimensões
 
 | # | Dimensão | Status | Observação |
-
 |---|----------|--------|------------|
 | A | Cobertura do requisito | ✅ / ⚠️ / ❌ | {n} achados |
 | L | Consistência documental | ✅ / ⚠️ / ❌ | {n} achados — L1…L5 |
@@ -735,10 +723,8 @@ Violação de qualquer uma invalida a execução:
 
 - [ ] `00-requisito.md` lido; cláusulas `RQ` identificadas (ou modo degradado declarado)
 - [ ] `01` lido: `## Natureza da Wiki` e `## Cobertura do Requisito`
-
 - [ ] `04` e `05` lidos; diff delimitado
 - [ ] `.ai/rules/index.md` (rules que casam o diff), docs de usuário e CHANGELOG tocados lidos; tabela `## Conformidade com Rules` do `03` em mãos
-
 - [ ] Perfil de esforço definido pelo gate de risco
 
 ### Execução

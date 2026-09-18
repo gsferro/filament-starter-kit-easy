@@ -1,6 +1,6 @@
 # feature-wiki — Documentação Antes de Implementar
 
-> **Skill**: [`SKILL.md`](SKILL.md) · versão **3.2.0**
+> **Skill**: [`SKILL.md`](SKILL.md) · versão **3.3.0**
 > Este README fala com a **pessoa**: por que a skill existe, o que ela entrega, dependências e limitações. O procedimento que o agente segue está no `SKILL.md` e não é duplicado aqui.
 
 ## Índice
@@ -33,6 +33,27 @@ Força o agente a **documentar antes de codar**. Em vez de sair implementando a 
 | Decisão que não se perde | ADR com contexto, alternativas e consequências |
 | Retomada sem reler tudo | `03-progresso.md` atualizado em tempo real |
 | Validação por quem não implementou | CT-B escritos em loop por sub-agente, e QA pela [`feature-quality-gate`](../feature-quality-gate/README.md) |
+| **Defeito de correção pego antes do PR** | step 7.5 roda `/code-review` **no diff** — o único gate que lê o diff, e o mais produtivo de todos numa feature medida |
+| **Superfície do cliente inventariada** | `## Superfície Livewire` no `02`: método público (ação por `$wire.`), propriedade pública sem `#[Locked]` e estado do framework usado sem validar |
+| **Lista paralela não esquecida** | varredura da classe irmã no step 5: `grep` pelo FQCN de uma irmã acha `config/`, seeders e inventários que nenhuma rule enumera |
+| **Premissa de custo falsificável** | `## Modelo de Execução` no PRD — quantos requests a tela custa, o que é adiado e o que é cacheado |
+
+### O gate que mais pega defeito (medido, 2026-09-17)
+
+Uma feature real rodou a skill 3.2.0 **com tudo cumprido** — 43 CTs, revisão adversarial fechando
+cinco implementações erradas, auditoria Ponytail com dez cortes, 61 testes verdes e 2.383 casos de
+regressão. Mesmo assim chegou ao step 7.5 com **sete defeitos**, dois produzindo 500 em produção.
+
+| Gate | Achados de correção | Por quê |
+|---|---|---|
+| step 5 — revisão profunda | 2 | valida o que o plano **afirma**, e roda antes do código existir |
+| step 6 — `ponytail-review` | 0 | correção, segurança e performance estão **fora do charter** dele |
+| revisão adversarial do `04` | 0 de correção, 5 de cobertura | recebe só `00` + `04`: vê o que o **requisito** descreve |
+| suíte verde, 2.383 casos | 1 | enforço de arquitetura do próprio projeto |
+| **step 7.5 — `/code-review` no diff** | **7** | é o único que lê o diff atrás de defeito de correção |
+
+A 3.3.0 nasceu dessa medição: elevou o 7.5 para o topo do documento e fechou os quatro buracos que
+deixaram os sete chegarem até ele.
 
 ## Os arquivos que ela cria
 
@@ -117,7 +138,6 @@ da turma pode disparar. Avisar o coordenador quando terminar. Precisa ser rápid
 ### O que a skill faz com isso
 
 1. **`## Texto Original`** — verbatim, **imutável**. Nunca editado, nem para "melhorar"
-
 2. **`## Decomposição em Cláusulas`** — cada exigência vira um `RQ-##` citando o trecho literal:
 
 | ID | Cláusula | Trecho literal | Tipo |
@@ -128,7 +148,6 @@ da turma pode disparar. Avisar o coordenador quando terminar. Precisa ser rápid
 | RQ-04 | ⚠️ "rápido" sem número | "Precisa ser rápido" | não-funcional |
 
 3. **`## Ambiguidades e Perguntas Abertas`** — a RQ-04 já entrega valor **antes de qualquer código**: *"rápido" não é testável; qual o SLA?* Vira pergunta para você em vez de suposição silenciosa do agente
-
 4. **`## Fora de Escopo`** — o que o requisito explicitamente não pede, para o quality gate não acusar omissão indevida
 
 Depois disso, **todo passo do PRD e todo CT/CT-B cita o `RQ` que atende**. É essa amarração que permite detectar cláusula sem plano, sem teste ou sem código.
@@ -184,7 +203,6 @@ Livewire** — milissegundos, sem Node e sem Playwright.
 
 **Regra do par**: *uma tela aberta não é uma tela que grava.* Um `GET` fica verde com o
 salvamento quebrado. Toda rota `create`/`edit` da `## Superfície de UI` precisa de um cenário de
-
 **gravação por componente** no `04` — é gate, não recomendação.
 
 O teto de 1 happy path + 1 erro continua valendo, mas agora só para o que de fato exige browser.
@@ -194,13 +212,10 @@ O teto de 1 happy path + 1 erro continua valendo, mas agora só para o que de fa
 O runtime dos CT-B é o **Pest Browser plugin**, que roda **Playwright** por baixo. A skill não assume que está instalado: se faltar, ela inclui a instalação como passo numerado na seção `## Dependências` do PRD.
 
 ```bash
-
 # 1. Plugin de browser do Pest
-
 composer require pestphp/pest-plugin-browser --dev
 
 # 2. Playwright + browsers
-
 npm install playwright@latest
 npx playwright install
 ```
@@ -225,15 +240,11 @@ tests/Browser/Screenshots
 **Opcional, mas recomendado (Pest 5):**
 
 ```bash
-
 # Verificação pontual de mudança pelo próprio agente de IA
-
 composer require pestphp/pest-plugin-agent --dev
 
 # Driver de cobertura — pré-requisito do --tia
-
 pecl install pcov     # ou Xdebug
-
 ```
 
 **Instalação/upgrade do Pest 5** (a doc oficial não usa `php artisan pest:install`):
@@ -242,7 +253,6 @@ pecl install pcov     # ou Xdebug
 composer remove phpunit/phpunit
 composer require pestphp/pest --dev --with-all-dependencies
 ./vendor/bin/pest --init          # cria tests/Pest.php
-
 ```
 
 Vindo do Pest 4: `"pestphp/pest": "^5.0"` no `composer.json` e todos os plugins para `^5.0`. Requer **PHP 8.4+** e PHPUnit 13.
@@ -372,7 +382,6 @@ Três lacunas concretas: **descobrir o locator verdadeiro** numa falha de seleto
 | Etapa | Uso | Tools |
 |---|---|---|
 | **Step 3** — pesquisa | extrair locators reais das telas que a feature vai tocar → alimenta a tabela `### Seletores` do arquivo `05` | `browser_navigate`, `browser_find`, `browser_generate_locator` |
-
 | **Loop do CT-B** — falha de tipo (a) ou (c) | observar a página ao vivo, achar locator/estado real, corrigir o CT-B | `browser_find`, `browser_generate_locator`, `browser_wait_for` |
 | **Step 7** — evidência | anexar console e rede ao roteiro *Desenhado × Implementado* | `browser_console_messages`, `browser_network_requests` |
 
@@ -436,7 +445,6 @@ Limitação que continua válida:
 ```text
 wikis/specs/ferro/579/relatorio-mba-lote/
 ├── 01-plano-acao.md                 ← + seção ## Superfície de UI (gate do CT-B)
-
 ├── 02-decisoes-arquiteturais.md
 ├── 03-progresso.md                  ← + checkboxes de CT-B
 ├── 04-casos-de-teste.md             ← backend: Feature/Unit, log, autorização

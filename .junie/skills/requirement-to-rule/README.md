@@ -71,7 +71,6 @@ A terceira linha é reveladora: o padrão de log é reescrito em **toda** wiki d
 Candidato só vira rule se passar em **todos**:
 
 | # | Gate | Pergunta | Reprova quando |
-
 |---|---|---|---|
 | 1 | **Durável** | vale além desta feature e desta sprint? | regra de negócio de um fluxo → fica na ADR |
 | 2 | **Escopável por path** | dá para expressar em glob? | "vale para o projeto todo" → glob `**` é anti-padrão |
@@ -135,7 +134,6 @@ Os agentes são instruídos a **consultar o índice antes de planejar ou editar 
 Modelo oficial do Boost, que a skill usa literalmente ao criar o arquivo:
 
 ```markdown
-
 # Project Rules Index
 
 Before planning or editing, find the row whose globs match the file's path and read that rule file.
