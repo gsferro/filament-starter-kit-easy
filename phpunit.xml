@@ -60,6 +60,7 @@
             Fixar aqui vale para toda a suíte de uma vez, e é o mesmo motivo pelo
             qual banco, fila e e-mail já estão fixados abaixo.
         -->
+        <env name="APP_VERSION" value="" force="true"/>
         <env name="KIT_COR_PRIMARIA" value="" force="true"/>
         <env name="KIT_DEMO" value="false" force="true"/>
         <env name="KIT_HUB" value="false" force="true"/>
@@ -100,6 +101,8 @@
         <env name="KIT_TABELA_LISTRADA" value="true" force="true"/>
         <env name="KIT_TABELA_PERSISTIR_FILTROS" value="true" force="true"/>
         <env name="KIT_TABELA_COLUNAS_REDIMENSIONAVEIS" value="true" force="true"/>
+        <env name="KIT_ALERTA_ALTERACOES_NAO_SALVAS" value="true" force="true"/>
+        <env name="KIT_EXIBIR_VERSAO" value="false" force="true"/>
         <env name="KIT_COR_PRIMARIA_HEX" value="" force="true"/>
         <env name="KIT_LOGIN_RODAPE" value="" force="true"/>
         <env name="KIT_ANTI_ROBO" value="false" force="true"/>

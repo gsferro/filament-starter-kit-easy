@@ -74,6 +74,18 @@ final class ConfiguracoesDoKit extends Settings
 
     public string $nome_da_aplicacao;
 
+    /**
+     * A versão do SISTEMA — o produto que nasce do kit, não o kit.
+     *
+     * `null` = não informada, e aí o rodapé não mostra versão nenhuma. Texto livre porque
+     * esquema de versionamento é decisão do projeto: SemVer, data, número de build ou o nome que
+     * a equipe usar. Validar formato aqui seria o kit escolhendo pelo projeto.
+     *
+     * Mapeada para `app.version`, e por isso o `.env` (`APP_VERSION`) a semeia — o mesmo par
+     * `nome_da_aplicacao` → `app.name` logo acima. Ver ADR-04.
+     */
+    public ?string $versao_do_sistema;
+
     /** Nome de uma constante de `Filament\Support\Colors\Color`. */
     public ?string $cor_primaria;
 
@@ -118,6 +130,26 @@ final class ConfiguracoesDoKit extends Settings
     // Kit --------------------------------------------------------------------
 
     public bool $hub_de_navegacao;
+
+    /**
+     * Avisar antes de sair de formulário com alteração não salva.
+     *
+     * Pode viver aqui — e a regra de `.ai/rules/settings.md` é sobre QUANDO a chave é lida, não
+     * sobre qual ela é. Os três painéis a leem por `Closure` em `->unsavedChangesAlerts()`, e
+     * `hasUnsavedChangesAlerts()` avalia a Closure no render
+     * (`vendor/filament/filament/src/Panel/Concerns/HasUnsavedChangesAlerts.php:19-21`), não na
+     * construção do painel. É leitura POR REQUEST, então o toggle faz efeito na hora — sem o
+     * decisor extra que `registro_verificar_email` precisou.
+     */
+    public bool $alerta_alteracoes_nao_salvas;
+
+    /**
+     * Mostrar também a versão do KIT ao lado da versão do sistema, no rodapé.
+     *
+     * Default `false`: versão do kit é métrica interna do starter, e quem entrega o produto a um
+     * cliente final não tem por que anunciar de qual kit ele nasceu.
+     */
+    public bool $exibir_versao_do_kit;
 
     /**
      * Dashboard dinâmico como tela de entrada dos painéis. Lido por
@@ -318,6 +350,7 @@ final class ConfiguracoesDoKit extends Settings
     {
         return [
             'nome_da_aplicacao'        => 'app.name',
+            'versao_do_sistema'        => 'app.version',
             'cor_primaria'             => 'kit.cor_primaria',
             'cor_primaria_hex'         => 'kit.cor_primaria_hex',
             'logo'                     => 'kit.identidade.logo',
@@ -336,6 +369,13 @@ final class ConfiguracoesDoKit extends Settings
             'persistir_filtros'        => 'kit.tabelas.persistir_filtros',
             'colunas_redimensionaveis' => 'kit.tabelas.colunas_redimensionaveis',
             'hub_de_navegacao'         => 'kit.hub',
+            /*
+             * O alerta de alterações não salvas entra pelo MAPA e nada mais muda: os três
+             * providers já leem `config('kit.alerta_alteracoes_nao_salvas')` por Closure, e
+             * `aplicarNaConfig()` sobrepõe essa config com o banco no boot. O mapa É a ligação.
+             */
+            'alerta_alteracoes_nao_salvas' => 'kit.alerta_alteracoes_nao_salvas',
+            'exibir_versao_do_kit'         => 'kit.exibir_versao',
             /*
              * O interruptor do dashboard dinâmico é lido por request — `mount()` e
              * `shouldRegisterNavigation()` das páginas consultam

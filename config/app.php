@@ -17,6 +17,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Versão do SISTEMA
+    |--------------------------------------------------------------------------
+    | A versão do produto que você está construindo — não a do kit. As duas são
+    | coisas diferentes e vivem em lugares diferentes de propósito:
+    |
+    |   config('app.version')  →  a SUA release, exibida no rodapé dos painéis
+    |   config('kit.version')  →  a versão do starter kit que originou o projeto,
+    |                             métrica interna do kit, usada pelo `kit:update`
+    |
+    | Editável em /admin/configuracoes-da-aplicacao (aba Identidade). Esta chave é a
+    | SEMENTE e o plano B: o valor gravado no banco vence em tempo de execução, como
+    | toda chave de `ConfiguracoesDoKit::mapaDeConfiguracao()`.
+    |
+    | `null` significa "não informada", e o rodapé simplesmente não mostra versão —
+    | um projeto que não versiona não precisa fingir que versiona.
+    |
+    | Quem implanta é quem preenche. O kit NÃO lê a tag nem a branch do `.git` em
+    | tempo de execução: imagem de produção costuma não ter `.git`, e ler de lá
+    | criaria uma segunda fonte de verdade que divergiria do que a tela mostra.
+    | Ver ADR-04 de wikis/specs/feat/estudo-de-pacotes-rodada-2/.
+    */
+
+    'version' => env('APP_VERSION'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

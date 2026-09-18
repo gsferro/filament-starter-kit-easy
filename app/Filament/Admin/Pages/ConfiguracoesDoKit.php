@@ -254,6 +254,17 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->required()
                     ->maxLength(255),
 
+                /*
+                 * A versão do SISTEMA, não a do kit. Texto livre: esquema de versionamento é
+                 * decisão do projeto (SemVer, data, número de build), e validar formato aqui
+                 * seria o kit escolhendo pelo projeto. Vazio some com a versão do rodapé.
+                 */
+                TextInput::make('versao_do_sistema')
+                    ->label('Versão do sistema')
+                    ->helperText('A versão do SEU produto, exibida no rodapé dos painéis. Em branco, o rodapé não mostra versão. APP_VERSION no .env semeia este campo na instalação; depois disso é aqui que se troca — o valor gravado vence o arquivo, inclusive quando está vazio.')
+                    ->placeholder('1.0.0')
+                    ->maxLength(50),
+
                 Select::make('cor_primaria')
                     ->label('Cor primária')
                     ->helperText('A paleta do Filament. Deixe em branco para o padrão (âmbar).')
@@ -746,6 +757,24 @@ class ConfiguracoesDoKit extends SettingsPage
                 Toggle::make('hub_de_navegacao')
                     ->label('Hub de navegação em cartões')
                     ->helperText('Uma grade de cartões com os destinos, nos painéis /admin e /app. O /infra tem hub independente desta chave.'),
+
+                /*
+                 * Interruptor lido por REQUEST: os três providers passam uma Closure para
+                 * `->unsavedChangesAlerts()`, e o Filament a avalia no render. Salvar aqui vale
+                 * no próximo F5, sem cache nem restart.
+                 */
+                Toggle::make('alerta_alteracoes_nao_salvas')
+                    ->label('Avisar sobre alterações não salvas')
+                    ->helperText('Ao sair de um formulário com alteração pendente, o navegador pede confirmação antes de descartar. Vale para as telas de cadastro e edição dos três painéis, inclusive as dos plugins.'),
+
+                /*
+                 * Desligado por padrão: a versão do kit é métrica interna do starter, e quem
+                 * entrega o produto a um cliente final não tem por que anunciar de qual kit ele
+                 * nasceu. A versão do SISTEMA fica na aba Identidade.
+                 */
+                Toggle::make('exibir_versao_do_kit')
+                    ->label('Mostrar também a versão do kit no rodapé')
+                    ->helperText('Acrescenta a versão do starter kit ao lado da versão do sistema. Desligado, o rodapé só mostra a sua. A versão do kit continua disponível em `php artisan kit:info`.'),
 
                 /*
                  * O interruptor do dashboard dinâmico. A troca é por REQUEST — as duas

@@ -94,6 +94,31 @@ trait ConfiguraFilamentGlobal
         $this->configuraPanelSwitch();
         $this->configuraSeletorDeIdioma();
         $this->configuraBotaoVoltarAoTopo();
+        $this->configuraVersaoNoRodape();
+    }
+
+    /**
+     * A versão do kit no rodapé de TODA tela de TODOS os painéis.
+     *
+     * Mesma técnica e mesma justificativa de `configuraBotaoVoltarAoTopo()` logo abaixo: **sem
+     * `scopes:`**, o hook cai no bucket `''` do `ViewManager` e o `renderHook()` o renderiza em
+     * qualquer escopo — os três painéis e qualquer painel que o projeto criar depois, sem tocar
+     * em nenhum PanelProvider.
+     *
+     * A fonte é `config('kit.version')`, a MESMA que o `php artisan kit:info` imprime
+     * (`app/Console/Commands/KitInfo.php:73`) e que o `kit:update` reescreve a partir da tag do
+     * release (`app/Console/Commands/KitUpdate.php:1050-1079`). Uma fonte só: CLI e tela nunca
+     * divergem, e nada lê `.git` em tempo de execução.
+     *
+     * O guard de visitante mora na blade, não aqui, porque é lá que está o motivo: o hook `FOOTER`
+     * também é emitido pelo layout `simple`, o das telas de autenticação.
+     */
+    private function configuraVersaoNoRodape(): void
+    {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::FOOTER,
+            fn (): View => view('filament.versao-do-kit'),
+        );
     }
 
     /**

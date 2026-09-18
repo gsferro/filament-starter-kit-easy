@@ -177,8 +177,10 @@ it('[CT-06] exibe uma linha para cada propriedade do settings, na ordem do mapa'
      * 48 → 49 na feature `login-unificado`: `login_unificado`.
      * 49 → 51 na feature `dashboard-dinamico-nos-paineis`: `dashboard_dinamico_habilitado`
      * e `dashboard_dinamico_paineis`.
+     * 51 → 54 na feature `estudo-de-pacotes-rodada-2`: `versao_do_sistema`,
+     * `alerta_alteracoes_nao_salvas` e `exibir_versao_do_kit`.
      */
-    expect($propriedades)->toHaveCount(51);
+    expect($propriedades)->toHaveCount(54);
 
     foreach ($propriedades as $propriedade) {
         expect($saida)->toContain(Str::headline($propriedade));

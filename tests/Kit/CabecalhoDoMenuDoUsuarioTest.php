@@ -178,3 +178,44 @@ it('não renderiza o cabeçalho na tela de login', function (string $painel): vo
         ->assertSuccessful()
         ->assertDontSee('data-user-menu-header', escape: false);
 })->with(['app', 'admin', 'infra'])->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| A guarda do fato que o comentário dos providers afirma
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Os dois hooks do menu do usuário renderizam em lugares DIFERENTES, e o kit depende disso.
+ *
+ * Até a v0.35.0 os três `PanelProvider` e a blade deste cabeçalho afirmavam que
+ * `USER_MENU_BEFORE` "renderiza DENTRO do dropdown do usuário". Ele não renderiza: é emitido
+ * antes e fora do `<x-filament::dropdown>`. A escolha de `GLOBAL_SEARCH_BEFORE` para o gatilho ⌘K
+ * continuava certa — por outro motivo, a posição exata do campo de busca. É o padrão que
+ * `.ai/rules/specs.md` nomeia: conclusão certa por motivo errado, e por isso invisível.
+ *
+ * Este caso é o que impede a afirmação de envelhecer de novo: ele lê a blade do vendor INSTALADO
+ * e confere a ordem real. Se um upgrade do Filament mover qualquer um dos dois, ele fica vermelho
+ * e o comentário é reescrito junto — em vez de continuar afirmando algo que deixou de valer.
+ */
+it('mantem USER_MENU_BEFORE fora do dropdown e USER_MENU_PROFILE_BEFORE dentro', function (): void {
+    $blade = (string) file_get_contents(
+        base_path('vendor/filament/filament/resources/views/components/user-menu.blade.php'),
+    );
+
+    $antesDoMenu        = strpos($blade, 'PanelsRenderHook::USER_MENU_BEFORE');
+    $aberturaDoDropdown = strpos($blade, '<x-filament::dropdown');
+    $dentroDoMenu       = strpos($blade, 'PanelsRenderHook::USER_MENU_PROFILE_BEFORE');
+
+    expect($antesDoMenu)->not->toBeFalse('o vendor não emite mais USER_MENU_BEFORE')
+        ->and($aberturaDoDropdown)->not->toBeFalse()
+        ->and($dentroDoMenu)->not->toBeFalse()
+        ->and($antesDoMenu)->toBeLessThan(
+            $aberturaDoDropdown,
+            'USER_MENU_BEFORE passou a ser emitido DENTRO do dropdown — o comentário dos três PanelProvider precisa ser reescrito',
+        )
+        ->and($dentroDoMenu)->toBeGreaterThan(
+            $aberturaDoDropdown,
+            'USER_MENU_PROFILE_BEFORE saiu de dentro do dropdown — o cabeçalho do menu do usuário mudou de lugar',
+        );
+})->group('kit');
