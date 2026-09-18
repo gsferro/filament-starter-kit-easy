@@ -25,7 +25,7 @@ it('nasce ligado nos tres paineis', function (string $painel): void {
  *
  * Trocar a Closure por um escalar (`->unsavedChangesAlerts(true)`) deixaria o caso acima VERDE e
  * este VERMELHO: o escalar é resolvido quando o `Panel` é construído e congela, enquanto
- * `hasUnsavedChangesAlerts()` avalia a Closure no render (`HasUnsavedChangesAlerts.php:19-21`).
+ * `hasUnsavedChangesAlerts()` avalia a Closure no render (`HasUnsavedChangesAlerts.php:18-21`).
  *
  * Mudar a config **depois** do painel montado e exigir que a resposta mude é a única forma de
  * provar que a tela governa de verdade.

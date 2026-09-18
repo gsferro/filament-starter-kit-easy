@@ -125,7 +125,7 @@
 |---|---|---|
 | "o provider padrão do Filament é `UiAvatarsProvider` e o kit não sobrescreve" | ✔ confirmado: `HasAvatars.php:10`; `grep -rn "defaultAvatarProvider" app/` vazio | nenhuma — premissa correta |
 | "`unsavedChangesAlerts` nasce `false` e o kit não liga" | ✔ confirmado: `HasUnsavedChangesAlerts.php:9`; `grep` em `app/` vazio | nenhuma |
-| "`ativo` não é auditado" | ✔ confirmado: `AuditsFillables.php:17` + `User.php:89-94` (`ativo` em `$attributes`, `:106-108`) | nenhuma |
+| "`ativo` não é auditado" | ✔ confirmado: `AuditsFillables.php:21-23` + `User.php:89-94` (`ativo` em `$attributes`, `:106-108`) | nenhuma |
 | "`USER_MENU_BEFORE` renderiza fora do dropdown" | ✔ confirmado: `user-menu.blade.php:38` vs. `<x-filament::dropdown>` em `:40`; `USER_MENU_PROFILE_BEFORE` em `:92`, `:105`, `:128`, `:143` | nenhuma |
 | "o kit está em Filament 5.7.6 e o page-header exige ^5.8.1" | ✔ confirmado no `composer.lock` | nenhuma |
 | "`config('kit.version')` é a tag do release, logo serve ao RQ-02" | **errado** — é a tag **do kit**, não a do produto | RQ-02 substituída por RQ-17 no **Adendo 2**; passo 3 reescrito; ADR-04 reescrita |

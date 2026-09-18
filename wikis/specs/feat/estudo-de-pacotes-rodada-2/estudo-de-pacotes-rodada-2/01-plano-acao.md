@@ -78,13 +78,13 @@ ao lado de `configuraBotaoVoltarAoTopo()`, e pelo mesmo motivo documentado lá: 
 hook vale para os três painéis e para qualquer painel que o projeto criar depois.
 
 ### `app/Traits/AuditsFillables.php`
-`getAuditInclude()` devolve `getFillable()` (`:17`). O docblock declara a regra certa — *"o que o
+`getAuditInclude()` devolvia `getFillable()` (`:17` antes desta entrega; `:21-23` depois). O docblock declara a regra certa — *"o que o
 usuário pode alterar é o que fica registrado"* — mas `getFillable()` é um proxy errado para ela:
 `ativo` é alterável pelo administrador via Action e **não** é fillable. Passo 4.
 
 ### `app/Models/User.php`
 `$fillable` = `name, email, password, avatar_url` (`:89-94`); `ativo` vive em `$attributes`
-(`:106-108`). `desativar()` grava com `forceFill(['ativo' => false])->save()` (`:291`) — o evento
+(`:106-108`). `desativar()` grava com `forceFill(['ativo' => false])->save()` (`:307`) — o evento
 `updated` dispara, o auditor observa, e o atributo é descartado pelo filtro do `getAuditInclude()`.
 `getFilamentAvatarUrl()` devolve `null` sem avatar (`:841-845`), que é o que faz o Filament cair no
 `defaultAvatarProvider`.
@@ -302,7 +302,7 @@ silêncio. É a necessidade por trás de RQ-03 e RQ-04, e o Filament já a resol
   ->unsavedChangesAlerts(fn (): bool => (bool) config('kit.alerta_alteracoes_nao_salvas'))
   ```
   **Closure, não escalar** — é o que torna a tela dona da decisão. `hasUnsavedChangesAlerts()`
-  chama `$this->evaluate()` (`HasUnsavedChangesAlerts.php:19-21`), então a Closure é avaliada no
+  chama `$this->evaluate()` (`HasUnsavedChangesAlerts.php:18-21`), então a Closure é avaliada no
   render, depois do alinhamento do `KitServiceProvider`. É a mesma razão já documentada para
   `->brandName()` e `->colors()` em `AdminPanelProvider.php:70-77`.
 - **Path 5**: `app/Filament/Admin/Pages/ConfiguracoesDoKit.php` — `Toggle` na aba **Kit**

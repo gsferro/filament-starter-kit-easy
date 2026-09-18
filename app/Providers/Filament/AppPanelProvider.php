@@ -105,13 +105,9 @@ class AppPanelProvider extends PanelProvider
              */
             ->defaultAvatarProvider(AvatarDeIniciais::class)
             /*
-             * Avisa antes de sair de um formulário com alteração não salva — o Filament nasce
-             * com isto DESLIGADO (`Panel/Concerns/HasUnsavedChangesAlerts.php:9`).
-             *
-             * `Closure` e não escalar, pela mesma razão que `->brandName()` acima já documenta:
-             * escalar congela na construção do painel, e o valor do banco só chega no
-             * `aplicarNaConfig()`. `hasUnsavedChangesAlerts()` avalia no render (`:19-21`), então
-             * /admin/configuracoes-da-aplicacao governa de verdade. Ver ADR-02.
+             * O Filament nasce com isto DESLIGADO (`Panel/Concerns/HasUnsavedChangesAlerts.php:9`).
+             * `Closure` e não escalar pela mesma razão que `->brandName()` acima documenta — é o
+             * que faz /admin/configuracoes-da-aplicacao governar de verdade. Ver ADR-02.
              */
             ->unsavedChangesAlerts(fn (): bool => (bool) config('kit.alerta_alteracoes_nao_salvas'))
             ->sidebarCollapsibleOnDesktop()

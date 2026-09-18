@@ -104,12 +104,12 @@ Nenhum dos dois pacotes é adotado.
 
 `.ai/rules/settings.md` proíbe virar Settings a chave lida **no boot**. Esta é lida **por request**:
 `hasUnsavedChangesAlerts()` chama `$this->evaluate()` sobre a Closure
-(`HasUnsavedChangesAlerts.php:19-21`), e a avaliação acontece no render. Sem decisor extra, ao
+(`HasUnsavedChangesAlerts.php:18-21`), e a avaliação acontece no render. Sem decisor extra, ao
 contrário do que `registro_verificar_email` precisou.
 
 ### Referências
 
-- `vendor/filament/filament/src/Panel/Concerns/HasUnsavedChangesAlerts.php:9,19-21`
+- `vendor/filament/filament/src/Panel/Concerns/HasUnsavedChangesAlerts.php:9,18-21`
 - `.ai/rules/settings.md`
 
 ---
@@ -264,14 +264,14 @@ O modo de falhar seria a versão aparecendo para visitante, com o diff parecendo
 
 ### Contexto
 
-`App\Traits\AuditsFillables::getAuditInclude()` devolvia `getFillable()` (`:17`). O docblock
+`App\Traits\AuditsFillables::getAuditInclude()` devolvia `getFillable()`. O docblock
 declarava a regra certa — *"o que o usuário pode alterar é o que fica registrado"* — mas
 `getFillable()` é um proxy errado para ela.
 
 `users.ativo` vive em `$attributes` (`app/Models/User.php:106-108`) e **nunca** em `$fillable`,
 porque `User::create($request->all())` com `ativo` fillable deixaria qualquer formulário destrancar
 uma conta. Quem a escreve é `desativar()`/`reativar()`, com `forceFill(...)->save()`
-(`User.php:291`, `:310`): o evento `updated` dispara, o auditor observa, e o atributo era descartado
+(`User.php:307`, `:326`): o evento `updated` dispara, o auditor observa, e o atributo era descartado
 pelo filtro.
 
 Resultado medido: **desativar uma conta não aparecia em `/infra/audits`**. A trilha registrava a

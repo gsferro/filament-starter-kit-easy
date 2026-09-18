@@ -12,7 +12,7 @@ use OwenIt\Auditing\Models\Audit;
  *
  * `App\Traits\AuditsFillables::getAuditInclude()` devolvia `getFillable()`, e `users.ativo`
  * **nunca** é `$fillable` — atribuição em massa com ela destrancaria conta. Quem a escreve é
- * `desativar()`/`reativar()`, com `forceFill(...)->save()` (`app/Models/User.php:291`, `:310`):
+ * `desativar()`/`reativar()`, com `forceFill(...)->save()` (`app/Models/User.php:307`, `:326`):
  * o evento `updated` dispara, o auditor observa, e o atributo era descartado pelo filtro.
  *
  * Resultado: a trilha registrava a troca do NOME do usuário e não registrava o CORTE DO ACESSO

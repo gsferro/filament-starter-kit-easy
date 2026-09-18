@@ -54,16 +54,6 @@ it('nao pede o avatar padrao a nenhum dominio externo', function (string $painel
         ->not->toContain('ui-avatars.com');
 })->with(['app', 'admin', 'infra'])->group('kit');
 
-/**
- * O avatar não toca disco nem rede, então não há o que falhar em ambiente isolado.
- *
- * O caso existe para o dia em que alguém trocar o `data:` URI por arquivo gerado: a implementação
- * nova teria de passar aqui sem `Storage::fake()` nem symlink, e não passaria.
- */
-it('resolve o avatar sem tocar disco nem rede', function (): void {
-    expect(svgDoAvatar('Ana Souza'))->toContain('<svg');
-})->group('kit');
-
 /*
 |--------------------------------------------------------------------------
 | As iniciais

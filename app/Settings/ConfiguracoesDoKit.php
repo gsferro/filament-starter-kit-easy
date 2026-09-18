@@ -137,7 +137,7 @@ final class ConfiguracoesDoKit extends Settings
      * Pode viver aqui — e a regra de `.ai/rules/settings.md` é sobre QUANDO a chave é lida, não
      * sobre qual ela é. Os três painéis a leem por `Closure` em `->unsavedChangesAlerts()`, e
      * `hasUnsavedChangesAlerts()` avalia a Closure no render
-     * (`vendor/filament/filament/src/Panel/Concerns/HasUnsavedChangesAlerts.php:19-21`), não na
+     * (`vendor/filament/filament/src/Panel/Concerns/HasUnsavedChangesAlerts.php:18-21`), não na
      * construção do painel. É leitura POR REQUEST, então o toggle faz efeito na hora — sem o
      * decisor extra que `registro_verificar_email` precisou.
      */
