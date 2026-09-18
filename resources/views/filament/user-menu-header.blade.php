@@ -1,20 +1,26 @@
 {{--
     Cabeçalho do menu do usuário: avatar + nome + e-mail + badge do papel.
 
-    Registrada nos TRÊS painéis por `PanelsRenderHook::USER_MENU_PROFILE_BEFORE`, que
-    emite DENTRO do dropdown, logo acima do item "Meu perfil".
+    Registrada nos TRÊS painéis por `PanelsRenderHook::USER_MENU_PROFILE_BEFORE`, que emite
+    DENTRO do dropdown, logo acima do item "Meu perfil"
+    (`vendor/filament/filament/resources/views/components/user-menu.blade.php:92`, e de novo em
+    `:105`, `:128` e `:143`, um por variação de layout do menu).
 
-    Atenção ao ler o provider: o hook irmão logo acima (`GLOBAL_SEARCH_BEFORE`, do
-    gatilho ⌘K) tem um comentário dizendo que `USER_MENU_BEFORE` foi REJEITADO por
-    renderizar dentro do dropdown. Não é contradição — é o mesmo fato usado ao
-    contrário. Lá o conteúdo tinha de ficar na topbar; aqui ele tem de ficar dentro.
+    Não confundir com o irmão `USER_MENU_BEFORE`: ele é emitido em `:38`, ANTES e FORA do
+    `<x-filament::dropdown>` que abre na linha 40 — ou seja, na topbar, colado ao avatar, e não
+    dentro do menu. Até 2026-09-18 esta blade e os três providers afirmavam o contrário.
 
     Blade puro, sem estado, na raiz de `views/filament/` pelo mesmo motivo do
     `spotlight-trigger`: é conteúdo de painel, não de página, e serve os três.
 
     O avatar é `x-filament-panels::avatar.user`, o componente do próprio Filament —
-    ele já consome `User::getFilamentAvatarUrl()` e cai no fallback ui-avatars quando
-    não há upload. Montar um `<img>` aqui seria reescrever o fallback.
+    ele já consome `User::getFilamentAvatarUrl()` e, quando não há upload, cai no
+    `defaultAvatarProvider` do painel. Montar um `<img>` aqui seria reescrever o fallback.
+
+    Esse fallback deixou de ser o `ui-avatars.com` em 2026-09-18: os três painéis declaram
+    `->defaultAvatarProvider(App\Support\AvatarDeIniciais::class)`, que desenha as iniciais num
+    SVG embutido. Antes disso, este componente fazia o navegador de cada pessoa requisitar um
+    domínio de terceiro em toda tela.
 
     `truncate` + `title` em nome e e-mail: o dropdown tem largura fixa, e um nome
     longo o alargaria por cima do resto da topbar.

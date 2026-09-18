@@ -13,6 +13,7 @@ use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Livewire\DefinirSenhaPorEmail;
+use App\Support\AvatarDeIniciais;
 use App\Support\CorPrimaria;
 use App\Support\IdentidadeDoKit;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
@@ -84,6 +85,24 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogoHeight('2rem')
             ->favicon(fn (): ?string => IdentidadeDoKit::favicon())
             ->colors(fn (): array => CorPrimaria::paleta())
+            /*
+             * Avatar de quem não enviou foto, desenhado no kit. Sem esta linha vale o
+             * `UiAvatarsProvider` do Filament (`Panel/Concerns/HasAvatars.php:10`), que devolve
+             * uma URL de `ui-avatars.com` — e o navegador de cada pessoa passa a requisitar um
+             * domínio de terceiro em toda tela, com as iniciais na query string e o `Referer` do
+             * painel junto. O porquê completo está em `App\Support\AvatarDeIniciais`.
+             */
+            ->defaultAvatarProvider(AvatarDeIniciais::class)
+            /*
+             * Avisa antes de sair de um formulário com alteração não salva — o Filament nasce
+             * com isto DESLIGADO (`Panel/Concerns/HasUnsavedChangesAlerts.php:9`).
+             *
+             * `Closure` e não escalar, pela mesma razão que `->brandName()` acima já documenta:
+             * escalar congela na construção do painel, e o valor do banco só chega no
+             * `aplicarNaConfig()`. `hasUnsavedChangesAlerts()` avalia no render (`:19-21`), então
+             * /admin/configuracoes-da-aplicacao governa de verdade. Ver ADR-02.
+             */
+            ->unsavedChangesAlerts(fn (): bool => (bool) config('kit.alerta_alteracoes_nao_salvas'))
             ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth(Width::Full)
             ->subNavigationPosition(SubNavigationPosition::Top)
@@ -313,11 +332,22 @@ class AdminPanelProvider extends PanelProvider
             /*
              * Gatilho da busca ⌘K, no lugar exato do campo nativo.
              *
-             * GLOBAL_SEARCH_BEFORE (e não USER_MENU_BEFORE, que renderiza
-             * DENTRO do dropdown do usuário): o hook é emitido pela topbar
-             * incondicionalmente — o `disableDefaultGlobalSearch()` guarda o
-             * componente Livewire da busca, não o hook. Então a topbar mantém
-             * a mesma aparência de sempre, e o clique abre o overlay.
+             * GLOBAL_SEARCH_BEFORE, e não USER_MENU_BEFORE: o gatilho tem de nascer
+             * no lugar EXATO do campo de busca nativo, e é só este hook que ocupa
+             * essa posição. O hook é emitido pela topbar incondicionalmente — o
+             * `disableDefaultGlobalSearch()` guarda o componente Livewire da busca,
+             * não o hook. Então a topbar mantém a mesma aparência de sempre, e o
+             * clique abre o overlay.
+             *
+             * Correção de fato, 2026-09-18: até aqui este comentário dizia que o
+             * USER_MENU_BEFORE fora rejeitado por "renderizar DENTRO do dropdown do
+             * usuário". Ele NÃO renderiza dentro. No Filament 5 instalado ele é
+             * emitido em
+             * `vendor/filament/filament/resources/views/components/user-menu.blade.php:38`,
+             * ANTES e FORA do `<x-filament::dropdown>` que abre na linha 40 — ou seja,
+             * também na topbar, colado ao avatar. A escolha continua certa; a
+             * justificativa estava errada, que é o padrão que `.ai/rules/specs.md`
+             * nomeia: conclusão certa por outro motivo, e por isso invisível.
              */
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
@@ -326,10 +356,14 @@ class AdminPanelProvider extends PanelProvider
             /*
              * Cabeçalho de identidade: avatar, nome, e-mail e o badge do papel.
              *
-             * USER_MENU_PROFILE_BEFORE renderiza DENTRO do dropdown, e é por isso
-             * que ele serve aqui. Não contradiz o bloco de cima: lá o gatilho ⌘K
-             * precisava ficar na TOPBAR, e foi esse mesmo fato que desqualificou o
-             * USER_MENU_BEFORE. Mesmo comportamento, exigência oposta.
+             * USER_MENU_PROFILE_BEFORE é o hook que renderiza DENTRO do dropdown
+             * (`user-menu.blade.php:92`, e de novo em `:105`, `:128` e `:143`, um por
+             * variação de layout do menu), e é por isso que ele serve aqui.
+             *
+             * O par com o bloco de cima é de POSIÇÃO, não de dentro/fora: lá o gatilho
+             * ⌘K tinha de cair onde ficava o campo de busca; aqui o cabeçalho tem de
+             * cair dentro do menu aberto. Os dois hooks do menu do usuário ficam na
+             * topbar; só este entra no dropdown.
              */
             ->renderHook(
                 PanelsRenderHook::USER_MENU_PROFILE_BEFORE,
