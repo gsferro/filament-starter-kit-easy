@@ -59,6 +59,25 @@
 - [ ] Blueprint: `composer bp:on` → aderência → `composer bp:off`
 - [ ] Bump de `config/kit.php` → `version` (é passo de **release**, não desta feature — ver Notas)
 
+## 10. Atualizar o Filament para a versão corrente da série
+
+<!-- Passo novo, do Adendo 1 (RQ-14/RQ-15/RQ-16), exigido pelo achado QA-01 do ciclo 1. -->
+
+- [x] `composer update "filament/*" --with-all-dependencies` — **v5.7.6 → v5.8.2**, 2026-09-18
+- [x] Constraint **mantida** em `^5.6` — RQ-14 proíbe travar, e subir para `^5.8` travaria quem está na 5.7, 2026-09-18
+- [x] Assets republicados pelo `post-update-cmd` (`public/js/filament/**`, `public/fonts/filament/**`), 2026-09-18
+- [x] ADR-08 registra o limite de RQ-16: o `kit:update` **notifica**, não propaga (`KitUpdate.php:299-306`, `:960-970`), 2026-09-18
+- [x] `composer test` pós-bump — **2464/2464**, 9604 asserções, 2026-09-18
+- [x] `composer test:browser` pós-bump — **61 verdes / 14 pulados / 0 falhas**, 2026-09-18
+
+## 11. Correção do `(bool) env()` na exibição da versão do kit
+
+<!-- Achado D2 da reconciliação (step 7), fechado no ciclo 2. -->
+
+- [x] CT-09 escrito **antes** da correção e confirmado **vermelho** em `off`/`no`/`talvez`, 2026-09-18
+- [x] `config/kit.php` → `BooleanoDoEnv::comPadrao(env('KIT_EXIBIR_VERSAO'), false)`, 2026-09-18
+- [x] CT-09 verde depois da correção, 2026-09-18
+
 ## Testes
 
 - [x] `tests/Kit/AvatarDeIniciaisTest.php` — 18 casos: domínio externo nos 3 painéis, iniciais (7 datasets), nome vazio, escape por parser XML, byte UTF-8 inválido, contraste, 2026-09-18
@@ -80,7 +99,8 @@
 - [x] `composer test:kit` — **2332/2332 verdes, 7821 asserções**, 2026-09-18
 - [x] Testes desta feature — 51/51 verdes nos arquivos novos, 2026-09-18
 - [x] **Falsificabilidade provada por `git stash`** — 22 de 49 casos vermelhos sem a implementação, 2026-09-18
-- [x] `composer test` (pint + phpstan + filacheck + Unit,Feature,Kit,Tenancy) — **2379/2379, 7955 asserções**, 2026-09-18
+- [x] `composer test` (pint + phpstan + filacheck + Unit,Feature,Kit,Tenancy) — **2464/2464, 9604 asserções**, já no Filament v5.8.2, 2026-09-18 *(alterado em 2026-09-18: a medição anterior, 2379/2379, era pré-bump)*
+- [x] `composer test:browser` — **61 verdes / 14 pulados / 0 falhas**, no Filament v5.8.2, 2026-09-18
 - [ ] `composer test:browser` — CT-B
 - [ ] `vendor/bin/pest --parallel --tia`
 - [ ] **Custo medido** — queries do caminho principal contra o `## Modelo de Execução` (esperado: 0 query nova)
@@ -100,7 +120,7 @@
 | `filament.md` | `app/Filament/**` | aplicada | Nenhum Resource, Page ou Widget novo → nenhuma permission nova; `filacheck` 17/17 |
 | `pages.md` | `app/Filament/Admin/Pages/**` | aplicada | Campos novos entram no `form()` existente; nenhum segredo acrescentado, logo `mutateFormDataBeforeFill()` intocado |
 | `settings.md` | `app/Settings/**` | aplicada | As três chaves são lidas **por request** (Closure no painel, `config()` na blade), nunca no boot. Contrato de três lugares cumprido: propriedade + `mapaDeConfiguracao()` + migration **nova** |
-| `config.md` | `config/**` | aplicada | `BooleanoDoEnv::comPadrao()` na chave com default `true`; `(bool) env()` só na de default `false`, com o motivo escrito |
+| `config.md` | `config/**` | aplicada | `BooleanoDoEnv::comPadrao()` nas **duas** chaves novas. A redação anterior desta linha dizia *"`(bool) env()` só na de default `false`, com o motivo escrito"* e **virou falsa** no ciclo 2: o motivo escrito cobria a partição vazia × ausente e não a do vocabulário (`off`, `no`), e `off` ligava a exibição. Ver o passo 11 |
 | `providers-filament.md` | `app/Providers/Filament/**` | aplicada | Nenhum plugin novo; nenhuma resolução de `Plugin::get()` no boot |
 | `providers.md` | `app/Providers/**` | aplicada | Render hook global sem `scopes:`, no padrão já documentado de `configuraBotaoVoltarAoTopo()` |
 | `models.md` | `app/Models/**` | aplicada | `auditaAlemDoFillable()` não altera `$fillable` nem `$casts` |
@@ -114,8 +134,64 @@
 
 <!-- Preenchido no step 8. Enquanto vazio, a feature NÃO está concluída e o PR não abre. -->
 
-- **Ciclo**: — · **Veredito**: — · **Data**: —
-- **Relatório**: `06-relatorio-qa.md` (ainda não gerado)
+- **Ciclo**: 1 · **Veredito**: **REPROVADO → especificação** · **Data**: 2026-09-18
+- **Relatório**: `06-relatorio-qa.md`
+- **Contagem**: Blocker 1 · Major 3 · Minor 4 · Cosmético 1
+- **Medido pelo gate** (não pelo implementador): `Kit,Tenancy --parallel` 2446/2446 · `Browser` 75 casos, 61 verdes / 14 pulados / 0 falhas · os 8 arquivos da feature 181/181
+
+### Achados abertos
+
+| # | Achado | Sev. | Destino |
+|---|---|---|---|
+| QA-01 | RQ-15 não entregue: Filament 5.8.2 publicado, kit em 5.7.6, `composer.json`/`.lock` intocados | **Blocker** | 2 |
+| QA-02 | `01-plano-acao.md` nunca reconciliado com o Adendo 2 (sem linha para RQ-13…RQ-18; passo 3 e env/UI defasados) | Major | 1 |
+| QA-03 | Docblock de `configuraVersaoNoRodape()` e cabeçalho da CSS ainda dizem `config("kit.version")` | Major | 1 |
+| QA-04 | RQ-16: `kit:update` nunca propaga `composer.json` (`KitUpdate.php:299-306`, `:960-970`) | Major | 1 |
+| QA-05 | `User.php:841-845` citada 4× para `getFilamentAvatarUrl()`, que está em `:857-862`; `01` passo 4 cita `:291` em vez de `:307` | Minor | 1 |
+| QA-06 | Referências cruzadas de ADR trocadas (ADR-03 ↔ ADR-02; ADR-05 ↔ ADR-03) | Minor | 1 |
+| QA-07 | As 10 perguntas do `04` nunca viraram Adendo 3 no `00` | Minor | 1 |
+| QA-08 | Verificação Final aberta: ciclo do Blueprint (RQ-11) e `ponytail-review` | Minor | 2 |
+| QA-09 | `versao-do-kit.blade.php` renderiza primariamente a versão do sistema | Cosmético | 1 |
+
+### Débitos aceitos
+
+- Dimensão H: o rodapé novo não é coberto por `assertNoAccessibilityIssues()` — some-se à DT-12.
+- Pergunta nº 10 do `04`: barreira separada de leitura e de escrita na tela de configurações.
+
+> **L1 medida em estado transitório**, com o `04` sendo reescrito por outro agente no mesmo
+> minuto. 19 IDs só no teste, nenhum só no `04`/`05`. Reconferir no ciclo 2.
+
+> **Os 3 achados do `/code-review` foram conferidos e procedem** — não recontados como novos.
+
+### Ciclo 2 — 2026-09-18
+
+- **Ciclo**: 2 · **Veredito**: **REPROVADO → especificação** · **Data**: 2026-09-18
+- **Relatório**: `06-relatorio-qa.md` › `# Ciclo 2` (o Ciclo 1 foi preservado)
+- **Contagem**: Blocker 0 · Major 5 · Minor 4 · Cosmético 0
+- **Medido pelo gate, já com o Filament v5.8.2**: `Kit,Tenancy --parallel` **2461/2461**
+  (9600 asserções, 0 falhas) · os 8 arquivos da feature **196/196** (1977 asserções)
+
+**Fechados no ciclo 1**: QA-01 (Blocker), QA-03, QA-04, QA-06, QA-07.
+**Parciais**: QA-02 → QA-12 · QA-05 → QA-18. **Aberto**: QA-08 → QA-15.
+
+| # | Achado | Sev. | Destino |
+|---|---|---|---|
+| QA-10 | O bump para v5.8.2 moveu 9 âncoras de `vendor/` sob as citações — 5 arquivos de produção e 6 de wiki | **Major** | 1 |
+| QA-11 | O `04` ainda diz CT-09 "sem teste" e M11 vivo; CT-46/CT-47 fora do Índice; `[CT-38]` em 2 arquivos | **Major** | 1 |
+| QA-12 | QA-02 fechado pela metade: passo 3, `## Superfície de UI` e `## Variáveis de Ambiente` seguem pré-Adendo 2; RQ-20 aponta um passo que não fala de rótulo | **Major** | 1 |
+| QA-15 | O `03` não registra o passo 10 nem a correção de `config/kit.php`; a linha `config.md` da tabela de rules virou falsa; `composer test` registrado é pré-bump | **Major** | 1 |
+| QA-16 | A premissa nº 2 do `00` (rodapé não renderiza nada) é negada pelo código, por CT-01/CT-47 e pelas docs pt/en | **Major** | 1 |
+| QA-13 | A v5.8.2 mudou as iniciais do `UiAvatarsProvider`; ADR-03 e o docblock ainda afirmam paridade | Minor | 1 (e 3) |
+| QA-14 | CT-47 mantém o oráculo fraco que CT-46 perdeu; e CT-46/CT-01/CT-08 fixam forma e string que o Adendo 3 não fixa | Minor | 3 |
+| QA-17 | O `composer update` moveu 18 pacotes, 5 fora da família Filament; CHANGELOG, `01` e ADR-08 dizem "nove irmãs" | Minor | 1 |
+| QA-18 | `02:329` (ADR-05 › Referências) ainda cita `User.php:291` em vez de `:307` | Minor | 1 |
+
+> **L1 reconferida** (o ciclo 1 a deixou em estado transitório): o `04` agora tem o problema
+> inverso — IDs no teste que o Índice não registra (CT-46, CT-47) e um Índice que descreve o
+> estado anterior à correção. Ver QA-11.
+
+> **Os três achados encontrados e corrigidos pelo solicitante foram reavaliados**: os três
+> procedem; o de CT-46 fechou só metade da classe. Ver `06 › Ciclo 2 › Os três achados`.
 
 ## Auditoria Pré-Implementação
 
@@ -126,7 +202,7 @@
 | "o provider padrão do Filament é `UiAvatarsProvider` e o kit não sobrescreve" | ✔ confirmado: `HasAvatars.php:10`; `grep -rn "defaultAvatarProvider" app/` vazio | nenhuma — premissa correta |
 | "`unsavedChangesAlerts` nasce `false` e o kit não liga" | ✔ confirmado: `HasUnsavedChangesAlerts.php:9`; `grep` em `app/` vazio | nenhuma |
 | "`ativo` não é auditado" | ✔ confirmado: `AuditsFillables.php:21-23` + `User.php:89-94` (`ativo` em `$attributes`, `:106-108`) | nenhuma |
-| "`USER_MENU_BEFORE` renderiza fora do dropdown" | ✔ confirmado: `user-menu.blade.php:38` vs. `<x-filament::dropdown>` em `:40`; `USER_MENU_PROFILE_BEFORE` em `:92`, `:105`, `:128`, `:143` | nenhuma |
+| "`USER_MENU_BEFORE` renderiza fora do dropdown" | ✔ confirmado: `user-menu.blade.php:43` vs. `<x-filament::dropdown>` em `:40`; `USER_MENU_PROFILE_BEFORE` em `:97`, `:105`, `:128`, `:143` | nenhuma |
 | "o kit está em Filament 5.7.6 e o page-header exige ^5.8.1" | ✔ confirmado no `composer.lock` | nenhuma |
 | "`config('kit.version')` é a tag do release, logo serve ao RQ-02" | **errado** — é a tag **do kit**, não a do produto | RQ-02 substituída por RQ-17 no **Adendo 2**; passo 3 reescrito; ADR-04 reescrita |
 | "`Panel::configureUsing()` resolveria os dois registros num lugar só" | `Component` usa `Configurable`, mas `PanelProvider::register()` monta o painel na fase de **register** e `configuraFilamentGlobal()` roda no **boot** — a ordem não foi provada | recusada: os dois ficam explícitos nos três providers, que é o padrão já usado por `->colors()` e `->favicon()` |
@@ -240,7 +316,7 @@ disparar o gate — um arquivo novo esquecido no `.gitignore` teria passado desp
   funciona exigiria medir. Os dois registros ficaram explícitos nos três providers, que é o padrão
   que `->colors()`, `->favicon()` e `->brandName()` já usam. Menos esperto e verificável por leitura.
 - **O render hook `FOOTER` é emitido por dois layouts**, e isso não estava no plano inicial:
-  `layout/index.blade.php:122` (telas do painel) e `layout/simple.blade.php:58` (login, registro,
+  `layout/index.blade.php:126` (telas do painel) e `layout/simple.blade.php:61` (login, registro,
   recuperação de senha). É a razão de o guard de visitante existir, e ele é o ponto mais frágil do
   passo 3 — daí `filament()->auth()->check()` em vez de `@auth`, que consultaria o guard default.
 - **A CSS da versão não declara cor de propósito.** Herda a do tema e aplica só `opacity`, o que a

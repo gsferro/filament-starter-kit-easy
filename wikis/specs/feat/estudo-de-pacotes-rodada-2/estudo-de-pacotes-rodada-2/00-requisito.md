@@ -67,6 +67,189 @@
   - **Assumido**: rodar a aderência. O kit já tem `tests/Kit/AderenciaAoBlueprintTest.php` e os scripts `composer bp:on` / `bp:off`, e `.ai/rules/general.md` proíbe que a dependência fique no `composer.json` commitado.
   - **Se negado**: o passo 7 do PRD muda conforme o uso pretendido.
 
+
+### Perguntas devolvidas pela `feature-test-design` (2026-09-18)
+
+As dez perguntas abaixo saíram da derivação dos casos de teste, e **cada uma tem premissa adotada,
+declarada, com a direção de falha e o "Se negado" escrito**. Não são suposições escondidas — são
+suposições que o dono do requisito ainda não viu. Chegaram aqui pelo achado **QA-07** do ciclo 1 do
+quality gate: o `04` as deixou prontas para colagem e ninguém as colou.
+
+**As três que precisavam de decisão foram respondidas**, e nenhuma segue como premissa:
+
+| Pergunta | Resposta | Onde |
+|---|---|---|
+| nº 1 — o avatar não tem cláusula própria | **sim, vira cláusula** | Adendo 3, RQ-19 |
+| nº 6 — o contrato do `kit:update` | **notifica, não propaga** — medido, não presumido | ADR-08 |
+| nº 9 — rótulo que distinga as duas versões | **sim, vira requisito** | Adendo 3, RQ-20 |
+
+As outras sete seguem na premissa adotada, cada uma com direção de falha e "Se negado" escritos.
+
+1. **O item "avatar padrão de iniciais" não tem cláusula própria.** Ele entra só por RQ-13 ("os 5
+   nativos"), e a lista dos cinco vive no `01`/`02`, não no `00`. Confirmar como **Adendo 3** com
+   uma cláusula própria, ou aceitar que R7/R8 fiquem permanentemente `@premissa`.
+   — *bloqueia R7, R8 (CT-20…CT-25).*
+   **Premissa adotada** (falha fechado): nenhum dado de usuário sai da aplicação para terceiro na
+   renderização de um avatar. **Se negado**: CT-21 inverte e passa a admitir o provider remoto.
+2. **Versão do sistema vazia com a versão do kit ligada** — o rodapé mostra só a do kit, mostra
+   nada, ou mostra um marcador de "sem versão"? O Adendo 2 decide as pontas (as duas preenchidas;
+   as duas vazias) e não decide o meio.
+   — *bloqueia a linha 3 de CT-01.*
+   **Premissa adotada** (falha fechado, corrigida pela revisão adversarial — a direção anterior era
+   a aberta): **o rodapé não renderiza nada**. A área recebeu Impacto 3 por divulgação de
+   informação; anunciar a versão do kit quando o produto não declarou a dele é abrir por
+   conveniência. **Invariante afirmado no mesmo cenário**, e ele vale nas duas leituras: nada no
+   rodapé apresenta a versão do kit como se fosse a do produto. **Se negado**, a linha 3 inverte
+   para "0.34.2, identificada como do kit" e o invariante fica como está.
+
+   **RESOLVIDA em 2026-09-18 — a premissa foi NEGADA, e o ramo "Se negado" é o que vale.** Achado
+   QA-16 do ciclo 2 do quality gate: o código mostra a versão do kit **rotulada**, e isso está em
+   CT-01 linha 3, em CT-47 e nas docs pt/en. Três coisas sustentam o ramo negado:
+
+   - o **Adendo 3 (RQ-20)** tornou o rótulo requisito, então `kit 0.34.2` sozinho **não** pode ser
+     lido como a versão do produto — que era exatamente o dano que a premissa previa;
+   - o interruptor **nasce desligado**, então este estado só existe quando alguém o ligou de
+     propósito. Não é abertura por conveniência, é escolha declarada;
+   - o invariante **continua valendo**, como o próprio "Se negado" antecipava, e agora é asserível
+     (CT-47), em vez de prosa.
+
+   O que mudou não foi o invariante — foi o ramo da linha 3. A premissa está fechada; o que segue
+   em aberto é só a preferência do solicitante, caso ele prefira o rodapé mudo nesse caso.
+3. **`versao_do_sistema` tem limite de tamanho ou formato?** O Adendo 2 diz "texto livre"
+   (SemVer, data ou número de build), e texto livre sem limite entra no HTML de **toda** tela dos
+   três painéis.
+   — *bloqueia CT-44.*
+   **Premissa adotada**: o requisito não decide, e **o cenário não escolhe por ele** — CT-44 tem
+   `Então` disjuntivo (*ou grava inteiro, ou recusa*) e afirma o invariante que vale nas duas
+   leituras: **nunca trunca em silêncio**. A revisão adversarial mostrou que a versão anterior
+   escolhia a direção aberta ("grava 1024 caracteres") e, se negada, **inverteria** em vez de
+   continuar valendo — que é a definição de premissa mal fixada. **Se negado** (houver limite),
+   CT-44 fixa o ramo da recusa e o limite vira borda de BVA.
+4. **O alerta de alterações não salvas nasce ligado ou desligado?** RQ-03/RQ-04 pedem
+   "ativar/desativar conforme necessidade" e não dizem o estado inicial. O `01` escolheu ligado.
+   — *bloqueia CT-16.*
+   **Premissa adotada**: **ligado**. Aqui falha fechado aponta para ligado, não para desligado: o
+   modo de falha do alerta é incômodo (um clique para desligar), e o modo de falha da ausência é
+   perda de dado digitado, que é irreversível. **Invariante afirmado no mesmo cenário** (última
+   linha de CT-16, acrescentada pela revisão): qualquer que seja o default, a chave governa. **Se
+   negado**, só o valor de fábrica inverte.
+5. **A lista de colunas de fronteira de acesso auditadas está fechada em `ativo` e
+   `aprovacao_pendente`?** `deleted_at` (exclusão lógica) é fronteira de acesso pelo mesmo critério
+   e não está na lista.
+   — *não bloqueia mais nenhuma célula.* A revisão adversarial mostrou que usar esta premissa para
+   marcar quatro células como "não se aplica" era converter escolha de implementação em cobertura:
+   ela é premissa de **mecanismo** (como a exclusão aparece na trilha), não de escopo.
+   **Premissa adotada**: a lista das colunas **declaradas** fica fechada nas duas, e a coluna
+   `excluir` da matriz é exercitada assim mesmo, pelo invariante que vale nas duas leituras e que
+   CT-42 afirma — **a exclusão lógica de uma conta deixa registro na trilha**. Para uma regra de
+   compliance, falha fechado é auditar mais. **Se negado** (a exclusão também dever entrar pela
+   lista declarada), CT-42 ganha a asserção da coluna e as células viram `✅F`.
+6. **RQ-15 e RQ-16 têm oráculo verificável?** "Se sair atualização, atualize no starter-kit e os
+   projetos que o usarem" descreve um compromisso operacional contínuo, não um estado do
+   repositório. A constraint que o habilita é testável (R11); o cumprimento futuro não é.
+   — *bloqueia nada hoje; declara a lacuna.*
+   **Premissa adotada**: a constraint em caret é o oráculo aceito, e a atualização em si é
+   processo. **Se negado**, é preciso decidir qual artefato (data do `composer.lock`? um comando de
+   verificação?) passa a ser medido.
+   **Correção da revisão adversarial**: o `00` assume **dois** mecanismos de propagação — a
+   constraint em caret **e** `php artisan kit:update` —, e a lacuna L3 só justificava o descarte do
+   primeiro (rede/Packagist). O segundo existe no repositório e é testável. A pergunta que falta é
+   **qual contrato do `kit:update`** RQ-16 compra: ele deve propagar a constraint do Filament para
+   o `composer.json` do projeto? apenas avisar? nada? Sem isso, escrever o cenário seria inventar o
+   requisito. *bloqueia R11 pela metade.*
+7. **A aparência do avatar é requisito?** Fundo, cor de texto e contraste vêm do `02` (cinza fixo,
+   texto branco) e o `00` não diz nada.
+   — *bloqueia qualquer cenário de cor/contraste, que por isso não foi escrito.*
+   **Premissa adotada**: aparência não é requisito; só privacidade e legibilidade das iniciais são.
+8. **Os rótulos dos dois campos novos na tela são requisito?** O `00` não os determina.
+   — *bloqueia nada;* nenhum `Então` casa rótulo, de propósito.
+9. **A versão do kit precisa aparecer no rodapé com um rótulo que a distinga da versão do
+   sistema?** A pergunta nasce de uma contradição que a rodada 2 encontrou: o invariante da
+   premissa nº 2 — *nada no rodapé apresenta a versão do kit como se fosse a do produto* — só é
+   verificável casando **rótulo**, e a pergunta nº 8 declara que nenhum `Então` casa rótulo. Ou o
+   rótulo vira requisito (Adendo 3) e o invariante ganha forma operacional, ou o invariante
+   continua sendo prosa e a premissa nº 2 volta a ser lacuna cega. **Não há terceira saída**, e é
+   por isso que isto é pergunta e não decisão do derivador.
+   — *bloqueia o invariante de CT-01.*
+10. **A tela de configurações tem uma barreira só, para abrir e para gravar?** Se tiver, a variante
+    de defeito *"a autorização vive só no `mount`"* é **inexpressável** — CT-11 e CT-41 entram pela
+    mesma porta e recusam juntos. Se houver (ou dever haver) permissão separada de leitura e de
+    escrita, CT-41 ganha a persona que monta e não grava, e a linha do checklist deixa de ser
+    cobertura parcial.
+    — *bloqueia o fechamento de L7.*
+
+---
+
+> **A nº 6 foi respondida em 2026-09-18, por ADR-08.** O contrato do `kit:update` foi medido, não
+> presumido: `app/Console/Commands/KitUpdate.php:299-306` lista `composer.json` entre os arquivos
+> que o comando **nunca** sobrescreve, e `:960-970` só emite aviso. Ele **notifica**, não propaga —
+> e isso é deliberado daquele comando, porque sobrescrever o `composer.json` de um projeto de
+> terceiro apagaria as dependências que ele acrescentou. RQ-16 fica **atendida parcialmente, com o
+> limite declarado**. Continua sendo ⚠️ apenas se o solicitante quiser um contrato diferente.
+
+> **Sobre a nº 9**: a implementação **já** distingue — o rodapé emite `kit 0.34.2`, com o prefixo
+> literal `kit `, ao lado de `v2.4.1`. Então o invariante da premissa nº 2 *é* verificável hoje. O
+> que falta é decidir se esse rótulo é **requisito** (e então vira Adendo 3, com cenário que o
+> casa) ou detalhe de implementação (e então o invariante continua sendo prosa). É a única das dez
+> em que a resposta muda um cenário existente.
+
+
+## Adendo 3 — 2026-09-18
+
+- **Fonte**: resposta do solicitante às perguntas nº 1 e nº 9 devolvidas pela `feature-test-design`,
+  apresentadas a ele durante o ciclo 1 do quality gate
+- **Fidelidade**: alta (texto escrito)
+
+### Texto Original
+
+<!-- IMUTÁVEL. A resposta é curta porque as perguntas eram fechadas; elas estão transcritas
+     abaixo, na íntegra, porque sem elas o "sim pros dois" não tem referente. -->
+
+> sim pros dois, vira adendo 3
+
+**As duas perguntas a que ele responde**, como foram feitas:
+
+> **nº 1 — o avatar de iniciais não tem cláusula própria no requisito.** Ele entra só por RQ-13
+> ("os 5 nativos"), e a lista dos cinco vive no `01`/`02`, não no `00`. Pela matriz de
+> rastreabilidade isso é *código sem RQ* — a maior mudança de privacidade da entrega não tem linha
+> no requisito. Vira **Adendo 3** com cláusula própria, ou aceito que as regras R7/R8 fiquem
+> permanentemente `@premissa`?
+>
+> **nº 9 — a versão do kit precisa de rótulo que a distinga da do sistema?** A implementação
+> **já** distingue: o rodapé emite `v2.4.1 · kit 0.34.2`, com o prefixo literal `kit `. Se esse
+> rótulo for requisito, ele vira Adendo 3 e ganha cenário que o casa; se for detalhe de
+> implementação, o invariante *"nada no rodapé apresenta a versão do kit como se fosse a do
+> produto"* continua sendo prosa, sem teste que o prove.
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-19 | Nenhum dado do usuário sai da aplicação para um terceiro na renderização de um avatar | "sim pros dois" → pergunta nº 1 | funcional | — |
+| RQ-20 | A versão do kit, quando exibida, carrega rótulo que a distingue da versão do sistema | "sim pros dois" → pergunta nº 9 | funcional | — |
+
+### O que este adendo fecha
+
+**RQ-19** tira o avatar de iniciais da condição de *código sem `RQ`*. Ele era a maior mudança de
+privacidade da entrega e entrava no requisito apenas de raspão, por RQ-13 ("implementar os cinco
+nativos") — uma cláusula sobre **quantidade de itens**, não sobre **o que cada um garante**. As
+regras R7 e R8 do `04` deixam de ser `@premissa` e passam a ter origem própria.
+
+A cláusula é escrita como **garantia**, não como implementação: *"nenhum dado sai para terceiro"*.
+Desenhar iniciais num SVG embutido é **um** jeito de cumpri-la; gerar arquivo local é outro. O que
+o requisito proíbe é a requisição a terceiro, e é isso que o cenário assere.
+
+**RQ-20** dá forma operacional a um invariante que até aqui era prosa. A premissa nº 2 afirmava
+*"nada no rodapé apresenta a versão do kit como se fosse a do produto"*, e a pergunta nº 8 tinha
+declarado que nenhum `Então` casa rótulo — o que deixava o invariante sem como ser verificado. A
+rodada 2 da revisão adversarial registrou a contradição e escreveu *"não há terceira saída"*. Esta
+é a saída: o rótulo vira requisito.
+
+O texto do rótulo (`kit `) **não** é fixado pelo requisito — o que é exigido é que exista distinção
+legível entre as duas versões. Fixar a string seria o requisito escolhendo a redação da interface,
+que é o erro que a pergunta nº 8 evita.
+
+
 ## Fora de Escopo (declarado)
 
 - **Adotar qualquer um dos 10 pacotes.** A recusa de cada um está registrada em `wikis/pacotes-candidatos.md` §4 com o motivo, conforme o processo daquela página (§5).

@@ -165,7 +165,8 @@
 .dark:root .fi-topbar-item.fi-active .fi-topbar-item-label { color: var(--primary-400); }
 
 /*
-| A versão do kit no rodapé dos painéis (`filament/versao-do-kit.blade.php`).
+| A versão do SISTEMA no rodapé dos painéis (`filament/versao-do-kit.blade.php`), e a do
+| kit ao lado quando `kit.exibir_versao` está ligada.
 |
 | Registrada no render hook `FOOTER` por
 | `ConfiguraFilamentGlobal::configuraVersaoNoRodape()`. Sem esta folha o rodapé sairia

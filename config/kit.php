@@ -242,12 +242,25 @@ return [
     | tem por que anunciar de qual kit o projeto nasceu. Quem quer ver liga o toggle
     | em /admin/configuracoes-da-aplicacao, ou roda `php artisan kit:info`.
     |
-    | `(bool) env()` aqui é seguro, e pelo mesmo motivo do `KIT_HUB` mais abaixo: o
-    | default é `false`, que é justamente o valor para o qual o defeito da chave
-    | presente-e-vazia converge.
+    | ## `BooleanoDoEnv`, e a primeira redação daqui errava
+    |
+    | Esta chave nasceu com `(bool) env('KIT_EXIBIR_VERSAO', false)`, justificado assim: *"o
+    | default é `false`, que é justamente o valor para o qual o defeito da chave presente-e-vazia
+    | converge"*. A frase é verdadeira e responde a pergunta **errada**.
+    |
+    | A partição que importa não é "vazia × ausente" — é o **vocabulário**. `off`, `no`, `nao` e
+    | qualquer texto ilegível são formas correntes de escrever "não" num `.env`, e `(bool) 'off'`
+    | é `true` em PHP. Medido: `KIT_EXIBIR_VERSAO=off` **ligava** a exibição da versão do kit.
+    |
+    | O `KIT_HUB` mais abaixo continua com `(bool) env()` e continua correto — mas não pelo motivo
+    | que esta chave copiou: lá a intenção é só "ausente = desligado", e ninguém escreve `off`
+    | numa chave que o `kit:install` grava. Aqui a chave é editada à mão por quem entrega o
+    | produto, e é justamente quem escreveria `off`.
+    |
+    | Achado pela reconciliação do step 7 (divergência D2, mutante M11). Guarda: CT-09.
     */
 
-    'exibir_versao' => (bool) env('KIT_EXIBIR_VERSAO', false),
+    'exibir_versao' => BooleanoDoEnv::comPadrao(env('KIT_EXIBIR_VERSAO'), false),
 
     /*
     |--------------------------------------------------------------------------

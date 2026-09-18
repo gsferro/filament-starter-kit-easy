@@ -20,10 +20,10 @@ use Illuminate\Database\Eloquent\Model;
  * uma URL de terceiro:
  *
  *     https://ui-avatars.com/api/?name={iniciais}&format=svg&color=FFFFFF&background={hex}
- *     (vendor/filament/filament/src/AvatarProviders/UiAvatarsProvider.php:23)
+ *     (vendor/filament/filament/src/AvatarProviders/UiAvatarsProvider.php:29)
  *
  * Como `User::getFilamentAvatarUrl()` devolve `null` quando não há foto
- * (`app/Models/User.php:841-845`), o Filament caía nesse provider — e o NAVEGADOR
+ * (`app/Models/User.php:857-862`), o Filament caía nesse provider — e o NAVEGADOR
  * de cada pessoa passava a requisitar `ui-avatars.com` em toda tela dos três
  * painéis, levando as iniciais na query string e o `Referer` do painel junto.
  *
@@ -43,7 +43,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * ## Por que a aparência não muda
  *
- * O fundo sai da MESMA expressão do provider do vendor (`UiAvatarsProvider.php:21`)
+ * O fundo sai da MESMA expressão do provider do vendor (`UiAvatarsProvider.php:27`)
  * e o texto é branco, como o `color=FFFFFF` da URL dele. A troca é de origem, não
  * de visual: quem já usava o kit não vê diferença, e é de propósito — a correção
  * não deve pedir uma decisão de estética para ser aceita.
@@ -74,7 +74,7 @@ final class AvatarDeIniciais implements AvatarProvider
      *
      * Nome vazio devolve string vazia, e o SVG sai só com o fundo. Devolver algo
      * como "?" seria inventar conteúdo para um caso que o dado não tem — e o
-     * provider do vendor também não inventa (`UiAvatarsProvider.php:15-19`).
+     * provider do vendor também não inventa (`UiAvatarsProvider.php:15-21`).
      */
     private function iniciais(string $nome): string
     {

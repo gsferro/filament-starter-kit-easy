@@ -35,8 +35,8 @@
     ── O guard de visitante não é opcional ──
 
     Este hook é emitido por DOIS layouts: o do painel
-    (`vendor/filament/filament/resources/views/components/layout/index.blade.php:122`) e o
-    `simple` (`.../layout/simple.blade.php:58`), que é o das telas de login, registro e
+    (`vendor/filament/filament/resources/views/components/layout/index.blade.php:126`) e o
+    `simple` (`.../layout/simple.blade.php:61`), que é o das telas de login, registro e
     recuperação de senha. Sem o guard abaixo, a versão exata da instalação apareceria para
     QUALQUER visitante da tela de login — que é entregar o mapa de CVEs aplicáveis a quem ainda
     não autenticou.

@@ -130,10 +130,10 @@ A resposta, verificada no vendor e no kit:
 
 - `vendor/filament/filament/src/Panel/Concerns/HasAvatars.php:10` — o provider padrão é
   `UiAvatarsProvider`;
-- `vendor/filament/filament/src/AvatarProviders/UiAvatarsProvider.php:23` — ele devolve
+- `vendor/filament/filament/src/AvatarProviders/UiAvatarsProvider.php:29` — ele devolve
   `https://ui-avatars.com/api/?name={iniciais}&...`;
 - `grep -rn "defaultAvatarProvider" app/` — **vazio**: nenhum dos três painéis sobrescreve;
-- `app/Models/User.php:841-845` — `getFilamentAvatarUrl()` devolve `null` sem foto, que é a
+- `app/Models/User.php:857-862` — `getFilamentAvatarUrl()` devolve `null` sem foto, que é a
   condição que faz o Filament cair no provider.
 
 Ou seja: o navegador de cada pessoa requisitava um domínio de terceiro em **toda tela** dos três
@@ -179,7 +179,7 @@ contraste garantido em qualquer paleta — e é o que o provider do vendor já f
 ### Referências
 
 - `vendor/filament/filament/src/Panel/Concerns/HasAvatars.php:10`
-- `vendor/filament/filament/src/AvatarProviders/UiAvatarsProvider.php:21-23`
+- `vendor/filament/filament/src/AvatarProviders/UiAvatarsProvider.php:27-23`
 - `app/Support/AvatarDeIniciais.php`
 
 ---
@@ -253,7 +253,7 @@ O modo de falhar seria a versão aparecendo para visitante, com o diff parecendo
 
 - `config/app.php` (bloco "Versão do SISTEMA"), `config/kit.php` (`version`, `exibir_versao`)
 - `resources/views/filament/versao-do-kit.blade.php`
-- `vendor/filament/filament/resources/views/components/layout/simple.blade.php:58`
+- `vendor/filament/filament/resources/views/components/layout/simple.blade.php:61`
 
 ---
 
@@ -475,3 +475,88 @@ todo projeto que nasce dele.
 
 - `07-dossies-dos-pacotes.md` — o dossiê completo, por pacote
 - `wikis/pacotes-candidatos.md` §4, `wikis/pacotes-ranking.md`
+
+---
+
+## ADR-08: O kit acompanha o Filament sem travar, e o que ele NÃO propaga
+
+**Status**: Aceita
+**Data**: 2026-09-18
+**Origem**: Adendo 1 do `00-requisito.md` (RQ-14, RQ-15, RQ-16), e o achado QA-01 do ciclo 1 do
+quality gate
+
+### Contexto
+
+O Adendo 1 pediu três coisas que parecem uma: não travar a versão do Filament (RQ-14), atualizar o
+kit quando sair atualização (RQ-15), e fazer os projetos que usam o kit receberem a atualização
+(RQ-16).
+
+A primeira leitura tratou as três como uma só e verificou apenas a constraint: `composer.json`
+declara `filament/filament: ^5.6`, que permite toda a série 5.x. Conclusão registrada: *"a
+constraint nunca esteve travada, RQ-14 está satisfeita"*.
+
+**A conclusão estava certa e a entrega estava incompleta.** O quality gate mediu o que a wiki não
+mediu: `composer outdated "filament/*"` devolvia `5.7.6 ! 5.8.2`, e
+`git diff main...HEAD -- composer.json composer.lock` vinha **vazio**. RQ-15 tinha disparado e nada
+tinha sido feito — sem passo no PRD, sem CT, sem nota de adiamento. Pior: o próprio Adendo 1
+raciocinava a partir de *"Atualizado o Filament, esse motivo cai"*, como se o update tivesse
+acontecido.
+
+É omissão silenciosa com aparência de decisão, e é exatamente a classe que a dimensão A do quality
+gate existe para pegar.
+
+### Decisão
+
+Três partes, uma por cláusula:
+
+1. **RQ-14 — constraint em caret, nunca exata, nunca `*`.** `^5.6` permite 5.7, 5.8 e qualquer 5.x.
+   `*` seria travar ao contrário: um major do Filament entraria sozinho num `composer update` de
+   rotina e quebraria toda instalação do kit.
+2. **RQ-15 — o kit sobe para a versão corrente da série.** Feito nesta entrega:
+   `composer update "filament/*" --with-all-dependencies`, **v5.7.6 → v5.8.2**, com a suíte
+   completa como oráculo.
+3. **RQ-16 — atendida parcialmente, e o limite é declarado.** Ver abaixo.
+
+### O limite de RQ-16, medido e não presumido
+
+O `00` nomeou dois mecanismos de propagação. **Só o primeiro funciona:**
+
+| Mecanismo | O que faz de fato |
+|---|---|
+| A constraint em caret que o projeto herda | **funciona**: o projeto nasce com `^5.6` no próprio `composer.json`, e um `composer update` dele traz o Filament novo |
+| `php artisan kit:update` | **não propaga dependência.** `app/Console/Commands/KitUpdate.php:299-306` lista `composer.json` entre os arquivos que o comando **nunca** sobrescreve, e `:960-970` apenas emite aviso com instrução manual |
+
+Ou seja: o `kit:update` **notifica**, não atualiza. E isso é decisão deliberada daquele comando —
+sobrescrever o `composer.json` de um projeto de terceiro apagaria as dependências que ele
+acrescentou, que é um estrago muito maior que uma versão atrasada.
+
+**Consequência aceita**: um projeto que nasceu do kit e nunca roda `composer update` fica para
+trás, e nenhum mecanismo do kit o alcança. O que o kit garante é que **nada o impede** de
+atualizar — que é o que a constraint em caret compra.
+
+### Alternativas Consideradas
+
+1. **`kit:update` passar a mesclar o `composer.json` do projeto** — descartada. Merge de
+   `composer.json` de terceiro é destrutivo na melhor das hipóteses e insolúvel na pior (conflito
+   de constraint entre o que o kit quer e o que o projeto precisa).
+2. **Fixar a versão exata do Filament no kit** (`5.8.2` em vez de `^5.6`) — descartada: é o oposto
+   literal de RQ-14.
+3. **Afrouxar para `*`** — descartada: aceitaria major novo sem revisão.
+4. **Um comando novo `kit:deps`** que só reporta dependência desatualizada — descartada por
+   redundância: `mominalzaraa/filament-composer-release-notifier` já está instalado e faz
+   exatamente isso, com tela em `/infra`.
+
+### Consequências
+
+- **Positivas**: o kit publicado passa a nascer na 5.8.2; a constraint continua permitindo as
+  próximas sem intervenção; o limite de propagação fica escrito em vez de presumido.
+- **Negativas**: subir de minor traz mudanças de vendor que a suíte do kit cobre, mas o projeto do
+  usuário não — quem atualiza roda a própria suíte.
+- **Riscos**: um minor do Filament pode mudar comportamento de vendor que o kit consome
+  indiretamente. Mitigação: `composer test` completo como gate do bump, e é o que foi feito.
+
+### Referências
+
+- `composer.json` — `"filament/filament": "^5.6"`
+- `app/Console/Commands/KitUpdate.php:299-306`, `:960-970`
+- `06-relatorio-qa.md`, achados QA-01 e QA-04

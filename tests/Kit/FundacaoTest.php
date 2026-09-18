@@ -56,6 +56,13 @@ it('nega abilities de infra para quem não tem papel', function (): void {
  *
  * Os dois casos abaixo são o par: um prova que a extensão alcança as duas colunas, o outro prova
  * que ela não vaza para quem não a declara.
+ *
+ * **Sem CT, e por decisão declarada.** Eles afirmam sobre a LISTA que `getAuditInclude()` devolve,
+ * e a wiki `estudo-de-pacotes-rodada-2` desqualifica essa forma de oráculo: consultar a função
+ * prova que ela devolve o que devolve; só a linha gravada em `audits` prova que o auditor a
+ * respeita. Quem afirma sobre a linha é CT-26 e CT-31, em `tests/Kit/TrilhaDeEstadoDaContaTest.php`.
+ * Mantidos porque a asserção de ORDEM (`fillable` mais as duas, nessa ordem) é barata e fica
+ * vermelha se alguém trocar a soma por substituição antes de o auditor entrar em cena.
  */
 it('audita o fillable mais as colunas de fronteira de acesso do usuario', function (): void {
     $user = new User;

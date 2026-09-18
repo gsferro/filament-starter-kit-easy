@@ -47,6 +47,11 @@ como coincidência:
   (`M1`…`M62`) + **2** no `05` (`MB1`, `MB2`) · Sem matador: **3** (`M6`, `M31`, `M45`) e
   **5 parcialmente vivos** (`M5`, `M19`, `M53`, e o par de premissa das perguntas nº 9 e nº 10),
   todos em `## Lacunas declaradas` com o que foi tentado.
+- **`M11` foi vivo e está morto.** A reconciliação (step 7) o encontrou implementado em
+  `config/kit.php`, medido, e deixou CT-09 **deliberadamente sem teste** em vez de escrevê-lo já
+  verde contra o comportamento errado. O ciclo 2 do quality gate cobrou; CT-09 foi escrito, ficou
+  **vermelho**, e só então o `config/kit.php` passou a usar `BooleanoDoEnv::comPadrao()`. Ver
+  `## Reconciliação` › D2.
 - **Duas rodadas de revisão adversarial**, por sub-agentes independentes: a primeira achou 5
   implementações erradas que passavam no conjunto inteiro; a segunda achou mais 3 e mostrou que
   **metade dos cenários que a primeira criou eram oráculos posicionais**. O teto da skill é 2
@@ -111,8 +116,8 @@ composer test:browser                    # os CT-B, em série, com build e view:
 | R4 — a versão do sistema vem da tela, semeada por `APP_VERSION`, sem ler `.git` | A1 (padrão) | RQ-17 (tabela de decisões do Adendo 2) + `## Fora de escopo do adendo` | EP do campo + matriz persona × gravação + varredura de ausência | CT-10…CT-13, CT-38, CT-41, CT-44 |
 | R5 — o alerta de alterações não salvas é decidido por request, pelo Settings, nos três painéis | A2 (padrão) | RQ-03, RQ-04 (Ambiguidades resolvidas), RQ-13 | matriz painel × chave + rastreio do efeito por request | CT-14…CT-17 |
 | R6 — cada propriedade nova cumpre o contrato de três lugares, é semeada com o valor certo e é alinhada pelo bootstrap | A3 (padrão) | RQ-13 | invariante por reflexão + partição do valor semeado | CT-18, CT-19, CT-36, CT-39 |
-| R7 — o avatar padrão é gerado dentro da aplicação, sem requisição a terceiro, e é o da pessoa certa | A4 (padrão) | RQ-13 (`@premissa` — ver perguntas) | EP + par de falsificabilidade + par discriminante de personas | CT-20…CT-22, CT-45 |
-| R8 — as iniciais derivam do nome em toda partição de nome, sem quebrar o SVG | A4 (padrão) | RQ-13 (`@premissa`) | EP + normalização/identidade | CT-23…CT-25 |
+| R7 — o avatar padrão é gerado dentro da aplicação, sem requisição a terceiro, e é o da pessoa certa | A4 (padrão) | **RQ-19 (Adendo 3)** | EP + par de falsificabilidade + par discriminante de personas | CT-20…CT-22, CT-45 |
+| R8 — as iniciais derivam do nome em toda partição de nome, sem quebrar o SVG | A4 (padrão) | **RQ-19 (Adendo 3)** | EP + normalização/identidade | CT-23…CT-25 |
 | R9 — mudar a fronteira de acesso deixa linha na trilha, com o antes e o depois | A5 (padrão) | RQ-13 + `00 › Fora de Escopo` (item 4) | tabela estado × operação + rastreio de efeito | CT-26…CT-29, CT-40, CT-42 |
 | R10 — a extensão da trilha soma, não substitui, e não vaza para quem não a declara | A5 (padrão) | RQ-13 | par de falsificabilidade | CT-30, CT-31 |
 | R11 — o kit não trava a versão do Filament e não a abre para major novo | A6 (mínimo) | RQ-14 | EP da constraint | CT-32 |
@@ -176,6 +181,7 @@ Bloco pronto para colagem. Cada uma bloqueia o que está indicado.
 1. **O item "avatar padrão de iniciais" não tem cláusula própria.** Ele entra só por RQ-13 ("os 5
    nativos"), e a lista dos cinco vive no `01`/`02`, não no `00`. Confirmar como **Adendo 3** com
    uma cláusula própria, ou aceitar que R7/R8 fiquem permanentemente `@premissa`.
+   **RESPONDIDA em 2026-09-18: vira cláusula.** Adendo 3, RQ-19. R7 e R8 deixam de ser `@premissa`.
    — *bloqueia R7, R8 (CT-20…CT-25).*
    **Premissa adotada** (falha fechado): nenhum dado de usuário sai da aplicação para terceiro na
    renderização de um avatar. **Se negado**: CT-21 inverte e passa a admitir o provider remoto.
@@ -245,6 +251,7 @@ Bloco pronto para colagem. Cada uma bloqueia o que está indicado.
    continua sendo prosa e a premissa nº 2 volta a ser lacuna cega. **Não há terceira saída**, e é
    por isso que isto é pergunta e não decisão do derivador.
    — *bloqueia o invariante de CT-01.*
+   **RESPONDIDA em 2026-09-18: o rótulo vira requisito.** Adendo 3, RQ-20; regra R14, CT-46 e CT-47.
 10. **A tela de configurações tem uma barreira só, para abrir e para gravar?** Se tiver, a variante
     de defeito *"a autorização vive só no `mount`"* é **inexpressável** — CT-11 e CT-41 entram pela
     mesma porta e recusam juntos. Se houver (ou dever haver) permissão separada de leitura e de
@@ -331,7 +338,7 @@ Funcionalidade: Versão no rodapé dos painéis
         | sistema | kit       | mostra                        | # combinação                  |
         | 2.4.0   | ligada    | 2.4.0 e 0.34.2                | as duas                       |
         | 2.4.0   | desligada | 2.4.0, e nada de 0.34.2       | só a do sistema               |
-        |         | ligada    | nada — o rodapé não renderiza | @premissa — ver pergunta nº 2 |
+        |         | ligada    | 0.34.2, identificada como do kit | **virou requisito**: Adendo 3, RQ-20, e o invariante passou a ser asserível — CT-47 |
         |         | desligada | nada — o rodapé não renderiza | nenhuma                       |
 
     Cenário: [CT-02] a versão do sistema é a do produto, não a do kit
@@ -365,7 +372,7 @@ Funcionalidade: Versão no rodapé dos painéis
 página inteira é a assertion proibida desta regra: ela fica verde com a versão emitida na barra do
 topo, no menu lateral ou no corpo da tela, e a regra é sobre o **rodapé**. O recorte
 implementation-neutral vem do próprio vendor: nos dois layouts o hook `FOOTER` é emitido **depois**
-do fechamento do `</main>` (`layout/index.blade.php:122`, `layout/simple.blade.php:58`), então o
+do fechamento do `</main>` (`layout/index.blade.php:126`, `layout/simple.blade.php:61`), então o
 `Então` assere sobre o trecho do documento **posterior ao último `</main>`**. O kit não tem
 `data-testid`, e esta é a mesma dívida de seletor que `.ai/rules/testes-browser.md` já registra —
 declarada aqui para que ninguém a resolva casando texto na página inteira.
@@ -452,8 +459,8 @@ registrado pelo próprio teste no ponto de extensão do rodapé e provado na tel
 o `Http::fake()` desta regra — um mundo em que o efeito **poderia** acontecer.
 
 O fato que ele trava está medido no vendor instalado:
-`vendor/filament/filament/resources/views/components/layout/simple.blade.php:58` emite o mesmo
-`FOOTER` que `layout/index.blade.php:122`. Se um upgrade do Filament deixar de emitir, CT-37 fica
+`vendor/filament/filament/resources/views/components/layout/simple.blade.php:61` emite o mesmo
+`FOOTER` que `layout/index.blade.php:126`. Se um upgrade do Filament deixar de emitir, CT-37 fica
 vermelho e alguém descobre **antes** de o guard virar código morto.
 
 **As cinco partições foram conferidas contra as rotas reais** (`php artisan route:list`), e não
@@ -567,7 +574,7 @@ Funcionalidade: Versão no rodapé dos painéis
         | 2.4.0                 | 2.4.0                 | 2.4.0                 | SemVer           |
         | 2026-09-18            | 2026-09-18            | 2026-09-18            | data             |
         | 1                     | 1                     | 1                     | um caractere     |
-        | ` 2.4.0 `             | 2.4.0                 | 2.4.0                 | espaços nas bordas |
+        | ` 2.4.0 `             | ` 2.4.0 `             | ` 2.4.0 `             | espaços nas bordas — corrigido; ver `## Reconciliação` › D3 |
         | (vazio)               | (vazio)               | (nada — o rodapé some) | limpeza do campo |
 
     Cenário: [CT-38] limpar o campo apaga o rodapé mesmo com a versão do ambiente preenchida
@@ -841,7 +848,7 @@ onde o invariante equivalente já mora.
 
 ## Regra R7 — o avatar padrão é gerado dentro da aplicação, sem requisição a terceiro
 
-> `RQ-13` — `@premissa`, ver pergunta nº 1 · área A4, perfil **padrão** · técnica: EP + par de
+> `RQ-19` (**Adendo 3** — deixou de ser `@premissa`) · área A4, perfil **padrão** · técnica: EP + par de
 > falsificabilidade
 
 ```gherkin
@@ -925,7 +932,7 @@ CT-B02, no `05`, porque HTML ausente não prova rede ausente.
 
 ## Regra R8 — as iniciais derivam do nome em toda partição de nome, sem quebrar o SVG
 
-> `RQ-13` — `@premissa`, ver pergunta nº 1 · área A4, perfil **padrão** · técnica: EP +
+> `RQ-19` (**Adendo 3** — deixou de ser `@premissa`) · área A4, perfil **padrão** · técnica: EP +
 > normalização/identidade
 
 ```gherkin
@@ -952,17 +959,16 @@ Funcionalidade: Avatar padrão
         | (só espaços)          | (nenhum) | equivalente a vazio               |
 
     Cenário: [CT-24] nome com marcação não quebra a imagem nem injeta conteúdo
-      Dado um usuário chamado "<b>Ana</b> \"Zé\" & Cia"
+      Dado um usuário cujo nome contém "<", "&" ou aspas
       Quando o avatar padrão dele é gerado
       Então a imagem gerada é um documento XML bem formado
-      E o único texto dentro dela é "AZ"
+      E o texto dentro dela é a inicial CRUA, escapada e não descartada
       E ela não contém nenhum elemento além dos que o desenho do avatar usa
 
-    Cenário: [CT-25] registro sem nome nenhum não derruba a página
-      Dado um registro de usuário cujo nome é nulo
-      Quando o avatar padrão dele é gerado
-      Então uma imagem válida é devolvida, sem texto
-      E nenhuma exceção é lançada
+    # [CT-25] FUNDIDO EM CT-23 — inexpressável por tipo. O provider não lê `name` do registro:
+    # recebe o nome de `Filament::getNameForDefaultAvatar()`, declarado `: string`. Nome nulo
+    # estoura antes de chegar ao kit, e a partição alcançável é a string vazia, que CT-23 cobre.
+    # Ver `## Reconciliação` › D5.
 ```
 
 **Por que CT-24 afirma sobre o XML e não sobre a string**: uma implementação que escapasse só `&`
@@ -986,7 +992,7 @@ outro com ausência de valor.
 | M33 | `strtoupper()` em vez de `mb_strtoupper()`: "Ána" vira "Á" corrompido ou fica minúsculo | CT-23 (linha acentuada) |
 | M34 | `substr($nome, 0, 1)` em vez de `mb_substr`: nome unicode produz meio caractere e o XML quebra | CT-23 (linha unicode) + CT-24 |
 | M35 | o escape usa `htmlspecialchars` sem `ENT_QUOTES`, e a aspa dentro do atributo fecha o atributo | CT-24 |
-| M36 | nome vazio produz `substr()` em string vazia e o método lança, derrubando toda tela com avatar | CT-23 (linha vazia) + CT-25 |
+| M36 | nome vazio produz `substr()` em string vazia e o método lança, derrubando toda tela com avatar | CT-23 (linhas vazia e só espaços — CT-25 foi fundido nele) |
 | M37 | pega as iniciais do **primeiro e do último** termo em vez dos dois primeiros | CT-23 (linha de quatro termos) |
 
 ---
@@ -1121,7 +1127,7 @@ Funcionalidade: Trilha de auditoria da fronteira de acesso
         | desativada | desativar | desativada × desativar  |
         | desativada | aprovar   | desativada × aprovar    |
         | pendente   | reativar  | pendente × reativar     |
-        | excluída   | excluir   | excluída × excluir      |
+        | excluída   | excluir   | excluída × excluir — SEM LINHA de teste; ver `## Reconciliação` › D6 |
 
     Esquema do Cenário: [CT-29] editar só o nome não arrasta a coluna de fronteira, em nenhum estado
       Dado uma conta alvo no estado "<estado>" e uma administradora distinta dela
@@ -1275,6 +1281,58 @@ cenário inteiro enquanto deixa um major novo entrar sozinho, que é precisament
 
 ---
 
+## Regra R14 — a versão do kit, quando exibida, é distinguível da versão do sistema
+
+> `RQ-20` (**Adendo 3**) · área A1, perfil **padrão** · técnica: partição + par discriminante
+
+Esta regra **não existia** até o Adendo 3. O invariante que ela opera vinha da premissa nº 2 —
+*nada no rodapé apresenta a versão do kit como se fosse a do produto* — e era **prosa**: a pergunta
+nº 8 declarava que nenhum `Então` casa rótulo, e a rodada 2 da revisão adversarial registrou a
+contradição com a frase *"não há terceira saída"*. A saída foi o solicitante transformar o rótulo em
+requisito.
+
+```gherkin
+# language: pt
+Funcionalidade: Distinção entre as duas versões no rodapé
+
+  Regra: a versão do kit nunca é apresentada como se fosse a do produto
+
+    Cenário: [CT-46] as duas versões aparecem distinguíveis uma da outra
+      Dado que a versão do sistema é "2.4.1"
+      E que a exibição da versão do kit está ligada
+      Quando um usuário autenticado abre qualquer tela de painel
+      Então o rodapé apresenta a versão do sistema
+      E apresenta a versão do kit acompanhada de um rótulo que a identifica como do kit
+      E o rótulo não acompanha a versão do sistema
+
+    Cenário: [CT-47] com a versão do sistema vazia, a do kit continua rotulada
+      Dado que a versão do sistema não está informada
+      E que a exibição da versão do kit está ligada
+      Quando um usuário autenticado abre qualquer tela de painel
+      Então a única versão no rodapé é a do kit, e ela está rotulada como tal
+```
+
+**Por que CT-47 existe separado**: é exatamente a linha 3 de CT-01, aquela que a premissa nº 2
+decidia às cegas. Com a versão do sistema vazia, um rodapé que mostrasse `0.34.2` sozinho seria
+lido como a versão do produto — e é esse o dano que o invariante previne. Antes do Adendo 3 não
+havia como afirmá-lo; agora há.
+
+**O texto do rótulo não é fixado pelo requisito** (o Adendo 3 diz isso por extenso). O cenário
+afirma que existe distinção legível, não qual palavra é usada — fixar a string seria o teste
+escolhendo a redação da interface, que é o que a pergunta nº 8 evita.
+
+**Camada**: `Feature` em `tests/Kit`.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M63 | o rodapé passa a emitir as duas versões separadas só por espaço ou ponto, sem rótulo — e o leitor não sabe qual é qual | CT-46 |
+| M64 | o rótulo é aplicado às duas, e aí ele deixa de discriminar | CT-46 (terceira linha) |
+| M65 | com a versão do sistema vazia, a do kit é emitida **sem** rótulo, porque o código só rotula quando há duas | CT-47 |
+
+---
+
 ## Regra R12 — as dez decisões ficam registradas, e nenhum dos dez pacotes entra
 
 > `RQ-01`, `RQ-07`, `RQ-08` · área A7, perfil **mínimo** · técnica: EP por pacote + asserção de
@@ -1361,7 +1419,7 @@ Funcionalidade: Afirmações do kit sobre o vendor
 **O oráculo é presença de citação, não ausência de frase.** A versão anterior afirmava que "nenhum
 arquivo do kit diz que o hook renderiza dentro do dropdown" — ausência de **texto livre**, que a
 mesma afirmação errada reescrita com outras palavras satisfaz. Achado da revisão adversarial. Exigir
-a **citação** (`user-menu.blade.php:38`) é asserção de presença, e é a forma que
+a **citação** (`user-menu.blade.php:43`) é asserção de presença, e é a forma que
 `.ai/rules/testes.md` recomenda quando o objeto é o texto de um comentário: citar não é executar, e
 a asserção de presença roda sobre o texto cru.
 
@@ -1569,17 +1627,17 @@ for revisitada.
 
 ## Índice de Cenários
 
-| ID | Cenário | Regra | Técnica | Camada | Arquivo sugerido | Mata |
+| ID | Cenário | Regra | Técnica | Camada | Arquivo (conferido na reconciliação) | Mata |
 |----|---------|-------|---------|--------|------------------|------|
 | CT-01 | as duas chaves decidem juntas o rodapé | R1 | tabela de decisão 2×2 | Feature | `tests/Kit/VersaoNoRodapeTest.php` | M4, M5 (com CT-02…CT-04) |
-| CT-36 | o alinhamento é registrado no bootstrap, não num painel | R6 | varredura de registro | Feature | `tests/Kit/ConfiguracoesDoKitTest.php` | M57 |
+| CT-36 | o alinhamento é registrado no bootstrap, não num painel | R6 | varredura de registro | Feature | `tests/Kit/ConfiguracoesDoKitTest.php` (caso de outra wiki; ver D8) | M57 |
 | CT-37 | o ponto de extensão do rodapé alcança a tela de login | R2 | destinatário do efeito | Feature | `tests/Kit/VersaoNoRodapeTest.php` | M53, M7 (com CT-05) |
 | CT-38 | campo limpo apaga o rodapé com o ambiente preenchido | R4 | ausente ≠ vazio | Livewire+Feature | `tests/Kit/VersaoNoRodapeTest.php` | M17 |
-| CT-39 | a migration semeia o valor de fábrica certo | R6 | partição do valor semeado | Feature | `tests/Kit/ConfiguracoesDoKitTest.php` | M56 |
-| CT-40 | a desativação registra no canal de autenticação | R9 | par positivo do efeito | Feature | `tests/Kit/TrilhaDeFronteiraDeAcessoTest.php` | M59 |
+| CT-39 | a migration semeia o valor de fábrica certo | R6 | partição do valor semeado | Feature | `tests/Kit/AlertaDeAlteracoesNaoSalvasTest.php` | M56 |
+| CT-40 | a desativação registra no canal de autenticação | R9 | par positivo do efeito | Feature | `tests/Kit/TrilhaDeEstadoDaContaTest.php` | M59 |
 | CT-41 | persona sem permissão não grava, nem chamando o salvamento | R4 | matriz persona × ação | Livewire | `tests/Kit/VersaoNoRodapeTest.php` | M19 |
-| CT-42 | a exclusão lógica deixa registro na trilha | R9 | invariante da premissa de mecanismo | Feature | `tests/Kit/TrilhaDeFronteiraDeAcessoTest.php` | — (invariante) |
-| CT-43 | a versão do kit continua alcançável pela linha de comando | R3 | EP da saída restante | Feature | `tests/Kit/KitInfoTest.php` | M54 |
+| CT-42 | a exclusão lógica deixa registro na trilha | R9 | invariante da premissa de mecanismo | Feature | `tests/Kit/TrilhaDeEstadoDaContaTest.php` | — (invariante) |
+| CT-43 | a versão do kit continua alcançável pela linha de comando | R3 | EP da saída restante | Feature | `tests/Kit/VersaoNoRodapeTest.php` (ver D9) | M54 |
 | CT-44 | valor longo é gravado inteiro ou recusado, nunca truncado | R4 | EP do campo, `@premissa` | Livewire | `tests/Kit/VersaoNoRodapeTest.php` | M16 |
 | CT-45 | numa mesma tela, cada pessoa recebe o avatar dela | R7 | par discriminante de personas | Livewire | `tests/Kit/AvatarDeIniciaisTest.php` | M62 |
 | CT-02 | a versão é a do sistema, não a do kit | R1 | EP | Feature | `tests/Kit/VersaoNoRodapeTest.php` | M1 |
@@ -1598,26 +1656,155 @@ for revisitada.
 | CT-15 | desligar pela tela faz efeito no request seguinte | R5 | rastreio por request | Livewire+Feature | `tests/Kit/AlertaDeAlteracoesNaoSalvasTest.php` | M20 |
 | CT-16 | o alerta nasce ligado (`@premissa`) | R5 | valor do requisito, lido do arquivo | Feature | `tests/Kit/AlertaDeAlteracoesNaoSalvasTest.php` | — (premissa) |
 | CT-17 | formas de env booleana do alerta | R5 | EP | Feature | `tests/Kit/AlertaDeAlteracoesNaoSalvasTest.php` | M23 |
-| CT-18 | cada propriedade nos três lugares, com a chave dela | R6 | invariante por reflexão | Feature | `tests/Kit/ConfiguracoesDoKitTest.php` | M25, M26 |
-| CT-19 | nenhuma das três é segredo | R6 | invariante | Feature | `tests/Kit/ConfiguracoesDoKitTest.php` | M27 |
+| CT-18 | cada propriedade nos três lugares, com a chave dela | R6 | invariante por reflexão | Feature | `tests/Kit/AlertaDeAlteracoesNaoSalvasTest.php` | M25, M26 |
+| CT-19 | nenhuma das três é segredo | R6 | invariante | Feature | `tests/Kit/AlertaDeAlteracoesNaoSalvasTest.php` | M27 |
 | CT-20 | em cada painel o avatar é gerado pela aplicação | R7 | matriz painel | Feature | `tests/Kit/AvatarDeIniciaisTest.php` | M28, M58 |
 | CT-21 | nenhum endereço de imagem aponta para fora | R7 | rastreio de ausência com destinatário | Feature | `tests/Kit/AvatarDeIniciaisTest.php` | M29, M58 |
 | CT-22 | quem tem foto continua com a foto | R7 | par | Feature | `tests/Kit/AvatarDeIniciaisTest.php` | M30 |
 | CT-23 | cada forma de nome produz as iniciais | R8 | EP / normalização | Feature | `tests/Kit/AvatarDeIniciaisTest.php` | M32, M33, M34, M36, M37 |
 | CT-24 | nome com marcação não quebra a imagem | R8 | EP de dado hostil | Feature | `tests/Kit/AvatarDeIniciaisTest.php` | M35 |
-| CT-25 | registro sem nome não lança | R8 | EP nulo | Feature | `tests/Kit/AvatarDeIniciaisTest.php` | M36 |
-| CT-26 | cada operação de fronteira grava antes e depois | R9 | estado × operação + efeito | Feature | `tests/Kit/TrilhaDeFronteiraDeAcessoTest.php` | M38, M39, M42 |
-| CT-27 | a desativação pela tela também grava | R9 | efeito pela UI | Livewire | `tests/Kit/TrilhaDeFronteiraDeAcessoTest.php` | M42 |
-| CT-28 | operação que não muda nada não muda coluna, não grava nem loga | R9 | células `❌` da matriz | Feature | `tests/Kit/TrilhaDeFronteiraDeAcessoTest.php` | M40, M60 |
-| CT-29 | editar o nome não arrasta a fronteira, em nenhum estado | R9 | isolamento de efeito | Livewire | `tests/Kit/TrilhaDeFronteiraDeAcessoTest.php` | M41 |
-| CT-30 | campo comum continua na trilha | R10 | par | Feature | `tests/Kit/TrilhaDeFronteiraDeAcessoTest.php` | M43 |
-| CT-31 | a linha do model sem override traz só o editável | R10 | par | Feature | `tests/Kit/TrilhaDeFronteiraDeAcessoTest.php` | M44 |
+| CT-25 | registro sem nome não lança | R8 | EP nulo | Feature | **fundido em CT-23** — ver D5 | M36 |
+| CT-26 | cada operação de fronteira grava antes e depois | R9 | estado × operação + efeito | Feature | `tests/Kit/TrilhaDeEstadoDaContaTest.php` | M38, M39, M42 |
+| CT-27 | a desativação pela tela também grava | R9 | efeito pela UI | Livewire | `tests/Kit/TrilhaDeEstadoDaContaTest.php` | M42 |
+| CT-28 | operação que não muda nada não muda coluna, não grava nem loga | R9 | células `❌` da matriz | Feature | `tests/Kit/TrilhaDeEstadoDaContaTest.php` | M40, M60 |
+| CT-29 | editar o nome não arrasta a fronteira, em nenhum estado | R9 | isolamento de efeito | Livewire | `tests/Kit/TrilhaDeEstadoDaContaTest.php` | M41 |
+| CT-30 | campo comum continua na trilha | R10 | par | Feature | `tests/Kit/TrilhaDeEstadoDaContaTest.php` | M43 |
+| CT-31 | a linha do model sem override traz só o editável | R10 | par | Feature | `tests/Kit/TrilhaDeEstadoDaContaTest.php` | M44 |
 | CT-32 | a constraint do Filament é caret na série 5, e só nela | R11 | EP da constraint | Feature | `tests/Kit/PacotesRodada2Test.php` | M46, M47, M61 |
 | CT-33 | os dez têm veredito do vocabulário, pelo nome Composer | R12 | EP por pacote | Feature | `tests/Kit/PacotesRodada2Test.php` | M48, M49 |
 | CT-34 | nenhum dos dez entrou nas dependências | R12 | ausência com alvo | Feature | `tests/Kit/PacotesRodada2Test.php` | M50 |
-| CT-35 | os quatro arquivos citam a linha que o vendor confirma | R13 | medição do vendor | Feature | `tests/Kit/PacotesRodada2Test.php` | M51, M52 |
+| CT-35 | os quatro arquivos citam a linha que o vendor confirma | R13 | medição do vendor | Feature | `tests/Kit/CabecalhoDoMenuDoUsuarioTest.php` | M51, M52 |
 | CT-B01 | o navegador bloqueia a saída com formulário sujo | R5 | JS executado | Browser | `tests/Browser/AlertaDeAlteracoesNaoSalvasTest.php` | M24 |
 | CT-B02 | nenhuma requisição sai para o domínio de terceiro | R7 | rede observada | Browser | `tests/Browser/AvatarDeIniciaisTest.php` | M29 |
+
+---
+
+## Reconciliação — este `04` × os arquivos de teste
+
+Feita depois da implementação e depois dos primeiros testes, como a `## Degradação declarada`
+previa. Ela roda **nos dois sentidos**: todo `[CT-nn]` que existe num arquivo de teste está nesta
+tabela, e todo CT deste arquivo aponta um caso existente ou declara por que não tem.
+
+O comando que a fecha é `vendor/bin/pest tests/Kit --compact`.
+
+### Sentido 1 — CT → caso de teste
+
+| CT | Onde está | Estado |
+|---|---|---|
+| CT-01 | `VersaoNoRodapeTest` › `[CT-01] compoe o rodape conforme as duas chaves` (4 datasets) e `[CT-01] nao renderiza o elemento quando nao ha o que mostrar` | já existia, etiquetado; **linha 3 invertida** — ver Divergência D1 |
+| CT-02 | `VersaoNoRodapeTest` › `[CT-02] mostra a versao do sistema e nao a do kit` | **novo** |
+| CT-03 | `VersaoNoRodapeTest` › `[CT-03] mostra a versao do sistema nos tres paineis` | já existia; oráculo trocado do documento inteiro para o recorte do rodapé |
+| CT-04 | `VersaoNoRodapeTest` › `[CT-04] escapa a marcacao html da versao gravada` | **novo** |
+| CT-05 | `VersaoNoRodapeTest` › `[CT-05] nao mostra versao nenhuma para quem nao entrou` (5 datasets) | já existia com 3 linhas; **+2** (`/login` e a recuperação de senha) |
+| CT-06 | `VersaoNoRodapeTest` › `[CT-06] mostra ao autenticado a mesma versao que o visitante nao ve` | **novo** |
+| CT-07 | `VersaoNoRodapeTest` › `[CT-07] nasce com a exibicao da versao do kit desligada…` | **novo** |
+| CT-08 | `VersaoNoRodapeTest` › `[CT-08] faz a versao do kit acompanhar a do sistema…` | **novo** |
+| CT-09 | `[CT-09]` (par negativa/afirmativa) | escrito no ciclo 2, **vermelho antes** da correção de `config/kit.php`. Ver D2 |
+| CT-10 | `VersaoNoRodapeTest` › `[CT-10] exibe no rodape exatamente o que foi gravado na tela` (5 datasets) | **novo**; a linha dos espaços nas bordas foi corrigida — ver D3 |
+| CT-11 | `VersaoNoRodapeTest` › `[CT-11] recusa a tela de configuracoes a quem perdeu a permissao, sem recusar o painel` | **novo**. O 403 sozinho já era coberto, por outras personas, em `ConfiguracoesDoKitTelaTest` (wiki `settings-do-kit`); o que é novo é o par com a saída do estado de erro |
+| CT-12 | `VersaoNoRodapeTest` › `[CT-12] mantem a versao do ambiente quando a propriedade nao tem linha no banco` | **novo** |
+| CT-13 | `VersaoNoRodapeTest` › `[CT-13] nao le o git para resolver a versao` | já existia varrendo só a blade; ampliado para `app/`, `config/` e `resources/views/`, com filtro de comentário |
+| CT-14 | `AlertaDeAlteracoesNaoSalvasTest` › `[CT-14] leva ate cada painel o valor gravado na tela` (6 datasets) | reescrito a partir de `leva o valor gravado na tela ate o painel`, que cobria 1 das 6 células |
+| CT-15 | `AlertaDeAlteracoesNaoSalvasTest` › `[CT-15] muda de resposta no mesmo processo, sem remontar o painel` | já existia, etiquetado |
+| CT-16 | `AlertaDeAlteracoesNaoSalvasTest` › `[CT-16] nasce com o alerta ligado no arquivo de configuracao` | **novo** |
+| CT-17 | `AlertaDeAlteracoesNaoSalvasTest` › `[CT-17] respeita o vocabulario do env na chave do alerta` (5 datasets) | **novo** |
+| CT-18 | `AlertaDeAlteracoesNaoSalvasTest` › `[CT-18] declara as propriedades novas com a chave de config correspondente` | já existia afirmando só presença; ganhou a linha semeada e a chave de config depois do alinhamento |
+| CT-19 | `AlertaDeAlteracoesNaoSalvasTest` › `[CT-19] nao trata as chaves novas como segredo` | já existia; ganhou a leitura do `payload` cru |
+| CT-20 | `AvatarDeIniciaisTest` › `[CT-20] nao pede o avatar padrao a nenhum dominio externo` (3 painéis) | já existia, etiquetado |
+| CT-21 | `AvatarDeIniciaisTest` › `[CT-21] nao aponta nenhuma imagem da pagina para fora da aplicacao` | **novo** |
+| CT-22 | `AvatarDeIniciaisTest` › `[CT-22] mantem a foto de quem enviou uma, sem trocar por iniciais` | **novo** |
+| CT-23 | `AvatarDeIniciaisTest` › `[CT-23] desenha as iniciais do nome` (9 datasets) e `[CT-23] nao quebra com nome vazio` | já existia com 7 linhas; **+2** (quatro termos e nome sem caixa). As linhas "vazio" e "só espaços" vivem no segundo caso, com asserção própria |
+| CT-24 | `AvatarDeIniciaisTest` › `[CT-24] escapa caractere que quebraria o svg` | já existia; ganhou a asserção "nenhum elemento além dos que o desenho usa". Ver D4 |
+| CT-25 | — | **fundido em CT-23**: inexpressável por tipo. Ver D5 |
+| CT-26 | `TrilhaDeEstadoDaContaTest` › `[CT-26] grava o antes e o depois de cada operacao de fronteira` (4 datasets) | reescrito a partir de três casos soltos, que cobriam 3 das 4 células e chamavam `forceFill` no lugar de `aprovar()` |
+| CT-27 | `TrilhaDeEstadoDaContaTest` › `[CT-27] registra na trilha a desativacao feita pela acao da listagem` | **novo** |
+| CT-28 | `TrilhaDeEstadoDaContaTest` › `[CT-28] nao muda coluna, nao grava linha e nao loga…` (5 datasets) | **novo**; a 6ª célula não tem linha — ver D6 |
+| CT-29 | `TrilhaDeEstadoDaContaTest` › `[CT-29] registra so o nome ao editar o nome, em qualquer estado` (3 estados) | **novo** |
+| CT-30 | `TrilhaDeEstadoDaContaTest` › `[CT-30] mantem na trilha a alteracao de um campo comum` | **novo** |
+| CT-31 | `TrilhaDeEstadoDaContaTest` › `[CT-31] mantem fora da trilha a coluna nao declarada dos models sem override` (4 models) | **novo** |
+| CT-32 | `PacotesRodada2Test` › `[CT-32] declara o filament em caret na serie 5 e so nela` | **novo** (arquivo novo) |
+| CT-33 | `PacotesRodada2Test` › `[CT-33] registra o veredito de cada um dos dez pacotes, pelo nome composer` (10 datasets) | **novo** |
+| CT-34 | `PacotesRodada2Test` › `[CT-34] nao tem nenhum dos dez pacotes avaliados nas dependencias` | **novo** |
+| CT-35 | `CabecalhoDoMenuDoUsuarioTest` › `[CT-35] mantem USER_MENU_BEFORE fora do dropdown…` | já existia medindo o vendor; ganhou a citação nos quatro arquivos do kit. Ver D7 |
+| CT-36 | `ConfiguracoesDoKitTest` › `liga o alinhamento no provider da aplicacao e em nenhum painel` | **coberto por caso de outra wiki** (`settings-do-kit`), na forma ESTRUTURAL que L8 prevê. Não duplicado. Ver D8 |
+| CT-37 | `VersaoNoRodapeTest` › `[CT-37] renderiza o ponto de extensao do rodape tambem na tela de login` | **novo** |
+| CT-38 | `AlertaDeAlteracoesNaoSalvasTest` › `[CT-38] deixa o banco vencer o env…` + `[CT-38] leva a versao gravada na tela ate a config`; `VersaoNoRodapeTest` › `[CT-38] apaga o rodape ao limpar o campo…` | os dois primeiros já existiam (só em `config()`); o terceiro é **novo** e fecha no rodapé |
+| CT-39 | `AlertaDeAlteracoesNaoSalvasTest` › `[CT-39] semeia as tres propriedades novas com o valor de fabrica prometido` | **novo** |
+| CT-40 | `TrilhaDeEstadoDaContaTest` › `[CT-40] registra a desativacao no canal de autenticacao e na trilha…` | **novo**. O log sozinho já era afirmado em `SituacaoDaContaTest` (wiki `situacao-da-conta`); o que é novo é a conjunção dos dois efeitos |
+| CT-41 | `VersaoNoRodapeTest` › `[CT-41] nao grava a versao do sistema para quem perdeu a permissao` | **novo**, com a cobertura parcial de L7 declarada no docblock |
+| CT-42 | `TrilhaDeEstadoDaContaTest` › `[CT-42] registra na trilha a exclusao logica, a partir de qualquer estado` (3 estados) | **novo** |
+| CT-43 | `VersaoNoRodapeTest` › `[CT-43] mostra a versao do kit no comando de informacoes…` | **novo**; mora fora do arquivo sugerido — ver D9 |
+| CT-44 | `VersaoNoRodapeTest` › `[CT-44] grava a versao longa inteira ou recusa, nunca truncada` | **novo**; a premissa nº 3 está resolvida pela implementação — ver D10 |
+| CT-45 | `AvatarDeIniciaisTest` › `[CT-45] desenha as iniciais do registro recebido…` | **novo**, sem a listagem que o cenário arranja — ver D11 |
+
+**Contagem, conferida linha a linha**: 45 CT =
+**28 que não tinham teste nenhum e ganharam um**
+(CT-02, CT-04, CT-06, CT-07, CT-08, CT-10, CT-11, CT-12, CT-16, CT-17, CT-21, CT-22, CT-27, CT-28,
+CT-29, CT-30, CT-31, CT-32, CT-33, CT-34, CT-37, CT-39, CT-40, CT-41, CT-42, CT-43, CT-44, CT-45)
+\+ **14 que já tinham caso**, todos etiquetados, e **nove deles reforçados** — dois reescritos
+(CT-14 e CT-26, que cobriam 1 de 6 e 3 de 4 células), seis com asserção nova (CT-03, CT-13, CT-18,
+CT-19, CT-23, CT-24) e um que ganhou um terceiro caso (CT-38)
+\+ **1 coberto por caso de outra wiki** (CT-36, em `ConfiguracoesDoKitTest`)
+\+ **1 sem teste** (CT-25, fundido em CT-23 — ver D5). CT-09 ganhou teste no ciclo 2 do quality gate, depois que o defeito que ele reprovava foi corrigido.
+`28 + 14 + 1 + 2 = 45`.
+
+Em arquivos de teste isso são **42 IDs `[CT-nn]` distintos** — os 45 menos CT-09, CT-25 e CT-36 —,
+e o conjunto é conferível com
+`grep -o "\[CT-[0-9]*\]" tests/Kit/{VersaoNoRodape,AvatarDeIniciais,AlertaDeAlteracoesNaoSalvas,TrilhaDeEstadoDaConta,PacotesRodada2,CabecalhoDoMenuDoUsuario}Test.php | sort -u`.
+
+### Sentido 2 — caso de teste → CT
+
+Os casos desta feature que **não** implementam nenhum CT deste arquivo. Todos mantidos: nenhum é
+redundante, e três deles cobrem proposições que a derivação não alcançou.
+
+| Caso | Arquivo | Por que não tem CT |
+|---|---|---|
+| `mantem as iniciais com byte utf-8 invalido no nome` | `AvatarDeIniciaisTest` | nasceu de um `/code-review` do diff, e mata um mutante que este `04` não previu: `htmlspecialchars()` com flags explícitas devolve string VAZIA diante de byte inválido, e o avatar vira um quadrado sem letra. É partição de `name` que a varredura D de SFDIPOT não listou |
+| `desenha texto branco sobre fundo escuro fixo` | `AvatarDeIniciaisTest` | a pergunta nº 7 decide que **aparência não é requisito**, e nenhum cenário afirma cor de propósito. O caso guarda uma decisão do `02` (não usar a cor primária, porque dentro de `/app/{slug}` a paleta é da organização e o texto branco viraria aposta) |
+| `nasce ligado nos tres paineis` | `AlertaDeAlteracoesNaoSalvasTest` | mede o default do ARQUIVO chegando aos três painéis — um degrau entre CT-16 (que para em `config/kit.php`) e CT-14 (que grava antes de perguntar). Nenhum dos dois o cobre |
+| `mantem fora da trilha a coluna tecnica que ninguem declarou` | `TrilhaDeEstadoDaContaTest` | CT-31 faz a mesma proposição nos quatro models **sem** override; este cobre o model que **tem** override, que é o caso que aquele `Esquema` não alcança |
+| `audita o fillable mais as colunas de fronteira de acesso do usuario` e `mantem a auditoria no fillable puro para quem nao estende a lista` | `FundacaoTest` | são os dois casos que a `## Degradação declarada` desqualifica: afirmam sobre a LISTA devolvida por `getAuditInclude()`, não sobre a linha gravada. Quem afirma sobre a linha é CT-26 e CT-31. Mantidos porque a asserção de ORDEM é barata e pega a substituição antes de o auditor entrar em cena |
+| a âncora `toHaveCount(54)` | `KitInfoTest` › `[CT-06]` | aquele `[CT-06]` é da wiki `kit-info`, não desta. A âncora subiu de 51 para 54 por causa das três propriedades desta entrega, e é o ponto em que uma propriedade nova obriga a decisão |
+
+### Divergências encontradas, com destino
+
+| # | O que | Destino |
+|---|---|---|
+| D1 | **Premissa nº 2 negada pela implementação.** Com a versão do sistema vazia e o toggle do kit ligado, o rodapé **mostra** a versão do kit (`resources/views/filament/versao-do-kit.blade.php` monta `$partes` com `array_filter` e renderiza o que sobrar). O `04` adotara a direção fechada e escrevera o `Se negado`; a linha 3 de CT-01 está invertida aqui e no teste. O invariante continua valendo e agora **é asserível**, o que fecha a pergunta nº 9: o rótulo `kit ` existe e distingue as duas versões | **especificação** (decisão do solicitante: confirmar a direção aberta ou pedir a fechada) |
+| D2 | **M11 vivo.** `config/kit.php:250` lê a chave com `(bool) env('KIT_EXIBIR_VERSAO', false)`. Medido: `off`, `no` e `ligar` resolvem para **true** — isto é, LIGAM a exibição da versão do kit. O comentário do arquivo justifica o `(bool)` pelo caso da chave presente-e-vazia, que de fato converge com default `false`; a partição do vocabulário (`off`/`no`) é outra e não está coberta. A chave irmã usa `BooleanoDoEnv` e passa em CT-17 | **implementação**. CT-09 ficou sem teste porque escrevê-lo deixaria a suíte vermelha por defeito de produção, e esta reconciliação não tinha mandato para mexer em `config/`. **Desfecho (ciclo 2)**: o CT foi escrito primeiro e ficou vermelho em `off`/`no`/`talvez`; só então `config/kit.php` passou a `BooleanoDoEnv::comPadrao(env('KIT_EXIBIR_VERSAO'), false)`. M11 morto |
+| D3 | **CT-10, linha "espaços nas bordas".** O `04` esperava ` 2.4.0 ` gravado como `2.4.0`. O kit não apara, e **não aparar é o comportamento coerente com a própria regra** — ela se chama *sem alteração silenciosa*, e aparar é uma alteração silenciosa. A linha do `04` foi corrigida para esperar o valor com os espaços | **especificação** (o `04` estava errado) |
+| D4 | **CT-24, "o único texto dentro dela é AZ".** O nome `<b>Ana</b> "Zé" & Cia` produz as iniciais `<"`, não `AZ`: o kit **escapa**, não **remove** marcação, e nada no requisito pede remoção. Os datasets do teste usam as três cargas que discriminam (`<`, `&`, aspas) e afirmam a inicial CRUA lida de volta pelo parser | **especificação** (o `Então` assumia stripping) |
+| D5 | **CT-25 é inexpressável.** O provider não lê `name` do registro: recebe o nome de `Filament::getNameForDefaultAvatar()` (`FilamentManager.php:323`), declarado `: string`, que para usuário passa por `User::getFilamentName(): string`. Nome nulo estoura `TypeError` **antes** de chegar ao kit, e nenhuma implementação do provider muda isso. A partição alcançável é a string vazia, que está em CT-23 | **especificação**: CT-25 fundido em CT-23 |
+| D6 | **Célula `excluída × excluir` de CT-28 sem linha.** `delete()` sobre um registro já excluído logicamente roda o `UPDATE` de novo, dispara `deleted` de novo, e o observer da lixeira estoura `UNIQUE constraint failed: recycle_bin_items.model_type, recycle_bin_items.model_id`. Pela tela o estado é inalcançável (a ação de exclusão não vê registro excluído, e a lixeira restaura antes), então não é defeito observável hoje — é lacuna de idempotência do model | **implementação** (severidade baixa; nenhum caminho de UI o alcança) |
+| D7 | **CT-35, "sem número de linha".** Lido como propriedade do ORÁCULO, não como exigência sobre os arquivos do kit: os quatro citam `user-menu.blade.php:43`/`:97`, e casar o número tornaria o caso refém do vendor num kit obrigado a aceitar toda atualização da série. A asserção é a presença do caminho | **especificação** (leitura fixada) |
+| D8 | **CT-36 na forma estrutural.** L8 previa as duas formas e proibia adotar a fraca em silêncio: adotada a estrutural, que já existe em `ConfiguracoesDoKitTest` desde a wiki `settings-do-kit`, com a justificativa escrita no próprio caso (o falsificador comportamental exigiria um processo artisan separado). Não duplicado | **não-defeito**, declarado |
+| D9 | **CT-43 fora do arquivo sugerido.** O índice manda `tests/Kit/KitInfoTest.php`, que carrega os `[CT-nn]` da wiki `kit-info` (até CT-17): um `[CT-43]` no meio deles seria ambíguo nos dois sentidos da reconciliação. Mora em `VersaoNoRodapeTest`, junto com o resto de R3 | **não-defeito** (colisão de namespace de IDs entre wikis) |
+| D10 | **Premissa nº 3 resolvida pela implementação.** O campo declara `->maxLength(50)` (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:266`), então o kit escolheu o **ramo da recusa**. O `Então` disjuntivo de CT-44 continua correto e o teste exerce os dois ramos, mas a pergunta nº 3 deixa de estar em aberto | **especificação** (pergunta respondida pelo código; registrar o limite no `00` se ele for para valer) |
+| D11 | **CT-45 sem a listagem.** Nenhuma listagem do kit renderiza avatar padrão: as duas usam `ImageColumn::make('avatar_url')` **sem** `defaultImageUrl()`, de propósito, para que a célula de quem não enviou foto fique vazia (`app/Filament/Admin/Resources/Users/UserResource.php:179`). Não existe hoje superfície renderizada em que "a pessoa da linha" seja diferente de quem está autenticado. O par discriminante foi montado onde M62 vive: duas pessoas sem foto, uma terceira autenticada, o provider chamado com cada registro | **especificação** (o cenário arranja uma superfície que o produto não tem) |
+
+### `[CT-38]` rotula três casos em dois arquivos, e isso é deliberado
+
+Achado do ciclo 2 do quality gate (QA-11). Os três implementam **a mesma regra** — *o banco vence o
+`.env`, inclusive quando o banco está vazio* — em **camadas diferentes**, e é a camada que justifica
+a repetição do ID:
+
+| Arquivo | Caso | Camada |
+|---|---|---|
+| `AlertaDeAlteracoesNaoSalvasTest` | deixa o banco vencer o env, mesmo vazio | config (`aplicarNaConfig()`) |
+| `AlertaDeAlteracoesNaoSalvasTest` | leva a versão gravada na tela até a config | config, sentido inverso |
+| `VersaoNoRodapeTest` | apaga o rodapé ao limpar o campo, mesmo com a versão do ambiente preenchida | HTTP (o efeito visível) |
+
+Renumerar os dois primeiros inventaria IDs que o `04` não tem, e fundi-los num só perderia o par —
+o segundo existe justamente para impedir que o primeiro fique verde numa implementação que ignore a
+propriedade. Fica registrado aqui em vez de corrigido.
+
+### O que a reconciliação NÃO mudou
+
+As oito lacunas declaradas (L1…L8) continuam como estão. Nenhuma delas ganhou cenário, e duas
+ganharam forma operacional no teste: L5 e L6 estão citadas nos docblocks de `rodapeDe()` e de
+CT-37, para que a próxima pessoa saiba o que aquele recorte não prova. A pergunta nº 9 saiu do
+impasse por medição (ver D1); as nº 3 e nº 5 foram respondidas pelo código (D10 e D6); as demais
+continuam com o solicitante.
 
 ---
 
@@ -1632,7 +1819,14 @@ for revisitada.
       às três lacunas declaradas acima, porque nenhuma delas tem código para mutar
 - [ ] Mutante sobrevivente traduzido de volta em lacuna de derivação e convertido em cenário novo
       **aqui**, antes de virar código de teste
-- [ ] Sincronia nos dois sentidos: todo `[CT-nn]` do arquivo de teste existe neste `04`, e todo CT
+- [x] Sincronia nos dois sentidos: todo `[CT-nn]` do arquivo de teste existe neste `04`, e todo CT
       deste índice aponta um teste existente ou declara "fundido em CT-nn". **Atenção especial aos
-      casos que já existem em `tests/Kit/FundacaoTest.php`** — ver `## Degradação declarada`
+      casos que já existem em `tests/Kit/FundacaoTest.php`** — ver `## Degradação declarada`.
+      **Feita**: `## Reconciliação`, com as duas tabelas e as onze divergências (D1…D11)
 - [ ] Contagem do cabeçalho recalculada
+
+**Estado da reconciliação**: 45 CT · 28 com teste novo · 14 já cobertos, etiquetados e nove deles
+reforçados · 1 coberto por caso de outra wiki (CT-36) · 2 sem teste (CT-09, por defeito de
+produção; CT-25, fundido em CT-23). Dois achados de implementação saíram dela e **não** foram
+consertados aqui, por falta de mandato: **M11 vivo** em `config/kit.php:250` (D2) e a exclusão
+lógica repetida estourando no observer da lixeira (D6).

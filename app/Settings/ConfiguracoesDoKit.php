@@ -303,7 +303,7 @@ final class ConfiguracoesDoKit extends Settings
      * gravação é `SettingsConfig::isEncrypted()`
      * (`vendor/spatie/laravel-settings/src/SettingsConfig.php:84-87`), alimentado por este
      * método mais o atributo `ShouldBeEncrypted` (`:57-59`), e consultado nos dois
-     * consumidores: `SettingsMapper::fetchProperties()` decifra na leitura (`:92`) e
+     * consumidores: `SettingsMapper::fetchProperties()` decifra na leitura (`:97`) e
      * `SettingsMapper::save()` cifra na gravação (`:67`).
      *
      * **Nome fora desta lista com `addEncrypted` na migration é um defeito de duas caras**, e o

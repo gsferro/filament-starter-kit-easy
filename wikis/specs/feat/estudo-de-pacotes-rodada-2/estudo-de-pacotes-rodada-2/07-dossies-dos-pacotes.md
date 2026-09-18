@@ -37,7 +37,7 @@ descrição do diretório.
 
 | Pacote | Versão / data | Idade do repo | ★ | DL/mês | CI | Veredito |
 |---|---|---|---|---|---|---|
-| `mortalkiller/filament-page-header` | v2.1.4 · 15/09/2026 | 5 dias | 7 | 199 | sim | **ADIAR** |
+| `mortalkiller/filament-page-header` | v2.1.4 · 15/09/2026 | 5 dias | 7 | 199 | sim | **ADIAR** (1 dos 3 motivos caiu — ver abaixo) |
 | `jeffersongoncalves/filament-page-visits` | v3.0.6 · 14/09/2026 | 7 dias | 3 | 233 | sim | **ADIAR** |
 | `jeffersongoncalves/filament-ban` | v3.0.3 · 12/09/2026 | 3 meses | 2 | 10 | sim | **RECUSAR** |
 | `packstub/filament-flow` | v1.4.1 · 18/09/2026 | 16 dias | 14 | 451 | sim | **ADIAR** |
@@ -68,17 +68,19 @@ em `ViewTenant`.
 
 **Por que fica de fora, em ordem de peso:**
 
-1. **Exige `filament/filament ^4.12.6 || ^5.8.1`** e o kit está em **v5.7.6** ✔ (`composer.lock`).
-   Adotar arrasta um upgrade de minor do framework, que é decisão própria. O README declara que a
-   faixa `5.0`–`5.8.0` não foi validada.
+1. ~~**Exige `filament/filament ^4.12.6 || ^5.8.1`** e o kit está em **v5.7.6**~~ — **motivo
+   resolvido em 2026-09-18**: o kit subiu para **v5.8.2** (ADR-08), e a constraint passou a ser
+   satisfeita. Ficava registrado aqui porque adotar arrastaria um upgrade de minor do framework; o
+   upgrade aconteceu por outra razão, pedida no Adendo 1.
 2. **Repo de 5 dias** (criado 13/09/2026), 8 releases em 3 dias, com **breaking de major em 24 h**
    (`HeaderLayout` → `Header`). A v2.1.4 já traz métodos `@deprecated`.
 3. **Ganho por tela, não por painel**: trait + `headerSchema()` por página. E a trait sobrescreve
    `getHeader()` — página que já sobrescreva esse método torna o pacote **inerte em silêncio**.
    Some `php artisan filament:assets` virando passo obrigatório de deploy.
 
-**Gatilho de reabertura**: ≥3 meses sem breaking na série `2.x` **e** o kit já em Filament 5.8+.
-O Adendo 1 (`sem travar a versão do Filament`) derruba o motivo 1, mas não os outros dois.
+**Gatilho de reabertura**: ≥3 meses sem breaking na série `2.x`. **O motivo 1 já caiu**: o Adendo 1
+levou o kit para o Filament **v5.8.2** nesta mesma entrega, então a constraint `^5.8.1` do pacote
+passou a ser satisfeita. Sobram os motivos 2 e 3 — API instável e ganho por tela —, e eles bastam.
 
 **Alternativa nativa**: header rico *estático* (avatar + título + badges + metadados) sai em ~20-25
 linhas com `x-filament-panels::avatar.user` e `x-filament::badge`, sobrescrevendo `getHeader()` — o

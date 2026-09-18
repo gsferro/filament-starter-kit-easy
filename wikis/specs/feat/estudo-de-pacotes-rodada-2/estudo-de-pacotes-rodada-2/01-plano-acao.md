@@ -20,17 +20,25 @@
 | RQ | Cláusula | Passo(s) que atende(m) | Observação |
 |----|----------|------------------------|------------|
 | RQ-01 | Análise a fundo dos 10 pacotes | 6 (dossiê consolidado) + `07-dossies-dos-pacotes.md` | Executada antes deste plano; o produto documental é o passo 6 |
-| RQ-02 | `app-version` pela tag ou pela branch `release/<versão>` | 3 | Atendido **sob premissa** (ver `00`, Ambiguidades): a tag já é `config('kit.version')`, gravada pelo `kit:update` |
+| RQ-02 | `app-version` pela tag ou pela branch `release/<versão>` | — | ❌ **SUBSTITUÍDA por RQ-17** no Adendo 2. A premissa original ("a tag já é `config('kit.version')`") respondia a pergunta errada: aquela é a tag **do kit**, não a do produto *(alterado em 2026-09-18: adendo 2)* |
 | RQ-03 | `simple-draft` com visão no Settings de quais forms | 2 | Atendido **parcialmente**: o Settings governa o alerta **globalmente**, não por formulário. Granularidade por form declarada fora de escopo no `00` |
-| RQ-04 | `autosave` com prós/contras e ativar/desativar | 6 | Análise entregue; adoção recusada, com o caminho de reabertura em ADR-03 |
+| RQ-04 | `autosave` com prós/contras e ativar/desativar | 6 | Análise entregue; adoção recusada, com o caminho de reabertura em **ADR-02** *(alterado em 2026-09-18: QA-06 — apontava ADR-03, que é a do avatar)* |
 | RQ-05 | `openapi-docs` automático quando houver API | — | ⚠️ **fora desta entrega** — o kit não tem `routes/api.php`. Gatilho de reabertura registrado no `00` e em ADR-06 |
-| RQ-06 | Sub-agentes em paralelo | — | Cumprido na fase de pesquisa: 5 sub-agentes, 2 pacotes cada. Registro em `03-progresso.md` |
+| RQ-06 | Sub-agentes em paralelo | — | Cumprido na fase de pesquisa: 5 sub-agentes, 2 pacotes cada. Registro em `07-dossies-dos-pacotes.md`, seção *Método* *(alterado em 2026-09-18: QA-06 — apontava o `03`)* |
 | RQ-07 | Mesmo formato dos estudos anteriores | 6 | `wikis/pacotes-candidatos.md` §4 e `wikis/pacotes-ranking.md`, conforme o processo da §5 daquela página |
 | RQ-08 | Proposta do que entra + implementar | 1–5 | Proposta: nenhum pacote entra; entram 5 itens nativos. Aprovada pelo solicitante em 2026-09-18 |
 | RQ-09 | Decidir branch/worktree | — | Decidido em ADR-01: uma branch, uma wiki |
 | RQ-10 | `/code-review` no diff | 8 | Step 7.5 da `feature-wiki` |
 | RQ-11 | Usar o Blueprint | 7 | `composer bp:on` → aderência → `bp:off`, conforme `.ai/rules/general.md` |
 | RQ-12 | Do início ao fim | 1–9 | — |
+| RQ-13 | Implementar os cinco itens nativos | 1–5 | Adendo 1 |
+| RQ-14 | Não travar a versão do Filament | 10 | Adendo 1. `composer.json` declara `filament/filament: ^5.6`, que **já** permite toda a série 5.x — a constraint nunca esteve travada. Verificado, não presumido |
+| RQ-15 | Saindo atualização do Filament, atualizar o kit | 10 | Adendo 1. **Foi omissão até o ciclo 1 do quality gate** (QA-01, Blocker): a constraint permitia, mas ninguém rodou o update. Fechado com `composer update "filament/*"` → **v5.7.6 → v5.8.2** |
+| RQ-16 | Os projetos que usam o kit recebem a atualização | 10 | Adendo 1. Atendido **parcialmente e com limite declarado** — ver ADR-08 |
+| RQ-17 | O rodapé exibe a versão do **sistema**, não a do kit | 3 | Adendo 2. **Substitui RQ-02** |
+| RQ-18 | A versão do kit é exibível, mas customizável por quem usa o kit | 3 | Adendo 2. Interruptor `exibir_versao_do_kit`, nascendo desligado |
+| RQ-19 | Nenhum dado do usuário sai para terceiro na renderização de um avatar | 1 | **Adendo 3**. Tira o avatar da condição de *código sem `RQ`*: ele entrava só por RQ-13, que é cláusula sobre quantidade de itens, não sobre garantia. R7/R8 do `04` deixam de ser `@premissa` |
+| RQ-20 | A versão do kit, quando exibida, carrega rótulo que a distingue da do sistema | 3 | **Adendo 3**. Dá forma operacional ao invariante da premissa nº 2, que era prosa. O texto do rótulo não é fixado pelo requisito |
 
 ## Objetivo
 
@@ -86,7 +94,7 @@ usuário pode alterar é o que fica registrado"* — mas `getFillable()` é um p
 `$fillable` = `name, email, password, avatar_url` (`:89-94`); `ativo` vive em `$attributes`
 (`:106-108`). `desativar()` grava com `forceFill(['ativo' => false])->save()` (`:307`) — o evento
 `updated` dispara, o auditor observa, e o atributo é descartado pelo filtro do `getAuditInclude()`.
-`getFilamentAvatarUrl()` devolve `null` sem avatar (`:841-845`), que é o que faz o Filament cair no
+`getFilamentAvatarUrl()` devolve `null` sem avatar (`:857-862`), que é o que faz o Filament cair no
 `defaultAvatarProvider`.
 
 ### `app/Settings/ConfiguracoesDoKit.php`
@@ -117,9 +125,11 @@ migration **nova**. Passo 2.
 | Tela / Componente | Tipo | Rota | Interação do usuário | Depende de JS? |
 |---|---|---|---|---|
 | Avatar padrão (iniciais) no menu do usuário e nas tabelas de usuários | Filament (provider) | todas as telas dos 3 painéis | nenhuma — é exibição | Não |
-| Rodapé com a versão do kit | Blade em render hook `FOOTER` | todas as telas dos 3 painéis | nenhuma — é exibição | Não |
+| Rodapé com a versão do sistema (e a do kit, rotulada, sob interruptor) | Blade em render hook `FOOTER` | todas as telas dos 3 painéis | nenhuma — é exibição | Não |
 | Alerta de alterações não salvas | Filament nativo (`unsavedChangesAlerts`) | telas `create`/`edit` dos 3 painéis | tentar sair da página com formulário sujo → confirmação do navegador | **Sim** |
 | Campo "Avisar sobre alterações não salvas" | Filament (`Toggle`) | `/admin/configuracoes-da-aplicacao`, aba **Kit** | liga/desliga e salva | Não |
+| Campo "Versão do sistema" | Filament (`TextInput`) | `/admin/configuracoes-da-aplicacao`, aba **Identidade** | digita a versão do produto e salva | Não |
+| Campo "Mostrar também a versão do kit no rodapé" | Filament (`Toggle`) | `/admin/configuracoes-da-aplicacao`, aba **Kit** | liga/desliga e salva | Não |
 
 **Gate de CT-B**: a tabela é gatilho, não critério.
 
@@ -142,7 +152,7 @@ campo novo entra lá.
 |-----|---------|-----------|
 | `KIT_ALERTA_ALTERACOES_NAO_SALVAS` | `true` | Semente de `kit.alerta_alteracoes_nao_salvas`. O banco vence em execução; esta chave semeia a migration de settings e é o plano B |
 
-Nenhuma chave nova para a versão nem para o avatar — ver ADR-04 e ADR-05.
+Nenhuma chave nova para o avatar — ver **ADR-03** *(alterado em 2026-09-18: QA-06 — a redação anterior mandava ler "ADR-04 e ADR-05")*. Para a versão, `APP_VERSION` (chave do Laravel, semeando `app.version`) e `KIT_EXIBIR_VERSAO` *(alterado em 2026-09-18: adendo 2 — a redação anterior negava chaves que passaram a existir)*.
 
 ## Eventos / Listeners / Observers
 
@@ -171,7 +181,7 @@ requisição de rede externa por uma string embutida no HTML.
 ## Impacto em Features Existentes
 
 - **Telas de autenticação**: o render hook `FOOTER` também é emitido por
-  `vendor/filament/filament/resources/views/components/layout/simple.blade.php:58`, que é o layout
+  `vendor/filament/filament/resources/views/components/layout/simple.blade.php:61`, que é o layout
   de login/registro/recuperação. O guard de visitante do passo 3 existe por causa disso. Risco:
   se o guard falhar, a versão aparece para quem não autenticou.
 - **`tests/Kit/TelasDeAutenticacaoTest.php` e `tests/Browser/`**: qualquer asserção que case texto
@@ -215,7 +225,7 @@ requisição de rede externa por uma string embutida no HTML.
   rodar `composer test:kit` inteiro, não só o filtro da feature.
 - **O avatar de iniciais perder contraste** em alguma paleta — mitigação: fundo fixo em
   `gray-950` e texto branco, que é exatamente o par do provider padrão do Filament
-  (`UiAvatarsProvider.php:21-23`), e não depende da cor primária nem da cor da organização.
+  (`UiAvatarsProvider.php:27-23`), e não depende da cor primária nem da cor da organização.
 - **Nome com caractere que quebre o SVG** (aspas, `<`, `&`) — mitigação: `e()` no valor antes de
   compor o SVG, e CT com nome contendo `<script>`.
 
@@ -250,10 +260,10 @@ mais.
 
 **Problema**: `vendor/filament/filament/src/Panel/Concerns/HasAvatars.php:10` define
 `UiAvatarsProvider` como provider padrão, e
-`vendor/filament/filament/src/AvatarProviders/UiAvatarsProvider.php:23` monta
+`vendor/filament/filament/src/AvatarProviders/UiAvatarsProvider.php:29` monta
 `https://ui-avatars.com/api/?name={iniciais}&format=svg&color=FFFFFF&background={hex}`. Os três
 painéis do kit não sobrescrevem (`grep -rn "defaultAvatarProvider" app/` = vazio), e
-`User::getFilamentAvatarUrl()` devolve `null` quando não há foto (`User.php:841-845`). Logo: todo
+`User::getFilamentAvatarUrl()` devolve `null` quando não há foto (`User.php:857-862`). Logo: todo
 usuário sem foto faz o **navegador** requisitar um domínio de terceiro, enviando as iniciais na
 query string e o `Referer` do painel.
 
@@ -271,7 +281,7 @@ query string e o `Referer` do painel.
   2. Iniciais: primeira letra dos dois primeiros segmentos não vazios, em maiúscula, no máximo 2.
      Nome vazio devolve string vazia, e o SVG sai sem texto — nunca lança.
   3. Fundo: `Color::convertToHex(FilamentColor::getColor('gray')[950] ?? Color::Gray[950])` — a
-     mesma expressão do `UiAvatarsProvider.php:21`, para que a aparência não mude.
+     mesma expressão do `UiAvatarsProvider.php:27`, para que a aparência não mude.
   4. Texto branco, `font-family` do sistema, `text-anchor: middle`.
   5. Devolve `'data:image/svg+xml;base64,'.base64_encode($svg)`.
   6. **Escapar** o texto com `e()` antes de compor o SVG.
@@ -311,14 +321,14 @@ silêncio. É a necessidade por trás de RQ-03 e RQ-04, e o Filament já a resol
 - **Path 6**: `.env.example` — `KIT_ALERTA_ALTERACOES_NAO_SALVAS=true`
 - **Logs**: nenhum.
 
-### 3. Versão do kit no rodapé dos painéis
+### 3. Versão do SISTEMA no rodapé dos painéis (e a do kit, sob interruptor)
 
 > Skills: `laravel-best-practices`, `tailwindcss-development`, `pest-testing`
 
 - **Path 1**: `resources/views/filament/versao-do-kit.blade.php` (novo)
   - guard de visitante: renderiza vazio quando `! filament()->auth()->check()`. Existe porque o
     hook `FOOTER` também é emitido pelo layout `simple`
-    (`vendor/filament/filament/resources/views/components/layout/simple.blade.php:58`), que é o
+    (`vendor/filament/filament/resources/views/components/layout/simple.blade.php:61`), que é o
     das telas de autenticação — e versão exposta a visitante é mapa de CVE.
   - conteúdo: `v{{ config('kit.version') }}`, com classes `fi-*` já compiladas na folha do
     Filament. **Nenhuma utilitária Tailwind nova** — o kit não tem `viteTheme()`, e
@@ -335,9 +345,11 @@ silêncio. É a necessidade por trás de RQ-03 e RQ-04, e o Filament já a resol
   `configuraBotaoVoltarAoTopo()`: o `ViewManager` normaliza `null` para o bucket `''`, que o
   `renderHook()` lê em qualquer escopo. Vale para os três painéis e para qualquer painel que o
   projeto criar depois.
-- **Fonte da versão**: `config('kit.version')`, única. A tag do release **já** é esta chave — o
-  `KitUpdate::marcarVersao()` a grava (`KitUpdate.php:1050-1079`). Ver ADR-04 para por que não se
-  lê `.git` em execução.
+- **Fonte da versão**: `config('app.version')` — a do **produto**, editável na tela e semeada por
+  `APP_VERSION`. `config('kit.version')` é a do **starter kit** e só aparece sob
+  `config('kit.exibir_versao')`, que nasce desligada. Ver ADR-04 para por que não se lê `.git` em
+  execução. *(alterado em 2026-09-18: adendo 2 — a redação anterior dava a versão do kit como
+  fonte única, que é o defeito que o adendo corrigiu)*
 - **Logs**: nenhum.
 
 ### 4. `ativo` na trilha de auditoria
@@ -346,7 +358,7 @@ silêncio. É a necessidade por trás de RQ-03 e RQ-04, e o Filament já a resol
 
 **Problema**: `AuditsFillables::getAuditInclude()` devolve `getFillable()` (`:17`), e `ativo` não
 é fillable em `User` (`:89-94`; o default vive em `$attributes`, `:106-108`). `desativar()` grava
-com `forceFill(['ativo' => false])->save()` (`:291`) — o evento dispara, o auditor observa, e o
+com `forceFill(['ativo' => false])->save()` (`:307`) — o evento dispara, o auditor observa, e o
 atributo é descartado pelo filtro. Desativar e reativar conta **não** aparecem em `/infra/audits`.
 
 - **Path 1**: `app/Traits/AuditsFillables.php`
@@ -382,9 +394,9 @@ atributo é descartado pelo filtro. Desativar e reativar conta **não** aparecem
 
 **Problema**: quatro arquivos afirmam que `PanelsRenderHook::USER_MENU_BEFORE` "renderiza DENTRO
 do dropdown do usuário". No Filament 5.7.6 instalado ele é emitido em
-`vendor/filament/filament/resources/views/components/user-menu.blade.php:38`, **antes e fora** do
+`vendor/filament/filament/resources/views/components/user-menu.blade.php:43`, **antes e fora** do
 `<x-filament::dropdown>` que abre na linha 40; quem renderiza dentro é `USER_MENU_PROFILE_BEFORE`
-(`:92`, `:105`, `:128`, `:143`).
+(`:97`, `:105`, `:128`, `:143`).
 
 A decisão de usar `GLOBAL_SEARCH_BEFORE` para o gatilho ⌘K continua certa por outro motivo (a
 posição exata do campo de busca), mas a justificativa escrita está errada — e é exatamente o
@@ -396,7 +408,7 @@ torna o erro invisível"*.
 - `app/Providers/Filament/InfraPanelProvider.php:599-600`
 - `resources/views/filament/user-menu-header.blade.php:7-10`
 
-Cada um passa a citar `user-menu.blade.php:38` e `:92`.
+Cada um passa a citar `user-menu.blade.php:43` e `:97`.
 
 ### 6. Registro documental das dez decisões
 
@@ -425,6 +437,27 @@ Cada um passa a citar `user-menu.blade.php:38` e `:92`.
   | `cj-ronxel-simple-draft` | `ronssij/filament-simple-draft` |
   | `yousef-aman-autosave` | `yousefaman/filament-autosave` |
   | `alex-kramarenko-openapi-docs` | `alexkramse/filament-openapi-docs` |
+
+### 10. Atualizar o Filament para a versão corrente da série
+
+> Acrescentado pelo **Adendo 1** (RQ-14, RQ-15, RQ-16) e **exigido pelo achado QA-01**, Blocker do
+> ciclo 1 do quality gate. Numerado 10 por ser posterior aos nove originais.
+
+**Problema**: a primeira leitura do Adendo 1 verificou só a constraint (`^5.6`, que não trava) e
+concluiu que RQ-14 estava satisfeita — sem notar que RQ-15 é uma cláusula **separada**, com
+gatilho já disparado. `composer outdated "filament/*"` devolvia `5.7.6 ! 5.8.2`.
+
+- **Comando**: `composer update "filament/*" --with-all-dependencies`
+- **Resultado**: `filament/filament` **v5.7.6 → v5.8.2**, e as 9 dependências irmãs junto
+- **Constraint**: **intocada** em `^5.6` — RQ-14 proíbe travar, e subir a constraint para `^5.8`
+  seria travar as instalações que ainda estão na 5.7
+- **Assets**: o `post-update-cmd` republica sozinho; `public/js/filament/**` e
+  `public/fonts/filament/**` entram no diff
+- **Oráculo**: `composer test` completo. Bump de minor de framework não tem outro
+- **Logs**: nenhum — é operação de dependência
+
+Ver ADR-08, inclusive para o limite de RQ-16: o `kit:update` **notifica** a atualização, não a
+propaga, e o porquê disso ser deliberado.
 
 ### 7. Documentação de usuário, CHANGELOG e Blueprint
 

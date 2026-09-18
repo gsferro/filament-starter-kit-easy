@@ -37,10 +37,20 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
   A chave é lida por `Closure`, avaliada no render — a tela governa sem deploy e sem limpar cache.
 
+### Alterado
+- **Filament atualizado de v5.7.6 para v5.8.2**, com as nove dependências irmãs junto. A constraint
+  do `composer.json` continua `^5.6` e **não sobe**: travar em `^5.8` deixaria de fora quem ainda
+  está na 5.7, e o pedido era explicitamente o contrário — não travar.
+
+  O kit **acompanha** a série; ele não **propaga**. `php artisan kit:update` não sobrescreve o
+  `composer.json` do seu projeto (`KitUpdate.php:299-306`) — ele avisa. Sobrescrever apagaria as
+  dependências que você acrescentou, que é um estrago maior que uma versão atrasada. O que o kit
+  garante é que nada impede o seu `composer update`. Ver ADR-08.
+
 ### Corrigido
 - **O avatar padrão deixou de ser buscado em `ui-avatars.com`.** O provider padrão do Filament é o
   `UiAvatarsProvider` (`Panel/Concerns/HasAvatars.php:10`), que devolve
-  `https://ui-avatars.com/api/?name={iniciais}&…` (`AvatarProviders/UiAvatarsProvider.php:23`), e
+  `https://ui-avatars.com/api/?name={iniciais}&…` (`AvatarProviders/UiAvatarsProvider.php:29`), e
   **nenhum dos três painéis o sobrescrevia**. Como `User::getFilamentAvatarUrl()` devolve `null`
   sem foto, o navegador de cada pessoa requisitava um domínio de terceiro em **toda tela**, levando
   as iniciais na query string e o `Referer` do painel junto.
@@ -68,9 +78,9 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - **Quatro arquivos justificavam a escolha de render hook com uma afirmação errada sobre o vendor.**
   Os três `PanelProvider` e `resources/views/filament/user-menu-header.blade.php` diziam que
   `PanelsRenderHook::USER_MENU_BEFORE` "renderiza DENTRO do dropdown do usuário". Ele não renderiza:
-  é emitido em `vendor/filament/filament/resources/views/components/user-menu.blade.php:38`, **antes
+  é emitido em `vendor/filament/filament/resources/views/components/user-menu.blade.php:43`, **antes
   e fora** do `<x-filament::dropdown>` da linha 40 — quem renderiza dentro é
-  `USER_MENU_PROFILE_BEFORE` (`:92`, `:105`, `:128`, `:143`).
+  `USER_MENU_PROFILE_BEFORE` (`:97`, `:105`, `:128`, `:143`).
 
   A decisão de usar `GLOBAL_SEARCH_BEFORE` para o gatilho ⌘K continua certa, por outro motivo (a
   posição exata do campo de busca). É o padrão que `.ai/rules/specs.md` nomeia: conclusão certa por

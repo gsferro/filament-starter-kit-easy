@@ -492,7 +492,7 @@ class AppPanelProvider extends PanelProvider
              * USER_MENU_BEFORE fora rejeitado por "renderizar DENTRO do dropdown do
              * usuário". Ele NÃO renderiza dentro. No Filament 5 instalado ele é
              * emitido em
-             * `vendor/filament/filament/resources/views/components/user-menu.blade.php:38`,
+             * `vendor/filament/filament/resources/views/components/user-menu.blade.php:43`,
              * ANTES e FORA do `<x-filament::dropdown>` que abre na linha 40 — ou seja,
              * também na topbar, colado ao avatar. A escolha continua certa; a
              * justificativa estava errada, que é o padrão que `.ai/rules/specs.md`
@@ -506,7 +506,7 @@ class AppPanelProvider extends PanelProvider
              * Cabeçalho de identidade: avatar, nome, e-mail e o badge do papel.
              *
              * USER_MENU_PROFILE_BEFORE é o hook que renderiza DENTRO do dropdown
-             * (`user-menu.blade.php:92`, e de novo em `:105`, `:128` e `:143`, um por
+             * (`user-menu.blade.php:97`, e de novo em `:110`, `:133` e `:148`, um por
              * variação de layout do menu), e é por isso que ele serve aqui.
              *
              * O par com o bloco de cima é de POSIÇÃO, não de dentro/fora: lá o gatilho

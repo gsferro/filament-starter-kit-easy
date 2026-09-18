@@ -4,7 +4,7 @@
     Registrada nos TRÊS painéis por `PanelsRenderHook::USER_MENU_PROFILE_BEFORE`, que emite
     DENTRO do dropdown, logo acima do item "Meu perfil"
     (`vendor/filament/filament/resources/views/components/user-menu.blade.php:92`, e de novo em
-    `:105`, `:128` e `:143`, um por variação de layout do menu).
+    `:110`, `:133` e `:148`, um por variação de layout do menu).
 
     Não confundir com o irmão `USER_MENU_BEFORE`: ele é emitido em `:38`, ANTES e FORA do
     `<x-filament::dropdown>` que abre na linha 40 — ou seja, na topbar, colado ao avatar, e não

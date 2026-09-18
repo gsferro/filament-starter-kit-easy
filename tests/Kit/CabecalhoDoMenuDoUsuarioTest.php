@@ -198,7 +198,7 @@ it('não renderiza o cabeçalho na tela de login', function (string $painel): vo
  * e confere a ordem real. Se um upgrade do Filament mover qualquer um dos dois, ele fica vermelho
  * e o comentário é reescrito junto — em vez de continuar afirmando algo que deixou de valer.
  */
-it('mantem USER_MENU_BEFORE fora do dropdown e USER_MENU_PROFILE_BEFORE dentro', function (): void {
+it('[CT-35] mantem USER_MENU_BEFORE fora do dropdown e USER_MENU_PROFILE_BEFORE dentro', function (): void {
     $blade = (string) file_get_contents(
         base_path('vendor/filament/filament/resources/views/components/user-menu.blade.php'),
     );
@@ -218,4 +218,28 @@ it('mantem USER_MENU_BEFORE fora do dropdown e USER_MENU_PROFILE_BEFORE dentro',
             $aberturaDoDropdown,
             'USER_MENU_PROFILE_BEFORE saiu de dentro do dropdown — o cabeçalho do menu do usuário mudou de lugar',
         );
+
+    /*
+     * A terceira metade do `Então` de CT-35, e ela é asserção de PRESENÇA, não de ausência.
+     *
+     * A versão anterior do cenário afirmava que "nenhum arquivo do kit diz que o hook renderiza
+     * dentro do dropdown" — ausência de texto livre, que a mesma afirmação errada reescrita com
+     * outras palavras satisfaz. Exigir a CITAÇÃO da view é o que `.ai/rules/testes.md` recomenda
+     * quando o objeto é o texto de um comentário, e é o que mata M51: a correção que troca o texto
+     * em três dos quatro arquivos e esquece o quarto.
+     *
+     * Sem NÚMERO de linha de propósito: num kit obrigado por RQ-14/RQ-15 a aceitar toda
+     * atualização da série do Filament, casar `:38` é ruído garantido no próximo upgrade. Quem
+     * mede a posição é a metade de cima deste caso, contra o vendor instalado.
+     */
+    $justificam = [
+        base_path('app/Providers/Filament/AdminPanelProvider.php'),
+        base_path('app/Providers/Filament/AppPanelProvider.php'),
+        base_path('app/Providers/Filament/InfraPanelProvider.php'),
+        resource_path('views/filament/user-menu-header.blade.php'),
+    ];
+
+    foreach ($justificam as $arquivo) {
+        expect((string) file_get_contents($arquivo))->toContain('user-menu.blade.php');
+    }
 })->group('kit');

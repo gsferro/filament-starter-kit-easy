@@ -27,23 +27,30 @@ gravação de formulário, e foram cortadas explicitamente na `## Poda` do `04`.
 
 ## Pré-requisitos
 
-- [ ] `npm run build` executado — sem `public/build/manifest.json` **toda** tela responde
+- [x] `npm run build` executado — sem `public/build/manifest.json` **toda** tela responde
       `ViteException` e todo cenário falha por um motivo que não é o dele. O `composer test:browser`
       já embute o build.
-- [ ] `php artisan view:cache` — o primeiro cenário que renderiza um painel paga a compilação
+- [x] `php artisan view:cache` — o primeiro cenário que renderiza um painel paga a compilação
       inteira **dentro do próprio timeout** e estoura os 45 s. O `composer test:browser` também
       embute isso. Não "conserte" o sintoma subindo `pest()->browser()->timeout()`: a rule do
       projeto registra que 40 s e 60 s reproduzem a falha igual.
-- [ ] Rodando **um arquivo isolado** depois de um `view:clear`: aqueça pelo kernel no `beforeEach`
+- [x] Rodando **um arquivo isolado** depois de um `view:clear`: aqueça pelo kernel no `beforeEach`
       com um `$this->get(...)` da mesma tela. O servidor do plugin roda no mesmo processo e reusa
       `storage/framework/views`.
-- [ ] `tests/Browser/Screenshots` no `.gitignore` — e **nenhuma captura nova** nesta feature, então
+- [x] `tests/Browser/Screenshots` no `.gitignore` — e **nenhuma captura nova** nesta feature, então
       nada a acrescentar em `KitArte::IMAGENS`.
-- [ ] Autenticação por `$this->actingAs($usuario)` **antes** do `visit()`. Login pela tela custa
+- [x] Autenticação por `$this->actingAs($usuario)` **antes** do `visit()`. Login pela tela custa
       ~20 s por cenário e não é o que estes dois cenários medem.
-- [ ] O `beforeEach` **não arranja painel**. Cada cenário arranja o seu imediatamente antes de
+- [x] O `beforeEach` **não arranja painel**. Cada cenário arranja o seu imediatamente antes de
       visitar — cenário de navegador renderiza a barra lateral do painel em que o processo foi
       deixado.
+- [x] **Binários do Playwright instalados** (`npm install` + `npx playwright install`). Numa árvore
+      sem `node_modules`, `composer test:browser` morre duas vezes e por motivos diferentes: o
+      `npm run build` não acha o `vite`, e depois o plugin aborta a suíte INTEIRA com
+      `PlaywrightOutdatedException` — "Playwright is outdated" é a mensagem, mas a causa real é o
+      navegador nunca ter sido baixado. Medido nesta feature: 75 testes, 0 verdes, 60 falhas em
+      `Playwright\Client.php:106`. Nenhuma delas tem a ver com o cenário. Não é dependência nova —
+      `playwright` já está em `package.json`; é passo de ambiente.
 
 ---
 
@@ -81,7 +88,6 @@ Funcionalidade: Alerta de alterações não salvas
     Cenário: [CT-B01] o navegador impede a saída silenciosa de um formulário com alteração pendente
       Dado que o alerta de alterações não salvas está ligado na configuração
       E a administradora autenticada na tela de configurações da aplicação
-      E que a tela abriu sem nenhum erro de JavaScript
       Quando ela altera o nome da aplicação sem salvar
       Então uma tentativa de sair da página é cancelada pelo navegador
       E, antes da alteração, a mesma tentativa não era cancelada
@@ -97,18 +103,24 @@ Funcionalidade: Alerta de alterações não salvas
 | 4 | **linha de base**: com o formulário limpo, o evento não é cancelado | `$pagina->assertScript("(() => { const e = new Event('beforeunload', {cancelable:true}); window.dispatchEvent(e); return e.defaultPrevented; })()", false)` | — |
 | 5 | suja o formulário | `->fill('#form\\.nome_da_aplicacao', 'Nome alterado')` | o campo com o valor novo |
 | 6 | **oráculo**: agora o evento é cancelado | `->assertScript("(() => { const e = new Event('beforeunload', {cancelable:true}); window.dispatchEvent(e); return e.defaultPrevented; })()", true)` | — |
-| 7 | apoio | `->assertNoJavaScriptErrors()` | — |
+| 7 | ~~apoio~~ | ~~`->assertNoJavaScriptErrors()`~~ — **não implementada, de propósito** (ver abaixo) | — |
+
+**Implementado em** `tests/Browser/AlertaDeAlteracoesNaoSalvasTest.php`.
 
 **Assertions**: `assertPathIs` primeiro (é ela que espera a navegação) · o par linha de base ×
-oráculo no passo 4 e no passo 6 é o que torna o cenário discriminante · `assertNoJavaScriptErrors()`
-é **apoio**, nunca o oráculo — e é ela, e não `assertNoSmoke()`, porque a tela de configurações
-carrega componentes de plugin de terceiro.
+oráculo no passo 4 e no passo 6 é o que torna o cenário discriminante.
 
-**Armadilha conhecida desta tela**: a tela de configurações tem `ColorPicker` dentro de `Tabs`, e o
-Chrome headless do Linux emite `ResizeObserver loop completed with undelivered notifications` na
-montagem — só no CI. Se o passo 7 reprovar por isso, **remova a asserção de console e escreva por
-quê no arquivo de teste**, como a rule do projeto manda: os oráculos que provam o comportamento são
-os dos passos 4 e 6, e esses ficam.
+**Armadilha conhecida desta tela, e por que o passo 7 não existe no código**: a tela de
+configurações tem `ColorPicker` dentro de `Tabs`, e o Chrome headless do Linux emite
+`ResizeObserver loop completed with undelivered notifications` duas vezes na montagem — **só no
+CI**. `.ai/rules/testes-browser.md` não deixa isso como contingência ("se reprovar, remova"), e sim
+como regra em pé: *"em tela com esse par de componentes, não use a asserção e escreva por que ela
+não está ali"*. O redator do roteiro escreveu o passo 7 condicional; o implementador aplicou a
+regra. `tests/Browser/ConfiguracoesDoKitTest.php` — a outra suíte de navegador desta mesma tela —
+já a tinha removido pela mesma causa, medida num CI vermelho da feature `settings-do-kit`.
+
+Escrever o passo 7 e esperar o CI reprovar teria custado um pipeline vermelho para reaprender o que
+a rule já registra. Os oráculos que provam o comportamento são os dos passos 4 e 6, e esses ficam.
 
 **Por que dois disparos e não um**: com um só, um ouvinte que cancelasse **sempre** (ignorando o
 estado do formulário) passaria. O par é o que distingue "o alerta existe" de "o alerta observa o
@@ -142,7 +154,7 @@ Funcionalidade: Avatar padrão
   Regra: o avatar de quem não enviou foto é gerado pela própria aplicação
 
     Cenário: [CT-B02] a tela de quem não tem foto não busca nada fora da aplicação
-      Dado uma usuária autenticada sem foto de perfil, chamada "Ana Souza"
+      Dado uma usuária autenticada sem foto de perfil
       Quando ela abre o painel /admin no navegador
       Então nenhum recurso carregado pela página veio de um domínio de terceiro
       E nenhuma imagem da página está quebrada
@@ -155,16 +167,28 @@ Funcionalidade: Avatar padrão
 | 1 | arranja a persona sem foto | `$this->actingAs(usuarioDoKit('admin'));` — o usuário do kit nasce sem foto | — |
 | 2 | aquece a compilação fora do cronômetro | `$this->get('/admin');` | — |
 | 3 | abre o painel | `$pagina = visit('/admin')->assertPathIs('/admin');` | o painel administrativo |
-| 4 | **oráculo de rede** | `$recursos = json_decode((string) $pagina->script("JSON.stringify(performance.getEntriesByType('resource').map(r => r.name))"), true, flags: JSON_THROW_ON_ERROR);` | — |
-| 5 | assere | `expect($recursos)->not->toBeEmpty()` e nenhum item contendo `ui-avatars.com` nem qualquer host fora do host da própria página | — |
-| 6 | **oráculo de decodificação** | `$pagina->assertNoBrokenImages()` | o avatar desenhado |
+| 4 | **oráculo de decodificação** — e é ele que espera a carga terminar | `$pagina->assertNoBrokenImages()` | o avatar desenhado |
+| 5 | lê a rede | `$recursos = json_decode((string) $pagina->script("JSON.stringify(performance.getEntriesByType('resource').map(r => r.name))"), true, flags: JSON_THROW_ON_ERROR);` e `$origem = (string) $pagina->script('location.origin');` | — |
+| 6 | **oráculo de rede** | `expect($recursos)->not->toBeEmpty()` e, filtrando por `! str_starts_with($recurso, $origem)`, `expect($deTerceiros)->toBe([])` | — |
 | 7 | apoio | `->assertNoJavaScriptErrors()` | — |
+
+**Implementado em** `tests/Browser/AvatarDeIniciaisTest.php`.
+
+**Ordem trocada em relação ao primeiro rascunho deste roteiro** (a decodificação era o passo 6 e a
+leitura de rede o 4): `assertNoBrokenImages()` chama `waitForLoadState('load')`
+(`vendor/pestphp/pest-plugin-browser/src/Api/Concerns/MakesConsoleAssertions.php:36`), e é a única
+coisa no cenário que espera a carga terminar. Lendo `performance` antes dela, a lista de recursos
+seria um retrato de meio caminho — e um retrato de meio caminho satisfaz uma asserção de ausência
+pelo motivo errado. Com a ordem atual, o `not->toBeEmpty()` vigia um mundo que já acabou de
+carregar.
 
 **Assertions**: `assertPathIs` primeiro · `expect($recursos)->not->toBeEmpty()` é obrigatório — sem
 ele, uma página que não carregou recurso nenhum (ou um `script()` que devolveu vazio) satisfaria a
 asserção de ausência, que é exatamente o **não-efeito em mundo vazio** que o gate proíbe · a
-asserção de host compara com o host da própria página, e não com uma lista de domínios proibidos:
-uma lista negra só pega o domínio que alguém lembrou de escrever.
+asserção de host compara com o host da própria página — lido no navegador por `location.origin`, e
+não montado em PHP, porque o plugin sobe o servidor em **porta aleatória** e o teste não sabe qual
+é —, e não com uma lista de domínios proibidos: uma lista negra só pega o domínio que alguém
+lembrou de escrever.
 
 **Por que `assertNoBrokenImages()` e não `assertVisible`**: `assertVisible` passa para qualquer
 elemento com caixa não vazia — um `<img>` com `src` inválido continua "visível". `assertNoBrokenImages`
@@ -202,9 +226,29 @@ CT-45, no `04`, e ele é teste de componente — duas pessoas sem foto na mesma 
 
 ## Roteiro de Validação: Desenhado × Implementado
 
-Preencher no step 7 da `feature-wiki`, com evidência inline.
-
 | # | O que o requisito pediu | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | o alerta de alterações não salvas chega ao navegador quando a configuração o liga (RQ-03/RQ-04 via `## Ambiguidades`) | | | |
-| 2 | nenhum dado do usuário sai para terceiro na renderização do avatar (RQ-13, `@premissa` — pergunta nº 1 do `04`) | | | |
+| 1 | o alerta de alterações não salvas chega ao navegador quando a configuração o liga (RQ-03/RQ-04 via `## Ambiguidades`) | `->unsavedChangesAlerts(fn (): bool => (bool) config('kit.alerta_alteracoes_nao_salvas'))` nos três painéis; o Filament emite `setUpUnsavedDataChangesAlert({ $wire })` e o ouvinte compara `md5($wire.data)` com `$wire.savedDataHash` | **Sim** | `AdminPanelProvider.php:101`, `AppPanelProvider.php:112`, `InfraPanelProvider.php:123`; `vendor/filament/filament/resources/views/components/page/index.blade.php:162-166`; `vendor/filament/filament/resources/js/unsaved-changes-alert.js:1-14`. CT-B01 verde: `defaultPrevented` é `false` com o formulário limpo e `true` depois do `fill` |
+| 2 | nenhum dado do usuário sai para terceiro na renderização do avatar (RQ-13, `@premissa` — pergunta nº 1 do `04`) | `->defaultAvatarProvider(App\Support\AvatarDeIniciais::class)` nos três painéis; o provider devolve `data:image/svg+xml;base64,…` desenhado na própria aplicação, no lugar do `UiAvatarsProvider` do Filament | **Sim** | `AdminPanelProvider.php:95`, `AppPanelProvider.php:106`, `InfraPanelProvider.php:117`; `App\Support\AvatarDeIniciais::get()`. CT-B02 verde: `performance.getEntriesByType('resource')` não veio vazia e **nenhum** item cai fora de `location.origin`; `assertNoBrokenImages()` prova que o `data:` URI decodifica |
+
+### Passo do desenho que NÃO virou código, e por quê
+
+| Passo | Decisão | Motivo |
+|---|---|---|
+| CT-B01, passo 7 (`assertNoJavaScriptErrors()`) e o `Dado ... a tela abriu sem nenhum erro de JavaScript` que era o par dele no Gherkin | **não implementado; a linha do Gherkin saiu junto** | `ColorPicker` dentro de `Tabs` emite `ResizeObserver loop…` no headless do Linux. `.ai/rules/testes-browser.md` proíbe a asserção nessa combinação — não é contingência, é regra em pé. Não reproduz no Chrome do Windows, então o roteiro ficaria verde local e vermelho no CI |
+| CT-B02, Gherkin — a persona chamada "Ana Souza" | **nome removido do cenário** | o roteiro executável arranja `usuarioDoKit('admin')`, cujo `name` é `Usuário`, e **nenhuma asserção do cenário lê o nome** — as iniciais desenhadas não são oráculo aqui (quem as mede é CT-45, no `04`). Um nome no `Dado` que o arranjo não cria é promessa de cobertura que o cenário não tem |
+| CT-B02, ordem dos passos 4 e 6 | **invertida** | `assertNoBrokenImages()` é quem espera `load`; lendo `performance` antes dela a asserção de ausência valeria sobre um retrato incompleto |
+
+### Execução
+
+```
+composer test:browser
+```
+
+(embute `config:clear`, `npm run build`, `view:cache` e `artisan test --testsuite=Browser`, em
+série — **nunca `--parallel`**)
+
+| Run | Resultado |
+|---|---|
+| suíte `Browser` completa | **75 testes, 61 verdes, 14 pulados, 0 falhas, 320 asserções, 254 s** |
+| só os dois arquivos novos | **2 verdes, 8 asserções** — e as 8 são exatamente as asserções escritas (3 em CT-B01, 5 em CT-B02), o que confirma execução real e não replay do TIA |
