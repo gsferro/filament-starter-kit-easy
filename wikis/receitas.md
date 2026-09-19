@@ -334,7 +334,7 @@ reprovados por `tests/Kit/PageHeaderTest.php:[CT-26]`.
 > JS próprios. Sem isso o cabeçalho sai sem estilo e o modo compacto fica inerte.
 >
 > **4. `whenCompact()` é apresentação, nunca autorização.** O vendor é explícito
-> (`docs/configuration.md:229`). Esconder um `summary()` com contagens no modo compacto não o
+> (`docs/configuration.md:227`). Esconder um `summary()` com contagens no modo compacto não o
 > protege: o dado já foi renderizado e está no HTML.
 
 ### Ligar num painel que ainda não tem

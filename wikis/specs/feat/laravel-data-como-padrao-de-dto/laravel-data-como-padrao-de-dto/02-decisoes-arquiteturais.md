@@ -38,7 +38,7 @@ passo 9 registra a proibição para quem vier depois. O cenário que falsifica e
 `RQ-01` e `RQ-02` pedem o pacote e a regra. O kit hoje não tem DTO nenhum: onde precisa de
 estrutura, usa `array` com shape documentado em PHPDoc — 8 ocorrências confirmadas em `app/`,
 duas delas com o **mesmo** shape redocumentado em classes diferentes
-(`Convite::convidarEmMassa():279` e `ConvidaEmMassa::notificarResultadoDoLote():145`).
+(`Convite::convidarEmMassa():284` e `ConvidaEmMassa::notificarResultadoDoLote():148`).
 
 ### Decisão
 
@@ -112,7 +112,7 @@ ou lixo junto.
 ### Contexto
 
 O dado externo chega em `snake_case`, com chaves que variam por provedor
-(`ProvedorSocial::booleanoDoBruto():219` lê `email_verified`, `verified_email` ou `confirmed_email`
+(`ProvedorSocial::booleanoDoBruto():217` lê `email_verified`, `verified_email` ou `confirmed_email`
 conforme o provedor). O pacote oferece `#[MapInputName]` e mappers automáticos de casing.
 
 ### Decisão
@@ -150,7 +150,7 @@ não é chamado direto pelo código consumidor.
 
 ### Contexto
 
-O shape `{name, email, password}` é montado à mão em quatro pontos do kit (`Convite::aceitar():601`,
+O shape `{name, email, password}` é montado à mão em quatro pontos do kit (`Convite::aceitar():604`,
 `RegistroAberto::registrar():160` e dois literais em `LoginSocialController.php:399,636`) e seria,
 pela régua de P2, um candidato forte a Data.
 
@@ -226,7 +226,7 @@ Payload malformado do provedor e banco fora do ar ficam **indistinguíveis** na 
 
 Onde o kit criar Data a partir de payload externo, a exceção de criação/validação do pacote é
 capturada **separadamente** da exceção de infraestrutura, e cada uma tem o seu log e o seu
-desfecho. O padrão já existente no kit é o alvo: `GarantirPromptSeguroMiddleware::classificar():66`
+desfecho. O padrão já existente no kit é o alvo: `GarantirPromptSeguroMiddleware::classificar():69`
 já separa "resposta fora do schema" (devolve `null`, fail-open deliberado) de "container fora do
 ar" (`catch (Throwable)` com `warning`) — o Data entra **sem** apagar essa distinção.
 

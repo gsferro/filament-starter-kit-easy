@@ -54,11 +54,11 @@
 | RQ | Cláusula | Passo PRD | CT | CT-B | Código | Resultado | Veredito |
 |----|----------|-----------|----|------|--------|-----------|----------|
 | RQ-01 | visão geral no topo, acima da tabela | 1 | CT-01 | — | `ListTenants::getHeaderWidgets():58-63` | verde | OK |
-| RQ-02 | tabela imediatamente depois da visão geral | 1 | CT-01 | — | template do vendor (`page/index.blade.php:headerWidgets:105, slot:109, footerWidgets:113`) | verde | OK |
+| RQ-02 | tabela imediatamente depois da visão geral | 1 | CT-01 | — | template do vendor (`page/index.blade.php:headerWidgets:109, slot:109, footerWidgets:113`) | verde | OK |
 | RQ-03 | demais widgets abaixo da tabela | 1 | CT-01 | — | `ListTenants::getFooterWidgets():68-74` | verde | OK (sob premissa do `00`) |
-| RQ-04 | título com a caixa configurada | 2 | CT-02 | — | `TenantResource::getPluralModelLabel():82-85` | verde | OK |
+| RQ-04 | título com a caixa configurada | 2 | CT-02 | — | `TenantResource::getPluralModelLabel():83` | verde | OK |
 | RQ-05 | breadcrumb com a caixa configurada | 2 | CT-03 | — | mesmo método, via `HasBreadcrumbs::getBreadcrumb():9-12` | verde | OK |
-| RQ-06 | menu não regride | 2 | CT-02, 2º `Então` | — | `TenantResource::getNavigationLabel():87-90` (intacto) | verde | OK |
+| RQ-06 | menu não regride | 2 | CT-02, 2º `Então` | — | `TenantResource::getNavigationLabel():88` (intacto) | verde | OK |
 
 Nenhuma linha de "código sem `RQ`": o diff em `app/` tem exatamente duas mudanças de comportamento, ambas mapeadas acima. As demais linhas do diff são docblock, teste, docs e CHANGELOG.
 

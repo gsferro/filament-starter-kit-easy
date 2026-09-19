@@ -61,7 +61,7 @@ it('desenha a grade de cartões do hub de infraestrutura', function (): void {
  * a tipografia do kit, dentro do cartão.
  *
  * Conferi as três utilitárias que a blade emite no bloco de descrição
- * (`vendor/harvirsidhu/filament-cards/resources/views/pages/cards-page.blade.php:373-381`) contra
+ * (`vendor/harvirsidhu/filament-cards/resources/views/components/card.blade.php:229`) contra
  * `resources/css/filament/cards.css`, e as três já estavam lá — `text-sm` na linha 114,
  * `text-gray-500` na 120 e o par de tema escuro na 141. Isto REDUZ o risco de ADR-02 da wiki
  * ancestral; não o elimina, porque o que a leitura não cobre é o efeito composto: dezesseis

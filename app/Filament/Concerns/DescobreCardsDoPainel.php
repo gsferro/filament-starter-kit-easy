@@ -77,8 +77,12 @@ trait DescobreCardsDoPainel
      *
      * `null` é seguro: `HasDescription::description()` aceita nulo e a blade do pacote só emite o
      * `<p>` sob `@if (filled($itemDescription))`
-     * (`vendor/harvirsidhu/filament-cards/resources/views/pages/cards-page.blade.php:373`). Cartão
+     * (`vendor/harvirsidhu/filament-cards/resources/views/components/card.blade.php:226`). Cartão
      * sem frase sai byte a byte como antes — é o que mantém os hubs de /admin e /app intactos.
+     *
+     * A citação apontava para `pages/cards-page.blade.php:373` até 2026-09-19, e o arquivo tem 151
+     * linhas: no `filament-cards` 1.1.0 o bloco da descrição mudou de ARQUIVO, não só de linha.
+     * Foi `tests/Kit/CitacoesDeCodigoTest.php` que acusou.
      */
     protected static function cardDe(string $componente, ?string $descricao = null): CardItem
     {

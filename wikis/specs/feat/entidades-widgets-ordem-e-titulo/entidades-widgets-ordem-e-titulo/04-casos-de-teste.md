@@ -81,7 +81,7 @@ R1 e R2 compartilham CT-01: a ordem completa dos cinco blocos (visão geral, tab
 
 ### Estratégia de DB
 
-- `RefreshDatabase` global via `pest()->extend(TenancyTestCase::class)->use(RefreshDatabase::class)->in('Tenancy')` (`tests/Pest.php:TenancyTestCase:78-81`). Suíte `Tenancy` porque `TenantResource::canAccess()` exige `kit.tenancy.enabled`, que só `Tests\TenancyTestCase` liga.
+- `RefreshDatabase` global via `pest()->extend(TenancyTestCase::class)->use(RefreshDatabase::class)->in('Tenancy')` (`tests/Pest.php:TenancyTestCase:80`). Suíte `Tenancy` porque `TenantResource::canAccess()` exige `kit.tenancy.enabled`, que só `Tests\TenancyTestCase` liga.
 
 ---
 

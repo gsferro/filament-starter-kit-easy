@@ -554,7 +554,7 @@ it('captura a lista de usuários com a coluna Origem', function (): void {
  * o recurso ficaria invisível.
  *
  * O alvo também nasce **inativo**: o badge de situação só tem o que mostrar se houver situação
- * diferente do caminho feliz, e "Inativo" é o rótulo que sai de `User::corDaSituacao():513` em
+ * diferente do caminho feliz, e "Inativo" é o rótulo que sai de `User::corDaSituacao():511` em
  * `danger`. Conta ativa daria um badge verde que se confunde com o resto da tela.
  *
  * Aquece o `/admin`, e só ele — cenário arranjado num painel e visitando outro renderiza a barra
