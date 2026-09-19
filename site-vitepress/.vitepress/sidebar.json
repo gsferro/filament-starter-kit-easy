@@ -1,0 +1,322 @@
+{
+  "/pt/": [
+    {
+      "text": "Começar",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "Visão geral",
+          "link": "/pt/comecar/"
+        },
+        {
+          "text": "Instalação avançada",
+          "link": "/pt/comecar/instalacao-avancada"
+        },
+        {
+          "text": "Atualizando o projeto",
+          "link": "/pt/comecar/atualizando-o-projeto"
+        },
+        {
+          "text": "Domínio local",
+          "link": "/pt/comecar/dominio-local"
+        }
+      ]
+    },
+    {
+      "text": "Autenticação",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "Visão geral",
+          "link": "/pt/autenticacao/"
+        },
+        {
+          "text": "Convite de usuário",
+          "link": "/pt/autenticacao/convites"
+        },
+        {
+          "text": "Registro aberto e aprovação",
+          "link": "/pt/autenticacao/registro-aberto"
+        },
+        {
+          "text": "Login social",
+          "link": "/pt/autenticacao/login-social"
+        },
+        {
+          "text": "Proteção anti-robô",
+          "link": "/pt/autenticacao/protecao-anti-robo"
+        },
+        {
+          "text": "Usuário ativo, inativo e excluído",
+          "link": "/pt/autenticacao/estados-de-usuario"
+        },
+        {
+          "text": "A rota / é pública",
+          "link": "/pt/autenticacao/rota-publica"
+        },
+        {
+          "text": "Página única de login",
+          "link": "/pt/autenticacao/login-unificado"
+        }
+      ]
+    },
+    {
+      "text": "Recursos",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "Visão geral",
+          "link": "/pt/recursos/"
+        },
+        {
+          "text": "Multi-tenancy (opt-in)",
+          "link": "/pt/recursos/multi-tenancy"
+        },
+        {
+          "text": "Anexos e mídia",
+          "link": "/pt/recursos/anexos-e-midia"
+        },
+        {
+          "text": "Import e export (CSV)",
+          "link": "/pt/recursos/import-export-csv"
+        },
+        {
+          "text": "Trilhas do /infra: exceções, e-mails e lixeira",
+          "link": "/pt/recursos/trilhas-de-infraestrutura"
+        },
+        {
+          "text": "Configuração global do Filament",
+          "link": "/pt/recursos/configuracao-global-filament"
+        },
+        {
+          "text": "Configurações do kit em /admin",
+          "link": "/pt/recursos/configuracoes-do-kit"
+        },
+        {
+          "text": "Hub de navegação em cartões",
+          "link": "/pt/recursos/hub-de-navegacao"
+        },
+        {
+          "text": "DTO com Laravel Data",
+          "link": "/pt/recursos/dto-com-laravel-data"
+        }
+      ]
+    },
+    {
+      "text": "Operação",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "Visão geral",
+          "link": "/pt/operacao/"
+        },
+        {
+          "text": "Trabalhando com agentes de IA",
+          "link": "/pt/operacao/agentes-de-ia"
+        },
+        {
+          "text": "Roteiro de features",
+          "link": "/pt/operacao/roteiro-de-features"
+        },
+        {
+          "text": "Convenções do kit",
+          "link": "/pt/operacao/convencoes-do-kit"
+        },
+        {
+          "text": "Depois de criar seus Resources",
+          "link": "/pt/operacao/depois-de-criar-resources"
+        },
+        {
+          "text": "Desenvolvendo o próprio kit",
+          "link": "/pt/operacao/desenvolvendo-o-kit"
+        }
+      ]
+    },
+    {
+      "text": "Referência",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "Visão geral",
+          "link": "/pt/referencia/"
+        },
+        {
+          "text": "Qualidade de código",
+          "link": "/pt/referencia/qualidade-de-codigo"
+        },
+        {
+          "text": "Busca e idioma",
+          "link": "/pt/referencia/busca-e-idioma"
+        },
+        {
+          "text": "Pacotes instalados",
+          "link": "/pt/referencia/pacotes-instalados"
+        },
+        {
+          "text": "Estudo: Advanced Tables e alternativas",
+          "link": "/pt/referencia/estudo-advanced-tables"
+        }
+      ]
+    }
+  ],
+  "/en/": [
+    {
+      "text": "Getting started",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "Overview",
+          "link": "/en/comecar/"
+        },
+        {
+          "text": "Advanced installation",
+          "link": "/en/comecar/instalacao-avancada"
+        },
+        {
+          "text": "Updating the project",
+          "link": "/en/comecar/atualizando-o-projeto"
+        },
+        {
+          "text": "Local domain",
+          "link": "/en/comecar/dominio-local"
+        }
+      ]
+    },
+    {
+      "text": "Authentication",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "Overview",
+          "link": "/en/autenticacao/"
+        },
+        {
+          "text": "User invitation",
+          "link": "/en/autenticacao/convites"
+        },
+        {
+          "text": "Open registration and approval",
+          "link": "/en/autenticacao/registro-aberto"
+        },
+        {
+          "text": "Social login",
+          "link": "/en/autenticacao/login-social"
+        },
+        {
+          "text": "Anti-robot protection",
+          "link": "/en/autenticacao/protecao-anti-robo"
+        },
+        {
+          "text": "Active, inactive and deleted users",
+          "link": "/en/autenticacao/estados-de-usuario"
+        },
+        {
+          "text": "The / route is public",
+          "link": "/en/autenticacao/rota-publica"
+        },
+        {
+          "text": "Single login page",
+          "link": "/en/autenticacao/login-unificado"
+        }
+      ]
+    },
+    {
+      "text": "Features",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "Overview",
+          "link": "/en/recursos/"
+        },
+        {
+          "text": "Multi-tenancy (opt-in)",
+          "link": "/en/recursos/multi-tenancy"
+        },
+        {
+          "text": "Attachments and media",
+          "link": "/en/recursos/anexos-e-midia"
+        },
+        {
+          "text": "CSV import and export",
+          "link": "/en/recursos/import-export-csv"
+        },
+        {
+          "text": "The /infra trails: exceptions, mail and recycle bin",
+          "link": "/en/recursos/trilhas-de-infraestrutura"
+        },
+        {
+          "text": "Global Filament configuration",
+          "link": "/en/recursos/configuracao-global-filament"
+        },
+        {
+          "text": "Kit settings under /admin",
+          "link": "/en/recursos/configuracoes-do-kit"
+        },
+        {
+          "text": "Card navigation hub",
+          "link": "/en/recursos/hub-de-navegacao"
+        },
+        {
+          "text": "DTOs with Laravel Data",
+          "link": "/en/recursos/dto-com-laravel-data"
+        }
+      ]
+    },
+    {
+      "text": "Operations",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "Overview",
+          "link": "/en/operacao/"
+        },
+        {
+          "text": "Working with AI agents",
+          "link": "/en/operacao/agentes-de-ia"
+        },
+        {
+          "text": "Feature roadmap",
+          "link": "/en/operacao/roteiro-de-features"
+        },
+        {
+          "text": "Kit conventions",
+          "link": "/en/operacao/convencoes-do-kit"
+        },
+        {
+          "text": "After creating your Resources",
+          "link": "/en/operacao/depois-de-criar-resources"
+        },
+        {
+          "text": "Developing the kit itself",
+          "link": "/en/operacao/desenvolvendo-o-kit"
+        }
+      ]
+    },
+    {
+      "text": "Reference",
+      "collapsed": false,
+      "items": [
+        {
+          "text": "Overview",
+          "link": "/en/referencia/"
+        },
+        {
+          "text": "Code quality",
+          "link": "/en/referencia/qualidade-de-codigo"
+        },
+        {
+          "text": "Search and language",
+          "link": "/en/referencia/busca-e-idioma"
+        },
+        {
+          "text": "Installed packages",
+          "link": "/en/referencia/pacotes-instalados"
+        },
+        {
+          "text": "Study: Advanced Tables and alternatives",
+          "link": "/en/referencia/estudo-advanced-tables"
+        }
+      ]
+    }
+  ]
+}
