@@ -10,7 +10,7 @@ use Filament\Schemas\Schema;
  *
  * So a secao compartilhada, e isso e a feature: a ficha do /admin acrescenta "Vinculos" com as
  * organizacoes da pessoa, e aqui essa secao NAO pode entrar — quem administra a Acme veria que
- * aquele usuario tambem e da Globex. O recorte de `UserResource::getEloquentQuery():197` garante
+ * aquele usuario tambem e da Globex. O recorte de `UserResource::getEloquentQuery():169` garante
  * que so se veja gente DA organizacao corrente; ele nao garante que se possa ver onde mais ela
  * esta. Ver `App\Filament\Concerns\FichaDeUsuario`.
  */

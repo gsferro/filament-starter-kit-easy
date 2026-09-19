@@ -17,7 +17,7 @@ use MortalKiller\FilamentPageHeader\Components\MetadataEntry;
  *
  * As duas classes `Schemas\UserHeader` existem por CONVENÇÃO do pacote, não por escolha: o
  * `HasPageHeader` descobre o schema montando o nome a partir do MODEL do resource
- * (`vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:65-66`),
+ * (`vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:50`),
  * e o namespace vem do resource. Com dois `UserResource`, são dois nomes obrigatórios. Elas
  * delegam para cá em uma linha.
  */

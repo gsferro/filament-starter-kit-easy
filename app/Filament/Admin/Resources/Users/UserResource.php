@@ -223,10 +223,23 @@ class UserResource extends Resource
                 self::acaoDeDesativar(),
                 self::acaoDeReativar(),
                 Impersonate::make(),
-                // Navega para a ficha em vez de abrir modal, porque `hasPage('view')` agora e
-                // verdadeiro (`Resources/Pages/Page::getDefaultActionUrl():382-389`). Autoriza por
-                // `View:User`, via policy — sem `->authorize()` a mais.
-                ViewAction::make(),
+                /*
+                 * Navega para a ficha em vez de abrir modal, porque `hasPage('view')` agora e
+                 * verdadeiro (`vendor/filament/filament/src/Resources/Pages/Page.php:getDefaultActionUrl:361`).
+                 * Autoriza por `View:User`, via policy — sem `->authorize()` a mais.
+                 *
+                 * OCULTA NA LIXEIRA, e isso nao e preferencia: o route binding passa por
+                 * `getEloquentQuery()` (`vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php:resolveRecordRouteBinding:49`)
+                 * e o `Resource::getEloquentQuery()` do Filament NAO remove o `SoftDeletingScope`
+                 * — quem o remove e so o `TrashedFilter`, na tabela. Entao a linha existe na
+                 * listagem filtrada por Lixeira e a ficha dela responde 404. Medido.
+                 *
+                 * A saida escolhida e esconder, e nao alargar o binding: na Lixeira a acao que faz
+                 * sentido e Restaurar, nao Ver. `UserPolicy::view()` nao ajuda aqui porque ela
+                 * ignora o registro (`app/Policies/UserPolicy.php:view:17`).
+                 */
+                ViewAction::make()
+                    ->visible(fn (User $record): bool => ! $record->trashed()),
                 EditAction::make(),
                 // Excluir é LÓGICO (`SoftDeletes` no model); Restaurar só aparece em linha excluída e
                 // autoriza por `Restore:User`, via `getRestoreAuthorizationResponse()` → policy.
@@ -333,7 +346,7 @@ class UserResource extends Resource
             'index'  => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),
             // 'view' ANTES de 'edit' de proposito: `/{record}` e a rota mais curta e o Filament
-            // casa na ordem de declaracao. Mesma ordem de `TenantResource::getPages():141-144`.
+            // casa na ordem de declaracao. Mesma ordem de `TenantResource::getPages():136`.
             'view'   => ViewUser::route('/{record}'),
             'edit'   => EditUser::route('/{record}/edit'),
         ];

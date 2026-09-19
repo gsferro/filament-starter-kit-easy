@@ -255,7 +255,7 @@ class UserResource extends Resource
      *
      * Sobrescrever a RESPOSTA e nao `canView()`: e a resposta que `ViewRecord::authorizeAccess()`
      * le, via `canView()` (`vendor/filament/filament/src/Resources/Pages/ViewRecord.php:80` ->
-     * `Resource/Concerns/HasAuthorization.php:canView:195-198`). Por painel, e nao na `UserPolicy`:
+     * `Resource/Concerns/HasAuthorization.php:canView:194`). Por painel, e nao na `UserPolicy`:
      * no /admin abrir a ficha do `master_global` e legitimo.
      */
     public static function getViewAuthorizationResponse(Model $record): Response
@@ -376,7 +376,7 @@ class UserResource extends Resource
             ->recordActions([
                 self::acaoDeAprovar(),
                 // Navega para a ficha em vez de abrir modal, porque `hasPage('view')` agora e
-                // verdadeiro (`Resources/Pages/Page::getDefaultActionUrl():382-389`). Autoriza por
+                // verdadeiro (`Resources/Pages/Page::getDefaultActionUrl():361`). Autoriza por
                 // `View:User`, via policy, e pela resposta de `getViewAuthorizationResponse()`.
                 ViewAction::make(),
                 EditAction::make(),
@@ -455,7 +455,7 @@ class UserResource extends Resource
             'index'  => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),
             // 'view' ANTES de 'edit' de proposito: `/{record}` e a rota mais curta e o Filament
-            // casa na ordem de declaracao. Mesma ordem de `TenantResource::getPages():141-144`.
+            // casa na ordem de declaracao. Mesma ordem de `TenantResource::getPages():136`.
             'view'   => ViewUser::route('/{record}'),
             'edit'   => EditUser::route('/{record}/edit'),
         ];

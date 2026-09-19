@@ -54,13 +54,19 @@ trait FichaDeUsuario
                     ->placeholder('Não confirmado'),
                 TextEntry::make('created_at')->label('Cadastrado em')->dateTime('d/m/Y H:i'),
                 TextEntry::make('updated_at')->label('Atualizado em')->dateTime('d/m/Y H:i'),
-                TextEntry::make('deleted_at')
-                    ->label('Excluído em')
-                    ->dateTime('d/m/Y H:i')
-                    ->placeholder('—')
-                    ->color('danger')
-                    // Só aparece em conta excluída logicamente; em conta viva a linha seria ruído.
-                    ->visible(fn (User $record): bool => $record->trashed()),
+                /*
+                 * NAO ha entrada `deleted_at` aqui, e a ausencia e deliberada — a primeira versao
+                 * tinha uma, com `->visible(fn (User $record) => $record->trashed())`, e ela era
+                 * CODIGO MORTO: conta excluida logicamente nao chega a esta tela.
+                 *
+                 * O route binding passa por `getEloquentQuery()`, e o `Resource::getEloquentQuery()`
+                 * do Filament nao remove o `SoftDeletingScope` — o unico registro que satisfaria o
+                 * `->visible()` e exatamente o que responde 404. Ver o comentario da `ViewAction`
+                 * em `UserResource::table()`.
+                 *
+                 * Quando a conta excluida precisar de ficha, o caminho e alargar o binding, e ai
+                 * a entrada volta junto com o caso que a cobre.
+                 */
             ]);
     }
 }

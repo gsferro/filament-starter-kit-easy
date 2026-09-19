@@ -16,7 +16,7 @@ use MortalKiller\FilamentPageHeader\Components\MetadataEntry;
  *
  * O NOME e o LUGAR desta classe não são escolha: o pacote a descobre por convenção sobre o MODEL
  * do resource — `{namespace do resource}\Schemas\{class_basename do model}Header` — em
- * `vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:65-66`.
+ * `vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:50`.
  * `configure()` estática é exigida pela mesma função (`:68`, `is_callable([$class, 'configure'])`).
  *
  * Sem par em outro painel: `Tenant` só tem resource no /admin.

@@ -27,7 +27,7 @@ class EditUser extends EditRecord
 {
     /*
      * Cabecalho rico. O schema vem por CONVENCAO do pacote, a partir do MODEL do resource
-     * (`vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:65-66`)
+     * (`vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:50`)
      * — nada a declarar aqui.
      *
      * O trait sobrescreve `getHeader()`. Declarar esse metodo nesta classe tornaria o pacote
