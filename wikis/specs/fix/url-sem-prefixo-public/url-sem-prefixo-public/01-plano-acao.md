@@ -42,14 +42,19 @@ divergem, e a base vira `/public` quando o endereço pedido também traz o prefi
 
 ## Análise dos Arquivos Existentes
 
-### `app/Providers/KitServiceProvider.php`
-Provider "cola" do kit — reúne tudo que o kit acrescenta ao Laravel cru e que não pertence a um
-painel específico. Tem treze métodos `configure*()` chamados em `boot()`, e é onde a correção
-pertence por natureza: vale para a aplicação inteira, não para um painel.
+### `bootstrap/app.php` *(alterado em 2026-09-18: ADR-05)*
+O registro do middleware global. `append()` o coloca **depois** do `TrustProxies`, e a posição é
+requisito — ver ADR-05 e CT-13.
 
-**Ponto de atenção do ciclo de vida**: `boot()` de provider roda **depois** de o request estar
-criado e ligado ao container (`Kernel::handle()` → `bootstrap()` → middleware). Logo, `$this->app['request']`
-já é o request real. Em console não há request útil, e o método precisa sair cedo.
+### ~~`app/Providers/KitServiceProvider.php`~~ — **descartado**
+O plano previa um método `configure*()` no provider "cola" do kit. **Não é mais lá.** O `boot()`
+de provider roda **antes** do `TrustProxies`, e ler `getSchemeAndHttpHost()` ali congelaria host e
+porta sem os cabeçalhos `X-Forwarded-*` — atrás de proxy entregando em 8080, a raiz forçada
+apontaria para uma porta que o navegador não alcança. Achado 2 do `/code-review`; ADR-05.
+
+### `app/Support/BooleanoDoEnv.php` *(acrescentado em 2026-09-18: QA-02)*
+Ganha `ouNulo()`, irmão tri-estado do `comPadrao()` que o kit já tinha. A chave nova precisa
+distinguir "ausente" de "desligado", e o `comPadrao()` sempre devolve booleano.
 
 ## Autorização
 
@@ -71,7 +76,13 @@ propriedade pública nova. A tabela do `02` registra isso explicitamente em vez 
 
 ## Variáveis de Ambiente
 
-Nenhuma nova. A correção **não** usa `APP_URL` — e isso é decisão, registrada na ADR-02.
+*(alterado em 2026-09-18: o Adendo 1 criou RQ-08, e com ele a chave.)*
+
+| Key | Default | Descrição |
+|-----|---------|-----------|
+| `KIT_URL_REMOVER_SUFIXO_PUBLIC` | *(ausente)* = detecta | `true` encurta sempre (nginx), `false` nunca. Ausente, vazia ou ilegível caem na detecção — `BooleanoDoEnv::ouNulo()` |
+
+A correção **não** usa `APP_URL` — decisão da ADR-02.
 
 ## Eventos / Listeners / Observers
 
@@ -88,9 +99,9 @@ Nenhum. Em fila não existe request HTTP, o método sai cedo e a geração de UR
 |---|---|
 | Quantos requests a tela custa? | não altera — a correção roda **uma vez por request**, no boot do provider |
 | O que é adiado, e por qual gatilho? | nada |
-| O que é memoizado por request? | nada; são duas chamadas de string e, no caso quebrado, um `forceRootUrl` |
+| O que é memoizado por request? | nada *(alterado em 2026-09-18: o memo estático foi cortado pela auditoria Ponytail — a leitura do `.htaccess` só acontece quando a base já veio com o sufixo, ou seja nunca em instalação correta)* |
 | O que é cacheado entre requests? | nada |
-| Custo do caminho principal | **zero query**. Em instalação correta o método sai na primeira condição |
+| Custo do caminho principal | **zero query**. Em instalação correta a base é vazia e o middleware sai na primeira condição, sem tocar disco |
 
 ## Impacto em Features Existentes
 
@@ -101,7 +112,9 @@ Nenhum. Em fila não existe request HTTP, o método sai cedo e a geração de UR
 
 ## Rollback
 
-Remover a chamada de `configureRaizDeUrl()` do `boot()`. Sem migration, sem dado, sem estado.
+Remover o `append(RaizDeUrlSemPublic::class)` de `bootstrap/app.php` *(alterado em 2026-09-18)*.
+Sem migration, sem dado, sem estado — e CT-13 fica vermelho, que é o desejado: o rollback é
+visível, não silencioso.
 
 ## Dependências
 
@@ -128,13 +141,14 @@ linha por request, para sempre, sem acrescentar informação depois da primeira.
 
 ## Estrutura de Implementação
 
-### 1. `configureRaizDeUrl()` no `KitServiceProvider`
+### 1. O middleware `RaizDeUrlSemPublic` *(alterado em 2026-09-18: era `configureRaizDeUrl()` no `KitServiceProvider` — ver ADR-05)*
 
 > Skills: `laravel-best-practices`, `ponytail`
 
-- **Path**: `app/Providers/KitServiceProvider.php`
-- Método `protected function configureRaizDeUrl(): void`, chamado em `boot()` **antes** dos
-  demais `configure*` que possam gerar URL
+- **Path**: `app/Http/Middleware/RaizDeUrlSemPublic.php` *(alterado em 2026-09-18: ADR-05 —
+  era um método no `KitServiceProvider`, e `boot()` roda antes do `TrustProxies`)*
+- Anexado ao stack **global** em `bootstrap/app.php`, o que garante a execução depois do
+  `TrustProxies`
 - Lógica *(alterado em 2026-09-18: o guard de console caiu — ver abaixo)*:
   1. ler `$request->getBaseUrl()`
   2. se **não** terminar em `/public`, sair (é o caminho comum; custo zero)

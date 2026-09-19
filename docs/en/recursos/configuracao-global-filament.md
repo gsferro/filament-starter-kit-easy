@@ -106,9 +106,9 @@ does nothing, and the reason is right below. Three consequences worth knowing:
   line, with no query and no cost.
 
 > **This does not excuse fixing `DocumentRoot`.** The kit's defence strips the prefix from the
-> URLs the application generates; it cannot stop someone typing `/public/...` in the address bar,
-> nor stop someone typing `/public/...` in the address bar. If you can point
-> `DocumentRoot` at `public/`, do it.
+> URLs the application generates; it cannot stop someone typing `/public/...` in the address
+> bar, nor remove the extra redirect the `.htaccess` performs on every click. If you can
+> point `DocumentRoot` at `public/`, do it.
 >
 **When the kit strips the prefix, and when it does not.** It only shortens the root when there is
 **evidence** that `/` really routes into `public/` — in practice, a `RewriteRule` pointing at

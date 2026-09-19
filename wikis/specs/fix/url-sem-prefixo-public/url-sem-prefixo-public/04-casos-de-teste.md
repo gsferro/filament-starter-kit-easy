@@ -16,13 +16,13 @@
   e o rollback é remover uma chamada. **Não** dispara revisão adversarial.
 - Técnicas: **EP** sobre o domínio da base, **BVA de sufixo** (a fronteira aqui é textual, não
   numérica) e **Esquema do Cenário** para o eixo dos painéis.
-- Cenários: **12** · Regras: **6** · Mutantes previstos: **16** · **Sem matador: 1** (M11 — ver R4)
+- Cenários: **15** · Regras: **7** · Mutantes previstos: **18** · **Sem matador: 1** (M11 — ver R4)
 - *(recontado em 2026-09-18 no ciclo 2 do quality gate: entra R6/CT-13, e a contagem
   anterior estava errada em três pontos — creditava CT-07, dizia 4 cenários em R4+R5 e
   declarava zero mutantes sem matador enquanto M11 se declarava sem)*
 
 > Teto do perfil padrão é 3 cenários por regra. R1 usa 3, R2 usa 2, R3 usa 1 (Esquema conta como
-> 1), R4 usa 1, R6 usa 1 — e **R5 usa 4**, estouro declarado: a tabela de decisão dela tem seis
+> 1), R4 usa 1, R6 usa 1, R7 usa 3 — e **R5 usa 4**, estouro declarado: a tabela de decisão dela tem seis
 > linhas, e três cenários deixariam a combinação `false` com sinal presente (CT-12) sem matador.
 > O gate de falsificabilidade vence o teto.
 
@@ -30,7 +30,7 @@
 
 | Letra | O que existe nesta feature | Cenários |
 |---|---|---|
-| **S** | um método `protected` num provider. Sem migration, model, job, policy, command ou config nova | — |
+| **S** | um **middleware** (`RaizDeUrlSemPublic`), o registro dele em `bootstrap/app.php`, a chave `kit.url.remover_sufixo_public` em `config/kit.php` e o método `BooleanoDoEnv::ouNulo()`. Sem migration, model, job, policy ou command | CT-13, CT-14…CT-16 |
 | **F** | decidir **se** força a raiz da URL, e **qual** raiz. Nada mais | CT-01…CT-08 |
 | **D** | entrada única: `Request::getBaseUrl()`, derivado pelo Symfony de `SCRIPT_NAME`/`REQUEST_URI`. Partições: vazio · `/public` · `/algo` · `/algo/public` · `/meupublic` · `/PUBLIC` | CT-01…CT-05 |
 | **I** | request HTTP de qualquer painel. A ausência de request deixou de ser cenário: com a correção em **middleware**, console e fila não a atravessam por construção | CT-06, CT-08, **CT-13** |
@@ -48,6 +48,7 @@
 | **R4** — a raiz nova sai do request, nunca do `APP_URL` | raiz de URL (padrão) | ADR-02 | EP | CT-08 |
 | **R5** — só encurta com **evidência positiva**; sem ela, não age | raiz de URL (padrão) | **RQ-06, RQ-07, RQ-08** (Adendo 1) | EP + tabela de decisão | CT-09…CT-12 |
 | **R6** — a correção está **ligada**: middleware no stack global, depois do `TrustProxies` | raiz de URL (padrão) | RQ-01 (sem registro, nada vale) + ADR-05 | EP | CT-13 |
+| **R7** — a chave tri-estado distingue "ausente" de "desligado" | raiz de URL (padrão) | RQ-08 | EP | CT-14…CT-16 |
 
 ## Fronteira com o Plano
 
@@ -83,17 +84,19 @@ Nenhuma no banco. O "mundo" de cada cenário é um `Illuminate\Http\Request` con
 variáveis de servidor que o Apache entregaria **depois** da reescrita interna:
 
 ```
-SCRIPT_NAME     = /public/index.php
-SCRIPT_FILENAME = <raiz>/public/index.php
-PHP_SELF        = /public/index.php
-REQUEST_URI     = <o que o cenário declara>
+SCRIPT_NAME     = <base>/index.php
+SCRIPT_FILENAME = <raiz>/<base>/index.php
 ```
 
-> **Por que as quatro, e não só `SCRIPT_NAME`**: o Symfony percorre `SCRIPT_FILENAME`, `PHP_SELF`
-> e `ORIG_SCRIPT_NAME` na cadeia de derivação da base. Omitir qualquer uma produz base **vazia**
-> em todos os casos — e aí todo cenário passaria sem exercitar nada. Isto foi medido durante a
-> investigação, com dois harnesses errados antes do certo, e por isso está escrito aqui em vez de
-> ficar implícito.
+> **Só duas são load-bearing, e isto foi remedido no ciclo 2** *(alterado em 2026-09-18)*: o
+> Symfony compara o **basename** de `SCRIPT_NAME` com o de `SCRIPT_FILENAME`. Sem o segundo a
+> base sai **vazia** e nenhum cenário exercita nada; `PHP_SELF` e `REQUEST_URI` podem faltar sem
+> efeito.
+>
+> Este bloco já afirmou o contrário, como se fosse medido, e também que
+> `app()->instance('request', …)` não alcançaria o `UrlGenerator`. **As duas eram falsas** — o
+> harness que falhou na investigação não tinha `SCRIPT_FILENAME`, e o sintoma foi atribuído à
+> causa errada. Fica registrado porque wiki que ensina o errado é pior que wiki omissa.
 
 ### Fakes
 
@@ -281,16 +284,15 @@ Funcionalidade: o endereço do painel nunca exibe /public
       Quando a aplicação monta o endereço do painel "/app"
       Então o endereço é "https://kit.test/public/app"
 
-    Esquema do Cenário: [CT-11] a declaração explícita vence a detecção
+    Cenário: [CT-11] true declarado encurta mesmo sem sinal, para nginx
       Dado uma instalação sem .htaccess na raiz
-      E a configuração de remoção declarada como "<declarado>"
+      E a configuração de remoção declarada como "true"
       Quando a aplicação monta o endereço do painel "/app"
-      Então o endereço é "<esperado>"
+      Então o endereço é "https://kit.test/app"
 
-      Exemplos:
-        | declarado | esperado                      | # caso                |
-        | true      | https://kit.test/app          | nginx, reescrita no vhost |
-        | false     | https://kit.test/public/app   | desligado de propósito    |
+    # A linha `false` que existia aqui foi CORTADA no ciclo 1 (ponytail): sem `.htaccess` a
+    # detecção já devolve falso, então ela passava mesmo se a config fosse ignorada por
+    # completo. Quem mata o `false` é CT-12, onde o sinal existe.
 
     Cenário: [CT-12] false explícito vence o sinal presente
       Dado uma instalação COM reescrita na raiz
@@ -342,6 +344,58 @@ Funcionalidade: o endereço do painel nunca exibe /public
 
 ---
 
+## Regra R7 — a chave tri-estado distingue "ausente" de "desligado"
+
+> `RQ-08` · perfil **padrão** · técnica: **EP** sobre o domínio do valor de env
+>
+> **Nasceu do QA-17 do ciclo 2**, e a origem importa: `BooleanoDoEnv::ouNulo()` foi escrito para
+> fechar o QA-02 e entrou **sem um único caso**. A feature o exercita só por `config()->set()`,
+> que pula a linha do `config/kit.php` — então apagar o guard dele fazia `KIT_ALGO=` virar `false`
+> e **desligava a correção de URL com a suíte verde**.
+>
+> Os três cenários nasceram como `it()` sem ID, que é a mesma falha de sincronia pelo outro lado.
+> Passaram por aqui no ciclo 3 e ganharam ID.
+
+```gherkin
+    Cenário: [CT-14] chave ausente ou vazia significa "decida sozinho"
+      Dado a variável de ambiente ausente, ou presente e vazia
+      Quando o kit lê a chave tri-estado
+      Então o valor é nulo, e a detecção decide
+
+    Cenário: [CT-15] valor ilegível cai no padrão, nunca em "desligado"
+      Dado a variável de ambiente com "talvez", "sim", "2" ou "null"
+      Quando o kit lê a chave tri-estado
+      Então o valor é nulo
+
+    Esquema do Cenário: [CT-16] valor legível declara
+      Dado a variável de ambiente com "<bruto>"
+      Quando o kit lê a chave tri-estado
+      Então o valor é <esperado>
+
+      Exemplos:
+        | bruto | esperado | # partição        |
+        | true  | true     | texto afirmativo  |
+        | 1     | true     | numérico          |
+        | on    | true     | palavra do filtro |
+        | false | false    | texto negativo    |
+        | 0     | false    | numérico          |
+        | off   | false    | palavra do filtro |
+```
+
+> **CT-15 é o que separa esta chave de uma booleana comum.** Num `comPadrao()`, valor ilegível
+> cair em `false` é aceitável — o padrão é um booleano. Aqui `false` é **uma das três respostas**
+> e significa "desligado de propósito"; deixar o ilegível virar `false` desliga a correção sem
+> ninguém ter pedido.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M17 | `filter_var` cru, sem o guard de ausente/vazio | **CT-14**, **CT-15** — provado por mutante: 6 casos vermelhos |
+| M18 | sem `FILTER_NULL_ON_FAILURE`, valor ilegível vira `false` | **CT-15** |
+
+---
+
 ## Checklist de Taxonomia
 
 | Item | Cenário que mata |
@@ -384,9 +438,12 @@ Funcionalidade: o endereço do painel nunca exibe /public
 | CT-08 | host e esquema vêm do request | R4 | EP | Kit | idem | M10 |
 | CT-09 | sem sinal, a raiz é preservada | R5 | EP | Kit | idem | M12, M13 |
 | CT-10 | `.htaccess` sem reescrita não é sinal | R5 | EP | Kit | idem | M13 |
-| CT-11 | declaração explícita vence a detecção | R5 | tabela de decisão | Kit | idem | M14 |
+| CT-11 | `true` declarado encurta sem sinal (nginx) | R5 | EP | Kit | idem | M14 |
 | CT-12 | `false` vence o sinal presente | R5 | tabela de decisão | Kit | idem | M14 |
 | CT-13 | o middleware está registrado, depois do `TrustProxies` | R6 | EP | Kit | idem | M15, M16 |
+| CT-14 | chave ausente ou vazia é "decida sozinho" | R7 | EP | Kit | `tests/Kit/BooleanoDoEnvTest.php` | M17 |
+| CT-15 | valor ilegível cai no padrão | R7 | EP | Kit | idem | M17, M18 |
+| CT-16 | valor legível declara | R7 | EP (Esquema) | Kit | idem | — |
 
 **Camada**: todos em `tests/Kit`, a suíte do kit com a aplicação bootada. É a mais barata que os
 prova: o oráculo é **a URL gerada**, e para observá-la bastam um `Request` construído e o gerador

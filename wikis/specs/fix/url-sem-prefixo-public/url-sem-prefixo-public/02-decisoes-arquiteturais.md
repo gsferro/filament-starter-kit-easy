@@ -8,7 +8,7 @@ não é.
 
 | Origem | O que foi inventariado | Resultado |
 |---|---|---|
-| código do projeto | `public function` novo em Page/Widget/componente | **nenhum** — o método é `protected` num provider |
+| código do projeto | `public function` novo em Page/Widget/componente | **nenhum**. O `handle()` do middleware é público por contrato do framework, e não é alcançável por `$wire.`; o `ouNulo()` é estático e puro *(alterado em 2026-09-18: a versão anterior dizia "método `protected` num provider", desenho que a ADR-05 descartou)* |
 | framework | arrays de estado que o cliente escreve (`$filters`, `$pageFilters`, …) | **nenhum consumido** |
 | pacote de terceiro | ação que recebe id do cliente, model persistido | **nenhum** — a feature não persiste nada |
 
@@ -149,7 +149,8 @@ O padrão do kit é log com channel próprio em toda etapa de execução.
 
 **Status**: Aceita
 **Data**: 2026-09-18
-**Revisa**: ADR-01 (o local) e ADR-03 (o momento de ler o host)
+**Revisa**: **ADR-01** (o local), **ADR-02** (o gatilho — a base sozinha não identifica o arranjo
+quebrado) e **ADR-03** (o momento de ler o host)
 
 ### Contexto
 
@@ -185,5 +186,7 @@ E o achado 2 mostrou um segundo problema no **local**: `boot()` de provider roda
 - **Positivas**: nenhuma instalação que hoje funciona passa a quebrar. Middleware elimina o
   problema de ordem com o `TrustProxies`.
 - **Negativas**: em nginx a detecção não acha sinal e o operador precisa declarar. Documentado.
-- **Custo**: uma leitura de arquivo, memoizada por processo, e **só** quando a base já veio com o
-  sufixo — ou seja, nunca em instalação correta.
+- **Custo**: uma leitura de arquivo, **só** quando a base já veio com o sufixo — ou seja, nunca
+  em instalação correta. *(alterado em 2026-09-18: a versão anterior memoizava por processo; a
+  auditoria Ponytail cortou o memo, porque ele forçava uma API pública existente só para o teste
+  conseguir resetá-lo.)*

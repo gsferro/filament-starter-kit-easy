@@ -259,9 +259,15 @@ it('[CT-11] true declarado encurta mesmo sem sinal, para nginx', function (): vo
  */
 it('[CT-13] o middleware esta no stack global, depois do TrustProxies', function (): void {
     /*
-     * O CONTRATO, e não `Foundation\Http\Kernel` direto: resolver a classe concreta instancia um
-     * kernel novo, com o stack de fábrica e sem o que o `bootstrap/app.php` configurou. O teste
-     * ficaria vermelho com o registro no lugar — medido.
+     * O CONTRATO, e não `Foundation\Http\Kernel` direto.
+     *
+     * **Correção de uma afirmação errada que esteve aqui** (QA-21 do ciclo 2): este comentário
+     * dizia, como se fosse medido, que resolver a classe concreta devolveria o stack de fábrica.
+     * Não devolve — o `withMiddleware()` registra um `afterResolving` pelo **contrato**, e o
+     * container dispara por tipo, então a instância nova também recebe o `append`.
+     *
+     * O contrato continua sendo a escolha certa, por outro motivo: é o que o framework resolve
+     * em produção, e é o único que continua verdadeiro se o kit um dia trocar a classe do kernel.
      */
     $global = app(Kernel::class)->getGlobalMiddleware();
 
@@ -274,10 +280,22 @@ it('[CT-13] o middleware esta no stack global, depois do TrustProxies', function
         'o middleware saiu do stack global — a correção fica inerte e nada mais acusa',
     );
 
-    expect(array_search(RaizDeUrlSemPublic::class, $global, true))->toBeGreaterThan(
-        array_search(TrustProxies::class, $global, true),
-        'precisa rodar DEPOIS do TrustProxies, senão lê host e porta sem os X-Forwarded-*',
-    );
+    /*
+     * As duas posições afirmadas como INTEIRO antes de comparar.
+     *
+     * QA-22 do ciclo 2: `array_search` devolve `false` quando não acha, e em PHP `9 > false` é
+     * verdadeiro — a asserção de ordem passaria em silêncio num dia em que o `TrustProxies`
+     * saísse do stack, que é justamente quando ela mais importa.
+     */
+    $posicaoDaRaiz  = array_search(RaizDeUrlSemPublic::class, $global, true);
+    $posicaoDoProxy = array_search(TrustProxies::class, $global, true);
+
+    expect($posicaoDoProxy)->toBeInt('o TrustProxies saiu do stack global — a ordem deixou de ser afirmável')
+        ->and($posicaoDaRaiz)->toBeInt()
+        ->and($posicaoDaRaiz)->toBeGreaterThan(
+            $posicaoDoProxy,
+            'precisa rodar DEPOIS do TrustProxies, senão lê host e porta sem os X-Forwarded-*',
+        );
 });
 
 /**
