@@ -107,6 +107,22 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
         'ativo' => true,
     ];
 
+    /**
+     * O estado de acesso entra na trilha, mesmo estando fora do `$fillable`.
+     *
+     * `ativo` e `aprovacao_pendente` são fronteira de acesso: quem as escreve são
+     * `desativar()`/`reativar()` e `aprovar()`, com `forceFill(...)->save()`, nunca atribuição em
+     * massa — e é por isso que elas não podem ser `$fillable`. Sem esta lista, o filtro de
+     * `AuditsFillables` as descartava, e a trilha de `/infra/audits` registrava a troca do nome
+     * do usuário mas **não** o corte do acesso dele.
+     *
+     * @return list<string>
+     */
+    protected function auditaAlemDoFillable(): array
+    {
+        return ['ativo', 'aprovacao_pendente'];
+    }
+
     protected function casts(): array
     {
         return [

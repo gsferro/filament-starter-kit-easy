@@ -163,3 +163,32 @@
 :root .fi-topbar-item.fi-active .fi-topbar-item-label { color: var(--primary-700); }
 
 .dark:root .fi-topbar-item.fi-active .fi-topbar-item-label { color: var(--primary-400); }
+
+/*
+| A versão do SISTEMA no rodapé dos painéis (`filament/versao-do-kit.blade.php`), e a do
+| kit ao lado quando `kit.exibir_versao` está ligada.
+|
+| Registrada no render hook `FOOTER` por
+| `ConfiguraFilamentGlobal::configuraVersaoNoRodape()`. Sem esta folha o rodapé sairia
+| sem estilo nenhum e com o teste verde: o kit não tem `viteTheme()`, então utilitária
+| Tailwind que a blade emitisse não existiria na folha compilada do Filament
+| (.ai/rules/css-filament.md).
+|
+| NÃO declara cor, e isso é a decisão do bloco: a cor é herdada do tema e só a opacidade
+| é aplicada. Assim o rodapé funciona no claro e no escuro com UMA regra, sem o par
+| `.dark:root` — e sem a armadilha que o CHANGELOG da 0.34.2 documenta, em que uma
+| sobrescrita de cor com especificidade suficiente para vencer no tema claro vence
+| também no escuro, porque a regra escura do Filament usa `:where()`, que contribui
+| ZERO especificidade.
+|
+| Escopo é o nome da classe, que é do kit: `.kit-versao` não colide com utilitária de
+| vendor nenhuma. Regra sem escopo só seria defeito se o seletor fosse uma utilitária
+| genérica.
+*/
+.kit-versao {
+    padding: 0.5rem 1rem 1rem;
+    text-align: center;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    opacity: 0.6;
+}

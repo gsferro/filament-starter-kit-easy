@@ -19,7 +19,7 @@ return [
     | contra a árvore de trabalho, que é mais ruidosa.
     */
 
-    'version' => '0.34.2',
+    'version' => '0.35.0',
 
     /*
     |--------------------------------------------------------------------------
@@ -205,6 +205,62 @@ return [
         'persistir_filtros'        => BooleanoDoEnv::comPadrao(env('KIT_TABELA_PERSISTIR_FILTROS'), true),
         'colunas_redimensionaveis' => BooleanoDoEnv::comPadrao(env('KIT_TABELA_COLUNAS_REDIMENSIONAVEIS'), true),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Avisar antes de sair de um formulário com alteração não salva
+    |--------------------------------------------------------------------------
+    | Liga o `->unsavedChangesAlerts()` dos três painéis. O Filament nasce com
+    | isto DESLIGADO (vendor/filament/filament/src/Panel/Concerns/HasUnsavedChangesAlerts.php:9),
+    | e o kit nunca ligou — sair de um formulário preenchido sem salvar perdia
+    | tudo, sem confirmação.
+    |
+    | Vale para TODA tela `create`/`edit` dos três painéis, inclusive as dos
+    | plugins de terceiros, porque quem decide é o painel e não o resource.
+    |
+    | Editável em /admin/configuracoes-da-aplicacao, aba Kit. Os providers leem
+    | esta chave por Closure, avaliada no render — então a tela governa sem
+    | precisar de deploy. Ver ADR-02 da wiki `estudo-de-pacotes-rodada-2`.
+    |
+    | `BooleanoDoEnv` e não `(bool) env()` pelo motivo que o bloco das tabelas
+    | acima documenta: o default aqui é `true`, e é exatamente com default `true`
+    | que `(bool) env('CHAVE', true)` falha em `CHAVE=`.
+    */
+
+    'alerta_alteracoes_nao_salvas' => BooleanoDoEnv::comPadrao(env('KIT_ALERTA_ALTERACOES_NAO_SALVAS'), true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Exibir também a versão do KIT no rodapé
+    |--------------------------------------------------------------------------
+    | O rodapé dos painéis mostra a versão do SISTEMA (`config('app.version')`).
+    | Esta chave acrescenta, ao lado dela, a versão do starter kit que originou o
+    | projeto — a `version` logo no topo deste arquivo.
+    |
+    | Nasce DESLIGADA de propósito: a versão do kit é métrica interna do starter,
+    | não do produto que está sendo entregue, e quem entrega a um cliente final não
+    | tem por que anunciar de qual kit o projeto nasceu. Quem quer ver liga o toggle
+    | em /admin/configuracoes-da-aplicacao, ou roda `php artisan kit:info`.
+    |
+    | ## `BooleanoDoEnv`, e a primeira redação daqui errava
+    |
+    | Esta chave nasceu com `(bool) env('KIT_EXIBIR_VERSAO', false)`, justificado assim: *"o
+    | default é `false`, que é justamente o valor para o qual o defeito da chave presente-e-vazia
+    | converge"*. A frase é verdadeira e responde a pergunta **errada**.
+    |
+    | A partição que importa não é "vazia × ausente" — é o **vocabulário**. `off`, `no`, `nao` e
+    | qualquer texto ilegível são formas correntes de escrever "não" num `.env`, e `(bool) 'off'`
+    | é `true` em PHP. Medido: `KIT_EXIBIR_VERSAO=off` **ligava** a exibição da versão do kit.
+    |
+    | O `KIT_HUB` mais abaixo continua com `(bool) env()` e continua correto — mas não pelo motivo
+    | que esta chave copiou: lá a intenção é só "ausente = desligado", e ninguém escreve `off`
+    | numa chave que o `kit:install` grava. Aqui a chave é editada à mão por quem entrega o
+    | produto, e é justamente quem escreveria `off`.
+    |
+    | Achado pela reconciliação do step 7 (divergência D2, mutante M11). Guarda: CT-09.
+    */
+
+    'exibir_versao' => BooleanoDoEnv::comPadrao(env('KIT_EXIBIR_VERSAO'), false),
 
     /*
     |--------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Projeto;
 use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
@@ -44,10 +45,38 @@ it('nega abilities de infra para quem não tem papel', function (): void {
         ->and(Gate::forUser($user)->allows('command-center:access'))->toBeFalse();
 });
 
-it('audita exatamente os campos fillable', function (): void {
+/**
+ * A trilha cobre o `$fillable` MAIS o que `auditaAlemDoFillable()` declarar.
+ *
+ * O contrato era `getAuditInclude() === getFillable()`, e ele escondia um defeito: `ativo` e
+ * `aprovacao_pendente` são fronteira de ACESSO e por isso nunca podem ser `$fillable` — só
+ * `desativar()`, `reativar()` e `aprovar()` as escrevem, com `forceFill(...)->save()`. O filtro as
+ * descartava, e `/infra/audits` registrava a troca do nome do usuário mas **não** o corte do
+ * acesso dele.
+ *
+ * Os dois casos abaixo são o par: um prova que a extensão alcança as duas colunas, o outro prova
+ * que ela não vaza para quem não a declara.
+ *
+ * **Sem CT, e por decisão declarada.** Eles afirmam sobre a LISTA que `getAuditInclude()` devolve,
+ * e a wiki `estudo-de-pacotes-rodada-2` desqualifica essa forma de oráculo: consultar a função
+ * prova que ela devolve o que devolve; só a linha gravada em `audits` prova que o auditor a
+ * respeita. Quem afirma sobre a linha é CT-26 e CT-31, em `tests/Kit/TrilhaDeEstadoDaContaTest.php`.
+ * Mantidos porque a asserção de ORDEM (`fillable` mais as duas, nessa ordem) é barata e fica
+ * vermelha se alguém trocar a soma por substituição antes de o auditor entrar em cena.
+ */
+it('audita o fillable mais as colunas de fronteira de acesso do usuario', function (): void {
     $user = new User;
 
-    expect($user->getAuditInclude())->toBe($user->getFillable());
+    expect($user->getAuditInclude())
+        ->toBe([...$user->getFillable(), 'ativo', 'aprovacao_pendente'])
+        ->and($user->getAuditInclude())->toContain('ativo')
+        ->and($user->getAuditInclude())->toContain('aprovacao_pendente');
+});
+
+it('mantem a auditoria no fillable puro para quem nao estende a lista', function (): void {
+    $projeto = new Projeto;
+
+    expect($projeto->getAuditInclude())->toBe($projeto->getFillable());
 });
 
 it('registra os health checks do kit', function (): void {
