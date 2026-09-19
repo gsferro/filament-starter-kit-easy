@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Log;
 use Livewire\Livewire;
 use Psr\Log\LoggerInterface;
@@ -495,3 +496,166 @@ it('[EXTRA] nao entrega a organizacao alheia pela acao do trait no painel de neg
         // E nenhuma relação carregada: é por ela que a organização alheia sairia.
         ->and(json_encode($retorno, JSON_THROW_ON_ERROR))->not->toContain('Globex');
 });
+
+/*
+|--------------------------------------------------------------------------
+| R5 — o rastreio de efeito da negativa, nas quatro direções
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * [CT-18] — com organização a consulta recorta; sem organização ela fecha, e avisa.
+ *
+ * Duas metades no mesmo caso, e é a comparação entre elas que é o oráculo — separá-las destruiria
+ * a afirmação.
+ *
+ * **A direção que faltava em toda a suíte**: "nenhum aviso quando a autorização permite". O mutante
+ * M57 — o `warning` emitido na **entrada** do método, antes do ramo — atravessava intacto tudo o
+ * que existia, porque nenhum caso media o caminho legítimo. E o efeito dele não é um 500: é a
+ * trilha que o `/infra` lê virando ruído, o que só se descobre meses depois.
+ *
+ * O espião é instalado **antes** do ramo permitido para que a ausência tenha destinatário: o canal
+ * existe, o espião está de pé, e o caminho irmão (sem organização) prova que ele grava.
+ */
+it('[CT-18] recorta com organizacao e fecha sem ela, avisando so no segundo caso', function (): void {
+    $acme   = tenant('Acme', 'acme');
+    $globex = tenant('Globex', 'globex');
+
+    $daAcme = papelNaOrganizacao(usuario('ana@example.com'), 'panel_user', $acme);
+    $daAcme->tenants()->attach($acme->id);
+
+    $daGlobex = papelNaOrganizacao(usuario('zoe@example.com'), 'panel_user', $globex);
+    $daGlobex->tenants()->attach($globex->id);
+
+    $espiao = espiarAutenticacao();
+
+    noPainelDa($acme);
+
+    $comOrganizacao = UserResource::getEloquentQuery()->pluck('email')->all();
+
+    expect($comOrganizacao)->toContain('ana@example.com')
+        ->and(in_array('zoe@example.com', $comOrganizacao, true))->toBeFalse();
+
+    // A direção "não aconteceu": o caminho legítimo não escreve na trilha.
+    $espiao->shouldNotHaveReceived('warning');
+
+    Filament::setTenant(null, isQuiet: true);
+
+    expect(UserResource::getEloquentQuery()->count())->toBe(0, 'sem organizacao a consulta falhou ABERTA');
+
+    $espiao->shouldHaveReceived('warning')->once()->withArgs(
+        static fn (string $mensagem, array $context): bool => str_contains($mensagem, '[UserResource@getEloquentQuery]')
+            && $context['motivo'] === 'sem_tenant_corrente',
+    );
+});
+
+/**
+ * [CT-19] — a ficha não é mais permissiva que a edição, e o caminho permitido não escreve na trilha.
+ *
+ * O invariante do ADR-07, medido nos dois verbos e nos dois alvos ao mesmo tempo. Toda vez que uma
+ * tela de leitura fica mais aberta que a de escrita sobre o mesmo registro, alguém abriu a brecha
+ * sem perceber — porque a intuição diz que ler é menos grave que escrever, e a intuição não sabe o
+ * que a ficha mostra.
+ *
+ * **Ator e alvo são pessoas distintas, nomeadas**, e isso mata M58: uma resposta que conferisse o
+ * ATOR em vez do ALVO negaria quando quem governa a instalação é quem olha, e liberaria quando ele
+ * é o olhado. Com ator e alvo confundidos num só, o mutante passaria.
+ *
+ * A contagem de avisos é exata — dois para quem governa (um por verbo), zero para o colega comum.
+ * "Um aviso é registrado" passa com dez, e log duplicado em barreira de autorização é ruído que
+ * esconde o evento real.
+ */
+it('[CT-19] nega ficha e edicao para quem governa, permite as duas para o colega, e so avisa na negativa', function (): void {
+    $acme = tenant('Acme', 'acme');
+
+    $leo = papelNaOrganizacao(usuario('leo@example.com'), 'admin_app', $acme);
+    $leo->tenants()->attach($acme->id);
+
+    $marta = papelNaOrganizacao(usuario('marta@example.com'), 'master_global');
+    $pedro = papelNaOrganizacao(usuario('pedro@example.com'), 'panel_user', $acme);
+
+    $this->actingAs($leo);
+    noPainelDa($acme);
+
+    $espiao = espiarAutenticacao();
+
+    // O colega comum: as duas permitem, e nada é escrito na trilha.
+    expect(UserResource::getViewAuthorizationResponse($pedro)->denied())->toBeFalse()
+        ->and(UserResource::getEditAuthorizationResponse($pedro)->denied())->toBeFalse();
+
+    $espiao->shouldNotHaveReceived('warning');
+
+    // Quem governa a instalação: as duas negam, e cada verbo escreve exatamente um aviso.
+    expect(UserResource::getViewAuthorizationResponse($marta)->denied())->toBeTrue()
+        ->and(UserResource::getEditAuthorizationResponse($marta)->denied())->toBeTrue();
+
+    /*
+     * A contagem exata sai do TOTAL, e não de `->once()->withArgs(...)`: no Mockery o contador se
+     * aplica ao método, não ao subconjunto filtrado — medido, `once()` com `withArgs` reprova com
+     * "should be called exactly 1 times but called 2 times". A primeira escrita deste caso caiu
+     * nisso.
+     *
+     * O argumento fica fechado assim mesmo: total DOIS, mais um aviso de cada verbo nomeando o
+     * alvo. Dois avisos, dois verbos distintos presentes, logo exatamente um por verbo.
+     */
+    $espiao->shouldHaveReceived('warning')->twice();
+
+    $espiao->shouldHaveReceived('warning')->withArgs(
+        static fn (string $mensagem, array $context): bool => str_contains($mensagem, 'getViewAuthorizationResponse')
+            && $context['alvo_id'] === $marta->id,
+    );
+
+    $espiao->shouldHaveReceived('warning')->withArgs(
+        static fn (string $mensagem, array $context): bool => str_contains($mensagem, 'getEditAuthorizationResponse')
+            && $context['alvo_id'] === $marta->id,
+    );
+});
+
+/*
+|--------------------------------------------------------------------------
+| R11 — a tabela de decisão dos badges da organização
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * [CT-40] — os dois estados da organização decidem dois badges, em toda combinação.
+ *
+ * Tabela de decisão **completa**: 2 condições × 2 = 4 linhas, todas escritas. A linha 3
+ * (`ativo=false`, `registro=true`) é a que um `&&` no lugar de dois testes independentes apaga —
+ * ela é o motivo de a tabela ser completa em vez de amostrada.
+ *
+ * **As duas colunas de oposto não são decoração.** Sem elas os quatro `Então` seriam só presença, e
+ * uma implementação que emitisse **os quatro rótulos sempre** passaria nas quatro linhas. Foi a
+ * revisão adversarial que apontou a assimetria: o caso irmão dos badges de conta já tinha a linha
+ * de exclusividade, e este não.
+ */
+it('[CT-40] decide os dois badges da organizacao em toda combinacao', function (bool $ativo, bool $registro, string $badgeAtivo, string $opostoAtivo, string $badgeRegistro, string $opostoRegistro): void {
+    $admin = usuarioDoKit('admin', 'admin@example.com');
+
+    $org = Tenant::factory()->create([
+        'nome'                => 'Acme Ltda',
+        'slug'                => 'acme',
+        'ativo'               => $ativo,
+        'registro_habilitado' => $registro,
+    ]);
+
+    $badges = regiaoDoHeader(
+        $this->actingAs($admin)->get("/admin/organizacoes/{$org->getRouteKey()}")->assertSuccessful()->getContent(),
+        'fph-badges',
+    );
+
+    expect($badges)->not->toBe('', 'a regiao de badges nao renderizou')
+        ->and($badges)->toContain($badgeAtivo)
+        ->and($badges)->toContain($badgeRegistro)
+        ->and(str_contains($badges, $opostoAtivo))->toBeFalse(
+            "o badge de situacao emitiu tambem o oposto ({$opostoAtivo})",
+        )
+        ->and(str_contains($badges, $opostoRegistro))->toBeFalse(
+            "o badge de registro emitiu tambem o oposto ({$opostoRegistro})",
+        );
+})->with([
+    'ativa e aberta'    => [true, true, 'Ativa', 'Inativa', 'Registro aberto', 'Registro fechado'],
+    'ativa e fechada'   => [true, false, 'Ativa', 'Inativa', 'Registro fechado', 'Registro aberto'],
+    'inativa e aberta'  => [false, true, 'Inativa', 'Ativa', 'Registro aberto', 'Registro fechado'],
+    'inativa e fechada' => [false, false, 'Inativa', 'Ativa', 'Registro fechado', 'Registro aberto'],
+]);
