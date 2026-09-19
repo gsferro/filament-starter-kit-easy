@@ -533,3 +533,86 @@ it('captura a lista de usuários com a coluna Origem', function (): void {
         ->assertSee('Google')
         ->screenshot(fullPage: false, filename: 'admin-users-origem');
 })->group('browser', 'art');
+
+/*
+|--------------------------------------------------------------------------
+| O cabeçalho rico das telas de registro (v0.36.0) e o avatar de iniciais (v0.35.0)
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * A ficha de uma conta: cabeçalho rico em cima, infolist embaixo.
+ *
+ * É a tela que a v0.36.0 criou — `User` não tinha `view`, só `index`, `create` e `edit`. A captura
+ * mostra as três coisas que ela trouxe de uma vez: o cabeçalho do pacote (avatar, nome, badge de
+ * situação e metadados com ícone), o **avatar de iniciais** do kit no lugar de uma foto ausente, e
+ * o corpo da ficha, que é o infolist.
+ *
+ * **A conta alvo nasce sem foto de propósito.** É o caso que mostra o `App\Support\AvatarDeIniciais`
+ * da v0.35.0 — o SVG de iniciais que substituiu o `UiAvatarsProvider`, que mandava o navegador de
+ * todo usuário buscar as iniciais em `ui-avatars.com`. Com foto, a captura mostraria um `<img>` e
+ * o recurso ficaria invisível.
+ *
+ * O alvo também nasce **inativo**: o badge de situação só tem o que mostrar se houver situação
+ * diferente do caminho feliz, e "Inativo" é o rótulo que sai de `User::corDaSituacao():513` em
+ * `danger`. Conta ativa daria um badge verde que se confunde com o resto da tela.
+ *
+ * Aquece o `/admin`, e só ele — cenário arranjado num painel e visitando outro renderiza a barra
+ * lateral do primeiro. Ver o cabeçalho deste arquivo.
+ */
+it('captura a ficha de usuário com o cabeçalho rico e o avatar de iniciais', function (): void {
+    $alvo = usuario('helena.pacheco@example.com');
+
+    $alvo->forceFill([
+        'name'       => 'Helena Pacheco',
+        'avatar_url' => null,
+        'ativo'      => false,
+        'origem'     => 'convite',
+    ])->save();
+
+    $this->get('/admin/users');
+
+    visit("/admin/users/{$alvo->getRouteKey()}")
+        ->resize(1400, 875)
+        ->assertSee('Helena Pacheco')
+        ->assertSee('Inativo')
+        ->assertSee('Convite')
+        ->screenshot(fullPage: false, filename: 'admin-user-ficha-header');
+})->group('browser', 'art');
+
+/**
+ * A ficha de uma organização: cabeçalho rico acima das abas de relacionamento.
+ *
+ * É o caso que a receita de `wikis/receitas.md` usa como exemplo executável do padrão *"resumo do
+ * registro no topo e abas para os relacionamentos"* — `ViewTenant` é o único `ViewRecord` do kit
+ * que já renderizava relation managers, e agora ganhou o cabeçalho acima deles.
+ *
+ * **A organização nasce com cor primária e sem logo**, e as duas coisas são a captura: sem logo, o
+ * slot de identidade cai nas iniciais; com cor, elas saem **tingidas** pela paleta da organização.
+ * `TenantHeader::paleta()` delega a `App\Support\CorPrimaria::resolver():80`, que é a mesma função
+ * que o `/app` usa no `bootUsing()` — o cabeçalho do `/admin` mostra a cor que o painel daquela
+ * organização vai usar.
+ *
+ * O membro vinculado existe para a aba de usuários não sair vazia.
+ */
+it('captura a ficha de organização com o cabeçalho rico e as abas', function (): void {
+    $membro = usuario('rodrigo.alencar@example.com');
+
+    $membro->forceFill(['name' => 'Rodrigo Alencar'])->save();
+    $membro->tenants()->attach($this->organizacao);
+
+    $this->organizacao->forceFill([
+        'nome'                => 'Acme',
+        'logo'                => null,
+        'cor_primaria'        => '#7c3aed',
+        'registro_habilitado' => true,
+    ])->save();
+
+    $this->get('/admin/organizacoes');
+
+    visit("/admin/organizacoes/{$this->organizacao->getRouteKey()}")
+        ->resize(1400, 875)
+        ->assertSee('Acme')
+        ->assertSee('Ativa')
+        ->screenshot(fullPage: false, filename: 'admin-organizacao-header');
+})->group('browser', 'art');

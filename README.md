@@ -140,14 +140,27 @@ Não é vitrine: é o inventário de tudo que já existe, e o que você não vai
 
 | | `/app` | `/admin` | `/infra` | **Total** |
 |---|---:|---:|---:|---:|
-| **Telas navegáveis** | 12 | 28 | 27 | **67** |
+| **Telas navegáveis** | 14 | 31 | 28 | **73** |
 | Resources | 4 | 8 | 8 | **20** |
-| Páginas próprias | 4 | 4 | 12 | **20** |
+| Páginas próprias | 5 | 5 | 13 | **23** |
 | Widgets | 1 | 9 | 19 | **29** |
-| Rotas `GET` | 21 | 35 | 33 | **89** |
+| Rotas `GET` | 23 | 38 | 34 | **95** |
 
 O `/app` é o menor de propósito — ele nasce **vazio**, porque é onde o seu projeto entra. Os outros
 dois já vêm completos.
+
+> **O critério de cada linha, para que os números sejam auditáveis.** *Tela navegável* é rota `GET`
+> do painel **com nome de rota**, descontadas as de autenticação, os endpoints que devolvem JSON e
+> os redirects. *Páginas próprias* é `$painel->getPages()`, sem exclusão. *Rotas `GET`* conta tudo
+> sob o caminho do painel, inclusive autenticação e redirect. *Widgets* é `$painel->getWidgets()` —
+> widget de **painel**; os 6 widgets de resource de `Tenants/Widgets/` não entram, e por isso um
+> `ls` dá um número maior. Medido com `kit.tenancy.enabled = false`; com tenancy ligada as rotas do
+> `/app` ganham o prefixo da organização.
+>
+> Até a v0.36.1 a linha *Telas navegáveis* não tinha critério declarado e **não era falsificável** —
+> ela ficou parada em `12 / 28 / 27` desde 18/08/2026 e atravessou um fact-check inteiro sem ser
+> corrigida, porque não havia como conferi-la. Agora as cinco linhas são travadas por
+> `tests/Kit/SiteDeDocumentacaoTest.php`.
 
 | Fundação | |
 |---|---:|
@@ -161,7 +174,7 @@ dois já vêm completos.
 |---|---:|
 | Casos de teste (`Kit` + `Tenancy`, medidos em 2026-09-08) | **2.226**, com **7.428 asserções** |
 | Telas varridas em navegador real | **55** |
-| Arquivos de teste | **126** em `Kit` + `Tenancy` (**149** no total) |
+| Arquivos de teste | **144** em `Kit` + `Tenancy` (**170** no total) |
 | PHPStan | **level 7**, zero erros |
 | FilaCheck | **17** regras, todas passando |
 

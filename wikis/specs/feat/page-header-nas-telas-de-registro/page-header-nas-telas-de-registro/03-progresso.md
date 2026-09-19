@@ -46,50 +46,50 @@ Legenda do estado: **integral** = todas as linhas do `Então` (e todas as linhas
 
 | CT | O que afirma | Teste que o realiza | Estado |
 |---|---|---|---|
-| CT-01 | o recorte separa dentro de fora (5 regiões) | — | não implementado |
+| CT-01 | o recorte separa dentro de fora (5 regiões) | `tests/Kit/PageHeaderTest.php:[CT-01]:904` · `tests/Kit/PageHeaderTest.php:[CT-01]:936` | **tem teste** (2026-09-19) |
 | CT-02 | região ausente devolve vazio | `tests/Kit/PageHeaderTest.php:[CT-02]:99` | parcial — mede sobre página real, não sobre HTML sintético; a linha "uma asserção de presença sobre esse recorte reprova" não existe |
 | CT-03 | header do pacote nas seis telas | `tests/Kit/PageHeaderTest.php:[CT-03]:64` (2 linhas) · `tests/Tenancy/PageHeaderTenancyTest.php:[CT-03]:45` (2 linhas) e `:[CT-03]:303` (1 linha) | parcial — 5 das 6 linhas; falta `app \| EditUser` e a asserção "o heading não contém o nome da aplicação" |
 | CT-04 | painel sem plugin segue com cabeçalho nativo | — | não implementado |
 | CT-05 | a folha de estilo não é servida no `/infra` | — | não implementado |
-| CT-06 | o header mostra **este** registro, nem o de outro nem o de quem olha | — | não implementado |
+| CT-06 | o header mostra **este** registro, nem o de outro nem o de quem olha | `tests/Kit/PageHeaderTest.php:[CT-06]:963` | **tem teste** (2026-09-19) |
 | CT-07 | o `data:` URI não chega ao `<img>` do header | `tests/Kit/PageHeaderTest.php:[CT-07]:172` | parcial — falta a linha de não-vacuidade ("contém `data:` **fora** do header") e a de ausência de `<img>` |
 | CT-08 | o URL de storage chega ao `<img>` | `tests/Kit/PageHeaderTest.php:[CT-08]:131` | parcial — sem as linhas de `src` começar por `http` e de `alt` conter o nome |
-| CT-09 | esquema do URL × nome decidem se o slot sobrevive (6 partições) | — | não implementado |
+| CT-09 | esquema do URL × nome decidem se o slot sobrevive (6 partições) | `tests/Kit/PageHeaderTest.php:[CT-09]:1005` | **tem teste** (2026-09-19) |
 | CT-10 | organização sem logo cai nas iniciais tingidas | `tests/Tenancy/PageHeaderTenancyTest.php:[CT-10]:388` | parcial — arranjo diverge (logo **nulo**, não logo apontando para arquivo inexistente) |
 | CT-11 | a tela consulta `View:User` nos dois sentidos | `tests/Kit/PageHeaderTest.php:[CT-11]:377` (positiva) e `:[CT-11]:402` (negativa) | parcial — as duas linhas existem; falta o `fph-root` na positiva (armadilha nomeada pelo `04`) e o "não contém o nome" na negativa |
-| CT-12 | o 403 tem saída | — | não implementado |
-| CT-13 | a barreira existe fora da tela | — | não implementado |
-| CT-14 | a ação de ficha some para quem não pode abri-la | — | não implementado |
+| CT-12 | o 403 tem saída | `tests/Kit/PageHeaderTest.php:[CT-12]:1054` | **tem teste** (2026-09-19) |
+| CT-13 | a barreira existe fora da tela | `tests/Kit/PageHeaderTest.php:[CT-13]:1075` | **tem teste** (2026-09-19) |
+| CT-14 | a ação de ficha some para quem não pode abri-la | `tests/Kit/PageHeaderTest.php:[CT-14]:1098` | **tem teste** (2026-09-19) |
 | CT-15 | a mesma barreira no `/app` | `tests/Tenancy/PageHeaderTenancyTest.php:[CT-15]:143` (linha `admin_app` com) e `:[CT-15]:336` (linha `admin_app` sem) | parcial — 2 das 3 linhas; falta `panel_user`, e falta o `fph-root`/"não contém o nome" que a legenda da matriz de R4 exige |
 | CT-16 | URL direta para conta de outra organização não abre | `tests/Tenancy/PageHeaderTenancyTest.php:[CT-16]:174` | parcial — sem a linha "não contém `fph-root`" e sem o par positivo no mesmo cenário |
 | CT-17 | a negativa de quem governa a instalação é decidida fora da tela, e vira aviso sem PII | `tests/Tenancy/PageHeaderTenancyTest.php:[CT-17]:207` (nega + par positivo) e `:[CT-17]:241` (o aviso) | parcial — o "**exatamente um** aviso" não é asserido (`shouldHaveReceived` sem `->once()`) e o `ator_id` não é conferido |
-| CT-18 | com organização a consulta recorta; sem organização fecha, e o caminho permitido não escreve na trilha | — | não implementado |
-| CT-19 | a ficha não é mais permissiva que a edição, e não loga no caminho permitido | — | não implementado |
+| CT-18 | com organização a consulta recorta; sem organização fecha, e o caminho permitido não escreve na trilha | `tests/Tenancy/PageHeaderTenancyTest.php:[CT-18]:520` | **tem teste** (2026-09-19) |
+| CT-19 | a ficha não é mais permissiva que a edição, e não loga no caminho permitido | `tests/Tenancy/PageHeaderTenancyTest.php:[CT-19]:568` | **tem teste** (2026-09-19) |
 | CT-20 | o que `getPageHeaderRecord()` devolve ao navegador | `tests/Kit/PageHeaderTest.php:[CT-20]:534` | **integral** — lista nominal fechada em `toBe()`, como o `04` pede |
-| CT-21 | `$record` não aceita troca pelo navegador | — | não implementado |
-| CT-22 | o estado do formulário da ficha não grava nada | — | não implementado |
-| CT-23 | os métodos públicos do trait chamados como ação | — | não implementado |
-| CT-24 | método tipado recusa argumento do navegador | — | não implementado |
-| CT-25 | `data-fph-options` não carrega dado do registro | — | não implementado |
+| CT-21 | `$record` não aceita troca pelo navegador | `tests/Kit/PageHeaderTest.php:[CT-21]:1137` | **tem teste** (2026-09-19) |
+| CT-22 | o estado do formulário da ficha não grava nada | `tests/Kit/PageHeaderTest.php:[CT-22]:1166` | **tem teste** (2026-09-19) |
+| CT-23 | os métodos públicos do trait chamados como ação | `tests/Kit/PageHeaderTest.php:[CT-23/CT-24]:787` | **tem teste** (2026-09-19) |
+| CT-24 | método tipado recusa argumento do navegador | `tests/Kit/PageHeaderTest.php:[CT-23/CT-24]:787` | **tem teste** (2026-09-19) |
+| CT-25 | `data-fph-options` não carrega dado do registro | `tests/Kit/PageHeaderTest.php:[CT-25]:1196` | **tem teste** (2026-09-19) |
 | CT-26 | as três APIs proibidas não aparecem em `app/`, e a varredura enxerga o que cita | `tests/Kit/PageHeaderTest.php:[CT-26]:210` (ausência) e `:[CT-26]:240` (controle do detector) | parcial — falta o **piso de 200 arquivos** varridos |
-| CT-27 | o título escapa marcação e preserva texto (5 partições) | — | não implementado |
+| CT-27 | o título escapa marcação e preserva texto (5 partições) | `tests/Kit/PageHeaderTest.php:[CT-27]:1241` | **tem teste** (2026-09-19) |
 | CT-28 | as classes emitidas estão cobertas, com exceção nominal | `tests/Kit/PageHeaderTest.php:[CT-28]:294` | parcial, **com oráculo divergente** — afirma "toda classe emitida é `fph-*` ou `fi-*`", não a subtração emitidas − definidas com exceção nominal; só um dos dois pisos |
-| CT-29 | o detector acha a agulha plantada (controle negativo de CT-28) | — | não implementado |
+| CT-29 | o detector acha a agulha plantada (controle negativo de CT-28) | `tests/Kit/PageHeaderTest.php:[CT-29]:1283` | **tem teste** (2026-09-19) |
 | CT-30 | a rota `view` existe, vem antes da `edit` e vale `/{record}` | `tests/Kit/PageHeaderTest.php:[CT-30]:355` (ordem, nos dois painéis) e `tests/Tenancy/PageHeaderTenancyTest.php:[CT-30]:359` (a URL servida sob o prefixo da organização) | parcial — o caminho é conferido pela URL gerada, não pela declaração |
-| CT-31 | a ação de ficha navega em vez de abrir modal | — | não implementado |
-| CT-32 | a ficha e a edição são telas distintas | — | não implementado |
+| CT-31 | a ação de ficha navega em vez de abrir modal | `tests/Kit/PageHeaderTest.php:[CT-31]:1325` | **tem teste** (2026-09-19) |
+| CT-32 | a ficha e a edição são telas distintas | `tests/Kit/PageHeaderTest.php:[CT-32]:1350` | **tem teste** (2026-09-19) |
 | CT-33 | o registro de pacotes diz ADOTADO e onde | `tests/Kit/PacotesRodada2Test.php:[CT-33]:118` | **integral** — caso **herdado**, como o `04` determina |
 | CT-34 | o oráculo da rodada anterior muda de veredito sem perder proteção | `tests/Kit/PacotesRodada2Test.php:[CT-34]:170` | **integral** — herdado |
 | CT-35 | as constraints aceitam a série e recusam o major seguinte | `tests/Kit/PacotesRodada2Test.php:[CT-32]:74` (Filament) e `:[CT-35]:204` (page-header) | parcial — 8 das 9 linhas; `filament 5.8.0 → recusa` não é asserida |
-| CT-36 | a doc de atualização manda ressemear (pt e en) | — | não implementado |
+| CT-36 | a doc de atualização manda ressemear (pt e en) | `tests/Kit/PageHeaderTest.php:[CT-36]:1800` · `tests/Kit/PageHeaderTest.php:[CT-36]:1822` | **tem teste** (2026-09-19) |
 | CT-37 | a situação da conta no badge, nas 4 combinações | `tests/Kit/PageHeaderTest.php:[CT-49]:585` | parcial — só a linha 3 (`pendente=false`, `ativo=false` → "Inativo"), e sem a asserção de exclusividade |
-| CT-38 | a origem da conta aparece traduzida | — | não implementado |
-| CT-39 | a data de criação sai no fuso do aplicativo | — | não implementado |
-| CT-40 | os dois estados da organização decidem dois badges | — | não implementado |
-| CT-41 | nenhuma página sobrescreve `getHeader()` | — | não implementado |
-| CT-42 | o detector acha o `getHeader()` plantado | — | não implementado |
-| CT-43 | a ficha de conta removida não abre | — | não implementado |
-| CT-44 | identificador inexistente não abre, mas a rota existe | — | não implementado |
+| CT-38 | a origem da conta aparece traduzida | `tests/Kit/PageHeaderTest.php:[CT-38]:1390` | **tem teste** (2026-09-19) |
+| CT-39 | a data de criação sai no fuso do aplicativo | `tests/Kit/PageHeaderTest.php:[CT-39]:1440` | **tem teste** (2026-09-19) |
+| CT-40 | os dois estados da organização decidem dois badges | `tests/Tenancy/PageHeaderTenancyTest.php:[CT-40]:632` | **tem teste** (2026-09-19) |
+| CT-41 | nenhuma página sobrescreve `getHeader()` | `tests/Kit/PageHeaderTest.php:[CT-41]:1532` | **tem teste** (2026-09-19) |
+| CT-42 | o detector acha o `getHeader()` plantado | `tests/Kit/PageHeaderTest.php:[CT-42]:1590` | **tem teste** (2026-09-19) |
+| CT-43 | a ficha de conta removida não abre | `tests/Kit/PageHeaderTest.php:[CT-43]:1651` | **tem teste** (2026-09-19) |
+| CT-44 | identificador inexistente não abre, mas a rota existe | `tests/Kit/PageHeaderTest.php:[CT-44]:1682` | **tem teste** (2026-09-19) |
 | CT-45 | o header convive com os widgets de cabeçalho | `tests/Tenancy/PageHeaderTenancyTest.php:[CT-45/CT-46]:93` | parcial — só a presença dos widgets na página; falta "nenhum widget dentro da região" e "as ações aparecem dentro dela" |
 | CT-46 | o header fica acima das abas de relacionamento | `tests/Tenancy/PageHeaderTenancyTest.php:[CT-45/CT-46]:93` | parcial — a disjunção está provada; a **ordem** não (o próprio teste registra por que descartou o oráculo de posição) |
 | CT-47 | o render hook da folha de estilo é escopado por painel | — | não implementado |
@@ -99,9 +99,9 @@ Legenda do estado: **integral** = todas as linhas do `Então` (e todas as linhas
 | CT-51 | os slots da ficha do `/app` ⊆ os do `/admin` | — | não implementado |
 | CT-52 | — | — | **não existe**, deliberadamente (R13d do `04`) |
 | CT-53 | a ficha mostra o registro fora do cabeçalho | `tests/Kit/PageHeaderTest.php:[CT-53]:433` | parcial — prova que o corpo não está vazio (seção "Vinculos"), sem subtrair a região do header nem contar entradas do infolist |
-| CT-54 | o `kit:update` avisa sobre a dependência nova | — | não implementado |
-| CT-55 | o papel `infra` não alcança a ficha de conta | — | não implementado |
-| CT-56 | abrir a própria ficha também exige a permissão | — | não implementado |
+| CT-54 | o `kit:update` avisa sobre a dependência nova | `tests/Kit/PageHeaderTest.php:[CT-54]:1846` · `tests/Kit/PageHeaderTest.php:[CT-54]:1888` | **tem teste** (2026-09-19) |
+| CT-55 | o papel `infra` não alcança a ficha de conta | `tests/Kit/PageHeaderTest.php:[CT-55]:1720` | **tem teste** (2026-09-19) |
+| CT-56 | abrir a própria ficha também exige a permissão | `tests/Kit/PageHeaderTest.php:[CT-56]:1755` | **tem teste** (2026-09-19) |
 | CT-B01 | os tokens do header mudam entre tema claro e escuro | — | não implementado |
 | CT-B02 | o modo compacto reage à rolagem | — | não implementado |
 | CT-B03 | console limpo nas telas que ganharam o header | — | não implementado |
@@ -123,6 +123,10 @@ Os dois cobrem comportamento real e ficam. O que eles **não** fazem é dispensa
 
 ## O que NÃO foi implementado, e por quê
 
+> **Atualizado em 2026-09-19.** O grupo 3 — as 28 lacunas sem justificativa — **foi fechado**. Dos 55
+> cenários do `04`, **46 têm teste**. Os 9 restantes estão nos grupos 1, 2 e 4 abaixo, cada um com o motivo
+> escrito desde a primeira redação.
+
 ### 1. Exige navegador — 4 casos
 
 `CT-B01`, `CT-B02`, `CT-B03`, `CT-B04`.
@@ -142,26 +146,65 @@ escritos. **Não é equivalência**: o `[EXTRA]` do plugin fica verde com a folh
 painéis, e o `[EXTRA]` do `/app` não olha para os rótulos do cabeçalho. A diferença está declarada no docblock
 de cada um.
 
-### 3. Sem motivo registrado — lacuna — 28 casos
+### 3. Sem motivo registrado — lacuna — ~~28 casos~~ **fechadas em 2026-09-19**
 
 `CT-01`, `CT-06`, `CT-09`, `CT-12`, `CT-13`, `CT-14`, `CT-18`, `CT-19`, `CT-21`, `CT-22`, `CT-23`, `CT-24`,
 `CT-25`, `CT-27`, `CT-29`, `CT-31`, `CT-32`, `CT-36`, `CT-38`, `CT-39`, `CT-40`, `CT-41`, `CT-42`, `CT-43`,
-`CT-44`, `CT-54`, `CT-55`, `CT-56`.
+`CT-44`, `CT-54`, `CT-55`, `CT-56` — **as 28 têm teste.** `CT-50` entrou junto, por ser o par de `CT-41`.
 
-Nenhum documento desta wiki, e nenhum comentário dos dois arquivos de teste, registra tentativa ou impedimento
-para qualquer um deles. A explicação de fundo é de **cronologia**, não de dificuldade: os testes foram escritos
-antes de o `04` existir, então os cenários que o `04` acrescentou depois — em especial os oito da revisão
-adversarial (`CT-49`…`CT-56`, dos quais só CT-49 tem teste) e a regra R6 inteira (`CT-21`…`CT-25`) — nunca
-chegaram a ser considerados. Isso explica a ausência; não a justifica.
+A explicação de fundo era de **cronologia**, não de dificuldade: os testes foram escritos antes de o `04`
+existir, então os cenários que o `04` acrescentou depois nunca chegaram a ser considerados. Isso explicava a
+ausência; não a justificava — e é por isso que o grupo se chamava "sem motivo registrado".
 
-Dois subconjuntos merecem nome próprio, porque o `04` os marca como não-opcionais:
+#### O que o fechamento exigiu antes de qualquer caso
 
-- **Controles negativos de detector** — `CT-01`, `CT-29`, `CT-42`. O `04` abre com a regra R1 justamente porque a
-  rodada anterior produziu 46 casos verdes sobre nada. Hoje `regiaoDoCabecalho()` tem **um** controle
-  (`[CT-02]`), e os detectores de CSS e de `getHeader()` não têm nenhum.
+**Um extrator de região de verdade.** `regiaoDoCabecalho()` procurava o primeiro `</header>` depois da classe.
+Isso basta para uma região sem aninhamento e **não** basta para `fph-badges` e `fph-metadata`, que contêm markup
+do Filament com divs dentro. Entrou `regiaoDoHeader($html, $classe)` em `tests/Pest.php:1099`, com caminhada
+balanceada e casamento de classe por **token** — `fph-heading` não pode casar `fph-heading-icon`, que é filho
+dele. `regiaoDoCabecalho()` passou a ser um atalho dele: um extrator, um conjunto de controles.
+
+Escrevê-lo custou **três diagnósticos errados seguidos**, e os três estão no comentário da função porque a
+próxima pessoa vai tropeçar nos mesmos:
+
+1. `preg_match_all` sobre o documento inteiro devolve `false` (não `0`) ao estourar o `backtrack_limit` do PCRE
+   num HTML de painel — e a guarda `=== 0` não pega isso;
+2. o `\b` dos regex virou **backspace literal** ao passar por um escape de shell, e o casamento morreu em
+   silêncio;
+3. o sintoma nas três vezes foi o mesmo — `''` onde se esperava conteúdo — e ele se lê como *"a tela não
+   renderizou o cabeçalho"*, que é o diagnóstico errado.
+
+#### Onde o `04` estava errado, e o que foi escrito no lugar
+
+Três cenários não podiam ser escritos como especificados. Em todos, **a divergência é o achado** e está no
+docblock do caso:
+
+| Cenário | O que o `04` pedia | O que foi medido | O que o caso faz |
+|---|---|---|---|
+| `CT-38`, linha do nulo | `origem` nula cai no rótulo default | `users.origem` é **NOT NULL** — a linha reprovava com violação de integridade | a partição equivalente é o **valor desconhecido** (provedor removido do enum, coluna editada à mão), que cai no mesmo `default` |
+| `CT-39` | o kit roda em `America/Sao_Paulo` | `config('app.timezone')` é **UTC**, e mudá-lo em runtime **não** desloca a data: entrada de data resolve por `FilamentTimezone::get()` (`vendor/filament/infolists/src/Components/Concerns/CanFormatState.php:472`) | o caso vira as **duas metades** — UTC mostra 11/03, São Paulo mostra 10/03 do mesmo instante — usando o botão que um usuário do kit de fato gira |
+| `CT-54` | rodar o `kit:update` em modo de relatório | rodar de verdade exigiria repositório git de mentira com duas tags, e mediria o `git diff`, que é do git | o caso extrai o **filtro** do fonte em tempo de execução e o aplica a um diff sintético; o que é do kit aqui é qual linha vira aviso |
+
+#### Os dois subconjuntos que o `04` marcava como não-opcionais
+
+- **Controles negativos de detector** — `CT-01`, `CT-29`, `CT-42`. Os três existem agora, e os três **matam
+  mutante medido**: o de `CT-01` reprova quando a caminhada deixa de contar aninhamento (medido: as linhas
+  `root` e `metadata` ficam vermelhas); o de `CT-29` planta uma classe em cada uma das duas formas de emissão;
+  o de `CT-42` planta uma página que neutraliza o trait, e distingue **declaração** de **chamada**.
 - **A direção "não aconteceu" do log** — `CT-18` e `CT-19`. O mutante M57 (o `warning` emitido na entrada do
-  método, antes do ramo) atravessa a suíte atual inteira: `[CT-17]:241` só prova que o aviso acontece no
-  caminho negado.
+  método, antes do ramo) atravessava a suíte inteira. Agora os dois casos afirmam `shouldNotHaveReceived` no
+  caminho permitido, num mundo em que o caminho irmão prova que o espião grava.
+
+#### Armadilhas de suíte que o fechamento encontrou
+
+| O que | Onde |
+|---|---|
+| `toContain($agulha, $mensagem)` do Pest é **variádico** — a mensagem vira segunda agulha | `CT-29`, na primeira escrita. É a mesma armadilha que o `[CT-34]` da wiki anterior cometeu, e que está documentada três funções acima dele |
+| `->once()->withArgs(...)` do Mockery conta as chamadas do **método**, não do subconjunto filtrado | `CT-19`. A contagem exata sai do total mais a presença de cada verbo |
+| o Filament 5 **não** emite `name` nos campos de formulário | `CT-32`. O marcador é o `wire:partial` que cada schema emite — `form.` na edição, `infolist.` na ficha |
+| `data-fph-options` usa aspas **duplas**, com o JSON escapado em `&quot;` | `CT-25` |
+| `Livewire\Exceptions\CannotUpdateLockedPropertyException` **não existe** — a classe é `Livewire\Features\SupportLockedProperties\…`, e o Pest trata class-string inexistente como **mensagem** | `CT-21` |
+| `semComentarios()` já existia em `tests/Kit/AderenciaAoBlueprintTest.php` — declará-la em `tests/Pest.php` derrubou a suíte com `Cannot redeclare` | o helper passou a ser usado por dois arquivos, então o lugar dele é `tests/Pest.php` (`.ai/rules/testes.md`). A colisão barulhenta é o desfecho **bom**; o ruim seria um clone com outro nome |
 
 ### 4. Não é caso — 1
 

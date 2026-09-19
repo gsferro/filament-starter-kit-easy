@@ -51,13 +51,16 @@ function helpersDepreciadosDeTeste(): array
     ];
 }
 
-/** Remove comentários de linha e de bloco, para a varredura não acusar quem explica o erro. */
-function semComentarios(string $php): string
-{
-    $semBlocos = preg_replace('#/\*.*?\*/#s', '', $php) ?? $php;
-
-    return preg_replace('#^\s*//.*$#m', '', $semBlocos) ?? $semBlocos;
-}
+/*
+ * `semComentarios()` morava aqui e foi para `tests/Pest.php` em 2026-09-19, quando
+ * `tests/Kit/PageHeaderTest.php` passou a precisar dela — dois arquivos, e a regra é a mesma para
+ * todo helper cruzado (`.ai/rules/testes.md`): em PHP função é global no processo, e uma declarada
+ * dentro de um arquivo de teste vaza para o vizinho até que alguém carregue um SUBCONJUNTO
+ * (`--parallel`, `--tia`, um arquivo só) e o `Call to undefined function` apareça longe da causa.
+ *
+ * Aqui a colisão foi imediata e barulhenta — `Cannot redeclare semComentarios()` derrubou a suíte
+ * inteira —, que é o desfecho bom. O ruim seria ter criado um clone com outro nome.
+ */
 
 /**
  * @param  list<array{padrao: string, motivo: string}>  $normas
