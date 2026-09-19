@@ -69,3 +69,66 @@ and **`:where()` contributes zero specificity**. An override written for light m
 The dark counterpart is written `.dark:root`, with the class on the **root itself**. `.dark :root` and `:root .dark` look equivalent and are dead letters: `:root` *is* the `<html>` element, so it can neither descend from anything nor contain the class the theme switcher writes onto it.
 
 > **When adding your own colour override**, follow the same pairing and run `php artisan filament:assets` after editing. The guards live in `tests/Kit/ContrasteDaNavegacaoNoTopoTest.php` and `tests/Kit/CorrecaoDeCorPrimariaTest.php`: they read the CSS and the `vendor/` stylesheets at runtime, recompute contrast against Filament's own palettes, and turn red when a package upgrade changes the game.
+
+## Where to point `DocumentRoot` — and what the kit does when it is wrong
+
+A Laravel project is served from **`public/`**, never from the project root. Your web server's
+`DocumentRoot` (or your hosting panel's *Document Root*) must point at:
+
+```
+/path/to/project/public
+```
+
+On shared hosting that is not always configurable, and the usual workaround is an `.htaccess` at
+the root rewriting everything into `public/`. **It works, with a side effect.**
+
+After an *internal* rewrite, Apache hands PHP `SCRIPT_NAME=/public/index.php` while `REQUEST_URI`
+still holds what the user asked for. Laravel derives the base URL by comparing the two:
+
+| What the browser asked for | Derived base | URLs generated on the page |
+|---|---|---|
+| `/app`, `/admin`, `/infra` | empty | clean |
+| `/public/app` | `/public` | **all** prefixed |
+
+So entering **once** through an address containing `/public` — an old bookmark, a shared link — is
+enough for every link on that page to come out prefixed. Because the `.htaccess` usually redirects
+back, the prefix appears and disappears, which makes the problem look random.
+
+**The kit defends itself against this — when it can tell that doing so is safe.** It refuses to
+honour a base URL ending in `/public` and rebuilds the root without that suffix, once per request,
+**but only when there is evidence that `/` really routes into `public/`**. Without that evidence it
+does nothing, and the reason is right below. Three consequences worth knowing:
+
+- it covers **any panel**, including ones you create — the fix is at the URL root, not in a list
+  of panels;
+- it covers **assets** too (`/css`, `/js`, `/build`), which come from the same generator;
+- on a correct install **nothing happens**: the base is empty and the check returns on its first
+  line, with no query and no cost.
+
+> **This does not excuse fixing `DocumentRoot`.** The kit's defence strips the prefix from the
+> URLs the application generates; it cannot stop someone typing `/public/...` in the address
+> bar, nor remove the extra redirect the `.htaccess` performs on every click. If you can
+> point `DocumentRoot` at `public/`, do it.
+>
+**When the kit strips the prefix, and when it does not.** It only shortens the root when there is
+**evidence** that `/` really routes into `public/` — in practice, a `RewriteRule` pointing at
+`public/` in the root `.htaccess`. Without that evidence it **does nothing**, and the reason is
+concrete: an install served at `https://host/public/...` **without** a rewrite works exactly like
+that, and shortening would turn every link and every asset into a 404.
+
+nginx has no `.htaccess` to inspect. Declare it by configuration:
+
+```dotenv
+KIT_URL_REMOVER_SUFIXO_PUBLIC=true   # the rewrite lives in the vhost
+KIT_URL_REMOVER_SUFIXO_PUBLIC=false  # turn it off entirely
+```
+
+Without the key, the kit detects on its own.
+
+> **What the defence does NOT reach.** It fixes the URLs the application **generates**. Anything
+> taken from the request itself keeps the prefix: the intended URL stored when you are bounced to
+> login (`redirect()->guest()`) and the "back" link derived from the `Referer`. A user who reaches
+> login from `/public/app` returns to `/public/app` after authenticating. One more reason to fix
+> `DocumentRoot`.
+
+> Guard: `tests/Kit/UrlSemPrefixoPublicTest.php`.

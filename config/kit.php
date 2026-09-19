@@ -105,6 +105,30 @@ return [
     | coluna `logo` do model Tenant, editada em /admin/organizacoes.
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Raiz de URL
+    |--------------------------------------------------------------------------
+    | `remover_sufixo_public` decide se o kit encurta a raiz do endereco quando o
+    | servidor entrega uma base terminada em `/public` — o sintoma de
+    | `DocumentRoot` apontando para a raiz do projeto em vez de `public/`.
+    |
+    | `null` (padrao) = DETECTA. Procura no `.htaccess` da raiz uma `RewriteRule`
+    | que aponte para `public/`; so encurta se achar. Sem sinal, nao age — porque
+    | instalacao servida em `https://host/public/...` SEM reescrita funciona assim,
+    | e encurtar transformaria todo link em 404.
+    |
+    | `true`  = encurta sempre. E a saida para nginx, onde nao existe `.htaccess`
+    |           para inspecionar mas a reescrita esta no vhost.
+    | `false` = nunca encurta.
+    |
+    | A correcao de raiz continua sendo apontar o `DocumentRoot` para `public/`.
+    */
+
+    'url' => [
+        'remover_sufixo_public' => BooleanoDoEnv::ouNulo(env('KIT_URL_REMOVER_SUFIXO_PUBLIC')),
+    ],
+
     'identidade' => [
         'logo'          => null,
         'favicon'       => null,
