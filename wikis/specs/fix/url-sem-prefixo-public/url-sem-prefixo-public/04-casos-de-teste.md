@@ -16,10 +16,11 @@
   e o rollback é remover uma chamada. **Não** dispara revisão adversarial.
 - Técnicas: **EP** sobre o domínio da base, **BVA de sufixo** (a fronteira aqui é textual, não
   numérica) e **Esquema do Cenário** para o eixo dos painéis.
-- Cenários: **15** · Regras: **7** · Mutantes previstos: **18** · **Sem matador: 1** (M11 — ver R4)
-- *(recontado em 2026-09-18 no ciclo 2 do quality gate: entra R6/CT-13, e a contagem
-  anterior estava errada em três pontos — creditava CT-07, dizia 4 cenários em R4+R5 e
-  declarava zero mutantes sem matador enquanto M11 se declarava sem)*
+- Cenários: **15** · Regras: **7** · Mutantes previstos: **19** · **Sem matador: 1** (M11 — ver R4)
+- *(recontado duas vezes: no **ciclo 2** entrou R6/CT-13 e a contagem anterior foi corrigida em
+  três pontos — creditava CT-07, dizia 4 cenários em R4+R5 e declarava zero mutantes sem
+  matador enquanto M11 se declarava sem. No **ciclo 3** entraram R7 e CT-14…CT-16, e os
+  mutantes de R7 foram medidos um a um)*
 
 > Teto do perfil padrão é 3 cenários por regra. R1 usa 3, R2 usa 2, R3 usa 1 (Esquema conta como
 > 1), R4 usa 1, R6 usa 1, R7 usa 3 — e **R5 usa 4**, estouro declarado: a tabela de decisão dela tem seis
@@ -89,9 +90,14 @@ SCRIPT_FILENAME = <raiz>/<base>/index.php
 ```
 
 > **Só duas são load-bearing, e isto foi remedido no ciclo 2** *(alterado em 2026-09-18)*: o
-> Symfony compara o **basename** de `SCRIPT_NAME` com o de `SCRIPT_FILENAME`. Sem o segundo a
-> base sai **vazia** e nenhum cenário exercita nada; `PHP_SELF` e `REQUEST_URI` podem faltar sem
-> efeito.
+> Symfony toma o basename de `SCRIPT_FILENAME`
+> (`vendor/symfony/http-foundation/Request.php:prepareBaseUrl():1938`) e compara com o de
+> `SCRIPT_NAME` (`:1940`). Sem `SCRIPT_FILENAME` a base sai **vazia** e nenhum cenário exercita
+> nada.
+>
+> `PHP_SELF` (`:1942`) e `ORIG_SCRIPT_NAME` (`:1944`) estão na cadeia, mas como **fallback** —
+> só são consultados quando o basename de `SCRIPT_NAME` **não** bate. No fixture acima ele
+> bate, e por isso removê-los não muda nada. É a explicação da medição, e faltava.
 >
 > Este bloco já afirmou o contrário, como se fosse medido, e também que
 > `app()->instance('request', …)` não alcançaria o `UrlGenerator`. **As duas eram falsas** — o
@@ -380,6 +386,8 @@ Funcionalidade: o endereço do painel nunca exibe /public
         | false | false    | texto negativo    |
         | 0     | false    | numérico          |
         | off   | false    | palavra do filtro |
+        | true  | true     | booleano PHP, não string |
+        | false | false    | booleano PHP, não string |
 ```
 
 > **CT-15 é o que separa esta chave de uma booleana comum.** Num `comPadrao()`, valor ilegível
@@ -391,8 +399,15 @@ Funcionalidade: o endereço do painel nunca exibe /public
 
 | # | Implementação errada plausível | Cenário que mata |
 |---|---|---|
-| M17 | `filter_var` cru, sem o guard de ausente/vazio | **CT-14**, **CT-15** — provado por mutante: 6 casos vermelhos |
-| M18 | sem `FILTER_NULL_ON_FAILURE`, valor ilegível vira `false` | **CT-15** |
+| M17 | o guard de ausente/vazio some; `FILTER_NULL_ON_FAILURE` fica | **CT-14** — medido: 2 vermelhos, todos dele |
+| M18 | o `FILTER_NULL_ON_FAILURE` some; o guard fica | **CT-15** — medido: 4 vermelhos, todos dele |
+| M19 | o valor legível é ignorado (devolve sempre `null`) | **CT-16** |
+
+> **Os dois primeiros foram medidos separados, e isso corrigiu um crédito errado** (QA-27 do
+> ciclo 3). A versão anterior dizia "6 casos vermelhos" e creditava M17 a CT-14 **e** CT-15 —
+> aquele 6 era a mutação dos dois defeitos ao mesmo tempo. Com `FILTER_NULL_ON_FAILURE`
+> preservado, `filter_var('talvez', …)` já devolve `null` e o CT-15 passa. Cada mutante mata o
+> seu, e nenhum cobre o do outro.
 
 ---
 
@@ -429,21 +444,21 @@ Funcionalidade: o endereço do painel nunca exibe /public
 
 | ID | Cenário | Regra | Técnica | Camada | Arquivo | Mata |
 |----|---------|-------|---------|--------|---------|------|
-| CT-01 | base `/public` gera endereço limpo | R1 | EP | Kit | `tests/Kit/UrlSemPrefixoPublicTest.php` | M2, M5, M7 |
+| CT-01 | base `/public` gera endereço limpo | R1 | EP | Kit | `tests/Kit/UrlSemPrefixoPublicTest.php` | M2, M5 |
 | CT-02 | instalação correta não é tocada | R2 | EP | Kit | idem | M5 |
 | CT-03 | base mais funda perde só o último segmento | R1 | BVA | Kit | idem | M2, M3 |
 | CT-04 | asset também sai limpo | R1 | EP | Kit | idem | M4 |
-| CT-05 | base parecida com `/public` é preservada | R2 | BVA (Esquema) | Kit | idem | M1, M6, M7 |
+| CT-05 | base parecida com `/public` é preservada | R2 | BVA (Esquema) | Kit | idem | M1, M6 |
 | CT-06 | qualquer painel, inclusive um inexistente | R3 | Esquema | Kit | idem | M8, M9 |
-| CT-08 | host e esquema vêm do request | R4 | EP | Kit | idem | M10 |
+| CT-08 | host e esquema vêm do request | R4 | EP | Kit | idem | M7, M10 |
 | CT-09 | sem sinal, a raiz é preservada | R5 | EP | Kit | idem | M12, M13 |
 | CT-10 | `.htaccess` sem reescrita não é sinal | R5 | EP | Kit | idem | M13 |
 | CT-11 | `true` declarado encurta sem sinal (nginx) | R5 | EP | Kit | idem | M14 |
 | CT-12 | `false` vence o sinal presente | R5 | tabela de decisão | Kit | idem | M14 |
 | CT-13 | o middleware está registrado, depois do `TrustProxies` | R6 | EP | Kit | idem | M15, M16 |
 | CT-14 | chave ausente ou vazia é "decida sozinho" | R7 | EP | Kit | `tests/Kit/BooleanoDoEnvTest.php` | M17 |
-| CT-15 | valor ilegível cai no padrão | R7 | EP | Kit | idem | M17, M18 |
-| CT-16 | valor legível declara | R7 | EP (Esquema) | Kit | idem | — |
+| CT-15 | valor ilegível cai no padrão | R7 | EP | Kit | idem | M18 |
+| CT-16 | valor legível declara | R7 | EP (Esquema) | Kit | idem | M19 |
 
 **Camada**: todos em `tests/Kit`, a suíte do kit com a aplicação bootada. É a mais barata que os
 prova: o oráculo é **a URL gerada**, e para observá-la bastam um `Request` construído e o gerador

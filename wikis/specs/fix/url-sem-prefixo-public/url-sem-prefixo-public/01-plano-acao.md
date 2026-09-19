@@ -99,7 +99,7 @@ Nenhum. Em fila não existe request HTTP, o método sai cedo e a geração de UR
 |---|---|
 | Quantos requests a tela custa? | não altera — a correção roda **uma vez por request**, no boot do provider |
 | O que é adiado, e por qual gatilho? | nada |
-| O que é memoizado por request? | nada *(alterado em 2026-09-18: o memo estático foi cortado pela auditoria Ponytail — a leitura do `.htaccess` só acontece quando a base já veio com o sufixo, ou seja nunca em instalação correta)* |
+| O que é memoizado por request? | nada. A leitura do `.htaccess` só acontece quando a base já veio com o sufixo — nunca em instalação correta *(alterado em 2026-09-18: o memo estático foi cortado pela auditoria Ponytail, porque exigia uma API pública existente só para o teste resetá-lo)* |
 | O que é cacheado entre requests? | nada |
 | Custo do caminho principal | **zero query**. Em instalação correta a base é vazia e o middleware sai na primeira condição, sem tocar disco |
 
@@ -149,10 +149,14 @@ linha por request, para sempre, sem acrescentar informação depois da primeira.
   era um método no `KitServiceProvider`, e `boot()` roda antes do `TrustProxies`)*
 - Anexado ao stack **global** em `bootstrap/app.php`, o que garante a execução depois do
   `TrustProxies`
-- Lógica *(alterado em 2026-09-18: o guard de console caiu — ver abaixo)*:
+- Lógica *(reescrita em 2026-09-18 pelo Adendo 1 — a versão anterior encurtava sem exigir
+  evidência, e teria quebrado o arranjo B)*:
   1. ler `$request->getBaseUrl()`
-  2. se **não** terminar em `/public`, sair (é o caminho comum; custo zero)
-  3. senão, `URL::forceRootUrl($request->getSchemeAndHttpHost().<base sem o sufixo>)`
+  2. se **não** terminar em `/public`, sair — é o caminho comum, custo zero
+  3. decidir se é **seguro** encurtar: `kit.url.remover_sufixo_public` declarado vence nos dois
+     sentidos; sem declaração, só encurta se o `.htaccess` da raiz tiver uma `RewriteRule`
+     apontando para `public/`. **Sem sinal, não age** (RQ-06, RQ-07)
+  4. senão, `URL::forceRootUrl($request->getSchemeAndHttpHost().<base sem o sufixo>)`
 
 > **O guard `runningInConsole()` foi cortado.** Ele estava previsto aqui como primeira linha.
 > Medido em `artisan`: `SCRIPT_NAME` é `artisan`, a base sai **vazia** e o teste de sufixo já

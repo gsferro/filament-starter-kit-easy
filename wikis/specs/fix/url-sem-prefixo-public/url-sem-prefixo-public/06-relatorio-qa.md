@@ -513,3 +513,200 @@ legível) que citam o QA-17 no comentário. Registro para o ciclo 3 não se conf
 - Os casos novos **não** foram auditados por mim e **não** estão no commit. O ciclo 3 confere se
   eles matam o mutante do guard e, principalmente, se os cenários nasceram no `04` — hoje são
   `it()` sem ID de CT, o que reabre a sincronia L1 pelo outro lado (teste sem cenário no `04`).
+
+---
+
+## Veredito — Ciclo 3 (último do teto)
+
+**REPROVADO → especificação · ESCALADO AO USUÁRIO** (teto de 3 ciclos atingido com Major aberto)
+
+- **Novos** neste ciclo: Blocker **0** · Major **2** · Minor **2** · Cosmético **1**
+- **Herdados ainda abertos**: QA-12, QA-13, QA-14 (Minor), QA-09 e QA-23 (Minor, parciais), QA-05
+  (Major, resíduo) — todos declarados fechados pelo `03`, que é o achado **QA-25**
+- Ambiente: **app NÃO servido** · Playwright MCP **indisponível** · commit `b882cb3`
+- Reexecutado por mim: `php artisan test tests/Kit/UrlSemPrefixoPublicTest.php
+  tests/Kit/BooleanoDoEnvTest.php` → **48/48, 58 asserções**;
+  `tests/Kit/SiteDeDocumentacaoTest.php` → **38/38, 144 asserções**. `composer test:kit` verde neste
+  commit: **2.493/2.493, 9.640 asserções** (aceito como declarado, não reexecutado aqui).
+- **Nenhum achado de comportamento do produto, pelo terceiro ciclo seguido.** O código entregue
+  está certo e agora está guardado. O que reprova é, de novo, **texto que afirma o que o arquivo
+  ao lado desmente** — e desta vez no documento que existe para impedir exatamente isso.
+
+### Fechamento do ciclo 2, verificado contra o código
+
+| Achado | Situação | Evidência medida agora |
+|---|---|---|
+| **QA-17** | **FECHADO** | `tests/Kit/BooleanoDoEnvTest.php` ganhou CT-14 (2 linhas), CT-15 (4) e CT-16 (8), e o `04` ganhou **R7**. O mutante existe e morre: `ouNulo('')` com o guard apagado devolve `false` (medido em `php -r`), e CT-14 fica vermelho. Ressalva de **evidência**, não de fechamento: **QA-27** |
+| **QA-18** | **FECHADO na forma, REABERTO no conteúdo** | a tabela de disposição foi reescrita e ganhou a nota de mea-culpa, mas a linha coletiva *"QA-08…QA-14, QA-16 — **fechados, e conferidos um a um**"* é falsa em três achados. Ver **QA-25** |
+| **QA-19** | **FECHADO** | `04` §Fixtures agora diz *"Só duas são load-bearing"* com `*(alterado em 2026-09-18)*` e registra as duas lições falsas; `03` §N2 idem. As quatro variáveis saíram do texto |
+| **QA-20** | **FECHADO** | `01` §Modelo de Execução: *"nada *(alterado … o memo estático foi cortado)*"*; `03:32` traz *"(sem memo — cortado pela auditoria Ponytail)"* |
+| **QA-21** | **FECHADO** | o comentário do CT-13 agora diz que o `afterResolving` é registrado **pelo contrato** e que a classe concreta **também** recebe o `append` — que é o que a medição do ciclo 2 mostrou. A citação `ApplicationBuilder.php:289` pedida junto **não** entrou (é QA-12, segue aberto) |
+| **QA-22** | **FECHADO** | o teste afirma `toBeInt()` nas **duas** posições antes do `toBeGreaterThan`. Com o `TrustProxies` fora do stack o caso agora fica vermelho, que era o pedido |
+| **QA-23** | **PARCIAL** | CT-11 virou Cenário simples no `04` ✅, mas a **tabela de decisão de R5 ainda mapeia** a linha *"não existe · `false` · não"* para **CT-11**, Exemplo que não existe mais; e `03:13` ainda registra *"CT-01…CT-06, CT-08…CT-12 — 18/18, 20 asserções"*, sem CT-13 e sem o `BooleanoDoEnvTest` |
+| **QA-24** | **FECHADO** | a "Varredura da classe irmã" foi refeita com as classes reais e aponta o próprio QA-17 |
+| **QA-09** (herdado) | **PARCIAL** | a ADR-05 declara revisar **ADR-02** ✅; a ADR-02 continua **Status: Aceita** sem marca, afirmando *"Forçar a raiz **somente** quando … termina em `/public`"* — a regra insuficiente |
+| **QA-12** (herdado) | **ABERTO** | `grep -rn "http-foundation/Request.php\|prepareBaseUrl\|ApplicationBuilder" wikis/…` → só o próprio `06`. `03:35` segue `[x]` com a isenção *"a wiki não cita linha de vendor"*, que `.ai/rules/specs.md:19` não abre |
+| **QA-13** (herdado) | **ABERTO** | `03:34` está **byte a byte** como no ciclo 1: *"Falsificabilidade por mutante — 5 rodados **no desenho anterior**, 5 mortos"* |
+| **QA-14** (herdado) | **ABERTO** | Índice de Cenários intacto: CT-09 ainda credita **M13** (em CT-09 não existe `.htaccess`, então M13 passa), CT-11 ainda credita **M14** (em CT-11 a detecção falha de propósito), CT-05 ainda credita **M7** (CT-05 não encurta) |
+| **QA-05** (herdado) | **PARCIAL** | Análise, Rollback e Variáveis de Ambiente reescritos ✅; §Modelo de Execução ainda diz *"roda uma vez por request, **no boot do provider**"*, e o passo 1 carrega defeito maior — **QA-26** |
+| QA-08, QA-10, QA-11, QA-16 | **FECHADOS** | EN restaurou *"nor remove the extra redirect"*; `02:11` cita o middleware e o `ouNulo()`; `04` linha `S` idem; `.env.example` traz a chave com o bloco dos três estados |
+
+### O quadro "Conferência do ciclo 3" do `03` — conferido linha a linha
+
+| Linha do `03` | Confere? |
+|---|---|
+| QA-08 — as duas cláusulas no EN | ✅ medido |
+| QA-09 — ADR-05 declara revisar ADR-02 | ✅ medido (mas a ADR-02 segue sem marca — metade do achado) |
+| QA-11 — linha `S` do SFDIPOT | ✅ medido |
+| QA-16 — chave no `.env.example` | ✅ medido |
+| QA-01 — apagar o `append` deixa **1 vermelho** | ✅ por construção: `bootstrap/app.php:21` é o único registro no repo e só CT-13 o afirma (não reexecutado: exigiria alterar código de aplicação) |
+| suíte — **86/86, 202 asserções** | ✅ **reproduzido exatamente**: 48/58 + 38/144 |
+| QA-17 — `filter_var` cru deixa **6 casos vermelhos** | ❌ **não reproduz para o mutante declarado** — ver **QA-27** |
+
+O quadro mede, sim. O problema não é o que ele afirma: é o que ele **não** lista — QA-12, QA-13 e
+QA-14 ficaram de fora dele e, mesmo assim, a tabela de cima os declara *"conferidos um a um"*.
+
+## Achados Novos do Ciclo 3
+
+### QA-25 — o `03` declara "fechados, e conferidos um a um" três achados intocados · Major · destino 1
+
+- **Dimensão**: L3/L4 (*"aplicada" sem evidência*) · **Relacionado a**: QA-18, QA-09, QA-12, QA-13, QA-14, QA-23
+- **Esperado**: o QA-18 do ciclo 2 foi Major exatamente por isto, e o `03` reconhece o erro por
+  escrito: *"Esta seção já mentiu, e o próprio gate pegou … Reescrita no ciclo 3 **conferindo linha a
+  linha antes de escrever**"* (`03:66-69`).
+- **Observado**: `03:98` — `| QA-08…QA-14, QA-16 (herdados) | Minor/Cosm. | 1 | **fechados, e
+  conferidos um a um** |`. Conferido por mim, um a um:
+  - **QA-12** intocado — nenhuma citação de vendor na wiki; `03:35` ainda isenta a si mesmo.
+  - **QA-13** intocado — `03:34` é a mesma linha do ciclo 1, *"5 rodados no desenho anterior"*.
+  - **QA-14** intocado — os três créditos errados do Índice seguem lá.
+  - **QA-09** pela metade — a ADR-02 continua sem marca de revisão.
+  - **QA-23** pela metade — a tabela de decisão de R5 e o `03:13`.
+  - **QA-05** pela metade — `01` §Modelo de Execução (ver QA-26).
+- **Repro**: `grep -rn "prepareBaseUrl\|ApplicationBuilder" wikis/specs/fix/url-sem-prefixo-public/`
+  → nada; `sed -n '34p' 03-progresso.md`; o Índice de Cenários do `04`.
+- **Por que Major, de novo**: o `03` é o portão do PR (*"PR não abre enquanto houver Major aberto"*)
+  e é o documento que a próxima pessoa lê em vez de reabrir o `06`. Um quadro que declara conferência
+  que não houve abre o gate sozinho — desta vez com a advertência contra isso escrita três parágrafos
+  acima, o que torna o padrão **crônico** (RCRCRC: *Repaired* + *Chronic*).
+- **Ação exigida**: uma linha por achado, com o estado real. O hábito que falta não é escrever a
+  tabela, é **conferir antes** — a linha coletiva que fecha nove achados de uma vez é a forma que
+  permite o erro, e ela sobreviveu à própria correção.
+
+### QA-26 — o passo 1 do `01` ainda descreve a lógica incondicional, e RQ-06/07/08 apontam para ele · Major · destino 1
+
+- **Dimensão**: L3 + A · **Relacionado a**: QA-05, QA-06, QA-18, Adendo 1 do `00`
+- **Esperado**: o passo do PRD para o qual a `## Cobertura do Requisito` manda RQ-06 (*"só remove com
+  evidência positiva"*), RQ-07 e RQ-08 precisa **tratar** dessas cláusulas. A skill nomeia o padrão:
+  *"PRD que diz RQ-02 → passo 5 mas o passo 5 não trata disso é achado"*.
+- **Observado**: `01:24-26` mapeia RQ-06, RQ-07 e RQ-08 → **passo 1**. O passo 1 (`01:144-160`)
+  descreve a lógica em três linhas — *"1. ler `$request->getBaseUrl()`; 2. se **não** terminar em
+  `/public`, sair; 3. senão, `URL::forceRootUrl(...)`"* —, que é exatamente o **desenho derrubado pelo
+  achado 1 do `/code-review`**. Não há menção a evidência positiva, `.htaccess`, `deveRemover()` nem à
+  chave de configuração em passo nenhum; o código entregue tem
+  `str_ends_with(...) && $this->deveRemover()` (`RaizDeUrlSemPublic:81`). O passo 2 (*"Cobertura por
+  teste"*) também só cita `UrlSemPrefixoPublicTest.php`, e CT-14…CT-16 vivem no `BooleanoDoEnvTest`.
+- **Resíduo do QA-05 no mesmo arquivo**: `01:100` — *"a correção roda uma vez por request, **no boot
+  do provider**"*; `01:106` — *"a raiz de URL passa a ser forçada **somente** quando a base termina em
+  `/public`"*, sem a condição de evidência.
+- **Repro**: ler `01` §"Cobertura do Requisito", §"Estrutura de Implementação" passo 1 e §"Modelo de
+  Execução" contra `app/Http/Middleware/RaizDeUrlSemPublic.php:81-107`.
+- **Por que Major**: é a decisão central da feature — a que separa encurtar de quebrar o arranjo B —
+  e o `01` é o único documento onde ela **não** está. O ciclo 2 fechou o *nome* do passo; ninguém
+  abriu o corpo dele.
+- **Ação exigida**: um passo novo (ou um quarto item na lógica) para a evidência positiva e a chave
+  `kit.url.remover_sufixo_public`, com `*(alterado em …)*`; corrigir as duas frases residuais.
+
+### QA-27 — a evidência "6 casos vermelhos" mede outro mutante, e CT-15 não mata o M17 · Minor · destino 1
+
+- **Dimensão**: L1 + K · **Relacionado a**: QA-17, QA-14, QA-21
+- **Esperado**: M17 é declarado como *"`filter_var` cru, sem o guard de ausente/vazio"* — o mutante de
+  **`ouNulo()`**, que é a classe de defeito que o QA-17 abriu.
+- **Observado / medido** (`php -r`, tabela completa do `filter_var`):
+  - `filter_var(null | '', FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)` → **`false`** → CT-14
+    fica vermelho nas suas **2** linhas. A morte do mutante é real, e existe.
+  - `filter_var('talvez' | 'sim' | '2' | 'null', …NULL_ON_FAILURE)` → **`null`** → **CT-15 continua
+    verde** sob M17. O crédito *"M17 | **CT-14**, **CT-15**"* (`04` §R7) e a linha do Índice
+    *"CT-15 … M17, M18"* estão errados — é o mesmo padrão do QA-14, em texto escrito agora.
+  - O número **6** só aparece mutando a **classe inteira** (`comPadrao()` junto): 2 de CT-14 + 2 de
+    *"trata ausente e vazio"* + 2 de *"difere do filter_var cru"*, estes quatro **já vermelhos antes
+    do ciclo 3** (os três casos de default de tabela ficam verdes porque `phpunit.xml:101-103` fixa
+    `KIT_TABELA_*=true`). Atribuído ao M17, o "6" credita a CT-14…CT-16 uma cobertura de que **4/6**
+    já existia.
+- **Repro**: `php -r 'var_export(filter_var("talvez", FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE));'`
+  → `NULL`; com `""` → `false`.
+- **Nota**: o fechamento do QA-17 é **real** — CT-14 mata o mutante. O defeito é da evidência, que
+  aparece no `03` §"Conferência do ciclo 3", no `04` §R7 e no corpo do commit `b882cb3`.
+- **Ação exigida**: trocar por *"2 casos vermelhos (CT-14)"* nos três lugares e tirar CT-15 do crédito
+  de M17; quem mata M18 continua sendo CT-15.
+
+### QA-28 — CT-16 tem 8 linhas de dataset para 6 Exemplos, e não mata mutante nenhum · Minor · destino 1
+
+- **Dimensão**: L1 + K (gate de falsificabilidade)
+- **Observado**: o Esquema de CT-16 no `04` traz seis Exemplos (`true, 1, on, false, 0, off`); o
+  dataset do teste traz **oito** — os dois a mais são os booleanos PHP `true` e `false`, partição
+  diferente das strings, e sem Exemplo do outro lado. É a forma L1 que a skill nomeia: *"linha de
+  dataset sem Exemplo no Gherkin"*.
+- **E o inverso**: o Índice dá a CT-16 a coluna *"Mata"* = **—**. R7 declara dois mutantes e os dois
+  são de CT-14/CT-15, então CT-16 não é exigido por mutante nenhum. Falta o mutante óbvio da regra —
+  *`ouNulo()` devolve sempre `null`, ignorando o valor* —, que CT-14 e CT-15 deixam vivo e só CT-16
+  mata. Com ele o cenário se justifica e o contador vai a 19.
+- **Ação exigida**: duas linhas novas nos Exemplos e um `M19` na tabela de R7.
+
+### QA-29 — o parêntese do cabeçalho do `04` atribui ao ciclo 2 um recount do ciclo 3 · Cosmético · destino 1
+
+- **Dimensão**: L1. `04:19-22` diz *"(recontado em 2026-09-18 **no ciclo 2** do quality gate: entra
+  R6/CT-13 …)"*, mas os números da linha acima — **15 cenários, 7 regras, 18 mutantes** — só passam a
+  valer com R7/CT-14…CT-16, que são do ciclo 3. As contagens em si estão **certas**, conferidas: 15
+  `it()` com ID, R1…R7, M1…M18, M11 o único sem matador, e o teto soma 3+2+1+1+1+3+4 = 15.
+
+## Dimensões — Ciclo 3
+
+| # | Dimensão | Status | Observação |
+|---|----------|--------|------------|
+| A | Cobertura do requisito | ⚠️ | nenhuma cláusula sem código ou sem teste; **RQ-06/07/08 apontam para um passo que não as trata** (QA-26) |
+| B | Fronteiras e dados | ✅ | a fronteira do env fechou de verdade: ausente, vazio, ilegível, bool nativo e vocabulário, todos com cenário e medidos aqui |
+| C, F, G, H | permissão · UX de erro · tema · a11y | ⏭️ | sem usuário, sem saída de erro, sem UI — inalterado desde o ciclo 1 |
+| D | Observabilidade real | ✅ | segue sem `Log::`, por decisão da ADR-04. Sem PII |
+| E | Performance | ✅ | leitura de disco só com base prefixada; o texto do memo foi corrigido (QA-20) |
+| I | Segurança da superfície nova | ✅ | o ciclo 3 só acrescentou casos de teste e uma chave no `.env.example`. Nenhuma rota, id, escrita ou propriedade pública |
+| J | Regressão adjacente | ✅ | `composer test:kit` **2.493/2.493, 9.640 asserções** neste commit; reexecutei os três arquivos tocados (86/86, 202) |
+| K | Adequação da suíte | ✅ | os dois buracos do ciclo 2 fecharam: `ouNulo()` tem cenário e o oráculo de ordem não degrada mais. Resíduo de **rastro**, não de força: QA-27 e QA-28. Mutação por `pest --mutate`: **não** medida |
+| L | Consistência documental | ❌ | 4 dos 5 achados novos, mais 6 herdados que o `03` declara conferidos (QA-25). Terceiro ciclo seguido como a dimensão de maior rendimento — 22 dos 29 achados da feature |
+
+## Não Verificado — Ciclo 3
+
+- **App não servido**: nenhum request HTTP real em nenhum dos dois arranjos. Tudo sobre comportamento
+  vem do código, do stack resolvido e dos 86 casos. As dimensões B, D, E, F, G, H e I rodaram
+  **estáticas**, como declarado desde o ciclo 1.
+- **Playwright MCP indisponível**; sem superfície de UI, o gate do `05` não abre.
+- **Mutation score (`pest --mutate`)**: não rodado em ciclo nenhum desta feature. Os mutantes foram
+  derivados por leitura e medidos pontualmente (`php -r`, `tinker`, contagem de casos).
+- **Mutante do `append` não executado**: apagá-lo exigiria alterar código de aplicação, proibido a
+  esta skill. Morte provada por construção (registro único no repo).
+- **Apache real**: `.htaccess`, `R=301` e reescrita interna continuam não observados.
+
+## Convergência — fim do loop
+
+O ciclo 3 **trouxe achado novo** (5), então a regra de parada por ausência de achado não disparou —
+mas é o **terceiro de três**, e o teto é rígido: *"Não seguir além de 3 ciclos. Escalar."*
+
+**Escalo ao usuário com 2 Major abertos**, e com a leitura que três ciclos permitem:
+
+1. **O produto está pronto.** Nos três ciclos, **zero** achado de comportamento. O desenho sobreviveu
+   ao achado que o derrubou (arranjos A × B), a falha é fechada, e as duas superfícies que estavam sem
+   guarda — o registro do middleware e o `ouNulo()` — hoje têm cenário que fica vermelho quando o
+   código morre. Um quarto ciclo não encontraria defeito de código: os três anteriores não
+   encontraram nenhum.
+2. **O que não converge é o texto.** 22 dos 29 achados são da dimensão L, e o padrão se repetiu nos
+   três ciclos **no mesmo documento**: o `03` declarando fechado o que não conferiu (QA-18 → QA-25).
+   Não é lacuna de esforço, é lacuna de método — a linha coletiva que fecha nove achados de uma vez é
+   a forma que permite o erro, e ela sobreviveu à própria correção.
+3. **Decisão que cabe ao usuário, não a mim**: (a) fechar QA-25 e QA-26 e abrir o PR — são duas
+   edições de texto, sem risco de código, e o `03`/`01` passam a descrever o que foi entregue; ou (b)
+   aceitar os dois como **débito declarado** no PR, com a lista de resíduos deste relatório colada na
+   descrição, já que nenhum deles altera o que o kit faz. A skill não autoriza (c) "aprovado": há
+   Major aberto.
+
+**Recomendação**: (a). O custo é uma passada de edição; o benefício é que o próximo a ler o `01`
+aprenda a regra da evidência positiva — a única coisa desta feature que, ignorada, quebra instalação
+de terceiro.

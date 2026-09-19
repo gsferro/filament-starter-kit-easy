@@ -165,7 +165,14 @@ E o achado 2 mostrou um segundo problema no **local**: `boot()` de provider roda
 ### Decisão
 
 1. **Middleware global** (`App\Http\Middleware\RaizDeUrlSemPublic`), anexado em
-   `bootstrap/app.php`. Roda **depois** do `TrustProxies`, e o achado 2 desaparece por construção.
+   `bootstrap/app.php` por `Middleware::append()`
+   (`vendor/laravel/framework/src/Illuminate/Foundation/Configuration/Middleware.php:append():185`).
+   Roda **depois** do `TrustProxies`, e o achado 2 desaparece por construção.
+
+   O registro chega ao kernel por um `afterResolving` pelo **contrato**
+   (`vendor/laravel/framework/src/Illuminate/Foundation/Configuration/ApplicationBuilder.php:289`),
+   e é por isso que CT-13 resolve `Contracts\Http\Kernel` — não porque a classe concreta
+   devolvesse o stack de fábrica, como um comentário anterior afirmava sem medir.
 2. **Evidência positiva**: só encurta quando o `.htaccess` da raiz tem uma `RewriteRule` apontando
    para `public/`. É o único sinal que o PHP observa sem sair pela rede, e é exatamente o que
    separa o arranjo A do B.

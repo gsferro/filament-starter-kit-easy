@@ -31,7 +31,12 @@
 - [x] `composer test:kit` — **2.479/2.479**, zero vermelhos, na base já rebaseada, 2026-09-18
 - [x] **Custo medido** — zero query. Em instalação correta a base é vazia e o middleware sai na primeira condição, sem tocar disco; a leitura do `.htaccess` só acontece quando a base já veio com o sufixo *(sem memo — cortado pela auditoria Ponytail)*, 2026-09-18
 - [x] **`/code-review` no diff (step 7.5)** — **5 achados, 1 high**. O high derrubou o desenho e virou o Adendo 1 do `00` + ADR-05 + CT-09…CT-12. Ver `## Desvios do Plano`, 2026-09-18
-- [x] Falsificabilidade por mutante — 5 rodados no desenho anterior, 5 mortos (sem a correção: 8 vermelhos; `str_contains`: 1; zera a raiz: 1; força sempre: 4; `APP_URL`: 8), 2026-09-18
+- [x] Falsificabilidade por mutante — **remedida no desenho atual** em 2026-09-19, porque a
+      medição anterior era do desenho que a ADR-05 descartou (QA-13). Seis mutantes, seis
+      mortos, cada um pelo cenário que o `04` declara:
+      `M1` str_contains → 1 (CT-05) · `M3` zera a raiz → 1 (CT-03) ·
+      `M12` encurta sem sinal → 3 (CT-09, CT-10, CT-12) · `M15` sem o `append` → 1 (CT-13) ·
+      `M17` sem o guard → 2 (CT-14) · `M18` sem `NULL_ON_FAILURE` → 4 (CT-15)
 - [x] Citações `arquivo:símbolo:linha` — a wiki não cita linha de vendor; as referências são a classe e o arquivo de config, conferidos, 2026-09-18
 - [x] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa — CT-07 removido dos dois lados, com o motivo escrito no `04`, 2026-09-18
 - [x] Docs pt/en e CHANGELOG reconciliados — inclusive a frase que o achado 3 desmentiu, 2026-09-18
@@ -109,7 +114,45 @@ QA-01, QA-02 (no código), QA-03 e QA-07, e pegou o que ficou pela metade.
 | QA-01 | mutante: apagar o `append` | **1 caso vermelho** (CT-13), com a mensagem certa |
 | suíte | `UrlSemPrefixoPublic` + `BooleanoDoEnv` + `SiteDeDocumentacao` | **86/86**, 202 asserções |
 
-- **Ciclo 3**: pendente — última reexecução (teto da skill).
+### Ciclo 3 — **REPROVADO → especificação, ESCALADO** · 2026-09-18
+
+Teto de 3 ciclos atingido. **Novos: 0 Blocker · 2 Major · 2 Minor · 1 Cosmético.** Em três ciclos,
+**zero achado de comportamento do produto**: dos 29 achados, 22 são de consistência documental.
+
+| Achado | Sev | Disposição |
+|---|---|---|
+| **QA-25** — o `03` declarava QA-12/13/14 "fechados, e **conferidos um a um**" com os três intocados. **Recorrência literal do QA-18**, no ciclo que existia para fechá-lo, três parágrafos abaixo da nota que advertia contra isso | Major | **fechado** — e desta vez por **verificador mecânico**, não por leitura. Ver abaixo |
+| **QA-26** — o passo 1 do `01` ainda descrevia a lógica de 3 linhas **sem** a evidência positiva, e RQ-06/07/08 apontavam para ele | Major | **fechado**: a lógica passa a ter 4 passos, com o de decisão explícito |
+| **QA-27** — *"`filter_var` cru deixa 6 vermelhos"* media os **dois** defeitos juntos; M17 sozinho deixa 2 e **CT-15 fica verde** sob ele | Minor | **fechado**: M17 e M18 medidos **separados** — 2 (CT-14) e 4 (CT-15) —, e nasce M19 para CT-16 |
+| **QA-28** — CT-16 com 8 linhas no teste e 6 Exemplos no Gherkin, e sem mutante declarado | Minor | **fechado**: Gherkin com as 8, e M19 declarado |
+| **QA-29** — o parêntese do cabeçalho atribuía ao ciclo 2 um recount do ciclo 3 | Cosmético | **fechado** |
+| QA-12 (herdado) — nenhuma citação `vendor:linha`, contra `.ai/rules/specs.md` | Minor | **fechado**: `Request.php:prepareBaseUrl():1938-1944`, `Middleware.php:append():185`, `ApplicationBuilder.php:289` |
+| QA-13 (herdado) — o checkbox de mutantes citava o desenho **abandonado** | Minor | **fechado**: seis mutantes remedidos no desenho atual |
+| QA-14 (herdado) — o Índice creditava M7 a CT-01/CT-05 | Minor | **fechado**: M7 é de CT-08 |
+
+### O verificador mecânico — a resposta ao QA-18/QA-25
+
+O erro se repetiu porque **eu conferia lendo**, e leitura confirma o que se espera encontrar. A
+correção não foi "prestar mais atenção": foi escrever um script que responde PASS/FAIL por achado,
+e rodá-lo **antes** de escrever qualquer "fechado" aqui.
+
+Ele pegou **três** que eu teria declarado fechados de novo — QA-12, QA-13 e QA-26 — e, na rodada
+seguinte, mostrou que dois FAIL eram do próprio verificador (regex estrita demais contra texto que
+quebra linha). Os dois lados importam: o oráculo tem de ser falsificável nas duas direções.
+
+Saída final: **8 PASS, 0 FAIL**.
+
+### Situação para a decisão do usuário
+
+A skill **não autoriza "aprovado" com Major aberto**, e o teto de ciclos foi atingido — por isso o
+veredito do ciclo 3 é escalar. Os dois Major dele eram **edição de texto**, sem risco de código, e
+estão fechados com verificação mecânica. O que nenhum ciclo produziu foi achado de comportamento:
+a regressão fechou **2.493/2.493, 9.640 asserções**, e os seis mutantes morrem nos cenários que o
+`04` declara.
+
+**Não verificado, declarado**: dimensões B, D, E, F, G, H e I rodaram estáticas (app não servido);
+`pest --mutate` não foi executado em ciclo nenhum — a falsificabilidade foi medida por mutante
+manual, um a um.
 
 ### Achados do `/ponytail:ponytail-review` (paralelo ao ciclo 1)
 
