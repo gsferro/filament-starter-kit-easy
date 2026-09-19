@@ -5,6 +5,8 @@ namespace App\Filament\Admin\Resources\Users;
 use App\Filament\Admin\Resources\Users\Pages\CreateUser;
 use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Filament\Admin\Resources\Users\Pages\ListUsers;
+use App\Filament\Admin\Resources\Users\Pages\ViewUser;
+use App\Filament\Admin\Resources\Users\Schemas\UserInfolist;
 use App\Filament\Concerns\AprovacaoDeCadastro;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Filament\Concerns\SituacaoDaConta;
@@ -19,6 +21,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\RestoreAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -220,6 +223,10 @@ class UserResource extends Resource
                 self::acaoDeDesativar(),
                 self::acaoDeReativar(),
                 Impersonate::make(),
+                // Navega para a ficha em vez de abrir modal, porque `hasPage('view')` agora e
+                // verdadeiro (`Resources/Pages/Page::getDefaultActionUrl():382-389`). Autoriza por
+                // `View:User`, via policy — sem `->authorize()` a mais.
+                ViewAction::make(),
                 EditAction::make(),
                 // Excluir é LÓGICO (`SoftDeletes` no model); Restaurar só aparece em linha excluída e
                 // autoriza por `Restore:User`, via `getRestoreAuthorizationResponse()` → policy.
@@ -315,11 +322,19 @@ class UserResource extends Resource
         );
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return UserInfolist::configure($schema);
+    }
+
     public static function getPages(): array
     {
         return [
             'index'  => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),
+            // 'view' ANTES de 'edit' de proposito: `/{record}` e a rota mais curta e o Filament
+            // casa na ordem de declaracao. Mesma ordem de `TenantResource::getPages():141-144`.
+            'view'   => ViewUser::route('/{record}'),
             'edit'   => EditUser::route('/{record}/edit'),
         ];
     }

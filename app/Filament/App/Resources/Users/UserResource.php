@@ -5,6 +5,8 @@ namespace App\Filament\App\Resources\Users;
 use App\Filament\App\Resources\Users\Pages\CreateUser;
 use App\Filament\App\Resources\Users\Pages\EditUser;
 use App\Filament\App\Resources\Users\Pages\ListUsers;
+use App\Filament\App\Resources\Users\Pages\ViewUser;
+use App\Filament\App\Resources\Users\Schemas\UserInfolist;
 use App\Filament\Concerns\AprovacaoDeCadastro;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Filament\Concerns\SituacaoDaConta;
@@ -13,6 +15,7 @@ use App\Models\User;
 use App\Support\Papeis;
 use BackedEnum;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -233,6 +236,49 @@ class UserResource extends Resource
     }
 
     /**
+     * A ficha de quem governa a instalacao nao abre no /app — segunda camada, espelhando a edicao.
+     *
+     * ## Por que nao basta a query
+     *
+     * `getEloquentQuery()` acima ja recorta por `User::queNaoGovernamAInstalacao()`, entao o alvo
+     * some da listagem e o route binding devolve 404 antes de a policy ser consultada. Isso basta
+     * HOJE, e e justamente o que torna a omissao perigosa: query e falha de um so ponto — uma
+     * action nova que receba um `User` de fora da tabela, um `mount()` com registro ja carregado,
+     * passam por fora dela. E a mesma licao de `getEditAuthorizationResponse()` logo abaixo.
+     *
+     * ## Por que a assimetria seria pior que a duplicacao
+     *
+     * A edicao tem duas camadas. Entregar a visualizacao com uma so a deixaria MAIS PERMISSIVA que
+     * a edicao sobre o mesmo alvo — e toda vez que a tela de leitura fica mais aberta que a de
+     * escrita, alguem abriu a brecha sem perceber, porque a intuicao diz que ler e menos grave que
+     * escrever e a intuicao nao sabe o que a ficha mostra.
+     *
+     * Sobrescrever a RESPOSTA e nao `canView()`: e a resposta que `ViewRecord::authorizeAccess()`
+     * le, via `canView()` (`vendor/filament/filament/src/Resources/Pages/ViewRecord.php:80` ->
+     * `Resource/Concerns/HasAuthorization.php:canView:195-198`). Por painel, e nao na `UserPolicy`:
+     * no /admin abrir a ficha do `master_global` e legitimo.
+     */
+    public static function getViewAuthorizationResponse(Model $record): Response
+    {
+        if ($record instanceof User && $record->governaAInstalacao()) {
+            Log::channel('autenticacao')->warning(
+                "[UserResource@getViewAuthorizationResponse] Visualizacao de quem governa a instalacao recusada no painel app | alvo: {$record->id}",
+                [
+                    'alvo_id'     => $record->id,
+                    'executor_id' => Auth::id(),
+                    'tenant_id'   => Filament::getTenant()?->getKey(),
+                    'painel'      => 'app',
+                    'motivo'      => 'alvo_governa_a_instalacao',
+                ],
+            );
+
+            return Response::deny(self::MOTIVO_DA_NEGACAO_DE_INSTALACAO);
+        }
+
+        return parent::getViewAuthorizationResponse($record);
+    }
+
+    /**
      * @return list<string>
      */
     public static function getGloballySearchableAttributes(): array
@@ -329,6 +375,10 @@ class UserResource extends Resource
             // status-e-exclusao-logica-de-usuario). A coluna e o filtro mostram o estado.
             ->recordActions([
                 self::acaoDeAprovar(),
+                // Navega para a ficha em vez de abrir modal, porque `hasPage('view')` agora e
+                // verdadeiro (`Resources/Pages/Page::getDefaultActionUrl():382-389`). Autoriza por
+                // `View:User`, via policy, e pela resposta de `getViewAuthorizationResponse()`.
+                ViewAction::make(),
                 EditAction::make(),
             ])
             ->emptyStateHeading('Nenhum usuário nesta '.mb_strtolower((string) config('kit.tenancy.label', 'Organização')))
@@ -394,11 +444,19 @@ class UserResource extends Resource
         );
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return UserInfolist::configure($schema);
+    }
+
     public static function getPages(): array
     {
         return [
             'index'  => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),
+            // 'view' ANTES de 'edit' de proposito: `/{record}` e a rota mais curta e o Filament
+            // casa na ordem de declaracao. Mesma ordem de `TenantResource::getPages():141-144`.
+            'view'   => ViewUser::route('/{record}'),
             'edit'   => EditUser::route('/{record}/edit'),
         ];
     }

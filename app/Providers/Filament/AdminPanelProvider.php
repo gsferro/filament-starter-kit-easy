@@ -44,6 +44,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use lockscreen\FilamentLockscreen\Lockscreen;
+use MortalKiller\FilamentPageHeader\PageHeaderPlugin;
 use Prodstarter\FilamentNotificationCenter\FilamentNotificationCenterPlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
 use SolutionForest\FilamentSimpleLightBox\SimpleLightBoxPlugin;
@@ -314,6 +315,29 @@ class AdminPanelProvider extends PanelProvider
                  */
                 FilamentExceptionsPlugin::make()
                     ->registerNavigation(false),
+
+                /*
+                 * Cabecalho rico nas telas de registro (View/Edit de User e Tenant).
+                 *
+                 * Registrado so aqui e no /app: o `register()` do plugin acrescenta um render
+                 * hook STYLES_AFTER que emite o <link> da CSS do pacote em TODA pagina do
+                 * painel (`PageHeaderPlugin::register():60-68`), tenha ela cabecalho ou nao.
+                 * O /infra nao tem tela alvo, e pagaria a folha de estilo por pagina sem um
+                 * unico consumidor. Ligar la e uma linha — ver a receita em wikis/receitas.md.
+                 *
+                 * Instancia NOVA a cada painel, nunca uma variavel reusada: `make()` e
+                 * `app(self::class)` e o provider do pacote nao registra singleton
+                 * (`PageHeaderServiceProvider::boot():14-23`), entao o estado (`$options`,
+                 * `$resourceSchemas`) e por instancia. Compartilhar faria a configuracao de um
+                 * painel vazar para o outro, em silencio.
+                 *
+                 * O plugin sozinho nao muda tela nenhuma: quem opta e a Page, com
+                 * `use HasPageHeader`. E o trait sobrescreve `getHeader()` — Page que ja
+                 * sobrescreva esse metodo torna o pacote INERTE, sem erro nenhum.
+                 *
+                 * Depois de instalar/atualizar: `php artisan filament:assets`.
+                 */
+                PageHeaderPlugin::make(),
             ])
             /*
              * Confirmação de e-mail: o Auth Designer configurado, a ROTA desligada — ver a

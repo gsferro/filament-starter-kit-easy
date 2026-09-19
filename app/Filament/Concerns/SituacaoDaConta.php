@@ -29,27 +29,17 @@ use Illuminate\Database\Eloquent\Builder;
 trait SituacaoDaConta
 {
     /**
-     * Pendente, Inativo ou Ativo — partição exaustiva do estado que a tela mostra.
-     *
-     * Excluído não aparece aqui: ele só entra na tabela pelo filtro "Lixeira", e ali a própria
-     * ação Restaurar é o sinal. Pendente vence Inativo na exibição: quem ainda não foi aprovado
-     * não tem estado de acesso a mostrar.
+     * Pendente, Inativo ou Ativo. A DECISÃO mora em `User::rotuloDaSituacao()`, não aqui: desde a
+     * v0.36.0 os cabeçalhos de `UserHeader` dos dois painéis mostram a mesma coisa, e um `match`
+     * copiado em três arquivos se desalinha na primeira mudança.
      */
     protected static function colunaDeSituacao(): TextColumn
     {
         return TextColumn::make('situacao')
             ->label('Situação')
             ->badge()
-            ->state(fn (User $record): string => match (true) {
-                (bool) $record->aprovacao_pendente => 'Pendente',
-                ! $record->ativo                   => 'Inativo',
-                default                            => 'Ativo',
-            })
-            ->color(fn (string $state): string => match ($state) {
-                'Pendente' => 'warning',
-                'Inativo'  => 'danger',
-                default    => 'success',
-            });
+            ->state(fn (User $record): string => $record->rotuloDaSituacao())
+            ->color(fn (User $record): string => $record->corDaSituacao());
     }
 
     protected static function filtroDeInativos(): Filter
