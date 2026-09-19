@@ -35,6 +35,7 @@
 | **Ampliar imagem ou documento de tabela** | `solution-forest/filament-simplelightbox` — nunca modal de preview escrito à mão |
 | **Página hub: grade de cartões de navegação** | `harvirsidhu/filament-cards` — **ligado no `/infra`; opt-in (`KIT_HUB`) em `/admin` e `/app`**. Nunca Blade de cartões à mão |
 | Dashboard arrastável pelo usuário | `mddev31/filament-dynamic-dashboard` |
+| **Cabeçalho rico no topo de uma tela de registro** (avatar, badge de situação, metadados copiáveis) | `mortalkiller/filament-page-header` — ligado nas telas de **ver e editar** usuário (`/admin` e `/app`) e organização (`/admin`). Nunca um bloco de cabeçalho em Blade à mão: o schema é descoberto por CONVENÇÃO sobre o model, e há armadilha com RelationManager — a receita está em [receitas.md](receitas.md#cabeçalho-rico-num-resource-com-relations) |
 | Barra de progresso em coluna/entry | `lara-zeus/progress` |
 | Checklist e tour guiado | `wallacemartinss/filament-onboarding` |
 | Página de erro branda | `anselmokossa/filament-sentinel` |

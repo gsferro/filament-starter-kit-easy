@@ -76,12 +76,13 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 | F-26 | Scope by trait | your models | — | `BelongsToTenant` gives relationship, global scope and filling — works outside Filament too | 🟢 |
 | F-27 | **Visual identity: color** | organization → *Visual identity* | `admin` | choose the color and open `/app/{org}`: the whole panel wears its color, and `/admin` **does not** change | 🔵 |
 | F-28 | **Visual identity: logo** | same | `admin` | the logo appears on the `/app` lock screen instead of the base image | 🔵 |
+| F-69 | **The `/app` record page does not tell where else the person is** | `/app{/org}/users/{id}` | `admin_app` | open a colleague's record page: it shows the account and **omits** the organizations and roles that the `/admin` one shows. Listing them there would tell whoever administers one organization that the account also belongs to another — the query scope guarantees you only see people FROM the current organization, not that you may see where else they are. The absence lives in `App\Filament\Concerns\FichaDeUsuario` | 🟢 |
 
 ## Administration
 
 | # | Feature | Where | Who can access | How to check | Test |
 |---|---|---|---|---|---|
-| F-29 | Users | `/admin/users` | `admin` | CRUD, with **mandatory** role on creation | 🟢 |
+| F-29 | Users | `/admin/users` | `admin` | create, **view** and edit in full screen, with a **mandatory** role on creation. The record page shows account, status, origin, dates and — only here — the person's organizations and roles | 🟢 |
 | F-30 | AI agent catalog | `/admin/agentes-ia` | `admin` | prompt, provider, model, tools and guardrails are **data**, editable without deploy | 🟢 |
 | F-31 | Onboarding authoring | `/admin/onboarding-flows` | `admin` | checklists and tours; consumption is in the business panel | 🔵 |
 | F-32 | Filled dashboard | `/admin` | `admin` | 6 widgets over the data the panel already has | 🔵 |
@@ -120,6 +121,8 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 | F-52 | Branded error pages | 403, 404, 419, 500, 503 | — | with the panel's look, in Portuguese (pt-BR) | 🔵 |
 | F-60 | **Language switcher** | topbar of the three and login screens | anyone | only shows up with **two** locales in `kit.idiomas`; translates Filament and the packages, **not** the kit's labels | 🟢 |
 | F-61 | **Attachments and media** | Projects form and table | whoever reaches the resource | upload, `anexos` collection, `miniatura` conversion and a table lightbox. The attachment inherits the record's own organization scope | 🟢 |
+| F-70 | **Rich header on the record screens** | view and edit user (`/admin` and `/app`) and organization (`/admin`) | whoever reaches the screen | in place of Filament's plain text title: avatar (or the initials, when there is no photo), name, status badge and copyable metadata. It comes from `mortalkiller/filament-page-header`; the content is the same in both panels, in `App\Filament\Concerns\CabecalhoDeUsuario`, because what an account **is** does not change per panel | 🟢 |
+| F-71 | **Initials avatar drawn in here** | every avatar without a photo, in the three panels | anyone | open any screen and watch the network tab: no request leaves the application. Filament's default provider is `UiAvatarsProvider`, which made **every** person's browser request `ui-avatars.com` on every screen load — carrying the initials in the query string and the panel's `Referer` along. `App\Support\AvatarDeIniciais` returns an inline SVG, with the same looks | 🟢 |
 
 ## AI
 

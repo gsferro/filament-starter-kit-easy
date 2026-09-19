@@ -16,7 +16,7 @@ O que a instalação perguntou — e mais um punhado de coisas que antes só se 
 | **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário e colunas arrastáveis — os defaults de **toda** tabela dos três painéis |
 | **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../autenticacao/registro-aberto.md)) |
 | **Login** | a página única de login em `/login` ([detalhes](../autenticacao/login-unificado.md)), os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../autenticacao/login-social.md)) |
-| **Kit** | hub de navegação em cartões, aviso de alterações não salvas, exibição da versão do kit no rodapé, e como o seu negócio chama cada organização (singular e plural) |
+| **Kit** | hub de navegação em cartões, aviso de alterações não salvas, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, e como o seu negócio chama cada organização (singular e plural) |
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
 
@@ -79,6 +79,25 @@ o padrão a preservar. Desligar é um clique, sem deploy.
 > É alerta, não rascunho: quem confirmar a saída perde o preenchimento do mesmo jeito. O kit avaliou
 > dois pacotes de rascunho e salvamento automático e não adotou nenhum — os motivos estão em
 > [`wikis/pacotes-candidatos.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/pacotes-candidatos.md).
+
+## O dashboard dinâmico é um interruptor, não uma migração
+
+Ainda na aba **Kit**, a seção *Dashboard dinâmico* troca a tela de entrada dos painéis: em vez do
+dashboard clássico, uma grade que o próprio usuário monta, move e redimensiona
+(`mddev31/filament-dynamic-dashboard`). Nasce **desligada** — `KIT_DASHBOARD_DINAMICO=false` no
+`.env.example` —, e *Painéis onde vale* restringe a quais painéis: em branco significa todos.
+
+O que faz dela um interruptor, e não um caminho sem volta, são duas decisões:
+
+- **As duas páginas estão sempre registradas.** O painel é montado no `register()` do provider e o
+  valor do banco só chega no `boot()`; um `->pages([...])` condicional leria a config antes de ela
+  existir. Quem decide qual página atende é `App\Support\DashboardDinamico`, por request — salvar
+  aqui vale no próximo F5, sem cache nem restart.
+- **Desligar não apaga nada.** As grades montadas ficam nas tabelas `dashboards` e
+  `dashboard_widgets` e voltam intactas ao religar.
+
+Ver não é montar: quem arrasta e salva a grade é quem tem a permissão `Manage:Dashboard` do
+Shield — os demais veem a mesma tela sem poder editá-la.
 
 ## Quem manda: o banco ou o `.env`?
 

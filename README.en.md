@@ -116,7 +116,7 @@ On panels **without** tenancy (`/admin`, `/infra`) the role must be assigned in 
 
 **The user-menu badge shows the role for the OPEN organization.** Someone who belongs to more than one may hold different roles in each — `panel_user` in one, `admin_app` in another — and the badge follows the organization switch. With no role in the open organization there is no badge: entering the panel does not depend on the organization (that is the paragraph above), but the display does. Nothing changes on panels without tenancy, since there is no current organization there.
 
-> With [multi-tenancy](#multi-tenancy-opt-in) turned on, **App** becomes `/app/{tenant}` and shows only the selected tenant's data. Admin and Infra stay global.
+> With [multi-tenancy](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/multi-tenancy.html) turned on, **App** becomes `/app/{tenant}` and shows only the selected tenant's data. Admin and Infra stay global.
 
 Separating admin from infra is the whole point of the kit: whoever administers users doesn't need (and shouldn't) see logs, queues and operational commands, and vice versa.
 
@@ -174,7 +174,7 @@ The other two already come complete.
 |---|---:|
 | Test cases (`Kit` + `Tenancy`, measured on 2026-09-08) | **2,226**, with **7,428 assertions** |
 | Screens swept in a real browser | **55** |
-| Test files | **143** in `Kit` + `Tenancy` (**169** in total) |
+| Test files | **144** in `Kit` + `Tenancy` (**170** in total) |
 | PHPStan | **level 7**, zero errors |
 | FilaCheck | **17** rules, all passing |
 
@@ -190,18 +190,20 @@ The other two already come complete.
 
 **Front door**
 - **Welcome page on the `/` route**, replacing Laravel's default welcome: one card per panel plus
-  what `kit:install` customised ([details](#the--route-is-public-and-shows-no-secrets))
+  what `kit:install` customised ([details](https://gsferro.github.io/filament-starter-kit-easy/en/autenticacao/rota-publica.html))
 
 **Administration and security**
 - Shield (roles and permissions with a UI) on top of spatie/laravel-permission
 - Breezy: user profile, avatar, 2FA and passkeys
+- **Full-screen user record page** (`/admin/users/{id}` and `/app/users/{id}`): account, status, origin and dates, with the edit button on top. **Only on `/admin`** does it list the person's organizations and roles — on `/app` the omission is the feature: telling them there would tell whoever administers one organization that the account also belongs to another ([details](https://gsferro.github.io/filament-starter-kit-easy/en/operacao/roteiro-de-features.html))
+- **Avatar drawn in here**: without a photo, Filament's default provider makes every person's browser request `ui-avatars.com` on every screen — carrying the initials in the query string and the panel's `Referer` along. `App\Support\AvatarDeIniciais` returns an inline SVG on all three panels: same looks, no external request
 - Auth Designer: two-column login screen — the artwork **shows the application name**, read from `APP_NAME` on every load; to use your own image, upload it at `/admin/configuracoes-da-aplicacao`
-- **Optional open sign-up** (off by default): registration without an invitation on `/app`, with a single role, manual approval and e-mail verification — each behind its own key ([details](#open-registration-and-approval))
+- **Optional open sign-up** (off by default): registration without an invitation on `/app`, with a single role, manual approval and e-mail verification — each behind its own key ([details](https://gsferro.github.io/filament-starter-kit-easy/en/autenticacao/registro-aberto.html))
 - Lockscreen: session lock on inactivity (30 min), registered on all 3 panels — the lock screen wears the same layout as the login page (Auth Designer), not Filament's simple layout
 - Impersonate, authentication log, change auditing (owen-it)
 - Panel Switch: switch panels from the user menu
 - **DTOs with `spatie/laravel-data`**: every structured value crossing a class boundary is a typed object, with an automated guard — credentials never go into a DTO, and API consumption/responses require one ([details](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/dto-com-laravel-data.html))
-- **Optional anti-robot protection** (off by default): reCAPTCHA v2/v3, Turnstile or hCaptcha on the login, password reset and register screens, via `ddr/filament-captcha` ([details](#anti-robot-protection))
+- **Optional anti-robot protection** (off by default): reCAPTCHA v2/v3, Turnstile or hCaptcha on the login, password reset and register screens, via `ddr/filament-captcha` ([details](https://gsferro.github.io/filament-starter-kit-easy/en/autenticacao/protecao-anti-robo.html))
 - **Single login page** (off by default): `KIT_LOGIN_UNIFICADO=true` sends `/admin/login`, `/infra/login` and `/app/login` to `/login`; whoever can access one panel goes straight in, whoever can access more than one picks from a card screen after signing in. **Heads-up**: external SSO (SAML / corporate OIDC) is not pre-configured yet and does not go through that rule — see [the docs page](https://gsferro.github.io/filament-starter-kit-easy/en/autenticacao/login-unificado.html)
 - **Social login per panel**: each provider can be enabled separately for `/app`, `/admin` and `/infra`; button, route and destination respect the panel of origin
 
@@ -210,7 +212,7 @@ The other two already come complete.
 - Backup Monitor (spatie/laravel-backup), Jobs Monitor, Logs Explorer (no delete button — a trail is evidence)
 - **Grouped exceptions** by type and frequency — what Health, Pulse and the log file don't answer
 - **Sent-mail trail**: separates "it was never sent" from "it was sent and landed in spam"
-- **Recycle bin**: restores what was deleted with `SoftDeletes` ([details](#the-infra-trails-exceptions-mail-and-recycle-bin))
+- **Recycle bin**: restores what was deleted with `SoftDeletes` ([details](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/trilhas-de-infraestrutura.html))
 - Command Center: Artisan commands pre-approved for the UI, with history
 - Laravel Pulse embedded as a panel page
 - Dependency Graph: a map of models, relations, resources and panels
@@ -230,7 +232,9 @@ The other two already come complete.
 - Branded error pages (Sentinel) in Portuguese (pt-BR) — the 403 one only shows the permission diagnosis outside production
 - 100% pt-BR UI, including plugins that ship English only (translations in `lang/vendor/`)
 - **Language switcher** on all three panels and on the login screens — driven by data, not by a flag (details below)
-- **Media layer** (spatie/laravel-medialibrary) inside Filament's components: uploads, collections and conversions in form, table and infolist ([details](#attachments-and-media))
+- **Media layer** (spatie/laravel-medialibrary) inside Filament's components: uploads, collections and conversions in form, table and infolist ([details](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/anexos-e-midia.html))
+- **Rich header** on top of the view and edit screens for users and organizations: avatar (or the initials), name, status badge and copyable metadata, in place of Filament's plain text title
+- **Unsaved-changes warning** when leaving a form on any of the three panels, and **your system's version in the footer** — both are a switch at `/admin/configuracoes-da-aplicacao`, no deploy ([details](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/configuracoes-do-kit.html))
 
 ## Full documentation
 
@@ -243,7 +247,7 @@ navigation: **[https://gsferro.github.io/filament-starter-kit-easy/en/](https://
 | [Authentication](https://gsferro.github.io/filament-starter-kit-easy/en/autenticacao/) | invitations, open registration, social login, anti-robot protection, user states |
 | [Features](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/) | multi-tenancy, attachments and media, CSV import/export, `/infra` trails, kit settings, card hub, DTOs with Laravel Data |
 | [Operations](https://gsferro.github.io/filament-starter-kit-easy/en/operacao/) | AI agents, the complete feature roadmap, conventions, what to do after creating a Resource |
-| [Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/) | code quality, search and language, the ~70 installed packages |
+| [Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/) | code quality, search and language, the 77 installed packages |
 
 The Portuguese version lives at **[https://gsferro.github.io/filament-starter-kit-easy/pt/](https://gsferro.github.io/filament-starter-kit-easy/pt/)**.
 
@@ -358,7 +362,7 @@ php artisan kit:tenancy           # turns on multi-tenancy (opt-in)
 | 2 | **Database** | the `DB_*` block in `.env` | ✅ |
 | 3 | **Seeder credentials** | `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` in `.env` | ✅ |
 | 4 | **Primary color** | `KIT_COR_PRIMARIA` in `.env` (a color name from the Filament palette), or `KIT_COR_PRIMARIA_HEX` with a free hex value — the hex beats the name when both are filled | ✅ |
-| 5 | **[Multi-tenancy](#multi-tenancy-opt-in)** | `php artisan kit:tenancy`, and the displayed term in `config/kit.php` → `tenancy.label` | ✅ |
+| 5 | **[Multi-tenancy](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/multi-tenancy.html)** | `php artisan kit:tenancy`, and the displayed term in `config/kit.php` → `tenancy.label` | ✅ |
 | 6 | **Login artwork** | none: it **shows the application name** (`APP_NAME`) on its own. To replace it with your own image, upload it at `/admin/configuracoes-da-aplicacao` | ✅ (via the name) |
 | 7 | **Panel access** | each user's role (`/admin` → Roles, the *Painel* field); the rule that reads it is `App\Models\User::canAccessPanel()` | — |
 | 8 | **Permission matrix** | `database/seeders/PapeisSeeder.php` | — |
@@ -366,16 +370,16 @@ php artisan kit:tenancy           # turns on multi-tenancy (opt-in)
 | 10 | **Commands in the UI** | `config/command-center.php` | — |
 | 11 | **Backups** | destination and schedule in `config/backup.php` | — |
 | 12 | **AI agent** | `/admin` → AI Agents (or `database/seeders/AssistenteSeeder.php`) | — |
-| 13 | **[Panel languages](#the-language-switcher)** | `config/kit.php` → `idiomas` (a list of locales; with only one, the switcher doesn't show) | — |
-| 14 | **[Trail retention](#retention-the-number-is-the-intent-the-scheduler-is-the-execution)** | `KIT_RETENCAO_EXCECOES_DIAS` / `KIT_RETENCAO_EMAILS_DIAS` in `.env` | — |
-| 15 | **[Media disk](#attachments-and-media)** | `MEDIA_DISK` in `.env` (`local` by default — private, served through a signed URL) | `php artisan kit:midia-privada` migrates media already written to a public disk |
-| 16 | **[CSV import and export](#csv-import-and-export)** | the Action in each `app/Filament/**/Pages/List*.php` (on or commented out); the permission in `config/filament-shield.php` → `policies.methods`; history retention in `KIT_RETENCAO_IMPORTACOES_DIAS` / `KIT_RETENCAO_EXPORTACOES_DIAS` in `.env` | reseed `ShieldPermissionsSeeder` + `PapeisSeeder` after touching the config |
+| 13 | **[Panel languages](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/busca-e-idioma.html)** | `config/kit.php` → `idiomas` (a list of locales; with only one, the switcher doesn't show) | — |
+| 14 | **[Trail retention](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/trilhas-de-infraestrutura.html)** | `KIT_RETENCAO_EXCECOES_DIAS` / `KIT_RETENCAO_EMAILS_DIAS` in `.env` | — |
+| 15 | **[Media disk](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/anexos-e-midia.html)** | `MEDIA_DISK` in `.env` (`local` by default — private, served through a signed URL) | `php artisan kit:midia-privada` migrates media already written to a public disk |
+| 16 | **[CSV import and export](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/import-export-csv.html)** | the Action in each `app/Filament/**/Pages/List*.php` (on or commented out); the permission in `config/filament-shield.php` → `policies.methods`; history retention in `KIT_RETENCAO_IMPORTACOES_DIAS` / `KIT_RETENCAO_EXPORTACOES_DIAS` in `.env` | reseed `ShieldPermissionsSeeder` + `PapeisSeeder` after touching the config |
 
 The last eleven are not asked because they are **code or screen data**, not a value that fits in a terminal prompt. The installer lists them in the final summary, each with its file.
 
 > ⚠️ Item 5 is the only one that is **not** "edit a file" once installed: `kit:tenancy` runs `migrate:fresh --seed` and **deletes your data**. It requires a clean git tree and an explicit confirmation. **Answered during installation it deletes nothing** — the database does not exist yet, and that is the right moment to decide.
 
-> The primary color applies to all three panels. With [multi-tenancy](#multi-tenancy-opt-in) on, each organization's color **wins** over it inside `/app/{slug}` — `/admin` and `/infra` keep the project's one. For a full palette, and not just `primary`, the way is still `->colors([...])` in each `app/Providers/Filament/*PanelProvider.php`.
+> The primary color applies to all three panels. With [multi-tenancy](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/multi-tenancy.html) on, each organization's color **wins** over it inside `/app/{slug}` — `/admin` and `/infra` keep the project's one. For a full palette, and not just `primary`, the way is still `->colors([...])` in each `app/Providers/Filament/*PanelProvider.php`.
 
 ## Updating a project born from the kit
 
