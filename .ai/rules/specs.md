@@ -35,3 +35,16 @@ O motivo é estrutural: defeito de fronteira se espalha por **cópia**, e nenhum
 4. Registre hipótese **rejeitada** com o motivo. Relatório sem rejeições parece que só procurou onde achou, e a rejeição costuma custar o mesmo que o achado.
 
 Sinal de que o gate está no fim do retorno: dois relatórios seguidos com 100% de correspondência CT ↔ teste. Aí pare de ler casos e vá varrer padrão.
+
+## Citação de vendor se confere por símbolo, nunca por número de linha
+A regra acima manda citar `file:line`. Esta diz como CONFERIR depois — e nasceu de três remediações falhas seguidas na feature `estudo-de-pacotes-rodada-2`.
+
+O número envelhece por dois caminhos, nenhum deles avisa: a sua própria edição desloca (Pint, um import novo — `AuditsFillables.php:17` virou `:21-23` dentro da mesma feature que a escreveu), e o `composer update` desloca em bloco (subir o Filament 5.7.6 → 5.8.2 moveu NOVE âncoras de uma vez: `USER_MENU_BEFORE` 38→43, os quatro `USER_MENU_PROFILE_BEFORE` 92/105/128/143→97/110/133/148, `FOOTER` 58→61 e 122→126).
+
+Conferir por lista de números escolhida à mão não é conferência, é amostragem que você mesmo selecionou. Medido: a 1ª varredura conferiu 18 pares, todos passaram, e o commit dizia "18/18 ok" — mas o símbolo que estava errado não estava na lista. A 2ª corrigiu 57 ocorrências e CORROMPEU duas, produzindo `UiAvatarsProvider.php:27-23`, intervalo invertido — pior que a citação velha, que ao menos apontava para algum lugar. A 3ª deixou seis intactas.
+
+Cite no formato `{path}:{símbolo}:{linha}` e confira mecanicamente, sem lista: extraia as citações com grep, e para cada uma verifique se `sed -n "{linha}p" {path}` contém o símbolo. Toda linha ERRO é citação a corrigir na fonte, nunca a apagar. O resultado (`14/14 ok`) vai para a Verificação Final do `03-progresso.md`.
+
+Vale para citação em QUALQUER arquivo, não só na wiki: o mesmo defeito apareceu em comentário de `app/Providers/Filament/*.php`, `app/Support/*.php` e `resources/views/filament/*.blade.php`.
+
+O contraste que fecha o argumento: na mesma feature, o CT-35 afirma sobre a posição dos dois render hooks do menu do usuário e SOBREVIVEU ao bump sem uma edição, porque lê a blade do vendor e compara posições relativas (`strpos` de um hook contra o do `<x-filament::dropdown>`), não números. O teste se protegeu; a prosa ao lado dele, escrita no mesmo commit, não. Quando a afirmação vale uma citação, ela costuma valer um teste — e o teste não envelhece.
