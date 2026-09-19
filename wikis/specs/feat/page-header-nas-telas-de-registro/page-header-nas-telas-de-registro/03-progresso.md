@@ -389,7 +389,7 @@ feia.
 
 | Suíte | Resultado |
 |---|---|
-| `composer test` | **2500/2500**, 9757 asserções (antes dos achados do Blueprint) |
+| `composer test` | **2502/2502**, 9787 asserções — corrida final, com tudo fechado |
 | `tests/Kit/PageHeaderTest.php` | 24/24 |
 | `tests/Tenancy/PageHeaderTenancyTest.php` | 13/13 |
 | `tests/Kit/PacotesRodada2Test.php` | 13/13 |
