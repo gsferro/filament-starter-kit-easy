@@ -1,11 +1,13 @@
 <?php
 
+use App\Filament\App\Resources\Users\Pages\ViewUser;
 use App\Filament\App\Resources\Users\UserResource;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Illuminate\Support\Facades\Log;
+use Livewire\Livewire;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -441,4 +443,55 @@ it('[CT-10] tinge as iniciais com a cor da organizacao, respeitando a precedenci
     expect($soHex)->not->toBe($soNome, 'a paleta esta cravada: duas cores diferentes deram o mesmo tom')
         ->and($ambos)->toBe($soHex, 'a precedencia inverteu: o nome venceu o hexadecimal')
         ->and($ambos)->not->toBe($soNome);
+});
+
+/**
+ * [EXTRA] — o par de `[CT-20]` no painel de negócio: a ação do trait não entrega a outra
+ * organização.
+ *
+ * Achado F-01 da auditoria do Filament Blueprint. `[CT-20]` de `tests/Kit/PageHeaderTest.php`
+ * trava a lista nominal de chaves que `$wire.getPageHeaderRecord()` devolve — mas só no `/admin`.
+ * E é no `/app` que existe uma fronteira a proteger: a ficha de lá omite as organizações **de
+ * propósito**, e essa omissão é de apresentação.
+ *
+ * O risco que este caso fecha não é hipotético: um `->with('tenants')` futuro em
+ * `getEloquentQuery()`, ou um accessor entrando em `$appends`, entregaria a organização alheia por
+ * `$wire.getPageHeaderRecord()` **sem tocar em nenhuma tela** — e o `[CT-18]`, que mede o HTML,
+ * continuaria verde.
+ *
+ * A lista é fechada com `toBe()`, e não `toContain()`: coluna nova que passe a sair por aqui
+ * deixa isto vermelho, que é o momento certo de decidir.
+ */
+it('[EXTRA] nao entrega a organizacao alheia pela acao do trait no painel de negocio', function (): void {
+    $acme   = tenant('Acme', 'acme');
+    $globex = tenant('Globex Confidencial', 'globex');
+
+    $ana = papelNaOrganizacao(usuario('ana@example.com'), 'admin_app', $acme);
+    $ana->tenants()->attach($acme->id);
+
+    $beto = papelNaOrganizacao(usuario('beto@example.com'), 'panel_user', $acme);
+    papelNaOrganizacao($beto, 'panel_user', $globex);
+    $beto->tenants()->attach([$acme->id, $globex->id]);
+
+    // GET real primeiro: `noPainelBootado('app')` morre no boot do Breezy, e sem painel bootado o
+    // componente resolve o painel errado. Ver `.ai/rules/testes.md`.
+    $this->actingAs($ana)->get("/app/acme/users/{$beto->getRouteKey()}")->assertSuccessful();
+
+    $retorno = Livewire::actingAs($ana)
+        ->test(ViewUser::class, ['record' => $beto->getRouteKey()])
+        ->call('getPageHeaderRecord')
+        ->effects['returns'][0] ?? null;
+
+    expect($retorno)->toBeArray();
+
+    $chaves = array_keys($retorno);
+
+    sort($chaves);
+
+    expect($chaves)->toBe([
+        'aprovacao_pendente', 'ativo', 'avatar_url', 'created_at', 'deleted_at', 'email',
+        'email_verified_at', 'id', 'name', 'origem', 'updated_at', 'uuid',
+    ])
+        // E nenhuma relação carregada: é por ela que a organização alheia sairia.
+        ->and(json_encode($retorno, JSON_THROW_ON_ERROR))->not->toContain('Globex');
 });

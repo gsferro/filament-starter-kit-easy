@@ -736,3 +736,81 @@ it('[EXTRA] serve exatamente a CSS que o vendor traz', function (): void {
             'a CSS publicada divergiu da do vendor — rode `php artisan filament:assets`',
         );
 })->group('kit');
+
+/**
+ * [CT-23/CT-24] — as NOVE ações que o trait acrescenta ao componente não entregam segredo, e as
+ * duas que carregam o registro carregam exatamente o mesmo que `[CT-20]` já trava.
+ *
+ * `HasPageHeader` acrescenta nove métodos públicos, e método de trait conta como declarado pela
+ * subclasse — o portão do Livewire é `Utils::getPublicMethodsDefinedBySubClass($root)`
+ * (`vendor/livewire/livewire/src/Mechanisms/HandleComponents/HandleComponents.php:570`), que só
+ * subtrai `render`. Logo os nove viram ação chamável por `$wire.`, em **seis** telas do kit.
+ *
+ * ## A auditoria do Blueprint deduziu errado, e este caso é o que mede
+ *
+ * A auditoria previu que `headerSchema`, `defaultHeaderSchema` e `pageHeaderOptions` — que têm
+ * parâmetro tipado (`Schema`, `HeaderOptions`) — estourariam `TypeError` ao serem chamados sem
+ * argumento, produzindo 500. **Não estouram.** Medido: os três respondem normalmente.
+ *
+ * E a medição achou o que a dedução não viu: `defaultHeaderSchema` devolve
+ * `{"model": {…as 12 chaves…}}` — o registro, serializado. Não é furo: é o MESMO registro que a
+ * pessoa já está autorizada a ver (`ViewRecord::hydrate():83` reautoriza a cada request) e as
+ * MESMAS 12 chaves de `[CT-20]`, sem `password` e sem `remember_token`, que o `$hidden` recorta
+ * (`app/Models/User.php:96`).
+ *
+ * O caso trava as duas pontas: nenhuma das nove entrega segredo, e as duas que carregam registro
+ * carregam a lista fechada. Coluna nova no `users`, ou accessor entrando em `$appends`, deixa isto
+ * vermelho — que é o momento certo de decidir se ela pode viajar.
+ */
+it('[CT-23/CT-24] nao entrega segredo pelas acoes que o trait acrescenta ao componente', function (): void {
+    $admin = usuarioDoKit('admin', 'admin@example.com');
+    $alvo  = User::factory()->create(['name' => 'Alvo', 'email' => 'alvo@example.com']);
+
+    $this->actingAs($admin)->get("/admin/users/{$alvo->getRouteKey()}")->assertSuccessful();
+
+    $chamar = fn (string $metodo): mixed => Livewire::actingAs($admin)
+        ->test(ViewUser::class, ['record' => $alvo->getRouteKey()])
+        ->call($metodo)
+        ->effects['returns'][0] ?? null;
+
+    $esperadas = [
+        'aprovacao_pendente', 'ativo', 'avatar_url', 'created_at', 'deleted_at', 'email',
+        'email_verified_at', 'id', 'name', 'origem', 'updated_at', 'uuid',
+    ];
+
+    $osNove = [
+        'headerSchema', 'defaultHeaderSchema', 'getPageHeaderRecord', 'getPageHeaderSchemaClass',
+        'pageHeaderOptions', 'getPageHeaderOptions', 'getPageHeaderComponent', 'pageHeaderIsEnabled',
+        'getHeader',
+    ];
+
+    $comRegistro = 0;
+
+    foreach ($osNove as $metodo) {
+        $retorno = $chamar($metodo);
+        $json    = json_encode($retorno, JSON_THROW_ON_ERROR);
+
+        expect($json)->not->toContain('password', "{$metodo} devolveu algo com 'password'")
+            ->and($json)->not->toContain('remember_token', "{$metodo} devolveu algo com 'remember_token'");
+
+        // As que carregam o registro: a lista de chaves é fechada.
+        $modelo = match (true) {
+            is_array($retorno) && array_key_exists('model', $retorno) => $retorno['model'],
+            is_array($retorno) && array_key_exists('email', $retorno) => $retorno,
+            default                                                   => null,
+        };
+
+        if ($modelo === null) {
+            continue;
+        }
+
+        $comRegistro++;
+        $chaves = array_keys($modelo);
+        sort($chaves);
+
+        expect($chaves)->toBe($esperadas, "{$metodo} devolveu um conjunto de colunas diferente do travado");
+    }
+
+    // Controle de não-vacuidade: se nenhuma devolvesse registro, o laço acima não afirmaria nada.
+    expect($comRegistro)->toBe(2, 'mudou quantas acoes do trait carregam o registro — reavalie');
+})->group('kit');
