@@ -296,8 +296,8 @@ dois scripts:
 
 | Forma | Conferidas | Erro |
 |---|---|---|
-| `{path}:{símbolo}:{linha}` | 32 | 0 |
-| `Classe::método():linha` | 59 | 0 |
+| `{path}:{símbolo}:{linha}` | 34 | 0 |
+| `Classe::método():linha` | 65 | 0 |
 
 Antes da conferência havia **40 citações erradas** (16 na primeira forma, 24 na segunda) — todas com
 a afirmação **certa** e o número velho, que é exatamente o padrão que a rule descreve. Sete casos
@@ -306,6 +306,12 @@ o script não resolve sozinho (dois arquivos com o mesmo basename, um por painel
 
 > Isto é a rule registrada na v0.35.0 pegando quem a escreveu, na primeira feature depois dela. O
 > valor dela não é ter evitado o erro: é ter tornado o erro **detectável em segundos**.
+
+**E aconteceu de novo, dentro da mesma feature.** Acrescentar `TenantResource::infolist()` para
+fechar o achado BP-03 deslocou **8 âncoras** em quatro arquivos — `getPages()`, `canAccess()` e
+`getRelations()` do mesmo resource. A segunda conferência achou as oito e corrigiu. É a prova
+prática do que a rule afirma: o número envelhece pela sua própria edição, e conferir por lista
+escolhida à mão não teria achado, porque essas três não estavam na lista de quem escreveu.
 
 ### Matriz de mutantes — medida, não alegada
 
@@ -326,7 +332,67 @@ trabalho ficou divergente, e `SiteDeDocumentacaoTest::[CT-20]` reprovou porque
 /`, que CRLF não satisfaz. O sintoma ("duas páginas sumiram da
 navegação") não aponta a causa. Normalizado; vale como aviso para a próxima edição em lote.
 
+### Ciclo do Blueprint (RQ-09) — com controle positivo
+
+| Passo | Resultado |
+|---|---|
+| `composer bp:on` | `filament/blueprint ^2.4` instalado |
+| **guard do kit com o Blueprint ligado** | **3 de 6 VERMELHOS**, com as três mensagens certas (`composer.json`, `repositories`, `composer.lock`) — é o controle positivo: o guard detecta |
+| auditoria de aderência | 9 achados; ver abaixo |
+| `composer bp:off` | removido |
+| **guard com o Blueprint desligado** | **6/6 verde**, árvore limpa |
+
+O guard rodado só no estado final provaria apenas que o arquivo está limpo — não que ele acusaria
+sujeira. Rodá-lo nos dois estados é o que o torna oráculo.
+
+### Auditoria do Filament Blueprint
+
+Perfil: auditoria de segurança da skill `filament-security-audit` (catálogo A–E completo) mais
+`checklist.md` item a item. **Nenhum furo de segurança novo**: A=0, B=0, C=0, D=0, E=0.
+
+| ID | Sev. | Achado | Desfecho |
+|---|---|---|---|
+| BP-01 | Média | entradas de infolist a 25% da largura ("Nested Columns Too Narrow") | **fechado** — `columns(1)` nos dois `UserInfolist` |
+| BP-02 | Baixa | metade direita da ficha do `/app` vazia | **fechado** pelo mesmo `columns(1)` |
+| BP-03 | Baixa/Média | `TenantResource` sem `infolist()` → `ViewTenant` com formulário desabilitado sob cabeçalho rico | **fechado** — entra `TenantInfolist` |
+| F-01 | Baixa | `getPageHeaderRecord()` em 6 Pages, oráculo em 1 — e a fronteira a proteger é a do `/app` | **fechado** — par escrito |
+| F-02 | Baixa | 8 métodos públicos do trait sem caso | **fechado** — e a dedução da auditoria estava errada, ver abaixo |
+| BP-04 | Baixa | 8 *record actions* no `/admin` sem `ActionGroup` | **declarado** — ver abaixo |
+| BP-05 | Média | 32 dos 55 CTs sem implementação | **declarado** — já é esta seção |
+| BP-06 | Info | casos de renderização que o Blueprint desaconselha | sem ação — rule do projeto vence, com motivo |
+| F-03 | Info | `data-fph-options` não carrega PII | **fecha por inspeção**: `HeaderOptions` é `final readonly` só com campos de layout |
+
+**A dedução da auditoria que a medição derrubou.** F-02 previa que `headerSchema`,
+`defaultHeaderSchema` e `pageHeaderOptions` estourariam `TypeError` por terem parâmetro tipado,
+produzindo 500. **Não estouram** — os três respondem. E a medição achou o que a dedução não viu:
+`defaultHeaderSchema` devolve `{"model": {…}}`, o registro serializado. Não é furo (mesmo registro
+autorizado, mesmas 12 chaves, sem `password` nem `remember_token`), mas é superfície que ninguém
+sabia que existia. Agora está travada, com controle de não-vacuidade.
+
+> Vale registrar a forma do erro: a auditoria marcou o item como **deduzido, não reproduzido**, e
+> foi honesta nisso. Foi essa honestidade que fez a medição acontecer. Achado marcado como
+> reproduzido quando não foi é o que faz a próxima pessoa não conferir.
+
+**BP-04, declarado.** `UserResource(Admin)::table()` passou de sete para oito ações por linha, e o
+`actions.md` pede `ActionGroup` acima de três. Não agrupado nesta entrega: reorganizar a barra de
+ações de uma listagem que o requisito não pediu para mudar é alargar escopo, e a oitava ação é a
+única que esta feature acrescenta. Fica como dívida nomeada.
+
+**O desvio de colunas é da base, não desta entrega.** `AiRunInfolist:21` e `TenantForm:34` têm o
+mesmo padrão `columns(2)` aninhado. Corrigidos aqui só os do diff; os outros dois ficam registrados
+para serem corrigidos juntos, senão a próxima auditoria os acha de novo. O lugar natural do enforço
+é `tests/Kit/AderenciaAoBlueprintTest.php`, que hoje varre construção depreciada e **não** varre
+aritmética de coluna — que é justamente o defeito que passa porque a suíte fica verde e a tela fica
+feia.
+
 ### Suítes
 
-<!-- preenchido ao fim do ciclo -->
+| Suíte | Resultado |
+|---|---|
+| `composer test` | **2500/2500**, 9757 asserções (antes dos achados do Blueprint) |
+| `tests/Kit/PageHeaderTest.php` | 24/24 |
+| `tests/Tenancy/PageHeaderTenancyTest.php` | 13/13 |
+| `tests/Kit/PacotesRodada2Test.php` | 13/13 |
+| Pint · PHPStan · FilaCheck | verde · 0 erros · 17/17 regras |
+
 

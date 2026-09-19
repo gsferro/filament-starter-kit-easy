@@ -15,7 +15,7 @@ use Psr\Log\LoggerInterface;
  *
  * Aqui mora o que a suíte `tests/Kit` não consegue medir, e por dois motivos distintos:
  *
- *   1. `TenantResource` exige `kit.tenancy.enabled` (`TenantResource::canAccess():106-109`), então
+ *   1. `TenantResource` exige `kit.tenancy.enabled` (`TenantResource::canAccess():107`), então
  *      as telas de organização respondem 403 em single-tenant;
  *   2. vazamento entre organizações precisa de DUAS organizações. Um caso com uma só mediria a
  *      ausência de dado, não a fronteira — e passaria com a fronteira inteira removida.
@@ -40,7 +40,7 @@ beforeEach(function (): void {
  * `[CT-03]` de baixo, neste mesmo arquivo. A linha `app | EditUser` continua sem caso.
  *
  * O `ViewTenant` é o caso mais informativo da entrega: é o único `ViewRecord` do kit que já
- * renderiza RelationManagers (`TenantResource::getRelations():129-134` → `UsersRelationManager`) e
+ * renderiza RelationManagers (`TenantResource::getRelations():135` → `UsersRelationManager`) e
  * widgets de cabeçalho. Este caso prova que as três coisas convivem — o cabeçalho do pacote, os
  * widgets e as abas ocupam regiões de DOM disjuntas.
  */

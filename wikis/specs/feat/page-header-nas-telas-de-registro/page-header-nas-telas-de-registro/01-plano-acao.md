@@ -178,7 +178,7 @@ O passo mais caro. Cinco entregas por painel:
    'edit' => EditUser::route('/{record}/edit'),
    ```
 
-   A ordem é do molde `TenantResource::getPages():136`, que a comenta: `/{record}` é a rota mais
+   A ordem é do molde `TenantResource::getPages():142`, que a comenta: `/{record}` é a rota mais
    curta e o Filament casa na ordem de declaração.
 
 3. **O infolist** — `Schemas/UserInfolist.php`, e `infolist()` no Resource apontando para ele.

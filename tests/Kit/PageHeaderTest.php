@@ -51,7 +51,7 @@ beforeEach(function (): void {
  * A linha "a região não contém o nome da aplicação" do cenário desenhado também não está aqui.
  *
  * As telas de ORGANIZAÇÃO ficam em `tests/Tenancy/PageHeaderTenancyTest.php`: `TenantResource`
- * exige `kit.tenancy.enabled` (`TenantResource::canAccess():106-109`), e esta suíte roda
+ * exige `kit.tenancy.enabled` (`TenantResource::canAccess():107`), e esta suíte roda
  * single-tenant — aqui elas respondem 403.
  *
  * O `assertSee` do nome sozinho não serviria: o nome aparece no título da aba, nas migalhas e no
@@ -350,7 +350,7 @@ it('[CT-28] cobre no CSS do pacote toda classe que as blades dele emitem', funct
  *
  * `/{record}` é a rota mais curta e o Filament casa na ordem de declaração; registrada depois de
  * `/{record}/edit` ela ainda funciona, mas a ordem é a convenção do kit
- * (`TenantResource::getPages():136`) e a inversão é o tipo de coisa que um gerador desfaz.
+ * (`TenantResource::getPages():142`) e a inversão é o tipo de coisa que um gerador desfaz.
  *
  * A existência da rota é o que faz o `ViewAction` da tabela NAVEGAR em vez de abrir modal:
  * `Resources\Pages\Page::getDefaultActionUrl():361` só devolve URL quando `hasPage('view')`.

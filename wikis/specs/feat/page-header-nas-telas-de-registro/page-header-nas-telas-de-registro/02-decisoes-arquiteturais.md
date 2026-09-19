@@ -193,7 +193,7 @@ resumo do registro e abas para os relacionamentos"*, e não diz onde.
 | Exemplo executável | `ViewTenant` | o caso **real**, não hipotético |
 
 **Por que o `ViewTenant` é o exemplo.** É o único `ViewRecord` do projeto que renderiza
-RelationManagers (`TenantResource::getRelations():129-134` → `UsersRelationManager`). Documentar o
+RelationManagers (`TenantResource::getRelations():135` → `UsersRelationManager`). Documentar o
 padrão com um exemplo inventado, tendo o caso verdadeiro no repositório, é o que produz receita que
 nunca foi executada.
 

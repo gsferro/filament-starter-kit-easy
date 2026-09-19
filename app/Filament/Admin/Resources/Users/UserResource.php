@@ -346,7 +346,7 @@ class UserResource extends Resource
             'index'  => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),
             // 'view' ANTES de 'edit' de proposito: `/{record}` e a rota mais curta e o Filament
-            // casa na ordem de declaracao. Mesma ordem de `TenantResource::getPages():136`.
+            // casa na ordem de declaracao. Mesma ordem de `TenantResource::getPages():142`.
             'view'   => ViewUser::route('/{record}'),
             'edit'   => EditUser::route('/{record}/edit'),
         ];
