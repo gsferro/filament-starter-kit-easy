@@ -69,3 +69,39 @@ console.log(`links internos conferidos: ${conferidos} (${vistos.size} distintos)
 console.log(
   quebrados.length ? `QUEBRADOS (${quebrados.length}):\n` + quebrados.join('\n') : 'quebrados: 0',
 );
+
+/*
+ * Os redirects das URLs antigas do Jekyll.
+ *
+ * Dois modos de falha, e os dois são silenciosos: o stub não chegar ao `dist` (e a URL antiga dar
+ * 404 como se não houvesse redirect nenhum), e o stub existir apontando para uma página que não
+ * existe — que é pior, porque o leitor é levado a um 404 DEPOIS de achar que deu certo.
+ */
+const mapa = JSON.parse(readFileSync(resolve('redirects.json'), 'utf8'));
+if (process.env.PLANTAR_DEFEITO) mapa['/pt/inexistente.html'] = '/pt/nao-existe/';
+const redirectsRuins = [];
+
+for (const [antiga, nova] of Object.entries(mapa)) {
+  const stub = join(DIST, antiga.replace(/^\//, ''));
+
+  if (!existsSync(stub)) {
+    redirectsRuins.push(`${antiga} — stub ausente no dist`);
+    continue;
+  }
+
+  if (!readFileSync(stub, 'utf8').includes(`url=${nova}`)) {
+    redirectsRuins.push(`${antiga} — stub nao aponta para ${nova}`);
+    continue;
+  }
+
+  if (!existsSync(join(DIST, nova, 'index.html'))) {
+    redirectsRuins.push(`${antiga} -> ${nova} — o destino nao existe`);
+  }
+}
+
+console.log(`redirects conferidos: ${Object.keys(mapa).length}`);
+console.log(
+  redirectsRuins.length
+    ? `REDIRECTS RUINS (${redirectsRuins.length}):\n` + redirectsRuins.join('\n')
+    : 'redirects ruins: 0',
+);

@@ -16,6 +16,18 @@ export default defineConfig({
   // Para a prévia o site é servido na raiz. No deploy real isto volta a ser
   // `/filament-starter-kit-easy`, que é o que o `baseurl` do Jekyll guarda hoje.
   base: process.env.DOCS_BASE || undefined,
+  /*
+   * `/` vai para o idioma padrão, e as 54 rotas de folha do Jekyll vão para a forma nova.
+   *
+   * A migração muda `/pt/comecar/instalacao-avancada.html` para
+   * `/pt/comecar/instalacao-avancada/` — TODA rota de folha muda de forma, então link salvo e
+   * indexação apontam para o vazio. Índice de seção não entra: `/pt/comecar/` já era assim nos
+   * dois, e redirect de rota que não mudou é ruído que esconde os que importam.
+   *
+   * Os stubs ficam em `public/` (copiado literalmente) porque o `redirects` do Astro trata a
+   * chave como rota e o `build.format` padrão transforma `/pt/x.html` no diretório `x.html/`.
+   * O motivo longo está no `converter.mjs`; aqui fica só a raiz, que é rota de verdade.
+   */
   redirects: { '/': '/pt/' },
   integrations: [
     starlight({

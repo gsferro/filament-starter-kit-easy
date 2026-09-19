@@ -98,6 +98,67 @@ function reescreveLinks(corpo, arquivo) {
 let convertidas = 0;
 const semDescricao = [];
 
+/**
+ * Os redirects das URLs do Jekyll para as do Starlight.
+ *
+ * A migração muda a forma de TODA rota de folha: o Jekyll publica
+ * `/pt/comecar/instalacao-avancada.html` e o Starlight publica
+ * `/pt/comecar/instalacao-avancada/`. Quem salvou um link da documentação, e o que o buscador
+ * indexou, apontam para a forma antiga.
+ *
+ * Índice de seção NÃO entra: `/pt/comecar/` já era assim nos dois, porque o Jekyll serve o
+ * `index.html` do diretório na própria URL do diretório. Redirect de rota que não mudou é ruído
+ * que esconde os que importam.
+ *
+ * Gerado daqui, e não escrito à mão, pelo motivo de sempre: lista de 54 rotas mantida à mão
+ * envelhece calada na primeira página que alguém renomear.
+ *
+ * ## Por que em `public/` e não no `redirects` do Astro
+ *
+ * O `redirects` do Astro trata a chave como ROTA, e o `build.format` padrão é `directory`: a
+ * chave `/pt/x.html` vira o diretório `x.html/` com um `index.html` dentro, e o arquivo
+ * `/pt/x.html` continua não existindo. Medido — o build falhou gerando
+ * `convites.html/index.html`.
+ *
+ * `public/` é copiado literalmente, então o caminho sai exatamente como escrito aqui. É também o
+ * que funciona igual em qualquer host estático, sem depender de configuração de servidor.
+ *
+ * A raiz (`/`) continua no `redirects` do Astro: ela é rota de verdade, não arquivo `.html`.
+ */
+const PUBLICO = resolve('public');
+const BASE = (process.env.DOCS_BASE || '').replace(/\/$/, '');
+
+/** @type {Record<string, string>} */
+const redirects = {};
+
+/** Stub de redirecionamento: `meta refresh` para quem navega, `canonical` para quem indexa. */
+function escreveStub(de, para) {
+  const destino = BASE + para;
+  const saida = join(PUBLICO, de.replace(/^\//, ''));
+
+  mkdirSync(dirname(saida), { recursive: true });
+  writeFileSync(
+    saida,
+    [
+      '<!doctype html>',
+      '<html lang="pt-BR">',
+      '<head>',
+      '<meta charset="utf-8">',
+      `<meta http-equiv="refresh" content="0; url=${destino}">`,
+      `<link rel="canonical" href="${destino}">`,
+      '<meta name="robots" content="noindex">',
+      '<title>Esta página mudou de endereço</title>',
+      '</head>',
+      '<body>',
+      `<p>Esta página agora fica em <a href="${destino}">${destino}</a>.</p>`,
+      '</body>',
+      '</html>',
+      '',
+    ].join('\n'),
+    { encoding: 'utf8' },
+  );
+}
+
 for (const arquivo of paginas(ORIGEM)) {
   const rel = emBarras(relative(ORIGEM, arquivo));
 
@@ -135,6 +196,12 @@ for (const arquivo of paginas(ORIGEM)) {
 
   const saida = join(DESTINO, rel);
   mkdirSync(dirname(saida), { recursive: true });
+  if (!indiceDeSecao) {
+    const antiga = urlDe(arquivo).replace(/\/$/, '') + '.html';
+    redirects[antiga] = urlDe(arquivo);
+    escreveStub(antiga, urlDe(arquivo));
+  }
+
   const texto = removeH1(reescreveLinks(corpo, arquivo)).replace(/\r\n/g, '\n');
 
   writeFileSync(saida, frente.join('\n') + texto, {
@@ -143,7 +210,10 @@ for (const arquivo of paginas(ORIGEM)) {
   convertidas++;
 }
 
+writeFileSync('redirects.json', JSON.stringify(redirects, null, 2) + '\n', { encoding: 'utf8' });
+
 console.log('convertidas: ' + convertidas);
+console.log('redirects gerados: ' + Object.keys(redirects).length);
 console.log(
   'sem descricao derivada: ' +
     semDescricao.length +
