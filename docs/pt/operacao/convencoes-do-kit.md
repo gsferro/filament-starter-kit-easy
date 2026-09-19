@@ -8,7 +8,7 @@ nav_order: 3
 # Convenções do kit
 
 - **UUID nas rotas, `id` int como PK.** Toda tabela nova ganha `$table->uuid('uuid')->unique()` e o model usa `App\Traits\TemUuid`. URL com id numérico devolve 404 e ninguém enumera registros por sequência. UUID não é autorização — policies continuam obrigatórias.
-- **Auditoria no que é editável.** `App\Traits\AuditsFillables` audita exatamente o `$fillable`, sem vazar colunas técnicas para a trilha.
+- **Auditoria no que é editável.** `App\Traits\AuditsFillables` audita o `$fillable` **mais** o que o model declarar em `auditaAlemDoFillable()` (`app/Traits/AuditsFillables.php:getAuditInclude:21`), sem vazar colunas técnicas para a trilha. O ponto de extensão existe porque `getFillable()` sozinho não alcança estado de fronteira de acesso: `ativo` e `aprovacao_pendente` ficam **fora** do `$fillable` de propósito — atribuição em massa com elas destrancaria conta — e só `forceFill` as escreve, sem passar pelo filtro. Enquanto o `User` não as declarou (`app/Models/User.php:auditaAlemDoFillable:121`), `/infra/audits` registrava a troca do nome e **não** o corte de acesso. Model que não sobrescreve continua auditando exatamente o `$fillable`.
 - **Seeder nunca usa factory nem faker.** `fakerphp/faker` é `require-dev` e a imagem Docker roda `--no-dev`.
 - **Permissões vêm de seeder, não de `shield:generate` interativo** — é o que permite instalar sem intervenção. O `ShieldPermissionsSeeder` gera para os **três** painéis (o comando do Shield só enxerga o painel corrente); o `PapeisSeeder` recorta a matriz por painel e entrega aos papéis. Depois de criar Resources novos, rode os dois (veja [abaixo](depois-de-criar-resources.md)).
 - **Acesso a painel é dado do papel**, na coluna `roles.painel` — não uma lista de nomes no código. Papel sem painel não abre painel nenhum: o default fecha.
@@ -31,5 +31,5 @@ Coisas que custaram tempo para descobrir e que o kit já entrega prontas — se 
 | Logs Explorer | `deletable(false)`: o delete do pacote faz `@unlink()` sem gravar rastro |
 | Ações de filtro | **fora** do `configureUsing()` global: em tabela sem filtro a ação nasce sem nome e derruba a página |
 | Pulse + resized-column | os dois bundles declaram constantes no escopo global; carregados como ES module para o segundo não morrer calado |
-| Busca ⌘K | gatilho no hook `GLOBAL_SEARCH_BEFORE` (o `USER_MENU_BEFORE` renderiza dentro do dropdown) e overlay aberto em `setTimeout`, senão o próprio clique fecha o painel |
+| Busca ⌘K | gatilho no hook `GLOBAL_SEARCH_BEFORE`, porque ele ocupa a posição exata do campo de busca nativo. O `USER_MENU_BEFORE` **não** serve de alternativa: ele sai ANTES e FORA do dropdown (`user-menu.blade.php:USER_MENU_BEFORE:43`, e o `<x-filament::dropdown>` só abre em `:45`), ou seja na topbar colado ao avatar — quem renderiza dentro do menu aberto é o `USER_MENU_PROFILE_BEFORE`. E o overlay abre em `setTimeout`, senão o próprio clique fecha o painel |
 

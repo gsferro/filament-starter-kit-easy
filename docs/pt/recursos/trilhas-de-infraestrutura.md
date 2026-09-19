@@ -49,22 +49,36 @@ cresce sem teto, o que é uma escolha, não um esquecimento.
 ## A Lixeira lista o que você declarar
 
 O `RevivePlugin` recebe uma **lista explícita** de models em
-`app/Providers/Filament/InfraPanelProvider.php` — hoje só `App\Models\Projeto`, a única model do
-kit com `SoftDeletes`:
+`app/Providers/Filament/InfraPanelProvider.php` — hoje `App\Models\Projeto` e `App\Models\User`,
+as duas models do kit com `SoftDeletes` (`InfraPanelProvider.php:models:581`):
 
 ```php
 RevivePlugin::make()
     ->navigationGroup('Sistema')
     ->navigationLabel('Lixeira')
+    ->navigationSort(250)
+    ->authorize(fn (): bool => auth()->check()
+        && PermissaoDaTela::permite(RecycleBin::class))
     ->models([
         Projeto::class,
+        User::class,
     ])
     ->withoutScoping(),
 ```
 
+O `->authorize()` não é enfeite: o default do pacote é `true`, e esta tela lista tudo o que foi
+apagado na **instalação inteira**. A allow-list de `->models()` é a primeira trava; a permissão da
+tela é a segunda.
+
 **Model nova com `SoftDeletes` precisa entrar nessa lista**, senão fica apagada sem tela para
-restaurar. A varredura automática de `app/Models` foi evitada de propósito: alcançaria `User`,
-`Role` e `Tenant`, cuja restauração tem consequência de **autorização** — um usuário volta com
-papel numa organização que pode nem existir mais. A trava é a lista, como na allow-list do
-Command Center.
+restaurar — e precisa também usar `Promethys\Revive\Concerns\Recyclable`, que é quem grava em
+`recycle_bin_items` no evento `deleted`; sem a trait a Lixeira lista vazio. A varredura automática
+de `app/Models` foi evitada de propósito: alcançaria `Role` e `Tenant`, que não têm `SoftDeletes` e
+não têm o que restaurar. A trava é a lista, como na allow-list do Command Center.
+
+`User` entrou na lista junto com a exclusão lógica de usuário, e é por aqui que se restaura uma
+conta excluída (ver [estados do usuário](../autenticacao/estados-de-usuario.md)). A recusa antiga
+— *"um usuário volta com papel numa organização que pode nem existir mais"* — pressupunha
+exclusão **física** com cascata; com `SoftDeletes` as pivots `tenant_user` e `model_has_roles`
+ficam de pé, restaurar devolve exatamente o que havia, e `Tenant` nunca é apagado (tem `ativo`).
 

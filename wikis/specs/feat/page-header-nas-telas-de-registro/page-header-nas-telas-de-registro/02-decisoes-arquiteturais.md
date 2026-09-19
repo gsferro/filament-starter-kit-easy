@@ -205,7 +205,7 @@ regiões de DOM disjuntas, e o próprio pacote declara que trocar de aba não re
 compacto (`docs/configuration.md:232`).
 
 **Uma fronteira que a receita precisa dizer em voz alta**: `whenCompact()` decide **apresentação**,
-nunca autorização. O vendor é explícito (`docs/configuration.md:229`: *"Compaction only changes
+nunca autorização. O vendor é explícito (`docs/configuration.md:227`: *"Compaction only changes
 presentation of already-rendered content; it is not an authorization boundary"*). Um `summary()` com
 contagens continua sendo dado renderizado; escondê-lo no modo compacto não o protege.
 

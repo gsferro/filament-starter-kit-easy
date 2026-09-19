@@ -8,7 +8,7 @@ nav_order: 3
 # Kit conventions
 
 - **UUID in routes, int `id` as PK.** Every new table gets `$table->uuid('uuid')->unique()` and the model uses `App\Traits\TemUuid`. A URL with a numeric id returns 404 and nobody enumerates records by sequence. UUID is not authorization — policies remain mandatory.
-- **Auditing on what is editable.** `App\Traits\AuditsFillables` audits exactly the `$fillable`, without leaking technical columns into the trail.
+- **Auditing on what is editable.** `App\Traits\AuditsFillables` audits the `$fillable` **plus** whatever the model declares in `auditaAlemDoFillable()` (`app/Traits/AuditsFillables.php:getAuditInclude:21`), without leaking technical columns into the trail. The extension point exists because `getFillable()` alone does not reach access-boundary state: `ativo` and `aprovacao_pendente` are kept **out** of `$fillable` on purpose — mass assignment with them would unlock an account — and only `forceFill` writes them, bypassing the filter. While `User` did not declare them (`app/Models/User.php:auditaAlemDoFillable:121`), `/infra/audits` recorded the name change and **not** the access cut. A model that does not override still audits exactly the `$fillable`.
 - **Seeders never use factories or faker.** `fakerphp/faker` is `require-dev` and the Docker image runs `--no-dev`.
 - **Permissions come from a seeder, not from the interactive `shield:generate`** — that's what makes an unattended install possible. `ShieldPermissionsSeeder` generates for all **three** panels (the Shield command only sees the current panel); `PapeisSeeder` slices the matrix per panel and hands it to the roles. After creating new Resources, run both (see [below](depois-de-criar-resources.md)).
 - **Panel access is data on the role**, in the `roles.painel` column — not a list of names in the code. A role with no panel opens no panel: the default is closed.
@@ -42,5 +42,5 @@ Things that cost time to figure out and that the kit already delivers done — i
 | Logs Explorer | `deletable(false)`: the package's delete does an `@unlink()` without recording a trace |
 | Filter actions | **outside** the global `configureUsing()`: on a table with no filters the action is born nameless and takes the page down |
 | Pulse + resized-column | both bundles declare constants in the global scope; loaded as an ES module so the second one doesn't die silently |
-| ⌘K search | trigger on the `GLOBAL_SEARCH_BEFORE` hook (`USER_MENU_BEFORE` renders inside the dropdown) and the overlay opened in a `setTimeout`, otherwise the click itself closes the panel |
+| ⌘K search | trigger on the `GLOBAL_SEARCH_BEFORE` hook, because it occupies the exact position of the native search field. `USER_MENU_BEFORE` is **not** an alternative: it comes out BEFORE and OUTSIDE the dropdown (`user-menu.blade.php:USER_MENU_BEFORE:43`, and the `<x-filament::dropdown>` only opens at `:45`), i.e. on the topbar next to the avatar — the one that renders inside the open menu is `USER_MENU_PROFILE_BEFORE`. And the overlay opens in a `setTimeout`, otherwise the click itself closes the panel |
 

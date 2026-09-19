@@ -109,7 +109,8 @@ class HubDeInfraestrutura extends CardsPage
      * e treze buracos.
      *
      * A frase também entra no `data-search-text` de cada cartão
-     * (`vendor/harvirsidhu/filament-cards/resources/views/pages/cards-page.blade.php:264`), então
+     * (`vendor/harvirsidhu/filament-cards/resources/views/components/card.blade.php:121`, montado a
+     * partir de `$searchSource` em `:107-118`), então
      * a busca desta página passa a encontrar por assunto — "fila", "restaurar", "e-mail" — e não
      * só pelo rótulo. É o que faz a descrição valer a pena num painel com `$searchable = true`.
      *

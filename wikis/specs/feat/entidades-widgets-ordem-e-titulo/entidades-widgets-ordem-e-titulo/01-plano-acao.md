@@ -16,7 +16,7 @@
 | RQ | Cláusula | Passo(s) que atende(m) | Observação |
 |----|----------|------------------------|------------|
 | RQ-01 | visão geral no topo, acima da tabela | 1 | `OrganizacoesStats` fica sozinho em `getHeaderWidgets()` |
-| RQ-02 | tabela imediatamente depois da visão geral | 1 | nenhum outro widget no cabeçalho; ordem header → tabela → footer é do vendor (`page/index.blade.php:headerWidgets:105, slot:109, footerWidgets:113`) |
+| RQ-02 | tabela imediatamente depois da visão geral | 1 | nenhum outro widget no cabeçalho; ordem header → tabela → footer é do vendor (`page/index.blade.php:headerWidgets:109, slot:109, footerWidgets:113`) |
 | RQ-03 | os demais widgets abaixo da tabela | 1 | os três vão para `getFooterWidgets()` — atendida **sob premissa** (lista e ordem atuais, ver `00` → Ambiguidades) |
 | RQ-04 | título da listagem como configurado | 2 | causa-raiz: `mb_strtolower()` em `getPluralModelLabel()` (ADR-01) |
 | RQ-05 | breadcrumb como configurado | 2 | mesma causa: `HasBreadcrumbs::getBreadcrumb()` lê `getTitleCasePluralModelLabel()` |
@@ -28,14 +28,14 @@ Na listagem do `TenantResource` (`/admin/{slug}`, "Entidades" na instalação do
 
 ## Contexto
 
-**Posição dos widgets.** `ListTenants::getHeaderWidgets()` (`app/Filament/Admin/Resources/Tenants/Pages/ListTenants.php:getHeaderWidgets():54-62`, linhas de ANTES desta entrega — hoje `:58-63`) declarava os quatro widgets como widgets de cabeçalho, e o Filament renderiza tudo o que está ali acima do conteúdo da página. O Filament já oferece o par: `Page::getFooterWidgets()` (`vendor/filament/filament/src/Pages/Page.php:getFooterWidgets():314-317`) renderiza abaixo do conteúdo. A ordem no template é fixa — `{{ $this->headerWidgets }}`, `{{ $slot }}` (a tabela), `{{ $this->footerWidgets }}` (`vendor/filament/filament/resources/views/components/page/index.blade.php:headerWidgets:105, slot:109, footerWidgets:113`). A doc do Filament 5 confirma: "`getHeaderWidgets()` returns an array of widgets to display above the page content, whereas `getFooterWidgets()` are displayed below" (search-docs, *Resources → Widgets → Displaying a widget on a resource page*). Colunas: as duas grades já são 2 por default (`vendor/filament/filament/src/Pages/Page.php:getHeaderWidgetsColumns():306-309` e `getFooterWidgetsColumns():356-359`), então o `getHeaderWidgetsColumns()` de `ListTenants` (`:64-67`) devolve o que já seria devolvido.
+**Posição dos widgets.** `ListTenants::getHeaderWidgets()` (`app/Filament/Admin/Resources/Tenants/Pages/ListTenants.php:getHeaderWidgets():54-62`, linhas de ANTES desta entrega — hoje `:58-63`) declarava os quatro widgets como widgets de cabeçalho, e o Filament renderiza tudo o que está ali acima do conteúdo da página. O Filament já oferece o par: `Page::getFooterWidgets()` (`vendor/filament/filament/src/Pages/Page.php:getFooterWidgets():314-317`) renderiza abaixo do conteúdo. A ordem no template é fixa — `{{ $this->headerWidgets }}`, `{{ $slot }}` (a tabela), `{{ $this->footerWidgets }}` (`vendor/filament/filament/resources/views/components/page/index.blade.php:headerWidgets:109, slot:109, footerWidgets:113`). A doc do Filament 5 confirma: "`getHeaderWidgets()` returns an array of widgets to display above the page content, whereas `getFooterWidgets()` are displayed below" (search-docs, *Resources → Widgets → Displaying a widget on a resource page*). Colunas: as duas grades já são 2 por default (`vendor/filament/filament/src/Pages/Page.php:getHeaderWidgetsColumns():306-309` e `getFooterWidgetsColumns():356-359`), então o `getHeaderWidgetsColumns()` de `ListTenants` (`:64-67`) devolve o que já seria devolvido.
 
 **Título e breadcrumb minúsculos — a cadeia completa, medida no vendor:**
 
-1. `TenantResource::getModelLabel():68-71` e `getPluralModelLabel():73-76` aplicam `mb_strtolower()` ao rótulo configurado. Escrito em 2026-08-13 (`681be6d`), quando o Title Case do Filament ainda estava **ligado**: `HasLabels::getTitleCasePluralModelLabel()` (`vendor/filament/filament/src/Resources/Resource/Concerns/HasLabels.php:getTitleCasePluralModelLabel():78-85`) aplicava `Str::ucwords()` e devolvia o título capitalizado de qualquer jeito; o minúsculo servia às frases em que o rótulo fica no meio ("Criar organização", "Nenhuma organização").
+1. `TenantResource::getModelLabel():78` e `getPluralModelLabel():73-76` aplicam `mb_strtolower()` ao rótulo configurado. Escrito em 2026-08-13 (`681be6d`), quando o Title Case do Filament ainda estava **ligado**: `HasLabels::getTitleCasePluralModelLabel()` (`vendor/filament/filament/src/Resources/Resource/Concerns/HasLabels.php:getTitleCasePluralModelLabel():78-85`) aplicava `Str::ucwords()` e devolvia o título capitalizado de qualquer jeito; o minúsculo servia às frases em que o rótulo fica no meio ("Criar organização", "Nenhuma organização").
 2. Em 2026-08-15 (`d5cf820`) o kit desligou o Title Case para **todos** os Resources — `Resource::titleCaseModelLabel(false)` em `app/Providers/Concerns/ConfiguraFilamentGlobal.php:titleCaseModelLabel():79` — porque `ucwords` capitaliza preposição ("Agentes **De** IA"). A partir daí `getTitleCasePluralModelLabel()` devolve o rótulo **como está** (`HasLabels.php:hasTitleCaseModelLabel():80-82`), isto é, minúsculo.
 3. Quem consome `getTitleCasePluralModelLabel()`: o título da listagem (`vendor/filament/filament/src/Resources/Pages/ListRecords.php:getTitle():76-79`), que alimenta o `<h1>` e o `<title>` da aba (`vendor/filament/filament/resources/views/components/layout/base.blade.php:getTitle():30`); o primeiro item do breadcrumb de **todas** as páginas do Resource (`vendor/filament/filament/src/Resources/Resource/Concerns/HasBreadcrumbs.php:getBreadcrumb():9-12`, chamado em `vendor/filament/filament/src/Resources/Pages/Page.php:getBreadcrumb():186`); e o rótulo de navegação por default (`vendor/filament/filament/src/Resources/Resource/Concerns/HasNavigation.php:getNavigationLabel():140-143`).
-4. O menu escapou porque `TenantResource::getNavigationLabel():78-81` sobrescreve o default e devolve o `config()` cru. É exatamente o sintoma do requisito: menu certo, título e breadcrumb errados.
+4. O menu escapou porque `TenantResource::getNavigationLabel():88` sobrescreve o default e devolve o `config()` cru. É exatamente o sintoma do requisito: menu certo, título e breadcrumb errados.
 
 Nenhum teste assere o título ou o breadcrumb da listagem (varredura de `tests/` por `getTitle|getBreadcrumbs|strtolower` sobre o `TenantResource`: zero ocorrências), e o único código do app que consome `TenantResource::getModelLabel()` é genérico: `app/Filament/Spotlight/AcoesDeCriacao.php:$rotulo:70` faz `ucfirst($resource::getModelLabel())` para todo Resource do painel, e o resultado fica igual ("Criar Organização" antes e depois) ou melhor (um rótulo composto deixa de virar "Criar Unidade de negócio"). `getPluralModelLabel()` não é consumido por nenhum código do app. *(alterado em 2026-09-07: o texto original dizia "varredura de `app/`: zero" — QA-01 do `06`.)* Quem lê o singular são só o vendor: `CreateRecord::getTitle():302-311` ("Criar :label" com `getTitleCaseModelLabel()`), `Page::getDefaultActionModelLabel():344-347` (rótulo das actions da tabela — no kit, os textos da tabela e da `CreateAction` são todos declarados à mão em `app/Filament/Admin/Resources/Tenants/Tables/TenantsTable.php:emptyStateHeading():66-67` e `ListTenants.php:label():32`), `vendor/filament/filament/src/GlobalSearch/Providers/DefaultGlobalSearchProvider.php:category():32` (categoria da busca global nativa, que o kit não usa — o Spotlight é do `wezlo`).
 
@@ -55,7 +55,7 @@ Nenhum teste assere o título ou o breadcrumb da listagem (varredura de `tests/`
 ### `app/Filament/Admin/Resources/Tenants/Widgets/*.php`
 
 - `OrganizacoesStats` (`$sort = 1`, `$columnSpan = 'full'`, heading "Visão geral"), `UsuariosUnicosPorOrganizacao` (`$sort = 2`, span 1), `AcessosPorPainel` (`$sort = 3`, span 1), `AtualizacoesDasOrganizacoes` (`$sort = 4`, span `'full'`). **Nenhum muda.** A grade do rodapé é 2 colunas por default, então o par lado a lado e a timeline em largura total ficam como hoje.
-- Todos herdam `CanBeLazy` com `$isLazy = true` (`vendor/filament/support/src/Concerns/CanBeLazy.php:isLazy:9`): no HTML inicial da página cada widget é um placeholder Livewire, sem o heading. Isso importa para o teste de ordem (ver `04`, CT-01): o marcador de cada widget é o **nome do componente Livewire** dentro do `wire:snapshot` que o Livewire injeta na raiz de todo componente montado (`vendor/livewire/livewire/src/Mechanisms/HandleComponents/HandleComponents.php:snapshot:76`), presente também no placeholder.
+- Todos herdam `CanBeLazy` com `$isLazy = true` (`vendor/filament/support/src/Concerns/CanBeLazy.php:isLazy:9`): no HTML inicial da página cada widget é um placeholder Livewire, sem o heading. Isso importa para o teste de ordem (ver `04`, CT-01): o marcador de cada widget é o **nome do componente Livewire** dentro do `wire:snapshot` que o Livewire injeta na raiz de todo componente montado (`vendor/livewire/livewire/src/Mechanisms/HandleComponents/HandleComponents.php:snapshot:265`), presente também no placeholder.
 
 ### `tests/Tenancy/InsightsDasOrganizacoesTest.php` (ancestral)
 
@@ -80,7 +80,7 @@ Nenhum teste assere o título ou o breadcrumb da listagem (varredura de `tests/`
 
 ## Rotas
 
-Nenhuma rota nova. A listagem continua em `/admin/{config('kit.tenancy.slug')}` (`TenantResource::getSlug():83-86`; `organizacoes` nos testes, forçado em `phpunit.xml:KIT_TENANCY_SLUG:68`).
+Nenhuma rota nova. A listagem continua em `/admin/{config('kit.tenancy.slug')}` (`TenantResource::getSlug():93`; `organizacoes` nos testes, forçado em `phpunit.xml:KIT_TENANCY_SLUG:68`).
 
 ## Superfície de UI
 
@@ -188,7 +188,7 @@ Nenhum.
 
 > Skills: `pest-testing`, `testing-best-practices`
 
-- **Path**: `tests/Tenancy/EntidadesWidgetsOrdemETituloTest.php` (suíte `Tenancy`, grupo `kit` herdado do `tests/Pest.php:TenancyTestCase:78-81`; a tela exige `kit.tenancy.enabled`, que só é `true` em `Tests\TenancyTestCase`)
+- **Path**: `tests/Tenancy/EntidadesWidgetsOrdemETituloTest.php` (suíte `Tenancy`, grupo `kit` herdado do `tests/Pest.php:TenancyTestCase:80`; a tela exige `kit.tenancy.enabled`, que só é `true` em `Tests\TenancyTestCase`)
 - Cenários: `[CT-01]` a `[CT-03]` do `04-casos-de-teste.md`, com o arranjo herdado da ancestral. Docblock do arquivo cita esta wiki.
 - Helper de teste, se houver, fica **dentro do arquivo** enquanto só ele usar (regra `.ai/rules/testes.md` — helper cruzado vai para `tests/Pest.php`). Nenhum helper novo é previsto. *(alterado em 2026-09-07 na implementação: o marcador virou uma closure local sobre o FQCN — ver ADR-03 e `03` → Desvios do Plano.)*
 
@@ -237,7 +237,7 @@ Nenhum.
 |---|---|---|---|
 | `<h1>` e `<title>` da listagem | `ListRecords::getTitle():78` → `getTitleCasePluralModelLabel()` | "entidades" | "Entidades" |
 | Breadcrumb, 1º item, nas 4 páginas | `HasBreadcrumbs::getBreadcrumb():11` | "entidades" | "Entidades" |
-| Menu | `TenantResource::getNavigationLabel():80` (config cru) | "Entidades" | "Entidades" |
+| Menu | `TenantResource::getNavigationLabel():88` (config cru) | "Entidades" | "Entidades" |
 | Título de `CreateTenant` | `CreateRecord::getTitle():309` → `getTitleCaseModelLabel()` | "Criar entidade" | "Criar Entidade" |
 
 ## Testes

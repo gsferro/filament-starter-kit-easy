@@ -3,12 +3,13 @@
 
     Registrada nos TRÊS painéis por `PanelsRenderHook::USER_MENU_PROFILE_BEFORE`, que emite
     DENTRO do dropdown, logo acima do item "Meu perfil"
-    (`vendor/filament/filament/resources/views/components/user-menu.blade.php:92`, e de novo em
+    (`vendor/filament/filament/resources/views/components/user-menu.blade.php:97`, e de novo em
     `:110`, `:133` e `:148`, um por variação de layout do menu).
 
-    Não confundir com o irmão `USER_MENU_BEFORE`: ele é emitido em `:38`, ANTES e FORA do
-    `<x-filament::dropdown>` que abre na linha 40 — ou seja, na topbar, colado ao avatar, e não
-    dentro do menu. Até 2026-09-18 esta blade e os três providers afirmavam o contrário.
+    Não confundir com o irmão `USER_MENU_BEFORE`: ele é emitido em `:43`, ANTES e FORA do
+    `<x-filament::dropdown>` que abre na linha 45 — ou seja, na topbar, colado ao avatar, e não
+    dentro do menu. Até 2026-09-18 esta blade e os três providers afirmavam o contrário; os
+    NÚMEROS ao lado só acompanharam em 2026-09-19 (a prosa foi corrigida antes deles).
 
     Blade puro, sem estado, na raiz de `views/filament/` pelo mesmo motivo do
     `spotlight-trigger`: é conteúdo de painel, não de página, e serve os três.

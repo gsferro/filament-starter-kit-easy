@@ -93,7 +93,7 @@
 | `auth.md` — guarda de laço por método sobrescrevível | `app/Filament/Pages/Auth/**` | aplicada | `ehAPaginaUnica()` em `RegistroPorConvite` e `TelaRecuperarSenha`, sobrescrito nas duas subclasses; CT-51/52 e CT-59/60 cobrem os dois sentidos |
 | `auth.md` — par `fi-auth-layout` | `app/Filament/Pages/Auth/**` | aplicada | CT-62: `/cadastro` e `/esqueci-minha-senha` com o layout, `/admin` sem ele depois |
 | `filament.md` — cartão de painel via `Paineis::cartoes()` filtrado | `app/Filament/**` | aplicada | `EscolhaDePainel::getCards():91-107` continua filtrando por `paineisDe()`; CT-45 mede o filtro com painel novo |
-| `providers.md` — rota do kit no provider com `web` | `app/Providers/**` | aplicada | `KitServiceProvider::configureLoginUnificado():527-546` — `/cadastro`, `/esqueci-minha-senha` e o redirect do slug, todos com `web` |
+| `providers.md` — rota do kit no provider com `web` | `app/Providers/**` | aplicada | `KitServiceProvider::configureLoginUnificado():627` — `/cadastro`, `/esqueci-minha-senha` e o redirect do slug, todos com `web` |
 | `pages.md` — segredo em formulário | `app/Filament/Admin/Pages/**` | n.a. | só o `$slug` mudou; nenhum campo tocado, `SegredosDoSettingsTest` verde |
 | `app.md` — papel via `ContextoDePapeis` | `app/**` | n.a. | nenhuma atribuição de papel na entrega; o teste de tenancy usa `ContextoDePapeis::em()` para LER |
 | `config.md` — env fail-closed | `config/**` | n.a. | só texto de comentário em `config/kit.php`; nenhuma chave nova |

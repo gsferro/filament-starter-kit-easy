@@ -7,7 +7,7 @@
 
 ### Contexto
 
-O título da listagem e o primeiro item do breadcrumb de todas as páginas do `TenantResource` saem de `getTitleCasePluralModelLabel()` (`vendor/filament/filament/src/Resources/Pages/ListRecords.php:getTitle():76-79`; `vendor/filament/filament/src/Resources/Resource/Concerns/HasBreadcrumbs.php:getBreadcrumb():9-12`). Com o Title Case desligado — `Resource::titleCaseModelLabel(false)` em `app/Providers/Concerns/ConfiguraFilamentGlobal.php:titleCaseModelLabel():79` — esse método devolve `getPluralModelLabel()` sem tocar (`vendor/filament/filament/src/Resources/Resource/Concerns/HasLabels.php:getTitleCasePluralModelLabel():78-85`). E `TenantResource::getPluralModelLabel():73-76` aplica `mb_strtolower()` ao rótulo configurado.
+O título da listagem e o primeiro item do breadcrumb de todas as páginas do `TenantResource` saem de `getTitleCasePluralModelLabel()` (`vendor/filament/filament/src/Resources/Pages/ListRecords.php:getTitle():76-79`; `vendor/filament/filament/src/Resources/Resource/Concerns/HasBreadcrumbs.php:getBreadcrumb():9-12`). Com o Title Case desligado — `Resource::titleCaseModelLabel(false)` em `app/Providers/Concerns/ConfiguraFilamentGlobal.php:titleCaseModelLabel():79` — esse método devolve `getPluralModelLabel()` sem tocar (`vendor/filament/filament/src/Resources/Resource/Concerns/HasLabels.php:getTitleCasePluralModelLabel():78-85`). E `TenantResource::getPluralModelLabel():83` aplica `mb_strtolower()` ao rótulo configurado.
 
 Cronologia, pelo `git log -S`: o `mb_strtolower()` é de `681be6d` (2026-08-13), quando o Title Case ainda estava ligado e `Str::ucwords()` recapitalizava título e breadcrumb; o desligamento global é de `d5cf820` (2026-08-15). Desde então toda instalação exibe "organizações" no `<h1>`, no `<title>` e no breadcrumb, e ninguém notou porque o menu — `getNavigationLabel():78-81`, que lê o `config()` cru — continuou certo, e nenhum teste assere título ou breadcrumb.
 
@@ -51,7 +51,7 @@ Remover o `mb_strtolower()` de `getModelLabel()` e de `getPluralModelLabel()`. O
 
 ### Contexto
 
-`ListTenants::getHeaderWidgets():54-62` declara os quatro widgets, e o template de página do Filament renderiza cabeçalho, conteúdo e rodapé nesta ordem fixa: `{{ $this->headerWidgets }}` (`vendor/filament/filament/resources/views/components/page/index.blade.php:headerWidgets:105`), `{{ $slot }}` (`:109`, a tabela), `{{ $this->footerWidgets }}` (`:113`). O pedido é "visão geral, tabela, demais widgets".
+`ListTenants::getHeaderWidgets():58` declara os quatro widgets, e o template de página do Filament renderiza cabeçalho, conteúdo e rodapé nesta ordem fixa: `{{ $this->headerWidgets }}` (`vendor/filament/filament/resources/views/components/page/index.blade.php:headerWidgets:109`), `{{ $slot }}` (`:109`, a tabela), `{{ $this->footerWidgets }}` (`:113`). O pedido é "visão geral, tabela, demais widgets".
 
 ### Decisão
 
@@ -73,7 +73,7 @@ Remover o `mb_strtolower()` de `getModelLabel()` e de `getPluralModelLabel()`. O
 
 - `app/Filament/Admin/Resources/Tenants/Pages/ListTenants.php:getHeaderWidgets():58-63`, `getFooterWidgets():68-74` *(linhas do código já corrigido; antes da entrega o cabeçalho era 54-62 e havia um `getHeaderWidgetsColumns():64-67`, removido)*
 - `vendor/filament/filament/src/Pages/Page.php:getHeaderWidgetsColumns():306-309`, `getFooterWidgets():314-317`, `getFooterWidgetsColumns():356-359`, `getWidgetsSchemaComponents():423`
-- `vendor/filament/filament/resources/views/components/page/index.blade.php:headerWidgets:105, slot:109, footerWidgets:113`
+- `vendor/filament/filament/resources/views/components/page/index.blade.php:headerWidgets:109, slot:109, footerWidgets:113`
 - ADR-03 de `wikis/specs/main/insights-das-organizacoes/02-decisoes-arquiteturais.md` (por que os widgets vivem em `Resources/Tenants/Widgets/`) — não muda
 
 ---
@@ -89,7 +89,7 @@ RQ-01 a RQ-03 são sobre posição na tela. A regra da `feature-test-design` é 
 
 ### Decisão
 
-Um cenário de componente (`Livewire::test(ListTenants::class)`) com `assertSeeHtmlInOrder()` (`vendor/livewire/livewire/src/Features/SupportTesting/MakesAssertions.php:assertSeeHtmlInOrder():59`) sobre marcadores que existem no HTML inicial mesmo com lazy: o **nome Livewire de cada widget** — presente no atributo `wire:snapshot` que o Livewire injeta na raiz de todo componente montado (`vendor/livewire/livewire/src/Mechanisms/HandleComponents/HandleComponents.php:snapshot:76`), placeholder incluído — e a classe `fi-ta-ctn` do contêiner da tabela (`vendor/filament/tables/resources/views/index.blade.php:'fi-ta-ctn':235`), que é renderizada mesmo com `deferLoading`. *(alterado em 2026-09-07 na implementação: `Component::getName()` (`vendor/livewire/livewire/src/Component.php:getName():70-73`) devolve `$this->__name`, que só é preenchido no MOUNT — em instância criada por `app()` ele é `null`. Medido no HTML inicial da listagem: no Livewire 4 o nome do componente É o FQCN, e o snapshot é JSON, então a contrabarra chega ao HTML dobrada. O marcador passa a ser `str_replace(chr(92), chr(92).chr(92), Widget::class)` — continua derivado de `::class`, sem string mágica.)*
+Um cenário de componente (`Livewire::test(ListTenants::class)`) com `assertSeeHtmlInOrder()` (`vendor/livewire/livewire/src/Features/SupportTesting/MakesAssertions.php:assertSeeHtmlInOrder():59`) sobre marcadores que existem no HTML inicial mesmo com lazy: o **nome Livewire de cada widget** — presente no atributo `wire:snapshot` que o Livewire injeta na raiz de todo componente montado (`vendor/livewire/livewire/src/Mechanisms/HandleComponents/HandleComponents.php:snapshot:265`), placeholder incluído — e a classe `fi-ta-ctn` do contêiner da tabela (`vendor/filament/tables/resources/views/index.blade.php:'fi-ta-ctn':235`), que é renderizada mesmo com `deferLoading`. *(alterado em 2026-09-07 na implementação: `Component::getName()` (`vendor/livewire/livewire/src/Component.php:getName():70-73`) devolve `$this->__name`, que só é preenchido no MOUNT — em instância criada por `app()` ele é `null`. Medido no HTML inicial da listagem: no Livewire 4 o nome do componente É o FQCN, e o snapshot é JSON, então a contrabarra chega ao HTML dobrada. O marcador passa a ser `str_replace(chr(92), chr(92).chr(92), Widget::class)` — continua derivado de `::class`, sem string mágica.)*
 
 Complementa, não substitui, o `[CT-12]` da ancestral (as duas listas por closure): o CT-12 mata "widget esquecido"; o cenário HTML mata "método declarado com nome errado" (`getFooterWidget()`, que o Filament nunca chama e o CT-12 por closure ainda encontraria) e prova que o vendor de fato renderiza rodapé depois da tabela.
 
@@ -103,12 +103,12 @@ Complementa, não substitui, o `[CT-12]` da ancestral (as duas listas por closur
 
 - **Positivas**: milissegundos, sem Node; o cenário fica vermelho tanto com os quatro no cabeçalho quanto com a visão geral no rodapé.
 - **Negativas**: depende de o nome do componente aparecer literal dentro do `wire:snapshot` HTML-escapado. Foi verificado por leitura do vendor, não por execução — a worktree não tem `vendor/`.
-- **Riscos**: se na implementação o marcador não aparecer literal, cair para a alternativa 2 e registrar em `03` → Notas de Implementação, deixando a ordem de renderização provada pela citação do template (`page/index.blade.php:headerWidgets:105, slot:109, footerWidgets:113`). Nunca "consertar" trocando para `assertSee` de texto que não existe no HTML inicial.
+- **Riscos**: se na implementação o marcador não aparecer literal, cair para a alternativa 2 e registrar em `03` → Notas de Implementação, deixando a ordem de renderização provada pela citação do template (`page/index.blade.php:headerWidgets:109, slot:109, footerWidgets:113`). Nunca "consertar" trocando para `assertSee` de texto que não existe no HTML inicial.
 
 ### Referências
 
 - `vendor/filament/support/src/Concerns/CanBeLazy.php:isLazy:9`
-- `vendor/livewire/livewire/src/Mechanisms/HandleComponents/HandleComponents.php:snapshot:76`
+- `vendor/livewire/livewire/src/Mechanisms/HandleComponents/HandleComponents.php:snapshot:265`
 - `vendor/livewire/livewire/src/Component.php:getName():70-73`
 - `vendor/livewire/livewire/src/Features/SupportTesting/MakesAssertions.php:assertSeeHtmlInOrder():59`
 - `vendor/filament/tables/resources/views/index.blade.php:'fi-ta-ctn':235`

@@ -86,7 +86,7 @@ Nenhuma rota nova. O kit continua **sem** `routes/api.php` (P1).
 
 **Sem superfície de UI.** Nenhum Data desta entrega chega à tela por caminho novo: o
 `ResultadoDoConviteEmMassaData` alimenta a mesma `Notification` de hoje
-(`ConvidaEmMassa::notificarResultadoDoLote():145`), com o mesmo texto.
+(`ConvidaEmMassa::notificarResultadoDoLote():148`), com o mesmo texto.
 
 Consequência: **não haverá `05-casos-de-teste-browser.md`** — o motivo fica registrado no `04`.
 
@@ -199,7 +199,7 @@ os CTs de log das features existentes são o oráculo disso.
   o `getRaw()` preservado para quem precisar de chave específica)
 - Construtor nomeado `doSocialite(ProvedorSocial $provedor, AbstractUser $usuario): self`, que
   concentra o que hoje está espalhado: `getId()`, `getEmail()`, `getName()` e a leitura de
-  "email verificado" com os três nomes possíveis (`ProvedorSocial::booleanoDoBruto():219`)
+  "email verificado" com os três nomes possíveis (`ProvedorSocial::booleanoDoBruto():217`)
 - `ProvedorSocial::booleanoDoBruto()` e `naoDesmentidoNoBruto()` passam a receber o Data (ou a
   lógica migra para o construtor nomeado — decidir no passo, mantendo os CTs de login social verdes)
 - **Segurança**: `bruto` **não** inclui `token`/`refreshToken` do Socialite — o construtor nomeado

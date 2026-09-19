@@ -211,12 +211,19 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   Os três `PanelProvider` e `resources/views/filament/user-menu-header.blade.php` diziam que
   `PanelsRenderHook::USER_MENU_BEFORE` "renderiza DENTRO do dropdown do usuário". Ele não renderiza:
   é emitido em `vendor/filament/filament/resources/views/components/user-menu.blade.php:43`, **antes
-  e fora** do `<x-filament::dropdown>` da linha 40 — quem renderiza dentro é
-  `USER_MENU_PROFILE_BEFORE` (`:97`, `:105`, `:128`, `:143`).
+  e fora** do `<x-filament::dropdown>` da linha 45 — quem renderiza dentro é
+  `USER_MENU_PROFILE_BEFORE` (`:97`, `:110`, `:133`, `:148`).
 
   A decisão de usar `GLOBAL_SEARCH_BEFORE` para o gatilho ⌘K continua certa, por outro motivo (a
   posição exata do campo de busca). É o padrão que `.ai/rules/specs.md` nomeia: conclusão certa por
   motivo errado, e por isso invisível.
+
+  *Números corrigidos em 2026-09-19.* Esta entrada saiu com "linha 40" para o dropdown e com
+  `:105`, `:128`, `:143` para os três últimos hooks — a numeração do Filament 5.7.6, metade
+  atualizada para o 5.8.2 e metade não. A entrada que anunciava o conserto de uma citação de
+  vendor errada trazia, ela mesma, citação de vendor errada. A rule que pega isso
+  (`{path}:{símbolo}:{linha}`, conferida mecanicamente) nasceu desta remediação e chegou na
+  versão seguinte, a v0.36.0 — tarde demais para a sua própria certidão de nascimento.
 
 ### Documentação
 - **Rodada 2 de avaliação de pacotes: dez indicados, nenhum adotado.** `page-header`, `page-visits`,

@@ -16,7 +16,7 @@ What the installer asked — plus a handful of things you previously could only 
 | **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns — the defaults for **every** table in all three panels |
 | **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](../autenticacao/registro-aberto.md)) |
 | **Login** | the single login page at `/login` ([details](../autenticacao/login-unificado.md)), the four social login providers, each with its switch, allowed panels, *Client ID* and encrypted *Client Secret*, plus the login screen footer ([details](../autenticacao/login-social.md)) |
-| **Kit** | card navigation hub, unsaved-changes alert, whether the kit version shows in the footer, and what your business calls each organisation (singular and plural) |
+| **Kit** | card navigation hub, unsaved-changes alert, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, and what your business calls each organisation (singular and plural) |
 
 Everything is stored by `spatie/laravel-settings` in the `settings` table, with the screen coming from `filament/spatie-laravel-settings-plugin` — both were already installed in the kit and unused until this version.
 
@@ -80,6 +80,26 @@ default worth preserving. Turning it off is one click, no deploy.
 > It is an alert, not a draft: confirming the exit still loses what you typed. The kit evaluated two
 > draft/autosave packages and adopted neither — the reasons are in
 > [`wikis/pacotes-candidatos.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/pacotes-candidatos.md).
+
+## The dynamic dashboard is a switch, not a migration
+
+Still on the **Kit** tab, the *Dashboard dinâmico* section swaps the panels' landing screen: instead
+of the classic dashboard, a grid the user builds, moves and resizes for themselves
+(`mddev31/filament-dynamic-dashboard`). It ships **off** — `KIT_DASHBOARD_DINAMICO=false` in
+`.env.example` — and *Painéis onde vale* restricts which panels it applies to: empty means all of
+them.
+
+Two decisions are what make it a switch rather than a one-way door:
+
+- **Both pages are always registered.** The panel is built in the provider's `register()` and the
+  database value only arrives in `boot()`; a conditional `->pages([...])` would read the config
+  before it exists. What decides which page answers is `App\Support\DashboardDinamico`, per
+  request — saving here takes effect on the next F5, with no cache clear and no restart.
+- **Turning it off deletes nothing.** The grids people built stay in the `dashboards` and
+  `dashboard_widgets` tables and come back untouched when you turn it on again.
+
+Viewing is not building: dragging and saving the grid belongs to whoever has Shield's
+`Manage:Dashboard` permission — everyone else sees the same screen without being able to edit it.
 
 ## Who wins: the database or `.env`?
 

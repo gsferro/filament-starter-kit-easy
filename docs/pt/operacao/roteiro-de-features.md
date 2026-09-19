@@ -78,12 +78,13 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-26 | Escopo por trait | seus models | — | `BelongsToTenant` dá relação, escopo global e preenchimento — vale fora do Filament também | 🟢 |
 | F-27 | **Identidade visual: cor** | organização → *Identidade visual* | `admin` | escolha a cor e abra `/app/{org}`: o painel inteiro veste a cor dela, e o `/admin` **não** muda | 🔵 |
 | F-28 | **Identidade visual: logo** | idem | `admin` | a logo aparece na tela de bloqueio do `/app` no lugar da imagem base | 🔵 |
+| F-69 | **A ficha do `/app` não conta onde mais a pessoa está** | `/app{/org}/users/{id}` | `admin_app` | abra a ficha de um colega: ela mostra a conta e **omite** as organizações e os papéis que a ficha do `/admin` mostra. Listá-los ali contaria a quem administra uma organização que aquela conta também é de outra — o recorte da consulta garante que só se veja gente DA organização corrente, não que se possa ver onde mais ela está. A ausência mora em `App\Filament\Concerns\FichaDeUsuario` | 🟢 |
 
 ## Administração
 
 | # | Feature | Onde | Quem alcança | Como conferir | Teste |
 |---|---|---|---|---|---|
-| F-29 | Usuários | `/admin/users` | `admin` | CRUD, com papel **obrigatório** no cadastro | 🟢 |
+| F-29 | Usuários | `/admin/users` | `admin` | create, **view** e edit em tela cheia, com papel **obrigatório** no cadastro. A ficha mostra conta, situação, origem, datas e — só aqui — as organizações e os papéis da pessoa | 🟢 |
 | F-30 | Catálogo de agentes de IA | `/admin/agentes-ia` | `admin` | prompt, provider, modelo, tools e guardrails são **dados**, editáveis sem deploy | 🟢 |
 | F-31 | Autoria de onboarding | `/admin/onboarding-flows` | `admin` | checklists e tours; o consumo fica no painel de negócio | 🔵 |
 | F-32 | Dashboard preenchido | `/admin` | `admin` | 6 widgets sobre os dados que o painel já tem | 🔵 |
@@ -122,6 +123,8 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-52 | Páginas de erro brandadas | 403, 404, 419, 500, 503 | — | com a cara do painel, em pt-BR | 🔵 |
 | F-60 | **Seletor de idioma** | topbar dos três e telas de login | qualquer um | só aparece com **dois** locales em `kit.idiomas`; traduz Filament e pacotes, **não** os rótulos do kit | 🟢 |
 | F-61 | **Anexos e mídia** | formulário e tabela de Projetos | quem alcança o resource | upload, coleção `anexos`, conversão `miniatura` e lightbox na tabela. O anexo herda o escopo da organização do próprio registro | 🟢 |
+| F-70 | **Cabeçalho rico nas telas de registro** | ver e editar usuário (`/admin` e `/app`) e organização (`/admin`) | quem alcança a tela | no lugar do título de texto do Filament: avatar (ou as iniciais, quando não há foto), nome, badge de situação e metadados copiáveis. Vem de `mortalkiller/filament-page-header`; o conteúdo é o mesmo nos dois painéis, em `App\Filament\Concerns\CabecalhoDeUsuario`, porque o que uma conta **é** não muda por painel | 🟢 |
+| F-71 | **Avatar de iniciais desenhado aqui dentro** | todo avatar sem foto, nos três painéis | qualquer um | abra qualquer tela e olhe a aba de rede: nenhuma requisição sai da aplicação. O provider padrão do Filament é o `UiAvatarsProvider`, que fazia o navegador de **cada** pessoa pedir `ui-avatars.com` a cada carga de tela — levando as iniciais na query string e o `Referer` do painel junto. `App\Support\AvatarDeIniciais` devolve um SVG embutido, com a mesma aparência | 🟢 |
 
 ## IA
 
