@@ -928,3 +928,26 @@ it('[CT-25] mantem a contagem de arquivos de teste dos readmes sincronizada', fu
     expect((string) file_get_contents(base_path('README.en.md')))
         ->toContain("| Test files | **{$fundacao}** in `Kit` + `Tenancy` (**{$total}** in total) |");
 })->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README, que passa a ser do projeto.')->group('kit');
+
+/**
+ * O exemplo do rótulo da versão do kit, nas duas páginas de configurações.
+ *
+ * `resources/views/filament/versao-do-kit.blade.php:$versaoDoKit:59` monta o rótulo como
+ * `'kit '.config('kit.version')`, e as duas páginas imprimem o resultado entre crases para o leitor
+ * reconhecer o formato. O formato não envelhece; os dígitos envelhecem a cada release — e
+ * envelheceram: o exemplo dizia `kit 0.35.0` com o kit já na 0.36.1.
+ *
+ * Exemplo concreto com número errado não é ilustração, é afirmação falsa: quem lê conclui que o kit
+ * está na versão impressa, e foi exatamente essa a leitura que a conferência do site pegou. Por isso
+ * ele passa a ser o quarto arquivo da rodada de release, junto do `CHANGELOG.md` e do
+ * `config/kit.php` que o `release.yml` já confere.
+ */
+it('[CT-25] mantem o exemplo do rotulo de versao das paginas de configuracoes na versao corrente', function (string $idioma): void {
+    $versao = (string) config('kit.version');
+
+    expect($versao)->toMatch('~^\d+\.\d+\.\d+~', 'config/kit.php nao devolveu versao legivel — o guarda mediria o vazio');
+
+    $pagina = (string) file_get_contents(base_path("docs/{$idioma}/recursos/configuracoes-do-kit.md"));
+
+    expect($pagina)->toContain("(`kit {$versao}`)");
+})->with(['pt', 'en'])->group('kit');
