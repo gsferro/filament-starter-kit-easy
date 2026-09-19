@@ -61,7 +61,7 @@ php artisan filament:assets   # required whenever the new package publishes CSS/
 record screens and publishes its own CSS and JS. Without `composer require` + `filament:assets`,
 the View/Edit screens for users and organizations still answer — just without the header.
 
-### A new permission: reseed both seeders
+### A new screen: reseed both seeders
 
 The "next steps" the command prints mention `filament:assets` and the tests, **not the seeders** —
 and a new kit screen usually brings a new permission, which lands ownerless in your database:
@@ -71,8 +71,20 @@ php artisan db:seed --class=Database\Seeders\ShieldPermissionsSeeder
 php artisan db:seed --class=Database\Seeders\PapeisSeeder
 ```
 
-Both are idempotent — running them again duplicates nothing. In v0.36.0 they are what wires the
-`ViewUser` screen to the `View:User` permission, which already existed and had no consumer.
+Both are idempotent — running them again duplicates nothing.
+
+**In v0.36.0 specifically they are a no-op** — and it is worth knowing why, so you don't go hunting
+for a defect that isn't there. The `ViewUser` screen that version brings consumes the `View:User`
+permission, and that permission **was already generated and handed out all along**: `view` is in
+`config('filament-shield.policies.methods')`, so `ShieldPermissionsSeeder` always created it and
+`PapeisSeeder` always gave it to the roles. Between v0.35.0 and v0.36.0 neither the seeders nor
+`config/filament-shield.php` changed a line (`git diff v0.35.0 v0.36.0 -- database/seeders
+config/filament-shield.php` comes back empty). What was missing was the **screen**, not the
+permission: the checkbox in `/admin/shield/roles` existed and decided nothing.
+
+Run both anyway. The habit costs two idempotent commands and pays off on the version that does
+bring a genuinely new Resource or Page — there the permission really is born ownerless in your
+database, and the symptom is a screen nobody can see.
 
 At the end nothing is committed: you review with `git diff`, run `php artisan migrate` if a new migration arrived (from v0.31.0 on the command also delivers `database/settings/`, and the settings screen breaks while the new property has no row in the database), run `composer test:kit` (the foundation) and commit. Went wrong? `git checkout -- .` undoes it, or delete the branch and go back to yours.
 

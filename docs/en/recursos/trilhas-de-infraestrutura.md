@@ -49,22 +49,37 @@ and then the table grows with no ceiling, which is a choice, not an oversight.
 ## The recycle bin lists what you declare
 
 `RevivePlugin` takes an **explicit list** of models in
-`app/Providers/Filament/InfraPanelProvider.php` — today only `App\Models\Projeto`, the kit's only
-model with `SoftDeletes`:
+`app/Providers/Filament/InfraPanelProvider.php` — today `App\Models\Projeto` and `App\Models\User`,
+the kit's two models with `SoftDeletes` (`InfraPanelProvider.php:models:581`):
 
 ```php
 RevivePlugin::make()
     ->navigationGroup('Sistema')
     ->navigationLabel('Lixeira')
+    ->navigationSort(250)
+    ->authorize(fn (): bool => auth()->check()
+        && PermissaoDaTela::permite(RecycleBin::class))
     ->models([
         Projeto::class,
+        User::class,
     ])
     ->withoutScoping(),
 ```
 
+The `->authorize()` is not decoration: the package default is `true`, and this screen lists
+everything deleted across the **whole installation**. The `->models()` allow-list is the first lock;
+the screen permission is the second.
+
 **A new model with `SoftDeletes` has to go into that list**, otherwise it ends up deleted with no
-screen to restore it from. Automatic scanning of `app/Models` was avoided on purpose: it would
-reach `User`, `Role` and `Tenant`, whose restoration has an **authorization** consequence — a user
-comes back with a role in an organization that may no longer exist. The lock is the list, just like
-the Command Center's allow-list.
+screen to restore it from — and it also has to use `Promethys\Revive\Concerns\Recyclable`, which is
+what writes to `recycle_bin_items` on the `deleted` event; without the trait the recycle bin lists
+nothing. Automatic scanning of `app/Models` was avoided on purpose: it would reach `Role` and
+`Tenant`, which have no `SoftDeletes` and nothing to restore. The lock is the list, just like the
+Command Center's allow-list.
+
+`User` joined the list together with logical user deletion, and this is where a deleted account is
+restored from (see [user states](../autenticacao/estados-de-usuario.md)). The old refusal — *"a user
+comes back with a role in an organization that may no longer exist"* — assumed a **physical**
+delete with cascade; with `SoftDeletes` the `tenant_user` and `model_has_roles` pivots stay in
+place, restoring gives back exactly what was there, and `Tenant` is never deleted (it has `ativo`).
 

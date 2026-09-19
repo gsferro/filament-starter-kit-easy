@@ -61,7 +61,7 @@ php artisan filament:assets   # obrigatório quando o pacote novo publica CSS/JS
 telas de registro e publica CSS e JS próprios. Sem o `composer require` + `filament:assets`, as
 telas de View/Edit de usuário e organização respondem normalmente, só que sem o cabeçalho.
 
-### Permissão nova: ressemeie os dois seeders
+### Tela nova: ressemeie os dois seeders
 
 Os "próximos passos" que o comando imprime citam `filament:assets` e os testes, **não os seeders** —
 e tela nova do kit costuma trazer permissão nova, que nasce sem dono no seu banco:
@@ -71,8 +71,20 @@ php artisan db:seed --class=Database\Seeders\ShieldPermissionsSeeder
 php artisan db:seed --class=Database\Seeders\PapeisSeeder
 ```
 
-Os dois são idempotentes — rodar de novo não duplica nada. Na v0.36.0 eles são o que liga a tela
-`ViewUser` à permissão `View:User`, que já existia e não tinha consumidor.
+Os dois são idempotentes — rodar de novo não duplica nada.
+
+**Na v0.36.0, especificamente, eles são no-op** — e vale saber por quê, para não procurar defeito
+onde não há. A tela `ViewUser` que essa versão traz consome a permissão `View:User`, e essa
+permissão **já era gerada e distribuía desde sempre**: `view` está em
+`config('filament-shield.policies.methods')`, então o `ShieldPermissionsSeeder` sempre a criou e o
+`PapeisSeeder` sempre a entregou aos papéis. Entre a v0.35.0 e a v0.36.0 nem os seeders nem o
+`config/filament-shield.php` mudaram uma linha (`git diff v0.35.0 v0.36.0 -- database/seeders
+config/filament-shield.php` volta vazio). O que faltava era a **tela**, não a permissão: o
+checkbox em `/admin/shield/roles` existia e não decidia nada.
+
+Rode os dois assim mesmo. O hábito custa dois comandos idempotentes e paga na versão que trouxer
+um Resource ou uma Page de fato novos — aí a permissão nasce mesmo sem dono no seu banco, e o
+sintoma é uma tela que ninguém enxerga.
 
 Ao final nada está commitado: você revisa com `git diff`, roda `php artisan migrate` se chegou migration nova (a partir da v0.31.0 o comando entrega também `database/settings/`, e a tela de configurações quebra enquanto a propriedade nova não tiver linha no banco), roda `composer test:kit` (a fundação) e commita. Deu errado? `git checkout -- .` desfaz, ou apague o branch e volte para o seu.
 

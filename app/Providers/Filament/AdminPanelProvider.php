@@ -364,7 +364,7 @@ class AdminPanelProvider extends PanelProvider
              * usuário". Ele NÃO renderiza dentro. No Filament 5 instalado ele é
              * emitido em
              * `vendor/filament/filament/resources/views/components/user-menu.blade.php:43`,
-             * ANTES e FORA do `<x-filament::dropdown>` que abre na linha 40 — ou seja,
+             * ANTES e FORA do `<x-filament::dropdown>` que abre na linha 45 — ou seja,
              * também na topbar, colado ao avatar. A escolha continua certa; a
              * justificativa estava errada, que é o padrão que `.ai/rules/specs.md`
              * nomeia: conclusão certa por outro motivo, e por isso invisível.
