@@ -77,6 +77,20 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   arquivo, **documenta exatamente essa armadilha** e explica por que ali se usa `str_contains()`
   embrulhado. A forma agora é `in_array()` embrulhado, com a mensagem no `expect()`.
 
+### Documentação
+- **Rule de projeto: citação de vendor se confere por símbolo, nunca por número de linha**
+  (`.ai/rules/specs.md`). Mergeada na `main` depois da v0.35.0 e entregue nesta versão.
+
+  Nasceu de três remediações falhas seguidas. O número de linha envelhece por dois caminhos e
+  nenhum deles avisa: a própria edição desloca (o Pint e um import novo moveram uma âncora dentro
+  da feature que a escreveu), e o `composer update` desloca em bloco — subir o Filament de 5.7.6
+  para 5.8.2 moveu **nove** âncoras de uma vez.
+
+  Conferir por lista de números escolhida à mão não é conferência, é amostragem que quem confere
+  selecionou: a primeira varredura conferiu 18 pares, todos passaram, e o símbolo errado não estava
+  na lista; a segunda corrompeu duas citações produzindo um intervalo invertido; a terceira deixou
+  seis intactas. O formato passa a ser `{path}:{símbolo}:{linha}`, conferido mecanicamente.
+
 ## [0.35.0] - 2026-09-18
 
 ### Adicionado
