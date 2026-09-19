@@ -1,0 +1,106 @@
+/*
+ * Identidade do kit sobre o Starlight.
+ *
+ * O acento é o vermelho do Laravel (#FF2D20), que é o que a arte do repositório já usa — o banner,
+ * o logo e o comando de instalação. Ele NÃO é usado puro: `#FF2D20` sobre fundo escuro passa em
+ * contraste para texto grande e reprova para corpo de texto, então a rampa abaixo escurece para o
+ * elemento interativo e clareia para o texto sobre fundo escuro.
+ *
+ * Nada aqui redefine componente do Starlight. São variáveis, de propósito: o tema atualiza sem
+ * levar junto uma folha de estilo que reimplementa a barra lateral.
+ */
+
+:root {
+  /* Rampa do acento — tema escuro (o padrão do site). */
+  --sl-color-accent-low: #4a0f0b;
+  --sl-color-accent: #c8322a;
+  --sl-color-accent-high: #ffb8b1;
+
+  --sl-color-text-accent: var(--sl-color-accent-high);
+
+  /* Cinzas levemente mais quentes que o padrão, para conversar com o vermelho. */
+  --sl-color-gray-6: #161313;
+  --sl-color-gray-7: #110f0f;
+
+  --sl-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --sl-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #ffdcd8;
+  --sl-color-accent: #c8322a;
+  --sl-color-accent-high: #5f120d;
+
+  --sl-color-text-accent: var(--sl-color-accent);
+}
+
+/*
+ * Hero da landing.
+ *
+ * Sem imagem: o banner do repositório é claro e já traz o título e o comando de instalação dentro
+ * dele — sobre o tema escuro ele vira um retângulo branco repetindo o que o hero diz do lado.
+ * O brilho abaixo é o que dá peso visual no lugar dela.
+ */
+.hero {
+  padding-block: clamp(2rem, 8vw, 5rem);
+}
+
+.hero > .stack {
+  position: relative;
+}
+
+.hero > .stack::before {
+  content: '';
+  position: absolute;
+  inset: -40% -20% auto -20%;
+  height: 320px;
+  z-index: -1;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    color-mix(in oklab, var(--sl-color-accent) 22%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.hero h1 {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.hero .tagline {
+  max-width: 46ch;
+  margin-inline: auto;
+}
+
+/* O título do site na barra superior carrega o acento, como na arte. */
+.site-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Cartões: borda mais definida e realce no hover, que o padrão não tem. */
+.card {
+  border-color: var(--sl-color-gray-5);
+  transition:
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.card:hover {
+  border-color: color-mix(in oklab, var(--sl-color-accent) 55%, var(--sl-color-gray-5));
+  transform: translateY(-2px);
+}
+
+/* Capturas de tela do produto: moldura sutil em vez de imagem solta na página. */
+.sl-markdown-content img:not([class]) {
+  border-radius: 0.5rem;
+  border: 1px solid var(--sl-color-gray-5);
+}
+
+/* Tabela larga não pode empurrar a página: o conteúdo do kit tem várias de 4+ colunas. */
+.sl-markdown-content table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}

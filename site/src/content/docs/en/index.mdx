@@ -1,0 +1,88 @@
+---
+title: Starter Kit Easy
+description: A Laravel 13 + Filament 5 starter kit with three separate panels, invitations, social login, anti-robot protection and opt-in multi-tenancy.
+template: splash
+hero:
+  tagline: Three separate panels, invitations, social login, anti-robot protection and opt-in multi-tenancy. One command to install.
+  actions:
+    - text: Install
+      link: /en/comecar/instalacao-avancada/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/gsferro/filament-starter-kit-easy
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, Code } from '@astrojs/starlight/components';
+import { Image } from 'astro:assets';
+import login from '../../../assets/login.png';
+
+<Code
+  code={`composer create-project gsferro/starter-kit-easy my-project
+cd my-project && php artisan kit:install`}
+  lang="bash"
+  title="Installation"
+/>
+
+<Image src={login} alt="The kit login screen" />
+
+## Where to start
+
+<CardGrid stagger>
+  <Card title="Getting started" icon="rocket">
+    Advanced installation, updating a project already born from the kit, and the local domain.
+
+    [Install the kit](/en/comecar/instalacao-avancada/)
+  </Card>
+
+  <Card title="Authentication" icon="approve-check">
+    Invitations, open registration with approval, social login, anti-robot protection and the
+    single login page.
+
+    [See authentication](/en/autenticacao/)
+  </Card>
+
+  <Card title="Features" icon="puzzle">
+    Opt-in multi-tenancy, attachments and media, CSV import and export, the `/infra` trails and
+    the kit settings screen.
+
+    [See features](/en/recursos/)
+  </Card>
+
+  <Card title="Operations" icon="setting">
+    Working with AI agents, kit conventions, what to do after creating your Resources, and how
+    to develop the kit itself.
+
+    [See operations](/en/operacao/)
+  </Card>
+</CardGrid>
+
+## What ships with it
+
+<CardGrid>
+  <Card title="Three panels" icon="laptop">
+    `/app` for people who use it, `/admin` for people who administer it and `/infra` for people
+    who operate it — genuinely separate, each with its own set of permissions.
+  </Card>
+
+  <Card title="Multi-tenancy is opt-in" icon="seti:folder">
+    It ships off. `php artisan kit:tenancy` turns it on — and it is an install-time decision,
+    because the permission tables only grow the context column if it exists before `migrate`.
+  </Card>
+
+  <Card title="Permissions ready" icon="seti:lock">
+    Filament Shield seeded with roles, a per-panel matrix and a screen to edit all of it.
+  </Card>
+
+  <Card title="Configuration on screen" icon="seti:config">
+    Identity, mail, tables, registration, login and the kit keys live in
+    `/admin/configuracoes-da-aplicacao`. No `.env`, no deploy.
+  </Card>
+</CardGrid>
+
+---
+
+The code lives at
+[github.com/gsferro/filament-starter-kit-easy](https://github.com/gsferro/filament-starter-kit-easy).
+The `README.md` still exists as the package's short pitch — it is what Packagist shows.
