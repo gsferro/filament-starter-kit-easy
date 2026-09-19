@@ -13,7 +13,7 @@ subtrai `render`.
 
 | Ponto de entrada | Alcançável por | Fronteira aplicada | Evidência |
 |---|---|---|---|
-| `getPageHeaderRecord()` | `$wire.getPageHeaderRecord()` | o registro já passou por `authorizeAccess()` no `mount()` **e** a cada `hydrate()`; `password` e `remember_token` saem pelo `$hidden` | `HasPageHeader.php:getPageHeaderRecord:40-47`; `ViewRecord.php:authorizeAccess:80`; `ViewRecord.php:hydrate:85`; `User.php:$hidden:96-99` |
+| `getPageHeaderRecord()` | `$wire.getPageHeaderRecord()` | o registro já passou por `authorizeAccess()` no `mount()` **e** a cada `hydrate()`; `password` e `remember_token` saem pelo `$hidden` | `HasPageHeader.php:getPageHeaderRecord:40-47`; `ViewRecord.php:authorizeAccess:78`; `ViewRecord.php:hydrate:83`; `User.php:$hidden:96-99` |
 | `getPageHeaderSchemaClass()` | idem | devolve `class-string` ou `null` — não toca registro | `HasPageHeader.php:getPageHeaderSchemaClass:50-76` |
 | `getPageHeaderOptions()` / `pageHeaderIsEnabled()` / `getPageHeaderComponent()` / `getHeader()` | idem | sem argumento do cliente; leem só config de painel e o schema | `HasPageHeader.php:78-131` |
 | `headerSchema(Schema)` / `defaultHeaderSchema(Schema)` / `pageHeaderOptions(HeaderOptions)` | não alcançáveis na prática | parâmetro é objeto tipado; o Livewire não hidrata `Schema` nem `HeaderOptions` a partir de JSON | `HasPageHeader.php:20-37`, `:78-81` |
@@ -59,7 +59,7 @@ logo o container constrói instância nova a cada chamada e o estado (`$options`
 modo de falhar seria silencioso.
 
 **O hook é escopado.** `Filament::getCurrentPanel() === $panel` na closure
-(`PageHeaderPlugin::register():64`). Não cai no defeito de render hook sem `scopes:`, que o kit já
+(`PageHeaderPlugin::register():60`). Não cai no defeito de render hook sem `scopes:`, que o kit já
 mediu: sem escopo o hook cai no bucket `''` e renderiza em qualquer painel.
 
 ---
@@ -90,9 +90,13 @@ E `AvatarDeIniciais::get():65-69` devolve `'data:image/svg+xml;base64,'.base64_e
 Medido: `parse_url` devolve `"data"`, a condição é verdadeira, e o método devolve **`null`**.
 
 O modo de falhar é o pior que existe: **nenhum erro**. O slot de identidade cai no `@elseif` de
-`components/layout.blade.php:24` e some, ou mostra iniciais que o pacote calcula por conta própria
-em `Header::getInitials():187-195` — com outra regra de recorte que a do kit. Teste de `assertOk()`
+`components/layout.blade.php:24` e mostra iniciais que o pacote calcula por conta própria em
+`Header::getInitials():187-195` — com outra regra de recorte que a do kit. Teste de `assertOk()`
 fica verde; `assertSee()` do nome fica verde, porque o nome está no heading.
+
+Onde isso **quebra de verdade** é quando o valor passado é um `data:` URI **incondicional** — um
+`->avatar(fn ($r) => app(AvatarDeIniciais::class)->get($r))`, que é a forma que alguém escreve ao
+"reusar o avatar do kit". Aí a foto de quem TEM foto some. Medido abaixo.
 
 `getFilamentAvatarUrl()` (`app/Models/User.php:857-861`) devolve `Storage::disk('public')->url(...)`,
 que é `http://…/storage/…` — medido, aceito pelo validador — ou `null` quando não há foto, e aí a
@@ -104,8 +108,24 @@ ficam visualmente próximas, não idênticas. Aceito: uniformizar exigiria ou pu
 pacote (que o `filament:assets` sobrescreve a cada update) ou servir o SVG por rota HTTP, e nenhuma
 das duas paga o ganho.
 
-**Vira oráculo**, não só prosa: um caso afirma que o `data:` URI não chega ao header e que o URL de
-`storage` chega. Sem ele, um refactor futuro que "unifique o avatar" reintroduz o branco silencioso.
+**Vira oráculo, e a matriz de mutantes corrigiu esta ADR.** Medido em `tests/Kit/PageHeaderTest.php`
+(CT-03 e CT-04):
+
+| Mutante | Resultado |
+|---|---|
+| `->avatar()` recebendo o SVG do kit sempre (`data:` URI incondicional) | **morto** por CT-03 |
+| `->initials()` removido | **morto** por CT-04 |
+| `getFilamentAvatarUrl()` → `Filament::getUserAvatarUrl()` | **sobrevive** |
+
+O terceiro sobrevive porque os dois produzem **a mesma saída**: `getUserAvatarUrl()` devolve
+`getFilamentAvatarUrl()` quando há foto, e só cai no provider quando não há — e aí o `data:` URI é
+descartado e o slot cai nas mesmas iniciais do pacote.
+
+Isso obriga a corrigir o que esta ADR dizia. O risco **não** é uma tela que quebra: é uma
+expectativa falsa. Quem escreve `Filament::getUserAvatarUrl()` acredita estar ligando o
+`AvatarDeIniciais` do kit ao cabeçalho, e não está ligando nada — o pacote ignora o retorno dele em
+silêncio. A decisão continua valendo pelo motivo certo, que é legibilidade do contrato, e não por um
+defeito observável que não existe.
 
 ---
 

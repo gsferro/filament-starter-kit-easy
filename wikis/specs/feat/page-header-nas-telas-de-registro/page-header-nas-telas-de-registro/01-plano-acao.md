@@ -11,7 +11,7 @@ uma tela `ViewUser` que faltava em dois painéis, e (c) a permissão que ela con
 existe no banco** e nunca teve consumidor.
 
 Superfície de UI: **presente, com JS** — o pacote registra um `AlpineComponent` e comportamento de
-scroll (`PageHeaderServiceProvider::boot():21`). Criticidade: **sensível** — a entrega cria uma tela
+scroll (`PageHeaderServiceProvider::boot():14`). Criticidade: **sensível** — a entrega cria uma tela
 que expõe dados de conta alheia, em painel com multi-tenancy.
 
 Logo, o perfil do `feature-quality-gate` é **Completo** (A–L, até 3 ciclos).
@@ -85,7 +85,7 @@ que o kit já mediu em render hook sem `scopes:`.
 ## Passo 3 — Os três schemas de cabeçalho *(RQ-02, RQ-03)*
 
 O pacote descobre a classe por **convenção sobre o model**, em
-`HasPageHeader::getPageHeaderSchemaClass():65-66`:
+`HasPageHeader::getPageHeaderSchemaClass():50`:
 
 ```php
 $class = substr($resource, 0, (int) strrpos($resource, '\\'))
@@ -113,7 +113,7 @@ só `TenantForm.php`.
 
   **Não** passar o avatar do painel (`Filament::getUserAvatarUrl()` / `AvatarDeIniciais`) — ver
   ADR-02. Em resumo: o provider do kit devolve `data:image/svg+xml;base64,…` e
-  `Header::getAvatarUrl():174-177` recusa todo esquema fora de `http`/`https`, devolvendo `null`
+  `Header::getAvatarUrl():169` recusa todo esquema fora de `http`/`https`, devolvendo `null`
   **sem erro**. `getFilamentAvatarUrl()` devolve `http://…/storage/…` (medido) e é aceito; quando
   não há foto ele devolve `null` e o slot cai nas iniciais, que é exatamente o desenho do kit.
 
@@ -122,14 +122,14 @@ só `TenantForm.php`.
   e-mail seria duplicar o que o Filament já resolve — o header recebe `name` e `email` pelos slots
   de metadata, não pelo título.
 
-- **Badges**: a situação da conta. O `match` de `SituacaoDaConta::colunaDeSituacao():42-46` já
+- **Badges**: a situação da conta. O `match` de `SituacaoDaConta::colunaDeSituacao():36` já
   decide Pendente/Inativo/Ativo com cor; o header reusa a mesma decisão em vez de reescrevê-la.
 
 - **Metadata**: e-mail (`MetadataEntry` com `fieldIcon`), origem da conta
   (`User::rotuloDaOrigem():478-487`) e data de criação.
 
 - **Sem `html: true`.** `Heading::html()` e `Subheading::html()` existem e desativam o `e($state)`
-  de `Heading::getContent():30`. O estado aqui é `$record->name`, que é **entrada de usuário**.
+  de `Heading::getContent():26`. O estado aqui é `$record->name`, que é **entrada de usuário**.
   Proibido por teste de arquitetura — ADR-04.
 
 ### `TenantHeader` — o conteúdo
@@ -178,7 +178,7 @@ O passo mais caro. Cinco entregas por painel:
    'edit' => EditUser::route('/{record}/edit'),
    ```
 
-   A ordem é do molde `TenantResource::getPages():141-144`, que a comenta: `/{record}` é a rota mais
+   A ordem é do molde `TenantResource::getPages():136`, que a comenta: `/{record}` é a rota mais
    curta e o Filament casa na ordem de declaração.
 
 3. **O infolist** — `Schemas/UserInfolist.php`, e `infolist()` no Resource apontando para ele.
@@ -187,7 +187,7 @@ O passo mais caro. Cinco entregas por painel:
 
 4. **`ViewAction::make()`** nas `recordActions()` das duas tabelas. Hoje não existe em nenhuma das
    duas. Sem a página `view` registrada o `ViewAction` abriria **modal** em vez de navegar
-   (`Resources/Pages/Page::getDefaultActionUrl():382-389` só devolve URL quando `hasPage('view')`);
+   (`Resources/Pages/Page::getDefaultActionUrl():361` só devolve URL quando `hasPage('view')`);
    com ela, navega.
 
 5. **`getViewAuthorizationResponse()` no `UserResource` do `/app`**, espelhando
@@ -201,10 +201,10 @@ O passo mais caro. Cinco entregas por painel:
    as duas camadas; entregar a View com uma só a deixa **mais permissiva que a Edit**, que é a
    direção errada de todas.
 
-**Autorização: nada a escrever além disso.** `ViewRecord::mount():71` chama `authorizeAccess()`, que
+**Autorização: nada a escrever além disso.** `ViewRecord::mount():67` chama `authorizeAccess()`, que
 é `abort_unless(static::getResource()::canView($this->getRecord()), 403)`
-(`ViewRecord::authorizeAccess():80`), e a cadeia termina em `UserPolicy::view():17-20` →
-`can('View:User')`. `ViewRecord::hydrate():85` repete a checagem a cada hidratação Livewire.
+(`ViewRecord::authorizeAccess():78`), e a cadeia termina em `UserPolicy::view():17-20` →
+`can('View:User')`. `ViewRecord::hydrate():83` repete a checagem a cada hidratação Livewire.
 Nada de `canAccess()`, nada de `ExigePermissaoDaTela` — esse trait é para **Page de painel**, e Page
 de Resource autoriza pela policy do Resource.
 
@@ -216,9 +216,9 @@ de Resource autoriza pela policy do Resource.
 |---|---|---|
 | nome da permissão | `View:User` | `config/filament-shield.php:permissions.separator:141` (`:`) + `case:142` (pascal) + `view` em `policies.methods:183` + `resources.subject:260` (`model`) |
 | `UserPolicy::view()` | existe | `app/Policies/UserPolicy.php:view:17-20` |
-| `admin` a recebe | sim | matriz do painel admin, `PapeisSeeder::run():58-59` |
-| `admin_app` a recebe | sim | matriz do painel app menos `permissoesForaDoApp()`, `PapeisSeeder::run():80-85` |
-| `panel_user` **não** recebe | correto | subtraída em bloco por FQCN em `PapeisSeeder::permissoesDeAdministracaoDoApp():171` |
+| `admin` a recebe | sim | matriz do painel admin, `PapeisSeeder::run():47` |
+| `admin_app` a recebe | sim | matriz do painel app menos `permissoesForaDoApp()`, `PapeisSeeder::run():47` |
+| `panel_user` **não** recebe | correto | subtraída em bloco por FQCN em `PapeisSeeder::permissoesDeAdministracaoDoApp():166` |
 | `infra` não recebe | correto | não é da matriz do painel |
 
 O que o passo faz é **ressemear** e **provar**:
@@ -258,7 +258,7 @@ armadilha):
 
 Três armadilhas na nota:
 - página que já sobrescreve `getHeader()` torna o trait **inerte em silêncio**;
-- o avatar do painel (`data:` URI) é descartado por `Header::getAvatarUrl():174-177`;
+- o avatar do painel (`data:` URI) é descartado por `Header::getAvatarUrl():169`;
 - `hideWhenCompact()` e `retainSummaryWhenCompact()` estão `@deprecated` no vendor
   (`Header.php:385` e `:328`) — a API viva é `whenCompact()` com `HeaderPart`.
 

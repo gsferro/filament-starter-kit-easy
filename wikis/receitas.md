@@ -226,7 +226,7 @@ O cabeçalho vem de `mortalkiller/filament-page-header`, registrado no `/admin` 
 ```
 
 O pacote descobre a classe por **convenção sobre o MODEL do resource**, em
-`vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:65-66`:
+`vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:50`:
 
 ```
 {namespace do Resource}\Schemas\{class_basename do Model}Header
@@ -304,7 +304,7 @@ Os dois métodos são do **Filament**, não do pacote
 O cabeçalho fica **acima de todas as abas** e não disputa espaço com elas — são regiões de DOM
 disjuntas, e trocar de aba não reinicia o estado compacto do cabeçalho
 (`vendor/mortalkiller/filament-page-header/docs/configuration.md:232`). Coberto por
-`tests/Tenancy/PageHeaderTenancyTest.php:[CT-13]`.
+`tests/Tenancy/PageHeaderTenancyTest.php:[CT-45/CT-46]`.
 
 ### 4. Modo compacto, se a tela for longa
 
@@ -316,7 +316,7 @@ Header::make()->sticky()                                  // ou só neste cabeç
 Compacto esconde descrição, metadata, summary e conteúdo extra; mantém título, badges, avatar menor
 e as ações. Para escolher o que sobra, use `whenCompact()` com `HeaderPart` — **nunca**
 `hideWhenCompact()` nem `retainSummaryWhenCompact()`, que estão `@deprecated` no vendor e são
-reprovados por `tests/Kit/PageHeaderTest.php:[CT-05]`.
+reprovados por `tests/Kit/PageHeaderTest.php:[CT-26]`.
 
 ### As quatro armadilhas
 
@@ -325,7 +325,7 @@ reprovados por `tests/Kit/PageHeaderTest.php:[CT-05]`.
 > `docs/specification.md:15`: *"a page getHeader override wins"*. Se o cabeçalho não aparece, é a
 > primeira coisa a conferir.
 >
-> **2. Avatar em `data:` URI é descartado em silêncio.** `Header::getAvatarUrl():174-177` só aceita
+> **2. Avatar em `data:` URI é descartado em silêncio.** `Header::getAvatarUrl():169` só aceita
 > `http`/`https`. O `App\Support\AvatarDeIniciais` do kit devolve `data:image/svg+xml;base64,…`,
 > então passá-lo ao cabeçalho não liga nada — e não dá erro. Use o accessor que devolve URL
 > (`getFilamentAvatarUrl()`, `urlDaLogo()`) e deixe `->initials()` como queda.
