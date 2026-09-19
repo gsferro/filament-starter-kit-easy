@@ -69,3 +69,67 @@ e **`:where()` contribui zero especificidade**. Uma sobrescrita escrita só para
 O par escuro se escreve `.dark:root`, com a classe na **própria raiz**. `.dark :root` e `:root .dark` parecem equivalentes e são letra morta: `:root` *é* o `<html>`, então ele não pode ser descendente de nada nem conter a classe que o alternador de tema escreve nele próprio.
 
 > **Ao acrescentar sua própria sobrescrita de cor**, siga o mesmo par e rode `php artisan filament:assets` depois de editar. As guardas ficam em `tests/Kit/ContrasteDaNavegacaoNoTopoTest.php` e `tests/Kit/CorrecaoDeCorPrimariaTest.php`: elas leem o CSS e as folhas do `vendor/` em runtime, recalculam o contraste com as paletas do próprio Filament e ficam vermelhas quando um upgrade de pacote muda o jogo.
+
+## Onde apontar o `DocumentRoot` — e o que o kit faz quando ele está errado
+
+Um projeto Laravel é servido a partir de **`public/`**, nunca da raiz. O `DocumentRoot` do
+servidor (ou a *Document Root* do painel de hospedagem) tem de apontar para:
+
+```
+/caminho/do/projeto/public
+```
+
+Em hospedagem compartilhada isso nem sempre é configurável, e a saída comum é um `.htaccess` na
+raiz reescrevendo tudo para dentro de `public/`. **Funciona, com um efeito colateral.**
+
+Depois de uma reescrita *interna*, o Apache entrega ao PHP `SCRIPT_NAME=/public/index.php`
+enquanto o `REQUEST_URI` continua o que o usuário pediu. O Laravel deriva a base do endereço
+comparando os dois:
+
+| O que o navegador pediu | Base derivada | Endereços gerados na página |
+|---|---|---|
+| `/app`, `/admin`, `/infra` | vazia | limpos |
+| `/public/app` | `/public` | **todos** com o prefixo |
+
+Ou seja: basta entrar **uma vez** por um endereço com `/public` — um favorito antigo, um link
+compartilhado — para que toda a navegação daquela página saia prefixada. Como o `.htaccess`
+costuma redirecionar de volta, o prefixo aparece e some, o que faz o problema parecer aleatório.
+
+**O kit se defende disso — quando consegue saber que é seguro.** Ele recusa honrar uma base de
+endereço terminada em `/public` e reconstrói a raiz sem o sufixo, uma vez por requisição, **mas só
+quando há sinal de que `/` realmente roteia para dentro de `public/`**. Sem esse sinal ele não age,
+e o motivo está logo abaixo. Três consequências que valem saber:
+
+- vale para **qualquer painel**, inclusive os que você criar — a correção é na raiz do endereço,
+  não numa lista de painéis;
+- vale para **asset** também (`/css`, `/js`, `/build`), que sai do mesmo gerador;
+- em instalação correta **nada acontece**: a base é vazia e a verificação sai na primeira linha,
+  sem consulta e sem custo.
+
+> **Isso não dispensa arrumar o `DocumentRoot`.** A defesa do kit tira o prefixo dos endereços que
+> a aplicação gera; ela não impede alguém de digitar `/public/...` na barra, nem corrige o
+> redirecionamento extra que o `.htaccess` faz a cada clique. Se você puder apontar o
+> `DocumentRoot` para `public/`, aponte.
+>
+**Quando o kit remove o prefixo, e quando não remove.** Ele só encurta se houver **sinal** de que
+`/` realmente roteia para dentro de `public/` — na prática, uma `RewriteRule` apontando para
+`public/` no `.htaccess` da raiz. Sem sinal ele **não age**, e o motivo é concreto: uma instalação
+servida em `https://host/public/...` **sem** reescrita funciona assim, e encurtar transformaria
+todo link e todo asset em 404.
+
+Em nginx não há `.htaccess` para inspecionar. Declare por configuração:
+
+```dotenv
+KIT_URL_REMOVER_SUFIXO_PUBLIC=true   # a reescrita está no vhost
+KIT_URL_REMOVER_SUFIXO_PUBLIC=false  # desliga de vez
+```
+
+Sem a chave, o kit detecta sozinho.
+
+> **O que a defesa NÃO alcança.** Ela conserta o endereço que a aplicação **gera**. O que vem do
+> próprio pedido continua com o prefixo: a URL guardada quando você é mandado ao login
+> (`redirect()->guest()`) e o "voltar" que sai do `Referer`. Quem cai no login vindo de
+> `/public/app` volta para `/public/app` depois de autenticar. Mais uma razão para arrumar o
+> `DocumentRoot`.
+
+> Guarda: `tests/Kit/UrlSemPrefixoPublicTest.php`.
