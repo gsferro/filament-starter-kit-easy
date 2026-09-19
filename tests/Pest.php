@@ -1067,31 +1067,131 @@ function linhaDoKitInfo(string $saida, string $rotulo): string
 }
 
 /**
- * O `<header>` que o `mortalkiller/filament-page-header` emite, e só ele.
+ * O interior do elemento que carrega a classe pedida — e só ele.
  *
- * Vive aqui, e não no arquivo de teste, porque dois arquivos o usam:
- * `tests/Kit/PageHeaderTest.php` e `tests/Tenancy/PageHeaderTenancyTest.php`. Helper cruzado
- * declarado num deles some quando o Pest carrega um subconjunto (`--parallel`, `--tia`, um arquivo
- * só) — ver `.ai/rules/testes.md`.
+ * Vive aqui, e não num arquivo de teste, porque três arquivos o usam
+ * (`tests/Kit/PageHeaderTest.php`, `tests/Tenancy/PageHeaderTenancyTest.php` e os casos de
+ * recorte). Helper cruzado declarado num deles some quando o Pest carrega um subconjunto
+ * (`--parallel`, `--tia`, um arquivo só) — ver `.ai/rules/testes.md`.
  *
- * O recorte é pequeno de propósito. Predicado de HTML aplicado sobre região grande não afirma
- * nada: a rodada anterior desta base produziu um oráculo que rodava sobre a cauda inteira da
- * página e QUALQUER texto o satisfazia, com 46 casos verdes sobre nada. `<header>` não aninha aqui
- * — o pacote emite um por página (`vendor/mortalkiller/filament-page-header/resources/views/header.blade.php:21-32`)
- * —, então o recorte por posição é exato e dispensa parser.
+ * ## Por que balanceado, e não `strpos` até o primeiro fechamento
  *
- * String vazia quando a página não tem cabeçalho do pacote. O controle negativo que prova que o
- * recortador recorta é `[CT-02]` de `tests/Kit/PageHeaderTest.php`.
+ * Predicado de HTML aplicado sobre região grande demais não afirma nada: a rodada anterior desta
+ * base produziu um oráculo sobre a cauda inteira da página em que QUALQUER texto o satisfazia —
+ * 46 casos verdes sobre nada. Mas o erro simétrico também existe: cortar no primeiro `</div>`
+ * aninhado devolve um pedaço, e a asserção de ausência sobre esse pedaço passa por engano.
+ *
+ * `fph-badges` e `fph-metadata` contêm markup do Filament, com divs aninhadas. Por isso a
+ * caminhada conta abertura e fechamento da MESMA tag em vez de procurar o próximo fechamento.
+ *
+ * ## A classe casa como TOKEN, nunca como substring
+ *
+ * `fph-heading` não pode casar `fph-heading-icon`, que é filho dele
+ * (`vendor/mortalkiller/filament-page-header/resources/views/components/heading.blade.php:5`).
+ * Substring aqui devolveria o ícone no lugar do título.
+ *
+ * String vazia quando o elemento não existe — e aí **asserção de ausência sobre o retorno não vale
+ * nada**, porque região vazia satisfaz toda ausência. O caso que usa ausência tem de provar antes
+ * que a região não está vazia. É a regra que `[CT-02]` institui.
+ *
+ * Controles negativos do detector: `[CT-01]` e `[CT-02]` de `tests/Kit/PageHeaderTest.php`.
+ */
+function regiaoDoHeader(string $html, string $classe): string
+{
+    $cursor = 0;
+
+    /*
+     * Busca por POSIÇÃO da classe, e não por um `preg_match_all` sobre o documento inteiro: o
+     * segundo é caro num HTML de painel e não compra nada aqui.
+     */
+    while (($posDaClasse = strpos($html, $classe, $cursor)) !== false) {
+        $cursor = $posDaClasse + strlen($classe);
+
+        // `strrpos` com deslocamento negativo caminha para trás a partir da ocorrência, sem copiar.
+        $inicioDaTag = strrpos($html, '<', $posDaClasse - strlen($html));
+        $fimDaTag    = strpos($html, '>', $posDaClasse);
+
+        if ($inicioDaTag === false || $fimDaTag === false) {
+            continue;
+        }
+
+        $tag = substr($html, $inicioDaTag, $fimDaTag - $inicioDaTag + 1);
+
+        if (preg_match('~^<([a-zA-Z][a-zA-Z0-9]*)[\s>]~', $tag, $nome) !== 1) {
+            continue;
+        }
+
+        if (preg_match('~[\s]class\s*=\s*"([^"]*)"~', $tag, $atributo) !== 1) {
+            continue;
+        }
+
+        // Token inteiro: `fph-heading` não pode casar `fph-heading-icon`, que é filho dele.
+        if (! in_array($classe, preg_split('~\s+~', $atributo[1], flags: PREG_SPLIT_NO_EMPTY) ?: [], true)) {
+            continue;
+        }
+
+        $nomeDaTag    = strtolower($nome[1]);
+        $inicio       = $fimDaTag + 1;
+        $profundidade = 1;
+        $andando      = $inicio;
+
+        while ($profundidade > 0) {
+            $abre  = stripos($html, '<'.$nomeDaTag, $andando);
+            $fecha = stripos($html, '</'.$nomeDaTag, $andando);
+
+            if ($fecha === false) {
+                return '';
+            }
+
+            if ($abre !== false && $abre < $fecha) {
+                // `<div` só abre quando o caractere seguinte encerra o nome; senão é `<divisor`.
+                $seguinte = $html[$abre + strlen($nomeDaTag) + 1] ?? '';
+
+                if ($seguinte === '>' || $seguinte === '/' || trim($seguinte) === '') {
+                    $profundidade++;
+                }
+
+                $andando = $abre + strlen($nomeDaTag) + 1;
+
+                continue;
+            }
+
+            $profundidade--;
+
+            if ($profundidade === 0) {
+                return substr($html, $inicio, $fecha - $inicio);
+            }
+
+            $andando = $fecha + strlen($nomeDaTag) + 2;
+        }
+    }
+
+    return '';
+}
+
+/**
+ * O `<header>` do pacote de page header. Atalho de `regiaoDoHeader($html, 'fph-header')`.
+ *
+ * Existe como nome próprio porque é a região usada em quase todo caso, e porque o nome diz o que
+ * se está medindo. A implementação é a mesma do extrator geral de propósito: um extrator, um
+ * conjunto de controles negativos.
  */
 function regiaoDoCabecalho(string $html): string
 {
-    $inicio = strpos($html, '<header class="fph-header');
+    return regiaoDoHeader($html, 'fph-header');
+}
 
-    if ($inicio === false) {
-        return '';
-    }
+/**
+ * O código sem comentário de bloco nem de linha.
+ *
+ * Só para asserção de AUSÊNCIA: os arquivos do kit **citam** o que proíbem, e é lá que está o
+ * porquê — sem o filtro, a varredura reprova pela própria documentação. A asserção de PRESENÇA
+ * roda sobre o texto cru. `.ai/rules/testes.md` registra o padrão, que já custou três vezes nesta
+ * base, uma delas derrubando três telas com `ParseError`.
+ */
+function semComentarios(string $codigo): string
+{
+    $codigo = (string) preg_replace('~/\*.*?\*/~s', '', $codigo);
 
-    $fim = strpos($html, '</header>', $inicio);
-
-    return $fim === false ? '' : substr($html, $inicio, $fim - $inicio);
+    return (string) preg_replace('~^\s*//.*$~m', '', $codigo);
 }
