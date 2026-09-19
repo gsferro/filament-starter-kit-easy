@@ -3,6 +3,49 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Corrigido
+- **`/public` aparecia na URL antes do painel, de forma intermitente.** Em hospedagem cujo
+  `DocumentRoot` aponta para a raiz do projeto em vez de `public/` — o arranjo comum de hospedagem
+  compartilhada, com um `.htaccess` reescrevendo tudo para dentro —, o Laravel deriva a base do
+  endereco como `/public` sempre que o endereco pedido tambem traz o prefixo. A partir dai **todas**
+  as URLs daquela pagina nascem prefixadas.
+
+  Isso explica a intermitencia, que nao era aleatoria: bastava entrar **uma vez** por um endereco
+  com `/public` — um favorito, um link compartilhado — para a navegacao inteira sair prefixada, ate
+  o `.htaccess` redirecionar de volta.
+
+  O kit passa a recusar uma base terminada em `/public` e reconstroi a raiz sem o sufixo, uma vez
+  por requisicao. Vale para **qualquer painel**, inclusive os que voce criar, porque a correcao e
+  na raiz do endereco e nao numa lista de paineis; vale tambem para asset, que sai do mesmo
+  gerador. **Em instalacao correta nada muda** — a base e vazia e a verificacao sai na primeira
+  linha, sem consulta e sem custo.
+
+  O gatilho e o **sufixo** da base, e nao o `APP_URL`: forcar a raiz a partir do `APP_URL` seria
+  mais curto e quebraria instalacao multi-dominio, jogando quem acessa pelo segundo dominio para o
+  primeiro.
+
+  **So encurta com evidencia positiva**, e isso nao e detalhe: `DocumentRoot` na raiz SEM
+  reescrita e um arranjo que funciona — `https://host/public/app` e o unico endereco que existe
+  ali —, e encurtar transformaria todo link em 404. O sinal e uma `RewriteRule` apontando para
+  `public/` no `.htaccess` da raiz. Sem sinal, o kit nao age. Em nginx, declare por
+  `KIT_URL_REMOVER_SUFIXO_PUBLIC`.
+
+  A correcao e um **middleware global**, e nao o `boot()` de um provider: `boot()` roda antes do
+  `TrustProxies` e congelaria host e porta sem os cabecalhos `X-Forwarded-*`.
+
+  **O que ela nao alcanca**: o endereco que vem do proprio pedido — a URL guardada pelo
+  `redirect()->guest()` e o `Referer`. Quem cai no login vindo de `/public/app` volta para la.
+
+  **A correcao de raiz continua sendo de infraestrutura** — apontar o `DocumentRoot` para
+  `public/`. A documentacao ganhou a secao que explica qual e a configuracao certa.
+
+### Documentacao
+- [Configuracao global do Filament](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/configuracao-global-filament.html)
+  ganhou **Onde apontar o `DocumentRoot`**, com a tabela que mostra por que o prefixo aparece e
+  some. Em ingles tambem.
+
 ## [0.36.0] - 2026-09-19
 
 ### Adicionado
