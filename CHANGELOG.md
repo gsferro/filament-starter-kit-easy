@@ -3,7 +3,35 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.36.1] - 2026-09-19
+
+### Adicionado
+- **Gate de citação de código** (`tests/Kit/CitacoesDeCodigoTest.php`). A rule que manda citar
+  `{path}:{símbolo}:{linha}` e conferir **por símbolo, nunca por número** existe desde a v0.35.0 —
+  o que não existia era o gate. A conferência era feita à mão e só sobre a wiki da feature
+  corrente; `docs/`, o `CHANGELOG.md` e os comentários de `app/` nunca passaram por ela.
+
+  Duas afirmações, porque há duas formas de citar no repositório: citação **com símbolo** tem de
+  ter o símbolo naquela linha (~160 delas), e citação **sem símbolo** tem de apontar para uma linha
+  que existe (~330). A segunda forma é o antipadrão que a rule desaconselha, e convertê-las é
+  migração própria — mas exigir que a linha exista é barato e pega o defeito que importa.
+
+  Ele acusou três de primeira, e o diagnóstico foi melhor do que se esperava: não eram linhas
+  deslocadas. O `filament-cards` 1.1.0 moveu o bloco de descrição e o `data-search-text` de
+  **arquivo**, e as citações apontavam para a linha 373 de um arquivo com 151 linhas.
+
+  O gate cobre a superfície **viva** e exclui `wikis/specs/**`, que são registros datados — exigir
+  frescor eterno de citação neles contradiz a decisão, registrada na v0.36.0, de não reescrever o
+  dossiê de uma rodada anterior.
+
+- **Guarda dos números por painel do README.** As cinco linhas da tabela "Nossos números" passam a
+  ser conferidas contra o Filament em tempo de execução. Sete linhas já eram travadas e estavam
+  todas certas; as cinco sem guarda tinham **três erradas**.
+
+- **Duas capturas de tela novas** (`composer art`): a ficha de usuário e a de organização com o
+  cabeçalho rico. A conta alvo nasce sem foto e inativa de propósito — sem foto o slot cai no
+  avatar de iniciais, e inativa dá ao badge de situação algo diferente do caminho feliz para
+  mostrar.
 
 ### Corrigido
 - **`/public` aparecia na URL antes do painel, de forma intermitente.** Em hospedagem cujo
@@ -46,6 +74,63 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - [Configuracao global do Filament](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/configuracao-global-filament.html)
   ganhou **Onde apontar o `DocumentRoot`**, com a tabela que mostra por que o prefixo aparece e
   some. Em ingles tambem.
+
+- **Sete afirmações falsas na documentação**, todas reconferidas contra o código antes da edição:
+
+  - `USER_MENU_BEFORE` **não** renderiza dentro do dropdown do menu do usuário — o vendor emite o
+    hook antes e fora dele. Quem renderiza dentro é o `USER_MENU_PROFILE_BEFORE`.
+  - A **Lixeira do `/infra` lista `User` também**, não só `Projeto`. A doc afirmava que `Projeto`
+    era "a única model do kit com `SoftDeletes`", e outra página do mesmo site mandava restaurar
+    conta excluída por ali — duas páginas se contradizendo.
+  - **Ressemear os seeders não é o que liga a tela `ViewUser` à permissão `View:User`.** Na v0.36.0
+    nenhum seeder mudou e a permissão já era gerada; faltava a tela. A instrução de ressemear fica,
+    porque continua sendo bom hábito ao receber Resource novo — o que mudou foi a causalidade.
+  - `AuditsFillables` **não** audita exatamente o `$fillable` desde a v0.35.0: ele soma
+    `auditaAlemDoFillable()`. Era justamente a convenção que aquela release desmentiu.
+  - A **arte do login** não vem de `public/images/auth/login.svg` — esse diretório não existe.
+
+- **Três números de linha errados no CHANGELOG da v0.35.0**, na frase que descrevia a correção de
+  uma citação errada. Eles estavam **meio atualizados** — um já era do Filament 5.8.2, três ainda
+  eram da 5.7.6 —, que é literalmente o *"a terceira varredura deixou seis intactas"* descrito pela
+  rule de citação. A mesma defasagem vivia na blade `user-menu-header` e nos três PanelProviders.
+
+- **Três linhas de "Nossos números"** estavam erradas: telas navegáveis, páginas próprias e rotas
+  `GET`. A defasagem maior não foi a `ViewUser` da v0.36.0, que bate em dois painéis, e sim o
+  `DashboardClassico`, registrado nos três.
+
+  *Telas navegáveis* era o pior caso: parada desde 18/08/2026, atravessou um fact-check inteiro sem
+  correção **porque não tinha critério declarado** — e o que não é falsificável ninguém confere. O
+  critério agora está escrito ao lado da tabela.
+
+- **25 âncoras internas mortas** nos dois READMEs, resto da migração para o site.
+
+### Documentação
+- **A tela `ViewUser`, o cabeçalho rico e o avatar de iniciais** ganham entrada no roteiro de
+  features e no README — os três foram entregues nas v0.35.0 e v0.36.0 e não apareciam em lugar
+  nenhum da documentação de usuário.
+
+  O avatar de iniciais em particular é correção de **privacidade**, não de estética: o provider
+  padrão do Filament fazia o navegador de cada pessoa pedir `ui-avatars.com` a cada carga de tela,
+  com as iniciais na query string e o `Referer` do painel.
+
+- **O `wikis/pacotes.md` passa a conhecer o `mortalkiller/filament-page-header`.** Esse arquivo
+  existe para um agente perguntar *"isto já existe?"* antes de escrever à mão; sem a linha, alguém
+  reimplementa cabeçalho.
+
+- **O dashboard dinâmico** ganha seção própria na página de configurações, com o motivo de as duas
+  páginas estarem sempre registradas.
+
+### Testes
+- **As 28 lacunas de cobertura sem justificativa da v0.36.0 foram fechadas.** Dos 55 cenários
+  especificados, 46 têm teste — eram 23. As lacunas estavam declaradas em voz alta no
+  `03-progresso.md` como *"sem motivo registrado"*, e não havia motivo: os testes foram escritos
+  antes de o documento de casos existir.
+
+  Três cenários **não podiam ser escritos como especificados**, e em todos a divergência virou o
+  achado, escrita no docblock do caso: a coluna `origem` é `NOT NULL` (a partição do nulo não
+  existe como estado de banco); o kit roda em UTC e não em São Paulo, e mudar o config em tempo de
+  execução não desloca a data porque entrada de data resolve o fuso pelo Filament; e rodar o
+  `kit:update` de verdade mediria o `git diff`, que é do git.
 
 ## [0.36.0] - 2026-09-19
 
