@@ -104,13 +104,33 @@ for (const arquivo of paginas(ORIGEM)) {
   // A landing compartilhada do Jekyll não tem equivalente: cada locale tem a sua, e `/` redireciona.
   if (rel === 'index.md') continue;
 
+  // As landings de idioma são escritas à mão como `.mdx` (hero + cartões); o `index.md` do Jekyll
+  // era só um título com dois parágrafos, e converter por cima delas desfaria o trabalho.
+  if (/^(pt|en)\/index\.md$/.test(rel)) continue;
+
   const { meta, corpo } = separaFrontMatter(readFileSync(arquivo, 'utf8'));
   const descricao = descricaoDe(corpo);
   if (!descricao) semDescricao.push(rel);
 
   const frente = ['---', 'title: ' + JSON.stringify(meta.title ?? rel)];
   if (descricao) frente.push('description: ' + JSON.stringify(descricao));
-  if (meta.nav_order) frente.push('sidebar:', '  order: ' + meta.nav_order);
+
+  /*
+   * O `index.md` de uma seção tem o MESMO título do grupo que o contém — no just-the-docs isso
+   * era o normal, porque `has_children` fazia do título o cabeçalho do grupo e a página vinha
+   * junto. No Starlight o grupo é nomeado no `astro.config.mjs` e a página é um item dentro
+   * dele, então a barra lateral mostrava "Começar > Começar", em quatro das cinco seções.
+   *
+   * O rótulo na barra passa a ser "Visão geral"; o título da página continua o que era.
+   */
+  const indiceDeSecao = /^(pt|en)\/[^/]+\/index\.md$/.test(rel);
+
+  if (indiceDeSecao) {
+    frente.push('sidebar:', '  label: ' + (rel.startsWith('pt/') ? '"Visão geral"' : '"Overview"'), '  order: 0');
+  } else if (meta.nav_order) {
+    frente.push('sidebar:', '  order: ' + meta.nav_order);
+  }
+
   frente.push('---', '');
 
   const saida = join(DESTINO, rel);

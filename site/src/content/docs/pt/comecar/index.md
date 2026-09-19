@@ -2,7 +2,8 @@
 title: "Começar"
 description: "O que vem depois do composer create-project: a instalação avançada (banco de dados, a lista completa de comandos e os 16 itens que dá para personalizar),…"
 sidebar:
-  order: 1
+  label: "Visão geral"
+  order: 0
 ---
 O que vem depois do `composer create-project`: a instalação avançada (banco de dados, a lista
 completa de comandos e os 16 itens que dá para personalizar), como atualizar um projeto que já

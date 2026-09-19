@@ -2,7 +2,8 @@
 title: "Recursos"
 description: "As features que o kit entrega prontas e o que cada uma exige de você: multi-tenancy opt-in, anexos e mídia, import e export em CSV, as trilhas do /infra, a…"
 sidebar:
-  order: 3
+  label: "Visão geral"
+  order: 0
 ---
 As features que o kit entrega prontas e o que cada uma exige de você: multi-tenancy opt-in, anexos e
 mídia, import e export em CSV, as trilhas do `/infra`, a configuração global do Filament, a tela de

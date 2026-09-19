@@ -2,7 +2,8 @@
 title: "Autenticação"
 description: "Como alguém entra — e como alguém deixa de entrar: convite, registro aberto com aprovação, login social nos quatro provedores, a página única de login…"
 sidebar:
-  order: 2
+  label: "Visão geral"
+  order: 0
 ---
 Como alguém entra — e como alguém deixa de entrar: convite, registro aberto com aprovação, login
 social nos quatro provedores, a página única de login opcional (`/login`), proteção anti-robô, os

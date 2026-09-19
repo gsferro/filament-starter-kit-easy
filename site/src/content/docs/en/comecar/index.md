@@ -2,7 +2,8 @@
 title: "Getting started"
 description: "What comes after composer create-project: advanced installation (database, the full command list and the 16 items you can customize), how to update a…"
 sidebar:
-  order: 1
+  label: "Overview"
+  order: 0
 ---
 What comes after `composer create-project`: advanced installation (database, the full command list
 and the 16 items you can customize), how to update a project born from the kit without losing what

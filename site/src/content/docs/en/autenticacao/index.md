@@ -2,7 +2,8 @@
 title: "Authentication"
 description: "How someone gets in — and how someone stops getting in: invitation, open registration with approval, social login across the four providers, the optional…"
 sidebar:
-  order: 2
+  label: "Overview"
+  order: 0
 ---
 How someone gets in — and how someone stops getting in: invitation, open registration with
 approval, social login across the four providers, the optional single login page (`/login`),

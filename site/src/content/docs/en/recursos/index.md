@@ -2,7 +2,8 @@
 title: "Features"
 description: "The features the kit ships ready and what each one asks of you: opt-in multi-tenancy, attachments and media, CSV import and export, the /infra trails, the…"
 sidebar:
-  order: 3
+  label: "Overview"
+  order: 0
 ---
 The features the kit ships ready and what each one asks of you: opt-in multi-tenancy, attachments and
 media, CSV import and export, the `/infra` trails, the global Filament configuration, the settings
