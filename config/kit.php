@@ -126,9 +126,7 @@ return [
     */
 
     'url' => [
-        'remover_sufixo_public' => env('KIT_URL_REMOVER_SUFIXO_PUBLIC') === null
-            ? null
-            : filter_var(env('KIT_URL_REMOVER_SUFIXO_PUBLIC'), FILTER_VALIDATE_BOOLEAN),
+        'remover_sufixo_public' => BooleanoDoEnv::ouNulo(env('KIT_URL_REMOVER_SUFIXO_PUBLIC')),
     ],
 
     'identidade' => [

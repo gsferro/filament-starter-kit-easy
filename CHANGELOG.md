@@ -17,7 +17,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   o `.htaccess` redirecionar de volta.
 
   O kit passa a recusar uma base terminada em `/public` e reconstroi a raiz sem o sufixo, uma vez
-  por requisicao. Vale para **qualquer painel**, inclusive os que voce criar, porque a correcao e
+  por requisicao — **so quando ha evidencia de que `/` roteia para dentro de `public/`**, pelo
+  motivo do paragrafo seguinte. Vale para **qualquer painel**, inclusive os que voce criar, porque a correcao e
   na raiz do endereco e nao numa lista de paineis; vale tambem para asset, que sai do mesmo
   gerador. **Em instalacao correta nada muda** — a base e vazia e a verificacao sai na primeira
   linha, sem consulta e sem custo.

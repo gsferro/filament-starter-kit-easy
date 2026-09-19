@@ -16,11 +16,15 @@
   e o rollback é remover uma chamada. **Não** dispara revisão adversarial.
 - Técnicas: **EP** sobre o domínio da base, **BVA de sufixo** (a fronteira aqui é textual, não
   numérica) e **Esquema do Cenário** para o eixo dos painéis.
-- Cenários: **11** · Regras: **5** · Mutantes previstos: **14** · Sem matador: **0**
-- *(recontado em 2026-09-18, depois do Adendo 1: entra R5 com CT-09…CT-12, e CT-07 sai)*
+- Cenários: **12** · Regras: **6** · Mutantes previstos: **16** · **Sem matador: 1** (M11 — ver R4)
+- *(recontado em 2026-09-18 no ciclo 2 do quality gate: entra R6/CT-13, e a contagem
+  anterior estava errada em três pontos — creditava CT-07, dizia 4 cenários em R4+R5 e
+  declarava zero mutantes sem matador enquanto M11 se declarava sem)*
 
 > Teto do perfil padrão é 3 cenários por regra. R1 usa 3, R2 usa 2, R3 usa 1 (Esquema conta como
-> 1) e R4 usa 2 — nenhum estouro.
+> 1), R4 usa 1, R6 usa 1 — e **R5 usa 4**, estouro declarado: a tabela de decisão dela tem seis
+> linhas, e três cenários deixariam a combinação `false` com sinal presente (CT-12) sem matador.
+> O gate de falsificabilidade vence o teto.
 
 ## Varredura SFDIPOT
 
@@ -29,7 +33,7 @@
 | **S** | um método `protected` num provider. Sem migration, model, job, policy, command ou config nova | — |
 | **F** | decidir **se** força a raiz da URL, e **qual** raiz. Nada mais | CT-01…CT-08 |
 | **D** | entrada única: `Request::getBaseUrl()`, derivado pelo Symfony de `SCRIPT_NAME`/`REQUEST_URI`. Partições: vazio · `/public` · `/algo` · `/algo/public` · `/meupublic` · `/PUBLIC` | CT-01…CT-05 |
-| **I** | request HTTP de qualquer painel; **e a ausência de request** (console, fila, scheduler) | CT-06, CT-07, CT-08 |
+| **I** | request HTTP de qualquer painel. A ausência de request deixou de ser cenário: com a correção em **middleware**, console e fila não a atravessam por construção | CT-06, CT-08, **CT-13** |
 | **P** | servidor web que reescreve para dentro de `public/`; `TrustProxies` para o esquema atrás de proxy. **Banco não entra** — a feature não consulta nada | CT-08 |
 | **O** | dois mundos: instalação **correta** (o caso comum, e o que não pode regredir) e instalação com `DocumentRoot` na raiz do projeto | CT-01, CT-02 |
 | **T** | **não se aplica**: nenhum comportamento depende de instante, expiração, ordem ou concorrência | — |
@@ -43,6 +47,7 @@
 | **R3** — a garantia não depende de **qual** painel, nem de o painel constar de lista nenhuma | raiz de URL (padrão) | RQ-02, RQ-03 | Esquema do Cenário | CT-06 |
 | **R4** — a raiz nova sai do request, nunca do `APP_URL` | raiz de URL (padrão) | ADR-02 | EP | CT-08 |
 | **R5** — só encurta com **evidência positiva**; sem ela, não age | raiz de URL (padrão) | **RQ-06, RQ-07, RQ-08** (Adendo 1) | EP + tabela de decisão | CT-09…CT-12 |
+| **R6** — a correção está **ligada**: middleware no stack global, depois do `TrustProxies` | raiz de URL (padrão) | RQ-01 (sem registro, nada vale) + ADR-05 | EP | CT-13 |
 
 ## Fronteira com o Plano
 
@@ -243,7 +248,7 @@ Funcionalidade: o endereço do painel nunca exibe /public
 | # | Implementação errada plausível | Cenário que mata |
 |---|---|---|
 | M10 | monta a raiz nova com `config('app.url')` em vez do host do request | **CT-08** |
-| M11 | lê o host no `boot()` do provider, antes do `TrustProxies` | **não coberto por teste** — é decisão de LOCAL, e a guarda é a ADR-05 mais o registro em `bootstrap/app.php`. Lacuna declarada: reproduzir exigiria um proxy no arnês |
+| M11 | lê o host no `boot()` do provider, antes do `TrustProxies` | ⚠️ **sem matador direto.** Lacuna declarada: reproduzir o efeito exigiria um proxy no arnês, com `X-Forwarded-Port` divergente. O que existe é a guarda **estrutural** de CT-13, que fixa a posição no stack — mata a causa, não o sintoma |
 
 ---
 
@@ -309,6 +314,34 @@ Funcionalidade: o endereço do painel nunca exibe /public
 
 ---
 
+## Regra R6 — a correção está ligada
+
+> RQ-01 (sem registro, nada vale) + ADR-05 · perfil **padrão** · técnica: **EP**
+>
+> **Nasceu do QA-01 do ciclo 1**, e o achado é o mais grave do gate: os outros doze cenários
+> chamam `handle()` direto. Apagar o `append` de `bootstrap/app.php` deixa a feature **inerte**, e
+> os 2.479 testes do kit seguem verdes — nada no repositório afirmava o registro.
+>
+> A **ordem** também é afirmada: antes do `TrustProxies` o middleware leria host e porta sem os
+> `X-Forwarded-*` e congelaria uma raiz inalcançável. A ADR-05 decidia isso e nada mantinha.
+
+```gherkin
+    Cenário: [CT-13] o middleware está no stack global, depois do TrustProxies
+      Dado a aplicação configurada como o kit a entrega
+      Quando se inspeciona o stack de middleware global
+      Então `RaizDeUrlSemPublic` está nele
+      E a posição dele é posterior à do `TrustProxies`
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M15 | o `append` some do `bootstrap/app.php` | **CT-13** — provado por mutante: derruba só ele |
+| M16 | registrado **antes** do `TrustProxies` | **CT-13**, segunda asserção |
+
+---
+
 ## Checklist de Taxonomia
 
 | Item | Cenário que mata |
@@ -331,6 +364,8 @@ Funcionalidade: o endereço do painel nunca exibe /public
 | Upload | **não se aplica** |
 | Precisão monetária | **não se aplica** |
 | **Superfície Livewire** | **não se aplica**: sem página, widget ou componente — inventariado no `02` |
+| **Lista paralela** (classe nova citada em mais de um lugar) | **CT-13** — o registro em `bootstrap/app.php` é a segunda lista, e era a que ninguém guardava |
+| **Chave de configuração nova** | CT-11, CT-12; e o tri-estado (`""` e ilegível → `null`) por `BooleanoDoEnv::ouNulo()`, que é a convenção do kit |
 | **Estado do framework usado sem validar** | CT-05 — `getBaseUrl()` é derivado de variável de servidor, e as bordas de sufixo são o domínio inválido dele. Não vira índice de array, `parse` nem nome de coluna |
 | **IDOR por entidade** | **não se aplica**: nenhuma tabela persistida |
 | **Escopo com discriminante nulo** | CT-02 e **CT-09** — a base vazia e a ausência de sinal são os dois "nulos" desta feature, e os dois cenários declaram que o desejado é **não agir** |
@@ -351,6 +386,7 @@ Funcionalidade: o endereço do painel nunca exibe /public
 | CT-10 | `.htaccess` sem reescrita não é sinal | R5 | EP | Kit | idem | M13 |
 | CT-11 | declaração explícita vence a detecção | R5 | tabela de decisão | Kit | idem | M14 |
 | CT-12 | `false` vence o sinal presente | R5 | tabela de decisão | Kit | idem | M14 |
+| CT-13 | o middleware está registrado, depois do `TrustProxies` | R6 | EP | Kit | idem | M15, M16 |
 
 **Camada**: todos em `tests/Kit`, a suíte do kit com a aplicação bootada. É a mais barata que os
 prova: o oráculo é **a URL gerada**, e para observá-la bastam um `Request` construído e o gerador

@@ -94,8 +94,10 @@ So entering **once** through an address containing `/public` — an old bookmark
 enough for every link on that page to come out prefixed. Because the `.htaccess` usually redirects
 back, the prefix appears and disappears, which makes the problem look random.
 
-**The kit defends itself against this.** It refuses to honour a base URL ending in `/public` and
-rebuilds the root without that suffix, once per request. Three consequences worth knowing:
+**The kit defends itself against this — when it can tell that doing so is safe.** It refuses to
+honour a base URL ending in `/public` and rebuilds the root without that suffix, once per request,
+**but only when there is evidence that `/` really routes into `public/`**. Without that evidence it
+does nothing, and the reason is right below. Three consequences worth knowing:
 
 - it covers **any panel**, including ones you create — the fix is at the URL root, not in a list
   of panels;

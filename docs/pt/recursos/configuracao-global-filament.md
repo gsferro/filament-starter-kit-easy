@@ -95,8 +95,10 @@ Ou seja: basta entrar **uma vez** por um endereço com `/public` — um favorito
 compartilhado — para que toda a navegação daquela página saia prefixada. Como o `.htaccess`
 costuma redirecionar de volta, o prefixo aparece e some, o que faz o problema parecer aleatório.
 
-**O kit se defende disso sozinho.** Ele recusa honrar uma base de endereço terminada em `/public`
-e reconstrói a raiz sem o sufixo, uma vez por requisição. Três consequências que valem saber:
+**O kit se defende disso — quando consegue saber que é seguro.** Ele recusa honrar uma base de
+endereço terminada em `/public` e reconstrói a raiz sem o sufixo, uma vez por requisição, **mas só
+quando há sinal de que `/` realmente roteia para dentro de `public/`**. Sem esse sinal ele não age,
+e o motivo está logo abaixo. Três consequências que valem saber:
 
 - vale para **qualquer painel**, inclusive os que você criar — a correção é na raiz do endereço,
   não numa lista de painéis;

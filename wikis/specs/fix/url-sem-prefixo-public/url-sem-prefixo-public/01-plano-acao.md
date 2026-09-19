@@ -21,6 +21,9 @@
 | RQ-03 | vale para painel novo do usuário do kit | 1 | a correção é na **raiz da URL**, não numa lista de painéis — é isto que a satisfaz |
 | RQ-04 | investigação e atribuição da causa | — | **já entregue** no `00`, seção "Achado da investigação" |
 | RQ-05 | kit, branch própria, PR para a `main` | 4 | branch `fix/url-sem-prefixo-public` |
+| RQ-06 | só remove com evidência positiva | 1 | *(Adendo 1)* `deveRemover()`; CT-09, CT-10 |
+| RQ-07 | sem evidência, não age | 1 | *(Adendo 1)* falha segura; CT-09, CT-10 |
+| RQ-08 | o operador declara por configuração | 1 | *(Adendo 1)* `kit.url.remover_sufixo_public`; CT-11, CT-12 |
 
 ## Objetivo
 
@@ -106,10 +109,13 @@ Nenhuma nova.
 
 ## Riscos
 
-- **Aplicação que vive legitimamente sob um caminho terminado em `public`**: teria a raiz
-  encurtada. Registrado como ambiguidade no `00` e assumido deliberadamente — é o caso quebrado
-  visto de outro ângulo. Mitigação: CT-04 fixa que só o sufixo `/public` é tocado, e `/meupublic`
-  não é.
+- ~~**Aplicação que vive legitimamente sob um caminho terminado em `public`** seria o caso
+  quebrado visto de outro ângulo~~ — *(alterado em 2026-09-18: **a premissa era falsa**. Um
+  servidor com `DocumentRoot` na raiz e **sem** reescrita entrega a mesma base `/public` e
+  funciona; encurtar ali quebra tudo. Ver Adendo 1 do `00` e ADR-05. A mitigação passa a ser a
+  exigência de evidência positiva, coberta por CT-09 e CT-10.)*
+- **Sufixo parecido não é sufixo**: `/meupublic` e `/publicacoes` não podem ser tocados —
+  CT-05.
 - **Proxy reverso que termina o TLS**: `getSchemeAndHttpHost()` depende de `TrustProxies` estar
   configurado. O kit já depende disso em qualquer geração de URL absoluta — a correção não piora
   nem melhora esse ponto. Declarado na ADR-03.

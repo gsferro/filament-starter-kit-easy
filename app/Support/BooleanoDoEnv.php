@@ -58,4 +58,25 @@ class BooleanoDoEnv
 
         return filter_var($bruto, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? $padrao;
     }
+
+    /**
+     * O mesmo, para chave de TRÊS estados: declarado como sim, declarado como não, ou ausente.
+     *
+     * Existe porque nem toda chave tem um padrão booleano. Algumas têm um padrão que é
+     * **"decida sozinho"** — e aí `null` não é a ausência de resposta, é a resposta.
+     * `kit.url.remover_sufixo_public` é assim: `null` manda detectar, `true` e `false` declaram.
+     *
+     * Ausente, vazio e ilegível caem todos em `null`, e isso é deliberado: numa chave
+     * tri-estado, valor que não se entende deve devolver o comportamento padrão, nunca o
+     * `false` que o `filter_var` cru produziria. `KIT_ALGO=` no `.env` é chave em branco, não
+     * chave desligada.
+     */
+    public static function ouNulo(mixed $bruto): ?bool
+    {
+        if ($bruto === null || $bruto === '') {
+            return null;
+        }
+
+        return filter_var($bruto, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    }
 }

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\RaizDeUrlSemPublic;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,18 +25,23 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * A primeira versão desta correção encurtava nos dois. CT-09 é o cenário que a derrubou.
  *
- * ## Duas armadilhas de arnês, as duas medidas
+ * ## A armadilha de arnês, medida — e as duas lições falsas que estavam escritas aqui
  *
- * **1. O `UrlGenerator` guarda a própria referência de request.** Trocar
- * `app()->instance('request', …)` não o alcança. Sem `URL::setRequest()`, "antes" e "depois" saem
- * idênticos e o cenário passa **sem exercitar nada**.
+ * **`SCRIPT_NAME` sozinho não basta.** O Symfony compara o basename dele com o de
+ * `SCRIPT_FILENAME` para derivar a base; sem o segundo, ela sai **vazia** em todos os casos e o
+ * mundo quebrado nunca é reproduzido — o cenário fica verde sem exercitar nada:
  *
- * **2. O Symfony percorre `SCRIPT_FILENAME`, `PHP_SELF` e `ORIG_SCRIPT_NAME`** para derivar a
- * base, não só `SCRIPT_NAME`. Omitir qualquer uma devolve base **vazia** em todos os casos, e o
- * mundo quebrado nunca é reproduzido.
+ *     SCRIPT_NAME + SCRIPT_FILENAME    base = /public   <- o que basta
+ *     só SCRIPT_NAME                   base = (vazio)   <- o furo
  *
- * As duas produzem o mesmo sintoma — teste verde que não testa — por causas diferentes, e as duas
- * custaram um harness errado durante a investigação.
+ * **Este bloco já afirmou outras duas coisas, e as duas eram falsas.** Que `PHP_SELF` e
+ * `REQUEST_URI` eram load-bearing — não são, a base continua `/public` sem eles — e que
+ * `app()->instance('request', …)` não alcançava o `UrlGenerator`, exigindo `URL::setRequest()`
+ * — alcança, pelo `rebinding` que o `RoutingServiceProvider` registra.
+ *
+ * O harness que falhou durante a investigação não tinha `SCRIPT_FILENAME`, e eu atribuí o
+ * sintoma à causa errada. Fica registrado porque comentário de teste que ensina o errado é pior
+ * que comentário nenhum.
  */
 
 /**
@@ -43,23 +50,16 @@ use Symfony\Component\HttpFoundation\Response;
  * `$base` é o que o servidor faz o Symfony derivar. `$host` existe para CT-08, que separa "usa o
  * host do request" de "usa o `APP_URL`".
  */
-function comABaseDeUrl(string $base, string $host = 'https://kit.test'): void
+function comABaseDeUrl(string $base, string $host = 'kit.test'): void
 {
-    $esquema        = str_starts_with($host, 'https://') ? 'on' : 'off';
-    $hostSemEsquema = (string) preg_replace('~^https?://~', '', $host);
-
     $request = Request::create($base.'/qualquer', 'GET', [], [], [], [
         'SCRIPT_NAME'     => $base.'/index.php',
         'SCRIPT_FILENAME' => base_path(ltrim($base, '/').'/index.php'),
-        'PHP_SELF'        => $base.'/index.php',
-        'REQUEST_URI'     => $base.'/qualquer',
-        'HTTP_HOST'       => $hostSemEsquema,
-        'HTTPS'           => $esquema,
+        'HTTP_HOST'       => $host,
+        'HTTPS'           => 'on',
     ]);
 
     app()->instance('request', $request);
-    URL::setRequest($request);
-    URL::forceRootUrl(null);
 
     (new RaizDeUrlSemPublic)->handle($request, fn (): Response => new Response);
 }
@@ -67,29 +67,36 @@ function comABaseDeUrl(string $base, string $host = 'https://kit.test'): void
 /** O sinal do arranjo A: `.htaccess` na raiz reescrevendo para dentro de `public/`. */
 function comReescritaNaRaiz(): void
 {
-    file_put_contents(base_path('.htaccess'), implode("\n", [
-        '<IfModule mod_rewrite.c>',
-        'RewriteEngine On',
-        'RewriteCond %{REQUEST_URI} !^/public/',
-        'RewriteRule ^(.*)$ public/$1 [L,NC]',
-        '</IfModule>',
-    ]));
+    // Só a linha que a detecção lê. O `.htaccess` de verdade tem mais, e nada disso muda a resposta.
+    file_put_contents(base_path('.htaccess'), 'RewriteRule ^(.*)$ public/$1 [L,NC]');
 }
 
+/*
+ * O `.htaccess` da raiz é fixture — e a raiz é o working tree de quem roda a suíte.
+ *
+ * QA-15 do ciclo 1: a versão anterior apagava o arquivo direto, e quem tivesse um `.htaccess`
+ * real ali — não versionado, não ignorado — o perderia ao rodar os testes. Agora o conteúdo
+ * original é guardado e devolvido.
+ */
 beforeEach(function (): void {
-    /*
-     * Estado de partida declarado: sem reescrita e sem declaração explícita. É o mundo do
-     * arranjo B, e é o default de quem instala o kit — ele não distribui `.htaccess` na raiz.
-     */
+    $this->htaccessOriginal = is_file(base_path('.htaccess'))
+        ? (string) file_get_contents(base_path('.htaccess'))
+        : null;
+
+    // Estado de partida: sem reescrita e sem declaração. É o mundo do arranjo B, e o default de
+    // quem instala o kit — ele não distribui `.htaccess` na raiz.
     @unlink(base_path('.htaccess'));
     config()->set('kit.url.remover_sufixo_public', null);
-    RaizDeUrlSemPublic::esquecerODetectado();
 });
 
 afterEach(function (): void {
-    @unlink(base_path('.htaccess'));
+    if ($this->htaccessOriginal === null) {
+        @unlink(base_path('.htaccess'));
+    } else {
+        file_put_contents(base_path('.htaccess'), $this->htaccessOriginal);
+    }
+
     URL::forceRootUrl(null);
-    RaizDeUrlSemPublic::esquecerODetectado();
 });
 
 it('[CT-01] o request que chega com /public gera endereco limpo', function (): void {
@@ -179,7 +186,7 @@ it('[CT-08] o esquema e o host vem do request, nao de APP_URL', function (): voi
     config()->set('app.url', 'https://kit.test');
 
     comReescritaNaRaiz();
-    comABaseDeUrl('/public', host: 'https://outro.test');
+    comABaseDeUrl('/public', host: 'outro.test');
 
     expect(url('/app'))->toBe('https://outro.test/app');
 });
@@ -223,19 +230,55 @@ it('[CT-10] htaccess sem reescrita para public nao conta como sinal', function (
 /**
  * CT-11 — a declaração explícita vence a detecção, nos dois sentidos.
  *
- * `true` é a saída para nginx, onde não existe `.htaccess` para inspecionar mas a reescrita está
- * no vhost. `false` desliga de vez, para quem não quiser a correção.
+ * `true` é a saída para nginx, onde não há `.htaccess` para inspecionar mas a reescrita está no
+ * vhost.
+ *
+ * **A linha `false` que existia aqui foi cortada**: sem `.htaccess` a detecção já devolve falso,
+ * então ela passava mesmo se a config fosse ignorada por completo — tautologia, e CT-09 já cobre
+ * aquele caminho. Quem mata o `false` de verdade é CT-12, onde o sinal existe.
  */
-it('[CT-11] a declaracao explicita vence a deteccao', function (bool $declarado, string $esperado): void {
-    config()->set('kit.url.remover_sufixo_public', $declarado);
+it('[CT-11] true declarado encurta mesmo sem sinal, para nginx', function (): void {
+    config()->set('kit.url.remover_sufixo_public', true);
 
     comABaseDeUrl('/public');
 
-    expect(url('/app'))->toBe($esperado);
-})->with([
-    'true sem htaccess (nginx)' => [true, 'https://kit.test/app'],
-    'false desliga de vez'      => [false, 'https://kit.test/public/app'],
-]);
+    expect(url('/app'))->toBe('https://kit.test/app');
+});
+
+/**
+ * CT-13 — o middleware está registrado no stack global, depois do `TrustProxies`.
+ *
+ * **QA-01 do ciclo 1, e o achado mais grave.** Os outros casos chamam `handle()` direto: apagar
+ * o `append` de `bootstrap/app.php` deixa a feature **inerte** e os 2.479 testes do kit seguem
+ * verdes. Nada no repositório afirmava o registro — a mesma classe de "lista paralela" que já
+ * cobrou nesta família.
+ *
+ * A ordem também é afirmada, e não é detalhe: antes do `TrustProxies` o middleware leria host e
+ * porta sem os cabeçalhos `X-Forwarded-*`, e congelaria uma raiz que o navegador não alcança.
+ * É a ADR-05, agora com guarda.
+ */
+it('[CT-13] o middleware esta no stack global, depois do TrustProxies', function (): void {
+    /*
+     * O CONTRATO, e não `Foundation\Http\Kernel` direto: resolver a classe concreta instancia um
+     * kernel novo, com o stack de fábrica e sem o que o `bootstrap/app.php` configurou. O teste
+     * ficaria vermelho com o registro no lugar — medido.
+     */
+    $global = app(Kernel::class)->getGlobalMiddleware();
+
+    /*
+     * `in_array` e não `toContain($classe, $mensagem)`: o `toContain` do Pest recebe VÁRIOS
+     * needles, não uma mensagem — passar a explicação como segundo argumento a transforma numa
+     * segunda busca, e o caso fica vermelho pelo motivo errado.
+     */
+    expect(in_array(RaizDeUrlSemPublic::class, $global, true))->toBeTrue(
+        'o middleware saiu do stack global — a correção fica inerte e nada mais acusa',
+    );
+
+    expect(array_search(RaizDeUrlSemPublic::class, $global, true))->toBeGreaterThan(
+        array_search(TrustProxies::class, $global, true),
+        'precisa rodar DEPOIS do TrustProxies, senão lê host e porta sem os X-Forwarded-*',
+    );
+});
 
 /**
  * CT-12 — `false` explícito vence até quando o sinal existe.

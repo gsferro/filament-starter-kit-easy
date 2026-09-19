@@ -64,15 +64,6 @@ final class RaizDeUrlSemPublic
     /** O segmento que o `DocumentRoot` mal configurado deixa na base da URL. */
     private const SUFIXO = '/public';
 
-    /**
-     * Memo do sinal, por processo.
-     *
-     * A detecção lê um arquivo, e a leitura só acontece quando a base já veio com o sufixo — ou
-     * seja, nunca em instalação correta. Ainda assim o `.htaccess` não muda em runtime, e uma
-     * leitura por request seria I/O à toa em toda página de uma instalação mal configurada.
-     */
-    private static ?bool $deveRemover = null;
-
     public function handle(Request $request, Closure $next): Response
     {
         $base = $request->getBaseUrl();
@@ -87,46 +78,34 @@ final class RaizDeUrlSemPublic
         return $next($request);
     }
 
-    /** Esquece o sinal memoizado — para teste, e para quem trocar o `.htaccess` em runtime. */
-    public static function esquecerODetectado(): void
-    {
-        self::$deveRemover = null;
-    }
-
+    /**
+     * Encurtar é seguro aqui?
+     *
+     * Declaração explícita vence, nos dois sentidos — é a saída para nginx, onde não há
+     * `.htaccess` para inspecionar mas a reescrita mora no vhost, e para quem quiser desligar.
+     *
+     * Sem declaração, o sinal é o `.htaccess` da raiz com uma `RewriteRule` apontando para
+     * `public/`: exatamente o arquivo que o arranjo A tem e o arranjo B não tem, e o único que o
+     * PHP observa sem sair pela rede. Sem sinal, `false` — nada acontece, e o que funcionava
+     * continua funcionando.
+     *
+     * Sem memo: a leitura só acontece quando a base já veio com o sufixo, ou seja **nunca** em
+     * instalação correta, e o arquivo tem poucas linhas. Cachear custaria uma API pública só para
+     * o teste conseguir resetar.
+     */
     private function deveRemover(): bool
     {
         $declarado = config('kit.url.remover_sufixo_public');
 
-        // Declaração explícita vence a detecção, nos dois sentidos. É a saída para nginx, onde
-        // não existe `.htaccess` para inspecionar, e para quem quiser desligar de vez.
         if ($declarado !== null) {
             return (bool) $declarado;
         }
 
-        return self::$deveRemover ??= $this->raizReescreveParaPublic();
-    }
-
-    /**
-     * Há sinal de que `/` roteia para dentro de `public/`?
-     *
-     * O sinal é o `.htaccess` na raiz do projeto com uma `RewriteRule` que aponta para `public/`.
-     * É exatamente o arquivo que o arranjo A tem e o arranjo B não tem — e é o único sinal que o
-     * PHP consegue observar sem sair pela rede.
-     *
-     * Em nginx não há `.htaccess`, e a resposta é `false`: nenhuma ação, comportamento de hoje
-     * preservado. Quem servir nginx com reescrita equivalente declara por config.
-     */
-    private function raizReescreveParaPublic(): bool
-    {
         $htaccess = base_path('.htaccess');
 
-        if (! is_file($htaccess)) {
-            return false;
-        }
-
-        return (bool) preg_match(
+        return is_file($htaccess) && preg_match(
             '~^\s*RewriteRule\s+\S+\s+/?public/~mi',
             (string) file_get_contents($htaccess),
-        );
+        ) === 1;
     }
 }

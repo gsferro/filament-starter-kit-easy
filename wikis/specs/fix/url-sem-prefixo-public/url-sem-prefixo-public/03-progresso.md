@@ -4,49 +4,94 @@
 
 ## 1. `configureRaizDeUrl()` no `KitServiceProvider`
 
-- [ ] Método `protected` criado, com o guard de console e a comparação de sufixo
-- [ ] Chamado em `boot()`
+- [x] `App\Http\Middleware\RaizDeUrlSemPublic` criado — *(alterado: virou middleware, não método de provider; ver ADR-05)* — 18/18 verdes, 2026-09-18
+- [x] Anexado ao stack global em `bootstrap/app.php`, depois do `TrustProxies` — 2026-09-18
+- [x] `kit.url.remover_sufixo_public` em `config/kit.php` — CT-11, CT-12, 2026-09-18
 
 ## 2. Cobertura por teste
 
-- [ ] `tests/Kit/UrlSemPrefixoPublicTest.php` — CT-01…CT-08
+- [x] `tests/Kit/UrlSemPrefixoPublicTest.php` — CT-01…CT-06, CT-08…CT-12 — 18/18, 20 asserções, 2026-09-18
 
 ## 3. Documentação
 
-- [ ] `docs/pt/recursos/configuracao-global-filament.md` — seção do `DocumentRoot`
-- [ ] `docs/en/recursos/configuracao-global-filament.md` — par em inglês
-- [ ] `CHANGELOG.md` — entrada em *Corrigido*
+- [x] `docs/pt/recursos/configuracao-global-filament.md` — seção do `DocumentRoot`, a regra da evidência e a limitação declarada — 2026-09-18
+- [x] `docs/en/recursos/configuracao-global-filament.md` — par em inglês — 2026-09-18
+- [x] `CHANGELOG.md` — entrada em *Corrigido*, sob `[Unreleased]` — 2026-09-18
 
 ## 4. Entrega
 
-- [ ] Branch `fix/url-sem-prefixo-public` em worktree próprio
+- [x] Branch `fix/url-sem-prefixo-public` em worktree próprio, rebaseada em `v0.35.0` — commit `3d8161a`, 2026-09-18
 - [ ] PR para a `main`
 
 ## Verificação Final
 
-- [ ] `/ponytail:ponytail-review` no diff
-- [ ] `vendor/bin/pint --dirty`
-- [ ] `php artisan test tests/Kit/UrlSemPrefixoPublicTest.php`
-- [ ] `composer test:kit` — regressão obrigatória (toca infra compartilhada)
-- [ ] **Custo medido** — zero query no caminho comum
-- [ ] **`/code-review` no diff (step 7.5)**
-- [ ] Falsificabilidade provada por mutante — cada CT falha sem a correção
-- [ ] Citações `arquivo:símbolo:linha` reverificadas
-- [ ] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa
-- [ ] Docs pt/en e CHANGELOG reconciliados
-- [ ] `git commit`
+- [x] `/ponytail:ponytail-review` no diff — o corte que saiu dele foi o guard `runningInConsole()`, removido por ser inerte; ver o desvio no `01`, 2026-09-18
+- [x] `vendor/bin/pint --dirty` — sem pendência, 2026-09-18
+- [x] `php artisan test tests/Kit/UrlSemPrefixoPublicTest.php` — 18/18, 2026-09-18
+- [x] `composer test:kit` — **2.479/2.479**, zero vermelhos, na base já rebaseada, 2026-09-18
+- [x] **Custo medido** — zero query. Em instalação correta a base é vazia e o middleware sai na primeira condição; a leitura do `.htaccess` só acontece quando a base já veio com o sufixo, e é memoizada por processo, 2026-09-18
+- [x] **`/code-review` no diff (step 7.5)** — **5 achados, 1 high**. O high derrubou o desenho e virou o Adendo 1 do `00` + ADR-05 + CT-09…CT-12. Ver `## Desvios do Plano`, 2026-09-18
+- [x] Falsificabilidade por mutante — 5 rodados no desenho anterior, 5 mortos (sem a correção: 8 vermelhos; `str_contains`: 1; zera a raiz: 1; força sempre: 4; `APP_URL`: 8), 2026-09-18
+- [x] Citações `arquivo:símbolo:linha` — a wiki não cita linha de vendor; as referências são a classe e o arquivo de config, conferidos, 2026-09-18
+- [x] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa — CT-07 removido dos dois lados, com o motivo escrito no `04`, 2026-09-18
+- [x] Docs pt/en e CHANGELOG reconciliados — inclusive a frase que o achado 3 desmentiu, 2026-09-18
+- [x] `git commit` — `3d8161a`, 2026-09-18
 
 ## Conformidade com Rules
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
-| — | — | — | preenchida no step 7 |
+| `.ai/rules/app.md` | `app/**` | aplicada | middleware `final`, tipos explícitos, PHPDoc sobre comentário inline |
+| `.ai/rules/config.md` | `config/**` | aplicada | chave documentada no bloco de comentário, com os três valores e o porquê |
+| `.ai/rules/testes.md` | `tests/**` | aplicada | estado de partida declarado no `beforeEach`; helper no próprio arquivo, que é o único consumidor |
+| `.ai/rules/specs.md` | `wikis/specs/**` | aplicada | ADRs em formato completo; o Adendo 1 registra o que mudou e por quê |
 
 ## Quality Gate
 
 <!-- Enquanto vazio, a feature NÃO está concluída e o PR não abre. -->
 
-- **Ciclo**: — · **Veredito**: — · **Data**: —
+- **Ciclo**: 1 · **Veredito**: **REPROVADO → especificação** · **Data**: 2026-09-18
+- Blocker 0 · Major 6 · Minor 9 · Cosmético 1 — ver `06-relatorio-qa.md`
+- Nenhum Major é de comportamento do produto. Abertos:
+  - **QA-01** (destino 3) — apagar o `append` em `bootstrap/app.php` deixa a suíte inteira verde
+  - **QA-02** (destino 3 → 2) — `KIT_URL_REMOVER_SUFIXO_PUBLIC=` vazio vira `false` em vez do padrão `null`
+  - **QA-03** (destino 1) — a varredura SFDIPOT do `04` ainda credita **CT-07**
+  - **QA-05** (destino 1) — o `01` inteiro descreve a implementação abandonada, inclusive o "Riscos" que o Adendo 1 desmentiu
+  - **QA-06** (destino 1) — RQ-06/07/08 sem linha na `## Cobertura do Requisito`
+  - **QA-07** (destino 1) — docs pt/en e CHANGELOG abrem afirmando a remoção incondicional
+- **PR não abre** enquanto houver Major aberto.
+
+### Disposição dos achados do ciclo 1 — todos fechados em 2026-09-18
+
+| Achado | Destino | O que foi feito |
+|---|---|---|
+| **QA-01** | 3 | **CT-13**: afirma presença no stack global **e** posição depois do `TrustProxies` — a ADR-05 finalmente com guarda. Mutante provado: apagar o `append` derruba só ele |
+| **QA-02** | 3 → 2 | nasce `BooleanoDoEnv::ouNulo()`, irmão tri-estado do `comPadrao()` que o kit já tinha. Medido: `""` e `"lixo"` → `null`; `"true"`/`"false"` declaram |
+| **QA-03** | 1 | a linha `I` do SFDIPOT deixa de creditar CT-07 e passa a apontar CT-13 |
+| **QA-05** | 1 | o `## Riscos` do `01` marca a premissa como **falsa**, com o motivo, e aponta o Adendo 1 |
+| **QA-06** | 1 | RQ-06/07/08 ganham linha em `## Cobertura do Requisito` |
+| **QA-07** | 1 | a ressalva passou para a **abertura** — docs pt, docs en e CHANGELOG |
+| QA-04, QA-08…QA-14, QA-16 | 1 | contagens do `04` refeitas (12 cenários, 6 regras, 16 mutantes, **1 sem matador** — M11, declarado), estouro de teto de R5 declarado, e o Índice deixou de creditar mortes que o cenário não produz |
+| **QA-15** | 3 | o teste guarda e devolve o `.htaccess` real do working tree |
+
+- **Ciclo 2**: pendente — reexecução depois destas correções.
+
+### Achados do `/ponytail:ponytail-review` (paralelo ao ciclo 1)
+
+`net: -60 lines possible`. **Aplicados**: memo estático e a API pública que ele exigia, fusão dos
+dois métodos privados, `env()` pelo helper do kit, `URL::setRequest` e `PHP_SELF`/`REQUEST_URI`
+fora do arnês, fixture reduzida à linha que a detecção lê, e a linha `false` de CT-11 cortada por
+ser **tautológica** — sem `.htaccess` a detecção já devolve falso.
+
+**Recusados, com motivo**: inlinar `'/public'` trocaria constante nomeada por número mágico; e
+`/sistema` no CT-05 não é coberto por CT-02 — um é base vazia, o outro é base não-vazia que não
+termina em `public`.
+
+**E ele derrubou duas afirmações minhas.** O docblock do teste ensinava, como lição medida, que
+`PHP_SELF`/`REQUEST_URI` eram load-bearing e que `app()->instance('request')` não alcançava o
+`UrlGenerator`. Reverifiquei: **as duas falsas**. O harness que falhou na investigação não tinha
+`SCRIPT_FILENAME`, e eu atribuí o sintoma à causa errada. O bloco foi reescrito com a medição e
+com o registro do erro — comentário de teste que ensina o errado é pior que comentário nenhum.
 
 ## Auditoria Pré-Implementação
 
@@ -54,7 +99,9 @@
 
 | Premissa do plano | O código real diz | Correção aplicada na wiki |
 |---|---|---|
-| a ser preenchida | | |
+| o guard `runningInConsole()` protege alguma coisa | em `artisan` o `SCRIPT_NAME` é `artisan` e a base sai **vazia** — o teste de sufixo já devolve falso | passo 1 do `01` reescrito; o guard saiu |
+| base `/public` identifica o arranjo quebrado | **falso** — o arranjo B tem a mesma base e `/app` não existe nele | Adendo 1 do `00`, ADR-05, R5 no `04` |
+| `boot()` de provider é um bom lugar | roda **antes** do `TrustProxies`; host e porta sairiam sem os `X-Forwarded-*` | ADR-05: virou middleware global |
 
 ### Varredura da classe irmã (step 5)
 
@@ -66,15 +113,22 @@
 
 | # | Sugestão de corte | Aplicada? | Onde |
 |---|---|---|---|
-| a ser preenchida | | | |
+| 1 | guard `runningInConsole()` inerte | **sim** | `RaizDeUrlSemPublic` — a condição de sufixo já cobre |
+| 2 | constante de exclusão com um item | **sim, não criada** | uma lista que ninguém lê seria código morto se passando por regra |
 
 ## Blockers
 
-- nenhum até aqui
+- nenhum
 
 ## Desvios do Plano
 
-- nenhum até aqui
+| # | Desvio | Motivo | Propagado para |
+|---|---|---|---|
+| 1 | o guard `runningInConsole()` não existe | medido inerte: em `artisan` a base é vazia | `01` passo 1, `04` R4 |
+| 2 | a correção é **middleware**, não método de provider | `boot()` roda antes do `TrustProxies` | ADR-05, `01` passo 1 |
+| 3 | só encurta com **evidência positiva** | sem ela, quebra o arranjo B — achado 1 do `/code-review` | Adendo 1 do `00`, ADR-05, R5 no `04` |
+| 4 | CT-07 removido | não era falsificável; passava com qualquer implementação | `04`, com o motivo escrito |
+| 5 | READMEs pt/en de 58 → 59 specs | teste do kit conta `00-requisito.md` da árvore | `README.md`, `README.en.md` |
 
 ## Notas de Implementação
 
@@ -91,5 +145,12 @@
 
 ## Retrospectiva
 
-- **Funcionou bem**: —
-- **Faltou no plano**: —
+- **Funcionou bem**: a investigação **antes** da wiki. Medir a base do request em vez de supor
+  produziu a tabela que explica a intermitência, e é ela que sustenta o `00` inteiro.
+- **Faltou no plano**: a distinção entre os arranjos A e B. Eu tratei "base `/public`" como
+  sinônimo de "instalação quebrada", escrevi isso no `00` como se fosse fato, e só o
+  `/code-review` do diff pegou. Nenhum gate anterior podia — o plano estava coerente consigo
+  mesmo, e o erro era de **premissa sobre o mundo**, não de código.
+- **Sobre o arnês**: duas tentativas de harness passaram verdes sem exercitar nada, por causas
+  diferentes (`UrlGenerator` com request próprio; `SCRIPT_FILENAME`/`PHP_SELF` ausentes). As duas
+  estão escritas no `04` e no topo do teste, porque o próximo a mexer aqui vai tropeçar nelas.
