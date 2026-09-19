@@ -1,5 +1,8 @@
 <?php
 
+use Filament\Facades\Filament;
+use Illuminate\Routing\Route;
+use Illuminate\Support\Collection;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Process\Process;
 
@@ -779,3 +782,149 @@ it('mantem os numeros objetivos dos readmes sincronizados com a arvore', functio
             ->toContain('| '.($arquivo === 'README.md' ? 'Project rules para agentes de IA (`.ai/rules/`, sem o índice)' : 'Project rules for AI agents (`.ai/rules/`, excluding the index)')." | **{$rules}** |");
     }
 });
+
+/**
+ * A tabela por painel de "Nossos números" — as cinco linhas que envelheciam em silêncio.
+ *
+ * O caso acima trava sete linhas (pacotes, migrations, policies, comandos, specs, rules) e **elas
+ * estão certas justamente porque ele existe**. A tabela dos painéis não tinha guarda nenhuma, e a
+ * auditoria de 2026-09-19 achou **três das cinco linhas erradas**:
+ *
+ * | linha | declarado | real |
+ * |---|---|---|
+ * | Telas navegáveis | 12 / 28 / 27 | 14 / 31 / 28 |
+ * | Páginas próprias | 4 / 4 / 12 | 5 / 5 / 13 |
+ * | Rotas `GET` | 21 / 35 / 33 | 23 / 38 / 34 |
+ *
+ * A defasagem maior não foi a `ViewUser` da v0.36.0 (que bate em dois painéis): foi o
+ * `DashboardClassico`, registrado nos **três**. E a linha *Telas navegáveis* estava parada desde
+ * 18/08/2026 — ela atravessou um fact-check inteiro sem ser corrigida porque **não tinha critério
+ * declarado**, e o que não é falsificável ninguém confere. O critério agora está escrito no próprio
+ * README, ao lado da tabela.
+ *
+ * ## Por que contar pelo Filament e nunca por `ls`
+ *
+ * `ls app/Filament/**\/Widgets/*.php` dá **30**; `$painel->getWidgets()` dá **29**. A diferença são
+ * os seis widgets de `Tenants/Widgets/`, que são widgets de **resource** e não de painel. Contar
+ * arquivo mede o diretório; contar pelo painel mede o que o usuário alcança — e é isso que a tabela
+ * promete.
+ */
+it('[CT-25] mantem a tabela por painel dos readmes sincronizada com os paineis registrados', function (): void {
+    $rotasGet = collect(app('router')->getRoutes())
+        ->filter(fn (Route $rota): bool => in_array('GET', $rota->methods(), true));
+
+    $doPainel = static fn (Collection $rotas, string $caminho): Collection => $rotas->filter(
+        static fn (Route $rota): bool => $rota->uri() === $caminho || str_starts_with($rota->uri(), $caminho.'/'),
+    );
+
+    /*
+     * O critério de "tela navegável", e ele é o que está escrito no README: rota GET do painel COM
+     * NOME, descontadas autenticação, endpoint que devolve JSON e redirect. Sem nome é redirect;
+     * `.auth.` é login/registro/senha; `passkeys/` devolve JSON; `screen/lock` é overlay.
+     */
+    $ehTela = static function (Route $rota): bool {
+        $nome = $rota->getName();
+
+        return $nome !== null
+            && ! str_contains($nome, '.auth.')
+            && ! str_contains($rota->uri(), 'passkeys/')
+            && ! str_contains($rota->uri(), 'screen/lock');
+    };
+
+    $linhas = ['telas' => [], 'resources' => [], 'paginas' => [], 'widgets' => [], 'rotas' => []];
+
+    /*
+     * O `/infra` tem UMA rota a mais numa instalacao de verdade do que nesta suite, e a diferenca
+     * nao e defeito: `infra/queue-monitors/pending` so e registrada quando
+     * `config('queue.default') === 'database'`
+     * (`vendor/croustibat/filament-jobs-monitor/src/Models/QueueJob.php:59-64`, chamado em
+     * `.../Resources/QueueMonitorResource.php:386`), e o `phpunit.xml:142` fixa
+     * `QUEUE_CONNECTION=sync` de proposito.
+     *
+     * O `.env.example:52` entrega `QUEUE_CONNECTION=database`, e o README descreve o kit COMO
+     * INSTALADO — entao o numero certo la e o que inclui a pagina de pendentes. Medido: 28 telas e
+     * 34 rotas no /infra com `artisan`, 27 e 33 aqui.
+     *
+     * Sem este ajuste o teste exigiria do README o numero do AMBIENTE DE TESTE, que ninguem ve. O
+     * kit ja documenta a mesma pegadinha em `tests/Pest.php:telasDoKit()`.
+     */
+    $pendentesForaDaSuite = config('queue.default') !== 'database' ? 1 : 0;
+
+    foreach (['app', 'admin', 'infra'] as $id) {
+        $painel       = Filament::getPanel($id);
+        $doPainelDele = $doPainel($rotasGet, trim($painel->getPath(), '/'));
+        $ajuste       = $id === 'infra' ? $pendentesForaDaSuite : 0;
+
+        $linhas['telas'][]     = $doPainelDele->filter($ehTela)->count() + $ajuste;
+        $linhas['resources'][] = count($painel->getResources());
+        $linhas['paginas'][]   = count($painel->getPages());
+        $linhas['widgets'][]   = count($painel->getWidgets());
+        $linhas['rotas'][]     = $doPainelDele->count() + $ajuste;
+    }
+
+    // Piso de não-vacuidade: painel que não resolve devolve zero em tudo, e a tabela "bateria".
+    expect(array_sum($linhas['resources']))->toBeGreaterThan(10, 'os paineis nao resolveram — a comparacao seria vacua');
+
+    $linhaDaTabela = static fn (string $rotulo, array $valores): string => sprintf(
+        '| %s | %d | %d | %d | **%d** |',
+        $rotulo,
+        $valores[0],
+        $valores[1],
+        $valores[2],
+        array_sum($valores),
+    );
+
+    $rotulos = [
+        'README.md' => [
+            'telas'     => '**Telas navegáveis**',
+            'resources' => 'Resources',
+            'paginas'   => 'Páginas próprias',
+            'widgets'   => 'Widgets',
+            'rotas'     => 'Rotas `GET`',
+        ],
+        'README.en.md' => [
+            'telas'     => '**Navigable screens**',
+            'resources' => 'Resources',
+            'paginas'   => 'Standalone pages',
+            'widgets'   => 'Widgets',
+            'rotas'     => '`GET` routes',
+        ],
+    ];
+
+    foreach ($rotulos as $arquivo => $mapa) {
+        $readme = (string) file_get_contents(base_path($arquivo));
+
+        foreach ($mapa as $chave => $rotulo) {
+            expect($readme)->toContain($linhaDaTabela($rotulo, $linhas[$chave]));
+        }
+    }
+})->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README, que passa a ser do projeto.')->group('kit');
+
+/**
+ * A contagem de arquivos de teste dos readmes.
+ *
+ * Linha da tabela "Qualidade", e a única dela que sai de um `find` — as outras (casos, asserções,
+ * telas varridas) exigem rodar a suíte ou não têm definição operacional, e estão declaradas com
+ * data e ressalva. Esta não tem desculpa para envelhecer, e envelheceu: `126`/`149` viraram
+ * `143`/`169` sem ninguém notar.
+ */
+it('[CT-25] mantem a contagem de arquivos de teste dos readmes sincronizada', function (): void {
+    $contar = static fn (string $diretorio): int => Finder::create()
+        ->files()
+        ->in(base_path($diretorio))
+        ->depth('== 0')
+        ->name('*Test.php')
+        ->count();
+
+    $fundacao = $contar('tests/Kit') + $contar('tests/Tenancy');
+    $total    = Finder::create()->files()->in(base_path('tests'))->name('*Test.php')->count();
+
+    expect($fundacao)->toBeGreaterThan(50, 'a varredura de testes olhou o lugar errado')
+        ->and($total)->toBeGreaterThanOrEqual($fundacao);
+
+    expect((string) file_get_contents(base_path('README.md')))
+        ->toContain("| Arquivos de teste | **{$fundacao}** em `Kit` + `Tenancy` (**{$total}** no total) |");
+
+    expect((string) file_get_contents(base_path('README.en.md')))
+        ->toContain("| Test files | **{$fundacao}** in `Kit` + `Tenancy` (**{$total}** in total) |");
+})->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README, que passa a ser do projeto.')->group('kit');
