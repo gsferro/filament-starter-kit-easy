@@ -174,7 +174,7 @@ dois já vêm completos.
 |---|---:|
 | Casos de teste (`Kit` + `Tenancy`, medidos em 2026-09-08) | **2.226**, com **7.428 asserções** |
 | Telas varridas em navegador real | **55** |
-| Arquivos de teste | **144** em `Kit` + `Tenancy` (**170** no total) |
+| Arquivos de teste | **145** em `Kit` + `Tenancy` (**171** no total) |
 | PHPStan | **level 7**, zero erros |
 | FilaCheck | **17** regras, todas passando |
 

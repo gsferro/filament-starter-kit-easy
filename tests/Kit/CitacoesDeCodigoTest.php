@@ -101,6 +101,20 @@ function linhaDaDeclaracao(string $arquivo, string $simbolo): ?int
         }
     }
 
+    /*
+     * Chave de array. `'arte_do_login' => null` num arquivo de config é símbolo tanto quanto um
+     * método, e é citado como tal — `config/kit.php:arte_do_login:135`.
+     *
+     * Sem este ramo a mensagem dizia "o simbolo esta em lugar nenhum desse arquivo" para uma chave
+     * que existe, e isso manda quem lê procurar o defeito errado: ele conclui que a citação é
+     * inventada, quando o número é que está velho. Medido na primeira citação que o caso reprovou.
+     */
+    foreach ($linhas as $i => $linha) {
+        if (preg_match('~[\'"]'.preg_quote($nu, '~').'[\'"]\s*=>~', $linha) === 1) {
+            return $i + 1;
+        }
+    }
+
     return null;
 }
 
