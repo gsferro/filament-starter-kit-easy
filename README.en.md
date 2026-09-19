@@ -140,14 +140,27 @@ Not a showcase: it's the inventory of everything that already exists, and of wha
 
 | | `/app` | `/admin` | `/infra` | **Total** |
 |---|---:|---:|---:|---:|
-| **Navigable screens** | 12 | 28 | 27 | **67** |
+| **Navigable screens** | 14 | 31 | 28 | **73** |
 | Resources | 4 | 8 | 8 | **20** |
-| Standalone pages | 4 | 4 | 12 | **20** |
+| Standalone pages | 5 | 5 | 13 | **23** |
 | Widgets | 1 | 9 | 19 | **29** |
-| `GET` routes | 21 | 35 | 33 | **89** |
+| `GET` routes | 23 | 38 | 34 | **95** |
 
 `/app` is the smallest on purpose — it is born **empty**, because that's where your business comes in.
 The other two already come complete.
+
+> **The criterion for each row, so the numbers can be audited.** A *navigable screen* is a panel
+> `GET` route **with a route name**, excluding authentication routes, JSON endpoints and redirects.
+> *Standalone pages* is `$panel->getPages()`, with no exclusions. *`GET` routes* counts everything
+> under the panel path, including authentication and redirects. *Widgets* is `$panel->getWidgets()` —
+> **panel** widgets; the 6 resource widgets in `Tenants/Widgets/` are not included, which is why an
+> `ls` returns a larger number. Measured with `kit.tenancy.enabled = false`; with tenancy on, `/app`
+> routes gain the organisation prefix.
+>
+> Until v0.36.1 the *Navigable screens* row had no declared criterion and **was not falsifiable** —
+> it sat at `12 / 28 / 27` since 2026-08-18 and survived a whole fact-check uncorrected, because
+> there was no way to check it. All five rows are now locked by
+> `tests/Kit/SiteDeDocumentacaoTest.php`.
 
 | Foundation | |
 |---|---:|
@@ -161,7 +174,7 @@ The other two already come complete.
 |---|---:|
 | Test cases (`Kit` + `Tenancy`, measured on 2026-09-08) | **2,226**, with **7,428 assertions** |
 | Screens swept in a real browser | **55** |
-| Test files | **126** in `Kit` + `Tenancy` (**149** in total) |
+| Test files | **143** in `Kit` + `Tenancy` (**169** in total) |
 | PHPStan | **level 7**, zero errors |
 | FilaCheck | **17** rules, all passing |
 
