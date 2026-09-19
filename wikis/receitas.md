@@ -212,6 +212,150 @@ php artisan make:filament-relation-manager ProdutoResource itens nome --no-inter
 
 Pular isso deixa o RelationManager aberto a qualquer um que consiga abrir o Resource pai — sem erro, sem 403, sem pista.
 
+## Cabeçalho rico num Resource com Relations
+
+O caso: uma tela de `View` que mostra **o resumo do registro no topo** e **abas para os
+relacionamentos**. O kit já traz isso em `/admin/organizacoes/{id}` — `ViewTenant` + `UsersRelationManager`.
+
+O cabeçalho vem de `mortalkiller/filament-page-header`, registrado no `/admin` e no `/app`.
+
+### 1. O schema — o nome não é escolha sua
+
+```bash
+# não há gerador; crie o arquivo à mão
+```
+
+O pacote descobre a classe por **convenção sobre o MODEL do resource**, em
+`vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:65-66`:
+
+```
+{namespace do Resource}\Schemas\{class_basename do Model}Header
+```
+
+Então `App\Filament\Admin\Resources\Projetos\ProjetoResource` (model `Projeto`) pede
+`App\Filament\Admin\Resources\Projetos\Schemas\ProjetoHeader`, com `configure()` **estática**:
+
+```php
+class ProjetoHeader
+{
+    public static function configure(Schema $schema): Schema
+    {
+        return $schema->components([
+            Header::make()
+                ->heading(fn (Projeto $record): string => $record->nome)
+                ->avatar(fn (Projeto $record): ?string => $record->urlDaCapa())
+                ->initials(fn (Projeto $record): string => $record->nome)
+                ->badges([
+                    TextEntry::make('status')->badge(),
+                ])
+                ->metadata([
+                    MetadataEntry::make('cliente.nome')->label('Cliente')->fieldIcon(Heroicon::OutlinedBuildingOffice),
+                    MetadataEntry::make('prazo')->label('Prazo')->fieldIcon(Heroicon::OutlinedCalendar)->date('d/m/Y'),
+                ])
+                ->summary([
+                    TextEntry::make('horas')->label('Horas lançadas'),
+                ]),
+        ]);
+    }
+}
+```
+
+`heading()` e `description()` são herdados de `getHeading()`/`getSubheading()` quando você não os
+declara (`Components/Header.php:setUp:70-76`). Em página de registro o herdado é *"Editar {nome}"* —
+bom para a aba do navegador, que o pacote não toca, redundante no cabeçalho. Declare o nome.
+
+Molde no kit: `app/Filament/Admin/Resources/Tenants/Schemas/TenantHeader.php`.
+
+### 2. A página
+
+```php
+class ViewProjeto extends ViewRecord
+{
+    use HasPageHeader;
+
+    protected static string $resource = ProjetoResource::class;
+}
+```
+
+Nada mais. Repita em `EditProjeto` — a RQ de quem pediu isto no kit dizia "View/**Edit**", e é
+fácil entregar só a View sem perceber.
+
+### 3. As abas dos relacionamentos
+
+Por padrão o `ViewRecord` renderiza o infolist e, **abaixo**, os relation managers. Para fundir os
+dois numa barra de abas única — o resumo vira a primeira aba, os relacionamentos as seguintes:
+
+```php
+public function hasCombinedRelationManagerTabsWithContent(): bool
+{
+    return true;
+}
+
+public function getContentTabLabel(): ?string
+{
+    return 'Resumo';
+}
+```
+
+Os dois métodos são do **Filament**, não do pacote
+(`vendor/filament/filament/src/Resources/Pages/Concerns/HasRelationManagers.php:96` e
+`vendor/filament/filament/src/Resources/Pages/ViewRecord.php:62`).
+
+O cabeçalho fica **acima de todas as abas** e não disputa espaço com elas — são regiões de DOM
+disjuntas, e trocar de aba não reinicia o estado compacto do cabeçalho
+(`vendor/mortalkiller/filament-page-header/docs/configuration.md:232`). Coberto por
+`tests/Tenancy/PageHeaderTenancyTest.php:[CT-13]`.
+
+### 4. Modo compacto, se a tela for longa
+
+```php
+PageHeaderPlugin::make()->sticky()->compactBelow(1024)   // no painel, para todas as telas
+Header::make()->sticky()                                  // ou só neste cabeçalho
+```
+
+Compacto esconde descrição, metadata, summary e conteúdo extra; mantém título, badges, avatar menor
+e as ações. Para escolher o que sobra, use `whenCompact()` com `HeaderPart` — **nunca**
+`hideWhenCompact()` nem `retainSummaryWhenCompact()`, que estão `@deprecated` no vendor e são
+reprovados por `tests/Kit/PageHeaderTest.php:[CT-05]`.
+
+### As quatro armadilhas
+
+> **1. `getHeader()` na sua Page torna o pacote inerte, sem erro nenhum.** O trait sobrescreve
+> exatamente esse método, e método da classe vence método de trait. O vendor diz isso em
+> `docs/specification.md:15`: *"a page getHeader override wins"*. Se o cabeçalho não aparece, é a
+> primeira coisa a conferir.
+>
+> **2. Avatar em `data:` URI é descartado em silêncio.** `Header::getAvatarUrl():174-177` só aceita
+> `http`/`https`. O `App\Support\AvatarDeIniciais` do kit devolve `data:image/svg+xml;base64,…`,
+> então passá-lo ao cabeçalho não liga nada — e não dá erro. Use o accessor que devolve URL
+> (`getFilamentAvatarUrl()`, `urlDaLogo()`) e deixe `->initials()` como queda.
+>
+> **3. Depois de instalar ou atualizar o pacote: `php artisan filament:assets`.** Ele publica CSS e
+> JS próprios. Sem isso o cabeçalho sai sem estilo e o modo compacto fica inerte.
+>
+> **4. `whenCompact()` é apresentação, nunca autorização.** O vendor é explícito
+> (`docs/configuration.md:229`). Esconder um `summary()` com contagens no modo compacto não o
+> protege: o dado já foi renderizado e está no HTML.
+
+### Ligar num painel que ainda não tem
+
+O plugin está no `/admin` e no `/app`. Para o `/infra`, uma linha no `->plugins([...])` do provider:
+
+```php
+PageHeaderPlugin::make(),
+```
+
+**Instância nova, nunca uma variável reusada entre painéis**: `make()` é `app(self::class)` e o
+pacote não registra singleton, então o estado (modo, offset, mapeamentos) é por instância.
+Compartilhar faz a configuração de um painel valer no outro, em silêncio.
+
+### O que testar
+
+O cabeçalho renderizado, com o oráculo rodando **sobre a região do cabeçalho** — não sobre a página.
+`regiaoDoCabecalho()` em `tests/Pest.php` recorta o `<header class="fph-header">`, e
+`tests/Kit/PageHeaderTest.php:[CT-02]` é o controle negativo que prova que o recortador recorta.
+Predicado de HTML aplicado sobre a página inteira fica verde sobre qualquer coisa.
+
 ## Papel novo
 
 Pela tela: `/admin` → **Funções** → *Criar*. O campo **Painel** é o que dá o acesso; deixá-lo em branco cria um papel que só carrega permissões, e quem o tiver sozinho autentica e leva 403 nos três painéis.

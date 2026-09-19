@@ -3,6 +3,80 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.36.0] - 2026-09-19
+
+### Adicionado
+- **Cabeçalho rico nas telas de registro de usuário e organização.** As telas de View e Edit de
+  `User` (nos painéis `/admin` e `/app`) e de `Tenant` (no `/admin`) passam a mostrar avatar,
+  nome, badge de situação e metadados com ícone no topo, em vez do título simples do Filament.
+  Entra `mortalkiller/filament-page-header` `^2.1.5`, registrado nos painéis `/admin` e `/app`.
+
+  O `/infra` fica **de fora de propósito**: o `register()` do plugin acrescenta um render hook
+  `STYLES_AFTER` que emite a folha de estilo do pacote em *toda* página do painel, tenha ela
+  cabeçalho ou não, e lá não há tela alvo. Ligar depois é uma linha — a receita está em
+  `wikis/receitas.md`.
+
+  A constraint é `^2.1.5` e não `^2.1`: a **v2.1.4 quebra no Filament 5.8.2**. O
+  `.fi-header-actions-ctn` do 5.8.2 passou a trazer `sm:self-end`, que conflita com o layout do
+  pacote, e a correção é `align-self: auto` na CSS dele. Quem resolvesse a v2.1.4 teria as ações do
+  cabeçalho deslocadas, sem erro nenhum.
+
+- **Tela de visualização de usuário (`ViewUser`), nos dois painéis.** `User` tinha `index`,
+  `create` e `edit` e não tinha `view` — só `Tenant` tinha. Agora tem, com infolist próprio e a
+  permissão `View:User` sendo de fato consultada.
+
+  A permissão **já existia** no banco desde sempre (`view` está em
+  `config('filament-shield.policies.methods')`) e **nunca teve consumidor** — era checkbox em
+  `/admin/shield/roles` que não decidia nada. Nenhuma mudança de config, policy ou seeder foi
+  necessária; o que faltava era a tela. Quem atualiza por `kit:update` precisa ressemear os dois
+  seeders, e isso agora está escrito em `docs/pt/comecar/atualizando-o-projeto.md`.
+
+  A ficha do `/admin` mostra as organizações e os papéis da pessoa; a do `/app`, **não** — listar
+  as organizações de alguém ali contaria a quem administra a Acme que aquela pessoa também é da
+  Globex. O recorte por organização decide *quem* aparece; ele não decide o que a ficha conta sobre
+  quem aparece.
+
+- **`ViewAction` nas listagens de usuário**, nos dois painéis. Ela navega em vez de abrir modal
+  porque a página `view` agora existe — `Page::getDefaultActionUrl()` só devolve URL quando
+  `hasPage('view')`.
+
+- **Receita "Cabeçalho rico num Resource com Relations"** em `wikis/receitas.md`, com o caso real
+  do kit (`ViewTenant` + `UsersRelationManager`) e as quatro armadilhas do pacote, todas
+  silenciosas.
+
+### Alterado
+- **`filament/filament` passa de `^5.6` para `^5.8.1`.** A v0.35.0 registrou que o `^5.6` era
+  deliberado, "para não deixar de fora quem ainda está na 5.7". Essa intenção morre aqui, e a
+  reversão é declarada: o page-header exige `^5.8.1` e o resolvedor do Composer já forçava esse
+  piso de qualquer jeito. Manter `^5.6` declarado seria descrever algo que o Composer não permite
+  mais — quem estivesse na 5.7 receberia um conflito de resolução em vez da mensagem do kit.
+  Continua caret na série 5: aceita toda a 5.x, recusa a 6.0.
+
+- **`User::rotuloDaSituacao()` e `User::corDaSituacao()`** saem da trait de UI e vão para o model.
+  A decisão Pendente/Inativo/Ativo tem agora três consumidores — a coluna da listagem e os
+  cabeçalhos dos dois painéis —, e um `match` copiado em três arquivos se desalinha na primeira
+  mudança.
+
+- **O registro da rodada 2 de pacotes foi corrigido**, e não reescrito.
+  `wikis/pacotes-candidatos.md` dizia "dez indicados, nenhum adotado"; passa a registrar a adoção,
+  com **onde no código** o pacote é usado. O dossiê da rodada anterior ganha a nota de reabertura e
+  mantém o texto original — ele registra o que se sabia em 18/09, e é isso que o torna útil.
+
+### Corrigido
+- **`[CT-34]` de `tests/Kit/PacotesRodada2Test.php` nasceu inerte e nunca detectou nada.** O caso
+  existia para impedir que um dos dez pacotes avaliados entrasse nas dependências, e estava escrito
+  como `expect($declaradas)->not->toContain($pacote, "mensagem")`. O `toContain()` do Pest é
+  **variádico**: a mensagem entrava como segunda agulha, e `not` sobre duas agulhas passa quando ao
+  menos uma está ausente — a mensagem nunca está no `composer.json`, logo o caso passava sempre.
+
+  Medido: com `mortalkiller/filament-page-header` já declarado no `require`, os doze casos do
+  arquivo ficaram **verdes**. O que expôs o defeito foi esta própria entrega — o caso deveria ter
+  ficado vermelho por desenho, e não ficou.
+
+  A ironia está registrada porque ensina: o docblock do `[CT-33]`, três funções acima no mesmo
+  arquivo, **documenta exatamente essa armadilha** e explica por que ali se usa `str_contains()`
+  embrulhado. A forma agora é `in_array()` embrulhado, com a mensagem no `expect()`.
+
 ## [0.35.0] - 2026-09-18
 
 ### Adicionado

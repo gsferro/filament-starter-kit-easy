@@ -575,7 +575,7 @@ A fila completa, com o restante dos 112, está em [`pacotes-ranking.md`](pacotes
 
 ---
 
-## Rodada 2 — 2026-09-18: dez indicados, nenhum adotado
+## Rodada 2 — 2026-09-18: dez indicados, um adotado depois
 
 Segunda rodada de avaliação, com lista escolhida a dedo pelo mantenedor em vez de varredura do
 diretório. Método: cinco sub-agentes em paralelo, dois pacotes cada, **lendo o código-fonte** de
@@ -587,7 +587,7 @@ reabertura por pacote:
 
 | Pacote (nome Composer **real**) | Veredito | Motivo em uma linha |
 |---|---|---|
-| `mortalkiller/filament-page-header` | **ADIAR** | Exige `filament ^5.8.1` (kit em 5.7.6); repo de 5 dias com breaking de major em 24 h |
+| `mortalkiller/filament-page-header` | **ADOTAR** | Adotado em 2026-09-19, depois que o kit subiu para o Filament 5.8.2 — ver abaixo |
 | `jeffersongoncalves/filament-page-visits` | **ADIAR** | Cadeia de 3 repos com 7 dias; o kit quase não tem rota pública; quebra se registrado no `/app` |
 | `jeffersongoncalves/filament-ban` | **RECUSAR** | Quarto estado de conta paralelo ao `ativo` do kit; não bloqueia sem middleware colado à mão |
 | `packstub/filament-flow` | **ADIAR** | Bom, mas motor de automação com 2 rotas públicas e cron por minuto é superfície demais num kit redistribuído |
@@ -597,6 +597,34 @@ reabertura por pacote:
 | `ronssij/filament-simple-draft` | **RECUSAR** | `nullable()` fail-open desliga `required` em qualquer componente sem o trait; perde Enter e Ctrl+S |
 | `yousefaman/filament-autosave` | **ADIAR** | O melhor da rodada, mas gera uma linha em `audits` por pausa de digitação nos 5 models auditados |
 | `alexkramse/filament-openapi-docs` | **RECUSAR** | O kit não tem API; sem CI; o badge gera a spec inteira a cada render de sidebar |
+
+### Reaberto e adotado — `mortalkiller/filament-page-header`, 2026-09-19
+
+O veredito era **ADIAR** por três motivos, e o de maior peso caiu sozinho um dia depois: o kit subiu
+para o Filament **5.8.2** na própria rodada 2, que é o que a constraint `^5.8.1` do pacote exige.
+Com ele fora, a conta mudou — e o gate que reprovou a rodada inteira (*"quanto custa fazer
+nativo?"*) responde diferente aqui: um cabeçalho com avatar, badges, metadados com ícone, modo
+compacto por scroll e tema claro/escuro não cabe em ~30 linhas.
+
+**Onde ele é usado no código:**
+
+| Onde | O quê |
+|---|---|
+| `app/Providers/Filament/AdminPanelProvider.php` · `AppPanelProvider.php` | `PageHeaderPlugin::make()` no `->plugins([...])`. O `/infra` fica fora de propósito — o `register()` do plugin emite a CSS em toda página do painel, e lá não há tela alvo |
+| `app/Filament/Admin/Resources/Users/Schemas/UserHeader.php` · `app/Filament/App/Resources/Users/Schemas/UserHeader.php` | o cabeçalho das telas de usuário, nos dois painéis |
+| `app/Filament/Admin/Resources/Tenants/Schemas/TenantHeader.php` | o cabeçalho das telas de organização |
+| `app/Filament/Concerns/CabecalhoDeUsuario.php` | o conteúdo compartilhado pelos dois `UserHeader` |
+| `app/Filament/**/Users/Pages/{ViewUser,EditUser}.php` · `Tenants/Pages/{ViewTenant,EditTenant}.php` | `use HasPageHeader` — seis telas |
+
+**O que a adoção custou, declarado:** o piso do Filament no `composer.json` subiu de `^5.6` para
+`^5.8.1`. O pacote já forçava esse piso pelo resolvedor; manter `^5.6` declarado seria descrever
+algo que o Composer não permite mais.
+
+**As três armadilhas**, todas no `vendor/` e todas silenciosas, estão na receita
+[`receitas.md`](receitas.md#cabeçalho-rico-num-resource-com-relations) e nas ADRs de
+[`specs/feat/page-header-nas-telas-de-registro/`](specs/feat/page-header-nas-telas-de-registro/page-header-nas-telas-de-registro/02-decisoes-arquiteturais.md).
+
+Os outros nove vereditos continuam valendo.
 
 ### O que entrou no lugar
 

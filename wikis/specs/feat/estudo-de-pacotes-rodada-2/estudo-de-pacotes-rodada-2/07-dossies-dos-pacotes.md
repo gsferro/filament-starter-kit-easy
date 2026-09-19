@@ -37,7 +37,7 @@ descrição do diretório.
 
 | Pacote | Versão / data | Idade do repo | ★ | DL/mês | CI | Veredito |
 |---|---|---|---|---|---|---|
-| `mortalkiller/filament-page-header` | v2.1.4 · 15/09/2026 | 5 dias | 7 | 199 | sim | **ADIAR** (1 dos 3 motivos caiu — ver abaixo) |
+| `mortalkiller/filament-page-header` | v2.1.4 · 15/09/2026 | 5 dias | 7 | 199 | sim | ~~ADIAR~~ → **ADOTADO** em 2026-09-19, na v2.1.5 |
 | `jeffersongoncalves/filament-page-visits` | v3.0.6 · 14/09/2026 | 7 dias | 3 | 233 | sim | **ADIAR** |
 | `jeffersongoncalves/filament-ban` | v3.0.3 · 12/09/2026 | 3 meses | 2 | 10 | sim | **RECUSAR** |
 | `packstub/filament-flow` | v1.4.1 · 18/09/2026 | 16 dias | 14 | 451 | sim | **ADIAR** |
@@ -55,7 +55,16 @@ factor 1.**
 
 ## 1. `mortalkiller/filament-page-header` — cabeçalho de página rico
 
-**Veredito: ADIAR.**
+**Veredito: ~~ADIAR~~ → ADOTADO em 2026-09-19.**
+
+> **Reaberto e adotado um dia depois.** O motivo de maior peso (item 1 abaixo) caiu na própria
+> rodada 2, quando o kit subiu para o Filament 5.8.2. Os outros dois foram enfrentados em vez de
+> evitados: o item 2 (API instável) virou constraint `^2.1.5` mais três APIs proibidas por teste de
+> arquitetura, e o item 3 (a armadilha do `getHeader()`) virou a primeira linha da receita.
+>
+> Entrega: [`wikis/specs/feat/page-header-nas-telas-de-registro/`](../../page-header-nas-telas-de-registro/page-header-nas-telas-de-registro/02-decisoes-arquiteturais.md).
+> **Este dossiê não é reescrito** — ele registra o que se sabia em 2026-09-18, e é isso que o torna
+> útil quando a próxima decisão precisar saber o que mudou e quando.
 
 Cabeçalho de página com avatar, badges, metadados em linha e modo compacto ao rolar. Opt-in em três
 níveis (plugin no painel, trait na página, componente no schema), sem migration, sem rota, sem
@@ -74,9 +83,15 @@ em `ViewTenant`.
    upgrade aconteceu por outra razão, pedida no Adendo 1.
 2. **Repo de 5 dias** (criado 13/09/2026), 8 releases em 3 dias, com **breaking de major em 24 h**
    (`HeaderLayout` → `Header`). A v2.1.4 já traz métodos `@deprecated`.
+   — **aceito em 2026-09-19, com mitigação**: constraint `^2.1.5` (a v2.1.4 quebra no Filament
+   5.8.2) e as duas APIs `@deprecated` proibidas por `tests/Kit/PageHeaderTest.php:[CT-05]`.
 3. **Ganho por tela, não por painel**: trait + `headerSchema()` por página. E a trait sobrescreve
    `getHeader()` — página que já sobrescreva esse método torna o pacote **inerte em silêncio**.
    Some `php artisan filament:assets` virando passo obrigatório de deploy.
+   — **aceito em 2026-09-19**: medido, `getHeader()` tem **zero ocorrências** em `app/`, então não
+   havia colisão a resolver; a armadilha virou a armadilha nº 1 da receita. E o `filament:assets`
+   já roda sozinho no `post-update-cmd` do `composer.json` — o passo manual é só para quem atualiza
+   por `kit:update`, e está documentado em `docs/pt/comecar/atualizando-o-projeto.md`.
 
 **Gatilho de reabertura**: ≥3 meses sem breaking na série `2.x`. **O motivo 1 já caiu**: o Adendo 1
 levou o kit para o Filament **v5.8.2** nesta mesma entrega, então a constraint `^5.8.1` do pacote

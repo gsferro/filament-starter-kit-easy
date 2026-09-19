@@ -42,6 +42,38 @@ Two details that show up in practice:
 - **`config/kit.php` always shows up as "modified"** (it carries the version mark). Applying it brings the kit's new keys, but **replaces the whole file** — if you changed seeder credentials or added your own keys there, read the diff and copy only what matters instead of applying.
 - **`kit:update` updates itself.** Since PHP already loaded the class into memory, the new behavior (and the new messages) only take effect on the following run. The command tells you when that happens. The **path list** that filters the diff is read from the **target version** (since v0.30.1), so a directory only the new version covers arrives in the same run — the "run the command again" notice only appears when that read failed. **An installation older than v0.30.1** still runs the old list on its first pass: run the second one with the command the notice prints. The known case is v0.22.x → v0.23.0 or later, which left `View [svg.arte-do-login] not found` between the two runs; the second run fixes it, or copy `resources/views/svg/arte-do-login.blade.php` from the kit repository.
 
+### A new kit dependency: `composer.json` is never applied
+
+`kit:update` **does not overwrite your `composer.json`** — it carries YOUR project's dependencies,
+and applying it would wipe out everything you installed after the kit. Instead the command
+**reports** what changed there (new package, new script) and you copy it by hand:
+
+```bash
+git diff kit-v0.35.0 kit-v0.36.0 -- composer.json
+composer update
+php artisan filament:assets   # required whenever the new package publishes CSS/JS
+```
+
+> **The report only shows up when the command knows where you started from.** It reads
+> `config('kit.version')`; if that marker does not match a kit tag, pass `--from=vX.Y.Z`.
+
+**In v0.36.0 this applies to `mortalkiller/filament-page-header`**, which brings the rich header on
+record screens and publishes its own CSS and JS. Without `composer require` + `filament:assets`,
+the View/Edit screens for users and organizations still answer — just without the header.
+
+### A new permission: reseed both seeders
+
+The "next steps" the command prints mention `filament:assets` and the tests, **not the seeders** —
+and a new kit screen usually brings a new permission, which lands ownerless in your database:
+
+```bash
+php artisan db:seed --class=Database\Seeders\ShieldPermissionsSeeder
+php artisan db:seed --class=Database\Seeders\PapeisSeeder
+```
+
+Both are idempotent — running them again duplicates nothing. In v0.36.0 they are what wires the
+`ViewUser` screen to the `View:User` permission, which already existed and had no consumer.
+
 At the end nothing is committed: you review with `git diff`, run `php artisan migrate` if a new migration arrived (from v0.31.0 on the command also delivers `database/settings/`, and the settings screen breaks while the new property has no row in the database), run `composer test:kit` (the foundation) and commit. Went wrong? `git checkout -- .` undoes it, or delete the branch and go back to yours.
 
 - **The settings screen's URL changed in v0.32.0.** It now answers at

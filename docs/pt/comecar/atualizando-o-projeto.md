@@ -42,6 +42,38 @@ Dois detalhes que aparecem na prática:
 - **`config/kit.php` sempre consta como "modificado"** (ele carrega a marca de versão). Aplicá-lo traz as chaves novas do kit, mas **substitui o arquivo inteiro** — se você mudou credenciais do seeder ou adicionou chaves próprias ali, veja o diff e copie só o que interessa em vez de aplicar.
 - **O próprio `kit:update` se atualiza.** Como o PHP já carregou a classe em memória, o comportamento novo (e as mensagens novas) só valem a partir da execução seguinte. O comando avisa quando isso acontece. A **lista de caminhos** que filtra o diff é lida da **versão destino** (a partir da v0.30.1), então diretório que só a versão nova cobre chega na mesma rodada — o aviso "rode o comando de novo" só aparece quando essa leitura falhou. **Instalação anterior à v0.30.1** ainda roda a lista antiga na primeira rodada: rode a segunda com o comando que o aviso imprime. O caso conhecido é v0.22.x → v0.23.0 ou posterior, que deixava `View [svg.arte-do-login] not found` entre as duas rodadas; a segunda rodada resolve, ou copie `resources/views/svg/arte-do-login.blade.php` do repositório do kit.
 
+### Dependência nova do kit: o `composer.json` nunca é aplicado
+
+O `kit:update` **não sobrescreve o seu `composer.json`** — ele carrega as dependências do SEU
+projeto, e aplicá-lo apagaria tudo que você instalou depois do kit. Em vez disso, o comando
+**relata** o que mudou ali (pacote novo, script novo) e você copia à mão:
+
+```bash
+git diff kit-v0.35.0 kit-v0.36.0 -- composer.json
+composer update
+php artisan filament:assets   # obrigatório quando o pacote novo publica CSS/JS
+```
+
+> **O relatório só aparece quando o comando sabe de onde você partiu.** Ele lê
+> `config('kit.version')`; se essa marca não casar com uma tag do kit, passe `--from=vX.Y.Z`.
+
+**Na v0.36.0 isso vale para `mortalkiller/filament-page-header`**, que traz o cabeçalho rico das
+telas de registro e publica CSS e JS próprios. Sem o `composer require` + `filament:assets`, as
+telas de View/Edit de usuário e organização respondem normalmente, só que sem o cabeçalho.
+
+### Permissão nova: ressemeie os dois seeders
+
+Os "próximos passos" que o comando imprime citam `filament:assets` e os testes, **não os seeders** —
+e tela nova do kit costuma trazer permissão nova, que nasce sem dono no seu banco:
+
+```bash
+php artisan db:seed --class=Database\Seeders\ShieldPermissionsSeeder
+php artisan db:seed --class=Database\Seeders\PapeisSeeder
+```
+
+Os dois são idempotentes — rodar de novo não duplica nada. Na v0.36.0 eles são o que liga a tela
+`ViewUser` à permissão `View:User`, que já existia e não tinha consumidor.
+
 Ao final nada está commitado: você revisa com `git diff`, roda `php artisan migrate` se chegou migration nova (a partir da v0.31.0 o comando entrega também `database/settings/`, e a tela de configurações quebra enquanto a propriedade nova não tiver linha no banco), roda `composer test:kit` (a fundação) e commita. Deu errado? `git checkout -- .` desfaz, ou apague o branch e volte para o seu.
 
 - **A URL da tela de configurações mudou na v0.32.0.** Ela passou a responder em

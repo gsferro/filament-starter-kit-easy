@@ -460,7 +460,7 @@ todo projeto que nasce dele.
 
 | Pacote | Veredito | Gate decisivo |
 |---|---|---|
-| `mortalkiller/filament-page-header` | ADIAR | exige `filament ^5.8.1` (kit em 5.7.6); API quebrou em 24 h |
+| `mortalkiller/filament-page-header` | ~~ADIAR~~ → **ADOTADO em 2026-09-19** | o gate caiu junto com o bump: o kit foi para 5.8.2 nesta mesma rodada. Ver `wikis/specs/feat/page-header-nas-telas-de-registro/` |
 | `jeffersongoncalves/filament-page-visits` | ADIAR | kit quase não tem rota pública; `PageVisitResource` quebra no `/app` |
 | `jeffersongoncalves/filament-ban` | RECUSAR | quarto estado de conta paralelo; não bloqueia sozinho |
 | `packstub/filament-flow` | ADIAR | superfície desproporcional para kit distribuído |
