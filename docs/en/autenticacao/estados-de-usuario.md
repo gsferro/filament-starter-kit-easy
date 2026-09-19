@@ -1,12 +1,9 @@
 ---
-title: Active, inactive and deleted users
-parent: Authentication
-grand_parent: English
-nav_order: 5
+title: "Active, inactive and deleted users"
+description: "Every user account has three states, and they override access to any panel:"
+sidebar:
+  order: 5
 ---
-
-# Active, inactive and deleted users
-
 Every user account has **three states**, and they override access to any panel:
 
 - **Active**: signs in with password or social login as usual.

@@ -25,6 +25,7 @@ const paginas = (dir) =>
 const ESTATICOS = /\.(css|js|png|webp|svg|xml|json|ico|txt|woff2?)$/;
 
 const quebrados = [];
+const problemas = [];
 const vistos = new Set();
 let conferidos = 0;
 
@@ -65,6 +66,28 @@ for (const arquivo of paginas(DIST)) {
   }
 }
 
+/*
+ * Piso de população, e ele é o que separa este conferidor de um enfeite.
+ *
+ * Sem ele, um `dist/` vazio — base do loader quebrada, build que não rodou, diretório renomeado —
+ * produz "conferidos: 0 / quebrados: 0" e o guarda diz que está tudo bem sobre o nada. A revisão
+ * adversarial apontou exatamente isso: o documento delega a este script as três afirmações mais
+ * caras da feature, e ele ficava verde sobre conjunto vazio.
+ */
+const PISO_DE_PAGINAS = 60;
+const PISO_DE_LINKS = 1000;
+
+const paginasLidas = paginas(DIST).length;
+
+if (paginasLidas < PISO_DE_PAGINAS) {
+  problemas.push(`o build tem ${paginasLidas} paginas, e o piso e ${PISO_DE_PAGINAS} — a varredura olhou o lugar errado, ou o build saiu vazio`);
+}
+
+if (conferidos < PISO_DE_LINKS) {
+  problemas.push(`so ${conferidos} links internos foram conferidos, e o piso e ${PISO_DE_LINKS} — o extrator nao extraiu`);
+}
+
+console.log(`paginas no build: ${paginasLidas}`);
 console.log(`links internos conferidos: ${conferidos} (${vistos.size} distintos)`);
 console.log(
   quebrados.length ? `QUEBRADOS (${quebrados.length}):\n` + quebrados.join('\n') : 'quebrados: 0',
@@ -89,8 +112,29 @@ for (const [antiga, nova] of Object.entries(mapa)) {
     continue;
   }
 
-  if (!readFileSync(stub, 'utf8').includes(`url=${nova}`)) {
-    redirectsRuins.push(`${antiga} — stub nao aponta para ${nova}`);
+  /*
+   * O destino do stub é RELATIVO, e o conferidor precisa saber disso.
+   *
+   * O stub mora em `…/x.html` e aponta para `x/` — mesmo diretório. É o que faz o redirect
+   * funcionar sob qualquer `base`, inclusive o `/filament-starter-kit-easy` do Pages. Uma versão
+   * anterior gravava o caminho absoluto e teria dado 404 em produção nos 54.
+   */
+  const relativo = nova.replace(/\/$/, '').split('/').pop() + '/';
+  const conteudoDoStub = readFileSync(stub, 'utf8');
+
+  if (!conteudoDoStub.includes(`url=${relativo}`)) {
+    redirectsRuins.push(`${antiga} — stub nao aponta para ${relativo}`);
+    continue;
+  }
+
+  // O redirect tem de acontecer sem clique: `meta refresh` com atraso zero.
+  if (!conteudoDoStub.includes('content="0; url=')) {
+    redirectsRuins.push(`${antiga} — stub nao redireciona sozinho (sem meta refresh imediato)`);
+    continue;
+  }
+
+  if (/href="\//.test(conteudoDoStub)) {
+    redirectsRuins.push(`${antiga} — stub tem caminho absoluto, que quebra sob base`);
     continue;
   }
 
@@ -105,3 +149,24 @@ console.log(
     ? `REDIRECTS RUINS (${redirectsRuins.length}):\n` + redirectsRuins.join('\n')
     : 'redirects ruins: 0',
 );
+
+/*
+ * O CÓDIGO DE SAÍDA.
+ *
+ * Sem isto o script imprimia "QUEBRADOS (3)" e saía com 0 — e o passo do workflow ficava verde
+ * com o site quebrado indo ao ar. Guarda que não reprova não é guarda: é um `console.log` caro.
+ *
+ * A revisão adversarial descreveu o modo de falha antes de ele acontecer em produção, e a
+ * conferência confirmou: não havia um `process.exit` no arquivo inteiro.
+ */
+const reprovas = [...problemas, ...quebrados, ...redirectsRuins];
+
+if (reprovas.length > 0) {
+  console.error(`\nREPROVADO — ${reprovas.length} problema(s):`);
+  for (const r of reprovas) {
+    console.error(`  - ${r}`);
+  }
+  process.exitCode = 1;
+} else {
+  console.log('\nOK — links, redirects e pisos de populacao conferidos.');
+}

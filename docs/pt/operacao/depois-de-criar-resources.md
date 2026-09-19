@@ -1,12 +1,9 @@
 ---
 title: "Depois de criar seus Resources"
-parent: "Operação"
-grand_parent: "Português"
-nav_order: 4
+description: "O Laravel descobre policy por convenção só para App\\Models\\. Um resource de pacote — a trilha de auditoria, os logs de e-mail, as filas — tem modelo em…"
+sidebar:
+  order: 4
 ---
-
-# Depois de criar seus Resources
-
 ```bash
 php artisan make:filament-resource Produto --panel=app
 php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder

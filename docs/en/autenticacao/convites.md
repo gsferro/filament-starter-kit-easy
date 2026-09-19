@@ -1,12 +1,9 @@
 ---
-title: User invitation
-parent: Authentication
-grand_parent: English
-nav_order: 1
+title: "User invitation"
+description: "Someone from outside becomes a user by invitation, and only by invitation. An admin opens /admin/convites — or, with tenancy, whoever holds adminapp opens…"
+sidebar:
+  order: 1
 ---
-
-# User invitation
-
 Someone from outside becomes a user **by invitation, and only by invitation**. An admin
 opens `/admin/convites` — or, with tenancy, whoever holds `admin_app` opens
 `/app/{organization}/convites` — and picks e-mail, role and organization; the kit sends a

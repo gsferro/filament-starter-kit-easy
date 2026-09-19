@@ -1,12 +1,9 @@
 ---
 title: "Roteiro de features"
-parent: "Operação"
-grand_parent: "Português"
-nav_order: 2
+description: "Tudo que o kit entrega, numerado, com onde fica, quem alcança e como conferir. Serve para três coisas: saber o que já existe antes de reimplementar, ter um…"
+sidebar:
+  order: 2
 ---
-
-# Roteiro de features
-
 Tudo que o kit entrega, numerado, com **onde fica**, **quem alcança** e **como conferir**. Serve
 para três coisas: saber o que já existe antes de reimplementar, ter um roteiro de teste manual
 depois de um `kit:update`, e dar nome às features nos testes automatizados.
@@ -53,7 +50,7 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-65 | **Boas-vindas na raiz**, com o que a instalação personalizou | `/` | anônimo | abra sem autenticar: os três cartões e a config aparecem, e nada de segredo — o caso planta sentinela em 8 valores e assere a ausência | 🟢 |
 | F-66 | A raiz herda tema e cor do projeto | `/` | anônimo | troque `KIT_COR_PRIMARIA`, rode `npm run build` e recarregue: o botão muda de cor. Sem o `panel:app` da rota, sairia âmbar | 🟢 |
 | F-67 | As três exceções estão **declaradas**, não escondidas | `/infra/command-center/commands` | `infra` | desmarque `View:Commands`: a tela **continua** abrindo. O pacote expõe um callback só para as três Pages dele, e a barreira delas é `command-center:access`. `tests/Kit/PermissoesDeTelasTest.php` tem o caso que assere essa lacuna e fica vermelho no dia em que ela fechar | 🔵 |
-| F-68 | **[Hub de navegação em cartões](../recursos/hub-de-navegacao.md)** | `/infra/hub-de-infraestrutura` (sempre); `/admin/hub-de-administracao` e `/app{/org}/hub-do-negocio` com `KIT_HUB=true` | quem entra no painel | abra o hub do `/infra`: uma grade de cartões, um por destino que o seu papel alcança. Com `KIT_HUB=false` os hubs de `/admin` e `/app` somem do menu, da URL e da busca ⌘K | 🟢 |
+| F-68 | **[Hub de navegação em cartões](/pt/recursos/hub-de-navegacao/)** | `/infra/hub-de-infraestrutura` (sempre); `/admin/hub-de-administracao` e `/app{/org}/hub-do-negocio` com `KIT_HUB=true` | quem entra no painel | abra o hub do `/infra`: uma grade de cartões, um por destino que o seu papel alcança. Com `KIT_HUB=false` os hubs de `/admin` e `/app` somem do menu, da URL e da busca ⌘K | 🟢 |
 
 ## Convites
 

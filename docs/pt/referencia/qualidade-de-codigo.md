@@ -1,12 +1,9 @@
 ---
 title: "Qualidade de código"
-parent: "Referência"
-grand_parent: "Português"
-nav_order: 1
+description: "A maioria dos projetos Laravel para no level 5 ou 6. O kit roda no 7, com zero erros e sem baseline: não há @phpstan-ignore espalhado, não há…"
+sidebar:
+  order: 1
 ---
-
-# Qualidade de código
-
 ## PHPStan no level 7 — e por que isso é um ponto forte
 
 A maioria dos projetos Laravel para no level 5 ou 6. O kit roda no **7, com zero erros e sem

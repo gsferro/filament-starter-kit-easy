@@ -1,12 +1,9 @@
 ---
 title: "Desenvolvendo o próprio kit"
-parent: "Operação"
-grand_parent: "Português"
-nav_order: 5
+description: "Esta seção é para quem mexe no kit, não para quem o instalou. Nada aqui é necessário num projeto que nasceu do create-project."
+sidebar:
+  order: 5
 ---
-
-# Desenvolvendo o próprio kit
-
 Esta seção é para quem **mexe no kit**, não para quem o instalou. Nada aqui é necessário num
 projeto que nasceu do `create-project`.
 
@@ -47,27 +44,50 @@ ficam vermelhos** — de propósito: é o lembrete de rodar `composer bp:off` an
 ## Como o site de documentação é publicado
 
 Este site — <https://gsferro.github.io/filament-starter-kit-easy/> — é o conteúdo de `docs/`
-construído pelo **Jekyll embutido do GitHub Pages**. O ciclo de atualização inteiro é:
+construído pelo **Astro Starlight** e publicado por **GitHub Actions**. O ciclo de atualização
+inteiro é:
 
 1. editar o markdown em `docs/pt/` e `docs/en/` — **sempre nos dois idiomas**, no mesmo commit;
 2. commitar e fazer push para a branch padrão (`main`);
-3. o GitHub constrói e publica sozinho, em cerca de um minuto.
+3. o fluxo `.github/workflows/pages.yml` constrói e publica sozinho, em cerca de dois minutos.
 
-**Não há workflow de Actions nem build local a rodar.** Não procure um `docs.yml` em
-`.github/workflows/` nem um `npm run docs:build`: eles não existem, de propósito — o build nativo
-do Pages resolve as gems no servidor dele, e um workflow seria uma segunda publicação competindo
-com a primeira (ADR-01 da wiki `site-de-documentacao`).
+**Para ver antes de publicar**, rode a prévia local:
+
+```bash
+cd site
+npm install
+npm run dev      # http://localhost:4321
+```
+
+**O conteúdo fica em `docs/`, não dentro do projeto Astro.** O layout convencional do Starlight é
+`src/content/docs/`, e o kit não o usa de propósito: nove arquivos do repositório apontam para
+`docs/`, entre eles o helper `documentacaoDoKit()` que quatro testes de outras features consomem.
+O Astro vai até o conteúdo por um loader `glob` com `base: '../docs'`, e não o contrário — a
+decisão está na ADR-02 da wiki `site-starlight`.
+
+Duas consequências práticas disso, e as duas já custaram tempo:
+
+- **a barra lateral é declarada, não descoberta.** O `autogenerate` do Starlight não funciona com
+  o conteúdo fora da raiz do projeto Astro: os grupos renderizam vazios. A lista vive em
+  `site/sidebar.json`, gerada pelo `site/converter.mjs`. Página nova que não entre nela fica
+  invisível na navegação — o `[CT-20]` reprova quando isso acontece;
+- **componentes MDX não funcionam nas páginas.** Um `import` de `@astrojs/starlight/components`
+  dentro de `docs/` não resolve o `node_modules` de `site/`. As landings usam `hero` no
+  front-matter e HTML simples.
+
+**A tradução casa por CAMINHO IDÊNTICO.** É o contrato do i18n do Starlight: `pt/recursos/x.md`
+e `en/recursos/x.md` são a mesma página em dois idiomas. Renomear o slug de um lado só faz o
+Starlight servir a página portuguesa sob `/en/` como fallback, em silêncio — é por isso que as
+páginas em inglês têm slug em português, e o `[CT-20]` confere o espelho.
+
+**As URLs antigas continuam funcionando.** O Jekyll publicava `x.html` e o Starlight publica `x/`;
+os 54 redirecionamentos vivem em `site/public/**` e são **commitados**, não gerados no build —
+depois que o Jekyll saiu, não há mais de onde derivá-los.
 
 A única parte que **não** está em arquivo nenhum é a origem do site, que é configuração do
-repositório: **Settings → Pages → Build and deployment → Source: Deploy from a branch →
-branch `main` → pasta `/docs`**. É o único passo que um `git revert` não desfaz e que nenhum
-teste alcança — se o site sumir com todos os arquivos no lugar, é ali que se olha.
+repositório: **Settings → Pages → Build and deployment → Source: GitHub Actions**. É o único passo
+que um `git revert` não desfaz e que nenhum teste alcança — se o site sumir com todos os arquivos
+no lugar, é ali que se olha.
 
-O build nativo roda em modo `--safe`: só as gems da lista do Pages funcionam, o tema vem por
-`remote_theme` e nenhum plugin de i18n é permitido — por isso as duas árvores de idioma são
-mantidas à mão, no front matter de cada página. E o Liquid processa chaves duplas **até dentro
-de bloco de código**: exemplo de Blade numa página precisa ficar dentro do bloco `raw` do
-Liquid, senão o trecho some da página publicada sem erro em lugar nenhum.
-
-`docs/` é `export-ignore`: o site é material do kit e não chega ao projeto que nasce do
+`docs/` e `site/` são `export-ignore`: o site é material do kit e não chega ao projeto que nasce do
 `create-project`. As guardas disso ficam em `tests/Kit/SiteDeDocumentacaoTest.php`.

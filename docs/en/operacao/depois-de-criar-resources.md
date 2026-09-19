@@ -1,12 +1,9 @@
 ---
 title: "After creating your Resources"
-parent: "Operations"
-grand_parent: "English"
-nav_order: 4
+description: "Laravel discovers policies by convention only for App\\Models\\. A package resource — the audit trail, mail logs, queues — has its model in a vendor…"
+sidebar:
+  order: 4
 ---
-
-# After creating your Resources
-
 ```bash
 php artisan make:filament-resource Produto --panel=app
 php artisan db:seed --class=Database\\Seeders\\ShieldPermissionsSeeder

@@ -1,12 +1,9 @@
 ---
 title: "Card navigation hub"
-parent: Features
-grand_parent: English
-nav_order: 7
+description: "Each panel has a hub page: a grid of cards, one per destination in the panel, instead of the sidebar tree — for when the question \"where do I see X?\" is…"
+sidebar:
+  order: 7
 ---
-
-# Card navigation hub
-
 Each panel has a **hub** page: a grid of cards, one per destination in the panel, instead of the
 sidebar tree — for when the question "where do I see X?" is real. There are three:
 

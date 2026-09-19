@@ -1,8 +1,12 @@
 import { defineCollection } from 'astro:content';
-import { docsLoader, i18nLoader } from '@astrojs/starlight/loaders';
+import { glob } from 'astro/loaders';
+import { i18nLoader } from '@astrojs/starlight/loaders';
 import { docsSchema, i18nSchema } from '@astrojs/starlight/schema';
 
 export const collections = {
-  docs: defineCollection({ loader: docsLoader(), schema: docsSchema() }),
+  docs: defineCollection({
+    loader: glob({ base: '../docs', pattern: '**/*.{md,mdx}' }),
+    schema: docsSchema(),
+  }),
   i18n: defineCollection({ loader: i18nLoader(), schema: i18nSchema() }),
 };

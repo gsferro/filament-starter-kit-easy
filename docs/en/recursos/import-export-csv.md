@@ -1,12 +1,9 @@
 ---
 title: "CSV import and export"
-parent: Features
-grand_parent: English
-nav_order: 3
+description: "The mechanism is native Filament 5: ImportAction, ExportAction, the jobs, the batch and the completion notification with a download button. The imports,…"
+sidebar:
+  order: 3
 ---
-
-# CSV import and export
-
 The mechanism is **native Filament 5**: `ImportAction`, `ExportAction`, the jobs, the batch and the
 completion notification with a download button. The `imports`, `exports` and `failed_import_rows`
 tables are already migrated, and the kit **writes no wrapper at all** around any of it. What it adds

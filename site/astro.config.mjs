@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import sidebar from './sidebar.json' with { type: 'json' };
 
 /**
  * Spike: o mesmo conteúdo do site atual, servido pelo Starlight.
@@ -51,33 +52,14 @@ export default defineConfig({
       },
       lastUpdated: true,
       customCss: ['./src/styles/kit.css'],
-      sidebar: [
-        {
-          label: 'Começar',
-          translations: { en: 'Getting started' },
-          items: [{ autogenerate: { directory: 'comecar' } }],
-        },
-        {
-          label: 'Autenticação',
-          translations: { en: 'Authentication' },
-          items: [{ autogenerate: { directory: 'autenticacao' } }],
-        },
-        {
-          label: 'Recursos',
-          translations: { en: 'Features' },
-          items: [{ autogenerate: { directory: 'recursos' } }],
-        },
-        {
-          label: 'Operação',
-          translations: { en: 'Operations' },
-          items: [{ autogenerate: { directory: 'operacao' } }],
-        },
-        {
-          label: 'Referência',
-          translations: { en: 'Reference' },
-          items: [{ autogenerate: { directory: 'referencia' } }],
-        },
-      ],
+      /*
+       * A barra lateral é DECLARADA, não descoberta.
+       *
+       * O `autogenerate` não funciona com o conteúdo fora da raiz do projeto Astro (ADR-02):
+       * os grupos renderizam sem nenhum item. Os `slug` abaixo são gerados pelo `converter.mjs`
+       * a partir da árvore, sem prefixo de idioma — o Starlight os localiza para cada locale.
+       */
+      sidebar,
     }),
   ],
 });

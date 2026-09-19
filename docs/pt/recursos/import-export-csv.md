@@ -1,12 +1,9 @@
 ---
 title: "Import e export (CSV)"
-parent: Recursos
-grand_parent: Português
-nav_order: 3
+description: "O mecanismo é nativo do Filament 5: ImportAction, ExportAction, os jobs, o batch e a notificação de conclusão com botão de download. As tabelas imports,…"
+sidebar:
+  order: 3
 ---
-
-# Import e export (CSV)
-
 O mecanismo é **nativo do Filament 5**: `ImportAction`, `ExportAction`, os jobs, o batch e a
 notificação de conclusão com botão de download. As tabelas `imports`, `exports` e
 `failed_import_rows` já vêm migradas, e o kit **não escreve wrapper nenhum** em volta disso. O que

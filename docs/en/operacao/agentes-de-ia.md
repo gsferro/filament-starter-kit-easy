@@ -1,12 +1,9 @@
 ---
 title: "Working with AI agents"
-parent: "Operations"
-grand_parent: "English"
-nav_order: 1
+description: "The kit ships ready for you to develop with a coding agent (Claude Code, Codex, Cursor, Junie, OpenCode) — and, more importantly, with the documentation the…"
+sidebar:
+  order: 1
 ---
-
-# Working with AI agents
-
 The kit ships ready for you to develop with a coding agent (Claude Code, Codex, Cursor, Junie, OpenCode) — and, more importantly, with **the documentation the agent needs to read** so it doesn't reinvent or break what's already there.
 
 ## 📚 `wikis/` — the kit's documentation
@@ -101,7 +98,7 @@ produces a file that the next step checks.
 **What this changes in practice:**
 
 - **The agent reads before writing.** `wikis/` and `.ai/rules` answer what already exists, and the
-  [feature roadmap](roteiro-de-features.md) below lists the 68 ready features. A feature
+  [feature roadmap](/en/operacao/roteiro-de-features/) below lists the 68 ready features. A feature
   reimplemented from scratch because the agent didn't know it existed is the most expensive and most invisible cost.
 - **Context becomes a file, not chat history.** Switching agent, machine or person does not
   lose the why of the decision — it is in the ADR, versioned in the same commit as the code.

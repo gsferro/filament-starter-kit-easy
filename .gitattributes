@@ -31,6 +31,13 @@ CHANGELOG.md export-ignore
 # apresentação do pacote, e é o que o Packagist mostra.
 /docs export-ignore
 
+# `site/` é o TOOLCHAIN do site — o projeto Astro que gera o que `docs/` descreve. Mesmo critério
+# de `/docs` acima, e o mesmo motivo: é material do kit, não do projeto que nasce dele. Sem esta
+# linha, todo projeto instalado receberia um `package.json` de documentação que ele nunca roda,
+# ao lado do `package.json` dele — que é exatamente o que a ADR-02 da wiki do site proíbe.
+/site export-ignore
+/site-vitepress export-ignore
+
 # `phpstan.neon`, `phpunit.xml` e `pint.json` NÃO entram aqui: os scripts `lint`,
 # `types:check` e `test` do composer.json seguem no dist e sem esses arquivos
 # nenhum deles roda no projeto instalado. Os três estão em

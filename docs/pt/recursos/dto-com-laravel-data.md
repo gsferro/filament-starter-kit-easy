@@ -1,12 +1,9 @@
 ---
 title: "DTO com Laravel Data"
-parent: Recursos
-grand_parent: Português
-nav_order: 8
+description: "Quando um dado estruturado atravessa a fronteira de uma classe no kit, ele viaja como DTO — um objeto tipado do spatie/laravel-data, não como array com o…"
+sidebar:
+  order: 8
 ---
-
-# DTO com Laravel Data
-
 Quando um dado estruturado atravessa a fronteira de uma classe no kit, ele viaja como **DTO** —
 um objeto tipado do [`spatie/laravel-data`](https://spatie.be/docs/laravel-data), não como array
 com o formato escrito no comentário.

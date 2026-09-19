@@ -1,12 +1,9 @@
 ---
 title: "Code quality"
-parent: "Reference"
-grand_parent: "English"
-nav_order: 1
+description: "Most Laravel projects stop at level 5 or 6. The kit runs at 7, with zero errors and no baseline: there is no @phpstan-ignore scattered around, no…"
+sidebar:
+  order: 1
 ---
-
-# Code quality
-
 ## PHPStan at level 7 — and why that's a strong point
 
 Most Laravel projects stop at level 5 or 6. The kit runs at **7, with zero errors and no

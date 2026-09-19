@@ -1,0 +1,75 @@
+# Publica o site de documentação (Astro Starlight) no GitHub Pages.
+#
+# Substitui o build nativo do Pages, que rodava Jekyll em `--safe` a partir de `main:/docs`. O
+# motivo está na ADR-01 de `wikis/specs/feat/site-starlight/site-starlight/` — e a saída já estava
+# nomeada na ADR-01 da wiki anterior, que escolheu o Jekyll sabendo que o `--safe` proíbe qualquer
+# plugin de i18n.
+#
+# `Settings → Pages → Source` precisa estar em **GitHub Actions** para este fluxo valer. Enquanto
+# estiver em "Deploy from a branch", o Pages ignora o que sai daqui.
+name: pages
+
+on:
+  push:
+    branches: [main]
+    # O conteúdo vive em `docs/` (ADR-02) e o toolchain em `site/`. Os dois disparam.
+    paths:
+      - 'docs/**'
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Um deploy por vez, e sem cancelar o que está no ar: cancelar no meio deixa o Pages num estado
+# que ele mesmo precisa reconciliar depois.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Instalar dependências
+        working-directory: site
+        run: npm ci
+
+      - name: Construir o site
+        working-directory: site
+        # O `base` é o nome do repositório: o site é de projeto, não de usuário, e mora em
+        # `gsferro.github.io/filament-starter-kit-easy/`. Sem ele, todo link interno aponta para a
+        # raiz do domínio e dá 404 — o mesmo defeito que o `baseurl` do Jekyll evitava.
+        run: DOCS_BASE=/filament-starter-kit-easy npm run build
+
+      - name: Conferir links, âncoras e redirects
+        working-directory: site
+        # ANTES do envio, de propósito: link quebrado não deve chegar ao ar só porque o build
+        # compilou. O script reprova com código de saída — e tem piso de população, senão ficaria
+        # verde sobre um `dist/` vazio.
+        run: node verifica-links.mjs
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
