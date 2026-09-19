@@ -1796,6 +1796,11 @@ it('[CT-56] exige a permissao tambem para abrir a propria ficha', function (): v
  *
  * A última asserção é a que impede a doc `en` de ficar para trás da `pt` (M47). Ela compara o
  * **número de seções**, que é estrutura, e não texto — tradução muda as palavras e não a forma.
+ *
+ * **`skip` fora da árvore do kit, e não é opcional**: `docs/` não está em `KitUpdate::CAMINHOS_DO_KIT`
+ * e sai do pacote por `export-ignore`, então num projeto que nasceu do kit estes dois arquivos não
+ * existem — sem a sentinela, o caso ficaria vermelho em TODA instalação. É o que
+ * `tests/Kit/RedeDeDocumentacaoTest.php:[CT-10]:210` reprova, e ele reprovou esta entrega.
  */
 it('[CT-36] manda instalar, publicar assets e ressemear na doc de atualizacao', function (string $pagina): void {
     $texto = (string) file_get_contents(base_path($pagina));
@@ -1808,7 +1813,7 @@ it('[CT-36] manda instalar, publicar assets e ressemear na doc de atualizacao', 
 })->with([
     'pt' => ['docs/pt/comecar/atualizando-o-projeto.md'],
     'en' => ['docs/en/comecar/atualizando-o-projeto.md'],
-])->group('kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update nao entrega o site (export-ignore): fora da arvore do kit estes arquivos nao existem.')->group('kit');
 
 /**
  * [CT-36] — as duas traduções da página de atualização têm a mesma estrutura.
@@ -1825,7 +1830,7 @@ it('[CT-36] mantem a doc de atualizacao em paridade entre pt e en', function ():
 
     expect(count($pt))->toBeGreaterThanOrEqual(8, 'a pagina pt tem poucas secoes — o extrator olhou o lugar errado')
         ->and(count($en))->toBe(count($pt), 'a doc en ficou para tras da pt');
-})->group('kit');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update nao entrega o site (export-ignore): fora da arvore do kit estes arquivos nao existem.')->group('kit');
 
 /**
  * [CT-54] — o relatório do `kit:update` acusa a dependência nova.
