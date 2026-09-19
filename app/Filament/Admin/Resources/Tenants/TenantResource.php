@@ -8,6 +8,7 @@ use App\Filament\Admin\Resources\Tenants\Pages\ListTenants;
 use App\Filament\Admin\Resources\Tenants\Pages\ViewTenant;
 use App\Filament\Admin\Resources\Tenants\RelationManagers\UsersRelationManager;
 use App\Filament\Admin\Resources\Tenants\Schemas\TenantForm;
+use App\Filament\Admin\Resources\Tenants\Schemas\TenantInfolist;
 use App\Filament\Admin\Resources\Tenants\Tables\TenantsTable;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\Tenant;
@@ -119,6 +120,11 @@ class TenantResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return TenantForm::configure($schema);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return TenantInfolist::configure($schema);
     }
 
     public static function table(Table $table): Table

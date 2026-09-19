@@ -1065,3 +1065,33 @@ function linhaDoKitInfo(string $saida, string $rotulo): string
 
     return '';
 }
+
+/**
+ * O `<header>` que o `mortalkiller/filament-page-header` emite, e só ele.
+ *
+ * Vive aqui, e não no arquivo de teste, porque dois arquivos o usam:
+ * `tests/Kit/PageHeaderTest.php` e `tests/Tenancy/PageHeaderTenancyTest.php`. Helper cruzado
+ * declarado num deles some quando o Pest carrega um subconjunto (`--parallel`, `--tia`, um arquivo
+ * só) — ver `.ai/rules/testes.md`.
+ *
+ * O recorte é pequeno de propósito. Predicado de HTML aplicado sobre região grande não afirma
+ * nada: a rodada anterior desta base produziu um oráculo que rodava sobre a cauda inteira da
+ * página e QUALQUER texto o satisfazia, com 46 casos verdes sobre nada. `<header>` não aninha aqui
+ * — o pacote emite um por página (`vendor/mortalkiller/filament-page-header/resources/views/header.blade.php:21-32`)
+ * —, então o recorte por posição é exato e dispensa parser.
+ *
+ * String vazia quando a página não tem cabeçalho do pacote. O controle negativo que prova que o
+ * recortador recorta é `[CT-02]` de `tests/Kit/PageHeaderTest.php`.
+ */
+function regiaoDoCabecalho(string $html): string
+{
+    $inicio = strpos($html, '<header class="fph-header');
+
+    if ($inicio === false) {
+        return '';
+    }
+
+    $fim = strpos($html, '</header>', $inicio);
+
+    return $fim === false ? '' : substr($html, $inicio, $fim - $inicio);
+}

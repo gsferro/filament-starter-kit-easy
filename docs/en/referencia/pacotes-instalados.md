@@ -83,6 +83,7 @@ Everything below comes installed, published and registered on the panels — the
 | [harvirsidhu/filament-cards](https://packagist.org/packages/harvirsidhu/filament-cards) | the card grid of the [navigation hubs](../recursos/hub-de-navegacao.md) |
 | [leandrocfe/filament-apex-charts](https://packagist.org/packages/leandrocfe/filament-apex-charts) | ApexCharts charts in the dashboard widgets |
 | [solution-forest/filament-simplelightbox](https://packagist.org/packages/solution-forest/filament-simplelightbox) | lightbox to enlarge images in tables and infolists |
+| [mortalkiller/filament-page-header](https://packagist.org/packages/mortalkiller/filament-page-header) | the rich header on record screens — avatar, status and metadata. Recipe in [`wikis/receitas.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/receitas.md#cabeçalho-rico-num-resource-com-relations) |
 
 ## Data and services
 

@@ -24,17 +24,23 @@ function composerDoKit(): array
 }
 
 /**
- * Os dez pacotes avaliados na rodada, com o veredito que o `02` registrou.
+ * Os dez pacotes avaliados na rodada, com o veredito VIGENTE de cada um.
  *
  * A lista é declarada aqui, e não derivada da própria página: derivá-la faria o caso afirmar que a
  * página concorda consigo mesma, e uma página vazia passaria.
+ *
+ * `mortalkiller/filament-page-header` saiu de ADIAR para ADOTAR em 2026-09-19, quando o motivo de
+ * peso caiu — o kit subiu para o Filament 5.8.2, que a constraint dele exige. O veredito muda
+ * AQUI, e o pacote não sai do registro: os outros nove continuam precisando da proteção, e um
+ * deles (`matondojk/filament-avatar-picker`) foi recusado por vazar foto de perfil entre
+ * organizações. Ver ADR-08 de `wikis/specs/feat/page-header-nas-telas-de-registro/`.
  *
  * @return array<string, string>
  */
 function pacotesDaRodada2(): array
 {
     return [
-        'mortalkiller/filament-page-header'          => 'ADIAR',
+        'mortalkiller/filament-page-header'          => 'ADOTAR',
         'jeffersongoncalves/filament-page-visits'    => 'ADIAR',
         'jeffersongoncalves/filament-ban'            => 'RECUSAR',
         'packstub/filament-flow'                     => 'ADIAR',
@@ -135,17 +141,33 @@ it('[CT-33] registra o veredito de cada um dos dez pacotes, pelo nome composer',
     ->all())->group('kit');
 
 /**
- * CT-34 — nenhum dos dez entrou nas dependências.
+ * CT-34 — os NOVE não adotados continuam fora das dependências; o adotado está dentro.
  *
- * A asserção de ausência tem alvo dos dois lados: a lista dos dez é declarada no próprio caso, e o
+ * A asserção de ausência tem alvo dos dois lados: a lista é declarada no próprio caso, e o
  * `composer.json` do kit tem dezenas de dependências diretas — o caso compara dois conjuntos não
  * vazios. "Nenhuma dependência nova" genérico seria vácuo, e é exatamente o formato que deixaria
  * M50 (um dos avaliados entrando junto com a entrega) passar.
  *
  * A varredura cobre `require` e `require-dev`: recusado por vazamento de foto entre organizações
  * não vira aceitável por estar no bloco de desenvolvimento.
+ *
+ * ## A armadilha que ESTE caso cometeu, e que ele mesmo documentava três funções acima
+ *
+ * Até 2026-09-19 a asserção era `expect($declaradas)->not->toContain($pacote, "mensagem")`. O
+ * `toContain()` do Pest é VARIÁDICO: a mensagem entrava como SEGUNDA AGULHA, e `not` sobre duas
+ * agulhas passa quando ao menos uma está ausente — a mensagem nunca está no `composer.json`, logo
+ * o caso passava SEMPRE. Medido: com `mortalkiller/filament-page-header` já no `require`, os doze
+ * casos do arquivo ficaram verdes.
+ *
+ * O caso existia para impedir que um pacote avaliado entrasse nas dependências, e **nunca foi
+ * capaz de detectar isso**. O que o expôs foi a adoção deste pacote: o caso deveria ter ficado
+ * vermelho por desenho, e não ficou.
+ *
+ * A forma correta é `toBeIn()` invertido — um valor, uma agulha — ou `in_array()` embrulhado. Aqui
+ * é `in_array()`, pelo mesmo motivo que o CT-33 usa `str_contains()`: a mensagem fica no
+ * `expect()`, longe da lista de agulhas.
  */
-it('[CT-34] nao tem nenhum dos dez pacotes avaliados nas dependencias', function (): void {
+it('[CT-34] mantem fora das dependencias os nove pacotes nao adotados', function (): void {
     $composer = composerDoKit();
 
     $declaradas = array_keys([
@@ -153,10 +175,50 @@ it('[CT-34] nao tem nenhum dos dez pacotes avaliados nas dependencias', function
         ...($composer['require-dev'] ?? []),
     ]);
 
-    expect($declaradas)->not->toBeEmpty()
-        ->and(pacotesDaRodada2())->not->toBeEmpty();
+    $naoAdotados = array_keys(array_filter(
+        pacotesDaRodada2(),
+        static fn (string $veredito): bool => $veredito !== 'ADOTAR',
+    ));
 
-    foreach (array_keys(pacotesDaRodada2()) as $pacote) {
-        expect($declaradas)->not->toContain($pacote, "o pacote {$pacote} foi avaliado na rodada 2 e entrou nas dependências");
+    expect($declaradas)->not->toBeEmpty()
+        ->and($naoAdotados)->toHaveCount(9);
+
+    foreach ($naoAdotados as $pacote) {
+        expect(in_array($pacote, $declaradas, true))->toBeFalse(
+            "o pacote {$pacote} nao foi adotado na rodada 2 e entrou nas dependencias",
+        );
     }
+})->group('kit');
+
+/**
+ * CT-35 — o pacote adotado ESTÁ declarado, e no piso seguro.
+ *
+ * O par positivo do CT-34, e ele não é decoração: sem esta metade, a mudança de veredito de um
+ * pacote o tiraria da varredura de ausência e **nada** passaria a afirmar coisa nenhuma sobre ele.
+ * O registro continuaria completo na página e vazio no oráculo.
+ *
+ * O piso `2.1.5` é requisito, não preferência: a v2.1.4 quebra no Filament 5.8.2 — o
+ * `.fi-header-actions-ctn` do 5.8.2 passou a trazer `sm:self-end`, que conflita com o layout do
+ * pacote. Quem resolvesse 2.1.4 teria as ações do cabeçalho deslocadas, sem erro nenhum.
+ */
+it('[CT-35] declara o pacote adotado da rodada 2, no piso seguro', function (): void {
+    $composer = composerDoKit();
+
+    $adotados = array_keys(array_filter(
+        pacotesDaRodada2(),
+        static fn (string $veredito): bool => $veredito === 'ADOTAR',
+    ));
+
+    expect($adotados)->toBe(['mortalkiller/filament-page-header']);
+
+    $constraint = $composer['require']['mortalkiller/filament-page-header'] ?? null;
+
+    expect($constraint)->not->toBeNull('o pacote adotado na rodada 2 nao esta no require')
+        // O piso: a 2.1.4 fica de fora.
+        ->and(Semver::satisfies('2.1.4', $constraint))->toBeFalse()
+        ->and(Semver::satisfies('2.1.5', $constraint))->toBeTrue()
+        // Caret, nao pino: correcao da serie chega sozinha.
+        ->and(Semver::satisfies('2.99.99', $constraint))->toBeTrue()
+        // E nenhum major novo, num repositorio que ja trocou a API em 24 h.
+        ->and(Semver::satisfies('3.0.0', $constraint))->toBeFalse();
 })->group('kit');

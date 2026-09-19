@@ -486,6 +486,37 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
         };
     }
 
+    /**
+     * Pendente, Inativo ou Ativo — a partição exaustiva do estado que as telas mostram.
+     *
+     * Mora no model, e não na trait de UI, porque desde a v0.36.0 são TRÊS consumidores: a coluna
+     * de `SituacaoDaConta::colunaDeSituacao()` e os cabeçalhos de `UserHeader` nos dois painéis.
+     * Um `match` copiado em três arquivos é uma decisão que se desalinha na primeira mudança, e
+     * "Inativo" tem de significar a mesma coisa em toda tela.
+     *
+     * Pendente vence Inativo: quem ainda não foi aprovado não tem estado de acesso a mostrar.
+     * Excluído não aparece — ele só entra na tabela pelo filtro "Lixeira", onde a própria ação
+     * Restaurar é o sinal.
+     */
+    public function rotuloDaSituacao(): string
+    {
+        return match (true) {
+            (bool) $this->aprovacao_pendente => 'Pendente',
+            ! $this->ativo                   => 'Inativo',
+            default                          => 'Ativo',
+        };
+    }
+
+    /** A cor do rótulo de `rotuloDaSituacao()`. Exibição, nunca autorização. */
+    public function corDaSituacao(): string
+    {
+        return match ($this->rotuloDaSituacao()) {
+            'Pendente' => 'warning',
+            'Inativo'  => 'danger',
+            default    => 'success',
+        };
+    }
+
     public function aprovar(): void
     {
         if (! $this->aprovacao_pendente) {
