@@ -1,5 +1,5 @@
 ---
-title: "The `/` route is public and shows no secrets"
+title: "The / route is public and shows no secrets"
 description: "Instead of Laravel's welcome.blade.php, the root serves App\\Filament\\Pages\\BoasVindas: one card per panel (/app, /admin, /infra) and an infolist with what…"
 sidebar:
   label: "The / route is public"

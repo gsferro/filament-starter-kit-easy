@@ -1,5 +1,5 @@
 ---
-title: "A rota `/` é pública e não mostra segredo"
+title: "A rota / é pública e não mostra segredo"
 description: "No lugar da welcome.blade.php do Laravel, a raiz serve App\\Filament\\Pages\\BoasVindas: um cartão por painel (/app, /admin, /infra) e uma infolist com o que a…"
 sidebar:
   label: "A rota / é pública"

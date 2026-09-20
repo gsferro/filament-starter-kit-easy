@@ -1,5 +1,5 @@
 ---
-title: "Página única de login (`/login`), opcional"
+title: "Página única de login (/login), opcional"
 description: "Por default cada painel tem a própria porta — /admin/login, /infra/login e /app/login —, que é o comportamento do Filament. Com a chave ligada, as três…"
 sidebar:
   label: "Página única de login"

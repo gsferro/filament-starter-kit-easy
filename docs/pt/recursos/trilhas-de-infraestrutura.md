@@ -1,5 +1,5 @@
 ---
-title: "Trilhas do `/infra`: exceções, e-mails e lixeira"
+title: "Trilhas do /infra: exceções, e-mails e lixeira"
 description: "O painel de infraestrutura já mostrava saúde (Health), desempenho (Pulse), arquivo de log (Logs Explorer) e filas (Jobs Monitor) — e nenhum deles respondia…"
 sidebar:
   label: "Trilhas do /infra: exceções, e-mails e lixeira"

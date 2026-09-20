@@ -1,5 +1,5 @@
 ---
-title: "The `/infra` trails: exceptions, mail and recycle bin"
+title: "The /infra trails: exceptions, mail and recycle bin"
 description: "The infrastructure panel already showed health (Health), performance (Pulse), the log file (Logs Explorer) and queues (Jobs Monitor) — and none of them…"
 sidebar:
   label: "The /infra trails: exceptions, mail and recycle bin"

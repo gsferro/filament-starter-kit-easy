@@ -34,8 +34,8 @@ totalmente reversível por quem o cometeu.
 - Técnicas: EP, BVA (contagem de arquivos), **matriz caminho × idioma**, rastreio de efeito
   (o guarda de build), normalização de caminho
 - **Revisão adversarial: obrigatória** — disparada por Impacto 3 na área D
-- Cenários: **18** (`CT-25` redefinido + `CT-26`..`CT-42`) · Regras: **11** · Mutantes previstos:
-  **39** · Sem matador: 2 (declarados)
+- Cenários: **20** (`CT-25` redefinido + `CT-26`..`CT-44`) · Regras: **13** · Mutantes previstos:
+  **43** · Sem matador: 2 (declarados)
 
 > As contagens são recalculadas por `grep`, nunca digitadas de memória: a primeira versão declarava
 > 27 mutantes quando já eram 32, porque a revisão adversarial acrescentou cinco. `QA-05`.
@@ -67,6 +67,8 @@ totalmente reversível por quem o cometeu.
 | R9 — O plano B continua executável, e o guarda de build não pode sumir | A/E (padrão) | RQ-05 | rastreio de efeito | CT-39, CT-40 |
 | R10 — O conversor é reexecutável | B (padrão) | RQ-09 | rastreio de efeito | CT-41 |
 | R11 — A acessibilidade é conferida antes de publicar | B (padrão) | RQ-01 | rastreio de efeito + ordem | CT-42 |
+| R12 — O conferidor desconta o prefixo base | A (padrão) | RQ-08 | normalização do resultado | CT-43 |
+| R13 — Nenhum título carrega marcação de markdown | B (padrão) | RQ-01 | EP sobre front-matter | CT-44 |
 
 **Técnica escalada acima do perfil**: nenhuma. **Rebaixada**: nenhuma.
 
@@ -496,6 +498,8 @@ Já incorporadas em `## Ambiguidades` do `00` — nenhuma pendente desta deriva�
 | CT-40 | o conferidor roda antes de publicar | R9 | rastreio de efeito + ordem | Kit | idem | M31, M32 |
 | CT-41 | toda folha conserva a posição na navegação | R10 | rastreio de efeito | Kit | idem | M33, M34, M35 |
 | CT-42 | acessibilidade conferida antes de publicar | R11 | rastreio de efeito + ordem | Kit | idem | M36..M39 |
+| CT-43 | o conferidor desconta o prefixo base | R12 | normalização | Kit | idem | — |
+| CT-44 | nenhum título carrega marcação | R13 | EP sobre front-matter | Kit | idem | M40..M43 |
 
 ## Sem CT-B
 
@@ -588,6 +592,59 @@ primeira foi o chip de código inline. É o argumento de rodar nos dois, e não 
 | M37 | a conferência roda **depois** do envio, e o site com violação vai ao ar com o job vermelho | CT-42 (exige a ordem) |
 | M38 | o conferidor passa a rodar só o tema escuro, e o defeito de contraste do claro volta a passar | CT-42 (exige os dois) |
 | M39 | a varredura de rotas quebra e o conferidor fica verde sobre zero páginas | CT-42 (exige o piso) |
+
+---
+
+## Regra R13 — Nenhum título carrega marcação de markdown
+
+> `RQ-01` · área B · técnica: **EP sobre o front-matter**
+
+**Esta regra nasceu de um defeito que FOI AO AR**, e é o mais instrutivo da feature inteira.
+
+O Starlight renderiza o `title` do front-matter como **texto puro** — ele não interpreta markdown
+ali. Um H1 como ``# Configurações do kit em `/admin` `` virou um título com as crases **visíveis**
+na tela publicada, na aba do navegador, na barra lateral e no resultado de busca. **Oito páginas**.
+
+A origem é irônica: o defeito nasceu **junto com a correção** que fez o `title` receber o H1 do
+corpo (`R5`, achado do `[CT-01]`). Antes dela, o `title` vinha do just-the-docs e já era texto
+puro. Consertar um defeito criou outro.
+
+### Por que nenhum gate o pegou
+
+| Gate | Por que não viu |
+|---|---|
+| Build | compila; título com crase é markdown válido |
+| `verifica-links.mjs` | afirma sobre links, não sobre texto renderizado |
+| `[CT-01]` (baseline de títulos) | o baseline **tem** as crases — ele exigia que elas estivessem lá |
+| `[CT-29]`, `[CT-30]` | afirmam sobre presença e formato de chaves, não sobre o conteúdo delas |
+| axe | crase visível não é violação de acessibilidade |
+| Quality gate | leu o `04` e o código; o **arquivo** estava correto |
+
+Todos afirmam sobre o **arquivo**. O defeito só existe no **renderizado**. Ele apareceu numa
+captura do site **publicado** — a primeira vez que alguém olhou o resultado em vez da fonte.
+
+```gherkin
+  Regra: Nenhum título chega à tela com marcação literal
+
+    Cenário: [CT-44] nenhum titulo ou rotulo carrega marcacao de markdown
+      Dado o front-matter de todas as páginas das duas árvores
+      Então nenhum `title` contém crase, asterisco ou sublinhado
+      E nenhum `sidebar.label` contém os mesmos
+      E a varredura cobriu ao menos sessenta entradas
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M40 | o conversor volta a copiar o H1 cru, e a crase reaparece na tela | CT-44 |
+| M41 | a limpeza é aplicada ao `title` e esquecida no `sidebar.label`, que tem o mesmo problema | CT-44 (confere os dois) |
+| M42 | alguém edita um título à mão e põe `**negrito**` achando que renderiza | CT-44 |
+| M43 | a varredura de front-matter quebra e o caso fica verde sobre zero entradas | CT-44 (piso de 60) |
+
+**Consequência colateral, registrada**: o `[CT-01]` compara contra o baseline congelado, que tem as
+crases. A comparação passou a normalizar **os dois lados**. O baseline **não** foi editado — ele é
+a medição de antes da migração, e é isso que o torna oráculo; quem se ajusta é a comparação.
 
 ---
 

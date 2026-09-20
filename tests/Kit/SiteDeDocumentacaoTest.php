@@ -44,6 +44,26 @@ beforeEach(function (): void {
  * Sem esta linha o baseline congelado de 115 títulos acusaria 66 sumiços — e o sumiço seria
  * falso: o título está lá, no front-matter, e é ele que o leitor vê no lugar do H1.
  */
+/**
+ * Um título sem a marcação inline, para comparar o que é o MESMO título escrito de formas
+ * diferentes.
+ *
+ * O baseline congelado mede os títulos como eles eram no README: ``A rota `/` é pública``, com as
+ * crases. No Starlight o título vive no front-matter, que ele renderiza como **texto puro** — e
+ * uma crase ali aparece literalmente na tela. Por isso o conversor as remove, e por isso a
+ * comparação precisa remover dos dois lados.
+ *
+ * **O baseline não é editado**: ele é a medição de antes da migração, e é isso que o torna
+ * oráculo. Quem se ajusta é a comparação.
+ *
+ * Custo aceito: dois títulos que difiram APENAS pela marcação passam a ser indistinguíveis aqui.
+ * Não há par assim neste conteúdo, e a alternativa — manter crase visível na tela — é pior.
+ */
+function semMarcacaoInline(string $titulo): string
+{
+    return (string) preg_replace('/[`*_]/', '', $titulo);
+}
+
 function titulosDoMarkdown(string $markdown): array
 {
     $titulos = [];
@@ -175,7 +195,11 @@ it('[CT-01] todo título do baseline existe no destino, e num destino só dentro
     foreach ($baseline[$idioma] as [$nivel, $titulo]) {
         $onde = array_keys(array_filter(
             $titulosPorArquivo,
-            static fn (array $titulos): bool => in_array($titulo, $titulos, true),
+            static fn (array $titulos): bool => in_array(
+                semMarcacaoInline($titulo),
+                array_map(semMarcacaoInline(...), $titulos),
+                true,
+            ),
         ));
 
         if ($onde === []) {
@@ -275,8 +299,9 @@ it('[CT-03] nada que migrou continua no README', function (string $idioma) use (
 
     foreach ($baseline['classificacao'] as $indice => $classe) {
         $titulo    = $h2[$indice - 1][1];
-        $ficou     = in_array($titulo, $noReadme, true);
-        $migrou    = in_array($titulo, $noSite, true);
+        $alvo      = semMarcacaoInline($titulo);
+        $ficou     = in_array($alvo, array_map(semMarcacaoInline(...), $noReadme), true);
+        $migrou    = in_array($alvo, array_map(semMarcacaoInline(...), $noSite), true);
         $esperado  = match ($classe) {
             'site'    => ! $ficou && $migrou,
             'landing' => $ficou && ! $migrou,
@@ -1592,4 +1617,45 @@ it('[CT-43] o conferidor de links desconta o prefixo base do site publicado', fu
     $fluxo = (string) file_get_contents(base_path('.github/workflows/pages.yml'));
 
     expect(substr_count($fluxo, 'DOCS_BASE'))->toBeGreaterThanOrEqual(1);
+});
+
+/**
+ * CT-44 — nenhum título carrega marcação de markdown.
+ *
+ * **Defeito que foi ao ar.** O Starlight renderiza o `title` do front-matter como **texto puro** —
+ * ele não interpreta markdown ali. Um H1 como ``# Configurações do kit em `/admin` `` virava um
+ * título com as crases VISÍVEIS na tela publicada, e o mesmo na aba do navegador, na barra lateral
+ * e no resultado de busca. Oito páginas saíram assim no primeiro deploy.
+ *
+ * A origem é irônica e vale registrar: o defeito nasceu **junto com a correção** que fez o `title`
+ * receber o H1 do corpo. Antes disso o `title` vinha do just-the-docs e já era texto puro.
+ *
+ * E ele sobreviveu a tudo: build verde, 2.296 links conferidos, 58 cenários, zero violação de
+ * acessibilidade. Nenhum deles olha o título **renderizado** — os testes afirmam sobre o arquivo,
+ * e o arquivo estava correto. Só apareceu numa captura do site **publicado**.
+ *
+ * O mesmo vale para `sidebar.label`, pelo mesmo motivo.
+ */
+it('[CT-44] nenhum titulo ou rotulo carrega marcacao de markdown', function (): void {
+    $comMarcacao = [];
+    $conferidos  = 0;
+
+    foreach (['pt', 'en'] as $idioma) {
+        foreach (paginasDoSite($idioma) as $caminho => $conteudo) {
+            foreach (['title', 'label'] as $chave) {
+                if (preg_match('~^\s*'.$chave.':\s*"(.*)"\s*$~m', $conteudo, $achado) !== 1) {
+                    continue;
+                }
+
+                $conferidos++;
+
+                if (preg_match('~[`*_]~', $achado[1]) === 1) {
+                    $comMarcacao[] = "{$idioma}/{$caminho} ({$chave}): {$achado[1]}";
+                }
+            }
+        }
+    }
+
+    expect($conferidos)->toBeGreaterThan(60, 'a varredura nao leu front-matter nenhum')
+        ->and($comMarcacao)->toBe([]);
 });

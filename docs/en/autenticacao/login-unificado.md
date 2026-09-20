@@ -1,5 +1,5 @@
 ---
-title: "Single login page (`/login`), optional"
+title: "Single login page (/login), optional"
 description: "By default each panel has its own door — /admin/login, /infra/login and /app/login —, which is Filament's behavior. With the switch on, all three lead to…"
 sidebar:
   label: "Single login page"

@@ -160,7 +160,25 @@ function removeH1(corpo) {
 function h1Do(corpo) {
   const casou = /^\s*#\s+([^\n]+)/.exec(corpo);
 
-  return casou ? casou[1].trim() : null;
+  if (casou === null) {
+    return null;
+  }
+
+  /*
+   * A marcação inline é REMOVIDA, e isso é correção de um defeito que foi ao ar.
+   *
+   * O Starlight renderiza o `title` do front-matter como TEXTO PURO — ele não interpreta markdown
+   * ali. Um H1 como ``# Configurações do kit em `/admin` `` virava um título com as crases
+   * VISÍVEIS na tela publicada, e o mesmo na aba do navegador, na barra lateral e na busca.
+   *
+   * Oito páginas saíram assim no primeiro deploy. O defeito nasceu junto com a correção que fez o
+   * `title` receber o H1: antes, o `title` vinha do just-the-docs e já era texto puro. Corrigir um
+   * defeito criou outro, e só apareceu ao olhar o site PUBLICADO — o build local e os testes
+   * afirmam sobre o arquivo, e o arquivo estava certo.
+   *
+   * Só crase e ênfase saem. Link e imagem num H1 seriam outro problema, e não existem aqui.
+   */
+  return casou[1].trim().replace(/[`*_]/g, '');
 }
 
 function reescreveLinks(corpo, arquivo) {

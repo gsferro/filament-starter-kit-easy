@@ -1,5 +1,5 @@
 ---
-title: "Configurações do kit em `/admin`"
+title: "Configurações do kit em /admin"
 description: "O que a instalação perguntou — e mais um punhado de coisas que antes só se mudava editando arquivo — vive em /admin/configuracoes-da-aplicacao — no menu do…"
 sidebar:
   label: "Configurações do kit em /admin"
