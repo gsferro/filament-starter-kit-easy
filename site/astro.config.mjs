@@ -12,6 +12,7 @@ import sidebar from './sidebar.json' with { type: 'json' };
  * - a busca (Pagefind) indexa POR IDIOMA, resolvendo a limitação aceita na ADR-01.
  * - o sidebar sai da árvore de arquivos; `nav_order` virou `sidebar.order`.
  */
+
 export default defineConfig({
   site: 'https://gsferro.github.io',
   // Para a prévia o site é servido na raiz. No deploy real isto volta a ser
@@ -40,6 +41,41 @@ export default defineConfig({
         pt: { label: 'Português', lang: 'pt-BR' },
         en: { label: 'English', lang: 'en' },
       },
+      head: [
+      /*
+       * Torna focável por teclado toda região que REALMENTE rola na horizontal.
+       *
+       * O axe reprova `scrollable-region-focusable` (serious): elemento que rola e não recebe
+       * foco é conteúdo que quem navega por teclado não alcança. Medido no site construído:
+       * **26 páginas**, em blocos de código e em tabelas.
+       *
+       * As tabelas são nossas — o Starlight não as embrulha, e foi a regra `overflow-x: auto` do
+       * `kit.css` que as tornou roláveis. Os blocos de código são do tema. Este script cobre os
+       * dois, e só quando há transbordo de verdade (`scrollWidth > clientWidth`), o que evita pôr
+       * na ordem de tabulação dezenas de elementos que não rolam.
+       *
+       * **Por que não um plugin rehype**: `markdown.rehypePlugins` no Astro 7 exige instalar
+       * `@astrojs/markdown-remark` e trocar o processador de markdown inteiro. Medido — o build
+       * recusa com essa mensagem. Trocar o pipeline de renderização para resolver um `tabindex`
+       * é desproporcional.
+       *
+       * Sem `role="region"`: `role` exige nome acessível, e nome genérico em site bilíngue
+       * criaria uma violação nova no lugar desta.
+       */
+      {
+        tag: 'script',
+        content: [
+          'const focavel = () => document',
+          "  .querySelectorAll('.sl-markdown-content table, .sl-markdown-content pre')",
+          '  .forEach((el) => {',
+          '    if (el.scrollWidth > el.clientWidth) el.setAttribute("tabindex", "0");',
+          '  });',
+          "document.addEventListener('DOMContentLoaded', focavel);",
+          "document.addEventListener('astro:page-load', focavel);",
+        ].join(String.fromCharCode(10)),
+      },
+      ],
+
       social: [
         {
           icon: 'github',

@@ -202,6 +202,13 @@ O rollback real, em dois movimentos:
 | `astro` | ^7.3.3 | `site/package.json` |
 | `@astrojs/starlight` | ^0.42.2 | `site/package.json` |
 | `sharp` | ^0.34.2 | `site/package.json` |
+| `axe-core` | ^4.13.0 | `site/package.json` (dev) |
+| `playwright` | ^1.63.0 | `site/package.json` (dev) |
+| `wait-on` | ^9.1.0 | `site/package.json` (dev) |
+
+*(alterado em 2026-09-20: as três de desenvolvimento entraram ao fechar a lacuna de acessibilidade
+que o quality gate declarou. Continuam fora da raiz do repositório — a ADR-02 ancestral vale, e o
+`[CT-12]` a protege.)*
 
 ## Riscos
 

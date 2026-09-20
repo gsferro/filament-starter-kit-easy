@@ -1501,3 +1501,36 @@ it('[CT-41] toda pagina de folha conserva a sua posicao na navegacao', function 
     expect($folhas)->toBeGreaterThan(40, 'a varredura nao achou folhas')
         ->and($semOrdem)->toBe([]);
 });
+
+/**
+ * CT-42 — o fluxo de publicação confere ACESSIBILIDADE antes de enviar o artefato.
+ *
+ * Irmão do `[CT-40]`, e pelo mesmo motivo estrutural: o guarda mora no Node, fora da suíte do
+ * Pest, porque exige o site construído num navegador — e um passo de workflow some com uma linha
+ * apagada, sem nada ficar vermelho.
+ *
+ * O quality gate deste ciclo declarou acessibilidade como **não verificada**, e essa era a maior
+ * lacuna da entrega. Ao fechá-la, o axe achou **28 violações `serious`** em 26 páginas: blocos de
+ * código e tabelas que rolam na horizontal sem receber foco por teclado (conteúdo que quem navega
+ * por teclado não alcança), e contraste insuficiente no item atual da barra lateral **só no tema
+ * claro** — a segunda vez que uma cor deste tema passou num esquema e falhou no outro.
+ *
+ * Por isso o cenário exige os **dois temas** no comando: rodar um só teria deixado o defeito de
+ * contraste passar, exatamente como aconteceu antes com o chip de código inline.
+ */
+it('[CT-42] o fluxo de publicacao confere acessibilidade antes de enviar o artefato', function (): void {
+    $fluxo = (string) file_get_contents(base_path('.github/workflows/pages.yml'));
+
+    $conferidor = strpos($fluxo, 'verifica-acessibilidade.mjs');
+    $envio      = strpos($fluxo, 'upload-pages-artifact');
+
+    expect($conferidor)->not->toBeFalse('o fluxo nao confere acessibilidade')
+        ->and($conferidor)->toBeLessThan($envio, 'a conferencia roda depois do envio');
+
+    $script = (string) file_get_contents(base_path('site/verifica-acessibilidade.mjs'));
+
+    // Os dois temas e o piso de população: sem eles o conferidor fica verde sobre o vazio.
+    expect($script)->toContain("'dark'")
+        ->and($script)->toContain("'light'")
+        ->and($script)->toContain('PISO');
+});

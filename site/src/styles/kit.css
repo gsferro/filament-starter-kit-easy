@@ -153,6 +153,23 @@
   box-shadow: inset 2px 0 0 var(--sl-color-accent);
 }
 
+/*
+ * O tema claro precisa de um acento mais escuro AQUI, e só aqui.
+ *
+ * O `--sl-color-text-accent` do claro (`#c8322a`) tem contraste de sobra sobre o fundo branco da
+ * página — e **não** sobre a pílula translúcida que a regra acima cria: 18% de vermelho sobre
+ * branco levanta o fundo e derruba a razão abaixo de 4.5:1. O axe reprovou em `color-contrast`
+ * (serious), e só no claro; no escuro a mesma regra passa folgado.
+ *
+ * É a segunda vez que uma cor deste tema funciona num esquema e falha no outro. A primeira foi o
+ * chip de código inline. As duas só apareceram porque a conferência roda nos dois.
+ */
+:root[data-theme='light'] .sidebar-content a[aria-current='page'],
+:root[data-theme='light'] .sidebar-content a[aria-current='page']:hover,
+:root[data-theme='light'] .sidebar-content a[aria-current='page']:focus {
+  color: var(--sl-color-accent-high);
+}
+
 /* O título do site na barra superior carrega o acento, como na arte. */
 .site-title {
   font-weight: 700;

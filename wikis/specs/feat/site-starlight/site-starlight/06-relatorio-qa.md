@@ -196,8 +196,33 @@ sentinela; ela foi medição manual do planejamento. A mitigação real é o pis
 `php artisan test --testsuite=Kit,Tenancy` → **2.601/2.601, 10.121 asserções**. Fecha a linha que
 o ciclo 1 deixou como ⚠️ parcial.
 
+### A lacuna de acessibilidade foi fechada — e ela não era teórica
+
+O ciclo 1 declarou acessibilidade como *"a lacuna mais significativa"*. Ela foi fechada depois, e o
+resultado justifica o alarde: **28 violações `serious` em 26 das 67 páginas**.
+
+| Violação | Quantas | De quem |
+|---|---|---|
+| `scrollable-region-focusable` | 26 | tabelas: **nossas** (a regra `overflow-x: auto` do `kit.css` as tornou roláveis); blocos de código: do tema |
+| `color-contrast` (tema claro) | 2 | **nossa** — a pílula translúcida do item atual da barra lateral derruba a razão abaixo de 4.5:1 |
+
+A de contraste é a **segunda vez** que uma cor deste tema passa num esquema e falha no outro — a
+primeira foi o chip de código inline. É o argumento inteiro de conferir nos dois, e não numa
+amostra de um.
+
+**Depois das correções: zero violações `serious`/`critical` de WCAG 2.1 AA**, em 70 conferências
+(66 páginas no escuro, 4 no claro). O conferidor entrou no `pages.yml` antes do envio do artefato,
+e o `[CT-42]` impede que ele seja removido — mesmo desenho do `[CT-40]`.
+
+Um detalhe do caminho vale registro: a primeira tentativa de correção foi um plugin `rehype`, e o
+**build recusou** — `markdown.rehypePlugins` no Astro 7 exige trocar o processador de markdown
+inteiro. Trocar o pipeline de renderização para resolver um `tabindex` é desproporcional; a
+correção final é um script no `head` que marca como focável **só o que realmente transborda**.
+
 ### O que continua não verificado
 
-A seção `## Não Verificado` do ciclo 1 vale igual, e a lacuna mais significativa não mudou:
-**acessibilidade nunca foi medida** contra o site construído. O `capturas.mjs` dirige o Playwright
-e poderia rodar `axe`; não roda. Fica como débito declarado, não como item silenciado.
+- **Navegação por teclado e ordem de foco** — o axe não as julga. Nenhuma ferramenta as mediu.
+- **Qualidade do texto alternativo** — o axe reporta `alt` ausente, não `alt` inútil.
+- **Mutation score** — sem driver de cobertura, e o alvo seria JavaScript, que o `pest --mutate`
+  não alcança de qualquer forma.
+- **O site publicado** — não existe ainda (`QA-04`).

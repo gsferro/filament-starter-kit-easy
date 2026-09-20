@@ -34,8 +34,8 @@ totalmente reversível por quem o cometeu.
 - Técnicas: EP, BVA (contagem de arquivos), **matriz caminho × idioma**, rastreio de efeito
   (o guarda de build), normalização de caminho
 - **Revisão adversarial: obrigatória** — disparada por Impacto 3 na área D
-- Cenários: **17** (`CT-25` redefinido + `CT-26`..`CT-41`) · Regras: **10** · Mutantes previstos:
-  **35** · Sem matador: 2 (declarados)
+- Cenários: **18** (`CT-25` redefinido + `CT-26`..`CT-42`) · Regras: **11** · Mutantes previstos:
+  **39** · Sem matador: 2 (declarados)
 
 > As contagens são recalculadas por `grep`, nunca digitadas de memória: a primeira versão declarava
 > 27 mutantes quando já eram 32, porque a revisão adversarial acrescentou cinco. `QA-05`.
@@ -66,6 +66,7 @@ totalmente reversível por quem o cometeu.
 | R8 — Toda URL antiga de folha redireciona para uma página existente | D (padrão, **I3**) | RQ-08 | EP + BVA de contagem | CT-36, CT-37, CT-38 |
 | R9 — O plano B continua executável, e o guarda de build não pode sumir | A/E (padrão) | RQ-05 | rastreio de efeito | CT-39, CT-40 |
 | R10 — O conversor é reexecutável | B (padrão) | RQ-09 | rastreio de efeito | CT-41 |
+| R11 — A acessibilidade é conferida antes de publicar | B (padrão) | RQ-01 | rastreio de efeito + ordem | CT-42 |
 
 **Técnica escalada acima do perfil**: nenhuma. **Rebaixada**: nenhuma.
 
@@ -494,6 +495,7 @@ Já incorporadas em `## Ambiguidades` do `00` — nenhuma pendente desta deriva�
 | CT-39 | o plano B está completo | R9 | rastreio de efeito | Kit | idem | M29, M30 |
 | CT-40 | o conferidor roda antes de publicar | R9 | rastreio de efeito + ordem | Kit | idem | M31, M32 |
 | CT-41 | toda folha conserva a posição na navegação | R10 | rastreio de efeito | Kit | idem | M33, M34, M35 |
+| CT-42 | acessibilidade conferida antes de publicar | R11 | rastreio de efeito + ordem | Kit | idem | M36..M39 |
 
 ## Sem CT-B
 
@@ -549,6 +551,43 @@ três passadas seguidas, `git diff` vazio.
 | M33 | o leitor de front-matter volta a exigir chave no início da linha, e a segunda passada apaga `sidebar.order` | CT-41 |
 | M34 | a ordem passa a ser herdada só de `nav_order`, que não existe mais depois da primeira passada | CT-41 |
 | M35 | a varredura de folhas quebra e o caso fica verde sobre lista vazia | CT-41 (piso de 40) |
+
+---
+
+## Regra R11 — A acessibilidade é conferida antes de o site ir ao ar
+
+> `RQ-01` · área B · técnica: **rastreio de efeito + ordem**
+
+**Esta regra nasceu de uma lacuna que o próprio quality gate declarou.** O ciclo 1 registrou
+acessibilidade como *"não verificada — a lacuna mais significativa deste ciclo"*. Fechá-la não foi
+formalidade: o axe achou **28 violações `serious`** em 26 das 67 páginas.
+
+| Violação | Onde | De quem |
+|---|---|---|
+| `scrollable-region-focusable` (26×) | blocos de código e tabelas que rolam na horizontal sem receber foco | tabelas: **nossas** (a regra `overflow-x: auto` do `kit.css`); blocos de código: do tema |
+| `color-contrast` (2×) | item atual da barra lateral, **só no tema claro** | **nossa** — a pílula translúcida levanta o fundo e derruba a razão abaixo de 4.5:1 |
+
+A segunda é a **segunda vez** que uma cor deste tema funciona num esquema e falha no outro; a
+primeira foi o chip de código inline. É o argumento de rodar nos dois, e não numa amostra de um.
+
+```gherkin
+  Regra: Nenhuma violação de acessibilidade chega ao site publicado
+
+    Cenário: [CT-42] o fluxo de publicação confere acessibilidade antes de enviar o artefato
+      Dado o fluxo de publicação do site
+      Então ele invoca o conferidor de acessibilidade
+      E a invocação vem antes do passo que envia o artefato
+      E o conferidor percorre os dois temas e tem piso de população
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M36 | o passo do axe é removido do fluxo "porque deixa o build lento" | CT-42 |
+| M37 | a conferência roda **depois** do envio, e o site com violação vai ao ar com o job vermelho | CT-42 (exige a ordem) |
+| M38 | o conferidor passa a rodar só o tema escuro, e o defeito de contraste do claro volta a passar | CT-42 (exige os dois) |
+| M39 | a varredura de rotas quebra e o conferidor fica verde sobre zero páginas | CT-42 (exige o piso) |
 
 ---
 

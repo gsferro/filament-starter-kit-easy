@@ -60,6 +60,20 @@ jobs:
         # verde sobre um `dist/` vazio.
         run: node verifica-links.mjs
 
+      - name: Instalar o navegador do Playwright
+        working-directory: site
+        run: npx playwright install --with-deps chromium
+
+      - name: Conferir acessibilidade (axe, WCAG 2.1 AA, nos dois temas)
+        working-directory: site
+        # Sobe a prévia, roda o axe contra o site CONSTRUÍDO e derruba o job em qualquer violação
+        # `serious`/`critical`. Nos dois temas de propósito: este site já teve um defeito de cor
+        # que era impecável no escuro e ilegível no claro.
+        run: |
+          npx astro preview &
+          npx wait-on http://localhost:4321/pt/ -t 60000
+          node verifica-acessibilidade.mjs
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/dist
