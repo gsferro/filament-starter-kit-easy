@@ -3,7 +3,7 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.37.0] - 2026-09-20
 
 ### Alterado
 - **O site de documentação passou a ser gerado pelo Astro Starlight e publicado por GitHub
