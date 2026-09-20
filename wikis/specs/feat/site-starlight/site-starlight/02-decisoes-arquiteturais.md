@@ -132,9 +132,29 @@ loader: glob({ base: '../docs', pattern: '**/*.{md,mdx}' })
   do site e o workflow.
 - **Negativas**: layout não-convencional. Quem conhece Starlight procura `src/content/docs/` e não
   acha — mitigado por comentário no `content.config.ts`.
+- **Negativa descoberta na implementação** *(alterado em 2026-09-20)*: **o `autogenerate` do
+  Starlight não funciona com o conteúdo fora da raiz do projeto Astro.** Os grupos da barra lateral
+  renderizam **vazios** — a página construída saiu com 9 links onde deveria ter 32. Não há erro: o
+  build fica verde e a navegação some.
+
+  A barra lateral passou a ser **declarada**, a partir de `site/sidebar.json` que o
+  `converter.mjs` gera. Os `slug` não levam prefixo de idioma — o Starlight rejeita
+  `pt/comecar/dominio-local` com *"does not exist"* e aceita `comecar/instalacao-avancada`,
+  localizando-o por locale. Medido nos dois sentidos.
+
+  O custo é um modo de falha novo: página que não entre na lista fica invisível na navegação sem
+  nada ficar vermelho. É o que o `[CT-20]` passa a cobrir.
 - **Riscos**: `glob` com `base` fora da raiz do Astro é suportado mas incomum; um upgrade pode
-  apertar isso. **Mitigado por teste**: o `[CT-30]` do `04` planta uma sentinela em `docs/` e
-  exige que ela apareça no build.
+  apertar isso.
+
+  *(alterado em 2026-09-20: a versão original dizia "mitigado por teste: o `[CT-30]` planta uma
+  sentinela". **Era falso** — o `[CT-30]` afirma que nenhuma página repete o título no corpo, e
+  **nenhum teste planta sentinela**. A sentinela foi uma medição manual feita no planejamento,
+  registrada como a lacuna `M11` do `04`.)*
+
+  **A mitigação real é outra**: o `verifica-links.mjs` tem piso de população (60 páginas, 1.000
+  links) e reprova com código de saída. Base quebrada produz build vazio, e o piso o derruba no
+  workflow antes do envio. É mitigação de fora da suíte do Pest, e está declarada como tal.
 
 ### Falsificação executada
 
@@ -304,7 +324,18 @@ A migração muda `/pt/comecar/instalacao-avancada.html` para
 ### Decisão
 
 Stubs HTML com `meta refresh` + `canonical` + `noindex`, gerados pelo `converter.mjs`, gravados em
-`site/public/` e **commitados**.
+`site/public/` e **commitados**, com **destino relativo**.
+
+*(alterado em 2026-09-20: a versão original previa caminho absoluto com o prefixo de `DOCS_BASE`.)*
+**O destino relativo é correção de um defeito de produção**, não preferência de estilo: os stubs
+são commitados, quem os gera localmente não passa `DOCS_BASE`, e os 54 entraram no repositório
+apontando para a raiz do domínio. O site publica em `/filament-starter-kit-easy/` — **todos dariam
+404 no ar**, e nada no repositório ficaria vermelho.
+
+O stub mora em `…/comecar/x.html` e o destino é `…/comecar/x/`: mesmo diretório, então o relativo
+é só o último segmento e resolve sob qualquer base, inclusive a raiz. Conferido com o resolvedor
+de URL do Node, que é o algoritmo do navegador: 3/3 casos resolvem para a rota nova sob o endereço
+de produção. O `[CT-36]` recusa destino absoluto.
 
 ### Alternativas Consideradas
 

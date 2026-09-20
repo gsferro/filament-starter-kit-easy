@@ -34,8 +34,11 @@ totalmente reversível por quem o cometeu.
 - Técnicas: EP, BVA (contagem de arquivos), **matriz caminho × idioma**, rastreio de efeito
   (o guarda de build), normalização de caminho
 - **Revisão adversarial: obrigatória** — disparada por Impacto 3 na área D
-- Cenários: 16 (`CT-25` redefinido + `CT-26`..`CT-40`) · Regras: 9 · Mutantes previstos: 27 ·
-  Sem matador: 2 (declarados)
+- Cenários: **17** (`CT-25` redefinido + `CT-26`..`CT-41`) · Regras: **10** · Mutantes previstos:
+  **35** · Sem matador: 2 (declarados)
+
+> As contagens são recalculadas por `grep`, nunca digitadas de memória: a primeira versão declarava
+> 27 mutantes quando já eram 32, porque a revisão adversarial acrescentou cinco. `QA-05`.
 
 ## Varredura SFDIPOT
 
@@ -62,6 +65,7 @@ totalmente reversível por quem o cometeu.
 | R7 — As duas árvores de idioma são espelho **por caminho** | C (padrão) | RQ-06, RQ-07 | matriz caminho × idioma | CT-34, CT-35 |
 | R8 — Toda URL antiga de folha redireciona para uma página existente | D (padrão, **I3**) | RQ-08 | EP + BVA de contagem | CT-36, CT-37, CT-38 |
 | R9 — O plano B continua executável, e o guarda de build não pode sumir | A/E (padrão) | RQ-05 | rastreio de efeito | CT-39, CT-40 |
+| R10 — O conversor é reexecutável | B (padrão) | RQ-09 | rastreio de efeito | CT-41 |
 
 **Técnica escalada acima do perfil**: nenhuma. **Rebaixada**: nenhuma.
 
@@ -489,6 +493,7 @@ Já incorporadas em `## Ambiguidades` do `00` — nenhuma pendente desta deriva�
 | CT-38 | toda folha tem redirect | R8 | BVA de contagem | Kit | idem | M25, M28 |
 | CT-39 | o plano B está completo | R9 | rastreio de efeito | Kit | idem | M29, M30 |
 | CT-40 | o conferidor roda antes de publicar | R9 | rastreio de efeito + ordem | Kit | idem | M31, M32 |
+| CT-41 | toda folha conserva a posição na navegação | R10 | rastreio de efeito | Kit | idem | M33, M34, M35 |
 
 ## Sem CT-B
 
@@ -502,6 +507,48 @@ A verificação em navegador real **existe** e foi o que encontrou os quatro def
 em desktop e celular, para o agente olhar. Ela é **observação**, não cobertura — exatamente o
 estatuto que a skill dá ao Playwright MCP. O que ela achou virou `CT-32` e `CT-33`, que são
 falsificáveis e rodam na suíte.
+
+---
+
+## Regra R10 — O conversor é reexecutável
+
+> `RQ-09` · área B · técnica: **rastreio de efeito sobre o próprio artefato**
+
+**Esta regra nasceu do step 7.5, depois de o `04` estar fechado — e o cenário foi escrito como
+teste ANTES de existir aqui, o que é a Proibição 11 da `feature-test-design` (teste derivado do
+código). O quality gate pegou como `QA-03`, e esta seção é a correção: a regra, o Gherkin e os
+mutantes passam a existir, e o teste passa a derivar deles.**
+
+O conversor é uma ferramenta, não um script de uma vez só: ele existe para ser rodado de novo
+quando uma página nova chega. Rodá-lo duas vezes degradava o conteúdo — mudava 55 arquivos,
+apagava `sidebar.order` de 32 páginas e embaralhava a barra lateral — **sem erro, sem aviso, com
+o build verde**. Ferramenta que degrada em silêncio é pior que ferramenta que falha.
+
+A causa é de leitura: o front-matter do just-the-docs era plano (`nav_order: 3`) e o do Starlight
+aninha sob `sidebar:`. O leitor só enxergava chave de topo.
+
+```gherkin
+  Regra: Rodar o conversor de novo não muda o que já está convertido
+
+    Cenário: [CT-41] toda página de folha conserva a sua posição na navegação
+      Dado todas as páginas de folha das duas árvores de idioma
+      Então cada uma declara a sua ordem na barra lateral
+      E a varredura cobriu ao menos quarenta folhas
+```
+
+**Por que o cenário afirma sobre a ORDEM e não sobre "rodar duas vezes":** rodar o conversor dentro
+do Pest modificaria `docs/` durante a suíte, o que é inaceitável. O que o caso afirma é a
+**consequência observável** da degradação — a ordem perdida —, que é o que fica no disco e o que
+alguém commitaria sem perceber. A reexecutabilidade em si foi provada por medição no step 7.5:
+três passadas seguidas, `git diff` vazio.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M33 | o leitor de front-matter volta a exigir chave no início da linha, e a segunda passada apaga `sidebar.order` | CT-41 |
+| M34 | a ordem passa a ser herdada só de `nav_order`, que não existe mais depois da primeira passada | CT-41 |
+| M35 | a varredura de folhas quebra e o caso fica verde sobre lista vazia | CT-41 (piso de 40) |
 
 ---
 

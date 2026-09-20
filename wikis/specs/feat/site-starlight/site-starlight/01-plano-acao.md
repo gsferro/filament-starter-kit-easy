@@ -172,15 +172,25 @@ request de aplicação, query, cache nem polling.
 
 ## Rollback
 
-Sem migration e sem dado. O rollback é de **publicação**, em três movimentos, e é barato porque o
-Jekyll não é destruído no mesmo commit:
+*(alterado em 2026-09-20: a versão original descrevia um rollback que não funciona — ver QA-02 do
+`06-relatorio-qa.md`.)*
 
-1. Em `Settings → Pages`, voltar `Source` para `Deploy from a branch → main → /docs`
-2. `git revert` do commit que remove `docs/_config.yml`
-3. O Jekyll volta a publicar do mesmo `docs/`
+Sem migration e sem dado, mas **o rollback não é barato como este plano supôs**.
 
-> Por isso o passo 12 (remover o `_config.yml`) é o **último**, separado, e não vai no mesmo commit
-> do resto: enquanto ele não roda, os dois geradores conseguem ler a mesma árvore.
+A suposição original era que os dois geradores leriam a mesma árvore por um commit, bastando
+reverter a remoção do `_config.yml`. **Falso, e a implementação provou**: a transformação do
+conteúdo é *para o Starlight* — o H1 sai do corpo (o Jekyll não o repõe, porque para ele `title` é
+rótulo de navegação) e os links viram absolutos sem o `baseurl` (que sob
+`/filament-starter-kit-easy` dão 404). Com o conteúdo transformado, o Jekyll **já está quebrado**,
+com ou sem o `_config.yml`.
+
+O rollback real, em dois movimentos:
+
+1. `git revert` do **merge inteiro** — o conteúdo precisa voltar ao formato do just-the-docs
+2. Em `Settings → Pages`, voltar `Source` para `Deploy from a branch → main → /docs`
+
+> Por isso o passo 12 deixou de ser um passo separado: manter o `_config.yml` por um commit não
+> guardava rollback nenhum, só dava a impressão de guardar.
 
 ## Dependências
 
@@ -199,8 +209,9 @@ Jekyll não é destruído no mesmo commit:
   **medido** (sentinela plantada em `docs/` apareceu no build), mas é uso incomum. *Mitigação*: o
   `[CT-30]` do `04` planta a sentinela de novo, em teste, para o dia em que um upgrade do Astro
   mudar isso.
-- **O `docs/` fica legível por dois geradores até o passo 12.** *Mitigação*: é deliberado, é o
-  rollback barato, e dura um commit.
+- ~~**O `docs/` fica legível por dois geradores até o passo 12.**~~ *(alterado em 2026-09-20:
+  risco retirado — ele nunca existiu. O conteúdo transformado não serve ao Jekyll, então não há
+  janela de dois geradores. Ver `## Rollback`.)*
 - **O deploy por Actions é a primeira publicação do site fora do build nativo.** *Mitigação*: o
   passo 8 troca a origem do Pages só depois de o workflow ter rodado verde uma vez.
 - **`[CT-25]` ancestral proíbe exatamente o workflow que esta feature cria.** *Mitigação*: não é
@@ -248,8 +259,12 @@ O spike já está nesta branch (`826816e`, `832aff6`, `21c29eb`, `133ac38`, `748
 ### 4. Transformar `docs/` no lugar
 
 - **Path**: `site/converter.mjs` (origem **e** destino passam a ser `../docs`)
-- Front-matter: `title` preservado, `description` derivada do primeiro parágrafo,
-  `nav_order` → `sidebar.order`, `parent`/`grand_parent`/`has_children` removidos
+- Front-matter: **`title` recebe o H1 do corpo** e `sidebar.label` recebe o `title` antigo quando
+  os dois diferem *(alterado em 2026-09-20: o plano dizia "`title` preservado", e o H1 e o `title`
+  do just-the-docs eram textos diferentes em várias páginas — o `title` era o rótulo curto da
+  navegação. Quem pegou foi o `[CT-01]`, contra o baseline congelado de 115 títulos.)*;
+  `description` derivada do primeiro parágrafo de prosa; `nav_order` → `sidebar.order`;
+  `parent`/`grand_parent`/`has_children` removidos
 - Índice de seção ganha `sidebar.label: "Visão geral"` / `"Overview"` e `order: 0`
 - H1 do corpo removido
 - Links `.md` reescritos como caminho absoluto
@@ -308,10 +323,10 @@ ADR-05 da wiki ancestral. Ver `04-casos-de-teste.md` para os cenários.
 - **Path**: `site-vitepress/README.md` e `02-decisoes-arquiteturais.md`
 - O README já existe; este passo o referencia da ADR-05 e o protege por teste
 
-### 12. Remover o Jekyll — ÚLTIMO, e em commit separado
+### 12. Remover o Jekyll — no MESMO commit *(alterado em 2026-09-20: ver `## Rollback`)*
 
 - **Path**: `docs/_config.yml`
-- Só depois de o passo 8 estar feito e o site novo estar no ar
+- **Sai junto com a transformação do conteúdo**, não depois. Ver `## Rollback` para o porquê
 
 ## Filosofia de Implementação
 

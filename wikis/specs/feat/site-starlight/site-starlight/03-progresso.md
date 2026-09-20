@@ -75,10 +75,10 @@
 - [x] Três suítes de documentação juntas — **66/66, 269 asserções**, 2026-09-19
 - [x] `cd site && npm run build && node verifica-links.mjs` — 67 páginas, **2.296 links / 0 quebrados**, **54 redirects / 0 ruins**, exit 0, 2026-09-19
 - [x] Revisão adversarial do `04` — 14 lacunas, 10 fechadas, 4 declaradas, 2026-09-19
-- [ ] `composer test` — suíte completa (regressão obrigatória)
+- [x] `php artisan test --testsuite=Kit,Tenancy` — **2.601/2.601, 10.121 asserções**, 2026-09-20
 - [x] Revisão de código do diff (step 7.5) — 2 achados, ambos fechados; 4 hipóteses rejeitadas com motivo, 2026-09-20
 - [x] Citações `arquivo:símbolo:linha` reverificadas — **2/2 ok**, e o gate `CitacoesDeCodigoTest` verde, 2026-09-20
-- [ ] `git commit`
+- [x] `git commit` — `7e1ffc0`, `444bea3` e o commit do ciclo 2 do gate, 2026-09-20
 
 ## Conformidade com Rules
 
@@ -92,7 +92,18 @@
 
 ## Quality Gate
 
-- **Ciclo**: — · **Veredito**: — · **Data**: —
+- **Ciclo 1** · **Veredito**: `REPROVADO → especificação` · **Data**: 2026-09-20
+  - 0 Blocker · 3 Major · 1 Minor · 1 Cosmético
+  - Nenhum achado de **comportamento**. O que reprovou foi a dimensão L (consistência documental):
+    este `03` declarava quatro propagações que **não tinham sido feitas**, o `## Rollback` do `01`
+    descrevia um procedimento que não funciona, e o `[CT-41]` existia como teste sem cenário no `04`.
+  - **Degradação declarada**: o ciclo foi executado pelo mesmo agente que implementou, porque o
+    sub-agente designado morreu num limite de sessão. A skill nomeia isso como cegueira
+    correlacionada.
+- **Ciclo 2** · **Veredito**: `APROVADO` · **Data**: 2026-09-20
+  - Os cinco achados do ciclo 1 foram fechados e reconferidos por comando. Nenhum achado novo.
+  - `QA-04` permanece **aberto por desenho**: é destino 4 (infra), depende de ação do solicitante
+    na interface do GitHub, e a skill define que destino 4 não reprova a feature.
 - **Relatório**: `06-relatorio-qa.md`
 
 ## Auditoria Pré-Implementação
@@ -182,13 +193,14 @@ erradas plausíveis e 14 lacunas; duas das cinco eram defeitos REAIS já present
    dois geradores leriam a mesma árvore por um commit, dando rollback barato. **O argumento é
    falso**: a transformação é para o Starlight (H1 fora do corpo, links absolutos sem o `baseurl`),
    então o Jekyll já está quebrado. O rollback real é reverter o merge e voltar o `Source` do
-   Pages. *Propagado para `01` → `## Rollback` e para o docblock de `[CT-27]`.*
+   Pages. *Propagado em 2026-09-20, depois de o `QA-01` acusar que a propagação não existia: `01` → `## Rollback`, `## Riscos` e passo 12, com marca de data; e o docblock de `[CT-27]`.*
 2. **O destino dos stubs passou a ser RELATIVO.** O plano e a ADR-06 previam caminho absoluto com
    `DOCS_BASE`. Como os stubs são commitados e quem os gera localmente não passa a variável, os 54
-   entraram apontando para a raiz do domínio — 404 em produção. *Propagado para a ADR-06 e para o
-   docblock de `escreveStub()`.*
+   entraram apontando para a raiz do domínio — 404 em produção. *Propagado em 2026-09-20 (`QA-01`): ADR-06 → `### Decisão`, com marca de data; e o docblock de
+   `escreveStub()`.*
 3. **A barra lateral é declarada, não descoberta.** O plano supunha `autogenerate`, que não
-   funciona com conteúdo fora da raiz do Astro. *Propagado para a ADR-02 e para o `[CT-20]`.*
+   funciona com conteúdo fora da raiz do Astro. *Propagado em 2026-09-20 (`QA-01`): ADR-02 → `### Consequências`, com marca de data; e o docblock
+   de `[CT-20]`.*
 4. **`title` recebe o H1; `sidebar.label` recebe o título antigo.** O plano dizia apenas "H1 do
    corpo removido". O H1 e o `title` do just-the-docs eram textos **diferentes** em várias páginas.
    *Propagado para o `01` passo 4 e para o docblock de `h1Do()`.*
