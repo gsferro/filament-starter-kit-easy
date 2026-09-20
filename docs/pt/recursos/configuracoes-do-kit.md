@@ -41,7 +41,7 @@ versiona. Com o interruptor da versão do kit **desligado** — que é como ele 
 renderiza nada.
 
 Se o interruptor estiver ligado e o campo vazio, o rodapé mostra **só a versão do kit, rotulada**
-(`kit 0.36.1`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
+(`kit 0.37.0`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
 impede essa leitura, e é requisito do kit, não detalhe de tela.
 
 **`APP_VERSION` semeia UMA vez, na instalação. Depois dela, quem manda é a tela.**
