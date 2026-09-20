@@ -682,7 +682,12 @@ it('[CT-25] exatamente um fluxo de Actions publica o site', function (): void {
 it('[CT-16] o endereço base do site é o do repositório, não o do pacote', function (): void {
     $composer = json_decode((string) file_get_contents(base_path('composer.json')), true);
 
-    preg_match('/DOCS_BASE=(\S+)/', (string) file_get_contents(base_path('.github/workflows/pages.yml')), $achado);
+    /*
+     * Duas formas, porque o valor mudou de lugar: era `DOCS_BASE=/x` no `run` do build e passou a
+     * ser `DOCS_BASE: /x` no `env` do job — o conferidor de links e o de acessibilidade precisam
+     * do mesmo prefixo, e no `run` só o build o enxergava. O caso segue o VALOR, não a sintaxe.
+     */
+    preg_match('/DOCS_BASE[=:]\s*(\S+)/', (string) file_get_contents(base_path('.github/workflows/pages.yml')), $achado);
 
     $base         = $achado[1] ?? '';
     $repositorio  = basename((string) $composer['homepage']);
