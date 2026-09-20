@@ -43,13 +43,37 @@ function paginas(dir) {
   });
 }
 
+/**
+ * O front-matter como mapa plano de `chave: valor`.
+ *
+ * **A indentação é aceita, e é isso que torna o conversor reexecutável.** O front-matter do
+ * just-the-docs era plano (`nav_order: 3`); o do Starlight aninha sob `sidebar:`:
+ *
+ * ```yaml
+ * sidebar:
+ *   label: "Visão geral"
+ *   order: 3
+ * ```
+ *
+ * Com o `^` colado no nome da chave, a segunda passada não enxergava `label` nem `order` — e como
+ * o `nav_order` já não existia mais, ela emitia o front-matter **sem ordem**. Medido: rodar o
+ * conversor duas vezes mudava 55 arquivos, apagava `sidebar.order` de 32 páginas e embaralhava a
+ * barra lateral inteira. Um conversor que degrada o conteúdo a cada execução é pior que um que
+ * falha, porque ninguém percebe.
+ *
+ * O `par[2] !== ''` descarta a linha `sidebar:` em si, que não tem valor — sem isso, `sidebar`
+ * entraria no mapa como string vazia e confundiria quem lesse o resultado.
+ *
+ * Achatar é seguro aqui porque `sidebar` é o único bloco aninhado e as chaves dele não colidem
+ * com as de topo.
+ */
 function separaFrontMatter(texto) {
   const casou = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(texto);
   if (!casou) return { meta: {}, corpo: texto };
   const meta = {};
   for (const linha of casou[1].split(/\r?\n/)) {
-    const par = /^([a-z_]+):\s*(.*)$/.exec(linha);
-    if (par) meta[par[1]] = par[2].trim().replace(/^["']|["']$/g, '');
+    const par = /^\s*([a-z_]+):\s*(.*)$/.exec(linha);
+    if (par && par[2] !== '') meta[par[1]] = par[2].trim().replace(/^["']|["']$/g, '');
   }
   return { meta, corpo: texto.slice(casou[0].length) };
 }
@@ -309,10 +333,13 @@ for (const arquivo of paginas(ORIGEM)) {
 
   if (indiceDeSecao) {
     frente.push('sidebar:', '  label: ' + (rel.startsWith('pt/') ? '"Visão geral"' : '"Overview"'), '  order: 0');
-  } else if (rotuloCurto !== null || meta.nav_order) {
+  } else if (rotuloCurto !== null || meta.nav_order || meta.order) {
     frente.push('sidebar:');
     if (rotuloCurto !== null) frente.push('  label: ' + JSON.stringify(rotuloCurto));
-    if (meta.nav_order) frente.push('  order: ' + meta.nav_order);
+    // `nav_order` na primeira passada (Jekyll); `order` nas seguintes (Starlight).
+    const ordem = meta.nav_order ?? meta.order;
+
+    if (ordem) frente.push('  order: ' + ordem);
   }
 
   frente.push('---', '');
@@ -325,7 +352,7 @@ for (const arquivo of paginas(ORIGEM)) {
   if (idioma === 'pt' && SECOES.some((s) => s.dir === secao)) {
     (itensDaSecao[secao] ??= []).push({
       slug: emBarras(rel).replace(/^pt\//, '').replace(/\.mdx?$/, '').replace(/\/index$/, ''),
-      ordem: indiceDeSecao ? 0 : Number(meta.nav_order ?? 99),
+      ordem: indiceDeSecao ? 0 : Number(meta.nav_order ?? meta.order ?? 99),
     });
   }
 

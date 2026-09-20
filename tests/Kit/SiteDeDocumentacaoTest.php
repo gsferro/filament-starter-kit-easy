@@ -1111,8 +1111,13 @@ it('[CT-26] a configuracao declara o Starlight e os dois locales', function (): 
 it('[CT-28] o conteudo publicado e o de docs, e so ele', function (): void {
     $colecoes = (string) file_get_contents(base_path('site/src/content.config.ts'));
 
+    /*
+     * `glob` e não `is_dir`: o detector do CT-10 procura `is_dir(... docs` e tem razão em
+     * procurar — ele caça cenário que se PULA quando o diretório não existe. Aqui a ausência é
+     * a AFIRMAÇÃO, e `glob` é o idioma que este arquivo já usa para isso (ver CT-15).
+     */
     expect($colecoes)->toContain("base: '../docs'")
-        ->and(is_dir(base_path('site/src/content/docs')))->toBeFalse();
+        ->and(glob(base_path('site/src/content/docs')))->toBe([]);
 });
 
 /**
@@ -1296,13 +1301,15 @@ it('[CT-36] todo redirecionamento aponta para uma pagina que existe, sem depende
 
 it('[CT-37] rota que nao mudou de forma nao ganha redirecionamento', function (): void {
     $indevidos = [];
+    $indices   = 0;
 
     foreach (['pt', 'en'] as $idioma) {
         foreach (array_keys(paginasDoSite($idioma)) as $caminho) {
-            if (! str_ends_with($caminho, 'index.md')) {
+            if ($caminho === 'index.md' || ! str_ends_with($caminho, 'index.md')) {
                 continue;
             }
 
+            $indices++;
             $stub = base_path("site/public/{$idioma}/".str_replace('/index.md', '.html', $caminho));
 
             if (is_file($stub)) {
@@ -1311,7 +1318,16 @@ it('[CT-37] rota que nao mudou de forma nao ganha redirecionamento', function ()
         }
     }
 
-    expect($indevidos)->toBe([]);
+    /*
+     * O piso é o que separa esta asserção de ausência de uma asserção sobre o nada.
+     *
+     * Sem ele, uma varredura que não achasse índice nenhum — diretório renomeado, glob quebrado —
+     * produziria `$indevidos` vazio e o caso ficaria verde afirmando que não há redirect indevido
+     * num mundo onde não há índice nenhum. A revisão adversarial apontou exatamente este cenário,
+     * e a conferência do diff confirmou que era o único caso novo sem âncora de população.
+     */
+    expect($indices)->toBe(10, 'sao cinco secoes em dois idiomas')
+        ->and($indevidos)->toBe([]);
 });
 
 it('[CT-38] toda pagina de folha tem o seu redirecionamento', function (): void {
@@ -1378,4 +1394,110 @@ it('[CT-40] o fluxo de publicacao confere os links antes de enviar o artefato', 
         ->and($envio)->not->toBeFalse('o fluxo nao envia artefato')
         ->and($conferidor)->toBeLessThan($envio, 'o conferidor roda depois do envio')
         ->and($fluxo)->not->toContain('continue-on-error');
+});
+
+/**
+ * CT-31 — o índice de cada seção não repete o nome do grupo na navegação.
+ *
+ * No just-the-docs o `index.md` da seção tinha o MESMO título do grupo, porque `has_children`
+ * fazia do título o cabeçalho e a página vinha junto. No Starlight o grupo é nomeado na
+ * configuração e a página é um item dentro dele — a barra lateral mostrava "Começar › Começar",
+ * em quatro das cinco seções.
+ *
+ * O rótulo na barra passa a ser "Visão geral" / "Overview"; o título da página continua o que era.
+ * O caso varre as DUAS árvores porque o modo de falha natural é aplicar a correção só no idioma
+ * que se estava olhando.
+ */
+it('[CT-31] o indice de cada secao tem rotulo proprio na navegacao', function (): void {
+    $esperado = ['pt' => 'Visão geral', 'en' => 'Overview'];
+    $ruins    = [];
+    $vistos   = 0;
+
+    foreach ($esperado as $idioma => $rotulo) {
+        foreach (paginasDoSite($idioma) as $caminho => $conteudo) {
+            if ($caminho === 'index.md' || ! str_ends_with($caminho, 'index.md')) {
+                continue;
+            }
+
+            $vistos++;
+
+            /*
+             * O `label` é ANINHADO sob `sidebar:`, e o `frontMatterDe()` só lê chave de topo —
+             * ele foi escrito para o front-matter plano do just-the-docs. Ler aqui com regex
+             * própria é mais honesto que afrouxar o helper, que quatro outros cenários usam
+             * esperando exatamente o comportamento atual.
+             */
+            preg_match('~^\s+label:\s*(.+?)\s*$~m', $conteudo, $achado);
+
+            $label = isset($achado[1]) ? trim($achado[1], "\"'") : null;
+
+            if ($label !== $rotulo) {
+                $ruins[] = "{$idioma}/{$caminho} — rotulo ".var_export($label, true);
+            }
+        }
+    }
+
+    expect($vistos)->toBe(10, 'sao cinco secoes em dois idiomas')
+        ->and($ruins)->toBe([]);
+});
+
+/**
+ * CT-35 — os locales declarados são exatamente as árvores de idioma que existem.
+ *
+ * Locale declarado sem árvore faz o seletor de idioma levar a 404; árvore sem locale declarado faz
+ * o Starlight publicar as páginas fora de qualquer idioma, sem barra lateral e sem seletor. Os
+ * dois são silenciosos no build.
+ */
+it('[CT-35] os locales declarados sao as arvores que existem', function (): void {
+    preg_match_all("~^\s+(\w+):\s*\{\s*label:~m", (string) file_get_contents(base_path('site/astro.config.mjs')), $achados);
+
+    $declarados = $achados[1];
+
+    $existentes = array_values(array_filter(
+        array_map('basename', (array) glob(base_path('docs/*'), GLOB_ONLYDIR)),
+    ));
+
+    sort($declarados);
+    sort($existentes);
+
+    expect($declarados)->not->toBeEmpty('o extrator de locales nao achou nada')
+        ->and($declarados)->toBe($existentes);
+});
+
+/**
+ * CT-41 — toda página de folha conserva a sua posição na navegação.
+ *
+ * Este caso existe por causa de um defeito **medido no step 7.5**: o conversor não era
+ * reexecutável. O front-matter do just-the-docs era plano (`nav_order: 3`) e o do Starlight aninha
+ * sob `sidebar:`; o leitor de front-matter só enxergava chave de topo, então a SEGUNDA passada não
+ * via `order` nem `label`, e como o `nav_order` já não existia mais, ela reescrevia o arquivo
+ * **sem ordem nenhuma**.
+ *
+ * Rodar o conversor duas vezes mudava 55 arquivos, apagava `sidebar.order` de 32 páginas e
+ * embaralhava a barra lateral inteira — sem erro, sem aviso, com o build verde. É a pior forma de
+ * defeito de ferramenta: ela degrada o conteúdo a cada execução e ninguém percebe.
+ *
+ * O conserto foi no conversor (aceitar chave indentada e herdar `nav_order ?? order`). Este caso é
+ * o que impede o defeito de voltar: ordem perdida vira lista vermelha, não navegação embaralhada.
+ */
+it('[CT-41] toda pagina de folha conserva a sua posicao na navegacao', function (): void {
+    $semOrdem = [];
+    $folhas   = 0;
+
+    foreach (['pt', 'en'] as $idioma) {
+        foreach (paginasDoSite($idioma) as $caminho => $conteudo) {
+            if ($caminho === 'index.md' || str_ends_with($caminho, 'index.md')) {
+                continue;
+            }
+
+            $folhas++;
+
+            if (preg_match('~^\s+order:\s*\d+~m', $conteudo) !== 1) {
+                $semOrdem[] = "{$idioma}/{$caminho}";
+            }
+        }
+    }
+
+    expect($folhas)->toBeGreaterThan(40, 'a varredura nao achou folhas')
+        ->and($semOrdem)->toBe([]);
 });

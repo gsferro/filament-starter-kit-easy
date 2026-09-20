@@ -502,3 +502,56 @@ A verificação em navegador real **existe** e foi o que encontrou os quatro def
 em desktop e celular, para o agente olhar. Ela é **observação**, não cobertura — exatamente o
 estatuto que a skill dá ao Playwright MCP. O que ela achou virou `CT-32` e `CT-33`, que são
 falsificáveis e rodam na suíte.
+
+---
+
+## Revisão Adversarial — 2026-09-19
+
+Disparada por **Impacto 3 na área D** (redirects). Sub-agente que não derivou os cenários,
+recebendo apenas o `00` e o `04` — sem o PRD, sem as ADRs, sem o código.
+
+Ela devolveu **5 implementações erradas plausíveis** que passariam por todos os 16 cenários e
+**14 lacunas**. Duas das cinco eram **defeitos reais já presentes no código**, não hipóteses.
+
+### O que cada achado virou
+
+| # | Lacuna | Virou |
+|---|---|---|
+| L2 | o destino do redirect não carrega o `base`; todos os 54 dariam 404 em produção | **defeito real, corrigido**: o destino passou a ser RELATIVO, o que dispensa o `base` inteiro. `CT-36` afirma que nenhum destino é absoluto |
+| L4 | o conferidor fica verde sobre `dist/` vazio, e o passo não reprova | **defeito real, corrigido**: piso de população (60 páginas, 1.000 links) e `process.exitCode = 1`. `CT-40` proíbe `continue-on-error` |
+| L13 | *"declara um destino"* é satisfeito por um `<a href>`; nada exige redirecionar sozinho | fechado em `CT-36`: exige `content="0; url=` |
+| L7 | `description` derivada do slug passa em `CT-29`; nada exige conservação do título | fechado nos dois lados: `CT-29` recusa `description` vazia, igual ao título ou começando por imagem; e o conversor passou a fazer `title ← H1` |
+| L6 | `CT-29`, `CT-30` e `CT-31` sem piso de população | fechado: os três têm piso (`> 60` páginas, `= 10` índices) |
+| L5 | `CT-38` verde para `0 == 0` | fechado: piso de 40 folhas antes da igualdade |
+| L11 | asserção de ausência sem controle positivo em `CT-27`, `CT-33`, `CT-37` | fechado em `CT-33` (exige que o bloco global exista antes de afirmar o que não há dentro). `CT-27` e `CT-37` seguem sem controle — declarado abaixo |
+| L14 | nada afirma a forma da rota servida | fechado em `CT-36`, que resolve o destino contra o arquivo real |
+| L9 | o workflow poderia publicar o artefato errado | fechado em `CT-25` + `CT-40`: um único publicador, e ele envia `site/dist` depois de rodar o build do Astro |
+| L12 | o plano B é conferido por texto, não por efeito | **parcial**: `CT-39` confere manifesto, config, conversor e os gatilhos do README. Rodar `npm install` do plano B na suíte do Pest traria Node para dentro dela, o que a ADR-02 ancestral proíbe |
+
+### Achados aceitos e NÃO fechados — declarados
+
+1. **L1 — não há inventário congelado das URLs antigas.** Os redirects são derivados da árvore
+   nova, e a árvore nova é também a fonte do defeito que eles corrigiriam: é circular. Funciona
+   hoje porque a forma da rota mudou de um jeito só (`x.html` → `x/`), e `CT-36` resolve cada
+   destino contra o arquivo real. Um baseline congelado das URLs que o Jekyll publicava seria mais
+   forte, e não foi feito.
+2. **L3 — nenhum cenário do Pest afirma sobre o site CONSTRUÍDO.** Os 16 afirmam sobre arquivo em
+   disco. Quem segue as URLs no `dist/` é o `verifica-links.mjs`, no workflow. `CT-40` garante que
+   ele roda e reprova, o que fecha metade do buraco — a outra metade é confiar no script.
+3. **L8 — o contraste não é calculado.** `CT-32` afirma que existe rampa nos dois esquemas, não
+   que ela é legível. Os valores hexadecimais estão em disco e o cálculo é aritmética simples;
+   não foi feito, e o oráculo de legibilidade continua sendo a captura em navegador.
+4. **L10 — renomeação SIMÉTRICA dos slugs passa.** `CT-34` afirma o espelho entre as árvores, não
+   o idioma do segmento. Trocar `recursos` por `features` nos dois idiomas mantém o espelho, passa
+   no caso e invalida as 54 URLs antigas de uma vez. É a lacuna mais próxima de virar defeito.
+
+### O achado estrutural, e o que fizemos com ele
+
+> *"12 dos 16 cenários não têm `Quando` nenhum. Para uma feature cuja tese de risco é 'o leitor
+> segue uma URL antiga', a ausência de um `Quando` que SIGA alguma coisa é o defeito de derivação
+> central."*
+
+Aceito, e é a mesma coisa que L3 vista de outro ângulo. A resposta honesta é a divisão de camadas
+declarada em `## Camada`: o Pest não constrói o site — fazê-lo traria Node para a suíte do kit, o
+que o `[CT-12]` reprova. O que o Pest **pode** afirmar, e passou a afirmar, é que o guarda que
+segue as URLs existe, roda antes do envio e reprova de verdade.
