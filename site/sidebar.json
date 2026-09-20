@@ -1,0 +1,138 @@
+[
+  {
+    "label": "Começar",
+    "translations": {
+      "en": "Getting started"
+    },
+    "items": [
+      {
+        "slug": "comecar"
+      },
+      {
+        "slug": "comecar/instalacao-avancada"
+      },
+      {
+        "slug": "comecar/atualizando-o-projeto"
+      },
+      {
+        "slug": "comecar/dominio-local"
+      }
+    ]
+  },
+  {
+    "label": "Autenticação",
+    "translations": {
+      "en": "Authentication"
+    },
+    "items": [
+      {
+        "slug": "autenticacao"
+      },
+      {
+        "slug": "autenticacao/convites"
+      },
+      {
+        "slug": "autenticacao/registro-aberto"
+      },
+      {
+        "slug": "autenticacao/login-social"
+      },
+      {
+        "slug": "autenticacao/protecao-anti-robo"
+      },
+      {
+        "slug": "autenticacao/estados-de-usuario"
+      },
+      {
+        "slug": "autenticacao/rota-publica"
+      },
+      {
+        "slug": "autenticacao/login-unificado"
+      }
+    ]
+  },
+  {
+    "label": "Recursos",
+    "translations": {
+      "en": "Features"
+    },
+    "items": [
+      {
+        "slug": "recursos"
+      },
+      {
+        "slug": "recursos/multi-tenancy"
+      },
+      {
+        "slug": "recursos/anexos-e-midia"
+      },
+      {
+        "slug": "recursos/import-export-csv"
+      },
+      {
+        "slug": "recursos/trilhas-de-infraestrutura"
+      },
+      {
+        "slug": "recursos/configuracao-global-filament"
+      },
+      {
+        "slug": "recursos/configuracoes-do-kit"
+      },
+      {
+        "slug": "recursos/hub-de-navegacao"
+      },
+      {
+        "slug": "recursos/dto-com-laravel-data"
+      }
+    ]
+  },
+  {
+    "label": "Operação",
+    "translations": {
+      "en": "Operations"
+    },
+    "items": [
+      {
+        "slug": "operacao"
+      },
+      {
+        "slug": "operacao/agentes-de-ia"
+      },
+      {
+        "slug": "operacao/roteiro-de-features"
+      },
+      {
+        "slug": "operacao/convencoes-do-kit"
+      },
+      {
+        "slug": "operacao/depois-de-criar-resources"
+      },
+      {
+        "slug": "operacao/desenvolvendo-o-kit"
+      }
+    ]
+  },
+  {
+    "label": "Referência",
+    "translations": {
+      "en": "Reference"
+    },
+    "items": [
+      {
+        "slug": "referencia"
+      },
+      {
+        "slug": "referencia/qualidade-de-codigo"
+      },
+      {
+        "slug": "referencia/busca-e-idioma"
+      },
+      {
+        "slug": "referencia/pacotes-instalados"
+      },
+      {
+        "slug": "referencia/estudo-advanced-tables"
+      }
+    ]
+  }
+]

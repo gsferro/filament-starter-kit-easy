@@ -1,12 +1,9 @@
 ---
-title: Proteção anti-robô
-parent: Autenticação
-grand_parent: Português
-nav_order: 4
+title: "Proteção anti-robô"
+description: "As telas públicas de login, recuperação de senha e registro dos três painéis podem receber um desafio anti-robô. A proteção nasce desligada e, quando…"
+sidebar:
+  order: 4
 ---
-
-# Proteção anti-robô
-
 As telas públicas de **login**, **recuperação de senha** e **registro** dos três painéis podem receber um desafio anti-robô. A proteção nasce **desligada** e, quando desligada, as telas são exatamente as mesmas de antes — sem scripts externos e sem campos extras.
 
 As duas capturas abaixo são da **mesma** tela de login, mudando só o provedor — e mostram a diferença que pesa na escolha: o Turnstile pede um clique, o reCAPTCHA v3 não pede nada.

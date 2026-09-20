@@ -1,12 +1,9 @@
 ---
 title: "Anexos e mídia"
-parent: Recursos
-grand_parent: Português
-nav_order: 2
+description: "O filament/spatie-laravel-media-library-plugin entrega a camada de mídia — upload, coleções e conversões — nos componentes de formulário, tabela e infolist…"
+sidebar:
+  order: 2
 ---
-
-# Anexos e mídia
-
 O `filament/spatie-laravel-media-library-plugin` entrega a camada de mídia — upload, coleções e
 conversões — nos componentes de formulário, tabela e infolist do Filament. A model de demonstração
 `App\Models\Projeto` mostra o desenho completo:

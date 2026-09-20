@@ -1,0 +1,203 @@
+/*
+ * Identidade do kit sobre o Starlight.
+ *
+ * O acento é o vermelho do Laravel (#FF2D20), que é o que a arte do repositório já usa — o banner,
+ * o logo e o comando de instalação. Ele NÃO é usado puro: `#FF2D20` sobre fundo escuro passa em
+ * contraste para texto grande e reprova para corpo de texto, então a rampa abaixo escurece para o
+ * elemento interativo e clareia para o texto sobre fundo escuro.
+ *
+ * O grosso são VARIÁVEIS, de propósito: o tema atualiza sem levar junto uma folha de estilo que
+ * reimplementa a barra lateral. As quatro regras que descem a componente (`sl-link-button`,
+ * `card`, `hero`, `table`) estão nomeadas e justificadas uma a uma, e cada uma é ou correção de
+ * contraste ou de layout — nenhuma é reestilo por gosto.
+ */
+
+:root {
+  /*
+   * Rampa do acento — tema escuro (o padrão do site).
+   *
+   * `accent-high` é o que o Starlight usa como COR DE TEXTO sobre fundo escuro (links, título do
+   * site, item atual do índice) e como FUNDO do item atual da barra lateral. Lá pelas tantas ele
+   * precisa ser claro o bastante para ler; o erro é clarear vermelho até ele virar rosa pastel,
+   * que foi a primeira tentativa aqui (`#ffb8b1`) e deixou o site com cara de outro produto.
+   *
+   * `#ff8577` mantém a saturação, puxa para o quente em vez do rosa, e dá ~7,7:1 sobre o fundo
+   * escuro — folgado para corpo de texto, não só para título.
+   */
+  --sl-color-accent-low: #3d0f0b;
+  --sl-color-accent: #d13a30;
+  --sl-color-accent-high: #ff8577;
+
+  --sl-color-text-accent: var(--sl-color-accent-high);
+
+  --sl-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --sl-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+}
+
+/*
+ * Os cinzas do tema NÃO são redefinidos aqui, e isso é decisão medida.
+ *
+ * A primeira versão escurecia `--sl-color-gray-6/7` no `:root` para "esquentar" o tema escuro. O
+ * tema CLARO usa as mesmas variáveis como superfície clara — e o chip de código inline virou
+ * bloco quase preto com texto escuro por cima, ilegível, em toda página. A captura nos dois temas
+ * é o que pegou; no escuro estava impecável.
+ */
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #ffdcd8;
+  --sl-color-accent: #c8322a;
+  --sl-color-accent-high: #5f120d;
+
+  --sl-color-text-accent: var(--sl-color-accent);
+}
+
+/*
+ * Hero da landing.
+ *
+ * Sem imagem: o banner do repositório é claro e já traz o título e o comando de instalação dentro
+ * dele — sobre o tema escuro ele vira um retângulo branco repetindo o que o hero diz do lado.
+ * O brilho abaixo é o que dá peso visual no lugar dela.
+ */
+.hero {
+  padding-block: clamp(2rem, 8vw, 5rem);
+}
+
+/*
+ * O `template: splash` monta o hero numa grade de duas colunas — texto de um lado, imagem do
+ * outro. Sem imagem a grade continua, e o conteúdo fica encostado à esquerda com metade da tela
+ * vazia à direita. Centralizar é o que o layout faria se soubesse que não há segunda coluna.
+ */
+.hero:not(:has(img)) {
+  text-align: center;
+}
+
+.hero:not(:has(img)) > .stack {
+  grid-column: 1 / -1;
+  max-width: 52rem;
+  margin-inline: auto;
+}
+
+.hero:not(:has(img)) .sl-flex.actions {
+  justify-content: center;
+}
+
+.hero > .stack {
+  position: relative;
+}
+
+.hero > .stack::before {
+  content: '';
+  position: absolute;
+  inset: -40% -20% auto -20%;
+  height: 320px;
+  z-index: -1;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    color-mix(in oklab, var(--sl-color-accent) 22%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.hero h1 {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.hero .tagline {
+  max-width: 46ch;
+  margin-inline: auto;
+}
+
+/*
+ * Botão principal do hero.
+ *
+ * O padrão do Starlight no tema escuro pinta o botão com a COR DE TEXTO do acento e escreve por
+ * cima na cor do fundo — no claro isso dá um botão sólido bonito, no escuro dava uma pílula rosa
+ * clara com texto escuro. Vermelho sólido com texto branco é o que a arte do repositório usa, e
+ * funciona igual nos dois temas.
+ *
+ * A classe é `sl-link-button`, não `action`: a primeira tentativa mirou `.action.primary`, a regra
+ * entrou no CSS construído e o botão continuou rosa — seletor que não casa nada não dá erro, só
+ * não faz nada. Conferido no HTML construído, não no palpite.
+ */
+.sl-link-button.primary {
+  background-color: var(--sl-color-accent);
+  color: var(--sl-color-white);
+  border-color: transparent;
+}
+
+.sl-link-button.primary:hover {
+  background-color: color-mix(in oklab, var(--sl-color-accent) 85%, black);
+  color: var(--sl-color-white);
+}
+
+/*
+ * Item atual da barra lateral.
+ *
+ * O padrão pinta o item inteiro com a cor de texto do acento e escreve por cima na cor do fundo
+ * — uma pílula clara e sólida que, no tema escuro, é de longe o elemento mais barulhento da tela
+ * e rouba a atenção do conteúdo. Aqui ele vira fundo translúcido do acento, texto no acento e uma
+ * barra de 2px na borda: a mesma informação, sem gritar.
+ *
+ * `--sl-color-text-accent` nos dois temas de propósito — ele já é claro no escuro e escuro no
+ * claro, então a regra não precisa de um ramo por tema (e não pode ter: `white` fixo aqui some
+ * no tema claro).
+ */
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
+  background-color: color-mix(in oklab, var(--sl-color-accent) 18%, transparent);
+  color: var(--sl-color-text-accent);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--sl-color-accent);
+}
+
+/*
+ * O tema claro precisa de um acento mais escuro AQUI, e só aqui.
+ *
+ * O `--sl-color-text-accent` do claro (`#c8322a`) tem contraste de sobra sobre o fundo branco da
+ * página — e **não** sobre a pílula translúcida que a regra acima cria: 18% de vermelho sobre
+ * branco levanta o fundo e derruba a razão abaixo de 4.5:1. O axe reprovou em `color-contrast`
+ * (serious), e só no claro; no escuro a mesma regra passa folgado.
+ *
+ * É a segunda vez que uma cor deste tema funciona num esquema e falha no outro. A primeira foi o
+ * chip de código inline. As duas só apareceram porque a conferência roda nos dois.
+ */
+:root[data-theme='light'] .sidebar-content a[aria-current='page'],
+:root[data-theme='light'] .sidebar-content a[aria-current='page']:hover,
+:root[data-theme='light'] .sidebar-content a[aria-current='page']:focus {
+  color: var(--sl-color-accent-high);
+}
+
+/* O título do site na barra superior carrega o acento, como na arte. */
+.site-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Cartões: borda mais definida e realce no hover, que o padrão não tem. */
+.card {
+  border-color: var(--sl-color-gray-5);
+  transition:
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.card:hover {
+  border-color: color-mix(in oklab, var(--sl-color-accent) 55%, var(--sl-color-gray-5));
+  transform: translateY(-2px);
+}
+
+/* Capturas de tela do produto: moldura sutil em vez de imagem solta na página. */
+.sl-markdown-content img:not([class]) {
+  border-radius: 0.5rem;
+  border: 1px solid var(--sl-color-gray-5);
+}
+
+/* Tabela larga não pode empurrar a página: o conteúdo do kit tem várias de 4+ colunas. */
+.sl-markdown-content table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}

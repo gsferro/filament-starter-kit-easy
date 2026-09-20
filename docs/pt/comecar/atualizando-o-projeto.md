@@ -1,12 +1,10 @@
 ---
-title: Atualizando o projeto
-parent: Começar
-grand_parent: Português
-nav_order: 2
+title: "Atualizando um projeto que já nasceu do kit"
+description: "O kit é um ponto de partida, não uma dependência. Depois do create-project o projeto é seu: você renomeia painéis, muda canAccessPanel(), edita seeders. Por…"
+sidebar:
+  label: "Atualizando o projeto"
+  order: 2
 ---
-
-# Atualizando um projeto que já nasceu do kit
-
 **O kit é um ponto de partida, não uma dependência.** Depois do `create-project` o projeto é seu: você renomeia painéis, muda `canAccessPanel()`, edita seeders. Por isso **não existe** um `kit:update` que sobrescreve arquivos — ele reescreveria justamente o que você personalizou, e um starter kit que estraga o projeto do usuário não serve para nada.
 
 O que muda separa-se em três camadas, e cada uma tem um caminho próprio:

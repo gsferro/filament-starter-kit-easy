@@ -1,12 +1,10 @@
 ---
-title: Updating the project
-parent: Getting started
-grand_parent: English
-nav_order: 2
+title: "Updating a project born from the kit"
+description: "The kit is a starting point, not a dependency. After create-project the project is yours: you rename panels, change canAccessPanel(), edit seeders. That's…"
+sidebar:
+  label: "Updating the project"
+  order: 2
 ---
-
-# Updating a project born from the kit
-
 **The kit is a starting point, not a dependency.** After `create-project` the project is yours: you rename panels, change `canAccessPanel()`, edit seeders. That's why there is **no** `kit:update` that overwrites files — it would rewrite exactly what you customized, and a starter kit that ruins the user's project is worth nothing.
 
 What changes splits into three layers, and each one has its own path:

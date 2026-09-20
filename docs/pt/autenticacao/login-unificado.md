@@ -1,12 +1,10 @@
 ---
-title: Página única de login
-parent: Autenticação
-grand_parent: Português
-nav_order: 7
+title: "Página única de login (`/login`), opcional"
+description: "Por default cada painel tem a própria porta — /admin/login, /infra/login e /app/login —, que é o comportamento do Filament. Com a chave ligada, as três…"
+sidebar:
+  label: "Página única de login"
+  order: 7
 ---
-
-# Página única de login (`/login`), opcional
-
 Por default cada painel tem a própria porta — `/admin/login`, `/infra/login` e `/app/login` —, que é
 o comportamento do Filament. Com a chave ligada, as três levam a **`/login`**, uma única tela de
 login (mesma arte, mesmo anti-robô, mesmos botões de login social), e o kit decide para onde a
@@ -87,7 +85,7 @@ migrar.
 **Cadastro com multi-organização**: o link "Cadastre-se" da tela de login só aparece quando existe
 uma organização de destino, e carrega o `?org=`. Divulgue `/login?org={slug}` (ou
 `/cadastro?org={slug}`) e ligue "Aceita cadastro público" na tela da organização — sem isso, o
-cadastro recusa, e o link some em vez de levar à recusa. Ver [Registro aberto](registro-aberto.md).
+cadastro recusa, e o link some em vez de levar à recusa. Ver [Registro aberto](/pt/autenticacao/registro-aberto/).
 
 ## O que continua por painel
 
@@ -102,7 +100,7 @@ cadastro recusa, e o link some em vez de levar à recusa. Ver [Registro aberto](
   provedor precisa estar habilitado, em qualquer painel), e o destino da volta segue a mesma regra
   da tabela acima **restrita aos painéis em que o provedor está autorizado** — GitHub liberado só
   no `/infra` não entrega ninguém no `/admin`; sem painel autorizado acessível, a sessão é
-  encerrada. Com a chave desligada, tudo como em [Login social](login-social.md).
+  encerrada. Com a chave desligada, tudo como em [Login social](/pt/autenticacao/login-social/).
 
 ## O log de acessos registra o painel em que a pessoa entrou
 

@@ -1,12 +1,9 @@
 ---
-title: Convite de usuário
-parent: Autenticação
-grand_parent: Português
-nav_order: 1
+title: "Convite de usuário"
+description: "Alguém de fora vira usuário por convite, e só por convite. Um administrador abre /admin/convites — ou, com tenancy, quem tem adminapp abre…"
+sidebar:
+  order: 1
 ---
-
-# Convite de usuário
-
 Alguém de fora vira usuário **por convite, e só por convite**. Um administrador abre
 `/admin/convites` — ou, com tenancy, quem tem `admin_app` abre
 `/app/{organizacao}/convites` — e escolhe e-mail, papel e organização; o kit envia um link

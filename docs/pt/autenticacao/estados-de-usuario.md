@@ -1,12 +1,9 @@
 ---
-title: Usuário ativo, inativo e excluído
-parent: Autenticação
-grand_parent: Português
-nav_order: 5
+title: "Usuário ativo, inativo e excluído"
+description: "A conta de cada usuário tem três estados e eles vencem o acesso a qualquer painel:"
+sidebar:
+  order: 5
 ---
-
-# Usuário ativo, inativo e excluído
-
 A conta de cada usuário tem **três estados** e eles vencem o acesso a qualquer painel:
 
 - **Ativo**: entra com senha ou login social normalmente.

@@ -1,12 +1,9 @@
 ---
 title: "Configuração global do Filament"
-parent: Recursos
-grand_parent: Português
-nav_order: 5
+description: "Um único arquivo define como toda tabela, toggle, modal e coluna do projeto se comporta: app/Providers/Concerns/ConfiguraFilamentGlobal.php (aplicado pelo…"
+sidebar:
+  order: 5
 ---
-
-# Configuração global do Filament
-
 Um único arquivo define como **toda** tabela, toggle, modal e coluna do projeto se comporta: `app/Providers/Concerns/ConfiguraFilamentGlobal.php` (aplicado pelo `KitServiceProvider`). Mudou ali, mudou em todo lugar — inclusive nas telas dos plugins de terceiros, que você não conseguiria editar de outro jeito.
 
 **Toda tabela nasce com:**
@@ -35,7 +32,7 @@ Também são globais: modal que **não** fecha no Esc (um toque acidental descar
 > }
 > ```
 
-> **Quatro desses defaults são editáveis em [Configurações do kit](configuracoes-do-kit.md)**, na aba *Tabelas*: linhas por página, linhas listradas, persistência do recorte e colunas arrastáveis. No `.env` as mesmas quatro existem como semente e plano B — `KIT_TABELA_PAGINACAO`, `KIT_TABELA_LISTRADA`, `KIT_TABELA_PERSISTIR_FILTROS` e `KIT_TABELA_COLUNAS_REDIMENSIONAVEIS` — e o valor gravado no banco vence. O resto continua sendo decisão de código, de propósito — são escolhas com motivo escrito, não preferência de gosto.
+> **Quatro desses defaults são editáveis em [Configurações do kit](/pt/recursos/configuracoes-do-kit/)**, na aba *Tabelas*: linhas por página, linhas listradas, persistência do recorte e colunas arrastáveis. No `.env` as mesmas quatro existem como semente e plano B — `KIT_TABELA_PAGINACAO`, `KIT_TABELA_LISTRADA`, `KIT_TABELA_PERSISTIR_FILTROS` e `KIT_TABELA_COLUNAS_REDIMENSIONAVEIS` — e o valor gravado no banco vence. O resto continua sendo decisão de código, de propósito — são escolhas com motivo escrito, não preferência de gosto.
 >
 > ⚠️ **Densidade de tabela não existe no Filament 5** e por isso não está na tela. O TODO antigo daqui prometia os quatro itens, e um deles não tem API: varredura em `vendor/filament/tables/src` não devolve nenhuma ocorrência de `density`, e `vendor/filament/tables/src/Enums/` traz sete enums, nenhum de densidade. O que o framework oferece de controle visual de aperto é o `striped()`, e é ele que ficou configurável.
 

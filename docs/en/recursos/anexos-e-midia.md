@@ -1,12 +1,9 @@
 ---
 title: "Attachments and media"
-parent: Features
-grand_parent: English
-nav_order: 2
+description: "filament/spatie-laravel-media-library-plugin delivers the media layer — uploads, collections and conversions — inside Filament's form, table and infolist…"
+sidebar:
+  order: 2
 ---
-
-# Attachments and media
-
 `filament/spatie-laravel-media-library-plugin` delivers the media layer — uploads, collections and
 conversions — inside Filament's form, table and infolist components. The demo model
 `App\Models\Projeto` shows the whole design:

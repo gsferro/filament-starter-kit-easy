@@ -1,0 +1,16 @@
+{
+  "name": "starter-kit-easy-docs-vitepress",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview --port 4322"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true
+  }
+}

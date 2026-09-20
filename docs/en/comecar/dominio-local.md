@@ -1,12 +1,9 @@
 ---
-title: Local domain
-parent: Getting started
-grand_parent: English
-nav_order: 3
+title: "Local domain"
+description: "Reaching the project at http://my-project.test instead of http://127.0.0.1:8000 costs one line in your machine's hosts file and two keys in your .env. No…"
+sidebar:
+  order: 3
 ---
-
-# Local domain
-
 ## Why it pays off
 
 Reaching the project at `http://my-project.test` instead of `http://127.0.0.1:8000` costs one line

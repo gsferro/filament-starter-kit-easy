@@ -1,12 +1,10 @@
 ---
-title: Social login
-parent: Authentication
-grand_parent: English
-nav_order: 3
+title: "Social login: four providers (opt-in, one at a time)"
+description: "A second way in, next to the password: the Sign in with… buttons below the login form on all three panels. Each provider ships turned off, is turned on…"
+sidebar:
+  label: "Social login"
+  order: 3
 ---
-
-# Social login: four providers (opt-in, one at a time)
-
 A second way in, next to the password: the **Sign in with…** buttons below the login form on all
 three panels. Each provider ships **turned off**, is turned on **individually**, and once on does
 exactly one thing — authenticate someone who **already has an account**.
@@ -63,7 +61,7 @@ screen: it offers the same buttons as the login, and coming back from the provid
 The steps are the same for all four; only the place where you create the OAuth app changes. You can
 do everything through `.env` **or** through `/admin/configuracoes-da-aplicacao` → the **Login** tab — but
 know who is in charge: **the database wins over `.env` at runtime, and `.env` only seeds it** (see
-[Who wins: the database or `.env`?](../recursos/configuracoes-do-kit.md#who-wins-the-database-or-env)). Step 3 is where that matters.
+[Who wins: the database or `.env`?](/en/recursos/configuracoes-do-kit/#who-wins-the-database-or-env)). Step 3 is where that matters.
 
 **1. Create the OAuth app at the provider** and register the redirect URI — your `APP_URL` plus the
 path from the table above:

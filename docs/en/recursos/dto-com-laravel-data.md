@@ -1,12 +1,9 @@
 ---
 title: "DTOs with Laravel Data"
-parent: Features
-grand_parent: English
-nav_order: 8
+description: "When structured data crosses a class boundary in the kit, it travels as a DTO — a typed object from spatie/laravel-data, not an array whose shape lives in a…"
+sidebar:
+  order: 8
 ---
-
-# DTOs with Laravel Data
-
 When structured data crosses a class boundary in the kit, it travels as a **DTO** — a typed object
 from [`spatie/laravel-data`](https://spatie.be/docs/laravel-data), not an array whose shape lives in
 a comment.

@@ -50,16 +50,21 @@ it('[CT-33] a documentação tem a seção de usuário ativo, inativo e excluíd
     }
 })->with([
     'pt' => [
-        // Reancorado: a seção migrou para o site (GitHub Pages) e o h2 virou o h1 da
-        // página. A co-localização — cada termo DENTRO da seção — é o que este caso
-        // protege, e ela é preservada apontando para a página em vez do README.
+        // Reancorado DUAS vezes. Primeiro a seção migrou do README para o site e o h2
+        // virou o h1 da página. Depois a migração para o Starlight tirou o h1 do corpo,
+        // porque lá o `title` do front-matter É o h1 renderizado — mantê-lo no corpo
+        // produzia o título duas vezes na tela. A âncora segue o título para onde ele foi.
+        //
+        // A co-localização — cada termo DENTRO da seção — continua sendo o que este caso
+        // protege: a varredura vai da âncora até o próximo `##`, e nesta página não há
+        // nenhum, então a seção é a página inteira, como já era antes.
         'docs/pt/autenticacao/estados-de-usuario.md',
-        '# Usuário ativo, inativo e excluído',
+        'title: "Usuário ativo, inativo e excluído"',
         ['Reativar', 'Lixeira', 'Restaurar', 'senha', 'contato com o administrador', 'Desativar:User'],
     ],
     'en' => [
         'docs/en/autenticacao/estados-de-usuario.md',
-        '# Active, inactive and deleted users',
+        'title: "Active, inactive and deleted users"',
         ['Reactivate', 'Recycle bin', 'Restore', 'password', 'contact the administrator', 'Desativar:User'],
     ],
 ])->group('kit');

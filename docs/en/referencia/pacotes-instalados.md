@@ -1,12 +1,9 @@
 ---
 title: "Installed packages"
-parent: "Reference"
-grand_parent: "English"
-nav_order: 3
+description: "Everything below comes installed, published and registered on the panels — there is no \"now install plugin X\" step. The source of truth for versions is…"
+sidebar:
+  order: 3
 ---
-
-# Installed packages
-
 Everything below comes installed, published and registered on the panels — there is no "now install plugin X" step. The source of truth for versions is `composer.json`; the table tells you **what each one is for inside the kit**.
 
 ## Base
@@ -33,7 +30,7 @@ Everything below comes installed, published and registered on the panels — the
 | [syriable/filament-activitylog](https://packagist.org/packages/syriable/filament-activitylog) | activity log (spatie/laravel-activitylog) in Filament |
 | [bezhansalleh/filament-panel-switch](https://packagist.org/packages/bezhansalleh/filament-panel-switch) | panel switching from the user menu |
 | [laravel/socialite](https://packagist.org/packages/laravel/socialite) | social login (Google, GitHub, LinkedIn, X), opt-in per provider |
-| [ddr/filament-captcha](https://packagist.org/packages/ddr/filament-captcha) | anti-robot challenge on the public screens (reCAPTCHA v2/v3, Turnstile, hCaptcha), opt-in; the kit wraps it with fail-closed verification and logging ([details](../autenticacao/protecao-anti-robo.md)) |
+| [ddr/filament-captcha](https://packagist.org/packages/ddr/filament-captcha) | anti-robot challenge on the public screens (reCAPTCHA v2/v3, Turnstile, hCaptcha), opt-in; the kit wraps it with fail-closed verification and logging ([details](/en/autenticacao/protecao-anti-robo/)) |
 
 ## Observability and maintenance
 
@@ -80,7 +77,7 @@ Everything below comes installed, published and registered on the panels — the
 | [anselmokossa/filament-sentinel](https://packagist.org/packages/anselmokossa/filament-sentinel) | error pages (403, 404, 419, 500, 503) that look like the panel |
 | [flowframe/laravel-trend](https://packagist.org/packages/flowframe/laravel-trend) | period aggregation for the widgets' charts |
 | [bezhansalleh/filament-language-switch](https://packagist.org/packages/bezhansalleh/filament-language-switch) | language switcher on the three panels and on the login screens |
-| [harvirsidhu/filament-cards](https://packagist.org/packages/harvirsidhu/filament-cards) | the card grid of the [navigation hubs](../recursos/hub-de-navegacao.md) |
+| [harvirsidhu/filament-cards](https://packagist.org/packages/harvirsidhu/filament-cards) | the card grid of the [navigation hubs](/en/recursos/hub-de-navegacao/) |
 | [leandrocfe/filament-apex-charts](https://packagist.org/packages/leandrocfe/filament-apex-charts) | ApexCharts charts in the dashboard widgets |
 | [solution-forest/filament-simplelightbox](https://packagist.org/packages/solution-forest/filament-simplelightbox) | lightbox to enlarge images in tables and infolists |
 | [mortalkiller/filament-page-header](https://packagist.org/packages/mortalkiller/filament-page-header) | the rich header on record screens — avatar, status and metadata. Recipe in [`wikis/receitas.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/receitas.md#cabeçalho-rico-num-resource-com-relations) |
@@ -91,7 +88,7 @@ Everything below comes installed, published and registered on the panels — the
 |---|---|
 | [filament/spatie-laravel-settings-plugin](https://packagist.org/packages/filament/spatie-laravel-settings-plugin) | settings pages in the panel |
 | [spatie/laravel-settings](https://packagist.org/packages/spatie/laravel-settings) | the persisted settings behind them |
-| [spatie/laravel-data](https://packagist.org/packages/spatie/laravel-data) | the kit's DTO standard — see [DTOs with Laravel Data](../recursos/dto-com-laravel-data.md) |
+| [spatie/laravel-data](https://packagist.org/packages/spatie/laravel-data) | the kit's DTO standard — see [DTOs with Laravel Data](/en/recursos/dto-com-laravel-data/) |
 | [filament/spatie-laravel-media-library-plugin](https://packagist.org/packages/filament/spatie-laravel-media-library-plugin) | the media layer (uploads, collections, conversions) in the form, table and infolist components |
 | [mike-bronner/laravel-model-caching](https://packagist.org/packages/mike-bronner/laravel-model-caching) | automatic caching of Eloquent queries |
 | [predis/predis](https://packagist.org/packages/predis/predis) | pure-PHP Redis client (no extension needed) |
