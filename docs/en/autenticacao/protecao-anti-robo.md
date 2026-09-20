@@ -1,12 +1,9 @@
 ---
-title: Anti-robot protection
-parent: Authentication
-grand_parent: English
-nav_order: 4
+title: "Anti-robot protection"
+description: "The public login, password reset and register screens of the three panels can include an anti-robot challenge. The protection starts disabled, and when…"
+sidebar:
+  order: 4
 ---
-
-# Anti-robot protection
-
 The public **login**, **password reset** and **register** screens of the three panels can include an anti-robot challenge. The protection starts **disabled**, and when disabled the screens are exactly the same as before — no external scripts, no extra fields.
 
 Both screenshots below are the **same** login screen with only the provider changed — and they show the difference that drives the choice: Turnstile asks for a click, reCAPTCHA v3 asks for nothing.

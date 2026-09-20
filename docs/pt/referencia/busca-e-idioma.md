@@ -1,12 +1,9 @@
 ---
 title: "Busca e idioma"
-parent: "Referência"
-grand_parent: "Português"
-nav_order: 2
+description: "O campo na topbar é o nativo do Filament — mesma marcação, mesma aparência, mesmo Ctrl/⌘+K. O que muda é o que acontece ao clicar: em vez de digitar ali,…"
+sidebar:
+  order: 2
 ---
-
-# Busca e idioma
-
 ## A busca ⌘K
 
 [![Busca ⌘K](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/spotlight.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/spotlight.png)

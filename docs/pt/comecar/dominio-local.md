@@ -1,12 +1,9 @@
 ---
-title: Domínio local
-parent: Começar
-grand_parent: Português
-nav_order: 3
+title: "Domínio local"
+description: "Acessar o projeto por http://meu-projeto.test em vez de http://127.0.0.1:8000 custa uma linha no arquivo hosts da sua máquina e duas chaves no seu .env.…"
+sidebar:
+  order: 3
 ---
-
-# Domínio local
-
 ## Por que vale a pena
 
 Acessar o projeto por `http://meu-projeto.test` em vez de `http://127.0.0.1:8000` custa uma linha

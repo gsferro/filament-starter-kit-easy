@@ -1,16 +1,13 @@
 ---
 title: "Kit conventions"
-parent: "Operations"
-grand_parent: "English"
-nav_order: 3
+description: "- UUID in routes, int id as PK. Every new table gets $table->uuid('uuid')->unique() and the model uses App\\Traits\\TemUuid. A URL with a numeric id returns…"
+sidebar:
+  order: 3
 ---
-
-# Kit conventions
-
 - **UUID in routes, int `id` as PK.** Every new table gets `$table->uuid('uuid')->unique()` and the model uses `App\Traits\TemUuid`. A URL with a numeric id returns 404 and nobody enumerates records by sequence. UUID is not authorization — policies remain mandatory.
 - **Auditing on what is editable.** `App\Traits\AuditsFillables` audits the `$fillable` **plus** whatever the model declares in `auditaAlemDoFillable()` (`app/Traits/AuditsFillables.php:getAuditInclude:21`), without leaking technical columns into the trail. The extension point exists because `getFillable()` alone does not reach access-boundary state: `ativo` and `aprovacao_pendente` are kept **out** of `$fillable` on purpose — mass assignment with them would unlock an account — and only `forceFill` writes them, bypassing the filter. While `User` did not declare them (`app/Models/User.php:auditaAlemDoFillable:121`), `/infra/audits` recorded the name change and **not** the access cut. A model that does not override still audits exactly the `$fillable`.
 - **Seeders never use factories or faker.** `fakerphp/faker` is `require-dev` and the Docker image runs `--no-dev`.
-- **Permissions come from a seeder, not from the interactive `shield:generate`** — that's what makes an unattended install possible. `ShieldPermissionsSeeder` generates for all **three** panels (the Shield command only sees the current panel); `PapeisSeeder` slices the matrix per panel and hands it to the roles. After creating new Resources, run both (see [below](depois-de-criar-resources.md)).
+- **Permissions come from a seeder, not from the interactive `shield:generate`** — that's what makes an unattended install possible. `ShieldPermissionsSeeder` generates for all **three** panels (the Shield command only sees the current panel); `PapeisSeeder` slices the matrix per panel and hands it to the roles. After creating new Resources, run both (see [below](/en/operacao/depois-de-criar-resources/)).
 - **Panel access is data on the role**, in the `roles.painel` column — not a list of names in the code. A role with no panel opens no panel: the default is closed.
 - **No affordance without permission.** Menu, search and actions consult `canAccess()`/`canCreate()` before showing up. Finding something that results in a 403 is considered a bug.
 - **A listing with distinct states gets `getTabs()`.** A tab is the **one-click** slice; the modal

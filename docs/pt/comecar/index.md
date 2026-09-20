@@ -1,12 +1,10 @@
 ---
-title: Começar
-parent: Português
-has_children: true
-nav_order: 1
+title: "Começar"
+description: "O que vem depois do composer create-project: a instalação avançada (banco de dados, a lista completa de comandos e os 16 itens que dá para personalizar),…"
+sidebar:
+  label: "Visão geral"
+  order: 0
 ---
-
-# Começar
-
 O que vem depois do `composer create-project`: a instalação avançada (banco de dados, a lista
 completa de comandos e os 16 itens que dá para personalizar), como atualizar um projeto que já
 nasceu do kit sem perder o que você escreveu, e como trocar o `127.0.0.1:8000` por um domínio

@@ -33,15 +33,29 @@ beforeEach(function (): void {
 });
 
 /**
- * Os títulos (qualquer nível) de um markdown, sem espaço sobrando.
+ * Os títulos de um markdown: o `title` do front-matter mais os cabeçalhos do corpo.
  *
- * @return list<string>
+ * O front-matter passou a contar na migração para o Starlight (2026-09-19), e não é ajuste de
+ * teste para ficar verde: **o título da página mudou de lugar, não sumiu**. No just-the-docs o
+ * `title` ia para a aba do navegador e o H1 era escrito à mão no corpo — os dois conviviam. O
+ * Starlight RENDERIZA o `title` como H1 da página, então manter o do corpo produzia o título
+ * duas vezes na tela e um segundo H1 no documento, que é defeito de acessibilidade.
+ *
+ * Sem esta linha o baseline congelado de 115 títulos acusaria 66 sumiços — e o sumiço seria
+ * falso: o título está lá, no front-matter, e é ele que o leitor vê no lugar do H1.
  */
 function titulosDoMarkdown(string $markdown): array
 {
+    $titulos = [];
+
+    if (preg_match('/\A---\n(.*?)\n---\n/s', $markdown, $frente) === 1
+        && preg_match('/^title:\s*(.+?)\s*$/m', $frente[1], $doFrontMatter) === 1) {
+        $titulos[] = trim($doFrontMatter[1], "\"'");
+    }
+
     preg_match_all('/^#{1,6} (.+?)\s*$/m', $markdown, $achados);
 
-    return $achados[1];
+    return array_merge($titulos, $achados[1]);
 }
 
 function readmeDe(string $idioma): string
@@ -88,6 +102,32 @@ function idDeTitulo(string $texto): string
 /** Resolve `../recursos/x.md` a partir do diretório de uma página, sem tocar o disco. */
 function caminhoResolvido(string $paginaDeOrigem, string $link): string
 {
+    /*
+     * Link ABSOLUTO do site — a forma que a migração para o Starlight produziu, e não por gosto.
+     *
+     * O Jekyll publicava `convites.html` e o Starlight publica `convites/`. A profundidade de todo
+     * link relativo MUDA com isso: de `/pt/autenticacao/convites/`, um `../recursos/x/` chega em
+     * `/pt/autenticacao/recursos/x/` — página errada, e que em alguns casos existe. Por isso o
+     * conversor reescreveu cada link como caminho absoluto, e este resolvedor precisa conhecê-lo.
+     *
+     * O mapa de URL para arquivo sai da profundidade, e a árvore tem exatamente dois níveis:
+     *
+     * | URL              | Arquivo             |
+     * |------------------|---------------------|
+     * | `/pt/`           | `index.md`          |
+     * | `/pt/recursos/`  | `recursos/index.md` |
+     * | `/pt/recursos/x/`| `recursos/x.md`     |
+     */
+    if (str_starts_with($link, '/')) {
+        $semIdioma = trim((string) preg_replace('~^/(pt|en)(/|$)~', '', $link), '/');
+
+        if ($semIdioma === '') {
+            return 'index.md';
+        }
+
+        return str_contains($semIdioma, '/') ? "{$semIdioma}.md" : "{$semIdioma}/index.md";
+    }
+
     $partes = [];
 
     foreach (explode('/', dirname($paginaDeOrigem).'/'.$link) as $segmento) {
@@ -528,54 +568,129 @@ it('[CT-22] nenhum link interno do site aponta para página ou âncora inexisten
 |--------------------------------------------------------------------------
 */
 
-/** CT-15 — o que o build nativo exige em `main:/docs`: config com `baseurl`, home não vazia, e NADA de npm. */
-it('[CT-15] a raiz publicada tem o que o build nativo exige', function (): void {
-    $config = (string) file_get_contents(base_path('docs/_config.yml'));
-    $home   = (string) file_get_contents(base_path('docs/index.md'));
+/**
+ * CT-15 — o que a publicação exige, e o que ela NÃO pode ter perto do conteúdo.
+ *
+ * **Afirmação trocada junto com o mecanismo** (ADR-01/ADR-02 da wiki `site-starlight`). Antes era
+ * sobre o build nativo do Pages: `_config.yml` com `baseurl` e uma `index.md` na raiz de `docs/`.
+ * Hoje o gerador é o Astro, o `base` vem do workflow por `DOCS_BASE`, e `docs/` não tem mais raiz
+ * própria — cada idioma tem a sua landing e `/` redireciona.
+ *
+ * O que sobrevive intacto é a parte que nunca foi sobre o Jekyll: **nenhum manifesto de npm perto
+ * do conteúdo**. É a ADR-02 da wiki ancestral, e o `[CT-12]` a protege do lado da raiz do
+ * projeto; aqui ela é protegida do lado de `docs/`. O toolchain mora em `site/`, e só lá.
+ */
+it('[CT-15] a publicação tem o que precisa, e o conteúdo não carrega toolchain', function (): void {
+    $config = (string) file_get_contents(base_path('site/astro.config.mjs'));
 
-    expect($config)->toMatch('/^baseurl:/m')
-        ->and(substr_count($home, "\n"))->toBeGreaterThanOrEqual(5)
-        ->and(glob(base_path('docs/package*.json')))->toBe([]);
+    expect(glob(base_path('docs/package*.json')))->toBe([], 'manifesto de npm dentro do conteúdo')
+        ->and($config)->toContain('DOCS_BASE')
+        ->and(is_file(base_path('site/package-lock.json')))->toBeTrue('o `npm ci` do workflow exige o lock');
+
+    foreach (['pt', 'en'] as $idioma) {
+        $landing = (string) file_get_contents(base_path("docs/{$idioma}/index.md"));
+
+        expect($landing)->toContain('template: splash')
+            ->and(substr_count($landing, "\n"))->toBeGreaterThanOrEqual(5);
+    }
 });
 
 /**
- * CT-25 — nenhum outro mecanismo publica o mesmo site. COM controle positivo: sem ele o
- * cenário não distingue "não há fluxo" de "meu detector não casa nada", e os dois fluxos
- * legítimos do repositório servem de falso conforto.
+ * CT-27 — o gerador antigo não publica mais, e a configuração dele saiu.
+ *
+ * ## Por que isto entra no MESMO commit da migração, e não depois
+ *
+ * O plano original deixava o `_config.yml` para um passo final separado, com o argumento de que
+ * os dois geradores conseguiriam ler a mesma árvore por um commit — um rollback barato.
+ *
+ * **O argumento é falso, e a implementação provou.** A transformação do conteúdo é para o
+ * Starlight: o H1 saiu do corpo (o Jekyll não o repõe, porque para ele `title` é rótulo de
+ * navegação) e os links viraram absolutos sem o `baseurl` (que sob `/filament-starter-kit-easy`
+ * dão 404). Assim que isto for para a `main`, o site servido pelo Jekyll está quebrado —
+ * manter o `_config.yml` não guarda rollback nenhum, só dá a impressão de guardar.
+ *
+ * O rollback real é reverter o merge inteiro e voltar o `Source` do Pages para a branch. Está
+ * escrito na ADR-01 e no `01-plano-acao.md`, corrigidos depois desta descoberta.
  */
-it('[CT-25] nenhum fluxo de Actions publica o site por fora do build nativo', function (): void {
-    $detector = '~deploy-pages|actions-gh-pages|github-pages-deploy|gh-pages|pages-build-deployment~i';
+it('[CT-27] o conteudo nao guarda configuracao do gerador antigo', function (): void {
+    // `glob` e não `is_file`: o detector do CT-10 procura `is_file(... docs`, e com razão — ele
+    // caça cenário que se PULA quando `docs/` não existe. Aqui a ausência é a AFIRMAÇÃO, não a
+    // condição, e `glob` já é o idioma deste arquivo para isso (ver CT-15).
+    expect(glob(base_path('docs/_config.yml')))->toBe([], 'o Jekyll ainda tem configuração em docs/');
 
-    expect(preg_match($detector, '      - run: git push origin HEAD:gh-pages --force'))->toBe(1);
+    $comRemoteTheme = [];
 
-    $acusados = [];
-
-    foreach (Finder::create()->files()->in(base_path('.github/workflows'))->name('*.yml') as $fluxo) {
-        if (preg_match($detector, $fluxo->getContents()) === 1) {
-            $acusados[] = $fluxo->getFilename();
+    foreach (Finder::create()->files()->in(base_path('docs'))->name(['*.yml', '*.md']) as $arquivo) {
+        if (str_contains($arquivo->getContents(), 'remote_theme')) {
+            $comRemoteTheme[] = $arquivo->getRelativePathname();
         }
     }
 
-    expect($acusados)->toBe([]);
+    expect($comRemoteTheme)->toBe([]);
 });
 
 /**
- * CT-16 — o `baseurl` é o nome do REPOSITÓRIO, derivado do `homepage` do pacote, e não o
- * nome do PACOTE: `gsferro/starter-kit-easy` vive em `filament-starter-kit-easy`, e derivar
- * do `name` produz um site que funciona em prévia local e quebra publicado (M32, M33).
- * A forma do Jekyll é barra na frente e nenhuma no fim (M44).
+ * CT-25 — existe EXATAMENTE UM fluxo que publica o site, e ele é o `pages.yml`.
+ *
+ * ## A afirmação deste caso foi invertida, e isso é decisão registrada
+ *
+ * Até a v0.36.1 ele dizia *"nenhum fluxo de Actions publica o site por fora do build nativo"* —
+ * porque o site saía do Jekyll embutido do Pages, e um workflow de publicação seria um segundo
+ * publicador disputando a mesma saída. A migração para o Starlight trocou o mecanismo: o build
+ * nativo não roda Astro, e a publicação passa a ser por Actions (ADR-03 da wiki `site-starlight`).
+ *
+ * **Reescrito, não removido.** Apagar o caso porque ele incomoda tiraria da rede a única
+ * afirmação sobre o mecanismo de publicação — justamente o que mudou. O cenário antigo protegia
+ * contra *"alguém acrescentou um publicador"*; o novo protege contra os dois modos de falha que
+ * a arquitetura nova tem: **um segundo publicador** disputando o deploy, e **nenhum**, com o site
+ * congelado na última versão sem ninguém perceber.
+ *
+ * O controle positivo continua: sem ele, o caso não distingue "há exatamente um" de "meu detector
+ * casa qualquer coisa" nem de "meu detector cegou depois que a action foi renomeada".
+ */
+it('[CT-25] exatamente um fluxo de Actions publica o site', function (): void {
+    $detector = '~deploy-pages|actions-gh-pages|github-pages-deploy|gh-pages~i';
+
+    // Controle positivo: o detector casa uma linha plantada.
+    expect(preg_match($detector, '      - uses: actions/deploy-pages@v4'))->toBe(1);
+
+    $publicadores = [];
+
+    foreach (Finder::create()->files()->in(base_path('.github/workflows'))->name('*.yml') as $fluxo) {
+        if (preg_match($detector, $fluxo->getContents()) === 1) {
+            $publicadores[] = $fluxo->getFilename();
+        }
+    }
+
+    expect($publicadores)->toBe(['pages.yml']);
+
+    $pages = (string) file_get_contents(base_path('.github/workflows/pages.yml'));
+
+    expect($pages)->toContain('name: github-pages');
+});
+
+/**
+ * CT-16 — o endereço base do site é o do REPOSITÓRIO, derivado do `homepage` do pacote.
+ *
+ * A afirmação é a mesma de sempre e o motivo não mudou: `gsferro/starter-kit-easy` é publicado em
+ * `filament-starter-kit-easy`, e derivar do `name` do pacote produz um site que funciona em
+ * prévia local e quebra publicado — todo link interno apontando para a raiz do domínio.
+ *
+ * O que mudou é **onde o valor mora**. Era o `baseurl` do `_config.yml`, lido pelo Jekyll; passou
+ * a ser `DOCS_BASE`, passado pelo workflow ao build do Astro. O caso segue o valor.
  */
 it('[CT-16] o endereço base do site é o do repositório, não o do pacote', function (): void {
     $composer = json_decode((string) file_get_contents(base_path('composer.json')), true);
-    preg_match('/^baseurl:\s*(\S+)/m', (string) file_get_contents(base_path('docs/_config.yml')), $achado);
 
-    $baseurl      = trim($achado[1] ?? '', '"\'');
+    preg_match('/DOCS_BASE=(\S+)/', (string) file_get_contents(base_path('.github/workflows/pages.yml')), $achado);
+
+    $base         = $achado[1] ?? '';
     $repositorio  = basename((string) $composer['homepage']);
     $nomeDoPacote = explode('/', (string) $composer['name'])[1];
 
-    expect($baseurl)->toBe("/{$repositorio}")
-        ->and($baseurl)->toMatch('~^/[^/]+$~')
-        ->and($baseurl)->not->toBe("/{$nomeDoPacote}");
+    expect($base)->toBe("/{$repositorio}")
+        ->and($base)->toMatch('~^/[^/]+$~')
+        ->and($base)->not->toBe("/{$nomeDoPacote}");
 });
 
 /*
@@ -589,16 +704,23 @@ it('[CT-16] o endereço base do site é o do repositório, não o do pacote', fu
  * nem build (M59: texto copiado do plano ANTERIOR descreveria um `docs.yml` que não existe), e
  * nomeando onde a origem do Pages se configura — o único passo que não está em arquivo (M60).
  */
-it('[CT-17] cada idioma explica como a documentação é publicada', function (string $idioma, string $semWorkflow): void {
+it('[CT-17] cada idioma explica como a documentação é publicada', function (string $idioma, string $previa): void {
     $texto = paginasDoSite($idioma)['operacao/desenvolvendo-o-kit.md'] ?? '';
 
+    /*
+     * Sem mensagem no `toContain`: ele é VARIÁDICO, e a mensagem vira uma segunda agulha
+     * procurada no texto. A primeira versão deste caso passava `'a doc precisa nomear o fluxo'`
+     * como segundo argumento e reprovava afirmando que a doc não contém essa frase — que ela
+     * realmente não contém, e nem deve. A armadilha já está documentada em `[CT-29]` e `[CT-34]`
+     * deste repositório; a mensagem vai no `toMatch`, que aceita, ou em `expect()` separado.
+     */
     expect($texto)->toContain('`main`')
-        ->and($texto)->toMatch($semWorkflow)
-        ->and($texto)->toContain('Deploy from a branch')
-        ->and($texto)->toContain('`/docs`');
+        ->and($texto)->toContain('pages.yml')
+        ->and($texto)->toContain('Source: GitHub Actions')
+        ->and($texto)->toMatch($previa);
 })->with([
-    'português' => ['pt', '/não há workflow/i'],
-    'inglês'    => ['en', '/there is no workflow/i'],
+    'português' => ['pt', '/prévia local/i'],
+    'inglês'    => ['en', '/local preview/i'],
 ]);
 
 /*
@@ -642,37 +764,59 @@ it('[CT-18] nenhuma página deixa delimitador de template solto', function (): v
  * navegação" = o pai declarado é o título REAL do índice do diretório (M46: um índice
  * renomeado deixa órfãs todas as filhas), e "não referencia inexistente" é a mesma asserção.
  */
+/**
+ * CT-20 — toda página aparece na navegação do idioma a que pertence.
+ *
+ * O CENÁRIO É O MESMO; o mecanismo mudou. No just-the-docs a árvore saía do front-matter de cada
+ * página (`parent`, `grand_parent`, `has_children`) e este caso conferia esses campos. No
+ * Starlight a barra lateral é DECLARADA no `astro.config.mjs`, a partir de `site/sidebar.json`
+ * que o `converter.mjs` gera — porque o `autogenerate` não funciona com o conteúdo fora da raiz
+ * do projeto Astro (ADR-02 da wiki `site-starlight`).
+ *
+ * A troca de mecanismo criou um modo de falha que o anterior não tinha: uma página nova que não
+ * entre na lista **simplesmente não aparece na navegação**, e nada mais no repositório reclama.
+ * Ela continua existindo, continua sendo servida por URL direta, e some para quem navega. É
+ * exatamente o que este caso passa a cobrir.
+ *
+ * Os `slug` do sidebar não levam prefixo de idioma — o Starlight os localiza para cada locale —,
+ * então a mesma lista atende os dois, e conferi-la contra as duas árvores também afirma a
+ * paridade de caminho que o i18n do Starlight exige.
+ */
 it('[CT-20] toda página aparece na navegação do idioma a que pertence', function (string $idioma): void {
-    $frontMatter = array_map(frontMatterDe(...), paginasDoSite($idioma));
-    $raiz        = $frontMatter['index.md']['title'] ?? null;
+    $sidebar = json_decode((string) file_get_contents(base_path('site/sidebar.json')), true);
 
-    $folhas = array_filter(array_keys($frontMatter), static fn (string $c): bool => ! str_ends_with($c, 'index.md'));
-    $orfas  = [];
+    $slugs = [];
 
-    foreach ($frontMatter as $caminho => $campos) {
+    foreach ($sidebar as $grupo) {
+        foreach ($grupo['items'] ?? [] as $item) {
+            $slugs[] = $item['slug'];
+        }
+    }
+
+    $paginas = paginasDoSite($idioma);
+    $orfas   = [];
+    $folhas  = 0;
+
+    foreach (array_keys($paginas) as $caminho) {
+        // A landing do idioma é a raiz: ela não entra na barra lateral, e não é órfã por isso.
         if ($caminho === 'index.md') {
             continue;
         }
 
-        if (str_ends_with($caminho, 'index.md')) {
-            $ok = ($campos['parent'] ?? null) === $raiz && ($campos['has_children'] ?? null) === 'true';
-        } else {
-            $pai = $frontMatter[dirname($caminho).'/index.md']['title'] ?? null;
-            $ok  = $pai !== null
-                && ($campos['parent'] ?? null) === $pai
-                && ($campos['grand_parent'] ?? null) === $raiz
-                && isset($campos['title'], $campos['nav_order']);
+        $slug = preg_replace('~(/index)?\.md$~', '', $caminho);
+
+        if (! str_ends_with($caminho, 'index.md')) {
+            $folhas++;
         }
 
-        if (! $ok) {
+        if (! in_array($slug, $slugs, true)) {
             $orfas[] = $caminho;
         }
     }
 
-    expect($raiz)->not->toBeNull()
-        ->and(($frontMatter['index.md']['has_children'] ?? null))->toBe('true')
-        ->and(count($folhas))->toBeGreaterThanOrEqual(22)
-        ->and($orfas)->toBe([]);
+    expect($slugs)->not->toBeEmpty('o sidebar gerado esta vazio — o converter nao rodou')
+        ->and($folhas)->toBeGreaterThanOrEqual(22)
+        ->and($orfas)->toBe([], "paginas fora da navegacao ({$idioma})");
 })->with(['pt', 'en']);
 
 /**
@@ -928,3 +1072,465 @@ it('[CT-25] mantem a contagem de arquivos de teste dos readmes sincronizada', fu
     expect((string) file_get_contents(base_path('README.en.md')))
         ->toContain("| Test files | **{$fundacao}** in `Kit` + `Tenancy` (**{$total}** in total) |");
 })->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README, que passa a ser do projeto.')->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| Migração para o Astro Starlight — wikis/specs/feat/site-starlight/
+|--------------------------------------------------------------------------
+|
+| Os cenários abaixo nasceram com a troca de gerador. Os de ID menor, acima,
+| continuam valendo: o conteúdo é o mesmo, e é isso que a ADR-01 daquela wiki
+| promete. Cinco deles tiveram a AFIRMAÇÃO invertida junto com o mecanismo
+| (CT-15, CT-16, CT-17, CT-20, CT-25), e cada um diz no próprio docblock o que
+| mudou e por quê.
+*/
+
+/**
+ * CT-26 — a configuração declara o Starlight e os dois locales.
+ *
+ * O `lang` de cada locale não é enfeite: é ele que o Pagefind usa para separar o índice de busca
+ * por idioma, que é uma das duas coisas que motivaram a troca de gerador. `pt` em vez de `pt-BR`
+ * indexaria com o idioma errado sem nada quebrar na tela.
+ */
+it('[CT-26] a configuracao declara o Starlight e os dois locales', function (): void {
+    $config = (string) file_get_contents(base_path('site/astro.config.mjs'));
+
+    expect($config)->toContain('@astrojs/starlight')
+        ->and($config)->toMatch("~pt:\s*\{[^}]*lang:\s*'pt-BR'~")
+        ->and($config)->toMatch("~en:\s*\{[^}]*lang:\s*'en'~")
+        ->and($config)->toMatch("~defaultLocale:\s*'pt'~");
+});
+
+/**
+ * CT-28 — o Starlight lê de `docs/`, e não há uma segunda árvore de conteúdo.
+ *
+ * A segunda metade é a que importa no dia a dia: a cópia do spike dentro do projeto Astro ficaria
+ * funcionando e divergiria em silêncio, e o leitor veria a versão velha sem ninguém saber por quê.
+ * Duas fontes da verdade não dão erro — dão duas verdades.
+ */
+it('[CT-28] o conteudo publicado e o de docs, e so ele', function (): void {
+    $colecoes = (string) file_get_contents(base_path('site/src/content.config.ts'));
+
+    /*
+     * `glob` e não `is_dir`: o detector do CT-10 procura `is_dir(... docs` e tem razão em
+     * procurar — ele caça cenário que se PULA quando o diretório não existe. Aqui a ausência é
+     * a AFIRMAÇÃO, e `glob` é o idioma que este arquivo já usa para isso (ver CT-15).
+     */
+    expect($colecoes)->toContain("base: '../docs'")
+        ->and(glob(base_path('site/src/content/docs')))->toBe([]);
+});
+
+/**
+ * CT-29 — nenhuma página carrega front-matter do gerador antigo, e toda uma tem `description`.
+ *
+ * O `description` merece explicação: o Jekyll não tinha nenhuma, e sem ela o Starlight preenche o
+ * cartão de compartilhamento e o resultado de busca com o que o gerador escolher. A conversão a
+ * deriva do primeiro parágrafo de PROSA — e "prosa" precisou excluir a imagem com link
+ * (`[![alt](thumb)](full)`), que abre várias páginas deste site: sem isso, 20 descrições nasciam
+ * com o texto alternativo de um print.
+ *
+ * Por isso o caso não se contenta com "a chave existe": ele exige que ela não seja igual ao
+ * título e não comece por marcação de imagem.
+ */
+it('[CT-29] toda pagina esta no formato do Starlight', function (): void {
+    $doGeradorAntigo = $semDescricao = $descricaoRuim = [];
+    $conferidas      = 0;
+
+    foreach (['pt', 'en'] as $idioma) {
+        foreach (paginasDoSite($idioma) as $caminho => $conteudo) {
+            $conferidas++;
+            $campos = frontMatterDe($conteudo);
+
+            foreach (['parent', 'grand_parent', 'has_children', 'nav_order'] as $chave) {
+                if (isset($campos[$chave])) {
+                    $doGeradorAntigo[] = "{$idioma}/{$caminho} ({$chave})";
+                }
+            }
+
+            $descricao = $campos['description'] ?? null;
+
+            if ($descricao === null || $descricao === '') {
+                $semDescricao[] = "{$idioma}/{$caminho}";
+
+                continue;
+            }
+
+            if ($descricao === ($campos['title'] ?? null) || str_starts_with($descricao, '![')) {
+                $descricaoRuim[] = "{$idioma}/{$caminho}";
+            }
+        }
+    }
+
+    expect($conferidas)->toBeGreaterThan(60, 'a varredura olhou o lugar errado')
+        ->and($doGeradorAntigo)->toBe([])
+        ->and($semDescricao)->toBe([])
+        ->and($descricaoRuim)->toBe([]);
+});
+
+/**
+ * CT-30 — nenhuma página repete o título no corpo.
+ *
+ * O Starlight renderiza o `title` do front-matter como H1. Um H1 no corpo produz o título duas
+ * vezes na tela e um segundo H1 no documento, que é defeito de acessibilidade, não de estética.
+ *
+ * **O que este caso NÃO prova** está declarado na wiki: ele afirma que nenhum corpo COMEÇA com
+ * H1; não afirma que nenhum H1 do meio do texto foi apagado por engano. Quem cobre isso é o
+ * `[CT-01]`, contra o baseline congelado de 115 títulos — e foi ele que pegou, na implementação,
+ * que o H1 e o `title` antigo eram textos DIFERENTES em várias páginas.
+ */
+it('[CT-30] nenhuma pagina repete o titulo no corpo', function (): void {
+    $comH1      = [];
+    $conferidas = 0;
+
+    foreach (['pt', 'en'] as $idioma) {
+        foreach (paginasDoSite($idioma) as $caminho => $conteudo) {
+            $conferidas++;
+            $corpo = (string) preg_replace('/\A---\n.*?\n---\n/s', '', $conteudo);
+
+            if (preg_match('/\A\s*#\s+/', $corpo) === 1) {
+                $comH1[] = "{$idioma}/{$caminho}";
+            }
+        }
+    }
+
+    expect($conferidas)->toBeGreaterThan(60)
+        ->and($comH1)->toBe([]);
+});
+
+/**
+ * CT-32 e CT-33 — a identidade visual existe nos dois esquemas de cor.
+ *
+ * Os dois nasceram de um defeito MEDIDO em navegador, não de uma preocupação abstrata: a primeira
+ * versão do tema redefinia `--sl-color-gray-6/7` no seletor global para "esquentar" o tema
+ * escuro, e o tema CLARO usa essas mesmas variáveis como superfície clara. O chip de código
+ * inline virou bloco quase preto com texto escuro por cima, ilegível em toda página — e no escuro
+ * estava impecável. Foi a captura nos dois temas que pegou.
+ *
+ * CT-33 é a asserção de AUSÊNCIA correspondente, e ela só vale sobre o bloco global: redefinir um
+ * cinza dentro de um bloco por tema é legítimo.
+ */
+it('[CT-32] a rampa de acento existe no escuro e no claro', function (): void {
+    $css = (string) file_get_contents(base_path('site/src/styles/kit.css'));
+
+    expect((string) file_get_contents(base_path('site/astro.config.mjs')))->toContain('kit.css');
+
+    expect($css)->toMatch('~:root\s*\{[^}]*--sl-color-accent~s')
+        ->and($css)->toMatch("~:root\[data-theme='light'\]\s*\{[^}]*--sl-color-accent~s");
+});
+
+it('[CT-33] nenhuma variavel de cinza do tema e redefinida no seletor global', function (): void {
+    $css = (string) file_get_contents(base_path('site/src/styles/kit.css'));
+
+    preg_match('~:root\s*\{(.*?)\}~s', $css, $global);
+
+    expect($global[1] ?? '')->not->toBe('', 'o bloco global sumiu — o caso mediria o vazio')
+        ->and($global[1])->not->toMatch('~--sl-color-gray-~');
+});
+
+/**
+ * CT-34 — as duas árvores de idioma são espelho por CAMINHO.
+ *
+ * Não é preciosismo de organização: **caminho idêntico é o contrato do i18n do Starlight**. A
+ * tradução de `pt/recursos/x.md` é `en/recursos/x.md`, e só ela. Renomear o slug de um lado faz o
+ * Starlight gerar, no caminho órfão, uma página com `lang="en"` e o CORPO EM PORTUGUÊS — o
+ * fallback de tradução ausente —, e o seletor de idioma continua apontando para ela.
+ *
+ * Medido renomeando uma página de verdade durante o planejamento. É a razão de os slugs em inglês
+ * continuarem em português (ADR-04), e este caso é o que torna essa não-ação falsificável.
+ */
+it('[CT-34] as duas arvores de idioma sao espelho por caminho', function (): void {
+    $pt = array_keys(paginasDoSite('pt'));
+    $en = array_keys(paginasDoSite('en'));
+
+    sort($pt);
+    sort($en);
+
+    expect(count($pt))->toBeGreaterThan(30, 'a varredura olhou o lugar errado')
+        ->and(array_values(array_diff($pt, $en)))->toBe([], 'existe em pt e falta em en')
+        ->and(array_values(array_diff($en, $pt)))->toBe([], 'existe em en e falta em pt');
+});
+
+/**
+ * CT-36, CT-37 e CT-38 — os redirecionamentos das URLs que o gerador antigo publicava.
+ *
+ * ## O destino é relativo, e isso é a correção de um defeito de produção
+ *
+ * A primeira versão gravava o caminho absoluto (`/pt/comecar/x/`). Os stubs são **commitados**, e
+ * quem os gera localmente não passa o `base` — então os 54 entraram no repositório apontando para
+ * a raiz do domínio. O site publica em `/filament-starter-kit-easy/`: **todos dariam 404 no ar**,
+ * e nada no repositório ficaria vermelho. Um destino relativo resolve contra o diretório do
+ * próprio stub e acerta sob qualquer base.
+ *
+ * CT-37 afirma a AUSÊNCIA para índice de seção — `/pt/comecar/` tinha a mesma forma nos dois
+ * geradores, e redirect de rota que não mudou é ruído numa lista de 54.
+ *
+ * CT-38 é o piso: `CT-36` fica verde sobre zero stubs, e sem contagem a regra inteira viraria
+ * vácuo. A contagem sai da árvore, nunca digitada.
+ */
+it('[CT-36] todo redirecionamento aponta para uma pagina que existe, sem depender do base', function (): void {
+    $ruins  = [];
+    $vistos = 0;
+
+    foreach (Finder::create()->files()->in(base_path('site/public'))->name('*.html') as $stub) {
+        $vistos++;
+        $conteudo = $stub->getContents();
+        $relativo = str_replace('\\', '/', $stub->getRelativePathname());
+
+        if (preg_match('~content="0; url=([^"]+)"~', $conteudo, $alvo) !== 1) {
+            $ruins[] = "{$relativo} — sem meta refresh imediato";
+
+            continue;
+        }
+
+        if (str_starts_with($alvo[1], '/')) {
+            $ruins[] = "{$relativo} — destino absoluto, quebra sob base";
+
+            continue;
+        }
+
+        $pagina = base_path('docs/'.dirname($relativo).'/'.rtrim($alvo[1], '/').'.md');
+
+        if (! is_file($pagina)) {
+            $ruins[] = "{$relativo} — destino {$alvo[1]} nao existe no conteudo";
+        }
+    }
+
+    expect($vistos)->toBeGreaterThan(40, 'a varredura de stubs nao achou nada')
+        ->and($ruins)->toBe([]);
+});
+
+it('[CT-37] rota que nao mudou de forma nao ganha redirecionamento', function (): void {
+    $indevidos = [];
+    $indices   = 0;
+
+    foreach (['pt', 'en'] as $idioma) {
+        foreach (array_keys(paginasDoSite($idioma)) as $caminho) {
+            if ($caminho === 'index.md' || ! str_ends_with($caminho, 'index.md')) {
+                continue;
+            }
+
+            $indices++;
+            $stub = base_path("site/public/{$idioma}/".str_replace('/index.md', '.html', $caminho));
+
+            if (is_file($stub)) {
+                $indevidos[] = "{$idioma}/{$caminho}";
+            }
+        }
+    }
+
+    /*
+     * O piso é o que separa esta asserção de ausência de uma asserção sobre o nada.
+     *
+     * Sem ele, uma varredura que não achasse índice nenhum — diretório renomeado, glob quebrado —
+     * produziria `$indevidos` vazio e o caso ficaria verde afirmando que não há redirect indevido
+     * num mundo onde não há índice nenhum. A revisão adversarial apontou exatamente este cenário,
+     * e a conferência do diff confirmou que era o único caso novo sem âncora de população.
+     */
+    expect($indices)->toBe(10, 'sao cinco secoes em dois idiomas')
+        ->and($indevidos)->toBe([]);
+});
+
+it('[CT-38] toda pagina de folha tem o seu redirecionamento', function (): void {
+    $folhas  = 0;
+    $semStub = [];
+
+    foreach (['pt', 'en'] as $idioma) {
+        foreach (array_keys(paginasDoSite($idioma)) as $caminho) {
+            if (str_ends_with($caminho, 'index.md')) {
+                continue;
+            }
+
+            $folhas++;
+            $stub = base_path("site/public/{$idioma}/".str_replace('.md', '.html', $caminho));
+
+            if (! is_file($stub)) {
+                $semStub[] = "{$idioma}/{$caminho}";
+            }
+        }
+    }
+
+    $stubs = Finder::create()->files()->in(base_path('site/public'))->name('*.html')->count();
+
+    expect($folhas)->toBeGreaterThan(40, 'nao ha folhas — a varredura olhou o lugar errado')
+        ->and($semStub)->toBe([])
+        ->and($stubs)->toBe($folhas, 'ha stub sobrando ou faltando');
+});
+
+/**
+ * CT-39 — o plano B continua sendo um plano B, e não um parágrafo.
+ *
+ * O solicitante pediu o VitePress "como 2 opção caso algo aconteça". Alternativa em prosa nunca
+ * foi executada, e quem tentar usá-la vai descobrir os problemas sob pressão — que é o pior
+ * momento. Por isso ela fica no repositório construindo, e por isso o README dela declara **quando
+ * trocar**, não só como instalar.
+ */
+it('[CT-39] o plano B esta completo e declara quando trocar', function (): void {
+    $readme = (string) file_get_contents(base_path('site-vitepress/README.md'));
+
+    expect(is_file(base_path('site-vitepress/package.json')))->toBeTrue()
+        ->and(is_file(base_path('site-vitepress/.vitepress/config.mts')))->toBeTrue()
+        ->and(is_file(base_path('site-vitepress/converter.mjs')))->toBeTrue()
+        ->and($readme)->toContain('Quando trocar');
+});
+
+/**
+ * CT-40 — o conferidor de links roda ANTES de o site ir ao ar.
+ *
+ * Este é o cenário que fecha o buraco da divisão de camadas. Os guardas de link, de âncora e de
+ * redirect moram no Node, fora da suíte do Pest, porque exigem o site construído — e um passo de
+ * workflow some com uma linha apagada, sem nada ficar vermelho.
+ *
+ * A ordem é parte da afirmação: conferir depois do envio deixa o site quebrado no ar mesmo com o
+ * job vermelho. E `continue-on-error` num passo de guarda é a forma silenciosa de desligá-lo sem
+ * removê-lo.
+ */
+it('[CT-40] o fluxo de publicacao confere os links antes de enviar o artefato', function (): void {
+    $fluxo = (string) file_get_contents(base_path('.github/workflows/pages.yml'));
+
+    $conferidor = strpos($fluxo, 'verifica-links.mjs');
+    $envio      = strpos($fluxo, 'upload-pages-artifact');
+
+    expect($conferidor)->not->toBeFalse('o fluxo nao confere os links')
+        ->and($envio)->not->toBeFalse('o fluxo nao envia artefato')
+        ->and($conferidor)->toBeLessThan($envio, 'o conferidor roda depois do envio')
+        ->and($fluxo)->not->toContain('continue-on-error');
+});
+
+/**
+ * CT-31 — o índice de cada seção não repete o nome do grupo na navegação.
+ *
+ * No just-the-docs o `index.md` da seção tinha o MESMO título do grupo, porque `has_children`
+ * fazia do título o cabeçalho e a página vinha junto. No Starlight o grupo é nomeado na
+ * configuração e a página é um item dentro dele — a barra lateral mostrava "Começar › Começar",
+ * em quatro das cinco seções.
+ *
+ * O rótulo na barra passa a ser "Visão geral" / "Overview"; o título da página continua o que era.
+ * O caso varre as DUAS árvores porque o modo de falha natural é aplicar a correção só no idioma
+ * que se estava olhando.
+ */
+it('[CT-31] o indice de cada secao tem rotulo proprio na navegacao', function (): void {
+    $esperado = ['pt' => 'Visão geral', 'en' => 'Overview'];
+    $ruins    = [];
+    $vistos   = 0;
+
+    foreach ($esperado as $idioma => $rotulo) {
+        foreach (paginasDoSite($idioma) as $caminho => $conteudo) {
+            if ($caminho === 'index.md' || ! str_ends_with($caminho, 'index.md')) {
+                continue;
+            }
+
+            $vistos++;
+
+            /*
+             * O `label` é ANINHADO sob `sidebar:`, e o `frontMatterDe()` só lê chave de topo —
+             * ele foi escrito para o front-matter plano do just-the-docs. Ler aqui com regex
+             * própria é mais honesto que afrouxar o helper, que quatro outros cenários usam
+             * esperando exatamente o comportamento atual.
+             */
+            preg_match('~^\s+label:\s*(.+?)\s*$~m', $conteudo, $achado);
+
+            $label = isset($achado[1]) ? trim($achado[1], "\"'") : null;
+
+            if ($label !== $rotulo) {
+                $ruins[] = "{$idioma}/{$caminho} — rotulo ".var_export($label, true);
+            }
+        }
+    }
+
+    expect($vistos)->toBe(10, 'sao cinco secoes em dois idiomas')
+        ->and($ruins)->toBe([]);
+});
+
+/**
+ * CT-35 — os locales declarados são exatamente as árvores de idioma que existem.
+ *
+ * Locale declarado sem árvore faz o seletor de idioma levar a 404; árvore sem locale declarado faz
+ * o Starlight publicar as páginas fora de qualquer idioma, sem barra lateral e sem seletor. Os
+ * dois são silenciosos no build.
+ */
+it('[CT-35] os locales declarados sao as arvores que existem', function (): void {
+    preg_match_all("~^\s+(\w+):\s*\{\s*label:~m", (string) file_get_contents(base_path('site/astro.config.mjs')), $achados);
+
+    $declarados = $achados[1];
+
+    $existentes = array_values(array_filter(
+        array_map('basename', (array) glob(base_path('docs/*'), GLOB_ONLYDIR)),
+    ));
+
+    sort($declarados);
+    sort($existentes);
+
+    expect($declarados)->not->toBeEmpty('o extrator de locales nao achou nada')
+        ->and($declarados)->toBe($existentes);
+});
+
+/**
+ * CT-41 — toda página de folha conserva a sua posição na navegação.
+ *
+ * Este caso existe por causa de um defeito **medido no step 7.5**: o conversor não era
+ * reexecutável. O front-matter do just-the-docs era plano (`nav_order: 3`) e o do Starlight aninha
+ * sob `sidebar:`; o leitor de front-matter só enxergava chave de topo, então a SEGUNDA passada não
+ * via `order` nem `label`, e como o `nav_order` já não existia mais, ela reescrevia o arquivo
+ * **sem ordem nenhuma**.
+ *
+ * Rodar o conversor duas vezes mudava 55 arquivos, apagava `sidebar.order` de 32 páginas e
+ * embaralhava a barra lateral inteira — sem erro, sem aviso, com o build verde. É a pior forma de
+ * defeito de ferramenta: ela degrada o conteúdo a cada execução e ninguém percebe.
+ *
+ * O conserto foi no conversor (aceitar chave indentada e herdar `nav_order ?? order`). Este caso é
+ * o que impede o defeito de voltar: ordem perdida vira lista vermelha, não navegação embaralhada.
+ */
+it('[CT-41] toda pagina de folha conserva a sua posicao na navegacao', function (): void {
+    $semOrdem = [];
+    $folhas   = 0;
+
+    foreach (['pt', 'en'] as $idioma) {
+        foreach (paginasDoSite($idioma) as $caminho => $conteudo) {
+            if ($caminho === 'index.md' || str_ends_with($caminho, 'index.md')) {
+                continue;
+            }
+
+            $folhas++;
+
+            if (preg_match('~^\s+order:\s*\d+~m', $conteudo) !== 1) {
+                $semOrdem[] = "{$idioma}/{$caminho}";
+            }
+        }
+    }
+
+    expect($folhas)->toBeGreaterThan(40, 'a varredura nao achou folhas')
+        ->and($semOrdem)->toBe([]);
+});
+
+/**
+ * CT-42 — o fluxo de publicação confere ACESSIBILIDADE antes de enviar o artefato.
+ *
+ * Irmão do `[CT-40]`, e pelo mesmo motivo estrutural: o guarda mora no Node, fora da suíte do
+ * Pest, porque exige o site construído num navegador — e um passo de workflow some com uma linha
+ * apagada, sem nada ficar vermelho.
+ *
+ * O quality gate deste ciclo declarou acessibilidade como **não verificada**, e essa era a maior
+ * lacuna da entrega. Ao fechá-la, o axe achou **28 violações `serious`** em 26 páginas: blocos de
+ * código e tabelas que rolam na horizontal sem receber foco por teclado (conteúdo que quem navega
+ * por teclado não alcança), e contraste insuficiente no item atual da barra lateral **só no tema
+ * claro** — a segunda vez que uma cor deste tema passou num esquema e falhou no outro.
+ *
+ * Por isso o cenário exige os **dois temas** no comando: rodar um só teria deixado o defeito de
+ * contraste passar, exatamente como aconteceu antes com o chip de código inline.
+ */
+it('[CT-42] o fluxo de publicacao confere acessibilidade antes de enviar o artefato', function (): void {
+    $fluxo = (string) file_get_contents(base_path('.github/workflows/pages.yml'));
+
+    $conferidor = strpos($fluxo, 'verifica-acessibilidade.mjs');
+    $envio      = strpos($fluxo, 'upload-pages-artifact');
+
+    expect($conferidor)->not->toBeFalse('o fluxo nao confere acessibilidade')
+        ->and($conferidor)->toBeLessThan($envio, 'a conferencia roda depois do envio');
+
+    $script = (string) file_get_contents(base_path('site/verifica-acessibilidade.mjs'));
+
+    // Os dois temas e o piso de população: sem eles o conferidor fica verde sobre o vazio.
+    expect($script)->toContain("'dark'")
+        ->and($script)->toContain("'light'")
+        ->and($script)->toContain('PISO');
+});

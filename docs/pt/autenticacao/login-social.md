@@ -1,12 +1,10 @@
 ---
-title: Login social
-parent: Autenticação
-grand_parent: Português
-nav_order: 3
+title: "Login social: quatro provedores (opt-in, um por um)"
+description: "Um segundo caminho de entrada, ao lado da senha: os botões Entrar com… abaixo do formulário de login dos três painéis. Cada provedor nasce desligado, é…"
+sidebar:
+  label: "Login social"
+  order: 3
 ---
-
-# Login social: quatro provedores (opt-in, um por um)
-
 Um segundo caminho de entrada, ao lado da senha: os botões **Entrar com…** abaixo do formulário de
 login dos três painéis. Cada provedor nasce **desligado**, é ligado **individualmente**, e ligado
 faz uma coisa só — autenticar quem **já tem conta**.
@@ -63,7 +61,7 @@ login, e a volta do provedor destrava.
 O roteiro é o mesmo para os quatro; só muda onde se cria o app OAuth. Você pode fazer tudo pelo
 `.env` **ou** pela tela `/admin/configuracoes-da-aplicacao` → aba **Login** — mas saiba quem manda: **o
 banco vence o `.env` em tempo de execução, e o `.env` só semeia** (ver
-[Quem manda: o banco ou o `.env`?](../recursos/configuracoes-do-kit.md#quem-manda-o-banco-ou-o-env)). O passo 3 é onde isso pesa.
+[Quem manda: o banco ou o `.env`?](/pt/recursos/configuracoes-do-kit/#quem-manda-o-banco-ou-o-env)). O passo 3 é onde isso pesa.
 
 **1. Crie o app OAuth no provedor** e cadastre a URI de redirecionamento — que é o seu `APP_URL`
 mais o caminho da tabela acima:

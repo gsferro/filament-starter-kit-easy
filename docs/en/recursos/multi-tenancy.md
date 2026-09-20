@@ -1,12 +1,9 @@
 ---
 title: "Multi-tenancy (opt-in)"
-parent: Features
-grand_parent: English
-nav_order: 1
+description: "The kit is born single-tenant. One command turns multi-tenancy on — and those who don't need it pay nothing for it:"
+sidebar:
+  order: 1
 ---
-
-# Multi-tenancy (opt-in)
-
 The kit is born **single-tenant**. One command turns multi-tenancy on — and those who don't need it pay nothing for it:
 
 ```bash

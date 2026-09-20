@@ -1,12 +1,10 @@
 ---
-title: Single login page
-parent: Authentication
-grand_parent: English
-nav_order: 7
+title: "Single login page (`/login`), optional"
+description: "By default each panel has its own door — /admin/login, /infra/login and /app/login —, which is Filament's behavior. With the switch on, all three lead to…"
+sidebar:
+  label: "Single login page"
+  order: 7
 ---
-
-# Single login page (`/login`), optional
-
 By default each panel has its own door — `/admin/login`, `/infra/login` and `/app/login` —, which
 is Filament's behavior. With the switch on, all three lead to **`/login`**, a single login screen
 (same artwork, same anti-robot protection, same social login buttons), and the kit decides where the
@@ -88,7 +86,7 @@ migrate.
 is a destination organization, and it carries the `?org=`. Publish `/login?org={slug}` (or
 `/cadastro?org={slug}`) and turn on "Accepts public sign-up" on the organization's screen — without
 that the sign-up refuses, and the link disappears instead of leading to the refusal. See
-[Open registration](registro-aberto.md).
+[Open registration](/en/autenticacao/registro-aberto/).
 
 ## What stays per panel
 
@@ -103,7 +101,7 @@ that the sign-up refuses, and the link disappears instead of leading to the refu
   (the provider must be enabled, on any panel), and the destination follows the same rule as the
   table above **restricted to the panels the provider is allowed in** — GitHub enabled only for
   `/infra` never drops anyone into `/admin`; with no allowed accessible panel, the session is
-  ended. With the switch off, everything as in [Social login](login-social.md).
+  ended. With the switch off, everything as in [Social login](/en/autenticacao/login-social/).
 
 ## The access log records the panel the person entered
 

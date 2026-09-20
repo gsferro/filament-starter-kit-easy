@@ -1,12 +1,9 @@
 ---
 title: "Multi-tenancy (opt-in)"
-parent: Recursos
-grand_parent: Português
-nav_order: 1
+description: "O kit nasce single-tenant. Um comando liga o modo multi-tenant — e quem não precisa não paga nada por ele:"
+sidebar:
+  order: 1
 ---
-
-# Multi-tenancy (opt-in)
-
 O kit nasce **single-tenant**. Um comando liga o modo multi-tenant — e quem não precisa não paga nada por ele:
 
 ```bash

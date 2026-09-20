@@ -1,12 +1,9 @@
 ---
 title: "Search and language"
-parent: "Reference"
-grand_parent: "English"
-nav_order: 2
+description: "The topbar field is Filament's native one — same markup, same look, same Ctrl/⌘+K. What changes is what happens on click: instead of typing there, it opens…"
+sidebar:
+  order: 2
 ---
-
-# Search and language
-
 ## The ⌘K search
 
 [![⌘K search](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/spotlight.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/spotlight.png)

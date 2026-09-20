@@ -1,12 +1,9 @@
 ---
 title: "Hub de navegação em cartões"
-parent: Recursos
-grand_parent: Português
-nav_order: 7
+description: "Cada painel tem uma página hub: uma grade de cartões, um por destino do painel, no lugar da árvore da barra lateral — para quando a pergunta \"onde vejo X?\"…"
+sidebar:
+  order: 7
 ---
-
-# Hub de navegação em cartões
-
 Cada painel tem uma página **hub**: uma grade de cartões, um por destino do painel, no lugar da
 árvore da barra lateral — para quando a pergunta "onde vejo X?" é real. São três:
 
