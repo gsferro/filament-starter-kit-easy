@@ -1534,3 +1534,35 @@ it('[CT-42] o fluxo de publicacao confere acessibilidade antes de enviar o artef
         ->and($script)->toContain("'light'")
         ->and($script)->toContain('PISO');
 });
+
+/**
+ * CT-43 — o conferidor de links desconta o prefixo base.
+ *
+ * **Defeito real, achado no primeiro deploy de produção.** O site é de projeto e mora em
+ * `gsferro.github.io/filament-starter-kit-easy/`, então o build de produção recebe
+ * `DOCS_BASE=/filament-starter-kit-easy` e todo link interno sai como
+ * `href="/filament-starter-kit-easy/pt/..."`. O `dist/` **não** tem um diretório com esse nome —
+ * o base é prefixo de URL, não caminho em disco.
+ *
+ * Sem descontar, o conferidor acusa **todos** os links internos como inexistentes. Foi o que
+ * derrubou o job: centenas de falsos positivos, e o site não subiu.
+ *
+ * O guarda falhou **fechado**, que é a direção certa — mas por defeito dele, não do site. E era
+ * invisível fora da CI: a prévia local não passa `DOCS_BASE` e serve na raiz.
+ *
+ * É a mesma classe que a revisão adversarial já tinha nomeado para os *stubs* (`L2`: "normalização
+ * aplicada ao resultado, não à fonte"). Corrigi nos stubs e não no conferidor — o mesmo raciocínio
+ * valia para os dois, e só um foi aplicado.
+ */
+it('[CT-43] o conferidor de links desconta o prefixo base do site publicado', function (): void {
+    $conferidor = (string) file_get_contents(base_path('site/verifica-links.mjs'));
+
+    expect($conferidor)->toContain('DOCS_BASE')
+        ->and($conferidor)->toContain('semBase');
+
+    // O workflow precisa passar a MESMA variável ao conferidor e ao build, senão o desconto é de
+    // um prefixo que o HTML não tem — e o defeito volta pelo outro lado.
+    $fluxo = (string) file_get_contents(base_path('.github/workflows/pages.yml'));
+
+    expect(substr_count($fluxo, 'DOCS_BASE'))->toBeGreaterThanOrEqual(1);
+});

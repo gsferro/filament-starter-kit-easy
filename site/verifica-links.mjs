@@ -15,6 +15,28 @@ import { join, resolve } from 'node:path';
 
 const DIST = resolve('dist');
 
+/*
+ * O PREFIXO BASE, e por que ele precisa ser descontado aqui.
+ *
+ * O site é de projeto, não de usuário: ele mora em `gsferro.github.io/filament-starter-kit-easy/`,
+ * e o build de produção recebe `DOCS_BASE=/filament-starter-kit-easy`. Com isso, todo link interno
+ * do HTML sai como `href="/filament-starter-kit-easy/pt/..."` — mas o `dist/` **não** tem um
+ * diretório `filament-starter-kit-easy/`: o base é prefixo de URL, não de caminho em disco.
+ *
+ * Sem descontar, este conferidor acusa TODOS os links internos como inexistentes. Foi o que
+ * aconteceu no primeiro deploy real: o job reprovou com centenas de falsos positivos, e o site não
+ * subiu. O guarda falhou FECHADO, que é a direção certa — mas por um defeito dele, não do site.
+ *
+ * A prévia local não passa `DOCS_BASE` e serve na raiz, então o bug era invisível fora da CI.
+ */
+const BASE = (process.env.DOCS_BASE || '').replace(/\/+$/, '');
+
+/** Tira o prefixo de URL para chegar ao caminho real dentro do `dist/`. */
+const semBase = (caminho) =>
+  BASE !== '' && (caminho === BASE || caminho.startsWith(BASE + '/'))
+    ? caminho.slice(BASE.length) || '/'
+    : caminho;
+
 const paginas = (dir) =>
   readdirSync(dir).flatMap((nome) => {
     const caminho = join(dir, nome);
@@ -42,9 +64,13 @@ for (const arquivo of paginas(DIST)) {
     if (vistos.has(chave)) continue;
     vistos.add(chave);
 
-    const achado = [join(DIST, alvo, 'index.html'), join(DIST, alvo), join(DIST, alvo + '.html')].find(
-      existsSync,
-    );
+    const emDisco = semBase(alvo);
+
+    const achado = [
+      join(DIST, emDisco, 'index.html'),
+      join(DIST, emDisco),
+      join(DIST, emDisco + '.html'),
+    ].find(existsSync);
 
     const origem = arquivo.replace(DIST, '');
 

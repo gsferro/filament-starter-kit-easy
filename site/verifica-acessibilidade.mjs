@@ -33,6 +33,13 @@ const PORTA = process.argv[2] || '4321';
 const DIST = resolve('dist');
 const AXE = readFileSync(resolve('node_modules/axe-core/axe.min.js'), 'utf8');
 
+/*
+ * O prefixo base, pelo mesmo motivo do `verifica-links.mjs`: o `astro preview` serve o site sob
+ * `/filament-starter-kit-easy/` quando o build recebeu esse `base`. Navegar para `/pt/` ali dá
+ * 404, e o axe reportaria zero violação numa página de erro — verde sobre o nada.
+ */
+const BASE = (process.env.DOCS_BASE || '').replace(/\/+$/, '');
+
 /** As rotas do site construído, derivadas do `dist/` — nunca uma lista escrita à mão. */
 function rotas(dir = DIST, prefixo = '') {
   return readdirSync(dir).flatMap((nome) => {
@@ -67,7 +74,7 @@ for (const [tema, rotasDoTema] of [
   const pagina = await contexto.newPage();
 
   for (const rota of rotasDoTema) {
-    await pagina.goto(`http://localhost:${PORTA}${rota}`, { waitUntil: 'domcontentloaded' });
+    await pagina.goto(`http://localhost:${PORTA}${BASE}${rota}`, { waitUntil: 'domcontentloaded' });
     await pagina.evaluate((t) => document.documentElement.setAttribute('data-theme', t), tema);
     await pagina.addScriptTag({ content: AXE });
 

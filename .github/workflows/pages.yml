@@ -33,6 +33,14 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    # No NÍVEL DO JOB, e não no passo do build: o conferidor de links precisa descontar o mesmo
+    # prefixo que o build aplicou, e o de acessibilidade precisa navegar para ele. Com a variável
+    # só no `run` do build, os dois enxergavam raiz enquanto o HTML tinha o prefixo — foi o que
+    # derrubou o primeiro deploy, com centenas de falsos positivos.
+    env:
+      DOCS_BASE: /filament-starter-kit-easy
+
     steps:
       - uses: actions/checkout@v4
 
@@ -48,10 +56,11 @@ jobs:
 
       - name: Construir o site
         working-directory: site
-        # O `base` é o nome do repositório: o site é de projeto, não de usuário, e mora em
-        # `gsferro.github.io/filament-starter-kit-easy/`. Sem ele, todo link interno aponta para a
-        # raiz do domínio e dá 404 — o mesmo defeito que o `baseurl` do Jekyll evitava.
-        run: DOCS_BASE=/filament-starter-kit-easy npm run build
+        # O `base` sai do `env` do job — ver o comentário lá. Ele é o nome do repositório: o site
+        # é de projeto, não de usuário, e mora em `gsferro.github.io/filament-starter-kit-easy/`.
+        # Sem ele, todo link interno aponta para a raiz do domínio e dá 404 — o mesmo defeito que o
+        # `baseurl` do Jekyll evitava.
+        run: npm run build
 
       - name: Conferir links, âncoras e redirects
         working-directory: site
@@ -71,7 +80,7 @@ jobs:
         # que era impecável no escuro e ilegível no claro.
         run: |
           npx astro preview &
-          npx wait-on http://localhost:4321/pt/ -t 60000
+          npx wait-on "http://localhost:4321${DOCS_BASE}/pt/" -t 60000
           node verifica-acessibilidade.mjs
 
       - uses: actions/upload-pages-artifact@v3
