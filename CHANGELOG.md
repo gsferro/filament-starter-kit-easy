@@ -3,6 +3,56 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Alterado
+- **O site de documentação passou a ser gerado pelo Astro Starlight e publicado por GitHub
+  Actions.** Sai o Jekyll embutido do GitHub Pages com o tema `just-the-docs`.
+
+  Não é reverter a decisão da v0.34.0 — é **acionar a cláusula dela**. A ADR-01 daquela wiki
+  escolheu o Jekyll sabendo que o build nativo roda em `--safe` e proíbe qualquer plugin de i18n,
+  e nomeou a saída: *"fica nomeada como saída se o bilíngue manual se mostrar caro demais na
+  prática"*.
+
+  O que a troca entrega, medido: **i18n nativo** com seletor que leva à página equivalente;
+  **busca separada por idioma** (Pagefind: `en` 33 páginas, `pt-br` 33, índices distintos), que era
+  a limitação declarada e aceita lá; `description` nas 66 páginas, que o Jekyll não tinha em
+  nenhuma; e **zero violações `serious`/`critical` de WCAG 2.1 AA**, conferidas com axe nos dois
+  temas.
+
+  **As URLs antigas continuam funcionando.** O Jekyll publicava `x.html` e o Starlight publica
+  `x/` — 54 redirecionamentos cobrem toda rota de folha, com destino relativo para funcionarem sob
+  qualquer base.
+
+  **O conteúdo não saiu de `docs/`**, e isso foi decisão medida: nove arquivos do repositório
+  apontam para lá, entre eles o helper `documentacaoDoKit()` que quatro testes de outras features
+  consomem. O Astro vai até o conteúdo por um loader `glob`, e não o contrário.
+
+- **Os slugs das páginas em inglês continuam em português.** Traduzi-los quebraria o i18n do
+  Starlight, que casa tradução por **caminho idêntico**: medido renomeando uma página, o resultado
+  foram duas — a inglesa no slug novo e uma página-fantasma em português sob `/en/`, servida como
+  fallback, com o seletor de idioma apontando para ela.
+
+### Corrigido
+- **O exemplo do rótulo de versão no rodapé** dizia `kit 0.35.0` com o kit já na 0.36.1, nas duas
+  páginas de configurações do site. Exemplo concreto com número errado não é ilustração, é
+  afirmação falsa — quem lê conclui que o kit está na versão impressa. Agora é travado por teste.
+
+### Testes
+- **A rede de testes do site acompanhou a troca de gerador**, no mesmo commit. Cinco cenários
+  tiveram a **afirmação invertida** junto com o mecanismo — `[CT-15]`, `[CT-16]`, `[CT-17]`,
+  `[CT-20]` e `[CT-25]` —, cada um com o motivo no próprio docblock. O `[CT-25]` é o mais
+  ilustrativo: ele afirmava *"nenhum fluxo de Actions publica o site"* e passou a afirmar
+  *"exatamente um publica, e é o `pages.yml`"*. Reescrito, não removido: apagar o caso tiraria da
+  rede a única afirmação sobre o mecanismo de publicação, que é justamente o que mudou.
+
+- **Cenários novos**: `[CT-26]`..`[CT-43]`, entre eles os guardas que nasceram de defeito medido —
+  o conversor ser reexecutável, a acessibilidade ser conferida antes de publicar, e o conferidor
+  de links descontar o prefixo base.
+
+- **O VitePress fica no repositório construindo**, como plano B com gatilhos de troca declarados.
+  Alternativa em prosa nunca foi executada, e quem tentar usá-la descobre os problemas sob pressão.
+
 ## [0.36.1] - 2026-09-19
 
 ### Adicionado
