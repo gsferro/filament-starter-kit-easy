@@ -309,6 +309,37 @@ M01, não prova presença), CT-06 (ausência no cadastro), CT-11 (não-efeito na
 feature **depende** sem ser dona) e CT-19 (a tela fechada sem tenancy). Nenhum deles afirma presença
 do link.
 
+## Step 7.5 — `/code-review` no diff (2026-09-21)
+
+Quatro achados, todos fechados. A tabela completa, com o que verificou cada um, está no adendo do
+`04-casos-de-teste.md`. O resumo do que **mudou em código**:
+
+| Achado | Mudança |
+|---|---|
+| 1 — CT-21 guardava string inalcançável | oráculo trocado pela forma real (`/app/{chave}`) + **controle positivo** que mede o gerador |
+| 2 — `urlDoPainel()` devolvia link morto sem tenancy | guarda `hasTenancy()` no gerador; ADR-03 revista; **CT-23** novo |
+| 3 — comentário "21 queries" defasado | corrigido para 33/53, alinhado ao CHANGELOG e a CT-14 |
+| 4 — CT-13 alegava fechar armadilha que não fecha | docblock corrigido para dizer o que o caso prova |
+
+**Dois deles eu não teria encontrado sozinho**, e vale registrar por quê: o 1 e o 4 são asserções
+que *parecem* proteger. Ambas vinham com docblock longo, raciocínio plausível e citação real de
+`arquivo:linha` do vendor — e a conclusão errada. Os gates anteriores (revisão profunda, ponytail,
+revisão adversarial do `04`) leem o **plano**; só o 7.5 lê o **diff** e pergunta se o código está
+certo. É o achado que a própria skill já documenta como o de maior rendimento, e a feature confirmou.
+
+### O erro que a correção do achado 1 produziu, e que valeu mais que ela
+
+O controle positivo nasceu **vermelho**, e por um motivo que não era o esperado: o segundo argumento
+de `expect()->toContain()` é **outra agulha**, não a mensagem de falha. Isso expôs que as asserções
+de ausência de CT-21 já carregavam o mesmo defeito desde o início — `->not->toContain($x, $msg)`
+exigia que a mensagem também estivesse ausente do HTML, o que é sempre verdade.
+
+Migradas para `assertStringNotContainsString`. Efeito medido nas duas suítes da feature:
+**174 → 227 asserções**, com um único cenário novo. A diferença são asserções que existiam no
+arquivo e não contavam.
+
+**Candidato a rule** (step 9): `toContain()`/`not->toContain()` do Pest não recebem mensagem.
+
 ## Retrospectiva
 
 <!-- Preenchido no fim. -->

@@ -16,7 +16,7 @@
 | **D** — nova aba | 1 | 1 | 1 | mínimo |
 | **E** — gravação e estado do formulário de edição | 2 | 2 | 4 | padrão |
 | **F** — custo da listagem | 2 | 2 | 4 | padrão |
-| **G** — tenancy desligada | 1 | 2 | 2 | mínimo |
+| **G** — tenancy desligada | 1 | 3 | 3 | mínimo |
 
 **Impacto 3 nas áreas A e C** → [revisão adversarial obrigatória](#revisão-adversarial), mesmo com
 P×I ≤ 6. Justificativa do I=3:
@@ -31,7 +31,7 @@ P×I ≤ 6. Justificativa do I=3:
 - Técnicas aplicadas: EP, BVA 3-valores (comprimento do slug), **partição de unicidade**, tabela
   estado × operação, matriz persona × portão, rastreio de efeito (log, pivot), contagem de queries,
   varredura de código-fonte (ausência do literal do caminho), inventário de telas.
-- Cenários: **22** · Regras: **9** · Mutantes previstos: **36** · Sem matador: **0** ·
+- Cenários: **23** · Regras: **9** · Mutantes previstos: **37** · Sem matador: **0** ·
   Lacunas declaradas: **3** (uma delas reduzida a **meia** célula — ver `## Lacunas Declaradas`)
 
 > **Este arquivo foi reconciliado DEPOIS da implementação, e a ordem invertida é deliberada.** A
@@ -70,7 +70,7 @@ P×I ≤ 6. Justificativa do I=3:
 | **R6** — o link não é campo: não entra no estado do formulário nem altera a gravação do `EditTenant` | E (padrão) | RQ-02 | gate de tela de escrita + idempotência no agregado persistido | CT-12, CT-13 |
 | **R7** — a URL sai do slug do **próprio registro**: a listagem não paga query por linha | F (padrão) | RQ-05 | contagem de queries invariante à cardinalidade | CT-14, CT-15 |
 | **R8** — o slug que compõe a URL continua restrito a `alphaDash`, a 120 caracteres e a **um por organização**, na criação **e** na edição | A (padrão) | RQ-05 + `## Superfície Livewire` do `02` | EP (inválidas isoladas) + BVA 3-valores + **partição de unicidade** | CT-16, CT-17, CT-18 |
-| **R9** — com a tenancy desligada a superfície do link não é alcançável | G (mínimo) | RQ-01 (pressupõe a rota `/app/{slug}`, que só existe com tenancy) — mecanismo em ADR-03 | EP (config ligada/desligada) × inventário de telas | CT-19, CT-21 |
+| **R9** — com a tenancy desligada a superfície do link não é alcançável **e o gerador devolve `null`** | G (mínimo) | RQ-01 (pressupõe a rota `/app/{slug}`, que só existe com tenancy) — mecanismo em ADR-03, revisto em 2026-09-21 | EP (config ligada/desligada) × inventário de telas × retorno do gerador | CT-19, CT-21, CT-23 |
 
 **Técnica escalada acima do perfil da área**: R8 está em área `padrão`, e a técnica é BVA
 **3-valores** (119/120/121) em vez de 2-valores. Motivo: 2-valores não distingue `maxLength(120)`
@@ -1115,7 +1115,8 @@ que é o que a feature possui — o custo da tela é da lacuna 3).
 | CT-21 | com a tenancy desligada nenhuma tela do `/admin` estoura nem oferece o link | R9 | EP (config) × inventário de telas | Feature (`GET`) | `tests/Kit/LinkDoPainelSemTenancyTest.php` — **ainda não escrito** | M27, **M36** |
 | CT-22 | seguir o link de organização inativa, sem vínculo, é recusado nas duas leituras | R5 | invariante das duas leituras | Feature (`GET`) | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` — **ainda não escrito** | **M33** |
 
-**36 mutantes previstos, 36 com matador, 0 sem.**
+**37 mutantes previstos, 37 com matador, 0 sem.** (M36 entrou pelo `/code-review` — ver o
+adendo no fim deste arquivo.)
 
 ### Cenários especificados sem teste escrito
 
@@ -1206,8 +1207,9 @@ Cortar é resultado de revisão tanto quanto acrescentar, e os dois estão regis
 
 - **C-1** — CT-02, 2º `Então` ("não contém nenhuma concatenação do slug com um caminho"): não é
   oráculo executável, e exigiria regex adivinhado sobre fonte, que `.ai/rules/testes.md` proíbe.
-  ⚠️ **O teste ainda o carrega** (`tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:133`): é linha a
-  **remover do teste**, achado roteado a "implementação/teste", não à especificação.
+  ✅ **Fechado**: a linha saiu do teste, e o docblock de CT-02 registra o corte
+  (`tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php`, seção *"A segunda asserção saiu"*). O que
+  carrega o cenário é a asserção do literal, que continua lá.
 - **C-2** — CT-05, 2º `Então` ("o endereço da inativa não é o da ativa"): **não pode falhar quando
   o primeiro passa**. Ficou no lugar a versão falsificável, que o teste já fazia.
 
@@ -1218,3 +1220,56 @@ Cortar é resultado de revisão tanto quanto acrescentar, e os dois estão regis
 | **D-02** | CT-14: "a listagem custa o mesmo com uma e com cinco organizações" — propriedade **falsa**: a listagem já crescia ~5 consultas por linha **antes** da feature (33 → 53, medido nas duas pontas do diff) | mesmo oráculo (invariância à cardinalidade), **sujeito** trocado para o que a feature possui: a resolução do endereço, **zero** consultas para uma e para cinco. O N+1 de terceiro virou **lacuna 3** |
 | **D-03** | a linha `acento` de CT-16 estava do lado **errado**: `alpha_dash` é unicode-aware (`/\A[\pL\pM\pN_-]+\z/u`), e `organização` **grava** | o acento migrou para CT-18, lado **válido**; entraram `acme.painel` e `acme%2fpainel`, que o `\pL` recusa de fato e que cobrem o risco de segmento de URL |
 | **novo** | ninguém havia afirmado que `Panel::getUrl()` **não** percent-encoda o segmento (o `e()` do helper escapa HTML, não URL) | vira **asserção** em CT-18 (linha `organização`), não lacuna: é falsificável em uma linha, tem mutante (**M35**), e é a premissa que CT-01/CT-03/CT-05/CT-15 já consomem ao comparar endereço com string |
+
+
+---
+
+## Adendo — os quatro achados do `/code-review` (2026-09-21)
+
+O step 7.5 rodou sobre o diff, por quem não implementou. Os quatro achados são registrados aqui com
+o que os **fechou**, porque três deles eram defeitos de **afirmação** — texto que dizia proteger
+algo que não protegia — e esse é o tipo que some sem registro.
+
+| # | Achado | Verificado como | Destino |
+|---|---|---|---|
+| 1 | CT-21 guardava a string `?tenant={uuid}`, que **nenhuma implementação produz** | medido: `Panel::getUrl()` devolve `/app/{uuid}`, segmento de caminho | especificação + teste |
+| 2 | `urlDoPainel()` devolvia um `/app/{uuid}` **morto** sem tenancy, sem guarda | mesma medição | ADR-03 + implementação + **CT-23** |
+| 3 | comentário de `TenantsTable` dizia "21 queries", CHANGELOG e CT-14 dizem 33/53 | leitura cruzada | implementação (comentário) |
+| 4 | CT-13 alegava fechar a armadilha do `dehydrate`; não fecha | `url_do_painel` não é coluna nem está no `$fillable` | especificação (docblock) |
+
+### Por que o achado 1 é o mais grave dos quatro
+
+Não pelo efeito — a tela está correta — e sim pelo **modo**. A asserção era de **ausência**, e
+asserção de ausência não distingue *"o kit não renderiza isto"* de *"esta string não existe no
+universo"*. Ela teria ficado verde para sempre, inclusive contra o mutante que o docblock dizia
+matar, e o docblock **explicava em detalhe** por que estava certa — com citação de `arquivo:linha`
+do vendor. Raciocínio plausível, citação real, conclusão errada.
+
+**A correção estrutural** é o controle positivo, não a troca da string: CT-21 agora mede o gerador
+e **exige** que ele produza o endereço morto antes de afirmar a ausência dele. Se o Filament mudar
+a forma da URL, o caso fica vermelho no controle em vez de emudecer. Mesmo mecanismo de
+`tests/Kit/OrdemDasCascadeLayersTest.php`, da `v0.37.1`.
+
+### M36 — o mutante novo
+
+| Mutante | Matador | Verificado |
+|---|---|---|
+| **M36** — a guarda `hasTenancy()` sai de `Tenant::urlDoPainel()` | **CT-23** | sim, por mutação em 2026-09-21: removida a guarda, CT-23 fica vermelho e CT-19/CT-21 seguem **verdes** |
+
+A segunda metade dessa linha é o motivo de CT-23 existir separado de CT-21: **CT-21 não protege a
+guarda.** Ele é verde com ou sem ela, porque sem tenancy o `TenantResource` está fechado e não há
+tabela para renderizar. Sem a verificação por mutação, CT-23 pareceria redundante com CT-21 e teria
+sido cortado.
+
+### O achado que o próprio arquivo não previa: `toContain()` não recebe mensagem
+
+Ao escrever o controle positivo, o segundo argumento de `expect()->toContain()` revelou-se **outra
+agulha**, não a mensagem de falha. O controle nasceu vermelho e expôs que as asserções de ausência
+do laço de CT-21 **já tinham o mesmo defeito**: `->not->toContain($endereco, $mensagem)` exigia que
+a *mensagem* também estivesse ausente do HTML — o que é sempre verdade, e portanto inócuo.
+
+As duas passaram para `assertStringContainsString` / `assertStringNotContainsString`, do PHPUnit,
+que recebem mensagem de fato. Efeito medido no arquivo: **174 → 227 asserções** nas duas suítes,
+sem cenário novo além de CT-23 — a diferença são asserções que antes eram engolidas.
+
+**Candidato a rule**, roteado ao step 9.

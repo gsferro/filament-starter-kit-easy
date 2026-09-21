@@ -102,22 +102,47 @@ não tem rota com tenant, e o próprio `TenantResource` já se esconde —
 
 ### Decisão
 
-Nenhuma guarda nova. A feature vive **dentro** do `TenantResource`, que já não existe com a tenancy
-desligada. Adicionar uma segunda verificação seria uma segunda dona para a mesma pergunta — o que
-`.ai/rules/config.md` proíbe explicitamente.
+**Uma guarda, no gerador — revisada em 2026-09-21, ver abaixo.** Nas três superfícies, nenhuma: a
+feature vive **dentro** do `TenantResource`, que já não existe com a tenancy desligada, e repetir a
+verificação em cada tela seria uma segunda dona para a mesma pergunta — o que `.ai/rules/config.md`
+proíbe explicitamente.
+
+### Revisão de 2026-09-21 — o risco desta ADR estava escrito errado
+
+O texto original dizia *"Nenhuma guarda nova"* e registrava como risco que *"se alguém abrir o
+`TenantResource` sem tenancy, o gerador de URL da ADR-01 **falha**. Coberto por CT"*.
+
+**Falhar seria o bom desfecho.** A medição do `/code-review` mostrou que não é o que acontece:
+
+| Afirmado | Medido (suíte `Kit`, `kit.tenancy.enabled` falso) |
+|---|---|
+| `Panel::getUrl($tenant)` falha | devolve `http://host/app/{uuid}` — 200 de sintaxe, **404 de destino** |
+| o CT cobre | cobria uma string (`?tenant={uuid}`) que **nenhuma implementação produz** |
+
+O modo de falha real era **silencioso**: um link clicável para lugar nenhum, que nenhuma asserção
+de status, exceção ou console enxerga. É a mesma família do defeito que a `v0.37.1` pagou.
+
+**Correção aplicada**: `Tenant::urlDoPainel()` devolve `null` quando o painel não tem tenancy. A
+pergunta vai ao **painel** (`hasTenancy()`), não à config — quem sabe se existe rota por organização
+é o dono da rota, então isto **não** cria a segunda dona que a decisão original evitava. As três
+superfícies já tipavam `?string` e tratam `null` como "sem link", então nenhuma delas mudou.
 
 ### Alternativas Consideradas
 
-1. **Checar `config('kit.tenancy.enabled')` nas três superfícies** — descartada: redundante e cria
+1. **Checar `config('kit.tenancy.enabled')` nas três superfícies** — descartada: redundante, e cria
    a chance de as duas respostas divergirem
+2. **Manter sem guarda nenhuma** (a decisão original) — descartada pela medição acima: o link morto
+   é pior que a exceção que a ADR supunha
 
 ### Consequências
 
-- **Positivas**: zero código para um caso que já é impossível de alcançar
+- **Positivas**: o caso impossível de alcançar hoje deixa de ser uma bomba para quem mover a entrada
+  do link amanhã; e o comportamento passou a ser **medido**, não suposto
 - **Negativas**: a feature depende de o `TenantResource` continuar fechado. É um invariante que o
   `04` afirma
-- **Riscos**: se alguém abrir o `TenantResource` sem tenancy, o gerador de URL da ADR-01 falha.
-  Coberto por CT
+- **Riscos**: CT-21 **não** protege a guarda — ele é verde com ou sem ela, porque o resource fechado
+  não renderiza tabela nenhuma. Quem protege é **CT-23**, que chama o gerador direto. Verificado por
+  mutação em 2026-09-21: removida a guarda, CT-23 fica vermelho e CT-19/CT-21 seguem verdes
 
 ---
 
