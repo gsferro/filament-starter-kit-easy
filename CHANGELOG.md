@@ -3,7 +3,7 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.37.1] - 2026-09-21
 
 ### Corrigido
 - **Todo botão dos três painéis saía sem padding, sem fundo e sem borda arredondada.** O "Login" do
