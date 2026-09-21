@@ -139,12 +139,22 @@ so the agent does not have to scan hundreds of lines of coloured output.
 
 ### How it knows it is an agent
 
-By the **presence** of environment variables that agents set (`AI_AGENT`, `CLAUDECODE`,
-`CURSOR_AGENT`, `GEMINI_CLI`, `CODEX_*`, and a dozen more). The kit's CI defines **none** of them,
-so output there is unchanged.
+In three layers, in this order (`vendor/laravel/agent-detector/src/AgentDetector.php`):
 
-A useful side effect to know: anything that scrubs the environment — `env -u`, `sudo` without `-E`,
-`docker run` without `-e` — silently turns `pao` off.
+1. **`AI_AGENT`**, if it has **content**. Empty or whitespace-only does **not** count — the detector
+   runs `trim()` and reports "no agent".
+2. The **presence** of any of 19 known variables: `CLAUDECODE`, `CURSOR_AGENT`, `GEMINI_CLI`,
+   `CODEX_SANDBOX`, `CODEX_CI`, `CODEX_THREAD_ID`, `COPILOT_CLI`, and more. Only the **name**
+   matters here, not the value. **There is no wildcard**: `CODEX_HOME`, for instance, triggers
+   nothing.
+3. The **file system**: `file_exists('/opt/.devin')` identifies Devin with **no environment variable
+   at all**.
+
+The kit's CI defines **none** of the 19, so output there is unchanged.
+
+A useful side effect of layers 1 and 2: anything that scrubs the environment — `env -u`, `sudo`
+without `-E`, `docker run` without `-e` — silently turns `pao` off. **Not on Devin**: there the
+detection is by file and survives a scrubbed environment.
 
 ### How to turn it off
 

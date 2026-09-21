@@ -133,12 +133,21 @@ ter que varrer centenas de linhas de saída colorida.
 
 ### Como ele sabe que é um agente
 
-Pela **presença** de variáveis de ambiente que os agentes definem (`AI_AGENT`, `CLAUDECODE`,
-`CURSOR_AGENT`, `GEMINI_CLI`, `CODEX_*`, e mais uma dúzia). O CI do kit **não** define nenhuma
-delas, então lá a saída é a de sempre.
+Em três camadas, nesta ordem (`vendor/laravel/agent-detector/src/AgentDetector.php`):
 
-O efeito colateral disso é útil de saber: qualquer coisa que limpe o ambiente — `env -u`, `sudo`
-sem `-E`, `docker run` sem `-e` — desliga o `pao` sem avisar.
+1. **`AI_AGENT`**, se tiver **conteúdo**. Vazia ou só com espaço **não conta** — o detector faz
+   `trim()` e devolve "sem agente".
+2. A **presença** de qualquer uma de 19 variáveis conhecidas: `CLAUDECODE`, `CURSOR_AGENT`,
+   `GEMINI_CLI`, `CODEX_SANDBOX`, `CODEX_CI`, `CODEX_THREAD_ID`, `COPILOT_CLI`, e mais. Aqui só o
+   **nome** importa, o valor não. **Não há curinga**: `CODEX_HOME`, por exemplo, não dispara nada.
+3. O **sistema de arquivos**: `file_exists('/opt/.devin')` identifica o Devin **sem variável de
+   ambiente nenhuma**.
+
+O CI do kit **não** define nenhuma das 19, então lá a saída é a de sempre.
+
+O efeito colateral das camadas 1 e 2 é útil de saber: qualquer coisa que limpe o ambiente —
+`env -u`, `sudo` sem `-E`, `docker run` sem `-e` — desliga o `pao` sem avisar. **No Devin não**:
+lá a detecção é por arquivo e sobrevive ao ambiente limpo.
 
 ### Como desligar
 

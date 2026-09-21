@@ -253,7 +253,7 @@ A versão em inglês fica em **[https://gsferro.github.io/filament-starter-kit-e
 
 ## Requisitos
 
-- PHP 8.3+ e Composer 2
+- PHP 8.4+ e Composer 2
 - Node 20+ (opcional — sem ele a instalação segue e avisa como fazer o build depois)
 - Docker (opcional — só para Postgres/MySQL, Redis, IA local e e-mail)
 

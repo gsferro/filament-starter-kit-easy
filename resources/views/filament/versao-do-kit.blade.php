@@ -28,8 +28,9 @@
     ── Por que não um pacote ──
 
     Existe `vaslv/filament-app-version`, e ele resolve versão por config, por composer.json, por
-    arquivo e pelo SHA curto do git — mas NÃO por tag nem por nome de branch. Somando que ele exige
-    `php: ^8.4` contra o `^8.3` declarado do kit, sobrou uma dependência a mais para um `<span>`.
+    arquivo e pelo SHA curto do git — mas NÃO por tag nem por nome de branch, que era o pedido.
+    Sobrou uma dependência a mais para um `<span>`. (O segundo motivo da recusa era o `php: ^8.4`
+    dele contra o `^8.3` do kit; esse caiu quando o kit assumiu o `^8.4` que já exigia na prática.)
     Ver ADR-04 da wiki `estudo-de-pacotes-rodada-2`.
 
     ── O guard de visitante não é opcional ──

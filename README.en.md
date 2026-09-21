@@ -253,7 +253,7 @@ The Portuguese version lives at **[https://gsferro.github.io/filament-starter-ki
 
 ## Requirements
 
-- PHP 8.3+ and Composer 2
+- PHP 8.4+ and Composer 2
 - Node 20+ (optional — without it the installation still goes through and tells you how to build later)
 - Docker (optional — only for Postgres/MySQL, Redis, local AI and e-mail)
 

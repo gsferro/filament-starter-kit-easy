@@ -29,7 +29,7 @@ Leia nesta ordem. São ~20 minutos e evitam a maior parte dos erros caros:
 
 ## O kit em dez linhas
 
-- **Laravel 13 + Filament 5**, PHP 8.3+, instalação em um comando (`composer create-project`), banco SQLite por padrão.
+- **Laravel 13 + Filament 5**, PHP 8.4+, instalação em um comando (`composer create-project`), banco SQLite por padrão.
 - **Três painéis** com fronteiras de acesso distintas: `/app` (negócio, nasce vazio), `/admin` (usuários, papéis, agentes de IA), `/infra` (observabilidade e manutenção).
 - A **autorização** sai de `App\Models\User::canAccessPanel()` + papéis do Shield; `master_global` vence qualquer gate via `Gate::before`.
 - Toda a **cola** do kit está em `app/Providers/KitServiceProvider.php` e `app/Providers/Concerns/ConfiguraFilamentGlobal.php`.
