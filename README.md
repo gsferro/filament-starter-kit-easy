@@ -181,7 +181,7 @@ dois já vêm completos.
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **9** |
-| Features especificadas (`wikis/specs/`) | **62** |
+| Features especificadas (`wikis/specs/`) | **63** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **18** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
@@ -253,7 +253,7 @@ A versão em inglês fica em **[https://gsferro.github.io/filament-starter-kit-e
 
 ## Requisitos
 
-- PHP 8.3+ e Composer 2
+- PHP 8.4+ e Composer 2
 - Node 20+ (opcional — sem ele a instalação segue e avisa como fazer o build depois)
 - Docker (opcional — só para Postgres/MySQL, Redis, IA local e e-mail)
 

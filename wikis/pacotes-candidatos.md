@@ -593,7 +593,7 @@ reabertura por pacote:
 | `packstub/filament-flow` | **ADIAR** | Bom, mas motor de automação com 2 rotas públicas e cron por minuto é superfície demais num kit redistribuído |
 | `syofyanzuhad/filament-connection-indicator` | **RECUSAR** | Mede `navigator.onLine`: fica verde com o servidor caído, e sempre verde no Safari/Firefox |
 | `matondojk/filament-avatar-picker` | **RECUSAR** | Galeria lista o diretório de avatares sem filtro — vaza foto de perfil entre usuários e organizações |
-| `vaslv/filament-app-version` | **ADIAR** | Exige PHP `^8.4` (kit declara `^8.3`) e não resolve tag nem branch, que era o pedido |
+| `vaslv/filament-app-version` | **ADIAR** | Não resolve tag nem branch, que era o pedido. *(O motivo do PHP caiu: o kit passou a declarar `^8.4`.)* |
 | `ronssij/filament-simple-draft` | **RECUSAR** | `nullable()` fail-open desliga `required` em qualquer componente sem o trait; perde Enter e Ctrl+S |
 | `yousefaman/filament-autosave` | **ADIAR** | O melhor da rodada, mas gera uma linha em `audits` por pausa de digitação nos 5 models auditados |
 | `alexkramse/filament-openapi-docs` | **RECUSAR** | O kit não tem API; sem CI; o badge gera a spec inteira a cada render de sidebar |

@@ -108,3 +108,86 @@ arquivo que a etapa seguinte confere.
 > mesma diz quando não compensa — cerimônia em mudança de uma linha é o over-engineering que o
 > Ponytail existe para cortar.
 
+## Saída para agente — `laravel/pao`
+
+O kit já traz o [`laravel/pao`](https://packagist.org/packages/laravel/pao) em `require-dev`, e
+provavelmente você nunca notou: ele **só age quando um agente de IA está rodando o comando**. Para
+uma pessoa no terminal, tudo continua igual.
+
+Sob agente, a suíte inteira responde **uma linha**:
+
+```json
+{"tool":"pest","result":"passed","tests":2614,"passed":2614,"assertions":10164,"duration_ms":283774}
+```
+
+E quando falha, a linha traz `file`, `line` e `message` de cada caso — já extraídos, sem o agente
+ter que varrer centenas de linhas de saída colorida.
+
+| Ferramenta | O que muda sob agente |
+|---|---|
+| Pest, PHPUnit, Paratest | uma linha de JSON; falhas em `failures[]` com arquivo e linha |
+| PHPStan | JSON agrupado por arquivo, truncado em 30 erros (use `-v` para todos) |
+| Rector | JSON; em `--dry-run`, arquivo alterado conta como reprovação |
+| Artisan | sem ANSI e sem decoração — `Versão do kit .. 0.37.1` em vez da linha pontilhada |
+| Pint | **não é o `pao`** — o Pint tem detecção própria e já emite JSON sozinho |
+
+### Como ele sabe que é um agente
+
+Em três camadas, nesta ordem (`vendor/laravel/agent-detector/src/AgentDetector.php`):
+
+1. **`AI_AGENT`**, se tiver **conteúdo**. Vazia ou só com espaço **não conta** — o detector faz
+   `trim()` e devolve "sem agente".
+2. A **presença** de qualquer uma de 19 variáveis conhecidas: `CLAUDECODE`, `CURSOR_AGENT`,
+   `GEMINI_CLI`, `CODEX_SANDBOX`, `CODEX_CI`, `CODEX_THREAD_ID`, `COPILOT_CLI`, e mais. Aqui só o
+   **nome** importa, o valor não. **Não há curinga**: `CODEX_HOME`, por exemplo, não dispara nada.
+3. O **sistema de arquivos**: `file_exists('/opt/.devin')` identifica o Devin **sem variável de
+   ambiente nenhuma**.
+
+O CI do kit **não** define nenhuma das 19, então lá a saída é a de sempre.
+
+O efeito colateral das camadas 1 e 2 é útil de saber: qualquer coisa que limpe o ambiente —
+`env -u`, `sudo` sem `-E`, `docker run` sem `-e` — desliga o `pao` sem avisar. **No Devin não**:
+lá a detecção é por arquivo e sobrevive ao ambiente limpo.
+
+### Como desligar
+
+```bash
+PAO_DISABLE=1 php artisan test    # saída humana, mesmo sob agente
+PAO_FORCE=1   php artisan test    # saída de agente, mesmo sem agente
+```
+
+> **As duas são variáveis de ambiente de verdade, e não entram no `.env`.** O `pao` as lê de
+> `$_SERVER` antes de o Laravel existir — uma linha no `.env` do projeto não tem efeito.
+
+Use `PAO_DISABLE=1` quando estiver depurando junto com o agente e quiser ver a saída completa.
+
+### Duas pegadinhas que economizam tempo
+
+- **`--compact` é suplantado sob agente.** O plugin injeta `--no-output --no-progress`, então
+  `php artisan test --compact` e `php artisan test` dão o mesmo resultado quando um agente roda.
+- **`pint --format agent` é redundante sob agente.** O Pint detecta sozinho. O flag continua útil
+  para forçar JSON fora de uma sessão com agente.
+
+## Auditoria de segurança do GitHub — `laravel/moat` (opcional)
+
+O [`moat`](https://github.com/laravel/moat) **não é um pacote PHP e não é dependência do kit.** É
+uma CLI escrita em Rust que faz uma revisão **somente leitura** da configuração de segurança de uma
+organização ou repositório no GitHub: exigência de 2FA, proteção de branch, varredura de segredos,
+permissões de workflow — mais de 25 verificações.
+
+Ele não altera nada; apenas relata.
+
+```bash
+brew tap laravel/moat https://github.com/laravel/moat
+brew install laravel/moat/moat
+
+moat sua-org        # uma organização ou usuário
+moat owner/repo     # um repositório
+```
+
+Precisa de autenticação no GitHub (`GITHUB_TOKEN`, `GH_TOKEN` ou a CLI `gh` já logada), e aceita
+saída em terminal, JSON ou Markdown.
+
+> **É ferramenta de quem mantém o repositório, não de quem usa o kit.** Ela audita configuração no
+> GitHub, não o seu código. E a instalação é por Homebrew, que não é padrão no Windows — lá o
+> caminho é WSL ou baixar o binário do release.

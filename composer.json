@@ -17,7 +17,7 @@
         "source": "https://github.com/gsferro/filament-starter-kit-easy"
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "anselmokossa/filament-sentinel": "^1.0",
         "asmit/resized-column": "^4.0",
         "awcodes/filament-badgeable-column": "^4.2",
@@ -89,7 +89,7 @@
         "laravel/pint": "^1.27",
         "laraveldaily/filacheck": "^1.2",
         "mockery/mockery": "^1.6",
-        "nunomaduro/collision": "^8.6",
+        "nunomaduro/collision": "^8.9.3",
         "pestphp/pest": "^5.1",
         "pestphp/pest-plugin-browser": "^5.0",
         "pestphp/pest-plugin-laravel": "^5.0",
