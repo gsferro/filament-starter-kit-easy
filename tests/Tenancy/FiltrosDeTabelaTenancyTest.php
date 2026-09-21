@@ -7,7 +7,7 @@ use Livewire\Livewire;
 
 /**
  * O filtro `ativo` de `TenantsTable`
- * (`app/Filament/Admin/Resources/Tenants/Tables/TenantsTable.php:ativo:83`) — o único filtro do
+ * (`app/Filament/Admin/Resources/Tenants/Tables/TenantsTable.php:ativo:85`) — o único filtro do
  * kit que só existe com a tenancy ligada.
  *
  * A citação passou a ser `{path}:{símbolo}:{linha}` com o caminho COMPLETO, e não o

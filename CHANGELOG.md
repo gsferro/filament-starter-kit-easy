@@ -28,8 +28,16 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   vínculo (`canAccessTenant()`, que registra `motivo: sem_vinculo` no canal `tenancy`). O 404 é
   deliberado: 403 confirmaria que a organização existe e permitiria enumerar clientes por varredura
   de slug. Documentado em
-  [Multi-tenancy (opt-in)](docs/pt/recursos/multi-tenancy.md) e coberto por 39 casos em
+  [Multi-tenancy (opt-in)](docs/pt/recursos/multi-tenancy.md) e coberto por 44 casos em
   `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` e `tests/Kit/LinkDoPainelSemTenancyTest.php`.
+
+  **Com a multi-tenancy desligada o endereço é `null`, e não um link.** Sem tenancy o painel de
+  negócio não tem rota por organização — mas o gerador do Filament **não falha** nesse caso: ele
+  devolve `/app/{uuid}`, que é sintaticamente uma URL e responde 404. Medido, não suposto. Por isso
+  `urlDoPainel()` pergunta ao painel se ele tem tenancy antes de gerar, e devolve `null` quando não
+  tem; as três telas tratam `null` como "sem link". Na prática nada disso é alcançável hoje, porque
+  a tela de organizações já se fecha inteira sem tenancy — a guarda existe para quem mover a
+  entrada do link para fora dela amanhã.
 
   **Custo medido**, contra o que o plano afirmava: a listagem paga **33** consultas com uma
   organização e **53** com cinco — os mesmos números antes e depois do diff. A coluna nova custa
