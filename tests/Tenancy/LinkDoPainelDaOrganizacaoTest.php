@@ -383,25 +383,39 @@ it('[CT-07] o link da tela abre em nova aba', function (string $tela): void {
  * (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:handle:13`), porque um 403
  * confirmaria que a organização EXISTE e bastaria varrer slugs para enumerar os clientes da
  * instalação — o mesmo argumento de `tests/Tenancy/AdminDaOrganizacaoTest.php:98`.
+ *
+ * ## A linha do administrador VINCULADO, e por que ela não é redundante com a de cima
+ *
+ * As duas personas `admin` e `admin_vinculado` têm o MESMO papel e respondem o MESMO 403 — e é
+ * justamente por isso que a segunda existe. Ela muda uma variável só: a linha na pivot
+ * `tenant_user`, que o `UsersRelationManager` da própria tela de organizações sabe criar. Sem ela,
+ * M32 (o portão 1 passar a aceitar VÍNCULO como credencial) ficaria verde no conjunto inteiro:
+ * ninguém teria testado alguém que tem vínculo e não tem papel do painel de negócio.
+ *
+ * O que a linha documenta é a ORDEM: vínculo não basta, porque o portão 1 decide primeiro — o
+ * `Authenticate` roda antes do `IdentifyTenant` na pilha do painel, e `canAccessTenant()` nem
+ * chega a ser consultado.
  */
 it('[CT-08] seguir o link devolve o que os portoes decidem', function (string $persona, int $resposta): void {
     $organizacao = tenant('Acme', 'acme');
 
     $usuario = match ($persona) {
-        'mestre'      => usuarioComPapel('master_global'),
-        'admin'       => administradorDaInstalacao(),
-        'sem_vinculo' => usuarioComPapel('panel_user', $organizacao),
-        'vinculada'   => tap(usuarioComPapel('admin_app', $organizacao), fn (User $u) => $u->tenants()->attach($organizacao)),
+        'mestre'          => usuarioComPapel('master_global'),
+        'admin'           => administradorDaInstalacao(),
+        'admin_vinculado' => tap(administradorDaInstalacao(), fn (User $u) => $u->tenants()->attach($organizacao)),
+        'sem_vinculo'     => usuarioComPapel('panel_user', $organizacao),
+        'vinculada'       => tap(usuarioComPapel('admin_app', $organizacao), fn (User $u) => $u->tenants()->attach($organizacao)),
     };
 
     $this->actingAs($usuario)
         ->get((string) $organizacao->urlDoPainel())
         ->assertStatus($resposta);
 })->with([
-    'o mestre da instalação (passa nos dois)'                      => ['mestre', 200],
-    'o administrador da instalação (barra no portão 1 — 403)'      => ['admin', 403],
-    'a operadora do negócio sem vínculo (barra no portão 2 — 404)' => ['sem_vinculo', 404],
-    'a administradora da organização, vinculada (passa nos dois)'  => ['vinculada', 200],
+    'o mestre da instalação (passa nos dois)'                       => ['mestre', 200],
+    'o administrador da instalação (barra no portão 1 — 403)'       => ['admin', 403],
+    'o administrador da instalação VINCULADO (vínculo não é papel)' => ['admin_vinculado', 403],
+    'a operadora do negócio sem vínculo (barra no portão 2 — 404)'  => ['sem_vinculo', 404],
+    'a administradora da organização, vinculada (passa nos dois)'   => ['vinculada', 200],
 ]);
 
 /**
