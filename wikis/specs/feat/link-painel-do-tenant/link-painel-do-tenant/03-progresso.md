@@ -1,46 +1,72 @@
 # Progresso — Link de acesso ao painel da organização
 
 ## 1. Gerador da URL
-- [ ] Um ponto único que devolve a URL do painel da organização
+- [x] Um ponto único que devolve a URL do painel da organização — `Tenant::urlDoPainel()`
+      (`app/Models/Tenant.php:urlDoPainel:148`), que chama `Filament::getPanel('app')->getUrl($this)`.
+      **Nenhuma classe nova**: o método vive ao lado de `urlDaLogo()`, que é a irmã exata ("o
+      endereço de algo desta organização"), e as três superfícies já recebem o registro. Consumido
+      pelos três schemas; a string `/app/` não aparece (CT-02 varre o arquivo do gerador)
 
 ## 2. `TenantForm` — no `EditTenant`
-- [ ] Entrada na seção `Identificação`, junto de nome e slug
-- [ ] Ausente no `CreateTenant`
+- [x] Entrada na seção `Identificação`, junto de nome e slug — `TextEntry::make('url_do_painel')`
+      dentro de `Section::make('Identificação')`, entre o `slug` e o `ativo`. **CT-04 afirma o
+      LUGAR**, subindo a hierarquia do schema até a `Section` e conferindo o título: RQ-02 é
+      cláusula de lugar, e um header action passaria em todo cenário de HTML sem atendê-la
+- [x] Ausente no `CreateTenant` — `->visible(fn (?Tenant $record) => $record !== null)`; CT-06
+      afirma `assertSchemaComponentHidden` **e** que a `description` com `/app/{slug}` continua na
+      tela
 
 ## 3. `TenantInfolist`
-- [ ] Entrada na seção `Identificação`
+- [x] Entrada na seção `Identificação` — ao lado do `TextEntry::make('slug')->copyable()`
 
 ## 4. `TenantsTable`
-- [ ] Coluna com a URL clicável
+- [x] Coluna com a URL clicável — `TextColumn::make('url_do_painel')`, com o endereço como
+      **estado da coluna** (o conteúdo visível da célula), `->url()` + `->openUrlInNewTab()`.
+      CT-04 usa `assertTableColumnStateSet`, que é o único oráculo que separa coluna de
+      `Action->url()`: as duas emitem o mesmo `href="…" target="_blank"`
+- [x] Citação de terceiro do achado **R2** atualizada no mesmo commit —
+      `tests/Tenancy/FiltrosDeTabelaTenancyTest.php:9`
 
 ## 5. Documentação
-- [ ] `docs/{pt,en}/recursos/multi-tenancy.md`
-- [ ] `CHANGELOG.md` → `[Unreleased]` → `Adicionado`
+- [x] `docs/{pt,en}/recursos/multi-tenancy.md` — seção "O atalho para o painel de cada
+      organização" / "The shortcut to each organization's panel", sem link interno
+- [x] `CHANGELOG.md` → `[Unreleased]` → `Adicionado`
+- [x] Contadores dos readmes sincronizados (arquivos de teste 146→148 / 172→174; specs 63→64,
+      que já estava dessincronizado pelo commit da wiki)
 
 ## Testes
-- [ ] `tests/Tenancy/{Nome}Test.php` — CTs do `04`
+- [x] `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` — CT-01..CT-18 e CT-20 (38 casos com
+      datasets)
+- [x] `tests/Kit/LinkDoPainelSemTenancyTest.php` — CT-19
 
 ## Verificação Final
 - [ ] `/ponytail:ponytail-review` no diff
-- [ ] `vendor/bin/pint --dirty --format agent`
-- [ ] `vendor/bin/filacheck --fix`
-- [ ] CTs da feature
-- [ ] Testes existentes do tenant (`tests/Tenancy/**`)
-- [ ] `composer test:kit`
-- [ ] **Custo medido** — queries da listagem antes × depois
-- [ ] Citações `arquivo:símbolo:linha` reverificadas — inclui a **citação de terceiro** do achado R2
-- [ ] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa
+- [x] `vendor/bin/pint --dirty --format agent` — `fixed`, sem pendência
+- [x] `vendor/bin/filacheck --fix` — **All 17 rules passed!**
+- [x] CTs da feature — **39 casos, 39 verdes, 156 asserções**
+- [x] Testes existentes do tenant (`tests/Tenancy/**`) + gates de documentação e citação — 84
+      verdes
+- [x] `composer test:kit` — **2653 casos, 2653 verdes, 10 317 asserções**
+- [x] **Custo medido** — ver `## Notas de Implementação`: **33 / 53** antes, **33 / 53** depois
+- [x] Citações `arquivo:símbolo:linha` reverificadas por `tests/Kit/CitacoesDeCodigoTest.php`
+      (CT-26) — inclui a **citação de terceiro** do achado R2 e mais **duas** que o próprio diff
+      deslocou, listadas nos desvios
+- [x] Falsificabilidade — com `git stash push -- app/`, **22 dos 39** casos ficam vermelhos
+      (12 falhas de asserção + 10 erros por método inexistente)
+- [ ] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa — pendente da aplicação dos 13 achados da revisão
+      adversarial no `04`
 - [ ] `/code-review` no diff (step 7.5)
 
 ## Conformidade com Rules
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
-| `filament.md` | `app/Filament/**` | a preencher | — |
+| `filament.md` | `app/Filament/**` | **aplicada** | nenhuma Action nem item de navegação novo (por isso `tests/Kit/PermissoesDeAcoesTest.php` não pede declaração de autorização — é um dos motivos de a superfície ser coluna e `TextEntry`, e não `Action`); nenhuma construção reprovada pelo Blueprint (`filacheck`: 17/17, `AderenciaAoBlueprintTest` verde); nenhum `assignRole`/`syncRoles`; nada de papel, permissão ou seeder |
 | `resources.md` | `app/Filament/App/Resources/**` | **n.a.** | a feature toca `Admin/Resources`, não `App/` |
-| `filament-resources.md` | `app/Filament/**/Resources/**` | a preencher | — |
-| `specs.md` | `wikis/specs/**` | a preencher | citações por símbolo, conferidas por grep |
-| `testes.md` | `tests/**` | a preencher | — |
+| `filament-resources.md` | `app/Filament/**/Resources/**` | **n.a. no que ela exige** | a rule governa Resource novo (badge de contagem, colisão de trait, scope em `getEloquentQuery()`); a feature não cria Resource nem toca `getEloquentQuery()`. `BadgeDeNavegacaoTest`/`BadgeDeNavegacaoTenancyTest` continuam verdes |
+| `specs.md` | `wikis/specs/**` | **aplicada** | citações por símbolo conferidas por `tests/Kit/CitacoesDeCodigoTest.php:[CT-26]`; **três** deslocadas pelo diff foram corrigidas (ver desvios) |
+| `testes.md` | `tests/**` | **aplicada** | nenhum helper cruzado (os quatro do arquivo novo são usados só por ele — `HelpersDeTesteTest` verde); `noPainelBootado('admin')` + `->loadTable()` em todo caso de listagem; `semComentarios()` na única asserção de ausência sobre arquivo (CT-02); `TestHandler` no channel real em CT-09; CT-19 em `tests/Kit` porque é a única suíte com a tenancy desligada; `fronteiraDeRequest()` entre painéis em CT-09 e CT-10 |
+| `models.md` | `app/Models/**` | **n.a. no que ela exige** | `Tenant` não tem Resource no `/app` (`ModeloCacheavel` não se aplica), e a feature não acrescenta `SoftDeletes` nem `InteractsWithMedia`. O método novo é leitura pura, sem query |
 
 ## Quality Gate
 
@@ -83,11 +109,115 @@ Nenhum.
 
 ## Desvios do Plano
 
-<!-- Preenchido durante a implementação. -->
+### D-01 — o "ponto único" é método de model, não classe nova
+
+O passo 1 do `01` pede "um único ponto que devolve a URL do painel da organização" sem dizer onde.
+Ficou em `Tenant::urlDoPainel()` (`app/Models/Tenant.php:urlDoPainel:148`), ao lado de
+`urlDaLogo()`. Motivo: é a irmã exata — as duas respondem "o endereço de algo desta organização" —,
+as três superfícies já recebem o registro, e a `## Filosofia de Implementação` do plano proíbe
+classe nova. **CT-02 continua com sujeito**: ele varre o arquivo do gerador, que é este, e a string
+`/app` não aparece nele fora de comentário.
+
+### D-02 — CT-14 do `04` afirma uma propriedade FALSA da listagem, e foi medido
+
+O `04` escreveu CT-14 como "a listagem custa o mesmo com uma e com cinco organizações". Medido nas
+duas pontas do diff, com o mesmo arnês (sonda de contagem, duas medições quentes):
+
+| | 1 organização | 5 organizações |
+|---|---|---|
+| **antes** (`git stash push -- app/`) | **33** | **53** |
+| **depois** | **33** | **53** |
+
+A coluna nova custa **zero** — o `## Modelo de Execução` do `01` está confirmado. Mas a listagem
+**já** crescia 5 consultas por linha antes da feature, então o oráculo escrito nasceria **vermelho
+contra a implementação correta**, medindo um N+1 de terceiro que a feature não introduziu e não pode
+consertar (mudar a listagem está fora de escopo).
+
+O caso escrito mantém o **mesmo oráculo** — invariância à cardinalidade, derivada de RQ-05 — aplicado
+ao que a feature possui: a resolução do endereço. Zero consultas para uma, zero para cinco. É o que
+mata M22. O número medido da tela ficou registrado no docblock do caso e no `CHANGELOG.md`, como
+afirmação datada e não como asserção.
+
+### D-03 — a linha `acento` do CT-16 está do lado errado da fronteira
+
+O `04` listou `organização` como partição **inválida** do slug. `alpha_dash` do Laravel é
+**unicode-aware**: sem o argumento `ascii` a regra é `/\A[\pL\pM\pN_-]+\z/u`
+(`vendor/laravel/framework/src/Illuminate/Validation/Concerns/ValidatesAttributes.php:validateAlphaDash:403`),
+e `ç`/`ã` são `\pL`. O slug acentuado **grava**.
+
+Trocar `->alphaDash()` por `->alphaDash(ascii: true)` seria alterar uma validação que **não é desta
+feature** para fazer um caso passar — recusado. O que foi feito:
+
+- CT-16 perdeu a linha `acento` e ganhou **duas** que o `\pL` de fato recusa e que cobrem o risco
+  real de um segmento de URL: **ponto** (`acme.painel`) e **percent-encoding** (`acme%2fpainel`).
+- O acento passou para **CT-18**, do lado válido: ele grava, e o link segue o gravado.
+
+**E CT-18 mediu uma terceira coisa, que ninguém tinha afirmado:** `Panel::getUrl()` **não**
+percent-encoda o segmento — o endereço sai `http://…/app/organização`, com o UTF-8 cru, e o `e()` de
+`generate_href_html()` escapa HTML, não URL. O link funciona (navegador e servidor encodam o
+caminho), mas a forma canônica do endereço no kit é a crua, e agora está escrita.
+
+### D-04 — o diff deslocou TRÊS citações, não uma
+
+O achado R2 previu uma (`FiltrosDeTabelaTenancyTest.php:9` → `TenantsTable.php:55`). O método novo
+no `Tenant` deslocou **outras duas**, que o R2 não podia prever porque o plano não dizia onde o
+gerador ficaria: `TenantHeader.php:32` e `TenantInfolist.php:73` citavam
+`app/Models/Tenant.php:urlDaLogo:138`, que virou `:164`. As três foram corrigidas no mesmo commit, e
+quem as achou foi `tests/Kit/CitacoesDeCodigoTest.php:[CT-26]` — o gate automático, não a
+conferência à mão.
+
+**A citação do R2 mudou de forma, e não só de número.** Era `TenantsTable.php:55`, caminho solto:
+`base_path('TenantsTable.php')` não resolve, então o CT-26 a **ignorava** — ela podia ficar errada
+para sempre sem nada acusar. Virou
+`app/Filament/Admin/Resources/Tenants/Tables/TenantsTable.php:ativo:83`, caminho completo e com
+símbolo, que é a forma que o gate confere.
 
 ## Notas de Implementação
 
-<!-- Preenchido durante a implementação. -->
+### `TextEntry` no formulário, e por que não `TextInput->disabled()`
+
+Em schemas unificados do Filament 5, `Filament\Infolists\Components\Entry` estende
+`Schemas\Components\Component` — **não** `Field`. Consequência direta: ela não entra no estado do
+formulário nem no `dehydrate`, que é o requisito duro do passo 2 do plano. Um `TextInput`
+desabilitado com a URL viria no save e escreveria uma chave que não é coluna; CT-12 e CT-13 são os
+casos que o pegariam.
+
+Bônus não previsto: `Entry` usa o concern `CanOpenUrl`, então `->url()->openUrlInNewTab()` produz
+exatamente o `href="…" target="_blank"` de `generate_href_html()` — o mesmo HTML da coluna e da
+ficha. As três superfícies passaram a ter o mesmo oráculo de asserção sem nenhum adaptador.
+
+### O que separa coluna de ação, e é uma linha
+
+`Action::make()->url(…)->openUrlInNewTab()` emite HTML **idêntico** ao da coluna. Todo cenário de
+`assertSeeHtml` da listagem passaria com a feature implementada como ação por linha, e a decisão do
+usuário ("coluna, porque ela mostra o endereço") ficaria sem falsificador. O que separa as duas é o
+**estado da coluna**: `assertTableColumnStateSet('url_do_painel', $endereco, $organizacao)` só tem
+resposta se existir uma coluna, e só passa se o endereço for o **conteúdo** da célula.
+
+### O 302 que parecia defeito e era a sessão
+
+CT-09 visita o painel de negócio com duas personas no mesmo caso. Sem `flushSession()` entre elas o
+segundo `GET` vinha **302 para o login**: o `AuthenticateSession` do painel grava o hash da senha na
+sessão e desloga quando o do request seguinte não corresponde. A falha se lê como "a administradora
+vinculada não entra" — e a única coisa errada era a sessão da anterior. Registrado no docblock do
+caso.
+
+### Custo medido
+
+Ver **D-02**. Listagem: **33** consultas com uma organização e **53** com cinco, iguais antes e
+depois. Resolução do endereço: **0** consultas, para uma e para cinco (CT-14).
+
+### Falsificabilidade
+
+`git stash push -- app/` e a suíte da feature: **22 dos 39 casos ficam vermelhos** — 12 falhas de
+asserção (CT-03, CT-04 ×3, CT-05 ×3, CT-07 ×3, CT-15, CT-20) e 10 erros por
+`Call to undefined method urlDoPainel()` (CT-01, CT-08 ×4, CT-09, CT-10, CT-14, CT-18 ×2).
+
+Os 17 que continuam verdes são **por desenho**, e vale dizer quais: CT-02 (varredura de fonte — mata
+M01, não prova presença), CT-06 (ausência no cadastro), CT-11 (não-efeito na pivot), CT-12 e CT-13
+(a gravação, que tem de continuar funcionando), CT-16 e CT-17 (validação pré-existente de que a
+feature **depende** sem ser dona) e CT-19 (a tela fechada sem tenancy). Nenhum deles afirma presença
+do link.
 
 ## Retrospectiva
 
