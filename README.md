@@ -180,7 +180,7 @@ dois já vêm completos.
 
 | Documentação | |
 |---|---:|
-| Documentos de referência (`wikis/`) | **9** |
+| Documentos de referência (`wikis/`) | **10** |
 | Features especificadas (`wikis/specs/`) | **65** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **18** |
 
@@ -250,6 +250,15 @@ navegação: **[https://gsferro.github.io/filament-starter-kit-easy/pt/](https:/
 | [Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/) | qualidade de código, busca e idioma, os 77 pacotes instalados |
 
 A versão em inglês fica em **[https://gsferro.github.io/filament-starter-kit-easy/en/](https://gsferro.github.io/filament-starter-kit-easy/en/)**.
+
+### Futuras melhorias
+
+O **[roadmap do kit](wikis/roadmap.md)** registra o que já foi olhado e **decidiu-se adiar**, com o
+motivo e, quando houve, a medição que sustentou a decisão: preferências de aparência por usuário, o
+tema compacto pago da Filament, e o gatilho que aposenta a implementação atual de densidade.
+
+Ele vem junto com o seu projeto de propósito — é o futuro **do kit**, não o do seu projeto, e serve
+para você não gastar uma tarde reavaliando do zero algo que já tem número registrado.
 
 ## Requisitos
 
