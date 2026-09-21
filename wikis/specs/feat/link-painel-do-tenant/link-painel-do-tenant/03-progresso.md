@@ -53,8 +53,15 @@
       deslocou, listadas nos desvios
 - [x] Falsificabilidade — com `git stash push -- app/`, **22 dos 39** casos ficam vermelhos
       (12 falhas de asserção + 10 erros por método inexistente)
-- [ ] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa — pendente da aplicação dos 13 achados da revisão
-      adversarial no `04`
+- [x] IDs `[CT-nn]` do teste ⊆ `04` — **fecha**: os 20 IDs do teste (CT-01..CT-18, CT-20 em
+      `tests/Tenancy`, CT-19 em `tests/Kit`) existem todos no `04`
+- [ ] IDs do `04` ⊆ teste — **aberto por desenho**, ver **D-05**: a revisão adversarial
+      especificou **CT-21** e **CT-22** e mais **duas linhas de `Examples`** (CT-08 vinculado,
+      CT-16 `globex`) que ainda não têm caso escrito. Os quatro foram **sondados** contra o código
+      antes de entrar no `04`, e a sonda foi descartada
+- [x] Os 13 achados da revisão adversarial aplicados no `04` — ver `04-casos-de-teste.md` →
+      `## Revisão Adversarial`. Contagens do cabeçalho derivadas por `grep`, não digitadas:
+      **22** cenários, **9** regras, **36** mutantes, **3** lacunas
 - [ ] `/code-review` no diff (step 7.5)
 
 ## Conformidade com Rules
@@ -171,6 +178,39 @@ conferência à mão.
 para sempre sem nada acusar. Virou
 `app/Filament/Admin/Resources/Tenants/Tables/TenantsTable.php:ativo:83`, caminho completo e com
 símbolo, que é a forma que o gate confere.
+
+### D-05 — o `04` foi reconciliado DEPOIS da implementação, e quatro cenários ficaram sem teste
+
+A revisão adversarial disparada pelo Impacto 3 chegou **depois** de a feature fechar verde. Quatro
+dos treze achados (**A-1**, **A-2/A-4**, **A-3**, **A-6**) já tinham sido endereçados **nos
+testes** e não no `04` — por um período os testes foram mais fortes que a especificação deles, que
+é a pior configuração possível: quem lê o `04` acredita que aquilo é o contrato, e quem apaga uma
+linha do teste não encontra nada que reclame. Esta passagem reconciliou os dois.
+
+**O que entrou no `04` e JÁ tem teste** (era a especificação que estava atrás): estado da coluna e
+seção do formulário em CT-04 (A-1/A-2/A-4); sujeito do CT-02 nomeado (A-3); `fronteiraDeRequest()`
+no `## Setup Global` (A-6); oráculo do CT-06 corrigido para o `href` mais a **presença** da prosa
+(A-2 do relatório); `Dado` e medição prévia do CT-10 (A-9); não-efeito do CT-17 (A-13); separação
+dos oráculos de HTML de CT-04 e CT-07 (A-11); contagem da matriz 11/3 (A-12); CT-14 reescrito
+(D-02); linhas `acme.painel`/`acme%2fpainel` e o acento em CT-18 (D-03).
+
+**O que entrou no `04` e AINDA NÃO tem teste** — os quatro foram **sondados** contra o código real
+antes de serem escritos, com casos temporários que foram descartados. A direção está registrada
+para que ninguém escreva o teste no sentido errado:
+
+| Onde | Cenário especificado | Sonda |
+|---|---|---|
+| CT-16, 9ª linha dos `Examples` | a edição recusa o slug **de outra organização gravada**, e o gravado não muda (A-5) | **PASSA hoje.** `->unique()` do Filament ignora o próprio registro por padrão nesta versão (`vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:unique:563` + a propriedade `true` em `:shouldUniqueValidationIgnoreRecordByDefault:34`), então o mesmo `->unique()` sem argumento atende CT-13 **e** esta linha. Não é achado de implementação: é cenário que faltava |
+| CT-08, 3ª linha dos `Examples` | o administrador da instalação **vinculado** à organização continua tomando **403** — vínculo não é papel (A-10) | **403**, como esperado. O portão 1 decide primeiro |
+| **CT-21** (novo) | com a tenancy desligada, nenhuma das telas de `tests/Pest.php:telasDoKit:224` do painel `admin` responde **500**, e nenhuma exibe `href` do painel de negócio (A-7) | as 18 telas passam, 51 asserções |
+| **CT-22** (novo) | seguir o link de organização **inativa** sem vínculo devolve **404**, e as duas leituras concordam (A-8) | **404**; `canAccessTenant()` falso e `getTenants()` não a contém |
+
+**Um achado roteado ao TESTE, não à especificação (corte C-1).** O segundo `Então` do CT-02 foi
+cortado do `04`: "o gerador não contém nenhuma concatenação do slug com um caminho" não é oráculo
+executável, e exigiria regex adivinhado sobre fonte — o que `.ai/rules/testes.md` proíbe ("não
+invente um regex, ele conta comentário como chamada"). O teste **ainda carrega** a asserção, no
+`preg_match` de `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:133`. É linha a **remover do
+teste**; esta passagem não toca arquivo de teste.
 
 ## Notas de Implementação
 

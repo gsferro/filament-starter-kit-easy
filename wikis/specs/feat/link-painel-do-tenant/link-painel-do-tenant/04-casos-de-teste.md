@@ -28,11 +28,19 @@ P×I ≤ 6. Justificativa do I=3:
   requisito decidiu **não** guardá-lo — então o que resta a travar é que ele continue sem
   **conceder** nada.
 
-- Técnicas aplicadas: EP, BVA 3-valores (comprimento do slug), tabela estado × operação,
-  matriz persona × portão, rastreio de efeito (log, pivot), contagem de queries, varredura de
-  código-fonte (ausência de concatenação).
-- Cenários: **20** · Regras: **9** · Mutantes previstos: **28** · Sem matador: **0** ·
-  Lacunas declaradas: **2**
+- Técnicas aplicadas: EP, BVA 3-valores (comprimento do slug), **partição de unicidade**, tabela
+  estado × operação, matriz persona × portão, rastreio de efeito (log, pivot), contagem de queries,
+  varredura de código-fonte (ausência do literal do caminho), inventário de telas.
+- Cenários: **22** · Regras: **9** · Mutantes previstos: **36** · Sem matador: **0** ·
+  Lacunas declaradas: **3** (uma delas reduzida a **meia** célula — ver `## Lacunas Declaradas`)
+
+> **Este arquivo foi reconciliado DEPOIS da implementação, e a ordem invertida é deliberada.** A
+> revisão adversarial disparada pelo Impacto 3 chegou depois de a feature fechar verde, e quatro
+> dos seus achados já tinham sido endereçados nos **testes**, não aqui — por um período os testes
+> foram mais fortes que a especificação deles. Os treze achados estão em `## Revisão Adversarial`,
+> cada um com o que virou. Onde o `04` e o teste divergiam, quem manda é o `03-progresso.md` →
+> `## Desvios do Plano` (D-01..D-04): o cenário foi reescrito para o que o teste **prova**, e nunca
+> o contrário.
 
 ---
 
@@ -42,9 +50,9 @@ P×I ≤ 6. Justificativa do I=3:
 |---|---|---|
 | **S** | Um gerador de URL (ponto único) + três schemas já existentes (`TenantForm`, `TenantInfolist`, `TenantsTable`). **Nenhuma** migration, coluna, rota, config, evento, job ou comando novo | CT-01, CT-02 |
 | **F** | Gerar o endereço; renderizar o link (presente ou ausente por tela); abrir em nova aba; **não** conceder acesso; **não** interferir na gravação; **não** custar query | CT-04, CT-06, CT-07, CT-11, CT-12, CT-14 |
-| **D** | `slug` (`alphaDash`, `unique`, `maxLength(120)`), escrito por humano e consumido como segmento de URL; `ativo` (a "exclusão lógica" desta entidade — não há `SoftDeletes` nem `DeleteAction`); registro **não gravado** (state do `CreateTenant`); slug gravado por fora do formulário | CT-05, CT-13, CT-16, CT-17, CT-18 |
+| **D** | `slug` (`alphaDash`, **`unique`**, `maxLength(120)`) — as **três** restrições, e a unicidade é o que faz o endereço IDENTIFICAR a organização —, escrito por humano e consumido como segmento de URL; `ativo` (a "exclusão lógica" desta entidade — não há `SoftDeletes` nem `DeleteAction`); registro **não gravado** (state do `CreateTenant`); slug gravado por fora do formulário | CT-05, CT-13, CT-16, CT-17, CT-18 |
 | **I** | Três telas do painel `/admin`; o gerador alcançável por PHP puro; e o **destino**, alcançável por `GET /app/{slug}` — que é onde os portões decidem | CT-01, CT-08, CT-19 |
-| **P** | Depende de o painel `app` estar registrado **com** `->tenant()`, o que só acontece com `config('kit.tenancy.enabled')`. Por isso CT-01..CT-18 e CT-20 vivem em `tests/Tenancy` (o `TenancyTestCase` fixa `permission.teams` antes das migrations) e **CT-19 vive em `tests/Kit`**, a única suíte onde a tenancy está desligada. O `assertSeeHtml` depende do formato de `Filament\Support\generate_href_html()` (`vendor/filament/support/src/helpers.php:generate_href_html:159-162`) | CT-19 |
+| **P** | Depende de o painel `app` estar registrado **com** `->tenant()`, o que só acontece com `config('kit.tenancy.enabled')`. Por isso CT-01..CT-18, CT-20 e CT-22 vivem em `tests/Tenancy` (o `TenancyTestCase` fixa `permission.teams` antes das migrations) e **CT-19 vive em `tests/Kit`**, **CT-19 e CT-21 vivem em `tests/Kit`**, a única suíte onde a tenancy está desligada. O `assertSeeHtml` depende do formato de `Filament\Support\generate_href_html()` (`vendor/filament/support/src/helpers.php:generate_href_html:159-162`) | CT-19, CT-21 |
 | **O** | Quatro personas reais: `master_global` (passa nos dois portões), **administrador da instalação** (papel `admin`, sem papel do `app`, sem vínculo — falha no portão 1), usuário com papel do `app` sem linha no pivot (falha no portão 2), `admin_app` vinculado (passa). Uso previsto: "ir ver como está lá". Uso indevido: repassar o endereço a quem não tem acesso | CT-04, CT-08, CT-09 |
 | **T** | **Não se aplica** a concorrência, agendamento, expiração, DST ou timezone: a feature não grava nem compara tempo. O tempo entra por **uma** via, e ela é cenário: o `slug` muda, e o link tem de acompanhar (`helperText` já avisa que "mudar invalida os links já compartilhados") | CT-03 |
 
@@ -58,11 +66,11 @@ P×I ≤ 6. Justificativa do I=3:
 | **R2** — o link está presente, com o endereço certo, nas três superfícies da organização | B (mínimo) | RQ-02, RQ-03, RQ-04 | EP por superfície + partição de `ativo` | CT-04, CT-05 |
 | **R3** — nenhum link é renderizado para organização não gravada | B (mínimo) | RQ-02 + invariante do `## Ambiguidades` | EP (estado "não gravada") | CT-06, CT-20 |
 | **R4** — o link abre em nova aba nas três superfícies | D (mínimo) | RQ-01 (premissa adotada no `00`, ADR-04) | EP por superfície | CT-07 |
-| **R5** — o link **navega**, não autoriza: quem não passa nos portões recebe a recusa do Filament, o motivo é registrado, e nada é concedido | C (padrão) | RQ-01 + decisão (a) do `## Ambiguidades` + `## Fora de Escopo` | matriz persona × portão + rastreio de efeito + saída do erro | CT-08, CT-09, CT-10, CT-11 |
+| **R5** — o link **navega**, não autoriza: quem não passa nos portões recebe a recusa do Filament, o motivo é registrado, e nada é concedido | C (padrão) | RQ-01 + decisão (a) do `## Ambiguidades` + `## Fora de Escopo` | matriz persona × portão + rastreio de efeito + saída do erro + invariante das duas leituras | CT-08, CT-09, CT-10, CT-11, CT-22 |
 | **R6** — o link não é campo: não entra no estado do formulário nem altera a gravação do `EditTenant` | E (padrão) | RQ-02 | gate de tela de escrita + idempotência no agregado persistido | CT-12, CT-13 |
 | **R7** — a URL sai do slug do **próprio registro**: a listagem não paga query por linha | F (padrão) | RQ-05 | contagem de queries invariante à cardinalidade | CT-14, CT-15 |
-| **R8** — o slug que compõe a URL continua restrito a `alphaDash` e a 120 caracteres, na criação **e** na edição | A (padrão) | RQ-05 + `## Superfície Livewire` do `02` | EP (inválidas isoladas) + BVA 3-valores | CT-16, CT-17, CT-18 |
-| **R9** — com a tenancy desligada a superfície do link não é alcançável | G (mínimo) | RQ-01 (pressupõe a rota `/app/{slug}`, que só existe com tenancy) — mecanismo em ADR-03 | EP (config ligada/desligada) | CT-19 |
+| **R8** — o slug que compõe a URL continua restrito a `alphaDash`, a 120 caracteres e a **um por organização**, na criação **e** na edição | A (padrão) | RQ-05 + `## Superfície Livewire` do `02` | EP (inválidas isoladas) + BVA 3-valores + **partição de unicidade** | CT-16, CT-17, CT-18 |
+| **R9** — com a tenancy desligada a superfície do link não é alcançável | G (mínimo) | RQ-01 (pressupõe a rota `/app/{slug}`, que só existe com tenancy) — mecanismo em ADR-03 | EP (config ligada/desligada) × inventário de telas | CT-19, CT-21 |
 
 **Técnica escalada acima do perfil da área**: R8 está em área `padrão`, e a técnica é BVA
 **3-valores** (119/120/121) em vez de 2-valores. Motivo: 2-valores não distingue `maxLength(120)`
@@ -79,8 +87,13 @@ de `maxLength(121)`, e 120 é o único número literal que o requisito herda do 
   dado que a listagem **exibe** e o requisito não exclui.
 - R3 (área mínimo, teto 1) usa **2** cenários — CT-20 fecha a célula `não gravada × gravar` da
   matriz e o gate de tela de escrita da rota `create`.
-- R5 (área padrão, teto 3) usa **4** cenários — é regra de **rastreio de efeito** (log, pivot) e
+- R5 (área padrão, teto 3) usa **5** cenários — é regra de **rastreio de efeito** (log, pivot) e
   o teto não divide com a matriz de persona (passo 7 da skill). O gate do passo 6 vence o teto.
+  O quinto (CT-22) entrou na revisão adversarial, para fechar a metade não contestada de
+  `inativa × seguir`.
+- R9 (área mínimo, teto 1) usa **2** cenários — CT-21 entrou na revisão adversarial (achado A-7):
+  CT-19 mata M27 só no `TenantResource`, e o modo de falha fora dele é **500** na tela inteira,
+  não link quebrado. Cenário que o gate de falsificabilidade obriga, e o teto não vence gate.
 
 ---
 
@@ -93,7 +106,8 @@ do PRD:
 |---|---|---|
 | "um ponto único que devolve a URL" (passo 1) | escolha de implementação — nome, classe e assinatura não são observáveis do requisito | detalhe do cenário. **Nenhum CT nomeia a função**; CT-01 e CT-02 afirmam sobre a **URL** e sobre a **fonte de onde ela sai** |
 | `openUrlInNewTab()` (ADR-04) | é a API que produz o comportamento, não o comportamento | CT-07 afirma o HTML (`target="_blank"`), que é o que o usuário recebe |
-| "coluna, não ação" (RQ-04, decidido) | **aceito** como oráculo: a decisão está no `00`, não só no PRD | CT-04 afirma a coluna da listagem |
+| "coluna, não ação" (RQ-04, decidido) | **aceito** como oráculo: a decisão está no `00`, não só no PRD | CT-04 afirma o **estado da coluna**, e não o `href` — ver `### Coluna não é ação, e lugar não é presença` |
+| "a entrada fica na seção que cadastra nome e slug" (RQ-02) | **aceito**: RQ-02 é cláusula de **lugar** ("na onde tem a parte que cadastra o nome e a slug"), e lugar é observável | CT-04 sobe a hierarquia do schema e afirma a `Section` que contém a entrada |
 | "zero query nova" (`## Modelo de Execução`) | o **número** é do PRD | o oráculo usado é RQ-05 ("a URL é derivada do slug"), traduzido em **invariância à cardinalidade** (CT-14). Nenhum CT afirma "N queries" |
 | "403 do Filament" (ADR-02 e `## Ambiguidades`) | **factualmente errado para o portão 2** — ver a pergunta 1 abaixo. O `IdentifyTenant` do vendor faz `abort(404)` | CT-08 afirma **403 no portão 1** e **404 no portão 2**, o que o vendor faz. A wiki precisa ser corrigida |
 | "a string `/app/` não aparece no código da feature" (ADR-01, `## Riscos`) | aceito, **com exclusão obrigatória** — ver abaixo | CT-02 |
@@ -115,6 +129,25 @@ CT-02 é escopado ao **arquivo do gerador de URL** (o ponto único do passo 1), 
 tem nenhum motivo legítimo para existir. As três superfícies são cobertas por CT-01 e CT-04, que
 afirmam que a URL renderizada é **a mesma** que o gerador devolve — uma superfície que montasse a
 URL por conta própria só passaria por coincidência hoje, e o CT-03 (troca de slug) a derruba.
+
+**E o gerador ficou em arquivo próprio, então CT-02 tem sujeito.** O ponto único é
+`Tenant::urlDoPainel()` (`app/Models/Tenant.php:urlDoPainel:148`), ao lado de `urlDaLogo()` — a
+irmã exata, "o endereço de algo desta organização". É a decisão D-01 do `03-progresso.md`: método
+de model, nenhuma classe nova. O sujeito da varredura de CT-02 é **esse arquivo**, e não um schema
+— `app/Models/Tenant.php`, com os comentários filtrados, porque o docblock do próprio método cita
+`/app/{slug}` para explicar o que não faz (`.ai/rules/testes.md` → "Asserção de ausência sobre
+arquivo documentado precisa filtrar comentário").
+
+### Coluna não é ação, e lugar não é presença
+
+Os dois oráculos abaixo não existem no HTML, e sem eles **duas decisões do `00` ficam sem
+falsificador**. Foram escritos no teste antes de estarem escritos aqui — é o achado A-1/A-2 da
+revisão adversarial.
+
+| Decisão | Por que o HTML não a falsifica | O oráculo que a falsifica |
+|---|---|---|
+| **coluna, não ação** (RQ-04) | `Action::make()->url(…)->openUrlInNewTab()` emite **exatamente** o mesmo `href="…" target="_blank"`, pelo mesmo `generate_href_html()` do vendor. Todo cenário de HTML da listagem passaria com a feature implementada como ação por linha, e o motivo da decisão ("a coluna mostra o endereço, então o destino é visível antes do clique") ficaria sem teste | o **estado da coluna**: `assertTableColumnStateSet('url_do_painel', $endereco, $organizacao)`. Ele exige que o endereço seja o **conteúdo da célula**, e nem sequer compila contra uma ação — não há coluna para consultar |
+| **lugar** (RQ-02: "na onde tem a parte que cadastra o nome e a slug") | um link como **header action** do `EditTenant`, ou numa `Section` própria no rodapé, passaria em todo cenário de HTML e não atenderia a cláusula | subir a hierarquia do schema a partir da entrada (`getContainer()->getParentComponent()`), afirmar que o pai é uma `Section` e que o `getHeading()` dela é `Identificação` |
 
 ### Perguntas em aberto
 
@@ -186,11 +219,30 @@ $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 Sem os dois seeders, `View:Tenant` / `Update:Tenant` / `ViewAny:Tenant` não existem e todo caso
 morre com 403 no arranjo — o mesmo padrão de `tests/Tenancy/IdentidadeVisualTenancyTest.php:20-22`.
 
+### `fronteiraDeRequest()` entre visitas que trocam de painel
+
+**Obrigatório em CT-09 e CT-10**, entre um `GET` e o seguinte
+(`tests/Pest.php:fronteiraDeRequest:749`). Os dois cenários atravessam `/admin` e `/app` no mesmo
+caso, e o teste não ganha de graça a fronteira que o request de verdade tem: em produção cada
+request nasce com container próprio, no teste o mesmo container atravessa todas as visitas.
+
+O motivo específico desta feature é o **`SpotlightActionRegistry`**: ele é singleton
+(`FilamentSearchSpotlightServiceProvider.php:25`) e **acumula** as ações "Criar X" de todo painel
+visitado. No painel seguinte, o ⌘K resolve `getUrl('create')` de um resource que não existe ali e o
+request morre em **500** (`Route [filament.app.resources.agentes-ia.create] not defined`) — um 500
+que se lê como "o link do painel quebrou a tela" e não tem nada a ver com a feature. Junto vão o
+`ColorManager` e o `AssetManager`, pelo mesmo motivo de cache de painel.
+
+CT-10 é o caso em que a falta disto seria mais cara: ele afirma que a listagem **volta** a abrir
+depois da recusa, e um 500 do registry faria o cenário acusar exatamente o defeito que ele existe
+para pegar, pelo motivo errado.
+
 ### Personas
 
 | Nome no cenário | Como criar | Passa no portão 1? | Passa no portão 2? |
 |---|---|---|---|
 | **o administrador da instalação** | `usuarioComPapel('admin')` — contexto **global** | **não** (papel do painel `admin`) | não (sem vínculo) |
+| **o administrador da instalação, vinculado** | o mesmo, mais `->tenants()->attach($acme)` | **não** — e é o ponto: o portão 1 decide primeiro, e vínculo não dá papel do painel `app` | (não chega a ser consultado) |
 | **o mestre da instalação** | `usuarioComPapel('master_global')` | sim (`Gate::before`) | sim (`isMasterGlobal()`) |
 | **a operadora do negócio sem vínculo** | `usuarioComPapel('panel_user', $acme)` **sem** `->tenants()->attach()` | sim (papel do `app` em alguma organização) | **não** (`motivo: sem_vinculo`) |
 | **a administradora da organização** | `usuarioComPapel('admin_app', $acme)` + `->tenants()->attach($acme)` | sim | sim |
@@ -254,11 +306,25 @@ Os três caminhos de render passam por `Filament\Support\generate_href_html()`
 | infolist | `vendor/filament/infolists/resources/views/components/entry-wrapper.blade.php:93` |
 | formulário (Action / link / botão) | `vendor/filament/support/resources/views/components/link.blade.php:84` e `.../button/index.blade.php:108` |
 
-Por isso a asserção é `assertSeeHtml('href="'.$esperado.'" target="_blank"')` — **uma só string,
-adjacente**, e ela vale para qualquer das três escolhas de componente. `assertSee('target="_blank"')`
-solto é **proibido** como oráculo: o topbar e o widget de informação do próprio Filament já emitem
-`_blank` em toda página (`vendor/filament/filament/resources/views/livewire/topbar.blade.php` e
+Por isso a asserção de **R4** é `assertSeeHtml('href="'.$esperado.'" target="_blank"')` — **uma só
+string, adjacente**, e ela vale para qualquer das três escolhas de componente.
+`assertSee('target="_blank"')` solto é **proibido** como oráculo: o topbar e o widget de informação
+do próprio Filament já emitem `_blank` em toda página
+(`vendor/filament/filament/resources/views/livewire/topbar.blade.php` e
 `.../widgets/filament-info-widget.blade.php`).
+
+**Mas a string adjacente tem UM dono, e ele é o CT-07.** Se CT-04, CT-05 e CT-15 também a usarem,
+eles **viram** CT-07: o mutante "o link abre na mesma aba" (M13) derruba os quatro de uma vez, e o
+diagnóstico aponta a regra errada — o leitor vê R2 vermelha e vai procurar link ausente, quando o
+link está lá e só perdeu o `target`. Um mutante tem de derrubar o cenário da **sua** regra.
+
+| Cenário | Regra | String afirmada |
+|---|---|---|
+| CT-04, CT-05, CT-15 | R2, R7 — **presença e identidade** do endereço | `href="{endereço}"`, e só |
+| CT-07 | R4 — **nova aba** | `href="{endereço}" target="_blank"`, adjacente |
+
+CT-04 acrescenta o **estado da coluna** e a **seção** (ver `### Coluna não é ação, e lugar não é
+presença`); nenhum dos dois é HTML, e é por isso que eles existem.
 
 ---
 
@@ -283,10 +349,9 @@ Funcionalidade: Link de acesso ao painel da organização
       E o endereço da segunda organização é diferente do da primeira
 
     Cenário: [CT-02] o caminho do painel não é escrito à mão em lugar nenhum do gerador
-      Dado o código-fonte do gerador de endereço da feature, sem os comentários
+      Dado o código-fonte do arquivo do gerador de endereço da feature, sem os comentários
       Quando o texto é inspecionado
       Então ele não contém o literal "/app"
-      E ele não contém nenhuma concatenação do slug com um caminho
 
     Cenário: [CT-03] trocar o slug move o link
       Dado uma organização gravada com o slug "acme", aberta na tela de edição
@@ -294,6 +359,18 @@ Funcionalidade: Link de acesso ao painel da organização
       Então o link da tela recarregada termina com o segmento "/acme-2"
       E o endereço com o segmento "/acme" não aparece mais na tela
 ```
+
+**O segundo `Então` do CT-02 foi CORTADO** ("ele não contém nenhuma concatenação do slug com um
+caminho"). Não é oráculo executável: não existe forma de afirmar "nenhuma concatenação" sem um
+regex adivinhado sobre fonte, e `.ai/rules/testes.md` é explícita contra isso ("não invente um
+regex, ele conta comentário como chamada"). O que a cláusula queria dizer — que o endereço não é
+montado à mão — já é o **primeiro** `Então`, e o que ela realmente protegeria (o endereço apontar
+para o lugar errado) é CT-01 e CT-03. Registrado em `### Cogitado e cortado`.
+
+> ⚠️ **Divergência viva.** O teste de CT-02 ainda carrega a asserção cortada, na forma de um
+> `preg_match` sobre a fonte (`tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:133`). Ela não está
+> mais especificada aqui: é linha a **remover do teste**, não cenário a reescrever. Achado
+> roteado ao destino "implementação/teste", não à especificação.
 
 **Discriminância dos valores.** `acme-do-brasil` e não `acme`: um slug de um só termo não distingue
 "o endereço termina com o slug" de "o endereço termina com o nome em minúsculas". A **segunda
@@ -333,6 +410,8 @@ resolvido e da rota registrada, e `tests/Pest.php` não liga o `TestCase` da apl
       E que o administrador da instalação não tem papel do painel de negócio nem vínculo com ela
       Quando ele abre <tela>
       Então o HTML contém o endereço que o painel de negócio gera para a organização, como link
+      E na listagem, o endereço é o CONTEÚDO da célula da coluna do painel, e não só o alvo do link
+      E na edição, a entrada do link está dentro da seção intitulada "Identificação"
 
       Exemplos:
         | tela                     | # superfície            |
@@ -345,7 +424,7 @@ resolvido e da rota registrada, e `tests/Pest.php` não liga o `TestCase` da apl
       E uma organização ativa gravada com o slug "acme"
       Quando o administrador da instalação abre <tela>
       Então o HTML contém o endereço da organização inativa, como link
-      E o endereço exibido para a inativa não é o da organização ativa
+      E nas telas de um registro só, o endereço da organização ativa não aparece
 
       Exemplos:
         | tela                       | # partição de `ativo` |
@@ -360,9 +439,24 @@ a decisão do usuário sem um único teste: a alternativa recusada (renderizar s
 entrar) ficaria **verde no conjunto inteiro**. Só a persona que **falha** nos portões falsifica a
 decisão (M14).
 
-**Discriminância.** CT-05 exige o endereço **da inativa**, e afirma que ele difere do da ativa: uma
-implementação que resolvesse o link a partir da organização errada (a primeira da página, o tenant
-corrente) passaria num cenário de uma organização só.
+**Os dois `Então` novos do CT-04 são os oráculos que o HTML não dá**, e sem eles duas decisões do
+`00` ficam sem falsificador — ver `### Coluna não é ação, e lugar não é presença`. A linha da
+listagem afirma o **estado da coluna** (M29: a feature implementada como ação por linha emite HTML
+idêntico); a linha da edição afirma a **seção** que contém a entrada (M30: um header action passa
+em todo cenário de HTML e não atende RQ-02, que é cláusula de **lugar**).
+
+**Discriminância do CT-05, e o `Então` que foi CORTADO.** O segundo `Então` do `04` original dizia
+"o endereço exibido para a inativa não é o da organização ativa". Ele **não pode falhar quando o
+primeiro passa**: os slugs são distintos por construção (`globex` e `acme`), logo os endereços que
+`getUrl()` devolve são distintos — a asserção é uma tautologia sobre as fixtures, não sobre a
+implementação. Foi cortado.
+
+O que ficou no lugar é a versão **falsificável** da mesma preocupação, e é a que o teste já fazia:
+nas telas de **um registro só** (ficha e edição da inativa), o endereço da **ativa** não pode
+aparecer no HTML. Aí sim existe implementação que falha — a que resolve o link a partir da
+organização errada (a primeira da página, o tenant corrente) —, e a asserção de ausência tem alvo,
+porque a organização ativa existe no banco e o endereço dela é renderizável. Na **listagem** a
+cláusula não se aplica: as duas organizações estão na página, e os dois endereços têm de aparecer.
 
 #### Mutantes previstos
 
@@ -372,6 +466,9 @@ corrente) passaria num cenário de uma organização só.
 | M07 | a listagem ganha a coluna com o endereço **como texto**, sem `href` | CT-04 (linha da listagem: a asserção é sobre `href=`, não sobre o texto) |
 | M08 | o link é condicionado a `ativo`, e a organização desligada fica sem endereço visível | CT-05 |
 | M14 | o link ganha a guarda dos dois portões — a alternativa 1 da ADR-02, recusada pelo usuário | CT-04 (a persona não passa em nenhum dos dois portões e o link tem de estar lá) |
+| M29 | a listagem entrega o link como **ação por linha** (`Action::make()->url()->openUrlInNewTab()`) em vez da coluna decidida em RQ-04 — o HTML é **idêntico**, e todo `assertSeeHtml` continua verde | CT-04 (linha da listagem: o **estado da coluna**, que uma ação não tem) |
+| M30 | o link da edição vira **header action** do `EditTenant`, ou ganha uma `Section` própria no rodapé — presente, clicável, e fora do lugar que RQ-02 pede | CT-04 (linha da edição: a `Section` que contém a entrada, e o título dela) |
+| M31 | o link da inativa é resolvido a partir da organização errada (a primeira da página, o tenant corrente) nas telas de um registro só | CT-05 (a ausência do endereço da ativa na ficha e na edição da inativa) |
 
 ---
 
@@ -386,7 +483,9 @@ corrente) passaria num cenário de uma organização só.
     Cenário: [CT-06] a tela de cadastro não oferece link, nem depois de o slug ser digitado
       Dado o administrador da instalação na tela de cadastro de organização
       Quando ele preenche o nome "Acme" e o slug "acme" sem salvar
-      Então o HTML não contém nenhum link para o painel de negócio
+      Então o HTML não contém nenhum `href` para o endereço que o painel de negócio daria a "acme"
+      E a entrada do link do painel está oculta no schema do formulário
+      E a prosa "O slug vira o endereço do painel de negócio: /app/{slug}." continua na tela
       E nenhuma organização com o slug "acme" existe no banco
 
     Cenário: [CT-20] o cadastro continua gravando, e o link aparece na edição do que foi gravado
@@ -395,6 +494,31 @@ corrente) passaria num cenário de uma organização só.
       Então a organização "acme" está gravada e ativa
       E a tela de edição dela contém o endereço que o painel de negócio gera para ela, como link
 ```
+
+**O oráculo é o `href`, e NUNCA o caminho `/app/` — senão CT-06 nasce vermelho.** O `TenantForm`
+é o schema do `CreateTenant` **também** (o mesmo `TenantForm::configure()` serve as duas páginas), e
+a `description` da seção já contém o literal
+(`app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php:description:36`):
+
+```php
+->description('O slug vira o endereço do painel de negócio: /app/{slug}.')
+```
+
+É **prosa renderizada ao usuário**, não comentário — é onde está escrito o que o slug significa, e
+o filtro de comentário da `.ai/rules/testes.md` não a remove. Um CT-06 escrito como
+`assertDontSee('/app/')` nasce **vermelho contra a implementação correta**, e a "correção" óbvia
+seria apagar a explicação do slug da tela de cadastro.
+
+Daí as três formas do `Então`, e a terceira é o ponto:
+
+1. **ausência do `href`** — o endereço que o painel daria a `acme`, montado no caso, não aparece
+   como alvo de link nenhum. É a ausência que tem alvo: a operação renderiza link no caminho feliz
+   (CT-04);
+2. **a entrada oculta no schema** (`assertSchemaComponentHidden`) — afirma a condição de registro
+   existente no ponto em que ela é decidida, e não no HTML resultante;
+3. **PRESENÇA da prosa** — `O slug vira o endereço do painel de negócio: /app/{slug}.` continua na
+   tela. Esta linha existe **exatamente** para travar o conserto errado: sem ela, um agente futuro
+   faz a ausência passar apagando a `description` da seção.
 
 **Por que o "sem salvar" é o ponto do CT-06.** O `slug` é `live(onBlur: true)` por causa do
 `afterStateUpdated` do campo `nome` (`TenantForm.php:configure:44-48`), então o estado do
@@ -454,7 +578,7 @@ quando a nova aba está declarada (`helpers.php:159-162`).
 
 > RQ-01 + decisão (a) do `## Ambiguidades` + `## Fora de Escopo` do `00` · área **C**, perfil
 > **padrão** · técnicas: **matriz persona × portão**, **rastreio de efeito** (log, pivot),
-> **saída do estado de erro**
+> **saída do estado de erro**, **invariante das duas leituras**
 
 ```gherkin
   Regra: seguir o link não concede nada — os dois portões continuam decidindo, e o motivo fica registrado
@@ -469,6 +593,7 @@ quando a nova aba está declarada (`helpers.php:159-162`).
         | persona                                                          | resposta | # portão            |
         | o mestre da instalação                                            | 200      | passa nos dois      |
         | o administrador da instalação, sem papel do painel de negócio     | 403      | barra no portão 1   |
+        | o administrador da instalação, VINCULADO à organização            | 403      | barra no portão 1   |
         | a operadora do negócio, com papel do painel e sem vínculo         | 404      | barra no portão 2   |
         | a administradora da organização, vinculada a ela                  | 200      | passa nos dois      |
 
@@ -480,7 +605,9 @@ quando a nova aba está declarada (`helpers.php:159-162`).
       E o mesmo canal, no acesso da administradora vinculada, não recebe nenhum aviso com esse motivo
 
     Cenário: [CT-10] a recusa não tranca o administrador fora da administração
-      Dado o administrador da instalação, sem papel do painel de negócio, na listagem de organizações
+      Dado uma organização ativa gravada com o slug "acme"
+      E o administrador da instalação, sem papel do painel de negócio
+      E que a listagem de organizações abre com sucesso para ele
       Quando ele segue o endereço do link e recebe a recusa
       Então ele continua autenticado
       E a listagem de organizações volta a abrir com sucesso
@@ -491,6 +618,14 @@ quando a nova aba está declarada (`helpers.php:159-162`).
       Quando ele abre a listagem, a ficha e a edição da organização
       Então nenhuma linha nova existe na pivot de organizações do usuário
       E nenhum papel novo existe na pivot de papéis para ele
+
+    Cenário: [CT-22] seguir o link de organização inativa, sem vínculo, é recusado — e as duas leituras concordam
+      Dado uma organização INATIVA gravada com o slug "globex"
+      E a operadora do negócio, com papel do painel e sem vínculo com essa organização
+      Quando ela segue o endereço do link da organização inativa
+      Então a resposta é 404
+      E o portão 2 nega o acesso a essa organização
+      E a organização inativa não aparece entre as organizações que ela pode escolher
 ```
 
 **O não-efeito do CT-09 tem destinatário.** O canal `tenancy` é o mesmo nos dois acessos, e o
@@ -501,9 +636,29 @@ asserção não é feita num mundo sem canal: ela é feita no mundo onde o aviso
 existe, e há um caminho no kit que **grava** ali (o `UsersRelationManager` da própria tela). A
 contagem é tirada antes e depois, e não "nenhum registro" genérico.
 
-**CT-10 é a saída do estado de erro.** O `AuthenticateSession` está na pilha do painel de negócio;
-um clique que invalidasse a sessão deixaria o administrador fora do `/admin` também — o defeito que
-nenhum cenário de 403/404 isolado enxerga, porque cada um, sozinho, está certo.
+**CT-10 é a saída do estado de erro, e ele precisa das DUAS medições.** O oráculo é "a listagem
+**volta** a abrir" — e "volta" é uma afirmação sobre *transição*, não sobre estado. Sem afirmar a
+abertura **antes** da recusa, a segunda metade não distingue "voltou a abrir" de "sempre abriu, e a
+recusa não tinha como afetar nada": o cenário passaria verde numa instalação em que o `/admin`
+jamais fecharia, medindo o arnês. A situação de partida também estava faltando — sem organização
+gravada não há listagem com linha, não há link e não há endereço a seguir. As duas correções vieram
+do achado A-9; **o teste já as fazia** (`tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:453-468`),
+era a especificação que estava atrás.
+
+O defeito que o cenário existe para pegar: o `AuthenticateSession` está na pilha do painel de
+negócio, e um clique que invalidasse a sessão deixaria o administrador fora do `/admin` também — o
+defeito que nenhum cenário de 403/404 isolado enxerga, porque cada um, sozinho, está certo.
+
+**CT-22 é a metade NÃO contestada da lacuna 1.** A célula `inativa × seguir` tem duas metades, e a
+pergunta 2 do `## Fronteira com o Plano` só suspende **uma**: a de quem **passa** nos portões (o
+`master_global`, a vinculada), onde `canAccessTenant()` não olha `ativo` e o `00` não decide. Para
+quem **não tem vínculo** não há contestação nenhuma: `canAccessTenant()` nega por falta de vínculo,
+independente de `ativo`, e `User::getTenants()` também não a devolve porque filtra
+`->where('ativo', true)` — as **duas** leituras que discordam no caso contestado **concordam** aqui.
+
+É a mesma técnica que o `04` já aplicou na lacuna 2 (o invariante que vale nas duas leituras, CT-18)
+e não tinha aplicado na 1. Com CT-22 escrito, a lacuna 1 deixa de ser uma célula inteira e passa a
+ser **meia** — ver `## Lacunas Declaradas`.
 
 **Camada.** Os quatro são `Feature` com `GET` real — **por fora do componente de UI**, que é o gate
 de camada da regra de autorização: uma barreira que existisse só no `Resource` ficaria verde em
@@ -518,6 +673,8 @@ qualquer teste de componente.
 | M17 | o log de negação do vínculo deixa de ser registrado | CT-09 |
 | M18 | seguir o link invalida a sessão e tranca o administrador fora do `/admin` | CT-10 |
 | M14 | *(também de R2)* o link ganha a guarda dos dois portões e desaparece para quem não entra | CT-04 |
+| M32 | o portão 1 passa a aceitar **vínculo** como credencial ("ele está ligado à organização, então deixa entrar"), e quem se vincula pelo `UsersRelationManager` da própria tela ganha o painel de negócio sem papel nenhum | CT-08 (a linha do administrador **vinculado**, que continua em 403) |
+| M33 | `canAccessTenant()` passa a devolver verdadeiro sem vínculo (ou `getTenants()` e `canAccessTenant()` divergem na direção de **abrir**), e a organização inativa de terceiro abre para quem tem papel do painel | CT-22 |
 
 ---
 
@@ -572,11 +729,13 @@ chamada.
 ```gherkin
   Regra: a coluna do link não introduz consulta por linha
 
-    Cenário: [CT-14] a listagem custa o mesmo com uma e com cinco organizações
-      Dado uma organização ativa gravada e a listagem já carregada uma vez
-      E a contagem de consultas de um segundo carregamento, com essa única organização
-      Quando outras quatro organizações são gravadas e a listagem é carregada de novo
-      Então a contagem de consultas é a mesma das duas vezes
+    Cenário: [CT-14] resolver o endereço das organizações da página não custa consulta nenhuma
+      Dado uma organização ativa gravada e os registros da página já hidratados
+      E a resolução do endereço já exercitada uma vez, para aquecer painel e rota
+      Quando o endereço é resolvido para essa única organização, com o log de consultas ligado
+      Então a contagem de consultas é zero
+      Quando outras quatro organizações são gravadas e o endereço das cinco é resolvido
+      Então a contagem de consultas continua a mesma
 
     Cenário: [CT-15] cada linha exibe o endereço da sua própria organização
       Dado cinco organizações ativas gravadas, com slugs distintos
@@ -584,12 +743,36 @@ chamada.
       Então o HTML contém os cinco endereços, um por slug
 ```
 
+**Este cenário foi REESCRITO depois da implementação, e o motivo está medido.** A redação original
+era "a listagem custa o mesmo com uma e com cinco organizações", e ela afirmava uma propriedade
+**falsa** da tela. Medido nas duas pontas do diff, com o mesmo arnês (D-02 do `03-progresso.md`):
+
+| | 1 organização | 5 organizações |
+|---|---|---|
+| **antes** da feature (`git stash push -- app/`) | **33** | **53** |
+| **depois** | **33** | **53** |
+
+A coluna nova custa **zero** — é o que o `## Modelo de Execução` do `01` afirma, e está confirmado.
+Mas a listagem **já** crescia 5 consultas por linha **antes** da feature (autorização de
+`ViewAction`/`EditAction` por registro, entre outras). O oráculo original nasceria **vermelho contra
+a implementação correta**, medindo um N+1 de terceiro que a feature não introduziu e não pode
+consertar — mudar a listagem está em `## Fora de Escopo`. Um cenário assim não é rigor: é um
+cenário que obriga quem vier depois a consertar algo fora do escopo dele, ou a apagá-lo.
+
+O oráculo **não mudou** — continua sendo **invariância à cardinalidade**, derivada de RQ-05. O que
+mudou é o **sujeito**: ele passou a ser aplicado ao que a feature de fato possui, a **resolução do
+endereço**, e não à tela inteira, que é de terceiro. Zero consultas para uma organização, zero para
+cinco. É o que mata M22: um resolvedor por relação ou consulta marcaria N aqui, com os registros já
+hidratados.
+
+O N+1 pré-existente da listagem **não some por isso**: ele foi medido, é real, e ficou registrado
+como **lacuna 3** de `## Lacunas Declaradas` — dívida de terceiro, não defeito desta feature.
+
 **O aquecimento do `Dado` não é cerimônia: sem ele o cenário é flaky e mede o arnês.** O primeiro
-carregamento da listagem paga o cache de permissões do spatie e a resolução do painel; a contagem
-do primeiro render é sempre maior que a do segundo, por motivo que **não** é a feature. Comparar
-"1 registro (frio)" com "5 registros (quente)" produziria vermelho aleatório e, pior, poderia
-esconder um N+1 de quatro queries atrás da diferença de aquecimento. As duas medições são feitas
-**quentes**.
+`getUrl()` do processo resolve o painel e a rota; a contagem da primeira resolução é sempre maior
+que a da segunda, por motivo que **não** é a feature. A hidratação dos registros antes de ligar o
+log é da mesma natureza — sem ela o cenário mediria a query da própria listagem em vez da resolução
+do endereço.
 
 **Por que invariância e não um número.** O número de queries da listagem é do PRD, não do
 requisito, e envelhece com qualquer mudança de painel. A **invariância à cardinalidade** é derivada
@@ -612,30 +795,34 @@ as cinco linhas apontam para a mesma organização.
 ## Regra R8 — o slug que compõe a URL continua restrito
 
 > RQ-05 + `## Superfície Livewire` do `02` · área **A**, perfil **padrão** · técnicas: **EP com
-> inválidas isoladas**, **BVA 3-valores** (incremento: 1 caractere)
+> inválidas isoladas**, **BVA 3-valores** (incremento: 1 caractere), **partição de unicidade**
 
 ```gherkin
-  Regra: o slug que vira endereço só aceita caractere de slug, e no máximo 120
+  Regra: o slug que vira endereço só aceita caractere de slug, no máximo 120, e um por organização
 
-    Esquema do Cenário: [CT-16] a edição recusa slug que não é slug, e não altera o gravado
+    Esquema do Cenário: [CT-16] a edição recusa slug que não serve de endereço, e não altera o gravado
       Dado uma organização ativa gravada com o slug "acme"
-      Quando o mestre da instalação salva a edição com o slug <slug>
+      E uma segunda organização já gravada com o slug "globex"
+      Quando o mestre da instalação salva a edição da primeira com o slug <slug>
       Então o campo slug apresenta erro
       E a organização gravada continua com o slug "acme"
 
       Exemplos:
-        | slug                  | # partição inválida        |
-        | ../outra              | caminho relativo           |
-        | acme/painel           | separador de caminho       |
-        | acme painel           | espaço                     |
-        | acme?x=1              | início de query string     |
-        | organização           | acento                     |
-        |                       | vazio                      |
+        | slug                  | # partição recusada                |
+        | ../outra              | caminho relativo                   |
+        | acme/painel           | separador de caminho               |
+        | acme painel           | espaço                             |
+        | acme?x=1              | início de query string             |
+        | acme.painel           | ponto                              |
+        | acme%2fpainel         | percent-encoding                   |
+        |                       | vazio                              |
+        | globex                | slug de OUTRA organização gravada  |
 
     Esquema do Cenário: [CT-17] o comprimento do slug é inclusivo em 120
       Dado o mestre da instalação na tela de cadastro de organização
       Quando ele salva uma organização com um slug de <tamanho> caracteres
       Então o resultado é "<resultado>"
+      E quando o resultado é "recusado", nenhuma organização com esse slug existe no banco
 
       Exemplos:
         | tamanho | resultado | # borda  |
@@ -643,18 +830,66 @@ as cinco linhas apontam para a mesma organização.
         | 120     | gravado   | borda    |
         | 121     | recusado  | borda+1  |
 
-    Cenário: [CT-18] o link segue o slug gravado, sem normalizar
-      Dado uma organização gravada por fora do formulário com o slug "ACME-Brasil"
+    Esquema do Cenário: [CT-18] o link segue o slug gravado, sem normalizar e sem encodar
+      Dado uma organização gravada por fora do formulário com o slug <slug>
       Quando o administrador da instalação abre a ficha da organização
-      Então o link exibido termina com o segmento "/ACME-Brasil"
+      Então o endereço gerado termina com o segmento "/<slug>", byte a byte
+      E o link exibido na ficha aponta para esse endereço
+
+      Exemplos:
+        | slug         | # o que o valor discrimina                        |
+        | ACME-Brasil  | caixa preservada — o `Str::slug` a destruiria      |
+        | organização  | acento gravado, endereço CRU (sem percent-encoding) |
 ```
 
-**Uma inválida por cenário**: cada linha do CT-16 é uma partição isolada — combinar duas deixaria a
-primeira validação a disparar mascarando a segunda.
+**Uma recusa por linha**: cada linha do CT-16 é uma partição isolada — combinar duas deixaria a
+primeira validação a disparar mascarando a segunda. Oito linhas são de **formato** (o valor não
+serve de segmento de URL) e a nona é de **unicidade** (o valor serve, mas já é de outra
+organização): é a mesma regra R8 e o mesmo oráculo — o campo acusa erro, e o gravado não muda.
 
 **O não-efeito do CT-16 tem alvo**: a organização existe, gravada com `acme`, e o caminho feliz
 (CT-12) altera esse mesmo campo. A asserção "continua com `acme`" é feita num mundo em que o
 campo mudaria.
+
+### A linha `acento` saiu, e as duas que entraram no lugar
+
+Registrado como **D-03** no `03-progresso.md`. O `04` original listava `organização` como partição
+**inválida**, e a linha nasceria **vermelha contra a implementação correta**: `alpha_dash` do
+Laravel é **unicode-aware**, e sem o argumento `ascii` a regra é `/\A[\pL\pM\pN_-]+\z/u`
+(`vendor/laravel/framework/src/Illuminate/Validation/Concerns/ValidatesAttributes.php:validateAlphaDash:403`)
+— `ç` e `ã` são `\pL`, e o slug acentuado **grava**. Trocar `->alphaDash()` por
+`->alphaDash(ascii: true)` seria mexer numa validação que **não é desta feature** para fazer um
+cenário passar: recusado.
+
+As duas linhas que entraram cobrem o que a do acento **pretendia** cobrir e o `\pL` de fato recusa,
+e as duas são metacaracteres de **segmento de URL**, que é o risco real da feature: o **ponto**
+(`acme.painel`, que abre caminho para `..` e para extensão de arquivo) e o **percent-encoding**
+(`acme%2fpainel`, uma barra disfarçada). O acento migrou para **CT-18**, do lado **válido**: ele
+grava, e o link segue o gravado.
+
+### A unicidade — a terceira restrição do campo, que o mapa de regras tinha perdido
+
+A varredura SFDIPOT inventariou `slug (alphaDash, unique, maxLength(120))`. R8 recolheu duas das
+três: o `unique` (`app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php:unique:54`) não tinha mutante nem cenário. Achado A-5.
+
+**Por que ele importa NESTA feature, e não só no cadastro.** É a unicidade que faz o endereço
+**identificar** a organização. Sem ela, duas linhas da listagem exibem o **mesmo** `href`, e uma
+organização ganha um link que abre a **outra** — que é exatamente o defeito que CT-05 e CT-15 foram
+desenhados para pegar, chegando por um caminho que nenhum dos dois cobre: os dois partem de slugs
+distintos por construção, e nenhum deles exercita a gravação.
+
+A partição é **irmã** das outras do CT-16 — "valor que o campo tem de recusar, e o gravado não
+muda" — e por isso cabe como linha dos `Exemplos`, com o `Dado` acrescentando a segunda organização.
+O `Dado` novo vale para as nove linhas: uma organização a mais no banco não muda o veredito das
+oito primeiras, e evita um segundo esquema para uma linha só.
+
+> **Medido, não suposto.** O cenário **PASSA** hoje. `->unique()` do Filament ignora o próprio
+> registro **por padrão** nesta versão — `$ignoreRecord ??= $component->shouldUniqueValidationIgnoreRecordByDefault()`
+> (`vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:unique:563`) e a propriedade
+> nasce `true` (`vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:shouldUniqueValidationIgnoreRecordByDefault:34`). É por isso
+> que `->unique()` sem argumento atende ao mesmo tempo CT-13 (salvar sem alterar, o registro não
+> colide consigo mesmo) e esta linha (colidir com **outra** organização é erro). **Não é achado
+> para o `03`**; é cenário que faltava à especificação.
 
 **CT-18 é o cenário por fora do componente de UI para esta regra, e é o que a premissa 3 permite
 escrever.** A gravação é feita por factory (sem formulário), e o oráculo é o **invariante das duas
@@ -663,13 +898,36 @@ está gravado. `ACME-Brasil` passa pelo `alphaDash` (maiúscula é permitida) ma
 — então um gerador que normalizasse produziria `/acme-brasil`, um endereço que **não existe**, e o
 link nasceria quebrado sem ninguém notar. É um valor discriminante escolhido para isso.
 
+**A forma canônica do endereço no kit é a CRUA, e agora está afirmada.** Medido durante a
+implementação: `Panel::getUrl()` **não** percent-encoda o segmento — o endereço de `organização`
+sai `http://…/app/organização`, com o UTF-8 cru, e o `href` sai assim, porque o `e()` de
+`generate_href_html()` escapa **HTML**, não **URL**. O link funciona (navegador e servidor encodam
+o caminho na hora de pedir), mas até aqui **ninguém havia afirmado isso**.
+
+*Decisão: vira asserção em CT-18, e não lacuna declarada.* Três motivos, nesta ordem:
+
+1. **Ela é falsificável, e barata.** O `Então` "termina com `/organização`, byte a byte" tem um
+   mutante plausível e imediato — um `rawurlencode()` no gerador (M35) — e cai sozinho contra ele.
+   Lacuna declarada é o destino de afirmação que **não se pode escrever**; esta se escreve em uma
+   linha, e declará-la lacuna seria declarar como intransponível o que custa um `toEndWith`.
+2. **Ela já é consumida como verdade em outro lugar.** Todo cenário que compara endereço no kit —
+   CT-01, CT-03, CT-05, CT-15 — calcula o esperado com `getUrl()` e compara **string com string**.
+   Se a forma canônica mudar, os quatro passam a comparar formas diferentes da mesma URL, e o
+   vermelho aparece longe da causa. A afirmação que sustenta os quatro merece um dono.
+3. **A escolha não é arbitrária, e já está registrada.** A feature decidiu **não normalizar** o
+   slug gravado (o próprio CT-18, linha `ACME-Brasil`). Não encodar é a mesma decisão vista do
+   outro lado: o endereço é o que o painel gera a partir do que está no banco, sem que a feature
+   se meta no meio. Afirmar uma metade e declarar a outra lacuna seria incoerente.
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata |
 |---|---|---|
 | M24 | o `->alphaDash()` do slug é removido (ou trocado por `->regex()` frouxo), e o `href` de uma tela de administração passa a ser escolhido por quem cadastra | CT-16 |
 | M25 | o `->maxLength(120)` sai, ou vira 121, e o único teto do slug desaparece | CT-17 |
-| M26 | o gerador aplica `Str::slug()` no slug gravado, e o link aponta para endereço inexistente | CT-18 |
+| M26 | o gerador aplica `Str::slug()` no slug gravado, e o link aponta para endereço inexistente | CT-18 (linha `ACME-Brasil`) |
+| M34 | o `->unique()` do slug é perdido no diff da feature (ou trocado por `->unique(ignoreRecord: false)`, que quebra a edição em vez de proteger a unicidade), e duas organizações passam a compartilhar o endereço — o `href` de uma abre a outra | CT-16 (linha `slug de OUTRA organização gravada`) |
+| M35 | o gerador passa a percent-encodar o segmento (`rawurlencode($slug)`), e a forma canônica do endereço muda sem nada avisar: CT-01, CT-03, CT-05 e CT-15 passam a comparar duas formas da mesma URL | CT-18 (linha `organização`) |
 
 ---
 
@@ -687,22 +945,44 @@ link nasceria quebrado sem ninguém notar. É um valor discriminante escolhido p
       Quando o administrador da instalação abre a listagem de organizações
       Então a resposta é 403
       E o cadastro de organizações não aparece na navegação
+
+    Cenário: [CT-21] com a tenancy desligada nenhuma tela do /admin estoura nem oferece o link
+      Dado a instalação com a multi-tenancy desligada
+      E uma organização gravada na tabela, com o slug "acme"
+      Quando o administrador da instalação abre, uma a uma, as telas do painel de administração
+      Então nenhuma delas responde 500
+      E nenhum endereço do painel de negócio aparece no HTML de nenhuma delas
 ```
 
 **O "não se aplica" aqui tem destinatário.** A organização **existe** na tabela (ela existe sem
 tenancy, só não significa nada), então a listagem teria uma linha para renderizar um link. Sem essa
 fixture o cenário passaria por não haver o que renderizar, e não por a tela estar fechada.
 
+**CT-21 existe porque CT-19 mata M27 só pela metade.** M27 fala em "hub, widget, menu" — três
+lugares —, e CT-19 afirma duas coisas sobre **um** lugar: a listagem do `TenantResource` em 403 e a
+ausência dele na navegação. Nenhuma das duas alcança um **widget do dashboard** do `/admin`, um item
+do menu do usuário ou qualquer outra entrada que renderizasse o link fora do resource. E com a
+tenancy desligada o painel `app` pode nem estar registrado: o gerador não estoura em link quebrado,
+estoura em **500** na tela inteira. Um widget assim deixaria o `/admin` inteiro fora do ar numa
+instalação single-tenant, e CT-19 ficaria verde.
+
+CT-21 fecha isso varrendo as telas que `tests/Pest.php:telasDoKit:224` lista para o painel `admin` —
+a lista que o `InventarioDeTelasTest` já obriga a manter completa, então o cenário herda cobertura
+de toda tela nova sem precisar de edição. As duas asserções são as duas metades do defeito: **nenhum
+500** (o gerador chamado onde não há rota) e **nenhum `href` do painel de negócio** (a entrada
+renderizada onde ela não deveria existir).
+
 **Suíte.** `tests/Kit` — a única em que `kit.tenancy.enabled` é falso. Escrito em `tests/Tenancy`
 com `config()->set()` num `beforeEach`, o caso mediria o arnês: o `TenancyTestCase` fixa a config
-antes das migrations.
+antes das migrations. Vale para CT-19 **e** para CT-21.
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata |
 |---|---|---|
-| M27 | a entrada é acrescentada fora do `TenantResource` (num hub, num widget, no menu) e fica alcançável sem tenancy, onde o gerador não tem rota | CT-19 |
+| M27 | a entrada é acrescentada fora do `TenantResource` (num hub, num widget, no menu) e fica alcançável sem tenancy, onde o gerador não tem rota | CT-19 **em parte** (só a tela do resource) + **CT-21** (as demais telas do `/admin`) |
 | M28 | `canAccess()` ou `shouldRegisterNavigation()` do `TenantResource` perdem a condição de config no diff da feature | CT-19 |
+| M36 | a entrada nasce num **widget do dashboard** ou no **menu do usuário** do `/admin`, e sem tenancy o gerador chama um painel `app` que não está registrado — a tela inteira responde **500**, não link quebrado | CT-21 |
 
 ---
 
@@ -715,17 +995,27 @@ que a feature toca — não a partir do mapa de regras.
 lógica desta entidade: não há `SoftDeletes` no `Tenant` e não há `DeleteAction` na tabela.
 **Operações** (5): `listar`, `ver`, `editar`, `gravar`, `seguir` (o `GET` no endereço do link).
 
-**3 × 5 = 15 células** · válidas exercitadas: **10** · não se aplica: **4** · lacuna declarada: **1**
+**3 × 5 = 15 células** · com CT: **11** · com CT em **metade** da célula: **1** (`inativa × seguir`)
+· não se aplica: **3** · lacuna declarada: **meia** célula. Soma: 11 + 1 + 3 = **15**.
+
+> **Os dois números do cabeçalho estavam errados, e a soma escondia o erro** (achado A-12). A
+> redação anterior declarava **10** exercitadas e **4** `n/a` — que também somam 15, e por isso a
+> conferência **pelo total** passava. Conferido célula a célula: as com CT são **11** (2 na linha
+> `não gravada`, 5 na `ativa`, 4 na `inativa`) e as `n/a` são **3**, todas na linha `não gravada`.
+> A legenda abaixo diz "conferida célula a célula", e **legenda é asserção**: se ela afirma a
+> conferência, ela tem de estar certa, senão é a única linha do arquivo que mente sobre si mesma.
 
 | | listar | ver | editar | gravar | seguir |
 |---|---|---|---|---|---|
 | **não gravada** | n/a ¹ | n/a ¹ | **CT-06** ❌ | **CT-20** ✅ | n/a ² |
 | **ativa** | **CT-04, CT-05, CT-15** ✅ | **CT-04** ✅ | **CT-04** ✅ | **CT-12, CT-13** ✅ | **CT-08, CT-09, CT-10** ✅❌ |
-| **inativa** | **CT-05** ✅ | **CT-05** ✅ | **CT-05** ✅ | **CT-13** ✅ | ⚠️ lacuna declarada ³ |
+| **inativa** | **CT-05** ✅ | **CT-05** ✅ | **CT-05** ✅ | **CT-13** ✅ | **CT-22** ❌ — **meia** célula ³ |
 
 ¹ **não se aplica**: registro não gravado não tem linha na listagem nem rota `view`.
 ² **não se aplica**: sem endereço renderizado não há o que seguir — e é exatamente o que CT-06 afirma.
-³ **lacuna declarada**: ver `## Lacunas Declaradas`, item 1.
+³ **meia célula**: quem **não tem vínculo** está afirmado (CT-22 — 404, e as duas leituras
+concordam). Quem **passa** nos portões (`master_global`, vinculada) continua lacuna declarada — ver
+`## Lacunas Declaradas`, item 1.
 
 **Legenda, que é asserção e foi conferida célula a célula:**
 
@@ -740,12 +1030,16 @@ lógica desta entidade: não há `SoftDeletes` no `Tenant` e não há `DeleteAct
     feliz → a recusa é o status. E o caminho feliz de quem tem acesso **não** grava aviso de
     negação → CT-09 nega o aviso no acesso legítimo. E o caminho feliz de concessão **grava na
     pivot** → CT-11 nega a linha nova.
+  - `inativa × seguir` (CT-22): a operação dispara **entrada no painel** no caminho feliz (CT-08,
+    linha `vinculada`) → a recusa é o 404. E o não-efeito é afirmado nas **duas leituras** do kit,
+    que no caso sem vínculo concordam: `canAccessTenant()` nega, e a organização não aparece entre
+    as escolhíveis. É meia célula: a outra metade, de quem passa nos portões, é lacuna.
 
 **As duas dimensões que a matriz não mostra, e que não ficaram fixas:**
 
 | Dimensão | Onde varia |
 |---|---|
-| **persona** | CT-08 (quatro personas, uma por portão), CT-04 e CT-11 (a persona que **falha** nos dois portões), CT-12/CT-13/CT-16/CT-17 (o mestre da instalação) |
+| **persona** | CT-08 (**cinco** personas, incluindo o administrador **vinculado** que ainda toma 403 — vínculo não é papel), CT-22 (a operadora sem vínculo, na inativa), CT-04 e CT-11 (a persona que **falha** nos dois portões), CT-12/CT-13/CT-16/CT-17 (o mestre da instalação) |
 | **campo alterado** | CT-12 altera **nome e slug**; CT-16 altera **só o slug** (o campo que decide o endereço); CT-03 altera o slug **depois** de o registro estar gravado, que é o estado em que a recomputação do link importa |
 
 ---
@@ -754,11 +1048,13 @@ lógica desta entidade: não há `SoftDeletes` no `Tenant` e não há `DeleteAct
 
 | # | O que não é afirmado | O que foi tentado | Vinculada a |
 |---|---|---|---|
-| 1 | O que acontece ao **seguir** o link de uma organização **inativa** (`inativa × seguir`) | Lidos os dois lados: `IdentifyTenant` só consulta `canAccessTenant()` (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:handle:40-42`), que **não** olha `ativo` (`app/Models/User.php:canAccessTenant:789-809`); `User::getTenants()` **filtra** `ativo` (`app/Models/User.php:getTenants:775-782`). Os dois discordam e o `00` não decide. Escrever o cenário na direção "falha fechado" (a inativa não abre) o deixaria **vermelho contra a implementação correta**, porque mudar os portões está em `## Fora de Escopo` | pergunta **2** do `## Fronteira com o Plano`. O invariante que vale nas duas leituras **está** escrito: CT-05 |
+| 1 | **Meia célula** de `inativa × seguir`: o que acontece quando segue o link de organização **inativa** quem **passa** nos dois portões (o `master_global`, a administradora vinculada) | Lidos os dois lados: `IdentifyTenant` só consulta `canAccessTenant()` (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:handle:40-42`), que **não** olha `ativo` (`app/Models/User.php:canAccessTenant:789-809`); `User::getTenants()` **filtra** `ativo` (`app/Models/User.php:getTenants:775-782`). Os dois discordam **nesta metade**, e o `00` não decide. Escrever o cenário na direção "falha fechado" (a inativa não abre) o deixaria **vermelho contra a implementação correta**, porque mudar os portões está em `## Fora de Escopo`. **A outra metade não é contestada e foi escrita**: sem vínculo, as duas leituras concordam em negar, independente de `ativo` → **CT-22** | pergunta **2** do `## Fronteira com o Plano`. O invariante de renderização **está** escrito: CT-05 |
 | 2 | Uma barreira de domínio para o `slug` **fora do formulário** (o gate "≥1 cenário por fora do componente de UI" para R8, na direção de recusa) | Não existe barreira no model: `Tenant::create(['slug' => '../outra'])` grava. Escrever o cenário na direção de recusa seria vermelho contra a implementação atual, e o requisito não pede a barreira. O que foi escrito no lugar é o **invariante das duas leituras** (CT-18): a feature não normaliza o slug gravado, seja ele barrado onde for | pergunta **3** do `## Fronteira com o Plano` |
+| 3 | O **N+1 pré-existente da listagem de organizações**: ela cresce ~5 consultas por linha (33 com uma organização, 53 com cinco) | **Medido nas duas pontas do diff** (D-02 do `03-progresso.md`): 33/53 **antes** da feature e 33/53 **depois** — a coluna nova custa **zero**. O N+1 vem da autorização de `ViewAction`/`EditAction` por registro, é **anterior** à feature e mudar a listagem está em `## Fora de Escopo`. É dívida registrada, **não defeito desta feature**, e o CT-14 original (que a mediria) foi reescrito para o sujeito que a feature possui | `## Fora de Escopo` do `00` + D-02 do `03`. O oráculo de invariância **está** escrito, sobre a resolução do endereço: CT-14 |
 
-Nenhum mutante previsto fica sem matador por causa das duas: M24 é morto por CT-16 (a barreira que
-**existe**, no ponto de entrada que existe) e M26 por CT-18.
+Nenhum mutante previsto fica sem matador por causa das três: M24 é morto por CT-16 (a barreira que
+**existe**, no ponto de entrada que existe), M26 por CT-18 e M22 por CT-14 (a resolução do endereço,
+que é o que a feature possui — o custo da tela é da lacuna 3).
 
 ---
 
@@ -778,7 +1074,8 @@ Nenhum mutante previsto fica sem matador por causa das duas: M24 é morto por CT
 | Ordenação por coluna | **não se aplica**: a coluna nova exibe endereço, e o requisito não pede ordenação por ela. Ordenar por `slug` já existe e já é coberto |
 | Timezone / DST / virada de dia | **não se aplica**: a feature não grava, lê nem compara tempo |
 | Unicode / limite de varchar | **CT-16** (acento recusado pelo `alphaDash`), **CT-17** (119/120/121). **Atenção — o 120 não vem do banco**: a coluna é `$table->string('slug')`, ou seja 255 (`database/migrations/0001_01_01_000020_create_tenants_table.php:29`). O 120 existe **só** no formulário, então CT-17 é a única guarda desse teto em todo o kit |
-| Unicidade + soft delete | **não se aplica**: o `Tenant` não usa `SoftDeletes` (conferido em `app/Models/Tenant.php:5-13,68-73`) e a tabela não tem `DeleteAction` por decisão registrada no docblock de `TenantsTable`. A metade que **existe** — unicidade contra o próprio registro na edição — é **CT-13** |
+| Unicidade + soft delete | o **soft delete** não se aplica: o `Tenant` não usa `SoftDeletes` (conferido em `app/Models/Tenant.php:5-13,68-73`) e a tabela não tem `DeleteAction` por decisão registrada no docblock de `TenantsTable`. A **unicidade** tem as duas metades escritas: contra o **próprio** registro na edição (tem de passar) é **CT-13**; contra **outra** organização gravada (tem de recusar) é **CT-16**, linha `slug de OUTRA organização gravada`. É a unicidade que faz o endereço identificar a organização — sem ela, duas linhas da listagem exibem o mesmo `href` |
+| Autorização: credencial certa, e vínculo não é credencial | **CT-08**, linha do administrador **vinculado** — ele vê o link, toma 403, vai ao `UsersRelationManager` da própria tela, se vincula, clica de novo e **continua tomando 403**. Vínculo não dá papel do painel `app`, e o portão 1 decide primeiro |
 | CRUD combinado (editar sem alterar; ID inexistente) | **CT-13** (editar sem alterar nada). ID inexistente: **não se aplica** — é o route binding do resource, pré-existente e não tocado pela feature |
 | Mass assignment | **CT-13** — se a entrada do link virasse campo e trouxesse chave nova no `dehydrate`, algum atributo do registro mudaria num save sem alteração |
 | Upload | **não se aplica**: a feature não acrescenta upload; o campo `logo` é pré-existente |
@@ -798,25 +1095,45 @@ Nenhum mutante previsto fica sem matador por causa das duas: M24 é morto por CT
 | CT-01 | o endereço é o do painel da organização, e não o do registro nem o da raiz | R1 | EP | Feature | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | M02, M03, M04 |
 | CT-02 | o caminho do painel não é escrito à mão no gerador | R1 | varredura de fonte | Feature | idem | **M01** |
 | CT-03 | trocar o slug move o link | R1 | invariante temporal | Livewire (`EditTenant`) | idem | M05 |
-| CT-04 | o link aparece nas três telas, para quem **não** passa nos portões | R2 | EP por superfície | Livewire ×3 | idem | M06, M07, **M14** |
-| CT-05 | a organização inativa também exibe o link, e é o dela | R2 | partição de `ativo` | Livewire ×3 | idem | M08 |
+| CT-04 | o link aparece nas três telas, para quem **não** passa nos portões; é **coluna** na listagem e mora na seção `Identificação` na edição | R2 | EP por superfície + estado de coluna + hierarquia de schema | Livewire ×3 | idem | M06, M07, **M14**, **M29**, **M30** |
+| CT-05 | a organização inativa também exibe o link, e é o dela | R2 | partição de `ativo` | Livewire ×3 | idem | M08, M31 |
 | CT-06 | a tela de cadastro não oferece link, nem com o slug digitado | R3 | EP (não gravada) | Livewire (`CreateTenant`) | idem | M09, M10 |
 | CT-07 | o link da tela abre em nova aba | R4 | EP por superfície | Livewire ×3 | idem | M12, M13 |
-| CT-08 | seguir o link devolve o que os portões decidem | R5 | matriz persona × portão | Feature (`GET`) | idem | M16 |
+| CT-08 | seguir o link devolve o que os portões decidem | R5 | matriz persona × portão | Feature (`GET`) | idem | M16, M32 |
 | CT-09 | a negação do vínculo fica registrada; o acesso legítimo não | R5 | rastreio de efeito | Feature (`GET`) | idem | M17 |
 | CT-10 | a recusa não tranca o administrador fora da administração | R5 | saída do erro | Feature (`GET`) | idem | M18 |
 | CT-11 | renderizar o link não cria vínculo nem papel | R5 | rastreio de efeito | Feature | idem | M15 |
 | CT-12 | a edição continua gravando os campos | R6 | gate de tela de escrita | Livewire (`EditTenant`) | idem | M19 |
 | CT-13 | salvar sem alterar nada não muda nada | R6 | idempotência no agregado | Livewire (`EditTenant`) | idem | M19, M20, M21 |
-| CT-14 | a listagem custa o mesmo com uma e com cinco organizações | R7 | contagem de queries | Livewire (`ListTenants`) | idem | M22 |
+| CT-14 | resolver o endereço das organizações da página não custa consulta nenhuma | R7 | contagem de queries, invariante à cardinalidade | Feature | idem | M22 |
 | CT-15 | cada linha exibe o endereço da sua própria organização | R7 | cardinalidade | Livewire (`ListTenants`) | idem | M23 |
-| CT-16 | a edição recusa slug que não é slug, e não altera o gravado | R8 | EP, inválidas isoladas | Livewire (`EditTenant`) | idem | M24 |
+| CT-16 | a edição recusa slug que não serve de endereço, e não altera o gravado | R8 | EP, inválidas isoladas + partição de unicidade | Livewire (`EditTenant`) | idem | M24, **M34** |
 | CT-17 | o comprimento do slug é inclusivo em 120 | R8 | BVA 3-valores | Livewire (`CreateTenant`) | idem | M25 |
-| CT-18 | o link segue o slug gravado, sem normalizar | R8 | invariante, escrita fora da UI | Livewire (`ViewTenant`) | idem | M26 |
-| CT-19 | com a tenancy desligada a listagem não abre | R9 | EP (config) | Feature (`GET`) | `tests/Kit/LinkDoPainelSemTenancyTest.php` | M27, M28 |
+| CT-18 | o link segue o slug gravado, sem normalizar e sem encodar | R8 | invariante das duas leituras, escrita fora da UI | Livewire (`ViewTenant`) | idem | M26, **M35** |
+| CT-19 | com a tenancy desligada a listagem não abre | R9 | EP (config) | Feature (`GET`) | `tests/Kit/LinkDoPainelSemTenancyTest.php` | M27 *(em parte)*, M28 |
 | CT-20 | o cadastro continua gravando, e o link aparece na edição | R3 | gate de tela de escrita | Livewire (`CreateTenant`) | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | M11 |
+| CT-21 | com a tenancy desligada nenhuma tela do `/admin` estoura nem oferece o link | R9 | EP (config) × inventário de telas | Feature (`GET`) | `tests/Kit/LinkDoPainelSemTenancyTest.php` — **ainda não escrito** | M27, **M36** |
+| CT-22 | seguir o link de organização inativa, sem vínculo, é recusado nas duas leituras | R5 | invariante das duas leituras | Feature (`GET`) | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` — **ainda não escrito** | **M33** |
 
-**28 mutantes previstos, 28 com matador, 0 sem.**
+**36 mutantes previstos, 36 com matador, 0 sem.**
+
+### Cenários especificados sem teste escrito
+
+**Dois cenários e duas linhas de `Examples`** nasceram desta revisão e **ainda não têm caso no
+arquivo de teste**. Os quatro foram **sondados** contra o código real antes de serem escritos aqui,
+com casos temporários que foram descartados — nenhum deles é suposição. O resultado está registrado
+para que ninguém escreva o teste na direção errada:
+
+| Onde | Direção sondada | O que falta |
+|---|---|---|
+| **CT-21** (novo) | as **18** telas de `telasDoKit()['admin']` respondem **abaixo de 500** com a tenancy desligada, e nenhuma exibe `href` do painel de negócio | escrever o caso em `tests/Kit/LinkDoPainelSemTenancyTest.php`, com `fronteiraDeRequest()` entre as visitas |
+| **CT-22** (novo) | a operadora sem vínculo recebe **404** na organização inativa; `canAccessTenant()` devolve falso e `getTenants()` não a contém | escrever o caso em `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` |
+| **CT-16**, linha `globex` | a edição **recusa** o slug de outra organização gravada, e o gravado continua `acme`. **PASSA hoje** — `->unique()` ignora o próprio registro por padrão nesta versão do Filament | acrescentar a linha ao dataset de `[CT-16]`, e a segunda organização ao arranjo |
+| **CT-08**, linha do administrador **vinculado** | **403** — o portão 1 decide primeiro, e vínculo não dá papel do painel `app` | acrescentar a linha ao dataset de `[CT-08]`, com `->tenants()->attach()` no arranjo |
+
+> Enquanto os quatro não existirem, o gate "IDs `[CT-nn]` do teste ⊆ `04` **e vice-versa**" do
+> step 7 fica **aberto** na direção `04 → teste`. Registrado na Verificação Final do
+> `03-progresso.md`, como **D-05**.
 
 ### Cogitado e cortado
 
@@ -828,6 +1145,8 @@ Nenhum mutante previsto fica sem matador por causa das duas: M24 é morto por CT
 | "seguir o link de organização que não existe devolve 404" | é o route binding do painel de negócio, pré-existente e fora do escopo — e já coberto por `tests/Tenancy/AdminDaOrganizacaoTest.php` |
 | "o `href` renderizado é igual em duas visitas seguidas" | mata o mesmo mutante que CT-01 (M02/M03), e mais fraco |
 | "o admin sem `ViewAny:Tenant` não abre a listagem" | já é `tests/Tenancy/PermissoesDeTenantResourceTest.php:28-34`, pré-existente; duplicar não acrescenta |
+| CT-02, 2º `Então`: "o gerador não contém nenhuma concatenação do slug com um caminho" | **cortado na revisão** (corte **C-1**): não é oráculo executável. Afirmar "nenhuma concatenação" exige um regex adivinhado sobre fonte, e `.ai/rules/testes.md` é explícita contra isso ("não invente um regex, ele conta comentário como chamada"). O que a cláusula queria já é o 1º `Então` (o literal), e o defeito que ela temia é CT-01 e CT-03 |
+| CT-05, 2º `Então`: "o endereço da inativa não é o da ativa" | **cortado na revisão** (corte **C-2**): **não pode falhar quando o primeiro passa**. Os slugs das duas fixtures são distintos por construção, logo os endereços que `getUrl()` devolve são distintos — a asserção fala das fixtures, não da implementação. A justificação virou prosa em R2, e a versão falsificável da mesma preocupação ficou no lugar: nas telas de um registro só, o endereço da **ativa** não aparece |
 
 ---
 
@@ -857,6 +1176,45 @@ smoke de navegador do kit (`/admin/organizacoes` e `/admin/organizacoes/create` 
 Disparada por **Impacto 3** nas áreas A e C. Delegada a sub-agente que não derivou os cenários,
 com entrada limitada ao `00-requisito.md` e a este arquivo.
 
-| # | Achado | O que virou |
+**A revisão chegou DEPOIS da implementação, e isso muda como ela se lê.** Na esteira normal, o `04`
+precede o código. Aqui a feature já tinha fechado verde, e o implementador já havia endereçado
+**quatro** dos achados — nos **testes**, não aqui. O resultado é que por um período os testes foram
+mais fortes que a especificação deles, que é a pior configuração possível: quem lê o `04` acredita
+que aquilo é o contrato, e quem apaga uma linha do teste não encontra nada que reclame. Esta seção
+reconcilia os dois, e a coluna **"estado"** diz de qual lado cada achado estava.
+
+| # | Achado | Estado antes desta passagem | O que virou |
+|---|---|---|---|
+| **A-1** | "coluna, não ação" (RQ-04) não tinha falsificador: `Action::make()->url()->openUrlInNewTab()` emite HTML **idêntico** ao da coluna, e todo cenário de `assertSeeHtml` passaria com a feature implementada como ação por linha | **já fechado no teste** — CT-04 usa `assertTableColumnStateSet('url_do_painel', $endereco, $organizacao)` | `Então` novo em CT-04 (o endereço é o **conteúdo da célula**) + mutante **M29** + a tabela `### Coluna não é ação, e lugar não é presença` |
+| **A-2** | RQ-02 é cláusula de **lugar** ("na onde tem a parte que cadastra o nome e a slug"), e nenhum cenário afirmava lugar — um header action passaria em todo cenário de HTML | **já fechado no teste** — CT-04 sobe `getContainer()->getParentComponent()` e afirma `Section` + `getHeading() === 'Identificação'` | `Então` novo em CT-04 (a seção que contém a entrada) + mutante **M30** + linha nova em `## Fronteira com o Plano` |
+| **A-3** | M01 (`url('/app/'.$slug)`) só tem matador se CT-02 tiver **sujeito**, e o `04` não dizia qual arquivo | **já fechado no teste** — o gerador ficou em arquivo próprio, `Tenant::urlDoPainel()` | o sujeito do CT-02 está nomeado e citado: `app/Models/Tenant.php:urlDoPainel:148` (D-01 do `03`) |
+| **A-4** | *(ver A-2 — mesma cláusula, o lado da hierarquia do schema)* | **já fechado no teste** | idem A-2 |
+| **A-5** | 🔴 **bloqueava**: a varredura SFDIPOT inventariou `slug (alphaDash, unique, maxLength(120))` e R8 recolheu **duas** das três. O `unique` não tinha mutante nem cenário — e é ele que faz o endereço **identificar** a organização | **aberto nos dois lados** | 9ª linha dos `Exemplos` de CT-16 (`globex`), `Dado` com a segunda organização, mutante **M34**, `### A unicidade` em R8 e linha nova no `## Checklist de Taxonomia`. **Sondado: PASSA hoje** |
+| **A-6** | `fronteiraDeRequest()` não estava no `## Setup Global`, e sem ela um cenário que atravessa dois painéis morre em **500** — o `SpotlightActionRegistry` é singleton e acumula as ações de todo painel visitado | **já fechado no teste** — presente entre as visitas em CT-09 e CT-10 | subseção `### fronteiraDeRequest() entre visitas que trocam de painel` no `## Setup Global`, com o motivo |
+| **A-7** | M27 fala em "hub, widget, menu" e CT-19 alcança **um** lugar só. Um widget do `/admin` ou item do menu do usuário que renderizasse o link derrubaria a tela inteira em **500** sem tenancy, e CT-19 ficaria verde | **aberto nos dois lados** | **CT-21** (novo) + mutante **M36**. Varre `tests/Pest.php:telasDoKit:224`, que o `InventarioDeTelasTest` já obriga a manter completa |
+| **A-8** | a lacuna 1 (`inativa × seguir`) foi declarada **inteira**, mas a célula tem **duas** metades e só uma é contestada: sem vínculo, `canAccessTenant()` nega independente de `ativo` e `getTenants()` também — as duas leituras **concordam** | **aberto nos dois lados** | **CT-22** (novo) + mutante **M33**; a lacuna 1 reduzida a **meia** célula. É a técnica do invariante das duas leituras, que o `04` já aplicava na lacuna 2 |
+| **A-9** | CT-10 é cenário positivo **sem situação de partida** (nenhuma organização gravada) e o oráculo "a listagem **volta** a abrir" não afirmava a abertura **antes** — sem as duas medições, "voltou" não se distingue de "sempre abriu" | **já correto no teste**, errado no `04` | `Dado` com a organização + `E` com a abertura prévia; prosa explicando por que "volta" exige as duas pontas |
+| **A-10** | CT-08 cobria **três** das quatro células do 2×2 persona × portão. Faltava o administrador **vinculado** que ainda toma 403 — a célula que documenta "**vínculo não basta**" | **aberto nos dois lados** | 3ª linha dos `Exemplos` de CT-08 + mutante **M32** + linha nova no `## Checklist de Taxonomia`. **Sondado: 403, como esperado** |
+| **A-11** | o `## Assertion de HTML` prescrevia **uma** string adjacente (`href="…" target="_blank"`) para todos. Se CT-04 a usasse, CT-04 **seria** CT-07: o mutante "mesma aba" derrubaria os dois e o diagnóstico apontaria a regra errada | **já separado no teste**, junto no `04` | tabela de dois usos no `## Assertion de HTML`: CT-04/CT-05/CT-15 afirmam `href="$esperado"`; **só** CT-07 afirma a adjacência |
+| **A-12** | o cabeçalho da matriz estado × operação declarava **10** exercitadas e **4** `n/a`. Conferido célula a célula: **11** e **3**. A soma dá 15 nos dois casos, e era isso que escondia o erro — e a legenda **afirma** ter sido conferida célula a célula | **aberto** (o `04` não tem contraparte no teste) | os dois números corrigidos, a soma explicitada, e o motivo do erro registrado. **Legenda é asserção** |
+| **A-13** | CT-17 dizia `Então o resultado é "recusado"` sem afirmar o **não-efeito**. CT-16 faz a versão correta ("a organização gravada continua com o slug acme"); CT-17 roda no `CreateTenant`, onde o não-efeito é "nenhuma organização com esse slug existe" | **já correto no teste** (`expect(Tenant::where('slug', $slug)->exists())->toBe($gravado)`), faltava no `04` | um `E` a mais no CT-17 |
+
+### Os dois `Então` cortados
+
+Cortar é resultado de revisão tanto quanto acrescentar, e os dois estão registrados em
+`### Cogitado e cortado` com o motivo:
+
+- **C-1** — CT-02, 2º `Então` ("não contém nenhuma concatenação do slug com um caminho"): não é
+  oráculo executável, e exigiria regex adivinhado sobre fonte, que `.ai/rules/testes.md` proíbe.
+  ⚠️ **O teste ainda o carrega** (`tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:133`): é linha a
+  **remover do teste**, achado roteado a "implementação/teste", não à especificação.
+- **C-2** — CT-05, 2º `Então` ("o endereço da inativa não é o da ativa"): **não pode falhar quando
+  o primeiro passa**. Ficou no lugar a versão falsificável, que o teste já fazia.
+
+### As divergências do implementador que este arquivo absorveu
+
+| Desvio do `03` | O que o `04` dizia | O que o `04` diz agora |
 |---|---|---|
-| — | *a preencher na execução da revisão* | — |
+| **D-02** | CT-14: "a listagem custa o mesmo com uma e com cinco organizações" — propriedade **falsa**: a listagem já crescia ~5 consultas por linha **antes** da feature (33 → 53, medido nas duas pontas do diff) | mesmo oráculo (invariância à cardinalidade), **sujeito** trocado para o que a feature possui: a resolução do endereço, **zero** consultas para uma e para cinco. O N+1 de terceiro virou **lacuna 3** |
+| **D-03** | a linha `acento` de CT-16 estava do lado **errado**: `alpha_dash` é unicode-aware (`/\A[\pL\pM\pN_-]+\z/u`), e `organização` **grava** | o acento migrou para CT-18, lado **válido**; entraram `acme.painel` e `acme%2fpainel`, que o `\pL` recusa de fato e que cobrem o risco de segmento de URL |
+| **novo** | ninguém havia afirmado que `Panel::getUrl()` **não** percent-encoda o segmento (o `e()` do helper escapa HTML, não URL) | vira **asserção** em CT-18 (linha `organização`), não lacuna: é falsificável em uma linha, tem mutante (**M35**), e é a premissa que CT-01/CT-03/CT-05/CT-15 já consomem ao comparar endereço com string |
