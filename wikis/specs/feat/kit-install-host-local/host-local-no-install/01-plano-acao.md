@@ -52,21 +52,21 @@ Dois pontos que o plano depende:
 - `banner()` (`:416`) monta as URLs de acesso a partir de **`config('app.url')` em memória**
 - `temTerminal()` (`:144-148`) é o gate de toda pergunta opcional; no Windows o Composer **nunca**
   repassa TTY ao script
-- `$this->avisos[]` (`:53-54`): nenhum passo aborta a instalação; o que falha vira aviso
+- `$this->avisos[]` (`KitInstall.php:protected array $avisos:55`): nenhum passo aborta a instalação; o que falha vira aviso
 
 ### `app/Support/CustomizadorDaInstalacao.php`
-- A 1ª pergunta é `text('Nome do projeto', ...)` (`:136-141`) → `$respostas['nome']`
-- Vira `APP_NAME` (`:281`), `COMPOSE_PROJECT_NAME = Str::slug($nome) ?: 'starter-kit'`
-  (`nomeDeProjetoDocker():544-547`) e `config(['app.name' => …])` (`alinharConfigEmMemoria():562`)
-- O diretório-base é **injetável** (`:32-37`) de propósito, para a suíte não reescrever o `.env`
+- A 1ª pergunta é `text('Nome do projeto', ...)` (`CustomizadorDaInstalacao.php:Nome do projeto:137`) → `$respostas['nome']`
+- Vira `APP_NAME` (`CustomizadorDaInstalacao.php:'APP_NAME', $nome:281`), `COMPOSE_PROJECT_NAME = Str::slug($nome) ?: 'starter-kit'`
+  (`CustomizadorDaInstalacao.php:function nomeDeProjetoDocker:544`) e `config(['app.name' => …])` (`CustomizadorDaInstalacao.php:function alinharConfigEmMemoria:559`)
+- O diretório-base é **injetável** (`CustomizadorDaInstalacao.php:O diretório-base é injetável:32`) de propósito, para a suíte não reescrever o `.env`
   da máquina. **Toda escrita nova segue esse padrão.**
 
 ### `app/Support/SubstituicaoEmArquivo.php`
-`definirNoEnv($env, 'CHAVE', $valor)` (`:71-81`) trata os três estados (preenchida / comentada /
-ausente) e escapa `\ " $ \r \n` (`escaparValorDeEnv():91-98`). **Nada de `file_put_contents` cru.**
+`definirNoEnv($env, 'CHAVE', $valor)` (`SubstituicaoEmArquivo.php:function definirNoEnv:71`) trata os três estados (preenchida / comentada /
+ausente) e escapa `\ " $ \r \n` (`SubstituicaoEmArquivo.php:function escaparValorDeEnv:91`). **Nada de `file_put_contents` cru.**
 
 ### `docs/pt/comecar/dominio-local.md`
-Fonte canônica do procedimento. O comando de auto-elevação já está escrito lá (`:100-105`).
+Fonte canônica do procedimento. O comando de auto-elevação já está escrito lá (`docs/pt/comecar/dominio-local.md:Start-Process pwsh -Verb RunAs:109`).
 
 ## Autorização
 
@@ -103,14 +103,14 @@ só o navegador prova.
 ## Impacto em Features Existentes
 
 - **Login social**: trocar `APP_URL` invalida os callbacks `APP_URL + /auth/{provider}/callback`
-  já registrados no console do provedor (`dominio-local.md:118-121`). **A pergunta precisa avisar.**
-- **Vite / `npm run dev`**: serve de `localhost:5173` e restringe CORS (`:122-124`)
+  já registrados no console do provedor (`docs/pt/comecar/dominio-local.md:Login social:130`). **A pergunta precisa avisar.**
+- **Vite / `npm run dev`**: serve de `localhost:5173` e restringe CORS (`docs/pt/comecar/dominio-local.md:npm run dev:132`)
 - **`banner()`**: lê `config('app.url')` — ver ADR-02
 - **`tests/Kit/CustomizadorDaInstalacaoTest.php`**: mesma família de escrita em `.env`
 
 ## Rollback
 
-Sem migration. Desfazer é: remover a linha do `hosts` (documentado em `dominio-local.md:126-129`) e
+Sem migration. Desfazer é: remover a linha do `hosts` (documentado em `docs/pt/comecar/dominio-local.md:Como desfazer:136`) e
 voltar `APP_URL`. A etapa é opt-in — não fazer nada já é o estado anterior.
 
 ## Dependências
@@ -123,19 +123,21 @@ Nenhuma nova. Laravel Prompts já é usado.
 |---|---|
 | UAC negado ou fechado pelo usuário | Conferir com `Select-String` depois; se não entrou, vira aviso com o comando para colar |
 | `Start-Process -Verb RunAs` não devolve código confiável | **Não confiar nele**: o oráculo é reler o `hosts` |
-| Antivírus / Acesso Controlado a Pastas bloqueia | Vira aviso, não aborta (`dominio-local.md:106-108`) |
-| Linha já existe no `hosts` | Conferir antes de anexar — idempotência (`:72-73`) |
-| Herd/Valet já resolvem `*.test` | Sondar e avisar que a linha pode ser desnecessária (`:42-44`) |
+| Antivírus / Acesso Controlado a Pastas bloqueia | Vira aviso, não aborta (`docs/pt/comecar/dominio-local.md:Acesso Controlado a Pastas:117`) |
+| Linha já existe no `hosts` | Conferir antes de anexar — idempotência (`docs/pt/comecar/dominio-local.md:Select-String meu-projeto:79`) |
+| Herd/Valet já resolvem `*.test` | Sondar e avisar que a linha pode ser desnecessária (`docs/pt/comecar/dominio-local.md:ping meu-projeto.test:48`) |
 | Teste reescrever o `.env` da máquina | Diretório-base injetável, como o `CustomizadorDaInstalacao` |
-| Config em cache | Imprimir "rode `php artisan config:clear`", como `KitInstall.php:184` já faz |
+| Config em cache | Imprimir "rode `php artisan config:clear`", como `KitInstall.php:config:clear:187` já faz |
 
 ## Channel de Log da Feature
 
-`config/logging.php` tem `ai` (114), `tenancy` (123), `autenticacao` (132), `configuracoes` (153).
+`config/logging.php` tem quatro canais nomeados (`config/logging.php:'ai':114`,
+`config/logging.php:'tenancy':123`, `config/logging.php:'autenticacao':132`,
+`config/logging.php:'configuracoes':153`).
 **Não há canal `instalacao`**, e o `KitInstall` usa o `Log::` default.
 
 **Decisão**: usar o canal **`configuracoes`**, que já é o canal de "reescrita de `.env` que vale no
-próximo request" — é exatamente o que esta etapa faz (`CustomizadorDaInstalacao.php:363-367`).
+próximo request" — é exatamente o que esta etapa faz (`CustomizadorDaInstalacao.php:Log::channel('configuracoes'):363`).
 Não criar canal novo: seria uma quinta dona para a mesma pergunta.
 
 ## Estrutura de Implementação
@@ -146,7 +148,7 @@ Não criar canal novo: seria uma quinta dona para a mesma pergunta.
 
 - **Path**: `app/Support/HostLocal.php` (novo)
 - Construtor com **diretório-base injetável** (obrigatório, sem default), espelhando
-  `CustomizadorDaInstalacao.php:32-37`. Aqui ele não pode cair em `base_path()` nem por default:
+  `CustomizadorDaInstalacao.php:O diretório-base é injetável:32`. Aqui ele não pode cair em `base_path()` nem por default:
   CT-24 é lista branca, e todo caminho de arquivo tem de partir da propriedade recebida
 - **Mais quatro seams, cada um exigido por um caso já escrito no `04`** (ver `03-progresso.md` → D1):
 
@@ -213,11 +215,11 @@ text('Qual domínio?', default: $hostLocal->dominioSugerido())
 ```
 
 - `default: false` na 1ª: Enter reproduz a instalação de sempre
-  (`CustomizadorDaInstalacao.php:21-24`)
+  (`CustomizadorDaInstalacao.php:o instalador do Laravel:21`)
 - Antes de executar, **avisar sobre login social e Vite** (`note(...)`), porque trocar `APP_URL`
   quebra callbacks já registrados
 - Validar o domínio: sem esquema, sem barra, sem espaço; recusar `.local` (RFC 6762 — a doc já
-  proíbe em `:110-114`). A validação vive em `erroDoDominio()` e roda **nos dois** lugares: no
+  proíbe em `docs/pt/comecar/dominio-local.md:Sufixo .test, nunca .local:120`). A validação vive em `erroDoDominio()` e roda **nos dois** lugares: no
   `validate:` do prompt (que produz a mensagem e a repergunta) e na entrada de `processar()`, para
   que "nada do que foi digitado vira comando novo no executor elevado" valha por construção, e não
   por causa da interface — ver `03-progresso.md` → D5
@@ -229,7 +231,7 @@ text('Qual domínio?', default: $hostLocal->dominioSugerido())
 - `docs/pt/comecar/instalacao-avancada.md` e `docs/en/…`: a etapa nova no fluxo do `kit:install`
 - `docs/pt/comecar/dominio-local.md` e `docs/en/…`: nota de que o `kit:install` **oferece** fazer
   isso, com link cruzado
-- `README.md:312-314` e `README.en.md:312-314`: uma linha
+- `README.md:Endereço local por nome:312` e `README.en.md:A local hostname:312`: uma linha
 - `CHANGELOG.md`: entrada em `[Unreleased] → Adicionado`
 - **Links internos em markdown de `docs/` são RELATIVOS** — regra recém-estabelecida nesta mesma
   sessão (`[CT-45]` de `tests/Kit/SiteDeDocumentacaoTest.php`); caminho absoluto dá 404 sob o
@@ -240,7 +242,7 @@ text('Qual domínio?', default: $hostLocal->dominioSugerido())
 > Skills: `pest-testing`, `feature-test-design`
 
 - **Path**: `tests/Kit/HostLocalTest.php`
-- Padrão obrigatório de `tests/Kit/CustomizadorDaInstalacaoTest.php:24-34`: `beforeEach` cria
+- Padrão obrigatório de `tests/Kit/CustomizadorDaInstalacaoTest.php:kit-custom-:25`: `beforeEach` cria
   diretório temporário e copia `.env.example` para lá
 - Executor **mockado** — nenhum teste eleva de verdade
 - Cenários derivados pela `feature-test-design` a partir do `00-requisito.md`
@@ -248,7 +250,7 @@ text('Qual domínio?', default: $hostLocal->dominioSugerido())
 ## Filosofia de Implementação
 
 > **Ponytail ativo em modo `full`.** Reaproveitar `SubstituicaoEmArquivo` e o padrão de
-> `match (PHP_OS_FAMILY)` que já existe em `KitInstall.php:565-570`. Não criar `.ps1` novo na raiz
+> `match (PHP_OS_FAMILY)` que já existe em `KitInstall.php:match (PHP_OS_FAMILY):591`. Não criar `.ps1` novo na raiz
 > (sujaria o repositório de quem instala). Não criar canal de log novo.
 
 ## Testes

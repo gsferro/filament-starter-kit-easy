@@ -189,7 +189,7 @@ e o processo elevado, que escreve no arquivo de sistema. É essa fronteira — n
 contas — que a taxonomia trata no lugar do IDOR.
 
 ### Fixtures
-Padrão **obrigatório** de `tests/Kit/CustomizadorDaInstalacaoTest.php:24-34`:
+Padrão **obrigatório** de `tests/Kit/CustomizadorDaInstalacaoTest.php:kit-custom-:25`:
 
 ```php
 beforeEach(function (): void {
@@ -251,7 +251,7 @@ afterEach(fn () => File::deleteDirectory($this->base));
 arquivo vive em `tests/Pest.php`"), enforçada por `tests/Kit/HelpersDeTesteTest.php`, os dois
 **devem ser movidos para `tests/Pest.php`** na mesma entrega. Não clonar com outro nome: a rule
 proíbe explicitamente, e o clone é pior que a colisão. CT-34 usa `documentacaoDoKit($idioma)`, que
-**já** vive em `tests/Pest.php:933`.
+**já** vive em `tests/Pest.php:documentacaoDoKit:959`.
 
 ### Estratégia de DB
 `tests/Pest.php` já liga `TestCase` + `RefreshDatabase` + `group('kit')` a `tests/Kit`. Nenhum
@@ -260,7 +260,7 @@ cenário desta feature toca banco; o `RefreshDatabase` vem de graça.
 ### Camada
 **Todos os cenários são `Unit`/`Feature` em `tests/Kit/HostLocalTest.php`**, exceto CT-01, CT-24 e
 CT-34, que são asserções sobre a **fonte** e sobre a **documentação** — precedente do projeto em
-`tests/Kit/CustomizadorDaInstalacaoTest.php:117-131` ("olha a fonte porque o defeito é de ORIGEM
+`tests/Kit/CustomizadorDaInstalacaoTest.php:ORIGEM DO SINAL:106` ("olha a fonte porque o defeito é de ORIGEM
 DO SINAL"). Ver `## Sem CT-B`.
 
 ---
@@ -309,12 +309,12 @@ afirma sobre o **texto** exibido. CT-02 ficou só com o ramo negativo, de propó
 único aplicaria as asserções de não-efeito também à linha positiva, e ali elas passariam com a
 etapa perguntando e ignorando a resposta.
 
-**Nota de arnês (obrigatória para CT-02)**: `temTerminal()` (`KitInstall.php:144-148`) devolve
+**Nota de arnês (obrigatória para CT-02)**: `temTerminal()` (`KitInstall.php:temTerminal():147`) devolve
 `true` sempre que `runningUnitTests()` é verdadeiro. Um CT-02 escrito por
 `$this->artisan('kit:install')` seria **falso ✅**: o ramo "sem terminal" nunca é alcançado dentro da
 suíte. O cenário precisa exercitar a **decisão isolada** — o precedente é
 `CustomizadorDaInstalacao::devePerguntar()`, testado por tabela em
-`tests/Kit/CustomizadorDaInstalacaoTest.php:97-118`. **Se a implementação não expuser uma decisão
+`tests/Kit/CustomizadorDaInstalacaoTest.php:devePerguntar:89`. **Se a implementação não expuser uma decisão
 isolada equivalente, CT-02 não tem matador garantido** — e isso é achado de implementação a ser
 resolvido no `01`, não lacuna a declarar aqui.
 
@@ -877,7 +877,7 @@ os casos "corrige" M62 e introduz M63. As duas direções ficam escritas no mesm
 o mata **executando-o**, e a execução reescreve o `.env` real de quem roda a suíte antes de a
 asserção ficar vermelha. O prejuízo já aconteceu quando o teste reprova. CT-24 é a guarda que
 reprova **sem** disparar a escrita, e tem precedente direto no projeto:
-`tests/Kit/CustomizadorDaInstalacaoTest.php:117-131`, escrito pelo mesmo motivo — defeito de
+`tests/Kit/CustomizadorDaInstalacaoTest.php:ORIGEM DO SINAL:106`, escrito pelo mesmo motivo — defeito de
 **origem do sinal** não se prova só pelo efeito.
 
 **A guarda é por lista branca, não por lista negra.** A primeira versão citava só `base_path` e
@@ -1090,7 +1090,7 @@ uma terceira pergunta que ninguém pediu.
 suíte `tests/Kit/SiteDeDocumentacaoTest.php`. A revisão adversarial apontou o óbvio — aquela suíte é
 **anterior** à feature e não pode afirmar sobre uma etapa que ainda não existe. O mutante "a etapa
 foi implementada e a documentação não a menciona" ficava sem matador, contra uma cláusula explícita
-do requisito. O helper `documentacaoDoKit($idioma)` (`tests/Pest.php:933`) já existe.
+do requisito. O helper `documentacaoDoKit($idioma)` (`tests/Pest.php:documentacaoDoKit:959`) já existe.
 
 #### Mutantes previstos
 
@@ -1196,7 +1196,7 @@ do requisito. O helper `documentacaoDoKit($idioma)` (`tests/Pest.php:933`) já e
 
 | Cenário cogitado | Por que foi cortado |
 |---|---|
-| "o `ipconfig /flushdns` é executado depois do cadastro" | não mata mutante nenhum: o próprio `dominio-local.md:96-98` diz que ele responde sucesso sem elevação, logo não é observável de nada |
+| "o `ipconfig /flushdns` é executado depois do cadastro" | não mata mutante nenhum: a própria página (`docs/pt/comecar/dominio-local.md:ipconfig /flushdns:103`) diz que ele responde sucesso sem elevação, logo não é observável de nada |
 | "o log em `configuracoes` registra o cadastro" | o requisito não menciona log; o canal é escolha de implementação (ver `## Fronteira com o Plano`) |
 | "a etapa não roda sob `--custom`" | ADR-05 registra `--custom` como **evolução futura**, não como comportamento desta entrega — cenário sobre algo que não foi decidido |
 | "a pergunta avisa sobre login social antes de executar" | depende de P4b, que não bloqueia regra nenhuma; escrever o cenário congelaria um texto que o requisito não pede |
@@ -1226,7 +1226,7 @@ do requisito. O helper `documentacaoDoKit($idioma)` (`tests/Pest.php:933`) já e
 
 O único caminho que **nenhuma** suíte cobre, por desenho, é a janela de UAC real. Ele fica como
 **verificação manual** no `01-plano-acao.md` → `## Verificação Final`, com o mesmo raciocínio que o
-docblock de `tests/Kit/CustomizadorDaInstalacaoTest.php:12-23` já registra para o TTY do Composer:
+docblock de `tests/Kit/CustomizadorDaInstalacaoTest.php:TTY do Composer:20` já registra para o TTY do Composer:
 o oráculo automatizável aqui é a **decisão**, não o efeito externo.
 
 ---
