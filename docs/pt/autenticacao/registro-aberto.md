@@ -99,13 +99,13 @@ seja: numa instalação multi-organização, divulgar `/app/register` sem o `?or
 
 **O link "Cadastre-se" da tela de login segue a mesma regra.** Ele só aparece quando existe uma
 organização de destino resolvível, e a carrega: abra a tela de login com o slug
-(`/app/login?org=acme`, ou `/login?org=acme` com a [página única](/pt/autenticacao/login-unificado/)) e o link vai
+(`/app/login?org=acme`, ou `/login?org=acme` com a [página única](../login-unificado/)) e o link vai
 para o cadastro daquela organização. Sem `?org=`, ou com a organização recusando cadastro, o link
 **não aparece** — antes ele aparecia e levava à mesma recusa, que é um beco sem saída medido numa
 instalação real. Se o botão sumiu numa instalação com multi-organização, é isto: falta ligar
 *"Aceita cadastro público"* na organização, ou falta o `?org=` no endereço divulgado.
 
-Com [a página única de login](/pt/autenticacao/login-unificado/) ligada, o endereço do cadastro é `/cadastro`
+Com [a página única de login](../login-unificado/) ligada, o endereço do cadastro é `/cadastro`
 (`/cadastro?org=acme`), e `/app/register` redireciona para lá preservando a query.
 
 Isto não se confunde com *criar* organização: registrar-se **numa** organização não é criá-la, e

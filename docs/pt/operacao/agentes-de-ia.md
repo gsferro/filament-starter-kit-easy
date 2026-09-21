@@ -92,7 +92,7 @@ arquivo que a etapa seguinte confere.
 **O que isso muda na prática:**
 
 - **O agente lê antes de escrever.** `wikis/` e `.ai/rules` respondem o que já existe, e o
-  [roteiro de features](/pt/operacao/roteiro-de-features/) abaixo lista as 68 features prontas. Feature
+  [roteiro de features](../roteiro-de-features/) abaixo lista as 68 features prontas. Feature
   reimplementada do zero porque o agente não sabia que existia é o custo mais caro e mais invisível.
 - **Contexto vira arquivo, não histórico de chat.** Trocar de agente, de máquina ou de pessoa não
   perde o porquê da decisão — ele está no ADR, versionado no mesmo commit do código.

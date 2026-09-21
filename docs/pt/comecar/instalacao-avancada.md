@@ -131,7 +131,7 @@ php artisan kit:tenancy           # liga o modo multi-tenant (opt-in)
 ```
 Os aprofundamentos de qualidade que ficavam sob esta seção — FilaCheck, Rector, a suíte de testes,
 as imagens do README e a varredura SFDIPOT — estão em
-[Qualidade de código](/pt/referencia/qualidade-de-codigo/).
+[Qualidade de código](../../referencia/qualidade-de-codigo/).
 
 ## Personalize seu projeto
 
@@ -145,7 +145,7 @@ as imagens do README e a varredura SFDIPOT — estão em
 | 2 | **Banco de dados** | bloco `DB_*` no `.env` | ✅ |
 | 3 | **Credenciais do seeder** | `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` no `.env` | ✅ |
 | 4 | **Cor primária** | `KIT_COR_PRIMARIA` no `.env` (nome de uma cor da paleta do Filament), ou `KIT_COR_PRIMARIA_HEX` com um hexadecimal livre — o hex vence o nome quando os dois estão preenchidos | ✅ |
-| 5 | **[Multi-tenancy](/pt/recursos/multi-tenancy/)** | `php artisan kit:tenancy`, e o termo exibido em `config/kit.php` → `tenancy.label` | ✅ |
+| 5 | **[Multi-tenancy](../../recursos/multi-tenancy/)** | `php artisan kit:tenancy`, e o termo exibido em `config/kit.php` → `tenancy.label` | ✅ |
 | 6 | **Arte do login** | nenhuma: ela **mostra o nome da aplicação** (`APP_NAME`) sozinha. Para trocar por uma imagem sua, envie em `/admin/configuracoes-da-aplicacao` | ✅ (pelo nome) |
 | 7 | **Acesso aos painéis** | o papel de cada usuário (`/admin` → Papéis, campo *Painel*); a regra que o lê é `App\Models\User::canAccessPanel()` | — |
 | 8 | **Matriz de permissões** | `database/seeders/PapeisSeeder.php` | — |
@@ -153,14 +153,14 @@ as imagens do README e a varredura SFDIPOT — estão em
 | 10 | **Comandos da UI** | `config/command-center.php` | — |
 | 11 | **Backups** | destino e agenda em `config/backup.php` | — |
 | 12 | **Agente de IA** | `/admin` → Agentes de IA (ou `database/seeders/AssistenteSeeder.php`) | — |
-| 13 | **[Idiomas do painel](/pt/referencia/busca-e-idioma/#o-seletor-de-idioma)** | `config/kit.php` → `idiomas` (lista de locales; com um só, o seletor não aparece) | — |
-| 14 | **[Retenção das trilhas](/pt/recursos/trilhas-de-infraestrutura/#retenção-o-número-é-a-intenção-o-agendador-é-a-execução)** | `KIT_RETENCAO_EXCECOES_DIAS` / `KIT_RETENCAO_EMAILS_DIAS` no `.env` | — |
-| 15 | **[Disco da mídia](/pt/recursos/anexos-e-midia/)** | `MEDIA_DISK` no `.env` (`local` por padrão — privado, servido por URL assinada) | `php artisan kit:midia-privada` migra a mídia já gravada em disco público |
-| 16 | **[Import e export CSV](/pt/recursos/import-export-csv/)** | a Action em cada `app/Filament/**/Pages/List*.php` (ligada ou comentada); a permissão em `config/filament-shield.php` → `policies.methods`; a retenção do histórico em `KIT_RETENCAO_IMPORTACOES_DIAS` / `KIT_RETENCAO_EXPORTACOES_DIAS` no `.env` | ressemeie `ShieldPermissionsSeeder` + `PapeisSeeder` depois de mexer no config |
+| 13 | **[Idiomas do painel](../../referencia/busca-e-idioma/#o-seletor-de-idioma)** | `config/kit.php` → `idiomas` (lista de locales; com um só, o seletor não aparece) | — |
+| 14 | **[Retenção das trilhas](../../recursos/trilhas-de-infraestrutura/#retenção-o-número-é-a-intenção-o-agendador-é-a-execução)** | `KIT_RETENCAO_EXCECOES_DIAS` / `KIT_RETENCAO_EMAILS_DIAS` no `.env` | — |
+| 15 | **[Disco da mídia](../../recursos/anexos-e-midia/)** | `MEDIA_DISK` no `.env` (`local` por padrão — privado, servido por URL assinada) | `php artisan kit:midia-privada` migra a mídia já gravada em disco público |
+| 16 | **[Import e export CSV](../../recursos/import-export-csv/)** | a Action em cada `app/Filament/**/Pages/List*.php` (ligada ou comentada); a permissão em `config/filament-shield.php` → `policies.methods`; a retenção do histórico em `KIT_RETENCAO_IMPORTACOES_DIAS` / `KIT_RETENCAO_EXPORTACOES_DIAS` no `.env` | ressemeie `ShieldPermissionsSeeder` + `PapeisSeeder` depois de mexer no config |
 
 Os onze últimos não entram nas perguntas porque são **código ou dado de tela**, não um valor que caiba num prompt de terminal. O instalador os lista no resumo final, com o arquivo de cada um.
 
 > ⚠️ O item 5 é o único que **não** é "edite um arquivo" depois de instalado: o `kit:tenancy` roda `migrate:fresh --seed` e **apaga os dados**. Ele exige árvore git limpa e confirmação explícita. **Respondido na instalação, ele não apaga nada** — o banco ainda nem existe, e é essa a hora certa de decidir.
 
-> A cor primária vale para os três painéis. Com o [modo multi-tenant](/pt/recursos/multi-tenancy/) ligado, a cor de cada organização **vence** esta dentro de `/app/{slug}` — o `/admin` e o `/infra` continuam com a do projeto. Para uma paleta completa, e não só a `primary`, o caminho continua sendo `->colors([...])` em cada `app/Providers/Filament/*PanelProvider.php`.
+> A cor primária vale para os três painéis. Com o [modo multi-tenant](../../recursos/multi-tenancy/) ligado, a cor de cada organização **vence** esta dentro de `/app/{slug}` — o `/admin` e o `/infra` continuam com a do projeto. Para uma paleta completa, e não só a `primary`, o caminho continua sendo `->colors([...])` em cada `app/Providers/Filament/*PanelProvider.php`.
 

@@ -86,7 +86,7 @@ migrate.
 is a destination organization, and it carries the `?org=`. Publish `/login?org={slug}` (or
 `/cadastro?org={slug}`) and turn on "Accepts public sign-up" on the organization's screen — without
 that the sign-up refuses, and the link disappears instead of leading to the refusal. See
-[Open registration](/en/autenticacao/registro-aberto/).
+[Open registration](../registro-aberto/).
 
 ## What stays per panel
 
@@ -101,7 +101,7 @@ that the sign-up refuses, and the link disappears instead of leading to the refu
   (the provider must be enabled, on any panel), and the destination follows the same rule as the
   table above **restricted to the panels the provider is allowed in** — GitHub enabled only for
   `/infra` never drops anyone into `/admin`; with no allowed accessible panel, the session is
-  ended. With the switch off, everything as in [Social login](/en/autenticacao/login-social/).
+  ended. With the switch off, everything as in [Social login](../login-social/).
 
 ## The access log records the panel the person entered
 

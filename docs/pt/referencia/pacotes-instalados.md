@@ -30,7 +30,7 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | [syriable/filament-activitylog](https://packagist.org/packages/syriable/filament-activitylog) | log de atividades (spatie/laravel-activitylog) no Filament |
 | [bezhansalleh/filament-panel-switch](https://packagist.org/packages/bezhansalleh/filament-panel-switch) | troca de painel pelo menu do usuário |
 | [laravel/socialite](https://packagist.org/packages/laravel/socialite) | login social (Google, GitHub, LinkedIn, X), opt-in por provedor |
-| [ddr/filament-captcha](https://packagist.org/packages/ddr/filament-captcha) | desafio anti-robô nas telas públicas (reCAPTCHA v2/v3, Turnstile, hCaptcha), opt-in; o kit embrulha com falha fechada e log ([detalhes](/pt/autenticacao/protecao-anti-robo/)) |
+| [ddr/filament-captcha](https://packagist.org/packages/ddr/filament-captcha) | desafio anti-robô nas telas públicas (reCAPTCHA v2/v3, Turnstile, hCaptcha), opt-in; o kit embrulha com falha fechada e log ([detalhes](../../autenticacao/protecao-anti-robo/)) |
 
 ## Observabilidade e manutenção
 
@@ -77,7 +77,7 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | [anselmokossa/filament-sentinel](https://packagist.org/packages/anselmokossa/filament-sentinel) | páginas de erro (403, 404, 419, 500, 503) com a cara do painel |
 | [flowframe/laravel-trend](https://packagist.org/packages/flowframe/laravel-trend) | agregação por período para os gráficos dos widgets |
 | [bezhansalleh/filament-language-switch](https://packagist.org/packages/bezhansalleh/filament-language-switch) | seletor de idioma nos três painéis e nas telas de login |
-| [harvirsidhu/filament-cards](https://packagist.org/packages/harvirsidhu/filament-cards) | a grade de cartões dos [hubs de navegação](/pt/recursos/hub-de-navegacao/) |
+| [harvirsidhu/filament-cards](https://packagist.org/packages/harvirsidhu/filament-cards) | a grade de cartões dos [hubs de navegação](../../recursos/hub-de-navegacao/) |
 | [leandrocfe/filament-apex-charts](https://packagist.org/packages/leandrocfe/filament-apex-charts) | gráficos ApexCharts nos widgets dos dashboards |
 | [solution-forest/filament-simplelightbox](https://packagist.org/packages/solution-forest/filament-simplelightbox) | lightbox para ampliar imagem em tabela e infolist |
 | [mortalkiller/filament-page-header](https://packagist.org/packages/mortalkiller/filament-page-header) | o cabeçalho rico das telas de registro — avatar, situação e metadados. Receita em [`wikis/receitas.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/receitas.md#cabeçalho-rico-num-resource-com-relations) |
@@ -88,7 +88,7 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 |---|---|
 | [filament/spatie-laravel-settings-plugin](https://packagist.org/packages/filament/spatie-laravel-settings-plugin) | páginas de configuração no painel |
 | [spatie/laravel-settings](https://packagist.org/packages/spatie/laravel-settings) | as configurações persistidas por trás delas |
-| [spatie/laravel-data](https://packagist.org/packages/spatie/laravel-data) | o padrão de DTO do kit — ver [DTO com Laravel Data](/pt/recursos/dto-com-laravel-data/) |
+| [spatie/laravel-data](https://packagist.org/packages/spatie/laravel-data) | o padrão de DTO do kit — ver [DTO com Laravel Data](../../recursos/dto-com-laravel-data/) |
 | [filament/spatie-laravel-media-library-plugin](https://packagist.org/packages/filament/spatie-laravel-media-library-plugin) | a camada de mídia (upload, coleções, conversões) nos componentes de form, tabela e infolist |
 | [mike-bronner/laravel-model-caching](https://packagist.org/packages/mike-bronner/laravel-model-caching) | cache automático de queries do Eloquent |
 | [predis/predis](https://packagist.org/packages/predis/predis) | cliente Redis em PHP puro (sem extensão) |

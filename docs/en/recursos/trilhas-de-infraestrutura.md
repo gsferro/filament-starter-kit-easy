@@ -76,7 +76,7 @@ nothing. Automatic scanning of `app/Models` was avoided on purpose: it would rea
 Command Center's allow-list.
 
 `User` joined the list together with logical user deletion, and this is where a deleted account is
-restored from (see [user states](/en/autenticacao/estados-de-usuario/)). The old refusal — *"a user
+restored from (see [user states](../../autenticacao/estados-de-usuario/)). The old refusal — *"a user
 comes back with a role in an organization that may no longer exist"* — assumed a **physical**
 delete with cascade; with `SoftDeletes` the `tenant_user` and `model_has_roles` pivots stay in
 place, restoring gives back exactly what was there, and `Tenant` is never deleted (it has `ativo`).
