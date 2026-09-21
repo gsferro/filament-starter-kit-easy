@@ -201,8 +201,18 @@ afterEach(fn () => File::deleteDirectory($this->base));
 
   Só o intérprete torna CT-27 e CT-28 falsificáveis. Um executor único que sempre anexa deixa
   M46 (`Set-Content`) e M47 (formato não reconhecido pela própria sonda) vivos com o conjunto verde.
-- `Laravel\Prompts\Prompt::fake([...])` para os cenários que afirmam sobre o texto da pergunta e
-  sobre o default (`Prompt::assertOutputContains()` / `assertStrippedOutputContains()` existem em
+- ~~`Laravel\Prompts\Prompt::fake([...])` para os cenários que afirmam sobre o texto da pergunta e
+  sobre o default~~ — **corrigido na implementação** (`03-progresso.md` → D4). `Prompt::fake()` não
+  serve de arnês de pergunta no Windows, que é justamente o sistema desta etapa: `Prompt::prompt()`
+  chama `checkEnvironment()`, que lança ali sempre que o fallback está desligado — e desligá-lo não
+  é possível, porque `fallbackWhen($c)` faz `$c || static::$shouldFallback` e só sabe **ligar**.
+  O caminho que roda de verdade no Windows é o **fallback**, ligado por
+  `ConfiguresPrompts::configurePrompts()` em `windows_os() || runningUnitTests()`. O arnês registra
+  o próprio fallback (`ConfirmPrompt::fallbackUsing()`, `TextPrompt::fallbackUsing()`) e com isso
+  afirma sobre o **objeto do prompt** — `label`, `default` e `validate` como o código os construiu.
+  M7 e M14 ficaram mais fortes: são afirmados no valor, não no texto renderizado.
+  `Prompt::fake([])` continua no `beforeEach`, só para capturar em buffer a saída de `note()`, que
+  é o que CT-15 afirma sobre a instrução do Unix (`assertStrippedOutputContains()` existe em
   `vendor/laravel/prompts/src/Concerns/FakesInputOutput.php` — conferido, não inventado)
 - Nenhum `Queue::fake()`/`Mail::fake()`: a etapa não despacha job nem envia nada
 
@@ -934,7 +944,7 @@ do requisito. O helper `documentacaoDoKit($idioma)` (`tests/Pest.php:933`) já e
 | CT-06 | domínio sugerido é o slug do nome | R3 | EP + BVA | Unit | `tests/Kit/HostLocalTest.php` | M10, M11, M12 |
 | CT-07 | a sugestão vem pré-preenchida | R3 | EP | Feature | `tests/Kit/HostLocalTest.php` | M14 |
 | CT-08 | a sugestão sai do nome em memória | R3 | EP discriminante | Unit | `tests/Kit/HostLocalTest.php` | M13 |
-| CT-09 | domínio malformado é recusado, com motivo | R4 | EP, inválidas isoladas | Feature | `tests/Kit/HostLocalTest.php` | M15, M16, M17, M18, M19, M55 |
+| CT-09 | domínio malformado é recusado, com motivo | R4 | EP, inválidas isoladas | Feature | `tests/Kit/HostLocalTest.php` — **dois casos**: os não-efeitos contra `processar()` e a mensagem + repergunta pelo diálogo (`03-progresso.md` → D6) | M15, M16, M17, M18, M19, M55 |
 | CT-10 | domínio bem formado é aceito | R4 | EP | Feature | `tests/Kit/HostLocalTest.php` | M17, M20 |
 | CT-11 | quebra de linha não injeta | R4 | rastreio de efeito | Feature | `tests/Kit/HostLocalTest.php` | M18 |
 | CT-12 | o comando é o da documentação | R5 | oráculo documental | Unit | `tests/Kit/HostLocalTest.php` | M26, M50 |

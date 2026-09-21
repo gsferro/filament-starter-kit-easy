@@ -55,9 +55,16 @@ sem TTY nenhum (`KitInstall.php:126-143`). O requisito diz **"rode"**, não "inf
 
 ### Decisão
 
-Executar via **`Start-Process pwsh -Verb RunAs`**, que é literalmente o comando que a documentação
-do próprio repositório já ensina (`docs/pt/comecar/dominio-local.md:100-105`). E, logo depois,
-**reler o `hosts` e procurar o domínio** — é isso, e só isso, que decide se deu certo.
+Executar via **`Start-Process pwsh -Verb RunAs -Wait`**, que é literalmente o comando que a
+documentação do próprio repositório já ensina (`docs/pt/comecar/dominio-local.md`, seção
+"Armadilhas"). E, logo depois, **reler o `hosts` e procurar o domínio** — é isso, e só isso, que
+decide se deu certo.
+
+> **O `-Wait` entrou na implementação, e com ele na página** (`03-progresso.md` → D2). Sem ele o
+> `Start-Process` devolve na hora e a releitura acontece **enquanto a janela do UAC ainda espera
+> resposta**: o oráculo desta ADR reportaria falha em toda instalação bem-sucedida. Como RQ-06 é
+> literal ("rode conforme a documentação") e CT-12 compara os dois textos, a correção tinha de
+> entrar nos dois lugares no mesmo commit.
 
 ### Alternativas Consideradas
 
@@ -80,7 +87,7 @@ do próprio repositório já ensina (`docs/pt/comecar/dominio-local.md:100-105`)
 
 ### Referências
 
-- `docs/pt/comecar/dominio-local.md:100-105` — o comando de elevação
+- `docs/pt/comecar/dominio-local.md`, seção "Armadilhas" — o comando de elevação, já com o `-Wait`
 - `docs/pt/comecar/dominio-local.md:96-98` — por que o `flushdns` mente
 - `KitInstall.php:25-26` — "nenhum passo aborta a instalação"
 

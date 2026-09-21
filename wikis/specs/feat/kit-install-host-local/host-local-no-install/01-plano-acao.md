@@ -145,21 +145,35 @@ Não criar canal novo: seria uma quinta dona para a mesma pergunta.
 > Skills: `laravel-best-practices`, `ponytail`
 
 - **Path**: `app/Support/HostLocal.php` (novo)
-- Construtor com **diretório-base injetável** (`public function __construct(private string $base)`),
-  espelhando `CustomizadorDaInstalacao.php:32-37`
-- **Executor injetável** para o `Start-Process`, senão o teste eleva de verdade na máquina de quem
-  roda a suíte. Assinatura: `__construct(private string $base, private ?Closure $executor = null)`
+- Construtor com **diretório-base injetável** (obrigatório, sem default), espelhando
+  `CustomizadorDaInstalacao.php:32-37`. Aqui ele não pode cair em `base_path()` nem por default:
+  CT-24 é lista branca, e todo caminho de arquivo tem de partir da propriedade recebida
+- **Mais quatro seams, cada um exigido por um caso já escrito no `04`** (ver `03-progresso.md` → D1):
+
+```php
+public function __construct(
+    private readonly string $base,       // o .env do projeto que está sendo instalado
+    ?Closure $executor = null,           // sem ele o teste eleva de verdade — CT-12, CT-13
+    ?string $hosts = null,               // sem ele o teste escreve no hosts do sistema
+    ?Closure $resolvedor = null,         // a sonda de resolução real (Herd/Valet/DNS) — CT-32
+    private readonly string $so = PHP_OS_FAMILY, // constante de compilação — CT-15 tem 3 linhas
+) {}
+```
 
 Métodos:
 
 | Método | Responsabilidade |
 |---|---|
+| `oferecer(bool $interativo): ?string` | as duas perguntas; devolve o aviso, ou `null` — ver passo 3 |
+| `processar(string $dominio): ?string` | valida, sonda, cadastra e aplica; devolve o aviso, ou `null` |
 | `dominioSugerido(): string` | `Str::slug(config('app.name')) ?: 'starter-kit'`, + `.test` |
 | `urlSugerida(): string` | `'http://'.$this->dominioSugerido()` |
-| `caminhoDoHosts(): string` | `match (PHP_OS_FAMILY)` — Windows vs `/etc/hosts` |
-| `jaResolve(string $dominio): bool` | lê o `hosts` e procura o domínio — idempotência |
-| `comandoDeElevacao(string $dominio): string` | monta o `Start-Process pwsh -Verb RunAs …` |
+| `caminhoDoHosts(): string` | `match ($this->so)` — Windows vs `/etc/hosts` |
+| `jaResolve(string $dominio): bool` | linha ativa no `hosts` **ou** resolução real — idempotência |
+| `erroDoDominio(string $dominio): ?string` | a validação, usada no `validate:` do prompt **e** em `processar()` |
+| `comandoDeElevacao(string $dominio): string` | monta o `Start-Process pwsh -Verb RunAs -Wait …` |
 | `cadastrar(string $dominio): bool` | executa e **confere relendo o arquivo** |
+| `instrucaoManual(string $dominio): string` | a linha `sudo` do Unix (ADR-03) |
 
 - **Logs**:
   - `Log::channel('configuracoes')->info('[HostLocal@cadastrar] Host local cadastrado | dominio: {d}', ['dominio' => $d, 'caminho' => $this->caminhoDoHosts(), 'so' => PHP_OS_FAMILY])`
@@ -180,7 +194,10 @@ Métodos:
 - **Path**: `app/Console/Commands/KitInstall.php`
 - Novo método `oferecerHostLocal()`, chamado em `handle()` **entre `desvincularDoSnyk()` (114) e
   `banner()` (117)** — ADR-02
-- Gate: `if (! $this->temTerminal()) { return; }`, igual a `oferecerTestes():515`
+- Gate: `temTerminal()` é **passado** a `HostLocal::oferecer($this->temTerminal())`, e não lido lá
+  dentro. Um `if (! $this->temTerminal()) { return; }` aqui nunca teria o ramo negativo exercitado,
+  porque `temTerminal()` devolve `true` sob `runningUnitTests()` — ver `03-progresso.md` → D3 e a
+  nota de arnês de CT-02
 - Falha vira `$this->avisos[]`, nunca `return self::FAILURE`
 
 ### 4. As duas perguntas
@@ -200,7 +217,10 @@ text('Qual domínio?', default: $hostLocal->dominioSugerido())
 - Antes de executar, **avisar sobre login social e Vite** (`note(...)`), porque trocar `APP_URL`
   quebra callbacks já registrados
 - Validar o domínio: sem esquema, sem barra, sem espaço; recusar `.local` (RFC 6762 — a doc já
-  proíbe em `:110-114`)
+  proíbe em `:110-114`). A validação vive em `erroDoDominio()` e roda **nos dois** lugares: no
+  `validate:` do prompt (que produz a mensagem e a repergunta) e na entrada de `processar()`, para
+  que "nada do que foi digitado vira comando novo no executor elevado" valha por construção, e não
+  por causa da interface — ver `03-progresso.md` → D5
 
 ### 5. Documentação
 
