@@ -340,6 +340,45 @@ arquivo e não contavam.
 
 **Candidato a rule** (step 9): `toContain()`/`not->toContain()` do Pest não recebem mensagem.
 
+## Rebase sobre o `main` pós-#93, e o que ele custou (2026-09-21)
+
+O `main` avançou durante esta wiki: o PR #93 (host local) entrou. O rebase não foi de graça, e o
+próprio kit acusou três defasagens que ele criou:
+
+| Defasagem | De → para | Quem pegou |
+|---|---|---|
+| arquivos de teste nos READMEs | 149→150 fundação, 175→176 total | caso de contadores **vindo com o #93** |
+| features especificadas | 64→65 (a wiki desta feature) | idem |
+| `tests/Pest.php:telasDoKit` | `:224` → `:225`, empurrado pelo helper novo do host local | `CitacoesDeCodigoTest` |
+
+Vale registrar a primeira linha: o caso que a pegou **nasceu no #93**, trava sete linhas do README
+que antes envelheciam em silêncio, e **estreou pegando defeito de outro PR**. É evidência direta
+do valor dele, do tipo que normalmente ninguém mede.
+
+Conferido que o rebase não engoliu nada já entregue: `OrdemDasCascadeLayersTest` e as duas
+referências a `configureOrdemDasCascadeLayers()` (a correção da `v0.37.1`) e o `HostLocalTest`
+seguem na árvore.
+
+### Suíte completa pós-rebase
+
+**2.817 casos, 2.801 verdes, 16 pulados, 0 falhas**, 2026-09-21 — inclui a suíte de navegador.
+
+### O falso positivo que quase virou achado
+
+Numa execução anterior, `tests/Browser/TemaEscuroTest.php` reprovou duas vezes com contraste
+`1,47:1` no `h1.fi-header-heading`. Duas rodadas vermelhas **não** sustentavam a conclusão de
+"falha consistente", e ela estava errada: em seguida o arquivo passou **cinco vezes seguidas**,
+sem mudança de código.
+
+O diagnóstico está no próprio docblock do teste, que já documenta a assinatura — paleta escura
+inteira sobre fundo claro é vazamento de tema entre cenários, não defeito de cor — e avisa que o
+caso *"tem o formato de teste instável"*. As duas falhas vieram logo após a suíte cheia, o que
+aponta contaminação entre arquivos de navegador.
+
+Confirmado que não era desta branch: teste, `.env` e assets publicados são **idênticos** ao repo
+principal (conferido por `diff`), onde o mesmo arquivo passou. Fica como **achado de isolamento de
+teste, pré-existente**, não como regressão desta feature.
+
 ## Retrospectiva
 
 <!-- Preenchido no fim. -->
