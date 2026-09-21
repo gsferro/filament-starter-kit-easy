@@ -63,7 +63,7 @@ it('[CT-19] com a tenancy desligada a listagem de organizacoes nao abre', functi
  *
  * ## O inventário é emprestado, de propósito
  *
- * A varredura usa `telasDoKit()['admin']` (`tests/Pest.php:telasDoKit:224`), a mesma lista que o
+ * A varredura usa `telasDoKit()['admin']` (`tests/Pest.php:telasDoKit:225`), a mesma lista que o
  * `InventarioDeTelasTest` obriga a manter completa nos dois sentidos. Assim o caso herda cobertura
  * de toda tela nova do painel sem precisar de edição: quem acrescentar uma tela é obrigado a
  * listá-la lá, e ela entra aqui de graça.
