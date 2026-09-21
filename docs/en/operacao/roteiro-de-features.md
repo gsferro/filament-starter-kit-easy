@@ -48,7 +48,7 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 | F-65 | **Welcome page at the root**, with what the installation customised | `/` | anonymous | open it unauthenticated: the three cards and the config show up, and no secrets — the test plants a sentinel in 8 values and asserts its absence | 🟢 |
 | F-66 | The root inherits the project theme and colour | `/` | anonymous | change `KIT_COR_PRIMARIA`, run `npm run build` and reload: the button changes colour. Without the route's `panel:app` it would render amber | 🟢 |
 | F-67 | The three exceptions are **declared**, not hidden | `/infra/command-center/commands` | `infra` | uncheck `View:Commands`: the screen **still** opens. The package exposes a single callback for all three of its Pages, so their barrier is `command-center:access`. `tests/Kit/PermissoesDeTelasTest.php` has the case that asserts this gap and turns red the day it closes | 🔵 |
-| F-68 | **[Card navigation hub](/en/recursos/hub-de-navegacao/)** | `/infra/hub-de-infraestrutura` (always); `/admin/hub-de-administracao` and `/app{/org}/hub-do-negocio` with `KIT_HUB=true` | whoever enters the panel | open the `/infra` hub: a grid of cards, one per destination your role can reach. With `KIT_HUB=false` the `/admin` and `/app` hubs leave the menu, the URL and the ⌘K search | 🟢 |
+| F-68 | **[Card navigation hub](../../recursos/hub-de-navegacao/)** | `/infra/hub-de-infraestrutura` (always); `/admin/hub-de-administracao` and `/app{/org}/hub-do-negocio` with `KIT_HUB=true` | whoever enters the panel | open the `/infra` hub: a grid of cards, one per destination your role can reach. With `KIT_HUB=false` the `/admin` and `/app` hubs leave the menu, the URL and the ⌘K search | 🟢 |
 
 ## Invitations
 

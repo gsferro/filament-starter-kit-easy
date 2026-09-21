@@ -13,11 +13,17 @@ import sidebar from './sidebar.json' with { type: 'json' };
  * - o sidebar sai da árvore de arquivos; `nav_order` virou `sidebar.order`.
  */
 
+/*
+ * O prefixo base, normalizado UMA vez — porque ele entra em dois lugares e o Astro só cuida de um.
+ *
+ * Para a prévia o site é servido na raiz (`DOCS_BASE` ausente, prefixo vazio). No deploy real ele
+ * é `/filament-starter-kit-easy`, que é o que o `baseurl` do Jekyll guardava.
+ */
+const base = (process.env.DOCS_BASE || '').replace(/\/+$/, '');
+
 export default defineConfig({
   site: 'https://gsferro.github.io',
-  // Para a prévia o site é servido na raiz. No deploy real isto volta a ser
-  // `/filament-starter-kit-easy`, que é o que o `baseurl` do Jekyll guarda hoje.
-  base: process.env.DOCS_BASE || undefined,
+  base: base || undefined,
   /*
    * `/` vai para o idioma padrão, e as 54 rotas de folha do Jekyll vão para a forma nova.
    *
@@ -29,8 +35,19 @@ export default defineConfig({
    * Os stubs ficam em `public/` (copiado literalmente) porque o `redirects` do Astro trata a
    * chave como rota e o `build.format` padrão transforma `/pt/x.html` no diretório `x.html/`.
    * O motivo longo está no `converter.mjs`; aqui fica só a raiz, que é rota de verdade.
+   *
+   * O DESTINO LEVA O `base` À MÃO, e é isto que mantém a porta da frente de pé.
+   *
+   * O Astro aplica o `base` à CHAVE do redirect — o stub sai em `dist/index.html` e é servido em
+   * `/filament-starter-kit-easy/` — e **não** ao valor. Com `'/pt/'` cru, o stub publicado dizia
+   * `url=/pt/`, que sob o domínio do Pages é `gsferro.github.io/pt/`: fora do site do projeto, e
+   * 404. A raiz do site — o endereço que todo README e todo link externo usam — caía nele, e as
+   * páginas internas respondiam 200 o tempo todo, então o defeito parecia ser "o site inteiro"
+   * para quem chegava pela porta da frente e invisível para quem já estava dentro.
+   *
+   * Com prefixo vazio isto volta a ser `/pt/`, que é o certo para a prévia na raiz.
    */
-  redirects: { '/': '/pt/' },
+  redirects: { '/': `${base}/pt/` },
   integrations: [
     starlight({
       title: 'Starter Kit Easy',
@@ -86,6 +103,20 @@ export default defineConfig({
       editLink: {
         baseUrl: 'https://github.com/gsferro/filament-starter-kit-easy/edit/main/site/',
       },
+      /*
+       * O ícone, e ele estava faltando — em TODA página.
+       *
+       * Sem esta linha o Starlight aponta para `/favicon.svg`, que nunca existiu em `site/public/`:
+       * 122 páginas publicadas pedindo um arquivo que responde 404. Não aparece na navegação, não
+       * quebra nada visível, e é o 404 mais repetido do site.
+       *
+       * O arquivo agora existe em `site/public/favicon.svg`, no vermelho do Laravel de onde o
+       * `kit.css` já deriva o acento. O `favicon.ico` da aplicação Laravel não servia: tem 0 byte.
+       *
+       * A linha fica explícita mesmo apontando para o padrão do Starlight, porque foi justamente
+       * o padrão implícito que ficou dois deploys apontando para o vazio sem ninguém notar.
+       */
+      favicon: '/favicon.svg',
       lastUpdated: true,
       customCss: ['./src/styles/kit.css'],
       /*

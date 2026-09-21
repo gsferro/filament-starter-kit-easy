@@ -119,38 +119,71 @@ function idDeTitulo(string $texto): string
     return trim((string) preg_replace('/[\s\-]+/', '-', $ascii), '-');
 }
 
-/** Resolve `../recursos/x.md` a partir do diretório de uma página, sem tocar o disco. */
+/**
+ * O arquivo que responde por uma URL do site, na árvore de dois níveis.
+ *
+ * | URL (sem idioma) | Arquivo             |
+ * |------------------|---------------------|
+ * | `/`              | `index.md`          |
+ * | `/recursos/`     | `recursos/index.md` |
+ * | `/recursos/x/`   | `recursos/x.md`     |
+ */
+function arquivoDaUrl(string $url): string
+{
+    $url = trim($url, '/');
+
+    if ($url === '') {
+        return 'index.md';
+    }
+
+    return str_contains($url, '/') ? "{$url}.md" : "{$url}/index.md";
+}
+
+/**
+ * A URL publicada de uma página, relativa à raiz do idioma e SEM barra no fim.
+ *
+ * É o outro lado de `arquivoDaUrl()`, e existe porque link relativo resolve contra a URL — não
+ * contra o caminho do arquivo. A distinção é de um nível inteiro: `recursos/x.md` publica em
+ * `/recursos/x/`, um nível mais fundo que o diretório `recursos/` onde o arquivo mora.
+ */
+function urlDaPagina(string $pagina): string
+{
+    if ($pagina === 'index.md') {
+        return '';
+    }
+
+    return str_ends_with($pagina, '/index.md')
+        ? substr($pagina, 0, -strlen('/index.md'))
+        : substr($pagina, 0, -strlen('.md'));
+}
+
+/** Resolve `../recursos/x/` a partir de uma página, em espaço de URL, sem tocar o disco. */
 function caminhoResolvido(string $paginaDeOrigem, string $link): string
 {
     /*
-     * Link ABSOLUTO do site — a forma que a migração para o Starlight produziu, e não por gosto.
-     *
-     * O Jekyll publicava `convites.html` e o Starlight publica `convites/`. A profundidade de todo
-     * link relativo MUDA com isso: de `/pt/autenticacao/convites/`, um `../recursos/x/` chega em
-     * `/pt/autenticacao/recursos/x/` — página errada, e que em alguns casos existe. Por isso o
-     * conversor reescreveu cada link como caminho absoluto, e este resolvedor precisa conhecê-lo.
-     *
-     * O mapa de URL para arquivo sai da profundidade, e a árvore tem exatamente dois níveis:
-     *
-     * | URL              | Arquivo             |
-     * |------------------|---------------------|
-     * | `/pt/`           | `index.md`          |
-     * | `/pt/recursos/`  | `recursos/index.md` |
-     * | `/pt/recursos/x/`| `recursos/x.md`     |
+     * Link ABSOLUTO do site. Continua resolvendo, e continua PROIBIDO no conteúdo — o `[CT-45]` é
+     * quem proíbe, e o motivo é que ele não leva o prefixo `base` do GitHub Pages e vai a 404.
+     * O ramo sobrevive porque o resolvedor também atende link vindo de README.
      */
     if (str_starts_with($link, '/')) {
-        $semIdioma = trim((string) preg_replace('~^/(pt|en)(/|$)~', '', $link), '/');
-
-        if ($semIdioma === '') {
-            return 'index.md';
-        }
-
-        return str_contains($semIdioma, '/') ? "{$semIdioma}.md" : "{$semIdioma}/index.md";
+        return arquivoDaUrl((string) preg_replace('~^/(pt|en)(/|$)~', '', $link));
     }
 
+    /*
+     * RESOLUÇÃO EM ESPAÇO DE URL, e foi aqui que este ajudante estava um nível errado.
+     *
+     * Ele resolvia contra `dirname()` do ARQUIVO. Mas o Starlight publica `x.md` como `x/`, então
+     * a URL da página é um nível mais funda que o diretório do arquivo, e é contra a URL que o
+     * navegador resolve `../`. Com o modelo de arquivo, o `../../recursos/x/` correto — o que o
+     * navegador leva a `/pt/recursos/x/` — subia dois níveis a partir de `comecar/` e estourava a
+     * raiz do idioma: 23 links legítimos acusados por página inexistente, nos dois idiomas.
+     *
+     * O oráculo que decidiu a direção não foi este arquivo: foi o rastreio do site CONSTRUÍDO com
+     * um navegador de verdade, onde as 121 páginas e os 55 redirecionamentos respondem 200.
+     */
     $partes = [];
 
-    foreach (explode('/', dirname($paginaDeOrigem).'/'.$link) as $segmento) {
+    foreach (explode('/', urlDaPagina($paginaDeOrigem).'/'.$link) as $segmento) {
         if ($segmento === '..') {
             array_pop($partes);
         } elseif ($segmento !== '.' && $segmento !== '') {
@@ -158,9 +191,7 @@ function caminhoResolvido(string $paginaDeOrigem, string $link): string
         }
     }
 
-    $caminho = implode('/', $partes);
-
-    return str_ends_with($link, '/') || $caminho === '' ? "{$caminho}/index.md" : $caminho;
+    return arquivoDaUrl(implode('/', $partes));
 }
 
 /** Só o detector de Liquid, isolado para receber controle positivo em CT-18. */
@@ -1658,4 +1689,111 @@ it('[CT-44] nenhum titulo ou rotulo carrega marcacao de markdown', function (): 
 
     expect($conferidos)->toBeGreaterThan(60, 'a varredura nao leu front-matter nenhum')
         ->and($comMarcacao)->toBe([]);
+});
+
+/*
+|--------------------------------------------------------------------------
+| R9 — o site é servido sob um prefixo, e tudo que aponta para ele sabe disso
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * CT-45 — nenhum link interno do conteúdo é um caminho absoluto.
+ *
+ * **Defeito que FOI AO AR, e ficou.** O site é de projeto, não de usuário: ele mora em
+ * `gsferro.github.io/filament-starter-kit-easy/`, e o `base` entra por `DOCS_BASE` no workflow.
+ * O Astro aplica esse prefixo ao que ELE gera — rota, asset, navegação do Starlight — e **não** ao
+ * que está escrito dentro do markdown. Um `](/pt/recursos/x/)` chega ao HTML igualzinho e, sob o
+ * domínio do Pages, aponta para `gsferro.github.io/pt/recursos/x/`: fora do site do projeto, 404.
+ *
+ * Eram 54 links assim, em 24 arquivos, mais o botão "Instalar" das duas landings — o caminho pelo
+ * qual um leitor que chegasse pela porta da frente saía do site no primeiro clique.
+ *
+ * ## Por que nenhum gate viu
+ *
+ * A prévia local é servida na RAIZ, então lá os mesmos links funcionam: o defeito só existia em
+ * produção. O `verifica-links.mjs` rodava sobre o `dist/`, que também não tem o diretório
+ * `filament-starter-kit-easy/` — ele descontava o prefixo para não gerar falso positivo e, com
+ * isso, não distinguia o link correto já descontado do link que nasceu sem o prefixo: `/pt/x/`
+ * achava `dist/pt/x/index.html` e era declarado bom. O `[CT-22]` afirmava sobre o arquivo de
+ * destino, que existe nos dois casos. Nenhum dos três olhava o prefixo.
+ *
+ * A forma correta é RELATIVA (`../../recursos/x/`): resolve contra a página corrente e sobrevive a
+ * qualquer base — a mesma razão pela qual os stubs de redirecionamento são relativos (`[CT-36]`).
+ */
+it('[CT-45] nenhum link interno do conteudo e caminho absoluto', function (string $idioma): void {
+    $absolutos  = [];
+    $conferidos = 0;
+
+    foreach (paginasDoSite($idioma) as $caminho => $conteudo) {
+        // Links de corpo (`](/pt/x/)`) e o `link:` das ações do hero, no front-matter.
+        preg_match_all('~\]\(([^)\s]+)\)|^\s*link:\s*(\S+)~m', $conteudo, $achados, PREG_SET_ORDER);
+
+        foreach ($achados as $achado) {
+            $link = $achado[2] ?? '';
+
+            if ($link === '') {
+                $link = $achado[1] ?? '';
+            }
+
+            if ($link === '' || preg_match('~^(https?:|mailto:|#)~', $link) === 1) {
+                continue;
+            }
+
+            $conferidos++;
+
+            if (str_starts_with($link, '/')) {
+                $absolutos[] = "{$idioma}/{$caminho} → {$link}";
+            }
+        }
+    }
+
+    // O piso é por idioma: são 28 links internos em cada árvore, e os 54 do defeito somavam as duas.
+    expect($conferidos)->toBeGreaterThan(20, 'a varredura nao achou link interno nenhum')
+        ->and($absolutos)->toBe([]);
+})->with(['pt', 'en']);
+
+/**
+ * CT-46 — o redirecionamento da raiz, declarado no Astro, leva o prefixo `base`.
+ *
+ * É a PORTA DA FRENTE: `gsferro.github.io/filament-starter-kit-easy/` é o endereço que os dois
+ * readmes publicam e que todo link externo usa. Ele não é uma página, é um redirecionamento para o
+ * idioma padrão — e o Astro aplica o `base` à CHAVE do redirect (o stub sai em `dist/index.html`)
+ * e **não** ao valor. Com `'/pt/'` cru, o stub publicado dizia `url=/pt/` e mandava quem chegasse
+ * para `gsferro.github.io/pt/`, que é 404. As páginas internas respondiam 200 o tempo todo, então
+ * o site parecia inteiro para quem já estava dentro e quebrado para quem chegava.
+ *
+ * O `[CT-36]` já exigia isto dos 54 stubs de `public/`; o redirect declarado no config escapava,
+ * porque é o único que o Astro gera em vez de o repositório versionar.
+ */
+it('[CT-46] o redirecionamento da raiz leva o prefixo base', function (): void {
+    $config = (string) file_get_contents(base_path('site/astro.config.mjs'));
+
+    $comBase = 'redirects: { \'/\': `${base}/pt/` },';
+    $cru     = 'redirects: { \'/\': \'/pt/\' }';
+
+    expect($config)
+        ->toContain($comBase)
+        ->toContain('base: base || undefined,')
+        ->not->toContain($cru);
+});
+
+/**
+ * CT-47 — o ícone declarado existe.
+ *
+ * Sem declaração o Starlight aponta para `/favicon.svg`, e nada em `site/public/` servia esse
+ * caminho: 122 páginas publicadas pedindo um arquivo que respondia 404. Não aparece na navegação e
+ * não quebra nada visível, o que é justamente por que passou dois deploys.
+ *
+ * O `favicon.ico` da aplicação Laravel não servia de origem — tem 0 byte.
+ */
+it('[CT-47] o icone declarado no config existe e nao esta vazio', function (): void {
+    $config = (string) file_get_contents(base_path('site/astro.config.mjs'));
+
+    expect(preg_match("~favicon:\s*'([^']+)'~", $config, $achado))->toBe(1, 'o config nao declara favicon');
+
+    $arquivo = base_path('site/public/'.ltrim($achado[1], '/'));
+
+    expect($arquivo)->toBeFile()
+        ->and(filesize($arquivo))->toBeGreaterThan(0);
 });

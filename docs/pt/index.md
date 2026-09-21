@@ -6,7 +6,7 @@ hero:
   tagline: Três painéis separados, convites, login social, proteção anti-robô e multi-tenancy opcional. Um comando para instalar.
   actions:
     - text: Instalar
-      link: /pt/comecar/instalacao-avancada/
+      link: comecar/instalacao-avancada/
       icon: right-arrow
     - text: Ver no GitHub
       link: https://github.com/gsferro/filament-starter-kit-easy
@@ -25,13 +25,13 @@ cd meu-projeto && php artisan kit:install
 
 <div class="cartoes-do-kit">
 
-[**Começar** — instalação avançada, atualização de um projeto que já nasceu do kit e domínio local.](/pt/comecar/)
+[**Começar** — instalação avançada, atualização de um projeto que já nasceu do kit e domínio local.](comecar/)
 
-[**Autenticação** — convites, registro aberto com aprovação, login social, proteção anti-robô e a página única de login.](/pt/autenticacao/)
+[**Autenticação** — convites, registro aberto com aprovação, login social, proteção anti-robô e a página única de login.](autenticacao/)
 
-[**Recursos** — multi-tenancy opcional, anexos e mídia, import e export em CSV, as trilhas do `/infra` e as configurações em tela.](/pt/recursos/)
+[**Recursos** — multi-tenancy opcional, anexos e mídia, import e export em CSV, as trilhas do `/infra` e as configurações em tela.](recursos/)
 
-[**Operação** — trabalhar com agentes de IA, convenções do kit, o que fazer depois de criar seus Resources e como desenvolver o próprio kit.](/pt/operacao/)
+[**Operação** — trabalhar com agentes de IA, convenções do kit, o que fazer depois de criar seus Resources e como desenvolver o próprio kit.](operacao/)
 
 </div>
 

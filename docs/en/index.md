@@ -6,7 +6,7 @@ hero:
   tagline: Three separate panels, invitations, social login, anti-robot protection and opt-in multi-tenancy. One command to install.
   actions:
     - text: Install
-      link: /en/comecar/instalacao-avancada/
+      link: comecar/instalacao-avancada/
       icon: right-arrow
     - text: View on GitHub
       link: https://github.com/gsferro/filament-starter-kit-easy
@@ -25,13 +25,13 @@ cd my-project && php artisan kit:install
 
 <div class="cartoes-do-kit">
 
-[**Getting started** — advanced installation, updating a project already born from the kit, and the local domain.](/en/comecar/)
+[**Getting started** — advanced installation, updating a project already born from the kit, and the local domain.](comecar/)
 
-[**Authentication** — invitations, open registration with approval, social login, anti-robot protection and the single login page.](/en/autenticacao/)
+[**Authentication** — invitations, open registration with approval, social login, anti-robot protection and the single login page.](autenticacao/)
 
-[**Features** — opt-in multi-tenancy, attachments and media, CSV import and export, the `/infra` trails and the settings screen.](/en/recursos/)
+[**Features** — opt-in multi-tenancy, attachments and media, CSV import and export, the `/infra` trails and the settings screen.](recursos/)
 
-[**Operations** — working with AI agents, kit conventions, what to do after creating your Resources, and how to develop the kit itself.](/en/operacao/)
+[**Operations** — working with AI agents, kit conventions, what to do after creating your Resources, and how to develop the kit itself.](operacao/)
 
 </div>
 

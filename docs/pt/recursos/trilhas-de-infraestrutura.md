@@ -75,7 +75,7 @@ de `app/Models` foi evitada de propósito: alcançaria `Role` e `Tenant`, que n�
 não têm o que restaurar. A trava é a lista, como na allow-list do Command Center.
 
 `User` entrou na lista junto com a exclusão lógica de usuário, e é por aqui que se restaura uma
-conta excluída (ver [estados do usuário](/pt/autenticacao/estados-de-usuario/)). A recusa antiga
+conta excluída (ver [estados do usuário](../../autenticacao/estados-de-usuario/)). A recusa antiga
 — *"um usuário volta com papel numa organização que pode nem existir mais"* — pressupunha
 exclusão **física** com cascata; com `SoftDeletes` as pivots `tenant_user` e `model_has_roles`
 ficam de pé, restaurar devolve exatamente o que havia, e `Tenant` nunca é apagado (tem `ativo`).

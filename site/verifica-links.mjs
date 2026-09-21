@@ -11,7 +11,7 @@
  * página certa e o pedaço errado dela.
  */
 import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve, posix } from 'node:path';
 
 const DIST = resolve('dist');
 
@@ -31,11 +31,13 @@ const DIST = resolve('dist');
  */
 const BASE = (process.env.DOCS_BASE || '').replace(/\/+$/, '');
 
+/** O caminho absoluto carrega o prefixo base? */
+const temBase = (caminho) =>
+  BASE === '' || caminho === BASE || caminho.startsWith(BASE + '/');
+
 /** Tira o prefixo de URL para chegar ao caminho real dentro do `dist/`. */
 const semBase = (caminho) =>
-  BASE !== '' && (caminho === BASE || caminho.startsWith(BASE + '/'))
-    ? caminho.slice(BASE.length) || '/'
-    : caminho;
+  BASE !== '' && temBase(caminho) ? caminho.slice(BASE.length) || '/' : caminho;
 
 const paginas = (dir) =>
   readdirSync(dir).flatMap((nome) => {
@@ -54,17 +56,56 @@ let conferidos = 0;
 for (const arquivo of paginas(DIST)) {
   const html = readFileSync(arquivo, 'utf8');
 
-  for (const casou of html.matchAll(/href="(\/[^"?]*)"/g)) {
-    const [alvo, ancora] = casou[1].split('#');
-    if (!alvo || ESTATICOS.test(alvo)) continue;
+  /*
+   * O extrator pega TODO `href`, e não só os absolutos — foi o que esta versão mudou.
+   *
+   * A forma correta de link interno no conteúdo é a RELATIVA (`../../recursos/x/`), porque ela
+   * resolve contra a página corrente e sobrevive a qualquer `base`. Só que a versão anterior
+   * casava `href="/…"`: no dia em que os 54 links do markdown passaram de absolutos para
+   * relativos, eles sairiam da varredura inteira e o conferidor ficaria verde por não olhar —
+   * trocando um falso negativo por um ponto cego maior. Os dois formatos entram.
+   */
+  for (const casou of html.matchAll(/href="([^"]+)"/g)) {
+    const bruto = casou[1];
+
+    // `http:`, `https:`, `mailto:`, `tel:` e `//host/…`: não é rota deste site.
+    if (/^(?:[a-z][a-z0-9+.\-]*:|\/\/)/i.test(bruto)) continue;
+
+    const [semQuery] = bruto.split('?');
+    const [alvoBruto, ancora] = semQuery.split('#');
+
+    // Âncora pura (`#_top`) aponta para a própria página; não há rota para conferir.
+    if (!alvoBruto || ESTATICOS.test(alvoBruto)) continue;
 
     conferidos++;
 
-    const chave = alvo + (ancora ? '#' + ancora : '');
+    /*
+     * O caminho em disco, e é aqui que os dois formatos convergem.
+     *
+     * Absoluto: precisa carregar o `base`, e o que sobra depois de descontá-lo é o caminho dentro
+     * do `dist/`. Relativo: resolve contra o diretório da página que o contém — o mesmo que o
+     * navegador faz. Os dois chegam a uma chave única, então a deduplicação passa a ser por
+     * DESTINO RESOLVIDO: o mesmo `../x/` em duas páginas diferentes vai para lugares diferentes,
+     * e dedupar pelo texto cru esconderia o segundo.
+     */
+    // No Windows o caminho vem com `\`; o resolvedor de URL trabalha em `/`.
+    const origem = arquivo.replace(DIST, '').split(/[\\/]/).join('/');
+
+    let emDisco;
+
+    if (alvoBruto.startsWith('/')) {
+      if (!temBase(alvoBruto)) {
+        quebrados.push(`${bruto}  — caminho absoluto SEM o prefixo base '${BASE}': em producao isto sai do site do projeto e da 404 (ex.: ${origem})`);
+        continue;
+      }
+      emDisco = semBase(alvoBruto);
+    } else {
+      emDisco = posix.resolve(posix.dirname(origem), alvoBruto);
+    }
+
+    const chave = emDisco + (ancora ? '#' + ancora : '');
     if (vistos.has(chave)) continue;
     vistos.add(chave);
-
-    const emDisco = semBase(alvo);
 
     const achado = [
       join(DIST, emDisco, 'index.html'),
@@ -72,10 +113,8 @@ for (const arquivo of paginas(DIST)) {
       join(DIST, emDisco + '.html'),
     ].find(existsSync);
 
-    const origem = arquivo.replace(DIST, '');
-
     if (!achado) {
-      quebrados.push(`${chave}  — pagina inexistente (ex.: ${origem})`);
+      quebrados.push(`${bruto} -> ${emDisco}  — pagina inexistente (ex.: ${origem})`);
       continue;
     }
 
@@ -87,7 +126,7 @@ for (const arquivo of paginas(DIST)) {
     const procurada = decodeURIComponent(ancora ?? '');
 
     if (ancora && !readFileSync(achado, 'utf8').includes(`id="${procurada}"`)) {
-      quebrados.push(`${chave}  — ancora morta (ex.: ${origem})`);
+      quebrados.push(`${bruto} -> ${chave}  — ancora morta (ex.: ${origem})`);
     }
   }
 }
