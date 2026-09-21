@@ -39,6 +39,36 @@ Os cinco papéis do kit, e o que cada um significa com o modo ligado:
 
 O papel só existe com a tenancy ligada, e a concessão é em `/admin` → organizações → **Usuários vinculados** → *Papéis nesta organização*. **Não** pelo cadastro do usuário: ali a atribuição vai para o contexto global e a pessoa entra no `/app` sem enxergar nada. A receita completa, com o sintoma, está em [`wikis/receitas.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/receitas.md#promover-alguém-a-admin-de-uma-organização).
 
+## O atalho para o painel de cada organização
+
+As três telas de organização no `/admin` — listagem, ficha e edição — mostram o **endereço do
+painel de negócio** daquela organização, clicável, abrindo em **nova aba**. Na listagem é uma
+coluna, *Painel*, com o endereço visível: você sabe para onde vai antes de clicar, e comparar duas
+organizações é abrir duas abas.
+
+O endereço sai do gerador de URL do próprio painel, e não de `/app/` + slug escrito à mão — então
+ele acompanha o `path` do painel, o `APP_URL` da instalação e o atributo de slug configurado.
+Trocar o slug de uma organização move o link na hora, o que é a outra metade do aviso que o campo
+já dá: *mudar invalida os links já compartilhados*.
+
+**O link navega; ele não autoriza.** É de propósito que ele apareça sempre, para todo mundo que
+consegue abrir a tela de administração — esconder o link esconderia também a informação de que a
+organização **tem** um painel. Quem seguir sem acesso recebe a recusa dos dois portões que já
+existem, e os códigos são **diferentes**:
+
+| Situação de quem clica | Resposta | Quem barra |
+|---|---|---|
+| Tem papel do `/app` e vínculo com a organização (ou é `master_global`) | abre o painel | — |
+| **Não** tem papel do painel `/app` — o caso típico de quem só administra a instalação | **403** | `canAccessPanel()` |
+| Tem papel do `/app` mas **não** está vinculado a essa organização | **404** | `canAccessTenant()` |
+
+O 404 do segundo caso é deliberado: um 403 confirmaria que a organização **existe**, e bastaria
+varrer slugs para enumerar os clientes da instalação. Ele fica registrado no log do canal
+`tenancy`, com o motivo `sem_vinculo`.
+
+No **cadastro** de uma organização nova o link não aparece: enquanto o registro não está gravado,
+não existe endereço para apontar — e um link para um slug ainda não salvo seria 404 garantido.
+
 ## Insights das organizações no `/admin`
 
 A listagem de organizações traz quatro widgets para operação global — a visão geral acima da tabela e os três de detalhe abaixo dela:

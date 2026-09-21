@@ -39,6 +39,36 @@ The kit's five roles, and what each one means with the mode on:
 
 The role only exists with tenancy on, and it is granted in `/admin` → organizations → **Linked users** → *Roles in this organization*. **Not** from the user record: there the assignment goes to the global context and the person enters `/app` seeing nothing. The full recipe, with the symptom, is in [`wikis/receitas.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/receitas.md#promover-alguém-a-admin-de-uma-organização).
 
+## The shortcut to each organization's panel
+
+The three organization screens under `/admin` — list, record and edit — show that organization's
+**business panel address**, clickable, opening in a **new tab**. On the list it is a column,
+*Painel*, with the address visible: you know where you are going before clicking, and comparing two
+organizations is opening two tabs.
+
+The address comes from the panel's own URL generator, not from `/app/` + slug written by hand — so
+it follows the panel `path`, the installation's `APP_URL` and the configured slug attribute.
+Changing an organization's slug moves the link right away, which is the other half of the warning
+the field already gives: *changing it invalidates the links already shared*.
+
+**The link navigates; it does not authorize.** It shows up always, on purpose, for everyone who can
+open the administration screen — hiding the link would also hide the fact that the organization
+**has** a panel. Whoever follows it without access gets the refusal of the two gates that already
+exist, and the codes are **different**:
+
+| Situation of whoever clicks | Response | Who refuses |
+|---|---|---|
+| Has an `/app` role and is linked to the organization (or is `master_global`) | the panel opens | — |
+| Has **no** `/app` panel role — the typical case of someone who only administers the installation | **403** | `canAccessPanel()` |
+| Has an `/app` role but is **not** linked to that organization | **404** | `canAccessTenant()` |
+
+The 404 of the second case is deliberate: a 403 would confirm the organization **exists**, and
+sweeping slugs would be enough to enumerate the installation's clients. It is recorded in the
+`tenancy` log channel, with reason `sem_vinculo`.
+
+On the **create** screen of a new organization the link is absent: while the record is not saved
+there is no address to point at — and a link to an unsaved slug would be a guaranteed 404.
+
 ## Organization insights under `/admin`
 
 The organization list includes four widgets for global operations — the overview above the table and the three detail widgets below it:
