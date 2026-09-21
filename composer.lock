@@ -2408,27 +2408,25 @@
         },
         {
             "name": "doctrine/lexer",
-            "version": "3.0.1",
+            "version": "3.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/lexer.git",
-                "reference": "31ad66abc0fc9e1a1f2d9bc6a42668d2fbbcd6dd"
+                "reference": "e96fe45e92a54233726014a7cc7340abf29bb14c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/lexer/zipball/31ad66abc0fc9e1a1f2d9bc6a42668d2fbbcd6dd",
-                "reference": "31ad66abc0fc9e1a1f2d9bc6a42668d2fbbcd6dd",
+                "url": "https://api.github.com/repos/doctrine/lexer/zipball/e96fe45e92a54233726014a7cc7340abf29bb14c",
+                "reference": "e96fe45e92a54233726014a7cc7340abf29bb14c",
                 "shasum": ""
             },
             "require": {
                 "php": "^8.1"
             },
             "require-dev": {
-                "doctrine/coding-standard": "^12",
-                "phpstan/phpstan": "^1.10",
-                "phpunit/phpunit": "^10.5",
-                "psalm/plugin-phpunit": "^0.18.3",
-                "vimeo/psalm": "^5.21"
+                "doctrine/coding-standard": "^14",
+                "phpstan/phpstan": "^2",
+                "phpunit/phpunit": "^10.5.58 || ^12.5.4"
             },
             "type": "library",
             "autoload": {
@@ -2465,7 +2463,7 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/lexer/issues",
-                "source": "https://github.com/doctrine/lexer/tree/3.0.1"
+                "source": "https://github.com/doctrine/lexer/tree/3.0.2"
             },
             "funding": [
                 {
@@ -2481,7 +2479,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-02-05T11:56:58+00:00"
+            "time": "2026-06-14T20:44:06+00:00"
         },
         {
             "name": "doctrine/sql-formatter",
@@ -6906,16 +6904,16 @@
         },
         {
             "name": "mike-bronner/laravel-model-caching",
-            "version": "13.1.8",
+            "version": "13.1.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mike-bronner/laravel-model-caching.git",
-                "reference": "f09769ff5a8b8ded69a7bdd5d4f56037b949faaa"
+                "reference": "9b1d97049e5f6e7151f0c42dc9887c0aff7ee74f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mike-bronner/laravel-model-caching/zipball/f09769ff5a8b8ded69a7bdd5d4f56037b949faaa",
-                "reference": "f09769ff5a8b8ded69a7bdd5d4f56037b949faaa",
+                "url": "https://api.github.com/repos/mike-bronner/laravel-model-caching/zipball/9b1d97049e5f6e7151f0c42dc9887c0aff7ee74f",
+                "reference": "9b1d97049e5f6e7151f0c42dc9887c0aff7ee74f",
                 "shasum": ""
             },
             "require": {
@@ -6926,7 +6924,7 @@
                 "illuminate/database": "^11.0|^12.0|^13.0",
                 "illuminate/http": "^11.0|^12.0|^13.0",
                 "illuminate/support": "^11.0|^12.0|^13.0",
-                "mikebronner/laravel-pivot-events": "*",
+                "mikebronner/laravel-pivot-events": "^13.1",
                 "php": ">=8.2"
             },
             "replace": {
@@ -6978,9 +6976,9 @@
             "description": "Automatic caching for Eloquent models.",
             "support": {
                 "issues": "https://github.com/mike-bronner/laravel-model-caching/issues",
-                "source": "https://github.com/mike-bronner/laravel-model-caching/tree/13.1.8"
+                "source": "https://github.com/mike-bronner/laravel-model-caching/tree/13.1.10"
             },
-            "time": "2026-09-03T21:43:08+00:00"
+            "time": "2026-09-09T21:06:54+00:00"
         },
         {
             "name": "mikebronner/laravel-pivot-events",
