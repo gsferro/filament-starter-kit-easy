@@ -88,6 +88,7 @@ class KitServiceProvider extends ServiceProvider
         $this->configureClearCacheButton();
         $this->configureProcessEnvNoWindows();
         $this->configuraFilamentGlobal();
+        $this->configureOrdemDasCascadeLayers();
         $this->configureCorrecoesDeCss();
         $this->configureTelaDeLogin();
         $this->configureLoginUnificado();
@@ -498,9 +499,61 @@ class KitServiceProvider extends ServiceProvider
     }
 
     /**
-     * Health checks padrão — adicione/remova conforme o projeto.
-     * A página fica no painel infra; agendamento em routes/console.php.
+     * Fixa a ordem das cascade layers do Tailwind ANTES de qualquer folha de plugin.
+     *
+     * O Filament 5 compila o próprio CSS em cascade layers do Tailwind 4, na ordem
+     * `properties, theme, base, components, utilities`. O preflight — `* { padding: 0 }`,
+     * `button { background-color: transparent; border-radius: 0 }` — mora em `base`, e `.fi-btn`
+     * mora em `components`. Como `components` vem DEPOIS de `base`, o botão vence o reset. É assim
+     * que o Filament foi desenhado.
+     *
+     * Só que a ordem das layers de uma página não é decidida por quem tem mais regras: é decidida
+     * pela **primeira declaração de layer encontrada no documento**. E o `@filamentStyles` emite as
+     * folhas dos PLUGINS antes da `app.css` do Filament.
+     *
+     * O `croustibat/filament-jobs-monitor` registra a folha dele como asset GLOBAL
+     * (`FilamentJobsMonitorServiceProvider.php:36`), e o arquivo inteiro
+     * (`vendor/croustibat/filament-jobs-monitor/resources/dist/filament-jobs-monitor.css`) está
+     * dentro de um `@layer components{…}`. Sendo a primeira folha a declarar layer alguma, é ela
+     * quem fixa a ordem da página: `components, properties, theme, base, utilities`. Com `base`
+     * caindo DEPOIS de `components`, o reset de `button` passa a derrotar `.fi-btn`.
+     *
+     * **Sintoma**: todo botão dos três painéis sai sem padding, sem fundo e sem borda arredondada —
+     * o "Login" do `/admin/login`, o "Sair" do dashboard. O resto do layout fica intacto, TODAS as
+     * folhas respondem 200 e o console fica limpo. Falha silenciosa, e nenhum teste acusava.
+     *
+     * **Medido em 2026-09-21**, com Playwright no `/admin/login`: bloqueando SÓ essa folha, o botão
+     * volta a `padding 12px/8px`, fundo `primary-400` e `radius 8px`. Bloquear qualquer outra folha
+     * de plugin, uma a uma, não muda nada.
+     *
+     * A declaração é VAZIA de propósito: `@layer a, b, c;` não cria regra nenhuma, só estabelece a
+     * precedência. Ela não altera o que qualquer folha faz — apenas decide quem vence quando duas
+     * layers disputam a mesma propriedade. Por isso cobre este plugin e qualquer outro que venha a
+     * fazer o mesmo, sem precisar enumerá-los.
+     *
+     * **Por que `STYLES_BEFORE`**: é emitido pelo layout base do Filament
+     * (`vendor/filament/filament/resources/views/components/layout/base.blade.php:44`) logo antes
+     * do `@filamentStyles` (:70). Todos os layouts passam pelo base — inclusive o do
+     * `caresome/filament-auth-designer`, que veste as telas de autenticação. Assim esta é a
+     * primeira declaração de layer que o navegador lê, que é a única posição em que ela funciona.
+     *
+     * **Alternativa recusada**: reescrever ou reordenar a folha do plugin. Ela é publicada por
+     * `filament:assets` e volta ao original a cada `composer update` — a correção duraria até o
+     * próximo deploy, e falharia em silêncio de novo.
+     *
+     * `FilamentView::registerRenderHook()` e não `$panel->renderHook()` pela mesma razão de
+     * `configureTelaDeLogin()`: uma registração cobre os três painéis.
+     *
+     * Guarda: `tests/Kit/OrdemDasCascadeLayersTest.php`.
      */
+    protected function configureOrdemDasCascadeLayers(): void
+    {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::STYLES_BEFORE,
+            fn (): string => '<style>@layer properties, theme, base, components, utilities;</style>',
+        );
+    }
+
     /**
      * Registra o CSS de correções do kit nos três painéis.
      *

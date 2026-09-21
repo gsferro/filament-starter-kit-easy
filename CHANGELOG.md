@@ -3,6 +3,39 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.37.1] - 2026-09-21
+
+### Corrigido
+- **Todo botão dos três painéis saía sem padding, sem fundo e sem borda arredondada.** O "Login" do
+  `/admin/login`, o "Sair" do dashboard — e mais nada no layout mudava.
+
+  A causa é de **ordem de cascade layer**, não de regra faltando. O Filament 5 compila em layers do
+  Tailwind 4 na ordem `properties, theme, base, components, utilities`: o preflight do `button`
+  (`background-color: transparent`, `border-radius: 0`, `padding: 0`) mora em `base`, e o `.fi-btn`
+  mora em `components`, que vem depois e por isso vence.
+
+  Só que a ordem de uma página é fixada pela **primeira declaração de layer do documento**, e o
+  `@filamentStyles` emite as folhas dos plugins **antes** da `app.css` do Filament. A folha do
+  **`croustibat/filament-jobs-monitor`** está inteira em `@layer components{…}` e é registrada como
+  asset global — então era ela quem fixava a ordem da página inteira, jogando `base` para depois de
+  `components` e fazendo o reset do `button` derrotar o `.fi-btn`.
+
+  O kit passa a declarar a ordem correta no `STYLES_BEFORE`, que o layout base do Filament emite
+  logo antes do `@filamentStyles` e por onde todos os layouts passam. A declaração é vazia: não cria
+  regra nenhuma, só decide quem vence — e por isso cobre qualquer plugin futuro que faça o mesmo,
+  sem precisar enumerá-los.
+
+  **Por que nenhum gate viu**: todas as folhas respondiam **200**, o console ficava **limpo**, o HTML
+  saía byte a byte correto e a suíte ficava **verde**. Não havia oráculo de status, de console ou de
+  conteúdo que alcançasse — só estilo computado em navegador real. Medido em **2026-09-21** com
+  Playwright no `/admin/login`: bloqueando apenas aquela folha, o botão volta a `padding 12px/8px`,
+  fundo `primary-400` e `radius 8px`; bloquear qualquer outra, uma a uma, não muda nada.
+
+  Guarda em `tests/Kit/OrdemDasCascadeLayersTest.php`, com controle positivo do detector: se um dia
+  nenhum plugin declarar mais `@layer`, o teste fica **vermelho** pedindo reavaliação, em vez de
+  seguir provando que uma correção inócua funciona. Rule em `.ai/rules/css-filament.md`, cujo glob
+  passou a alcançar também `app/Providers/**`.
+
 ## [0.37.0] - 2026-09-20
 
 ### Alterado
