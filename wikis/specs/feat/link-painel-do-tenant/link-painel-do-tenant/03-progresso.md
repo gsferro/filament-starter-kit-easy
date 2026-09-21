@@ -43,22 +43,26 @@
 - [ ] `/ponytail:ponytail-review` no diff
 - [x] `vendor/bin/pint --dirty --format agent` — `fixed`, sem pendência
 - [x] `vendor/bin/filacheck --fix` — **All 17 rules passed!**
-- [x] CTs da feature — **39 casos, 39 verdes, 156 asserções**
+- [x] CTs da feature — **43 casos, 43 verdes, 226 asserções** (39 na primeira passagem; os
+      **quatro** que faltavam entraram depois, ver **D-05**)
 - [x] Testes existentes do tenant (`tests/Tenancy/**`) + gates de documentação e citação — 84
       verdes
-- [x] `composer test:kit` — **2653 casos, 2653 verdes, 10 317 asserções**
+- [x] `composer test:kit` — **2657 casos, 2657 verdes, 10 390 asserções**
 - [x] **Custo medido** — ver `## Notas de Implementação`: **33 / 53** antes, **33 / 53** depois
 - [x] Citações `arquivo:símbolo:linha` reverificadas por `tests/Kit/CitacoesDeCodigoTest.php`
       (CT-26) — inclui a **citação de terceiro** do achado R2 e mais **duas** que o próprio diff
       deslocou, listadas nos desvios
-- [x] Falsificabilidade — com `git stash push -- app/`, **22 dos 39** casos ficam vermelhos
-      (12 falhas de asserção + 10 erros por método inexistente)
-- [x] IDs `[CT-nn]` do teste ⊆ `04` — **fecha**: os 20 IDs do teste (CT-01..CT-18, CT-20 em
-      `tests/Tenancy`, CT-19 em `tests/Kit`) existem todos no `04`
-- [ ] IDs do `04` ⊆ teste — **aberto por desenho**, ver **D-05**: a revisão adversarial
-      especificou **CT-21** e **CT-22** e mais **duas linhas de `Examples`** (CT-08 vinculado,
-      CT-16 `globex`) que ainda não têm caso escrito. Os quatro foram **sondados** contra o código
-      antes de entrar no `04`, e a sonda foi descartada
+- [x] Falsificabilidade — com o `app/` revertido ao merge-base, **25 dos 43** casos ficam
+      vermelhos (13 falhas de asserção + 12 erros por método inexistente). Dos **quatro** casos
+      novos, **2 reprovam** (CT-22 e a linha `admin_vinculado` de CT-08, as duas por
+      `Tenant::urlDoPainel()` não existir) e **2 passam dos dois lados** — CT-21 e a linha
+      `globex` de CT-16 —, o que está **previsto** e não é defeito: ver **D-05**
+- [x] IDs `[CT-nn]` do teste ⊆ `04` — **fecha**: os **22** IDs do teste (CT-01..CT-18, CT-20 e
+      CT-22 em `tests/Tenancy`, CT-19 e CT-21 em `tests/Kit`) existem todos no `04`
+- [x] IDs do `04` ⊆ teste — **fecha**: os quatro cenários que a revisão adversarial acrescentou
+      (**CT-21**, **CT-22** e as duas linhas de `Examples` — CT-08 vinculado, CT-16 `globex`)
+      agora têm caso escrito e versionado. Ver **D-05**. Gate bidirecional, saída **vazia**:
+      `diff <(grep -oh 'CT-[0-9]\+' 04-casos-de-teste.md | sort -u) <(grep -oh 'CT-[0-9]\+' tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php tests/Kit/LinkDoPainelSemTenancyTest.php | sort -u)`
 - [x] Os 13 achados da revisão adversarial aplicados no `04` — ver `04-casos-de-teste.md` →
       `## Revisão Adversarial`. Contagens do cabeçalho derivadas por `grep`, não digitadas:
       **22** cenários, **9** regras, **36** mutantes, **3** lacunas
@@ -181,6 +185,10 @@ símbolo, que é a forma que o gate confere.
 
 ### D-05 — o `04` foi reconciliado DEPOIS da implementação, e quatro cenários ficaram sem teste
 
+> **FECHADO.** Os quatro têm teste escrito e versionado, e o gate bidirecional de IDs devolve
+> saída vazia nos dois sentidos. O que cada um virou está na coluna **Teste definitivo** da tabela
+> abaixo, e as duas divergências entre a sonda e o definitivo estão logo depois dela.
+
 A revisão adversarial disparada pelo Impacto 3 chegou **depois** de a feature fechar verde. Quatro
 dos treze achados (**A-1**, **A-2/A-4**, **A-3**, **A-6**) já tinham sido endereçados **nos
 testes** e não no `04` — por um período os testes foram mais fortes que a especificação deles, que
@@ -198,19 +206,61 @@ dos oráculos de HTML de CT-04 e CT-07 (A-11); contagem da matriz 11/3 (A-12); C
 antes de serem escritos, com casos temporários que foram descartados. A direção está registrada
 para que ninguém escreva o teste no sentido errado:
 
-| Onde | Cenário especificado | Sonda |
-|---|---|---|
-| CT-16, 9ª linha dos `Examples` | a edição recusa o slug **de outra organização gravada**, e o gravado não muda (A-5) | **PASSA hoje.** `->unique()` do Filament ignora o próprio registro por padrão nesta versão (`vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:unique:563` + a propriedade `true` em `:shouldUniqueValidationIgnoreRecordByDefault:34`), então o mesmo `->unique()` sem argumento atende CT-13 **e** esta linha. Não é achado de implementação: é cenário que faltava |
-| CT-08, 3ª linha dos `Examples` | o administrador da instalação **vinculado** à organização continua tomando **403** — vínculo não é papel (A-10) | **403**, como esperado. O portão 1 decide primeiro |
-| **CT-21** (novo) | com a tenancy desligada, nenhuma das telas de `tests/Pest.php:telasDoKit:224` do painel `admin` responde **500**, e nenhuma exibe `href` do painel de negócio (A-7) | as 18 telas passam, 51 asserções |
-| **CT-22** (novo) | seguir o link de organização **inativa** sem vínculo devolve **404**, e as duas leituras concordam (A-8) | **404**; `canAccessTenant()` falso e `getTenants()` não a contém |
+| Onde | Cenário especificado | Sonda | Teste definitivo |
+|---|---|---|---|
+| CT-16, última linha dos `Examples` | a edição recusa o slug **de outra organização gravada**, e o gravado não muda (A-5) | **PASSA hoje.** `->unique()` do Filament ignora o próprio registro por padrão nesta versão (`vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:unique:563` + a propriedade `true` em `:shouldUniqueValidationIgnoreRecordByDefault:34`), então o mesmo `->unique()` sem argumento atende CT-13 **e** esta linha. Não é achado de implementação: é cenário que faltava | **confirma a sonda.** Linha `slug de OUTRA organização gravada` no dataset, mais a `Globex` no `Dado` (inerte para as demais). `assertHasFormErrors(['slug'])`, gravado segue `acme` |
+| CT-08, 3ª linha dos `Examples` | o administrador da instalação **vinculado** à organização continua tomando **403** — vínculo não é papel (A-10) | **403**, como esperado. O portão 1 decide primeiro | **confirma a sonda.** Persona `admin_vinculado` no `match`, mesma pessoa de `administradorDaInstalacao()` com `tenants()->attach()` |
+| **CT-21** (novo) | com a tenancy desligada, nenhuma das telas de `tests/Pest.php:telasDoKit:224` do painel `admin` responde **500**, e nenhuma exibe `href` do painel de negócio (A-7) | as 18 telas passam, 51 asserções | **confirma a direção, com asserção a mais.** As mesmas 18 telas, **55** asserções — a sonda afirmava UMA forma do endereço e o definitivo afirma **duas** (ver a divergência D-05.a) |
+| **CT-22** (novo) | seguir o link de organização **inativa** sem vínculo devolve **404**, e as duas leituras concordam (A-8) | **404**; `canAccessTenant()` falso e `getTenants()` não a contém | **confirma a sonda**, as três asserções |
+
+#### D-05.a — a sonda de CT-21 media UMA forma do endereço, e existem duas
+
+Sem tenancy, `Panel::getUrl($tenant)`
+(`vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:getUrl:170`) **não** produz
+`/app/{slug}`: `hasTenancy()` é falso, a rota não tem parâmetro `{tenant}`, e o ramo de
+`Route::has()` entrega o modelo a `route()` como parâmetro extra — que vira **query string**,
+`?tenant={uuid}`. Uma asserção que só procurasse `/app/acme` ficaria verde diante de uma entrada
+renderizada na forma que a instalação single-tenant de fato produz. O caso definitivo afirma as
+**duas**, e é daí que vêm as quatro asserções a mais (55, não 51).
+
+Nenhuma das duas é `/app` solto: a raiz do painel de negócio aparece legitimamente no `/admin` (o
+seletor de painéis), e a asserção nasceria vermelha contra a instalação correta.
+
+#### D-05.b — o `04` diz "oito linhas de formato e a nona de unicidade", e a tabela tem oito
+
+Achado de **especificação**, não de teste, e por isso registrado aqui em vez de corrigido: a prosa
+de R8 no `04` (`## Regra R8` → "Uma recusa por linha") conta **nove** linhas em CT-16, enquanto a
+tabela de `Examples` logo acima lista **oito** — sete de formato (`../outra`, `acme/painel`,
+`acme painel`, `acme?x=1`, `acme.painel`, `acme%2fpainel`, vazio) e uma de unicidade (`globex`). O
+teste segue a **tabela**, que é a parte executável do cenário: 8 linhas no dataset. A contagem da
+prosa vem de antes de D-03 ter trocado a linha `acento` por duas, e não acompanhou. Fica para a
+próxima passagem no `04`.
+
+#### D-05.c — dois dos quatro passam com o `app/` revertido, e isso é o desenho
+
+CT-21 e a linha `globex` de CT-16 ficam **verdes** sem a implementação. Não são oráculos deste
+diff, e nunca foram:
+
+- **CT-21 é asserção de ausência.** Ele mata M27/M36 — uma implementação **errada** (a entrada
+  nascendo num widget, num hub ou no menu do `/admin`) —, não a ausência de implementação. Mesma
+  categoria de CT-19, que também passa dos dois lados pela mesma razão.
+- **A linha `globex` de CT-16 protege uma validação que não é desta feature.** O `->unique()` do
+  `TenantForm` é anterior ao diff; a linha mata M34, que é o `unique` ser **perdido** numa
+  edição futura. A sonda já dizia isso ("PASSA hoje... é cenário que faltava").
+
+Os outros dois (CT-22 e `admin_vinculado` de CT-08) reprovam, mas por `Tenant::urlDoPainel()` não
+existir — erro fatal, não falha de asserção. A força discriminante deles é contra M32 e M33
+(mutações **futuras** dos dois portões), não contra a remoção do gerador.
 
 **Um achado roteado ao TESTE, não à especificação (corte C-1).** O segundo `Então` do CT-02 foi
 cortado do `04`: "o gerador não contém nenhuma concatenação do slug com um caminho" não é oráculo
 executável, e exigiria regex adivinhado sobre fonte — o que `.ai/rules/testes.md` proíbe ("não
-invente um regex, ele conta comentário como chamada"). O teste **ainda carrega** a asserção, no
-`preg_match` de `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:133`. É linha a **remover do
-teste**; esta passagem não toca arquivo de teste.
+invente um regex, ele conta comentário como chamada").
+
+**FECHADO.** O `preg_match` saiu do caso de CT-02
+(`tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:[CT-02]`). O que carrega o cenário é a asserção
+do **literal** — `expect($fonte)->not->toContain('/app')` sobre a fonte sem comentários —, e ela
+continua. O motivo do corte ficou no docblock do caso, para que ninguém a reescreva.
 
 ## Notas de Implementação
 
