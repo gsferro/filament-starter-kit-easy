@@ -692,9 +692,36 @@ it('[CT-15] cada linha exibe o endereco da sua propria organizacao', function ()
  * caminho e de escape de URL. O acento passou para CT-18, do lado VÁLIDO: ele grava, e o link
  * segue o gravado — percent-encodado pelo gerador, que é o comportamento correto.
  * Divergência registrada no `03-progresso.md`.
+ *
+ * ## A última linha é de UNICIDADE, e ela fecha a terceira restrição do campo
+ *
+ * As demais são de FORMATO (o valor não serve de segmento de URL). A última é de unicidade: o
+ * valor serve perfeitamente, só já é de outra organização. Mesma regra R8, mesmo oráculo — o
+ * campo acusa erro e o gravado não muda —, por isso ela cabe como linha dos `Examples` em vez de
+ * um segundo esquema para um caso só.
+ *
+ * **Por que ela importa NESTA feature, e não só no cadastro.** É a unicidade que faz o endereço
+ * IDENTIFICAR a organização. Sem ela duas linhas da listagem exibem o MESMO `href`, e uma
+ * organização ganha um link que abre a OUTRA — o defeito que CT-05 e CT-15 foram desenhados para
+ * pegar, chegando por um caminho que nenhum dos dois cobre: os dois partem de slugs distintos por
+ * construção, e nenhum deles exercita a gravação. Mata M34 (o `->unique()` perdido no diff).
+ *
+ * **O `Dado` da segunda organização vale para TODAS as linhas.** Uma organização a mais no banco
+ * não muda o veredito das de formato, e a alternativa seria duplicar o esquema.
+ *
+ * **Medido, não suposto: a linha PASSA sem mexer em nada.** `->unique()` do Filament ignora o
+ * próprio registro por padrão nesta versão —
+ * `$ignoreRecord ??= $component->shouldUniqueValidationIgnoreRecordByDefault()`
+ * (`vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:unique:563`), com a
+ * propriedade nascendo `true` (`:shouldUniqueValidationIgnoreRecordByDefault:34`). É por isso que
+ * o mesmo `->unique()` sem argumento atende ao mesmo tempo CT-13 (salvar sem alterar, o registro
+ * não colide consigo mesmo) e esta linha.
  */
 it('[CT-16] a edicao recusa slug que nao e slug, e nao altera o gravado', function (string $slug): void {
     $organizacao = Tenant::factory()->create(['nome' => 'Acme', 'slug' => 'acme']);
+
+    // A segunda organização é o alvo da linha de unicidade, e é inerte para as de formato.
+    Tenant::factory()->create(['nome' => 'Globex', 'slug' => 'globex']);
 
     noAdminComo(usuarioComPapel('master_global'));
 
@@ -705,13 +732,14 @@ it('[CT-16] a edicao recusa slug que nao e slug, e nao altera o gravado', functi
 
     expect($organizacao->fresh()->slug)->toBe('acme');
 })->with([
-    'caminho relativo'       => '../outra',
-    'separador de caminho'   => 'acme/painel',
-    'espaço'                 => 'acme painel',
-    'início de query string' => 'acme?x=1',
-    'ponto'                  => 'acme.painel',
-    'percent-encoding'       => 'acme%2fpainel',
-    'vazio'                  => '',
+    'caminho relativo'                  => '../outra',
+    'separador de caminho'              => 'acme/painel',
+    'espaço'                            => 'acme painel',
+    'início de query string'            => 'acme?x=1',
+    'ponto'                             => 'acme.painel',
+    'percent-encoding'                  => 'acme%2fpainel',
+    'vazio'                             => '',
+    'slug de OUTRA organização gravada' => 'globex',
 ]);
 
 /**
