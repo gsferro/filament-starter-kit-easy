@@ -1797,3 +1797,97 @@ it('[CT-47] o icone declarado no config existe e nao esta vazio', function (): v
     expect($arquivo)->toBeFile()
         ->and(filesize($arquivo))->toBeGreaterThan(0);
 });
+
+/**
+ * CT-48 — o roadmap existe, está ligado nos dois READMEs, e **viaja** com o projeto instalado.
+ *
+ * RQ-10 da wiki `layout-compact`. O caso nasceu de uma lacuna encontrada na derivação do `04`
+ * daquela wiki: o artefato foi entregue e **nenhum oráculo o sustentava**.
+ *
+ * ## O que estava desprotegido, e o que não estava
+ *
+ * `[CT-25]`, algumas funções acima, sincroniza a contagem de **arquivos de teste** dos READMEs — e
+ * é fácil supor que ele cobre a tabela inteira de "Nossos números". Não cobre: a linha
+ * `Documentos de referência (wikis/)` não é afirmada por caso nenhum desta suíte. Apagar
+ * `wikis/roadmap.md` deixaria a contagem mentindo, com a suíte verde.
+ *
+ * ## A terceira asserção é a que importa, e é uma DECISÃO do usuário
+ *
+ * O `.gitattributes` exporta `/wikis/specs export-ignore` e deliberadamente **não** ignora
+ * `wikis/*.md` — a linha 22 do arquivo registra o porquê: *"a wiki de referência é material de
+ * trabalho de quem instala"*. Para o roadmap isso foi decidido explicitamente com o usuário em
+ * 2026-09-21: ele **viaja** para todo projeto criado do kit.
+ *
+ * Uma linha de `export-ignore` acrescentada por engano reverteria essa decisão **sem quebrar
+ * nada** — o arquivo continuaria no repo, os links continuariam funcionando, a suíte continuaria
+ * verde, e só sumiria do `composer create-project`, onde ninguém olha. É o modo de falha mais
+ * silencioso dos três, e é o único que não tem outro sintoma.
+ *
+ * ## Por que o texto é afirmado, e não só o link
+ *
+ * O documento viaja para dentro do projeto de quem instala, então ele **precisa** dizer de quem é
+ * o futuro que descreve. Sem essa frase ele se lê como promessa ao usuário do kit — que é
+ * exatamente o oposto da intenção.
+ */
+it('[CT-48] mantem o roadmap presente, ligado nos READMEs e fora do export-ignore', function (): void {
+    expect(base_path('wikis/roadmap.md'))->toBeFile();
+
+    $roadmap = (string) file_get_contents(base_path('wikis/roadmap.md'));
+
+    // `assertStringContainsString` e não `toContain()`: o 2º argumento de `toContain()` é outra
+    // AGULHA, não a mensagem — ver `.ai/rules/testes.md`.
+    $this->assertStringContainsString(
+        'futuro do KIT',
+        $roadmap,
+        'o roadmap viaja para dentro do projeto de quem instala e precisa declarar de quem é o '
+        .'futuro que descreve, senão se lê como promessa',
+    );
+
+    // A contagem de `wikis/*.md` na tabela dos READMEs — a linha que nenhum outro caso afirma.
+    $documentosDeReferencia = Finder::create()
+        ->files()
+        ->in(base_path('wikis'))
+        ->depth('== 0')
+        ->name('*.md')
+        ->notName('README.md')
+        ->count();
+
+    expect($documentosDeReferencia)->toBeGreaterThan(5, 'a varredura de `wikis/` olhou o lugar errado');
+
+    expect((string) file_get_contents(base_path('README.md')))
+        ->toContain("| Documentos de referência (`wikis/`) | **{$documentosDeReferencia}** |")
+        ->toContain('(wikis/roadmap.md)');
+
+    expect((string) file_get_contents(base_path('README.en.md')))
+        ->toContain("| Reference documents (`wikis/`) | **{$documentosDeReferencia}** |")
+        ->toContain('(wikis/roadmap.md)');
+
+    $this->assertStringContainsString(
+        '(roadmap.md)',
+        (string) file_get_contents(base_path('wikis/README.md')),
+        'o índice da wiki não lista o roadmap',
+    );
+
+    /*
+     * A decisão do usuário, travada: o roadmap NÃO pode ganhar `export-ignore`.
+     *
+     * Afirmado sobre as linhas efetivas — `.gitattributes` aceita comentário, e o arquivo cita
+     * `wikis/*.md` em prosa justamente para explicar por que ele NÃO entra. Afirmar sobre o texto
+     * cru reprovaria contra a configuração correta (`.ai/rules/testes.md`, "asserção de ausência
+     * sobre arquivo documentado precisa filtrar comentário").
+     */
+    $regras = collect(explode("\n", (string) file_get_contents(base_path('.gitattributes'))))
+        ->map(fn (string $linha): string => trim($linha))
+        ->reject(fn (string $linha): bool => $linha === '' || str_starts_with($linha, '#'));
+
+    $ignoraRoadmap = $regras->contains(
+        fn (string $linha): bool => str_contains($linha, 'export-ignore')
+            && (str_contains($linha, 'roadmap.md') || preg_match('~^/?wikis/?\*?\.?m?d?\s~', $linha) === 1),
+    );
+
+    expect($ignoraRoadmap)->toBeFalse(
+        'uma regra de `export-ignore` passou a alcançar o roadmap: ele deixaria de viajar para os '
+        .'projetos criados com `composer create-project`, revertendo em silêncio a decisão de '
+        .'2026-09-21 — e sem quebrar mais nada',
+    );
+})->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega os READMEs, que passam a ser do projeto.')->group('kit');
