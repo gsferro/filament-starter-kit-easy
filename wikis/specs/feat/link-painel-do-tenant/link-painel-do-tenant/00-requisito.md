@@ -93,6 +93,53 @@
   `AppPanelProvider` chama `->tenant()`, e a chave de rota do `Tenant` precisa ser conferida antes
   de montar a URL à mão. **Preferir o gerador de URL do Filament a concatenar string.**
 
+### Perguntas acrescentadas pela derivação dos casos de teste (2026-09-21)
+
+<!-- Acrescentadas pela skill `feature-test-design` no step 4. Só perguntas: nada acima foi
+     editado. Cada uma bloqueia o que está indicado e tem a premissa adotada registrada no
+     `04-casos-de-teste.md`. -->
+
+- **RQ-01 — o código de status do portão 2 é 404, não 403.** A decisão (a) acima foi registrada
+  dizendo que quem não passa nos dois portões "recebe o **403 do Filament**". Isso está certo para
+  o **portão 1** e **errado para o portão 2**:
+
+  | Portão | O que nega | Status | Evidência no vendor |
+  |---|---|---|---|
+  | 1 | `canAccessPanel()` | **403** | `vendor/filament/filament/src/Http/Middleware/Authenticate.php:authenticate:35-41` (`abort_if(..., 403)`) |
+  | 2 | `canAccessTenant()` | **404** | `vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:handle:40-42` (`abort(404)`) |
+
+  O `Authenticate` embrulha as rotas de tenant (`vendor/filament/filament/routes/web.php:60`), então
+  o portão 1 decide primeiro. E o 404 do portão 2 é **deliberado**: já existe teste do kit
+  afirmando-o e explicando o motivo — *"um 403 confirmaria que a organização EXISTE, e bastaria
+  varrer slugs para enumerar os clientes da instalação"*
+  (`tests/Tenancy/AdminDaOrganizacaoTest.php:98-105`).
+  **Premissa adotada**: o `04` afirma o que o vendor faz — 403 no portão 1, 404 no portão 2 (CT-08).
+  **Se confirmado**: este parágrafo e a ADR-02 passam a dizer 403 **e** 404, e nenhum CT muda.
+
+- **RQ-01 — e o link de uma organização INATIVA, seguido até o fim?** A decisão (a) já resolve a
+  **renderização**: o link aparece sempre, inclusive para organização inativa (a listagem mostra as
+  duas). O que ninguém decidiu é o **destino**, e as duas metades do kit discordam:
+  `User::getTenants()` filtra `->where('ativo', true)` (`app/Models/User.php:getTenants:775-782`),
+  mas `canAccessTenant()` **não olha `ativo`** (`app/Models/User.php:canAccessTenant:789-809`).
+  Alterar os portões está em `## Fora de Escopo`, então a feature não pode decidir isso sozinha.
+  **Premissa adotada** (de escopo): o cenário de renderização é obrigatório e está escrito (CT-05,
+  que afirma o link da inativa e que o endereço é o dela); o de **seguir** o link de organização
+  inativa é **lacuna declarada** no `04`. **Bloqueia**: a célula `inativa × seguir` da matriz.
+  **Se negado** (decidir que organização inativa não abre o painel): nasce um CT afirmando a recusa
+  e a decisão sai de `Fora de Escopo`.
+
+- **RQ-05 — o `slug` deve ser barrado fora do formulário?** `->alphaDash()` e `->maxLength(120)`
+  vivem só em `TenantForm`; o model não tem barreira, e `Tenant::create(['slug' => '../outra'])`
+  grava. A partir desta feature o `slug` deixa de ser só um segmento de rota e passa a compor um
+  `href` renderizado numa tela de administração — a feature **depende** dessa validação sem ser
+  dona dela.
+  **Premissa adotada** (de mecanismo): o formulário é o único portão, e o CT escrito é o invariante
+  que vale nas duas leituras — **a feature não normaliza o slug gravado** (CT-18), então um slug
+  gravado por fora produz o link daquele slug e não um "consertado" que aponta para endereço
+  inexistente. **Bloqueia**: o cenário de recusa fora do componente de UI para essa regra.
+  **Se negado** (decidir que o model barra): CT-18 inverte e nasce um CT chamando
+  `Tenant::create()` direto.
+
 ## Fora de Escopo (declarado)
 
 - Conceder acesso, criar vínculo no pivot ou atribuir papel a partir do link — o link **navega**,

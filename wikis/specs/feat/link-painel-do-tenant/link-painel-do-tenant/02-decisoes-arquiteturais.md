@@ -53,8 +53,17 @@ decide quem consegue abrir `/app/{slug}`: sem linha no pivot, …"*.
 
 ### Decisão
 
-**O link aparece sempre, clicável, nas três superfícies.** Quem não passa nos dois portões recebe o
-**403 do Filament**.
+**O link aparece sempre, clicável, nas três superfícies.** Quem não passa nos portões recebe erro —
+e **os dois portões devolvem códigos diferentes**, o que esta ADR afirmava errado:
+
+| Portão | O que barra | Código |
+|---|---|---|
+| `canAccessPanel('app')` | sem papel do painel `app` | **403** |
+| `canAccessTenant($tenant)` | sem `isMasterGlobal()` e sem linha no pivot | **404** — `vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:abort(404):41` |
+
+*(corrigido em 2026-09-21: esta ADR dizia "403 do Filament" para os dois. O 404 do portão 2 é
+deliberado no vendor — devolver 403 revelaria que a organização **existe** a quem não pode vê-la.
+Achado da derivação dos casos de teste, conferido no vendor.)*
 
 **Decidido pelo usuário em 2026-09-21.** O agente recomendou a alternativa 1 abaixo; a escolha do
 usuário prevalece.
@@ -71,12 +80,13 @@ usuário prevalece.
 ### Consequências
 
 - **Positivas**: uma só regra nas três superfícies; o endereço da organização fica sempre visível
-- **Negativas**: **um administrador sem papel do painel `app` e sem vínculo leva 403 ao clicar**, em
-  qualquer das três telas. É consequência aceita, não descuido
-- **Riscos**: o 403 do Filament é tela de erro, não caminho de volta. **Mitigação declarada**: a
-  consequência vira **caso de teste** — o `04` cobre o cenário do administrador sem acesso, para
-  que o comportamento seja **conhecido e travado**, e não descoberto em produção. Se o 403 se
-  mostrar incômodo na prática, a alternativa 1 é uma condição em cada superfície
+- **Negativas**: **um administrador sem papel do painel `app` leva 403, e um com papel mas sem
+  vínculo leva 404**, em qualquer das três telas. É consequência aceita, não descuido
+- **Riscos**: 403 e 404 são telas de erro, não caminho de volta. E o **404 é pior para quem clica**:
+  ele sugere que a organização não existe, quando na verdade existe e a pessoa não tem vínculo.
+  **Mitigação declarada**: a consequência vira **caso de teste** — o `04` cobre os dois portões com
+  o código de cada um, para que o comportamento seja **conhecido e travado**. Se incomodar na
+  prática, a alternativa 1 é uma condição em cada superfície
 
 ---
 
