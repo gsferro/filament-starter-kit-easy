@@ -119,3 +119,36 @@ natureza.
   mesmo commit em que o segundo arquivo passou a usá-los
 - Contadores dos readmes sincronizados (arquivos de teste 145 → 146, total 171 → 172; features
   especificadas 61 → 62), como `[CT-25]` de `tests/Kit/SiteDeDocumentacaoTest.php` exige
+
+## Verificação Final
+
+- [x] `vendor/bin/pint --dirty --format agent` — `passed`, 2026-09-21
+- [x] `vendor/bin/filacheck --fix` — **17/17 regras passaram**, 2026-09-21
+- [x] `php artisan test --compact tests/Kit/HostLocalTest.php` — **57/57, 192 asserções**, 2026-09-21
+- [x] Arquivos vizinhos (Customizador, SiteDeDocumentacao, RedeDeDocumentacao, HelpersDeTeste) — **136/136, 428 asserções**, 2026-09-21
+- [x] **`composer test:kit`** — **2.686/2.686, 10.439 asserções**, 2026-09-21
+- [x] **Falsificabilidade** (`git stash push -u -- app/`) — **55 dos 57 reprovam sem a implementação**; os 2 sobreviventes são as duas linhas de CT-34, que afirmam sobre documentação e não sobre código, 2026-09-21
+- [x] **`/code-review` no diff (step 7.5)** — 9 achados, roteados na ordem da skill (Adendo no `00` → CT no `04` → correção). Comandos: `767e802` (Adendo), `f2ed1e1` (CT-35..CT-40 + R12), `6c323ba` (A1..A7), `d7e24c9` (arnês), `7c9f0dd` (docs), `a1f5b71` (citações), 2026-09-21
+- [x] **IDs `[CT-nn]` do teste ⊆ `04` e vice-versa** — `diff` dos dois conjuntos: **saída vazia**, 2026-09-21
+- [x] **Citações `arquivo:símbolo:linha` reverificadas** — **9/9 ok**, 2026-09-21. O grep da skill acusou 3 `ERRO`, e os três eram **falso positivo dele**: para path curto (`KitInstall.php:…`) o `sed` resolve da raiz do repositório em vez de `app/Console/Commands/`. Conferidos à mão no arquivo real, os três batem
+- [ ] `feature-quality-gate` (step 8)
+
+> **Limitação do conferidor de citações, para a próxima wiki**: o grep da skill trata o path como
+> relativo à raiz. Citação com **path curto** — que a própria skill permite depois de o path
+> completo aparecer no documento — sempre vira `ERRO`. O resultado dele precisa ser lido, não
+> obedecido: `ERRO` em path curto exige conferência manual antes de virar correção.
+
+## Conformidade com Rules
+
+| Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
+|---|---|---|---|
+| `app.md` | `app/**` | **n.a.** | as duas regras são `ContextoDePapeis` × `assignRole` e DTO em `app/Data` — a feature não cria nenhum dos dois |
+| `config.md` | `config/**` | **aplicada** | nenhuma chave nova: `APP_URL` já tem dona (`config('app.url')`). "Uma pergunta, uma dona" |
+| `testes.md` | `tests/**` | **aplicada** | `envDoTeste()` e `valorNoEnv()` migrados para `tests/Pest.php` no mesmo commit em que o segundo arquivo passou a usá-los |
+| `specs.md` | `wikis/specs/**` | **aplicada** | citações por símbolo, conferidas por grep + à mão (9/9) |
+| `general.md` | `composer.json` | **n.a.** | a feature não toca `composer.json` |
+
+## Quality Gate
+
+- **Ciclo**: 1 · **Veredito**: a preencher · **Data**: 2026-09-21
+- **Relatório**: `06-relatorio-qa.md`
