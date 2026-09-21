@@ -68,8 +68,9 @@
 
 - **RQ-05 — "stats, table, menu, button e etc" não é lista fechada.** O "e etc" deixa a
   superfície aberta. As quatro nomeadas são verificáveis; o resto não.
-  **Premissa adotada**: as quatro nomeadas são obrigatórias; qualquer superfície além delas é
-  ganho e vai para o roadmap, não para esta entrega.
+  **DECIDIDO com o usuário em 2026-09-21**: *"segue com as 4 superfícies"* — **stats, table, menu
+  e button** são o escopo. Qualquer superfície além delas vai para o roadmap, não para esta
+  entrega.
   **Invariante afirmado junto**: seja qual for a decisão, **nenhuma superfície fica
   parcialmente compacta** — meia tela compacta é pior que nenhuma.
 
@@ -93,9 +94,15 @@
 - **RQ-10 — qual nome?** O repo **não tem** `ROADMAP.md` nem `TODO.md`. A convenção para
   documento de referência é `wikis/*.md`, e o análogo mais próximo é o `wikis/pacotes-candidatos.md`
   (decisões sobre o que ainda não entrou).
-  **Premissa adotada**: **`wikis/roadmap.md`**, com uma linha no `README.md`.
-  **Atenção**: `.gitattributes` mantém `wikis/*.md` **fora** do `export-ignore` — o arquivo
-  **viaja** para todo projeto criado do kit. Isso é desejável para um roadmap? **Pergunta aberta.**
+  **DECIDIDO com o usuário em 2026-09-21**: **`wikis/roadmap.md`**, com uma linha no `README.md`, e
+  **fora do `export-ignore`** — ou seja, ele **viaja** para todo projeto criado do kit, como os
+  demais `wikis/*.md`.
+
+  A consequência é deliberada e vale escrever: quem instalar o kit recebe o roadmap **do kit**
+  dentro do próprio projeto. Isso é coerente com a decisão que o `.gitattributes` já registra para
+  `wikis/` — *"a wiki de referência é material de trabalho de quem instala"* —, e o texto do
+  roadmap precisa deixar claro que ele descreve o **futuro do kit**, não do projeto de quem o usa.
+  **Se negado**: uma linha no `.gitattributes` reverte, sem tocar em mais nada.
 
 ## Fora de Escopo (declarado)
 
