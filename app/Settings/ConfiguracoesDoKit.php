@@ -144,6 +144,24 @@ final class ConfiguracoesDoKit extends Settings
     public bool $alerta_alteracoes_nao_salvas;
 
     /**
+     * O quanto o layout dos três painéis aperta: `confortavel`, `compacto` ou `denso`.
+     *
+     * `string` e não o enum: o spatie/laravel-settings grava o `payload` em JSON, e uma
+     * propriedade tipada com enum exigiria cast próprio para um ganho nenhum — quem precisa do
+     * caso é `App\Support\DensidadeDoLayout::deConfig()`, do lado do consumo. O vocabulário é
+     * garantido no consumo (`coagir()`), não no armazenamento, justamente porque o armazenamento
+     * também aceita o que alguém escreveu à mão no `.env` ou direto na tabela.
+     *
+     * Pode viver aqui pelo critério de `.ai/rules/settings.md`: a chave é lida POR REQUEST, num
+     * render hook — `configureDensidadeDoLayout()` registra uma `Closure`, e o layout base do
+     * Filament a avalia no render
+     * (`vendor/filament/filament/resources/views/components/layout/base.blade.php:44`), não na
+     * construção do painel. O caminho do `viteTheme()` cairia na armadilha: ele é resolvido no
+     * registro do painel e não aceita `Closure`. Ver ADR-06.
+     */
+    public string $densidade_do_layout;
+
+    /**
      * Mostrar também a versão do KIT ao lado da versão do sistema, no rodapé.
      *
      * Default `false`: versão do kit é métrica interna do starter, e quem entrega o produto a um
@@ -375,7 +393,15 @@ final class ConfiguracoesDoKit extends Settings
              * `aplicarNaConfig()` sobrepõe essa config com o banco no boot. O mapa É a ligação.
              */
             'alerta_alteracoes_nao_salvas' => 'kit.alerta_alteracoes_nao_salvas',
-            'exibir_versao_do_kit'         => 'kit.exibir_versao',
+            /*
+             * A densidade entra pelo MAPA e nada mais muda, exatamente como o alerta acima:
+             * `App\Support\DensidadeDoLayout::deConfig()` lê `config('kit.densidade_do_layout')`
+             * dentro do render hook, e `aplicarNaConfig()` sobrepõe essa config com o banco no
+             * boot. Sem esta linha o Select da tela grava e NÃO governa nada — o defeito
+             * silencioso que o docblock da classe e `.ai/rules/settings.md` descrevem.
+             */
+            'densidade_do_layout'  => 'kit.densidade_do_layout',
+            'exibir_versao_do_kit' => 'kit.exibir_versao',
             /*
              * O interruptor do dashboard dinâmico é lido por request — `mount()` e
              * `shouldRegisterNavigation()` das páginas consultam

@@ -7,6 +7,7 @@ namespace App\Filament\Admin\Pages;
 use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\CustomizadorDaInstalacao;
+use App\Support\DensidadeDoLayout;
 use App\Support\Paineis;
 use App\Support\ProvedorAntiRobo;
 use App\Support\ProvedorSocial;
@@ -766,6 +767,31 @@ class ConfiguracoesDoKit extends SettingsPage
                 Toggle::make('alerta_alteracoes_nao_salvas')
                     ->label('Avisar sobre alterações não salvas')
                     ->helperText('Ao sair de um formulário com alteração pendente, o navegador pede confirmação antes de descartar. Vale para as telas de cadastro e edição dos três painéis, inclusive as dos plugins.'),
+
+                /*
+                 * Select de NÍVEIS e não Toggle, e a diferença não é estética: apertar por
+                 * `--spacing` distorce proporções (ícone e caixa de seleção encolhem junto), a
+                 * distorção escala com a intensidade e ela é questão de gosto e de tela. Um
+                 * booleano fixaria uma intensidade para todo mundo. Ver ADR-04.
+                 *
+                 * Lido por REQUEST no render hook `STYLES_BEFORE`, como o alerta acima: salvar
+                 * aqui vale no próximo F5, sem `npm run build`, sem cache e sem deploy.
+                 *
+                 * `DensidadeDoLayout::opcoes()` e NÃO `->options(DensidadeDoLayout::class)`: a
+                 * segunda forma faz o Filament devolver instância do enum no estado, e o
+                 * `fill()` do spatie a atribui direto à propriedade tipada `string` — `TypeError`
+                 * ao salvar a TELA INTEIRA, não só este campo. O docblock de `opcoes()` tem o
+                 * caminho completo; a suíte pegou com 60 casos de outras features.
+                 *
+                 * O enum continua sendo a única cópia do vocabulário: nível novo aparece aqui
+                 * sem tocar nesta tela.
+                 */
+                Select::make('densidade_do_layout')
+                    ->label('Densidade do layout')
+                    ->helperText('Aperta de uma vez os cartões de estatística, as tabelas, o menu lateral e os botões dos três painéis. "Confortável" é o padrão do Filament e não muda nada.')
+                    ->options(DensidadeDoLayout::opcoes())
+                    ->selectablePlaceholder(false)
+                    ->required(),
 
                 /*
                  * Desligado por padrão: a versão do kit é métrica interna do starter, e quem
