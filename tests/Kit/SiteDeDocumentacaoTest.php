@@ -1890,4 +1890,23 @@ it('[CT-48] mantem o roadmap presente, ligado nos READMEs e fora do export-ignor
         .'projetos criados com `composer create-project`, revertendo em silêncio a decisão de '
         .'2026-09-21 — e sem quebrar mais nada',
     );
+
+    /*
+     * O SEGUNDO caminho de entrega — e a lacuna que este caso tinha na primeira versão.
+     *
+     * "Viajar com o projeto" tem DOIS caminhos, não um, e eles atendem populações diferentes:
+     *
+     *     composer create-project  ->  governado pelo `.gitattributes`  ->  quem instala AGORA
+     *     php artisan kit:update   ->  governado por CAMINHOS_DO_KIT    ->  quem JÁ instalou
+     *
+     * A primeira versão deste caso afirmava só o primeiro, e passou verde enquanto o roadmap
+     * estava ausente de `KitUpdate::CAMINHOS_DO_KIT` — ou seja, enquanto o README prometia que
+     * ele "vem junto com o seu projeto" e o comando nunca o entregava a quem já tinha instalado.
+     * Achado do `/code-review`, não deste arquivo.
+     *
+     * `KitUpdateTest` tem a asserção genérica que varre `wikis/*.md`, e foi ela que reprovou. A
+     * linha abaixo é específica do roadmap de propósito: ela amarra a promessa do README ao
+     * mecanismo que a cumpre, e fica vermelha citando a promessa em vez de citar uma lista.
+     */
+    expect(caminhosDoKit())->toContain('wikis/roadmap.md');
 })->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega os READMEs, que passam a ser do projeto.')->group('kit');
