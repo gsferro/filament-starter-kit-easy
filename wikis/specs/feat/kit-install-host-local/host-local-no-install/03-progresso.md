@@ -150,5 +150,25 @@ natureza.
 
 ## Quality Gate
 
-- **Ciclo**: 1 · **Veredito**: a preencher · **Data**: 2026-09-21
+- **Ciclo**: 1 · **Veredito**: **REPROVADO → especificação** · **Data**: 2026-09-21
+- **Relatório**: `06-relatorio-qa.md` — 1 Blocker, 1 Major, 1 Cosmético
+
+### Ciclo 1 — achados e desfecho
+
+| # | Achado | Severidade | Destino | Desfecho |
+|---|---|---|---|---|
+| QA-01 | A branch apagaria 4 arquivos da v0.37.1, entre eles a guarda `OrdemDasCascadeLayersTest.php` | **Blocker** | 4 (infra) | **fechado** — `git rebase origin/main`; `--diff-filter=D` agora volta vazio e `merge-base --is-ancestor` passa |
+| QA-02 | RQ-10..RQ-13 do Adendo 1 sem linha na `## Cobertura do Requisito` | **Major** | 1 (especificação) | **fechado** — as quatro linhas entraram no `01`, com a marca da data e o motivo |
+| QA-03 | Doc `en` transcreve o prompt em pt sem glosa | Cosmético | 1 | **débito aceito** — é fiel ao que o usuário vê, e não há convenção sendo violada |
+
+**Efeito colateral do rebase, e ele importa**: trazer a `main` atual acrescentou a wiki da
+correção de CSS (+1 spec) e o `OrdemDasCascadeLayersTest.php` (+1 arquivo de teste). Os contadores
+dos readmes foram recalculados — **63 specs, 147/173 arquivos de teste** — e os guardas voltaram
+verdes (81/81, 312 asserções).
+
+> **Nota de método**: ao recalcular os contadores eu chamei `find` por `subprocess` no Windows, e
+> ele resolveu para o `find.exe` do sistema em vez do utilitário POSIX — devolveu **zero** e os
+> contadores foram gravados como `0`. Peguei na conferência seguinte e refiz em Python puro
+> (`os.walk`), com `assert` contra contagem zerada. Contador derivado de comando externo precisa
+> de piso, exatamente como a skill exige dos testes.
 - **Relatório**: `06-relatorio-qa.md`

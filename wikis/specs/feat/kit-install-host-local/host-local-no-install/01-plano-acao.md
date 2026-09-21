@@ -24,6 +24,14 @@
 | RQ-07 | Ajusta `APP_URL` no `.env` | 2, 4 | + `config()` em memória, ver ADR-02 |
 | RQ-08 | Documentação de instalação atualizada | 5 | pt **e** en |
 | RQ-09 | Decidir sobre `--force` | ADR-05 | **Decidido: não usa `--force`** |
+| RQ-10 | TLD não reservado exige confirmação extra | 4 | *(Adendo 1)* — `Str::endsWith` contra `.test`/`.localhost`/`.example`/`.invalid` |
+| RQ-11 | A confirmação diz o que vai acontecer | 4 | *(Adendo 1)* — a mensagem cita o domínio e a consequência |
+| RQ-12 | "Já resolve" = resolve para **loopback** | 1, 4 | *(Adendo 1)* — o seam do resolvedor devolve o IP; só `127.0.0.0/8` e `::1` contam |
+| RQ-13 | Rótulo > 63 e nome > 253 são recusados | 1 | *(Adendo 1)* — `MAX_ROTULO` e `MAX_NOME` em `app/Support/HostLocal.php` |
+
+> *(acrescentado em 2026-09-21: QA-02 do ciclo 1. As quatro nasceram no `## Adendo 1` do `00`,
+> ganharam CT no `04` e código, e o passo 2 do procedimento de Adendo — atualizar esta tabela —
+> ficou de fora. O rastro existia no teste e no código, e faltava no mapa.)*
 
 ## Objetivo
 
