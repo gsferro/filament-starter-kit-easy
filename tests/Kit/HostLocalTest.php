@@ -86,17 +86,29 @@ function registradorDeComandos(array &$comandos, int $codigo = 0): Closure
  * `Add-Content` acrescenta; `Set-Content` (ou qualquer outra forma) **sobrescreve** — é assim
  * que um comando que apagaria o arquivo da máquina fica vermelho aqui. Comando que a própria
  * sonda não reconheceria devolve falha e não escreve nada.
+ *
+ * **E ele confere o ALVO, não só a forma.** A primeira versão casava o caminho no regex e
+ * DESCARTAVA o grupo: escrevia em `test()->hosts` qualquer que fosse o arquivo citado no
+ * comando, e com isso um mutante que trocasse o alvo do `Add-Content` ficava verde em todos os
+ * cenários de efeito — só CT-12 o pegava, e CT-12 é cenário de texto, não de efeito. Achado A9
+ * da revisão de código, mesma família do arnês auto-realizável que a revisão adversarial já
+ * havia corrigido.
  */
 function interpretadorDeComandos(array &$comandos, int $codigo = 0): Closure
 {
     return static function (string $comando) use (&$comandos, $codigo): int {
         $comandos[] = $comando;
 
-        if (preg_match('~(Add-Content|Set-Content)\s+"[^"]*"\s+"([^"]*)"~', $comando, $achado) !== 1) {
+        if (preg_match('~(Add-Content|Set-Content)\s+"([^"]*)"\s+"([^"]*)"~', $comando, $achado) !== 1) {
             return 1;
         }
 
-        $carga = str_replace(['`n', '`t'], ["\n", "\t"], $achado[2]);
+        expect($achado[2])->toBe(
+            test()->hosts,
+            'o comando emitido escreve num arquivo diferente do que a etapa rele',
+        );
+
+        $carga = str_replace(['`n', '`t'], ["\n", "\t"], $achado[3]);
 
         $achado[1] === 'Add-Content'
             ? File::append(test()->hosts, $carga)
