@@ -512,6 +512,47 @@ it('[CT-11] renderizar o link nao cria vinculo nem papel', function (): void {
         ->and($papeis())->toBe($papeisAntes);
 });
 
+/**
+ * CT-22 — seguir o link de organização INATIVA, sem vínculo, é recusado, e as duas leituras
+ * concordam.
+ *
+ * ## Ele é a metade NÃO contestada da lacuna 1
+ *
+ * A célula `inativa × seguir` da matriz tem duas metades, e a pergunta 2 do `## Fronteira com o
+ * Plano` suspende só UMA: a de quem PASSA nos portões (o `master_global`, a vinculada), onde
+ * `canAccessTenant()` não olha `ativo` (`app/Models/User.php:canAccessTenant:789-809`) enquanto
+ * `User::getTenants()` filtra `->where('ativo', true)` (`app/Models/User.php:getTenants:775-782`)
+ * — as duas leituras DISCORDAM ali, e o `00` não decide qual vence. Escrever aquele cenário na
+ * direção "falha fechado" o deixaria vermelho contra a implementação correta, porque mexer nos
+ * portões está em `## Fora de Escopo`.
+ *
+ * Para quem NÃO tem vínculo não há contestação nenhuma: `canAccessTenant()` nega por falta de
+ * vínculo independente de `ativo`, e `getTenants()` também não a devolve. As duas leituras
+ * concordam, e é isso que o caso fixa.
+ *
+ * ## Por que as três asserções, e não só o 404
+ *
+ * O 404 sozinho não distingue "o portão 2 negou" de "a rota não resolveu" — e é o mesmo código
+ * dos dois. As duas leituras são consultadas DIRETAMENTE em seguida: `canAccessTenant()` falso é
+ * o portão que de fato negou, e a ausência em `getTenants()` é a segunda leitura concordando. É
+ * o par que mata M33 (as duas divergirem na direção de ABRIR), que nenhum código HTTP enxerga.
+ */
+it('[CT-22] seguir o link de organizacao inativa, sem vinculo, e recusado', function (): void {
+    $inativa = tenant('Globex', 'globex', ativo: false);
+
+    // Papel do painel de negócio NO contexto da organização, e nenhuma linha na pivot — a mesma
+    // persona `sem_vinculo` de CT-08, agora contra a organização logicamente excluída.
+    $operadora = usuarioComPapel('panel_user', $inativa);
+
+    $this->actingAs($operadora)
+        ->get((string) $inativa->urlDoPainel())
+        ->assertNotFound();
+
+    expect($operadora->canAccessTenant($inativa))->toBeFalse('o portão 2 deixou passar sem vínculo')
+        ->and($operadora->getTenants(Filament::getPanel('app'))->contains($inativa))
+        ->toBeFalse('a organização inativa apareceu entre as que ela pode escolher');
+});
+
 /*
 |--------------------------------------------------------------------------
 | R6 — o link não é campo
