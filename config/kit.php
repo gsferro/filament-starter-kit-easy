@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\BooleanoDoEnv;
+use App\Support\DensidadeDoLayout;
 use App\Support\NumeroDoEnv;
 use App\Support\ValidadeDoConvite;
 
@@ -252,6 +253,38 @@ return [
     */
 
     'alerta_alteracoes_nao_salvas' => BooleanoDoEnv::comPadrao(env('KIT_ALERTA_ALTERACOES_NAO_SALVAS'), true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Densidade do layout (o "compacto")
+    |--------------------------------------------------------------------------
+    | `confortavel` (padrão), `compacto` ou `denso`. Aperta de uma vez as quatro
+    | superfícies do escopo — stats, tabela, menu e botão — nos três painéis.
+    |
+    | O mecanismo é UMA declaração de `--spacing` fora de cascade layer, emitida
+    | por `KitServiceProvider::configureDensidadeDoLayout()` no render hook
+    | `STYLES_BEFORE`. Não há tema Vite, não há `npm run build` e não há uma única
+    | classe `fi-*` escrita à mão — escrever CSS por classe foi MEDIDO e piorou a
+    | altura da tabela em 21,9%. Ver ADR-03 e ADR-04 da wiki `layout-compact`.
+    |
+    | Editável em /admin/configuracoes-da-aplicacao, aba Kit. O render hook é
+    | avaliado POR REQUEST, então a tela governa sem deploy — é o critério que
+    | `.ai/rules/settings.md` fixa. `viteTheme()` NÃO serve aqui: ele é resolvido
+    | na construção do painel e não aceita `Closure` (ADR-06).
+    |
+    | ## Por que o enum coage, e não um `?:` como nas chaves de texto
+    |
+    | Esta chave tem VOCABULÁRIO FECHADO, e o consumidor dela roda no render hook
+    | de toda tela dos três painéis. `KIT_DENSIDADE_DO_LAYOUT=compact` (em inglês,
+    | que é o erro provável) não pode virar exceção no layout base — e também não
+    | pode virar `<style>` com um valor inventado. `DensidadeDoLayout::deConfig()`
+    | faz `tryFrom() ?? padrao()`: o que não é do vocabulário cai no confortável,
+    | que é o único default seguro — a aplicação simplesmente não muda de
+    | aparência. Vazio e ausente caem no mesmo lugar, pelo motivo que o bloco das
+    | tabelas documenta para `env()`.
+    */
+
+    'densidade_do_layout' => DensidadeDoLayout::coagir(env('KIT_DENSIDADE_DO_LAYOUT'))->value,
 
     /*
     |--------------------------------------------------------------------------
