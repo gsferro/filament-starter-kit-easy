@@ -38,24 +38,27 @@
 | RQ-04 | **Medir a profundidade e o peso** — o gatilho | 1 | ✅ Medida. **Os três critérios de "fácil" passaram**; os números estão em `### A decisão de RQ-04`, abaixo |
 | RQ-05 | **Se fácil, implementar** nas quatro superfícies | 2, 3, 4, 5, 6 | ✅ **ESCOLHIDA.** Stats, tabela, menu e botão apertam nos três níveis, medido no kit — ver a tabela de `### Passo 6` |
 | RQ-06 | **Se complexo, só documentar** | — | ⛔ **Excluída por RQ-04.** Mutuamente exclusiva com RQ-05. O estudo foi documentado assim mesmo (ADR-01 a ADR-06 + item 2 do roadmap), mas como **acompanhamento** da entrega, não no lugar dela |
-| RQ-07 | Analisar e documentar o TODO de preferências de usuário | 7 | ⚠️ Escrito em `wikis/roadmap.md`, item 1 — **arquivo ainda não commitado**, ver ⚠️ abaixo |
-| RQ-08 | O TODO enumera fonte, densidade, cor e modo de ocultação do menu | 7 | ⚠️ Escrito: tabela de quatro linhas no item 1 do roadmap, cada uma com "situação hoje" e "o que falta". **Mesmo arquivo não commitado** |
-| RQ-09 | O TODO registra a hipótese de virar pacote Filament externo | 7 | ⚠️ Escrito no item 1 do roadmap. **Mesmo arquivo não commitado** |
-| RQ-10 | Documento de futuras melhorias, **ligado ao `README.md`** | 7 | ⚠️ **Parcial.** `wikis/roadmap.md` existe na árvore de trabalho, completo (132 linhas, 5 itens), mas **não está no índice do git** e **o `README.md` não ganhou a linha que o aponta**. A cláusula tem duas metades e só a primeira está escrita |
+| RQ-07 | Analisar e documentar o TODO de preferências de usuário | 7 | ✅ `wikis/roadmap.md`, item 1 — commit `bf6e799` |
+| RQ-08 | O TODO enumera fonte, densidade, cor e modo de ocultação do menu | 7 | ✅ Tabela de quatro linhas no item 1 do roadmap, cada uma com "situação hoje" e "o que falta" |
+| RQ-09 | O TODO registra a hipótese de virar pacote Filament externo | 7 | ✅ Item 1 do roadmap, com o argumento de por que nada nele depende do kit |
+| RQ-10 | Documento de futuras melhorias, **ligado ao `README.md`** | 7 | ✅ **As duas metades.** `wikis/roadmap.md` (132 linhas, 5 itens) versionado, e a seção *Futuras melhorias* com o link em `README.md` e `README.en.md`. Fora do `export-ignore`, como o `00` decidiu — ele viaja para todo projeto criado do kit |
 
-> ### ⚠️ A lacuna real desta entrega, e ela é de RQ-10
+> ### A cláusula que quase ficou de fora — e o que isso diz sobre a suíte
 >
-> `git status` devolve `?? wikis/roadmap.md`: o arquivo foi escrito, tem os cinco itens
-> (preferências de usuário, tema pago, gatilho de densidade nativa, armadilha do `viteTheme()` e as
-> superfícies que não apertam) e **não entrou em nenhum dos nove commits**. Junto com ele ficou de
-> fora a linha do `README.md` que RQ-10 pede — `grep -n roadmap README.md` volta vazio, e a única
-> ocorrência em `README.en.md:249` é um link pré-existente para o site.
+> RQ-07 a RQ-10 estiveram **escritas e não entregues** durante toda a implementação:
+> `wikis/roadmap.md` existia na árvore de trabalho, completo, e `git status` devolvia
+> `?? wikis/roadmap.md` — fora do índice, e sem a linha correspondente no `README.md`. A suíte ficou
+> **verde o tempo inteiro**, porque nenhum caso afirma sobre a existência do documento nem sobre a
+> ligação com o README.
 >
-> Consequência: **RQ-07, RQ-08, RQ-09 e RQ-10 não estão entregues no repositório**, embora o texto
-> que as atende esteja pronto no disco. A decisão de `.gitattributes` que o `00` registra
-> (`wikis/*.md` **fora** do `export-ignore`, `/wikis/specs export-ignore` em `.gitattributes:24`)
-> continua válida e não precisa de mudança: basta `git add wikis/roadmap.md` mais a linha no
-> `README.md`. Registrado como pendência em `03-progresso.md` → `## Pendências`.
+> Fechado pelo commit `bf6e799`, que versionou o roadmap e acrescentou a seção *Futuras melhorias*
+> aos dois READMEs mais a linha em `wikis/README.md`. **A lacuna de cobertura continua aberta**: o
+> cenário que teria pego a omissão no dia — `CT-15`, oráculo documental — está escrito em Gherkin no
+> `04-casos-de-teste.md` (`L3`) e **não foi implementado**. Enquanto não for, a mesma omissão pode
+> voltar sem nada ficar vermelho.
+>
+> A decisão de `.gitattributes` que o `00` registra continua válida e não precisou mudar:
+> `/wikis/specs export-ignore` em `.gitattributes:24`, e `wikis/*.md` **fora** do `export-ignore`.
 
 ### A decisão de RQ-04 — os números que escolheram RQ-05 e descartaram RQ-06
 
@@ -399,8 +402,10 @@ As quatro superfícies do escopo respondem. As três leituras que **não** apert
   especificadas 64 → 65)
 - `tests/Kit/CitacoesDeCodigoTest.php` e `wikis/convencoes.md` — `arte_do_login` de `:135` para
   `:136`, deslocada pelo `use` novo em `config/kit.php`
-- ⚠️ `wikis/roadmap.md` — **escrito e não commitado**, e sem a linha correspondente no `README.md`.
-  Ver `## Cobertura do Requisito`
+- `wikis/roadmap.md` — os cinco itens (preferências de usuário, tema pago, gatilho de densidade
+  nativa, armadilha do `viteTheme()` e as superfícies que não apertam), mais a seção *Futuras
+  melhorias* em `README.md` e `README.en.md` e a linha em `wikis/README.md`. Commit `bf6e799`,
+  acrescentado depois dos oito primeiros — ver o aviso em `## Cobertura do Requisito`
 
 ## Filosofia de Implementação
 
@@ -426,7 +431,8 @@ As quatro superfícies do escopo respondem. As três leituras que **não** apert
 - [x] **Medição no kit** — quatro níveis, oito telas, `padrão` medido com a feature fora da árvore, 2026-09-21
 - [x] **`/code-review` no diff (step 7.5)** — executado durante a implementação; o achado do
   `->options(DensidadeDoLayout::class)` foi pego antes, pela própria suíte, 2026-09-21
-- [ ] ⚠️ `wikis/roadmap.md` commitado e ligado ao `README.md` — **pendente**, RQ-07 a RQ-10
+- [x] `wikis/roadmap.md` commitado e ligado ao `README.md` — RQ-07 a RQ-10, commit `bf6e799`, 2026-09-21
+- [ ] ⚠️ **CT-15** (oráculo documental do roadmap) escrito — **pendente**, ver `04-casos-de-teste.md` → `L3`
 - [ ] `feature-quality-gate` (step 8)
 - [ ] PR
 
@@ -441,4 +447,5 @@ As quatro superfícies do escopo respondem. As três leituras que **não** apert
 - `:white_check_mark: test(kit): a cadeia inteira da densidade do layout` — `c2189d7`
 - `:memo: docs: o layout compacto, com os numeros medidos e o preco declarado` — `e98f436`
 - `:wrench: chore(docs): sincroniza os contadores e a citacao que a linha nova deslocou` — `022e027`
+- `:memo: docs(roadmap): o que o kit olhou e decidiu adiar, com o motivo e a medicao` — `bf6e799`
 - `:memo: docs(wiki): o PRD, os casos de teste e o progresso do layout compacto` — esta rodada

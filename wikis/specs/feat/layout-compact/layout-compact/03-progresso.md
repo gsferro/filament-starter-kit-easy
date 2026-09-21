@@ -5,8 +5,8 @@
 
 ## Estado
 
-**Implementada e medida.** Pendente: a segunda metade de RQ-10 (o roadmap commitado e ligado ao
-`README.md`), o quality gate (step 8) e o PR.
+**Implementada, medida e documentada.** As dez cláusulas do `00` estão atendidas. Pendentes: o
+cenário `CT-15` (a lacuna `L3` do `04`), o quality gate (step 8) e o PR.
 
 | Passo do `01` | Estado | Evidência |
 |---|---|---|
@@ -16,7 +16,7 @@
 | 4 — O render hook | ✅ | `app/Providers/KitServiceProvider.php:configureDensidadeDoLayout():611` · commit `3c6d5f6` · CT-01, CT-03, CT-05, CT-06 |
 | 5 — A suíte | ✅ | `tests/Kit/DensidadeDoLayoutTest.php` — 14 CTs, **25 casos**, 47 asserções · commit `c2189d7` |
 | 6 — Medir o resultado no kit, nos quatro níveis | ✅ | `## Medição`, abaixo |
-| 7 — Documentação | ⚠️ **parcial** | docs pt/en, CHANGELOG e contadores: commits `e98f436` e `022e027`. **`wikis/roadmap.md` escrito e não commitado** — ver `## Pendências` |
+| 7 — Documentação | ✅ | docs pt/en, CHANGELOG e contadores: commits `e98f436` e `022e027`. `wikis/roadmap.md` mais a seção *Futuras melhorias* nos dois READMEs: commit `bf6e799` — acrescentado depois, ver `## Desvios do Plano` → D3 |
 
 ---
 
@@ -180,41 +180,43 @@ valor. As duas leituras estão certas e medem coisas diferentes, e por isso a AD
 reescrita: ela registra o que se sabia quando a decisão foi tomada. A leitura do kit está aqui
 (`## Medição`, A3), no docblock do enum e nas docs de usuário — que é onde ela governa.
 
-### D3 — RQ-10 ficou pela metade, e está aberto
+### D3 — RQ-10 atravessou oito commits escrita e não entregue
 
-Ver `## Pendências`.
+`wikis/roadmap.md` foi escrito cedo, com os cinco itens completos, e ficou **fora do índice do
+git** — `git status` devolvia `?? wikis/roadmap.md` — enquanto os oito primeiros commits da
+feature passavam. Junto com ele faltava a linha do `README.md` que RQ-10 pede por extenso
+(*"utilizando no @README.md"*).
+
+**Fechado pelo commit `bf6e799`**, que versionou o roadmap e acrescentou a seção *Futuras
+melhorias* a `README.md` e `README.en.md`, mais a linha em `wikis/README.md`.
+
+**O que não fechou junto, e é o que importa**: a suíte ficou **verde do começo ao fim**, porque
+nenhum caso afirma sobre a existência do documento nem sobre a ligação. O cenário que teria pego a
+omissão no dia está escrito em Gherkin no `04-casos-de-teste.md` (`L3`, como `CT-15`) e continua
+**não implementado** — ver `## Pendências` → P1. O kit **tem** o padrão de oráculo documental
+(`tests/Kit/RedeDeDocumentacaoTest.php`, `tests/Kit/SiteDeDocumentacaoTest.php`), e ele não foi
+usado.
 
 ---
 
 ## Pendências
 
-### P1 — ⚠️ `wikis/roadmap.md` não commitado, e o `README.md` sem a linha
+### P1 — ⚠️ `CT-15` não escrito: a cláusula documental continua sem oráculo
 
-**Bloqueia RQ-07, RQ-08, RQ-09 e RQ-10.**
+**Não bloqueia nenhuma cláusula — bloqueia a garantia de que ela continue atendida.**
 
-`git status` devolve `?? wikis/roadmap.md`. O arquivo existe na árvore de trabalho, com 132 linhas e
-os cinco itens que o requisito pede:
+RQ-07 a RQ-10 estão entregues (commit `bf6e799`). O que falta é o caso que impede a omissão de
+voltar. O Gherkin está pronto em `04-casos-de-teste.md` → `L3`:
 
-1. Preferências de usuário — densidade, fonte, cor e modo do menu (RQ-07, RQ-08), com a hipótese de
-   **pacote Filament externo** (RQ-09)
-2. O tema compacto oficial e pago, com os números da ADR-05 (RQ-01, RQ-06)
-3. Densidade nativa do Filament — o gatilho que aposenta a implementação atual
-4. A armadilha do `viteTheme()`, que desligaria o botão em silêncio
-5. As superfícies que a densidade não alcança — os achados A1 e A2 desta página
+- existe `wikis/roadmap.md` **na árvore versionada**
+- o texto dele diz que descreve o futuro **do kit**, não o do projeto de quem o instala — a
+  asserção não é enfeite: o arquivo **viaja** para todo projeto criado do kit (`wikis/*.md` fora do
+  `export-ignore`, `/wikis/specs export-ignore` em `.gitattributes:24`), e sem essa frase ele se lê
+  como promessa
+- o `README.md` contém o link para ele
 
-**O que falta**, e é curto:
-
-- `git add wikis/roadmap.md`
-- a linha no `README.md` que RQ-10 pede explicitamente (*"utilizando no @README.md"*) — hoje
-  `grep -n roadmap README.md` volta vazio
-- **o cenário que faltou** — `04-casos-de-teste.md` → `L3` tem o Gherkin do CT-15. Escrever o
-  cenário **antes** de commitar o arquivo é o roteamento correto (destino 3 — teste), e é o que
-  impede a mesma omissão de voltar
-
-O `.gitattributes` **não** precisa mudar: `/wikis/specs export-ignore` está em `.gitattributes:24`
-e `wikis/*.md` continua fora do `export-ignore`, que é a decisão registrada no `00` — o roadmap
-viaja para todo projeto criado do kit, e o texto dele já diz, nele mesmo, que descreve o futuro do
-**kit** e não o do projeto de quem o instala.
+Roteamento: destino **3 — teste**. Custa três asserções, no molde de
+`tests/Kit/RedeDeDocumentacaoTest.php`.
 
 ### P2 — Quality gate (step 8) e PR
 
@@ -237,8 +239,8 @@ está concluída.
 - [x] **Citações `arquivo:símbolo:linha` reverificadas** — **21/21 ok** pelo grep da skill sobre os quatro arquivos da wiki. Duas citações do `02` estavam deslocadas pela própria feature (`aplicarNaConfig()` :478 → :504 e o ponto de chamada :346 → :355, empurrados pela propriedade nova) e foram corrigidas **na fonte**, com a nota inline que o step 7 exige, 2026-09-21
 - [x] **`vendor/bin/pest tests/Kit/CitacoesDeCodigoTest.php --compact`** — verde. `wikis/specs/**` fica **fora** do escopo desse caso por decisão registrada (wiki é registro datado), então ele não confere esta wiki: quem confere é o grep da linha acima, 2026-09-21
 - [x] **Wiki completada** — `01`, `03` e `04` escritos contra o código existente, com as lacunas declaradas em vez de caladas, 2026-09-21
-- [ ] ⚠️ `wikis/roadmap.md` commitado e ligado ao `README.md` — **pendente**, ver `## Pendências` → P1
-- [ ] ⚠️ CT-15 (oráculo documental do roadmap) escrito — **pendente**, ver `04-casos-de-teste.md` → `L3`
+- [x] **`wikis/roadmap.md` commitado e ligado ao `README.md`** — RQ-07 a RQ-10 fechadas, commit `bf6e799` (roadmap + *Futuras melhorias* nos dois READMEs + linha em `wikis/README.md`), 2026-09-21
+- [ ] ⚠️ **CT-15** (oráculo documental do roadmap) escrito — **pendente**, ver `04-casos-de-teste.md` → `L3` e `## Pendências` → P1
 - [ ] `feature-quality-gate` (step 8)
 - [ ] `git commit` da wiki e PR
 
@@ -270,8 +272,9 @@ está concluída.
 
 **Entrada que o gate vai encontrar**, e vale avisar para ele não gastar ciclo redescobrindo:
 
-- **RQ-07 a RQ-10 não estão entregues no repositório** — o texto existe no disco, o arquivo não está
-  versionado. Ver `## Pendências` → P1. É omissão **conhecida e declarada**, não silenciosa
+- **RQ-07 a RQ-10 estão entregues** (commit `bf6e799`), mas atravessaram oito commits **escritas e
+  não versionadas** sem que nada ficasse vermelho. A lacuna que permitiu isso — `CT-15`, oráculo
+  documental — continua aberta e está declarada em `## Pendências` → P1
 - **RQ-06 é ⛔ por desenho** — excluída por RQ-04, que escolheu RQ-05. Marcar como "não atendida"
   seria erro de leitura: as duas são mutuamente exclusivas
 - **A prova do pixel é medição, não suíte** — lacuna `L1` do `04`, declarada
@@ -342,8 +345,9 @@ medida.
   cobertura para consultar. Um `## Cobertura do Requisito` escrito antes teria mostrado RQ-07 a
   RQ-10 sem passo fechado
 - **Oráculo documental para cláusula documental.** O kit **tem** o padrão
-  (`RedeDeDocumentacaoTest`, `SiteDeDocumentacaoTest`) e ele não foi usado. Três linhas de cenário
-  teriam mantido `wikis/roadmap.md` fora do limbo
+  (`RedeDeDocumentacaoTest`, `SiteDeDocumentacaoTest`) e ele não foi usado. `wikis/roadmap.md` ficou
+  oito commits no limbo — escrito, completo, fora do índice —, e o que o tirou de lá foi alguém
+  reparar, não a suíte. Três asserções teriam feito o trabalho no dia
 - **Provar o servidor antes de medir.** A rodada perdida na porta 8123 não deu nenhum sinal de
   erro — e uma medição silenciosamente errada é pior que uma medição que falha. Um `curl` de
   confirmação passa a ser passo obrigatório de qualquer medição de navegador neste repositório

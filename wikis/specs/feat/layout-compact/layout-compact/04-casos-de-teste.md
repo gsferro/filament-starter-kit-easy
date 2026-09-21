@@ -9,7 +9,8 @@
 > **duas** fontes confrontadas: o `00-requisito.md` e `tests/Kit/DensidadeDoLayoutTest.php`. Onde o
 > requisito pede algo que **nenhum caso prova**, está escrito como **lacuna declarada** (`L1`…`L4`)
 > em vez de ser calado — é a única coisa honesta a fazer com um `04` escrito por último, e duas das
-> quatro lacunas apontam para a cláusula que de fato ficou por entregar.
+> quatro apontam para a cláusula que atravessou oito commits escrita e não versionada, sem que nada
+> ficasse vermelho.
 
 ## Perfil de Derivação
 
@@ -81,10 +82,10 @@ conteúdo o distingue, e foi exatamente esse modo de falha que a `v0.37.1` pagou
 | RQ-04 | — | **decisória**: o resultado dela é a existência das regras R1…R7. A medição que a fecha está no `01` → `### A decisão de RQ-04` e no `03` → `## Medição`. Sem CT — ver `L2` |
 | RQ-05 | R1, R2, R3, R4, R5, R6 | CT-01…CT-08, CT-12, CT-13, CT-14 — com a lacuna `L1` no **pixel** |
 | RQ-06 | — | ⛔ excluída por RQ-04. Não gera cenário: um CT para ela contradiria a entrega |
-| RQ-07 | — | **documental** — `wikis/roadmap.md`, item 1. Sem CT — ver `L3` |
+| RQ-07 | — | **documental** — `wikis/roadmap.md`, item 1 (commit `bf6e799`). Sem CT — ver `L3` |
 | RQ-08 | — | **documental** — tabela de quatro linhas no item 1. Sem CT — ver `L3` |
 | RQ-09 | — | **documental** — hipótese de pacote externo, item 1. Sem CT — ver `L3` |
-| RQ-10 | — | **documental** — ⚠️ e é a cláusula que ficou **por entregar**. Ver `L3`, que é a lacuna cara |
+| RQ-10 | — | **documental** — entregue nas duas metades (documento + link nos READMEs), mas **sem oráculo**: ver `L3`, que é a lacuna cara |
 
 ---
 
@@ -542,18 +543,19 @@ documental — `tests/Kit/RedeDeDocumentacaoTest.php` e `tests/Kit/SiteDeDocumen
 afirmam sobre a rede de documentação, e a wiki `kit-install-host-local` usou um CT para a cláusula
 de documentação dela. Aqui não foi usado.
 
-### `L3` — A cláusula que ficou por entregar é justamente a que não tem CT — e o kit tinha como cobri-la
+### `L3` — A cláusula sem CT é a que ficou oito commits no limbo
 
 **A cláusula**: RQ-10, *"crie uma para TODOs ou com o nome normalmente utilizando no @README.md para
 informas futuras melhorias"* — duas metades: **o documento** e **a ligação com o README**.
 
-**O estado real**: `wikis/roadmap.md` existe na árvore de trabalho, com os cinco itens que RQ-07,
-RQ-08 e RQ-09 pedem, e **não está no índice do git**; o `README.md` **não** ganhou a linha.
-`git status` devolve `?? wikis/roadmap.md`.
+**O que aconteceu**: `wikis/roadmap.md` foi escrito cedo, completo, e ficou **fora do índice do
+git** durante os oito primeiros commits da feature — `git status` devolvia `?? wikis/roadmap.md` —,
+e o `README.md` não tinha a linha. A suíte ficou **verde do começo ao fim**. A cláusula só fechou
+no commit `bf6e799`, e o que a fechou foi alguém reparar, não um caso vermelho.
 
 **Por que nada ficou vermelho**: nenhum caso afirma sobre a existência do documento nem sobre a
 ligação. Os contadores do README que **têm** teste (`SiteDeDocumentacaoTest`) contam *features
-especificadas* e *arquivos de teste* — nenhum deles conta documentos de topo de `wikis/`, e
+especificadas* e *arquivos de teste* — nenhum deles conta documentos de topo de `wikis/` —, e
 `RedeDeDocumentacaoTest` varre o que está **no repositório**, não o que está no disco.
 
 **O cenário que faltou**, e ele é barato:
@@ -570,8 +572,8 @@ A segunda asserção não é enfeite: a decisão registrada no `00` é que o roa
 projeto criado do kit (`wikis/*.md` fora do `export-ignore`), e sem essa frase o arquivo vira ruído
 confuso na raiz de um projeto de terceiro.
 
-**Roteamento**: destino **3 — teste**, e a correção é escrever o cenário **antes** de commitar o
-arquivo. Registrado como pendência no `03-progresso.md`.
+**Roteamento**: destino **3 — teste**, e continua **aberto**. O artefato está entregue; o oráculo
+que impede a omissão de voltar, não. Registrado em `03-progresso.md` → `## Pendências` → P1.
 
 ### `L4` — Duas fronteiras sem cenário
 
@@ -631,7 +633,7 @@ arquivo. Registrado como pendência no `03-progresso.md`.
 | CT-12 | Fixa o espaçamento medido de cada nível (3 exemplos) | R1, R6 | congelamento de valor | Feature | idem | M1, M2 |
 | CT-13 | Expõe exatamente os três níveis da escala | R6 | partição exaustiva do enum | Feature | idem | M20, M21 |
 | CT-14 | Grava pelo Select da tela e leva até o HTML | R4 | gravação por componente Livewire | Feature (Livewire + HTTP) | idem | M14, M15, M16 |
-| ~~CT-15~~ | O roadmap existe no repositório e o README o aponta | — | oráculo documental | — | **não escrito** — ver `L3` | — |
+| ~~CT-15~~ | O roadmap existe no repositório e o README o aponta | — | oráculo documental | — | **não escrito** — ver `L3`; o artefato está entregue (`bf6e799`), o oráculo não | — |
 
 **14 cenários, 25 casos executados.** Todos em `tests/Kit/DensidadeDoLayoutTest.php`, suíte `Kit`.
 
