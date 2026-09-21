@@ -236,5 +236,5 @@ Settings"*. O render hook satisfaz.
 - `vendor/filament/filament/resources/views/components/layout/base.blade.php:44`
 - `vendor/filament/filament/src/Panel/Concerns/HasTheme.php:27-33`
 - `.ai/rules/settings.md:13`
-- `app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig():478`, chamado em
-  `app/Providers/KitServiceProvider.php:346`
+- `app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig():504`, chamado em
+  `app/Providers/KitServiceProvider.php:aplicarNaConfig():355` *(alterado em 2026-09-21: :478 e :346 eram as linhas de antes de a propriedade nova desta feature entrar no arquivo; deslocamento pego pela reverificação de citações do step 7)*
