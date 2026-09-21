@@ -633,7 +633,8 @@ que impede a omissão de voltar, não. Registrado em `03-progresso.md` → `## P
 | CT-12 | Fixa o espaçamento medido de cada nível (3 exemplos) | R1, R6 | congelamento de valor | Feature | idem | M1, M2 |
 | CT-13 | Expõe exatamente os três níveis da escala | R6 | partição exaustiva do enum | Feature | idem | M20, M21 |
 | CT-14 | Grava pelo Select da tela e leva até o HTML | R4 | gravação por componente Livewire | Feature (Livewire + HTTP) | idem | M14, M15, M16 |
-| ~~CT-15~~ | O roadmap existe no repositório e o README o aponta | — | oráculo documental | — | **não escrito** — ver `L3`; o artefato está entregue (`bf6e799`), o oráculo não | — |
+| CT-15 | O roadmap existe, está ligado nos dois READMEs **e viaja pelos dois caminhos de entrega** | R8 | oráculo documental | — | **escrito** — vive em `tests/Kit/SiteDeDocumentacaoTest.php` sob o ID local `[CT-48]` daquele arquivo, que é o dono dos contadores de README | M31, M32 |
+| CT-16 | Um nível ilegível gravado **não trava a tela de configurações** | R3 | EP (vocabulário legível × ilegível) × oráculo no campo ALHEIO | 1 | **escrito** — `tests/Kit/DensidadeDoLayoutTest.php` | M33 |
 
 **14 cenários, 25 casos executados.** Todos em `tests/Kit/DensidadeDoLayoutTest.php`, suíte `Kit`.
 
@@ -641,6 +642,8 @@ que impede a omissão de voltar, não. Registrado em `03-progresso.md` → `## P
 
 | Verificação | Resultado |
 |---|---|
+| Mutação **M31/M32** — `export-ignore` alcançando o roadmap; roadmap fora de `KitUpdate::CAMINHOS_DO_KIT` | **mortos**, verificados por mutação em 2026-09-21: os dois deixam `[CT-48]` vermelho, e a árvore restaurada volta ao verde |
+| Mutação **M33** — a coerção sai de `mutateFormDataBeforeFill()` | **morto por CT-16**, que nasceu VERMELHO contra a implementação original: salvar `nome_da_aplicacao` falhava com erro em `densidade_do_layout` |
 | Mutação **M12** — apagar a linha do `mapaDeConfiguracao()` | **7 dos 14 CTs reprovam**, medido em 2026-09-21 (commit `c2189d7`). Entre eles CT-03, CT-06, CT-07 e CT-14, que são os que afirmam sobre o valor do banco chegando ao outro lado da cadeia |
 | Mutantes previstos | 30 |
 | Mutantes **sem matador** | **2** — M3 (`L1`) e M30 (`L4`), ambos declarados |

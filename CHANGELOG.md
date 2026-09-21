@@ -66,6 +66,21 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   organização e **53** com cinco — os mesmos números antes e depois do diff. A coluna nova custa
   zero; o crescimento por linha é pré-existente e não é desta feature.
 
+- **`wikis/roadmap.md` — o que o kit já olhou e decidiu adiar, com o motivo e a medição.** Cinco
+  itens, cada um com a decisão registrada atrás: preferências de aparência por usuário (com a
+  hipótese de virar pacote Filament externo), o tema compacto **pago** da Filament, o gatilho que
+  aposenta a implementação atual de densidade, a armadilha do `viteTheme()`, e as superfícies que
+  `--spacing` não alcança.
+
+  O tema pago fica registrado com números, e **recusado para o kit pela licença, não pelo preço**:
+  ela é de projeto único, e um starter kit é distribuído — embarcá-lo obrigaria cada instalação a
+  comprar. Para quem tem projeto único, a conta muda, e o documento dá a informação para decidir.
+
+  Ele **viaja com o projeto**, pelos dois caminhos: `composer create-project` (não está no
+  `export-ignore`) e `php artisan kit:update` (está em `KitUpdate::CAMINHOS_DO_KIT`). Ligado em
+  `README.md`, `README.en.md` e no índice `wikis/README.md`. É o futuro **do kit**, não o do seu
+  projeto, e o documento abre dizendo isso — sem essa linha ele se leria como promessa.
+
 - **A documentação agora conta o que o `laravel/pao` faz.** Ele está no kit desde o commit do
   esqueleto, em `require-dev`, e a referência de pacotes o descrevia como *"ferramentas de
   desenvolvimento do Laravel"* — descrição que não diz nada e não prepara ninguém para ver a suíte

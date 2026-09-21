@@ -201,7 +201,13 @@ usado.
 
 ## Pendências
 
-### P1 — ⚠️ `CT-15` não escrito: a cláusula documental continua sem oráculo
+### ~~P1~~ — FECHADA em 2026-09-21
+
+`CT-15` foi escrito como `[CT-48]` de `tests/Kit/SiteDeDocumentacaoTest.php`, e o `/code-review`
+mostrou que a primeira versão dele **cobria só metade do problema** — ver o step 7.5 abaixo. O
+texto original da pendência fica abaixo, porque a análise que ela fez continua certa.
+
+### P1 (texto original) — `CT-15` não escrito: a cláusula documental continua sem oráculo
 
 **Não bloqueia nenhuma cláusula — bloqueia a garantia de que ela continue atendida.**
 
@@ -225,6 +231,78 @@ está concluída.
 
 ---
 
+## Step 7.5 — `/code-review` no diff (2026-09-21)
+
+Três achados. **Dois eram defeito de verdade, e os dois moravam em código escrito para fechar uma
+lacuna apontada por outro gate** — o que é a lição desta seção.
+
+### Achado 1 — o roadmap não chegava a quem JÁ instalou (alto)
+
+`wikis/roadmap.md` entrou no repositório e **não** entrou em `KitUpdate::CAMINHOS_DO_KIT`. O
+`kit:update` compara duas versões restrito a essa lista: arquivo fora dela não é entregue nunca.
+`tests/Kit/KitUpdateTest.php` reprovava — era a **única** falha da suíte `Kit` inteira.
+
+**O que faz este achado valer mais que a correção**: `CT-48` foi escrito exatamente para garantir
+que o roadmap "viaja com o projeto", e passava verde. Porque "viajar" tem **dois** caminhos, e ele
+afirmava só um:
+
+| Caminho | Governado por | Atende |
+|---|---|---|
+| `composer create-project` | `.gitattributes` | quem instala **agora** |
+| `php artisan kit:update` | `KitUpdate::CAMINHOS_DO_KIT` | quem **já** instalou |
+
+Enquanto isso o README prometia, nas duas línguas, que o roadmap *"vem junto com o seu projeto"*.
+A promessa estava no texto, o mecanismo do `create-project` estava certo, o do `kit:update` não
+existia, e o caso desenhado para cobrir a promessa **não tocava** nele.
+
+Fechado nos dois lados. Para usar a lista sem repetir reflexão, o helper `caminhosDoKit()` saiu de
+dentro de `KitUpdateTest.php` e foi para `tests/Pest.php` — helper usado por dois arquivos só
+estoura em `--parallel`, `--tia` ou arquivo solto (`.ai/rules/testes.md`), e as três formas foram
+rodadas.
+
+Nit do mesmo achado, corrigido junto: o comentário do `.gitattributes` dizia "dez documentos de
+topo de `wikis/`"; são onze.
+
+### Achado 2 — o nível ilegível travava a tela inteira (médio)
+
+`Select` acrescenta sozinho um `Rule::in()` das próprias opções. Com `compact` gravado na linha de
+settings, o formulário nascia com esse valor e a validação o recusava — e o efeito **não** fica no
+campo: a tela parava de salvar por inteiro.
+
+**Reproduzido antes de corrigir**: `fillForm(['nome_da_aplicacao' => 'Projeto Novo'])->call('save')`
+falhava com `data.densidade_do_layout => "O campo densidade do layout não contém um valor válido."`.
+Quem só queria trocar o nome da aplicação levava erro num campo que não tocou.
+
+O arquivo da tela **já descrevia esse defeito** no docblock de `comValorConfigurado()`, para
+`MAIL_MAILER=ses` — *"nem o nome da aplicação grava"*. O caso do `.env` tinha sido tratado; este
+nasceu com a densidade e não foi. E CT-11 já existia para valor ilegível, **mas só pelo lado do
+render** — a metade da tela estava aberta.
+
+Fechado com `DensidadeDoLayout::coagir()` em `mutateFormDataBeforeFill()`, e **não** com
+`comValorConfigurado()`: os dois problemas só se parecem. `ses` é transporte legítimo fora da lista
+curta, e rebaixá-lo seria perda de dado; nível de densidade tem vocabulário fechado, e `compact` é
+lixo — oferecê-lo como opção marcada exibiria lixo e o gravaria de volta.
+
+CT-16 nasceu **vermelho** contra a implementação original, e o oráculo dele é o **campo alheio**:
+asserir só que a densidade grava deixaria passar uma correção que conserta o campo e mantém a tela
+travada.
+
+### Achado 3 — evidência datada de antes do commit que a invalidou (baixo)
+
+A Verificação Final registrava `composer test:kit` com **2.715 verdes, 0 falhas**, e esse número
+era de **antes** do commit `bf6e799` (o roadmap) — que é justamente o que deixou a suíte vermelha.
+A linha seguinte fechava o item do roadmap sem repetir a regressão que o roadmap quebrou.
+
+Corrigido remedindo, não reescrevendo a data.
+
+### O padrão, que vale para além desta wiki
+
+Os dois achados de código estavam em trabalho feito para **fechar lacuna apontada por outro gate**.
+Fechar lacuna é escrever código novo, e esse código entra **depois** da revisão que o motivou — ou
+seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
+
+---
+
 ## Verificação Final
 
 - [x] `vendor/bin/pint --dirty --format agent` — `passed`, 2026-09-21
@@ -240,7 +318,9 @@ está concluída.
 - [x] **`vendor/bin/pest tests/Kit/CitacoesDeCodigoTest.php --compact`** — verde. `wikis/specs/**` fica **fora** do escopo desse caso por decisão registrada (wiki é registro datado), então ele não confere esta wiki: quem confere é o grep da linha acima, 2026-09-21
 - [x] **Wiki completada** — `01`, `03` e `04` escritos contra o código existente, com as lacunas declaradas em vez de caladas, 2026-09-21
 - [x] **`wikis/roadmap.md` commitado e ligado ao `README.md`** — RQ-07 a RQ-10 fechadas, commit `bf6e799` (roadmap + *Futuras melhorias* nos dois READMEs + linha em `wikis/README.md`), 2026-09-21
-- [ ] ⚠️ **CT-15** (oráculo documental do roadmap) escrito — **pendente**, ver `04-casos-de-teste.md` → `L3` e `## Pendências` → P1
+- [x] **CT-15** (oráculo documental do roadmap) **escrito** — vive em `tests/Kit/SiteDeDocumentacaoTest.php` sob o ID local `[CT-48]`, o arquivo que já é dono dos contadores de README. Verificado por mutação: `export-ignore` no roadmap, link quebrado no README e índice da wiki sem a entrada deixam os três o caso vermelho, 2026-09-21
+- [x] **`/code-review` (PR-02)** — três achados, todos fechados. Ver `## Step 7.5` abaixo, 2026-09-21
+- [x] **CT-16** — a tela de configurações não trava com nível ilegível gravado. Nasceu **vermelho** contra a implementação original, 2026-09-21
 - [ ] `feature-quality-gate` (step 8)
 - [ ] `git commit` da wiki e PR
 
