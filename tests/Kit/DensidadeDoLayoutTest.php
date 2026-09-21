@@ -380,3 +380,60 @@ it('[CT-13] expoe exatamente os tres niveis da escala', function (): void {
     expect(array_column(DensidadeDoLayout::cases(), 'value'))
         ->toBe(['confortavel', 'compacto', 'denso']);
 });
+
+/**
+ * CT-16 — um nível ilegível gravado não trava a TELA de configurações.
+ *
+ * ## O par que faltava
+ *
+ * CT-11 já cobre o valor ilegível pelo lado do RENDER: a página servida não quebra e não emite
+ * `--spacing`. Esta é a outra metade, e ela estava aberta — achado do `/code-review`.
+ *
+ * `Select` acrescenta sozinho um `Rule::in()` das próprias opções
+ * (`vendor/filament/forms/src/Components/Select.php:getInValidationRuleValues()`). Com
+ * `compact` — que não é nível do kit — gravado na linha de settings, o formulário nasce com esse
+ * valor no estado e a validação o recusa. O efeito **não** fica contido no campo: a tela inteira
+ * para de salvar, e quem tentar mudar o NOME DA APLICAÇÃO leva erro num campo que nem tocou.
+ *
+ * É exatamente o defeito que o docblock de `comValorConfigurado()`, neste mesmo arquivo de tela,
+ * já descreve para `MAIL_MAILER=ses` — *"nem o nome da aplicação grava"*. O caso do `.env` foi
+ * tratado; este nasceu junto com a densidade e não foi.
+ *
+ * ## Por que `coagir()` e não `comValorConfigurado()`
+ *
+ * São problemas diferentes com a mesma aparência. `comValorConfigurado()` existe para valor
+ * **legítimo porém fora da lista curta** — `ses` é um transporte real do Laravel, e rebaixá-lo ao
+ * default seria perda de dado. Nível de densidade tem **vocabulário fechado**: `compact` não é um
+ * nível válido em lugar nenhum, é lixo. Oferecê-lo como opção marcada exibiria lixo na tela e o
+ * gravaria de volta.
+ *
+ * `coagir()` é a mesma função que o render hook já usa (CT-10), então a tela e a página passam a
+ * responder a mesma coisa para a mesma entrada — que é o invariante que importa.
+ *
+ * ## O oráculo é o CAMPO ALHEIO
+ *
+ * Asserir só que a densidade grava deixaria passar uma correção que conserta o campo e mantém a
+ * tela travada. O `Então` afirma que `nome_da_aplicacao` — que o caso nem menciona no problema —
+ * chega ao banco.
+ */
+it('[CT-16] um nivel ilegivel gravado nao impede salvar o resto da tela', function (): void {
+    // Os demais casos deste arquivo não abrem tela, então o arquivo não semeia papéis.
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    gravarDensidade('compact');
+
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKitTela::class)
+        ->fillForm(['nome_da_aplicacao' => 'Projeto Novo'])
+        ->call('save')
+        ->assertHasNoFormErrors()
+        ->assertNotified();
+
+    expect(configuracaoGravada('nome_da_aplicacao'))->toBe('Projeto Novo');
+
+    expect(configuracaoGravada('densidade_do_layout'))->toBe(
+        'confortavel',
+        'o lixo tinha de ser coagido para o padrão ao entrar no formulário, e gravado coagido',
+    );
+})->group('kit');

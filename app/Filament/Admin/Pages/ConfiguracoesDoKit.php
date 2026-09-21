@@ -177,6 +177,27 @@ class ConfiguracoesDoKit extends SettingsPage
         // A chave secreta do anti-robô: mesmo segredo, mesmos dois pontos (`.ai/rules/pages.md`).
         $data['login_anti_robo_chave_secreta'] = null;
 
+        /*
+         * A densidade entra COAGIDA, e isso trava a tela inteira se faltar.
+         *
+         * `Select` acrescenta sozinho um `Rule::in()` das próprias opções. Um nível ilegível
+         * gravado na linha de settings — `compact` em vez de `compacto`, vindo de edição à mão
+         * ou de versão futura revertida — nasceria no estado do formulário e seria recusado pela
+         * validação. O efeito NÃO fica contido no campo: a tela para de salvar por inteiro, e
+         * quem tentar mudar o nome da aplicação leva erro num campo que não tocou. É o mesmo
+         * defeito que `comValorConfigurado()` descreve para `MAIL_MAILER=ses`, logo abaixo.
+         *
+         * `coagir()` e NÃO `comValorConfigurado()`, porque os dois problemas só se parecem:
+         * `ses` é um transporte legítimo fora da lista curta, e rebaixá-lo ao default seria perda
+         * de dado. Nível de densidade tem vocabulário FECHADO — `compact` não é válido em lugar
+         * nenhum, é lixo, e oferecê-lo como opção marcada exibiria lixo e o gravaria de volta.
+         *
+         * `coagir()` é a mesma função que o render hook usa, então a tela e a página servida
+         * respondem a mesma coisa para a mesma entrada. Coberto por CT-16; CT-11 é a metade do
+         * render.
+         */
+        $data['densidade_do_layout'] = DensidadeDoLayout::coagir($data['densidade_do_layout'] ?? null)->value;
+
         return $data;
     }
 
