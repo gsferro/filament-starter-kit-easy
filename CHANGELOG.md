@@ -3,6 +3,59 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Adicionado
+- **A documentação agora conta o que o `laravel/pao` faz.** Ele está no kit desde o commit do
+  esqueleto, em `require-dev`, e a referência de pacotes o descrevia como *"ferramentas de
+  desenvolvimento do Laravel"* — descrição que não diz nada e não prepara ninguém para ver a suíte
+  de 2.614 testes responder **uma linha de JSON**.
+
+  A página [Trabalhando com agentes de IA](docs/pt/operacao/agentes-de-ia.md) ganhou a seção com o
+  que muda por ferramenta (Pest, PHPUnit, Paratest, PHPStan, Rector, Artisan), como ele detecta o
+  agente, e como desligar.
+
+  Três coisas que estavam **só no código do pacote**, ausentes do README dele:
+  `PAO_DISABLE=1` e `PAO_FORCE=1` existem; as duas são lidas de **`$_SERVER`**, então uma linha no
+  `.env` do Laravel **não** tem efeito; e a detecção é pela **presença** de variáveis de ambiente
+  (`AI_AGENT`, `CLAUDECODE`, `CURSOR_AGENT`, `CODEX_*`, …), o que significa que `env -u`, `sudo` sem
+  `-E` e `docker run` sem `-e` desligam o `pao` sem avisar.
+
+  E duas correções de afirmação nossa, que só eram falsas **sob agente** e por isso envelheceram sem
+  ninguém notar: `--compact` do Pest é **suplantado** (o plugin injeta `--no-output --no-progress`),
+  e `pint --format agent` é **redundante** (o Pint tem detecção própria).
+
+- **`laravel/moat` documentado como ferramenta opcional do mantenedor.** Não é pacote PHP nem
+  dependência do kit: é uma CLI em **Rust**, via Homebrew, que faz auditoria *read-only* de
+  configuração de segurança do GitHub. A documentação diz isso explicitamente, para ninguém tentar
+  `composer require` — e registra que Homebrew não é padrão no Windows.
+
+### Alterado
+- **`nunomaduro/collision` passa de `^8.6` para `^8.9.3`.** A constraint não descrevia o
+  instalável: o `laravel/pao` declara `conflict: "<8.9.3"`, e o resolvedor já subia o piso em
+  silêncio para 8.9.5. Nada muda no que é instalado — muda o que o manifesto **afirma**.
+
+- **`php` passa de `^8.3` para `^8.4`.** Conferido por `composer why-not php 8.3.0 --locked`:
+  **24 pacotes de produção** no lock exigem ≥ 8.4 (a linha `symfony/*` 8.1 inteira em `>=8.4.1`,
+  mais `spatie/laravel-activitylog` e `syriable/filament-activitylog`), e 31 em `require-dev`,
+  incluindo o Pest 5. A constraint frouxa não deixava ninguém instalar em 8.3: apenas trocava a
+  mensagem de erro por um conflito de dependência transitiva, que manda a pessoa procurar no lugar
+  errado.
+
+### Avaliado e adiado
+- **`laravel/vet` não entra agora.** Ele mostra o diff do código das dependências antes do
+  `composer update` gravar no vendor, e o valor para um kit com ~60 dependências diretas seria alto.
+  Mas é **plugin do Composer** que, por desenho declarado, **aborta o build** quando acha pacote não
+  confiado — e o kit é distribuído por `composer create-project`. Se o `vet.json` viajasse no dist,
+  o `create-project` de terceiro morreria no pós-install contra a lista de confiança do mantenedor,
+  e o `kit:install` nunca rodaria.
+
+  O que decidiu o adiamento: **v0.1.2, três releases em três dias**, beta declarado, e o
+  `extra.class` do plugin **mudou de namespace** entre a v0.1.0 e a v0.1.1. O custo de esperar é
+  zero; o de um `create-project` quebrado é o kit inteiro. Reavaliar na 1.0 — a análise completa,
+  com as duas formas de adoção já avaliadas, está em
+  `wikis/specs/feat/pacotes-laravel-ia/pacotes-laravel-ia/02-decisoes-arquiteturais.md`.
+
 ## [0.37.1] - 2026-09-21
 
 ### Corrigido
