@@ -17,7 +17,7 @@
         "source": "https://github.com/gsferro/filament-starter-kit-easy"
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "anselmokossa/filament-sentinel": "^1.0",
         "asmit/resized-column": "^4.0",
         "awcodes/filament-badgeable-column": "^4.2",
