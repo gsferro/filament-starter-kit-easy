@@ -174,14 +174,14 @@ dois já vêm completos.
 |---|---:|
 | Casos de teste (`Kit` + `Tenancy`, medidos em 2026-09-08) | **2.226**, com **7.428 asserções** |
 | Telas varridas em navegador real | **55** |
-| Arquivos de teste | **146** em `Kit` + `Tenancy` (**172** no total) |
+| Arquivos de teste | **147** em `Kit` + `Tenancy` (**173** no total) |
 | PHPStan | **level 7**, zero erros |
 | FilaCheck | **17** regras, todas passando |
 
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **9** |
-| Features especificadas (`wikis/specs/`) | **63** |
+| Features especificadas (`wikis/specs/`) | **64** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **18** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
@@ -312,6 +312,8 @@ Nenhum serviço tem `container_name` fixo: o prefixo vem de `COMPOSE_PROJECT_NAM
 ### Endereço local por nome, em vez de IP e porta
 
 Dá para abrir o projeto em `http://meu-projeto.test` no lugar de `http://127.0.0.1:8000`: custa uma linha no arquivo `hosts` da máquina e duas chaves no `.env`. Nenhum arquivo versionado muda, a adoção é individual e quem não fizer nada continua em `http://localhost:8000`. [Receita completa, com a armadilha de elevação no Windows](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/dominio-local.html).
+
+**O `kit:install` oferece fazer isso no fim da instalação**: ele sugere o domínio a partir do nome que você escolheu, escreve a linha no `hosts` (pedindo elevação no Windows) e ajusta a `APP_URL`. É opt-in, não depende de flag nenhuma, e recusar deixa tudo como sempre foi. Domínio fora dos sufixos reservados ao uso local (`.test`, `.localhost`, `.example`, `.invalid`) pede um sim a mais, porque apontar um domínio real para `127.0.0.1` derruba o acesso ao site de verdade nesta máquina.
 
 ### Atualizando a stack na máquina que a hospeda
 

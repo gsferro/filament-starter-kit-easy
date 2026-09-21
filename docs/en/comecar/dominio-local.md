@@ -15,6 +15,12 @@ The gain is more than cosmetic. Session cookies, absolute links stored in the da
 login callbacks start using a stable name rather than an IP with a port — the same shape as the
 real environment.
 
+> **`kit:install` offers to do this for you.** At the end of the installation it asks whether you
+> want a local domain, suggests one from the project's name, writes the line into `hosts` (asking
+> for elevation on Windows) and adjusts `APP_URL`. This page still applies to anyone who installed
+> before it existed, to anyone who declined the question, and to `FORWARD_APP_PORT`, which the step
+> never touches. See [Advanced installation](../instalacao-avancada/#local-domain-at-the-end-of-the-installation).
+
 ## Recipe, in three steps
 
 ### 1. The hosts file
@@ -100,9 +106,13 @@ either way, so its success proves nothing about your session being elevated.
 Open Windows Terminal with *Run as administrator*, or elevate the single command:
 
 ```powershell
-Start-Process pwsh -Verb RunAs -ArgumentList '-NoProfile','-Command',
+Start-Process pwsh -Verb RunAs -Wait -ArgumentList '-NoProfile','-Command',
   'Add-Content "$env:windir\System32\drivers\etc\hosts" "`n127.0.0.1`tmy-project.test" -Encoding ascii'
 ```
+
+`-Wait` is what hands control back only once the elevated process is done. Pasting it by hand, that
+is a convenience; for `kit:install`, which runs this very command and **checks the file afterwards**,
+it is what keeps the check from happening before the UAC dialog is answered.
 
 Should the error survive elevation, the next suspect is Controlled Folder Access in Defender, or a
 corporate antivirus guarding the file.

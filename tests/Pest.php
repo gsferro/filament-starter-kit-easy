@@ -17,6 +17,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Two\User as UsuarioDoProvedor;
 use Psr\Log\LoggerInterface;
@@ -447,6 +448,31 @@ function noPainelBootado(string $painel): void
 {
     Filament::setCurrentPanel($painel);
     Filament::bootCurrentPanel();
+}
+
+/**
+ * O `.env` do diretório temporário do caso — nunca o do projeto.
+ *
+ * Os casos que exercitam escrita de `.env` (`CustomizadorDaInstalacaoTest`,
+ * `HostLocalTest`) copiam o `.env.example` para um diretório temporário e injetam esse
+ * diretório na classe sob teste. Apontar para `base_path()` faria a suíte destruir o
+ * ambiente de quem a roda.
+ *
+ * Aqui, e não dentro de um arquivo de teste, porque mais de um arquivo usa — em PHP função é
+ * global no processo, e helper que vaza de um arquivo para o vizinho só estoura em
+ * `--parallel`, `--tia` ou ao rodar um arquivo sozinho. Ver `.ai/rules/testes.md`.
+ */
+function envDoTeste(): string
+{
+    return File::get(test()->base.'/.env');
+}
+
+/** O valor efetivo da chave, já com as aspas e os escapes resolvidos pelo dotenv. */
+function valorNoEnv(string $chave): ?string
+{
+    $lidos = Dotenv\Dotenv::parse(envDoTeste());
+
+    return $lidos[$chave] ?? null;
 }
 
 /** Nome da pivot de papéis, que muda com `config('permission.table_names')`. */

@@ -51,19 +51,6 @@ afterEach(function (): void {
     File::deleteDirectory($this->base);
 });
 
-function envDoTeste(): string
-{
-    return File::get(test()->base.'/.env');
-}
-
-/** O valor efetivo da chave, já com as aspas e os escapes resolvidos pelo dotenv. */
-function valorNoEnv(string $chave): ?string
-{
-    $lidos = Dotenv\Dotenv::parse(envDoTeste());
-
-    return $lidos[$chave] ?? null;
-}
-
 function respostasDeCustomizacao(array $sobrescritas = []): array
 {
     return array_replace([

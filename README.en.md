@@ -174,14 +174,14 @@ The other two already come complete.
 |---|---:|
 | Test cases (`Kit` + `Tenancy`, measured on 2026-09-08) | **2,226**, with **7,428 assertions** |
 | Screens swept in a real browser | **55** |
-| Test files | **146** in `Kit` + `Tenancy` (**172** in total) |
+| Test files | **147** in `Kit` + `Tenancy` (**173** in total) |
 | PHPStan | **level 7**, zero errors |
 | FilaCheck | **17** rules, all passing |
 
 | Documentation | |
 |---|---:|
 | Reference documents (`wikis/`) | **9** |
-| Specified features (`wikis/specs/`) | **63** |
+| Specified features (`wikis/specs/`) | **64** |
 | Project rules for AI agents (`.ai/rules/`, excluding the index) | **18** |
 
 > The details moved to the site: **[Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/)** and **[Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/)**.
@@ -312,6 +312,8 @@ No service declares a fixed `container_name`: the prefix comes from `COMPOSE_PRO
 ### A local hostname, instead of IP and port
 
 You can open the project at `http://my-project.test` rather than `http://127.0.0.1:8000`: it costs one line in the machine's `hosts` file and two keys in `.env`. No versioned file changes, adoption is individual, and anyone who does nothing stays on `http://localhost:8000`. [Full recipe, including the Windows elevation trap](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/dominio-local.html).
+
+**`kit:install` offers to do this at the end of the installation**: it suggests the domain from the name you chose, writes the line into `hosts` (asking for elevation on Windows) and adjusts `APP_URL`. It is opt-in, depends on no flag, and declining leaves everything exactly as it always was. A domain outside the suffixes reserved for local use (`.test`, `.localhost`, `.example`, `.invalid`) takes one more yes, because pointing a real domain at `127.0.0.1` blocks access to the actual site on this machine.
 
 ### Updating the stack on the machine that hosts it
 

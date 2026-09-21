@@ -64,6 +64,59 @@ Two details of the image, which explain what the installer writes:
 The local AI caveat does not change: semantic search and embeddings depend on `pgvector`, which only
 Postgres has.
 
+## Local domain at the end of the installation
+
+Once the heavy lifting is done — migrations, seeders and assets —, `kit:install` asks one last
+question: **register a local domain**, so the project opens at `http://my-project.test` instead of
+`http://localhost:8000`.
+
+```text
+Cadastrar um domínio local (ex.: http://my-project.test)? [y/N]
+Qual domínio? › my-project.test
+```
+
+Three things are worth knowing before you answer:
+
+- **It is opt-in.** The default answer is *no*: Enter keeps `http://localhost:8000`, exactly as
+  before. The question only shows up when there is a terminal — in CI, a Docker build or with
+  `--no-interaction` the step never happens. There is no flag to turn it on or off, and it does not
+  depend on `--force` either.
+- **The suggestion comes from the name you chose** in the first question: `Loja do Ferro` becomes
+  `loja-do-ferro.test`. You can type another one — with no `http://`, no slash and no space, and
+  within the DNS limits (63 characters per label, 253 overall). The suffix is `.test`, reserved by
+  RFC 6761; `.local` is refused, because RFC 6762 reserves it for mDNS.
+- **A public domain takes one more yes.** If what you type does not end in `.test`, `.localhost`,
+  `.example` or `.invalid` — the four suffixes RFC 6761 reserves for local use —, the command asks
+  a third question, naming the domain and spelling out what is about to happen. The default answer
+  is *no*, for a concrete reason: pointing a real domain at `127.0.0.1` **blocks access to the
+  actual site on this machine**, and the line stays in `hosts` until someone removes it by hand —
+  removing is not part of what `kit:install` does. It is the guard against the typo that costs the
+  most. (The prompts themselves are in Portuguese, as everywhere else in the installer.)
+- **Accepting does two things**: a `127.0.0.1` line is appended to the machine's `hosts` file, and
+  the `APP_URL` key in your `.env` becomes `http://my-project.test` — which is the address the
+  command itself prints at the end, already with the new name.
+
+On **Windows** the step runs the registration, asking for elevation through UAC: a window opens,
+and what decides whether it worked is the kit **reading the file back** afterwards — the exit code
+of an elevated process proves nothing. On **Linux** and **macOS** it prints the line ready for you
+to paste with `sudo`, and adjusts `APP_URL` all the same.
+
+None of this aborts the installation — not even a question interrupted halfway through. Elevation
+denied, an antivirus guarding the file or a missing `pwsh` all become a **warning** at the end, with
+the command ready to paste (the one for *your* system: `Start-Process … -Verb RunAs` on Windows,
+`sudo tee -a` on Linux and macOS). The warning also states **what happened to `APP_URL`**: normally
+it is left alone, so the final screen never shows an address that does not answer.
+
+If the domain already resolves **to this machine** — an earlier installation, or Laravel Herd and
+Valet, which answer for `*.test` on their own —, the `hosts` file is left untouched and only
+`APP_URL` is adjusted. Mind the "to this machine": only `127.0.0.0/8` and `::1` count. A corporate
+wildcard DNS answers for any name, including one you have just made up, and treating that as "already
+done" would leave the final screen pointing at somebody else's server. In that case the command says
+which address answered and registers the local line on top of it.
+
+The full manual recipe, with the elevation traps, `FORWARD_APP_PORT` and the effect on social login
+and Vite, is in [Local domain](../dominio-local/).
+
 ## Container names
 
 No service in `docker-compose.yml` declares a `container_name`. The prefix of every container and
