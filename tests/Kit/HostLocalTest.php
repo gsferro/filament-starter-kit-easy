@@ -65,7 +65,7 @@ function hostLocalNoTemp(?Closure $executor = null, ?Closure $resolvedor = null,
         test()->base,
         $executor ?? static fn (): int => 0,
         test()->hosts,
-        $resolvedor ?? static fn (): bool => false,
+        $resolvedor ?? static fn (): ?string => null,
         $so,
     );
 }
@@ -128,7 +128,7 @@ function responderPerguntas(array $respostas, array &$feitas): void
     };
 
     ConfirmPrompt::fallbackUsing(static function (ConfirmPrompt $prompt) use ($proxima, &$feitas): bool {
-        $feitas[]  = ['label' => $prompt->label, 'default' => $prompt->default];
+        $feitas[]  = ['label' => $prompt->label, 'default' => $prompt->default, 'hint' => $prompt->hint];
         $resposta  = $proxima();
 
         return $resposta === null ? $prompt->default : (bool) $resposta;
@@ -136,7 +136,7 @@ function responderPerguntas(array $respostas, array &$feitas): void
 
     TextPrompt::fallbackUsing(static function (TextPrompt $prompt) use ($proxima, &$feitas): string {
         while (true) {
-            $feitas[]  = ['label' => $prompt->label, 'default' => $prompt->default];
+            $feitas[]  = ['label' => $prompt->label, 'default' => $prompt->default, 'hint' => $prompt->hint];
             $resposta  = $proxima();
             $valor     = $resposta === null ? $prompt->default : (string) $resposta;
             $erro      = $prompt->validate === null ? null : ($prompt->validate)($valor);
@@ -492,6 +492,45 @@ it('[CT-11] nao deixa quebra de linha injetar linha no hosts nem chave no .env',
         ->and(Dotenv\Dotenv::parse(envDoTeste()))->not->toHaveKey('127.0.0.1 invasor.test');
 })->group('kit');
 
+/**
+ * CT-40 — valor limite do comprimento, e ele é o do DNS (RFC 1035 §2.3.4).
+ *
+ * Achado A7: a validação não tinha limite nenhum, e um domínio de 900 octetos — ou um rótulo de
+ * 200 — entrava no `hosts` e na `APP_URL` sem uma palavra. Nenhum resolvedor os aceita depois, e
+ * a linha fica no arquivo de sistema. As linhas escritas são as **fronteiras**: o último aceito e
+ * o primeiro recusado, que é onde um `<` trocado por `<=` mora. O valor interior já é exercido
+ * por todos os outros casos do arquivo, que usam domínios curtos.
+ */
+it('[CT-40] recusa o dominio que passa do limite de comprimento do DNS', function (string $dominio, bool $aceita): void {
+    $antes    = File::get($this->hosts);
+    $comandos = [];
+
+    $aviso = hostLocalNoTemp(interpretadorDeComandos($comandos))->processar($dominio);
+
+    if ($aceita) {
+        expect($aviso)->toBeNull()
+            ->and(linhasAtivasDoHosts($dominio))->toBe(1);
+
+        return;
+    }
+
+    expect($aviso)->toBeString()
+        ->and($aviso)->toContain($dominio)
+        ->and(File::get($this->hosts))->toBe($antes)
+        ->and($comandos)->toBe([]);
+})->with([
+    'maior rótulo: 63 octetos, dentro'  => [str_repeat('a', 63).'.test', true],
+    'maior rótulo: 64 octetos, fora'    => [str_repeat('a', 64).'.test', false],
+    'nome inteiro: 253 octetos, dentro' => [
+        str_repeat('a', 63).'.'.str_repeat('b', 63).'.'.str_repeat('c', 63).'.'.str_repeat('d', 61),
+        true,
+    ],
+    'nome inteiro: 254 octetos, fora' => [
+        str_repeat('a', 63).'.'.str_repeat('b', 63).'.'.str_repeat('c', 63).'.'.str_repeat('d', 62),
+        false,
+    ],
+])->group('kit');
+
 /*
 |--------------------------------------------------------------------------
 | R5 — o cadastro reproduz o procedimento documentado, e o oráculo é o arquivo
@@ -504,6 +543,11 @@ it('[CT-11] nao deixa quebra de linha injetar linha no hosts nem chave no .env',
  * RQ-06 é literal — "rode conforme a documentação". Sem esta amarra, o comando poderia
  * divergir da página e nada ficaria vermelho: a documentação continuaria descrevendo um
  * procedimento e o kit rodando outro.
+ *
+ * O comando documentado é um GABARITO com duas variáveis: o domínio e o caminho do `hosts`.
+ * A página escreve `$env:windir\…` porque quem a lê está colando dentro de um PowerShell; o
+ * código já tem a variável expandida, porque é o mesmo caminho que ele relê depois. As duas
+ * substituições acontecem aqui, e quem fixa a segunda contra o oráculo é **CT-35**.
  */
 it('[CT-12] emite o mesmo comando de elevacao que a documentacao ensina', function (): void {
     $normalizar = static fn (string $texto): string => trim((string) preg_replace('/\s+/', ' ', $texto));
@@ -516,14 +560,39 @@ it('[CT-12] emite o mesmo comando de elevacao que a documentacao ensina', functi
 
     expect($achado[1] ?? '')->not->toBe('', 'a pagina dominio-local.md deixou de trazer o comando de elevacao');
 
-    $documentado = $normalizar(str_replace('meu-projeto.test', 'loja-do-ferro.test', $achado[1]));
-    $comando     = hostLocalNoTemp()->comandoDeElevacao('loja-do-ferro.test');
+    // Sem `hosts` injetado: aqui o caminho do sistema é parte do que se compara.
+    $etapa   = new HostLocal($this->base, so: 'Windows');
+    $comando = $etapa->comandoDeElevacao('loja-do-ferro.test');
+
+    $documentado = $normalizar(str_replace(
+        ['meu-projeto.test', '$env:windir\System32\drivers\etc\hosts'],
+        ['loja-do-ferro.test', $etapa->caminhoDoHosts()],
+        $achado[1],
+    ));
 
     expect($normalizar($comando))->toBe($documentado)
         ->and($comando)->toContain('-Verb RunAs')
         ->and($comando)->toContain('-Encoding ascii')
         ->and($comando)->toContain('System32\drivers\etc\hosts')
         ->and($comando)->not->toContain('/etc/hosts');
+})->group('kit');
+
+/**
+ * CT-35 — o comando escreve no MESMO arquivo que o oráculo relê.
+ *
+ * O achado A2 da revisão de código: o comando citava `$env:windir\System32\…` e o oráculo lia
+ * `C:\Windows\System32\…` fixo. Numa máquina com `%windir%` diferente a linha ENTRA e o oráculo
+ * não a vê — a etapa reporta falha numa instalação bem-sucedida, a `APP_URL` nunca é ajustada,
+ * e o aviso manda colar de novo um comando que **duplicaria** a linha. CT-12 não pega isso: lá
+ * os dois textos batem porque a divergência está entre o comando e o LEITOR, não entre o
+ * comando e a página.
+ */
+it('[CT-35] emite um comando que escreve no mesmo arquivo que a etapa rele', function (): void {
+    $etapa   = hostLocalNoTemp();
+    $comando = $etapa->comandoDeElevacao('loja-do-ferro.test');
+
+    expect($comando)->toContain($etapa->caminhoDoHosts())
+        ->and($comando)->not->toContain('$env:');
 })->group('kit');
 
 /**
@@ -611,7 +680,9 @@ it('[CT-15] fora do Windows instrui em vez de executar, e ajusta a URL', functio
 ): void {
     Prompt::fake([]);
 
-    expect((new HostLocal($this->base, so: $so))->caminhoDoHosts())->toBe($caminho);
+    // Sufixo, e não igualdade: no Windows a pasta do sistema sai de `%windir%` (ver CT-35), e
+    // fixar `C:\Windows` aqui reintroduziria a segunda fonte de verdade que A2 apontou.
+    expect((new HostLocal($this->base, so: $so))->caminhoDoHosts())->toEndWith($caminho);
 
     $comandos = [];
 
@@ -631,7 +702,7 @@ it('[CT-15] fora do Windows instrui em vez de executar, e ajusta a URL', functio
 })->with([
     'Linux'   => ['Linux', '/etc/hosts', 0, true],
     'Darwin'  => ['Darwin', '/etc/hosts', 0, true],
-    'Windows' => ['Windows', 'C:\Windows\System32\drivers\etc\hosts', 1, false],
+    'Windows' => ['Windows', '\System32\drivers\etc\hosts', 1, false],
 ])->group('kit');
 
 /*
@@ -816,6 +887,103 @@ it('[CT-22] transforma qualquer modo de falha em aviso', function (Closure $arra
     }],
 ])->group('kit');
 
+/**
+ * CT-22 (segunda metade) — o perímetro à prova de exceção é `oferecer()`, não `processar()`.
+ *
+ * Achado A1 da revisão de código. O `try/catch` ficava DENTRO de `processar()`, e as duas
+ * perguntas — que são onde a exceção de verdade nasce — ficavam de fora. No Windows o Laravel
+ * sempre cai no fallback do Symfony (`Prompt::fallbackWhen(windows_os() || runningUnitTests())`,
+ * `vendor/laravel/framework/src/Illuminate/Foundation/Console/ConfiguresPrompts.php`), e o
+ * `QuestionHelper` lança `MissingInputException` quando o STDIN acaba no meio de uma pergunta.
+ * Como a etapa roda ANTES do `banner()`, essa exceção matava banner, resumo, lista de avisos,
+ * oferta de testes e de estrela — depois de migrate, seed e build.
+ */
+it('[CT-22] nao deixa excecao da pergunta escapar da etapa', function (Closure $arranjo): void {
+    $arranjo();
+
+    $comandos = [];
+    $aviso    = null;
+
+    expect(function () use (&$aviso, &$comandos): void {
+        $aviso = hostLocalNoTemp(registradorDeComandos($comandos))->oferecer(true);
+    })->not->toThrow(Throwable::class);
+
+    expect($aviso)->toBeString()
+        ->and($aviso)->toContain('loja-do-ferro.test')
+        ->and($comandos)->toBe([]);
+})->with([
+    'a pergunta da oferta lança exceção' => [function (): void {
+        ConfirmPrompt::fallbackUsing(static fn (): bool => throw new RuntimeException('Aborted.'));
+    }],
+    'a pergunta do domínio lança exceção' => [function (): void {
+        ConfirmPrompt::fallbackUsing(static fn (): bool => true);
+        TextPrompt::fallbackUsing(static fn (): string => throw new RuntimeException('Aborted.'));
+    }],
+])->group('kit');
+
+/**
+ * CT-22 (terceira metade) — fora do Windows o aviso de falha instrui com `sudo`, não com UAC.
+ *
+ * Achado A4: o ramo de erro devolvia "Num PowerShell como administrador: Start-Process…" em
+ * qualquer sistema. Quebra a ADR-03, que decide a assimetria Windows-executa/Unix-instrui, e
+ * deixa quem está no Linux num beco sem saída — `instrucaoManual()` já existia e não era usada
+ * ali. O aviso é o **destino alcançável** do estado de erro; destino escrito para outro sistema
+ * operacional não é destino.
+ */
+it('[CT-22] fora do Windows o aviso de falha instrui com sudo, e nao com UAC', function (string $so): void {
+    File::delete($this->hosts);
+
+    $comandos = [];
+
+    $aviso = hostLocalNoTemp(registradorDeComandos($comandos), so: $so)->processar('loja-do-ferro.test');
+
+    expect($aviso)->toBeString()
+        ->and($aviso)->toContain('sudo')
+        ->and($aviso)->toContain($this->hosts)
+        ->and($aviso)->not->toContain('Start-Process');
+})->with(['Linux', 'Darwin'])->group('kit');
+
+/**
+ * CT-39 — o aviso de falha não AFIRMA o que pode ser falso.
+ *
+ * Achado A6: o aviso dizia **sempre** "a APP_URL continua como estava", e isso é falso em todo
+ * caminho em que a etapa já reescreveu o `.env` antes de falhar.
+ *
+ * O arranjo é o de uma instância que processa duas vezes — o mesmo de CT-28, e o que acontece
+ * de verdade num `kit:install --force` seguido de um segundo `--custom`. Na primeira passada o
+ * domínio já resolvia e a `APP_URL` foi gravada; na segunda o arquivo de hosts desapareceu
+ * (antivírus, VPN, outro processo) e a etapa cai no ramo de erro. O aviso dessa segunda passada
+ * não pode dizer que a `APP_URL` está como estava: ela não está.
+ *
+ * A última asserção é o antídoto do remédio — apagar a frase em todos os casos "corrige" M62 e
+ * introduz M63, tirando de quem falhou ANTES de qualquer escrita a única informação que o
+ * tranquilizava.
+ */
+it('[CT-39] no aviso de falha, so afirma sobre a APP_URL o que e verdade', function (): void {
+    $comandos = [];
+
+    $etapa = hostLocalNoTemp(
+        registradorDeComandos($comandos),
+        resolvedor: static fn (): ?string => '127.0.0.1',
+    );
+
+    expect($etapa->processar('loja-do-ferro.test'))->toBeNull()
+        ->and(valorNoEnv('APP_URL'))->toBe('http://loja-do-ferro.test');
+
+    File::delete($this->hosts);
+
+    $depoisDaEscrita = $etapa->processar('loja-do-ferro.test');
+
+    expect($depoisDaEscrita)->toBeString()
+        ->and($depoisDaEscrita)->not->toContain('continua como estava')
+        ->and(valorNoEnv('APP_URL'))->toBe('http://loja-do-ferro.test');
+
+    // O complementar, na mesma medida: quem falhou sem ter escrito nada continua sabendo disso.
+    $semEscrita = hostLocalNoTemp(registradorDeComandos($comandos))->processar('loja-do-ferro.test');
+
+    expect($semEscrita)->toContain('continua como estava');
+})->group('kit');
+
 /*
 |--------------------------------------------------------------------------
 | R9 — a escrita cai no .env do projeto que está sendo instalado
@@ -923,11 +1091,11 @@ it('[CT-31] cadastra sobre a linha comentada sem apaga-la', function (): void {
 })->group('kit');
 
 /**
- * CT-32 — `@premissa P6`: o domínio já resolve FORA do arquivo `hosts`.
+ * CT-32 — `@premissa P6`: o domínio já resolve FORA do arquivo `hosts`, e resolve para AQUI.
  *
- * Herd, Valet e dnsmasq respondem por `*.test` sem linha nenhuma no arquivo, e um DNS
- * corporativo pode responder pelo domínio escolhido. Sondar só o arquivo faria a etapa pedir
- * elevação à toa e sujar o arquivo de sistema de quem já tinha a máquina configurada.
+ * Herd, Valet e dnsmasq respondem por `*.test` sem linha nenhuma no arquivo. Sondar só o
+ * arquivo faria a etapa pedir elevação à toa e sujar o arquivo de sistema de quem já tinha a
+ * máquina configurada.
  */
 it('[CT-32] nao eleva quando o dominio ja resolve fora do arquivo hosts', function (): void {
     $antes    = File::get($this->hosts);
@@ -935,7 +1103,7 @@ it('[CT-32] nao eleva quando o dominio ja resolve fora do arquivo hosts', functi
 
     $aviso = hostLocalNoTemp(
         registradorDeComandos($comandos),
-        resolvedor: static fn (string $dominio): bool => $dominio === 'loja-do-ferro.test',
+        resolvedor: static fn (string $dominio): ?string => $dominio === 'loja-do-ferro.test' ? '127.0.0.1' : null,
     )->processar('loja-do-ferro.test');
 
     expect($comandos)->toBe([])
@@ -943,6 +1111,130 @@ it('[CT-32] nao eleva quando o dominio ja resolve fora do arquivo hosts', functi
         ->and(valorNoEnv('APP_URL'))->toBe('http://loja-do-ferro.test')
         ->and($aviso)->toBeNull();
 })->group('kit');
+
+/**
+ * CT-36 — resolução que NÃO é loopback não conta como "já resolve" (RQ-12, Adendo 1).
+ *
+ * CT-32 sozinho passa com a sonda ingênua (`gethostbyname($d) !== $d`): lá o endereço que
+ * responde É 127.0.0.1, e "aceita qualquer coisa" e "aceita só loopback" dão o mesmo
+ * observável. A discriminância mora no endereço de fora — num DNS corporativo com curinga, ou
+ * com NXDOMAIN sequestrado, a sonda ingênua faz a etapa PULAR a escrita, gravar a `APP_URL` e
+ * devolver `null`: a instalação termina com o banner apontando para um endereço de terceiro,
+ * sem um único aviso. `198.18.0.1` é do bloco de benchmark da RFC 2544, escolhido para não ser
+ * confundido com rede de ninguém.
+ */
+it('[CT-36] nao trata resolucao fora do loopback como ja resolvido', function (): void {
+    Prompt::fake([]);
+
+    $comandos = [];
+
+    hostLocalNoTemp(
+        interpretadorDeComandos($comandos),
+        resolvedor: static fn (string $dominio): ?string => $dominio === 'loja-do-ferro.test' ? '198.18.0.1' : null,
+    )->processar('loja-do-ferro.test');
+
+    expect($comandos)->toHaveCount(1, 'a etapa pulou a escrita por causa de um endereco que nao e desta maquina')
+        ->and(linhasAtivasDoHosts('loja-do-ferro.test'))->toBe(1)
+        ->and(valorNoEnv('APP_URL'))->toBe('http://loja-do-ferro.test');
+
+    Prompt::assertStrippedOutputContains('198.18.0.1');
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| R12 — domínio fora dos TLD reservados só passa com uma confirmação explícita
+|--------------------------------------------------------------------------
+| `Adendo 1` do `00-requisito.md` (RQ-10, RQ-11). Apontar um domínio público
+| para 127.0.0.1 é irreversível POR ESTA FEATURE — remover a linha está fora
+| de escopo por declaração do `00` —, então o único ponto de controle é antes
+| de escrever.
+*/
+
+/**
+ * CT-37 — a confirmação a mais existe e DIZ as três consequências.
+ *
+ * A segunda linha do dataset é a discriminante do sufixo: `loja.test.br` CONTÉM `.test` e não
+ * termina nele. Uma verificação por `str_contains` o trataria como reservado e o cadastraria
+ * calado — que é justamente o caminho do typo que o achado A5 descreve.
+ */
+it('[CT-37] pede uma confirmacao a mais para dominio publico, dizendo o que vai acontecer', function (string $dominio): void {
+    $feitas = [];
+    responderPerguntas([true, $dominio, false], $feitas);
+
+    $comandos = [];
+
+    hostLocalNoTemp(registradorDeComandos($comandos))->oferecer(true);
+
+    expect($feitas)->toHaveCount(3, 'a confirmacao extra do dominio publico nao foi exibida');
+
+    $extra = $feitas[2];
+
+    expect($extra['label'])->toContain($dominio)
+        ->and($extra['label'])->toContain('domínio público')
+        ->and($extra['default'])->toBeFalse('o Enter da confirmacao extra precisa recusar')
+        ->and($extra['hint'])->toContain('impedir o acesso ao site real')
+        ->and($extra['hint'])->toContain('até ser removida à mão');
+})->with([
+    'domínio real, o typo do achado A5'        => ['fiotec.fiocruz.br'],
+    'contém ".test" e não termina nele'        => ['loja.test.br'],
+])->group('kit');
+
+/** CT-37 — recusar a confirmação extra encerra a etapa sem efeito nenhum. */
+it('[CT-37] recusar a confirmacao extra nao toca no hosts nem no .env', function (): void {
+    $feitas = [];
+    responderPerguntas([true, 'fiotec.fiocruz.br', false], $feitas);
+
+    $antes    = File::get($this->hosts);
+    $comandos = [];
+
+    $aviso = hostLocalNoTemp(registradorDeComandos($comandos))->oferecer(true);
+
+    expect($aviso)->toBeNull()
+        ->and($comandos)->toBe([])
+        ->and(File::get($this->hosts))->toBe($antes)
+        ->and(valorNoEnv('APP_URL'))->toBe('http://localhost:8000')
+        ->and(config('app.url'))->toBe('http://localhost:8000');
+})->group('kit');
+
+/**
+ * CT-37 — aceitar a confirmação extra cadastra o domínio público.
+ *
+ * Sem este caso, "pergunta e ignora a resposta" passaria — é o mesmo defeito de M45, já visto
+ * nesta feature na segunda pergunta.
+ */
+it('[CT-37] aceitar a confirmacao extra cadastra o dominio publico', function (): void {
+    $feitas = [];
+    responderPerguntas([true, 'fiotec.fiocruz.br', true], $feitas);
+
+    $comandos = [];
+
+    hostLocalNoTemp(interpretadorDeComandos($comandos))->oferecer(true);
+
+    expect(linhasAtivasDoHosts('fiotec.fiocruz.br'))->toBe(1)
+        ->and(valorNoEnv('APP_URL'))->toBe('http://fiotec.fiocruz.br');
+})->group('kit');
+
+/**
+ * CT-38 — domínio em TLD reservado não pede confirmação nenhuma a mais.
+ *
+ * A partição complementar, e sem ela a regra é satisfeita por "perguntar sempre" — o que daria
+ * ao caminho feliz do kit (o `.test` que o próprio comando sugere) uma terceira pergunta que
+ * ninguém pediu, contra RQ-02 e RQ-05.
+ */
+it('[CT-38] nao pede confirmacao extra para TLD reservado ao uso local', function (string $tld): void {
+    $dominio = 'loja-do-ferro.'.$tld;
+    $feitas  = [];
+
+    responderPerguntas([true, $dominio], $feitas);
+
+    $comandos = [];
+
+    hostLocalNoTemp(interpretadorDeComandos($comandos))->oferecer(true);
+
+    expect($feitas)->toHaveCount(2, 'o TLD reservado pela RFC 6761 nao pode ganhar pergunta a mais')
+        ->and(linhasAtivasDoHosts($dominio))->toBe(1)
+        ->and(valorNoEnv('APP_URL'))->toBe('http://'.$dominio);
+})->with(['test', 'localhost', 'example', 'invalid'])->group('kit');
 
 /*
 |--------------------------------------------------------------------------

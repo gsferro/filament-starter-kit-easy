@@ -26,6 +26,18 @@ use function Laravel\Prompts\text;
  * A etapa é **opcional, idempotente e não-abortante**: Enter em tudo instala
  * como sempre, rodar de novo não duplica nada, e o que falhar vira aviso.
  *
+ * ## O perímetro à prova de exceção é `oferecer()`, não `processar()`
+ *
+ * O `try/catch` que sustenta o "não-abortante" precisa cobrir **as perguntas**,
+ * e não só o trabalho depois delas. No Windows o Laravel sempre cai no fallback
+ * do Symfony (`ConfiguresPrompts::configurePrompts()` liga
+ * `Prompt::fallbackWhen(windows_os() || runningUnitTests())`), e o
+ * `QuestionHelper` lança `MissingInputException` quando o STDIN acaba no meio de
+ * uma pergunta. Como a etapa roda **antes** do `banner()`, uma exceção escapando
+ * daqui mataria banner, resumo, avisos, oferta de testes e de estrela — depois
+ * de migrate, seed e build já terem acontecido. `processar()` mantém o seu
+ * próprio `catch` porque também é ponto de entrada público.
+ *
  * ## O que decide se deu certo é o ARQUIVO, nunca o código de saída
  *
  * `Start-Process -Verb RunAs` sobe um processo novo e não devolve código de
@@ -34,12 +46,19 @@ use function Laravel\Prompts\text;
  * Nenhum dos dois prova coisa alguma. O oráculo é reler o `hosts` e procurar o
  * domínio; é isso, e só isso, que autoriza escrever a `APP_URL`.
  *
+ * **E é UM arquivo só.** O caminho que o comando elevado escreve e o caminho que
+ * o oráculo relê saem os dois de `caminhoDoHosts()`. Divergir ali produz o pior
+ * desfecho possível: a linha entra, o oráculo não a vê, a `APP_URL` nunca é
+ * ajustada, e o aviso manda colar de novo um comando que **duplicaria** a linha.
+ *
  * ## Windows executa, Unix instrui
  *
  * O `hosts` do Windows aceita elevação por UAC no meio da instalação; no Linux
  * e no macOS o equivalente é `sudo` em processo não-interativo, que pediria
  * senha no lugar errado. Lá a etapa imprime a linha pronta e **ajusta o `.env`
  * assim mesmo** — o ajuste da URL não precisa de elevação em sistema nenhum.
+ * A assimetria vale também no ramo de ERRO: o aviso de falha instrui no idioma
+ * do sistema em que a falha aconteceu.
  *
  * ## Por que tudo é injetável
  *
@@ -64,19 +83,41 @@ final class HostLocal
     /** O piso do slug, idêntico ao que já produz o `COMPOSE_PROJECT_NAME`. */
     private const NOME_PADRAO = 'starter-kit';
 
+    /**
+     * Os TLD que a RFC 6761 reserva para uso local — os únicos que passam sem confirmação extra.
+     *
+     * @var list<string>
+     */
+    private const TLD_RESERVADOS = ['test', 'localhost', 'example', 'invalid'];
+
+    /** Limites do DNS (RFC 1035 §2.3.4), em octetos. */
+    private const MAX_ROTULO = 63;
+
+    private const MAX_NOME = 253;
+
     /** @var Closure(string): int */
     private Closure $executor;
 
-    /** @var Closure(string): bool */
+    /** @var Closure(string): ?string */
     private Closure $resolvedor;
 
     private string $hosts;
 
     /**
+     * A `APP_URL` já foi reescrita nesta instância?
+     *
+     * Existe para o aviso de falha não AFIRMAR o que pode ser falso: uma exceção
+     * levantada dentro de `aplicarNoEnv()` depois de `definirNoEnv()` produziria
+     * um aviso dizendo "a APP_URL continua como estava" sobre um arquivo que já
+     * tinha mudado.
+     */
+    private bool $envEscrito = false;
+
+    /**
      * @param  string  $base  diretório do projeto que está sendo instalado
      * @param  (Closure(string): int)|null  $executor  recebe o comando e devolve o código de saída
      * @param  string|null  $hosts  caminho do arquivo de hosts; nulo usa o do sistema
-     * @param  (Closure(string): bool)|null  $resolvedor  o domínio já resolve fora do arquivo?
+     * @param  (Closure(string): ?string)|null  $resolvedor  o endereço que já responde pelo domínio, ou nulo
      */
     public function __construct(
         private readonly string $base,
@@ -86,18 +127,24 @@ final class HostLocal
         private readonly string $so = PHP_OS_FAMILY,
     ) {
         $this->executor   = $executor ?? self::executorDoSistema();
-        $this->resolvedor = $resolvedor ?? static fn (string $dominio): bool => gethostbyname($dominio) !== $dominio;
-        $this->hosts      = $hosts ?? $this->caminhoPadraoDoHosts();
+        $this->resolvedor = $resolvedor ?? static function (string $dominio): ?string {
+            $endereco = gethostbyname($dominio);
+
+            return $endereco === $dominio ? null : $endereco;
+        };
+        $this->hosts = $hosts ?? $this->caminhoPadraoDoHosts();
     }
 
     /**
-     * As duas perguntas e o que decorre delas. Devolve o aviso, ou `null` quando não há o que avisar.
+     * As perguntas e o que decorre delas. Devolve o aviso, ou `null` quando não há o que avisar.
      *
      * O `$interativo` chega de `KitInstall::temTerminal()` e é o gate da etapa
      * inteira: sem alguém do outro lado, nada é perguntado e nada é decidido.
      * Ele é PARÂMETRO, e não uma consulta feita aqui dentro, porque
      * `runningUnitTests()` deixa `temTerminal()` verdadeiro dentro da suíte — um
      * gate lido daqui nunca teria o ramo negativo exercitado.
+     *
+     * O `try/catch` cobre as perguntas de propósito — ver o docblock da classe.
      */
     public function oferecer(bool $interativo): ?string
     {
@@ -105,32 +152,42 @@ final class HostLocal
             return null;
         }
 
-        /*
-         * O rótulo cabe em 74 colunas de propósito: é onde o Laravel Prompts trunca,
-         * e o exemplo — que é a cláusula do requisito — mora no fim dele.
-         */
-        if (! confirm(
-            label: "Cadastrar um domínio local (ex.: {$this->urlSugerida()})?",
-            default: false,
-            hint: 'Escreve uma linha no hosts da máquina e ajusta a APP_URL.',
-        )) {
-            return null;
+        $dominio = null;
+
+        try {
+            /*
+             * O rótulo cabe em 74 colunas de propósito: é onde o Laravel Prompts trunca,
+             * e o exemplo — que é a cláusula do requisito — mora no fim dele.
+             */
+            if (! confirm(
+                label: "Cadastrar um domínio local (ex.: {$this->urlSugerida()})?",
+                default: false,
+                hint: 'Escreve uma linha no hosts da máquina e ajusta a APP_URL.',
+            )) {
+                return null;
+            }
+
+            $dominio = text(
+                label: 'Qual domínio?',
+                default: $this->dominioSugerido(),
+                validate: fn (string $valor): ?string => $this->erroDoDominio($valor),
+                hint: 'Só o nome, sem http:// e sem barra. O sufixo .test é reservado pela RFC 6761 para isto.',
+            );
+
+            if (! $this->confirmarDominioPublico($dominio)) {
+                return null;
+            }
+
+            note(
+                "A APP_URL passa a ser http://{$dominio}. Dois efeitos conhecidos:\n"
+                .'- login social: a URI de callback registrada no provedor muda junto;'."\n"
+                .'- npm run dev: o Vite serve de localhost:5173 e restringe CORS — com npm run build não aparece.'
+            );
+
+            return $this->processar($dominio);
+        } catch (Throwable $excecao) {
+            return $this->registrarFalha('oferecer', $dominio ?? $this->dominioSugerido(), $excecao);
         }
-
-        $dominio = text(
-            label: 'Qual domínio?',
-            default: $this->dominioSugerido(),
-            validate: fn (string $valor): ?string => $this->erroDoDominio($valor),
-            hint: 'Só o nome, sem http:// e sem barra. O sufixo .test é reservado pela RFC 6761 para isto.',
-        );
-
-        note(
-            "A APP_URL passa a ser http://{$dominio}. Dois efeitos conhecidos:\n"
-            .'- login social: a URI de callback registrada no provedor muda junto;'."\n"
-            .'- npm run dev: o Vite serve de localhost:5173 e restringe CORS — com npm run build não aparece.'
-        );
-
-        return $this->processar($dominio);
     }
 
     /**
@@ -149,10 +206,16 @@ final class HostLocal
                 return $erro;
             }
 
-            if ($this->jaResolve($dominio)) {
+            [$resolveAqui, $enderecoDeTerceiro] = $this->sondar($dominio);
+
+            if ($resolveAqui) {
                 $this->aplicarNoEnv($dominio);
 
                 return null;
+            }
+
+            if ($enderecoDeTerceiro !== null) {
+                note($this->avisoDeEnderecoDeTerceiro($dominio, $enderecoDeTerceiro));
             }
 
             if ($this->so !== 'Windows') {
@@ -170,12 +233,7 @@ final class HostLocal
 
             return $this->avisoDeFalha($dominio);
         } catch (Throwable $excecao) {
-            Log::channel('configuracoes')->warning(
-                "[HostLocal@processar] Etapa do host local falhou | dominio: {$dominio}",
-                ['dominio' => $dominio, 'erro' => $excecao->getMessage(), 'so' => $this->so],
-            );
-
-            return $this->avisoDeFalha($dominio);
+            return $this->registrarFalha('processar', $dominio, $excecao);
         }
     }
 
@@ -196,11 +254,17 @@ final class HostLocal
     }
 
     /**
-     * O domínio já resolve? — e a pergunta é sobre a RESOLUÇÃO, não sobre o texto do arquivo.
+     * O domínio já resolve **nesta máquina**? — e a pergunta é sobre a RESOLUÇÃO, não sobre o texto do arquivo.
      *
      * Quem tem Laravel Herd ou Valet resolve `*.test` por dnsmasq, **sem** linha
      * nenhuma no `hosts`. Olhar só o arquivo faria a etapa pedir elevação à toa
      * e sujar o arquivo de sistema de quem já tinha a máquina configurada.
+     *
+     * **Só LOOPBACK conta** (RQ-12, Adendo 1). Um DNS corporativo com curinga, ou
+     * com NXDOMAIN sequestrado, responde por domínio inédito — e tratar isso como
+     * "já resolve" faria a etapa pular a escrita, gravar a `APP_URL` e devolver
+     * nenhum aviso, deixando a impressão final apontando para um endereço de
+     * terceiro. "Já resolve" tem de significar "resolve **para aqui**".
      *
      * No arquivo, só uma linha ATIVA do domínio EXATO conta: `# 127.0.0.1 x.test`
      * é um comentário e não resolve nada, `app.x.test` e `x.test.br` são outros
@@ -208,7 +272,7 @@ final class HostLocal
      */
     public function jaResolve(string $dominio): bool
     {
-        return $this->temLinhaAtiva($dominio) || ($this->resolvedor)($dominio);
+        return $this->sondar($dominio)[0];
     }
 
     /**
@@ -218,6 +282,10 @@ final class HostLocal
      * em silêncio: a página continuaria descrevendo um procedimento e o comando
      * rodando outro. Há caso de teste comparando os dois textos.
      *
+     * O caminho sai de `caminhoDoHosts()`, e não de `$env:windir` literal, porque
+     * é ele que o oráculo relê: a página usa a variável porque quem cola o comando
+     * está dentro de um PowerShell, e aqui a variável já foi expandida.
+     *
      * O domínio entra já validado por `erroDoDominio()` — ele vira argumento de
      * um processo ELEVADO, e aspa ou ponto-e-vírgula ali emendariam um segundo
      * comando rodando como Administrador.
@@ -225,7 +293,7 @@ final class HostLocal
     public function comandoDeElevacao(string $dominio): string
     {
         return 'Start-Process pwsh -Verb RunAs -Wait -ArgumentList \'-NoProfile\',\'-Command\', '
-            .'\'Add-Content "$env:windir\System32\drivers\etc\hosts" "`n127.0.0.1`t'
+            .'\'Add-Content "'.$this->caminhoDoHosts().'" "`n127.0.0.1`t'
             .$dominio.'" -Encoding ascii\'';
     }
 
@@ -268,11 +336,29 @@ final class HostLocal
     }
 
     /**
+     * O domínio termina em um dos TLD que a RFC 6761 reserva para uso local?
+     *
+     * É SUFIXO, e não "contém": `loja.test.br` é um domínio público que carrega
+     * `.test` no meio, e tratá-lo como reservado o cadastraria calado.
+     */
+    public function ehDominioReservado(string $dominio): bool
+    {
+        $sufixos = array_map(static fn (string $tld): string => '.'.$tld, self::TLD_RESERVADOS);
+
+        return Str::endsWith(Str::lower($dominio), $sufixos);
+    }
+
+    /**
      * O que recusa uma entrada — e o porquê de cada recusa.
      *
      * O texto digitado num terminal comum vira DUAS coisas perigosas: argumento
      * de um processo elevado e linha de um arquivo de sistema. Esquema, barra,
      * espaço, aspas e quebra de linha são recusados por isso, não por estética.
+     *
+     * O comprimento é recusado pelo limite do próprio DNS (RFC 1035 §2.3.4):
+     * rótulo de 64 octetos e nome de 254 não resolvem em lugar nenhum, e deixar
+     * passar só troca uma mensagem clara agora por uma linha inútil no arquivo de
+     * sistema e uma `APP_URL` que nunca abre.
      *
      * Devolve a mensagem de erro, ou `null` quando o domínio serve. É o formato
      * que o `validate:` do Laravel Prompts espera: a mensagem aparece e a
@@ -288,7 +374,78 @@ final class HostLocal
             return "{$dominio}: só o nome, sem http:// nem barra nem espaço";
         }
 
+        if (strlen($dominio) > self::MAX_NOME) {
+            return "{$dominio}: o nome inteiro passa de ".self::MAX_NOME.' octetos (RFC 1035)';
+        }
+
+        foreach (explode('.', $dominio) as $rotulo) {
+            if (strlen($rotulo) > self::MAX_ROTULO) {
+                return "{$dominio}: cada parte do nome cabe em ".self::MAX_ROTULO.' octetos (RFC 1035)';
+            }
+        }
+
         return null;
+    }
+
+    /**
+     * O sim a mais que um domínio público exige (RQ-10/RQ-11, Adendo 1).
+     *
+     * Um domínio que não termina em TLD reservado é uma escolha **legítima e
+     * perigosa**: `127.0.0.1 fiotec.fiocruz.br` no `hosts` derruba o acesso ao
+     * site real nesta máquina, e remover a linha está fora do escopo desta
+     * feature — o único ponto de controle possível é antes de escrever. Por isso
+     * a barreira mora aqui, e não em `erroDoDominio()`: recusar tornaria RQ-10
+     * inalcançável, porque a pessoa não teria como dizer sim.
+     */
+    private function confirmarDominioPublico(string $dominio): bool
+    {
+        if ($this->ehDominioReservado($dominio)) {
+            return true;
+        }
+
+        return confirm(
+            label: "{$dominio} é um domínio público. Apontar mesmo assim para 127.0.0.1?",
+            default: false,
+            hint: 'Apontá-lo para 127.0.0.1 nesta máquina vai impedir o acesso ao site real, '
+                .'e a linha fica no hosts até ser removida à mão.',
+        );
+    }
+
+    /**
+     * Sonda uma vez só, e devolve as duas respostas que a etapa precisa.
+     *
+     * @return array{0: bool, 1: string|null} resolve nesta máquina? · endereço de terceiro que responde
+     */
+    private function sondar(string $dominio): array
+    {
+        $endereco = ($this->resolvedor)($dominio);
+
+        if ($this->temLinhaAtiva($dominio) || self::ehLoopback($endereco)) {
+            return [true, null];
+        }
+
+        return [false, $endereco];
+    }
+
+    /** `127.0.0.0/8` e `::1` — o que significa "esta máquina", e mais nada. */
+    private static function ehLoopback(?string $endereco): bool
+    {
+        if ($endereco === null) {
+            return false;
+        }
+
+        $limpo = trim($endereco, '[]');
+
+        return $limpo === '::1'
+            || preg_match('/\A127\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\z/', $limpo) === 1;
+    }
+
+    /** O domínio já respondia — mas por um endereço que não é desta máquina. */
+    private function avisoDeEnderecoDeTerceiro(string $dominio, string $endereco): string
+    {
+        return "Atenção: {$dominio} já responde como {$endereco}, que não é um endereço desta máquina "
+            .'(DNS da rede, ou curinga do provedor). A linha nova no hosts passa a valer sobre ele aqui — '
+            .'e só aqui.';
     }
 
     /**
@@ -306,6 +463,8 @@ final class HostLocal
 
         SubstituicaoEmArquivo::definirNoEnv($this->caminhoDoEnv(), 'APP_URL', $url);
 
+        $this->envEscrito = true;
+
         config(['app.url' => $url]);
 
         Log::channel('configuracoes')->info(
@@ -320,10 +479,18 @@ final class HostLocal
         return $this->base.DIRECTORY_SEPARATOR.'.env';
     }
 
+    /**
+     * O `hosts` do sistema — e no Windows ele sai de `%windir%`, não de uma constante.
+     *
+     * A pasta do Windows é `C:\Windows` na esmagadora maioria das máquinas e não é
+     * em algumas. Como este caminho é ao mesmo tempo o que o comando elevado
+     * escreve e o que o oráculo relê, fixá-lo em texto faria os dois apontarem
+     * para arquivos diferentes justamente onde o erro é invisível.
+     */
     private function caminhoPadraoDoHosts(): string
     {
         return match ($this->so) {
-            'Windows' => 'C:\Windows\System32\drivers\etc\hosts',
+            'Windows' => ((string) (getenv('windir') ?: 'C:\Windows')).'\System32\drivers\etc\hosts',
             default   => '/etc/hosts',
         };
     }
@@ -351,11 +518,46 @@ final class HostLocal
         return false;
     }
 
-    /** O destino alcançável de quem chegou ao estado de erro: o comando pronto para colar. */
+    /**
+     * Loga a falha e devolve o aviso — o único caminho de saída dos dois `catch`.
+     *
+     * O log tem o `try` dele porque **registrar a falha não pode virar a falha**: se o que
+     * estourou lá atrás foi o próprio canal de log, escrever aqui estouraria de novo e a exceção
+     * escaparia do `catch` que existe para que nada escape.
+     */
+    private function registrarFalha(string $metodo, string $dominio, Throwable $excecao): string
+    {
+        try {
+            Log::channel('configuracoes')->warning(
+                "[HostLocal@{$metodo}] Etapa do host local falhou | dominio: {$dominio}",
+                ['dominio' => $dominio, 'erro' => $excecao->getMessage(), 'so' => $this->so],
+            );
+        } catch (Throwable) {
+            // Sem canal não há registro, e o aviso devolvido continua sendo a saída que importa.
+        }
+
+        return $this->avisoDeFalha($dominio);
+    }
+
+    /**
+     * O destino alcançável de quem chegou ao estado de erro: o comando pronto para colar.
+     *
+     * Duas coisas que o aviso NÃO pode fazer, e ambas já custaram um achado de
+     * revisão: dar instrução de Windows para quem está no Linux (o `match` abaixo,
+     * ADR-03 valendo também no ramo de erro), e **afirmar** que a `APP_URL`
+     * continua como estava quando a exceção aconteceu depois da escrita.
+     */
     private function avisoDeFalha(string $dominio): string
     {
-        return "Não consegui cadastrar {$dominio} no arquivo hosts — a APP_URL continua como estava. "
-            .'Num PowerShell como administrador: '.$this->comandoDeElevacao($dominio);
+        $url = $this->envEscrito
+            ? "a APP_URL já tinha sido ajustada para http://{$dominio}"
+            : 'a APP_URL continua como estava';
+
+        return "Não consegui cadastrar {$dominio} no arquivo hosts — {$url}. "
+            .match ($this->so) {
+                'Windows' => 'Num PowerShell como administrador: '.$this->comandoDeElevacao($dominio),
+                default   => $this->instrucaoManual($dominio),
+            };
     }
 
     /**
