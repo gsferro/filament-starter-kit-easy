@@ -120,7 +120,7 @@ php artisan modelCache:clear      # clears the model cache
 | [laraveldaily/filacheck](https://packagist.org/packages/laraveldaily/filacheck) | Filament-specific lint (`composer filament:check`) |
 | [laravel-lang/common](https://packagist.org/packages/laravel-lang/common) | pt-BR translations for Laravel |
 | [laravel/pail](https://packagist.org/packages/laravel/pail) | real-time logs in the terminal |
-| [laravel/pao](https://packagist.org/packages/laravel/pao) | Laravel development tooling |
+| [laravel/pao](https://packagist.org/packages/laravel/pao) | JSON output for tests and static analysis **when an AI agent runs the commands**; humans see no difference. Turn it off with `PAO_DISABLE=1` — see [working with agents](../../operacao/agentes-de-ia/) |
 | [nunomaduro/collision](https://packagist.org/packages/nunomaduro/collision) | readable errors in the terminal |
 | [mockery/mockery](https://packagist.org/packages/mockery/mockery) | mocks in tests |
 | [fakerphp/faker](https://packagist.org/packages/fakerphp/faker) | fake data **in tests only** — the kit's seeders never use it |

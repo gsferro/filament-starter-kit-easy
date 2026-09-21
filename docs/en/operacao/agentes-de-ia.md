@@ -114,3 +114,77 @@ produces a file that the next step checks.
 > itself tells you when it isn't worth it — ceremony in a one-line change is the over-engineering
 > Ponytail exists to cut.
 
+## Agent output — `laravel/pao`
+
+The kit already ships [`laravel/pao`](https://packagist.org/packages/laravel/pao) in `require-dev`,
+and you have probably never noticed: it **only acts when an AI agent is running the command**. For a
+person at the terminal, nothing changes.
+
+Under an agent, the whole suite answers with **one line**:
+
+```json
+{"tool":"pest","result":"passed","tests":2614,"passed":2614,"assertions":10164,"duration_ms":283774}
+```
+
+And when it fails, that line carries `file`, `line` and `message` for each case — already extracted,
+so the agent does not have to scan hundreds of lines of coloured output.
+
+| Tool | What changes under an agent |
+|---|---|
+| Pest, PHPUnit, Paratest | one JSON line; failures in `failures[]` with file and line |
+| PHPStan | JSON grouped by file, truncated at 30 errors (use `-v` for all) |
+| Rector | JSON; under `--dry-run`, a changed file counts as a failure |
+| Artisan | no ANSI and no decoration — `Kit version .. 0.37.1` instead of the dotted line |
+| Pint | **not `pao`** — Pint has its own detection and already emits JSON by itself |
+
+### How it knows it is an agent
+
+By the **presence** of environment variables that agents set (`AI_AGENT`, `CLAUDECODE`,
+`CURSOR_AGENT`, `GEMINI_CLI`, `CODEX_*`, and a dozen more). The kit's CI defines **none** of them,
+so output there is unchanged.
+
+A useful side effect to know: anything that scrubs the environment — `env -u`, `sudo` without `-E`,
+`docker run` without `-e` — silently turns `pao` off.
+
+### How to turn it off
+
+```bash
+PAO_DISABLE=1 php artisan test    # human output, even under an agent
+PAO_FORCE=1   php artisan test    # agent output, even without an agent
+```
+
+> **Both are real environment variables, and they do not belong in `.env`.** `pao` reads them from
+> `$_SERVER` before Laravel exists — a line in the project's `.env` has no effect.
+
+Use `PAO_DISABLE=1` when you are debugging alongside the agent and want the full output.
+
+### Two gotchas that save time
+
+- **`--compact` is superseded under an agent.** The plugin injects `--no-output --no-progress`, so
+  `php artisan test --compact` and `php artisan test` give the same result when an agent runs them.
+- **`pint --format agent` is redundant under an agent.** Pint detects it on its own. The flag is
+  still useful to force JSON outside an agent session.
+
+## GitHub security auditing — `laravel/moat` (optional)
+
+[`moat`](https://github.com/laravel/moat) **is not a PHP package and is not a kit dependency.** It
+is a CLI written in Rust that performs a **read-only** review of the security configuration of a
+GitHub organisation or repository: 2FA enforcement, branch protection, secret scanning, workflow
+permissions — over 25 checks.
+
+It changes nothing; it only reports.
+
+```bash
+brew tap laravel/moat https://github.com/laravel/moat
+brew install laravel/moat/moat
+
+moat your-org       # an organisation or user
+moat owner/repo     # a repository
+```
+
+It needs GitHub authentication (`GITHUB_TOKEN`, `GH_TOKEN`, or the `gh` CLI already signed in), and
+supports terminal, JSON or Markdown output.
+
+> **It is a tool for whoever maintains the repository, not for whoever uses the kit.** It audits
+> configuration on GitHub, not your code. And installation goes through Homebrew, which is not
+> standard on Windows — there the path is WSL or downloading the release binary.
