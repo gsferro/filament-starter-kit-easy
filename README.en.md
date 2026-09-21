@@ -313,7 +313,7 @@ No service declares a fixed `container_name`: the prefix comes from `COMPOSE_PRO
 
 You can open the project at `http://my-project.test` rather than `http://127.0.0.1:8000`: it costs one line in the machine's `hosts` file and two keys in `.env`. No versioned file changes, adoption is individual, and anyone who does nothing stays on `http://localhost:8000`. [Full recipe, including the Windows elevation trap](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/dominio-local.html).
 
-**`kit:install` offers to do this at the end of the installation**: it suggests the domain from the name you chose, writes the line into `hosts` (asking for elevation on Windows) and adjusts `APP_URL`. It is opt-in, depends on no flag, and declining leaves everything exactly as it always was.
+**`kit:install` offers to do this at the end of the installation**: it suggests the domain from the name you chose, writes the line into `hosts` (asking for elevation on Windows) and adjusts `APP_URL`. It is opt-in, depends on no flag, and declining leaves everything exactly as it always was. A domain outside the suffixes reserved for local use (`.test`, `.localhost`, `.example`, `.invalid`) takes one more yes, because pointing a real domain at `127.0.0.1` blocks access to the actual site on this machine.
 
 ### Updating the stack on the machine that hosts it
 

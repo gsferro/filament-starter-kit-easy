@@ -81,8 +81,21 @@ Três coisas valem saber antes de responder:
   etapa nem acontece. Não existe flag para ligá-la ou desligá-la, e ela também não depende do
   `--force`.
 - **A sugestão vem do nome que você escolheu** na primeira pergunta: `Loja do Ferro` vira
-  `loja-do-ferro.test`. Você pode digitar outro — sem `http://`, sem barra e sem espaço. O sufixo é
-  `.test`, reservado pela RFC 6761; `.local` é recusado, porque a RFC 6762 o reserva ao mDNS.
+  `loja-do-ferro.test`. Você pode digitar outro — sem `http://`, sem barra e sem espaço, e dentro
+  dos limites do DNS (63 caracteres por parte do nome, 253 no total). O sufixo é `.test`, reservado
+  pela RFC 6761; `.local` é recusado, porque a RFC 6762 o reserva ao mDNS.
+- **Domínio público pede um sim a mais.** Se o que você digitar não terminar em `.test`,
+  `.localhost`, `.example` ou `.invalid` — os quatro sufixos que a RFC 6761 reserva ao uso local —,
+  o comando pergunta de novo, dizendo o que vai acontecer:
+
+  ```text
+  minha-empresa.com.br é um domínio público. Apontar mesmo assim para 127.0.0.1? [y/N]
+  ```
+
+  A resposta padrão é *não*, e por um motivo concreto: apontar um domínio real para `127.0.0.1`
+  **impede o acesso ao site de verdade nesta máquina**, e a linha fica no `hosts` até alguém
+  removê-la à mão — remover não faz parte do que o `kit:install` faz. É a proteção contra o erro de
+  digitação que custa mais caro.
 - **Aceitando, duas coisas acontecem**: uma linha `127.0.0.1` é acrescentada ao arquivo `hosts` da
   máquina, e a chave `APP_URL` do seu `.env` passa a ser `http://meu-projeto.test` — que é o
   endereço que o próprio comando imprime no fim, já com o nome novo.
@@ -92,10 +105,18 @@ decide se deu certo é o kit **reler o arquivo** depois — código de saída de
 prova nada. No **Linux** e no **macOS** ela imprime a linha pronta para você colar com `sudo`, e
 ajusta a `APP_URL` do mesmo jeito.
 
-Nada disso aborta a instalação: elevação negada, antivírus bloqueando o arquivo ou `pwsh` ausente
-viram **aviso** no fim, com o comando pronto para colar — e a `APP_URL` fica como estava, para a
-tela final não mostrar um endereço que não responde. Se o domínio já resolve (instalação anterior,
-ou Laravel Herd e Valet, que respondem por `*.test` sozinhos), o arquivo `hosts` não é tocado.
+Nada disso aborta a instalação — nem uma pergunta interrompida no meio. Elevação negada, antivírus
+bloqueando o arquivo ou `pwsh` ausente viram **aviso** no fim, com o comando pronto para colar (o do
+seu sistema: `Start-Process … -Verb RunAs` no Windows, `sudo tee -a` no Linux e no macOS). O aviso
+também diz **em que estado a `APP_URL` ficou**: o normal é ela não ser tocada, para a tela final não
+mostrar um endereço que não responde.
+
+Se o domínio já resolve **para esta máquina** — instalação anterior, ou Laravel Herd e Valet, que
+respondem por `*.test` sozinhos —, o arquivo `hosts` não é tocado e só a `APP_URL` é ajustada. Note
+o "para esta máquina": só `127.0.0.0/8` e `::1` contam. Um DNS corporativo com curinga responde por
+qualquer nome, inclusive um que você acabou de inventar, e tratar isso como "já está pronto" deixaria
+a tela final apontando para um servidor de terceiro. Nesse caso o comando avisa qual endereço
+respondeu e cadastra a linha local por cima.
 
 A receita manual completa, com as armadilhas de elevação, o `FORWARD_APP_PORT` e o efeito sobre
 login social e Vite, está em [Domínio local](../dominio-local/).

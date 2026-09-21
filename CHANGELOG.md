@@ -73,8 +73,17 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   elevação nenhuma. Não confirmado, a `APP_URL` fica como estava e sai um aviso com o comando
   pronto para colar — nenhuma falha aqui aborta a instalação.
 
-  Também não mexe no `hosts` de quem já tem o domínio resolvendo, inclusive quando quem resolve é
-  o Laravel Herd ou o Valet, que respondem por `*.test` **sem** linha nenhuma no arquivo.
+  Também não mexe no `hosts` de quem já tem o domínio resolvendo **para esta máquina**, inclusive
+  quando quem resolve é o Laravel Herd ou o Valet, que respondem por `*.test` **sem** linha nenhuma
+  no arquivo. "Para esta máquina" é `127.0.0.0/8` ou `::1`, e só: um DNS corporativo com curinga
+  responde por qualquer nome, e tomar isso por "já está pronto" deixaria a tela final apontando
+  para o servidor de outra pessoa.
+
+  **Domínio que não termina em `.test`, `.localhost`, `.example` ou `.invalid`** — os quatro
+  sufixos que a RFC 6761 reserva ao uso local — pede uma confirmação a mais, com o texto dizendo o
+  que vai acontecer: apontar um domínio real para `127.0.0.1` derruba o acesso ao site de verdade
+  nesta máquina, e a linha fica no `hosts` até alguém removê-la à mão. O padrão dessa pergunta é
+  *não*.
 
   Ver `wikis/specs/feat/kit-install-host-local/`.
 

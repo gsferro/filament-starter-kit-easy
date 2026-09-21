@@ -313,7 +313,7 @@ Nenhum serviço tem `container_name` fixo: o prefixo vem de `COMPOSE_PROJECT_NAM
 
 Dá para abrir o projeto em `http://meu-projeto.test` no lugar de `http://127.0.0.1:8000`: custa uma linha no arquivo `hosts` da máquina e duas chaves no `.env`. Nenhum arquivo versionado muda, a adoção é individual e quem não fizer nada continua em `http://localhost:8000`. [Receita completa, com a armadilha de elevação no Windows](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/dominio-local.html).
 
-**O `kit:install` oferece fazer isso no fim da instalação**: ele sugere o domínio a partir do nome que você escolheu, escreve a linha no `hosts` (pedindo elevação no Windows) e ajusta a `APP_URL`. É opt-in, não depende de flag nenhuma, e recusar deixa tudo como sempre foi.
+**O `kit:install` oferece fazer isso no fim da instalação**: ele sugere o domínio a partir do nome que você escolheu, escreve a linha no `hosts` (pedindo elevação no Windows) e ajusta a `APP_URL`. É opt-in, não depende de flag nenhuma, e recusar deixa tudo como sempre foi. Domínio fora dos sufixos reservados ao uso local (`.test`, `.localhost`, `.example`, `.invalid`) pede um sim a mais, porque apontar um domínio real para `127.0.0.1` derruba o acesso ao site de verdade nesta máquina.
 
 ### Atualizando a stack na máquina que a hospeda
 
