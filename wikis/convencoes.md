@@ -222,7 +222,7 @@ Código que parece errado e **é deliberado**. Antes de "corrigir" qualquer linh
 | Provider de IA | `AI_PROVIDER` no `.env` (`config/ai.php`) |
 | Backups | `config/backup.php` + agendamento em `routes/console.php` |
 | Cores de cada painel | `->colors([...])` no `*PanelProvider` |
-| Arte do login | a view `resources/views/svg/arte-do-login.blade.php`, renderizada como data URI em `app/Support/IdentidadeDoKit.php:artePadrao:82` — **não existe** `public/images/`. Para trocar, envie a arte na tela de configurações (`kit.identidade.arte_do_login`, default em `config/kit.php:arte_do_login:135`) |
+| Arte do login | a view `resources/views/svg/arte-do-login.blade.php`, renderizada como data URI em `app/Support/IdentidadeDoKit.php:artePadrao:82` — **não existe** `public/images/`. Para trocar, envie a arte na tela de configurações (`kit.identidade.arte_do_login`, default em `config/kit.php:arte_do_login:136`) |
 | Ligar multi-tenancy | `php artisan kit:tenancy` (destrutivo — ver [arquitetura](arquitetura.md#multi-tenancy-opt-in)) |
 | Termo do tenant na UI | `kit.tenancy.label` / `label_plural` / `slug` em `config/kit.php` |
 | Retenção das trilhas (exceções, e-mails) | `KIT_RETENCAO_EXCECOES_DIAS` / `KIT_RETENCAO_EMAILS_DIAS` no `.env` (`kit.retencao` em `config/kit.php`). O config declara o prazo; **quem aplica é `routes/console.php`** |
