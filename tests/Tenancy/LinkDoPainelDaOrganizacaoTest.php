@@ -580,9 +580,20 @@ it('[CT-12] a edicao continua gravando os campos da organizacao', function (): v
  *
  * Três armadilhas num caso, todas da EDIÇÃO e nenhuma da criação: (i) a unicidade do slug acusando
  * colisão do registro consigo mesmo; (ii) a entrada nova entrando no `dehydrate` e escrevendo
- * alguma coluna no save — é por isso que a entrada do link é `TextEntry` e não `TextInput`
- * desabilitado; (iii) a linha `inativa`, que fecha a célula `inativa × gravar`: o registro
+ * alguma coluna no save; (iii) a linha `inativa`, que fecha a célula `inativa × gravar`: o registro
  * logicamente excluído ainda tem de funcionar na operação de escrita.
+ *
+ * ## O alcance real da armadilha (ii) — corrigido em 2026-09-21
+ *
+ * Este docblock dizia que (ii) é a razão de a entrada do link ser `TextEntry` e não `TextInput`
+ * desabilitado. **Este caso não prova isso**, e é melhor dizê-lo do que deixar a alegação de pé:
+ * `url_do_painel` não é coluna da tabela nem está em `Tenant::$fillable`, então mesmo um
+ * `TextInput` teria a escrita DESCARTADA em silêncio pelo mass assignment, e o agregado relido
+ * sairia idêntico. O caso continuaria verde contra o mutante que ele diz matar.
+ *
+ * Quem fecha (ii) é a ESTRUTURA — ausência de coluna e ausência no `fillable` —, não esta
+ * asserção. O que este caso prova de verdade é (i) e (iii), mais o invariante geral de que o save
+ * da edição não passou a escrever nenhuma outra coluna. É menos do que se afirmava, e é o que há.
  *
  * O oráculo é o AGREGADO PERSISTIDO — os atributos do registro relido —, não o retorno da chamada.
  */

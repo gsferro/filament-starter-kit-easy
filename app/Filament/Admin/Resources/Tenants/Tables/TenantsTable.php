@@ -57,7 +57,9 @@ class TenantsTable
                  *
                  * Zero query nova: `Tenant::urlDoPainel()` lê o `slug` do próprio registro, que
                  * a listagem já seleciona — não é relação, não é `counts()`, não vai ao disco.
-                 * Medido antes e depois: 21 queries nos dois casos.
+                 * Medido antes e depois do diff (`git stash push -- app/`), e é o mesmo número
+                 * do CHANGELOG e do docblock de CT-14: 33 consultas com uma organização e 53
+                 * com cinco, nos dois casos.
                  *
                  * `->url()` explícito, ao contrário das `recordActions()` abaixo: o destino é
                  * EXTERNO ao resource, então não há `Page::getDefaultActionUrl()` para resolvê-lo.
