@@ -29,7 +29,7 @@ class TenantHeader
             Header::make()
                 /*
                  * `urlDaLogo()` já confere `Storage::disk('public')->exists()` antes de devolver
-                 * (`app/Models/Tenant.php:urlDaLogo:138`), então não chega `<img>` quebrado aqui.
+                 * (`app/Models/Tenant.php:urlDaLogo:164`), então não chega `<img>` quebrado aqui.
                  * Devolve `null` sem logo, e o slot cai nas iniciais.
                  *
                  * É `asset()`, não `Storage::url()` — logo URL absoluta com esquema http/https, que

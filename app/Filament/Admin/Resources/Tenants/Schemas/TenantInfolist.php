@@ -41,6 +41,17 @@ class TenantInfolist
                     ->schema([
                         TextEntry::make('nome')->label('Nome'),
                         TextEntry::make('slug')->label('Identificador')->copyable(),
+                        /*
+                         * O atalho para o painel da organização — RQ-01/RQ-03 da wiki
+                         * `link-painel-do-tenant`. Aqui, ao lado do `slug` que é `copyable()`:
+                         * o slug responde "qual é o identificador", este responde "onde ele
+                         * leva". Nova aba (ADR-04).
+                         */
+                        TextEntry::make('url_do_painel')
+                            ->label('Painel da organização')
+                            ->state(fn (Tenant $record): ?string => $record->urlDoPainel())
+                            ->url(fn (Tenant $record): ?string => $record->urlDoPainel())
+                            ->openUrlInNewTab(),
                         TextEntry::make('ativo')
                             ->label('Situação')
                             ->badge()
@@ -59,7 +70,7 @@ class TenantInfolist
                     ->schema([
                         /*
                          * `urlDaLogo()` e não a coluna crua: ele confere
-                         * `Storage::disk('public')->exists()` antes (`app/Models/Tenant.php:urlDaLogo:138`),
+                         * `Storage::disk('public')->exists()` antes (`app/Models/Tenant.php:urlDaLogo:164`),
                          * então path órfão degrada para o placeholder em vez de renderizar imagem
                          * quebrada — que é o oposto do que a tela promete.
                          */

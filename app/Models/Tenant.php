@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\AuditsFillables;
 use App\Traits\TemUuid;
 use Database\Factories\TenantFactory;
+use Filament\Facades\Filament;
 use Filament\Models\Contracts\HasCurrentTenantLabel;
 use Filament\Models\Contracts\HasName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -122,6 +123,31 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
             'ativo'               => 'boolean',
             'registro_habilitado' => 'boolean',
         ];
+    }
+
+    /**
+     * O endereço do painel de negócio DESTA organização — o ponto único da feature do link.
+     *
+     * Aqui, ao lado de `urlDaLogo()`, por simetria: as duas são "o endereço de algo desta
+     * organização", e as três telas do `TenantResource` (form, ficha e listagem) já recebem o
+     * registro — não precisam de mais nada para montar o link.
+     *
+     * `Panel::getUrl($this)` e NÃO concatenação: o endereço é derivado do `path` do painel, do
+     * `APP_URL` corrente e do `slugAttribute` declarado no `AppPanelProvider`
+     * (`vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:getUrl:170`). Escrever o
+     * caminho à mão quebraria em silêncio em três situações que o kit já permite: o `path` do
+     * painel mudar, a instalação rodar sob subdiretório, e a chave de rota do tenant deixar de
+     * ser o slug. Ver ADR-01 de `wikis/specs/feat/link-painel-do-tenant/link-painel-do-tenant/`.
+     *
+     * Sem normalizar o slug gravado: `Str::slug()` aqui produziria um endereço que **não
+     * existe** para quem gravou `ACME-Brasil` por fora do formulário, e o link nasceria
+     * quebrado sem nada avisar. O link segue o que está no banco.
+     *
+     * `?string` porque é o retorno de `getUrl()`.
+     */
+    public function urlDoPainel(): ?string
+    {
+        return Filament::getPanel('app')->getUrl($this);
     }
 
     /**

@@ -2,8 +2,11 @@
 
 namespace App\Filament\Admin\Resources\Tenants\Tables;
 
+use App\Models\Tenant;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Enums\IconPosition;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -42,6 +45,31 @@ class TenantsTable
                     ->simpleLightbox(),
                 TextColumn::make('nome')->label('Nome')->searchable(['nome', 'slug'])->sortable(),
                 TextColumn::make('slug')->label('Slug')->badge()->color('gray')->searchable(),
+                /*
+                 * O acesso direto ao painel da organização — RQ-01/RQ-04 da wiki
+                 * `link-painel-do-tenant`.
+                 *
+                 * COLUNA e não `Action` por linha, decidido com o usuário: a coluna EXIBE o
+                 * endereço, então o destino é conhecido antes do clique — um ícone não diz para
+                 * onde leva. (E Action nova obrigaria declarar autorização no inventário de
+                 * `tests/Kit/PermissoesDeAcoesTest.php`, o que aqui seria mentira: o link não
+                 * autoriza nada, ele navega.)
+                 *
+                 * Zero query nova: `Tenant::urlDoPainel()` lê o `slug` do próprio registro, que
+                 * a listagem já seleciona — não é relação, não é `counts()`, não vai ao disco.
+                 * Medido antes e depois: 21 queries nos dois casos.
+                 *
+                 * `->url()` explícito, ao contrário das `recordActions()` abaixo: o destino é
+                 * EXTERNO ao resource, então não há `Page::getDefaultActionUrl()` para resolvê-lo.
+                 */
+                TextColumn::make('url_do_painel')
+                    ->label('Painel')
+                    ->state(fn (Tenant $record): ?string => $record->urlDoPainel())
+                    ->url(fn (Tenant $record): ?string => $record->urlDoPainel())
+                    ->openUrlInNewTab()
+                    ->color('primary')
+                    ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                    ->iconPosition(IconPosition::After),
                 IconColumn::make('ativo')->label('Ativo')->boolean(),
                 TextColumn::make('users_count')
                     ->label('Usuários')

@@ -11,6 +11,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
@@ -51,6 +52,33 @@ class TenantForm
                             ->maxLength(120)
                             ->alphaDash()
                             ->unique(),
+
+                        /*
+                         * O atalho para o painel da organização — RQ-01/RQ-02 da wiki
+                         * `link-painel-do-tenant`.
+                         *
+                         * `TextEntry` e NÃO `TextInput::make()->disabled()`: entrada de infolist
+                         * não é `Field`, então ela não entra no estado do formulário nem no
+                         * `dehydrate` — um `TextInput` desabilitado viria no save e escreveria
+                         * uma chave que não é coluna. É o único requisito duro deste componente.
+                         *
+                         * Só na EDIÇÃO. No `CreateTenant` o registro ainda não existe e o slug
+                         * digitado pode mudar antes de gravar: um link para `{slug}` não gravado
+                         * é um 404 garantido. O invariante da wiki é literal — nenhum link é
+                         * renderizado apontando para slug que não está no banco.
+                         *
+                         * Nova aba (ADR-04): o atalho é "ir ver como está lá", não "trocar de
+                         * contexto de trabalho" — quem estava editando a organização não perde a
+                         * tela de administração.
+                         */
+                        TextEntry::make('url_do_painel')
+                            ->label('Painel da organização')
+                            ->state(fn (?Tenant $record): ?string => $record?->urlDoPainel())
+                            ->url(fn (?Tenant $record): ?string => $record?->urlDoPainel())
+                            ->openUrlInNewTab()
+                            ->visible(fn (?Tenant $record): bool => $record !== null)
+                            ->helperText('Abre em nova aba. Quem não tem papel do painel de negócio recebe 403; quem tem papel mas não está vinculado a esta organização recebe 404.')
+                            ->columnSpanFull(),
 
                         Toggle::make('ativo')
                             ->label('Ativo')
