@@ -124,13 +124,18 @@ it('[CT-01] o endereco e o do painel da organizacao, e nao o do registro nem o d
  *
  * `semComentarios()` porque o model documenta `/app/{slug}` no docblock da classe, e citar não é
  * executar (`.ai/rules/testes.md`).
+ *
+ * ## A segunda asserção saiu (corte C-1 da revisão adversarial)
+ *
+ * O caso carregava um `preg_match` de regex adivinhado ("o slug concatenado com um caminho"), e o
+ * `04` cortou o `Então` correspondente: não é oráculo executável, e `.ai/rules/testes.md` proíbe
+ * exatamente isso ("não invente um regex, ele conta comentário como chamada"). O que carrega o
+ * cenário é a asserção do LITERAL, que continua aqui. Registrado como C-1 no `03-progresso.md`.
  */
 it('[CT-02] o caminho do painel nao e escrito a mao no gerador', function (): void {
     $fonte = semComentarios((string) file_get_contents(app_path('Models/Tenant.php')));
 
-    expect($fonte)->not->toContain('/app')
-        // E nem o slug concatenado com um caminho, que é a outra metade do mesmo defeito.
-        ->and(preg_match('~[\'"]\s*\.\s*\$\w+->slug|\$\w+->slug\s*\.\s*[\'"]~', $fonte))->toBe(0);
+    expect($fonte)->not->toContain('/app');
 });
 
 /**
