@@ -30,7 +30,9 @@
 - [x] `composer update --lock` — lock consistente, sem mudança de pacote, 2026-09-21
 - [x] `composer why-not php 8.3.0 --locked` — **24 pacotes de produção** e 31 de dev exigem ≥ 8.4, 2026-09-21
 - [x] `php artisan test --compact` docs guards — **74/74, 283 asserções**, 2026-09-21
-- [ ] `composer test:kit` — a suíte inteira (mexeu em constraint)
+- [x] `composer test:kit` — **2.614/2.614, 10.164 asserções**, 2026-09-21
+- [x] `vendor/bin/pint --dirty --format agent` — `passed`, 2026-09-21
+- [x] **Rebase sobre a `main`** — a worktree nasceu da branch da wiki `host-local` e carregava 2 commits que não eram desta entrega. Refeita com `git rebase --onto origin/main`; agora são **7 commits, todos desta wiki**, 2026-09-21
 - [ ] `/code-review` no diff (step 7.5)
 - [ ] `feature-quality-gate` (step 8)
 
