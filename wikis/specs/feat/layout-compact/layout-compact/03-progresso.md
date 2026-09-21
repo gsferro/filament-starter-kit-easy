@@ -308,7 +308,17 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
 - [x] `vendor/bin/pint --dirty --format agent` — `passed`, 2026-09-21
 - [x] `vendor/bin/filacheck --fix` — **17/17 regras passaram**, 2026-09-21
 - [x] `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` — **25 passaram, 47 asserções**, 2026-09-21
-- [x] **`composer test:kit`** (regressão completa — obrigatória por tocar infra compartilhada) — **2.715 passaram, 10.508 asserções, 0 falhas**, 2026-09-21
+- [x] **`composer test:kit`** (regressão completa — obrigatória por tocar infra compartilhada) — **2.717 passaram, 10.525 asserções, 0 falhas**, 2026-09-21, **remedido após o `/code-review`**
+
+  O número anterior registrado aqui (2.715 / 10.508) era de **antes** do commit `bf6e799`, que é
+  justamente o que tinha deixado a suíte vermelha — achado 3 do `/code-review`. Remedido, não
+  reescrito.
+
+  **E a remedição quase repetiu o mesmo erro.** A primeira tentativa rodou `composer test:kit` num
+  shell sem o `composer` no PATH: a saída foi `composer: command not found` e o **código de saída
+  foi 0**. Ler só o código de saída teria registrado como verde uma suíte que não rodou — o mesmo
+  defeito do achado 3, cometido ao corrigi-lo. Rodado direto por
+  `php artisan test --testsuite=Kit,Tenancy --parallel`, que é o que o script faz
 - [x] **Falsificabilidade por mutação** — apagar a linha do `mapaDeConfiguracao()` reprova **7 dos 14 CTs**, 2026-09-21
 - [x] **Custo medido** — **zero request e zero query a mais**: a leitura sai de `config()`, já em memória desde o `boot()`. Bate com o `## Modelo de Execução` do `01`, 2026-09-21
 - [x] **Medição no kit** — quatro níveis, oito telas por nível, `padrão` medido com a feature fora da árvore por `git stash`, 2026-09-21
