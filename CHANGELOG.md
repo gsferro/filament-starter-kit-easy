@@ -6,6 +6,29 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Adicionado
+- **Layout compacto, em três níveis, na aba Kit das configurações.** *Densidade do layout* aperta
+  de uma vez os cartões de estatística, as tabelas, o menu lateral e os botões dos três painéis.
+
+  Medido no **próprio kit** (não na demo limpa), com navegador de verdade lendo estilo computado em
+  `/admin/users` a 1600×1000: **compacto** encolhe a linha da tabela de 56,0 px para 46,4 px
+  (−17,1%) e a tabela de dez linhas de 612 px para 509,2 px (−16,8%); **denso** chega a 42,9 px
+  (−23,4%) e 471,8 px (−22,9%) — praticamente o mesmo ganho do tema compacto **pago** oficial
+  (−22,5%), que não pode entrar no kit porque a licença é de projeto único.
+
+  **É uma declaração de CSS, e nenhuma classe `fi-*` foi escrita.** O Filament 5 deriva todo
+  espaçamento de `--spacing`, declarada uma vez só dentro de `@layer theme`; o kit a redeclara
+  **fora** de cascade layer, num render hook `STYLES_BEFORE` avaliado por request. Sem tema Vite,
+  sem `npm run build`, sem deploy: salvar na tela vale no próximo F5. A alternativa artesanal foi
+  medida e **piorou** a altura da tabela em 21,9%, porque o padding da célula não mora em
+  `.fi-ta-cell` (que é `@apply p-0`) — está em nove arquivos `columns/*.css` do vendor.
+
+  Nasce **confortável**, e nesse nível o kit **não emite estilo nenhum**: quem nunca mexer continua
+  com o HTML que já tinha. São níveis e não um liga-desliga porque apertar `--spacing` distorce
+  proporções (ícone 24 → 19,2 → 16,8 px), e a distorção escala com a intensidade.
+
+  Nova chave `KIT_DENSIDADE_DO_LAYOUT` (semente e plano B) e nova propriedade
+  `densidade_do_layout` no settings. Ver `wikis/specs/feat/layout-compact/`, ADR-03 a ADR-06.
+
 - **Link de acesso direto ao painel da organização, nas três telas do `/admin`.** A listagem, a
   ficha e a edição de organização passam a mostrar o endereço do painel de negócio daquela
   organização, clicável, abrindo em **nova aba**. Na listagem é uma **coluna** (*Painel*) com o
