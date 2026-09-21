@@ -17,6 +17,7 @@ use App\Observers\TenantObserver;
 use App\Providers\Concerns\ConfiguraFilamentGlobal;
 use App\Settings\ConfiguracoesDoKit;
 use App\Support\ConfiguracaoDoLogin;
+use App\Support\DensidadeDoLayout;
 use App\Support\DestinoAposLogin;
 use App\Support\PoliciesDeVendor;
 use App\Support\TetoDeUpload;
@@ -89,6 +90,7 @@ class KitServiceProvider extends ServiceProvider
         $this->configureProcessEnvNoWindows();
         $this->configuraFilamentGlobal();
         $this->configureOrdemDasCascadeLayers();
+        $this->configureDensidadeDoLayout();
         $this->configureCorrecoesDeCss();
         $this->configureTelaDeLogin();
         $this->configureLoginUnificado();
@@ -551,6 +553,72 @@ class KitServiceProvider extends ServiceProvider
         FilamentView::registerRenderHook(
             PanelsRenderHook::STYLES_BEFORE,
             fn (): string => '<style>@layer properties, theme, base, components, utilities;</style>',
+        );
+    }
+
+    /**
+     * O "layout compacto": uma declaração de `--spacing` fora de cascade layer, por request.
+     *
+     * ## O que ela alcança, e por que uma linha basta
+     *
+     * A CSS publicada do Filament 5 é Tailwind 4, e **todo** espaçamento dela é
+     * `calc(var(--spacing) * N)` — `var(--spacing)` aparece 1.228 vezes em
+     * `public/css/filament/filament/app.css`, e o valor `.25rem` é declarado **uma vez só**,
+     * dentro de `@layer theme{:root,:host{…}}`. Redeclarar a variável alcança as quatro
+     * superfícies do escopo (stats, tabela, menu e botão) de uma vez, porque as quatro medem
+     * nela. Medido no kit: ver a tabela em `App\Support\DensidadeDoLayout::espacamento()`.
+     *
+     * ## Por que FORA de layer, e por que isso não briga com a ordem fixada acima
+     *
+     * Declaração fora de cascade layer vence **qualquer** layer, independentemente de ordem e de
+     * especificidade — é o mesmo mecanismo que `configureOrdemDasCascadeLayers()` documenta,
+     * usado agora a favor. Por isso não há `!important`, não há seletor competindo e não importa
+     * se esta folha sai antes ou depois de qualquer outra: `:root{--spacing:…}` sem `@layer`
+     * ganha do `@layer theme` do Filament e de qualquer layer que um plugin venha a declarar.
+     *
+     * ## Proibido escrever isto por classe `fi-*`, e a proibição foi MEDIDA
+     *
+     * A tentativa óbvia — `.fi-ta-cell{padding-block:.5rem}` — **piorou** a altura da tabela em
+     * 21,9%, porque `vendor/filament/tables/resources/css/cell.css:2` é `@apply p-0`: o padding
+     * não mora na célula, mora no elemento da coluna, espalhado por nove arquivos
+     * `columns/*.css`. Um subconjunto honesto exigiria congelar ~370 classes de vendor, que
+     * apodrecem em silêncio no `composer update`. Ver ADR-03.
+     *
+     * ## Por que render hook, e não `viteTheme()`
+     *
+     * `STYLES_BEFORE` é emitido pelo layout base
+     * (`vendor/filament/filament/resources/views/components/layout/base.blade.php:44`), por onde
+     * **todos** os layouts passam — inclusive o do `caresome/filament-auth-designer`, que veste
+     * as telas de autenticação. A `Closure` é avaliada **no render**, então o Select da tela
+     * governa já no próximo F5, sem deploy e sem `npm run build`.
+     *
+     * `viteTheme()` faria o oposto e em silêncio: ele é resolvido na construção do painel e
+     * **não aceita `Closure`** (`vendor/filament/filament/src/Panel/Concerns/HasTheme.php:27-33`).
+     * O toggle gravaria e só valeria no próximo deploy — exatamente a armadilha que
+     * `.ai/rules/settings.md` registra. Ver ADR-06.
+     *
+     * ## O nível confortável não emite nada
+     *
+     * String vazia, e não `<style></style>`: `espacamento()` devolve `null` no padrão do
+     * Filament, e toda instalação que nunca mexeu nisto continua com o HTML que já tinha. Um
+     * `<style>` vazio seria equivalente na tela e mentiria na inspeção.
+     *
+     * `FilamentView::registerRenderHook()` e não `$panel->renderHook()` pela mesma razão de
+     * `configureOrdemDasCascadeLayers()`: uma registração cobre os três painéis.
+     *
+     * Guarda: `tests/Kit/DensidadeDoLayoutTest.php`.
+     */
+    protected function configureDensidadeDoLayout(): void
+    {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::STYLES_BEFORE,
+            function (): string {
+                $espacamento = DensidadeDoLayout::deConfig()->espacamento();
+
+                return $espacamento === null
+                    ? ''
+                    : '<style>:root{--spacing:'.$espacamento.'}</style>';
+            },
         );
     }
 
