@@ -313,6 +313,8 @@ No service declares a fixed `container_name`: the prefix comes from `COMPOSE_PRO
 
 You can open the project at `http://my-project.test` rather than `http://127.0.0.1:8000`: it costs one line in the machine's `hosts` file and two keys in `.env`. No versioned file changes, adoption is individual, and anyone who does nothing stays on `http://localhost:8000`. [Full recipe, including the Windows elevation trap](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/dominio-local.html).
 
+**`kit:install` offers to do this at the end of the installation**: it suggests the domain from the name you chose, writes the line into `hosts` (asking for elevation on Windows) and adjusts `APP_URL`. It is opt-in, depends on no flag, and declining leaves everything exactly as it always was.
+
 ### Updating the stack on the machine that hosts it
 
 `./deploy_docker_local.sh` runs **on the container host** (not on your development machine) and does the whole sequence: `git pull`, image rebuild, `--profile app up -d`, migrations, `optimize:clear`, a health check on `/up` and a TCP probe of Reverb. Output is appended to `storage/logs/deploy_docker_local.log`.

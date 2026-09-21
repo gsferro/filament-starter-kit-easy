@@ -64,6 +64,45 @@ Two details of the image, which explain what the installer writes:
 The local AI caveat does not change: semantic search and embeddings depend on `pgvector`, which only
 Postgres has.
 
+## Local domain at the end of the installation
+
+Once the heavy lifting is done — migrations, seeders and assets —, `kit:install` asks one last
+question: **register a local domain**, so the project opens at `http://my-project.test` instead of
+`http://localhost:8000`.
+
+```text
+Cadastrar um domínio local (ex.: http://my-project.test)? [y/N]
+Qual domínio? › my-project.test
+```
+
+Three things are worth knowing before you answer:
+
+- **It is opt-in.** The default answer is *no*: Enter keeps `http://localhost:8000`, exactly as
+  before. The question only shows up when there is a terminal — in CI, a Docker build or with
+  `--no-interaction` the step never happens. There is no flag to turn it on or off, and it does not
+  depend on `--force` either.
+- **The suggestion comes from the name you chose** in the first question: `Loja do Ferro` becomes
+  `loja-do-ferro.test`. You can type another one — with no `http://`, no slash and no space. The
+  suffix is `.test`, reserved by RFC 6761; `.local` is refused, because RFC 6762 reserves it for
+  mDNS.
+- **Accepting does two things**: a `127.0.0.1` line is appended to the machine's `hosts` file, and
+  the `APP_URL` key in your `.env` becomes `http://my-project.test` — which is the address the
+  command itself prints at the end, already with the new name.
+
+On **Windows** the step runs the registration, asking for elevation through UAC: a window opens,
+and what decides whether it worked is the kit **reading the file back** afterwards — the exit code
+of an elevated process proves nothing. On **Linux** and **macOS** it prints the line ready for you
+to paste with `sudo`, and adjusts `APP_URL` all the same.
+
+None of this aborts the installation: elevation denied, an antivirus guarding the file or a missing
+`pwsh` all become a **warning** at the end, with the command ready to paste — and `APP_URL` stays as
+it was, so the final screen never shows an address that does not answer. If the domain already
+resolves (an earlier installation, or Laravel Herd and Valet, which answer for `*.test` on their
+own), the `hosts` file is left untouched.
+
+The full manual recipe, with the elevation traps, `FORWARD_APP_PORT` and the effect on social login
+and Vite, is in [Local domain](../dominio-local/).
+
 ## Container names
 
 No service in `docker-compose.yml` declares a `container_name`. The prefix of every container and

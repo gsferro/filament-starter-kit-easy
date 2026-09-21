@@ -56,6 +56,28 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   com as duas formas de adoção já avaliadas, está em
   `wikis/specs/feat/pacotes-laravel-ia/pacotes-laravel-ia/02-decisoes-arquiteturais.md`.
 
+- **O `kit:install` passou a oferecer o domínio local no fim da instalação.** Ao terminar o
+  trabalho pesado — e **antes** de imprimir as URLs de acesso —, ele pergunta se você quer abrir o
+  projeto em `http://meu-projeto.test` no lugar de `http://localhost:8000`, sugere o domínio a
+  partir do nome que você escolheu na primeira pergunta, escreve a linha no arquivo `hosts` e
+  ajusta a `APP_URL` do `.env`.
+
+  A etapa é **opt-in** (`default: false`), **não depende de `--force`** — que apaga o banco, e
+  amarrar um DNS local a ele seria pedir para apagar os dados para ganhar um domínio — e some
+  sozinha onde não há terminal.
+
+  **No Windows ela executa**, pedindo elevação por UAC com o mesmo comando que a página
+  `dominio-local.md` já ensinava; no Linux e no macOS imprime a linha `sudo` pronta e ajusta a
+  `APP_URL` do mesmo jeito. O que decide se o cadastro deu certo é **reler o arquivo**: código de
+  saída de processo elevado não prova nada, e `ipconfig /flushdns` responde "bem-sucedida" sem
+  elevação nenhuma. Não confirmado, a `APP_URL` fica como estava e sai um aviso com o comando
+  pronto para colar — nenhuma falha aqui aborta a instalação.
+
+  Também não mexe no `hosts` de quem já tem o domínio resolvendo, inclusive quando quem resolve é
+  o Laravel Herd ou o Valet, que respondem por `*.test` **sem** linha nenhuma no arquivo.
+
+  Ver `wikis/specs/feat/kit-install-host-local/`.
+
 ## [0.37.1] - 2026-09-21
 
 ### Corrigido

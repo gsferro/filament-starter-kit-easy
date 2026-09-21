@@ -313,6 +313,8 @@ Nenhum serviço tem `container_name` fixo: o prefixo vem de `COMPOSE_PROJECT_NAM
 
 Dá para abrir o projeto em `http://meu-projeto.test` no lugar de `http://127.0.0.1:8000`: custa uma linha no arquivo `hosts` da máquina e duas chaves no `.env`. Nenhum arquivo versionado muda, a adoção é individual e quem não fizer nada continua em `http://localhost:8000`. [Receita completa, com a armadilha de elevação no Windows](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/dominio-local.html).
 
+**O `kit:install` oferece fazer isso no fim da instalação**: ele sugere o domínio a partir do nome que você escolheu, escreve a linha no `hosts` (pedindo elevação no Windows) e ajusta a `APP_URL`. É opt-in, não depende de flag nenhuma, e recusar deixa tudo como sempre foi.
+
 ### Atualizando a stack na máquina que a hospeda
 
 `./deploy_docker_local.sh` roda **no host dos containers** (não na máquina de desenvolvimento) e faz a sequência inteira: `git pull`, rebuild da imagem, `--profile app up -d`, migrations, `optimize:clear`, health check em `/up` e sonda TCP do Reverb. A saída fica em `storage/logs/deploy_docker_local.log`.

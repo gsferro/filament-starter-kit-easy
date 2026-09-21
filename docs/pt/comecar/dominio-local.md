@@ -14,6 +14,12 @@ individual: cada pessoa da equipe decide, e o servidor publicado não é tocado.
 O ganho não é só estético. Cookie de sessão, link absoluto gravado em banco e callback de login
 social passam a usar um nome estável, e não um IP com porta — o mesmo formato do ambiente real.
 
+> **O `kit:install` oferece fazer isto por você.** Ao final da instalação ele pergunta se quer
+> cadastrar um domínio local, sugere um a partir do nome do projeto, escreve a linha no `hosts`
+> (pedindo elevação no Windows) e ajusta a `APP_URL`. Esta página continua valendo para quem
+> instalou antes, para quem recusou a pergunta, e para o `FORWARD_APP_PORT`, que a etapa não toca.
+> Ver [Instalação avançada](../instalacao-avancada/#domínio-local-no-fim-da-instalação).
+
 ## Receita, em três passos
 
 ### 1. Arquivo hosts
@@ -100,9 +106,13 @@ qualquer jeito, então o sucesso dele não prova que a sessão é de administrad
 Abra o Windows Terminal com *Executar como administrador*, ou eleve só o comando:
 
 ```powershell
-Start-Process pwsh -Verb RunAs -ArgumentList '-NoProfile','-Command',
+Start-Process pwsh -Verb RunAs -Wait -ArgumentList '-NoProfile','-Command',
   'Add-Content "$env:windir\System32\drivers\etc\hosts" "`n127.0.0.1`tmeu-projeto.test" -Encoding ascii'
 ```
+
+O `-Wait` é o que devolve o controle só depois de o processo elevado terminar. Colando à mão ele é
+conveniência; para o `kit:install`, que roda este mesmo comando e **confere o arquivo depois**, ele
+é o que impede a conferência de acontecer antes de a janela do UAC ser respondida.
 
 Persistindo o erro mesmo com elevação, o suspeito seguinte é o Acesso Controlado a Pastas do
 Defender ou um antivírus corporativo protegendo o arquivo.

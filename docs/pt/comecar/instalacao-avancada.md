@@ -63,6 +63,43 @@ Dois detalhes da imagem, que explicam o que o instalador grava:
 A opção da IA local não muda: busca semântica e embeddings dependem de `pgvector`, que só existe no
 Postgres.
 
+## Domínio local no fim da instalação
+
+Terminado o trabalho pesado — migrations, seeders e assets —, o `kit:install` faz a última
+pergunta: **cadastrar um domínio local** para abrir o projeto em `http://meu-projeto.test` no lugar
+de `http://localhost:8000`.
+
+```text
+Cadastrar um domínio local (ex.: http://meu-projeto.test)? [y/N]
+Qual domínio? › meu-projeto.test
+```
+
+Três coisas valem saber antes de responder:
+
+- **É opt-in.** A resposta padrão é *não*: Enter segue com `http://localhost:8000`, exatamente como
+  antes. A pergunta só aparece quando há terminal — em CI, build Docker ou `--no-interaction` a
+  etapa nem acontece. Não existe flag para ligá-la ou desligá-la, e ela também não depende do
+  `--force`.
+- **A sugestão vem do nome que você escolheu** na primeira pergunta: `Loja do Ferro` vira
+  `loja-do-ferro.test`. Você pode digitar outro — sem `http://`, sem barra e sem espaço. O sufixo é
+  `.test`, reservado pela RFC 6761; `.local` é recusado, porque a RFC 6762 o reserva ao mDNS.
+- **Aceitando, duas coisas acontecem**: uma linha `127.0.0.1` é acrescentada ao arquivo `hosts` da
+  máquina, e a chave `APP_URL` do seu `.env` passa a ser `http://meu-projeto.test` — que é o
+  endereço que o próprio comando imprime no fim, já com o nome novo.
+
+No **Windows** a etapa executa o cadastro, pedindo elevação pelo UAC: uma janela se abre, e o que
+decide se deu certo é o kit **reler o arquivo** depois — código de saída de processo elevado não
+prova nada. No **Linux** e no **macOS** ela imprime a linha pronta para você colar com `sudo`, e
+ajusta a `APP_URL` do mesmo jeito.
+
+Nada disso aborta a instalação: elevação negada, antivírus bloqueando o arquivo ou `pwsh` ausente
+viram **aviso** no fim, com o comando pronto para colar — e a `APP_URL` fica como estava, para a
+tela final não mostrar um endereço que não responde. Se o domínio já resolve (instalação anterior,
+ou Laravel Herd e Valet, que respondem por `*.test` sozinhos), o arquivo `hosts` não é tocado.
+
+A receita manual completa, com as armadilhas de elevação, o `FORWARD_APP_PORT` e o efeito sobre
+login social e Vite, está em [Domínio local](../dominio-local/).
+
 ## O nome dos containers
 
 Nenhum serviço do `docker-compose.yml` declara `container_name`. O prefixo de todo container e de
