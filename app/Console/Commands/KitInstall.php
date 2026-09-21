@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Settings\ConfiguracoesDoKit;
 use App\Support\BancoSqlite;
 use App\Support\CustomizadorDaInstalacao;
+use App\Support\HostLocal;
 use App\Support\VinculoDoSnyk;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -113,6 +114,8 @@ class KitInstall extends Command
         if ($this->option('create-project')) {
             $this->desvincularDoSnyk();
         }
+
+        $this->oferecerHostLocal();
 
         $this->banner();
         $this->resumoDaCustomizacao();
@@ -408,6 +411,29 @@ class KitInstall extends Command
 
                 return $processo->isSuccessful();
             });
+        }
+    }
+
+    /**
+     * Oferece o domínio local — a última pergunta, e de propósito ANTES do banner.
+     *
+     * "No final" aqui é o final do TRABALHO, não a última linha do `handle()`: o
+     * `banner()` imprime as URLs de acesso a partir de `config('app.url')`, e
+     * oferecer depois dele deixaria na tela `http://localhost:8000/app` logo
+     * abaixo do endereço que a pessoa acabou de escolher — a feature funcionando
+     * e parecendo não ter funcionado.
+     *
+     * Nada aqui aborta a instalação: o que não der certo vira aviso, impresso
+     * pelo próprio `banner()` junto com os demais. Por isso a etapa também não
+     * depende de flag nenhuma — `--force` apaga o banco, e amarrar o cadastro de
+     * um DNS local a ele seria pedir para apagar o banco para ganhar um domínio.
+     */
+    private function oferecerHostLocal(): void
+    {
+        $aviso = (new HostLocal(base_path()))->oferecer($this->temTerminal());
+
+        if ($aviso !== null) {
+            $this->avisos[] = $aviso;
         }
     }
 
