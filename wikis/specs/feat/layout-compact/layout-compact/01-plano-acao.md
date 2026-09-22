@@ -382,9 +382,21 @@ estilo computado, viewport **1600×1000**, **oito telas por nível**:
 | stat (`/admin`, `/infra`) | 150 / 140 px | 150 / 140 px | 137,2 / 127,2 px (−8,5%) | 130,8 / 120,8 px (−12,8%) |
 | `.fi-section` | 92 px | 92 px | 77,6 px (−15,7%) | 70,4 px (−23,5%) |
 | ícone | 24 px | 24 px | 19,2 px (−20%) | 16,8 px (−30%) |
-| largura da sidebar | 320 px | 320 px | **320 px** | **320 px** |
+| largura da sidebar *(alterado em 2026-09-22)* | 320 px | 320 px | **272 px (−15,0%)** | **264 px (−17,5%)** |
 | topbar | 64 px | 64 px | **64 px** | **64 px** |
 | overflow horizontal | não | não | não | não |
+
+> **A linha da largura da sidebar não é mais a medição de 2026-09-21** *(alterado em 2026-09-22)*.
+> Ela dizia **320 px nos três níveis**, e isso é falso desde o commit `ec665a5`, que colocou a
+> largura na escala: `app/Support/DensidadeDoLayout.php:larguraDaSidebar:201` devolve
+> `'20rem' / '17rem' / '16.5rem'` — **320 / 272 / 264 px** a 16 px de raiz — e os três painéis a
+> consomem por `->sidebarWidth(fn (): string => DensidadeDoLayout::deConfig()->larguraDaSidebar())`
+> (`app/Providers/Filament/AdminPanelProvider.php:sidebarWidth:117`,
+> `app/Providers/Filament/AppPanelProvider.php:sidebarWidth:128`,
+> `app/Providers/Filament/InfraPanelProvider.php:sidebarWidth:138`). Os valores de compacto e denso são o **mínimo medido** no
+> navegador, não estimativa — o docblock do método registra a varredura. **As outras linhas da
+> tabela continuam sendo a medição Playwright de 21/09.** As docs pt/en, o CHANGELOG e o roadmap já
+> traziam 320 → 272 → 264; era esta tabela, a que serve de prova, que tinha ficado para trás.
 
 > **A coluna `padrão` foi medida com a feature FORA da árvore**, por `git stash`, e **não** é a
 > coluna `confortavel` renomeada. É ela que prova a promessa de CT-01: o nível de fábrica é

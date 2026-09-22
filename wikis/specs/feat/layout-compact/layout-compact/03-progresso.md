@@ -38,24 +38,46 @@ cenário `CT-15` (a lacuna `L3` do `04`), o quality gate (step 8) e o PR.
 | stat (`/admin`, `/infra`) | 150 / 140 px | 150 / 140 px | 137,2 / 127,2 px (−8,5%) | 130,8 / 120,8 px (−12,8%) |
 | `.fi-section` | 92 px | 92 px | 77,6 px (−15,7%) | 70,4 px (−23,5%) |
 | ícone | 24 px | 24 px | 19,2 px (−20%) | 16,8 px (−30%) |
-| largura da sidebar | 320 px | 320 px | **320 px** | **320 px** |
+| largura da sidebar *(alterado em 2026-09-22)* | 320 px | 320 px | **272 px (−15,0%)** | **264 px (−17,5%)** |
 | topbar | 64 px | 64 px | **64 px** | **64 px** |
 | overflow horizontal | não | não | não | não |
+
+> **A linha da largura da sidebar não é mais a medição de 2026-09-21** *(alterado em 2026-09-22)*.
+> Ela dizia **320 px nos três níveis**, e isso é falso desde o commit `ec665a5`, que colocou a
+> largura na escala: `app/Support/DensidadeDoLayout.php:larguraDaSidebar:201` devolve
+> `'20rem' / '17rem' / '16.5rem'` — **320 / 272 / 264 px** a 16 px de raiz — e os três painéis a
+> consomem por `->sidebarWidth(fn (): string => DensidadeDoLayout::deConfig()->larguraDaSidebar())`
+> (`app/Providers/Filament/AdminPanelProvider.php:sidebarWidth:117`,
+> `app/Providers/Filament/AppPanelProvider.php:sidebarWidth:128`,
+> `app/Providers/Filament/InfraPanelProvider.php:sidebarWidth:138`). Os valores de compacto e denso são o **mínimo medido** no
+> navegador, não estimativa — o docblock do método registra a varredura. **As outras linhas da
+> tabela continuam sendo a medição Playwright de 21/09.** As docs pt/en, o CHANGELOG e o roadmap já
+> traziam 320 → 272 → 264; era esta tabela, a que serve de prova, que tinha ficado para trás.
 
 **As quatro superfícies do escopo respondem** — stats, tabela, menu e botão —, e isso é medição, não
 dedução de `--spacing` aparecer no seletor.
 
 ### Achados da Medição
 
-#### A1 — Largura da sidebar e altura da topbar **não** apertam, e não é defeito
+#### A1 — A topbar não aperta; a largura da sidebar **passou a apertar** em `ec665a5` *(reescrito em 2026-09-22)*
 
-320 px e 64 px nos três níveis. A largura do menu sai de **`--sidebar-width`**, não de `--spacing`;
-a topbar tem **altura fixa**. Só a **altura dos itens** do menu aperta (40,0 → 32,8 → 31,2 px).
+**Medido em 21/09**: 320 px de menu e 64 px de topbar nos três níveis. A largura do menu não sai de
+`--spacing` — sai de **`--sidebar-width`**, que o Filament emite inline
+(`vendor/filament/filament/resources/views/components/layout/base.blade.php:getSidebarWidth:85`);
+a topbar tem **altura fixa**. Só a **altura dos itens** do menu apertava (40,0 → 32,8 → 31,2 px).
 
-Isto não contraria o invariante do `00` ("nenhuma superfície fica parcialmente compacta"): o
-invariante fala das **quatro superfícies nomeadas**, e a largura da sidebar não é nenhuma delas.
-Acrescentar `--sidebar-width` à escala é barato — é o candidato mais provável a entrar primeiro, e
-está no item 5 do roadmap.
+**A metade da sidebar deixou de valer no commit `ec665a5` (2026-09-21).** O ciclo 1 do quality gate
+(QA-01) apontou que apertar só a altura do menu é a *"meia tela compacta"* que o invariante do `00`
+proíbe — o menu **é** uma das quatro superfícies nomeadas, e a leitura anterior, de que o
+invariante não o alcançaria pela largura, estava errada. A largura entrou na escala por
+`Panel::sidebarWidth()` com `Closure`, avaliado por request:
+`app/Support/DensidadeDoLayout.php:larguraDaSidebar:201` devolve `'20rem' / '17rem' / '16.5rem'` =
+**320 / 272 / 264 px**, e os três painéis a consomem. Ver ADR-03 e CT-17/CT-18.
+
+**O que sobra neste achado, e continua verdadeiro**: a **altura da topbar** não aperta (64 px nos
+três níveis), porque não é derivada de variável — mudar isso exigiria API nova do Filament. É o
+primeiro item da tabela do item 5 do `wikis/roadmap.md`, junto com o rail colapsado (fora **por
+escolha**) e os cartões do Pulse.
 
 #### A2 — Os cartões do Pulse ficam em 128 px nos três níveis
 
