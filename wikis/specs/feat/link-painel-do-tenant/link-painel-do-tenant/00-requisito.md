@@ -147,3 +147,30 @@
 - Alterar as regras de `canAccessPanel()` / `canAccessTenant()`
 - Link para os painéis `/admin` e `/infra` (não têm tenancy)
 - Impersonar usuário da organização (o kit já tem `filament-impersonate`, é outra feature)
+
+## Adendo 1 — três citações deste arquivo apontam para a linha errada (2026-09-21)
+
+- **Fonte**: achado **QA-01** do quality gate (ciclo 1), `06-relatorio-qa.md`
+- **Fidelidade**: alta — conferido mecanicamente, não inferido
+
+O texto acima é **imutável** e fica como está: ele registra o que se sabia quando o requisito foi
+escrito. O que envelheceu foram os números de linha, e a correção mora aqui.
+
+A rule `.ai/rules/specs.md` manda citar `{path}:{símbolo}:{linha}` e conferir por **símbolo**. A
+Verificação Final do `03` declarava a rule aplicada com a evidência
+`tests/Kit/CitacoesDeCodigoTest.php:[CT-26]` — mas esse gate **exclui `wikis/specs/**` por decisão
+explícita** (docblock do próprio arquivo, decisão da v0.36.0: wiki é registro datado). O glob da
+rule nunca foi conferido, e três citações deste arquivo estavam erradas.
+
+| Onde | Citação escrita | Linha do símbolo hoje | O que há na linha citada |
+|---|---|---|---|
+| RQ-01, portão 1 | `app/Models/User.php:canAccessPanel():219` | **`:156`** | `if ($this->temPapelDoPainel(...))`, dentro do método |
+| `## Ambiguidades`, portão 1 | `vendor/filament/filament/src/Http/Middleware/Authenticate.php:authenticate:35-41` | **`:15`** | o `abort_if(..., 403)`, que é o corpo — a declaração está em `:15` |
+| `## Ambiguidades`, portão 2 | `vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:handle:40-42` | **`:13`** | o `if (! $user->canAccessTenant($tenant))` e o `abort(404)` de `:41` |
+
+**Nenhuma conclusão do requisito muda.** Os três trechos citados dizem exatamente o que o `00`
+afirma que dizem — o defeito é de ponteiro, não de fato, e é por isso que ele sobreviveu a quatro
+gates: quem lê a prosa reconhece o comportamento e não abre o arquivo.
+
+As citações **vivas** desta feature (as do `03` e do `04`) foram corrigidas na fonte. As deste
+arquivo valem por esta tabela: quem precisar do ponteiro usa as linhas da coluna do meio.
