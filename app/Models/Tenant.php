@@ -146,7 +146,7 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
      * `null` com a multi-tenancy DESLIGADA, e a guarda é o achado que ela registra: `getUrl()`
      * NÃO falha nesse caso. Sem `->tenant()` o painel não tem `slugAttribute`, e o gerador cai no
      * último ramo de `HasRoutes::getUrl()` — `url($path.'/'.$tenant->getRouteKey())`
-     * (`vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:193`) —, que é **concatenação
+     * (`vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:194`) —, que é **concatenação
      * de string sem consultar `Route::has()`**. Ou seja: exatamente o que a ADR-01 recusou fazer
      * à mão, o vendor faz como último recurso. O resultado é `http://host/app/{uuid}`: uma URL
      * bem-formada que responde **404**.
