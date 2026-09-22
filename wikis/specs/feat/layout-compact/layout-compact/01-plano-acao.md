@@ -305,11 +305,11 @@ Criar um canal `layout-compact` seria uma quinta dona para uma pergunta que já 
   vazio no nível padrão
 - `deConfig(): self` (`app/Support/DensidadeDoLayout.php:deConfig():217`) — lê
   `config('kit.densidade_do_layout')`, **por request**
-- `coagir(mixed): self` (`app/Support/DensidadeDoLayout.php:coagir():219`) — a **única** cópia da
+- `coagir(mixed): self` (`app/Support/DensidadeDoLayout.php:coagir():236`) — a **única** cópia da
   coerção, `tryFrom() ?? padrao()`. Chamada nos dois lados porque as duas entradas escapam uma da
   outra: o `config/kit.php` coage o que veio do `.env`, e `deConfig()` coage o que veio do **banco**,
   que `aplicarNaConfig()` escreve direto na config sem passar pelo arquivo
-- `padrao(): self` (`app/Support/DensidadeDoLayout.php:padrao():238`) — a única cópia do valor de
+- `padrao(): self` (`app/Support/DensidadeDoLayout.php:padrao():242`) — a única cópia do valor de
   fábrica; o config e a migration leem daqui
 - **Também**: `config/kit.php:densidade_do_layout:287` e o bloco de `.env.example`
 
@@ -460,8 +460,11 @@ escrito três vezes.
 
 ## Filosofia de Implementação
 
-> **Ponytail** ativo. A escada foi aplicada e o resultado é literal: o mecanismo inteiro é **uma
-> declaração CSS**. A alternativa "séria" — CSS por classe `fi-*` — foi medida e **piorou** o
+> **Ponytail** ativo. A escada foi aplicada, e o resultado era literal: o mecanismo inteiro cabia
+> em **uma declaração CSS**. Hoje são **dois caminhos** — a declaração de `--spacing`, mais
+> `Panel::sidebarWidth(Closure)` nos três painéis para a largura do menu, que `--spacing` não
+> alcança (passo 10). *(corrigido em 2026-09-21: o texto continuava afirmando "uma declaração" 50
+> linhas depois do passo que descreve o segundo caminho.)* A alternativa "séria" — CSS por classe `fi-*` — foi medida e **piorou** o
 > layout. É o caso raro em que a solução preguiçosa não é só mais barata: é a única que funciona.
 >
 > Arquivos da wiki (00–06) são boundary do Caveman — prosa normal.

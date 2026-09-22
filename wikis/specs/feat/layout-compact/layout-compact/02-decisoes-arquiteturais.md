@@ -67,7 +67,7 @@ e é lá que a análise se concentra (ADR-03).
 
 ---
 
-## ADR-03: O compacto sai de `--spacing`, não de CSS artesanal por classe `fi-*`
+## ADR-03: O compacto sai de `--spacing` (e, para o menu, de `--sidebar-width`), não de CSS artesanal por classe `fi-*`
 
 **Status**: Aceita · **Data**: 2026-09-21 · **Atende**: RQ-04, RQ-05
 
@@ -104,6 +104,33 @@ e nenhuma asserção de HTML, status ou console pega — é exatamente o modo de
 ### Decisão
 
 `--spacing`, em **níveis de intensidade** (ADR-04). **Não** escrever CSS por classe `fi-*`.
+
+### Revisão de 2026-09-21 — existe um SEGUNDO caminho, e esta ADR não o previa
+
+O quality gate (QA-01 do ciclo 1) mostrou que `--spacing` **não alcança o menu inteiro**. A
+largura dele vem de `--sidebar-width`, que o Filament emite **inline** a partir de
+`filament()->getSidebarWidth()` (`base.blade.php:85`) — nenhuma declaração de `--spacing`, em
+layer nenhuma, a atinge. O resultado era o menu apertando só em altura: a "meia tela compacta" que
+o `00` proíbe.
+
+**Decidido com o usuário**: a largura entra na escala, por `Panel::sidebarWidth()` com `Closure`
+nos três painéis. O mecanismo da feature passa a ter **dois** caminhos, não um:
+
+| Caminho | Como | O que alcança |
+|---|---|---|
+| `--spacing` fora de layer, por render hook | uma declaração | tudo que o Tailwind 4 deriva de espaçamento |
+| `Panel::sidebarWidth(Closure)` | três chamadas, uma por painel | a **largura** do menu, que o primeiro não alcança |
+
+**Uma consequência desta ADR fica corrigida junto.** O texto dizia que o mecanismo é *"imune a
+`composer update`, porque não referencia nada do vendor"*. O segundo caminho **referencia**: o
+nível confortável devolve `'20rem'`, que é o default declarado em
+`vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:11`. Se o Filament mudar esse default,
+o confortável do kit deixa de ser idêntico ao kit sem a feature — que é o contrato da ADR. **CT-17
+fica vermelho** nesse dia, porque afirma o valor literal.
+
+O **rail colapsado** (`--collapsed-sidebar-width`, `4.5rem`) ficou **deliberadamente de fora**,
+decidido com o usuário: ele é *icon-only*, a largura dele é ditada pelo alvo de clique e não por
+densidade de conteúdo, e o ícone dentro dele **já** encolhe sozinho, porque sai de `--spacing`.
 
 ### Alternativas Consideradas
 
@@ -218,7 +245,12 @@ request. A pergunta obrigatória era se densidade cai na mesma armadilha.
 | Caminho | Avaliado quando | Toggle funciona? |
 |---|---|---|
 | **Render hook** (`STYLES_BEFORE`) | **no render**, por request — `base.blade.php:44` | **sim** |
+| **`Panel::sidebarWidth(Closure)`** | **no render** — `HasSidebar.php:54` aceita `Closure`, e `getSidebarWidth():68` faz `evaluate()`, chamado em `base.blade.php:85` | **sim** |
 | `viteTheme()` | no **registro do painel** — `HasTheme.php:27-33`, **não aceita `Closure`** | **não** — grava e só vale no próximo deploy |
+
+*(a linha do meio entrou em 2026-09-21, com a largura do menu. Ela é o contraexemplo útil: estar
+no **registro do painel** não condena o toggle — o que condena é o valor ser resolvido ali. Com
+`Closure`, o registro só guarda a pergunta, e a resposta sai no render.)*
 
 O critério que a própria rule fixa (`settings.md:13`) é *"lida por request… pode ir para o
 Settings"*. O render hook satisfaz.

@@ -14,7 +14,7 @@ cenário `CT-15` (a lacuna `L3` do `04`), o quality gate (step 8) e o PR.
 | 2 — `App\Support\DensidadeDoLayout` | ✅ | `app/Support/DensidadeDoLayout.php` · commit `589110c` · CT-10, CT-12, CT-13 |
 | 3 — Os três lugares do Settings + o campo na tela | ✅ | `app/Settings/ConfiguracoesDoKit.php:densidade_do_layout:162`, a linha do mapa, a migration de settings e `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:densidade_do_layout:810` · commit `d82eccf` · CT-07, CT-08, CT-09, CT-14 |
 | 4 — O render hook | ✅ | `app/Providers/KitServiceProvider.php:configureDensidadeDoLayout():611` · commit `3c6d5f6` · CT-01, CT-03, CT-05, CT-06 |
-| 5 — A suíte | ✅ | `tests/Kit/DensidadeDoLayoutTest.php` — 14 CTs, **25 casos**, 47 asserções · commit `c2189d7` |
+| 5 — A suíte | ✅ | `tests/Kit/DensidadeDoLayoutTest.php` — **16 CTs, 30 casos, 66 asserções** (era 14/25/47 em `c2189d7`; CT-16 e CT-17 entraram pelos gates) · mais **CT-15** em `tests/Kit/SiteDeDocumentacaoTest.php` |
 | 6 — Medir o resultado no kit, nos quatro níveis | ✅ | `## Medição`, abaixo |
 | 7 — Documentação | ✅ | docs pt/en, CHANGELOG e contadores: commits `e98f436` e `022e027`. `wikis/roadmap.md` mais a seção *Futuras melhorias* nos dois READMEs: commit `bf6e799` — acrescentado depois, ver `## Desvios do Plano` → D3 |
 
@@ -377,6 +377,7 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
 | `config.md` | `config/**` | **aplicada** | "falhe fechado": `coagir()` com `tryFrom() ?? padrao()` nas **duas** portas (CT-10, CT-11). "Uma pergunta, uma dona": a densidade não tinha dona antes e passa a ter exatamente uma, `kit.densidade_do_layout` — nenhum consumidor lê `env()` direto |
 | `css-filament.md` | `app/Providers/**` | **aplicada** | a rule `CSS de plugin que declara @layer reordena a página inteira` é o que esta feature usa **a favor**: a declaração fica **fora** de cascade layer e por isso não depende de ordem de folha. Guardado por CT-05. `configureOrdemDasCascadeLayers()` da `v0.37.1` continua intacta, e CT-01 exige que ela continue saindo no bloco |
 | `providers.md` | `app/Providers/**` | **n.a.** | a rule é sobre rota nascer no `KitServiceProvider` com `web` explícito — a feature não registra rota |
+| `providers-filament.md` | `app/Providers/Filament/**` | **aplicada** | o glob passou a casar três arquivos quando a largura do menu entrou (QA-01). A rule **não** é violada: ela rege registro de plugin e ordem de boot, e `->sidebarWidth()` é configuração de painel, na mesma cadeia fluente de `->sidebarCollapsibleOnDesktop()`, logo acima. A linha faltava porque o diff só passou a casar o glob **depois** do ciclo 1 — achado QA-07 do ciclo 2 |
 | `filament.md` | `app/Filament/**` | **n.a.** | nenhum Resource, Page, Widget ou Action novo; a feature acrescenta **um campo** a uma Page existente, que já tem permissão e cobertura próprias |
 | `pages.md` | `app/Filament/Admin/Pages/**` | **aplicada** | a rule é *"segredo em formulário: esconder na tela não é esconder no HTML"*. A densidade **não** é segredo, e a decisão está afirmada nos dois sentidos por CT-09 — fora da lista `encrypted()` **e** com o `payload` legível |
 | `testes.md` | `tests/**` | **aplicada** | *"uma tela aberta não é uma tela que grava"* — CT-14 cobre a gravação por componente Livewire, e foi ele que pegou o defeito N1. Helper local (`gravarDensidade`) fica no arquivo porque só **um** arquivo o usa; os quatro helpers cruzados vêm de `tests/Pest.php`, como a rule manda |
@@ -475,7 +476,7 @@ pontos que ela acrescenta:
 | Ponto | Alcançável por | Fronteira aplicada | Evidência |
 |---|---|---|---|
 | `Select::make('densidade_do_layout')` | `$wire` da Page de settings, que já existe e já é protegida | vocabulário fechado no Select **e** `coagir()` no consumo — a validação do formulário não é a única guarda | `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:densidade_do_layout:810` · CT-14 |
-| O valor gravado, que vira **concatenação de string CSS** no render hook | quem escreve na tabela `settings` por fora, ou no `.env` | `coagir()` antes do uso, nas duas portas — `tryFrom() ?? padrao()` | `app/Support/DensidadeDoLayout.php:coagir():219` · CT-10, CT-11 |
+| O valor gravado, que vira **concatenação de string CSS** no render hook | quem escreve na tabela `settings` por fora, ou no `.env` | `coagir()` antes do uso, nas duas portas — `tryFrom() ?? padrao()` | `app/Support/DensidadeDoLayout.php:coagir():236` · CT-10, CT-11 |
 
 O segundo é o que importa: **é valor de configuração que vira texto emitido no HTML**. Sem a
 coerção, um `payload` adulterado seria concatenado cru dentro de `<style>`. A guarda existe e está

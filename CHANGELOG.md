@@ -21,7 +21,7 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   alcance de qualquer cascade layer —, e os valores são o **mínimo medido**: o rótulo mais longo do
   kit fixa o limiar, e abaixo dele o menu ganharia reticências.
 
-  **É uma declaração de CSS, e nenhuma classe `fi-*` foi escrita.** O Filament 5 deriva todo
+  **Nenhuma classe `fi-*` foi escrita.** O Filament 5 deriva todo
   espaçamento de `--spacing`, declarada uma vez só dentro de `@layer theme`; o kit a redeclara
   **fora** de cascade layer, num render hook `STYLES_BEFORE` avaliado por request. Sem tema Vite,
   sem `npm run build`, sem deploy: salvar na tela vale no próximo F5. A alternativa artesanal foi

@@ -114,8 +114,10 @@ screen is enough.
 > If your project adds a menu item with a longer label, it gets an ellipsis, which is Filament's
 > normal behaviour.
 >
-> Two things do **not** tighten, and that is not a defect: the **top bar**, whose height is fixed,
-> and the **`/infra/pulse` cards**, which ship their own CSS (the Pulse tables tighten normally).
+> Three things do **not** tighten, and none of them is a defect: the **top bar**, whose height is
+> fixed; the **`/infra/pulse` cards**, which ship their own CSS (the Pulse tables tighten normally);
+> and the **collapsed sidebar rail**, left out on purpose — it is icon-only, its width is the click
+> target, and the icon inside it already shrinks.
 > Both are on the [kit roadmap](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/roadmap.md).
 >
 > There is an [official paid compact theme](https://filamentphp.com/plugins/filament-compact-theme)

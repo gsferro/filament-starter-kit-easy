@@ -31,7 +31,7 @@ digitação em configuração cosmética.
 - Técnicas aplicadas: **partição de equivalência**, **partição exaustiva do enum**, **rastreio de
   efeito com asserção de ausência**, **pairwise (painel × nível)**, **round-trip** (`up()`/`down()`
   da migration), **contrapositivo** (o par ligado/desligado), **oráculo do outro lado da cadeia**
-- Cenários: **17** (30 casos executados, com datasets) · Regras: **8** · Mutantes previstos: **34**
+- Cenários: **17** (31 casos executados, com datasets) · Regras: **8** · Mutantes previstos: **34**
 
   Remedido em 2026-09-21. Os três cenários novos entraram **depois** dos gates: CT-15 pelo
   `/code-review` (achado 1), CT-16 pelo `/code-review` (achado 2) e CT-17 pelo quality gate
@@ -40,7 +40,7 @@ digitação em configuração cosmética.
   · Sem matador: **2**, mais **1** com matador parcial — os três declarados em
   `## Lacunas Declaradas`, junto com as outras duas lacunas de cobertura (`L2`, `L3`)
 
-> **Cenários × casos**: o arquivo tem 14 `it()`. Três deles têm dataset — CT-03 (4 exemplos),
+> **Cenários × casos**: o arquivo tem 16 `it()`. Quatro deles têm dataset — CT-03 (4 exemplos),
 > CT-10 (7) e CT-12 (3) —, e é daí que saem os **25** casos que o runner conta.
 
 ---
@@ -341,7 +341,7 @@ comparação frouxa); e o HTML fecha a cadeia até a ponta.
 
 | # | Implementação errada plausível | Cenário que mata |
 |---|---|---|
-| M12 | **A linha do `mapaDeConfiguracao()` ausente** — o campo aparece, grava, e não governa nada | CT-03, CT-06, CT-07, CT-14 (**medido**: 7 dos 14 CTs reprovam) |
+| M12 | **A linha do `mapaDeConfiguracao()` ausente** — o campo aparece, grava, e não governa nada | CT-03, CT-06, CT-07, CT-14 (**medido**: 10 dos 30 casos reprovam, remedido em 2026-09-21) |
 | M13 | O hook registrado por painel, alcançando só um dos três | CT-03 (os três painéis) |
 | M14 | O campo declarado com `->options(DensidadeDoLayout::class)`, devolvendo instância do enum ao `fill()` do spatie e estourando `TypeError` no salvamento da tela inteira | CT-14 — **e nenhum outro**; foi o defeito real da entrega |
 | M15 | O campo com `->dehydrated(false)` ou fora do schema — grava nada | CT-14 (payload cru) |
@@ -712,7 +712,11 @@ A última linha dos `Exemplos` é vocabulário ilegível, pelo mesmo motivo de C
 | CT-16 | Um nível ilegível gravado **não trava a tela de configurações** | R8 | EP (vocabulário legível × ilegível) × oráculo no campo ALHEIO | Feature (Livewire) | **escrito** — `tests/Kit/DensidadeDoLayoutTest.php` | M33 |
 | CT-17 | A **largura** do menu acompanha o nível, nos três painéis | R1 | partição por nível × inventário dos três painéis | Feature (painel resolvido) | **escrito** — `tests/Kit/DensidadeDoLayoutTest.php` | M34 |
 
-**14 cenários, 25 casos executados.** Todos em `tests/Kit/DensidadeDoLayoutTest.php`, suíte `Kit`.
+**17 cenários, 31 casos executados.** Dezesseis cenários (30 casos) vivem em
+`tests/Kit/DensidadeDoLayoutTest.php`; **CT-15 é a exceção** e vive em
+`tests/Kit/SiteDeDocumentacaoTest.php`, sob o ID local `[CT-48]` daquele arquivo — que já é o dono
+dos contadores de README, e é por isso que o oráculo documental nasceu lá e não aqui. Toda a suíte
+`Kit`.
 
 ### Gate de falsificabilidade
 
@@ -722,7 +726,7 @@ A última linha dos `Exemplos` é vocabulário ilegível, pelo mesmo motivo de C
 | Mutação **M34** — `sidebarWidth()` some de UM dos três painéis | **morto por CT-17**, verificado em 2026-09-21: removida a chamada do `InfraPanelProvider`, o caso fica vermelho. É o defeito provável, e seria invisível para qualquer caso que olhasse só o `/admin` |
 | Mutação **M33** — a coerção sai de `mutateFormDataBeforeFill()` | **morto por CT-16**, que nasceu VERMELHO contra a implementação original: salvar `nome_da_aplicacao` falhava com erro em `densidade_do_layout` |
 | Mutação **M12** — apagar a linha do `mapaDeConfiguracao()` | **7 dos 14 CTs reprovam**, medido em 2026-09-21 (commit `c2189d7`). Entre eles CT-03, CT-06, CT-07 e CT-14, que são os que afirmam sobre o valor do banco chegando ao outro lado da cadeia |
-| Mutantes previstos | 30 |
+| Mutantes previstos | 34 |
 | Mutantes **sem matador** | **2** — M3 (`L1`) e M30 (`L4`), ambos declarados |
 | Mutantes com matador parcial | **1** — M8 (`L4`), coberto por composição de CT-01 com CT-12 |
 

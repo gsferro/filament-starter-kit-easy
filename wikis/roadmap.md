@@ -112,8 +112,15 @@ Estes três não encolhem, e não é defeito — é onde o valor não sai de `--
 | Superfície | Por que não responde | O que exigiria |
 |---|---|---|
 | **Altura da topbar** (64 px nos três níveis) | altura fixa, não derivada de variável | uma variável nova no layout base do Filament — não há API hoje |
+| **Rail do menu colapsado** (`--collapsed-sidebar-width`, 72 px nos três) | **decisão, não limitação**: `collapsedSidebarWidth()` aceita `Closure` e daria para governar igual à largura normal | nada — foi deixado de fora de propósito, ver abaixo |
 | **Cartões do Pulse** (`/infra/pulse`, 128 px nos três) | o Pulse carrega CSS própria | escrever regra mirando o Pulse — o tipo de acoplamento a vendor que o kit evita. As **tabelas** do Pulse apertam normalmente |
 
+> **O rail colapsado é o único item desta página que está fora por escolha, e não por limitação.**
+> Decidido com o usuário em 2026-09-21: o rail é *icon-only*, então a largura dele é ditada pelo
+> **alvo de clique**, não por densidade de conteúdo. Encolher os 72 px espremeria o alvo sem ganhar
+> área útil — e o ícone dentro dele **já** encolhe sozinho (24 → 19,2 → 16,8 px), porque sai de
+> `--spacing`. Fica registrado com o motivo para não ser reaberto como se fosse esquecimento.
+>
 > **A largura do menu saiu desta lista.** Ela estava aqui como "candidata mais provável a entrar
 > primeiro", e entrou: o quality gate apontou que deixá-la de fora violava o invariante do
 > requisito — o menu é uma das quatro superfícies do escopo, e apertar só a altura é a "meia tela
