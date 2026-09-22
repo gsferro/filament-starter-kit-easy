@@ -84,11 +84,11 @@ default worth preserving. Turning it off is one click, no deploy.
 Still on the **Kit** tab, *Densidade do layout* tightens the **stat cards**, the **tables**, the
 **sidebar** and the **buttons** of all three panels at once. There are three steps:
 
-| Level | `--spacing` | Table row height | 10-row table |
-|---|---|---|---|
-| **Confortável** (default) | `.25rem`, Filament's own | 56.0 px | 612 px |
-| **Compacto** | `0.2rem` | 46.4 px (−17.1%) | 509.2 px (−16.8%) |
-| **Denso** | `0.175rem` | 42.9 px (−23.4%) | 471.8 px (−22.9%) |
+| Level | `--spacing` | Table row | 10-row table | Sidebar width |
+|---|---|---|---|---|
+| **Confortável** (default) | `.25rem`, Filament's own | 56.0 px | 612 px | 320 px |
+| **Compacto** | `0.2rem` | 46.4 px (−17.1%) | 509.2 px (−16.8%) | 272 px (−15.0%) |
+| **Denso** | `0.175rem` | 42.9 px (−23.4%) | 471.8 px (−22.9%) | 264 px (−17.5%) |
 
 These numbers were **measured** on the kit itself, with a real browser reading computed style on
 `/admin/users` at 1600×1000 — not estimated.
@@ -108,8 +108,15 @@ screen is enough.
 > scale and not an on/off — anyone bothered by the distortion stays on the middle step, which still
 > delivers two thirds of the gain.
 >
-> Two things do **not** tighten, and that is not a defect: the sidebar's **width** (it does not come
-> from that variable — only the item height changes) and the top bar, whose height is fixed.
+> **The sidebar tightens on both axes**, and the width needed its own mechanism: it comes from
+> `--sidebar-width`, not from `--spacing`. The widths in the table above are the **measured
+> minimum** — the kit's longest label is *"Configurações da aplicação"*, and it sets the threshold.
+> If your project adds a menu item with a longer label, it gets an ellipsis, which is Filament's
+> normal behaviour.
+>
+> Two things do **not** tighten, and that is not a defect: the **top bar**, whose height is fixed,
+> and the **`/infra/pulse` cards**, which ship their own CSS (the Pulse tables tighten normally).
+> Both are on the [kit roadmap](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/roadmap.md).
 >
 > There is an [official paid compact theme](https://filamentphp.com/plugins/filament-compact-theme)
 > that reaches −22.5% **without** distorting icons or fonts. It does not ship with the kit because

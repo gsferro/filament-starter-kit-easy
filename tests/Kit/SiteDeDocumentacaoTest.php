@@ -1871,24 +1871,22 @@ it('[CT-48] mantem o roadmap presente, ligado nos READMEs e fora do export-ignor
     /*
      * A decisão do usuário, travada: o roadmap NÃO pode ganhar `export-ignore`.
      *
-     * Afirmado sobre as linhas efetivas — `.gitattributes` aceita comentário, e o arquivo cita
-     * `wikis/*.md` em prosa justamente para explicar por que ele NÃO entra. Afirmar sobre o texto
-     * cru reprovaria contra a configuração correta (`.ai/rules/testes.md`, "asserção de ausência
-     * sobre arquivo documentado precisa filtrar comentário").
+     * `git check-attr` e NÃO um regex sobre o `.gitattributes` — achado do quality gate. A
+     * primeira versão deste bloco reimplementava o casamento de padrão do git à mão, e tinha
+     * falso negativo demonstrado: `wikis/** export-ignore` e `*.md export-ignore` **removem** o
+     * roadmap do `composer create-project` e o regex não os reconhecia. O caso ficaria verde
+     * contra a configuração que ele existe para proibir.
+     *
+     * Quem sabe casar padrão de `.gitattributes` é o git. Perguntar a ele é uma linha, não tem
+     * falso negativo, e continua valendo se a sintaxe do arquivo mudar.
      */
-    $regras = collect(explode("\n", (string) file_get_contents(base_path('.gitattributes'))))
-        ->map(fn (string $linha): string => trim($linha))
-        ->reject(fn (string $linha): bool => $linha === '' || str_starts_with($linha, '#'));
+    $atributo = trim((string) shell_exec('git check-attr export-ignore -- wikis/roadmap.md 2>&1'));
 
-    $ignoraRoadmap = $regras->contains(
-        fn (string $linha): bool => str_contains($linha, 'export-ignore')
-            && (str_contains($linha, 'roadmap.md') || preg_match('~^/?wikis/?\*?\.?m?d?\s~', $linha) === 1),
-    );
-
-    expect($ignoraRoadmap)->toBeFalse(
-        'uma regra de `export-ignore` passou a alcançar o roadmap: ele deixaria de viajar para os '
-        .'projetos criados com `composer create-project`, revertendo em silêncio a decisão de '
-        .'2026-09-21 — e sem quebrar mais nada',
+    expect($atributo)->toEndWith(
+        'unspecified',
+        'o git reporta `'.$atributo.'`: alguma regra de `export-ignore` passou a alcançar o '
+        .'roadmap, e ele deixaria de viajar para os projetos criados com `composer '
+        .'create-project` — revertendo em silêncio a decisão de 2026-09-21, sem quebrar mais nada',
     );
 
     /*

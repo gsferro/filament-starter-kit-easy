@@ -83,11 +83,11 @@ o padrão a preservar. Desligar é um clique, sem deploy.
 Ainda na aba **Kit**, *Densidade do layout* aperta de uma vez os **cartões de estatística**, as
 **tabelas**, o **menu lateral** e os **botões** dos três painéis. São três degraus:
 
-| Nível | `--spacing` | Altura da linha da tabela | Tabela de 10 linhas |
-|---|---|---|---|
-| **Confortável** (padrão) | `.25rem`, o do Filament | 56,0 px | 612 px |
-| **Compacto** | `0.2rem` | 46,4 px (−17,1%) | 509,2 px (−16,8%) |
-| **Denso** | `0.175rem` | 42,9 px (−23,4%) | 471,8 px (−22,9%) |
+| Nível | `--spacing` | Linha da tabela | Tabela de 10 linhas | Largura do menu |
+|---|---|---|---|---|
+| **Confortável** (padrão) | `.25rem`, o do Filament | 56,0 px | 612 px | 320 px |
+| **Compacto** | `0.2rem` | 46,4 px (−17,1%) | 509,2 px (−16,8%) | 272 px (−15,0%) |
+| **Denso** | `0.175rem` | 42,9 px (−23,4%) | 471,8 px (−22,9%) | 264 px (−17,5%) |
 
 Os números foram **medidos** no próprio kit, com navegador de verdade lendo estilo computado em
 `/admin/users` a 1600×1000 — não estimados.
@@ -107,8 +107,15 @@ suficiente.
 > opção é uma escala e não um liga-desliga — quem achar a distorção incômoda fica no degrau do
 > meio, que entrega dois terços do ganho.
 >
-> Duas coisas **não** apertam, e não é defeito: a **largura** do menu lateral (ela não sai dessa
-> variável — só a altura dos itens muda) e a barra superior, que tem altura fixa.
+> **O menu aperta nos dois eixos**, e a largura precisou de mecanismo próprio: ela vem de
+> `--sidebar-width`, não de `--spacing`. As larguras da tabela acima são o **mínimo medido** — o
+> rótulo mais longo do kit é *"Configurações da aplicação"*, e é ele que fixa o limiar. Se o seu
+> projeto criar item de menu com rótulo mais longo, ele ganha reticências, que é o comportamento
+> normal do Filament.
+>
+> Duas coisas **não** apertam, e não é defeito: a **barra superior**, que tem altura fixa, e os
+> **cartões do `/infra/pulse`**, que carregam CSS própria (as tabelas do Pulse apertam
+> normalmente). As duas estão no [roadmap do kit](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/roadmap.md).
 >
 > Existe um [tema compacto oficial pago](https://filamentphp.com/plugins/filament-compact-theme)
 > que chega a −22,5% **sem** distorcer ícone nem fonte. Ele não entra no kit porque a licença é de

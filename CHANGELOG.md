@@ -15,6 +15,12 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   (−23,4%) e 471,8 px (−22,9%) — praticamente o mesmo ganho do tema compacto **pago** oficial
   (−22,5%), que não pode entrar no kit porque a licença é de projeto único.
 
+  **O menu aperta nos dois eixos.** A altura dos itens cai de 40,0 px para 32,8 px (−18,0%) e
+  31,2 px (−22,0%); a largura, de 320 px para 272 px (−15,0%) e 264 px (−17,5%). A largura precisou
+  de mecanismo próprio — ela vem de `--sidebar-width`, emitido inline pelo Filament, fora do
+  alcance de qualquer cascade layer —, e os valores são o **mínimo medido**: o rótulo mais longo do
+  kit fixa o limiar, e abaixo dele o menu ganharia reticências.
+
   **É uma declaração de CSS, e nenhuma classe `fi-*` foi escrita.** O Filament 5 deriva todo
   espaçamento de `--spacing`, declarada uma vez só dentro de `@layer theme`; o kit a redeclara
   **fora** de cascade layer, num render hook `STYLES_BEFORE` avaliado por request. Sem tema Vite,

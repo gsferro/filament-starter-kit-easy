@@ -111,13 +111,14 @@ Estes três não encolhem, e não é defeito — é onde o valor não sai de `--
 
 | Superfície | Por que não responde | O que exigiria |
 |---|---|---|
-| **Largura da sidebar** (320 px nos três níveis) | sai de `--sidebar-width`, não de `--spacing` | uma segunda variável na escala; a altura dos itens **já** encolhe |
-| **Altura da topbar** (64 px nos três níveis) | altura fixa | idem |
+| **Altura da topbar** (64 px nos três níveis) | altura fixa, não derivada de variável | uma variável nova no layout base do Filament — não há API hoje |
 | **Cartões do Pulse** (`/infra/pulse`, 128 px nos três) | o Pulse carrega CSS própria | escrever regra mirando o Pulse — o tipo de acoplamento a vendor que o kit evita. As **tabelas** do Pulse apertam normalmente |
 
-Acrescentar `--sidebar-width` à escala é barato e é o candidato mais provável a entrar primeiro.
-Ficou de fora desta entrega porque o escopo fechado eram quatro superfícies — stats, table, menu e
-button —, e todas as quatro respondem.
+> **A largura do menu saiu desta lista.** Ela estava aqui como "candidata mais provável a entrar
+> primeiro", e entrou: o quality gate apontou que deixá-la de fora violava o invariante do
+> requisito — o menu é uma das quatro superfícies do escopo, e apertar só a altura é a "meia tela
+> compacta" que ele proíbe. Hoje a largura acompanha os três níveis (320 → 272 → 264 px), por
+> `Panel::sidebarWidth()` com `Closure`, avaliado por request.
 
 ---
 
