@@ -298,6 +298,67 @@ function arquivoTemSentinela(string $codigo): bool
 }
 
 /**
+ * O corpo de um caso depende da ARVORE DO KIT para passar?
+ *
+ * Tres formas, todas decidiveis:
+ *
+ * 1. **le** um arquivo de caminho literal que nao viaja (`leCaminhoNaoEntregue()`);
+ * 2. **afirma** que a sentinela e verdadeira — `expect(naArvoreDoKit())->toBeTrue()`;
+ * 3. **invoca o git** — `create-project` nao entrega `.git`, entao `git check-attr` e vizinhos
+ *    nao respondem em projeto instalado.
+ *
+ * A forma 1 era a unica coberta ate a validacao da v0.38.1, que encontrou um caso da forma 2
+ * (`ChecklistDeReleaseTest [CT-19]`) vermelho em toda instalacao nova — e ele tambem era da
+ * forma 3, por uma segunda razao independente.
+ *
+ * @param  list<string>  $funcoes
+ */
+function dependeDaArvoreDoKit(string $corpoDoCaso, array $funcoes, string $prefixos): bool
+{
+    if (leCaminhoNaoEntregue($corpoDoCaso, $funcoes, $prefixos)) {
+        return true;
+    }
+
+    // Forma 2: a sentinela como SUJEITO de uma afirmacao de verdade.
+    if (preg_match('~(?:expect|assertTrue)\s*\(\s*naArvoreDoKit\s*\(\s*\)~', $corpoDoCaso) === 1) {
+        return true;
+    }
+
+    /*
+     * Forma 3: um comando git EXECUTADO, que exige o `.git` que o create-project nao entrega.
+     *
+     * A primeira versao desta linha casava qualquer literal comecando por "git " e acusou dois
+     * casos inocentes — `DeployDockerLocalTest [CT-01]` e um do `KitUpdateTest`, que procuram
+     * 'git pull --ff-only' DENTRO de um script como agulha de busca. Mencionar o comando nao e
+     * executa-lo, e contar mencao como uso e o mesmo erro que esta guarda inteira existe para
+     * nao cometer. Agora o literal so conta quando e o ARGUMENTO de uma chamada que executa.
+     */
+    return preg_match('~(?:->run|::run|\brun|\bexec|shell_exec|proc_open|fromShellCommandline)\s*\(\s*[\'"]git\s~', $corpoDoCaso) === 1;
+}
+
+/**
+ * O caso esta guardado pela sentinela — de verdade, nao por mencao.
+ *
+ * ## Por que nao basta `str_contains($corpo, 'naArvoreDoKit')`
+ *
+ * Porque `ChecklistDeReleaseTest [CT-19]` menciona `naArvoreDoKit` TRES vezes e nao e guardado
+ * por nenhuma delas: ele a usa como sujeito de assercao e como fonte de um regex. Contar a
+ * mencao como protecao e o MESMO erro do `[CT-10]` contando o arquivo em vez do caso — um nivel
+ * acima, e cometido por mim ao escrever a correcao daquele.
+ *
+ * Guardar e uma dessas duas coisas, e nenhuma outra:
+ * `->skip(... naArvoreDoKit ...)` no proprio caso, ou `markTestSkipped()` sob a sentinela.
+ */
+function temSentinelaPropria(string $corpoDoCaso): bool
+{
+    if (preg_match('~->skip\s*\([^;]*naArvoreDoKit~s', $corpoDoCaso) === 1) {
+        return true;
+    }
+
+    return preg_match('~naArvoreDoKit[^;]{0,200}markTestSkipped~s', $corpoDoCaso) === 1;
+}
+
+/**
  * Os casos que **abrem** um arquivo de caminho literal nao entregue e nao tem a sentinela
  * `naArvoreDoKit()` **no proprio corpo**.
  *
@@ -340,11 +401,11 @@ function casosSemSentinelaPropria(array $suites): array
 
         // Um bloco por `it(` — o corpo do caso, nao o arquivo.
         foreach (array_slice($blocos, 1) as $corpo) {
-            if (! leCaminhoNaoEntregue($corpo, $funcoesDeLeitura, $naoEntregues)) {
+            if (! dependeDaArvoreDoKit($corpo, $funcoesDeLeitura, $naoEntregues)) {
                 continue;
             }
 
-            if (str_contains($corpo, 'naArvoreDoKit')) {
+            if (temSentinelaPropria($corpo)) {
                 continue;
             }
 

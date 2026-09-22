@@ -129,6 +129,61 @@ Estes três não encolhem, e não é defeito — é onde o valor não sai de `--
 
 ---
 
+## 6. Testar captcha e login social contra o serviço de verdade
+
+**Estado**: analisado, não implementado · **Origem**: pedido do mantenedor em 2026-09-22, durante
+a validação da `v0.38.1`
+
+O kit tem **dez arquivos de teste** de login social e cobertura do captcha — todos com o provedor
+**dublado**. Isso prova o nosso lado do contrato: que o callback monta o DTO certo, que conta
+indisponível é recusada, que o vínculo de provedor respeita o painel. **Não prova a ponta**: que
+a chave real, o domínio registrado e a URL de redirecionamento fecham contra o serviço.
+
+### Os dois casos não são o mesmo problema
+
+| | Captcha (reCAPTCHA, Turnstile, hCaptcha) | Login social (Google, GitHub) |
+|---|---|---|
+| Existe credencial de **teste oficial**? | **Sim** — os provedores publicam pares de chaves públicas feitas para isto: um sempre aprova, outro sempre reprova, outro força o desafio interativo | **Não** |
+| Precisa de segredo? | **Não.** As chaves de teste são públicas por desenho e podem ser **versionadas**, inclusive no CI | **Sim** — `CLIENT_ID` e `CLIENT_SECRET` de um app OAuth real |
+| O que a passada prova | que o widget renderiza, que o token viaja e que a verificação server-side interpreta aprovação **e** recusa | que o fluxo completo fecha contra o provedor |
+
+**A metade do captcha é a fácil, e deveria vir primeiro** — ela não tem nada a resolver sobre
+segredo, e o par "sempre reprova" é o que hoje **ninguém testa**: o caminho de recusa.
+
+### O desenho proposto para a metade que precisa de segredo
+
+- `.env.testing.local`, **no `.gitignore`**, com as credenciais reais de quem mantém o kit
+- `.env.testing.local.example`, **versionado**, listando as chaves exigidas e onde obtê-las
+- um helper `credencialDe('google')` em `tests/Pest.php`, e os casos guardados por
+  `->skip(fn () => ! temCredencial('google'), '[credencial] …')`
+
+### O risco, e ele é exatamente o desta wiki
+
+**Teste que pula por falta de credencial fica verde, e a suíte parece completa.** É a mesma forma
+do defeito que originou o `checklist-de-release.md` — ausência que não falha sozinha. Três
+amarras, e nenhuma é opcional:
+
+1. **O motivo do `skip` leva o prefixo `[credencial]`**, distinto do
+   `→ não se aplica fora da árvore do kit`. Sem isso os dois viram o mesmo número na saída, e o
+   teto de pulados do [checklist de release](checklist-de-release.md) deixa de discriminar —
+   pular por falta de chave e pular por não se aplicar são coisas **opostas**
+2. **Um caso exige que toda chave lida pelos testes esteja no `.example`**, para a lista não
+   apodrecer em silêncio
+3. **Um caso exige que `.env.testing.local` esteja no `.gitignore`** — guarda contra o vazamento,
+   e é barata
+
+### O que isso muda no roteiro de release
+
+Os quatro cenários ganham uma **passada com credenciais**, que registra **quantos casos de
+credencial rodaram** — não quantos pularam. Número de pulados é o que a passada existe para levar
+a zero.
+
+### Por que não entrou agora
+
+Decisão do mantenedor: fechar as features desta release primeiro. Fica para a próxima.
+
+---
+
 ## Como este documento é mantido
 
 Item entra aqui quando uma decisão **registrada** o empurrou para depois — com o motivo e, quando

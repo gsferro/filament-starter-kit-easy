@@ -37,8 +37,68 @@
 
 ## 6. Reexecutar os quatro cenários — critério de aceite de RQ-09
 
-- [ ] Contra a `v0.38.1` **publicada**
-- [ ] Zero erro e zero falha nos quatro, com a contagem de pulados registrada
+- [x] Contra a `v0.38.1` **publicada e indexada no Packagist**, 2026-09-22
+- [x] Os quatro executados em `C:\PROJECTS\PACOTES\FILAMENTS\STARTER-KIT-EASYalidacao-v0381\`
+- [ ] **Zero erro e zero falha** — **NÃO ATINGIDO na `v0.38.1`**. Fecha na `v0.38.2`
+
+### O que os quatro mediram
+
+| Cenário | Diretório | Resultado |
+|---|---|---|
+| 1 — limpo, sem tenancy | `novo-sem-tenant` | `2804 / 2631 verdes / 172 pulados / 1 erro` |
+| 2 — limpo, com tenancy | `novo-com-tenant` | **idêntico** |
+| 3 — `kit:update`, sem tenancy | `velho-sem-tenant` | **idêntico** |
+| 4 — `kit:update`, com tenancy | `velho-com-tenant` | **idêntico** |
+
+**O que a `v0.38.1` entregou e a `v0.38.0` não**: nos cenários 3 e 4 a versão foi de `0.38.0` a
+`0.38.1`, a tenancy sobreviveu ao update, e `wikis/checklist-de-release.md` chegou **pelos dois
+canais de entrega**. O caso do roadmap não se repetiu.
+
+**Os 172 pulados confirmam o achado QA-10** do ciclo 2 do quality gate. A previsão de **147** que
+eu tinha escrito no roteiro errou por 25, e o gate acertou ao exigir que ela virasse *"meça no
+passo 6"*. O número acima é o teto da próxima release.
+
+### O erro único — e ele é da mesma classe, no arquivo escrito para testá-la
+
+`tests/Kit/ChecklistDeReleaseTest.php` `[CT-19]` abre com:
+
+```php
+// Ramo verdadeiro, ao vivo: estamos de fato na árvore do kit.
+expect(naArvoreDoKit())->toBeTrue();
+```
+
+O comentário declara, em voz alta, uma suposição **falsa em todo projeto instalado**, e o caso não
+tinha `->skip()`. Havia uma segunda razão independente para ele quebrar lá: chama `git check-attr`,
+e o `create-project` não entrega `.git`.
+
+**Por que a guarda que eu escrevi para esta classe não o pegou — dois buracos, e o segundo é o
+que importa:**
+
+| # | Buraco | Consequência |
+|---|---|---|
+| a | `dependeDaArvoreDoKit()` só reconhecia *"o caso **lê** arquivo que não viaja"* | afirmar a sentinela e invocar `git` não contavam |
+| b | *"guardado"* era `str_contains($corpo, 'naArvoreDoKit')` | o `[CT-19]` **menciona** a sentinela **três vezes**, como sujeito de asserção — e passava por guardado |
+
+**O buraco (b) é o mesmo erro do `[CT-10]`, um nível acima, cometido por mim ao corrigir aquele.**
+O `[CT-10]` contava o **arquivo** onde devia contar o **caso**; a minha guarda contava a **menção**
+onde devia contar a **proteção**.
+
+**Corrigido**: `dependeDaArvoreDoKit()` reconhece as três formas (lê · afirma a sentinela · executa
+`git`), e `temSentinelaPropria()` exige `->skip(… naArvoreDoKit …)` ou `markTestSkipped()` de
+verdade. Ao estreitar a forma 3, a primeira versão acusou dois casos inocentes que procuravam
+`'git pull --ff-only'` **dentro de um script**, como agulha — menção não é execução, e o mesmo
+erro quase entrou na correção dele próprio.
+
+**Verificado por mutação**: com o `[CT-19]` desguardado, a guarda fica **vermelha**; restaurado,
+**verde** — `tests:1` nas duas.
+
+### A lição de RQ-07, medida
+
+O roteiro achou, **na primeira execução**, um defeito da exata classe para a qual foi escrito —
+num arquivo que dois ciclos de quality gate, um `/code-review` e um `fw-revisor-diff` tinham
+aprovado. Nenhum deles poderia vê-lo, pelo motivo de sempre: rodam na árvore do kit.
+
+**É a demonstração empírica de que o passo 6 não é formalidade.**
 
 ## 7. `[CT-11]` — a guarda endurecida (achado RD-02 do step 6.5)
 
