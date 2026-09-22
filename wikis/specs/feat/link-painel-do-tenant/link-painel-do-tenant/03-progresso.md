@@ -81,7 +81,14 @@
 
 ## Quality Gate
 
-<!-- Preenchido no step 8. Enquanto vazio, a feature NÃO está concluída e o PR não abre. -->
+**Ciclo 1 (2026-09-21) — REPROVADO → especificação.** Blocker 0 · Major 3 · Minor 9 · Cosmético 2.
+Relatório completo em `06-relatorio-qa.md`. Nenhum achado de implementação: o código atende
+RQ-01..RQ-05 e as quatro ADRs, e os três Major são texto contra a árvore — **QA-01** (a rule
+`specs.md` violada em 13 citações da wiki, e a evidência declarada aponta um gate que exclui
+`wikis/specs/**`), **QA-02** (o `04` diz que CT-21/CT-22 "ainda não escrito" e que o gate `04 →
+teste` está aberto, com o D-05 já fechado) e **QA-03** (D-05.a ainda sustenta a string
+`?tenant={uuid}`, que é o achado 1 do step 7.5). Abertos também QA-04 a QA-14. **O PR não abre até
+o ciclo 2.**
 
 ## Auditoria Pré-Implementação
 
