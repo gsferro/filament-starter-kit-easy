@@ -59,8 +59,27 @@
 
 ## Testes
 
-- [ ] `04-casos-de-teste.md` derivado
-- [ ] Casos escritos conforme o `04`
+- [x] `04-casos-de-teste.md` derivado — **23 cenários, 9 regras, 42 mutantes, 5 lacunas
+      declaradas**, com duas rodadas de revisão adversarial, 2026-09-22
+- [x] Casos escritos conforme o `04` — `tests/Kit/ChecklistDeReleaseTest.php`, **26 casos: 23
+      verdes, 3 pulados** (os três datasets de CT-18, inviáveis por razão declarada), 2026-09-22
+- [x] Regressão com o arquivo novo dentro — **2.800 testes, 2.797 passaram, 10.878 asserções, 0
+      falhas**, 2026-09-22
+
+### O que a escrita dos casos encontrou — quatro vermelhos, todos legítimos
+
+| # | Vermelho | Classe | Quem estava errado |
+|---|---|---|---|
+| 1 | **CT-16**: o alvo do link do `CONTRIBUTING.md` não resolve | implementação | **eu**, ao fechar o RD-01. Movi o arquivo para `.github/` e deixei o link relativo à raiz; no GitHub ele aponta para `.github/wikis/…`. Eram **três** links quebrados, e o caso só olha um |
+| 2 | **CT-15**: o roteiro não exigia versão validada, os quatro diretórios nem a saída colada | implementação | o artefato. Seção *"Depois dos quatro"* reescrita com a exigência e a ordem (**antes** da tag) |
+| 3 | **CT-11 acusou o `[CT-20]`** do arquivo novo | **teste** | **a minha guarda**. Ela usava regex, e o CT-20 *menciona* a chamada dentro de uma string de asserção. Reescrita por `token_get_all()`: menção é **um** `T_CONSTANT_ENCAPSED_STRING` e não se decompõe em chamada |
+| 4 | **CT-25**: contador de arquivos de teste dos READMEs | implementação | o artefato. 151/177 → **152/178** |
+
+**O terceiro é o que vale registrar.** A ADR-02 aceitou o `[CT-11]` declarando o risco
+*"produzir falso positivo numa forma de leitura que eu não previ"*. Ele apareceu no **primeiro
+arquivo escrito depois dela**, e a correção é a técnica que o próprio arquivo novo já usava.
+Reprovado nos dois sentidos depois de corrigido: zero falso positivo, e ainda vermelho quando o
+`skip` do `[CT-12]` é removido.
 
 ## Verificação Final
 

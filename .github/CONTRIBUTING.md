@@ -1,7 +1,7 @@
 # Contribuindo
 
 Obrigado pelo interesse. Este arquivo cobre o essencial para trabalhar **no kit**; se você derivou
-um projeto dele, o que interessa está em [`wikis/`](wikis/README.md) e no
+um projeto dele, o que interessa está em [`wikis/`](../wikis/README.md) e no
 [site de documentação](https://gsferro.github.io/filament-starter-kit-easy/pt/).
 
 ## Requisitos
@@ -38,7 +38,7 @@ vendor/bin/filacheck        # nada de Filament depreciado
 ## Padrões
 
 As decisões que o código não consegue contar sozinho estão em
-[`wikis/convencoes.md`](wikis/convencoes.md) e em `.ai/rules/` — leia antes de mexer numa área que
+[`wikis/convencoes.md`](../wikis/convencoes.md) e em `.ai/rules/` — leia antes de mexer numa área que
 não conhece. Elas existem porque cada uma já custou um defeito.
 
 Features novas seguem a esteira da skill `feature-wiki`: o requisito é capturado verbatim antes do
@@ -48,7 +48,7 @@ histórico de cada feature fica em `wikis/specs/`.
 ## Antes de lançar uma tag
 
 > **Obrigatório**: rodar os quatro cenários de
-> **[`wikis/checklist-de-release.md`](wikis/checklist-de-release.md)** — duas instalações limpas
+> **[`wikis/checklist-de-release.md`](../wikis/checklist-de-release.md)** — duas instalações limpas
 > (com e sem multi-tenancy) e dois `kit:update` a partir da versão anterior, nos mesmos dois
 > cenários.
 

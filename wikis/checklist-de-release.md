@@ -212,10 +212,23 @@ reprovou assim que `wikis/checklist-de-release.md` foi criado, pelo mesmo motivo
 
 ---
 
-## Depois dos quatro
+## Depois dos quatro — o registro, e ele vem **antes** da tag
 
-- Se **tudo liso**: a release está validada. Registrar os números no `CHANGELOG` ou na própria
-  release do GitHub
+**Nada disto é opcional, e a ordem importa**: o registro da evidência existe **antes de a tag de
+correção ser publicada**, não depois. Tag publicada é irreversível na prática — o Packagist já
+indexou, e alguém já pode ter rodado `create-project`. Registro feito depois é justificativa, não
+validação.
+
+O que fica registrado, no `CHANGELOG` ou na própria release do GitHub:
+
+| O que | Por que este item, e não só "deu verde" |
+|---|---|
+| **A versão validada**, exata | "rodei os quatro" sem a versão não diz **contra o quê**. Já houve caso de o Packagist ainda não ter indexado e a medição ser de outra release |
+| **Os quatro diretórios**, nomeados um a um | é o que distingue *"rodei os quatro"* de *"rodei dois e presumi os outros dois porque os números foram idênticos"*. Os números **foram** idênticos na `v0.38.0`, nos quatro |
+| **A saída colada** de cada execução | número sem o comando que o produziu é alegação. Colar a saída é o que torna a contagem de pulados conferi­vel por outra pessoa |
+| **A contagem de pulados** de cada cenário, e a justificativa de todo aumento | é o teto da seção anterior. Sem o número registrado, a próxima release não tem contra o que comparar |
+
+- Se **tudo liso**: com o registro acima feito, a release está validada. **Aí** sai a tag
 - Se **algo quebrou**: corrigir e lançar **versão de correção**, depois **reexecutar os quatro**
-  contra ela. Suíte verde na árvore do kit não fecha o caso — o defeito que originou este
-  documento era invisível ali
+  contra ela — e registrar de novo, com a mesma exigência, antes da tag nova. Suíte verde na
+  árvore do kit não fecha o caso: o defeito que originou este documento era invisível ali

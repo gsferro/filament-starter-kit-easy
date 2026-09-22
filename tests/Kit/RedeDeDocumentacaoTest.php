@@ -214,6 +214,53 @@ it('[CT-10] nenhum cenário se guarda pela própria entrega', function (): void 
 });
 
 /**
+ * O corpo de um caso **abre** um arquivo de caminho literal que casa com `$prefixos`?
+ *
+ * ## Por que por TOKENS, e não por regex
+ *
+ * A primeira versão deste detector usava regex, e ela **acusou um caso inocente**:
+ * `ChecklistDeReleaseTest [CT-20]` afirma que o `[CT-12]` corrigido continua abrindo o documento,
+ * e para isso carrega a chamada **dentro de uma string de asserção**:
+ *
+ * ```php
+ * $this->assertStringContainsString("File::get(base_path('docs/pt/…'))", $corpo);
+ * ```
+ *
+ * O caso **menciona** a leitura; quem lê é o `HostLocalTest`, que viaja. Regex não distingue as
+ * duas coisas — para o tokenizador, a menção inteira é **um** `T_CONSTANT_ENCAPSED_STRING` e não
+ * se decompõe em chamada. É o risco que a ADR-02 declarou ao aceitar este caso, e ele apareceu no
+ * primeiro arquivo escrito depois dele.
+ *
+ * @param  list<string>  $funcoes  nomes de função/método que abrem arquivo
+ */
+function leCaminhoNaoEntregue(string $corpoDoCaso, array $funcoes, string $prefixos): bool
+{
+    $tokens = array_values(array_filter(
+        token_get_all('<?php '.$corpoDoCaso),
+        fn ($token): bool => ! is_array($token) || ! in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true),
+    ));
+
+    foreach ($tokens as $i => $token) {
+        if (! is_array($token) || $token[0] !== T_STRING || ! in_array($token[1], $funcoes, true)) {
+            continue;
+        }
+
+        /*
+         * A partir do nome da função, o caminho literal aparece em poucos tokens — `('`,
+         * `(base_path('`. Uma janela curta evita colher o literal de uma chamada seguinte.
+         */
+        foreach (array_slice($tokens, $i + 1, 4) as $seguinte) {
+            if (is_array($seguinte) && $seguinte[0] === T_CONSTANT_ENCAPSED_STRING
+                && preg_match($prefixos, trim($seguinte[1], "'\"")) === 1) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
  * CT-11 — leitura DIRETA e literal de arquivo não entregue exige a sentinela no PRÓPRIO caso.
  *
  * ## O que este caso acrescenta ao CT-10, e por que ele não é redundante
@@ -251,9 +298,9 @@ it('[CT-11] leitura direta de arquivo nao entregue tem sentinela no proprio caso
      * Os prefixos que NÃO viajam, do `.gitattributes`. `wikis/specs` fica de fora de propósito:
      * o `KitUpdateTest` cita caminhos de lá como string, sem ler, e o CT-10 já trata esse caso.
      */
-    $naoEntregues = '(?:docs|site|site-vitepress|\.github)/';
+    $naoEntregues = '~^(?:docs|site|site-vitepress|\.github)/~';
 
-    $leituraDireta = "~(?:File::(?:get|exists|isDirectory)|file_get_contents)\(\s*(?:base_path\(\s*)?'{$naoEntregues}~";
+    $funcoesDeLeitura = ['file_get_contents', 'get', 'exists', 'isDirectory'];
 
     $desprotegidos = [];
 
@@ -275,7 +322,7 @@ it('[CT-11] leitura direta de arquivo nao entregue tem sentinela no proprio caso
 
         // Um bloco por `it(` — o corpo do caso, não o arquivo.
         foreach (array_slice($blocos, 1) as $corpo) {
-            if (preg_match($leituraDireta, $corpo) !== 1) {
+            if (! leCaminhoNaoEntregue($corpo, $funcoesDeLeitura, $naoEntregues)) {
                 continue;
             }
 
