@@ -678,11 +678,25 @@ it('[CT-14] confirma o cadastro quando a linha entrou, mesmo com codigo de falha
 })->group('kit');
 
 /**
- * CT-15 — fora do Windows a etapa instrui, e ainda assim ajusta a URL.
+ * CT-15 — fora do Windows a etapa instrui **por aviso**, e ainda assim ajusta a URL.
  *
  * A coluna da `APP_URL` existe porque ADR-03 decide o caso: no Unix o `.env` é ajustado **sem**
  * execução nenhuma. Sem ela, "não ajusta nada no Unix" e "ajusta" produziriam o mesmo
  * observável, e a premissa de falha fechado do Windows seria lida como se valesse nos três.
+ *
+ * ## A coluna do AVISO entrou em 2026-09-22, e o caso antes afirmava o defeito
+ *
+ * A primeira versão exigia `$aviso` **nulo nos três sistemas** e procurava a instrução do `sudo`
+ * na SAÍDA do prompt. Isso descrevia exatamente o defeito RD-03: no Unix o `.env` era reescrito,
+ * a linha do `hosts` não entrava, e a etapa devolvia `null` — então `KitInstall::banner()` fechava
+ * a instalação anunciando três endereços que não resolvem, sem aviso nenhum. O `note()` que o
+ * caso conferia sai na hora e, quando o banner aparece, já rolou para fora da tela.
+ *
+ * Aviso e saída não são o mesmo observável: o aviso é **coletado** e reimpresso no fim; a saída é
+ * transitória. O caso afirmava o transitório e por isso não via a diferença.
+ *
+ * Agora a expectativa é **por sistema**: no Windows o cadastro acontece e o aviso é `null`; no
+ * Unix o cadastro não acontece e o aviso carrega a instrução manual. Achado do `fw-revisor-diff`.
  */
 it('[CT-15] fora do Windows instrui em vez de executar, e ajusta a URL', function (
     string $so,
@@ -700,17 +714,23 @@ it('[CT-15] fora do Windows instrui em vez de executar, e ajusta a URL', functio
 
     $aviso = hostLocalNoTemp(interpretadorDeComandos($comandos), so: $so)->processar('loja-do-ferro.test');
 
-    expect($aviso)->toBeNull()
-        ->and($comandos)->toHaveCount($execucoes)
+    expect($comandos)->toHaveCount($execucoes)
         ->and(valorNoEnv('APP_URL'))->toBe('http://loja-do-ferro.test');
 
-    $instrui
-        ? Prompt::assertStrippedOutputContains("sudo tee -a {$this->hosts}")
-        : Prompt::assertStrippedOutputDoesntContain('sudo');
+    if ($instrui) {
+        // Unix: a linha do `hosts` ficou pendente, e quem avisa é o AVISO — que o banner reimprime.
+        expect($aviso)
+            ->toContain('loja-do-ferro.test')
+            ->toContain("sudo tee -a {$this->hosts}")
+            ->toContain('a APP_URL já tinha sido ajustada');
 
-    $instrui
-        ? Prompt::assertStrippedOutputContains('loja-do-ferro.test')
-        : Prompt::assertStrippedOutputDoesntContain('loja-do-ferro.test');
+        return;
+    }
+
+    // Windows: o cadastro aconteceu de fato, então não há o que avisar.
+    expect($aviso)->toBeNull();
+
+    Prompt::assertStrippedOutputDoesntContain('sudo');
 })->with([
     'Linux'   => ['Linux', '/etc/hosts', 0, true],
     'Darwin'  => ['Darwin', '/etc/hosts', 0, true],
@@ -1150,6 +1170,63 @@ it('[CT-36] nao trata resolucao fora do loopback como ja resolvido', function ()
         ->and(valorNoEnv('APP_URL'))->toBe('http://loja-do-ferro.test');
 
     Prompt::assertStrippedOutputContains('198.18.0.1');
+})->group('kit');
+
+/**
+ * CT-37 — linha no `hosts` apontando para FORA do loopback não conta como "já resolve aqui".
+ *
+ * ## A metade que faltava do CT-36
+ *
+ * `sondar()` pergunta duas coisas com um `||`: *"tem linha no arquivo?"* **ou** *"o DNS resolve
+ * para loopback?"*. CT-36 cobre o segundo ramo — DNS respondendo `198.18.0.1`. O primeiro nunca
+ * teve caso, e era ele que abria: `temLinhaAtiva()` descartava o ENDEREÇO da linha com
+ * `array_shift()` e perguntava só se algum nome casava. Com `10.20.30.40 loja-do-ferro.test` no
+ * arquivo, a etapa respondia "já resolve aqui".
+ *
+ * O `||` curto-circuita, então `ehLoopback()` — que existe exatamente para isto — **nunca era
+ * consultado quando havia linha no arquivo**. A guarda estava escrita e não era alcançada.
+ *
+ * ## O cenário não é exótico
+ *
+ * É quem aponta o domínio para uma VM, para o WSL ou para uma máquina de staging: caso comum de
+ * quem já tinha o ambiente montado antes de instalar o kit. O desfecho sem a guarda é o que o
+ * docblock de `sondar()` declara proibido — *"'Já resolve' tem de significar 'resolve para
+ * aqui'"*: a `APP_URL` é gravada, nenhum aviso é devolvido, e a instalação fecha imprimindo
+ * `/app`, `/admin` e `/infra` de **outra máquina**.
+ *
+ * ## O oráculo é a ESCRITA, não o aviso
+ *
+ * O que prova a correção é a etapa **escrever** a linha de loopback: ela reconhece que o domínio
+ * ainda não resolve para cá. Afirmar só o aviso deixaria passar uma implementação que avisasse e
+ * não escrevesse. A linha de terceiro continua no arquivo — remover linha alheia está fora do
+ * escopo desta feature —, então o arquivo passa a ter duas, e é a de loopback que vale no Windows.
+ *
+ * Achado do `fw-revisor-diff` (RD-01) na inspeção da `v0.38.0`.
+ */
+it('[CT-37] linha do hosts fora do loopback nao conta como ja resolvido', function (): void {
+    Prompt::fake([]);
+
+    // O arquivo já nomeia o domínio — mas apontando para outra máquina.
+    File::put($this->hosts, File::get($this->hosts).'
+10.20.30.40	loja-do-ferro.test
+');
+
+    $comandos = [];
+
+    $aviso = hostLocalNoTemp(interpretadorDeComandos($comandos))->processar('loja-do-ferro.test');
+
+    expect($comandos)->toHaveCount(
+        1,
+        'a etapa pulou a escrita por causa de uma linha que aponta para outra maquina',
+    );
+
+    expect(linhasAtivasDoHosts('loja-do-ferro.test'))->toBe(
+        2,
+        'a linha de loopback tinha de entrar ao lado da de terceiro, nao no lugar dela',
+    );
+
+    expect(valorNoEnv('APP_URL'))->toBe('http://loja-do-ferro.test')
+        ->and($aviso)->toBeNull();
 })->group('kit');
 
 /*

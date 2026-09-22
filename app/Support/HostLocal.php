@@ -219,10 +219,29 @@ final class HostLocal
             }
 
             if ($this->so !== 'Windows') {
-                note($this->instrucaoManual($dominio));
+                /*
+                 * O ramo Unix devolve AVISO, não `null` — e a diferença é o banner final.
+                 *
+                 * O kit não roda `sudo` por conta própria, então aqui a linha do `hosts` fica
+                 * pendente de um comando manual. Esse é, do ponto de vista de quem instala, o
+                 * MESMO estado que o ramo Windows classifica como falha: a `APP_URL` já aponta
+                 * para o domínio e o domínio ainda não resolve.
+                 *
+                 * A versão anterior emitia um `note()` e devolvia `null`. O `note()` sai na hora
+                 * e, quando a instalação termina, já rolou para fora da tela — acima do banner, do
+                 * resumo, da oferta de testes e da oferta de estrela. O `foreach ($this->avisos)`
+                 * de `KitInstall::banner()` não imprimia nada, e a instalação fechava anunciando
+                 * `http://{dominio}/app`, `/admin` e `/infra`: três endereços que não resolvem.
+                 *
+                 * `oferecerHostLocal()` foi escrito para consumir este retorno; no Unix ele
+                 * recebia sempre `null`. Achado do `fw-revisor-diff` (RD-03).
+                 *
+                 * `aplicarNoEnv()` ANTES: é ele que liga `$envEscrito`, e é isso que faz o aviso
+                 * dizer "a APP_URL já tinha sido ajustada" em vez de "continua como estava".
+                 */
                 $this->aplicarNoEnv($dominio);
 
-                return null;
+                return $this->avisoDeFalha($dominio);
             }
 
             if ($this->cadastrar($dominio)) {
@@ -505,10 +524,29 @@ final class HostLocal
                 continue;
             }
 
-            $nomes = preg_split('/\s+/', $util) ?: [];
-            array_shift($nomes);
+            $campos = preg_split('/\s+/', $util) ?: [];
 
-            foreach ($nomes as $nome) {
+            /*
+             * O ENDEREÇO da linha decide, e é por isso que ele não é descartado aqui.
+             *
+             * A primeira versão fazia `array_shift($campos)` e jogava o endereço fora, perguntando
+             * só se algum dos nomes casava. Com isso, `10.20.30.40 meuapp.test` — quem aponta o
+             * domínio para uma VM, WSL ou máquina de staging — contava como "já resolve aqui": a
+             * etapa pulava a escrita, gravava a `APP_URL` e devolvia **nenhum aviso**, e a
+             * instalação fechava imprimindo três endereços de OUTRA máquina.
+             *
+             * É exatamente o desfecho que o docblock de `sondar()` declara proibido — *"'Já
+             * resolve' tem de significar 'resolve para aqui'"* —, e a guarda existia só no ramo do
+             * DNS. O `||` de `sondar()` curto-circuita neste método, então `ehLoopback()` nunca era
+             * consultado quando havia linha no arquivo. Achado do `fw-revisor-diff` (RD-01).
+             */
+            $endereco = array_shift($campos);
+
+            if (! self::ehLoopback($endereco)) {
+                continue;
+            }
+
+            foreach ($campos as $nome) {
                 if (strcasecmp($nome, $dominio) === 0) {
                     return true;
                 }
