@@ -479,7 +479,11 @@ escrito três vezes.
 - [x] `vendor/bin/pint --dirty --format agent` — `passed`, 2026-09-21
 - [x] `vendor/bin/filacheck --fix` — **17/17 regras**, 2026-09-21
 - [x] `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` — **31/31, 68 asserções**, remedido em **2026-09-22** *(alterado em 2026-09-22)* — o CT-18 entrou em 22/09 e não disparou a remedição; o número anterior, `30/66`, era de 21/09. Saída do runner: `{"tool":"pest","result":"passed","tests":31,"passed":31,"assertions":68}`
-- [x] **Regressão completa** (obrigatória por tocar infra compartilhada) — ver o número corrente em `03-progresso.md` → `## Verificação Final`. **Rodada por `php artisan test --testsuite=Kit,Tenancy --parallel`, e não por `composer test:kit`**: num shell sem o `composer` no PATH o script imprime `command not found` e **sai com código 0**, o que se lê como suíte verde. Registrado no `03`
+- [x] **Regressão completa** (obrigatória por tocar infra compartilhada) — **2.770 passaram, 10.782 asserções, 0 falhas**, **2026-09-22** *(alterado em 2026-09-22 — dizia 2.722 / 10.539, de antes do rebase sobre o #94)*; detalhe e histórico em `03-progresso.md` → `## Verificação Final`
+
+  `{"tool":"pest","result":"passed","tests":2770,"passed":2770,"assertions":10782,"duration_ms":178100}`
+
+  **Rodada por `php artisan test --testsuite=Kit,Tenancy --parallel`, e não por `composer test:kit`**: num shell sem o `composer` no PATH o script imprime `command not found` e **sai com código 0**, o que se lê como suíte verde. Registrado no `03`
 - [x] **Falsificabilidade** — apagar a linha do `mapaDeConfiguracao()` reprova **10 dos 31 casos**, mutação **re-rodada em 2026-09-22** *(alterado em 2026-09-22)* (antes: 10 de 30 em 21/09; e 7 de 25, com 14 CTs). Saída sob o mutante: `{"result":"failed","tests":31,"passed":21,"failed":10,"assertions":58}` — arquivo restaurado depois, `md5sum` `1a0adc204e585486e604aadf92436256` igual ao de antes
 - [x] **Custo medido** — zero request e zero query a mais, contra o `## Modelo de Execução`, 2026-09-21
 - [x] **Medição no kit** — quatro níveis, oito telas, `padrão` medido com a feature fora da árvore, 2026-09-21

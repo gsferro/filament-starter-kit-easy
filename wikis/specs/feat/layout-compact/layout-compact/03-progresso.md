@@ -331,7 +331,15 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
   `{"tool":"pest","result":"passed","tests":31,"passed":31,"assertions":68,"duration_ms":4212}`
 
   **O CT-18 entrou em 2026-09-22 e não disparou esta remedição** — o commit que escreveu o caso deixou sete cópias do par `30 / 66` para trás. Contador de suíte é número derivado de comando: ou sai do comando na hora de escrever, ou sai do documento.
-- [x] **Regressão completa** (obrigatória por tocar infra compartilhada) — **2.722 passaram, 10.539 asserções, 0 falhas**, 2026-09-22, remedida pela **quarta** vez (2.715 → 2.717 → 2.721 → 2.722, acompanhando CT-16, CT-17 e CT-18): depois do `/code-review` (2.717) e de novo depois do quality gate, que acrescentou a largura do menu
+- [x] **Regressão completa** (obrigatória por tocar infra compartilhada) — **2.770 passaram, 10.782 asserções, 0 falhas**, **2026-09-22** *(alterado em 2026-09-22)*, remedida pela **quinta** vez (2.715 → 2.717 → 2.721 → 2.722 → 2.770)
+
+  `php artisan test --testsuite=Kit,Tenancy --parallel --compact`
+
+  `{"tool":"pest","result":"passed","tests":2770,"passed":2770,"assertions":10782,"duration_ms":178100}`
+
+  **Os 48 casos entre 2.722 e 2.770 não são desta feature**: o número anterior era de **antes do rebase sobre o #94** (`5400faf`), que trouxe 45 casos, e o resto veio do que entrou em `main` junto. Nenhuma linha de `app/`, `config/` ou `database/` desta feature mudou depois de `95d674e`.
+
+  **Regra que sai daí, porque esta é a quinta remedição da mesma linha**: número de regressão é medida da ÁRVORE, não do diff. Ele tem de ser refeito depois de **todo rebase ou merge de `main`**, não só depois de commit próprio — um rebase move o denominador sem tocar num arquivo sequer da feature, e foi exatamente assim que a defasagem sobreviveu a um gate
 
   **Rodada por `php artisan test --testsuite=Kit,Tenancy --parallel`, não por `composer test:kit`** — ver a armadilha do código de saída 0 logo abaixo
 
@@ -431,7 +439,7 @@ As duas ficam **abertas e declaradas**. Fechá-las mexe numa guarda de todo o ki
 acusaria citações pré-existentes em features que nada têm a ver com esta — é mudança própria, não
 carona nesta.
 
-**Confirmado pelo gate no ciclo 3, para não ser reaberto**: regressão **2.721 / 10.537 / 0 falhas**;
+**Confirmado pelo gate no ciclo 3, para não ser reaberto**: regressão **2.770 / 10.782 / 0 falhas** *(alterado em 2026-09-22 — o ciclo 3 mediu 2.721 / 10.537, antes do rebase sobre o #94)*;
 `DensidadeDoLayoutTest` **31 casos / 68 asserções** *(alterado em 2026-09-22 — eram 30/66 antes do CT-18)*; o diff pós-ciclo-2 é **só `.md`** (nenhuma linha
 de `app/`, `tests/`, `config/` ou `database/`); as quatro citações novas da ADR-06 (`HasSidebar.php`
 `:11`, `:54`, `:68` e `base.blade.php:85`) conferidas uma a uma; as citações vivas da wiki apontam
