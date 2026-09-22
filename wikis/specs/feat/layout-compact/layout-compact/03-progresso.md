@@ -357,8 +357,24 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
 
 <!-- Step 8. Enquanto vazio, a feature NÃO está concluída e o PR não abre. -->
 
-- **Ciclo**: — · **Veredito**: — · **Data**: —
-- **Relatório**: `06-relatorio-qa.md` (ainda não gerado)
+- **Ciclo**: 1 · **Veredito**: **REPROVADO → especificação** · **Data**: 2026-09-21
+- **Relatório**: `06-relatorio-qa.md`
+- **Severidade**: Blocker 0 · Major 3 · Minor 3 · Cosmético 0
+
+| Achado | Título | Sev. | Destino |
+|---|---|---|---|
+| QA-01 | O menu entrega só metade do compacto — o invariante do `00` é fechado por releitura, não por decisão do usuário | Major | 1 — especificação |
+| QA-02 | O `01` ainda carrega a evidência que o `/code-review` invalidou (2.715/10.508, "14 CTs, 25 casos", CT-15 "pendente", diff de seis arquivos) e não tem passo para o código do 7.5 | Major | 1 — especificação |
+| QA-03 | Oito citações `arquivo:símbolo:linha` erradas, com o `03:327` declarando "21/21 ok" | Minor | 1 — especificação |
+| QA-04 | CT-16 e a quarta asserção de CT-48 existem no código sem cenário no `04`; índice, regras e contagens divergem | Major | 3 — teste |
+| QA-05 | A guarda de `export-ignore` de `[CT-48]` reimplementa o `.gitattributes` com regex e deixa passar `wikis/** export-ignore` | Minor | 3 — teste |
+| QA-06 | Docs pt/en dizem "duas coisas não apertam"; são três (falta o Pulse) | Minor | 1 — especificação |
+
+**Confirmado pelo gate, para não ser reaberto**: regressão remedida em **2.717 / 10.525 / 0 falhas**;
+Pint `passed` e FilaCheck **17/17**; o roadmap **viaja pelos dois caminhos**, verificado por
+`git archive HEAD | tar -t` (11 documentos de topo, zero `wikis/specs`) e por
+`KitUpdate::CAMINHOS_DO_KIT`; nenhum log e portanto nenhum PII em log; zero query e zero request a
+mais; nenhuma célula de permissão nova.
 
 **Entrada que o gate vai encontrar**, e vale avisar para ele não gastar ciclo redescobrindo:
 
