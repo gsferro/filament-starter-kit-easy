@@ -7,6 +7,8 @@ use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\IconPosition;
+use Filament\Support\Icons\Heroicon;
 
 /**
  * A ficha somente-leitura de uma organização.
@@ -51,7 +53,22 @@ class TenantInfolist
                             ->label('Painel da organização')
                             ->state(fn (Tenant $record): ?string => $record->urlDoPainel())
                             ->url(fn (Tenant $record): ?string => $record->urlDoPainel())
-                            ->openUrlInNewTab(),
+                            ->openUrlInNewTab()
+                            /*
+                             * O ícone sinaliza a nova aba — QA-13 do quality gate.
+                             *
+                             * As outras duas superfícies já avisavam, cada uma do seu jeito: o
+                             * formulário por `helperText` (tem espaço para prosa), a listagem por
+                             * este mesmo ícone (não tem). Só a ficha não dizia nada, e abrir aba
+                             * sem aviso é o tipo de surpresa que o usuário atribui a defeito.
+                             *
+                             * Ícone e não `helperText`: aqui a entrada fica ao lado do `slug`
+                             * numa grade de fichas curtas, e uma linha de prosa por entrada
+                             * desequilibraria a coluna. O mesmo ícone da listagem mantém o
+                             * vocabulário visual único entre as duas telas de leitura.
+                             */
+                            ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                            ->iconPosition(IconPosition::After),
                         TextEntry::make('ativo')
                             ->label('Situação')
                             ->badge()
