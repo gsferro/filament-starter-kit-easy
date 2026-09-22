@@ -104,9 +104,12 @@ screen is enough.
 > **The price, and it shows at the densest step.** Filament 5 derives **every** spacing from a
 > single variable, so shrinking the variable shrinks things that are not space: icons go from 24 px
 > to 19.2 px at *compacto* and 16.8 px at *denso*, and the text input becomes shorter than the
-> button beside it (4 px apart at *compacto*, 6 px at *denso*). That is exactly why the option is a
-> scale and not an on/off — anyone bothered by the distortion stays on the middle step, which still
-> delivers two thirds of the gain.
+> button beside it (4 px apart at *compacto*, 6 px at *denso*). **Checkboxes shrink too, and that
+> is the one that matters**, because it is a click target: the checkbox square is
+> `calc(var(--spacing) * 4)`, so it goes from **16 px to 12.8 px at *compacto* and 11.2 px at
+> *denso***. That is exactly why the option is a scale and not an on/off — anyone bothered by the
+> distortion, or who needs the full click target, stays on the middle step, which still delivers
+> two thirds of the gain.
 >
 > **The sidebar tightens on both axes**, and the width needed its own mechanism: it comes from
 > `--sidebar-width`, not from `--spacing`. The widths in the table above are the **measured

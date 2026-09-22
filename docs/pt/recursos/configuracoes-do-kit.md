@@ -103,9 +103,12 @@ suficiente.
 > **O preço, e ele é visível no denso.** O Filament 5 mede **todo** espaçamento a partir de uma
 > variável só, então encolher a variável encolhe junto o que não é espaço: o ícone cai de 24 px
 > para 19,2 px no compacto e 16,8 px no denso, e a caixa de texto passa a ser mais baixa que o
-> botão ao lado dela (4 px de diferença no compacto, 6 px no denso). É exatamente por isso que a
-> opção é uma escala e não um liga-desliga — quem achar a distorção incômoda fica no degrau do
-> meio, que entrega dois terços do ganho.
+> botão ao lado dela (4 px de diferença no compacto, 6 px no denso). **A caixa de seleção encolhe
+> junto, e essa é a que pesa**, porque é alvo de clique: o quadradinho do checkbox mede
+> `calc(var(--spacing) * 4)`, então vai de **16 px para 12,8 px no compacto e 11,2 px no denso**.
+> É exatamente por isso que a opção é uma escala e não um liga-desliga — quem achar a distorção
+> incômoda, ou precisar do alvo de clique cheio, fica no degrau do meio, que entrega dois terços do
+> ganho.
 >
 > **O menu aperta nos dois eixos**, e a largura precisou de mecanismo próprio: ela vem de
 > `--sidebar-width`, não de `--spacing`. As larguras da tabela acima são o **mínimo medido** — o
