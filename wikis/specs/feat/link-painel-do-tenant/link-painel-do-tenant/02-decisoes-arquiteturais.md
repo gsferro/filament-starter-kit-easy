@@ -181,7 +181,7 @@ exige o inventário — e o exercício encontrou o ponto que importa.
 
 | Ponto de entrada | Alcançável por | Fronteira aplicada | Evidência |
 |---|---|---|---|
-| A URL renderizada no `href` | leitura da página | **nenhuma** — é saída, não entrada | o `slug` vem do registro já carregado pelo resource |
+| A URL renderizada no `href` | leitura da página | **o escape de HTML do vendor** — o `e($url)` de `Filament\Support\generate_href_html()` (`vendor/filament/support/src/helpers.php:generate_href_html:153`) | o `slug` é escrito por humano e vira **atributo HTML**; quem impede injeção no `href` é esse escape, e a feature passa a depender dele |
 | O `slug` que compõe a URL | escrita no formulário (`TextInput::make('slug')`) | `->alphaDash()` + `->unique()` + `->maxLength(120)` | `TenantForm.php:'slug'` |
 | O registro alcançado | rota do resource (`/admin/organizacoes/{record}`) | policy do `TenantResource` | — |
 
@@ -193,3 +193,25 @@ vermelho aqui e não só na tela de cadastro.
 
 **Nenhuma propriedade pública nova, nenhum método público novo, nenhum valor de `$tableFilters`
 consumido.**
+
+### A primeira linha dizia "fronteira: nenhuma", e a conclusão estava certa pelo motivo errado
+
+Esta linha afirmava *"**nenhuma** — é saída, não entrada"*. Não há risco aberto, e isso continua
+verdadeiro — mas **não** pela razão escrita. O `slug` é entrada de humano que termina dentro de um
+atributo HTML de uma tela de administração; "é saída" descreve a direção do dado, não a ausência de
+fronteira. Quem protege o `href` é o **escape**: `generate_href_html()` passa a URL por `e()` antes
+de montar o atributo. A feature **depende** dessa fronteira sem ser dona dela — exatamente como
+depende do `->alphaDash()`, e é o mesmo exercício que produziu a linha do `slug`.
+
+Confirmação de que o escape é a peça, e não uma suposição: **CT-18** mede que esse `e()` escapa
+**HTML e não URL** — o endereço sai com o UTF-8 cru (`/app/organização`) e o atributo sai escapado.
+É a outra metade da mesma dependência.
+
+Verificado no mérito, e por isso a conclusão não muda: `->alphaDash()`
+(`/\A[\pL\pM\pN_-]+\z/u`) recusa `<`, `"`, `/`, `.`, `%` e espaço, e os únicos caminhos de
+escrita de `slug` fora do formulário são `TenantsSeeder` e `DemoTenancySeeder`, com valores fixos.
+**Nenhum vetor de injeção aberto.**
+
+> `.ai/rules/specs.md` chama esse padrão — conclusão certa por motivo errado — de o mais difícil de
+> enxergar, porque a wiki fica verde, o teste passa, e o defeito só aparece quando alguém tenta
+> consertar o cenário pelo motivo escrito. Achado **QA-14** do quality gate.

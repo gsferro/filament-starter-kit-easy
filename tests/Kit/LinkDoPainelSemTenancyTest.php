@@ -26,9 +26,14 @@ use Filament\Facades\Filament;
  *
  * A ADR-03 decidiu NÃO acrescentar guarda de config nenhuma: a feature vive dentro do
  * `TenantResource`, que já se fecha nos dois métodos (`canAccess()` e `shouldRegisterNavigation()`).
- * Este caso é o invariante que sustenta essa decisão — ele fica vermelho se a entrada do link
- * nascer fora do resource (num hub, num widget, no menu), onde o gerador não tem rota de tenant
- * para resolver, e fica vermelho se o par de métodos do resource perder a condição de config.
+ * Este caso é o invariante que sustenta essa decisão **na tela do resource**: ele fica vermelho se
+ * o par de métodos (`canAccess()` / `shouldRegisterNavigation()`) perder a condição de config, e
+ * vermelho se a listagem voltar a abrir com a tenancy desligada.
+ *
+ * O que ele **não** alcança é a entrada do link nascendo FORA do resource — num hub, num widget do
+ * dashboard, num item do menu do usuário. Essa é a varredura de CT-21, doze linhas abaixo, cujo
+ * docblock diz o mesmo. Por isso o `04` registra "M27 *(em parte)*" para este caso, e M27 inteiro
+ * para CT-21.
  */
 beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);

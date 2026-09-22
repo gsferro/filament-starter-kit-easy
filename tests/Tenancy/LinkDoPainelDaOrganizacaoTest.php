@@ -31,12 +31,21 @@ use Monolog\LogRecord;
  * escrito com o `master_global`, a decisão do usuário ficaria sem um único teste e a alternativa
  * recusada (renderizar só para quem entra) passaria verde no conjunto inteiro.
  *
- * Nenhum caso nomeia a função que gera a URL: o oráculo é o endereço, e ele é sempre calculado com
+ * O endereço COMPLETO nunca é escrito à mão: onde ele é o oráculo, sai de
  * `Filament::getPanel('app')->getUrl($organizacao)`
- * (`vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:getUrl:170`), nunca escrito à mão.
- * Essa diferença é o ponto de CT-01: a chave de rota do model é o `uuid`
+ * (`vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:getUrl:170`). Essa diferença é o
+ * ponto de CT-01: a chave de rota do model é o `uuid`
  * (`app/Traits/TemUuid.php:getRouteKeyName:35`), e a rota do tenant é `{tenant:slug}` — quem
  * montasse a URL com `getRouteKey()` produziria o uuid.
+ *
+ * O SEGMENTO é escrito à mão, e de propósito. Oito casos deste arquivo chamam
+ * `Tenant::urlDoPainel()` direto (CT-01, CT-03, CT-08, CT-09, CT-10, CT-14, CT-18, CT-22), porque
+ * ali o sujeito da afirmação é o gerador e não a tela. E quatro oráculos afirmam só o FIM do
+ * endereço, com o segmento literal: `toEndWith('/acme-do-brasil')` (CT-01),
+ * `toEndWith('/acme-2')` (CT-03), `toEndWith('/'.$organizacao->slug)` (CT-14) e
+ * `toEndWith('/'.$slug)` (CT-18). Esses quatro afirmam que o segmento é o SLUG GRAVADO, byte a
+ * byte — afirmação que se dissolveria se o oráculo fosse recalculado pelo mesmo `getUrl()` que
+ * está sob teste.
  *
  * ## A asserção de HTML é UMA string adjacente
  *
