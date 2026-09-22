@@ -454,6 +454,33 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
 | QA-13 | Docs pt/en passaram a listar **três** superfícies que não apertam e o fecho continuava dizendo *"As duas"* / *"Both"* | Minor | 1 | ✅ fechado nas duas línguas |
 | QA-14 | A largura do menu empurrou o `InfraPanelProvider` em 14 linhas e `->models([` passou de `:581` para `:595`; duas docs de usuário citavam `:581` | Minor | 1 (+3) | ✅ citações fechadas. **A guarda não**: ver a lacuna do `[CT-26]` abaixo |
 
+### Ciclo 4 — a checagem L6, e nove números que não reproduziam
+
+- **Ciclo**: 4 · **Veredito**: **REPROVADO → especificação** · **Data**: 2026-09-22
+- **Severidade**: Blocker 0 · Major 4 · Minor 4 · Cosmético 1 · **nenhum defeito de comportamento**
+- **Atenção à numeração**: estes achados reusam os IDs **QA-15 a QA-17** da *Revalidação dirigida do
+  QA-11*, registrada no `06`. São achados **diferentes**, de ciclos diferentes. Onde a distinção
+  importa, o ciclo vem junto do ID.
+
+| Achado | Título | Sev. | Destino | Estado |
+|---|---|---|---|---|
+| QA-15 | A `## Verificação Final` declarava `30 passaram, 66 asserções` para um comando que devolve **31 / 68**; o denominador da falsificabilidade (*"10 dos 30 casos"*) herdava o erro | **Major** | 1 | ✅ fechado — sete cópias corrigidas, a saída do runner colada ao lado, e a **mutação M12 re-rodada**: 10 dos **31**, com CT-05 e CT-17 que o `04` não listava |
+| QA-16 | Regressão declarada em `2.722 / 10.539`, número de **antes do rebase sobre o #94** | **Major** | 1 | ✅ fechado — **2.770 / 10.782 / 0 falhas**, JSON do runner no `01` e no `03`, e a regra registrada: refazer depois de **todo rebase**, não só depois de commit próprio |
+| QA-17 | As duas tabelas de `## Medição` e o achado § A1 diziam **320 px nos três níveis**, falso desde `ec665a5` | **Major** | 1 | ✅ fechado — linha convertida para **320 / 272 / 264 px** com `*(alterado em 2026-09-22)*`, declarando que ela passou a ser valor derivado da declaração; § A1 reescrito, sobra dele a topbar |
+| QA-18 | A ADR-03 anunciava *"uma consequência desta ADR fica corrigida junto"* e a consequência seguia intacta, palavra por palavra | **Major** | 1 | ✅ fechado com marca de data, e mais uma terceira cópia da mesma afirmação, achada por grep no `01` |
+| QA-19 | *"36/36 ok"* só fecha se a varredura incluir o `06`, que cita citações erradas **de propósito** | Minor | 1 | ✅ fechado — escopo declarado (`00`–`04`), comando único ao lado, **30/30 ok** |
+| QA-20 | *"515 linhas acrescentadas e 1 removida em 11 arquivos"* sem comando que reproduzisse | Minor | 1 | ✅ fechado — `git diff 5400faf..8d3f2f3 --stat -- app/ config/ database/ .env.example`, com o merge-base explícito |
+| QA-21 | *"(132 linhas, 5 itens)"* — `wc -l wikis/roadmap.md` devolve **140** | Cosmético | 1 | ✅ fechado — contagem de linhas **removida**; ela não sustentava afirmação nenhuma. Os 5 itens conferem |
+| QA-22 | Dez citações de vendor em comentário de código **sem símbolo**, contra `.ai/rules/specs.md:46` | Minor | **2** | ✅ fechado — símbolo em todas, conferidas por `sed -n`, **10/10**, e sem acrescentar uma linha sequer, para não deslocar o que a wiki cita |
+| QA-23 | O preço da distorção nas docs pt/en não citava a **caixa de seleção**, que é alvo de clique | Minor | 1 | ✅ fechado nas duas línguas — `.fi-checkbox-input` é `calc(var(--spacing) * 4)`, logo **16 → 12,8 → 11,2 px** |
+
+> **O padrão do ciclo, e é o mesmo dos quatro anteriores**: nenhum defeito de comportamento, nove
+> números que não reproduziam. Oito dos nove eram **cópia** de um número medido uma vez e nunca
+> mais — e o gatilho da defasagem, duas vezes neste ciclo, foi algo que **não é commit próprio**:
+> um caso de teste novo (CT-18) e um **rebase**. Contador de suíte, número de regressão e contagem
+> de linhas são medida da árvore, não do diff; ou saem de um comando escrito ao lado deles, ou
+> saem do documento.
+
 ### A lacuna do `[CT-26]`, aberta e fora do escopo desta feature
 
 O `[CT-26]` de `tests/Kit/CitacoesDeCodigoTest.php` tem **duas** cegueiras independentes, as duas
