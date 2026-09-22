@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.38.1] - 2026-09-22
+
 ### Corrigido
 
 - **`HostLocalTest [CT-12]` quebrava em toda instalação nova.** O caso usa uma página de `docs/`
