@@ -152,8 +152,17 @@ acertou. Hoje o `[CT-11]` cobre a fatia decidível — caminho **literal** lido 
 foi provado por mutação contra este defeito. Ver
 `wikis/specs/fix/validacao-de-release/validacao-de-release/02-decisoes-arquiteturais.md`, ADR-02.
 
-**O que continua sem guarda automática possível** é o resto: tudo o que só acontece fora da
-árvore do kit. É esse resto que os quatro cenários cobrem.
+**O que continua sem guarda automática possível** é o resto: tudo o que só acontece **fora da
+árvore do kit**. Para essa classe, **instalar e rodar é a única medição confiável** — não uma
+entre várias, e nenhuma varredura estática a substitui, porque toda varredura roda **dentro** da
+árvore, onde o defeito não existe. O `[CT-11]` cobre **uma** classe vizinha e não dispensa nada
+daqui.
+
+E a classe a reconhecer no próximo caso é esta: **teste que viaja lendo arquivo que não viaja.**
+Quem for procurá-la precisa saber que o kit tem **três** mecanismos de guarda, e que nenhum é
+sinônimo dos outros — `->skip()` **por caso**, `markTestSkipped()` no `beforeEach` **por arquivo**,
+e **não-leitura** (o caso só cita o caminho como string). Cada uma das três varreduras que erraram
+deixou de enxergar exatamente um deles.
 
 ### `v0.38.0` — arquivo novo que não chegava a quem já instalou
 

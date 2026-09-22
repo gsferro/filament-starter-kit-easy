@@ -469,6 +469,7 @@ de **extrair o alvo do link** e resolvê-lo. É o mesmo padrão do "e-mail com l
       Quando o mantenedor lê a justificativa do procedimento
       Então ela afirma que instalar e rodar é a única medição confiável desta classe de defeito
       E não oferece nenhuma varredura estática como substituta do procedimento
+      E onde cita a guarda estática que existe, declara que ela cobre outra classe
 
     Cenário: [CT-17] o roteiro nomeia a classe do defeito e os três mecanismos de guarda
       Dado o roteiro de release entregue dentro do pacote
@@ -485,6 +486,14 @@ três varreduras não enxergaram. É a metade testável de RQ-07.
 **Controle positivo** da 2ª linha de CT-06: asserção de ausência sobre um texto que descreve as
 varreduras recusadas — filtre a citação antes de afirmar que não há oferta.
 
+> **Terceira linha acrescentada pelo achado RD-02 do step 6.5.** Quando este `04` foi derivado, a
+> decisão registrada era *"não haverá guarda estática"*, e CT-06 podia se contentar com a ausência.
+> A decisão mudou: **existe** guarda estática (`[CT-11]` do `RedeDeDocumentacaoTest`), ela cobre a
+> fatia decidível, e o roteiro agora a cita. Ausência deixou de ser o oráculo certo — o texto tem
+> de **distinguir** a guarda que existe do procedimento que ela não substitui. Sem esta linha, um
+> roteiro que citasse o `[CT-11]` como atalho (*"se o CT-11 está verde, pode pular os quatro
+> cenários"*) passaria em CT-06.
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata |
@@ -493,6 +502,7 @@ varreduras recusadas — filtre a citação antes de afirmar que não há oferta
 | M17 | o roteiro sugere uma varredura pelo `git archive` "para quem tiver pressa" | CT-06 (2ª linha) |
 | M18 | o roteiro cita "instalar e rodar" como **uma** das formas de medir | CT-06 (1ª linha) |
 | M19 | o roteiro conta a história da `v0.38.0` sem nomear a classe do defeito nem os três mecanismos: a próxima pessoa não reconhece o caso seguinte | CT-17 |
+| M35 | o roteiro cita o `[CT-11]` como atalho — *"guarda verde dispensa os quatro cenários"* — e o procedimento vira opcional na prática | CT-06 (3ª linha) |
 
 ---
 
@@ -854,7 +864,7 @@ verificação documental do quality gate.
 | CT-15 | o roteiro exige a evidência registrada antes da tag | R2b | rastreio de efeito documental | Kit | idem | — | M12 |
 | CT-05 | os dois pontos de entrada têm seção que remete ao roteiro | R3 | EP (`Esquema`, 2) | Kit | idem | **`naArvoreDoKit()`** | M13, M15 |
 | CT-16 | o **alvo do link** resolve para o roteiro | R3 | rastreio até o destino | Kit | idem | **`naArvoreDoKit()`** | M14, M15 |
-| CT-06 | a justificativa empírica, sem substituto estático | R4 | EP + controle positivo | Kit | idem | — | M16, M17, M18 |
+| CT-06 | a justificativa empírica, sem substituto estático | R4 | EP + controle positivo | Kit | idem | — | M16, M17, M18, M35 |
 | CT-17 | a classe do defeito e os três mecanismos, nomeados | R4 | EP | Kit | idem | — | M19 |
 | CT-07 | `@premissa` nenhum `export-ignore` alcança o roteiro | R5 | rastreio + controle positivo | Kit | idem | **`naArvoreDoKit()`** (sem repo git lá fora) | M20 (na árvore) |
 | CT-08 | o roteiro existe aqui e declara de quem é o processo | R5 | invariante + **canário desguardado** | Kit | idem | **nenhuma, de propósito** | M20 (no projeto instalado), M21 |
