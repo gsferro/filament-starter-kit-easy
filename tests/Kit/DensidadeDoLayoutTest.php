@@ -437,3 +437,48 @@ it('[CT-16] um nivel ilegivel gravado nao impede salvar o resto da tela', functi
         'o lixo tinha de ser coagido para o padrão ao entrar no formulário, e gravado coagido',
     );
 })->group('kit');
+
+/**
+ * CT-17 — a largura do menu acompanha o nível, nos três painéis.
+ *
+ * ## Por que este caso existe, e o que ele fecha
+ *
+ * O quality gate reprovou a entrega por aqui: o menu é uma das **quatro** superfícies do escopo,
+ * a altura dos itens encolhia (40 → 32,8 → 31,2 px) e a largura ficava em 320 px nos três níveis.
+ * O `00-requisito.md` afirma que **nenhuma superfície fica parcialmente compacta** — *"meia tela
+ * compacta é pior que nenhuma"*. Era exatamente isso.
+ *
+ * A largura não sai de `--spacing`: ela vem de `--sidebar-width`, emitido **inline** a partir de
+ * `filament()->getSidebarWidth()` (`base.blade.php:85`). Nenhuma declaração de `--spacing`, em
+ * layer nenhuma, a alcança — por isso ela precisou de mecanismo próprio.
+ *
+ * ## O oráculo é o PAINEL, não o HTML
+ *
+ * Os demais casos deste arquivo leem o HTML servido, porque o `<style>` do render hook só existe
+ * ali. Aqui a leitura é `Filament::getPanel($x)->getSidebarWidth()`, e é o ponto certo: é esse
+ * getter que o layout base chama, e ler dele exercita a **avaliação do Closure** — que é a parte
+ * que pode quebrar. Um valor fixo passaria num `assertSee` do HTML e falharia aqui, que é o
+ * defeito da ADR-06 (grava e só vale no próximo deploy).
+ *
+ * ## Os três painéis, e não um
+ *
+ * `sidebarWidth()` é por painel e foi escrito três vezes. Esquecer um é o defeito provável, e ele
+ * seria invisível em qualquer caso que olhasse só o `/admin`.
+ */
+it('[CT-17] a largura do menu acompanha o nivel nos tres paineis', function (string $nivel, string $esperado): void {
+    gravarDensidade($nivel);
+
+    foreach (['app', 'admin', 'infra'] as $painel) {
+        expect(Filament::getPanel($painel)->getSidebarWidth())->toBe(
+            $esperado,
+            "o painel `{$painel}` não acompanhou a densidade `{$nivel}`",
+        );
+    }
+})->with([
+    // `20rem` é o default do vendor (`HasSidebar.php:11`) — o confortável não muda nada.
+    'confortavel' => ['confortavel', '20rem'],
+    'compacto'    => ['compacto', '17rem'],
+    'denso'       => ['denso', '16.5rem'],
+    // Vocabulário ilegível cai no confortável, como em CT-10/CT-11.
+    'ilegivel'    => ['compact', '20rem'],
+])->group('kit');

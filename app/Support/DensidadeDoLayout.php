@@ -155,6 +155,59 @@ enum DensidadeDoLayout: string implements HasLabel
     }
 
     /**
+     * A largura do menu lateral deste nível.
+     *
+     * ## Por que isto existe separado de `espacamento()`
+     *
+     * A largura do menu **não sai de `--spacing`**, e foi isso que o quality gate pegou: o menu
+     * é uma das quatro superfícies do escopo, a altura dos itens encolhia e a largura não —
+     * exatamente a "meia tela compacta" que o requisito proíbe.
+     *
+     * O valor vem de `--sidebar-width`, que o Filament emite **inline** a partir de
+     * `filament()->getSidebarWidth()` (`vendor/filament/filament/resources/views/components/layout/base.blade.php:85`).
+     * Nenhuma declaração de `--spacing`, em layer nenhuma, o alcança.
+     *
+     * ## Por que ele PODE ser governado em runtime, ao contrário do tema
+     *
+     * `Panel::sidebarWidth()` aceita `string | Closure`
+     * (`vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:54`) e o getter faz
+     * `evaluate()` (`:68-71`), que roda **no render**. É a mesma propriedade do render hook, e o
+     * oposto do `viteTheme()` da ADR-06 — que é resolvido no registro do painel e por isso
+     * gravaria sem governar.
+     *
+     * `string` e não `?string`: aqui não há o contrato do `null` de `espacamento()`. O Filament
+     * sempre emite `--sidebar-width`, com ou sem o kit, então devolver o default explícito no
+     * nível confortável é o valor que o vendor já usaria — `'20rem'`
+     * (`HasSidebar.php:11`), os 320 px medidos antes da feature.
+     *
+     * ## Os dois valores são o MÍNIMO MEDIDO, não escolha de gosto
+     *
+     * Cada nível foi varrido no navegador com o `--spacing` do próprio nível ativo, medindo
+     * `scrollWidth > clientWidth` em todos os rótulos do menu. O rótulo mais longo do kit é
+     * *"Configurações da aplicação"*, e é ele que fixa o limiar:
+     *
+     * | Nível | `--spacing` | Largura mínima sem truncar |
+     * |---|---|---|
+     * | Compacto | `0.2rem` | **17rem** (em 16,5rem faltam 5 px) |
+     * | Denso | `0.175rem` | **16,5rem** (em 16rem faltam 5 px) |
+     *
+     * A primeira escolha foi `16rem` para o denso, no papel, e a medição a reprovou. Fica
+     * registrado porque a lição é a do resto desta feature: largura de menu não se estima.
+     *
+     * **O limiar é do KIT, não universal.** Projeto que criar item de menu com rótulo mais longo
+     * verá reticências — que é o comportamento normal do Filament, e acontece igual no `20rem`
+     * com rótulo suficientemente longo. Quem precisar de mais largura muda aqui.
+     */
+    public function larguraDaSidebar(): string
+    {
+        return match ($this) {
+            self::Confortavel => '20rem',
+            self::Compacto    => '17rem',
+            self::Denso       => '16.5rem',
+        };
+    }
+
+    /**
      * O nível gravado nas configurações, lido POR REQUEST.
      *
      * Ler aqui, e não no `boot()`, é o que separa "a tela governa" de "grava e só vale no próximo
