@@ -49,7 +49,8 @@
       é o achado **QA-09** do quality gate
 
 ## Verificação Final
-- [ ] `/ponytail:ponytail-review` no diff
+- [x] `/ponytail:ponytail-review` no diff — rodado em **2026-09-21**, no ciclo 1 do quality gate.
+      Veredito: **nada a cortar**. Ver `### Auditoria Ponytail (step 6)`
 - [x] `vendor/bin/pint --dirty --format agent` — `fixed`, sem pendência
 - [x] `vendor/bin/filacheck --fix` — **All 17 rules passed!**
 - [x] CTs da feature — **44 casos, 44 verdes, 230 asserções**, medido em 2026-09-21
@@ -77,7 +78,9 @@
 - [x] Os 13 achados da revisão adversarial aplicados no `04` — ver `04-casos-de-teste.md` →
       `## Revisão Adversarial`. Contagens do cabeçalho derivadas por `grep`, não digitadas:
       **23** cenários (com o CT-23 do step 7.5), **9** regras, **36** mutantes, **3** lacunas
-- [ ] `/code-review` no diff (step 7.5)
+- [x] `/code-review` no diff (step 7.5) — **quatro achados, todos fechados**. A seção está
+      neste mesmo arquivo (`## Step 7.5 — /code-review no diff (2026-09-21)`) e a tabela completa
+      no adendo do `04`. O checkbox ficou desmarcado por esquecimento, e é o achado **QA-11**
 
 ## Conformidade com Rules
 
@@ -86,7 +89,8 @@
 | `filament.md` | `app/Filament/**` | **aplicada** | nenhuma Action nem item de navegação novo (por isso `tests/Kit/PermissoesDeAcoesTest.php` não pede declaração de autorização — é um dos motivos de a superfície ser coluna e `TextEntry`, e não `Action`); nenhuma construção reprovada pelo Blueprint (`filacheck`: 17/17, `AderenciaAoBlueprintTest` verde); nenhum `assignRole`/`syncRoles`; nada de papel, permissão ou seeder |
 | `resources.md` | `app/Filament/App/Resources/**` | **n.a.** | a feature toca `Admin/Resources`, não `App/` |
 | `filament-resources.md` | `app/Filament/**/Resources/**` | **n.a. no que ela exige** | a rule governa Resource novo (badge de contagem, colisão de trait, scope em `getEloquentQuery()`); a feature não cria Resource nem toca `getEloquentQuery()`. `BadgeDeNavegacaoTest`/`BadgeDeNavegacaoTenancyTest` continuam verdes |
-| `specs.md` | `wikis/specs/**` | **aplicada** | citações por símbolo conferidas por `tests/Kit/CitacoesDeCodigoTest.php:[CT-26]`; **três** deslocadas pelo diff foram corrigidas (ver desvios) |
+| `specs.md` | `wikis/specs/**` | **aplicada — reconferida em 2026-09-21** | a evidência anterior (`tests/Kit/CitacoesDeCodigoTest.php:[CT-26]`) **não cobre este glob**: o gate exclui `wikis/specs/**` por decisão explícita da v0.36.0, registrada no docblock dele. Era exatamente o glob da rule, e por isso QA-01 achou **doze** citações erradas na wiki. A evidência agora é a conferência mecânica prescrita pela rule — extrair as citações dos `.md` da wiki e exigir que `sed -n "{linha}p" {path}` contenha o símbolo —, com as do `03` e do `04` corrigidas na fonte e as do `00` (imutável) no **Adendo 1**. O `[CT-26]` continua valendo para a superfície **viva** (`app/`, `docs/`, rules, README, CHANGELOG), que é onde ele achou as três do D-04 |
+| `app.md` | `app/**` | **n.a. no que ela exige** | o diff toca `app/Models/Tenant.php` e três schemas, então o glob casa. A rule governa atribuição de papel/permissão (`assignRole`/`syncRoles`) e DTO: o diff não tem nenhum dos dois — o método novo é leitura pura e as três entradas são declarativas. Linha ausente até o quality gate (**QA-10**): a rule não estava violada, mas "rule sem linha na tabela" é achado por si |
 | `testes.md` | `tests/**` | **aplicada** | nenhum helper cruzado (os quatro do arquivo novo são usados só por ele — `HelpersDeTesteTest` verde); `noPainelBootado('admin')` + `->loadTable()` em todo caso de listagem; `semComentarios()` na única asserção de ausência sobre arquivo (CT-02); `TestHandler` no channel real em CT-09; CT-19 em `tests/Kit` porque é a única suíte com a tenancy desligada; `fronteiraDeRequest()` entre painéis em CT-09 e CT-10 |
 | `models.md` | `app/Models/**` | **n.a. no que ela exige** | `Tenant` não tem Resource no `/app` (`ModeloCacheavel` não se aplica), e a feature não acrescenta `SoftDeletes` nem `InteractsWithMedia`. O método novo é leitura pura, sem query |
 
@@ -128,9 +132,20 @@ só o próprio `TenantResource` e os dois testes de filtro já citados em R2.
 
 ### Auditoria Ponytail (step 6)
 
-| # | Sugestão de corte | Aplicada? | Onde |
+Rodada em **2026-09-21** sobre `git diff fbfe528 -- app/`: 5 arquivos, 119 linhas inseridas, das
+quais a maioria é comentário. **Veredito: lean already.** Não há o que cortar — a feature é um
+método de model de **nove linhas** mais três entradas declarativas. Nenhuma classe, serviço,
+helper, interface, config, rota, migration, evento nem dependência nova para deletar.
+
+| # | Sugestão de corte cogitada | Aplicada? | Motivo |
 |---|---|---|---|
-| — | a rodar | — | — |
+| **P-1** | um ponto único em classe própria (serviço/action) em vez de método de model | **já recusada no D-01** | o plano proíbe classe nova, e a irmã `urlDaLogo()` já define o lugar. Zero indireção |
+| **P-2** | `->state()` e `->url()` chamam `urlDoPainel()` duas vezes por registro; guardar em variável | **não** | o método é leitura pura do `slug` já carregado — **0 consultas**, medido por CT-14. Fechar sobre uma variável trocaria custo zero por indireção |
+| **P-3** | o `?->` de `TenantForm` sobrepõe `->visible(fn (?Tenant $record) => $record !== null)` | **não** | não cortam a mesma coisa: a `visible` governa o **render** e é o que CT-06 prova; o `?->` mantém a resolução do state fora de erro no `CreateTenant`. E cortar um `?->` não tira linha nenhuma |
+| **P-4** | `->color('primary')` e o par `->icon()`/`->iconPosition()` das telas de leitura | **não** | são a afordância de link e o aviso de nova aba (QA-13), não decoração. `->color('primary')` é **token**, que é o que `.ai/rules/css-filament.md` pede |
+
+**net: -0 linhas.** O step 6 estava declarado no `01` e o checkbox ficou aberto até o quality gate
+(QA-11) — o atraso é o achado, não o resultado.
 
 ## Blockers
 
@@ -266,15 +281,21 @@ exige que o gerador produza o endereço morto antes de afirmar a ausência dele.
 Nenhuma das duas é `/app` solto: a raiz do painel de negócio aparece legitimamente no `/admin` (o
 seletor de painéis), e a asserção nasceria vermelha contra a instalação correta.
 
-#### D-05.b — o `04` diz "oito linhas de formato e a nona de unicidade", e a tabela tem oito
+#### D-05.b — o `04` dizia "oito linhas de formato e a nona de unicidade", e a tabela tem oito
 
-Achado de **especificação**, não de teste, e por isso registrado aqui em vez de corrigido: a prosa
-de R8 no `04` (`## Regra R8` → "Uma recusa por linha") conta **nove** linhas em CT-16, enquanto a
-tabela de `Examples` logo acima lista **oito** — sete de formato (`../outra`, `acme/painel`,
-`acme painel`, `acme?x=1`, `acme.painel`, `acme%2fpainel`, vazio) e uma de unicidade (`globex`). O
-teste segue a **tabela**, que é a parte executável do cenário: 8 linhas no dataset. A contagem da
-prosa vem de antes de D-03 ter trocado a linha `acento` por duas, e não acompanhou. Fica para a
-próxima passagem no `04`.
+> **FECHADO em 2026-09-21** (achado **QA-12** do quality gate). Ele tinha sido adiado para "a
+> próxima passagem no `04`" — a passagem aconteceu (o adendo do step 7.5) e ele não foi fechado
+> nela. Fechar adiamento é o que o gate mede.
+
+A prosa de R8 no `04` (`## Regra R8` → "Uma recusa por linha") contava **nove** linhas em CT-16,
+enquanto a tabela de `Examples` logo acima lista **oito** — **sete** de formato (`../outra`,
+`acme/painel`, `acme painel`, `acme?x=1`, `acme.painel`, `acme%2fpainel`, vazio) e **uma** de
+unicidade (`globex`). O teste segue a **tabela**, que é a parte executável do cenário: 8 linhas no
+dataset.
+
+A contagem da prosa vinha de antes de D-03 ter trocado a linha `acento` por duas, e não acompanhou.
+Corrigida nos dois lugares do `04`: "sete linhas são de formato e a oitava é de unicidade", e "o
+`Dado` novo vale para as oito linhas… das sete primeiras".
 
 #### D-05.c — dois dos quatro passam com o `app/` revertido, e isso é o desenho
 

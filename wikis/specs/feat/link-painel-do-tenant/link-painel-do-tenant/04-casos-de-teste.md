@@ -845,8 +845,8 @@ as cinco linhas apontam para a mesma organização.
 ```
 
 **Uma recusa por linha**: cada linha do CT-16 é uma partição isolada — combinar duas deixaria a
-primeira validação a disparar mascarando a segunda. Oito linhas são de **formato** (o valor não
-serve de segmento de URL) e a nona é de **unicidade** (o valor serve, mas já é de outra
+primeira validação a disparar mascarando a segunda. **Sete** linhas são de **formato** (o valor não
+serve de segmento de URL) e a **oitava** é de **unicidade** (o valor serve, mas já é de outra
 organização): é a mesma regra R8 e o mesmo oráculo — o campo acusa erro, e o gravado não muda.
 
 **O não-efeito do CT-16 tem alvo**: a organização existe, gravada com `acme`, e o caminho feliz
@@ -882,8 +882,8 @@ distintos por construção, e nenhum deles exercita a gravação.
 
 A partição é **irmã** das outras do CT-16 — "valor que o campo tem de recusar, e o gravado não
 muda" — e por isso cabe como linha dos `Exemplos`, com o `Dado` acrescentando a segunda organização.
-O `Dado` novo vale para as nove linhas: uma organização a mais no banco não muda o veredito das
-oito primeiras, e evita um segundo esquema para uma linha só.
+O `Dado` novo vale para as **oito** linhas: uma organização a mais no banco não muda o veredito das
+**sete** primeiras, e evita um segundo esquema para uma linha só.
 
 > **Medido, não suposto.** O cenário **PASSA** hoje. `->unique()` do Filament ignora o próprio
 > registro **por padrão** nesta versão — `$ignoreRecord ??= $component->shouldUniqueValidationIgnoreRecordByDefault()`
