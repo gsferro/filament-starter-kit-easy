@@ -61,9 +61,14 @@
       verdes
 - [x] `composer test:kit` — **2657 casos, 2657 verdes, 10 390 asserções**
 - [x] **Custo medido** — ver `## Notas de Implementação`: **33 / 53** antes, **33 / 53** depois
-- [x] Citações `arquivo:símbolo:linha` reverificadas por `tests/Kit/CitacoesDeCodigoTest.php`
-      (CT-26) — inclui a **citação de terceiro** do achado R2 e mais **duas** que o próprio diff
-      deslocou, listadas nos desvios
+- [x] Citações `arquivo:símbolo:linha` da superfície **viva** (`app/`, `docs/`, rules, README,
+      CHANGELOG) reverificadas por `tests/Kit/CitacoesDeCodigoTest.php` (CT-26) — inclui a
+      **citação de terceiro** do achado R2 e mais **duas** que o próprio diff deslocou
+- [x] Citações **da wiki** (`wikis/specs/**`) conferidas **à parte**, por varredura mecânica —
+      `[CT-26]` **exclui esse glob** por decisão registrada na v0.36.0, então ele nunca as viu.
+      **14 erradas** na árvore do ciclo 1, **zero** hoje no `03`/`04`; as do `00` no **Adendo 1**.
+      Conferido também que cada correção aponta para a **declaração** e não para uma menção em
+      docblock — a armadilha que a wiki irmã (`layout-compact`) produziu ao corrigir as dela
 - [x] Falsificabilidade — com o `app/` revertido ao merge-base
       (`git checkout fbfe528 -- app/`), **26 dos 44** casos ficam vermelhos (13 falhas de asserção
       + 13 erros por método inexistente), remedido em 2026-09-21. Dos **cinco** casos que entraram
@@ -90,7 +95,7 @@
 | `filament.md` | `app/Filament/**` | **aplicada** | nenhuma Action nem item de navegação novo (por isso `tests/Kit/PermissoesDeAcoesTest.php` não pede declaração de autorização — é um dos motivos de a superfície ser coluna e `TextEntry`, e não `Action`); nenhuma construção reprovada pelo Blueprint (`filacheck`: 17/17, `AderenciaAoBlueprintTest` verde); nenhum `assignRole`/`syncRoles`; nada de papel, permissão ou seeder |
 | `resources.md` | `app/Filament/App/Resources/**` | **n.a.** | a feature toca `Admin/Resources`, não `App/` |
 | `filament-resources.md` | `app/Filament/**/Resources/**` | **n.a. no que ela exige** | a rule governa Resource novo (badge de contagem, colisão de trait, scope em `getEloquentQuery()`); a feature não cria Resource nem toca `getEloquentQuery()`. `BadgeDeNavegacaoTest`/`BadgeDeNavegacaoTenancyTest` continuam verdes |
-| `specs.md` | `wikis/specs/**` | **aplicada — reconferida em 2026-09-21** | a evidência anterior (`tests/Kit/CitacoesDeCodigoTest.php:[CT-26]`) **não cobre este glob**: o gate exclui `wikis/specs/**` por decisão explícita da v0.36.0, registrada no docblock dele. Era exatamente o glob da rule, e por isso QA-01 achou **doze** citações erradas na wiki. A evidência agora é a conferência mecânica prescrita pela rule — extrair as citações dos `.md` da wiki e exigir que `sed -n "{linha}p" {path}` contenha o símbolo —, com as do `03` e do `04` corrigidas na fonte e as do `00` (imutável) no **Adendo 1**. O `[CT-26]` continua valendo para a superfície **viva** (`app/`, `docs/`, rules, README, CHANGELOG), que é onde ele achou as três do D-04 |
+| `specs.md` | `wikis/specs/**` | **aplicada — reconferida em 2026-09-21** | a evidência anterior (`tests/Kit/CitacoesDeCodigoTest.php:[CT-26]`) **não cobre este glob**: o gate exclui `wikis/specs/**` por decisão explícita da v0.36.0, registrada no docblock dele. Era exatamente o glob da rule, e por isso QA-01 achou **14** citações erradas na wiki — 13 no `03`/`04` e as do `00`. *(este texto dizia "doze" até 2026-09-22; o gate remediu e achou duas que a própria lista do relatório não trazia, por serem caminho solto que não resolve da raiz do repo.)* A evidência agora é a conferência mecânica prescrita pela rule — extrair as citações dos `.md` da wiki e exigir que `sed -n "{linha}p" {path}` contenha o símbolo —, com as do `03` e do `04` corrigidas na fonte e as do `00` (imutável) no **Adendo 1**. O `[CT-26]` continua valendo para a superfície **viva** (`app/`, `docs/`, rules, README, CHANGELOG), que é onde ele achou as três do D-04 |
 | `app.md` | `app/**` | **n.a. no que ela exige** | o diff toca `app/Models/Tenant.php` e três schemas, então o glob casa. A rule governa atribuição de papel/permissão (`assignRole`/`syncRoles`) e DTO: o diff não tem nenhum dos dois — o método novo é leitura pura e as três entradas são declarativas. Linha ausente até o quality gate (**QA-10**): a rule não estava violada, mas "rule sem linha na tabela" é achado por si |
 | `testes.md` | `tests/**` | **aplicada** | nenhum helper cruzado (os quatro do arquivo novo são usados só por ele — `HelpersDeTesteTest` verde); `noPainelBootado('admin')` + `->loadTable()` em todo caso de listagem; `semComentarios()` na única asserção de ausência sobre arquivo (CT-02); `TestHandler` no channel real em CT-09; CT-19 em `tests/Kit` porque é a única suíte com a tenancy desligada; `fronteiraDeRequest()` entre painéis em CT-09 e CT-10 |
 | `models.md` | `app/Models/**` | **n.a. no que ela exige** | `Tenant` não tem Resource no `/app` (`ModeloCacheavel` não se aplica), e a feature não acrescenta `SoftDeletes` nem `InteractsWithMedia`. O método novo é leitura pura, sem query |
@@ -100,7 +105,7 @@
 **Ciclo 1 (2026-09-21) — REPROVADO → especificação.** Blocker 0 · Major 3 · Minor 9 · Cosmético 2.
 Relatório completo em `06-relatorio-qa.md`. Nenhum achado de implementação: o código atende
 RQ-01..RQ-05 e as quatro ADRs, e os três Major são texto contra a árvore — **QA-01** (a rule
-`specs.md` violada em 13 citações da wiki, e a evidência declarada aponta um gate que exclui
+`specs.md` violada em 14 citações da wiki, e a evidência declarada aponta um gate que exclui
 `wikis/specs/**`), **QA-02** (o `04` diz que CT-21/CT-22 "ainda não escrito" e que o gate `04 →
 teste` está aberto, com o D-05 já fechado) e **QA-03** (D-05.a ainda sustenta a string
 `?tenant={uuid}`, que é o achado 1 do step 7.5). Abertos também QA-04 a QA-14. **O PR não abre até
@@ -112,10 +117,13 @@ achado, com os números **remedidos** e as citações **reconferidas por grep** 
 relatório. QA-07 e QA-08 (destino 3) fecharam em `df00ddf` e QA-13 (destino 2) em `24b7f9c`. O
 detalhe de cada um está em `06-relatorio-qa.md` → `## Fechamento`.
 
-**Fica aberto um item**, declarado e não escondido: a 13ª citação do QA-01 vive no **docblock de
-`Tenant::urlDoPainel()`** — `HasRoutes.php:193`, forma sem símbolo, e a linha do `return` é a
-**194** (a 193 é branca). Ela é `app/`, não wiki, e a correção é de código: fica para quem estiver
-com o `app/` na mão.
+~~**Fica aberto um item**~~ — **fechado** no commit `5390093`, em 2026-09-21. A citação vivia no
+docblock de `Tenant::urlDoPainel()` (`HasRoutes.php:193`, forma sem símbolo) e a linha do `return`
+é a **194**; a 193 é branca. Ela era `app/` e não wiki, então ficou fora do escopo do agente que
+fechou os documentais — corretamente — e foi fechada em seguida.
+
+*(este parágrafo continuou dando o item por aberto depois de ele ter sido fechado — achado QA-18
+do ciclo 2.)*
 
 **Ciclo 2 (2026-09-21) — REPROVADO → especificação.** Blocker 0 · Major **2** · Minor **3** ·
 Cosmético **2**. Sete achados **novos** (QA-15 a QA-21), nenhum repetido do ciclo 1 — logo o loop

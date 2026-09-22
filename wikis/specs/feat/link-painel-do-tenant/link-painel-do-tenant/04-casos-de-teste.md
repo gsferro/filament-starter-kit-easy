@@ -31,7 +31,7 @@ P×I ≤ 6. Justificativa do I=3:
 - Técnicas aplicadas: EP, BVA 3-valores (comprimento do slug), **partição de unicidade**, tabela
   estado × operação, matriz persona × portão, rastreio de efeito (log, pivot), contagem de queries,
   varredura de código-fonte (ausência do literal do caminho), inventário de telas.
-- Cenários: **23** · Regras: **9** · Mutantes previstos: **36** · Sem matador: **0** ·
+- Cenários: **24** · Regras: **9** · Mutantes previstos: **38** · Sem matador: **0** ·
   Lacunas declaradas: **3** (uma delas reduzida a **meia** célula — ver `## Lacunas Declaradas`)
 
 > **Este arquivo foi reconciliado DEPOIS da implementação, e a ordem invertida é deliberada.** A
@@ -369,10 +369,10 @@ regex, ele conta comentário como chamada"). O que a cláusula queria dizer — 
 montado à mão — já é o **primeiro** `Então`, e o que ela realmente protegeria (o endereço apontar
 para o lugar errado) é CT-01 e CT-03. Registrado em `### Cogitado e cortado`.
 
-> ⚠️ **Divergência viva.** O teste de CT-02 ainda carrega a asserção cortada, na forma de um
-> `preg_match` sobre a fonte (`tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:133`). Ela não está
-> mais especificada aqui: é linha a **remover do teste**, não cenário a reescrever. Achado
-> roteado ao destino "implementação/teste", não à especificação.
+> ✅ **Fechada** no commit `3c326bf`, **antes** do ciclo 1 do quality gate. O `preg_match` saiu do
+> teste e o docblock de CT-02 registra o corte. Este aviso continuou aqui dizendo "divergência
+> viva" e apontando uma linha que hoje está em branco — achado QA-16 do ciclo 2, mesma família do
+> QA-02: o texto sobreviveu à correção que ele descrevia.
 
 **Discriminância dos valores.** `acme-do-brasil` e não `acme`: um slug de um só termo não distingue
 "o endereço termina com o slug" de "o endereço termina com o nome em minúsculas". A **segunda
@@ -984,7 +984,14 @@ antes das migrations. Vale para CT-19 **e** para CT-21.
 |---|---|---|
 | M27 | a entrada é acrescentada fora do `TenantResource` (num hub, num widget, no menu) e fica alcançável sem tenancy, onde o gerador não tem rota | CT-19 **em parte** (só a tela do resource) + **CT-21** (as demais telas do `/admin`) |
 | M28 | `canAccess()` ou `shouldRegisterNavigation()` do `TenantResource` perdem a condição de config no diff da feature | CT-19 |
-| M36 | a entrada nasce num **widget do dashboard** ou no **menu do usuário** do `/admin`, e sem tenancy o gerador chama um painel `app` que não está registrado — a tela inteira responde **500**, não link quebrado | CT-21 |
+| M36 | **a guarda `hasTenancy()` sai de `Tenant::urlDoPainel()`** — sem tenancy o gerador devolve `/app/{uuid}`, um link morto que responde 404, em vez de `null` | **CT-23** |
+| M37 | a entrada nasce num **widget do dashboard** ou no **menu do usuário** do `/admin`, e sem tenancy o gerador chama um painel `app` que não está registrado — a tela inteira responde **500**, não link quebrado | CT-21 |
+
+*(renumerado em 2026-09-22, achado QA-15 do ciclo 2: o ID **M36 tinha duas definições e dois
+matadores** neste mesmo arquivo — esta tabela dizia "widget/menu → CT-21" e o adendo do
+`/code-review` dizia "guarda `hasTenancy()` → CT-23", **medindo** que CT-19 e CT-21 seguem verdes
+sem a guarda. O contador "36 com matador" contava um ID que significava duas coisas. Separados:
+a guarda é M36, matada por CT-23; a entrada fora do resource é M37, matada por CT-21.)*
 
 ---
 
@@ -1117,6 +1124,7 @@ que é o que a feature possui — o custo da tela é da lacuna 3).
 | CT-21 | com a tenancy desligada nenhuma tela do `/admin` estoura nem oferece o link | R9 | EP (config) × inventário de telas | Feature (`GET`) | `tests/Kit/LinkDoPainelSemTenancyTest.php` | M27 |
 | CT-22 | seguir o link de organização inativa, sem vínculo, é recusado nas duas leituras | R5 | invariante das duas leituras | Feature (`GET`) | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | **M33** |
 | CT-23 | sem tenancy o gerador devolve `null`, e não o `/app/{uuid}` morto | R9 | EP (config), chamada direta do gerador | Feature (PHP puro) | `tests/Kit/LinkDoPainelSemTenancyTest.php` | **M36** |
+| CT-24 | as três superfícies **avisam** que o link troca de aba | R1 | inventário das três superfícies × forma do aviso | Feature (schema resolvido) | M38 |
 
 **36 mutantes previstos, 36 com matador, 0 sem** — `M01`..`M36`, nenhum ID pulado, conferido por
 `grep -o "M[0-9][0-9]" 04-casos-de-teste.md | sort -u | wc -l`. (M36 entrou pelo `/code-review` —
@@ -1219,7 +1227,7 @@ reconcilia os dois, e a coluna **"estado"** diz de qual lado cada achado estava.
 | **A-2** | RQ-02 é cláusula de **lugar** ("na onde tem a parte que cadastra o nome e a slug"), e nenhum cenário afirmava lugar — um header action passaria em todo cenário de HTML | **já fechado no teste** — CT-04 sobe `getContainer()->getParentComponent()` e afirma `Section` + `getHeading() === 'Identificação'` | `Então` novo em CT-04 (a seção que contém a entrada) + mutante **M30** + linha nova em `## Fronteira com o Plano` |
 | **A-3** | M01 (`url('/app/'.$slug)`) só tem matador se CT-02 tiver **sujeito**, e o `04` não dizia qual arquivo | **já fechado no teste** — o gerador ficou em arquivo próprio, `Tenant::urlDoPainel()` | o sujeito do CT-02 está nomeado e citado: `app/Models/Tenant.php:urlDoPainel:164` (D-01 do `03`) |
 | **A-4** | *(ver A-2 — mesma cláusula, o lado da hierarquia do schema)* | **já fechado no teste** | idem A-2 |
-| **A-5** | 🔴 **bloqueava**: a varredura SFDIPOT inventariou `slug (alphaDash, unique, maxLength(120))` e R8 recolheu **duas** das três. O `unique` não tinha mutante nem cenário — e é ele que faz o endereço **identificar** a organização | **aberto nos dois lados** | 9ª linha dos `Exemplos` de CT-16 (`globex`), `Dado` com a segunda organização, mutante **M34**, `### A unicidade` em R8 e linha nova no `## Checklist de Taxonomia`. **Sondado: PASSA hoje** |
+| **A-5** | 🔴 **bloqueava**: a varredura SFDIPOT inventariou `slug (alphaDash, unique, maxLength(120))` e R8 recolheu **duas** das três. O `unique` não tinha mutante nem cenário — e é ele que faz o endereço **identificar** a organização | **aberto nos dois lados** | 8ª linha dos `Exemplos` de CT-16 (`globex`) — *era "9ª" até 2026-09-22; o QA-12 removeu uma linha em outra seção e este número ficou para trás*, `Dado` com a segunda organização, mutante **M34**, `### A unicidade` em R8 e linha nova no `## Checklist de Taxonomia`. **Sondado: PASSA hoje** |
 | **A-6** | `fronteiraDeRequest()` não estava no `## Setup Global`, e sem ela um cenário que atravessa dois painéis morre em **500** — o `SpotlightActionRegistry` é singleton e acumula as ações de todo painel visitado | **já fechado no teste** — presente entre as visitas em CT-09 e CT-10 | subseção `### fronteiraDeRequest() entre visitas que trocam de painel` no `## Setup Global`, com o motivo |
 | **A-7** | M27 fala em "hub, widget, menu" e CT-19 alcança **um** lugar só. Um widget do `/admin` ou item do menu do usuário que renderizasse o link derrubaria a tela inteira em **500** sem tenancy, e CT-19 ficaria verde | **aberto nos dois lados** | **CT-21** (novo) + mutante **M36**. Varre `tests/Pest.php:telasDoKit:225`, que o `InventarioDeTelasTest` já obriga a manter completa |
 | **A-8** | a lacuna 1 (`inativa × seguir`) foi declarada **inteira**, mas a célula tem **duas** metades e só uma é contestada: sem vínculo, `canAccessTenant()` nega independente de `ativo` e `getTenants()` também — as duas leituras **concordam** | **aberto nos dois lados** | **CT-22** (novo) + mutante **M33**; a lacuna 1 reduzida a **meia** célula. É a técnica do invariante das duas leituras, que o `04` já aplicava na lacuna 2 |
@@ -1250,6 +1258,35 @@ Cortar é resultado de revisão tanto quanto acrescentar, e os dois estão regis
 | **D-03** | a linha `acento` de CT-16 estava do lado **errado**: `alpha_dash` é unicode-aware (`/\A[\pL\pM\pN_-]+\z/u`), e `organização` **grava** | o acento migrou para CT-18, lado **válido**; entraram `acme.painel` e `acme%2fpainel`, que o `\pL` recusa de fato e que cobrem o risco de segmento de URL |
 | **novo** | ninguém havia afirmado que `Panel::getUrl()` **não** percent-encoda o segmento (o `e()` do helper escapa HTML, não URL) | vira **asserção** em CT-18 (linha `organização`), não lacuna: é falsificável em uma linha, tem mutante (**M35**), e é a premissa que CT-01/CT-03/CT-05/CT-15 já consomem ao comparar endereço com string |
 
+
+---
+
+## Adendo 2 — o CT-24, do ciclo 2 do quality gate (2026-09-22)
+
+O QA-13 do ciclo 1 apontou que a **ficha** não sinalizava a nova aba — o formulário avisava por
+`helperText`, a listagem por ícone, e ela não avisava nada. A correção entrou, e o **ciclo 2
+apontou que ela entrou sem caso** (QA-19): apagar o `->icon()` deixava os 44 casos verdes.
+
+```gherkin
+    Cenário: [CT-24] As três superfícies avisam que o link troca de aba
+      Dado uma organização cadastrada
+      Então a ficha declara um ícone na entrada do painel
+      E a listagem declara um ícone na coluna do painel
+      E o formulário exibe "Abre em nova aba"
+```
+
+**O oráculo é o SINAL, não o destino.** Afirmar `target="_blank"` aqui mediria o que CT-04 e CT-15
+já medem. Trocar de aba sem avisar é defeito de usabilidade **mesmo com o `href` perfeito**.
+
+**E o oráculo muda de natureza conforme a superfície**, o que é a parte interessante:
+
+| Superfície | Aviso | Oráculo | Por quê |
+|---|---|---|---|
+| ficha, listagem | ícone | **estrutural** — `getIcon()` da entrada e da coluna | marcação de ícone é detalhe de render do vendor; afirmar sobre o HTML seria frágil |
+| formulário | prosa | **texto renderizado** — `assertSee()` | `helperText()` é açúcar sobre `belowContent()` (`vendor/filament/forms/src/Components/Concerns/HasHelperText.php:12`) e não tem getter. E o que importa ao usuário é a frase aparecer. A string é do kit, não do vendor |
+
+**M38** — o aviso some de qualquer uma das três. Verificado por mutação em 2026-09-22: ficha sem
+ícone, listagem sem ícone e formulário sem a frase deixam o caso vermelho, cada um por conta.
 
 ---
 
