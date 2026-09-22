@@ -788,6 +788,41 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
      */
     public function canAccessTenant(Model $tenant): bool
     {
+        /*
+         * Organização INATIVA é barrada para todo mundo, inclusive o `master_global`.
+         *
+         * Este método e `getTenants()` respondem à mesma pergunta em dois momentos — quem pode
+         * entrar, e o que aparece no seletor — e estavam **assimétricos**: o seletor filtrava
+         * `ativo`, a rota não. O efeito era um painel que ABRE para uma organização desativada,
+         * com um seletor que não a contém: quem entrasse não teria como sair dela a não ser
+         * trocando a URL à mão.
+         *
+         * A assimetria é anterior ao link de acesso direto; o que o link fez foi transformá-la
+         * numa afordância de um clique, e escrever ao lado dela um `helperText` que enumera os
+         * desfechos como exaustivos — *"sem papel recebe 403; com papel e sem vínculo recebe
+         * 404"*. A organização desativada era um terceiro desfecho que não é nenhum dos dois.
+         * Achado do `fw-revisor-diff` (RD-02) na inspeção da `v0.38.0`.
+         *
+         * A guarda vem ANTES do `isMasterGlobal()` de propósito: `getTenants()` também exclui
+         * inativa dele, então liberar a rota aqui recriaria a assimetria pelo outro lado.
+         *
+         * Motivo próprio no log (`organizacao_inativa`, não `sem_vinculo`): quem lê a trilha
+         * precisa distinguir "não é seu" de "está desativada" — as duas negam, e só a segunda se
+         * resolve reativando a organização.
+         */
+        if ($tenant instanceof Tenant && ! $tenant->ativo) {
+            Log::channel('tenancy')->warning(
+                "[User@canAccessTenant] Acesso a tenant negado | user: {$this->id} - tenant: {$tenant->getKey()}",
+                [
+                    'user_id'   => $this->id,
+                    'tenant_id' => $tenant->getKey(),
+                    'motivo'    => 'organizacao_inativa',
+                ],
+            );
+
+            return false;
+        }
+
         if ($this->isMasterGlobal()) {
             return true;
         }

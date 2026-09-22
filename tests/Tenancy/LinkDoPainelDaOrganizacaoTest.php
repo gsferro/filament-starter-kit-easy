@@ -984,3 +984,50 @@ it('[CT-24] as tres superficies avisam que o link troca de aba', function (): vo
     expect($coluna?->getIcon($organizacao->urlDoPainel()))
         ->not->toBeNull('a coluna da listagem não sinaliza a nova aba');
 })->group('tenancy');
+
+/**
+ * CT-25 — organização INATIVA é barrada na rota, para todo mundo.
+ *
+ * ## O terceiro desfecho que o `helperText` não previa
+ *
+ * A entrada do formulário enumera as recusas como exaustivas: *"Quem não tem papel do painel de
+ * negócio recebe 403; quem tem papel mas não está vinculado a esta organização recebe 404."*
+ * Havia um terceiro caso, e ele não era nenhum dos dois — a organização **desativada** abria.
+ *
+ * `User::getTenants()` e `User::canAccessTenant()` respondem à mesma pergunta em dois momentos:
+ * o que aparece no seletor, e quem entra pela rota. Estavam **assimétricos** — o seletor filtrava
+ * `ativo`, a rota não. O painel abria para uma organização desativada com um seletor que **não a
+ * contém**, e quem entrasse não teria como sair dela a não ser editando a URL.
+ *
+ * A assimetria é **anterior** ao link de acesso direto. O que o link fez foi transformá-la numa
+ * afordância de um clique e escrever ao lado dela uma promessa incompleta. Achado do
+ * `fw-revisor-diff` (RD-02) na inspeção da `v0.38.0`.
+ *
+ * ## `master_global` também é barrado, e é de propósito
+ *
+ * `getTenants()` já exclui a inativa dele. Liberar a rota só para ele recriaria a assimetria pelo
+ * outro lado: entraria numa organização que o próprio seletor dele não oferece.
+ *
+ * ## O motivo do log é outro, e isso importa para quem lê a trilha
+ *
+ * `organizacao_inativa`, não `sem_vinculo`. As duas negam, e só a segunda se resolve reativando a
+ * organização — quem investiga precisa distinguir "não é seu" de "está desligada".
+ */
+it('[CT-25] organizacao inativa e barrada na rota, inclusive para o master global', function (string $papel): void {
+    $inativa = Tenant::factory()->create(['nome' => 'Globex', 'slug' => 'globex', 'ativo' => false]);
+
+    $usuario = usuarioComPapel($papel);
+
+    if ($papel !== 'master_global') {
+        $usuario->tenants()->syncWithoutDetaching([$inativa->getKey()]);
+    }
+
+    expect($usuario->fresh()->canAccessTenant($inativa))->toBeFalse(
+        "o papel `{$papel}` entrou numa organização desativada",
+    );
+
+    // E o seletor concorda — é a simetria que o caso existe para travar.
+    expect($usuario->fresh()->getTenants(Filament::getPanel('app'))->contains($inativa))->toBeFalse(
+        'o seletor ofereceu a organização desativada',
+    );
+})->with(['master_global', 'admin'])->group('tenancy');
