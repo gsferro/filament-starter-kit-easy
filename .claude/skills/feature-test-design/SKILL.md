@@ -1,6 +1,6 @@
 ---
 name: feature-test-design
-version: 1.12.0
+version: 1.14.0
 description: >
   Deriva casos de teste que MATAM defeito, a partir do requisito — não do plano e
   nunca do código. Invoque no step 4 da feature-wiki (antes de implementar), quando
@@ -91,6 +91,12 @@ Fonte primária é o `00-requisito.md`. O PRD (`01`) entra só para nomes, paths
 >
 > É o mesmo mecanismo pelo qual o PRD não serve de oráculo para o `feature-quality-gate`:
 > validar contra a interpretação confirma a interpretação.
+
+**Corolário: log não é cláusula.** O template antigo da `feature-wiki` pedia "CTs de log" e esta
+skill deriva só do `00` — o conflito foi medido em 2026-09-21 (helper de log declarado e nunca
+usado, zero CT de log, 17 logs conferidos um a um pela dimensão D do quality gate). Resolvido: o
+log é **saída observável do plano**, conferida pela `feature-quality-gate`; só vira cenário aqui
+quando o requisito pede trilha de auditoria — e então é `RQ`.
 
 ### 2. Cenário sem mutante morto não é caso de teste
 
@@ -1113,6 +1119,11 @@ passa hoje e quebra no upgrade.
 
 ### Fixtures
 - `{Model}::factory()->{state}()` — {estado}
+- **Situação de partida com ciclo de vida: por transições reais.** Helper `{entidade}Em('{situacao}', [...])`
+  em `tests/Pest.php` que chama a máquina de estados do domínio (`enviar()`, `aprovar()`…) em vez de
+  gravar `situacao` à força. Reimplementar a transição no teste esconde o defeito que o teste existe
+  para pegar. Medido (2026-09-21): a fixture por transição expôs que a notificação real exigia
+  contexto de painel — um `create(['situacao' => …])` nunca mostraria
 
 ### Fakes
 - `Queue::fake()` / `Mail::fake()` / `Notification::fake()` / `Http::fake()` + `Http::preventStrayRequests()`
@@ -1343,7 +1354,19 @@ vendor/bin/pest tests/Feature/{Feature} --mutate --path=app/Services
 vendor/bin/pest tests/Feature/{Feature} --mutate --path=app/Services --min=70
 ```
 
-- Exige driver de cobertura (**PCOV ou Xdebug** com `XDEBUG_MODE=coverage`)
+- Exige driver de cobertura (**PCOV ou Xdebug** com `XDEBUG_MODE=coverage`). *"Sem driver"* e
+  *"plugin ausente"* só se declaram com a prova negativa colada (`php -m | grep -i "pcov\|xdebug"`,
+  `ls vendor/pestphp/`) — em 2026-09-21 as duas afirmações estavam na wiki e as duas eram falsas
+- **No Windows, `pest --mutate` dá 100 % falso.** O plugin relança `argv[0]` (`vendor/bin/pest`,
+  script sh) por Symfony Process; o `cmd` não o executa, cada subprocesso sai com código 1 em ~30 ms
+  e o plugin conta saída não-zero como mutante morto. Sintoma: *206 mutantes em 3 s* para uma suíte
+  de 200 s. **Score só vale com `Duration` compatível com N × tempo dos testes cobridores e com a
+  lista de sobreviventes.** Solução: um `.cmd` poliglota na raiz (batch que chama `php` sobre si
+  mesmo e, como PHP, faz `require` do `vendor/pestphp/pest/bin/pest`) e
+  `cmd //c pestw.cmd … --mutate --path=… --covered-only --parallel` — o texto completo do lançador
+  está na seção *Pest 5* da `feature-wiki`. Medido de verdade: 206 mutantes, 196 mortos, 7 timeout,
+  3 sobreviventes, 98,54 % em 594 s
+- **`--testsuite=A --testsuite=B` só honra o último** — uma suíte por comando
 - **Confirmar que `pestphp/pest-plugin-mutate` está declarado no `composer.json`.** Ele costuma
   aparecer em `vendor/` como dependência transitiva do Pest 5 — o comando funciona por acidente da
   árvore de dependências e some num `composer update`. Se estiver só transitivo, incluir
@@ -1376,7 +1399,16 @@ vendor/bin/pest tests/Feature/{Feature} --mutate --path=app/Services --min=70
 **Disparo**: perfil **completo** em qualquer área, **ou Impacto 3** em qualquer área (ver
 [Passo 0](#passo-0--perfil-de-esforço-por-risco)). Uma única rodada cobre o `04` inteiro.
 
-Delegar a um **sub-agente que não derivou os cenários**, com este contrato:
+Delegar a um **sub-agente que não derivou os cenários**, com este contrato. No Claude Code a rota é
+`fw-adversario-ct` (`opus`, sem `Edit`/`Write`/`Bash`; definição em
+[`agents/fw-adversario-ct.md`](agents/fw-adversario-ct.md) desta skill, que o Claude Code só enxerga
+depois de `cp .ai/skills/*/agents/*.md .claude/agents/`) ou
+`general-purpose` com `model: opus` **explícito** — o mais forte disponível, porque classificar
+se um oráculo está correto é a tarefa em que modelos são comprovadamente piores do que em gerá-lo.
+A cegueira vem da construção: o sub-agente recebe **só** o que a linha `Entrada` lista, e o
+orquestrador registra o disparo em `## Despachos` do `03`. Host sem sub-agente: rodar em linha e
+declarar no `04` — *"Revisão adversarial: em linha, mesma sessão que derivou"* — porque o
+resultado vale menos:
 
 ```text
 Entrada: 00-requisito.md + 04-casos-de-teste.md (e 05, se houver)
@@ -1389,6 +1421,13 @@ Tarefa: PROVAR que este conjunto deixa passar um defeito.
      implementação defeituosa (assertOk sozinho, assertSee de layout,
      assertDatabaseHas só com a chave, ausência de assertion sobre o valor)
   4. Aponte todo cenário sem nenhum "Então" e todo cenário com mais de um "Quando"
+  5. Para cada PAR de papéis do requisito, pergunte: o conjunto tem cenário em que a mesma
+     pessoa acumula os dois? (solicitante × aprovador; aprovador da etapa 1 × aprovador da
+     etapa 2). Par sem cenário é lacuna
+  6. Para cada recorte de visibilidade, pergunte: quem JÁ PARTICIPOU continua vendo? e o link
+     de toda notificação leva a um destino que o destinatário ainda vê?
+  7. Para cada texto livre do requisito, pergunte: há cenário no teto (n, n+1) — no model, não
+     só no formulário?
 
 Saída: lista de lacunas, cada uma com a regra, a técnica faltante e o cenário sugerido,
        + a lista de áreas/regras percorridas (a revisão cobre o conjunto inteiro, não só
@@ -1401,6 +1440,13 @@ PROIBIDO: elogiar o conjunto, reescrever os cenários, dizer "está bom".
 1. **Fechar todos** — cada lacuna vira cenário novo, ou oráculo reescrito, ou lacuna declarada com motivo
 2. **Re-revisar uma única vez**, e só se o fechamento tiver criado **cenário novo** (não se apenas reforçou oráculo existente). Cenário novo introduz superfície nova, e é aí que mora a lacuna de segunda ordem
 3. **Teto de 2 rodadas.** Se a segunda rodada ainda trouxer achado estrutural, o problema não é o conjunto — é a regra, que provavelmente deveria ser duas. Registrar e escalar
+
+> **Medido em 2026-09-21** (feature de aprovação de compra, 60 CTs derivados por `opus`): a rodada 1
+> do adversário cego (`opus`, só `00` + `04`) achou **5 implementações erradas que passavam por
+> todos os cenários**; a rodada 2 achou o estrutural — `R6` eram duas regras (`R6a`/`R6b`). E as
+> perguntas 5–7 acima nasceram do que **nem o adversário** perguntou e o quality gate depois
+> perguntou: gestor que acumula `diretor` assinava as duas etapas sozinho; quem já decidiu perdia a
+> solicitação de vista. A cegueira pesou mais que o modelo — os dois eram `opus`.
 
 Registrar no `04` quantos achados a revisão produziu e o que virou cada um. Revisão adversarial
 cujos achados ninguém fecha é teatro caro.
@@ -1430,6 +1476,9 @@ cujos achados ninguém fecha é teatro caro.
     no momento da derivação — seguir isso obriga o agente a imaginar a implementação e testá-la,
     que é a definição de teste tautológico. O critério de suficiência aqui é: **toda regra tem
     seus mutantes previstos mortos**.
+12. **Não derivar CT de log.** Log não é cláusula do requisito; é saída observável do plano, e quem
+    a confere é a dimensão D do quality gate. Exceção: requisito que pede trilha de auditoria —
+    aí é `RQ`, e o cenário afirma o **registro**, não a linha de log.
 11. **Não escrever teste `[CT-nn]` sem o cenário no `04`/`05`.** Cenário descoberto durante a
     implementação nasce **aqui** — Gherkin, regra, mutante — e só depois vira código de teste.
     O caminho inverso, teste escrito e "documentado depois", é a Proibição 1 com outro nome, e
@@ -1480,7 +1529,9 @@ cujos achados ninguém fecha é teatro caro.
 
 ### Pós-implementação
 
-- [ ] `pest --mutate --covered-only --class={escopo da feature}` executado
+- [ ] `pest --mutate --covered-only --path={escopo da feature}` executado — com **duração plausível** e sobreviventes listados (no Windows, via lançador `.cmd`); "sem driver/plugin" só com a prova negativa
+- [ ] CT cujo elemento foi cortado no step 6 da `feature-wiki` (filtro, ação, coluna) marcado `@obsoleto` com motivo e `~~` no índice — não apagado, não deixado órfão
+- [ ] CT novo que passa dos dois lados do `git stash`: reescrito, **ou** declarado "não falsificável nesta pilha" com o motivo (SQLite sem `VARCHAR`/`RESTRICT`)
 - [ ] Mutante sobrevivente traduzido em lacuna de derivação e convertido em cenário novo
 - [ ] Índice de cenários atualizado com o arquivo de teste real de cada CT
 - [ ] **Sincronia nos dois sentidos**: todo `[CT-nn]`/`[CT-Bnn]` do teste existe no `04`/`05`, e todo CT do índice aponta um teste existente ou declara "fundido em CT-nn"; linha de dataset nova existe como Exemplo no Gherkin

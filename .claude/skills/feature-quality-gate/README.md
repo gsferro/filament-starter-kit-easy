@@ -1,11 +1,17 @@
 # feature-quality-gate — QA no Agente
 
-> **Status: implementada — [`SKILL.md`](SKILL.md) v1.0.0.**
+> **Status: implementada — [`SKILL.md`](SKILL.md) v1.5.1.**
 > Requer `feature-wiki` ≥ **2.10.0** (que introduziu o `00-requisito.md`, o oráculo desta skill).
 >
 > Este documento é o registro da pesquisa que precedeu a implementação: qual problema ela resolve, o que já existe no mercado (incluindo alternativas MIT), qual lacuna sobra, e por que essa lacuna justificou uma skill nova em vez de instalar o que estava pronto. Ele continua sendo o documento **para humanos** — vantagens, escopo, dependências e limitações.
 >
 > **`SKILL.md` fala com o agente; este README fala com a pessoa.** Procedimento, gates e templates estão no `SKILL.md` e não são duplicados aqui.
+>
+> **Validado em campo (1.5.0, 2026-09-21).** Primeira execução como sub-agente cego (`fw-qa-gate`,
+> `opus`, sem Edit/Write) numa feature completa: `REPROVADO → especificação`, 8 achados — duas
+> perguntas de requisito que ninguém tinha feito e **dois achados contra o próprio orquestrador**
+> (número da Verificação Final sem comando que o reproduza; degradação declarada com a ferramenta
+> presente). A checagem **L6** e a regra de plausibilidade do `--mutate` na dimensão K nasceram daí.
 
 ---
 
@@ -499,6 +505,25 @@ Por isso o `00-requisito.md` na `feature-wiki` é **pré-requisito**, não melho
 | Playwright MCP (`--isolated --headless --caps=testing`) | inventário de elementos, tema/cor, console/rede |
 | Boost MCP (`Browser Logs`, `database-query`, `search-docs`) | evidência de console e conferência de dados |
 | 5-6 skills do `qa-skills` | técnica de QA (SBTM, triagem, repro) |
+| Claude Code com sub-agentes | a skill roda como `fw-qa-gate` (`opus`, **sem Edit/Write**), cega à conversa que escreveu a wiki — "por quem não escreveu" e "não corrige nada" viram construção. Sem isso, roda em linha e o `06` declara `Independência: mesma sessão` |
+
+### Instalação do sub-agente (Claude Code)
+
+A definição do agente vem nesta skill, em [`agents/fw-qa-gate.md`](agents/fw-qa-gate.md), para o
+`boost:add-skill` instalá-la junto. **O Claude Code só lê `.claude/agents/`**, então depois de
+instalar ou atualizar as skills copie os agentes de toda a esteira — uma vez, e de novo a cada
+atualização:
+
+```bash
+mkdir -p .claude/agents
+cp .ai/skills/*/agents/*.md .claude/agents/
+```
+
+No PowerShell: `New-Item -ItemType Directory -Force .claudegents | Out-Null` e
+`Copy-Item -Force .ai\skills\*gents\*.md .claudegents\`.
+
+Sem a cópia, a `feature-wiki` não encontra `fw-qa-gate` e despacha um `general-purpose` com
+`model: opus` — funciona, mas com Edit/Write disponíveis, e o "não corrige nada" volta a ser promessa.
 | PCOV ou Xdebug | pré-requisito do `--tia` |
 
 ---

@@ -1,6 +1,6 @@
 ---
 name: feature-wiki
-version: 3.3.0
+version: 3.5.1
 description: >
   Cria estrutura de documentação wiki para uma feature antes de implementá-la.
   Invoque SEMPRE ao iniciar implementação de qualquer feature nova.
@@ -36,22 +36,30 @@ description: >
   mantém à mão em config, seeders e inventários de teste). O PRD declara o ## Modelo de
   Execução — quantos requests a tela custa, o que é adiado, o que é memoizado por request e o
   que é cacheado entre eles —, porque premissa de custo não escrita produz ADR coerente e
-  errada. O step 7.5 roda revisão de código do diff por quem não implementou, antes do
-  quality gate: é o ÚNICO gate que lê o diff atrás de defeito de correção, e medido numa
-  feature real foi o mais produtivo de todos.
+  errada. O step 6.5 roda revisão de código do diff por quem não implementou, LOGO APÓS os
+  testes passarem e ANTES da reconciliação (7) e do quality gate (8): é o ÚNICO gate que lê o
+  diff atrás de defeito de correção, e medido numa feature real foi o mais produtivo de todos.
+  No Claude Code ele são dois passes no mesmo lote — `/code-review high {base}...HEAD` (alvo
+  explícito, nunca `--fix`) e um passe de eixos Laravel/Livewire por sub-agente cego ao PRD.
+  Quando roda no Claude Code, a skill DESPACHA: tarefa de volume e todo julgamento que exige
+  independência vão para sub-agente via Agent, com modelo roteado por complexidade (haiku
+  mecânico, sonnet construtor, opus analista/juiz) e por cegueira (o juiz não recebe o que o
+  viciaria); todo disparo aparece num quadro visível e fica registrado em ## Despachos do 03;
+  NUNCA general-purpose sem model explícito; o step 8 roda em sub-agente sem Edit/Write.
 ---
 
 # Feature Wiki — Documentação Antes de Implementar
 
-> ## O gate que mais pega defeito é o step 7.5, e ele vem por último
+> ## O gate que mais pega defeito é o step 6.5 — e ele roda assim que os testes passam
 >
 > Esta skill tem oito gates. Sete deles leem **o plano, o requisito ou a tela**. Um só lê **o
-> diff**, e é o [step 7.5 — Revisão de Código do Diff](#75-revisão-de-código-do-diff-obrigatório-antes-do-quality-gate),
+> diff**, e é o [step 6.5 — Revisão de Código do Diff](#65-revisão-de-código-do-diff-obrigatório-logo-após-os-testes-passarem-e-antes-da-reconciliação),
 > com `/code-review` por quem não implementou.
 >
-> Ele está no fim do documento e é o mais fácil de adiar. **É também o mais produtivo.** Medido em
-> 2026-09-17, numa feature com wiki completa — 43 CTs, revisão adversarial com cinco implementações
-> erradas fechadas, auditoria Ponytail com dez cortes aplicados, 61 testes verdes:
+> Até a 3.3.0 ele era o step 7.5: o último antes do quality gate, no fim do documento, e o mais
+> fácil de adiar. **É também o mais produtivo.** Medido em 2026-09-17, numa feature com wiki
+> completa — 43 CTs, revisão adversarial com cinco implementações erradas fechadas, auditoria
+> Ponytail com dez cortes aplicados, 61 testes verdes:
 >
 > | Gate | Achados de correção |
 > |---|---|
@@ -59,14 +67,19 @@ description: >
 > | step 6 — `ponytail-review` (excesso no plano) | 0 — **por charter**: *"correctness bugs, security holes and performance are explicitly out of scope"* |
 > | revisão adversarial do `04` (requisito × cenários) | 0 de correção; 5 de **cobertura**, que é o trabalho dela |
 > | suíte de testes verde, 2.383 casos | 1 (enforço de arquitetura do próprio projeto) |
-> | **step 7.5 — `/code-review` no diff** | **7**, dois deles produzindo 500 em produção |
+> | **step 6.5 (então 7.5) — `/code-review` no diff** | **7**, dois deles produzindo 500 em produção |
 >
 > Os sete não eram visíveis para nenhum gate anterior, e o motivo é estrutural: o step 6 exclui
 > correção por definição, a revisão adversarial só enxerga o que o **requisito** descreve, e o
 > step 8 pergunta *"o requisito foi atendido?"* — nenhum deles pergunta *"este código está certo?"*.
 >
-> **Não trate o 7.5 como formalidade de fim de fila.** Se o orçamento apertar, corte cenário
-> redundante, não este gate.
+> **Não trate o 6.5 como formalidade.** Se o orçamento apertar, corte cenário redundante, não este
+> gate. E ele roda **antes** da reconciliação (step 7), não depois: cada achado confirmado muda
+> código, cláusula e CT — reconciliar antes de revisar é reconciliar duas vezes.
+>
+> **Quem revisa não pode ser quem implementou.** No Claude Code isso é construção, não intenção:
+> o `/code-review` já roda em sub-agente isolado, e o passe de eixos vai para um sub-agente que
+> não recebe o PRD. Ver [Execução e Delegação](#execução-e-delegação-claude-code--roteamento-por-modelo-e-por-cegueira).
 
 ## Glossário
 
@@ -84,6 +97,7 @@ description: >
 ## Índice
 
 - [Quando Invocar](#quando-invocar)
+- [Execução e Delegação (Claude Code)](#execução-e-delegação-claude-code--roteamento-por-modelo-e-por-cegueira)
 - [Fluxo de Execução](#fluxo-de-execução)
   - [1. Descobrir Branch](#1-descobrir-branch-e-estrutura-de-pasta)
   - [2. Definir Nome da Feature](#2-definir-nome-da-feature)
@@ -94,8 +108,8 @@ description: >
   - [5. Revisão Profunda Pós-Escrita](#5-revisão-profunda-pós-escrita-obrigatório)
     - [Varredura da classe irmã](#varredura-da-classe-irmã-obrigatória-para-toda-classe-nova)
   - [6. Auditoria da Wiki com Ponytail-review](#6-auditoria-da-wiki-com-ponytail-review-obrigatório)
+  - [6.5. Revisão de Código do Diff](#65-revisão-de-código-do-diff-obrigatório-logo-após-os-testes-passarem-e-antes-da-reconciliação)
   - [7. Pós-Implementação e Reconciliação](#7-pós-implementação-e-reconciliação-obrigatório-antes-do-pr)
-  - [7.5. Revisão de Código do Diff](#75-revisão-de-código-do-diff-obrigatório-antes-do-quality-gate)
   - [8. Quality Gate e abertura do PR](#8-quality-gate-e-abertura-do-pr-obrigatório-antes-do-pr)
   - [9. Candidatos a Rule](#9-candidatos-a-rule-de-projeto-decisão-do-usuário)
 - [Arquivo 00: Requisito](#arquivo-00-requisito--fonte-da-verdade)
@@ -140,6 +154,219 @@ Ao implementar, o agente deve ler os arquivos nesta ordem:
 
 > **Critério**: se a mudança não adiciona nova lógica de negócio, não altera fluxo de dados e não cria novos arquivos de código → não precisa de wiki.
 > **Bug fix com nova lógica**: se o fix introduz nova regra de negócio, novo estado ou novo fluxo → invocar a wiki.
+
+## Execução e Delegação (Claude Code) — roteamento por modelo e por cegueira
+
+> Vale quando o host expõe sub-agentes (Claude Code: ferramenta `Agent`, agentes em
+> `.claude/agents/`). Em host sem sub-agente (Windsurf, Cursor, Copilot) tudo roda em linha, e a
+> degradação é **declarada** no `03-progresso.md` → `## Despachos`: *"Sem despacho — host sem
+> sub-agente"*. O que se perde não é só custo: perde-se a **independência** dos gates, e o leitor
+> do PR precisa saber disso.
+
+A sessão principal **orquestra, decide e audita**. Tarefa de volume e tarefa de julgamento
+independente **não rodam em linha** — vão para sub-agente pela ferramenta `Agent`, com o modelo
+roteado. Delegar é o padrão; rodar em linha é exceção declarada.
+
+Princípio: **gerar barato, raciocinar sob demanda, auditar caro — e julgar às cegas.**
+
+### Validado em campo — 2026-09-21, feature completa no `demo-wiki`
+
+A 3.4.0 desenhou o modelo; a 3.5.0 o **mediu** numa feature real de ponta a ponta (fluxo de
+aprovação de compra em Laravel 13 / Filament 5: 18 `RQ`, 28 premissas, 79 CTs, 182 testes,
+14 commits, 48 despachos, ~4,6 M tokens de sub-agente, quality gate ciclo 1 devolvido
+`REPROVADO → especificação` com 8 achados). O que a medição **confirmou** vira regra dura nesta
+versão; o que ela **desmentiu** está corrigido nas seções indicadas, cada uma com o caso.
+
+| Confirmado | Evidência |
+|---|---|
+| **Cegueira vale mais que modelo.** O juiz cego acha o que a sessão não acha, mesmo com a sessão num modelo mais forte | duas rodadas adversariais (`opus`, só `00` + `04`) acharam 5 implementações erradas sobre 60 CTs derivados por outro `opus`, e uma regra que eram duas; o 6.5 cego produziu 14 achados que mudaram código, `00` (P-24, P-25) e `04` (CT-76..79) |
+| **O juiz cego acusa a própria sessão.** O step 8 pegou duas alegações falsas da `## Verificação Final` — *"88 citações ok"* sem comando por trás e *"sem PCOV / mutate não instalado"* sem `php -m` — que nenhum gate anterior tinha como ver | QA-03 e QA-04 do ciclo 1; as duas eram do orquestrador, não do código |
+| **O juiz cego faz a pergunta de requisito que ninguém fez** | gestor que acumula `diretor` assinava as duas etapas sozinho; quem já decidiu perdia a solicitação de vista e o link do e-mail virava 404 — QA-01 e QA-02, nascidos só no step 8 |
+| **6.5 antes do 7.** Os 14 achados do 6.5 deslocaram citações, criaram IDs de CT e mudaram frases de ADR | se o 7 tivesse rodado antes, teria sido refeito inteiro |
+| **Contrato de executor com classificação a/b/c** (teste errado / implementação divergente / flake) e *"nunca tocar `app/`"* | 5 lotes de teste; todo vermelho que sobrou era defeito real (CT-58: ação sem registro → 500; CT-59: justificativa sem teto) |
+| **Auditoria do retorno é obrigatória, sobretudo com `haiku`** | 3 de 8 retornos `haiku` tinham defeito (escape de FQCN no grep → *"sem ocorrências"*; `preload()` *"não encontrado"* e existia; *"nada cresce com N"* medido com paginação de 10). Todos pegos por amostragem |
+| **Quadro de despacho mede custo** | 48 linhas em `## Despachos`; a maior parte do custo foi `sonnet` construindo; o `Explore` sozinho custou 139 k tokens |
+
+O que ela **desmentiu**, e onde está a correção: `pest --mutate` dá 100 % falso no Windows
+(seção *Execução de Testes com Pest 5*); `haiku` em lote misto faz um item e reporta três
+(*Rotas*); o `04` derivado antes dos cortes do Ponytail fica com CT órfão (*step 6*); a
+`## Superfície Livewire` envelhece durante a implementação (*step 6.5*); número na
+`## Verificação Final` sem o comando que o gerou é alegação (*Arquivo 03* e *Auditoria do
+retorno*); CT que passa dos dois lados do `git stash` pode ser a pilha, não o CT (*step 6.5*).
+
+### Dois eixos de roteamento, não um
+
+| Eixo | Pergunta | Decide |
+|---|---|---|
+| **Complexidade** | quanto raciocínio a tarefa exige? | o **modelo** (`haiku` → `sonnet` → `opus`) |
+| **Cegueira** | o que o executor **não pode ter visto** para o resultado valer como prova? | o **contexto** que o sub-agente recebe — e, por consequência, que a tarefa **não pode** rodar em linha |
+
+O segundo eixo é o que esta esteira tem de específico. A coletânea inteira existe para quebrar a
+**cegueira correlacionada**: o mesmo agente lê o requisito, escreve o plano, o teste, o código e o
+veredito, e erra coerentemente. Sub-agente é o instrumento mais barato contra isso — ele nasce
+**sem** o contexto da sessão, então *"por quem não implementou"* (step 6.5), *"por quem não
+derivou"* (revisão adversarial da `feature-test-design`) e *"por quem não escreveu a wiki"*
+(step 8) deixam de ser intenção e viram **construção**. Tarefa cuja validade depende de cegueira
+**nunca** roda em linha, mesmo que caiba em dois passos.
+
+### Rotas
+
+| Rota | Modelo | Uso nesta esteira | Ferramentas |
+|---|---|---|---|
+| **mecânico** | `haiku` | grep em lote com a tabela pronta (Superfície Livewire, classe irmã, factories, rotas, policies, config), conferência de citação `arquivo:símbolo:linha`, `diff` de IDs de CT, espelho `01` → `03`, contagens por `grep -c`, `search-docs` uma pergunta por consulta | leitura + Bash |
+| **construtor** | `sonnet` | gerar artefato a partir de template e insumo: rascunho do `01`/`02` a partir do pacote de pesquisa, código de **um** passo do PRD guiado pelo plano e pelo `04`, arquivo de teste a partir do Gherkin | tudo |
+| **analista** | `opus` | julgamento com contexto: revisão profunda do plano (step 5), ADR, derivação do `04` pela `feature-test-design`, os 4 gates de candidato a rule, classificação de achado | leitura + Bash |
+| **revisor-diff** | `opus` | step 6.5, passe de eixos sobre o diff. **Cego ao PRD** | leitura + Bash; **sem** Edit/Write |
+| **adversário-ct** | `opus` | revisão adversarial da `feature-test-design`. Recebe **só** `00` + `04`/`05` | leitura; **sem** Edit/Write |
+| **qa-gate** | `opus` | step 8: roda a `feature-quality-gate` inteira e devolve o `06` **como texto**. Não grava nada | leitura + Bash + MCP herdado (Boost, Playwright); **sem** Edit/Write |
+| **executor-ct** | `sonnet` | escrever e rodar os testes Pest de **backend** a partir do Gherkin do `04`, sob o [contrato do construtor de testes](#contrato-do-construtor-de-testes-executor-ct): classifica cada vermelho em a/b/c e **nunca toca `app/`** | tudo, sob o contrato |
+| **executor-ctb** | `sonnet` | escrever e rodar os CT-B em loop, sob o [contrato dos CT-B](#ciclo-de-escrita-e-auditoria-dos-ct-b-loop--sub-agente) | tudo, sob o contrato |
+| **sessão principal** | o da sessão | captura **verbatim** do requisito, decomposição em `RQ`, perguntas ao usuário, decisão de roteamento de achado, veredito final, auditoria de todo retorno | — |
+
+**Tier é o conceito portável; o alias é a implementação Claude.** `haiku` = **econômico**,
+`sonnet` = **intermediário**, `opus` = **topo**. Em outro provedor o projeto mapeia os três tiers
+para os modelos que tiver (um "mini", um padrão, um de raciocínio) e o resto da esteira fica
+intacto; a coluna *Modelo* de `## Despachos` registra sempre o modelo **efetivamente** usado.
+
+**Regras da rota `mecânico`, medidas em 2026-09-21:**
+
+- **Um item por despacho** — um grep em lote com a tabela pronta, uma conversão, um espelho. Lote
+  misto (converter + mover + preencher tabela) vai para `construtor`: o `haiku` fez 1 de 5 itens e
+  reportou 3 como feitos, com um `git diff --stat` de arquivo que era untracked
+- **FQCN em grep vai com `grep -F`** — o escape das barras produziu um *"sem ocorrências"* falso
+- **`Explore` (built-in) só para feature grande.** Para o resto, `mecânico` com **trechos**, não
+  arquivos: o `Explore` custou 139 k tokens onde cada `haiku` custou 40–60 k
+
+Como obter as rotas, em ordem de preferência:
+
+1. **Agentes do projeto** em `.claude/agents/` — se o projeto já tem `mecanico`/`construtor`/
+   `analista` (ou equivalentes), usá-los pelo `subagent_type`
+2. **Agentes da esteira** — cada skill é dona do seu, na pasta `agents/` dela, para o Boost
+   instalá-lo junto com a skill: `feature-wiki/agents/fw-revisor-diff.md`, `fw-executor-ct.md` e `fw-executor-ctb.md`,
+   `feature-test-design/agents/fw-adversario-ct.md`, `feature-quality-gate/agents/fw-qa-gate.md`.
+   O Claude Code **não lê `.ai/skills/*/agents/`** — os arquivos precisam ser copiados uma vez para
+   `.claude/agents/`, e de novo a cada atualização das skills:
+
+   ```bash
+   cp .ai/skills/*/agents/*.md .claude/agents/
+   ```
+
+   Sem a cópia, `subagent_type: "fw-…"` falha e a rota cai no item 3. São os cinco que carregam
+   **cegueira e restrição de ferramenta**; as rotas genéricas não precisam de arquivo.
+   **Os agentes só carregam de `.claude/agents/` do diretório onde a sessão foi aberta** — sessão
+   aberta num diretório pai ou noutro repositório não os vê. Antes do primeiro despacho,
+   `ls .claude/agents/fw-*.md`; se faltar, a rota cai no item 3 e a linha de `## Despachos`
+   registra *"fallback `general-purpose`/{model} — agente `fw-…` indisponível"*. O fallback
+   segurou uma feature inteira (2026-09-21): perde a **restrição de ferramenta**, não a cegueira,
+   porque o contrato e o que o agente não recebe vão no prompt
+3. **`general-purpose` com `model` explícito** — funciona em qualquer projeto sem instalar nada.
+   **NUNCA despachar `general-purpose` sem `model`**: ele herda o modelo caro da sessão e o
+   roteamento deixa de existir
+
+O parâmetro `model` da chamada `Agent` sobrepõe o modelo do arquivo do agente quando a tarefa fugir
+do padrão — e a sobreposição vai no quadro, com o motivo. Sub-agente que precisa seguir uma skill
+companheira recebe o **path do `SKILL.md`** dela para ler e seguir; não se resume a skill no prompt.
+
+### Paralelo é o padrão, sequência é exceção
+
+Tarefas independentes disparam **juntas, no mesmo lote**. Sequência só quando a saída de uma é
+entrada da outra — e aí o quadro declara qual dependência forçou a fila.
+
+Duas restrições desta esteira ao paralelo:
+
+- **Nunca dois construtores no mesmo arquivo.** Passos do PRD que tocam o mesmo arquivo rodam em
+  sequência; paralelo só com conjuntos de arquivos **disjuntos**, declarados no quadro
+- **Cegueira vence paralelo.** O revisor do diff só dispara depois que o último construtor
+  entregou — não por dependência de saída, mas porque o diff que ele lê tem de ser o diff final
+
+### Todo disparo é visível — o quadro de despacho
+
+Antes de despachar (mesmo um agente só), mostrar o quadro; no retorno, reportar **contra o mesmo
+quadro**: o que cada agente entregou, o que falhou, o que foi refeito. Nada de delegação silenciosa.
+
+| # | Agente / tarefa | Modelo | Depende de | Não recebe (cegueira) | Por quê este modelo |
+|---|---|---|---|---|---|
+| 1 | `mecanico` — greps da Superfície Livewire, tabela pronta | haiku | — | — | transformação direta, sem julgamento |
+| 2 | `fw-revisor-diff` — eixos sobre `main...HEAD` | opus | último construtor | `01`, `03`, raciocínio da sessão | julgamento crítico; cegueira exigida |
+
+O quadro **vai para o `03-progresso.md`**, seção `## Despachos`, uma linha por disparo com o
+resultado e a auditoria do retorno. É o único registro de **qual modelo** fez o quê nesta feature
+— e é o primeiro instrumento desta coletânea que mede **custo de operar**, não só eficácia.
+
+### Rodam em linha, sem despacho
+
+Tarefa de 1–2 passos; interação direta com o usuário; decisão que depende do contexto imediato da
+conversa; edição cirúrgica em arquivo com forte interdependência; captura **verbatim** do requisito
+(copiar não é tarefa, e passar a fonte por um resumo de sub-agente seria alterá-la). Nesses casos,
+declarar **"Sem despacho — motivo"**, citando a exceção.
+
+Exceção que **não** vale: *"a tarefa é pequena, então reviso eu mesmo."* Tamanho não compra
+cegueira. O passe de eixos do 6.5, a revisão adversarial e o step 8 vão para sub-agente **sempre**.
+
+### Auditoria do retorno
+
+A sessão principal confere o retorno de **todo** lote antes de usá-lo:
+
+- **presença** — o agente entregou tudo o que o quadro pedia, no formato fixo?
+- **integridade** — nenhuma proibição do contrato violada: código de aplicação intacto, `00`
+  intacto, `04` intacto (`git status` e `git diff --stat` antes e depois do lote)
+- **amostragem** — 2–3 itens conferidos com `Read`/`grep` direto. O step 3 já manda *"confirmar os
+  trechos críticos com `Read` direto"* para o `Explore`; a regra vale para todo retorno
+
+**Sinais que reprovam o retorno antes da amostragem** (todos medidos em 2026-09-21):
+
+- **número sem comando** — *"88 ok"*, *"32 convertidas"*: se o retorno não traz o comando e a
+  saída literal, o número não existe. Um deles chegou à `## Verificação Final` e foi o juiz cego
+  quem o derrubou
+- **`git diff --stat` como prova de arquivo untracked** — a wiki nova não aparece no diff; retorno
+  que a "prova" por ele não a conferiu
+- **"não encontrado" / "não instalado" sem a prova negativa** — `ls vendor/…`, `php -m`, `grep -c`
+  colados. Duas dessas afirmações (`Select::preload()`, `pest-plugin-mutate`) eram falsas
+- **"sem ocorrências" em grep com FQCN** — conferir o escape (`grep -F`) antes de aceitar
+- **conclusão de custo sob paginação** — *"nada cresce com N"* medido com página de 10 linhas não
+  mede nada; pedir N acima da página
+
+Retorno reprovado é refeito pelo mesmo agente com o achado, ou escalado de modelo — e o quadro
+registra os dois casos: **auditoria reprovada é linha do quadro**, com o redespacho ao lado, não
+apagão. **Interrupção no meio do lote** (limite de sessão, 429): o construtor pode ter deixado a
+árvore meio-editada. Antes de retomar, `git status` e `git diff --stat`; retomar o **mesmo** agente
+por `SendMessage` (o contexto dele sobrevive) em vez de despachar um novo sobre o estado parcial.
+
+### Mapa de roteamento por step
+
+| Step | Tarefa | Rota | Em paralelo com | Cegueira |
+|---|---|---|---|---|
+| 0, 2 | capturar requisito verbatim, decompor em `RQ`, nomear a feature | **sessão** | — | — |
+| 3 | mapeamento amplo do código | `Explore` (built-in) | greps abaixo | — |
+| 3 | greps de Superfície Livewire, classe irmã, factories, rotas, policies, config, `.env.example` — **tabelas prontas** | `mecânico` ×N | entre si e com o `Explore` | — |
+| 3 | `search-docs` por stack, com a versão | `mecânico` | entre si | — |
+| 4 | `00-requisito.md` | **sessão** | — | — |
+| 4 | rascunho do `01` e do `02` a partir do pacote de pesquisa | `construtor` | — | — |
+| 4 | `03` espelhando o `01` | `mecânico` | derivação do `04` | — |
+| 4 | derivação do `04`/`05` — lê e segue `feature-test-design/SKILL.md` | `analista` | `03` | recebe `00` inteiro e, do `01`, **só** paths, rotas e `## Superfície de UI` (a própria skill delimita). Perguntas voltam como saída; a sessão as leva ao usuário |
+| 4 | revisão adversarial do `04` | `adversário-ct` | — | recebe **só** `00` + `04`/`05` |
+| 5 | levantar cada premissa do plano no código: existe? assinatura? linha? | `mecânico` | classe irmã | — |
+| 5 | julgar as divergências e corrigir a wiki | `analista` ou **sessão** | — | — |
+| 6 | `/ponytail:ponytail-review` | em linha (comando do plugin) | — | — |
+| 6 | re-sincronização do `04` após corte que mude a `## Superfície de UI` | `mecânico` cruza índice × elementos cortados; **sessão** decide `@obsoleto` ou re-derivar | — | — |
+| pré-6.5 | re-varrer a `## Superfície Livewire` do `02` sobre o **código final** | `mecânico` | — | — |
+| impl. | cada passo do PRD, com o `04` como contrato | `construtor`, **sequencial** por padrão | só com arquivos disjuntos | não edita `00`, `04`, `05` |
+| impl. | teste Pest a partir do Gherkin do `04` | `executor-ct` | passo seguinte, se disjunto | não lê `01`/`02`; lê `app/` só para nomes, nunca para o `Então`; **não toca `app/`** |
+| **6.5** | `/code-review high {base}...HEAD` | o próprio comando (já roda em sub-agente isolado) | passe de eixos | — |
+| **6.5** | passe de eixos sobre o diff | `revisor-diff` | `/code-review` | **não recebe** `01`, `03` nem o raciocínio da sessão; recebe diff, eixos, `## Superfície Livewire` do `02`, rules que casam o diff |
+| 6.5 | roteamento do achado: Adendo → CT → correção | **sessão** decide; `construtor` corrige | — | — |
+| 7 | citações, `diff` de IDs, checkbox sem evidência, docs pt/en × CHANGELOG | `mecânico` ×N | entre si | — |
+| 7 | conformidade com rules — candidatos por glob, veredito por rule | `mecânico` levanta, `analista` julga | — | — |
+| 7 | CT-B em loop | `executor-ctb` | — | contrato existente |
+| **8** | `feature-quality-gate` inteira — lê e segue o `SKILL.md` dela | `qa-gate` | — | **não recebe** a conversa; só path da wiki, URL do app e `git diff --stat`. Devolve o `06` como texto; a **sessão** grava sem editar |
+| 9 | 4 gates dos candidatos a rule | `analista` | — | — |
+| 9 | decisão e `record-rule` | **sessão** + usuário | — | — |
+
+> **Por que o step 8 é o maior ganho.** A `feature-quality-gate` pede *"por quem não escreveu a
+> wiki"* e *"não corrige nada"*. Invocada em linha, ela roda na sessão que escreveu o `01` e
+> implementou — a cegueira correlacionada que ela existe para quebrar. Em sub-agente **sem
+> Edit/Write**, as duas exigências deixam de ser promessa: o juiz não viu a conversa e não
+> consegue consertar.
 
 ## Fluxo de Execução
 
@@ -248,7 +475,7 @@ Antes de escrever qualquer documento:
 - Executar `php artisan model:show ModelName` para models relacionados
 - Examinar padrões existentes com `Glob "**/[padrão]/**/*.php"`
 - **Inspecionar APIs de terceiros** antes de escrever CTs — verificar vendor source ou docs oficiais para confirmar nomes de métodos, assinaturas e restrições de schema. E isso nunca basta sozinho: **toda** feature que cria página, widget ou componente preenche a [Superfície Livewire](#superfície-livewire-obrigatório-em-toda-feature-que-cria-página-widget-ou-componente)
-- Para features médias/grandes: delegar o mapeamento amplo a um agent `Explore` e depois **confirmar os trechos críticos com `Read` direto** (linhas exatas, imports, assinaturas) — não confiar apenas no resumo do agent
+- Para features médias/grandes: delegar o mapeamento amplo a um agent `Explore` e depois **confirmar os trechos críticos com `Read` direto** (linhas exatas, imports, assinaturas) — não confiar apenas no resumo do agent. No Claude Code, os greps prescritos nesta lista e na Superfície Livewire vão para `mecânico` (`haiku`) **em paralelo**, cada um devolvendo a tabela pronta — ver [Execução e Delegação](#execução-e-delegação-claude-code--roteamento-por-modelo-e-por-cegueira)
 - **Validar dados fornecidos pelo usuário** (CSV, listas, IDs) contra o banco via `database-query` — detectar divergências de título/chave, escolher chave estável (ID) para mapeamentos e documentar as divergências no plano
 - **Verificar existência de factories** (`Glob "database/factories/{Model}*"`) e states disponíveis antes de escrever CTs; se não houver factory, especificar `Model::create([...])` no Setup Global
 - **Confirmar padrões internos citados** no plano com grep/read (ex: seeder-em-migration, guards de environment, `$casts` property vs `casts()`) — citar `arquivo:linha` de referência no plano
@@ -426,6 +653,13 @@ Após escrever os 4 arquivos, **re-validar cada premissa do plano contra o códi
 - **Registrar cada correção** em `03-progresso.md` → `## Auditoria Pré-Implementação` → *Revisão profunda*. Correção aplicada e não registrada some: a próxima pessoa refaz a verificação e o histórico não mostra que a premissa original estava errada
 - Só então avançar para o step 6 (Auditoria da Wiki)
 
+**Padrão de despacho (Claude Code)** — o mesmo do `PM_Arquiteto`: **levantar com `mecânico`,
+julgar com `analista`**. Um `haiku` por bloco de premissas devolve a tabela *premissa do plano ×
+o que o código diz* (`arquivo:símbolo:linha` conferido por grep, assinatura real, import
+existente); a sessão — ou um `analista`, quando a divergência exige decisão — julga cada linha e
+corrige a wiki. Levantar é volume; julgar é raciocínio. Misturar os dois num só agente caro é o
+desperdício que o roteamento existe para evitar.
+
 > Exemplo real (feature/implementar-carga-horaria): a revisão pós-escrita detectou que o import `MbaTrack` já existia no arquivo a editar e confirmou o padrão exato do guard de environment nas migrations com seeder — ambos corrigidos na wiki antes da implementação.
 
 #### Varredura da classe irmã (OBRIGATÓRIA para toda classe nova)
@@ -475,14 +709,144 @@ Após a revisão profunda (step 5), **invocar automaticamente** `/ponytail:ponyt
 4. **Re-executar** `/ponytail:ponytail-review` se houver mudanças significativas (>3 arquivos alterados)
 5. Só então apresentar ao usuário para aprovação / iniciar implementação
 
+**Ordem com o step 4 (medido em 2026-09-21)**: o `04` derivado **antes** dos cortes do Ponytail
+herda os elementos cortados. Na feature de referência o Ponytail removeu um filtro de tabela e o
+CT-42 ficou órfão — só apareceu no `diff` de IDs do step 7. Duas regras:
+
+1. **Preferir** rodar este step sobre `01`/`02` **antes** de invocar a `feature-test-design`: a
+   derivação recebe do `01` só paths, rotas e `## Superfície de UI` — exatamente o que os cortes
+   mudam
+2. Se o `04` já existe quando um corte muda rota, ação, filtro ou coluna da `## Superfície de UI`,
+   **re-sincronizar o `04` no mesmo passo**: um `mecânico` cruza o `## Índice de Cenários` com os
+   elementos cortados; cada CT atingido vira `@obsoleto` com o motivo (e sai do índice com `~~`)
+   ou é re-derivado pela `feature-test-design`. Registrar em `### Auditoria Ponytail (step 6)` do
+   `03`. CT órfão descoberto só no step 7 é sinal de que este item foi pulado
+
 > **Importante**: Esta auditoria revisa o **plano** (a wiki), não o código implementado. A auditoria do código implementado acontece no step 7 (Pós-Implementação) e nos templates de Verificação Final.
 >
 > **Comando correto**: `/ponytail:ponytail-review` (com namespace `ponytail:`). NUNCA usar `/ponytail-review` sem o namespace — o comando não será encontrado.
 
+### 6.5. Revisão de Código do Diff (OBRIGATÓRIO, logo após os testes passarem e antes da reconciliação)
+
+**Quando**: a suíte da feature está verde e o último passo do PRD foi entregue — **antes** do
+step 7. A ordem é **6.5 → 7 → 8 → PR**, e o motivo é mecânico: cada achado confirmado aqui vira
+Adendo no `00`, CT no `04` e correção no código, e isso desloca linha citada, cria ID de CT e muda
+frase de doc e de ADR. Reconciliar (7) antes de revisar é reconciliar duas vezes. E a dimensão L do
+step 8 repete a reconciliação por quem não a fez, então ela precisa ser a **última** coisa antes
+dele. Até a 3.3.0 este step era o 7.5 e rodava depois do 7; mudou só a posição — o gate é o mesmo.
+
+**Por quem não implementou** — sobre o **diff completo** da feature contra a base
+(`git diff {base}...HEAD` mais o não-commitado), não sobre os arquivos que o agente lembra de ter
+tocado.
+
+**Pré-requisitos do lote** (os dois medidos em 2026-09-21):
+
+- **A sessão roda no repositório do projeto.** O `/code-review` só alcança o diretório onde a
+  sessão foi aberta; sessão aberta noutro repositório não consegue apontá-lo para o projeto. Nesse
+  caso o passe 1 é substituído por um `analista` (`opus`) **cego**, com o mesmo alvo
+  (`{base}...HEAD`) e sem os eixos, e a linha de `## Despachos` declara *"passe genérico por
+  sub-agente — `/code-review` fora de alcance"*. Vale menos: o comando nativo tem heurísticas
+  próprias que o substituto não tem
+- **A `## Superfície Livewire` do `02` foi re-varrida sobre o código final.** A tabela nasce no
+  planejamento e **envelhece** durante a implementação: na feature de referência ela negava
+  superfície de vendor, e as duas Pages herdavam uma trait com quatro métodos `$wire.` que recebem
+  índice de array. Um `mecânico` refaz os quatro greps sobre o diff final **antes** de despachar o
+  revisor; a tabela atualizada é o que ele recebe — a antiga é insumo do plano, não prova
+
+**Por que existe, e por que nenhum outro step cobre**: o step 6 audita o **plano**
+(`ponytail-review`, over-engineering); o step 8 confronta **requisito × app rodando** (omissão
+silenciosa). Nenhum dos dois lê o diff atrás de **defeito de correção**. Entre um e outro passa
+uma classe inteira: escrita cross-tenant, propriedade pública que o cliente escreve, gate que
+falha aberto no caso nulo, estado de erro sem saída. Nada disso é visível para quem pergunta *"o
+requisito foi atendido?"* nem para quem pergunta *"o plano é simples demais?"* — e tudo isso passa
+com a suíte verde, porque os testes foram derivados da mesma leitura que produziu o defeito.
+
+#### Quando rodado no Claude Code — dois passes, no mesmo lote
+
+| Passe | Ferramenta | O que pega | Como |
+|---|---|---|---|
+| **1. Genérico** | `/code-review high {base}...HEAD` | defeito de correção que qualquer revisor competente vê: nulo não tratado, condição invertida, exceção engolida, N+1, uso errado de API | o comando já roda em sub-agente isolado — a cegueira ao contexto da sessão vem de graça |
+| **2. Eixos** | sub-agente `fw-revisor-diff` (`opus`, sem Edit/Write) | os eixos da tabela abaixo — são de Laravel, Livewire e multi-tenant, e o passe genérico **não os conhece** | recebe: o diff, a tabela de eixos, a `## Superfície Livewire` do `02` e as rules cujos globs casam o diff. **Não recebe**: `01`, `03`, nem o raciocínio da sessão |
+
+Os dois disparam **juntos** — são independentes. Regras dos passes:
+
+- **Alvo explícito, sempre.** Sem alvo, o `/code-review` compara com o merge-base do **upstream**
+  da branch: numa branch já pushada o "diff atual" vira só o não-commitado, e a revisão sai vazia
+  parecendo limpa. Escrever `main...HEAD` (ou a base real do PR)
+- **Nível `high`.** `low`/`medium` devolvem só achado de alta confiança; aqui o achado incerto é
+  bem-vindo, porque o roteamento **obriga a rejeitar com motivo** — e relatório sem rejeição
+  parece que só procurou onde achou
+- **`--fix` é proibido.** Quem julga não conserta (princípio 2 da `feature-quality-gate`), e o
+  roteamento exige Adendo → CT → correção **nessa ordem**; o `--fix` pula os dois primeiros e
+  entrega correção sem oráculo
+- **O comando não aceita foco em texto livre** — o que vier depois do nível é lido como alvo. Por
+  isso os eixos vão num sub-agente próprio, não num argumento do `/code-review`
+- **Re-revisar uma única vez**, e só se alguma correção tocou eixo de fronteira (dado, superfície,
+  estado de erro) — correção é código novo do mesmo agente. Teto de 2 rodadas; se a segunda ainda
+  trouxer achado estrutural, o problema é o plano: registrar e escalar
+
+**Checkpoint opcional durante a implementação**: depois de um passo do PRD que cria query com
+discriminante, `public function`/`public $` em componente, ou estado de erro novo, rodar
+`/code-review medium` sobre o diff não-commitado. Achado aqui custa uma linha; o mesmo achado no
+6.5 custa Adendo, CT, correção e re-teste. O checkpoint **não substitui** o passe completo — ele
+não enxerga simetria de guarda entre superfícies que ainda não existem.
+
+**Fora do Claude Code**: o passe 2 é o gate inteiro. Host com sub-agente: `revisor-diff` com o
+mesmo contrato. Host sem sub-agente: em linha, com a degradação declarada no `03` —
+*"6.5 em linha — mesma sessão que implementou"* — porque o resultado vale menos, e o leitor do PR
+precisa saber.
+
+**Eixos obrigatórios da revisão** (além do que o revisor achar por conta):
+
+| Eixo | Pergunta |
+|---|---|
+| Fronteira de dado | toda query que o usuário alcança filtra pelo discriminante? e quando o discriminante é **nulo**, ela **fecha** ou **abre**? |
+| Ponto de entrada do vendor | as ações do pacote que recebem id/argumento do cliente estão cobertas pela mesma fronteira? conferir contra `## Superfície Livewire` do `02` |
+| Propriedade pública Livewire | o que o cliente pode escrever **entre requests**? `#[Locked]` em toda propriedade que decide **onde** a escrita cai |
+| **Método público de componente** | todo `public function` de Page/Widget é **ação chamável por `$wire.`**, e o retorno vai para o navegador. Tem lista fechada de argumentos, ou aceita qualquer string? |
+| **Valor de estado usado sem validar** | todo valor vindo de `$filters`, `$pageFilters`, `$tableFilters` ou `$tableSearch` que vira **índice de array**, argumento de **`parse`**, nome de **coluna** ou **operador** tem guarda? A página pode sanitizar e o widget receber cru |
+| **Lista paralela** | nasceu classe nova? o FQCN de uma classe **irmã** aparece em quantos lugares (`config/`, seeders, inventários de teste, providers)? a nova entrou em todos? |
+| **Simetria de guarda** | duas superfícies da mesma fronteira se comportam igual? uma fecha com log e a outra fecha em silêncio? |
+| Estado de erro | todo 4xx/redirect novo tem saída — para onde o usuário vai depois? par "A devolve para B, B devolve para A" é blocker |
+| Afirmação de comentário | comentário que justifica a **ausência** de um controle tem `arquivo:linha` do vendor provando? |
+
+> Os quatro eixos em negrito vieram do caso de 2026-09-17 — foram exatamente os achados que os
+> gates anteriores não tinham como ver, e cada um deles já era um 500 ou um checkbox que mente.
+
+**Roteamento do achado** — igual ao do quality gate, e nesta ordem:
+
+1. Achado confirmado vira **Adendo numerado no `00`** (`## Adendo N`, premissas `Pnn`) — porque ele
+   muda o que a feature promete, não só o código
+2. Vira **CT novo no `04`** (regra, cenário Gherkin e os mutantes que ele mata), **antes** da
+   correção
+3. Só então a correção
+4. Achado **rejeitado** fica registrado com o motivo. Relatório sem rejeição parece que só procurou
+   onde achou
+
+**Falsificabilidade da correção (duro)**: antes de fechar, provar que o CT novo **falha sem** a
+correção — `git stash push -- app/`, rodar o CT, `git stash pop`. CT que passa dos dois lados não é
+oráculo, é decoração — **salvo quando a pilha de teste não consegue exibir o defeito**. Três saídas,
+e a terceira precisa estar escrita:
+
+| Sem a correção, o CT… | Veredito | Registro na `## Verificação Final` |
+|---|---|---|
+| falha | oráculo válido | `n de m falham sem o fix` |
+| passa, e a pilha exibiria o defeito | decoração — reescrever o CT | — |
+| passa porque a pilha **não exibe** o defeito (SQLite ignora `VARCHAR(255)`; `RESTRICT` sem `PRAGMA foreign_keys`; cascata só em memória) | **"não falsificável nesta pilha — guarda mantida, dívida declarada"** | linha com o motivo e o que exibiria (MySQL/Postgres em CI) |
+
+Na feature de referência 3 de 5 CTs novos caíram na terceira linha. Lida como regra absoluta, a
+frase *"decoração"* mandaria apagar guardas corretas.
+
+> Caso real (2026-09-15): a revisão de código do diff de uma feature já "verde e concluída" achou
+> quatro defeitos — dois de escrita cross-tenant, um de fail-open e um beco sem saída na raiz do
+> painel. Os steps 5, 6 e 7 tinham rodado; o 8 não. Nenhum dos quatro seria pego por nenhum deles,
+> porque todos os quatro estavam **corretos em relação ao plano**.
+
 ### 7. Pós-Implementação e Reconciliação (OBRIGATÓRIO, antes do PR)
 
-Após a implementação e os testes passarem — e **antes de abrir o PR e antes de escrever
-"concluída" no `03`**. A ordem é **7 → 8 → PR**. Abrir o PR antes foi o que produziu, num caso
+Após a implementação, os testes passarem e o **step 6.5 ter rodado** — e **antes de abrir o PR e
+antes de escrever "concluída" no `03`**. A ordem é **6.5 → 7 → 8 → PR**: o diff que se reconcilia
+aqui é o diff **pós-revisão**. Abrir o PR antes foi o que produziu, num caso
 real, uma feature "concluída" com quality gate "para o passo seguinte", quatro quebras reais e 27
 afirmações defasadas na wiki e nas docs.
 
@@ -518,82 +882,52 @@ de `.ai/rules/` cujos globs casam com o diff.
    declarava um CT de ciclo liga/desliga com dois mutantes exclusivos e **nenhum teste o
    implementava**; o checkbox *"testes conforme 04/05"* fechou assim mesmo, e a lacuna só apareceu
    numa revisão de código posterior. O `diff` acima leva segundos e a teria pego no dia.)
-5. **Conformidade com as rules do projeto.** Para cada rule em `.ai/rules/index.md` cujo glob
+5. **Todo número da wiki é derivado por comando — e procurado na wiki inteira quando muda.**
+   Número escrito à mão envelhece **dentro do próprio ciclo**: contagem de CTs, de regras, de
+   mutantes, de permissions, de linhas de uma varredura, total de cenários no cabeçalho. A regra
+   vale para o `01`, o `02` e o `04`, não só para o `03` — e a conferência é `grep -c` contra o
+   código, ao fim, nunca leitura.
+
+   O ponto cego é a **duplicação**: quando um achado corrige um número, a correção vai para o
+   arquivo que o achado citou e a **cópia do mesmo número em outro arquivo sobrevive**. Antes de
+   fechar, procurar o valor antigo na wiki inteira:
+
+   ```bash
+   grep -rn "{valor antigo}" wikis/specs/{branch}/{feature}/
+   ```
+
+   > Medido numa mesma wiki, três vezes: nove citações `arquivo:linha` desatualizadas, uma
+   > varredura colada na `## Superfície Livewire` que o código já contradizia, e uma contagem que
+   > o quality gate acusou — corrigida no `01`, mantida na ADR do `02`, que repetia o mesmo
+   > número. **A defasagem sobreviveu ao gate que existia para pegá-la**, porque o gate leu o
+   > arquivo onde esperava a afirmação e conferiu ali.
+6. **Conformidade com as rules do projeto.** Para cada rule em `.ai/rules/index.md` cujo glob
    casa com um arquivo do diff, uma linha na tabela `## Conformidade com Rules` do `03`:
    `rule → aplicada / n.a. / violada`, com evidência (`arquivo:símbolo:linha` ou nome do CT).
    Rule violada é blocker do PR. O step 3 manda **ler** as rules antes de planejar; este item
    confere se o **código** as cumpre — são coisas diferentes, e a segunda nunca era feita
    (medido: `group('kit')` em teste de browser, chave `KIT_*` fora do `phpunit.xml`, par de
    cenário exigido pela rule de auth ausente — três rules lidas no step 3, três violadas no código)
-6. **Docs de usuário e CHANGELOG × comportamento × rastro.** Toda consequência que a wiki
+7. **Docs de usuário e CHANGELOG × comportamento × rastro.** Toda consequência que a wiki
    descreveu e depois mudou (ex.: "o log registra o painel `app`") é procurada nas docs pt/en, no
    CHANGELOG, no README e na ADR que a originou. Frase nova em doc de usuário **sem `RQ` nem ADR
    de origem** é crescimento sem rastro: vira Adendo no `00` ou sai da doc
-7. **Notas de Implementação** no `03`: descobertas durante o código que não estavam no plano
+8. **Notas de Implementação** no `03`: descobertas durante o código que não estavam no plano
    (ex.: "`Enrollment::find()` aplica scope global de tenant — documentado em `02`")
-8. **Roteiro "Desenhado × Implementado"** em `05-casos-de-teste-browser.md` (se existir): rodar os
+9. **Roteiro "Desenhado × Implementado"** em `05-casos-de-teste-browser.md` (se existir): rodar os
    CT-B, conferir cada linha da `## Superfície de UI` do PRD contra a tela real, marcar ✅/⚠️/❌;
    divergência vai para "Desvios do Plano" **e** para a fonte (item 2)
-9. **Confirmar impacto real com TIA**: `vendor/bin/pest --parallel --tia` × `## Impacto em
+10. **Confirmar impacto real com TIA**: `vendor/bin/pest --parallel --tia` × `## Impacto em
    Features Existentes` do PRD — divergência é nota de implementação
-10. **Retrospectiva breve** no `03`: o que funcionou no planejamento e o que faltou
-11. **Limpeza de channel de log** — só **depois do merge** e da estabilização: reduzir o level de
+11. **Retrospectiva breve** no `03`: o que funcionou no planejamento e o que faltou
+12. **Limpeza de channel de log** — só **depois do merge** e da estabilização: reduzir o level de
     `debug` para `info` ou remover o channel
 
-> **Autolimpeza não é auditoria.** Os itens 2, 5 e 6 são julgamento sobre texto que o mesmo
+> **Autolimpeza não é auditoria.** Os itens 2, 6 e 7 são julgamento sobre texto que o mesmo
 > agente escreveu, e ele tende a lê-lo como certo. Por isso a `feature-quality-gate` (step 8)
 > repete os três como **dimensão L — Consistência Documental**, por quem não escreveu a wiki.
 > Fazer só um dos dois não basta: sem o 7 o quality gate afoga em defasagem trivial; sem o 8
 > ninguém confere quem escreveu.
-
-### 7.5. Revisão de Código do Diff (OBRIGATÓRIO, antes do quality gate)
-
-**Por quem não implementou** — `/code-review` ou sub-agente equivalente, sobre o **diff completo**
-da feature (`git diff {base}..HEAD`), não sobre os arquivos que o agente lembra de ter tocado.
-
-**Por que existe, e por que nenhum outro step cobre**: o step 6 audita o **plano**
-(`ponytail-review`, over-engineering); o step 8 confronta **requisito × app rodando** (omissão
-silenciosa). Nenhum dos dois lê o diff atrás de **defeito de correção**. Entre um e outro passa
-uma classe inteira: escrita cross-tenant, propriedade pública que o cliente escreve, gate que
-falha aberto no caso nulo, estado de erro sem saída. Nada disso é visível para quem pergunta *"o
-requisito foi atendido?"* nem para quem pergunta *"o plano é simples demais?"* — e tudo isso passa
-com a suíte verde, porque os testes foram derivados da mesma leitura que produziu o defeito.
-
-**Eixos obrigatórios da revisão** (além do que o revisor achar por conta):
-
-| Eixo | Pergunta |
-|---|---|
-| Fronteira de dado | toda query que o usuário alcança filtra pelo discriminante? e quando o discriminante é **nulo**, ela **fecha** ou **abre**? |
-| Ponto de entrada do vendor | as ações do pacote que recebem id/argumento do cliente estão cobertas pela mesma fronteira? conferir contra `## Superfície Livewire` do `02` |
-| Propriedade pública Livewire | o que o cliente pode escrever **entre requests**? `#[Locked]` em toda propriedade que decide **onde** a escrita cai |
-| **Método público de componente** | todo `public function` de Page/Widget é **ação chamável por `$wire.`**, e o retorno vai para o navegador. Tem lista fechada de argumentos, ou aceita qualquer string? |
-| **Valor de estado usado sem validar** | todo valor vindo de `$filters`, `$pageFilters`, `$tableFilters` ou `$tableSearch` que vira **índice de array**, argumento de **`parse`**, nome de **coluna** ou **operador** tem guarda? A página pode sanitizar e o widget receber cru |
-| **Lista paralela** | nasceu classe nova? o FQCN de uma classe **irmã** aparece em quantos lugares (`config/`, seeders, inventários de teste, providers)? a nova entrou em todos? |
-| **Simetria de guarda** | duas superfícies da mesma fronteira se comportam igual? uma fecha com log e a outra fecha em silêncio? |
-| Estado de erro | todo 4xx/redirect novo tem saída — para onde o usuário vai depois? par "A devolve para B, B devolve para A" é blocker |
-| Afirmação de comentário | comentário que justifica a **ausência** de um controle tem `arquivo:linha` do vendor provando? |
-
-> Os quatro eixos em negrito vieram do caso de 2026-09-17 — foram exatamente os achados que os
-> gates anteriores não tinham como ver, e cada um deles já era um 500 ou um checkbox que mente.
-
-**Roteamento do achado** — igual ao do quality gate, e nesta ordem:
-
-1. Achado confirmado vira **Adendo numerado no `00`** (`## Adendo N`, premissas `Pnn`) — porque ele
-   muda o que a feature promete, não só o código
-2. Vira **CT novo no `04`** (regra, cenário Gherkin e os mutantes que ele mata), **antes** da
-   correção
-3. Só então a correção
-4. Achado **rejeitado** fica registrado com o motivo. Relatório sem rejeição parece que só procurou
-   onde achou
-
-**Falsificabilidade da correção (duro)**: antes de fechar, provar que o CT novo **falha sem** a
-correção — `git stash push -- app/`, rodar o CT, `git stash pop`. CT que passa dos dois lados não é
-oráculo, é decoração. O resultado (`4 de 5 falham sem o fix`) vai para a `## Verificação Final`.
-
-> Caso real (2026-09-15): a revisão de código do diff de uma feature já "verde e concluída" achou
-> quatro defeitos — dois de escrita cross-tenant, um de fail-open e um beco sem saída na raiz do
-> painel. Os steps 5, 6 e 7 tinham rodado; o 8 não. Nenhum dos quatro seria pego por nenhum deles,
-> porque todos os quatro estavam **corretos em relação ao plano**.
 
 ### 8. Quality Gate e abertura do PR (OBRIGATÓRIO, antes do PR)
 
@@ -609,6 +943,17 @@ Após os testes passarem e o step 7 estar concluído, **invocar a skill `feature
 - `## Natureza da Wiki` do PRD (decide se roda regressão)
 
 **Saída**: `06-relatorio-qa.md` + veredito.
+
+**Quando rodado no Claude Code — despachar, não invocar em linha.** A skill exige *"por quem não
+escreveu a wiki"*, e invocá-la na mesma sessão que escreveu o `01` e implementou entrega o
+contrário disso. Despachar o sub-agente `fw-qa-gate` (`opus`, sem Edit/Write) com **só**: o path
+da wiki, a URL do app servido, o `git diff --stat` e a instrução de ler e seguir
+`.ai/skills/feature-quality-gate/SKILL.md`. Ele devolve o `06-relatorio-qa.md` **como texto**, e a
+sessão grava o arquivo **sem editar** — a ausência de Edit/Write no agente é o que torna *"não
+corrige nada"* uma propriedade, não uma promessa. O cabeçalho do `06` leva a linha
+`Independência: sub-agente fw-qa-gate/opus, sem acesso à conversa` — ou `mesma sessão`, quando
+degradado. As dimensões que exigem Playwright MCP ou Boost rodam no próprio sub-agente: ele herda
+as ferramentas MCP quando o arquivo do agente não restringe `tools`.
 
 | Veredito | O que o fluxo faz |
 |---|---|
@@ -732,7 +1077,16 @@ Virar rule? (1, 2, ambos, nenhum)
 
 ## Ambiguidades e Perguntas Abertas
 
-<!-- Cláusula que não dá para testar como está. Perguntar ANTES de implementar. -->
+<!-- Cláusula que não dá para testar como está. Perguntar ANTES de implementar.
+     Perguntas OBRIGATÓRIAS quando o requisito tem papéis, visibilidade, notificação ou texto livre
+     (as quatro que o juiz cego fez em 2026-09-21 e a sessão não fez):
+     1. Acumulação de papéis, PAR A PAR: quem é X pode também ser Y? (solicitante × aprovador,
+        aprovador × aprovador de outra etapa). Uma pergunta por par, não uma genérica
+     2. Recorte de visibilidade: quem VÊ agora × quem JÁ PARTICIPOU. O participante histórico
+        continua vendo? O que vê quem perdeu a corrida?
+     3. Toda notificação tem link: para ONDE leva, e o destino ainda existe e está visível para o
+        destinatário quando ele clica?
+     4. Todo texto livre tem teto — no model, não só no formulário? -->
 
 - **RQ-03**: "{precisa ser rápido}" — sem número não é testável. Qual SLA?
 - **RQ-05**: conflita com RQ-02 — {descrever o conflito}
@@ -1041,6 +1395,13 @@ torna a premissa falsificável na revisão.
 > **Caveman ativo em modo `ultra`** (padrão) na comunicação agent ↔ usuário.
 > Arquivos wiki (00-06) são boundary do Caveman — escrever em prosa normal.
 > Código, commits e PRs também são boundary do Caveman.
+>
+> **Model novo declara `$table`** sempre que o nome da tabela não for o plural inglês que o
+> Eloquent infere — com nome em pt-BR é sempre: `centros_custo`, não `centro_custos`. Nasceu como
+> defeito (2026-09-21) e é candidato natural a Project Rule no step 9.
+>
+> **Baseline antes do primeiro commit**: rodar a suíte completa em `{base}` e listar por nome as
+> falhas pré-existentes. A `## Verificação Final` compara contra a baseline, não contra zero.
 
 ## Mapeamentos
 
@@ -1056,9 +1417,10 @@ torna a premissa falsificável na revisão.
 - [ ] `vendor/bin/pint --dirty`
 - [ ] `vendor/bin/pest --filter={Feature} --compact` (CTs de backend)
 - [ ] `vendor/bin/pest tests/Browser --filter={Feature}` (CT-B — só se houver `05-*-browser.md`)
-- [ ] `vendor/bin/pest --parallel --tia` (Pest 5 — confirma que nada mais no suite quebrou, rodando só o afetado)
-- [ ] **Custo medido** — queries do caminho principal e do caminho com filtro/busca, contra o `## Modelo de Execução`
-- [ ] **`/code-review` no diff (step 7.5)** — o único gate que lê o diff atrás de defeito de correção
+- [ ] `vendor/bin/pest --parallel --tia` (Pest 5 — confirma que nada mais no suite quebrou, rodando só o afetado) — comparado à **baseline** de `{base}`
+- [ ] `pest --mutate --path={classe de regra}` — score, **duração** e lista de sobreviventes (score sem duração plausível é falso; ver *Pest 5*)
+- [ ] **Custo medido** — queries do caminho principal e do caminho com filtro/busca, contra o `## Modelo de Execução`, com N **acima da página**
+- [ ] **`/code-review high {base}...HEAD` + passe de eixos (step 6.5)** — antes da reconciliação; o único gate que lê o diff atrás de defeito de correção
 - [ ] {outros comandos de verificação específicos}
 
 ## Commits
@@ -1277,6 +1639,13 @@ O channel `daily` gera arquivos de texto. Para parsing estruturado em produção
 
 ### Testando Logs em Pest
 
+> Técnica **opcional**. Log não é cláusula do requisito, então a `feature-test-design` **não deriva
+> CT de log** e este template não os exige mais — quem confere o log é a **dimensão D** da
+> `feature-quality-gate` (17 logs conferidos um a um na feature de referência, sem nenhum CT de
+> log). Use quando o requisito pede trilha de auditoria (aí é `RQ`) ou quando um passo do PRD
+> trata o log como saída observável. Helper de log declarado e nunca usado é código morto
+> (achado F9 do 6.5 em 2026-09-21).
+
 Para verificar que os logs foram emitidos corretamente nos CTs:
 
 ```php
@@ -1408,17 +1777,23 @@ Se o projeto possuir uma trait de logging (ex: `UnicoLogging`), verificar:
 - [ ] `vendor/bin/pint --dirty`
 - [ ] `vendor/bin/pest --filter={Feature} --compact`
 - [ ] `vendor/bin/pest tests/Browser --filter={Feature}` <!-- se houver CT-B -->
-- [ ] `vendor/bin/pest --parallel --tia` — nada mais no suite quebrou
-- [ ] **Custo medido** — queries do caminho principal × do caminho filtrado, contra o `## Modelo de Execução`
-- [ ] **`/code-review` no diff (step 7.5)** — achados fechados ou rejeitados com motivo
+- [ ] `vendor/bin/pest --parallel --tia` — nada mais no suite quebrou além da **baseline** de `{base}` (falhas pré-existentes por nome)
+- [ ] `pest --mutate --path={classe}` — {score} em {duração}, {n} sobreviventes listados (no Windows, via lançador `.cmd`)
+- [ ] **Custo medido** — queries do caminho principal × do caminho filtrado, contra o `## Modelo de Execução`, com N acima da página
+- [ ] **`/code-review high {base}...HEAD` + passe de eixos (step 6.5)** — antes da reconciliação; achados fechados ou rejeitados com motivo
 - [ ] Roteiro "Desenhado × Implementado" do `05-*-browser.md` preenchido <!-- se houver CT-B -->
 - [ ] Desvios propagados ao `01`/`02`/`04`/`05` de origem, marcados `*(alterado em …)*`
-- [ ] Citações `arquivo:símbolo:linha` reverificadas — {n}/{n} ok
+- [ ] Citações `arquivo:símbolo:linha` reverificadas — {n}/{n} ok (saída do script colada)
 - [ ] IDs `[CT-nn]` do teste ⊆ `04`/`05` e vice-versa
+- [ ] Falsificabilidade dos CTs novos — {n} de {m} falham sem o fix; os demais "não falsificável nesta pilha", com motivo
 - [ ] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final
 - [ ] `git commit`
 
-<!-- Cada [x] acima leva " — {evidência}, {data}". Ex.: `- [x] composer test:kit — 677/677, 2026-09-05` -->
+<!-- Cada [x] acima leva " — {evidência}, {data}". Ex.: `- [x] composer test:kit — 677/677, 2026-09-05`
+     Evidência com NÚMERO leva o comando que o gerou (`grep -c …`, saída do script). Degradação
+     declarada ("sem PCOV", "plugin ausente") leva a PROVA NEGATIVA (`php -m`, `ls vendor/…`).
+     Número sem comando e ausência sem prova foram os dois achados que o juiz cego devolveu
+     CONTRA A SESSÃO em 2026-09-21 (QA-03, QA-04). -->
 
 ## Conformidade com Rules
 
@@ -1448,6 +1823,20 @@ Se o projeto possuir uma trait de logging (ex: `UnicoLogging`), verificar:
 | # | Sugestão de corte | Aplicada? | Onde |
 |---|---|---|---|
 | 1 | {…} | sim / recusada: {motivo} | `01`, passo 4 |
+
+## Despachos
+
+<!-- Claude Code: uma linha por disparo de sub-agente, com o modelo, o que ele NÃO recebeu e a
+     auditoria do retorno. Host sem sub-agente: uma linha "Sem despacho — host sem sub-agente".
+     Tarefa que rodou em linha por exceção: "Sem despacho — {motivo}".
+     Auditoria REPROVADA também é linha (com o redespacho ao lado); fallback para general-purpose
+     por agente fw-* indisponível vai na coluna Modelo. -->
+
+| # | Step | Agente / tarefa | Modelo | Não recebeu | Resultado | Auditoria do retorno |
+|---|---|---|---|---|---|---|
+| 1 | 3 | `mecanico` — Superfície Livewire | haiku | — | tabela, 7 linhas | 2/7 conferidas por grep |
+| 2 | 6.5 | `fw-revisor-diff` — eixos sobre `main...HEAD` | opus | `01`, `03` | 3 achados, 1 rejeitado | 3/3 reproduzidos |
+| 3 | 8 | `fw-qa-gate` — quality gate | opus | conversa | `06` gravado verbatim, APROVADO COM DÉBITO | `git status` limpo antes/depois |
 
 ## Blockers
 <!-- Impedimentos encontrados durante implementação -->
@@ -1517,6 +1906,10 @@ Proibido passar como entrada:
 o sistema deve fazer é ler o PRD, o `00-requisito.md` está incompleto — e isso é achado, não
 atalho.
 
+**Ordem**: sempre que possível, o step 6 (Ponytail) roda sobre `01`/`02` **antes** desta invocação;
+se o `04` já existir quando um corte mudar a `## Superfície de UI`, ele é re-sincronizado no mesmo
+passo (ver step 6). O `04` derivado de uma superfície que depois foi cortada fica com CT órfão.
+
 ### Gate do `05` (browser)
 
 A tabela `## Superfície de UI` do PRD continua sendo o gatilho, mas o critério mudou: **o cenário
@@ -1533,6 +1926,38 @@ gravação, listagem, busca, filtro, ação de tabela, notificação e autoriza�
 
 Se nenhum cenário exigir navegador: **não criar o `05`** e registrar no `04` a seção
 `## Sem CT-B` com o motivo.
+
+### Contrato do construtor de testes (`executor-ct`)
+
+O teste Pest de backend nasce do Gherkin do `04`, escrito por quem **não implementou** — no Claude
+Code, o sub-agente `fw-executor-ct` (`sonnet`; definição em
+[`agents/fw-executor-ct.md`](agents/fw-executor-ct.md)). É a generalização do contrato dos CT-B para
+o backend, medida em 5 lotes (2026-09-21): **todo vermelho que sobrou era defeito real**. O
+contrato, em resumo — o arquivo do agente tem o texto completo:
+
+- **Fonte é o `04`**: `## Setup Global` inteiro + só as regras/cenários do lote. Pode ler `app/`
+  para descobrir nome de classe, método e rota que o cenário deixa em aberto; **nunca** para
+  inferir o `Então`. Não lê `01` nem `02`
+- **Fixture por transições reais**: a situação de partida se constrói chamando a máquina de
+  estados do domínio (`enviar()`, `aprovar()`…), não gravando `situacao` à força — reimplementar a
+  transição no teste esconde exatamente o defeito que o teste existe para pegar. O helper
+  (`{entidade}Em('{situacao}')`) vive em `tests/Pest.php` e é dono de um lote `D0`, anterior aos
+  outros
+- **Um lote por arquivo, arquivos disjuntos** entre construtores paralelos; `tests/Pest.php` tem um
+  único dono
+- **Todo `Então` vira asserção; o nome do teste começa com `[CT-nn]`**; `Esquema do Cenário` vira
+  `->with([...])`, uma linha por `Exemplos`; cenário `@obsoleto` não vira teste
+- **Vermelho é classificado antes de qualquer edição**: (a) teste errado → corrige o teste;
+  (b) **implementação divergente da especificação → não corrige**, deixa vermelho e registra com
+  a saída literal; (c) flake → anota. Máximo 3 iterações por arquivo. **Vermelho por (b) é
+  resultado válido** e é o que a sessão roteia (Adendo → CT → correção)
+- **Proibido**: tocar `app/`, `database/`, `config/`; relaxar asserção; remover cenário; editar
+  `00`/`01`/`02`/`04`
+- **Saída em formato fixo**: arquivos e contagem; status por CT com a causa a/b/c; divergências
+  (o que o `04` afirma / o que o código faz / `arquivo:símbolo:linha`); ambiguidades do `04` que
+  teve de resolver; saída literal do `pest` e do `pint`
+- **Interrompido no meio** (limite de sessão): reporta *"estado parcial"* com os arquivos tocados;
+  a sessão confere `git status` antes de retomá-lo por `SendMessage`
 
 ### Ciclo de escrita e auditoria dos CT-B (loop + sub-agente)
 
@@ -1686,6 +2111,30 @@ composer require pestphp/pest --dev --with-all-dependencies
 
 Vindo de Pest 4: `"pestphp/pest": "^5.0"` no `composer.json` + todos os plugins para `^5.0`.
 
+**Duas armadilhas medidas (2026-09-21):**
+
+- **`--testsuite=A --testsuite=B` só honra o último.** Uma suíte por comando, as duas saídas coladas
+- **`pest --mutate` dá 100 % falso no Windows.** O plugin relança `argv[0]` (`vendor/bin/pest`,
+  script sh) por Symfony Process; o `cmd` não o executa, o subprocesso sai com código 1 em ~30 ms e
+  o plugin conta **qualquer** saída não-zero como mutante morto. Sintoma: *206 mutantes em 3 s*
+  para uma suíte de 200 s — e o juiz cego caiu nisso também (*"2 mutantes, 100 %"*). Regra:
+  **score só vale com `Duration` compatível com N × tempo dos testes cobridores e com a lista de
+  sobreviventes.** No Windows, lançar por um `.cmd` poliglota na raiz do projeto, para que
+  `argv[0]` seja executável pelo `cmd`:
+
+  ```
+  <?php /*
+  @echo off
+  php "%~f0" %*
+  exit /b %errorlevel%
+  */ require __DIR__.'/vendor/pestphp/pest/bin/pest';
+  ```
+
+  `XDEBUG_MODE=coverage cmd //c pestw.cmd tests/Feature/{Feature} --mutate --path=app/Models/X.php --covered-only --parallel`
+  — medido de verdade na feature de referência: 206 mutantes, 196 mortos, 7 timeout,
+  3 sobreviventes (context de log), 98,54 % em 594 s. Timeout conta como morto no score; listar
+  os sobreviventes é o que vale
+
 ### TIA — Test Impact Analysis (`--tia`)
 
 Roda apenas os testes afetados pelo diff e replica o resultado em cache para o restante. Exige driver de cobertura (**PCOV ou Xdebug**) instalado.
@@ -1750,7 +2199,7 @@ Regras: aspas simples envolvendo o snippet, aspas duplas para strings PHP intern
 | Sharding por tempo real | `pest --update-shards` / `--shard=1/4` | CI de features grandes com muitos CT-B |
 | Profiling | `pest --profile` | Investigar CT lento antes de aceitar o tempo como normal |
 | Type coverage | `pest --type-coverage` | Verificação Final em features com muito DTO/enum |
-| Mutation testing | `pest --mutate` | Features de regra de negócio crítica (cálculo, cobrança) |
+| Mutation testing | `pest --mutate` | Features de regra de negócio crítica (cálculo, cobrança) — ver a armadilha do Windows acima |
 | Novos matchers | `toBeEmail()`, `toBeUlid()`, `toBeIpAddress()`, `toBeMacAddress()`, `toBeHostname()`, `toBeDomain()`, `toBeBase64()`, `toBeHexadecimal()` | Substituem regex custom nos CTs — aplicar a escada do Ponytail |
 
 ---
@@ -1827,6 +2276,7 @@ Antes de encerrar a invocação:
 - [ ] Requisito decomposto em cláusulas `RQ-##`, cada uma citando o trecho literal de origem
 - [ ] Ambiguidades e perguntas abertas listadas — e perguntadas ao usuário antes de implementar
 - [ ] Fora de escopo declarado (evita o quality gate acusar omissão indevida)
+- [ ] Perguntas obrigatórias do `00` feitas: acumulação de papéis **par a par**, participante histórico × recorte de visibilidade, destino do link de toda notificação, teto de todo texto livre
 - [ ] `## Natureza da Wiki` preenchida no PRD (+ wiki ancestral se não for "nova")
 - [ ] `## Cobertura do Requisito` no PRD mapeia **toda** cláusula `RQ` a passo(s) ou justificativa
 
@@ -1844,6 +2294,8 @@ Antes de encerrar a invocação:
 - [ ] Dados fornecidos pelo usuário validados contra o DB (quando aplicável)
 - [ ] Factories confirmadas (existência + states) para todos os CTs
 - [ ] Stack de testes verificado: versão do Pest, `pest-plugin-browser`, Playwright, `APP_URL`, traits em `tests/Pest.php`
+- [ ] **Baseline** da suíte completa em `{base}` registrada antes do primeiro commit, falhas pré-existentes por nome
+- [ ] Model novo cujo nome de tabela não é o plural inglês inferido declara `$table`
 
 ### Documentação
 
@@ -1865,7 +2317,7 @@ Antes de encerrar a invocação:
 - [ ] Channel de log da feature verificado/criado e referenciado em todos os passos do PRD
 - [ ] Padrão de log `[Classe@Método] mensagem` especificado em cada passo de execução do PRD
 - [ ] Context estruturado (array `$context`) especificado em cada log do PRD
-- [ ] CTs de log incluídos no `04-casos-de-teste.md`
+- [ ] Log **não** vira CT no `04` (log não é cláusula do requisito) — quem o confere é a dimensão D do quality gate; exceção: requisito que pede trilha de auditoria, e aí é `RQ`
 
 ### Validação
 
@@ -1873,6 +2325,7 @@ Antes de encerrar a invocação:
 - [ ] **Varredura da classe irmã** executada para toda classe nova, com a irmã escolhida e as ocorrências registradas no `03`
 - [ ] `## Modelo de Execução` preenchido no PRD (ou "um request, sem trabalho adiado" declarado)
 - [ ] **Auditoria da wiki executada** — `/ponytail:ponytail-review` invocado e sugestões aplicadas
+- [ ] Step 6 rodou sobre `01`/`02` **antes** da derivação do `04` — ou o `04` foi re-sincronizado após os cortes (CT órfão declarado `@obsoleto`)
 - [ ] `03-progresso.md` espelha exatamente os passos do `01-plano-acao.md`
 - [ ] Filosofia de Implementação (Ponytail) incluída no PRD
 - [ ] Confirmar com usuário se o plano está correto antes de implementar
@@ -1883,9 +2336,14 @@ Antes de encerrar a invocação:
 - [ ] Cada desvio do `03` tem a edição correspondente no `01`/`02`/`04`/`05` de origem, marcada `*(alterado em …)*` — nenhuma afirmação do `01`/`02` contradiz o código
 - [ ] Toda citação `arquivo:símbolo:linha` da wiki reverificada pelo grep — resultado no `03`
 - [ ] IDs `[CT-nn]`/`[CT-Bnn]` do teste ⊆ `04`/`05` e vice-versa — **saída do `diff` colada na Verificação Final, vazia**
-- [ ] **Revisão de código do diff executada** (step 7.5) por quem não implementou; cada achado confirmado virou Adendo no `00` + CT no `04` + correção, nessa ordem
-- [ ] Falsificabilidade dos CTs novos provada por `git stash` — cada um falha sem a correção
-- [ ] Contagens do `03` (nº de CTs, regras, mutantes) derivadas por `grep -c`, nunca digitadas — número digitado envelhece no primeiro adendo
+- [ ] **Revisão de código do diff executada** (step 6.5) **antes** da reconciliação, por quem não implementou; cada achado confirmado virou Adendo no `00` + CT no `04` + correção, nessa ordem
+- [ ] No Claude Code: `/code-review` rodou com alvo explícito (`{base}...HEAD`), nível `high`, sem `--fix` — e o passe de eixos rodou em sub-agente cego ao `01`/`03`
+- [ ] Falsificabilidade dos CTs novos provada por `git stash` — cada um falha sem a correção **ou** está declarado "não falsificável nesta pilha", com o motivo
+- [ ] `## Superfície Livewire` do `02` re-varrida sobre o código final **antes** do 6.5
+- [ ] Todo número da `## Verificação Final` tem o comando que o gerou; toda degradação declarada tem a prova negativa (`php -m`, `ls vendor/…`)
+- [ ] `pest --mutate` com duração plausível e sobreviventes listados (no Windows, via lançador `.cmd`)
+- [ ] Contagens da wiki inteira (`01`, `02`, `03`, `04`: nº de CTs, regras, mutantes, permissions, linhas de varredura) derivadas por `grep -c`, nunca digitadas — número digitado envelhece no primeiro adendo
+- [ ] Todo número **corrigido** durante o ciclo foi procurado na wiki inteira (`grep -rn "{valor antigo}"`) — a cópia em outro arquivo é o que sobrevive ao gate
 - [ ] Requisito que cresceu virou `## Adendo N` no `00`, com `RQ` novos, e a `feature-test-design` foi reinvocada para ele **antes** do código
 - [ ] Tabela `## Conformidade com Rules` do `03` preenchida para toda rule cujo glob casa o diff — nenhuma `violada`
 - [ ] Docs de usuário (pt **e** en), CHANGELOG e README reconciliados; nenhuma frase neles sem `RQ` ou ADR de origem
@@ -1894,9 +2352,19 @@ Antes de encerrar a invocação:
 - [ ] CT-B escritos e rodados via sub-agente; divergências classificadas (CT errado / implementação divergente / flake)
 - [ ] Se o Playwright MCP foi usado: só como observação (`--isolated --headless --caps=testing`), nenhum ref em arquivo de teste, nenhuma sessão MCP registrada como cobertura
 
+### Delegação (Claude Code)
+
+- [ ] Todo disparo de sub-agente está em `## Despachos` do `03`, com modelo, cegueira e auditoria do retorno; tarefa em linha por exceção tem "Sem despacho — motivo"
+- [ ] Nenhum `general-purpose` despachado sem `model` explícito
+- [ ] Passe de eixos do 6.5, revisão adversarial e step 8 rodaram em sub-agente **cego** — ou a degradação está declarada no `03` e no cabeçalho do `06`
+- [ ] Todo retorno auditado: presença, integridade (`git diff --stat` antes/depois do lote) e amostragem
+- [ ] `ls .claude/agents/fw-*.md` conferido antes do primeiro despacho; fallback `general-purpose`/{model} registrado no quadro quando o agente faltou
+- [ ] Rota `mecânico` só com **um item por despacho**; lote misto foi para `construtor`
+- [ ] Retorno com número sem comando, `git diff --stat` de untracked ou "não encontrado" sem prova negativa foi **reprovado e refeito** — e a reprovação está no quadro
+
 ### Quality Gate e PR
 
-- [ ] **`feature-quality-gate` invocado** (step 8) e ciclo/veredito/data registrados na seção `## Quality Gate` do `03-progresso.md`
+- [ ] **`feature-quality-gate` invocado** (step 8) — no Claude Code, via `fw-qa-gate` sem Edit/Write, `06` gravado verbatim pela sessão — e ciclo/veredito/data registrados na seção `## Quality Gate` do `03-progresso.md`
 - [ ] `06-relatorio-qa.md` **existe** no diretório da wiki (`ls wikis/specs/{branch}/{feature}/06-relatorio-qa.md`) — a ausência dele é blocker do PR, e é a evidência de que o step 8 rodou
 - [ ] Se `REPROVADO`: achado roteado para o destino correto (especificação / implementação / teste) e reciclado
 - [ ] **Só depois do veredito**: PR aberto com link da wiki e veredito do `06` na descrição; `03` marcado "concluída"
@@ -1918,6 +2386,7 @@ A feature-wiki é a primeira estação de uma esteira de skills que cobrem o cic
 | **Execução** (código) | [Ponytail](https://github.com/DietrichGebert/ponytail) | Mínimo código que funciona — escada de simplicidade | Não corta validação, segurança, tratamento de erros |
 | **Qualidade** (QA no agente) | `feature-quality-gate` | Confronta `00-requisito` × PRD × app rodando; audita a consistência wiki × código × docs × rules (dimensão L); roteia achado para especificação / implementação / teste. Roda **antes do PR** | Não corrige nada — só lê, reproduz e reporta |
 | **Memória de projeto** (rules) | `requirement-to-rule` | Decisão da wiki vira Project Rule do Boost em `.ai/rules/` | Só o que é específico da aplicação; ecossistema é guideline do Boost |
+| **Orquestração** (Claude Code) | sub-agentes por rota — pasta `agents/` de cada skill, instalados com `cp .ai/skills/*/agents/*.md .claude/agents/` | Modelo por complexidade, contexto por cegueira; quadro de despacho no `03` | A sessão nunca delega captura verbatim do requisito, perguntas ao usuário nem veredito final |
 
 ### Caveman + feature-wiki: fronteira clara
 

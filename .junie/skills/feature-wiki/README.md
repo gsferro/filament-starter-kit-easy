@@ -1,6 +1,6 @@
 # feature-wiki — Documentação Antes de Implementar
 
-> **Skill**: [`SKILL.md`](SKILL.md) · versão **3.3.0**
+> **Skill**: [`SKILL.md`](SKILL.md) · versão **3.5.1**
 > Este README fala com a **pessoa**: por que a skill existe, o que ela entrega, dependências e limitações. O procedimento que o agente segue está no `SKILL.md` e não é duplicado aqui.
 
 ## Índice
@@ -9,6 +9,7 @@
 - [Os arquivos que ela cria](#os-arquivos-que-ela-cria)
 - [Quando é invocada](#quando-é-invocada)
 - [Dependências](#dependências)
+- [Execução e delegação no Claude Code](#-execução-e-delegação-no-claude-code)
 - [Como informar o requisito](#-como-informar-o-requisito-para-a-feature-wiki)
 - [Testes de Browser (Pest + Playwright)](#-testes-de-browser-na-feature-wiki-pest--playwright)
 - [Documentation API do Boost](#-documentation-api-do-boost-search-docs)
@@ -33,7 +34,8 @@ Força o agente a **documentar antes de codar**. Em vez de sair implementando a 
 | Decisão que não se perde | ADR com contexto, alternativas e consequências |
 | Retomada sem reler tudo | `03-progresso.md` atualizado em tempo real |
 | Validação por quem não implementou | CT-B escritos em loop por sub-agente, e QA pela [`feature-quality-gate`](../feature-quality-gate/README.md) |
-| **Defeito de correção pego antes do PR** | step 7.5 roda `/code-review` **no diff** — o único gate que lê o diff, e o mais produtivo de todos numa feature medida |
+| **Defeito de correção pego antes do PR** | step 6.5 roda `/code-review high` **no diff** mais um passe de eixos, logo após os testes passarem e **antes** da reconciliação — o único gate que lê o diff, e o mais produtivo de todos numa feature medida |
+| **Juiz que não é o autor** | no Claude Code, revisão do diff, revisão adversarial e quality gate rodam em **sub-agentes cegos** (`opus`, sem Edit/Write); o resto vai para `haiku`/`sonnet` conforme a complexidade, com quadro de despacho no `03` |
 | **Superfície do cliente inventariada** | `## Superfície Livewire` no `02`: método público (ação por `$wire.`), propriedade pública sem `#[Locked]` e estado do framework usado sem validar |
 | **Lista paralela não esquecida** | varredura da classe irmã no step 5: `grep` pelo FQCN de uma irmã acha `config/`, seeders e inventários que nenhuma rule enumera |
 | **Premissa de custo falsificável** | `## Modelo de Execução` no PRD — quantos requests a tela custa, o que é adiado e o que é cacheado |
@@ -42,7 +44,7 @@ Força o agente a **documentar antes de codar**. Em vez de sair implementando a 
 
 Uma feature real rodou a skill 3.2.0 **com tudo cumprido** — 43 CTs, revisão adversarial fechando
 cinco implementações erradas, auditoria Ponytail com dez cortes, 61 testes verdes e 2.383 casos de
-regressão. Mesmo assim chegou ao step 7.5 com **sete defeitos**, dois produzindo 500 em produção.
+regressão. Mesmo assim chegou ao step 7.5 (hoje **6.5**) com **sete defeitos**, dois produzindo 500 em produção.
 
 | Gate | Achados de correção | Por quê |
 |---|---|---|
@@ -50,10 +52,13 @@ regressão. Mesmo assim chegou ao step 7.5 com **sete defeitos**, dois produzind
 | step 6 — `ponytail-review` | 0 | correção, segurança e performance estão **fora do charter** dele |
 | revisão adversarial do `04` | 0 de correção, 5 de cobertura | recebe só `00` + `04`: vê o que o **requisito** descreve |
 | suíte verde, 2.383 casos | 1 | enforço de arquitetura do próprio projeto |
-| **step 7.5 — `/code-review` no diff** | **7** | é o único que lê o diff atrás de defeito de correção |
+| **step 7.5 (hoje 6.5) — `/code-review` no diff** | **7** | é o único que lê o diff atrás de defeito de correção |
 
 A 3.3.0 nasceu dessa medição: elevou o 7.5 para o topo do documento e fechou os quatro buracos que
-deixaram os sete chegarem até ele.
+deixaram os sete chegarem até ele. A 3.4.0 fez as duas coisas que faltavam: **moveu o gate para
+antes da reconciliação** (cada achado confirmado muda código, cláusula e CT — reconciliar antes
+era reconciliar duas vezes) e **tirou-o das mãos de quem implementou**, despachando-o para
+sub-agente cego ao plano.
 
 ## Os arquivos que ela cria
 
@@ -103,6 +108,114 @@ Nenhuma além de um projeto Laravel com git. A skill funciona com Pest 3, 4 ou 5
 | Caveman | prosa terse na conversa (nunca nos arquivos wiki) | — |
 | [`feature-quality-gate`](../feature-quality-gate/README.md) | step 8: QA confrontando requisito × plano × app | step 8 é pulado |
 | [`requirement-to-rule`](../requirement-to-rule/README.md) | step 9: decisão da wiki vira Project Rule | step 9 é pulado |
+| Claude Code com sub-agentes (`Agent`, `.claude/agents/`) | roteamento por modelo (`haiku`/`sonnet`/`opus`) e **juiz independente** por construção no 6.5, na adversarial e no step 8 | tudo roda em linha, na mesma sessão que implementou — e a degradação é declarada no `03` e no cabeçalho do `06` |
+
+---
+
+## 🧭 Execução e delegação no Claude Code
+
+A partir da **v3.4.0**, quando a skill roda no Claude Code, a sessão principal **orquestra, decide
+e audita** — e despacha o resto para sub-agentes. O procedimento (rotas, quadro de despacho, mapa
+por step) está no `SKILL.md`; aqui vai o porquê.
+
+### Por que despachar
+
+Dois motivos, e o segundo é o que importa para esta coletânea:
+
+1. **Custo.** Grep em lote, tabela pronta, espelho do `01` no `03`, conferência de citação — nada
+   disso precisa do modelo mais caro. O princípio é o do PO que motivou a mudança: *gerar barato,
+   raciocinar sob demanda, auditar caro.*
+2. **Independência.** A coletânea inteira existe para quebrar a **cegueira correlacionada**: o
+   mesmo agente lê o requisito, escreve o plano, o teste, o código e o veredito, e erra
+   coerentemente. Três gates já pediam *"por quem não implementou / não derivou / não escreveu"*
+   — e rodavam **na mesma sessão**. Um sub-agente nasce sem o contexto da sessão: a cegueira vem
+   de graça. Por isso a skill roteia por **dois eixos**: complexidade escolhe o modelo; cegueira
+   escolhe o contexto e proíbe rodar em linha.
+
+### O que muda na prática
+
+| Gate | Antes | Agora |
+|---|---|---|
+| Revisão do diff (6.5) | `/code-review` na sessão que implementou, depois da reconciliação | `/code-review high {base}...HEAD` **mais** um passe de eixos por `fw-revisor-diff` (`opus`, sem Edit/Write, não recebe o PRD), **antes** da reconciliação |
+| Revisão adversarial do `04` | sub-agente "equivalente", sem modelo fixado | `fw-adversario-ct` (`opus`), recebe só `00` + `04`/`05` |
+| Quality gate (8) | skill invocada em linha | `fw-qa-gate` (`opus`, sem Edit/Write) recebe só path da wiki, URL do app e `git diff --stat`; devolve o `06` como texto |
+| Pesquisa, greps, espelhos, contagens | em linha, no modelo da sessão | `haiku` em paralelo, tabela pronta |
+| Rascunho de `01`/`02`, código de um passo, teste a partir do Gherkin | em linha | `sonnet`, um passo por vez, nunca dois no mesmo arquivo |
+
+Todo disparo aparece num **quadro** antes de rodar e é reportado contra o mesmo quadro depois; o
+quadro vai para a seção `## Despachos` do `03-progresso.md`. É também o primeiro registro da
+coletânea de **qual modelo fez o quê** — o custo de operar, que nunca tinha sido medido.
+
+### Instalação dos agentes
+
+As cinco rotas que carregam **cegueira e restrição de ferramenta** vêm prontas, cada uma na
+pasta `agents/` da skill que define o contrato dela — assim o `boost:add-skill` instala o agente
+junto com a skill, inclusive na instalação seletiva:
+
+| Agente | Skill dona | Papel |
+|---|---|---|
+| `fw-revisor-diff` | `feature-wiki` | passe de eixos do step 6.5 |
+| `fw-executor-ct` | `feature-wiki` | testes Pest de backend a partir do Gherkin do `04`, sob contrato a/b/c (3.5.0) |
+| `fw-executor-ctb` | `feature-wiki` | loop dos CT-B no step 7 |
+| `fw-adversario-ct` | `feature-test-design` | revisão adversarial do `04` |
+| `fw-qa-gate` | `feature-quality-gate` | step 8 inteiro, sem Edit/Write |
+
+**O Claude Code não lê `.ai/skills/*/agents/`.** Depois de instalar ou atualizar as skills pelo
+Boost, copie os agentes para onde ele procura — uma vez, e de novo a cada `boost:add-skill`:
+
+```bash
+mkdir -p .claude/agents
+cp .ai/skills/*/agents/*.md .claude/agents/
+```
+
+No PowerShell: `New-Item -ItemType Directory -Force .claudegents | Out-Null` e
+`Copy-Item -Force .ai\skills\*gents\*.md .claudegents\`.
+
+Sem essa cópia, o `subagent_type: "fw-…"` não existe e a skill cai no `general-purpose` com
+`model` explícito — funciona (segurou uma feature inteira em 2026-09-21), mas perde a restrição
+de ferramenta. Os agentes só carregam do diretório onde a sessão foi aberta: `ls .claude/agents/fw-*.md`
+antes do primeiro despacho, e o fallback vai registrado no quadro.
+
+As rotas genéricas (`mecânico`, `construtor`, `analista`) não precisam de arquivo: a skill usa os
+agentes que o projeto já tiver em `.claude/agents/` ou o `general-purpose` com `model` explícito.
+**Nunca sem `model`** — sem ele o sub-agente herda o modelo caro da sessão.
+
+### Fora do Claude Code
+
+Windsurf, Cursor e Copilot não expõem sub-agente. A skill roda em linha e **declara** a degradação
+no `03` e no cabeçalho do `06` (`Independência: mesma sessão`). O que se perde não é só custo: o
+juiz volta a ser o autor, e quem lê o PR precisa saber disso.
+
+### Validado em campo (3.5.0, medido em 2026-09-21)
+
+A 3.4.0 desenhou o roteamento; a 3.5.0 é o que uma feature completa ensinou ao rodá-lo — fluxo de
+aprovação de compra em Laravel 13 / Filament 5 (`demo-wiki`): 18 `RQ`, 79 CTs, 182 testes,
+48 despachos, ~4,6 M tokens de sub-agente, quality gate ciclo 1 `REPROVADO → especificação`.
+
+**O que se confirmou** — e agora é regra dura, com o caso escrito no `SKILL.md`:
+
+- **Cegueira vale mais que modelo.** O adversário cego (`opus`) achou 5 implementações erradas
+  sobre 60 CTs que outro `opus` derivou. O 6.5 cego produziu 14 achados que mudaram código,
+  requisito e testes — antes da reconciliação, como a 3.4.0 previa
+- **O juiz cego acusa a própria sessão.** O step 8 derrubou duas alegações da Verificação Final:
+  *"88 citações ok"* sem comando por trás e *"sem PCOV / mutate não instalado"* sem `php -m`.
+  Nenhum gate anterior tinha como ver isso, porque todos viam a conversa
+- **O juiz cego faz a pergunta de requisito que ninguém fez**: gestor que acumula `diretor`
+  assinava as duas etapas sozinho; quem já decidiu perdia a solicitação de vista
+- **Auditoria do retorno não é opcional.** 3 de 8 retornos `haiku` tinham defeito; num lote misto
+  de 5 itens o `haiku` fez 1 e reportou 3 como feitos
+
+**O que se desmentiu** — e está corrigido na 3.5.0: `pest --mutate` dá 100 % falso no Windows
+(206 mutantes em 3 s; o plugin conta falha de spawn como mutante morto — lançador `.cmd` documentado
+e regra de plausibilidade); o `04` derivado antes dos cortes do Ponytail fica com CT órfão (ordem
+6 × 4 e re-sincronização); a `## Superfície Livewire` envelhece durante a implementação
+(re-varredura obrigatória antes do 6.5); CT que passa dos dois lados do `git stash` pode ser a
+pilha, não o CT (terceira saída da falsificabilidade); e "CTs de log" saíram do checklist — log é
+saída do plano, conferida pela dimensão D do quality gate.
+
+Nasceu também a quinta rota: **`fw-executor-ct`**, o construtor de testes Pest de backend a partir
+do Gherkin do `04`, que classifica cada vermelho em *teste errado / implementação divergente /
+flake* e nunca toca `app/`. Nos 5 lotes medidos, todo vermelho que sobrou era defeito real.
 
 ---
 

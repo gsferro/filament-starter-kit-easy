@@ -1,6 +1,6 @@
 ---
 name: feature-quality-gate
-version: 1.3.0
+version: 1.5.1
 description: >
   Etapa de QA dentro do agente — a próxima estação da esteira depois de
   implementar e rodar os testes. Invoque no step 8 da skill feature-wiki, ou
@@ -16,6 +16,9 @@ description: >
   Cada achado é classificado por severidade e roteado para um de 5 destinos — especificação,
   implementação, teste, infra ou não-defeito. NÃO corrige nada: lê, reproduz e
   reporta em 06-relatorio-qa.md. Loop converge em no máximo 3 ciclos.
+  No Claude Code roda como SUB-AGENTE sem Edit/Write (agents/fw-qa-gate.md desta skill, copiado
+  para .claude/agents/ com `cp .ai/skills/*/agents/*.md .claude/agents/`), cego à conversa que
+  escreveu a wiki e o código; o cabeçalho do 06 declara a Independência.
 ---
 
 # Feature Quality Gate — QA no Agente, com Roteamento
@@ -66,6 +69,24 @@ A fonte da verdade é o **`00-requisito.md`** e o **app rodando**. O PRD, os ADR
 O quality gate **lê, reproduz e reporta**. Não edita código de aplicação, não edita teste, não relaxa assertion, não "arruma" o PRD.
 
 > **Por quê**: agente que corrige o que acabou de julgar volta a ter cegueira correlacionada, e o relatório perde valor de prova.
+
+**No Claude Code, os princípios 1 e 2 são construção, não promessa.** A `feature-wiki` despacha
+esta skill no step 8 como sub-agente `fw-qa-gate` (`opus`), que **não tem `Edit`/`Write`** e
+recebe **só** o path da wiki, a URL do app e o `git diff --stat` — nunca a conversa que escreveu o
+`01` e implementou. A definição do agente é [`agents/fw-qa-gate.md`](agents/fw-qa-gate.md), nesta
+skill; o Claude Code só a enxerga depois de `cp .ai/skills/*/agents/*.md .claude/agents/` (uma vez,
+e a cada atualização das skills). O relatório volta como texto e a sessão o grava verbatim. Em qualquer host, o
+cabeçalho do `06` declara a linha `Independência:` — `sub-agente {rota}/{modelo}, sem acesso à
+conversa` ou `mesma sessão que escreveu a wiki`. A segunda é modo degradado: o leitor precisa
+saber que quem julgou foi quem escreveu.
+
+> **Medido em 2026-09-21** (primeira execução como `fw-qa-gate` cego, feature completa): o juiz
+> devolveu `REPROVADO → especificação` com 8 achados — 2 perguntas de requisito que ninguém tinha
+> feito (acumulação gestor × diretor; visibilidade de quem já decidiu) e **2 achados contra o
+> próprio orquestrador**: a `## Verificação Final` alegava *"88 citações ok"* sem comando que
+> reproduzisse o número, e declarava *"sem PCOV / `pest-plugin-mutate` não instalado"* quando
+> `php -m` e `ls vendor/pestphp/` provavam o contrário. Nenhum gate anterior tinha como acusar a
+> sessão; o juiz cego acusou porque não a viu. A dimensão L ganhou a checagem L6 por isso.
 
 ### 3. Convergência — loop com regra de parada
 
@@ -398,6 +419,15 @@ XDEBUG_MODE=coverage vendor/bin/pest tests/Feature/{Feature} --mutate --path=app
 Exige driver de cobertura (PCOV ou Xdebug). Escopar sempre: mutar o projeto inteiro é caro e
 devolve ruído.
 
+**Plausibilidade do score, antes de lê-lo** (medido em 2026-09-21): no Windows o plugin relança
+`argv[0]` (`vendor/bin/pest`, script sh) e o `cmd` não o executa — cada subprocesso morre em
+~30 ms com código 1 e o plugin conta como mutante **morto**. Resultado: *206 mutantes, 100 %,
+3 s* para uma suíte de 200 s — e este gate, na primeira execução cega, aceitou um *"2 mutantes,
+100 %"* sem desconfiar. Regra: **score sem `Duration` compatível com N × tempo dos testes
+cobridores, ou sem a lista de sobreviventes, é "Não Verificado"**, não 100 %. No Windows, rodar
+por um lançador `.cmd` poliglota (texto na seção *Pest 5* da `feature-wiki`). Timeout conta como
+morto no score; o achado é sempre o **sobrevivente nomeado**.
+
 > **Armadilha verificada**: `covers(X::class)` no arquivo de teste **restringe o que conta como
 > coberto**. Mutantes em classe fora do `covers()` são reportados como `uncovered` e o score vai a
 > 0%, mesmo com os testes executando aquele código em toda chamada. E `--class=` pode não casar;
@@ -428,7 +458,9 @@ operador diz qual lacuna de derivação o deixou vivo:
 
 **Piso sugerido**: 70% de mutation score nas classes de regra de negócio da feature. Abaixo disso,
 `REPROVADO → teste`. Sem driver de cobertura, rodar só o passo 1 e declarar o passo 2 em
-"Não Verificado".
+"Não Verificado" — **depois de provar a ausência** (`php -m | grep -i "pcov\|xdebug"`,
+`ls vendor/pestphp/`). A wiki que declara a degradação sem a prova é achado **L6**: em
+2026-09-21 as duas declarações estavam lá e as duas eram falsas.
 
 > **Nunca reprovar por cobertura de linha.** O indicador é o mutation score, e o achado é sempre
 > um mutante nomeado — não um percentual.
@@ -459,9 +491,10 @@ implementador **declarou**; esta dimensão confere a declaração.
 |---|---|---|---|
 | L1 | IDs de CT | `grep -o '\[CT-B\?[0-9]*\]'` nos arquivos de teste × índice do `04`/`05` | ID num lado só; linha de dataset sem Exemplo no Gherkin; contagem do cabeçalho do `04` diferente da real |
 | L2 | Citações `arquivo:símbolo:linha` | o grep da seção *Citações de código* da `feature-wiki` | símbolo não está na linha citada; citação sem símbolo |
-| L3 | PRD/ADR × código | para cada passo do `01` e cada "Decisão"/"Consequências" do `02`, abrir o arquivo citado e conferir a afirmação | afirmação que o código contradiz sem marca `*(alterado em …)*`; desvio que existe só no `03` |
+| L3 | PRD/ADR × código | para cada passo do `01` e cada "Decisão"/"Consequências" do `02`, abrir o arquivo citado e conferir a afirmação. **Toda afirmação com número é conferida por `grep -rn` do valor na wiki inteira**, não lendo o arquivo onde ela é esperada — número duplicado entre `01` e `02` é o que sobrevive ao gate | afirmação que o código contradiz sem marca `*(alterado em …)*`; desvio que existe só no `03`; número certo num arquivo e velho em outro |
 | L4 | Rules × diff | para cada rule cujo glob casa um arquivo do diff, conferir a linha da tabela do `03` **e** o código | rule sem linha na tabela; "aplicada" sem evidência; rule violada (`group` errado, chave de env fora do `phpunit.xml`, par de cenário exigido pela rule ausente) |
 | L5 | Docs × comportamento × rastro | docs pt × en × CHANGELOG × README contra o comportamento final; cada frase nova procurada no `00`/`02` | pt e en dizem coisas diferentes; consequência invalidada ainda descrita; frase em doc de usuário **sem `RQ` nem ADR** de origem — crescimento sem rastro, o mesmo padrão que a matriz chama de "código sem `RQ`" |
+| **L6** | Alegações da `## Verificação Final` e de `## Despachos` do `03` | cada `[x]` com **número**: reproduzir o comando que o gera (`grep -c`, script de citações, `pest`); cada **degradação declarada** ("sem PCOV", "plugin ausente", "MCP indisponível"): prova negativa (`php -m`, `ls vendor/…`); cada `Duration` de `--mutate`: plausível para N × testes | número que nenhum comando reproduz; degradação declarada com a ferramenta presente; score de mutação com duração implausível. **É a checagem que acusa o orquestrador**, e só um juiz que não viu a conversa a faz sem viés |
 
 **Severidade e destino**:
 
@@ -473,7 +506,16 @@ implementador **declarou**; esta dimensão confere a declaração.
 | L5 frase sem rastro | Major | **1** — vira Adendo no `00` ou sai da doc |
 | L5 pt × en divergentes; consequência invalidada ainda descrita | Minor | **1** |
 | L2 citação errada | Minor | **1** |
+| L6 número irreproduzível | Major | **1** — substituir pela saída real do comando |
+| L6 degradação falsa (a ferramenta existe) | Major | **1**, e **3** quando a degradação pulou o passo medido da dimensão K |
 | L1 contagem do cabeçalho errada | Cosmético | **1** — ou remover a contagem manual |
+
+> **Achado de número: procure a cópia antes de fechar.** Medido: este gate acusou uma contagem
+> errada, o orquestrador corrigiu o `01` e a ADR do `02` — que repetia o mesmo número — ficou para
+> trás. A defasagem sobreviveu ao gate que existia para pegá-la, porque o gate conferiu o arquivo
+> onde esperava a afirmação. Todo achado de L2, L3 ou L6 que envolva um valor sai com o
+> `grep -rn "{valor}" wikis/specs/{branch}/{feature}/` colado, e a ação exigida nomeia **todos** os
+> arquivos que o repetem.
 
 > **Esta dimensão não corrige nada**, como as outras. Devolve a lista com `arquivo:linha` dos
 > dois lados — o texto e o código — e o destino. Quem corrige é o step 7 da `feature-wiki`, na
@@ -550,6 +592,7 @@ A Matriz de Rastreabilidade transforma roteamento em consequência, não opiniã
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md`
 > Perfil de esforço: mínimo | padrão | completo
 > Natureza da wiki: {tipo} · Regressão: sim | não
+> Independência: sub-agente {rota}/{modelo}, sem acesso à conversa | mesma sessão que escreveu a wiki (degradado)
 
 ## Veredito — Ciclo {N}
 
@@ -714,6 +757,9 @@ Violação de qualquer uma invalida a execução:
 8. **Não aprovar com Blocker ou Major aberto.**
 9. **Não seguir além de 3 ciclos.** Escalar.
 10. **Não apontar o MCP para staging ou produção.**
+11. **Não aceitar número sem comando nem ausência sem prova.** "88 ok" sem o script, "sem PCOV"
+    sem `php -m`, "100 %" em 3 segundos — tudo isso é alegação do orquestrador, e a dimensão L6
+    existe para conferi-la.
 
 ---
 
@@ -734,6 +780,9 @@ Violação de qualquer uma invalida a execução:
 - [ ] Todas as dimensões do perfil executadas; as fora do perfil **declaradas com motivo**
 - [ ] Dimensão D verificou log real, incluindo **PII no context**
 - [ ] Dimensão L conferiu IDs de CT, citações `arquivo:símbolo:linha`, PRD/ADR × código, rules × diff e docs pt × en × CHANGELOG — inclusive a declaração do `03`
+- [ ] **L6**: todo número da `## Verificação Final` reproduzido pelo comando; toda degradação declarada conferida com a prova negativa; `Duration` do `--mutate` plausível
+- [ ] Todo achado que envolve um valor numérico sai com o `grep -rn` do valor na wiki inteira — a ação exigida nomeia cada arquivo que o repete
+- [ ] Dimensão K: score de mutação só aceito com duração plausível e sobreviventes nomeados — senão "Não Verificado"
 - [ ] Dimensão G detectou o mecanismo de tema do projeto antes de validar
 - [ ] Achados do MCP convertidos em CT-B novo ou em achado roteado
 

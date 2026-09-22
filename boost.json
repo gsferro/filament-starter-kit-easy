@@ -26,6 +26,7 @@
         "socialite-development",
         "pest-testing",
         "tailwindcss-development",
+        "filament-development",
         "blaze-optimize",
         "laravel-backup",
         "caveman",

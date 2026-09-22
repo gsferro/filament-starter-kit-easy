@@ -1,6 +1,6 @@
 # feature-test-design — Casos de Teste que Matam Defeito
 
-> **Skill**: [`SKILL.md`](SKILL.md) · versão **1.12.0**
+> **Skill**: [`SKILL.md`](SKILL.md) · versão **1.14.0**
 > Este README fala com a **pessoa**: por que a skill existe, que problema ela resolve, a
 > evidência por trás de cada decisão e o que ela não faz. O procedimento que o agente segue
 > está no `SKILL.md` e não é duplicado aqui.
@@ -264,7 +264,22 @@ Nenhuma obrigatória além de um projeto com testes. Degradações declaradas:
 | Item | O que habilita | Sem ele |
 |---|---|---|
 | `00-requisito.md` (feature-wiki ≥ 2.10) | o oráculo do pipeline | a skill **para e pede** o requisito |
-| `pestphp/pest-plugin-mutate` + PCOV/Xdebug | fechamento do ciclo (`pest --mutate`) | o passo 6 fica só como previsão, sem medição |
+| `pestphp/pest-plugin-mutate` + PCOV/Xdebug | fechamento do ciclo (`pest --mutate`) | o passo 6 fica só como previsão, sem medição — declarar a ausência só com `php -m` / `ls vendor/pestphp/` colados. **No Windows o score é 100 % falso** sem o lançador `.cmd` (ver a `feature-wiki`, seção *Pest 5*) |
 | `pest-plugin-livewire` | camada de componente | cai para `Feature` HTTP, mais cara e mais cega |
 | `pest-plugin-browser` + Playwright | CT-B executáveis | o `05` fica como roteiro manual |
 | Sub-agente disponível | revisão adversarial | perfil completo perde o gate independente |
+| Claude Code com o agente `fw-adversario-ct` instalado | adversarial em `opus`, **sem Edit/Write/Bash**, recebendo só `00` + `04`/`05` — a cegueira vem da construção | cai em `general-purpose` com `model: opus` explícito; sem sub-agente nenhum, roda em linha e o `04` declara *"mesma sessão que derivou"* |
+
+### Instalação do sub-agente (Claude Code)
+
+A definição vem nesta skill, em [`agents/fw-adversario-ct.md`](agents/fw-adversario-ct.md), para o
+`boost:add-skill` instalá-la junto. **O Claude Code só lê `.claude/agents/`** — depois de instalar
+ou atualizar as skills, copie os agentes de toda a esteira, uma vez e a cada atualização:
+
+```bash
+mkdir -p .claude/agents
+cp .ai/skills/*/agents/*.md .claude/agents/
+```
+
+No PowerShell: `New-Item -ItemType Directory -Force .claudegents | Out-Null` e
+`Copy-Item -Force .ai\skills\*gents\*.md .claudegents\`.
