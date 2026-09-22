@@ -133,7 +133,37 @@ it('[CT-01] o endereco e o do painel da organizacao, e nao o do registro nem o d
  * cenário é a asserção do LITERAL, que continua aqui. Registrado como C-1 no `03-progresso.md`.
  */
 it('[CT-02] o caminho do painel nao e escrito a mao no gerador', function (): void {
-    $fonte = semComentarios((string) file_get_contents(app_path('Models/Tenant.php')));
+    $cru = (string) file_get_contents(app_path('Models/Tenant.php'));
+
+    /*
+     * CONTROLE POSITIVO — acrescentado em 2026-09-21, achado QA-08 do quality gate.
+     *
+     * A asserção deste caso é de AUSÊNCIA sobre uma fonte TRANSFORMADA, e essa combinação tem um
+     * modo de falha silencioso: se `file_get_contents()` devolvesse `false` (arquivo movido,
+     * renomeado, permissão) ou se `semComentarios()` passasse a devolver vazio, a string a
+     * procurar não estaria lá — e `not->toContain('/app')` ficaria VERDE para sempre. Contra M01,
+     * que este caso é o único a matar.
+     *
+     * `str_contains("", "/app") === false`: a repro é essa, e cabe numa linha.
+     *
+     * O controle afirma o oposto sobre o texto CRU: o `/app/{slug}` **tem** de estar lá, porque o
+     * docblock da classe documenta o endereço que o método gera. Uma asserção prova que o arquivo
+     * foi lido de verdade; a outra, que o filtro de comentário funcionou. Nenhuma das duas sozinha
+     * prova as duas coisas.
+     *
+     * Mesma família do defeito que o `/code-review` encontrou em CT-21 de
+     * `tests/Kit/LinkDoPainelSemTenancyTest.php`, e a terceira ocorrência dela nesta feature.
+     */
+    $this->assertStringContainsString(
+        '/app/{slug}',
+        $cru,
+        'o docblock de `Tenant.php` deixou de documentar o endereço gerado: o filtro de comentário '
+        .'deste caso perdeu o alvo, e a asserção de ausência abaixo não guarda mais nada',
+    );
+
+    $fonte = semComentarios($cru);
+
+    $this->assertNotSame('', trim($fonte), '`semComentarios()` devolveu vazio — a asserção abaixo seria vácua');
 
     expect($fonte)->not->toContain('/app');
 });
@@ -260,7 +290,16 @@ it('[CT-05] a organizacao inativa tambem exibe o link, e e o dela', function (st
         $componente->assertDontSeeHtml('href="'.e(enderecoEsperadoDoPainel($ativa)).'"');
     }
 
-    expect(enderecoEsperadoDoPainel($inativa))->not->toBe(enderecoEsperadoDoPainel($ativa));
+    /*
+     * A segunda asserção SAIU (corte C-2 da revisão adversarial, aplicado em 2026-09-21 — QA-07).
+     *
+     * Ela era `expect(enderecoDa($inativa))->not->toBe(enderecoDa($ativa))`, e **não podia falhar
+     * quando a primeira passa**: as duas organizações nascem com slugs distintos por construção,
+     * então o gerador já não teria como devolver o mesmo endereço. O `04` registrou o corte; o
+     * teste continuava carregando a linha, e os dois lados diziam coisas diferentes sobre ela.
+     *
+     * O que prova a distinção de endereços é CT-15, que compara o renderizado com o gerado.
+     */
 })->with([
     'a listagem (inativa na listagem)' => 'listagem',
     'a ficha da inativa'               => 'ficha',
