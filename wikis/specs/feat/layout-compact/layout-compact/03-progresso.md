@@ -327,7 +327,7 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
 - [x] `vendor/bin/pint --dirty --format agent` — `passed`, 2026-09-21
 - [x] `vendor/bin/filacheck --fix` — **17/17 regras passaram**, 2026-09-21
 - [x] `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` — **30 passaram, 66 asserções**, remedido em 2026-09-21 (antes: 25/47, antes de CT-16 e CT-17)
-- [x] **Regressão completa** (obrigatória por tocar infra compartilhada) — **2.721 passaram, 10.537 asserções, 0 falhas**, 2026-09-21, remedida pela **terceira** vez: depois do `/code-review` (2.717) e de novo depois do quality gate, que acrescentou a largura do menu
+- [x] **Regressão completa** (obrigatória por tocar infra compartilhada) — **2.722 passaram, 10.539 asserções, 0 falhas**, 2026-09-22, remedida pela **quarta** vez (2.715 → 2.717 → 2.721 → 2.722, acompanhando CT-16, CT-17 e CT-18): depois do `/code-review` (2.717) e de novo depois do quality gate, que acrescentou a largura do menu
 
   **Rodada por `php artisan test --testsuite=Kit,Tenancy --parallel`, não por `composer test:kit`** — ver a armadilha do código de saída 0 logo abaixo
 
