@@ -211,7 +211,14 @@ gate por serem caminho solto (`base_path('TenantForm.php')` não resolve):
 É a confirmação medida do que a própria rule diz: **conferir por lista escolhida à mão não é
 conferência**. Foram 13 na lista, 14 na árvore.
 
-### O que fica aberto
+### ~~O que fica aberto~~ — fechado em 2026-09-22
+
+> A citação `HasRoutes.php:193` → `194` foi fechada no commit `5390093`, e o `03` foi atualizado em
+> `dcb038e`. **Esta seção continuou dando o item por aberto** — o QA-18 fechou pela metade, e o
+> ciclo 3 apontou a outra metade. Fica registrado porque é a terceira ocorrência do mesmo padrão
+> nesta wiki: o texto sobrevive à correção que ele descreve, num arquivo que ninguém relê.
+
+### O que ficava aberto (texto original)
 
 - **`HasRoutes.php:193`** no docblock de `Tenant::urlDoPainel()` (`app/Models/Tenant.php`). O ramo
   de concatenação retorna na linha **194**; a 193 é branca. Não foi corrigida porque é código de

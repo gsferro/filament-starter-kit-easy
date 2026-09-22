@@ -38,7 +38,7 @@ use Monolog\LogRecord;
  * (`app/Traits/TemUuid.php:getRouteKeyName:35`), e a rota do tenant é `{tenant:slug}` — quem
  * montasse a URL com `getRouteKey()` produziria o uuid.
  *
- * O SEGMENTO é escrito à mão, e de propósito. Oito casos deste arquivo chamam
+ * O SEGMENTO é escrito à mão, e de propósito. Nove casos deste arquivo chamam
  * `Tenant::urlDoPainel()` direto (CT-01, CT-03, CT-08, CT-09, CT-10, CT-14, CT-18, CT-22), porque
  * ali o sujeito da afirmação é o gerador e não a tela. E quatro oráculos afirmam só o FIM do
  * endereço, com o segmento literal: `toEndWith('/acme-do-brasil')` (CT-01),

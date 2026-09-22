@@ -70,12 +70,15 @@
       Conferido também que cada correção aponta para a **declaração** e não para uma menção em
       docblock — a armadilha que a wiki irmã (`layout-compact`) produziu ao corrigir as dela
 - [x] Falsificabilidade — com o `app/` revertido ao merge-base
-      (`git checkout fbfe528 -- app/`), **26 dos 44** casos ficam vermelhos (13 falhas de asserção
-      + 13 erros por método inexistente), remedido em 2026-09-21. Dos **cinco** casos que entraram
-      depois da primeira passagem, **3 reprovam** (CT-22, CT-23 e a linha `admin_vinculado` de
-      CT-08, os três por `Tenant::urlDoPainel()` não existir) e **2 passam dos dois lados** —
-      CT-21 e a linha `globex` de CT-16 —, o que está **previsto** e não é defeito: ver **D-05**
-- [x] IDs `[CT-nn]` do teste ⊆ `04` — **fecha**: os **23** IDs do teste (CT-01..CT-18, CT-20 e
+      (`git checkout fbfe528 -- app/`), **28 dos 45** casos ficam vermelhos (15 falhas de asserção
+      e 13 erros por `Call to undefined method urlDoPainel()`) — remedido em 2026-09-22, achado
+      QA-25 do ciclo 3. Vermelhos: CT-01..CT-10, CT-14, CT-15, CT-18, CT-20, CT-22, CT-23, CT-24.
+
+      **CT-02 mudou de lado, e isso é resultado do próprio gate.** Ele figurava entre os verdes
+      "por desenho" — varredura de fonte, mata M01 e não prova presença. O controle positivo que o
+      QA-17 obrigou a escrever (exigir `function urlDoPainel` na fonte **transformada**) o fez
+      reprovar contra o merge-base, onde o método não existe. A correção de um oráculo fraco
+      **aumentou a falsificabilidade da suíte**, e é medível: 26/44 → 28/45.
       CT-22 em `tests/Tenancy`, CT-19, CT-21 e CT-23 em `tests/Kit`) existem todos no `04`
 - [x] IDs do `04` ⊆ teste — **fecha**: os quatro cenários que a revisão adversarial acrescentou
       (**CT-21**, **CT-22** e as duas linhas de `Examples` — CT-08 vinculado, CT-16 `globex`)
@@ -130,7 +133,7 @@ Cosmético **2**. Sete achados **novos** (QA-15 a QA-21), nenhum repetido do cic
 **não converge** e resta um ciclo do teto de três. A reconferência independente **confirmou** o
 fechamento no que ele mediu: 14 citações erradas na árvore do ciclo 1, zero ERRO hoje no `03`/`04`,
 todas as correções apontando para a **declaração**, e os contadores (36 mutantes, 23 cenários, 9
-regras, 3 lacunas, 44/229, 23 IDs, 26 dos 44, R8 com oito linhas) batendo com a árvore. Os dois
+regras, 3 lacunas, 45/234, 24 IDs, 28 dos 45, R8 com oito linhas) batendo com a árvore. Os dois
 Major nasceram **dentro da remediação**: **QA-15** (`M36` ficou com duas definições e dois
 matadores no mesmo `04` — `04:987` dá CT-21, `04:1286` dá CT-23 e mede que CT-21 **não** o mata) e
 **QA-16** (o `04` ainda publica uma "Divergência viva" de CT-02 desfeita em `3c326bf`, antes do

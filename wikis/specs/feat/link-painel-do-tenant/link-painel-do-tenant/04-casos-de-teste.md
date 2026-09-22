@@ -206,7 +206,7 @@ proibição de `--parallel` com browser não se aplica.
 
 | CTs | Arquivo | Suíte | Por quê |
 |---|---|---|---|
-| CT-01..CT-18, CT-20, CT-22 | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | `Tenancy` (grupo `kit`) | `TenantResource::canAccess()` exige `kit.tenancy.enabled`, e o `Tests\TenancyTestCase` fixa `permission.teams` em `createApplication()`, antes das migrations. O papel `admin_app` **só existe** nesta suíte |
+| CT-01..CT-18, CT-20, CT-22, **CT-24** | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | `Tenancy` (grupo `kit`) | `TenantResource::canAccess()` exige `kit.tenancy.enabled`, e o `Tests\TenancyTestCase` fixa `permission.teams` em `createApplication()`, antes das migrations. O papel `admin_app` **só existe** nesta suíte |
 | CT-19, CT-21, CT-23 | `tests/Kit/LinkDoPainelSemTenancyTest.php` | `Kit` (grupo `kit`) | é a **única** suíte onde a tenancy está desligada. Um CT de "desligada" dentro de `tests/Tenancy` mediria o arnês, não o comportamento |
 
 > Nenhum helper novo em `tests/Pest.php`: os dois arquivos não compartilham função. Se a
@@ -573,6 +573,12 @@ quando a nova aba está declarada (`vendor/filament/support/src/helpers.php:gene
 |---|---|---|
 | M12 | a nova aba é declarada em duas superfícies e esquecida na terceira | CT-07 (a linha da superfície faltante) |
 | M13 | o link abre na mesma aba, e quem clicava na listagem perde a lista | CT-07 |
+| M38 | o link **abre** em nova aba mas **não avisa** — o `->icon()` sai de uma das duas telas de leitura, ou o `helperText` do formulário perde a frase. O `target="_blank"` continua lá, então M12 e M13 seguem mortos e o defeito é invisível para eles: trocar de aba sem aviso é o usuário atribuindo a defeito uma coisa deliberada | **CT-24** |
+
+> **M38 nasceu de uma correção, não da derivação.** O QA-13 do quality gate apontou que a ficha não
+> sinalizava nada; a correção entrou e o ciclo seguinte apontou que ela tinha entrado **sem caso**
+> (QA-19). Ou seja: a regra R4 tinha mutante para o **comportamento** (a aba abre?) e nenhum para o
+> **aviso** (o usuário sabe que vai abrir?) — e os dois são exigência da ADR-04, não só o primeiro.
 
 ---
 
@@ -1121,12 +1127,12 @@ que é o que a feature possui — o custo da tela é da lacuna 3).
 | CT-18 | o link segue o slug gravado, sem normalizar e sem encodar | R8 | invariante das duas leituras, escrita fora da UI | Livewire (`ViewTenant`) | idem | M26, **M35** |
 | CT-19 | com a tenancy desligada a listagem não abre | R9 | EP (config) | Feature (`GET`) | `tests/Kit/LinkDoPainelSemTenancyTest.php` | M27 *(em parte)*, M28 |
 | CT-20 | o cadastro continua gravando, e o link aparece na edição | R3 | gate de tela de escrita | Livewire (`CreateTenant`) | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | M11 |
-| CT-21 | com a tenancy desligada nenhuma tela do `/admin` estoura nem oferece o link | R9 | EP (config) × inventário de telas | Feature (`GET`) | `tests/Kit/LinkDoPainelSemTenancyTest.php` | M27 |
+| CT-21 | com a tenancy desligada nenhuma tela do `/admin` estoura nem oferece o link | R9 | EP (config) × inventário de telas | Feature (`GET`) | `tests/Kit/LinkDoPainelSemTenancyTest.php` | M27, **M37** |
 | CT-22 | seguir o link de organização inativa, sem vínculo, é recusado nas duas leituras | R5 | invariante das duas leituras | Feature (`GET`) | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | **M33** |
 | CT-23 | sem tenancy o gerador devolve `null`, e não o `/app/{uuid}` morto | R9 | EP (config), chamada direta do gerador | Feature (PHP puro) | `tests/Kit/LinkDoPainelSemTenancyTest.php` | **M36** |
-| CT-24 | as três superfícies **avisam** que o link troca de aba | R1 | inventário das três superfícies × forma do aviso | Feature (schema resolvido) | M38 |
+| CT-24 | as três superfícies **avisam** que o link troca de aba | R4 | inventário das três superfícies × forma do aviso | Feature (schema resolvido) | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | **M38** |
 
-**36 mutantes previstos, 36 com matador, 0 sem** — `M01`..`M36`, nenhum ID pulado, conferido por
+**38 mutantes previstos, 38 com matador, 0 sem** — `M01`..`M38`, nenhum ID pulado, conferido por
 `grep -o "M[0-9][0-9]" 04-casos-de-teste.md | sort -u | wc -l`. (M36 entrou pelo `/code-review` —
 ver o adendo no fim deste arquivo. O `37` escrito aqui antes vinha de um erro anterior ao M36: o
 incremento 36→37 preservou a diferença em vez de corrigi-la.)

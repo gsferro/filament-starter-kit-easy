@@ -28,7 +28,7 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   vínculo (`canAccessTenant()`, que registra `motivo: sem_vinculo` no canal `tenancy`). O 404 é
   deliberado: 403 confirmaria que a organização existe e permitiria enumerar clientes por varredura
   de slug. Documentado em
-  [Multi-tenancy (opt-in)](docs/pt/recursos/multi-tenancy.md) e coberto por 44 casos em
+  [Multi-tenancy (opt-in)](docs/pt/recursos/multi-tenancy.md) e coberto por 45 casos em
   `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` e `tests/Kit/LinkDoPainelSemTenancyTest.php`.
 
   **Com a multi-tenancy desligada o endereço é `null`, e não um link.** Sem tenancy o painel de
