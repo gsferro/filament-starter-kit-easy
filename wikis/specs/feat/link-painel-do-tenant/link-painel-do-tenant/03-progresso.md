@@ -221,18 +221,36 @@ para que ninguém escreva o teste no sentido errado:
 |---|---|---|---|
 | CT-16, última linha dos `Examples` | a edição recusa o slug **de outra organização gravada**, e o gravado não muda (A-5) | **PASSA hoje.** `->unique()` do Filament ignora o próprio registro por padrão nesta versão (`vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:unique:563` + a propriedade `true` em `:shouldUniqueValidationIgnoreRecordByDefault:34`), então o mesmo `->unique()` sem argumento atende CT-13 **e** esta linha. Não é achado de implementação: é cenário que faltava | **confirma a sonda.** Linha `slug de OUTRA organização gravada` no dataset, mais a `Globex` no `Dado` (inerte para as demais). `assertHasFormErrors(['slug'])`, gravado segue `acme` |
 | CT-08, 3ª linha dos `Examples` | o administrador da instalação **vinculado** à organização continua tomando **403** — vínculo não é papel (A-10) | **403**, como esperado. O portão 1 decide primeiro | **confirma a sonda.** Persona `admin_vinculado` no `match`, mesma pessoa de `administradorDaInstalacao()` com `tenants()->attach()` |
-| **CT-21** (novo) | com a tenancy desligada, nenhuma das telas de `tests/Pest.php:telasDoKit:225` do painel `admin` responde **500**, e nenhuma exibe `href` do painel de negócio (A-7) | as 18 telas passam, 51 asserções | **confirma a direção, com asserção a mais.** As mesmas 18 telas, **55** asserções — a sonda afirmava UMA forma do endereço e o definitivo afirma **duas** (ver a divergência D-05.a) |
+| **CT-21** (novo) | com a tenancy desligada, nenhuma das telas de `tests/Pest.php:telasDoKit:225` do painel `admin` responde **500**, e nenhuma exibe `href` do painel de negócio (A-7) | as 18 telas passam, 51 asserções | **confirma a direção, com asserção a mais.** As mesmas 18 telas, **56** asserções (medido em 2026-09-21) — a sonda afirmava UMA forma do endereço e o definitivo afirma **duas**, mais o controle positivo (ver a divergência D-05.a) |
 | **CT-22** (novo) | seguir o link de organização **inativa** sem vínculo devolve **404**, e as duas leituras concordam (A-8) | **404**; `canAccessTenant()` falso e `getTenants()` não a contém | **confirma a sonda**, as três asserções |
 
 #### D-05.a — a sonda de CT-21 media UMA forma do endereço, e existem duas
 
+> **Corrigido em 2026-09-21.** O parágrafo original sustentava que sem tenancy o endereço vinha
+> como **query string**, `?tenant={uuid}`. É o achado 1 do `/code-review`, e foi **medido como
+> falso**. Ele sobreviveu à correção porque o raciocínio estava escrito **aqui**, e o que o step
+> 7.5 consertou foi o teste — o docblock e a asserção. Registrado inteiro, e não apagado, porque é
+> o parágrafo com a maior chance de reintroduzir o defeito.
+
 Sem tenancy, `Panel::getUrl($tenant)`
-(`vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:getUrl:170`) **não** produz
-`/app/{slug}`: `hasTenancy()` é falso, a rota não tem parâmetro `{tenant}`, e o ramo de
-`Route::has()` entrega o modelo a `route()` como parâmetro extra — que vira **query string**,
-`?tenant={uuid}`. Uma asserção que só procurasse `/app/acme` ficaria verde diante de uma entrada
-renderizada na forma que a instalação single-tenant de fato produz. O caso definitivo afirma as
-**duas**, e é daí que vêm as quatro asserções a mais (55, não 51).
+(`vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:getUrl:170`) não produz `/app/{slug}` —
+e também **não** produz query string nenhuma. `hasTenancy()` é falso; o ramo de `Route::has()`
+(linha 182) exige a rota `filament.app.home`, que **não é registrada** com a tenancy desligada,
+então a condição é falsa e a execução **cai no ramo seguinte** (linha 194), que monta o endereço
+por **concatenação de string** — `url($path.'/'.$tenant->getRouteKey())`, com a chave de rota
+porque não há `slugAttribute` declarado.
+
+O que sai é `http://host/app/{uuid}`: segmento de **caminho**, chave no lugar do slug, e nenhum
+`?tenant=`. Enquanto a string afirmada foi `tenant=`, essa metade do caso era **vazia** — nenhuma
+implementação, certa ou errada, poderia produzi-la, e a asserção ficaria verde para sempre,
+inclusive contra o mutante que o docblock dizia matar. O erro não foi de citação: o parágrafo
+citava `arquivo:linha` real e raciocinava de forma plausível sobre ele. O que faltou foi executar.
+
+O caso definitivo afirma as **duas** formas que uma implementação real produz — `/app/{slug}`, da
+concatenação à mão que a ADR-01 descartou, e `/app/{uuid}`, do gerador — e mede **56** asserções
+(medido em 2026-09-21; a sonda media 51, e a diferença vem da segunda forma somada à migração de
+`->not->toContain()` para `assertStringNotContainsString`). E ganhou **controle positivo**: o caso
+exige que o gerador produza o endereço morto antes de afirmar a ausência dele.
 
 Nenhuma das duas é `/app` solto: a raiz do painel de negócio aparece legitimamente no `/admin` (o
 seletor de painéis), e a asserção nasceria vermelha contra a instalação correta.
