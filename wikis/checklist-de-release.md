@@ -88,19 +88,32 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 | O que conferir | Como | Esperado |
 |---|---|---|
 | **Zero erro e zero falha** | a saída do comando acima | é o critério de "liso"; **pulado declarado não conta contra** |
-| Contagem de **pulados** | mesma saída | **anotar**, não afirmar. A variação entre releases é o sinal — ver a nota abaixo |
+| Contagem de **pulados** | mesma saída | **não pode passar do teto** registrado na release anterior. Subiu? **justificar por escrito, caso a caso**, antes da tag — ver a nota abaixo |
 | Versão | `php artisan tinker --execute "echo config('kit.version');"` | a tag nova **sem o `v`** (`0.38.1`, não `v0.38.1`), nos quatro |
 | Tenancy (2 e 4) | `… echo config('kit.tenancy.enabled') ? 'SIM' : 'NAO';` | `SIM` |
 | Arquivo novo da release | `ls` no caminho dele | presente nos quatro — se faltar só nos de update, o problema é `CAMINHOS_DO_KIT` |
 | Migration nova | saída do `migrate --force` | rodou nos cenários 3 e 4 |
 
-> **Sobre os pulados.** Na `v0.38.0` foram **145** por cenário, e eles são deliberados: os casos que não se
-> aplicam fora da árvore do kit (site de documentação, fluxos do GitHub Actions, histórico de
-> planejamento). O número **envelhece** a cada release, então o checklist pede **registrar**, não
-> conferir contra um valor fixo — **o número acima já envelheceu**: a correção do `[CT-12]` o leva
-> para 146 (o caso passa a pular em vez de estourar) e o `[CT-11]` novo, que também só vale na
-> árvore do kit, para 147. O que importa é a **variação**: um salto de dezenas sem feature nova que
-> justifique é achado — provavelmente um caso que deveria rodar e passou a ser pulado.
+> ### Sobre os pulados — e por que aqui há **teto**, não só registro
+>
+> Na `v0.38.0` foram **145** por cenário, e eles são deliberados: os casos que não se aplicam fora
+> da árvore do kit (site de documentação, fluxos do GitHub Actions, histórico de planejamento). O
+> número **envelhece** a cada release — e o de cima **já envelheceu**: a correção do `[CT-12]` o
+> leva a 146 (o caso passa a pular em vez de estourar) e o `[CT-11]` novo, também só válido na
+> árvore do kit, a 147.
+>
+> **A regra**: a contagem de uma release **não pode passar do teto da anterior**. Se passar, cada
+> unidade de aumento é **justificada por escrito** antes da tag sair, nomeando o caso e o motivo.
+> O teto novo vira o da próxima.
+>
+> **Por que teto e não só "anotar e comparar"**, que era a regra original: *"pulado declarado não
+> conta contra"* é **anti-conservador justamente nesta classe de defeito**, porque a correção
+> canônica dela **é acrescentar um `skip`**. O critério isenta exatamente a métrica que toda
+> correção futura infla. Um caso que deixe de rodar **indevidamente** e uma correção **legítima**
+> produzem a mesma linha — *+1 pulado, zero falha* — e só a justificação os separa.
+>
+> Registrar deixa o sinal visível e não obriga ninguém a olhar. Teto **reprova** na release em que
+> o número sobe sem explicação.
 
 ### Limpar
 

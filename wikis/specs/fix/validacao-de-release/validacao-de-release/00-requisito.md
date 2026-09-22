@@ -133,6 +133,15 @@ não era *"criar guarda?"*, era *"endurecer a que existe?"*.
   **Assumido**: "liso" significa **zero erro e zero falha**; pulado declarado não conta contra.
   **Se negado**: seria preciso decidir o que fazer com cada um dos 145, o que é outra entrega.
 
+- **A premissa acima falha ABERTO — achado da derivação do `04`, DECIDIDO com o usuário em 2026-09-22.**
+  *"Pulado declarado não conta contra"* é **anti-conservadora nesta feature em específico**: a
+  correção canônica desta classe de defeito **é acrescentar um `skip`**. A premissa isenta
+  justamente a métrica que toda correção futura faz crescer — e já cresceu **nesta entrega**: 145
+  → 147, sendo as duas unidades o `[CT-12]` corrigido e o `[CT-11]` novo. Um caso que passe a ser
+  pulado **indevidamente** é indistinguível, por este critério, de uma correção legítima.
+  **DECIDIDO: manter o teto.** O roteiro passa a exigir teto de pulados com **justificativa por
+  aumento**, não só registro — registrar é anotação, teto é gate. Materializado em CT-13.
+
 - **RQ-07 — "entender os erros" tem oráculo?**
   Não é testável como está.
   **Assumido**: o entendimento é entregue como a seção *"por que nenhum gate pegou"* do `03` e

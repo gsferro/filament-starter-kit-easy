@@ -199,7 +199,18 @@ devolveu **145 pulados** em cada um, além do erro único.
 
 ### Decisão
 
-**"Liso" significa zero erro e zero falha.** Pulado **declarado** não conta contra.
+**"Liso" significa zero erro e zero falha.** Pulado **declarado** não conta contra — **mas a
+contagem tem teto, e todo aumento exige justificativa escrita.**
+
+> **A segunda metade entrou depois, e a primeira sozinha estava errada.** A derivação do `04`
+> mostrou que *"pulado não conta contra"* falha **aberto nesta feature em específico**: a correção
+> canônica desta classe de defeito **é acrescentar um `skip`**, então o critério isenta exatamente
+> a métrica que toda correção futura infla. **Nesta própria entrega** ela foi de 145 para 147.
+> Sem teto, um caso que deixe de rodar **indevidamente** é indistinguível de uma correção
+> legítima — os dois são "+1 pulado, zero falha".
+>
+> **Confirmado com o usuário em 2026-09-22**: mantém o teto. É acréscimo de processo, e foi
+> aceito como tal.
 
 ### Alternativas Consideradas
 
@@ -207,14 +218,20 @@ devolveu **145 pulados** em cada um, além do erro único.
    kit: conferem o site de documentação, os fluxos do GitHub Actions, o histórico de planejamento.
    Fazê-los rodar exigiria entregar `docs/`, `.github/` e `wikis/specs/` a todo projeto instalado —
    o oposto de três decisões anteriores do kit
+2. **Só registrar a contagem, sem teto** — foi a primeira versão desta ADR, e **descartada** depois
+   do achado da derivação do `04`. Registrar deixa o sinal visível e não obriga ninguém a olhar: a
+   release sai com "zero erro, zero falha" e o número cresce em silêncio numa linha de log. Numa
+   feature cuja correção canônica é *acrescentar um `skip`*, isso é pedir para a métrica apodrecer
 
 ### Consequências
 
-- **Positivas**: o critério é verificável e não pede mudança de escopo
-- **Negativas**: um pulado **indevido** (caso que deveria rodar e não roda) passaria despercebido
-  por este critério. **Mitigação declarada**: o checklist manda registrar a contagem de pulados a
-  cada release, e a variação dela entre versões é o sinal — um salto de dezenas sem feature nova que
-  o justifique é achado
+- **Positivas**: o critério é verificável, e o teto o torna **acionável** — o aumento tem de ser
+  explicado por quem publica, no momento em que publica
+- **Negativas**: é acréscimo de processo, e processo que ninguém cumpre é pior que processo nenhum.
+  Aceito explicitamente pelo usuário em 2026-09-22, sabendo disso
+- **O que a mitigação anterior não cobria**: *"registrar, e a variação é o sinal"* supõe alguém
+  comparando duas releases. O teto não supõe ninguém: ele **reprova** na release em que o número
+  sobe sem justificativa escrita
 - **Riscos**: o número 145 envelhece — e **já envelheceu nesta própria entrega**: o `[CT-12]`
   corrigido leva a 146 e o `[CT-11]` novo a 147. Por isso o checklist pede **registrar**, não
   **afirmar**, e o passo 6 é quem mede
