@@ -575,3 +575,226 @@ escrita na ADR sobre o que o teste protege, e ela foi medida como falsa.
 - **`pest --tia`** — não rodado; a regressão completa cobre o mesmo escopo com mais folga.
 - **`site-vitepress/`** — espelho defasado por decisão anterior ao escopo desta feature; varrido só
   para registrar que a citação do QA-14 se repete lá.
+
+---
+
+## Revalidação dirigida do QA-11
+
+> **Não é um ciclo 4.** O teto de três ciclos foi atingido e o QA-11 escalou ao usuário. Esta
+> seção verifica **quatro afirmações** sobre a remediação feita depois do veredito (commit
+> `5740ebc`, diff `47e7fec..HEAD`), por execução, e nada mais. As 12 dimensões **não** foram
+> rodadas.
+>
+> Ambiente: worktree `starter-kit-easy-compact`, branch `feat/layout-compact` · `vendor/bin/pest`
+> (sem `composer`) · app **não servido** · Playwright **não usado**.
+
+### Veredito da revalidação
+
+**Afirmações 1, 2 e 3: confirmadas. Afirmação 4: derrubada.**
+
+O código e o teste estão certos — a guarda é real, não é circular, e mata o mutante que a ADR
+descreve. O que não fecha é o **texto que veio junto**: a remediação acrescentou um CT e deixou
+sete contadores para trás em quatro arquivos, não derivou o CT no `04`, e não registrou nada no
+`03`. É a **quarta** repetição seguida da mesma família (QA-04 → QA-09 → QA-12 → QA-16), e o
+achado de derivação (QA-15) é da mesma classe que o ciclo 1 classificou como **Major**.
+
+**Não vai para PR como está.** Os três achados abaixo são texto, são baratos, e nenhum deles pede
+tocar em código ou em teste.
+
+### Afirmação 1 — existe uma guarda real do contrato · **CONFIRMADA**
+
+`[CT-18]` (`tests/Kit/DensidadeDoLayoutTest.php:516-525`) lê o default do vendor por
+`(new ReflectionClass(Panel::class))->getDefaultProperties()['sidebarWidth']` e o compara com
+`DensidadeDoLayout::Confortavel->larguraDaSidebar()`.
+
+**Não é circular, e isso foi medido, não deduzido.** `getDefaultProperties()` devolve o valor
+**declarado** na propriedade do trait (`Panel` usa `Panel\Concerns\HasSidebar` em
+`vendor/filament/filament/src/Panel.php:41`), não o estado de um painel resolvido. Os três
+painéis do kit chamam `->sidebarWidth(Closure)` — `AdminPanelProvider.php:117`,
+`AppPanelProvider.php:128`, `InfraPanelProvider.php:138` —, então perguntar a
+`Filament::getPanel($x)->getSidebarWidth()` devolveria o valor que o **próprio kit** setou, e a
+asserção não valeria nada. A prova de que a reflexão de fato alcança o vendor está na afirmação 2:
+sob o mutante, o lado *esperado* da falha veio `'18rem'`, que é o literal do vendor mutado — se a
+leitura fosse do painel, teria vindo `'20rem'` dos dois lados e o caso ficaria verde.
+
+A primeira asserção do caso (`toBeString`) cobre o sumiço da propriedade: sem ela o contrato
+perderia a referência em silêncio, e agora falha com mensagem própria.
+
+**Limitação, declarada e não um defeito**: CT-18 guarda a **propriedade**. Um Filament que
+mantivesse `$sidebarWidth = '20rem'` e mudasse o `getSidebarWidth()` passaria por baixo. A ADR não
+afirma o contrário — ela diz "por reflexão sobre a propriedade", que é exatamente o que o código
+faz.
+
+### Afirmação 2 — a guarda mata o mutante · **CONFIRMADA**
+
+Mutação à mão no vendor, sem suíte de fundo na árvore, com restauração conferida por hash:
+
+| Passo | Comando | Resultado |
+|---|---|---|
+| 1 | `md5sum vendor/filament/filament/src/Panel/Concerns/HasSidebar.php` | `9add012f96c1d5de34baf38386790c1f` |
+| 2 | backup em scratchpad, `md5sum` do backup | idêntico ao original |
+| 3 | `sed -i "11s/'20rem'/'18rem'/"` · `sed -n '11p'` | a propriedade passa a `'18rem'` · md5 `3ba7afe2fbe063b5994c7b51c4fa7f7a` |
+| 4 | `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php` | **`failed` · tests: 31 · passed: 30 · failed: 1** |
+| 5 | a **única** falha | `[CT-18]` — *"Failed asserting that two strings are identical. — `'18rem'` / `'20rem'`"*, com a mensagem da ADR-03 |
+| 6 | CT-17 (4 casos de dataset) | **verde**, dentro dos 30 que passaram |
+| 7 | restauração do backup · `md5sum` · `sed -n '11p'` | **`9add012f96c1d5de34baf38386790c1f`** · de volta a `'20rem'` |
+| 8 | reexecução na árvore restaurada | **`passed` · 31 testes · 68 asserções** |
+
+É o controle que faltava no ciclo 3: o mesmo evento que deixava **tudo verde** agora deixa
+**exatamente um caso vermelho**, e é o caso escrito para isso. A ADR-03 estava errada e a guarda
+nova é necessária — as duas metades ficam provadas pelo mesmo experimento.
+
+**Alcance do "nenhum outro caso o veria mudar"** (afirmação da ADR): verificado por
+`grep -rn "sidebarWidth|sidebar-width|20rem|17rem|16.5rem" tests/` → **zero ocorrências** fora de
+`DensidadeDoLayoutTest.php`. Some a isso os 30 verdes do passo 4. A suíte completa (2.721) **não**
+foi rodada sob o mutante — a varredura torna o resultado estrutural, não amostral.
+
+### Afirmação 3 — o texto da ADR-03 diz a verdade · **CONFIRMADA, com uma ressalva**
+
+`02-decisoes-arquiteturais.md:128-144`. Conferido frase a frase contra o que foi medido:
+
+| O que a ADR afirma | Veredito |
+|---|---|
+| *"trocando `'20rem'` por `'18rem'` em `HasSidebar.php:11`, CT-17 passa"* | **verdade** — passo 6 acima |
+| *"os três painéis chamam `->sidebarWidth()`, o default fica inalcançável em runtime"* | **verdade** — as três chamadas conferidas por `grep` |
+| *"CT-18 … lê o default do vendor por reflexão sobre a propriedade — e não perguntando ao painel"* | **verdade** — afirmação 1 |
+| *"com o default em `'18rem'`, CT-18 fica vermelho e CT-17 segue verde"* | **verdade** — passos 4-6 |
+| `HasSidebar.php:11` | **citação certa** — `sed -n '11p'` é a declaração da propriedade |
+| *"É a terceira vez nesta feature que uma correção de texto afirma mais do que o código sustenta"* | **defensável, e não medido** — ver ressalva |
+
+**Ressalva.** A última linha é a única afirmação da seção que não é verificável por execução. Ela
+fecha se os três forem *"21/21 ok"* (QA-03), *"36/36 ok"* (QA-08) e *"CT-17 fica vermelho"*
+(QA-11) — três asserções sobre o que uma verificação ou um teste pega, todas falsas. Nesse
+recorte o número está certo. Mas o commit que a escreve **produz a quarta** (QA-16 e QA-17
+abaixo), e a regra que a própria seção deriva — *"afirmação sobre o que um teste pega tem de ser
+verificada"* — não foi aplicada ao resto do commit que a introduziu.
+
+Fora isso, **a ADR não afirma mais do que o código sustenta em ponto nenhum.** A frase *"Quem
+guarda o contrato é CT-18"* é lida no escopo da seção (o **segundo caminho**, a largura do menu);
+a outra metade do contrato — o `<style>` que não é emitido no confortável — continua guardada por
+CT-01, CT-04 e CT-12, e a ADR não diz o contrário.
+
+### Afirmação 4 — a correção não abriu buraco novo · **DERRUBADA**
+
+Diff `47e7fec..HEAD`: 8 arquivos, `+79 −11`. Uma única mudança de código-fonte (o CT-18 no arquivo
+de teste); o resto é `.md`.
+
+**O que fechou, e está conferido:**
+
+- **QA-13** — `docs/pt/…:119` → *"As três"* e `docs/en/…:121` → *"All three"*. Fechado nas duas
+  línguas.
+- **QA-14, a parte de citação** — `InfraPanelProvider.php:models:581` → `:595` nas duas docs.
+  `sed -n '595p' app/Providers/Filament/InfraPanelProvider.php` devolve a linha do `->models([`.
+  **Certa.**
+- **QA-12, os três pontos exigidos** — `04:34`, `04:43-46` e `01:261` recontados e corretos
+  (17 `it()`, quatro datasets **listados**, 31 casos, 68 asserções — bate com o runner).
+- **Varredura de citação própria**, com padrão que cobre `simbolo():linha` **com parênteses** e que
+  exige apontar para a **declaração** (`function|const|case|class|trait|enum <símbolo>`,
+  propriedade, ou chave de array), resolvendo basename por busca no repo: **232 citações
+  conferidas** em `app/`, `tests/Kit/`, `docs/pt`, `docs/en`, `.ai/rules/`, `wikis/*.md` e as wikis
+  de spec. **Nenhuma citação nova ou alterada pelo diff está errada.**
+
+**Os três achados novos:**
+
+#### QA-15 — CT-18 entrou no código sem derivação no `04`; M35 é citado e nunca declarado · Major · destino 1 (+ 3)
+
+- **Dimensão**: L (L1) com origem em K · **Relacionado a**: QA-04 do ciclo 1 (**Major**, mesma
+  classe), QA-11 · commit `5740ebc`
+- **Esperado**: todo CT do arquivo tem, no `04`, cenário em Gherkin, bloco `#### Mutantes
+  previstos` e — quando o mutante foi rodado — linha no `### Gate de falsificabilidade`. É o
+  padrão que CT-16 e CT-17 seguem, em `04:613-656`.
+- **Observado**: `grep -rn "CT-18" wikis/specs/feat/layout-compact/layout-compact/` devolve **três**
+  linhas — duas na ADR-03 e **uma** no `04`, a do Índice (`04:719`). Não há cenário, não há bloco de
+  mutantes, e **M35 aparece na coluna *Mata* sem existir em lugar nenhum**: é o único mutante do
+  documento que nunca é enunciado. A seção que abrigaria o cenário ainda se chama *"Os **dois**
+  cenários que os gates acrescentaram"* (`04:613`).
+- **E a mutação foi rodada** — a ADR-03 declara o resultado (`'18rem'` → CT-18 vermelho, CT-17
+  verde) e esta revalidação o reproduziu. Ela simplesmente não chegou ao `### Gate de
+  falsificabilidade`, que é o lugar onde o kit registra mutante morto.
+- **Repro**: `grep -rn "CT-18|M35" wikis/specs/feat/layout-compact/layout-compact/`
+- **Ação exigida**: derivar CT-18 no `04` como CT-16 e CT-17 foram — Gherkin, M35 enunciado, linha
+  no gate com o resultado já medido — e corrigir o título da seção. A derivação sai da
+  `feature-test-design`, não daqui.
+
+#### QA-16 — o CT novo deixou sete contadores para trás, em quatro arquivos · Minor · destino 1
+
+- **Dimensão**: L (L1) · **Relacionado a**: QA-04 (ciclo 1), QA-09 (ciclo 2), QA-12 (ciclo 3) —
+  **quarta repetição consecutiva** · commit `5740ebc`
+- **Real, medido pelo runner**: `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php` →
+  **31 passaram, 68 asserções**; `grep -c "^it(" …` → **17**.
+
+  | Onde | Diz | Real |
+  |---|---|---|
+  | `04:36-39` | *"Os **três** cenários novos entraram depois dos gates: CT-15…, CT-16…, CT-17 (QA-01)"* | são **quatro** — CT-18 entrou pelo QA-11. A mesma nota ainda se data *"Remedido em 2026-09-21"* num bullet editado em 22/09 |
+  | `04:721` | *"**17 cenários, 31 casos executados.** **Dezesseis** cenários (30 casos) vivem em `DensidadeDoLayoutTest`"* | contradiz `04:34` (**18** / **32**) e `04:46` (17 `it()` / 31 casos) **no mesmo arquivo** |
+  | `04:735` | linha *Mutantes previstos* do gate: **34** | `04:34`, corrigido no mesmo commit, diz **35** |
+  | `01:362` | *"**16 CTs, 30 casos** com datasets"* | 17 / 31 |
+  | `01:474` | *"**16 CTs, 30 casos**"* | 17 / 31 |
+  | `03:17` | *"**16 CTs, 30 casos, 66 asserções**… CT-16 e CT-17 entraram pelos gates"* | 17 / 31 / **68**, e falta CT-18 |
+  | `03:343` e `04:735` | *"10 dos **30** casos"* (mutação M12) | a medição é de 21/09 e continua válida, mas o denominador hoje é **31** |
+
+  `04:721` e `04:735` são o defeito **exato** que o QA-12 descreveu — *"o arquivo se contradiz de
+  novo, em outro par de linhas"* —, agora em dois pares novos. `01:362` e `01:474` estavam
+  **corretos** antes do commit e foram invalidados por ele.
+- **Repro**: `grep -n "16 CT|30 casos|Mutantes previstos|cenários" 01-plano-acao.md
+  03-progresso.md 04-casos-de-teste.md`
+- **Ação exigida**: recontar os sete pontos — ou aceitar a sugestão que o ciclo 2 e o ciclo 3 já
+  fizeram e **remover a contagem manual** de onde ela não paga a manutenção. Quatro ciclos
+  seguidos de achado no mesmo lugar são o argumento fechado.
+
+#### QA-17 — o `03` não registra a remediação, e a Verificação Final declara uma varredura que não cobre o que mudou depois dela · Minor · destino 1
+
+- **Dimensão**: L (L1/L2) · **Relacionado a**: QA-03 → QA-08 (a mesma classe: declaração de
+  verificação mais forte que a medição) · commit `5740ebc`
+- **Observado**:
+  1. `git diff 47e7fec..HEAD --stat` **não toca `03-progresso.md`**. A tabela do ciclo 3
+     (`03:458-461`) segue listando **QA-11, QA-12, QA-13 e QA-14 como abertos**, sem nenhuma linha
+     de fechamento — embora três deles tenham sido remediados neste commit. Quem ler o `03` conclui
+     que a feature parou reprovada no teto.
+  2. `03:348` continua declarando *"**Citações `arquivo:símbolo:linha` reverificadas — 36/36 ok**,
+     por varredura própria em **2026-09-21**"*. Duas citações vivas (`docs/pt|en/recursos/
+     trilhas-de-infraestrutura.md:51`) foram corrigidas em **2026-09-22**, depois dessa varredura e
+     por causa do QA-14. O número e a data ficaram; a frase afirma uma conferência que, por
+     construção, não viu o que mudou depois dela.
+  3. `03:17` não menciona CT-18 (ver QA-16).
+- **Repro**: `git diff 47e7fec..HEAD --stat` · `sed -n '17p;348p;458,461p' 03-progresso.md`
+- **Ação exigida**: registrar no `03` o fechamento de QA-11/12/13/14 com a evidência (a mutação
+  desta seção serve para o QA-11), incluir CT-18 no passo 5, e **redatar a Verificação Final**
+  com a varredura de hoje em vez de manter a de 21/09.
+
+### Hipóteses Rejeitadas — revalidação
+
+| Hipótese | Resultado | Evidência |
+|---|---|---|
+| **CT-18 seria circular** (leria o painel configurado) | **rejeitada** | sob o mutante, o lado esperado da falha veio `'18rem'` — o literal do vendor. A reflexão alcança a declaração, não o painel |
+| **CT-18 ficaria verde sob o mutante** | **rejeitada** | é a **única** falha entre 31 casos |
+| **CT-17 ficaria vermelho junto** (o que tornaria CT-18 redundante) | **rejeitada** | os 4 casos de dataset de CT-17 passam sob o mutante — a ADR-03 estava errada, e é por isso que CT-18 precisa existir |
+| **O vendor teria ficado sujo** | **rejeitada** | `md5sum` antes e depois: `9add012f96c1d5de34baf38386790c1f` nos dois; `sed -n '11p'` volta a `'20rem'`; suíte volta a 31/68 |
+| **A correção do QA-14 teria criado citação nova errada** (foi o padrão do QA-03 → QA-08) | **rejeitada** | `:595` é a linha do `->models([`, conferida nas duas línguas. Varredura própria de 232 citações: nenhuma citação do diff está errada |
+| **As docs pt e en divergiriam de novo** | **rejeitada** | *"As três"* / *"All three"*, mesma contagem, mesmo lugar |
+| **Os testes de documentação quebrariam com as edições** | **rejeitada** | `CitacoesDeCodigo`, `SiteDeDocumentacao`, `RedeDeDocumentacao` e `ConfiguracoesDoKitDocumentacao` → **85 passaram, 330 asserções** |
+
+### Registrado, fora do escopo desta revalidação
+
+- **O `[CT-26]` confere por `str_contains`, não por declaração.** `.ai/rules/specs.md:46` manda
+  verificar *"se `sed -n "{linha}p" {path}` **contém** o símbolo"*, e é isso que o caso implementa —
+  então ele está fiel à rule. Mas o critério deixa passar citação que aponta para **chamada** em vez
+  de declaração. Achado da varredura própria, em código **vivo** e alheio a esta feature:
+  `app/Filament/Admin/Resources/Users/Schemas/UserInfolist.php:50` cita
+  `app/Models/User.php:papeisEmQualquerContexto:683`, que é uma **chamada**; a declaração está em
+  `:714`. O `[CT-26]` fica verde. É uma segunda lacuna da mesma guarda, independente da que o QA-14
+  registrou (descarte silencioso de caminho não-resolvível), e as duas continuam **abertas**. Não é
+  defeito desta feature.
+- **`InfraPanelProvider.php:models:595`**, a citação corrigida pelo QA-14, é um **ponto de chamada**:
+  `models` não é declarado nesse arquivo, é método do `RevivePlugin`. Satisfaz a rule do kit e é o
+  único ancoradouro possível — registrado para que uma futura varredura por *declaração* não o leia
+  como defeito.
+- **Suíte completa não rodada.** Esta revalidação rodou `DensidadeDoLayoutTest` (31/68) e os quatro
+  arquivos de documentação (85/330). A regressão de 2.721 do ciclo 3 não foi refeita: o diff tem
+  **uma** adição de teste e nenhuma linha de `app/`, `config/` ou `database/`.
+
+### O que falta para o PR
+
+Código e teste estão prontos. Faltam **QA-15** (Major — derivar CT-18 no `04`), **QA-16** (sete
+contadores) e **QA-17** (registrar no `03`). Os três são texto, nenhum deles toca código, teste ou
+`00-requisito.md`.
