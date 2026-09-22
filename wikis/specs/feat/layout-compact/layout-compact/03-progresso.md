@@ -383,7 +383,22 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
 - [x] **Medição no kit** — quatro níveis, oito telas por nível, `padrão` medido com a feature fora da árvore por `git stash`, 2026-09-21
 - [x] **Guardas do kit reconciliadas** — `CitacoesDeCodigoTest` (`arte_do_login` :135 → :136), `SiteDeDocumentacaoTest` (contadores) e `KitInfoTest` (54 → 55 propriedades), commit `022e027`, 2026-09-21
 - [x] **Docs pt/en e CHANGELOG** — seção nova nas duas línguas **com o preço declarado junto com o ganho**, commit `e98f436`, 2026-09-21
-- [x] **Citações `arquivo:símbolo:linha` reverificadas** — **36/36 ok** na wiki, por varredura própria, refeita em **2026-09-22** depois de o CT-18 e as correções do ciclo 3 deslocarem linhas. Conferido pelo critério da **declaração**, não da menção — que foi o defeito do QA-08.
+- [x] **Citações `arquivo:símbolo:linha` reverificadas** — **30/30 ok** *(alterado em 2026-09-22)*, sobre um escopo declarado: os arquivos **`00`–`04`**
+  desta wiki, **sem o `06-relatorio-qa.md`**. O número anterior, *"36/36"*, só existe com o `06`
+  dentro da varredura — e o `06` **cita citações erradas de propósito**, porque é o registro do que
+  o gate achou. Contar o que ele transcreve como se fossem citações do kit infla o denominador com
+  as próprias acusações. Sobre `00`–`04`, antes das correções deste ciclo, eram **22/22**; as oito
+  novas entraram com as notas de remediação (`larguraDaSidebar`, os três `->sidebarWidth()` e os
+  dois pontos de `HasSidebar.php`).
+
+  Escopo e comando, um só, sem lista escolhida à mão:
+
+  ```
+  grep -rhoE '[A-Za-z0-9_/.-]+\.(php|blade\.php|md|css|json|xml):[A-Za-z_$][A-Za-z0-9_]*(\(\))?:[0-9]+' wikis/specs/feat/layout-compact/layout-compact/0[0-4]*.md | sort -u
+  ```
+
+  → **30** citações distintas; para cada uma, `sed -n "{linha}p" {path}` **contém** o símbolo, que é
+  o critério de `.ai/rules/specs.md:46`. **30 ok, 0 erro, 0 caminho que não resolve.** Varredura refeita em **2026-09-22** depois de o CT-18, as correções do ciclo 3 e as deste ciclo deslocarem linhas. Conferido pelo critério da **declaração**, não da menção — que foi o defeito do QA-08.
 
   A declaração anterior, de "21/21 ok", estava errada por dois motivos, e o quality gate pegou os
   dois. O primeiro: o padrão usado não cobria o formato `arquivo:simbolo():linha` — **com

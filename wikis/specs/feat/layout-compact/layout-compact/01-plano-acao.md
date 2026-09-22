@@ -77,7 +77,7 @@ E o custo, que é a outra metade de RQ-04:
 |---|---|---|---|
 | Tamanho do mecanismo | **1 declaração CSS** | 548 blocos de regra, 370 classes `fi-*` | 11 seletores, na tentativa medida |
 | Ganho na altura da tabela | **−16,8%** (`compacto`) · **−22,9%** (`denso`) | −22,5% | **+21,9%** — *piorou* |
-| Sobrevive a `composer update`? | sim, **com uma dependência declarada** *(alterado em 2026-09-22)* — o caminho do `--spacing` não cita nada do vendor; o da largura do menu depende de `sidebarWidth()` aceitar `Closure` e do default `'20rem'` (`HasSidebar.php:$sidebarWidth:11`), guardado por CT-18 | sim (é do vendor) | **não** — lista congelada de classes de terceiro |
+| Sobrevive a `composer update`? | sim, **com uma dependência declarada** *(alterado em 2026-09-22)* — o caminho do `--spacing` não cita nada do vendor; o da largura do menu depende de `sidebarWidth()` aceitar `Closure` e do default `'20rem'` (`vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:$sidebarWidth:11`), guardado por CT-18 | sim (é do vendor) | **não** — lista congelada de classes de terceiro |
 | Roda em runtime? | sim | **não** — build-time | sim |
 | Entra num starter kit? | sim | **não** — licença de projeto único | — |
 
@@ -505,8 +505,24 @@ escrito três vezes.
 - [x] **CT-15** (oráculo documental do roadmap) **escrito** — vive em `tests/Kit/SiteDeDocumentacaoTest.php` sob o ID local `[CT-48]`, o arquivo que já é dono dos contadores de README
 - [x] **CT-16** — a tela de configurações não trava com nível ilegível gravado
 - [x] **CT-17** — a largura do menu acompanha o nível nos três painéis (QA-01 do quality gate)
-- [x] **Citações `arquivo:símbolo:linha` reverificadas** — **36/36**, por varredura própria. O
-  `CitacoesDeCodigoTest` **exclui `wikis/specs/**` por decisão registrada**, então ele nunca
+- [x] **Citações `arquivo:símbolo:linha` reverificadas** — **30/30 ok** *(alterado em 2026-09-22)*, sobre um escopo declarado: os arquivos **`00`–`04`**
+  desta wiki, **sem o `06-relatorio-qa.md`**. O número anterior, *"36/36"*, só existe com o `06`
+  dentro da varredura — e o `06` **cita citações erradas de propósito**, porque é o registro do que
+  o gate achou. Contar o que ele transcreve como se fossem citações do kit infla o denominador com
+  as próprias acusações. Sobre `00`–`04`, antes das correções deste ciclo, eram **22/22**; as oito
+  novas entraram com as notas de remediação (`larguraDaSidebar`, os três `->sidebarWidth()` e os
+  dois pontos de `HasSidebar.php`).
+
+  Escopo e comando, um só, sem lista escolhida à mão:
+
+  ```
+  grep -rhoE '[A-Za-z0-9_/.-]+\.(php|blade\.php|md|css|json|xml):[A-Za-z_$][A-Za-z0-9_]*(\(\))?:[0-9]+' wikis/specs/feat/layout-compact/layout-compact/0[0-4]*.md | sort -u
+  ```
+
+  → **30** citações distintas; para cada uma, `sed -n "{linha}p" {path}` **contém** o símbolo, que é
+  o critério de `.ai/rules/specs.md:46`. **30 ok, 0 erro, 0 caminho que não resolve.**
+
+  O `CitacoesDeCodigoTest` **exclui `wikis/specs/**` por decisão registrada**, então ele nunca
   conferiu esta wiki; a declaração anterior de "21/21 ok" apontava um gate que não cobre este glob
 - [x] `feature-quality-gate` (step 8) — **ciclo 1 REPROVADO → especificação**, ver `06-relatorio-qa.md`; achados fechados em 2026-09-21
 - [ ] PR
