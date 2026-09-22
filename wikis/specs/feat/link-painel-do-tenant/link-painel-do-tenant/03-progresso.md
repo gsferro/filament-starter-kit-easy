@@ -2,7 +2,7 @@
 
 ## 1. Gerador da URL
 - [x] Um ponto único que devolve a URL do painel da organização — `Tenant::urlDoPainel()`
-      (`app/Models/Tenant.php:urlDoPainel:148`), que chama `Filament::getPanel('app')->getUrl($this)`.
+      (`app/Models/Tenant.php:urlDoPainel:164`), que chama `Filament::getPanel('app')->getUrl($this)`.
       **Nenhuma classe nova**: o método vive ao lado de `urlDaLogo()`, que é a irmã exata ("o
       endereço de algo desta organização"), e as três superfícies já recebem o registro. Consumido
       pelos três schemas; a string `/app/` não aparece (CT-02 varre o arquivo do gerador)
@@ -130,7 +130,7 @@ Nenhum.
 ### D-01 — o "ponto único" é método de model, não classe nova
 
 O passo 1 do `01` pede "um único ponto que devolve a URL do painel da organização" sem dizer onde.
-Ficou em `Tenant::urlDoPainel()` (`app/Models/Tenant.php:urlDoPainel:148`), ao lado de
+Ficou em `Tenant::urlDoPainel()` (`app/Models/Tenant.php:urlDoPainel:164`), ao lado de
 `urlDaLogo()`. Motivo: é a irmã exata — as duas respondem "o endereço de algo desta organização" —,
 as três superfícies já recebem o registro, e a `## Filosofia de Implementação` do plano proíbe
 classe nova. **CT-02 continua com sujeito**: ele varre o arquivo do gerador, que é este, e a string
@@ -179,16 +179,20 @@ caminho), mas a forma canônica do endereço no kit é a crua, e agora está esc
 
 O achado R2 previu uma (`FiltrosDeTabelaTenancyTest.php:9` → `TenantsTable.php:55`). O método novo
 no `Tenant` deslocou **outras duas**, que o R2 não podia prever porque o plano não dizia onde o
-gerador ficaria: `TenantHeader.php:32` e `TenantInfolist.php:73` citavam
-`app/Models/Tenant.php:urlDaLogo:138`, que virou `:164`. As três foram corrigidas no mesmo commit, e
+gerador ficaria: `TenantHeader.php:32` e `TenantInfolist.php:73` citavam o `urlDaLogo()` pela
+linha antiga (`:138`). Hoje as duas citam `app/Models/Tenant.php:urlDaLogo:186` — o `:164`
+escrito aqui **já envelheceu**, no mesmo parágrafo que descreve o envelhecimento, e só o
+símbolo reancorou a citação. As três foram corrigidas no mesmo commit, e
 quem as achou foi `tests/Kit/CitacoesDeCodigoTest.php:[CT-26]` — o gate automático, não a
 conferência à mão.
 
 **A citação do R2 mudou de forma, e não só de número.** Era `TenantsTable.php:55`, caminho solto:
 `base_path('TenantsTable.php')` não resolve, então o CT-26 a **ignorava** — ela podia ficar errada
 para sempre sem nada acusar. Virou
-`app/Filament/Admin/Resources/Tenants/Tables/TenantsTable.php:ativo:83`, caminho completo e com
-símbolo, que é a forma que o gate confere.
+`app/Filament/Admin/Resources/Tenants/Tables/TenantsTable.php:ativo:85`, caminho completo e com
+símbolo, que é a forma que o gate confere. O número andou outra vez depois disso — de `:83`
+para `:85` — e a citação **não** apodreceu junto: quem a reancorou foi o símbolo, que é
+exatamente o que a rule prescreve.
 
 ### D-05 — o `04` foi reconciliado DEPOIS da implementação, e quatro cenários ficaram sem teste
 
@@ -217,7 +221,7 @@ para que ninguém escreva o teste no sentido errado:
 |---|---|---|---|
 | CT-16, última linha dos `Examples` | a edição recusa o slug **de outra organização gravada**, e o gravado não muda (A-5) | **PASSA hoje.** `->unique()` do Filament ignora o próprio registro por padrão nesta versão (`vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:unique:563` + a propriedade `true` em `:shouldUniqueValidationIgnoreRecordByDefault:34`), então o mesmo `->unique()` sem argumento atende CT-13 **e** esta linha. Não é achado de implementação: é cenário que faltava | **confirma a sonda.** Linha `slug de OUTRA organização gravada` no dataset, mais a `Globex` no `Dado` (inerte para as demais). `assertHasFormErrors(['slug'])`, gravado segue `acme` |
 | CT-08, 3ª linha dos `Examples` | o administrador da instalação **vinculado** à organização continua tomando **403** — vínculo não é papel (A-10) | **403**, como esperado. O portão 1 decide primeiro | **confirma a sonda.** Persona `admin_vinculado` no `match`, mesma pessoa de `administradorDaInstalacao()` com `tenants()->attach()` |
-| **CT-21** (novo) | com a tenancy desligada, nenhuma das telas de `tests/Pest.php:telasDoKit:224` do painel `admin` responde **500**, e nenhuma exibe `href` do painel de negócio (A-7) | as 18 telas passam, 51 asserções | **confirma a direção, com asserção a mais.** As mesmas 18 telas, **55** asserções — a sonda afirmava UMA forma do endereço e o definitivo afirma **duas** (ver a divergência D-05.a) |
+| **CT-21** (novo) | com a tenancy desligada, nenhuma das telas de `tests/Pest.php:telasDoKit:225` do painel `admin` responde **500**, e nenhuma exibe `href` do painel de negócio (A-7) | as 18 telas passam, 51 asserções | **confirma a direção, com asserção a mais.** As mesmas 18 telas, **55** asserções — a sonda afirmava UMA forma do endereço e o definitivo afirma **duas** (ver a divergência D-05.a) |
 | **CT-22** (novo) | seguir o link de organização **inativa** sem vínculo devolve **404**, e as duas leituras concordam (A-8) | **404**; `canAccessTenant()` falso e `getTenants()` não a contém | **confirma a sonda**, as três asserções |
 
 #### D-05.a — a sonda de CT-21 media UMA forma do endereço, e existem duas

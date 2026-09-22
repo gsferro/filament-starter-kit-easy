@@ -52,7 +52,7 @@ P×I ≤ 6. Justificativa do I=3:
 | **F** | Gerar o endereço; renderizar o link (presente ou ausente por tela); abrir em nova aba; **não** conceder acesso; **não** interferir na gravação; **não** custar query | CT-04, CT-06, CT-07, CT-11, CT-12, CT-14 |
 | **D** | `slug` (`alphaDash`, **`unique`**, `maxLength(120)`) — as **três** restrições, e a unicidade é o que faz o endereço IDENTIFICAR a organização —, escrito por humano e consumido como segmento de URL; `ativo` (a "exclusão lógica" desta entidade — não há `SoftDeletes` nem `DeleteAction`); registro **não gravado** (state do `CreateTenant`); slug gravado por fora do formulário | CT-05, CT-13, CT-16, CT-17, CT-18 |
 | **I** | Três telas do painel `/admin`; o gerador alcançável por PHP puro; e o **destino**, alcançável por `GET /app/{slug}` — que é onde os portões decidem | CT-01, CT-08, CT-19 |
-| **P** | Depende de o painel `app` estar registrado **com** `->tenant()`, o que só acontece com `config('kit.tenancy.enabled')`. Por isso CT-01..CT-18, CT-20 e CT-22 vivem em `tests/Tenancy` (o `TenancyTestCase` fixa `permission.teams` antes das migrations) e **CT-19 vive em `tests/Kit`**, **CT-19 e CT-21 vivem em `tests/Kit`**, a única suíte onde a tenancy está desligada. O `assertSeeHtml` depende do formato de `Filament\Support\generate_href_html()` (`vendor/filament/support/src/helpers.php:generate_href_html:159-162`) | CT-19, CT-21 |
+| **P** | Depende de o painel `app` estar registrado **com** `->tenant()`, o que só acontece com `config('kit.tenancy.enabled')`. Por isso CT-01..CT-18, CT-20 e CT-22 vivem em `tests/Tenancy` (o `TenancyTestCase` fixa `permission.teams` antes das migrations) e **CT-19 vive em `tests/Kit`**, **CT-19 e CT-21 vivem em `tests/Kit`**, a única suíte onde a tenancy está desligada. O `assertSeeHtml` depende do formato de `Filament\Support\generate_href_html()` (`vendor/filament/support/src/helpers.php:generate_href_html:153`) | CT-19, CT-21 |
 | **O** | Quatro personas reais: `master_global` (passa nos dois portões), **administrador da instalação** (papel `admin`, sem papel do `app`, sem vínculo — falha no portão 1), usuário com papel do `app` sem linha no pivot (falha no portão 2), `admin_app` vinculado (passa). Uso previsto: "ir ver como está lá". Uso indevido: repassar o endereço a quem não tem acesso | CT-04, CT-08, CT-09 |
 | **T** | **Não se aplica** a concorrência, agendamento, expiração, DST ou timezone: a feature não grava nem compara tempo. O tempo entra por **uma** via, e ela é cenário: o `slug` muda, e o link tem de acompanhar (`helperText` já avisa que "mudar invalida os links já compartilhados") | CT-03 |
 
@@ -114,7 +114,7 @@ do PRD:
 
 ### A exclusão que o CT-02 precisa declarar, senão ele fica vermelho contra a implementação correta
 
-`TenantForm.php:configure:35` **já contém** o literal `/app/{slug}`, hoje, antes da feature:
+`app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php:description:36` **já contém** o literal `/app/{slug}`, hoje, antes da feature:
 
 ```php
 ->description('O slug vira o endereço do painel de negócio: /app/{slug}.')
@@ -131,7 +131,7 @@ afirmam que a URL renderizada é **a mesma** que o gerador devolve — uma super
 URL por conta própria só passaria por coincidência hoje, e o CT-03 (troca de slug) a derruba.
 
 **E o gerador ficou em arquivo próprio, então CT-02 tem sujeito.** O ponto único é
-`Tenant::urlDoPainel()` (`app/Models/Tenant.php:urlDoPainel:148`), ao lado de `urlDaLogo()` — a
+`Tenant::urlDoPainel()` (`app/Models/Tenant.php:urlDoPainel:164`), ao lado de `urlDaLogo()` — a
 irmã exata, "o endereço de algo desta organização". É a decisão D-01 do `03-progresso.md`: método
 de model, nenhuma classe nova. O sujeito da varredura de CT-02 é **esse arquivo**, e não um schema
 — `app/Models/Tenant.php`, com os comentários filtrados, porque o docblock do próprio método cita
@@ -155,9 +155,11 @@ Replicadas em `00-requisito.md` → `## Ambiguidades`. Cada uma bloqueia o que e
 
 1. **O código de status do portão 2 é 404, não 403.** `Filament\Http\Middleware\IdentifyTenant`
    faz `abort(404)` quando `canAccessTenant()` nega
-   (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:handle:40-42`), e o portão 1
+   (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:handle:13`, o `abort(404)` na
+   linha 41), e o portão 1
    (`canAccessPanel`) é que faz `abort_if(..., 403)`
-   (`vendor/filament/filament/src/Http/Middleware/Authenticate.php:authenticate:35-41`). O
+   (`vendor/filament/filament/src/Http/Middleware/Authenticate.php:authenticate:15`, o `abort_if` na
+   linha 35). O
    `Authenticate` embrulha as rotas de tenant (`vendor/filament/filament/routes/web.php:60`), então
    o portão 1 decide primeiro. Já existe teste do kit afirmando o 404 e **explicando por que é
    melhor que 403** (`tests/Tenancy/AdminDaOrganizacaoTest.php:98-105`: "um 403 confirmaria que a
@@ -222,7 +224,7 @@ morre com 403 no arranjo — o mesmo padrão de `tests/Tenancy/IdentidadeVisualT
 ### `fronteiraDeRequest()` entre visitas que trocam de painel
 
 **Obrigatório em CT-09 e CT-10**, entre um `GET` e o seguinte
-(`tests/Pest.php:fronteiraDeRequest:749`). Os dois cenários atravessam `/admin` e `/app` no mesmo
+(`tests/Pest.php:fronteiraDeRequest:775`). Os dois cenários atravessam `/admin` e `/app` no mesmo
 caso, e o teste não ganha de graça a fronteira que o request de verdade tem: em produção cada
 request nasce com container próprio, no teste o mesmo container atravessa todas as visitas.
 
@@ -249,7 +251,7 @@ para pegar, pelo motivo errado.
 
 **Por que o contexto do papel importa, e por que os dois helpers servem para o `/admin`.** Com
 `permission.teams` ligado, papel gravado fora de `Tenant::CONTEXTO_GLOBAL` (que é `0`,
-`app/Models/Tenant.php:CONTEXTO_GLOBAL:66`) fica invisível no `/admin` —
+`app/Models/Tenant.php:CONTEXTO_GLOBAL:67`) fica invisível no `/admin` —
 `User::canAccessPanel()` compara com `contextoGlobal()` para painel sem tenancy
 (`app/Models/User.php:contextoGlobal:726-729`). O `KitServiceProvider` já fixa esse contexto no
 boot (`app/Providers/KitServiceProvider.php:237`), então na suíte `Tenancy` tanto
@@ -258,7 +260,7 @@ boot (`app/Providers/KitServiceProvider.php:237`), então na suíte `Tenancy` ta
 `tests/Tenancy/IdentidadeVisualTenancyTest.php:43` e
 `tests/Tenancy/PermissoesDeTenantResourceTest.php:22-25` fazem. Para papel do painel `app`, ao
 contrário, o contexto **tem** de ser a organização: `usuarioComPapel($papel, $acme)`. Ver
-`tests/Pest.php:papelNaOrganizacao:773` e `.ai/rules/testes.md`.
+`tests/Pest.php:papelNaOrganizacao:799` e `.ai/rules/testes.md`.
 
 O `admin` recebe a matriz inteira do painel `admin` (`database/seeders/PapeisSeeder.php:58-59`),
 então `ViewAny:Tenant`, `View:Tenant` e `Update:Tenant` existem para ele — é o que permite a
@@ -268,7 +270,7 @@ negócio. Sem os dois seeders do `beforeEach`, as três telas dão 403 no arranj
 ### Fixtures
 
 - `Tenant::factory()->create(['nome' => 'Acme', 'slug' => 'acme'])` — a organização do caminho feliz
-- `tenant('Globex', 'globex', ativo: false)` — a inativa (helper de `tests/Pest.php:tenant:384`)
+- `tenant('Globex', 'globex', ativo: false)` — a inativa (helper de `tests/Pest.php:tenant:385`)
 - O **endereço esperado** é sempre calculado no caso, nunca escrito à mão:
   `$esperado = Filament::getPanel('app')->getUrl($organizacao)`
   (`vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:getUrl:170-196`). A rota do tenant é
@@ -521,7 +523,7 @@ Daí as três formas do `Então`, e a terceira é o ponto:
    faz a ausência passar apagando a `description` da seção.
 
 **Por que o "sem salvar" é o ponto do CT-06.** O `slug` é `live(onBlur: true)` por causa do
-`afterStateUpdated` do campo `nome` (`TenantForm.php:configure:44-48`), então o estado do
+`afterStateUpdated` do campo `nome` (`app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php:afterStateUpdated:46`), então o estado do
 formulário **tem** um slug antes de qualquer gravação. Uma implementação que montasse o link a
 partir do state vivo passaria num cenário que só abrisse a tela vazia. O `fillForm` sem `create`
 é o que discrimina (M10).
@@ -563,7 +565,7 @@ derruba a gravação com a tela abrindo verde.
 **Discriminância — e é onde este cenário quase não prova nada.** Afirmar `target="_blank"` solto é
 decorativo: o topbar do Filament já o emite em toda página do painel. O oráculo é a **adjacência**,
 `href="{endereço}" target="_blank"`, que é o que `generate_href_html()` produz e **só** produz
-quando a nova aba está declarada (`helpers.php:159-162`).
+quando a nova aba está declarada (`vendor/filament/support/src/helpers.php:generate_href_html:153`).
 
 #### Mutantes previstos
 
@@ -966,7 +968,7 @@ tenancy desligada o painel `app` pode nem estar registrado: o gerador não estou
 estoura em **500** na tela inteira. Um widget assim deixaria o `/admin` inteiro fora do ar numa
 instalação single-tenant, e CT-19 ficaria verde.
 
-CT-21 fecha isso varrendo as telas que `tests/Pest.php:telasDoKit:224` lista para o painel `admin` —
+CT-21 fecha isso varrendo as telas que `tests/Pest.php:telasDoKit:225` lista para o painel `admin` —
 a lista que o `InventarioDeTelasTest` já obriga a manter completa, então o cenário herda cobertura
 de toda tela nova sem precisar de edição. As duas asserções são as duas metades do defeito: **nenhum
 500** (o gerador chamado onde não há rota) e **nenhum `href` do painel de negócio** (a entrada
@@ -1048,7 +1050,7 @@ concordam). Quem **passa** nos portões (`master_global`, vinculada) continua la
 
 | # | O que não é afirmado | O que foi tentado | Vinculada a |
 |---|---|---|---|
-| 1 | **Meia célula** de `inativa × seguir`: o que acontece quando segue o link de organização **inativa** quem **passa** nos dois portões (o `master_global`, a administradora vinculada) | Lidos os dois lados: `IdentifyTenant` só consulta `canAccessTenant()` (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:handle:40-42`), que **não** olha `ativo` (`app/Models/User.php:canAccessTenant:789-809`); `User::getTenants()` **filtra** `ativo` (`app/Models/User.php:getTenants:775-782`). Os dois discordam **nesta metade**, e o `00` não decide. Escrever o cenário na direção "falha fechado" (a inativa não abre) o deixaria **vermelho contra a implementação correta**, porque mudar os portões está em `## Fora de Escopo`. **A outra metade não é contestada e foi escrita**: sem vínculo, as duas leituras concordam em negar, independente de `ativo` → **CT-22** | pergunta **2** do `## Fronteira com o Plano`. O invariante de renderização **está** escrito: CT-05 |
+| 1 | **Meia célula** de `inativa × seguir`: o que acontece quando segue o link de organização **inativa** quem **passa** nos dois portões (o `master_global`, a administradora vinculada) | Lidos os dois lados: `IdentifyTenant` só consulta `canAccessTenant()` (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:handle:13`), que **não** olha `ativo` (`app/Models/User.php:canAccessTenant:789-809`); `User::getTenants()` **filtra** `ativo` (`app/Models/User.php:getTenants:775-782`). Os dois discordam **nesta metade**, e o `00` não decide. Escrever o cenário na direção "falha fechado" (a inativa não abre) o deixaria **vermelho contra a implementação correta**, porque mudar os portões está em `## Fora de Escopo`. **A outra metade não é contestada e foi escrita**: sem vínculo, as duas leituras concordam em negar, independente de `ativo` → **CT-22** | pergunta **2** do `## Fronteira com o Plano`. O invariante de renderização **está** escrito: CT-05 |
 | 2 | Uma barreira de domínio para o `slug` **fora do formulário** (o gate "≥1 cenário por fora do componente de UI" para R8, na direção de recusa) | Não existe barreira no model: `Tenant::create(['slug' => '../outra'])` grava. Escrever o cenário na direção de recusa seria vermelho contra a implementação atual, e o requisito não pede a barreira. O que foi escrito no lugar é o **invariante das duas leituras** (CT-18): a feature não normaliza o slug gravado, seja ele barrado onde for | pergunta **3** do `## Fronteira com o Plano` |
 | 3 | O **N+1 pré-existente da listagem de organizações**: ela cresce ~5 consultas por linha (33 com uma organização, 53 com cinco) | **Medido nas duas pontas do diff** (D-02 do `03-progresso.md`): 33/53 **antes** da feature e 33/53 **depois** — a coluna nova custa **zero**. O N+1 vem da autorização de `ViewAction`/`EditAction` por registro, é **anterior** à feature e mudar a listagem está em `## Fora de Escopo`. É dívida registrada, **não defeito desta feature**, e o CT-14 original (que a mediria) foi reescrito para o sujeito que a feature possui | `## Fora de Escopo` do `00` + D-02 do `03`. O oráculo de invariância **está** escrito, sobre a resolução do endereço: CT-14 |
 
@@ -1160,7 +1162,7 @@ com ou sem `target="_blank"`. Nenhuma das três superfícies afirma sobre **Java
 console, acessibilidade, cor ou layout** — as quatro coisas que só o navegador prova. O único
 aspecto aparentemente "de navegador" é a nova aba, e ela é o atributo `target="_blank"` no HTML,
 emitido por `Filament\Support\generate_href_html()`
-(`vendor/filament/support/src/helpers.php:generate_href_html:159-162`) e afirmável por componente
+(`vendor/filament/support/src/helpers.php:generate_href_html:153`) e afirmável por componente
 Livewire em milissegundos — é o CT-07.
 
 Contra-argumento considerado e rejeitado: "um CT-B provaria que o clique abre a outra aba". Não
@@ -1188,11 +1190,11 @@ reconcilia os dois, e a coluna **"estado"** diz de qual lado cada achado estava.
 |---|---|---|---|
 | **A-1** | "coluna, não ação" (RQ-04) não tinha falsificador: `Action::make()->url()->openUrlInNewTab()` emite HTML **idêntico** ao da coluna, e todo cenário de `assertSeeHtml` passaria com a feature implementada como ação por linha | **já fechado no teste** — CT-04 usa `assertTableColumnStateSet('url_do_painel', $endereco, $organizacao)` | `Então` novo em CT-04 (o endereço é o **conteúdo da célula**) + mutante **M29** + a tabela `### Coluna não é ação, e lugar não é presença` |
 | **A-2** | RQ-02 é cláusula de **lugar** ("na onde tem a parte que cadastra o nome e a slug"), e nenhum cenário afirmava lugar — um header action passaria em todo cenário de HTML | **já fechado no teste** — CT-04 sobe `getContainer()->getParentComponent()` e afirma `Section` + `getHeading() === 'Identificação'` | `Então` novo em CT-04 (a seção que contém a entrada) + mutante **M30** + linha nova em `## Fronteira com o Plano` |
-| **A-3** | M01 (`url('/app/'.$slug)`) só tem matador se CT-02 tiver **sujeito**, e o `04` não dizia qual arquivo | **já fechado no teste** — o gerador ficou em arquivo próprio, `Tenant::urlDoPainel()` | o sujeito do CT-02 está nomeado e citado: `app/Models/Tenant.php:urlDoPainel:148` (D-01 do `03`) |
+| **A-3** | M01 (`url('/app/'.$slug)`) só tem matador se CT-02 tiver **sujeito**, e o `04` não dizia qual arquivo | **já fechado no teste** — o gerador ficou em arquivo próprio, `Tenant::urlDoPainel()` | o sujeito do CT-02 está nomeado e citado: `app/Models/Tenant.php:urlDoPainel:164` (D-01 do `03`) |
 | **A-4** | *(ver A-2 — mesma cláusula, o lado da hierarquia do schema)* | **já fechado no teste** | idem A-2 |
 | **A-5** | 🔴 **bloqueava**: a varredura SFDIPOT inventariou `slug (alphaDash, unique, maxLength(120))` e R8 recolheu **duas** das três. O `unique` não tinha mutante nem cenário — e é ele que faz o endereço **identificar** a organização | **aberto nos dois lados** | 9ª linha dos `Exemplos` de CT-16 (`globex`), `Dado` com a segunda organização, mutante **M34**, `### A unicidade` em R8 e linha nova no `## Checklist de Taxonomia`. **Sondado: PASSA hoje** |
 | **A-6** | `fronteiraDeRequest()` não estava no `## Setup Global`, e sem ela um cenário que atravessa dois painéis morre em **500** — o `SpotlightActionRegistry` é singleton e acumula as ações de todo painel visitado | **já fechado no teste** — presente entre as visitas em CT-09 e CT-10 | subseção `### fronteiraDeRequest() entre visitas que trocam de painel` no `## Setup Global`, com o motivo |
-| **A-7** | M27 fala em "hub, widget, menu" e CT-19 alcança **um** lugar só. Um widget do `/admin` ou item do menu do usuário que renderizasse o link derrubaria a tela inteira em **500** sem tenancy, e CT-19 ficaria verde | **aberto nos dois lados** | **CT-21** (novo) + mutante **M36**. Varre `tests/Pest.php:telasDoKit:224`, que o `InventarioDeTelasTest` já obriga a manter completa |
+| **A-7** | M27 fala em "hub, widget, menu" e CT-19 alcança **um** lugar só. Um widget do `/admin` ou item do menu do usuário que renderizasse o link derrubaria a tela inteira em **500** sem tenancy, e CT-19 ficaria verde | **aberto nos dois lados** | **CT-21** (novo) + mutante **M36**. Varre `tests/Pest.php:telasDoKit:225`, que o `InventarioDeTelasTest` já obriga a manter completa |
 | **A-8** | a lacuna 1 (`inativa × seguir`) foi declarada **inteira**, mas a célula tem **duas** metades e só uma é contestada: sem vínculo, `canAccessTenant()` nega independente de `ativo` e `getTenants()` também — as duas leituras **concordam** | **aberto nos dois lados** | **CT-22** (novo) + mutante **M33**; a lacuna 1 reduzida a **meia** célula. É a técnica do invariante das duas leituras, que o `04` já aplicava na lacuna 2 |
 | **A-9** | CT-10 é cenário positivo **sem situação de partida** (nenhuma organização gravada) e o oráculo "a listagem **volta** a abrir" não afirmava a abertura **antes** — sem as duas medições, "voltou" não se distingue de "sempre abriu" | **já correto no teste**, errado no `04` | `Dado` com a organização + `E` com a abertura prévia; prosa explicando por que "volta" exige as duas pontas |
 | **A-10** | CT-08 cobria **três** das quatro células do 2×2 persona × portão. Faltava o administrador **vinculado** que ainda toma 403 — a célula que documenta "**vínculo não basta**" | **aberto nos dois lados** | 3ª linha dos `Exemplos` de CT-08 + mutante **M32** + linha nova no `## Checklist de Taxonomia`. **Sondado: 403, como esperado** |
