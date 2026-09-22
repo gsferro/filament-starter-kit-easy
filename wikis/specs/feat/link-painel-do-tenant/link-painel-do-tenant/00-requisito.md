@@ -164,9 +164,9 @@ rule nunca foi conferido, e três citações deste arquivo estavam erradas.
 
 | Onde | Citação escrita | Linha do símbolo hoje | O que há na linha citada |
 |---|---|---|---|
-| RQ-01, portão 1 | `app/Models/User.php:canAccessPanel():219` | **`:156`** | `if ($this->temPapelDoPainel(...))`, dentro do método |
-| `## Ambiguidades`, portão 1 | `vendor/filament/filament/src/Http/Middleware/Authenticate.php:authenticate:35-41` | **`:15`** | o `abort_if(..., 403)`, que é o corpo — a declaração está em `:15` |
-| `## Ambiguidades`, portão 2 | `vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:handle:40-42` | **`:13`** | o `if (! $user->canAccessTenant($tenant))` e o `abort(404)` de `:41` |
+| RQ-01, portão 1 | `app/Models/User.php:canAccessPanel()` + `219` | **`:156`** | `if ($this->temPapelDoPainel(...))`, dentro do método |
+| `## Ambiguidades`, portão 1 | `vendor/filament/filament/src/Http/Middleware/Authenticate.php:authenticate` + `35-41` | **`:15`** | o `abort_if(..., 403)`, que é o corpo — a declaração está em `:15` |
+| `## Ambiguidades`, portão 2 | `vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:handle` + `40-42` | **`:13`** | o `if (! $user->canAccessTenant($tenant))` e o `abort(404)` de `:41` |
 
 **Nenhuma conclusão do requisito muda.** Os três trechos citados dizem exatamente o que o `00`
 afirma que dizem — o defeito é de ponteiro, não de fato, e é por isso que ele sobreviveu a quatro
@@ -174,3 +174,8 @@ gates: quem lê a prosa reconhece o comportamento e não abre o arquivo.
 
 As citações **vivas** desta feature (as do `03` e do `04`) foram corrigidas na fonte. As deste
 arquivo valem por esta tabela: quem precisar do ponteiro usa as linhas da coluna do meio.
+
+> Uma varredura mecânica sobre a wiki vai continuar acusando **três** ERRO neste arquivo, e sempre
+> as mesmas três: as do texto imutável acima. É o preço declarado da imutabilidade, e esta tabela é
+> o mapa. A coluna "citação escrita" está com a linha **separada** de propósito, para não
+> acrescentar três falsos irmãos à varredura.
