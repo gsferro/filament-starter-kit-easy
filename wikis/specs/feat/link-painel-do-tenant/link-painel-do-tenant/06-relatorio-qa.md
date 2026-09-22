@@ -228,3 +228,122 @@ conferência**. Foram 13 na lista, 14 na árvore.
 
     vendor/bin/pest tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php tests/Kit/LinkDoPainelSemTenancyTest.php
     → 44 casos, 44 verdes, 229 asserções
+
+---
+
+# Ciclo 2
+
+> Mesmo perfil de esforço (**completo**) e mesma natureza (`nova`). Entrada: os 15 commits que
+> entraram depois do relatório do ciclo 1 (`3e2b2a7..HEAD`) — diff que **nenhuma revisão tinha
+> lido** — mais uma reconferência independente de tudo que o fechamento declarou fechado.
+
+## Veredito — Ciclo 2
+
+**REPROVADO → especificação**
+
+- Blocker: **0** · Major: **2** · Minor: **3** · Cosmético: **2**
+- **Não converge**: sete achados novos, nenhum deles repetição do ciclo 1. Os dois Major nasceram
+  **dentro da própria remediação** — um mutante que ficou com duas definições, e um aviso de
+  divergência que descreve um estado desfeito antes do ciclo 1.
+- Ambiente: Pest **5.0.5** · app não servido · Playwright MCP **indisponível** · driver de
+  cobertura **ausente** (dimensão K segue sem o passo medido)
+- Medições próprias deste ciclo: **44 casos / 229 asserções** (feature) e **73 casos / 257
+  asserções** (gates de citação, documentação, variádica do Pest e filtro de tabela) — verdes
+- `tests/Browser/TemaEscuroTest.php` **não é re-reportado**: instabilidade pré-existente de
+  contaminação entre arquivos de navegador, já roteada ao **destino 4** no `03`
+
+### O que foi reconferido, e não virou achado
+
+| Alegação do fechamento | Como foi reconferida | Resultado |
+|---|---|---|
+| "14 citações erradas na árvore, não 13" | varredura própria sobre os `.md` do ciclo 1 (`git show 3e2b2a7:…`), com padrão que cobre `simbolo()`, caminho solto e intervalo, e resolução de basename | **confirmado: 14** |
+| as citações do `03` e do `04` corrigidas | mesma varredura sobre a árvore de hoje | **0 ERRO** — sobram só as três do `00`, cobertas pelo Adendo 1 |
+| as correções apontam para a **declaração**, não para menção em docblock | conferido uma a uma: `User::canAccessPanel` `:156`, `Authenticate::authenticate` `:15`, `IdentifyTenant::handle` `:13`, `HasRoutes` `:194`, `TenantForm::description` `:36`, `TenantForm::afterStateUpdated` `:46`, `TenantsTable` `ativo:85`, `generate_href_html` `:153` | **nenhuma aponta para docblock** |
+| contadores remedidos | `grep` e `pest` próprios | **36** mutantes (`M01`..`M36`), **23** cenários no índice (CT-23 presente), **9** regras, **3** lacunas, **44/229**, **23** IDs nos dois sentidos, **26 dos 44** nos dois lugares do `03`, R8 com **oito** linhas de `Exemplos` |
+| CT-05 perdeu a asserção cortada | `git diff 3e2b2a7..HEAD -- tests/` | confirmado, e a aritmética fecha: −1 asserção × 3 linhas de dataset, +2 em CT-02 = **230 → 229** |
+
+## Achados
+
+### QA-15 — `M36` tem **duas** definições e **dois** matadores no mesmo `04`, e uma delas contradiz a verificação por mutação · **Major** · destino 1
+
+- **Dimensão**: L1/L3 + K · **Relacionado a**: gate de falsificabilidade do `04`, CT-21, CT-23, adendo do step 7.5
+- **Esperado**: um ID de mutante, uma definição, um matador. O gate do cabeçalho — *"36 mutantes previstos, 36 com matador, 0 sem"* — só vale se cada ID significar uma coisa só.
+- **Observado**: `04:987`, na tabela `#### Mutantes previstos` de **R9**, define `M36` como *"a entrada nasce num **widget do dashboard** ou no **menu do usuário** do `/admin` … a tela inteira responde **500**"*, com matador **CT-21**. `04:1286`, no adendo `### M36 — o mutante novo`, define `M36` como *"a guarda `hasTenancy()` sai de `Tenant::urlDoPainel()`"*, com matador **CT-23**, e acrescenta, medido: *"removida a guarda, CT-23 fica vermelho e **CT-19/CT-21 seguem verdes**"* — ou seja, **CT-21 não mata o M36 que a linha 987 diz que ele mata**. O índice (`04:1119`) já foi corrigido para `CT-23 → M36`; a tabela de R9 ficou como estava. De quebra, a definição da linha 987 é quase a de `M27` (`04:985`), que já é atribuída a CT-19 *(em parte)* + CT-21.
+- **Repro**: `grep -n "M36" 04-casos-de-teste.md` → `987`, `1119`, `1121`, `1122`, `1286`; ler `987` contra `1286`. E `git show 5f1e81d -- .../04-casos-de-teste.md | grep M36` mostra que o remedimento tocou só o parágrafo do gate, não a linha de R9.
+- **Ação exigida**: uma das duas linhas sai, ou a do widget/menu vira **M37** — e aí o contador do cabeçalho muda junto.
+
+### QA-16 — o `04` publica um aviso de **Divergência viva** sobre CT-02 que foi desfeito em `3c326bf`, antes do ciclo 1, e o cita numa linha em branco · **Major** · destino 1
+
+- **Dimensão**: L3/L1 · **Relacionado a**: corte **C-1** da revisão adversarial
+- **Esperado**: o `04` descreve o contrato vigente. É o mesmo critério que reprovou **QA-02** no ciclo 1.
+- **Observado**: `04:372-375` traz *"⚠️ **Divergência viva.** O teste de CT-02 ainda carrega a asserção cortada, na forma de um `preg_match` sobre a fonte (`tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:133`) … é linha a **remover do teste**"*. O `preg_match` saiu em `3c326bf` (*remove do CT-02 o regex que o 04 cortou (C-1)*), **anterior** ao relatório do ciclo 1. Hoje a única ocorrência de `preg_match` no arquivo é a **palavra**, no docblock que explica a remoção (`:139`). E a citação `:133` aponta para uma linha que só tem `*`.
+- **Repro**: `grep -n "preg_match" tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` → uma linha, `139`, dentro de comentário · `sed -n '133p' tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` → `*` · `git log --oneline -- tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php`.
+- **Ação exigida**: trocar o bloco por um registro datado de que C-1 foi aplicado, como o `### Cogitado e cortado` já faz com C-2.
+
+### QA-17 — o controle positivo que fechou QA-08 não cobre o mutante realista de `semComentarios()`: CT-02 fica verde com o corpo do gerador inteiro comido · **Minor** · destino 3
+
+- **Dimensão**: K · **Relacionado a**: QA-08 (ciclo 1), M01, `tests/Pest.php:semComentarios:1219`
+- **Esperado**: o controle positivo fecha a **classe** de lacuna — *asserção de ausência sobre entrada transformada* —, não a instância. É o que a skill exige do destino 3, e o que `df00ddf` e o adendo do `04` afirmam ter feito.
+- **Observado**: os dois controles são `assertStringContainsString('/app/{slug}', $cru)` — sobre o texto **cru** — e `assertNotSame('', trim($fonte))` — só **não-vazio**. Nenhum dos dois afirma que a fonte **transformada** ainda contém o código sob teste. E o mutante plausível de `semComentarios()` não é "devolver vazio": é o `?` cair do quantificador (`~/\*.*?\*/~s` → `~/\*.*\*/~s`), e aí o regex ganancioso come do **primeiro** `/*` ao **último** `*/`, levando junto todo o corpo da classe.
+- **Repro** (sem tocar em nenhum arquivo versionado):
+  1. aplicar os dois `preg_replace` de `semComentarios()` sobre `app/Models/Tenant.php`, uma vez com `.*?` e outra com `.*`
+  2. medido: original → **1852** bytes, contém `function urlDoPainel`; mutante ganancioso → **712** bytes, **não** contém `function urlDoPainel`
+  3. nos dois casos: controle 1 `true`, controle 2 `true`, asserção `not->toContain('/app')` `true` → **CT-02 VERDE**, e M01 volta a não ter matador
+- **Evidência**: `scratchpad/ct02.php`
+- **Ação exigida**: `feature-test-design` com este mutante como entrada. O controle que fecha a classe é sobre a fonte **transformada** (exigir que `$fonte` ainda contenha `function urlDoPainel`, por exemplo), não sobre a crua. E **varrer o padrão antes de consertar o ponto**: `semComentarios()` é compartilhado e também é usado em `tests/Kit/AderenciaAoBlueprintTest.php`, `tests/Kit/HostLocalTest.php` e `tests/Kit/PageHeaderTest.php` — fora do escopo desta feature, mas mesma família.
+
+### QA-18 — `03` e `06` declaram **aberto** o item `HasRoutes.php:193`, que o commit de HEAD fechou · **Minor** · destino 1
+
+- **Dimensão**: L3 · **Observado**: `03:114-118` (*"**Fica aberto um item** … `HasRoutes.php:193` … fica para quem estiver com o `app/` na mão"*) e `06` → `### O que fica aberto`. O commit `5390093` já trocou `:193` por `:194` em `app/Models/Tenant.php` e em `tests/Kit/LinkDoPainelSemTenancyTest.php`. Conferido: a linha 194 de `vendor/filament/filament/src/Panel/Concerns/HasRoutes.php` é o `return url(Str::replaceEnd(...))` do ramo de concatenação.
+- **Repro**: `git show 5390093 -- app/Models/Tenant.php` · `grep -n "HasRoutes.php:19" app/Models/Tenant.php tests/Kit/LinkDoPainelSemTenancyTest.php` → só `:194`.
+- **Ação exigida**: fechar o parágrafo do `03` (e o do `06`) com o commit. O último item do QA-01 não sobra mais.
+
+### QA-19 — o ícone de nova aba da ficha, que fechou QA-13, entrou sem nenhum CT · **Minor** · destino 3
+
+- **Dimensão**: A/K · **Relacionado a**: QA-13 (ciclo 1, destino 2), R4, CT-07
+- **Esperado**: comportamento novo de UI nasce com cenário. R4/CT-07 cobrem o **atributo** `target="_blank"`; o **aviso** ao usuário (`helperText` no formulário, ícone na listagem e agora na ficha) não é afirmado por caso nenhum.
+- **Observado**: `24b7f9c` acrescentou `->icon(Heroicon::OutlinedArrowTopRightOnSquare)->iconPosition(IconPosition::After)` a `TenantInfolist`. Apagar as duas linhas deixa os **44** casos da feature verdes — o mutante "a ficha volta a não avisar" é exatamente o defeito que QA-13 reportou, e nada o detecta.
+- **Repro**: `grep -rn "ArrowTopRightOnSquare|iconPosition|helperText" tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php tests/Kit/LinkDoPainelSemTenancyTest.php` → **nenhuma ocorrência**.
+- **Ação exigida**: cenário em R4 (o aviso de nova aba nas três superfícies, cada uma com a sua convenção) com mutante próprio, ou lacuna declarada com o motivo. Hoje não é nem uma coisa nem outra.
+
+### QA-20 — o `03` diz que QA-01 achou **doze** citações erradas na wiki; foram **14** · **Cosmético** · destino 1
+
+- **Dimensão**: L1/L4 · **Observado**, dois pedaços:
+  - linha `specs.md` de `## Conformidade com Rules` (`03`): *"por isso QA-01 achou **doze** citações erradas na wiki"*. Medido por varredura própria sobre os `.md` do ciclo 1: **14** distintas, das quais **13** viviam no `03`/`04` (só `User.php:canAccessPanel():219` era exclusiva do `00`). O `06` → `### Duas citações erradas que este relatório não listou` já diz **14**; o título do QA-01 diz **13**. Três números para a mesma varredura.
+  - `## Verificação Final` do `03`: o item de citações continua com a evidência `tests/Kit/CitacoesDeCodigoTest.php` (CT-26) e **nada** sobre a wiki — e é a Verificação Final o lugar onde a rule `specs.md` manda o resultado (`14/14 ok`) aparecer. A evidência da wiki ficou só na tabela de rules.
+- **Repro**: extrair os `.md` do ciclo 1 (`git show 3e2b2a7:...`) e repetir a conferência por símbolo → 14 ERRO, listadas no `scratchpad`.
+
+### QA-21 — `04:1222` (achado **A-5**) ainda conta a linha `globex` como a **9ª** dos `Exemplos` de CT-16; é a **8ª** · **Cosmético** · destino 1
+
+- **Dimensão**: L1 · **Relacionado a**: QA-12 (ciclo 1), fechado dentro de R8
+- **Observado**: QA-12 fez R8 passar a contar *"**Sete** linhas … e a **oitava** … de unicidade"*, e a tabela de `Exemplos` tem oito linhas — conferido. A linha do `## Revisão Adversarial` não foi junto: *"**9ª linha** dos `Exemplos` de CT-16 (`globex`)"*.
+- **Repro**: `grep -n "9ª linha" 04-casos-de-teste.md` · contar a tabela de `Exemplos` de CT-16 → 8 linhas · o dataset de CT-16 no teste → 8 linhas.
+
+## Dimensões — Ciclo 2
+
+| # | Dimensão | Status | Observação |
+|---|----------|--------|------------|
+| A | Cobertura do requisito | ⚠️ | matriz do ciclo 1 revalidada (RQ-01..RQ-05 e ADR-02 não são tocados pelo diff novo); QA-19 é comportamento novo sem cenário |
+| B | Fronteiras e dados | ✅ | nenhuma validação mudou em `3e2b2a7..HEAD`; R8/CT-16..18 reconferidos por contagem |
+| C | Matriz de permissão | ✅ | inalterada — o diff novo não toca portão, papel nem política |
+| D | Observabilidade | ✅ | nenhum log novo no diff do ciclo 2 |
+| E | Performance | ✅ | o diff novo é `->icon()`/`->iconPosition()` declarativos e comentário; zero consulta nova |
+| F | UX de erro | ✅ | QA-13 fechado e conferido na fonte: as três superfícies avisam da nova aba |
+| G | Tema e cor | ✅ estático | `Heroicon` e `IconPosition` são enum/token; nenhum hex, classe de cor ou Blade no diff. Visual nos dois temas segue **não verificado** |
+| H | Acessibilidade | ✅ | o ícone convencional (WCAG G201) fecha a ausência que o ciclo 1 apontou na ficha |
+| I | Segurança da superfície nova | ✅ | nada acrescentado à superfície; o `02` já nomeia a fronteira real (`e($url)`) desde QA-14 |
+| J | Regressão adjacente | ✅ | 73 casos dos gates (citação, documentação, variádica, filtro de tabela) + 44 da feature, verdes. Suíte completa reportada pelo condutor: 2.817 / 2.800 verdes / 16 pulados / 1 falha pré-existente (destino 4) |
+| K | Adequação da suíte | ⚠️ | passo estático refeito nos dois arquivos de teste: QA-17 e QA-19. Passo **medido** (`--mutate`) segue **não verificado**, sem driver de cobertura |
+| L | Consistência documental | ❌ | 5 achados — QA-15, QA-16, QA-18, QA-20, QA-21 |
+
+## Suspeitas Não Confirmadas — Ciclo 2
+
+- **`tests/Tenancy/FiltrosDeTabelaTenancyTest.php:16`** — a prosa diz que a coluna nova deslocou a citação *"de 55 para **83**"*, e hoje o `TernaryFilter` está em **85**. A citação ao lado (`:ativo:85`) está certa, e o `83` é relato de um estado intermediário datado, não ponteiro vivo. Abaixo do limiar.
+- **24 citações da wiki na forma sem símbolo** (`{path}:{linha}` e `{path}:{início}-{fim}`) — a rule pede `{path}:{símbolo}:{linha}`, mas quase todas apontam para bloco de teste ou trecho de Blade sem símbolo único, e todas resolvem para a linha certa. Não é defeito de ponteiro; é o limite do formato.
+- **CT-05, docblock** — *"a segunda asserção é a discriminante"* continua verdadeiro depois do corte C-2, porque a segunda asserção passou a ser o `assertDontSeeHtml` da ativa. Verificado, não é achado.
+
+## Não Verificado — Ciclo 2
+
+- **Dimensão K, passo medido (`--mutate`)** — sem PCOV nem Xdebug, como no ciclo 1.
+- **Confronto visual e de console/rede** — Playwright MCP indisponível; Boost MCP também fora do ar nesta sessão.
+- **Suíte completa** — não re-executada por este gate; o número veio do condutor. Foram rodados 117 casos dirigidos.

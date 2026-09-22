@@ -117,6 +117,21 @@ detalhe de cada um está em `06-relatorio-qa.md` → `## Fechamento`.
 **194** (a 193 é branca). Ela é `app/`, não wiki, e a correção é de código: fica para quem estiver
 com o `app/` na mão.
 
+**Ciclo 2 (2026-09-21) — REPROVADO → especificação.** Blocker 0 · Major **2** · Minor **3** ·
+Cosmético **2**. Sete achados **novos** (QA-15 a QA-21), nenhum repetido do ciclo 1 — logo o loop
+**não converge** e resta um ciclo do teto de três. A reconferência independente **confirmou** o
+fechamento no que ele mediu: 14 citações erradas na árvore do ciclo 1, zero ERRO hoje no `03`/`04`,
+todas as correções apontando para a **declaração**, e os contadores (36 mutantes, 23 cenários, 9
+regras, 3 lacunas, 44/229, 23 IDs, 26 dos 44, R8 com oito linhas) batendo com a árvore. Os dois
+Major nasceram **dentro da remediação**: **QA-15** (`M36` ficou com duas definições e dois
+matadores no mesmo `04` — `04:987` dá CT-21, `04:1286` dá CT-23 e mede que CT-21 **não** o mata) e
+**QA-16** (o `04` ainda publica uma "Divergência viva" de CT-02 desfeita em `3c326bf`, antes do
+ciclo 1, citando uma linha em branco). Minor: **QA-17** (o controle positivo de CT-02 não cobre o
+mutante ganancioso de `semComentarios()` — medido, CT-02 fica verde com o corpo do gerador comido),
+**QA-18** (`03` e `06` dão por aberto o `HasRoutes.php:193` que `5390093` fechou) e **QA-19** (o
+ícone de nova aba da ficha entrou sem CT). Cosmético: **QA-20** e **QA-21**. **O PR não abre até o
+ciclo 3.** Relatório em `06-relatorio-qa.md` → `# Ciclo 2`.
+
 ## Auditoria Pré-Implementação
 
 ### Revisão profunda (step 5) — premissas do plano contra o código real
