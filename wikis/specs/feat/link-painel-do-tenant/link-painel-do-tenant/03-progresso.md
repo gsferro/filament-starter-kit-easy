@@ -140,6 +140,29 @@ mutante ganancioso de `semComentarios()` — medido, CT-02 fica verde com o corp
 ícone de nova aba da ficha entrou sem CT). Cosmético: **QA-20** e **QA-21**. **O PR não abre até o
 ciclo 3.** Relatório em `06-relatorio-qa.md` → `# Ciclo 2`.
 
+**Ciclo 3 (2026-09-22) — APROVADO COM DÉBITO.** Blocker 0 · Major **0** · Minor **4** · Cosmético
+**1**. Cinco achados novos (**QA-22** a **QA-26**), todos de **destino 1** — texto contra a árvore,
+nenhum tocando código de aplicação, teste ou asserção. **O teto de três ciclos foi atingido e o
+loop encerra aqui**: como não há Blocker nem Major novo, **não há o que escalar ao usuário**, e os
+cinco viram **débito**. A reconferência por medição própria **confirmou** o que o ciclo 2 fechou:
+CT-24 mata os três mutantes do aviso (mutação aplicada e revertida em `TenantInfolist`,
+`TenantsTable` e `TenantForm`, vermelho nos três), `getIcon($state)` não é trivialmente verdadeiro
+(sem `->icon()` o vendor só devolveria algo se o estado fosse `IconInterface`, e aqui é string),
+o controle novo de CT-02 resiste ao regex ganancioso **e** ao retorno vazio, M36 tem matador de
+verdade (sem a guarda `hasTenancy()`, CT-23 vermelho e CT-19/CT-21 verdes), e a varredura de
+citações dá **zero ERRO** fora do `00` imutável. Os cinco achados nasceram **dentro da remediação
+do ciclo 2**: **QA-22** (CT-24 entrou no `04` sem entrar na estrutura por regra — índice com uma
+célula a menos, filiado a R1 em vez de R4, fora do `### Suíte e arnês`, e M38 sem tabela de
+mutante), **QA-23** (`04:1129` ainda declara *"36 mutantes, 36 com matador"* e `M01..M36`, refutado
+pelo comando que ele mesmo publica, e M37 é o único dos 38 fora da coluna `Mata` do índice),
+**QA-24** (44/229 sobreviveu em três checkboxes da `## Verificação Final` e no **CHANGELOG**;
+medido: **45 casos / 234 asserções**), **QA-25** (`### Falsificabilidade` diz 26 de 44 e lista
+CT-02 entre os verdes; medido agora, **28 de 45**, com CT-02 **reprovando** graças ao controle do
+QA-17) e **QA-26**, cosmético (o cabeçalho do teste conta "oito casos" que chamam `urlDoPainel()`
+direto; são nove). Fica também **QA-18 pela metade**: o `03` fechou, o `06` → `### O que fica
+aberto` não. **O PR pode abrir**, com os seis débitos registrados. Relatório em
+`06-relatorio-qa.md` → `# Ciclo 3`.
+
 ## Auditoria Pré-Implementação
 
 ### Revisão profunda (step 5) — premissas do plano contra o código real

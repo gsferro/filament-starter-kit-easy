@@ -347,3 +347,149 @@ conferência**. Foram 13 na lista, 14 na árvore.
 - **Dimensão K, passo medido (`--mutate`)** — sem PCOV nem Xdebug, como no ciclo 1.
 - **Confronto visual e de console/rede** — Playwright MCP indisponível; Boost MCP também fora do ar nesta sessão.
 - **Suíte completa** — não re-executada por este gate; o número veio do condutor. Foram rodados 117 casos dirigidos.
+
+---
+
+# Ciclo 3
+
+> Mesmo perfil de esforço (**completo**) e mesma natureza (`nova`). Entrada: os dois commits que
+> entraram depois do relatório do ciclo 2 (`b5a8f9c..HEAD` — `62ffddd` e `dcb038e`), **diff que
+> nenhuma revisão tinha lido**, mais a reconferência independente de tudo que o fechamento do
+> ciclo 2 declarou fechado. **Este é o teto de três ciclos da skill.**
+
+## Veredito — Ciclo 3
+
+**APROVADO COM DÉBITO**
+
+- Blocker: **0** · Major: **0** · Minor: **4** · Cosmético: **1**
+- **Nenhum Blocker e nenhum Major novo** — então **não há escalação ao usuário**, que é o que a
+  skill manda quando o teto é atingido com achado que reprova. O loop **encerra aqui**: os cinco
+  achados (QA-22 a QA-26) são todos de **destino 1**, texto contra a árvore, e vão para o `03`
+  como **débito**. Nenhum toca código de aplicação, teste ou asserção.
+- Os cinco nasceram **dentro da remediação do ciclo 2**: o CT-24 entrou no `04` sem ser encaixado
+  na estrutura por regra que o arquivo usa para os outros 23, a separação M36/M37 parou antes do
+  gate, e três contadores não souberam que a suíte cresceu.
+- Ambiente: Pest **5.0.5** · app não servido · Playwright MCP **indisponível** · driver de
+  cobertura **ausente** (`php -m` não lista PCOV nem Xdebug)
+- Medições próprias deste ciclo: **45 casos / 234 asserções** na feature (42/169 em
+  `tests/Tenancy` + 3/65 em `tests/Kit`) e **74 casos / 258 asserções** nos gates de citação,
+  documentação, variádica do Pest, filtro de tabela e helpers — todos verdes
+- `tests/Browser/TemaEscuroTest.php` **não é re-reportado**: instabilidade medida na própria
+  `main`, sem nenhuma das branches — **destino 4**
+
+### O que foi reconferido por medição própria, e NÃO virou achado
+
+| Alegação do fechamento do ciclo 2 | Como foi reconferida | Resultado |
+|---|---|---|
+| CT-24 — `getIcon($state)` não é trivialmente verdadeiro | leitura do vendor: `getIcon(mixed $state)` avalia o closure e, **sem** `->icon()`, só devolve algo se `$state instanceof IconInterface` (`vendor/filament/infolists/src/Components/Concerns/HasIcon.php:getIcon:58` e `vendor/filament/tables/src/Columns/Concerns/HasIcon.php:getIcon:58`). O estado aqui é **string** (a URL) | **confirmado** — o parâmetro é obrigatório, e passá-lo não abre caminho para verdade trivial |
+| CT-24 mata o mutante nas **três** superfícies | mutação própria, uma de cada vez, com `git checkout --` entre elas: `->icon()` fora de `TenantInfolist`; `->icon()` fora de `TenantsTable`; a frase trocada no `helperText` de `TenantForm` | **vermelho nos três**, cada um com mensagem distinta (componente de schema, `expect(...)->not->toBeNull`, `assertSee`) |
+| CT-02 corrigido resiste ao regex ganancioso | os dois `preg_replace` de `semComentarios()` aplicados fora da árvore, com `.*?` e com `.*` | **confirmado**: original 1852 bytes *(com `trim`)* e **com** `function urlDoPainel` → verde; ganancioso 712 bytes **sem** o método → vermelho; retorno vazio → vermelho |
+| M36 tem matador de verdade | guarda `hasTenancy()` removida de `Tenant::urlDoPainel()`, com `tests/Kit/LinkDoPainelSemTenancyTest.php` inteiro | **CT-23 vermelho, CT-19 e CT-21 verdes** — exatamente o que o adendo do `04` afirma |
+| citações da wiki | varredura mecânica própria sobre os cinco `.md` (fora o `06`, que **cita** as erradas de propósito), com resolução por basename | **74 OK, 3 ERRO** — as três do `00`, imutáveis, cobertas pelo **Adendo 1** |
+| contadores de ID | `grep` próprio | **24** cenários no `04` e **24** IDs no teste, fechando nos dois sentidos; **38** IDs de mutante distintos; **9** regras |
+| números do README tocados pelo diff | `find` | **150** arquivos em `Kit`+`Tenancy`, **176** no total, **65** pastas com `00-requisito.md` — os três batem |
+
+## Achados
+
+### QA-22 — o CT-24 entrou no `04` sem ser encaixado na estrutura por regra, em **quatro** lugares · **Minor** · destino 1
+
+- **Dimensão**: L1/L3 · **Relacionado a**: QA-19 (ciclo 2), QA-04 (ciclo 1), R1, R4
+- **Esperado**: cenário novo ocupa os mesmos lugares que os 23 anteriores — índice completo, linha em `### Suíte e arnês`, regra que o abriga e mutante declarado numa tabela `#### Mutantes previstos`. É o que o fechamento do QA-04 fez por CT-23.
+- **Observado**, quatro pontos:
+  1. **`04:1127`** — a linha do índice tem **6 células** onde todas as outras têm **7**. Falta a coluna `Arquivo`, então `Feature (schema resolvido)` cai em `Camada`, `M38` cai em `Arquivo` e `Mata` fica vazia. CT-24 é o único cenário do arquivo sem arquivo de teste declarado no índice.
+  2. **`04:1127`** — CT-24 está filiado a **R1** (*"a URL do link é a que o painel `app` gera"*). O cenário é de **R4** (`04:545`, *"o link abre em nova aba nas três superfícies"*) — e a **ação exigida do QA-19** dizia, literalmente, *"cenário em R4"*.
+  3. **`04:209`** — a linha de `### Suíte e arnês` do arquivo de Tenancy continua `CT-01..CT-18, CT-20, CT-22`. **CT-24 não está lá.** É o mesmo defeito que o QA-04 fechou para CT-23.
+  4. **M38 não aparece em nenhuma tabela `#### Mutantes previstos`** — é o único dos 38 que vive só no índice e no `## Adendo 2`. A tabela de R4 (`04:570-575`) segue com M12 e M13.
+- **Repro**:
+  1. contar os separadores das linhas do índice: a 1127 tem um `|` a menos que as 23 anteriores
+  2. `sed -n '545p;1127p' 04-casos-de-teste.md` — a regra de nova aba é R4, o índice diz R1
+  3. `sed -n '209p' 04-casos-de-teste.md | grep -c CT-24` → `0`
+  4. `grep -n "M38" 04-casos-de-teste.md` → `1127` e `1288`, nenhuma tabela de mutante
+- **Ação exigida**: mover CT-24 para R4 (índice + `Esquema do Cenário` ao lado de CT-07), fechar a 7ª célula da linha, acrescentar CT-24 à linha de `### Suíte e arnês` e declarar M38 na tabela `#### Mutantes previstos` de R4.
+
+### QA-23 — a separação M36/M37 parou antes do gate de falsificabilidade e do índice · **Minor** · destino 1
+
+- **Dimensão**: L1/K · **Relacionado a**: QA-15 (ciclo 2), cuja ação exigida dizia *"e aí o contador do cabeçalho muda junto"*
+- **Esperado**: o gate do `04` — *"N mutantes previstos, N com matador, 0 sem"* — vale enquanto o número cobrir todos os IDs, e o índice lista cada mutante na coluna `Mata` de quem o mata.
+- **Observado**, dois pontos:
+  1. **`04:1129`** ainda publica **"36 mutantes previstos, 36 com matador, 0 sem — `M01`..`M36`, nenhum ID pulado, conferido por `grep -o "M[0-9][0-9]" 04-casos-de-teste.md | sort -u | wc -l`"**. O comando que a própria frase publica devolve **38** hoje, e o cabeçalho (`04:34`) já foi corrigido para 38. **O gate é refutado pelo comando que ele cita** — e, como está escrito, deixa M37 e M38 fora do seu alcance.
+  2. **M37 é o único dos 38 ausente da coluna `Mata` do índice.** A linha de CT-21 (`04:1124`) continua só com `M27`, e M37 é declarado matado por CT-21 apenas na tabela de R9 (`04:988`). Antes da separação o ID `M36` aparecia no índice pela linha de CT-23; depois dela, o mutante do widget/menu ficou sem linha nenhuma.
+- **Repro**:
+  - `sed -n '34p;1129p' 04-casos-de-teste.md` → 38 contra 36
+  - `comm -13 <(sed -n '1102,1128p' 04-casos-de-teste.md | grep -o "M[0-9][0-9]" | sort -u) <(grep -o "M[0-9][0-9]" 04-casos-de-teste.md | sort -u)` → saída: **`M37`**, e só ele
+- **Não é defeito de mérito**: medido aqui, a separação está **certa**. Removida a guarda `hasTenancy()` de `Tenant::urlDoPainel()`, CT-23 fica vermelho e CT-19/CT-21 seguem verdes (3 casos, 1 falha, 65 asserções). O defeito é de escrituração, nos dois lugares que o QA-15 não alcançou.
+- **Ação exigida**: o parágrafo de `04:1129` passa a 38 (e a `M01`..`M38`), e a linha de CT-21 do índice ganha `M37` ao lado de `M27`.
+
+### QA-24 — "44 casos / 229 asserções" sobreviveu ao CT-24 em três checkboxes do `03` e **no CHANGELOG** · **Minor** · destino 1
+
+- **Dimensão**: L1/L5 · **Relacionado a**: QA-04 e QA-20, mesma família
+- **Esperado**: a `## Verificação Final` é onde o `03` declara o que foi **medido**; checkbox marcado com número velho declara uma medição que não existe. E o CHANGELOG **publica**.
+- **Observado** — medido hoje: **45 casos / 234 asserções** (42/169 em `tests/Tenancy` + 3/65 em `tests/Kit`):
+
+| Onde | O que diz | Árvore |
+|---|---|---|
+| `03:56-57` | *"**44 casos, 44 verdes, 229 asserções** … (41/164 em `tests/Tenancy` + 3/65 em `tests/Kit`)"* | 45 / 234 (42/169 + 3/65) |
+| `03:78` | *"os **23** IDs do teste"* | **24** |
+| `03:86` | *"**23** cenários …, **9** regras, **36** mutantes, **3** lacunas"* | 24 cenários, 9 regras, **38** mutantes, 3 lacunas |
+| `CHANGELOG.md:31` | *"coberto por **44 casos** em `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` e `tests/Kit/LinkDoPainelSemTenancyTest.php`"* | **45** |
+
+- **Repro**: `vendor/bin/pest tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php tests/Kit/LinkDoPainelSemTenancyTest.php` → `tests: 45, assertions: 234` · a extração de IDs dos dois arquivos de teste devolve 24
+- **Ação exigida**: remedir os quatro. O do CHANGELOG é o que sai do repositório, e é o que urge.
+- **Nota**: `03:133` também diz "44/229, 23 IDs", mas ali está **dentro do parágrafo datado do ciclo 2** — é registro do que foi medido naquele dia e fica como está.
+
+### QA-25 — `### Falsificabilidade` do `03` desatualizou, e nomeia **CT-02 no lado errado** · **Minor** · destino 1
+
+- **Dimensão**: L3/K · **Relacionado a**: QA-17 (ciclo 2), QA-19 (ciclo 2)
+- **Esperado**: a seção declara quantos casos morrem com o `app/` revertido ao merge-base e **quais** continuam verdes "por desenho". A lista nominal é a parte que não pode envelhecer em silêncio: ela é o argumento de que os verdes são verdes de propósito.
+- **Observado** — `03:419-438` diz *"**26 dos 44** casos ficam vermelhos — 13 falhas de asserção (CT-03, CT-04 ×3, CT-05 ×3, CT-06, CT-07 ×3, CT-15, CT-20) e 13 erros"*, e *"Os **18** que continuam verdes … **CT-02** (varredura de fonte — mata M01, não prova presença)"*. **Medido agora**: `git checkout fbfe528 -- app/` e as duas suítes dão **28 de 45 vermelhos — 15 falhas + 13 erros**, e **CT-02 está entre as falhas**. Os dois a mais são consequência direta das correções do ciclo 2:
+  - **CT-02** passou a reprovar porque o controle do **QA-17** exige `function urlDoPainel` na fonte **transformada**, e no merge-base o método não existe. Ou seja: o QA-17 **aumentou** a falsificabilidade da suíte, e o `03` ainda lista CT-02 como insensível ao diff.
+  - **CT-24** nasceu (QA-19) e reprova.
+- **Repro**: `git checkout fbfe528 -- app/` · as duas suítes → `tests: 45, passed: 17, failed: 15, errors: 13` · `git checkout HEAD -- app/` (árvore conferida limpa depois)
+- **Ação exigida**: remedir para **28 de 45**, tirar CT-02 da lista dos verdes e registrar o motivo — é a melhor evidência que a feature tem de que o fechamento do QA-17 funcionou.
+
+### QA-26 — o cabeçalho do arquivo de teste volta a contar errado: "Oito casos", são **nove** · **Cosmético** · destino 1
+
+- **Dimensão**: L1 · **Relacionado a**: QA-06 (ciclo 1), que corrigiu este mesmo cabeçalho
+- **Observado**: `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:41-43` afirma *"**Oito** casos deste arquivo chamam `Tenant::urlDoPainel()` direto (CT-01, CT-03, CT-08, CT-09, CT-10, CT-14, CT-18, CT-22)"*. CT-24 chama `$organizacao->urlDoPainel()` duas vezes (`:968` e `:984`) — são **nove**.
+- **Repro**: as chamadas de `->urlDoPainel()` no arquivo estão em 9 casos distintos, e a lista do cabeçalho nomeia 8.
+- **Ação exigida**: a correção não é só somar um. Em CT-24 o gerador é **argumento de estado**, não sujeito da afirmação — o que a frase quer dizer é *"o sujeito da afirmação é o gerador"*, e é a frase que precisa mudar, com CT-24 nomeado como a exceção.
+
+## Achados do ciclo 2 não integralmente fechados
+
+<!-- Não contam na tabela de severidade deste ciclo: já foram contados no ciclo 2. -->
+
+- **QA-18 fechou metade.** A ação exigida pedia fechar o parágrafo *"fica aberto um item"* no `03`
+  **e** no `06`. O `03:119-124` fechou em `dcb038e`; o `06:214-220` → `### O que fica aberto`
+  continua declarando `HasRoutes.php:193` em aberto, e o commit não tocou o `06`.
+  Repro: `git diff b5a8f9c..HEAD --stat -- wikis/` lista só `03` e `04`.
+  Segue **Minor, destino 1**.
+
+## Dimensões — Ciclo 3
+
+| # | Dimensão | Status | Observação |
+|---|----------|--------|------------|
+| A | Cobertura do requisito | ✅ | a matriz do ciclo 1 (RQ-01..RQ-05 + ADR-02) não é tocada pelo diff novo, que é teste e texto. A lacuna do ciclo 2 (QA-19, aviso sem cenário) **fechou**: CT-24 existe e mata os três mutantes |
+| B | Fronteiras e dados | ✅ | nenhuma validação mudou em `b5a8f9c..HEAD` |
+| C | Matriz de permissão | ✅ | o diff novo não toca portão, papel nem política |
+| D | Observabilidade | ✅ | nenhum log novo; CT-24 não emite nem afirma log |
+| E | Performance | ✅ | o diff novo é teste e markdown; zero consulta nova |
+| F | UX de erro | ✅ | as três superfícies avisam da nova aba, e agora há caso afirmando cada uma |
+| G | Tema e cor | ✅ estático | nenhum Blade, CSS, hex ou classe de cor no diff novo. Visual nos dois temas segue **não verificado** |
+| H | Acessibilidade | ✅ | o ícone convencional (WCAG G201) nas duas telas de leitura e a prosa no formulário, agora travados por CT-24 |
+| I | Segurança da superfície nova | ✅ | nada acrescentado à superfície |
+| J | Regressão adjacente | ✅ | natureza `nova` ⇒ não obrigatória; rodada: 74 casos / 258 asserções dos gates (citação, documentação, variádica, filtro de tabela, helpers) + 45 da feature, verdes |
+| K | Adequação da suíte | ✅ passo estático | CT-24 auditado por **mutação nas três superfícies** e CT-02 pelo mutante ganancioso — os dois oráculos que o ciclo 2 abriu estão vivos. Passo **medido** (`--mutate`) segue **não verificado**, sem driver de cobertura |
+| L | Consistência documental | ❌ | **5 achados** — QA-22 a QA-26, todos L1/L3/L5 |
+
+## Suspeitas Não Confirmadas — Ciclo 3
+
+- **CT-24 não chama `->loadTable()` na listagem**, e a tabela `## Conformidade com Rules` do `03` declara *"`noPainelBootado('admin')` + `->loadTable()` em todo caso de listagem"*. **Não é violação**: a rule protege asserção sobre **HTML** (*"sem `->loadTable()` o HTML testado é o do esqueleto"*), e CT-24 lê a **definição** da coluna (`getTable()->getColumn()`), que não depende de registro carregado. O painel está bootado — `noAdminComo()` chama `noPainelBootado('admin')` (`tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:noAdminComo:93`). E a mutação prova o oráculo vivo. Abaixo do limiar; o que é absoluto demais é a frase do `03`.
+- **`tests/Tenancy/BoasVindasTest.php:21` cita `HasRoutes.php:196`** — arquivo fora do diff desta feature, não conferido. Não é achado deste gate.
+- **Os 1852/712 bytes do docblock de CT-02** — medidos aqui como 1853/713 com `strlen()` e **1852/712 com `strlen(trim())`**. O docblock bate com a segunda leitura. Não é achado.
+
+## Não Verificado — Ciclo 3
+
+- **Dimensão K, passo medido (`--mutate`)** — `php -m` não lista PCOV nem Xdebug, como nos ciclos 1 e 2. A mutação deste ciclo foi **manual e dirigida** (cinco mutantes aplicados e revertidos um a um, com `git status` limpo ao fim); não é mutation score.
+- **Confronto visual e de console/rede** — Playwright MCP indisponível; Boost MCP fora do ar nesta sessão. Sem inventário de elementos, sem screenshot nos dois temas.
+- **Suíte completa** — não re-executada por este gate. Foram rodados **119 casos dirigidos** (45 da feature + 74 dos gates), mais as seis execuções de mutação.
+- **`tests/Browser/TemaEscuroTest.php`** — não executado. Instabilidade medida na `main` sem nenhuma das branches: **destino 4**, e não se re-reporta.
