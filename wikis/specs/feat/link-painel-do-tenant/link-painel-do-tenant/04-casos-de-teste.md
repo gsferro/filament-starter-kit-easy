@@ -206,8 +206,8 @@ proibição de `--parallel` com browser não se aplica.
 
 | CTs | Arquivo | Suíte | Por quê |
 |---|---|---|---|
-| CT-01..CT-18, CT-20 | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | `Tenancy` (grupo `kit`) | `TenantResource::canAccess()` exige `kit.tenancy.enabled`, e o `Tests\TenancyTestCase` fixa `permission.teams` em `createApplication()`, antes das migrations. O papel `admin_app` **só existe** nesta suíte |
-| CT-19 | `tests/Kit/LinkDoPainelSemTenancyTest.php` | `Kit` (grupo `kit`) | é a **única** suíte onde a tenancy está desligada. Um CT de "desligada" dentro de `tests/Tenancy` mediria o arnês, não o comportamento |
+| CT-01..CT-18, CT-20, CT-22 | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | `Tenancy` (grupo `kit`) | `TenantResource::canAccess()` exige `kit.tenancy.enabled`, e o `Tests\TenancyTestCase` fixa `permission.teams` em `createApplication()`, antes das migrations. O papel `admin_app` **só existe** nesta suíte |
+| CT-19, CT-21, CT-23 | `tests/Kit/LinkDoPainelSemTenancyTest.php` | `Kit` (grupo `kit`) | é a **única** suíte onde a tenancy está desligada. Um CT de "desligada" dentro de `tests/Tenancy` mediria o arnês, não o comportamento |
 
 > Nenhum helper novo em `tests/Pest.php`: os dois arquivos não compartilham função. Se a
 > implementação obrigar um helper comum, ele vai para `tests/Pest.php` — `.ai/rules/testes.md`.
@@ -1114,29 +1114,36 @@ que é o que a feature possui — o custo da tela é da lacuna 3).
 | CT-18 | o link segue o slug gravado, sem normalizar e sem encodar | R8 | invariante das duas leituras, escrita fora da UI | Livewire (`ViewTenant`) | idem | M26, **M35** |
 | CT-19 | com a tenancy desligada a listagem não abre | R9 | EP (config) | Feature (`GET`) | `tests/Kit/LinkDoPainelSemTenancyTest.php` | M27 *(em parte)*, M28 |
 | CT-20 | o cadastro continua gravando, e o link aparece na edição | R3 | gate de tela de escrita | Livewire (`CreateTenant`) | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | M11 |
-| CT-21 | com a tenancy desligada nenhuma tela do `/admin` estoura nem oferece o link | R9 | EP (config) × inventário de telas | Feature (`GET`) | `tests/Kit/LinkDoPainelSemTenancyTest.php` — **ainda não escrito** | M27, **M36** |
-| CT-22 | seguir o link de organização inativa, sem vínculo, é recusado nas duas leituras | R5 | invariante das duas leituras | Feature (`GET`) | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` — **ainda não escrito** | **M33** |
+| CT-21 | com a tenancy desligada nenhuma tela do `/admin` estoura nem oferece o link | R9 | EP (config) × inventário de telas | Feature (`GET`) | `tests/Kit/LinkDoPainelSemTenancyTest.php` | M27 |
+| CT-22 | seguir o link de organização inativa, sem vínculo, é recusado nas duas leituras | R5 | invariante das duas leituras | Feature (`GET`) | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | **M33** |
+| CT-23 | sem tenancy o gerador devolve `null`, e não o `/app/{uuid}` morto | R9 | EP (config), chamada direta do gerador | Feature (PHP puro) | `tests/Kit/LinkDoPainelSemTenancyTest.php` | **M36** |
 
 **37 mutantes previstos, 37 com matador, 0 sem.** (M36 entrou pelo `/code-review` — ver o
 adendo no fim deste arquivo.)
 
-### Cenários especificados sem teste escrito
+### Cenários especificados sem teste escrito — **nenhum** (fechado em 2026-09-21)
 
-**Dois cenários e duas linhas de `Examples`** nasceram desta revisão e **ainda não têm caso no
-arquivo de teste**. Os quatro foram **sondados** contra o código real antes de serem escritos aqui,
-com casos temporários que foram descartados — nenhum deles é suposição. O resultado está registrado
-para que ninguém escreva o teste na direção errada:
+**Dois cenários e duas linhas de `Examples`** nasceram da revisão adversarial sem caso escrito, e
+os quatro foram **sondados** contra o código real antes de entrarem aqui. Os quatro existem hoje, e
+os quatro **confirmaram a sonda** — a direção registrada não precisou ser invertida em nenhum:
 
-| Onde | Direção sondada | O que falta |
+| Onde | Direção sondada | Onde o caso está |
 |---|---|---|
-| **CT-21** (novo) | as **18** telas de `telasDoKit()['admin']` respondem **abaixo de 500** com a tenancy desligada, e nenhuma exibe `href` do painel de negócio | escrever o caso em `tests/Kit/LinkDoPainelSemTenancyTest.php`, com `fronteiraDeRequest()` entre as visitas |
-| **CT-22** (novo) | a operadora sem vínculo recebe **404** na organização inativa; `canAccessTenant()` devolve falso e `getTenants()` não a contém | escrever o caso em `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` |
-| **CT-16**, linha `globex` | a edição **recusa** o slug de outra organização gravada, e o gravado continua `acme`. **PASSA hoje** — `->unique()` ignora o próprio registro por padrão nesta versão do Filament | acrescentar a linha ao dataset de `[CT-16]`, e a segunda organização ao arranjo |
-| **CT-08**, linha do administrador **vinculado** | **403** — o portão 1 decide primeiro, e vínculo não dá papel do painel `app` | acrescentar a linha ao dataset de `[CT-08]`, com `->tenants()->attach()` no arranjo |
+| **CT-21** | as **18** telas de `telasDoKit()['admin']` respondem **abaixo de 500** com a tenancy desligada, e nenhuma exibe `href` do painel de negócio | `tests/Kit/LinkDoPainelSemTenancyTest.php:[CT-21]` — 56 asserções, com controle positivo |
+| **CT-22** | a operadora sem vínculo recebe **404** na organização inativa; `canAccessTenant()` devolve falso e `getTenants()` não a contém | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:[CT-22]` — as três asserções |
+| **CT-16**, linha `globex` | a edição **recusa** o slug de outra organização gravada, e o gravado continua `acme`. **PASSA hoje** — `->unique()` ignora o próprio registro por padrão nesta versão do Filament | linha `slug de OUTRA organização gravada` no dataset de `[CT-16]` |
+| **CT-08**, linha do administrador **vinculado** | **403** — o portão 1 decide primeiro, e vínculo não dá papel do painel `app` | persona `admin_vinculado` no dataset de `[CT-08]` |
 
-> Enquanto os quatro não existirem, o gate "IDs `[CT-nn]` do teste ⊆ `04` **e vice-versa**" do
-> step 7 fica **aberto** na direção `04 → teste`. Registrado na Verificação Final do
-> `03-progresso.md`, como **D-05**.
+Depois deles ainda entrou **CT-23**, pelo achado 2 do `/code-review` (ver o adendo no fim deste
+arquivo). Ele é o único caso que fica vermelho se a guarda `hasTenancy()` sair do gerador.
+
+> O gate "IDs `[CT-nn]` do teste ⊆ `04` **e vice-versa**" do step 7 **fecha** nos dois sentidos:
+> 23 IDs de um lado, 23 do outro, saída vazia. Registrado na Verificação Final do
+> `03-progresso.md`, como **D-05 — FECHADO**.
+>
+> A única exceção é declarada e não é cenário desta feature:
+> `tests/Kit/ExpectativaVariadicaDoPestTest.php` tem `[CT-01]` e `[CT-02]` **próprios**, locais ao
+> arquivo — ver `## Sem CT-B` → *"O teste que não é CT desta feature"*.
 
 ### Cogitado e cortado
 
