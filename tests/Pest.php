@@ -1248,3 +1248,34 @@ function caminhosDoKit(): array
 
     return $caminhos;
 }
+
+/**
+ * O código PHP sem comentários e docblocks — só o que executa.
+ *
+ * `token_get_all()` e não regex, porque a menção a um literal dentro de um docblock é o caso
+ * mais comum nesta suíte: um caso que **fala sobre** `docs/pt/…` num comentário não o lê.
+ *
+ * Mora aqui, e não dentro de um arquivo de teste, porque **dois** arquivos o usam
+ * (`RedeDeDocumentacaoTest` e `ChecklistDeReleaseTest`) — `.ai/rules/testes.md`. A primeira
+ * versão do segundo trouxe um clone chamado `codigoPhpSemComentario()`, byte a byte igual, que
+ * é exatamente o que a rule proíbe: em vez de estourar redeclaração, ficam duas funções
+ * idênticas que divergem em silêncio.
+ */
+function codigoSemComentario(string $codigo): string
+{
+    $saida = '';
+
+    foreach (token_get_all($codigo) as $token) {
+        if (is_array($token)) {
+            if (in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            $saida .= $token[1];
+        } else {
+            $saida .= $token;
+        }
+    }
+
+    return $saida;
+}

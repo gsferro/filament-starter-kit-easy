@@ -560,6 +560,19 @@ it('[CT-40] recusa o dominio que passa do limite de comprimento do DNS', functio
  * A página escreve `$env:windir\…` porque quem a lê está colando dentro de um PowerShell; o
  * código já tem a variável expandida, porque é o mesmo caminho que ele relê depois. As duas
  * substituições acontecem aqui, e quem fixa a segunda contra o oráculo é **CT-35**.
+ *
+ * ## Só roda na árvore do kit, e isso é correção de 2026-09-22
+ *
+ * O oráculo deste caso é um arquivo de `docs/`, que está no `export-ignore`: ele **não viaja** no
+ * `composer create-project`. O caso viajava e o arquivo não, então **toda instalação nova falhava
+ * aqui** — `File does not exist at path …/docs/pt/comecar/dominio-local.md`.
+ *
+ * Passou despercebido porque a suíte do kit, rodada na árvore do kit, tem o `docs/` presente: o
+ * defeito só é observável de DENTRO de um projeto instalado. Foi encontrado pela validação de
+ * release (`wikis/checklist-de-release.md`), na primeira instalação limpa da `v0.38.0`.
+ *
+ * O `->skip()` abaixo é o mesmo que o último caso deste arquivo já usava — a guarda existia no
+ * arquivo, e este caso não a tinha.
  */
 it('[CT-12] emite o mesmo comando de elevacao que a documentacao ensina', function (): void {
     $normalizar = static fn (string $texto): string => trim((string) preg_replace('/\s+/', ' ', $texto));
@@ -587,7 +600,7 @@ it('[CT-12] emite o mesmo comando de elevacao que a documentacao ensina', functi
         ->and($comando)->toContain('-Encoding ascii')
         ->and($comando)->toContain('System32\drivers\etc\hosts')
         ->and($comando)->not->toContain('/etc/hosts');
-})->group('kit');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'O site de documentação não viaja no projeto instalado.')->group('kit');
 
 /**
  * CT-35 — o comando escreve no MESMO arquivo que o oráculo relê.

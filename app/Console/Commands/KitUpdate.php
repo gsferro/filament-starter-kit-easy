@@ -242,7 +242,9 @@ class KitUpdate extends Command
         '.ai/rules',
 
         /*
-        | Os sete documentos de topo da wiki, um a um — e não `wikis` inteiro.
+        | Os doze documentos de topo da wiki, um a um — e não `wikis` inteiro.
+        | Em ordem alfabética: a lista só envelhece bem se der para achar
+        | um nome nela sem ler as doze linhas.
         | `wikis/specs/` é o histórico de planejamento DO KIT (hoje ~6 mil
         | linhas, e só cresce); entregá-lo faria todo projeto instalado carregar
         | as ADRs das features do kit. O que o projeto precisa é a wiki de
@@ -251,6 +253,7 @@ class KitUpdate extends Command
         'wikis/README.md',
         'wikis/agentes-e-skills.md',
         'wikis/arquitetura.md',
+        'wikis/checklist-de-release.md',
         'wikis/convencoes.md',
         'wikis/ia.md',
         'wikis/pacotes-candidatos.md',

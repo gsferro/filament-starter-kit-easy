@@ -5,6 +5,33 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Corrigido
+
+- **`HostLocalTest [CT-12]` quebrava em toda instalação nova.** O caso usa uma página de `docs/`
+  como oráculo documental — ele confronta o comando que o código emite com o comando que a página
+  ensina. `docs/` está no `export-ignore`: **o teste viaja e o arquivo que ele lê não**. Passava
+  despercebido porque todo gate roda na árvore do kit, onde `docs/` existe; só é observável de
+  dentro de um projeto instalado.
+
+### Adicionado
+
+- **`wikis/checklist-de-release.md`** — o roteiro dos quatro cenários de validação que passa a ser
+  obrigatório a cada tag: duas instalações limpas (com e sem tenancy) e dois `kit:update` no mesmo
+  cruzamento. Instalação limpa e `kit:update` são caminhos de entrega **diferentes** — governados
+  pelo `.gitattributes` e por `KitUpdate::CAMINHOS_DO_KIT` —, e um arquivo pode viajar por um e
+  não pelo outro. Traz teto de pulados com justificativa por aumento, e a seção *"O que já
+  quebrou aqui"*.
+- **`.github/CONTRIBUTING.md`** — não existia no repositório.
+- **`RedeDeDocumentacaoTest [CT-11]`** — guarda estática para a classe do defeito acima, na fatia
+  em que ela é decidível: leitura de caminho **literal** exige a sentinela **no próprio caso**. O
+  `[CT-10]`, que já existia, cobra a sentinela por **arquivo**, e por isso ficou verde durante
+  toda a `v0.38.0`. `[CT-22]` e `[CT-23]` são o controle positivo da guarda nova.
+
+### Alterado
+
+- `KitUpdate::CAMINHOS_DO_KIT` passa a entregar `wikis/checklist-de-release.md`, em ordem
+  alfabética com os demais.
+
 ## [0.38.0] - 2026-09-22
 
 ### Corrigido
