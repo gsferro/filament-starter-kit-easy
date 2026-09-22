@@ -235,6 +235,17 @@ dois já vêm completos.
 - **Camada de mídia** (spatie/laravel-medialibrary) nos componentes do Filament: upload, coleções e conversões em formulário, tabela e infolist ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/anexos-e-midia.html))
 - **Cabeçalho rico** no topo das telas de ver e editar usuário e organização: avatar (ou as iniciais), nome, badge de situação e metadados copiáveis, no lugar do título de texto do Filament
 - **Aviso de alterações não salvas** ao sair de um formulário nos três painéis, e a **versão do seu sistema no rodapé** — os dois são interruptor em `/admin/configuracoes-da-aplicacao`, sem deploy ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/configuracoes-do-kit.html))
+- **Densidade do layout em três níveis**, na mesma tela de configurações: *confortável* (o padrão do Filament), *compacto* e *denso*. Aperta de uma vez os cartões de estatística, as tabelas, o menu lateral e os botões dos três painéis, e **vale no próximo F5** — sem tema Vite, sem `npm run build`, sem deploy. Medido no próprio kit: a linha da tabela cai **−17,1%** no compacto e **−23,4%** no denso ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/configuracoes-do-kit.html#densidade-do-layout))
+- **Link de acesso direto ao painel de cada organização** (com multi-tenancy) nas três telas do `/admin` — listagem, ficha e edição. Na listagem é uma coluna com o endereço visível, abrindo em nova aba: o destino é conhecido antes do clique ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/multi-tenancy.html))
+
+### A densidade do layout, na mesma tela
+
+| Confortável (padrão) | Compacto | Denso |
+|---|---|---|
+| [![Densidade confortável](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/densidade-confortavel.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/densidade-confortavel.png) | [![Densidade compacta](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/densidade-compacto.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/densidade-compacto.png) | [![Densidade densa](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/densidade-denso.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/densidade-denso.png) |
+
+Repare na coluna de ações: no confortável ela é cortada em *"Edi…"*; no denso cabe inteira. Apertar
+não é só ganhar altura — é deixar de esconder conteúdo.
 
 ## Documentação completa
 

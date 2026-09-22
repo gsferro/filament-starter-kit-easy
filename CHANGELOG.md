@@ -7,6 +7,34 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [0.38.0] - 2026-09-22
 
+### Corrigido
+
+- **`kit:install`: linha no `hosts` apontando para outra máquina contava como "já resolve aqui".**
+  Quem tinha `10.20.30.40 meuapp.test` no arquivo — o caso de quem aponta o domínio para uma VM,
+  para o WSL ou para uma máquina de staging — instalava o kit, tinha a `APP_URL` gravada, **não
+  recebia aviso nenhum**, e a instalação fechava imprimindo `/app`, `/admin` e `/infra` de **outra
+  máquina**.
+
+  A sonda descartava o endereço da linha e perguntava só se algum nome casava. A guarda de loopback
+  existia e não era alcançada: o `||` da sonda curto-circuitava antes dela quando havia linha no
+  arquivo. Agora a linha só conta se apontar para loopback — *"já resolve" passou a significar
+  "resolve **para aqui**"*, que é o que a documentação do método sempre prometeu.
+
+- **`kit:install` no Linux e no macOS: a instalação terminava anunciando endereços que não
+  resolvem.** Fora do Windows o kit não roda `sudo`, então a linha do `hosts` fica pendente de um
+  comando manual. O `.env` era reescrito mesmo assim e a etapa **não devolvia aviso** — só um
+  `note()`, que quando o banner final aparece já rolou para fora da tela. O resumo fechava com três
+  URLs quebradas e nenhuma menção ao comando pendente. Agora o aviso é devolvido e reimpresso no
+  banner, como já acontecia no Windows.
+
+- **Multi-tenancy: organização desativada abria o painel.** `getTenants()` filtrava por `ativo` e
+  `canAccessTenant()` não — o painel abria para uma organização desligada, com um seletor que **não
+  a continha**, e quem entrasse só sairia editando a URL. A assimetria era anterior ao link de
+  acesso direto; o link a transformou num atalho de um clique. Agora a rota barra organização
+  inativa **para todo mundo, inclusive o `master_global`** (que já não a via no seletor), com motivo
+  próprio na trilha — `organizacao_inativa`, e não `sem_vinculo`: as duas negam, e só a segunda se
+  resolve reativando a organização.
+
 ### Adicionado
 - **Layout compacto, em três níveis, na aba Kit das configurações.** *Densidade do layout* aperta
   de uma vez os cartões de estatística, as tabelas, o menu lateral e os botões dos três painéis.

@@ -92,6 +92,14 @@ Ainda na aba **Kit**, *Densidade do layout* aperta de uma vez os **cartões de e
 Os números foram **medidos** no próprio kit, com navegador de verdade lendo estilo computado em
 `/admin/users` a 1600×1000 — não estimados.
 
+| Confortável (padrão) | Compacto | Denso |
+|---|---|---|
+| [![Densidade confortável](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/densidade-confortavel.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/densidade-confortavel.png) | [![Densidade compacta](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/densidade-compacto.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/densidade-compacto.png) | [![Densidade densa](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/densidade-denso.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/densidade-denso.png) |
+
+As três são a **mesma tela**, e nascem da mesma suíte que prova que a opção funciona — não são
+montagem. Repare na coluna de ações à direita: no confortável ela é cortada em *"Edi…"*, e no denso
+cabe inteira. Apertar não é só ganhar altura; é deixar de esconder conteúdo.
+
 Nasce **confortável**, e de propósito: densidade é gosto, e atualizar o kit não deve mudar a
 aparência do seu projeto sozinho. No confortável o kit **não emite estilo nenhum** — o HTML é byte a
 byte o que sempre foi.

@@ -90,6 +90,15 @@ Still on the **Kit** tab, *Densidade do layout* tightens the **stat cards**, the
 | **Compacto** | `0.2rem` | 46.4 px (−17.1%) | 509.2 px (−16.8%) | 272 px (−15.0%) |
 | **Denso** | `0.175rem` | 42.9 px (−23.4%) | 471.8 px (−22.9%) | 264 px (−17.5%) |
 
+| Confortável (default) | Compacto | Denso |
+|---|---|---|
+| [![Comfortable density](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/densidade-confortavel.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/densidade-confortavel.png) | [![Compact density](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/densidade-compacto.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/densidade-compacto.png) | [![Dense density](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/densidade-denso.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/densidade-denso.png) |
+
+All three are the **same screen**, and they are produced by the same suite that proves the option
+works — they are not a mock-up. Look at the actions column on the right: on *confortável* it is
+clipped to *"Edi…"*, and on *denso* it fits whole. Tightening is not only about height; it stops
+hiding content.
+
 These numbers were **measured** on the kit itself, with a real browser reading computed style on
 `/admin/users` at 1600×1000 — not estimated.
 
