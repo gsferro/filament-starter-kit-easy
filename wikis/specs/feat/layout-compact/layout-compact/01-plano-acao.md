@@ -40,7 +40,7 @@
 | RQ-07 | Analisar e documentar o TODO de preferências de usuário | 7 | ✅ `wikis/roadmap.md`, item 1 — commit `bf6e799` |
 | RQ-08 | O TODO enumera fonte, densidade, cor e modo de ocultação do menu | 7 | ✅ Tabela de quatro linhas no item 1 do roadmap, cada uma com "situação hoje" e "o que falta" |
 | RQ-09 | O TODO registra a hipótese de virar pacote Filament externo | 7 | ✅ Item 1 do roadmap, com o argumento de por que nada nele depende do kit |
-| RQ-10 | Documento de futuras melhorias, **ligado ao `README.md`** | 7 | ✅ **As duas metades.** `wikis/roadmap.md` (132 linhas, 5 itens) versionado, e a seção *Futuras melhorias* com o link em `README.md` e `README.en.md`. Fora do `export-ignore`, como o `00` decidiu — ele viaja para todo projeto criado do kit |
+| RQ-10 | Documento de futuras melhorias, **ligado ao `README.md`** | 7 | ✅ **As duas metades.** `wikis/roadmap.md` (**5 itens**) versionado, e a seção *Futuras melhorias* com o link em `README.md` e `README.en.md`. Fora do `export-ignore`, como o `00` decidiu — ele viaja para todo projeto criado do kit |
 
 > ### A cláusula que quase ficou de fora — e o que isso diz sobre a suíte
 >
