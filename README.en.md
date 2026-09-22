@@ -174,14 +174,14 @@ The other two already come complete.
 |---|---:|
 | Test cases (`Kit` + `Tenancy`, measured on 2026-09-08) | **2,226**, with **7,428 assertions** |
 | Screens swept in a real browser | **55** |
-| Test files | **150** in `Kit` + `Tenancy` (**176** in total) |
+| Test files | **151** in `Kit` + `Tenancy` (**177** in total) |
 | PHPStan | **level 7**, zero errors |
 | FilaCheck | **17** rules, all passing |
 
 | Documentation | |
 |---|---:|
-| Reference documents (`wikis/`) | **9** |
-| Specified features (`wikis/specs/`) | **65** |
+| Reference documents (`wikis/`) | **10** |
+| Specified features (`wikis/specs/`) | **66** |
 | Project rules for AI agents (`.ai/rules/`, excluding the index) | **18** |
 
 > The details moved to the site: **[Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/)** and **[Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/)**.
@@ -250,6 +250,16 @@ navigation: **[https://gsferro.github.io/filament-starter-kit-easy/en/](https://
 | [Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/) | code quality, search and language, the 77 installed packages |
 
 The Portuguese version lives at **[https://gsferro.github.io/filament-starter-kit-easy/pt/](https://gsferro.github.io/filament-starter-kit-easy/pt/)**.
+
+### Future improvements
+
+The **[kit roadmap](wikis/roadmap.md)** records what has already been looked at and **deliberately
+deferred**, with the reason and, where there was one, the measurement behind the decision: per-user
+appearance preferences, Filament's paid compact theme, and the trigger that retires the current
+density implementation.
+
+It ships with your project on purpose — it is the **kit's** future, not your project's, and it
+exists so you don't spend an afternoon re-evaluating something that already has numbers on record.
 
 ## Requirements
 

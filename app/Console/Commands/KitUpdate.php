@@ -258,6 +258,7 @@ class KitUpdate extends Command
         'wikis/pacotes.md',
         'wikis/qualidade-de-codigo.md',
         'wikis/receitas.md',
+        'wikis/roadmap.md',
 
         /*
          * Configuração do Rector. Não é lint — é a ferramenta de upgrade, e o arquivo

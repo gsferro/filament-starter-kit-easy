@@ -2,25 +2,6 @@
 
 use App\Console\Commands\KitUpdate;
 
-/**
- * O `kit:update` compara duas versões do kit restrito a uma lista fechada de
- * caminhos. Arquivo do kit fora dessa lista **não chega a quem já instalou**:
- * a feature existe no repositório e é invisível na prática.
- *
- * Foi exatamente o que aconteceu com a multi-tenancy — três versões inteiras
- * (0.9.1 a 0.9.3) em que o `kit:update` só oferecia `config/kit.php`. Este
- * teste é o que faz a lista envelhecer com barulho em vez de em silêncio.
- */
-function caminhosDoKit(): array
-{
-    $reflexao = new ReflectionClass(KitUpdate::class);
-
-    /** @var list<string> $caminhos */
-    $caminhos = $reflexao->getConstant('CAMINHOS_DO_KIT');
-
-    return $caminhos;
-}
-
 function estaCoberto(string $arquivo): bool
 {
     foreach (caminhosDoKit() as $caminho) {

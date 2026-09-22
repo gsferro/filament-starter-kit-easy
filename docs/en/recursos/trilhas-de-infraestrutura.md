@@ -48,7 +48,7 @@ and then the table grows with no ceiling, which is a choice, not an oversight.
 
 `RevivePlugin` takes an **explicit list** of models in
 `app/Providers/Filament/InfraPanelProvider.php` — today `App\Models\Projeto` and `App\Models\User`,
-the kit's two models with `SoftDeletes` (`InfraPanelProvider.php:models:581`):
+the kit's two models with `SoftDeletes` (`InfraPanelProvider.php:models:595`):
 
 ```php
 RevivePlugin::make()

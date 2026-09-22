@@ -179,8 +179,9 @@ it('[CT-06] exibe uma linha para cada propriedade do settings, na ordem do mapa'
      * e `dashboard_dinamico_paineis`.
      * 51 → 54 na feature `estudo-de-pacotes-rodada-2`: `versao_do_sistema`,
      * `alerta_alteracoes_nao_salvas` e `exibir_versao_do_kit`.
+     * 54 → 55 na feature `layout-compact`: `densidade_do_layout`.
      */
-    expect($propriedades)->toHaveCount(54);
+    expect($propriedades)->toHaveCount(55);
 
     foreach ($propriedades as $propriedade) {
         expect($saida)->toContain(Str::headline($propriedade));

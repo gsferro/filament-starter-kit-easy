@@ -48,7 +48,7 @@ cresce sem teto, o que é uma escolha, não um esquecimento.
 
 O `RevivePlugin` recebe uma **lista explícita** de models em
 `app/Providers/Filament/InfraPanelProvider.php` — hoje `App\Models\Projeto` e `App\Models\User`,
-as duas models do kit com `SoftDeletes` (`InfraPanelProvider.php:models:581`):
+as duas models do kit com `SoftDeletes` (`InfraPanelProvider.php:models:595`):
 
 ```php
 RevivePlugin::make()

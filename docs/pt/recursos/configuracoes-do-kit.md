@@ -14,7 +14,7 @@ O que a instalação perguntou — e mais um punhado de coisas que antes só se 
 | **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário e colunas arrastáveis — os defaults de **toda** tabela dos três painéis |
 | **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../../autenticacao/registro-aberto/)) |
 | **Login** | a página única de login em `/login` ([detalhes](../../autenticacao/login-unificado/)), os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../../autenticacao/login-social/)) |
-| **Kit** | hub de navegação em cartões, aviso de alterações não salvas, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, e como o seu negócio chama cada organização (singular e plural) |
+| **Kit** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, e como o seu negócio chama cada organização (singular e plural) |
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
 
@@ -77,6 +77,52 @@ o padrão a preservar. Desligar é um clique, sem deploy.
 > É alerta, não rascunho: quem confirmar a saída perde o preenchimento do mesmo jeito. O kit avaliou
 > dois pacotes de rascunho e salvamento automático e não adotou nenhum — os motivos estão em
 > [`wikis/pacotes-candidatos.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/pacotes-candidatos.md).
+
+## Layout compacto: uma escala, não um interruptor
+
+Ainda na aba **Kit**, *Densidade do layout* aperta de uma vez os **cartões de estatística**, as
+**tabelas**, o **menu lateral** e os **botões** dos três painéis. São três degraus:
+
+| Nível | `--spacing` | Linha da tabela | Tabela de 10 linhas | Largura do menu |
+|---|---|---|---|---|
+| **Confortável** (padrão) | `.25rem`, o do Filament | 56,0 px | 612 px | 320 px |
+| **Compacto** | `0.2rem` | 46,4 px (−17,1%) | 509,2 px (−16,8%) | 272 px (−15,0%) |
+| **Denso** | `0.175rem` | 42,9 px (−23,4%) | 471,8 px (−22,9%) | 264 px (−17,5%) |
+
+Os números foram **medidos** no próprio kit, com navegador de verdade lendo estilo computado em
+`/admin/users` a 1600×1000 — não estimados.
+
+Nasce **confortável**, e de propósito: densidade é gosto, e atualizar o kit não deve mudar a
+aparência do seu projeto sozinho. No confortável o kit **não emite estilo nenhum** — o HTML é byte a
+byte o que sempre foi.
+
+**Vale no próximo F5.** O kit emite uma única declaração CSS por requisição, num render hook do
+layout base do Filament: não há tema Vite, não há `npm run build` e não há deploy. Salvar na tela é
+suficiente.
+
+> **O preço, e ele é visível no denso.** O Filament 5 mede **todo** espaçamento a partir de uma
+> variável só, então encolher a variável encolhe junto o que não é espaço: o ícone cai de 24 px
+> para 19,2 px no compacto e 16,8 px no denso, e a caixa de texto passa a ser mais baixa que o
+> botão ao lado dela (4 px de diferença no compacto, 6 px no denso). É exatamente por isso que a
+> opção é uma escala e não um liga-desliga — quem achar a distorção incômoda fica no degrau do
+> meio, que entrega dois terços do ganho.
+>
+> **O menu aperta nos dois eixos**, e a largura precisou de mecanismo próprio: ela vem de
+> `--sidebar-width`, não de `--spacing`. As larguras da tabela acima são o **mínimo medido** — o
+> rótulo mais longo do kit é *"Configurações da aplicação"*, e é ele que fixa o limiar. Se o seu
+> projeto criar item de menu com rótulo mais longo, ele ganha reticências, que é o comportamento
+> normal do Filament.
+>
+> Três coisas **não** apertam, e nenhuma é defeito: a **barra superior**, que tem altura fixa; os
+> **cartões do `/infra/pulse`**, que carregam CSS própria (as tabelas do Pulse apertam
+> normalmente); e o **rail do menu colapsado**, deixado de fora de propósito — ele é só ícone, a
+> largura dele é o alvo de clique, e o ícone dentro dele já encolhe. As três estão no [roadmap do kit](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/roadmap.md).
+>
+> Existe um [tema compacto oficial pago](https://filamentphp.com/plugins/filament-compact-theme)
+> que chega a −22,5% **sem** distorcer ícone nem fonte. Ele não entra no kit porque a licença é de
+> projeto único e um starter kit é distribuído — o estudo com os números está na wiki
+> `layout-compact`. O degrau **denso** chega praticamente ao mesmo ganho, com a distorção como
+> contrapartida.
 
 ## O dashboard dinâmico é um interruptor, não uma migração
 

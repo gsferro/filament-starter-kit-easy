@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\KitUpdate;
 use App\Models\Convite;
 use App\Models\Role;
 use App\Models\Tenant;
@@ -1220,4 +1221,30 @@ function semComentarios(string $codigo): string
     $codigo = (string) preg_replace('~/\*.*?\*/~s', '', $codigo);
 
     return (string) preg_replace('~^\s*//.*$~m', '', $codigo);
+}
+
+/**
+ * A lista fechada de caminhos que o `kit:update` entrega a quem JÁ instalou o kit.
+ *
+ * O comando compara duas versões restrito a essa lista. Arquivo do kit fora dela **não chega**:
+ * a feature existe no repositório e é invisível na prática. Foi o que aconteceu com a
+ * multi-tenancy — três versões inteiras (0.9.1 a 0.9.3) em que o `kit:update` só oferecia
+ * `config/kit.php`.
+ *
+ * Aqui, e não dentro de um arquivo de teste, porque DOIS arquivos usam: `KitUpdateTest` faz a
+ * varredura genérica, e `SiteDeDocumentacaoTest` amarra a promessa do README sobre o roadmap ao
+ * mecanismo que a cumpre. Em PHP função é global no processo, e helper que vaza de um arquivo
+ * para o vizinho só estoura em `--parallel`, `--tia` ou ao rodar um arquivo sozinho
+ * (`.ai/rules/testes.md`).
+ *
+ * @return list<string>
+ */
+function caminhosDoKit(): array
+{
+    $reflexao = new ReflectionClass(KitUpdate::class);
+
+    /** @var list<string> $caminhos */
+    $caminhos = $reflexao->getConstant('CAMINHOS_DO_KIT');
+
+    return $caminhos;
 }

@@ -1797,3 +1797,114 @@ it('[CT-47] o icone declarado no config existe e nao esta vazio', function (): v
     expect($arquivo)->toBeFile()
         ->and(filesize($arquivo))->toBeGreaterThan(0);
 });
+
+/**
+ * CT-48 — o roadmap existe, está ligado nos dois READMEs, e **viaja** com o projeto instalado.
+ *
+ * RQ-10 da wiki `layout-compact`. O caso nasceu de uma lacuna encontrada na derivação do `04`
+ * daquela wiki: o artefato foi entregue e **nenhum oráculo o sustentava**.
+ *
+ * ## O que estava desprotegido, e o que não estava
+ *
+ * `[CT-25]`, algumas funções acima, sincroniza a contagem de **arquivos de teste** dos READMEs — e
+ * é fácil supor que ele cobre a tabela inteira de "Nossos números". Não cobre: a linha
+ * `Documentos de referência (wikis/)` não é afirmada por caso nenhum desta suíte. Apagar
+ * `wikis/roadmap.md` deixaria a contagem mentindo, com a suíte verde.
+ *
+ * ## A terceira asserção é a que importa, e é uma DECISÃO do usuário
+ *
+ * O `.gitattributes` exporta `/wikis/specs export-ignore` e deliberadamente **não** ignora
+ * `wikis/*.md` — a linha 22 do arquivo registra o porquê: *"a wiki de referência é material de
+ * trabalho de quem instala"*. Para o roadmap isso foi decidido explicitamente com o usuário em
+ * 2026-09-21: ele **viaja** para todo projeto criado do kit.
+ *
+ * Uma linha de `export-ignore` acrescentada por engano reverteria essa decisão **sem quebrar
+ * nada** — o arquivo continuaria no repo, os links continuariam funcionando, a suíte continuaria
+ * verde, e só sumiria do `composer create-project`, onde ninguém olha. É o modo de falha mais
+ * silencioso dos três, e é o único que não tem outro sintoma.
+ *
+ * ## Por que o texto é afirmado, e não só o link
+ *
+ * O documento viaja para dentro do projeto de quem instala, então ele **precisa** dizer de quem é
+ * o futuro que descreve. Sem essa frase ele se lê como promessa ao usuário do kit — que é
+ * exatamente o oposto da intenção.
+ */
+it('[CT-48] mantem o roadmap presente, ligado nos READMEs e fora do export-ignore', function (): void {
+    expect(base_path('wikis/roadmap.md'))->toBeFile();
+
+    $roadmap = (string) file_get_contents(base_path('wikis/roadmap.md'));
+
+    // `assertStringContainsString` e não `toContain()`: o 2º argumento de `toContain()` é outra
+    // AGULHA, não a mensagem — ver `.ai/rules/testes.md`.
+    $this->assertStringContainsString(
+        'futuro do KIT',
+        $roadmap,
+        'o roadmap viaja para dentro do projeto de quem instala e precisa declarar de quem é o '
+        .'futuro que descreve, senão se lê como promessa',
+    );
+
+    // A contagem de `wikis/*.md` na tabela dos READMEs — a linha que nenhum outro caso afirma.
+    $documentosDeReferencia = Finder::create()
+        ->files()
+        ->in(base_path('wikis'))
+        ->depth('== 0')
+        ->name('*.md')
+        ->notName('README.md')
+        ->count();
+
+    expect($documentosDeReferencia)->toBeGreaterThan(5, 'a varredura de `wikis/` olhou o lugar errado');
+
+    expect((string) file_get_contents(base_path('README.md')))
+        ->toContain("| Documentos de referência (`wikis/`) | **{$documentosDeReferencia}** |")
+        ->toContain('(wikis/roadmap.md)');
+
+    expect((string) file_get_contents(base_path('README.en.md')))
+        ->toContain("| Reference documents (`wikis/`) | **{$documentosDeReferencia}** |")
+        ->toContain('(wikis/roadmap.md)');
+
+    $this->assertStringContainsString(
+        '(roadmap.md)',
+        (string) file_get_contents(base_path('wikis/README.md')),
+        'o índice da wiki não lista o roadmap',
+    );
+
+    /*
+     * A decisão do usuário, travada: o roadmap NÃO pode ganhar `export-ignore`.
+     *
+     * `git check-attr` e NÃO um regex sobre o `.gitattributes` — achado do quality gate. A
+     * primeira versão deste bloco reimplementava o casamento de padrão do git à mão, e tinha
+     * falso negativo demonstrado: `wikis/** export-ignore` e `*.md export-ignore` **removem** o
+     * roadmap do `composer create-project` e o regex não os reconhecia. O caso ficaria verde
+     * contra a configuração que ele existe para proibir.
+     *
+     * Quem sabe casar padrão de `.gitattributes` é o git. Perguntar a ele é uma linha, não tem
+     * falso negativo, e continua valendo se a sintaxe do arquivo mudar.
+     */
+    $atributo = trim((string) shell_exec('git check-attr export-ignore -- wikis/roadmap.md 2>&1'));
+
+    expect($atributo)->toEndWith(
+        'unspecified',
+        'o git reporta `'.$atributo.'`: alguma regra de `export-ignore` passou a alcançar o '
+        .'roadmap, e ele deixaria de viajar para os projetos criados com `composer '
+        .'create-project` — revertendo em silêncio a decisão de 2026-09-21, sem quebrar mais nada',
+    );
+
+    /*
+     * O SEGUNDO caminho de entrega — e a lacuna que este caso tinha na primeira versão.
+     *
+     * "Viajar com o projeto" tem DOIS caminhos, não um, e eles atendem populações diferentes:
+     *
+     *     composer create-project  ->  governado pelo `.gitattributes`  ->  quem instala AGORA
+     *     php artisan kit:update   ->  governado por CAMINHOS_DO_KIT    ->  quem JÁ instalou
+     *
+     * A primeira versão deste caso afirmava só o primeiro, e passou verde enquanto o roadmap
+     * estava ausente de `KitUpdate::CAMINHOS_DO_KIT` — ou seja, enquanto o README prometia que
+     * ele "vem junto com o seu projeto" e o comando nunca o entregava a quem já tinha instalado.
+     * Achado do `/code-review`, não deste arquivo.
+     *
+     * `KitUpdateTest` tem a asserção genérica que varre `wikis/*.md`, e foi ela que reprovou. A
+     * linha abaixo é específica do roadmap de propósito: ela amarra a promessa do README ao
+     * mecanismo que a cumpre, e fica vermelha citando a promessa em vez de citar uma lista.
+     */
+    expect(caminhosDoKit())->toContain('wikis/roadmap.md');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega os READMEs, que passam a ser do projeto.')->group('kit');

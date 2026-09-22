@@ -7,6 +7,7 @@ namespace App\Filament\Admin\Pages;
 use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\CustomizadorDaInstalacao;
+use App\Support\DensidadeDoLayout;
 use App\Support\Paineis;
 use App\Support\ProvedorAntiRobo;
 use App\Support\ProvedorSocial;
@@ -175,6 +176,27 @@ class ConfiguracoesDoKit extends SettingsPage
 
         // A chave secreta do anti-robô: mesmo segredo, mesmos dois pontos (`.ai/rules/pages.md`).
         $data['login_anti_robo_chave_secreta'] = null;
+
+        /*
+         * A densidade entra COAGIDA, e isso trava a tela inteira se faltar.
+         *
+         * `Select` acrescenta sozinho um `Rule::in()` das próprias opções. Um nível ilegível
+         * gravado na linha de settings — `compact` em vez de `compacto`, vindo de edição à mão
+         * ou de versão futura revertida — nasceria no estado do formulário e seria recusado pela
+         * validação. O efeito NÃO fica contido no campo: a tela para de salvar por inteiro, e
+         * quem tentar mudar o nome da aplicação leva erro num campo que não tocou. É o mesmo
+         * defeito que `comValorConfigurado()` descreve para `MAIL_MAILER=ses`, logo abaixo.
+         *
+         * `coagir()` e NÃO `comValorConfigurado()`, porque os dois problemas só se parecem:
+         * `ses` é um transporte legítimo fora da lista curta, e rebaixá-lo ao default seria perda
+         * de dado. Nível de densidade tem vocabulário FECHADO — `compact` não é válido em lugar
+         * nenhum, é lixo, e oferecê-lo como opção marcada exibiria lixo e o gravaria de volta.
+         *
+         * `coagir()` é a mesma função que o render hook usa, então a tela e a página servida
+         * respondem a mesma coisa para a mesma entrada. Coberto por CT-16; CT-11 é a metade do
+         * render.
+         */
+        $data['densidade_do_layout'] = DensidadeDoLayout::coagir($data['densidade_do_layout'] ?? null)->value;
 
         return $data;
     }
@@ -766,6 +788,31 @@ class ConfiguracoesDoKit extends SettingsPage
                 Toggle::make('alerta_alteracoes_nao_salvas')
                     ->label('Avisar sobre alterações não salvas')
                     ->helperText('Ao sair de um formulário com alteração pendente, o navegador pede confirmação antes de descartar. Vale para as telas de cadastro e edição dos três painéis, inclusive as dos plugins.'),
+
+                /*
+                 * Select de NÍVEIS e não Toggle, e a diferença não é estética: apertar por
+                 * `--spacing` distorce proporções (ícone e caixa de seleção encolhem junto), a
+                 * distorção escala com a intensidade e ela é questão de gosto e de tela. Um
+                 * booleano fixaria uma intensidade para todo mundo. Ver ADR-04.
+                 *
+                 * Lido por REQUEST no render hook `STYLES_BEFORE`, como o alerta acima: salvar
+                 * aqui vale no próximo F5, sem `npm run build`, sem cache e sem deploy.
+                 *
+                 * `DensidadeDoLayout::opcoes()` e NÃO `->options(DensidadeDoLayout::class)`: a
+                 * segunda forma faz o Filament devolver instância do enum no estado, e o
+                 * `fill()` do spatie a atribui direto à propriedade tipada `string` — `TypeError`
+                 * ao salvar a TELA INTEIRA, não só este campo. O docblock de `opcoes()` tem o
+                 * caminho completo; a suíte pegou com 60 casos de outras features.
+                 *
+                 * O enum continua sendo a única cópia do vocabulário: nível novo aparece aqui
+                 * sem tocar nesta tela.
+                 */
+                Select::make('densidade_do_layout')
+                    ->label('Densidade do layout')
+                    ->helperText('Aperta de uma vez os cartões de estatística, as tabelas, o menu lateral e os botões dos três painéis. "Confortável" é o padrão do Filament e não muda nada.')
+                    ->options(DensidadeDoLayout::opcoes())
+                    ->selectablePlaceholder(false)
+                    ->required(),
 
                 /*
                  * Desligado por padrão: a versão do kit é métrica interna do starter, e quem

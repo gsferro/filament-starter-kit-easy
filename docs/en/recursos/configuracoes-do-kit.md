@@ -14,7 +14,7 @@ What the installer asked — plus a handful of things you previously could only 
 | **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns — the defaults for **every** table in all three panels |
 | **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](../../autenticacao/registro-aberto/)) |
 | **Login** | the single login page at `/login` ([details](../../autenticacao/login-unificado/)), the four social login providers, each with its switch, allowed panels, *Client ID* and encrypted *Client Secret*, plus the login screen footer ([details](../../autenticacao/login-social/)) |
-| **Kit** | card navigation hub, unsaved-changes alert, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, and what your business calls each organisation (singular and plural) |
+| **Kit** | card navigation hub, unsaved-changes alert, **layout density**, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, and what your business calls each organisation (singular and plural) |
 
 Everything is stored by `spatie/laravel-settings` in the `settings` table, with the screen coming from `filament/spatie-laravel-settings-plugin` — both were already installed in the kit and unused until this version.
 
@@ -78,6 +78,53 @@ default worth preserving. Turning it off is one click, no deploy.
 > It is an alert, not a draft: confirming the exit still loses what you typed. The kit evaluated two
 > draft/autosave packages and adopted neither — the reasons are in
 > [`wikis/pacotes-candidatos.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/pacotes-candidatos.md).
+
+## Compact layout: a scale, not a switch
+
+Still on the **Kit** tab, *Densidade do layout* tightens the **stat cards**, the **tables**, the
+**sidebar** and the **buttons** of all three panels at once. There are three steps:
+
+| Level | `--spacing` | Table row | 10-row table | Sidebar width |
+|---|---|---|---|---|
+| **Confortável** (default) | `.25rem`, Filament's own | 56.0 px | 612 px | 320 px |
+| **Compacto** | `0.2rem` | 46.4 px (−17.1%) | 509.2 px (−16.8%) | 272 px (−15.0%) |
+| **Denso** | `0.175rem` | 42.9 px (−23.4%) | 471.8 px (−22.9%) | 264 px (−17.5%) |
+
+These numbers were **measured** on the kit itself, with a real browser reading computed style on
+`/admin/users` at 1600×1000 — not estimated.
+
+It ships **confortável**, on purpose: density is taste, and updating the kit must not change your
+project's appearance on its own. At that level the kit emits **no style at all** — the HTML is byte
+for byte what it always was.
+
+**It takes effect on the next refresh.** The kit emits a single CSS declaration per request, from a
+render hook in Filament's base layout: no Vite theme, no `npm run build`, no deploy. Saving on the
+screen is enough.
+
+> **The price, and it shows at the densest step.** Filament 5 derives **every** spacing from a
+> single variable, so shrinking the variable shrinks things that are not space: icons go from 24 px
+> to 19.2 px at *compacto* and 16.8 px at *denso*, and the text input becomes shorter than the
+> button beside it (4 px apart at *compacto*, 6 px at *denso*). That is exactly why the option is a
+> scale and not an on/off — anyone bothered by the distortion stays on the middle step, which still
+> delivers two thirds of the gain.
+>
+> **The sidebar tightens on both axes**, and the width needed its own mechanism: it comes from
+> `--sidebar-width`, not from `--spacing`. The widths in the table above are the **measured
+> minimum** — the kit's longest label is *"Configurações da aplicação"*, and it sets the threshold.
+> If your project adds a menu item with a longer label, it gets an ellipsis, which is Filament's
+> normal behaviour.
+>
+> Three things do **not** tighten, and none of them is a defect: the **top bar**, whose height is
+> fixed; the **`/infra/pulse` cards**, which ship their own CSS (the Pulse tables tighten normally);
+> and the **collapsed sidebar rail**, left out on purpose — it is icon-only, its width is the click
+> target, and the icon inside it already shrinks.
+> All three are on the [kit roadmap](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/roadmap.md).
+>
+> There is an [official paid compact theme](https://filamentphp.com/plugins/filament-compact-theme)
+> that reaches −22.5% **without** distorting icons or fonts. It does not ship with the kit because
+> its licence is per project and a starter kit is distributed — the study, with the numbers, is in
+> the `layout-compact` wiki. The **denso** step reaches practically the same gain, with the
+> distortion as the trade-off.
 
 ## The dynamic dashboard is a switch, not a migration
 

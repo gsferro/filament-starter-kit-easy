@@ -15,6 +15,7 @@ use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Livewire\DefinirSenhaPorEmail;
 use App\Support\AvatarDeIniciais;
 use App\Support\CorPrimaria;
+use App\Support\DensidadeDoLayout;
 use App\Support\IdentidadeDoKit;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
@@ -101,6 +102,19 @@ class AdminPanelProvider extends PanelProvider
              */
             ->unsavedChangesAlerts(fn (): bool => (bool) config('kit.alerta_alteracoes_nao_salvas'))
             ->sidebarCollapsibleOnDesktop()
+            /*
+             * A largura do menu acompanha a densidade do layout — a quarta superfície do escopo
+             * de `wikis/specs/feat/layout-compact/`.
+             *
+             * `Closure` e não valor fixo: `getSidebarWidth()` faz `evaluate()` no RENDER
+             * (`vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:68`), então a escolha
+             * da tela vale no request seguinte. Um valor fixo aqui seria resolvido no registro do
+             * painel e gravaria sem governar — a armadilha da ADR-06.
+             *
+             * Aqui e não no render hook de `--spacing`: a largura vem de `--sidebar-width`, que o
+             * Filament emite inline em `base.blade.php:85`, fora do alcance de qualquer layer.
+             */
+            ->sidebarWidth(fn (): string => DensidadeDoLayout::deConfig()->larguraDaSidebar())
             ->maxContentWidth(Width::Full)
             ->subNavigationPosition(SubNavigationPosition::Top)
             // Com Reverb o sininho reage ao evento Echo (sem polling); sem ele,

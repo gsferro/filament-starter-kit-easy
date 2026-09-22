@@ -174,14 +174,14 @@ dois já vêm completos.
 |---|---:|
 | Casos de teste (`Kit` + `Tenancy`, medidos em 2026-09-08) | **2.226**, com **7.428 asserções** |
 | Telas varridas em navegador real | **55** |
-| Arquivos de teste | **150** em `Kit` + `Tenancy` (**176** no total) |
+| Arquivos de teste | **151** em `Kit` + `Tenancy` (**177** no total) |
 | PHPStan | **level 7**, zero erros |
 | FilaCheck | **17** regras, todas passando |
 
 | Documentação | |
 |---|---:|
-| Documentos de referência (`wikis/`) | **9** |
-| Features especificadas (`wikis/specs/`) | **65** |
+| Documentos de referência (`wikis/`) | **10** |
+| Features especificadas (`wikis/specs/`) | **66** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **18** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
@@ -250,6 +250,15 @@ navegação: **[https://gsferro.github.io/filament-starter-kit-easy/pt/](https:/
 | [Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/) | qualidade de código, busca e idioma, os 77 pacotes instalados |
 
 A versão em inglês fica em **[https://gsferro.github.io/filament-starter-kit-easy/en/](https://gsferro.github.io/filament-starter-kit-easy/en/)**.
+
+### Futuras melhorias
+
+O **[roadmap do kit](wikis/roadmap.md)** registra o que já foi olhado e **decidiu-se adiar**, com o
+motivo e, quando houve, a medição que sustentou a decisão: preferências de aparência por usuário, o
+tema compacto pago da Filament, e o gatilho que aposenta a implementação atual de densidade.
+
+Ele vem junto com o seu projeto de propósito — é o futuro **do kit**, não o do seu projeto, e serve
+para você não gastar uma tarde reavaliando do zero algo que já tem número registrado.
 
 ## Requisitos
 

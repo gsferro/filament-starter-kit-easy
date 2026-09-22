@@ -6,6 +6,35 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Adicionado
+- **Layout compacto, em três níveis, na aba Kit das configurações.** *Densidade do layout* aperta
+  de uma vez os cartões de estatística, as tabelas, o menu lateral e os botões dos três painéis.
+
+  Medido no **próprio kit** (não na demo limpa), com navegador de verdade lendo estilo computado em
+  `/admin/users` a 1600×1000: **compacto** encolhe a linha da tabela de 56,0 px para 46,4 px
+  (−17,1%) e a tabela de dez linhas de 612 px para 509,2 px (−16,8%); **denso** chega a 42,9 px
+  (−23,4%) e 471,8 px (−22,9%) — praticamente o mesmo ganho do tema compacto **pago** oficial
+  (−22,5%), que não pode entrar no kit porque a licença é de projeto único.
+
+  **O menu aperta nos dois eixos.** A altura dos itens cai de 40,0 px para 32,8 px (−18,0%) e
+  31,2 px (−22,0%); a largura, de 320 px para 272 px (−15,0%) e 264 px (−17,5%). A largura precisou
+  de mecanismo próprio — ela vem de `--sidebar-width`, emitido inline pelo Filament, fora do
+  alcance de qualquer cascade layer —, e os valores são o **mínimo medido**: o rótulo mais longo do
+  kit fixa o limiar, e abaixo dele o menu ganharia reticências.
+
+  **Nenhuma classe `fi-*` foi escrita.** O Filament 5 deriva todo
+  espaçamento de `--spacing`, declarada uma vez só dentro de `@layer theme`; o kit a redeclara
+  **fora** de cascade layer, num render hook `STYLES_BEFORE` avaliado por request. Sem tema Vite,
+  sem `npm run build`, sem deploy: salvar na tela vale no próximo F5. A alternativa artesanal foi
+  medida e **piorou** a altura da tabela em 21,9%, porque o padding da célula não mora em
+  `.fi-ta-cell` (que é `@apply p-0`) — está em nove arquivos `columns/*.css` do vendor.
+
+  Nasce **confortável**, e nesse nível o kit **não emite estilo nenhum**: quem nunca mexer continua
+  com o HTML que já tinha. São níveis e não um liga-desliga porque apertar `--spacing` distorce
+  proporções (ícone 24 → 19,2 → 16,8 px), e a distorção escala com a intensidade.
+
+  Nova chave `KIT_DENSIDADE_DO_LAYOUT` (semente e plano B) e nova propriedade
+  `densidade_do_layout` no settings. Ver `wikis/specs/feat/layout-compact/`, ADR-03 a ADR-06.
+
 - **Link de acesso direto ao painel da organização, nas três telas do `/admin`.** A listagem, a
   ficha e a edição de organização passam a mostrar o endereço do painel de negócio daquela
   organização, clicável, abrindo em **nova aba**. Na listagem é uma **coluna** (*Painel*) com o
@@ -42,6 +71,21 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   **Custo medido**, contra o que o plano afirmava: a listagem paga **33** consultas com uma
   organização e **53** com cinco — os mesmos números antes e depois do diff. A coluna nova custa
   zero; o crescimento por linha é pré-existente e não é desta feature.
+
+- **`wikis/roadmap.md` — o que o kit já olhou e decidiu adiar, com o motivo e a medição.** Cinco
+  itens, cada um com a decisão registrada atrás: preferências de aparência por usuário (com a
+  hipótese de virar pacote Filament externo), o tema compacto **pago** da Filament, o gatilho que
+  aposenta a implementação atual de densidade, a armadilha do `viteTheme()`, e as superfícies que
+  `--spacing` não alcança.
+
+  O tema pago fica registrado com números, e **recusado para o kit pela licença, não pelo preço**:
+  ela é de projeto único, e um starter kit é distribuído — embarcá-lo obrigaria cada instalação a
+  comprar. Para quem tem projeto único, a conta muda, e o documento dá a informação para decidir.
+
+  Ele **viaja com o projeto**, pelos dois caminhos: `composer create-project` (não está no
+  `export-ignore`) e `php artisan kit:update` (está em `KitUpdate::CAMINHOS_DO_KIT`). Ligado em
+  `README.md`, `README.en.md` e no índice `wikis/README.md`. É o futuro **do kit**, não o do seu
+  projeto, e o documento abre dizendo isso — sem essa linha ele se leria como promessa.
 
 - **A documentação agora conta o que o `laravel/pao` faz.** Ele está no kit desde o commit do
   esqueleto, em `require-dev`, e a referência de pacotes o descrevia como *"ferramentas de
