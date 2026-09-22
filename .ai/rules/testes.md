@@ -70,6 +70,35 @@ O padrão já custou três vezes nesta base:
 
 O último caso é o que mostra a regra maior: em Blade, a menção nem chega ao teste — ela vira código. Ver `.ai/rules/views.md`.
 
+## `toContain()` do Pest não recebe mensagem — o 2º argumento é outra AGULHA
+
+`toContain(mixed ...$needles)` é **variádica**. Passar a explicação da falha ali não documenta nada: transforma a mensagem numa string **a procurar**.
+
+```php
+// ERRADO — exige que a MENSAGEM também esteja no HTML
+expect($html)->not->toContain($endereco, "a tela oferece o endereço {$endereco}");
+
+// CERTO
+$this->assertStringNotContainsString($endereco, $html, "a tela oferece o endereço {$endereco}");
+```
+
+**Nas duas direções, e a negativa é a perigosa:**
+
+| Forma | O que acontece | Sintoma |
+|---|---|---|
+| `toContain($x, $msg)` | exige `$x` **e** `$msg` presentes | vermelho imediato, com a mensagem citada como se fosse conteúdo esperado |
+| `not->toContain($x, $msg)` | exige `$x` **e** `$msg` ausentes | **nenhum** — mensagem nenhuma aparece num HTML, então a cláusula extra é sempre verdadeira |
+
+A negativa não falha, não avisa e não protege o que parece proteger. Ela é a forma que aparece em asserção de ausência — justamente onde já é difícil saber se o oráculo está vivo (ver a seção acima e o **controle positivo** de `tests/Kit/LinkDoPainelSemTenancyTest.php`).
+
+**Por que erra quem conhece o Pest**: são as **únicas duas** expectativas variádicas da API. Medido em `vendor/pestphp/pest/src/Mixins/Expectation.php`: de 76 expectativas, **74 declaram `string $message`** — inclusive `toContainOnlyInstancesOf(string $class, string $message = '')`, três linhas abaixo no mesmo arquivo. O hábito está certo em 97% dos casos, e é por isso que ninguém desconfia nos outros 3%.
+
+Só `toContain()` e `toContainEqual()`. `toBe()`, `toBeNull()`, `toBeFalse()`, `toBeLessThan()`, `toHaveCount()` e as demais recebem mensagem normalmente — **não** troque tudo por asserção do PHPUnit.
+
+`tests/Kit/ExpectativaVariadicaDoPestTest.php` trava isso por reflexão e fica vermelho se o Pest passar a aceitar mensagem — momento em que esta regra pode sair.
+
+**Custo medido** (wiki `link-painel-do-tenant`, 2026-09-21): duas suítes passaram de **174 para 227 asserções** com um único cenário novo. A diferença eram asserções que existiam e não contavam.
+
 ## noPainelBootado() não serve para o painel /app — boote com um GET real antes do primeiro Livewire::test()
 `noPainelBootado('app')` chama `Filament::bootCurrentPanel()` sem request, e o `BreezyCore::boot()` lê `route()->parameter()` — `route()` é null e o boot morre com "Call to a member function parameter() on null". Vale para o `/app` (Breezy registrado); `/admin` e `/infra` não tropeçam.
 

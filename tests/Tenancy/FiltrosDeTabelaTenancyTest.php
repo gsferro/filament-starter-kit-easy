@@ -6,8 +6,17 @@ use Database\Seeders\ShieldPermissionsSeeder;
 use Livewire\Livewire;
 
 /**
- * O filtro `ativo` de `TenantsTable` (`TenantsTable.php:55`) — o único filtro do kit que só
- * existe com a tenancy ligada.
+ * O filtro `ativo` de `TenantsTable`
+ * (`app/Filament/Admin/Resources/Tenants/Tables/TenantsTable.php:ativo:85`) — o único filtro do
+ * kit que só existe com a tenancy ligada.
+ *
+ * A citação passou a ser `{path}:{símbolo}:{linha}` com o caminho COMPLETO, e não o
+ * `TenantsTable.php:55` de antes, por dois motivos medidos: a coluna do link do painel da
+ * organização (wiki `link-painel-do-tenant`), acrescentada em `->columns([…])`, deslocou aquele
+ * número de 55 para 83 num diff que nem abria este arquivo; e `TenantsTable.php` solto não resolve
+ * em `base_path()`, então `tests/Kit/CitacoesDeCodigoTest.php:[CT-26]` a IGNORAVA — a citação
+ * ficava errada sem nada acusar. Com o caminho completo e o símbolo, o gate confere. Ver
+ * `.ai/rules/specs.md`.
  *
  * A auditoria de aderência ao Blueprint (N-33) o listou entre os filtros declarados e nunca
  * acionados. Vive aqui, e não em `tests/Kit/FiltrosDeTabelaTest.php`, porque

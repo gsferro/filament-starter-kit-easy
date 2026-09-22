@@ -6,6 +6,43 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Adicionado
+- **Link de acesso direto ao painel da organização, nas três telas do `/admin`.** A listagem, a
+  ficha e a edição de organização passam a mostrar o endereço do painel de negócio daquela
+  organização, clicável, abrindo em **nova aba**. Na listagem é uma **coluna** (*Painel*) com o
+  endereço visível — o destino é conhecido antes do clique, e não um ícone que não diz para onde
+  leva. Antes disso, quem administrava só via o slug e tinha de montar a URL na barra de endereço.
+
+  O endereço sai de `Tenant::urlDoPainel()`, um ponto único que chama o **gerador de URL do
+  painel** (`Panel::getUrl($organizacao)`). A string `/app/` não aparece no código da feature, e há
+  caso de teste afirmando isso: concatenar à mão quebraria em silêncio se o `path` do painel
+  mudasse, se a instalação rodasse sob subdiretório ou se a chave de rota do tenant deixasse de ser
+  o slug. Trocar o slug move o link na hora.
+
+  No **cadastro** o link não aparece: enquanto o registro não está gravado não existe endereço para
+  apontar. E a entrada do formulário é `TextEntry`, não `TextInput` desabilitado — entrada de
+  infolist não entra no `dehydrate`, então ela não participa da gravação.
+
+  **O link navega, não autoriza**, e essa é a decisão central: ele aparece sempre, inclusive para
+  quem não consegue entrar. Os dois portões existentes continuam decidindo, e os códigos são
+  diferentes — **403** sem papel do painel `/app` (`canAccessPanel()`) e **404** com papel e sem
+  vínculo (`canAccessTenant()`, que registra `motivo: sem_vinculo` no canal `tenancy`). O 404 é
+  deliberado: 403 confirmaria que a organização existe e permitiria enumerar clientes por varredura
+  de slug. Documentado em
+  [Multi-tenancy (opt-in)](docs/pt/recursos/multi-tenancy.md) e coberto por 45 casos em
+  `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` e `tests/Kit/LinkDoPainelSemTenancyTest.php`.
+
+  **Com a multi-tenancy desligada o endereço é `null`, e não um link.** Sem tenancy o painel de
+  negócio não tem rota por organização — mas o gerador do Filament **não falha** nesse caso: ele
+  devolve `/app/{uuid}`, que é sintaticamente uma URL e responde 404. Medido, não suposto. Por isso
+  `urlDoPainel()` pergunta ao painel se ele tem tenancy antes de gerar, e devolve `null` quando não
+  tem; as três telas tratam `null` como "sem link". Na prática nada disso é alcançável hoje, porque
+  a tela de organizações já se fecha inteira sem tenancy — a guarda existe para quem mover a
+  entrada do link para fora dela amanhã.
+
+  **Custo medido**, contra o que o plano afirmava: a listagem paga **33** consultas com uma
+  organização e **53** com cinco — os mesmos números antes e depois do diff. A coluna nova custa
+  zero; o crescimento por linha é pré-existente e não é desta feature.
+
 - **A documentação agora conta o que o `laravel/pao` faz.** Ele está no kit desde o commit do
   esqueleto, em `require-dev`, e a referência de pacotes o descrevia como *"ferramentas de
   desenvolvimento do Laravel"* — descrição que não diz nada e não prepara ninguém para ver a suíte

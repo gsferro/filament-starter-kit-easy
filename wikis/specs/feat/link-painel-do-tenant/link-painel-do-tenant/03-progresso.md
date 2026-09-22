@@ -1,0 +1,518 @@
+# Progresso — Link de acesso ao painel da organização
+
+## 1. Gerador da URL
+- [x] Um ponto único que devolve a URL do painel da organização — `Tenant::urlDoPainel()`
+      (`app/Models/Tenant.php:urlDoPainel:164`), que chama `Filament::getPanel('app')->getUrl($this)`.
+      **Nenhuma classe nova**: o método vive ao lado de `urlDaLogo()`, que é a irmã exata ("o
+      endereço de algo desta organização"), e as três superfícies já recebem o registro. Consumido
+      pelos três schemas; a string `/app/` não aparece (CT-02 varre o arquivo do gerador)
+
+## 2. `TenantForm` — no `EditTenant`
+- [x] Entrada na seção `Identificação`, junto de nome e slug — `TextEntry::make('url_do_painel')`
+      dentro de `Section::make('Identificação')`, entre o `slug` e o `ativo`. **CT-04 afirma o
+      LUGAR**, subindo a hierarquia do schema até a `Section` e conferindo o título: RQ-02 é
+      cláusula de lugar, e um header action passaria em todo cenário de HTML sem atendê-la
+- [x] Ausente no `CreateTenant` — `->visible(fn (?Tenant $record) => $record !== null)`; CT-06
+      afirma `assertSchemaComponentHidden` **e** que a `description` com `/app/{slug}` continua na
+      tela
+
+## 3. `TenantInfolist`
+- [x] Entrada na seção `Identificação` — ao lado do `TextEntry::make('slug')->copyable()`
+
+## 4. `TenantsTable`
+- [x] Coluna com a URL clicável — `TextColumn::make('url_do_painel')`, com o endereço como
+      **estado da coluna** (o conteúdo visível da célula), `->url()` + `->openUrlInNewTab()`.
+      CT-04 usa `assertTableColumnStateSet`, que é o único oráculo que separa coluna de
+      `Action->url()`: as duas emitem o mesmo `href="…" target="_blank"`
+- [x] Citação de terceiro do achado **R2** atualizada no mesmo commit —
+      `tests/Tenancy/FiltrosDeTabelaTenancyTest.php:9`
+
+## 5. Documentação
+- [x] `docs/{pt,en}/recursos/multi-tenancy.md` — seção "O atalho para o painel de cada
+      organização" / "The shortcut to each organization's panel", sem link interno
+- [x] `CHANGELOG.md` → `[Unreleased]` → `Adicionado`
+- [x] Contadores dos readmes sincronizados (arquivos de teste 146→148 / 172→174; specs 63→64,
+      que já estava dessincronizado pelo commit da wiki)
+
+## Testes
+- [x] `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` — CT-01..CT-18, CT-20 e CT-22
+      (**41 casos** com datasets, **164 asserções**)
+- [x] `tests/Kit/LinkDoPainelSemTenancyTest.php` — CT-19, CT-21 e CT-23 (**3 casos**,
+      **65 asserções**)
+- [x] `tests/Kit/ExpectativaVariadicaDoPestTest.php` — **não é CT desta feature**, e é por isso que
+      não está no `04`. Ele é a sentinela da rule que nasceu aqui (`.ai/rules/testes.md` →
+      "`toContain()` do Pest não recebe mensagem"): mede **por reflexão** a assinatura do vendor, e
+      fica vermelho no dia em que o Pest aceitar mensagem — que é o dia de a rule **sair**, em vez
+      de envelhecer como conselho obsoleto. Os `[CT-01]`/`[CT-02]` dele são **locais ao arquivo** e
+      ficam fora do gate bidirecional de IDs desta wiki de propósito: o `diff` do gate compara o
+      `04` com os **dois arquivos da feature**, e este não é um deles. Entrou no diff sem rastro, e
+      é o achado **QA-09** do quality gate
+
+## Verificação Final
+- [x] `/ponytail:ponytail-review` no diff — rodado em **2026-09-21**, no ciclo 1 do quality gate.
+      Veredito: **nada a cortar**. Ver `### Auditoria Ponytail (step 6)`
+- [x] `vendor/bin/pint --dirty --format agent` — `fixed`, sem pendência
+- [x] `vendor/bin/filacheck --fix` — **All 17 rules passed!**
+- [x] CTs da feature — **44 casos, 44 verdes, 229 asserções**, medido em 2026-09-21
+      (41/164 em `tests/Tenancy` + 3/65 em `tests/Kit`), já com o controle positivo de CT-02 e a
+      linha cortada de CT-05 (QA-07/QA-08). Foram 39 na primeira passagem; os
+      **quatro** do **D-05** e o **CT-23** do step 7.5 entraram depois
+- [x] Testes existentes do tenant (`tests/Tenancy/**`) + gates de documentação e citação — 84
+      verdes
+- [x] `composer test:kit` — **2657 casos, 2657 verdes, 10 390 asserções**
+- [x] **Custo medido** — ver `## Notas de Implementação`: **33 / 53** antes, **33 / 53** depois
+- [x] Citações `arquivo:símbolo:linha` da superfície **viva** (`app/`, `docs/`, rules, README,
+      CHANGELOG) reverificadas por `tests/Kit/CitacoesDeCodigoTest.php` (CT-26) — inclui a
+      **citação de terceiro** do achado R2 e mais **duas** que o próprio diff deslocou
+- [x] Citações **da wiki** (`wikis/specs/**`) conferidas **à parte**, por varredura mecânica —
+      `[CT-26]` **exclui esse glob** por decisão registrada na v0.36.0, então ele nunca as viu.
+      **14 erradas** na árvore do ciclo 1, **zero** hoje no `03`/`04`; as do `00` no **Adendo 1**.
+      Conferido também que cada correção aponta para a **declaração** e não para uma menção em
+      docblock — a armadilha que a wiki irmã (`layout-compact`) produziu ao corrigir as dela
+- [x] Falsificabilidade — com o `app/` revertido ao merge-base
+      (`git checkout fbfe528 -- app/`), **28 dos 45** casos ficam vermelhos (15 falhas de asserção
+      e 13 erros por `Call to undefined method urlDoPainel()`) — remedido em 2026-09-22, achado
+      QA-25 do ciclo 3. Vermelhos: CT-01..CT-10, CT-14, CT-15, CT-18, CT-20, CT-22, CT-23, CT-24.
+
+      **CT-02 mudou de lado, e isso é resultado do próprio gate.** Ele figurava entre os verdes
+      "por desenho" — varredura de fonte, mata M01 e não prova presença. O controle positivo que o
+      QA-17 obrigou a escrever (exigir `function urlDoPainel` na fonte **transformada**) o fez
+      reprovar contra o merge-base, onde o método não existe. A correção de um oráculo fraco
+      **aumentou a falsificabilidade da suíte**, e é medível: 26/44 → 28/45.
+      CT-22 em `tests/Tenancy`, CT-19, CT-21 e CT-23 em `tests/Kit`) existem todos no `04`
+- [x] IDs do `04` ⊆ teste — **fecha**: os quatro cenários que a revisão adversarial acrescentou
+      (**CT-21**, **CT-22** e as duas linhas de `Examples` — CT-08 vinculado, CT-16 `globex`)
+      agora têm caso escrito e versionado. Ver **D-05**. Gate bidirecional, saída **vazia**:
+      `diff <(grep -oh 'CT-[0-9]\+' 04-casos-de-teste.md | sort -u) <(grep -oh 'CT-[0-9]\+' tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php tests/Kit/LinkDoPainelSemTenancyTest.php | sort -u)`
+- [x] Os 13 achados da revisão adversarial aplicados no `04` — ver `04-casos-de-teste.md` →
+      `## Revisão Adversarial`. Contagens do cabeçalho derivadas por `grep`, não digitadas:
+      **23** cenários (com o CT-23 do step 7.5), **9** regras, **36** mutantes, **3** lacunas
+- [x] `/code-review` no diff (step 7.5) — **quatro achados, todos fechados**. A seção está
+      neste mesmo arquivo (`## Step 7.5 — /code-review no diff (2026-09-21)`) e a tabela completa
+      no adendo do `04`. O checkbox ficou desmarcado por esquecimento, e é o achado **QA-11**
+
+## Conformidade com Rules
+
+| Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
+|---|---|---|---|
+| `filament.md` | `app/Filament/**` | **aplicada** | nenhuma Action nem item de navegação novo (por isso `tests/Kit/PermissoesDeAcoesTest.php` não pede declaração de autorização — é um dos motivos de a superfície ser coluna e `TextEntry`, e não `Action`); nenhuma construção reprovada pelo Blueprint (`filacheck`: 17/17, `AderenciaAoBlueprintTest` verde); nenhum `assignRole`/`syncRoles`; nada de papel, permissão ou seeder |
+| `resources.md` | `app/Filament/App/Resources/**` | **n.a.** | a feature toca `Admin/Resources`, não `App/` |
+| `filament-resources.md` | `app/Filament/**/Resources/**` | **n.a. no que ela exige** | a rule governa Resource novo (badge de contagem, colisão de trait, scope em `getEloquentQuery()`); a feature não cria Resource nem toca `getEloquentQuery()`. `BadgeDeNavegacaoTest`/`BadgeDeNavegacaoTenancyTest` continuam verdes |
+| `specs.md` | `wikis/specs/**` | **aplicada — reconferida em 2026-09-21** | a evidência anterior (`tests/Kit/CitacoesDeCodigoTest.php:[CT-26]`) **não cobre este glob**: o gate exclui `wikis/specs/**` por decisão explícita da v0.36.0, registrada no docblock dele. Era exatamente o glob da rule, e por isso QA-01 achou **14** citações erradas na wiki — 13 no `03`/`04` e as do `00`. *(este texto dizia "doze" até 2026-09-22; o gate remediu e achou duas que a própria lista do relatório não trazia, por serem caminho solto que não resolve da raiz do repo.)* A evidência agora é a conferência mecânica prescrita pela rule — extrair as citações dos `.md` da wiki e exigir que `sed -n "{linha}p" {path}` contenha o símbolo —, com as do `03` e do `04` corrigidas na fonte e as do `00` (imutável) no **Adendo 1**. O `[CT-26]` continua valendo para a superfície **viva** (`app/`, `docs/`, rules, README, CHANGELOG), que é onde ele achou as três do D-04 |
+| `app.md` | `app/**` | **n.a. no que ela exige** | o diff toca `app/Models/Tenant.php` e três schemas, então o glob casa. A rule governa atribuição de papel/permissão (`assignRole`/`syncRoles`) e DTO: o diff não tem nenhum dos dois — o método novo é leitura pura e as três entradas são declarativas. Linha ausente até o quality gate (**QA-10**): a rule não estava violada, mas "rule sem linha na tabela" é achado por si |
+| `testes.md` | `tests/**` | **aplicada** | nenhum helper cruzado (os quatro do arquivo novo são usados só por ele — `HelpersDeTesteTest` verde); `noPainelBootado('admin')` + `->loadTable()` em todo caso de listagem; `semComentarios()` na única asserção de ausência sobre arquivo (CT-02); `TestHandler` no channel real em CT-09; CT-19 em `tests/Kit` porque é a única suíte com a tenancy desligada; `fronteiraDeRequest()` entre painéis em CT-09 e CT-10 |
+| `models.md` | `app/Models/**` | **n.a. no que ela exige** | `Tenant` não tem Resource no `/app` (`ModeloCacheavel` não se aplica), e a feature não acrescenta `SoftDeletes` nem `InteractsWithMedia`. O método novo é leitura pura, sem query |
+
+## Quality Gate
+
+**Ciclo 1 (2026-09-21) — REPROVADO → especificação.** Blocker 0 · Major 3 · Minor 9 · Cosmético 2.
+Relatório completo em `06-relatorio-qa.md`. Nenhum achado de implementação: o código atende
+RQ-01..RQ-05 e as quatro ADRs, e os três Major são texto contra a árvore — **QA-01** (a rule
+`specs.md` violada em 14 citações da wiki, e a evidência declarada aponta um gate que exclui
+`wikis/specs/**`), **QA-02** (o `04` diz que CT-21/CT-22 "ainda não escrito" e que o gate `04 →
+teste` está aberto, com o D-05 já fechado) e **QA-03** (D-05.a ainda sustenta a string
+`?tenant={uuid}`, que é o achado 1 do step 7.5). Abertos também QA-04 a QA-14. **O PR não abre até
+o ciclo 2.**
+
+**Fechamento dos achados documentais (2026-09-21).** Os onze de **destino 1** estão fechados —
+QA-01, QA-02, QA-03, QA-04, QA-05, QA-06, QA-09, QA-10, QA-11, QA-12 e QA-14 —, um commit por
+achado, com os números **remedidos** e as citações **reconferidas por grep** em vez de copiadas do
+relatório. QA-07 e QA-08 (destino 3) fecharam em `df00ddf` e QA-13 (destino 2) em `24b7f9c`. O
+detalhe de cada um está em `06-relatorio-qa.md` → `## Fechamento`.
+
+~~**Fica aberto um item**~~ — **fechado** no commit `5390093`, em 2026-09-21. A citação vivia no
+docblock de `Tenant::urlDoPainel()` (`HasRoutes.php:193`, forma sem símbolo) e a linha do `return`
+é a **194**; a 193 é branca. Ela era `app/` e não wiki, então ficou fora do escopo do agente que
+fechou os documentais — corretamente — e foi fechada em seguida.
+
+*(este parágrafo continuou dando o item por aberto depois de ele ter sido fechado — achado QA-18
+do ciclo 2.)*
+
+**Ciclo 2 (2026-09-21) — REPROVADO → especificação.** Blocker 0 · Major **2** · Minor **3** ·
+Cosmético **2**. Sete achados **novos** (QA-15 a QA-21), nenhum repetido do ciclo 1 — logo o loop
+**não converge** e resta um ciclo do teto de três. A reconferência independente **confirmou** o
+fechamento no que ele mediu: 14 citações erradas na árvore do ciclo 1, zero ERRO hoje no `03`/`04`,
+todas as correções apontando para a **declaração**, e os contadores (36 mutantes, 23 cenários, 9
+regras, 3 lacunas, 45/234, 24 IDs, 28 dos 45, R8 com oito linhas) batendo com a árvore. Os dois
+Major nasceram **dentro da remediação**: **QA-15** (`M36` ficou com duas definições e dois
+matadores no mesmo `04` — `04:987` dá CT-21, `04:1286` dá CT-23 e mede que CT-21 **não** o mata) e
+**QA-16** (o `04` ainda publica uma "Divergência viva" de CT-02 desfeita em `3c326bf`, antes do
+ciclo 1, citando uma linha em branco). Minor: **QA-17** (o controle positivo de CT-02 não cobre o
+mutante ganancioso de `semComentarios()` — medido, CT-02 fica verde com o corpo do gerador comido),
+**QA-18** (`03` e `06` dão por aberto o `HasRoutes.php:193` que `5390093` fechou) e **QA-19** (o
+ícone de nova aba da ficha entrou sem CT). Cosmético: **QA-20** e **QA-21**. **O PR não abre até o
+ciclo 3.** Relatório em `06-relatorio-qa.md` → `# Ciclo 2`.
+
+**Ciclo 3 (2026-09-22) — APROVADO COM DÉBITO.** Blocker 0 · Major **0** · Minor **4** · Cosmético
+**1**. Cinco achados novos (**QA-22** a **QA-26**), todos de **destino 1** — texto contra a árvore,
+nenhum tocando código de aplicação, teste ou asserção. **O teto de três ciclos foi atingido e o
+loop encerra aqui**: como não há Blocker nem Major novo, **não há o que escalar ao usuário**, e os
+cinco viram **débito**. A reconferência por medição própria **confirmou** o que o ciclo 2 fechou:
+CT-24 mata os três mutantes do aviso (mutação aplicada e revertida em `TenantInfolist`,
+`TenantsTable` e `TenantForm`, vermelho nos três), `getIcon($state)` não é trivialmente verdadeiro
+(sem `->icon()` o vendor só devolveria algo se o estado fosse `IconInterface`, e aqui é string),
+o controle novo de CT-02 resiste ao regex ganancioso **e** ao retorno vazio, M36 tem matador de
+verdade (sem a guarda `hasTenancy()`, CT-23 vermelho e CT-19/CT-21 verdes), e a varredura de
+citações dá **zero ERRO** fora do `00` imutável. Os cinco achados nasceram **dentro da remediação
+do ciclo 2**: **QA-22** (CT-24 entrou no `04` sem entrar na estrutura por regra — índice com uma
+célula a menos, filiado a R1 em vez de R4, fora do `### Suíte e arnês`, e M38 sem tabela de
+mutante), **QA-23** (`04:1129` ainda declara *"36 mutantes, 36 com matador"* e `M01..M36`, refutado
+pelo comando que ele mesmo publica, e M37 é o único dos 38 fora da coluna `Mata` do índice),
+**QA-24** (44/229 sobreviveu em três checkboxes da `## Verificação Final` e no **CHANGELOG**;
+medido: **45 casos / 234 asserções**), **QA-25** (`### Falsificabilidade` diz 26 de 44 e lista
+CT-02 entre os verdes; medido agora, **28 de 45**, com CT-02 **reprovando** graças ao controle do
+QA-17) e **QA-26**, cosmético (o cabeçalho do teste conta "oito casos" que chamam `urlDoPainel()`
+direto; são nove). Fica também **QA-18 pela metade**: o `03` fechou, o `06` → `### O que fica
+aberto` não. **O PR pode abrir**, com os seis débitos registrados. Relatório em
+`06-relatorio-qa.md` → `# Ciclo 3`.
+
+## Auditoria Pré-Implementação
+
+### Revisão profunda (step 5) — premissas do plano contra o código real
+
+| # | Premissa do plano | O código real diz | Correção aplicada na wiki |
+|---|---|---|---|
+| **R1** | Passo 1 manda "conferir se já existe helper de URL de tenant antes de escrever" | **Não existe.** `grep -rn "getTenantUrl\|tenantUrl" app/` devolve **zero**; os únicos hits de `filament.app` são nomes de rota em contextos não relacionados (`DashboardClassico.php`, `AcoesDeCriacao.php`, `ConfiguraFilamentGlobal.php`, `AppPanelProvider.php`). O passo 1 **cria**, não reaproveita | Passo 1 do `01` reescrito de "conferir e reaproveitar" para "criar, e aqui está a evidência de que não havia o que reaproveitar" |
+| **R2** | O plano não previa impacto em citação de terceiro | **`tests/Tenancy/FiltrosDeTabelaTenancyTest.php:9` cita `TenantsTable.php:55`** — e a linha 55 hoje é o `->filters([`. A coluna nova entra no `->columns([…])`, que fecha na linha 53: **inserir a coluna desloca a linha 55 e invalida a citação de um teste que não é desta feature** | `## Impacto em Features Existentes` do `01` ganhou o item; entrou na Verificação Final como conferência obrigatória; e virou risco declarado |
+
+> **R2 é o achado que justifica o step 5 nesta feature.** A citação está no **docblock de um teste
+> alheio**, não na minha wiki — nenhum gate posterior a procuraria, porque o step 7 confere as
+> citações *da wiki da feature*. E a rule `specs.md` do projeto trata citação errada como defeito.
+> Uma coluna de tabela, que parece a mudança mais inócua possível, quebra uma afirmação a 40 linhas
+> de distância num arquivo que o diff não abre.
+
+### Varredura da classe irmã
+
+**Não se aplica: a feature não cria classe nenhuma.** São três entradas declarativas em schemas
+existentes (`TenantForm`, `TenantInfolist`, `TenantsTable`) mais um gerador de URL. Nenhum FQCN novo
+para aparecer em `config/`, seeder, inventário de teste ou provider.
+
+Conferido mesmo assim, porque "não se aplica" precisa ser verificado e não deduzido:
+`grep -rn "TenantsTable\|TenantForm\|TenantInfolist" app config database tests` — as ocorrências são
+só o próprio `TenantResource` e os dois testes de filtro já citados em R2.
+
+### Auditoria Ponytail (step 6)
+
+Rodada em **2026-09-21** sobre `git diff fbfe528 -- app/`: 5 arquivos, 119 linhas inseridas, das
+quais a maioria é comentário. **Veredito: lean already.** Não há o que cortar — a feature é um
+método de model de **nove linhas** mais três entradas declarativas. Nenhuma classe, serviço,
+helper, interface, config, rota, migration, evento nem dependência nova para deletar.
+
+| # | Sugestão de corte cogitada | Aplicada? | Motivo |
+|---|---|---|---|
+| **P-1** | um ponto único em classe própria (serviço/action) em vez de método de model | **já recusada no D-01** | o plano proíbe classe nova, e a irmã `urlDaLogo()` já define o lugar. Zero indireção |
+| **P-2** | `->state()` e `->url()` chamam `urlDoPainel()` duas vezes por registro; guardar em variável | **não** | o método é leitura pura do `slug` já carregado — **0 consultas**, medido por CT-14. Fechar sobre uma variável trocaria custo zero por indireção |
+| **P-3** | o `?->` de `TenantForm` sobrepõe `->visible(fn (?Tenant $record) => $record !== null)` | **não** | não cortam a mesma coisa: a `visible` governa o **render** e é o que CT-06 prova; o `?->` mantém a resolução do state fora de erro no `CreateTenant`. E cortar um `?->` não tira linha nenhuma |
+| **P-4** | `->color('primary')` e o par `->icon()`/`->iconPosition()` das telas de leitura | **não** | são a afordância de link e o aviso de nova aba (QA-13), não decoração. `->color('primary')` é **token**, que é o que `.ai/rules/css-filament.md` pede |
+
+**net: -0 linhas.** O step 6 estava declarado no `01` e o checkbox ficou aberto até o quality gate
+(QA-11) — o atraso é o achado, não o resultado.
+
+## Blockers
+
+Nenhum.
+
+## Desvios do Plano
+
+### D-01 — o "ponto único" é método de model, não classe nova
+
+O passo 1 do `01` pede "um único ponto que devolve a URL do painel da organização" sem dizer onde.
+Ficou em `Tenant::urlDoPainel()` (`app/Models/Tenant.php:urlDoPainel:164`), ao lado de
+`urlDaLogo()`. Motivo: é a irmã exata — as duas respondem "o endereço de algo desta organização" —,
+as três superfícies já recebem o registro, e a `## Filosofia de Implementação` do plano proíbe
+classe nova. **CT-02 continua com sujeito**: ele varre o arquivo do gerador, que é este, e a string
+`/app` não aparece nele fora de comentário.
+
+### D-02 — CT-14 do `04` afirma uma propriedade FALSA da listagem, e foi medido
+
+O `04` escreveu CT-14 como "a listagem custa o mesmo com uma e com cinco organizações". Medido nas
+duas pontas do diff, com o mesmo arnês (sonda de contagem, duas medições quentes):
+
+| | 1 organização | 5 organizações |
+|---|---|---|
+| **antes** (`git stash push -- app/`) | **33** | **53** |
+| **depois** | **33** | **53** |
+
+A coluna nova custa **zero** — o `## Modelo de Execução` do `01` está confirmado. Mas a listagem
+**já** crescia 5 consultas por linha antes da feature, então o oráculo escrito nasceria **vermelho
+contra a implementação correta**, medindo um N+1 de terceiro que a feature não introduziu e não pode
+consertar (mudar a listagem está fora de escopo).
+
+O caso escrito mantém o **mesmo oráculo** — invariância à cardinalidade, derivada de RQ-05 — aplicado
+ao que a feature possui: a resolução do endereço. Zero consultas para uma, zero para cinco. É o que
+mata M22. O número medido da tela ficou registrado no docblock do caso e no `CHANGELOG.md`, como
+afirmação datada e não como asserção.
+
+### D-03 — a linha `acento` do CT-16 está do lado errado da fronteira
+
+O `04` listou `organização` como partição **inválida** do slug. `alpha_dash` do Laravel é
+**unicode-aware**: sem o argumento `ascii` a regra é `/\A[\pL\pM\pN_-]+\z/u`
+(`vendor/laravel/framework/src/Illuminate/Validation/Concerns/ValidatesAttributes.php:validateAlphaDash:403`),
+e `ç`/`ã` são `\pL`. O slug acentuado **grava**.
+
+Trocar `->alphaDash()` por `->alphaDash(ascii: true)` seria alterar uma validação que **não é desta
+feature** para fazer um caso passar — recusado. O que foi feito:
+
+- CT-16 perdeu a linha `acento` e ganhou **duas** que o `\pL` de fato recusa e que cobrem o risco
+  real de um segmento de URL: **ponto** (`acme.painel`) e **percent-encoding** (`acme%2fpainel`).
+- O acento passou para **CT-18**, do lado válido: ele grava, e o link segue o gravado.
+
+**E CT-18 mediu uma terceira coisa, que ninguém tinha afirmado:** `Panel::getUrl()` **não**
+percent-encoda o segmento — o endereço sai `http://…/app/organização`, com o UTF-8 cru, e o `e()` de
+`generate_href_html()` escapa HTML, não URL. O link funciona (navegador e servidor encodam o
+caminho), mas a forma canônica do endereço no kit é a crua, e agora está escrita.
+
+### D-04 — o diff deslocou TRÊS citações, não uma
+
+O achado R2 previu uma (`FiltrosDeTabelaTenancyTest.php:9` → `TenantsTable.php:55`). O método novo
+no `Tenant` deslocou **outras duas**, que o R2 não podia prever porque o plano não dizia onde o
+gerador ficaria: `TenantHeader.php:32` e `TenantInfolist.php:73` citavam o `urlDaLogo()` pela
+linha antiga (`:138`). Hoje as duas citam `app/Models/Tenant.php:urlDaLogo:186` — o `:164`
+escrito aqui **já envelheceu**, no mesmo parágrafo que descreve o envelhecimento, e só o
+símbolo reancorou a citação. As três foram corrigidas no mesmo commit, e
+quem as achou foi `tests/Kit/CitacoesDeCodigoTest.php:[CT-26]` — o gate automático, não a
+conferência à mão.
+
+**A citação do R2 mudou de forma, e não só de número.** Era `TenantsTable.php:55`, caminho solto:
+`base_path('TenantsTable.php')` não resolve, então o CT-26 a **ignorava** — ela podia ficar errada
+para sempre sem nada acusar. Virou
+`app/Filament/Admin/Resources/Tenants/Tables/TenantsTable.php:ativo:85`, caminho completo e com
+símbolo, que é a forma que o gate confere. O número andou outra vez depois disso — de `:83`
+para `:85` — e a citação **não** apodreceu junto: quem a reancorou foi o símbolo, que é
+exatamente o que a rule prescreve.
+
+### D-05 — o `04` foi reconciliado DEPOIS da implementação, e quatro cenários ficaram sem teste
+
+> **FECHADO.** Os quatro têm teste escrito e versionado, e o gate bidirecional de IDs devolve
+> saída vazia nos dois sentidos. O que cada um virou está na coluna **Teste definitivo** da tabela
+> abaixo, e as duas divergências entre a sonda e o definitivo estão logo depois dela.
+
+A revisão adversarial disparada pelo Impacto 3 chegou **depois** de a feature fechar verde. Quatro
+dos treze achados (**A-1**, **A-2/A-4**, **A-3**, **A-6**) já tinham sido endereçados **nos
+testes** e não no `04` — por um período os testes foram mais fortes que a especificação deles, que
+é a pior configuração possível: quem lê o `04` acredita que aquilo é o contrato, e quem apaga uma
+linha do teste não encontra nada que reclame. Esta passagem reconciliou os dois.
+
+**O que entrou no `04` e JÁ tem teste** (era a especificação que estava atrás): estado da coluna e
+seção do formulário em CT-04 (A-1/A-2/A-4); sujeito do CT-02 nomeado (A-3); `fronteiraDeRequest()`
+no `## Setup Global` (A-6); oráculo do CT-06 corrigido para o `href` mais a **presença** da prosa
+(A-2 do relatório); `Dado` e medição prévia do CT-10 (A-9); não-efeito do CT-17 (A-13); separação
+dos oráculos de HTML de CT-04 e CT-07 (A-11); contagem da matriz 11/3 (A-12); CT-14 reescrito
+(D-02); linhas `acme.painel`/`acme%2fpainel` e o acento em CT-18 (D-03).
+
+**O que entrou no `04` e AINDA NÃO tem teste** — os quatro foram **sondados** contra o código real
+antes de serem escritos, com casos temporários que foram descartados. A direção está registrada
+para que ninguém escreva o teste no sentido errado:
+
+| Onde | Cenário especificado | Sonda | Teste definitivo |
+|---|---|---|---|
+| CT-16, última linha dos `Examples` | a edição recusa o slug **de outra organização gravada**, e o gravado não muda (A-5) | **PASSA hoje.** `->unique()` do Filament ignora o próprio registro por padrão nesta versão (`vendor/filament/forms/src/Components/Concerns/CanBeValidated.php:unique:563` + a propriedade `true` em `:shouldUniqueValidationIgnoreRecordByDefault:34`), então o mesmo `->unique()` sem argumento atende CT-13 **e** esta linha. Não é achado de implementação: é cenário que faltava | **confirma a sonda.** Linha `slug de OUTRA organização gravada` no dataset, mais a `Globex` no `Dado` (inerte para as demais). `assertHasFormErrors(['slug'])`, gravado segue `acme` |
+| CT-08, 3ª linha dos `Examples` | o administrador da instalação **vinculado** à organização continua tomando **403** — vínculo não é papel (A-10) | **403**, como esperado. O portão 1 decide primeiro | **confirma a sonda.** Persona `admin_vinculado` no `match`, mesma pessoa de `administradorDaInstalacao()` com `tenants()->attach()` |
+| **CT-21** (novo) | com a tenancy desligada, nenhuma das telas de `tests/Pest.php:telasDoKit:225` do painel `admin` responde **500**, e nenhuma exibe `href` do painel de negócio (A-7) | as 18 telas passam, 51 asserções | **confirma a direção, com asserção a mais.** As mesmas 18 telas, **56** asserções (medido em 2026-09-21) — a sonda afirmava UMA forma do endereço e o definitivo afirma **duas**, mais o controle positivo (ver a divergência D-05.a) |
+| **CT-22** (novo) | seguir o link de organização **inativa** sem vínculo devolve **404**, e as duas leituras concordam (A-8) | **404**; `canAccessTenant()` falso e `getTenants()` não a contém | **confirma a sonda**, as três asserções |
+
+#### D-05.a — a sonda de CT-21 media UMA forma do endereço, e existem duas
+
+> **Corrigido em 2026-09-21.** O parágrafo original sustentava que sem tenancy o endereço vinha
+> como **query string**, `?tenant={uuid}`. É o achado 1 do `/code-review`, e foi **medido como
+> falso**. Ele sobreviveu à correção porque o raciocínio estava escrito **aqui**, e o que o step
+> 7.5 consertou foi o teste — o docblock e a asserção. Registrado inteiro, e não apagado, porque é
+> o parágrafo com a maior chance de reintroduzir o defeito.
+
+Sem tenancy, `Panel::getUrl($tenant)`
+(`vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:getUrl:170`) não produz `/app/{slug}` —
+e também **não** produz query string nenhuma. `hasTenancy()` é falso; o ramo de `Route::has()`
+(linha 182) exige a rota `filament.app.home`, que **não é registrada** com a tenancy desligada,
+então a condição é falsa e a execução **cai no ramo seguinte** (linha 194), que monta o endereço
+por **concatenação de string** — `url($path.'/'.$tenant->getRouteKey())`, com a chave de rota
+porque não há `slugAttribute` declarado.
+
+O que sai é `http://host/app/{uuid}`: segmento de **caminho**, chave no lugar do slug, e nenhum
+`?tenant=`. Enquanto a string afirmada foi `tenant=`, essa metade do caso era **vazia** — nenhuma
+implementação, certa ou errada, poderia produzi-la, e a asserção ficaria verde para sempre,
+inclusive contra o mutante que o docblock dizia matar. O erro não foi de citação: o parágrafo
+citava `arquivo:linha` real e raciocinava de forma plausível sobre ele. O que faltou foi executar.
+
+O caso definitivo afirma as **duas** formas que uma implementação real produz — `/app/{slug}`, da
+concatenação à mão que a ADR-01 descartou, e `/app/{uuid}`, do gerador — e mede **56** asserções
+(medido em 2026-09-21; a sonda media 51, e a diferença vem da segunda forma somada à migração de
+`->not->toContain()` para `assertStringNotContainsString`). E ganhou **controle positivo**: o caso
+exige que o gerador produza o endereço morto antes de afirmar a ausência dele.
+
+Nenhuma das duas é `/app` solto: a raiz do painel de negócio aparece legitimamente no `/admin` (o
+seletor de painéis), e a asserção nasceria vermelha contra a instalação correta.
+
+#### D-05.b — o `04` dizia "oito linhas de formato e a nona de unicidade", e a tabela tem oito
+
+> **FECHADO em 2026-09-21** (achado **QA-12** do quality gate). Ele tinha sido adiado para "a
+> próxima passagem no `04`" — a passagem aconteceu (o adendo do step 7.5) e ele não foi fechado
+> nela. Fechar adiamento é o que o gate mede.
+
+A prosa de R8 no `04` (`## Regra R8` → "Uma recusa por linha") contava **nove** linhas em CT-16,
+enquanto a tabela de `Examples` logo acima lista **oito** — **sete** de formato (`../outra`,
+`acme/painel`, `acme painel`, `acme?x=1`, `acme.painel`, `acme%2fpainel`, vazio) e **uma** de
+unicidade (`globex`). O teste segue a **tabela**, que é a parte executável do cenário: 8 linhas no
+dataset.
+
+A contagem da prosa vinha de antes de D-03 ter trocado a linha `acento` por duas, e não acompanhou.
+Corrigida nos dois lugares do `04`: "sete linhas são de formato e a oitava é de unicidade", e "o
+`Dado` novo vale para as oito linhas… das sete primeiras".
+
+#### D-05.c — dois dos quatro passam com o `app/` revertido, e isso é o desenho
+
+CT-21 e a linha `globex` de CT-16 ficam **verdes** sem a implementação. Não são oráculos deste
+diff, e nunca foram:
+
+- **CT-21 é asserção de ausência.** Ele mata M27/M36 — uma implementação **errada** (a entrada
+  nascendo num widget, num hub ou no menu do `/admin`) —, não a ausência de implementação. Mesma
+  categoria de CT-19, que também passa dos dois lados pela mesma razão.
+- **A linha `globex` de CT-16 protege uma validação que não é desta feature.** O `->unique()` do
+  `TenantForm` é anterior ao diff; a linha mata M34, que é o `unique` ser **perdido** numa
+  edição futura. A sonda já dizia isso ("PASSA hoje... é cenário que faltava").
+
+Os outros dois (CT-22 e `admin_vinculado` de CT-08) reprovam, mas por `Tenant::urlDoPainel()` não
+existir — erro fatal, não falha de asserção. A força discriminante deles é contra M32 e M33
+(mutações **futuras** dos dois portões), não contra a remoção do gerador.
+
+**Um achado roteado ao TESTE, não à especificação (corte C-1).** O segundo `Então` do CT-02 foi
+cortado do `04`: "o gerador não contém nenhuma concatenação do slug com um caminho" não é oráculo
+executável, e exigiria regex adivinhado sobre fonte — o que `.ai/rules/testes.md` proíbe ("não
+invente um regex, ele conta comentário como chamada").
+
+**FECHADO.** O `preg_match` saiu do caso de CT-02
+(`tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php:[CT-02]`). O que carrega o cenário é a asserção
+do **literal** — `expect($fonte)->not->toContain('/app')` sobre a fonte sem comentários —, e ela
+continua. O motivo do corte ficou no docblock do caso, para que ninguém a reescreva.
+
+## Notas de Implementação
+
+### `TextEntry` no formulário, e por que não `TextInput->disabled()`
+
+Em schemas unificados do Filament 5, `Filament\Infolists\Components\Entry` estende
+`Schemas\Components\Component` — **não** `Field`. Consequência direta: ela não entra no estado do
+formulário nem no `dehydrate`, que é o requisito duro do passo 2 do plano. Um `TextInput`
+desabilitado com a URL viria no save e escreveria uma chave que não é coluna; CT-12 e CT-13 são os
+casos que o pegariam.
+
+Bônus não previsto: `Entry` usa o concern `CanOpenUrl`, então `->url()->openUrlInNewTab()` produz
+exatamente o `href="…" target="_blank"` de `generate_href_html()` — o mesmo HTML da coluna e da
+ficha. As três superfícies passaram a ter o mesmo oráculo de asserção sem nenhum adaptador.
+
+### O que separa coluna de ação, e é uma linha
+
+`Action::make()->url(…)->openUrlInNewTab()` emite HTML **idêntico** ao da coluna. Todo cenário de
+`assertSeeHtml` da listagem passaria com a feature implementada como ação por linha, e a decisão do
+usuário ("coluna, porque ela mostra o endereço") ficaria sem falsificador. O que separa as duas é o
+**estado da coluna**: `assertTableColumnStateSet('url_do_painel', $endereco, $organizacao)` só tem
+resposta se existir uma coluna, e só passa se o endereço for o **conteúdo** da célula.
+
+### O 302 que parecia defeito e era a sessão
+
+CT-09 visita o painel de negócio com duas personas no mesmo caso. Sem `flushSession()` entre elas o
+segundo `GET` vinha **302 para o login**: o `AuthenticateSession` do painel grava o hash da senha na
+sessão e desloga quando o do request seguinte não corresponde. A falha se lê como "a administradora
+vinculada não entra" — e a única coisa errada era a sessão da anterior. Registrado no docblock do
+caso.
+
+### Custo medido
+
+Ver **D-02**. Listagem: **33** consultas com uma organização e **53** com cinco, iguais antes e
+depois. Resolução do endereço: **0** consultas, para uma e para cinco (CT-14).
+
+### Falsificabilidade
+
+**Remedido em 2026-09-21**, sobre os 44 casos de hoje. `git checkout fbfe528 -- app/` e as duas
+suítes da feature: **26 dos 44 casos ficam vermelhos** — 13 falhas de asserção (CT-03, CT-04 ×3,
+CT-05 ×3, CT-06, CT-07 ×3, CT-15, CT-20) e 13 erros por
+`Call to undefined method urlDoPainel()` (CT-01, CT-08 ×5, CT-09, CT-10, CT-14, CT-18 ×2, CT-22,
+CT-23).
+
+A medição anterior (**22 de 39**) é de antes de CT-21, CT-22, CT-23 e das duas linhas de
+`Examples`, e **CT-06 trocou de lado**: ele reprova hoje, e não por asserção de conteúdo —
+`assertSchemaComponentHidden('url_do_painel')` exige que o componente **exista** para poder
+escondê-lo, e no merge-base ele não existe. O caso continua sendo de ausência; o que ele não é, é
+insensível ao diff.
+
+Os 18 que continuam verdes são **por desenho**, e vale dizer quais: CT-02 (varredura de fonte — mata
+M01, não prova presença), CT-11 (não-efeito na pivot), CT-12 e CT-13 ×2 (a gravação, que tem de
+continuar funcionando), CT-16 ×8 e CT-17 ×3 (validação pré-existente de que a feature **depende**
+sem ser dona), CT-19 e CT-21 (a superfície fechada sem tenancy). Nenhum deles afirma presença do
+link.
+
+## Step 7.5 — `/code-review` no diff (2026-09-21)
+
+Quatro achados, todos fechados. A tabela completa, com o que verificou cada um, está no adendo do
+`04-casos-de-teste.md`. O resumo do que **mudou em código**:
+
+| Achado | Mudança |
+|---|---|
+| 1 — CT-21 guardava string inalcançável | oráculo trocado pela forma real (`/app/{chave}`) + **controle positivo** que mede o gerador |
+| 2 — `urlDoPainel()` devolvia link morto sem tenancy | guarda `hasTenancy()` no gerador; ADR-03 revista; **CT-23** novo |
+| 3 — comentário "21 queries" defasado | corrigido para 33/53, alinhado ao CHANGELOG e a CT-14 |
+| 4 — CT-13 alegava fechar armadilha que não fecha | docblock corrigido para dizer o que o caso prova |
+
+**Dois deles eu não teria encontrado sozinho**, e vale registrar por quê: o 1 e o 4 são asserções
+que *parecem* proteger. Ambas vinham com docblock longo, raciocínio plausível e citação real de
+`arquivo:linha` do vendor — e a conclusão errada. Os gates anteriores (revisão profunda, ponytail,
+revisão adversarial do `04`) leem o **plano**; só o 7.5 lê o **diff** e pergunta se o código está
+certo. É o achado que a própria skill já documenta como o de maior rendimento, e a feature confirmou.
+
+### O erro que a correção do achado 1 produziu, e que valeu mais que ela
+
+O controle positivo nasceu **vermelho**, e por um motivo que não era o esperado: o segundo argumento
+de `expect()->toContain()` é **outra agulha**, não a mensagem de falha. Isso expôs que as asserções
+de ausência de CT-21 já carregavam o mesmo defeito desde o início — `->not->toContain($x, $msg)`
+exigia que a mensagem também estivesse ausente do HTML, o que é sempre verdade.
+
+Migradas para `assertStringNotContainsString`. Efeito medido nas duas suítes da feature:
+**174 → 227 asserções** na época, com um único cenário novo. A diferença são asserções que
+existiam no arquivo e não contavam. (O total das duas suítes é hoje **229**, medido em 2026-09-21
+depois de CT-02 ganhar controle positivo e CT-05 perder a linha cortada em C-2.)
+
+**Rule gravada — o step 9 desta candidata está FECHADO.** `.ai/rules/testes.md` →
+*"`toContain()` do Pest não recebe mensagem — o 2º argumento é outra AGULHA"*, 29 linhas, commit
+`9c6c494` **neste branch**. Ela não é mais candidata, e a wiki parou de chamá-la assim (QA-09). A
+sentinela que a mantém honesta é `tests/Kit/ExpectativaVariadicaDoPestTest.php`.
+
+## Rebase sobre o `main` pós-#93, e o que ele custou (2026-09-21)
+
+O `main` avançou durante esta wiki: o PR #93 (host local) entrou. O rebase não foi de graça, e o
+próprio kit acusou três defasagens que ele criou:
+
+| Defasagem | De → para | Quem pegou |
+|---|---|---|
+| arquivos de teste nos READMEs | 149→150 fundação, 175→176 total | caso de contadores **vindo com o #93** |
+| features especificadas | 64→65 (a wiki desta feature) | idem |
+| `tests/Pest.php:telasDoKit` | `:224` → `:225`, empurrado pelo helper novo do host local | `CitacoesDeCodigoTest` |
+
+Vale registrar a primeira linha: o caso que a pegou **nasceu no #93**, trava sete linhas do README
+que antes envelheciam em silêncio, e **estreou pegando defeito de outro PR**. É evidência direta
+do valor dele, do tipo que normalmente ninguém mede.
+
+Conferido que o rebase não engoliu nada já entregue: `OrdemDasCascadeLayersTest` e as duas
+referências a `configureOrdemDasCascadeLayers()` (a correção da `v0.37.1`) e o `HostLocalTest`
+seguem na árvore.
+
+### Suíte completa pós-rebase
+
+**2.817 casos, 2.801 verdes, 16 pulados, 0 falhas**, 2026-09-21 — inclui a suíte de navegador.
+
+### O falso positivo que quase virou achado
+
+Numa execução anterior, `tests/Browser/TemaEscuroTest.php` reprovou duas vezes com contraste
+`1,47:1` no `h1.fi-header-heading`. Duas rodadas vermelhas **não** sustentavam a conclusão de
+"falha consistente", e ela estava errada: em seguida o arquivo passou **cinco vezes seguidas**,
+sem mudança de código.
+
+O diagnóstico está no próprio docblock do teste, que já documenta a assinatura — paleta escura
+inteira sobre fundo claro é vazamento de tema entre cenários, não defeito de cor — e avisa que o
+caso *"tem o formato de teste instável"*. As duas falhas vieram logo após a suíte cheia, o que
+aponta contaminação entre arquivos de navegador.
+
+Confirmado que não era desta branch: teste, `.env` e assets publicados são **idênticos** ao repo
+principal (conferido por `diff`), onde o mesmo arquivo passou. Fica como **achado de isolamento de
+teste, pré-existente**, não como regressão desta feature.
+
+## Retrospectiva
+
+<!-- Preenchido no fim. -->

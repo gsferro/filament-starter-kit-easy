@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\AuditsFillables;
 use App\Traits\TemUuid;
 use Database\Factories\TenantFactory;
+use Filament\Facades\Filament;
 use Filament\Models\Contracts\HasCurrentTenantLabel;
 use Filament\Models\Contracts\HasName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -122,6 +123,53 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
             'ativo'               => 'boolean',
             'registro_habilitado' => 'boolean',
         ];
+    }
+
+    /**
+     * O endereço do painel de negócio DESTA organização — o ponto único da feature do link.
+     *
+     * Aqui, ao lado de `urlDaLogo()`, por simetria: as duas são "o endereço de algo desta
+     * organização", e as três telas do `TenantResource` (form, ficha e listagem) já recebem o
+     * registro — não precisam de mais nada para montar o link.
+     *
+     * `Panel::getUrl($this)` e NÃO concatenação: o endereço é derivado do `path` do painel, do
+     * `APP_URL` corrente e do `slugAttribute` declarado no `AppPanelProvider`
+     * (`vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:getUrl:170`). Escrever o
+     * caminho à mão quebraria em silêncio em três situações que o kit já permite: o `path` do
+     * painel mudar, a instalação rodar sob subdiretório, e a chave de rota do tenant deixar de
+     * ser o slug. Ver ADR-01 de `wikis/specs/feat/link-painel-do-tenant/link-painel-do-tenant/`.
+     *
+     * Sem normalizar o slug gravado: `Str::slug()` aqui produziria um endereço que **não
+     * existe** para quem gravou `ACME-Brasil` por fora do formulário, e o link nasceria
+     * quebrado sem nada avisar. O link segue o que está no banco.
+     *
+     * `null` com a multi-tenancy DESLIGADA, e a guarda é o achado que ela registra: `getUrl()`
+     * NÃO falha nesse caso. Sem `->tenant()` o painel não tem `slugAttribute`, e o gerador cai no
+     * último ramo de `HasRoutes::getUrl()` — `url($path.'/'.$tenant->getRouteKey())`
+     * (`vendor/filament/filament/src/Panel/Concerns/HasRoutes.php:194`) —, que é **concatenação
+     * de string sem consultar `Route::has()`**. Ou seja: exatamente o que a ADR-01 recusou fazer
+     * à mão, o vendor faz como último recurso. O resultado é `http://host/app/{uuid}`: uma URL
+     * bem-formada que responde **404**.
+     *
+     * Medido em 2026-09-21 na suíte `Kit`, a única com `kit.tenancy.enabled` falso. O risco
+     * declarado na ADR-03 dizia "o gerador falha"; ele não falha, entrega um link morto em
+     * silêncio — que é pior, porque nenhuma asserção de status ou de exceção enxerga.
+     *
+     * A pergunta é feita ao PAINEL (`hasTenancy()`), não à config: quem sabe se existe rota por
+     * organização é o dono da rota. Ler `config('kit.tenancy.enabled')` aqui criaria uma segunda
+     * dona para a mesma pergunta, que é o que `.ai/rules/config.md` proíbe.
+     *
+     * `?string` porque é o retorno de `getUrl()`.
+     */
+    public function urlDoPainel(): ?string
+    {
+        $painel = Filament::getPanel('app');
+
+        if (! $painel->hasTenancy()) {
+            return null;
+        }
+
+        return $painel->getUrl($this);
     }
 
     /**
