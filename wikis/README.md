@@ -27,6 +27,7 @@ Leia nesta ordem. São ~20 minutos e evitam a maior parte dos erros caros:
 | 8 | [Ranking de adoção](pacotes-ranking.md) | A fila: os 112 pacotes que agregam, do que mais agrega ao que menos, para instalar de cima para baixo |
 | 9 | [Qualidade de código](qualidade-de-codigo.md) | As quatro ferramentas — Pint, PHPStan level 7, FilaCheck e Rector — e por que só três estão no gate |
 | 10 | [Roadmap](roadmap.md) | O que o kit já olhou e **decidiu adiar**, com o motivo e a medição — para você não reavaliar do zero |
+| 11 | [Checklist de release](checklist-de-release.md) | **Do mantenedor do kit**: os quatro cenários obrigatórios a cada tag, e o que já quebrou em cada um |
 
 ## O kit em dez linhas
 

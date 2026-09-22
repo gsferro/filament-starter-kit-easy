@@ -1,0 +1,220 @@
+# Decisões Arquiteturais — Validação de release em projeto instalado
+
+## ADR-01: A guarda do CT-12 é `naArvoreDoKit()`, e o arquivo já tinha o padrão
+
+**Status**: Aceita · **Data**: 2026-09-22 · **Atende**: RQ-07, RQ-08
+
+### Contexto
+
+`[CT-12]` de `tests/Kit/HostLocalTest.php` usa um arquivo de `docs/` como **oráculo documental**:
+ele extrai o comando de elevação da página `dominio-local.md` e exige que o comando emitido pelo
+código seja o mesmo. A intenção é boa e está escrita no docblock — *"sem esta amarra, o comando
+poderia divergir da página e nada ficaria vermelho"*.
+
+O problema não é o oráculo. É que `docs/` está no `export-ignore` e o teste não.
+
+### Decisão
+
+`->skip(fn (): bool => ! naArvoreDoKit(), 'O site de documentação não viaja no projeto instalado.')`
+
+**O mesmo padrão que o último caso do próprio arquivo já usava** (`tests/Kit/HostLocalTest.php:[CT-34]:1354`). Não é
+mecanismo novo: é o mecanismo existente aplicado ao caso que não o tinha.
+
+### Alternativas Consideradas
+
+1. **Fazer `docs/` viajar** — descartada. A decisão de excluí-lo é anterior, tem motivo próprio
+   (o site é do kit, não do projeto de quem instala) e mudá-la por causa de um teste inverteria a
+   ordem: o produto serviria ao teste
+2. **Mover o oráculo para dentro de `tests/`** — descartada. O valor do CT-12 é justamente
+   confrontar o código com **a página que o usuário lê**; uma cópia em `tests/` pode divergir da
+   página e o caso perderia o sentido
+3. **`File::exists()` antes de ler, e passar quando não existe** — descartada, e é a pior: o caso
+   ficaria **verde por ausência**, que é exatamente a classe de defeito que esta sessão inteira
+   perseguiu. Pular declarando é honesto; passar em silêncio não
+
+### Consequências
+
+- **Positivas**: o caso continua valendo onde pode valer, e declara por que não vale no resto
+- **Negativas**: o oráculo documental deixa de rodar no projeto instalado — mas ali ele **nunca**
+  pôde rodar; o que muda é ser explícito em vez de quebrar
+- **Riscos**: nenhum novo. `naArvoreDoKit()` é `is_dir(base_path('.github'))`, e `.github` está no
+  mesmo `export-ignore` — o sinal é o próprio mecanismo que causa o problema, o que o torna exato
+
+---
+
+## ADR-02: A guarda estática **já existia** e errava por granularidade — endurecê-la, não substituí-la
+
+**Status**: Aceita · **Data**: 2026-09-22 · **Atende**: RQ-05, RQ-06, RQ-07
+
+> **Esta ADR foi reescrita pelo step 6.5 (achado RD-02).** A primeira versão decidia *"não escrever
+> guarda estática"* e não mencionava, em 50 linhas, que **uma guarda estática já existia** —
+> `tests/Kit/RedeDeDocumentacaoTest.php` `[CT-10]`. Decidir não criar guarda e decidir não endurecer
+> a guarda existente são decisões diferentes, e a segunda foi tomada na prática sem ser registrada.
+> O texto original está preservado no fim desta ADR.
+
+### Contexto
+
+O `[CT-10]` varre os arquivos de teste que leem documentação e exige a sentinela `naArvoreDoKit()`.
+Ele faz isso com `str_contains` sobre o **arquivo inteiro**.
+
+`tests/Kit/HostLocalTest.php` já continha a sentinela — no `[CT-34]`, outro caso, 750 linhas abaixo
+do `[CT-12]`. **O CT-10 esteve verde o tempo todo**, e o `[CT-12]` quebrava em toda instalação nova.
+
+O docblock do CT-10 **declara essa granularidade como decisão consciente**, e com bom argumento:
+nesta base a leitura é quase sempre **indireta** — o caminho vem de um dataset e o
+`file_get_contents()` está no corpo —, e regra estática não distingue esse literal de um
+decorativo. *"A granularidade da sentinela é do AUTOR … Este caso só cobra que a sentinela exista."*
+
+**O argumento está certo para o caso indireto.** Ele deixa aberta a fatia em que a regra **é**
+decidível: caminho **literal**, dentro da chamada de leitura, **no corpo do caso**. E foi por essa
+fatia que o defeito passou — `File::get(base_path('docs/pt/…'))`, sem ambiguidade nenhuma.
+
+### Decisão
+
+**Acrescentar `[CT-11]`** a `tests/Kit/RedeDeDocumentacaoTest.php`, cobrindo **só** a fatia direta:
+leitura literal de caminho não entregue exige a sentinela **no próprio caso**.
+
+O CT-10 fica como está. O CT-11 não tenta decidir o indecidível — ele cobre o que o CT-10 declarou
+fora do próprio alcance.
+
+**Medido nos dois sentidos, com o defeito original restaurado na árvore:**
+
+| Guarda | Com o `[CT-12]` defeituoso |
+|---|---|
+| `[CT-10]` — a que existia | **verde** |
+| `[CT-11]` — a nova | **vermelho** |
+
+### O que a primeira versão desta ADR errou, e por quê
+
+Ela apoiava a decisão em *"três varreduras estáticas foram escritas e as três erraram"* — 8, 20 e
+17 desprotegidos contra **1** real. O dado é verdadeiro e a conclusão não se sustenta: os erros
+eram **limitações daquelas três tentativas**, não propriedade do problema.
+
+A prova é que o revisor do 6.5 escreveu uma varredura por caso em ~25 linhas e ela achou **1
+lacuna real** — a certa. E o `[CT-11]` desta ADR, escrito depois, **repetiu o erro da terceira
+tentativa** na primeira versão: acusou os 15 cenários do `SiteDeDocumentacaoTest`, porque não via o
+`markTestSkipped` do `beforeEach`. Corrigido acrescentando a checagem do preâmbulo — e o motivo
+está escrito **dentro do caso**, porque a próxima pessoa vai esquecer de novo.
+
+### Alternativas Consideradas
+
+1. **Nenhuma guarda, só o roteiro** — a decisão da primeira versão. Descartada por RD-02: deixava
+   o gate existente exatamente como estava, sem registrar que essa era uma decisão
+2. **Endurecer o próprio CT-10 para granularidade por caso** — descartada: ele cobre também a
+   leitura indireta, onde a regra não é decidível, e apertá-lo ali produziria o falso alarme que o
+   docblock dele já argumenta evitar. Caso novo separado mantém as duas granularidades explícitas
+3. **Varredura ampla pelo `git archive`** — descartada: resolve *o que viaja* (exato) e continua
+   tendo de decidir *quais casos estão protegidos*, que é a parte difícil
+
+### Consequências
+
+- **Positivas**: a classe do defeito passa a ter matador automático na fatia em que isso é
+  decidível — e ele foi **provado** contra o defeito real, não assumido
+- **Negativas**: a leitura indireta continua coberta só pelo CT-10, na granularidade de arquivo.
+  É limitação declarada, não esquecimento
+- **Riscos**: o CT-11 produzir falso positivo numa forma de leitura que eu não previ. Mitigação: a
+  mensagem nomeia o caso e explica que sentinela em caso vizinho não protege — quem for acusado
+  sabe o que fazer
+
+### O roteiro continua sendo necessário
+
+O CT-11 cobre **uma** classe. O roteiro dos quatro cenários cobre o que nenhuma varredura cobre:
+**tudo o que só acontece fora da árvore do kit**. Os dois não se substituem, e o caso do roadmap
+(ADR original, RD-03) mostra o inverso — um defeito que o gate automatizado pegava e o roteiro
+também pegaria.
+
+<details>
+<summary>Texto original desta ADR, antes do RD-02 (preservado)</summary>
+
+A versão original decidia *"não escrever guarda estática"*, com o argumento das três varreduras
+que erraram, e concluía que *"guarda que erra é pior que guarda nenhuma"*. A frase continua
+verdadeira — e é por isso que o `[CT-11]` foi verificado por mutação antes de entrar. O que estava
+errado era o pressuposto de que **não havia** guarda a endurecer.
+
+</details>
+
+---
+
+## ADR-03: O checklist viaja; o `CONTRIBUTING.md` não — e ele vive em `.github/`
+
+**Status**: Aceita · **Data**: 2026-09-22 · **Atende**: RQ-05
+
+### Contexto
+
+`wikis/*.md` está **fora** do `export-ignore` por decisão registrada no `.gitattributes` — *"a wiki
+de referência é material de trabalho de quem instala"*. O `roadmap.md` já seguiu essa regra na
+`v0.38.0`. O checklist de release, porém, descreve o processo de quem **mantém** o kit.
+
+### Decisão
+
+**Viaja**, como os demais `wikis/*.md`. E, como o `roadmap.md`, o texto **abre declarando** que
+descreve o processo de quem mantém o kit, não de quem o instala.
+
+### Alternativas Consideradas
+
+1. **`export-ignore` só para este arquivo** — descartada: criaria a primeira exceção dentro de
+   `wikis/*.md`, e exceção de uma linha é o tipo de regra que ninguém lembra depois. Quem derivar
+   um projeto do kit e quiser apagar o arquivo apaga; é dele
+2. **Colocar em `.github/`** (que não viaja) — descartada: `.github/` é fluxo de CI, não
+   documentação de processo, e o arquivo perderia a vizinhança dos outros `wikis/`
+
+### Consequências
+
+- **Positivas**: coerente com a decisão já tomada para o `roadmap.md`; zero linha nova de
+  configuração
+- **Negativas**: quem instala recebe um roteiro que não é dele. Mitigado pela declaração no topo —
+  a mesma solução que o roadmap usou
+- **Riscos**: nenhum medido
+
+### O `CONTRIBUTING.md` é o caso oposto, e esta ADR não o decidia
+
+**Achado RD-01 do step 6.5.** O arquivo nasceu na **raiz**, e a raiz viaja: quem rodasse
+`composer create-project` receberia, no próprio projeto, um guia dizendo *"antes de lançar uma tag,
+rode os quatro cenários"* sobre um kit que já virou o código dele. E não chegava por
+`kit:update`, porque a varredura de `KitUpdateTest` cobre `wikis/` e `.ai/rules/`, **não a raiz** —
+entrega assimétrica, e nenhum teste ficava vermelho.
+
+**Decisão**: `.github/CONTRIBUTING.md`. O GitHub procura o arquivo em três lugares — raiz,
+`.github/` e `docs/` — então o botão de contribuir e o template de PR continuam funcionando. E
+`/.github` já está no `export-ignore`, então ele **não viaja**, que é o correto: é documento de
+quem mantém o kit, não de quem o instala.
+
+**O precedente é do próprio repositório**: `.github/SECURITY.md` já é exatamente isso. A primeira
+versão quebrou as duas pontas da convenção que o repo já tinha.
+
+**Consequência que fecha um erro da ADR-02**: ela citava *"é linkado do `CONTRIBUTING.md`"* como
+mitigação do risco de o checklist cair em desuso — e **nada apontava para o `CONTRIBUTING.md`**.
+Uma mitigação que depende de um arquivo sem porta de entrada não é mitigação.
+
+---
+
+## ADR-04: O critério de "liso" é zero erro e zero falha, não zero pulado
+
+**Status**: Aceita · **Data**: 2026-09-22 · **Atende**: RQ-09
+
+### Contexto
+
+RQ-09 pede *"rodar liso de ponta a ponta em todos os cenarios"*. A execução nos quatro cenários
+devolveu **145 pulados** em cada um, além do erro único.
+
+### Decisão
+
+**"Liso" significa zero erro e zero falha.** Pulado **declarado** não conta contra.
+
+### Alternativas Consideradas
+
+1. **Exigir zero pulado** — descartada. Os 145 são casos que **não se aplicam** fora da árvore do
+   kit: conferem o site de documentação, os fluxos do GitHub Actions, o histórico de planejamento.
+   Fazê-los rodar exigiria entregar `docs/`, `.github/` e `wikis/specs/` a todo projeto instalado —
+   o oposto de três decisões anteriores do kit
+
+### Consequências
+
+- **Positivas**: o critério é verificável e não pede mudança de escopo
+- **Negativas**: um pulado **indevido** (caso que deveria rodar e não roda) passaria despercebido
+  por este critério. **Mitigação declarada**: o checklist manda registrar a contagem de pulados a
+  cada release, e a variação dela entre versões é o sinal — um salto de dezenas sem feature nova que
+  o justifique é achado
+- **Riscos**: o número 145 envelhece — e **já envelheceu nesta própria entrega**: o `[CT-12]`
+  corrigido leva a 146 e o `[CT-11]` novo a 147. Por isso o checklist pede **registrar**, não
+  **afirmar**, e o passo 6 é quem mede

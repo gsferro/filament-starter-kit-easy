@@ -180,8 +180,8 @@ dois já vêm completos.
 
 | Documentação | |
 |---|---:|
-| Documentos de referência (`wikis/`) | **10** |
-| Features especificadas (`wikis/specs/`) | **66** |
+| Documentos de referência (`wikis/`) | **11** |
+| Features especificadas (`wikis/specs/`) | **67** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **18** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.

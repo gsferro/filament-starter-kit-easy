@@ -212,3 +212,87 @@ it('[CT-10] nenhum cenário se guarda pela própria entrega', function (): void 
         expect($guardasSobreDocs[0])->toBe([], "{$arquivo} condiciona execução à existência de docs/");
     }
 });
+
+/**
+ * CT-11 — leitura DIRETA e literal de arquivo não entregue exige a sentinela no PRÓPRIO caso.
+ *
+ * ## O que este caso acrescenta ao CT-10, e por que ele não é redundante
+ *
+ * O CT-10 cobra que a sentinela **exista no arquivo**, e o docblock dele declara que a
+ * granularidade fica com o autor — com argumento: nesta base a leitura é quase sempre **indireta**
+ * (o caminho vem de um dataset e o `file_get_contents()` está no corpo), e nenhuma regra estática
+ * distingue esse literal de um decorativo.
+ *
+ * O argumento está certo para o caso indireto. Ele deixa aberta a fatia em que a regra **é**
+ * decidível: quando o caminho aparece **literal, dentro da chamada de leitura, no corpo do caso**.
+ * Aí não há ambiguidade — aquele caso lê aquele arquivo.
+ *
+ * ## E foi exatamente por essa fatia que o defeito passou
+ *
+ * `tests/Kit/HostLocalTest.php` `[CT-12]` fazia `File::get(base_path('docs/pt/…'))` sem sentinela
+ * própria. O arquivo **tinha** `naArvoreDoKit()` — no `[CT-34]`, outro caso, 750 linhas abaixo —,
+ * então o CT-10 ficava **verde** e o caso quebrava em toda instalação nova. Encontrado pela
+ * validação de release da `v0.38.0`, não por gate nenhum.
+ *
+ * ## Por que não varrer tudo
+ *
+ * Porque a varredura ampla erra, e isso foi medido: três tentativas devolveram 8, 20 e 17
+ * desprotegidos contra **1** real. Este caso não tenta decidir o indecidível — ele cobre só o que
+ * o CT-10 declarou fora do próprio alcance, e deixa o resto onde estava.
+ *
+ * ## O oráculo é o CASO, não o arquivo
+ *
+ * Um caso pode ler `docs/` e ter a sentinela num vizinho; é isso que o CT-10 aceita e que este
+ * recusa, para a fatia direta. A mensagem nomeia o caso, porque "o arquivo X não tem sentinela"
+ * foi precisamente a informação que não bastou.
+ */
+it('[CT-11] leitura direta de arquivo nao entregue tem sentinela no proprio caso', function (): void {
+    /*
+     * Os prefixos que NÃO viajam, do `.gitattributes`. `wikis/specs` fica de fora de propósito:
+     * o `KitUpdateTest` cita caminhos de lá como string, sem ler, e o CT-10 já trata esse caso.
+     */
+    $naoEntregues = '(?:docs|site|site-vitepress|\.github)/';
+
+    $leituraDireta = "~(?:File::(?:get|exists|isDirectory)|file_get_contents)\(\s*(?:base_path\(\s*)?'{$naoEntregues}~";
+
+    $desprotegidos = [];
+
+    foreach (suitesDeDocumentacao() as $arquivo => $codigo) {
+        $blocos = preg_split('~\nit\(~', $codigo) ?: [];
+
+        /*
+         * O PREÂMBULO — tudo antes do primeiro `it(` — é onde mora o `beforeEach` do arquivo.
+         * Sentinela ali protege TODOS os casos, e é um dos três mecanismos que o kit usa
+         * (`tests/Kit/SiteDeDocumentacaoTest.php:naArvoreDoKit:30`).
+         *
+         * Esta verificação não estava na primeira versão deste caso, e ele acusou os 15 cenários
+         * daquele arquivo — repetindo exatamente o erro que a terceira varredura estática da
+         * investigação cometeu. Está escrito aqui porque a próxima pessoa vai esquecer de novo.
+         */
+        if (str_contains($blocos[0] ?? '', 'naArvoreDoKit')) {
+            continue;
+        }
+
+        // Um bloco por `it(` — o corpo do caso, não o arquivo.
+        foreach (array_slice($blocos, 1) as $corpo) {
+            if (preg_match($leituraDireta, $corpo) !== 1) {
+                continue;
+            }
+
+            if (str_contains($corpo, 'naArvoreDoKit')) {
+                continue;
+            }
+
+            preg_match("~^'([^']+)'~", $corpo, $nome);
+
+            $desprotegidos[] = $arquivo.' → '.($nome[1] ?? '?');
+        }
+    }
+
+    expect($desprotegidos)->toBe(
+        [],
+        'estes casos leem arquivo que NÃO viaja no composer create-project e não têm a sentinela '
+        .'`naArvoreDoKit()` no próprio corpo: eles ficam vermelhos em toda instalação nova. '
+        .'Sentinela num caso vizinho do mesmo arquivo satisfaz o [CT-10] e não protege este.',
+    );
+})->group('kit');
