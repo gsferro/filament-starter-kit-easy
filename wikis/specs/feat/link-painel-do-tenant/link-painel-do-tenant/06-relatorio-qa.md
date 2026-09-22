@@ -173,3 +173,58 @@ exceto `tests/Kit/ExpectativaVariadicaDoPestTest.php` (QA-09), que é código de
 - **Suíte completa (2.817 casos)** — não re-executada; rodei 180 casos dirigidos. Os números do `03` (`composer test:kit` 2657) são anteriores ao CT-23.
 - **`tests/Browser/TemaEscuroTest.php`** — não executado. A instabilidade documentada no `03` fica como está: destino 4, não defeito desta feature.
 - **CT-B** — não existem, e o gate do `01`/`04` que os dispensa foi lido e aceito: a feature afirma sobre HTML renderizado, não sobre JS, console, cor ou layout.
+
+## Fechamento — os achados documentais do ciclo 1 (2026-09-21)
+
+Fechados **onze** dos quatorze, todos os de **destino 1**. Um commit por achado. Nenhum número
+copiado deste relatório: os contadores foram **remedidos** com `vendor/bin/pest` e `grep`, e as
+citações **reconferidas** por extração mecânica.
+
+| Achado | Estado | O que fechou |
+|---|---|---|
+| **QA-01** | ✅ fechado (com 1 item aberto) | doze citações corrigidas no `03` e no `04`; as três do `00` viraram **Adendo 1**; a evidência da linha `specs.md` trocada. **Duas** estavam fora da lista deste relatório (ver abaixo). **Aberto**: `HasRoutes.php:193` no docblock de `Tenant::urlDoPainel()` — é `app/`, não wiki |
+| **QA-02** | ✅ fechado | os dois "ainda não escrito" do índice e a seção `Cenários especificados sem teste escrito`, que agora registra o gate `04 → teste` **fechado** nos dois sentidos |
+| **QA-03** | ✅ fechado | D-05.a reescrito com a forma **medida** (`/app/{uuid}`, segmento de caminho, ramo da linha 194 de `HasRoutes`), com o raciocínio antigo preservado por cima e datado |
+| **QA-04** | ✅ fechado | 37→**36** mutantes; 43/226→**44/229**; 22→**23** IDs; CT-23 no índice e na tabela `Suíte e arnês`; e as duas medições do mesmo experimento viraram uma, remedida: **26 dos 44** |
+| **QA-05** | ✅ fechado | o docblock de CT-19 passa a afirmar a tela do resource; a varredura de hub/widget/menu é de CT-21 |
+| **QA-06** | ✅ fechado | o cabeçalho do teste passa a dizer que o endereço **completo** nunca é escrito à mão e o **segmento** é, de propósito, com os oito casos e os quatro literais nomeados |
+| **QA-07** | ✅ fechado | `df00ddf` — destino 3 |
+| **QA-08** | ✅ fechado | `df00ddf` — destino 3 |
+| **QA-09** | ✅ fechado | o `ExpectativaVariadicaDoPestTest` entrou na lista de Testes do `03` e ganhou seção no `04` explicando por que **não** é CT desta feature; e os dois lugares que chamavam a rule de "candidata" passaram a registrar que ela está na árvore (`9c6c494`) |
+| **QA-10** | ✅ fechado | linha de `app.md` na tabela `Conformidade com Rules`, **n.a. no mérito** |
+| **QA-11** | ✅ fechado | `/code-review` marcado (a seção já existia no mesmo arquivo); `/ponytail:ponytail-review` **rodado**, com a tabela do step 6 preenchida — veredito `net: -0 linhas` |
+| **QA-12** | ✅ fechado | R8 passa a contar **sete** linhas de formato e a **oitava** de unicidade, nos dois lugares do `04` |
+| **QA-13** | ✅ fechado | `24b7f9c` — destino 2 |
+| **QA-14** | ✅ fechado | o `02` passa a nomear a fronteira real (`e($url)` de `generate_href_html()`) e a dizer que a feature **depende** dela; a conclusão "sem risco" fica, com o motivo certo |
+
+### Duas citações erradas que este relatório não listou
+
+A varredura de fechamento não usou a lista de treze: extraiu **todas** as citações dos seis `.md`
+da wiki e conferiu cada uma. Além das do relatório, apareceram duas no `04`, as duas invisíveis ao
+gate por serem caminho solto (`base_path('TenantForm.php')` não resolve):
+
+- `TenantForm.php:configure:35` → o literal `/app/{slug}` está em `:36`, e a âncora é a
+  `description`, não a `configure`. Virou `…/TenantForm.php:description:36`
+- `TenantForm.php:configure:44-48` → o `live(onBlur: true)`/`afterStateUpdated` do campo `nome`
+  está em `:45-46`. Virou `…/TenantForm.php:afterStateUpdated:46`
+
+É a confirmação medida do que a própria rule diz: **conferir por lista escolhida à mão não é
+conferência**. Foram 13 na lista, 14 na árvore.
+
+### O que fica aberto
+
+- **`HasRoutes.php:193`** no docblock de `Tenant::urlDoPainel()` (`app/Models/Tenant.php`). O ramo
+  de concatenação retorna na linha **194**; a 193 é branca. Não foi corrigida porque é código de
+  aplicação, fora do escopo desta passagem — e porque a citação é da forma **sem símbolo**, que o
+  `CitacoesDeCodigoTest` só confere quanto à existência da linha, e a 193 existe. É o único item
+  do QA-01 que sobra.
+- **Dimensão K, passo medido (`--mutate`)** e **confronto visual/console** seguem em
+  `## Não Verificado`: não são achados documentais e nada nesta passagem os altera.
+
+### Gates rodados no fechamento
+
+    vendor/bin/pest tests/Kit/CitacoesDeCodigoTest.php tests/Kit/SiteDeDocumentacaoTest.php
+    → 68 casos, 68 verdes, 242 asserções
+
+    vendor/bin/pest tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php tests/Kit/LinkDoPainelSemTenancyTest.php
+    → 44 casos, 44 verdes, 229 asserções

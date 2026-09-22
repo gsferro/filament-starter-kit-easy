@@ -53,8 +53,9 @@
       Veredito: **nada a cortar**. Ver `### Auditoria Ponytail (step 6)`
 - [x] `vendor/bin/pint --dirty --format agent` — `fixed`, sem pendência
 - [x] `vendor/bin/filacheck --fix` — **All 17 rules passed!**
-- [x] CTs da feature — **44 casos, 44 verdes, 230 asserções**, medido em 2026-09-21
-      (41/165 em `tests/Tenancy` + 3/65 em `tests/Kit`). Foram 39 na primeira passagem; os
+- [x] CTs da feature — **44 casos, 44 verdes, 229 asserções**, medido em 2026-09-21
+      (41/164 em `tests/Tenancy` + 3/65 em `tests/Kit`), já com o controle positivo de CT-02 e a
+      linha cortada de CT-05 (QA-07/QA-08). Foram 39 na primeira passagem; os
       **quatro** do **D-05** e o **CT-23** do step 7.5 entraram depois
 - [x] Testes existentes do tenant (`tests/Tenancy/**`) + gates de documentação e citação — 84
       verdes
@@ -104,6 +105,17 @@ RQ-01..RQ-05 e as quatro ADRs, e os três Major são texto contra a árvore — 
 teste` está aberto, com o D-05 já fechado) e **QA-03** (D-05.a ainda sustenta a string
 `?tenant={uuid}`, que é o achado 1 do step 7.5). Abertos também QA-04 a QA-14. **O PR não abre até
 o ciclo 2.**
+
+**Fechamento dos achados documentais (2026-09-21).** Os onze de **destino 1** estão fechados —
+QA-01, QA-02, QA-03, QA-04, QA-05, QA-06, QA-09, QA-10, QA-11, QA-12 e QA-14 —, um commit por
+achado, com os números **remedidos** e as citações **reconferidas por grep** em vez de copiadas do
+relatório. QA-07 e QA-08 (destino 3) fecharam em `df00ddf` e QA-13 (destino 2) em `24b7f9c`. O
+detalhe de cada um está em `06-relatorio-qa.md` → `## Fechamento`.
+
+**Fica aberto um item**, declarado e não escondido: a 13ª citação do QA-01 vive no **docblock de
+`Tenant::urlDoPainel()`** — `HasRoutes.php:193`, forma sem símbolo, e a linha do `return` é a
+**194** (a 193 é branca). Ela é `app/`, não wiki, e a correção é de código: fica para quem estiver
+com o `app/` na mão.
 
 ## Auditoria Pré-Implementação
 
@@ -404,9 +416,9 @@ de ausência de CT-21 já carregavam o mesmo defeito desde o início — `->not-
 exigia que a mensagem também estivesse ausente do HTML, o que é sempre verdade.
 
 Migradas para `assertStringNotContainsString`. Efeito medido nas duas suítes da feature:
-**174 → 230 asserções**, com um único cenário novo. A diferença são asserções que existiam no
-arquivo e não contavam. (O `227` escrito aqui antes era uma contagem parcial; medido em
-2026-09-21, o total das duas suítes é **230**.)
+**174 → 227 asserções** na época, com um único cenário novo. A diferença são asserções que
+existiam no arquivo e não contavam. (O total das duas suítes é hoje **229**, medido em 2026-09-21
+depois de CT-02 ganhar controle positivo e CT-05 perder a linha cortada em C-2.)
 
 **Rule gravada — o step 9 desta candidata está FECHADO.** `.ai/rules/testes.md` →
 *"`toContain()` do Pest não recebe mensagem — o 2º argumento é outra AGULHA"*, 29 linhas, commit

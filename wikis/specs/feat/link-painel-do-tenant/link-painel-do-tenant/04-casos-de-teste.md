@@ -1299,8 +1299,9 @@ a *mensagem* também estivesse ausente do HTML — o que é sempre verdade, e po
 
 As duas passaram para `assertStringContainsString` / `assertStringNotContainsString`, do PHPUnit,
 que recebem mensagem de fato. Efeito medido no arquivo: **174 → 227 asserções** nas duas suítes,
-sem cenário novo além de CT-23 — a diferença são asserções que antes eram engolidas. (Medido em
-2026-09-21, o total das duas suítes é **230**; o `227` era contagem parcial.)
+sem cenário novo além de CT-23 — a diferença são asserções que antes eram engolidas. (O total das
+duas suítes é hoje **229**, medido em 2026-09-21 depois de CT-02 ganhar controle positivo e CT-05
+perder a linha cortada em C-2; o `227` era contagem parcial.)
 
 **Rule gravada, e o step 9 desta candidata está fechado**: `.ai/rules/testes.md` →
 *"`toContain()` do Pest não recebe mensagem — o 2º argumento é outra AGULHA"* (commit `9c6c494`,
