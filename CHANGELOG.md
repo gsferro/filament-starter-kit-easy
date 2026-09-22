@@ -5,6 +5,24 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.38.2] - 2026-09-22
+
+### Corrigido
+
+- **A tela de configurações não recusava o autopreenchimento do navegador.** O campo
+  *"Cor primária livre"* oferecia um **e-mail salvo** do Google ao receber foco: o Chrome trata
+  qualquer `<input type="text">` sem `autocomplete` como candidato ao seu heurístico, e o rótulo
+  do campo não entra na conta.
+
+  **Os 17 campos da tela foram corrigidos, não só o reportado.** O campo do seletor de cor é o
+  sintoma cosmético; o pior efeito está nos vizinhos — `mail_password`, `mail_username`, a chave
+  secreta do anti-robô e os `client_secret` do login social. Neles o gerenciador do navegador
+  oferece a **credencial pessoal de quem administra**, dentro de um formulário que a grava como
+  configuração da instalação.
+
+  Nos quatro campos `->password()` o valor é `new-password`, e não `off`: `off` é respeitado pelo
+  heurístico de endereço e e-mail, e largamente **ignorado** pelos gerenciadores de senha.
+
 ## [0.38.1] - 2026-09-22
 
 ### Corrigido
