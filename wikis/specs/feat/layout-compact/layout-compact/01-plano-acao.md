@@ -77,7 +77,7 @@ E o custo, que é a outra metade de RQ-04:
 |---|---|---|---|
 | Tamanho do mecanismo | **1 declaração CSS** | 548 blocos de regra, 370 classes `fi-*` | 11 seletores, na tentativa medida |
 | Ganho na altura da tabela | **−16,8%** (`compacto`) · **−22,9%** (`denso`) | −22,5% | **+21,9%** — *piorou* |
-| Sobrevive a `composer update`? | sim — não cita nada do vendor | sim (é do vendor) | **não** — lista congelada de classes de terceiro |
+| Sobrevive a `composer update`? | sim, **com uma dependência declarada** *(alterado em 2026-09-22)* — o caminho do `--spacing` não cita nada do vendor; o da largura do menu depende de `sidebarWidth()` aceitar `Closure` e do default `'20rem'` (`HasSidebar.php:$sidebarWidth:11`), guardado por CT-18 | sim (é do vendor) | **não** — lista congelada de classes de terceiro |
 | Roda em runtime? | sim | **não** — build-time | sim |
 | Entra num starter kit? | sim | **não** — licença de projeto único | — |
 

@@ -164,8 +164,19 @@ densidade de conteúdo, e o ícone dentro dele **já** encolhe sozinho, porque s
 
 ### Consequências
 
-- **Positivas**: uma declaração; **imune a `composer update`**, porque não referencia nada do
-  vendor; vence sem `!important`
+- **Positivas**: uma declaração para tudo que deriva de `--spacing`; vence sem `!important`.
+  *(alterado em 2026-09-22)* Onde se lia *"**imune a `composer update`**, porque não referencia
+  nada do vendor"*: **o segundo caminho referencia.** O anúncio da correção estava na § Decisão
+  desde 2026-09-21 e a consequência tinha ficado intacta — é o texto que a própria ADR declarou
+  corrigido, palavra por palavra. O que vale hoje: o caminho do `--spacing` continua sem citar
+  nada do vendor, e o caminho da largura do menu **depende de dois pontos dele** —
+  `Panel::sidebarWidth()` aceitar `string | Closure`
+  (`vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:sidebarWidth:54`) e o default
+  `'20rem'` (`vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:$sidebarWidth:11`), que é
+  o valor que o nível confortável devolve para ser idêntico ao kit sem a feature. Um
+  `composer update` que mude esse default quebra o contrato da ADR — **em silêncio, não fosse
+  CT-18**, que lê o default por reflexão e é quem guarda isso (ver a Correção de 2026-09-22
+  acima)
 - **Negativas**: entrega **metade** do ganho do tema pago, e **distorce proporções** — ícones
   20→15px, checkbox 16→12px, e o input fica **menor** que o botão (27px × 32px). Medido, aceito
   pelo usuário com a mitigação da ADR-04
