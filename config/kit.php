@@ -20,7 +20,7 @@ return [
     | contra a árvore de trabalho, que é mais ruidosa.
     */
 
-    'version' => '0.37.1',
+    'version' => '0.38.0',
 
     /*
     |--------------------------------------------------------------------------

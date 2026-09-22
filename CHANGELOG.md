@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.38.0] - 2026-09-22
+
 ### Adicionado
 - **Layout compacto, em três níveis, na aba Kit das configurações.** *Densidade do layout* aperta
   de uma vez os cartões de estatística, as tabelas, o menu lateral e os botões dos três painéis.
