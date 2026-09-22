@@ -12,7 +12,7 @@ cenário `CT-15` (a lacuna `L3` do `04`), o quality gate (step 8) e o PR.
 |---|---|---|
 | 1 — Medir profundidade e peso (RQ-01…RQ-04) | ✅ | Seis ADRs em `02-decisoes-arquiteturais.md`, commit `c862361`. **Decisão: RQ-05** |
 | 2 — `App\Support\DensidadeDoLayout` | ✅ | `app/Support/DensidadeDoLayout.php` · commit `589110c` · CT-10, CT-12, CT-13 |
-| 3 — Os três lugares do Settings + o campo na tela | ✅ | `app/Settings/ConfiguracoesDoKit.php:densidade_do_layout:162`, a linha do mapa, a migration de settings e `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:densidade_do_layout:789` · commit `d82eccf` · CT-07, CT-08, CT-09, CT-14 |
+| 3 — Os três lugares do Settings + o campo na tela | ✅ | `app/Settings/ConfiguracoesDoKit.php:densidade_do_layout:162`, a linha do mapa, a migration de settings e `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:densidade_do_layout:810` · commit `d82eccf` · CT-07, CT-08, CT-09, CT-14 |
 | 4 — O render hook | ✅ | `app/Providers/KitServiceProvider.php:configureDensidadeDoLayout():611` · commit `3c6d5f6` · CT-01, CT-03, CT-05, CT-06 |
 | 5 — A suíte | ✅ | `tests/Kit/DensidadeDoLayoutTest.php` — 14 CTs, **25 casos**, 47 asserções · commit `c2189d7` |
 | 6 — Medir o resultado no kit, nos quatro níveis | ✅ | `## Medição`, abaixo |
@@ -141,7 +141,7 @@ declaração inútil em toda página de todo painel.
 ### N3 — A coerção precisa existir nos **dois** lados, e o motivo não é simetria
 
 `coagir()` é chamada em `config/kit.php:densidade_do_layout:287` **e** em
-`app/Support/DensidadeDoLayout.php:deConfig():164`, e as duas chamadas não são redundantes: as duas
+`app/Support/DensidadeDoLayout.php:deConfig():217`, e as duas chamadas não são redundantes: as duas
 entradas escapam uma da outra. O arquivo de config coage o que veio do `.env`; `deConfig()` coage o
 que veio do **banco**, que `aplicarNaConfig()`
 (`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig():504`) escreve **direto na config**, sem
@@ -307,7 +307,7 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
 
 - [x] `vendor/bin/pint --dirty --format agent` — `passed`, 2026-09-21
 - [x] `vendor/bin/filacheck --fix` — **17/17 regras passaram**, 2026-09-21
-- [x] `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` — **25 passaram, 47 asserções**, 2026-09-21
+- [x] `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` — **30 passaram, 66 asserções**, remedido em 2026-09-21 (antes: 25/47, antes de CT-16 e CT-17)
 - [x] **`composer test:kit`** (regressão completa — obrigatória por tocar infra compartilhada) — **2.717 passaram, 10.525 asserções, 0 falhas**, 2026-09-21, **remedido após o `/code-review`**
 
   O número anterior registrado aqui (2.715 / 10.508) era de **antes** do commit `bf6e799`, que é
@@ -319,12 +319,23 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
   foi 0**. Ler só o código de saída teria registrado como verde uma suíte que não rodou — o mesmo
   defeito do achado 3, cometido ao corrigi-lo. Rodado direto por
   `php artisan test --testsuite=Kit,Tenancy --parallel`, que é o que o script faz
-- [x] **Falsificabilidade por mutação** — apagar a linha do `mapaDeConfiguracao()` reprova **7 dos 14 CTs**, 2026-09-21
+- [x] **Falsificabilidade por mutação** — apagar a linha do `mapaDeConfiguracao()` reprova **10 dos 30 casos**, remedido em 2026-09-21 (antes: 7 de 25)
 - [x] **Custo medido** — **zero request e zero query a mais**: a leitura sai de `config()`, já em memória desde o `boot()`. Bate com o `## Modelo de Execução` do `01`, 2026-09-21
 - [x] **Medição no kit** — quatro níveis, oito telas por nível, `padrão` medido com a feature fora da árvore por `git stash`, 2026-09-21
 - [x] **Guardas do kit reconciliadas** — `CitacoesDeCodigoTest` (`arte_do_login` :135 → :136), `SiteDeDocumentacaoTest` (contadores) e `KitInfoTest` (54 → 55 propriedades), commit `022e027`, 2026-09-21
 - [x] **Docs pt/en e CHANGELOG** — seção nova nas duas línguas **com o preço declarado junto com o ganho**, commit `e98f436`, 2026-09-21
-- [x] **Citações `arquivo:símbolo:linha` reverificadas** — **21/21 ok** pelo grep da skill sobre os quatro arquivos da wiki. Duas citações do `02` estavam deslocadas pela própria feature (`aplicarNaConfig()` :478 → :504 e o ponto de chamada :346 → :355, empurrados pela propriedade nova) e foram corrigidas **na fonte**, com a nota inline que o step 7 exige, 2026-09-21
+- [x] **Citações `arquivo:símbolo:linha` reverificadas** — **36/36 ok**, por varredura própria em 2026-09-21.
+
+  A declaração anterior, de "21/21 ok", estava errada por dois motivos, e o quality gate pegou os
+  dois. O primeiro: o padrão usado não cobria o formato `arquivo:simbolo():linha` — **com
+  parênteses** —, que é justamente como as cinco citações a `tests/Pest.php` estão escritas. O
+  segundo: a evidência declarada apontava o `CitacoesDeCodigoTest`, que **exclui `wikis/specs/**`
+  por decisão registrada** e portanto nunca conferiu esta wiki.
+
+  Erradas de fato: **14**, não 8. Oito o gate achou; as outras **seis eu criei depois dele**, ao
+  acrescentar `larguraDaSidebar()` — o método empurrou `DensidadeDoLayout.php` em ~53 linhas e
+  invalidou toda citação abaixo dele. É a demonstração mais limpa do que esta dimensão mede:
+  citação por número de linha envelhece a cada commit que mexe no arquivo citado. Duas citações do `02` estavam deslocadas pela própria feature (`aplicarNaConfig()` :478 → :504 e o ponto de chamada :346 → :355, empurrados pela propriedade nova) e foram corrigidas **na fonte**, com a nota inline que o step 7 exige, 2026-09-21
 - [x] **`vendor/bin/pest tests/Kit/CitacoesDeCodigoTest.php --compact`** — verde. `wikis/specs/**` fica **fora** do escopo desse caso por decisão registrada (wiki é registro datado), então ele não confere esta wiki: quem confere é o grep da linha acima, 2026-09-21
 - [x] **Wiki completada** — `01`, `03` e `04` escritos contra o código existente, com as lacunas declaradas em vez de caladas, 2026-09-21
 - [x] **`wikis/roadmap.md` commitado e ligado ao `README.md`** — RQ-07 a RQ-10 fechadas, commit `bf6e799` (roadmap + *Futuras melhorias* nos dois READMEs + linha em `wikis/README.md`), 2026-09-21
@@ -420,8 +431,8 @@ pontos que ela acrescenta:
 
 | Ponto | Alcançável por | Fronteira aplicada | Evidência |
 |---|---|---|---|
-| `Select::make('densidade_do_layout')` | `$wire` da Page de settings, que já existe e já é protegida | vocabulário fechado no Select **e** `coagir()` no consumo — a validação do formulário não é a única guarda | `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:densidade_do_layout:789` · CT-14 |
-| O valor gravado, que vira **concatenação de string CSS** no render hook | quem escreve na tabela `settings` por fora, ou no `.env` | `coagir()` antes do uso, nas duas portas — `tryFrom() ?? padrao()` | `app/Support/DensidadeDoLayout.php:coagir():183` · CT-10, CT-11 |
+| `Select::make('densidade_do_layout')` | `$wire` da Page de settings, que já existe e já é protegida | vocabulário fechado no Select **e** `coagir()` no consumo — a validação do formulário não é a única guarda | `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:densidade_do_layout:810` · CT-14 |
+| O valor gravado, que vira **concatenação de string CSS** no render hook | quem escreve na tabela `settings` por fora, ou no `.env` | `coagir()` antes do uso, nas duas portas — `tryFrom() ?? padrao()` | `app/Support/DensidadeDoLayout.php:coagir():219` · CT-10, CT-11 |
 
 O segundo é o que importa: **é valor de configuração que vira texto emitido no HTML**. Sem a
 coerção, um `payload` adulterado seria concatenado cru dentro de `<style>`. A guarda existe e está

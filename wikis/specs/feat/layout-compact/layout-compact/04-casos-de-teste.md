@@ -31,7 +31,12 @@ digitação em configuração cosmética.
 - Técnicas aplicadas: **partição de equivalência**, **partição exaustiva do enum**, **rastreio de
   efeito com asserção de ausência**, **pairwise (painel × nível)**, **round-trip** (`up()`/`down()`
   da migration), **contrapositivo** (o par ligado/desligado), **oráculo do outro lado da cadeia**
-- Cenários: **14** (25 casos executados, com datasets) · Regras: **8** · Mutantes previstos: **30**
+- Cenários: **17** (30 casos executados, com datasets) · Regras: **8** · Mutantes previstos: **34**
+
+  Remedido em 2026-09-21. Os três cenários novos entraram **depois** dos gates: CT-15 pelo
+  `/code-review` (achado 1), CT-16 pelo `/code-review` (achado 2) e CT-17 pelo quality gate
+  (QA-01). Os números originais — 14 cenários, 25 casos, 30 mutantes — valiam para o commit
+  `c2189d7`.
   · Sem matador: **2**, mais **1** com matador parcial — os três declarados em
   `## Lacunas Declaradas`, junto com as outras duas lacunas de cobertura (`L2`, `L3`)
 
@@ -82,10 +87,10 @@ conteúdo o distingue, e foi exatamente esse modo de falha que a `v0.37.1` pagou
 | RQ-04 | — | **decisória**: o resultado dela é a existência das regras R1…R7. A medição que a fecha está no `01` → `### A decisão de RQ-04` e no `03` → `## Medição`. Sem CT — ver `L2` |
 | RQ-05 | R1, R2, R3, R4, R5, R6 | CT-01…CT-08, CT-12, CT-13, CT-14 — com a lacuna `L1` no **pixel** |
 | RQ-06 | — | ⛔ excluída por RQ-04. Não gera cenário: um CT para ela contradiria a entrega |
-| RQ-07 | — | **documental** — `wikis/roadmap.md`, item 1 (commit `bf6e799`). Sem CT — ver `L3` |
-| RQ-08 | — | **documental** — tabela de quatro linhas no item 1. Sem CT — ver `L3` |
-| RQ-09 | — | **documental** — hipótese de pacote externo, item 1. Sem CT — ver `L3` |
-| RQ-10 | — | **documental** — entregue nas duas metades (documento + link nos READMEs), mas **sem oráculo**: ver `L3`, que é a lacuna cara |
+| RQ-07 | CT-15 | **documental** — `wikis/roadmap.md`, item 1 (commit `bf6e799`). Coberto por **CT-15**, que afirma a presença do documento e os **dois** caminhos de entrega |
+| RQ-08 | CT-15 | **documental** — tabela de quatro linhas no item 1. Coberto por **CT-15**, que afirma a presença do documento e os **dois** caminhos de entrega |
+| RQ-09 | CT-15 | **documental** — hipótese de pacote externo, item 1. Coberto por **CT-15**, que afirma a presença do documento e os **dois** caminhos de entrega |
+| RQ-10 | CT-15 | **documental** — entregue nas duas metades (documento + link nos READMEs), **e com oráculo**: `L3` foi fechada em 2026-09-21 — ver o adendo dela |
 
 ---
 
@@ -109,7 +114,7 @@ premissa declarada (acesso à demo, Playwright npm no lugar do MCP).
 
 ### Personas
 
-- `usuarioDoKit('admin')` — o helper do projeto (`tests/Pest.php:usuarioDoKit():490`). Usado só em
+- `usuarioDoKit('admin')` — o helper do projeto (`tests/Pest.php:usuarioDoKit():491`). Usado só em
   CT-14, que é o único cenário que passa pela tela. Exige
   `seed([ShieldPermissionsSeeder::class, PapeisSeeder::class])` e `Filament::setCurrentPanel('admin')`
 
@@ -122,10 +127,10 @@ helpers abaixo.
 
 | Helper | O que faz | Por que importa aqui |
 |---|---|---|
-| `gravarConfiguracao()` (`tests/Pest.php:gravarConfiguracao():347`) | escreve o `payload` na tabela e esquece o singleton | é a porta de escrita **por fora da tela** |
-| `alinharConfiguracoesDoKit()` (`tests/Pest.php:alinharConfiguracoesDoKit():368`) | chama o alinhamento como o `boot()` chamaria | com `RefreshDatabase` o `boot()` real roda antes das migrations, então quem quer exercitar o alinhamento o chama |
-| `configuracaoGravada()` (`tests/Pest.php:configuracaoGravada():699`) | lê o `payload` **cru** | quem pergunta se o valor está cifrado não pode perguntar para quem decifra |
-| `kitConfigCom()` (`tests/Pest.php:kitConfigCom():581`) | `require` do `config/kit.php` com a env forçada | a config do processo já foi resolvida no boot; `putenv()` depois não a reavalia |
+| `gravarConfiguracao()` (`tests/Pest.php:gravarConfiguracao():348`) | escreve o `payload` na tabela e esquece o singleton | é a porta de escrita **por fora da tela** |
+| `alinharConfiguracoesDoKit()` (`tests/Pest.php:alinharConfiguracoesDoKit():369`) | chama o alinhamento como o `boot()` chamaria | com `RefreshDatabase` o `boot()` real roda antes das migrations, então quem quer exercitar o alinhamento o chama |
+| `configuracaoGravada()` (`tests/Pest.php:configuracaoGravada():700`) | lê o `payload` **cru** | quem pergunta se o valor está cifrado não pode perguntar para quem decifra |
+| `kitConfigCom()` (`tests/Pest.php:kitConfigCom():582`) | `require` do `config/kit.php` com a env forçada | a config do processo já foi resolvida no boot; `putenv()` depois não a reavalia |
 
 **Helper local do arquivo**: `gravarDensidade($nivel)` — `gravarConfiguracao()` + `alinharConfiguracoesDoKit()`,
 que é a dupla que reproduz um request de verdade.
@@ -543,7 +548,15 @@ documental — `tests/Kit/RedeDeDocumentacaoTest.php` e `tests/Kit/SiteDeDocumen
 afirmam sobre a rede de documentação, e a wiki `kit-install-host-local` usou um CT para a cláusula
 de documentação dela. Aqui não foi usado.
 
-### `L3` — A cláusula sem CT é a que ficou oito commits no limbo
+### ~~`L3`~~ — FECHADA em 2026-09-21 — a cláusula sem CT que ficou oito commits no limbo
+
+> **Fechada**, e não pela primeira tentativa. O `CT-15` foi escrito, o `/code-review` mostrou que
+> ele cobria **metade** do problema (só o caminho do `composer create-project`), e a segunda metade
+> — o `kit:update` — entrou depois. O texto original da lacuna fica abaixo porque a análise dele
+> continua certa, e foi ela que apontou o precedente de oráculo documental que o kit já tinha e
+> não estava usando.
+
+### `L3` (texto original) — A cláusula sem CT é a que ficou oito commits no limbo
 
 **A cláusula**: RQ-10, *"crie uma para TODOs ou com o nome normalmente utilizando no @README.md para
 informas futuras melhorias"* — duas metades: **o documento** e **a ligação com o README**.
@@ -561,19 +574,81 @@ especificadas* e *arquivos de teste* — nenhum deles conta documentos de topo d
 **O cenário que faltou**, e ele é barato:
 
 ```gherkin
-    Cenário: [CT-15, NÃO ESCRITO] O roadmap existe no repositório e o README o aponta
+    Cenário: [CT-15] O roadmap existe, está ligado, e viaja pelos DOIS caminhos de entrega
       Dado a árvore versionada do kit
       Então existe "wikis/roadmap.md"
       E o texto dele diz que descreve o futuro do KIT, não o do projeto de quem o instala
-      E o README.md contém um link para ele
+      E o README.md, o README.en.md e o índice wikis/README.md contêm um link para ele
+      E a contagem de "Documentos de referência (wikis/)" nos READMEs bate com a árvore
+      E `git check-attr export-ignore` não o marca — ele viaja no `composer create-project`
+      E ele está em `KitUpdate::CAMINHOS_DO_KIT` — ele viaja no `php artisan kit:update`
 ```
 
 A segunda asserção não é enfeite: a decisão registrada no `00` é que o roadmap **viaja** para todo
 projeto criado do kit (`wikis/*.md` fora do `export-ignore`), e sem essa frase o arquivo vira ruído
 confuso na raiz de um projeto de terceiro.
 
-**Roteamento**: destino **3 — teste**, e continua **aberto**. O artefato está entregue; o oráculo
-que impede a omissão de voltar, não. Registrado em `03-progresso.md` → `## Pendências` → P1.
+**As duas últimas asserções nasceram do `/code-review`, e são a lição deste cenário.** A primeira
+versão escrita afirmava só o `.gitattributes` — e passou verde enquanto o roadmap estava **ausente**
+de `KitUpdate::CAMINHOS_DO_KIT`, ou seja, enquanto o README prometia que ele "vem junto com o seu
+projeto" e o comando nunca o entregava a quem já tinha instalado. *"Viajar"* tem **dois** caminhos,
+que atendem populações diferentes, e cobrir um só é meia cobertura com cara de cobertura inteira.
+
+A asserção do `export-ignore` também foi reescrita: ela reimplementava o casamento de padrão do git
+com regex, e o falso negativo está demonstrado — `wikis/** export-ignore` e `*.md export-ignore`
+removem o roadmap e o regex não os reconhecia. Hoje ela pergunta ao `git check-attr`.
+
+**Roteamento**: destino **3 — teste**, **FECHADO em 2026-09-21**. Vive em
+`tests/Kit/SiteDeDocumentacaoTest.php` sob o ID local `[CT-48]` daquele arquivo, que já é o dono
+dos contadores de README. Verificado por mutação: `export-ignore` em três formas, link quebrado no
+README, índice sem a entrada e roadmap fora de `CAMINHOS_DO_KIT` — todos deixam o caso vermelho.
+
+---
+
+### Os dois cenários que os gates acrescentaram
+
+```gherkin
+    Cenário: [CT-16] Um nível ilegível gravado não impede salvar o resto da tela
+      Dado que a linha de settings guarda "compact", que não é nível do kit
+      Quando eu abro as configurações e mudo APENAS o nome da aplicação
+      Então o formulário não acusa erro
+      E o novo nome está gravado
+      E a densidade foi coagida para o padrão
+```
+
+**O oráculo é o campo ALHEIO, e isso é o cenário todo.** `Select` acrescenta sozinho um
+`Rule::in()` das próprias opções, e o efeito de um valor fora da lista **não fica contido no
+campo**: a tela inteira para de salvar. Afirmar só que a densidade grava deixaria passar uma
+correção que conserta o campo e mantém a tela travada — por isso o `Quando` mexe em
+`nome_da_aplicacao`, que nada tem a ver com densidade.
+
+CT-11 é a outra metade, pelo lado do **render**: ela já cobria valor ilegível na página servida.
+A metade da tela estava aberta, e o `/code-review` a encontrou. Mata **M33**.
+
+```gherkin
+    Cenário: [CT-17] A largura do menu acompanha o nível, nos três painéis
+      Dado o nível <nivel> gravado
+      Quando eu pergunto a largura do menu a cada painel do kit
+      Então "app", "admin" e "infra" respondem <largura>
+
+      Exemplos:
+        | nivel       | largura  |
+        | confortavel | 20rem    |
+        | compacto    | 17rem    |
+        | denso       | 16.5rem  |
+        | compact     | 20rem    |
+```
+
+**O oráculo é o PAINEL, não o HTML.** Os demais cenários leem o HTML servido, porque o `<style>` do
+render hook só existe ali. Aqui a leitura é `Filament::getPanel($x)->getSidebarWidth()`, que é o
+getter que o layout base chama — e lê-lo exercita a **avaliação do `Closure`**, que é a parte que
+pode quebrar. Um valor fixo passaria num `assertSee` de HTML e falharia aqui: é o defeito da ADR-06,
+grava e só vale no próximo deploy.
+
+**Os três painéis, e não um**, porque `sidebarWidth()` é por painel e foi escrito três vezes.
+Esquecer um é o defeito provável e seria invisível para qualquer caso que olhasse só o `/admin`.
+A última linha dos `Exemplos` é vocabulário ilegível, pelo mesmo motivo de CT-10/CT-11. Mata
+**M34**.
 
 ### `L4` — Duas fronteiras sem cenário
 
@@ -633,8 +708,9 @@ que impede a omissão de voltar, não. Registrado em `03-progresso.md` → `## P
 | CT-12 | Fixa o espaçamento medido de cada nível (3 exemplos) | R1, R6 | congelamento de valor | Feature | idem | M1, M2 |
 | CT-13 | Expõe exatamente os três níveis da escala | R6 | partição exaustiva do enum | Feature | idem | M20, M21 |
 | CT-14 | Grava pelo Select da tela e leva até o HTML | R4 | gravação por componente Livewire | Feature (Livewire + HTTP) | idem | M14, M15, M16 |
-| CT-15 | O roadmap existe, está ligado nos dois READMEs **e viaja pelos dois caminhos de entrega** | R8 | oráculo documental | — | **escrito** — vive em `tests/Kit/SiteDeDocumentacaoTest.php` sob o ID local `[CT-48]` daquele arquivo, que é o dono dos contadores de README | M31, M32 |
-| CT-16 | Um nível ilegível gravado **não trava a tela de configurações** | R3 | EP (vocabulário legível × ilegível) × oráculo no campo ALHEIO | 1 | **escrito** — `tests/Kit/DensidadeDoLayoutTest.php` | M33 |
+| CT-15 | O roadmap existe, está ligado nos dois READMEs **e viaja pelos dois caminhos de entrega** | — **documental** (RQ-07..RQ-10), fora das regras funcionais | oráculo documental | — | **escrito** — `tests/Kit/SiteDeDocumentacaoTest.php`, ID local `[CT-48]` daquele arquivo, que é o dono dos contadores de README | M31, M32 |
+| CT-16 | Um nível ilegível gravado **não trava a tela de configurações** | R8 | EP (vocabulário legível × ilegível) × oráculo no campo ALHEIO | Feature (Livewire) | **escrito** — `tests/Kit/DensidadeDoLayoutTest.php` | M33 |
+| CT-17 | A **largura** do menu acompanha o nível, nos três painéis | R1 | partição por nível × inventário dos três painéis | Feature (painel resolvido) | **escrito** — `tests/Kit/DensidadeDoLayoutTest.php` | M34 |
 
 **14 cenários, 25 casos executados.** Todos em `tests/Kit/DensidadeDoLayoutTest.php`, suíte `Kit`.
 
@@ -643,6 +719,7 @@ que impede a omissão de voltar, não. Registrado em `03-progresso.md` → `## P
 | Verificação | Resultado |
 |---|---|
 | Mutação **M31/M32** — `export-ignore` alcançando o roadmap; roadmap fora de `KitUpdate::CAMINHOS_DO_KIT` | **mortos**, verificados por mutação em 2026-09-21: os dois deixam `[CT-48]` vermelho, e a árvore restaurada volta ao verde |
+| Mutação **M34** — `sidebarWidth()` some de UM dos três painéis | **morto por CT-17**, verificado em 2026-09-21: removida a chamada do `InfraPanelProvider`, o caso fica vermelho. É o defeito provável, e seria invisível para qualquer caso que olhasse só o `/admin` |
 | Mutação **M33** — a coerção sai de `mutateFormDataBeforeFill()` | **morto por CT-16**, que nasceu VERMELHO contra a implementação original: salvar `nome_da_aplicacao` falhava com erro em `densidade_do_layout` |
 | Mutação **M12** — apagar a linha do `mapaDeConfiguracao()` | **7 dos 14 CTs reprovam**, medido em 2026-09-21 (commit `c2189d7`). Entre eles CT-03, CT-06, CT-07 e CT-14, que são os que afirmam sobre o valor do banco chegando ao outro lado da cadeia |
 | Mutantes previstos | 30 |

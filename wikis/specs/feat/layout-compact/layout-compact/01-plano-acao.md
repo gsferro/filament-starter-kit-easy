@@ -25,8 +25,7 @@
      chave que `configureOrdemDasCascadeLayers()` já usa
   3. O `<style>` novo aparece no HTML de **toda** tela dos três painéis
 
-  **A regressão é obrigatória** e está prestada em `## Verificação Final`: `composer test:kit`
-  completo, 2.715 casos.
+  **A regressão é obrigatória** e está prestada em `## Verificação Final`.
 
 ## Cobertura do Requisito
 
@@ -53,7 +52,8 @@
 >
 > Fechado pelo commit `bf6e799`, que versionou o roadmap e acrescentou a seção *Futuras melhorias*
 > aos dois READMEs mais a linha em `wikis/README.md`. **A lacuna de cobertura continua aberta**: o
-> cenário que teria pego a omissão no dia — `CT-15`, oráculo documental — está escrito em Gherkin no
+> cenário que teria pego a omissão no dia — `CT-15`, oráculo documental — **foi escrito** (como
+> `[CT-48]` de `tests/Kit/SiteDeDocumentacaoTest.php`) e está em Gherkin no
 > `04-casos-de-teste.md` (`L3`) e **não foi implementado**. Enquanto não for, a mesma omissão pode
 > voltar sem nada ficar vermelho.
 >
@@ -81,9 +81,12 @@ E o custo, que é a outra metade de RQ-04:
 | Roda em runtime? | sim | **não** — build-time | sim |
 | Entra num starter kit? | sim | **não** — licença de projeto único | — |
 
-**Diff da entrega**: 398 linhas acrescentadas e 1 removida em `app/`, `config/`, `database/` e
-`.env.example`, somando **seis arquivos**. Das 193 linhas de `app/Support/DensidadeDoLayout.php`,
-**59** são código — o resto é o docblock que carrega os números medidos. Nenhuma dependência nova,
+**Diff da entrega**: **515 linhas acrescentadas e 1 removida** em `app/`, `config/`, `database/` e
+`.env.example`, somando **11 arquivos** — remedido em 2026-09-21, depois de o quality gate
+acrescentar a largura do menu (três painéis) e o `/code-review` acrescentar o `KitUpdate` e a
+coerção na tela. A conta original, `bf6e799`, era 398 linhas em seis arquivos.
+Das 246 linhas de `app/Support/DensidadeDoLayout.php`, **~70** são código — o resto é o docblock
+que carrega os números medidos. Nenhuma dependência nova,
 nenhum pacote, nenhum passo de build.
 
 Foi essa conta que fechou RQ-04 para o lado de **RQ-05**. RQ-06 (documentar e esperar o Filament)
@@ -212,7 +215,7 @@ Nenhum. Não há trabalho assíncrono.
 |---|---|
 | Quantos requests a tela custa? | **zero a mais.** A feature não acrescenta request: ela acrescenta uma `Closure` ao `STYLES_BEFORE`, avaliada uma vez por render de layout |
 | O que é adiado, e por qual gatilho? | nada |
-| O que é memoizado **por request**? | nada — e é deliberado. `DensidadeDoLayout::deConfig()` (`app/Support/DensidadeDoLayout.php:deConfig():164`) lê `config()`, que já está em memória desde o `boot()`; memoizar um `match` sobre um array em memória seria cache de nada |
+| O que é memoizado **por request**? | nada — e é deliberado. `DensidadeDoLayout::deConfig()` (`app/Support/DensidadeDoLayout.php:deConfig():217`) lê `config()`, que já está em memória desde o `boot()`; memoizar um `match` sobre um array em memória seria cache de nada |
 | O que é cacheado **entre** requests? | nada. Cachear **quebraria** o critério (c) de RQ-04 — o toggle deixaria de valer no próximo F5 |
 | Custo do caminho principal | **zero query.** A leitura sai de `config()`; o banco já foi consultado uma vez no `boot()` por `aplicarNaConfig()`, que é infraestrutura pré-existente e não muda de custo por causa desta chave |
 
@@ -300,13 +303,13 @@ Criar um canal `layout-compact` seria uma quinta dona para uma pergunta que já 
 - `espacamento(): ?string` (`app/Support/DensidadeDoLayout.php:espacamento():148`) — `null`,
   `0.2rem`, `0.175rem`. O `null` é **contrato**, não conveniência: é ele que impede o `<style>`
   vazio no nível padrão
-- `deConfig(): self` (`app/Support/DensidadeDoLayout.php:deConfig():164`) — lê
+- `deConfig(): self` (`app/Support/DensidadeDoLayout.php:deConfig():217`) — lê
   `config('kit.densidade_do_layout')`, **por request**
-- `coagir(mixed): self` (`app/Support/DensidadeDoLayout.php:coagir():183`) — a **única** cópia da
+- `coagir(mixed): self` (`app/Support/DensidadeDoLayout.php:coagir():219`) — a **única** cópia da
   coerção, `tryFrom() ?? padrao()`. Chamada nos dois lados porque as duas entradas escapam uma da
   outra: o `config/kit.php` coage o que veio do `.env`, e `deConfig()` coage o que veio do **banco**,
   que `aplicarNaConfig()` escreve direto na config sem passar pelo arquivo
-- `padrao(): self` (`app/Support/DensidadeDoLayout.php:padrao():189`) — a única cópia do valor de
+- `padrao(): self` (`app/Support/DensidadeDoLayout.php:padrao():238`) — a única cópia do valor de
   fábrica; o config e a migration leem daqui
 - **Também**: `config/kit.php:densidade_do_layout:287` e o bloco de `.env.example`
 
@@ -328,7 +331,7 @@ Criar um canal `layout-compact` seria uma quinta dona para uma pergunta que já 
    `DensidadeDoLayout::coagir(config('kit.densidade_do_layout'))->value`, e não com `config()`
    direto, porque um `.env` com `compact` semearia a tabela com um valor que nenhum nível conhece
 4. **O campo**: `Select::make('densidade_do_layout')`
-   (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:densidade_do_layout:789`), com
+   (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:densidade_do_layout:810`), com
    `->options(DensidadeDoLayout::opcoes())`, `->selectablePlaceholder(false)` e `->required()`.
    Select e não Toggle é a ADR-04
 
@@ -356,7 +359,7 @@ atualizar o kit não deve mudá-la sozinho.
 
 > Commit `c2189d7` · Skills: `pest-testing`, `feature-test-design`
 
-- **Path**: `tests/Kit/DensidadeDoLayoutTest.php` — **14 CTs, 25 casos** com datasets
+- **Path**: `tests/Kit/DensidadeDoLayoutTest.php` — **16 CTs, 30 casos** com datasets
 - Especificação completa em `04-casos-de-teste.md`
 - Âncora de `tests/Kit/KitInfoTest.php` de 54 para 55 propriedades, com o motivo escrito no
   comentário — ela é manual de propósito, para ficar vermelha e obrigar a decisão
@@ -407,6 +410,54 @@ As quatro superfícies do escopo respondem. As três leituras que **não** apert
   melhorias* em `README.md` e `README.en.md` e a linha em `wikis/README.md`. Commit `bf6e799`,
   acrescentado depois dos oito primeiros — ver o aviso em `## Cobertura do Requisito`
 
+### 8. A coerção na entrada do formulário (RQ-05) — acrescentado pelo `/code-review`
+
+> Commit `d19e1e3` · Achado 2 do step 7.5
+
+`Select` acrescenta sozinho um `Rule::in()` das próprias opções, então um nível ilegível gravado
+na linha de settings travava **a tela inteira** — quem tentasse mudar o nome da aplicação levava
+erro num campo que não tocou.
+
+`DensidadeDoLayout::coagir()` entra em `mutateFormDataBeforeFill()`, e **não**
+`comValorConfigurado()`: aquele helper existe para valor *legítimo porém fora da lista curta*
+(`MAIL_MAILER=ses`), e rebaixá-lo seria perda de dado. Nível de densidade tem vocabulário
+**fechado** — `compact` é lixo, e oferecê-lo como opção marcada exibiria lixo e o gravaria de volta.
+
+Coberto por **CT-16**, que nasceu vermelho contra a implementação anterior.
+
+### 9. O roadmap na lista de entrega do `kit:update` (RQ-10) — acrescentado pelo `/code-review`
+
+> Commit `8c3ef0b` · Achado 1 do step 7.5
+
+`wikis/roadmap.md` entrou no repositório e não em `KitUpdate::CAMINHOS_DO_KIT`. "Viajar com o
+projeto" tem **dois** caminhos, e só um estava coberto:
+
+| Caminho | Governado por | Atende |
+|---|---|---|
+| `composer create-project` | `.gitattributes` | quem instala **agora** |
+| `php artisan kit:update` | `CAMINHOS_DO_KIT` | quem **já** instalou |
+
+Coberto por **CT-15** (`[CT-48]` de `tests/Kit/SiteDeDocumentacaoTest.php`), nos dois caminhos.
+
+### 10. A largura do menu na escala (RQ-05) — acrescentado pelo quality gate
+
+> Commit `ec665a5` · QA-01 do step 8, decidido pelo usuário
+
+O menu entregava **metade** do compacto: a altura dos itens encolhia e a largura não. O `00` afirma
+que nenhuma superfície fica parcialmente compacta, e o menu é uma das quatro do escopo.
+
+A largura vem de `--sidebar-width`, emitido **inline** pelo Filament — fora do alcance de qualquer
+cascade layer. Ela entra por `Panel::sidebarWidth()` com `Closure`, nos três painéis, e o getter
+faz `evaluate()` no render: mesma propriedade do render hook, sem a armadilha do `viteTheme()` da
+ADR-06. **Esse fato não estava na ADR-03.**
+
+Os valores são o **mínimo medido** por varredura no navegador, com o `--spacing` de cada nível
+ativo. A primeira escolha (`16rem` para o denso) foi **reprovada pela medição** — truncava o rótulo
+mais longo do kit por 5 px.
+
+Coberto por **CT-17**, que afirma sobre os três painéis porque `sidebarWidth()` é por painel e foi
+escrito três vezes.
+
 ## Filosofia de Implementação
 
 > **Ponytail** ativo. A escada foi aplicada e o resultado é literal: o mecanismo inteiro é **uma
@@ -417,23 +468,28 @@ As quatro superfícies do escopo respondem. As três leituras que **não** apert
 
 ## Testes
 
-> Ver `04-casos-de-teste.md`. **14 CTs, 25 casos** em `tests/Kit/DensidadeDoLayoutTest.php`.
+> Ver `04-casos-de-teste.md`. **16 CTs, 30 casos** em `tests/Kit/DensidadeDoLayoutTest.php`.
 > **Sem `05`** — nenhum cenário afirma sobre algo que só o navegador prova.
 
 ## Verificação Final
 
 - [x] `vendor/bin/pint --dirty --format agent` — `passed`, 2026-09-21
 - [x] `vendor/bin/filacheck --fix` — **17/17 regras**, 2026-09-21
-- [x] `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` — **25/25, 47 asserções**, 2026-09-21
-- [x] `composer test:kit` (regressão completa, obrigatória por tocar infra compartilhada) — **2.715/2.715, 10.508 asserções, 0 falhas**, 2026-09-21
-- [x] **Falsificabilidade** — apagar a linha do `mapaDeConfiguracao()` reprova **7 dos 14 CTs**, 2026-09-21
+- [x] `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` — **30/30, 66 asserções**, 2026-09-21
+- [x] **Regressão completa** (obrigatória por tocar infra compartilhada) — ver o número corrente em `03-progresso.md` → `## Verificação Final`. **Rodada por `php artisan test --testsuite=Kit,Tenancy --parallel`, e não por `composer test:kit`**: num shell sem o `composer` no PATH o script imprime `command not found` e **sai com código 0**, o que se lê como suíte verde. Registrado no `03`
+- [x] **Falsificabilidade** — apagar a linha do `mapaDeConfiguracao()` reprova **10 dos 30 casos**, remedido em 2026-09-21 (antes: 7 de 25, com 14 CTs)
 - [x] **Custo medido** — zero request e zero query a mais, contra o `## Modelo de Execução`, 2026-09-21
 - [x] **Medição no kit** — quatro níveis, oito telas, `padrão` medido com a feature fora da árvore, 2026-09-21
 - [x] **`/code-review` no diff (step 7.5)** — executado durante a implementação; o achado do
   `->options(DensidadeDoLayout::class)` foi pego antes, pela própria suíte, 2026-09-21
 - [x] `wikis/roadmap.md` commitado e ligado ao `README.md` — RQ-07 a RQ-10, commit `bf6e799`, 2026-09-21
-- [ ] ⚠️ **CT-15** (oráculo documental do roadmap) escrito — **pendente**, ver `04-casos-de-teste.md` → `L3`
-- [ ] `feature-quality-gate` (step 8)
+- [x] **CT-15** (oráculo documental do roadmap) **escrito** — vive em `tests/Kit/SiteDeDocumentacaoTest.php` sob o ID local `[CT-48]`, o arquivo que já é dono dos contadores de README
+- [x] **CT-16** — a tela de configurações não trava com nível ilegível gravado
+- [x] **CT-17** — a largura do menu acompanha o nível nos três painéis (QA-01 do quality gate)
+- [x] **Citações `arquivo:símbolo:linha` reverificadas** — **36/36**, por varredura própria. O
+  `CitacoesDeCodigoTest` **exclui `wikis/specs/**` por decisão registrada**, então ele nunca
+  conferiu esta wiki; a declaração anterior de "21/21 ok" apontava um gate que não cobre este glob
+- [x] `feature-quality-gate` (step 8) — **ciclo 1 REPROVADO → especificação**, ver `06-relatorio-qa.md`; achados fechados em 2026-09-21
 - [ ] PR
 
 ## Commits
