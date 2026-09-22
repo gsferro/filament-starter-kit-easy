@@ -172,7 +172,26 @@ it('[CT-02] o caminho do painel nao e escrito a mao no gerador', function (): vo
 
     $fonte = semComentarios($cru);
 
-    $this->assertNotSame('', trim($fonte), '`semComentarios()` devolveu vazio — a asserção abaixo seria vácua');
+    /*
+     * O controle sobre a fonte TRANSFORMADA — e a primeira versão dele não bastava (QA-17).
+     *
+     * A versão anterior afirmava sobre o texto cru e sobre `$fonte` não ser vazia. Medido: isso
+     * **não** basta. Trocando o quantificador de `semComentarios()` de **preguiçoso para
+     * ganancioso** — tirando o `?` do `.*?` que casa o bloco de comentário —, o regex passa a
+     * comer do PRIMEIRO abre-comentário ao ÚLTIMO fecha-comentário e devolve 712 bytes de 1852.
+     * Não-vazios, e **sem `function urlDoPainel`**. Os dois controles antigos passavam e o caso
+     * ficava VERDE, com M01 outra vez sem matador.
+     *
+     * "Não-vazio" é o oráculo errado porque a pergunta não é *"sobrou texto?"* e sim *"sobrou o
+     * CÓDIGO que eu vim varrer?"*. Esta asserção pergunta a certa: o método cujo corpo a asserção
+     * de ausência inspeciona **tem de continuar lá** depois do filtro.
+     */
+    $this->assertStringContainsString(
+        'function urlDoPainel',
+        $fonte,
+        '`semComentarios()` comeu o código junto com os comentários: a asserção de ausência abaixo '
+        .'estaria varrendo uma fonte sem o método que ela existe para inspecionar',
+    );
 
     expect($fonte)->not->toContain('/app');
 });
@@ -907,3 +926,61 @@ it('[CT-18] o link segue o slug gravado, sem normalizar', function (string $slug
     'caixa preservada (o Str::slug destruiria)' => 'ACME-Brasil',
     'acento gravado, endereço encodado'         => 'organização',
 ]);
+
+/**
+ * CT-24 — as três superfícies AVISAM que o link troca de aba.
+ *
+ * ## Por que o caso existe, e por que ele não nasceu com a feature
+ *
+ * A ADR-04 decidiu abrir em nova aba, e os CTs que nasceram dela afirmam sobre o `target="_blank"`
+ * — o **comportamento**. Nenhum afirmava sobre o **aviso**, e por isso a ficha passou a entrega
+ * inteira sem sinalizar nada: `openUrlInNewTab()` sem ícone nem `helperText` renderiza um link
+ * igual a qualquer outro, e a aba nova vira surpresa.
+ *
+ * O quality gate pegou a falta do aviso (QA-13); o ciclo seguinte pegou que a correção tinha
+ * entrado **sem caso** (QA-19) — apagar o `->icon()` da ficha deixava os 44 casos verdes.
+ *
+ * ## O oráculo é o SINAL, não o destino
+ *
+ * Trocar de aba sem avisar é defeito de usabilidade mesmo com o `href` perfeito, então afirmar
+ * `target="_blank"` aqui seria medir outra coisa — e é justamente o que os outros casos já fazem.
+ * Cada superfície sinaliza do jeito que cabe nela, e é isso que o caso afirma:
+ *
+ * | Superfície | Como avisa | Por quê |
+ * |---|---|---|
+ * | formulário | `helperText` | tem espaço para prosa, e precisa explicar 403 × 404 |
+ * | listagem | ícone | coluna de tabela não comporta uma linha de texto por célula |
+ * | ficha | ícone | grade de fichas curtas; prosa por entrada desequilibraria a coluna |
+ *
+ * A listagem e a ficha usam o **mesmo** ícone de propósito: são as duas telas de leitura, e
+ * vocabulário visual diferente entre elas para a mesma ação seria ruído.
+ */
+it('[CT-24] as tres superficies avisam que o link troca de aba', function (): void {
+    $organizacao = Tenant::factory()->create(['nome' => 'Acme', 'slug' => 'acme']);
+
+    noAdminComo(usuarioComPapel('master_global'));
+
+    // Ficha: o aviso é o ícone de "abre fora daqui".
+    Livewire::test(ViewTenant::class, ['record' => $organizacao->getRouteKey()])
+        ->assertSchemaComponentExists(
+            'url_do_painel',
+            'infolist',
+            fn (TextEntry $entrada): bool => $entrada->getIcon($organizacao->urlDoPainel()) !== null,
+        );
+
+    /*
+     * Formulário: o aviso é PROSA, e por isso o oráculo aqui é o texto renderizado, não a
+     * definição. `helperText()` é açúcar sobre `belowContent()`
+     * (`vendor/filament/forms/src/Components/Concerns/HasHelperText.php:12`), então não há getter
+     * para ler de volta — e mesmo que houvesse, o que importa ao usuário é a frase aparecer na
+     * tela. A string é do kit, não do vendor, então afirmar sobre ela não é frágil.
+     */
+    Livewire::test(EditTenant::class, ['record' => $organizacao->getRouteKey()])
+        ->assertSee('Abre em nova aba');
+
+    // Listagem: o mesmo ícone da ficha, lido da definição da coluna já resolvida pela página.
+    $coluna = Livewire::test(ListTenants::class)->instance()->getTable()->getColumn('url_do_painel');
+
+    expect($coluna?->getIcon($organizacao->urlDoPainel()))
+        ->not->toBeNull('a coluna da listagem não sinaliza a nova aba');
+})->group('tenancy');
