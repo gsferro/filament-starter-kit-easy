@@ -31,7 +31,7 @@ P×I ≤ 6. Justificativa do I=3:
 - Técnicas aplicadas: EP, BVA 3-valores (comprimento do slug), **partição de unicidade**, tabela
   estado × operação, matriz persona × portão, rastreio de efeito (log, pivot), contagem de queries,
   varredura de código-fonte (ausência do literal do caminho), inventário de telas.
-- Cenários: **23** · Regras: **9** · Mutantes previstos: **37** · Sem matador: **0** ·
+- Cenários: **23** · Regras: **9** · Mutantes previstos: **36** · Sem matador: **0** ·
   Lacunas declaradas: **3** (uma delas reduzida a **meia** célula — ver `## Lacunas Declaradas`)
 
 > **Este arquivo foi reconciliado DEPOIS da implementação, e a ordem invertida é deliberada.** A
@@ -1118,8 +1118,10 @@ que é o que a feature possui — o custo da tela é da lacuna 3).
 | CT-22 | seguir o link de organização inativa, sem vínculo, é recusado nas duas leituras | R5 | invariante das duas leituras | Feature (`GET`) | `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` | **M33** |
 | CT-23 | sem tenancy o gerador devolve `null`, e não o `/app/{uuid}` morto | R9 | EP (config), chamada direta do gerador | Feature (PHP puro) | `tests/Kit/LinkDoPainelSemTenancyTest.php` | **M36** |
 
-**37 mutantes previstos, 37 com matador, 0 sem.** (M36 entrou pelo `/code-review` — ver o
-adendo no fim deste arquivo.)
+**36 mutantes previstos, 36 com matador, 0 sem** — `M01`..`M36`, nenhum ID pulado, conferido por
+`grep -o "M[0-9][0-9]" 04-casos-de-teste.md | sort -u | wc -l`. (M36 entrou pelo `/code-review` —
+ver o adendo no fim deste arquivo. O `37` escrito aqui antes vinha de um erro anterior ao M36: o
+incremento 36→37 preservou a diferença em vez de corrigi-la.)
 
 ### Cenários especificados sem teste escrito — **nenhum** (fechado em 2026-09-21)
 
@@ -1279,6 +1281,7 @@ a *mensagem* também estivesse ausente do HTML — o que é sempre verdade, e po
 
 As duas passaram para `assertStringContainsString` / `assertStringNotContainsString`, do PHPUnit,
 que recebem mensagem de fato. Efeito medido no arquivo: **174 → 227 asserções** nas duas suítes,
-sem cenário novo além de CT-23 — a diferença são asserções que antes eram engolidas.
+sem cenário novo além de CT-23 — a diferença são asserções que antes eram engolidas. (Medido em
+2026-09-21, o total das duas suítes é **230**; o `227` era contagem parcial.)
 
 **Candidato a rule**, roteado ao step 9.

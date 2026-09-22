@@ -43,8 +43,9 @@
 - [ ] `/ponytail:ponytail-review` no diff
 - [x] `vendor/bin/pint --dirty --format agent` — `fixed`, sem pendência
 - [x] `vendor/bin/filacheck --fix` — **All 17 rules passed!**
-- [x] CTs da feature — **43 casos, 43 verdes, 226 asserções** (39 na primeira passagem; os
-      **quatro** que faltavam entraram depois, ver **D-05**)
+- [x] CTs da feature — **44 casos, 44 verdes, 230 asserções**, medido em 2026-09-21
+      (41/165 em `tests/Tenancy` + 3/65 em `tests/Kit`). Foram 39 na primeira passagem; os
+      **quatro** do **D-05** e o **CT-23** do step 7.5 entraram depois
 - [x] Testes existentes do tenant (`tests/Tenancy/**`) + gates de documentação e citação — 84
       verdes
 - [x] `composer test:kit` — **2657 casos, 2657 verdes, 10 390 asserções**
@@ -52,20 +53,21 @@
 - [x] Citações `arquivo:símbolo:linha` reverificadas por `tests/Kit/CitacoesDeCodigoTest.php`
       (CT-26) — inclui a **citação de terceiro** do achado R2 e mais **duas** que o próprio diff
       deslocou, listadas nos desvios
-- [x] Falsificabilidade — com o `app/` revertido ao merge-base, **25 dos 43** casos ficam
-      vermelhos (13 falhas de asserção + 12 erros por método inexistente). Dos **quatro** casos
-      novos, **2 reprovam** (CT-22 e a linha `admin_vinculado` de CT-08, as duas por
-      `Tenant::urlDoPainel()` não existir) e **2 passam dos dois lados** — CT-21 e a linha
-      `globex` de CT-16 —, o que está **previsto** e não é defeito: ver **D-05**
-- [x] IDs `[CT-nn]` do teste ⊆ `04` — **fecha**: os **22** IDs do teste (CT-01..CT-18, CT-20 e
-      CT-22 em `tests/Tenancy`, CT-19 e CT-21 em `tests/Kit`) existem todos no `04`
+- [x] Falsificabilidade — com o `app/` revertido ao merge-base
+      (`git checkout fbfe528 -- app/`), **26 dos 44** casos ficam vermelhos (13 falhas de asserção
+      + 13 erros por método inexistente), remedido em 2026-09-21. Dos **cinco** casos que entraram
+      depois da primeira passagem, **3 reprovam** (CT-22, CT-23 e a linha `admin_vinculado` de
+      CT-08, os três por `Tenant::urlDoPainel()` não existir) e **2 passam dos dois lados** —
+      CT-21 e a linha `globex` de CT-16 —, o que está **previsto** e não é defeito: ver **D-05**
+- [x] IDs `[CT-nn]` do teste ⊆ `04` — **fecha**: os **23** IDs do teste (CT-01..CT-18, CT-20 e
+      CT-22 em `tests/Tenancy`, CT-19, CT-21 e CT-23 em `tests/Kit`) existem todos no `04`
 - [x] IDs do `04` ⊆ teste — **fecha**: os quatro cenários que a revisão adversarial acrescentou
       (**CT-21**, **CT-22** e as duas linhas de `Examples` — CT-08 vinculado, CT-16 `globex`)
       agora têm caso escrito e versionado. Ver **D-05**. Gate bidirecional, saída **vazia**:
       `diff <(grep -oh 'CT-[0-9]\+' 04-casos-de-teste.md | sort -u) <(grep -oh 'CT-[0-9]\+' tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php tests/Kit/LinkDoPainelSemTenancyTest.php | sort -u)`
 - [x] Os 13 achados da revisão adversarial aplicados no `04` — ver `04-casos-de-teste.md` →
       `## Revisão Adversarial`. Contagens do cabeçalho derivadas por `grep`, não digitadas:
-      **22** cenários, **9** regras, **36** mutantes, **3** lacunas
+      **23** cenários (com o CT-23 do step 7.5), **9** regras, **36** mutantes, **3** lacunas
 - [ ] `/code-review` no diff (step 7.5)
 
 ## Conformidade com Rules
@@ -328,15 +330,23 @@ depois. Resolução do endereço: **0** consultas, para uma e para cinco (CT-14)
 
 ### Falsificabilidade
 
-`git stash push -- app/` e a suíte da feature: **22 dos 39 casos ficam vermelhos** — 12 falhas de
-asserção (CT-03, CT-04 ×3, CT-05 ×3, CT-07 ×3, CT-15, CT-20) e 10 erros por
-`Call to undefined method urlDoPainel()` (CT-01, CT-08 ×4, CT-09, CT-10, CT-14, CT-18 ×2).
+**Remedido em 2026-09-21**, sobre os 44 casos de hoje. `git checkout fbfe528 -- app/` e as duas
+suítes da feature: **26 dos 44 casos ficam vermelhos** — 13 falhas de asserção (CT-03, CT-04 ×3,
+CT-05 ×3, CT-06, CT-07 ×3, CT-15, CT-20) e 13 erros por
+`Call to undefined method urlDoPainel()` (CT-01, CT-08 ×5, CT-09, CT-10, CT-14, CT-18 ×2, CT-22,
+CT-23).
 
-Os 17 que continuam verdes são **por desenho**, e vale dizer quais: CT-02 (varredura de fonte — mata
-M01, não prova presença), CT-06 (ausência no cadastro), CT-11 (não-efeito na pivot), CT-12 e CT-13
-(a gravação, que tem de continuar funcionando), CT-16 e CT-17 (validação pré-existente de que a
-feature **depende** sem ser dona) e CT-19 (a tela fechada sem tenancy). Nenhum deles afirma presença
-do link.
+A medição anterior (**22 de 39**) é de antes de CT-21, CT-22, CT-23 e das duas linhas de
+`Examples`, e **CT-06 trocou de lado**: ele reprova hoje, e não por asserção de conteúdo —
+`assertSchemaComponentHidden('url_do_painel')` exige que o componente **exista** para poder
+escondê-lo, e no merge-base ele não existe. O caso continua sendo de ausência; o que ele não é, é
+insensível ao diff.
+
+Os 18 que continuam verdes são **por desenho**, e vale dizer quais: CT-02 (varredura de fonte — mata
+M01, não prova presença), CT-11 (não-efeito na pivot), CT-12 e CT-13 ×2 (a gravação, que tem de
+continuar funcionando), CT-16 ×8 e CT-17 ×3 (validação pré-existente de que a feature **depende**
+sem ser dona), CT-19 e CT-21 (a superfície fechada sem tenancy). Nenhum deles afirma presença do
+link.
 
 ## Step 7.5 — `/code-review` no diff (2026-09-21)
 
@@ -364,8 +374,9 @@ de ausência de CT-21 já carregavam o mesmo defeito desde o início — `->not-
 exigia que a mensagem também estivesse ausente do HTML, o que é sempre verdade.
 
 Migradas para `assertStringNotContainsString`. Efeito medido nas duas suítes da feature:
-**174 → 227 asserções**, com um único cenário novo. A diferença são asserções que existiam no
-arquivo e não contavam.
+**174 → 230 asserções**, com um único cenário novo. A diferença são asserções que existiam no
+arquivo e não contavam. (O `227` escrito aqui antes era uma contagem parcial; medido em
+2026-09-21, o total das duas suítes é **230**.)
 
 **Candidato a rule** (step 9): `toContain()`/`not->toContain()` do Pest não recebem mensagem.
 
