@@ -241,3 +241,61 @@ contagem tem teto, e todo aumento exige justificativa escrita.**
 - **Ajuste do ciclo 2**: a justificativa do aumento é **por causa**, não por unidade. Exigir um
   parágrafo por pulado tornaria o gate impossível de cumprir na primeira release que acrescenta
   um arquivo de teste — e gate impossível vira gate ignorado
+
+---
+
+## ADR-05: RQ-06 fica **sem gate automatizado**, e isso é decisão, não esquecimento
+
+**Status**: Aceita · **Data**: 2026-09-22 · **Atende**: RQ-06 · **Origem**: QA-14, quality gate ciclo 2
+
+### Contexto
+
+RQ-06 é uma **restrição**: *"sempre que lançar uma nova tag, fazer esses 4 testes"*. Hoje o
+cumprimento dela depende inteiramente de prosa — o `## A regra` do checklist e a seção do
+`.github/CONTRIBUTING.md`. O `04` já registra `M37` (*"a versão de correção sai **sem** que os
+quatro cenários tenham rodado contra ela"*) como **sem matador**.
+
+O gate apontou, com razão, que **a opção óbvia nunca foi pesada**: o
+`.github/workflows/release.yml` já roda em `push: tags: ['v*']` e já reprova duas invariantes de
+release — marcador × tag e a seção do `CHANGELOG`. Exigir ali o registro dos quatro cenários é o
+**mesmo mecanismo**, não a automação de `composer create-project` que o `00` põe fora de escopo.
+
+### Decisão
+
+**Sem gate automatizado.** RQ-06 continua sendo cumprida por processo, e `M37` fica **declarado
+sem matador**, apontando para esta ADR.
+
+### Por quê
+
+O gate possível verificaria que a **seção de release contém um texto**. Ele não tem como saber se
+os quatro cenários rodaram — só se alguém **escreveu que rodaram**.
+
+Isso é pior do que parece, e a razão é o próprio assunto desta wiki: **um gate que aprova a
+alegação em vez do fato produz exatamente a falsa segurança que esta correção existe para
+desmontar.** Com ele no lugar, o CI ficaria verde na tag e a pergunta *"os quatro rodaram?"*
+passaria a ter uma resposta automática e sem valor. Sem ele, a pergunta continua aberta e alguém
+tem de respondê-la.
+
+O paralelo interno é direto: o `[CT-10]` cobrava a sentinela **no arquivo** e por isso passou verde
+com o defeito dentro. Um gate de tag que cobra **a frase** tem a mesma forma — mede o rastro, não
+o fato.
+
+### Alternativas Consideradas
+
+1. **Passo no `release.yml` exigindo o registro** — recusada pelo argumento acima. Custo baixo
+   (~10 linhas), mas mede a alegação. **Foi levada ao usuário e recusada explicitamente**, em
+   2026-09-22, com a opção à vista
+2. **Automatizar os quatro cenários no CI** — fora de escopo por decisão do `00`: exige rede,
+   tag publicada e minutos por cenário, e a versão de correção não existe quando a suíte roda
+3. **Deixar como estava** — recusada: não estava *"sem gate por decisão"*, estava **sem decisão**.
+   É a diferença que o QA-14 apontou, e é a mesma que a ADR-02 teve de corrigir
+
+### Consequências
+
+- **Positivas**: nenhum gate que aprove alegação. A obrigação fica onde pode ser cumprida de
+  verdade — no roteiro, que exige a **saída colada** de cada execução, e não um "sim"
+- **Negativas**: `M37` sem matador. Quem publicar uma tag pulando o roteiro não encontra
+  resistência nenhuma do sistema
+- **Riscos**: o roteiro cair em desuso, que é o risco já nomeado no `01`. A mitigação continua
+  sendo a mesma: ele carrega dois casos reais de *"o que já quebrou aqui"* em vez de ser roteiro
+  genérico, e o registro da evidência vem **antes** da tag

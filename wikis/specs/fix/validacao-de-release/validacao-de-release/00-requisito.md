@@ -171,6 +171,15 @@ não era *"criar guarda?"*, era *"endurecer a que existe?"*.
   guarda do que **nenhuma** varredura alcança — o que só acontece fora da árvore do kit.
   Ver ADR-02.
 
+- **RQ-06 tem gate automatizado? — DECIDIDO com o usuário em 2026-09-22: não.**
+  Levantado pelo quality gate (QA-14, ciclo 2): a obrigação *"a cada nova tag"* dependia só de
+  prosa, e a opção óbvia — um passo no `release.yml`, que **já** roda em `push: tags` e já
+  reprova duas invariantes — nunca tinha sido pesada nem recusada.
+  **Decidido: sem gate.** O gate possível verificaria que a seção de release **contém um texto**,
+  não que os quatro cenários rodaram — aprovaria a **alegação** em vez do fato, que é a mesma
+  forma do `[CT-10]` cobrando a sentinela no arquivo. `M37` fica **declaradamente** sem matador.
+  Ver ADR-05.
+
 ## Fora de Escopo (declarado)
 
 - **Criar guarda para os outros 17 casos** — eles estão protegidos; a varredura confirmou

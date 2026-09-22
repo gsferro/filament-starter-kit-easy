@@ -705,7 +705,7 @@ provar o que a CI já prova antes de a tag existir.
 | M34 | a versão sobe em `config/kit.php` e a tag não é publicada | CT-11 (o gate roda sobre a tag) |
 | M35 | a tag sai sem seção no `CHANGELOG.md` | CT-11 |
 | M36 | a seção existe e está vazia, ou não menciona o caso corrigido | ⚠️ **sem matador** — [L3](#l3--o-conteúdo-da-seção-do-changelog-não-é-conferido-por-gate-nenhum) |
-| M37 | a versão de correção sai **sem** que os quatro cenários tenham rodado contra ela | ⚠️ **sem matador** — CT-15 exige o registro; nada verifica. É RQ-09 |
+| M37 | a versão de correção sai **sem** que os quatro cenários tenham rodado contra ela | ⚠️ **sem matador — por decisão (ADR-05)**: o gate possível mediria a alegação, não o fato — CT-15 exige o registro; nada verifica. É RQ-09 |
 
 ---
 
