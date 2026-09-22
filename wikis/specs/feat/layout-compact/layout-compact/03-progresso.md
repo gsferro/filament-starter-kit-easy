@@ -231,6 +231,25 @@ está concluída.
 
 ---
 
+## Duas medições confundidas, e as duas por concorrência com a própria medição
+
+Ficam registradas porque as duas produziram um resultado que se lê como defeito e não era.
+
+**A primeira, no `composer test:kit`.** Num shell sem o `composer` no PATH, o comando imprime
+`command not found` e **sai com código 0**. Ler só o código de saída registraria como verde uma
+suíte que não rodou — e isso aconteceu justamente ao corrigir o achado 3 do `/code-review`, que era
+exatamente sobre evidência não conferida.
+
+**A segunda, mais sutil.** A regressão reprovou em
+`tests/Kit/ConfiguracoesDoKitTest.php:tem a tabela de settings migrada` com *"55 não é 54"*. Não era
+defeito: eu rodei a **mutação de falsificabilidade** — que apaga a linha do `mapaDeConfiguracao()` —
+**enquanto a suíte corria na mesma árvore**. Ela leu o arquivo mutado, e a contagem do banco (55
+linhas semeadas) deixou de bater com a do mapa (54, com a linha apagada).
+
+A lição é a mesma das duas: **medição não pode compartilhar árvore com o que a altera.** Mutação
+de código e suíte de fundo não convivem, e o sintoma resultante aponta para o lugar errado — neste
+caso, para um contador de settings que estava correto o tempo todo.
+
 ## Step 7.5 — `/code-review` no diff (2026-09-21)
 
 Três achados. **Dois eram defeito de verdade, e os dois moravam em código escrito para fechar uma
@@ -308,7 +327,9 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
 - [x] `vendor/bin/pint --dirty --format agent` — `passed`, 2026-09-21
 - [x] `vendor/bin/filacheck --fix` — **17/17 regras passaram**, 2026-09-21
 - [x] `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` — **30 passaram, 66 asserções**, remedido em 2026-09-21 (antes: 25/47, antes de CT-16 e CT-17)
-- [x] **`composer test:kit`** (regressão completa — obrigatória por tocar infra compartilhada) — **2.717 passaram, 10.525 asserções, 0 falhas**, 2026-09-21, **remedido após o `/code-review`**
+- [x] **Regressão completa** (obrigatória por tocar infra compartilhada) — **2.721 passaram, 10.537 asserções, 0 falhas**, 2026-09-21, remedida pela **terceira** vez: depois do `/code-review` (2.717) e de novo depois do quality gate, que acrescentou a largura do menu
+
+  **Rodada por `php artisan test --testsuite=Kit,Tenancy --parallel`, não por `composer test:kit`** — ver a armadilha do código de saída 0 logo abaixo
 
   O número anterior registrado aqui (2.715 / 10.508) era de **antes** do commit `bf6e799`, que é
   justamente o que tinha deixado a suíte vermelha — achado 3 do `/code-review`. Remedido, não
