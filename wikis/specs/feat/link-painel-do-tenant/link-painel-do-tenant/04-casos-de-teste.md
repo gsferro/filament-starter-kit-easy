@@ -1181,6 +1181,24 @@ smoke de navegador do kit (`/admin/organizacoes` e `/admin/organizacoes/create` 
 `telasDoKit()`, `tests/Pest.php`), que continuaria verde de qualquer forma — é a assertion que o
 `## Sem CT-B` existe para não fingir que cobre isto.
 
+### O teste que não é CT desta feature
+
+`tests/Kit/ExpectativaVariadicaDoPestTest.php` entra no diff desta branch e **não tem cenário
+aqui**, de propósito. Ele não afirma nada sobre o link do painel: afirma, por reflexão, que
+`toContain()` e `toContainEqual()` do Pest continuam **variádicas** e sem parâmetro `$message`.
+
+É infraestrutura da rule `.ai/rules/testes.md` → *"`toContain()` do Pest não recebe mensagem"*, que
+nasceu do erro descrito no adendo abaixo. Os `[CT-01]` e `[CT-02]` dele são numeração **local ao
+arquivo** e não colidem com os CT desta wiki — o gate bidirecional de IDs do step 7 compara o `04`
+com `LinkDoPainelDaOrganizacaoTest` e `LinkDoPainelSemTenancyTest`, e este arquivo está fora do
+conjunto por não ser da feature.
+
+O que o torna sentinela e não teste decorativo: no dia em que o Pest aceitar mensagem nos dois, ele
+fica **vermelho**, e esse é o sinal de que a rule pode **sair** do `.ai/rules/` — mesmo mecanismo
+de `tests/Kit/OrdemDasCascadeLayersTest.php`. Achado **QA-09** do quality gate; registrado aqui
+porque "arquivo de teste sem rastro na wiki" é achado por si, mesmo quando a resposta é *"não
+pertence a esta wiki"*.
+
 ---
 
 ## Revisão Adversarial
@@ -1284,4 +1302,6 @@ que recebem mensagem de fato. Efeito medido no arquivo: **174 → 227 asserçõe
 sem cenário novo além de CT-23 — a diferença são asserções que antes eram engolidas. (Medido em
 2026-09-21, o total das duas suítes é **230**; o `227` era contagem parcial.)
 
-**Candidato a rule**, roteado ao step 9.
+**Rule gravada, e o step 9 desta candidata está fechado**: `.ai/rules/testes.md` →
+*"`toContain()` do Pest não recebe mensagem — o 2º argumento é outra AGULHA"* (commit `9c6c494`,
+neste branch), com `tests/Kit/ExpectativaVariadicaDoPestTest.php` de sentinela.

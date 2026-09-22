@@ -35,9 +35,18 @@
       que já estava dessincronizado pelo commit da wiki)
 
 ## Testes
-- [x] `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` — CT-01..CT-18 e CT-20 (38 casos com
-      datasets)
-- [x] `tests/Kit/LinkDoPainelSemTenancyTest.php` — CT-19
+- [x] `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php` — CT-01..CT-18, CT-20 e CT-22
+      (**41 casos** com datasets, **164 asserções**)
+- [x] `tests/Kit/LinkDoPainelSemTenancyTest.php` — CT-19, CT-21 e CT-23 (**3 casos**,
+      **65 asserções**)
+- [x] `tests/Kit/ExpectativaVariadicaDoPestTest.php` — **não é CT desta feature**, e é por isso que
+      não está no `04`. Ele é a sentinela da rule que nasceu aqui (`.ai/rules/testes.md` →
+      "`toContain()` do Pest não recebe mensagem"): mede **por reflexão** a assinatura do vendor, e
+      fica vermelho no dia em que o Pest aceitar mensagem — que é o dia de a rule **sair**, em vez
+      de envelhecer como conselho obsoleto. Os `[CT-01]`/`[CT-02]` dele são **locais ao arquivo** e
+      ficam fora do gate bidirecional de IDs desta wiki de propósito: o `diff` do gate compara o
+      `04` com os **dois arquivos da feature**, e este não é um deles. Entrou no diff sem rastro, e
+      é o achado **QA-09** do quality gate
 
 ## Verificação Final
 - [ ] `/ponytail:ponytail-review` no diff
@@ -378,7 +387,10 @@ Migradas para `assertStringNotContainsString`. Efeito medido nas duas suítes da
 arquivo e não contavam. (O `227` escrito aqui antes era uma contagem parcial; medido em
 2026-09-21, o total das duas suítes é **230**.)
 
-**Candidato a rule** (step 9): `toContain()`/`not->toContain()` do Pest não recebem mensagem.
+**Rule gravada — o step 9 desta candidata está FECHADO.** `.ai/rules/testes.md` →
+*"`toContain()` do Pest não recebe mensagem — o 2º argumento é outra AGULHA"*, 29 linhas, commit
+`9c6c494` **neste branch**. Ela não é mais candidata, e a wiki parou de chamá-la assim (QA-09). A
+sentinela que a mantém honesta é `tests/Kit/ExpectativaVariadicaDoPestTest.php`.
 
 ## Rebase sobre o `main` pós-#93, e o que ele custou (2026-09-21)
 
