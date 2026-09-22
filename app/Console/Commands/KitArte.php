@@ -80,6 +80,11 @@ class KitArte extends Command
         'import-modal',
         'infra-hub',
 
+        // Densidade do layout, os três níveis na mesma tela (wiki layout-compact).
+        'densidade-confortavel',
+        'densidade-compacto',
+        'densidade-denso',
+
         // Proteção anti-robô (wiki recaptcha-nas-telas-publicas).
         'admin-anti-robo',
 

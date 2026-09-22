@@ -319,6 +319,62 @@ it('captura a tela de login com os botões sociais e o rodapé', function (): vo
         ->screenshot(fullPage: false, filename: 'login-social');
 })->group('browser', 'art');
 
+/**
+ * A densidade do layout — as três em `/admin/users`, a mesma tela, para a comparação ser legível.
+ *
+ * ## Por que a listagem de usuários, e não o dashboard
+ *
+ * A feature aperta quatro superfícies, e a listagem é a única tela que mostra **três delas ao
+ * mesmo tempo**: linha de tabela, botão e menu lateral. No dashboard só os cartões de estatística
+ * respondem, e a diferença entre os níveis fica sutil demais para uma imagem de README.
+ *
+ * ## Três arquivos, e não um com legenda
+ *
+ * A comparação que importa é **a mesma tela em dois estados**, e isso não cabe num print só sem
+ * montagem. Três arquivos deixam o leitor alternar, e deixam a doc escolher qual usar onde: o
+ * `confortavel` é o "antes" que todo mundo já conhece.
+ *
+ * ## Grava no banco **e** realinha — as duas, e a segunda não é opcional
+ *
+ * `gravarConfiguracao()` escreve o `payload` da linha de `settings` e esquece o singleton, mas
+ * **não** mexe na config do processo. Com `RefreshDatabase` o `boot()` real rodou **antes** das
+ * migrations, então a config em memória ainda carrega o valor de fábrica — e é dela que o render
+ * hook lê. Só gravar produz três capturas **byte a byte idênticas**, o que aconteceu na primeira
+ * tentativa e só foi notado porque os três arquivos saíram com o mesmo `md5`.
+ *
+ * Medido, no mesmo cenário:
+ *
+ * | Passo | `config('kit.densidade_do_layout')` | HTML tem `--spacing:`? |
+ * |---|---|---|
+ * | depois de `gravarConfiguracao('denso')` | `confortavel` | **não** |
+ * | depois de `alinharConfiguracoesDoKit()` | `denso` | **sim** |
+ *
+ * Fixar `config()` direto seria pior: capturaria uma tela que a instalação de verdade não produz,
+ * porque `aplicarNaConfig()` reescreve a config **a partir do banco**. O par grava onde a
+ * instalação grava e alinha como o `boot()` alinharia.
+ *
+ * ## Aquece o /admin, e só ele
+ *
+ * Mesma razão do cabeçalho deste arquivo: cenário arranjado num painel e capturado em outro
+ * renderiza a barra lateral do primeiro. Aqui arranjo e captura são os dois no `/admin`.
+ */
+it('captura os tres niveis de densidade do layout', function (string $nivel, string $arquivo): void {
+    gravarConfiguracao('densidade_do_layout', $nivel);
+    alinharConfiguracoesDoKit();
+
+    // Aquece o /admin, e só ele.
+    $this->get('/admin/users');
+
+    visit('/admin/users')
+        ->resize(1400, 875)
+        ->assertSee('Usuários')
+        ->screenshot(fullPage: false, filename: $arquivo);
+})->with([
+    'confortável' => ['confortavel', 'densidade-confortavel'],
+    'compacto'    => ['compacto', 'densidade-compacto'],
+    'denso'       => ['denso', 'densidade-denso'],
+])->group('browser', 'art');
+
 it('captura a aba Login das configurações da aplicação', function (): void {
     // Aquece o /admin, e só ele.
     $this->get('/admin/configuracoes-da-aplicacao');
