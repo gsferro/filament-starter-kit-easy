@@ -388,3 +388,190 @@ Registradas com o motivo, porque custaram o mesmo que os achados.
   e o gate não os tocou. Para medir, o gate trocou a senha de `admin@example.com` e **restaurou o
   hash original** ao fim (verificado), devolvendo a densidade a `confortavel` e derrubando o
   `artisan serve`.
+
+---
+
+## Ciclo 3 — o teto da skill
+
+> Escopo: verificar o **fechamento** dos quatro achados do ciclo 2 e tratar como **diff não
+> revisado** tudo que entrou depois dele (commit `da93083`, documentação apenas). Os dez achados
+> dos ciclos 1 e 2 **não** são re-reportados; o que está abaixo é achado **novo**, ou fechamento
+> que não fechou.
+>
+> **Este é o terceiro ciclo, e a skill não permite um quarto.** Achado Blocker ou Major aqui
+> **escala ao usuário** — não abre novo ciclo.
+
+### Veredito — Ciclo 3
+
+**REPROVADO → especificação · ESCALADO AO USUÁRIO (teto de 3 ciclos atingido)**
+
+- Blocker: 0 · Major: **1** · Minor: **3** · Cosmético: 0
+- Ambiente: app **não servido** (o diff do ciclo 3 é texto; nada novo para observar em tela) ·
+  PHP 8.4.25 · Pest 5.0.5 · Playwright e MCP **não usados neste ciclo**
+- Regressão reproduzida pelo gate: `php artisan test --testsuite=Kit,Tenancy --parallel --compact`
+  → **2.721 passaram, 10.537 asserções, 0 falhas** — idêntico ao ciclo 2
+- `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` → **30 passaram, 66 asserções**
+- `vendor/bin/pest tests/Kit/CitacoesDeCodigoTest.php --compact` → **3 passaram** — e é justamente
+  esse verde que o QA-14 põe em dúvida
+
+**Os quatro do ciclo 2 fecharam** — QA-07, QA-08, QA-09 e QA-10; a prova de cada um está em
+`## Hipóteses Rejeitadas — Ciclo 3`. O que sobrou tem, de novo, a mesma origem: **a remediação
+produziu texto novo que ninguém releu**. O Major não é defeito de código — é uma **garantia falsa**
+escrita na ADR sobre o que o teste protege, e ela foi medida como falsa.
+
+### Achados
+
+#### QA-11 — A ADR-03 promete que CT-17 fica vermelho se o vendor mudar o default; medido, ele fica **verde** · Major · destino 1
+
+- **Dimensão**: L (L3 — ADR × código), com origem em K (o contrato não tem matador)
+- **Relacionado a**: ADR-03 § *Revisão de 2026-09-21*, CT-17, QA-07 do ciclo 2 (foi a remediação
+  dele que escreveu a frase)
+- **Esperado**: `02:126-129` afirma, de próprio punho, que o contrato *"o confortável do kit é
+  idêntico ao kit sem a feature"* está guardado — *"Se o Filament mudar esse default, o confortável
+  do kit deixa de ser idêntico ao kit sem a feature — que é o contrato da ADR. **CT-17 fica
+  vermelho** nesse dia, porque afirma o valor literal."*
+- **Observado**: CT-17 compara o **retorno do kit** com um **literal do kit**. Os dois lados da
+  asserção são `'20rem'` escritos no kit (`DensidadeDoLayout.php:larguraDaSidebar():201` e o
+  dataset em `tests/Kit/DensidadeDoLayoutTest.php:479`). O default do vendor **não entra na
+  comparação em ponto nenhum**, e como os três painéis chamam `->sidebarWidth()`, ele é
+  inalcançável em runtime. Resultado: o dia em que o Filament mudar o default, **nada fica
+  vermelho** — o contrato quebra em silêncio, com a ADR dizendo que não quebraria.
+- **Repro** — mutação no vendor, com restauração conferida por hash:
+  1. `md5sum vendor/filament/filament/src/Panel/Concerns/HasSidebar.php` → `9add012f…`
+  2. `sed -i "11s/'20rem'/'18rem'/"` no mesmo arquivo — é exatamente o evento que a ADR descreve
+  3. `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --filter="a largura do menu acompanha o nivel nos tres paineis" --compact`
+     → **`passed`, 4 casos, 12 asserções**. A ADR previa vermelho
+  4. Arquivo restaurado; `md5sum` volta a `9add012f…` e `sed -n '11p'` volta a `'20rem'`
+- **Evidência**: a mutação acima; `sed -n '52,56p;66,70p'` do mesmo arquivo confirma que
+  `sidebarWidth()` (`:54`) grava e `getSidebarWidth()` (`:68`) faz `evaluate()` do que foi gravado —
+  o default só valeria se ninguém chamasse o setter
+- **Destino**: 1 — especificação. A frase da ADR é a única coisa errada; o código está certo
+- **Ação exigida**: corrigir `02:126-129` (o contrato **não** tem guarda hoje) e decidir se ele
+  merece uma: o CT que de fato o guarda precisa **ler o default do vendor** — por reflexão sobre
+  `HasSidebar::$sidebarWidth` ou por `Panel` sem `sidebarWidth()` chamado — e compará-lo com
+  `larguraDaSidebar()` do confortável. Isso é derivação nova, destino 3, e sai da
+  `feature-test-design`, não daqui
+- **Nota**: o mesmo texto aparece como comentário em `tests/Kit/DensidadeDoLayoutTest.php:478`
+  (*"`20rem` é o default do vendor — o confortável não muda nada"*). Ali é descrição de intenção e
+  está correta; o que não existe é a asserção que a sustente
+
+#### QA-12 — A correção do QA-09 deixou a nota de contagem aritmeticamente impossível, e dois pontos com o número velho · Minor · destino 1
+
+- **Dimensão**: L (L1)
+- **Relacionado a**: QA-09 do ciclo 2 · commit `da93083`
+- **Esperado**: 16 `it()`, **4** datasets (CT-03 4 exemplos, CT-10 7, CT-12 3, CT-17 4) → 12 casos
+  simples + 18 de dataset = **30** casos no arquivo, **31** com CT-15
+- **Observado**:
+
+  | Onde | Diz | Real |
+  |---|---|---|
+  | `04:43-44` | *"o arquivo tem 16 `it()`. **Quatro** deles têm dataset — CT-03 (4 exemplos), CT-10 (7) e CT-12 (3) —, e é daí que saem os **25** casos"* | diz "quatro" e **lista três**; e 12 + 14 nunca deu 25 nem 30. Falta CT-17 na lista, e o **25** é o número de antes do QA-09 |
+  | `04:728` | linha M12 do *Gate de falsificabilidade*: *"**7 dos 14 CTs reprovam**"* | `04:344`, corrigido no mesmo commit, diz **10 dos 30 casos** — o arquivo se contradiz de novo, em outro par de linhas |
+  | `01:261` | *"a mutação confirmou que apagar a linha reprova **7 dos 14 casos**"* | `01:483`, no mesmo arquivo, já diz **10 dos 30** |
+
+  A linha `04:43-44` é a mais grave das três porque **foi editada pela remediação** (`14 → 16`,
+  `Três → Quatro`) e saiu pior: antes era coerente e velha, agora é incoerente consigo mesma.
+- **Repro**:
+  1. `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` → `30 passed, 66 assertions`
+  2. `grep -c "^it(" tests/Kit/DensidadeDoLayoutTest.php` → **16** ·
+     `grep -n "})->with(\[" tests/Kit/DensidadeDoLayoutTest.php` → **4** ocorrências (`:116`, `:284`,
+     `:327`, `:477`)
+  3. `grep -n "7 dos 14\|25 casos" 01-plano-acao.md 04-casos-de-teste.md`
+- **Destino**: 1
+- **Ação exigida**: corrigir os três pontos — ou, como o ciclo 2 já sugeriu, **remover a contagem
+  manual** onde ela não paga a manutenção. Três ciclos seguidos de achado no mesmo lugar são o
+  argumento a favor de remover
+
+#### QA-13 — As docs pt/en passaram a listar três coisas que não apertam, e a frase seguinte continua dizendo "as duas" · Minor · destino 1
+
+- **Dimensão**: L (L5)
+- **Relacionado a**: QA-06 do ciclo 1, QA-10 do ciclo 2 · commit `da93083`
+- **Esperado**: o parágrafo enumera três superfícies e a frase de fecho as retoma
+- **Observado**: nas **duas** línguas, a contagem foi atualizada na abertura e não no fecho:
+  - `docs/pt/recursos/configuracoes-do-kit.md:116` — *"**Três** coisas não apertam…"*; `:119` —
+    *"**As duas** estão no roadmap do kit."*
+  - `docs/en/recursos/configuracoes-do-kit.md:117` — *"**Three** things do not tighten…"*; `:121` —
+    *"**Both** are on the kit roadmap."*
+
+  E as três **estão** mesmo no roadmap: `wikis/roadmap.md` § 5 ganhou a linha do rail no mesmo
+  commit. O número é que ficou para trás. Não é divergência pt × en — as duas línguas erram igual,
+  o que confirma que a frase foi traduzida e não relida.
+- **Repro**: `grep -n "As duas estão\|Both are on" docs/pt/recursos/configuracoes-do-kit.md docs/en/recursos/configuracoes-do-kit.md`
+- **Destino**: 1
+- **Ação exigida**: "As três" / "All three", nas duas línguas. Vale conferir se o fecho deve mesmo
+  agrupar o rail com as outras duas: o roadmap o separa como *"escolha, não limitação"*
+
+#### QA-14 — A largura do menu empurrou o `InfraPanelProvider` em 14 linhas e quebrou uma citação em doc de usuário; a guarda `[CT-26]` não a vê · Minor · destino 1 (+ 3)
+
+- **Dimensão**: L (L2), com um item de K
+- **Relacionado a**: `.ai/rules/specs.md:48` — *"Vale para citação em QUALQUER arquivo, não só na
+  wiki"* · `03:348` (*"36/36 ok"*) · commit `ec665a5`
+- **Esperado**: citação `{path}:{símbolo}:{linha}` aponta para a declaração. A reverificação do
+  step 7 varreu as citações **da wiki para fora**; faltou a direção oposta — as citações **de fora
+  para dentro** dos arquivos que o diff deslocou
+- **Observado**: `->models([` do `RevivePlugin` estava em `:581` no `main` e está em **`:595`**
+  hoje, empurrado pelas 14 linhas que `->sidebarWidth()` acrescentou ao `InfraPanelProvider`. Duas
+  docs de usuário continuam citando `:581`, que hoje contém `->navigationGroup('Sistema')`:
+  - `docs/pt/recursos/trilhas-de-infraestrutura.md:51`
+  - `docs/en/recursos/trilhas-de-infraestrutura.md:51`
+
+  **E a guarda que existe para isso fica verde.** `tests/Kit/CitacoesDeCodigoTest.php` `[CT-26]`
+  varre `docs/`, mas descarta a citação em `:200` — `! is_file(base_path($caminho))` —, e o caminho
+  aqui é só o basename (`InfraPanelProvider.php`), que não resolve a partir da raiz. Medido na
+  superfície viva que o caso varre: **38 citações com símbolo, 30 conferidas, 8 puladas**, e o piso
+  do caso é `toBeGreaterThan(5)` (`:223`) — folgado demais para acusar a perda. Das 8 puladas, 5 são
+  elisão de vendor (descarte **declarado** no docblock) e 3 são arquivo do kit citado por basename,
+  que poderia resolver.
+- **Repro**:
+  1. `git show main:app/Providers/Filament/InfraPanelProvider.php | grep -n "\->models(\["` → **581**
+  2. `grep -n "\->models(\[" app/Providers/Filament/InfraPanelProvider.php` → **595**
+  3. `sed -n '581p' app/Providers/Filament/InfraPanelProvider.php` → `->navigationGroup('Sistema')`
+  4. `vendor/bin/pest tests/Kit/CitacoesDeCodigoTest.php --compact` → **3 passaram**
+- **Destino**: 1 para as duas citações. A guarda é **destino 3**: o descarte silencioso de caminho
+  não-resolvível é a lacuna de derivação, e fechá-la pede caso novo pela `feature-test-design`
+- **Ação exigida**: corrigir `:581` → `:595` nas duas docs; e decidir se `[CT-26]` passa a resolver
+  basename por busca no repo (e a **contar** quantas pulou, em vez de pular calado)
+- **Fora de escopo, registrado**: `site-vitepress/pt|en/recursos/trilhas-de-infraestrutura.md:51`
+  repetem a citação, mas aquele espelho já está defasado desde a `v0.35.0` (diz `kit 0.35.0` onde o
+  `docs/` diz `0.37.1`) e não é varrido por `[CT-26]`. Não é defeito desta feature
+
+### Hipóteses Rejeitadas — Ciclo 3
+
+| Hipótese | Resultado | Evidência |
+|---|---|---|
+| **QA-07 continuaria aberto** | **rejeitada — fechado** | ADR-03 ganhou § *Revisão de 2026-09-21* com a tabela dos dois caminhos e corrigiu a consequência do "não referencia nada do vendor"; ADR-06 ganhou a terceira linha (`sidebarWidth(Closure)`) com nota datada; o `01` § Filosofia e o `CHANGELOG.md` não dizem mais "uma declaração CSS"; `03:380` tem a linha de `providers-filament.md`. **Mas a correção da ADR trouxe o QA-11** |
+| **QA-08 continuaria aberto** | **rejeitada — fechado** | varredura própria com padrão que cobre `simbolo():linha` **com parênteses** sobre `00`–`06`, `docs/pt`, `docs/en`, `wikis/*.md`, `CHANGELOG` e os dois READMEs: **53 citações**, e **nenhuma** das citações vivas da wiki aponta para chamada. `coagir():236` e `padrao():242` conferidos por `function <símbolo>` na linha. As 5 suspeitas restantes em `06` são o próprio relatório **citando** as citações erradas dos ciclos 1 e 2, e `02:272` é ponto-de-chamada deliberado com nota inline — ambos já classificados |
+| **QA-09 continuaria aberto** | **rejeitada — fechado em 4 dos 6 pontos** | `04:34`, `04:715`, `04:729`, `04:344` e `03:17` recontados e corretos. Os que sobraram viraram QA-12 |
+| **QA-10 continuaria aberto** | **rejeitada — fechado** | `wikis/roadmap.md` § 5 tem a linha do rail **e** um parágrafo declarando que ele é *"o único item desta página que está fora por escolha, e não por limitação… fica registrado com o motivo para não ser reaberto como se fosse esquecimento"*. ADR-03 repete a decisão. Docs pt/en passaram a três — com o defeito de fecho do QA-13 |
+| **O roadmap inventa a medição do ícone** (*"24 → 19,2 → 16,8 px"*) | **rejeitada** | é aritmética verificável, não estimativa: o ícone do Filament é `size-6` = `6 × --spacing`, e `larguraDaSidebar()`/`espacamento()` fixam `.25rem / 0.2rem / 0.175rem` (`DensidadeDoLayout.php:espacamento():148`) → `1.5rem / 1.2rem / 1.05rem` = **24 / 19,2 / 16,8 px** |
+| **As citações novas da ADR-06 estariam erradas** | **rejeitada** | `HasSidebar.php:54` é `public function sidebarWidth(...)`, `:68` é `getSidebarWidth()` com `evaluate()`, `:11` é o default `'20rem'`, `base.blade.php:85` emite `--sidebar-width`. Quatro conferidas, quatro certas |
+| **O diff do ciclo 3 mexeria em código ou teste** | **rejeitada** | `git diff 9cc1be2..HEAD --stat` → 8 arquivos, **todos `.md`**: CHANGELOG, docs pt/en, roadmap e `01`/`02`/`03`/`04`. Nenhuma linha de `app/`, `tests/`, `config/` ou `database/` |
+
+### Dimensões — Ciclo 3
+
+| # | Dimensão | Status | Observação |
+|---|----------|--------|------------|
+| A | Cobertura do requisito | ✅ | as dez `RQ` têm rastro; RQ-05 fechou com QA-01 e a decisão do QA-10 registrada como **escolha**. Nenhuma lacuna nova |
+| B | Fronteiras e dados | ⏭️ pulada | **motivo**: o diff do ciclo 3 não tem código. Reconfirmada indiretamente pela regressão |
+| C | Matriz de permissão | ⏭️ pulada | **motivo**: nenhuma célula nova — sem rota, policy ou ação no diff |
+| D | Observabilidade real | ⏭️ pulada | **motivo**: sem código novo. `git diff 9cc1be2..HEAD -- app/` → vazio; a ausência de log continua sendo decisão declarada |
+| E | Performance | ⏭️ pulada | **motivo**: sem código novo |
+| F | UX de erro | ⏭️ pulada | **motivo**: nenhuma superfície de mensagem no diff |
+| G | Tema e cor | ⏭️ pulada | **motivo**: superfície de cor nula — o diff é texto |
+| H | Acessibilidade | ⏭️ pulada | **motivo**: sem elemento novo. O recorte medido no ciclo 2 (0 rótulo truncado) continua valendo |
+| I | Segurança da superfície nova | ⏭️ pulada | **motivo**: nenhuma rota, propriedade Livewire ou método público no diff |
+| J | Regressão adjacente | ✅ | **2.721 / 10.537 / 0 falhas**, reproduzida pelo gate neste ciclo |
+| K | Adequação da suíte | ⚠️ | passo estático: nenhum teste novo no diff. **Um achado por outro caminho** — o contrato da ADR-03 sem matador (QA-11, provado por mutação no vendor) e o descarte silencioso do `[CT-26]` (QA-14). Passo medido continua em *Não Verificado* |
+| L | Consistência documental | ❌ | 4 achados — QA-11, QA-12, QA-13, QA-14 |
+
+### Não Verificado — Ciclo 3
+
+- **Dimensão K, passo medido (mutation score)** — `php -m` continua sem **PCOV e sem Xdebug**, e
+  `--mutate` aborta com `Mutation testing requires code coverage to be enabled`. A mutação do QA-11
+  foi feita **à mão no vendor**, com restauração conferida por `md5sum`, justamente porque o
+  caminho automático não existe nesta máquina.
+- **Validação em tela** — app **não servido** neste ciclo: o diff é texto, e nada do que ele mudou
+  se observa em navegador. As medições de pixel do ciclo 2 não foram refeitas.
+- **`pest --tia`** — não rodado; a regressão completa cobre o mesmo escopo com mais folga.
+- **`site-vitepress/`** — espelho defasado por decisão anterior ao escopo desta feature; varrido só
+  para registrar que a citação do QA-14 se repete lá.

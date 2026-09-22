@@ -440,6 +440,33 @@ menu **medida no navegador** (320,0 → 272,0 → 264,0 px, item 40,0 → 32,8 �
 `Closure`** nos três painéis, verificado em processo único; a guarda de `export-ignore` por
 `git check-attr` pega os quatro padrões, inclusive os dois que o regex deixava passar.
 
+### Ciclo 3 — teto da skill
+
+- **Ciclo**: 3 (**último permitido**) · **Veredito**: **REPROVADO → especificação · ESCALADO AO
+  USUÁRIO** · **Data**: 2026-09-22
+- **Relatório**: `06-relatorio-qa.md` → `## Ciclo 3 — o teto da skill`
+- **Severidade**: Blocker 0 · Major **1** · Minor **3** · Cosmético 0
+- **Fechados no ciclo 2**: QA-07, QA-08, QA-09 e QA-10 — **os quatro**, verificados e não aceitos no
+  papel (varredura própria de 53 citações, recontagem pelo runner, decisão do rail registrada no
+  roadmap **como escolha e não como limitação**)
+- **Por que escala em vez de abrir ciclo 4**: a `feature-quality-gate` fixa teto de **3 ciclos**
+  (§ *Convergência do Loop*, item 3). Com Major aberto no teto, a skill manda parar, entregar a
+  lista ao usuário e registrar o blocker aqui — **não** seguir tentando
+
+| Achado | Título | Sev. | Destino |
+|---|---|---|---|
+| QA-11 | A ADR-03 promete que **CT-17 fica vermelho** se o Filament mudar o default de `sidebarWidth`; medido por mutação no vendor (`'20rem'` → `'18rem'`), ele fica **verde** — o contrato "o confortável é idêntico ao kit sem a feature" não tem guarda | **Major** | 1 — especificação (+ 3, se o contrato merecer CT) |
+| QA-12 | A correção do QA-09 deixou `04:43-44` aritmeticamente impossível ("quatro datasets" listando três, e **25** casos onde são 30); `04:728` e `01:261` ainda dizem "7 dos 14" | Minor | 1 — especificação |
+| QA-13 | Docs pt/en passaram a listar **três** superfícies que não apertam e o fecho continua dizendo *"As duas"* / *"Both"* (`docs/pt/…:119`, `docs/en/…:121`) | Minor | 1 — especificação |
+| QA-14 | A largura do menu empurrou o `InfraPanelProvider` em 14 linhas e `->models([` passou de `:581` para `:595`; duas docs de usuário ainda citam `:581`, e o `[CT-26]` não as vê porque descarta caminho não-resolvível em silêncio | Minor | 1 — especificação (+ 3, a guarda) |
+
+**Confirmado pelo gate no ciclo 3, para não ser reaberto**: regressão **2.721 / 10.537 / 0 falhas**;
+`DensidadeDoLayoutTest` **30 casos / 66 asserções**; o diff pós-ciclo-2 é **só `.md`** (nenhuma linha
+de `app/`, `tests/`, `config/` ou `database/`); as quatro citações novas da ADR-06 (`HasSidebar.php`
+`:11`, `:54`, `:68` e `base.blade.php:85`) conferidas uma a uma; as citações vivas da wiki apontam
+todas para **declaração**, não para chamada; e a medição do ícone do rail (24 → 19,2 → 16,8 px) é
+aritmética verificável a partir de `--spacing`, não estimativa.
+
 ---
 
 ## Auditoria Pré-Implementação
