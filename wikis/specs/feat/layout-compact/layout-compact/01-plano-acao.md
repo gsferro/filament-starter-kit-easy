@@ -81,10 +81,21 @@ E o custo, que é a outra metade de RQ-04:
 | Roda em runtime? | sim | **não** — build-time | sim |
 | Entra num starter kit? | sim | **não** — licença de projeto único | — |
 
-**Diff da entrega**: **515 linhas acrescentadas e 1 removida** em `app/`, `config/`, `database/` e
-`.env.example`, somando **11 arquivos** — remedido em 2026-09-21, depois de o quality gate
-acrescentar a largura do menu (três painéis) e o `/code-review` acrescentar o `KitUpdate` e a
-coerção na tela. A conta original, `bf6e799`, era 398 linhas em seis arquivos.
+**Diff da entrega**: **515 linhas acrescentadas e 1 removida**, em **11 arquivos**. O número sai
+de um comando, e o comando fica escrito ao lado dele *(alterado em 2026-09-22 — antes o número
+estava solto, sem SHA de base nem lista de paths, e nenhum comando o reproduzia)*:
+
+```
+git diff 5400faf..8d3f2f3 --stat -- app/ config/ database/ .env.example
+# 11 files changed, 515 insertions(+), 1 deletion(-)
+```
+
+`5400faf` é o **merge-base** da feature com `main` (o merge do #94), e `8d3f2f3` é o merge do #95 —
+não `HEAD`, que já andou. A lista de paths é o escopo do mecanismo: a wiki, os testes e as docs
+ficam de fora de propósito, porque a comparação que esta conta sustenta é contra os *"548 blocos de
+regra sobre 370 classes `fi-*`"* do tema pago, que também são só mecanismo. Remedido em 2026-09-21,
+depois de o quality gate acrescentar a largura do menu (três painéis) e o `/code-review` acrescentar
+o `KitUpdate` e a coerção na tela. A conta original, `bf6e799`, era 398 linhas em seis arquivos.
 Das 246 linhas de `app/Support/DensidadeDoLayout.php`, **~70** são código — o resto é o docblock
 que carrega os números medidos. Nenhuma dependência nova,
 nenhum pacote, nenhum passo de build.
