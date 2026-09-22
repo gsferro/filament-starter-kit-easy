@@ -357,7 +357,7 @@ comparação frouxa); e o HTML fecha a cadeia até a ponta.
 
 | # | Implementação errada plausível | Cenário que mata |
 |---|---|---|
-| M12 | **A linha do `mapaDeConfiguracao()` ausente** — o campo aparece, grava, e não governa nada | CT-03, CT-06, CT-07, CT-14 (**medido**: 10 dos 30 casos reprovam, remedido em 2026-09-21) |
+| M12 | **A linha do `mapaDeConfiguracao()` ausente** — o campo aparece, grava, e não governa nada | CT-03, CT-05, CT-06, CT-07, CT-14, CT-17 (**medido**: 10 dos 31 casos reprovam, mutação re-rodada em 2026-09-22 *(alterado em 2026-09-22)*) |
 | M13 | O hook registrado por painel, alcançando só um dos três | CT-03 (os três painéis) |
 | M14 | O campo declarado com `->options(DensidadeDoLayout::class)`, devolvendo instância do enum ao `fill()` do spatie e estourando `TypeError` no salvamento da tela inteira | CT-14 — **e nenhum outro**; foi o defeito real da entrega |
 | M15 | O campo com `->dehydrated(false)` ou fora do schema — grava nada | CT-14 (payload cru) |
@@ -743,7 +743,7 @@ dos contadores de README, e é por isso que o oráculo documental nasceu lá e n
 | Mutação **M35** — o default de `sidebarWidth` no vendor muda de `'20rem'` para outro valor | **morto por CT-18**, verificado em 2026-09-22 com `md5sum` do arquivo do vendor conferido antes e depois: **CT-18 fica vermelho e CT-17 segue verde**. Na falha, o lado *esperado* vem com o literal do vendor mutado — se a leitura fosse do painel, viriam os dois lados iguais e o caso ficaria verde. É o que prova que o controle não é circular |
 | Mutação **M34** — `sidebarWidth()` some de UM dos três painéis | **morto por CT-17**, verificado em 2026-09-21: removida a chamada do `InfraPanelProvider`, o caso fica vermelho. É o defeito provável, e seria invisível para qualquer caso que olhasse só o `/admin` |
 | Mutação **M33** — a coerção sai de `mutateFormDataBeforeFill()` | **morto por CT-16**, que nasceu VERMELHO contra a implementação original: salvar `nome_da_aplicacao` falhava com erro em `densidade_do_layout` |
-| Mutação **M12** — apagar a linha do `mapaDeConfiguracao()` | **10 dos 30 casos reprovam**, remedido em 2026-09-21 (era "7 dos 14 CTs", de `c2189d7`). Entre eles CT-03, CT-06, CT-07 e CT-14, que são os que afirmam sobre o valor do banco chegando ao outro lado da cadeia |
+| Mutação **M12** — apagar a linha do `mapaDeConfiguracao()` | **10 dos 31 casos reprovam**, mutação re-rodada em **2026-09-22** *(alterado em 2026-09-22)* (era "10 dos 30" em 21/09, e "7 dos 14 CTs" em `c2189d7`). São CT-03 (4 exemplos), CT-05, CT-06, CT-07, CT-14 e CT-17 (2 exemplos) — os que afirmam sobre o valor do banco chegando ao outro lado da cadeia. O denominador subiu com o CT-18; o numerador não, porque CT-18 não passa pela linha do mapa |
 | Mutantes previstos | 35 |
 | Mutantes **sem matador** | **2** — M3 (`L1`) e M30 (`L4`), ambos declarados |
 | Mutantes com matador parcial | **1** — M8 (`L4`), coberto por composição de CT-01 com CT-12 |

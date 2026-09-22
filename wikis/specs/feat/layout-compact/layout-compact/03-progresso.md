@@ -326,7 +326,11 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
 
 - [x] `vendor/bin/pint --dirty --format agent` — `passed`, 2026-09-21
 - [x] `vendor/bin/filacheck --fix` — **17/17 regras passaram**, 2026-09-21
-- [x] `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` — **30 passaram, 66 asserções**, remedido em 2026-09-21 (antes: 25/47, antes de CT-16 e CT-17)
+- [x] `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` — **31 passaram, 68 asserções**, remedido em **2026-09-22** *(alterado em 2026-09-22)* (antes: 30/66 em 21/09, antes de CT-18; e 25/47, antes de CT-16 e CT-17)
+
+  `{"tool":"pest","result":"passed","tests":31,"passed":31,"assertions":68,"duration_ms":4212}`
+
+  **O CT-18 entrou em 2026-09-22 e não disparou esta remedição** — o commit que escreveu o caso deixou sete cópias do par `30 / 66` para trás. Contador de suíte é número derivado de comando: ou sai do comando na hora de escrever, ou sai do documento.
 - [x] **Regressão completa** (obrigatória por tocar infra compartilhada) — **2.722 passaram, 10.539 asserções, 0 falhas**, 2026-09-22, remedida pela **quarta** vez (2.715 → 2.717 → 2.721 → 2.722, acompanhando CT-16, CT-17 e CT-18): depois do `/code-review` (2.717) e de novo depois do quality gate, que acrescentou a largura do menu
 
   **Rodada por `php artisan test --testsuite=Kit,Tenancy --parallel`, não por `composer test:kit`** — ver a armadilha do código de saída 0 logo abaixo
@@ -340,7 +344,11 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
   foi 0**. Ler só o código de saída teria registrado como verde uma suíte que não rodou — o mesmo
   defeito do achado 3, cometido ao corrigi-lo. Rodado direto por
   `php artisan test --testsuite=Kit,Tenancy --parallel`, que é o que o script faz
-- [x] **Falsificabilidade por mutação** — apagar a linha do `mapaDeConfiguracao()` reprova **10 dos 30 casos**, remedido em 2026-09-21 (antes: 7 de 25)
+- [x] **Falsificabilidade por mutação** — apagar a linha `'densidade_do_layout' => 'kit.densidade_do_layout'` de `app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:367` reprova **10 dos 31 casos**, mutação **re-rodada em 2026-09-22** *(alterado em 2026-09-22)* (antes: 10 de 30 em 21/09; e 7 de 25)
+
+  `{"tool":"pest","result":"failed","tests":31,"passed":21,"failed":10,"assertions":58,"duration_ms":4271}`
+
+  Os 10 vermelhos: **CT-03** (4 exemplos de dataset), **CT-05**, **CT-06**, **CT-07**, **CT-14** e **CT-17** (2 dos 4 exemplos). O denominador subiu com o CT-18 e o numerador **não** — CT-18 não passa pela linha do mapa, e é isso que a re-rodada mostra em vez de supor. Árvore restaurada: `md5sum app/Settings/ConfiguracoesDoKit.php` → `1a0adc204e585486e604aadf92436256`, igual ao de antes, e `git status` limpo.
 - [x] **Custo medido** — **zero request e zero query a mais**: a leitura sai de `config()`, já em memória desde o `boot()`. Bate com o `## Modelo de Execução` do `01`, 2026-09-21
 - [x] **Medição no kit** — quatro níveis, oito telas por nível, `padrão` medido com a feature fora da árvore por `git stash`, 2026-09-21
 - [x] **Guardas do kit reconciliadas** — `CitacoesDeCodigoTest` (`arte_do_login` :135 → :136), `SiteDeDocumentacaoTest` (contadores) e `KitInfoTest` (54 → 55 propriedades), commit `022e027`, 2026-09-21
@@ -424,7 +432,7 @@ acusaria citações pré-existentes em features que nada têm a ver com esta —
 carona nesta.
 
 **Confirmado pelo gate no ciclo 3, para não ser reaberto**: regressão **2.721 / 10.537 / 0 falhas**;
-`DensidadeDoLayoutTest` **30 casos / 66 asserções**; o diff pós-ciclo-2 é **só `.md`** (nenhuma linha
+`DensidadeDoLayoutTest` **31 casos / 68 asserções** *(alterado em 2026-09-22 — eram 30/66 antes do CT-18)*; o diff pós-ciclo-2 é **só `.md`** (nenhuma linha
 de `app/`, `tests/`, `config/` ou `database/`); as quatro citações novas da ADR-06 (`HasSidebar.php`
 `:11`, `:54`, `:68` e `base.blade.php:85`) conferidas uma a uma; as citações vivas da wiki apontam
 todas para **declaração**, não para chamada; e a medição do ícone do rail (24 → 19,2 → 16,8 px) é

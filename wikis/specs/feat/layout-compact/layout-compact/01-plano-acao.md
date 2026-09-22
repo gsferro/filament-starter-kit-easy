@@ -258,7 +258,7 @@ não em teste versionado.
 | Valor ilegível no `.env` ou na tabela estoura no layout base de toda tela | `coagir()` com `tryFrom() ?? padrao()`, chamado nos **dois** lados (`config/kit.php` e `deConfig()`) | fechado — CT-10 (7 entradas) e CT-11 |
 | A declaração acabar **dentro** de uma cascade layer e não mudar nada | CT-05 recorta a tag do kit e exige ausência de `@layer` e de `!important` | fechado |
 | O toggle gravar e não fazer efeito (armadilha do `settings.md`) | ADR-06 + CT-06, que muda a resposta no mesmo processo | fechado |
-| Esquecer a linha do `mapaDeConfiguracao()` | CT-07 afirma sobre as três pontas; a mutação confirmou que apagar a linha reprova **10 dos 30 casos** (remedido em 2026-09-22; dizia "7 dos 14") | fechado |
+| Esquecer a linha do `mapaDeConfiguracao()` | CT-07 afirma sobre as três pontas; a mutação confirmou que apagar a linha reprova **10 dos 31 casos** (re-rodada em 2026-09-22 *(alterado em 2026-09-22)*; dizia "10 dos 30", e antes disso "7 dos 14") | fechado |
 | A medição da ADR ter sido feita na **demo limpa**, e o kit reagir diferente | Medição refeita **no kit**, com jobs-monitor, auth-designer, `resized-column` e Pulse ligados | fechado — passo 6; o kit rendeu **mais** que a demo |
 | Distorção de proporção (ícone e input encolhem junto) | Não tem conserto barato. Mitigada por **níveis** (ADR-04) e **declarada** nas docs pt/en, com os números | aceito |
 
@@ -478,9 +478,9 @@ escrito três vezes.
 
 - [x] `vendor/bin/pint --dirty --format agent` — `passed`, 2026-09-21
 - [x] `vendor/bin/filacheck --fix` — **17/17 regras**, 2026-09-21
-- [x] `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` — **30/30, 66 asserções**, 2026-09-21
+- [x] `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` — **31/31, 68 asserções**, remedido em **2026-09-22** *(alterado em 2026-09-22)* — o CT-18 entrou em 22/09 e não disparou a remedição; o número anterior, `30/66`, era de 21/09. Saída do runner: `{"tool":"pest","result":"passed","tests":31,"passed":31,"assertions":68}`
 - [x] **Regressão completa** (obrigatória por tocar infra compartilhada) — ver o número corrente em `03-progresso.md` → `## Verificação Final`. **Rodada por `php artisan test --testsuite=Kit,Tenancy --parallel`, e não por `composer test:kit`**: num shell sem o `composer` no PATH o script imprime `command not found` e **sai com código 0**, o que se lê como suíte verde. Registrado no `03`
-- [x] **Falsificabilidade** — apagar a linha do `mapaDeConfiguracao()` reprova **10 dos 30 casos**, remedido em 2026-09-21 (antes: 7 de 25, com 14 CTs)
+- [x] **Falsificabilidade** — apagar a linha do `mapaDeConfiguracao()` reprova **10 dos 31 casos**, mutação **re-rodada em 2026-09-22** *(alterado em 2026-09-22)* (antes: 10 de 30 em 21/09; e 7 de 25, com 14 CTs). Saída sob o mutante: `{"result":"failed","tests":31,"passed":21,"failed":10,"assertions":58}` — arquivo restaurado depois, `md5sum` `1a0adc204e585486e604aadf92436256` igual ao de antes
 - [x] **Custo medido** — zero request e zero query a mais, contra o `## Modelo de Execução`, 2026-09-21
 - [x] **Medição no kit** — quatro níveis, oito telas, `padrão` medido com a feature fora da árvore, 2026-09-21
 - [x] **`/code-review` no diff (step 7.5)** — executado durante a implementação; o achado do
