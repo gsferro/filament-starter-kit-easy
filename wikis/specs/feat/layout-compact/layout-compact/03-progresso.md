@@ -417,6 +417,28 @@ mais; nenhuma célula de permissão nova.
   seria erro de leitura: as duas são mutuamente exclusivas
 - **A prova do pixel é medição, não suíte** — lacuna `L1` do `04`, declarada
 
+### Ciclo 2
+
+- **Ciclo**: 2 · **Veredito**: **REPROVADO → especificação** · **Data**: 2026-09-21
+- **Relatório**: `06-relatorio-qa.md` → `# Ciclo 2`
+- **Severidade**: Blocker 0 · Major **1** · Minor **3** · Cosmético 0
+- **Fechados no ciclo 1**: QA-01, QA-05, QA-06 e a parte de **cenário** do QA-04 — verificados, não
+  aceitos no papel (medição em navegador, repositório de prova do `git check-attr`, Gherkin conferido)
+
+| Achado | Título | Sev. | Destino |
+|---|---|---|---|
+| QA-07 | O mecanismo ganhou um segundo caminho (`Panel::sidebarWidth()`) e o `02` não mudou; o `01:462` ainda diz "uma declaração CSS", e falta a linha de `providers-filament.md` na tabela de rules | Major | 1 — especificação |
+| QA-08 | A correção do QA-03 criou três citações novas erradas (`coagir():219` ×2, `padrao():238`), com "36/36 ok" declarado | Minor | 1 — especificação |
+| QA-09 | Os contadores do QA-04 fecharam pela metade: `04:43`, `04:715`, `04:725`, `04:34`, `04:344` e `03:17` ainda dizem 14/25/30 | Minor | 1 — especificação |
+| QA-10 | O menu **colapsado** ficou fora da escala (`--collapsed-sidebar-width` em `4.5rem` nos três níveis) e não está na lista de "o que não aperta" | Minor | 1 — especificação |
+
+**Confirmado pelo gate no ciclo 2, para não ser reaberto**: regressão **2.721 / 10.537 / 0 falhas**;
+Pint `passed`; FilaCheck **17/17**; `DensidadeDoLayoutTest` **30 casos / 66 asserções**; a largura do
+menu **medida no navegador** (320,0 → 272,0 → 264,0 px, item 40,0 → 32,8 → 31,2 px, linha da tabela
+56,0 → 46,4 → 42,9 px, **0 rótulo truncado**, sem scroll horizontal); CT-17 **exercita a avaliação do
+`Closure`** nos três painéis, verificado em processo único; a guarda de `export-ignore` por
+`git check-attr` pega os quatro padrões, inclusive os dois que o regex deixava passar.
+
 ---
 
 ## Auditoria Pré-Implementação

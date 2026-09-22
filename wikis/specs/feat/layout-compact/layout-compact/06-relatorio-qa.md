@@ -194,3 +194,197 @@ Nenhum. Os três Minor (QA-03, QA-05, QA-06) são baratos e vão junto com os Ma
 - **ADR-05** — 1.354 linhas / 548 blocos / 370 classes / 11 variáveis do tema pago: os bundles
   `stock-*.css` da demo não estão no repositório. Idem RQ-02 (navegação da demo).
 - **`pest --tia`** para impacto medido: não rodado; a regressão completa cobriu o mesmo escopo com mais folga.
+
+---
+
+## Ciclo 2
+
+> Escopo: verificar o **fechamento** dos seis achados do ciclo 1 e tratar o código que entrou
+> depois dos gates (a largura do menu, commit `ec665a5`) como **diff não revisado**.
+> Regra do loop: os seis do ciclo 1 **não** são re-reportados; o que está abaixo é achado novo, ou
+> fechamento que não fechou.
+
+### Veredito — Ciclo 2
+
+**REPROVADO → especificação**
+
+- Blocker: 0 · Major: **1** · Minor: **3** · Cosmético: 0
+- Ambiente: app **servido** em `http://127.0.0.1:8347` (`php artisan serve`, derrubado ao fim) ·
+  PHP 8.4.25 · Pest 5.0.5 · **Playwright 1.63.0 usado** (pacote npm; MCP continua indisponível)
+- Regressão reproduzida pelo gate: `php artisan test --testsuite=Kit,Tenancy --parallel --compact`
+  → **2.721 passaram, 10.537 asserções, 0 falhas** — bate com o `03` § Verificação Final
+- `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` → **30 passaram, 66 asserções**
+- `vendor/bin/pint --test` **passed** · `vendor/bin/filacheck` **17/17**
+
+**Quatro dos seis fecharam de verdade** — QA-01, QA-05, QA-06 e a parte de *cenário* do QA-04;
+a prova de cada um está em `## Hipóteses Rejeitadas`. O que sobrou é do mesmo tipo do ciclo 1 e tem
+a mesma causa: **a largura do menu entrou depois de todos os gates e a wiki a montante não foi
+reconciliada** — a ADR não mudou, três citações novas nasceram erradas, e os contadores do `04`/`03`
+fecharam pela metade.
+
+### Achados
+
+#### QA-07 — O mecanismo ganhou um segundo caminho e o `02` não mudou; o `01` ainda diz "uma declaração CSS" · Major · destino 1
+
+- **Dimensão**: L (L3 — PRD/ADR × código; com um item de L4)
+- **Relacionado a**: RQ-05, ADR-03, ADR-06, passo 10 do `01`, commit `ec665a5`
+- **Esperado**: step 7 da `feature-wiki` e a tabela L3 desta skill — afirmação que o código
+  contradiz se corrige **na fonte**, com a marca `*(alterado em …)*`. O próprio `02:240` já usa
+  essa marca, então a convenção existe dentro do arquivo.
+- **Observado**:
+
+  | Onde | Afirma | O código faz |
+  |---|---|---|
+  | `02` ADR-03 § Decisão | o compacto sai de **`--spacing`**, e não de outro lugar | a largura do menu sai de `Panel::sidebarWidth()`, que não é `--spacing` — o próprio docblock de `app/Support/DensidadeDoLayout.php:larguraDaSidebar():201` diz isso |
+  | `02` ADR-03 § Consequências | *"uma declaração; **imune a `composer update`**, porque **não referencia nada do vendor**"* | referencia: `->sidebarWidth()` é API de painel, e o `'20rem'` do nível confortável **congela o default do vendor** (`vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:11`) |
+  | `02` ADR-06 § Decisão | tabela de **dois** caminhos (render hook × `viteTheme()`) | há um **terceiro** em uso — `sidebarWidth(Closure)`, avaliado no render (`HasSidebar.php:getSidebarWidth():68`). A ADR-06 é citada como justificativa nos três providers e não conhece o caso |
+  | `01:462-464` § Filosofia | *"o mecanismo inteiro é **uma declaração CSS**"* | são dois mecanismos — e o passo 10, ~50 linhas acima **no mesmo arquivo**, descreve o segundo |
+  | `01:170-175` § Superfície de UI | duas linhas de emissão | `--sidebar-width` é um terceiro ponto, emitido em **toda** rota dos três painéis (`base.blade.php:85`) |
+  | `CHANGELOG.md:22` | *"**É uma declaração de CSS**, e nenhuma classe `fi-*` foi escrita"* | idem — o parágrafo novo logo acima já diz o contrário |
+  | `03:371-385` § Conformidade com Rules | dez linhas, nenhuma para `providers-filament.md` | o glob `app/Providers/Filament/**` passou a casar **três** arquivos do diff. A rule **não** está violada (a chamada está nos três painéis, que é justamente o que ela exige), mas não tem linha na tabela — L4 |
+
+  O `01:451` escreve, de próprio punho, *"**Esse fato não estava na ADR-03.**"* — o desvio foi visto,
+  registrado no arquivo vizinho e **não** corrigido na fonte. É o mesmo padrão que o QA-02 do ciclo 1
+  apontou, repetido no artefato seguinte.
+- **Repro**:
+  1. `git diff a95d2f0..HEAD -- wikis/specs/feat/layout-compact/layout-compact/02-decisoes-arquiteturais.md` → **vazio**
+  2. `git diff a95d2f0..HEAD --stat -- app/` → `11 files changed, 515 insertions(+)`, três deles `app/Providers/Filament/*PanelProvider.php`
+  3. `grep -n "o mecanismo inteiro é" 01-plano-acao.md` → `:462`
+  4. `sed -n '11p' vendor/filament/filament/src/Panel/Concerns/HasSidebar.php` → `protected string | Closure $sidebarWidth = '20rem';`
+- **Destino**: 1 — especificação/wiki
+- **Ação exigida**: reconciliar o `02` (ADR-03 § Decisão e § Consequências; ADR-06 § Decisão e
+  § Riscos) com o segundo mecanismo, marcando `*(alterado em …)*`; corrigir `01:462` e
+  `CHANGELOG.md:22`; acrescentar a linha de `providers-filament.md` à tabela do `03`.
+
+#### QA-08 — A correção do QA-03 criou três citações novas erradas, e declarou "36/36 ok" · Minor · destino 1
+
+- **Dimensão**: L (L2)
+- **Relacionado a**: QA-03 do ciclo 1 · `.ai/rules/specs.md` § *Citação de vendor se confere por
+  símbolo, nunca por número de linha* · commit `9c52204`
+- **Esperado**: `{path}:{símbolo}:{linha}` aponta para **a declaração** do símbolo. No ciclo 1 essas
+  três citações estavam **certas** (`:183` e `:189`); foi a remediação que as quebrou.
+- **Observado**:
+
+  | Citação | Onde | A linha citada contém | Declaração real |
+  |---|---|---|---|
+  | `app/Support/DensidadeDoLayout.php:coagir():219` | `01:308` | `return self::coagir(config('kit.densidade_do_layout'));` — corpo de `deConfig()` | **236** |
+  | `app/Support/DensidadeDoLayout.php:padrao():238` | `01:312` | `... ?? self::padrao();` — corpo de `coagir()` | **242** |
+  | `app/Support/DensidadeDoLayout.php:coagir():219` | `03:456` | idem da primeira | **236** |
+
+  As três **passam** pela conferência que a rule prescreve (*"verifique se `sed -n "{linha}p"` contém
+  o símbolo"*), porque o nome aparece na linha como **chamada**. O furo é da conferência, não do
+  leitor: quem seguir a citação cai 17 e 4 linhas antes, dentro de outro método — exatamente o tipo
+  de erro que o QA-03 chamou de *"símbolo errado, não só linha"*.
+  Consequência: `01:489` e `03:348` declaram **"36/36 ok"**, e `03:383` registra `specs.md` como
+  *"aplicada — toda afirmação sobre vendor tem `arquivo:símbolo:linha` conferido"*.
+- **Repro** — varredura própria, com padrão que cobre `arquivo:simbolo():linha` **com parênteses**,
+  sobre `00`–`06`, `docs/pt`, `docs/en` e `wikis/roadmap.md`: 97 casamentos; para cada símbolo de
+  função, exigir `function <nome>` na linha citada.
+  - 3 apontam para **chamada** em vez de declaração — as da tabela acima
+  - 2 são ponto-de-chamada **deliberado e declarado** (`base.blade.php:STYLES_BEFORE:44` e
+    `KitServiceProvider.php:aplicarNaConfig():355`, este com a nota inline) — **não** são achado
+
+  Conferência manual: `grep -n "function coagir\|function padrao" app/Support/DensidadeDoLayout.php`
+  → `236`, `242`.
+- **Destino**: 1
+- **Ação exigida**: corrigir as três e refazer a contagem; e trocar a conferência por uma que exija
+  `function <símbolo>` na linha citada, em vez da mera presença do nome.
+
+#### QA-09 — Os contadores do QA-04 fecharam pela metade, e o `04` se contradiz em duas linhas vizinhas · Minor · destino 1
+
+- **Dimensão**: L (L1)
+- **Relacionado a**: QA-04 do ciclo 1 — a parte de **cenário** fechou; a de contagem/índice, não
+- **Esperado**: cabeçalho, nota explicativa, rodapé do Índice e tabela do gate concordando entre si
+  e com o runner.
+- **Medido**: `grep -c "^it(" tests/Kit/DensidadeDoLayoutTest.php` → **16** ·
+  `vendor/bin/pest tests/Kit/DensidadeDoLayoutTest.php --compact` → **30 casos / 66 asserções** ·
+  CT-15 vive em `tests/Kit/SiteDeDocumentacaoTest.php` (**+1 caso**) → **17 cenários, 31 casos**.
+
+  | Onde | Diz | Real |
+  |---|---|---|
+  | `04:43-44` | *"o arquivo tem **14** `it()`"*, *"**25** casos"*; datasets CT-03/CT-10/CT-12 | 16 `it()`, 30 casos; falta CT-17, que tem 4 exemplos |
+  | `04:715` | *"**14 cenários, 25 casos executados.** **Todos** em `tests/Kit/DensidadeDoLayoutTest.php`"* | 17 / 31 — e a linha `04:711`, **imediatamente acima**, diz que CT-15 vive em outro arquivo |
+  | `04:725` | `Mutantes previstos: **30**` | `04:34` já diz **34** |
+  | `04:34` | *"17 (30 casos executados)"* | 30 é a contagem de **um** arquivo; com CT-15 são 31. É a mesma conflação do ciclo 1, com números novos |
+  | `04:344` | *"medido: **7 dos 14 CTs** reprovam"* | remedido para **10 dos 30** em `01:480` e `03:343`; esta célula não acompanhou |
+  | `03:17` | *"**14 CTs, 25 casos**, 47 asserções"* | 16 / 30 / 66 — o `01:362` e o `01:471` foram corrigidos; a linha 5 da tabela `## Estado` do `03`, não |
+- **Repro**: os dois comandos acima, mais
+  `grep -n "25 casos\|14 CTs\|Mutantes previstos" 03-progresso.md 04-casos-de-teste.md`
+- **Destino**: 1
+- **Ação exigida**: recontar nos seis pontos, separando **cenários do conjunto** (17) de **casos por
+  arquivo** (30 + 1) — ou remover a contagem manual onde ela não paga a manutenção.
+
+#### QA-10 — O menu colapsado ficou fora da escala, e a lista de "o que não aperta" não o cita · Minor · destino 1
+
+- **Dimensão**: A (invariante do `00`) + L (L5)
+- **Relacionado a**: RQ-05, invariante do `00`, QA-01 do ciclo 1
+- **Esperado**: a decisão do ciclo 1 estabeleceu que **largura é atributo do menu** e por isso entra
+  na escala — *"nenhuma superfície fica parcialmente compacta"*. O menu tem **dois** estados de
+  largura, e os dois são alcançáveis: `->sidebarCollapsibleOnDesktop()` está ligado nos três painéis.
+- **Observado**: `--collapsed-sidebar-width` fica em **`4.5rem` (72 px) nos três níveis**. O valor é
+  o default do vendor e **nada no kit o sobrescreve** — exatamente a situação em que `--sidebar-width`
+  estava antes do ciclo 1. As docs pt/en e o `wikis/roadmap.md` § 5 listam **duas** superfícies que
+  não apertam (topbar e cartões do Pulse); esta seria a terceira, ou entra na escala.
+- **Repro** (estática e conclusiva — é literal sem override):
+  1. `grep -rn "collapsedSidebarWidth" app/ resources/` → só `badgeOnCollapsedSidebar()`, que é outra
+     coisa; **nenhum** `->collapsedSidebarWidth(...)`
+  2. `grep -n "collapsedSidebarWidth" vendor/filament/filament/src/Panel/Concerns/HasSidebar.php` →
+     `:13 protected string | Closure $collapsedSidebarWidth = '4.5rem';` e o getter que o avalia
+  3. `sed -n '86p' vendor/filament/filament/resources/views/components/layout/base.blade.php` →
+     `--collapsed-sidebar-width: {{ filament()->getCollapsedSidebarWidth() }};`
+- **Destino**: 1 — decisão do usuário, como foi a do QA-01: ou o rail colapsado entra na escala, ou
+  vira a terceira linha da lista de "não aperta", nas docs e no roadmap
+- **Ação exigida**: fechar a decisão num Adendo do `00` ou numa ADR, e refletir nas docs pt/en e no
+  `wikis/roadmap.md` § 5.
+- **Nota de severidade**: classificado **Minor**, e não Major por paridade com o QA-01, porque o rail
+  colapsado é estado **secundário e opcional** (o usuário precisa colapsar), é *icon-only* — não há
+  rótulo para apertar — e a correção documental custa uma linha. Um revisor que leia o invariante ao
+  pé da letra pode chamá-lo de Major; fica registrado para a decisão ser do usuário, não do gate.
+
+### Hipóteses Rejeitadas
+
+Registradas com o motivo, porque custaram o mesmo que os achados.
+
+| Hipótese | Resultado | Evidência |
+|---|---|---|
+| **CT-17 lê um valor congelado**, não a avaliação do `Closure` | **rejeitada** | `HasSidebar.php:getSidebarWidth():68` faz `evaluate($this->sidebarWidth)`. Confirmado em processo único: `php artisan tinker --execute` trocando `config('kit.densidade_do_layout')` entre leituras devolve `20rem / 17rem / 16.5rem / 20rem` (ilegível) nos **três** painéis. Valor fixo reprovaria 3 das 4 linhas do dataset |
+| **Os três painéis não estão cobertos** | **rejeitada** | `grep -rn "sidebarWidth" app/` → `AdminPanelProvider:117`, `AppPanelProvider:128`, `InfraPanelProvider:138`; CT-17 itera `['app','admin','infra']` com `toBe()` |
+| **A largura não aperta de verdade na tela** | **rejeitada** | Playwright 1.63.0 + Chromium, 1600×1000, `/admin` e `/admin/users` autenticado: menu **320,0 / 272,0 / 264,0 px**; item **40,0 / 32,8 / 31,2 px**; linha da tabela **56,0 / 46,4 / 42,9 px**; topbar **64 px** nos três (coerente com o documentado); **0 rótulos truncados** (`scrollWidth > clientWidth`) e `estouraHorizontal: false`. O limiar confere: no denso o rótulo mais longo — *"Configurações da aplicação"* — mede **187,2 px** numa caixa de **190 px**, 2,8 px de folga; em `16rem` a caixa seria 182 px, os ~5 px que o docblock declara |
+| **`git check-attr` teria o mesmo falso negativo do regex** | **rejeitada** | repositório de prova no scratchpad: `wikis/** export-ignore`, `*.md export-ignore`, `wikis/*.md export-ignore` e `/wikis/roadmap.md export-ignore` devolvem **todos** `set`; sem regra, `unspecified`. Os dois padrões que o regex deixava passar agora reprovam — **QA-05 fechado** |
+| **QA-06 continuaria divergente entre pt e en** | **rejeitada** | as duas línguas dizem a mesma coisa, com o mesmo número de itens, e o `wikis/roadmap.md` § 5 tem as mesmas duas linhas — **fechado** |
+| **QA-01 continuaria aberto** | **rejeitada** | ver a medição acima — **fechado** |
+| **A parte de cenário do QA-04 continuaria aberta** | **rejeitada** | CT-15, CT-16 e CT-17 têm Gherkin com `Exemplos`; o Índice atribui CT-16 → **R8** e CT-17 → **R1**, e a coluna *Camada* está preenchida. Sobrou a contagem — QA-09 |
+
+### Dimensões — Ciclo 2
+
+| # | Dimensão | Status | Observação |
+|---|----------|--------|------------|
+| A | Cobertura do requisito | ⚠️ | 1 achado (QA-10). QA-01 fechado e medido no navegador |
+| B | Fronteiras e dados | ✅ | `larguraDaSidebar()` é `match` total sobre os três casos do enum, sem `default` e sem entrada externa — o valor já chega coagido por `deConfig()` |
+| C | Matriz de permissão | ⏭️ pulada | nenhuma célula nova no diff do ciclo 2: sem rota, policy ou ação |
+| D | Observabilidade real | ✅ | `git diff a95d2f0..HEAD -- app/ \| grep -c "Log::"` → **0**. Sem log, e portanto sem PII em log |
+| E | Performance | ✅ | uma chamada a `DensidadeDoLayout::deConfig()` por render de layout, lendo `config()` já em memória. Zero query nova |
+| F | UX de erro | ✅ | nenhuma superfície de mensagem nova |
+| G | Tema e cor | ⏭️ pulada | superfície de cor **nula** no diff do ciclo 2: `git diff a95d2f0..HEAD -- app/ resources/ \| grep -E "bg-\|text-(white\|black\|gray)\|border-\|#hex"` → vazio |
+| H | Acessibilidade | ⚠️ parcial | verificado o recorte que a largura afeta: **0 rótulo truncado** nos três níveis e sem scroll horizontal. Tab order e axe não rodados — ver *Não Verificado* |
+| I | Segurança da superfície nova | ✅ | `larguraDaSidebar()` devolve **literal** de um `match`; nada vindo do request alcança o `<style>` inline. Nenhuma propriedade Livewire, rota ou método público novo |
+| J | Regressão adjacente | ✅ | **2.721 / 10.537 / 0 falhas**, reproduzida pelo gate |
+| K | Adequação da suíte | ✅ | passo estático **limpo** nos dois testes novos: CT-17 usa `toBe()` com valor esperado por nível e por painel; a guarda de `export-ignore` virou `git check-attr`, com o oráculo verificado em repositório de prova. Passo medido continua em *Não Verificado* |
+| L | Consistência documental | ❌ | 3 achados — QA-07, QA-08, QA-09 |
+
+### Não Verificado — Ciclo 2
+
+- **Dimensão K, passo medido (mutation score)** — `php -m` não lista **PCOV nem Xdebug**, e
+  `--mutate` aborta com `Mutation testing requires code coverage to be enabled`. A falsificabilidade
+  declarada no `04` (M34 morto ao remover `sidebarWidth()` do `InfraPanelProvider`) **não foi
+  reproduzida**: reproduzi-la exigiria mutar código de aplicação, que esta skill proíbe.
+- **Acessibilidade completa** (axe, tab order, foco) — fora do perfil `padrão`; verificado só o
+  recorte que a largura nova afeta.
+- **Rail colapsado medido em pixel** — QA-10 está provado **estaticamente** (literal do vendor sem
+  override); a medição do estado colapsado no navegador não foi feita.
+- **`pest --tia`** — não rodado; a regressão completa cobriu o mesmo escopo com mais folga.
+- **Dado de desenvolvimento** — a medição de uma sessão anterior deixou **14 usuários
+  `medicao*@example.com`** no banco de desenvolvimento. Não é defeito do produto (destino 4, infra)
+  e o gate não os tocou. Para medir, o gate trocou a senha de `admin@example.com` e **restaurou o
+  hash original** ao fim (verificado), devolvendo a densidade a `confortavel` e derrubando o
+  `artisan serve`.
