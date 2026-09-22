@@ -55,11 +55,11 @@
 - [x] A primeira versão do `[CT-11]` **repetiu o erro da terceira varredura** — acusou os 15
       cenários do `SiteDeDocumentacaoTest`, porque não via o `markTestSkipped` do `beforeEach`.
       Corrigida com a checagem do preâmbulo, e o motivo ficou escrito **dentro do caso** — 2026-09-22
-- [x] `vendor/bin/pest tests/Kit/RedeDeDocumentacaoTest.php` — **10/10 verdes**, 2026-09-22
+- [x] `vendor/bin/pest tests/Kit/RedeDeDocumentacaoTest.php` — **14/14 verdes** (eram 10 antes de `[CT-22]` e `[CT-23]`), 2026-09-22
 
 ## Testes
 
-- [x] `04-casos-de-teste.md` derivado — **23 cenários, 9 regras, 42 mutantes, 5 lacunas
+- [x] `04-casos-de-teste.md` derivado — **23 cenários, 9 regras, 42 mutantes, 6 lacunas
       declaradas**, com duas rodadas de revisão adversarial, 2026-09-22
 - [x] Casos escritos conforme o `04` — **em dois arquivos**, e o segundo só entrou depois do
       quality gate (QA-02): `tests/Kit/RedeDeDocumentacaoTest.php` ganhou `[CT-22]` e `[CT-23]`,
@@ -88,9 +88,9 @@ Reprovado nos dois sentidos depois de corrigido: zero falso positivo, e ainda ve
 ## Verificação Final
 
 - [x] `vendor/bin/pint --dirty --format agent` — `passed`, 2026-09-22
-- [x] `vendor/bin/pest` nos cinco arquivos tocados (`SiteDeDocumentacao`, `RedeDeDocumentacao`,
-      `KitUpdate`, `HostLocal`, `CitacoesDeCodigo`) — **209/209**, 2026-09-22
-- [x] `php artisan test --testsuite=Kit,Tenancy --parallel` — **2.773 passaram, 10.790 asserções, 0 falhas**, 2026-09-22. Mesmo total da `v0.38.0`: a correção **declara o alcance** de um caso, não acrescenta caso
+- [x] `vendor/bin/pest` nos cinco arquivos rodados na reverificação (`SiteDeDocumentacao`, `RedeDeDocumentacao`,
+      `KitUpdate`, `HostLocal`, `CitacoesDeCodigo`) — **209/209** na data, 2026-09-22
+- [x] `php artisan test --testsuite=Kit,Tenancy --parallel` — **2.773 passaram, 10.790 asserções, 0 falhas** — medição de 2026-09-22, **antes dos testes desta wiki**. ~~Mesmo total da `v0.38.0`: a correção declara o alcance de um caso, não acrescenta caso~~ — a conclusão era verdadeira quando escrita e ficou falsa: o diff acrescenta 31 casos (QA-18, ciclo 2)
 - [x] `vendor/bin/phpstan analyse` — level 7, **0 erros** · `vendor/bin/filacheck` — **17/17**, 2026-09-22
 - [x] `/code-review high main...HEAD` + passe de eixos (step 6.5) — **9 achados, 3 Major e 6 Minor,
       todos fechados**, 2026-09-22:
@@ -108,7 +108,8 @@ Reprovado nos dois sentidos depois de corrigido: zero falso positivo, e ainda ve
       | RD-09 | Minor | os dois últimos itens de `CAMINHOS_DO_KIT` fora da ordem alfabética | reordenados; ordem declarada no comentário |
 
 - [x] Reverificação após os nove: `pint` **passed** · `phpstan` level 7 **0 erros** · os cinco
-      arquivos tocados **210/210** · `--testsuite=Kit,Tenancy --parallel` **2.804 testes, 2.801
+      arquivos **rodados na reverificação** — não "tocados": três deles não estão no diff —
+      **214/214, 677 asserções** · `--testsuite=Kit,Tenancy --parallel` **2.804 testes, 2.801
       passaram, 10.883 asserções, 3 pulados, 0 falhas**, 2026-09-22.
 
       **Corrigido pelo quality gate (QA-07).** Este bullet dizia *"2.774 passaram, 10.791
@@ -118,15 +119,25 @@ Reprovado nos dois sentidos depois de corrigido: zero falso positivo, e ainda ve
       depois disso. É o padrão *número certo num arquivo e velho em outro* — o valor correto já
       estava na seção `## Testes` deste mesmo documento
 - [ ] `feature-quality-gate` (step 8)
-- [x] Citações `arquivo:símbolo:linha` reverificadas — **4 distintas, 8 ocorrências, 4/4 corretas**, 2026-09-22. O extrator e a conferência, colados porque o *"3/3 ok"* anterior não saía de comando nenhum (QA-08):
+- [x] Citações `arquivo:símbolo:linha` reverificadas — **4 distintas, 12 ocorrências**, e
+      **duas estavam erradas**, 2026-09-22 (QA-12 do ciclo 2). O extrator, colado:
 
       ```
       $ grep -rhoE '([A-Za-z0-9_/.-]+\.php):(\[?[A-Za-z_0-9-]+\]?):([0-9]+)' wikis/specs/fix/validacao-de-release/ | sort | uniq -c
-            5 tests/Kit/HostLocalTest.php:[CT-34]:1354
-            1 tests/Kit/SiteDeDocumentacaoTest.php:naArvoreDoKit:30
-            1 app/Console/Commands/KitUpdate.php:handle:414
-            1 app/Console/Commands/KitUpdate.php:handle:1089
+            2 app/Console/Commands/KitUpdate.php:git:1089
+            2 app/Console/Commands/KitUpdate.php:preVoo:414
+            6 tests/Kit/HostLocalTest.php:[CT-34]:1354
+            2 tests/Kit/SiteDeDocumentacaoTest.php:naArvoreDoKit:30
       ```
+
+      **O que o ciclo 1 errou aqui, duas vezes.** Afirmei *"3/3 ok"* sem comando; corrigi para
+      *"8 ocorrências, 4/4 corretas"* — e **as duas partes estavam erradas**. São 12, porque colar
+      a saída no `03` acrescentou uma ocorrência de cada: a evidência invalidou a si mesma no ato
+      de ser colada. E eram **2/4**: conferi que a linha 414 contém `is_dir(base_path('.git'))` e
+      que a 1089 contém `new Process(...)`, mas não conferi **em que função elas moram** — são
+      `preVoo()` (declarada em 406) e `git()` (em 1087), não `handle()`. `.ai/rules/specs.md` pede
+      o **símbolo da declaração**, e conferir o conteúdo da linha não é conferir o símbolo.
+
 
 
       **Uma delas estava errada, e é o registro que importa**: escrevi `HostLocalTest.php:1356`
@@ -145,7 +156,31 @@ Reprovado nos dois sentidos depois de corrigido: zero falso positivo, e ainda ve
 
 ## Quality Gate
 
-- **Ciclo**: — · **Veredito**: — · **Data**: —
+| Ciclo | Veredito | Blocker | Major | Minor | Data |
+|---|---|---|---|---|---|
+| 1 | REPROVADO → especificação | 1 | 6 | 2 | 2026-09-22 |
+| 2 | REPROVADO → especificação | 1 | 5 | 4 | 2026-09-22 |
+
+**Os nove do ciclo 1 estão fechados** — o ciclo 2 conferiu oito no disco e rodando, e reabriu um
+(QA-08 virou QA-12: a correção estava errada nas duas partes).
+
+**Sete dos nove achados do ciclo 2 nasceram das correções do ciclo 1**, e todos da mesma forma:
+número escrito em prosa que era verdadeiro no commit e falso no seguinte — `210/210`, `10/10`,
+`8 ocorrências`, `145 → 147`. **Duas delas estavam a duas linhas da nota que explica o padrão.**
+
+A lição está registrada e aplicada: **o que não envelhece é o comando colado ao lado do número**.
+A tabela de varredura do `00` já fazia isso; o resto do `03` não fazia, e passou a fazer.
+
+### O Blocker é de sequência, e o gate concordou
+
+QA-01 — RQ-08 e RQ-09 abertos — permanece nos dois ciclos, e o ciclo 2 julgou a sequência
+**defensável**: não se publica tag de branch não mesclado, e `composer create-project … v0.38.1`
+exige a tag **indexada no Packagist**. Adiar os passos 5 e 6 é ordenação física, não omissão.
+
+**A consequência é mecânica e está declarada**: o que se aprova aqui é o **PR**, não a entrega.
+Enquanto o passo 6 não rodar, este documento **não pode dizer "concluída"**, e nenhum ciclo de
+quality gate pode emitir `APROVADO` — por definição do próprio `00`.
+
 - **Relatório**: `06-relatorio-qa.md`
 
 ## Por que nenhum gate pegou o `[CT-12]` — RQ-07

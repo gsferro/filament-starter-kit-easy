@@ -148,6 +148,11 @@ não era *"criar guarda?"*, era *"endurecer a que existe?"*.
   pulado **indevidamente** é indistinguível, por este critério, de uma correção legítima.
   **DECIDIDO: manter o teto.** O roteiro passa a exigir teto de pulados com **justificativa por
   aumento**, não só registro — registrar é anotação, teto é gate. Materializado em CT-13.
+  **Ajustado no ciclo 2 do quality gate (QA-10)**: a justificativa é **por causa**, não por
+  unidade. Esta entrega sozinha acrescenta ~27 pulados fora da árvore do kit — um arquivo de
+  testes inteiro que só vale aqui dentro — e exigir 27 parágrafos transformaria o gate em
+  carimbo. E a previsão `145 → 147` que estava escrita **errou por ~25**, porque contava só os
+  dois casos que eu tinha em mente em vez de todo caso guardado por `naArvoreDoKit()`.
 
 - **RQ-07 — "entender os erros" tem oráculo?**
   Não é testável como está.

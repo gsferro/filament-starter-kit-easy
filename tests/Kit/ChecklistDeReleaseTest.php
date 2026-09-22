@@ -340,7 +340,15 @@ it('[CT-13] o critério registra um número esperado de pulados por cenário de 
 
     $this->assertMatchesRegularExpression('/\bteto\b/iu', $roteiro);
     $this->assertMatchesRegularExpression('/justificad[ao]? por escrito|justificar por escrito/iu', $roteiro);
-    $this->assertMatchesRegularExpression('/nomeando o caso/iu', $roteiro);
+    /*
+     * O Gherkin pede que o aumento "seja NOMEADO antes de aprovado" — nao fixa a UNIDADE da
+     * nomeacao. A primeira versao desta linha cobrava `nomeando o caso`, e o ciclo 2 do quality
+     * gate (QA-10) mostrou por que isso nao serve: esta entrega sozinha acrescenta ~27 pulados
+     * fora da arvore do kit, e exigir um paragrafo por caso tornaria o gate impossivel de
+     * cumprir na primeira release que acrescenta um arquivo de teste. Gate impossivel vira gate
+     * ignorado. A justificativa passou a ser POR CAUSA, e o oraculo acompanha a clausula.
+     */
+    $this->assertMatchesRegularExpression('/por causa|nomeando (?:o caso|a causa)/iu', $roteiro);
     $this->assertStringContainsString('não fecha o caso', $roteiro);
 })->skip(fn (): bool => ! naArvoreDoKit(), 'Asserção sobre a REDAÇÃO do roteiro — regra do canário único (04).');
 

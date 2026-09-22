@@ -762,7 +762,8 @@ custa, além dela, inverter CT-07 e esta linha — está escrito, e é o preço 
 
 ## Lacunas Declaradas
 
-Cinco. **L1 e L2 encolheram** nas duas rodadas de revisão, que provaram que as duas eram
+**Seis** — a L6 entrou no ciclo 1 do quality gate, e este contador ficou em "cinco" até o
+ciclo 2 o pegar (QA-15). **L1 e L2 encolheram** nas duas rodadas de revisão, que provaram que as duas eram
 parcialmente falsas; o recuperado virou CT-12, CT-15, CT-20, CT-21, CT-22.
 
 ### L1 — a execução dos quatro cenários continua fora do arnês
@@ -797,9 +798,9 @@ quatro projetos.
 só quando o destino está vazio.
 
 **Por que não dá**: `KitUpdate::handle()` opera sobre `base_path()` **fixo**, não injetável
-(`app/Console/Commands/KitUpdate.php:handle:414`), e exige repositório git real — ele cria um
+(`app/Console/Commands/KitUpdate.php:preVoo:414`), e exige repositório git real — ele cria um
 remote `kit`, busca uma tag **publicada** e aplica o diff **no próprio checkout onde a suíte
-roda** (`app/Console/Commands/KitUpdate.php:handle:1089`). Executá-lo de verdade destruiria a
+roda** (`app/Console/Commands/KitUpdate.php:git:1089`). Executá-lo de verdade destruiria a
 árvore que está sendo medida. É a mesma classe de ambiente que [L1](#l1--a-execução-dos-quatro-cenários-continua-fora-do-arnês)
 já declara para os quatro cenários.
 

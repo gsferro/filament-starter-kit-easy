@@ -98,13 +98,19 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 >
 > Na `v0.38.0` foram **145** por cenário, e eles são deliberados: os casos que não se aplicam fora
 > da árvore do kit (site de documentação, fluxos do GitHub Actions, histórico de planejamento). O
-> número **envelhece** a cada release — e o de cima **já envelheceu**: a correção do `[CT-12]` o
-> leva a 146 (o caso passa a pular em vez de estourar) e o `[CT-11]` novo, também só válido na
-> árvore do kit, a 147.
+> número **envelhece** a cada release, e é medição histórica: vale para a `v0.38.0`, não para a
+> próxima.
 >
-> **A regra**: a contagem de uma release **não pode passar do teto da anterior**. Se passar, cada
-> unidade de aumento é **justificada por escrito** antes da tag sair, nomeando o caso e o motivo.
-> O teto novo vira o da próxima.
+> **A regra**: a contagem de uma release **não pode passar do teto da anterior**. Se passar, o
+> aumento é **justificado por escrito** antes da tag sair — **por causa, não por unidade**: *"+26,
+> arquivo de testes novo do roteiro, que só vale na árvore do kit"* é uma justificativa completa
+> para 26 pulados. O teto novo vira o da próxima release.
+>
+> **Não tente prever o número.** A primeira versão desta seção previa `145 → 147`, contando só os
+> dois casos que ela tinha em mente, e errou por ~25: **todo** caso guardado por `naArvoreDoKit()`
+> pula lá fora, e a própria entrega que escreveu este parágrafo acrescentou um arquivo inteiro
+> deles. Previsão de contagem envelhece no commit seguinte. **Meça no passo 6 e registre**; o que
+> não envelhece é o comando ao lado do número.
 >
 > **Por que teto e não só "anotar e comparar"**, que era a regra original: *"pulado declarado não
 > conta contra"* é **anti-conservador justamente nesta classe de defeito**, porque a correção

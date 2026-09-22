@@ -232,6 +232,12 @@ contagem tem teto, e todo aumento exige justificativa escrita.**
 - **O que a mitigação anterior não cobria**: *"registrar, e a variação é o sinal"* supõe alguém
   comparando duas releases. O teto não supõe ninguém: ele **reprova** na release em que o número
   sobe sem justificativa escrita
-- **Riscos**: o número 145 envelhece — e **já envelheceu nesta própria entrega**: o `[CT-12]`
-  corrigido leva a 146 e o `[CT-11]` novo a 147. Por isso o checklist pede **registrar**, não
-  **afirmar**, e o passo 6 é quem mede
+- **Riscos**: o número 145 envelhece — e **já envelheceu nesta própria entrega**. A primeira
+  versão desta linha dizia *"o `[CT-12]` corrigido leva a 146 e o `[CT-11]` novo a 147"*, e
+  **errou por ~25** (QA-10, ciclo 2): eu contei os dois casos que tinha em mente, quando o que
+  pula lá fora é **todo** caso guardado por `naArvoreDoKit()` — e esta entrega acrescentou um
+  arquivo inteiro deles. Por isso o checklist pede **medir e registrar**, nunca **prever**, e o
+  passo 6 é quem mede.
+- **Ajuste do ciclo 2**: a justificativa do aumento é **por causa**, não por unidade. Exigir um
+  parágrafo por pulado tornaria o gate impossível de cumprir na primeira release que acrescenta
+  um arquivo de teste — e gate impossível vira gate ignorado

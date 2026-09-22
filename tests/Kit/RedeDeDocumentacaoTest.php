@@ -5,9 +5,21 @@ use Symfony\Component\Finder\Finder;
 /**
  * A rede de asserções sobre a documentação continua vigiando o texto ONDE ELE PASSOU A MORAR.
  *
- * IDs de CT em `wikis/specs/feat/site-de-documentacao/site-de-documentacao/04-casos-de-teste.md`
- * (R4). Separado de `SiteDeDocumentacaoTest` porque o alvo aqui não é o site: são as suítes
- * que leem a documentação.
+ * Separado de `SiteDeDocumentacaoTest` porque o alvo aqui não é o site: são as suítes que leem a
+ * documentação.
+ *
+ * ## Os IDs deste arquivo vêm de DUAS wikis, e por isso colidem com os de outro arquivo
+ *
+ * | Caso | Wiki de origem |
+ * |---|---|
+ * | `[CT-07]` a `[CT-10]` | `wikis/specs/feat/site-de-documentacao/site-de-documentacao/04-casos-de-teste.md` (R4) |
+ * | `[CT-11]`, `[CT-22]`, `[CT-23]` | `wikis/specs/fix/validacao-de-release/validacao-de-release/04-casos-de-teste.md` |
+ *
+ * `SiteDeDocumentacaoTest` tem um `[CT-11]`, um `[CT-22]` e um `[CT-23]` **seus**, com outro
+ * significado. `grep -rn '\[CT-22\]' tests/` devolve os dois, e isso é esperado: o `CT-nn` é
+ * único **dentro do arquivo**, e a wiki de origem é o que desambigua. Este bloco existe porque a
+ * primeira versão do docblock declarava uma wiki só e ficou falsa quando os três casos da
+ * segunda entraram (achado QA-13 do quality gate, ciclo 2).
  *
  * A assimetria que justifica o arquivo: asserção de PRESENÇA fica vermelha quando o texto
  * migra e se conserta sozinha; asserção de AUSÊNCIA fica verde e VAZIA — o README encolhido
@@ -183,7 +195,7 @@ it('[CT-10] nenhum cenário se guarda pela própria entrega', function (): void 
         preg_match_all('/\b(is_dir|file_exists|is_file|markTestSkipped|skip)\s*\([^;]*?docs/', $codigo, $guardasSobreDocs);
 
         // `toContain()` recebe VÁRIOS needles — uma mensagem como 2º argumento viraria needle.
-        expect(str_contains($codigo, 'naArvoreDoKit()'))
+        expect(arquivoTemSentinela($codigo))
             ->toBeTrue("{$arquivo} lê a documentação do kit e não tem a sentinela naArvoreDoKit(): fora da árvore do kit ele fica vermelho em toda instalação.");
 
         expect($guardasSobreDocs[0])->toBe([], "{$arquivo} condiciona execução à existência de docs/");
@@ -270,6 +282,21 @@ function leCaminhoNaoEntregue(string $corpoDoCaso, array $funcoes, string $prefi
  * recusa, para a fatia direta. A mensagem nomeia o caso, porque "o arquivo X não tem sentinela"
  * foi precisamente a informação que não bastou.
  */
+/**
+ * O oraculo do `[CT-10]`: a sentinela existe **em algum lugar do ARQUIVO**.
+ *
+ * Extraida para que `[CT-22]` possa exercita-la sobre o mesmo arranjo que alimenta o `[CT-11]`,
+ * em vez de reafirmar uma string literal escrita tres linhas acima — a segunda assercao do
+ * `[CT-22]` fazia isso e nao podia falhar (achado QA-17 do quality gate, ciclo 2).
+ *
+ * Agora as duas guardas rodam o MESMO codigo que rodam em producao, sobre o MESMO insumo, e o
+ * `[CT-22]` afirma que elas **discordam** — que e a propriedade que justifica as duas existirem.
+ */
+function arquivoTemSentinela(string $codigo): bool
+{
+    return str_contains($codigo, 'naArvoreDoKit()');
+}
+
 /**
  * Os casos que **abrem** um arquivo de caminho literal nao entregue e nao tem a sentinela
  * `naArvoreDoKit()` **no proprio corpo**.
@@ -381,11 +408,14 @@ it('[CT-22] a guarda reprova o arranjo que a enganou, e o CT-10 nao', function (
         ->toBe(['ArranjoDaV0380Test.php -> [FIXTURE-A] le a pagina do site como oraculo documental']);
 
     /*
-     * O oraculo do [CT-10] sobre o MESMO arranjo, reproduzido aqui em vez de invocado: ele cobra
-     * `naArvoreDoKit()` no arquivo. O FIXTURE-B a tem, entao o arquivo a tem, entao ele passa.
-     * Esta linha e o que prova que o [CT-11] nao e redundante com o [CT-10].
+     * E o oraculo do [CT-10] sobre o MESMO arranjo, INVOCADO e nao reproduzido: `[CT-10]` chama
+     * esta mesma funcao. Ele passa, porque o FIXTURE-B tem a sentinela e ele olha o arquivo.
+     *
+     * As duas linhas juntas sao o achado da v0.38.0 transformado em teste: sobre um so insumo, a
+     * guarda por arquivo aprova e a guarda por caso reprova. Se alguem "unificar" as duas, este
+     * caso fica vermelho — que e exatamente o alarme que se quer.
      */
-    expect(str_contains($arranjoDoDefeito, 'naArvoreDoKit()'))->toBeTrue();
+    expect(arquivoTemSentinela($arranjoDoDefeito))->toBeTrue();
 })->group('kit');
 
 /**
