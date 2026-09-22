@@ -118,7 +118,7 @@ enum DensidadeDoLayout: string implements HasLabel
      * **Existe para que o campo NÃO seja `->options(DensidadeDoLayout::class)`**, e isso não é
      * preferência: passar a classe faz o Filament casteá-la de volta para instância do enum, e o
      * `fill()` do spatie atribui essa instância direto à propriedade
-     * (`vendor/spatie/laravel-settings/src/Settings.php:181`). Com a propriedade tipada `string`
+     * (`vendor/spatie/laravel-settings/src/Settings.php:fill:178`; a atribuição é a `:181`). Com a propriedade tipada `string`
      * o resultado é `TypeError` ao **salvar a tela inteira** — não só este campo. Foi a suíte que
      * pegou: 60 casos de outras features (login social, anti-robô, login unificado) passaram a
      * dar erro porque todos salvam a mesma página.
@@ -164,13 +164,13 @@ enum DensidadeDoLayout: string implements HasLabel
      * exatamente a "meia tela compacta" que o requisito proíbe.
      *
      * O valor vem de `--sidebar-width`, que o Filament emite **inline** a partir de
-     * `filament()->getSidebarWidth()` (`vendor/filament/filament/resources/views/components/layout/base.blade.php:85`).
+     * `filament()->getSidebarWidth()` (`vendor/filament/filament/resources/views/components/layout/base.blade.php:getSidebarWidth:85`).
      * Nenhuma declaração de `--spacing`, em layer nenhuma, o alcança.
      *
      * ## Por que ele PODE ser governado em runtime, ao contrário do tema
      *
      * `Panel::sidebarWidth()` aceita `string | Closure`
-     * (`vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:54`) e o getter faz
+     * (`vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:sidebarWidth:54`) e o getter faz
      * `evaluate()` (`:68-71`), que roda **no render**. É a mesma propriedade do render hook, e o
      * oposto do `viteTheme()` da ADR-06 — que é resolvido no registro do painel e por isso
      * gravaria sem governar.
@@ -178,7 +178,7 @@ enum DensidadeDoLayout: string implements HasLabel
      * `string` e não `?string`: aqui não há o contrato do `null` de `espacamento()`. O Filament
      * sempre emite `--sidebar-width`, com ou sem o kit, então devolver o default explícito no
      * nível confortável é o valor que o vendor já usaria — `'20rem'`
-     * (`HasSidebar.php:11`), os 320 px medidos antes da feature.
+     * (`vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:$sidebarWidth:11`), os 320 px medidos antes da feature.
      *
      * ## Os dois valores são o MÍNIMO MEDIDO, não escolha de gosto
      *

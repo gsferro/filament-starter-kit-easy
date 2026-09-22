@@ -128,12 +128,12 @@ class InfraPanelProvider extends PanelProvider
              * de `wikis/specs/feat/layout-compact/`.
              *
              * `Closure` e não valor fixo: `getSidebarWidth()` faz `evaluate()` no RENDER
-             * (`vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:68`), então a escolha
+             * (`vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:getSidebarWidth:68`), então a escolha
              * da tela vale no request seguinte. Um valor fixo aqui seria resolvido no registro do
              * painel e gravaria sem governar — a armadilha da ADR-06.
              *
              * Aqui e não no render hook de `--spacing`: a largura vem de `--sidebar-width`, que o
-             * Filament emite inline em `base.blade.php:85`, fora do alcance de qualquer layer.
+             * Filament emite inline em `vendor/filament/filament/resources/views/components/layout/base.blade.php:getSidebarWidth:85`, fora do alcance de qualquer layer.
              */
             ->sidebarWidth(fn (): string => DensidadeDoLayout::deConfig()->larguraDaSidebar())
             ->maxContentWidth(Width::Full)
