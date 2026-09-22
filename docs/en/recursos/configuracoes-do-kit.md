@@ -118,7 +118,7 @@ screen is enough.
 > fixed; the **`/infra/pulse` cards**, which ship their own CSS (the Pulse tables tighten normally);
 > and the **collapsed sidebar rail**, left out on purpose — it is icon-only, its width is the click
 > target, and the icon inside it already shrinks.
-> Both are on the [kit roadmap](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/roadmap.md).
+> All three are on the [kit roadmap](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/roadmap.md).
 >
 > There is an [official paid compact theme](https://filamentphp.com/plugins/filament-compact-theme)
 > that reaches −22.5% **without** distorting icons or fonts. It does not ship with the kit because

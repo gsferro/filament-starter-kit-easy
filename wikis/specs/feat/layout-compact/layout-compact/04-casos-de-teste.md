@@ -31,7 +31,7 @@ digitação em configuração cosmética.
 - Técnicas aplicadas: **partição de equivalência**, **partição exaustiva do enum**, **rastreio de
   efeito com asserção de ausência**, **pairwise (painel × nível)**, **round-trip** (`up()`/`down()`
   da migration), **contrapositivo** (o par ligado/desligado), **oráculo do outro lado da cadeia**
-- Cenários: **17** (31 casos executados, com datasets) · Regras: **8** · Mutantes previstos: **34**
+- Cenários: **18** (32 casos executados, com datasets) · Regras: **8** · Mutantes previstos: **35**
 
   Remedido em 2026-09-21. Os três cenários novos entraram **depois** dos gates: CT-15 pelo
   `/code-review` (achado 1), CT-16 pelo `/code-review` (achado 2) e CT-17 pelo quality gate
@@ -40,8 +40,13 @@ digitação em configuração cosmética.
   · Sem matador: **2**, mais **1** com matador parcial — os três declarados em
   `## Lacunas Declaradas`, junto com as outras duas lacunas de cobertura (`L2`, `L3`)
 
-> **Cenários × casos**: o arquivo tem 16 `it()`. Quatro deles têm dataset — CT-03 (4 exemplos),
-> CT-10 (7) e CT-12 (3) —, e é daí que saem os **25** casos que o runner conta.
+> **Cenários × casos**: o arquivo tem **17** `it()`. **Quatro** deles têm dataset — CT-03 (4
+> exemplos), CT-10 (7), CT-12 (3) e CT-17 (4) —, e é daí que saem os **31** casos que o runner
+> conta, com **68** asserções. Somando CT-15, que vive em `tests/Kit/SiteDeDocumentacaoTest.php`,
+> a feature tem **18 cenários / 32 casos**.
+>
+> *(remedido em 2026-09-22. A correção do QA-09 deixou este parágrafo PIOR — dizia "quatro" e
+> listava três, e manteve os 25 casos. Achado QA-12 do ciclo 3.)*
 
 ---
 
@@ -711,6 +716,7 @@ A última linha dos `Exemplos` é vocabulário ilegível, pelo mesmo motivo de C
 | CT-15 | O roadmap existe, está ligado nos dois READMEs **e viaja pelos dois caminhos de entrega** | — **documental** (RQ-07..RQ-10), fora das regras funcionais | oráculo documental | — | **escrito** — `tests/Kit/SiteDeDocumentacaoTest.php`, ID local `[CT-48]` daquele arquivo, que é o dono dos contadores de README | M31, M32 |
 | CT-16 | Um nível ilegível gravado **não trava a tela de configurações** | R8 | EP (vocabulário legível × ilegível) × oráculo no campo ALHEIO | Feature (Livewire) | **escrito** — `tests/Kit/DensidadeDoLayoutTest.php` | M33 |
 | CT-17 | A **largura** do menu acompanha o nível, nos três painéis | R1 | partição por nível × inventário dos três painéis | Feature (painel resolvido) | **escrito** — `tests/Kit/DensidadeDoLayoutTest.php` | M34 |
+| CT-18 | o **confortável** devolve exatamente o default do Filament | R3 | confronto com a declaração do vendor, por reflexão | Unit (reflexão) | **escrito** — `tests/Kit/DensidadeDoLayoutTest.php` | M35 |
 
 **17 cenários, 31 casos executados.** Dezesseis cenários (30 casos) vivem em
 `tests/Kit/DensidadeDoLayoutTest.php`; **CT-15 é a exceção** e vive em
@@ -725,7 +731,7 @@ dos contadores de README, e é por isso que o oráculo documental nasceu lá e n
 | Mutação **M31/M32** — `export-ignore` alcançando o roadmap; roadmap fora de `KitUpdate::CAMINHOS_DO_KIT` | **mortos**, verificados por mutação em 2026-09-21: os dois deixam `[CT-48]` vermelho, e a árvore restaurada volta ao verde |
 | Mutação **M34** — `sidebarWidth()` some de UM dos três painéis | **morto por CT-17**, verificado em 2026-09-21: removida a chamada do `InfraPanelProvider`, o caso fica vermelho. É o defeito provável, e seria invisível para qualquer caso que olhasse só o `/admin` |
 | Mutação **M33** — a coerção sai de `mutateFormDataBeforeFill()` | **morto por CT-16**, que nasceu VERMELHO contra a implementação original: salvar `nome_da_aplicacao` falhava com erro em `densidade_do_layout` |
-| Mutação **M12** — apagar a linha do `mapaDeConfiguracao()` | **7 dos 14 CTs reprovam**, medido em 2026-09-21 (commit `c2189d7`). Entre eles CT-03, CT-06, CT-07 e CT-14, que são os que afirmam sobre o valor do banco chegando ao outro lado da cadeia |
+| Mutação **M12** — apagar a linha do `mapaDeConfiguracao()` | **10 dos 30 casos reprovam**, remedido em 2026-09-21 (era "7 dos 14 CTs", de `c2189d7`). Entre eles CT-03, CT-06, CT-07 e CT-14, que são os que afirmam sobre o valor do banco chegando ao outro lado da cadeia |
 | Mutantes previstos | 34 |
 | Mutantes **sem matador** | **2** — M3 (`L1`) e M30 (`L4`), ambos declarados |
 | Mutantes com matador parcial | **1** — M8 (`L4`), coberto por composição de CT-01 com CT-12 |

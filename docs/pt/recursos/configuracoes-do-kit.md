@@ -116,7 +116,7 @@ suficiente.
 > Três coisas **não** apertam, e nenhuma é defeito: a **barra superior**, que tem altura fixa; os
 > **cartões do `/infra/pulse`**, que carregam CSS própria (as tabelas do Pulse apertam
 > normalmente); e o **rail do menu colapsado**, deixado de fora de propósito — ele é só ícone, a
-> largura dele é o alvo de clique, e o ícone dentro dele já encolhe. As duas estão no [roadmap do kit](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/roadmap.md).
+> largura dele é o alvo de clique, e o ícone dentro dele já encolhe. As três estão no [roadmap do kit](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/roadmap.md).
 >
 > Existe um [tema compacto oficial pago](https://filamentphp.com/plugins/filament-compact-theme)
 > que chega a −22,5% **sem** distorcer ícone nem fonte. Ele não entra no kit porque a licença é de

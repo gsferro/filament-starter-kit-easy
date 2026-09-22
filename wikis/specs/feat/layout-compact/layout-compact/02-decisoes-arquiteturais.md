@@ -125,8 +125,24 @@ nos três painéis. O mecanismo da feature passa a ter **dois** caminhos, não u
 `composer update`, porque não referencia nada do vendor"*. O segundo caminho **referencia**: o
 nível confortável devolve `'20rem'`, que é o default declarado em
 `vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:11`. Se o Filament mudar esse default,
-o confortável do kit deixa de ser idêntico ao kit sem a feature — que é o contrato da ADR. **CT-17
-fica vermelho** nesse dia, porque afirma o valor literal.
+o confortável do kit deixa de ser idêntico ao kit sem a feature — que é o contrato da ADR.
+
+> **Correção de 2026-09-22 — esta seção afirmava uma guarda que não existia.** O texto dizia
+> *"CT-17 fica vermelho nesse dia, porque afirma o valor literal"*. **Medido no ciclo 3 do quality
+> gate: não fica.** Os dois lados da asserção de CT-17 são literais **do kit**, então o default do
+> vendor nunca entra na comparação; trocando `'20rem'` por `'18rem'` em `HasSidebar.php:11`, CT-17
+> passa. E como os três painéis chamam `->sidebarWidth()`, o default fica inalcançável em runtime:
+> nenhum outro caso o veria mudar.
+>
+> Quem guarda o contrato é **CT-18**, escrito para isto: ele lê o default do vendor por reflexão
+> sobre a propriedade — e não perguntando ao painel, que devolveria o valor que o próprio kit
+> configurou — e exige que o confortável seja igual a ele. Verificado por mutação: com o default
+> em `'18rem'`, **CT-18 fica vermelho e CT-17 segue verde**.
+>
+> É a terceira vez nesta feature que uma correção de texto afirma mais do que o código sustenta.
+> Vale a regra que sai daí: **afirmação sobre o que um teste pega é verificável, e por isso tem de
+> ser verificada** — escrever "o caso X pega isso" sem rodar o mutante é a mesma classe de erro
+> que a asserção de ausência sem controle positivo.
 
 O **rail colapsado** (`--collapsed-sidebar-width`, `4.5rem`) ficou **deliberadamente de fora**,
 decidido com o usuário: ele é *icon-only*, a largura dele é ditada pelo alvo de clique e não por

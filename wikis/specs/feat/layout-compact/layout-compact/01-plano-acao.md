@@ -258,7 +258,7 @@ não em teste versionado.
 | Valor ilegível no `.env` ou na tabela estoura no layout base de toda tela | `coagir()` com `tryFrom() ?? padrao()`, chamado nos **dois** lados (`config/kit.php` e `deConfig()`) | fechado — CT-10 (7 entradas) e CT-11 |
 | A declaração acabar **dentro** de uma cascade layer e não mudar nada | CT-05 recorta a tag do kit e exige ausência de `@layer` e de `!important` | fechado |
 | O toggle gravar e não fazer efeito (armadilha do `settings.md`) | ADR-06 + CT-06, que muda a resposta no mesmo processo | fechado |
-| Esquecer a linha do `mapaDeConfiguracao()` | CT-07 afirma sobre as três pontas; a mutação confirmou que apagar a linha reprova 7 dos 14 casos | fechado |
+| Esquecer a linha do `mapaDeConfiguracao()` | CT-07 afirma sobre as três pontas; a mutação confirmou que apagar a linha reprova **10 dos 30 casos** (remedido em 2026-09-22; dizia "7 dos 14") | fechado |
 | A medição da ADR ter sido feita na **demo limpa**, e o kit reagir diferente | Medição refeita **no kit**, com jobs-monitor, auth-designer, `resized-column` e Pulse ligados | fechado — passo 6; o kit rendeu **mais** que a demo |
 | Distorção de proporção (ícone e input encolhem junto) | Não tem conserto barato. Mitigada por **níveis** (ADR-04) e **declarada** nas docs pt/en, com os números | aceito |
 

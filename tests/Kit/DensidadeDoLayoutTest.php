@@ -6,6 +6,7 @@ use App\Support\DensidadeDoLayout;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
+use Filament\Panel;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Livewire\Livewire;
@@ -482,3 +483,48 @@ it('[CT-17] a largura do menu acompanha o nivel nos tres paineis', function (str
     // Vocabulário ilegível cai no confortável, como em CT-10/CT-11.
     'ilegivel'    => ['compact', '20rem'],
 ])->group('kit');
+
+/**
+ * CT-18 — o nível confortável devolve **exatamente o default do Filament**.
+ *
+ * ## O caso existe porque a ADR afirmava uma guarda que não existia
+ *
+ * A ADR-03 diz que o confortável é **indistinguível do kit sem a feature** — é o contrato do
+ * nível de fábrica, e a razão de `espacamento()` devolver `null` em vez de `'0.25rem'`. Quando a
+ * largura do menu entrou, a ADR passou a afirmar que *"CT-17 fica vermelho"* se o Filament mudar
+ * o próprio default.
+ *
+ * **Medido no ciclo 3 do quality gate: não fica.** Os dois lados da asserção de CT-17 são
+ * literais do kit — `larguraDaSidebar()` de um lado, o dataset do outro —, então o default do
+ * vendor **nunca entra na comparação**. Trocando `'20rem'` por `'18rem'` em `HasSidebar.php:11`,
+ * CT-17 passa. E como os três painéis chamam `->sidebarWidth()`, o default fica inalcançável em
+ * runtime: nenhum outro caso o veria mudar.
+ *
+ * O contrato não tinha guarda nenhuma, e a ADR dizia que tinha. Este caso é a guarda.
+ *
+ * ## Por que reflexão sobre a PROPRIEDADE, e não `getSidebarWidth()` de um painel
+ *
+ * Perguntar ao painel devolveria o valor que o **kit** configurou — a própria coisa que este caso
+ * quer confrontar. A pergunta é sobre o vendor **antes** de o kit falar, e o único lugar onde ela
+ * existe é a declaração da propriedade no trait.
+ *
+ * Vermelho aqui **não** quer dizer que o kit quebrou: quer dizer que o Filament mudou o default e
+ * que a decisão precisa ser retomada — acompanhar o novo valor, ou declarar que o confortável
+ * deixou de ser idêntico. As duas são escolha, e nenhuma pode acontecer em silêncio.
+ */
+it('[CT-18] o confortavel devolve exatamente o default do Filament', function (): void {
+    $padraoDoVendor = (new ReflectionClass(Panel::class))
+        ->getDefaultProperties()['sidebarWidth'] ?? null;
+
+    expect($padraoDoVendor)->toBeString(
+        'a propriedade `sidebarWidth` sumiu do `Panel` — o contrato do nível confortável perdeu '
+        .'a referência contra a qual ele é afirmado',
+    );
+
+    expect(DensidadeDoLayout::Confortavel->larguraDaSidebar())->toBe(
+        $padraoDoVendor,
+        'o Filament mudou o default de `--sidebar-width`, e o nível confortável do kit deixou de '
+        .'ser indistinguível do kit SEM a feature — que é o contrato da ADR-03. Acompanhar o novo '
+        .'valor ou declarar que o contrato mudou: as duas são decisão, nenhuma é silêncio',
+    );
+})->group('kit');
