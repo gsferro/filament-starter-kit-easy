@@ -61,10 +61,14 @@
 
 - [x] `04-casos-de-teste.md` derivado — **23 cenários, 9 regras, 42 mutantes, 5 lacunas
       declaradas**, com duas rodadas de revisão adversarial, 2026-09-22
-- [x] Casos escritos conforme o `04` — `tests/Kit/ChecklistDeReleaseTest.php`, **26 casos: 23
+- [x] Casos escritos conforme o `04` — **em dois arquivos**, e o segundo só entrou depois do
+      quality gate (QA-02): `tests/Kit/RedeDeDocumentacaoTest.php` ganhou `[CT-22]` e `[CT-23]`,
+      que o `04` atribuía a ele e que a primeira rodada deixou de escrever. A linha anterior
+      afirmava conformidade com o `04` contando só um dos dois arquivos.
+      `tests/Kit/ChecklistDeReleaseTest.php`, **26 casos: 23
       verdes, 3 pulados** (os três datasets de CT-18, inviáveis por razão declarada), 2026-09-22
-- [x] Regressão com o arquivo novo dentro — **2.800 testes, 2.797 passaram, 10.878 asserções, 0
-      falhas**, 2026-09-22
+- [x] Regressão com o arquivo novo dentro — **2.804 testes, 2.801 passaram, 10.883 asserções, 3 pulados, 0
+      falhas** — os quatro a mais que a medição anterior são `[CT-22]` e os três datasets de `[CT-23]`, 2026-09-22
 
 ### O que a escrita dos casos encontrou — quatro vermelhos, todos legítimos
 
@@ -104,13 +108,26 @@ Reprovado nos dois sentidos depois de corrigido: zero falso positivo, e ainda ve
       | RD-09 | Minor | os dois últimos itens de `CAMINHOS_DO_KIT` fora da ordem alfabética | reordenados; ordem declarada no comentário |
 
 - [x] Reverificação após os nove: `pint` **passed** · `phpstan` level 7 **0 erros** · os cinco
-      arquivos tocados **210/210** · `--testsuite=Kit,Tenancy --parallel` **2.774 passaram, 10.791
-      asserções, 0 falhas**, 2026-09-22.
+      arquivos tocados **210/210** · `--testsuite=Kit,Tenancy --parallel` **2.804 testes, 2.801
+      passaram, 10.883 asserções, 3 pulados, 0 falhas**, 2026-09-22.
 
-      **2.774 é um a mais que a `v0.38.0`, e o um é o `[CT-11]`** — a única linha do diff que
-      acrescenta caso
+      **Corrigido pelo quality gate (QA-07).** Este bullet dizia *"2.774 passaram, 10.791
+      asserções"* e, logo abaixo, *"2.774 é um a mais que a `v0.38.0`, e o um é o `[CT-11]` — a
+      única linha do diff que acrescenta caso"*. As duas frases eram verdadeiras quando escritas e
+      falsas na árvore entregue: o diff acrescentou `ChecklistDeReleaseTest.php` com **26** casos
+      depois disso. É o padrão *número certo num arquivo e velho em outro* — o valor correto já
+      estava na seção `## Testes` deste mesmo documento
 - [ ] `feature-quality-gate` (step 8)
-- [x] Citações `arquivo:símbolo:linha` reverificadas — **3/3 ok**, conferidas por `sed -n {linha}p | grep`, 2026-09-22.
+- [x] Citações `arquivo:símbolo:linha` reverificadas — **4 distintas, 8 ocorrências, 4/4 corretas**, 2026-09-22. O extrator e a conferência, colados porque o *"3/3 ok"* anterior não saía de comando nenhum (QA-08):
+
+      ```
+      $ grep -rhoE '([A-Za-z0-9_/.-]+\.php):(\[?[A-Za-z_0-9-]+\]?):([0-9]+)' wikis/specs/fix/validacao-de-release/ | sort | uniq -c
+            5 tests/Kit/HostLocalTest.php:[CT-34]:1354
+            1 tests/Kit/SiteDeDocumentacaoTest.php:naArvoreDoKit:30
+            1 app/Console/Commands/KitUpdate.php:handle:414
+            1 app/Console/Commands/KitUpdate.php:handle:1089
+      ```
+
 
       **Uma delas estava errada, e é o registro que importa**: escrevi `HostLocalTest.php:1356`
       no texto que documenta citações erradas, e a minha própria edição no docblock do CT-12
@@ -122,7 +139,7 @@ Reprovado nos dois sentidos depois de corrigido: zero falso positivo, e ainda ve
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
-| `testes.md` | `tests/**` | **aplicada** | a guarda usada é o padrão que o próprio arquivo já tinha (`tests/Kit/HostLocalTest.php:[CT-34]:1354`); nenhum helper novo, nenhum helper cruzado |
+| `testes.md` | `tests/**` | **violada e corrigida** | a guarda usada é o padrão que o próprio arquivo já tinha (`tests/Kit/HostLocalTest.php:[CT-34]:1354`). **Mas a evidência anterior — *"nenhum helper novo, nenhum helper cruzado"* — descrevia só o passo 1**: o diff acrescenta 15 helpers, e um deles, `codigoPhpSemComentario()`, era **clone byte a byte** de `codigoSemComentario()` (mesmo `md5` do corpo). A rule proíbe exatamente isso — *"nunca crie um clone com outro nome para escapar da colisão"*. Achado QA-06; fechado movendo a função para `tests/Pest.php`, com um nome só |
 | `app.md` | `app/**` | **n.a. no que ela exige** | o diff toca `app/Console/Commands/KitUpdate.php`, mas só acrescenta uma string a uma constante. A rule governa atribuição de papel/permissão e DTO — nenhum dos dois |
 | `specs.md` | `wikis/specs/**` | **aplicada** | citações conferidas — ver Verificação Final |
 

@@ -30,13 +30,13 @@
 | Área | O que é | P | I | P×I | Perfil |
 |---|---|---|---|---|---|
 | **A** — o roteiro documentado (RQ-05, RQ-06) | texto novo, isolado, sem runtime | 1 | 2 | 2 | mínimo |
-| **B** — a guarda: corrigir o caso e **endurecer a que existe** (RQ-07, RQ-08) | mexe numa guarda que já falhou uma vez, e que cobre 193 arquivos | 3 | 3 | 9 | **completo** |
+| **B** — a guarda: corrigir o caso e **endurecer a que existe** (RQ-07, RQ-08) | mexe numa guarda que já falhou uma vez, e que varre 16 arquivos de suíte | 3 | 3 | 9 | **completo** |
 | **C** — a entrega do roteiro pelos dois canais (RQ-05, assumido) | integra com `.gitattributes` e com a lista fechada do `kit:update` | 2 | 2 | 4 | padrão |
 | **D** — os quatro cenários rodando liso contra a versão publicada (RQ-01…RQ-04, RQ-09) | ambiente externo, quatro instalações, dois eixos | 3 | 3 | 9 | completo |
 | **E** — a versão de correção (RQ-08) | bump de versão, já governado por gate existente | 1 | 2 | 2 | mínimo |
 
 **A área B subiu de `padrão` para `completo` com a RD-02.** Deixou de ser "corrigir um caso" e passou
-a ser "endurecer um oráculo que cobre 193 arquivos e que já deu verde com o defeito dentro" —
+a ser "endurecer um oráculo que varre 16 arquivos de suíte e que já deu verde com o defeito dentro" —
 probabilidade 3 (regra com muitas condições, três mecanismos de guarda distintos) e impacto 3
 (a guarda errada é pior que guarda nenhuma, que é o argumento original do usuário).
 
@@ -46,7 +46,11 @@ probabilidade 3 (regra com muitas condições, três mecanismos de guarda distin
   (substitui a matriz estado × operação), **rastreio de efeito de entrega até o disco**, **controle
   positivo bilateral** em toda sentinela e em toda asserção de ausência, **partição sobre os três
   mecanismos de guarda**, **valor limite** sobre contagens.
-- Cenários: **23** · Regras: **9** · Mutantes previstos: **42** · Sem matador: **5** · Parciais: **4**
+- Cenários: **23** · Regras: **9** · Mutantes previstos: **42** · Sem matador: **7** · Parciais: **4**
+- **Corrigido pelo quality gate, ciclo 1 (QA-04)**: era "sem matador: 5". O CT-18 foi escrito com
+  **corpo vazio e pulado** — o `kit:update` opera sobre `base_path()` fixo e exige `.git` real,
+  então exercitá-lo destruiria o próprio checkout. A razão é boa; o que faltou foi **mover M25 e
+  M27 para a coluna certa** em vez de deixá-los contados como mortos. Ver [L6](#l6--a-entrega-em-disco-pelo-kitupdate-nao-e-exercitavel-aqui).
 
 > **A superfície testável é pequena e incomum, e isso é um fato do requisito.** A maior parte da
 > entrega é texto, e RQ-09 **só é observável fora da árvore do kit**. A seção
@@ -94,7 +98,7 @@ e está declarada como tal. Mecanismos (comandos) têm tabela própria, porque a
 | 7 | `CHANGELOG.md` | presente | **ausente** | CT-11 | n/a — **não há caso Pest**; CT-11 é gate de CI, que só roda no repositório |
 | 8 | `.gitattributes` | presente | presente, porém **inerte**: sem repositório git nada o aplica | **nenhum** — as Armadilhas **proíbem** regex sobre ele; CT-07 consulta o mecanismo | n/a |
 | 9 | `config/kit.php` | presente | presente — entregue pelo `kit:update` | CT-11 | n/a (CI) |
-| 10 | `tests/Kit/HostLocalTest.php` (como texto) | presente | **presente** — os 193 arquivos de teste viajam | CT-10, CT-19, CT-20, CT-22 | sem guarda — ler o *arquivo de teste* é seguro nos dois ambientes |
+| 10 | `tests/Kit/HostLocalTest.php` (como texto) | presente | **presente** — os 178 arquivos de teste viajam | CT-10, CT-19, CT-20, CT-22 | sem guarda — ler o *arquivo de teste* é seguro nos dois ambientes |
 | 11 | `app/Console/Commands/KitUpdate.php` | presente | presente — é código entregue | CT-09 | sem guarda |
 | 12 | `.github/workflows/release.yml` | presente | **ausente** — `/.github export-ignore` | CT-11 | n/a — é o próprio gate |
 | 13 | `tests/Kit/ChecklistDeReleaseTest.php` (como texto) | presente | **presente** — passa a ser o 194º que viaja | CT-21 | sem guarda |
@@ -586,9 +590,9 @@ caem** e R5 fica com CT-07 e CT-08.
 |---|---|---|
 | M23 | uma regra de `export-ignore` alcança `wikis/*.md`: o roteiro some do `create-project` **sem quebrar mais nada** | CT-07 (na árvore) **e** CT-08 (no projeto instalado, que é onde importa) |
 | M24 | o roteiro viaja e se lê como promessa a quem instalou ("a cada release **sua**, rode…") | CT-08 (2ª linha) |
-| M25 | o roteiro entra na lista fechada e o comando **não o grava**: ramo de `--all`, ou lista que só reporta | CT-18 (linha `ausente`) |
+| M25 | o roteiro entra na lista fechada e o comando **não o grava**: ramo de `--all`, ou lista que só reporta | ⚠️ **sem matador** — CT-18 existe e está **pulado** ([L6](#l6--a-entrega-em-disco-pelo-kitupdate-nao-e-exercitavel-aqui)) |
 | M26 | o roteiro fica fora da lista fechada: quem já instalou nunca o recebe | CT-09 |
-| M27 | o comando pula o arquivo quando o destino já tem um `wikis/`, sem relatar | CT-18 (linhas `presente e idêntico` e `presente e modificado`) — *origem: revisão adversarial, rodada 2* |
+| M27 | o comando pula o arquivo quando o destino já tem um `wikis/`, sem relatar | ⚠️ **sem matador** — CT-18 existe e está **pulado** ([L6](#l6--a-entrega-em-disco-pelo-kitupdate-nao-e-exercitavel-aqui)). *origem: revisão adversarial, rodada 2* |
 
 ---
 
@@ -742,7 +746,7 @@ roteiro deixar de viajar, o canário passa a precisar de guarda e o "exatamente 
 custa, além dela, inverter CT-07 e esta linha — está escrito, e é o preço declarado de ter canário.
 
 **Escopo honesto**: CT-21 cobre **um** arquivo. Não é a varredura genérica, e não protege os outros
-193 — esses são de CT-22, que endurece a guarda que já existe para eles.
+177 — esses são de CT-22, que endurece a guarda que já existe para os 16 que ela varre.
 
 #### Mutantes previstos
 
@@ -751,7 +755,7 @@ custa, além dela, inverter CT-07 e esta linha — está escrito, e é o preço 
 | M38 | os quatro cenários são "reexecutados" rodando a suíte na árvore do kit | ⚠️ **sem matador automatizado** — o roteiro, via CT-13 (3ª linha) |
 | M39 | só os dois cenários de instalação são reexecutados; os de `kit:update` são presumidos equivalentes | ⚠️ **sem matador automatizado** — CT-01 e CT-15 deixam rastro; nada prova que os quatro rodaram |
 | M40 | a reexecução acontece contra a branch, ou contra uma tag anterior | **parcial** — CT-12 mata a metade documental; a execução fica sem matador |
-| M41 | a correção fecha o caso do domínio local e abre outro da mesma classe | **parcial** — CT-21 para o arquivo novo, CT-22 para os outros 193 |
+| M41 | a correção fecha o caso do domínio local e abre outro da mesma classe | **parcial** — CT-21 para o arquivo novo, CT-22 para os 16 que a guarda varre |
 | M42 | "liso" é declarado com um erro considerado conhecido, e a tag sai | ⚠️ **sem matador automatizado** — o roteiro, via CT-04 e CT-15 |
 
 ---
@@ -786,6 +790,29 @@ reprovando o arranjo real (**CT-22**), que a RD-02 transformou de lacuna em clá
 
 **Quem fecha o resto**: a execução manual do roteiro, registrada no `03` com a saída colada dos
 quatro projetos.
+
+### L6 — a entrega em disco pelo `kit:update` não é exercitável aqui
+
+**O que é**: M25 e M27 — o roteiro entra na lista fechada e o comando **não o grava**, ou o grava
+só quando o destino está vazio.
+
+**Por que não dá**: `KitUpdate::handle()` opera sobre `base_path()` **fixo**, não injetável
+(`app/Console/Commands/KitUpdate.php:handle:414`), e exige repositório git real — ele cria um
+remote `kit`, busca uma tag **publicada** e aplica o diff **no próprio checkout onde a suíte
+roda** (`app/Console/Commands/KitUpdate.php:handle:1089`). Executá-lo de verdade destruiria a
+árvore que está sendo medida. É a mesma classe de ambiente que [L1](#l1--a-execução-dos-quatro-cenários-continua-fora-do-arnês)
+já declara para os quatro cenários.
+
+**O que foi feito, e por que não é o suficiente**: CT-18 está **escrito**, com os três datasets e
+`->skip()` nomeado — não foi apagado nem preenchido com asserção falsa. Isso preserva a intenção
+e deixa o rastro, mas **não mata mutante nenhum**.
+
+**Como isto entrou**: o quality gate (QA-04) achou o `04` ainda creditando M25 e M27 a CT-18
+depois de ele ter sido pulado. É a forma clássica de cobertura fantasma — o caso existe, o número
+fecha, e nada é medido.
+
+**Quem fecha**: o cenário **3** do roteiro de release, que roda `kit:update --all` num projeto
+instalado de verdade e confere o arquivo em disco. É oráculo empírico, como L1.
 
 ### L2 — a força da asserção documental continua fora de alcance
 
@@ -893,7 +920,7 @@ verificação documental do quality gate.
 | CT-07 | `@premissa` nenhum `export-ignore` alcança o roteiro | R5 | rastreio + controle positivo | Kit | idem | `naArvoreDoKit()` (sem repo git lá fora) | M23 (na árvore) |
 | CT-08 | **canário** — o roteiro existe aqui e diz de quem é o processo | R5 | invariante + canário | Kit | idem | **nenhuma, de propósito** | M23 (no projeto instalado), M24 |
 | CT-09 | `@premissa` o roteiro está na lista do `kit:update` | R5 | pertinência | Kit | *materializado por `KitUpdateTest`* | — | M26 |
-| CT-18 | `@premissa` o comando deixa o roteiro em disco, em três destinos | R5 | rastreio até o destino + partição (`Esquema`, 3) | Kit | `ChecklistDeReleaseTest` | — | M25, M27 |
+| CT-18 | `@premissa` o comando deixa o roteiro em disco, em três destinos | R5 | rastreio até o destino + partição (`Esquema`, 3) | Kit | `ChecklistDeReleaseTest` — **escrito, pulado** | — | ⚠️ nenhum (L6) |
 | CT-10 | a guarda é do caso, não do arquivo | R6 | partição dos 3 mecanismos, por tokens | Kit | idem | — | M28, M29 |
 | CT-19 | a sentinela discrimina nos dois sentidos | R6 | controle positivo **bilateral** | Kit | idem | — | M30 |
 | CT-20 | a correção guardou a leitura, não a removeu | R6 | partição mecanismo × conteúdo | Kit | idem | — | M28, M31 |
@@ -906,7 +933,7 @@ verificação documental do quality gate.
 **Arquivos tocados**: `tests/Kit/ChecklistDeReleaseTest.php` (novo) e
 `tests/Kit/RedeDeDocumentacaoTest.php` (CT-22, CT-23 — endurecer a guarda existente).
 
-**Sem matador** (5): M36 (L3), M37, M38, M39, M42 (L1).
+**Sem matador** (7): M25 e M27 (**L6**), M36 (L3), M37, M38, M39, M42 (L1).
 **Parciais** (4): M12, M13, M40, M41.
 **Órfão condicional**: M10 — se a [pergunta 5](#perguntas-para-o-00-requisitomd) for negada, CT-13 cai
 e M10 fica sem matador junto com M12. A versão anterior registrava só M12; **é o achado F4 da
@@ -921,7 +948,7 @@ inaceitável em RQ-09.
 |---|---|
 | afirmar a contagem `Documentos de referência (wikis/)` nos READMEs | já provado por `SiteDeDocumentacaoTest [CT-48]`, que **já é guardado por caso** — conferido, e por isso a suspeita da rodada 2 sobre ele não procede |
 | um caso Pest para a coerência tag ↔ `config/kit.php` ↔ `CHANGELOG.md` | duplicaria o `release.yml` e teria de ler o `CHANGELOG.md`, que não viaja |
-| **a varredura genérica sobre os 193 arquivos** | recusada pelo `00`, e a RD-02 **não** a reabilitou: ela reabilitou a guarda **por caso** sobre a fatia decidível, que é CT-22 e CT-23 sobre a guarda que já existe |
+| **a varredura genérica sobre os 178 arquivos** | recusada pelo `00`, e a RD-02 **não** a reabilitou: ela reabilitou a guarda **por caso** sobre a fatia decidível, que é CT-22 e CT-23 sobre a guarda que já existe |
 | afirmar que o comentário do `.gitattributes` diz "doze documentos de topo" | comentário não é comportamento, e o número envelhece |
 | afirmar que o roteiro cita os números da validação (2773 / 2627 / 145 / 1) | envelhecem e reprovariam entregas alheias. O que não envelhece é o **critério** (CT-04, CT-13), e por isso CT-13 fala em "um número esperado que o roteiro declara", nunca no 145 |
 | um cenário por caso "protegido" dos outros 17 | **fora de escopo declarado no `00`** — e CT-22 os cobre por outro caminho, endurecendo a guarda comum |

@@ -163,26 +163,6 @@ function alvoResolvidoEmDisco(string $arquivoDeOrigem, string $alvo): ?string
     return implode('/', $partes);
 }
 
-/** O código PHP de um arquivo, SEM comentário nem docblock — só o que executa. */
-function codigoPhpSemComentario(string $codigo): string
-{
-    $saida = '';
-
-    foreach (token_get_all($codigo) as $token) {
-        if (is_array($token)) {
-            if (in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
-                continue;
-            }
-
-            $saida .= $token[1];
-        } else {
-            $saida .= $token;
-        }
-    }
-
-    return $saida;
-}
-
 /**
  * Os valores de toda string literal AUTÔNOMA (não substring de uma string maior) num trecho PHP.
  *
@@ -616,7 +596,7 @@ it('[CT-20] a correção guardou a leitura, não a removeu', function (): void {
  * (achado D2): a versão anterior omitia `docs/`, o próprio caminho que originou esta wiki.
  */
 it('[CT-21] os casos novos respeitam a fronteira entre o que viaja e o que não viaja', function (): void {
-    $fonte = codigoPhpSemComentario((string) file_get_contents(base_path('tests/Kit/ChecklistDeReleaseTest.php')));
+    $fonte = codigoSemComentario((string) file_get_contents(base_path('tests/Kit/ChecklistDeReleaseTest.php')));
 
     $blocos = preg_split('~\nit\(~', $fonte) ?: [];
 

@@ -42,29 +42,6 @@ function suitesDeDocumentacao(): array
 }
 
 /**
- * O código PHP sem comentários e docblocks — `token_get_all()` e não regex, porque a menção a
- * um literal dentro de um docblock é o caso mais comum nesta suíte (`HelpersDeTesteTest`).
- */
-function codigoSemComentario(string $codigo): string
-{
-    $saida = '';
-
-    foreach (token_get_all($codigo) as $token) {
-        if (is_array($token)) {
-            if (in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
-                continue;
-            }
-
-            $saida .= $token[1];
-        } else {
-            $saida .= $token;
-        }
-    }
-
-    return $saida;
-}
-
-/**
  * CT-07 — o inventário do que é vigiado não encolhe nem troca de conteúdo.
  *
  * O piso é o NÚMERO LITERAL de sítios de `toContain` medidos nas suítes de documentação no
@@ -293,10 +270,23 @@ function leCaminhoNaoEntregue(string $corpoDoCaso, array $funcoes, string $prefi
  * recusa, para a fatia direta. A mensagem nomeia o caso, porque "o arquivo X não tem sentinela"
  * foi precisamente a informação que não bastou.
  */
-it('[CT-11] leitura direta de arquivo nao entregue tem sentinela no proprio caso', function (): void {
+/**
+ * Os casos que **abrem** um arquivo de caminho literal nao entregue e nao tem a sentinela
+ * `naArvoreDoKit()` **no proprio corpo**.
+ *
+ * Extraida de dentro do `[CT-11]` para que `[CT-22]` e `[CT-23]` possam alimenta-la com um
+ * arranjo conhecido. Enquanto a varredura morava dentro do caso, a unica prova de que ela
+ * funcionava era **manual** — restaurar o defeito na arvore e olhar. Prova que nao esta
+ * versionada nao protege release nenhuma: foi o achado QA-03 do quality gate.
+ *
+ * @param  array<string, string>  $suites  arquivo => codigo PHP sem comentario
+ * @return list<string>
+ */
+function casosSemSentinelaPropria(array $suites): array
+{
     /*
-     * Os prefixos que NÃO viajam, do `.gitattributes`. `wikis/specs` fica de fora de propósito:
-     * o `KitUpdateTest` cita caminhos de lá como string, sem ler, e o CT-10 já trata esse caso.
+     * Os prefixos que NAO viajam, do `.gitattributes`. `wikis/specs` fica de fora de proposito:
+     * o `KitUpdateTest` cita caminhos de la como string, sem ler, e o CT-10 ja trata esse caso.
      */
     $naoEntregues = '~^(?:docs|site|site-vitepress|\.github)/~';
 
@@ -304,23 +294,24 @@ it('[CT-11] leitura direta de arquivo nao entregue tem sentinela no proprio caso
 
     $desprotegidos = [];
 
-    foreach (suitesDeDocumentacao() as $arquivo => $codigo) {
+    foreach ($suites as $arquivo => $codigo) {
         $blocos = preg_split('~\nit\(~', $codigo) ?: [];
 
         /*
-         * O PREÂMBULO — tudo antes do primeiro `it(` — é onde mora o `beforeEach` do arquivo.
-         * Sentinela ali protege TODOS os casos, e é um dos três mecanismos que o kit usa
+         * O PREAMBULO — tudo antes do primeiro `it(` — e onde mora o `beforeEach` do arquivo.
+         * Sentinela ali protege TODOS os casos, e e um dos tres mecanismos que o kit usa
          * (`tests/Kit/SiteDeDocumentacaoTest.php:naArvoreDoKit:30`).
          *
-         * Esta verificação não estava na primeira versão deste caso, e ele acusou os 15 cenários
-         * daquele arquivo — repetindo exatamente o erro que a terceira varredura estática da
-         * investigação cometeu. Está escrito aqui porque a próxima pessoa vai esquecer de novo.
+         * Esta verificacao nao estava na primeira versao do `[CT-11]`, e ele acusou os 15
+         * cenarios daquele arquivo — repetindo exatamente o erro que a terceira varredura
+         * estatica da investigacao cometeu. `[CT-23]` fixa isso num caso, para que a proxima
+         * pessoa nao precise lembrar.
          */
         if (str_contains($blocos[0] ?? '', 'naArvoreDoKit')) {
             continue;
         }
 
-        // Um bloco por `it(` — o corpo do caso, não o arquivo.
+        // Um bloco por `it(` — o corpo do caso, nao o arquivo.
         foreach (array_slice($blocos, 1) as $corpo) {
             if (! leCaminhoNaoEntregue($corpo, $funcoesDeLeitura, $naoEntregues)) {
                 continue;
@@ -332,14 +323,114 @@ it('[CT-11] leitura direta de arquivo nao entregue tem sentinela no proprio caso
 
             preg_match("~^'([^']+)'~", $corpo, $nome);
 
-            $desprotegidos[] = $arquivo.' → '.($nome[1] ?? '?');
+            $desprotegidos[] = $arquivo.' -> '.($nome[1] ?? '?');
         }
     }
 
-    expect($desprotegidos)->toBe(
+    return $desprotegidos;
+}
+
+it('[CT-11] leitura direta de arquivo nao entregue tem sentinela no proprio caso', function (): void {
+    expect(casosSemSentinelaPropria(suitesDeDocumentacao()))->toBe(
         [],
-        'estes casos leem arquivo que NÃO viaja no composer create-project e não têm a sentinela '
-        .'`naArvoreDoKit()` no próprio corpo: eles ficam vermelhos em toda instalação nova. '
-        .'Sentinela num caso vizinho do mesmo arquivo satisfaz o [CT-10] e não protege este.',
+        'estes casos leem arquivo que NAO viaja no composer create-project e nao tem a sentinela '
+        .'`naArvoreDoKit()` no proprio corpo: eles ficam vermelhos em toda instalacao nova. '
+        .'Sentinela num caso vizinho do mesmo arquivo satisfaz o [CT-10] e nao protege este.',
     );
 })->group('kit');
+
+/**
+ * CT-22 — a guarda reprova o arranjo EXATO que a enganou na `v0.38.0`.
+ *
+ * ## Por que este caso existe
+ *
+ * A ADR-02 aceitou o `[CT-11]` dizendo que ele "foi verificado por mutacao antes de entrar". Era
+ * verdade, e era **manual**: restaurei o defeito na arvore, rodei, restaurei de volta. Nada no
+ * repositorio guardava essa prova. O quality gate mediu a consequencia (achado QA-03): trocar o
+ * corpo de `leCaminhoNaoEntregue()` por `return false` deixa `$desprotegidos === []` e o
+ * `[CT-11]` **verde**.
+ *
+ * Guarda sem controle positivo e a mesma forma de defeito que esta wiki inteira persegue: ela
+ * afirma ausencia, e ausencia nunca falha sozinha.
+ *
+ * ## O arranjo reproduzido aqui
+ *
+ * E o da `v0.38.0`, em miniatura: um caso que abre `docs/` com caminho **literal** e sem
+ * sentinela, e um caso **vizinho, no mesmo arquivo**, que tem a sentinela. No original os dois
+ * estavam a 750 linhas de distancia. O `[CT-10]`, que olha o arquivo inteiro com `str_contains`,
+ * fica verde nesse arranjo — e e por isso que as duas asserções abaixo andam juntas: elas
+ * documentam que as duas guardas **discordam de proposito**.
+ */
+it('[CT-22] a guarda reprova o arranjo que a enganou, e o CT-10 nao', function (): void {
+    $arranjoDoDefeito = <<<'PHP'
+    <?php
+    it('[FIXTURE-A] le a pagina do site como oraculo documental', function (): void {
+        $pagina = File::get(base_path('docs/pt/comecar/dominio-local.md'));
+        expect($pagina)->toContain('sudo');
+    });
+
+    it('[FIXTURE-B] o caso vizinho, 750 linhas abaixo, tem a sentinela', function (): void {
+        expect(true)->toBeTrue();
+    })->skip(fn (): bool => ! naArvoreDoKit(), 'fora da arvore do kit');
+    PHP;
+
+    $suite = ['ArranjoDaV0380Test.php' => $arranjoDoDefeito];
+
+    // A guarda nova acusa — e acusa o caso CERTO, nao o arquivo.
+    expect(casosSemSentinelaPropria($suite))
+        ->toBe(['ArranjoDaV0380Test.php -> [FIXTURE-A] le a pagina do site como oraculo documental']);
+
+    /*
+     * O oraculo do [CT-10] sobre o MESMO arranjo, reproduzido aqui em vez de invocado: ele cobra
+     * `naArvoreDoKit()` no arquivo. O FIXTURE-B a tem, entao o arquivo a tem, entao ele passa.
+     * Esta linha e o que prova que o [CT-11] nao e redundante com o [CT-10].
+     */
+    expect(str_contains($arranjoDoDefeito, 'naArvoreDoKit()'))->toBeTrue();
+})->group('kit');
+
+/**
+ * CT-23 — a guarda declara a fatia que NAO decide, em vez de reprovar por suspeita.
+ *
+ * O docblock do `[CT-10]` argumenta, com razao, que nesta base a leitura e quase sempre
+ * **indireta** — o caminho vem de um dataset e a chamada esta no corpo — e que regra estatica nao
+ * distingue esse literal de um decorativo. O `[CT-11]` nao tenta decidir isso. Este caso fixa os
+ * tres nao-alvos, para que ninguem "melhore" a guarda ate ela virar ruido:
+ *
+ * 1. **leitura indireta** — o caminho chega por variavel;
+ * 2. **mencao dentro de string** — foi o falso positivo real do `[CT-20]` do
+ *    `ChecklistDeReleaseTest`, que afirma sobre a chamada sem executa-la;
+ * 3. **sentinela no `beforeEach` do arquivo** — o mecanismo que a terceira varredura estatica da
+ *    investigacao nao enxergou, e que a primeira versao do `[CT-11]` tambem nao enxergava.
+ */
+it('[CT-23] a guarda nao acusa o que ela declarou nao decidir', function (string $rotulo, string $codigo): void {
+    expect(casosSemSentinelaPropria([$rotulo => $codigo]))
+        ->toBe([], "a guarda acusou um caso da fatia que ela declara NAO decidir: {$rotulo}");
+})->with([
+    'leitura indireta, caminho por variavel' => ['IndiretaTest.php', <<<'PHP'
+    <?php
+    it('[FIXTURE-C] le o caminho que o dataset trouxe', function (string $caminho): void {
+        expect(File::get(base_path($caminho)))->not->toBe('');
+    })->with(['docs/pt/comecar/dominio-local.md']);
+    PHP],
+
+    'mencao dentro de string, sem leitura' => ['MencaoTest.php', <<<'PHP'
+    <?php
+    it('[FIXTURE-D] afirma que o outro caso continua abrindo o documento', function (): void {
+        $fonte = (string) file_get_contents(base_path('tests/Kit/HostLocalTest.php'));
+        $this->assertStringContainsString("File::get(base_path('docs/pt/comecar/dominio-local.md'))", $fonte);
+    });
+    PHP],
+
+    'sentinela no beforeEach do arquivo' => ['BeforeEachTest.php', <<<'PHP'
+    <?php
+    beforeEach(function (): void {
+        if (! naArvoreDoKit()) {
+            $this->markTestSkipped('fora da arvore do kit');
+        }
+    });
+
+    it('[FIXTURE-E] le o site, protegido pelo beforeEach acima', function (): void {
+        expect(File::get(base_path('docs/pt/comecar/dominio-local.md')))->not->toBe('');
+    });
+    PHP],
+])->group('kit');

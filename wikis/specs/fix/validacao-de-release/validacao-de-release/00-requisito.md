@@ -74,12 +74,19 @@ File does not exist at path …/docs/pt/comecar/dominio-local.md
 
 ### A varredura por outros casos da mesma forma — e por que o método é o achado
 
-| | |
-|---|---|
-| arquivos de teste que viajam | **193** |
-| arquivos de `docs/` que viajam | **0** |
-| casos que leem arquivo não entregue | **18** |
-| casos **desprotegidos** | **1** — o CT-12 |
+> **Números corrigidos pelo quality gate, ciclo 1 (achado QA-05).** A primeira versão desta
+> tabela dizia **193** arquivos de teste, e nenhuma contagem da árvore devolve 193 — o gate mediu
+> 178. Pior: o `04` usava o 193 como *alcance da guarda `[CT-10]`*, e o universo dela não são os
+> arquivos de teste, são as 16 suítes que `suitesDeDocumentacao()` seleciona. Cada linha abaixo
+> agora tem o comando que a produz.
+
+| | | comando |
+|---|---|---|
+| arquivos de teste que viajam | **178** | `find tests -name '*Test.php' \| wc -l`, e `git check-attr export-ignore` devolve `unspecified` para os 178 |
+| arquivos de `docs/` que viajam | **0** | `git check-attr export-ignore -- docs` → `set` |
+| arquivos que o `[CT-10]` varre | **16** | `suitesDeDocumentacao()` — só `tests/Kit/*Test.php` que mencionam documentação |
+| casos com leitura **literal** de caminho não entregue | **16** | `casosSemSentinelaPropria()`, contando antes do filtro de sentinela |
+| casos **desprotegidos** | **0** hoje — era **1**, o CT-12 | `casosSemSentinelaPropria(suitesDeDocumentacao())` → `[]`, e é o que o `[CT-11]` afirma |
 
 O kit tem **três** mecanismos de guarda diferentes, e nenhum é sinônimo dos outros:
 
