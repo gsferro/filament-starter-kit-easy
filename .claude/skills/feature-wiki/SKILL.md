@@ -2271,7 +2271,6 @@ Criar apenas quando a feature exige:
 Antes de encerrar a invocação:
 
 ### Requisito
-
 - [ ] `00-requisito.md` criado com Fonte, Texto Original **verbatim** e Fidelidade declarada
 - [ ] Requisito decomposto em cláusulas `RQ-##`, cada uma citando o trecho literal de origem
 - [ ] Ambiguidades e perguntas abertas listadas — e perguntadas ao usuário antes de implementar
@@ -2281,7 +2280,6 @@ Antes de encerrar a invocação:
 - [ ] `## Cobertura do Requisito` no PRD mapeia **toda** cláusula `RQ` a passo(s) ou justificativa
 
 ### Planejamento
-
 - [ ] Branch lida e estrutura de pasta criada
 - [ ] Wiki existente verificada (retomar/sobrescrever/incrementar se já existe)
 - [ ] Nome da feature confirmado com usuário
@@ -2298,7 +2296,6 @@ Antes de encerrar a invocação:
 - [ ] Model novo cujo nome de tabela não é o plural inglês inferido declara `$table`
 
 ### Documentação
-
 - [ ] `01-plano-acao.md` escrito com passos numerados + skills referenciadas + logs em todas as etapas
 - [ ] `01-plano-acao.md` inclui seções: Autorização, Rotas, Variáveis de Ambiente, Eventos, Jobs, Impacto, Rollback, Dependências, Riscos
 - [ ] `02-decisoes-arquiteturais.md` escrito em formato ADR (Status, Contexto, Decisão, Alternativas, Consequências)
@@ -2313,14 +2310,12 @@ Antes de encerrar a invocação:
 - [ ] Arquivos extras (`05-*`) criados se necessário (rollback, performance, security)
 
 ### Log
-
 - [ ] Channel de log da feature verificado/criado e referenciado em todos os passos do PRD
 - [ ] Padrão de log `[Classe@Método] mensagem` especificado em cada passo de execução do PRD
 - [ ] Context estruturado (array `$context`) especificado em cada log do PRD
 - [ ] Log **não** vira CT no `04` (log não é cláusula do requisito) — quem o confere é a dimensão D do quality gate; exceção: requisito que pede trilha de auditoria, e aí é `RQ`
 
 ### Validação
-
 - [ ] Revisão profunda pós-escrita executada — premissas do plano re-validadas contra o código
 - [ ] **Varredura da classe irmã** executada para toda classe nova, com a irmã escolhida e as ocorrências registradas no `03`
 - [ ] `## Modelo de Execução` preenchido no PRD (ou "um request, sem trabalho adiado" declarado)
@@ -2331,7 +2326,6 @@ Antes de encerrar a invocação:
 - [ ] Confirmar com usuário se o plano está correto antes de implementar
 
 ### Pós-Implementação e Reconciliação (antes do PR)
-
 - [ ] Todo `[x]` do `03-progresso.md` tem evidência inline (`— {resultado}, {data}`); nenhum fechado em lote
 - [ ] Cada desvio do `03` tem a edição correspondente no `01`/`02`/`04`/`05` de origem, marcada `*(alterado em …)*` — nenhuma afirmação do `01`/`02` contradiz o código
 - [ ] Toda citação `arquivo:símbolo:linha` da wiki reverificada pelo grep — resultado no `03`
@@ -2353,7 +2347,6 @@ Antes de encerrar a invocação:
 - [ ] Se o Playwright MCP foi usado: só como observação (`--isolated --headless --caps=testing`), nenhum ref em arquivo de teste, nenhuma sessão MCP registrada como cobertura
 
 ### Delegação (Claude Code)
-
 - [ ] Todo disparo de sub-agente está em `## Despachos` do `03`, com modelo, cegueira e auditoria do retorno; tarefa em linha por exceção tem "Sem despacho — motivo"
 - [ ] Nenhum `general-purpose` despachado sem `model` explícito
 - [ ] Passe de eixos do 6.5, revisão adversarial e step 8 rodaram em sub-agente **cego** — ou a degradação está declarada no `03` e no cabeçalho do `06`
@@ -2363,7 +2356,6 @@ Antes de encerrar a invocação:
 - [ ] Retorno com número sem comando, `git diff --stat` de untracked ou "não encontrado" sem prova negativa foi **reprovado e refeito** — e a reprovação está no quadro
 
 ### Quality Gate e PR
-
 - [ ] **`feature-quality-gate` invocado** (step 8) — no Claude Code, via `fw-qa-gate` sem Edit/Write, `06` gravado verbatim pela sessão — e ciclo/veredito/data registrados na seção `## Quality Gate` do `03-progresso.md`
 - [ ] `06-relatorio-qa.md` **existe** no diretório da wiki (`ls wikis/specs/{branch}/{feature}/06-relatorio-qa.md`) — a ausência dele é blocker do PR, e é a evidência de que o step 8 rodou
 - [ ] Se `REPROVADO`: achado roteado para o destino correto (especificação / implementação / teste) e reciclado
@@ -2371,7 +2363,6 @@ Antes de encerrar a invocação:
 - [ ] Candidatos a rule avaliados nos 4 gates e **apresentados ao usuário** — gravados via `requirement-to-rule` só se aprovados
 
 ### Após o merge
-
 - [ ] Channel de log ajustado (level reduzido ou removido)
 
 ## Skills Companheiras

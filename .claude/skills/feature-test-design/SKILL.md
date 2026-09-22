@@ -1287,7 +1287,6 @@ Preferir `data-testid` / `aria-label` / texto visível a classe de CSS. Se o pro
 **Assertions**: `assertPathIs` primeiro · `assertNoJavaScriptErrors()` · uma única âncora de persistência
 
 #### Mutantes previstos
-
 | # | Implementação errada plausível | Cenário que mata |
 |---|---|---|
 
@@ -1490,7 +1489,6 @@ cujos achados ninguém fecha é teatro caro.
 ## Checklist Final
 
 ### Derivação
-
 - [ ] Perfil de esforço definido por área, com P×I registrado
 - [ ] Varredura SFDIPOT preenchida; dimensão vazia **declarada** com motivo
 - [ ] Mapa de regras montado; toda `RQ` do `00` gerou ao menos uma regra ou uma justificativa
@@ -1505,7 +1503,6 @@ cujos achados ninguém fecha é teatro caro.
 - [ ] Checklist de taxonomia percorrido item a item, com dispensa justificada
 
 ### Escrita
-
 - [ ] Cenários em Gherkin pt-BR: `Funcionalidade` → `Regra` → `Cenário`
 - [ ] Um único `Quando` por cenário; 3–5 passos; ator nomeado em 3ª pessoa
 - [ ] Todo `Então` afirma saída observável com valor concreto
@@ -1515,7 +1512,6 @@ cujos achados ninguém fecha é teatro caro.
 - [ ] `Esquema do Cenário` só onde há classe de equivalência ou borda, com a coluna do rótulo
 
 ### Gate
-
 - [ ] **Toda regra declara ≥2 mutantes** (≥3 no perfil completo)
 - [ ] Todo mutante tem cenário matador **ou** lacuna declarada com motivo
 - [ ] Cenário que não mata mutante nenhum foi cortado ou justificado
@@ -1528,7 +1524,6 @@ cujos achados ninguém fecha é teatro caro.
 - [ ] Revisão adversarial executada por sub-agente independente (perfil completo)
 
 ### Pós-implementação
-
 - [ ] `pest --mutate --covered-only --path={escopo da feature}` executado — com **duração plausível** e sobreviventes listados (no Windows, via lançador `.cmd`); "sem driver/plugin" só com a prova negativa
 - [ ] CT cujo elemento foi cortado no step 6 da `feature-wiki` (filtro, ação, coluna) marcado `@obsoleto` com motivo e `~~` no índice — não apagado, não deixado órfão
 - [ ] CT novo que passa dos dois lados do `git stash`: reescrito, **ou** declarado "não falsificável nesta pilha" com o motivo (SQLite sem `VARCHAR`/`RESTRICT`)

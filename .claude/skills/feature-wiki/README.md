@@ -565,7 +565,6 @@ wikis/specs/ferro/579/relatorio-mba-lote/
 ```
 
 ---
-
 ## 🔎 Documentation API do Boost (`search-docs`)
 
 O Boost expõe a tool MCP **`search-docs`**, que consulta a Documentation API hospedada da Laravel — **17.000+ trechos** com busca semântica por embeddings, **filtrada pelos pacotes que o projeto realmente tem instalados**. A skill trata isso como fonte primária, antes de vendor source e antes de doc na web.

@@ -766,7 +766,6 @@ Violação de qualquer uma invalida a execução:
 ## Checklist Final
 
 ### Entrada
-
 - [ ] `00-requisito.md` lido; cláusulas `RQ` identificadas (ou modo degradado declarado)
 - [ ] `01` lido: `## Natureza da Wiki` e `## Cobertura do Requisito`
 - [ ] `04` e `05` lidos; diff delimitado
@@ -774,7 +773,6 @@ Violação de qualquer uma invalida a execução:
 - [ ] Perfil de esforço definido pelo gate de risco
 
 ### Execução
-
 - [ ] Ambiguidades do requisito auditadas **antes** de validar comportamento
 - [ ] Matriz de Rastreabilidade montada e conferida contra a realidade (não só contra o mapa declarado)
 - [ ] Todas as dimensões do perfil executadas; as fora do perfil **declaradas com motivo**
@@ -787,7 +785,6 @@ Violação de qualquer uma invalida a execução:
 - [ ] Achados do MCP convertidos em CT-B novo ou em achado roteado
 
 ### Saída
-
 - [ ] Cada achado tem: severidade, dimensão, esperado × observado, repro, evidência, destino, ação exigida
 - [ ] Roteamento por prioridade (especificação > teste > implementação)
 - [ ] `06-relatorio-qa.md` escrito, dentro do teto de tamanho
