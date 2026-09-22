@@ -139,10 +139,14 @@ o confortável do kit deixa de ser idêntico ao kit sem a feature — que é o c
 > configurou — e exige que o confortável seja igual a ele. Verificado por mutação: com o default
 > em `'18rem'`, **CT-18 fica vermelho e CT-17 segue verde**.
 >
-> É a terceira vez nesta feature que uma correção de texto afirma mais do que o código sustenta.
-> Vale a regra que sai daí: **afirmação sobre o que um teste pega é verificável, e por isso tem de
-> ser verificada** — escrever "o caso X pega isso" sem rodar o mutante é a mesma classe de erro
-> que a asserção de ausência sem controle positivo.
+> **Quatro vezes**, nesta feature, uma correção de texto afirmou mais do que o código sustentava:
+> "21/21 ok" (QA-03), "36/36 ok" (QA-08), "CT-17 fica vermelho" (QA-11), e os contadores que a
+> correção do QA-09 deixou **piores** que antes (QA-12). A quarta saiu do commit que escreveu esta
+> própria nota, o que é a demonstração de que não é descuido pontual.
+>
+> A regra que sai daí: **afirmação sobre o que um teste pega é verificável, e por isso tem de ser
+> verificada.** Escrever *"o caso X pega isso"* sem rodar o mutante é a mesma classe de erro que a
+> asserção de ausência sem controle positivo — soa como prova e não é.
 
 O **rail colapsado** (`--collapsed-sidebar-width`, `4.5rem`) ficou **deliberadamente de fora**,
 decidido com o usuário: ele é *icon-only*, a largura dele é ditada pelo alvo de clique e não por

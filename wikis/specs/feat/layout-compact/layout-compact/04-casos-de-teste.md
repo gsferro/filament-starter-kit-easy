@@ -33,10 +33,10 @@ digitação em configuração cosmética.
   da migration), **contrapositivo** (o par ligado/desligado), **oráculo do outro lado da cadeia**
 - Cenários: **18** (32 casos executados, com datasets) · Regras: **8** · Mutantes previstos: **35**
 
-  Remedido em 2026-09-21. Os três cenários novos entraram **depois** dos gates: CT-15 pelo
-  `/code-review` (achado 1), CT-16 pelo `/code-review` (achado 2) e CT-17 pelo quality gate
-  (QA-01). Os números originais — 14 cenários, 25 casos, 30 mutantes — valiam para o commit
-  `c2189d7`.
+  Remedido pela última vez em 2026-09-22. Os **quatro** cenários novos entraram **depois** dos
+  gates: CT-15 e CT-16 pelo `/code-review` (achados 1 e 2), CT-17 pelo quality gate (QA-01) e
+  CT-18 pela revalidação do QA-11. Os números originais — 14 cenários, 25 casos, 30 mutantes —
+  valiam para o commit `c2189d7`.
   · Sem matador: **2**, mais **1** com matador parcial — os três declarados em
   `## Lacunas Declaradas`, junto com as outras duas lacunas de cobertura (`L2`, `L3`)
 
@@ -282,6 +282,17 @@ carrega também a ordem das layers, que precisa continuar lá.
 | M9 | O padrão de fábrica é `compacto` ou `denso` | CT-02 |
 | M10 | O hook devolve a declaração sempre, com o valor certo — o nível governa o **texto**, não a **existência** | CT-04 |
 | M11 | O hook deixa de emitir a ordem das cascade layers junto (regressão da `v0.37.1`) | CT-01 (segunda asserção) |
+| M35 | **O Filament muda o default de `--sidebar-width` e o kit não acompanha** — o confortável deixa de ser indistinguível do kit sem a feature, que é o contrato desta regra. Não é erro de quem escreve o kit: é o vendor se mexendo debaixo dele | **CT-18** |
+
+> **M35 é o único mutante desta wiki que vive no vendor, e é por isso que ele existe.** Os demais
+> descrevem implementações erradas do kit; este descreve o **Filament mudando**. A ADR-03 afirmava
+> que CT-17 pegaria essa mudança — **medido no ciclo 3: não pega**, porque os dois lados da
+> asserção dele são literais do kit e o default do vendor nunca entra na comparação. Sem CT-18, o
+> contrato de R3 dependia de ninguém nunca mexer no default.
+>
+> Vermelho em CT-18 **não** quer dizer que o kit quebrou: quer dizer que a decisão precisa ser
+> retomada — acompanhar o novo valor, ou declarar que o confortável deixou de ser idêntico. As
+> duas são escolha; nenhuma pode acontecer em silêncio.
 
 ---
 
@@ -610,7 +621,7 @@ README, índice sem a entrada e roadmap fora de `CAMINHOS_DO_KIT` — todos deix
 
 ---
 
-### Os dois cenários que os gates acrescentaram
+### Os cenários que os gates acrescentaram
 
 ```gherkin
     Cenário: [CT-16] Um nível ilegível gravado não impede salvar o resto da tela
@@ -718,7 +729,7 @@ A última linha dos `Exemplos` é vocabulário ilegível, pelo mesmo motivo de C
 | CT-17 | A **largura** do menu acompanha o nível, nos três painéis | R1 | partição por nível × inventário dos três painéis | Feature (painel resolvido) | **escrito** — `tests/Kit/DensidadeDoLayoutTest.php` | M34 |
 | CT-18 | o **confortável** devolve exatamente o default do Filament | R3 | confronto com a declaração do vendor, por reflexão | Unit (reflexão) | **escrito** — `tests/Kit/DensidadeDoLayoutTest.php` | M35 |
 
-**17 cenários, 31 casos executados.** Dezesseis cenários (30 casos) vivem em
+**18 cenários, 32 casos executados.** Dezessete cenários (31 casos) vivem em
 `tests/Kit/DensidadeDoLayoutTest.php`; **CT-15 é a exceção** e vive em
 `tests/Kit/SiteDeDocumentacaoTest.php`, sob o ID local `[CT-48]` daquele arquivo — que já é o dono
 dos contadores de README, e é por isso que o oráculo documental nasceu lá e não aqui. Toda a suíte
@@ -729,10 +740,11 @@ dos contadores de README, e é por isso que o oráculo documental nasceu lá e n
 | Verificação | Resultado |
 |---|---|
 | Mutação **M31/M32** — `export-ignore` alcançando o roadmap; roadmap fora de `KitUpdate::CAMINHOS_DO_KIT` | **mortos**, verificados por mutação em 2026-09-21: os dois deixam `[CT-48]` vermelho, e a árvore restaurada volta ao verde |
+| Mutação **M35** — o default de `sidebarWidth` no vendor muda de `'20rem'` para outro valor | **morto por CT-18**, verificado em 2026-09-22 com `md5sum` do arquivo do vendor conferido antes e depois: **CT-18 fica vermelho e CT-17 segue verde**. Na falha, o lado *esperado* vem com o literal do vendor mutado — se a leitura fosse do painel, viriam os dois lados iguais e o caso ficaria verde. É o que prova que o controle não é circular |
 | Mutação **M34** — `sidebarWidth()` some de UM dos três painéis | **morto por CT-17**, verificado em 2026-09-21: removida a chamada do `InfraPanelProvider`, o caso fica vermelho. É o defeito provável, e seria invisível para qualquer caso que olhasse só o `/admin` |
 | Mutação **M33** — a coerção sai de `mutateFormDataBeforeFill()` | **morto por CT-16**, que nasceu VERMELHO contra a implementação original: salvar `nome_da_aplicacao` falhava com erro em `densidade_do_layout` |
 | Mutação **M12** — apagar a linha do `mapaDeConfiguracao()` | **10 dos 30 casos reprovam**, remedido em 2026-09-21 (era "7 dos 14 CTs", de `c2189d7`). Entre eles CT-03, CT-06, CT-07 e CT-14, que são os que afirmam sobre o valor do banco chegando ao outro lado da cadeia |
-| Mutantes previstos | 34 |
+| Mutantes previstos | 35 |
 | Mutantes **sem matador** | **2** — M3 (`L1`) e M30 (`L4`), ambos declarados |
 | Mutantes com matador parcial | **1** — M8 (`L4`), coberto por composição de CT-01 com CT-12 |
 

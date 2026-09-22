@@ -14,7 +14,7 @@ cenário `CT-15` (a lacuna `L3` do `04`), o quality gate (step 8) e o PR.
 | 2 — `App\Support\DensidadeDoLayout` | ✅ | `app/Support/DensidadeDoLayout.php` · commit `589110c` · CT-10, CT-12, CT-13 |
 | 3 — Os três lugares do Settings + o campo na tela | ✅ | `app/Settings/ConfiguracoesDoKit.php:densidade_do_layout:162`, a linha do mapa, a migration de settings e `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:densidade_do_layout:810` · commit `d82eccf` · CT-07, CT-08, CT-09, CT-14 |
 | 4 — O render hook | ✅ | `app/Providers/KitServiceProvider.php:configureDensidadeDoLayout():611` · commit `3c6d5f6` · CT-01, CT-03, CT-05, CT-06 |
-| 5 — A suíte | ✅ | `tests/Kit/DensidadeDoLayoutTest.php` — **16 CTs, 30 casos, 66 asserções** (era 14/25/47 em `c2189d7`; CT-16 e CT-17 entraram pelos gates) · mais **CT-15** em `tests/Kit/SiteDeDocumentacaoTest.php` |
+| 5 — A suíte | ✅ | `tests/Kit/DensidadeDoLayoutTest.php` — **17 CTs, 31 casos, 68 asserções** (era 14/25/47 em `c2189d7`; CT-16, CT-17 e CT-18 entraram pelos gates) · mais **CT-15** em `tests/Kit/SiteDeDocumentacaoTest.php` → **18 cenários, 32 casos** |
 | 6 — Medir o resultado no kit, nos quatro níveis | ✅ | `## Medição`, abaixo |
 | 7 — Documentação | ✅ | docs pt/en, CHANGELOG e contadores: commits `e98f436` e `022e027`. `wikis/roadmap.md` mais a seção *Futuras melhorias* nos dois READMEs: commit `bf6e799` — acrescentado depois, ver `## Desvios do Plano` → D3 |
 
@@ -345,7 +345,7 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
 - [x] **Medição no kit** — quatro níveis, oito telas por nível, `padrão` medido com a feature fora da árvore por `git stash`, 2026-09-21
 - [x] **Guardas do kit reconciliadas** — `CitacoesDeCodigoTest` (`arte_do_login` :135 → :136), `SiteDeDocumentacaoTest` (contadores) e `KitInfoTest` (54 → 55 propriedades), commit `022e027`, 2026-09-21
 - [x] **Docs pt/en e CHANGELOG** — seção nova nas duas línguas **com o preço declarado junto com o ganho**, commit `e98f436`, 2026-09-21
-- [x] **Citações `arquivo:símbolo:linha` reverificadas** — **36/36 ok**, por varredura própria em 2026-09-21.
+- [x] **Citações `arquivo:símbolo:linha` reverificadas** — **36/36 ok** na wiki, por varredura própria, refeita em **2026-09-22** depois de o CT-18 e as correções do ciclo 3 deslocarem linhas. Conferido pelo critério da **declaração**, não da menção — que foi o defeito do QA-08.
 
   A declaração anterior, de "21/21 ok", estava errada por dois motivos, e o quality gate pegou os
   dois. O primeiro: o padrão usado não cobria o formato `arquivo:simbolo():linha` — **com
@@ -394,71 +394,34 @@ seja, sem gate. O step 7.5 foi o único que olhou o diff depois disso.
 - **Relatório**: `06-relatorio-qa.md`
 - **Severidade**: Blocker 0 · Major 3 · Minor 3 · Cosmético 0
 
-| Achado | Título | Sev. | Destino |
-|---|---|---|---|
-| QA-01 | O menu entrega só metade do compacto — o invariante do `00` é fechado por releitura, não por decisão do usuário | Major | 1 — especificação |
-| QA-02 | O `01` ainda carrega a evidência que o `/code-review` invalidou (2.715/10.508, "14 CTs, 25 casos", CT-15 "pendente", diff de seis arquivos) e não tem passo para o código do 7.5 | Major | 1 — especificação |
-| QA-03 | Oito citações `arquivo:símbolo:linha` erradas, com o `03:327` declarando "21/21 ok" | Minor | 1 — especificação |
-| QA-04 | CT-16 e a quarta asserção de CT-48 existem no código sem cenário no `04`; índice, regras e contagens divergem | Major | 3 — teste |
-| QA-05 | A guarda de `export-ignore` de `[CT-48]` reimplementa o `.gitattributes` com regex e deixa passar `wikis/** export-ignore` | Minor | 3 — teste |
-| QA-06 | Docs pt/en dizem "duas coisas não apertam"; são três (falta o Pulse) | Minor | 1 — especificação |
+| Achado | Título | Sev. | Destino | Estado |
+|---|---|---|---|---|
+| QA-11 | A ADR-03 prometia que **CT-17 fica vermelho** se o Filament mudar o default de `sidebarWidth`; medido por mutação no vendor, ele fica **verde** — o contrato "o confortável é idêntico ao kit sem a feature" não tinha guarda | **Major** | 1 (+3) | ✅ **fechado** — entra **CT-18**, que lê o default por reflexão sobre a propriedade. Revalidado em 2026-09-22 por agente independente: guarda real, não circular, e mata o mutante com `md5sum` do vendor conferido nos dois sentidos |
+| QA-12 | A correção do QA-09 deixou `04:43-44` aritmeticamente impossível ("quatro datasets" listando três, e **25** casos onde são 30); `04:728` e `01:261` ainda diziam "7 dos 14" | Minor | 1 | ✅ fechado |
+| QA-13 | Docs pt/en passaram a listar **três** superfícies que não apertam e o fecho continuava dizendo *"As duas"* / *"Both"* | Minor | 1 | ✅ fechado nas duas línguas |
+| QA-14 | A largura do menu empurrou o `InfraPanelProvider` em 14 linhas e `->models([` passou de `:581` para `:595`; duas docs de usuário citavam `:581` | Minor | 1 (+3) | ✅ citações fechadas. **A guarda não**: ver a lacuna do `[CT-26]` abaixo |
 
-**Confirmado pelo gate, para não ser reaberto**: regressão remedida em **2.717 / 10.525 / 0 falhas**;
-Pint `passed` e FilaCheck **17/17**; o roadmap **viaja pelos dois caminhos**, verificado por
-`git archive HEAD | tar -t` (11 documentos de topo, zero `wikis/specs`) e por
-`KitUpdate::CAMINHOS_DO_KIT`; nenhum log e portanto nenhum PII em log; zero query e zero request a
-mais; nenhuma célula de permissão nova.
+### A lacuna do `[CT-26]`, aberta e fora do escopo desta feature
 
-**Entrada que o gate vai encontrar**, e vale avisar para ele não gastar ciclo redescobrindo:
+O `[CT-26]` de `tests/Kit/CitacoesDeCodigoTest.php` tem **duas** cegueiras independentes, as duas
+medidas nesta wiki:
 
-- **RQ-07 a RQ-10 estão entregues** (commit `bf6e799`), mas atravessaram oito commits **escritas e
-  não versionadas** sem que nada ficasse vermelho. A lacuna que permitiu isso — `CT-15`, oráculo
-  documental — continua aberta e está declarada em `## Pendências` → P1
-- **RQ-06 é ⛔ por desenho** — excluída por RQ-04, que escolheu RQ-05. Marcar como "não atendida"
-  seria erro de leitura: as duas são mutuamente exclusivas
-- **A prova do pixel é medição, não suíte** — lacuna `L1` do `04`, declarada
+1. **descarta caminho não-resolvível em silêncio** — `is_file()` sobre o basename. Medido: 38
+   citações com símbolo na superfície viva, **30 conferidas, 8 puladas**, com piso
+   `toBeGreaterThan(5)`, que não acusa a diferença
+2. **confere por `str_contains`, não por declaração** — fiel ao que `.ai/rules/specs.md:46` pede,
+   mas deixa passar citação que aponta para uma **chamada**. Vítima viva e alheia a esta feature:
+   `app/Filament/Admin/Resources/Users/Schemas/UserInfolist.php:50` aponta o símbolo
+   `papeisEmQualquerContexto` de `app/Models/User.php` para a linha **683**, que é uma
+   **chamada**; a declaração está em `app/Models/User.php:papeisEmQualquerContexto:714`
 
-### Ciclo 2
+   *(o número errado está escrito por extenso de propósito: no formato de citação, uma varredura
+   automática o leria como citação desta wiki e o acusaria — o texto que documenta um defeito de
+   citação não pode ser indistinguível do defeito.)*
 
-- **Ciclo**: 2 · **Veredito**: **REPROVADO → especificação** · **Data**: 2026-09-21
-- **Relatório**: `06-relatorio-qa.md` → `# Ciclo 2`
-- **Severidade**: Blocker 0 · Major **1** · Minor **3** · Cosmético 0
-- **Fechados no ciclo 1**: QA-01, QA-05, QA-06 e a parte de **cenário** do QA-04 — verificados, não
-  aceitos no papel (medição em navegador, repositório de prova do `git check-attr`, Gherkin conferido)
-
-| Achado | Título | Sev. | Destino |
-|---|---|---|---|
-| QA-07 | O mecanismo ganhou um segundo caminho (`Panel::sidebarWidth()`) e o `02` não mudou; o `01:462` ainda diz "uma declaração CSS", e falta a linha de `providers-filament.md` na tabela de rules | Major | 1 — especificação |
-| QA-08 | A correção do QA-03 criou três citações novas erradas (`coagir():219` ×2, `padrao():238`), com "36/36 ok" declarado | Minor | 1 — especificação |
-| QA-09 | Os contadores do QA-04 fecharam pela metade: `04:43`, `04:715`, `04:725`, `04:34`, `04:344` e `03:17` ainda dizem 14/25/30 | Minor | 1 — especificação |
-| QA-10 | O menu **colapsado** ficou fora da escala (`--collapsed-sidebar-width` em `4.5rem` nos três níveis) e não está na lista de "o que não aperta" | Minor | 1 — especificação |
-
-**Confirmado pelo gate no ciclo 2, para não ser reaberto**: regressão **2.721 / 10.537 / 0 falhas**;
-Pint `passed`; FilaCheck **17/17**; `DensidadeDoLayoutTest` **30 casos / 66 asserções**; a largura do
-menu **medida no navegador** (320,0 → 272,0 → 264,0 px, item 40,0 → 32,8 → 31,2 px, linha da tabela
-56,0 → 46,4 → 42,9 px, **0 rótulo truncado**, sem scroll horizontal); CT-17 **exercita a avaliação do
-`Closure`** nos três painéis, verificado em processo único; a guarda de `export-ignore` por
-`git check-attr` pega os quatro padrões, inclusive os dois que o regex deixava passar.
-
-### Ciclo 3 — teto da skill
-
-- **Ciclo**: 3 (**último permitido**) · **Veredito**: **REPROVADO → especificação · ESCALADO AO
-  USUÁRIO** · **Data**: 2026-09-22
-- **Relatório**: `06-relatorio-qa.md` → `## Ciclo 3 — o teto da skill`
-- **Severidade**: Blocker 0 · Major **1** · Minor **3** · Cosmético 0
-- **Fechados no ciclo 2**: QA-07, QA-08, QA-09 e QA-10 — **os quatro**, verificados e não aceitos no
-  papel (varredura própria de 53 citações, recontagem pelo runner, decisão do rail registrada no
-  roadmap **como escolha e não como limitação**)
-- **Por que escala em vez de abrir ciclo 4**: a `feature-quality-gate` fixa teto de **3 ciclos**
-  (§ *Convergência do Loop*, item 3). Com Major aberto no teto, a skill manda parar, entregar a
-  lista ao usuário e registrar o blocker aqui — **não** seguir tentando
-
-| Achado | Título | Sev. | Destino |
-|---|---|---|---|
-| QA-11 | A ADR-03 promete que **CT-17 fica vermelho** se o Filament mudar o default de `sidebarWidth`; medido por mutação no vendor (`'20rem'` → `'18rem'`), ele fica **verde** — o contrato "o confortável é idêntico ao kit sem a feature" não tem guarda | **Major** | 1 — especificação (+ 3, se o contrato merecer CT) |
-| QA-12 | A correção do QA-09 deixou `04:43-44` aritmeticamente impossível ("quatro datasets" listando três, e **25** casos onde são 30); `04:728` e `01:261` ainda dizem "7 dos 14" | Minor | 1 — especificação |
-| QA-13 | Docs pt/en passaram a listar **três** superfícies que não apertam e o fecho continua dizendo *"As duas"* / *"Both"* (`docs/pt/…:119`, `docs/en/…:121`) | Minor | 1 — especificação |
-| QA-14 | A largura do menu empurrou o `InfraPanelProvider` em 14 linhas e `->models([` passou de `:581` para `:595`; duas docs de usuário ainda citam `:581`, e o `[CT-26]` não as vê porque descarta caminho não-resolvível em silêncio | Minor | 1 — especificação (+ 3, a guarda) |
+As duas ficam **abertas e declaradas**. Fechá-las mexe numa guarda de todo o kit e provavelmente
+acusaria citações pré-existentes em features que nada têm a ver com esta — é mudança própria, não
+carona nesta.
 
 **Confirmado pelo gate no ciclo 3, para não ser reaberto**: regressão **2.721 / 10.537 / 0 falhas**;
 `DensidadeDoLayoutTest` **30 casos / 66 asserções**; o diff pós-ciclo-2 é **só `.md`** (nenhuma linha

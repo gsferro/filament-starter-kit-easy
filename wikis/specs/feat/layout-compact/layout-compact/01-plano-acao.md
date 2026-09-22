@@ -359,7 +359,7 @@ atualizar o kit não deve mudá-la sozinho.
 
 > Commit `c2189d7` · Skills: `pest-testing`, `feature-test-design`
 
-- **Path**: `tests/Kit/DensidadeDoLayoutTest.php` — **16 CTs, 30 casos** com datasets
+- **Path**: `tests/Kit/DensidadeDoLayoutTest.php` — **17 CTs, 31 casos** com datasets
 - Especificação completa em `04-casos-de-teste.md`
 - Âncora de `tests/Kit/KitInfoTest.php` de 54 para 55 propriedades, com o motivo escrito no
   comentário — ela é manual de propósito, para ficar vermelha e obrigar a decisão
@@ -471,7 +471,7 @@ escrito três vezes.
 
 ## Testes
 
-> Ver `04-casos-de-teste.md`. **16 CTs, 30 casos** em `tests/Kit/DensidadeDoLayoutTest.php`.
+> Ver `04-casos-de-teste.md`. **17 CTs, 31 casos** em `tests/Kit/DensidadeDoLayoutTest.php`, mais **CT-15** em `tests/Kit/SiteDeDocumentacaoTest.php` — **18 cenários, 32 casos** na feature.
 > **Sem `05`** — nenhum cenário afirma sobre algo que só o navegador prova.
 
 ## Verificação Final
