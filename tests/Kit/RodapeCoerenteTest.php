@@ -6,6 +6,7 @@ use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
+use Symfony\Component\Finder\Finder;
 
 /*
 |--------------------------------------------------------------------------
@@ -376,11 +377,15 @@ it('[CT-10] a assinatura vem antes do recado, em toda tela de login', function (
     // Bloco 1: a assinatura, sozinha no seu elemento.
     expect(assinaturaDoRodape($html))->toBe('© 2026 Acme');
 
-    // Bloco 2: o recado, num elemento IRMÃO — não dentro do mesmo nó da assinatura. `[^>]*` (e não
-    // um espaço fixo) entre `<div` e `class=`: o blade quebra os atributos em linhas separadas.
-    preg_match('~<div[^>]*class="fi-login-rodape"[^>]*>(.*?)</div>~s', $html, $recadoMatch);
-    expect($recadoMatch[1] ?? null)->not->toBeNull('o elemento do recado não foi encontrado');
-    $this->assertStringContainsString('Fale com o suporte', $recadoMatch[1]);
+    // Bloco 2: o recado, num elemento IRMÃO — não dentro do mesmo nó da assinatura.
+    //
+    // `recadoDoRodape()`, e NÃO um regex local. Esta linha era a segunda cópia sobrevivente do
+    // extrator, com a tag `div` fixa; quebrou sozinha quando o ADR-09 de `rodape-coerente` trocou o recado por
+    // `<aside>`. Achado QA-45 — irmão do QA-44, e a prova de que fechar a ocorrência sem fechar
+    // a classe só adia o mesmo vermelho.
+    $recado = recadoDoRodape($html);
+    expect($recado)->not->toBe('', 'o elemento do recado não foi encontrado em '.$rota);
+    $this->assertStringContainsString('Fale com o suporte', $recado);
 
     // As duas presenças já provadas — agora, e só agora, a ordem.
     $posicaoDaAssinatura = strpos($html, 'kit-versao');
@@ -790,4 +795,110 @@ it('[CT-20] a assinatura não passa pelo renderizador de Markdown do recado', fu
     $this->assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;Acme', $html);
     $this->assertStringContainsString('<strong>Fale com o suporte</strong>', $html);
     $this->assertStringNotContainsString('<script>alert(1)', $html);
+})->group('kit');
+
+/**
+ * [CT-24] nenhum teste reescreve o recorte do rodapé por conta própria.
+ *
+ * ## Por que este caso existe
+ *
+ * Os achados QA-44 e QA-45 do ciclo 4 eram **a mesma cópia, em dois arquivos**: um regex local
+ * com a tag fixa (`div`, `div|footer`) duplicando `RECORTE_DA_ASSINATURA` / `RECORTE_DO_RECADO`.
+ * O ciclo 3 já tinha unificado os extratores em `tests/Pest.php` (QA-31) — e **duas cópias
+ * sobreviveram à unificação**, porque nada impedia que sobrevivessem.
+ *
+ * Elas não eram inertes: quando o ADR-09 de `rodape-coerente` trocou o recado de `<div>` para
+ * `<aside>`, as duas
+ * quebraram, e **8 casos caíram de uma vez**. Pior — os que afirmavam AUSÊNCIA teriam ficado
+ * VERDES sobre o recorte vazio se não fosse o controle positivo.
+ *
+ * Este caso é a resposta ao diagnóstico que o quality gate repetiu por três ciclos: *"as correções
+ * fecham o caso citado e deixam a classe aberta"*. Fechar a classe é impedir a terceira cópia.
+ *
+ * O oráculo é **estrutural**, não textual: qualquer `preg_*` cuja agulha cite um dos dois
+ * marcadores do rodapé é uma reescrita do extrator, e o lugar dela é `tests/Pest.php`.
+ */
+it('[CT-24] nenhum teste reescreve o recorte do rodape por conta propria', function (): void {
+    $copias        = [];
+    $varridos      = 0;
+    $viramMarcador = 0;
+
+    foreach (Finder::create()->files()->in(dirname(__DIR__))->name('*.php') as $arquivo) {
+        $varridos++;
+
+        // `tests/Pest.php` é a CASA dos extratores — é lá que as duas constantes vivem.
+        if ($arquivo->getFilename() === 'Pest.php') {
+            continue;
+        }
+
+        foreach (preg_split('~\R~', (string) $arquivo->getContents()) ?: [] as $numero => $linha) {
+            if (preg_match('~preg_(?:match|match_all|replace|split)~', $linha) !== 1) {
+                continue;
+            }
+
+            if (preg_match(MARCADORES_DO_RODAPE, $linha) !== 1) {
+                continue;
+            }
+
+            $copias[] = $arquivo->getRelativePathname().':'.($numero + 1);
+        }
+
+        if (preg_match(MARCADORES_DO_RODAPE, (string) $arquivo->getContents()) === 1) {
+            $viramMarcador++;
+        }
+    }
+
+    /*
+     * CONTROLE POSITIVO DA VARREDURA, e ele vem primeiro.
+     *
+     * A asserção abaixo é de AUSÊNCIA sobre uma lista construída por `Finder`. Um `in()` apontando
+     * para pasta errada, um `name()` que não casasse ou um `preg_split` que devolvesse vazio
+     * deixariam `$copias` vazia e este caso VERDE sobre nada — que é o mesmo defeito que o
+     * `[CT-B03]` fechou no navegador, e o mesmo que `recadoDoRodape()` teve no ciclo 2.
+     *
+     * Os dois números são independentes: o primeiro prova que a varredura andou, o segundo que
+     * ela leu o CONTEÚDO dos arquivos e que o reconhecedor casa no corpus real. `[CT-25]` cobre
+     * o terceiro pedaço — que o reconhecedor acusa a cópia que existia de verdade.
+     */
+    expect($varridos)->toBeGreaterThan(50, 'a varredura não encontrou arquivos de teste — a lista de cópias abaixo mediria o vazio');
+    expect($viramMarcador)->toBeGreaterThan(0, 'nenhum arquivo de teste menciona os marcadores do rodapé — o reconhecedor não está casando no corpus real');
+
+    expect($copias)->toBe([], implode("\n", [
+        'Estes trechos reescrevem o recorte do rodapé em vez de usar os extratores de tests/Pest.php:',
+        ...$copias,
+        '',
+        'Use assinaturaDoRodape($html) ou recadoDoRodape($html). Uma cópia com a tag fixa fica',
+        'verde até alguém mudar a tag do elemento — e aí falha ABERTO, devolvendo vazio.',
+    ]));
+})->group('kit');
+
+/**
+ * [CT-25] controle positivo de [CT-24] — o varredor enxerga uma cópia quando ela existe.
+ *
+ * `[CT-24]` afirma uma AUSÊNCIA sobre uma lista construída por varredura. Um `Finder` que não
+ * achasse arquivo nenhum, um `preg_split` que devolvesse vazio ou um padrão que não casasse mais
+ * deixariam a lista vazia e o caso VERDE sobre nada — que é, nome por nome, o defeito que o
+ * `[CT-B03]` acabou de evitar com o controle positivo do detector.
+ *
+ * Em vez de um arquivo temporário no disco, o oráculo é o reconhecedor aplicado à cópia REAL que
+ * existia em `VersaoNoRodapeTest.php:574` antes do QA-44.
+ */
+it('[CT-25] o varredor de [CT-24] reconhece a copia que existia de verdade', function (): void {
+    /*
+     * A cópia é MONTADA, e não escrita inteira numa linha. Se ela aparecesse literal aqui,
+     * `[CT-24]` — que varre este mesmo arquivo — acusaria o controle positivo do próprio
+     * `[CT-24]`, e a única saída seria cegá-lo neste arquivo. Que é onde o QA-45 morava.
+     */
+    $marcador = 'kit-'.'versao';
+    $chamada  = 'preg_'.'match';
+
+    $copiaRemovidaNoQa44 = $chamada.'(\'~<(?:div|footer) class="'.$marcador.'">(.*?)</(?:div|footer)>~s\', $rodape, $match);';
+
+    expect(preg_match('~preg_(?:match|match_all|replace|split)~', $copiaRemovidaNoQa44))->toBe(1)
+        ->and(preg_match(MARCADORES_DO_RODAPE, $copiaRemovidaNoQa44))->toBe(1);
+
+    // E o negativo: uma linha que só MENCIONA o marcador, sem recortar, não pode ser acusada.
+    $mencaoLegitima = '$posicaoDaAssinatura = strpos($html, \''.$marcador.'\');';
+
+    expect(preg_match('~preg_(?:match|match_all|replace|split)~', $mencaoLegitima))->toBe(0);
 })->group('kit');

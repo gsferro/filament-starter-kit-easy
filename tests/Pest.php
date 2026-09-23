@@ -1302,16 +1302,6 @@ function comVersoes(?string $sistema, bool $exibirKit): void
     config()->set('kit.exibir_versao', $exibirKit);
 }
 
-/**
- * ATENCAO ao usar esta funcao em assercao de AUSENCIA.
- *
- * Ela devolve `''` em silencio quando nao acha o ancora — e string vazia satisfaz qualquer
- * `assertStringNotContainsString`. Falha ABERTO, que e o defeito n.1 desta base
- * (`.ai/rules/testes.md`). Achado RD-06 do step 6.5.
- *
- * Todo caso que a usa para provar ausencia precisa de um controle positivo NA MESMA ROTA,
- * provando que ela devolveu conteudo ali — nao basta um controle positivo noutra rota.
- */
 /*
 |--------------------------------------------------------------------------
 | Os recortes do rodape, em UM lugar
@@ -1327,12 +1317,44 @@ function comVersoes(?string $sistema, bool $exibirKit): void
 | atributos, e o elemento pode ganhar uma classe utilitaria ou um `data-testid`
 | `["']` como classe de aspa porque aspas simples sao HTML valido.
 |
-| Se um deles parar de casar, devolve string vazia — FALHA ABERTO. Por isso
-| toda assercao de AUSENCIA que os usa leva controle positivo NA MESMA ROTA.
+| A TAG E CAPTURADA, NAO LISTADA. A versao anterior listava `(?:div|footer)`
+| na assinatura e `div` FIXO no recado. Quando o recado virou `<aside>`
+| (ADR-09 de `rodape-coerente`), o recorte do recado parou de casar e 8 casos
+| Os que afirmavam AUSENCIA teriam ficado VERDES sobre o vazio se nao fosse
+| o controle positivo exigido acima. `(?P<tag>[a-z]+)` com `</(?P=tag)>`
+| fecha pela MESMA tag: a semantica do elemento muda sem tocar no extrator,
+| e um `</div>` que feche um `<aside>` continua sendo recusado.
+|
+| ATENCAO AO USAR QUALQUER UM DELES EM ASSERCAO DE AUSENCIA.
+|
+| Os tres extratores (`rodapeDe`, `assinaturaDoRodape`, `recadoDoRodape`)
+| devolvem `''` em silencio quando nao acham a ancora — e string vazia
+| satisfaz qualquer `assertStringNotContainsString`. Falham ABERTO, que e o
+| defeito n.1 desta base (`.ai/rules/testes.md`). Achado RD-06 do step 6.5.
+|
+| Todo caso que os usa para provar ausencia precisa de um controle positivo
+| NA MESMA ROTA, provando que o extrator devolveu conteudo ali — nao basta um
+| controle positivo noutra rota.
+|
+| Este aviso estava num docblock solto acima deste bloco, a 70 linhas
+| da funcao que dizia descrever: preso a nada, e duplicando o que ja se lia
+| aqui. Achado QA-46 do ciclo 4. Fundido, e agora vale para os tres — que e o
+| escopo certo, porque os tres falham do mesmo jeito.
 */
-const RECORTE_DA_ASSINATURA = '~<(?:div|footer)[^>]*class=[\x22\x27][^\x22\x27]*kit-versao[^\x22\x27]*[\x22\x27][^>]*>(.*?)</(?:div|footer)>~s';
+/**
+ * Os dois marcadores de classe do rodape, como ALTERNATIVA de regex.
+ *
+ * Existe como constante por um motivo especifico: `[CT-24]` varre `tests/` procurando linhas que
+ * reescrevam os extratores, e reconhece uma copia por conter um destes marcadores ao lado de um
+ * `preg_*`. Se o proprio `[CT-24]` escrevesse os marcadores como literal, ele se acusaria — e a
+ * saida seria cega-lo no proprio arquivo, que e exatamente onde o QA-45 morava. A constante
+ * mantem o varredor sensivel ao arquivo que o hospeda.
+ */
+const MARCADORES_DO_RODAPE = '~kit-versao|fi-login-rodape~';
 
-const RECORTE_DO_RECADO = '~<div[^>]*class=[\x22\x27][^\x22\x27]*fi-login-rodape[^\x22\x27]*[\x22\x27][^>]*>(.*?)</div>~s';
+const RECORTE_DA_ASSINATURA = '~<(?P<tag>[a-z]+)[^>]*class=[\x22\x27][^\x22\x27]*kit-versao[^\x22\x27]*[\x22\x27][^>]*>(?P<corpo>.*?)</(?P=tag)>~s';
+
+const RECORTE_DO_RECADO = '~<(?P<tag>[a-z]+)[^>]*class=[\x22\x27][^\x22\x27]*fi-login-rodape[^\x22\x27]*[\x22\x27][^>]*>(?P<corpo>.*?)</(?P=tag)>~s';
 
 /**
  * O RODAPÉ da página, e não a página inteira.
@@ -1425,7 +1447,7 @@ function segmentoDaVersao(string $html, string $versao): string
         return '';
     }
 
-    foreach (explode('·', strip_tags($m[1])) as $segmento) {
+    foreach (explode('·', strip_tags($m['corpo'])) as $segmento) {
         if (str_contains($segmento, $versao)) {
             return trim($segmento);
         }
@@ -1505,7 +1527,7 @@ function recadoDoRodape(string $html): string
         return '';
     }
 
-    foreach ($m[1] as $conteudo) {
+    foreach ($m['corpo'] as $conteudo) {
         if (filled($texto = trim(strip_tags($conteudo)))) {
             return $texto;
         }
@@ -1537,7 +1559,7 @@ function assinaturaDoRodape(string $html): string
         return '';
     }
 
-    $texto = html_entity_decode(strip_tags($m[1]));
+    $texto = html_entity_decode(strip_tags($m['corpo']));
     $texto = preg_replace('~\s+~', ' ', $texto) ?? $texto;
 
     return trim($texto);

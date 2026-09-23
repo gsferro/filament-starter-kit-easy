@@ -27,7 +27,12 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   recado, em silêncio.
 
 - O campo **Versão do sistema** ganhou o prefixo visual `v`. Ele **não é gravado**: quem acrescenta
-  o `v` ao exibir continua sendo um só lugar, e é isso que evita o `vv1.2.3`.
+  o `v` ao exibir continua sendo um só lugar, e é isso que impede o `vv1.2.3` em quem digitar
+  `1.2.3` daqui em diante.
+
+  **Quem já tinha `v1.2.3` gravado passa a ver `vv1.2.3`** — no campo e no rodapé. Isso é
+  deliberado e está sob teste (`[CT-15]`): o prefixo torna o dado sujo **visível** em vez de
+  migrá-lo em silêncio. Para corrigir, apague o `v` do campo e grave.
 
 - `resources/views/filament/versao-do-kit.blade.php` → **`assinatura-do-rodape.blade.php`**. O nome
   antigo já era impreciso — a blade mostra a versão do **sistema**, não a do kit — e mostrar

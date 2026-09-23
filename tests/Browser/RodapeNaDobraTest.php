@@ -146,20 +146,52 @@ it('[CT-B02] entrega a faixa do rodape com o estilo do kit aplicado', function (
  *
  * Medido antes de escrever: o axe passa hoje, com a assinatura e o recado presentes.
  */
-it('[CT-B03] nao introduz problema de acessibilidade na tela publica', function (string $rota, bool $unificado): void {
+it('[CT-B03] nao acrescenta elemento sem landmark na tela publica', function (string $rota, bool $unificado): void {
     config(['kit.login.rodape' => 'Fale com o **suporte**']);
     ligarLoginUnificado($unificado);
 
-    $pagina = visit($rota);
+    /*
+     * O ORACULO E DE PERTINENCIA, e nao `assertNoAccessibilityIssues()` puro. Duas medicoes, as
+     * duas do achado QA-40 do quality gate:
+     *
+     * 1. O NIVEL PADRAO E CEGO PARA ESTA CLASSE. `assertNoAccessibilityIssues(int $level = 1)`
+     *    mantem so `critical` e `serious`; a regra `region` — a que o <div> disparava e o <footer>
+     *    resolve — e `moderate`. A primeira redacao deste caso usava o padrao e era cega ao
+     *    defeito que veio guardar: revertendo para <div>, ficava verde.
+     *
+     * 2. NO NIVEL `moderate` A TELA JA TEM DOIS PROBLEMAS, E NENHUM E DESTA FEATURE. Medido:
+     *    `landmark-one-main` no <html> e `region` na `.fi-auth-media-section` e nos campos do
+     *    formulario — todos do layout do `filament-auth-designer`, que nao emite <main>. Exigir
+     *    zero seria reprovar esta entrega por divida alheia.
+     *
+     * Entao o que se afirma e: os elementos que ESTA feature acrescenta nao estao entre os
+     * acusados. Ver `04-casos-de-teste.md`, regra R8, mutantes M58-M62.
+     *
+     * AS TRES REGRAS, e nao so `region`. Varrer so `region` deixaria M62 vivo: <footer> no recado
+     * limpa o `region` e QUEBRA as outras duas, acusando a assinatura. As tres foram medidas nas
+     * tres formas (<div>, <footer>, <aside>) — a tabela esta na regra R8.
+     */
+    $acusados = json_decode((string) visit($rota)->script(<<<'JS'
+        (() => new Promise((resolve) => {
+            const regras = ['region', 'landmark-no-duplicate-contentinfo', 'landmark-unique'];
+            axe.run(document, { runOnly: { type: 'rule', values: regras } }).then((r) => {
+                const nos = r.violations.flatMap((v) => v.nodes).flatMap((n) => n.target).map(String);
+                resolve(JSON.stringify({ total: nos.length, alvos: nos }));
+            });
+        }))()
+    JS), true, flags: JSON_THROW_ON_ERROR);
 
     /*
-     * CONTROLE POSITIVO primeiro: sem o rodapé na página, o axe passaria e este caso ficaria
-     * verde sobre uma tela que não tem o que ele veio guardar.
+     * CONTROLE POSITIVO DO DETECTOR, e ele vem primeiro: um axe que nao rodasse devolveria lista
+     * vazia, e as duas ausencias abaixo ficariam verdes sobre nada. Esta tela acusa dois
+     * elementos hoje, os dois do vendor — se a lista vier vazia, e a varredura que falhou.
      */
-    $temRodape = (string) $pagina->script("(() => document.querySelector('.kit-versao') !== null)()");
-    expect($temRodape)->toBeTruthy("a assinatura não está em {$rota} — o axe abaixo mediria outra tela");
+    expect($acusados['total'])->toBeGreaterThan(0, "o axe nao acusou nada em {$rota} — a varredura nao rodou, e as ausencias abaixo mediriam o vazio");
 
-    $pagina->assertNoAccessibilityIssues();
+    $lista = implode(' ', $acusados['alvos']);
+
+    $this->assertStringNotContainsString('kit-versao', $lista, "a assinatura foi acusada em {$rota}: ou ficou fora de landmark (M58), ou virou o segundo <footer> da tela e duplicou o contentinfo (M62)");
+    $this->assertStringNotContainsString('fi-login-rodape', $lista, "o recado foi acusado em {$rota} — ele precisa de um landmark proprio, e <aside> e o unico que nao duplica o da assinatura (M59)");
 })->with([
     'login do admin'       => ['/admin/login', false],
     'página única'         => ['/login', true],

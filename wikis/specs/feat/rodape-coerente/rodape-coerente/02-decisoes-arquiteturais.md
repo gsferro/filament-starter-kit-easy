@@ -95,7 +95,9 @@ Três razões, e a terceira é a que pesa:
 
 ### Contexto
 
-`resources/views/filament/versao-do-kit.blade.php` passa a renderizar `© Nome` além das versões.
+`resources/views/filament/versao-do-kit.blade.php` passa a renderizar `© {ano corrente} {Nome}`
+além das versões — **com o ano**, que o ADR-04 fixa como calculado no render. A redação anterior
+dizia `© Nome`, sem ele (achado QA-52).
 
 O nome **já era impreciso antes desta entrega**: a blade mostra `config('app.version')`, a versão
 do **sistema**, e a do kit só aparece sob toggle. O próprio docblock dela registra que confundir as
@@ -337,3 +339,54 @@ material licenciado** a quem não tem licença.
 - **Positivas**: nenhum material licenciado no repositório público
 - **Negativas**: quem tiver licença refaz a cópia. O comando está escrito no próprio `.gitignore`
 
+## ADR-09: O recado é `<aside>` — a terceira forma, e a única medida
+
+**Data**: 2026-09-23 · **Status**: aceita · **Origem**: achados QA-17, QA-35 e QA-40 do quality gate
+
+### Contexto
+
+A assinatura virou `<footer>` no ciclo 1 (ADR-05 e o docblock da blade): filha direta de `<body>`
+numa tela pública, ela estava fora de qualquer landmark, e `<footer>` nessa posição tem
+`role=contentinfo` implícito.
+
+O recado (`rodape-login.blade.php`) ficou `<div>`, e o ciclo 1 registrou isso como **lacuna
+aceitável** com a justificativa de que torná-lo `<footer>` criaria um segundo `contentinfo`. O
+ciclo 3 achou o defeito dessa frase: **o axe nunca tinha rodado**. A justificativa era uma
+consequência deduzida, não medida — e a decisão estava apoiada nela.
+
+### Decisão
+
+O recado é **`<aside>`**. As três formas foram medidas com `axe.run()` nas rotas reais, nas regras
+`region`, `landmark-no-duplicate-contentinfo` e `landmark-unique`:
+
+| Tag do recado | `region` | duplicidade de `contentinfo` |
+|---|---|---|
+| `<div>` — o que estava | **acusa o recado** | limpo |
+| `<footer>` — o que a lacuna supunha | limpo | **acusa a assinatura**, nas duas regras |
+| **`<aside>`** — adotado | limpo | limpo |
+
+`<aside>` tem landmark `complementary` implícito: resolve o `region` sem entrar em conflito com o
+`contentinfo` da assinatura.
+
+### Consequências
+
+- **O QA-17 era defeito, não lacuna.** `[CT-B03]`, escrito antes da mudança, ficou vermelho em 2
+  das 3 rotas. A "lacuna aceitável" do ciclo 1 estava escondendo um problema real numa tela pública
+- **A dedução do ciclo 1 estava certa sobre `<footer>`, e isso agora é medido** — não é sorte
+  retroativa: é a diferença entre uma frase que se sustenta e uma que só não foi checada
+- **O que faltava não era rigor, era a terceira opção.** Os dois lados discutiram `<div>` vs
+  `<footer>` e nenhum perguntou se havia outro landmark. `complementary` estava disponível o tempo
+  todo
+- Os mutantes **M58, M59 e M62** morrem em `[CT-B03]`, que por isso varre **as três** regras. Com
+  `runOnly: ['region']` — a primeira redação — M62 sobrevivia
+- **Custo**: `<aside>` sem `aria-label` é um landmark genérico. Aceito, porque a alternativa
+  (rotular) acrescenta string traduzível a um elemento que já carrega texto do próprio usuário
+
+### Alternativas descartadas
+
+| Alternativa | Por que não |
+|---|---|
+| Manter `<div>` e suprimir a regra no teste | é o oráculo se ajustando ao defeito — a Proibição que esta esteira inteira existe para impedir |
+| `<footer>` no recado | **medido**: troca um problema por dois, e os dois apontam para a assinatura |
+| `<footer>` no recado e `<div>` na assinatura | move o `contentinfo` para o elemento que só aparece em 4 das 5 rotas: `/admin/password-reset/request` ficaria sem nenhum |
+| Envolver os dois num `<footer>` comum | os dois nascem de hooks diferentes, em arquivos diferentes, com escopos diferentes — juntá-los no DOM exigiria um terceiro hook e desfaria o ADR-02 |

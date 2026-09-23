@@ -38,7 +38,7 @@ Feitas contra a **fonte instalada**, não contra a memória. Cada uma é premiss
 |---|---|---|---|
 | V1 | `TextInput` aceita `prefix()` | `vendor/filament/forms/src/Components/TextInput.php:26` e `vendor/filament/forms/src/Components/Concerns/HasAffixes.php:prefix:56` | **confirmado** |
 | V2 | `prefix()` é **só exibição** | a assinatura recebe rótulo e não muta estado; `inlinePrefix()` (`:119`) é método à parte | **confirmado** — o valor gravado segue sem `v` |
-| V3 | quais layouts emitem `FOOTER` | ~~grep em `vendor/filament/filament/resources/views/`~~ → **grep em `vendor/` inteiro** | **CORRIGIDA (QA-02)**: são **três**, não dois — `filament/.../layout/index.blade.php:126`, `filament/.../layout/simple.blade.php:61` **e `caresome/filament-auth-designer/.../layouts/auth.blade.php:63`**. A primeira medição varreu **um só vendor**, e o terceiro é justamente o que estas telas usam |
+| V3 | quais layouts emitem `FOOTER` | ~~grep em `vendor/filament/filament/resources/views/`~~ → **grep em `vendor/` inteiro** | **CORRIGIDA (QA-02)**: são **três**, não dois — `vendor/filament/filament/resources/views/components/layout/index.blade.php:126`, `vendor/filament/filament/resources/views/components/layout/simple.blade.php:61` **e `vendor/caresome/filament-auth-designer/resources/views/components/layouts/auth.blade.php:63`**. A primeira medição varreu **um só vendor**, e o terceiro é justamente o que estas telas usam |
 | V4 | ordem entre hooks no mesmo ponto | `vendor/filament/support/src/View/ViewManager.php:renderHook:74` | **sem escopo renderiza ANTES de com escopo**, independente da ordem de registro; dedupe por `spl_object_id` |
 | V5 | onde o `FOOTER` cai na tela de login | ~~`simple.blade.php`~~ → **`auth-designer/.../auth.blade.php`**: `.fi-auth-layout` abre na 28, fecha na **61**, `FOOTER` na **63** | **CORRIGIDA (QA-02)**: **8 de 9 páginas de `app/Filament/Pages/Auth/` redeclaram `$layout` para o do Auth Designer**, que **não tem `<main>`**. A medição original foi feita no layout errado — e foi ela que produziu o **Blocker de geometria** do step 6.5 |
 | V6 | o que `getRenderHookScopes()` devolve | `vendor/filament/filament/src/Pages/BasePage.php:getRenderHookScopes:200` | `[static::class]` — a classe **concreta** |
@@ -199,7 +199,31 @@ atender RQ-08 e sai com `composer bp:off`.
 - **Escopada por `:has()`** para valer só nas telas de autenticação — ver ADR-07
 - **Guardada por** `[CT-B01]` e `[CT-B02]`
 
-### 6. Documentação e CHANGELOG
+### 6. Landmarks das duas linhas do rodapé (RQ-06)
+
+> Skills: `filament-development` · acrescentado em 2026-09-23, achados QA-17/QA-39/QA-40
+
+- **Paths**: `resources/views/filament/assinatura-do-rodape.blade.php` e
+  `resources/views/filament/auth/rodape-login.blade.php`
+- **O problema**: as duas linhas são filhas diretas de `<body>` numa tela **pública**. Como `<div>`,
+  o axe acusa as duas por `region` — conteúdo fora de qualquer landmark
+- **A decisão**: assinatura em `<footer>` (`contentinfo`), recado em **`<aside>`**
+  (`complementary`). As **três** formas foram medidas com `axe.run()` — ver **ADR-09**; `<footer>`
+  no recado limpa o `region` mas dispara `landmark-no-duplicate-contentinfo` **e**
+  `landmark-unique` na assinatura
+- **Conferido contra o Filament 5.8.1**: ele usa `<footer class="fi-*-footer">` só **aninhado**
+  (`fi-section-footer`, `fi-empty-state-footer`), não emite `contentinfo` em nível de `<body>` e
+  não emite `<aside>` em lugar nenhum — nenhuma das duas tags colide
+- **Guardado por** `[CT-B03]`, que varre `region`, `landmark-no-duplicate-contentinfo` e
+  `landmark-unique` com oráculo de **pertinência** (a tela já tem dívida de acessibilidade do
+  vendor, e exigir zero reprovaria esta entrega por dívida alheia). Mata M58, M59 e M62
+
+> **Este passo nasceu depois da implementação, e o registro importa.** No ciclo 1, o recado fora
+> de landmark foi classificado como *lacuna aceitável* com uma justificativa que **nunca tinha
+> sido medida** (QA-35). Quando o oráculo rodou, ele reprovou a implementação — era defeito. É a
+> mesma classe do QA-12: mudança de código que existia só como nota, sem passo aqui e sem ADR.
+
+### 7. Documentação e CHANGELOG
 
 - `docs/pt/` e `docs/en/` — a página de configurações descreve o campo e o rodapé
 - `CHANGELOG.md`, seção `[Unreleased]` (RQ-09: **não** sai tag)

@@ -571,7 +571,12 @@ it('[CT-10] exibe no rodape exatamente o que foi gravado na tela', function (str
     $rodape = rodapeDe((string) $this->get('/admin')->assertOk()->getContent());
 
     if ($exibido === null) {
-        preg_match('~<(?:div|footer) class="kit-versao">(.*?)</(?:div|footer)>~s', $rodape, $match);
+        /*
+         * `assinaturaDoRodape()`, e NAO um regex local. Esta linha era uma copia do extrator com
+         * a tag FIXA (`div|footer`, colada ao `class`). Ela sobreviveu a unificacao do QA-31 e
+         * quebrou sozinha quando o ADR-09 de `rodape-coerente` mudou a tag do recado — achado QA-44. Copia de extrator
+         * e a classe de defeito, nao esta ocorrencia dela.
+         */
 
         /*
          * IGUALDADE EXATA, e nao "nao contem o separador".
@@ -584,7 +589,7 @@ it('[CT-10] exibe no rodape exatamente o que foi gravado na tela', function (str
          * Com o conteudo fixado, o que se afirma e o texto inteiro: a assinatura esta la, a
          * versao nao, e nao sobrou marca de separador.
          */
-        expect(trim(strip_tags($match[1] ?? '')))->toBe('© 2026 Acme');
+        expect(assinaturaDoRodape($rodape))->toBe('© 2026 Acme');
 
         return;
     }

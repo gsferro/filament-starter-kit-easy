@@ -20,7 +20,12 @@
   (presente / ausente / uma vez só), **matriz superfície × audiência**, **normalização/escape**.
 - **Revisão adversarial: obrigatória e disparada** — perfil completo na área A **e** Impacto 3 em A e E.
   Resultado em [`## Revisão Adversarial`](#revisão-adversarial).
-- Cenários: **21** (CT-01…CT-22, com CT-06 fundido em CT-04) · Regras: **7** · Mutantes previstos: **57** · Sem matador: **2** — M38 e M51 *(alterado em 2026-09-23, QA-13: `[CT-B01]` cobre M33 e `[CT-B02]` mata M35, em `tests/Browser/RodapeNaDobraTest.php`)*.
+- Cenários: **26** (CT-01…CT-22 com CT-06 fundido em CT-04; mais **CT-24** e **CT-25** da regra R9, e **CT-B01…CT-B03**) · Regras: **9** (R1…R9) · Mutantes previstos: **67** · Sem matador: **2** — M38 e M51 *(alterado em 2026-09-23, QA-13: `[CT-B01]` cobre M33 e `[CT-B02]` mata M35, em `tests/Browser/RodapeNaDobraTest.php`)*.
+
+*(corrigido em 2026-09-23, achado QA-47: a linha **T** dizia "não se aplica". Dizia isso na
+mesma página em que a linha **R1** já listava "valor limite temporal" como técnica e apontava o
+CT-22. O `©` calcula `now()->year` a cada render — tempo é a variável mais exposta desta entrega,
+não a ausente.)*
 
 > **Para quem for implementar**: o `--filter` do Pest casa a **descrição do `it()`**, não o
 > `[CT-nn]`. Depois de rodar, confira o campo `tests:` da saída — `--filter=CT-04` pode selecionar
@@ -38,7 +43,7 @@
 | **I** | `GET` de qualquer tela dos três painéis; `GET` das quatro telas de login (`/admin/login`, `/app/login`, `/infra/login`, `/login`) e das demais telas do layout `simple`; componente Livewire `ConfiguracoesDoKit` | CT-01, CT-04, CT-11, CT-13, CT-14 |
 | **P** | **o kit não usa `viteTheme()`** — utilitária Tailwind emitida por blade do kit **não existe** na folha compilada do Filament (`.ai/rules/css-filament.md`): faixa sem estilo com todo teste verde. SQLite `:memory:`. `phpunit.xml` **força** `APP_VERSION=""`, `KIT_LOGIN_RODAPE=""`, `KIT_EXIBIR_VERSAO=false` e **não força `APP_NAME`** | M35 (lacuna declarada) · ver `## Setup Global` |
 | **O** | visitante anônimo numa tela pública e indexável; usuário autenticado nos três painéis; admin que edita a identidade; **instalação com dado sujo** (`v1.2.3` já gravado) | CT-04, CT-05, CT-15 |
-| **T** | **não se aplica**: nada na entrega depende de instante, fuso, agendamento, expiração ou ordem temporal. A única escrita é a da tela de configurações, cuja concorrência não muda de regra com esta entrega e já tem cobertura própria em `tests/Kit/ConfiguracoesDoKitTelaTest.php` | — |
+| **T** | **aplica-se, e por um fio só**: o `©` leva o **ano corrente calculado no render** (`now()->year`, ADR-04), então a saída de cada caso depende do relógio — por isso o `Dado` de todo cenário de assinatura fixa o tempo com `emJunhoDe2026()`, e a **virada de ano** é valor-limite, não detalhe. Fora do `©`: nada depende de fuso, agendamento, expiração ou ordem temporal; a única escrita é a da tela de configurações, cuja concorrência não muda de regra com esta entrega e já tem cobertura em `tests/Kit/ConfiguracoesDoKitTelaTest.php` | CT-22 (virada de ano) · `emJunhoDe2026()` no `## Setup Global` |
 
 ---
 
@@ -660,7 +665,7 @@ assertasse "existe uma classe `ComposicaoDoRodape`" testaria o plano, não o req
 **Por que estes cenários discriminam**
 
 - **CT-13 é o que separa "prefixo exibido" de "prefixo qualquer".** O oráculo é
-  `getPrefixLabel()` do componente (`vendor/filament/forms/.../HasAffixes.php:225`, confirmado na
+  `getPrefixLabel()` do componente (`vendor/filament/forms/src/Components/Concerns/HasAffixes.php:225`, confirmado na
   fonte instalada), alcançado como o projeto já alcança componentes:
   `Livewire::test(ConfiguracoesDoKit::class)->instance()->getSchemaComponent('form.versao_do_sistema')`
   (padrão de `tests/Tenancy/AdminDaOrganizacaoTest.php:157`). Um `assertSee('v')` seria vácuo — a
@@ -974,24 +979,148 @@ aqui, na derivação, porque é derivando que se percebe o que mudou de superfí
 
 ## Gate de CT-B
 
-*(reescrito em 2026-09-23 — achado QA-13 do quality gate.)*
+*(reescrito em 2026-09-23 — achados QA-13, QA-39 e QA-40 do quality gate.)*
 
 **A versão anterior desta seção dizia que o `05` não foi criado porque o escopo da tarefa limitava
-a saída ao `04`. A entrega falseou isso.**
+a saída ao `04`. A entrega falseou isso duas vezes.**
 
-O step 6.5 achou um **Blocker** que nenhum dos 113 casos de HTML via: a assinatura terminando
-em `y=1122` e o recado em `y=1186`, num viewport de 1117px — os dois **abaixo da dobra**, em toda
-tela de autenticação, e o recado **regredindo** de visível para invisível.
+O step 6.5 achou um **Blocker** que nenhum dos 113 casos de HTML via: a assinatura terminando em
+`y=1122` e o recado em `y=1186`, num viewport de 1117px — os dois **abaixo da dobra**, e o recado
+**regredindo** de visível para invisível.
 
-Os cenários de navegador vivem em `tests/Browser/RodapeNaDobraTest.php`:
+E o ciclo 4 achou que o **terceiro** cenário de navegador nasceu **no disco**, sem passar por aqui
+(QA-39) — que é a Proibição 11 da `feature-test-design`, e a causa nomeada de o gate achar o
+vizinho a cada ciclo. Este bloco existe para que ele deixe de nascer assim.
+
+### Regra R8 — a superfície pública nova não acrescenta problema de acessibilidade
+
+> `RQ-06` · área H · técnica: **invariante sobre conjunto**, com controle positivo e negativo
+
+```gherkin
+  Regra: os elementos que esta feature acrescenta ficam dentro de um landmark
+
+    Cenário: [CT-B03] a assinatura e o recado não aparecem entre os elementos sem landmark
+      Dado a tela de login, anônima, com o recado preenchido
+      Quando o axe varre a página nas regras `region`, `landmark-no-duplicate-contentinfo` e `landmark-unique`
+      Então os elementos que ele acusa não incluem a assinatura
+      E não incluem o recado
+      E a varredura acusou pelo menos um elemento, provando que ela rodou
+```
+
+**Por que o oráculo NÃO é `assertNoAccessibilityIssues()` puro** — e isto é o achado QA-40:
+
+1. **O nível padrão é cego para esta classe.** `assertNoAccessibilityIssues(int $level = 1)`
+   (`vendor/pestphp/pest-plugin-browser/src/Api/Concerns/MakesConsoleAssertions.php:assertNoAccessibilityIssues:95`)
+   mantém só `critical` e `serious`. A regra `region` — a que o `<div>` disparava e o `<footer>`
+   resolve — é **`moderate`**. A primeira redação do `[CT-B03]` usava o padrão e era **cega ao
+   defeito que veio guardar**.
+2. **No nível `moderate` a tela já tem dois problemas, e nenhum é desta feature.** Medido:
+   `landmark-one-main` no `<html>` e `region` na `.fi-auth-media-section` e nos campos do
+   formulário — todos do layout do `filament-auth-designer`, que não emite `<main>`. Exigir zero
+   seria reprovar a entrega por dívida alheia.
+
+Por isso o oráculo é de **pertinência**: os elementos da feature não estão na lista. E a terceira
+linha do `Então` é o **controle positivo do detector** — sem ela, um axe que não rodasse devolveria
+lista vazia e as duas ausências ficariam verdes sobre nada.
+
+#### O cenário reprovou a implementação, e é isso que um CT serve para fazer
+
+Escrito, `[CT-B03]` ficou **vermelho em 2 das 3 rotas**: o recado era `<div>` e **estava mesmo fora
+de landmark**. Ou seja — o QA-17, que o ciclo 1 tinha classificado como lacuna aceitável, era um
+**defeito real**, e a justificativa de não fechá-lo era a consequência de um axe que nunca rodara
+(o achado QA-35).
+
+As três formas foram então **medidas**, e não deduzidas. É o registro que faltava:
+
+| Tag do recado | `region` | `landmark-no-duplicate-contentinfo` + `landmark-unique` |
+|---|---|---|
+| `<div>` (como estava) | **acusa o recado** | limpo |
+| `<footer>` (o que a ADR supunha) | limpo | **acusam a ASSINATURA**, as duas |
+| **`<aside>`** (adotado) | limpo | limpo |
+
+`<footer>` nessa posição tem `contentinfo` implícito, e a assinatura já é um — **dois `contentinfo`
+irmãos** disparam duas regras novas, as duas apontando para a assinatura. A ADR dizia isso sem ter
+medido, e acertou; o que ela não tinha era a **terceira** forma. `<aside>` é landmark
+`complementary`: satisfaz o `region` sem duplicar nada. Ver ADR-09.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M58 | a assinatura volta a ser `<div>` filho de `<body>` — conteúdo fora de landmark em tela pública | **CT-B03**, 1ª linha. É o mutante que `[CT-B02]` e os 113 casos de HTML **não** matam, e que a primeira redação do CT-B03 também não matava |
+| M59 | o recado volta a ser `<div>` e perde o landmark `complementary` | CT-B03, 2ª linha. **Medido**: vermelho em `/admin/login` e `/login`; verde em `/admin/password-reset/request`, que não emite recado — o escopo do hook, e não uma lacuna |
+| M62 | o recado vira `<footer>` em vez de `<aside>` — limpa o `region` e **duplica o `contentinfo`** da assinatura | CT-B03, 1ª linha. Só mata porque o cenário varre **as três** regras: com `runOnly: ['region']` este mutante sobrevivia. **Medido**: vermelho em 2 de 3 rotas |
+| M60 | o axe deixa de rodar (script não injetado, página não carregada) e tudo passa | CT-B03, 3ª linha — o controle positivo |
+| M61 | o nível volta ao padrão e a varredura deixa de ver `moderate` | CT-B03, 3ª linha: no nível 1 esta tela não acusa nada, e a asserção de "acusou alguém" fica vermelha |
+
+### Regra R9 — o extrator do rodapé mora num lugar só
+
+> `RQ-08` · área **S** (estrutura da própria suíte) · técnica: **invariante sobre conjunto**,
+> com controle positivo da varredura **e** do reconhecedor
+
+Esta regra não descreve o produto: descreve a **suíte**. Ela existe porque o mesmo defeito voltou
+em três ciclos seguidos, e o quality gate nomeou a causa — *"as correções fecham o caso citado e
+deixam a classe aberta"*.
+
+**A história medida**, e é ela que justifica o custo de um caso estrutural:
+
+1. O ciclo 3 (QA-31) unificou os recortes em `RECORTE_DA_ASSINATURA` e `RECORTE_DO_RECADO`;
+2. **duas cópias sobreviveram à unificação** (`VersaoNoRodapeTest.php:574`,
+   `RodapeCoerenteTest.php:381`) — achados QA-44 e QA-45 do ciclo 4;
+3. quando o ADR-09 trocou o recado de `<div>` para `<aside>`, **as duas quebraram junto com a
+   própria constante**, e **8 casos caíram de uma vez**;
+4. os que afirmavam AUSÊNCIA teriam ficado **verdes sobre o recorte vazio** — o extrator falha
+   aberto — se não fosse o controle positivo exigido no `## Setup Global`.
+
+```gherkin
+  Regra: nenhum teste reescreve o recorte do rodapé por conta própria
+
+    Cenário: [CT-24] a suíte não contém cópia do extrator
+      Dado todos os arquivos PHP sob `tests/`, exceto `tests/Pest.php`
+      Quando se procura uma linha que chame `preg_*` citando um marcador do rodapé
+      Então nenhuma linha é encontrada
+      E a varredura visitou mais de 50 arquivos, provando que ela andou
+      E ao menos um arquivo menciona um marcador, provando que o reconhecedor casa no corpus
+
+    Cenário: [CT-25] o reconhecedor de [CT-24] acusa a cópia que existia de verdade
+      Dado a linha removida de "VersaoNoRodapeTest.php:574" pelo achado QA-44
+      Quando o reconhecedor de [CT-24] é aplicado a ela
+      Então ela é acusada
+      E uma linha que apenas MENCIONA o marcador, sem recortar, não é acusada
+```
+
+**Por que os marcadores são uma constante (`MARCADORES_DO_RODAPE`) e não um literal**
+
+`[CT-24]` varre `tests/` inteiro, **inclusive o arquivo que o hospeda**. Se ele escrevesse
+`kit-versao` como literal, acusaria a si mesmo, e a saída óbvia — cegá-lo no próprio arquivo —
+o cegaria exatamente onde o QA-45 morava. A constante mantém o varredor sensível ao seu
+próprio hospedeiro. Pelo mesmo motivo, a cópia de `[CT-25]` é **montada por concatenação**.
+
+**Por que `tests/Pest.php` é a única exceção**: é onde as duas constantes vivem. A exceção é por
+**arquivo nomeado**, não por padrão — um `@phpcs:ignore` ou marcador de opt-out seria uma porta
+que qualquer cópia futura atravessaria.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M63 | alguém escreve um terceiro recorte local, com a tag fixa | **CT-24**. É o mutante que nenhum outro caso pega: a cópia fica **verde** até a tag mudar |
+| M64 | o `Finder` aponta para pasta errada, ou o `name()` deixa de casar | CT-24, 4ª linha — o controle positivo da varredura |
+| M65 | o reconhecedor deixa de casar (marcador renomeado, regex quebrado) e tudo passa | CT-24, 5ª linha + **CT-25**, que aplica o reconhecedor à cópia real |
+| M66 | o reconhecedor passa a acusar qualquer menção ao marcador, e vira ruído | CT-25, última linha — o controle **negativo** |
+| M67 | o extrator volta a listar a tag (`(?:div\|footer)`) em vez de capturá-la | CT-01…CT-22 em bloco, **medido**: 8 vermelhos quando o recado virou `<aside>` |
+
+---
+
+### Os outros dois cenários de navegador
 
 | Caso | O que mede | Mutante |
 |---|---|---|
 | `[CT-B01]` | `getBoundingClientRect().bottom` ≤ `innerHeight` em 5 rotas, e a ordem **visual** entre assinatura e recado | cobre **M33** |
 | `[CT-B02]` | `font-size`, `text-align` e `opacity` **computados** — os três divergem de uma vez se a folha do kit não chegar | mata **M35** |
 
-**`assertVisible` não serviria**: ele exige bounding box não-vazio, **não** exige estar no viewport.
-Um elemento a 1.122px num viewport de 1.117px é "visível" para ele.
+**`assertVisible` não serviria** em nenhum dos três: ele exige bounding box não-vazio, **não** exige
+estar no viewport nem diz nada sobre landmark.
 
 **Provados por mutação**, e o percurso vale registro: a primeira tentativa removeu a regra de CSS
 só de `resources/css/filament/kit.css` e os casos ficaram **verdes** — porque o Filament serve a
