@@ -165,7 +165,7 @@
 .dark:root .fi-topbar-item.fi-active .fi-topbar-item-label { color: var(--primary-400); }
 
 /*
-| A versão do SISTEMA no rodapé dos painéis (`filament/versao-do-kit.blade.php`), e a do
+| A versão do SISTEMA no rodapé dos painéis (`filament/assinatura-do-rodape.blade.php`), e a do
 | kit ao lado quando `kit.exibir_versao` está ligada.
 |
 | Registrada no render hook `FOOTER` por
@@ -191,4 +191,41 @@
     font-size: 0.75rem;
     line-height: 1rem;
     opacity: 0.6;
+}
+
+/*
+|--------------------------------------------------------------------------
+| O rodapé das telas de autenticação cabe na dobra
+|--------------------------------------------------------------------------
+|
+| MEDIDO, não deduzido. Num viewport de 1117px a assinatura saía em y=1122 e o
+| recado em y=1186: os dois abaixo da dobra, invisíveis sem rolar. E o recado
+| REGREDIU — antes ele vivia dentro do cartão do formulário.
+|
+| A causa é estrutural. Este kit não usa o layout `simple` do Filament nessas
+| telas: usa o do `filament-auth-designer`, cujo `.fi-auth-layout` declara
+| `min-height: 100vh` e emite o hook `FOOTER` DEPOIS de fechar a própria div
+| (`components/layouts/auth.blade.php:60-63`). O contêiner sozinho já consome a
+| dobra inteira, e tudo o que vem depois sobra para fora.
+|
+| Os três são IRMÃOS diretos de `body.fi-body`, que já tem `min-height: 100vh`
+| — então a correção é fazer o body ser a coluna e o layout parar de exigir a
+| altura toda. O rodapé encosta no fim da tela, dentro dela.
+|
+| Escopado por `:has(> .fi-auth-layout)` para valer SÓ nas telas de
+| autenticação: o layout de painel autenticado não tem essa classe, e lá o
+| `FOOTER` já cai no fluxo normal.
+|
+| `:has()` tem suporte em todo navegador com atualização desde 2023. Se um
+| navegador antigo o ignorar, a regra inteira é descartada e o comportamento
+| volta a ser o de hoje — degrada para o estado anterior, não para um pior.
+*/
+body.fi-body:has(> .fi-auth-layout) {
+    display: flex;
+    flex-direction: column;
+}
+
+body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
+    min-height: 0;
+    flex: 1 1 auto;
 }

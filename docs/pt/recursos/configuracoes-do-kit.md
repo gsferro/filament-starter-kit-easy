@@ -18,11 +18,29 @@ O que a instalação perguntou — e mais um punhado de coisas que antes só se 
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
 
-## A versão no rodapé: a sua, não a do kit
+## O rodapé: assinatura para todos, versão só para quem entrou
 
-O rodapé de toda tela dos três painéis mostra a **versão do seu sistema** — o produto que nasceu do
-kit. Ela sai do campo *Versão do sistema*, na aba **Identidade**, semeado por `APP_VERSION` no
-`.env`.
+O rodapé é montado em **um só lugar** (`App\Support\AssinaturaDoRodape`) e aparece em toda tela
+dos três painéis **e** nas telas de autenticação. O que muda entre elas não é o formato — é quem
+vê o quê:
+
+| Parte | Visitante | Quem entrou |
+|---|---|---|
+| `© {ano} {Nome da aplicação}` | ✅ | ✅ |
+| `v{versão do sistema}` | ❌ | ✅ |
+| `kit {versão do kit}` | ❌ | ✅, se o interruptor estiver ligado |
+
+**A versão não aparece para quem não entrou, e isso é deliberado**: exibir a versão exata da
+instalação na tela de login é entregar, a qualquer visitante, a lista de vulnerabilidades
+conhecidas que se aplicam a ela. O nome e o `©` são públicos de qualquer forma — já aparecem no
+topo do painel e no título da aba.
+
+O **ano é o corrente**, calculado a cada render: não há campo para ele e ele muda sozinho na virada.
+
+A **versão do seu sistema** sai do campo *Versão do sistema*, na aba **Identidade**, semeado por
+`APP_VERSION` no `.env`. O campo mostra um **`v` fixo à esquerda**: ele é só visual, marca a
+convenção e **não é gravado** — digite `1.2.3`, e o rodapé mostra `v1.2.3`. Se você digitar o `v`
+também, verá `vv1.2.3`, que é o jeito de a tela avisar que sobrou um.
 
 São duas versões diferentes, e confundi-las é o erro que esta seção existe para evitar:
 
@@ -37,10 +55,17 @@ comparar. Ela **não** aparece no rodapé por padrão; quem quiser vê-la ao lad
 duas, independentemente do interruptor.
 
 **Campo vazio, rodapé sem a SUA versão.** Um projeto que não versiona não precisa fingir que
-versiona. Com o interruptor da versão do kit **desligado** — que é como ele nasce — o rodapé não
-renderiza nada.
+versiona — a assinatura `© {ano} {Nome}` continua lá, só sem o número.
 
-Se o interruptor estiver ligado e o campo vazio, o rodapé mostra **só a versão do kit, rotulada**
+### O recado da tela de login
+
+A aba **Login** tem um campo de texto livre que vira uma **segunda linha do rodapé, abaixo da
+assinatura**, e só nas telas de login (`/admin/login`, `/app/login`, `/infra/login` e `/login`). Ele
+aceita Markdown — negrito, itálico e link — e descarta HTML cru, porque a tela de login é pública.
+
+As telas de **registro** e de **recuperação de senha** recebem só a assinatura, não o recado.
+
+Se o interruptor estiver ligado e o campo vazio, o rodapé mostra a assinatura e, ao lado, **a versão do kit rotulada**
 (`kit 0.38.2`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
 impede essa leitura, e é requisito do kit, não detalhe de tela.
 

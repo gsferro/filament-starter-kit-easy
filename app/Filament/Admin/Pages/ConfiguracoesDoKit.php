@@ -273,7 +273,7 @@ class ConfiguracoesDoKit extends SettingsPage
                 TextInput::make('nome_da_aplicacao')
                     ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('Nome da aplicação')
-                    ->helperText('Aparece no topo dos três painéis, no título da aba e como remetente padrão.')
+                    ->helperText('Aparece no topo dos três painéis, no título da aba, como remetente padrão e no rodapé — inclusive nas telas públicas de login e recuperação de senha.')
                     ->required()
                     ->maxLength(255),
 
@@ -284,8 +284,25 @@ class ConfiguracoesDoKit extends SettingsPage
                  */
                 TextInput::make('versao_do_sistema')
                     ->extraInputAttributes(['autocomplete' => 'off'])
+                    /*
+                     * Afixo do Filament: e EXIBICAO, nao muta o estado. O valor gravado continua
+                     * sem o `v`, e quem o acrescenta no rodape e `AssinaturaDoRodape` — UM SO
+                     * LUGAR poe o `v`, e e isso que impede o MECANISMO de dobra-lo.
+                     *
+                     * Isso NAO impede o `vv1.2.3` quando o dado ja vem sujo: quem gravou
+                     * `v1.2.3` — a convencao de tag do git — ve `vv1.2.3` no campo e no rodape,
+                     * e `[CT-15]` congela esse comportamento de proposito. O afixo TORNA O ERRO
+                     * VISIVEL; nao o corrige.
+                     *
+                     * Sem normalizacao ao salvar, e a decisao esta na ADR-06: remover um `v`
+                     * inicial quebraria uma versao legitima chamada `v2`, e migrar dado de
+                     * settings por um caso que a tela agora evidencia custa mais do que o
+                     * incomodo. Achado RD-04 do step 6.5: a primeira versao deste comentario
+                     * dizia so "evita o vv1.2.3", que o proprio CT-15 desmente.
+                     */
+                    ->prefix('v')
                     ->label('Versão do sistema')
-                    ->helperText('A versão do SEU produto, exibida no rodapé dos painéis. Em branco, o rodapé não mostra versão. APP_VERSION no .env semeia este campo na instalação; depois disso é aqui que se troca — o valor gravado vence o arquivo, inclusive quando está vazio.')
+                    ->helperText('A versão do SEU produto, exibida no rodapé. O `v` à esquerda já é do campo: digite só o número (`1.2.3`), senão o rodapé mostra `vv1.2.3`. Em branco, o rodapé não mostra versão. APP_VERSION no .env semeia este campo na instalação; depois disso é aqui que se troca — o valor gravado vence o arquivo, inclusive quando está vazio.')
                     ->placeholder('1.0.0')
                     ->maxLength(50),
 

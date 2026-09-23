@@ -487,7 +487,7 @@ it('[CT-50] todo campo de texto livre das configuracoes recusa o autopreenchimen
 
     expect($campos)->not->toBe([], 'a varredura não achou campo nenhum — o arquivo mudou de forma e este caso parou de medir');
 
-    $semGuarda = [];
+    $semGuarda   = [];
     $senhaComOff = [];
 
     foreach ($campos as [, $nome, $corpo]) {

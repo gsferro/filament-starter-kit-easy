@@ -18,11 +18,30 @@ What the installer asked — plus a handful of things you previously could only 
 
 Everything is stored by `spatie/laravel-settings` in the `settings` table, with the screen coming from `filament/spatie-laravel-settings-plugin` — both were already installed in the kit and unused until this version.
 
-## The version in the footer: yours, not the kit's
+## The footer: signature for everyone, version only once you are in
 
-The footer of every screen in all three panels shows **your system's version** — the product born
-from the kit. It comes from the *Versão do sistema* field on the **Identidade** tab, seeded by
-`APP_VERSION` in `.env`.
+The footer is composed in **one place** (`App\Support\AssinaturaDoRodape`) and appears on every
+screen of all three panels **and** on the authentication screens. What differs between them is not
+the format — it is who sees what:
+
+| Part | Visitor | Signed in |
+|---|---|---|
+| `© {year} {Application name}` | ✅ | ✅ |
+| `v{system version}` | ❌ | ✅ |
+| `kit {kit version}` | ❌ | ✅, if the switch is on |
+
+**The version is hidden from visitors, and that is deliberate**: showing the exact installed
+version on the login screen hands any passer-by the list of known vulnerabilities that apply to it.
+The name and the `©` are public anyway — they already appear at the top of the panel and in the
+browser tab title.
+
+The **year is the current one**, computed on every render: there is no field for it, and it rolls
+over on its own.
+
+**Your system's version** comes from the *Versão do sistema* field on the **Identidade** tab, seeded
+by `APP_VERSION` in `.env`. The field shows a fixed **`v` on its left**: it is display only, it
+marks the convention and it is **not stored** — type `1.2.3` and the footer shows `v1.2.3`. Type the
+`v` as well and you will see `vv1.2.3`, which is the screen telling you one is spare.
 
 These are two different versions, and conflating them is the mistake this section exists to prevent:
 
@@ -37,10 +56,18 @@ version* switch on the **Kit** tab. `php artisan kit:info` always prints both, r
 of the switch.
 
 **Empty field, no version of YOURS in the footer.** A project that does not version itself need not
-pretend to. With the kit-version switch **off** — which is how it ships — the footer renders
-nothing at all.
+pretend to — the `© {year} {Name}` signature stays, just without the number.
 
-If the switch is on and the field is empty, the footer shows **only the kit version, labelled**
+### The login screen notice
+
+The **Login** tab has a free-text field that becomes a **second footer line, below the signature**,
+and only on the login screens (`/admin/login`, `/app/login`, `/infra/login` and `/login`). It
+accepts Markdown — bold, italic and links — and discards raw HTML, because the login screen is
+public.
+
+The **registration** and **password reset** screens get the signature only, not the notice.
+
+If the switch is on and the field is empty, the footer shows the signature and, beside it, **the kit version, labelled**
 (`kit 0.38.2`). It is never presented as if it were your product's: the label is precisely what
 prevents that reading, and it is a kit requirement, not a screen detail.
 

@@ -1137,7 +1137,7 @@ it('[CT-25] mantem a contagem de arquivos de teste dos readmes sincronizada', fu
 /**
  * O exemplo do rótulo da versão do kit, nas duas páginas de configurações.
  *
- * `resources/views/filament/versao-do-kit.blade.php:$versaoDoKit:60` monta o rótulo como
+ * `app/Support/AssinaturaDoRodape.php:partes:67` monta o rótulo como
  * `'kit '.config('kit.version')`, e as duas páginas imprimem o resultado entre crases para o leitor
  * reconhecer o formato. O formato não envelhece; os dígitos envelhecem a cada release — e
  * envelheceram: o exemplo dizia `kit 0.35.0` com o kit já na 0.36.1.
