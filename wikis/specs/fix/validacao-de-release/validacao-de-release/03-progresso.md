@@ -306,6 +306,80 @@ E havia um erro maior embaixo: **já existia uma guarda estática**, o `[CT-10]`
 `HostLocalTest` tinha a sentinela no `[CT-34]`. A pergunta nunca foi *"criar guarda?"*; era
 *"endurecer a que existe?"*, e ninguém a fez. Ver ADR-02, reescrita, e o `[CT-11]` no passo 7.
 
+## Revisão do PR #97 — três achados, e o padrão é o mesmo dos quatro ciclos do rodapé
+
+> 2026-09-23, antes do merge. A guarda foi **ampliada no que reconhece** e ficou **estreita em
+> onde olha** — duas peças que precisam crescer juntas, e só uma tinha teste.
+
+### 1. O escopo não cresceu junto com o reconhecedor — Major
+
+`suitesDeDocumentacao()` filtra por `documentacaoDoKit(`, `README.md` e `docs/{pt,en}/`. Era o
+escopo certo enquanto a única forma de depender da árvore do kit era **ler documentação que não
+viaja**. Este PR acrescentou duas formas — **afirmar a sentinela** e **invocar o git** — e
+nenhuma delas tem relação com documentação.
+
+**Medido**: `tests/Kit/BlueprintForaDoPacoteTest.php` invoca `git ls-files`, não tem sentinela
+nenhuma e **nunca era varrido**. Com o escopo alargado (`suitesComRiscoDeArvore()`, toda suite de
+`tests/Kit`), ele é o **único acusado em 112 arquivos** — zero falso positivo.
+
+E o caso dele não ficava vermelho no projeto instalado: ficava **verde pela razão errada**. Sem
+`.git`, o `git ls-files` sai com código ≠ 0, e o oráculo é `not->toBe(0)`. Passava não porque o
+`auth.json` estivesse fora do versionamento, mas porque **não havia versionamento a consultar**.
+Verde que não prova nada ocupa o lugar da prova.
+
+### 2. A forma-3 não via a variante em array — Major
+
+`new Process(['git', 'show', ...])` seguido de `$git->run()` com parênteses **vazios**: o comando
+não está no argumento de quem executa, e nenhum alternante do regex o alcançava.
+
+Não é hipótese — `tests/Kit/SiteDeDocumentacaoTest.php:265` usa exatamente essa forma. Ali não
+mordia porque o arquivo tem sentinela no `beforeEach`; ou seja, **o buraco estava coberto por
+acidente, e não por construção**, que é o motivo de ter sobrevivido.
+
+### 3. A janela do casamento cortava no primeiro `;` — Minor, nos dois ramos
+
+`[^;]` entre a sentinela e o pulo: um `->skip()` com closure de mais de uma instrução, ou um
+`markTestSkipped` precedido de uma atribuição, têm `;` no meio — e um caso **guardado** era
+acusado. A fronteira certa é a chave que fecha o bloco: `[^}]{0,400}`.
+
+### Prova por mutação — cinco mutantes, cinco matadores
+
+| Mutante | Cenário que mata | Resultado |
+|---|---|---|
+| o `->skip()` do `[CT-19]` é removido | `[CT-11]` | **vermelho**, nomeando `ChecklistDeReleaseTest.php -> [CT-19]` |
+| o escopo volta a `suitesDeDocumentacao()` | **`[CT-28]`** | **vermelho** — e nenhum outro caso o pegava |
+| a forma-3 perde a variante em array | **`[CT-26]`** | **vermelho** |
+| a janela do `markTestSkipped` volta a `[^;]` | `[CT-23]` | **vermelho** |
+| a janela do `->skip()` volta a `[^;]` | `[CT-23]` | **vermelho** |
+
+`[CT-28]` é o caso que faltava, e vale dizer por quê: `[CT-11]` prova que os arquivos varridos
+estão limpos, **não** que a varredura olha para os arquivos certos. Estreitar o escopo de volta
+deixava `[CT-11]` verde, porque o único acusado ganhou `->skip()` no mesmo commit. `[CT-28]`
+afirma a **relação** entre reconhecedor e escopo, e não o valor de nenhum dos dois.
+
+### Um falso positivo que eu mesmo produzi, e que o `[CT-10]` pegou
+
+O rótulo do dataset dizia `'->skip() com closure de mais de uma instrucao'`. O regex do `[CT-10]`
+casa `skip(` seguido de `docs` sem `;` no meio — e o rótulo em prosa ficava colado no heredoc que
+lê `docs/`. **O `[CT-10]` reprovou o texto do caso, não o código.** Rótulo renomeado; fica
+registrado que a frouxidão do regex do `[CT-10]` é débito conhecido, e que desta vez ela
+trabalhou a favor.
+
+### Verificação da revisão
+
+`pint --test` passed · `phpstan` level 7, **0 erros** · `filacheck` **17/17** ·
+`--testsuite=Kit,Tenancy --parallel`: **2.880 testes, 2.877 passaram, 11.160 asserções, 3 pulados,
+0 falhas**.
+
+**O delta sobre a `main` é +6 testes e +8 asserções, e ele é inteiramente da revisão** — `[CT-26]`
+(2 casos), `[CT-27]`, `[CT-28]` e os 2 novos do `[CT-23]`. O commit original deste PR acrescenta
+**zero** casos: `[CT-22]` e `[CT-23]` já tinham chegado à `main` por outro caminho, e o que ele
+traz é a troca de implementação (`dependeDaArvoreDoKit()`, `temSentinelaPropria()`).
+
+Conferido que o PR **não** é redundante: na `main`, o `[CT-19]`
+(`tests/Kit/ChecklistDeReleaseTest.php:544`) continua fechando em `});`, **sem `->skip()`** — o
+defeito que originou este PR está lá.
+
 ## Retrospectiva
 
 <!-- Preenchido no fim. -->

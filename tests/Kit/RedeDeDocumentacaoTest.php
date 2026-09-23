@@ -333,7 +333,20 @@ function dependeDaArvoreDoKit(string $corpoDoCaso, array $funcoes, string $prefi
      * executa-lo, e contar mencao como uso e o mesmo erro que esta guarda inteira existe para
      * nao cometer. Agora o literal so conta quando e o ARGUMENTO de uma chamada que executa.
      */
-    return preg_match('~(?:->run|::run|\brun|\bexec|shell_exec|proc_open|fromShellCommandline)\s*\(\s*[\'"]git\s~', $corpoDoCaso) === 1;
+    if (preg_match('~(?:->run|::run|\brun|\bexec|shell_exec|proc_open|fromShellCommandline)\s*\(\s*[\'"]git\s~', $corpoDoCaso) === 1) {
+        return true;
+    }
+
+    /*
+     * A VARIANTE EM ARRAY, que a primeira redacao desta funcao nao via: `new Process(['git', ...])`
+     * seguido de `$git->run()` com parenteses VAZIOS. O comando nao esta no argumento do `run`, e
+     * nenhum dos alternantes acima o alcanca.
+     *
+     * Nao e hipotese: `tests/Kit/SiteDeDocumentacaoTest.php:265` usa exatamente essa forma. Ali
+     * ela nao morde porque o arquivo tem sentinela no `beforeEach` — mas o reconhecedor ficaria
+     * cego para o proximo arquivo que a usasse sem essa protecao.
+     */
+    return preg_match('~(?:new\s+Process|::fromShellCommandline)\s*\(\s*\[\s*[\'"]git[\'"]~', $corpoDoCaso) === 1;
 }
 
 /**
@@ -351,11 +364,22 @@ function dependeDaArvoreDoKit(string $corpoDoCaso, array $funcoes, string $prefi
  */
 function temSentinelaPropria(string $corpoDoCaso): bool
 {
-    if (preg_match('~->skip\s*\([^;]*naArvoreDoKit~s', $corpoDoCaso) === 1) {
+    /*
+     * `[^;}]`... nao: `[^}]{0,400}`, pelo mesmo motivo do ramo abaixo. Um `->skip()` com closure
+     * de mais de uma instrucao tem `;` antes da sentinela, e a janela antiga (`[^;]*`) cortava
+     * ali — acusando um caso GUARDADO. A chave que fecha a closure e a fronteira certa; o teto
+     * de 400 impede que um `->skip()` sem sentinela se ligue a uma mencao distante no bloco.
+     */
+    if (preg_match('~->skip\s*\([^}]{0,400}naArvoreDoKit~s', $corpoDoCaso) === 1) {
         return true;
     }
 
-    return preg_match('~naArvoreDoKit[^;]{0,200}markTestSkipped~s', $corpoDoCaso) === 1;
+    /*
+     * `[^}]` e nao `[^;]`: entre a sentinela e o `markTestSkipped` cabe mais de uma instrucao
+     * (`if (! naArvoreDoKit()) { $motivo = '...'; $this->markTestSkipped($motivo); }`), e o
+     * primeiro `;` cortava o casamento no meio. A fronteira certa e a chave que fecha o bloco.
+     */
+    return preg_match('~naArvoreDoKit[^}]{0,400}markTestSkipped~s', $corpoDoCaso) === 1;
 }
 
 /**
@@ -418,8 +442,50 @@ function casosSemSentinelaPropria(array $suites): array
     return $desprotegidos;
 }
 
+/**
+ * TODA suite de `tests/Kit`, sem comentario — e nao so as de documentacao.
+ *
+ * ## Por que o escopo teve de crescer junto com o reconhecedor
+ *
+ * `suitesDeDocumentacao()` filtra por `documentacaoDoKit(`, `README.md` e `docs/{pt,en}/`. Era o
+ * escopo CERTO enquanto a unica forma de depender da arvore do kit era **ler um arquivo de
+ * documentacao que nao viaja**.
+ *
+ * `dependeDaArvoreDoKit()` passou a reconhecer mais duas formas — **afirmar a sentinela** e
+ * **invocar o git** — e nenhuma delas tem relacao com documentacao. O reconhecedor cresceu, o
+ * escopo nao, e a guarda ficou detectando um risco em arquivos onde ele nao estava e ignorando
+ * o arquivo onde estava.
+ *
+ * **Medido**: `tests/Kit/BlueprintForaDoPacoteTest.php` invoca `git ls-files`, nao tem sentinela
+ * nenhuma e **nunca era varrido**, porque nao cita documentacao. Com o escopo alargado, ele e o
+ * unico acusado em 112 arquivos — nenhum falso positivo.
+ *
+ * Alargar e seguro porque o reconhecedor ja se auto-limita: a forma 1 exige caminho literal com
+ * prefixo `docs|site|site-vitepress|.github`, e os prefixos nao mudam com o escopo.
+ *
+ * @return array<string, string>
+ */
+function suitesComRiscoDeArvore(): array
+{
+    $suites = [];
+
+    foreach (Finder::create()->files()->in(__DIR__)->name('*Test.php') as $arquivo) {
+        $suites[$arquivo->getFilename()] = codigoSemComentario($arquivo->getContents());
+    }
+
+    return $suites;
+}
+
 it('[CT-11] leitura direta de arquivo nao entregue tem sentinela no proprio caso', function (): void {
-    expect(casosSemSentinelaPropria(suitesDeDocumentacao()))->toBe(
+    /*
+     * CONTROLE POSITIVO DA VARREDURA, e ele vem primeiro: um `Finder` que nao achasse arquivo
+     * deixaria a lista de acusados vazia e este caso VERDE sobre nada. A base tem mais de cem
+     * suites em `tests/Kit`.
+     */
+    expect(count($suites = suitesComRiscoDeArvore()))
+        ->toBeGreaterThan(50, 'a varredura nao encontrou suites — a lista de acusados abaixo mediria o vazio');
+
+    expect(casosSemSentinelaPropria($suites))->toBe(
         [],
         'estes casos leem arquivo que NAO viaja no composer create-project e nao tem a sentinela '
         .'`naArvoreDoKit()` no proprio corpo: eles ficam vermelhos em toda instalacao nova. '
@@ -480,6 +546,111 @@ it('[CT-22] a guarda reprova o arranjo que a enganou, e o CT-10 nao', function (
 })->group('kit');
 
 /**
+ * CT-26 — a guarda acusa a invocacao do git nas DUAS formas que esta base usa.
+ *
+ * A primeira redacao de `dependeDaArvoreDoKit()` so via o comando como **argumento literal** de
+ * quem executa (`->run('git ...')`). A base tambem usa a forma em **array**
+ * (`new Process(['git', 'show', ...])` + `$git->run()`, em `SiteDeDocumentacaoTest.php:265`), em
+ * que `run()` tem parenteses vazios e nenhum alternante alcancava o comando.
+ *
+ * Ali nao mordia, porque aquele arquivo tem sentinela no `beforeEach` — e e por isso que o
+ * buraco sobreviveu: ele estava coberto por acidente, e nao por construcao. Achado da revisao
+ * deste PR.
+ */
+it('[CT-26] a guarda acusa a invocacao do git nas duas formas', function (string $rotulo, string $codigo): void {
+    expect(casosSemSentinelaPropria([$rotulo => $codigo]))
+        ->toHaveCount(1, "a guarda nao viu a invocacao do git em {$rotulo}");
+})->with([
+    'literal no argumento de quem executa' => ['GitLiteralTest.php', <<<'PHP'
+    <?php
+    it('[FIXTURE-G] consulta o git pelo argumento literal', function (): void {
+        $saida = Process::path(base_path())->run('git check-attr export-ignore -- wikis/')->output();
+        expect($saida)->toContain('export-ignore');
+    });
+    PHP],
+
+    'array, com run() de parenteses vazios' => ['GitArrayTest.php', <<<'PHP'
+    <?php
+    it('[FIXTURE-H] consulta o git montando o comando em array', function (): void {
+        $git = new Process(['git', 'show', 'HEAD:README.md']);
+        $git->run();
+
+        expect($git->isSuccessful())->toBeTrue();
+    });
+    PHP],
+])->group('kit');
+
+/**
+ * CT-27 — controle NEGATIVO de CT-26: mencionar o git nao e invoca-lo.
+ *
+ * A primeira versao do reconhecedor de forma 3 casava qualquer literal comecando por `git ` e
+ * acusou dois casos inocentes que procuram `git pull --ff-only` DENTRO de um script, como agulha
+ * de busca. Contar mencao como uso e o mesmo erro que esta guarda inteira existe para nao
+ * cometer, entao ele fica fixado num caso.
+ */
+/**
+ * CT-28 — o ESCOPO da varredura cobre todo arquivo que o reconhecedor considera em risco.
+ *
+ * ## O mutante que nenhum outro caso mata
+ *
+ * `[CT-11]` prova que os arquivos varridos estao limpos. Ele **nao** prova que a varredura olha
+ * para os arquivos certos: estreitar o escopo de volta para `suitesDeDocumentacao()` deixa
+ * `[CT-11]` verde, porque o unico acusado ganhou `->skip()` junto. Reconhecedor e escopo sao
+ * duas pecas, e ate aqui so uma delas tinha guarda.
+ *
+ * Foi exatamente assim que o buraco nasceu: `dependeDaArvoreDoKit()` cresceu para reconhecer
+ * **afirmar a sentinela** e **invocar o git**, e o escopo ficou filtrando por documentacao. O
+ * reconhecedor passou a enxergar um risco que o escopo nao o deixava alcancar.
+ *
+ * Este caso liga as duas: **todo** arquivo de `tests/Kit` em que o reconhecedor acha risco tem de
+ * estar no conjunto varrido. Nao afirma qual e o escopo — afirma a RELACAO entre os dois, que e
+ * a propriedade, e nao a implementacao.
+ */
+it('[CT-28] a varredura alcanca todo arquivo em que o reconhecedor acha risco', function (): void {
+    $varridos = array_keys(suitesComRiscoDeArvore());
+
+    $emRisco = [];
+
+    foreach (Finder::create()->files()->in(__DIR__)->name('*Test.php') as $arquivo) {
+        $codigo = codigoSemComentario($arquivo->getContents());
+        $blocos = preg_split('~\nit\(~', $codigo) ?: [];
+
+        foreach (array_slice($blocos, 1) as $corpo) {
+            if (dependeDaArvoreDoKit($corpo, ['file_get_contents', 'get', 'exists', 'isDirectory'], '~^(?:docs|site|site-vitepress|\.github)/~')) {
+                $emRisco[] = $arquivo->getFilename();
+
+                break;
+            }
+        }
+    }
+
+    /*
+     * CONTROLE POSITIVO, e ele vem primeiro: se o reconhecedor nao achasse risco em lugar nenhum,
+     * a diferenca abaixo seria vazia e o caso ficaria verde sobre nada. Esta base tem varios.
+     */
+    expect(count($emRisco))->toBeGreaterThan(3, 'o reconhecedor nao achou risco em arquivo nenhum — a diferenca abaixo mediria o vazio');
+
+    expect(array_values(array_diff($emRisco, $varridos)))->toBe([], implode("\n", [
+        'Estes arquivos tem caso que depende da arvore do kit e a varredura NAO os alcanca:',
+        ...array_diff($emRisco, $varridos),
+        '',
+        'O reconhecedor e o escopo tem de crescer juntos. Ver `suitesComRiscoDeArvore()`.',
+    ]));
+})->group('kit');
+
+it('[CT-27] mencionar o git como agulha de busca nao conta como invocacao', function (): void {
+    $mencao = <<<'PHP'
+    <?php
+    it('[FIXTURE-I] o script de deploy faz pull antes de subir', function (): void {
+        $script = File::get(base_path('deploy_docker_local.sh'));
+        expect($script)->toContain('git pull --ff-only');
+    });
+    PHP;
+
+    expect(casosSemSentinelaPropria(['MencaoDeGitTest.php' => $mencao]))->toBe([]);
+})->group('kit');
+
+/**
  * CT-23 — a guarda declara a fatia que NAO decide, em vez de reprovar por suspeita.
  *
  * O docblock do `[CT-10]` argumenta, com razao, que nesta base a leitura e quase sempre
@@ -509,6 +680,42 @@ it('[CT-23] a guarda nao acusa o que ela declarou nao decidir', function (string
     it('[FIXTURE-D] afirma que o outro caso continua abrindo o documento', function (): void {
         $fonte = (string) file_get_contents(base_path('tests/Kit/HostLocalTest.php'));
         $this->assertStringContainsString("File::get(base_path('docs/pt/comecar/dominio-local.md'))", $fonte);
+    });
+    PHP],
+
+    /*
+     * OS DOIS RAMOS DE `temSentinelaPropria()`, um caso cada — e a primeira redacao deste bloco
+     * tinha so um, que exercitava o ramo `->skip()` quando a correcao era no ramo
+     * `markTestSkipped`. O mutante sobreviveu a bateria e so apareceu porque ela rodou.
+     *
+     * Nos dois, a sentinela e o skip estao separados por OUTRA instrucao. A janela antiga
+     * (`[^;]`) cortava no primeiro `;` e acusava um caso GUARDADO.
+     */
+    'markTestSkipped com instrucao no meio' => ['JanelaSkipTest.php', <<<'PHP'
+    <?php
+    it('[FIXTURE-F] guardado por markTestSkipped, com uma instrucao no meio', function (): void {
+        if (! naArvoreDoKit()) {
+            $motivo = 'fora da arvore do kit';
+            $this->markTestSkipped($motivo);
+        }
+
+        expect(File::get(base_path('docs/pt/comecar/dominio-local.md')))->not->toBe('');
+    });
+    PHP],
+
+    /*
+     * O rotulo NAO escreve `->skip(` literal: o regex do `[CT-10]` casa `skip(` seguido de `docs`
+     * sem `;` no meio, e o rotulo em prosa ficava colado no heredoc que le `docs/`. Falso
+     * positivo do CT-10 produzido pelo texto do caso, e nao pelo codigo.
+     */
+    'closure de mais de uma instrucao no gatilho de pulo' => ['JanelaClosureTest.php', <<<'PHP'
+    <?php
+    it('[FIXTURE-J] guardado por gatilho de pulo com closure multilinha', function (): void {
+        expect(File::get(base_path('docs/pt/comecar/dominio-local.md')))->not->toBe('');
+    })->skip(function (): bool {
+        $rotulo = 'sentinela';
+
+        return ! naArvoreDoKit();
     });
     PHP],
 
