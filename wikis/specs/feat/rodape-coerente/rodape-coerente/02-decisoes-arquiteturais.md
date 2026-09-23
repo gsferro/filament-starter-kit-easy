@@ -263,7 +263,7 @@ tela agora evidencia e que o admin corrige em dois segundos. O risco de uma migr
 
 ### Contexto
 
-O layout do `filament-auth-designer` — usado por **8 das 10** páginas de `app/Filament/Pages/Auth/`
+O layout do `filament-auth-designer` — usado por **8 das 9** páginas de `app/Filament/Pages/Auth/`
 — fixa `.fi-auth-layout` em `min-height: 100vh` e emite o hook `FOOTER` **depois** de fechar a
 própria div. O contêiner sozinho consome a dobra inteira.
 

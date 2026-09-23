@@ -67,7 +67,7 @@ public.
 
 The **registration** and **password reset** screens get the signature only, not the notice.
 
-If the switch is on and the field is empty, the footer shows **only the kit version, labelled**
+If the switch is on and the field is empty, the footer shows the signature and, beside it, **the kit version, labelled**
 (`kit 0.38.2`). It is never presented as if it were your product's: the label is precisely what
 prevents that reading, and it is a kit requirement, not a screen detail.
 

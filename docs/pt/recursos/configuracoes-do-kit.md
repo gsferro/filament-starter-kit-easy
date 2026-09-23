@@ -65,7 +65,7 @@ aceita Markdown — negrito, itálico e link — e descarta HTML cru, porque a t
 
 As telas de **registro** e de **recuperação de senha** recebem só a assinatura, não o recado.
 
-Se o interruptor estiver ligado e o campo vazio, o rodapé mostra **só a versão do kit, rotulada**
+Se o interruptor estiver ligado e o campo vazio, o rodapé mostra a assinatura e, ao lado, **a versão do kit rotulada**
 (`kit 0.38.2`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
 impede essa leitura, e é requisito do kit, não detalhe de tela.
 

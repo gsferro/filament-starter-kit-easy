@@ -121,7 +121,7 @@ trait ConfiguraFilamentGlobal
      * | `simple` do Filament | `filament/.../components/layout/simple.blade.php:61` |
      * | **Auth Designer** | `caresome/filament-auth-designer/.../layouts/auth.blade.php:63` |
      *
-     * **O terceiro é o que importa aqui**: 8 das 10 páginas de `app/Filament/Pages/Auth/`
+     * **O terceiro é o que importa aqui**: 8 das 9 páginas de `app/Filament/Pages/Auth/`
      * redeclaram `$layout` para ele. A primeira redação deste comentário citava só o `simple`,
      * e a mesma premissa errada no plano produziu um Blocker de geometria no step 6.5 — a
      * assinatura caindo abaixo da dobra. Achado QA-02 do quality gate.

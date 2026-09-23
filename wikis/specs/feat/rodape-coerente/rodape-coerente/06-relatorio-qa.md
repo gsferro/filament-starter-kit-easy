@@ -20,7 +20,7 @@
 comportamento e o aprovaram: a versão **não vaza** em nenhuma superfície anônima
 (`app.version='999-sonda'` invisível em cinco rotas, inclusive no `wire:snapshot`), o nome sai
 escapado em todas, o escopo do hook cobre exatamente as duas classes que existem, e a regressão
-fechou em `2.872 / 2.869 / 11.137` nas duas execuções.
+fechou em `2.872 / 2.869 / 11.146` nas duas execuções.
 
 ## O que cada ciclo achou
 

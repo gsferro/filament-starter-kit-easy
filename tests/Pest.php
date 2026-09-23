@@ -1312,6 +1312,28 @@ function comVersoes(?string $sistema, bool $exibirKit): void
  * Todo caso que a usa para provar ausencia precisa de um controle positivo NA MESMA ROTA,
  * provando que ela devolveu conteudo ali — nao basta um controle positivo noutra rota.
  */
+/*
+|--------------------------------------------------------------------------
+| Os recortes do rodape, em UM lugar
+|--------------------------------------------------------------------------
+|
+| Tres extratores liam o mesmo elemento com tres copias do mesmo regex, e as
+| copias divergiram: `recadoDoRodape()` foi endurecido para aceitar o atributo
+| quebrado em varias linhas, e os dois da assinatura ficaram para tras. Achado
+| QA-31 do quality gate, ciclo 3 — e a forma do defeito que esta feature
+| inteira persegue: a mesma regra escrita em dois lugares diverge.
+|
+| `[^>]*` dos DOIS lados do `class`: a blade quebra a linha entre a tag e os
+| atributos, e o elemento pode ganhar uma classe utilitaria ou um `data-testid`
+| `["']` como classe de aspa porque aspas simples sao HTML valido.
+|
+| Se um deles parar de casar, devolve string vazia — FALHA ABERTO. Por isso
+| toda assercao de AUSENCIA que os usa leva controle positivo NA MESMA ROTA.
+*/
+const RECORTE_DA_ASSINATURA = '~<(?:div|footer)[^>]*class=[\x22\x27][^\x22\x27]*kit-versao[^\x22\x27]*[\x22\x27][^>]*>(.*?)</(?:div|footer)>~s';
+
+const RECORTE_DO_RECADO = '~<div[^>]*class=[\x22\x27][^\x22\x27]*fi-login-rodape[^\x22\x27]*[\x22\x27][^>]*>(.*?)</div>~s';
+
 /**
  * O RODAPÉ da página, e não a página inteira.
  *
@@ -1399,7 +1421,7 @@ function segmentoDaVersao(string $html, string $versao): string
      * da página, com menu do usuário, scripts e texto de sobra. O recorte tem de ser o elemento
      * que a feature emite, e só ele.
      */
-    if (preg_match('~<(?:div|footer) class="kit-versao">(.*?)</(?:div|footer)>~s', $html, $m) !== 1) {
+    if (preg_match(RECORTE_DA_ASSINATURA, $html, $m) !== 1) {
         return '';
     }
 
@@ -1467,12 +1489,19 @@ function recadoDoRodape(string $html): string
      * 1. O `class` nao vem colado no `<div`: a blade quebra a linha entre a tag e os atributos,
      *    entao o `[^>]*` no meio e obrigatorio.
      *
-     * 2. A classe aparece MAIS DE UMA VEZ no documento. Um `preg_match` simples casa a primeira,
-     *    que nao e a faixa renderizada, e devolve conteudo vazio: o helper falhava aberto
-     *    exatamente como o `rodapeDe()` que ele veio substituir. Foram os controles positivos
-     *    dos casos que o pegaram, vermelhos na hora — e e por isso que eles existem.
+     * 2. `preg_match_all` + primeira ocorrencia NAO-VAZIA, por defesa e nao por diagnostico.
+     *
+     *    A primeira redacao desta nota afirmava que "a classe aparece mais de uma vez no
+     *    documento". O ciclo 3 do quality gate MEDIU e desmentiu: `substr_count()` devolve 1 em
+     *    `/admin/login` e 1 em `/login`. O que de fato consertou o helper foi a decisao 1 — o
+     *    `[^>]*`, porque a blade quebra a linha entre a tag e os atributos.
+     *
+     *    O laco fica, porque custa tres linhas e cobre o dia em que houver duas. Mas a premissa
+     *    escrita nao era medida, e registrar isso importa mais que a linha de codigo: foi o
+     *    mesmo erro que produziu o Blocker do 6.5 (medir o layout errado) e as verificacoes
+     *    V3/V5 falsas. Achado QA-31.
      */
-    if (preg_match_all('~<div[^>]*class="fi-login-rodape"[^>]*>(.*?)</div>~s', $html, $m) < 1) {
+    if (preg_match_all(RECORTE_DO_RECADO, $html, $m) < 1) {
         return '';
     }
 
@@ -1504,7 +1533,7 @@ function recadoDoRodape(string $html): string
  */
 function assinaturaDoRodape(string $html): string
 {
-    if (preg_match('~<(?:div|footer) class="kit-versao">(.*?)</(?:div|footer)>~s', $html, $m) !== 1) {
+    if (preg_match(RECORTE_DA_ASSINATURA, $html, $m) !== 1) {
         return '';
     }
 

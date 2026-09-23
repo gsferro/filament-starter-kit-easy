@@ -87,7 +87,7 @@ não autenticou."*
 
 - **RQ-03 — o prefixo `v` é de exibição ou entra no valor gravado?**
   O recurso citado pelo usuário (`prefix()`) é **de exibição**: não altera o que é gravado.
-  E a blade **já** antepõe `'v'` (`assinatura-do-rodape.blade.php:59`).
+  E a blade **já** antepõe `'v'` (`app/Support/AssinaturaDoRodape.php:partes:63`).
   **Assumido**: prefixo só no formulário, valor gravado continua sem `v`, rodapé continua
   compondo o `v`. É o que torna os dois coerentes sem duplicar o caractere.
   **Se negado**: seria preciso decidir o que fazer com os valores já gravados.

@@ -7,7 +7,7 @@
  *
  * O `01-plano-acao.md` declarou, na seção `## Gate de CT-B`, que a entrega era "composição de
  * texto e ordem de render — nada que só o navegador prove". **A própria entrega falseou essa
- * declaração**: o step 6.5 achou um Blocker que nenhuma das 113 asserções de HTML via — a
+ * declaração**: o step 6.5 achou um Blocker que nenhuma das 113 casos de HTML via — a
  * assinatura em `y=1122` e o recado em `y=1186` num viewport de 1117px, os dois abaixo da dobra.
  *
  * A correção foi uma regra de CSS (`resources/css/filament/kit.css`), e ela entrou **sem teste**.
@@ -90,7 +90,7 @@ it('[CT-B01] mantem a assinatura e o recado dentro da dobra nas telas de autenti
     'login do infra'        => ['/infra/login', false, true],
     'página única de login' => ['/login', true, true],
     'recuperação de senha'  => ['/admin/password-reset/request', false, false],
-])->group('kit');
+])->group('browser-kit');
 
 /**
  * CT-B02 — a faixa tem ESTILO, e não só existe.
@@ -125,3 +125,43 @@ it('[CT-B02] entrega a faixa do rodape com o estilo do kit aplicado', function (
     expect($estilo['textAlign'])->toBe('center', 'a faixa não está centralizada — a folha do kit não chegou');
     expect($estilo['opacity'])->toBeLessThan(1.0, 'a faixa está em opacidade cheia — a folha do kit não chegou');
 })->group('browser-kit');
+
+/**
+ * CT-B03 — o rodapé não introduz problema de acessibilidade na tela pública.
+ *
+ * ## Por que este caso existe, e por que ele é a resposta certa a três achados
+ *
+ * O ciclo 1 do quality gate (QA-09) apontou que o elemento da assinatura era um `<div>` filho
+ * direto de `<body>` — conteúdo fora de qualquer landmark, numa tela pública. Virou `<footer>`,
+ * que tem `role=contentinfo` implícito nessa posição.
+ *
+ * O ciclo 2 (QA-22) apontou que **nenhum caso afirmava a tag**: reverter para `<div>` deixava
+ * 113/113 verdes. E o ciclo 3 (QA-35) apontou algo pior — eu justifiquei não fechar a lacuna
+ * vizinha com uma consequência do axe que **nunca tinha rodado**.
+ *
+ * Afirmar a TAG seria o oráculo errado: ele congela a implementação em vez da propriedade. O que
+ * importa não é ser `<footer>` — é a tela pública não ganhar problema de acessibilidade por causa
+ * do rodapé. É isso que este caso mede, e é o que a rule do projeto pede quando há superfície
+ * pública nova.
+ *
+ * Medido antes de escrever: o axe passa hoje, com a assinatura e o recado presentes.
+ */
+it('[CT-B03] nao introduz problema de acessibilidade na tela publica', function (string $rota, bool $unificado): void {
+    config(['kit.login.rodape' => 'Fale com o **suporte**']);
+    ligarLoginUnificado($unificado);
+
+    $pagina = visit($rota);
+
+    /*
+     * CONTROLE POSITIVO primeiro: sem o rodapé na página, o axe passaria e este caso ficaria
+     * verde sobre uma tela que não tem o que ele veio guardar.
+     */
+    $temRodape = (string) $pagina->script("(() => document.querySelector('.kit-versao') !== null)()");
+    expect($temRodape)->toBeTruthy("a assinatura não está em {$rota} — o axe abaixo mediria outra tela");
+
+    $pagina->assertNoAccessibilityIssues();
+})->with([
+    'login do admin'       => ['/admin/login', false],
+    'página única'         => ['/login', true],
+    'recuperação de senha' => ['/admin/password-reset/request', false],
+])->group('browser-kit');

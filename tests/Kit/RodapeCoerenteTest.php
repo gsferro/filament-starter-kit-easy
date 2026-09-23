@@ -64,6 +64,7 @@ it('[CT-01] a assinatura sai em toda superfície, para as duas audiências', fun
     $this->assertStringContainsString('© 2026 Acme', assinaturaDoRodape($html));
 
     if ($recadoNaoDeveAparecer) {
+        expect(rodapeDe($html))->not->toBe('', 'rodapeDe() nao achou o rodape nesta rota — a ausencia abaixo mediria o vazio');
         $this->assertStringNotContainsString('Fale com o suporte', rodapeDe($html));
     }
 })->with([
@@ -220,6 +221,7 @@ it('[CT-04] o visitante vê a assinatura e nenhuma versão', function (string $r
     $this->assertStringNotContainsString((string) config('kit.version'), $html);
 
     if ($rota === '/admin/password-reset/request') {
+        expect(rodapeDe($html))->not->toBe('', 'rodapeDe() nao achou o rodape nesta rota — a ausencia abaixo mediria o vazio');
         $this->assertStringNotContainsString('Fale com o suporte', rodapeDe($html));
     }
 })->with([
@@ -337,6 +339,7 @@ it('[CT-09] o recado sem conteúdo não apaga a assinatura', function (?string $
     $rodape = rodapeDe($html);
 
     $this->assertStringContainsString('© 2026 Acme', assinaturaDoRodape($html));
+    expect($rodape)->not->toBe('', 'rodapeDe() nao achou o rodape nesta rota — a ausencia abaixo mediria o vazio');
     $this->assertStringNotContainsString('fi-login-rodape', $rodape);
 })->with([
     'ausente'     => [null],
@@ -436,6 +439,8 @@ it('[CT-12] o recado aparece na tela de login e não na tela autenticada', funct
 
     // Presenca pelo RECORTE (QA-07); ausencia pela cauda, que e o recorte largo e correto para
     // provar que o recado nao esta em lugar nenhum daquele pedaco.
+    expect($rodape)->not->toBe('', 'rodapeDe() nao achou o rodape nesta rota — a ausencia abaixo mediria o vazio');
+
     $espera
         ? $this->assertStringContainsString('Fale com o suporte', recadoDoRodape($html))
         : $this->assertStringNotContainsString('Fale com o suporte', $rodape);

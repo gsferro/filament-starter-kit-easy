@@ -39,12 +39,12 @@
       esquecimento: refazer as capturas exige `composer art`, que roda a suíte de browser inteira
       e regrava binários. Achado QA-18 do ciclo 2 — o item estava no `01` e **não aparecia aqui**,
       nem fechado nem adiado
-- [x] Contadores dos READMEs — arquivos 152→**153**, total 178→**180**, specs 67→**68**, casos 2.226→**2.872** e asserções 7.428→**11.137**, redatados para 2026-09-23
+- [x] Contadores dos READMEs — arquivos 152→**153**, total 178→**180**, specs 67→**68**, casos 2.226→**2.872** e asserções 7.428→**11.146**, redatados para 2026-09-23
 
 ## Testes
 
 - [x] `04-casos-de-teste.md` derivado — 21 cenários, 7 regras, 57 mutantes, 4 lacunas, após 3 rodadas adversariais
-- [x] Casos escritos conforme o `04` — `tests/Kit/RodapeCoerenteTest.php` (21 `it()`, 67 com dataset) e 3 casos reescritos em `VersaoNoRodapeTest.php`. **113 passaram, 1.783 asserções**, 2026-09-23
+- [x] Casos escritos conforme o `04` — `tests/Kit/RodapeCoerenteTest.php` (21 `it()`, 67 com dataset) e 3 casos reescritos em `VersaoNoRodapeTest.php`. **113 passaram, 1.795 asserções**, 2026-09-23
 - [x] `tests/Browser/RodapeNaDobraTest.php` — **não estava no plano, e a própria entrega provou que precisava**. **6 passaram, 35 asserções**, 2026-09-23
 
 ## Verificação Final
@@ -52,15 +52,88 @@
 - [x] `vendor/bin/pint --test --format agent` — **passed na árvore inteira**, 2026-09-23. Corrigiu de passagem uma violação que **eu** introduzi na `v0.38.2` (`ConfiguracoesDoKitTelaTest.php`) e que deixava o check `qualidade` do CI **vermelho na `main`**
 - [x] `vendor/bin/filacheck` — **17/17**, 2026-09-23
 - [x] `vendor/bin/pest tests/Kit/RodapeCoerenteTest.php tests/Kit/VersaoNoRodapeTest.php` — **113/113**, 2026-09-23
-- [x] `vendor/bin/pest tests/Browser/RodapeNaDobraTest.php` — **6/6, 35 asserções**, 2026-09-23
+- [x] `vendor/bin/pest tests/Browser/RodapeNaDobraTest.php` — **9/9, 41 asserções**, 2026-09-23
 - [x] `vendor/bin/phpstan analyse` — level 7, **0 erros**, 2026-09-23
 - [x] `/code-review high main...HEAD` + passe de eixos (step 6.5) — **8 achados: 1 Blocker, 3 Major, 4 Minor**, todos fechados
-- [x] `feature-quality-gate` (step 8) — ciclo 1 **REPROVADO → especificação**; 10 achados fechados. Ver `## Quality Gate
+- [x] `feature-quality-gate` (step 8) — **três ciclos, os três REPROVADO → especificação**; 38 achados, nenhum de comportamento do produto. Ver a seção de Quality Gate abaixo e o `06-relatorio-qa.md`
+- [x] `php artisan test --testsuite=Kit,Tenancy --parallel` — **regressão obrigatória** (o `01` declara *toca infra compartilhada*): **2.872 testes, 2.869 passaram, 11.146 asserções, 3 pulados, 0 falhas**, 2026-09-23
+- [x] `composer bp:off` — `filament/blueprint` ausente de `composer.json` e de `vendor/`; as três skills pagas ficam no disco e **gitignoradas** (ADR-08), 2026-09-23
+
+## Conformidade com Rules
+
+| Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
+|---|---|---|---|
+| `testes.md` — helper de dois arquivos vive em `tests/Pest.php` | `tests/**` | **aplicada** | 4 helpers migrados; `HelpersDeTesteTest` verde |
+| `testes.md` — `toContain()` não recebe mensagem | `tests/**` | **aplicada, e corrigiu um caso preexistente** | o loop do `[CT-13]` usava `not->toContain($x, $msg)`, que nunca falha; o arquivo foi de 133 para 1.541 asserções |
+| `testes-browser.md` — o oráculo é número, não presença | `tests/Browser/**` | **aplicada** | `[CT-B01]` compara `bottom` com `innerHeight` |
+| `testes-browser.md` — nunca `--parallel` com browser | `tests/Browser/**` | **violada e corrigida** | `group('kit')` em arquivo de navegador fazia `--parallel --group=kit` selecioná-lo. Os **dois** casos agora são `browser-kit` — QA-11 fechou um, QA-24 pegou o outro |
+| `css-filament.md` — folha do kit precisa de guarda que leia o vendor | `resources/css/filament/**` | **VIOLADA** | `[CT-B01]` mede o **efeito**, não o **detector**: se o vendor remover `min-height: 100vh`, a regra vira inócua e o caso fica verde. Achado QA-29 — **débito declarado**, ver Quality Gate |
+| `views.md` | `resources/views/**` | **aplicada** | saída escapada; nenhuma utilitária Tailwind emitida pela blade |
+| `app.md` | `app/**` | **n.a. no que ela exige** | nenhuma atribuição de papel/permissão, nenhum DTO |
+| `filament.md` | `app/Filament/**` | **aplicada** | `filacheck` 17/17; afixo nativo, não componente custom |
+| `providers.md` | `app/Providers/**` | **aplicada** | hook registrado uma vez, sem `scopes:` para a assinatura e com escopo para o recado |
+| `pages.md` | `app/Filament/Admin/Pages/**` | **n.a.** | nenhuma página nova; só um afixo num campo existente |
+| `specs.md` | `wikis/specs/**` | **violada e corrigida** | 5 citações erradas ao todo, nos três ciclos; hoje 7/7 ok pela conferência mecânica |
+
+
+## Quality Gate
+
+**Teto de 3 ciclos ESTOURADO — a skill manda escalar ao usuário, e isto está escalado.**
 
 | Ciclo | Veredito | Blocker | Major | Minor | Cosmético | Data |
 |---|---|---|---|---|---|---|
 | 1 | REPROVADO → especificação | 0 | 4 | 5 | 1 | 2026-09-23 |
 | 2 | REPROVADO → especificação | 0 | 5 novos + 1 carregado | 6 novos + 2 | 2 | 2026-09-23 |
+| 3 | REPROVADO → especificação · **teto estourado** | 0 | 8 | 5 | 2 | 2026-09-23 |
+
+### Ciclo 3 — 15 achados, 11 nascidos das correções do ciclo 2
+
+**O diagnóstico do ciclo 3 é sobre o orquestrador, não sobre a wiki**, e vale citá-lo:
+
+> *"As correções fecham o caso citado e deixam a classe aberta."*
+> QA-11 → QA-24 · QA-06 → QA-30 · QA-07 → QA-31 · QA-13 → QA-26 · QA-12 → QA-38.
+> Cinco dos oito Major são o vizinho do achado que o ciclo anterior fechou.
+
+Está certo, e a prova apareceu no próprio ciclo: ao reescrever a seção de Quality Gate eu casei
+uma **referência** (`Ver \`## Quality Gate\``) dentro de um checkbox em vez do cabeçalho, e o
+corte **levou junto a tabela de Conformidade com Rules inteira** — que foi o QA-28 e que deixou o
+L4 do gate cego por dois ciclos. É o mesmo erro que eu já tinha cometido no `04` horas antes.
+
+**Por isso o ciclo 3 foi corrigido por VARREDURA, não por ponto**, e cada classe foi zerada com
+o `grep` de confirmação colado:
+
+| Classe | Antes | Depois |
+|---|---|---|
+| `group('kit')` em `tests/Browser/` | 1 | **0** |
+| *"8 das 10 páginas"* | 4 | **0** |
+| *"113 asserções"* (são casos) | 4 | **0** |
+| ausências sem controle positivo | 4 | **0** — de 2 para **6** controles |
+| extratores com regex própria | 3 cópias | **1** constante cada |
+
+| # | Achado | Fechado por |
+|---|---|---|
+| QA-24 | `[CT-B01]` ainda em `group('kit')` | varredura em `tests/Browser/` |
+| QA-25 | *"8 das 10"* é falso — são 9 arquivos | varredura nos quatro, inclusive o comentário de produção |
+| QA-26 | o `04` se contradizia sobre mutantes sem matador | M33 e M35 riscados na tabela |
+| QA-27 | 1.783 asserções, medida 1.786 (hoje 1.795) | varredura |
+| QA-28 | **a tabela de Rules não existia** | restaurada, com 11 globs |
+| QA-29 | a regra de CSS viola `css-filament.md` | **débito declarado** na tabela de Rules |
+| QA-30 | 4 de 6 ausências sem controle positivo | os quatro |
+| QA-31 | `recadoDoRodape()` empurrou o problema; os espelhos ficaram para trás | **uma constante por recorte**, `["']` e `[^>]*` dos dois lados |
+| QA-32 | citação apontando para a blade, que não tem o `'v'` | `AssinaturaDoRodape:partes:63` |
+| QA-33 | frase falsa nas docs pt e en | corrigida nas duas |
+| QA-34 | regressão e `bp:off` sem linha na Verificação Final | acrescentadas |
+| QA-35 | justifiquei uma lacuna com consequência do axe **nunca medida** | **medido**: o axe passa. Virou `[CT-B03]` |
+| QA-36 | o gatilho de M51 depende de driver que não existe | declarado, com gatilho alcançável |
+| QA-37 | *"113 asserções"* | varredura |
+| QA-38 | passos do `01` fora de ordem | reordenados, 5 ↔ 6 |
+
+**A premissa do `recadoDoRodape()` era falsa, e isso importa mais que a linha de código.** O
+comentário afirmava *"a classe aparece mais de uma vez no documento"*; o gate mediu
+`substr_count()` = **1**. O que consertou o helper foi o `[^>]*`, não o laço. É o mesmo erro que
+produziu o Blocker do 6.5 (medir o layout errado) e as verificações V3/V5 falsas — **afirmar uma
+causa sem medi-la**, três vezes na mesma feature.
+
 
 **O veredito dos dois ciclos é o mesmo, e é preciso**: *"o código está correto e medido, o que
 está errado é o que a wiki afirma sobre ele."* Nenhum dos 23 achados foi de comportamento do
@@ -73,13 +146,13 @@ produto.
 | QA-11 | `group('kit')` em arquivo de browser faz `--parallel --group=kit` selecionar navegador | `group('browser-kit')` |
 | QA-12 | a **regra de CSS**, que é o coração da correção do Blocker, sem passo no `01` nem ADR | passo 6 no `01`, **ADR-07** |
 | QA-13 | `[CT-B01]`/`[CT-B02]` só no teste; o `04` ainda dizia que não existiam e contava 4 sem matador | `## Gate de CT-B` reescrito; 4 → **2** |
-| QA-14 | *"5/5 ok, 3 ERRO"* falso nas três partes | **7/7 ok, 0 ERRO**, com o comando colado |
+| QA-14 | *"5/5 ok, 3 ERRO"* falso nas três partes | **8/8 ok, 0 ERRO**, com o comando colado |
 | QA-15 | `01` ainda dizia *"nada que só o navegador prove"*, falseado pela própria entrega | riscado e reescrito |
 | QA-16 | a ADR-03 ficou com a citação velha que o ciclo 1 corrigiu nos outros três arquivos | `:121` → `:129` |
 | QA-17 | o **recado** continua fora de landmark | ver lacuna abaixo |
 | QA-18 | captura de arte não refeita, e o item sumiu do `03` | **débito explícito**, registrado |
 | QA-19 | 12 linhas de `.gitignore` sem `RQ`, passo ou ADR | **ADR-08** |
-| QA-20 | contagem de asserções errando por um | 11.137, medida |
+| QA-20 | contagem de asserções errando por um | 11.146, medida |
 | QA-21 | a guarda de CSS sem controle positivo do detector | ver lacuna abaixo |
 | QA-22 | a correção de QA-09 sem oráculo que fixe a tag | ver lacuna abaixo |
 | QA-23 | o `06` do ciclo 1 não existe no disco | `06-relatorio-qa.md` gravado |
@@ -125,7 +198,7 @@ primeira ocorrência não-vazia.
 
 ### O Blocker do 6.5 nasceu de eu medir o layout errado
 
-A verificação **V5** do plano mediu `simple.blade.php` do Filament. **8 das 10 páginas de
+A verificação **V5** do plano mediu `simple.blade.php` do Filament. **8 das 9 páginas de
 `app/Filament/Pages/Auth/` redeclaram `$layout`** para o do `filament-auth-designer`, que não tem
 `<main>` e fixa `.fi-auth-layout` em `min-height: 100vh`, emitindo o `FOOTER` **depois** de
 fechá-lo.
@@ -187,7 +260,7 @@ espaçamento em `ConfiguracoesDoKitTelaTest.php`, introduzida pelo meu commit do
 
 ## Retrospectiva
 
-- **Funcionou**: a cegueira dos gates. O 6.5 achou um Blocker que 113 asserções de HTML não viam,
+- **Funcionou**: a cegueira dos gates. O 6.5 achou um Blocker que 113 casos de HTML não viam,
   e o step 8 achou que a correção do Blocker não tinha teste. Nenhum dos dois era visível de dentro
 - **Faltou no plano**: verificar API **por vendor**, e não por pacote. A V3 e a V5 erraram pela
   mesma causa, e uma delas custou o Blocker

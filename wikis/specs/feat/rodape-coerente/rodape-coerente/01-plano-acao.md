@@ -19,7 +19,7 @@
 | RQ-03 | prefixo `v` no campo | 4 | `->prefix('v')`, só exibição |
 | RQ-04 | usar o afixo nativo do Filament | 4 | `HasAffixes::prefix()`, confirmado na fonte instalada |
 | RQ-05 | gerir melhor os dados do rodapé | 1 | ponto único de composição, testável sem render |
-| RQ-06 | coerência entre painéis e login | 2, 3 | mesma linha nos dois, visibilidade diferente |
+| RQ-06 | coerência entre painéis e login | 2, 3, **5** | mesma linha nos dois, visibilidade diferente |
 | RQ-07 | avaliar a melhor solução | — | três opções levadas ao usuário; ver `00` e ADR-01 |
 | RQ-08 | Filament conforme o Blueprint | 1–4 | APIs verificadas na fonte instalada; ver abaixo |
 | RQ-09 | sem tag própria | — | **fora de escopo declarado**; acumula com outras evoluções |
@@ -40,7 +40,7 @@ Feitas contra a **fonte instalada**, não contra a memória. Cada uma é premiss
 | V2 | `prefix()` é **só exibição** | a assinatura recebe rótulo e não muta estado; `inlinePrefix()` (`:119`) é método à parte | **confirmado** — o valor gravado segue sem `v` |
 | V3 | quais layouts emitem `FOOTER` | ~~grep em `vendor/filament/filament/resources/views/`~~ → **grep em `vendor/` inteiro** | **CORRIGIDA (QA-02)**: são **três**, não dois — `filament/.../layout/index.blade.php:126`, `filament/.../layout/simple.blade.php:61` **e `caresome/filament-auth-designer/.../layouts/auth.blade.php:63`**. A primeira medição varreu **um só vendor**, e o terceiro é justamente o que estas telas usam |
 | V4 | ordem entre hooks no mesmo ponto | `vendor/filament/support/src/View/ViewManager.php:renderHook:74` | **sem escopo renderiza ANTES de com escopo**, independente da ordem de registro; dedupe por `spl_object_id` |
-| V5 | onde o `FOOTER` cai na tela de login | ~~`simple.blade.php`~~ → **`auth-designer/.../auth.blade.php`**: `.fi-auth-layout` abre na 28, fecha na **60**, `FOOTER` na **63** | **CORRIGIDA (QA-02)**: **8 de 10 páginas de `app/Filament/Pages/Auth/` redeclaram `$layout` para o do Auth Designer**, que **não tem `<main>`**. A medição original foi feita no layout errado — e foi ela que produziu o **Blocker de geometria** do step 6.5 |
+| V5 | onde o `FOOTER` cai na tela de login | ~~`simple.blade.php`~~ → **`auth-designer/.../auth.blade.php`**: `.fi-auth-layout` abre na 28, fecha na **61**, `FOOTER` na **63** | **CORRIGIDA (QA-02)**: **8 de 9 páginas de `app/Filament/Pages/Auth/` redeclaram `$layout` para o do Auth Designer**, que **não tem `<main>`**. A medição original foi feita no layout errado — e foi ela que produziu o **Blocker de geometria** do step 6.5 |
 | V6 | o que `getRenderHookScopes()` devolve | `vendor/filament/filament/src/Pages/BasePage.php:getRenderHookScopes:200` | `[static::class]` — a classe **concreta** |
 | V7 | classes de página de login em uso | `usingPage(TelaLogin::class)` nos três providers; rota `/login` para `TelaLoginUnificada` em `app/Providers/KitServiceProvider.php:configureLoginUnificado:782` | **duas**, e a segunda **estende** a primeira — por V6, escopar só na mãe **não pega** a filha |
 
@@ -68,7 +68,7 @@ Feitas contra a **fonte instalada**, não contra a memória. Cada uma é premiss
 ~~**Gate de CT-B**: a entrega é composição de texto e ordem de render — nada que **só o navegador
 prove**.~~ *(alterado em 2026-09-23: **a própria entrega falseou esta declaração** — QA-15.)*
 
-**Gate de CT-B — corrigido.** O step 6.5 achou um **Blocker que nenhuma das 113 asserções de HTML
+**Gate de CT-B — corrigido.** O step 6.5 achou um **Blocker que nenhuma das 113 casos de HTML
 via**: a assinatura e o recado **abaixo da dobra** em toda tela de autenticação. Geometria só o
 navegador prova — `assertVisible` fica verde com o elemento fora do viewport, porque exige
 bounding box não-vazio, não estar na tela.
@@ -187,7 +187,7 @@ atender RQ-08 e sai com `composer bp:off`.
 - **Dado sujo preexistente**: quem já digitou `v1.2.3` passa a ver `vv1.2.3`. O prefixo **torna o
   erro visível**; não o corrige. Sem migração — ver ADR-06
 
-### 6. A regra de CSS que faz o rodapé caber na dobra (RQ-06)
+### 5. A regra de CSS que faz o rodapé caber na dobra (RQ-06)
 
 > Skills: `tailwindcss-development` · **Passo acrescentado em 2026-09-23** — ele **não estava no
 > plano**: nasceu do Blocker RD-01 do step 6.5, e o quality gate cobrou o registro (QA-12).
@@ -199,7 +199,7 @@ atender RQ-08 e sai com `composer bp:off`.
 - **Escopada por `:has()`** para valer só nas telas de autenticação — ver ADR-07
 - **Guardada por** `[CT-B01]` e `[CT-B02]`
 
-### 5. Documentação e CHANGELOG
+### 6. Documentação e CHANGELOG
 
 - `docs/pt/` e `docs/en/` — a página de configurações descreve o campo e o rodapé
 - `CHANGELOG.md`, seção `[Unreleased]` (RQ-09: **não** sai tag)
