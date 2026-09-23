@@ -119,7 +119,7 @@ trait ConfiguraFilamentGlobal
     {
         FilamentView::registerRenderHook(
             PanelsRenderHook::FOOTER,
-            fn (): View => view('filament.versao-do-kit'),
+            fn (): View => view('filament.assinatura-do-rodape'),
         );
     }
 

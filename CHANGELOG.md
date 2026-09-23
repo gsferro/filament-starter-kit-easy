@@ -5,6 +5,34 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Adicionado
+
+- **O rodapé passa a assinar o sistema, e a assinatura é composta em um só lugar.** Em toda tela
+  dos três painéis e nas telas de autenticação aparece `© {ano} {Nome da aplicação}`, com o ano
+  corrente calculado no render — sem campo novo.
+
+  **A versão continua invisível para quem não entrou.** A guarda deixou de envolver o bloco inteiro
+  e passou a envolver **só a versão**: nome e `©` são públicos (já apareciam no topo do painel e no
+  título da aba); a versão exata da instalação, não — exibi-la na tela de login é entregar a lista
+  de vulnerabilidades aplicáveis a quem ainda não autenticou.
+
+### Alterado
+
+- **Os dois rodapés passaram a ser coerentes.** O recado da tela de login, que era texto livre num
+  hook próprio, virou uma **segunda linha abaixo da assinatura**, no mesmo hook `FOOTER`, escopado
+  às páginas de login. Registro e recuperação de senha recebem só a assinatura.
+
+  O escopo lista **duas** classes, e não uma: `getRenderHookScopes()` devolve a classe concreta, e
+  a página de login unificado **estende** a do painel — escopar só na mãe deixaria `/login` sem
+  recado, em silêncio.
+
+- O campo **Versão do sistema** ganhou o prefixo visual `v`. Ele **não é gravado**: quem acrescenta
+  o `v` ao exibir continua sendo um só lugar, e é isso que evita o `vv1.2.3`.
+
+- `resources/views/filament/versao-do-kit.blade.php` → **`assinatura-do-rodape.blade.php`**. O nome
+  antigo já era impreciso — a blade mostra a versão do **sistema**, não a do kit — e mostrar
+  também o `©` o tornaria ativamente errado.
+
 ## [0.38.2] - 2026-09-22
 
 ### Corrigido

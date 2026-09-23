@@ -33,90 +33,15 @@ beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
 
-/**
- * As duas chaves são lidas por request (`config()` dentro da blade), então `config()->set()` no
- * caso é o arranjo fiel — não há nada congelado no boot do painel a contornar.
- */
-function comVersoes(?string $sistema, bool $exibirKit): void
-{
-    config()->set('app.version', $sistema);
-    config()->set('kit.exibir_versao', $exibirKit);
-}
-
-/**
- * O RODAPÉ da página, e não a página inteira.
- *
- * É oráculo, não conveniência. `assertSee` sobre o documento todo fica verde com a versão emitida
- * na barra do topo, no menu lateral ou no corpo da tela — e a regra é sobre o rodapé (M5). O
- * recorte é implementation-neutral e vem do próprio vendor: nos DOIS layouts o hook `FOOTER` é
- * emitido depois do fechamento do `</main>`
- * (`vendor/filament/filament/resources/views/components/layout/index.blade.php:126` e
- * `.../simple.blade.php:61`), então o trecho posterior ao último `</main>` contém o rodapé e não
- * contém nem topbar nem conteúdo.
- *
- * O que ele NÃO fecha está declarado em L5 da wiki: a variante "a versão é emitida no fim do
- * documento" também é posterior ao `</main>`, e fechar o recorte por baixo dependeria do markup do
- * vendor — o mesmo critério pelo qual L2 descartou a asserção sobre `<img>`.
- */
-function rodapeDe(string $html): string
-{
-    $fim = strrpos($html, '</main>');
-
-    return $fim === false ? '' : substr($html, $fim);
-}
-
-/**
- * O SEGMENTO do rodapé em que uma versão aparece.
- *
- * ## Por que um predicado único, e não mais uma correção pontual
- *
- * O oráculo de RQ-20 foi corrigido três vezes, e a fraqueza **migrou** nas três: primeiro aceitava
- * `·` como rótulo; depois virou posicional (`toStartWith('v2.4.1')`, que reprovava um rótulo
- * renomeado, algo que RQ-20 permite); depois exigia palavra em **qualquer lugar** do rodapé — e aí
- * `sem versao do sistema · 0.34.2` passava, com a versão do kit crua ao lado. Esse último é o M65,
- * exatamente o mutante que CT-47 existe para matar.
- *
- * A lacuna de derivação era sempre a mesma: o invariante nunca virou um predicado sobre o
- * **segmento adjacente** à versão. Este helper é esse predicado, e os três casos passam a usá-lo.
- *
- * ## Acoplamento declarado
- *
- * O corte usa o separador ` · `, que é a composição do próprio kit
- * (`versao-do-kit.blade.php:64`, `implode(' · ', $partes)`). Trocar o separador exige atualizar
- * este helper — é acoplamento real, e fica escrito em vez de implícito. O que ele **não** acopla é
- * o texto do rótulo nem a posição dele: prefixo (`kit 0.35.0`) e sufixo (`0.35.0 do kit`) passam
- * igual, porque RQ-20 não fixa nenhum dos dois.
- */
-function segmentoDaVersao(string $html, string $versao): string
-{
-    /*
-     * A DIV, não o `rodapeDe()`.
-     *
-     * `rodapeDe()` devolve tudo depois de `</main>` — a cauda inteira da página, com menu do
-     * usuário, scripts e texto de sobra. Fatiar aquilo por `·` devolve um segmento gigante que
-     * contém palavras de qualquer jeito, e `temRotulo()` responde `true` sempre. Foi assim que a
-     * quarta redação deste oráculo nasceu inerte: M63 e M65 passavam, e a medição dizia verde.
-     *
-     * O recorte tem de ser o elemento que a feature emite, e só ele.
-     */
-    if (preg_match('~<div class="kit-versao">(.*?)</div>~s', $html, $m) !== 1) {
-        return '';
-    }
-
-    foreach (explode('·', strip_tags($m[1])) as $segmento) {
-        if (str_contains($segmento, $versao)) {
-            return trim($segmento);
-        }
-    }
-
-    return '';
-}
-
-/** O segmento tem rótulo? Palavra, não letra solta — `v` de `v2.4.1` é marcador de versão. */
-function temRotulo(string $segmento): bool
-{
-    return preg_match('/\p{L}{2,}/u', $segmento) === 1;
-}
+/*
+|--------------------------------------------------------------------------
+| comVersoes(), rodapeDe(), segmentoDaVersao() e temRotulo() MUDARAM de casa
+|--------------------------------------------------------------------------
+| Foram para `tests/Pest.php` na wiki `feat/rodape-coerente`: ganharam um segundo consumidor
+| (`tests/Kit/RodapeCoerenteTest.php`), e `.ai/rules/testes.md` proíbe helper cruzado dentro de
+| um arquivo de teste — ele some quando o Pest carrega um subconjunto (`--parallel`, `--tia`, um
+| arquivo isolado). Continuam com o mesmo nome e o mesmo contrato; só o endereço mudou.
+*/
 
 /*
 |--------------------------------------------------------------------------
@@ -274,11 +199,21 @@ it('[CT-01] compoe o rodape conforme as duas chaves', function (?string $sistema
 /**
  * Versão vazia e toggle desligado: o rodapé não renderiza NADA.
  *
- * Caso separado da tabela acima de propósito: ali a asserção é sobre texto, aqui é sobre o
- * elemento. Um mutante que renderizasse `<div class="kit-versao"></div>` vazio passaria na
- * tabela e falha aqui — e um rodapé vazio ocupando espaço é defeito visual, não detalhe.
+ * **Reescrito para `feat/rodape-coerente`** (ver `## Regressão em suíte existente` do `04` daquela
+ * wiki): a premissa original era "sem versão, sem elemento", e a feature mudou isso de propósito —
+ * `© {ano} {nome}` passou a aparecer para TODO mundo (`App\Support\AssinaturaDoRodape`), e só a
+ * VERSÃO ficou guardada. Com `APP_NAME` vindo do `.env` da máquina (o `phpunit.xml` não o força
+ * vazio), "sem versão" sozinho já não implica elemento ausente: a assinatura sozinha basta para o
+ * `<div class="kit-versao">` existir.
+ *
+ * A intenção original — "nada a mostrar, elemento realmente ausente" — sobrevive na linha
+ * `(vazio)/(vazia)` de `[CT-16]` em `tests/Kit/RodapeCoerenteTest.php`, que é o oráculo completo
+ * (nome × versão × toggle). Este caso, no escopo reduzido deste arquivo (só versão), continua
+ * medindo a mesma coisa fixando também o NOME vazio — sem isso o caso ficaria vermelho contra uma
+ * implementação correta, medindo a regra antiga.
  */
 it('[CT-01] nao renderiza o elemento quando nao ha o que mostrar', function (): void {
+    config()->set('app.name', '');
     comVersoes(null, exibirKit: false);
 
     $this->actingAs(usuarioDoKit('admin'))
@@ -377,9 +312,16 @@ it('[CT-04] escapa a marcacao html da versao gravada', function (): void {
  *
  * Este caso a enforça por varredura: nenhum arquivo do kit pode resolver versão por `shell_exec`,
  * `exec` ou leitura de `.git`. Sem ele, a decisão seria só prosa na ADR.
+ *
+ * **Reescrito para `feat/rodape-coerente`**: a COMPOSIÇÃO saiu da blade e foi para
+ * `App\Support\AssinaturaDoRodape::partes()` (ver `04-casos-de-teste.md` daquela wiki, seção da
+ * blade renomeada). A blade só decide QUEM ESTÁ OLHANDO agora — ela delega a composição — e por
+ * isso deixou de conter `config('app.version')`/`config('kit.version')` diretamente. O oráculo
+ * "não lê o git" continua igual (é sobre TODO o código, não sobre onde a composição mora); o que
+ * mudou é ONDE checar a leitura das duas versões.
  */
 it('[CT-13] nao le o git para resolver a versao', function (): void {
-    $blade = (string) file_get_contents(resource_path('views/filament/versao-do-kit.blade.php'));
+    $blade = (string) file_get_contents(resource_path('views/filament/assinatura-do-rodape.blade.php'));
 
     /*
      * O comentário da blade EXPLICA a decisão, e portanto cita `.git`. Varrer o arquivo inteiro
@@ -391,8 +333,15 @@ it('[CT-13] nao le o git para resolver a versao', function (): void {
         ->not->toContain('shell_exec')
         ->not->toContain('exec(')
         ->not->toContain('.git')
-        ->toContain("config('app.version')")
-        ->toContain("config('kit.version')");
+        // A blade delega a composição — é isso, e não as duas chaves de config diretamente, que
+        // ela precisa citar agora.
+        ->toContain('AssinaturaDoRodape::partes');
+
+    // As duas leituras de config moraram para a classe de composição; é lá que o oráculo as busca.
+    $classeDaComposicao = (string) file_get_contents(app_path('Support/AssinaturaDoRodape.php'));
+
+    $this->assertStringContainsString("config('app.version')", $classeDaComposicao);
+    $this->assertStringContainsString("config('kit.version')", $classeDaComposicao);
 
     /*
      * E a varredura larga que o cenário pede: `app/`, `config/` e `resources/views/` inteiros, sem
@@ -421,8 +370,13 @@ it('[CT-13] nao le o git para resolver a versao', function (): void {
         $codigoDoArquivo = $semComentario($arquivo->getRealPath());
 
         foreach (['packed-refs', 'git describe', 'shell_exec(', 'proc_open('] as $proibido) {
-            expect($codigoDoArquivo)->not->toContain(
+            // `not->toContain($x, $mensagem)` NUNCA falharia aqui — a forma negativa variádica
+            // exige as DUAS agulhas ausentes, e nenhum HTML/PHP contém a mensagem de erro
+            // (`.ai/rules/testes.md`, "toContain() do Pest não recebe mensagem"). PHPUnit é quem
+            // trata o 3º argumento como mensagem de verdade.
+            $this->assertStringNotContainsString(
                 $proibido,
+                $codigoDoArquivo,
                 "{$arquivo->getRelativePathname()} resolve versão por processo externo ou pelo repositório git",
             );
         }
@@ -569,6 +523,13 @@ it('[CT-43] mostra a versao do kit no comando de informacoes mesmo com o toggle 
  * A linha "espaços nas bordas" espera o valor COM os espaços, e isso é correção do `04`: a regra
  * se chama *sem alteração silenciosa*, e aparar as bordas é exatamente uma alteração silenciosa.
  * Registrado em `## Reconciliação`.
+ *
+ * **A linha "limpeza do campo" foi reescrita para `feat/rodape-coerente`.** A premissa original —
+ * "sem versão, elemento ausente" — não vale mais: `© {ano} {nome}` (`App\Support\AssinaturaDoRodape`)
+ * passou a aparecer para todo mundo, então o `<div class="kit-versao">` continua existindo por
+ * causa da assinatura mesmo sem versão nenhuma. O que este caso ainda prova, no seu escopo (só a
+ * versão), é que NENHUM segmento de versão sobrevive dentro do elemento — não que o elemento
+ * inteiro suma.
  */
 it('[CT-10] exibe no rodape exatamente o que foi gravado na tela', function (string $digitado, ?string $gravado, ?string $exibido): void {
     $this->actingAs(usuarioDoKit('admin'));
@@ -586,9 +547,19 @@ it('[CT-10] exibe no rodape exatamente o que foi gravado na tela', function (str
 
     $rodape = rodapeDe((string) $this->get('/admin')->assertOk()->getContent());
 
-    $exibido === null
-        ? expect($rodape)->not->toContain('kit-versao')
-        : expect($rodape)->toContain('v'.e($exibido));
+    if ($exibido === null) {
+        preg_match('~<div class="kit-versao">(.*?)</div>~s', $rodape, $match);
+
+        // O elemento continua existindo — por causa da assinatura, que passou a aparecer sempre
+        // (`feat/rodape-coerente`) — e o que se prova é a AUSÊNCIA de separador dentro dele: sem
+        // versão, não há segmento de versão ao lado da assinatura.
+        expect($match[1] ?? null)->not->toBeNull('o elemento kit-versao deveria existir por causa da assinatura');
+        $this->assertStringNotContainsString('·', $match[1], 'um separador solto indicaria versão vazia deixando marca');
+
+        return;
+    }
+
+    expect($rodape)->toContain('v'.e($exibido));
 })->with([
     'SemVer'             => ['2.4.0', '2.4.0', '2.4.0'],
     'data'               => ['2026-09-18', '2026-09-18', '2026-09-18'],

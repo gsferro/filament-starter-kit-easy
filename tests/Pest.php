@@ -1279,3 +1279,190 @@ function codigoSemComentario(string $codigo): string
 
     return $saida;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Rodapé coerente — helpers compartilhados por VersaoNoRodapeTest.php e
+| RodapeCoerenteTest.php (wiki feat/rodape-coerente)
+|--------------------------------------------------------------------------
+| Os quatro primeiros já existiam em VersaoNoRodapeTest.php e ganharam um
+| segundo consumidor com esta feature — `.ai/rules/testes.md` é explícita:
+| helper usado por dois arquivos vem para cá, com um nome só, porque
+| declarado só num arquivo de teste ele some quando o Pest carrega um
+| subconjunto (`--parallel`, `--tia`, um arquivo isolado).
+*/
+
+/**
+ * As duas chaves são lidas por request (`config()` dentro da blade), então `config()->set()` no
+ * caso é o arranjo fiel — não há nada congelado no boot do painel a contornar.
+ */
+function comVersoes(?string $sistema, bool $exibirKit): void
+{
+    config()->set('app.version', $sistema);
+    config()->set('kit.exibir_versao', $exibirKit);
+}
+
+/**
+ * O RODAPÉ da página, e não a página inteira.
+ *
+ * É oráculo, não conveniência. `assertSee` sobre o documento todo fica verde com a versão emitida
+ * na barra do topo, no menu lateral ou no corpo da tela — e a regra é sobre o rodapé.
+ *
+ * ## Dois layouts, dois anchors — medido, não suposto
+ *
+ * Nos painéis autenticados (`vendor/filament/filament/resources/views/components/layout/index.blade.php:126`)
+ * o hook `FOOTER` é emitido depois do fechamento do `</main>`, e o trecho posterior ao último
+ * `</main>` contém o rodapé sem topbar nem conteúdo.
+ *
+ * **Nas telas de autenticação deste kit, isso não vale.** O `01`/`02` desta feature registram o
+ * `FOOTER` como emitido também por `filament/resources/views/components/layout/simple.blade.php:61`
+ * — mas esta instalação usa `caresome/filament-auth-designer` para as telas de login, registro e
+ * recuperação de senha, cujo layout PRÓPRIO
+ * (`vendor/caresome/filament-auth-designer/resources/views/components/layouts/auth.blade.php`)
+ * **não tem `<main>` nenhum**: medido, `str_contains($html, '</main>')` é `false` em `/admin/login`.
+ * O `FOOTER` ali é emitido logo após o fechamento BALANCEADO da `<div class="fi-auth-layout">`
+ * (linhas 28→61 daquele arquivo). Sem este segundo caminho, `rodapeDe()` devolveria `''` para toda
+ * tela de autenticação, e "o rodapé contém/não contém X" mediria uma string vazia — verde sobre
+ * nada nas asserções de ausência, vermelho sem destinatário nas de presença.
+ */
+function rodapeDe(string $html): string
+{
+    $fim = strrpos($html, '</main>');
+
+    return $fim !== false ? substr($html, $fim) : rodapeDoLayoutDeAutenticacao($html);
+}
+
+/** O trecho posterior ao fechamento BALANCEADO da `<div class="fi-auth-layout">` — ver `rodapeDe()`. */
+function rodapeDoLayoutDeAutenticacao(string $html): string
+{
+    $posDaClasse = strpos($html, 'fi-auth-layout');
+
+    if ($posDaClasse === false) {
+        return '';
+    }
+
+    $inicioDaTag      = strrpos($html, '<div', $posDaClasse - strlen($html));
+    $fimDaTagAbertura = strpos($html, '>', $posDaClasse);
+
+    if ($inicioDaTag === false || $fimDaTagAbertura === false) {
+        return '';
+    }
+
+    $profundidade = 1;
+    $andando      = $fimDaTagAbertura + 1;
+
+    while ($profundidade > 0) {
+        $abre  = stripos($html, '<div', $andando);
+        $fecha = stripos($html, '</div', $andando);
+
+        if ($fecha === false) {
+            return '';
+        }
+
+        if ($abre !== false && $abre < $fecha) {
+            $profundidade++;
+            $andando = $abre + 4;
+
+            continue;
+        }
+
+        $profundidade--;
+        $andando = $fecha + 5;
+    }
+
+    $fimDoFechamento = strpos($html, '>', $andando - 5);
+
+    return $fimDoFechamento === false ? '' : substr($html, $fimDoFechamento + 1);
+}
+
+/**
+ * O SEGMENTO do rodapé em que uma versão aparece.
+ *
+ * O corte usa o separador ` · `, que é a composição do próprio kit
+ * (`assinatura-do-rodape.blade.php`, `implode(' · ', $partes)`). O que ele NÃO acopla é o texto do
+ * rótulo nem a posição dele.
+ */
+function segmentoDaVersao(string $html, string $versao): string
+{
+    /*
+     * A DIV, não o `rodapeDe()`. `rodapeDe()` devolve tudo depois de `</main>` — a cauda inteira
+     * da página, com menu do usuário, scripts e texto de sobra. O recorte tem de ser o elemento
+     * que a feature emite, e só ele.
+     */
+    if (preg_match('~<div class="kit-versao">(.*?)</div>~s', $html, $m) !== 1) {
+        return '';
+    }
+
+    foreach (explode('·', strip_tags($m[1])) as $segmento) {
+        if (str_contains($segmento, $versao)) {
+            return trim($segmento);
+        }
+    }
+
+    return '';
+}
+
+/** O segmento tem rótulo? Palavra, não letra solta — `v` de `v2.4.1` é marcador de versão. */
+function temRotulo(string $segmento): bool
+{
+    return preg_match('/\p{L}{2,}/u', $segmento) === 1;
+}
+
+/**
+ * Congela o relógio num instante neutro — longe das duas bordas do ano.
+ *
+ * Todo cenário que afirma a assinatura (`© {ano} {nome}`) precisa disto: o ano compõe a linha no
+ * RENDER (`now()->year`), e um literal `© 2026 Acme` escrito sem congelar o relógio fica verde
+ * hoje e vermelho em 1º de janeiro. Sem `travelBack()` explícito: o Laravel o faz no teardown, e um
+ * `travel()` solto vazaria para o vizinho e viraria flake em `--parallel`. `[CT-22]` é o cenário que
+ * MEDE o relógio, e por isso não usa este helper — ele controla fuso e instante caso a caso.
+ */
+function emJunhoDe2026(): void
+{
+    test()->travelTo('2026-06-15 12:00:00');
+}
+
+/**
+ * As quatro chaves da composição do rodapé, de uma vez.
+ *
+ * `.ai/rules/testes.md` e o Setup Global da wiki `feat/rodape-coerente` exigem que todo `Dado`
+ * fixe as QUATRO chaves — `app.name`, `app.version`, `kit.exibir_versao` e `kit.login.rodape` —, e
+ * não só a que o cenário discute: um `Dado` que cala sobre o resto mede o que o `phpunit.xml`
+ * forçou (nome vindo do `.env` da máquina, versão e recado forçados vazios), não o comportamento.
+ */
+function comIdentidade(?string $nome, ?string $versao, bool $exibirKit, ?string $recado = null): void
+{
+    config()->set('app.name', $nome);
+    config()->set('app.version', $versao);
+    config()->set('kit.exibir_versao', $exibirKit);
+    config()->set('kit.login.rodape', $recado);
+}
+
+/**
+ * O conteúdo TEXTUAL e normalizado do elemento que compõe a assinatura do rodapé.
+ *
+ * `Então o rodapé contém X` significa isto, nunca `rodapeDe()`: `rodapeDe()` devolve a cauda
+ * inteira da página — menu do usuário, scripts e o SNAPSHOT do Livewire, onde `app.name` e o
+ * recado do login aparecem serializados. Presença medida ali é satisfeita por payload de JS, com a
+ * faixa do rodapé inexistente.
+ *
+ * `strip_tags` → `html_entity_decode` → colapsar espaços → `trim`, nesta ordem. `html_entity_decode`
+ * não é detalhe: `{{ }}` do Blade não converte `©`, mas uma implementação que escreva `&copy;`
+ * literal produz o MESMO pixel e uma string diferente — sem a normalização um oráculo escrito com
+ * `©` ficaria vermelho contra uma implementação correta.
+ *
+ * String vazia quando o elemento não existe. Não usar isto para afirmar AUSÊNCIA: elemento
+ * ausente e elemento presente-e-vazio devolvem a mesma string vazia — a ausência é sobre o HTML
+ * (marcador `kit-versao`), não sobre este retorno normalizado.
+ */
+function assinaturaDoRodape(string $html): string
+{
+    if (preg_match('~<div class="kit-versao">(.*?)</div>~s', $html, $m) !== 1) {
+        return '';
+    }
+
+    $texto = html_entity_decode(strip_tags($m[1]));
+    $texto = preg_replace('~\s+~', ' ', $texto) ?? $texto;
+
+    return trim($texto);
+}

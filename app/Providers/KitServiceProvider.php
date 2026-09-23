@@ -6,6 +6,7 @@ use App\Ai\Health\LocalAiCheck;
 use App\Ai\Listeners\RegistrarAiRun;
 use App\Filament\Pages\Auth\CadastroUnificado;
 use App\Filament\Pages\Auth\EscolhaDePainel;
+use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Pages\Auth\TelaLoginUnificada;
 use App\Filament\Pages\Auth\TelaRecuperarSenhaUnificada;
 use App\Http\Controllers\Auth\EntrarNoPainelController;
@@ -710,9 +711,32 @@ class KitServiceProvider extends ServiceProvider
             fn (): string => view('filament.auth.botoes-sociais')->render(),
         );
 
+        /*
+         * O recado do rodape sai no MESMO hook da assinatura do sistema (`FOOTER`), e nao num
+         * hook proprio. Duas coisas dependem disso, e nenhuma e obvia:
+         *
+         * 1. ORDEM. `ViewManager::renderHook()` renderiza os hooks SEM escopo antes dos COM
+         *    escopo, qualquer que seja a ordem de registro. A assinatura e registrada sem escopo
+         *    em `ConfiguraFilamentGlobal`; este aqui tem escopo. E isso que garante
+         *    "assinatura em cima, recado embaixo" sem acoplar os dois registros.
+         *
+         *    Nao daria para conseguir isso deixando o recado em `AUTH_LOGIN_FORM_AFTER`: naquele
+         *    hook ele sai DENTRO do `<main>` do layout `simple`, e o `FOOTER` sai depois do
+         *    `</main>` — ou seja, a assinatura apareceria ABAIXO do recado.
+         *
+         * 2. ALCANCE. O motivo de o recado nunca ter usado o `FOOTER` continua valendo: aquele
+         *    hook e emitido TAMBEM pelo layout de painel autenticado, e o texto apareceria em
+         *    toda tela do sistema. O `scopes:` e o que resolve — e e por isso que ele pode viver
+         *    no mesmo hook agora, o que antes era impossivel.
+         *
+         * AS DUAS CLASSES, e nao so a mae: `getRenderHookScopes()` devolve `[static::class]`, a
+         * classe CONCRETA. `TelaLoginUnificada` ESTENDE `TelaLogin`, entao escopar so na mae
+         * deixaria o login unificado (`/login`) sem recado — em silencio.
+         */
         FilamentView::registerRenderHook(
-            PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+            PanelsRenderHook::FOOTER,
             fn (): string => view('filament.auth.rodape-login')->render(),
+            scopes: [TelaLogin::class, TelaLoginUnificada::class],
         );
 
         // A tela de registro (registro aberto e aceite de convite) oferece os mesmos botoes; a
