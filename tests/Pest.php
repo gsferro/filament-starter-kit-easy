@@ -1279,3 +1279,288 @@ function codigoSemComentario(string $codigo): string
 
     return $saida;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Rodapé coerente — helpers compartilhados por VersaoNoRodapeTest.php e
+| RodapeCoerenteTest.php (wiki feat/rodape-coerente)
+|--------------------------------------------------------------------------
+| Os quatro primeiros já existiam em VersaoNoRodapeTest.php e ganharam um
+| segundo consumidor com esta feature — `.ai/rules/testes.md` é explícita:
+| helper usado por dois arquivos vem para cá, com um nome só, porque
+| declarado só num arquivo de teste ele some quando o Pest carrega um
+| subconjunto (`--parallel`, `--tia`, um arquivo isolado).
+*/
+
+/**
+ * As duas chaves são lidas por request (`config()` dentro da blade), então `config()->set()` no
+ * caso é o arranjo fiel — não há nada congelado no boot do painel a contornar.
+ */
+function comVersoes(?string $sistema, bool $exibirKit): void
+{
+    config()->set('app.version', $sistema);
+    config()->set('kit.exibir_versao', $exibirKit);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Os recortes do rodape, em UM lugar
+|--------------------------------------------------------------------------
+|
+| Tres extratores liam o mesmo elemento com tres copias do mesmo regex, e as
+| copias divergiram: `recadoDoRodape()` foi endurecido para aceitar o atributo
+| quebrado em varias linhas, e os dois da assinatura ficaram para tras. Achado
+| QA-31 do quality gate, ciclo 3 — e a forma do defeito que esta feature
+| inteira persegue: a mesma regra escrita em dois lugares diverge.
+|
+| `[^>]*` dos DOIS lados do `class`: a blade quebra a linha entre a tag e os
+| atributos, e o elemento pode ganhar uma classe utilitaria ou um `data-testid`
+| `["']` como classe de aspa porque aspas simples sao HTML valido.
+|
+| A TAG E CAPTURADA, NAO LISTADA. A versao anterior listava `(?:div|footer)`
+| na assinatura e `div` FIXO no recado. Quando o recado virou `<aside>`
+| (ADR-09 de `rodape-coerente`), o recorte do recado parou de casar e 8 casos
+| Os que afirmavam AUSENCIA teriam ficado VERDES sobre o vazio se nao fosse
+| o controle positivo exigido acima. `(?P<tag>[a-z]+)` com `</(?P=tag)>`
+| fecha pela MESMA tag: a semantica do elemento muda sem tocar no extrator,
+| e um `</div>` que feche um `<aside>` continua sendo recusado.
+|
+| ATENCAO AO USAR QUALQUER UM DELES EM ASSERCAO DE AUSENCIA.
+|
+| Os tres extratores (`rodapeDe`, `assinaturaDoRodape`, `recadoDoRodape`)
+| devolvem `''` em silencio quando nao acham a ancora — e string vazia
+| satisfaz qualquer `assertStringNotContainsString`. Falham ABERTO, que e o
+| defeito n.1 desta base (`.ai/rules/testes.md`). Achado RD-06 do step 6.5.
+|
+| Todo caso que os usa para provar ausencia precisa de um controle positivo
+| NA MESMA ROTA, provando que o extrator devolveu conteudo ali — nao basta um
+| controle positivo noutra rota.
+|
+| Este aviso estava num docblock solto acima deste bloco, a 70 linhas
+| da funcao que dizia descrever: preso a nada, e duplicando o que ja se lia
+| aqui. Achado QA-46 do ciclo 4. Fundido, e agora vale para os tres — que e o
+| escopo certo, porque os tres falham do mesmo jeito.
+*/
+/**
+ * Os dois marcadores de classe do rodape, como ALTERNATIVA de regex.
+ *
+ * Existe como constante por um motivo especifico: `[CT-24]` varre `tests/` procurando linhas que
+ * reescrevam os extratores, e reconhece uma copia por conter um destes marcadores ao lado de um
+ * `preg_*`. Se o proprio `[CT-24]` escrevesse os marcadores como literal, ele se acusaria — e a
+ * saida seria cega-lo no proprio arquivo, que e exatamente onde o QA-45 morava. A constante
+ * mantem o varredor sensivel ao arquivo que o hospeda.
+ */
+const MARCADORES_DO_RODAPE = '~kit-versao|fi-login-rodape~';
+
+const RECORTE_DA_ASSINATURA = '~<(?P<tag>[a-z]+)[^>]*class=[\x22\x27][^\x22\x27]*kit-versao[^\x22\x27]*[\x22\x27][^>]*>(?P<corpo>.*?)</(?P=tag)>~s';
+
+const RECORTE_DO_RECADO = '~<(?P<tag>[a-z]+)[^>]*class=[\x22\x27][^\x22\x27]*fi-login-rodape[^\x22\x27]*[\x22\x27][^>]*>(?P<corpo>.*?)</(?P=tag)>~s';
+
+/**
+ * O RODAPÉ da página, e não a página inteira.
+ *
+ * É oráculo, não conveniência. `assertSee` sobre o documento todo fica verde com a versão emitida
+ * na barra do topo, no menu lateral ou no corpo da tela — e a regra é sobre o rodapé.
+ *
+ * ## Dois layouts, dois anchors — medido, não suposto
+ *
+ * Nos painéis autenticados (`vendor/filament/filament/resources/views/components/layout/index.blade.php:126`)
+ * o hook `FOOTER` é emitido depois do fechamento do `</main>`, e o trecho posterior ao último
+ * `</main>` contém o rodapé sem topbar nem conteúdo.
+ *
+ * **Nas telas de autenticação deste kit, isso não vale.** O `01`/`02` desta feature registram o
+ * `FOOTER` como emitido também por `filament/resources/views/components/layout/simple.blade.php:61`
+ * — mas esta instalação usa `caresome/filament-auth-designer` para as telas de login, registro e
+ * recuperação de senha, cujo layout PRÓPRIO
+ * (`vendor/caresome/filament-auth-designer/resources/views/components/layouts/auth.blade.php`)
+ * **não tem `<main>` nenhum**: medido, `str_contains($html, '</main>')` é `false` em `/admin/login`.
+ * O `FOOTER` ali é emitido logo após o fechamento BALANCEADO da `<div class="fi-auth-layout">`
+ * (linhas 28→61 daquele arquivo). Sem este segundo caminho, `rodapeDe()` devolveria `''` para toda
+ * tela de autenticação, e "o rodapé contém/não contém X" mediria uma string vazia — verde sobre
+ * nada nas asserções de ausência, vermelho sem destinatário nas de presença.
+ */
+function rodapeDe(string $html): string
+{
+    $fim = strrpos($html, '</main>');
+
+    return $fim !== false ? substr($html, $fim) : rodapeDoLayoutDeAutenticacao($html);
+}
+
+/** O trecho posterior ao fechamento BALANCEADO da `<div class="fi-auth-layout">` — ver `rodapeDe()`. */
+function rodapeDoLayoutDeAutenticacao(string $html): string
+{
+    $posDaClasse = strpos($html, 'fi-auth-layout');
+
+    if ($posDaClasse === false) {
+        return '';
+    }
+
+    $inicioDaTag      = strrpos($html, '<div', $posDaClasse - strlen($html));
+    $fimDaTagAbertura = strpos($html, '>', $posDaClasse);
+
+    if ($inicioDaTag === false || $fimDaTagAbertura === false) {
+        return '';
+    }
+
+    $profundidade = 1;
+    $andando      = $fimDaTagAbertura + 1;
+
+    while ($profundidade > 0) {
+        $abre  = stripos($html, '<div', $andando);
+        $fecha = stripos($html, '</div', $andando);
+
+        if ($fecha === false) {
+            return '';
+        }
+
+        if ($abre !== false && $abre < $fecha) {
+            $profundidade++;
+            $andando = $abre + 4;
+
+            continue;
+        }
+
+        $profundidade--;
+        $andando = $fecha + 5;
+    }
+
+    $fimDoFechamento = strpos($html, '>', $andando - 5);
+
+    return $fimDoFechamento === false ? '' : substr($html, $fimDoFechamento + 1);
+}
+
+/**
+ * O SEGMENTO do rodapé em que uma versão aparece.
+ *
+ * O corte usa o separador ` · `, que é a composição do próprio kit
+ * (`assinatura-do-rodape.blade.php`, `implode(' · ', $partes)`). O que ele NÃO acopla é o texto do
+ * rótulo nem a posição dele.
+ */
+function segmentoDaVersao(string $html, string $versao): string
+{
+    /*
+     * A DIV, não o `rodapeDe()`. `rodapeDe()` devolve tudo depois de `</main>` — a cauda inteira
+     * da página, com menu do usuário, scripts e texto de sobra. O recorte tem de ser o elemento
+     * que a feature emite, e só ele.
+     */
+    if (preg_match(RECORTE_DA_ASSINATURA, $html, $m) !== 1) {
+        return '';
+    }
+
+    foreach (explode('·', strip_tags($m['corpo'])) as $segmento) {
+        if (str_contains($segmento, $versao)) {
+            return trim($segmento);
+        }
+    }
+
+    return '';
+}
+
+/** O segmento tem rótulo? Palavra, não letra solta — `v` de `v2.4.1` é marcador de versão. */
+function temRotulo(string $segmento): bool
+{
+    return preg_match('/\p{L}{2,}/u', $segmento) === 1;
+}
+
+/**
+ * Congela o relógio num instante neutro — longe das duas bordas do ano.
+ *
+ * Todo cenário que afirma a assinatura (`© {ano} {nome}`) precisa disto: o ano compõe a linha no
+ * RENDER (`now()->year`), e um literal `© 2026 Acme` escrito sem congelar o relógio fica verde
+ * hoje e vermelho em 1º de janeiro. Sem `travelBack()` explícito: o Laravel o faz no teardown, e um
+ * `travel()` solto vazaria para o vizinho e viraria flake em `--parallel`. `[CT-22]` é o cenário que
+ * MEDE o relógio, e por isso não usa este helper — ele controla fuso e instante caso a caso.
+ */
+function emJunhoDe2026(): void
+{
+    test()->travelTo('2026-06-15 12:00:00');
+}
+
+/**
+ * As quatro chaves da composição do rodapé, de uma vez.
+ *
+ * `.ai/rules/testes.md` e o Setup Global da wiki `feat/rodape-coerente` exigem que todo `Dado`
+ * fixe as QUATRO chaves — `app.name`, `app.version`, `kit.exibir_versao` e `kit.login.rodape` —, e
+ * não só a que o cenário discute: um `Dado` que cala sobre o resto mede o que o `phpunit.xml`
+ * forçou (nome vindo do `.env` da máquina, versão e recado forçados vazios), não o comportamento.
+ */
+function comIdentidade(?string $nome, ?string $versao, bool $exibirKit, ?string $recado = null): void
+{
+    config()->set('app.name', $nome);
+    config()->set('app.version', $versao);
+    config()->set('kit.exibir_versao', $exibirKit);
+    config()->set('kit.login.rodape', $recado);
+}
+
+/**
+ * O texto do RECADO do rodape, recortado do elemento — e nao da cauda da pagina.
+ *
+ * Espelha `assinaturaDoRodape()`, e existe pelo mesmo motivo: `rodapeDe()` devolve tudo depois do
+ * ancora, inclusive o `wire:snapshot` do Livewire, onde o recado pode aparecer SERIALIZADO. Uma
+ * assercao de presenca sobre aquela cauda fica verde com a faixa inexistente.
+ *
+ * O Setup Global do `04` declara isso como regra — "rodapeDe() so serve de entrada para
+ * segmentoDaVersao() e para as assercoes de AUSENCIA" — e tres casos a violavam. Achado QA-07 do
+ * quality gate, que eu tinha declarado como lacuna quando custava este helper.
+ */
+function recadoDoRodape(string $html): string
+{
+    /*
+     * `preg_match_all` e a PRIMEIRA ocorrencia NAO-VAZIA, e as duas decisoes custaram medicao.
+     *
+     * 1. O `class` nao vem colado no `<div`: a blade quebra a linha entre a tag e os atributos,
+     *    entao o `[^>]*` no meio e obrigatorio.
+     *
+     * 2. `preg_match_all` + primeira ocorrencia NAO-VAZIA, por defesa e nao por diagnostico.
+     *
+     *    A primeira redacao desta nota afirmava que "a classe aparece mais de uma vez no
+     *    documento". O ciclo 3 do quality gate MEDIU e desmentiu: `substr_count()` devolve 1 em
+     *    `/admin/login` e 1 em `/login`. O que de fato consertou o helper foi a decisao 1 — o
+     *    `[^>]*`, porque a blade quebra a linha entre a tag e os atributos.
+     *
+     *    O laco fica, porque custa tres linhas e cobre o dia em que houver duas. Mas a premissa
+     *    escrita nao era medida, e registrar isso importa mais que a linha de codigo: foi o
+     *    mesmo erro que produziu o Blocker do 6.5 (medir o layout errado) e as verificacoes
+     *    V3/V5 falsas. Achado QA-31.
+     */
+    if (preg_match_all(RECORTE_DO_RECADO, $html, $m) < 1) {
+        return '';
+    }
+
+    foreach ($m['corpo'] as $conteudo) {
+        if (filled($texto = trim(strip_tags($conteudo)))) {
+            return $texto;
+        }
+    }
+
+    return '';
+}
+
+/**
+ * O conteúdo TEXTUAL e normalizado do elemento que compõe a assinatura do rodapé.
+ *
+ * `Então o rodapé contém X` significa isto, nunca `rodapeDe()`: `rodapeDe()` devolve a cauda
+ * inteira da página — menu do usuário, scripts e o SNAPSHOT do Livewire, onde `app.name` e o
+ * recado do login aparecem serializados. Presença medida ali é satisfeita por payload de JS, com a
+ * faixa do rodapé inexistente.
+ *
+ * `strip_tags` → `html_entity_decode` → colapsar espaços → `trim`, nesta ordem. `html_entity_decode`
+ * não é detalhe: `{{ }}` do Blade não converte `©`, mas uma implementação que escreva `&copy;`
+ * literal produz o MESMO pixel e uma string diferente — sem a normalização um oráculo escrito com
+ * `©` ficaria vermelho contra uma implementação correta.
+ *
+ * String vazia quando o elemento não existe. Não usar isto para afirmar AUSÊNCIA: elemento
+ * ausente e elemento presente-e-vazio devolvem a mesma string vazia — a ausência é sobre o HTML
+ * (marcador `kit-versao`), não sobre este retorno normalizado.
+ */
+function assinaturaDoRodape(string $html): string
+{
+    if (preg_match(RECORTE_DA_ASSINATURA, $html, $m) !== 1) {
+        return '';
+    }
+
+    $texto = html_entity_decode(strip_tags($m['corpo']));
+    $texto = preg_replace('~\s+~', ' ', $texto) ?? $texto;
+
+    return trim($texto);
+}

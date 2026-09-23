@@ -41,3 +41,15 @@ Thumbs.db
 /.claude/requisitos/
 /.claude/setup-worktree.sh
 /.playwright-mcp/
+
+# As skills do `filament/blueprint` NAO sao versionadas.
+#
+# Elas vem de um pacote PAGO (packages.filamentphp.com) e este repositorio e distribuido
+# publicamente por `composer create-project` — versiona-las seria redistribuir material
+# licenciado. As outras 18 skills de `.claude/skills/` vem de pacotes abertos e ficam.
+#
+# Quem tiver licenca as instala com `composer bp:on` e as copia:
+#   cp -r vendor/filament/blueprint/resources/boost/skills/* .claude/skills/
+/.claude/skills/planning-filament/
+/.claude/skills/reviewing-filament-plans/
+/.claude/skills/filament-security-audit/

@@ -134,7 +134,7 @@ so the agent does not have to scan hundreds of lines of coloured output.
 | Pest, PHPUnit, Paratest | one JSON line; failures in `failures[]` with file and line |
 | PHPStan | JSON grouped by file, truncated at 30 errors (use `-v` for all) |
 | Rector | JSON; under `--dry-run`, a changed file counts as a failure |
-| Artisan | no ANSI and no decoration — `Kit version .. 0.38.1` instead of the dotted line |
+| Artisan | no ANSI and no decoration — `Kit version .. 0.38.2` instead of the dotted line |
 | Pint | **not `pao`** — Pint has its own detection and already emits JSON by itself |
 
 ### How it knows it is an agent

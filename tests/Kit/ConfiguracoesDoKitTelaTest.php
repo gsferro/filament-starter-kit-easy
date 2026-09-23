@@ -455,3 +455,57 @@ it('[CT-49] o slug antigo redireciona para o novo e nunca serve a tela', functio
     'pessoa admin autenticada' => [true, true],
     'visitante anônimo'        => [false, false],
 ]);
+
+/**
+ * CT-50 — todo campo de texto livre da tela recusa o autopreenchimento do navegador.
+ *
+ * ## O sintoma que originou o caso
+ *
+ * O `ColorPicker` "Cor primária livre" oferecia um **e-mail salvo** do Google ao receber foco.
+ * O Chrome trata qualquer `<input type="text">` sem `autocomplete` como candidato ao seu
+ * heurístico de autopreenchimento, e o rótulo do campo não é levado em conta.
+ *
+ * ## Por que o caso cobra a TELA inteira, e não o campo que foi reportado
+ *
+ * Porque o sintoma cosmético não é o pior efeito. Esta tela guarda `mail_password`,
+ * `mail_username`, a chave secreta do anti-robô e os `client_secret` do login social — e neles
+ * o gerenciador do navegador oferece a **credencial pessoal de quem administra**. Um caso que
+ * afirmasse só o campo reportado ficaria verde com os outros dezesseis abertos, e o próximo
+ * campo nasceria sem o atributo.
+ *
+ * ## Por que `new-password` nos campos de senha
+ *
+ * `autocomplete="off"` é **respeitado para o heurístico** de endereço e e-mail, e largamente
+ * **ignorado pelos gerenciadores de senha** — a recusa que eles honram é `new-password`.
+ * Aplicar `off` num campo de senha seria guarda que não guarda.
+ */
+it('[CT-50] todo campo de texto livre das configuracoes recusa o autopreenchimento', function (): void {
+    $fonte = (string) file_get_contents(base_path('app/Filament/Admin/Pages/ConfiguracoesDoKit.php'));
+
+    // Um bloco por campo: da declaração até a vírgula que a fecha no schema.
+    preg_match_all('~(?:TextInput|ColorPicker)::make\((.+?)\)(.*?)\n\n~s', $fonte, $campos, PREG_SET_ORDER);
+
+    expect($campos)->not->toBe([], 'a varredura não achou campo nenhum — o arquivo mudou de forma e este caso parou de medir');
+
+    $semGuarda   = [];
+    $senhaComOff = [];
+
+    foreach ($campos as [, $nome, $corpo]) {
+        if (! str_contains($corpo, 'autocomplete')) {
+            $semGuarda[] = trim($nome);
+
+            continue;
+        }
+
+        // Campo de senha exige `new-password`: `off` não segura gerenciador de senha.
+        if (str_contains($corpo, '->password()') && ! str_contains($corpo, "'new-password'")) {
+            $senhaComOff[] = trim($nome);
+        }
+    }
+
+    expect($semGuarda)->toBe([], 'estes campos da tela de configurações não recusam o autopreenchimento do navegador: '
+        .'o Chrome oferece neles o que tiver salvo, inclusive e-mail e senha pessoais de quem administra');
+
+    expect($senhaComOff)->toBe([], 'estes campos são `->password()` e não usam `autocomplete="new-password"`: '
+        .'gerenciador de senha ignora `off`, então a guarda não guarda');
+})->group('kit');

@@ -112,14 +112,25 @@ trait ConfiguraFilamentGlobal
      * `config('kit.exibir_versao')` está ligada, e ela nasce desligada. Confundir as duas foi o
      * defeito que o Adendo 2 do requisito corrigiu. Nada lê `.git` em tempo de execução.
      *
-     * O guard de visitante mora na blade, não aqui, porque é lá que está o motivo: o hook `FOOTER`
-     * também é emitido pelo layout `simple`, o das telas de autenticação.
+     * O guard mora na blade, não aqui, porque é lá que está o motivo: o hook `FOOTER` é emitido por
+     * **três** layouts, e dois deles servem tela pública.
+     *
+     * | Layout | Onde |
+     * |---|---|
+     * | painel autenticado | `filament/.../components/layout/index.blade.php:126` |
+     * | `simple` do Filament | `filament/.../components/layout/simple.blade.php:61` |
+     * | **Auth Designer** | `caresome/filament-auth-designer/.../layouts/auth.blade.php:63` |
+     *
+     * **O terceiro é o que importa aqui**: 8 das 9 páginas de `app/Filament/Pages/Auth/`
+     * redeclaram `$layout` para ele. A primeira redação deste comentário citava só o `simple`,
+     * e a mesma premissa errada no plano produziu um Blocker de geometria no step 6.5 — a
+     * assinatura caindo abaixo da dobra. Achado QA-02 do quality gate.
      */
     private function configuraVersaoNoRodape(): void
     {
         FilamentView::registerRenderHook(
             PanelsRenderHook::FOOTER,
-            fn (): View => view('filament.versao-do-kit'),
+            fn (): View => view('filament.assinatura-do-rodape'),
         );
     }
 

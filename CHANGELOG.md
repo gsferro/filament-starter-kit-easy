@@ -5,6 +5,57 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Adicionado
+
+- **O rodapé passa a assinar o sistema, e a assinatura é composta em um só lugar.** Em toda tela
+  dos três painéis e nas telas de autenticação aparece `© {ano} {Nome da aplicação}`, com o ano
+  corrente calculado no render — sem campo novo.
+
+  **A versão continua invisível para quem não entrou.** A guarda deixou de envolver o bloco inteiro
+  e passou a envolver **só a versão**: nome e `©` são públicos (já apareciam no topo do painel e no
+  título da aba); a versão exata da instalação, não — exibi-la na tela de login é entregar a lista
+  de vulnerabilidades aplicáveis a quem ainda não autenticou.
+
+### Alterado
+
+- **Os dois rodapés passaram a ser coerentes.** O recado da tela de login, que era texto livre num
+  hook próprio, virou uma **segunda linha abaixo da assinatura**, no mesmo hook `FOOTER`, escopado
+  às páginas de login. Registro e recuperação de senha recebem só a assinatura.
+
+  O escopo lista **duas** classes, e não uma: `getRenderHookScopes()` devolve a classe concreta, e
+  a página de login unificado **estende** a do painel — escopar só na mãe deixaria `/login` sem
+  recado, em silêncio.
+
+- O campo **Versão do sistema** ganhou o prefixo visual `v`. Ele **não é gravado**: quem acrescenta
+  o `v` ao exibir continua sendo um só lugar, e é isso que impede o `vv1.2.3` em quem digitar
+  `1.2.3` daqui em diante.
+
+  **Quem já tinha `v1.2.3` gravado passa a ver `vv1.2.3`** — no campo e no rodapé. Isso é
+  deliberado e está sob teste (`[CT-15]`): o prefixo torna o dado sujo **visível** em vez de
+  migrá-lo em silêncio. Para corrigir, apague o `v` do campo e grave.
+
+- `resources/views/filament/versao-do-kit.blade.php` → **`assinatura-do-rodape.blade.php`**. O nome
+  antigo já era impreciso — a blade mostra a versão do **sistema**, não a do kit — e mostrar
+  também o `©` o tornaria ativamente errado.
+
+## [0.38.2] - 2026-09-22
+
+### Corrigido
+
+- **A tela de configurações não recusava o autopreenchimento do navegador.** O campo
+  *"Cor primária livre"* oferecia um **e-mail salvo** do Google ao receber foco: o Chrome trata
+  qualquer `<input type="text">` sem `autocomplete` como candidato ao seu heurístico, e o rótulo
+  do campo não entra na conta.
+
+  **Os 17 campos da tela foram corrigidos, não só o reportado.** O campo do seletor de cor é o
+  sintoma cosmético; o pior efeito está nos vizinhos — `mail_password`, `mail_username`, a chave
+  secreta do anti-robô e os `client_secret` do login social. Neles o gerenciador do navegador
+  oferece a **credencial pessoal de quem administra**, dentro de um formulário que a grava como
+  configuração da instalação.
+
+  Nos quatro campos `->password()` o valor é `new-password`, e não `off`: `off` é respeitado pelo
+  heurístico de endereço e e-mail, e largamente **ignorado** pelos gerenciadores de senha.
+
 ## [0.38.1] - 2026-09-22
 
 ### Corrigido

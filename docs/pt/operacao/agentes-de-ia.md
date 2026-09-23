@@ -128,7 +128,7 @@ ter que varrer centenas de linhas de saída colorida.
 | Pest, PHPUnit, Paratest | uma linha de JSON; falhas em `failures[]` com arquivo e linha |
 | PHPStan | JSON agrupado por arquivo, truncado em 30 erros (use `-v` para todos) |
 | Rector | JSON; em `--dry-run`, arquivo alterado conta como reprovação |
-| Artisan | sem ANSI e sem decoração — `Versão do kit .. 0.38.1` em vez da linha pontilhada |
+| Artisan | sem ANSI e sem decoração — `Versão do kit .. 0.38.2` em vez da linha pontilhada |
 | Pint | **não é o `pao`** — o Pint tem detecção própria e já emite JSON sozinho |
 
 ### Como ele sabe que é um agente

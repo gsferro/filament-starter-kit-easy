@@ -271,8 +271,9 @@ class ConfiguracoesDoKit extends SettingsPage
             ->icon('heroicon-o-paint-brush')
             ->schema([
                 TextInput::make('nome_da_aplicacao')
+                    ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('Nome da aplicação')
-                    ->helperText('Aparece no topo dos três painéis, no título da aba e como remetente padrão.')
+                    ->helperText('Aparece no topo dos três painéis, no título da aba, como remetente padrão e no rodapé — inclusive nas telas públicas de login e recuperação de senha.')
                     ->required()
                     ->maxLength(255),
 
@@ -282,8 +283,26 @@ class ConfiguracoesDoKit extends SettingsPage
                  * seria o kit escolhendo pelo projeto. Vazio some com a versão do rodapé.
                  */
                 TextInput::make('versao_do_sistema')
+                    ->extraInputAttributes(['autocomplete' => 'off'])
+                    /*
+                     * Afixo do Filament: e EXIBICAO, nao muta o estado. O valor gravado continua
+                     * sem o `v`, e quem o acrescenta no rodape e `AssinaturaDoRodape` — UM SO
+                     * LUGAR poe o `v`, e e isso que impede o MECANISMO de dobra-lo.
+                     *
+                     * Isso NAO impede o `vv1.2.3` quando o dado ja vem sujo: quem gravou
+                     * `v1.2.3` — a convencao de tag do git — ve `vv1.2.3` no campo e no rodape,
+                     * e `[CT-15]` congela esse comportamento de proposito. O afixo TORNA O ERRO
+                     * VISIVEL; nao o corrige.
+                     *
+                     * Sem normalizacao ao salvar, e a decisao esta na ADR-06: remover um `v`
+                     * inicial quebraria uma versao legitima chamada `v2`, e migrar dado de
+                     * settings por um caso que a tela agora evidencia custa mais do que o
+                     * incomodo. Achado RD-04 do step 6.5: a primeira versao deste comentario
+                     * dizia so "evita o vv1.2.3", que o proprio CT-15 desmente.
+                     */
+                    ->prefix('v')
                     ->label('Versão do sistema')
-                    ->helperText('A versão do SEU produto, exibida no rodapé dos painéis. Em branco, o rodapé não mostra versão. APP_VERSION no .env semeia este campo na instalação; depois disso é aqui que se troca — o valor gravado vence o arquivo, inclusive quando está vazio.')
+                    ->helperText('A versão do SEU produto, exibida no rodapé. O `v` à esquerda já é do campo: digite só o número (`1.2.3`), senão o rodapé mostra `vv1.2.3`. Em branco, o rodapé não mostra versão. APP_VERSION no .env semeia este campo na instalação; depois disso é aqui que se troca — o valor gravado vence o arquivo, inclusive quando está vazio.')
                     ->placeholder('1.0.0')
                     ->maxLength(50),
 
@@ -301,6 +320,7 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->placeholder('Padrão do Filament (âmbar)'),
 
                 ColorPicker::make('cor_primaria_hex')
+                    ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('Cor primária livre')
                     ->helperText('Cor de marca em hexadecimal. VENCE a seleção acima quando preenchida. Valor inválido é ignorado.')
                     ->regex('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'),
@@ -336,20 +356,24 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->live(),
 
                 TextInput::make('mail_from_address')
+                    ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('Remetente')
                     ->email()
                     ->maxLength(255),
 
                 TextInput::make('mail_from_name')
+                    ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('Nome do remetente')
                     ->maxLength(255),
 
                 TextInput::make('mail_host')
+                    ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('Servidor')
                     ->maxLength(255)
                     ->visible($smtp),
 
                 TextInput::make('mail_port')
+                    ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('Porta')
                     ->numeric()
                     ->integer()
@@ -368,6 +392,7 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->visible($smtp),
 
                 TextInput::make('mail_username')
+                    ->extraInputAttributes(['autocomplete' => 'new-password'])
                     ->label('Usuário')
                     ->maxLength(255)
                     ->visible($smtp),
@@ -409,6 +434,7 @@ class ConfiguracoesDoKit extends SettingsPage
                  * digitar, que e conferencia de digitacao, nao exposicao do que estava gravado.
                  */
                 TextInput::make('mail_password')
+                    ->extraInputAttributes(['autocomplete' => 'new-password'])
                     ->label('Senha')
                     ->helperText('Guardada cifrada. Deixe em branco para manter a senha atual — ela nao e exibida aqui, nem no codigo-fonte da pagina. A trilha de auditoria registra que ela mudou, nunca o valor.')
                     ->placeholder(fn (): string => filled($this->senhaDeSmtpGuardada()) ? 'Ja configurada — em branco mantem' : 'Nenhuma senha configurada')
@@ -426,6 +452,7 @@ class ConfiguracoesDoKit extends SettingsPage
             ->icon('heroicon-o-table-cells')
             ->schema([
                 TextInput::make('paginacao_padrao')
+                    ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('Linhas por página')
                     ->helperText('O default de TODA tabela dos três painéis, inclusive as dos pacotes de terceiros.')
                     ->numeric()
@@ -654,6 +681,7 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->visible($ligado),
 
                 TextInput::make('login_anti_robo_pontuacao_minima')
+                    ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('Pontuação mínima (reCAPTCHA v3)')
                     ->helperText('O Google devolve uma pontuação de 0 (robô) a 1 (pessoa); abaixo deste valor o envio é recusado. 0,5 é o sugerido. Só o reCAPTCHA v3 usa isto.')
                     ->numeric()
@@ -665,12 +693,14 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->visible(fn (Get $get): bool => $ligado($get) && ProvedorAntiRobo::tryFrom((string) $get('login_anti_robo_provedor'))?->usaPontuacao() === true),
 
                 TextInput::make('login_anti_robo_chave_do_site')
+                    ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('Chave do site')
                     ->helperText('A chave pública: vai para o HTML das telas.')
                     ->maxLength(255)
                     ->visible($ligado),
 
                 TextInput::make('login_anti_robo_chave_secreta')
+                    ->extraInputAttributes(['autocomplete' => 'new-password'])
                     ->label('Chave secreta')
                     ->helperText('Guardada cifrada. Deixe em branco para manter a atual — ela não é exibida aqui, nem no código-fonte da página.')
                     ->placeholder(fn (): string => filled($this->chaveSecretaAntiRoboGuardada()) ? 'Já configurada — em branco mantém' : 'Nenhuma chave configurada')
@@ -719,6 +749,7 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->live(),
 
                 TextInput::make($provedor->propriedadeDeSettings('client_id'))
+                    ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('Client ID')
                     // O caminho é o que vive em `config/services.php`, relativo de propósito —
                     // cadastre-o ABSOLUTO no console do provedor.
@@ -727,6 +758,7 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->visible($ligado),
 
                 TextInput::make($provedor->propriedadeDeSettings('client_secret'))
+                    ->extraInputAttributes(['autocomplete' => 'new-password'])
                     ->label('Client Secret')
                     ->helperText('Guardado cifrado. Deixe em branco para manter o atual — ele não é exibido aqui, nem no código-fonte da página.')
                     ->placeholder(fn (): string => filled($this->segredoGuardadoDe($provedor)) ? 'Já configurado — em branco mantém' : 'Nenhum segredo configurado')
@@ -851,12 +883,14 @@ class ConfiguracoesDoKit extends SettingsPage
                     ]),
 
                 TextInput::make('rotulo_da_organizacao')
+                    ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('Como chamar cada organização')
                     ->helperText('Vocabulário da INSTALAÇÃO (Empresa, Cliente, Escola, Unidade). Não é a configuração de uma organização — essa fica em /admin/organizacoes.')
                     ->required()
                     ->maxLength(255),
 
                 TextInput::make('rotulo_das_organizacoes')
+                    ->extraInputAttributes(['autocomplete' => 'off'])
                     ->label('E no plural')
                     ->required()
                     ->maxLength(255),
