@@ -124,4 +124,4 @@ it('[CT-B02] entrega a faixa do rodape com o estilo do kit aplicado', function (
     expect($estilo['fontSize'])->toBe('12px', 'a faixa saiu com o tamanho padrão do navegador — a folha do kit não chegou');
     expect($estilo['textAlign'])->toBe('center', 'a faixa não está centralizada — a folha do kit não chegou');
     expect($estilo['opacity'])->toBeLessThan(1.0, 'a faixa está em opacidade cheia — a folha do kit não chegou');
-})->group('kit');
+})->group('browser-kit');

@@ -172,7 +172,7 @@ The other two already come complete.
 
 | Quality | |
 |---|---:|
-| Test cases (`Kit` + `Tenancy`, measured on 2026-09-23) | **2,872**, with **11,133 assertions** |
+| Test cases (`Kit` + `Tenancy`, measured on 2026-09-23) | **2,872**, with **11,137 assertions** |
 | Screens swept in a real browser | **55** |
 | Test files | **153** in `Kit` + `Tenancy` (**180** in total) |
 | PHPStan | **level 7**, zero errors |

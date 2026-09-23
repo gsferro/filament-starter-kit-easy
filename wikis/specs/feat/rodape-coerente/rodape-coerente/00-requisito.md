@@ -94,6 +94,17 @@ não autenticou."*
   **Efeito colateral a cobrir por caso**: quem hoje digitou `v1.2.3` passa a ver `vv1.2.3` no
   campo — o prefixo torna o erro visível, mas o dado sujo continua lá.
 
+- **RQ-05 — PERGUNTA ABERTA, e ela vai ao usuário antes de qualquer trabalho nesse sentido.**
+  *"Gerir melhor essa etapa de **dados** do rodapé"* inclui a **superfície de edição**?
+  A entrega atendeu a cláusula como **composição** — um ponto único monta a linha — e **não tocou
+  os dados**: as três chaves que compõem uma única faixa visual continuam em **duas abas
+  diferentes** da mesma tela (`nome_da_aplicacao` e `versao_do_sistema` em *Identidade*,
+  `login_rodape` em *Login*), e nada na tela diz que elas se combinam.
+  **Esta é a única cláusula do pedido resolvida por assunção**, enquanto as vizinhas foram levadas
+  ao usuário e voltaram decididas. Achado QA-01 do quality gate, ciclos 1 e 2 — no ciclo 1 eu a
+  registrei só no `03`, e o gate apontou que **o oráculo é o `00`**: quem lê o requisito não via
+  que a pergunta existia.
+
 - **RQ-05 — "gerir melhor" tem oráculo?**
   Não como está.
   **Assumido**: a entrega é um **ponto único de composição** do rodapé, com teste, em vez de a

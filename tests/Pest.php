@@ -1449,6 +1449,43 @@ function comIdentidade(?string $nome, ?string $versao, bool $exibirKit, ?string 
 }
 
 /**
+ * O texto do RECADO do rodape, recortado do elemento — e nao da cauda da pagina.
+ *
+ * Espelha `assinaturaDoRodape()`, e existe pelo mesmo motivo: `rodapeDe()` devolve tudo depois do
+ * ancora, inclusive o `wire:snapshot` do Livewire, onde o recado pode aparecer SERIALIZADO. Uma
+ * assercao de presenca sobre aquela cauda fica verde com a faixa inexistente.
+ *
+ * O Setup Global do `04` declara isso como regra — "rodapeDe() so serve de entrada para
+ * segmentoDaVersao() e para as assercoes de AUSENCIA" — e tres casos a violavam. Achado QA-07 do
+ * quality gate, que eu tinha declarado como lacuna quando custava este helper.
+ */
+function recadoDoRodape(string $html): string
+{
+    /*
+     * `preg_match_all` e a PRIMEIRA ocorrencia NAO-VAZIA, e as duas decisoes custaram medicao.
+     *
+     * 1. O `class` nao vem colado no `<div`: a blade quebra a linha entre a tag e os atributos,
+     *    entao o `[^>]*` no meio e obrigatorio.
+     *
+     * 2. A classe aparece MAIS DE UMA VEZ no documento. Um `preg_match` simples casa a primeira,
+     *    que nao e a faixa renderizada, e devolve conteudo vazio: o helper falhava aberto
+     *    exatamente como o `rodapeDe()` que ele veio substituir. Foram os controles positivos
+     *    dos casos que o pegaram, vermelhos na hora — e e por isso que eles existem.
+     */
+    if (preg_match_all('~<div[^>]*class="fi-login-rodape"[^>]*>(.*?)</div>~s', $html, $m) < 1) {
+        return '';
+    }
+
+    foreach ($m[1] as $conteudo) {
+        if (filled($texto = trim(strip_tags($conteudo)))) {
+            return $texto;
+        }
+    }
+
+    return '';
+}
+
+/**
  * O conteúdo TEXTUAL e normalizado do elemento que compõe a assinatura do rodapé.
  *
  * `Então o rodapé contém X` significa isto, nunca `rodapeDe()`: `rodapeDe()` devolve a cauda

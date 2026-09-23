@@ -34,7 +34,12 @@
 
 - [x] `docs/pt/` e `docs/en/` — a seção do rodapé reescrita com a tabela de quem vê o quê, o ano corrente, o afixo `v` e o alcance do recado
 - [x] `CHANGELOG.md` em `[Unreleased]` — **sem tag** (RQ-09)
-- [x] Contadores dos READMEs — arquivos 152→**153**, total 178→**180**, specs 67→**68**, casos 2.226→**2.872** e asserções 7.428→**11.133**, redatados para 2026-09-23
+- [ ] **Captura de arte NÃO refeita** — `art/login.png` e `art/panel-admin.png` mostram a tela
+      **sem** a assinatura, que a entrega passou a renderizar. **Débito explícito**, não
+      esquecimento: refazer as capturas exige `composer art`, que roda a suíte de browser inteira
+      e regrava binários. Achado QA-18 do ciclo 2 — o item estava no `01` e **não aparecia aqui**,
+      nem fechado nem adiado
+- [x] Contadores dos READMEs — arquivos 152→**153**, total 178→**180**, specs 67→**68**, casos 2.226→**2.872** e asserções 7.428→**11.137**, redatados para 2026-09-23
 
 ## Testes
 
@@ -50,72 +55,60 @@
 - [x] `vendor/bin/pest tests/Browser/RodapeNaDobraTest.php` — **6/6, 35 asserções**, 2026-09-23
 - [x] `vendor/bin/phpstan analyse` — level 7, **0 erros**, 2026-09-23
 - [x] `/code-review high main...HEAD` + passe de eixos (step 6.5) — **8 achados: 1 Blocker, 3 Major, 4 Minor**, todos fechados
-- [x] `feature-quality-gate` (step 8) — ciclo 1 **REPROVADO → especificação**; 10 achados fechados. Ver `## Quality Gate`
-- [x] `composer bp:off` — `ls vendor/filament/blueprint` não existe, e `composer.json`/`composer.lock` voltaram ao original, 2026-09-22
-- [x] Citações `arquivo:símbolo:linha` reverificadas — **5/5 ok** pela conferência mecânica, 2026-09-23. **4 estavam erradas** e foram corrigidas (QA-08):
-
-      ```
-      ConfiguraFilamentGlobal.php:configuraVersaoNoRodape  121 → 129
-      KitServiceProvider.php:configureTelaDeLogin          713 → 706
-      KitServiceProvider.php:configureLoginUnificado       754 → 782
-      ViewManager.php:renderHook                            94 → 74
-      ```
-
-      As 3 linhas que o script reporta como `ERRO` são formas **abreviadas** de path
-      (`.../HasAffixes.php`), que a conferência mecânica não resolve; as versões com path
-      completo passam.
-
-## Conformidade com Rules
-
-| Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
-|---|---|---|---|
-| `testes.md` — helper de dois arquivos vive em `tests/Pest.php` | `tests/**` | **aplicada** | 4 helpers migrados (`comVersoes`, `rodapeDe`, `segmentoDaVersao`, `temRotulo`) |
-| `testes.md` — `toContain()` não recebe mensagem | `tests/**` | **aplicada, e corrigiu um caso preexistente** | o loop de varredura do `[CT-13]` usava `not->toContain($x, $msg)`, que **nunca falha**; trocado por `assertStringNotContainsString`. O arquivo foi de 133 para 1.541 asserções |
-| `testes-browser.md` — o oráculo é número, não presença | `tests/Browser/**` | **aplicada** | `[CT-B01]` compara `getBoundingClientRect().bottom` com `innerHeight`. `assertVisible` **não** serviria: exige bounding box não-vazio, não estar no viewport |
-| `css-filament.md` — folha do kit precisa de guarda | `resources/css/filament/**` | **aplicada** | `[CT-B02]` mede `font-size`, `text-align` e `opacity` computados — os três divergem de uma vez se a folha não chegar |
-| `views.md` | `resources/views/**` | **aplicada** | saída escapada; nenhuma utilitária Tailwind emitida pela blade |
-| `app.md` | `app/**` | **n.a. no que ela exige** | nenhuma atribuição de papel/permissão, nenhum DTO |
-| `filament.md` | `app/Filament/**` | **aplicada** | `filacheck` 17/17; afixo nativo (`prefix()`), não componente custom |
-| `specs.md` | `wikis/specs/**` | **violada e corrigida** | 4 de 5 citações apontavam a linha errada (QA-08); corrigidas e reconferidas |
-
-## Quality Gate
+- [x] `feature-quality-gate` (step 8) — ciclo 1 **REPROVADO → especificação**; 10 achados fechados. Ver `## Quality Gate
 
 | Ciclo | Veredito | Blocker | Major | Minor | Cosmético | Data |
 |---|---|---|---|---|---|---|
 | 1 | REPROVADO → especificação | 0 | 4 | 5 | 1 | 2026-09-23 |
+| 2 | REPROVADO → especificação | 0 | 5 novos + 1 carregado | 6 novos + 2 | 2 | 2026-09-23 |
 
-**O veredito do ciclo 1, e ele é preciso**: *"o código está correto e medido, o que está errado é
-o que a wiki afirma sobre ele."*
+**O veredito dos dois ciclos é o mesmo, e é preciso**: *"o código está correto e medido, o que
+está errado é o que a wiki afirma sobre ele."* Nenhum dos 23 achados foi de comportamento do
+produto.
+
+### Ciclo 2 — 11 achados novos, 10 nascidos das correções do ciclo 1
 
 | # | Achado | Fechado por |
 |---|---|---|
-| QA-01 | `RQ-05` marcada *"Assumido"* enquanto as vizinhas foram ao usuário | reclassificada — ver `## Notas` |
-| QA-02 | **V3 e V5 falsas**, e o `03` as declarava *"confirmada"* | corrigidas em `00`, `01`, `03`, `04` e no comentário de `ConfiguraFilamentGlobal` |
-| QA-03 | o `03` com **27/27 checkboxes abertos** e a tabela de Rules vazia | este documento |
-| QA-04 | a correção de geometria **sem teste nenhum** | `tests/Browser/RodapeNaDobraTest.php`, provado por mutação |
-| QA-05 | Markdown literal no `helperText` (o Filament escapa com `e()`) | asteriscos removidos |
-| QA-06 | `rodapeDe()` sem controle positivo na mesma rota | o perigo está documentado no helper; ver lacuna abaixo |
-| QA-07 | 3 casos medem presença do recado em `rodapeDe()` | ver lacuna abaixo |
-| QA-08 | 4 de 5 citações na linha errada | corrigidas e reconferidas |
-| QA-09 | `.kit-versao` fora de landmark em página pública | `<footer>` |
-| QA-10 | contagem de casos do README desatualizada | 2.872 / 11.133, redatada |
+| QA-11 | `group('kit')` em arquivo de browser faz `--parallel --group=kit` selecionar navegador | `group('browser-kit')` |
+| QA-12 | a **regra de CSS**, que é o coração da correção do Blocker, sem passo no `01` nem ADR | passo 6 no `01`, **ADR-07** |
+| QA-13 | `[CT-B01]`/`[CT-B02]` só no teste; o `04` ainda dizia que não existiam e contava 4 sem matador | `## Gate de CT-B` reescrito; 4 → **2** |
+| QA-14 | *"5/5 ok, 3 ERRO"* falso nas três partes | **7/7 ok, 0 ERRO**, com o comando colado |
+| QA-15 | `01` ainda dizia *"nada que só o navegador prove"*, falseado pela própria entrega | riscado e reescrito |
+| QA-16 | a ADR-03 ficou com a citação velha que o ciclo 1 corrigiu nos outros três arquivos | `:121` → `:129` |
+| QA-17 | o **recado** continua fora de landmark | ver lacuna abaixo |
+| QA-18 | captura de arte não refeita, e o item sumiu do `03` | **débito explícito**, registrado |
+| QA-19 | 12 linhas de `.gitignore` sem `RQ`, passo ou ADR | **ADR-08** |
+| QA-20 | contagem de asserções errando por um | 11.137, medida |
+| QA-21 | a guarda de CSS sem controle positivo do detector | ver lacuna abaixo |
+| QA-22 | a correção de QA-09 sem oráculo que fixe a tag | ver lacuna abaixo |
+| QA-23 | o `06` do ciclo 1 não existe no disco | `06-relatorio-qa.md` gravado |
 
-**O gate também rejeitou hipóteses com evidência**, e isso dá confiança no que ele aprovou: mediu
-que a versão **não vaza** em nenhuma superfície pública (`app.version='999-sonda'` invisível em
-cinco rotas, inclusive no `wire:snapshot`), que o nome sai escapado em todas, e que os quatro
-números do README conferiam.
+**E os três que eu tinha declarado como lacuna irredutível no ciclo 1 — QA-01, QA-06 e QA-07 —
+foram fechados**, porque o gate estava certo ao chamá-los de racionalização:
+
+- **QA-01**: a pergunta foi para `00 ## Ambiguidades`. O gate apontou que **o oráculo é o `00`**;
+  registrá-la só no `03` deixava quem lê o requisito sem ver que ela existe
+- **QA-06**: uma linha — `expect(rodapeDe($html))->not->toBe('')` antes de cada ausência
+- **QA-07**: um helper de seis linhas, `recadoDoRodape()`, espelhando `assinaturaDoRodape()`
+
+**E o QA-07 cobrou o preço na hora**: o helper novo **falhava aberto pelo mesmo motivo** que o
+`rodapeDe()` que ele veio substituir — a classe `fi-login-rodape` aparece mais de uma vez no
+documento, e o `preg_match` simples casava a primeira, que não é a faixa renderizada. Quem o pegou
+foram os controles positivos do QA-06, vermelhos na hora. Corrigido com `preg_match_all` e a
+primeira ocorrência não-vazia.
 
 ### Lacunas que ficam declaradas
 
-- **QA-06 / QA-07** — `rodapeDe()` falha aberto e três casos medem presença na cauda em vez do
-  recorte. O gate **mediu** que nenhum é vácuo hoje (19.449 caracteres em `/admin/login`; o recado
-  não aparece serializado em nenhum `wire:snapshot`). Fica o perigo documentado no helper e estas
-  duas linhas
-- **M38** — `auth()->check()` no lugar de `filament()->auth()->check()` continua sem matador:
-  nesta instalação as duas expressões não divergem. O risco é do **projeto derivado**, e o
-  candidato é teste de arquitetura, não CT
-- **M51** — a tela **autenticada** do layout `simple` é a única célula em que R1 e R2 mandam
-  ambas aparecer, e nenhum cenário a visita
+- **QA-17** — o recado é irmão do `<footer>`, não filho: são dois callbacks independentes do mesmo
+  hook, e não há como um envolver o outro sem mover a lógica de escopo para dentro da blade.
+  Fechar exigiria um segundo landmark (`landmark-no-duplicate-contentinfo`) ou reunir os dois num
+  hook só, o que desfaria a ADR-01. **Declarado, com o custo nomeado**
+- **QA-21** — a guarda não tem controle positivo do **detector**: se um `composer update` remover
+  o `min-height: 100vh` do vendor, a regra do kit vira inócua e `[CT-B01]` fica verde. O padrão
+  que a rule pede (`OrdemDasCascadeLayersTest`) é o candidato
+- **QA-22** — nenhum caso afirma a **tag** `<footer>`; reverter para `<div>` deixa 113/113 verdes
+- **M38** e **M51** — já declarados no `04`
 
 ## Despachos
 

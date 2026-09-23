@@ -36,7 +36,7 @@ Feitas contra a **fonte instalada**, não contra a memória. Cada uma é premiss
 
 | # | Premissa | Como foi verificada | Resultado |
 |---|---|---|---|
-| V1 | `TextInput` aceita `prefix()` | `vendor/filament/forms/src/Components/TextInput.php:26` e `.../Concerns/HasAffixes.php:prefix:56` | **confirmado** |
+| V1 | `TextInput` aceita `prefix()` | `vendor/filament/forms/src/Components/TextInput.php:26` e `vendor/filament/forms/src/Components/Concerns/HasAffixes.php:prefix:56` | **confirmado** |
 | V2 | `prefix()` é **só exibição** | a assinatura recebe rótulo e não muta estado; `inlinePrefix()` (`:119`) é método à parte | **confirmado** — o valor gravado segue sem `v` |
 | V3 | quais layouts emitem `FOOTER` | ~~grep em `vendor/filament/filament/resources/views/`~~ → **grep em `vendor/` inteiro** | **CORRIGIDA (QA-02)**: são **três**, não dois — `filament/.../layout/index.blade.php:126`, `filament/.../layout/simple.blade.php:61` **e `caresome/filament-auth-designer/.../layouts/auth.blade.php:63`**. A primeira medição varreu **um só vendor**, e o terceiro é justamente o que estas telas usam |
 | V4 | ordem entre hooks no mesmo ponto | `vendor/filament/support/src/View/ViewManager.php:renderHook:74` | **sem escopo renderiza ANTES de com escopo**, independente da ordem de registro; dedupe por `spl_object_id` |
@@ -65,9 +65,16 @@ Feitas contra a **fonte instalada**, não contra a memória. Cada uma é premiss
 | Recado do rodapé, na tela de login | `FOOTER` **escopado** | idem | leitura | Não |
 | Campo "Versão do sistema" | `TextInput` com afixo | `/admin/configuracoes-da-aplicacao?tab=identidade` | digitar a versão | Não |
 
-**Gate de CT-B**: a entrega é composição de texto e ordem de render — nada que **só o navegador
-prove**. Os cenários vão para o `04`. **Exceção a avaliar no `04`**: a ordem visual na tela de
-login tem captura de arte, e o recado muda de lugar — mudança visual real.
+~~**Gate de CT-B**: a entrega é composição de texto e ordem de render — nada que **só o navegador
+prove**.~~ *(alterado em 2026-09-23: **a própria entrega falseou esta declaração** — QA-15.)*
+
+**Gate de CT-B — corrigido.** O step 6.5 achou um **Blocker que nenhuma das 113 asserções de HTML
+via**: a assinatura e o recado **abaixo da dobra** em toda tela de autenticação. Geometria só o
+navegador prova — `assertVisible` fica verde com o elemento fora do viewport, porque exige
+bounding box não-vazio, não estar na tela.
+
+Os cenários de composição vão para o `04`; os de **geometria e estilo computado** vão para
+`tests/Browser/RodapeNaDobraTest.php` (`[CT-B01]`, `[CT-B02]`).
 
 ## Modelo de Execução
 
@@ -179,6 +186,18 @@ atender RQ-08 e sai com `composer bp:off`.
 - O valor gravado continua sem `v` e a blade continua compondo o `v`. É isso que evita a duplicação
 - **Dado sujo preexistente**: quem já digitou `v1.2.3` passa a ver `vv1.2.3`. O prefixo **torna o
   erro visível**; não o corrige. Sem migração — ver ADR-06
+
+### 6. A regra de CSS que faz o rodapé caber na dobra (RQ-06)
+
+> Skills: `tailwindcss-development` · **Passo acrescentado em 2026-09-23** — ele **não estava no
+> plano**: nasceu do Blocker RD-01 do step 6.5, e o quality gate cobrou o registro (QA-12).
+
+- **Path**: `resources/css/filament/kit.css` **e** a cópia publicada `public/css/kit/kit-correcoes.css`
+- **O problema**: o layout do Auth Designer fixa `.fi-auth-layout` em `min-height: 100vh` e emite o
+  `FOOTER` **depois** de fechá-lo. O contêiner sozinho consome a dobra, e o rodapé sobra para fora
+- **A regra**: `body.fi-body:has(> .fi-auth-layout)` vira coluna e o layout cede a altura
+- **Escopada por `:has()`** para valer só nas telas de autenticação — ver ADR-07
+- **Guardada por** `[CT-B01]` e `[CT-B02]`
 
 ### 5. Documentação e CHANGELOG
 

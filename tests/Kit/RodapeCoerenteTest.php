@@ -316,7 +316,10 @@ it('[CT-08] o recado preenchido não substitui a assinatura', function (): void 
     $rodape = rodapeDe($html);
 
     $this->assertStringContainsString('© 2026 Acme', assinaturaDoRodape($html));
-    $this->assertStringContainsString('Fale com o suporte', $rodape);
+
+    // O RECORTE do elemento, e nao a cauda: `rodapeDe()` inclui o `wire:snapshot`, onde o recado
+    // pode aparecer serializado — presenca satisfeita com a faixa inexistente (QA-07).
+    $this->assertStringContainsString('Fale com o suporte', recadoDoRodape($html));
 })->group('kit');
 
 /**
@@ -402,7 +405,9 @@ it('[CT-11] o recado aparece em todas as telas de login', function (string $rota
 
     $html = (string) $this->get($rota)->assertOk()->getContent();
 
-    $this->assertStringContainsString('Fale com o suporte', rodapeDe($html));
+    // O RECORTE do elemento, e nao a cauda (QA-07). Este caso e o UNICO matador de M16/M17/M43
+    // — o escopo do hook —, entao e justamente aqui que o oraculo nao pode ser o da cauda.
+    $this->assertStringContainsString('Fale com o suporte', recadoDoRodape($html));
     $this->assertStringContainsString('© 2026 Acme', assinaturaDoRodape($html));
 })->with([
     'login de painel (a classe mãe)'          => ['/admin/login'],
@@ -429,8 +434,10 @@ it('[CT-12] o recado aparece na tela de login e não na tela autenticada', funct
     $html   = (string) $resposta->assertOk()->getContent();
     $rodape = rodapeDe($html);
 
+    // Presenca pelo RECORTE (QA-07); ausencia pela cauda, que e o recorte largo e correto para
+    // provar que o recado nao esta em lugar nenhum daquele pedaco.
     $espera
-        ? $this->assertStringContainsString('Fale com o suporte', $rodape)
+        ? $this->assertStringContainsString('Fale com o suporte', recadoDoRodape($html))
         : $this->assertStringNotContainsString('Fale com o suporte', $rodape);
 
     $this->assertStringContainsString('© 2026 Acme', assinaturaDoRodape($html));
@@ -610,6 +617,17 @@ it('[CT-16] a composição exata, com a versão do kit desligada', function (?st
     $html = (string) $this->actingAs(usuarioDoKit('admin'))->get('/admin')->assertOk()->getContent();
 
     if ($esperado === null) {
+        /*
+         * CONTROLE POSITIVO NA MESMA ROTA, e ele vem antes.
+         *
+         * `rodapeDe()` devolve '' em silencio quando nao acha o ancora, e string vazia satisfaz
+         * qualquer `assertStringNotContainsString`. Sem esta linha a ausencia abaixo ficaria
+         * verde sobre nada — e o docblock do proprio helper exige o controle NA MESMA ROTA, nao
+         * noutra. Achado QA-06 do quality gate, que eu tinha declarado como lacuna irredutivel
+         * quando custava uma linha.
+         */
+        expect(rodapeDe($html))->not->toBe('', 'rodapeDe() nao achou o rodape nesta rota — a ausencia abaixo mediria o vazio');
+
         $this->assertStringNotContainsString('kit-versao', rodapeDe($html));
 
         return;
@@ -688,6 +706,17 @@ it('[CT-18] para o visitante, a assinatura é a linha inteira', function (string
     $html = (string) $this->get('/admin/login')->assertOk()->getContent();
 
     if ($esperado === null) {
+        /*
+         * CONTROLE POSITIVO NA MESMA ROTA, e ele vem antes.
+         *
+         * `rodapeDe()` devolve '' em silencio quando nao acha o ancora, e string vazia satisfaz
+         * qualquer `assertStringNotContainsString`. Sem esta linha a ausencia abaixo ficaria
+         * verde sobre nada — e o docblock do proprio helper exige o controle NA MESMA ROTA, nao
+         * noutra. Achado QA-06 do quality gate, que eu tinha declarado como lacuna irredutivel
+         * quando custava uma linha.
+         */
+        expect(rodapeDe($html))->not->toBe('', 'rodapeDe() nao achou o rodape nesta rota — a ausencia abaixo mediria o vazio');
+
         $this->assertStringNotContainsString('kit-versao', rodapeDe($html));
 
         return;

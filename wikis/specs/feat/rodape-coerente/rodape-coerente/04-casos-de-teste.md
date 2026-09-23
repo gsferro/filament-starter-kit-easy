@@ -20,7 +20,7 @@
   (presente / ausente / uma vez só), **matriz superfície × audiência**, **normalização/escape**.
 - **Revisão adversarial: obrigatória e disparada** — perfil completo na área A **e** Impacto 3 em A e E.
   Resultado em [`## Revisão Adversarial`](#revisão-adversarial).
-- Cenários: **21** (CT-01…CT-22, com CT-06 fundido em CT-04) · Regras: **7** · Mutantes previstos: **57** · Sem matador: **4** (todos declarados: M33, M35, M38, M51).
+- Cenários: **21** (CT-01…CT-22, com CT-06 fundido em CT-04) · Regras: **7** · Mutantes previstos: **57** · Sem matador: **2** — M38 e M51 *(alterado em 2026-09-23, QA-13: `[CT-B01]` cobre M33 e `[CT-B02]` mata M35, em `tests/Browser/RodapeNaDobraTest.php`)*.
 
 > **Para quem for implementar**: o `--filter` do Pest casa a **descrição do `it()`**, não o
 > `[CT-nn]`. Depois de rodar, confira o campo `tests:` da saída — `--filter=CT-04` pode selecionar
@@ -974,33 +974,28 @@ aqui, na derivação, porque é derivando que se percebe o que mudou de superfí
 
 ## Gate de CT-B
 
-**Não foi criado `05-casos-de-teste-browser.md`** — e há um desvio a declarar, porque o gate tem
-duas leituras aqui:
+*(reescrito em 2026-09-23 — achado QA-13 do quality gate.)*
 
-- **O que o gate reprova**: composição de texto, presença, ausência, ordem no documento e escape
-  são todos prováveis por `GET` HTTP. Empurrar isso para o navegador seria o desperdício que a
-  skill proíbe.
-- **O que o gate aprovaria**: **M33** — a ordem **visual** das duas linhas depois do CSS. É a única
-  afirmação do conjunto que o navegador prova e o HTTP não. O candidato é um **CT-B01** em `/login`
-  medindo geometria por `script()` (`getBoundingClientRect().top` da assinatura < a do recado), no
-  molde de `.ai/rules/testes-browser.md`.
-- **Por que ele não foi escrito**: o escopo desta tarefa limita a saída ao `04`. **Decisão do
-  solicitante**, não do derivador. O atenuante está declarado em M33 (sem `viteTheme()`, utilitária
-  Tailwind emitida pela blade do kit é inerte), e ele reduz o risco — não o zera, porque o CSS do
-  kit em `resources/css/filament/` pode declarar a regra escapando do atenuante.
+**A versão anterior desta seção dizia que o `05` não foi criado porque o escopo da tarefa limitava
+a saída ao `04`. A entrega falseou isso.**
 
-### Cogitado e cortado
+O step 6.5 achou um **Blocker** que nenhuma das 113 asserções de HTML via: a assinatura terminando
+em `y=1122` e o recado em `y=1186`, num viewport de 1117px — os dois **abaixo da dobra**, em toda
+tela de autenticação, e o recado **regredindo** de visível para invisível.
 
-| Cenário cogitado | Por que foi cortado |
-|---|---|
-| CT-B: console limpo nas telas de login | já coberto pela suíte de browser do kit; esta entrega não acrescenta JS |
-| CT-B: a assinatura legível em dark mode | o requisito não determina cor nem contraste; vira achado do quality gate, não CT |
-| CT: `©` presente no comando `kit:info` | o requisito fala em **rodapé**; o comando não é superfície desta entrega |
-| CT: a assinatura no `<title>`/topbar | mesma razão — o `00` diz "ao exibir no rodapé" |
-| CT: o recado renderiza Markdown | comportamento **pré-existente**, não muda com esta entrega; a única metade nova é CT-20, que só afirma que o Markdown **continua** funcionando ao lado da assinatura |
-| CT: a assinatura na tela de configurações (autenticada, painel admin) | mesma partição de CT-01 `/admin`; mata o mesmo conjunto de mutantes |
+Os cenários de navegador vivem em `tests/Browser/RodapeNaDobraTest.php`:
 
----
+| Caso | O que mede | Mutante |
+|---|---|---|
+| `[CT-B01]` | `getBoundingClientRect().bottom` ≤ `innerHeight` em 5 rotas, e a ordem **visual** entre assinatura e recado | cobre **M33** |
+| `[CT-B02]` | `font-size`, `text-align` e `opacity` **computados** — os três divergem de uma vez se a folha do kit não chegar | mata **M35** |
+
+**`assertVisible` não serviria**: ele exige bounding box não-vazio, **não** exige estar no viewport.
+Um elemento a 1.122px num viewport de 1.117px é "visível" para ele.
+
+**Provados por mutação**, e o percurso vale registro: a primeira tentativa removeu a regra de CSS
+só de `resources/css/filament/kit.css` e os casos ficaram **verdes** — porque o Filament serve a
+cópia publicada em `public/css/kit/`. Mutando as duas, os 5 datasets ficam vermelhos.
 
 ## Índice de Cenários
 

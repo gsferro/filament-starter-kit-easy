@@ -104,7 +104,7 @@ duas foi um defeito real, corrigido por um adendo da wiki ancestral.
 ### Decisão
 
 `git mv` para **`assinatura-do-rodape.blade.php`**, com a referência atualizada em
-`ConfiguraFilamentGlobal:configuraVersaoNoRodape:121`.
+`ConfiguraFilamentGlobal:configuraVersaoNoRodape:129`.
 
 ### Alternativas Consideradas
 
@@ -226,7 +226,7 @@ continua sendo a blade.
 
 ### Por quê
 
-Verificado na fonte instalada (`HasAffixes.php:prefix:56`): o método recebe um rótulo e **não muta
+Verificado na fonte instalada (`vendor/filament/forms/src/Components/Concerns/HasAffixes.php:prefix:56`): o método recebe um rótulo e **não muta
 o estado**. É exibição.
 
 Isso é o que mantém os dois coerentes: **um só lugar acrescenta o `v`**. Se o prefixo gravasse, o
@@ -254,3 +254,86 @@ tela agora evidencia e que o admin corrige em dois segundos. O risco de uma migr
 - **Positivas**: um só ponto acrescenta o `v`; zero risco a dado existente
 - **Negativas**: base que já tem `v` gravado exibe `vv` até alguém corrigir. É visível, que é o
   oposto de silencioso
+
+---
+
+## ADR-07: O rodapé cabe na dobra por CSS do kit, e não mexendo no hook
+
+**Status**: Aceita · **Data**: 2026-09-23 · **Atende**: RQ-06 · **Origem**: Blocker RD-01 do step 6.5
+
+### Contexto
+
+O layout do `filament-auth-designer` — usado por **8 das 10** páginas de `app/Filament/Pages/Auth/`
+— fixa `.fi-auth-layout` em `min-height: 100vh` e emite o hook `FOOTER` **depois** de fechar a
+própria div. O contêiner sozinho consome a dobra inteira.
+
+Medido, viewport de 1117px: assinatura em `y=1122`, recado em `y=1186`. Os dois invisíveis sem
+rolar — e o recado **regredindo**, porque antes vivia dentro do cartão do formulário.
+
+### Decisão
+
+Uma regra de CSS do kit:
+
+```css
+body.fi-body:has(> .fi-auth-layout)                     { display: flex; flex-direction: column; }
+body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout   { min-height: 0; flex: 1 1 auto; }
+```
+
+Os três elementos são **irmãos diretos** de `body.fi-body`, que já tem `100vh` — medido. Basta o
+body ser a coluna e o layout parar de exigir a altura toda.
+
+### Alternativas Consideradas
+
+1. **Mover o rodapé para um hook interno** (`AuthDesignerRenderHook::CardAfter`) — descartada: põe
+   o rodapé **dentro do cartão**, o que ele não é, e acopla o kit a um hook proprietário do pacote
+2. **Voltar o recado para `AUTH_LOGIN_FORM_AFTER`** — descartada: quebra a ordem que o usuário
+   escolheu (assinatura acima), porque aquele hook sai **dentro** do cartão e o `FOOTER` fora
+3. **`min-height: calc(100vh - {altura})`** — descartada: número mágico que envelhece com o
+   conteúdo do rodapé
+
+### Consequências
+
+- **Positivas**: o hook fica intacto; a regra é de três linhas e escopada
+- **Negativas**: o kit passa a sobrescrever o dimensionamento de um layout de vendor. As variantes
+  `no-media` e `media-left` foram medidas; `media-top`, `media-bottom`, `media-right` e `cover`,
+  **não** — registrado como suspeita não confirmada
+- **Degradação declarada**: navegador sem `:has()` descarta a regra inteira e volta ao
+  comportamento anterior — **para o estado de hoje, não para um pior**
+- **Riscos**: a regra depende de dois fatos do vendor (`min-height: 100vh` e a posição do hook), e
+  `composer update` move âncoras em silêncio. Mitigação: `[CT-B01]`, provado por mutação
+
+---
+
+## ADR-08: As skills do Blueprint não são versionadas
+
+**Status**: Aceita · **Data**: 2026-09-22 · **Atende**: RQ-08 · **Origem**: QA-19
+
+### Contexto
+
+`composer bp:on` instala `filament/blueprint`, que traz três skills de agente
+(`planning-filament`, `reviewing-filament-plans`, `filament-security-audit`). Para o Claude Code as
+enxergar, elas precisam ser copiadas para `.claude/skills/` — diretório que **é versionado** neste
+repositório, com 18 skills de pacotes abertos.
+
+### Decisão
+
+Exclusão **cirúrgica** no `.gitignore`: as três do Blueprint, e só elas.
+
+### Por quê
+
+`filament/blueprint` vem de `packages.filamentphp.com`, um repositório **pago**, e este kit é
+distribuído publicamente por `composer create-project`. Versionar as skills seria **redistribuir
+material licenciado** a quem não tem licença.
+
+### Alternativas Consideradas
+
+1. **Ignorar `.claude/skills/` inteiro** — descartada: tiraria do versionamento as 18 skills
+   abertas que o kit entrega de propósito
+2. **Não copiar as skills** — descartada: sem a cópia o `subagent_type` falha, e a RQ-08 pede o
+   Blueprint
+
+### Consequências
+
+- **Positivas**: nenhum material licenciado no repositório público
+- **Negativas**: quem tiver licença refaz a cópia. O comando está escrito no próprio `.gitignore`
+
