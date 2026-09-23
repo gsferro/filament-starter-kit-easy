@@ -979,7 +979,7 @@ aqui, na derivação, porque é derivando que se percebe o que mudou de superfí
 **A versão anterior desta seção dizia que o `05` não foi criado porque o escopo da tarefa limitava
 a saída ao `04`. A entrega falseou isso.**
 
-O step 6.5 achou um **Blocker** que nenhuma das 113 casos de HTML via: a assinatura terminando
+O step 6.5 achou um **Blocker** que nenhum dos 113 casos de HTML via: a assinatura terminando
 em `y=1122` e o recado em `y=1186`, num viewport de 1117px — os dois **abaixo da dobra**, em toda
 tela de autenticação, e o recado **regredindo** de visível para invisível.
 

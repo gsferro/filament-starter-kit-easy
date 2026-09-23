@@ -7,7 +7,7 @@
  *
  * O `01-plano-acao.md` declarou, na seção `## Gate de CT-B`, que a entrega era "composição de
  * texto e ordem de render — nada que só o navegador prove". **A própria entrega falseou essa
- * declaração**: o step 6.5 achou um Blocker que nenhuma das 113 casos de HTML via — a
+ * declaração**: o step 6.5 achou um Blocker que nenhum dos 113 casos de HTML via — a
  * assinatura em `y=1122` e o recado em `y=1186` num viewport de 1117px, os dois abaixo da dobra.
  *
  * A correção foi uma regra de CSS (`resources/css/filament/kit.css`), e ela entrou **sem teste**.

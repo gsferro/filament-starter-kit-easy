@@ -68,7 +68,7 @@ Feitas contra a **fonte instalada**, não contra a memória. Cada uma é premiss
 ~~**Gate de CT-B**: a entrega é composição de texto e ordem de render — nada que **só o navegador
 prove**.~~ *(alterado em 2026-09-23: **a própria entrega falseou esta declaração** — QA-15.)*
 
-**Gate de CT-B — corrigido.** O step 6.5 achou um **Blocker que nenhuma das 113 casos de HTML
+**Gate de CT-B — corrigido.** O step 6.5 achou um **Blocker que nenhum dos 113 casos de HTML
 via**: a assinatura e o recado **abaixo da dobra** em toda tela de autenticação. Geometria só o
 navegador prova — `assertVisible` fica verde com o elemento fora do viewport, porque exige
 bounding box não-vazio, não estar na tela.

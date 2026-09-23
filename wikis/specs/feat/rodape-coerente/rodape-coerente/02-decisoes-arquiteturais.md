@@ -9,7 +9,7 @@
 O pedido diz *"precisamos que seja coerente ambos os cenarios"*. A leitura óbvia — **mesmo
 conteúdo nos dois** — colide com uma decisão anterior e registrada: o rodapé dos painéis esconde a
 versão de quem não autenticou, porque mostrá-la *"é entregar o mapa de CVEs aplicáveis a quem ainda
-não autenticou"* (`resources/views/filament/versao-do-kit.blade.php`).
+não autenticou"* — hoje `resources/views/filament/assinatura-do-rodape.blade.php`, renomeada por esta entrega (ADR-03).
 
 Uma superfície é pública, a outra não. Sem resolver isso, "coerência" desfaria a decisão de
 segurança sem que ninguém a tivesse revisto.
@@ -21,7 +21,7 @@ decide o que entra nela:
 
 | | Visitante | Autenticado |
 |---|---|---|
-| `© {Nome}` | ✅ | ✅ |
+| `© {ano} {Nome}` | ✅ | ✅ |
 | `v{versão}` | ❌ | ✅ |
 | `kit {versão}` | ❌ | ✅, se o toggle estiver ligado |
 

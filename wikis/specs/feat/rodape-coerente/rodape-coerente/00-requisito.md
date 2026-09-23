@@ -53,7 +53,7 @@ São **dois rodapés independentes**, e a independência é **deliberada e docum
 emitem o mesmo hook que o layout de painel autenticado — usar o
 `FOOTER` faria o texto do login aparecer em **toda tela do sistema**.
 
-**Por que o rodapé dos painéis tem guarda de visitante** (`versao-do-kit.blade.php`): o hook
+**Por que o rodapé dos painéis tem guarda de visitante** (`assinatura-do-rodape.blade.php`, na época `versao-do-kit.blade.php`): o hook
 `FOOTER` é emitido pelos **dois** layouts. Sem a guarda, *"a versão exata da instalação apareceria
 para QUALQUER visitante da tela de login — que é entregar o mapa de CVEs aplicáveis a quem ainda
 não autenticou."*
@@ -67,7 +67,7 @@ não autenticou."*
   isso desfaria a decisão anterior sem que ninguém a tenha revisto.
 
   **DECIDIDO com o usuário em 2026-09-22**: coerente é **mesma linha automática nos dois, com
-  visibilidade diferente**. Um **ponto único de composição** monta `© {Nome}` para todo mundo e
+  visibilidade diferente**. Um **ponto único de composição** monta `© {ano} {Nome}` para todo mundo e
   acrescenta a versão **só para autenticado**. Na tela de login, o texto livre do admin passa a ser
   uma linha **adicional**, abaixo da automática — e não a única.
 
