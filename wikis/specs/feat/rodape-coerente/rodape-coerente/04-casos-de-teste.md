@@ -133,7 +133,7 @@ e o sintoma é `Call to undefined function`, que não aponta a causa:
 | Helper | O que faz | Onde está hoje |
 |---|---|---|
 | `comVersoes(?string $sistema, bool $exibirKit)` | fixa `app.version` e `kit.exibir_versao` | `VersaoNoRodapeTest.php:40` → **mover** |
-| `rodapeDe(string $html)` | tudo depois do último `</main>` — vale nos dois layouts (V5) | `:61` → **mover** |
+| `rodapeDe(string $html)` | tudo depois do último `</main>` — ~~vale nos dois layouts (V5)~~ **NÃO vale no layout do Auth Designer, que não tem `<main>`**; a implementação precisou de um segundo âncora (`rodapeDoLayoutDeAutenticacao()`). V5 estava errada — QA-02 | `:61` → **mover** |
 | `segmentoDaVersao(string $html, string $versao)` | o segmento entre ` · ` em que a versão aparece | `:90` → **mover** |
 | `temRotulo(string $segmento)` | o segmento tem palavra de 2+ letras | `:116` → **mover** |
 | `ligarLoginUnificado(bool)` | `kit.login.unificado` | já em `tests/Pest.php:507` |

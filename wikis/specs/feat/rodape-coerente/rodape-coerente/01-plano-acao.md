@@ -38,16 +38,23 @@ Feitas contra a **fonte instalada**, não contra a memória. Cada uma é premiss
 |---|---|---|---|
 | V1 | `TextInput` aceita `prefix()` | `vendor/filament/forms/src/Components/TextInput.php:26` e `.../Concerns/HasAffixes.php:prefix:56` | **confirmado** |
 | V2 | `prefix()` é **só exibição** | a assinatura recebe rótulo e não muta estado; `inlinePrefix()` (`:119`) é método à parte | **confirmado** — o valor gravado segue sem `v` |
-| V3 | quais layouts emitem `FOOTER` | grep em `vendor/filament/filament/resources/views/` | **exatamente dois**: `components/layout/index.blade.php:126` e `components/layout/simple.blade.php:61` |
-| V4 | ordem entre hooks no mesmo ponto | `vendor/filament/support/src/View/ViewManager.php:renderHook:94` | **sem escopo renderiza ANTES de com escopo**, independente da ordem de registro; dedupe por `spl_object_id` |
-| V5 | onde o `FOOTER` cai na tela de login | `simple.blade.php`: slot na 57, fecha `main` na 58, `FOOTER` na **61** | o `FOOTER` sai **fora e abaixo** do cartão do formulário |
+| V3 | quais layouts emitem `FOOTER` | ~~grep em `vendor/filament/filament/resources/views/`~~ → **grep em `vendor/` inteiro** | **CORRIGIDA (QA-02)**: são **três**, não dois — `filament/.../layout/index.blade.php:126`, `filament/.../layout/simple.blade.php:61` **e `caresome/filament-auth-designer/.../layouts/auth.blade.php:63`**. A primeira medição varreu **um só vendor**, e o terceiro é justamente o que estas telas usam |
+| V4 | ordem entre hooks no mesmo ponto | `vendor/filament/support/src/View/ViewManager.php:renderHook:74` | **sem escopo renderiza ANTES de com escopo**, independente da ordem de registro; dedupe por `spl_object_id` |
+| V5 | onde o `FOOTER` cai na tela de login | ~~`simple.blade.php`~~ → **`auth-designer/.../auth.blade.php`**: `.fi-auth-layout` abre na 28, fecha na **60**, `FOOTER` na **63** | **CORRIGIDA (QA-02)**: **8 de 10 páginas de `app/Filament/Pages/Auth/` redeclaram `$layout` para o do Auth Designer**, que **não tem `<main>`**. A medição original foi feita no layout errado — e foi ela que produziu o **Blocker de geometria** do step 6.5 |
 | V6 | o que `getRenderHookScopes()` devolve | `vendor/filament/filament/src/Pages/BasePage.php:getRenderHookScopes:200` | `[static::class]` — a classe **concreta** |
-| V7 | classes de página de login em uso | `usingPage(TelaLogin::class)` nos três providers; rota `/login` para `TelaLoginUnificada` em `app/Providers/KitServiceProvider.php:configureLoginUnificado:754` | **duas**, e a segunda **estende** a primeira — por V6, escopar só na mãe **não pega** a filha |
+| V7 | classes de página de login em uso | `usingPage(TelaLogin::class)` nos três providers; rota `/login` para `TelaLoginUnificada` em `app/Providers/KitServiceProvider.php:configureLoginUnificado:782` | **duas**, e a segunda **estende** a primeira — por V6, escopar só na mãe **não pega** a filha |
 
-> **V5 é o achado que inverte o plano ingênuo.** Acrescentar o `©` à blade do `FOOTER` e deixar o
-> recado onde está colocaria a assinatura **abaixo** do texto livre, porque o
-> `AUTH_LOGIN_FORM_AFTER` sai dentro do `main` e o `FOOTER` depois dele. A ordem pedida exige
-> mover o recado.
+> **V5 inverteu o plano ingênuo — e estava medindo o layout errado.**
+>
+> A conclusão **sobreviveu**: o `AUTH_LOGIN_FORM_AFTER` sai dentro do cartão do formulário e o
+> `FOOTER` fora e abaixo dele, então mover o recado continua sendo necessário para a ordem pedida.
+>
+> O que não sobreviveu foi a **premissa**. Eu medi o `simple.blade.php` do Filament, e estas telas
+> usam o layout do `filament-auth-designer` — que não tem `<main>` e, pior, fixa `.fi-auth-layout`
+> em `min-height: 100vh` emitindo o `FOOTER` **depois** de fechá-lo. Foi isso que pôs a assinatura
+> **abaixo da dobra** e virou o Blocker do step 6.5, fechado por regra de CSS.
+>
+> **A lição**: `grep` num vendor só responde sobre aquele vendor. Achado QA-02 do quality gate.
 
 ## Superfície de UI
 
@@ -143,7 +150,7 @@ atender RQ-08 e sai com `composer bp:off`.
 
 - **Path**: `resources/views/filament/versao-do-kit.blade.php` → **`assinatura-do-rodape.blade.php`**
   (`git mv`); atualizar a referência em
-  `app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraVersaoNoRodape:121`
+  `app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraVersaoNoRodape:129`
 - **A guarda se estreita**: o `@if` deixa de envolver o bloco e passa a decidir só o argumento —
   `AssinaturaDoRodape::partes(comVersao: filament()->auth()->check())`
 - **Saída escapada** — nunca HTML cru. `app.name` vem de campo editável e esta blade passa a
@@ -154,7 +161,7 @@ atender RQ-08 e sai com `composer bp:off`.
 
 > Skills: `filament-development`
 
-- **Path**: `app/Providers/KitServiceProvider.php:configureTelaDeLogin:713`
+- **Path**: `app/Providers/KitServiceProvider.php:configureTelaDeLogin:706`
 - Sai de `AUTH_LOGIN_FORM_AFTER` e vai para `FOOTER` **com `scopes:`**, listando **as duas**
   classes (V6/V7): `TelaLogin::class` e `TelaLoginUnificada::class`
 - **Por que isso resolve a ordem**: por V4 o hook **sem escopo** renderiza antes do **com escopo**,

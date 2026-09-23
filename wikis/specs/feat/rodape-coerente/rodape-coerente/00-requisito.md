@@ -43,13 +43,14 @@ São **dois rodapés independentes**, e a independência é **deliberada e docum
 | | Rodapé dos painéis | Rodapé da tela de login |
 |---|---|---|
 | Arquivo | `resources/views/filament/versao-do-kit.blade.php` | `resources/views/filament/auth/rodape-login.blade.php` |
-| Registro | hook `PanelsRenderHook::FOOTER`, sem `scopes:` (`app/Providers/Concerns/ConfiguraFilamentGlobal.php:121`) | registro próprio, **fora** do `FOOTER` (`app/Providers/KitServiceProvider.php:715`) |
+| Registro | hook `PanelsRenderHook::FOOTER`, sem `scopes:` (`app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraVersaoNoRodape:129`) | registro próprio, **fora** do `FOOTER` (`app/Providers/KitServiceProvider.php:configureTelaDeLogin:706`) |
 | Conteúdo | composto por código: `v{app.version}` e, opcional, `kit {kit.version}`, unidos por ` · ` | **texto livre** do admin, em Markdown, campo `login_rodape` |
 | Audiência | **só autenticado** — `filament()->auth()->check()` | **público** |
 | Origem do dado | `config('app.version')`, semeado por `APP_VERSION` | `config('kit.login.rodape')`, editável em `MarkdownEditor` |
 
 **Por que o rodapé do login não usa o hook `FOOTER`** (`KitServiceProvider.php:693-700`): o layout
-`simple`, das telas de login, emite o mesmo hook que o layout de painel autenticado — usar o
+`simple` do Filament **e o do `filament-auth-designer`, que é o que estas telas de fato usam**,
+emitem o mesmo hook que o layout de painel autenticado — usar o
 `FOOTER` faria o texto do login aparecer em **toda tela do sistema**.
 
 **Por que o rodapé dos painéis tem guarda de visitante** (`versao-do-kit.blade.php`): o hook
@@ -86,7 +87,7 @@ não autenticou."*
 
 - **RQ-03 — o prefixo `v` é de exibição ou entra no valor gravado?**
   O recurso citado pelo usuário (`prefix()`) é **de exibição**: não altera o que é gravado.
-  E a blade **já** antepõe `'v'` (`versao-do-kit.blade.php:59`).
+  E a blade **já** antepõe `'v'` (`assinatura-do-rodape.blade.php:59`).
   **Assumido**: prefixo só no formulário, valor gravado continua sem `v`, rodapé continua
   compondo o `v`. É o que torna os dois coerentes sem duplicar o caractere.
   **Se negado**: seria preciso decidir o que fazer com os valores já gravados.

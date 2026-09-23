@@ -1399,7 +1399,7 @@ function segmentoDaVersao(string $html, string $versao): string
      * da página, com menu do usuário, scripts e texto de sobra. O recorte tem de ser o elemento
      * que a feature emite, e só ele.
      */
-    if (preg_match('~<div class="kit-versao">(.*?)</div>~s', $html, $m) !== 1) {
+    if (preg_match('~<(?:div|footer) class="kit-versao">(.*?)</(?:div|footer)>~s', $html, $m) !== 1) {
         return '';
     }
 
@@ -1467,7 +1467,7 @@ function comIdentidade(?string $nome, ?string $versao, bool $exibirKit, ?string 
  */
 function assinaturaDoRodape(string $html): string
 {
-    if (preg_match('~<div class="kit-versao">(.*?)</div>~s', $html, $m) !== 1) {
+    if (preg_match('~<(?:div|footer) class="kit-versao">(.*?)</(?:div|footer)>~s', $html, $m) !== 1) {
         return '';
     }
 

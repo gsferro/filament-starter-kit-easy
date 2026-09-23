@@ -571,7 +571,7 @@ it('[CT-10] exibe no rodape exatamente o que foi gravado na tela', function (str
     $rodape = rodapeDe((string) $this->get('/admin')->assertOk()->getContent());
 
     if ($exibido === null) {
-        preg_match('~<div class="kit-versao">(.*?)</div>~s', $rodape, $match);
+        preg_match('~<(?:div|footer) class="kit-versao">(.*?)</(?:div|footer)>~s', $rodape, $match);
 
         /*
          * IGUALDADE EXATA, e nao "nao contem o separador".

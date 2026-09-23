@@ -54,11 +54,18 @@
     compilada e o rodapé sairia sem estilo nenhum, com o teste verde (`.ai/rules/css-filament.md`).
     A classe é do kit e mora em `resources/css/filament/kit.css`. Ela não declara COR de propósito:
     herda a do tema e usa `opacity`, então funciona no claro e no escuro sem um par de regras.
+
+    ── `<footer>`, e não `<div>` ──
+
+    O elemento é filho direto de `<body>` e renderiza em tela PÚBLICA. Como `<div>`, o axe-core
+    acusava `region` — conteúdo fora de qualquer landmark — nas telas de autenticação, que é onde
+    a assinatura passou a aparecer. `<footer>` nessa posição tem `role=contentinfo` implícito e
+    resolve sem atributo extra. Achado QA-09 do quality gate.
 --}}
 @php
     $partes = \App\Support\AssinaturaDoRodape::partes(comVersao: filament()->auth()->check());
 @endphp
 
 @if ($partes !== [])
-    <div class="kit-versao">{{ implode(' · ', $partes) }}</div>
+    <footer class="kit-versao">{{ implode(' · ', $partes) }}</footer>
 @endif

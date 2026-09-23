@@ -302,7 +302,7 @@ class ConfiguracoesDoKit extends SettingsPage
                      */
                     ->prefix('v')
                     ->label('Versão do sistema')
-                    ->helperText('A versão do SEU produto, exibida no rodapé. **O `v` à esquerda já é do campo** — digite só o número (`1.2.3`), senão o rodapé mostra `vv1.2.3`. Em branco, o rodapé não mostra versão. APP_VERSION no .env semeia este campo na instalação; depois disso é aqui que se troca — o valor gravado vence o arquivo, inclusive quando está vazio.')
+                    ->helperText('A versão do SEU produto, exibida no rodapé. O `v` à esquerda já é do campo: digite só o número (`1.2.3`), senão o rodapé mostra `vv1.2.3`. Em branco, o rodapé não mostra versão. APP_VERSION no .env semeia este campo na instalação; depois disso é aqui que se troca — o valor gravado vence o arquivo, inclusive quando está vazio.')
                     ->placeholder('1.0.0')
                     ->maxLength(50),
 
