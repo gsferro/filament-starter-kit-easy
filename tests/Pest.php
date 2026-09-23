@@ -1303,6 +1303,16 @@ function comVersoes(?string $sistema, bool $exibirKit): void
 }
 
 /**
+ * ATENCAO ao usar esta funcao em assercao de AUSENCIA.
+ *
+ * Ela devolve `''` em silencio quando nao acha o ancora — e string vazia satisfaz qualquer
+ * `assertStringNotContainsString`. Falha ABERTO, que e o defeito n.1 desta base
+ * (`.ai/rules/testes.md`). Achado RD-06 do step 6.5.
+ *
+ * Todo caso que a usa para provar ausencia precisa de um controle positivo NA MESMA ROTA,
+ * provando que ela devolveu conteudo ali — nao basta um controle positivo noutra rota.
+ */
+/**
  * O RODAPÉ da página, e não a página inteira.
  *
  * É oráculo, não conveniência. `assertSee` sobre o documento todo fica verde com a versão emitida

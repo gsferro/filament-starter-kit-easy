@@ -532,12 +532,35 @@ it('[CT-43] mostra a versao do kit no comando de informacoes mesmo com o toggle 
  * inteiro suma.
  */
 it('[CT-10] exibe no rodape exatamente o que foi gravado na tela', function (string $digitado, ?string $gravado, ?string $exibido): void {
+    /*
+     * O NOME fixado, e nao herdado do `.env` da maquina.
+     *
+     * A assinatura (`© {ano} {nome}`) passou a sustentar o elemento sozinha, entao a linha
+     * "versao vazia" deste caso depende de `app.name` — uma chave que o caso nunca arranjava e
+     * que o `phpunit.xml` NAO forca. Com `APP_NAME=""` no ambiente, `partes()` devolve `[]`, a
+     * blade nao emite a div e o caso ficava VERMELHO CONTRA UMA IMPLEMENTACAO CORRETA.
+     *
+     * E a regra que o docblock de `comIdentidade()` enuncia, e que este caso estava violando:
+     * todo `Dado` fixa as chaves de que a assercao depende, e nao so a que o cenario discute.
+     * Achado RD-03 do step 6.5.
+     */
+    emJunhoDe2026();
+
     $this->actingAs(usuarioDoKit('admin'));
 
     Filament::setCurrentPanel('admin');
 
     Livewire::test(ConfiguracoesDoKit::class)
-        ->fillForm(['versao_do_sistema' => $digitado])
+        /*
+         * O NOME vai no mesmo `fillForm`, e nao num `config()->set`.
+         *
+         * A assinatura passou a sustentar o elemento sozinha, entao a linha "versao vazia" deste
+         * caso depende de `app.name` — chave que o caso nao arranjava e que o `phpunit.xml` NAO
+         * forca. Pior: um `config()->set('app.name', ...)` aqui seria SOBRESCRITO pelo
+         * `alinharConfiguracoesDoKit()` logo abaixo, que relê tudo do banco de settings. O `Dado`
+         * tem de entrar pelo mesmo caminho que a tela usa. Achado RD-03 do step 6.5.
+         */
+        ->fillForm(['nome_da_aplicacao' => 'Acme', 'versao_do_sistema' => $digitado])
         ->call('save')
         ->assertHasNoFormErrors();
 
@@ -550,11 +573,18 @@ it('[CT-10] exibe no rodape exatamente o que foi gravado na tela', function (str
     if ($exibido === null) {
         preg_match('~<div class="kit-versao">(.*?)</div>~s', $rodape, $match);
 
-        // O elemento continua existindo — por causa da assinatura, que passou a aparecer sempre
-        // (`feat/rodape-coerente`) — e o que se prova é a AUSÊNCIA de separador dentro dele: sem
-        // versão, não há segmento de versão ao lado da assinatura.
-        expect($match[1] ?? null)->not->toBeNull('o elemento kit-versao deveria existir por causa da assinatura');
-        $this->assertStringNotContainsString('·', $match[1], 'um separador solto indicaria versão vazia deixando marca');
+        /*
+         * IGUALDADE EXATA, e nao "nao contem o separador".
+         *
+         * A primeira redacao deste ramo pedia so `!== null` e `nao contem '·'`. Um mutante que
+         * emitisse `<div class="kit-versao"></div>` VAZIO passava nas duas — e era exatamente o
+         * mutante que o docblock original deste caso declarava como sua razao de ser. O caso
+         * tinha perdido o proprio oraculo e passado a depender do vizinho. Achado RD-03.
+         *
+         * Com o conteudo fixado, o que se afirma e o texto inteiro: a assinatura esta la, a
+         * versao nao, e nao sobrou marca de separador.
+         */
+        expect(trim(strip_tags($match[1] ?? '')))->toBe('© 2026 Acme');
 
         return;
     }

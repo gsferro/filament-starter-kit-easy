@@ -691,14 +691,13 @@ class KitServiceProvider extends ServiceProvider
      * pede o botao. Registrar global e seguro porque essa chave nao e emitida em nenhuma
      * outra tela.
      *
-     * O rodape NAO usa o hook `FOOTER`, apesar de o layout do Auth Designer renderizar aquele
-     * hook (`filament-auth-designer/resources/views/components/layouts/auth.blade.php:63`):
-     * o layout de painel autenticado tambem renderiza `FOOTER`, e o rodape apareceria em toda
-     * tela de todo painel. Ver ADR-05.
+     * O rodape USA o hook `FOOTER`, com `scopes:`. Ate a feature `rodape-coerente` ele NAO usava,
+     * e o motivo era bom: o layout de painel autenticado tambem emite `FOOTER`, e o texto
+     * apareceria em toda tela de todo painel. O `scopes:` e o que resolveu — o motivo continua
+     * valendo, e passou a ser atendido de outro jeito.
      *
      * Duas registracoes e nao um blade com dois blocos: as duas superficies tem condicoes
-     * independentes — os botoes dependem das credenciais de cada provedor, o rodape do texto. A
-     * ordem de render e a ordem de registro, entao os botoes vem antes do rodape.
+     * independentes — os botoes dependem das credenciais de cada provedor, o rodape do texto.
      *
      * A view dos botoes e UMA para os quatro provedores: ela percorre
      * `ConfiguracaoDoLogin::disponiveis()`. Provedor novo aparece na tela de login sem tocar
@@ -721,8 +720,19 @@ class KitServiceProvider extends ServiceProvider
          *    "assinatura em cima, recado embaixo" sem acoplar os dois registros.
          *
          *    Nao daria para conseguir isso deixando o recado em `AUTH_LOGIN_FORM_AFTER`: naquele
-         *    hook ele sai DENTRO do `<main>` do layout `simple`, e o `FOOTER` sai depois do
-         *    `</main>` — ou seja, a assinatura apareceria ABAIXO do recado.
+         *    hook ele sai DENTRO do cartao do formulario, e o `FOOTER` sai fora e abaixo dele —
+         *    ou seja, a assinatura apareceria ABAIXO do recado.
+         *
+         *    ATENCAO ao medir isto de novo: estas telas NAO usam o layout `simple` do Filament.
+         *    `TelaLogin`, `TelaLoginUnificada` e `TelaRecuperarSenha` redeclaram `$layout` para
+         *    `filament-auth-designer::components.layouts.auth`, que nao tem `<main>`. A primeira
+         *    versao deste comentario argumentava sobre o `simple.blade.php` e media o layout
+         *    errado — achado RD-02 do step 6.5.
+         *
+         *    Esse layout tambem fixa `.fi-auth-layout` em `min-height: 100vh` e emite o `FOOTER`
+         *    DEPOIS de fechar a propria div: sem a regra de CSS que `resources/css/filament/kit.css`
+         *    acrescentou, a assinatura e o recado caem ABAIXO DA DOBRA. Medido: y=1122 e y=1186
+         *    num viewport de 1117px.
          *
          * 2. ALCANCE. O motivo de o recado nunca ter usado o `FOOTER` continua valendo: aquele
          *    hook e emitido TAMBEM pelo layout de painel autenticado, e o texto apareceria em

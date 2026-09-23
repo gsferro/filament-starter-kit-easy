@@ -39,7 +39,7 @@ namespace App\Support;
  * `empty('0')` é `true` em PHP, e uma versão `0` sumiria levando o separador junto. `filled()`
  * trata `'0'` como presente e `'   '` como ausente, que é o que se quer nos dois casos.
  */
-class AssinaturaDoRodape
+final class AssinaturaDoRodape
 {
     /**
      * As partes da assinatura, na ordem de exibição.
