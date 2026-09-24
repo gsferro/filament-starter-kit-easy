@@ -5,6 +5,77 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Seguranca
+
+- **O kit nao distribui mais uma credencial utilizavel.** `.env.example` trazia
+  `KIT_ADMIN_PASSWORD=password`, e o `config/kit.php` repetia o literal como fallback: toda
+  instalacao que nao trocasse a senha nascia com **a mesma credencial**, publicada no repositorio.
+
+  A saida nao foi exigir que alguem defina a senha antes de instalar — isso transformaria a
+  instalacao de um comando em duas etapas. O `kit:install` passou a **gerar** uma senha aleatoria
+  de 24 caracteres, grava-la no `.env` e imprimi-la **uma vez** ao final. Quem preferir escolher a
+  propria escreve `KIT_ADMIN_PASSWORD` antes de instalar, e o instalador respeita.
+
+  A senha so aparece no terminal quando **esta execucao a gerou**. Ate aqui a linha imprimia
+  `config('kit.admin.password')` sempre, inclusive a senha que o usuario havia escolhido — que
+  ninguem pediu para ver no terminal nem no log de CI.
+
+- **O diagnostico de permissao da pagina 403 deixou de aparecer em staging.** A guarda era
+  `! app()->isProduction()`, que deixava o diagnostico ligado em `staging` e em qualquer ambiente
+  nomeado de outra forma (`homolog`, `qa`, `demo`) — justamente onde ha dado parecido com o real e
+  gente de fora olhando. Virou lista fechada: `local` e `testing`. Ambiente novo nasce fechado.
+
+- **`spatie/laravel-backup` tinha constraint `"*"`**, sem teto de major. Um `composer update` de
+  rotina traria uma major nova de terceiro para dentro do kit sem aviso. Fechado em `^10.3`, e uma
+  guarda (`tests/Kit/ConstraintDeDependenciaTest.php`) reprova a proxima que nascer aberta.
+
+### Corrigido
+
+- **`lang/pt_BR.json` nunca chegava a quem atualiza — a TERCEIRA ocorrencia da mesma classe.**
+  Sao 33 strings que traduzem telas de plugin de terceiro que so vem em ingles (commit `5511a0a`),
+  e a chave nao estava em `KitUpdate::CAMINHOS_DO_KIT`. **Quem instalou antes daquele commit e vem
+  rodando `kit:update` continua vendo o /infra em ingles**, apesar de o kit prometer UI traduzida.
+
+  As duas ocorrencias anteriores foram `resources/views/svg` (v0.23.0) e `tests/Browser` (v0.39.1).
+  Nas tres, a varredura de completude existia e estava cega — porque o escopo dela e uma terceira
+  lista mantida a mao, e `lang` nao estava nela. Corrigido nos dois niveis.
+
+### Adicionado
+
+- **Guarda das duas rotas de entrega** (`tests/Kit/DuasRotasDeEntregaTest.php`). O kit entrega
+  arquivo por dois caminhos governados por listas de formas **opostas**: o `.gitattributes` e de
+  **exclusao** (viaja tudo menos o marcado) e o `CAMINHOS_DO_KIT` e de **inclusao** (so viaja o
+  listado). Duas listas assim divergem sozinhas — basta um diretorio novo nascer.
+
+  A guarda afirma que todo caminho que viaja esta coberto pelo `kit:update` **ou** foi declarado
+  em `FORA_DA_ENTREGA_POR_DECISAO`, **com o motivo escrito**. Caminho novo nasce reprovando.
+
+  Ela desce ao segundo nivel quando a cobertura e parcial, e isso nao e detalhe: a primeira
+  redacao parava no topo, via `tests` como coberto por `tests/Kit`, e **deixaria passar a propria
+  ocorrencia 2 que a motivou** — o mutante sobreviveu a bateria e a correcao veio dai.
+
+  Ela **deriva do `git ls-files`, nao do disco**. A primeira redacao lia o disco e passava aqui
+  enquanto reprovava no CI: `public/build` e gerado por `npm run build`, existe na maquina de quem
+  desenvolve e nao no job `qualidade`, que nao faz build. O CI estava certo. O que e rastreado e
+  igual em toda maquina, e o que e gitignorado nao viaja por **nenhuma** das duas rotas — logo
+  nunca pode divergir entre elas, que e a unica coisa que esta guarda existe para medir.
+
+  **Cinco divergencias reais no primeiro uso, todas de material de IA**: `.agents`, `.ai/mcp`,
+  `.ai/skills`, `.claude` e `.junie` viajavam no `create-project` e **nao** eram entregues pelo
+  `kit:update`. Quem instalava ficava com as skills da versao de instalacao para sempre — e elas
+  mudam mais rapido que o codigo (a `feature-wiki` ja esta na 3.5.0). As cinco entraram em
+  `CAMINHOS_DO_KIT`, ao lado do `.ai/rules` que ja estava la pelo mesmo argumento.
+
+  O debito mais caro que ela tornou visivel: `bootstrap/app.php` registra o middleware
+  `RaizDeUrlSemPublic` do kit (v0.36.1) e **nao e entregue pelo update**, porque o arquivo tambem
+  e do esqueleto. Quem instalou antes da v0.36.1 tem a classe e nao tem o registro. A saida
+  estrutural — o kit registrar o proprio middleware pelo `KitServiceProvider`, que viaja pelas
+  duas rotas — esta declarada e ainda nao foi feita.
+
+- **Guarda de constraint de dependencia** (`tests/Kit/ConstraintDeDependenciaTest.php`), com lista
+  **fechada** de formas aceitas: operador novo ou grafia inesperada nasce reprovando.
+
+
 ### Alterado
 
 - **O CI passou a rodar a suite em paralelo, com cache de dependencia.** O job `qualidade` rodava

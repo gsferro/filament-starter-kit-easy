@@ -150,7 +150,7 @@ final class CustomizadorDaInstalacao
             ),
             'senha' => password(
                 label: 'Senha do administrador',
-                hint: 'Enter mantém a senha padrão do kit. Troque antes de expor o ambiente.',
+                hint: 'Enter deixa o instalador gerar uma senha aleatória e imprimi-la uma vez.',
             ),
             'cor'   => select(
                 label: 'Cor primária dos painéis',

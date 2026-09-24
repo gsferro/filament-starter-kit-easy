@@ -12,7 +12,19 @@
     | permissão e papéis descrevem a superfície de autorização da aplicação
     | para quem acabou de ser barrado por ela.
     */
-    $mostrarDiagnostico = ! app()->isProduction();
+    /*
+    | LISTA FECHADA, e nao "tudo menos producao".
+    |
+    | `! isProduction()` deixava o diagnostico ligado em STAGING e em qualquer
+    | ambiente nomeado de outra forma (`homolog`, `qa`, `demo`) — justamente
+    | onde ha dado parecido com o real e gente de fora olhando. Interruptor que
+    | abre superficie nomeia quem PODE, nunca quem nao pode: ambiente novo nasce
+    | fechado, que e a regra de `.ai/rules/config.md` aplicada a uma view.
+    |
+    | `testing` esta na lista para que um caso possa afirmar o conteudo do
+    | diagnostico sem precisar mudar de ambiente.
+    */
+    $mostrarDiagnostico = app()->environment('local', 'testing');
 
     $auth = [];
 

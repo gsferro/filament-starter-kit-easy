@@ -6,6 +6,7 @@ use App\Settings\ConfiguracoesDoKit;
 use App\Support\BancoSqlite;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\HostLocal;
+use App\Support\SenhaDoAdministrador;
 use App\Support\VinculoDoSnyk;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -334,8 +335,38 @@ class KitInstall extends Command
         });
     }
 
+    /**
+     * A senha gerada nesta execucao, ou `null` quando o `.env` ja trazia uma.
+     *
+     * Guardada para ser impressa UMA VEZ no fim. Quando o usuario definiu a propria, fica `null`
+     * e nada e impresso — imprimir a senha de alguem no terminal e no log de CI, sem que essa
+     * pessoa tenha pedido, e vaza-la.
+     */
+    protected ?string $senhaGerada = null;
+
+    /**
+     * Garante uma senha de administrador utilizavel, ANTES de semear.
+     *
+     * A ordem e requisito, nao estilo: e o `UsuarioAdminSeeder` que grava a senha no usuario, a
+     * partir de `config('kit.admin.password')`. Gerar depois dele criaria o administrador com o
+     * valor antigo e gravaria no `.env` um valor que nao entra em lugar nenhum — a instalacao
+     * imprimiria uma senha que nao funciona.
+     */
+    protected function garantirSenhaDoAdministrador(): void
+    {
+        $this->senhaGerada = SenhaDoAdministrador::garantirNoEnv(base_path('.env'));
+
+        if ($this->senhaGerada === null) {
+            return;
+        }
+
+        $this->components->task('Gerando senha do administrador', fn (): bool => true);
+    }
+
     protected function semear(): void
     {
+        $this->garantirSenhaDoAdministrador();
+
         $this->components->task('Populando papéis, permissões e usuário inicial', function (): bool {
             $codigo = $this->callSilently('db:seed', ['--force' => true]);
 
@@ -450,10 +481,22 @@ class KitInstall extends Command
             "Infraestrutura: {$url}/infra",
         ]);
 
+        /*
+         * A SENHA SO APARECE QUANDO ESTA EXECUCAO A GEROU.
+         *
+         * Ate a v0.39.1 esta linha imprimia `config('kit.admin.password')` sempre — inclusive a
+         * senha que o usuario tinha escolhido no `.env`, que ninguem pediu para ver no terminal
+         * nem no log de CI. Agora: gerada, aparece uma vez (e e a unica chance de anotar);
+         * escolhida por quem instala, nao aparece.
+         */
         note(
-            'Login inicial: '.config('kit.admin.email')
-            .' / '.config('kit.admin.password')
-            ."\nTroque a senha antes de expor o ambiente."
+            $this->senhaGerada !== null
+                ? 'Login inicial: '.config('kit.admin.email')
+                    .' / '.$this->senhaGerada
+                    ."\nEsta senha foi gerada agora e NAO sera mostrada de novo — anote."
+                    ."\nPara trocar: php artisan kit:admin"
+                : 'Login inicial: '.config('kit.admin.email')
+                    ."\nA senha e a que voce definiu em KIT_ADMIN_PASSWORD."
         );
 
         $this->components->bulletList([

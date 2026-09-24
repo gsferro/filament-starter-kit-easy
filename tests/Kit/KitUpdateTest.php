@@ -117,6 +117,16 @@ const DIRETORIOS_DE_CODIGO = [
      * do usuario.
      */
     'tests',
+
+    /*
+     * `lang` entrou com a TERCEIRA ocorrencia da mesma classe: `lang/pt_BR.json` traduz as telas
+     * de plugin de terceiro e nao estava em `CAMINHOS_DO_KIT`, entao quem atualiza continuava com
+     * o /infra em ingles. A varredura nao pegou porque `lang` nao estava aqui — pelo mesmo motivo
+     * de `resources/views/svg` (v0.23.0) e de `tests` (v0.39.1), tres e quatro linhas acima.
+     *
+     * `lang/pt_BR/` sai por `NAO_E_DO_KIT`: sao as traducoes padrao do Laravel.
+     */
+    'lang',
 ];
 
 /**
@@ -134,6 +144,17 @@ const NAO_E_DO_KIT = [
      */
     'tests/Unit/ExampleTest.php',
     'tests/Feature/ExemploTest.php',
+
+    /*
+     * As traducoes PADRAO do Laravel, que quem instala pode ajustar ao proprio dominio.
+     * O que e do kit e `lang/pt_BR.json`, esse sim entregue pelo `kit:update`.
+     */
+    'lang/pt_BR/actions.php',
+    'lang/pt_BR/auth.php',
+    'lang/pt_BR/http-statuses.php',
+    'lang/pt_BR/pagination.php',
+    'lang/pt_BR/passwords.php',
+    'lang/pt_BR/validation.php',
 ];
 
 it('cobre todo o código do kit, e não só o que alguém lembrou de listar', function (): void {

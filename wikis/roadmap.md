@@ -184,6 +184,63 @@ Decisão do mantenedor: fechar as features desta release primeiro. Fica para a p
 
 ---
 
+## 7. O kit registra o próprio middleware, em vez de depender do `bootstrap/app.php`
+
+> Aberto em 2026-09-24, pela guarda `tests/Kit/DuasRotasDeEntregaTest.php`. **É débito com
+> consequência medida, não melhoria.**
+
+### O defeito, e ele está em produção agora
+
+`bootstrap/app.php` registra o middleware `RaizDeUrlSemPublic` do kit no stack global, e
+`bootstrap/providers.php` registra o `KitServiceProvider`. **Nenhum dos dois é entregue pelo
+`kit:update`** — `bootstrap/` não está em `KitUpdate::CAMINHOS_DO_KIT`, e não pode estar: é onde
+quem instala registra os **próprios** middlewares e providers, e sobrescrever apagaria isso.
+
+Consequência medida: `RaizDeUrlSemPublic` entrou na **v0.36.1**. Quem instalou entre a v0.16.0 e a
+v0.36.0 e vem rodando `kit:update`:
+
+- **tem** a classe do middleware — `app/Http/Middleware` está coberto;
+- **não tem** o registro — `bootstrap/app.php` não viaja.
+
+A correção de URL **não funciona** para essas instalações, e o sintoma é silencioso: nada quebra,
+o `/public` simplesmente continua aparecendo antes do painel.
+
+### A saída
+
+O kit registra o próprio middleware a partir do `KitServiceProvider`, que **viaja pelas duas
+rotas** de entrega. O `bootstrap/app.php` de quem instala deixa de ser o lugar onde o kit escreve.
+
+```php
+// em KitServiceProvider::boot(), em vez de bootstrap/app.php
+$this->app->make(\Illuminate\Contracts\Http\Kernel::class)
+    ->pushMiddleware(RaizDeUrlSemPublic::class);
+```
+
+**A posição importa** e é requisito, não estilo: o comentário em `bootstrap/app.php` registra que
+ele precisa rodar **depois** de outro middleware do stack global. Mover sem preservar a ordem
+troca um defeito silencioso por outro.
+
+### Por que não entrou junto dos cinco urgentes
+
+Porque não é de uma linha, e porque mexer na ordem do stack global de middleware é mudança de
+comportamento que merece wiki própria — com CT que prove a ordem, e com os quatro cenários de
+validação rodados contra uma instalação **antiga** atualizada, que é onde o defeito vive.
+
+O `bootstrap/` está declarado em `FORA_DA_ENTREGA_POR_DECISAO` com este texto inteiro, então a
+guarda não deixa a decisão virar esquecimento de novo.
+
+### O mesmo mecanismo já falhou três vezes
+
+| Ocorrência | O que não chegava a quem atualiza | Descoberto em |
+|---|---|---|
+| 1 | `resources/views/svg` | v0.23.0, por erro em produção (`View not found`) |
+| 2 | `tests/Browser`, `tests/BrowserTenancy` | validação dos quatro cenários da v0.39.0 |
+| 3 | `lang/pt_BR.json` — /infra em inglês | a guarda nova, em 2026-09-24 |
+| **4** | **`bootstrap/` — middleware sem registro** | **a mesma guarda, aberta aqui** |
+
+As três primeiras estão corrigidas. Esta é a única em que a correção exige decisão de desenho.
+
+
 ## Como este documento é mantido
 
 Item entra aqui quando uma decisão **registrada** o empurrou para depois — com o motivo e, quando
