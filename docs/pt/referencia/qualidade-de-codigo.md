@@ -153,6 +153,54 @@ compartilhado — `composer test:kit:serial` isola isso, e a diferença entre os
 
 Seus testes vão em `tests/Feature` e `tests/Unit`, como de costume — o kit não encosta neles.
 
+## A cobertura de testes — e o que o número **não** inclui
+
+**79,79 %** das linhas de `app/` (7.858 de 9.848 statements), medido em 2026-09-24. O badge do
+README vem daqui, e o CI reprova quando ele mente.
+
+```bash
+composer test:coverage    # mede, grava o badge e aplica o piso — ~27 min, em série
+```
+
+### Por que em série, e por que demora
+
+`--parallel --coverage` **não existe**: o Pest imprime o *usage* do paratest, e
+`artisan test --parallel --coverage-clover` roda e não gera arquivo nenhum. A medição é serial por
+construção — ~27 min contra os ~3 min da suíte paralela. Por isso o job de CI roda em `main` e por
+disparo manual, não em toda PR.
+
+O driver é o **PCOV**, não o Xdebug: para cobertura de **linha** o Xdebug não acrescenta nada e
+custa muito mais. Ele fica desligado no `php.ini` (`pcov.enabled=0`) e liga só na invocação, para
+que a suíte do dia a dia não pague os **+44 %** de instrumentação.
+
+### O número é um piso, não um teto
+
+Três coisas ficam fora da conta, e ler o número sem saber disso leva à conclusão errada:
+
+| Fora da medição | Por quê |
+|---|---|
+| `tests/Browser` e `tests/BrowserTenancy` | rodam contra um servidor em **outro processo**; o PCOV instrumenta o processo do Pest |
+| Os testes de instalação | rodam `composer create-project` de verdade, também em outro processo |
+| `tests/Unit` e `tests/Feature` | são **seus**, não do kit — têm um arquivo de exemplo cada |
+
+O efeito é visível na decomposição: **`app/Console` aparece a 27 %** e é, na prática, o código mais
+exercitado do kit — os testes de instalação executam `kit:install` inteiro, de fora. Lê-lo como
+*"os comandos não têm teste"* seria exatamente o erro que esta seção existe para evitar.
+
+A lacuna **real** é outra: `app/Policies`, a **23 %**. As policies são exercitadas indiretamente
+(a tela nega, o teste vê negado), mas o `Gate` curto-circuita antes do método em boa parte dos
+casos — e autorização é onde defeito silencioso custa mais caro.
+
+### O piso é 78 %, e ele não é folclore
+
+Com 9.848 statements, **1 ponto percentual vale ~98 linhas**. Um bug corrigido, um método novo ou
+um refactor não movem o número; para cair os 1,79 pp de folga é preciso que quase 180 statements
+entrem sem teste — que é o único evento que o piso existe para pegar.
+
+E cobertura de linha **não** mede se a suíte detecta defeito: ela mede o que foi **executado**, não
+o que foi **verificado**. Quem responde isso é o mutation score, e para ele o kit usa
+`pest --mutate` (em Windows, pelo `pestw.cmd` da raiz — o cabeçalho do arquivo explica por quê).
+
 ## As imagens do README saem de um teste
 
 As capturas de tela deste README **não são feitas à mão**. Elas nascem de

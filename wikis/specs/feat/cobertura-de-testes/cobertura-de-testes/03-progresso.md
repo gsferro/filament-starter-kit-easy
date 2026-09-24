@@ -34,25 +34,40 @@
 
 ## 5. Comando e job de CI (RQ-05, RQ-09)
 
-- [ ] `composer test:coverage` no `composer.json`
-- [ ] `.github/badges/cobertura.json` gerado pelo comando
-- [ ] Job `cobertura` no `ci.yml`, com `coverage: pcov`
-- [ ] O job **reprova** quando o JSON commitado diverge do medido
-- [ ] Frequência decidida com o tempo medido (por PR × push em `main` × agendado)
+- [x] `composer test:coverage` — mede, grava o badge e aplica o piso
+- [x] `.github/cobertura.php` — lê o Clover, aplica `--min` e escreve/confere o badge
+- [x] `.github/badges/cobertura.json` gerado: `{"message": "79%", "color": "green"}`
+- [x] Job `cobertura` no `ci.yml`, com `coverage: pcov`
+- [x] **Os dois caminhos de reprovação verificados à mão**: com `--min=95` sai 1; com o JSON
+  adulterado para `91%` sai 1 dizendo o que rodar; restaurado, sai 0
+- [x] **Frequência decidida**: `push` em `main` + `workflow_dispatch`, **não** em PR —
+  `if: github.event_name != 'pull_request'`. A medição é serial por construção (ADR-02) e custa
+  ~27 min contra ~3 min da suíte paralela; cobrar isso de toda PR quadruplicaria o CI do
+  repositório para vigiar um número que se move ~1 pp a cada ~98 linhas
+- [x] O badge guarda o percentual **inteiro truncado**, não o real — senão a guarda reprovaria por
+  ruído da terceira casa e viraria alarme falso
 
 ## 6. Fechar lacuna real até a meta (RQ-07)
 
-- [ ] Arquivos de `app/` ordenados por cobertura ascendente, cruzados com "tem regra de negócio"
-- [ ] Testes novos escritos para o que tem risco — cada um nascido de cenário, não de linha
-- [ ] Meta atingida
+- [x] Arquivos de `app/` ordenados por cobertura ascendente — tabela em `## Notas de Implementação`
+- [x] **Meta atingida sem escrever teste**: o medido (79,79 %) já está acima do piso (78 %). A meta
+  nasceu da medição, então "fechar a lacuna" seria inverter a ordem — escolher um número e depois
+  escrever teste para alcançá-lo é como se produz teste que não prova nada
+- [ ] **`app/Policies` a 23 % vira débito declarado**, não tarefa desta entrega. É lacuna real, e
+  merece cenário escrito, não linha perseguida — ver o roadmap
 
 ## 7. Documentação e badge (RQ-08, RQ-09)
 
-- [ ] Página de cobertura em `docs/pt/` e `docs/en/`
-- [ ] Badge no `README.md` e no `README.en.md`
-- [ ] Linha na tabela `## Qualidade` dos dois READMEs
-- [ ] `SiteDeDocumentacaoTest` guarda a linha nova
-- [ ] `CHANGELOG.md`
+- [x] Seção de cobertura em `docs/pt/referencia/qualidade-de-codigo.md` e no par em inglês —
+  **seção**, e não página nova: o assunto já tinha casa, e o índice não precisou mudar
+- [x] Badge (*endpoint* do shields.io sobre o JSON versionado) nos dois READMEs
+- [x] Linha na tabela `Qualidade` dos dois READMEs
+- [x] **`[CT-49]`** guarda a linha nova contra o JSON do badge — a corrente fica fechada:
+  medição → JSON (guardado pelo CI) → README (guardado pelo CT). Verificado com mutante: trocar
+  `79 %` por `88 %` reprova
+- [x] `[CT-25]` (contagem de arquivos) e o caso das specs acusaram a entrega e foram atualizados:
+  **157 / 184** arquivos e **69** specs
+- [x] `CHANGELOG.md`
 
 ## 8. Xdebug e o custo de carregá-lo (RQ-11, RQ-12)
 

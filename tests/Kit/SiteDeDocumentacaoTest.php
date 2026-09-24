@@ -1908,3 +1908,31 @@ it('[CT-48] mantem o roadmap presente, ligado nos READMEs e fora do export-ignor
      */
     expect(caminhosDoKit())->toContain('wikis/roadmap.md');
 })->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega os READMEs, que passam a ser do projeto.')->group('kit');
+
+/**
+ * O percentual de cobertura dos READMEs sai do MESMO arquivo que alimenta o badge.
+ *
+ * O badge do README é um *endpoint* do shields.io apontando para
+ * `.github/badges/cobertura.json`, e o job `cobertura` do CI reprova quando esse JSON
+ * diverge do medido. Isso trava **o badge**.
+ *
+ * A linha da tabela "Qualidade" é outro número, escrito à mão, e sem esta guarda ela
+ * poderia dizer `79 %` para sempre enquanto o badge mostrasse `85 %` — a mesma classe
+ * de defeito que a linha *Telas navegáveis* cometeu por mais de um mês, e que o
+ * `[CT-25]` existe para impedir na contagem de arquivos.
+ *
+ * A corrente fica fechada: medição → JSON (guardado pelo CI) → README (guardado aqui).
+ */
+it('[CT-49] mantem o percentual de cobertura dos readmes igual ao do badge', function (): void {
+    $badge = json_decode((string) file_get_contents(base_path('.github/badges/cobertura.json')), true);
+
+    expect($badge)->toBeArray()
+        ->and($badge['message'] ?? null)->toMatch('~^\d{1,3}%$~', 'o badge precisa guardar o percentual inteiro, como `79%`');
+
+    $percentual = (int) rtrim((string) $badge['message'], '%');
+
+    expect((string) file_get_contents(base_path('README.md')))
+        ->toContain("| Cobertura de testes (`app/`, linha) | **{$percentual} %**")
+        ->and((string) file_get_contents(base_path('README.en.md')))
+        ->toContain("| Test coverage (`app/`, line) | **{$percentual} %**");
+})->skip(fn (): bool => ! naArvoreDoKit(), 'O `.github/` é `export-ignore`: não existe em projeto nascido de `create-project`.')->group('kit');

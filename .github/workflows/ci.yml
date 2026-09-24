@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # O job `cobertura` roda em SERIE e leva ~27 min (medido local, 2026-09-24). Ele nao roda
+  # em pull request; o disparo manual existe para quem quiser o numero antes do merge.
+  workflow_dispatch:
 
 jobs:
   qualidade:
@@ -130,6 +133,58 @@ jobs:
       # banco por worker.
       - name: Testes de tela (Pest browser)
         run: php artisan test --testsuite=Browser
+
+  cobertura:
+    # A cobertura de linha de `app/`, medida e confrontada com o badge versionado.
+    #
+    # ## Por que NAO roda em pull request
+    #
+    # `--parallel --coverage` nao existe: o Pest imprime o *usage* do paratest, e
+    # `artisan test --parallel --coverage-clover` roda e nao gera arquivo nenhum (ADR-02). A
+    # medicao e serial por construcao, e custa ~27 min contra os ~6 min da suite paralela.
+    # Cobrar isso de toda PR quadruplicaria o tempo de CI do repositorio inteiro para vigiar
+    # um numero que se move ~1 pp a cada ~98 linhas.
+    #
+    # Em `main` o custo e aceitavel e o sinal chega no mesmo dia. Quem quiser o numero antes
+    # do merge dispara pelo `workflow_dispatch`.
+    if: github.event_name != 'pull_request'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Configurar PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, intl, pcntl, zip, sqlite3, pdo_sqlite
+          # PCOV, e nao Xdebug: para cobertura de LINHA o Xdebug nao acrescenta nada e custa
+          # muito mais. Ver ADR-01.
+          coverage: pcov
+
+      - name: Cache das dependencias PHP
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php84-${{ hashFiles('composer.lock') }}
+          restore-keys: ${{ runner.os }}-php84-
+
+      - name: Instalar dependencias
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Preparar ambiente
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # Sem `--write`: aqui o script VERIFICA. Ele reprova quando a cobertura cai abaixo do
+      # piso de 78% (ADR-06) e quando `.github/badges/cobertura.json` commitado diverge do
+      # medido -- que e a guarda contra o numero do README envelhecer em silencio.
+      - name: Medir a cobertura e conferir o badge
+        run: |
+          php -d pcov.enabled=1 vendor/bin/pest tests/Kit tests/Tenancy --coverage-clover=cobertura.xml
+          php .github/cobertura.php cobertura.xml --min=78
 
   instalacao:
     # Prova que `composer create-project` continua entregando o projeto pronto.

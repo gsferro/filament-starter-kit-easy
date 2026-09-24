@@ -241,6 +241,37 @@ guarda não deixa a decisão virar esquecimento de novo.
 As três primeiras estão corrigidas. Esta é a única em que a correção exige decisão de desenho.
 
 
+## 8. Os níveis de qualidade que já foram medidos e ficaram para depois
+
+Levantados em 2026-09-24 ao atender o pedido *"analise e pesquise se temos mais níveis de
+qualidade para implementarmos"*. Cada candidato foi **rodado contra esta árvore** antes de entrar
+aqui — a tabela completa, com os que entraram e os que foram recusados, está em
+`wikis/specs/feat/cobertura-de-testes/cobertura-de-testes/02-decisoes-arquiteturais.md` → ADR-05.
+
+| # | Item | O que a medição mostrou | Por que não entrou agora |
+|---|---|---|---|
+| 8.1 | **PHPStan level 8** | **48 erros** (level 7 atual = 0) | é uma passada focada, e cabe numa release própria. Level 9 dá **474** e `max` dá **594** — esses são precipício, não degrau |
+| 8.2 | **`composer-require-checker` + `composer-unused`** | não instalados | respondem mecanicamente a *"das 58 dependências, quais são de fato usadas?"* — pergunta que a crítica externa fez e que hoje só tem a resposta *"não sabemos"*. Melhor razão valor/esforço da lista |
+| 8.3 | **`declare(strict_types=1)`** | **98 de 240** arquivos de `app/` | não é falta de rigor, é **inconsistência**: metade roda com coerção estrita e metade não, e nada no CI diz de que lado um arquivo novo nasce. Exige decidir o lado, não rodar um `sed` |
+| 8.4 | **Branch coverage** (Xdebug) | Xdebug 3.5.3 já instalado localmente | é a única razão de o Xdebug existir nesta máquina. Mais lento que o PCOV; depende de o job de cobertura já estar estabilizado |
+| 8.5 | **`pest-plugin-type-coverage`** | não instalado | dependência nova; mede outra coisa que o PHPStan level 8 já cobre em parte |
+| 8.6 | **Meta de cobertura por diretório** | `app/Policies` a **23 %**, `app/Console` a **27 %** | hoje reprovaria `app/Console`, que é o código **mais** exercitado do kit e aparece baixo por ser medido de outro processo. Só faz sentido depois que essa distorção tiver saída |
+
+### O que **entrou** junto com o levantamento
+
+Os dois presets de arquitetura do Pest que já passavam — `php` e `security`, em
+`tests/Kit/ArquiteturaDoCodigoTest.php`. O plugin `pest-plugin-arch` estava no `composer.json`
+desde sempre com **zero** uso.
+
+### Por que não entrou o resto agora
+
+Decisão registrada: a entrega da cobertura já mexe em CI, README, docs e `composer.json`. Empilhar
+48 correções de PHPStan em cima disso tornaria o diff irrevisável. Cada item acima tem número
+medido, então a estimativa não precisa ser refeita do zero — mas **precisa ser remedida**: `48` é
+de 2026-09-24 e muda a cada release.
+
+---
+
 ## Como este documento é mantido
 
 Item entra aqui quando uma decisão **registrada** o empurrou para depois — com o motivo e, quando

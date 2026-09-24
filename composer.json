@@ -158,6 +158,12 @@
             "@php artisan config:clear --ansi",
             "@php artisan test --testsuite=Kit,Tenancy --parallel"
         ],
+        "test:coverage": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@php -d pcov.enabled=1 vendor/bin/pest tests/Kit tests/Tenancy --coverage-clover=cobertura.xml",
+            "@php .github/cobertura.php cobertura.xml --min=78 --write"
+        ],
         "test:kit:serial": [
             "Composer\\Config::disableProcessTimeout",
             "@php artisan config:clear --ansi",

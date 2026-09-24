@@ -154,6 +154,56 @@ state — `composer test:kit:serial` isolates that, and the difference between t
 
 Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never touches them.
 
+## Test coverage — and what the number leaves **out**
+
+**79.79%** of the lines in `app/` (7,858 of 9,848 statements), measured on 2026-09-24. The README
+badge comes from here, and CI fails when it lies.
+
+```bash
+composer test:coverage    # measures, writes the badge and applies the floor — ~27 min, serial
+```
+
+### Why serial, and why it takes that long
+
+`--parallel --coverage` **does not exist**: Pest prints the paratest *usage*, and
+`artisan test --parallel --coverage-clover` runs and produces no file at all. The measurement is
+serial by construction — ~27 min against the ~3 min of the parallel suite. That is why the CI job
+runs on `main` and on manual dispatch, not on every PR.
+
+The driver is **PCOV**, not Xdebug: for **line** coverage Xdebug adds nothing and costs far more.
+It stays off in `php.ini` (`pcov.enabled=0`) and is switched on per invocation, so the everyday
+suite does not pay the **+44%** instrumentation cost.
+
+### The number is a floor, not a ceiling
+
+Three things sit outside the count, and reading the number without knowing that leads to the wrong
+conclusion:
+
+| Outside the measurement | Why |
+|---|---|
+| `tests/Browser` and `tests/BrowserTenancy` | they run against a server in **another process**; PCOV instruments the Pest process |
+| The installation tests | they run a real `composer create-project`, also in another process |
+| `tests/Unit` and `tests/Feature` | they are **yours**, not the kit's — one example file each |
+
+The effect shows in the breakdown: **`app/Console` reports 27%** and is, in practice, the most
+exercised code in the kit — the installation tests run the whole `kit:install` from the outside.
+Reading it as *"the commands have no tests"* would be precisely the mistake this section exists to
+prevent.
+
+The **real** gap is elsewhere: `app/Policies`, at **23%**. Policies are exercised indirectly (the
+screen denies, the test sees the denial), but `Gate` short-circuits before the method in most
+cases — and authorisation is where a silent defect costs the most.
+
+### The floor is 78%, and it is not folklore
+
+With 9,848 statements, **1 percentage point is worth ~98 lines**. A bug fix, a new method or a
+refactor do not move the number; to lose the 1.79 pp of slack, nearly 180 statements have to land
+untested — which is the only event the floor exists to catch.
+
+And line coverage does **not** measure whether the suite detects defects: it measures what was
+**executed**, not what was **verified**. That question belongs to the mutation score, for which the
+kit uses `pest --mutate` (on Windows, through `pestw.cmd` at the root — its header explains why).
+
 ## The README images come out of a test
 
 The screenshots in this README are **not taken by hand**. They come from
