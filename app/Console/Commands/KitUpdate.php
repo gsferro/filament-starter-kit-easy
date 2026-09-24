@@ -195,6 +195,20 @@ class KitUpdate extends Command
         'database/settings',
         'docker',
         'lang/vendor',
+
+        /*
+         * As traducoes do PROPRIO kit, e nao as do esqueleto.
+         *
+         * `lang/pt_BR.json` tem 33 strings que traduzem telas de plugin de terceiro que so vem em
+         * ingles (commit 5511a0a, "traduz as telas de plugin que ainda saiam em ingles no /infra").
+         * Ele nao estava aqui: quem instalou antes daquele commit e vem rodando `kit:update`
+         * continua vendo o /infra em ingles, apesar de o kit prometer UI traduzida.
+         *
+         * TERCEIRA ocorrencia da divergencia entre as duas rotas de entrega, depois de
+         * `resources/views/svg` (v0.23.0) e `tests/Browser` (v0.39.1). `lang/pt_BR/` fica de
+         * fora de proposito: sao as traducoes padrao do Laravel, que quem instala pode ajustar.
+         */
+        'lang/pt_BR.json',
         /*
          * O CSS que o kit registra nos painéis por `FilamentAsset` — a fonte em
          * `resources/css/filament` e o publicado em `public/css/kit`, que é versionado.

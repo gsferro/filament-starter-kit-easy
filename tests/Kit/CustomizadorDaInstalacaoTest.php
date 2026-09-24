@@ -2,6 +2,7 @@
 
 use App\Console\Commands\KitInstall;
 use App\Support\CustomizadorDaInstalacao;
+use App\Support\SenhaDoAdministrador;
 use App\Support\SubstituicaoEmArquivo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -159,11 +160,22 @@ it('acrescenta a chave ausente uma única vez', function (): void {
         ->and(valorNoEnv('KIT_COR_PRIMARIA'))->toBe('Emerald');
 })->group('kit');
 
-it('mantém a senha padrão quando a resposta vem vazia', function (): void {
+/**
+ * Resposta vazia deixa a chave VAZIA — e é isso que faz o instalador gerar.
+ *
+ * Até a v0.39.1 este caso afirmava o oposto: resposta vazia "mantinha a senha padrão do kit",
+ * que era `password`, publicada no repositório. O contrato mudou porque o padrão publicado
+ * deixou de existir, e o caso mudou junto — ele guarda o contrato, não a implementação antiga.
+ *
+ * A distinção importa: quem aperta Enter aqui **não** está escolhendo uma senha, está delegando.
+ * Gravar qualquer valor conhecido nesse ponto reintroduziria o defeito por outro caminho.
+ */
+it('deixa a senha vazia quando a resposta vem vazia, para o instalador gerar', function (): void {
     customizadorNoTemp()->aplicar(respostasDeCustomizacao(['senha' => '']));
 
-    expect(valorNoEnv('KIT_ADMIN_PASSWORD'))->toBe('password')
-        ->and(config('kit.admin.password'))->toBe('password');
+    expect(valorNoEnv('KIT_ADMIN_PASSWORD'))->toBe('')
+        ->and(SenhaDoAdministrador::ehUtilizavel(valorNoEnv('KIT_ADMIN_PASSWORD')))
+        ->toBeFalse('a resposta vazia gravou algo utilizável — o instalador não geraria senha nenhuma');
 })->group('kit');
 
 it('grava a senha escolhida quando ela é informada', function (): void {
