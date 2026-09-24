@@ -53,3 +53,10 @@ Thumbs.db
 /.claude/skills/planning-filament/
 /.claude/skills/reviewing-filament-plans/
 /.claude/skills/filament-security-audit/
+
+# Relatorios de cobertura gerados localmente.
+#
+# O `composer test:coverage` escreve o Clover na raiz para o script de badge ler. O
+# arquivo tem ~770 KB e muda a cada rodada; o que E versionado e so o resumo em
+# `.github/badges/cobertura.json`.
+/cobertura.xml
