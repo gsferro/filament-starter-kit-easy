@@ -48,6 +48,27 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [0.39.1] - 2026-09-24
 
+### Validacao dos quatro cenarios — `v0.39.1`
+
+Rodados contra a tag `v0.39.1` publicada e indexada, em `STARTER-KIT-EASY/validacao-v0.39.1/`.
+Os cenarios 3 e 4 nasceram da `v0.39.0` e foram atualizados com `kit:update --all`.
+
+| # | Cenario | Diretorio | Versao | Tenancy | `tests/Browser` | Saida |
+|---|---|---|---|---|---|---|
+| 1 | limpo, sem tenancy | `novo-sem-tenant` | `0.39.1` | — | 21 | `2880 testes / 2700 verdes / 10.599 assercoes / 180 pulados / 0 falhas` |
+| 2 | limpo, com tenancy | `novo-com-tenant` | `0.39.1` | `SIM` | 21 | `2880 / 2700 / 10.599 / 180 pulados / 0 falhas` |
+| 3 | `kit:update`, sem tenancy | `velho-sem-tenant` | `0.39.1` | — | **21** | `2880 / 2700 / 10.599 / 180 pulados / 0 falhas` |
+| 4 | `kit:update`, com tenancy | `velho-com-tenant` | `0.39.1` | `SIM` | **21** | `2880 / 2700 / 10.599 / 180 pulados / 0 falhas` |
+
+**A correcao esta confirmada nos dois caminhos de atualizacao.** Na validacao da `v0.39.0`, os
+cenarios 3 e 4 tinham **20** arquivos em `tests/Browser` contra os 21 da instalacao limpa, e
+**10.603** assercoes contra 10.599 — porque o projeto atualizado rodava uma versao diferente dos
+testes. Agora os quatro numeros sao identicos, nos quatro cenarios.
+
+Pulados: **180**, o mesmo teto da `v0.39.0`, sem aumento. `migrate --force` devolveu
+`Nothing to migrate` nos cenarios 3 e 4, o que confere — esta correcao nao traz migration.
+
+
 ### Corrigido
 
 - **`tests/Browser` e `tests/BrowserTenancy` nunca chegavam a quem atualiza.** Os dois viajam no
