@@ -14,13 +14,19 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   **Medido, antes e depois, no mesmo runner**, com mais de uma execucao de cada lado porque o
   runner varia:
 
-  | | Execucoes | Faixa |
-  |---|---|---|
-  | antes, em serie | 3 | **1.095 – 1.162 s** |
-  | depois, em paralelo | 2 | **269 – 364 s** |
+  | | Execucoes | Valores | Mediana |
+  |---|---|---|---|
+  | antes, em serie | 3 | 1.095 · 1.119 · 1.162 s | **1.119 s** |
+  | depois, em paralelo | 3 | 269 · 364 · 533 s | **364 s** |
 
-  **3,0x a 4,3x.** O relogio de parede do CI inteiro acompanhou — de ~19 min para 4,5 a 6 min —
-  porque `qualidade` era o caminho critico. A estimativa deste PR era 2,5 a 3,5x.
+  **~3,1x na mediana, com faixa de 2,1x a 4,3x.** O runner varia bastante mais do lado paralelo,
+  e o numero que vale e a mediana, nao o melhor caso. O relogio de parede do CI inteiro acompanhou,
+  porque `qualidade` era o caminho critico.
+
+  *(Este numero foi corrigido duas vezes. A primeira redacao dizia 4,3x, de uma execucao so; a
+  segunda, 3,0x a 4,3x, de duas. Cada medicao nova alargou a faixa para baixo — que e o
+  comportamento esperado de uma amostra pequena, e a razao de a mediana de tres valer mais que o
+  melhor de um.)*
 
   A regra `.ai/rules/testes-browser.md` proibe `--parallel` com navegador, e a proibicao **nao
   alcanca este job**: ele nomeia as suites, e `Browser`/`BrowserTenancy` nao estao entre elas.
