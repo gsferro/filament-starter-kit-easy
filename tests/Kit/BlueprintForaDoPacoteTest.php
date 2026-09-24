@@ -93,6 +93,18 @@ it('mantem o auth.json fora do versionamento', function (): void {
     );
 })->group('kit');
 
+/**
+ * Guardado pela sentinela, e o motivo importa: este caso passava VERDE no projeto instalado
+ * **pela razão errada**.
+ *
+ * Sem `.git`, o `git ls-files` sai com código diferente de zero — e o oráculo é exatamente
+ * `not->toBe(0)`. O caso ficava verde não porque o `auth.json` estivesse fora do versionamento,
+ * mas porque **não havia versionamento nenhum para consultar**. Verde que não prova nada é pior
+ * que vermelho: ele ocupa o lugar da prova.
+ *
+ * Achado da revisão deste PR. A guarda `[CT-11]` não o via porque `suitesDeDocumentacao()` só
+ * alcançava arquivos que citam documentação — corrigido junto, em `suitesComRiscoDeArvore()`.
+ */
 it('o auth.json nao esta rastreado pelo git', function (): void {
     exec('git ls-files --error-unmatch auth.json 2>&1', $saida, $codigo);
 
@@ -100,7 +112,7 @@ it('o auth.json nao esta rastreado pelo git', function (): void {
         'auth.json ESTÁ rastreado. Rode `git rm --cached auth.json` e gere um token novo: '
         .'o antigo está no histórico.'
     );
-})->group('kit');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'Sem `.git` o oraculo `not->toBe(0)` fica verde por ausencia de git, e nao por o auth.json estar fora do versionamento.')->group('kit');
 
 /*
  * O `composer.lock` em sincronia com o `composer.json` — e é o `bp:on`/`bp:off` quem dessincroniza.

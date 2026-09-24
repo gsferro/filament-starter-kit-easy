@@ -572,7 +572,7 @@ it('[CT-19] a sentinela discrimina nos dois sentidos', function (): void {
 
     // E não é o diretório que os casos guardados leem (docs/).
     expect($ancora)->not->toBe('docs');
-});
+})->skip(fn (): bool => ! naArvoreDoKit(), 'O caso AFIRMA estar na árvore do kit e consulta o git — nenhum dos dois vale no projeto instalado.');
 
 it('[CT-20] a correção guardou a leitura, não a removeu', function (): void {
     $fonte = (string) file_get_contents(base_path('tests/Kit/HostLocalTest.php'));

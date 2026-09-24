@@ -37,8 +37,68 @@
 
 ## 6. Reexecutar os quatro cenários — critério de aceite de RQ-09
 
-- [ ] Contra a `v0.38.1` **publicada**
-- [ ] Zero erro e zero falha nos quatro, com a contagem de pulados registrada
+- [x] Contra a `v0.38.1` **publicada e indexada no Packagist**, 2026-09-22
+- [x] Os quatro executados em `C:\PROJECTS\PACOTES\FILAMENTS\STARTER-KIT-EASYalidacao-v0381\`
+- [ ] **Zero erro e zero falha** — **NÃO ATINGIDO na `v0.38.1`**. Fecha na `v0.38.2`
+
+### O que os quatro mediram
+
+| Cenário | Diretório | Resultado |
+|---|---|---|
+| 1 — limpo, sem tenancy | `novo-sem-tenant` | `2804 / 2631 verdes / 172 pulados / 1 erro` |
+| 2 — limpo, com tenancy | `novo-com-tenant` | **idêntico** |
+| 3 — `kit:update`, sem tenancy | `velho-sem-tenant` | **idêntico** |
+| 4 — `kit:update`, com tenancy | `velho-com-tenant` | **idêntico** |
+
+**O que a `v0.38.1` entregou e a `v0.38.0` não**: nos cenários 3 e 4 a versão foi de `0.38.0` a
+`0.38.1`, a tenancy sobreviveu ao update, e `wikis/checklist-de-release.md` chegou **pelos dois
+canais de entrega**. O caso do roadmap não se repetiu.
+
+**Os 172 pulados confirmam o achado QA-10** do ciclo 2 do quality gate. A previsão de **147** que
+eu tinha escrito no roteiro errou por 25, e o gate acertou ao exigir que ela virasse *"meça no
+passo 6"*. O número acima é o teto da próxima release.
+
+### O erro único — e ele é da mesma classe, no arquivo escrito para testá-la
+
+`tests/Kit/ChecklistDeReleaseTest.php` `[CT-19]` abre com:
+
+```php
+// Ramo verdadeiro, ao vivo: estamos de fato na árvore do kit.
+expect(naArvoreDoKit())->toBeTrue();
+```
+
+O comentário declara, em voz alta, uma suposição **falsa em todo projeto instalado**, e o caso não
+tinha `->skip()`. Havia uma segunda razão independente para ele quebrar lá: chama `git check-attr`,
+e o `create-project` não entrega `.git`.
+
+**Por que a guarda que eu escrevi para esta classe não o pegou — dois buracos, e o segundo é o
+que importa:**
+
+| # | Buraco | Consequência |
+|---|---|---|
+| a | `dependeDaArvoreDoKit()` só reconhecia *"o caso **lê** arquivo que não viaja"* | afirmar a sentinela e invocar `git` não contavam |
+| b | *"guardado"* era `str_contains($corpo, 'naArvoreDoKit')` | o `[CT-19]` **menciona** a sentinela **três vezes**, como sujeito de asserção — e passava por guardado |
+
+**O buraco (b) é o mesmo erro do `[CT-10]`, um nível acima, cometido por mim ao corrigir aquele.**
+O `[CT-10]` contava o **arquivo** onde devia contar o **caso**; a minha guarda contava a **menção**
+onde devia contar a **proteção**.
+
+**Corrigido**: `dependeDaArvoreDoKit()` reconhece as três formas (lê · afirma a sentinela · executa
+`git`), e `temSentinelaPropria()` exige `->skip(… naArvoreDoKit …)` ou `markTestSkipped()` de
+verdade. Ao estreitar a forma 3, a primeira versão acusou dois casos inocentes que procuravam
+`'git pull --ff-only'` **dentro de um script**, como agulha — menção não é execução, e o mesmo
+erro quase entrou na correção dele próprio.
+
+**Verificado por mutação**: com o `[CT-19]` desguardado, a guarda fica **vermelha**; restaurado,
+**verde** — `tests:1` nas duas.
+
+### A lição de RQ-07, medida
+
+O roteiro achou, **na primeira execução**, um defeito da exata classe para a qual foi escrito —
+num arquivo que dois ciclos de quality gate, um `/code-review` e um `fw-revisor-diff` tinham
+aprovado. Nenhum deles poderia vê-lo, pelo motivo de sempre: rodam na árvore do kit.
+
+**É a demonstração empírica de que o passo 6 não é formalidade.**
 
 ## 7. `[CT-11]` — a guarda endurecida (achado RD-02 do step 6.5)
 
@@ -245,6 +305,80 @@ E havia um erro maior embaixo: **já existia uma guarda estática**, o `[CT-10]`
 `tests/Kit/RedeDeDocumentacaoTest.php`, verde o tempo todo porque olha o **arquivo**, e o
 `HostLocalTest` tinha a sentinela no `[CT-34]`. A pergunta nunca foi *"criar guarda?"*; era
 *"endurecer a que existe?"*, e ninguém a fez. Ver ADR-02, reescrita, e o `[CT-11]` no passo 7.
+
+## Revisão do PR #97 — três achados, e o padrão é o mesmo dos quatro ciclos do rodapé
+
+> 2026-09-23, antes do merge. A guarda foi **ampliada no que reconhece** e ficou **estreita em
+> onde olha** — duas peças que precisam crescer juntas, e só uma tinha teste.
+
+### 1. O escopo não cresceu junto com o reconhecedor — Major
+
+`suitesDeDocumentacao()` filtra por `documentacaoDoKit(`, `README.md` e `docs/{pt,en}/`. Era o
+escopo certo enquanto a única forma de depender da árvore do kit era **ler documentação que não
+viaja**. Este PR acrescentou duas formas — **afirmar a sentinela** e **invocar o git** — e
+nenhuma delas tem relação com documentação.
+
+**Medido**: `tests/Kit/BlueprintForaDoPacoteTest.php` invoca `git ls-files`, não tem sentinela
+nenhuma e **nunca era varrido**. Com o escopo alargado (`suitesComRiscoDeArvore()`, toda suite de
+`tests/Kit`), ele é o **único acusado em 112 arquivos** — zero falso positivo.
+
+E o caso dele não ficava vermelho no projeto instalado: ficava **verde pela razão errada**. Sem
+`.git`, o `git ls-files` sai com código ≠ 0, e o oráculo é `not->toBe(0)`. Passava não porque o
+`auth.json` estivesse fora do versionamento, mas porque **não havia versionamento a consultar**.
+Verde que não prova nada ocupa o lugar da prova.
+
+### 2. A forma-3 não via a variante em array — Major
+
+`new Process(['git', 'show', ...])` seguido de `$git->run()` com parênteses **vazios**: o comando
+não está no argumento de quem executa, e nenhum alternante do regex o alcançava.
+
+Não é hipótese — `tests/Kit/SiteDeDocumentacaoTest.php:265` usa exatamente essa forma. Ali não
+mordia porque o arquivo tem sentinela no `beforeEach`; ou seja, **o buraco estava coberto por
+acidente, e não por construção**, que é o motivo de ter sobrevivido.
+
+### 3. A janela do casamento cortava no primeiro `;` — Minor, nos dois ramos
+
+`[^;]` entre a sentinela e o pulo: um `->skip()` com closure de mais de uma instrução, ou um
+`markTestSkipped` precedido de uma atribuição, têm `;` no meio — e um caso **guardado** era
+acusado. A fronteira certa é a chave que fecha o bloco: `[^}]{0,400}`.
+
+### Prova por mutação — cinco mutantes, cinco matadores
+
+| Mutante | Cenário que mata | Resultado |
+|---|---|---|
+| o `->skip()` do `[CT-19]` é removido | `[CT-11]` | **vermelho**, nomeando `ChecklistDeReleaseTest.php -> [CT-19]` |
+| o escopo volta a `suitesDeDocumentacao()` | **`[CT-28]`** | **vermelho** — e nenhum outro caso o pegava |
+| a forma-3 perde a variante em array | **`[CT-26]`** | **vermelho** |
+| a janela do `markTestSkipped` volta a `[^;]` | `[CT-23]` | **vermelho** |
+| a janela do `->skip()` volta a `[^;]` | `[CT-23]` | **vermelho** |
+
+`[CT-28]` é o caso que faltava, e vale dizer por quê: `[CT-11]` prova que os arquivos varridos
+estão limpos, **não** que a varredura olha para os arquivos certos. Estreitar o escopo de volta
+deixava `[CT-11]` verde, porque o único acusado ganhou `->skip()` no mesmo commit. `[CT-28]`
+afirma a **relação** entre reconhecedor e escopo, e não o valor de nenhum dos dois.
+
+### Um falso positivo que eu mesmo produzi, e que o `[CT-10]` pegou
+
+O rótulo do dataset dizia `'->skip() com closure de mais de uma instrucao'`. O regex do `[CT-10]`
+casa `skip(` seguido de `docs` sem `;` no meio — e o rótulo em prosa ficava colado no heredoc que
+lê `docs/`. **O `[CT-10]` reprovou o texto do caso, não o código.** Rótulo renomeado; fica
+registrado que a frouxidão do regex do `[CT-10]` é débito conhecido, e que desta vez ela
+trabalhou a favor.
+
+### Verificação da revisão
+
+`pint --test` passed · `phpstan` level 7, **0 erros** · `filacheck` **17/17** ·
+`--testsuite=Kit,Tenancy --parallel`: **2.880 testes, 2.877 passaram, 11.160 asserções, 3 pulados,
+0 falhas**.
+
+**O delta sobre a `main` é +6 testes e +8 asserções, e ele é inteiramente da revisão** — `[CT-26]`
+(2 casos), `[CT-27]`, `[CT-28]` e os 2 novos do `[CT-23]`. O commit original deste PR acrescenta
+**zero** casos: `[CT-22]` e `[CT-23]` já tinham chegado à `main` por outro caminho, e o que ele
+traz é a troca de implementação (`dependeDaArvoreDoKit()`, `temSentinelaPropria()`).
+
+Conferido que o PR **não** é redundante: na `main`, o `[CT-19]`
+(`tests/Kit/ChecklistDeReleaseTest.php:544`) continua fechando em `});`, **sem `->skip()`** — o
+defeito que originou este PR está lá.
 
 ## Retrospectiva
 
