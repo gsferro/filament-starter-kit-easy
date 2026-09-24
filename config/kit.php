@@ -3,6 +3,7 @@
 use App\Support\BooleanoDoEnv;
 use App\Support\DensidadeDoLayout;
 use App\Support\NumeroDoEnv;
+use App\Support\SenhaDoAdministrador;
 use App\Support\ValidadeDoConvite;
 
 return [
@@ -849,7 +850,7 @@ return [
     'admin' => [
         'name'     => env('KIT_ADMIN_NAME') ?: 'Administrador',
         'email'    => env('KIT_ADMIN_EMAIL') ?: 'admin@example.com',
-        'password' => env('KIT_ADMIN_PASSWORD') ?: 'password',
+        'password' => env(SenhaDoAdministrador::CHAVE) ?: SenhaDoAdministrador::PADRAO_PUBLICADO,
     ],
 
 ];

@@ -195,6 +195,20 @@ class KitUpdate extends Command
         'database/settings',
         'docker',
         'lang/vendor',
+
+        /*
+         * As traducoes do PROPRIO kit, e nao as do esqueleto.
+         *
+         * `lang/pt_BR.json` tem 33 strings que traduzem telas de plugin de terceiro que so vem em
+         * ingles (commit 5511a0a, "traduz as telas de plugin que ainda saiam em ingles no /infra").
+         * Ele nao estava aqui: quem instalou antes daquele commit e vem rodando `kit:update`
+         * continua vendo o /infra em ingles, apesar de o kit prometer UI traduzida.
+         *
+         * TERCEIRA ocorrencia da divergencia entre as duas rotas de entrega, depois de
+         * `resources/views/svg` (v0.23.0) e `tests/Browser` (v0.39.1). `lang/pt_BR/` fica de
+         * fora de proposito: sao as traducoes padrao do Laravel, que quem instala pode ajustar.
+         */
+        'lang/pt_BR.json',
         /*
          * O CSS que o kit registra nos painéis por `FilamentAsset` — a fonte em
          * `resources/css/filament` e o publicado em `public/css/kit`, que é versionado.
@@ -257,6 +271,31 @@ class KitUpdate extends Command
         | guidelines dos pacotes do projeto.
         */
         '.ai/rules',
+
+        /*
+        | As SKILLS e a config de MCP, nas quatro convencoes que o kit publica.
+        |
+        | Entraram junto com `tests/Kit/DuasRotasDeEntregaTest.php`, que e quem as
+        | acusou: as cinco viajam no `composer create-project` (nenhuma tem
+        | `export-ignore`) e nao eram entregues pelo `kit:update`. Quem instalou o kit
+        | ficava com as skills da versao em que instalou, para sempre — e elas mudam
+        | mais rapido que o codigo: a `feature-wiki` ja esta na 3.5.0.
+        |
+        | Sao quatro espelhos do MESMO material, porque cada ferramenta le de um
+        | lugar: `.ai/` e o canonico, `.claude/` o do Claude Code, `.agents/` o da
+        | convencao aberta e `.junie/` o do JetBrains. Espelho que nao e atualizado
+        | junto vira divergencia silenciosa, que e a classe que este bloco fecha.
+        |
+        | Skill ou agente SEU nao entra no diff, pela mesma regra de
+        | `app/Console/Commands`: o que nao existe na arvore do kit nunca aparece na
+        | comparacao entre duas versoes dele. E `.claude/settings.local.json` nao e
+        | rastreado, entao nao ha risco de sobrescrever preferencia de maquina.
+        */
+        '.ai/mcp',
+        '.ai/skills',
+        '.agents',
+        '.claude',
+        '.junie',
 
         /*
         | Os doze documentos de topo da wiki, um a um — e não `wikis` inteiro.

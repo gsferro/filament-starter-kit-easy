@@ -103,7 +103,7 @@ function linhaDaDeclaracao(string $arquivo, string $simbolo): ?int
 
     /*
      * Chave de array. `'arte_do_login' => null` num arquivo de config é símbolo tanto quanto um
-     * método, e é citado como tal — `config/kit.php:arte_do_login:136`.
+     * método, e é citado como tal — `config/kit.php:arte_do_login:137`.
      *
      * Sem este ramo a mensagem dizia "o simbolo esta em lugar nenhum desse arquivo" para uma chave
      * que existe, e isso manda quem lê procurar o defeito errado: ele conclui que a citação é
