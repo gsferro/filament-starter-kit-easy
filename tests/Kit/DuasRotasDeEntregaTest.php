@@ -121,7 +121,7 @@ it('todo caminho de topo que viaja esta coberto pelo kit:update ou declarado for
         '  1. acrescentar a `KitUpdate::CAMINHOS_DO_KIT`, se o kit é dono do conteúdo; ou',
         '  2. declarar em `FORA_DA_ENTREGA_POR_DECISAO`, neste arquivo, COM O MOTIVO.',
     ]));
-})->group('kit');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'Este arquivo mede as DUAS ROTAS DE ENTREGA DO KIT, e as duas so existem na arvore do kit: a varredura deriva de `git ls-files`, e projeto nascido de `composer create-project` nao tem o repositorio do kit. Sem a sentinela, `git ls-files` devolveria vazio e os tres casos ficariam verdes por AUSENCIA de git, que e o pior desfecho possivel para uma guarda.')->group('kit');
 
 /**
  * Os caminhos de topo que viajam e que o `kit:update` NÃO entrega, cada um com o motivo.
@@ -287,7 +287,7 @@ it('o leitor do gitattributes reconhece as exclusoes declaradas', function (): v
     $this->assertContains('app', $viajam);
     $this->assertContains('config', $viajam);
     $this->assertContains('tests', $viajam);
-})->group('kit');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'Este arquivo mede as DUAS ROTAS DE ENTREGA DO KIT, e as duas so existem na arvore do kit: a varredura deriva de `git ls-files`, e projeto nascido de `composer create-project` nao tem o repositorio do kit. Sem a sentinela, `git ls-files` devolveria vazio e os tres casos ficariam verdes por AUSENCIA de git, que e o pior desfecho possivel para uma guarda.')->group('kit');
 
 /**
  * Nenhuma declaração de `FORA_DA_ENTREGA_POR_DECISAO` sobrevive ao caminho que ela descreve.
@@ -320,4 +320,4 @@ it('toda declaracao de excecao aponta um caminho que existe e viaja', function (
             ->not->toBe('', "`{$caminho}` está declarado como exceção e não é rastreado pelo git — remova a declaração");
         expect(mb_strlen($motivo))->toBeGreaterThan(60, "a exceção `{$caminho}` precisa de um motivo escrito, não de um rótulo");
     }
-})->group('kit');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'Este arquivo mede as DUAS ROTAS DE ENTREGA DO KIT, e as duas so existem na arvore do kit: a varredura deriva de `git ls-files`, e projeto nascido de `composer create-project` nao tem o repositorio do kit. Sem a sentinela, `git ls-files` devolveria vazio e os tres casos ficariam verdes por AUSENCIA de git, que e o pior desfecho possivel para uma guarda.')->group('kit');
