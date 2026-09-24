@@ -165,7 +165,7 @@ The other two already come complete.
 | Foundation | |
 |---|---:|
 | Production packages | **58** |
-| Development packages | **19** |
+| Development packages | **20** |
 | Migrations | **60** |
 | Policies | **16** |
 | `kit:*` commands | **8** |

@@ -19,6 +19,13 @@ jobs:
           extensions: bcmath, intl, pcntl, zip, sqlite3, pdo_sqlite
           coverage: none
 
+      - name: Cache das dependências PHP
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php84-${{ hashFiles('composer.lock') }}
+          restore-keys: ${{ runner.os }}-php84-
+
       - name: Instalar dependências
         run: composer install --prefer-dist --no-interaction --no-progress
 
@@ -38,13 +45,27 @@ jobs:
       # arquivo com `visit()` (UsesBrowserTestCaseMethodFilter.php:57-60). Com o grupo, este
       # job morria em PlaywrightNotInstalledException sem rodar um único teste. Nomear as
       # suítes tira as pastas de browser da coleta, e elas seguem cobertas no job `telas`.
+      # `--parallel` porque a suíte em série não usa o runner: medido em 2026-09-24, a MESMA
+      # suíte e o MESMO commit levam 1.162 s em série aqui e 334 s em paralelo (16 núcleos).
+      # O runner tem 4 vCPU, e três ficavam parados durante 19 minutos.
+      #
+      # A regra `.ai/rules/testes-browser.md` PROIBE `--parallel` com navegador, e a proibição
+      # **não alcança este job**: ele nomeia as suítes, e `Browser`/`BrowserTenancy` não estão
+      # entre elas — elas rodam no job `telas`, em série. Isto está escrito porque confundir os
+      # dois casos já produziu o achado QA-11 e a reincidência QA-24.
       - name: Testes (Pest)
-        run: php artisan test --testsuite=Unit,Feature,Kit,Tenancy
+        run: php artisan test --testsuite=Unit,Feature,Kit,Tenancy --parallel
 
   telas:
     # Navegador real sobre as 52 telas dos três painéis. Job próprio porque é o único que
-    # precisa de Node + browsers do Playwright, e porque leva ~2min contra os segundos do
-    # job de qualidade — separado, uma falha aqui não esconde uma falha de estilo.
+    # precisa de Node + browsers do Playwright, e porque uma falha aqui não deve esconder uma
+    # falha de estilo.
+    #
+    # A redação anterior justificava a separação dizendo que este job "leva ~2min contra os
+    # segundos do job de qualidade". **O número inverteu de sinal e ninguém remediu**: medido
+    # em 2026-09-24, `telas` leva 226 s e `qualidade` levava 1.162 s. A separação continua
+    # certa, por outro motivo — isolar Node e Playwright — mas quem viesse aqui decidir onde
+    # otimizar olharia para o lugar errado.
     runs-on: ubuntu-latest
 
     steps:
@@ -61,13 +82,43 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Cache das dependências PHP
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php84-${{ hashFiles('composer.lock') }}
+          restore-keys: ${{ runner.os }}-php84-
+
+      - name: Cache do node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node-
+
+      # O download do Chromium é o que domina este job. A versão do browser é amarrada à do
+      # `@playwright/test` no lockfile, então o `hashFiles` dele é a chave correta: subir o
+      # Playwright invalida o cache, como deve.
+      - name: Cache dos browsers do Playwright
+        uses: actions/cache@v4
+        id: cache-playwright
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
       - name: Instalar dependências
         run: |
           composer install --prefer-dist --no-interaction --no-progress
           npm ci
 
+      # Com o cache quente, só as dependências de sistema — os binários já estão em disco.
       - name: Instalar browsers do Playwright
-        run: npx playwright install --with-deps chromium
+        run: |
+          if [ "${{ steps.cache-playwright.outputs.cache-hit }}" = "true" ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
 
       - name: Preparar ambiente
         run: |
@@ -97,6 +148,13 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
+
+      - name: Cache das dependências PHP
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php84-${{ hashFiles('composer.lock') }}
+          restore-keys: ${{ runner.os }}-php84-
 
       - name: Instalar dependências
         run: composer install --prefer-dist --no-interaction --no-progress
