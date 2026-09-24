@@ -101,6 +101,22 @@ const DIRETORIOS_DE_CODIGO = [
      * quem instala) e `resources/css/vendor/` é o que os pacotes publicam.
      */
     'resources/css/filament',
+
+    /*
+     * `tests` entrou depois de a validacao da v0.39.0 medir que `tests/Browser` e
+     * `tests/BrowserTenancy` NUNCA chegavam a quem atualiza: viajam no `create-project`
+     * pelo `.gitattributes` e nao estavam em `CAMINHOS_DO_KIT`.
+     *
+     * E a varredura nao pegou pelo mesmo motivo de sempre: ela olhava `app`,
+     * `database/*`, `resources/views` e `resources/css/filament`. Um diretorio de TESTE
+     * novo era invisivel para ela — exatamente como um diretorio de VIEW novo era antes
+     * da v0.23.0, tres linhas acima nesta mesma lista.
+     *
+     * `tests/Unit` e `tests/Feature` ficam de fora por `NAO_E_DO_KIT`: sao o esqueleto do
+     * Laravel, o ponto de extensao de quem instala, e entrega-los sobrescreveria o teste
+     * do usuario.
+     */
+    'tests',
 ];
 
 /**
@@ -111,6 +127,13 @@ const DIRETORIOS_DE_CODIGO = [
 const NAO_E_DO_KIT = [
     // Do skeleton do Laravel, e ponto de extensão de quem instala.
     'app/Http/Controllers/Controller.php',
+
+    /*
+     * O esqueleto do Laravel, e o ponto de extensao de quem instala: entregar estes pelo
+     * `kit:update` sobrescreveria o teste do usuario. Ficam fora de proposito.
+     */
+    'tests/Unit/ExampleTest.php',
+    'tests/Feature/ExemploTest.php',
 ];
 
 it('cobre todo o código do kit, e não só o que alguém lembrou de listar', function (): void {

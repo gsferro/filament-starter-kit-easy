@@ -5,6 +5,86 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.39.1] - 2026-09-24
+
+### Corrigido
+
+- **`tests/Browser` e `tests/BrowserTenancy` nunca chegavam a quem atualiza.** Os dois viajam no
+  `composer create-project` pelo `.gitattributes`, mas não estavam em
+  `KitUpdate::CAMINHOS_DO_KIT`. Quem instalou numa versão antiga e foi atualizando ficou com os
+  testes de tela da versão de origem, **para sempre**.
+
+  **Medido** na validação da `v0.39.0`: instalação limpa com **21** arquivos em `tests/Browser`,
+  instalação atualizada com **20**. O que faltava era o `RodapeNaDobraTest.php` da própria
+  release — e os outros 20 também nunca tinham sido atualizados.
+
+- **A guarda que deveria ter pego isso olhava para os diretórios errados.** A varredura de
+  `tests/Kit/KitUpdateTest.php` percorre `DIRETORIOS_DE_CODIGO`, que cobria `app`, `database/*`,
+  `resources/views` e `resources/css/filament` — e **não** `tests`. Um diretório de teste novo
+  era invisível para ela.
+
+  É o mesmo defeito que deixou `resources/views/svg` escapar na `v0.23.0`, três linhas acima na
+  mesma lista, e o comentário que o documenta estava lá o tempo todo. Corrigido por **classe**:
+  `tests` entrou na varredura, com `tests/Unit` e `tests/Feature` fora por `NAO_E_DO_KIT` — são
+  o esqueleto do Laravel, e entregá-los sobrescreveria o teste de quem instala.
+
+  Provado por mutação: removendo `tests/Browser` da lista, a guarda fica **vermelha** e nomeia os
+  25 arquivos. Antes da correção ela ficava **verde**.
+
+### Documentação
+
+- **O roteiro de release produzia um cenário 4 que não rodava.** Ele dizia apenas *"idem, com
+  `kit:tenancy` antes do update"*, e o *"idem"* não carregava o **commit extra** entre os dois: o
+  `kit:tenancy` deixa 6 arquivos modificados, e o `kit:update` recusa árvore suja, de propósito.
+
+  Pior, a falha não é óbvia — o `artisan` sai com código **0** e a mensagem de recusa rola para
+  fora do `tail`. A tabela de conferência passou a dizer que **a versão é o único sinal
+  confiável** de que o update aplicou.
+
+- **Registrado que o `kit:update` nunca apaga arquivo, e que isso é desenho** (`KitUpdate.php:798`
+  avisa em vez de apagar). Um arquivo **renomeado** chega pelo nome novo e o nome velho fica no
+  projeto atualizado, órfão. A `v0.39.0` renomeou `versao-do-kit.blade.php`, então as duas blades
+  convivem em projeto atualizado — e isso **não** é falha do cenário 3 ou 4.
+
+### Validação dos quatro cenários — `v0.39.0`
+
+Rodados contra a tag `v0.39.0` publicada e indexada no Packagist, em
+`STARTER-KIT-EASY/validacao-v0.39.0/`. Comando idêntico nos quatro:
+
+```
+php artisan test --testsuite=Kit,Tenancy --parallel --compact
+```
+
+| # | Cenário | Diretório | Versão | Tenancy | Saída |
+|---|---|---|---|---|---|
+| 1 | limpo, sem tenancy | `novo-sem-tenant` | `0.39.0` | — | `2880 testes / 2700 verdes / 10.599 asserções / 180 pulados / 0 falhas` |
+| 2 | limpo, com tenancy | `novo-com-tenant` | `0.39.0` | `SIM` | `2880 / 2700 / 10.599 / 180 pulados / 0 falhas` |
+| 3 | `kit:update`, sem tenancy | `velho-sem-tenant` | `0.39.0` | — | `2880 / 2700 / 10.603 / 180 pulados / 0 falhas` |
+| 4 | `kit:update`, com tenancy | `velho-com-tenant` | `0.39.0` | `SIM` | `2880 / 2700 / 10.603 / 180 pulados / 0 falhas` |
+
+Os 3 e 4 nasceram da `v0.38.2` e foram atualizados com `kit:update --all`; `migrate --force`
+devolveu `Nothing to migrate` nos dois, o que confere — esta release não traz migration.
+
+#### Os pulados: 172 → **180**, e o aumento é justificado por causa
+
+O teto da validação anterior (`v0.38.1`) era **172**. Os **+8** são correções legítimas —
+exatamente a classe que o roteiro avisa que infla a métrica:
+
+| Causa | Casos |
+|---|---|
+| `[CT-19]` de `ChecklistDeReleaseTest` ganhou `->skip()` — ele afirmava estar na árvore do kit e consultava o `git` | +1 |
+| `'o auth.json nao esta rastreado pelo git'` ganhou `->skip()` — passava no projeto instalado **pela razão errada** | +1 |
+| `RedeDeDocumentacaoTest` (arquivo inteiro guardado pela sentinela) ganhou `[CT-26]`, `[CT-27]`, `[CT-28]` e 2 casos no `[CT-23]` | +6 |
+| **Total** | **+8** |
+
+**Novo teto para a próxima release: 180.**
+
+#### O que a validação achou
+
+Um defeito real, e ele **só aparece nos cenários 3 e 4** — que é a razão de o roteiro exigir os
+quatro, e não dois. Está corrigido nesta `v0.39.1`, acima.
+
+
 ## [0.39.0] - 2026-09-24
 
 ### Adicionado

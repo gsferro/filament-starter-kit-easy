@@ -76,6 +76,32 @@ php artisan kit:update --all --no-interaction
 php artisan migrate --force
 ```
 
+> **No cenário 4 há um commit A MAIS, e ele não é zelo.** O `kit:tenancy` deixa a árvore suja
+> (medido: 6 arquivos — `.env`, `config/permission.php`, `config/filament-shield.php`, o banco e
+> dois logs), e o `kit:update` **recusa** árvore suja, de propósito: é isso que permite distinguir
+> o que é seu do que o kit trouxe. Sem o commit no meio, o cenário 4 falha com
+> `ERROR Há alterações não commitadas na árvore de trabalho`:
+>
+> ```bash
+> cd velho-com-tenant
+> git init && git add -A && git commit -m "vX.Y.(Z-1) recem instalada"
+> php artisan kit:tenancy --force --no-interaction
+> git add -A && git commit -m "depois da tenancy, antes do update"   # <- ESTE
+> php artisan kit:update --all --no-interaction
+> php artisan migrate --force
+> ```
+>
+> A redação anterior dizia apenas *"idem, com `kit:tenancy` antes do update"*, e o *"idem"* não
+> carregava o commit extra. Achado da validação da `v0.39.0`, onde o cenário 4 ficou parado na
+> versão antiga sem que a falha fosse óbvia: o `artisan` saiu com código 0 e a mensagem de recusa
+> rolou para fora do `tail`. **O sinal confiável é a versão**, conferida logo após o update.
+
+> **O `kit:update` nunca apaga arquivo, e isso é desenho.** Um arquivo **renomeado** no kit chega
+> pelo nome novo e o nome velho **fica** no projeto atualizado — órfão, mas presente. O comando
+> avisa (`KitUpdate.php:798`: *"foi REMOVIDO do kit. Nada é apagado automaticamente — decida
+> você"*). Então **não** trate a presença do nome antigo como falha do cenário 3 ou 4;
+> a v0.39.0 renomeou `versao-do-kit.blade.php` e as duas blades convivem em projeto atualizado.
+
 `--all` aplica tudo sem revisar arquivo a arquivo. Num projeto de validação é o que se quer; num
 projeto real, **não** — ali o modo interativo existe para você escolher.
 
@@ -89,7 +115,7 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 |---|---|---|
 | **Zero erro e zero falha** | a saída do comando acima | é o critério de "liso"; **pulado declarado não conta contra** |
 | Contagem de **pulados** | mesma saída | **não pode passar do teto** registrado na release anterior. Subiu? **justificar por escrito, caso a caso**, antes da tag — ver a nota abaixo |
-| Versão | `php artisan tinker --execute "echo config('kit.version');"` | a tag nova **sem o `v`** (`0.38.1`, não `v0.38.1`), nos quatro |
+| Versão | `php artisan tinker --execute "echo config('kit.version');"` | a tag nova **sem o `v`** (`0.38.1`, não `v0.38.1`), nos quatro. **É o único sinal confiável de que o `kit:update` de fato aplicou** — ele pode recusar e sair com código 0 |
 | Tenancy (2 e 4) | `… echo config('kit.tenancy.enabled') ? 'SIM' : 'NAO';` | `SIM` |
 | Arquivo novo da release | `ls` no caminho dele | presente nos quatro — se faltar só nos de update, o problema é `CAMINHOS_DO_KIT` |
 | Migration nova | saída do `migrate --force` | rodou nos cenários 3 e 4 |

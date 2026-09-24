@@ -218,6 +218,23 @@ class KitUpdate extends Command
         // confere se a fundação continua de pé depois de aplicar.
         'tests/Kit',
         'tests/Tenancy',
+
+        /*
+         * `tests/Browser` e `tests/BrowserTenancy` viajam no `create-project` pelo
+         * `.gitattributes`, mas ate a v0.39.1 nao estavam AQUI: quem instalou e foi
+         * atualizando ficou com os testes de tela da versao em que instalou, para sempre.
+         *
+         * Medido na validacao da v0.39.0: instalacao limpa tinha 21 arquivos em
+         * `tests/Browser`, instalacao atualizada tinha 20 — faltava exatamente o
+         * `RodapeNaDobraTest.php` da release. Os outros 20 tambem nunca haviam sido
+         * atualizados; eram os da versao de origem.
+         *
+         * A varredura de `tests/Kit/KitUpdateTest.php` nao pegou porque
+         * `DIRETORIOS_DE_CODIGO` nao incluia `tests` — o MESMO motivo pelo qual
+         * `resources/views/svg` escapou na v0.23.0, um diretorio adiante. Corrigido junto.
+         */
+        'tests/Browser',
+        'tests/BrowserTenancy',
         'tests/Pest.php',
         'tests/TestCase.php',
         'tests/TenancyTestCase.php',
