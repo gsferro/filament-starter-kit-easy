@@ -9,8 +9,11 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 - **O CI passou a rodar a suite em paralelo, com cache de dependencia.** O job `qualidade` rodava
   `php artisan test` **sem `--parallel`**, em serie, num runner de 4 vCPU — tres ficavam parados
-  durante 19 minutos. **Medido** em 2026-09-24: a mesma suite e o mesmo commit levam **1.162 s em
-  serie** e **334 s em paralelo** (16 nucleos).
+  durante 19 minutos.
+
+  **Medido, antes e depois, no mesmo runner**: o job caiu de **1.162 s (19,4 min)** para
+  **269 s (4,5 min)** — **4,3x**, e com os caches ainda **frios** na execucao medida. O relogio de
+  parede do CI inteiro acompanhou, porque `qualidade` era o caminho critico.
 
   A regra `.ai/rules/testes-browser.md` proibe `--parallel` com navegador, e a proibicao **nao
   alcanca este job**: ele nomeia as suites, e `Browser`/`BrowserTenancy` nao estao entre elas.
