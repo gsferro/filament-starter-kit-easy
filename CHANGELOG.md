@@ -5,6 +5,53 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alterado
+
+- **O CI passou a rodar a suite em paralelo, com cache de dependencia.** O job `qualidade` rodava
+  `php artisan test` **sem `--parallel`**, em serie, num runner de 4 vCPU — tres ficavam parados
+  durante 19 minutos.
+
+  **Medido, antes e depois, no mesmo runner**, com mais de uma execucao de cada lado porque o
+  runner varia:
+
+  | | Execucoes | Valores | Mediana |
+  |---|---|---|---|
+  | antes, em serie | 3 | 1.095 · 1.119 · 1.162 s | **1.119 s** |
+  | depois, em paralelo | 3 | 269 · 364 · 533 s | **364 s** |
+
+  **~3,1x na mediana, com faixa de 2,1x a 4,3x.** O runner varia bastante mais do lado paralelo,
+  e o numero que vale e a mediana, nao o melhor caso. O relogio de parede do CI inteiro acompanhou,
+  porque `qualidade` era o caminho critico.
+
+  *(Este numero foi corrigido duas vezes. A primeira redacao dizia 4,3x, de uma execucao so; a
+  segunda, 3,0x a 4,3x, de duas. Cada medicao nova alargou a faixa para baixo — que e o
+  comportamento esperado de uma amostra pequena, e a razao de a mediana de tres valer mais que o
+  melhor de um.)*
+
+  A regra `.ai/rules/testes-browser.md` proibe `--parallel` com navegador, e a proibicao **nao
+  alcanca este job**: ele nomeia as suites, e `Browser`/`BrowserTenancy` nao estao entre elas.
+  Isto ficou escrito no workflow, porque confundir os dois casos ja produziu o achado QA-11 e a
+  reincidencia QA-24.
+
+- **Nenhum dos tres jobs tinha cache.** `composer install --prefer-dist` completo a cada execucao,
+  e `npx playwright install --with-deps chromium` no job de telas. Entraram caches para `vendor`,
+  `node_modules` e os browsers do Playwright, este ultimo chaveado pelo `package-lock.json` — a
+  versao do browser e amarrada a do `@playwright/test`, entao subir o Playwright invalida o cache,
+  como deve.
+
+- **`brianium/paratest` passou a ser declarado em `require-dev`.** Ele ja estava em `vendor/`, mas
+  como dependencia **transitiva** de `laravel/pao`: o `composer test:kit`, que o time usa todo dia,
+  dependia de um pacote que o projeto nao pedia. Um upgrade upstream que o soltasse quebraria o
+  paralelismo sem aviso.
+
+### Documentacao
+
+- **O comentario que justificava a separacao dos jobs do CI havia invertido de sinal.** Ele dizia
+  que o job de telas *"leva ~2min contra os segundos do job de qualidade"*. Medido: `telas` leva
+  **226 s** e `qualidade` levava **1.162 s**. A separacao continua certa, por outro motivo —
+  isolar Node e Playwright — mas quem viesse decidir onde otimizar olharia para o lugar errado.
+
+
 ## [0.39.1] - 2026-09-24
 
 ### Validacao dos quatro cenarios — `v0.39.1`

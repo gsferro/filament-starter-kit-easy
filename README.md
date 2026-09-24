@@ -165,7 +165,7 @@ dois já vêm completos.
 | Fundação | |
 |---|---:|
 | Pacotes de produção | **58** |
-| Pacotes de desenvolvimento | **19** |
+| Pacotes de desenvolvimento | **20** |
 | Migrations | **60** |
 | Policies | **16** |
 | Comandos `kit:*` | **8** |
