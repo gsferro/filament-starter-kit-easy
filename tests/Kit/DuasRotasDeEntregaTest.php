@@ -2,6 +2,7 @@
 
 use App\Console\Commands\KitUpdate;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Process;
 
 /**
  * As duas rotas de entrega do kit não podem divergir em silêncio.
@@ -90,8 +91,8 @@ it('todo caminho de topo que viaja esta coberto pelo kit:update ou declarado for
          * Entao, quando a cobertura e parcial, cada FILHO de disco precisa estar coberto ou
          * declarado. Um subdiretorio novo nasce reprovando, como o de topo.
          */
-        foreach (File::directories(base_path($caminho)) as $sub) {
-            $relativo = $caminho.'/'.basename($sub);
+        foreach (diretoriosRastreados($caminho) as $sub) {
+            $relativo = $caminho.'/'.$sub;
 
             $cobertoFilho = array_any(
                 $cobertos,
@@ -150,9 +151,6 @@ const FORA_DA_ENTREGA_POR_DECISAO = [
         .'`lang/pt_BR.json` — as 33 strings que traduzem telas de plugin de terceiro — e esse SIM '
         .'passou a ser entregue pelo `kit:update`, na correção que este arquivo motivou.',
 
-    'public/build' => 'Saída do Vite, gerada por `npm run build` no projeto instalado. Entregar '
-        .'artefato compilado pelo update sobrescreveria o build de quem tem front próprio.',
-
     'public/fonts' => 'Fontes publicadas por `filament:assets`, que o `kit:update` manda rodar ao '
         .'final. Elas se regeneram a partir do vendor instalado, e versioná-las no update faria o '
         .'kit competir com o comando do Filament pela mesma pasta.',
@@ -199,16 +197,14 @@ function caminhosDeTopoQueViajam(): array
     }
 
     /*
-     * `vendor` e `node_modules` não são versionados; `storage` viaja, mas o que ele carrega é
-     * estrutura de diretório vazia, não conteúdo que o kit atualize.
+     * `storage` e rastreado (os `.gitignore` de dentro dele), mas o que viaja ali e estrutura de
+     * diretorio vazia, nao conteudo que o kit atualize.
      */
-    $nuncaSaoDoKit = ['vendor', 'node_modules', 'storage', '.git'];
+    $nuncaSaoDoKit = ['storage'];
 
     $viajam = [];
 
-    foreach (File::directories(base_path()) as $diretorio) {
-        $nome = basename($diretorio);
-
+    foreach (diretoriosRastreados('') as $nome) {
         if (in_array($nome, $excluidos, true) || in_array($nome, $nuncaSaoDoKit, true)) {
             continue;
         }
@@ -219,6 +215,59 @@ function caminhosDeTopoQueViajam(): array
     sort($viajam);
 
     return $viajam;
+}
+
+/**
+ * Os diretorios RASTREADOS pelo git sob `$prefixo` — e nao os que estao no disco.
+ *
+ * ## Por que git, e nao `File::directories()`
+ *
+ * A primeira redacao lia o disco, e o disco DIFERE entre maquinas: `public/build` e gerado por
+ * `npm run build` e existe na maquina de quem desenvolve, nao no job `qualidade` do CI, que nao
+ * faz build. O caso passava aqui e **reprovava la** — e o CI estava certo.
+ *
+ * Derivar do git corrige a classe, nao a ocorrencia:
+ *
+ * - o que e **rastreado** e identico em toda maquina, entao a lista de acusados para de depender
+ *   de quem roda;
+ * - o que e **gitignorado** nao viaja por NENHUMA das duas rotas de entrega — nem no
+ *   `create-project` (que exporta do git) nem no `kit:update` (que compara commits) —, logo nunca
+ *   pode divergir entre elas, que e a unica coisa que este arquivo existe para medir.
+ *
+ * `vendor` e `node_modules` somem de graca por serem gitignorados, e por isso saem da lista de
+ * excecoes escrita a mao.
+ *
+ * @return list<string>
+ */
+function diretoriosRastreados(string $prefixo): array
+{
+    $processo = Process::path(base_path())->run(
+        $prefixo === ''
+            ? 'git ls-files --full-name'
+            : 'git ls-files --full-name -- '.escapeshellarg($prefixo),
+    );
+
+    $nomes = [];
+
+    foreach (preg_split('~\R~', $processo->output()) ?: [] as $caminho) {
+        $caminho = trim($caminho);
+
+        if ($caminho === '') {
+            continue;
+        }
+
+        $partes       = explode('/', $caminho);
+        $profundidade = $prefixo === '' ? 0 : substr_count(rtrim($prefixo, '/'), '/') + 1;
+
+        // So interessa quem TEM subcaminho: arquivo solto na raiz nao e diretorio.
+        if (count($partes) <= $profundidade + 1) {
+            continue;
+        }
+
+        $nomes[$partes[$profundidade]] = true;
+    }
+
+    return array_keys($nomes);
 }
 
 /**
@@ -262,7 +311,13 @@ it('toda declaracao de excecao aponta um caminho que existe e viaja', function (
          * lida, e ainda assim.
          */
         $this->assertContains($topo, $viajam, "`{$caminho}` está declarado como exceção e o topo dele não viaja mais — remova a declaração");
-        $this->assertDirectoryExists(base_path($caminho), "`{$caminho}` está declarado como exceção e não existe mais no disco — remova a declaração");
+        /*
+         * Rastreado pelo GIT, e nao "existe no disco": `assertDirectoryExists` reprovava no CI
+         * para `public/build`, que e gerado pelo `npm run build` e so existe depois dele. O
+         * criterio certo e o mesmo da varredura — ver `diretoriosRastreados()`.
+         */
+        expect(Process::path(base_path())->run('git ls-files --full-name -- '.escapeshellarg($caminho))->output())
+            ->not->toBe('', "`{$caminho}` está declarado como exceção e não é rastreado pelo git — remova a declaração");
         expect(mb_strlen($motivo))->toBeGreaterThan(60, "a exceção `{$caminho}` precisa de um motivo escrito, não de um rótulo");
     }
 })->group('kit');

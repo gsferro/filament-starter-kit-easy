@@ -54,6 +54,18 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   redacao parava no topo, via `tests` como coberto por `tests/Kit`, e **deixaria passar a propria
   ocorrencia 2 que a motivou** — o mutante sobreviveu a bateria e a correcao veio dai.
 
+  Ela **deriva do `git ls-files`, nao do disco**. A primeira redacao lia o disco e passava aqui
+  enquanto reprovava no CI: `public/build` e gerado por `npm run build`, existe na maquina de quem
+  desenvolve e nao no job `qualidade`, que nao faz build. O CI estava certo. O que e rastreado e
+  igual em toda maquina, e o que e gitignorado nao viaja por **nenhuma** das duas rotas — logo
+  nunca pode divergir entre elas, que e a unica coisa que esta guarda existe para medir.
+
+  **Cinco divergencias reais no primeiro uso, todas de material de IA**: `.agents`, `.ai/mcp`,
+  `.ai/skills`, `.claude` e `.junie` viajavam no `create-project` e **nao** eram entregues pelo
+  `kit:update`. Quem instalava ficava com as skills da versao de instalacao para sempre — e elas
+  mudam mais rapido que o codigo (a `feature-wiki` ja esta na 3.5.0). As cinco entraram em
+  `CAMINHOS_DO_KIT`, ao lado do `.ai/rules` que ja estava la pelo mesmo argumento.
+
   O debito mais caro que ela tornou visivel: `bootstrap/app.php` registra o middleware
   `RaizDeUrlSemPublic` do kit (v0.36.1) e **nao e entregue pelo update**, porque o arquivo tambem
   e do esqueleto. Quem instalou antes da v0.36.1 tem a classe e nao tem o registro. A saida

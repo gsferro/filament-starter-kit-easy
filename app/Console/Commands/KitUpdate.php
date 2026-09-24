@@ -273,6 +273,31 @@ class KitUpdate extends Command
         '.ai/rules',
 
         /*
+        | As SKILLS e a config de MCP, nas quatro convencoes que o kit publica.
+        |
+        | Entraram junto com `tests/Kit/DuasRotasDeEntregaTest.php`, que e quem as
+        | acusou: as cinco viajam no `composer create-project` (nenhuma tem
+        | `export-ignore`) e nao eram entregues pelo `kit:update`. Quem instalou o kit
+        | ficava com as skills da versao em que instalou, para sempre — e elas mudam
+        | mais rapido que o codigo: a `feature-wiki` ja esta na 3.5.0.
+        |
+        | Sao quatro espelhos do MESMO material, porque cada ferramenta le de um
+        | lugar: `.ai/` e o canonico, `.claude/` o do Claude Code, `.agents/` o da
+        | convencao aberta e `.junie/` o do JetBrains. Espelho que nao e atualizado
+        | junto vira divergencia silenciosa, que e a classe que este bloco fecha.
+        |
+        | Skill ou agente SEU nao entra no diff, pela mesma regra de
+        | `app/Console/Commands`: o que nao existe na arvore do kit nunca aparece na
+        | comparacao entre duas versoes dele. E `.claude/settings.local.json` nao e
+        | rastreado, entao nao ha risco de sobrescrever preferencia de maquina.
+        */
+        '.ai/mcp',
+        '.ai/skills',
+        '.agents',
+        '.claude',
+        '.junie',
+
+        /*
         | Os doze documentos de topo da wiki, um a um — e não `wikis` inteiro.
         | Em ordem alfabética: a lista só envelhece bem se der para achar
         | um nome nela sem ler as doze linhas.
