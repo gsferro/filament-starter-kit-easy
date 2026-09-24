@@ -11,9 +11,16 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   `php artisan test` **sem `--parallel`**, em serie, num runner de 4 vCPU — tres ficavam parados
   durante 19 minutos.
 
-  **Medido, antes e depois, no mesmo runner**: o job caiu de **1.162 s (19,4 min)** para
-  **269 s (4,5 min)** — **4,3x**, e com os caches ainda **frios** na execucao medida. O relogio de
-  parede do CI inteiro acompanhou, porque `qualidade` era o caminho critico.
+  **Medido, antes e depois, no mesmo runner**, com mais de uma execucao de cada lado porque o
+  runner varia:
+
+  | | Execucoes | Faixa |
+  |---|---|---|
+  | antes, em serie | 3 | **1.095 – 1.162 s** |
+  | depois, em paralelo | 2 | **269 – 364 s** |
+
+  **3,0x a 4,3x.** O relogio de parede do CI inteiro acompanhou — de ~19 min para 4,5 a 6 min —
+  porque `qualidade` era o caminho critico. A estimativa deste PR era 2,5 a 3,5x.
 
   A regra `.ai/rules/testes-browser.md` proibe `--parallel` com navegador, e a proibicao **nao
   alcanca este job**: ele nomeia as suites, e `Browser`/`BrowserTenancy` nao estao entre elas.
