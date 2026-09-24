@@ -6,6 +6,14 @@
 *.md diff=markdown
 *.php diff=php
 
+# O `*` da linha 1 normaliza TUDO para LF, e para um `.cmd` isso e quebra funcional, nao
+# cosmetica: o `cmd` do Windows exige CRLF para ler o arquivo em lotes. Sem esta linha, o
+# `pestw.cmd` sai quebrado no `git checkout` de quem clonar, e o sintoma aparece longe da
+# causa -- o `--mutate` volta a dar 100% instantaneo e falso. Ver o cabecalho do proprio
+# `pestw.cmd` e o ADR-07 de `wikis/specs/feat/cobertura-de-testes/`.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
 # O CI e o changelog são do kit, não do projeto que nasce dele: ficam fora do
 # pacote distribuído. Tudo o mais (tests, docker, .env.docker) segue junto de
 # propósito — é material de trabalho de quem instala.
