@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.39.0] - 2026-09-24
+
 ### Adicionado
 
 - **O rodapé passa a assinar o sistema, e a assinatura é composta em um só lugar.** Em toda tela
@@ -37,6 +39,26 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - `resources/views/filament/versao-do-kit.blade.php` → **`assinatura-do-rodape.blade.php`**. O nome
   antigo já era impreciso — a blade mostra a versão do **sistema**, não a do kit — e mostrar
   também o `©` o tornaria ativamente errado.
+
+### Corrigido
+
+- **O recado da tela de login ficava fora de qualquer landmark.** Numa tela pública, ele era um
+  `<div>` filho direto de `<body>`, e o axe o acusava por `region`. Passou a ser `<aside>`
+  (landmark `complementary`), que resolve isso **sem** duplicar o `contentinfo` da assinatura —
+  as três formas foram medidas com o axe, e não deduzidas.
+
+  Conferido contra o Filament 5.8.1: ele emite `<footer>` apenas **aninhado** e não emite
+  `<aside>` em lugar nenhum, então nenhuma das duas tags colide com o framework.
+
+- **Um caso de teste afirmava estar na árvore do kit, sem guarda.** O `[CT-19]` de
+  `ChecklistDeReleaseTest` ficava vermelho em toda instalação nova, por duas razões independentes:
+  ele afirmava `naArvoreDoKit()` e consultava o `git`, que o `create-project` não entrega.
+
+- **A guarda de arquitetura que deveria ter pego isso olhava para os arquivos errados.** Ela
+  reconhecia três formas de depender da árvore do kit, mas só varria arquivos que citam
+  documentação. `BlueprintForaDoPacoteTest` invoca `git ls-files`, não tinha guarda e **nunca era
+  varrido** — e o caso dele passava no projeto instalado **pela razão errada**: sem `.git`, o
+  comando sai com código diferente de zero, que era exatamente o que a asserção esperava.
 
 ## [0.38.2] - 2026-09-22
 
