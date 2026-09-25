@@ -54,7 +54,26 @@ it('nenhuma dependencia de producao tem constraint sem teto de major', function 
         'Um `composer update` traz código novo de terceiro sem aviso. Declare o teto: `^10.3`',
         'para o major corrente, ou `>=1.2 <3` quando duas majors forem de fato suportadas.',
     ]));
-})->group('kit');
+})->skip(
+    /*
+     * Fora da arvore do kit, o `composer.json` e DO PROJETO -- e o kit nao tem o que reprovar ali.
+     *
+     * Achado pelos quatro cenarios de instalacao da v0.40.0: os cenarios 3 e 4 (`kit:update` a
+     * partir da v0.39.1) ficavam VERMELHOS por `spatie/laravel-backup => *`, que foi o proprio kit
+     * que embarcou na v0.39.1 e corrigiu na v0.40.0. O `composer.json` esta deliberadamente fora do
+     * `kit:update` (`KitUpdate.php:366`), que avisa e manda revisar a mao -- entao quem atualiza
+     * recebe o TESTE novo sem a CORRECAO, e a suite dele fica vermelha no dia 1 por algo que ele
+     * nao causou e que so ele pode consertar.
+     *
+     * Instalacao limpa nao tinha o problema: ela ja nasce com o `composer.json` da versao nova.
+     *
+     * Guarda que dispara por decisao do kit, na arvore de outra pessoa, e alarme falso -- e alarme
+     * falso e como guarda morre. Na arvore do kit ela continua valendo com todo o rigor, que e onde
+     * a decisao de constraint e de fato tomada.
+     */
+    fn (): bool => ! naArvoreDoKit(),
+    'O `composer.json` de um projeto instalado e dele: as dependencias que ele declara sao escolha de quem instalou.',
+)->group('kit');
 
 /**
  * A constraint limita o major que pode entrar?
