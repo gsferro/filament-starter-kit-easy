@@ -155,19 +155,50 @@ Seus testes vão em `tests/Feature` e `tests/Unit`, como de costume — o kit n�
 
 ## A cobertura de testes — e o que o número **não** inclui
 
-**79,79 %** das linhas de `app/` (7.858 de 9.848 statements), medido em 2026-09-24. O badge do
+**79 %** das linhas de `app/` — 7.970 de 9.976 statements, medido em 2026-09-25. O badge do
 README vem daqui, e o CI reprova quando ele mente.
+
+> Os números com casa decimal desta página são **datados**, não derivados: eles valem para a
+> medição de 2026-09-25 e envelhecem. O único que tem guarda automática é o percentual inteiro,
+> travado contra `.github/badges/cobertura.json` pelo `[CT-49]`.
 
 ```bash
 composer test:coverage    # mede, grava o badge e aplica o piso — ~27 min, em série
+
+# as duas metades, separadas, quando você já tem o Clover:
+php -d pcov.enabled=1 vendor/bin/pest --testsuite=Kit,Tenancy --no-tia --coverage-clover=cobertura.xml
+php artisan kit:cobertura cobertura.xml --min=78          # confere (é o que o CI faz)
+php artisan kit:cobertura cobertura.xml --min=78 --write  # grava o badge
 ```
+
+O `kit:cobertura` **viaja com o kit**: no seu projeto ele aplica o piso que você escolher, sobre o
+`phpunit.xml` que você tiver. A parte do badge é a única que é só do kit — fora da árvore dele o
+`.github/badges/` não existe, e o comando simplesmente não mexe em badge nenhum.
+
+### Os três badges de teste do README, e o que cada um garante
+
+| Badge | De onde sai | Quem impede de envelhecer |
+|---|---|---|
+| **cobertura** | `.github/badges/cobertura.json`, gerado por `composer test:coverage` | o job `cobertura` do CI, que remede e reprova se o JSON mentir |
+| **casos de teste** | contagem de blocos `it()`/`test()` em `tests/` | o `[CT-50]`, que **recalcula da árvore** a cada rodada da suíte |
+| **PHPStan** | o `level:` do `phpstan.neon` | o `[CT-50]`, pelo mesmo mecanismo |
+
+Os dois últimos não dependem de rodar nada — são deriváveis por leitura, então a guarda calcula a
+verdade sozinha em milissegundos. O de cobertura depende dos ~27 min de medição, e por isso vive
+num arquivo versionado com conferência no CI.
+
+> **O badge de casos conta blocos escritos, não casos executados.** Um `it()` com `->with()` de
+> cinco linhas vira cinco casos na execução — por isso o número do badge é menor que o que o Pest
+> imprime. É a grandeza que dá para derivar sem rodar a suíte, e é o que o badge quer dizer:
+> quantos cenários foram escritos à mão.
 
 ### Por que em série, e por que demora
 
 `--parallel --coverage` **não existe**: o Pest imprime o *usage* do paratest, e
 `artisan test --parallel --coverage-clover` roda e não gera arquivo nenhum. A medição é serial por
-construção — ~27 min contra os ~3 min da suíte paralela. Por isso o job de CI roda em `main` e por
-disparo manual, não em toda PR.
+construção — ~27 min contra os ~6 min que a mesma suíte leva em paralelo **no runner do CI**
+(~3 min numa máquina de 16 núcleos). Por isso o job roda em `main` e por disparo manual, não em
+toda PR: o número comparável é o do CI, que é onde a conta é paga.
 
 O driver é o **PCOV**, não o Xdebug: para cobertura de **linha** o Xdebug não acrescenta nada e
 custa muito mais. Ele fica desligado no `php.ini` (`pcov.enabled=0`) e liga só na invocação, para
@@ -183,7 +214,7 @@ Três coisas ficam fora da conta, e ler o número sem saber disso leva à conclu
 | Os testes de instalação | rodam `composer create-project` de verdade, também em outro processo |
 | `tests/Unit` e `tests/Feature` | são **seus**, não do kit — têm um arquivo de exemplo cada |
 
-O efeito é visível na decomposição: **`app/Console` aparece a 27 %** e é, na prática, o código mais
+O efeito é visível na decomposição: **`app/Console` aparece a 34 %** e é, na prática, o código mais
 exercitado do kit — os testes de instalação executam `kit:install` inteiro, de fora. Lê-lo como
 *"os comandos não têm teste"* seria exatamente o erro que esta seção existe para evitar.
 
@@ -193,9 +224,9 @@ casos — e autorização é onde defeito silencioso custa mais caro.
 
 ### O piso é 78 %, e ele não é folclore
 
-Com 9.848 statements, **1 ponto percentual vale ~98 linhas**. Um bug corrigido, um método novo ou
-um refactor não movem o número; para cair os 1,79 pp de folga é preciso que quase 180 statements
-entrem sem teste — que é o único evento que o piso existe para pegar.
+Com 9.976 statements, **1 ponto percentual vale ~100 linhas**. Um bug corrigido, um método novo
+ou um refactor não movem o número; para cair os 1,89 pp de folga é preciso que quase 190
+statements entrem sem teste — que é o único evento que o piso existe para pegar.
 
 E cobertura de linha **não** mede se a suíte detecta defeito: ela mede o que foi **executado**, não
 o que foi **verificado**. Quem responde isso é o mutation score, e para ele o kit usa

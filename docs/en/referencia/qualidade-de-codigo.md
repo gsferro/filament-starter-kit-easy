@@ -156,19 +156,50 @@ Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never to
 
 ## Test coverage — and what the number leaves **out**
 
-**79.79%** of the lines in `app/` (7,858 of 9,848 statements), measured on 2026-09-24. The README
+**79 %** of the lines in `app/` — 7,970 of 9,976 statements, measured on 2026-09-25. The README
 badge comes from here, and CI fails when it lies.
+
+> The figures with decimals on this page are **dated**, not derived: they hold for the 2026-09-25
+> measurement and they age. The only one with an automatic guard is the whole percentage, pinned
+> against `.github/badges/cobertura.json` by `[CT-49]`.
 
 ```bash
 composer test:coverage    # measures, writes the badge and applies the floor — ~27 min, serial
+
+# the two halves, separately, when you already have the Clover:
+php -d pcov.enabled=1 vendor/bin/pest --testsuite=Kit,Tenancy --no-tia --coverage-clover=cobertura.xml
+php artisan kit:cobertura cobertura.xml --min=78          # checks (this is what CI does)
+php artisan kit:cobertura cobertura.xml --min=78 --write  # writes the badge
 ```
+
+`kit:cobertura` **travels with the kit**: in your project it applies whatever floor you choose,
+over whatever `phpunit.xml` you have. The badge part is the only kit-only piece — outside the
+kit's tree `.github/badges/` does not exist, and the command simply leaves badges alone.
+
+### The three test badges in the README, and what each one guarantees
+
+| Badge | Where it comes from | What keeps it from ageing |
+|---|---|---|
+| **coverage** | `.github/badges/cobertura.json`, produced by `composer test:coverage` | the `cobertura` CI job, which re-measures and fails if the JSON lies |
+| **test cases** | count of `it()`/`test()` blocks under `tests/` | `[CT-50]`, which **recomputes it from the tree** on every suite run |
+| **PHPStan** | the `level:` in `phpstan.neon` | `[CT-50]`, by the same mechanism |
+
+The last two depend on running nothing — they are derivable by reading, so the guard works out the
+truth by itself in milliseconds. The coverage one depends on the ~27 min measurement, which is why
+it lives in a versioned file checked by CI.
+
+> **The case badge counts blocks written, not cases executed.** An `it()` with a five-row
+> `->with()` becomes five cases at run time — which is why the badge number is lower than what Pest
+> prints. It is the quantity that can be derived without running the suite, and it is what the
+> badge means to say: how many scenarios were written by hand.
 
 ### Why serial, and why it takes that long
 
 `--parallel --coverage` **does not exist**: Pest prints the paratest *usage*, and
 `artisan test --parallel --coverage-clover` runs and produces no file at all. The measurement is
-serial by construction — ~27 min against the ~3 min of the parallel suite. That is why the CI job
-runs on `main` and on manual dispatch, not on every PR.
+serial by construction — ~27 min against the ~6 min the same suite takes in parallel **on the CI
+runner** (~3 min on a 16-core machine). That is why the job runs on `main` and on manual dispatch,
+not on every PR: the comparable number is the CI one, which is where the bill is paid.
 
 The driver is **PCOV**, not Xdebug: for **line** coverage Xdebug adds nothing and costs far more.
 It stays off in `php.ini` (`pcov.enabled=0`) and is switched on per invocation, so the everyday
@@ -185,7 +216,7 @@ conclusion:
 | The installation tests | they run a real `composer create-project`, also in another process |
 | `tests/Unit` and `tests/Feature` | they are **yours**, not the kit's — one example file each |
 
-The effect shows in the breakdown: **`app/Console` reports 27%** and is, in practice, the most
+The effect shows in the breakdown: **`app/Console` reports 34%** and is, in practice, the most
 exercised code in the kit — the installation tests run the whole `kit:install` from the outside.
 Reading it as *"the commands have no tests"* would be precisely the mistake this section exists to
 prevent.
@@ -196,8 +227,8 @@ cases — and authorisation is where a silent defect costs the most.
 
 ### The floor is 78%, and it is not folklore
 
-With 9,848 statements, **1 percentage point is worth ~98 lines**. A bug fix, a new method or a
-refactor do not move the number; to lose the 1.79 pp of slack, nearly 180 statements have to land
+With 9,976 statements, **1 percentage point is worth ~100 lines**. A bug fix, a new method or a
+refactor do not move the number; to lose the 1.89 pp of slack, nearly 190 statements have to land
 untested — which is the only event the floor exists to catch.
 
 And line coverage does **not** measure whether the suite detects defects: it measures what was

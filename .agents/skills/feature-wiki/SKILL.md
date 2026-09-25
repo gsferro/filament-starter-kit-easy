@@ -2123,14 +2123,35 @@ Vindo de Pest 4: `"pestphp/pest": "^5.0"` no `composer.json` + todos os plugins 
   `argv[0]` seja executável pelo `cmd`:
 
   ```
-  <?php /*
+  :<?php /*
   @echo off
-  php "%~f0" %*
+  set PAO_DISABLE=1
+  php -d pcov.enabled=1 "%~f0" %*
   exit /b %errorlevel%
   */ require __DIR__.'/vendor/pestphp/pest/bin/pest';
   ```
 
-  `XDEBUG_MODE=coverage cmd //c pestw.cmd tests/Feature/{Feature} --mutate --path=app/Models/X.php --covered-only --parallel`
+  **Os três detalhes da primeira linha e do bloco não são enfeite** — cada um veio de um
+  sintoma medido em 2026-09-24:
+
+  - **`:` na frente do `<?php`**: sem ele o `cmd` lê o `<` como redirecionamento de entrada a
+    partir de um arquivo chamado `?php` e morre em *"A sintaxe do nome do arquivo … está
+    incorreta"*. O `:` faz a linha virar rótulo, que o `cmd` ignora. O preço é um `:` solto no
+    começo da saída, que o PHP imprime e não há como suprimir — **a saída não é consumível por
+    parser**
+  - **`-d pcov.enabled=1`**: sem ele o `--mutate` morre com *"Mutation testing requires code
+    coverage to be enabled"*, mesmo com PCOV instalado
+  - **`set PAO_DISABLE=1`**: o `laravel/pao` apaga o `COLLISION_PRINTER` e escolhe driver por
+    `basename($argv[0])`, que aqui é `pestw.cmd` e não casa com nada — sem a linha, a saída cai
+    no printer cru do PHPUnit e o `--compact` some
+
+  `cmd //c pestw.cmd tests/Feature/{Feature} --mutate --path=app/Models/X.php --covered-only --no-tia`
+
+  **`--no-tia` é obrigatório** em projeto que liga o TIA (`pest()->tia()->…->locally()` no
+  `tests/Pest.php`): o `PcovRestarter` relança o PHP reconstruindo a linha de comando do zero e
+  **descarta** o `-d pcov.enabled=1`. O sintoma manda para o lado errado — o `--mutate` diz que
+  não há cobertura enquanto `Coverage::isAvailable()` devolve `true` se testado à mão. Não há
+  perda: TIA escolhe testes pelo diff, e mutação precisa de todos os cobridores.
   — medido de verdade na feature de referência: 206 mutantes, 196 mortos, 7 timeout,
   3 sobreviventes (context de log), 98,54 % em 594 s. Timeout conta como morto no score; listar
   os sobreviventes é o que vale

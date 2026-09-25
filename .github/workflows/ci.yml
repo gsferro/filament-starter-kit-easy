@@ -178,13 +178,22 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
-      # Sem `--write`: aqui o script VERIFICA. Ele reprova quando a cobertura cai abaixo do
+      # `--testsuite`, e nao caminhos: a composicao da medicao segue a MESMA fonte que o resto
+      # do CI (o `phpunit.xml`). Com caminhos, acrescentar um `<directory>` ao testsuite `Kit`
+      # -- como `Browser` ja faz com `tests/BrowserTenancy` -- passaria a valer em todo job
+      # menos neste, e o denominador cairia sem ninguem notar.
+      #
+      # `--no-tia` explicito: o caminho literal desligava o TIA por efeito colateral, e
+      # `--testsuite` nao desliga. Medir com a suite amostrada pelo diff daria um numero que
+      # nao e a cobertura de nada.
+      #
+      # Sem `--write`: aqui o comando VERIFICA. Ele reprova quando a cobertura cai abaixo do
       # piso de 78% (ADR-06) e quando `.github/badges/cobertura.json` commitado diverge do
       # medido -- que e a guarda contra o numero do README envelhecer em silencio.
       - name: Medir a cobertura e conferir o badge
         run: |
-          php -d pcov.enabled=1 vendor/bin/pest tests/Kit tests/Tenancy --coverage-clover=cobertura.xml
-          php .github/cobertura.php cobertura.xml --min=78
+          php -d pcov.enabled=1 vendor/bin/pest --testsuite=Kit,Tenancy --no-tia --coverage-clover=cobertura.xml
+          php artisan kit:cobertura cobertura.xml --min=78 --ansi
 
   instalacao:
     # Prova que `composer create-project` continua entregando o projeto pronto.

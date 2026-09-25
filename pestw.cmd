@@ -4,6 +4,8 @@ rem A linha 1 e um ROTULO para o cmd (ele ignora tudo que comeca com ":") e a AB
 rem de um comentario para o PHP. Sem o ":", o cmd le o "<" como redirecionamento de
 rem entrada a partir de um arquivo chamado "?php" e morre com
 rem "A sintaxe do nome do arquivo ... esta incorreta".
+rem PAO_DISABLE: ver "O printer, e por que ele precisa desta linha" abaixo.
+set PAO_DISABLE=1
 php -d pcov.enabled=1 "%~f0" %*
 exit /b %errorlevel%
 */
@@ -70,10 +72,33 @@ exit /b %errorlevel%
 | score 98,22%, 43,95 s**. Um score ABAIXO de 100% com duracao plausivel e a prova de que os
 | mutantes rodaram de verdade -- pelo caminho falso, tudo morre e tudo da 100%.
 |
+| ## O printer, e por que ele precisa da linha `set PAO_DISABLE=1`
+|
+| O `laravel/pao` entra pelo autoload do Composer e, quando detecta um agente de IA pela
+| variavel `AI_AGENT`, faz duas coisas em `vendor/laravel/pao/src/Autoload.php`: apaga o
+| `$_SERVER['COLLISION_PRINTER']` (linha 31) e escolhe um driver por
+| `basename($argv[0])` (`Execution.php:47-55`), que so casa com os nomes exatos `pest`,
+| `paratest`, `phpunit`, `phpstan` e `rector`.
+|
+| Rodando por aqui, o `argv[0]` e `pestw.cmd` de proposito -- e exatamente por isso NENHUM
+| driver casa. Resultado sem a linha: o Collision ja foi desligado, o Pao nao assume o lugar
+| dele, e a saida cai no printer cru do PHPUnit. O `--compact` some junto, porque ele vira
+| `COLLISION_PRINTER_COMPACT` e nao ha mais Collision para ler.
+|
+| `PAO_DISABLE=1` faz o Pao sair antes de apagar qualquer coisa, e o Pest volta a imprimir
+| como imprime para um humano.
+|
+| **O que se perde**: a saida JSON de agente (`{"tool":"pest",...}`) nao sai por este
+| lancador, em nenhuma configuracao -- ela depende do `basename($argv[0]) === 'pest'`, que e
+| justamente o que precisa ser outra coisa para o `--mutate` funcionar. Para ler o score, ler
+| a linha `Score:` da saida normal.
+|
 | ## Duas pegadinhas conhecidas
 |
-| - A saida comeca com um ":" solto: e a linha 1 sendo impressa pelo PHP, que nao tem
-|   como ignorar texto fora de tag. E cosmetico, e o preco do rotulo que o `cmd` exige.
+| - A saida comeca com um ":" solto: e a linha 1 sendo impressa pelo PHP, que nao tem como
+|   ignorar texto fora de tag. E o preco do rotulo que o `cmd` exige, e nao ha como suprimi-lo
+|   -- o PHP imprime antes de executar qualquer codigo que pudesse bufferizar. Consequencia
+|   pratica: a saida deste lancador **nao e consumivel por parser**; nao canalize para `jq`.
 | - Em Linux e macOS este arquivo e desnecessario: `vendor/bin/pest` ja e executavel e o
 |   relancamento funciona.
 */

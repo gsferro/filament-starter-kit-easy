@@ -1362,7 +1362,9 @@ vendor/bin/pest tests/Feature/{Feature} --mutate --path=app/Services --min=70
   de 200 s. **Score só vale com `Duration` compatível com N × tempo dos testes cobridores e com a
   lista de sobreviventes.** Solução: um `.cmd` poliglota na raiz (batch que chama `php` sobre si
   mesmo e, como PHP, faz `require` do `vendor/pestphp/pest/bin/pest`) e
-  `cmd //c pestw.cmd … --mutate --path=… --covered-only --parallel` — o texto completo do lançador
+  `cmd //c pestw.cmd … --mutate --path=… --covered-only --no-tia` — o `--no-tia` é obrigatório
+  quando o projeto liga o TIA, porque o `PcovRestarter` reconstrói a linha de comando e descarta o
+  `-d pcov.enabled=1`; o texto completo do lançador
   está na seção *Pest 5* da `feature-wiki`. Medido de verdade: 206 mutantes, 196 mortos, 7 timeout,
   3 sobreviventes, 98,54 % em 594 s
 - **`--testsuite=A --testsuite=B` só honra o último** — uma suíte por comando
