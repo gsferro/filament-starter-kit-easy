@@ -159,6 +159,11 @@ Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never to
 **79 %** of the lines in `app/` — 7,970 of 9,976 statements, measured on 2026-09-25. The README
 badge comes from here, and CI fails when it lies.
 
+> **The number moves slightly with the operating system**, and the badge was designed to absorb
+> that: the same tree gives **79.89 % on Windows and 79.82 % on Linux** — 7 statements apart, from
+> code that only runs on one platform. Both truncate to `79%`, so the badge matches on either. Had
+> it stored the decimal, CI would fail every measurement taken on the other platform.
+
 > The figures with decimals on this page are **dated**, not derived: they hold for the 2026-09-25
 > measurement and they age. The only one with an automatic guard is the whole percentage, pinned
 > against `.github/badges/cobertura.json` by `[CT-49]`.
@@ -197,9 +202,16 @@ it lives in a versioned file checked by CI.
 
 `--parallel --coverage` **does not exist**: Pest prints the paratest *usage*, and
 `artisan test --parallel --coverage-clover` runs and produces no file at all. The measurement is
-serial by construction — ~27 min against the ~6 min the same suite takes in parallel **on the CI
-runner** (~3 min on a 16-core machine). That is why the job runs on `main` and on manual dispatch,
-not on every PR: the comparable number is the CI one, which is where the bill is paid.
+serial by construction, and the cost was measured on both sides:
+
+| Where | Parallel, no coverage | Serial, with coverage |
+|---|---:|---:|
+| local machine, 16 cores | ~3 min | **25 min** |
+| CI runner, 4 vCPU | ~6 min | **52 min** |
+
+That is why the job runs on `main` and on manual dispatch, not on every PR: **52 minutes** is the
+number that matters, because that is where the bill is paid, and charging every PR for it would
+multiply the repository's CI time ninefold.
 
 The driver is **PCOV**, not Xdebug: for **line** coverage Xdebug adds nothing and costs far more.
 It stays off in `php.ini` (`pcov.enabled=0`) and is switched on per invocation, so the everyday

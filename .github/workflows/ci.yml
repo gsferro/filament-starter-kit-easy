@@ -141,9 +141,13 @@ jobs:
     #
     # `--parallel --coverage` nao existe: o Pest imprime o *usage* do paratest, e
     # `artisan test --parallel --coverage-clover` roda e nao gera arquivo nenhum (ADR-02). A
-    # medicao e serial por construcao, e custa ~27 min contra os ~6 min da suite paralela.
-    # Cobrar isso de toda PR quadruplicaria o tempo de CI do repositorio inteiro para vigiar
-    # um numero que se move ~1 pp a cada ~98 linhas.
+    # medicao e serial por construcao, e custa **52 min neste runner** -- medido em 2026-09-25,
+    # no primeiro disparo manual deste job -- contra os ~6 min da suite paralela. Cobrar isso de
+    # toda PR multiplicaria por nove o tempo de CI do repositorio inteiro para vigiar um numero
+    # que se move ~1 pp a cada ~100 linhas.
+    #
+    # O numero local (~25 min, 16 nucleos) NAO serve para decidir isto: quem paga a conta e o
+    # runner de 4 vCPU, e a suite e serial, entao ela nao aproveita nucleo nenhum dos dois lados.
     #
     # Em `main` o custo e aceitavel e o sinal chega no mesmo dia. Quem quiser o numero antes
     # do merge dispara pelo `workflow_dispatch`.

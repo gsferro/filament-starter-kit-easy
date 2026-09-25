@@ -158,6 +158,12 @@ Seus testes vão em `tests/Feature` e `tests/Unit`, como de costume — o kit n�
 **79 %** das linhas de `app/` — 7.970 de 9.976 statements, medido em 2026-09-25. O badge do
 README vem daqui, e o CI reprova quando ele mente.
 
+> **O número varia um pouco com o sistema operacional**, e o badge foi desenhado para absorver
+> isso: a mesma árvore dá **79,89 % no Windows e 79,82 % no Linux** — 7 statements de diferença,
+> de código que só roda numa das plataformas. Os dois truncam para `79%`, então o badge confere
+> nos dois. Se ele guardasse a casa decimal, o CI reprovaria toda medição feita na outra
+> plataforma.
+
 > Os números com casa decimal desta página são **datados**, não derivados: eles valem para a
 > medição de 2026-09-25 e envelhecem. O único que tem guarda automática é o percentual inteiro,
 > travado contra `.github/badges/cobertura.json` pelo `[CT-49]`.
@@ -196,9 +202,16 @@ num arquivo versionado com conferência no CI.
 
 `--parallel --coverage` **não existe**: o Pest imprime o *usage* do paratest, e
 `artisan test --parallel --coverage-clover` roda e não gera arquivo nenhum. A medição é serial por
-construção — ~27 min contra os ~6 min que a mesma suíte leva em paralelo **no runner do CI**
-(~3 min numa máquina de 16 núcleos). Por isso o job roda em `main` e por disparo manual, não em
-toda PR: o número comparável é o do CI, que é onde a conta é paga.
+construção, e o custo foi medido dos dois lados:
+
+| Onde | Em paralelo, sem cobertura | Em série, com cobertura |
+|---|---:|---:|
+| máquina local, 16 núcleos | ~3 min | **25 min** |
+| runner do CI, 4 vCPU | ~6 min | **52 min** |
+
+Por isso o job roda em `main` e por disparo manual, não em toda PR: **52 minutos** é o número que
+importa, porque é onde a conta é paga, e cobrar isso de toda PR multiplicaria por nove o tempo de
+CI do repositório.
 
 O driver é o **PCOV**, não o Xdebug: para cobertura de **linha** o Xdebug não acrescenta nada e
 custa muito mais. Ele fica desligado no `php.ini` (`pcov.enabled=0`) e liga só na invocação, para

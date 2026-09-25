@@ -44,9 +44,19 @@
 - [x] **Os dois caminhos de reprovação verificados à mão**: com `--min=95` sai 1; com o JSON
   adulterado para `91%` sai 1 dizendo o que rodar; restaurado, sai 0
 - [x] **Frequência decidida**: `push` em `main` + `workflow_dispatch`, **não** em PR —
-  `if: github.event_name != 'pull_request'`. A medição é serial por construção (ADR-02) e custa
-  ~27 min contra ~3 min da suíte paralela; cobrar isso de toda PR quadruplicaria o CI do
-  repositório para vigiar um número que se move ~1 pp a cada ~98 linhas
+  `if: github.event_name != 'pull_request'`. A medição é serial por construção (ADR-02), e o custo
+  foi medido dos dois lados: **25 min local** (16 núcleos) e **52 min no runner** (4 vCPU), contra
+  ~3 min e ~6 min da suíte paralela. O número que decide é o do runner, porque é onde a conta é
+  paga — cobrar isso de toda PR multiplicaria por **nove** o CI do repositório
+- [x] **O job foi disparado à mão antes do merge** (`gh workflow run ci.yml --ref …`), porque job
+  de CI que nunca rodou é afirmação, não garantia. Passou, e trouxe dois dados novos:
+  - **52 min**, contra os ~27 min que eu havia estimado a partir do número local. A estimativa
+    estava errada e a documentação a repetia em quatro lugares
+  - **a cobertura varia com a plataforma**: mesma árvore, **79,89 % no Windows × 79,82 % no
+    Linux** — 7 statements de código que só roda num dos dois. Os dois truncam para `79%`, então
+    o badge confere nos dois. **A decisão do ADR-04 de guardar o inteiro, tomada por outro motivo
+    (ruído da terceira casa), é o que impede o CI de reprovar toda medição feita na plataforma
+    oposta** — teria sido um defeito difícil de diagnosticar
 - [x] O badge guarda o percentual **inteiro truncado**, não o real — senão a guarda reprovaria por
   ruído da terceira casa e viraria alarme falso
 

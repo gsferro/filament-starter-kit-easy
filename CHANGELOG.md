@@ -74,8 +74,15 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
   O job **nao roda em pull request**: `--parallel --coverage` nao existe (o Pest imprime o *usage*
   do paratest, e `artisan test --parallel --coverage-clover` roda sem gerar arquivo), entao a
-  medicao e serial por construcao e custa ~27 min contra ~3 min da suite paralela. Roda em `main`
-  e por `workflow_dispatch`.
+  medicao e serial por construcao. Medido nos dois lados: **25 min na maquina local** (16 nucleos)
+  e **52 min no runner** (4 vCPU), contra ~3 min e ~6 min da suite paralela. Roda em `main` e por
+  `workflow_dispatch`.
+
+  O job foi **disparado a mao antes do merge**, porque job de CI que nunca rodou e afirmacao, nao
+  garantia. Ele passou, e de quebra mostrou que a cobertura **varia com a plataforma**: a mesma
+  arvore da 79,89% no Windows e 79,82% no Linux -- 7 statements de codigo que so roda num dos
+  dois. Os dois truncam para `79%`, entao o badge confere nos dois; se ele guardasse a casa
+  decimal, o CI reprovaria toda medicao feita na outra plataforma.
 
 - **`kit:cobertura` com teste proprio** (`tests/Kit/KitCoberturaTest.php`, 33 casos). Ele nasceu
   sem teste nenhum -- os seis caminhos de saida foram conferidos a MAO e a conferencia nao foi
