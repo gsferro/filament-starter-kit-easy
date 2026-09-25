@@ -12,7 +12,7 @@ use Illuminate\Console\Command;
  * A primeira redação morava em `.github/cobertura.php`, e isso era um defeito de **entrega**: o
  * `.gitattributes` marca `/.github` com `export-ignore`, então o diretório **não existe** em
  * projeto nascido de `composer create-project` — enquanto o `composer.json`, que ganhou o script
- * `test:coverage` apontando para lá, viaja inteiro. Quem instalasse o kit rodaria os ~27 minutos
+ * `test:coverage` apontando para lá, viaja inteiro. Quem instalasse o kit rodaria os ~25 minutos
  * de suíte com cobertura para só então bater em `Could not open input file`.
  *
  * O mesmo `.gitattributes` já escreve a regra, a propósito dos scripts `lint` e `types:check`: o
@@ -42,7 +42,7 @@ class KitCobertura extends Command
      * O badge guarda o percentual INTEIRO TRUNCADO, e isso é deliberado.
      *
      * O número real move na terceira casa a cada rodada — uma linha a mais em `app/` já o muda.
-     * Se o JSON guardasse `79,79 %`, o job reprovaria por ruído e a guarda viraria alarme falso,
+     * Se o JSON guardasse a casa decimal, o job reprovaria por ruído e a guarda viraria alarme falso,
      * que é como guarda morre. Guardando o inteiro, ele só muda quando a cobertura cruza um ponto
      * percentual: ~98 statements nesta árvore.
      *
@@ -90,7 +90,14 @@ class KitCobertura extends Command
 
         if ($piso !== null && $percentual < $piso) {
             $falhas[] = sprintf(
-                'Cobertura de %.2f%% abaixo do piso de %s%% — ver a meta no ADR-06 de `wikis/specs/feat/cobertura-de-testes/`.',
+                /*
+                 * Mensagem AUTOCONTIDA: ela não pode citar `wikis/specs/`, que é `export-ignore`
+                 * no `.gitattributes` e portanto não existe em projeto nascido de
+                 * `create-project`. Mandar o operador a um caminho inexistente é a mesma classe
+                 * de defeito que tirou o script de dentro de `.github/` — referência que só vale
+                 * na árvore do kit, embarcada no que viaja.
+                 */
+                'Cobertura de %.2f%% abaixo do piso de %s%% — suba a cobertura ou ajuste o `--min`.',
                 $percentual,
                 $this->semZerosAtoa($piso),
             );
@@ -143,8 +150,17 @@ class KitCobertura extends Command
 
         $piso = (float) $bruto;
 
-        if ($piso < 0 || $piso > 100) {
-            $this->components->error("`--min` precisa estar entre 0 e 100, e veio {$piso}.");
+        /*
+         * O ZERO e recusado, e a direcao vem de falha fechado.
+         *
+         * `--min=0` passava: a faixa era `0 <= piso <= 100`, e o comando ainda imprimia "o piso foi
+         * respeitado". Um piso que nao reprova ninguem nao e piso -- e a diferenca para o
+         * `--min=abc` que a revisao de diff pegou (RD-02) e so a porta por onde entra.
+         *
+         * Achado pelo quality gate, ciclo 1.
+         */
+        if ($piso <= 0 || $piso > 100) {
+            $this->components->error("`--min` precisa estar entre 1 e 100, e veio {$piso}.");
 
             return false;
         }

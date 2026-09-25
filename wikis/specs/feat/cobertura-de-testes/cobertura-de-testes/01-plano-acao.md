@@ -175,10 +175,24 @@ CI e documentação. Não há ponto de execução que justifique channel própri
 
 > Skills: `laravel-best-practices`
 
-- **`composer test:coverage`**: roda a medição em série, grava o Clover, escreve
-  `.github/badges/cobertura.json` e aplica `--min`
-- **Job `cobertura`** no `ci.yml`, com `coverage: pcov`: roda a medição, aplica o `--min` e
-  **reprova quando o JSON commitado diverge do medido**, com a instrução do comando na mensagem
+> **Reescrito depois da implementação** — a redação original previa um script solto em
+> `.github/cobertura.php`, e ele não podia funcionar: o `composer.json` viaja no `create-project`
+> e `/.github` é `export-ignore`. Ver `## Desvios do Plano` no `03`.
+
+- **`app/Console/Commands/KitCobertura.php`** — comando `kit:cobertura`, que lê o Clover, aplica
+  o `--min` e **escreve ou confere** `.github/badges/cobertura.json` conforme o `--write`.
+  Viaja pelas duas rotas de entrega (`app/` não é `export-ignore`, e `app/Console/Commands` está
+  em `KitUpdate::CAMINHOS_DO_KIT`), então o piso serve também a quem instala o kit. A parte do
+  badge é a única que é só do kit, e **degrada sozinha**: sem `.github/badges/` ele não mexe em
+  badge nenhum
+- **`composer test:coverage`**: roda a medição em série (`--testsuite=Kit,Tenancy --no-tia`),
+  grava o Clover e chama `php artisan kit:cobertura … --min=78 --write`
+- **Job `cobertura`** no `ci.yml`, com `coverage: pcov`: roda a mesma medição e chama o comando
+  **sem** `--write` — reprova quando cai abaixo do piso e quando o JSON commitado diverge do
+  medido, com a instrução do comando na mensagem
+- **`pestw.cmd`** na raiz — lançador poliglota `cmd`/PHP, sem o qual o `pest --mutate` devolve
+  score falso no Windows e o RQ-14 não teria como ser verificado (ADR-07). Acompanha a regra
+  `*.cmd text eol=crlf` no `.gitattributes`, senão o `checkout` o quebra
 - A frequência (todo PR × push em `main` × agendado) é decidida **com o tempo do passo 3**
 
 ### 6. Fechar lacuna real até a meta (RQ-07)
@@ -188,6 +202,11 @@ CI e documentação. Não há ponto de execução que justifique channel própri
 - Ordenar os arquivos de `app/` por cobertura **ascendente**, cruzando com "tem regra de negócio"
 - Escrever teste para o que estiver em cima da lista e **tiver risco**
 - Cada teste novo nasce de cenário, não de linha descoberta — a `feature-test-design` deriva
+
+> **Alvo escolhido, depois do quality gate**: `app/Policies`, a 23 %. A primeira passagem por este
+> passo não fechou lacuna nenhuma — o único teste escrito cobria o comando que **esta entrega**
+> criou, repondo o que ela mesma tirou. O gate chamou isso de *"cláusula cumprida por construção"*
+> (QA-07), o mantenedor decidiu fechar de verdade, e daí nasceu `tests/Kit/PoliciesTest.php`.
 
 ### 7. Documentação e badge (RQ-08, RQ-09)
 
@@ -218,7 +237,7 @@ Cada candidato **rodado contra o kit** antes de entrar na recomendação — a t
 `02-decisoes-arquiteturais.md` → ADR-05. O que esta entrega executa:
 
 - adotar `arch()->preset()->php()` e `arch()->preset()->security()`, este com `ignoring()` na
-  única violação (`KitInstall.php:592`), com o motivo escrito;
+  única violação (`KitInstall.php:oferecerEstrela:635`), com o motivo escrito;
 - verificar o mutation score de verdade, pelo `pestw.cmd`, e o `--tia` (RQ-14);
 - registrar no `wikis/roadmap.md` os itens medidos que **não** entram: PHPStan level 8 (48 erros),
   `composer-require-checker` + `composer-unused`, `declare(strict_types=1)` (98 de 240),

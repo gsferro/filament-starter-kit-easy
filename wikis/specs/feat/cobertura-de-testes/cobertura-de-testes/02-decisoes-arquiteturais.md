@@ -230,7 +230,7 @@ O caso do `arch` é o mais desconfortável dos dois: o kit tem **113 arquivos** 
 | # | Nível | Medido nesta árvore | Custo | Veredito |
 |---|---|---|---|---|
 | 1 | `arch()->preset()->php()` | **passa limpo**, 53 asserções, **6,5 s** | zero — plugin instalado | **adotar nesta entrega** |
-| 2 | `arch()->preset()->security()` | **1 violação**: `exec()` em `KitInstall.php:592` | zero | **adotar com `ignoring()` declarado** |
+| 2 | `arch()->preset()->security()` | **1 classe acusada**, com **3 chamadas** de `exec()` em `KitInstall.php:oferecerEstrela:635-637` | zero | **adotar com `ignoring()` declarado** |
 | 3 | **PHPStan level 8** | **48 erros** | uma passada focada | **roadmap, prioridade alta** |
 | 4 | PHPStan level 9 | **474 erros** | reescrita de tipagem em massa | **não** — precipício, não degrau |
 | 5 | PHPStan level `max` | **594 erros** | idem | **não** |
@@ -272,9 +272,15 @@ desproporcional — e não por serem ruins.
 
 ### Sobre o `exec` do item 2
 
-`KitInstall::oferecerEstrela()` chama `exec('open '.self::REPOSITORIO)` para abrir o repositório
-no navegador. O argumento é uma **constante de classe**; não há entrada de usuário no caminho, e o
-uso já tem comentário de revisão no código. Não é vulnerabilidade.
+`KitInstall::oferecerEstrela()` chama `exec()` **três vezes**, uma por família de sistema
+operacional (`KitInstall.php:635-637`), para abrir o repositório no navegador. O argumento das três
+é a mesma **constante de classe**; não há entrada de usuário no caminho, e o uso já tem comentário
+de revisão no código. Não é vulnerabilidade.
+
+E o custo da exceção é maior do que "um `exec`": `ignoring()` recebe uma lista plana, então passar
+o nome da classe libera, dentro dela, as **vinte** funções da lista do preset. É por isso que ela
+não fica sozinha — ver o caso companheiro em `tests/Kit/ArquiteturaDoCodigoTest.php`, que confina
+a exceção a `exec` com constante.
 
 O que ele **é** hoje é uma chamada de `exec` **sem guarda**: se amanhã alguém escrever
 `exec($algoQueVeioDoUsuario)`, nada reprova. Adotar o preset com `ignoring()` nesta única classe

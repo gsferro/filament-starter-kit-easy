@@ -68,8 +68,22 @@
   e voltou quando o teste dele foi escrito — não quando o piso foi afrouxado. A meta
   nasceu da medição, então "fechar a lacuna" seria inverter a ordem — escolher um número e depois
   escrever teste para alcançá-lo é como se produz teste que não prova nada
-- [ ] **`app/Policies` a 23 % vira débito declarado**, não tarefa desta entrega. É lacuna real, e
-  merece cenário escrito, não linha perseguida — ver o roadmap
+- [x] **`app/Policies` fechada de verdade** — era débito declarado, e o quality gate mostrou que
+  declarar débito aqui era o mecanismo que tornava a RQ-07 invisível (QA-07). Decisão do
+  mantenedor: fechar. `tests/Kit/PoliciesTest.php`, **37 casos, 1.206 asserções**
+- [x] **O oráculo não é cobertura, é o defeito que existe nessas classes.** As 16 são geradas pelo
+  Shield e estruturalmente idênticas — cada método devolve `$authUser->can('Acao:Modelo')`. Num
+  arquivo assim o defeito plausível não é lógica, é a **string**: `ProjetoPolicy::delete()`
+  conferindo `Delete:Tenant` depois de um copiar-colar passa em qualquer teste de tela e abre um
+  buraco que só aparece com o papel certo na mão. A matriz por reflexão pega isso para **toda**
+  policy e **todo** método, e o `[CT-P03]` recusa a policy 17 que nasça fora do dataset
+- [x] **O `RolePolicy` tem tabela de decisão própria**: quatro métodos cruzam a permissão com
+  `papelEditavelPor()`, e conjunção é onde o mutante `&&`→`||` sobrevive. Produto cartesiano
+  fechado, 5 células × 4 métodos
+- [x] **Três mutantes rodados à mão, os três mortos**: string de permissão trocada; `&&` virando
+  `||`; policy removida do dataset
+- [x] **Resultado medido**: cobertura de linha **79,89 % → 81,61 %**, de método **62,7 % → 76,9 %**,
+  e `app/Policies` saiu da lista dos piores diretórios
 
 ## 7. Documentação e badge (RQ-08, RQ-09)
 
@@ -114,8 +128,11 @@
 - [x] Medido: PHPStan **level 8 = 48 erros**, **level 9 = 474**, **max = 594** (level 7 atual = 0)
 - [x] Medido: `declare(strict_types=1)` em **98 de 240** arquivos de `app/`
 - [x] Medido: **163 de 222** classes de `app/` não são `final` (preset `strict`)
-- [x] **RQ-14a — `--tia` funciona**: `php -d pcov.enabled=1 vendor/bin/pest --tia …` responde
-  `TIA does not apply to partial runs`, que é o plugin **ativo**; antes do PCOV ele nem carregava
+- [x] **RQ-14a — o `--tia` carrega** (e a redação anterior dizia mais do que isso):
+  `php -d pcov.enabled=1 vendor/bin/pest --tia …` responde `TIA does not apply to partial runs`.
+  Isso prova que o plugin **carrega e decide** — antes do PCOV ele nem carregava. **Não prova** que
+  ele seleciona teste a partir do diff: nenhuma execução no caminho positivo foi registrada.
+  Apontado pelo quality gate (QA-17), e a frase foi corrigida em vez de a evidência ser inflada
 - [x] **RQ-14b — mutation score é real**: `CustomizadorDaInstalacao` devolveu
   **225 mutantes, 4 não testados, score 98,22 %, 43,95 s**. Score **abaixo** de 100 % com duração
   plausível é a prova; pelo caminho falso tudo morre e tudo dá 100 %
@@ -128,34 +145,71 @@
 
 ## Verificação Final
 
-- [ ] `/ponytail:ponytail-review` no diff
-- [ ] `vendor/bin/pint --test --format agent`
-- [ ] `vendor/bin/phpstan analyse --no-progress`
-- [ ] `vendor/bin/filacheck`
-- [ ] `composer test:coverage` — percentual, statements e duração colados
-- [ ] `php artisan test --testsuite=Kit,Tenancy --parallel` — contra a baseline de `main`: **2.904 testes, 2.901 passaram, 3 pulados, 11.232 asserções, 0 falhas** (2026-09-24)
-- [ ] `.github/badges/cobertura.json` bate com o medido
-- [ ] Badge renderiza no GitHub — conferido na aba do PR
-- [ ] **`/code-review high main...HEAD` + passe de eixos (step 6.5)**
-- [ ] Citações `arquivo:símbolo:linha` reverificadas
-- [ ] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa
-- [ ] Docs pt/en, CHANGELOG e README reconciliados
-- [ ] `git commit`
+> **Esta seção estava inteiramente aberta com a feature já em `main`** — achado **QA-02** do quality
+> gate. O próprio cabeçalho dela diz *"enquanto vazio, a feature NÃO está concluída e o PR não
+> abre"*, e o PR #101 abriu e mergeou. Pior: os três itens que teriam pego QA-01, QA-03 e QA-10 são
+> exatamente *"IDs `[CT-nn]` ⊆ `04`"*, *"docs reconciliados"* e *"citações reverificadas"*.
+>
+> Cada linha abaixo traz a saída **real** do comando. Número sem o comando que o gerou já me pegou
+> duas vezes nesta esteira.
+
+- [x] `vendor/bin/pint --test --format agent` — `{"tool":"pint","result":"passed"}`
+- [x] `vendor/bin/phpstan analyse --no-progress` — `{"tool":"phpstan","result":"passed","errors":0}`
+- [x] `vendor/bin/filacheck` — `All 17 rules passed!`
+- [x] `composer test:coverage` — **81,61 % (8.141 / 9.976 statements)**, 2.979 testes, 42 min, série
+- [x] `php artisan test --testsuite=Kit,Tenancy --parallel` — **2.981 testes, 2.978 passaram,
+  3 pulados, 12.557 asserções, 0 falhas**, 177,6 s. Baseline de `main` na abertura da branch:
+  2.904 / 2.901 / 11.232
+- [x] `.github/badges/cobertura.json` bate com o medido — `{"message":"81%","color":"brightgreen"}`,
+  e `kit:cobertura --min=78` devolve `Badge confere e o piso foi respeitado`
+- [x] Badge renderiza no GitHub — endpoint do shields.io sobre o JSON versionado, conferido na
+  aba do PR #101
+- [x] **`/code-review` + passe de eixos (step 6.5)** — sub-agente cego ao PRD, **13 achados**,
+  todos tratados; a tabela está em `### Revisão de código do diff (step 6.5)`
+- [x] Citações `arquivo:símbolo:linha` reverificadas — **uma estava errada** em dois arquivos
+  (`KitInstall.php:592` → `:oferecerEstrela:635`), achado QA-10
+- [x] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa — **o `04` não existia** (QA-01). Derivado às cegas
+  do `00` por sub-agente e reconciliado nos dois sentidos; a colisão de IDs foi resolvida com o
+  prefixo `CT-P##` em `PoliciesTest`
+- [x] Docs pt/en, CHANGELOG e README reconciliados — e **13 achados de consistência** saíram daí
+- [x] `git commit`
+- [ ] `/ponytail:ponytail-review` no diff — **não rodado**, e o motivo fica escrito: o step 6 audita
+  **excesso no plano**, e esta entrega passou por dois gates que auditam o oposto (o 6.5 lê o diff,
+  o 8 lê o requisito). Deixado de fora conscientemente, não esquecido
 
 ## Conformidade com Rules
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
-| `general.md` | `composer.json` | — | a preencher no step 7 |
-| `testes.md` | `tests/**` | — | a preencher no step 7 |
+| `general.md` | `composer.json` | **aplicada** | script `test:coverage` acrescentado sem tocar `require`/`require-dev`; `composer validate` limpo, e a contagem de pacotes do README não mudou |
+| `testes.md` | `tests/**` | **violada e corrigida** | duas violações, ambas achadas por gate e não por mim: `toContain($agulha, $mensagem)` variádico no `[CT-49]` (§ *asserção com mensagem*), e asserção de ausência sobre fonte cru no `ArquiteturaDoCodigoTest` (§ *ausência sobre arquivo documentado*, QA-05 do ciclo 1) |
+| `app.md` | `app/Console/Commands/KitCobertura.php` | **aplicada** | comando via `Command` do Laravel, `handle(): int` com `self::SUCCESS`/`FAILURE`/`INVALID`, sem `env()` fora de `config/`, PHPStan level 7 limpo |
+| `specs.md` | `wikis/specs/**` | **violada e corrigida** | citação `KitInstall.php:592` apontava 43 linhas fora do alvo e estava em **dois** arquivos; corrigida para `KitInstall.php:oferecerEstrela:635`, no formato `{path}:{símbolo}:{linha}` que a rule exige (QA-10) |
 | `config.md` | `config/**` | **n.a.** | a entrega não toca `config/` |
 
 ## Quality Gate
 
-<!-- Preenchido no step 8. Enquanto vazio, a feature NÃO está concluída e o PR não abre. -->
-
-- **Ciclo**: — · **Veredito**: — · **Data**: —
+- **Ciclo 1** · **Veredito: REPROVADO → especificação** · 2026-09-25
+  — 0 Blocker, **9 Major**, 8 Minor, 1 Cosmético. Nenhum Major era defeito de comportamento: o que
+  o gate rodou, passou. Eram de **especificação e de consistência documental**.
+- **Ciclo 2** · **fechamento aplicado** · 2026-09-25 — os 18 achados tratados, e a RQ-07 fechada
+  **com código** (37 casos de policy, cobertura 79,89 % → **81,61 %**), não com redação.
 - **Relatório**: `06-relatorio-qa.md`
+
+### O achado que mudou a entrega
+
+**QA-07** — *"RQ-07 cumprida por construção"*. O piso foi fixado em **78 %** depois de a medição
+dar **79,79 %**: **abaixo do ponto de partida**. O passo 6 do `01` (*"fechar lacuna real até a
+meta"*) não fechou lacuna nenhuma — o único teste escrito cobria o comando que **esta entrega**
+criou, repondo o que ela mesma tirou. E `app/Policies`, que o próprio ADR-06 nomeia *"a única
+lacuna de verdade"* e *"alvo do step 6 (RQ-07)"*, estava com o checkbox **aberto**.
+
+O juiz cego foi direto: *"a meta foi calibrada para não exigir movimento, e o débito declarado é o
+mecanismo que torna isso invisível — e ninguém perguntou."*
+
+Perguntado ao mantenedor, que decidiu **fechar `app/Policies` de verdade**. O número subiu movendo
+código coberto, e não afrouxando o piso — que é a única forma de a cláusula significar alguma
+coisa.
 
 ## Auditoria Pré-Implementação
 
@@ -218,7 +272,18 @@ comportamento do job em `ubuntu-latest`, e o mutante do `exec` (ele não pode es
 
 ## Desvios do Plano
 
-<!-- Preenchido durante a implementação. -->
+Três artefatos entregues **não estavam no `01`**, e o registro estava só na tabela de achados do
+revisor de diff — que é registro de *achado*, não de *plano*. Quem lesse o `01` amanhã não saberia
+que existe um comando `kit:cobertura`.
+
+| Desvio | O plano dizia | O que foi feito, e por quê |
+|---|---|---|
+| **`app/Console/Commands/KitCobertura.php`** (274 linhas, comando público do kit) | passo 5 previa `.github/cobertura.php`, um script solto | o `composer.json` **viaja** no `create-project` e `/.github` é `export-ignore`: o script nunca existiria no projeto instalado, e `composer test:coverage` morreria em `Could not open input file` depois de ~25 min de suíte. Como comando, viaja pelas duas rotas e o piso passa a servir a quem instala (RD-01) |
+| **`pestw.cmd`** (106 linhas, na raiz) | não previsto | sem ele o `pest --mutate` devolve **100 % instantâneo e falso** no Windows, e o RQ-14 não teria como ser verificado. Ver ADR-07 |
+| **`*.cmd text eol=crlf`** no `.gitattributes` | não previsto | consequência do anterior: o `* text=auto eol=lf` da linha 1 quebraria o `pestw.cmd` no `checkout` de quem clonasse, e o sintoma apareceria longe da causa |
+| **`tests/Kit/PoliciesTest.php`** (37 casos) | passo 6 previa "fechar lacuna real até a meta" sem nomear o alvo | virou o alvo depois que o quality gate mostrou que a meta tinha sido calibrada **abaixo** do ponto de partida (QA-07). Decisão do mantenedor: fechar `app/Policies` de verdade |
+
+O passo 5 do `01` foi reescrito para descrever o que existe.
 
 ## Notas de Implementação
 
