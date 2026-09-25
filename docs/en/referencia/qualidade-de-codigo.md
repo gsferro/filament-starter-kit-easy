@@ -154,6 +154,99 @@ state — `composer test:kit:serial` isolates that, and the difference between t
 
 Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never touches them.
 
+## Test coverage — and what the number leaves **out**
+
+**79 %** of the lines in `app/` — 7,970 of 9,976 statements, measured on 2026-09-25. The README
+badge comes from here, and CI fails when it lies.
+
+> **The number moves slightly with the operating system**, and the badge was designed to absorb
+> that: the same tree gives **79.89 % on Windows and 79.82 % on Linux** — 7 statements apart, from
+> code that only runs on one platform. Both truncate to `79%`, so the badge matches on either. Had
+> it stored the decimal, CI would fail every measurement taken on the other platform.
+
+> The figures with decimals on this page are **dated**, not derived: they hold for the 2026-09-25
+> measurement and they age. The only one with an automatic guard is the whole percentage, pinned
+> against `.github/badges/cobertura.json` by `[CT-49]`.
+
+```bash
+composer test:coverage    # measures, writes the badge and applies the floor — ~27 min, serial
+
+# the two halves, separately, when you already have the Clover:
+php -d pcov.enabled=1 vendor/bin/pest --testsuite=Kit,Tenancy --no-tia --coverage-clover=cobertura.xml
+php artisan kit:cobertura cobertura.xml --min=78          # checks (this is what CI does)
+php artisan kit:cobertura cobertura.xml --min=78 --write  # writes the badge
+```
+
+`kit:cobertura` **travels with the kit**: in your project it applies whatever floor you choose,
+over whatever `phpunit.xml` you have. The badge part is the only kit-only piece — outside the
+kit's tree `.github/badges/` does not exist, and the command simply leaves badges alone.
+
+### The three test badges in the README, and what each one guarantees
+
+| Badge | Where it comes from | What keeps it from ageing |
+|---|---|---|
+| **coverage** | `.github/badges/cobertura.json`, produced by `composer test:coverage` | the `cobertura` CI job, which re-measures and fails if the JSON lies |
+| **test cases** | count of `it()`/`test()` blocks under `tests/` | `[CT-50]`, which **recomputes it from the tree** on every suite run |
+| **PHPStan** | the `level:` in `phpstan.neon` | `[CT-50]`, by the same mechanism |
+
+The last two depend on running nothing — they are derivable by reading, so the guard works out the
+truth by itself in milliseconds. The coverage one depends on the ~27 min measurement, which is why
+it lives in a versioned file checked by CI.
+
+> **The case badge counts blocks written, not cases executed.** An `it()` with a five-row
+> `->with()` becomes five cases at run time — which is why the badge number is lower than what Pest
+> prints. It is the quantity that can be derived without running the suite, and it is what the
+> badge means to say: how many scenarios were written by hand.
+
+### Why serial, and why it takes that long
+
+`--parallel --coverage` **does not exist**: Pest prints the paratest *usage*, and
+`artisan test --parallel --coverage-clover` runs and produces no file at all. The measurement is
+serial by construction, and the cost was measured on both sides:
+
+| Where | Parallel, no coverage | Serial, with coverage |
+|---|---:|---:|
+| local machine, 16 cores | ~3 min | **25 min** |
+| CI runner, 4 vCPU | ~6 min | **52 min** |
+
+That is why the job runs on `main` and on manual dispatch, not on every PR: **52 minutes** is the
+number that matters, because that is where the bill is paid, and charging every PR for it would
+multiply the repository's CI time ninefold.
+
+The driver is **PCOV**, not Xdebug: for **line** coverage Xdebug adds nothing and costs far more.
+It stays off in `php.ini` (`pcov.enabled=0`) and is switched on per invocation, so the everyday
+suite does not pay the **+44%** instrumentation cost.
+
+### The number is a floor, not a ceiling
+
+Three things sit outside the count, and reading the number without knowing that leads to the wrong
+conclusion:
+
+| Outside the measurement | Why |
+|---|---|
+| `tests/Browser` and `tests/BrowserTenancy` | they run against a server in **another process**; PCOV instruments the Pest process |
+| The installation tests | they run a real `composer create-project`, also in another process |
+| `tests/Unit` and `tests/Feature` | they are **yours**, not the kit's — one example file each |
+
+The effect shows in the breakdown: **`app/Console` reports 34%** and is, in practice, the most
+exercised code in the kit — the installation tests run the whole `kit:install` from the outside.
+Reading it as *"the commands have no tests"* would be precisely the mistake this section exists to
+prevent.
+
+The **real** gap is elsewhere: `app/Policies`, at **23%**. Policies are exercised indirectly (the
+screen denies, the test sees the denial), but `Gate` short-circuits before the method in most
+cases — and authorisation is where a silent defect costs the most.
+
+### The floor is 78%, and it is not folklore
+
+With 9,976 statements, **1 percentage point is worth ~100 lines**. A bug fix, a new method or a
+refactor do not move the number; to lose the 1.89 pp of slack, nearly 190 statements have to land
+untested — which is the only event the floor exists to catch.
+
+And line coverage does **not** measure whether the suite detects defects: it measures what was
+**executed**, not what was **verified**. That question belongs to the mutation score, for which the
+kit uses `pest --mutate` (on Windows, through `pestw.cmd` at the root — its header explains why).
+
 ## The README images come out of a test
 
 The screenshots in this README are **not taken by hand**. They come from

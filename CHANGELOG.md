@@ -31,6 +31,14 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Corrigido
 
+- **`.cmd` e `.bat` ficam com CRLF** (`.gitattributes`). O `* text=auto eol=lf` da primeira linha
+  normalizava tudo para LF, e o `cmd` do Windows nao le arquivo em lotes com LF. O sintoma
+  apareceria longe da causa: o `pestw.cmd` sairia quebrado no `git checkout` de quem clonasse, e o
+  `--mutate` voltaria ao 100% instantaneo e falso.
+
+- **`cobertura.xml` saiu do versionamento.** 773 KB de relatorio gerado, que muda a cada rodada e
+  nao tem diff legivel. O que e versionado e so o resumo em `.github/badges/cobertura.json`.
+
 - **`lang/pt_BR.json` nunca chegava a quem atualiza — a TERCEIRA ocorrencia da mesma classe.**
   Sao 33 strings que traduzem telas de plugin de terceiro que so vem em ingles (commit `5511a0a`),
   e a chave nao estava em `KitUpdate::CAMINHOS_DO_KIT`. **Quem instalou antes daquele commit e vem
@@ -41,6 +49,86 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   lista mantida a mao, e `lang` nao estava nela. Corrigido nos dois niveis.
 
 ### Adicionado
+
+- **Cobertura de testes medida, com meta, badge e guarda** (`composer test:coverage`, job
+  `cobertura` no CI, `.github/badges/cobertura.json`, comando `kit:cobertura`). Primeira medicao
+  real do kit:
+  **79,89% das linhas de `app/`** — 7.970 de 9.976 statements, em 2.942 testes e 25 min 08 s.
+
+  **O numero e um piso, nao um teto**, e a documentacao diz isso com todas as letras porque a
+  leitura ingenua leva ao contrario: `app/Console` aparece a **34%** e e, na pratica, o codigo
+  mais exercitado do kit — os testes de instalacao rodam `composer create-project` de verdade, em
+  **outro processo**, e o PCOV so instrumenta o processo do Pest. A lacuna real e `app/Policies`,
+  a **23%**.
+
+  Piso de CI em **78%**. Com 9.976 statements, 1 pp vale ~100 linhas: o piso nao se mexe por
+  mudanca pequena, e so cai quando uma funcionalidade inteira entra sem teste — o unico evento que
+  ele existe para pegar.
+
+  Dois elos, e o segundo e barato de proposito: o job reprova quando o JSON do badge diverge do
+  medido, e o `[CT-49]` reprova quando o percentual dos READMEs e das docs diverge do JSON.
+
+  **O primeiro elo nao roda em pull request**, e isso esta escrito no proprio `[CT-49]`: uma PR
+  que derrube a cobertura passa nos dois (README e JSON continuam coerentes entre si) e o defeito
+  so aparece em `main`. E o preco declarado de nao gastar 27 min por PR, nao um descuido.
+
+  O job **nao roda em pull request**: `--parallel --coverage` nao existe (o Pest imprime o *usage*
+  do paratest, e `artisan test --parallel --coverage-clover` roda sem gerar arquivo), entao a
+  medicao e serial por construcao. Medido nos dois lados: **25 min na maquina local** (16 nucleos)
+  e **52 min no runner** (4 vCPU), contra ~3 min e ~6 min da suite paralela. Roda em `main` e por
+  `workflow_dispatch`.
+
+  O job foi **disparado a mao antes do merge**, porque job de CI que nunca rodou e afirmacao, nao
+  garantia. Ele passou, e de quebra mostrou que a cobertura **varia com a plataforma**: a mesma
+  arvore da 79,89% no Windows e 79,82% no Linux -- 7 statements de codigo que so roda num dos
+  dois. Os dois truncam para `79%`, entao o badge confere nos dois; se ele guardasse a casa
+  decimal, o CI reprovaria toda medicao feita na outra plataforma.
+
+- **`kit:cobertura` com teste proprio** (`tests/Kit/KitCoberturaTest.php`, 33 casos). Ele nasceu
+  sem teste nenhum -- os seis caminhos de saida foram conferidos a MAO e a conferencia nao foi
+  versionada. A medicao seguinte cobrou a conta: **105 statements descobertos**, e a cobertura do
+  kit caiu de 79,79% para 78,84% por causa de um arquivo so.
+
+  O detalhe que torna o episodio util: **passava**. O piso de 78% continuava respeitado, e ninguem
+  teria notado se o numero nao tivesse sido olhado.
+
+  Mutation score do comando, escopado: **78,48% na primeira redacao dos testes, 89,24% depois de
+  as mensagens serem afirmadas**. Os 17 mutantes que sobrevivem sao `RemoveMethodCall` sobre
+  impressao de mensagem que nenhum caso afirma -- parada declarada, nao esquecimento.
+
+- **Tres badges de teste no README**, e os dois novos sao **derivados da arvore**: casos de teste
+  (blocos `it()`/`test()` em `tests/`) e level do PHPStan (lido do `phpstan.neon`). O `[CT-50]`
+  recalcula os dois a cada rodada da suite, entao nao ha numero escrito a mao para envelhecer --
+  diferente do badge de cobertura, que depende dos ~27 min de medicao e por isso vive num JSON
+  versionado com conferencia no CI.
+
+  O badge de casos conta **blocos escritos**, nao casos executados: um `it()` com `->with()` de
+  cinco linhas vira cinco casos na execucao. E a grandeza que da para derivar sem rodar a suite.
+
+- **Guardas de arquitetura do Pest** (`tests/Kit/ArquiteturaDoCodigoTest.php`), presets `php` e
+  `security`. O `pest-plugin-arch` estava no `composer.json` desde sempre com **zero** uso, e os
+  dois presets adotados **ja passavam** — ninguem e reprovado por codigo que ja estava la.
+
+  A unica violacao do kit esta declarada com o motivo: o `exec` de `KitInstall::oferecerEstrela()`,
+  que abre o repositorio no navegador com uma **constante de classe** como argumento. A guarda foi
+  verificada com mutante: um `exec` novo em qualquer outro lugar de `app/` reprova.
+
+  Os outros quatro presets foram medidos e recusados por conflitarem com convencao deliberada do
+  kit — `strict` exigiria `final` em 163 de 222 classes, e `AgenteBase` existe para ser estendida.
+
+- **`pestw.cmd`** — lancador poliglota `cmd`/PHP que faz o `pest --mutate` produzir score real no
+  Windows. O plugin relanca a suite por `$_SERVER['argv']`, e com `argv[0]` apontando para um
+  script `sh` cada mutante saia com codigo 1 em ~30 ms; o plugin conta qualquer saida nao-zero
+  como mutante morto, e o resultado era um **100% instantaneo e falso** — que ja enganou um juiz
+  cego do quality gate desta esteira.
+
+  O `--no-tia` e obrigatorio junto: com o TIA ligado (o padrao deste projeto), o `PcovRestarter`
+  relanca o PHP reconstruindo a linha de comando do zero e **descarta** o `-d pcov.enabled=1`. O
+  sintoma manda para o lado errado — o `--mutate` morre dizendo que nao ha cobertura enquanto
+  `Coverage::isAvailable()` devolve `true` se testado a mao.
+
+  Evidencia de que agora e real: `CustomizadorDaInstalacao` deu **225 mutantes, 4 nao testados,
+  98,22%, 43,95 s**. Score abaixo de 100% com duracao plausivel e a prova.
 
 - **Guarda das duas rotas de entrega** (`tests/Kit/DuasRotasDeEntregaTest.php`). O kit entrega
   arquivo por dois caminhos governados por listas de formas **opostas**: o `.gitattributes` e de

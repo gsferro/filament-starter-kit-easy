@@ -1908,3 +1908,122 @@ it('[CT-48] mantem o roadmap presente, ligado nos READMEs e fora do export-ignor
      */
     expect(caminhosDoKit())->toContain('wikis/roadmap.md');
 })->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega os READMEs, que passam a ser do projeto.')->group('kit');
+
+/**
+ * O percentual de cobertura dos READMEs sai do MESMO arquivo que alimenta o badge.
+ *
+ * O badge do README é um *endpoint* do shields.io apontando para
+ * `.github/badges/cobertura.json`, e o job `cobertura` do CI reprova quando esse JSON
+ * diverge do medido. Isso trava **o badge**.
+ *
+ * A linha da tabela "Qualidade" é outro número, escrito à mão, e sem esta guarda ela
+ * poderia dizer `79 %` para sempre enquanto o badge mostrasse `85 %` — a mesma classe
+ * de defeito que a linha *Telas navegáveis* cometeu por mais de um mês, e que o
+ * `[CT-25]` existe para impedir na contagem de arquivos.
+ *
+ * ## O que esta guarda NÃO faz — dito porque a redação anterior prometia demais
+ *
+ * Ela compara README **contra o JSON**, não contra a realidade. O elo que liga o JSON à medição
+ * é o job `cobertura`, e ele **não roda em pull request** (`ci.yml`, `if: github.event_name !=
+ * 'pull_request'`), porque a medição é serial e custa ~27 min.
+ *
+ * Consequência prática, nos dois sentidos:
+ *
+ * - uma PR que **derrube** a cobertura passa por aqui, porque README e JSON continuam coerentes
+ *   entre si. O defeito aparece em `main`, depois do merge;
+ * - uma PR que **suba** a cobertura cruzando o ponto percentual também passa, e deixa `main`
+ *   vermelha até alguém rodar `composer test:coverage` e commitar o JSON novo.
+ *
+ * Isso é o preço declarado de não gastar 27 min por PR (ADR-02 e ADR-06), e não um descuido. O
+ * que esta guarda fecha é o elo **barato**: o número escrito à mão no README envelhecendo em
+ * silêncio, que é a classe de defeito da linha *Telas navegáveis*.
+ */
+it('[CT-49] mantem o percentual de cobertura dos readmes igual ao do badge', function (): void {
+    $badge = json_decode((string) file_get_contents(base_path('.github/badges/cobertura.json')), true);
+
+    expect($badge)->toBeArray()
+        ->and($badge['message'] ?? null)->toMatch('~^\d{1,3}%$~', 'o badge precisa guardar o percentual inteiro, como `79%`');
+
+    $percentual = (int) rtrim((string) $badge['message'], '%');
+
+    expect((string) file_get_contents(base_path('README.md')))
+        ->toContain("| Cobertura de testes (`app/`, linha) | **{$percentual} %**")
+        ->and((string) file_get_contents(base_path('README.en.md')))
+        ->toContain("| Test coverage (`app/`, line) | **{$percentual} %**");
+
+    /*
+     * As páginas de docs também citam o percentual, e sem esta parte elas ficariam livres para
+     * envelhecer enquanto README e badge são atualizados juntos — exatamente a classe de defeito
+     * que este caso existe para impedir, só que num arquivo que esta mesma entrega criou.
+     *
+     * A frase é a mesma nas duas línguas de propósito, para uma asserção só travar as duas.
+     */
+    foreach (['pt', 'en'] as $lingua) {
+        /*
+         * `assertStringContainsString`, e NÃO `expect()->toContain($agulha, $mensagem)`: o
+         * `toContain` do Pest é variádico, e o segundo argumento vira OUTRA AGULHA — o caso
+         * passaria a exigir a mensagem dentro da página. Está em `.ai/rules/testes.md`.
+         */
+        $this->assertStringContainsString(
+            "**{$percentual} %** ",
+            (string) file_get_contents(base_path("docs/{$lingua}/referencia/qualidade-de-codigo.md")),
+            "a página de cobertura em `docs/{$lingua}/` cita um percentual diferente do badge",
+        );
+    }
+})->skip(fn (): bool => ! naArvoreDoKit(), 'O `.github/` é `export-ignore`: não existe em projeto nascido de `create-project`.')->group('kit');
+
+/**
+ * Os dois badges novos saem da ÁRVORE, e não da memória de quem os escreveu.
+ *
+ * ## Por que estes dois podem ter guarda e o de cobertura não
+ *
+ * O badge de cobertura depende de uma medição de ~27 min, então ele vive num JSON versionado e o
+ * CI o confere quando roda (`[CT-49]`). Estes dois não dependem de rodar nada: a contagem de
+ * blocos `it()`/`test()` e o `level:` do `phpstan.neon` são **derivávies por leitura**, e por isso
+ * a guarda pode calcular a verdade sozinha, aqui, em milissegundos.
+ *
+ * A diferença importa: um badge que só uma pessoa sabe atualizar é uma afirmação que envelhece. A
+ * linha *Telas navegáveis* deste mesmo README ficou parada em `12 / 28 / 27` por mais de um mês
+ * exatamente assim, e é o precedente que justifica cada caso deste arquivo.
+ *
+ * ## O que a contagem NÃO é
+ *
+ * Blocos escritos, não casos executados: um `it()` com `->with()` de cinco linhas vira cinco casos
+ * na execução. O número do badge é menor que o da suíte de propósito — ele conta **o que foi
+ * escrito à mão**, que é a grandeza que o badge quer comunicar, e é a única derivável sem rodar.
+ */
+it('[CT-50] mantem os badges de casos de teste e de phpstan sincronizados com a arvore', function (): void {
+    $blocos = 0;
+
+    foreach (Finder::create()->files()->in(base_path('tests'))->name('*.php') as $arquivo) {
+        $blocos += preg_match_all('~^(it|test)\(~m', (string) $arquivo->getContents());
+    }
+
+    expect($blocos)->toBeGreaterThan(500, 'a varredura de blocos olhou o lugar errado');
+
+    $nivel = null;
+
+    if (preg_match('~^\s*level:\s*(\w+)~m', (string) file_get_contents(base_path('phpstan.neon')), $casado) === 1) {
+        $nivel = $casado[1];
+    }
+
+    expect($nivel)->not->toBeNull('não achei o `level:` no `phpstan.neon`');
+
+    foreach (['README.md' => '.', 'README.en.md' => ','] as $readme => $separador) {
+        $conteudo  = (string) file_get_contents(base_path($readme));
+        $rotulo    = $readme === 'README.md' ? 'casos%20de%20teste' : 'test%20cases';
+        $formatado = number_format($blocos, 0, ',', $separador);
+
+        $this->assertStringContainsString(
+            "img.shields.io/badge/{$rotulo}-{$formatado}-",
+            $conteudo,
+            "o badge de casos de teste do `{$readme}` não diz {$formatado} — a árvore tem {$blocos} blocos `it()`/`test()`",
+        );
+
+        $this->assertStringContainsString(
+            "img.shields.io/badge/PHPStan-level%20{$nivel}-",
+            $conteudo,
+            "o badge de PHPStan do `{$readme}` não diz `level {$nivel}`, que é o do `phpstan.neon`",
+        );
+    }
+})->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega os READMEs, que passam a ser do projeto.')->group('kit');

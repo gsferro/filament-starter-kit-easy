@@ -4,6 +4,9 @@
 [![Downloads](https://img.shields.io/packagist/dt/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Plumb](https://plumbphp.dev/badges/gsferro/starter-kit-easy/composite.svg)](https://plumbphp.dev/gsferro/starter-kit-easy)
 [![Tests](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=tests)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgsferro%2Ffilament-starter-kit-easy%2Fmain%2F.github%2Fbadges%2Fcobertura.json&style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
+[![Test cases](https://img.shields.io/badge/test%20cases-1,617-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
+[![PHPStan](https://img.shields.io/badge/PHPStan-level%207-4c1?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
 [![License](https://img.shields.io/packagist/l/gsferro/starter-kit-easy.svg?style=flat-square)](LICENSE)
@@ -168,20 +171,21 @@ The other two already come complete.
 | Development packages | **20** |
 | Migrations | **60** |
 | Policies | **16** |
-| `kit:*` commands | **8** |
+| `kit:*` commands | **9** |
 
 | Quality | |
 |---|---:|
-| Test cases (`Kit` + `Tenancy`, measured on 2026-09-23) | **2,872**, with **11,146 assertions** |
+| Test cases (`Kit` + `Tenancy`, measured on 2026-09-25) | **2,942**, with **11,344 assertions** |
 | Screens swept in a real browser | **55** |
-| Test files | **156** in `Kit` + `Tenancy` (**183** in total) |
+| Test files | **158** in `Kit` + `Tenancy` (**185** in total) |
 | PHPStan | **level 7**, zero errors |
+| Test coverage (`app/`, line) | **79 %** — see [what the number leaves out](docs/en/referencia/qualidade-de-codigo.md) |
 | FilaCheck | **17** rules, all passing |
 
 | Documentation | |
 |---|---:|
 | Reference documents (`wikis/`) | **11** |
-| Specified features (`wikis/specs/`) | **68** |
+| Specified features (`wikis/specs/`) | **69** |
 | Project rules for AI agents (`.ai/rules/`, excluding the index) | **18** |
 
 > The details moved to the site: **[Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/)** and **[Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/)**.
