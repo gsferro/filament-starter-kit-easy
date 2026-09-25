@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.40.0] - 2026-09-25
+
 ### Seguranca
 
 - **O kit nao distribui mais uma credencial utilizavel.** `.env.example` trazia
