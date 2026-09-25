@@ -31,6 +31,16 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Corrigido
 
+- **`--min=0` deixou de ser aceito.** A faixa era `0 <= piso <= 100`, entao `--min=0` passava e o
+  comando ainda imprimia *"o piso foi respeitado"*. Piso que nao reprova ninguem nao e piso. E a
+  mesma classe do `--min=abc` que a revisao de diff pegou (RD-02), pela porta que ficou aberta ao
+  lado. Direcao fixada por falha fechado; a faixa agora e `1..100`.
+
+- **A guarda de seguranca do `KitInstall` afirmava ausencia sobre o fonte cru**, sem filtrar
+  comentario — e `.ai/rules/testes.md` lista **tres** ocorrencias anteriores do mesmo padrao nesta
+  base. Bastava alguem escrever *"nunca use `system()` aqui"* num docblock para o caso ficar
+  vermelho sem haver defeito. Esta era a quarta, e quem a pegou foi o quality gate.
+
 - **`.cmd` e `.bat` ficam com CRLF** (`.gitattributes`). O `* text=auto eol=lf` da primeira linha
   normalizava tudo para LF, e o `cmd` do Windows nao le arquivo em lotes com LF. O sintoma
   apareceria longe da causa: o `pestw.cmd` sairia quebrado no `git checkout` de quem clonasse, e o
@@ -53,7 +63,7 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - **Cobertura de testes medida, com meta, badge e guarda** (`composer test:coverage`, job
   `cobertura` no CI, `.github/badges/cobertura.json`, comando `kit:cobertura`). Primeira medicao
   real do kit:
-  **79,89% das linhas de `app/`** — 7.970 de 9.976 statements, em 2.942 testes e 25 min 08 s.
+  **81,61% das linhas de `app/`** — 8.141 de 9.976 statements, em 2.979 testes e 42 min.
 
   **O numero e um piso, nao um teto**, e a documentacao diz isso com todas as letras porque a
   leitura ingenua leva ao contrario: `app/Console` aparece a **34%** e e, na pratica, o codigo
@@ -70,7 +80,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
   **O primeiro elo nao roda em pull request**, e isso esta escrito no proprio `[CT-49]`: uma PR
   que derrube a cobertura passa nos dois (README e JSON continuam coerentes entre si) e o defeito
-  so aparece em `main`. E o preco declarado de nao gastar 27 min por PR, nao um descuido.
+  so aparece em `main`. E o preco declarado de nao gastar 52 min de runner por PR, nao um
+  descuido.
 
   O job **nao roda em pull request**: `--parallel --coverage` nao existe (o Pest imprime o *usage*
   do paratest, e `artisan test --parallel --coverage-clover` roda sem gerar arquivo), entao a
@@ -80,9 +91,50 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
   O job foi **disparado a mao antes do merge**, porque job de CI que nunca rodou e afirmacao, nao
   garantia. Ele passou, e de quebra mostrou que a cobertura **varia com a plataforma**: a mesma
-  arvore da 79,89% no Windows e 79,82% no Linux -- 7 statements de codigo que so roda num dos
-  dois. Os dois truncam para `79%`, entao o badge confere nos dois; se ele guardasse a casa
-  decimal, o CI reprovaria toda medicao feita na outra plataforma.
+  arvore dava, na medicao de 2026-09-25, **79,89% no Windows e 79,82% no Linux** -- 7 statements
+  de codigo que so roda num dos dois. Os dois truncavam para `79%`, entao o badge conferia nos
+  dois; se ele guardasse a casa decimal, o CI reprovaria toda medicao feita na outra plataforma.
+
+- **As 16 policies do kit ganharam teste** (`tests/Kit/PoliciesTest.php`, 37 casos, 1.206
+  asseracoes). Elas estavam a **23% de cobertura** — exercitadas o tempo todo e **indiretamente**,
+  porque o `Gate` curto-circuita antes do metodo: o `master_global` passa pelo `before` do Shield, e
+  quem nao tem papel nenhum nem chega ao painel.
+
+  **O oraculo nao e a cobertura, e o defeito que existe nessas classes.** As 16 sao geradas pelo
+  Shield e estruturalmente identicas — cada metodo devolve `$authUser->can('Acao:Modelo')`. Num
+  arquivo assim o defeito plausivel nao e logica, e a **string**: `ProjetoPolicy::delete()`
+  conferindo `Delete:Tenant` depois de um copiar-colar passa em qualquer teste de tela (nega quando
+  tem de negar, por acaso) e abre um buraco que so aparece com o papel certo na mao. Nada no kit
+  pegava isso.
+
+  A matriz por reflexao pega para **toda** policy e **todo** metodo, sem ninguem precisar lembrar de
+  acrescentar caso quando nascer a policy 17 — e um caso companheiro recusa a policy que nasca fora
+  do dataset. O `RolePolicy` tem tabela de decisao propria: quatro metodos cruzam a permissao com
+  `papelEditavelPor()`, e sem essa conjuncao qualquer papel com `Update:Role` poderia reescrever o
+  `master_global` e se promover.
+
+  Tres mutantes rodados a mao, os tres mortos: string de permissao trocada, `&&` virando `||`,
+  policy removida do dataset.
+
+  **Cobertura de linha 79,89% -> 81,61%**; de metodo, 62,7% -> 76,9%.
+
+- **O piso de cobertura deixou de ser um numero solto** (`[CT-51]`). `--min=78` estava escrito **a
+  mao** no `composer.json` e no `ci.yml`, e o `78 %` da documentacao era prosa: **baixar o piso para
+  70 nos dois lugares nao deixava nada vermelho** — a unica mudanca de uma linha capaz de fazer a
+  meta "passar" sem cobrir uma linha de `app/`.
+
+  A ironia e que o docblock de `KitCobertura::pisoPedido()` ja registrava o risco (*"o `--min` esta
+  escrito a mao em dois lugares, que e exatamente onde erro de digitacao mora"*). A guarda que
+  nasceu dali defendia contra o valor **ilegivel**, e deixou aberta a porta ao lado: o valor
+  **trocado**.
+
+  A fonte passa a ser a documentacao, porque e ela que carrega a **justificativa** — RQ-06 pede um
+  numero *"escolhido e justificado"*, e numero sem o porque e folclore.
+
+- **O levantamento de niveis de qualidade e o mutation score entraram na documentacao de usuario**
+  (`docs/{pt,en}/referencia/qualidade-de-codigo.md`). Eles viviam so na wiki e no roadmap, e a RQ-08
+  diz *"tudo fica na documentacao"*. Cada score sai agora com **comando, duracao e plataforma** —
+  sem os tres, um score nao e auditavel, e e a regra que o proprio `pestw.cmd` escreve.
 
 - **`kit:cobertura` com teste proprio** (`tests/Kit/KitCoberturaTest.php`, 33 casos). Ele nasceu
   sem teste nenhum -- os seis caminhos de saida foram conferidos a MAO e a conferencia nao foi
@@ -99,7 +151,7 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - **Tres badges de teste no README**, e os dois novos sao **derivados da arvore**: casos de teste
   (blocos `it()`/`test()` em `tests/`) e level do PHPStan (lido do `phpstan.neon`). O `[CT-50]`
   recalcula os dois a cada rodada da suite, entao nao ha numero escrito a mao para envelhecer --
-  diferente do badge de cobertura, que depende dos ~27 min de medicao e por isso vive num JSON
+  diferente do badge de cobertura, que depende dos ~25 min de medicao local e por isso vive num JSON
   versionado com conferencia no CI.
 
   O badge de casos conta **blocos escritos**, nao casos executados: um `it()` com `->with()` de

@@ -109,9 +109,14 @@ it('[CT-04] recusa --min ilegivel em vez de desligar o piso em silencio', functi
         ->assertFailed();
 })->with([
     'texto'        => ['abc', '"abc"'],
+    /*
+     * O zero e o caso que o quality gate achou: ele passava, e o comando ainda anunciava "o piso
+     * foi respeitado". Direcao fixada por falha fechado -- piso que nao reprova ninguem nao e piso.
+     */
+    'zero'         => ['0', 'entre 1 e 100'],
     'vazio'        => ['', 'precisa ser um número'],
-    'negativo'     => ['-1', 'entre 0 e 100'],
-    'acima de cem' => ['101', 'entre 0 e 100'],
+    'negativo'     => ['-1', 'entre 1 e 100'],
+    'acima de cem' => ['101', 'entre 1 e 100'],
 ])->group('kit');
 
 /**

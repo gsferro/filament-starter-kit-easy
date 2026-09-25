@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
-  # O job `cobertura` roda em SERIE e leva ~27 min (medido local, 2026-09-24). Ele nao roda
+  # O job `cobertura` roda em SERIE e leva ~52 min neste runner (medido em 2026-09-25, no
+  # primeiro disparo manual; sao ~25 min numa maquina local de 16 nucleos). Ele nao roda
   # em pull request; o disparo manual existe para quem quiser o numero antes do merge.
   workflow_dispatch:
 

@@ -156,11 +156,12 @@ Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never to
 
 ## Test coverage — and what the number leaves **out**
 
-**79 %** of the lines in `app/` — 7,970 of 9,976 statements, measured on 2026-09-25. The README
+**81 %** of the lines in `app/` — 8,141 of 9,976 statements, measured on 2026-09-25. The README
 badge comes from here, and CI fails when it lies.
 
 > **The number moves slightly with the operating system**, and the badge was designed to absorb
-> that: the same tree gives **79.89 % on Windows and 79.82 % on Linux** — 7 statements apart, from
+> that: in a 2026-09-25 measurement, the same tree gave **79.89 % on Windows and 79.82 % on Linux**
+> — 7 statements apart, from
 > code that only runs on one platform. Both truncate to `79%`, so the badge matches on either. Had
 > it stored the decimal, CI would fail every measurement taken on the other platform.
 
@@ -169,7 +170,7 @@ badge comes from here, and CI fails when it lies.
 > against `.github/badges/cobertura.json` by `[CT-49]`.
 
 ```bash
-composer test:coverage    # measures, writes the badge and applies the floor — ~27 min, serial
+composer test:coverage    # measures, writes the badge and applies the floor — ~25 min, serial
 
 # the two halves, separately, when you already have the Clover:
 php -d pcov.enabled=1 vendor/bin/pest --testsuite=Kit,Tenancy --no-tia --coverage-clover=cobertura.xml
@@ -190,7 +191,8 @@ kit's tree `.github/badges/` does not exist, and the command simply leaves badge
 | **PHPStan** | the `level:` in `phpstan.neon` | `[CT-50]`, by the same mechanism |
 
 The last two depend on running nothing — they are derivable by reading, so the guard works out the
-truth by itself in milliseconds. The coverage one depends on the ~27 min measurement, which is why
+truth by itself in milliseconds. The coverage one depends on the ~25 min measurement (52 min on
+the CI runner), which is why
 it lives in a versioned file checked by CI.
 
 > **The case badge counts blocks written, not cases executed.** An `it()` with a five-row
@@ -246,6 +248,67 @@ untested — which is the only event the floor exists to catch.
 And line coverage does **not** measure whether the suite detects defects: it measures what was
 **executed**, not what was **verified**. That question belongs to the mutation score, for which the
 kit uses `pest --mutate` (on Windows, through `pestw.cmd` at the root — its header explains why).
+
+## The mutation score, and what it answers that coverage does not
+
+Coverage measures **what ran**. Mutation testing measures **what was verified**: it changes the code
+on purpose — swaps a `<` for `<=`, deletes a call, flips an `&&` — and asks whether any test turns
+red. A surviving mutant is a defect nobody would catch.
+
+```bash
+# Linux and macOS
+vendor/bin/pest tests/Kit/SomeTest.php --mutate --path=app/Support/X.php --covered-only --no-tia
+
+# Windows — through the launcher at the root; its header explains why
+cmd /c pestw.cmd tests/Kit/SomeTest.php --mutate --path=app/Support/X.php --covered-only --no-tia
+```
+
+Measurements from this tree, with the command, the duration and the platform — without all three a
+score is not auditable:
+
+| Target | Mutants | Score | Duration | Platform |
+|---|---:|---:|---:|---|
+| `app/Support/CustomizadorDaInstalacao.php` | 225, 4 untested | **98.22%** | 43.95 s | Windows, PHP 8.4.25, PCOV |
+| `app/Console/Commands/KitCobertura.php` | 158, 17 untested | **89.24%** | 66.87 s | Windows, PHP 8.4.25, PCOV |
+| `app/Policies/` (all 16) | **4** | 100% | 0.19 s | Windows, PHP 8.4.25, PCOV |
+
+> **A high, instant score is a symptom, not a result.** On Windows, running through
+> `vendor/bin/pest` instead of the launcher returns **100% in seconds** for a suite that takes
+> minutes — the plugin relaunches `argv[0]`, `cmd` cannot execute an `sh` script, and every
+> non-zero exit is counted as a killed mutant. The policies row above is honest for a different
+> reason: **4 mutants for 222 statements**, because pure delegation code has no operators to
+> mutate. There the instrument is not mutation — it is the assertion that each policy checks the
+> permission of its **own** model.
+
+## The quality levels the kit did **not** adopt, and why
+
+Survey of 2026-09-25. Every candidate was **run against this tree** before entering the table —
+because every quality tool looks good in the abstract, and what separates the worthwhile ones is how
+much noise they produce in **this** code. An analyser that reports 594 times is not stricter than
+one that reports 48; it is one nobody will switch on.
+
+| Level | Measured here | Verdict |
+|---|---|---|
+| `arch()->preset()->php()` | passes clean, 53 assertions, 6.5 s | **adopted** |
+| `arch()->preset()->security()` | 1 class flagged (3 `exec()` in `KitInstall`, with a constant) | **adopted**, with the exception declared and confined |
+| **PHPStan level 8** | **48 errors** | roadmap, high priority — fits a release of its own |
+| PHPStan level 9 / `max` | **474** and **594** errors | **no** — a cliff, not a step |
+| `arch()->preset()->laravel()` | fails on the 1st class (controller with a method outside the REST set) | **no** — the kit's convention is deliberate |
+| `arch()->preset()->strict()` | **163 of 222** classes are not `final` | **no** — `AgenteBase` exists to be extended |
+| `arch()->preset()->relaxed()` | forbids `private` methods; **54** files use them | **no** — contradicts the kit's style |
+| `declare(strict_types=1)` | **98 of 240** files | roadmap — not a lack of rigour but **inconsistency**, and it requires picking a side |
+| `composer-require-checker` + `composer-unused` | not installed | roadmap, high priority — they answer *"of the 58 dependencies, which are used?"* |
+| Branch coverage (Xdebug) | Xdebug 3.5.3 installed | roadmap — it is the only reason Xdebug exists here |
+| `pest-plugin-type-coverage` | not installed | roadmap |
+| Deptrac | not installed | **no** — the kit has no layer boundary to defend |
+
+The three cut-off criteria, applied to every row: **(a)** does it answer a gap already measured in
+this project? **(b)** is the adoption cost known? **(c)** is what it catches missed by everything
+already in place? The roadmap items pass (a) and (c) and are waiting for budget; the rejected ones
+fail (a) or clash with a written convention.
+
+> The figures above age — `48 errors at level 8` is from 2026-09-25 and changes with every release.
+> Whoever picks up a roadmap item **re-measures before estimating**.
 
 ## The README images come out of a test
 

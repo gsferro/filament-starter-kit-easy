@@ -79,6 +79,20 @@ it('confina a excecao de seguranca do KitInstall a exec com constante', function
     $fonte = (string) file_get_contents(base_path('app/Console/Commands/KitInstall.php'));
 
     /*
+     * Asserção de AUSÊNCIA roda sobre o código sem comentário — `.ai/rules/testes.md`.
+     *
+     * O `KitInstall` é o arquivo mais comentado do kit, e comentário bom cita o que proíbe: basta
+     * alguém escrever *"nunca use `system()` aqui"* num docblock para este caso ficar vermelho sem
+     * haver defeito nenhum. A rule lista **três** ocorrências anteriores deste mesmo padrão nesta
+     * base, e este caso era a quarta — pego pelo quality gate, não por mim.
+     *
+     * A asserção de PRESENÇA (o `exec`, logo abaixo) continua sobre o texto cru de propósito:
+     * citar não é executar, mas executar também aparece no texto cru.
+     */
+    $codigo = (string) preg_replace(['~/\*.*?\*/~s', '~//[^
+]*~'], '', $fonte);
+
+    /*
      * A lista do `Pest\ArchPresets\Security`, menos o `exec`. Escrita à mão de propósito: o
      * preset é `internal` e ler a lista dele por reflexão amarraria esta guarda a um detalhe
      * de implementação do Pest. Se o preset ganhar uma função nova, este caso não a cobre — e
@@ -92,7 +106,7 @@ it('confina a excecao de seguranca do KitInstall a exec com constante', function
 
     $encontradas = array_values(array_filter(
         $proibidas,
-        static fn (string $funcao): bool => preg_match('~(?<![\w>$:])'.preg_quote($funcao, '~').'\s*\(~', $fonte) === 1,
+        static fn (string $funcao): bool => preg_match('~(?<![\w>$:])'.preg_quote($funcao, '~').'\s*\(~', $codigo) === 1,
     ));
 
     expect($encontradas)->toBe([], 'funcao da lista de seguranca dentro do `KitInstall`, que o `ignoring()` do preset deixa passar');

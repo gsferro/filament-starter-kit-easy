@@ -1925,7 +1925,7 @@ it('[CT-48] mantem o roadmap presente, ligado nos READMEs e fora do export-ignor
  *
  * Ela compara README **contra o JSON**, não contra a realidade. O elo que liga o JSON à medição
  * é o job `cobertura`, e ele **não roda em pull request** (`ci.yml`, `if: github.event_name !=
- * 'pull_request'`), porque a medição é serial e custa ~27 min.
+ * 'pull_request'`), porque a medição é serial e custa ~52 min no runner.
  *
  * Consequência prática, nos dois sentidos:
  *
@@ -1934,7 +1934,8 @@ it('[CT-48] mantem o roadmap presente, ligado nos READMEs e fora do export-ignor
  * - uma PR que **suba** a cobertura cruzando o ponto percentual também passa, e deixa `main`
  *   vermelha até alguém rodar `composer test:coverage` e commitar o JSON novo.
  *
- * Isso é o preço declarado de não gastar 27 min por PR (ADR-02 e ADR-06), e não um descuido. O
+ * Isso é o preço declarado de não gastar 52 min de runner por PR (ADR-02 e ADR-06), e não um
+ * descuido. O
  * que esta guarda fecha é o elo **barato**: o número escrito à mão no README envelhecendo em
  * silêncio, que é a classe de defeito da linha *Telas navegáveis*.
  */
@@ -1977,7 +1978,8 @@ it('[CT-49] mantem o percentual de cobertura dos readmes igual ao do badge', fun
  *
  * ## Por que estes dois podem ter guarda e o de cobertura não
  *
- * O badge de cobertura depende de uma medição de ~27 min, então ele vive num JSON versionado e o
+ * O badge de cobertura depende de uma medição de ~25 min (52 min no CI), então ele vive num JSON
+ * versionado e o
  * CI o confere quando roda (`[CT-49]`). Estes dois não dependem de rodar nada: a contagem de
  * blocos `it()`/`test()` e o `level:` do `phpstan.neon` são **derivávies por leitura**, e por isso
  * a guarda pode calcular a verdade sozinha, aqui, em milissegundos.
@@ -2027,3 +2029,71 @@ it('[CT-50] mantem os badges de casos de teste e de phpstan sincronizados com a 
         );
     }
 })->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega os READMEs, que passam a ser do projeto.')->group('kit');
+
+/**
+ * O piso de cobertura é UM número, e ele está em três lugares — este caso é o que os amarra.
+ *
+ * ## O buraco que ele fecha
+ *
+ * `--min=78` está escrito **à mão** no `composer.json` e no `.github/workflows/ci.yml`, e o
+ * `78 %` da documentação é prosa. Até este caso existir, **baixar o piso para 70 nos dois lugares
+ * não deixava nada vermelho** — e é a única mudança de uma linha capaz de fazer a meta "passar"
+ * sem que uma linha de `app/` seja coberta.
+ *
+ * A ironia é que o próprio docblock de `KitCobertura::pisoPedido()` já registrava o risco: *"o
+ * `--min` está escrito à mão em dois lugares, que é exatamente onde erro de digitação mora"*. A
+ * guarda que nasceu dali defendia contra o valor **ilegível** (`--mim=78`), e deixou aberta a
+ * porta ao lado: o valor **trocado**.
+ *
+ * Achado pelo quality gate do ciclo 1, como o buraco de maior risco da entrega.
+ *
+ * ## Por que a documentação é a fonte, e não o `composer.json`
+ *
+ * Porque é ela que carrega a **justificativa**. RQ-06 pede um número *"escolhido e justificado"*,
+ * e número sem o porquê é folclore — que é o que esta feature inteira existe para não ser. Quem
+ * quiser mudar o piso muda a decisão escrita primeiro.
+ *
+ * ## Por que aqui, e não em `KitCoberturaTest`
+ *
+ * Aquele arquivo relocaliza a raiz da aplicação no `beforeEach`, para que os casos de badge rodem
+ * num mundo sem `.github/badges`. Com a raiz trocada, `naArvoreDoKit()` responde sobre a pasta
+ * temporária e o caso é **pulado em silêncio** — que é o modo mais barato de uma guarda não
+ * guardar nada. Foi assim que ele estreou, e foi o `[CT-10]` de `RedeDeDocumentacaoTest` que
+ * cobrou a sentinela canônica.
+ */
+it('[CT-51] mantem o piso do composer e do CI igual a meta declarada na documentacao', function (): void {
+    $doc = (string) file_get_contents(base_path('docs/pt/referencia/qualidade-de-codigo.md'));
+
+    expect($doc)->toMatch('~### O piso é \d{1,3} %~');
+
+    preg_match('~### O piso é (\d{1,3}) %~', $doc, $casado);
+
+    $meta = $casado[1];
+
+    foreach ([
+        'composer.json'            => '~kit:cobertura[^"]*--min=(\d{1,3})~',
+        '.github/workflows/ci.yml' => '~kit:cobertura[^
+]*--min=(\d{1,3})~',
+    ] as $arquivo => $padrao) {
+        preg_match_all($padrao, (string) file_get_contents(base_path($arquivo)), $pisos);
+
+        $this->assertNotEmpty(
+            $pisos[1],
+            "não achei nenhum `--min` de `kit:cobertura` em `{$arquivo}` — se o comando saiu de lá, este caso precisa mudar junto",
+        );
+
+        foreach ($pisos[1] as $piso) {
+            $this->assertSame(
+                $meta,
+                $piso,
+                "`{$arquivo}` aplica o piso {$piso} e a documentação declara a meta {$meta} — um dos dois mente",
+            );
+        }
+    }
+    /*
+     * A mensagem do `skip` não pode citar o diretório da documentação: o `[CT-10]` de
+     * `RedeDeDocumentacaoTest` proíbe `skip(...)` que o mencione, porque condicionar execução à
+     * existência dele é auto-anulante — sem a migração, nada existe, tudo é pulado e a suíte fica
+     * verde com zero entrega. A sentinela correta é `naArvoreDoKit()`, que olha `.github`.
+     */
+})->skip(fn (): bool => ! naArvoreDoKit(), 'A documentação de usuário e o `.github/` são `export-ignore`: nenhum dos dois existe em projeto nascido de `create-project`.')->group('kit');
