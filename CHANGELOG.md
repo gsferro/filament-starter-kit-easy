@@ -5,6 +5,32 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.40.1] - 2026-09-25
+
+### Corrigido
+
+- **A guarda de constraint de dependencia deixou a suite de quem ATUALIZA vermelha.** Achado pelos
+  quatro cenarios de instalacao da v0.40.0, e e a razao de eles existirem: os cenarios 1 e 2
+  (instalacao limpa) passavam, e os **3 e 4** (`kit:update` a partir da v0.39.1) reprovavam.
+
+  O mecanismo: `ConstraintDeDependenciaTest` nasceu na v0.40.0 e exige teto de major em toda
+  dependencia de producao. O `composer.json` esta **deliberadamente fora** do `kit:update`
+  (`KitUpdate.php:366`) -- ele avisa que mudou e manda revisar a mao, porque sobrescreve-lo apagaria
+  as dependencias do projeto. Resultado: quem atualiza recebe o **teste** novo sem a **correcao**, e
+  a suite fica vermelha no dia 1 por `spatie/laravel-backup => *` -- que foi o proprio kit que
+  embarcou na v0.39.1 e corrigiu na v0.40.0.
+
+  Guarda que dispara por decisao do kit, na arvore de outra pessoa, e alarme falso. Fora da arvore
+  do kit o `composer.json` e **do projeto**, e o kit nao tem o que reprovar ali; dentro dela a
+  guarda continua com todo o rigor, que e onde a decisao de constraint e de fato tomada.
+
+  Verificado nas duas direcoes: o cenario 3 fica verde, e trocar o teto por `*` na arvore do kit
+  continua reprovando.
+
+> **Se voce atualizou da v0.39.1 ou anterior**, vale bumpar `spatie/laravel-backup` de `*` para
+> `^10.3` no seu `composer.json` -- a dependencia sem teto aceita qualquer major futura. O
+> `kit:update` ja imprime o `git diff` para comparar o `composer.json` do kit com o seu.
+
 ## [0.40.0] - 2026-09-25
 
 ### Seguranca
