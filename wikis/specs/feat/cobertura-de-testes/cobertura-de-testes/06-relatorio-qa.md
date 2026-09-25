@@ -54,18 +54,19 @@ consistência documental** — o texto que a próxima pessoa leria não descrevi
 ## O que a reconciliação do `04` acrescentou ao veredito
 
 A derivação cega, feita depois do gate, achou **15 buracos** que nenhum dos dois passes anteriores
-tinha visto. Três foram fechados neste ciclo:
+tinha visto. **Quatro** foram fechados neste ciclo:
 
 | # | Buraco | Fechado com |
 |---|---|---|
 | 1 | **o piso `78` não estava ligado a nada** — literal à mão no `composer.json` **e** no `ci.yml`, documentação em prosa. Baixá-lo para 70 não deixava nada vermelho, e era a única mudança de uma linha capaz de fazer a meta "passar" sem cobrir uma linha de `app/` | `[CT-51]`, que amarra os três e morde dos dois lados |
 | 3 | **`--min=0` era aceito** e o comando ainda anunciava *"o piso foi respeitado"* | faixa passou a `1..100`, com o caso `zero` no `[CT-04]` |
+| 4 | **o recorte medido não tinha guarda nenhuma** — `phpunit.xml` era a única coisa que definia o denominador, e trocar `<directory>app</directory>` por `app/Models`, ou acrescentar um `<exclude>` sobre o diretório de pior cobertura, **sobe o percentual** e passa por todo o CI | `[CT-52]` e `[CT-53]`, verificados com três mutantes: estreitar por inclusão, por exclusão, e apagar o `<source>` inteiro |
 | 10 e 11 | **RQ-13 e RQ-14 não estavam na documentação de usuário** — o levantamento de níveis de qualidade e o mutation score viviam só na wiki e no roadmap, e RQ-08 diz *"tudo fica na documentação"* | duas seções novas em `docs/{pt,en}/referencia/qualidade-de-codigo.md` |
 
-Os **doze restantes** estão no `04`, cada um com o cenário que os fecha, e são o roteiro do próximo
-ciclo. Os dois maiores: nenhuma guarda sobre o **recorte medido** (trocar `<directory>app</directory>`
-por `app/Models` sobe a cobertura e passa por todo o CI) e nenhuma guarda sobre a **cadeia de
-propagação do código de saída** no CI.
+Os **onze restantes** estão no `04`, cada um com o cenário que os fecha, e são o roteiro do próximo
+ciclo. O maior deles: nenhuma guarda sobre a **cadeia de propagação do código de saída** no CI —
+um `|| true` no passo, ou tolerância a erro no job, deixa o gate verde com a cobertura abaixo da
+meta.
 
 ## Dimensões
 

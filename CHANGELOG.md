@@ -118,6 +118,18 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
   **Cobertura de linha 79,89% -> 81,61%**; de metodo, 62,7% -> 76,9%.
 
+- **O recorte medido ganhou guarda** (`tests/Kit/RecorteDaCoberturaTest.php`). O `phpunit.xml` era
+  a **unica** coisa que definia o denominador da cobertura, e nada o afirmava: trocar
+  `<directory>app</directory>` por `app/Models`, ou acrescentar um `<exclude>` sobre o diretorio de
+  pior cobertura, **sobe o percentual** e passava por todo o CI -- inclusive pelo job `cobertura`,
+  que confere o badge contra a medicao e ficaria feliz com as duas mentindo juntas.
+
+  A assercao e de **igualdade de conjuntos**, e nao uma busca por `<exclude>`: procurar exclusao
+  deixaria passar o estreitamento por **inclusao**, que e o mesmo defeito com outra sintaxe.
+  Verificado com tres mutantes -- inclusao, exclusao e o `<source>` apagado inteiro.
+
+  E a irma da guarda do piso: la o numero, aqui o conjunto sobre o qual ele e calculado.
+
 - **O piso de cobertura deixou de ser um numero solto** (`[CT-51]`). `--min=78` estava escrito **a
   mao** no `composer.json` e no `ci.yml`, e o `78 %` da documentacao era prosa: **baixar o piso para
   70 nos dois lugares nao deixava nada vermelho** — a unica mudanca de uma linha capaz de fazer a
