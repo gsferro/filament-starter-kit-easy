@@ -5,6 +5,58 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Seguranca
+
+- **As 23 referencias de GitHub Action passaram a ser pinadas por SHA** -- eram **13 de 23**.
+  Faltavam seis `actions/cache@v4` no `ci.yml` e as quatro acoes inteiras do `pages.yml`.
+
+  Uma tag e **movel**: quem controla o repositorio da action pode reescrever `v4` para outro commit
+  a qualquer momento, e todo pipeline que a usa passa a executar codigo novo sem que nada no
+  repositorio consumidor mude. Foi assim que o `tj-actions/changed-files` vazou segredo de milhares
+  de pipelines em marco de 2025. Um SHA de 40 caracteres nao se reescreve.
+
+  E `tests/Kit/AcoesPinadasPorShaTest.php` fecha a **classe**, nao a ocorrencia: a proxima action
+  acrescentada com `@v4` -- que e como toda documentacao escreve o exemplo -- nasce reprovando. O
+  segundo caso exige o rotulo da versao ao lado do SHA, senao o diff de um bump do Dependabot fica
+  ilegivel e ninguem o audita.
+
+- **O Dependabot passou a esperar antes de abrir PR de versao recem-publicada** (`cooldown`).
+  Pacote comprometido costuma ser descoberto e despublicado em horas ou poucos dias, e quem
+  atualiza no minuto zero e quem consome a versao maliciosa.
+
+  As janelas sao **escalonadas pelo risco do salto**, e nao uniformes: major 14 dias, minor 7,
+  patch 3, default 5. Patch de seguranca nao entra na regra -- o Dependabot ignora o cooldown para
+  advisory, que e exatamente o caso em que esperar custa mais do que atualizar.
+
+Os dois vieram do relatorio do **Plumb**, que pontuava **79/100**.
+
+### Corrigido
+
+- **O middleware `RaizDeUrlSemPublic` nao chegava a quem ATUALIZA** -- e o sintoma era silencioso.
+
+  Ele e registrado em `bootstrap/app.php`, e `bootstrap/` **nao viaja** por nenhuma das duas rotas
+  de entrega, nem pode: e onde quem instala registra os proprios middlewares e providers.
+
+  Consequencia medida: a classe entrou na **v0.36.1**. Quem instalou entre a v0.16.0 e a v0.36.0 e
+  vem rodando `kit:update` **tem a classe** e **nao tem o registro**. A correcao de URL nao
+  funcionava nessas instalacoes, e nada quebrava -- o `/public` so continuava aparecendo antes do
+  painel.
+
+  A saida e **rede de seguranca, nao realocacao**: `KitServiceProvider::garantirRaizDeUrlSemPublic()`
+  chama `pushMiddleware()`, que e idempotente. Instalacao nova -- o metodo e no-op e a posicao
+  original fica intacta, o que importa porque a **posicao e requisito**: o middleware precisa rodar
+  depois do `TrustProxies`, senao leria host e porta sem os cabecalhos `X-Forwarded-*`. Instalacao
+  atualizada sem o registro -- ele entra no fim do stack, que continua sendo depois do
+  `TrustProxies`.
+
+  Era o **item 7** do `wikis/roadmap.md`, o unico dos oito classificado como defeito em producao.
+
+  `tests/Kit/RaizDeUrlRegistradaTest.php`, 4 casos. **O quarto nasceu de um mutante sobrevivente**:
+  apagar a chamada de dentro do `boot()` nao reprovava, porque o caso que provava a correcao
+  invocava o metodo privado por reflexao -- ele provava que o metodo funciona, e nao que alguem o
+  chama.
+
+
 ## [0.40.1] - 2026-09-25
 
 ### Corrigido
@@ -304,6 +356,56 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 
 ## [0.39.1] - 2026-09-24
+
+### Validacao dos quatro cenarios — `v0.40.0` e `v0.40.1`
+
+Rodados em `STARTER-KIT-EASY/validacao-v0.40.0/`. Os cenarios 3 e 4 nasceram da `v0.39.1` e foram
+atualizados com `kit:update --all`, primeiro para a `v0.40.0` e depois para a `v0.40.1`.
+
+| # | Cenario | Diretorio | Versao | Tenancy | Saida |
+|---|---|---|---|---|---|
+| 1 | limpo, sem tenancy | `novo-sem-tenant` | `0.40.0` | — | `2983 testes / 2794 verdes / 11.938 assercoes / 189 pulados / 0 falhas` |
+| 2 | limpo, com tenancy | `novo-com-tenant` | `0.40.0` | `SIM` | `2983 / 2794 / 11.938 / 189 pulados / 0 falhas` |
+| 3 | `kit:update`, sem tenancy | `velho-sem-tenant` | **`0.40.1`** | — | `2983 / 2793 / 11.935 / 190 pulados / 0 falhas` |
+| 4 | `kit:update`, com tenancy | `velho-com-tenant` | **`0.40.1`** | `SIM` | `2983 / 2793 / 11.935 / 190 pulados / 0 falhas` |
+
+**Os cenarios 3 e 4 REPROVARAM na `v0.40.0`**, e foi essa validacao que produziu a `v0.40.1`. A
+guarda de constraint viajava e reprovava por uma decisao do proprio kit; o detalhe esta na secao
+da `v0.40.1`. Os dois foram re-rodados por inteiro depois da correcao.
+
+**Os cenarios 1 e 2 nao foram re-medidos na `v0.40.1`**, e a limitacao fica declarada em vez de
+extrapolada. A `v0.40.1` muda um `skip` num arquivo de teste, os tres marcadores de versao e o
+CHANGELOG -- o efeito esperado numa instalacao limpa e `+1 pulado`, mas esperado nao e medido.
+
+#### O teto de pulados: 180 -> 190, justificado por causa
+
+O checklist exige que o aumento seja justificado **por causa** antes da tag, e na `v0.40.0` isso
+**nao foi feito** -- a primeira tentativa estimou por `grep naArvoreDoKit` e errou (+11 previsto,
++9 medido), porque a chamada tambem aparece dentro de corpo de caso e dataset de N linhas conta N
+pulados. Medido agora com `--log-junit`, no cenario 3:
+
+| Causa | Pulados |
+|---|---:|
+| `DuasRotasDeEntregaTest` (novo na `v0.40.0`) | 3 |
+| `RecorteDaCoberturaTest` (novo) | 2 |
+| `ArquiteturaDoCodigoTest` (novo) | 1 |
+| `ConstraintDeDependenciaTest` (a sentinela da `v0.40.1`) | 1 |
+| `SiteDeDocumentacaoTest` — `[CT-49]`, `[CT-50]`, `[CT-51]` | 3 |
+| **total** | **10** |
+
+`180 + 10 = 190`. Fecha exatamente, e todas as causas sao casos que so valem na arvore do kit.
+**Novo teto: 190.**
+
+#### Uma falha que nao era defeito, e por que ela esta registrada
+
+O cenario 4 reprovou uma vez em `AdminDaOrganizacaoTest`, num run cuja **duracao foi de
+3 h 25 min** -- inanicao de recursos, porque rodou concorrente com a medicao de cobertura e com os
+outros cenarios. Isolado, o arquivo passa em 52 s; a suite inteira, com a maquina livre, passa em
+182 s.
+
+Fica escrito porque a tentacao de anotar *"1 falha no cenario 4"* e seguir e real, e seria falso.
+**Duracao implausivel e sintoma do arnes, nao resultado** -- a mesma regra que o `pestw.cmd` aplica
+ao mutation score, pelo outro lado.
 
 ### Validacao dos quatro cenarios — `v0.39.1`
 

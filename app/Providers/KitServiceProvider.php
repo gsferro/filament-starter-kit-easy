@@ -10,6 +10,7 @@ use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Pages\Auth\TelaLoginUnificada;
 use App\Filament\Pages\Auth\TelaRecuperarSenhaUnificada;
 use App\Http\Controllers\Auth\EntrarNoPainelController;
+use App\Http\Middleware\RaizDeUrlSemPublic;
 use App\Http\Responses\RespostaDeCadastro;
 use App\Http\Responses\RespostaDeLogin;
 use App\Models\Tenant;
@@ -34,6 +35,7 @@ use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -71,9 +73,52 @@ class KitServiceProvider extends ServiceProvider
 {
     use ConfiguraFilamentGlobal;
 
+    /**
+     * Rede de seguranca para o registro do `RaizDeUrlSemPublic` — nao uma realocacao.
+     *
+     * ## O defeito que ela fecha, e ele esta em producao
+     *
+     * O middleware e registrado em `bootstrap/app.php`, e **`bootstrap/` nao viaja pelo
+     * `kit:update`** — nem pode: e onde quem instala registra os PROPRIOS middlewares e
+     * providers, e sobrescrever apagaria isso.
+     *
+     * Consequencia medida: a classe entrou na **v0.36.1**. Quem instalou entre a v0.16.0 e a
+     * v0.36.0 e vem rodando `kit:update` **tem a classe** (`app/Http/Middleware` e entregue) e
+     * **nao tem o registro**. A correcao de URL simplesmente nao funciona nessas instalacoes, e o
+     * sintoma e silencioso: nada quebra, o `/public` so continua aparecendo antes do painel.
+     *
+     * Achado pela guarda `tests/Kit/DuasRotasDeEntregaTest.php`, que existe para comparar as duas
+     * rotas de entrega.
+     *
+     * ## Por que rede de seguranca, e nao mover o registro para ca
+     *
+     * A **posicao** do middleware no stack global e requisito: ele precisa rodar **depois** do
+     * `TrustProxies`, senao leria host e porta sem os cabecalhos `X-Forwarded-*` e congelaria uma
+     * raiz que o navegador nao alcanca. Hoje o `append()` do `bootstrap/app.php` o coloca na
+     * posicao certa, e mover sem preservar a ordem trocaria um defeito silencioso por outro.
+     *
+     * Entao este metodo nao move nada. Ele **completa**:
+     *
+     * - instalacao nova: o `bootstrap/app.php` ja registrou, e `pushMiddleware()` e idempotente
+     *   (`Illuminate\Foundation\Http\Kernel::pushMiddleware:364` so acrescenta se ausente) —
+     *   este metodo e um no-op e a posicao original fica intacta;
+     * - instalacao atualizada sem o registro: o middleware entra no fim do stack global, que
+     *   continua sendo **depois** do `TrustProxies`, que e o unico requisito de ordem que a classe
+     *   declara.
+     *
+     * O `KitServiceProvider` viaja pelas duas rotas de entrega, entao a rede alcanca quem o
+     * `bootstrap/app.php` nunca alcancou.
+     */
+    private function garantirRaizDeUrlSemPublic(): void
+    {
+        $this->app->make(HttpKernel::class)->pushMiddleware(RaizDeUrlSemPublic::class);
+    }
+
     public function boot(): void
     {
         $this->configureDefaults();
+
+        $this->garantirRaizDeUrlSemPublic();
 
         /*
          * ANTES de `configuraFilamentGlobal()`, e a ordem é requisito: aquele

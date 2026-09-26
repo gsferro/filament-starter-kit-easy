@@ -1,8 +1,26 @@
 version: 2
 
+# COOLDOWN: o Dependabot espera N dias antes de abrir PR de uma versao recem-publicada.
+#
+# Existe por uma razao de supply chain, nao de conforto: pacote comprometido costuma ser
+# descoberto e despublicado em horas ou poucos dias, e quem atualiza no minuto zero e quem
+# consome a versao maliciosa. A janela troca "estar sempre na ultima" por "nao ser o cobaia".
+#
+# Os numeros sao escalonados pelo risco de cada salto, e nao uniformes: major muda API e
+# merece mais tempo de exposicao publica; patch de seguranca nao entra na regra -- o
+# Dependabot ignora o cooldown para advisory, que e exatamente o caso em que esperar custa
+# mais do que atualizar.
+#
+# Acusado pelo check `security/dependency-update-cooldown` do Plumb.
+
 updates:
   - package-ecosystem: "composer"
     directory: "/"
+    cooldown:
+      default-days: 5
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -11,6 +29,11 @@ updates:
 
   - package-ecosystem: "npm"
     directory: "/"
+    cooldown:
+      default-days: 5
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -19,6 +42,11 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    cooldown:
+      default-days: 5
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 5

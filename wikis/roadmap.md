@@ -184,10 +184,26 @@ Decisão do mantenedor: fechar as features desta release primeiro. Fica para a p
 
 ---
 
-## 7. O kit registra o próprio middleware, em vez de depender do `bootstrap/app.php`
+## 7. ~~O kit registra o próprio middleware, em vez de depender do `bootstrap/app.php`~~ — FEITO
 
-> Aberto em 2026-09-24, pela guarda `tests/Kit/DuasRotasDeEntregaTest.php`. **É débito com
-> consequência medida, não melhoria.**
+> Aberto em 2026-09-24 pela guarda `tests/Kit/DuasRotasDeEntregaTest.php`; **fechado em
+> 2026-09-26**, em `wikis/specs/feat/plumb-e-dividas-tecnicas/`.
+>
+> **A saída não foi a que este item propunha.** Ele previa *mover* o registro para o
+> `KitServiceProvider`, e mover trocaria um defeito silencioso por outro: a posição no stack global
+> é requisito (depois do `TrustProxies`), e o `append()` do `bootstrap/app.php` a garante.
+>
+> O que foi feito é **rede de segurança**: `garantirRaizDeUrlSemPublic()` chama `pushMiddleware()`,
+> que é idempotente (`Kernel.php:364`). Instalação nova — o método é no-op e a posição original
+> fica intacta. Instalação atualizada sem o registro — o middleware entra no fim do stack, que
+> continua sendo depois do `TrustProxies`, o único requisito de ordem que a classe declara.
+>
+> Coberto por `tests/Kit/RaizDeUrlRegistradaTest.php`, 4 casos. O quarto nasceu de um **mutante
+> sobrevivente**: apagar a chamada de dentro do `boot()` não reprovava, porque o caso que provava a
+> correção invocava o método privado por reflexão.
+
+<details>
+<summary>O texto original do item, para quem quiser o histórico</summary>
 
 ### O defeito, e ele está em produção agora
 
@@ -240,6 +256,10 @@ guarda não deixa a decisão virar esquecimento de novo.
 
 As três primeiras estão corrigidas. Esta é a única em que a correção exige decisão de desenho.
 
+
+</details>
+
+---
 
 ## 8. Os níveis de qualidade que já foram medidos e ficaram para depois
 
