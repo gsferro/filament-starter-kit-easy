@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\User;
+use App\Support\Paineis;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use DanHarrin\LivewireRateLimiting\WithRateLimiting;
 use Filament\Auth\Notifications\ResetPassword as ResetPasswordNotification;
@@ -102,10 +103,13 @@ class DefinirSenhaPorEmail extends MyProfileComponent
 
         Log::channel('autenticacao')->info(
             "[DefinirSenhaPorEmail@enviar] Link de definição de senha enviado, sessão encerrada | user: {$user->getKey()} - email: {$mascarado}",
-            ['user_id' => $user->getKey(), 'email' => $mascarado, 'painel' => (Filament::getCurrentPanel() ?? Filament::getDefaultPanel())->getId()],
+            ['user_id' => $user->getKey(), 'email' => $mascarado, 'painel' => Paineis::correnteOuPadrao()->getId()],
         );
 
-        $loginUrl = (Filament::getCurrentPanel() ?? Filament::getDefaultPanel())->getLoginUrl();
+        // Painel sem `->login()` devolve `null`, e `redirect(null)` congelaria a tela com a sessão
+        // já encerrada: a raiz do painel entrega a decisão ao middleware dele (RQ-08).
+        $painel   = Paineis::correnteOuPadrao();
+        $loginUrl = $painel->getLoginUrl() ?? url($painel->getPath());
 
         Filament::auth()->logout();
         session()->invalidate();

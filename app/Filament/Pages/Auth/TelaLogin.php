@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Support\ConfiguracaoDoLogin;
 use App\Support\DestinoAposLogin;
+use App\Support\Paineis;
 use App\Support\RegistroAberto;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Login;
 use Filament\Actions\Action;
@@ -204,7 +205,7 @@ class TelaLogin extends Login
             }
 
             $motivo = (string) $conta->motivoDeIndisponibilidade();
-            $painel = (Filament::getCurrentPanel() ?? Filament::getDefaultPanel())->getId();
+            $painel = Paineis::correnteOuPadrao()->getId();
 
             Log::channel('autenticacao')->warning(
                 "[TelaLogin@authenticate] Login recusado: {$motivo} | user: {$conta->getKey()} - painel: {$painel} - ip: ".request()->ip(),

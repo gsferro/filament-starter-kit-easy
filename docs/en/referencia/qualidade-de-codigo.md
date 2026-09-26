@@ -25,8 +25,8 @@ Going from 6 to 7 exposed **29 real errors** in the kit, and one of them was a g
 `Convite|null` with a method called straight on it. Going from 7 to 8 exposed **48** more, all of them
 about nullability: 27 were an impossible null written with a type that was too wide, 7 were a panel
 URL that is `null` on a panel without `->login()` — they now get the destination the kit already
-uses, the panel root —, 13 were an invariant with no guard, and 1 was a wrong Laravel annotation. All
-fixed at the source — none silenced.
+uses, the panel root —, 13 were an invariant with no guard, and 1 was a wrong Laravel annotation, worked around by an
+invariant guard in the kit's middleware. All fixed at the source — none silenced.
 
 > ### ⚠️ Watch out when implementing this in your project
 >
@@ -43,13 +43,12 @@ fixed at the source — none silenced.
 > | `env('ALGUMA_COISA')` straight into a `str_*` | `(string) env(...)`, or `config()` with a typed default |
 > | a method with no return type | declare the type; the kit requires it everywhere |
 >
-> **Don't solve it with `@phpstan-ignore` or a baseline.** The kit has exactly **four** exceptions in
+> **Don't solve it with `@phpstan-ignore` or a baseline.** The kit has exactly **three** exceptions in
 > `phpstan.neon`: a vendor macro resolved at runtime (`simpleLightbox()`), an extension point with no
-> use inside the kit (`WidgetDinamico`), the unsatisfiable annotation of filament-breezy's
-> `customMyProfilePage()`, and the `null` in the `@return` that Laravel's `EnsureEmailIsVerified`
-> declares and never returns — each scoped to one file, with the reason, the alternatives that were
-> tried and dropped, and the test that covers the point for real. `tests/Kit/QualidadeDeCodigoTest.php`
-> locks the inventory. That's the
+> use inside the kit (`WidgetDinamico`), and the unsatisfiable annotation of filament-breezy's
+> `customMyProfilePage()` — each scoped to one file, with the reason, the alternatives that were tried
+> and dropped, and the test that covers the point for real. `tests/Kit/QualidadeDeCodigoTest.php` locks
+> the inventory: moving to level 8 added none. That's the
 > standard: if an exception is needed, it comes with the justification and with the test that
 > replaces it.
 >

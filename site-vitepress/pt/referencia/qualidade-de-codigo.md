@@ -26,8 +26,8 @@ Subir de 6 para 7 expôs **29 erros reais** no kit, e um deles era bug latente d
 `Convite|null` com método chamado direto. Subir de 7 para 8 expôs mais **48**, todos de nulidade:
 27 eram nulo impossível escrito com um tipo largo demais, 7 eram URL de painel que é `null` em
 painel sem `->login()` — e ganharam o destino que o kit já usa, a raiz do painel —, 13 eram
-invariante sem guarda, e 1 era anotação errada do Laravel. Todos corrigidos na origem — nenhum
-silenciado.
+invariante sem guarda, e 1 era anotação errada do Laravel, contornada por guarda de invariante no
+middleware do kit. Todos corrigidos na origem — nenhum silenciado.
 
 > ### ⚠️ Ponto de atenção ao implementar no seu projeto
 >
@@ -44,12 +44,12 @@ silenciado.
 > | `env('ALGUMA_COISA')` direto num `str_*` | `(string) env(...)`, ou `config()` com default tipado |
 > | método sem tipo de retorno | declare o tipo; o kit exige em tudo |
 >
-> **Não resolva com `@phpstan-ignore` nem baseline.** O kit tem exatamente **quatro** exceções em
+> **Não resolva com `@phpstan-ignore` nem baseline.** O kit tem exatamente **três** exceções em
 > `phpstan.neon`: um macro de vendor resolvido em runtime (`simpleLightbox()`), um ponto de extensão
-> sem uso dentro do kit (`WidgetDinamico`), a anotação insatisfazível de `customMyProfilePage()` do
-> filament-breezy e o `@return` com `null` que o `EnsureEmailIsVerified` do Laravel declara e nunca
-> devolve — cada uma com escopo de arquivo, o motivo, as alternativas testadas e descartadas, e o
-> teste que cobre o ponto de verdade. `tests/Kit/QualidadeDeCodigoTest.php` trava o inventário. Esse é o padrão:
+> sem uso dentro do kit (`WidgetDinamico`) e a anotação insatisfazível de `customMyProfilePage()` do
+> filament-breezy — cada uma com escopo de arquivo, o motivo, as alternativas testadas e descartadas,
+> e o teste que cobre o ponto de verdade. `tests/Kit/QualidadeDeCodigoTest.php` trava o inventário:
+> a subida para o level 8 não acrescentou nenhuma. Esse é o padrão:
 > se precisar de exceção, ela vem com a justificativa e com o teste que a substitui.
 >
 > Se quiser afrouxar no seu projeto, é uma linha em `phpstan.neon`. Mas saiba o que está trocando:

@@ -2061,7 +2061,7 @@ it('[CT-50] mantem os badges de casos de teste e de phpstan sincronizados com a 
 
 /*
  * O caso que travava "o piso do composer e do CI igual à meta declarada na documentação" morava
- * aqui como CT-51. Movido para `tests/Kit/KitCoberturaTest.php` como CT-18
+ * aqui como CT-51. Movido para `tests/Kit/CoberturaDeTestesTest.php` como CT-18
  * (`wikis/specs/feat/cobertura-de-testes/cobertura-de-testes/04-casos-de-teste.md`, achado #1 da
  * reconciliação): ele não testa o site de documentação, testa a feature de cobertura de testes, e
  * o `04` dela é quem deveria ter sido consultado para derivá-lo.

@@ -3,6 +3,7 @@
 namespace App\Filament\Pages\Auth;
 
 use App\Models\Tenant;
+use App\Support\Paineis;
 use Caresome\FilamentAuthDesigner\Concerns\HasAuthDesignerLayout;
 use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
 use Filament\Actions\Action;
@@ -87,7 +88,7 @@ class TelaBloqueio extends LockerScreen
     public function getAuthDesignerConfig(): AuthDesignerConfig
     {
         $config = $this->configBaseDoAuthDesigner();
-        $painel = Filament::getCurrentOrDefaultPanel()?->getId();
+        $painel = Paineis::correnteOuPadrao()->getId();
 
         /*
          * A CHAVE da organização, não a organização: quem grava a sessão é
@@ -209,7 +210,7 @@ class TelaBloqueio extends LockerScreen
      */
     public function mount(): void
     {
-        $panel = Filament::getCurrentPanel() ?? Filament::getDefaultPanel();
+        $panel = Paineis::correnteOuPadrao();
 
         // Painel sem `->login()` devolve `null` aqui: a raiz do painel entrega a decisão ao
         // middleware de autenticação dele (ADR-02 de `phpstan-nivel-8`).

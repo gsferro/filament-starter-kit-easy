@@ -48,11 +48,12 @@ Subir de 6 para 7 expôs **29 erros reais**, um deles um `Convite|null` com mét
 Subir de 7 para 8 expôs mais **48**, todos de nulidade — a classificação e o que cada classe
 virou estão em `wikis/specs/feat/phpstan-nivel-8/phpstan-nivel-8/01-plano-acao.md`.
 
-Existem **quatro** exceções em `ignoreErrors`, cada uma com escopo de arquivo: o macro
+Existem **três** exceções em `ignoreErrors`, cada uma com escopo de arquivo: o macro
 `simpleLightbox()` (resolvido em runtime, nenhuma análise estática alcança), a trait
-`WidgetDinamico` (ponto de extensão sem uso dentro do kit), a anotação insatisfazível do
-`customMyProfilePage()` do Breezy e o `null` que o `@return` do `EnsureEmailIsVerified` do Laravel
-declara e o corpo nunca devolve. Cada uma vem com o motivo, as alternativas testadas e descartadas,
+`WidgetDinamico` (ponto de extensão sem uso dentro do kit) e a anotação insatisfazível do
+`customMyProfilePage()` do Breezy. A subida para o level 8 não acrescentou nenhuma: o `null` que o
+`@return` do `EnsureEmailIsVerified` do Laravel declara e nunca devolve foi contornado por guarda de
+invariante no middleware do kit. Cada uma vem com o motivo, as alternativas testadas e descartadas,
 e o teste que cobre o ponto de verdade; `tests/Kit/QualidadeDeCodigoTest.php` trava o inventário. **Esse é o padrão**: exceção com justificativa e
 com o teste que a substitui, nunca `@phpstan-ignore` solto.
 

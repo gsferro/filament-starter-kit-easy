@@ -243,6 +243,18 @@ final class Paineis
     }
 
     /**
+     * O painel corrente, ou o padrão fora de um request de painel — com o tipo que ele tem.
+     *
+     * É o corpo de `Filament::getCurrentOrDefaultPanel()`, que o vendor anota `?Panel` embora
+     * `getDefaultPanel(): Panel` nunca seja nulo. Um lugar só em vez da expressão colada em cada
+     * tela (achado do step 6.5 de `wikis/specs/feat/phpstan-nivel-8/`).
+     */
+    public static function correnteOuPadrao(): Panel
+    {
+        return Filament::getCurrentPanel() ?? Filament::getDefaultPanel();
+    }
+
+    /**
      * O rótulo de cada painel do kit, para o Panel Switch e para os cartões.
      *
      * Fonte ÚNICA dos dois: `ConfiguraFilamentGlobal::configuraPanelSwitch()` passa este array

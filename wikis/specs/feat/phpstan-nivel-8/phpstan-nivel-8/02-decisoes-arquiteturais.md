@@ -66,7 +66,7 @@ nunca 500, nunca `Location` vazio.
 
 ## ADR-03: A anotação errada do `EnsureEmailIsVerified` vai para `ignoreErrors`, não para stub
 
-**Status**: Aceita
+**Status**: **Substituída pela ADR-05** *(alterado em 2026-09-26: achado RD-06 do step 6.5, Adendo 1 / RQ-09)*
 **Data**: 2026-09-26
 
 ### Contexto
@@ -118,6 +118,36 @@ A decidir na implementação, **depois** de ler o teste inteiro — com a restri
 fixture não é editada. As duas saídas aceitáveis: (a) o título fica e o corpo diz o nível atual;
 (b) um mapa explícito de renomeação no teste, auditável, que diz "este título do baseline vive
 agora com este nome". A escolha e o motivo entram aqui como `*(alterado em …)*`.
+
+## ADR-05: A anotação errada do `EnsureEmailIsVerified` é contornada por guarda de invariante no kit
+
+**Status**: Aceita — substitui a ADR-03
+**Data**: 2026-09-26
+
+### Contexto
+A ADR-03 descartou stub, `?? $next` e `?Response`, e ficou com uma exceção em `ignoreErrors`. O
+revisor de eixos do step 6.5 (RD-06) apontou a alternativa que ela não considerou: a mesma guarda
+que o diff usa em outros cinco lugares (`painelCorrente()`, `papelOuFalha()`, `registro()`,
+`CreateRole`/`EditRole`).
+
+### Decisão
+`ExigirEmailVerificado::handle()` guarda o retorno de `parent::handle()` num local e lança
+`LogicException` se ele não for `Response`. O corpo do vendor nunca devolve `null`, então a guarda
+não muda comportamento; e ela diz a verdade ao analisador **e** ao leitor, sem exceção no neon.
+
+### Por que ela vence as alternativas da ADR-03
+- **`?? $next($request)`** mentia: dizia que o pipeline poderia rodar duas vezes. A guarda não
+  promete caminho nenhum — ela declara que o caminho é impossível e para se ele acontecer
+- **exceção em `ignoreErrors`** é silêncio com escopo: correta, mas é a única do diff que trata o
+  erro fora do código. O inventário volta a três, e o `QualidadeDeCodigoTest` trava três
+
+### Consequências
+- **Positivas**: nenhuma exceção nova no `phpstan.neon`; o padrão do diff é um só
+- **Negativas**: nenhuma de runtime. Quando o Laravel corrigir a anotação, a guarda vira código
+  morto — e o aviso chega mesmo assim: o PHPStan acusa `instanceof` sempre verdadeiro (regra de
+  level 4, com `treatPhpDocTypesAsCertain` ligado por padrão), o mesmo papel que o
+  `reportUnmatchedIgnoredErrors` cumpria para a exceção
+- **Cobertura**: `tests/Kit/VerificacaoDeEmailTest.php` (regressão) e o CT-06 (inventário = 3)
 
 ## Superfície Livewire
 

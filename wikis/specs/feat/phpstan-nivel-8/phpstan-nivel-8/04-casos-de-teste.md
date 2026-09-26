@@ -6,6 +6,8 @@
 > Onde o `Então` é "o comportamento da `main`", o cenário é de **caracterização**. O oráculo é a cláusula "tratar nulidade
 > não muda comportamento observável" (RQ-06, *"trata a causa, não cala"*), e o valor é **medido na `main` antes do diff**.
 > Se o cenário ficar vermelho na `main`, o errado é o CT, não o código.
+>
+> **Adendo 1 (2026-09-26, RQ-07…RQ-10)**, achados do step 6.5 derivados só do `00`, sem 01/02/03 e sem código como oráculo. Mudanças: CT-02 (RQ-07), CT-05/CT-06 (RQ-09, que **substitui** a parte "exceção em `ignoreErrors`" do RQ-06), CT-16 (RQ-10) e **CT-23 novo** (RQ-08, regra R9). As decisões da sessão entram como premissas fixas, não como pergunta.
 
 ## Perfil de Derivação
 
@@ -18,8 +20,8 @@
 
 - A área B tem I=3 porque um defeito ali atribui o papel errado (autorização) ou deixa o usuário sem saída no fluxo de login.
 - **Técnica escalada**: na R2 (área A) usei tabela de decisão em vez de só EP. Um único predicado ("tem path") não separa o baseline por arquivo da exceção legítima, e o inventário fechado é o que separa.
-- Técnicas aplicadas: EP, tabela de decisão (R2), rastreio de efeito com não-efeito (R6a, R6b, R7), caracterização (R7, R8).
-- Cenários: 22 · Regras: 9 (R6 dividida em R6a/R6b) · Mutantes previstos: 60 (25 vindos da revisão adversarial, fora do teto) · Sem matador: 3 (lacunas declaradas em R3b)
+- Técnicas aplicadas: EP, tabela de decisão (R2), rastreio de efeito com não-efeito (R6a, R6b, R7, R9), caracterização (R7, R8).
+- Cenários: 23 · Regras: 10 (R6 dividida em R6a/R6b; R9 do Adendo 1) · Mutantes previstos: 70 (25 da revisão adversarial e 5 do Adendo 1, fora do teto) · Sem matador: 4 (lacunas declaradas M14, M15, M16 em R3b e M40 em R9)
 - Contagens por comando: `grep -c "^ *\(Esquema do \)\?Cenário: \[CT-" 04-casos-de-teste.md` e `grep -cE "^\| M[0-9]+[a-z]? " 04-casos-de-teste.md`.
 - **Teto do perfil**: R6b tem 4 cenários contra o teto de 1 do perfil mínimo. O estouro é pelo gate: cada ponto de entrada mata um mutante que nenhum outro mata (M29c…M29g).
 
@@ -39,16 +41,17 @@
 
 | Regra | Área (perfil herdado) | Origem (`RQ`) | Técnica | Cenários |
 |---|---|---|---|---|
-| R1: o nível efetivo da análise é ≥ 8 e nenhum ponto de invocação o rebaixa | A (padrão) | RQ-03, RQ-04 | EP | CT-01, CT-02, CT-03 |
-| R2: nenhum erro é calado (sem baseline, exceções com escopo e inventário fechado, escopo analisado intacto, `@phpstan-ignore` congelado) | A (padrão) | RQ-06 | tabela de decisão | CT-04…CT-08 |
+| R1: o nível efetivo da análise é ≥ 8 e nenhum ponto de invocação o rebaixa, e a guarda do gate local roda em projeto instalado | A (padrão) | RQ-03, RQ-04, RQ-07 (Adendo 1) | EP | CT-01, CT-02, CT-03 |
+| R2: nenhum erro é calado (sem baseline, exceções com escopo e inventário fechado nas 3 anteriores, escopo analisado intacto, `@phpstan-ignore` congelado) | A (padrão) | RQ-06, RQ-09 (Adendo 1) | tabela de decisão | CT-04…CT-08 |
 | R3: fora de painel, o hub falha fechado com exceção clara e nunca mostra cartões de outro painel | C (mínimo) | RQ-06 | EP (3 hubs) | CT-09 |
 | R3b: nulo impossível pelo desenho (o `/app` sempre tem login) não vira valor inventado | B (mínimo) | RQ-06 | revisão estática | lacuna declarada |
 | R4: painel sem login dá ao visitante da tela de bloqueio um destino dentro do painel | B (mínimo) | RQ-06 | EP (com/sem login) | CT-10 |
 | R5: painel sem login na volta do provedor social dá um destino de login alcançável | B (mínimo) | RQ-06 | EP (com/sem login) | CT-11 |
 | R6a: no model, convite sem papel falha com exceção de invariante e não atribui papel inventado | B (mínimo) | RQ-06 | EP + rastreio de efeito | CT-12, CT-13 |
 | R6b: todo ponto de entrada do aceite sobrevive a papel ausente sem efeito colateral nem `Error`/`TypeError`/`AssertionError` | B (mínimo) | RQ-06 | EP por ponto de entrada + rastreio de efeito | CT-18…CT-21 |
-| R7: o widget do assistente só mostra e só age sobre conversas do usuário autenticado. Sem usuário, renderiza vazio e recusa | C (mínimo) | RQ-06 | EP (persona) + caracterização | CT-14, CT-15, CT-16, CT-22 |
+| R7: o widget do assistente só mostra e só age sobre conversas do usuário autenticado. Sem usuário, renderiza vazio e recusa | C (mínimo) | RQ-06, RQ-10 (Adendo 1) | EP (persona) + caracterização | CT-14, CT-15, CT-16, CT-22 |
 | R8: a fusão de duplicatas da migration do onboarding continua igual à da `main` | D (padrão) | RQ-06 | caracterização | CT-17 |
+| R9: nenhum redirect recebe URL de login nula onde o nulo é alcançável | B (mínimo) | RQ-08 (Adendo 1) | EP (com/sem login) | CT-23 (+ lacuna M40) |
 
 **RQ sem cenário, com a justificativa:**
 - **RQ-01 / RQ-02** (pendências de código e de teste): são caixas de wiki e evidência de varredura, sem comportamento de aplicação. Quem confere é o `feature-quality-gate` (consistência documental).
@@ -111,15 +114,15 @@ Funcionalidade: PHPStan travado no level 8
       Quando o guarda de qualidade lê a linha de comando do phpstan nesse ponto
       Então a linha chama "phpstan analyse" sem argumento posicional de path
       E a linha não contém flag que comece por "-l" ou "--level", nem "-c", "--configuration" ou "--generate-baseline"
-      E a linha não termina em "|| true" e o step não declara "continue-on-error" nem "if:"
-      E o script "types:check" chama o phpstan direto, sem indireção por "@outro-script"
-      E o workflow do CI dispara em "push" para "main" e em "pull_request"
+      E a linha não termina em "|| true"
+      E <regra_do_ponto>
+      E num projeto sem ".github/", a linha <sem_github>
 
       Exemplos:
-        | ponto                                                   | # partição        |
-        | script "types:check" do composer.json                   | gate local        |
-        | step do phpstan em .github/workflows/ci.yml             | gate de CI        |
-        | qualquer outra chamada a phpstan em .github/workflows/* | varredura         |
+        | ponto                                                   | regra_do_ponto                                                                                                     | sem_github                                                              | # partição  |
+        | script "types:check" do composer.json                   | o script chama o phpstan direto, sem indireção por "@outro-script", e a linha não lê nenhum arquivo de ".github/"   | roda e passa, com ao menos uma asserção executada (não é pulada)        | gate local  |
+        | step do phpstan em .github/workflows/ci.yml             | o step não declara "continue-on-error" nem "if:", e o workflow dispara em "push" para "main" e em "pull_request"  | é pulada pela sentinela, e nenhuma asserção dela roda                    | gate de CI  |
+        | qualquer outra chamada a phpstan em .github/workflows/* | o step não declara "continue-on-error" nem "if:"                                                                    | é pulada pela sentinela, e nenhuma asserção dela roda                    | varredura   |
 
     Cenário: [CT-03] o próprio comando do gate termina sem erro no nível travado
       Dado o código de app, bootstrap/app.php, config, database e routes desta branch
@@ -129,6 +132,7 @@ Funcionalidade: PHPStan travado no level 8
 ```
 
 - CT-01 e CT-02 ficam em `tests/Kit/QualidadeDeCodigoTest.php`, ao lado do guarda "mantém os três gates do composer test".
+- **CT-02 × projeto instalado (RQ-07, Adendo 1).** O `create-project` não entrega `.github/`. Por isso as cláusulas de workflow (`on:`, push/pull_request, step sem `if:`/`continue-on-error`) valem **só nas duas linhas de CI**, que rodam sob a sentinela de "arquivo não entregue" (pulam quando `.github/` não existe). A linha do composer **não** é pulada: ela roda e passa num projeto instalado. Arnês: rodar a linha do composer com `base_path` apontando para uma cópia sem `.github/`, ou estruturar o dataset para que ela nunca leia o workflow. Os dois servem, desde que a linha execute asserção.
 - CT-01 **nunca é pulado**: sem `skip()` nem `markTestSkipped` condicional (binário ausente, JSON vazio, Windows). Se o `dump-parameters` falhar, o caso fica **vermelho**. Guarda que se pula em silêncio é guarda desligada.
 - CT-03 é **comando de gate**, não caso Pest. Rodar o PHPStan dentro da suíte duplicaria o `composer test` (que já roda `@types:check`) e custaria minutos. A evidência é a saída colada no `03` e o job verde do CI.
 
@@ -143,6 +147,8 @@ Funcionalidade: PHPStan travado no level 8
 | M4a (revisão adversarial) | `level: 8` com `checkNullables: false` ao lado: 0 erros sem nada corrigido | CT-01 (parâmetros de rigor) |
 | M4b (revisão adversarial) | gate vira `phpstan analyse app/Models`, `-l7`, `\|\| true` ou `continue-on-error` | CT-02 |
 | M4c (adversarial, rodada 2) | o guarda se pula quando o `dump-parameters` falha ou devolve JSON inválido, e o nível nunca é lido | CT-01 (exit 0, JSON válido, nunca pulado) |
+| M4e (Adendo 1, RQ-07) | a asserção sobre o `on:` do workflow roda também na linha do composer, que reprova em todo projeto instalado (RD-01) | CT-02 (linha composer, `sem_github` = roda e passa) |
+| M4f (Adendo 1, RQ-07) | a sentinela de `.github/` é posta no caso inteiro, e a linha do composer também é pulada: em projeto instalado a guarda do gate local some | CT-02 (linha composer, "ao menos uma asserção executada") |
 | M4d (adversarial, rodada 2) | step do phpstan com `if:` que o desliga, workflow só em `workflow_dispatch`, ou `types:check` → `@outro` que roda com `--level=7` | CT-02 (sem `if:`, gatilhos push/PR, sem indireção) |
 
 ---
@@ -156,7 +162,7 @@ Funcionalidade: PHPStan travado no level 8
 > | tem `path`/`paths` | S | S | **N** | S |
 > | path ≠ raiz analisada | S | S | — | S |
 > | mensagem específica (não casa amostra de nulidade) | S | S | — | **N** |
-> | sem chave `count` e dentro do inventário | S | **N** | — | S |
+> | sem chave `count` e dentro do inventário (as 3 da `main`) | S | **N** | — | S |
 > | **Aceita** | ✅ | ❌ CT-04/06 | ❌ CT-05 | ❌ CT-05 |
 
 ```gherkin
@@ -184,16 +190,15 @@ Funcionalidade: PHPStan travado no level 8
         | simpleLightbox            | pré-existente                 |
         | WidgetDinamico            | pré-existente                 |
         | customMyProfilePage       | pré-existente                 |
-        | ExigirEmailVerificado     | nova, ADR-03 citado no 00     |
 
-    Cenário: [CT-06] o inventário de exceções é fechado e cada uma registra a tentativa
+    Cenário: [CT-06] o inventário de exceções volta às 3 anteriores e cada uma registra a tentativa
       Dado a configuração efetiva lida por "phpstan dump-parameters --json"
       E o texto do phpstan.neon
       Quando o guarda de qualidade conta as exceções
-      Então "ignoreErrors" tem exatamente 4 entradas
-      E as 3 entradas pré-existentes têm "message" e "path(s)" idênticos aos da main
-      E exatamente 1 entrada tem path "app/Http/Middleware/ExigirEmailVerificado.php", e esse é o único path dela
-      E o bloco de comentário de cada uma das 4 contém o registro "Tentado" seguido de ao menos uma alternativa descartada
+      Então "ignoreErrors" tem exatamente 3 entradas
+      E as 3 entradas têm "message" e "path(s)" idênticos aos da main
+      E nenhuma entrada cita "ExigirEmailVerificado" na mensagem nem no path
+      E o bloco de comentário de cada uma das 3 contém o registro "Tentado" seguido de ao menos uma alternativa descartada
       E "reportUnmatchedIgnoredErrors" é true
       E nenhuma entrada de "stubFiles" fica fora de "vendor/" (o kit não tem stub próprio)
       E o phpstan.neon não declara "services" nem "conditionalTags", e todo "includes" aponta para "vendor/"
@@ -223,17 +228,20 @@ Funcionalidade: PHPStan travado no level 8
 |---|---|---|
 | M5 | `phpstan analyse --generate-baseline` e `includes: - phpstan-baseline.neon` com os 48 erros | CT-04 (`count`, include), CT-06 (inventário ≠ 4) |
 | M6 | exceção sem `path` (global) para a mensagem de nulidade do `getLoginUrl()` | CT-05 |
-| M7 | exceção da `ExigirEmailVerificado` com `message: '#.*#'` e escopo de arquivo | CT-05 (a amostra casa) |
+| M7 | exceção com `message: '#.*#'` e escopo de arquivo (o caso histórico era o `ExigirEmailVerificado`) | CT-05 (a amostra casa) e, se for a do `ExigirEmailVerificado`, CT-06 (Adendo 1) |
 | M8 | `paths: [app]` numa exceção nova (escopo = raiz) | CT-05 |
 | M9 | arquivo com erro movido para `excludePaths`, ou `database` tirado de `paths` | CT-07 |
 | M10 | `/** @phpstan-ignore-next-line */` num dos 14 arquivos | CT-08 |
 | M10a (revisão adversarial) | exceção pré-existente ganha paths entre os 14 arquivos, ou a regex fica mais larga sem casar as amostras | CT-06 (igualdade com a `main`) |
 | M10b (revisão adversarial) | stub próprio declara `getCurrentPanel(): Panel` / `getLoginUrl(): string` e cala os nulos | CT-06 (`stubFiles` só de vendor) |
-| M10c (adversarial, rodada 2) | exceção por `identifier: argument.type` (ou `rawMessage`/`messages`) com escopo de arquivo: cala a classe inteira de erro sem regex para as amostras casarem; ou uma segunda entrada no mesmo path da `ExigirEmailVerificado` | CT-05 (chaves proibidas), CT-06 (contagem 1 por path) |
+| M10c (adversarial, rodada 2) | exceção por `identifier: argument.type` (ou `rawMessage`/`messages`) com escopo de arquivo: cala a classe inteira de erro sem regex para as amostras casarem | CT-05 (chaves proibidas) |
 | M10d (adversarial, rodada 2) | extensão de tipo própria (`services` com `phpstan.broker.dynamicMethodReturnTypeExtension`) devolvendo `Panel` não nulo | CT-06 (sem `services`/`conditionalTags`, includes só de vendor) |
+| M10f (Adendo 1, RQ-09) | a exceção do `ExigirEmailVerificado` volta ao `phpstan.neon` em vez da guarda de invariante no código | CT-06 (contagem 4 ≠ 3, e cita `ExigirEmailVerificado`) |
+| M10g (Adendo 1, RQ-09) | a exceção sai do neon e a guarda de invariante no middleware muda o comportamento: o barramento, a resposta 403 JSON ou a trilha no canal de autenticação | regressão `tests/Kit/VerificacaoDeEmailTest.php` (todos os casos), que precisa seguir verde |
 | M10e (adversarial, rodada 2) | nulo "tratado" com `assert($x !== null)` ou `@phpstan-assert`: o PHPStan estreita, e a produção (`zend.assertions=-1`) segue com o nulo | CT-08 |
 
-- O "sem stub próprio" do CT-06 segue o 00: o stub do `EnsureEmailIsVerified` **reprovou** (ADR-03) e virou exceção. Se o plano acrescentar um stub legítimo, ele entra por adendo no 00 e o CT-06 passa a ter um inventário nominal de stubs.
+- O "sem stub próprio" do CT-06 segue o 00: o stub do `EnsureEmailIsVerified` **reprovou**. Pelo **RQ-09 (Adendo 1)**, a anotação errada do vendor passa a ser contornada por **guarda de invariante no código do kit**, e não por exceção no neon. O inventário de `ignoreErrors` volta às 3 anteriores.
+- **Regressão do RQ-09**: o middleware `ExigirEmailVerificado` continua passando em `tests/Kit/VerificacaoDeEmailTest.php`, sem reescrever, com as mesmas asserções de barramento, 403 JSON, trilha e escopo do painel.
 
 ---
 
@@ -534,6 +542,7 @@ Os três painéis do kit chamam `->login()` (`AdminPanelProvider.php:70`, `AppPa
         | retomarConversa (id da Ana)                   | id de terceiro: 403, não 404           |
         | novaConversa                                  | sem id                                 |
         | renomearConversa (id do "Rascunho órfão", "Invadido") | dono nulo: nullsafe viraria whereNull e abriria |
+        | responder (depois de definir "mensagemPendente" = "oi" por set) | a ação cuja autorização mais mudou (RQ-10, Adendo 1) |
 
     Esquema do Cenário: [CT-22] um usuário autenticado que não é dono recebe 404 na conversa alheia e nada muda
       Dado a conversa "Plano de férias" pertencente à Ana
@@ -553,7 +562,7 @@ Os três painéis do kit chamam `->login()` (`AdminPanelProvider.php:70`, `AppPa
 
 - Arquivo novo: `tests/Kit/AssistenteChatWidgetTest.php`. **Não existe hoje nenhum teste do componente**: o `grep` por `AssistenteChatWidget`/`assistente-chat` em `tests/` só acha um comentário em `tests/Browser/BoasVindasTest.php`.
 - CT-14 é por HTTP porque a entrada real é o render hook. CT-15 e CT-16 usam `Livewire::test(AssistenteChatWidget::class)`.
-- `responder` fica fora do Esquema. Ele depende de `mensagemPendente` e do streaming, e o custo de arnês não se paga, porque ele passa pelo mesmo guarda de `enviar`. Está em "Cogitado e cortado".
+- **`responder` entrou no CT-16 pelo RQ-10 (Adendo 1)**, revertendo o corte anterior. O visitante define `mensagemPendente` por `set` e chama `responder`. Espera 403, e o total de conversas e de mensagens não muda. Arnês: `Assistente::fake([...])`, como em `tests/Kit/GuardrailsDtoTest.php`. Sem o fake, um guarda ausente tentaria falar com o provedor em vez de gravar a conversa que o cenário conta.
 - **CT-22 é caracterização**: o 404 para o autenticado que não é dono é o comportamento da `main`. Medir na `main` antes do diff. Com o CT-16 ele fecha o par: visitante → 403, autenticado alheio → 404. Um tratamento de nulo que unifique os dois, ou que abra a conversa, muda um dos lados.
 - O "403, não 404" das linhas com id é **discriminante**. Um tratamento de nulo por nullsafe na conferência de posse (`$user?->getMorphClass()`) vira `whereNull` e responde 404 ao visitante, e um cenário que só aceitasse "recusado" não o separaria.
 
@@ -564,6 +573,7 @@ Os três painéis do kit chamam `->login()` (`AdminPanelProvider.php:70`, `AppPa
 | M30 | render sem usuário estoura em `auth()->user()->…` (500 na tela de login do `/app`) | CT-14, CT-15 (visitante) |
 | M31 | nullsafe na conferência de posse: visitante com id de terceiro recebe 404 | CT-16 (linhas renomear e retomar) |
 | M32 | o guarda de autenticação some de uma ação ao tratar o nulo, e `renomearConversa` renomeia | CT-16 (título inalterado) |
+| M32a (Adendo 1, RQ-10) | `responder()` lê o usuário com nullsafe e segue sem conferir autenticação: o visitante com `mensagemPendente` forjada dispara o agente e grava conversa e mensagens | CT-16 (linha responder: 403, contagens iguais) |
 | M33 | histórico sem filtro de participante quando não há usuário | CT-15 (visitante não vê). O CT-14 **não** o mata: ele só prova que a página renderiza com o widget, e a lista do visitante é afirmada no componente |
 | M33a (revisão adversarial) | o widget some do render hook e o CT-14 passa por ausência | CT-14 (componente montado) |
 | M33b (revisão adversarial) | nullsafe na posse ou no histórico vira `whereNull` e abre a conversa sem dono ao visitante | CT-15 ("Rascunho órfão"), CT-16 (última linha) |
@@ -620,6 +630,45 @@ Os três painéis do kit chamam `->login()` (`AdminPanelProvider.php:70`, `AppPa
 
 ---
 
+## Regra R9: nenhum redirect recebe URL de login nula onde o nulo é alcançável
+
+> `RQ-08` (Adendo 1) · perfil **mínimo** (área B, Impacto 3) · técnica: **EP** (painel com login × painel sem login), o mesmo eixo da R4
+>
+> A premissa **P-02** vale aqui como fixa (decisão da sessão): no painel sem login, o destino é a raiz do painel.
+
+```gherkin
+  Regra: o nulo de URL de login é tratado onde é alcançável. Quem encerra a sessão sai para um destino não nulo dentro do painel
+
+    @premissa
+    Esquema do Cenário: [CT-23] definir senha por e-mail num painel sem login encerra a sessão e leva à raiz do painel
+      Dado a Ana autenticada, com o painel corrente "<painel>" <login>
+      Quando a Ana envia o pedido de "Definir senha por e-mail"
+      Então a resposta é um redirecionamento para "<destino>", que não é nulo nem vazio
+      E a Ana não está mais autenticada
+      E exatamente um link de redefinição de senha foi enviado para "ana@example.com"
+
+      Exemplos:
+        | painel     | login                               | destino       | # partição               |
+        | admin      | com login                           | /admin/login  | fato: tem login          |
+        | financeiro | sem login (painelRegistradoEmTeste) | /financeiro   | premissa P-02 (fixa)     |
+```
+
+- Livewire `App\Livewire\DefinirSenhaPorEmail`, ação `enviar`, em `tests/Kit/DefinirSenhaPorEmailTest.php`. O painel corrente vem de `Filament::setCurrentPanel('<painel>')`. "Exatamente um link" usa `Notification::fake()` com a notificação de redefinição que o caso existente "envia o link de redefinicao do filament…" já afirma. É o efeito do caminho feliz, e a Ana é a destinatária.
+- **Por que as três asserções juntas**: o RD-02 descreve a tela congelada **com a sessão já invalidada**. Um cenário que só olhasse o redirect aceitaria "redireciona sem encerrar", e um que só olhasse a sessão aceitaria o `redirect(null)`.
+- **`RegistroPorConvite::register`, ramo `aprovacao_pendente`** (cadastro recebido e à espera de aprovação: encerra a sessão e redireciona ao login do `/app`). O painel é **sempre** o `app`, e o `/app` sempre tem `->login()` (`AppPanelProvider.php:78`). Por isso o nulo **não é alcançável** na configuração do kit, e esse ramo não tem cenário executável. Fica como **lacuna declarada M40**, no molde de R3b. A regressão do ramo com login está em `tests/Kit/DestinoAposCadastroTest.php` e `tests/Kit/RegistroAbertoTest.php`.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M36 | `redirect(getLoginUrl())` com o nulo passado adiante: a tela congela com a sessão já encerrada (RD-02) | CT-23 (linha financeiro: redirect exato para `/financeiro`) |
+| M37 | `getLoginUrl() ?? ''` ou `?? url('/')`: destino vazio, ou fora do painel | CT-23 (linha financeiro, destino exato) |
+| M38 | o tratamento do nulo sai antes do logout e a sessão continua aberta | CT-23 (Ana não está autenticada) |
+| M39 | "simplificar" e mandar todo pedido para a raiz do painel, inclusive onde há login | CT-23 (linha admin) |
+| M40 | `RegistroPorConvite::register` (ramo `aprovacao_pendente`) com `redirect(null)` se o `/app` perder o login | ⚠️ **lacuna declarada**: o `/app` sempre tem login no kit, então o mutante e o código correto dão o mesmo observável. Tentado: painel sem login como corrente não afeta, porque o ramo usa `getPanel('app')` fixo. Roteado ao `fw-revisor-diff` (grep por `redirect(` recebendo `getLoginUrl()` sem guarda) |
+
+---
+
 ## Regressão apontada (testes existentes, não reescritos)
 
 | Arquivo tocado (superfície do plano) | Testes existentes que precisam seguir verdes |
@@ -629,12 +678,12 @@ Os três painéis do kit chamam `->login()` (`AdminPanelProvider.php:70`, `AppPa
 | `app/Filament/Pages/Auth/RegistroPorConvite.php` | `tests/Kit/ConviteTest.php`, `tests/Kit/DestinoAposCadastroTest.php`, `tests/Kit/RegistroAbertoTest.php`, `tests/Kit/ProtecaoAntiRoboTest.php`, `tests/Kit/TelasDeAutenticacaoTest.php`, `tests/Tenancy/ConviteTenancyTest.php`, `tests/Tenancy/RegistroAbertoTenancyTest.php`, `tests/Tenancy/LoginUnificadoTenancyTest.php` |
 | `app/Filament/Pages/Auth/TelaBloqueio.php` | `tests/Kit/BloqueioDeSessaoTest.php`, `tests/Kit/IdentidadeVisualTest.php`, `tests/Kit/PermissoesDeAcoesTest.php` |
 | `app/Filament/Pages/Auth/TelaLogin.php` | `tests/Kit/SituacaoDaContaTest.php`, `tests/Kit/LoginUnificadoTest.php`, `tests/Kit/LixeiraTest.php`, `tests/Kit/RodapeCoerenteTest.php` |
-| `app/Livewire/DefinirSenhaPorEmail.php` | `tests/Kit/DefinirSenhaPorEmailTest.php` |
+| `app/Livewire/DefinirSenhaPorEmail.php` | `tests/Kit/DefinirSenhaPorEmailTest.php` (e o CT-23 novo no mesmo arquivo) |
 | `app/Http/Controllers/Auth/LoginSocialController.php` | `tests/Kit/LoginSocialGoogleTest.php`, `tests/Kit/LoginSocialPorPainelTest.php`, `tests/Kit/VinculoDeProvedorSocialTest.php`, `tests/Kit/CadastroSocialPorConviteTest.php`, `tests/Kit/LoginSocialContaIndisponivelTest.php`, `tests/Tenancy/LoginSocialGoogleTenancyTest.php` |
 | `app/Notifications/PrimeiroAcessoSocial.php` | `tests/Kit/VinculoDeProvedorSocialTest.php`, `tests/Kit/LoginSocialContaIndisponivelTest.php` |
 | `app/Models/Convite.php` (`aceitar`, `aceitarComoUsuarioExistente`, envio em lote) | `tests/Kit/ConviteTest.php`, `tests/Kit/ConviteUsuarioExistenteTest.php`, `tests/Kit/ConviteEmMassaTest.php`, `tests/Kit/ConviteEmMassaDtoTest.php`, `tests/Tenancy/ConviteUsuarioExistenteTest.php`, `tests/Tenancy/ConviteEmMassaTenancyTest.php` |
 | `app/Support/ImportExport/ImportadorDoKit.php` | `tests/Kit/ImportExportTest.php`, `tests/Tenancy/ImportExportTenancyTest.php` |
-| `app/Http/Middleware/ExigirEmailVerificado.php` | `tests/Kit/VerificacaoDeEmailTest.php`, `tests/Kit/ConfiguracoesDoKitTest.php`, `tests/Kit/RegistroAbertoTest.php`, `tests/Kit/TelasDeAutenticacaoTest.php` |
+| `app/Http/Middleware/ExigirEmailVerificado.php` (guarda de invariante no lugar da exceção do neon, RQ-09) | `tests/Kit/VerificacaoDeEmailTest.php` (mata o M10g), `tests/Kit/ConfiguracoesDoKitTest.php`, `tests/Kit/RegistroAbertoTest.php`, `tests/Kit/TelasDeAutenticacaoTest.php` |
 | `app/Livewire/AssistenteChatWidget.php` | **nenhum**, por isso CT-14…CT-16 são novos |
 | `database/migrations/2026_08_12_164953_harden_onboarding_progress_scope.php` | **nenhum**, por isso CT-17 é novo |
 | `phpstan.neon` | `tests/Kit/QualidadeDeCodigoTest.php` (os casos atuais continuam; o docblock que diz "level 7" precisa acompanhar) |
@@ -664,22 +713,22 @@ Comando mínimo da regressão (suíte Kit + Tenancy, uma por comando):
 | Mass assignment | não se aplica: nenhum payload novo |
 | Upload | não se aplica |
 | Precisão monetária | não se aplica |
-| Superfície Livewire (método público, prop pública) | CT-16 (4 métodos públicos por `$wire.`). `conversaId` já é `#[Locked]`. `mensagem` fora do domínio já tem `#[Validate]`: lacuna declarada, não é mudança desta entrega |
+| Superfície Livewire (método público, prop pública) | CT-16 (5 métodos públicos por `$wire.`, `responder` inclusive, com `mensagemPendente` forjada por `set`). `conversaId` já é `#[Locked]`. `mensagem` fora do domínio já tem `#[Validate]`: lacuna declarada, não é mudança desta entrega |
 | Estado do framework usado sem validar | não se aplica: nenhum `$filters`/`$tableFilters` tocado |
 | IDOR por entidade | `agent_conversations`: CT-16, CT-22 · `convites`: fora do escopo (nenhuma rota nova) |
 | Escopo com discriminante nulo (fecha ou abre?) | CT-15/CT-16 (usuário nulo: o histórico **fecha**, e a posse com nulo **recusa com 403**, não abre nem cai em `whereNull`) |
-| Saída do estado de erro (4xx/redirect tem destino) | CT-10, CT-11 (destino exato e não vazio). CT-16: o 403 é resposta de ação Livewire, e o visitante continua na tela de login onde já estava. CT-09/CT-13: exceção de invariante em código de desenvolvedor, sem usuário final no caminho (pergunta P-05) |
+| Saída do estado de erro (4xx/redirect tem destino) | CT-10, CT-11, CT-23 (destino exato e não vazio). CT-16: o 403 é resposta de ação Livewire, e o visitante continua na tela de login onde já estava. CT-09/CT-13: exceção de invariante em código de desenvolvedor, sem usuário final no caminho (pergunta P-05) |
 
 ## Índice de Cenários
 
 | ID | Cenário | Regra | Técnica | Camada | Arquivo | Mata |
 |----|---------|-------|---------|--------|---------|------|
 | CT-01 | nível efetivo ≥ 8 e rigor resolvido, nunca pulado | R1 | EP | Kit (processo) | `tests/Kit/QualidadeDeCodigoTest.php` | M1, M4a, M4c |
-| CT-02 | invocações não rebaixam nem se desligam | R1 | EP | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M2, M3, M4b, M4d |
+| CT-02 | invocações não rebaixam nem se desligam; a linha do composer passa sem `.github/` | R1 | EP | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M2, M3, M4b, M4d, M4e, M4f |
 | CT-03 | análise limpa | R1 | EP | comando de gate | `composer types:check` / CI | M4 |
 | CT-04 | sem baseline | R2 | tabela de decisão | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M5 |
-| CT-05 | exceções com escopo e específicas, sem `identifier`/`rawMessage` | R2 | tabela de decisão | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M6, M7, M8, M10c |
-| CT-06 | inventário fechado de 4, antigas congeladas, sem stub nem extensão própria | R2 | tabela de decisão + caracterização | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M5, M10a, M10b, M10c, M10d |
+| CT-05 | exceções com escopo e específicas, sem `identifier`/`rawMessage` (3 linhas) | R2 | tabela de decisão | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M6, M7, M8, M10c |
+| CT-06 | inventário fechado nas 3 da `main`, sem `ExigirEmailVerificado`, sem stub nem extensão própria | R2 | tabela de decisão + caracterização | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M5, M10a, M10b, M10d, M10f |
 | CT-07 | escopo analisado intacto | R2 | EP | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M9 |
 | CT-08 | `@phpstan-ignore` congelado, sem `assert(`/`@phpstan-assert` nos tocados `@premissa` | R2 | EP | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M10, M10e |
 | CT-09 | hub sem painel: exceção `@premissa` | R3 | EP | Kit | `tests/Kit/HubDeCardsTest.php` | M11, M12, M13 |
@@ -689,15 +738,16 @@ Comando mínimo da regressão (suíte Kit + Tenancy, uma por comando):
 | CT-13 | aceite sem papel no model: exceção sem efeito | R6a | EP + rastreio | Feature | `tests/Kit/ConviteTest.php` | M24…M28, M29a |
 | CT-14 | `/app/login` do visitante: 200, widget montado, sem conversa | R7 | EP | Feature (HTTP) | `tests/Kit/AssistenteChatWidgetTest.php` | M30, M33a |
 | CT-15 | widget lista só para a dona | R7 | EP persona | Livewire | `tests/Kit/AssistenteChatWidgetTest.php` | M30, M33, M33b, M33c |
-| CT-16 | ações do visitante: 403 sem efeito | R7 | EP + caracterização | Livewire | `tests/Kit/AssistenteChatWidgetTest.php` | M31, M32, M33b |
+| CT-16 | ações do visitante, `responder` inclusive: 403 sem efeito | R7 | EP + caracterização | Livewire | `tests/Kit/AssistenteChatWidgetTest.php` | M31, M32, M32a, M33b |
 | CT-17 | fusão de duplicatas igual à da `main` (6 linhas) | R8 | caracterização | Feature (migration) | `tests/Kit/MigracaoDoEscopoDoOnboardingTest.php` | M34, M35, M35a…M35d |
 | CT-18 | cadastro por convite sem papel (montagem / envio): oráculo comum | R6b | EP por ponto de entrada | Livewire | `tests/Kit/ConviteTest.php` | M29b, M29c |
 | CT-19 | convites recebidos, ação aceitar sem papel: oráculo comum | R6b | EP por ponto de entrada | Livewire (ação de tabela) | `tests/Kit/ConviteUsuarioExistenteTest.php` | M29d |
 | CT-20 | cadastro social por convite sem papel: oráculo comum | R6b | EP por ponto de entrada | Feature (HTTP) | `tests/Kit/CadastroSocialPorConviteTest.php` | M29e |
 | CT-21 | tenancy, dois verbos, convite sem papel | R6b | EP por ponto de entrada | Feature (Tenancy) | `tests/Tenancy/ConviteTenancyTest.php`, `tests/Tenancy/ConviteUsuarioExistenteTest.php` | M29f, M29g |
 | CT-22 | autenticado alheio: 404 sem efeito | R7 | caracterização | Livewire | `tests/Kit/AssistenteChatWidgetTest.php` | M31a, M31b |
+| CT-23 | definir senha em painel sem login: raiz do painel, sessão encerrada, 1 link `@premissa` | R9 | EP | Livewire | `tests/Kit/DefinirSenhaPorEmailTest.php` | M36…M39 |
 
-Lacunas declaradas (sem matador): M14, M15, M16 (R3b, nulo inalcançável na configuração do kit), roteadas ao `fw-revisor-diff`.
+Lacunas declaradas (sem matador): M14, M15, M16 (R3b) e M40 (R9), todas de nulo inalcançável na configuração do kit, roteadas ao `fw-revisor-diff`. O M10g é morto pela regressão existente `VerificacaoDeEmailTest`, não por CT novo.
 
 ## Cogitado e cortado
 
@@ -705,7 +755,7 @@ Lacunas declaradas (sem matador): M14, M15, M16 (R3b, nulo inalcançável na con
 |---|---|
 | Rodar `phpstan analyse` dentro de um caso Pest | duplica o `@types:check` do `composer test` e custa minutos. CT-03 fica como comando de gate |
 | ~~`RegistroPorConvite` pela tela com convite sem papel~~ | **reaberto** pela revisão adversarial (M29a, M29b): agora é o CT-18 |
-| `responder` sem usuário no CT-16 | passa pelo mesmo guarda de `enviar`, e o arnês de streaming não se paga |
+| ~~`responder` sem usuário no CT-16~~ | **reaberto** pelo RQ-10 (Adendo 1): agora é linha do CT-16 |
 | Remover `->login()` do `/app` para exercitar R3b | muda a configuração da feature que se quer testar. Ver lacunas M14…M16 |
 | CT de `ImportadorDoKit`, `CreateRole`/`EditRole`, `ExigirEmailVerificado` | não há nulo alcançável novo com comportamento a definir. Cobertos pela regressão apontada. Para o `ImportadorDoKit`, ver a rejeição do M-I na revisão adversarial |
 | Casos para RQ-01/02/05 | não são comportamento de aplicação, e o QA gate confere |
@@ -718,7 +768,7 @@ Lacunas declaradas (sem matador): M14, M15, M16 (R3b, nulo inalcançável na con
 - **RQ-06 / hub fora de painel** — o 00 não diz o que um hub faz sem painel corrente.
   - **Assumido**: exceção de invariante com mensagem clara (falha fechado); nunca cartões do painel padrão. (CT-09)
   - **Se negado**: lista vazia sem exceção; CT-09 inverte as duas primeiras linhas do `Então`. O invariante (nenhum cartão de outro painel) fica.
-- **RQ-06 / tela de bloqueio em painel sem login** — painel de projeto sem `->login()` que usa o plugin de bloqueio.
+- **RQ-06 / tela de bloqueio em painel sem login** — painel de projeto sem `->login()` que usa o plugin de bloqueio. *(Adendo 1: a sessão adotou esta premissa como fixa também para o CT-23 de `DefinirSenhaPorEmail`.)*
   - **Assumido**: o visitante vai para a raiz do próprio painel (destino dentro do painel). (CT-10, linha `financeiro`)
   - **Se negado**: exceção de invariante que nomeia o painel; CT-10 inverte a linha. Nunca `''`, `/` ou laço.
 - **RQ-06 / login social com painel de origem sem login**.
@@ -728,7 +778,7 @@ Lacunas declaradas (sem matador): M14, M15, M16 (R3b, nulo inalcançável na con
   - **Assumido**: ficam, congelados por inventário; nenhum novo. (CT-08)
   - **Se negado**: zero; CT-08 inverte para 0 ocorrências e a entrega remove os três.
 - **RQ-06 / forma da exceção de invariante** (convite sem papel, hub sem painel).
-  - **Assumido**: exceção de domínio (não `Error`/`TypeError`) cuja mensagem cita o que falta; texto livre. Em tela, vira o 500 do handler com mensagem clara no log.
+  - **Assumido**: exceção de domínio (não `Error`/`TypeError`) cuja mensagem cita o que falta; texto livre. Em tela, vira o 500 do handler com mensagem clara no log. *(Adendo 1: pelo RQ-09, o mesmo tipo de guarda de invariante é o que substitui a exceção do `ExigirEmailVerificado` no neon.)*
   - **Se negado** (o mantenedor quer saída amigável na tela de cadastro): nasce um CT de `RegistroPorConvite` com aviso e destino.
 - **Excluir pela tela um papel que tem convite pendente** (anterior a esta entrega): a FK recusa, e a ação de excluir do `RoleResource` vira `QueryException` (500).
   - **Assumido**: fora desta entrega. O CT-12 prova só o desenho (a FK existe).

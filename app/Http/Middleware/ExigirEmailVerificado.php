@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use LogicException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -72,7 +73,19 @@ final class ExigirEmailVerificado extends EnsureEmailIsVerified
 
         $this->registrarBarramento($request);
 
-        return parent::handle($request, $next, $redirectToRoute);
+        $resposta = parent::handle($request, $next, $redirectToRoute);
+
+        /*
+         * O `@return` do vendor inclui `null`, e o corpo dele nunca o devolve: `abort(403)`,
+         * `Redirect::guest()` ou `$next($request)`. A guarda diz isso ao analisador sem exceção no
+         * `phpstan.neon`, e para com o nome do que falta se um upgrade mudar o corpo. ADR-05 de
+         * `wikis/specs/feat/phpstan-nivel-8/`.
+         */
+        if (! $resposta instanceof Response) {
+            throw new LogicException('EnsureEmailIsVerified::handle() não devolveu uma resposta.');
+        }
+
+        return $resposta;
     }
 
     /**

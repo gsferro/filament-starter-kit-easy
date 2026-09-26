@@ -99,3 +99,33 @@
 - Incluir `tests/` nos `paths` do PHPStan (decisão medida no `phpstan.neon`)
 - `declare(strict_types=1)` em todo `app/` (roadmap 8.3)
 - `composer-require-checker`, type coverage, branch coverage (roadmap 8.2, 8.4, 8.5)
+
+## Adendo 1 — 2026-09-26
+
+- **Fonte**: achados do step 6.5 (`/code-review high main...HEAD` e `fw-revisor-diff`, ambos cegos
+  ao plano), triados pela sessão. Não é pedido novo do mantenedor: é o que a revisão do diff provou
+  que a entrega prometia e não cumpria
+- **Fidelidade**: alta (achados com `arquivo:linha` e reprodução)
+
+### Texto Original
+
+<!-- IMUTÁVEL. Resumo fiel dos achados aceitos; os relatórios completos estão em 03-progresso.md. -->
+
+> RD-01 / CR#1 — o [CT-02] novo reprova em todo projeto instalado: a linha do composer não é pulada
+> e a asserção sobre o `on:` do workflow roda com o ci.yml ausente.
+> RD-02 / CR#3 — `getLoginUrl()` nulo foi tratado só onde o PHPStan acusou; `DefinirSenhaPorEmail`
+> e `RegistroPorConvite::register` seguem com `redirect(null)`, que deixa a tela congelada com a
+> sessão já invalidada.
+> RD-06 — a exceção do `ExigirEmailVerificado` em `ignoreErrors` não considerou a guarda de
+> invariante que o próprio diff usa em cinco lugares.
+> CR#5 — `responder()`, a ação cuja autorização mais mudou, não tem caso para o visitante.
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-07 | Toda guarda de teste que lê arquivo não entregue pelo `create-project` roda sob a sentinela, inclusive as asserções de uma linha de dataset que não é pulada | RD-01 | restrição | — |
+| RQ-08 | O nulo de URL de login é tratado **onde é alcançável**, não só onde o analisador acusa: nenhum `redirect()` recebe `null` | RD-02 | funcional | — |
+| RQ-09 | A anotação errada do vendor é contornada por guarda de invariante no código do kit, não por exceção no `phpstan.neon` — o inventário de `ignoreErrors` volta às três anteriores | RD-06 | restrição | RQ-06 (a parte "exceção em `ignoreErrors`") e ADR-03 |
+| RQ-10 | Toda ação pública do widget do assistente, `responder()` inclusive, recusa o visitante sem efeito | CR#5 | autorização | — |
+

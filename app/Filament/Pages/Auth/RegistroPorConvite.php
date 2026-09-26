@@ -244,7 +244,7 @@ class RegistroPorConvite extends Register
             ->persistent()
             ->send();
 
-        $this->redirect(Filament::getPanel('app')->getLoginUrl());
+        $this->redirect($this->urlDeLoginDoApp());
 
         return null;
     }
@@ -301,7 +301,7 @@ class RegistroPorConvite extends Register
      * Para onde mandar depois de aceitar: a organização do convite, se houver.
      *
      * `getUrl()` é `null` com tenant por domínio e ninguém autenticado; a raiz do painel é o
-     * fallback do kit para isso (`Paineis::urlDoPainel()`, ADR-02 de `phpstan-nivel-8`).
+     * fallback do kit para isso (`Paineis::url()`, ADR-02 de `phpstan-nivel-8`).
      */
     private function urlDaOrganizacao(bool $semOrganizacao = false): string
     {

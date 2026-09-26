@@ -40,7 +40,7 @@ caem em quatro classes, e a classe decide a correção:
 | **A — nulo impossível, tipo mal dito** | 27 | o valor nunca é nulo no fluxo, mas a expressão usada é tipada `?T` | escrever a mesma coisa com uma expressão que carrega o tipo real. **Sem mudança de comportamento** |
 | **B — URL de painel nula** | 7 | `Panel::getLoginUrl()` é `null` em painel sem `->login()`; `Panel::getUrl()` é `null` com tenant por domínio | fallback **que o kit já usa**: `?? url($painel->getPath())` (`app/Support/Paineis.php:urlDoPainel:242`) |
 | **C — invariante sem guarda** | 13 | o nulo é impossível por **outra** camada (FK, request de painel), mas nada no código diz isso | exceção de invariante com mensagem, no molde de `CreateRole::afterCreate` |
-| **D — anotação errada do vendor** | 1 | o `@return` do `EnsureEmailIsVerified::handle()` do Laravel inclui `null`, que o corpo nunca devolve | `ignoreErrors` com escopo de arquivo (ADR-03) |
+| **D — anotação errada do vendor** | 1 | o `@return` do `EnsureEmailIsVerified::handle()` do Laravel inclui `null`, que o corpo nunca devolve | guarda de invariante no middleware (ADR-05; era `ignoreErrors`, ADR-03, *alterado em 2026-09-26*) |
 
 A contagem por arquivo é de `phpstan analyse --level=8 --error-format=raw | cut -d: -f1 | sort | uniq -c`
 (saída no `03`); a soma confere com `grep -c identifier=` → `48`.
@@ -153,12 +153,20 @@ Não se aplica: nenhum log novo. Os logs existentes de `CreateRole`/`EditRole` (
   roda antes e nunca devolve nulo neste importador (`:96-97`, `?? new $model`). Guarda com
   `LogicException` numa só leitura
 
-### 4. Classe D — a anotação errada do vendor
+### 4. Classe D — a anotação errada do vendor *(alterado em 2026-09-26: RD-06 do step 6.5, Adendo 1 / RQ-09 — ADR-05 substitui a ADR-03)*
 
-- `phpstan.neon` → `ignoreErrors`, escopo **só** `app/Http/Middleware/ExigirEmailVerificado.php`,
-  no molde do bloco do Breezy: o que o vendor declara, por que é insatisfazível, o que foi tentado
-  (stub — medido, reprova na validação de stub com `class.notFound`), e qual teste cobre o
-  comportamento (`tests/Kit/VerificacaoDeEmailTest.php`)
+- ~~`phpstan.neon` → `ignoreErrors`, escopo só `app/Http/Middleware/ExigirEmailVerificado.php`~~
+- `ExigirEmailVerificado::handle()` guarda o retorno de `parent::handle()` e lança
+  `LogicException` se não for `Response`. O inventário de `ignoreErrors` fica nas três de antes
+- Cobertura: `tests/Kit/VerificacaoDeEmailTest.php` (regressão) e o CT-06 (inventário = 3)
+
+### 4b. Achados do step 6.5 que mudaram código *(alterado em 2026-09-26: Adendo 1)*
+
+- `Paineis::correnteOuPadrao(): Panel` — um lugar só para a expressão que estava colada em quatro
+  telas; `TelaBloqueio::getAuthDesignerConfig()` deixa o nullsafe
+- `DefinirSenhaPorEmail::enviar()` e `RegistroPorConvite::register()` deixam de passar `null` ao
+  `redirect()` (RQ-08, CT-23)
+- `PrimeiroAcessoSocial` reaproveita `Paineis::url()` em vez de reimplementá-lo
 
 ### 5. O nível sobe e fica travado
 

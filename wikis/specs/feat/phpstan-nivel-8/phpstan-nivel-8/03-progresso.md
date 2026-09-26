@@ -29,7 +29,7 @@
 - [x] ImportadorDoKit `registro()`, 2026-09-26
 
 ## 4. Classe D — anotação do vendor
-- [x] `ignoreErrors` do ExigirEmailVerificado, com `path` único e mensagem ancorada, 2026-09-26
+- [x] ~~`ignoreErrors` do ExigirEmailVerificado~~ → guarda de invariante no middleware (ADR-05, RD-06); `git diff main -- phpstan.neon` → só a linha do `level`, 2026-09-26
 
 ## 5. O nível sobe e fica travado
 - [x] `phpstan.neon` `level: 8` — `vendor/bin/phpstan analyse` → `{"result":"passed","errors":0}`, 2026-09-26
@@ -65,6 +65,31 @@
 - [ ] Citações `arquivo:símbolo:linha` reverificadas
 - [ ] Docs pt/en, CHANGELOG e README reconciliados
 - [ ] `git commit`
+
+## Revisão de código do diff (step 6.5)
+
+Dois passes cegos ao plano, disparados juntos sobre `main...c33cee8`: `/code-review high` (10 achados) e
+`fw-revisor-diff` (6 achados). Nove eram o mesmo defeito visto pelos dois, ou achados distintos
+aceitos; três foram rejeitados com prova.
+
+| Achado | Eixo / tema | Decisão | Evidência |
+|---|---|---|---|
+| CR#1 = RD-01 | `[CT-02]` vermelho em projeto instalado | **aceito** — Blocker. Adendo 1 / RQ-07, CT-02 alterado, teste corrigido | prova com `.github` renomeado: `tests 3, passed 1, skipped 2` |
+| CR#2 | fallback da tela de bloqueio daria 401 vazio | **rejeitado** | medido: `AuthenticationException::redirectTo()` cai no callback estático (`vendor/laravel/framework/src/Illuminate/Auth/AuthenticationException.php:redirectTo:68-69`), que `withMiddleware()` registra como `route('login')` (`vendor/laravel/framework/src/Illuminate/Foundation/Configuration/ApplicationBuilder.php:withMiddleware:291`); a rota `login` existe (`php artisan route:list --name=login`) |
+| CR#3 = RD-02 | `redirect(null)` em `DefinirSenhaPorEmail` e `RegistroPorConvite::register` | **aceito** — Adendo 1 / RQ-08, CT-23 | CT-23 `financeiro` vermelho antes (`Component did not perform a redirect`), verde depois |
+| CR#4 | `phpstan dump-parameters` 8× por suíte | **aceito** — memoizado numa `static` | — |
+| CR#5 | `responder()` sem caso para visitante | **aceito** — Adendo 1 / RQ-10, linha nova no CT-16 | verde na primeira execução: a guarda já estava certa; o CT fecha a lacuna de cobertura |
+| CR#6 = RD-04 | `Paineis::url()` reimplementado e citado como `urlDoPainel()` | **aceito** | `PrimeiroAcessoSocial` usa `Paineis::url()`; citação corrigida |
+| CR#7 | = RD-04 | — | — |
+| CR#8 | a mesma expressão colada 4× | **aceito** — `Paineis::correnteOuPadrao()` | — |
+| CR#9 = RD-05 | comentários de teste falsos (CT-22; ponteiro do CT-18) | **aceito** | CT-22 remedido contra a `main`: `passed 2` |
+| CR#10 | comentários inline × regra do CLAUDE.md | **rejeitado** | a base usa comentário inline explicativo em todo `app/` (ex.: o próprio `Convite::aceitarComoUsuarioExistente`); os novos explicam ordem de efeito colateral, que não se lê do código |
+| RD-03 | `?? url('/')` em `LoginSocialController::urlDoPainel` | **rejeitado** | anterior ao diff, fora de escopo pela premissa P-06 |
+| RD-06 | a guarda de invariante não foi tentada no middleware | **aceito, e mudou a decisão** — Adendo 1 / RQ-09, ADR-05 substitui a ADR-03 | CT-06 vermelho antes (`actual size 4 matches expected size 3`), verde depois |
+
+**Falsificabilidade das correções**: CT-06 e CT-23 `financeiro` nasceram vermelhos contra o código
+anterior à correção — **2 de 2 falham sem o fix**. CT-02 (guarda de teste) e CT-16/`responder`
+(guarda já correta) não são correções de app.
 
 ## Conformidade com Rules
 
@@ -112,7 +137,12 @@ congelada — passo 7 e ADR-04.
 | 5 | 4 | mesmo analista do #1 — aplicar a rodada 2 (R6 → R6a/R6b) | opus | `01`, `02`, código | 22 CTs, 60 mutantes, 9 regras | `grep -c` conferido; só o `04` editado |
 | 6 | impl. | sem despacho — edição cirúrgica em 14 arquivos interdependentes (mesma exceção vale para docs) | sessão | — | L8: 48 → 0 | `phpstan analyse` → 0 erros |
 | 7 | impl. | `fw-executor-ct` lote A — CT-01…08 (`QualidadeDeCodigoTest`) | sonnet | `01`, `02`, conversa | — | — |
-| 8 | impl. | `fw-executor-ct` lote B — CT-09…22 | sonnet | `01`, `02`, conversa | — | — |
+| 8 | impl. | `fw-executor-ct` lote B — CT-09…22 | sonnet | `01`, `02`, conversa | 37 casos verdes; falsificabilidade 9/11 | `git status`/`git stash list` limpos; 6 vermelhos que ele chamou de "pré-existentes" eram da branch (citação deslocada, sentinela ausente, badges) — **reprovado nesse ponto**, corrigidos pela sessão |
+| 9 | 6.5 | `fw-revisor-diff` — eixos sobre `main...HEAD` | opus | `01`, `03`, conversa | 6 achados | 6/6 reproduzidos; RD-03 rejeitado |
+| 10 | 6.5 | `/code-review high main...HEAD` | skill | — | 10 achados | CR#2 **refutado por medição**; CR#10 rejeitado |
+| 11 | 6.5 | mesmo analista — CTs do Adendo 1 | opus | `01`, `02`, código | 23 CTs, 10 regras | só o `04` editado |
+| 12 | 6.5 | `fw-executor-ct` — CTs do Adendo 1, vermelhos antes do fix | sonnet | `01`, `02`, conversa | 2 vermelhos (b) esperados | ambos os vermelhos conferidos; `.github` restaurado (`ls -d .github`) |
+| 13 | 6.5 | sem despacho — correção do Adendo 1 (8 arquivos pequenos e interdependentes) | sessão | — | L8 0 erros; 164 testes afetados verdes | — |
 
 ## Blockers
 - Nenhum.

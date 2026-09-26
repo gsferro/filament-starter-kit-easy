@@ -184,9 +184,20 @@ it('não escreve log em disco durante a suíte', function (?string $canal): void
  * é exatamente isso que o CT-01 protege (M4c).
  *
  * `PAO_DISABLE=1` evita que o laravel/pao interfira na saída do processo.
+ *
+ * Memoizado numa `static`: o processo do PHPStan é caro (minutos, não milissegundos),
+ * e CT-01, CT-04, CT-05 (×3) e CT-06 chamam este helper — sem a `static` cada um
+ * dispara a própria execução do binário. Uma execução por processo de teste basta:
+ * nenhum caso deste arquivo escreve no `phpstan.neon` no meio da suíte.
  */
 function configuracaoEfetivaDoPhpstan(): array
 {
+    static $configuracao = null;
+
+    if ($configuracao !== null) {
+        return $configuracao;
+    }
+
     $resultado = Process::path(base_path())
         ->env(['PAO_DISABLE' => '1'])
         ->timeout(60)
@@ -199,7 +210,7 @@ function configuracaoEfetivaDoPhpstan(): array
     expect(json_last_error())->toBe(JSON_ERROR_NONE)
         ->and($json)->toBeArray();
 
-    return $json;
+    return $configuracao = $json;
 }
 
 /**
@@ -350,25 +361,36 @@ it('[CT-02] nenhum ponto de invocação sobrescreve nível, configuração, esco
         expect($outras)->toBeEmpty();
     }
 
-    // O step do CI não desliga o gate por fora da linha de comando.
+    // O step do CI não desliga o gate por fora da linha de comando, e o workflow
+    // dispara em push para main e em pull_request. As duas checagens vivem SÓ
+    // aqui: são propriedade do arquivo .github/workflows/ci.yml, que só esta
+    // partição lê (RQ-07, Adendo 1). Rodá-las também na partição do composer
+    // reprovaria todo projeto instalado, que não tem ".github/" (M4e).
     if ($ponto === 'step do phpstan em .github/workflows/ci.yml') {
         $bloco = blocoDoStep($ciTexto, 'Análise estática (PHPStan)');
 
         expect($bloco)->not->toContain('continue-on-error')
             ->and($bloco)->not->toContain('if:');
+
+        preg_match('/^on:\n(.*?)\njobs:/ms', $ciTexto, $onBloco);
+        $blocoOn = $onBloco[1] ?? '';
+
+        expect($blocoOn)->toContain('push:')
+            ->and($blocoOn)->toMatch('/branches:\s*\[main\]/')
+            ->and($blocoOn)->toContain('pull_request:');
     }
 
-    // O script local não indireciona para outro script do composer.
-    $tiposCheck = (array) ($composerScripts['types:check'] ?? []);
-    expect(collect($tiposCheck)->contains(static fn (string $l): bool => str_starts_with(trim($l), '@')))->toBeFalse();
+    // O script local não indireciona para outro script do composer, e a linha
+    // não lê nenhum arquivo de ".github/" — é o que a mantém executável e verde
+    // num projeto instalado (create-project não entrega ".github/", RQ-07).
+    if ($ponto === 'script "types:check" do composer.json') {
+        $tiposCheck = (array) ($composerScripts['types:check'] ?? []);
+        expect(collect($tiposCheck)->contains(static fn (string $l): bool => str_starts_with(trim($l), '@')))->toBeFalse();
 
-    // O workflow dispara em push para main e em pull_request.
-    preg_match('/^on:\n(.*?)\njobs:/ms', $ciTexto, $onBloco);
-    $blocoOn = $onBloco[1] ?? '';
-
-    expect($blocoOn)->toContain('push:')
-        ->and($blocoOn)->toMatch('/branches:\s*\[main\]/')
-        ->and($blocoOn)->toContain('pull_request:');
+        foreach ($linhas as $linha) {
+            expect($linha)->not->toContain('.github');
+        }
+    }
 })->with([
     'script "types:check" do composer.json',
     'step do phpstan em .github/workflows/ci.yml',
@@ -424,14 +446,32 @@ it('[CT-05] toda exceção de ignoreErrors tem escopo de path e mensagem especí
     'simpleLightbox',
     'WidgetDinamico',
     'customMyProfilePage',
-    'ExigirEmailVerificado',
 ])->group('kit');
 
-it('[CT-06] o inventário de exceções é fechado e cada uma registra a tentativa', function (): void {
+/**
+ * Adendo 1 (RQ-09, 2026-09-26): a anotação errada do vendor para `EnsureEmailIsVerified`
+ * deixa de ser contornada por exceção no `phpstan.neon` — passa a ser guarda de invariante
+ * no código do kit (`ExigirEmailVerificado`). O inventário volta às 3 exceções anteriores
+ * à entrega, e nenhuma cita `ExigirEmailVerificado` na mensagem nem no path.
+ */
+it('[CT-06] o inventário de exceções volta às 3 anteriores e cada uma registra a tentativa', function (): void {
     $json = configuracaoEfetivaDoPhpstan();
     $neon = (string) file_get_contents(base_path('phpstan.neon'));
 
-    expect($json['ignoreErrors'])->toHaveCount(4);
+    expect($json['ignoreErrors'])->toHaveCount(3);
+
+    foreach ($json['ignoreErrors'] as $entrada) {
+        $paths = $entrada['paths'] ?? ($entrada['path'] ?? null);
+        $paths = is_array($paths) ? $paths : ($paths === null ? [] : [$paths]);
+
+        $this->assertStringNotContainsString('ExigirEmailVerificado', (string) ($entrada['message'] ?? ''));
+
+        foreach ($paths as $p) {
+            $this->assertStringNotContainsString('ExigirEmailVerificado', $p);
+        }
+    }
+
+    $this->assertStringNotContainsString('ExigirEmailVerificado', $neon);
 
     // As 3 entradas pré-existentes, congeladas com o mesmo message/path(s) da
     // `main` (medido: `git show main:phpstan.neon` é byte-idêntico a estes
@@ -466,24 +506,12 @@ it('[CT-06] o inventário de exceções é fechado e cada uma registra a tentati
         expect($pathsAtuais)->toBe($esperada['paths']);
     }
 
-    // Exatamente 1 entrada tem o path da ExigirEmailVerificado, e é o único
-    // path dela.
-    $comEssePath = array_values(array_filter($json['ignoreErrors'], static function (array $e): bool {
-        $paths = $e['paths'] ?? ($e['path'] ?? null);
-        $paths = is_array($paths) ? $paths : [$paths];
-        $paths = array_map(relativizarCaminhoDoPhpstan(...), $paths);
-
-        return $paths === ['app/Http/Middleware/ExigirEmailVerificado.php'];
-    }));
-
-    expect($comEssePath)->toHaveCount(1);
-
-    // Cada uma das 4 entradas registra a tentativa: "Tentado" seguido de ao
+    // Cada uma das 3 entradas registra a tentativa: "Tentado" seguido de ao
     // menos uma alternativa descartada (bullet "#   - ...").
     preg_match_all('/((?:^[ \t]*#[^\n]*\n)+)[ \t]*-\n[ \t]*message: /m', $neon, $matches);
     $comentarios = $matches[1];
 
-    expect($comentarios)->toHaveCount(4);
+    expect($comentarios)->toHaveCount(3);
 
     foreach ($comentarios as $bloco) {
         expect($bloco)->toContain('Tentado');
