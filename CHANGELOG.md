@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.41.0] - 2026-09-26
+
 ### Adicionado
 
 - **Guarda do acoplamento entre `predis/predis` e o `REDIS_CLIENT` do `.env`.** Uma varredura das
@@ -98,10 +100,32 @@ E um que não era de nulidade: `DescobreCardsDoPainel` tinha um ternário com os
   com os cenários que o quality gate pediu para as saídas antecipadas; os sobreviventes que restam
   (`CustomizadorDaInstalacao.php:470`, equivalentes) são publicados por `arquivo:linha`. A página passou a dizer que o `UNTESTED`
   do `pest-plugin-mutate` **é** o sobrevivente — o mutante com o qual o teste passou
-- **79 testes novos**: os nulos alcançáveis (hub, tela de bloqueio, login social, os três pontos
+- **85 testes novos**: os nulos alcançáveis (hub, tela de bloqueio, login social, os três pontos
   de entrada do aceite de convite, o widget do assistente para visitante e para autenticado que não
   é dono, "Definir senha por e-mail" em painel sem login), a caracterização da migration de escopo
-  do onboarding, e a guarda do gate. Suíte: **2.993 → 3.072** casos
+  do onboarding, e a guarda do gate. Suíte: **2.993 → 3.078** casos
+
+### Validação antes da tag
+
+O `wikis/checklist-de-release.md` pede os quatro cenários a cada tag, e os cenários 1 e 2 nascem de
+`composer create-project` **na tag** — que ainda não existe quando esta seção é escrita. A medição
+disponível antes dela: `git archive` aplica o `export-ignore` exatamente como o Packagist aplica,
+então uma extração + `composer install` + `kit:install --create-project` reproduz o cenário 1.
+
+- **Cenário 1, simulado** (extração de `501b2cb`, a árvore que virou esta versão menos documentação):
+  `php artisan test --testsuite=Kit,Tenancy --parallel` → **3.075 testes, 2.861 passaram, 214
+  pulados, 0 falhas**
+- **Teto de pulados: 193 → 214 (+21)**, decomposto por causa com `--log-junit`, trocando na
+  extração os 14 arquivos de teste alterados pela versão da `v0.40.2` (91 pulados) contra a desta
+  versão (92), mais os 3 arquivos novos (20):
+  - **+20** `tests/Kit/CoberturaDeTestesTest.php`, novo: guardas sobre `docs/`, `composer.json` e
+    `.github/workflows/ci.yml`, que não viajam
+  - **+2** `tests/Kit/QualidadeDeCodigoTest.php` `[CT-02]`: as duas linhas de CI (a do composer
+    **roda** no projeto instalado)
+  - **−1** `tests/Kit/SiteDeDocumentacaoTest.php`: o caso que travava a meta de cobertura saiu
+    dali para o arquivo novo
+- **Cenários 2, 3 e 4**: rodam sobre a tag publicada, e o registro vem num PR de documentação, como
+  a `v0.40.2` fez no #108
 
 ## [0.40.2] - 2026-09-26
 
