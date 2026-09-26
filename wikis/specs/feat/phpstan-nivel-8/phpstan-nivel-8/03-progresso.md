@@ -51,7 +51,7 @@
 
 ## 8. Release
 - [ ] Resposta do mantenedor sobre "regras de validação e de teste" (`00`, premissa do QA-01) — levada ao fim da sessão; a leitura assumida está no `00`, e o QA-14 do gate pede que ela conste aqui
-- [ ] `config/kit.php` 0.41.0, PR, merge, tag
+- [x] `config/kit.php` 0.41.0, PR, merge, tag — #110 (feature) e #111 (release) mergeados; tag anotada `v0.41.0` em `a85ab0a`; release no GitHub; `release.yml` (tag × marcador × CHANGELOG) → success, 2026-09-26
 
 ## Testes
 - [x] `04-casos-de-teste.md` implementado — 22 de 23 CTs com teste; o CT-03 é comando de gate por desenho. `diff` de IDs → só `< CT-03`, 2026-09-26
@@ -113,8 +113,7 @@ enxerga a classe "teste que viaja lendo arquivo que não viaja" — a do RD-01 �
     **roda** no projeto instalado (RQ-07)
   - **−1** `tests/Kit/SiteDeDocumentacaoTest.php`: o antigo CT-51 saiu dali
   - `AssistenteChatWidgetTest` e `MigracaoDoEscopoDoOnboardingTest` (novos): **0** pulados
-- [ ] Cenários 2, 3 e 4 — só existem depois da tag (`create-project` na tag nova e `kit:update`
-  sobre a v0.40.2); rodar e registrar no CHANGELOG, como a v0.40.2 fez no #108
+- [x] Os quatro cenários reais sobre a tag — **3075 / 2861 / 12.388 asserções / 214 pulados / 0 falhas, nos quatro**; versão `0.41.0` nos quatro, tenancy `SIM` em 2 e 4; registrado no CHANGELOG e o teto do `checklist-de-release` atualizado para 214, 2026-09-26
 
 ## Conformidade com Rules
 
