@@ -127,6 +127,34 @@ então uma extração + `composer install` + `kit:install --create-project` repr
 - **Cenários 2, 3 e 4**: rodam sobre a tag publicada, e o registro vem num PR de documentação, como
   a `v0.40.2` fez no #108
 
+### Validação dos quatro cenários — `v0.41.0`
+
+Rodados depois da tag, a partir do Packagist (`create-project` pinado em `v0.41.0`), num
+diretório descartável. Os cenários 3 e 4 nasceram da `v0.40.2` e foram atualizados com
+`kit:update --all`; o 4 com o commit extra entre a tenancy e o update, como o checklist manda.
+
+| # | Cenário | Diretório | Versão | Tenancy | Saída |
+|---|---|---|---|---|---|
+| 1 | limpo, sem tenancy | `novo-sem-tenant` | `0.41.0` | — | `3075 testes / 2861 verdes / 12.388 asserções / 214 pulados / 0 falhas` |
+| 2 | limpo, com tenancy | `novo-com-tenant` | `0.41.0` | `SIM` | `3075 / 2861 / 12.388 / 214 pulados / 0 falhas` |
+| 3 | `kit:update`, sem tenancy | `velho-sem-tenant` | `0.41.0` | — | `3075 / 2861 / 12.388 / 214 pulados / 0 falhas` |
+| 4 | `kit:update`, com tenancy | `velho-com-tenant` | `0.41.0` | `SIM` | `3075 / 2861 / 12.388 / 214 pulados / 0 falhas` |
+
+**Os quatro são idênticos, e idênticos à simulação feita antes da tag** — o teto de 214 que a seção
+anterior justificou por causa se confirmou nas duas rotas de entrega.
+
+**O que chegou a quem já instalou**, conferido no cenário 3 depois do `kit:update`: o
+`phpstan.neon` com `level: 8`, `App\Support\Paineis::correnteOuPadrao()` e os três arquivos de
+teste novos (`AssistenteChatWidgetTest`, `CoberturaDeTestesTest`, `MigracaoDoEscopoDoOnboardingTest`).
+
+**Dois tropeços do arnês de validação, nenhum do kit**, registrados porque vão acontecer de novo
+em Windows: o `git add` falhou com `Filename too long` num diretório de caminho longo (resolve
+`git config core.longpaths true` no repositório do cenário), e o `git commit` falhou sem identidade
+configurada fora do repositório do projeto (resolve `user.name`/`user.email` locais). Os dois
+impedem o `kit:tenancy` e o `kit:update`, que exigem repositório com commit — e o `artisan` sai com
+código diferente de zero, então o sinal apareceu. A versão conferida depois de cada cenário foi o
+que confirmou a retomada.
+
 ## [0.40.2] - 2026-09-26
 
 ### Seguranca

@@ -122,8 +122,10 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 
 > ### Sobre os pulados — e por que aqui há **teto**, não só registro
 >
-> **Teto corrente: 193**, medido na `v0.40.2` (os quatro cenários, idênticos). A decomposição por causa está na
-> seção `Validacao dos quatro cenarios — v0.40.0 e v0.40.1` do `CHANGELOG.md`, e ela foi feita com
+> **Teto corrente: 214**, medido na `v0.41.0` (os quatro cenários, idênticos, e idênticos à
+> simulação por `git archive` feita antes da tag). O `+21` sobre o 193 da `v0.40.2` está decomposto
+> por causa na seção `Validação antes da tag` da `v0.41.0` no `CHANGELOG.md`. A decomposição do 193
+> está na seção `Validacao dos quatro cenarios — v0.40.0 e v0.40.1`, e ela foi feita com
 > `--log-junit` **depois** de uma estimativa por `grep` ter errado por 2 — a chamada de
 > `naArvoreDoKit()` também aparece dentro de corpo de caso, e dataset de N linhas conta N pulados.
 > **Não estime: meça.**
