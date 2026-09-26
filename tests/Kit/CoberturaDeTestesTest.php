@@ -270,7 +270,8 @@ it('[CT-27] o mutation score publicado vem com duração, plataforma e sobrevive
     $this->assertMatchesRegularExpression('~\d+[,.]?\d*\s*s\b~', $texto, 'a seção não publica a duração da execução');
     $this->assertMatchesRegularExpression('~Windows|Linux|macOS~', $texto, 'a seção não publica a plataforma em que a execução rodou');
 
-    preg_match_all('~(\d+)\s+não testados~', $texto, $contagens);
+    // "não testados" é o rótulo do plugin (`UNTESTED`), "sobreviventes" é o que ele significa.
+    preg_match_all('~(\d+)\s+(?:sobreviventes|não testados)~', $texto, $contagens);
     $this->assertNotEmpty($contagens[1], 'a seção não publica a contagem de mutantes sobreviventes');
 
     foreach ($contagens[1] as $quantidade) {

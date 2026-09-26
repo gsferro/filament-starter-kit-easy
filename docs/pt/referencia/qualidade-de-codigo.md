@@ -274,22 +274,25 @@ auditável:
 | Alvo | Mutantes | Score | Duração | Plataforma |
 |---|---:|---:|---:|---|
 | `app/Support/CustomizadorDaInstalacao.php` | 225, sendo 4 sobreviventes | **98,22 %** | 42,96 s | Windows, PHP 8.4.25, PCOV |
-| `app/Console/Commands/KitCobertura.php` | 158, sendo 4 sobreviventes | **97,47 %** | 38,00 s | Windows, PHP 8.4.25, PCOV |
+| `app/Console/Commands/KitCobertura.php` | 158, sendo 0 sobreviventes | **100 %** | 31,25 s | Windows, PHP 8.4.25, PCOV |
 | `app/Policies/` (as 16) | **4** | 100 % | 0,19 s | Windows, PHP 8.4.25, PCOV |
 
 **Leia `UNTESTED` como sobrevivente.** No `pest-plugin-mutate`, `UNTESTED` é o mutante com o qual o
 processo de teste **passou** — o defeito que escaparia
 (`vendor/pestphp/pest-plugin-mutate/src/MutationTest.php:hasFinished:120`, que emite
 `mutationEscaped`). Mutante em linha que nenhum teste executa é outra categoria, `UNCOVERED`, e o
-`--covered-only` a tira da conta. Os sobreviventes das duas medições acima, nomeados:
+`--covered-only` a tira da conta. Os sobreviventes das medições acima, nomeados:
 
-- `app/Support/CustomizadorDaInstalacao.php:470` — quatro mutações na mesma linha
-- `app/Console/Commands/KitCobertura.php:57`, `:59` (o relatório ausente) e `:198` (o relatório
-  ilegível) — sem a dica ou sem o `return` antecipado, a execução segue e imprime **também** a
-  mensagem do caso seguinte; os testes afirmavam a primeira mensagem e não a ausência da segunda
+- `app/Support/CustomizadorDaInstalacao.php:470` — quatro mutações no **default** de
+  `config('kit.tenancy.label_plural', …)`, que nunca é lido: a chave sempre existe em
+  `config/kit.php`. São equivalentes na configuração do kit, e declarados assim — um teste que
+  removesse a chave teria de afirmar como esperado o plural errado que o próprio código chama de
+  defeito
 
-O `KitCobertura` saiu de **89,24 %** (17 sobreviventes, medido em 2026-09-25) para **97,47 %** em
-2026-09-26, quando a reconciliação da wiki `cobertura-de-testes` escreveu os cenários que faltavam.
+O `KitCobertura` saiu de **89,24 %** (17 sobreviventes, medido em 2026-09-25) para **100 %** em
+2026-09-26. Os quatro últimos sobreviventes (`:57`, `:59`, `:198`) eram saídas antecipadas: sem a
+dica ou sem o `return`, a execução seguia e imprimia **também** a mensagem do caso seguinte, e os
+testes afirmavam a primeira mensagem sem afirmar a ausência da segunda.
 
 > **Score alto e instantâneo é sintoma, não resultado.** No Windows, rodar por `vendor/bin/pest`
 > em vez do lançador devolve **100 % em segundos** para uma suíte de minutos — o plugin relança

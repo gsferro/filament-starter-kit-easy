@@ -276,22 +276,25 @@ score is not auditable:
 | Target | Mutants | Score | Duration | Platform |
 |---|---:|---:|---:|---|
 | `app/Support/CustomizadorDaInstalacao.php` | 225, 4 survivors | **98.22%** | 42.96 s | Windows, PHP 8.4.25, PCOV |
-| `app/Console/Commands/KitCobertura.php` | 158, 4 survivors | **97.47%** | 38.00 s | Windows, PHP 8.4.25, PCOV |
+| `app/Console/Commands/KitCobertura.php` | 158, 0 survivors | **100%** | 31.25 s | Windows, PHP 8.4.25, PCOV |
 | `app/Policies/` (all 16) | **4** | 100% | 0.19 s | Windows, PHP 8.4.25, PCOV |
 
 **Read `UNTESTED` as a survivor.** In `pest-plugin-mutate`, `UNTESTED` is the mutant the test process
 **passed** with — the defect that would slip through
 (`vendor/pestphp/pest-plugin-mutate/src/MutationTest.php:hasFinished:120`, which emits
 `mutationEscaped`). A mutant on a line no test runs is a different category, `UNCOVERED`, and
-`--covered-only` leaves it out. The survivors of both measurements above, named:
+`--covered-only` leaves it out. The survivors of the measurements above, named:
 
-- `app/Support/CustomizadorDaInstalacao.php:470` — four mutations on the same line
-- `app/Console/Commands/KitCobertura.php:57`, `:59` (missing report) and `:198` (unreadable
-  report) — without the hint or without the early `return`, execution goes on and **also** prints
-  the next case's message; the tests asserted the first message, not the absence of the second
+- `app/Support/CustomizadorDaInstalacao.php:470` — four mutations in the **default** of
+  `config('kit.tenancy.label_plural', …)`, which is never read: the key always exists in
+  `config/kit.php`. They are equivalent in the kit's configuration, and declared as such — a test
+  that removed the key would have to assert, as expected, the wrong plural the code itself calls a
+  defect
 
-`KitCobertura` went from **89.24%** (17 survivors, measured on 2026-09-25) to **97.47%** on
-2026-09-26, when the reconciliation of the `cobertura-de-testes` wiki wrote the missing scenarios.
+`KitCobertura` went from **89.24%** (17 survivors, measured on 2026-09-25) to **100%** on
+2026-09-26. The last four survivors (`:57`, `:59`, `:198`) were early exits: without the hint or
+without the `return`, execution went on and **also** printed the next case's message, and the tests
+asserted the first message without asserting the absence of the second.
 
 > **A high, instant score is a symptom, not a result.** On Windows, running through
 > `vendor/bin/pest` instead of the launcher returns **100% in seconds** for a suite that takes

@@ -93,9 +93,10 @@ E um que não era de nulidade: `DescobreCardsDoPainel` tinha um ternário com os
   (`tests/Kit/CoberturaDeTestesTest.php` para as guardas sobre docs, composer e CI), e os cinco que
   não rodam na suíte `Kit` -- dependem do driver de cobertura ou levam ~52 min -- **declarados**,
   não esquecidos
-- **O mutation score publicado foi remedido.** `KitCobertura` saiu de **89,24 % para 97,47 %**
-  (17 → 4 sobreviventes, 38 s, Windows, PHP 8.4.25, PCOV) com a reconciliação acima, e os
-  sobreviventes agora são publicados por `arquivo:linha`. A página passou a dizer que o `UNTESTED`
+- **O mutation score publicado foi remedido.** `KitCobertura` saiu de **89,24 % para 100 %**
+  (17 → 0 sobreviventes, 158 mutantes, 31 s, Windows, PHP 8.4.25, PCOV) com a reconciliação acima e
+  com os cenários que o quality gate pediu para as saídas antecipadas; os sobreviventes que restam
+  (`CustomizadorDaInstalacao.php:470`, equivalentes) são publicados por `arquivo:linha`. A página passou a dizer que o `UNTESTED`
   do `pest-plugin-mutate` **é** o sobrevivente — o mutante com o qual o teste passou
 - **79 testes novos**: os nulos alcançáveis (hub, tela de bloqueio, login social, os três pontos
   de entrada do aceite de convite, o widget do assistente para visitante e para autenticado que não

@@ -47,7 +47,7 @@
 ## 7. Docs e CHANGELOG
 - [x] nível corrente nas docs pt/en, `site-vitepress` pt/en, READMEs, CONTRIBUTING, `wikis/qualidade-de-codigo.md`, `wikis/README.md`, `rector.php`, roadmap §8.1 (e §9 novo) — frases históricas mantidas, 2026-09-26
 - [x] ADR-04 decidida — saída (b): `$baselineVigente` com mapa de renomeação auditável em `tests/Kit/SiteDeDocumentacaoTest.php`; o `$baseline` cru segue intacto para o CT-24. `--filter` CT-01/02/03/24 → 11 passaram, 2026-09-26
-- [ ] CHANGELOG
+- [x] CHANGELOG — `[Unreleased]` com Alterado, Corrigido e Testes (commit `87164c6`, conceito de mutação corrigido em `501b2cb`), 2026-09-26
 
 ## 8. Release
 - [ ] `config/kit.php` 0.41.0, PR, merge, tag
@@ -60,10 +60,10 @@
 - [ ] `vendor/bin/phpstan analyse` — level 8, 0 erros
 - [ ] `vendor/bin/filacheck --fix`
 - [ ] suíte Unit, Feature, Kit, Tenancy `--parallel` contra a baseline
-- [ ] `/code-review high main...HEAD` + passe de eixos (step 6.5)
-- [ ] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa — saída do `diff` colada
-- [ ] Citações `arquivo:símbolo:linha` reverificadas
-- [ ] Docs pt/en, CHANGELOG e README reconciliados
+- [x] `/code-review high main...HEAD` + passe de eixos (step 6.5) — 16 achados, 13 aceitos, 3 rejeitados com prova; re-revisão única do delta: 0 Blocker/Major, 3 Minor corrigidos (tabela `## Revisão de código do diff`), 2026-09-26
+- [x] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa — `diff` → `< CT-03` (comando de gate), `< CT-27`, `< CT-28` (materializados em `[CT-12]`/`[CT-13]` do `KitCoberturaTest`, namespace da cobertura), todos declarados no `04`, 2026-09-26
+- [x] Citações `arquivo:símbolo:linha` reverificadas — script do step 7 → 8/8 ok, depois de 4 corrigidas (`urlDoPainel` inexistente e três linhas de docblock), 2026-09-26
+- [x] Docs pt/en, CHANGELOG e README reconciliados — nível, badges (`PHPStan-level%208`, casos de teste 1.668), "três exceções", tabela de não adotados e conceito de mutação; `SiteDeDocumentacaoTest` 68/68, 2026-09-26
 - [ ] `git commit`
 
 ## Revisão de código do diff (step 6.5)
