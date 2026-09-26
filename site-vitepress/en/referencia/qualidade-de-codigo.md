@@ -1,19 +1,20 @@
 ---
 title: "Code quality"
-description: "Most Laravel projects stop at level 5 or 6. The kit runs at 7, with zero errors and no baseline: there is no @phpstan-ignore scattered around, no…"
+description: "Most Laravel projects stop at level 5 or 6. The kit runs at 8, with zero errors and no baseline: there is no @phpstan-ignore scattered around, no…"
 ---
 
 # Code quality
 
-## PHPStan at level 7 — and why that's a strong point
+## PHPStan at level 8 — and why that's a strong point
 
-Most Laravel projects stop at level 5 or 6. The kit runs at **7, with zero errors and no
+Most Laravel projects stop at level 5 or 6. The kit runs at **8, with zero errors and no
 baseline**: there is no `@phpstan-ignore` scattered around, no `phpstan-baseline.neon` hiding debt.
 
-What level 7 catches and 6 doesn't, in practice:
+What levels 7 and 8 catch and 6 doesn't, in practice:
 
-- **Unchecked null.** `Filament::getCurrentPanel()` returns `?Panel`; `auth()->user()` returns
-  `?User`. At level 6 you call a method on them and it passes. At 7, you have to prove it exists.
+- **Unchecked null** (what 8 adds). `Filament::getCurrentPanel()` returns `?Panel`;
+  `auth()->user()` returns `?User`; `Panel::getLoginUrl()` returns `?string`. Up to level 7 you call
+  a method on them and it passes. At 8, you have to prove it exists.
 - **A wide vendor type leaking into your code.** `session()` is `mixed`, `env()` is `bool|string`,
   Shield's getters are `?array`. 7 forces you to narrow it at the **boundary**, once, instead of
   hoping the value is what you expect at every use.
@@ -22,11 +23,15 @@ What level 7 catches and 6 doesn't, in practice:
   instead of an array, and the front end breaks.
 
 Going from 6 to 7 exposed **29 real errors** in the kit, and one of them was a genuine latent bug: a
-`Convite|null` with a method called straight on it. All fixed at the source — none silenced.
+`Convite|null` with a method called straight on it. Going from 7 to 8 exposed **48** more, all of them
+about nullability: 27 were an impossible null written with a type that was too wide, 7 were a panel
+URL that is `null` on a panel without `->login()` — they now get the destination the kit already
+uses, the panel root —, 13 were an invariant with no guard, and 1 was a wrong Laravel annotation, worked around by an
+invariant guard in the kit's middleware. All fixed at the source — none silenced.
 
 > ### ⚠️ Watch out when implementing this in your project
 >
-> **Level 7 applies to the code you write too.** `composer test` runs
+> **Level 8 applies to the code you write too.** `composer test` runs
 > `phpstan analyse` and fails the whole build.
 >
 > What shows up the most when someone starts writing in the kit:
@@ -39,15 +44,17 @@ Going from 6 to 7 exposed **29 real errors** in the kit, and one of them was a g
 > | `env('ALGUMA_COISA')` straight into a `str_*` | `(string) env(...)`, or `config()` with a typed default |
 > | a method with no return type | declare the type; the kit requires it everywhere |
 >
-> **Don't solve it with `@phpstan-ignore` or a baseline.** The kit has exactly **two** exceptions in
-> `phpstan.neon`: one for a vendor macro resolved at runtime (`simpleLightbox()`), the other for the
-> unsatisfiable annotation of filament-breezy's `customMyProfilePage()` — each with the reason, the
-> alternatives that were tried and dropped, and the test that covers the point for real. That's the
+> **Don't solve it with `@phpstan-ignore` or a baseline.** The kit has exactly **three** exceptions in
+> `phpstan.neon`: a vendor macro resolved at runtime (`simpleLightbox()`), an extension point with no
+> use inside the kit (`WidgetDinamico`), and the unsatisfiable annotation of filament-breezy's
+> `customMyProfilePage()` — each scoped to one file, with the reason, the alternatives that were tried
+> and dropped, and the test that covers the point for real. `tests/Kit/QualidadeDeCodigoTest.php` locks
+> the inventory: moving to level 8 added none. That's the
 > standard: if an exception is needed, it comes with the justification and with the test that
 > replaces it.
 >
 > If you want to loosen it in your project, it's one line in `phpstan.neon`. But know what you're
-> trading away: the 29 errors above were all real.
+> trading away: the 77 errors above were all real.
 
 ## FilaCheck: the lint that only knows Filament
 
@@ -66,7 +73,7 @@ The kit has **four** quality tools, on four axes — and only **three** are in t
 | Tool | Axis | On finding a problem | Runs |
 |---|---|---|---|
 | **Pint** | style | **fixes it** | always (gate) |
-| **PHPStan** + larastan | types | reports | always (gate), **level 7** |
+| **PHPStan** + larastan | types | reports | always (gate), **level 8** |
 | **FilaCheck** | Filament's API | reports | always (gate) |
 | **Rector** | code rewriting | **changes semantics** | **on demand** |
 

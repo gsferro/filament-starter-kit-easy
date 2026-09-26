@@ -1,10 +1,16 @@
 <?php
 
+use App\Filament\App\Pages\ConvitesRecebidos;
 use App\Models\Convite;
+use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Actions\Testing\TestAction;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
+use Livewire\Livewire;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -126,3 +132,60 @@ it('deriva a situacao do convite', function (array $atributos, string $esperado)
     'sem envio'        => [['expira_em' => null], 'Expirado'],
     'aceito e vencido' => [['expira_em' => '-1 day', 'aceito_em' => 'now'], 'Aceito'],
 ]);
+
+/**
+ * CT-19 (wiki `phpstan-nivel-8`) — aceitar pela AÇÃO da tela de convites recebidos uma oferta
+ * cujo papel sumiu falha fechado igual ao model (CT-13): sem conta nova, sem papel novo, convite
+ * intacto e sem notificação.
+ *
+ * ## Ambiguidade resolvida: permissão da ação × papel do Setup Global
+ *
+ * `Aceitar:Convite` só é concedida a `panel_user`/`admin_app` (`PapeisSeeder`, matriz do painel
+ * `app`) — `infra` não a tem. O Setup Global fixa `bruno` com o papel `infra` nos três CTs
+ * (13/19/21), porque o item (c) do oráculo ("bruno mantém exatamente o papel infra") depende
+ * disso. As duas exigências colidem: sem a permissão, `callAction()` reprova por AUTORIZAÇÃO
+ * antes de chegar ao model, e testaria a Action errada.
+ *
+ * Resolvido concedendo a PERMISSÃO da ação direto a bruno (`givePermissionTo`), sem tocar no
+ * papel dele — permissão e papel são coisas diferentes no spatie, e só o papel entra no oráculo.
+ *
+ * A tenancy fica DESLIGADA (default do Kit): `ConvitesRecebidos::canAccess()`
+ * (`regraLocalDeAcesso()`) exige `config('kit.tenancy.enabled')`, mas isso só é consultado pela
+ * ROTA real — `Livewire::test()` monta o componente por uma rota de teste própria
+ * (`InitialRender::makeInitialRequest()`) e nunca chama `canAccess()`. Só a Action, com
+ * `->authorize()`, é consultada dentro do harness.
+ */
+it('[CT-19] aceitar pela tela de convites recebidos uma oferta cujo papel não existe mais falha fechado', function (): void {
+    $bruno = usuarioDoKit('infra', 'bruno@example.com');
+    $bruno->givePermissionTo('Aceitar:Convite');
+
+    $convite = ofertaPara('bruno@example.com', papel: 'admin');
+
+    DB::statement('PRAGMA defer_foreign_keys = ON');
+    Role::findByName('admin')->delete();
+    $convite->refresh();
+
+    $this->actingAs($bruno);
+
+    Notification::fake();
+    $antesUsuarios = User::count();
+
+    $lancado = null;
+
+    try {
+        Livewire::test(ConvitesRecebidos::class)
+            ->loadTable()
+            ->callAction(TestAction::make('aceitar')->table($convite));
+    } catch (Throwable $e) {
+        $lancado = $e;
+    }
+
+    expect($lancado)->not->toBeNull('esperava a exceção de invariante do papel ausente, e a ação terminou sem estourar')
+        ->and($lancado)->not->toBeInstanceOf(Error::class)
+        ->and(User::count())->toBe($antesUsuarios)
+        ->and($bruno->fresh()?->getRoleNames()->all())->toBe(['infra'])
+        ->and($convite->fresh()?->aceito_em)->toBeNull()
+        ->and(Convite::pendentesPara($bruno->fresh())->whereKey($convite->id)->exists())->toBeTrue();
+
+    Notification::assertNothingSent();
+});

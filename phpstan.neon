@@ -7,7 +7,7 @@ includes:
     - vendor/pestphp/pest-plugin-phpstan/extension.neon
 
 parameters:
-    level: 7
+    level: 8
 
     ignoreErrors:
         # `simpleLightbox()` é MACRO: o solution-forest/filament-simplelightbox o registra em

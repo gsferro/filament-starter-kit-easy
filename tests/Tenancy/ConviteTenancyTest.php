@@ -8,6 +8,8 @@ use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
@@ -136,4 +138,54 @@ it('mantem a url de aceite fora do segmento de organizacao', function (): void {
 
     // Sem autenticação e sem organização na URL, com a tenancy ligada.
     $this->get("/app/register?token={$token}")->assertOk();
+});
+
+/**
+ * CT-21 (wiki `phpstan-nivel-8`), verbo `aceitar` — com tenancy, o mesmo papel ausente de CT-13
+ * falha fechado, e bruno (papel `infra`, contexto global) não ganha vínculo nem papel novo em
+ * NENHUM contexto — nem sequer na própria organização de onde o convite morto veio.
+ *
+ * `bruno` é "membro da acme" per o Dado do 04, apesar do papel dele ser global — a bagunça é
+ * proposital: o oráculo prova que a fusão de contexto não vaza NEM quando a pessoa já pertence à
+ * organização por outro motivo.
+ */
+it('[CT-21] com tenancy, aceitar convite cujo papel não existe mais falha fechado (conta nova)', function (): void {
+    $acme = Tenant::factory()->create(['slug' => 'acme']);
+
+    $bruno = usuarioComPapel('infra', null, 'bruno@example.com');
+    $bruno->tenants()->attach($acme);
+
+    [$convite] = conviteTenancyCom('admin', $acme, 'carla@example.com');
+
+    DB::statement('PRAGMA defer_foreign_keys = ON');
+    Role::findByName('admin')->delete();
+    $convite->refresh();
+
+    Notification::fake();
+    $antesUsuarios = User::count();
+
+    $lancado = null;
+
+    try {
+        $convite->aceitar(['name' => 'Carla', 'password' => 'segredo-bem-longo-123']);
+    } catch (Throwable $e) {
+        $lancado = $e;
+    }
+
+    expect($lancado)->not->toBeNull('esperava a exceção de invariante do papel ausente, e o aceite terminou sem estourar')
+        ->and($lancado)->not->toBeInstanceOf(Error::class)
+        ->and(User::count())->toBe($antesUsuarios)
+        ->and($convite->fresh()?->aceito_em)->toBeNull();
+
+    Notification::assertNothingSent();
+
+    expect(DB::table(pivotDePapeis())->where('model_id', $bruno->id)->count())->toBe(1);
+
+    $this->assertDatabaseHas(pivotDePapeis(), [
+        'model_id' => $bruno->id,
+        'role_id'  => Role::findByName('infra')->getKey(),
+        'team_id'  => Tenant::CONTEXTO_GLOBAL,
+    ]);
+
+    $this->assertDatabaseMissing(pivotDePapeis(), ['model_id' => $bruno->id, 'team_id' => $acme->id]);
 });

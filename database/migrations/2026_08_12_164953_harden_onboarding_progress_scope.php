@@ -86,8 +86,14 @@ return new class extends Migration
                 ->orderBy('id')
                 ->get();
 
+            // O grupo vem de `having count(*) > 1`: nunca é vazio. A guarda só diz isso ao analisador.
             $survivor = $rows->first();
-            $merged   = [];
+
+            if ($survivor === null) {
+                continue;
+            }
+
+            $merged = [];
 
             foreach ($timestamps as $column) {
                 $furthest = $rows->pluck($column)->filter()->max();

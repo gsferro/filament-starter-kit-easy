@@ -31,7 +31,7 @@ Antes de abrir PR:
 
 ```bash
 vendor/bin/pint --dirty     # formatação
-vendor/bin/phpstan analyse  # level 7, zero erros
+vendor/bin/phpstan analyse  # level 8, zero erros
 vendor/bin/filacheck        # nada de Filament depreciado
 ```
 

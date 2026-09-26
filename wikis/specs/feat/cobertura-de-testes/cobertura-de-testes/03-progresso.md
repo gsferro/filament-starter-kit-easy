@@ -136,12 +136,19 @@
 - [x] **RQ-14b — mutation score é real**: `CustomizadorDaInstalacao` devolveu
   **225 mutantes, 4 não testados, score 98,22 %, 43,95 s**. Score **abaixo** de 100 % com duração
   plausível é a prova; pelo caminho falso tudo morre e tudo dá 100 %
-- [ ] Adotar os presets `php` e `security` em `tests/Kit/`
-- [ ] Registrar no `wikis/roadmap.md` os itens medidos que não entram
+- [x] Adotar os presets `php` e `security` em `tests/Kit/` — `tests/Kit/ArquiteturaDoCodigoTest.php`
+  (`arch()->preset()->php()` e `->security()->ignoring(KitInstall::class)`, `grep -n "arch()->preset()"`),
+  fechado com evidência em 2026-09-26 pela wiki `phpstan-nivel-8` — a caixa tinha ficado aberta
+- [x] Registrar no `wikis/roadmap.md` os itens medidos que não entram — `## 8. Os níveis de qualidade
+  que já foram medidos e ficaram para depois`, itens 8.1–8.6, fechado com evidência em 2026-09-26
+  pela wiki `phpstan-nivel-8`
 
 ## Testes
 
-- [ ] `tests/Kit/CoberturaDeTestesTest.php` — CTs conforme o `04`
+- [x] `tests/Kit/CoberturaDeTestesTest.php` — CTs conforme o `04` — **não estava feito**: o `diff` de IDs
+  mostrava 22 CTs do `04` sem teste. Reconciliado em 2026-09-26 pela wiki `phpstan-nivel-8` (passo 6b):
+  27 CTs com teste, 5 não automatizáveis declarados no `04`; `php artisan test tests/Kit/KitCoberturaTest.php
+  tests/Kit/CoberturaDeTestesTest.php tests/Kit/RecorteDaCoberturaTest.php --compact` verde
 
 ## Verificação Final
 

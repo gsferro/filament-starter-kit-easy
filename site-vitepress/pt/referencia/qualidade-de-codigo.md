@@ -1,19 +1,20 @@
 ---
 title: "Qualidade de código"
-description: "A maioria dos projetos Laravel para no level 5 ou 6. O kit roda no 7, com zero erros e sem baseline: não há @phpstan-ignore espalhado, não há…"
+description: "A maioria dos projetos Laravel para no level 5 ou 6. O kit roda no 8, com zero erros e sem baseline: não há @phpstan-ignore espalhado, não há…"
 ---
 
 # Qualidade de código
 
-## PHPStan no level 7 — e por que isso é um ponto forte
+## PHPStan no level 8 — e por que isso é um ponto forte
 
-A maioria dos projetos Laravel para no level 5 ou 6. O kit roda no **7, com zero erros e sem
+A maioria dos projetos Laravel para no level 5 ou 6. O kit roda no **8, com zero erros e sem
 baseline**: não há `@phpstan-ignore` espalhado, não há `phpstan-baseline.neon` escondendo dívida.
 
-O que o level 7 pega e o 6 não pega, na prática:
+O que o 7 e o 8 pegam e o 6 não pega, na prática:
 
-- **Nulo não checado.** `Filament::getCurrentPanel()` devolve `?Panel`; `auth()->user()` devolve
-  `?User`. No level 6 você chama método neles e passa. No 7, precisa provar que existe.
+- **Nulo não checado** (o que o 8 acrescenta). `Filament::getCurrentPanel()` devolve `?Panel`;
+  `auth()->user()` devolve `?User`; `Panel::getLoginUrl()` devolve `?string`. Até o level 7 você
+  chama método neles e passa. No 8, precisa provar que existe.
 - **Tipo largo do vendor entrando no seu código.** `session()` é `mixed`, `env()` é `bool|string`,
   os getters do Shield são `?array`. O 7 obriga a estreitar na **fronteira**, uma vez, em vez de
   torcer para o valor ser o esperado em cada uso.
@@ -22,11 +23,15 @@ O que o level 7 pega e o 6 não pega, na prática:
   array, e o front quebra.
 
 Subir de 6 para 7 expôs **29 erros reais** no kit, e um deles era bug latente de verdade: um
-`Convite|null` com método chamado direto. Todos corrigidos na origem — nenhum silenciado.
+`Convite|null` com método chamado direto. Subir de 7 para 8 expôs mais **48**, todos de nulidade:
+27 eram nulo impossível escrito com um tipo largo demais, 7 eram URL de painel que é `null` em
+painel sem `->login()` — e ganharam o destino que o kit já usa, a raiz do painel —, 13 eram
+invariante sem guarda, e 1 era anotação errada do Laravel, contornada por guarda de invariante no
+middleware do kit. Todos corrigidos na origem — nenhum silenciado.
 
 > ### ⚠️ Ponto de atenção ao implementar no seu projeto
 >
-> **O level 7 vale para o código que você escrever também.** `composer test` roda
+> **O level 8 vale para o código que você escrever também.** `composer test` roda
 > `phpstan analyse` e reprova o build inteiro.
 >
 > O que mais aparece quando alguém começa a escrever no kit:
@@ -39,14 +44,16 @@ Subir de 6 para 7 expôs **29 erros reais** no kit, e um deles era bug latente d
 > | `env('ALGUMA_COISA')` direto num `str_*` | `(string) env(...)`, ou `config()` com default tipado |
 > | método sem tipo de retorno | declare o tipo; o kit exige em tudo |
 >
-> **Não resolva com `@phpstan-ignore` nem baseline.** O kit tem exatamente **duas** exceções em
-> `phpstan.neon`: uma para um macro de vendor resolvido em runtime (`simpleLightbox()`), outra para
-> a anotação insatisfazível de `customMyProfilePage()` do filament-breezy — cada uma com o motivo, as
-> alternativas testadas e descartadas, e o teste que cobre o ponto de verdade. Esse é o padrão:
+> **Não resolva com `@phpstan-ignore` nem baseline.** O kit tem exatamente **três** exceções em
+> `phpstan.neon`: um macro de vendor resolvido em runtime (`simpleLightbox()`), um ponto de extensão
+> sem uso dentro do kit (`WidgetDinamico`) e a anotação insatisfazível de `customMyProfilePage()` do
+> filament-breezy — cada uma com escopo de arquivo, o motivo, as alternativas testadas e descartadas,
+> e o teste que cobre o ponto de verdade. `tests/Kit/QualidadeDeCodigoTest.php` trava o inventário:
+> a subida para o level 8 não acrescentou nenhuma. Esse é o padrão:
 > se precisar de exceção, ela vem com a justificativa e com o teste que a substitui.
 >
 > Se quiser afrouxar no seu projeto, é uma linha em `phpstan.neon`. Mas saiba o que está trocando:
-> os 29 erros acima eram todos reais.
+> os 77 erros acima eram todos reais.
 
 ## FilaCheck: o lint que só entende de Filament
 
@@ -65,7 +72,7 @@ O kit tem **quatro** ferramentas de qualidade, em quatro eixos — e só **três
 | Ferramenta | Eixo | Ao achar problema | Roda |
 |---|---|---|---|
 | **Pint** | estilo | **corrige** | sempre (gate) |
-| **PHPStan** + larastan | tipos | reporta | sempre (gate), **level 7** |
+| **PHPStan** + larastan | tipos | reporta | sempre (gate), **level 8** |
 | **FilaCheck** | API do Filament | reporta | sempre (gate) |
 | **Rector** | reescrita de código | **muda semântica** | **sob demanda** |
 

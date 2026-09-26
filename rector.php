@@ -22,7 +22,7 @@ use RectorLaravel\Rector\StaticCall\CarbonToDateFacadeRector;
 | Não entra em `composer test`. O kit tem três gates que rodam sempre:
 |
 |   pint       → estilo      (corrige)
-|   phpstan    → tipos       (reporta, level 7)
+|   phpstan    → tipos       (reporta, level 8)
 |   filacheck  → API Filament (reporta)
 |
 | O Rector é o único dos quatro que REESCREVE semântica, e foi medido antes de
@@ -80,7 +80,7 @@ return RectorConfig::configure()
         | Regras que CONFLITAM com o PHPStan — o PHPStan vence
         |----------------------------------------------------------------------
         | Regra do projeto: quando as duas ferramentas discordam, quem manda é o
-        | PHPStan (level 7, zero erros, sem baseline). O Rector é desligado aqui,
+        | PHPStan (level 8, zero erros, sem baseline). O Rector é desligado aqui,
         | com o motivo, em vez de a correção do PHPStan ser desfeita a cada
         | `refactor:apply`.
         |

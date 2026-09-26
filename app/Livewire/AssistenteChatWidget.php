@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Ai\Agents\Assistente;
 use App\Ai\Exceptions\PromptInjecaoBloqueadaException;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -88,14 +89,15 @@ class AssistenteChatWidget extends Component
      */
     public function responder(): void
     {
-        // Revalidação defensiva: `mensagemPendente` não é #[Locked] e a action é pública.
-        if ($this->mensagemPendente === null || mb_strlen($this->mensagemPendente) > 2000) {
+        // Revalidação defensiva: `mensagemPendente` não é #[Locked] e a action é pública. Lida
+        // UMA vez: é a mesma leitura que a guarda valida e o stream consome.
+        $pendente = $this->mensagemPendente;
+
+        if ($pendente === null || mb_strlen($pendente) > 2000) {
             return;
         }
 
-        $this->assertContexto($this->conversaId);
-
-        $user    = auth()->user();
+        $user    = $this->assertContexto($this->conversaId);
         $eraNova = $this->conversaId === null;
 
         try {
@@ -108,7 +110,7 @@ class AssistenteChatWidget extends Component
             // (AgentStreamed) grava a execução em `ai_runs`. A facade AI::stream do
             // fomvasss/laravel-ai-tasks NÃO é usada de propósito — ela monta um
             // AnonymousAgent e perderia guardrails, tools e conversas do SDK.
-            $resposta = $agente->stream($this->mensagemPendente);
+            $resposta = $agente->stream($pendente);
 
             $chunks = 0;
             $inicio = hrtime(true);
@@ -146,7 +148,7 @@ class AssistenteChatWidget extends Component
             // persistidas permanecem (o re-render lê do banco) e o texto volta ao input para
             // reenvio. Cobre agente inativo, provider fora do ar, budget estourado e afins.
             $this->indisponivel     = true;
-            $this->mensagem         = $this->mensagemPendente;
+            $this->mensagem         = $pendente;
             $this->mensagemPendente = null;
 
             Log::channel('ai')->error(
@@ -210,16 +212,19 @@ class AssistenteChatWidget extends Component
      * Ponto ÚNICO de autorização das actions: usuário autenticado e, quando `$conversaId` é
      * informado, conversa pertencente ao participante atual (senão 404 + log de warning).
      * Toda action pública passa por aqui — id de conversa vem do browser.
+     *
+     * Devolve o usuário que autorizou: quem chama não relê `auth()->user()`, que o tipo diz
+     * poder ser nulo — a autorização e o uso ficam sobre o MESMO objeto.
      */
-    private function assertContexto(?string $conversaId = null): void
+    private function assertContexto(?string $conversaId = null): User
     {
-        abort_unless(auth()->check(), 403);
+        $user = auth()->user();
+
+        abort_unless($user instanceof User, 403);
 
         if ($conversaId === null) {
-            return;
+            return $user;
         }
-
-        $user = auth()->user();
 
         $pertence = Conversation::query()
             ->whereKey($conversaId)
@@ -235,6 +240,8 @@ class AssistenteChatWidget extends Component
 
             abort(404);
         }
+
+        return $user;
     }
 
     /**
@@ -244,13 +251,15 @@ class AssistenteChatWidget extends Component
      */
     private function historico(): Collection
     {
-        if (! auth()->check()) {
+        $user = auth()->user();
+
+        if (! $user instanceof User) {
             return collect();
         }
 
         return Conversation::query()
-            ->where('participant_type', auth()->user()->getMorphClass())
-            ->where('participant_id', auth()->id())
+            ->where('participant_type', $user->getMorphClass())
+            ->where('participant_id', $user->getKey())
             ->orderByDesc('updated_at')
             ->get(['id', 'title', 'updated_at']);
     }

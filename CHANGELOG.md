@@ -31,6 +31,78 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   esta varredura e a aproximacao barata, nao a rigorosa.
 
 
+### Alterado
+
+- **O PHPStan passou do level 7 para o 8**, com zero erros, sem baseline, sem `@phpstan-ignore` novo e
+  sem nenhuma exceção nova no `phpstan.neon` -- o arquivo difere da versão anterior só na linha do
+  `level`. O 8 acrescenta ao 7 uma família só: **nulidade**, isto é, chamar método, ler propriedade
+  ou passar argumento sobre um valor que o tipo declara poder ser `null`.
+
+  **Atenção para quem estende o kit**: código do seu projeto que passava no 7 pode reprovar no 8, e
+  `composer test` roda o PHPStan como gate. O que mais aparece é `auth()->user()->id`,
+  `Filament::getCurrentPanel()->…` e `$painel->getLoginUrl()` passado adiante sem tratar o `null`.
+  Afrouxar é uma linha no `phpstan.neon`, e a documentação diz o que se troca ao fazer isso.
+
+  Os 48 erros foram classificados antes de corrigidos, e a classe decidiu a correção: **27** eram
+  nulo impossível escrito com um tipo largo demais (a mesma expressão, agora com o tipo real);
+  **7** eram URL de painel que é `null` em painel sem `->login()`; **13** eram invariante sem
+  guarda; **1** era anotação errada do Laravel (`EnsureEmailIsVerified::handle()` declara `null` no
+  `@return` e nunca o devolve), contornada por guarda de invariante no middleware do kit depois de o
+  stub reprovar na validação do próprio PHPStan.
+
+  `tests/Kit/QualidadeDeCodigoTest.php` trava o nível, os parâmetros de rigor resolvidos
+  (`checkNullables`, `reportMaybes`, `checkUnionTypes`), a ausência de baseline, o escopo analisado
+  e o inventário fechado das três exceções -- e nenhuma linha que invoca o gate pode rebaixá-lo.
+
+- **`App\Support\Paineis::correnteOuPadrao(): Panel`** -- o corpo de
+  `Filament::getCurrentOrDefaultPanel()`, que o Filament anota `?Panel` embora nunca devolva nulo.
+
+### Corrigido
+
+Cinco comportamentos que o level 8 revelou e que nenhum teste pegava -- todos alcançáveis por um
+projeto que registre um painel sem `->login()`, que é configuração legítima do Filament:
+
+- **A tela de bloqueio estourava `TypeError`** para o visitante de um painel sem login. Agora o
+  manda à raiz do painel, cujo middleware de autenticação decide
+- **A volta recusada do login social respondia 500** quando o painel de origem não tinha login.
+  Agora cai no login do painel padrão, como a de um painel inexistente
+- **"Definir senha por e-mail" congelava a tela com a sessão já encerrada** num painel sem login:
+  o `redirect()` recebia `null` e não navegava. Agora vai à raiz do painel
+- **O hub de cards estourava `Error: … on null`** fora de um request de painel. Agora falha com
+  `LogicException` dizendo o que falta -- e nunca cai no painel padrão, que listaria os cartões do
+  painel errado
+- **Aceitar um convite cujo papel não existe mais criava a conta sem papel, em silêncio**, e
+  consumia o convite: o spatie ignora `assignRole(null)`. A FK `convites.role_id` sem cascade
+  impede o estado pelo caminho normal; agora, se ele acontecer, o aceite falha **antes** de criar a
+  conta ou consumir o convite, nos três pontos de entrada (cadastro, oferta ao usuário existente e
+  cadastro social por convite), com e sem tenancy
+
+E um que não era de nulidade: `DescobreCardsDoPainel` tinha um ternário com os dois ramos idênticos.
+
+- **A documentação afirmava duas coisas falsas sobre o PHPStan.** Dizia que o level 7 cobra "nulo
+  não checado" -- é justamente o que o 8 acrescenta -- e contava **duas** exceções no
+  `phpstan.neon` (a wiki dizia **uma**) quando já eram três. As duas corrigidas, em pt e en, no
+  site e na wiki
+
+### Testes
+
+- **A reconciliação que a wiki `cobertura-de-testes` mandou fazer, e que não tinha sido feita.** O
+  `diff` de IDs entre o `04` daquela wiki e os testes voltava com **22 cenários sem teste** e 3 IDs
+  de teste fora da especificação -- e a verificação final dela dizia *"IDs sincronizados"*.
+  `KitCoberturaTest` renumerado para os IDs da especificação, os cenários que faltavam escritos
+  (`tests/Kit/CoberturaDeTestesTest.php` para as guardas sobre docs, composer e CI), e os cinco que
+  não rodam na suíte `Kit` -- dependem do driver de cobertura ou levam ~52 min -- **declarados**,
+  não esquecidos
+- **O mutation score publicado foi remedido.** `KitCobertura` saiu de **89,24 % para 100 %**
+  (17 → 0 sobreviventes, 158 mutantes, 31 s, Windows, PHP 8.4.25, PCOV) com a reconciliação acima e
+  com os cenários que o quality gate pediu para as saídas antecipadas; os sobreviventes que restam
+  (`CustomizadorDaInstalacao.php:470`, equivalentes) são publicados por `arquivo:linha`. A página passou a dizer que o `UNTESTED`
+  do `pest-plugin-mutate` **é** o sobrevivente — o mutante com o qual o teste passou
+- **79 testes novos**: os nulos alcançáveis (hub, tela de bloqueio, login social, os três pontos
+  de entrada do aceite de convite, o widget do assistente para visitante e para autenticado que não
+  é dono, "Definir senha por e-mail" em painel sem login), a caracterização da migration de escopo
+  do onboarding, e a guarda do gate. Suíte: **2.993 → 3.072** casos
+
 ## [0.40.2] - 2026-09-26
 
 ### Seguranca

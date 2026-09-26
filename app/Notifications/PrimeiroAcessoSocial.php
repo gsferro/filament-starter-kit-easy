@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Support\Paineis;
 use App\Support\ProvedorSocial;
 use Filament\Facades\Filament;
 use Illuminate\Bus\Queueable;
@@ -46,7 +47,7 @@ class PrimeiroAcessoSocial extends Notification implements ShouldQueue
             ->line('Quando: '.now()->format('d/m/Y H:i').' · IP: '.$this->ip)
             ->line('Se foi você, não há nada a fazer: nas próximas vezes essa conta do '.$rotulo.' entra direto.')
             ->line('Se NÃO foi você, troque a sua senha agora (ou defina uma, pelo bloco "Definir senha por e-mail" do seu perfil) e avise quem administra o sistema.')
-            ->action('Abrir o painel', Filament::getPanel('app')->getUrl())
+            ->action('Abrir o painel', Paineis::url(Filament::getPanel('app')))
             ->salutation('Atenciosamente, '.$app);
     }
 }

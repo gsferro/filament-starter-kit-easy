@@ -10,6 +10,7 @@ use Filament\Actions\Imports\Exceptions\RowImportFailedException;
 use Filament\Actions\Imports\Importer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
+use LogicException;
 
 /**
  * Import do Filament COM fronteira de organização — a peça que o pacote não entrega.
@@ -109,11 +110,13 @@ abstract class ImportadorDoKit extends Importer
             return;
         }
 
-        if ($this->record->exists) {
+        $registro = $this->registro();
+
+        if ($registro->exists) {
             return;
         }
 
-        $this->record->setAttribute('tenant_id', $this->tenantId());
+        $registro->setAttribute('tenant_id', $this->tenantId());
     }
 
     /**
@@ -129,11 +132,12 @@ abstract class ImportadorDoKit extends Importer
     private function exigirPermissaoDoOperador(): void
     {
         $operador = $this->import->user;
-        $acao     = $this->record->exists ? 'update' : 'create';
+        $registro = $this->registro();
+        $acao     = $registro->exists ? 'update' : 'create';
         $contexto = $this->exigeEscopoDeTenant() ? (int) $this->tenantId() : Tenant::CONTEXTO_GLOBAL;
 
         $autorizado = $operador instanceof User
-            && ContextoDePapeis::em($contexto, $operador, fn (): bool => $operador->can($acao, $this->record));
+            && ContextoDePapeis::em($contexto, $operador, fn (): bool => $operador->can($acao, $registro));
 
         if ($autorizado) {
             return;
@@ -148,6 +152,20 @@ abstract class ImportadorDoKit extends Importer
         throw new RowImportFailedException(
             $acao === 'update' ? 'Sem permissão para alterar este registro.' : 'Sem permissão para criar este registro.'
         );
+    }
+
+    /**
+     * O registro da linha. `Importer::$record` é `?Model`, mas o Filament só chama os ganchos de
+     * gravação depois de `resolveRecord()`, e o deste importador nunca devolve nulo
+     * (`?? new $model`). A guarda nomeia o invariante em vez de deixar um `Error` "on null".
+     */
+    private function registro(): Model
+    {
+        if (! $this->record instanceof Model) {
+            throw new LogicException('[ImportadorDoKit] gancho de gravação chamado antes de resolveRecord().');
+        }
+
+        return $this->record;
     }
 
     /**

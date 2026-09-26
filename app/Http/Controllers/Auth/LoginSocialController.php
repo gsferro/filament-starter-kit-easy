@@ -746,10 +746,19 @@ final class LoginSocialController extends Controller
         return $this->painelDeDestino()->getUrl() ?? url('/');
     }
 
-    /** O login do painel de onde a pessoa tentou entrar — não o do `app` fixo. */
+    /**
+     * O login do painel de onde a pessoa tentou entrar — não o do `app` fixo.
+     *
+     * Painel sem `->login()` é painel sem porta: a volta cai no login do painel padrão, como a
+     * de um painel inexistente na query (premissa P-03 de `phpstan-nivel-8`).
+     */
     private function urlDeLoginDoPainel(): string
     {
-        return $this->painelDeDestino()->getLoginUrl();
+        $padrao = Filament::getDefaultPanel();
+
+        return $this->painelDeDestino()->getLoginUrl()
+            ?? $padrao->getLoginUrl()
+            ?? url($padrao->getPath());
     }
 
     /**

@@ -6,7 +6,7 @@ elas é o que decide qual roda sempre e qual roda quando você chama.
 | Ferramenta | Eixo | O que faz ao achar | Roda |
 |---|---|---|---|
 | **Pint** | estilo | **corrige** | sempre (gate) |
-| **PHPStan** + larastan | tipos e correção | reporta | sempre (gate), **level 7** |
+| **PHPStan** + larastan | tipos e correção | reporta | sempre (gate), **level 8** |
 | **FilaCheck** | API do Filament | reporta | sempre (gate) |
 | **Rector** | reescrita de código | **muda semântica** | **sob demanda** |
 
@@ -29,25 +29,32 @@ formatação em code review.
 
 Rode `vendor/bin/pint --dirty` antes de commitar. O `composer test` roda `--test`, que só confere.
 
-## PHPStan — tipos, no level 7
+## PHPStan — tipos, no level 8
 
 `phpstan.neon`, com `larastan` e o `pest-plugin-phpstan`. Analisa `app`, `bootstrap/app.php`,
 `config`, `database` e `routes` — **`tests` fica fora, e a ausência é medida**: ver
 "Analisar `tests`" abaixo.
 
-**Level 7, com zero erros e sem baseline.** A maioria dos projetos Laravel para no 5 ou 6. O que o 7
-cobra a mais:
+**Level 8, com zero erros e sem baseline.** A maioria dos projetos Laravel para no 5 ou 6. O que o 7
+e o 8 cobram a mais:
 
-- **nulo não checado** — `Filament::getCurrentPanel()` é `?Panel`, `auth()->user()` é `?User`
+- **nulo não checado** (o 8) — `Filament::getCurrentPanel()` é `?Panel`, `auth()->user()` é `?User`,
+  `Panel::getLoginUrl()` é `?string`
 - **tipo largo do vendor** entrando no seu código — `session()` é `mixed`, `env()` é `bool|string`
 - **`list<T>` vs `array<int,T>`** — `filter()` e `map()` preservam chave, e um array com buraco
   entregue onde se esperava lista vira objeto no `json_encode`
 
 Subir de 6 para 7 expôs **29 erros reais**, um deles um `Convite|null` com método chamado direto.
+Subir de 7 para 8 expôs mais **48**, todos de nulidade — a classificação e o que cada classe
+virou estão em `wikis/specs/feat/phpstan-nivel-8/phpstan-nivel-8/01-plano-acao.md`.
 
-Existe **uma** exceção em `ignoreErrors`, para o macro `simpleLightbox()` — que é resolvido em
-runtime e nenhuma análise estática alcança. Ela vem com o motivo, as duas alternativas testadas e
-descartadas, e o teste que cobre o ponto de verdade. **Esse é o padrão**: exceção com justificativa e
+Existem **três** exceções em `ignoreErrors`, cada uma com escopo de arquivo: o macro
+`simpleLightbox()` (resolvido em runtime, nenhuma análise estática alcança), a trait
+`WidgetDinamico` (ponto de extensão sem uso dentro do kit) e a anotação insatisfazível do
+`customMyProfilePage()` do Breezy. A subida para o level 8 não acrescentou nenhuma: o `null` que o
+`@return` do `EnsureEmailIsVerified` do Laravel declara e nunca devolve foi contornado por guarda de
+invariante no middleware do kit. Cada uma vem com o motivo, as alternativas testadas e descartadas,
+e o teste que cobre o ponto de verdade; `tests/Kit/QualidadeDeCodigoTest.php` trava o inventário. **Esse é o padrão**: exceção com justificativa e
 com o teste que a substitui, nunca `@phpstan-ignore` solto.
 
 ## FilaCheck — a API do Filament
@@ -142,7 +149,7 @@ Por que o PHPStan é o árbitro, em ordem de peso:
    regra de qualidade do Rector é preferência de escrita.
 2. **O PHPStan está no gate; o Rector não.** Deixar o Rector vencer criaria um estado em que
    `composer test` reprova logo depois de um `refactor:apply` bem-sucedido.
-3. **O nível está pago** — level 7, zero erros, sem baseline. Ceder isso para um rewriter de estilo
+3. **O nível está pago** — level 8, zero erros, sem baseline. Ceder isso para um rewriter de estilo
    é trocar garantia por preferência.
 
 **Ao acrescentar um skip**: escreva o motivo com arquivo e linha, como o do Carbon. Skip sem
