@@ -22,7 +22,41 @@
   - `[CT-01]` toda action de terceiro pinada por SHA
   - `[CT-02]` todo SHA com o rótulo da versão ao lado, senão o diff de bump é ilegível
   - verificados com dois mutantes: voltar uma para `@v4` reprova; tirar o rótulo reprova
-- [ ] Rescan do Plumb depois do merge — o score novo só sai quando ele reler o repositório
+- [x] **Rescan do Plumb: 79 → 97, "Good"**, confirmado pela ferramenta em 2026-09-26
+
+| Categoria | Peso | Antes | Depois |
+|---|---:|---:|---:|
+| **Security** | 55 % | — | **100** |
+| **Ecosystem** | 15 % | — | **100** |
+| **Maintenance** | 30 % | — | **89** |
+
+`0,55 × 100 + 0,30 × 89 + 0,15 × 100 = 96,7 ≈ 97`. O `actions-sha-pinned` agora lê
+**23 de 23 pinadas · Not pinned: none**.
+
+### Os 3 pontos que faltam custam uma regressão, e por isso ficam
+
+Os 89 de Maintenance vêm de **um** check: `maintenance/lean-dist`, que acusa arquivo de
+desenvolvimento dentro do pacote distribuído. O único que ele aponta é o **`phpstan.neon`**.
+
+E ele viaja **de propósito**, com a decisão escrita desde antes deste trabalho, em
+`.gitattributes:49-50`:
+
+> `phpstan.neon`, `phpunit.xml` e `pint.json` **NÃO** entram aqui: os scripts `lint`,
+> `types:check` e `test` do `composer.json` seguem no dist e sem esses arquivos nenhum deles roda
+> no projeto instalado.
+
+Marcá-lo como `export-ignore` para ganhar 3 pontos **quebraria `composer types:check` em todo
+projeto que nasce do kit** — que é exatamente a classe de defeito do RD-01 desta mesma esteira: um
+script que viaja apontando para um arquivo que não viaja.
+
+**Decisão: os 3 pontos ficam.** É o ponto em que a métrica e o produto discordam, e quem manda é o
+produto. Um kit que entrega a ferramenta de qualidade e não entrega a configuração dela não é um
+kit mais limpo — é um kit quebrado com badge melhor.
+
+> **Nota sobre o próprio check**: ele lista *"Test files (1): phpstan.neon"*, embora `tests/`
+> (205 arquivos) e `phpunit.xml` também viajem. A heurística dele é parcial. Isso **reforça** a
+> decisão em vez de enfraquecê-la: a suíte do kit viajando é o que dá ao consumidor uma rede de
+> regressão depois de cada `kit:update`, e é a razão de existir do `composer test:kit`.
 
 ### O que **não** é acionável, e fica declarado
 
