@@ -121,3 +121,11 @@ Use `painelRegistradoEmTeste($id)` de `tests/Pest.php`. Ele existe para o cenár
 Recortar a primeira seção `## [` do `CHANGELOG.md` para afirmar que ela cita a feature X só passa enquanto X for a release mais recente: a primeira seção `[Unreleased]` de qualquer entrega seguinte empurra X para baixo e o caso reprova a feature nova, que nada tem a ver com ele. Aconteceu em duas branches ao mesmo tempo na v0.32.0.
 
 O que o caso protege é "a entrega está registrada no CHANGELOG", e isso não expira: assere sobre o **arquivo inteiro**. Se a intenção for de fato "está no topo", então o caso é sobre a release corrente e precisa ler a versão de `config('kit.version')`, não a posição no arquivo.
+
+## UNTESTED do pest-plugin-mutate é sobrevivente, e --mutate com --filter no Windows não mede
+No `pest-plugin-mutate`, `UNTESTED` é o mutante com o qual o processo de teste PASSOU — o sobrevivente (`vendor/pestphp/pest-plugin-mutate/src/MutationTest.php:hasFinished()`, que emite `mutationEscaped`). Linha sem teste é `UNCOVERED`, e `--covered-only` a tira da conta. Publicar "N não testados, 0 sobreviventes" inverte o conceito: já foi publicado assim nas docs e no CHANGELOG, e só o quality gate pegou.
+
+No Windows, `--mutate` combinado com `--filter` dá "100 %" falso (mutante morto que nenhum teste filtrado alcança; ~45–110 ms por mutante contra ~2,5 s de um processo). Meça sem `--filter`, pelo `pestw.cmd`, com `--no-tia`, e só aceite score com Duration plausível e, se possível, com um mutante manual morto pela suíte. Origem: `wikis/specs/feat/phpstan-nivel-8/` (QA-02 e QA-09 do `06-relatorio-qa.md`).
+
+## Citação histórica de ID de caso de teste em docblock vai sem colchetes
+O `diff` de IDs do step 7 da feature-wiki (`grep -oh '\[CT-[0-9]\+'` nos arquivos de teste) não distingue citação de declaração: um docblock que diga "renumerado a partir de `[CT-52]`" ou "os `[CT-01]`..`[CT-12]` antigos" conta como teste existente. Na wiki `cobertura-de-testes` isso escondeu que o CT-01 real não tinha teste e fez quatro IDs mortos parecerem vivos. Ao citar um ID antigo, movido ou de outra wiki, escreva sem colchete ("o antigo CT-51"). O colchete é reservado ao nome do `it()`/`test()` que implementa o cenário. Origem: `wikis/specs/feat/phpstan-nivel-8/` (passo 6b).
