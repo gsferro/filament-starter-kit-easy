@@ -135,3 +135,66 @@ it('o reconhecedor de teto distingue as duas familias', function (string $constr
     'intervalo com teto'       => ['>=10.3 <12', true],
     'duas majors suportadas'   => ['^10.3 || ^11.0', true],
 ])->group('kit');
+
+/**
+ * O `predis/predis` é exigido pelo `.env.example`, e nenhuma linha de código o menciona.
+ *
+ * ## Por que este caso existe
+ *
+ * Uma varredura de "dependências não usadas" sobre este kit acusa **uma** candidata em mais de
+ * cinquenta: o `predis/predis`. Todas as outras aparecem por namespace no código; esta não aparece
+ * em lugar nenhum de `app/`, `database/` ou `resources/`.
+ *
+ * E ela **é** usada — por configuração. `.env.example` e `.env.docker` trazem
+ * `REDIS_CLIENT=predis`, e o `config/database.php` lê essa chave. Sem o pacote, toda instalação
+ * nova que toque Redis morre em `Class "Predis\Client" not found`, e o sintoma aparece longe da
+ * causa: ninguém removeu nada do código.
+ *
+ * É a forma clássica de uma limpeza bem-intencionada quebrar um projeto — e este é o único ponto
+ * do kit onde ela é possível, porque é o único acoplamento entre `composer.json` e `.env` que
+ * nenhuma busca de símbolo enxerga.
+ *
+ * ## A asserção é nos DOIS sentidos, de propósito
+ *
+ * Remover o pacote quebra quem instala. Trocar o `REDIS_CLIENT` para `phpredis` sem remover o
+ * pacote transforma `predis` em peso morto que viaja para todo projeto. As duas direções são
+ * defeito, e cada uma tem a sua mensagem.
+ */
+it('mantem o predis e o REDIS_CLIENT do env coerentes entre si', function (): void {
+    $composer = json_decode(File::get(base_path('composer.json')), true, flags: JSON_THROW_ON_ERROR);
+
+    $declarado = isset($composer['require']['predis/predis']);
+
+    $pedemPredis = [];
+
+    foreach (['.env.example', '.env.docker'] as $arquivo) {
+        if (! File::exists(base_path($arquivo))) {
+            continue;
+        }
+
+        if (preg_match('~^REDIS_CLIENT\s*=\s*predis\s*$~m', File::get(base_path($arquivo))) === 1) {
+            $pedemPredis[] = $arquivo;
+        }
+    }
+
+    /*
+     * Sentinela: se nenhum `.env` de exemplo existir mais, o caso não tem o que comparar e ficaria
+     * verde sem medir nada.
+     */
+    expect(File::exists(base_path('.env.example')))->toBeTrue('o `.env.example` sumiu — este caso deixa de ter o que comparar');
+
+    if ($pedemPredis !== []) {
+        expect($declarado)->toBeTrue(
+            'o `.env.example` pede `REDIS_CLIENT=predis` e o `predis/predis` não está em `require` — '
+            .'toda instalação nova que tocar Redis morre em `Class "Predis\Client" not found`, e nenhuma '
+            .'busca de código acusa, porque o acoplamento é pelo `.env`',
+        );
+
+        return;
+    }
+
+    expect($declarado)->toBeFalse(
+        'nenhum `.env` de exemplo pede `REDIS_CLIENT=predis`, e o pacote continua em `require` — '
+        .'ele passa a viajar como peso morto para todo projeto que nasce do kit',
+    );
+})->group('kit');

@@ -5,7 +5,7 @@
 [![Plumb](https://plumbphp.dev/badges/gsferro/starter-kit-easy/composite.svg)](https://plumbphp.dev/gsferro/starter-kit-easy)
 [![Tests](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=tests)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgsferro%2Ffilament-starter-kit-easy%2Fmain%2F.github%2Fbadges%2Fcobertura.json&style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
-[![Test cases](https://img.shields.io/badge/test%20cases-1,629-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
+[![Test cases](https://img.shields.io/badge/test%20cases-1,630-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%207-4c1?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
@@ -175,7 +175,7 @@ The other two already come complete.
 
 | Quality | |
 |---|---:|
-| Test cases (`Kit` + `Tenancy`, measured on 2026-09-26) | **2,989**, with **12,576 assertions** |
+| Test cases (`Kit` + `Tenancy`, measured on 2026-09-26) | **2,990**, with **12,578 assertions** |
 | Screens swept in a real browser | **55** |
 | Test files | **162** in `Kit` + `Tenancy` (**189** in total) |
 | PHPStan | **level 7**, zero errors |

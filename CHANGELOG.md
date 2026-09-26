@@ -5,6 +5,32 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Adicionado
+
+- **Guarda do acoplamento entre `predis/predis` e o `REDIS_CLIENT` do `.env`.** Uma varredura das
+  mais de cinquenta dependencias de producao do kit devolve **uma** candidata a "nao usada": o
+  `predis/predis`. Todas as outras aparecem por namespace no codigo; esta nao aparece em lugar
+  nenhum de `app/`, `database/` ou `resources/`.
+
+  E ela **e** usada -- por configuracao. O `.env.example` e o `.env.docker` trazem
+  `REDIS_CLIENT=predis`, e o `config/database.php` le essa chave. Sem o pacote, toda instalacao
+  nova que toque Redis morre em `Class "Predis\Client" not found`, e o sintoma aparece longe da
+  causa: ninguem removeu nada do codigo.
+
+  E a forma classica de uma limpeza bem-intencionada quebrar um projeto, e este e o unico ponto do
+  kit onde ela e possivel -- o unico acoplamento entre `composer.json` e `.env` que nenhuma busca
+  de simbolo enxerga.
+
+  A guarda vale nos **dois** sentidos, porque as duas direcoes sao defeito: remover o pacote quebra
+  quem instala; trocar o `REDIS_CLIENT` para `phpredis` sem remover o pacote o transforma em peso
+  morto que viaja para todo projeto. Verificada com um mutante de cada lado.
+
+  **Resultado da varredura, para registro**: nenhuma dependencia de producao do kit esta sem uso.
+  E a resposta medida para a pergunta *"das dependencias declaradas, quais sao de fato usadas?"*.
+  O `composer-require-checker`, que resolve simbolo a simbolo pelo autoload, continua no roadmap --
+  esta varredura e a aproximacao barata, nao a rigorosa.
+
+
 ## [0.40.2] - 2026-09-26
 
 ### Seguranca
