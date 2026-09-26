@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.40.2] - 2026-09-26
+
 ### Seguranca
 
 - **As 23 referencias de GitHub Action passaram a ser pinadas por SHA** -- eram **13 de 23**.
