@@ -188,14 +188,6 @@ class EditRole extends EditRecord
 
     protected function afterSave(): void
     {
-        $permissionModels = collect();
-        $this->permissions->each(function (string $permission) use ($permissionModels): void {
-            $permissionModels->push(Utils::getPermissionModel()::firstOrCreate([
-                'name'       => $permission,
-                'guard_name' => $this->data['guard_name'],
-            ]));
-        });
-
         $papel = $this->record;
 
         /*
@@ -209,6 +201,14 @@ class EditRole extends EditRecord
                 'permission.models.role precisa estender '.SpatieRole::class.' para esta tela gravar permissões.'
             );
         }
+
+        $permissionModels = collect();
+        $this->permissions->each(function (string $permission) use ($permissionModels, $papel): void {
+            $permissionModels->push(Utils::getPermissionModel()::firstOrCreate([
+                'name'       => $permission,
+                'guard_name' => $papel->guard_name,
+            ]));
+        });
 
         /*
          * Sincroniza SÓ dentro do que o formulário ofereceu — o resto é preservado.
@@ -242,10 +242,10 @@ class EditRole extends EditRecord
         ));
 
         Log::channel('autenticacao')->info(
-            '[EditRole@afterSave] Papel gravado | papel: '.$this->data['name'].' - painel: '.($this->data['painel'] ?? 'nenhum'),
+            '[EditRole@afterSave] Papel gravado | papel: '.$papel->name.' - painel: '.($this->data['painel'] ?? 'nenhum'),
             [
                 'role_id'    => $papel->getKey(),
-                'papel'      => $this->data['name'],
+                'papel'      => $papel->name,
                 'painel'     => $this->data['painel'] ?? null,
                 'permissoes' => $this->permissions->count(),
                 'executor'   => auth()->id(),

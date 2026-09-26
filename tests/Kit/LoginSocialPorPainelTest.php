@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use App\Support\ConfiguracaoDoLogin;
 use App\Support\ProvedorSocial;
 use Illuminate\Support\Facades\Log;
@@ -205,3 +206,40 @@ it('não põe painel na sessão quando a query não informa', function (): void 
 
     expect(session('login_social.contexto'))->not->toHaveKey('painel');
 })->group('kit');
+
+/**
+ * CT-11 (wiki `phpstan-nivel-8`) — o retorno recusado (state que não é o da sessão) leva ao
+ * login do painel de ORIGEM, ou ao login do painel PADRÃO quando a origem não tem `->login()`
+ * (premissa P-03: painel sem login é tratado como painel sem porta, igual a painel inexistente
+ * na query).
+ *
+ * **Sem `Socialite::fake()` nem `Http::fake()` de propósito** — mesma razão do CT-05 de
+ * `LoginSocialGoogleTest.php`: a recusa acontece por `hasInvalidState()`, ANTES de
+ * `getAccessTokenResponse()` tocar a rede (`vendor/laravel/socialite/src/Two/AbstractProvider.php:230-241`).
+ * A ida ao provedor (`redirecionar()`) grava o `state` real do Socialite na sessão; o retorno
+ * chega com um `state` que não casa com ele.
+ *
+ * Um usuário prévio no `Dado` é o que torna "a contagem de usuários continua a mesma" um
+ * oráculo vivo, e não um vácuo.
+ */
+it('[CT-11] o retorno recusado do Google leva ao login do painel de origem, ou ao login do painel padrão quando a origem não tem', function (string $painel, string $destino): void {
+    if ($painel === 'financeiro') {
+        painelRegistradoEmTeste('financeiro');
+    }
+
+    ligarProvedor(ProvedorSocial::Google);
+    usuario('ja.tem@example.com');
+
+    $this->get(route('auth.social.redirect', ['provedor' => 'google', 'painel' => $painel]))
+        ->assertRedirect();
+
+    $this->get(route('auth.social.callback', ['provedor' => 'google']).'?code=codigo-inventado&state=state-inventado')
+        ->assertRedirect($destino);
+
+    $this->assertGuest();
+
+    expect(User::query()->count())->toBe(1);
+})->with([
+    'admin — tem login (fato)'                => ['admin', '/admin/login'],
+    'financeiro — sem login (premissa P-03)'  => ['financeiro', '/app/login'],
+])->group('kit');

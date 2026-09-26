@@ -13,6 +13,7 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -1079,3 +1080,169 @@ it('marca a origem da conta como convite ao aceitar', function (): void {
         ->and($aceito->rotuloDaOrigem())->toBe('Convite')
         ->and(usuario('interno@example.com')->rotuloDaOrigem())->toBe('Interno');
 });
+
+/*
+|--------------------------------------------------------------------------
+| R6a — papel apagado (wiki `phpstan-nivel-8`)
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * CT-12 — prova a afirmação "impossível pelo desenho" em que o 00 se apoia. A FK de
+ * `convites.role_id` (`constrained()`, sem cascade — `create_convites_table.php:34-35`) recusa a
+ * exclusão de um papel com convite pendente, e o SQLite de teste tem `foreign_key_constraints`
+ * ligado por padrão (`config/database.php:40`).
+ *
+ * A UX daquele 500 pela tela do `RoleResource` é anterior a esta entrega e ficou fora do escopo
+ * (pergunta P-07, roteada ao 00).
+ */
+it('[CT-12] excluir um papel que tem convite pendente é recusado pelo banco', function (): void {
+    $papel   = Role::findByName('admin');
+    $convite = ofertaPara('carla@example.com', papel: 'admin');
+
+    expect(fn () => $papel->delete())->toThrow(QueryException::class);
+
+    expect(Role::query()->whereKey($papel->getKey())->exists())->toBeTrue()
+        ->and($convite->fresh()?->role_id)->toBe($papel->getKey());
+});
+
+/**
+ * CT-13 — aceitar um convite cujo papel sumiu (simulando o banco restaurado pela metade) falha
+ * com exceção de invariante e sem NENHUM efeito colateral, nos dois verbos de aceite: conta nova
+ * (`aceitar`) e usuário existente (`aceitarComoUsuarioExistente`).
+ *
+ * ## Por que `PRAGMA defer_foreign_keys`, e não `Schema::disableForeignKeyConstraints()`
+ *
+ * O `RefreshDatabase` do Kit envolve cada caso numa transação, e o `PRAGMA foreign_keys` do
+ * SQLite é **no-op dentro de uma transação** — medido, `Schema::disableForeignKeyConstraints()`
+ * (e o `PRAGMA foreign_keys = OFF` cru) não muda o valor lido de volta, e o `delete()` do papel
+ * continua batendo na FK de `convites.role_id`. `.ai/rules` ainda não registra isto;
+ * `tests/Kit/KitInfoTest.php:396-397` documenta o mesmo achado para outro caso.
+ *
+ * `defer_foreign_keys` é o pragma irmão que o SQLite deixa mudar DENTRO de uma transação: ele
+ * adia a checagem da FK para o COMMIT da transação mais externa — e como o `RefreshDatabase`
+ * nunca comita (só dá `ROLLBACK` no `tearDown`), a checagem adiada nunca dispara. O papel é
+ * apagado de verdade dentro da transação do caso, e o rollback desfaz tudo no final, como
+ * qualquer outra escrita do teste.
+ *
+ * `bruno` no mundo é o que torna "papéis inalterados" e "total de usuários igual" oráculos
+ * vivos — sem ele, as duas passariam também com o defeito presente. `Notification::fake()`
+ * DEPOIS do arranjo (`ofertaPara()` não chama `enviar()`, então não há notificação de convite a
+ * descontar).
+ *
+ * Premissa P-05: só a FORMA da exceção é fixada (não `Error`/`TypeError` — o que inclui
+ * `AssertionError`, que É `Error`, mata M29a) e que a mensagem cita o papel ausente.
+ */
+it('[CT-13] aceitar convite cujo papel não existe mais lança exceção de invariante sem efeito colateral', function (string $verbo, string $email): void {
+    $convite = ofertaPara($email, papel: 'admin');
+    $bruno   = usuarioDoKit('infra', 'bruno@example.com');
+
+    DB::statement('PRAGMA defer_foreign_keys = ON');
+    Role::findByName('admin')->delete();
+    $convite->refresh();
+
+    Notification::fake();
+
+    $antesUsuarios = User::count();
+    $lancado       = null;
+
+    try {
+        $verbo === 'aceitar'
+            ? $convite->aceitar(['name' => 'Carla', 'password' => 'segredo-bem-longo-123'])
+            : $convite->aceitarComoUsuarioExistente($bruno);
+    } catch (Throwable $e) {
+        $lancado = $e;
+    }
+
+    expect($lancado)->not->toBeNull('esperava uma exceção de invariante, e o aceite terminou sem estourar')
+        ->and($lancado)->not->toBeInstanceOf(Error::class)
+        ->and($lancado->getMessage())->toContain((string) $convite->role_id)
+        ->and(User::count())->toBe($antesUsuarios)
+        ->and($bruno->fresh()?->getRoleNames()->all())->toBe(['infra'])
+        ->and($convite->fresh()?->aceito_em)->toBeNull();
+
+    Notification::assertNothingSent();
+})->with([
+    'aceitar (conta nova, com nome e senha)' => ['aceitar', 'carla@example.com'],
+    'aceitarComoUsuarioExistente (bruno)'    => ['aceitarComoUsuarioExistente', 'bruno@example.com'],
+]);
+
+/*
+|--------------------------------------------------------------------------
+| R6b — o cadastro por convite pela TELA sobrevive ao mesmo papel ausente
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * CT-18 — dois momentos: a MONTAGEM da tela (o token é válido, então `mount()` não consulta o
+ * papel — só `aceitar()` faz, dentro de `handleRegistration()`) e o ENVIO do formulário, que é
+ * quem de fato aciona `Convite::aceitar()` e reproduz a mesma exceção de CT-13.
+ *
+ * Se a montagem algum dia passar a estourar sozinha (M29b: a tela lê o nome do papel antes do
+ * aceite), a linha "envio" fica inalcançável e a asserção da montagem já cobre o oráculo — nada
+ * a fundir aqui hoje, porque `mount()` mede limpo.
+ *
+ * O oráculo comum de R6b (a-g) reduzido ao que um teste de COMPONENTE consegue medir sem HTTP:
+ * (a) a falha não é `Error`/`TypeError`/`AssertionError`; (b) nenhuma conta nasce; (c) bruno
+ * mantém só o papel `infra`; (d) o convite continua pendente; (e) nenhuma notificação sai; (f)
+ * ninguém fica autenticado (M29c: a tela não pode ter logado a convidada antes do aceite).
+ *
+ * A `LogicException` do model não é `Symfony\...\HttpException` nem `AuthorizationException` —
+ * as duas que o harness de teste do Livewire deixa passar pelo exception handler
+ * (`vendor/livewire/livewire/src/Features/SupportTesting/RequestBroker.php:29`) — então ela
+ * propaga como exceção crua através de `Livewire::test()->call('register')` e é capturada aqui.
+ */
+it('[CT-18] a tela de cadastro por convite cujo papel não existe mais falha fechado, no momento em que falhar primeiro', function (string $momento): void {
+    [$convite, $token]  = conviteCom('admin', email: 'carla@example.com');
+    $bruno              = usuarioDoKit('infra', 'bruno@example.com');
+
+    // `PRAGMA defer_foreign_keys`, não `Schema::disableForeignKeyConstraints()` — ver o
+    // docblock do CT-13 acima: o `PRAGMA foreign_keys` é no-op dentro da transação do
+    // `RefreshDatabase`.
+    DB::statement('PRAGMA defer_foreign_keys = ON');
+    Role::findByName('admin')->delete();
+    $convite->refresh();
+
+    Notification::fake();
+    $antesUsuarios = User::count();
+
+    $lancado = null;
+
+    try {
+        Filament::setCurrentPanel('app');
+
+        $componente = Livewire::withQueryParams(['token' => $token])->test(RegistroPorConvite::class);
+
+        if ($momento === 'envio') {
+            $componente
+                ->fillForm([
+                    'name'                 => 'Carla',
+                    'password'             => 'segredo-bem-longo-123',
+                    'passwordConfirmation' => 'segredo-bem-longo-123',
+                ])
+                ->call('register');
+        }
+    } catch (Throwable $e) {
+        $lancado = $e;
+    }
+
+    if ($momento === 'envio') {
+        expect($lancado)->not->toBeNull('esperava a exceção de invariante no register(), e nada estourou')
+            ->and($lancado)->not->toBeInstanceOf(Error::class);
+    } else {
+        // A montagem NÃO consulta o papel: só `Convite::aceitar()` o faz, dentro de
+        // `handleRegistration()`. Um M29b (leitura do papel no cabeçalho/mount) faria isto
+        // estourar, e é essa a linha que discrimina.
+        expect($lancado)->toBeNull('a montagem não deveria falhar — o papel só é lido dentro de aceitar()');
+    }
+
+    expect(User::count())->toBe($antesUsuarios)
+        ->and($bruno->fresh()?->getRoleNames()->all())->toBe(['infra'])
+        ->and($convite->fresh()?->aceito_em)->toBeNull()
+        ->and(auth()->check())->toBeFalse();
+
+    Notification::assertNothingSent();
+})->with([
+    'montagem' => ['montagem'],
+    'envio'    => ['envio'],
+]);

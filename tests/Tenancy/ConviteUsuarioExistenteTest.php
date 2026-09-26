@@ -462,3 +462,47 @@ it('manda texto de oferta para quem ja tem conta', function (): void {
         // exibe solto, que é como uma credencial vaza em print de tela e em suporte.
         ->and(substr_count($corpo, 'token='.$token))->toBe(substr_count($corpo, $token));
 });
+
+/**
+ * CT-21 (wiki `phpstan-nivel-8`), verbo `aceitarComoUsuarioExistente` — a oferta de acesso cujo
+ * papel sumiu falha fechado igual ao model (CT-13 do Kit), e bruno não ganha vínculo nem papel
+ * novo em contexto nenhum — nem no global, onde o papel `infra` dele já vive.
+ */
+it('[CT-21] com tenancy, aceitar oferta cujo papel não existe mais falha fechado (usuário existente)', function (): void {
+    $acme = tenant('Acme', 'acme');
+
+    $bruno = usuarioComPapel('infra', null, 'bruno@example.com');
+    $bruno->tenants()->attach($acme);
+
+    $convite = ofertaPara('bruno@example.com', $acme, 'admin');
+
+    DB::statement('PRAGMA defer_foreign_keys = ON');
+    Role::findByName('admin')->delete();
+    $convite->refresh();
+
+    Notification::fake();
+
+    $lancado = null;
+
+    try {
+        $convite->aceitarComoUsuarioExistente($bruno);
+    } catch (Throwable $e) {
+        $lancado = $e;
+    }
+
+    expect($lancado)->not->toBeNull('esperava a exceção de invariante do papel ausente, e o aceite terminou sem estourar')
+        ->and($lancado)->not->toBeInstanceOf(Error::class)
+        ->and($convite->fresh()?->aceito_em)->toBeNull();
+
+    Notification::assertNothingSent();
+
+    expect(DB::table(pivotDePapeis())->where('model_id', $bruno->id)->count())->toBe(1);
+
+    $this->assertDatabaseHas(pivotDePapeis(), [
+        'model_id' => $bruno->id,
+        'role_id'  => Role::findByName('infra')->getKey(),
+        'team_id'  => Tenant::CONTEXTO_GLOBAL,
+    ]);
+
+    $this->assertDatabaseMissing(pivotDePapeis(), ['model_id' => $bruno->id, 'team_id' => $acme->id]);
+});

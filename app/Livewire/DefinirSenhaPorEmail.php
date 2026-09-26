@@ -102,10 +102,10 @@ class DefinirSenhaPorEmail extends MyProfileComponent
 
         Log::channel('autenticacao')->info(
             "[DefinirSenhaPorEmail@enviar] Link de definição de senha enviado, sessão encerrada | user: {$user->getKey()} - email: {$mascarado}",
-            ['user_id' => $user->getKey(), 'email' => $mascarado, 'painel' => Filament::getCurrentOrDefaultPanel()->getId()],
+            ['user_id' => $user->getKey(), 'email' => $mascarado, 'painel' => (Filament::getCurrentPanel() ?? Filament::getDefaultPanel())->getId()],
         );
 
-        $loginUrl = Filament::getCurrentOrDefaultPanel()->getLoginUrl();
+        $loginUrl = (Filament::getCurrentPanel() ?? Filament::getDefaultPanel())->getLoginUrl();
 
         Filament::auth()->logout();
         session()->invalidate();

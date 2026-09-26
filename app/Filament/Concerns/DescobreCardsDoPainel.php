@@ -7,10 +7,12 @@ namespace App\Filament\Concerns;
 use BackedEnum;
 use Filament\Facades\Filament;
 use Filament\Pages\Page;
+use Filament\Panel;
 use Filament\Resources\Resource;
 use Harvirsidhu\FilamentCards\CardGroup;
 use Harvirsidhu\FilamentCards\CardItem;
 use Illuminate\Support\Collection;
+use LogicException;
 use UnitEnum;
 
 /**
@@ -45,7 +47,7 @@ trait DescobreCardsDoPainel
      */
     protected static function cardsDoPainel(array $excluir = [], array $descricoes = []): array
     {
-        $painel = Filament::getCurrentPanel();
+        $painel = static::painelCorrente();
 
         $componentes = [...$painel->getResources(), ...$painel->getPages()];
 
@@ -97,7 +99,20 @@ trait DescobreCardsDoPainel
             ->sort($componente::getNavigationSort() ?? 0)
             // `getUrl()` e não caminho montado à mão: é ele que resolve o segmento do tenant no
             // painel /app (`/app/{slug}/…`). Concatenar quebraria só ali, e só em produção.
-            ->url(is_a($componente, Resource::class, true) ? $componente::getUrl() : $componente::getUrl());
+            ->url($componente::getUrl());
+    }
+
+    /**
+     * O painel de onde o hub é aberto — sem fallback.
+     *
+     * `getCurrentOrDefaultPanel()` seria a saída fácil e a errada: o hub do `/admin` montado sem
+     * painel corrente listaria os cartões do `/app`. Fora de um request de painel não existe hub
+     * certo, então falha com o nome do que falta (premissa P-01 de `phpstan-nivel-8`).
+     */
+    protected static function painelCorrente(): Panel
+    {
+        return Filament::getCurrentPanel()
+            ?? throw new LogicException('Hub de cards exige um painel corrente, e nenhum está definido.');
     }
 
     /**
@@ -111,7 +126,7 @@ trait DescobreCardsDoPainel
      */
     protected static function agrupar(Collection $itens): array
     {
-        $ordem = collect(Filament::getCurrentPanel()->getNavigationGroups())
+        $ordem = collect(static::painelCorrente()->getNavigationGroups())
             ->map(fn (mixed $grupo): string => is_string($grupo) ? $grupo : (string) $grupo->getLabel())
             ->values()
             ->all();

@@ -270,7 +270,7 @@ aqui — a tabela completa, com os que entraram e os que foram recusados, está 
 
 | # | Item | O que a medição mostrou | Por que não entrou agora |
 |---|---|---|---|
-| 8.1 | **PHPStan level 8** | **48 erros** (level 7 atual = 0) | é uma passada focada, e cabe numa release própria. Level 9 dá **474** e `max` dá **594** — esses são precipício, não degrau |
+| 8.1 | ~~**PHPStan level 8**~~ — **FEITO** em 2026-09-26 | **48 erros**, remedido e zerado pela causa | `wikis/specs/feat/phpstan-nivel-8/`. Level 9 (**474**) e `max` (**594**) continuam precipício, não degrau |
 | 8.2 | **`composer-require-checker` + `composer-unused`** | não instalados | respondem mecanicamente a *"das 58 dependências, quais são de fato usadas?"* — pergunta que a crítica externa fez e que hoje só tem a resposta *"não sabemos"*. Melhor razão valor/esforço da lista |
 | 8.3 | **`declare(strict_types=1)`** | **98 de 240** arquivos de `app/` | não é falta de rigor, é **inconsistência**: metade roda com coerção estrita e metade não, e nada no CI diz de que lado um arquivo novo nasce. Exige decidir o lado, não rodar um `sed` |
 | 8.4 | **Branch coverage** (Xdebug) | Xdebug 3.5.3 já instalado localmente | é a única razão de o Xdebug existir nesta máquina. Mais lento que o PCOV; depende de o job de cobertura já estar estabilizado |
@@ -289,6 +289,21 @@ Decisão registrada: a entrega da cobertura já mexe em CI, README, docs e `comp
 48 correções de PHPStan em cima disso tornaria o diff irrevisável. Cada item acima tem número
 medido, então a estimativa não precisa ser refeita do zero — mas **precisa ser remedida**: `48` é
 de 2026-09-24 e muda a cada release.
+
+---
+
+## 9. Excluir pela tela um papel que tem convite pendente responde 500
+
+> Medido em 2026-09-26 pela `feature-test-design` da wiki `phpstan-nivel-8` (premissa P-07).
+
+A FK `convites.role_id` **sem cascade** (`database/migrations/2026_08_13_000002_create_convites_table.php`)
+é deliberada: apagar o papel de um convite pendente tem de doer na hora, em vez de deixar o convite
+aceitar com papel nulo. A recusa está certa. O que está errado é **como** ela chega: a ação de
+excluir do `RoleResource` não trata a violação, e o administrador vê o 500 do `QueryException`.
+
+**Fica para depois porque** não é nulidade, não é o que a wiki `phpstan-nivel-8` pediu, e a saída
+certa é decisão de produto: recusar com aviso nomeando os convites pendentes, ou oferecer
+cancelá-los junto. O invariante já está travado por `[CT-12]` da wiki `phpstan-nivel-8`; falta a UX.
 
 ---
 

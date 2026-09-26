@@ -412,7 +412,7 @@ function casosSemSentinelaPropria(array $suites): array
         /*
          * O PREAMBULO — tudo antes do primeiro `it(` — e onde mora o `beforeEach` do arquivo.
          * Sentinela ali protege TODOS os casos, e e um dos tres mecanismos que o kit usa
-         * (`tests/Kit/SiteDeDocumentacaoTest.php:naArvoreDoKit:30`).
+         * (`tests/Kit/SiteDeDocumentacaoTest.php:naArvoreDoKit:59`).
          *
          * Esta verificacao nao estava na primeira versao do `[CT-11]`, e ele acusou os 15
          * cenarios daquele arquivo — repetindo exatamente o erro que a terceira varredura

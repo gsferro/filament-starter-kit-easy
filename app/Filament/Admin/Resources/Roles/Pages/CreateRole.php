@@ -39,14 +39,6 @@ class CreateRole extends CreateRecord
 
     protected function afterCreate(): void
     {
-        $permissionModels = collect();
-        $this->permissions->each(function (string $permission) use ($permissionModels): void {
-            $permissionModels->push(Utils::getPermissionModel()::firstOrCreate([
-                'name'       => $permission,
-                'guard_name' => $this->data['guard_name'],
-            ]));
-        });
-
         $papel = $this->record;
 
         /*
@@ -61,13 +53,21 @@ class CreateRole extends CreateRecord
             );
         }
 
+        $permissionModels = collect();
+        $this->permissions->each(function (string $permission) use ($permissionModels, $papel): void {
+            $permissionModels->push(Utils::getPermissionModel()::firstOrCreate([
+                'name'       => $permission,
+                'guard_name' => $papel->guard_name,
+            ]));
+        });
+
         $papel->syncPermissions($permissionModels);
 
         Log::channel('autenticacao')->info(
-            '[CreateRole@afterCreate] Papel gravado | papel: '.$this->data['name'].' - painel: '.($this->data['painel'] ?? 'nenhum'),
+            '[CreateRole@afterCreate] Papel gravado | papel: '.$papel->name.' - painel: '.($this->data['painel'] ?? 'nenhum'),
             [
                 'role_id'    => $papel->getKey(),
-                'papel'      => $this->data['name'],
+                'papel'      => $papel->name,
                 'painel'     => $this->data['painel'] ?? null,
                 'permissoes' => $this->permissions->count(),
                 'executor'   => auth()->id(),

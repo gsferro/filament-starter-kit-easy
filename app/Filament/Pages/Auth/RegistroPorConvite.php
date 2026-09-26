@@ -270,7 +270,7 @@ class RegistroPorConvite extends Register
                 'Entre para aceitar o convite',
                 'Você já tem conta neste sistema. Entre com a sua senha — o convite aparece no menu do seu usuário.',
                 'info',
-                Filament::getPanel('app')->getLoginUrl(),
+                $this->urlDeLoginDoApp(),
             );
         }
 
@@ -281,13 +281,13 @@ class RegistroPorConvite extends Register
                 'Este convite não é para esta conta',
                 'O convite foi enviado para outro endereço. Saia e entre com a conta convidada, ou peça um convite novo.',
                 'warning',
-                Filament::getPanel('app')->getUrl(),
+                $this->urlDaOrganizacao(semOrganizacao: true),
             );
         }
 
         // É a pessoa certa, já autenticada: aceita na hora. A asserção de e-mail acontece
         // de novo dentro do model — de propósito (ADR-03).
-        $this->convite->aceitarComoUsuarioExistente($autenticado);
+        $this->convite()->aceitarComoUsuarioExistente($autenticado);
 
         $this->sair(
             'Convite aceito',
@@ -297,14 +297,26 @@ class RegistroPorConvite extends Register
         );
     }
 
-    /** Para onde mandar depois de aceitar: a organização do convite, se houver. */
-    private function urlDaOrganizacao(): string
+    /**
+     * Para onde mandar depois de aceitar: a organização do convite, se houver.
+     *
+     * `getUrl()` é `null` com tenant por domínio e ninguém autenticado; a raiz do painel é o
+     * fallback do kit para isso (`Paineis::urlDoPainel()`, ADR-02 de `phpstan-nivel-8`).
+     */
+    private function urlDaOrganizacao(bool $semOrganizacao = false): string
+    {
+        $painel = Filament::getPanel('app');
+        $tenant = $semOrganizacao ? null : $this->convite()->tenant;
+
+        return $painel->getUrl($tenant) ?? url($painel->getPath());
+    }
+
+    /** O login do `/app`, ou a raiz dele num painel sem `->login()` — ADR-02 de `phpstan-nivel-8`. */
+    private function urlDeLoginDoApp(): string
     {
         $painel = Filament::getPanel('app');
 
-        return $this->convite()->tenant !== null
-            ? $painel->getUrl($this->convite()->tenant)
-            : $painel->getUrl();
+        return $painel->getLoginUrl() ?? url($painel->getPath());
     }
 
     private function sair(string $titulo, string $corpo, string $tom, string $destino): never
@@ -463,7 +475,7 @@ class RegistroPorConvite extends Register
             ->send();
 
         throw new HttpResponseException(
-            new RedirectResponse(Filament::getPanel('app')->getLoginUrl()),
+            new RedirectResponse($this->urlDeLoginDoApp()),
         );
     }
 }

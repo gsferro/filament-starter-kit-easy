@@ -3,6 +3,7 @@
 use App\Filament\Admin\Pages\HubDeAdministracao;
 use App\Filament\Admin\Resources\Roles\RoleResource;
 use App\Filament\Admin\Resources\Users\UserResource;
+use App\Filament\App\Pages\HubDoNegocio;
 use App\Filament\Infra\Pages\BackupRunsPage;
 use App\Filament\Infra\Pages\HubDeInfraestrutura;
 use App\Filament\Infra\Resources\AiRuns\AiRunResource;
@@ -300,3 +301,40 @@ it('aponta o cartão para o destino e o coloca no grupo dele', function (): void
         ->assertSee(AiRunResource::getUrl(), escape: false)
         ->assertSee('IA');
 });
+
+/**
+ * CT-09 (wiki `phpstan-nivel-8`) — sem painel corrente, o hub falha fechado.
+ *
+ * Premissa P-01: exceção de invariante (não `Error`/`TypeError`) que nomeia o painel ausente —
+ * nunca lista vazia silenciosa (mataria M11) nem cartões do painel padrão herdados de
+ * `getCurrentOrDefaultPanel()` (mataria M12, o mais perigoso: o hub do /admin mostrando os
+ * destinos do /app). `getCards()` é protegido — mesma reflexão que `descricoesDoHub()` já usa
+ * neste arquivo.
+ */
+it('[CT-09] o hub sem painel corrente lança exceção de invariante e não lista cartões de outro painel', function (string $hub): void {
+    Filament::setCurrentPanel(null);
+
+    $metodo = new ReflectionMethod($hub, 'getCards');
+    $metodo->setAccessible(true);
+
+    $lancado    = null;
+    $resultado  = null;
+
+    try {
+        $resultado = $metodo->invoke(null);
+    } catch (Throwable $e) {
+        $lancado = $e;
+    }
+
+    expect($lancado)->not->toBeNull('esperava uma exceção de invariante, e o hub devolveu cartões em silêncio')
+        ->and($lancado)->not->toBeInstanceOf(Error::class)
+        ->and($lancado->getMessage())->toContain('painel');
+
+    // Nada foi devolvido: a exceção interrompe ANTES de montar qualquer cartão, do painel próprio
+    // ou de qualquer outro (M11 e M12 deixariam $resultado preenchido).
+    expect($resultado)->toBeNull();
+})->with([
+    'admin — painel de origem admin' => [HubDeAdministracao::class],
+    'app — painel de origem app'     => [HubDoNegocio::class],
+    'infra — painel de origem infra' => [HubDeInfraestrutura::class],
+]);

@@ -537,11 +537,13 @@ Funcionalidade: Cobertura de testes medida, com meta e badge
         | 78,40      | 78,50      | reprova  | piso fracionário: truncar para 78 aprovaria          |
         | 78,50      | 78,50      | aprova   | piso fracionário na borda exata                      |
 
-    Cenário: [CT-07] sem piso informado, vale a meta padrão do kit
+    # (alterado em 2026-09-26: a reconciliação de 2026-09-25 mostrou que não existe meta padrão —
+    #  a meta mora no `--min` do composer.json e do ci.yml, travada por CT-18. Ver phpstan-nivel-8)
+    Cenário: [CT-07] sem piso informado, o verificador mede e não reprova por piso
       Dado um relatório de cobertura cuja razão medida está a 0,01 ponto percentual abaixo da meta
       Quando o mantenedor executa o verificador de cobertura sem informar nenhum piso
-      Então o verificador reprova
-      E o piso citado na saída é o mesmo número que a documentação do kit declara como meta
+      Então o verificador não reprova por cobertura
+      E a saída não afirma que um piso foi respeitado
 ```
 
 **Notas de materialização.**
@@ -642,8 +644,8 @@ Funcionalidade: Cobertura de testes medida, com meta e badge
         |        | recusa   | vazio ≠ ausente: ausente cai em CT-07, vazio é entrada inválida    |
         | 101    | recusa   | acima do domínio                                                  |
         | 78%    | recusa   | sufixo: aceitar e truncar é coerção silenciosa                    |
-        | " 78 " | recusa   | espaços nas bordas — ou normaliza, ou recusa; nunca vira 0        |
-        | 1e2    | recusa   | notação científica: 100 disfarçado, que a coerção aceita           |
+        | " 78 " | aceito   | espaços nas bordas: normaliza para 78 — nunca vira 0 (alterado em 2026-09-26) |
+        | 1e2    | aceito   | notação científica vale 100: não abre a guarda (alterado em 2026-09-26)        |
         | 78,5   | aceito   | @premissa de mecanismo: piso fracionário é válido                 |
         | 100    | aceito   | borda superior válida — e, com este relatório, aprova             |
 
@@ -974,7 +976,9 @@ Funcionalidade: Cobertura de testes medida, com meta e badge
       Então esse passo não está marcado como tolerante a erro
       E o job que o contém não está marcado como tolerante a erro
       E o comando desse passo não está em cadeia de tubulação nem dentro de invólucro que descarte o código de saída do processo interno
-      E o fluxo de trabalho que contém esse passo dispara em pedido de integração
+    # (alterado em 2026-09-26: a cláusula "dispara em pedido de integração" saiu. O job de cobertura
+    #  leva ~52 min no runner e NÃO roda em PR por decisão registrada no próprio ci.yml; o disparo
+    #  manual cobre quem quer o número antes do merge. M56 continua sem matador, e declarado)
 
     Cenário: [CT-24] o piso é aplicado sobre um relatório produzido na mesma execução, pelo comando documentado
       Dado a definição de integração contínua do kit
@@ -1112,6 +1116,34 @@ explícito para não virar flake.
 | **Não-efeito em mundo com destinatário** | CT-11, CT-12, CT-13, CT-14, CT-16 — em **todos**, o `Dado` põe um badge de partida com valor **conhecido e diferente**; e CT-17 prova, na direção positiva, que o caminho feliz de fato o moveria |
 | **Efeito na direção positiva** (entrada diferente → efeito diferente) | CT-17 — o item que faltava, e sem o qual todas as asserções de ausência acima eram satisfeitas por um escritor no-op |
 | **Valor literal do requisito** | **não se aplica por construção**: o requisito deliberadamente não fixa número (RQ-06: *"medir primeiro, decidir depois"*). Substituído por CT-07 (default exercitado sem injeção) + CT-18 (default = documentado, extração ancorada) + CT-10 (o **tipo** e o **formato** do piso, que um default certo no número e errado na coerção atravessaria) |
+
+---
+
+## Não automatizáveis na suíte, e referências cruzadas *(alterado em 2026-09-26, wiki `phpstan-nivel-8`, passo 6b)*
+
+A reconciliação que a seção `## Reconciliação com os testes existentes` mandou fazer foi executada
+em 2026-09-26: `tests/Kit/KitCoberturaTest.php` renumerado para os IDs deste `04`, os dois casos
+de `RecorteDaCoberturaTest` que usavam números fora deste `04` viraram CT-04/CT-05, e o caso de
+`SiteDeDocumentacaoTest` que travava a meta virou CT-18 em `CoberturaDeTestesTest`, e os cenários que faltavam foram escritos
+(`tests/Kit/CoberturaDeTestesTest.php` para as guardas sobre docs, composer e CI).
+
+Cinco cenários **não têm teste**, e isso é decisão, não esquecimento:
+
+| CT | Por que não roda na suíte `Kit` |
+|---|---|
+| CT-01, CT-02, CT-03 | dependem do driver de cobertura **carregado no PHP corrente**; o job `qualidade` do CI roda com `coverage: none`, então o caso seria vermelho lá por construção. A evidência é a medição do `composer test:coverage` |
+| CT-25 | fim-a-fim da cadeia de CI: ~52 min no runner |
+| CT-28 | subprocesso `--tia`, que exige PCOV e o grafo local do TIA |
+
+**CT-49 e CT-50** pertencem à wiki `site-de-documentacao` e aparecem aqui só como referência cruzada
+(cobertura parcial de CT-19 e CT-20).
+
+**O `diff` de IDs**, com esses sete como as únicas linhas esperadas:
+
+```
+diff <(grep -oh 'CT-P\?[0-9]\+' 04-casos-de-teste.md | sort -u)      <(grep -oh '\[CT-P\?[0-9]\+' tests/Kit/{KitCobertura,CoberturaDeTestes,RecorteDaCobertura,Policies}Test.php | tr -d '[' | sort -u)
+< CT-01  < CT-02  < CT-03  < CT-25  < CT-28  < CT-49  < CT-50
+```
 
 ---
 

@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use LogicException;
 use OwenIt\Auditing\Contracts\Auditable;
 use RuntimeException;
 use Spatie\Permission\Support\Config;
@@ -297,9 +298,10 @@ class Convite extends Model implements Auditable
          * ponytail: um Validator por endereço, com N ≤ 100. Um Validator só, com regra
          * `emails.*`, exigiria mapear `emails.3` de volta ao índice.
          */
-        [$validos, $tortos] = $emails->partition(
+        $validos = $emails->filter(
             fn (string $email): bool => Validator::make(['email' => $email], ['email' => ['email']])->passes(),
         );
+        $tortos = $emails->diff($validos);
 
         // A normalização de `separarEmails()` aplicada ao que vem DO BANCO: a entrada já
         // chegou minúscula, os registros não necessariamente.
@@ -614,6 +616,9 @@ class Convite extends Model implements Auditable
             return $this->aceitarComoUsuarioExistente($existente);
         }
 
+        // Antes do `create()`: convite sem papel não deixa conta órfã para trás.
+        $papel = $this->papelOuFalha();
+
         // O e-mail vem do CONVITE, sempre. O que veio do formulário morre nesta linha.
         $user = User::create([...$dados, 'email' => $this->email]);
 
@@ -632,7 +637,7 @@ class Convite extends Model implements Auditable
             $user->tenants()->syncWithoutDetaching([$this->tenant_id]);
         }
 
-        $this->atribuirPapel($user);
+        $this->atribuirPapel($user, $papel);
 
         // O uso único: `Convite::valido()` já não devolve este convite. Convite consumido
         // fecha as DUAS portas — o link do último lembrete morre junto.
@@ -670,6 +675,9 @@ class Convite extends Model implements Auditable
     {
         $this->exigirDono($user, 'aceitarComoUsuarioExistente');
 
+        // Antes do consumo: convite sem papel não pode ser gasto sem vincular ninguém.
+        $papel = $this->papelOuFalha();
+
         /*
          * Consumo ATÔMICO, e é aqui que esta via difere da de conta nova.
          *
@@ -701,7 +709,7 @@ class Convite extends Model implements Auditable
             $user->tenants()->syncWithoutDetaching([$this->tenant_id]);
         }
 
-        $this->atribuirPapel($user);
+        $this->atribuirPapel($user, $papel);
 
         Log::channel('autenticacao')->info(
             "[Convite@aceitarComoUsuarioExistente] Oferta de acesso aceita | convite: {$this->id} - user: {$user->id}",
@@ -804,13 +812,32 @@ class Convite extends Model implements Auditable
      * registro aberto. O que fica aqui é a única coisa que é decisão do convite: **qual**
      * contexto.
      */
-    private function atribuirPapel(User $user): void
+    private function atribuirPapel(User $user, Model $papel): void
     {
-        ContextoDePapeis::em($this->contextoDoPapel(), $user, function () use ($user): void {
+        ContextoDePapeis::em($this->contextoDoPapel(), $user, function () use ($user, $papel): void {
             // assignRole(), NUNCA sync() na relação: o sync escreve só as colunas da chave
             // e estoura `NOT NULL constraint failed: model_has_roles.team_id`.
-            $user->assignRole($this->papel);
+            $user->assignRole($papel);
         });
+    }
+
+    /**
+     * O papel do convite — que a FK `convites.role_id` sem cascade garante existir.
+     *
+     * A guarda é para o dia em que a garantia não valer (FK desligada, banco restaurado pela
+     * metade): falhar aqui, com o nome do que falta, e ANTES de qualquer escrita — os dois
+     * verbos de aceite a chamam na primeira linha útil. Atribuir papel nenhum em silêncio
+     * criaria o usuário que entra e leva 403. Premissa P-05 de `phpstan-nivel-8`.
+     */
+    private function papelOuFalha(): Model
+    {
+        $papel = $this->papel;
+
+        if (! $papel instanceof Model) {
+            throw new LogicException("O papel do convite {$this->getKey()} não existe mais (role_id {$this->role_id}).");
+        }
+
+        return $papel;
     }
 
     /**

@@ -210,3 +210,36 @@ it('destrava a sessão bloqueada na volta do provedor', function (): void {
 
     $this->get('/admin')->assertOk();
 });
+
+/**
+ * CT-10 (wiki `phpstan-nivel-8`) — o visitante da tela de bloqueio sempre sai para um destino
+ * alcançável do MESMO painel, nunca para `''`, para `/` ou para a própria tela (laço).
+ *
+ * A linha `admin` fortalece "manda visitante não autenticado para o login" (`:152-156`), que só
+ * afirmava `assertRedirect()` sem destino — aqui o destino é exato.
+ *
+ * A linha `financeiro` prova a premissa P-02: painel sem `->login()` (`painelRegistradoEmTeste()`)
+ * cai na raiz do PRÓPRIO painel — nunca em `TelaBloqueio::mount()` deixando `getLoginUrl() ?? ''`
+ * (laço) ou `?? url('/')` (destino inventado, fora do painel).
+ *
+ * `TelaBloqueio::mount()` sai por `HttpResponseException`, e não por `redirect()` solto —
+ * `Illuminate\Routing\Route::run()` a captura e devolve `$e->getResponse()` direto
+ * (`vendor/laravel/framework/src/Illuminate/Routing/Route.php:220-221`), ANTES de o harness de
+ * teste do Livewire (que monta o componente atrás de uma rota real, ver
+ * `vendor/livewire/livewire/src/Features/SupportTesting/InitialRender.php:29-34`) sequer montar o
+ * `ComponentState` — por isso o resultado chega como uma resposta HTTP normal, sem precisar de
+ * `try`/`catch`.
+ */
+it('[CT-10] o visitante da tela de bloqueio é levado ao login do painel, ou à raiz dele quando o painel não tem login', function (string $painel, string $destino): void {
+    if ($painel === 'financeiro') {
+        painelRegistradoEmTeste('financeiro');
+    }
+
+    Filament::setCurrentPanel($painel);
+    session(['lockscreen' => true]);
+
+    Livewire::test(TelaBloqueio::class)->assertRedirect($destino);
+})->with([
+    'admin, com login (fato)'               => ['admin', '/admin/login'],
+    'financeiro, sem login (premissa P-02)' => ['financeiro', '/financeiro'],
+]);

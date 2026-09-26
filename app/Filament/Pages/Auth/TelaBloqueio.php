@@ -209,10 +209,12 @@ class TelaBloqueio extends LockerScreen
      */
     public function mount(): void
     {
-        $panel = Filament::getCurrentOrDefaultPanel();
+        $panel = Filament::getCurrentPanel() ?? Filament::getDefaultPanel();
 
+        // Painel sem `->login()` devolve `null` aqui: a raiz do painel entrega a decisão ao
+        // middleware de autenticação dele (ADR-02 de `phpstan-nivel-8`).
         if (! Filament::auth()->check()) {
-            $this->sairPara($panel->getLoginUrl());
+            $this->sairPara($panel->getLoginUrl() ?? url($panel->getPath()));
         }
 
         if (! session()->has('lockscreen')) {

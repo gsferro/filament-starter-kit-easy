@@ -14,7 +14,12 @@ use Illuminate\Support\Facades\File;
  * feliz com as duas mentindo juntas.
  *
  * É a forma mais barata de fazer a meta "passar" sem cobrir uma linha, e é irmã da que o
- * `[CT-51]` fechou: lá o número do piso, aqui o conjunto sobre o qual ele é calculado.
+ * `[CT-18]` (`tests/Kit/KitCoberturaTest.php`) fechou: lá o número do piso, aqui o conjunto sobre
+ * o qual ele é calculado.
+ *
+ * IDs de CT em `wikis/specs/feat/cobertura-de-testes/cobertura-de-testes/04-casos-de-teste.md`
+ * (R2, CT-04 e CT-05) — renumerado dos antigos CT-52 e CT-53, escritos antes de o `04`
+ * existir.
  *
  * Achado pela derivação cega do `04-casos-de-teste.md`, como o buraco mais barato de fechar entre
  * os que sobraram do quality gate.
@@ -26,7 +31,7 @@ use Illuminate\Support\Facades\File;
  * árvore de verdade fecha as duas portas de uma vez, e uma terceira: o diretório novo que nasça
  * em `app/` e não seja medido.
  */
-it('[CT-52] o recorte da cobertura e declarado, e nada o estreita', function (): void {
+it('[CT-04] o recorte da cobertura é declarado, e nada o estreita', function (): void {
     $xml = simplexml_load_string((string) file_get_contents(base_path('phpunit.xml')));
 
     expect($xml)->not->toBeFalse();
@@ -72,7 +77,7 @@ it('[CT-52] o recorte da cobertura e declarado, e nada o estreita', function ():
 /**
  * Todo subdiretório de `app/` presente na árvore entra no cálculo — o caso anterior pelo avesso.
  *
- * O `[CT-52]` prova que a **declaração** não encolheu. Este prova que a declaração **alcança** o
+ * O `[CT-04]` prova que a **declaração** não encolheu. Este prova que a declaração **alcança** o
  * que existe: um `app/Dominio/` novo, nascido depois, passa a contar no denominador sem ninguém
  * precisar lembrar de nada — e, se algum dia alguém trocar a declaração por uma lista de
  * diretórios, este caso é o que acusa o primeiro que ficar de fora.
@@ -80,7 +85,7 @@ it('[CT-52] o recorte da cobertura e declarado, e nada o estreita', function ():
  * Os dois juntos são a igualdade de conjuntos que a derivação pediu: nem menos que `app/`, nem
  * um recorte que finja cobri-lo.
  */
-it('[CT-53] todo subdiretorio de app esta dentro do recorte medido', function (): void {
+it('[CT-05] todo subdiretório de app está dentro do recorte medido', function (): void {
     $xml = simplexml_load_string((string) file_get_contents(base_path('phpunit.xml')));
 
     $incluidos = [];

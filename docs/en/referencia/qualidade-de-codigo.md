@@ -1,18 +1,19 @@
 ---
 title: "Code quality"
-description: "Most Laravel projects stop at level 5 or 6. The kit runs at 7, with zero errors and no baseline: there is no @phpstan-ignore scattered around, no…"
+description: "Most Laravel projects stop at level 5 or 6. The kit runs at 8, with zero errors and no baseline: there is no @phpstan-ignore scattered around, no…"
 sidebar:
   order: 1
 ---
-## PHPStan at level 7 — and why that's a strong point
+## PHPStan at level 8 — and why that's a strong point
 
-Most Laravel projects stop at level 5 or 6. The kit runs at **7, with zero errors and no
+Most Laravel projects stop at level 5 or 6. The kit runs at **8, with zero errors and no
 baseline**: there is no `@phpstan-ignore` scattered around, no `phpstan-baseline.neon` hiding debt.
 
-What level 7 catches and 6 doesn't, in practice:
+What levels 7 and 8 catch and 6 doesn't, in practice:
 
-- **Unchecked null.** `Filament::getCurrentPanel()` returns `?Panel`; `auth()->user()` returns
-  `?User`. At level 6 you call a method on them and it passes. At 7, you have to prove it exists.
+- **Unchecked null** (what 8 adds). `Filament::getCurrentPanel()` returns `?Panel`;
+  `auth()->user()` returns `?User`; `Panel::getLoginUrl()` returns `?string`. Up to level 7 you call
+  a method on them and it passes. At 8, you have to prove it exists.
 - **A wide vendor type leaking into your code.** `session()` is `mixed`, `env()` is `bool|string`,
   Shield's getters are `?array`. 7 forces you to narrow it at the **boundary**, once, instead of
   hoping the value is what you expect at every use.
@@ -21,11 +22,15 @@ What level 7 catches and 6 doesn't, in practice:
   instead of an array, and the front end breaks.
 
 Going from 6 to 7 exposed **29 real errors** in the kit, and one of them was a genuine latent bug: a
-`Convite|null` with a method called straight on it. All fixed at the source — none silenced.
+`Convite|null` with a method called straight on it. Going from 7 to 8 exposed **48** more, all of them
+about nullability: 27 were an impossible null written with a type that was too wide, 7 were a panel
+URL that is `null` on a panel without `->login()` — they now get the destination the kit already
+uses, the panel root —, 13 were an invariant with no guard, and 1 was a wrong Laravel annotation. All
+fixed at the source — none silenced.
 
 > ### ⚠️ Watch out when implementing this in your project
 >
-> **Level 7 applies to the code you write too.** `composer test` runs
+> **Level 8 applies to the code you write too.** `composer test` runs
 > `phpstan analyse` and fails the whole build.
 >
 > What shows up the most when someone starts writing in the kit:
@@ -38,15 +43,18 @@ Going from 6 to 7 exposed **29 real errors** in the kit, and one of them was a g
 > | `env('ALGUMA_COISA')` straight into a `str_*` | `(string) env(...)`, or `config()` with a typed default |
 > | a method with no return type | declare the type; the kit requires it everywhere |
 >
-> **Don't solve it with `@phpstan-ignore` or a baseline.** The kit has exactly **two** exceptions in
-> `phpstan.neon`: one for a vendor macro resolved at runtime (`simpleLightbox()`), the other for the
-> unsatisfiable annotation of filament-breezy's `customMyProfilePage()` — each with the reason, the
-> alternatives that were tried and dropped, and the test that covers the point for real. That's the
+> **Don't solve it with `@phpstan-ignore` or a baseline.** The kit has exactly **four** exceptions in
+> `phpstan.neon`: a vendor macro resolved at runtime (`simpleLightbox()`), an extension point with no
+> use inside the kit (`WidgetDinamico`), the unsatisfiable annotation of filament-breezy's
+> `customMyProfilePage()`, and the `null` in the `@return` that Laravel's `EnsureEmailIsVerified`
+> declares and never returns — each scoped to one file, with the reason, the alternatives that were
+> tried and dropped, and the test that covers the point for real. `tests/Kit/QualidadeDeCodigoTest.php`
+> locks the inventory. That's the
 > standard: if an exception is needed, it comes with the justification and with the test that
 > replaces it.
 >
 > If you want to loosen it in your project, it's one line in `phpstan.neon`. But know what you're
-> trading away: the 29 errors above were all real.
+> trading away: the 77 errors above were all real.
 
 ## FilaCheck: the lint that only knows Filament
 
@@ -65,7 +73,7 @@ The kit has **four** quality tools, on four axes — and only **three** are in t
 | Tool | Axis | On finding a problem | Runs |
 |---|---|---|---|
 | **Pint** | style | **fixes it** | always (gate) |
-| **PHPStan** + larastan | types | reports | always (gate), **level 7** |
+| **PHPStan** + larastan | types | reports | always (gate), **level 8** |
 | **FilaCheck** | Filament's API | reports | always (gate) |
 | **Rector** | code rewriting | **changes semantics** | **on demand** |
 
@@ -268,9 +276,23 @@ score is not auditable:
 
 | Target | Mutants | Score | Duration | Platform |
 |---|---:|---:|---:|---|
-| `app/Support/CustomizadorDaInstalacao.php` | 225, 4 untested | **98.22%** | 43.95 s | Windows, PHP 8.4.25, PCOV |
-| `app/Console/Commands/KitCobertura.php` | 158, 17 untested | **89.24%** | 66.87 s | Windows, PHP 8.4.25, PCOV |
+| `app/Support/CustomizadorDaInstalacao.php` | 225, 4 untested and 0 survivors | **98.22%** | 42.96 s | Windows, PHP 8.4.25, PCOV |
+| `app/Console/Commands/KitCobertura.php` | 158, 4 untested and 0 survivors | **97.47%** | 38.00 s | Windows, PHP 8.4.25, PCOV |
 | `app/Policies/` (all 16) | **4** | 100% | 0.19 s | Windows, PHP 8.4.25, PCOV |
+
+**A survivor is not the same as an untested mutant.** A survivor is a mutant that a test **ran**
+and did not notice — a defect that would slip through. An untested mutant sits on a line that **no**
+test runs. Both measurements above have zero survivors; the untested ones, named for whoever wants
+to close them:
+
+- `app/Support/CustomizadorDaInstalacao.php:470` — four mutations on the same line
+- `app/Console/Commands/KitCobertura.php:57`, `:59` (missing report) and `:198` (unreadable
+  report) — early exits that line coverage does not attribute to any test, even though
+  `[CT-12]` and `[CT-13]` in `tests/Kit/KitCoberturaTest.php` assert both messages; the cause was
+  not investigated
+
+`KitCobertura` went from **89.24%** (17 untested, measured on 2026-09-25) to **97.47%** on
+2026-09-26, when the reconciliation of the `cobertura-de-testes` wiki wrote the missing scenarios.
 
 > **A high, instant score is a symptom, not a result.** On Windows, running through
 > `vendor/bin/pest` instead of the launcher returns **100% in seconds** for a suite that takes

@@ -22,6 +22,35 @@ use Symfony\Component\Process\Process;
 $baseline = require __DIR__.'/fixtures/baseline-readme.php';
 
 /**
+ * Títulos do baseline que mudaram de NOME depois da migração, com o motivo — e nada mais.
+ *
+ * O baseline não se regenera (o cabeçalho dele explica por quê), então um título cujo texto
+ * deixou de ser verdade não pode ser editado lá. Este mapa é a saída auditável: o título
+ * congelado continua sendo procurado, só que pelo nome que ele tem hoje. Entrada nova aqui é
+ * decisão, e precisa dizer de onde veio; um mapa que cresce sem motivo é o baseline sendo
+ * reescrito pela porta dos fundos. O `$baseline` cru continua intacto para o CT-24, que o
+ * compara com o README do commit de antes da migração.
+ *
+ * - PHPStan 7 → 8: a afirmação do título virou falsa com o gate no level 8 (ADR-04 de
+ *   `wikis/specs/feat/phpstan-nivel-8/`).
+ */
+$baselineVigente = (static function (array $baseline): array {
+    $renomeados = [
+        'PHPStan no level 7 — e por que isso é um ponto forte'   => 'PHPStan no level 8 — e por que isso é um ponto forte',
+        'PHPStan at level 7 — and why that\'s a strong point'    => 'PHPStan at level 8 — and why that\'s a strong point',
+    ];
+
+    foreach (['pt', 'en'] as $idioma) {
+        $baseline[$idioma] = array_map(
+            static fn (array $bloco): array => [$bloco[0], $renomeados[$bloco[1]] ?? $bloco[1]],
+            $baseline[$idioma],
+        );
+    }
+
+    return $baseline;
+})($baseline);
+
+/**
  * `docs/` é `export-ignore`: num projeto nascido do `create-project` ele não existe, e todo
  * cenário aqui ficaria vermelho lá. A sentinela é `.github` — e NÃO `docs/`, que seria
  * auto-anulante (CT-10, em `RedeDeDocumentacaoTest`).
@@ -216,14 +245,14 @@ function acusaLiquidSolto(string $texto): bool
  * o PRÓPRIO baseline já o repetia (o roteiro de features tem um h3 "Multi-tenancy (opt-in)" e
  * um h3 "IA" que coincidem com títulos de outras seções). README × site é assunto de CT-03.
  */
-it('[CT-01] todo título do baseline existe no destino, e num destino só dentro do site', function (string $idioma) use ($baseline): void {
+it('[CT-01] todo título do baseline existe no destino, e num destino só dentro do site', function (string $idioma) use ($baselineVigente): void {
     $titulosPorArquivo = ['README' => titulosDoMarkdown(readmeDe($idioma))]
         + array_map(titulosDoMarkdown(...), paginasDoSite($idioma));
 
     $semDestino        = [];
     $repetidosNoSite   = [];
 
-    foreach ($baseline[$idioma] as [$nivel, $titulo]) {
+    foreach ($baselineVigente[$idioma] as [$nivel, $titulo]) {
         $onde = array_keys(array_filter(
             $titulosPorArquivo,
             static fn (array $titulos): bool => in_array(
@@ -243,7 +272,7 @@ it('[CT-01] todo título do baseline existe no destino, e num destino só dentro
     }
 
     $repetidosNoBaseline = array_keys(array_filter(
-        array_count_values(array_column($baseline[$idioma], 1)),
+        array_count_values(array_column($baselineVigente[$idioma], 1)),
         static fn (int $vezes): bool => $vezes > 1,
     ));
 
@@ -284,11 +313,11 @@ it('[CT-24] o baseline é o de antes da migração, não uma foto do depois', fu
  * guarda do próprio dataset — um prefixo de seção que não casa devolveria zero filhos e
  * passaria em silêncio.
  */
-it('[CT-02] a página de destino carrega o conteúdo, não um esqueleto', function (string $idioma, string $inicioDaSecao, string $pagina, int $minimoDeLinhas, int $h3Esperados) use ($baseline): void {
+it('[CT-02] a página de destino carrega o conteúdo, não um esqueleto', function (string $idioma, string $inicioDaSecao, string $pagina, int $minimoDeLinhas, int $h3Esperados) use ($baselineVigente): void {
     $filhos = [];
     $dentro = false;
 
-    foreach ($baseline[$idioma] as [$nivel, $titulo]) {
+    foreach ($baselineVigente[$idioma] as [$nivel, $titulo]) {
         if ($nivel === 2) {
             $dentro = str_starts_with($titulo, $inicioDaSecao);
 
@@ -320,15 +349,15 @@ it('[CT-02] a página de destino carrega o conteúdo, não um esqueleto', functi
  * site; `ambos` ficou resumida no README. E nenhum h3 vive nos dois lados — o que migrou
  * saiu da origem, senão não foi migração, foi cópia (M3), e as duas cópias divergem sozinhas.
  */
-it('[CT-03] nada que migrou continua no README', function (string $idioma) use ($baseline): void {
+it('[CT-03] nada que migrou continua no README', function (string $idioma) use ($baselineVigente): void {
     $noReadme = titulosDoMarkdown(readmeDe($idioma));
     $noSite   = array_merge(...array_values(array_map(titulosDoMarkdown(...), paginasDoSite($idioma))));
-    $h2       = array_values(array_filter($baseline[$idioma], static fn (array $t): bool => $t[0] === 2));
-    $h3       = array_column(array_filter($baseline[$idioma], static fn (array $t): bool => $t[0] === 3), 1);
+    $h2       = array_values(array_filter($baselineVigente[$idioma], static fn (array $t): bool => $t[0] === 2));
+    $h3       = array_column(array_filter($baselineVigente[$idioma], static fn (array $t): bool => $t[0] === 3), 1);
 
     $foraDoLugar = [];
 
-    foreach ($baseline['classificacao'] as $indice => $classe) {
+    foreach ($baselineVigente['classificacao'] as $indice => $classe) {
         $titulo    = $h2[$indice - 1][1];
         $alvo      = semMarcacaoInline($titulo);
         $ficou     = in_array($alvo, array_map(semMarcacaoInline(...), $noReadme), true);
@@ -2030,70 +2059,10 @@ it('[CT-50] mantem os badges de casos de teste e de phpstan sincronizados com a 
     }
 })->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega os READMEs, que passam a ser do projeto.')->group('kit');
 
-/**
- * O piso de cobertura é UM número, e ele está em três lugares — este caso é o que os amarra.
- *
- * ## O buraco que ele fecha
- *
- * `--min=78` está escrito **à mão** no `composer.json` e no `.github/workflows/ci.yml`, e o
- * `78 %` da documentação é prosa. Até este caso existir, **baixar o piso para 70 nos dois lugares
- * não deixava nada vermelho** — e é a única mudança de uma linha capaz de fazer a meta "passar"
- * sem que uma linha de `app/` seja coberta.
- *
- * A ironia é que o próprio docblock de `KitCobertura::pisoPedido()` já registrava o risco: *"o
- * `--min` está escrito à mão em dois lugares, que é exatamente onde erro de digitação mora"*. A
- * guarda que nasceu dali defendia contra o valor **ilegível** (`--mim=78`), e deixou aberta a
- * porta ao lado: o valor **trocado**.
- *
- * Achado pelo quality gate do ciclo 1, como o buraco de maior risco da entrega.
- *
- * ## Por que a documentação é a fonte, e não o `composer.json`
- *
- * Porque é ela que carrega a **justificativa**. RQ-06 pede um número *"escolhido e justificado"*,
- * e número sem o porquê é folclore — que é o que esta feature inteira existe para não ser. Quem
- * quiser mudar o piso muda a decisão escrita primeiro.
- *
- * ## Por que aqui, e não em `KitCoberturaTest`
- *
- * Aquele arquivo relocaliza a raiz da aplicação no `beforeEach`, para que os casos de badge rodem
- * num mundo sem `.github/badges`. Com a raiz trocada, `naArvoreDoKit()` responde sobre a pasta
- * temporária e o caso é **pulado em silêncio** — que é o modo mais barato de uma guarda não
- * guardar nada. Foi assim que ele estreou, e foi o `[CT-10]` de `RedeDeDocumentacaoTest` que
- * cobrou a sentinela canônica.
+/*
+ * O caso que travava "o piso do composer e do CI igual à meta declarada na documentação" morava
+ * aqui como CT-51. Movido para `tests/Kit/KitCoberturaTest.php` como CT-18
+ * (`wikis/specs/feat/cobertura-de-testes/cobertura-de-testes/04-casos-de-teste.md`, achado #1 da
+ * reconciliação): ele não testa o site de documentação, testa a feature de cobertura de testes, e
+ * o `04` dela é quem deveria ter sido consultado para derivá-lo.
  */
-it('[CT-51] mantem o piso do composer e do CI igual a meta declarada na documentacao', function (): void {
-    $doc = (string) file_get_contents(base_path('docs/pt/referencia/qualidade-de-codigo.md'));
-
-    expect($doc)->toMatch('~### O piso é \d{1,3} %~');
-
-    preg_match('~### O piso é (\d{1,3}) %~', $doc, $casado);
-
-    $meta = $casado[1];
-
-    foreach ([
-        'composer.json'            => '~kit:cobertura[^"]*--min=(\d{1,3})~',
-        '.github/workflows/ci.yml' => '~kit:cobertura[^
-]*--min=(\d{1,3})~',
-    ] as $arquivo => $padrao) {
-        preg_match_all($padrao, (string) file_get_contents(base_path($arquivo)), $pisos);
-
-        $this->assertNotEmpty(
-            $pisos[1],
-            "não achei nenhum `--min` de `kit:cobertura` em `{$arquivo}` — se o comando saiu de lá, este caso precisa mudar junto",
-        );
-
-        foreach ($pisos[1] as $piso) {
-            $this->assertSame(
-                $meta,
-                $piso,
-                "`{$arquivo}` aplica o piso {$piso} e a documentação declara a meta {$meta} — um dos dois mente",
-            );
-        }
-    }
-    /*
-     * A mensagem do `skip` não pode citar o diretório da documentação: o `[CT-10]` de
-     * `RedeDeDocumentacaoTest` proíbe `skip(...)` que o mencione, porque condicionar execução à
-     * existência dele é auto-anulante — sem a migração, nada existe, tudo é pulado e a suíte fica
-     * verde com zero entrega. A sentinela correta é `naArvoreDoKit()`, que olha `.github`.
-     */
-})->skip(fn (): bool => ! naArvoreDoKit(), 'A documentação de usuário e o `.github/` são `export-ignore`: nenhum dos dois existe em projeto nascido de `create-project`.')->group('kit');

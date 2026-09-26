@@ -120,8 +120,11 @@ exige a chamada. Os dois mutantes morrem agora: apagar a linha, e comentá-la.
 - [x] `vendor/bin/pint --test --format agent` — `passed`
 - [x] `vendor/bin/phpstan analyse --no-progress` — `0 erros`
 - [x] Guardas novas mortas com mutante, **nas duas direções**, as quatro
-- [ ] `php artisan test --testsuite=Kit,Tenancy --parallel` — a rodar
-- [ ] Quatro cenários — a reconfirmar depois do merge
+- [x] `php artisan test --testsuite=Unit,Feature,Kit,Tenancy --parallel --compact` sobre `main` @ `acf94fb`
+  — **2.993 testes, 2.990 passaram, 3 pulados, 12.582 asserções, 0 falhas**, 188,6 s, 2026-09-26
+  (rodada como baseline da wiki `phpstan-nivel-8`; a caixa tinha ficado aberta)
+- [x] Quatro cenários — reconfirmados depois do merge: evidência publicada no PR #108
+  (`:memo: docs(release): a evidencia dos quatro cenarios da v0.40.2`), 2026-09-26
 
 ## Blockers
 

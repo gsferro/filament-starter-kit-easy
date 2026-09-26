@@ -38,6 +38,7 @@ class PrimeiroAcessoSocial extends Notification implements ShouldQueue
     {
         $rotulo = $this->provedor->rotulo();
         $app    = (string) config('app.name');
+        $painel = Filament::getPanel('app');
 
         return (new MailMessage)
             ->subject("Sua conta no {$app} foi acessada pelo {$rotulo} pela primeira vez")
@@ -46,7 +47,8 @@ class PrimeiroAcessoSocial extends Notification implements ShouldQueue
             ->line('Quando: '.now()->format('d/m/Y H:i').' · IP: '.$this->ip)
             ->line('Se foi você, não há nada a fazer: nas próximas vezes essa conta do '.$rotulo.' entra direto.')
             ->line('Se NÃO foi você, troque a sua senha agora (ou defina uma, pelo bloco "Definir senha por e-mail" do seu perfil) e avise quem administra o sistema.')
-            ->action('Abrir o painel', Filament::getPanel('app')->getUrl())
+            // `getUrl()` é `null` com tenant por domínio: a raiz do painel (ADR-02 de `phpstan-nivel-8`).
+            ->action('Abrir o painel', $painel->getUrl() ?? url($painel->getPath()))
             ->salutation('Atenciosamente, '.$app);
     }
 }

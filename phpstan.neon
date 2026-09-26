@@ -7,7 +7,7 @@ includes:
     - vendor/pestphp/pest-plugin-phpstan/extension.neon
 
 parameters:
-    level: 7
+    level: 8
 
     ignoreErrors:
         # `simpleLightbox()` é MACRO: o solution-forest/filament-simplelightbox o registra em
@@ -77,6 +77,28 @@ parameters:
                 - app/Providers/Filament/AdminPanelProvider.php
                 - app/Providers/Filament/AppPanelProvider.php
                 - app/Providers/Filament/InfraPanelProvider.php
+
+        # `EnsureEmailIsVerified::handle()` do Laravel ANOTA um retorno que o corpo nunca produz:
+        # `@return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse|null`
+        # (vendor/laravel/framework/src/Illuminate/Auth/Middleware/EnsureEmailIsVerified.php:29).
+        # O corpo tem três saídas — `abort(403)`, `Redirect::guest()` e `$next($request)` — e
+        # nenhuma é `null`. `ExigirEmailVerificado` herda e declara `: Response`, que é o correto;
+        # o level 8 acusa a diferença entre o tipo do kit e a anotação do vendor.
+        #
+        # Tentado e descartado ANTES desta exceção (medido em 2026-09-26, wiki `phpstan-nivel-8`):
+        #   - `stubFiles` com o `@return` corrigido: o erro do middleware some, mas a validação de
+        #     stub do próprio PHPStan acusa `class.notFound` no tipo de retorno — para a
+        #     `Response` do Symfony e para a do Illuminate, com e sem `use`, dentro e fora do
+        #     projeto. Troca um erro por outro.
+        #   - `return parent::handle(...) ?? $next($request)`: o `??` nunca dispara, mas quem lê
+        #     entende que o pipeline pode rodar duas vezes. Código que mente para calar analisador.
+        #   - declarar `?Response`: alarga o tipo do kit para caber o erro do vendor.
+        #
+        # A cobertura de verdade é o teste: `tests/Kit/VerificacaoDeEmailTest.php`. E quando o
+        # Laravel corrigir a anotação, `reportUnmatchedIgnoredErrors` avisa que esta exceção sobrou.
+        -
+            message: '#^Method App\\Http\\Middleware\\ExigirEmailVerificado::handle\(\) should return Illuminate\\Http\\RedirectResponse\|Illuminate\\Http\\Response but returns Illuminate\\Http\\RedirectResponse\|Illuminate\\Http\\Response\|null\.$#'
+            path: app/Http/Middleware/ExigirEmailVerificado.php
 
     # `tests` NAO esta nos paths, e a ausencia e medida.
     #

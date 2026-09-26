@@ -204,7 +204,7 @@ class TelaLogin extends Login
             }
 
             $motivo = (string) $conta->motivoDeIndisponibilidade();
-            $painel = Filament::getCurrentOrDefaultPanel()->getId();
+            $painel = (Filament::getCurrentPanel() ?? Filament::getDefaultPanel())->getId();
 
             Log::channel('autenticacao')->warning(
                 "[TelaLogin@authenticate] Login recusado: {$motivo} | user: {$conta->getKey()} - painel: {$painel} - ip: ".request()->ip(),
