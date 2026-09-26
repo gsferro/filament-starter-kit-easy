@@ -122,7 +122,7 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 
 > ### Sobre os pulados — e por que aqui há **teto**, não só registro
 >
-> **Teto corrente: 190**, medido na `v0.40.1` (cenários 3 e 4). A decomposição por causa está na
+> **Teto corrente: 193**, medido na `v0.40.2` (os quatro cenários, idênticos). A decomposição por causa está na
 > seção `Validacao dos quatro cenarios — v0.40.0 e v0.40.1` do `CHANGELOG.md`, e ela foi feita com
 > `--log-junit` **depois** de uma estimativa por `grep` ter errado por 2 — a chamada de
 > `naArvoreDoKit()` também aparece dentro de corpo de caso, e dataset de N linhas conta N pulados.

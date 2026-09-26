@@ -385,6 +385,40 @@ Os dois vieram do relatorio do **Plumb**, que pontuava **79/100**.
 
 ## [0.39.1] - 2026-09-24
 
+### Validacao dos quatro cenarios — `v0.40.2`
+
+Rodados em `STARTER-KIT-EASY/validacao-v0.40.2/`, **em serie**, com a maquina livre. Os cenarios 3
+e 4 nasceram da `v0.40.1` e foram atualizados com `kit:update --all`.
+
+| # | Cenario | Diretorio | Versao | Tenancy | Saida |
+|---|---|---|---|---|---|
+| 1 | limpo, sem tenancy | `novo-sem-tenant` | `0.40.2` | — | `2989 testes / 2796 verdes / 11.944 assercoes / 193 pulados / 0 falhas` |
+| 2 | limpo, com tenancy | `novo-com-tenant` | `0.40.2` | `SIM` | `2989 / 2796 / 11.944 / 193 pulados / 0 falhas` |
+| 3 | `kit:update`, sem tenancy | `velho-sem-tenant` | `0.40.2` | — | `2989 / 2796 / 11.944 / 193 pulados / 0 falhas` |
+| 4 | `kit:update`, com tenancy | `velho-com-tenant` | `0.40.2` | `SIM` | `2989 / 2796 / 11.944 / 193 pulados / 0 falhas` |
+
+**Os quatro sao identicos**, e a identidade e sinal: nao ha divergencia entre instalacao limpa e
+projeto atualizado -- que e exatamente o que as duas rotas de entrega podem produzir, e ja
+produziram (ver o caso da `v0.38.0` abaixo).
+
+#### A prova de que o item 7 fechou para quem ja instalou
+
+Conferido no cenario 3, apos o `kit:update`: a rede de seguranca
+`KitServiceProvider::garantirRaizDeUrlSemPublic()` **chegou**, junto dos dois arquivos de teste
+novos. E o que fecha o defeito para quem instalou entre a v0.16.0 e a v0.36.0 -- o registro do
+middleware deixa de depender do `bootstrap/app.php`, que nunca viajou.
+
+#### Teto de pulados: 190 -> 193
+
+| Causa | Pulados |
+|---|---:|
+| `AcoesPinadasPorShaTest` (novo na `v0.40.2`) | 2 |
+| `RaizDeUrlRegistradaTest` — `[CT-03]` | 1 |
+| **total** | **3** |
+
+`190 + 3 = 193`. Fecha exatamente, e as tres causas sao casos que so valem na arvore do kit: os
+workflows e o `.gitattributes` sao `export-ignore`. **Novo teto: 193.**
+
 ### Validacao dos quatro cenarios — `v0.40.0` e `v0.40.1`
 
 Rodados em `STARTER-KIT-EASY/validacao-v0.40.0/`. Os cenarios 3 e 4 nasceram da `v0.39.1` e foram
