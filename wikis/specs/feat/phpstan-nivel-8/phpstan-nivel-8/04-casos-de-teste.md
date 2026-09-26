@@ -29,7 +29,7 @@
 
 | Letra | O que existe nesta feature | Cenários gerados |
 |---|---|---|
-| S | `phpstan.neon`, script `types:check` do `composer.json`, `.github/workflows/ci.yml`, 14 arquivos com a nulidade tratada (13 alterados em `app/` e `database/`, mais `ExigirEmailVerificado`, tratado por exceção no neon) *(alterado em 2026-09-26: eram "16", contagem do plano sem o código)* | CT-01…CT-08 |
+| S | `phpstan.neon`, script `types:check` do `composer.json`, `.github/workflows/ci.yml`, 15 arquivos alterados em `app/` e `database/` (os 13 do primeiro commit, `ExigirEmailVerificado` e `Paineis.php`, do Adendo 1) *(alterado em 2026-09-26: eram "16", contagem do plano sem o código)* | CT-01…CT-08 |
 | F | Travar o nível. Não calar erro. Definir o comportamento de cada nulo alcançável: painel sem login, hub fora de painel, convite sem papel, widget sem usuário | CT-09…CT-16 |
 | D | O nulo é o dado. `Panel::getLoginUrl()` é null sem `->login()` (`vendor/filament/filament/src/Panel/Concerns/HasAuth.php:380-387`). `getCurrentPanel()` é null fora de request de painel. `Convite::papel()` fica null se o papel sumir. `auth()->user()` é null para o visitante. Linhas de progresso duplicadas com escopo nulo | CT-09…CT-17 |
 | I | Rota HTTP (`/app/login`, callback social), componente Livewire (widget, tela de bloqueio, hubs), método de model (`Convite::aceitar*`), migration, comando `phpstan` | CT-03, CT-09…CT-17 |
@@ -62,7 +62,7 @@
 
 | Item recebido do plano | Recusado como oráculo porque | Destino |
 |---|---|---|
-| Lista dos 14 arquivos com nulidade tratada | é escolha de implementação (onde mexer) | define **onde** procurar nulo alcançável; o CT-08 usa a lista como escopo do "nenhum ignore novo" |
+| Lista dos 15 arquivos com nulidade tratada | é escolha de implementação (onde mexer) | define **onde** procurar nulo alcançável; o CT-08 usa a lista como escopo do "nenhum ignore novo" |
 | Nomes `cardsDoPainel`, `atribuirPapel`, `urlDeLoginDoPainel`, `sairPara` | são nomes de método | detalhe; nenhum `Então` cita método privado |
 | Mensagem exata das exceções de invariante | é comportamento visível que o 00 não fixa (diz só "exceção de invariante") | premissa P-05; o `Então` afirma o **tipo** e o **assunto** da mensagem, não o texto |
 | Fato de vendor: `getUrl()` pode ser null com tenant por domínio | o kit não liga tenant por domínio. `HasRoutes.php:178-179` só devolve null por `getRedirectUrl()` com `hasTenantDomain()` | R3b (lacuna declarada, sem cenário) |
@@ -208,14 +208,14 @@ Funcionalidade: PHPStan travado no level 8
       Quando o guarda de qualidade lê "paths" e "excludePaths"
       Então "paths" é exatamente app, bootstrap/app.php, config, database e routes
       E "excludePaths" é exatamente os três globs de migration de vendor (health, breezy_sessions, pulse)
-      E nenhum dos 14 arquivos tocados por esta entrega está em "excludePaths"
+      E nenhum dos 15 arquivos tocados por esta entrega está em "excludePaths"
 
     @premissa
     Cenário: [CT-08] nenhum @phpstan-ignore novo nasce, e os pré-existentes ficam congelados
       Dado o código de app, config, database, routes e bootstrap/app.php
       Quando o guarda de qualidade conta as ocorrências de "@phpstan-ignore"
       Então as ocorrências são exatamente 2 em "app/Filament/Admin/Resources/Roles/RoleResource.php" e 1 em "app/Models/User.php"
-      E nenhum dos 14 arquivos tocados por esta entrega contém "@phpstan-ignore", "@phpstan-assert" nem chamada a "assert("
+      E nenhum dos 15 arquivos tocados por esta entrega contém "@phpstan-ignore", "@phpstan-assert" nem chamada a "assert("
 ```
 
 - Premissa **P-04** (CT-08): Assumido: os três ignores anteriores a esta entrega ficam, congelados por inventário. Se negado (o mantenedor quer zero): a primeira asserção do CT-08 inverte para "0 ocorrências". **Invariante das duas leituras**: a contagem nunca cresce, e nenhum arquivo tocado aqui ganha ignore.
@@ -231,8 +231,8 @@ Funcionalidade: PHPStan travado no level 8
 | M7 | exceção com `message: '#.*#'` e escopo de arquivo (o caso histórico era o `ExigirEmailVerificado`) | CT-05 (a amostra casa) e, se for a do `ExigirEmailVerificado`, CT-06 (Adendo 1) |
 | M8 | `paths: [app]` numa exceção nova (escopo = raiz) | CT-05 |
 | M9 | arquivo com erro movido para `excludePaths`, ou `database` tirado de `paths` | CT-07 |
-| M10 | `/** @phpstan-ignore-next-line */` num dos 14 arquivos | CT-08 |
-| M10a (revisão adversarial) | exceção pré-existente ganha paths entre os 14 arquivos, ou a regex fica mais larga sem casar as amostras | CT-06 (igualdade com a `main`) |
+| M10 | `/** @phpstan-ignore-next-line */` num dos 15 arquivos | CT-08 |
+| M10a (revisão adversarial) | exceção pré-existente ganha paths entre os 15 arquivos, ou a regex fica mais larga sem casar as amostras | CT-06 (igualdade com a `main`) |
 | M10b (revisão adversarial) | stub próprio declara `getCurrentPanel(): Panel` / `getLoginUrl(): string` e cala os nulos | CT-06 (`stubFiles` só de vendor) |
 | M10c (adversarial, rodada 2) | exceção por `identifier: argument.type` (ou `rawMessage`/`messages`) com escopo de arquivo: cala a classe inteira de erro sem regex para as amostras casarem | CT-05 (chaves proibidas) |
 | M10d (adversarial, rodada 2) | extensão de tipo própria (`services` com `phpstan.broker.dynamicMethodReturnTypeExtension`) devolvendo `Panel` não nulo | CT-06 (sem `services`/`conditionalTags`, includes só de vendor) |
@@ -290,7 +290,7 @@ Os três painéis do kit chamam `->login()` (`AdminPanelProvider.php:70`, `AppPa
 
 | # | Implementação errada plausível | Cenário que mata |
 |---|---|---|
-| M14 | `?? ''` ou `(string)` em `getLoginUrl()`/`getUrl()`: redirect vazio se o nulo um dia acontecer | ⚠️ **lacuna declarada**: na configuração do kit o mutante e o código correto dão o mesmo observável. Tentado: remover `->login()` do `/app` no teste, mas o provider roda antes do teste e reconfigurar muda a feature testada. Roteado ao `fw-revisor-diff` (grep `?? ''`, `?? url('/')`, `(string) ` nos 14 arquivos) |
+| M14 | `?? ''` ou `(string)` em `getLoginUrl()`/`getUrl()`: redirect vazio se o nulo um dia acontecer | ⚠️ **lacuna declarada**: na configuração do kit o mutante e o código correto dão o mesmo observável. Tentado: remover `->login()` do `/app` no teste, mas o provider roda antes do teste e reconfigurar muda a feature testada. Roteado ao `fw-revisor-diff` (grep `?? ''`, `?? url('/')`, `(string) ` nos 15 arquivos) |
 | M15 | `?? url('/')` novo em arquivo tocado: valor inventado, fora do painel | ⚠️ **lacuna declarada**: mesmo motivo de M14 e mesmo roteamento |
 | M16 | `?? url('/')` já existente em `LoginSocialController::urlDoPainel` (vale só com tenant por domínio) mantido como está | ⚠️ **lacuna declarada**: é anterior a esta entrega e fica fora do alcance do kit. É candidata a pergunta P-06 |
 

@@ -57,12 +57,12 @@ tratado como painel inexistente na query — que já cai no padrão. Invariante 
 nunca 500, nunca `Location` vazio.
 
 ### Consequências
-- **Positivas**: um padrão só, o de `app/Support/Paineis.php:urlDoPainel:242`
+- **Positivas**: um padrão só, o de `app/Support/Paineis.php:url():240`
 - **Negativas**: nenhum caminho do kit exercita o fallback, então o teste precisa montar o painel
   sem login — ver `04`
 
 ### Referências
-- `app/Support/Paineis.php:urlDoPainel:242`
+- `app/Support/Paineis.php:url():240`
 
 ## ADR-03: A anotação errada do `EnsureEmailIsVerified` vai para `ignoreErrors`, não para stub
 
@@ -72,7 +72,7 @@ nunca 500, nunca `Location` vazio.
 ### Contexto
 `Illuminate\Auth\Middleware\EnsureEmailIsVerified::handle()` declara
 `@return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse|null`
-(`vendor/laravel/framework/src/Illuminate/Auth/Middleware/EnsureEmailIsVerified.php:handle:29-31`).
+(`vendor/laravel/framework/src/Illuminate/Auth/Middleware/EnsureEmailIsVerified.php:handle():31`).
 O corpo nunca devolve `null`: ou `abort(403)`, ou `Redirect::guest()`, ou `$next($request)`.
 `ExigirEmailVerificado` herda e declara `: Response` (Symfony) — o correto. O level 8 acusa a
 diferença.
@@ -113,8 +113,13 @@ página do site. Um deles é *"PHPStan no level 7 — e por que isso é um ponto
 equivalente em inglês). O cabeçalho da fixture proíbe regenerá-la: ela só falsifica *"o conteúdo
 migrou"* porque foi medida antes da implementação.
 
-### Decisão
-A decidir na implementação, **depois** de ler o teste inteiro — com a restrição fixa de que a
+### Decisão *(alterado em 2026-09-26: decidida)*
+**Saída (b).** `tests/Kit/SiteDeDocumentacaoTest.php` monta um `$baselineVigente` com um mapa
+explícito título-congelado → título-de-hoje, com o motivo de cada entrada; CT-01, CT-02 e CT-03 leem
+dele, e o `$baseline` cru continua intacto para o CT-24, que o compara com o README do commit de
+antes da migração. A saída (a) foi recusada: manteria no site um título que afirma o falso.
+
+Texto original da decisão, antes da implementação: a decidir na implementação, **depois** de ler o teste inteiro — com a restrição fixa de que a
 fixture não é editada. As duas saídas aceitáveis: (a) o título fica e o corpo diz o nível atual;
 (b) um mapa explícito de renomeação no teste, auditável, que diz "este título do baseline vive
 agora com este nome". A escolha e o motivo entram aqui como `*(alterado em …)*`.

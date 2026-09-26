@@ -90,18 +90,13 @@ it('nao envia nada sem sessao', function (): void {
  * o resultado. `registrarRotaDeResetSenhaSemLogin()` (abaixo, só usada aqui) supre exatamente essa
  * rota, e só ela — nenhum outro comportamento do painel muda.
  *
- * CT-23 — `enviar()` lê `(Filament::getCurrentPanel() ?? Filament::getDefaultPanel())->getLoginUrl()`
- * SEM tratar o nulo (`app/Livewire/DefinirSenhaPorEmail.php`) antes de `$this->redirect($loginUrl)`.
- * No painel `financeiro` (`painelRegistradoEmTeste()`, sem `->login()`) esse `getLoginUrl()` é
- * null — a mesma premissa P-02 de CT-10/CT-11 — e o `redirect(null)` congela a tela COM a sessão
- * já encerrada (RD-02): o 3º `Então` (link enviado) e o 2º (sessão encerrada) já aconteceram
- * quando o 1º (redirect para um destino não nulo) falha. É por isso que as três asserções vêm
- * juntas: um caso que só olhasse o redirect aceitaria "redireciona sem encerrar", e um que só
- * olhasse a sessão aceitaria o `redirect(null)`.
- *
- * A linha `financeiro` é esperada VERMELHA nesta entrega (RQ-09/RQ-08 ainda não implementados no
- * código de app — só a wiki e os testes chegaram até aqui): `assertRedirect('/financeiro')` não
- * bate com o destino nulo que o código produz hoje.
+ * CT-23 — no painel `financeiro` (`painelRegistradoEmTeste()`, sem `->login()`) o `getLoginUrl()`
+ * é null — a mesma premissa P-02 de CT-10/CT-11. Antes da correção do Adendo 1 (RQ-08), `enviar()`
+ * passava esse null ao `$this->redirect()`, e a tela congelava COM a sessão já encerrada (RD-02):
+ * o link já tinha saído e a sessão já tinha acabado quando o redirect falhava. É por isso que as
+ * três asserções vêm juntas: um caso que só olhasse o redirect aceitaria "redireciona sem
+ * encerrar", e um que só olhasse a sessão aceitaria o `redirect(null)`. A linha `financeiro` foi
+ * vermelha contra o código anterior à correção (`Component did not perform a redirect`).
  */
 function registrarRotaDeResetSenhaSemLogin(string $painel): void
 {

@@ -285,9 +285,9 @@ function blocoDoStep(string $texto, string $nomeStep): string
 }
 
 /**
- * Os 14 arquivos de app/database com nulidade tratada por esta entrega, na
- * lista literal recebida do orquestrador (o 04 fala em "16 arquivos"; a
- * diferença está reportada como ambiguidade resolvida no retorno deste lote).
+ * Os 15 arquivos de app/database que a entrega do level 8 alterou — `git diff main --name-only --
+ * app database` no dia do merge, incluindo `Paineis.php`, onde nasceu `correnteOuPadrao()`.
+ * Lista literal e congelada: é o escopo do "nenhum ignore novo" do CT-08.
  *
  * @return list<string>
  */
@@ -307,6 +307,7 @@ function arquivosTocadosPelaEntrega(): array
         'app/Models/Convite.php',
         'app/Notifications/PrimeiroAcessoSocial.php',
         'app/Support/ImportExport/ImportadorDoKit.php',
+        'app/Support/Paineis.php',
         'database/migrations/2026_08_12_164953_harden_onboarding_progress_scope.php',
     ];
 }

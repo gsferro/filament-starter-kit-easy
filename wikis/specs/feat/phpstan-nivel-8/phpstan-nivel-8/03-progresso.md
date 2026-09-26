@@ -33,7 +33,7 @@
 
 ## 5. O nível sobe e fica travado
 - [x] `phpstan.neon` `level: 8` — `vendor/bin/phpstan analyse` → `{"result":"passed","errors":0}`, 2026-09-26
-- [ ] guarda em `QualidadeDeCodigoTest`
+- [x] guarda em `QualidadeDeCodigoTest` — CT-01…CT-08 (CT-03 é o comando `composer types:check` → `[OK] No errors`); 3 mutantes no neon derrubam o caso certo e o arquivo volta byte a byte (md5), 2026-09-26
 
 ## 6. Pendências documentais das wikis anteriores
 - [x] `cobertura-de-testes/03` — presets e roadmap fechados com evidência; a caixa do `CoberturaDeTestesTest` depende do 6b, 2026-09-26
@@ -46,14 +46,14 @@
 
 ## 7. Docs e CHANGELOG
 - [x] nível corrente nas docs pt/en, `site-vitepress` pt/en, READMEs, CONTRIBUTING, `wikis/qualidade-de-codigo.md`, `wikis/README.md`, `rector.php`, roadmap §8.1 (e §9 novo) — frases históricas mantidas, 2026-09-26
-- [ ] ADR-04 decidida (título h3 congelado)
+- [x] ADR-04 decidida — saída (b): `$baselineVigente` com mapa de renomeação auditável em `tests/Kit/SiteDeDocumentacaoTest.php`; o `$baseline` cru segue intacto para o CT-24. `--filter` CT-01/02/03/24 → 11 passaram, 2026-09-26
 - [ ] CHANGELOG
 
 ## 8. Release
 - [ ] `config/kit.php` 0.41.0, PR, merge, tag
 
 ## Testes
-- [ ] `04-casos-de-teste.md` implementado
+- [x] `04-casos-de-teste.md` implementado — 22 de 23 CTs com teste; o CT-03 é comando de gate por desenho. `diff` de IDs → só `< CT-03`, 2026-09-26
 
 ## Verificação Final
 - [ ] `vendor/bin/pint --dirty --format agent`
@@ -75,7 +75,7 @@ aceitos; três foram rejeitados com prova.
 | Achado | Eixo / tema | Decisão | Evidência |
 |---|---|---|---|
 | CR#1 = RD-01 | `[CT-02]` vermelho em projeto instalado | **aceito** — Blocker. Adendo 1 / RQ-07, CT-02 alterado, teste corrigido | prova com `.github` renomeado: `tests 3, passed 1, skipped 2` |
-| CR#2 | fallback da tela de bloqueio daria 401 vazio | **rejeitado** | medido: `AuthenticationException::redirectTo()` cai no callback estático (`vendor/laravel/framework/src/Illuminate/Auth/AuthenticationException.php:redirectTo:68-69`), que `withMiddleware()` registra como `route('login')` (`vendor/laravel/framework/src/Illuminate/Foundation/Configuration/ApplicationBuilder.php:withMiddleware:291`); a rota `login` existe (`php artisan route:list --name=login`) |
+| CR#2 | fallback da tela de bloqueio daria 401 vazio | **rejeitado** | medido: `AuthenticationException::redirectTo()` cai no callback estático (`vendor/laravel/framework/src/Illuminate/Auth/AuthenticationException.php:redirectTo:68-69`), que `withMiddleware()` registra como `route('login')` (`vendor/laravel/framework/src/Illuminate/Foundation/Configuration/ApplicationBuilder.php:redirectGuestsTo:291`); a rota `login` existe (`php artisan route:list --name=login`) |
 | CR#3 = RD-02 | `redirect(null)` em `DefinirSenhaPorEmail` e `RegistroPorConvite::register` | **aceito** — Adendo 1 / RQ-08, CT-23 | CT-23 `financeiro` vermelho antes (`Component did not perform a redirect`), verde depois |
 | CR#4 | `phpstan dump-parameters` 8× por suíte | **aceito** — memoizado numa `static` | — |
 | CR#5 | `responder()` sem caso para visitante | **aceito** — Adendo 1 / RQ-10, linha nova no CT-16 | verde na primeira execução: a guarda já estava certa; o CT fecha a lacuna de cobertura |
@@ -95,6 +95,17 @@ anterior à correção — **2 de 2 falham sem o fix**. CT-02 (guarda de teste) 
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
+| `app.md` — papel dentro de `ContextoDePapeis` | `app/**` | aplicada | `Convite::atribuirPapel()` segue em `ContextoDePapeis::em()`; só ganhou o parâmetro `$papel` |
+| `auth.md` — guarda de laço em `mount()` por método, redirect por `HttpResponseException` | `app/Filament/Pages/Auth/**` | aplicada | `TelaBloqueio::mount()` continua saindo por `sairPara()` → `HttpResponseException` |
+| `auth.md` — página fora do painel resolve o painel da conta antes de `canAccessPanel()` | idem | n.a. | os usos novos de `Paineis::correnteOuPadrao()` são log e URL de login, nenhum consulta `canAccessPanel()` |
+| `filament.md` — papel e permissão pela API do spatie | `app/Filament/**` | aplicada | `CreateRole`/`EditRole` seguem em `syncPermissions()` |
+| `filament.md` — asserção de identidade no model | idem | aplicada | `exigirDono()` continua a primeira linha de `aceitarComoUsuarioExistente()`; `papelOuFalha()` vem depois dela |
+| `filament.md` — cartão de hub só por `DescobreCardsDoPainel` | idem | aplicada | o concern mudou por dentro; nenhum `CardItem::make()` fora dele |
+| `models.md` | `app/Models/**` | n.a. | `Convite` não ganhou Resource, trait nem mídia |
+| `testes.md` — helper cruzado em `tests/Pest.php` | `tests/**` | aplicada | `grep` de cada helper novo: definido e usado num arquivo só |
+| `testes.md` — `toContain()` variádico | idem | aplicada | `grep` por `toContain(x, 'mensagem')` nos testes do diff → vazio |
+| `testes.md` — asserção de ausência filtra comentário | idem | aplicada | CT-23 da cobertura usa `semComentarioYaml()`; CT-08 conta `@phpstan-ignore` no texto cru de propósito (o ignore **é** comentário) |
+| `specs.md` — citação conferida por símbolo | `wikis/specs/**` | aplicada | script do step 7 → 8/8 ok, depois de 4 corrigidas |
 
 ## Quality Gate
 
@@ -109,7 +120,7 @@ anterior à correção — **2 de 2 falham sem o fix**. CT-02 (guarda de teste) 
 | a anotação errada do `EnsureEmailIsVerified` se corrige por stub | o validador de stub do PHPStan acusa `class.notFound` para `Response` (Symfony e Illuminate), com e sem `use`, dentro e fora do projeto — medido em 4 tentativas | ADR-03 reescrita para `ignoreErrors`; `00` RQ-06 marcado `(alterado em …)` |
 | `AssistenteChatWidget` tem 11 erros | **10** (`uniq -c`) | tabela do `01` corrigida; B = 7, C = 13 |
 | a caixa de `CoberturaDeTestesTest` no `03` da cobertura só está desatualizada | o `diff` de IDs mostra 22 CTs sem teste e 3 IDs fora do `04` | passo 6b criado no `01` |
-| o `--min=0` precisa de correção (reconciliação de 25/09) | já recusado em `app/Console/Commands/KitCobertura.php:pisoPedido:162` | só o executor é avisado; nenhuma correção de app |
+| o `--min=0` precisa de correção (reconciliação de 25/09) | já recusado em `app/Console/Commands/KitCobertura.php:pisoPedido():137-162` | só o executor é avisado; nenhuma correção de app |
 | `Filament::getPanel('app')` pode ser nulo | o level 8 **não** acusa — a facade é tipada sem `?` | nenhuma mudança; fora do escopo |
 
 ### Varredura da classe irmã

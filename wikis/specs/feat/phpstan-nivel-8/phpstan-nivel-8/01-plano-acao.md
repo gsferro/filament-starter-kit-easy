@@ -38,7 +38,7 @@ caem em quatro classes, e a classe decide a correção:
 | Classe | Erros | O que é | Correção |
 |---|---:|---|---|
 | **A — nulo impossível, tipo mal dito** | 27 | o valor nunca é nulo no fluxo, mas a expressão usada é tipada `?T` | escrever a mesma coisa com uma expressão que carrega o tipo real. **Sem mudança de comportamento** |
-| **B — URL de painel nula** | 7 | `Panel::getLoginUrl()` é `null` em painel sem `->login()`; `Panel::getUrl()` é `null` com tenant por domínio | fallback **que o kit já usa**: `?? url($painel->getPath())` (`app/Support/Paineis.php:urlDoPainel:242`) |
+| **B — URL de painel nula** | 7 | `Panel::getLoginUrl()` é `null` em painel sem `->login()`; `Panel::getUrl()` é `null` com tenant por domínio | fallback **que o kit já usa**: `?? url($painel->getPath())` (`app/Support/Paineis.php:url():240`) |
 | **C — invariante sem guarda** | 13 | o nulo é impossível por **outra** camada (FK, request de painel), mas nada no código diz isso | exceção de invariante com mensagem, no molde de `CreateRole::afterCreate` |
 | **D — anotação errada do vendor** | 1 | o `@return` do `EnsureEmailIsVerified::handle()` do Laravel inclui `null`, que o corpo nunca devolve | guarda de invariante no middleware (ADR-05; era `ignoreErrors`, ADR-03, *alterado em 2026-09-26*) |
 
@@ -102,7 +102,7 @@ Nenhuma.
 
 - **Fallback de URL mascarar configuração errada**: o `url($painel->getPath())` leva à raiz do
   painel, cujo middleware de autenticação redireciona ao login que existir. É o mesmo desenho de
-  `Paineis::urlDoPainel()` e não inventa destino fora do painel
+  `Paineis::url()` e não inventa destino fora do painel
 - **Docs com o nível espalhado**: o "level 7" aparece em 10+ arquivos (lista no passo 7). O teste
   do passo 5 trava o `phpstan.neon`, não a prosa — a prosa é reconciliada no step 7 com `grep`
 
