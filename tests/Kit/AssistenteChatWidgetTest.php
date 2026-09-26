@@ -1,14 +1,19 @@
 <?php
 
 use App\Ai\Agents\Assistente;
+use App\Ai\Agents\GuardaPrompt;
 use App\Livewire\AssistenteChatWidget;
 use App\Models\User;
+use Database\Seeders\AssistenteSeeder;
+use Database\Seeders\GuardaPromptSeeder;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Ai\Models\Conversation;
 use Laravel\Ai\Models\ConversationMessage;
 use Livewire\Livewire;
+use Psr\Log\LoggerInterface;
 
 /**
  * Regra R7 da wiki `phpstan-nivel-8`: o widget do assistente (`AssistenteChatWidget`, montado no
@@ -24,6 +29,16 @@ use Livewire\Livewire;
  */
 beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    /*
+     * Só CT-24/CT-25 chegam a este ponto (pergunta pendente válida, autenticado): o paper do
+     * `Assistente` no catálogo `agentes_ia` e do classificador de guardrail no `GuardaPrompt`,
+     * sem os quais `AgenteBase::agente()`/`middleware()` estouram `RuntimeException` antes do
+     * guard de `responder()` rodar — achado igual ao de `tests/Kit/GuardrailsDtoTest.php`. Nas
+     * demais linhas deste arquivo (403/404 antes do stream), as duas seeders são inertes.
+     */
+    $this->seed([AssistenteSeeder::class, GuardaPromptSeeder::class]);
+    config(['ai.providers.llamacpp.models.text.default' => 'modelo-de-teste']);
 });
 
 /**
@@ -188,3 +203,115 @@ it('[CT-22] um usuário autenticado que não é dono recebe 404 na conversa alhe
     'renomearConversa ("Invadido") — escrita'  => ['renomearConversa'],
     'retomarConversa — leitura'                => ['retomarConversa'],
 ]);
+
+/**
+ * Regra R10 da wiki `phpstan-nivel-8` (origem: quality gate ciclo 1, QA-04): o `responder()`
+ * autenticado só consulta o agente com `mensagemPendente` não nula e de até 2000 caracteres —
+ * o mesmo teto de `#[Validate('required|string|max:2000', ...)]` do campo `mensagem`. É
+ * caracterização da `main`, não número novo do `00`.
+ *
+ * `Assistente::fake(['ok'])` registra o prompt mesmo em streaming: `stream()` passa pelo MESMO
+ * `gatherMiddlewareFor()` de `prompt()` (`vendor/laravel/ai/src/Providers/Concerns/GeneratesText.php:142`,
+ * também usado por `StreamsText.php:35`), que grava em `Ai::recordPrompt()` quando o agente está
+ * faked — por isso `assertPrompted()`/`assertNeverPrompted()` são oráculo válido aqui, ao
+ * contrário do que a nota do `04` cogitava como fallback.
+ *
+ * `GuardaPrompt::fake([...])` libera o guardrail `prompt_guard_local` (2ª camada, classificador
+ * próprio) com veredito seguro — sem ele o teste chamaria de verdade um segundo agente antes de
+ * chegar ao `Assistente` (mesmo padrão de `tests/Kit/GuardrailsDtoTest.php::[CT-22]`).
+ */
+it('[CT-24] o responder da Ana consulta o agente só com pergunta pendente de até 2000 caracteres', function (?string $pendente, string $chamado, string $efeito): void {
+    GuardaPrompt::fake([['seguro' => true, 'categoria' => 'legitima', 'motivo' => 'pergunta comum']]);
+    Assistente::fake(['ok']);
+
+    $ana = usuarioDoKit('panel_user', 'ana@example.com');
+    $this->actingAs($ana);
+
+    $totalConversasAntes = Conversation::count();
+    $totalMensagensAntes = ConversationMessage::count();
+
+    Livewire::test(AssistenteChatWidget::class)
+        ->set('mensagemPendente', $pendente)
+        ->call('responder');
+
+    $chamado === 'é consultado'
+        ? Assistente::assertPrompted($pendente)
+        : Assistente::assertNeverPrompted();
+
+    if ($efeito === 'cresce') {
+        expect(Conversation::count())->toBeGreaterThan($totalConversasAntes)
+            ->and(ConversationMessage::count())->toBeGreaterThan($totalMensagensAntes);
+    } else {
+        expect(Conversation::count())->toBe($totalConversasAntes)
+            ->and(ConversationMessage::count())->toBe($totalMensagensAntes);
+    }
+})->with([
+    'partição nula'                  => [null, 'não é consultado', 'é o mesmo de antes'],
+    'borda−1 (1999 caracteres "a")'  => [str_repeat('a', 1999), 'é consultado', 'cresce'],
+    'borda (2000 caracteres "a")'    => [str_repeat('a', 2000), 'é consultado', 'cresce'],
+    'borda+1 (2001 caracteres "a")'  => [str_repeat('a', 2001), 'não é consultado', 'é o mesmo de antes'],
+]);
+
+/**
+ * CT-25 — pergunta válida grava a conversa da Ana (participante, não órfã) e limpa a bolha
+ * pendente. `conversaId` é `#[Locked]` só contra escrita vinda do browser (CT-16); aqui é o
+ * próprio componente quem o define ao final do streaming (`AssistenteChatWidget::responder()`,
+ * `$this->conversaId = $resposta->conversationId`).
+ */
+it('[CT-25] o responder da Ana com pergunta válida grava a conversa dela e limpa a pendência', function (): void {
+    GuardaPrompt::fake([['seguro' => true, 'categoria' => 'legitima', 'motivo' => 'pergunta comum']]);
+    Assistente::fake(['Resposta fixa do teste']);
+
+    $ana = usuarioDoKit('panel_user', 'ana@example.com');
+    $this->actingAs($ana);
+
+    $componente = Livewire::test(AssistenteChatWidget::class)
+        ->set('mensagemPendente', 'Qual é o prazo?')
+        ->call('responder');
+
+    expect(Conversation::count())->toBe(1);
+
+    $conversa = Conversation::sole();
+
+    expect($conversa->participant_type)->toBe($ana->getMorphClass())
+        ->and($conversa->participant_id)->toBe($ana->getKey());
+
+    $componente
+        ->assertSet('conversaId', $conversa->id)
+        ->assertSet('mensagemPendente', null);
+});
+
+/**
+ * CT-26 — a negação de posse (já provada pelo 404 do CT-22) grava a trilha de auditoria no
+ * canal `ai`. A skill proíbe CT de log; a exceção declarada em R10 é exatamente esta: o log É
+ * a trilha de uma negação de acesso, não um detalhe de formatação — 7 mutantes sobreviventes
+ * publicados pelo gate (M48…M53) miram este warning.
+ *
+ * `Log::partialMock()->shouldReceive('channel')->with('ai')` (padrão de
+ * `tests/Kit/GuardrailsDtoTest.php::[CT-31]`) troca só o canal nomeado por um espião; os
+ * demais canais continuam reais.
+ */
+it('[CT-26] negar a conversa alheia responde 404 e grava a trilha da negação no canal de IA', function (): void {
+    $ana   = usuarioDoKit('panel_user', 'ana@example.com');
+    $bruno = usuarioDoKit('infra', 'bruno@example.com');
+
+    $conversaDaAna = conversaPara($ana, 'Plano de férias');
+
+    $canal = Mockery::spy(LoggerInterface::class);
+    Log::partialMock()->shouldReceive('channel')->with('ai')->andReturn($canal);
+
+    $this->actingAs($bruno);
+
+    Livewire::test(AssistenteChatWidget::class)
+        ->call('retomarConversa', $conversaDaAna->id)
+        ->assertNotFound();
+
+    $canal->shouldHaveReceived('warning')
+        ->withArgs(function (string $mensagem, array $contexto) use ($conversaDaAna, $bruno): bool {
+            return str_starts_with($mensagem, '[AssistenteChatWidget@assertContexto] Acesso negado a conversa')
+                && ($contexto['motivo'] ?? null) === 'posse_invalida'
+                && ($contexto['conversa_id'] ?? null) === $conversaDaAna->id
+                && ($contexto['user_id'] ?? null) === $bruno->id;
+        })
+        ->once();
+});

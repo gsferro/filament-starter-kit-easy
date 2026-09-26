@@ -569,18 +569,108 @@ it('[CT-07] o escopo analisado não encolheu para esconder erro', function (): v
     }
 })->group('kit');
 
-it('[CT-08] nenhum @phpstan-ignore novo nasce, e os pré-existentes ficam congelados', function (): void {
-    $roleResource = (string) file_get_contents(base_path('app/Filament/Admin/Resources/Roles/RoleResource.php'));
-    $userModel    = (string) file_get_contents(base_path('app/Models/User.php'));
+/**
+ * Todo arquivo `.php` sob os `paths` da configuração EFETIVA do PHPStan (app,
+ * bootstrap/app.php, config, database, routes), menos os `excludePaths` — nunca uma
+ * lista fixa de arquivos "tocados pela entrega" (CT-08 × escopo, QA-03 do quality gate
+ * ciclo 1). Um `@phpstan-ignore` em `app/Models/Tenant.php`, fora da entrega, só é
+ * visto porque a varredura é do ESCOPO INTEIRO.
+ *
+ * `paths` traz uma mistura de diretório (`app`) e arquivo solto (`bootstrap/app.php`):
+ * `is_file()` cobre o segundo sem tentar (e falhar) uma varredura recursiva nele.
+ * `excludePaths` é glob (`database/migrations/*_create_health_tables.php`), casado por
+ * `fnmatch()` contra o caminho relativo.
+ *
+ * @param  list<string>  $paths
+ * @param  list<string>  $excludePaths
+ * @return list<string>
+ */
+function arquivosPhpNoEscopoAnalisadoDoPhpstan(array $paths, array $excludePaths): array
+{
+    $arquivos = [];
 
-    expect(substr_count($roleResource, '@phpstan-ignore'))->toBe(2);
-    expect(substr_count($userModel, '@phpstan-ignore'))->toBe(1);
+    foreach ($paths as $path) {
+        $absoluto = base_path($path);
 
-    foreach (arquivosTocadosPelaEntrega() as $arquivo) {
+        if (is_file($absoluto)) {
+            $arquivos[] = $path;
+
+            continue;
+        }
+
+        $iterador = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($absoluto, FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterador as $arquivo) {
+            if ($arquivo->getExtension() !== 'php') {
+                continue;
+            }
+
+            $arquivos[] = relativizarCaminhoDoPhpstan(str_replace('\\', '/', $arquivo->getPathname()));
+        }
+    }
+
+    $arquivos = array_values(array_filter(
+        $arquivos,
+        static function (string $arquivo) use ($excludePaths): bool {
+            foreach ($excludePaths as $padrao) {
+                if (fnmatch($padrao, $arquivo)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    ));
+
+    sort($arquivos);
+
+    return $arquivos;
+}
+
+/**
+ * CT-08 × escopo (QA-03, quality gate ciclo 1): a contagem de `@phpstan-ignore` roda sobre
+ * TODO o escopo analisado pelo PHPStan (`paths`/`excludePaths` da config efetiva), não sobre
+ * uma lista fixa dos arquivos que esta entrega tocou. Medido com
+ * `grep -rnE "@phpstan-ignore|@phpstan-assert|(^|[^a-zA-Z_>:])assert\(" app config database
+ * routes bootstrap/app.php` em 2026-09-26: só as 3 ocorrências abaixo, e zero `assert(`/
+ * `@phpstan-assert` — não há `assert(` legítimo pré-existente, então o inventário do escopo
+ * inteiro é zero.
+ */
+it('[CT-08] nenhum @phpstan-ignore novo nasce em todo o escopo analisado, e os pré-existentes ficam congelados', function (): void {
+    $json = configuracaoEfetivaDoPhpstan();
+
+    $paths        = array_map(relativizarCaminhoDoPhpstan(...), $json['paths']);
+    $excludePaths = array_map(
+        relativizarCaminhoDoPhpstan(...),
+        array_merge($json['excludePaths']['analyseAndScan'] ?? [], $json['excludePaths']['analyse'] ?? [])
+    );
+
+    $arquivos = arquivosPhpNoEscopoAnalisadoDoPhpstan($paths, $excludePaths);
+
+    $ignoresPorArquivo   = [];
+    $totalPhpstanAssert  = 0;
+    $totalChamadaAssert  = 0;
+
+    foreach ($arquivos as $arquivo) {
         $codigo = (string) file_get_contents(base_path($arquivo));
 
-        expect($codigo)->not->toContain('@phpstan-ignore');
-        expect($codigo)->not->toContain('@phpstan-assert');
-        expect((bool) preg_match('/\bassert\s*\(/', $codigo))->toBeFalse();
+        $ignoresNoArquivo = substr_count($codigo, '@phpstan-ignore');
+
+        if ($ignoresNoArquivo > 0) {
+            $ignoresPorArquivo[$arquivo] = $ignoresNoArquivo;
+        }
+
+        $totalPhpstanAssert += substr_count($codigo, '@phpstan-assert');
+        $totalChamadaAssert += preg_match_all('/(?:^|[^a-zA-Z_>:])assert\s*\(/', $codigo);
     }
+
+    expect($ignoresPorArquivo)->toBe([
+        'app/Filament/Admin/Resources/Roles/RoleResource.php' => 2,
+        'app/Models/User.php'                                 => 1,
+    ]);
+
+    expect($totalPhpstanAssert)->toBe(0);
+    expect($totalChamadaAssert)->toBe(0);
 })->group('kit');

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Symfony\Component\Console\Command\Command;
 
 /**
  * `kit:cobertura` — o comando que decide se a cobertura reprova o build.
@@ -331,6 +332,10 @@ it('[CT-11] piso inválido nunca aprova uma medição abaixo da meta, nem toca o
  * (`Illuminate\Console\View\Components\Mutators\EnsureRelativePaths`) reescreve toda mensagem de
  * `components->error()`/`success()` removendo o prefixo de `base_path()` — comportamento do
  * framework, não desta feature.
+ *
+ * A linha "ausente" também é reforçada pelos CT-27/CT-28 da wiki phpstan-nivel-8: código de saída
+ * INVALID (2), a dica `composer test:coverage` presente, e "Relatório Clover ilegível" ausente —
+ * a recusa para na PRIMEIRA causa e não segue para a próxima verificação.
  */
 it('[CT-12] caminho de relatório que não é um relatório recusa, nomeando o caminho', function (string $tipo): void {
     if ($tipo === 'espaco') {
@@ -356,6 +361,16 @@ it('[CT-12] caminho de relatório que não é um relatório recusa, nomeando o c
     $this->assertDoesNotMatchRegularExpression('~\d+(\.\d+)?%~', $saida, 'a saída exibiu um percentual sem ter medido nada');
 
     expect(json_decode((string) File::get($badge), true))->toMatchArray(['message' => '42%', 'color' => 'red']);
+
+    if ($tipo === 'ausente') {
+        expect($codigo)->toBe(Command::INVALID);
+        // Sem o ponto final: `components->bulletList()` roda todo elemento pelo mutator
+        // `EnsureNoPunctuation` (vendor/laravel/framework/.../Mutators/EnsureNoPunctuation.php),
+        // que remove pontuação final de QUALQUER bullet — o ponto do texto-fonte nunca chega
+        // ao terminal.
+        $this->assertStringContainsString('Gere-o com `composer test:coverage`', $saida, 'a saída não trouxe a dica do comando');
+        $this->assertStringNotContainsString('Relatório Clover ilegível', $saida, 'a recusa não parou na primeira causa');
+    }
 })->with([
     'ausente'                     => ['ausente'],
     'existe, e não é arquivo'     => ['diretorio'],
@@ -368,6 +383,9 @@ it('[CT-12] caminho de relatório que não é um relatório recusa, nomeando o c
  * O comando tem três mensagens de recusa distintas; apagar qualquer uma deixa a suíte verde
  * (achado da reconciliação). Esta cobre as duas primeiras; a terceira (zero statements) é CT-14,
  * porque só ela tem o `Então` extra "não vale 100 %".
+ *
+ * A linha "ilegivel" também é reforçada pelos CT-27/CT-28 da wiki phpstan-nivel-8: a saída não
+ * reclama de métricas — a recusa para na causa "ilegível" e não segue para a próxima verificação.
  */
 it('[CT-13] relatório ilegível ou sem métricas recusa, sem aprovar e sem publicar número', function (string $defeito, string $mensagem): void {
     $badge = badgeDePartida($this->pasta);
@@ -385,6 +403,10 @@ it('[CT-13] relatório ilegível ou sem métricas recusa, sem aprovar e sem publ
     $this->assertDoesNotMatchRegularExpression('~\d+(\.\d+)?%~', $saida, 'a saída exibiu um percentual sem ter lido o relatório');
 
     expect(json_decode((string) File::get($badge), true))->toMatchArray(['message' => '42%', 'color' => 'red']);
+
+    if ($defeito === 'ilegivel') {
+        $this->assertStringNotContainsString('Relatório sem `<project><metrics>`', $saida, 'a recusa não parou na primeira causa');
+    }
 })->with([
     'ilegivel'     => ['ilegivel', 'Relatório Clover ilegível'],
     'sem metricas' => ['sem metricas', 'sem `<project><metrics>`'],

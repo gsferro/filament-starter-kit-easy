@@ -21,7 +21,7 @@
 | RQ-03 | melhor degrau de qualidade | 5 | level 7 → 8 |
 | RQ-04 | regra travada | 5 | caso novo em `QualidadeDeCodigoTest` |
 | RQ-05 | merge + tag | 8 | não há PR aberto; é o PR desta entrega |
-| RQ-06 | causa, não silêncio | 1–4 | 47 de 48 corrigidos no código; 1 é anotação errada do vendor (ADR-03) |
+| RQ-06 | causa, não silêncio | 1–4 | 48 de 48 corrigidos no código; o da anotação errada do vendor por guarda de invariante (ADR-05) *(alterado em 2026-09-26: QA-05 do quality gate)* |
 
 ## Objetivo
 
@@ -68,8 +68,9 @@ A contagem por arquivo é de `phpstan analyse --level=8 --error-format=raw | cut
 
 ## Autorização, Rotas, Superfície de UI, Ambiente, Eventos, Jobs
 
-Nada novo. Nenhuma policy, gate ou middleware muda de decisão — o `AssistenteChatWidget` mantém o
-`abort_unless(auth()->check(), 403)` e só passa a **devolver** o usuário que ele já garantia.
+Nada novo. Nenhuma policy, gate ou middleware muda de decisão — o `AssistenteChatWidget` troca
+`abort_unless(auth()->check(), 403)` por `abort_unless($user instanceof User, 403)`, a mesma decisão
+sobre o mesmo objeto, e passa a **devolver** o usuário que autorizou *(alterado em 2026-09-26: QA-05 do quality gate)*.
 **Sem superfície de UI nova**: login, bloqueio, registro por convite, hubs, papéis e o widget do
 assistente não mudam no caminho real.
 
@@ -84,7 +85,8 @@ um valor já carregado (o `$record` da página de papel em vez do `$data` do for
   `LogicException` em vez de `Error: Call to a member function on null`. Nenhum caminho do kit faz
   essa chamada; teste que monte o hub sem painel corrente passaria a ver a mensagem nova
 - **Aceite de convite**: convite cujo papel não carrega passa a lançar `LogicException` com
-  mensagem, antes do `assignRole()`. Hoje a FK `convites.role_id` sem cascade (migration
+  mensagem, na **primeira linha útil dos dois verbos de aceite** — antes do `User::create()` e antes
+  do consumo atômico, não só antes do `assignRole()` *(alterado em 2026-09-26: QA-05 do quality gate)*. Hoje a FK `convites.role_id` sem cascade (migration
   `2026_08_13_000002`) impede o estado
 - **Log dos papéis**: `CreateRole`/`EditRole` passam a logar o nome do papel **gravado** (`$papel`)
   em vez do digitado (`$this->data`) — idênticos, porque `mutateFormDataBeforeCreate` repassa o
@@ -139,15 +141,16 @@ Não se aplica: nenhum log novo. Os logs existentes de `CreateRole`/`EditRole` (
 ### 3. Classe C — o invariante ganha guarda com mensagem
 
 - `DescobreCardsDoPainel::cardsDoPainel()` e `::agrupar()`: um método privado
-  `painelCorrente(): Panel` que lança `LogicException('Hub de cards fora de um request de painel.')`
+  `painelCorrente(): Panel` que lança `LogicException('Hub de cards exige um painel corrente, e nenhum está definido.')` *(alterado em 2026-09-26: QA-05 do quality gate)*
   quando `Filament::getCurrentPanel()` é nulo. **Fail loud**: um hub vazio em silêncio seria pior
   que o erro
 - **Achado colateral**, mesmo arquivo: `cardDe()` tem
   `->url(is_a($componente, Resource::class, true) ? $componente::getUrl() : $componente::getUrl())`
   — os dois ramos são idênticos. Vira `->url($componente::getUrl())`, e o `use Resource` sai se
   ficar sem uso
-- `Convite::atribuirPapel()`: `$papel = $this->papel;` e `LogicException` se não for `Model`,
-  antes do `assignRole()`
+- `Convite::papelOuFalha(): Model`, chamado na primeira linha útil de `aceitar()` (antes do
+  `User::create()`) e de `aceitarComoUsuarioExistente()` (depois de `exigirDono()`, antes do consumo);
+  `atribuirPapel()` recebe o papel já resolvido *(alterado em 2026-09-26: QA-05 do quality gate)*
 - `ImportadorDoKit::beforeSave()` e `::exigirPermissaoDoOperador()`: o `$this->record` do
   `Importer` é `?Model` (`vendor/filament/actions/src/Imports/Importer.php:44`); `resolveRecord()`
   roda antes e nunca devolve nulo neste importador (`:96-97`, `?? new $model`). Guarda com
@@ -217,8 +220,9 @@ tag.
 
 ## Filosofia de Implementação
 
-> **Ponytail ativo em modo `full`.** Nenhum helper novo compartilhado entre arquivos: cada correção
-> é local. A exceção é `painelCorrente()`, porque o mesmo arquivo lê o painel duas vezes.
+> **Ponytail ativo em modo `full`.** Cada correção é local, com duas exceções: `painelCorrente()`,
+> porque o mesmo arquivo lê o painel duas vezes, e `Paineis::correnteOuPadrao()`, que o step 6.5
+> pediu para a expressão que estava colada em quatro telas *(alterado em 2026-09-26: QA-05 do quality gate)*.
 
 ## Testes
 
@@ -233,8 +237,11 @@ tag.
 - [ ] `/code-review high main...HEAD` + passe de eixos (step 6.5)
 - [ ] quality gate (step 8)
 
-## Commits
+## Commits *(alterado em 2026-09-26: QA-05 do quality gate)*
+
+O que o `git log main..HEAD` tem, e não o que o plano previa:
 
 - `:rotating_light: fix(tipos): PHPStan no level 8 — os 48 nulos tratados pela causa`
-- `:memo: docs(qualidade): o level 8 nas docs, e as caixas que as wikis deixaram abertas`
-- `:bookmark: chore(release): v0.41.0`
+- `:white_check_mark: fix(tipos): os achados do step 6.5 -- guarda no lugar da excecao, e nenhum redirect nulo`
+- `:memo: docs: CHANGELOG do level 8, os achados do 6.5 e a reconciliacao da cobertura`
+- os commits do ciclo do quality gate, e o `:bookmark: chore(release): v0.41.0` no PR de release

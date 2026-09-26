@@ -275,22 +275,22 @@ score is not auditable:
 
 | Target | Mutants | Score | Duration | Platform |
 |---|---:|---:|---:|---|
-| `app/Support/CustomizadorDaInstalacao.php` | 225, 4 untested and 0 survivors | **98.22%** | 42.96 s | Windows, PHP 8.4.25, PCOV |
-| `app/Console/Commands/KitCobertura.php` | 158, 4 untested and 0 survivors | **97.47%** | 38.00 s | Windows, PHP 8.4.25, PCOV |
+| `app/Support/CustomizadorDaInstalacao.php` | 225, 4 survivors | **98.22%** | 42.96 s | Windows, PHP 8.4.25, PCOV |
+| `app/Console/Commands/KitCobertura.php` | 158, 4 survivors | **97.47%** | 38.00 s | Windows, PHP 8.4.25, PCOV |
 | `app/Policies/` (all 16) | **4** | 100% | 0.19 s | Windows, PHP 8.4.25, PCOV |
 
-**A survivor is not the same as an untested mutant.** A survivor is a mutant that a test **ran**
-and did not notice — a defect that would slip through. An untested mutant sits on a line that **no**
-test runs. Both measurements above have zero survivors; the untested ones, named for whoever wants
-to close them:
+**Read `UNTESTED` as a survivor.** In `pest-plugin-mutate`, `UNTESTED` is the mutant the test process
+**passed** with — the defect that would slip through
+(`vendor/pestphp/pest-plugin-mutate/src/MutationTest.php:hasFinished:120`, which emits
+`mutationEscaped`). A mutant on a line no test runs is a different category, `UNCOVERED`, and
+`--covered-only` leaves it out. The survivors of both measurements above, named:
 
 - `app/Support/CustomizadorDaInstalacao.php:470` — four mutations on the same line
 - `app/Console/Commands/KitCobertura.php:57`, `:59` (missing report) and `:198` (unreadable
-  report) — early exits that line coverage does not attribute to any test, even though
-  `[CT-12]` and `[CT-13]` in `tests/Kit/KitCoberturaTest.php` assert both messages; the cause was
-  not investigated
+  report) — without the hint or without the early `return`, execution goes on and **also** prints
+  the next case's message; the tests asserted the first message, not the absence of the second
 
-`KitCobertura` went from **89.24%** (17 untested, measured on 2026-09-25) to **97.47%** on
+`KitCobertura` went from **89.24%** (17 survivors, measured on 2026-09-25) to **97.47%** on
 2026-09-26, when the reconciliation of the `cobertura-de-testes` wiki wrote the missing scenarios.
 
 > **A high, instant score is a symptom, not a result.** On Windows, running through
@@ -312,7 +312,7 @@ one that reports 48; it is one nobody will switch on.
 |---|---|---|
 | `arch()->preset()->php()` | passes clean, 53 assertions, 6.5 s | **adopted** |
 | `arch()->preset()->security()` | 1 class flagged (3 `exec()` in `KitInstall`, with a constant) | **adopted**, with the exception declared and confined |
-| **PHPStan level 8** | **48 errors** | roadmap, high priority — fits a release of its own |
+| **PHPStan level 8** | **48 errors** on 2026-09-25, **0** on 2026-09-26 | **adopted** — it is the current gate (top section of this page) |
 | PHPStan level 9 / `max` | **474** and **594** errors | **no** — a cliff, not a step |
 | `arch()->preset()->laravel()` | fails on the 1st class (controller with a method outside the REST set) | **no** — the kit's convention is deliberate |
 | `arch()->preset()->strict()` | **163 of 222** classes are not `final` | **no** — `AgenteBase` exists to be extended |
@@ -328,8 +328,9 @@ this project? **(b)** is the adoption cost known? **(c)** is what it catches mis
 already in place? The roadmap items pass (a) and (c) and are waiting for budget; the rejected ones
 fail (a) or clash with a written convention.
 
-> The figures above age — `48 errors at level 8` is from 2026-09-25 and changes with every release.
-> Whoever picks up a roadmap item **re-measures before estimating**.
+> The figures above age — `474` at level 9 is from 2026-09-25 and changes with every release.
+> Whoever picks up a roadmap item **re-measures before estimating**: the `48` at level 8 was
+> re-measured before it was executed, and had not changed.
 
 ## The README images come out of a test
 

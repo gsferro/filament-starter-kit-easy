@@ -171,11 +171,15 @@ congelada — passo 7 e ADR-04.
 
 ## Notas de Implementação
 
-- **O CT-27 da cobertura acusava uma confusão de conceito, não uma doc incompleta.** A doc dizia
-  "225, sendo 4 não testados"; com score 98,22 % isso é 221/225, **zero sobreviventes**. Os 4 são
-  mutantes em linha que nenhum teste executa. A correção foi remedir (os números do `KitCobertura`
-  tinham envelhecido com a própria reconciliação: 89,24 % → **97,47 %**, 17 → 4 não testados, 38 s)
-  e publicar os não testados por `arquivo:linha`, com a distinção escrita — `cmd //c ".\pestw.cmd …"`
+- **Errei o conceito de mutação, e o quality gate pegou (QA-02).** Li *"225, sendo 4 não testados"*
+  como *"zero sobreviventes, 4 mutantes em linha sem teste"* e publiquei isso nas docs e no CHANGELOG
+  como correção. É o contrário: no `pest-plugin-mutate`, `UNTESTED` é o mutante com o qual o processo
+  de teste **passou** — o sobrevivente (`vendor/pestphp/pest-plugin-mutate/src/MutationTest.php:hasFinished:120`,
+  que emite `mutationEscaped`); linha sem teste é `UNCOVERED`. O CT-27 que o executor escreveu
+  tratava "não testados" como sobreviventes — **certo** — e eu o contrariei no texto. A doc original,
+  que só dizia "4 não testados", estava mais certa que a minha "correção". Os números remedidos
+  continuam valendo (`KitCobertura`: 158 mutantes, **4 sobreviventes**, 97,47 %, 38 s); o que mudou é
+  o que eles significam, e os sobreviventes viraram cenário (QA-02 → destino 3)
 - **Citação de ID em docblock é ID para o `diff`.** Quatro docblocks citavam `[CT-51]`…`[CT-53]` e
   `[CT-01]`..`[CT-12]` como história; o `grep` do step 7 não distingue citação de declaração, e o
   `[CT-01]` citado escondia que o CT-01 real não tem teste. Citação histórica vai sem colchete

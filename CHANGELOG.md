@@ -93,11 +93,10 @@ E um que não era de nulidade: `DescobreCardsDoPainel` tinha um ternário com os
   (`tests/Kit/CoberturaDeTestesTest.php` para as guardas sobre docs, composer e CI), e os cinco que
   não rodam na suíte `Kit` -- dependem do driver de cobertura ou levam ~52 min -- **declarados**,
   não esquecidos
-- **O mutation score publicado foi remedido**, e confundia dois conceitos. *"225, sendo 4 não
-  testados"* com score de 98,22 % são **zero sobreviventes**: os 4 são mutantes em linha que nenhum
-  teste executa. `KitCobertura` saiu de **89,24 % para 97,47 %** (17 → 4 não testados, 38 s,
-  Windows, PHP 8.4.25, PCOV) com a reconciliação acima, e os não testados agora são publicados por
-  `arquivo:linha`
+- **O mutation score publicado foi remedido.** `KitCobertura` saiu de **89,24 % para 97,47 %**
+  (17 → 4 sobreviventes, 38 s, Windows, PHP 8.4.25, PCOV) com a reconciliação acima, e os
+  sobreviventes agora são publicados por `arquivo:linha`. A página passou a dizer que o `UNTESTED`
+  do `pest-plugin-mutate` **é** o sobrevivente — o mutante com o qual o teste passou
 - **79 testes novos**: os nulos alcançáveis (hub, tela de bloqueio, login social, os três pontos
   de entrada do aceite de convite, o widget do assistente para visitante e para autenticado que não
   é dono, "Definir senha por e-mail" em painel sem login), a caracterização da migration de escopo

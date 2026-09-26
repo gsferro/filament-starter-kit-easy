@@ -7,6 +7,8 @@
 > não muda comportamento observável" (RQ-06, *"trata a causa, não cala"*), e o valor é **medido na `main` antes do diff**.
 > Se o cenário ficar vermelho na `main`, o errado é o CT, não o código.
 >
+> **Quality gate, ciclo 1 (QA-02, QA-03, QA-04, destino 3 — teste)**: CT-08 reforçado para o escopo analisado inteiro (QA-03). **CT-24…CT-26** (regra R10, `responder()` autenticado e trilha da negação de posse, QA-04). **CT-27, CT-28** (regra R11, recusas do `kit:cobertura`, QA-02). Os mutantes do default de `pluralSugerido` foram declarados equivalentes (QA-02). Os mutantes sobreviventes publicados pelo gate são nomeados com a linha do código **só para localizar**. O `Então` continua vindo do `00` ou da caracterização da `main`.
+>
 > **Adendo 1 (2026-09-26, RQ-07…RQ-10)**, achados do step 6.5 derivados só do `00`, sem 01/02/03 e sem código como oráculo. Mudanças: CT-02 (RQ-07), CT-05/CT-06 (RQ-09, que **substitui** a parte "exceção em `ignoreErrors`" do RQ-06), CT-16 (RQ-10) e **CT-23 novo** (RQ-08, regra R9). As decisões da sessão entram como premissas fixas, não como pergunta.
 
 ## Perfil de Derivação
@@ -21,7 +23,7 @@
 - A área B tem I=3 porque um defeito ali atribui o papel errado (autorização) ou deixa o usuário sem saída no fluxo de login.
 - **Técnica escalada**: na R2 (área A) usei tabela de decisão em vez de só EP. Um único predicado ("tem path") não separa o baseline por arquivo da exceção legítima, e o inventário fechado é o que separa.
 - Técnicas aplicadas: EP, tabela de decisão (R2), rastreio de efeito com não-efeito (R6a, R6b, R7, R9), caracterização (R7, R8).
-- Cenários: 23 · Regras: 10 (R6 dividida em R6a/R6b; R9 do Adendo 1) · Mutantes previstos: 70 (25 da revisão adversarial e 5 do Adendo 1, fora do teto) · Sem matador: 4 (lacunas declaradas M14, M15, M16 em R3b e M40 em R9)
+- Cenários: 28 · Regras: 12 (R6 dividida em R6a/R6b; R9 do Adendo 1; R10 e R11 do quality gate ciclo 1) · Mutantes previstos com matador ou lacuna: 88 (18 do quality gate ciclo 1) · Sem matador: 4 lacunas declaradas (M14, M15, M16, M40) · Equivalentes declarados: 4 (M57–M60)
 - Contagens por comando: `grep -c "^ *\(Esquema do \)\?Cenário: \[CT-" 04-casos-de-teste.md` e `grep -cE "^\| M[0-9]+[a-z]? " 04-casos-de-teste.md`.
 - **Teto do perfil**: R6b tem 4 cenários contra o teto de 1 do perfil mínimo. O estouro é pelo gate: cada ponto de entrada mata um mutante que nenhum outro mata (M29c…M29g).
 
@@ -52,6 +54,8 @@
 | R7: o widget do assistente só mostra e só age sobre conversas do usuário autenticado. Sem usuário, renderiza vazio e recusa | C (mínimo) | RQ-06, RQ-10 (Adendo 1) | EP (persona) + caracterização | CT-14, CT-15, CT-16, CT-22 |
 | R8: a fusão de duplicatas da migration do onboarding continua igual à da `main` | D (padrão) | RQ-06 | caracterização | CT-17 |
 | R9: nenhum redirect recebe URL de login nula onde o nulo é alcançável | B (mínimo) | RQ-08 (Adendo 1) | EP (com/sem login) | CT-23 (+ lacuna M40) |
+| R10: o `responder()` autenticado só chama o agente com pergunta pendente de até 2000 caracteres, e a negação de posse deixa trilha | C (mínimo) | RQ-06, RQ-10 · origem QA-04 (gate ciclo 1) | BVA 3 valores + partição nula, caracterização, rastreio de efeito | CT-24, CT-25, CT-26 |
+| R11: as recusas do `kit:cobertura` dizem a causa e param na primeira | A (mínimo) | RQ-02 (pendência de teste das últimas rodadas) · origem QA-02 (gate ciclo 1) | EP + rastreio de efeito | CT-27, CT-28 (+ 4 equivalentes M57–M60) |
 
 **RQ sem cenário, com a justificativa:**
 - **RQ-01 / RQ-02** (pendências de código e de teste): são caixas de wiki e evidência de varredura, sem comportamento de aplicação. Quem confere é o `feature-quality-gate` (consistência documental).
@@ -211,14 +215,16 @@ Funcionalidade: PHPStan travado no level 8
       E nenhum dos 15 arquivos tocados por esta entrega está em "excludePaths"
 
     @premissa
-    Cenário: [CT-08] nenhum @phpstan-ignore novo nasce, e os pré-existentes ficam congelados
-      Dado o código de app, config, database, routes e bootstrap/app.php
-      Quando o guarda de qualidade conta as ocorrências de "@phpstan-ignore"
-      Então as ocorrências são exatamente 2 em "app/Filament/Admin/Resources/Roles/RoleResource.php" e 1 em "app/Models/User.php"
-      E nenhum dos 15 arquivos tocados por esta entrega contém "@phpstan-ignore", "@phpstan-assert" nem chamada a "assert("
+    Cenário: [CT-08] nenhum @phpstan-ignore novo nasce em todo o escopo analisado, e os pré-existentes ficam congelados
+      Dado todos os arquivos PHP sob os "paths" da configuração efetiva do PHPStan (app, bootstrap/app.php, config, database, routes), menos os "excludePaths"
+      Quando o guarda de qualidade conta, em cada arquivo, as ocorrências de "@phpstan-ignore", "@phpstan-assert" e chamada a "assert("
+      Então o inventário de "@phpstan-ignore" em todo o escopo é exatamente: 2 em "app/Filament/Admin/Resources/Roles/RoleResource.php" e 1 em "app/Models/User.php", e nenhum outro arquivo
+      E "@phpstan-assert" tem 0 ocorrências em todo o escopo
+      E chamada a "assert(" tem 0 ocorrências em todo o escopo
 ```
 
 - Premissa **P-04** (CT-08): Assumido: os três ignores anteriores a esta entrega ficam, congelados por inventário. Se negado (o mantenedor quer zero): a primeira asserção do CT-08 inverte para "0 ocorrências". **Invariante das duas leituras**: a contagem nunca cresce, e nenhum arquivo tocado aqui ganha ignore.
+- **CT-08 × escopo (QA-03, quality gate ciclo 1)**: o teste contava só nos arquivos da entrega, e o Gherkin já falava do escopo inteiro. Agora a lista de arquivos sai dos `paths`/`excludePaths` do `dump-parameters`, e não de uma lista fixa. Inventário medido com `grep -rnE "@phpstan-ignore|@phpstan-assert|(^|[^a-zA-Z_>:])assert\(" app config database routes bootstrap/app.php` em 2026-09-26: 3 ignores (os citados) e **zero** `assert(` ou `@phpstan-assert`. Não há `assert(` legítimo pré-existente, então o inventário é zero. A chamada `assert(` é casada como função global, não como método (`->assert(`, `::assert(`).
 - CT-04…CT-08 ficam em `tests/Kit/QualidadeDeCodigoTest.php`. A contagem do CT-08 roda sobre o texto cru: o ignore **é** comentário, então aqui não se filtra comentário (`.ai/rules/testes.md`: o filtro vale para asserção de ausência de *comando citado*, que não é o caso).
 - `@var` inline e cast para calar tipo não viram CT, porque não há predicado textual sem falso positivo. Ficam como lacuna declarada, roteada ao `fw-revisor-diff` (eixo "cala o analisador?").
 
@@ -238,6 +244,8 @@ Funcionalidade: PHPStan travado no level 8
 | M10d (adversarial, rodada 2) | extensão de tipo própria (`services` com `phpstan.broker.dynamicMethodReturnTypeExtension`) devolvendo `Panel` não nulo | CT-06 (sem `services`/`conditionalTags`, includes só de vendor) |
 | M10f (Adendo 1, RQ-09) | a exceção do `ExigirEmailVerificado` volta ao `phpstan.neon` em vez da guarda de invariante no código | CT-06 (contagem 4 ≠ 3, e cita `ExigirEmailVerificado`) |
 | M10g (Adendo 1, RQ-09) | a exceção sai do neon e a guarda de invariante no middleware muda o comportamento: o barramento, a resposta 403 JSON ou a trilha no canal de autenticação | regressão `tests/Kit/VerificacaoDeEmailTest.php` (todos os casos), que precisa seguir verde |
+| M10h (QA-03, gate ciclo 1) | `@phpstan-ignore-next-line` em arquivo de `app/` **fora** da entrega (ex.: `app/Models/Tenant.php`), invisível ao teste que só varria os arquivos tocados | CT-08 (inventário do escopo inteiro) |
+| M10i (QA-03, gate ciclo 1) | `@phpstan-assert` ou `assert(` num arquivo de `config/` ou `database/` fora da entrega | CT-08 (zero em todo o escopo) |
 | M10e (adversarial, rodada 2) | nulo "tratado" com `assert($x !== null)` ou `@phpstan-assert`: o PHPStan estreita, e a produção (`zend.assertions=-1`) segue com o nulo | CT-08 |
 
 - O "sem stub próprio" do CT-06 segue o 00: o stub do `EnsureEmailIsVerified` **reprovou**. Pelo **RQ-09 (Adendo 1)**, a anotação errada do vendor passa a ser contornada por **guarda de invariante no código do kit**, e não por exceção no neon. O inventário de `ignoreErrors` volta às 3 anteriores.
@@ -669,6 +677,121 @@ Os três painéis do kit chamam `->login()` (`AdminPanelProvider.php:70`, `AppPa
 
 ---
 
+## Regra R10: o `responder()` autenticado só chama o agente com pergunta pendente dentro do limite, e a negação de posse deixa trilha
+
+> Origem: **quality gate ciclo 1, QA-04** (destino 3). `RQ-06` (tratar nulidade não muda o comportamento observável) e `RQ-10` (autorização do widget). Perfil **mínimo** (área C). Técnica: **BVA 3 valores + partição nula**, **caracterização** (o limite de 2000 e o fluxo autenticado são o comportamento da `main`) e **rastreio de efeito** (a trilha de negação).
+>
+> **Por que há log aqui**: a skill proíbe CT de log. A exceção é quando o log é a **trilha de auditoria** de uma negação de acesso, e é exatamente o que a mutação expôs: 7 mutantes sobreviventes no warning de negação de posse. O cenário afirma o **registro** (canal, prefixo da mensagem, contexto), não a formatação da linha.
+>
+> **Caracterização**: medir CT-24…CT-26 na `main` antes do diff (`git stash`/worktree). Divergiu da `main`, o CT está errado.
+
+```gherkin
+  Regra: autenticado, o responder só consulta o agente quando há pergunta pendente de até 2000 caracteres, e toda negação de posse grava a trilha no canal de IA
+
+    Esquema do Cenário: [CT-24] o responder da Ana consulta o agente só com pergunta pendente de até 2000 caracteres
+      Dado a Ana autenticada, com o agente do assistente falso e resposta fixa "ok"
+      E a "mensagemPendente" do widget definida por set como <pendente>
+      E o total de conversas e de mensagens do assistente anotado
+      Quando a Ana chama "responder" no widget do assistente
+      Então o agente <chamado>
+      E o total de conversas e de mensagens do assistente <efeito>
+
+      Exemplos:
+        | pendente                   | chamado          | efeito                  | # borda           |
+        | nulo                       | não é consultado | é o mesmo de antes      | partição nula     |
+        | 1999 caracteres "a"        | é consultado     | cresce                  | borda−1           |
+        | 2000 caracteres "a"        | é consultado     | cresce                  | borda             |
+        | 2001 caracteres "a"        | não é consultado | é o mesmo de antes      | borda+1           |
+
+    Cenário: [CT-25] o responder da Ana com pergunta válida grava a conversa dela e limpa a pendência
+      Dado a Ana autenticada, sem conversa do assistente, com o agente falso e resposta fixa "Resposta fixa do teste"
+      E a "mensagemPendente" do widget definida por set como "Qual é o prazo?"
+      Quando a Ana chama "responder" no widget do assistente
+      Então existe exatamente 1 conversa do assistente, com a Ana como participante
+      E o "conversaId" do widget é o id dessa conversa
+      E a "mensagemPendente" do widget volta a nulo
+
+    Cenário: [CT-26] negar a conversa alheia responde 404 e grava a trilha da negação no canal de IA
+      Dado a conversa "Plano de férias" pertencente à Ana
+      E "bruno@example.com" autenticado, não dono
+      E o canal de log "ai" espionado
+      Quando bruno chama "retomarConversa" com o id da conversa da Ana
+      Então a resposta é 404
+      E o canal "ai" recebe exatamente 1 warning cuja mensagem começa por "[AssistenteChatWidget@assertContexto] Acesso negado a conversa"
+      E o contexto desse warning tem "motivo" = "posse_invalida", "conversa_id" = id da conversa da Ana e "user_id" = id do bruno
+```
+
+- Arquivo: `tests/Kit/AssistenteChatWidgetTest.php`. O agente falso é o `Assistente::fake([...])` (`vendor/laravel/ai/src/Promptable.php:380`). "Não é consultado" = `Assistente::assertNeverPrompted()`, e "é consultado" = `Assistente::assertPrompted(...)` (`Promptable.php:388-404`). Se o fake não registrar prompt em modo streaming, o executor declara isso e usa a contagem de mensagens como oráculo, que já está no `Então`.
+- CT-24 é **BVA com incremento de 1 caractere** (string), e mais a partição nula. O 2000 é o mesmo teto da validação do campo `mensagem`. É caracterização da `main`, não número do `00`.
+- CT-26 espiona o canal nomeado com `Log::shouldReceive`/`Log::spy()` sobre `Log::channel('ai')` (padrão `espiarConfiguracoes()`/`espiarAutenticacao()` do `tests/Pest.php`). A regra de `.ai/rules/testes.md` sobre o `NullHandler` não atrapalha: o espião substitui o logger.
+- O CT-22 já afirma o 404 de `renomearConversa`/`retomarConversa`. O CT-26 acrescenta a trilha, e o 404 fica repetido de propósito, para o cenário ter âncora de resposta.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível (linha publicada pelo gate, só para localizar) | Cenário que mata |
+|---|---|---|
+| M41 (QA-04) | `AssistenteChatWidget.php:96`, `\|\|` → `&&` na guarda da pendência: pendente de 2001 passa | CT-24 (linha 2001) |
+| M42 (QA-04) | `:96`, `>` → `>=`: a pergunta de exatamente 2000 é descartada | CT-24 (linha 2000) |
+| M43 (QA-04) | `:96`, literal 2000 → 2001: a pergunta de 2001 passa | CT-24 (linha 2001) |
+| M44 (QA-04) | `:96`, literal 2000 → 1999: a pergunta de 2000 é descartada | CT-24 (linha 2000) |
+| M45 (QA-04) | a guarda de nulo sai ao "tratar o nulo" e o agente é chamado com pergunta nula (ou `''`) | CT-24 (linha nulo) |
+| M46 (QA-04) | o `responder` autenticado não limpa `mensagemPendente`, ou não amarra `conversaId` à conversa criada | CT-25 |
+| M47 (QA-04) | conversa gravada sem participante (nulo tratado com `?->`) | CT-25 (participante = Ana) |
+| M48 (QA-04) | `:236-238`, o `Log::…->warning` da negação removido (a chamada some) | CT-26 (exatamente 1 warning) |
+| M49 (QA-04) | canal trocado (`default` em vez de `ai`) ou nível trocado (`info`) | CT-26 (canal `ai`, warning) |
+| M50 (QA-04) | mensagem do warning alterada, ou vazia | CT-26 (prefixo) |
+| M51 (QA-04) | chave `motivo` ausente, ou valor `''` no lugar de `posse_invalida` | CT-26 (`motivo`) |
+| M52 (QA-04) | `conversa_id` ou `user_id` fora do contexto, ou com o valor errado (id do usuário no lugar do id da conversa) | CT-26 (`conversa_id`, `user_id`) |
+| M53 (QA-04) | o log vem depois do `abort(404)` e nunca roda, ou vem antes da conferência e loga também quem é dono | CT-26 (exatamente 1 warning numa negação) |
+
+- Os 7 mutantes de log publicados pelo gate caem em M48…M53: remoção, canal, nível, mensagem, cada chave e a ordem. O teto do perfil mínimo foi excedido **pelo gate**, e mutante medido não conta para o teto.
+
+---
+
+## Regra R11: as recusas do `kit:cobertura` dizem a causa e param na primeira
+
+> Origem: **quality gate ciclo 1, QA-02** (sobreviventes publicados do `kit:cobertura`, da wiki `cobertura-de-testes`, derivados aqui por decisão da sessão). Perfil **mínimo**. Técnica: **EP das recusas + rastreio de efeito** (a mensagem da recusa aparece, a da recusa seguinte **não**, e o código de saída).
+>
+> **Caracterização**: as mensagens citadas são as que a `main` produz hoje. Medir na `main` antes.
+>
+> **Colisão de ID**: `tests/Kit/KitCoberturaTest.php` já tem `[CT-06…CT-17]` e `[CT-29…CT-32]` da wiki `cobertura-de-testes`. Os casos desta regra entram lá com os IDs **CT-27 e CT-28**, que não colidem, e com o nome desta wiki (`phpstan-nivel-8`) na descrição. É isso que mantém a sincronia teste ↔ 04 inequívoca nos dois sentidos.
+
+```gherkin
+  Regra: relatório ausente ou ilegível recusa com a mensagem da causa, a dica quando há, e sem seguir para a próxima verificação
+
+    Cenário: [CT-27] relatório Clover inexistente recusa com a dica do comando e para aí
+      Dado um caminho de relatório que não existe
+      Quando o mantenedor roda "kit:cobertura" com esse caminho
+      Então o código de saída é INVALID (2)
+      E a saída contém "Relatório Clover não encontrado" e o caminho
+      E a saída contém "Gere-o com `composer test:coverage`."
+      E a saída não contém "Relatório Clover ilegível"
+
+    Cenário: [CT-28] relatório Clover ilegível recusa nomeando a causa e não reclama de métricas
+      Dado um arquivo que existe e não é XML
+      Quando o mantenedor roda "kit:cobertura" com esse caminho
+      Então o comando não termina com sucesso
+      E a saída contém "Relatório Clover ilegível" e o caminho
+      E a saída não contém "Relatório sem `<project><metrics>`"
+```
+
+- Arquivo: `tests/Kit/KitCoberturaTest.php`, com `$this->artisan('kit:cobertura', ['clover' => …])` e `expectsOutputToContain`/`doesntExpectOutputToContain`. Os casos existentes `[CT-12]` e `[CT-13]` daquele arquivo não são reescritos: afirmam a recusa, não a parada.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível (linha publicada pelo gate, só para localizar) | Cenário que mata |
+|---|---|---|
+| M54 (QA-02) | `KitCobertura.php:57`, o `bulletList` com a dica do `composer test:coverage` é removido | CT-27 (dica) |
+| M55 (QA-02) | `:59`, o `return self::INVALID` é removido: segue e imprime também "Relatório Clover ilegível" | CT-27 (ausência da segunda mensagem, código INVALID) |
+| M56 (QA-02) | `:198`, o `return null` depois de "ilegível" é removido: segue e imprime também "Relatório sem `<project><metrics>`" | CT-28 (ausência da segunda mensagem) |
+
+**`CustomizadorDaInstalacao::pluralSugerido`, default `$padrao.'s'` (`:470`, 4 mutantes do gate): declarados EQUIVALENTES na configuração do kit, sem cenário.**
+- Motivo 1: a chave `kit.tenancy.label_plural` **sempre existe** (`config/kit.php:355`, `env('KIT_TENANCY_LABEL_PLURAL') ?: 'Organizações'`). Nem a env vazia a deixa nula. Na configuração do kit o default do `config()` nunca é lido, e os 4 mutantes dão o mesmo observável que o código.
+- Motivo 2, o decisivo: um cenário que removesse a chave teria de afirmar o "+s" do padrão, ou seja, **"Organizaçãos"**. O próprio docblock de `pluralSugerido` chama esse valor de defeito ("a sugestão ingênua oferecia **Organizaçãos**"). Escrever esse cenário **cimentaria como esperado** um valor que o kit declara errado, o que é oráculo invertido pela regra 6 do gate da skill.
+- Registrado como **M57–M60 (QA-02), equivalentes**. A pergunta P-08 abaixo decide se o default deve sumir.
+
+---
+
 ## Regressão apontada (testes existentes, não reescritos)
 
 | Arquivo tocado (superfície do plano) | Testes existentes que precisam seguir verdes |
@@ -686,6 +809,7 @@ Os três painéis do kit chamam `->login()` (`AdminPanelProvider.php:70`, `AppPa
 | `app/Http/Middleware/ExigirEmailVerificado.php` (guarda de invariante no lugar da exceção do neon, RQ-09) | `tests/Kit/VerificacaoDeEmailTest.php` (mata o M10g), `tests/Kit/ConfiguracoesDoKitTest.php`, `tests/Kit/RegistroAbertoTest.php`, `tests/Kit/TelasDeAutenticacaoTest.php` |
 | `app/Livewire/AssistenteChatWidget.php` | **nenhum**, por isso CT-14…CT-16 são novos |
 | `database/migrations/2026_08_12_164953_harden_onboarding_progress_scope.php` | **nenhum**, por isso CT-17 é novo |
+| `app/Console/Commands/KitCobertura.php` (QA-02) | `tests/Kit/KitCoberturaTest.php` (`[CT-12]`, `[CT-13]` da wiki `cobertura-de-testes`) e os CT-27/CT-28 novos |
 | `phpstan.neon` | `tests/Kit/QualidadeDeCodigoTest.php` (os casos atuais continuam; o docblock que diz "level 7" precisa acompanhar) |
 
 Comando mínimo da regressão (suíte Kit + Tenancy, uma por comando):
@@ -719,6 +843,16 @@ Comando mínimo da regressão (suíte Kit + Tenancy, uma por comando):
 | Escopo com discriminante nulo (fecha ou abre?) | CT-15/CT-16 (usuário nulo: o histórico **fecha**, e a posse com nulo **recusa com 403**, não abre nem cai em `whereNull`) |
 | Saída do estado de erro (4xx/redirect tem destino) | CT-10, CT-11, CT-23 (destino exato e não vazio). CT-16: o 403 é resposta de ação Livewire, e o visitante continua na tela de login onde já estava. CT-09/CT-13: exceção de invariante em código de desenvolvedor, sem usuário final no caminho (pergunta P-05) |
 
+### Onde CT-27 e CT-28 são materializados *(decisão da sessão, 2026-09-26)*
+
+`tests/Kit/KitCoberturaTest.php` é do namespace da wiki `cobertura-de-testes`, e **lá** CT-27 e
+CT-28 já significam outra coisa (mutation score publicado e `--tia`, este declarado não
+automatizável). Um `[CT-27]`/`[CT-28]` desta wiki naquele arquivo faria o `diff` de IDs da cobertura
+acusar como coberto um cenário que não tem teste. Por isso os dois entram como **asserções a mais**
+nos casos que já existem para o mesmo cenário: CT-27 → `[CT-12]` (relatório ausente) e CT-28 →
+`[CT-13]` (relatório ilegível) de `KitCoberturaTest`. No `diff` de IDs desta wiki eles aparecem como
+`< CT-27`, `< CT-28` — materializados em outro namespace, e declarados aqui.
+
 ## Índice de Cenários
 
 | ID | Cenário | Regra | Técnica | Camada | Arquivo | Mata |
@@ -730,7 +864,7 @@ Comando mínimo da regressão (suíte Kit + Tenancy, uma por comando):
 | CT-05 | exceções com escopo e específicas, sem `identifier`/`rawMessage` (3 linhas) | R2 | tabela de decisão | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M6, M7, M8, M10c |
 | CT-06 | inventário fechado nas 3 da `main`, sem `ExigirEmailVerificado`, sem stub nem extensão própria | R2 | tabela de decisão + caracterização | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M5, M10a, M10b, M10d, M10f |
 | CT-07 | escopo analisado intacto | R2 | EP | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M9 |
-| CT-08 | `@phpstan-ignore` congelado, sem `assert(`/`@phpstan-assert` nos tocados `@premissa` | R2 | EP | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M10, M10e |
+| CT-08 | `@phpstan-ignore` congelado e `assert(`/`@phpstan-assert` zero **no escopo analisado inteiro** `@premissa` | R2 | EP | Kit | `tests/Kit/QualidadeDeCodigoTest.php` | M10, M10e, M10h, M10i |
 | CT-09 | hub sem painel: exceção `@premissa` | R3 | EP | Kit | `tests/Kit/HubDeCardsTest.php` | M11, M12, M13 |
 | CT-10 | bloqueio: destino com/sem login `@premissa` | R4 | EP | Livewire | `tests/Kit/BloqueioDeSessaoTest.php` | M17…M20 |
 | CT-11 | social: destino com/sem login `@premissa` | R5 | EP | Feature (HTTP) | `tests/Kit/LoginSocialPorPainelTest.php` | M21, M22, M23 |
@@ -746,8 +880,13 @@ Comando mínimo da regressão (suíte Kit + Tenancy, uma por comando):
 | CT-21 | tenancy, dois verbos, convite sem papel | R6b | EP por ponto de entrada | Feature (Tenancy) | `tests/Tenancy/ConviteTenancyTest.php`, `tests/Tenancy/ConviteUsuarioExistenteTest.php` | M29f, M29g |
 | CT-22 | autenticado alheio: 404 sem efeito | R7 | caracterização | Livewire | `tests/Kit/AssistenteChatWidgetTest.php` | M31a, M31b |
 | CT-23 | definir senha em painel sem login: raiz do painel, sessão encerrada, 1 link `@premissa` | R9 | EP | Livewire | `tests/Kit/DefinirSenhaPorEmailTest.php` | M36…M39 |
+| CT-24 | responder autenticado: agente só com pendente não nula de até 2000 | R10 | BVA 3 valores + nulo | Livewire | `tests/Kit/AssistenteChatWidgetTest.php` | M41…M45 |
+| CT-25 | responder autenticado grava a conversa da Ana e limpa a pendência | R10 | caracterização | Livewire | `tests/Kit/AssistenteChatWidgetTest.php` | M46, M47 |
+| CT-26 | negação de posse: 404 + warning no canal `ai` com o contexto | R10 | rastreio de efeito | Livewire | `tests/Kit/AssistenteChatWidgetTest.php` | M48…M53 |
+| CT-27 | `kit:cobertura` sem relatório: dica, INVALID, e para | R11 | EP + rastreio | Kit (artisan) | `tests/Kit/KitCoberturaTest.php` | M54, M55 |
+| CT-28 | `kit:cobertura` ilegível: não reclama de métricas | R11 | EP + rastreio | Kit (artisan) | `tests/Kit/KitCoberturaTest.php` | M56 |
 
-Lacunas declaradas (sem matador): M14, M15, M16 (R3b) e M40 (R9), todas de nulo inalcançável na configuração do kit, roteadas ao `fw-revisor-diff`. O M10g é morto pela regressão existente `VerificacaoDeEmailTest`, não por CT novo.
+Lacunas declaradas (sem matador): M14, M15, M16 (R3b) e M40 (R9), todas de nulo inalcançável na configuração do kit, roteadas ao `fw-revisor-diff`. **Equivalentes declarados**: M57–M60 (R11, default de `pluralSugerido`), com o motivo na R11. O M10g é morto pela regressão existente `VerificacaoDeEmailTest`, não por CT novo.
 
 ## Cogitado e cortado
 
@@ -783,6 +922,9 @@ Lacunas declaradas (sem matador): M14, M15, M16 (R3b) e M40 (R9), todas de nulo 
 - **Excluir pela tela um papel que tem convite pendente** (anterior a esta entrega): a FK recusa, e a ação de excluir do `RoleResource` vira `QueryException` (500).
   - **Assumido**: fora desta entrega. O CT-12 prova só o desenho (a FK existe).
   - **Se negado**: nasce um CT pela ação da tela com aviso de recusa, papel e convite intactos.
+- **QA-02 / default `$padrao.'s'` de `CustomizadorDaInstalacao::pluralSugerido`** — equivalente na configuração do kit (a chave sempre existe) e, se lido, produz "Organizaçãos", que o próprio docblock chama de defeito.
+  - **Assumido**: fica como está, com os 4 mutantes (M57–M60) declarados equivalentes.
+  - **Se negado** (o default deve sumir ou virar `label_plural` do padrão correto): o código muda e nasce um cenário com a chave removida, afirmando o valor decidido. Nunca "Organizaçãos".
 - **RQ-06 / `?? url('/')` já existente em `LoginSocialController::urlDoPainel`** — é valor inventado pela letra do 00, mas anterior a esta entrega e inalcançável sem tenant por domínio.
   - **Assumido**: fica fora desta entrega (lacuna M16).
   - **Se negado**: vira exceção de invariante; sem CT executável na configuração do kit.

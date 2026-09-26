@@ -273,21 +273,22 @@ auditável:
 
 | Alvo | Mutantes | Score | Duração | Plataforma |
 |---|---:|---:|---:|---|
-| `app/Support/CustomizadorDaInstalacao.php` | 225, sendo 4 não testados e 0 sobreviventes | **98,22 %** | 42,96 s | Windows, PHP 8.4.25, PCOV |
-| `app/Console/Commands/KitCobertura.php` | 158, sendo 4 não testados e 0 sobreviventes | **97,47 %** | 38,00 s | Windows, PHP 8.4.25, PCOV |
+| `app/Support/CustomizadorDaInstalacao.php` | 225, sendo 4 sobreviventes | **98,22 %** | 42,96 s | Windows, PHP 8.4.25, PCOV |
+| `app/Console/Commands/KitCobertura.php` | 158, sendo 4 sobreviventes | **97,47 %** | 38,00 s | Windows, PHP 8.4.25, PCOV |
 | `app/Policies/` (as 16) | **4** | 100 % | 0,19 s | Windows, PHP 8.4.25, PCOV |
 
-**Sobrevivente não é o mesmo que não testado.** Sobrevivente é mutante que um teste **executou** e
-não percebeu — defeito que passaria. Não testado é mutante numa linha que **nenhum** teste executa.
-As duas medições acima têm zero sobreviventes; os não testados, nomeados para quem quiser fechá-los:
+**Leia `UNTESTED` como sobrevivente.** No `pest-plugin-mutate`, `UNTESTED` é o mutante com o qual o
+processo de teste **passou** — o defeito que escaparia
+(`vendor/pestphp/pest-plugin-mutate/src/MutationTest.php:hasFinished:120`, que emite
+`mutationEscaped`). Mutante em linha que nenhum teste executa é outra categoria, `UNCOVERED`, e o
+`--covered-only` a tira da conta. Os sobreviventes das duas medições acima, nomeados:
 
 - `app/Support/CustomizadorDaInstalacao.php:470` — quatro mutações na mesma linha
 - `app/Console/Commands/KitCobertura.php:57`, `:59` (o relatório ausente) e `:198` (o relatório
-  ilegível) — saídas antecipadas que a cobertura por linha não atribui a nenhum teste, embora
-  `[CT-12]` e `[CT-13]` de `tests/Kit/KitCoberturaTest.php` afirmem as duas mensagens; o motivo
-  não foi investigado
+  ilegível) — sem a dica ou sem o `return` antecipado, a execução segue e imprime **também** a
+  mensagem do caso seguinte; os testes afirmavam a primeira mensagem e não a ausência da segunda
 
-O `KitCobertura` saiu de **89,24 %** (17 não testados, medido em 2026-09-25) para **97,47 %** em
+O `KitCobertura` saiu de **89,24 %** (17 sobreviventes, medido em 2026-09-25) para **97,47 %** em
 2026-09-26, quando a reconciliação da wiki `cobertura-de-testes` escreveu os cenários que faltavam.
 
 > **Score alto e instantâneo é sintoma, não resultado.** No Windows, rodar por `vendor/bin/pest`
@@ -308,7 +309,7 @@ que um que acusa 48; é um que ninguém vai ligar.
 |---|---|---|
 | `arch()->preset()->php()` | passa limpo, 53 asserções, 6,5 s | **adotado** |
 | `arch()->preset()->security()` | 1 classe acusada (3 `exec()` no `KitInstall`, com constante) | **adotado**, com a exceção declarada e confinada |
-| **PHPStan level 8** | **48 erros** | roadmap, prioridade alta — cabe numa release própria |
+| **PHPStan level 8** | **48 erros** em 2026-09-25, **0** em 2026-09-26 | **adotado** — é o gate atual (seção do topo desta página) |
 | PHPStan level 9 / `max` | **474** e **594** erros | **não** — é precipício, não degrau |
 | `arch()->preset()->laravel()` | reprova na 1.ª classe (controller com método fora do conjunto REST) | **não** — a convenção do kit é deliberada |
 | `arch()->preset()->strict()` | **163 de 222** classes não são `final` | **não** — `AgenteBase` existe para ser estendida |
@@ -324,8 +325,9 @@ projeto? **(b)** o custo de adoção é conhecido? **(c)** o que ele pega não �
 existe? Os itens de roadmap passaram em (a) e (c) e esperam orçamento; os recusados falharam em
 (a) ou conflitam com convenção escrita.
 
-> Os números acima envelhecem — `48 erros no level 8` é de 2026-09-25 e muda a cada release. Quem
-> for executar um item de roadmap **remede antes de estimar**.
+> Os números acima envelhecem — `474` no level 9 é de 2026-09-25 e muda a cada release. Quem for
+> executar um item de roadmap **remede antes de estimar**: o `48` do level 8 foi remedido antes de
+> ser executado, e não tinha mudado.
 
 ## As imagens do README saem de um teste
 

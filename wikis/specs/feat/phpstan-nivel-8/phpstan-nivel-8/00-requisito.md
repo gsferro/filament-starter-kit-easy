@@ -42,7 +42,7 @@
 | Rector | sem nenhum set ligado | **decisão documentada** em `rector.php` e travada por `QualidadeDeCodigoTest` — não é pendência |
 | Wiki `cobertura-de-testes` | **4 caixas abertas** em `03-progresso.md` | três delas estão feitas (presets em `ArquiteturaDoCodigoTest`, roadmap §8 escrito, CTs em `KitCoberturaTest`/`RecorteDaCoberturaTest`) — caixa desatualizada; a quarta (ponytail) é recusa declarada |
 | Wiki `plumb-e-dividas-tecnicas` | **2 caixas abertas** na Verificação Final | "suíte a rodar" e "cenários a reconfirmar" — a evidência existe (#108 e a rodada de hoje), a caixa não foi fechada |
-| PHPStan **level 8** | **48 erros em 16 arquivos** — o mesmo número medido em 2026-09-24 no roadmap §8.1 | `phpstan analyse --level=8` |
+| PHPStan **level 8** | **48 erros em 14 arquivos** *(alterado em 2026-09-26: dizia 16; a contagem por `cut -d: -f1 \| sort \| uniq -c` dá 14, QA-07)* — o mesmo número medido em 2026-09-24 no roadmap §8.1 | `phpstan analyse --level=8` |
 
 ## Ambiguidades e Perguntas Abertas
 
@@ -53,6 +53,21 @@
     (roadmap 8.3) exige **decidir o lado**, não rodar uma ferramenta, e fica fora.
   - **Se negado**: se o mantenedor quiser o level 9, a entrega vira outra wiki: 474 correções não
     cabem num diff revisável junto com esta.
+- **RQ-03 / RQ-01** — *"as regras de **validação, teste e qualidade**"* tem três substantivos, e a
+  primeira decomposição só leu o terceiro (achado QA-01 do quality gate, ciclo 1). *(acrescentado
+  em 2026-09-26)*
+  - **Assumido**: *"regras de validação"* = o que **valida** uma entrega antes do merge — os gates
+    de `composer test` (Pint, PHPStan, Filacheck) e a CI; *"regras de teste"* = o que garante que a
+    suíte prova o que diz provar — a sincronia CT ↔ teste das wikis, o mutation score publicado e
+    as guardas de arquitetura. Por essa leitura as três palavras estão atendidas: validação pelo
+    level 8 travado (RQ-03/RQ-04), teste pela reconciliação da wiki `cobertura-de-testes` e pelo
+    score remedido (RQ-02). E *"pendente nas últimas rodadas"* (RQ-01) inclui os 48 erros porque o
+    level 8 era o item **adiado** 8.1 do roadmap — pendência registrada, não trabalho inventado
+  - **Se negado**: se *"regras de validação"* for **validação de dados** (form requests, regras
+    dos formulários Filament, `rules()` de Livewire), é auditoria de outra natureza e vira wiki
+    própria: nenhuma linha desta entrega a cobre
+  - **Levado ao mantenedor** no fim da sessão, com a leitura assumida
+
 - **RQ-05** — não há PR aberto.
   - **Assumido**: a cláusula se cumpre pelo PR **desta** entrega, mergeado e tagueado junto com o
     `[Unreleased]` que já estava na `main` (#107–#109).
