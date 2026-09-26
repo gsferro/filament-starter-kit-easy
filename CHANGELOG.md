@@ -56,7 +56,16 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   patch 3, default 5. Patch de seguranca nao entra na regra -- o Dependabot ignora o cooldown para
   advisory, que e exatamente o caso em que esperar custa mais do que atualizar.
 
-Os dois vieram do relatorio do **Plumb**, que pontuava **79/100**.
+Os dois vieram do relatorio do **Plumb**, que pontuava **79/100**. Depois do rescan:
+**97, "Good"** -- Security **100**, Ecosystem **100**, Maintenance **89**.
+
+Os 3 pontos que faltam vem de um check so, o `lean-dist`, que acusa o `phpstan.neon` dentro do
+pacote distribuido. Ele viaja **de proposito**, com a decisao escrita em `.gitattributes:49-50`:
+os scripts `lint`, `types:check` e `test` seguem no dist, e sem esses arquivos nenhum deles roda
+no projeto instalado. Marca-lo como `export-ignore` para ganhar 3 pontos quebraria
+`composer types:check` em todo projeto que nasce do kit.
+
+**Os 3 pontos ficam.** E o ponto em que a metrica e o produto discordam, e quem manda e o produto.
 
 ### Corrigido
 
