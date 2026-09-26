@@ -24,7 +24,7 @@ jobs:
           coverage: none
 
       - name: Cache das dependências PHP
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: vendor
           key: ${{ runner.os }}-php84-${{ hashFiles('composer.lock') }}
@@ -87,14 +87,14 @@ jobs:
           node-version: '22'
 
       - name: Cache das dependências PHP
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: vendor
           key: ${{ runner.os }}-php84-${{ hashFiles('composer.lock') }}
           restore-keys: ${{ runner.os }}-php84-
 
       - name: Cache do node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
@@ -104,7 +104,7 @@ jobs:
       # `@playwright/test` no lockfile, então o `hashFiles` dele é a chave correta: subir o
       # Playwright invalida o cache, como deve.
       - name: Cache dos browsers do Playwright
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: cache-playwright
         with:
           path: ~/.cache/ms-playwright
@@ -169,7 +169,7 @@ jobs:
           coverage: pcov
 
       - name: Cache das dependencias PHP
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: vendor
           key: ${{ runner.os }}-php84-${{ hashFiles('composer.lock') }}
@@ -219,7 +219,7 @@ jobs:
           node-version: '22'
 
       - name: Cache das dependências PHP
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: vendor
           key: ${{ runner.os }}-php84-${{ hashFiles('composer.lock') }}

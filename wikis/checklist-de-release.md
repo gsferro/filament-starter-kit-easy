@@ -122,6 +122,12 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 
 > ### Sobre os pulados — e por que aqui há **teto**, não só registro
 >
+> **Teto corrente: 190**, medido na `v0.40.1` (cenários 3 e 4). A decomposição por causa está na
+> seção `Validacao dos quatro cenarios — v0.40.0 e v0.40.1` do `CHANGELOG.md`, e ela foi feita com
+> `--log-junit` **depois** de uma estimativa por `grep` ter errado por 2 — a chamada de
+> `naArvoreDoKit()` também aparece dentro de corpo de caso, e dataset de N linhas conta N pulados.
+> **Não estime: meça.**
+>
 > Na `v0.38.0` foram **145** por cenário, e eles são deliberados: os casos que não se aplicam fora
 > da árvore do kit (site de documentação, fluxos do GitHub Actions, histórico de planejamento). O
 > número **envelhece** a cada release, e é medição histórica: vale para a `v0.38.0`, não para a
