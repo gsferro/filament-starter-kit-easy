@@ -28,3 +28,8 @@ Credencial (`senha`, `password`, `token`, `secret`, `api_key`) NUNCA vira propri
 Coleção de sub-Data é array tipado (`list<XData>`); `DataCollection` só com a necessidade escrita no docblock. Consumo e resposta de API exigem Data.
 
 Enforçado por `App\Support\GuardaDoPadraoDeDto` + `tests/Kit/DtoComLaravelDataTest.php` — o guarda expõe as raízes padrão como dado e o kit publicado passa verde nele. Ver `wikis/specs/feat/laravel-data-como-padrao-de-dto/`.
+
+## Painel corrente por Paineis::correnteOuPadrao(), URL de painel nula por Paineis::url()
+`Filament::getCurrentOrDefaultPanel()` é anotado `?Panel` e nunca é nulo; use `App\Support\Paineis::correnteOuPadrao(): Panel`. Com o PHPStan no level 8 (gate do `composer test`), a chamada direta reprova, e o atalho `?->` esconde que o nulo é impossível. Exceção: hub de cards e tudo que NÃO pode cair no painel padrão lê `Filament::getCurrentPanel()` e falha com `LogicException` quando é nulo (`DescobreCardsDoPainel::painelCorrente()`), senão o hub do /admin lista os cartões do /app.
+
+`Panel::getUrl()` é nulo com tenant por domínio e `Panel::getLoginUrl()` é nulo em painel sem `->login()`: nunca passe isso a `redirect()`/`RedirectResponse` (congela a tela ou estoura `TypeError`). Use `Paineis::url($painel)` ou `$painel->getLoginUrl() ?? url($painel->getPath())` — a raiz do painel cai no `route('login')` pelo `redirectGuestsTo` padrão. Origem: `wikis/specs/feat/phpstan-nivel-8/` (ADR-02).
