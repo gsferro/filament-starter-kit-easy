@@ -108,6 +108,11 @@
   - **Se negado**: vira exceção de invariante; sem CT executável na configuração do kit.
 ```
 
+- **P-08 (quality gate ciclo 2, QA-10)** — o default `$padrao.'s'` de
+  `CustomizadorDaInstalacao::pluralSugerido()` nunca é lido e produziria o plural que o docblock
+  chama de defeito. **Assumido**: fica, fora desta entrega (4 mutantes equivalentes declarados).
+  **Se negado**: o default sai numa entrega própria.
+
 ## Fora de Escopo (declarado)
 
 - PHPStan level 9 / `max` (474 / 594 erros)

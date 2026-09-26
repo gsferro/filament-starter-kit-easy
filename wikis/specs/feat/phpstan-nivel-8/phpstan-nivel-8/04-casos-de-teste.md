@@ -684,6 +684,7 @@ Os três painéis do kit chamam `->login()` (`AdminPanelProvider.php:70`, `AppPa
 > **Por que há log aqui**: a skill proíbe CT de log. A exceção é quando o log é a **trilha de auditoria** de uma negação de acesso, e é exatamente o que a mutação expôs: 7 mutantes sobreviventes no warning de negação de posse. O cenário afirma o **registro** (canal, prefixo da mensagem, contexto), não a formatação da linha.
 >
 > **Caracterização**: medir CT-24…CT-26 na `main` antes do diff (`git stash`/worktree). Divergiu da `main`, o CT está errado.
+> *(QA-13 do quality gate, ciclo 2: **não medido na `main`**. Os três nasceram depois da correção, contra o código da branch; a guarda da linha 96 e o log de `assertContexto` não mudaram de comportamento no diff — só a leitura de `mensagemPendente` virou local —, e um mutante manual (`> 2000` → `>= 2000`) aplicado à branch foi morto pela linha "borda" do CT-24. Fica declarado como não feito.)*
 
 ```gherkin
   Regra: autenticado, o responder só consulta o agente quando há pergunta pendente de até 2000 caracteres, e toda negação de posse grava a trilha no canal de IA
@@ -754,7 +755,7 @@ Os três painéis do kit chamam `->login()` (`AdminPanelProvider.php:70`, `AppPa
 >
 > **Caracterização**: as mensagens citadas são as que a `main` produz hoje. Medir na `main` antes.
 >
-> **Colisão de ID**: `tests/Kit/KitCoberturaTest.php` já tem `[CT-06…CT-17]` e `[CT-29…CT-32]` da wiki `cobertura-de-testes`. Os casos desta regra entram lá com os IDs **CT-27 e CT-28**, que não colidem, e com o nome desta wiki (`phpstan-nivel-8`) na descrição. É isso que mantém a sincronia teste ↔ 04 inequívoca nos dois sentidos.
+> **Colisão de ID** *(alterado em 2026-09-26: QA-10 do quality gate, ciclo 2)*: `tests/Kit/KitCoberturaTest.php` é do namespace da wiki `cobertura-de-testes`, onde CT-27 e CT-28 já têm outro sentido. Os dois cenários desta regra são **asserções a mais** nos casos `[CT-12]` e `[CT-13]` daquele arquivo, sem ID próprio lá — ver "Onde CT-27 e CT-28 são materializados", antes do Índice.
 
 ```gherkin
   Regra: relatório ausente ou ilegível recusa com a mensagem da causa, a dica quando há, e sem seguir para a próxima verificação
@@ -775,7 +776,7 @@ Os três painéis do kit chamam `->login()` (`AdminPanelProvider.php:70`, `AppPa
       E a saída não contém "Relatório sem `<project><metrics>`"
 ```
 
-- Arquivo: `tests/Kit/KitCoberturaTest.php`, com `$this->artisan('kit:cobertura', ['clover' => …])` e `expectsOutputToContain`/`doesntExpectOutputToContain`. Os casos existentes `[CT-12]` e `[CT-13]` daquele arquivo não são reescritos: afirmam a recusa, não a parada.
+- Arquivo: `tests/Kit/KitCoberturaTest.php`, com `$this->artisan('kit:cobertura', ['clover' => …])` e `expectsOutputToContain`/`doesntExpectOutputToContain`. Os casos existentes `[CT-12]` e `[CT-13]` daquele arquivo **recebem** as asserções da parada ao lado das da recusa *(alterado em 2026-09-26: QA-10 do quality gate, ciclo 2)*.
 
 #### Mutantes previstos
 
@@ -788,7 +789,7 @@ Os três painéis do kit chamam `->login()` (`AdminPanelProvider.php:70`, `AppPa
 **`CustomizadorDaInstalacao::pluralSugerido`, default `$padrao.'s'` (`:470`, 4 mutantes do gate): declarados EQUIVALENTES na configuração do kit, sem cenário.**
 - Motivo 1: a chave `kit.tenancy.label_plural` **sempre existe** (`config/kit.php:355`, `env('KIT_TENANCY_LABEL_PLURAL') ?: 'Organizações'`). Nem a env vazia a deixa nula. Na configuração do kit o default do `config()` nunca é lido, e os 4 mutantes dão o mesmo observável que o código.
 - Motivo 2, o decisivo: um cenário que removesse a chave teria de afirmar o "+s" do padrão, ou seja, **"Organizaçãos"**. O próprio docblock de `pluralSugerido` chama esse valor de defeito ("a sugestão ingênua oferecia **Organizaçãos**"). Escrever esse cenário **cimentaria como esperado** um valor que o kit declara errado, o que é oráculo invertido pela regra 6 do gate da skill.
-- Registrado como **M57–M60 (QA-02), equivalentes**. A pergunta P-08 abaixo decide se o default deve sumir.
+- Registrado como **M57–M60 (QA-02), equivalentes**. A pergunta **P-08** (bloco "Perguntas para o 00-requisito.md", e espelhada no 00) decide se o default deve sumir *(alterado em 2026-09-26: QA-10 do quality gate, ciclo 2)*.
 
 ---
 
@@ -928,6 +929,9 @@ Lacunas declaradas (sem matador): M14, M15, M16 (R3b) e M40 (R9), todas de nulo 
 - **RQ-06 / `?? url('/')` já existente em `LoginSocialController::urlDoPainel`** — é valor inventado pela letra do 00, mas anterior a esta entrega e inalcançável sem tenant por domínio.
   - **Assumido**: fica fora desta entrega (lacuna M16).
   - **Se negado**: vira exceção de invariante; sem CT executável na configuração do kit.
+- **P-08 — o default `$padrao.'s'` de `CustomizadorDaInstalacao::pluralSugerido()` deve sumir?** A chave `kit.tenancy.label_plural` sempre existe, então o default nunca é lido, e o valor que ele produziria ("Organizaçãos") é o que o próprio docblock chama de defeito.
+  - **Assumido**: fica como está, fora desta entrega; os 4 mutantes são equivalentes declarados (M57–M60).
+  - **Se negado**: o default sai (ou vira `$padrao`), e os mutantes deixam de existir.
 ```
 
 ## Revisão adversarial

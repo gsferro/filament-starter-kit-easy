@@ -230,12 +230,13 @@ tag.
 
 ## Verificação Final
 
-- [ ] `vendor/bin/pint --dirty --format agent`
-- [ ] `vendor/bin/phpstan analyse` (level 8) — 0 erros
-- [ ] `vendor/bin/filacheck --fix`
-- [ ] suíte Unit, Feature, Kit, Tenancy `--parallel` contra a baseline (2.993 / 2.990 / 3 pulados)
-- [ ] `/code-review high main...HEAD` + passe de eixos (step 6.5)
-- [ ] quality gate (step 8)
+> Fechada no `03-progresso.md`, com a saída de cada comando — este bloco só aponta para lá
+> *(alterado em 2026-09-26: QA-08 do quality gate)*.
+
+- [x] Pint, PHPStan level 8, Filacheck — `passed` / `[OK] No errors` / `All 17 rules passed!`
+- [x] suíte Unit, Feature, Kit, Tenancy — 3.078 / 3.075 / 3 pulados
+- [x] `/code-review high main...HEAD` + passe de eixos (step 6.5) — 16 achados triados, re-revisão única
+- [x] quality gate (step 8) — ciclo 2, APROVADO COM DÉBITO
 
 ## Commits *(alterado em 2026-09-26: QA-05 do quality gate)*
 

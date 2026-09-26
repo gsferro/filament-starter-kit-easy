@@ -307,6 +307,27 @@ cancelá-los junto. O invariante já está travado por `[CT-12]` da wiki `phpsta
 
 ---
 
+## 10. Dois débitos do quality gate da wiki `phpstan-nivel-8`
+
+> Aceitos no ciclo 2 (APROVADO COM DÉBITO, 2026-09-26). Relatório em
+> `wikis/specs/feat/phpstan-nivel-8/phpstan-nivel-8/06-relatorio-qa.md`.
+
+**10.1 — O `--mutate` mente em alguns alvos no Windows (QA-09).** Em `AssistenteChatWidget`,
+`DescobreCardsDoPainel` e `DefinirSenhaPorEmail` o plugin devolve "100 %" em tempo implausível
+(45–110 ms por mutante, contra ~2,5 s de um único processo), e o controle do juiz mostrou morte
+falsa quando o comando leva `--filter`. `KitCobertura` e `CustomizadorDaInstalacao` medem de
+verdade. **Fica para depois porque** é diagnóstico de arnês, não defeito do kit; hipótese registrada:
+nomes de teste e dataset com `"`, `−` e `[` no `--filter` que o plugin monta. Até lá, nenhum desses
+três scores é publicado, e a página de qualidade deveria avisar que `--filter` com `--mutate` no
+Windows invalida o score.
+
+**10.2 — O `[CT-27]` da wiki `cobertura-de-testes` aceita uma citação para N sobreviventes
+(QA-12).** O Gherkin diz *"cada um nomeado"*; o teste exige uma citação `arquivo:linha` na seção,
+qualquer que seja a contagem. **Fica para depois porque** é oráculo fraco de um teste, sem defeito
+publicado hoje; a saída é contar citações distintas contra o total de sobreviventes publicado.
+
+---
+
 ## Como este documento é mantido
 
 Item entra aqui quando uma decisão **registrada** o empurrou para depois — com o motivo e, quando

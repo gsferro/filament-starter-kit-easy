@@ -161,3 +161,133 @@ Nenhum até agora: o veredito reprova. Os achados QA-06 a QA-09 viram débito se
 - 03 despacho 8, *"falsificabilidade 9/11"*: sem comando reproduzível.
 - RQ-05 (tag): acontece depois do gate. Conferir com `git tag --contains <sha de #107>`.
 - Playwright MCP e Boost `browser-logs`: não usados, porque não há superfície de UI nova.
+
+---
+
+<!-- Ciclo 2 — gravado pela sessão, verbatim, a partir do retorno do sub-agente fw-qa-gate. Sem edição. -->
+
+## Veredito, ciclo 2
+
+> Independência: sub-agente fw-qa-gate/opus, sem acesso à conversa
+> Entradas recebidas: path da wiki, projeto, branch e base, e a indicação de que o app não está servido. Não recebi resumo nem justificativa da sessão. Li as mensagens dos commits `501b2cb` e `0b87903` como alegações a conferir, não como verdade.
+> Perfil: **completo**, sem mudança desde o ciclo 1 (domínio sensível, K com `--mutate`). Regressão: sim, e a reconciliação 6b está no escopo.
+
+**APROVADO COM DÉBITO**
+
+- Blocker: 0 · Major: 0 · Minor: 7 (QA-08, QA-09, QA-10, QA-11, QA-12, QA-13, QA-14) · Cosmético: 0
+- Os 5 Major do ciclo 1 estão fechados. Das 4 Minor do ciclo 1, 2 fecharam e 2 viraram débito. Há 5 Minor novas, nenhuma Major.
+- Ambiente: app não servido. Pest 5, com PCOV e Xdebug carregados (`php -m`) e `pest-plugin-mutate` presente (`ls vendor/pestphp/`). Playwright MCP não usado, porque não há superfície de UI nova.
+- Gates que reproduzi agora:
+  - `pint --test` → `passed`
+  - `phpstan analyse` → `[OK] No errors`
+  - `filacheck` → `All 17 rules passed!`
+  - suíte Unit, Feature, Kit e Tenancy com `--parallel` → **3.078 testes, 3.075 passaram, 3 pulados, 13.109 asserções, 192,6 s**
+- Comparação com o ciclo 1: são +6 testes, que são exatamente as 4 linhas do CT-24 mais o CT-25 e o CT-26. As asserções caíram 22 porque o CT-08 deixou de fazer 3 asserções por arquivo e passou a fazer 3 no total. O badge de 1.671 bate: são +3 blocos `it()`, conferidos pelo `[CT-50]` na suíte.
+
+### Disposição dos achados do ciclo 1
+
+| Achado | Disposição | Evidência deste ciclo |
+|---|---|---|
+| QA-01 (Major, destino 1) | **fechado como especificação registrada** | `00:56-69` traz Assumido e Se negado para "validação" e "teste". A resposta do mantenedor continua pendente, e ela é pré-condição do merge (RQ-05). |
+| QA-02 (Major, destinos 1 e 3) | **fechado** | O grep de `0 sobreviventes\|zero sobreviventes\|Não testado é` nas docs e no CHANGELOG só casa a linha nova `158, sendo 0 sobreviventes`, que eu remedi e que é verdadeira. Remedição: `pestw.cmd tests/Kit/KitCoberturaTest.php --mutate --path=app/Console/Commands/KitCobertura.php --covered-only --no-tia --no-cache` → **158 tested, 100 %, 31,45 s** (39 s de relógio). Aceito o número: o mesmo arnês, no ciclo 1, nomeou 4 sobreviventes com duração equivalente (33,6 s), e as asserções novas miram exatamente esses 4. O `Customizador:470` foi declarado equivalente. Conferi `config/kit.php:355`, onde a chave sempre existe, e o docblock de `pluralSugerido` chama o valor do default de defeito. Aceito como destino 5. |
+| QA-03 (Major, destino 3) | **fechado** | `QualidadeDeCodigoTest.php` `[CT-08]` agora varre `paths`/`excludePaths` de `configuracaoEfetivaDoPhpstan()` e compara o mapa inteiro com `toBe([...2 arquivos])`. Pela leitura, um `@phpstan-ignore` em `app/Models/Tenant.php` entra no mapa e reprova. |
+| QA-04 (Major, destino 3) | **fechado no nível do teste; a medição de mutação é "Não Verificado"** (ver QA-09) | CT-24 cobre nulo, 1999, 2000 e 2001, com `assertPrompted`/`assertNeverPrompted` e contagem de linhas. CT-25 cobre participante, `conversaId` e pendência nula. CT-26 cobre canal `ai`, prefixo, as 3 chaves e `once()`. Pela leitura, os oráculos matam M41–M53. |
+| QA-05 (Major, destino 1) | **fechado** | `01:24`, `:71-73`, `:87-89`, `:144`, `:151-153`, `:223-225` e `## Commits` estão corrigidos, com a marca `*(alterado em 2026-09-26: QA-05…)*`, e batem com o código. |
+| QA-06 (Minor) | **fechado** | pt `:315` e en `:318` dizem **adotado**. |
+| QA-07 (Minor) | **fechado** | `00:45` diz 14, com marca. `grep -rn "16 arquivos"` fora do 06 → vazio. |
+| QA-08 (Minor) | **aberto → débito** | Ver QA-08 abaixo. |
+| QA-09 (Minor, destino 4) | **aberto e ampliado → débito** | Ver QA-09 abaixo. |
+
+### Achados reabertos e novos
+
+### QA-08: a Verificação Final continua sem as caixas dos gates · Minor · destino 1
+- **Dimensão**: L6
+- **Observado**:
+  - `03:59-62` (pint, phpstan, filacheck, suíte) e `01` `## Verificação Final` continuam `[ ]`.
+  - `03` `## Quality Gate` (`:110-112`) está vazio, embora o ciclo 1 tenha rodado. O passo 8 da skill manda registrar ali o veredito e o número do ciclo.
+- **Ação exigida**: fechar as caixas com a saída acima (3.078/3.075/3, 13.109 asserções, 192,6 s; `[OK] No errors`; `passed`; `17 rules`) e registrar os ciclos 1 e 2 em `## Quality Gate`.
+
+### QA-09: o arnês de `--mutate` dá "100 %" implausível em três alvos, agora também no widget · Minor · destino 4
+- **Dimensão**: K (plausibilidade)
+- **Observado** (todos os comandos com `--no-cache --no-tia`):
+
+  | Alvo | Resultado | Ciclo 1 |
+  |---|---|---|
+  | `AssistenteChatWidget` | 74 tested, 100 %, **7,87 s** (≈106 ms por mutante) | 44 cobertos em 62,87 s, com 11 sobreviventes |
+  | `DescobreCardsDoPainel` | 52 em **2,36 s** (≈45 ms por mutante) | igual |
+  | `DefinirSenhaPorEmail` | 25 em **2,72 s** (≈109 ms por mutante) | igual |
+
+  - Um único processo filtrado do widget leva 2,75 s (`--filter=CT-24`), com 4 seeders no `beforeEach`. Um mutante morto precisa passar por esse boot. 106 ms não cabem nisso.
+  - O processo do Pest sem teste casado sai com código 1 em 0,32 s, e o plugin conta isso como morto. É a mesma assinatura do arnês quebrado.
+  - Controle com `--filter=CT-25`: o mutante `Line 96: GreaterToGreaterOrEqual` aparece como morto, e o CT-25 (pergunta de 15 caracteres) não tem como matá-lo. Com `--filter` do usuário o arnês também mente: `KitCobertura` com `--filter=CT-06` deu 73 em 3,19 s. Isso confirma a suspeita do ciclo 1 sobre o `--filter` no Windows.
+- **Consequência**: a alegação da mensagem do `501b2cb` (*"100 % dos mutantes da linha 96 e do log mortos"*) não tem medição válida por trás. Ela não está na wiki nem nas docs, então não gera achado L6. Os scores desses três alvos são "Não Verificado".
+- **Ação exigida**: diagnosticar o arnês nesses alvos (hipótese: nomes de teste e de dataset com `"`, `−` e `[` no `--filter` que o plugin monta, `MutationTest.php:91-96`) e acrescentar à página de qualidade o aviso de que `--filter` com `--mutate` no Windows invalida o score. Não reprova a feature: os testes do QA-04 se sustentam pela leitura.
+
+### QA-10: o 04 contradiz a si mesmo sobre onde vivem o CT-27 e o CT-28, e cita uma premissa inexistente · Minor · destino 1 · novo
+- **Dimensão**: L3
+- **Observado**:
+  - `04:757` (R11, "Colisão de ID") diz que os casos entram em `KitCoberturaTest` **com os IDs CT-27 e CT-28, que não colidem**.
+  - `04:778` diz que `[CT-12]` e `[CT-13]` **não são reescritos**.
+  - `04:849-855` e o código fazem o oposto: são asserções a mais dentro de `[CT-12]`/`[CT-13]`, e nenhum `[CT-27]`/`[CT-28]` existe no arquivo (`grep -c` → 0 e 0).
+  - `04:791` remete à *"pergunta P-08 abaixo"*, mas não existe P-08 (`grep -n "P-0[0-9]"` só vai até P-07). A pergunta do `pluralSugerido` também não foi espelhada no bloco "Premissas devolvidas" do 00.
+- **Ação exigida**:
+  - reescrever `04:757` e `:778` conforme a decisão de `:849`;
+  - rotular a pergunta como P-08;
+  - espelhá-la no 00.
+
+### QA-11: números velhos no 03 depois do próprio ciclo · Minor · destino 1 · novo
+- **Dimensão**: L3 e L6
+- **Evidência**: `grep -rn "97,47\|1\.668\|8/8"` na wiki casa:
+  - `03:181`: *"os números remedidos continuam valendo (158 mutantes, **4 sobreviventes**, 97,47 %, 38 s)"*. As docs e o CHANGELOG dizem 100 % e 31,25 s, e eu medi 100 %.
+  - `03:66`: *"casos de teste 1.668"*. O README diz 1.671, travado pelo `[CT-50]`.
+  - `03:65` e `03:132`: *"8/8 ok"*. O script de citações da `feature-wiki` sobre `00`–`04` dá hoje **9/9 ok**, porque entrou `MutationTest.php:hasFinished:120`.
+- **Ação exigida**: atualizar `03:65`, `:66`, `:132` e `:181` com os valores atuais.
+
+### QA-12: o `[CT-27]` da cobertura aceita uma citação para qualquer quantidade de sobreviventes · Minor · destino 3 · novo
+- **Dimensão**: K (oráculo fraco). O teste é novo nesta branch.
+- **Esperado**: o Gherkin da cobertura (`04:1047`) diz *"quando há sobreviventes, **cada um** está nomeado por arquivo e linha"*.
+- **Observado**: o laço de `tests/Kit/CoberturaDeTestesTest.php` `[CT-27]` refaz o mesmo `assertMatchesRegularExpression('~app/\S+\.php:\d+~', $texto)` para toda contagem diferente de zero. Um único `app/X.php:N` na seção satisfaz qualquer número de linhas.
+- **Repro**: pela leitura, basta publicar `158, sendo 3 sobreviventes` mantendo só a citação do `Customizador:470`. O teste fica verde.
+- **Ação exigida**: a `feature-test-design` fecha "cada um". Por exemplo, o total de sobreviventes publicado ≤ o número de citações `arquivo:linha` distintas, com os equivalentes declarados contando como citação.
+
+### QA-13: o 04 prometeu caracterizar o CT-24…CT-26 contra a `main` e não há rastro disso · Minor · destino 1 · novo
+- **Dimensão**: L6
+- **Observado**: `04` R10 diz *"Caracterização: medir CT-24…CT-26 na `main` antes do diff"*, e a R11 diz o mesmo. Não há resultado registrado no 03 nem no 04. É o mesmo padrão da suspeita sobre o CT-17 no ciclo 1.
+- **Ação exigida**: colar a medição ou marcar a caracterização como não feita, com o motivo.
+
+### QA-14: a pendência do QA-01 fica dentro do 00, e não no controle do merge · Minor · destino 1 · novo
+- **Dimensão**: A
+- **Observado**: `00:69` diz *"Levado ao mantenedor no fim da sessão"*. O `03 ## 8. Release` não condiciona o merge à resposta. Se a leitura for negada, o RQ-03 muda de natureza.
+- **Ação exigida**: acrescentar ao passo 8 do 03 a caixa *"resposta do mantenedor sobre 'regras de validação/teste' (00:56)"* antes de PR, merge e tag.
+
+## Dimensões, ciclo 2
+
+| # | Dimensão | Status | Observação |
+|---|---|---|---|
+| A | Cobertura do requisito | ⚠️ | QA-01 fechado como especificação; QA-14 (Minor) |
+| B | Fronteiras | ✅ | borda de 2000 coberta (CT-24, 1999/2000/2001/nulo) |
+| C | Matriz de permissão | ✅ | sem mudança desde o ciclo 1; CT-26 soma a trilha |
+| D | Observabilidade | ✅ | log de negação com canal, prefixo e contexto afirmados; `user_id`/`conversa_id`, sem PII |
+| E | Performance | ✅ | nenhuma query nova no ciclo |
+| F | UX de erro | ✅ | sem mudança |
+| G, H | Tema e acessibilidade | ⏭️ pulada | sem superfície de UI nova; app não servido |
+| I | Segurança da superfície | ✅ | sem superfície nova no ciclo |
+| J | Regressão adjacente | ✅ | suíte inteira verde; nenhum teste antigo alterado além do `[CT-12]`/`[CT-13]` reforçados e da regex do `[CT-27]` |
+| K | Adequação da suíte | ⚠️ | KitCobertura 100 % medido e plausível; widget, hub e DefinirSenha "Não Verificado" (QA-09); QA-12 |
+| L | Consistência documental | ⚠️ | L1: 04 × teste, 28 cenários e 88 mutantes batem com o cabeçalho; só `CT-03`/`27`/`28` sem ID, por desenho. L2: 9/9 ok. L3: QA-10, QA-11. L4: rules ok (`testes.md` conferida para os testes novos). L5: pt × en × CHANGELOG coerentes. L6: QA-08, QA-11, QA-13 |
+
+## Débitos Aceitos (ciclo 2)
+
+QA-08, QA-09, QA-10, QA-11, QA-12, QA-13 e QA-14, todos Minor. Devem ser replicados em `03-progresso.md`.
+
+## Convergência
+
+O ciclo 2 trouxe achados novos, mas só Minor. Com 0 Blocker e 0 Major, o veredito não reprova, então **não há ciclo 3 obrigatório**. Os débitos seguem o fluxo normal, e o teto de 3 ciclos não foi atingido.
+
+## Não Verificado (ciclo 2)
+
+- **Scores de `--mutate`** de `AssistenteChatWidget`, `DescobreCardsDoPainel` e `DefinirSenhaPorEmail`: a duração é implausível e o controle mostrou morte falsa (QA-09).
+- **`CustomizadorDaInstalacao`, 225 mutantes, 98,22 %**: não remedi. O número não mudou na branch e o alvo está fora do diff.
+- **Dimensões de navegador** (G, H e B/F/I dinâmicas): app não servido.
+- **Falhar de fato com um `@phpstan-ignore` em `Tenant.php`** (QA-03) e **matar de fato M41–M53** (QA-04): exigiriam editar a árvore, o que este juiz não faz. Fechei esses dois pela leitura do oráculo.
+- **RQ-05** (merge e tag): acontece depois do gate.

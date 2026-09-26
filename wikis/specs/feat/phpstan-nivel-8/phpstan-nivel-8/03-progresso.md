@@ -50,21 +50,22 @@
 - [x] CHANGELOG — `[Unreleased]` com Alterado, Corrigido e Testes (commit `87164c6`, conceito de mutação corrigido em `501b2cb`), 2026-09-26
 
 ## 8. Release
+- [ ] Resposta do mantenedor sobre "regras de validação e de teste" (`00`, premissa do QA-01) — levada ao fim da sessão; a leitura assumida está no `00`, e o QA-14 do gate pede que ela conste aqui
 - [ ] `config/kit.php` 0.41.0, PR, merge, tag
 
 ## Testes
 - [x] `04-casos-de-teste.md` implementado — 22 de 23 CTs com teste; o CT-03 é comando de gate por desenho. `diff` de IDs → só `< CT-03`, 2026-09-26
 
 ## Verificação Final
-- [ ] `vendor/bin/pint --dirty --format agent`
-- [ ] `vendor/bin/phpstan analyse` — level 8, 0 erros
-- [ ] `vendor/bin/filacheck --fix`
-- [ ] suíte Unit, Feature, Kit, Tenancy `--parallel` contra a baseline
+- [x] `vendor/bin/pint --dirty --format agent` — `{"tool":"pint","result":"passed"}`; o juiz reproduziu `pint --test` → `passed`, 2026-09-26
+- [x] `vendor/bin/phpstan analyse` — level 8, 0 erros — `[OK] No errors`, reproduzido pelo juiz no ciclo 2, 2026-09-26
+- [x] `vendor/bin/filacheck --fix` — `All 17 rules passed!`, 2026-09-26
+- [x] suíte Unit, Feature, Kit, Tenancy `--parallel` contra a baseline — **3.078 testes, 3.075 passaram, 3 pulados, 13.109 asserções**, 192,6 s (juiz, ciclo 2); baseline 2.993 / 2.990 / 3: +85 testes, nenhum pulado novo na árvore do kit, 2026-09-26
 - [x] `/code-review high main...HEAD` + passe de eixos (step 6.5) — 16 achados, 13 aceitos, 3 rejeitados com prova; re-revisão única do delta: 0 Blocker/Major, 3 Minor corrigidos (tabela `## Revisão de código do diff`), 2026-09-26
 - [x] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa — `diff` → `< CT-03` (comando de gate), `< CT-27`, `< CT-28` (materializados em `[CT-12]`/`[CT-13]` do `KitCoberturaTest`, namespace da cobertura), todos declarados no `04`, 2026-09-26
-- [x] Citações `arquivo:símbolo:linha` reverificadas — script do step 7 → 8/8 ok, depois de 4 corrigidas (`urlDoPainel` inexistente e três linhas de docblock), 2026-09-26
-- [x] Docs pt/en, CHANGELOG e README reconciliados — nível, badges (`PHPStan-level%208`, casos de teste 1.668), "três exceções", tabela de não adotados e conceito de mutação; `SiteDeDocumentacaoTest` 68/68, 2026-09-26
-- [ ] `git commit`
+- [x] Citações `arquivo:símbolo:linha` reverificadas — script do step 7 → **9/9 ok** (entrou `MutationTest.php:hasFinished:120`), depois de 4 corrigidas (`urlDoPainel` inexistente e três linhas de docblock), 2026-09-26
+- [x] Docs pt/en, CHANGELOG e README reconciliados — nível, badges (`PHPStan-level%208`, casos de teste **1.671**), "três exceções", tabela de não adotados e conceito de mutação; `SiteDeDocumentacaoTest` 68/68, 2026-09-26
+- [x] `git commit` — `c33cee8`, `07d31d1`, `87164c6`, `501b2cb`, `0b87903` e o do ciclo 2, 2026-09-26
 
 ## Revisão de código do diff (step 6.5)
 
@@ -91,6 +92,30 @@ aceitos; três foram rejeitados com prova.
 anterior à correção — **2 de 2 falham sem o fix**. CT-02 (guarda de teste) e CT-16/`responder`
 (guarda já correta) não são correções de app.
 
+## Instalação simulada e o teto de pulados (antes do PR)
+
+O `wikis/checklist-de-release.md` exige os quatro cenários a cada tag, e os cenários 1 e 2 nascem de
+`composer create-project` **na tag nova** — que ainda não existe. A medição honesta disponível antes
+dela: `git archive` aplica o `export-ignore` exatamente como o Packagist aplica, então uma extração
++ `composer install` + `kit:install --create-project` reproduz o cenário 1. É a única medição que
+enxerga a classe "teste que viaja lendo arquivo que não viaja" — a do RD-01 — e nenhuma suíte na
+árvore do kit a vê.
+
+- [x] Cenário 1 simulado sobre `87164c6` — `php artisan test --testsuite=Kit,Tenancy --parallel` na
+  extração: **3.069 testes, 2.855 passaram, 214 pulados, 0 falhas**, 2026-09-26
+- [x] Repetido sobre `501b2cb` com `--log-junit` — **3.075 / 2.861 / 214 pulados / 0 falhas**, 2026-09-26
+- [x] **Teto: 193 → 214 (+21), decomposto por causa, medido e não estimado.** Na extração, os 14
+  arquivos de teste alterados pela branch foram trocados pela versão da `main` e rodados com
+  `--log-junit`: somam **91** pulados, contra **92** na branch; os 3 arquivos novos somam **20**
+  - **+20** `tests/Kit/CoberturaDeTestesTest.php` (novo): guardas sobre `docs/`, `composer.json` e
+    `.github/workflows/ci.yml`, que são export-ignore — inclui o CT-18 que veio do `SiteDeDocumentacaoTest`
+  - **+2** `tests/Kit/QualidadeDeCodigoTest.php` `[CT-02]`: as duas linhas de CI; a linha do composer
+    **roda** no projeto instalado (RQ-07)
+  - **−1** `tests/Kit/SiteDeDocumentacaoTest.php`: o antigo CT-51 saiu dali
+  - `AssistenteChatWidgetTest` e `MigracaoDoEscopoDoOnboardingTest` (novos): **0** pulados
+- [ ] Cenários 2, 3 e 4 — só existem depois da tag (`create-project` na tag nova e `kit:update`
+  sobre a v0.40.2); rodar e registrar no CHANGELOG, como a v0.40.2 fez no #108
+
 ## Conformidade com Rules
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
@@ -105,11 +130,28 @@ anterior à correção — **2 de 2 falham sem o fix**. CT-02 (guarda de teste) 
 | `testes.md` — helper cruzado em `tests/Pest.php` | `tests/**` | aplicada | `grep` de cada helper novo: definido e usado num arquivo só |
 | `testes.md` — `toContain()` variádico | idem | aplicada | `grep` por `toContain(x, 'mensagem')` nos testes do diff → vazio |
 | `testes.md` — asserção de ausência filtra comentário | idem | aplicada | CT-23 da cobertura usa `semComentarioYaml()`; CT-08 conta `@phpstan-ignore` no texto cru de propósito (o ignore **é** comentário) |
-| `specs.md` — citação conferida por símbolo | `wikis/specs/**` | aplicada | script do step 7 → 8/8 ok, depois de 4 corrigidas |
+| `specs.md` — citação conferida por símbolo | `wikis/specs/**` | aplicada | script do step 7 → 9/9 ok, depois de 4 corrigidas |
 
 ## Quality Gate
 
-<!-- Preenchido no step 8. Enquanto vazio, a feature NÃO está concluída e o PR não abre. -->
+- **Ciclo 1** · **Veredito**: REPROVADO → especificação (0 Blocker, 5 Major, 4 Minor) · **Data**: 2026-09-26
+  - o Major mais sério era meu: o conceito de mutação invertido nas docs e no CHANGELOG (QA-02)
+- **Ciclo 2** · **Veredito**: **APROVADO COM DÉBITO** (0 Blocker, 0 Major, 7 Minor) · **Data**: 2026-09-26
+  - os 5 Major fechados; sem ciclo 3 obrigatório pela regra de convergência
+- **Relatório**: `06-relatorio-qa.md` (os dois ciclos, gravados verbatim)
+- **Independência**: sub-agente `fw-qa-gate`/opus, sem acesso à conversa, nos dois ciclos
+
+### Débitos aceitos (ciclo 2)
+
+| Débito | Destino | Estado |
+|---|---|---|
+| QA-08 — caixas dos gates abertas; `## Quality Gate` vazio | 1 | **fechado** depois do veredito, com a saída do juiz |
+| QA-09 — `--mutate` com duração implausível em `AssistenteChatWidget`, `DescobreCardsDoPainel`, `DefinirSenhaPorEmail`; o controle do juiz mostrou morte falsa com `--filter` | 4 (infra) | **aberto**: esses três scores são "Não Verificado"; nenhum deles está publicado. Um mutante manual na linha 96 do widget foi morto pela suíte, o que prova aquele mutante, não os 74 |
+| QA-10 — o `04` se contradizia sobre CT-27/CT-28; P-08 citada e inexistente | 1 | **fechado** |
+| QA-11 — números velhos no `03` | 1 | **fechado** |
+| QA-12 — o `[CT-27]` da cobertura aceita uma citação para N sobreviventes | 3 | **aberto**: oráculo fraco de um teste novo; vai para a `feature-test-design` numa próxima entrega |
+| QA-13 — CT-24…CT-26 prometidos como caracterização na `main` | 1 | **fechado como não feito**, declarado no `04` com o motivo |
+| QA-14 — a resposta do mantenedor sobre o QA-01 não estava no controle do merge | 1 | **fechado**: caixa acrescentada no passo 8 |
 
 ## Auditoria Pré-Implementação
 
@@ -178,8 +220,9 @@ congelada — passo 7 e ADR-04.
   que emite `mutationEscaped`); linha sem teste é `UNCOVERED`. O CT-27 que o executor escreveu
   tratava "não testados" como sobreviventes — **certo** — e eu o contrariei no texto. A doc original,
   que só dizia "4 não testados", estava mais certa que a minha "correção". Os números remedidos
-  continuam valendo (`KitCobertura`: 158 mutantes, **4 sobreviventes**, 97,47 %, 38 s); o que mudou é
-  o que eles significam, e os sobreviventes viraram cenário (QA-02 → destino 3)
+  significavam **4 sobreviventes** em 158 (97,47 %, 38 s); os sobreviventes viraram cenário (QA-02 →
+  destino 3) e o `KitCobertura` foi a **158 mortos, 100 %, 31,25 s** — número que o juiz remediu no
+  ciclo 2 (31,45 s)
 - **Citação de ID em docblock é ID para o `diff`.** Quatro docblocks citavam `[CT-51]`…`[CT-53]` e
   `[CT-01]`..`[CT-12]` como história; o `grep` do step 7 não distingue citação de declaração, e o
   `[CT-01]` citado escondia que o CT-01 real não tem teste. Citação histórica vai sem colchete
