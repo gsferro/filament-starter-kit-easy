@@ -5,6 +5,43 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Adicionado
+
+- **O README diz o que a suíte precisa para rodar** -- e nada disso é necessário para instalar
+  ou usar o kit: as extensões PHP que o CI instala (`sqlite3`, `pdo_sqlite`, `bcmath`, `intl`,
+  `zip`, e `pcntl` fora do Windows), o **PCOV** para `composer test:coverage`, `pest --mutate` e o
+  TIA, os navegadores do **Playwright** para `composer test:browser` e `composer art`, e o
+  `pestw.cmd` para o `--mutate` no Windows. O bloco de comandos ganhou `test:coverage`,
+  `test:kit:serial`, `test:browser`, `types:check` e `art`, que existiam no `composer.json` e não
+  estavam documentados. Nos dois idiomas
+
+### Corrigido
+
+- **O job `cobertura` do CI estava vermelho nos três últimos pushes em `main`** (`cee3bcd`,
+  `a85ab0a`, `f6f91cd`): o Linux media **82,05 %** e o badge commitado dizia 81 %. Remedido no
+  Windows em 2026-09-26: **82,12 %** (8.214 de 10.003 statements, 1.935 s em série com PCOV).
+  Badge, README e a página de qualidade passam a dizer **82 %**, o `[CT-49]` os trava juntos. A
+  folga no Linux é de 4 statements acima de 82,00 -- Windows mede 7 a mais, a mesma diferença da
+  amostra de 2026-09-25 -- e o badge só absorve a diferença de plataforma enquanto o decimal do
+  Windows não cai em [N,00; N,07)
+- **A página de qualidade afirmava uma lacuna que já tinha fechado**: `app/Policies` a 23 %, quando
+  a medição dá **100 %** (222 de 222 statements) desde os cenários que o quality gate pediu em
+  `7263853`. E o tempo local do `composer test:coverage` passou de "~25 min" para os **~32 min**
+  medidos em 20 núcleos, em pt, en e nos comentários do `ci.yml`
+
+### Medido
+
+- Mutation score remedido, igual ao publicado: `KitCobertura` 158 mutantes, **100 %**, 33 s;
+  `CustomizadorDaInstalacao` 225 mutantes, 4 sobreviventes (`:470`, equivalentes), **98,22 %**,
+  40 s; `app/Policies` 4 mutantes, 100 %
+- **TIA em run completo** (`php vendor/bin/pest --tia`, série, com Browser): frio com `--fresh`
+  **2.423 s**; quente, sem diff, **12 s** com 3.167 casos replayed. Em run parcial
+  (`--testsuite`, o que `composer test:kit` usa) o TIA não liga
+- **Xdebug carregado em `debug,develop,coverage` deixou a suíte paralela 6x mais lenta** na
+  máquina de medição: 1.532 s contra 253 s com `XDEBUG_MODE=off`, mesma linha de comando, 20
+  processos. Uma amostra de cada lado; a atribuição sobrevive à checagem de órfãos, de coleta
+  PCOV e do custo do `--tia`
+
 ## [0.41.0] - 2026-09-26
 
 ### Adicionado

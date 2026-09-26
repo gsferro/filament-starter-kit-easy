@@ -163,7 +163,7 @@ Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never to
 
 ## Test coverage — and what the number leaves **out**
 
-**81 %** of the lines in `app/` — 8,141 of 9,976 statements, measured on 2026-09-25. The README
+**82 %** of the lines in `app/` — 8,214 of 10,003 statements, measured on 2026-09-26. The README
 badge comes from here, and CI fails when it lies.
 
 > **The number moves slightly with the operating system**, and the badge was designed to absorb
@@ -172,12 +172,12 @@ badge comes from here, and CI fails when it lies.
 > code that only runs on one platform. Both truncate to `79%`, so the badge matches on either. Had
 > it stored the decimal, CI would fail every measurement taken on the other platform.
 
-> The figures with decimals on this page are **dated**, not derived: they hold for the 2026-09-25
+> The figures with decimals on this page are **dated**, not derived: they hold for the 2026-09-26
 > measurement and they age. The only one with an automatic guard is the whole percentage, pinned
 > against `.github/badges/cobertura.json` by `[CT-49]`.
 
 ```bash
-composer test:coverage    # measures, writes the badge and applies the floor — ~25 min, serial
+composer test:coverage    # measures, writes the badge and applies the floor — ~32 min, serial
 
 # the two halves, separately, when you already have the Clover:
 php -d pcov.enabled=1 vendor/bin/pest --testsuite=Kit,Tenancy --no-tia --coverage-clover=cobertura.xml
@@ -198,7 +198,7 @@ kit's tree `.github/badges/` does not exist, and the command simply leaves badge
 | **PHPStan** | the `level:` in `phpstan.neon` | `[CT-50]`, by the same mechanism |
 
 The last two depend on running nothing — they are derivable by reading, so the guard works out the
-truth by itself in milliseconds. The coverage one depends on the ~25 min measurement (52 min on
+truth by itself in milliseconds. The coverage one depends on the ~32 min measurement (52 min on
 the CI runner), which is why
 it lives in a versioned file checked by CI.
 
@@ -215,7 +215,7 @@ serial by construction, and the cost was measured on both sides:
 
 | Where | Parallel, no coverage | Serial, with coverage |
 |---|---:|---:|
-| local machine, 16 cores | ~3 min | **25 min** |
+| local machine, 20 cores | ~3 min | **32 min** |
 | CI runner, 4 vCPU | ~6 min | **52 min** |
 
 That is why the job runs on `main` and on manual dispatch, not on every PR: **52 minutes** is the
@@ -242,14 +242,15 @@ exercised code in the kit — the installation tests run the whole `kit:install`
 Reading it as *"the commands have no tests"* would be precisely the mistake this section exists to
 prevent.
 
-The **real** gap is elsewhere: `app/Policies`, at **23%**. Policies are exercised indirectly (the
-screen denies, the test sees the denial), but `Gate` short-circuits before the method in most
-cases — and authorisation is where a silent defect costs the most.
+The gap this page pointed at on 2026-09-25 — `app/Policies`, at **23%** — has closed: on
+2026-09-26 the 16 policies are at **100%** (222 of 222 statements), after the scenarios the
+quality gate asked for. What remains true: authorization is where a silent defect costs the most,
+and their mutation score measures little by construction — see the mutation score section.
 
 ### The floor is 78%, and it is not folklore
 
-With 9,976 statements, **1 percentage point is worth ~100 lines**. A bug fix, a new method or a
-refactor do not move the number; to lose the 1.89 pp of slack, nearly 190 statements have to land
+With 10,003 statements, **1 percentage point is worth ~100 lines**. A bug fix, a new method or a
+refactor do not move the number; to lose the 4.12 pp of slack, more than 410 statements have to land
 untested — which is the only event the floor exists to catch.
 
 And line coverage does **not** measure whether the suite detects defects: it measures what was

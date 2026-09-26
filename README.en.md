@@ -179,7 +179,7 @@ The other two already come complete.
 | Screens swept in a real browser | **55** |
 | Test files | **165** in `Kit` + `Tenancy` (**192** in total) |
 | PHPStan | **level 8**, zero errors |
-| Test coverage (`app/`, line) | **81 %** — see [what the number leaves out](docs/en/referencia/qualidade-de-codigo.md) |
+| Test coverage (`app/`, line) | **82 %** — see [what the number leaves out](docs/en/referencia/qualidade-de-codigo.md) |
 | FilaCheck | **17** rules, all passing |
 
 | Documentation | |
@@ -282,6 +282,13 @@ exists so you don't spend an afternoon re-evaluating something that already has 
 - Node 20+ (optional — without it the installation still goes through and tells you how to build later)
 - Docker (optional — only for Postgres/MySQL, Redis, local AI and e-mail)
 
+To run the test suite, also this — none of it is needed to install or use the kit:
+
+- PHP extensions `sqlite3`, `pdo_sqlite`, `bcmath`, `intl` and `zip` (the same ones CI installs, plus `pcntl` outside Windows) — the suite runs on SQLite
+- **PCOV**, for `composer test:coverage`, `pest --mutate` and Pest's TIA. Keep it off in `php.ini` (`pcov.enabled=0`): the commands switch it on per invocation; Xdebug is not a substitute, because the script only enables PCOV. [Why PCOV, and what the measurement leaves out](docs/en/referencia/qualidade-de-codigo.md)
+- The **Playwright** browsers (`npx playwright install chromium`), only for `composer test:browser` and `composer art` — `pest-plugin-browser` starts Playwright as soon as it collects the tests
+- On Windows, `pest --mutate` runs through the `pestw.cmd` at the root (the file header explains why)
+
 ## Database
 
 **The installation asks** — SQLite, PostgreSQL or MySQL. The default is **SQLite**, so it depends on nothing.
@@ -359,6 +366,11 @@ The rebuild comes **after** the pull because the image is self-contained (the co
 composer dev          # server + queue + vite together
 composer test         # pint + phpstan + filacheck + the whole suite
 composer test:kit     # only the kit's tests (the foundation), in parallel
+composer test:kit:serial  # the same tests without --parallel, to isolate a flake
+composer test:coverage    # measures coverage with PCOV, writes the badge and applies the floor — ~32 min, serial
+composer test:browser     # the browser suite (Playwright) — runs npm run build and view:cache first
+composer types:check      # only PHPStan (level 8)
+composer art              # regenerates the README screenshots from the browser suite
 composer lint         # formats the code
 composer lint:check   # only checks the formatting, changing nothing (what CI runs)
 composer filament:check   # only the Filament-specific lint (FilaCheck)

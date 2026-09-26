@@ -162,7 +162,7 @@ Seus testes vão em `tests/Feature` e `tests/Unit`, como de costume — o kit n�
 
 ## A cobertura de testes — e o que o número **não** inclui
 
-**81 %** das linhas de `app/` — 8.141 de 9.976 statements, medido em 2026-09-25. O badge do
+**82 %** das linhas de `app/` — 8.214 de 10.003 statements, medido em 2026-09-26. O badge do
 README vem daqui, e o CI reprova quando ele mente.
 
 > **O número varia um pouco com o sistema operacional**, e o badge foi desenhado para absorver
@@ -173,11 +173,11 @@ README vem daqui, e o CI reprova quando ele mente.
 > plataforma.
 
 > Os números com casa decimal desta página são **datados**, não derivados: eles valem para a
-> medição de 2026-09-25 e envelhecem. O único que tem guarda automática é o percentual inteiro,
+> medição de 2026-09-26 e envelhecem. O único que tem guarda automática é o percentual inteiro,
 > travado contra `.github/badges/cobertura.json` pelo `[CT-49]`.
 
 ```bash
-composer test:coverage    # mede, grava o badge e aplica o piso — ~25 min, em série
+composer test:coverage    # mede, grava o badge e aplica o piso — ~32 min, em série
 
 # as duas metades, separadas, quando você já tem o Clover:
 php -d pcov.enabled=1 vendor/bin/pest --testsuite=Kit,Tenancy --no-tia --coverage-clover=cobertura.xml
@@ -198,7 +198,7 @@ O `kit:cobertura` **viaja com o kit**: no seu projeto ele aplica o piso que voc�
 | **PHPStan** | o `level:` do `phpstan.neon` | o `[CT-50]`, pelo mesmo mecanismo |
 
 Os dois últimos não dependem de rodar nada — são deriváveis por leitura, então a guarda calcula a
-verdade sozinha em milissegundos. O de cobertura depende dos ~25 min de medição local (52 min no
+verdade sozinha em milissegundos. O de cobertura depende dos ~32 min de medição local (52 min no
 runner do CI), e por isso vive
 num arquivo versionado com conferência no CI.
 
@@ -215,7 +215,7 @@ construção, e o custo foi medido dos dois lados:
 
 | Onde | Em paralelo, sem cobertura | Em série, com cobertura |
 |---|---:|---:|
-| máquina local, 16 núcleos | ~3 min | **25 min** |
+| máquina local, 20 núcleos | ~3 min | **32 min** |
 | runner do CI, 4 vCPU | ~6 min | **52 min** |
 
 Por isso o job roda em `main` e por disparo manual, não em toda PR: **52 minutos** é o número que
@@ -240,14 +240,15 @@ O efeito é visível na decomposição: **`app/Console` aparece a 34 %** e é, n
 exercitado do kit — os testes de instalação executam `kit:install` inteiro, de fora. Lê-lo como
 *"os comandos não têm teste"* seria exatamente o erro que esta seção existe para evitar.
 
-A lacuna **real** é outra: `app/Policies`, a **23 %**. As policies são exercitadas indiretamente
-(a tela nega, o teste vê negado), mas o `Gate` curto-circuita antes do método em boa parte dos
-casos — e autorização é onde defeito silencioso custa mais caro.
+A lacuna que esta página apontava em 2026-09-25 — `app/Policies`, a **23 %** — fechou: em
+2026-09-26 as 16 policies estão a **100 %** (222 de 222 statements), depois dos cenários que o
+quality gate pediu. O que continua verdadeiro: autorização é onde defeito silencioso custa mais
+caro, e o mutation score delas mede pouco por construção — ver a seção do mutation score.
 
 ### O piso é 78 %, e ele não é folclore
 
-Com 9.976 statements, **1 ponto percentual vale ~100 linhas**. Um bug corrigido, um método novo
-ou um refactor não movem o número; para cair os 1,89 pp de folga é preciso que quase 190
+Com 10.003 statements, **1 ponto percentual vale ~100 linhas**. Um bug corrigido, um método novo
+ou um refactor não movem o número; para cair os 4,12 pp de folga é preciso que mais de 410
 statements entrem sem teste — que é o único evento que o piso existe para pegar.
 
 E cobertura de linha **não** mede se a suíte detecta defeito: ela mede o que foi **executado**, não
