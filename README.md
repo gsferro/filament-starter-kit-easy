@@ -179,7 +179,7 @@ dois já vêm completos.
 | Telas varridas em navegador real | **55** |
 | Arquivos de teste | **165** em `Kit` + `Tenancy` (**192** no total) |
 | PHPStan | **level 8**, zero erros |
-| Cobertura de testes (`app/`, linha) | **81 %** — ver [o que o número não inclui](docs/pt/referencia/qualidade-de-codigo.md) |
+| Cobertura de testes (`app/`, linha) | **82 %** — ver [o que o número não inclui](docs/pt/referencia/qualidade-de-codigo.md) |
 | FilaCheck | **17** regras, todas passando |
 
 | Documentação | |
@@ -281,6 +281,13 @@ para você não gastar uma tarde reavaliando do zero algo que já tem número re
 - Node 20+ (opcional — sem ele a instalação segue e avisa como fazer o build depois)
 - Docker (opcional — só para Postgres/MySQL, Redis, IA local e e-mail)
 
+Para rodar a suíte de testes, mais isto — nada daqui é necessário para instalar ou usar o kit:
+
+- Extensões PHP `sqlite3`, `pdo_sqlite`, `bcmath`, `intl` e `zip` (as mesmas que o CI instala, mais `pcntl` fora do Windows) — a suíte roda em SQLite
+- **PCOV**, para `composer test:coverage`, `pest --mutate` e o TIA do Pest. Deixe-o desligado no `php.ini` (`pcov.enabled=0`): os comandos ligam na invocação; o Xdebug não é substituto, porque o script só ativa o PCOV. [Por que PCOV, e o que a medição não inclui](docs/pt/referencia/qualidade-de-codigo.md)
+- Os navegadores do **Playwright** (`npx playwright install chromium`), só para `composer test:browser` e `composer art` — o `pest-plugin-browser` sobe o Playwright já na coleta dos testes
+- No Windows, `pest --mutate` roda pelo `pestw.cmd` da raiz (o cabeçalho do arquivo explica por quê)
+
 ## Banco de dados
 
 **A instalação pergunta** — SQLite, PostgreSQL ou MySQL. O padrão é **SQLite**, para não depender de nada.
@@ -358,6 +365,11 @@ O rebuild vem **depois** do pull porque a imagem é self-contained (o código é
 composer dev          # servidor + fila + vite juntos
 composer test         # pint + phpstan + filacheck + a suíte inteira
 composer test:kit     # só os testes do kit (a fundação), em paralelo
+composer test:kit:serial  # os mesmos testes sem --parallel, para isolar um flake
+composer test:coverage    # mede a cobertura com PCOV, grava o badge e aplica o piso — ~32 min, em série
+composer test:browser     # a suíte de navegador (Playwright) — faz o npm run build e o view:cache antes
+composer types:check      # só o PHPStan (level 8)
+composer art              # refaz as capturas de tela do README a partir da suíte de navegador
 composer lint         # formata o código
 composer lint:check   # só verifica a formatação, sem alterar nada (o que a CI roda)
 composer filament:check   # só o lint específico de Filament (FilaCheck)

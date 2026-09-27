@@ -5,7 +5,7 @@ on:
     branches: [main]
   pull_request:
   # O job `cobertura` roda em SERIE e leva ~52 min neste runner (medido em 2026-09-25, no
-  # primeiro disparo manual; sao ~25 min numa maquina local de 16 nucleos). Ele nao roda
+  # primeiro disparo manual; sao ~32 min numa maquina local de 20 nucleos). Ele nao roda
   # em pull request; o disparo manual existe para quem quiser o numero antes do merge.
   workflow_dispatch:
 
@@ -147,7 +147,7 @@ jobs:
     # toda PR multiplicaria por nove o tempo de CI do repositorio inteiro para vigiar um numero
     # que se move ~1 pp a cada ~100 linhas.
     #
-    # O numero local (~25 min, 16 nucleos) NAO serve para decidir isto: quem paga a conta e o
+    # O numero local (~32 min, 20 nucleos) NAO serve para decidir isto: quem paga a conta e o
     # runner de 4 vCPU, e a suite e serial, entao ela nao aproveita nucleo nenhum dos dois lados.
     #
     # Em `main` o custo e aceitavel e o sinal chega no mesmo dia. Quem quiser o numero antes
