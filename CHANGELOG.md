@@ -62,6 +62,31 @@ pede os quatro cenários a cada tag mesmo assim, e o cenário 1 foi simulado pel
 - **Cenários 2, 3 e 4**: rodam sobre a tag publicada, e o registro vem num PR de documentação, como
   a `v0.41.0` fez no #112
 
+### Validação dos quatro cenários — `v0.41.1`
+
+Rodados depois da tag, a partir do Packagist (`create-project` pinado em `v0.41.1`, que já estava
+indexado), num diretório descartável, **um cenário por vez e com `--processes=4`** — a máquina de
+validação tinha 1,2 GB livres de 31,7 GB, e os quatro em paralelo, ou a suíte nos 20 núcleos, não
+cabiam. Os cenários 3 e 4 nasceram da `v0.41.0` e foram atualizados com `kit:update --all`; o 4 com
+o commit extra entre a tenancy e o update, como o checklist manda.
+
+| # | Cenário | Diretório | Versão | Tenancy | Saída |
+|---|---|---|---|---|---|
+| 1 | limpo, sem tenancy | `novo-sem-tenant` | `0.41.1` | — | `3075 testes / 2861 verdes / 12.388 asserções / 214 pulados / 0 falhas` |
+| 2 | limpo, com tenancy | `novo-com-tenant` | `0.41.1` | `SIM` | `3075 / 2861 / 12.388 / 214 pulados / 0 falhas` |
+| 3 | `kit:update`, sem tenancy | `velho-sem-tenant` | `0.41.1` | — | `3075 / 2861 / 12.388 / 214 pulados / 0 falhas` |
+| 4 | `kit:update`, com tenancy | `velho-com-tenant` | `0.41.1` | `SIM` | `3075 / 2861 / 12.388 / 214 pulados / 0 falhas` |
+
+**Os quatro são idênticos entre si, à simulação feita antes da tag e aos quatro da `v0.41.0`** — o
+teto de 214 se manteve, como o diff sem `tests/` previa.
+
+**O que chegou a quem já instalou**, conferido nos cenários 3 e 4 depois do `kit:update`: dois
+arquivos modificados, `config/kit.php` (a versão) e `wikis/checklist-de-release.md` (o teto de
+pulados da `v0.41.0`), nenhum novo, e `migrate --force` respondeu *Nothing to migrate*. O README e
+a página de qualidade, que são o conteúdo desta versão, **não** viajam pelo `kit:update` — o README
+fica fora de `KitUpdate::CAMINHOS_DO_KIT` e `docs/` é `export-ignore` — e chegam só a quem instala
+de novo.
+
 ## [0.41.0] - 2026-09-26
 
 ### Adicionado
