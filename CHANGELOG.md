@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.41.1] - 2026-09-27
+
 ### Adicionado
 
 - **O README diz o que a suíte precisa para rodar** -- e nada disso é necessário para instalar
@@ -41,6 +43,24 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   máquina de medição: 1.532 s contra 253 s com `XDEBUG_MODE=off`, mesma linha de comando, 20
   processos. Uma amostra de cada lado; a atribuição sobrevive à checagem de órfãos, de coleta
   PCOV e do custo do `--tia`
+
+### Validação antes da tag
+
+Patch e não minor: documentação e badge, sem mudança de comportamento. O `checklist-de-release`
+pede os quatro cenários a cada tag mesmo assim, e o cenário 1 foi simulado pela mesma rota da
+`v0.41.0`: extração por `git archive` (que aplica o `export-ignore` como o Packagist aplica) +
+`composer install` + `kit:install --create-project`.
+
+- **Cenário 1, simulado** (extração de `7f809e4`, mesma árvore do `8a28e23` do merge, e esta
+  versão menos a troca de versão): `php artisan test --testsuite=Kit,Tenancy --parallel` →
+  **3.075 testes, 2.861 passaram, 12.388 asserções, 214 pulados, 0 falhas** -- idêntico, número a
+  número, aos quatro cenários da `v0.41.0`
+- **Teto de pulados: 214, sem mudança.** O diff desta versão não toca `tests/`
+- **Cobertura no Linux antes do merge**: o job `cobertura` rodou por disparo manual na branch do
+  #114 (run `36291984624`, 52 min), para que `main` não recebesse um quarto push vermelho --
+  **82,05 %**, 8.207 de 10.003 statements, *"Badge confere e o piso foi respeitado"*
+- **Cenários 2, 3 e 4**: rodam sobre a tag publicada, e o registro vem num PR de documentação, como
+  a `v0.41.0` fez no #112
 
 ## [0.41.0] - 2026-09-26
 
