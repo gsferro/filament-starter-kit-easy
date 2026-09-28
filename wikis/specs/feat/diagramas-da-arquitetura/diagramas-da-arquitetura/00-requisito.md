@@ -69,6 +69,15 @@
 >   `BancoSqlite::recriar` lança `RuntimeException` sem captura com `--force` e o SQLite preso)
 > - **P-06 → resolvido pelo Adendo 2**: a opção escolhida ("1 diagrama + link") já dizia "o Packagist
 >   provavelmente mostra o código cru" — o mantenedor aceitou esse custo ao escolhê-la
+>
+> **Confirmações do mantenedor, 2026-09-28** (respostas verbatim às três perguntas que a sessão levou):
+>
+> > "Quanto rigor os diagramas de estado (conta e convite) devem ter? [...]"="Seta com condição (Recomendado)", "Qual o tamanho da suíte de guardas?"="Os 104 cenários (Recomendado)", "Os GIFs novos vão em art/, que viaja no composer create-project (hoje 8,9 MB). Impõe teto de peso?"="Sem teto, medido (Recomendado)"
+>
+> - **P-29 e P-30 → confirmadas**: seta com a condição que o código usa, curta (`aprovar [estava ativa]`); a matriz
+>   completa de situações × eventos mora só no teste
+> - **O `04` inteiro é o contrato** (104 cenários, 259 mutantes), inclusive as trocas de técnica do ciclo 2 (P-31)
+> - **P-10 → confirmada**: sem teto de peso; o tamanho de cada GIF sai medido no CHANGELOG
 
 - **RQ-23 (ER)** — "ER do núcleo": quais entidades são o núcleo?
   - **Assumido (P-01)**: os 7 models de `app/Models` e as tabelas de ligação das relações deles
