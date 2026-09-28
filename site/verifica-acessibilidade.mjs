@@ -28,10 +28,15 @@
  * O `astro-mermaid` desenha o SVG **no cliente**, depois do `domcontentloaded` — rodar o axe no
  * `<pre class="mermaid">` cru não prova nada. Antes do axe, cada página espera todo `pre.mermaid`
  * terminar de processar (`data-processed`, marcado tanto no sucesso quanto no erro) e reprova se
- * algum bloco não virou `<svg>` ou virou o diagrama de erro do Mermaid (texto "Syntax error"/"Error
- * rendering diagram" — as duas formas do mesmo defeito, a segunda é a que a integração instalada
- * produz). É a única validação de SINTAXE que estes blocos têm: a guarda Pest lê o texto e não roda
- * o Mermaid; o GitHub não reprova nada.
+ * algum bloco não virou `<svg>` ou virou o elemento de erro que a integração instalada (v2.1.0)
+ * põe no lugar do bloco quando `mermaid.render()` rejeita
+ * (`node_modules/astro-mermaid/astro-mermaid-integration.js`, bloco `catch` de `initMermaid()`:
+ * um `<div>` com um `<strong>Error rendering diagram:</strong>` filho direto). A detecção é
+ * ESTRUTURAL — a presença desse elemento, nunca um regex sobre o texto visível do bloco: um
+ * diagrama válido cujo próprio rótulo contivesse a mesma frase (ex.: um fluxo que documenta
+ * tratamento de erro) seria acusado de quebrado por um regex, e não é o caso aqui. É a única
+ * validação de SINTAXE que estes blocos têm: a guarda Pest lê o texto e não roda o Mermaid; o
+ * GitHub não reprova nada.
  *
  * Uso: `node verifica-acessibilidade.mjs [porta]`
  */
@@ -121,18 +126,22 @@ for (const [tema, rotasDoTema] of [
       violacoes.push(`${tema} ${rota} — mermaid: bloco(s) não terminaram de renderizar em ${MERMAID_TIMEOUT_MS}ms`);
     }
 
-    // A única validação de sintaxe destes blocos: bloco sem <svg>, ou que virou o diagrama de erro.
+    // A única validação de sintaxe destes blocos: bloco sem <svg>, ou com o elemento de erro
+    // ESTRUTURAL que o astro-mermaid 2.1.0 põe no lugar (ver ADR-02, acima) — nunca regex no texto.
     const blocosMermaid = await pagina.evaluate(() =>
       [...document.querySelectorAll('pre.mermaid')].map((bloco, indice) => ({
         indice,
         temSvg: !!bloco.querySelector('svg'),
-        comErro: /syntax error|error rendering diagram/i.test(bloco.textContent || ''),
+        // `initMermaid()` do vendor, no catch: cria um <div> e um <strong>Error rendering
+        // diagram:</strong> como filho dele — a mesma estrutura, sempre, não importa a
+        // mensagem do erro. `:scope > div > strong` casa só essa forma exata.
+        temElementoDeErro: !!bloco.querySelector(':scope > div > strong'),
       })),
     );
 
-    for (const erro of blocosMermaid.filter((b) => !b.temSvg || b.comErro)) {
+    for (const erro of blocosMermaid.filter((b) => !b.temSvg || b.temElementoDeErro)) {
       violacoes.push(
-        `${tema} ${rota} — mermaid bloco #${erro.indice}: ${erro.temSvg ? 'SVG de erro ("Syntax error")' : 'sem SVG'}`,
+        `${tema} ${rota} — mermaid bloco #${erro.indice}: ${erro.temElementoDeErro ? 'elemento de erro do astro-mermaid' : 'sem SVG'}`,
       );
     }
 
@@ -181,22 +190,38 @@ const idiomasAbaixoDoPiso = ['pt', 'en'].filter((idioma) => diagramasPorIdioma[i
 console.log(`paginas conferidas: ${conferidas} (${todas.length} no escuro, ${AMOSTRA_CLARA.length} no claro)`);
 console.log(`paginas com diagrama: pt=${diagramasPorIdioma.pt}, en=${diagramasPorIdioma.en} (piso ${PISO_DIAGRAMAS_POR_IDIOMA} por idioma)`);
 
+/*
+ * Os três motivos de reprovação são INDEPENDENTES (CR-9): um `else if` esconderia as violações
+ * sempre que o piso também falhasse, e o piso de diagrama sempre que o de população falhasse —
+ * nenhum vira ruído do outro. Todo motivo que se aplica é impresso, e a saída reprova se
+ * QUALQUER um deles falhar.
+ */
+let reprovado = false;
+
 if (conferidas < PISO) {
   console.error(`REPROVADO — so ${conferidas} paginas conferidas, e o piso e ${PISO}`);
-  process.exitCode = 1;
-} else if (idiomasAbaixoDoPiso.length > 0) {
+  reprovado = true;
+}
+
+if (idiomasAbaixoDoPiso.length > 0) {
   console.error(
     `REPROVADO — piso de paginas com diagrama nao atingido: ${idiomasAbaixoDoPiso
       .map((idioma) => `${idioma}=${diagramasPorIdioma[idioma]}/${PISO_DIAGRAMAS_POR_IDIOMA}`)
       .join(', ')}`,
   );
-  process.exitCode = 1;
-} else if (violacoes.length > 0) {
+  reprovado = true;
+}
+
+if (violacoes.length > 0) {
   console.error(`REPROVADO — ${violacoes.length} violacao(oes) serious/critical:`);
   for (const v of [...new Set(violacoes)]) {
     console.error(`  - ${v}`);
   }
-  process.exitCode = 1;
-} else {
+  reprovado = true;
+}
+
+if (!reprovado) {
   console.log('OK — nenhuma violacao serious/critical de WCAG 2.1 AA, piso de diagramas atingido.');
 }
+
+process.exitCode = reprovado ? 1 : 0;

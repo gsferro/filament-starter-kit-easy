@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Spatie\Image\Enums\Fit;
 use Spatie\Image\Image;
-use Symfony\Component\Process\ExecutableFinder;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
 
 /**
@@ -242,8 +242,10 @@ class KitArte extends Command
      * `palettegen`/`paletteuse` porque GIF é limitado a 256 cores: sem a paleta calculada
      * a partir DESTES quadros, a interface do Filament sai com faixas de cor visíveis.
      *
-     * Um clipe incompleto é reportado pelo nome e não impede os outros (R32) — o `foreach`
-     * nunca para no primeiro incompleto/falho.
+     * Um clipe incompleto, cujo ffmpeg falha ou cujo ffmpeg ESTOURA O TIMEOUT (padrão do
+     * `Process`: 60s) é reportado pelo nome e não impede os outros (R32) — o `foreach` nunca
+     * para no primeiro incompleto/falho/travado; `montarClipe()` trata os três casos com o
+     * mesmo `try/finally`.
      *
      * Sem ffmpeg no PATH, avisa UMA VEZ e segue sem tentar nenhum clipe — as imagens
      * estáticas já foram publicadas, e tentar cada clipe só repetiria o mesmo aviso.
@@ -267,10 +269,16 @@ class KitArte extends Command
      * Monta o GIF de UM clipe. Nunca escreve por cima do GIF publicado antes de confirmar
      * sucesso (R33): o ffmpeg recebe um destino TEMPORÁRIO, fora de `art/`
      * (R33.M6 — um temporário dentro de `art/` ficaria lá, publicado, se o ffmpeg falhasse), e
-     * só o sucesso copia o temporário por cima do publicado. O diretório de montagem é limpo
-     * ANTES de copiar os quadros deste clipe (R32.M6) — um quadro sobrado de uma execução
-     * interrompida, ou do clipe anterior no mesmo laço (R32.M5), não sobrevive para entrar
-     * neste GIF.
+     * só o sucesso publica o temporário no lugar do publicado, de forma atômica
+     * (`publicarGif()`). O diretório de montagem é limpo ANTES de copiar os quadros deste
+     * clipe (R32.M6) — um quadro sobrado de uma execução interrompida, ou do clipe anterior no
+     * mesmo laço (R32.M5), não sobrevive para entrar neste GIF.
+     *
+     * O `try/finally` cobre as TRÊS formas de o ffmpeg não terminar bem — falha (código != 0),
+     * timeout (`ProcessTimedOutException`, o padrão do `Process` é 60s) e qualquer outra
+     * exceção do processo: nos três casos o diretório de montagem é limpo do mesmo jeito, e
+     * `montarGif()` segue para o próximo clipe (R32) — travar num clipe não pode significar
+     * nunca tentar os outros.
      *
      * @param  list<string>  $quadros
      */
@@ -289,36 +297,45 @@ class KitArte extends Command
             return;
         }
 
-        $entrada = base_path('storage/framework/cache/arte');
-
-        File::deleteDirectory($entrada);
-        File::ensureDirectoryExists($entrada);
-
-        foreach (array_values($quadros) as $indice => $quadro) {
-            File::copy("{$origem}/{$quadro}.png", sprintf('%s/quadro-%02d.png', $entrada, $indice + 1));
-        }
-
+        $entrada    = base_path('storage/framework/cache/arte');
         $destino    = base_path("art/{$clipe}.gif");
         $temporario = "{$entrada}/{$clipe}-saida.gif";
+        $sucesso    = false;
 
-        $processo = new Process([
-            $ffmpeg, '-y',
-            '-framerate', '0.6',
-            '-i', $entrada.'/quadro-%02d.png',
-            '-vf', 'scale=1000:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse',
-            '-loop', '0',
-            $temporario,
-        ]);
+        try {
+            File::deleteDirectory($entrada);
+            File::ensureDirectoryExists($entrada);
 
-        $processo->run();
+            foreach (array_values($quadros) as $indice => $quadro) {
+                File::copy("{$origem}/{$quadro}.png", sprintf('%s/quadro-%02d.png', $entrada, $indice + 1));
+            }
 
-        $sucesso = $processo->isSuccessful() && File::exists($temporario);
+            $processo = new Process([
+                $ffmpeg, '-y',
+                '-framerate', '0.6',
+                '-i', $entrada.'/quadro-%02d.png',
+                '-vf', 'scale=1000:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse',
+                '-loop', '0',
+                $temporario,
+            ]);
 
-        if ($sucesso) {
-            File::copy($temporario, $destino);
+            try {
+                $processo->run();
+            } catch (ProcessTimedOutException) {
+                // Tratado como qualquer outra falha do ffmpeg logo abaixo — não sobe, não para
+                // o `foreach` de `montarGif()`.
+            }
+
+            $sucesso = $processo->isSuccessful() && File::exists($temporario);
+
+            if ($sucesso) {
+                $sucesso = $this->publicarGif($temporario, $destino);
+            }
+        } finally {
+            // Sempre — sucesso, falha, timeout ou qualquer exceção: nenhum quadro nem GIF
+            // temporário deste clipe pode sobreviver para contaminar o próximo (R32.M6).
+            File::deleteDirectory($entrada);
         }
-
-        File::deleteDirectory($entrada);
 
         if (! $sucesso) {
             $this->components->warn("ffmpeg não disponível ou falhou — GIF de '{$label}' não montado. As imagens estáticas foram publicadas.");
@@ -333,41 +350,93 @@ class KitArte extends Command
     }
 
     /**
-     * Resolve o caminho do ffmpeg no PATH do ambiente, um diretório por vez.
+     * Publica o temporário no destino de forma ATÔMICA (R33): um leitor concorrente nunca vê o
+     * GIF publicado pela metade.
      *
-     * `ExecutableFinder::find()` varre por SUFIXO primeiro e diretório depois
-     * (`vendor/symfony/process/ExecutableFinder.php:76-88`): no Windows, com um ffmpeg REAL
-     * instalado mais adiante no PATH (ex.: WinGet), a extensão `.exe` é tentada em TODOS os
-     * diretórios antes de `.cmd` ser tentada em qualquer um — um ffmpeg de teste `.cmd` à
-     * FRENTE do PATH perde para o `.exe` real mais atrás. Provado nesta sessão com uma sonda:
-     * `ExecutableFinder::find('ffmpeg')` chamado direto, com o `.cmd` de teste na frente do
-     * PATH e um `ffmpeg.exe` real mais adiante, resolveu o `.exe` real.
+     * `rename()` é atômico quando origem e destino estão no MESMO volume — o caso comum aqui,
+     * já que `$temporario` mora em `storage/framework/cache/arte` e `$destino` em `art/`,
+     * ambos dentro do mesmo `base_path()`. Quando os dois estão em volumes diferentes,
+     * `rename()` falha (Windows: `false`; Linux: `EXDEV`) e a troca vira: copia para um
+     * temporário AO LADO do destino (mesmo diretório `art/`, portanto mesmo volume que ele) e
+     * só então renomeia esse temporário para o nome final — `File::copy()` direto por cima do
+     * publicado NÃO é atômico, e um leitor concorrente poderia ver o arquivo truncado a meio
+     * caminho.
+     */
+    private function publicarGif(string $temporario, string $destino): bool
+    {
+        if (@rename($temporario, $destino)) {
+            return true;
+        }
+
+        $temporarioAoLado = $destino.'.tmp-'.bin2hex(random_bytes(8));
+
+        if (! File::copy($temporario, $temporarioAoLado)) {
+            return false;
+        }
+
+        if (@rename($temporarioAoLado, $destino)) {
+            return true;
+        }
+
+        File::delete($temporarioAoLado);
+
+        return false;
+    }
+
+    /**
+     * Resolve o caminho do ffmpeg no PATH do ambiente, sem mutar o processo.
      *
-     * Isolar a varredura a um diretório por vez (sobrescrevendo `PATH` com só ele e
-     * restaurando em seguida) respeita a ordem real do PATH — o primeiro diretório com
-     * QUALQUER extensão de PATHEXT vence, como o Windows resolve de fato.
+     * `Symfony\Component\Process\ExecutableFinder` varre por SUFIXO primeiro e diretório
+     * depois: no Windows, com um ffmpeg REAL instalado mais adiante no PATH (ex.: WinGet), a
+     * extensão `.exe` é tentada em TODOS os diretórios antes de `.cmd` ser tentada em qualquer
+     * um — um ffmpeg de teste `.cmd` à FRENTE do PATH perde para o `.exe` real mais atrás, que
+     * não é a ordem que o Windows de fato usa (nem a que o operador espera ao editar o PATH).
+     * Varrer aqui, diretório por diretório e SÓ DEPOIS as extensões, resolve isso sem recorrer
+     * ao truque de sobrescrever `PATH` do processo por diretório (que mutava estado global e,
+     * no Linux, disparava um `command -v` por diretório dentro do `ExecutableFinder` quando o
+     * arquivo não existia ali).
+     *
+     * Fora do Windows, `ffmpeg` é o único candidato por diretório (sem PATHEXT) e precisa
+     * também de `is_executable` — `is_file` sozinho aceita um arquivo sem permissão de
+     * execução.
      */
     private function resolverFfmpeg(): ?string
     {
         $pathOriginal = getenv('PATH') ?: getenv('Path') ?: '';
         $diretorios   = array_filter(explode(PATH_SEPARATOR, $pathOriginal), fn (string $d): bool => $d !== '');
-
-        $finder = new ExecutableFinder;
+        $ehWindows    = PHP_OS_FAMILY === 'Windows';
+        $extensoes    = $ehWindows ? $this->extensoesDoPathext() : [''];
 
         foreach ($diretorios as $diretorio) {
-            putenv("PATH={$diretorio}");
+            foreach ($extensoes as $extensao) {
+                $candidato = rtrim($diretorio, '\\/').DIRECTORY_SEPARATOR."ffmpeg{$extensao}";
 
-            $encontrado = $finder->find('ffmpeg');
+                if (! is_file($candidato)) {
+                    continue;
+                }
 
-            if ($encontrado !== null) {
-                putenv("PATH={$pathOriginal}");
+                if (! $ehWindows && ! is_executable($candidato)) {
+                    continue;
+                }
 
-                return $encontrado;
+                return $candidato;
             }
         }
 
-        putenv("PATH={$pathOriginal}");
-
         return null;
+    }
+
+    /**
+     * As extensões de executável do Windows, na ordem de `PATHEXT` — cada uma já com o ponto
+     * (`.EXE`, `.CMD`…). Com a variável ausente ou vazia, a mesma lista padrão que o próprio
+     * Windows usa quando `PATHEXT` não foi definida.
+     *
+     * @return list<string>
+     */
+    private function extensoesDoPathext(): array
+    {
+        $pathext = getenv('PATHEXT') ?: '.COM;.EXE;.BAT;.CMD';
+
+        return array_values(array_filter(explode(PATH_SEPARATOR, $pathext), fn (string $e): bool => $e !== ''));
     }
 }
