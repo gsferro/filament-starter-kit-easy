@@ -12,7 +12,7 @@
         "laravel-vite-plugin": "^3.1",
         "playwright": "^1.63.0",
         "tailwindcss": "^4.0.0",
-        "vite": "^8.3.0"
+        "vite": "^8.3.1"
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1"
