@@ -182,7 +182,7 @@ accDescr: RememberConversation wraps the pipeline; the budget guard and the four
         filtro_saida->>remember: response (redacted if flagged)
         remember->>widget: title + original message + already redacted response
         widget->>ledger: AgentStreamed
-        note right of ledger: usually 2 rows per turn (prompt guard + assistant); 1 when the classifier fails (fail-open)
+        note right of ledger: usually 2 rows per turn (prompt guard + assistant) - 1 when the classifier fails (fail-open)
       end
     end
   end

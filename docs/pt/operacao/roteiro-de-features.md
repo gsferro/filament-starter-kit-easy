@@ -184,7 +184,7 @@ accDescr: RememberConversation envolve o pipeline; o orçamento e os quatro guar
         filtro_saida->>remember: resposta (redigida se detectada)
         remember->>widget: título + mensagem original + resposta já redigida
         widget->>ledger: AgentStreamed
-        note right of ledger: normalmente 2 linhas por turno (guarda-prompt + assistente); 1 quando o classificador falha (fail-open)
+        note right of ledger: normalmente 2 linhas por turno (guarda-prompt + assistente) - 1 quando o classificador falha (fail-open)
       end
     end
   end
