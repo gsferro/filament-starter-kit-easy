@@ -45,6 +45,7 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Filament\Resources\Resource;
 use Fomvasss\AiTasks\Exceptions\BudgetExceededException;
 use Fomvasss\AiTasks\Models\AiRun;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -218,17 +219,8 @@ function arvoreSinteticaDoCatalogo(string $idioma): array
     return $paginas;
 }
 
-/** Localiza, na árvore REAL, o bloco de um DG (fora de comentário HTML); `null` se ausente. */
-function blocoDoCatalogoNaArvore(string $id, string $idioma): ?array
-{
-    foreach (blocosMermaidDaArvore($idioma) as $bloco) {
-        if ($bloco['idCatalogo'] === $id && ! $bloco['dentroDeComentarioHtml']) {
-            return $bloco;
-        }
-    }
-
-    return null;
-}
+// `blocoDoCatalogoNaArvore()` mora em `tests/Pest.php` — dois arquivos o usam (RD-11,
+// `.ai/rules/testes.md`: "nunca crie um clone com outro nome").
 
 /**
  * Estrutura normalizada de um bloco Mermaid (R2): tipo, IDs de nó/estado/participante e arestas
@@ -411,6 +403,21 @@ it('[CT-103] o extrator reconhece toda cerca Mermaid e recusa o bloco escondido 
     'cerca longa'                   => ["````mermaid\nflowchart LR\n  A --> B\n````\n", 1, 'recusa: bloco sem guarda'],
     'bloco escondido (A2-21, P-40)' => ["<!--\n```mermaid\nflowchart LR\n  A --> B\n  %% DG-01\n```\n-->\n", 1, 'recusa: comentário'],
     'falso positivo do detector'    => ["```php\necho 'mermaid';\n```\n", 0, 'aceita'],
+    // CR-7: um `<!--` de EXEMPLO dentro de um bloco ```html (sem fechar ali) não pode ligar
+    // "dentro de comentário" até o fim do arquivo — o bloco Mermaid REAL que vem depois continua
+    // visível.
+    'comentário de exemplo dentro de bloco html (CR-7)' => [
+        "```html\n<!-- início de um comentário de exemplo, sem fechar aqui\n```\n\n```mermaid\nflowchart LR\n  A --> B\n  %% DG-01\n```\n",
+        1,
+        'aceita',
+    ],
+    // CR-7: um ```mermaid aninhado dentro de uma cerca de QUATRO crases (um bloco Markdown de
+    // EXEMPLO, ensinando a sintaxe) não é um diagrama real.
+    'mermaid aninhado em cerca de 4 crases (CR-7)' => [
+        "````markdown\n```mermaid\nflowchart LR\n  A --> B\n```\n````\n\n```mermaid\nflowchart LR\n  A --> B\n  %% DG-01\n```\n",
+        1,
+        'aceita',
+    ],
 ]);
 
 /*
@@ -645,12 +652,29 @@ function fatosPorDg(): array
         // DG-02: panel_user NÃO tem "gerir usuários" entre suas arestas (subtração de administração).
         'DG-02' => static fn (string $b): bool => ! (bool) preg_match('/panel_user\s*-->\s*gerir_usuarios/', $b),
 
-        // DG-03: a pergunta de pendência vem ANTES da de master_global.
+        // DG-03: a pergunta de pendência vem ANTES da de master_global (canAccessPanel) E, na
+        // extensão de canAccessTenant, a organização inativa nega ANTES do master_global sempre
+        // entrar — `app/Models/User.php:canAccessTenant:789` faz a checagem de `!$tenant->ativo`
+        // primeiro "de propósito", e só depois `isMasterGlobal()` (RD-12).
         'DG-03' => static function (string $b): bool {
             $posPendencia = stripos($b, 'pendente?');
             $posMaster    = stripos($b, 'master_global?');
 
-            return $posPendencia !== false && $posMaster !== false && $posPendencia < $posMaster;
+            if ($posPendencia === false || $posMaster === false || $posPendencia >= $posMaster) {
+                return false;
+            }
+
+            $posTenant = stripos($b, 'checa_tenant');
+
+            if ($posTenant === false) {
+                return false;
+            }
+
+            $trechoTenant    = substr($b, $posTenant);
+            $posInativa      = stripos($trechoTenant, 'inativa');
+            $posMasterTenant = stripos($trechoTenant, 'master_global');
+
+            return $posInativa !== false && $posMasterTenant !== false && $posInativa < $posMasterTenant;
         },
 
         // DG-04: o desafio de 2FA está dentro de um bloco condicional (alt), não incondicional.
@@ -727,12 +751,22 @@ it('[CT-06] cada DG adulterado num fato do código é reprovado', function (stri
 
     $fato = $fatos[$dg];
 
+    // DG-03: o controle positivo lê o BLOCO REAL (04: "Dado o bloco <dg> real em pt"), não um
+    // texto sintético — é a aplicação de fatosPorDg() a um bloco real que prova (ou reprova, RD-12)
+    // que o diagrama publicado bate com o código hoje. Os outros 19 DGs continuam com o bloco
+    // sintético como controle do MECANISMO (não foram auditados um a um contra o texto publicado).
+    if ($dg === 'DG-03') {
+        $blocoReal = blocoDoCatalogoNaArvore('DG-03', 'pt');
+        expect($blocoReal)->not->toBeNull('DG-03 não encontrado em pt');
+        $blocoCorreto = (string) ($blocoReal['bloco'] ?? $blocoCorreto);
+    }
+
     expect($fato($blocoCorreto))->toBeTrue("o fato de {$dg} deveria aceitar o bloco correto: {$blocoCorreto}");
     expect($fato($blocoAdulterado))->toBeFalse("o fato de {$dg} deveria reprovar o bloco adulterado: {$blocoAdulterado}");
 })->with([
     ['DG-01', "flowchart LR\n  Adm[/admin] --> AdminP\n  Inf[/infra] --> InfraP\n", "flowchart LR\n  Adm[/admin] --> AdminP\n"],
     ['DG-02', "flowchart LR\n  panel_user --> operar_negocio\n", "flowchart LR\n  panel_user --> gerir_usuarios\n"],
-    ['DG-03', "flowchart LR\n  Q1{pendente?} --> Q2{master_global?}\n", "flowchart LR\n  Q1{master_global?} --> Q2{pendente?}\n"],
+    ['DG-03', "flowchart LR\n  Q1{pendente?} --> Q2{master_global?}\n  checa_tenant -->|inativa| nega\n  checa_tenant -->|master_global| permite\n", "flowchart LR\n  Q1{master_global?} --> Q2{pendente?}\n  checa_tenant -->|inativa| nega\n  checa_tenant -->|master_global| permite\n"],
     ['DG-04', "sequenceDiagram\n  alt 2FA ligado\n    U->>S: desafio 2FA\n  end\n", "sequenceDiagram\n  U->>S: desafio 2FA\n"],
     ['DG-05', "flowchart LR\n  N2[2 painéis] --> Escolha[tela de escolha]\n", "flowchart LR\n  N2[2 painéis] --> Painel[direto ao painel]\n"],
     ['DG-06', "flowchart LR\n  Retorno --> Recusa1[e-mail não verificado]\n", "flowchart LR\n  Retorno --> Recusa1[credencial recusada]\n"],
@@ -1009,6 +1043,50 @@ it('[CT-10] o DG-01 fica vermelho quando o mundo muda', function (string $mundo,
             expect($role->painel)->toBe('infra', "roles.painel do papel infra deveria ser 'infra' e não 'admin' — {$nomeia}");
             break;
 
+            // RD-05: o DG-01 real liga arestas que o código não tem. Cada linha abaixo lê o CÓDIGO
+            // (o fato) e o BLOCO REAL — não uma cópia sintética — e as duas têm de bater.
+        case 'reverb ligado só ao painel admin, mas os três painéis o usam':
+            foreach (['Admin', 'App', 'Infra'] as $painel) {
+                $codigo = codigoSemComentario((string) file_get_contents(app_path("Providers/Filament/{$painel}PanelProvider.php")));
+                test()->assertStringContainsString('reverb', $codigo, "{$painel}PanelProvider deveria referenciar reverb — os três painéis usam (databaseNotificationsPolling)");
+            }
+
+            $bloco = blocoDoCatalogoNaArvore('DG-01', 'pt');
+            expect($bloco)->not->toBeNull('DG-01 não encontrado em pt');
+            test()->assertStringNotContainsString('reverb --> painel_admin', (string) $bloco['bloco'], "o DG-01 não deveria ligar {$nomeia} só ao painel_admin — os três painéis usam");
+            break;
+
+        case 'packagist ligado ao painel admin, mas o plugin é do /infra':
+            $codigoAdmin = codigoSemComentario((string) file_get_contents(app_path('Providers/Filament/AdminPanelProvider.php')));
+            $codigoInfra = codigoSemComentario((string) file_get_contents(app_path('Providers/Filament/InfraPanelProvider.php')));
+
+            test()->assertStringNotContainsString('FilamentComposerReleaseNotifierPlugin', $codigoAdmin, 'o plugin do Packagist não deveria estar no AdminPanelProvider');
+            expect($codigoInfra)->toContain('FilamentComposerReleaseNotifierPlugin');
+
+            $bloco = blocoDoCatalogoNaArvore('DG-01', 'pt');
+            expect($bloco)->not->toBeNull('DG-01 não encontrado em pt');
+            test()->assertStringNotContainsString('painel_admin -.-> packagist', (string) $bloco['bloco'], "o DG-01 liga {$nomeia} ao painel_admin, mas o plugin é do /infra");
+            break;
+
+        case 'oauth desenhado só no painel admin, mas o hook de login é global':
+            foreach (['Admin', 'App', 'Infra'] as $painel) {
+                $codigo = codigoSemComentario((string) file_get_contents(app_path("Providers/Filament/{$painel}PanelProvider.php")));
+                test()->assertStringContainsString('TelaLogin', $codigo, "{$painel}PanelProvider deveria usar a TelaLogin — é o hook de login (e o social) global");
+            }
+
+            $bloco = blocoDoCatalogoNaArvore('DG-01', 'pt');
+            expect($bloco)->not->toBeNull('DG-01 não encontrado em pt');
+            test()->assertStringNotContainsString('painel_admin -.-> oauth', (string) $bloco['bloco'], "o DG-01 liga {$nomeia} só ao painel_admin, mas o hook de login social é global");
+            break;
+
+        case 'agentes de IA desenhados só via /app, mas o catálogo é administrado no /admin':
+            expect(is_dir(app_path('Filament/Admin/Resources/AgentesIa')))->toBeTrue('o catálogo de agentes deveria ter Resource no /admin (AgenteIaResource)');
+
+            $bloco = blocoDoCatalogoNaArvore('DG-01', 'pt');
+            expect($bloco)->not->toBeNull('DG-01 não encontrado em pt');
+            test()->assertStringNotContainsString('só via /app', (string) $bloco['bloco'], "o DG-01 diz que {$nomeia} é \"só via /app\", mas o catálogo é administrado no /admin");
+            break;
+
         default:
             throw new RuntimeException("mundo desconhecido: {$mundo}");
     }
@@ -1016,6 +1094,10 @@ it('[CT-10] o DG-01 fica vermelho quando o mundo muda', function (string $mundo,
     ['painel financeiro registrado', 'financeiro'],
     ['nó Horizon inventado', 'Horizon'],
     ['papel infra com roles.painel = admin', 'infra'],
+    ['reverb ligado só ao painel admin, mas os três painéis o usam', 'reverb'],
+    ['packagist ligado ao painel admin, mas o plugin é do /infra', 'packagist'],
+    ['oauth desenhado só no painel admin, mas o hook de login é global', 'oauth'],
+    ['agentes de IA desenhados só via /app, mas o catálogo é administrado no /admin', 'agentes_ia'],
 ]);
 
 /*
@@ -1037,34 +1119,106 @@ function mapaCasoDeUsoParaPermissao(): array
     ];
 }
 
+/** O id do ator de cada papel no DG-02 (arestas ligam IDS, nunca o texto humano — RD-03). */
+function idDoAtorNoDg02(string $papel): string
+{
+    return match ($papel) {
+        'master_global'  => 'ator_master_global',
+        'admin'          => 'ator_admin',
+        'infra'          => 'ator_infra',
+        'panel_user'     => 'ator_panel_user',
+        'admin_app'      => 'ator_admin_app',
+        default          => throw new RuntimeException("papel desconhecido: {$papel}"),
+    };
+}
+
+/**
+ * O id do nó de caso de uso no DG-02 para cada rótulo textual usado nos datasets desta suíte.
+ * `null` quando o caso de uso não tem nó dedicado hoje (a checagem cai para o texto humano).
+ */
+function idDoCasoDeUsoNoDg02(): array
+{
+    return [
+        'gerir usuários'                => 'cu_gerir_usuarios',
+        'gerir usuários da organização' => 'cu_gerir_usuarios_org',
+        'gerir convites'                => 'cu_convidar',
+        'ver os logs'                   => 'cu_ver_logs',
+        'ver a saúde da instalação'     => 'cu_ver_saude',
+        'aceitar convite recebido'      => 'cu_aceitar_convite',
+        'operar o negócio no /app'      => 'cu_operar_negocio',
+        'personificar usuário'          => 'cu_personificar',
+        'importar'                      => null,
+        'exportar'                      => null,
+    ];
+}
+
+/** Acha, num bloco flowchart, o id de um nó cujo RÓTULO contém o trecho dado (case-insensitive). */
+function idDoNoComRotulo(string $bloco, string $rotuloParcial): ?string
+{
+    foreach (explode("\n", $bloco) as $linha) {
+        if (preg_match('/^\s*([A-Za-z0-9_]+)\["([^"]*)"\]/', $linha, $m) === 1
+            && stripos($m[2], $rotuloParcial) !== false
+        ) {
+            return $m[1];
+        }
+    }
+
+    return null;
+}
+
 it('[CT-11] os casos de uso de cada papel batem com as permissões semeadas, sem tenancy', function (string $papel, string $ausente): void {
     test()->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 
-    $bloco = blocoDoCatalogoNaArvore('DG-02', 'pt');
+    // Fora do loop de idioma: `usuarioDoKit()` cria a conta uma única vez — chamá-la a cada
+    // iteração colidiria no e-mail único (o mesmo papel, o mesmo default de e-mail).
+    $user = usuarioDoKit($papel);
 
-    expect($bloco)->not->toBeNull('DG-02 não encontrado — a página de diagramas ainda não existe');
+    foreach (['pt', 'en'] as $idioma) {
+        $bloco = blocoDoCatalogoNaArvore('DG-02', $idioma);
 
-    if ($bloco === null) {
-        // Ainda confere o fato real (as permissões do papel), que já existe hoje.
-        $user = usuarioDoKit($papel);
+        expect($bloco)->not->toBeNull("DG-02 não encontrado em {$idioma}");
 
-        foreach (mapaCasoDeUsoParaPermissao() as $caso => $permissao) {
-            $pode = $user->can($permissao);
-
-            if ($papel === 'master_global') {
-                expect($pode)->toBeTrue("master_global deveria poder tudo via Gate::before ({$caso})");
-            }
-        }
-
-        return;
-    }
-
-    foreach (explode(', ', $ausente) as $usoAusente) {
-        if (str_starts_with($usoAusente, '—')) {
+        if ($bloco === null) {
             continue;
         }
 
-        test()->assertStringNotContainsString("{$papel} --> ".$usoAusente, $bloco['bloco'], "{$papel} não deveria se ligar a \"{$usoAusente}\"");
+        if ($papel === 'master_global') {
+            foreach (mapaCasoDeUsoParaPermissao() as $caso => $permissao) {
+                expect($user->can($permissao))->toBeTrue("master_global deveria poder tudo via Gate::before ({$caso})");
+            }
+
+            test()->assertMatchesRegularExpression(
+                '/ator_master_global\s*-->\s*cu_tudo\b/',
+                (string) $bloco['bloco'],
+                "{$idioma}: master_global deveria se ligar ao nó único do Gate::before (cu_tudo)",
+            );
+
+            continue;
+        }
+
+        $idAtor = idDoAtorNoDg02($papel);
+
+        foreach (explode(', ', $ausente) as $usoAusente) {
+            if (str_starts_with($usoAusente, '—')) {
+                continue;
+            }
+
+            $idCaso = idDoCasoDeUsoNoDg02()[$usoAusente] ?? null;
+
+            // Sem id de nó dedicado hoje: cai para o texto humano (controle antigo, mais fraco,
+            // mas não vazio — sem nó a checagem por id não tem o que comparar).
+            if ($idCaso === null) {
+                test()->assertStringNotContainsString("{$papel} --> {$usoAusente}", (string) $bloco['bloco'], "{$idioma}: {$papel} não deveria se ligar a \"{$usoAusente}\"");
+
+                continue;
+            }
+
+            test()->assertDoesNotMatchRegularExpression(
+                '/\b'.preg_quote($idAtor, '/').'\s*-->\s*'.preg_quote($idCaso, '/').'\b/',
+                (string) $bloco['bloco'],
+                "{$idioma}: {$papel} não deveria se ligar a \"{$usoAusente}\" ({$idAtor} --> {$idCaso})",
+            );
+        }
     }
 })->with([
     ['master_global', '— (liga-se a "tudo, via Gate::before", não a uma lista de permissões)'],
@@ -1081,10 +1235,35 @@ it('[CT-73] o caso de uso de escrita exige a permissão de escrita, não a de ve
     $user = usuarioDoKit($papel);
     $pode = $user->can($permissao);
 
-    expect($pode)->toBe($arestaEsperada === 'presente, com KIT_DASHBOARD_DINAMICO' || $arestaEsperada === 'ausente' ? $pode : $pode);
+    // A tautologia `toBe($cond ? $pode : $pode)` nunca discriminava nada (RD-03): a permissão
+    // exigida SÓ é presente para quem a tem de fato.
+    expect($pode)->toBe($arestaEsperada === 'presente, com KIT_DASHBOARD_DINAMICO');
 
     if ($papel === 'panel_user') {
         expect($pode)->toBeFalse('panel_user não tem Manage:Dashboard — a subtração de PapeisSeeder::class');
+    }
+
+    $idAtor = idDoAtorNoDg02($papel);
+
+    foreach (['pt', 'en'] as $idioma) {
+        $bloco = blocoDoCatalogoNaArvore('DG-02', $idioma);
+        expect($bloco)->not->toBeNull("DG-02 não encontrado em {$idioma}");
+
+        if ($bloco === null) {
+            continue;
+        }
+
+        $idCaso = idDoNoComRotulo((string) $bloco['bloco'], 'dashboard');
+
+        // A linha só discrimina se o DG-02 desenhar o caso de uso; se não desenhar, nada a
+        // afirmar sobre a ARESTA (a permissão, acima, é sempre conferida).
+        if ($idCaso === null) {
+            continue;
+        }
+
+        $temAresta = (bool) preg_match('/\b'.preg_quote($idAtor, '/').'\s*-->\s*'.preg_quote($idCaso, '/').'\b/', (string) $bloco['bloco']);
+
+        expect($temAresta)->toBe(str_starts_with($arestaEsperada, 'presente'), "{$idioma}: a aresta {$idAtor} --> {$idCaso} deveria estar \"{$arestaEsperada}\"");
     }
 })->with([
     ['montar o dashboard', 'Manage:Dashboard', 'panel_user', 'ausente'],
@@ -1101,13 +1280,44 @@ it('[CT-83] a aresta desenhada de cada papel para cada caso de uso é a que can(
     }
 
     $user = usuarioDoKit($papel);
-    $pode = $user->can($permissao);
+
+    // "— (canImpersonate)" marca "Personificar usuário": não é permissão do Shield, é
+    // `User::canImpersonate()` — RD-04 (admin --> personificar no DG-02, mas o método só aceita
+    // master_global). Mesmo mecanismo de R44 (aresta ⇔ fato do código), papel que R44 não cobria.
+    $pode = $permissao === '— (canImpersonate)' ? $user->canImpersonate() : $user->can($permissao);
 
     expect($pode)->toBe($podeEsperado === 'sim');
 
-    $bloco = blocoDoCatalogoNaArvore('DG-02', 'pt');
+    $idAtor = idDoAtorNoDg02($papel);
+    $idCaso = idDoCasoDeUsoNoDg02()[$casoDeUso] ?? null;
 
-    expect($bloco)->not->toBeNull('DG-02 não encontrado — a página de diagramas ainda não existe, então a aresta não pode ser conferida contra o bloco');
+    foreach (['pt', 'en'] as $idioma) {
+        $bloco = blocoDoCatalogoNaArvore('DG-02', $idioma);
+        expect($bloco)->not->toBeNull("DG-02 não encontrado em {$idioma} — a aresta de {$papel} para {$casoDeUso} não pode ser conferida");
+
+        if ($bloco === null) {
+            continue;
+        }
+
+        $temAresta = $idCaso !== null && (bool) preg_match(
+            '/\b'.preg_quote($idAtor, '/').'\s*-->\s*'.preg_quote($idCaso, '/').'\b/',
+            (string) $bloco['bloco'],
+        );
+
+        if ($papel === 'master_global' && str_starts_with($aresta, 'presente, ou o nó único')) {
+            $temNoUnico = (bool) preg_match('/ator_master_global\s*-->\s*cu_tudo\b/', (string) $bloco['bloco']);
+            expect($temAresta || $temNoUnico)->toBeTrue("{$idioma}: master_global deveria se ligar a \"{$casoDeUso}\" ou ao nó único do Gate::before (cu_tudo)");
+
+            continue;
+        }
+
+        $deveriaExistir = str_starts_with($aresta, 'presente');
+
+        expect($temAresta)->toBe(
+            $deveriaExistir,
+            "{$idioma}: a aresta {$idAtor} --> ".($idCaso ?? '?')." (\"{$casoDeUso}\") deveria estar \"{$aresta}\" — can(\"{$permissao}\") devolveu ".($pode ? 'true' : 'false'),
+        );
+    }
 })->with([
     ['master_global', 'ver os logs', 'View:LogsExplorer', 'sim', 'presente, ou o nó único que nomeia o Gate::before'],
     ['admin', 'gerir usuários', 'Create:User', 'sim', 'presente'],
@@ -1115,6 +1325,11 @@ it('[CT-83] a aresta desenhada de cada papel para cada caso de uso é a que can(
     ['infra', 'ver os logs', 'View:LogsExplorer', 'sim', 'presente'],
     ['infra', 'gerir usuários', 'Create:User', 'não', 'ausente'],
     ['panel_user', 'gerir usuários', 'Create:User', 'não', 'ausente'],
+    // RD-04: `User::canImpersonate()` (`app/Models/User.php:852-855`) só aceita master_global.
+    // O DG-02 de hoje liga `ator_admin --> cu_personificar` — esta linha TEM de ficar vermelha
+    // até o diagrama ser corrigido (roteamento step65).
+    ['admin', 'personificar usuário', '— (canImpersonate)', 'não', 'ausente'],
+    ['master_global', 'personificar usuário', '— (canImpersonate)', 'sim', 'presente, ou o nó único que nomeia o Gate::before'],
 ]);
 
 /*
@@ -1237,14 +1452,19 @@ it('[CT-16] todo participante do DG-04 existe, e a checagem de acesso vem antes 
         return;
     }
 
-    $posChecagem = stripos($bloco['bloco'], 'canAccessPanel');
-    $posDesafio  = stripos($bloco['bloco'], '2FA');
+    // A ordem tem de vir do CORPO do diagrama, não do `accDescr` (a legenda de acessibilidade) —
+    // o `accDescr` do DG-04 já afirma em prosa "canAccessPanel() vem antes de 2FA", e isso
+    // satisfaria a checagem mesmo que o CORPO estivesse errado (RD-03).
+    $corpo = (string) preg_replace('/^\s*acc(Title|Descr):.*$/mi', '', $bloco['bloco']);
+
+    $posChecagem = stripos($corpo, 'canAccessPanel');
+    $posDesafio  = stripos($corpo, '2FA');
 
     expect($posChecagem)->not->toBeFalse()
         ->and($posDesafio)->not->toBeFalse()
         ->and($posChecagem)->toBeLessThan($posDesafio);
 
-    if (preg_match('/(\d+)\s*tentativas/', $bloco['bloco'], $m) === 1) {
+    if (preg_match('/(\d+)\s*tentativas/', $corpo, $m) === 1) {
         expect($m[1])->toBe('5');
     }
 });
@@ -2092,8 +2312,54 @@ it('[CT-23] a ordem desenhada é a ordem executada, com os 4 guardrails do requi
     $codigoListener = codigoSemComentario((string) file_get_contents(app_path('Ai/Listeners/RegistrarAiRun.php')));
     expect($codigoListener)->toContain('AiRun::create');
 
-    $bloco = blocoDoCatalogoNaArvore('DG-11', 'pt');
-    expect($bloco)->not->toBeNull('DG-11 não encontrado — operacao/roteiro-de-features.md ainda não existe');
+    foreach (['pt', 'en'] as $idioma) {
+        $bloco = blocoDoCatalogoNaArvore('DG-11', $idioma);
+        expect($bloco)->not->toBeNull("DG-11 não encontrado em {$idioma}");
+
+        if ($bloco === null) {
+            continue;
+        }
+
+        $corpo = (string) preg_replace('/^\s*acc(Title|Descr):.*$/mi', '', (string) $bloco['bloco']);
+
+        // A ordem executada, do lado do PEDIDO (entrada): Budget, os 3 guardrails de entrada
+        // (na ordem do catálogo), e por fim quem chama o provider (AiAudit — o próprio docblock
+        // do middleware diz que ele "vai por último no pipeline"). O filtro de saída
+        // (FiltroSaidaSensivelMiddleware) age na RESPOSTA, depois do provider — não faz parte
+        // desta cadeia de chamada de entrada, e por isso é conferido à parte, abaixo (M1/M2).
+        $posBudget      = stripos($corpo, 'participant budget');
+        $posInjection   = stripos($corpo, 'participant prompt_injection');
+        $posGuardLocal  = stripos($corpo, 'participant prompt_guard_local');
+        $posPiiRedactor = stripos($corpo, 'participant pii_redactor');
+        $posAuditoria   = stripos($corpo, 'participant auditoria');
+        $posFiltroSaida = stripos($corpo, 'participant filtro_saida');
+        $posLedger      = stripos($corpo, 'participant ledger');
+
+        foreach ([
+            'BudgetGuard'             => $posBudget,
+            'prompt_injection'        => $posInjection,
+            'prompt_guard_local'      => $posGuardLocal,
+            'pii_redactor'            => $posPiiRedactor,
+            'AiAudit (auditoria)'     => $posAuditoria,
+            'filtro_saida_sensivel'   => $posFiltroSaida,
+            'ledger (RegistrarAiRun)' => $posLedger,
+        ] as $nome => $pos) {
+            expect($pos)->not->toBeFalse("{$idioma}: participante \"{$nome}\" não encontrado no DG-11");
+        }
+
+        // M1/M2/M4: a ordem de entrada bate com o catálogo (Budget primeiro, depois os 3
+        // guardrails de request na ordem real), e há exatamente os 4 guardrails do requisito.
+        expect($posBudget)->toBeLessThan($posInjection)
+            ->and($posInjection)->toBeLessThan($posGuardLocal)
+            ->and($posGuardLocal)->toBeLessThan($posPiiRedactor)
+            ->and($posPiiRedactor)->toBeLessThan($posAuditoria);
+
+        // M3: quem grava ai_runs é o listener RegistrarAiRun (participante "ledger"), nunca o
+        // AiAuditMiddleware ("auditoria") — o homônimo mais enganoso da própria wiki (R15).
+        test()->assertMatchesRegularExpression('/\bauditoria\s*->>?\s*provider\b/', $corpo, "{$idioma}: AiAudit deveria ser quem chama o provider (fecha o pipeline antes dele)");
+        test()->assertMatchesRegularExpression('/->>?\s*ledger\s*:/', $corpo, "{$idioma}: quem grava ai_runs deveria ser o participante \"ledger\" (RegistrarAiRun)");
+        test()->assertDoesNotMatchRegularExpression('/\bauditoria\s*->>?\s*ledger\b/', $corpo, "{$idioma}: o AiAuditMiddleware não deveria ser desenhado como quem grava ai_runs");
+    }
 });
 
 it('[CT-24] o DG-11 fica vermelho quando o catálogo do agente muda', function (): void {
@@ -2111,10 +2377,34 @@ it('[CT-24] o DG-11 fica vermelho quando o catálogo do agente muda', function (
     test()->assertNotContains(GarantirPromptSeguroMiddleware::class, $guardrails, 'prompt_guard_local deveria ter sumido do agente regravado');
     test()->assertNotContains(FiltroSaidaSensivelMiddleware::class, $guardrails, 'filtro_saida_sensivel deveria ter sumido do agente regravado');
 
-    // A guarda REAL, quando existir, compararia isto contra o DG-11 real — hoje não há bloco para
-    // nomear "prompt_guard_local e filtro_saida_sensivel" como divergentes.
     $bloco = blocoDoCatalogoNaArvore('DG-11', 'pt');
-    expect($bloco)->not->toBeNull('DG-11 não encontrado — não é possível nomear a divergência contra o diagrama ainda');
+    expect($bloco)->not->toBeNull('DG-11 não encontrado em pt');
+
+    // A guarda REAL: compara os guardrails que o DG-11 desenha (fixos, no bloco) com os que o
+    // catálogo REGRAVADO agora executa (só 2) — a divergência tem de nomear os dois que sumiram.
+    $mapaParticipanteParaSlug = [
+        'prompt_injection'   => 'prompt_injection',
+        'prompt_guard_local' => 'prompt_guard_local',
+        'pii_redactor'       => 'pii_redactor',
+        'filtro_saida'       => 'filtro_saida_sensivel',
+    ];
+
+    $guardrailsDesenhados = [];
+
+    foreach ($mapaParticipanteParaSlug as $idParticipante => $slug) {
+        if (preg_match('/^\s*participant\s+'.preg_quote($idParticipante, '/').'\s+as\b/m', (string) $bloco['bloco']) === 1) {
+            $guardrailsDesenhados[] = $slug;
+        }
+    }
+
+    $guardrailsExecutados = $agente->agente()->guardrails;
+    $divergentes          = array_values(array_diff($guardrailsDesenhados, $guardrailsExecutados));
+
+    expect($divergentes)->not->toBeEmpty('a conferência deveria reprovar: o DG-11 ainda desenha guardrails que o catálogo regravado não executa mais');
+
+    foreach (['prompt_guard_local', 'filtro_saida_sensivel'] as $esperado) {
+        test()->assertContains($esperado, $divergentes, "a conferência deveria nomear \"{$esperado}\" como divergente");
+    }
 });
 
 it('[CT-91] o desfecho desenhado de cada camada é o executado, e só o pedido que chega ao provider vira linha do ai_runs', function (string $situacao, string $camada, string $desfecho, int $linhas): void {
@@ -2168,6 +2458,35 @@ it('[CT-91] o desfecho desenhado de cada camada é o executado, e só o pedido q
 |--------------------------------------------------------------------------
 */
 
+/**
+ * Confere que cada Resource real do /infra tem a TABELA do seu model desenhada como alvo de
+ * algum gravador no DG-12 (os nós entre parênteses, `nome_da_tabela[("nome_da_tabela")]`).
+ * Devolve TODAS as que não batem (não só a primeira), para que o cenário "mundo alterado" (CT-26)
+ * consiga nomear a Resource injetada mesmo que outra já divirja hoje.
+ *
+ * @param  list<class-string<resource>>  $resources
+ * @return array{ok:bool, motivo:?string}
+ */
+function confereDg12(array $resources, string $bloco): array
+{
+    $semGravador = [];
+
+    foreach ($resources as $resourceClass) {
+        $modelo = $resourceClass::getModel();
+        $tabela = (new $modelo)->getTable();
+
+        if (! str_contains($bloco, $tabela)) {
+            $semGravador[] = $resourceClass;
+        }
+    }
+
+    if ($semGravador !== []) {
+        return ['ok' => false, 'motivo' => 'sem gravador desenhado no DG-12 (tabela do model ausente do bloco): '.implode(', ', $semGravador)];
+    }
+
+    return ['ok' => true, 'motivo' => null];
+}
+
 it('[CT-25] cada tela do /infra liga-se a um gravador real', function (): void {
     noPainelBootado('infra');
 
@@ -2176,7 +2495,10 @@ it('[CT-25] cada tela do /infra liga-se a um gravador real', function (): void {
     expect($resources)->not->toBeEmpty('o painel infra deveria ter Resources registradas');
 
     $bloco = blocoDoCatalogoNaArvore('DG-12', 'pt');
-    expect($bloco)->not->toBeNull('DG-12 não encontrado — recursos/trilhas-de-infraestrutura.md ainda não existe');
+    expect($bloco)->not->toBeNull('DG-12 não encontrado em pt');
+
+    $resultado = confereDg12($resources, (string) $bloco['bloco']);
+    expect($resultado['ok'])->toBeTrue($resultado['motivo'] ?? 'reprovado sem motivo');
 
     $codigoRoutes = codigoSemComentario((string) file_get_contents(base_path('routes/console.php')));
     expect($codigoRoutes)->toContain('health:check');
@@ -2184,17 +2506,29 @@ it('[CT-25] cada tela do /infra liga-se a um gravador real', function (): void {
 });
 
 it('[CT-26] o DG-12 fica vermelho quando o /infra ganha uma tela', function (): void {
-    $antes = count(Filament::getPanel('infra')->getResources());
+    $resourcesAntes = Filament::getPanel('infra')->getResources();
 
-    painelRegistradoEmTeste('financeiro-infra-extra');
+    // Uma Resource extra REAL registrada no painel infra durante o teste (não um painel novo:
+    // registrar um painel não altera as Resources do /infra, e não é isso que o DG-12 confere).
+    $novaResource = new class extends Resource
+    {
+        protected static ?string $model = Convite::class;
+    };
 
-    // Registrar um painel novo não altera as Resources do /infra; o que este CT prova é que a
-    // contagem de Resources do painel é DERIVADA (Filament::getPanel('infra')->getResources()),
-    // não uma lista escrita à mão — uma Resource nova apareceria aqui sem exceção declarada.
-    expect(count(Filament::getPanel('infra')->getResources()))->toBe($antes);
+    Filament::getPanel('infra')->resources([$novaResource::class]);
+
+    $resourcesDepois = Filament::getPanel('infra')->getResources();
+
+    expect($resourcesDepois)->toHaveCount(count($resourcesAntes) + 1)
+        ->and($resourcesDepois)->toContain($novaResource::class);
 
     $bloco = blocoDoCatalogoNaArvore('DG-12', 'pt');
-    expect($bloco)->not->toBeNull('DG-12 não encontrado — não é possível nomear a Resource nova contra o diagrama ainda');
+    expect($bloco)->not->toBeNull('DG-12 não encontrado em pt');
+
+    $resultado = confereDg12($resourcesDepois, (string) $bloco['bloco']);
+
+    expect($resultado['ok'])->toBeFalse('a conferência deveria reprovar com uma Resource extra no /infra')
+        ->and((string) $resultado['motivo'])->toContain($novaResource::class);
 });
 
 it('[CT-62] o gravador que o DG-12 liga a uma tela, exercitado, grava a tabela que ela lista', function (string $tela, string $tabela, string $homonimo): void {
@@ -2325,6 +2659,32 @@ it('[CT-27] o ER desenhado existe e cobre o núcleo', function (): void {
     expect($bloco)->not->toBeNull('DG-13 não encontrado — referencia/arquitetura-em-diagramas.md ainda não tem o ER');
 });
 
+/**
+ * Os atributos desenhados por entidade num bloco `erDiagram` (blocos `ENTIDADE { tipo nome ... }`
+ * — hoje só `agentes_ia` tem um). É o que permite ao CT-28 NOMEAR uma coluna divergente contra o
+ * que o bloco de fato afirma, em vez de só provar que o bloco existe.
+ *
+ * @return array<string, list<string>>
+ */
+function atributosDesenhadosNoDg13(string $bloco): array
+{
+    $atributos = [];
+
+    if (preg_match_all('/([A-Za-z0-9_]+)\s*\{([^}]*)\}/s', $bloco, $blocosDeEntidade, PREG_SET_ORDER) !== false) {
+        foreach ($blocosDeEntidade as $grupo) {
+            [, $entidade, $corpo] = $grupo;
+
+            foreach (explode("\n", trim($corpo)) as $linha) {
+                if (preg_match('/^\s*\S+\s+([A-Za-z0-9_]+)\s*$/', $linha, $campo) === 1) {
+                    $atributos[$entidade][] = $campo[1];
+                }
+            }
+        }
+    }
+
+    return $atributos;
+}
+
 it('[CT-28] o DG-13 fica vermelho quando o schema muda', function (): void {
     expect(Schema::hasColumn('convites', 'expira_em'))->toBeTrue();
 
@@ -2335,7 +2695,26 @@ it('[CT-28] o DG-13 fica vermelho quando o schema muda', function (): void {
     expect(Schema::hasColumn('convites', 'expira_em'))->toBeFalse('convites.expira_em deveria ter sido removida para este cenário');
 
     $bloco = blocoDoCatalogoNaArvore('DG-13', 'pt');
-    expect($bloco)->not->toBeNull('DG-13 não encontrado — não é possível nomear convites.expira_em contra o diagrama ainda');
+    expect($bloco)->not->toBeNull('DG-13 não encontrado em pt');
+
+    $motivos = [];
+
+    foreach (atributosDesenhadosNoDg13((string) $bloco['bloco']) as $entidade => $colunas) {
+        $tabela = strtolower($entidade);
+
+        foreach ($colunas as $coluna) {
+            if (! Schema::hasColumn($tabela, $coluna)) {
+                $motivos[] = "{$tabela}.{$coluna}";
+            }
+        }
+    }
+
+    test()->assertContains(
+        'convites.expira_em',
+        $motivos,
+        'a conferência deveria reprovar nomeando convites.expira_em — o DG-13 hoje só desenha atributos '.
+        'para agentes_ia (nenhum bloco `convites { ... }`), então não há como o extrator nomear essa coluna',
+    );
 });
 
 /** Classifica uma relação Eloquent pelo tipo (M8 do R16: tipo desconhecido reprova). */
@@ -2358,22 +2737,50 @@ it('[CT-63] as duas pontas de cada relação desenhada são as do tipo da relaç
         ->and(tipoDeCardinalidade($user->vinculosSociais()))->toBe('1:N')
         ->and(Schema::getColumns('convites'))->toBeArray();
 
-    $colunaTenantId = collect(Schema::getColumns('convites'))->firstWhere('name', 'tenant_id');
-    $colunaRoleId   = collect(Schema::getColumns('convites'))->firstWhere('name', 'role_id');
+    $colunaTenantId       = collect(Schema::getColumns('convites'))->firstWhere('name', 'tenant_id');
+    $colunaRoleId         = collect(Schema::getColumns('convites'))->firstWhere('name', 'role_id');
+    $colunaConvidadoPorId = collect(Schema::getColumns('convites'))->firstWhere('name', 'convidado_por_id');
 
     expect($colunaTenantId['nullable'] ?? null)->toBeTrue('convites.tenant_id deveria ser anulável')
-        ->and($colunaRoleId['nullable'] ?? null)->toBeFalse('convites.role_id deveria ser obrigatória');
+        ->and($colunaRoleId['nullable'] ?? null)->toBeFalse('convites.role_id deveria ser obrigatória')
+        ->and($colunaConvidadoPorId['nullable'] ?? null)->toBeTrue('convites.convidado_por_id deveria ser anulável');
 
-    // As alterações descritas são recusadas por divergirem do que acabamos de medir acima.
+    // RD-06: ai_runs e agent_conversations guardam identificador SOLTO (subject_type/subject_id,
+    // participant_type/participant_id — nullable, sem `constrained()`), nunca uma FK de usuário.
+    $temFkUsuarioEmAiRuns             = Schema::hasColumn('ai_runs', 'user_id');
+    $temFkUsuarioEmAgentConversations = Schema::hasColumn('agent_conversations', 'user_id');
+
+    expect($temFkUsuarioEmAiRuns)->toBeFalse('ai_runs não tem FK de usuário — guarda identificador solto (subject_type/subject_id)')
+        ->and($temFkUsuarioEmAgentConversations)->toBeFalse('agent_conversations não tem FK de usuário — guarda identificador solto (participant_type/participant_id)');
+
+    $blocoReal = blocoDoCatalogoNaArvore('DG-13', 'pt');
+    expect($blocoReal)->not->toBeNull('DG-13 não encontrado em pt');
+
+    $motivosReais = [];
+
+    if (preg_match('/users\s*\|\|--o\{\s*convites\s*:\s*"?convidou/', (string) $blocoReal['bloco']) === 1) {
+        $motivosReais[] = 'users --> convites (convidou) desenhada com ponta obrigatória (||), mas convites.convidado_por_id é anulável';
+    }
+
+    if (str_contains((string) $blocoReal['bloco'], 'ai_runs')) {
+        $motivosReais[] = 'relação para ai_runs desenhada sem FK de usuário real';
+    }
+
+    if (str_contains((string) $blocoReal['bloco'], 'agent_conversations')) {
+        $motivosReais[] = 'relação para agent_conversations desenhada sem FK de usuário real';
+    }
+
+    // "nenhuma" confere o BLOCO REAL (RD-06): o dataset sintético abaixo (as outras 3 linhas)
+    // continua só como controle do MECANISMO de cardinalidade.
     $recusa = match ($alteracao) {
-        'nenhuma'                                    => false,
+        'nenhuma'                                    => $motivosReais !== [],
         'TENANT ||--o{ USER no lugar da relação N:N' => tipoDeCardinalidade($user->tenants()) === 'N:N',
         'CONVITE }o--|| TENANT'                      => ($colunaTenantId['nullable'] ?? null) === true,
         'USER ||--|| VINCULO_SOCIAL'                 => tipoDeCardinalidade($user->vinculosSociais()) === '1:N',
         default                                      => throw new RuntimeException($alteracao),
     };
 
-    expect(! $recusa)->toBe($resultado === 'aceita');
+    expect(! $recusa)->toBe($resultado === 'aceita', implode(' | ', $motivosReais) ?: 'aceito sem motivo de recusa');
 })->with([
     'controle positivo'                    => ['nenhuma', 'aceita'],
     'belongsToMany desenhado 1:N'          => ['TENANT ||--o{ USER no lugar da relação N:N', 'recusa'],
@@ -2393,8 +2800,15 @@ it('[CT-94] a relação conta–papel é N:N por model_has_roles, e relação de
         public function __construct() {}
     });
 
+    $blocoReal = blocoDoCatalogoNaArvore('DG-13', 'pt');
+    expect($blocoReal)->not->toBeNull('DG-13 não encontrado em pt');
+
+    // Se o bloco liga USER a ROLE DIRETAMENTE (em vez de via model_has_roles), as duas pontas
+    // têm de ser N:N — nunca "exatamente um" de um dos lados.
+    $ligacaoDiretaUserRole = (bool) preg_match('/\bUSER\s*(?:\|\||\|o|\}o|\}\|)--(?:\|\||\|o|o\{|\|\{)\s*ROLE\b/', (string) $blocoReal['bloco']);
+
     $recusa = match ($alteracao) {
-        'nenhuma'                                                       => false,
+        'nenhuma'                                                       => $ligacaoDiretaUserRole,
         'USER }o--|| ROLE'                                              => true, // um papel por conta — contradiz o morphToMany medido acima.
         'USER ||--o{ ROLE'                                              => true,
         'o classificador recebe uma relação HasManyThrough de controle' => $classificacaoDeControle === 'desconhecido',
@@ -2496,8 +2910,11 @@ it('[CT-96] o DG-15 tem os dois ramos da senha e o banco acessível como condiç
 
     // `$atual` existe justamente para o teste não depender de env()/config() já resolvidos no
     // boot — `garantirNoEnv()` sem ele leria `config('kit.admin.password')` do AMBIENTE REAL da
-    // suíte, não do .env temporário acima.
-    $devolvido = SenhaDoAdministrador::garantirNoEnv($envPath, $noEnv === '(ausente)' ? null : $noEnv);
+    // suíte, não do .env temporário acima. Por isso é SEMPRE explícito, mesmo para "ausente":
+    // `null` cairia no `$atual ?? self::doAmbiente()` e leria o `.env` REAL do desenvolvedor —
+    // falha em checkout onde o `kit:install` já rodou (CR-5). `''` não é `filled()`: nunca é
+    // "utilizável", então nunca ativa o fallback.
+    $devolvido = SenhaDoAdministrador::garantirNoEnv($envPath, $noEnv === '(ausente)' ? '' : $noEnv);
 
     if ($devolveEsperado === 'null') {
         expect($devolvido)->toBeNull();
@@ -2693,6 +3110,38 @@ it('[CT-93] todo "não viaja" do bloco confere com as duas listas', function (st
 |--------------------------------------------------------------------------
 */
 
+/** O id do subgraph do DG-18 que deveria conter o serviço, pela partição de profiles do 04. */
+function idDeSubgraphEsperadoNoDg18(string $profiles): string
+{
+    return match ($profiles) {
+        'sempre (sem profile)'  => 'sempre',
+        'mysql'                 => 'perfil_mysql',
+        'ai, full'              => 'perfil_ai',
+        'mail, full'            => 'perfil_mail',
+        'app'                   => 'perfil_app',
+        'app, realtime'         => 'perfil_realtime',
+        default                 => throw new RuntimeException("profiles desconhecido: {$profiles}"),
+    };
+}
+
+/** Localiza, num bloco flowchart com subgraphs, o ID do subgraph que contém o nó do serviço. */
+function subgraphDoServicoNoDg18(string $bloco, string $servico): ?string
+{
+    $no = str_replace('-', '_', $servico);
+
+    if (preg_match_all('/subgraph\s+(\w+)\s*\[[^\]]*\](.*?)\n\s*end\b/s', $bloco, $grupos, PREG_SET_ORDER) !== false) {
+        foreach ($grupos as $grupo) {
+            [, $id, $corpo] = $grupo;
+
+            if (preg_match('/\b'.preg_quote($no, '/').'\b/', $corpo) === 1) {
+                return $id;
+            }
+        }
+    }
+
+    return null;
+}
+
 it('[CT-33] os profiles desenhados de cada serviço são os declarados', function (string $servico, string $profiles): void {
     $compose = (string) file_get_contents(base_path('docker-compose.yml'));
     $bloco   = blocoDoServico($compose, $servico);
@@ -2704,8 +3153,20 @@ it('[CT-33] os profiles desenhados de cada serviço são os declarados', functio
         default                => test()->assertStringContainsString("profiles: [{$profiles}]", $bloco, "{$servico} deveria ter profiles: [{$profiles}]"),
     };
 
-    $blocoDg = blocoDoCatalogoNaArvore('DG-18', 'pt');
-    expect($blocoDg)->not->toBeNull("DG-18 não encontrado — não é possível conferir o profile de {$servico} contra o diagrama ainda");
+    $subgraphEsperado = idDeSubgraphEsperadoNoDg18($profiles);
+
+    foreach (['pt', 'en'] as $idioma) {
+        $blocoDg = blocoDoCatalogoNaArvore('DG-18', $idioma);
+        expect($blocoDg)->not->toBeNull("DG-18 não encontrado em {$idioma}");
+
+        if ($blocoDg === null) {
+            continue;
+        }
+
+        $subgraphReal = subgraphDoServicoNoDg18((string) $blocoDg['bloco'], $servico);
+
+        expect($subgraphReal)->toBe($subgraphEsperado, "{$idioma}: {$servico} deveria estar no subgraph \"{$subgraphEsperado}\" (profiles: {$profiles}), achado \"".($subgraphReal ?? 'nenhum').'"');
+    }
 })->with([
     ['pgsql', 'sempre (sem profile)'],
     ['mysql', 'mysql'],
@@ -2714,19 +3175,63 @@ it('[CT-33] os profiles desenhados de cada serviço são os declarados', functio
     ['scheduler', 'app'],
 ]);
 
-it('[CT-75] todo contêiner do DG-18 é um serviço da chave services do docker-compose.yml', function (string $bloco, string $resultado): void {
+it('[CT-75] todo contêiner do DG-18 é um serviço da chave services do docker-compose.yml', function (string $situacao, string $resultado): void {
     $compose  = (string) file_get_contents(base_path('docker-compose.yml'));
     $servicos = servicosDoCompose($compose);
 
     expect($servicos)->toHaveCount(12, 'esperados 12 serviços em docker-compose.yml — achados: '.implode(', ', $servicos));
 
-    $recusa = match (true) {
-        str_contains($bloco, 'contêiner horizon no profile app')    => ! in_array('horizon', $servicos, true) ? true : false,
-        str_contains($bloco, 'pgsql-data desenhado como contêiner') => ! in_array('pgsql-data', $servicos, true) ? true : false,
-        default                                                     => false,
-    };
+    $servicosComoIds = array_map(static fn (string $s): string => str_replace('-', '_', $s), $servicos);
 
-    expect($recusa)->toBe($resultado !== 'aceita, e os contêineres são exatamente os 12 serviços' || str_contains($resultado, 'recusa'));
+    foreach (['pt', 'en'] as $idioma) {
+        $blocoDg = blocoDoCatalogoNaArvore('DG-18', $idioma);
+        expect($blocoDg)->not->toBeNull("DG-18 não encontrado em {$idioma}");
+
+        if ($blocoDg === null) {
+            continue;
+        }
+
+        $bloco = (string) $blocoDg['bloco'];
+
+        // "Cópia com a adulteração": um contêiner que o compose não tem, ou o volume lido como
+        // contêiner — sempre inserido pelo ID invariante do subgraph (`perfil_app`/`sempre`),
+        // que é igual em pt e en.
+        $bloco = match (true) {
+            str_contains($situacao, 'contêiner horizon no profile app') => (string) preg_replace(
+                '/(subgraph perfil_app \[[^\]]*\]\n)/',
+                '$1    horizon["horizon"]'."\n",
+                $bloco,
+                1,
+            ),
+            str_contains($situacao, 'pgsql-data desenhado como contêiner') => (string) preg_replace(
+                '/(subgraph sempre \[[^\]]*\]\n)/',
+                '$1    pgsql_data["pgsql-data"]'."\n",
+                $bloco,
+                1,
+            ),
+            default => $bloco,
+        };
+
+        preg_match_all('/subgraph\s+\w+\s*\[[^\]]*\](.*?)\n\s*end\b/s', $bloco, $corpoDosSubgraphs);
+        preg_match_all('/^\s*([A-Za-z0-9_]+)\s*[\[(]/m', implode("\n", $corpoDosSubgraphs[1] ?? []), $nos);
+
+        $containers = array_values(array_unique($nos[1] ?? []));
+        $invasores  = array_values(array_diff($containers, $servicosComoIds));
+
+        $ok = $invasores === [];
+
+        expect($ok)->toBe(str_starts_with($resultado, 'aceita'), "{$idioma}: contêineres fora dos 12 serviços: ".implode(', ', $invasores));
+
+        if ($ok) {
+            expect($containers)->toHaveCount(12, "{$idioma}: o DG-18 deveria desenhar exatamente os 12 contêineres");
+        } else {
+            foreach (['horizon', 'pgsql_data'] as $nomeadoNoResultado) {
+                if (str_contains($resultado, str_replace('_', '-', $nomeadoNoResultado))) {
+                    test()->assertContains($nomeadoNoResultado, $invasores, "{$idioma}: a recusa deveria nomear \"{$nomeadoNoResultado}\"");
+                }
+            }
+        }
+    }
 })->with([
     'soundness e completude'   => ['DG-18 real, pt e en', 'aceita, e os contêineres são exatamente os 12 serviços'],
     'contêiner inventado'      => ['cópia com o contêiner horizon no profile app', 'recusa, nomeando horizon'],
@@ -2749,8 +3254,20 @@ it('[CT-84] cada um dos 12 serviços do docker-compose.yml está no DG-18 com ex
         }
     }
 
-    $blocoDg = blocoDoCatalogoNaArvore('DG-18', 'pt');
-    expect($blocoDg)->not->toBeNull("DG-18 não encontrado — não é possível conferir {$servico} contra o diagrama ainda");
+    $subgraphEsperado = idDeSubgraphEsperadoNoDg18($profiles);
+
+    foreach (['pt', 'en'] as $idioma) {
+        $blocoDg = blocoDoCatalogoNaArvore('DG-18', $idioma);
+        expect($blocoDg)->not->toBeNull("DG-18 não encontrado em {$idioma}");
+
+        if ($blocoDg === null) {
+            continue;
+        }
+
+        $subgraphReal = subgraphDoServicoNoDg18((string) $blocoDg['bloco'], $servico);
+
+        expect($subgraphReal)->toBe($subgraphEsperado, "{$idioma}: {$servico} deveria estar em \"{$subgraphEsperado}\" (profiles: {$profiles}), e em nenhum outro — achado \"".($subgraphReal ?? 'nenhum').'"');
+    }
 })->with([
     ['pgsql', 'sempre (sem profile)'],
     ['redis', 'sempre (sem profile)'],
@@ -3761,30 +4278,95 @@ it('[CT-86] o rótulo visível de cada estado é o fixado, nos dois idiomas', fu
 |--------------------------------------------------------------------------
 */
 
+/**
+ * Confere a marca de opcional nas seções que citam um GIF de clipe (R4/CT-104): toda seção que
+ * cita "{clipe}.gif" para um clipe MAPEADO a uma chave tem também de citar essa chave.
+ *
+ * @param  array<string,string>  $mapaClipeParaChave
+ * @return array{ok:bool, motivo:?string}
+ */
+function confereGifsOptIn(string $conteudo, array $mapaClipeParaChave): array
+{
+    foreach (preg_split('~^#{1,6} ~m', $conteudo) ?: [] as $secao) {
+        foreach ($mapaClipeParaChave as $clipe => $chave) {
+            if (str_contains($secao, "{$clipe}.gif") && ! str_contains($secao, $chave)) {
+                $tituloDaSecao = trim(explode("\n", $secao, 2)[0]);
+
+                return ['ok' => false, 'motivo' => "seção \"{$tituloDaSecao}\" cita {$clipe}.gif sem citar {$chave}"];
+            }
+        }
+    }
+
+    return ['ok' => true, 'motivo' => null];
+}
+
 it('[CT-104] a seção que mostra o GIF de um recurso desligado por padrão nomeia a chave que o liga', function (string $pagina, string $alteracao, string $resultado): void {
+    // Os outros três clipes (busca ⌘K, densidade, import/export) não têm chave — são sempre
+    // ligados (P-41).
     $mapaClipeParaChave = ['login-unificado' => 'KIT_LOGIN_UNIFICADO'];
 
-    if (str_starts_with($pagina, 'README') || str_starts_with($pagina, 'cada página real')) {
+    if ($pagina === 'README.md e README.en.md reais') {
         foreach (['README.md', 'README.en.md'] as $readme) {
-            foreach (secoesDoMarkdown($readme) as $secao) {
-                foreach ($mapaClipeParaChave as $clipe => $chave) {
-                    if (str_contains($secao, "{$clipe}.gif")) {
-                        test()->assertStringContainsString($chave, $secao, "{$readme}: seção com o GIF de {$clipe} não cita {$chave}");
-                    }
+            $resultadoReadme = confereGifsOptIn((string) file_get_contents(base_path($readme)), $mapaClipeParaChave);
+            expect($resultadoReadme['ok'])->toBeTrue("{$readme}: ".($resultadoReadme['motivo'] ?? ''));
+        }
+
+        return;
+    }
+
+    if (str_starts_with($pagina, 'cada página real de docs/')) {
+        foreach (['pt', 'en'] as $idioma) {
+            foreach (paginasDoSite($idioma) as $relativo => $conteudo) {
+                if (! str_contains($conteudo, '.gif')) {
+                    continue;
                 }
+
+                $resultadoPagina = confereGifsOptIn($conteudo, $mapaClipeParaChave);
+                expect($resultadoPagina['ok'])->toBeTrue("docs/{$idioma}/{$relativo}: ".($resultadoPagina['motivo'] ?? ''));
             }
         }
 
         return;
     }
 
-    $recusa = match (true) {
-        str_contains($alteracao, 'login unificado numa seção sem KIT_LOGIN_UNIFICADO') => true,
-        str_contains($alteracao, 'busca ⌘K numa seção sem chave nenhuma')              => false, // clipe sempre ligado não é acusado.
-        default                                                                        => false,
-    };
+    if ($pagina === 'cópia do README.md') {
+        $original = (string) file_get_contents(base_path('README.md'));
 
-    expect(! $recusa)->toBe($resultado === 'aceita' || str_starts_with($resultado, 'aceita'));
+        // Cópia com a alteração: o GIF do login unificado numa seção SEM a chave — remove toda
+        // menção à chave das seções que citam o clipe (se a seção real já citar a chave hoje;
+        // controle positivo acima já prova que sim) e, se o README ainda não citar o clipe (o
+        // kit:arte generalizado ainda não existe), acrescenta a seção sintética que o cenário
+        // pede — o alvo aqui é o DETECTOR, não o estado atual do README.
+        $secoes = preg_split('~(^#{1,6} .*$)~m', $original, -1, PREG_SPLIT_DELIM_CAPTURE) ?: [];
+        $copia  = '';
+
+        foreach ($secoes as $parte) {
+            if (str_contains($parte, 'login-unificado.gif')) {
+                $parte = str_replace('KIT_LOGIN_UNIFICADO', '', $parte);
+            }
+
+            $copia .= $parte;
+        }
+
+        if (! str_contains($copia, 'login-unificado.gif')) {
+            $copia .= "\n## Seção de teste (CT-104)\n\nGIF: login-unificado.gif\n";
+        }
+
+        $resultado2 = confereGifsOptIn($copia, $mapaClipeParaChave);
+
+        expect($resultado2['ok'])->toBeFalse('a conferência deveria reprovar: o GIF do login unificado apareceu numa seção sem KIT_LOGIN_UNIFICADO')
+            ->and((string) $resultado2['motivo'])->toContain('login-unificado.gif')
+            ->and((string) $resultado2['motivo'])->toContain('KIT_LOGIN_UNIFICADO');
+
+        return;
+    }
+
+    // 'cópia de docs/pt/autenticacao/index.md': o GIF da busca ⌘K numa seção sem chave nenhuma —
+    // clipe sempre ligado, fora do mapa: não deveria ser acusado.
+    $copiaBusca = "## Busca rápida\n\nGIF: busca-spotlight.gif\n";
+    $resultado3 = confereGifsOptIn($copiaBusca, $mapaClipeParaChave);
+
+    expect($resultado3['ok'])->toBeTrue('o clipe da busca ⌘K é sempre ligado — não deveria exigir chave nenhuma');
 })->with([
     'controle positivo'                 => ['README.md e README.en.md reais', 'nenhuma', 'aceita'],
     'controle positivo, site'           => ['cada página real de docs/ que cita um GIF de clipe, pt e en', 'nenhuma', 'aceita'],

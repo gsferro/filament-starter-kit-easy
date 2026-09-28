@@ -999,11 +999,20 @@ function naArvoreDoKit(): bool
  * As páginas do site de um idioma, indexadas pelo caminho relativo a `docs/{idioma}/`
  * (sempre com `/`, mesmo no Windows), em ordem alfabética.
  *
+ * Fora da árvore do kit `docs/` não existe (`.gitattributes: /docs export-ignore`) — devolve
+ * `[]` em vez de deixar o `RecursiveDirectoryIterator` lançar `UnexpectedValueException` (RD-02:
+ * o docblock de `blocosMermaidDaArvore()` já prometia isto, e não era verdade até este `is_dir`).
+ *
  * @return array<string, string>
  */
 function paginasDoSite(string $idioma): array
 {
-    $raiz    = base_path("docs/{$idioma}");
+    $raiz = base_path("docs/{$idioma}");
+
+    if (! is_dir($raiz)) {
+        return [];
+    }
+
     $paginas = [];
 
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($raiz, FilesystemIterator::SKIP_DOTS)) as $arquivo) {
@@ -1043,6 +1052,17 @@ function paginasDoSite(string $idioma): array
  * conta do mesmo jeito — o achado que `dentroDeComentarioHtml` fixa. Este extrator só LEVANTA a
  * marca; quem decide "recusa, nomeando o comentário e a linha" é a guarda que a consome.
  *
+ * ## Toda cerca de código é rastreada, não só a de Mermaid e o comentário HTML (CR-7)
+ *
+ * Sem isto, um `<!--` de EXEMPLO dentro de um bloco ` ```html `/` ```blade ` (ensinando como
+ * esconder um diagrama) liga "dentro de comentário" até achar um `-->` qualquer — inclusive o
+ * do PRÓPRIO fechamento da cerca de exemplo —, e um bloco visível de verdade que vier depois no
+ * arquivo é lido como escondido. E um ` ```mermaid ` aninhado dentro de uma cerca de quatro
+ * crases (um bloco Markdown de EXEMPLO, mostrando a sintaxe) é lido como diagrama real. A
+ * correção: toda cerca de código de qualquer linguagem — info string diferente de `mermaid` —
+ * é pulada inteira, do jeito que apareceu, até o fechamento da MESMA marca e do MESMO tamanho (ou
+ * maior); só fora dela `<!--`/`-->` e ` ```mermaid ` contam.
+ *
  * @return list<array{bloco: string, linha: int, idCatalogo: ?string, dentroDeComentarioHtml: bool}>
  */
 function blocosMermaidDe(string $markdown): array
@@ -1055,13 +1075,36 @@ function blocosMermaidDe(string $markdown): array
     for ($i = 0; $i < $total; $i++) {
         $linha = $linhas[$i];
 
+        // Delimitador `#`, e não `~`: a própria alternativa da cerca de til usa o caractere `~`,
+        // e um delimitador `~` cru quebra ali com "Unknown modifier" — o `~` da cerca fecha o
+        // regex antes da hora.
+        if (preg_match('#^\s*(`{3,}|~{3,})\s*(\S*)\s*$#', $linha, $cercaQualquer) === 1
+            && $cercaQualquer[2] !== 'mermaid'
+        ) {
+            $marcadorAlheio = $cercaQualquer[1][0];
+            $tamanhoAlheio  = strlen($cercaQualquer[1]);
+            $fechouAlheio   = false;
+
+            for ($j = $i + 1; $j < $total; $j++) {
+                if (preg_match('#^\s*'.preg_quote($marcadorAlheio, '#').'{'.$tamanhoAlheio.',}\s*$#', $linhas[$j]) === 1) {
+                    $i            = $j;
+                    $fechouAlheio = true;
+                    break;
+                }
+            }
+
+            // Sem fechamento: o resto do arquivo é literal (dentro da cerca aberta).
+            if (! $fechouAlheio) {
+                $i = $total;
+            }
+
+            continue;
+        }
+
         if (str_contains($linha, '<!--') && ! str_contains($linha, '-->')) {
             $dentroDeComentario = true;
         }
 
-        // Delimitador `#`, e não `~`: a própria alternativa da cerca de til usa o caractere `~`,
-        // e um delimitador `~` cru quebra ali com "Unknown modifier" — o `~` da cerca fecha o
-        // regex antes da hora.
         if (preg_match('#^\s*(`{3,}|~{3,})\s*mermaid\s*$#', $linha, $cerca) !== 1) {
             if (str_contains($linha, '-->')) {
                 $dentroDeComentario = false;
@@ -1137,6 +1180,27 @@ function blocosMermaidDaArvore(string $idioma): array
     }
 
     return $blocos;
+}
+
+/**
+ * Localiza, na árvore REAL, o bloco de um DG do catálogo (fora de comentário HTML); `null` se
+ * ausente.
+ *
+ * Aqui, e não em `tests/Kit/DiagramasDaArquiteturaTest.php` (nem clonado com outro nome em
+ * `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`, que tinha `blocoDoCatalogo()` idêntico
+ * byte a byte), porque os DOIS arquivos o usam — `.ai/rules/testes.md` (RD-11).
+ *
+ * @return ?array{bloco: string, linha: int, idCatalogo: ?string, dentroDeComentarioHtml: bool, arquivo: string, idioma: string}
+ */
+function blocoDoCatalogoNaArvore(string $id, string $idioma): ?array
+{
+    foreach (blocosMermaidDaArvore($idioma) as $bloco) {
+        if ($bloco['idCatalogo'] === $id && ! $bloco['dentroDeComentarioHtml']) {
+            return $bloco;
+        }
+    }
+
+    return null;
 }
 
 /** Um documento markdown sem as linhas de citação (`>`), para asserção de AUSÊNCIA. */
@@ -1371,18 +1435,6 @@ function caminhosDoKit(): array
 }
 
 /**
- * O código PHP sem comentários e docblocks — só o que executa.
- *
- * `token_get_all()` e não regex, porque a menção a um literal dentro de um docblock é o caso
- * mais comum nesta suíte: um caso que **fala sobre** `docs/pt/…` num comentário não o lê.
- *
- * Mora aqui, e não dentro de um arquivo de teste, porque **dois** arquivos o usam
- * (`RedeDeDocumentacaoTest` e `ChecklistDeReleaseTest`) — `.ai/rules/testes.md`. A primeira
- * versão do segundo trouxe um clone chamado `codigoPhpSemComentario()`, byte a byte igual, que
- * é exatamente o que a rule proíbe: em vez de estourar redeclaração, ficam duas funções
- * idênticas que divergem em silêncio.
- */
-/**
  * O bloco de UM serviço do `docker-compose.yml`: do `  <nome>:` até a próxima chave de coluna 2
  * (outro serviço) ou de coluna 0 (o `volumes:` de topo). Devolve `''` quando o serviço não existe.
  *
@@ -1419,6 +1471,18 @@ function blocoDoServico(string $compose, string $servico): string
     return implode("\n", $bloco);
 }
 
+/**
+ * O código PHP sem comentários e docblocks — só o que executa.
+ *
+ * `token_get_all()` e não regex, porque a menção a um literal dentro de um docblock é o caso
+ * mais comum nesta suíte: um caso que **fala sobre** `docs/pt/…` num comentário não o lê.
+ *
+ * Mora aqui, e não dentro de um arquivo de teste, porque **dois** arquivos o usam
+ * (`RedeDeDocumentacaoTest` e `ChecklistDeReleaseTest`) — `.ai/rules/testes.md`. A primeira
+ * versão do segundo trouxe um clone chamado `codigoPhpSemComentario()`, byte a byte igual, que
+ * é exatamente o que a rule proíbe: em vez de estourar redeclaração, ficam duas funções
+ * idênticas que divergem em silêncio.
+ */
 function codigoSemComentario(string $codigo): string
 {
     $saida = '';

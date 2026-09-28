@@ -33,8 +33,17 @@ beforeEach(function (): void {
 });
 
 /**
- * As suítes que leem a documentação do kit: todo arquivo de `tests/Kit` que chama
- * `documentacaoDoKit()` ou nomeia um README ou uma página do site.
+ * As suítes que leem a documentação do kit: todo arquivo de `tests/Kit` OU `tests/Tenancy` que
+ * chama `documentacaoDoKit()`, nomeia um README ou uma página do site, ou lê o bloco do catálogo
+ * pelos helpers de `tests/Pest.php` (`blocoDoCatalogoNaArvore()`/`blocosMermaidDaArvore()` — a
+ * forma INDIRETA que `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` usa, RD-02).
+ *
+ * `tests/Tenancy` entrou no escopo porque `admin_app` (`.ai/rules/testes.md` §"Nem todo papel do
+ * kit existe em toda suíte") só existe lá, e é lá que o DG-02/03/07/09 são lidos pela ótica de
+ * organização — sem isso, a única guarda desta wiki que confere "todo arquivo que lê
+ * README/docs/ tem a sentinela" (`[CT-10]`) nunca alcançava esse arquivo (medido: removendo o
+ * `naArvoreDoKit()` do `beforeEach` de `DiagramasDaArquiteturaTenancyTest.php`, `[CT-10]` seguia
+ * verde até este alargamento).
  *
  * @return array<string, string> nome do arquivo => código
  */
@@ -42,10 +51,14 @@ function suitesDeDocumentacao(): array
 {
     $suites = [];
 
-    foreach (Finder::create()->files()->in(__DIR__)->name('*Test.php') as $arquivo) {
+    $arquivos = Finder::create()->files()
+        ->in([__DIR__, dirname(__DIR__).'/Tenancy'])
+        ->name('*Test.php');
+
+    foreach ($arquivos as $arquivo) {
         $codigo = codigoSemComentario($arquivo->getContents());
 
-        if (preg_match('~documentacaoDoKit\(|README(\.en)?\.md|docs/(pt|en)/~', $codigo) === 1) {
+        if (preg_match('~documentacaoDoKit\(|README(\.en)?\.md|docs/(pt|en)/|blocoDoCatalogo(?:NaArvore)?\(|blocosMermaidDaArvore\(~', $codigo) === 1) {
             $suites[$arquivo->getFilename()] = $codigo;
         }
     }
@@ -463,13 +476,25 @@ function casosSemSentinelaPropria(array $suites): array
  * Alargar e seguro porque o reconhecedor ja se auto-limita: a forma 1 exige caminho literal com
  * prefixo `docs|site|site-vitepress|.github`, e os prefixos nao mudam com o escopo.
  *
+ * ## `tests/Tenancy` entrou por RD-02
+ *
+ * Mesmo motivo do alargamento de `suitesDeDocumentacao()`: `admin_app` so existe em
+ * `tests/Tenancy`, e e la que mora `DiagramasDaArquiteturaTenancyTest.php`. Medido: nenhum outro
+ * arquivo de `tests/Tenancy` e acusado por este alargamento (nenhum le caminho literal de
+ * `docs|site|.github`, afirma a sentinela como sujeito, nem invoca git fora de comentario) —
+ * so amplia o universo varrido, sem introduzir falso positivo.
+ *
  * @return array<string, string>
  */
 function suitesComRiscoDeArvore(): array
 {
     $suites = [];
 
-    foreach (Finder::create()->files()->in(__DIR__)->name('*Test.php') as $arquivo) {
+    $arquivos = Finder::create()->files()
+        ->in([__DIR__, dirname(__DIR__).'/Tenancy'])
+        ->name('*Test.php');
+
+    foreach ($arquivos as $arquivo) {
         $suites[$arquivo->getFilename()] = codigoSemComentario($arquivo->getContents());
     }
 
@@ -611,7 +636,11 @@ it('[CT-28] a varredura alcanca todo arquivo em que o reconhecedor acha risco', 
 
     $emRisco = [];
 
-    foreach (Finder::create()->files()->in(__DIR__)->name('*Test.php') as $arquivo) {
+    $arquivos = Finder::create()->files()
+        ->in([__DIR__, dirname(__DIR__).'/Tenancy'])
+        ->name('*Test.php');
+
+    foreach ($arquivos as $arquivo) {
         $codigo = codigoSemComentario($arquivo->getContents());
         $blocos = preg_split('~\nit\(~', $codigo) ?: [];
 

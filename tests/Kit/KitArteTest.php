@@ -10,14 +10,19 @@ use Illuminate\Support\Str;
  * (ver `## Índice de Cenários` do `04-casos-de-teste.md`): CT-46, CT-47, CT-48, CT-49, CT-50,
  * CT-64, CT-65 — R32/R33/R34.
  *
- * **O KitArte de HOJE monta um clipe só** (`import/export`, `KitArte::QUADROS_DO_GIF`,
- * `app/Console/Commands/KitArte.php:41`) — a generalização para os 4 clipes do `00`
- * (busca ⌘K, login unificado → escolha de painel, densidade, import/export) **não existe
- * ainda**: outro lote a constrói lendo estes testes. Os cenários que dependem dela (CT-46 nas
- * três linhas novas, CT-47) ficam VERMELHOS por isso — causa (b), e a mensagem de falha diz
- * exatamente qual clipe a saída não nomeia. As linhas/cenários que já valem para o clipe de
- * hoje (CT-46 linha `import/export`, CT-48, CT-49, CT-50) são exercitados de verdade e podem
- * revelar divergência real do CÓDIGO ATUAL contra o `04` — não apenas ausência de feature.
+ * **O KitArte de HOJE já generaliza os 4 clipes do `00`** (busca ⌘K, login unificado → escolha
+ * de painel, densidade, import/export) via `KitArte::CLIPES` (`app/Console/Commands/KitArte.php:68`),
+ * mais um quinto clipe (`install`, referenciado pelo README) que não está nos exemplos do `04`
+ * mas existe no código — coberto aqui como achado adicional, não como divergência.
+ *
+ * O que ainda NÃO existe é a CAPTURA de tela de três desses clipes (`busca-spotlight`,
+ * `login-unificado`, `install`): nenhum cenário do `composer art` (`tests/BrowserTenancy/CapturaDeArteTest.php`,
+ * `tests/Browser/HubDeCardsTest.php`) produz os PNGs deles ainda — outro lote os cria (D2). Por
+ * isso `[CT-50]` fica VERMELHO para os quadros desses três clipes: é causa (b) (a implementação
+ * ainda não chegou), não um teste quebrado, e a mensagem de falha diz isso. `[CT-46]`, `[CT-47]`
+ * e `[CT-64]` não dependem dessa captura real — eles fornecem os quadros por FIXTURE e provam que
+ * o `kit:arte` monta um GIF completo de verdade (conteúdo exato, byte a byte, na ordem declarada),
+ * não apenas que o nome do clipe aparece na saída.
  *
  * ## Arnês do ffmpeg de teste (Setup Global, hipótese confirmada nesta sessão)
  *
@@ -38,9 +43,47 @@ use Illuminate\Support\Str;
  * batch/shell. Dois modos: **gravador** (lê o padrão do `-i` como o demuxer `image2` faria — do
  * `01` até o primeiro ausente — e escreve no destino a concatenação, em ordem, do CONTEÚDO de
  * cada quadro) e **falha tardia** (abre e trunca o arquivo de destino, sai com código 1).
+ *
+ * ## PATH é estado do PROCESSO, não do teste (RD-01)
+ *
+ * `instalarFfmpegDeTeste()` e o `Dado` "ffmpeg ausente" de `[CT-49]` escrevem em `putenv()`,
+ * `$_ENV['PATH']` e `$_SERVER['PATH']` — as três formas que o `resolverFfmpeg()` do comando e o
+ * `Process` do Symfony podem ler. Isso é estado do PROCESSO PHP inteiro, não da `Application`
+ * (que é recriada a cada teste por `TestCase::createApplication()`): sem restaurar, o `PATH`
+ * mutilado de um teste deste arquivo vaza para QUALQUER suíte que rode depois na mesma execução
+ * (`--parallel` isola por processo e não sofre; execução em série sofre) — medido nesta sessão
+ * com `DeployDockerLocalTest` e `SiteDeDocumentacaoTest`, que chamam `git`/`php` reais e quebram
+ * com o `PATH` vazio deixado por `[CT-49]`. O `afterEach` abaixo restaura os três valores
+ * originais e apaga os diretórios temporários `kit_arte_*` (nunca eram apagados antes).
  */
 beforeEach(function (): void {
-    $this->diretorioAnterior = null;
+    $this->pathOriginalPutenv = getenv('PATH');
+    $this->pathOriginalEnv    = $_ENV['PATH'] ?? null;
+    $this->pathOriginalServer = $_SERVER['PATH'] ?? null;
+});
+
+afterEach(function (): void {
+    if ($this->pathOriginalPutenv === false) {
+        putenv('PATH');
+    } else {
+        putenv("PATH={$this->pathOriginalPutenv}");
+    }
+
+    if ($this->pathOriginalEnv === null) {
+        unset($_ENV['PATH']);
+    } else {
+        $_ENV['PATH'] = $this->pathOriginalEnv;
+    }
+
+    if ($this->pathOriginalServer === null) {
+        unset($_SERVER['PATH']);
+    } else {
+        $_SERVER['PATH'] = $this->pathOriginalServer;
+    }
+
+    foreach (File::glob(sys_get_temp_dir().'/kit_arte_*') as $temporario) {
+        File::deleteDirectory($temporario);
+    }
 });
 
 /**
@@ -66,6 +109,40 @@ function diretorioDeArte(): string
 function pngValido(): string
 {
     return base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAFElEQVQYlWM8YWTEgBsw4ZEbwdIAducBQCVg+RoAAAAASUVORK5CYII=');
+}
+
+/**
+ * Um PNG 10x10 válido, com uma cor sólida — para gerar VARIAÇÕES que são PNG parseável mas com
+ * bytes distintos entre si. Necessário para `densidade-*`: é IMAGEM DECLARADA em `KitArte::IMAGENS`
+ * **e** quadro de clipe ao mesmo tempo, e `publicar()` confere `IMAGENS` primeiro — chama
+ * `Image::load()` nela ANTES de checar se é quadro (`app/Console/Commands/KitArte.php:185-202`).
+ * Conteúdo de texto solto (como os outros quadros usam) faria o Spatie\Image derrubar o comando
+ * inteiro com uma exceção não capturada.
+ */
+function pngValidoCor(int $tom): string
+{
+    $imagem = imagecreatetruecolor(10, 10);
+    imagefill($imagem, 0, 0, imagecolorallocate($imagem, $tom % 256, $tom % 256, $tom % 256));
+
+    ob_start();
+    imagepng($imagem);
+    $conteudo = ob_get_clean();
+
+    imagedestroy($imagem);
+
+    return $conteudo;
+}
+
+/**
+ * O conteúdo de teste para o quadro `$indice` do clipe `$clipe`: PNG de verdade (cor variando
+ * pela posição) para `densidade` — porque `densidade-*` também é IMAGEM DECLARADA (ver
+ * `pngValidoCor()`) —, texto identificando clipe+posição para os demais.
+ */
+function conteudoDoQuadroDeTeste(string $clipe, int $indice, string $prefixoDeTexto = 'conteudo'): string
+{
+    return $clipe === 'densidade'
+        ? pngValidoCor(30 + $indice * 70)
+        : "{$prefixoDeTexto}-{$clipe}-{$indice}";
 }
 
 /**
@@ -143,10 +220,22 @@ function instalarFfmpegDeTeste(string $modo): string
     return $dir;
 }
 
-/** Os quadros do (único, hoje) clipe do GIF, na ordem declarada. */
+/** Os quadros do clipe `fluxo-import-export` (o único já com captura real hoje), na ordem declarada. */
 function quadrosDoClipeDeHoje(): array
 {
     return (new ReflectionClassConstant(KitArte::class, 'QUADROS_DO_GIF'))->getValue();
+}
+
+/** Todos os clipes declarados em `KitArte::CLIPES`, chave => quadros na ordem declarada. */
+function clipesDoKitArte(): array
+{
+    return (new ReflectionClassConstant(KitArte::class, 'CLIPES'))->getValue();
+}
+
+/** Todos os quadros de todos os clipes de `KitArte::CLIPES`, achatados. */
+function todosOsQuadrosDoKitArte(): array
+{
+    return array_merge(...array_values(clipesDoKitArte()));
 }
 
 /*
@@ -155,14 +244,16 @@ function quadrosDoClipeDeHoje(): array
 |--------------------------------------------------------------------------
 */
 
-it('[CT-46] cada clipe com todos os quadros e montado ou reportado pelo nome', function (string $clipe, ?string $arquivoDoGif): void {
+it('[CT-46] cada clipe com todos os quadros e montado, com o conteudo exato dos seus quadros na ordem declarada', function (string $clipe, array $quadros): void {
     $base = diretorioDeArte();
     instalarFfmpegDeTeste('gravador');
 
-    if ($clipe === 'import/export') {
-        foreach (quadrosDoClipeDeHoje() as $i => $quadro) {
-            File::put("{$base}/tests/Browser/Screenshots/{$quadro}.png", "conteudo-{$clipe}-{$i}");
-        }
+    $conteudoEsperado = '';
+
+    foreach ($quadros as $i => $quadro) {
+        $conteudo = conteudoDoQuadroDeTeste($clipe, $i);
+        File::put("{$base}/tests/Browser/Screenshots/{$quadro}.png", $conteudo);
+        $conteudoEsperado .= $conteudo;
     }
 
     $saida  = '';
@@ -170,33 +261,32 @@ it('[CT-46] cada clipe com todos os quadros e montado ou reportado pelo nome', f
 
     expect($codigo)->toBe(0);
 
-    // O nome do clipe (ou o rótulo canônico dele) precisa aparecer na saída, nomeando o GIF
-    // como montado ou como "ffmpeg não disponível" — o `Então` de CT-46. Para o único clipe que
-    // existe hoje, "nomear o GIF" é citar o arquivo (`fluxo-import-export`, montado ou não —
-    // hoje a única linha existente é o aviso genérico, sem citar o clipe por nome quando falha).
-    $termoDoClipe = match ($clipe) {
-        'busca ⌘K'                            => 'busca',
-        'login unificado → escolha de painel' => 'login unificado',
-        'densidade'                           => 'densidade',
-        'import/export'                       => 'fluxo-import-export',
-    };
+    $arquivoDoGif = "art/{$clipe}.gif";
 
-    $mencionado = str_contains(mb_strtolower($saida), mb_strtolower($termoDoClipe))
-        || ($clipe === 'import/export' && str_contains(mb_strtolower($saida), 'ffmpeg'));
-
-    expect($mencionado)->toBeTrue(
-        "a saída do kit:arte não nomeia o clipe '{$clipe}' — a generalização para os 4 clipes do 00 ainda não existe (hoje só monta 'import/export')",
+    // Prova de MONTAGEM REAL, não só de menção na saída (R32.M2 — clipe declarado que o laço
+    // nunca tenta ficaria com o GIF ausente aqui, mesmo citando o nome em outro lugar).
+    expect(File::exists("{$base}/{$arquivoDoGif}"))->toBeTrue(
+        "o GIF do clipe '{$clipe}' deveria existir em {$arquivoDoGif} — com todos os seus quadros presentes, ele não pode ficar apenas 'não montado'. Saída: {$saida}",
     );
 
-    if ($arquivoDoGif !== null) {
-        expect(File::exists("{$base}/{$arquivoDoGif}"))->toBeTrue("o GIF de '{$clipe}' deveria existir em {$arquivoDoGif}");
-    }
-})->with([
-    'busca ⌘K'                                    => ['busca ⌘K', null],
-    'login unificado → escolha de painel'         => ['login unificado → escolha de painel', null],
-    'densidade'                                   => ['densidade', null],
-    'import/export (art/fluxo-import-export.gif)' => ['import/export', 'art/fluxo-import-export.gif'],
-]);
+    expect(File::get("{$base}/{$arquivoDoGif}"))->toBe(
+        $conteudoEsperado,
+        "o GIF de '{$clipe}' não tem exatamente o conteúdo dos seus próprios quadros, na ordem declarada em KitArte::CLIPES",
+    );
+
+    test()->assertStringContainsString(
+        $arquivoDoGif,
+        $saida,
+        "a saída do kit:arte não reporta '{$arquivoDoGif}' como montado",
+    );
+})->with(fn (): array => array_combine(
+    array_keys(clipesDoKitArte()),
+    array_map(
+        static fn (string $clipe, array $quadros): array => [$clipe, $quadros],
+        array_keys(clipesDoKitArte()),
+        array_values(clipesDoKitArte()),
+    ),
+));
 
 /**
  * Roda `kit:arte` via `Artisan::call` (in-process, respeita o `app()->setBasePath()` do
@@ -212,7 +302,7 @@ function artisan_kit_arte_para_teste(?string &$saidaCapturada = null): int
 
 /*
 |--------------------------------------------------------------------------
-| R32 — CT-47: um clipe incompleto é reportado e os outros continuam
+| R32 — CT-47: um clipe incompleto e reportado e os outros continuam
 |--------------------------------------------------------------------------
 */
 
@@ -220,26 +310,40 @@ it('[CT-47] um clipe incompleto e reportado e os outros continuam', function ():
     $base = diretorioDeArte();
     instalarFfmpegDeTeste('gravador');
 
-    // O único clipe que existe HOJE (import/export) fica completo — os outros dois nomeados no
-    // 00 (densidade, import/export) não têm mecanismo próprio ainda, então a única forma de
-    // "os outros continuam" testável hoje é o clipe existente continuar montando mesmo com uma
-    // captura de OUTRO clipe faltando por trás da mesma generalização ausente.
-    foreach (quadrosDoClipeDeHoje() as $quadro) {
-        File::put("{$base}/tests/Browser/Screenshots/{$quadro}.png", "conteudo-{$quadro}");
+    $clipes = clipesDoKitArte();
+
+    // import/export e densidade COMPLETOS.
+    foreach (['fluxo-import-export', 'densidade'] as $completo) {
+        foreach ($clipes[$completo] as $i => $quadro) {
+            File::put("{$base}/tests/Browser/Screenshots/{$quadro}.png", conteudoDoQuadroDeTeste($completo, $i));
+        }
+    }
+
+    // busca-spotlight SEM o seu último quadro.
+    $quadrosBusca  = $clipes['busca-spotlight'];
+    $quadroAusente = end($quadrosBusca);
+
+    foreach (array_slice($quadrosBusca, 0, -1) as $i => $quadro) {
+        File::put("{$base}/tests/Browser/Screenshots/{$quadro}.png", conteudoDoQuadroDeTeste('busca-spotlight', $i));
     }
 
     $saida = '';
     artisan_kit_arte_para_teste($saida);
 
-    // A saída da busca ⌘K (clipe sem quadro nenhum aqui) precisa nomear o quadro ausente — não
-    // existe hoje, porque o comando não conhece esse clipe: falha por causa (b), não (a).
     test()->assertStringContainsString(
-        'busca',
+        'busca spotlight',
         mb_strtolower($saida),
-        'a saída não nomeia o clipe "busca ⌘K" como incompleto — o kit:arte de hoje não conhece esse clipe (generalização ainda não construída)',
+        "a saída não nomeia o clipe 'busca-spotlight' como incompleto",
     );
 
-    expect(mb_strtolower($saida))->toContain('fluxo-import-export');
+    test()->assertStringContainsString(
+        $quadroAusente,
+        $saida,
+        "a saída não nomeia o quadro ausente '{$quadroAusente}'",
+    );
+
+    expect($saida)->toContain('art/fluxo-import-export.gif')
+        ->and($saida)->toContain('art/densidade.gif');
 });
 
 /*
@@ -257,21 +361,30 @@ function arquivosDaCapturaDeArte(): array
     ];
 }
 
-it('[CT-50] todo quadro declarado no KitArte tem quem o capture no composer art', function (string $quadro): void {
-    $capturado = false;
-
+/**
+ * O quadro `$quadro` tem algum cenário do `composer art` que o produz? Duas formas contam, as
+ * duas usadas de verdade nesta base: o literal `filename: '<quadro>'` (a maioria dos cenários),
+ * e o quadro como VALOR de um `->with([...])` cujo cenário grava com `filename: $variavel`
+ * (`densidade-*`, `tests/BrowserTenancy/CapturaDeArteTest.php:373` — `filename: $arquivo`, com
+ * `'densidade-confortavel'` etc. só no dataset). As duas produzem o arquivo; procurar só a forma
+ * literal acusaria `densidade-*` como sem captura, quando ela já existe.
+ */
+function quadroTemCapturaDeclarada(string $quadro): bool
+{
     foreach (arquivosDaCapturaDeArte() as $arquivo) {
-        if (str_contains(File::get($arquivo), "filename: '{$quadro}'")) {
-            $capturado = true;
-
-            break;
+        if (str_contains(File::get($arquivo), "'{$quadro}'")) {
+            return true;
         }
     }
 
-    expect($capturado)->toBeTrue(
-        "nenhum cenário de tests/BrowserTenancy/CapturaDeArteTest.php ou tests/Browser/HubDeCardsTest.php captura filename: '{$quadro}' — o quadro declarado em KitArte::QUADROS_DO_GIF não tem quem o produza (R34.M1/M2)",
+    return false;
+}
+
+it('[CT-50] todo quadro declarado no KitArte (todos os clipes) tem quem o capture no composer art', function (string $quadro): void {
+    expect(quadroTemCapturaDeclarada($quadro))->toBeTrue(
+        "nenhum cenário de tests/BrowserTenancy/CapturaDeArteTest.php ou tests/Browser/HubDeCardsTest.php produz o quadro '{$quadro}' — o quadro declarado em KitArte::CLIPES não tem quem o capture (R34.M1/M2). Se o quadro for de busca-spotlight, login-unificado ou install: causa (b), a fase de captura desses clipes (D2) ainda não existe. Para os demais (fluxo-*, densidade-*): defeito real.",
     );
-})->with(fn (): array => array_combine(quadrosDoClipeDeHoje(), quadrosDoClipeDeHoje()));
+})->with(fn (): array => array_combine(todosOsQuadrosDoKitArte(), todosOsQuadrosDoKitArte()));
 
 /*
 |--------------------------------------------------------------------------
@@ -346,40 +459,46 @@ it('[CT-49] a falha do ffmpeg por ausencia preserva o GIF ja publicado', functio
 |--------------------------------------------------------------------------
 */
 
-/**
- * A parte de CT-64 que já é testável HOJE (um clipe só): um quadro SOBRADO de uma execução
- * interrompida (`quadro-04.png`, além dos 3 que este clipe declara) no diretório de MONTAGEM do
- * comando não deveria entrar no GIF seguinte. `KitArte::montarGif()`
- * (`app/Console/Commands/KitArte.php:199`) faz `File::ensureDirectoryExists($entrada)` (não
- * limpa) e só apaga o diretório DEPOIS do processo (`:219`) — um `quadro-04.png` sobrado fica lá
- * quando o `-i .../quadro-%02d.png` é lido sequencialmente pelo demuxer `image2` (que o ffmpeg
- * de teste GRAVADOR reproduz).
- *
- * A parte de CT-64 que NÃO é testável hoje — "cada GIF recebe só os quadros do SEU clipe"
- * entre VÁRIOS clipes — fica de fora: só existe um clipe/GIF no comando de hoje.
- */
-it('[CT-64] um quadro sobrado do diretorio de montagem nao entra no GIF (parte testavel hoje — 1 clipe so)', function (): void {
+it('[CT-64] cada GIF recebe so os quadros do seu proprio clipe, na ordem declarada, e nenhum leva o quadro sobrado', function (): void {
     $base = diretorioDeArte();
     instalarFfmpegDeTeste('gravador');
 
-    foreach (quadrosDoClipeDeHoje() as $i => $quadro) {
-        File::put("{$base}/tests/Browser/Screenshots/{$quadro}.png", "QUADRO-{$i}");
+    $clipes = clipesDoKitArte();
+
+    // Quadros de TODOS os clipes, cada um com conteúdo que identifica clipe + posição (R32.M5:
+    // um clipe com mais quadros do que o seguinte, no mesmo laço, não pode "vazar" para ele).
+    foreach ($clipes as $clipe => $quadros) {
+        foreach ($quadros as $i => $quadro) {
+            File::put("{$base}/tests/Browser/Screenshots/{$quadro}.png", conteudoDoQuadroDeTeste($clipe, $i, 'QUADRO'));
+        }
     }
 
-    // O quadro sobrado vive no diretório de MONTAGEM (onde o comando copia com nome fixo
-    // `quadro-NN.png`), não no de capturas — é de lá que uma execução anterior o deixaria.
+    // Quadro sobrado no diretório de MONTAGEM do comando (não no de capturas) — de uma execução
+    // interrompida, exatamente o que R32.M6 (diretório não limpo antes de copiar) deixaria lá.
     File::ensureDirectoryExists("{$base}/storage/framework/cache/arte");
-    File::put("{$base}/storage/framework/cache/arte/quadro-04.png", 'QUADRO-SOBRADO-DE-EXECUCAO-ANTERIOR');
+    File::put("{$base}/storage/framework/cache/arte/quadro-03.png", 'QUADRO-SOBRADO-DE-EXECUCAO-ANTERIOR');
 
     Artisan::call('kit:arte');
 
-    $gif = File::get("{$base}/art/fluxo-import-export.gif");
+    foreach ($clipes as $clipe => $quadros) {
+        $gif = File::get("{$base}/art/{$clipe}.gif");
 
-    test()->assertStringNotContainsString(
-        'QUADRO-SOBRADO-DE-EXECUCAO-ANTERIOR',
-        $gif,
-        'o GIF publicado inclui o conteúdo de um quadro sobrado (quadro-04.png) de uma execução anterior — R32.M6: o diretório de montagem não é limpo ANTES de copiar (app/Console/Commands/KitArte.php:199 só garante que o diretório existe, nunca o esvazia)',
-    );
+        $esperado = '';
+        foreach ($quadros as $i => $quadro) {
+            $esperado .= conteudoDoQuadroDeTeste($clipe, $i, 'QUADRO');
+        }
+
+        expect($gif)->toBe(
+            $esperado,
+            "o GIF de '{$clipe}' não lista exatamente os quadros do seu próprio clipe, na ordem declarada — R32.M5 (quadro de outro clipe) ou M6 (diretório de montagem não limpo antes de copiar)",
+        );
+
+        test()->assertStringNotContainsString(
+            'QUADRO-SOBRADO-DE-EXECUCAO-ANTERIOR',
+            $gif,
+            "o GIF de '{$clipe}' inclui o conteúdo do quadro sobrado de uma execução anterior — R32.M6",
+        );
+    }
 });
 
 /*
@@ -404,7 +523,7 @@ it('[CT-65] o ffmpeg que abre a saida e falha no meio nao trunca o GIF publicado
 
     expect(File::get("{$base}/art/fluxo-import-export.gif"))->toBe(
         'CONTEUDO-CONHECIDO-BYTE-A-BYTE',
-        'o ffmpeg abriu o GIF publicado com "-y" e o truncou ao falhar no meio — R33.M5: o destino do processo é o próprio arquivo publicado (app/Console/Commands/KitArte.php:206,209), sem um temporário atômico por trás',
+        'o ffmpeg abriu o arquivo de saída e falhou no meio, mas o GIF publicado continua intacto — prova de que o destino do processo é um TEMPORÁRIO fora de art/ (app/Console/Commands/KitArte.php:montarClipe), copiado por cima do publicado só em caso de sucesso (R33)',
     );
 
     expect(mb_strtolower($saida))->toContain('não disponível');

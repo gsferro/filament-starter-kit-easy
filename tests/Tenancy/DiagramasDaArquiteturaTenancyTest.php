@@ -22,13 +22,20 @@ use Livewire\Livewire;
  * (`.ai/rules/testes.md` §"Nem todo papel do kit existe em toda suíte": `admin_app` só existe
  * aqui).
  *
- * **Os diagramas (README, `docs/`, site) ainda NÃO EXISTEM neste commit** — outro lote os
- * constrói depois, lendo estes testes. Todo cenário que afirma conteúdo de DG fica VERMELHO
- * por "bloco não encontrado", de propósito: é o sinal de que a implementação ainda não chegou,
- * não um teste quebrado. A parte de cada cenário que executa CÓDIGO REAL (canAccessPanel(), a
- * máquina de estados do convite pelos pontos de entrada) roda e vale hoje, com ou sem diagrama.
+ * A parte de cada cenário que executa CÓDIGO REAL (canAccessPanel(), a máquina de estados do
+ * convite pelos pontos de entrada) roda e vale sempre, com ou sem diagrama. A parte que confere
+ * o bloco Mermaid (README/`docs/`) depende de `docs/` existir — ausente num projeto nascido do
+ * `composer create-project` (`.gitattributes:40 /docs export-ignore`) —, por isso a sentinela
+ * abaixo, na MESMA forma de `tests/Kit/DiagramasDaArquiteturaTest.php:beforeEach:70` (RD-02): sem
+ * ela, `composer test:kit` (que roda `--testsuite=Kit,Tenancy`, `composer.json:test:kit:156`)
+ * nasceria vermelho em toda instalação nova, quando o certo é pular — o mesmo comportamento que
+ * o arquivo irmão já tinha.
  */
 beforeEach(function (): void {
+    if (! naArvoreDoKit()) {
+        test()->markTestSkipped('A guarda dos diagramas só existe na árvore do kit — o projeto instalado não recebe a documentação do site nem o README pelo kit:update.');
+    }
+
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
 
@@ -36,29 +43,12 @@ beforeEach(function (): void {
 |--------------------------------------------------------------------------
 | Extração de blocos Mermaid — genérica para flowchart/graph e state diagram
 |--------------------------------------------------------------------------
-| Não existia NENHUM diagrama Mermaid no repositório antes deste lote, então a convenção de
-| sintaxe abaixo é uma HIPÓTESE assumida por este arquivo para quem for desenhar o DG depois —
-| documentada aqui porque é a primeira vez que alguém precisa fixá-la. Local a este arquivo
-| (não a tests/Pest.php): CT-11/CT-13/CT-71/CT-21/CT-61/CT-81/CT-83/CT-88 (lote Kit) fazem a
-| MESMA leitura de DG-02/DG-03/DG-09/DG-07 — ver a pendência reportada ao orquestrador sobre
-| duplicação entre os dois arquivos.
+| O bloco do catálogo em si (`blocoDoCatalogoNaArvore()`) mora em `tests/Pest.php`, porque os
+| DOIS arquivos (este e `tests/Kit/DiagramasDaArquiteturaTest.php`) o usam (RD-11,
+| `.ai/rules/testes.md` §"Nunca crie um clone com outro nome"). O que é LOCAL a este arquivo é a
+| leitura do GRAFO a partir do bloco (`grafoDoFluxo()`, `transicoesDoEstado()` etc.) — só o lote
+| Tenancy percorre DG-02/DG-03/DG-09/DG-07 pela ótica de organização/contexto.
 */
-
-/**
- * O bloco Mermaid do catálogo `$idCatalogo`, num idioma — ou `null` se nenhum arquivo o afirma.
- *
- * @return array{bloco: string, linha: int, idCatalogo: ?string, dentroDeComentarioHtml: bool, arquivo: string, idioma: string}|null
- */
-function blocoDoCatalogo(string $idCatalogo, string $idioma): ?array
-{
-    foreach (blocosMermaidDaArvore($idioma) as $bloco) {
-        if ($bloco['idCatalogo'] === $idCatalogo && ! $bloco['dentroDeComentarioHtml']) {
-            return $bloco;
-        }
-    }
-
-    return null;
-}
 
 /**
  * Nós (id => rótulo) e arestas de um bloco Mermaid `flowchart`/`graph`.
@@ -286,7 +276,7 @@ it('[CT-12] admin_app administra a propria organizacao e so existe com tenancy',
     expect($papel->painel)->toBe('app');
 
     foreach (['pt', 'en'] as $idioma) {
-        $bloco = blocoDoCatalogo('DG-02', $idioma);
+        $bloco = blocoDoCatalogoNaArvore('DG-02', $idioma);
 
         expect($bloco)->not->toBeNull("DG-02 não encontrado em nenhum arquivo {$idioma} (README ou docs/{$idioma})");
 
@@ -337,7 +327,7 @@ it('[CT-14] o papel atribuido dentro de uma organizacao nao abre painel de insta
         "canAccessPanel() real diverge do esperado ({$desfecho}) para papel '{$papel}' {$onde}, painel {$painelId}",
     );
 
-    $bloco = blocoDoCatalogo('DG-03', 'pt');
+    $bloco = blocoDoCatalogoNaArvore('DG-03', 'pt');
 
     expect($bloco)->not->toBeNull('DG-03 não encontrado em nenhum arquivo pt (README ou docs/pt)');
 
@@ -372,7 +362,7 @@ it('[CT-98] papeis em contextos diferentes abrem so o painel cujo papel esta no 
         "canAccessPanel() real diverge do esperado ({$desfecho}) para o combo '{$combo}', painel {$painelId}",
     );
 
-    $bloco = blocoDoCatalogo('DG-03', 'pt');
+    $bloco = blocoDoCatalogoNaArvore('DG-03', 'pt');
 
     expect($bloco)->not->toBeNull('DG-03 não encontrado em nenhum arquivo pt (README ou docs/pt)');
 
@@ -565,7 +555,7 @@ it('[CT-80] cada uma das 24 celulas da matriz fechada do convite, executada pelo
     }
 
     foreach (['pt', 'en'] as $idioma) {
-        $bloco = blocoDoCatalogo('DG-09', $idioma);
+        $bloco = blocoDoCatalogoNaArvore('DG-09', $idioma);
 
         expect($bloco)->not->toBeNull("DG-09 não encontrado em nenhum arquivo {$idioma} (README ou docs/{$idioma})");
 
@@ -573,7 +563,7 @@ it('[CT-80] cada uma das 24 celulas da matriz fechada do convite, executada pelo
             // A tradução do rótulo do evento/estado para EN é fixada pelo lote Kit (R43,
             // CT-86) — aqui confere-se só a PARIDADE ESTRUTURAL (mesmo total de arestas que o
             // bloco pt), não o texto.
-            $blocoPt = blocoDoCatalogo('DG-09', 'pt');
+            $blocoPt = blocoDoCatalogoNaArvore('DG-09', 'pt');
 
             expect(transicoesDoEstado($bloco['bloco']))->toHaveCount(
                 count(transicoesDoEstado($blocoPt['bloco'])),
@@ -651,7 +641,7 @@ it('[CT-80] 2-switch: expirado reenviado e depois aceito muda para Aceito, com a
     expect(aceitarOuRecusarPelaCaixa('aceitar', $convite, $ana, $globex))->toBeTrue();
     expect($convite->fresh()->situacao())->toBe('Aceito');
 
-    $bloco = blocoDoCatalogo('DG-09', 'pt');
+    $bloco = blocoDoCatalogoNaArvore('DG-09', 'pt');
 
     expect($bloco)->not->toBeNull('DG-09 não encontrado em nenhum arquivo pt (README ou docs/pt)');
 
@@ -710,7 +700,7 @@ it('[CT-89] com a tenancy, os dois ramos do aceite ligam a conta a organizacao d
     ]);
 
     foreach (['pt', 'en'] as $idioma) {
-        $bloco = blocoDoCatalogo('DG-07', $idioma);
+        $bloco = blocoDoCatalogoNaArvore('DG-07', $idioma);
 
         expect($bloco)->not->toBeNull("DG-07 não encontrado em nenhum arquivo {$idioma} (README ou docs/{$idioma})");
 

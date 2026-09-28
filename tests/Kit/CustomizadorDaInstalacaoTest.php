@@ -715,3 +715,38 @@ it('[CT-41] o resumo do kit:install descreve a senha sem nunca citar password', 
     'senha vazia — gerada pelo instalador'  => ['', 'gerada pelo instalador e impressa no fim'],
     'senha digitada — mascarada'            => ['segredo123', '•••••••• (a que você digitou)'],
 ])->group('kit');
+
+/**
+ * [CT-41] (RD-07/achado adicional) — o `.env` já tem uma `KIT_ADMIN_PASSWORD` UTILIZÁVEL (uma
+ * reinstalação, ou um `.env` herdado) e a resposta desta execução vem vazia (Enter).
+ *
+ * `aplicar()` só GRAVA a chave quando `$senha !== ''` (`app/Support/CustomizadorDaInstalacao.php:291-293`):
+ * com resposta vazia e uma senha já utilizável no arquivo, nada é escrito e nada é gerado —
+ * `SenhaDoAdministrador::garantirNoEnv()` (chamado depois, no `kit:install`) devolve `null` nesse
+ * caso e NADA é impresso no terminal (`app/Support/SenhaDoAdministrador.php:garantirNoEnv:115`).
+ * O resumo não pode prometer o que não vai acontecer: a linha não diz "gerada" nem "impressa", e
+ * nomeia `KIT_ADMIN_PASSWORD` como a que vale, sem vazar o valor em claro.
+ *
+ * VERMELHO hoje (causa b): `$resumo[] = [...]` na linha 295 decide o texto só por
+ * `$senha !== ''` — nunca pergunta se o `.env` já tinha uma senha utilizável — e sai "gerada pelo
+ * instalador e impressa no fim" também aqui, que é falso.
+ */
+it('[CT-41] o resumo nao promete senha gerada nem impressa quando o .env ja tem KIT_ADMIN_PASSWORD utilizavel', function (): void {
+    File::put($this->base.'/.env', str_replace(
+        'KIT_ADMIN_PASSWORD=',
+        'KIT_ADMIN_PASSWORD=ja-era-utilizavel-123',
+        envDoTeste(),
+    ));
+
+    $resumo = customizadorNoTemp()->aplicar(respostasDeCustomizacao(['senha' => '']));
+
+    $linha = collect($resumo)->first(fn (array $par): bool => $par[0] === 'Senha do administrador');
+
+    expect($linha)->not->toBeNull('o resumo não tem a linha "Senha do administrador"');
+
+    $this->assertStringNotContainsString('gerada', $linha[1], 'o resumo promete uma senha GERADA quando o .env já tinha uma utilizável — nada foi gerado (RD-07)');
+    $this->assertStringNotContainsString('impressa', $linha[1], 'o resumo promete uma senha IMPRESSA quando o .env já tinha uma utilizável — SenhaDoAdministrador::garantirNoEnv() devolve null e nada é impresso (RD-07)');
+    $this->assertStringNotContainsString('password', $linha[1], 'a linha do resumo ainda cita "password"');
+    $this->assertStringNotContainsString('ja-era-utilizavel-123', $linha[1], 'a linha do resumo expõe a senha em claro');
+    $this->assertStringContainsString('KIT_ADMIN_PASSWORD', $linha[1], 'o resumo não nomeia KIT_ADMIN_PASSWORD como a senha que vale (RD-07)');
+})->group('kit');
