@@ -12,6 +12,8 @@ pessoa vai **depois** de entrar.
 
 ## Como ligar
 
+![A tela única de /login e, para quem acessa mais de um painel, a escolha em /login/painel](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-unificado.gif)
+
 Duas formas, mesma chave:
 
 ```dotenv

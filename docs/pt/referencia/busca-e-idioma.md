@@ -10,6 +10,8 @@ sidebar:
 
 O campo na topbar é o **nativo do Filament** — mesma marcação, mesma aparência, mesmo `Ctrl/⌘+K`. O que muda é o que acontece ao clicar: em vez de digitar ali, abre o overlay do Spotlight, que busca em quatro frentes:
 
+![O overlay fechado e aberto, com um termo digitado e um resultado real da busca de registros](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/busca-spotlight.gif)
+
 | Categoria | O que encontra |
 |---|---|
 | **Registros** | a busca global nativa do Filament (respeita `getGloballySearchableAttributes()` dos seus resources) |

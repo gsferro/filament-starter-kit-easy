@@ -125,6 +125,8 @@ As três são a **mesma tela**, e nascem da mesma suíte que prova que a opção
 montagem. Repare na coluna de ações à direita: no confortável ela é cortada em *"Edi…"*, e no denso
 cabe inteira. Apertar não é só ganhar altura; é deixar de esconder conteúdo.
 
+![Os três níveis de densidade, em sequência, na mesma tela](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/densidade.gif)
+
 Nasce **confortável**, e de propósito: densidade é gosto, e atualizar o kit não deve mudar a
 aparência do seu projeto sozinho. No confortável o kit **não emite estilo nenhum** — o HTML é byte a
 byte o que sempre foi.

@@ -8,6 +8,7 @@ use App\Settings\ConfiguracoesDoKit;
 use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Illuminate\Support\Facades\Route;
 use Tests\TenancyTestCase;
 
 /**
@@ -671,4 +672,140 @@ it('captura a ficha de organização com o cabeçalho rico e as abas', function 
         ->assertSee('Acme')
         ->assertSee('Ativa')
         ->screenshot(fullPage: false, filename: 'admin-organizacao-header');
+})->group('browser', 'art');
+
+/*
+|--------------------------------------------------------------------------
+| Busca ⌘K, login unificado e instalação — os clipes que a fase D2 acrescenta
+|--------------------------------------------------------------------------
+| `KitArte::CLIPES` já declara os quadros destes três clipes
+| (`app/Console/Commands/KitArte.php:68`); só faltava quem os capturasse — `[CT-50]` de
+| `tests/Kit/KitArteTest.php` ficava vermelho para os três até aqui (R34).
+*/
+
+/**
+ * A busca ⌘K (Spotlight): fechada e aberta com um termo digitado e um RESULTADO real.
+ *
+ * Mesmo seletor do F-45 (`tests/Browser/RoteiroDoKitTest.php:100-154`): o clique em
+ * `.fi-global-search-field` dispara a abertura do overlay num `setTimeout` do Alpine — nada
+ * disso existe num `$this->get()`.
+ *
+ * O resultado é medido DENTRO do overlay (`assertSeeIn`, o mesmo seletor de raiz que o F-45 usa
+ * para medir geometria), e não por texto solto na página: um `assertSee` sozinho passaria mesmo
+ * sem a busca ter devolvido nada, porque o termo poderia estar em qualquer outro canto da tela.
+ */
+it('captura a busca ⌘K fechada e aberta com um termo e resultado', function (): void {
+    arranjarPainelApp($this, $this->organizacao);
+
+    Projeto::create(['nome' => 'Contrato de fornecimento 2026']);
+
+    $pagina = visit("/app/{$this->organizacao->slug}/projetos")
+        ->resize(1400, 875)
+        ->assertSee('Contrato de fornecimento 2026')
+        ->screenshot(fullPage: false, filename: 'busca-spotlight-1-fechada')
+        ->click('.fi-global-search-field')
+        ->assertVisible('input[placeholder="Buscar registros e telas..."]')
+        ->fill('input[placeholder="Buscar registros e telas..."]', 'Contrato')
+        ->assertSeeIn('[x-on\\:open-spotlight\\.window]', 'Contrato de fornecimento 2026')
+        ->assertNoJavaScriptErrors();
+
+    $pagina->screenshot(fullPage: false, filename: 'busca-spotlight-2-aberta');
+})->group('browser', 'art');
+
+/**
+ * As duas telas do login unificado: o formulário único (`/login`) e a escolha de painel
+ * (`/login/painel`).
+ *
+ * Reaproveita o arranjo de `tests/Browser/LoginUnificadoTest.php` (CT-B01) — um usuário com dois
+ * papéis globais, `admin` e `infra`, que dão dois painéis (Administração e Infraestrutura) — sem
+ * duplicar as asserções funcionais daquele cenário; aqui é só captura.
+ *
+ * Login PELA TELA, e não `actingAs()`: é o único caminho real até `/login/painel` — a página
+ * decide o destino em `mount()` a partir de quem está autenticado
+ * (`app/Filament/Pages/Auth/EscolhaDePainel.php:62`), e chegar lá por `actingAs()` direto pularia
+ * exatamente o formulário que a primeira captura precisa mostrar vazio.
+ *
+ * `ligarLoginUnificado()` só altera `config()` (`tests/Pest.php:507`), lida por request em
+ * `ConfiguracaoDoLogin::unificado()` — chega ao servidor in-process do `pest-plugin-browser`
+ * porque é o MESMO processo PHP que serve o `visit()` (`.ai/rules/testes-browser.md`).
+ */
+it('captura o login unificado e a escolha de painel', function (): void {
+    ligarLoginUnificado();
+    usuarioComPapel('admin', email: 'dois@example.com')->assignRole('infra');
+
+    auth()->logout();
+
+    // Aquece a rota /login (painel /app por baixo) pelo kernel, fora do cronômetro do
+    // Playwright — mesma razão do aquecimento em `arranjarPainelApp()`, acima.
+    $this->get('/login');
+
+    $pagina = visit('/login')
+        ->resize(1400, 875)
+        ->assertPresent('.fi-auth-layout')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(fullPage: false, filename: 'login-unificado-1-formulario')
+        ->fill('#form\.email', 'dois@example.com')
+        ->fill('#form\.password', 'password')
+        ->press('Login')
+        ->assertPathIs('/login/painel')
+        ->assertSee('Administração')
+        ->assertSee('Infraestrutura')
+        ->assertNoJavaScriptErrors();
+
+    $pagina->screenshot(fullPage: false, filename: 'login-unificado-2-escolha');
+})->group('browser', 'art');
+
+/**
+ * Os quadros do `install.gif`: a transcrição real do `kit:install` (fixture
+ * `tests/Browser/Fixtures/terminal-instalacao.blade.php`), recortada progressivamente pelo
+ * parâmetro `$ate` — nunca uma segunda fixture (`01-plano-acao.md`, passo 21).
+ *
+ * A view é renderizada para HTML AQUI, em PHP (`view()->file(...)->render()`), e servida por
+ * rotas registradas SÓ NESTE TESTE — nunca em `routes/web.php` nem em arquivo nenhum do app: a
+ * fixture não pode virar rota pública (docblock dela). O servidor do `pest-plugin-browser` roda
+ * IN-PROCESS (`.ai/rules/testes-browser.md`), então uma rota registrada aqui, antes do
+ * `visit()`, já responde ao navegador — mesmo Router, mesmo processo.
+ *
+ * `file://` não serve para isto: `Pest\Browser\Support\ComputeUrl::from()` só reconhece
+ * `http://`/`https://` como URL absoluta; qualquer outro esquema (inclusive `file://`) leva um
+ * `https://` colado na frente e navega para um endereço inválido (medido lendo o pacote —
+ * `vendor/pestphp/pest-plugin-browser/src/Support/ComputeUrl.php`).
+ */
+it('captura os quadros do instalador', function (): void {
+    $fixture = base_path('tests/Browser/Fixtures/terminal-instalacao.blade.php');
+
+    /*
+     * Índice (na transcrição) que cada quadro do KitArte::CLIPES['install'] recorta —
+     * progressivo, do início da instalação ao resumo final (com a senha MASCARADA, nunca a
+     * palavra "password" — R35/[CT-52]).
+     *
+     * @var array<string, int|null>
+     */
+    $quadros = [
+        'instalacao-1-inicio'    => 4,    // INFO Instalando .. até "Rodando migrations .. DONE".
+        'instalacao-2-senha'     => 5,    // + "Gerando senha do administrador .. DONE".
+        'instalacao-3-progresso' => 11,   // + build/npm/Snyk, até o fim dos passos numerados.
+        'instalacao-4-resumo'    => null, // A transcrição inteira: links, login mascarado, aviso.
+    ];
+
+    foreach ($quadros as $arquivo => $ate) {
+        $html = view()->file($fixture, ['ate' => $ate])->render();
+
+        Route::get("/_teste-arte/{$arquivo}", fn () => response($html));
+
+        // Altura fixa e generosa (e igual nos 4 quadros — o `ffmpeg` monta um GIF de quadros do
+        // MESMO tamanho): a `.janela` da transcrição completa mede ~1.980px
+        // (`document.querySelector('.janela').getBoundingClientRect().height`, medido nesta
+        // sessão), e o viewport do resto das capturas (875px) a cortaria — o defeito medido
+        // aqui foi exatamente esse, com `instalacao-3-progresso` e `instalacao-4-resumo`
+        // saindo BYTE A BYTE idênticos porque o texto novo nascia fora da tela.
+        visit("/_teste-arte/{$arquivo}")
+            ->resize(1400, 2100)
+            // As duas formas em que a senha antiga aparecia (R35/[CT-52]) — nunca no HTML que
+            // vira imagem.
+            ->assertDontSee('/ password')
+            ->assertDontSee('password (padrão do kit)')
+            ->assertSee('meu-projeto — instalação')
+            ->screenshot(fullPage: false, filename: $arquivo);
+    }
 })->group('browser', 'art');

@@ -126,6 +126,8 @@ works — they are not a mock-up. Look at the actions column on the right: on *c
 clipped to *"Edi…"*, and on *denso* it fits whole. Tightening is not only about height; it stops
 hiding content.
 
+![The three density levels, in sequence, on the same screen](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/densidade.gif)
+
 These numbers were **measured** on the kit itself, with a real browser reading computed style on
 `/admin/users` at 1600×1000 — not estimated.
 

@@ -12,6 +12,8 @@ person goes **after** signing in.
 
 ## How to turn it on
 
+![The single /login screen and, for anyone with more than one panel, the choice at /login/painel](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/login-unificado.gif)
+
 Two ways, same key:
 
 ```dotenv
