@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import mermaid from 'astro-mermaid';
 import sidebar from './sidebar.json' with { type: 'json' };
 
 /**
@@ -49,6 +50,16 @@ export default defineConfig({
    */
   redirects: { '/': `${base}/pt/` },
   integrations: [
+    /*
+     * ANTES do starlight() — exigência do próprio astro-mermaid (ADR-02): ele transforma a cerca
+     * ```mermaid``` em `<pre class="mermaid">` na etapa de markdown, e o Expressive Code do
+     * Starlight, se rodar primeiro, pega a cerca e a transforma em bloco de código realçado.
+     *
+     * `autoTheme: true` (mesmo sendo o padrão do pacote) segue o `data-theme` que o Starlight já
+     * grava em `<html>` (`site/src/styles/kit.css:data-theme:46`) — sem tema nem cor fixos aqui,
+     * quem escolhe é o site (ADR-04).
+     */
+    mermaid({ autoTheme: true }),
     starlight({
       title: 'Starter Kit Easy',
       description:

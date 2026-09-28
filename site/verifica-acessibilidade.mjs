@@ -23,6 +23,16 @@
  * Não navega por teclado, não confere ordem de foco e não julga texto alternativo — o axe reporta
  * ausência de `alt`, não se o `alt` diz algo útil. São lacunas declaradas, não cobertas.
  *
+ * ## Diagramas Mermaid (ADR-02)
+ *
+ * O `astro-mermaid` desenha o SVG **no cliente**, depois do `domcontentloaded` — rodar o axe no
+ * `<pre class="mermaid">` cru não prova nada. Antes do axe, cada página espera todo `pre.mermaid`
+ * terminar de processar (`data-processed`, marcado tanto no sucesso quanto no erro) e reprova se
+ * algum bloco não virou `<svg>` ou virou o diagrama de erro do Mermaid (texto "Syntax error"/"Error
+ * rendering diagram" — as duas formas do mesmo defeito, a segunda é a que a integração instalada
+ * produz). É a única validação de SINTAXE que estes blocos têm: a guarda Pest lê o texto e não roda
+ * o Mermaid; o GitHub não reprova nada.
+ *
  * Uso: `node verifica-acessibilidade.mjs [porta]`
  */
 import { chromium } from 'playwright';
@@ -62,6 +72,9 @@ const todas = rotas().filter((r) => /^\/(pt|en)\//.test(r) || r === '/pt/' || r 
  */
 const AMOSTRA_CLARA = ['/pt/', '/en/', '/pt/recursos/configuracoes-do-kit/', '/pt/autenticacao/'];
 
+/** Quanto esperar pelo render client-side do Mermaid antes de desistir (ADR-02). */
+const MERMAID_TIMEOUT_MS = 15_000;
+
 const navegador = await chromium.launch();
 const violacoes = [];
 let conferidas = 0;
@@ -76,6 +89,38 @@ for (const [tema, rotasDoTema] of [
   for (const rota of rotasDoTema) {
     await pagina.goto(`http://localhost:${PORTA}${BASE}${rota}`, { waitUntil: 'domcontentloaded' });
     await pagina.evaluate((t) => document.documentElement.setAttribute('data-theme', t), tema);
+
+    /*
+     * Espera o Mermaid terminar de processar TODO bloco da página antes do axe (ADR-02). Página
+     * sem `.mermaid` nasce com a condição já satisfeita (zero pendente de zero) e não espera nada.
+     */
+    try {
+      await pagina.waitForFunction(
+        () => document.querySelectorAll('pre.mermaid:not([data-processed])').length === 0,
+        null,
+        { timeout: MERMAID_TIMEOUT_MS },
+      );
+    } catch {
+      violacoes.push(`${tema} ${rota} — mermaid: bloco(s) não terminaram de renderizar em ${MERMAID_TIMEOUT_MS}ms`);
+    }
+
+    // A única validação de sintaxe destes blocos: bloco sem <svg>, ou que virou o diagrama de erro.
+    const errosMermaid = await pagina.evaluate(() =>
+      [...document.querySelectorAll('pre.mermaid')]
+        .map((bloco, indice) => ({
+          indice,
+          temSvg: !!bloco.querySelector('svg'),
+          comErro: /syntax error|error rendering diagram/i.test(bloco.textContent || ''),
+        }))
+        .filter((b) => !b.temSvg || b.comErro),
+    );
+
+    for (const erro of errosMermaid) {
+      violacoes.push(
+        `${tema} ${rota} — mermaid bloco #${erro.indice}: ${erro.temSvg ? 'SVG de erro ("Syntax error")' : 'sem SVG'}`,
+      );
+    }
+
     await pagina.addScriptTag({ content: AXE });
 
     const resultado = await pagina.evaluate(async () => {
