@@ -370,6 +370,50 @@ it('ignora arquivo inexistente em vez de estourar', function (): void {
     expect(SubstituicaoEmArquivo::aplicar($this->base.'/nao-existe.env', '/^A=.*$/m', 'A=1'))->toBeFalse();
 })->group('kit');
 
+/**
+ * [RD2-08] Ida e volta de um valor com barra invertida, cifrão e aspas pelo `.env`.
+ *
+ * `escaparValorDeEnv()` (`app/Support/SubstituicaoEmArquivo.php:escaparValorDeEnv`) escapa `\`
+ * para `\\` ANTES de escapar `"` e `$` — pensado para o Dotenv, do lado da LEITURA, reconhecer a
+ * barra como escapada dentro do valor citado. O bug é um passo ANTES disso: essa linha inteira,
+ * já escapada, é o argumento de SUBSTITUIÇÃO de `preg_replace()` (`SubstituicaoEmArquivo::aplicar()`),
+ * e o próprio `preg_replace()` interpreta `\\` na substituição à sua maneira (backreference/escape
+ * de PCRE) — consumindo uma camada da barra ANTES dela chegar ao arquivo. O `.env` grava uma barra
+ * mal formada, e `Dotenv\Dotenv::parse()` (a mesma leitura de `valorNoEnv()` e de
+ * `CustomizadorDaInstalacao::senhaAtualNoEnv()`) lança `InvalidFileException: unexpected escape
+ * sequence` ao reler — o mesmo caminho que derruba `CustomizadorDaInstalacao::aplicar()` no meio
+ * quando o NOME digitado tem uma barra (APP_NAME e COMPOSE_PROJECT_NAME já foram gravados; cor,
+ * tenancy e settings nunca chegam a rodar).
+ */
+it('[RD2-08] valor com barra invertida, cifrao e aspas sobrevive a ida e volta pelo .env', function (): void {
+    $valor = 'Loja "X" $HOME \ fim';
+
+    $alterou = SubstituicaoEmArquivo::definirNoEnv($this->base.'/.env', 'APP_NAME', $valor);
+
+    expect($alterou)->toBeTrue();
+
+    $excecao = null;
+    $lido    = null;
+
+    try {
+        $lido = Dotenv\Dotenv::parse(envDoTeste())['APP_NAME'] ?? null;
+    } catch (Throwable $e) {
+        $excecao = $e;
+    }
+
+    expect($excecao)->toBeNull(
+        'Dotenv::parse() nao deveria lancar ao reler um valor com barra invertida gravado por '
+        .'SubstituicaoEmArquivo::definirNoEnv() (RD2-08). Excecao real: '
+        .($excecao instanceof Throwable ? $excecao::class.': '.$excecao->getMessage() : ''),
+    );
+
+    expect($lido)->toBe(
+        $valor,
+        'o valor lido de volta do .env diverge do valor original gravado — a barra invertida (ou o '
+        .'que a acompanha) nao fez ida e volta intacta',
+    );
+})->group('kit');
+
 /*
 |--------------------------------------------------------------------------
 | O plural sugerido para o rótulo da organização
@@ -691,7 +735,7 @@ it('[CT-19] o instalador anuncia o container em vez de negá-lo', function (): v
 | `04-casos-de-teste.md` da wiki `diagramas-da-arquitetura`, bloco R9: até a correção, a linha
 | "Senha do administrador" do resumo dizia `password (padrão do kit)` com a resposta vazia — uma
 | senha que nunca existiu (o kit gera uma aleatória), e a pergunta já promete "senha aleatória".
-| `app/Support/CustomizadorDaInstalacao.php:295` mostra a correção já aplicada.
+| `app/Support/CustomizadorDaInstalacao.php:312-316` mostra a correção já aplicada.
 */
 
 /**
@@ -717,19 +761,57 @@ it('[CT-41] o resumo do kit:install descreve a senha sem nunca citar password', 
 ])->group('kit');
 
 /**
+ * [CT-41] (RD2-06) — a senha DIGITADA não é utilizável (o padrão publicado, ou só espaço), e o
+ * resumo promete "a que você digitou" mesmo assim.
+ *
+ * O `match` de `aplicar()` (`app/Support/CustomizadorDaInstalacao.php:312-316`) decide esta linha
+ * só por `$senha !== ''` — nunca consulta `SenhaDoAdministrador::ehUtilizavel($senha)` no ramo da
+ * senha digitada (só no ramo vazio, para `$senhaJaUtilizavel`). Uma senha digitada como
+ * `password` (o padrão publicado, `SenhaDoAdministrador::PADRAO_PUBLICADO`) ou feita só de espaço
+ * é NÃO utilizável: `SenhaDoAdministrador::garantirNoEnv()` (chamado depois, no `kit:install`) vai
+ * ignorá-la e GERAR outra — o resumo não pode prometer "a que você digitou" para um valor que
+ * nunca chega a valer.
+ */
+it('[CT-41] senha digitada mas nao utilizavel nao e anunciada como "a que voce digitou"', function (string $senhaDigitada): void {
+    // Sonda do dataset: se isto falhar, o dataset está errado, não o produto.
+    test()->assertFalse(
+        SenhaDoAdministrador::ehUtilizavel($senhaDigitada),
+        'sonda do teste: a senha do dataset deveria ser considerada NAO utilizavel por SenhaDoAdministrador::ehUtilizavel()',
+    );
+
+    $resumo = customizadorNoTemp()->aplicar(respostasDeCustomizacao(['senha' => $senhaDigitada]));
+
+    $linha = collect($resumo)->first(fn (array $par): bool => $par[0] === 'Senha do administrador');
+
+    expect($linha)->not->toBeNull('o resumo não tem a linha "Senha do administrador"');
+
+    $this->assertStringNotContainsString(
+        'a que você digitou',
+        $linha[1],
+        'o resumo promete "a que você digitou" para uma senha que SenhaDoAdministrador::ehUtilizavel() rejeita — o instalador vai gerar outra (RD2-06)',
+    );
+    $this->assertStringNotContainsString('password', $linha[1], 'a linha do resumo ainda cita "password"');
+    $this->assertStringNotContainsString($senhaDigitada, $linha[1], 'a linha do resumo expõe a senha em claro');
+})->with([
+    'padrão publicado ("password")' => ['password'],
+    'só espaços'                    => ['   '],
+])->group('kit');
+
+/**
  * [CT-41] (RD-07/achado adicional) — o `.env` já tem uma `KIT_ADMIN_PASSWORD` UTILIZÁVEL (uma
  * reinstalação, ou um `.env` herdado) e a resposta desta execução vem vazia (Enter).
  *
  * `aplicar()` só GRAVA a chave quando `$senha !== ''` (`app/Support/CustomizadorDaInstalacao.php:291-293`):
  * com resposta vazia e uma senha já utilizável no arquivo, nada é escrito e nada é gerado —
  * `SenhaDoAdministrador::garantirNoEnv()` (chamado depois, no `kit:install`) devolve `null` nesse
- * caso e NADA é impresso no terminal (`app/Support/SenhaDoAdministrador.php:garantirNoEnv:115`).
+ * caso e NADA é impresso no terminal (`app/Support/SenhaDoAdministrador.php:garantirNoEnv:149`).
  * O resumo não pode prometer o que não vai acontecer: a linha não diz "gerada" nem "impressa", e
  * nomeia `KIT_ADMIN_PASSWORD` como a que vale, sem vazar o valor em claro.
  *
- * VERMELHO hoje (causa b): `$resumo[] = [...]` na linha 295 decide o texto só por
- * `$senha !== ''` — nunca pergunta se o `.env` já tinha uma senha utilizável — e sai "gerada pelo
- * instalador e impressa no fim" também aqui, que é falso.
+ * *(RD2-17, 2026-09-28)* VERDE hoje: o `match` de `aplicar()` (`:312-316`) já consulta
+ * `$senhaJaUtilizavel` (`SenhaDoAdministrador::ehUtilizavel($this->senhaAtualNoEnv($env))`) no
+ * ramo da resposta vazia — este caso é a REGRESSÃO deste comportamento (RD-07, Repro A), não mais
+ * uma reprodução de defeito aberto.
  */
 it('[CT-41] o resumo nao promete senha gerada nem impressa quando o .env ja tem KIT_ADMIN_PASSWORD utilizavel', function (): void {
     File::put($this->base.'/.env', str_replace(
@@ -749,4 +831,97 @@ it('[CT-41] o resumo nao promete senha gerada nem impressa quando o .env ja tem 
     $this->assertStringNotContainsString('password', $linha[1], 'a linha do resumo ainda cita "password"');
     $this->assertStringNotContainsString('ja-era-utilizavel-123', $linha[1], 'a linha do resumo expõe a senha em claro');
     $this->assertStringContainsString('KIT_ADMIN_PASSWORD', $linha[1], 'o resumo não nomeia KIT_ADMIN_PASSWORD como a senha que vale (RD-07)');
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| RD2-05 — o desfecho FINAL (so o KitInstall sabe) corrige a linha do resumo e o banner
+|--------------------------------------------------------------------------
+| `CustomizadorDaInstalacao::aplicar()` decide a linha "Senha do administrador" ANTES de o
+| `KitInstall` saber se vai semear (`KitInstall.php:handle:97` roda antes de `:100` e `:106`): com
+| `--no-seed`, ou banco inacessivel (`conferirConexao()` marca `bancoAcessivel = false`),
+| `semear()`/`garantirSenhaDoAdministrador()` NUNCA rodam — nada e gerado, `$this->senhaGerada`
+| fica `null` — mas o resumo grava "gerada pelo instalador e impressa no fim" (para senha vazia
+| digitada) e o `banner()` imprime "A senha e a que voce definiu em KIT_ADMIN_PASSWORD." mesmo
+| quando ninguem definiu nada de fato utilizavel.
+|
+| Contrato exigido do construtor (F5), fixado por estes dois casos:
+|
+|   1. `KitInstall::corrigirResumoDaSenha(): void` (sem parametros) — chamado depois de
+|      `conferirConexao()` e da decisao de `semear()`/`no-seed`, ANTES de `resumoDaCustomizacao()`.
+|      Quando `$this->senhaGerada === null` E a entrada `'Senha do administrador'` de
+|      `$this->resumo` ainda diz "gerada pelo instalador e impressa no fim", reescreve essa entrada
+|      para algo que NAO prometa "gerada" nem "impressa" nem cite a senha em claro.
+|
+|   2. `KitInstall::mensagemDoBanner(bool $semeado): string` — a nota que `banner()` imprime
+|      (`note(...)`, hoje inline em `banner():494-502`), chamada com
+|      `$semeado = $this->bancoAcessivel && ! $this->option('no-seed')`. Com `$this->senhaGerada`
+|      preenchido: a mensagem de "gerada agora" (comportamento de hoje, preservado). Com
+|      `$this->senhaGerada === null` E `$semeado === true`: "a que voce definiu" (comportamento de
+|      hoje, preservado — quem semeou e o .env ja tinha senha utilizavel). Com
+|      `$this->senhaGerada === null` E `$semeado === false`: NAO pode dizer "voce definiu" (RD2-05)
+|      — nada foi semeado, entao a frase e uma promessa vazia.
+*/
+
+it('[RD2-05] corrigirResumoDaSenha() reescreve a linha do resumo quando nada foi gerado (--no-seed ou banco inacessivel)', function (): void {
+    $comando = new KitInstall;
+
+    $propriedadeResumo = new ReflectionProperty(KitInstall::class, 'resumo');
+    $propriedadeResumo->setValue($comando, [
+        ['Nome do projeto', 'Loja do Ferro'],
+        ['Senha do administrador', 'gerada pelo instalador e impressa no fim'],
+    ]);
+
+    $propriedadeSenhaGerada = new ReflectionProperty(KitInstall::class, 'senhaGerada');
+    $propriedadeSenhaGerada->setValue($comando, null); // nada foi gerado: --no-seed ou banco inacessivel
+
+    (new ReflectionMethod(KitInstall::class, 'corrigirResumoDaSenha'))->invoke($comando);
+
+    $linha = collect($propriedadeResumo->getValue($comando))
+        ->first(fn (array $par): bool => $par[0] === 'Senha do administrador');
+
+    expect($linha)->not->toBeNull('a entrada "Senha do administrador" nao pode sumir do resumo');
+    $this->assertStringNotContainsString('gerada', $linha[1], 'o resumo continua prometendo uma senha GERADA quando nada foi semeado (RD2-05)');
+    $this->assertStringNotContainsString('impressa', $linha[1], 'o resumo continua prometendo uma senha IMPRESSA quando nada foi semeado (RD2-05)');
+    $this->assertStringNotContainsString('password', $linha[1], 'a linha do resumo cita "password"');
+})->group('kit');
+
+it('[RD2-05] mensagemDoBanner() nao promete "a que voce definiu" quando a semeadura nao rodou', function (): void {
+    $comando = new KitInstall;
+
+    (new ReflectionProperty(KitInstall::class, 'senhaGerada'))->setValue($comando, null);
+
+    $mensagem = (new ReflectionMethod(KitInstall::class, 'mensagemDoBanner'))->invoke($comando, false);
+
+    $this->assertStringNotContainsString(
+        'voce definiu',
+        $mensagem,
+        'o banner promete "a que voce definiu em KIT_ADMIN_PASSWORD" mesmo com a semeadura pulada (--no-seed ou banco inacessivel) — ninguem confirmou que essa senha vale para algum administrador (RD2-05)',
+    );
+})->group('kit');
+
+it('[RD2-05] mensagemDoBanner() preserva o comportamento de hoje quando a semeadura RODOU', function (): void {
+    $comando = new KitInstall;
+
+    (new ReflectionProperty(KitInstall::class, 'senhaGerada'))->setValue($comando, null);
+
+    $mensagem = (new ReflectionMethod(KitInstall::class, 'mensagemDoBanner'))->invoke($comando, true);
+
+    $this->assertStringContainsString(
+        'KIT_ADMIN_PASSWORD',
+        $mensagem,
+        'com a semeadura rodada e nada gerado (o .env ja tinha uma senha utilizavel), o banner deveria nomear KIT_ADMIN_PASSWORD como a que vale — comportamento de hoje, que este contrato nao pode quebrar',
+    );
+})->group('kit');
+
+it('[RD2-05] mensagemDoBanner() preserva a mensagem de senha gerada agora', function (): void {
+    $comando = new KitInstall;
+
+    (new ReflectionProperty(KitInstall::class, 'senhaGerada'))->setValue($comando, 'abc123XYZ');
+
+    foreach ([true, false] as $semeado) {
+        $mensagem = (new ReflectionMethod(KitInstall::class, 'mensagemDoBanner'))->invoke($comando, $semeado);
+
+        $this->assertStringContainsString('abc123XYZ', $mensagem, 'com senhaGerada preenchida, o banner deveria imprimir a senha gerada — comportamento de hoje, que este contrato nao pode quebrar');
+    }
 })->group('kit');

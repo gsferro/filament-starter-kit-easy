@@ -283,8 +283,8 @@ questions (`app/Console/Commands/KitInstall.php:customizar():97`) come before ge
 (`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel):102`,
 `app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel && ! $this->option('no-seed')):106`);
 and the administrator password is generated **before** `db:seed`
-(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:357`,
-`app/Console/Commands/KitInstall.php:'db:seed':373`) — never the other way around, or the banner
+(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:364`,
+`app/Console/Commands/KitInstall.php:'db:seed':380`) — never the other way around, or the banner
 would print a password the seeder had already recorded as something else.
 
 ```mermaid
@@ -315,6 +315,6 @@ The order of the five seeders comes from `DatabaseSeeder::run()`
 (`database/seeders/DatabaseSeeder.php:run:16`) — `TenantsSeeder` runs after them, only with
 multi-tenancy on. The banner never prints `password`: the password is generated with 24
 alphanumeric characters and only shows up once, in the run that created it
-(`app/Support/SenhaDoAdministrador.php:garantirNoEnv:115`); whoever already set their own in
+(`app/Support/SenhaDoAdministrador.php:garantirNoEnv:149`); whoever already set their own in
 `KIT_ADMIN_PASSWORD` never sees it printed back.
 

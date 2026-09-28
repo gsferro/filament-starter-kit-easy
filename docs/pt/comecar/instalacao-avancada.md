@@ -285,8 +285,8 @@ customização (`app/Console/Commands/KitInstall.php:customizar():97`) vêm ante
 (`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel):102`,
 `app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel && ! $this->option('no-seed')):106`);
 e a senha do administrador é gerada **antes** do `db:seed`
-(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:357`,
-`app/Console/Commands/KitInstall.php:'db:seed':373`) — nunca o contrário, senão o banner imprimiria
+(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:364`,
+`app/Console/Commands/KitInstall.php:'db:seed':380`) — nunca o contrário, senão o banner imprimiria
 uma senha que o seeder já gravou como outra.
 
 ```mermaid
@@ -317,6 +317,6 @@ A ordem dos cinco seeders vem de `DatabaseSeeder::run()`
 (`database/seeders/DatabaseSeeder.php:run:16`) — `TenantsSeeder` entra depois deles, só com o modo
 multi-tenant ligado. O banner nunca imprime `password`: a senha é gerada com 24 caracteres
 alfanuméricos e só aparece uma vez, na execução em que nasceu
-(`app/Support/SenhaDoAdministrador.php:garantirNoEnv:115`); quem já definiu a
+(`app/Support/SenhaDoAdministrador.php:garantirNoEnv:149`); quem já definiu a
 própria em `KIT_ADMIN_PASSWORD` não a vê impressa de volta.
 

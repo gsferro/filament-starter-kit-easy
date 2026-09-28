@@ -2,6 +2,9 @@
 
 namespace App\Support;
 
+use Dotenv\Dotenv;
+use Dotenv\Exception\InvalidFileException;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
 /**
@@ -68,6 +71,37 @@ final class SenhaDoAdministrador
         $bruta = config('kit.admin.password');
 
         return is_string($bruta) ? $bruta : null;
+    }
+
+    /**
+     * O valor ATUAL de `self::CHAVE` num arquivo `.env` ESPECÍFICO — nunca por `config()`.
+     *
+     * Dona única desta leitura (RD2-07/`.ai/rules/config.md`: "uma pergunta, uma dona"). Antes
+     * desta classe existir, `CustomizadorDaInstalacao::senhaAtualNoEnv()` chamava
+     * `Dotenv\Dotenv::parse()` por conta própria — uma segunda fonte respondendo à mesma
+     * pergunta que `doAmbiente()` já responde, só que por caminho diferente (arquivo, não
+     * `config()`). O caso concreto em que os dois divergem: o `.env` de DESTINO de uma
+     * customização (`CustomizadorDaInstalacao::$base` é injetável, e nos testes nunca é o `.env`
+     * do processo PHP corrente) não é o mesmo arquivo que `config('kit.admin.password')`
+     * reflete.
+     *
+     * Tolerante ao arquivo malformado (RD2-08): um `.env` que outra ferramenta corrompeu não
+     * pode derrubar quem só queria saber "já existe senha utilizável?" — a resposta nesse caso é
+     * `null` (equivalente a "não sei, trate como não utilizável"), nunca uma exceção.
+     */
+    public static function doArquivo(string $caminhoDoEnv): ?string
+    {
+        if (! File::exists($caminhoDoEnv)) {
+            return null;
+        }
+
+        try {
+            $valor = Dotenv::parse(File::get($caminhoDoEnv))[self::CHAVE] ?? null;
+        } catch (InvalidFileException) {
+            return null;
+        }
+
+        return is_string($valor) ? $valor : null;
     }
 
     /**

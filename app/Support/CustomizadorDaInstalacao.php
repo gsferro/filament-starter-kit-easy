@@ -3,10 +3,8 @@
 namespace App\Support;
 
 use App\Settings\ConfiguracoesDoKit;
-use Dotenv\Dotenv;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
@@ -175,7 +173,7 @@ final class CustomizadorDaInstalacao
      * As perguntas que podem ser refeitas SEM tocar no banco — e por que são só duas.
      *
      * O `--force` do `kit:install` refaz as cinco perguntas, mas apaga o SQLite antes
-     * (`KitInstall.php:229-231`). Isso é inócuo no minuto seguinte à instalação e destrutivo
+     * (`KitInstall.php:236-238`). Isso é inócuo no minuto seguinte à instalação e destrutivo
      * depois. Este caminho existe para o "depois", e por isso o recorte é conservador:
      *
      * - **nome** e **cor** são reescrita de `.env`, e valem no próximo request. Entram aqui.
@@ -295,20 +293,26 @@ final class CustomizadorDaInstalacao
         }
 
         /*
-         * O resumo não pode prometer o que não vai acontecer (RD-07). Com resposta vazia, este
-         * método NÃO grava nada em `KIT_ADMIN_PASSWORD` (bloco acima) — "gerada pelo instalador e
-         * impressa no fim" só é verdade quando o `.env` de destino ainda NÃO tem uma senha
-         * utilizável, porque é só nesse caso que `SenhaDoAdministrador::garantirNoEnv()` (chamado
-         * depois, no `kit:install`) de fato gera e devolve uma senha nova para imprimir. Quando já
-         * havia uma utilizável, `garantirNoEnv()` devolve `null` e nada é impresso — a mesma regra
-         * de `ehUtilizavel()`, consultada aqui em vez de duplicada.
+         * O resumo não pode prometer o que não vai acontecer (RD-07, RD2-06). Com resposta vazia,
+         * este método NÃO grava nada em `KIT_ADMIN_PASSWORD` (bloco acima) — "gerada pelo
+         * instalador e impressa no fim" só é verdade quando o `.env` de destino ainda NÃO tem uma
+         * senha utilizável, porque é só nesse caso que `SenhaDoAdministrador::garantirNoEnv()`
+         * (chamado depois, no `kit:install`) de fato gera e devolve uma senha nova para imprimir.
+         * Quando já havia uma utilizável, `garantirNoEnv()` devolve `null` e nada é impresso — a
+         * mesma regra de `ehUtilizavel()`, consultada aqui em vez de duplicada.
+         *
+         * A mesma regra vale para a senha DIGITADA (RD2-06): `password` (o padrão publicado) ou
+         * só espaço não é utilizável, e `garantirNoEnv()` vai IGNORAR o que foi digitado e gerar
+         * outra — o resumo não pode dizer "a que você digitou" para um valor que nunca chega a
+         * valer. Sem esta checagem, o `match` decidia só por `$senha !== ''`.
          */
-        $senhaJaUtilizavel = $senha === '' && SenhaDoAdministrador::ehUtilizavel($this->senhaAtualNoEnv($env));
+        $senhaDigitadaUtilizavel = $senha !== '' && SenhaDoAdministrador::ehUtilizavel($senha);
+        $senhaJaUtilizavel       = $senha === '' && SenhaDoAdministrador::ehUtilizavel($this->senhaAtualNoEnv($env));
 
         $resumo[] = ['Senha do administrador', match (true) {
-            $senha !== ''      => '•••••••• (a que você digitou)',
-            $senhaJaUtilizavel => 'a que você já definiu em KIT_ADMIN_PASSWORD',
-            default            => 'gerada pelo instalador e impressa no fim',
+            $senhaDigitadaUtilizavel => '•••••••• (a que você digitou)',
+            $senhaJaUtilizavel       => 'a que você já definiu em KIT_ADMIN_PASSWORD',
+            default                  => 'gerada pelo instalador e impressa no fim',
         }];
 
         SubstituicaoEmArquivo::definirNoEnv($env, 'KIT_COR_PRIMARIA', $cor);
@@ -346,20 +350,15 @@ final class CustomizadorDaInstalacao
      * O valor ATUAL de `KIT_ADMIN_PASSWORD` no `.env` de destino — lido ANTES de qualquer
      * escrita desta chamada, para decidir se já havia uma senha utilizável (RD-07).
      *
-     * Por `Dotenv\Dotenv::parse()`, nunca por `config()`: o `.env` aqui é o do diretório
-     * INJETÁVEL (`$this->base`), que na suíte de testes nunca é o do processo PHP corrente.
-     * `config('kit.admin.password')` responderia pelo `.env` de quem roda o teste ou o comando
-     * — não pelo arquivo que este método de fato lê e escreve.
+     * Delegado a `SenhaDoAdministrador::doArquivo()` (RD2-07/`.ai/rules/config.md`: "uma
+     * pergunta, uma dona") — a classe dona desta pergunta é quem lê o arquivo, nunca `config()`:
+     * o `.env` aqui é o do diretório INJETÁVEL (`$this->base`), que na suíte de testes nunca é o
+     * do processo PHP corrente, e `config('kit.admin.password')` responderia pelo `.env` de
+     * quem roda o teste ou o comando — não pelo arquivo que este método de fato lê e escreve.
      */
     private function senhaAtualNoEnv(string $env): ?string
     {
-        if (! File::exists($env)) {
-            return null;
-        }
-
-        $valor = Dotenv::parse(File::get($env))[SenhaDoAdministrador::CHAVE] ?? null;
-
-        return is_string($valor) ? $valor : null;
+        return SenhaDoAdministrador::doArquivo($env);
     }
 
     /**

@@ -39,9 +39,19 @@ final class SubstituicaoEmArquivo
         /*
          * Limite de 1: sem ele, um padrão que também casa dentro de um comentário
          * ("# APP_NAME=…, mude aqui") reescreveria a documentação junto com o valor.
+         *
+         * `preg_replace_callback()`, e NUNCA `preg_replace($padrao, $novo, ...)` (RD2-08): o
+         * `$novo` aqui já é uma linha ESCAPADA para o `.env` (`definirNoEnv()` grava `\\`, `\"` e
+         * `\$` dentro de aspas). Passar essa string pronta como argumento de SUBSTITUIÇÃO de
+         * `preg_replace()` é o defeito — o próprio PCRE interpreta `\\` e `\$` na substituição à
+         * sua maneira (`\\` colapsa para uma barra só, `\$` come a barra e deixa o cifrão nu),
+         * consumindo uma camada do escape ANTES de `$novo` chegar ao arquivo. O `.env` grava uma
+         * barra mal formada, e `Dotenv\Dotenv::parse()` lança `InvalidFileException: unexpected
+         * escape sequence` ao reler. O callback devolve `$novo` verbatim, sem nenhum
+         * processamento de backreference/escape sobre o texto de saída.
          */
         if (preg_match($padrao, $conteudo) === 1) {
-            File::put($caminho, (string) preg_replace($padrao, $novo, $conteudo, 1));
+            File::put($caminho, (string) preg_replace_callback($padrao, static fn (): string => $novo, $conteudo, 1));
 
             return true;
         }
