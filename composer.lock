@@ -4574,16 +4574,16 @@
         },
         {
             "name": "laboiteacode/filament-dashboard-widgets",
-            "version": "v1.0.0",
+            "version": "v1.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/La-boite-a-code/Filament-Dashboard-Widgets.git",
-                "reference": "b38ea179fab3fb1ac64e01c33e9ec5cbfb1e1405"
+                "reference": "1467244d8a522891962f6afca753004810182c3d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/La-boite-a-code/Filament-Dashboard-Widgets/zipball/b38ea179fab3fb1ac64e01c33e9ec5cbfb1e1405",
-                "reference": "b38ea179fab3fb1ac64e01c33e9ec5cbfb1e1405",
+                "url": "https://api.github.com/repos/La-boite-a-code/Filament-Dashboard-Widgets/zipball/1467244d8a522891962f6afca753004810182c3d",
+                "reference": "1467244d8a522891962f6afca753004810182c3d",
                 "shasum": ""
             },
             "require": {
@@ -4644,7 +4644,7 @@
                 "issues": "https://github.com/la-boite-a-code/filament-dashboard-widgets/issues",
                 "source": "https://github.com/la-boite-a-code/filament-dashboard-widgets"
             },
-            "time": "2026-07-24T06:13:18+00:00"
+            "time": "2026-09-22T18:29:46+00:00"
         },
         {
             "name": "laboiteacode/filament-dependency-graph",
