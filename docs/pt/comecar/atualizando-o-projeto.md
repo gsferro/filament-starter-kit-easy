@@ -37,7 +37,7 @@ O que ele faz, em ordem:
 
 O fluxo é **não interativo** quando não há terminal (CI, `--no-interaction`) — nunca "sem TTY": ele
 vira relatório e sai sem aplicar nada, a menos que `--all` ou `--only-new` já tenham dado a
-aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:426`).
+aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:427`).
 
 ```mermaid
 flowchart TD
@@ -66,13 +66,13 @@ accDescr: O kit:update confere o terreno, vincula o kit como remote temporário,
 ```
 
 A ordem vem direto de `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:374`): pré-voo (`:preVoo:462`), remote temporário
-(`:vincularKit:522`), diff restrito (`:arquivosAlterados:628`), resumo (`:mostrarResumo:747`), a
-checagem de terminal (`:isInteractive:426`), o branch temporário (`:prepararBranch:767`), a revisão
-por arquivo (`:revisarEAplicar:816`), o relatório do `composer.json`
+(`app/Console/Commands/KitUpdate.php:handle:375`): pré-voo (`:preVoo:463`), remote temporário
+(`:vincularKit:523`), diff restrito (`:arquivosAlterados:629`), resumo (`:mostrarResumo:748`), a
+checagem de terminal (`:isInteractive:427`), o branch temporário (`:prepararBranch:768`), a revisão
+por arquivo (`:revisarEAplicar:817`), o relatório do `composer.json`
 (`:relatarComposerJson:1001`, `:CAMINHOS_SO_RELATORIO:365`) e `marcarVersao()`
 (`:marcarVersao:1049`, chamada dentro de `:encerrar:1035`). O `finally` que desfaz o remote roda em
-todo caminho de saída, inclusive erro (`:desvincularKit:531`).
+todo caminho de saída, inclusive erro (`:desvincularKit:532`).
 
 Dois detalhes que aparecem na prática:
 

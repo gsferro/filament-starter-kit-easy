@@ -38,7 +38,7 @@ What it does, in order:
 The flow is **non-interactive** when there is no terminal (CI, `--no-interaction`) — never "no
 TTY": it turns into a report and exits without applying anything, unless `--all` or `--only-new`
 already gave the approval on the command line
-(`app/Console/Commands/KitUpdate.php:isInteractive:426`).
+(`app/Console/Commands/KitUpdate.php:isInteractive:427`).
 
 ```mermaid
 flowchart TD
@@ -67,13 +67,13 @@ accDescr: kit:update checks the ground, links the kit as a temporary remote, com
 ```
 
 The order comes straight from `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:374`): pre-flight (`:preVoo:462`), temporary remote
-(`:vincularKit:522`), restricted diff (`:arquivosAlterados:628`), summary (`:mostrarResumo:747`),
-the terminal check (`:isInteractive:426`), the temporary branch (`:prepararBranch:767`), the
-file-by-file review (`:revisarEAplicar:816`), the `composer.json` report
+(`app/Console/Commands/KitUpdate.php:handle:375`): pre-flight (`:preVoo:463`), temporary remote
+(`:vincularKit:523`), restricted diff (`:arquivosAlterados:629`), summary (`:mostrarResumo:748`),
+the terminal check (`:isInteractive:427`), the temporary branch (`:prepararBranch:768`), the
+file-by-file review (`:revisarEAplicar:817`), the `composer.json` report
 (`:relatarComposerJson:1001`, `:CAMINHOS_SO_RELATORIO:365`) and `marcarVersao()`
 (`:marcarVersao:1049`, called inside `:encerrar:1035`). The `finally` that undoes the remote runs on
-every exit path, including errors (`:desvincularKit:531`).
+every exit path, including errors (`:desvincularKit:532`).
 
 Two details that show up in practice:
 

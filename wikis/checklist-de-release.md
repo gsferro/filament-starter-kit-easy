@@ -98,7 +98,7 @@ php artisan migrate --force
 
 > **O `kit:update` nunca apaga arquivo, e isso é desenho.** Um arquivo **renomeado** no kit chega
 > pelo nome novo e o nome velho **fica** no projeto atualizado — órfão, mas presente. O comando
-> avisa (`KitUpdate.php:798`: *"foi REMOVIDO do kit. Nada é apagado automaticamente — decida
+> avisa (`KitUpdate.php:838`: *"foi REMOVIDO do kit. Nada é apagado automaticamente — decida
 > você"*). Então **não** trate a presença do nome antigo como falha do cenário 3 ou 4;
 > a v0.39.0 renomeou `versao-do-kit.blade.php` e as duas blades convivem em projeto atualizado.
 
