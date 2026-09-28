@@ -233,8 +233,9 @@ it('[CT-47] um clipe incompleto e reportado e os outros continuam', function ():
 
     // A saída da busca ⌘K (clipe sem quadro nenhum aqui) precisa nomear o quadro ausente — não
     // existe hoje, porque o comando não conhece esse clipe: falha por causa (b), não (a).
-    expect(mb_strtolower($saida))->toContain(
+    test()->assertStringContainsString(
         'busca',
+        mb_strtolower($saida),
         'a saída não nomeia o clipe "busca ⌘K" como incompleto — o kit:arte de hoje não conhece esse clipe (generalização ainda não construída)',
     );
 
@@ -374,8 +375,9 @@ it('[CT-64] um quadro sobrado do diretorio de montagem nao entra no GIF (parte t
 
     $gif = File::get("{$base}/art/fluxo-import-export.gif");
 
-    expect($gif)->not->toContain(
+    test()->assertStringNotContainsString(
         'QUADRO-SOBRADO-DE-EXECUCAO-ANTERIOR',
+        $gif,
         'o GIF publicado inclui o conteúdo de um quadro sobrado (quadro-04.png) de uma execução anterior — R32.M6: o diretório de montagem não é limpo ANTES de copiar (app/Console/Commands/KitArte.php:199 só garante que o diretório existe, nunca o esvazia)',
     );
 });

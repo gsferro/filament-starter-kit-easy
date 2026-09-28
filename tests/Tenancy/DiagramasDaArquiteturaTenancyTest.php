@@ -266,9 +266,11 @@ function entidadeDoCasoDeUso(string $rotulo): ?string
     $r = mb_strtolower($rotulo);
 
     return match (true) {
-        str_contains($r, 'usuár') || str_contains($r, 'usuar') => 'User',
-        str_contains($r, 'convite')                            => 'Convite',
-        default                                                => null,
+        // pt e en: o bloco en traduz o rótulo (CT-03), e o ID do nó não entra aqui.
+        // Convite antes de User: "Convidar usuário" / "Invite user" nomeia os dois, e o caso é o convite.
+        str_contains($r, 'convite') || str_contains($r, 'invit')                           => 'Convite',
+        str_contains($r, 'usuár') || str_contains($r, 'usuar') || str_contains($r, 'user') => 'User',
+        default                                                                            => null,
     };
 }
 
@@ -295,9 +297,9 @@ it('[CT-12] admin_app administra a propria organizacao e so existe com tenancy',
 
         $destinos = array_map(static fn (array $a): string => mb_strtolower((string) $a['destinoTexto']), $arestas);
 
-        expect(collect($destinos)->contains(fn (string $d): bool => str_contains($d, 'usuár') || str_contains($d, 'usuar')))
+        expect(collect($destinos)->contains(fn (string $d): bool => entidadeDoCasoDeUso($d) === 'User'))
             ->toBeTrue("admin_app não se liga a \"gerir usuários\" no DG-02 ({$idioma})");
-        expect(collect($destinos)->contains(fn (string $d): bool => str_contains($d, 'convite')))
+        expect(collect($destinos)->contains(fn (string $d): bool => entidadeDoCasoDeUso($d) === 'Convite'))
             ->toBeTrue("admin_app não se liga a \"gerir convites\" no DG-02 ({$idioma})");
 
         foreach ($arestas as $aresta) {
@@ -312,7 +314,7 @@ it('[CT-12] admin_app administra a propria organizacao e so existe com tenancy',
                 ->toBeTrue("admin_app não tem nenhuma permissão de {$entidade}, mas o DG-02 o liga a \"{$aresta['destinoTexto']}\" ({$idioma})");
         }
 
-        expect($bloco['bloco'])->toContain('KIT_TENANCY', "o bloco DG-02 não nomeia KIT_TENANCY junto de admin_app ({$idioma})");
+        test()->assertStringContainsString('KIT_TENANCY', $bloco['bloco'], "o bloco DG-02 não nomeia KIT_TENANCY junto de admin_app ({$idioma})");
     }
 });
 
@@ -598,8 +600,9 @@ it('[CT-80] cada uma das 24 celulas da matriz fechada do convite, executada pelo
 
         $paraEsperado = $alvo === 'fim' ? '[*]' : $alvo;
 
-        expect(collect($daCelula)->pluck('para')->all())->toContain(
+        test()->assertContains(
             $paraEsperado,
+            collect($daCelula)->pluck('para')->all(),
             "DG-09: a seta de '{$estado}' por '{$evento}' não vai para '{$paraEsperado}'",
         );
     }
@@ -726,7 +729,7 @@ it('[CT-89] com a tenancy, os dois ramos do aceite ligam a conta a organizacao d
         }
 
         expect($trecho)->not->toBeNull("DG-07 não nomeia o ramo \"{$ramo}\" ({$idioma})");
-        expect($normalizar((string) $trecho))->toContain('organiza', "DG-07, ramo \"{$ramo}\" ({$idioma}), não menciona a ligação à organização do convite");
+        test()->assertStringContainsString('organiza', $normalizar((string) $trecho), "DG-07, ramo \"{$ramo}\" ({$idioma}), não menciona a ligação à organização do convite");
     }
 })->with([
     'conta nova'      => ['sem conta com o e-mail', 'conta nova'],

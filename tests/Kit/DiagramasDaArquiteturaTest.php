@@ -882,10 +882,15 @@ it('[CT-57] o elemento de cada chave desligada por padrão vem com a chave em to
 ]);
 
 it('[CT-08] o elemento opt-in vem com a sua chave em todo bloco que o desenha', function (string $elemento, string $chave): void {
+    // O 04 escreve o elemento como alternativas separadas por " / " (ex.: organização / tenant /
+    // /app/{tenant}): qualquer uma delas no bloco já é o elemento desenhado.
+    $termos = array_map('trim', explode(' / ', $elemento));
+    $nomeia = static fn (string $bloco): bool => collect($termos)->contains(fn (string $termo): bool => str_contains($bloco, $termo));
+
     foreach (['pt', 'en'] as $idioma) {
         $blocosComElemento = array_filter(
             blocosMermaidDaArvore($idioma),
-            static fn (array $b): bool => str_contains($b['bloco'], explode(' ', $elemento)[0]) || str_contains($b['bloco'], $elemento),
+            static fn (array $b): bool => $nomeia($b['bloco']),
         );
 
         foreach ($blocosComElemento as $bloco) {
@@ -899,7 +904,7 @@ it('[CT-08] o elemento opt-in vem com a sua chave em todo bloco que o desenha', 
 
     foreach (['pt', 'en'] as $idioma) {
         foreach (blocosMermaidDaArvore($idioma) as $b) {
-            if (str_contains($b['bloco'], $elemento)) {
+            if ($nomeia($b['bloco'])) {
                 $existe = true;
             }
         }
@@ -955,7 +960,11 @@ it('[CT-09] o DG-01 afirma o que o kit registra hoje', function (string $fonte, 
 
     // O bloco real: ainda não existe.
     $arquivo = str_contains($fonte, 'README') ? ($idioma === 'en' ? 'README.en.md' : 'README.md') : "docs/{$idioma}/{$fonte}";
-    $bloco   = blocoDoCatalogoNaArvore('DG-01', $idioma);
+    // O DG-01 é o único DG com dois lugares (README e página de diagramas): o bloco é procurado
+    // no arquivo DESTE caso, não o primeiro da árvore — senão a linha da página leria o do README.
+    $bloco = collect(blocosMermaidDaArvore($idioma))->first(
+        fn (array $b): bool => $b['idCatalogo'] === 'DG-01' && ! $b['dentroDeComentarioHtml'] && $b['arquivo'] === $arquivo,
+    );
 
     expect($bloco)->not->toBeNull("DG-01 não encontrado em {$arquivo}");
 
