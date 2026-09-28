@@ -296,6 +296,33 @@ As opções escolhidas diziam, na pergunta:
 - **RQ-11 / RQ-12** → os dois idiomas (RQ-26), como assumido
 - **RQ-14 / RQ-15** → a pesquisa confirmou que o `sent.dm` é uma API de mensagens (SMS, WhatsApp, RCS) e **não gera vídeo**; o link é o anúncio pago do README do GitDiagram. As duas cláusulas fecham como **não se aplica**, e o mantenedor não pediu a integração no Adendo 2
 
+## Adendo 3 — 2026-09-28
+
+- **Fonte**: respostas do mantenedor às duas perguntas que a sessão levou quando a 2ª rodada da revisão do diff (step 6.5) atingiu o teto da skill com achado estrutural
+- **Fidelidade**: alta (escolha entre opções escritas)
+
+### Texto Original
+
+<!-- IMUTÁVEL. Pergunta como foi feita → resposta como foi dada. -->
+
+> "Como fecho o que a 2ª rodada de revisão achou? (o teto da skill é 2 rodadas; uma 3ª precisa da sua decisão)"="Corrigir tudo (Recomendado)", "O DG-11 quebrado só apareceu porque rodei o build do site à mão: o CI de PR não constrói o site (o pages.yml só roda depois do merge). Acrescento essa checagem ao CI de PR?"="Sim, job no PR (Recomendado)"
+
+As opções escolhidas diziam, na pergunta:
+
+- **Corrigir tudo** — "Uma 3ª rodada: os 2 defeitos do navegador (sintaxe do DG-11; contraste do tema escuro ajustado na config do astro-mermaid, sem cor fixa no bloco), os 4 de código, e as guardas: um extrator de arestas normalizado (-->, --->, -.->, ==>) usado em pt e en, e os 21 cenários passando a conferir o conteúdo do bloco. Depois, revisão curta só do delta e o quality gate."
+- **Sim, job no PR** — "Um job no ci.yml que roda npm ci + build + verifica-links + verifica-acessibilidade quando o PR toca docs/ ou site/. Custa ~3-5 min nesses PRs e pega diagrama quebrado e contraste antes do merge."
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-31 | Uma 3ª rodada do step 6.5 é autorizada, acima do teto da skill, para fechar **todos** os achados da 2ª | "Corrigir tudo (Recomendado)" | restrição | — |
+| RQ-32 | Todo diagrama renderiza no site e no GitHub — nenhum bloco com erro de sintaxe | "os 2 defeitos do navegador (sintaxe do DG-11 [...])" | funcional | concretiza RQ-12 |
+| RQ-33 | Os diagramas atendem ao contraste WCAG AA nos dois temas, ajustado na configuração do site, nunca com cor fixa no bloco | "contraste do tema escuro ajustado na config do astro-mermaid, sem cor fixa no bloco" | não-funcional | — |
+| RQ-34 | As guardas leem as arestas de forma normalizada (qualquer forma de seta) e nos dois idiomas | "um extrator de arestas normalizado (-->, --->, -.->, ==>) usado em pt e en" | restrição | reforça RQ-26 |
+| RQ-35 | Os 21 cenários que só conferiam a existência do bloco passam a conferir o conteúdo dele contra o código | "os 21 cenários passando a conferir o conteúdo do bloco" | restrição | reforça RQ-26 |
+| RQ-36 | O CI de pull request constrói e confere o site (build, links, acessibilidade e diagramas) quando o PR toca `docs/` ou `site/` | "Um job no ci.yml que roda npm ci + build + verifica-links + verifica-acessibilidade quando o PR toca docs/ ou site/" | funcional | — |
+
 ## Fora de Escopo (declarado)
 
 - Mudar o comportamento do kit para caber num diagrama — o diagrama segue o código, nunca o contrário
