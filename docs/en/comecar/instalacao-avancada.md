@@ -163,8 +163,9 @@ all**, and without an error.
 ## Containers by profile
 
 The 12 services in `docker-compose.yml` come up in groups: `pgsql` and `redis` always, with no
-profile (`docker-compose.yml:pgsql::29`, `docker-compose.yml:redis::85`); `mysql` only with
-`--profile mysql` (`docker-compose.yml:profiles: [mysql]:55`); `llamacpp` and
+profile (`docker-compose.yml:pgsql::29`, `docker-compose.yml:redis::85`); `mysql` in its own
+profile, started by name — `docker compose up -d mysql redis`, never by the profile alone, which
+would bring `pgsql` along (`docker-compose.yml:profiles: [mysql]:55`); `llamacpp` and
 `llamacpp-embeddings` with `ai` or `full` (`docker-compose.yml:profiles: [ai, full]:106`); `mailpit`
 with `mail` or `full` (`docker-compose.yml:profiles: [mail, full]:164`); `nginx`, `app`, `queue` and
 `scheduler` with `app` (`docker-compose.yml:profiles: [app]:180`); and `reverb` and `pulse` with

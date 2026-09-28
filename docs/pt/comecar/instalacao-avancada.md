@@ -165,7 +165,8 @@ dependência, `docker compose --profile app up -d` sobe a aplicação **sem banc
 ## Os containers por profile
 
 Os 12 serviços de `docker-compose.yml` sobem em grupos: `pgsql` e `redis` sempre, sem profile
-(`docker-compose.yml:pgsql::29`, `docker-compose.yml:redis::85`); `mysql` só com `--profile mysql`
+(`docker-compose.yml:pgsql::29`, `docker-compose.yml:redis::85`); `mysql` no profile próprio, subido pelo nome — `docker compose up -d mysql redis`, nunca pelo
+profile sozinho, que traria o `pgsql` junto
 (`docker-compose.yml:profiles: [mysql]:55`); `llamacpp` e `llamacpp-embeddings` com `ai` ou `full`
 (`docker-compose.yml:profiles: [ai, full]:106`); `mailpit` com `mail` ou `full`
 (`docker-compose.yml:profiles: [mail, full]:164`); `nginx`, `app`, `queue` e `scheduler` com `app`
