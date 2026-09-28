@@ -52,6 +52,40 @@
 }
 
 /*
+ * Diagramas Mermaid — contraste do rótulo de aresta no tema escuro (CT-B01).
+ *
+ * O `astro-mermaid` (ADR-02) usa o tema embutido `dark` do próprio Mermaid quando
+ * `data-theme="dark"`, sem opção própria para configurar isso por tema (`mermaidConfig` é o mesmo
+ * objeto para os dois — conferido em `node_modules/astro-mermaid`). Naquele tema, o fundo do
+ * rótulo de aresta (`.edgeLabel`, `labelBackground` clareado 25%) sai `#585858` sob o texto
+ * `#cccccc`: 4,43:1, abaixo do piso de 4,5:1 da WCAG AA (`color-contrast`, serious — medido pelo
+ * `verifica-acessibilidade.mjs`, CT-B01, em 8 páginas pt + 8 en com fluxo/estado).
+ *
+ * Escurecer só o FUNDO do rótulo de aresta resolve sem tocar no texto: o mesmo texto pinta também
+ * o rótulo do NÓ, só que sobre o fundo do nó (bem mais escuro), onde a razão já é folgada — mudar
+ * o texto arriscaria contraste que hoje passa. `#404040` dá 6,46:1 com a mesma margem que o resto
+ * do tema usa.
+ *
+ * Escopado ao tema escuro E ao `pre.mermaid` (ADR-04: nenhuma cor fixa fora do tema, e nunca no
+ * bloco) — o tema claro usa outro par fundo/texto, que já passa (CT-B01 só reprova no escuro), e
+ * continua intocado aqui. As três formas espelham as regras que o próprio Mermaid gera para o
+ * rótulo (`.edgeLabel`, `.edgeLabel p`, `.edgeLabel rect`).
+ *
+ * `!important` é necessário, não estilo: o `<style>` do Mermaid é injetado por diagrama, no
+ * cliente, e prefixa TODA regra com `#mermaid-<id-aleatorio> ` (medido no SVG construído) — um ID
+ * por render, então nenhuma pilha de classes desta folha supera aquela especificidade (a
+ * comparação de especificidade decide pelo ID antes de contar classe alguma). Sem isto, o fundo
+ * ficava com `fill` corrigido (propriedade sem efeito em HTML) e `background-color` — a que
+ * realmente pinta o `<p>` do rótulo — continuava a do Mermaid.
+ */
+:root[data-theme='dark'] pre.mermaid .edgeLabel,
+:root[data-theme='dark'] pre.mermaid .edgeLabel p,
+:root[data-theme='dark'] pre.mermaid .edgeLabel rect {
+  background-color: #404040 !important;
+  fill: #404040 !important;
+}
+
+/*
  * Hero da landing.
  *
  * Sem imagem: o banner do repositório é claro e já traz o título e o comando de instalação dentro
