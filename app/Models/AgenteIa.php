@@ -72,8 +72,9 @@ class AgenteIa extends Model implements Auditable
             'ativo'       => 'boolean',
             'tools'       => 'array',
             'guardrails'  => 'array',
-            // `float` (e não `decimal:2`): a temperatura vai direto para o provider como
-            // número — `decimal:2` devolveria string e obrigaria cast na borda.
+            // `float` (e não `decimal:2`, que devolveria string): o valor do catálogo ainda
+            // NÃO chega ao SDK — `AgenteBase` não implementa `temperature()`/`maxTokens()`,
+            // que é o que `TextGenerationOptions::forAgent()` lê (vendor/laravel/ai/src/Gateway/TextGenerationOptions.php:forAgent:69-76).
             'temperatura' => 'float',
             'max_tokens'  => 'integer',
             'versao'      => 'integer',

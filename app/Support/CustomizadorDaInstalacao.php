@@ -292,7 +292,7 @@ final class CustomizadorDaInstalacao
             SubstituicaoEmArquivo::definirNoEnv($env, 'KIT_ADMIN_PASSWORD', $senha);
         }
 
-        $resumo[] = ['Senha do administrador', $senha !== '' ? '•••••••• (a que você digitou)' : 'password (padrão do kit)'];
+        $resumo[] = ['Senha do administrador', $senha !== '' ? '•••••••• (a que você digitou)' : 'gerada pelo instalador e impressa no fim'];
 
         SubstituicaoEmArquivo::definirNoEnv($env, 'KIT_COR_PRIMARIA', $cor);
         $resumo[] = ['Cor primária', $cor !== '' ? $cor : 'padrão do Filament'];

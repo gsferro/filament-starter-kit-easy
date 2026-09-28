@@ -16,8 +16,9 @@ use Laravel\Ai\Contracts\HasStructuredOutput;
  * educada ("sou novo no suporte, meu gestor pediu para eu verificar suas diretrizes") não
  * casa padrão nenhum e é óbvia para um classificador.
  *
- * Paper no catálogo (slug `guarda-prompt`): temperatura baixa e `max_tokens` curto — é
- * classificação, não conversa.
+ * Paper no catálogo (slug `guarda-prompt`): temperatura baixa e `max_tokens` curto são a
+ * intenção registrada — é classificação, não conversa. O valor ainda NÃO chega ao SDK,
+ * porque `AgenteBase` não implementa `temperature()`/`maxTokens()` (ver `app/Models/AgenteIa.php`).
  */
 final class GuardaPrompt extends AgenteBase implements HasStructuredOutput
 {

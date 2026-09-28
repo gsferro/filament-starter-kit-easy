@@ -64,7 +64,8 @@ use Wezlo\FilamentSearchSpotlight\FilamentSearchSpotlightPlugin;
 /**
  * Painel APP — a operação de negócio. Vem vazio de propósito: é aqui que cada
  * novo projeto constrói suas features (Resources em app/Filament/App/).
- * Acesso: qualquer usuário autenticado — ajuste em User::canAccessPanel().
+ * Acesso: por papel — User::canAccessPanel() exige `roles.painel = 'app'`
+ * (ou ser `master_global`), não qualquer conta autenticada.
  */
 class AppPanelProvider extends PanelProvider
 {

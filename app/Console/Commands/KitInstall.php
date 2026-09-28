@@ -24,8 +24,10 @@ use function Laravel\Prompts\note;
  *
  * Roda automaticamente no `composer create-project` (post-create-project-cmd)
  * e pode ser reexecutado à mão depois de um `git clone` — todos os passos são
- * idempotentes. Nenhum passo aborta a instalação: o que falhar vira aviso com
- * a instrução de como refazer.
+ * idempotentes, e um passo idempotente que falhar vira aviso com a instrução
+ * de como refazer. Uma falha de INFRAESTRUTURA interrompe: com `--force`, um
+ * SQLite preso por outro processo faz `BancoSqlite::recriar()` lançar
+ * `RuntimeException` sem captura, e a instalação para ali.
  *
  * Num projeto NASCENDO ele também pergunta: nome, banco, credenciais do admin,
  * cor e multi-organização, no mesmo lugar em que o `laravel new` faz as dele.

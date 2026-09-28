@@ -259,9 +259,9 @@ class AdminPanelProvider extends PanelProvider
                     ->enableRateLimit(limit: 5, decayMinutes: 5, forceLogout: true),
 
                 /**
-                 * AUTORIA das jornadas de onboarding — e só ela. O consumo
-                 * (launcher/tours) pertence ao painel de negócio; a autoria fica
-                 * onde entrar já exige papel de administração.
+                 * AUTORIA das jornadas de onboarding — e só ela: hoje nenhum outro
+                 * painel registra o FilamentOnboardingPlugin. O consumo (launcher e
+                 * tours) vem desligado aqui; nada os liga em nenhum painel ainda.
                  */
                 FilamentOnboardingPlugin::make()
                     ->manageFlows((bool) config('filament-onboarding.enabled', true))
