@@ -683,3 +683,35 @@ it('[CT-19] o instalador anuncia o container em vez de negá-lo', function (): v
         )->and($trecho)->not->toContain('o kit não sobe container MySQL');
     }
 })->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| R27 (wiki diagramas-da-arquitetura) — o resumo nunca afirma `password`
+|--------------------------------------------------------------------------
+| `04-casos-de-teste.md` da wiki `diagramas-da-arquitetura`, bloco R9: até a correção, a linha
+| "Senha do administrador" do resumo dizia `password (padrão do kit)` com a resposta vazia — uma
+| senha que nunca existiu (o kit gera uma aleatória), e a pergunta já promete "senha aleatória".
+| `app/Support/CustomizadorDaInstalacao.php:295` mostra a correção já aplicada.
+*/
+
+/**
+ * [CT-41] o resumo descreve a senha de cada partição, e nunca cita `password` nem a senha em
+ * claro.
+ */
+it('[CT-41] o resumo do kit:install descreve a senha sem nunca citar password', function (string $senha, string $valorEsperado): void {
+    $resumo = customizadorNoTemp()->aplicar(respostasDeCustomizacao(['senha' => $senha]));
+
+    $linha = collect($resumo)->first(fn (array $par): bool => $par[0] === 'Senha do administrador');
+
+    expect($linha)->not->toBeNull('o resumo não tem a linha "Senha do administrador"')
+        ->and($linha[1])->toBe($valorEsperado);
+
+    $this->assertStringNotContainsString('password', $linha[1], 'a linha do resumo ainda cita "password"');
+
+    if ($senha !== '') {
+        $this->assertStringNotContainsString($senha, $linha[1], 'a linha do resumo expõe a senha em claro');
+    }
+})->with([
+    'senha vazia — gerada pelo instalador'  => ['', 'gerada pelo instalador e impressa no fim'],
+    'senha digitada — mascarada'            => ['segredo123', '•••••••• (a que você digitou)'],
+])->group('kit');

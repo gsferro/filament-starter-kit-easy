@@ -1382,6 +1382,43 @@ function caminhosDoKit(): array
  * é exatamente o que a rule proíbe: em vez de estourar redeclaração, ficam duas funções
  * idênticas que divergem em silêncio.
  */
+/**
+ * O bloco de UM serviço do `docker-compose.yml`: do `  <nome>:` até a próxima chave de coluna 2
+ * (outro serviço) ou de coluna 0 (o `volumes:` de topo). Devolve `''` quando o serviço não existe.
+ *
+ * Movido de `tests/Kit/MysqlNoDockerTest.php` (era closure local) porque a wiki
+ * `diagramas-da-arquitetura` ganhou um segundo consumidor — `tests/Kit/DiagramasDaArquiteturaTest.php`,
+ * que confere os profiles do DG-18 contra o mesmo `docker-compose.yml`. `.ai/rules/testes.md`: helper
+ * usado por mais de um arquivo vive aqui, nunca clonado.
+ */
+function blocoDoServico(string $compose, string $servico): string
+{
+    $linhas = explode("\n", $compose);
+    $dentro = false;
+    $bloco  = [];
+
+    foreach ($linhas as $linha) {
+        if ($linha === '  '.$servico.':') {
+            $dentro = true;
+
+            continue;
+        }
+
+        if ($dentro) {
+            $fimDeServico = preg_match('/^  \S/', $linha) === 1;
+            $fimDeTopo    = preg_match('/^\S/', $linha) === 1;
+
+            if ($fimDeServico || $fimDeTopo) {
+                break;
+            }
+
+            $bloco[] = $linha;
+        }
+    }
+
+    return implode("\n", $bloco);
+}
+
 function codigoSemComentario(string $codigo): string
 {
     $saida = '';

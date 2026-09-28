@@ -220,7 +220,7 @@ Windows pelo lançador `pestw.cmd` com `--covered-only --no-tia` (rule do projet
 ## Setup Global
 
 ### Personas
-- `master_global`, `admin`, `infra`, `panel_user` — `usuarioDoKit($papel, $email)` (`tests/Pest.php:usuarioDoKit:491`), depois de `$this->seed([PapeisSeeder::class, ShieldPermissionsSeeder::class])` (o `seed()` do `TestCase` passa por `db:seed`, `tests/TestCase.php:seed:158`)
+- `master_global`, `admin`, `infra`, `panel_user` — `usuarioDoKit($papel, $email)` (`tests/Pest.php:usuarioDoKit:491`), depois de `$this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class])` *(alterado em 2026-09-28: a ordem inversa deixava toda permissão vazia — o `PapeisSeeder` sincroniza permissões que ainda não existem; medido pelo executor do lote K, e é a ordem de `tests/Kit/LixeiraTest.php`)* (o `seed()` do `TestCase` passa por `db:seed`, `tests/TestCase.php:seed:158`)
 - sem papel — `usuarioCom(null)` (`tests/Pest.php:usuarioCom:404`)
 - `admin_app` e `admin` dentro de organização — só em `tests/Tenancy`: `usuarioComPapel($papel, $org)` (`tests/Pest.php:usuarioComPapel:725`), `tenant()` (`tests/Pest.php:tenant(:386`)
 - executor da desativação: **outro** `master_global` autenticado — desativar a própria conta é recusado (`app/Models/User.php:propria_conta:349`)
