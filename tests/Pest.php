@@ -1063,6 +1063,16 @@ function paginasDoSite(string $idioma): array
  * é pulada inteira, do jeito que apareceu, até o fechamento da MESMA marca e do MESMO tamanho (ou
  * maior); só fora dela `<!--`/`-->` e ` ```mermaid ` contam.
  *
+ * ## A info string pode ter META depois da linguagem (RD2-18)
+ *
+ * O CommonMark aceita texto depois da linguagem na info string da cerca de ABERTURA (` ```html
+ * title="x" `, ` ```mermaid title="Exemplo" `) — só a linguagem (a primeira palavra) importa.
+ * Exigir a linha INTEIRA em branco depois dela (como CR-7 fazia) faz a cerca alheia com meta não
+ * casar nem como "mermaid" nem como "outra linguagem a pular": ela vira texto comum, o `<!--` de
+ * exemplo dentro dela vaza (CR-7 de novo, por outra porta) e um ` ```mermaid ` de verdade que vier
+ * depois some (`bloco escondido em cerca alheia lida como texto`). A cerca de FECHAMENTO continua
+ * exigindo a linha inteira em branco (o CommonMark não aceita meta ali).
+ *
  * @return list<array{bloco: string, linha: int, idCatalogo: ?string, dentroDeComentarioHtml: bool}>
  */
 function blocosMermaidDe(string $markdown): array
@@ -1078,7 +1088,12 @@ function blocosMermaidDe(string $markdown): array
         // Delimitador `#`, e não `~`: a própria alternativa da cerca de til usa o caractere `~`,
         // e um delimitador `~` cru quebra ali com "Unknown modifier" — o `~` da cerca fecha o
         // regex antes da hora.
-        if (preg_match('#^\s*(`{3,}|~{3,})\s*(\S*)\s*$#', $linha, $cercaQualquer) === 1
+        //
+        // Sem `\s*$` no fim (RD2-18): a info string pode ter META depois da linguagem
+        // (` ```html title="x" `) — só a PRIMEIRA palavra (a linguagem) decide se a cerca é
+        // "mermaid" ou "outra, a pular"; exigir linha em branco depois dela perdia a cerca com
+        // meta por inteiro (nem mermaid, nem "outra" — texto comum, e o `<!--` de exemplo vazava).
+        if (preg_match('#^\s*(`{3,}|~{3,})\s*(\S*)#', $linha, $cercaQualquer) === 1
             && $cercaQualquer[2] !== 'mermaid'
         ) {
             $marcadorAlheio = $cercaQualquer[1][0];
@@ -1105,7 +1120,10 @@ function blocosMermaidDe(string $markdown): array
             $dentroDeComentario = true;
         }
 
-        if (preg_match('#^\s*(`{3,}|~{3,})\s*mermaid\s*$#', $linha, $cerca) !== 1) {
+        // Idem (RD2-18): `mermaid` pode vir seguido de meta (` ```mermaid title="x" `) — o que
+        // fecha a linha aqui é a cerca de FECHAMENTO, abaixo, que continua exigindo linha em
+        // branco (o CommonMark não aceita meta ali).
+        if (preg_match('#^\s*(`{3,}|~{3,})\s*mermaid(?:\s|$)#', $linha, $cerca) !== 1) {
             if (str_contains($linha, '-->')) {
                 $dentroDeComentario = false;
             }
@@ -1201,6 +1219,209 @@ function blocoDoCatalogoNaArvore(string $id, string $idioma): ?array
     }
 
     return null;
+}
+
+/*
+|--------------------------------------------------------------------------
+| RQ-34 — extrator de arestas normalizado (flowchart, erDiagram, sequenceDiagram, stateDiagram)
+|--------------------------------------------------------------------------
+|
+| Aqui, e não em tests/Kit/DiagramasDaArquiteturaTest.php, porque toda guarda de ARESTA do bloco
+| REAL usa (CT-10, CT-11, CT-73, CT-83, CT-63, CT-94) — a mesma razão de blocoDoCatalogoNaArvore
+| acima (.ai/rules/testes.md, RD-11): um helper usado por mais de um propósito no MESMO arquivo
+| ainda pode morar em tests/Pest.php quando o achado que o motivou (RQ-34) o declara compartilhado.
+|
+| RD2-10/RD2-11: as guardas antigas comparavam string crua com UMA forma de seta (`\s*-->\s*`, ou
+| a string literal `reverb --> painel_admin`) — uma aresta desenhada com `--->`, `-.->`, `==>` etc.
+| (mesmo grafo, sintaxe Mermaid válida) passava sem ser vista. RD2-12: a mesma cegueira valia para
+| `erDiagram` (regex fixa por cardinalidade e por CAIXA — `USER`/`ROLE` maiúsculo nunca casava com
+| o `users`/`roles` reais, minúsculos).
+*/
+
+/** As formas de seta de `flowchart`/`stateDiagram-v2` reconhecidas (RD2-10/RD2-11): normal (2 a 4
+ * traços), pontilhada (1 ou 2 pontos), grossa (2 ou 3 iguais), círculo e X. */
+const SETA_DE_FLUXO = '(?:-{2,4}>|-\.{1,2}->|={2,3}>|--o|--x)';
+
+/** O desenho de um nó (a forma logo depois do ID: `["..."]`, `{"..."}`, `(["..."])`, etc.), quando
+ * houver — usado para PULAR o desenho ao procurar a próxima aresta na mesma linha. */
+const FORMA_DE_NO_DE_FLUXO = '(?:\(\[[^\]\n]*\]\)|\[\([^\)\n]*\)\]|\[[^\]\n]*\]|\{[^}\n]*\}|\([^\)\n]*\))?';
+
+/**
+ * Existe uma aresta DIRETA $de -> $para num bloco `flowchart`/`stateDiagram-v2`, em QUALQUER forma
+ * de seta (RD2-10/RD2-11), com ou sem rótulo (`-->|"rótulo"|` ou sem rótulo) — inclusive um elo de
+ * uma cadeia `A --> B --> C` (a busca é por SUBSTRING "de(forma)? seta para", não por linha
+ * inteira, e "B --> C" é substring de "A --> B --> C"). Ignora o que vier depois do ID de destino
+ * (o desenho do PRÓPRIO nó, ex. `nega_403["Nega — 403"]`) — só o ID conta como identidade da
+ * aresta, nunca o rótulo humano (a mesma regra de RD-03).
+ */
+function existeArestaDeFluxo(string $bloco, string $de, string $para): bool
+{
+    return (bool) preg_match(
+        '/\b'.preg_quote($de, '/').'\b'.FORMA_DE_NO_DE_FLUXO.'\s*'.SETA_DE_FLUXO.'\s*(?:\|[^|\n]*\|\s*)?'.preg_quote($para, '/').'\b/',
+        $bloco,
+    );
+}
+
+/**
+ * O rótulo do PRÓPRIO nó $id num bloco `flowchart`/`stateDiagram-v2` (o texto do desenho, entre
+ * aspas ou não: `id{"texto"}`, `id["texto"]`, `id(["texto"])`, `id("texto")`) — `null` se o nó
+ * nunca é desenhado com forma neste bloco (só citado como origem/destino de aresta).
+ *
+ * @return array<string, string>
+ */
+function rotulosDeNoDeFluxo(string $bloco): array
+{
+    $rotulos = [];
+
+    preg_match_all(
+        '/\b([A-Za-z0-9_]+)(?:\(\[\s*"?([^"\]\)]*?)"?\s*\]\)|\[\(\s*"?([^"\]\)]*?)"?\s*\)\]|\[\s*"?([^"\]]*?)"?\s*\]|\{\s*"?([^"}]*?)"?\s*\}|\(\s*"?([^")]*?)"?\s*\))/',
+        $bloco,
+        $m,
+        PREG_SET_ORDER,
+    );
+
+    foreach ($m as $grupo) {
+        $id = $grupo[1];
+
+        if (array_key_exists($id, $rotulos)) {
+            continue;
+        }
+
+        foreach (array_slice($grupo, 2) as $possivel) {
+            if ($possivel !== '') {
+                $rotulos[$id] = trim($possivel);
+
+                break;
+            }
+        }
+    }
+
+    return $rotulos;
+}
+
+/**
+ * Todas as arestas de um bloco `flowchart`, NA ORDEM em que aparecem, com o rótulo quando houver
+ * (`-->|"rótulo"|` ou `-- rótulo -->`) — uma cadeia `A --> B --> C` vira dois elos. Ignora linhas
+ * de metadado (`accTitle`/`accDescr`/`classDef`/`class`/`style`/`subgraph`/`end`/comentário `%%`).
+ * Usado quando é preciso achar arestas SEM saber os dois IDs de antemão (ex. o fato do DG-03,
+ * RD2-09) — quando os dois IDs já são conhecidos, `existeArestaDeFluxo()` é mais simples.
+ *
+ * @return list<array{de: string, para: string, rotulo: ?string}>
+ */
+function arestasDeFluxo(string $bloco): array
+{
+    $rotuloPipe  = SETA_DE_FLUXO.'\s*\|\s*"?([^"|]*)"?\s*\|';
+    $rotuloTraco = '--\s+"?([^"\n-]+?)"?\s*'.SETA_DE_FLUXO;
+    $arestas     = [];
+
+    foreach (explode("\n", $bloco) as $linha) {
+        $linha = trim($linha);
+
+        if ($linha === ''
+            || preg_match('/^(%%|flowchart|graph|stateDiagram|erDiagram|sequenceDiagram|accTitle|accDescr|classDef|class\s|style\s|state\s|note\s|linkStyle\s|subgraph|end$)/i', $linha) === 1
+            || preg_match('/'.SETA_DE_FLUXO.'/', $linha) !== 1
+        ) {
+            continue;
+        }
+
+        $resto   = $linha;
+        $deAtual = null;
+
+        while (preg_match('/^\s*([A-Za-z0-9_]+)\s*'.FORMA_DE_NO_DE_FLUXO.'\s*(?:'.$rotuloPipe.'|'.$rotuloTraco.'|'.SETA_DE_FLUXO.')/', $resto, $m) === 1) {
+            $de     = $deAtual ?? $m[1];
+            $rotulo = match (true) {
+                ($m[2] ?? '') !== '' => $m[2],
+                ($m[3] ?? '') !== '' => $m[3],
+                default              => null,
+            };
+
+            $resto = substr($resto, strlen($m[0]));
+
+            if (preg_match('/^\s*([A-Za-z0-9_]+)\s*'.FORMA_DE_NO_DE_FLUXO.'/', $resto, $mPara) !== 1) {
+                break;
+            }
+
+            $arestas[] = ['de' => $de, 'para' => $mPara[1], 'rotulo' => $rotulo !== null ? trim($rotulo) : null];
+            $deAtual   = $mPara[1];
+            $resto     = substr($resto, strlen($mPara[0]));
+        }
+    }
+
+    return $arestas;
+}
+
+/**
+ * A relação `erDiagram` entre duas entidades, em qualquer ordem de declaração — as duas
+ * cardinalidades (`||` exatamente um, `|o` zero ou um, `}o`/`o{` zero ou muitos, `}|`/`|{` um ou
+ * muitos), o rótulo e se a linha veio invertida ($b antes de $a). `null` se não houver relação
+ * DIRETA entre as duas (RD2-12: a conta e o papel do kit se ligam por `model_has_roles`, então
+ * `relacaoDeEr($bloco, 'users', 'roles')` é `null` no bloco correto).
+ *
+ * @return ?array{cardDe: string, cardPara: string, rotulo: ?string, invertida: bool}
+ */
+function relacaoDeEr(string $bloco, string $a, string $b): ?array
+{
+    $card = '(?:\|\||\|o|o\||o\{|\{o|\}o|o\}|\|\{|\{\||\}\||\|\})';
+
+    foreach (explode("\n", $bloco) as $linha) {
+        $linha = trim($linha);
+
+        if (preg_match('/^([A-Za-z0-9_]+)\s*('.$card.')--('.$card.')\s*([A-Za-z0-9_]+)\s*(?::\s*"?([^"\n]*)"?)?\s*$/', $linha, $m) !== 1) {
+            continue;
+        }
+
+        if ($m[1] === $a && $m[4] === $b) {
+            return ['cardDe' => $m[2], 'cardPara' => $m[3], 'rotulo' => isset($m[5]) ? trim($m[5]) : null, 'invertida' => false];
+        }
+
+        if ($m[1] === $b && $m[4] === $a) {
+            return ['cardDe' => $m[3], 'cardPara' => $m[2], 'rotulo' => isset($m[5]) ? trim($m[5]) : null, 'invertida' => true];
+        }
+    }
+
+    return null;
+}
+
+/**
+ * As mensagens de um bloco `sequenceDiagram`, NA ORDEM em que aparecem: `A->>B`, `A-->>B`,
+ * `A-)B`, `A-xB`, com o rótulo depois de `:`.
+ *
+ * @return list<array{de: string, seta: string, para: string, rotulo: ?string}>
+ */
+function mensagensDeSequencia(string $bloco): array
+{
+    $mensagens = [];
+
+    foreach (explode("\n", $bloco) as $linha) {
+        $linha = trim($linha);
+
+        if (preg_match('/^([A-Za-z0-9_]+)\s*(-{1,2}>>|-\)|-x)\s*([A-Za-z0-9_]+)\s*:?\s*(.*)$/', $linha, $m) === 1) {
+            $mensagens[] = ['de' => $m[1], 'seta' => $m[2], 'para' => $m[3], 'rotulo' => $m[4] !== '' ? trim($m[4]) : null];
+        }
+    }
+
+    return $mensagens;
+}
+
+/**
+ * As transições de um bloco `stateDiagram-v2`, NA ORDEM em que aparecem: `A --> B : evento`
+ * (`[*]` conta como estado inicial/final).
+ *
+ * @return list<array{de: string, para: string, evento: ?string}>
+ */
+function transicoesDeEstado(string $bloco): array
+{
+    $transicoes = [];
+
+    foreach (explode("\n", $bloco) as $linha) {
+        $linha = trim($linha);
+
+        if (preg_match('/^(\[\*\]|[A-Za-z0-9_]+)\s*-->\s*(\[\*\]|[A-Za-z0-9_]+)\s*(?::\s*(.*))?$/', $linha, $m) === 1) {
+            $transicoes[] = ['de' => $m[1], 'para' => $m[2], 'evento' => isset($m[3]) && $m[3] !== '' ? trim($m[3]) : null];
+        }
+    }
+
+    return $transicoes;
 }
 
 /** Um documento markdown sem as linhas de citação (`>`), para asserção de AUSÊNCIA. */

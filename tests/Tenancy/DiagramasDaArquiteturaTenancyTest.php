@@ -22,14 +22,15 @@ use Livewire\Livewire;
  * (`.ai/rules/testes.md` §"Nem todo papel do kit existe em toda suíte": `admin_app` só existe
  * aqui).
  *
- * A parte de cada cenário que executa CÓDIGO REAL (canAccessPanel(), a máquina de estados do
- * convite pelos pontos de entrada) roda e vale sempre, com ou sem diagrama. A parte que confere
- * o bloco Mermaid (README/`docs/`) depende de `docs/` existir — ausente num projeto nascido do
- * `composer create-project` (`.gitattributes:40 /docs export-ignore`) —, por isso a sentinela
- * abaixo, na MESMA forma de `tests/Kit/DiagramasDaArquiteturaTest.php:beforeEach:70` (RD-02): sem
- * ela, `composer test:kit` (que roda `--testsuite=Kit,Tenancy`, `composer.json:test:kit:156`)
- * nasceria vermelho em toda instalação nova, quando o certo é pular — o mesmo comportamento que
- * o arquivo irmão já tinha.
+ * *(RD2-17, 2026-09-28, correção)* Cada cenário mistura uma parte que executa CÓDIGO REAL
+ * (canAccessPanel(), a máquina de estados do convite pelos pontos de entrada) com a conferência do
+ * bloco Mermaid (README/`docs/`) — mas a sentinela abaixo pula o ARQUIVO INTEIRO, inclusive a
+ * parte de código real: não há hoje neste arquivo um cenário que rode independente de `docs/`
+ * existir. `docs/` fica ausente num projeto nascido do `composer create-project`
+ * (`.gitattributes:40 /docs export-ignore`), por isso a sentinela, na MESMA forma de
+ * `tests/Kit/DiagramasDaArquiteturaTest.php:beforeEach:70` (RD-02): sem ela, `composer test:kit`
+ * (que roda `--testsuite=Kit,Tenancy`, `composer.json:test:kit:156`) nasceria vermelho em toda
+ * instalação nova, quando o certo é pular — o mesmo comportamento que o arquivo irmão já tinha.
  */
 beforeEach(function (): void {
     if (! naArvoreDoKit()) {
