@@ -1,24 +1,29 @@
 # feature-quality-gate — QA no Agente
 
-> **Status: implementada — [`SKILL.md`](SKILL.md) v1.5.1.**
-> Requer `feature-wiki` ≥ **2.10.0** (que introduziu o `00-requisito.md`, o oráculo desta skill).
+> **Status: implementada — [`SKILL.md`](SKILL.md) v1.7.0.**
+> Requer `feature-wiki` ≥ **4.0.0** (que traz a `feature-test-design` ≥ 1.16.0) — o porquê de cada versão mínima, e o que degrada sem cada item, está em [Dependências](#dependências).
 >
-> Este documento é o registro da pesquisa que precedeu a implementação: qual problema ela resolve, o que já existe no mercado (incluindo alternativas MIT), qual lacuna sobra, e por que essa lacuna justificou uma skill nova em vez de instalar o que estava pronto. Ele continua sendo o documento **para humanos** — vantagens, escopo, dependências e limitações.
+> **`SKILL.md` fala com o agente; este README fala com a pessoa**: por que a skill existe, quando usar, o que ela não faz e do que depende. Procedimento, dimensões, roteamento, convergência e o template do `06` estão só no [`SKILL.md`](SKILL.md) — aqui eles são explicados e apontados, não copiados.
 >
-> **`SKILL.md` fala com o agente; este README fala com a pessoa.** Procedimento, gates e templates estão no `SKILL.md` e não são duplicados aqui.
+> A segunda metade é o registro da pesquisa que precedeu a implementação (2026-08-14): qual problema ela resolve, o que já existe no mercado (incluindo alternativas MIT), qual lacuna sobra, e por que essa lacuna justificou uma skill nova em vez de instalar o que estava pronto.
 >
 > **Validado em campo (1.5.0, 2026-09-21).** Primeira execução como sub-agente cego (`fw-qa-gate`,
 > `opus`, sem Edit/Write) numa feature completa: `REPROVADO → especificação`, 8 achados — duas
 > perguntas de requisito que ninguém tinha feito e **dois achados contra o próprio orquestrador**
 > (número da Verificação Final sem comando que o reproduza; degradação declarada com a ferramenta
 > presente). A checagem **L6** e a regra de plausibilidade do `--mutate` na dimensão K nasceram daí.
+>
+> **Medição.** A skill ainda não tem rodada própria no protocolo de [`experimentos/`](https://github.com/gsferro/laravel-ai-skills/blob/main/experimentos/README.md), que mede a derivação dos casos de teste. A execução acima é uso real, não rodada controlada. O custo do gate antes e depois da 1.7.0 (scripts no lugar de grep reescrito, teto por cobertura) também não foi medido — fica pendente lá. A fonte das tabelas de medição da coletânea é [`experimentos/README.md`](https://github.com/gsferro/laravel-ai-skills/blob/main/experimentos/README.md).
 
 ---
 
 ## Índice
 
 **Uso**
-- [Uso da skill](#uso-da-skill)
+- [Quando usar](#quando-usar)
+- [O que ela entrega](#o-que-ela-entrega)
+- [Limites](#limites)
+- [Dependências](#dependências)
 
 **Motivação e estudo**
 - [TL;DR do veredito](#tldr-do-veredito)
@@ -36,93 +41,95 @@
 - [Convergência e separação de poderes](#convergência-e-separação-de-poderes)
 - [Riscos honestos](#riscos-honestos)
 - [Critério eliminatório](#critério-eliminatório)
-- [Dependências](#dependências)
 - [Fontes](#fontes)
 
 ---
 
-## Uso da skill
+## Quando usar
 
-A skill é a **próxima estação da esteira** — roda no step 8 da [`feature-wiki`](../feature-wiki/README.md), depois de implementar e com os testes verdes.
+A skill é a **próxima estação da esteira** — roda no step 11 da [`feature-wiki`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-wiki/README.md), depois de implementar, revisar o diff (step 9) e reconciliar a wiki (step 10), com os testes verdes, **antes de abrir o PR**. Dentro da esteira a `feature-wiki` a invoca sozinha. Fora dela, peça para "validar a feature", "revisar como QA" ou "conferir se atende ao requisito" — inclusive numa feature entregue há tempo.
 
-### O defeito que ela existe para pegar
+Não é hora de usá-la com teste vermelho (primeiro fazer passar), numa refatoração pequena e interna já coberta por teste verde (essa nem abre wiki; a larga, com `## Natureza da Wiki: refatoração`, roda o gate), nem antes de implementar (revisão de plano é o step 6). A lista completa está em [Quando Invocar](SKILL.md#quando-invocar).
 
-**Omissão silenciosa**: cláusula do requisito que nunca virou passo do plano, nunca virou teste, nunca virou código.
+O defeito que ela existe para pegar é a **omissão silenciosa**: cláusula do requisito que nunca virou passo do plano, nunca virou teste, nunca virou código. Tudo verde, feature incompleta — ver [Ganho real 1](#ganho-real-1--omissão-silenciosa-e-a-matriz-de-rastreabilidade).
 
-| RQ | Cláusula | Passo PRD | CT | CT-B | Código | Veredito |
-|----|----------|-----------|----|------|--------|----------|
-| RQ-01 | gerar relatório em lote | 3, 4 | CT-01 | CT-B01 | `GerarRelatorioLoteJob` | OK |
-| RQ-03 | notificar coordenador | — | — | — | — | ❌ **omissão silenciosa** |
-
-Nenhum teste falhou porque **nunca existiu teste** — e nunca existiu teste porque a cláusula nunca entrou no plano. CT e CT-B só podem falhar no que foi especificado; o `ponytail-review` audita **excesso**, nunca **falta**; o TIA mede impacto do diff, não cobertura do requisito. **É uma classe de defeito estruturalmente invisível para o resto do ciclo.**
-
-### As 12 dimensões
-
-| # | Dimensão | Exemplo do que pega |
-|---|---|---|
-| A | Cobertura do requisito | cláusula sem plano/teste/código |
-| B | Fronteiras e dados | `-1`, string de 500 chars, upload de 0 byte, 29/02 |
-| C | Matriz de permissão | 3 papéis × 4 ações = 12 células; o CT cobre 1 |
-| D | Observabilidade real | o PRD manda logar `[Classe@Método]` — **e ninguém confere**. Inclui **PII vazando no context** |
-| E | Performance | N+1, query sem índice, `->get()` onde cabia paginação |
-| F | UX de erro | "Erro ao processar" em vez de "CPF já inscrito na turma X" |
-| G | Tema e cor | **texto branco em fundo branco: `assertSee()` PASSA** |
-| H | Acessibilidade | teclado, foco, contraste, `alt` |
-| I | Segurança da superfície nova | IDOR, mass assignment, rota sem `can:` |
-| J | Regressão adjacente | só em wiki de evolução/correção |
-| K | Adequação da suíte | teste sem oráculo, `assertOk()` sozinho; mutation score por `--mutate` |
-| L | Consistência documental | PRD/ADR afirmando o que o código não faz; ID de CT só no teste; rule do projeto violada no diff; docs pt × en divergentes; frase em doc sem `RQ` de origem |
-
-A dimensão **D** é auto-referente e reveladora: a [`feature-wiki`](../feature-wiki/README.md) exige log em toda etapa de execução, com channel dedicado e context estruturado — e nada no ciclo verificava se isso acontecia. O quality gate fecha o laço da própria skill principal.
-
-A dimensão **L** (1.2.0) nasceu de uma medição: numa feature real, depois do step 7 da `feature-wiki` "concluído", uma revisão independente achou 31 itens, 27 deles texto defasado — PRD, ADR, `04`, docs e rules. Quem escreveu o texto o lê como certo; a auditoria tem de ser de quem não escreveu.
-
-### Roteamento: 5 destinos, não 2
-
-Esta é a peça que **não existe em nenhuma skill de QA do mercado** — verificado na pesquisa.
-
-| Achado | Diagnóstico | Volta para |
-|---|---|---|
-| requisito ambíguo/incompleto | defeito de **especificação** | escrita da wiki (`00`/`01`/`02`) |
-| implementação diverge do PRD | defeito de **código** | execução do passo |
-| comportamento errado sem CT que cubra | defeito de **teste** | `04`/`05`, **depois** implementação |
-| ambiente, dado, build | não é defeito do produto | infra |
-| comportamento correto, expectativa errada | não é defeito | fecha, registrando o porquê |
-
-Prioridade quando há vários: **especificação > teste > implementação**. Corrigir código contra especificação ambígua é retrabalho garantido.
-
-E no destino "teste", a ordem importa: **escrever o CT que falha primeiro**, só então corrigir. Invertido, perde-se a prova e o defeito volta na feature seguinte.
-
-### Regras que impedem a skill de virar teatro
-
-| Princípio | Efeito prático |
-|---|---|
-| **Oráculo externo** | o PRD é **alegação a ser testada**, não verdade |
-| **Separação de poderes** | **não corrige nada** — lê, reproduz, reporta. Quem julga não conserta |
-| **Convergência** | teto de **3 ciclos**; ciclo sem achado novo encerra; estourar escala a você |
-| **Teto por risco** | 3 perfis: `ajuste` sem UI roda 3 dimensões, não 10 |
-| **Degradação graciosa** | sem MCP, sem `qa-skills`, sem Pest 5 ela roda — e **declara no relatório** o que não pôde verificar |
-
-### Saída
+## O que ela entrega
 
 `06-relatorio-qa.md` na wiki, com veredito (`APROVADO` / `APROVADO COM DÉBITO` / `REPROVADO → destino`), achados com repro mínima e evidência, a Matriz de Rastreabilidade (**impressa só se houver lacuna**, para não virar métrica de vaidade) e uma seção **"Não Verificado"** declarando o alcance real da execução.
 
-### Dependências
+O veredito tem **teto por cobertura** (1.7.0): com qualquer dimensão não verificada — fora do perfil, sem app, sem MCP, oráculo degradado —, o máximo é `APROVADO COM DÉBITO`, e o débito lista cada dimensão com a causa. `APROVADO` passou a significar "tudo foi olhado e nada ficou aberto", não "o que foi olhado passou".
 
-**Obrigatórias:** `feature-wiki` ≥ 2.10.0 (pelo `00-requisito.md`), app servido, Pest.
+`NÃO APLICÁVEL` não é veredito do gate: é o `06` mínimo que a sessão da `feature-wiki` escreve, sem rodar o gate, quando pula o step 11 porque a feature não tem superfície validável.
 
-**Opcionais** — a skill degrada sem cada uma: Pest 5 (`--parallel --tia` para regressão), `pest-plugin-agent` (sondagem), `pest-plugin-browser` (CT-B), Playwright MCP (inventário de elementos, tema, console/rede), Boost MCP (`Browser Logs`, `database-query`), PCOV/Xdebug (pré-requisito do `--tia`).
+Cada achado sai com um destino — especificação, implementação, teste, infra ou não-defeito —, e a feature volta para a estação onde o defeito nasceu. O cabeçalho do `06` diz quem julgou: um sub-agente que não viu a conversa, ou a mesma sessão que escreveu a wiki.
 
-**Técnica de QA delegada** (MIT, instalar só as usadas):
+## Limites
+
+- **Não corrige nada.** Lê, reproduz e reporta. Quem corrige é a estação do destino, na volta do loop: a escrita da wiki (especificação; step 4 da `feature-wiki`, com o `04` re-derivado no step 7 quando o `01` muda), a execução do passo do PRD (implementação), a `feature-test-design` (teste). O texto defasado que a dimensão L acha é corrigido no step 10 da `feature-wiki`.
+- **Não substitui teste.** Encontra a lacuna; quem prova é o CT/CT-B versionado.
+- **Depende do `00-requisito.md`.** Sem ele, roda em modo degradado e declara que a omissão silenciosa não foi verificada — é o [critério eliminatório](#critério-eliminatório) do estudo.
+- **Mutation score não enxerga omissão.** Só muta código que existe: score alto não prova que o requisito foi entregue.
+- **Profundidade proporcional ao risco.** Feature de ajuste, sem UI e de domínio comum roda 5 dimensões, não 12. O que fica de fora é declarado no relatório, não verificado — e, desde a 1.7.0, segura o veredito em `APROVADO COM DÉBITO`: `APROVADO` é inalcançável nos perfis mínimo e padrão, de propósito. Isso não bloqueia nada — a feature segue para o PR, e o débito é a declaração honesta do que não foi verificado.
+- **Sem app servido, sem MCP ou sem driver de cobertura**, as dimensões que dependem deles ficam estáticas ou vão para "Não Verificado" — ver [Dependências](#dependências).
+- **Metade é julgamento, e está dito onde.** A tabela *Mecânica × julgamento* do `SKILL.md` diz, por dimensão, o que é script (A, G, K1, L1, L2, L4, L6), o que é contagem ou leitura mecânica e o que é opinião do juiz. Script dá candidatos; quem decide o achado é o gate. A L4 (rules × diff) é mista: o script lista as rules que casam o diff e acusa a que não tem linha no `03`; se a rule foi aplicada, não se aplica ou foi violada continua julgamento.
+- **Só no Claude Code, com o sub-agente instalado, parte da independência é construção**: o `fw-qa-gate` não tem Edit/Write (construção) e não recebe a conversa. No `Bash`, um hook `PreToolUse` da `feature-wiki` nega os comandos que alteram a árvore — cobertura **heurística**, por padrão de comando; o `git status --porcelain` de antes e de depois, que o agente devolve, é o que a sessão confere. Em outro host, quem julga é quem escreveu, e o `06` diz isso.
+- **O juiz lê o `03`**, que guarda resíduo da conversa (`## Despachos`, `## Desvios do Plano`). É por desenho — a L6 confere as alegações dele —, e o perfil do hook do gate não o bloqueia.
+
+Os limites que o [estudo de 2026-09-26](https://github.com/gsferro/laravel-ai-skills/blob/main/estudos/2026-09-26-agentskills-spec-to-spec-to-tickets.md) listou em §7.4 (itens 8 e 9 do §8) foram tratados na 1.7.0: teto por cobertura, tabela mecânica × julgamento, dimensão I restrita ao que a revisão do diff (step 9) não cobriu — lido de `## Revisão do Diff (step 9)` do `03` —, retorno com delimitadores e `git status` antes/depois. Continua aberto: o custo do gate não foi medido, e o `06` de mais de ~150 linhas ainda estoura com muitos achados.
+
+## Dependências
+
+| Item | Versão mínima | Para quê | Sem ele |
+|---|---|---|---|
+| `feature-wiki` | **4.0.0** | produz as entradas (`00`–`03`), os scripts que o gate roda (A, L1, L2, L4, L6), o lançador `pestw.cmd` e o hook do `fw-qa-gate`, e despacha esta skill no step 11 | sem `01`, a skill não roda; sem `00`, [oráculo degradado](SKILL.md#oráculo-degradado); sem os scripts, as checagens deles vão para "Não Verificado" |
+| `feature-test-design` | **1.16.0** (exigida pela `feature-wiki` 4.0.0) | produz o `04`/`05` auditados — com `P-nn` na origem dos CT, que a matriz cruza — e recebe todo achado de destino 3; traz a referência do `pest-plugin-browser` que a seção de [dark mode](#achado-técnico-dark-mode-inverte-a-regra-de-visão--estrutura) deste README aponta | sem `04`, a skill não roda |
+| `feature-tickets` | 1.0.0 | opcional: com `07-tickets/`, a coluna `Ticket` da matriz vem do `indice.sh --check` da `feature-tickets` — fonte única da alocação (cada `RQ`/`P-nn`, CT e CT-B em exatamente um ticket), das arestas e da fatia vertical; o gate não refaz a checagem | feature não fatiada — matriz sem a coluna; com `07-tickets/` e sem o script, essa checagem vai para "Não Verificado" |
+| `bash` e `php` no PATH | — | scripts desta skill e da `feature-wiki` (PHP embutido no `.sh`) | as checagens com script vão para "Não Verificado" |
+| Projeto Laravel com Pest | Pest 4 | rodar CT e CT-B existentes | — |
+| App servido na `APP_URL` | — | dimensões dinâmicas | B, C, D, E, F, G, H e I ficam estáticas |
+| Pest 5 | 5 | `--parallel --tia` para regressão por impacto medido | regressão sem impacto medido, declarada em "Não Verificado" |
+| PCOV ou Xdebug | — | cobertura para o `--tia` e o `--mutate` | a dimensão K roda só o passo estático; a medição vai para "Não Verificado", depois de provar a ausência |
+| `pest-plugin-agent` (`--agent`) | Pest 5 | sondagem efêmera durante a validação | leitura estática do código; o que não foi sondado é declarado |
+| `pest-plugin-browser` | — | rodar e criar CT-B | dimensões G e H limitadas |
+| Playwright MCP | — | inventário de elementos, tema/cor, console/rede | `screenshot()`, `content()` filtrado e leitura do Blade; o resto vai para "Não Verificado" |
+| Boost MCP (`browser-logs`, `database-query`, `database-schema`, `search-docs`) | — | evidência de console e conferência de dados | o que dependia deles é declarado |
+| Project Rules do Laravel Boost (`.ai/rules/*.md`) | `laravel/boost` 2.4.12 | L4: o `conformidade-rules.sh` da `feature-wiki` lista as rules cujo `paths:` casa o diff e acusa a que não tem linha no `03`; o gate confere a linha e o código | L4 não roda — declarada em "Não Verificado" |
+| Skills do [`qa-skills`](https://github.com/petrkindlmann/qa-skills) (MIT) | — | técnica de QA delegada (SBTM, triagem, repro) | fallback inline de cada uma, registrado no relatório; não rebaixa o veredito, porque a dimensão rodou — ver [Delegação](SKILL.md#delegação-a-skills-externas) |
+| Claude Code com sub-agentes | — | a skill roda como `fw-qa-gate` (`opus`, **sem Edit/Write**, hook no `Bash`), sem receber a conversa que escreveu a wiki (ver [Limites](#limites)) | roda em linha, e o `06` declara a independência degradada |
+
+**Por que `feature-wiki` ≥ 4.0.0.** A 4.0.0 renumerou os steps (o gate é o 11; a revisão do diff, que a dimensão I lê, é o 9; a reconciliação, o 10) e trouxe o que a 1.7.0 usa: os scripts `rastreabilidade.sh` (âncora da A), `ids-ct.sh` (L1), `citacoes.sh` (L2), `conformidade-rules.sh` (L4) e `checkbox-sem-evidencia.sh` (L6), a seção `## Revisão do Diff (step 9)` do `03` (dimensão I), o `pestw.cmd` como arquivo (dimensão K no Windows), o hook `guarda-subagente.sh` do `fw-qa-gate`, as `P-nn` em `## Premissas` e as `## Perguntas ao Solicitante` no `00` (linhas `P-nn` da matriz; `RQ` aberta), e o `wikis/glossario.md` (L7). As peças mais antigas continuam: o `00-requisito.md` desde a 2.10.0, a `## Superfície Livewire` do `02` desde a 3.3.0, a `## Despachos` do `03` desde a 3.4.0. Com uma versão anterior, o que falta vai para "Não Verificado" — e segura o veredito no teto.
+
+### Instalação do sub-agente (Claude Code)
+
+A definição do agente vem nesta skill, em [`agents/fw-qa-gate.md`](agents/fw-qa-gate.md), para o
+`boost:add-skill` instalá-la junto. **O Claude Code só lê `.claude/agents/`**, então depois de
+instalar ou atualizar as skills copie os agentes de toda a esteira — uma vez, e de novo a cada
+atualização:
 
 ```bash
-# NÃO instalar as 50 — inflação de contexto. Copiar só as pastas necessárias.
-# risk-based-testing · exploratory-testing · ai-bug-triage
-# bug-reproduction · ai-qa-review · test-reliability
-npx skills add petrkindlmann/qa-skills
+mkdir -p .claude/agents
+cp .ai/skills/*/agents/*.md .claude/agents/
 ```
 
-Cada delegação tem **fallback inline** documentado na skill: se a skill externa não estiver instalada, o agente aplica a técnica resumida em 2-3 linhas e registra no relatório qual caminho usou.
+No PowerShell:
+
+```powershell
+New-Item -ItemType Directory -Force .claude\agents | Out-Null
+Copy-Item -Force .ai\skills\*\agents\*.md .claude\agents\
+Get-ChildItem .claude\agents\fw-*.md        # cinco arquivos
+```
+
+Espelhar as skills em `.claude/skills/` só é preciso sem `boost.json`: com ele, o `boost:update` cria
+cada `.claude/skills/<skill>` como symlink, e copiar por cima falha. Os dois casos estão em
+[Como Instalar no Claude Code](https://github.com/gsferro/laravel-ai-skills/blob/main/README.md#-como-instalar-no-claude-code),
+no README da coletânea.
+
+Sem a cópia, a `feature-wiki` não encontra `fw-qa-gate` e despacha um `general-purpose` com
+`model: opus` — funciona, mas com Edit/Write disponíveis e sem o hook: o "não corrige nada" passa a ser só instrução, também para a edição de arquivo.
+
+O hook do agente procura `feature-wiki/scripts/guarda-subagente.sh` em `.ai/skills/`,
+`.claude/skills/` e `~/.claude/skills/`. Sem a `feature-wiki` instalada, ele **falha fechado**:
+nega toda ferramenta, o agente devolve só a mensagem do hook, e a sessão cai no mesmo fallback.
 
 ---
 
@@ -167,7 +174,7 @@ E há um limite comum às três: **todas tomam o PRD como verdade.** O step 5 va
 
 ## Estudo de mercado: o que já existe
 
-Pesquisa feita antes de qualquer linha de desenho.
+Pesquisa feita antes de qualquer linha de desenho (pesquisa feita em 2026-08-14).
 
 | Fonte | O que é | Licença |
 |---|---|---|
@@ -195,7 +202,7 @@ E o `healer` do Playwright merece nota: ele **repara o teste até passar**. Numa
 
 ## A lacuna verificada
 
-Todas as opções acima produzem **mais teste** ou **mais relatório**. Nenhuma fecha o ciclo. A doc do próprio QASkills.sh é explícita ao descrever o estado da arte:
+Todas as opções acima produzem **mais teste** ou **mais relatório**. Nenhuma fecha o ciclo. Um post do blog do QASkills.sh (ver [Fontes](#fontes)) é explícito ao descrever o estado da arte:
 
 > "The article describes these as complementary layers of a testing pyramid rather than a **gated feedback loop**. **No skill routes findings back to specifications or implementation gates.**"
 
@@ -249,7 +256,7 @@ A **Matriz de Rastreabilidade** amarra cada cláusula do requisito a tudo que de
 cláusula → passo do PRD → CT → CT-B → código → resultado → veredito
 ```
 
-> **Nomenclatura.** O termo adotado nesta coletânea — em documentos, no `06-relatorio-qa.md` e na futura `SKILL.md` — é **Matriz de Rastreabilidade**. A sigla **RTM** (*Requirements Traceability Matrix*) fica disponível como referência quando o contexto pedir: vocabulário de QA formal (ISTQB), conversa com time de qualidade, ou auditoria de setor regulado, onde o artefato é conhecido por esse nome. Em prosa corrente, escrever por extenso.
+> **Nomenclatura.** O termo adotado nesta coletânea — em documentos, no `06-relatorio-qa.md` e no `SKILL.md` — é **Matriz de Rastreabilidade**. A sigla **RTM** (*Requirements Traceability Matrix*) fica disponível como referência quando o contexto pedir: vocabulário de QA formal (ISTQB), conversa com time de qualidade, ou auditoria de setor regulado, onde o artefato é conhecido por esse nome. Em prosa corrente, escrever por extenso.
 
 O valor não está em documentar o que existe — está em **expor a célula vazia**. E ela é **bidirecional**:
 
@@ -271,127 +278,74 @@ A linha **RQ-02** é a razão de existir da skill: **nenhum teste falhou porque 
 
 ## Ganho real 2 — As 12 dimensões que as camadas atuais não cobrem
 
-| # | Dimensão | Por que escapa hoje | Como verificar |
+Cada dimensão precisou responder por que as três camadas de revisão existentes não a cobrem. Aqui fica o porquê e um exemplo do que ela pega; o "como verificar" de cada uma está em [As 12 Dimensões](SKILL.md#as-12-dimensões).
+
+| # | Dimensão | Por que escapa hoje | Exemplo do que pega |
 |---|---|---|---|
-| **A** | Cobertura do requisito | CT só falha no especificado | a Matriz de Rastreabilidade acima |
-| **B** | Fronteiras e dados | CT cobre o caso do PRD, não os vizinhos | 0, -1, vazio, 500 chars, unicode/emoji, upload 0 byte, 29/02, timezone |
-| **C** | Matriz de permissão | o CT de autorização testa **1** papel | papéis × ações — 3 × 4 = 12 células, o CT cobre 1 |
-| **D** | Observabilidade real | o PRD **manda** logar `[Classe@Método]` — **quem confere?** | rodar o fluxo, ler `storage/logs/{feature}.log`, comparar com o especificado; checar PII no context |
-| **E** | Performance | CT passa em 3 queries ou em 300 | `Model::preventLazyLoading()`, contagem de queries, `pest --profile` |
-| **F** | UX de erro | `assertSee('erro')` passa com mensagem inútil | "Erro ao processar" × "CPF já inscrito na turma X"; form preserva o digitado? |
-| **G** | Tema e cor (dark mode) | **CT-B passa com texto invisível** — ver seção seguinte | grep de classe sem par `dark:` + inspeção visual nos dois temas |
-| **H** | Acessibilidade | só se alguém escreveu o CT-B | `assertNoAccessibilityIssues()`, teclado, foco pós-submit |
-| **I** | Superfície nova de segurança | fora do escopo do CT | IDOR em `/x/{id}` de outro tenant, mass assignment, rota sem `can:`, upload sem mime |
-| **J** | Regressão adjacente | TIA diz quais testes o diff afetou, não o que **não tinha teste** | só no modo evolução/correção |
+| **A** | Cobertura do requisito | CT só falha no especificado | cláusula sem plano/teste/código |
+| **B** | Fronteiras e dados | CT cobre o caso do PRD, não os vizinhos | `-1`, string de 500 chars, upload de 0 byte, 29/02 |
+| **C** | Matriz de permissão | o CT de autorização testa **1** papel | 3 papéis × 4 ações = 12 células; o CT cobre 1 |
+| **D** | Observabilidade real | o PRD **manda** logar `[Classe@Método]` — **quem confere?** | log fora do padrão da `feature-wiki`; **PII vazando no context** |
+| **E** | Performance | CT passa em 3 queries ou em 300 | N+1, query sem índice, `->get()` onde cabia paginação |
+| **F** | UX de erro | `assertSee('erro')` passa com mensagem inútil | "Erro ao processar" em vez de "CPF já inscrito na turma X" |
+| **G** | Tema e cor (dark mode) | **CT-B passa com texto invisível** — ver [achado técnico](#achado-técnico-dark-mode-inverte-a-regra-de-visão--estrutura) | **texto branco em fundo branco: `assertSee()` PASSA** |
+| **H** | Acessibilidade | só se alguém escreveu o CT-B | teclado, foco, contraste, `alt` |
+| **I** | Superfície nova de segurança | fora do escopo do CT | IDOR, mass assignment, rota sem `can:` |
+| **J** | Regressão adjacente | TIA diz quais testes o diff afetou, não o que **não tinha teste** | regra antiga silenciada pela evolução — só em wiki de evolução/correção/ajuste/refatoração, ou `nova` que toca infra compartilhada |
+| **K** | Adequação da suíte (a suíte pega defeito?) | ninguém pergunta se o teste **falharia** diante de implementação errada; 100% de linha é compatível com zero assertion útil | teste sem oráculo, `assertOk()` sozinho; mutante que sobrevive |
+| **L** | Consistência documental (wiki × código × docs × rules × glossário) | quem escreveu o texto o lê como certo; o step 10 registra desvios só no `03` | PRD/ADR afirmando o que o código não faz; ID de CT só no teste; rule do projeto violada no diff; docs pt × en divergentes; frase em doc sem `RQ` de origem; número da Verificação Final que nenhum comando reproduz; termo usado com sentido diferente do `wikis/glossario.md` |
 
 A dimensão **D** é auto-referente e reveladora: a `feature-wiki` exige log em toda etapa de execução, com channel dedicado e context estruturado — e **nada no ciclo atual verifica se isso aconteceu**. O quality-gate fecha o laço da própria skill principal.
+
+A dimensão **L** (1.2.0) nasceu de uma medição: numa feature real, depois da reconciliação da `feature-wiki` (hoje o step 10) "concluída", uma revisão independente achou 31 itens, 27 deles texto defasado — PRD, ADR, `04`, docs e rules. Quem escreveu o texto o lê como certo; a auditoria tem de ser de quem não escreveu.
 
 ---
 
 ## Ganho real 3 — Roteamento de achados
 
-A taxonomia que não existe no mercado. Cinco destinos, não dois:
+A taxonomia que não existe no mercado. Cinco destinos, não dois: **especificação**, **implementação**, **teste**, **infra** e **não-defeito**. Achado que só diz "está errado" devolve o problema sem dizer em que estação ele nasceu; roteado, requisito ambíguo volta para a escrita da wiki, e não para o código.
 
-| # | Achado | Diagnóstico | Volta para | Artefato |
-|---|---|---|---|---|
-| 1 | requisito ambíguo / incompleto / contraditório | **defeito de especificação** | escrita da wiki (`01`/`02`) | ADR nova ou revisão do PRD |
-| 2 | implementação diverge do PRD | **defeito de código** | implementação | passo do PRD reaberto |
-| 3 | comportamento errado que nenhum CT cobria | **defeito de teste** | `04`/`05`, **depois** implementação | CT/CT-B novo → então corrige |
-| 4 | ambiente, dado, build, seed | **não é defeito do produto** | infra / setup | nota no `03` |
-| 5 | comportamento correto, expectativa errada | **não é defeito** | fecha sem mudança | registrar o porquê |
+**A Matriz de Rastreabilidade alimenta o roteamento.** O formato da lacuna determina o destino — deixa de ser opinião do agente e passa a ser consequência de uma célula vazia.
 
-O destino **3** é o mais valioso e o mais fácil de errar: a ordem correta é **escrever o CT que falha primeiro**, depois corrigir. Invertido, perde-se a prova e o caso reaparece na feature seguinte.
+O destino **teste** é o mais valioso e o mais fácil de errar: invertida a ordem (corrigir antes de ter o CT que falha), perde-se a prova e o caso reaparece na feature seguinte.
 
-**A Matriz de Rastreabilidade alimenta o roteamento.** O formato da lacuna determina o destino — deixa de ser opinião do agente e passa a ser consequência de uma célula vazia:
+E a decisão **bloquear × registrar** é por severidade, senão o loop nunca fecha por cosmética: o que não bloqueia entra num ledger de débito na wiki (mesma ideia do `ponytail-debt`).
 
-| Padrão da lacuna | Destino |
-|---|---|
-| RQ sem passo no PRD | **1** |
-| RQ com passo, sem CT | **3** |
-| RQ com CT verde, mas app errado | **3** → depois **2** |
-| RQ com passo e CT, sem código | **2** |
-| Passo/CT/código sem RQ | **1** (documentar) ou remover |
-| RQ ambíguo, não decomponível | **1** — pergunta ao usuário |
-
-E a decisão **bloquear × registrar** é por severidade, senão o loop nunca fecha por cosmética:
-
-- **Blocker / Major** → volta pelo destino, loop continua
-- **Minor / Cosmético** → não bloqueia; entra num ledger de débito na wiki (mesma ideia do `ponytail-debt`)
+A taxonomia completa — severidade, os cinco destinos com o que fazer em cada um, a prioridade entre eles e a tabela padrão da lacuna → destino — está em [Classificação e Roteamento](SKILL.md#classificação-e-roteamento).
 
 ---
 
 ## Achado técnico: dark mode inverte a regra de visão × estrutura
 
-O `pest-plugin-browser` **tem** `->inDarkMode()`, `assertScreenshotMatches()` e `assertNoAccessibilityIssues()`. Ainda assim, falha em casos graves:
+O `pest-plugin-browser` tem ferramentas para tema, screenshot e acessibilidade. O que cada uma faz e não faz — inclusive o alcance da regra de contraste do axe — está numa fonte só: `{skills}/feature-test-design/references/pest-plugin-browser.md`, onde `{skills}` é o primeiro dos três diretórios — `.ai/skills/` (Boost), `.claude/skills/` (espelho local), `~/.claude/skills/` (global) — que contém a skill citada.
 
-| Cenário | Resultado no pest-browser |
-|---|---|
-| Texto branco em fundo branco no dark mode | ✅ **`assertSee('Salvar')` PASSA** — está no DOM e na árvore de acessibilidade, apenas **invisível** |
-| Feature nova, primeiro `assertScreenshotMatches()` | ✅ passa — ele **cria** o baseline, incluindo o bug |
-| `bg-white text-gray-900` sem par `dark:` | ✅ passa — nenhuma assertion olha para isso |
-| Contraste insuficiente | ⚠️ **talvez** — o axe tem regra de `color-contrast` e a doc fala de "level 1 (serious)"; plausível, mas a confirmar no projeto |
+O que é da dimensão G é a consequência: dentro do plugin, nenhuma assertion barata prova cor. Os casos graves — texto invisível no tema escuro, classe sem par `dark:`, baseline de screenshot criado com o defeito — passam, e estão tabelados na referência.
 
-`assertScreenshotMatches` detecta **mudança**, não **erro**. Em requisito novo não existe baseline correto para comparar — é o furo clássico de screenshot regression.
+A cobertura escolhida vai do mais barato ao mais caro: grep estático de classe de cor sem par `dark:` (o melhor custo-benefício), CT-B versionado no tema escuro e inspeção visual pelo Playwright MCP — o único caminho para "ilegível". Como o jeito de forçar o tema no teste muda com o projeto, a dimensão começa detectando o mecanismo de tema. Desde a 1.7.0 a detecção e o nível estático são um script, `scripts/dark-mode.sh`, que reconhece também o Tailwind 4 (`@custom-variant dark`, e o `prefers-color-scheme` que ele aplica por padrão quando o projeto só usa `dark:`), o Flux e o painel Filament — os greps da 1.6.0 só viam o Tailwind 4 quando o projeto declarava `@custom-variant dark`. Os comandos estão na [dimensão G](SKILL.md#g--tema-e-cor-dark-mode).
 
-Cobertura proposta, do mais barato ao mais caro:
-
-1. **Estático, sem browser** — `Grep` nos Blade/componentes tocados pelo diff, procurando classe de cor **sem contraparte `dark:`** e hex hardcoded fora do arquivo de tokens. Determinístico, instantâneo. **Melhor custo-benefício de toda a lista.**
-2. **Dinâmico via Pest** — `visit('/x')->inDarkMode()->assertNoAccessibilityIssues()` como CT-B novo, versionado.
-3. **Visual via Playwright MCP** — screenshot nos dois temas e o agente **olha**. Único caminho para "ilegível".
-
-> **Correção de ênfase relevante.** Na análise do Playwright MCP a coletânea defende a árvore de acessibilidade contra o screenshot (~200–400 tokens × ~3.000–5.000). **Para defeito de cor isso se inverte**: a árvore é justamente cega ao problema, porque o texto *está* lá. Cor é o caso em que a visão ganha da estrutura — e a skill precisa dizer isso explicitamente para o agente não aplicar a regra errada.
-
-Detalhe de implementação: o quality-gate precisa **detectar o mecanismo do projeto** — `prefers-color-scheme` puro ou classe `dark` no `<html>` com toggle — porque a forma de forçar o tema no teste muda. Projeto sem dark mode: dimensão pulada com registro do motivo.
+> **Correção de ênfase relevante.** Na análise do Playwright MCP a coletânea defende a árvore de acessibilidade contra o screenshot, pelo custo em token (os números estão na [dimensão G](SKILL.md#g--tema-e-cor-dark-mode)). **Para defeito de cor isso se inverte**: a árvore é justamente cega ao problema, porque o texto *está* lá. Cor é o caso em que a visão ganha da estrutura — e a skill precisa dizer isso explicitamente para o agente não aplicar a regra errada.
 
 ---
 
 ## Achado técnico: Playwright MCP como confronto do CT-B
 
-A coletânea já define que **o `pest-plugin-browser` atesta e o Playwright MCP observa**. Para o quality-gate, o MCP habilita três confrontos:
+A coletânea já define que **o `pest-plugin-browser` atesta e o Playwright MCP observa**. Para o quality-gate, o MCP habilita três confrontos: elementos interativos da tela × elementos que o CT-B exercita; UI renderizada × tabela `## Superfície de UI` do PRD; e tema, console e rede.
 
-**1. Inventário de elementos × cobertura do CT-B** *(o mais valioso)*
-
-O `browser_snapshot` devolve o inventário de elementos interativos da tela. O CT-B declara quais exercita. **A diferença é lacuna de cobertura, mensurável:**
-
-```
-Tela /relatorios/lote — elementos interativos observados: 7
-CT-B01 + CT-B02 exercitam: 4
-Não exercitados: botão "Exportar CSV", select "Período", checkbox "Incluir inativos"
-→ Achado: 3 elementos na UI sem nenhum CT-B. São escopo ou scope creep?
-```
+O primeiro é o mais valioso: elemento interativo que a tela oferece e nenhum CT-B exercita vira achado — é escopo ou scope creep? O exemplo está em [`references/delegacao-e-playwright.md`](references/delegacao-e-playwright.md).
 
 Isso é literalmente "confronto do que entrou no CT-B", e nenhuma ferramenta de teste faz — teste só sabe o que você escreveu nele.
 
-**2. UI renderizada × tabela `## Superfície de UI` do PRD** — elemento na tela fora da tabela = UI não documentada; linha na tabela sem elemento = prometido e não entregue.
-
-**3. Visual/tema e console/rede** — 4xx/5xx que o app engole em silêncio não falha `assertNoSmoke()`.
-
-**Regra que mantém a disciplina:** todo achado do MCP tem dois destinos possíveis, e nenhum é "fica no relatório":
-
-- lacuna de cobertura → **vira CT-B novo** no `05`
-- defeito → **vira achado roteado** pela taxonomia
-
-Continuam valendo: sessão MCP não é cobertura; `ref=e5` é efêmero (*"valid until the next page change"*) e nunca entra em teste; `--isolated --headless --caps=testing`; só `localhost`.
+O que mantém a disciplina é que sessão MCP não é cobertura: todo achado do MCP vira CT-B novo ou achado roteado, nunca "fica no relatório". A configuração, o alvo permitido e o que nunca entra em teste estão em [Playwright MCP como Confronto](SKILL.md#playwright-mcp-como-confronto).
 
 ---
 
 ## Regressão condicional por natureza da wiki
 
-Rodar regressão em toda feature é caro e desnecessário. O gatilho certo é a **natureza da wiki**, declarada no `01`:
-
-```markdown
-## Natureza da Wiki
-
-- Tipo: nova | evolução | correção | ajuste
-- Wiki ancestral: wikis/specs/ferro/501/envio-progresso/   (obrigatório se não for "nova")
-```
-
-| Tipo | Regressão | O que roda |
-|---|---|---|
-| `nova` | ❌ | valida só a feature |
-| `evolução` / `correção` / `ajuste` | ✅ | (1) `pest --parallel --tia` para o impacto **medido**; (2) roda **por ID** os CT/CT-B do `04`/`05` da wiki ancestral; (3) RCRCRC nos arquivos que o diff tocou e a ancestral também tocava |
+Rodar regressão em toda feature é caro e desnecessário. O gatilho certo é a **natureza da wiki**, declarada no `01` (`## Natureza da Wiki`: nova, evolução, correção, ajuste ou refatoração, com a wiki ancestral quando não é nova), junto com o campo **Toca infra compartilhada?**. Wiki nova que não toca infra compartilhada valida só a feature; as demais — inclusive a nova que toca — medem o impacto por TIA, rodam por ID os CT/CT-B da ancestral (ou das features que consomem a infra tocada) e aplicam RCRCRC aos arquivos que as duas tocaram.
 
 Rodar os CT da ancestral **por ID** é o que garante que a evolução não silenciou uma regra antiga — algo que o TIA só pega se o teste existir.
+
+Os passos e comandos estão em [Regressão Condicional](SKILL.md#regressão-condicional).
 
 ---
 
@@ -401,17 +355,19 @@ Rodar os CT da ancestral **por ID** é o que garante que a evolução não silen
 
 ### Delegar ao [`qa-skills`](https://github.com/petrkindlmann/qa-skills)
 
-| Necessidade | Skill | Papel |
-|---|---|---|
-| Priorizar o que validar | `risk-based-testing` | define a profundidade por risco |
-| Explorar o não-especificado | `exploratory-testing` | SBTM, charters time-boxed, heurísticas |
-| Severidade + root cause | `ai-bug-triage` | **alimenta o roteamento** dos 5 destinos |
-| Repro mínima antes de reportar | `bug-reproduction` | achado sem repro não é reportável |
-| Avaliar os próprios CT/CT-B | `ai-qa-review` | "o CT-01 testa o que diz testar?" |
-| Flake × bug real | `test-reliability` | evita roteamento errado da causa (c) |
-| Podar suíte na regressão | `test-suite-curation` | só quando tipo ≠ nova |
-| Defeito escapado | `quality-postmortem` | fora do loop, sob demanda |
-| *(futuro)* gate de deploy | `release-readiness` | cobriria a 4ª etapa da esteira |
+O mapa necessidade → skill, com o fallback inline de cada uma, está em [`references/delegacao-e-playwright.md`](references/delegacao-e-playwright.md); as obrigações, em [Delegação a Skills Externas](SKILL.md#delegação-a-skills-externas). Aqui fica o papel que o estudo deu a cada delegação:
+
+| Skill | Papel |
+|---|---|
+| `risk-based-testing` | define a profundidade por risco |
+| `exploratory-testing` | SBTM, charters time-boxed, heurísticas |
+| `ai-bug-triage` | **alimenta o roteamento** dos 5 destinos |
+| `bug-reproduction` | achado sem repro não é reportável |
+| `ai-qa-review` | "o CT-01 testa o que diz testar?" |
+| `test-reliability` | evita roteamento errado da causa (c) |
+| `test-suite-curation` | só quando tipo ≠ nova |
+| `quality-postmortem` | defeito escapado: fora do loop, sob demanda |
+| `release-readiness` | *(futuro)* gate de deploy; cobriria a 4ª etapa da esteira |
 
 ### Construir aqui
 
@@ -426,20 +382,16 @@ Rodar os CT da ancestral **por ID** é o que garante que a evolução não silen
 
 ### Duas ressalvas sobre a dependência
 
-1. **Não instalar as 50.** `npx skills add petrkindlmann/qa-skills` traz a biblioteca inteira — 50 descrições competindo pela atenção do agente é inflação de contexto, o mesmo problema combatido nas Project Rules. Copiar **só as 5-6 pastas usadas** para `.ai/skills/`. *(A confirmar se o instalador permite seleção; se não, cópia manual.)*
-2. **Degradar graciosamente.** O quality-gate precisa funcionar sem elas — mesmo padrão do Playwright MCP na `feature-wiki`. Cada delegação vira: *"se `exploratory-testing` estiver instalada, invoque; senão, aplique estas 3 linhas de heurística inline"*.
+1. **Não instalar as 50.** A biblioteca inteira é inflação de contexto — o mesmo problema combatido nas Project Rules. O mapa em [`references/delegacao-e-playwright.md`](references/delegacao-e-playwright.md) lista as que a skill usa; copie só essas pastas para `.ai/skills/`. *(A confirmar se o instalador permite seleção; se não, cópia manual.)*
+2. **Degradar graciosamente.** O quality-gate precisa funcionar sem elas — mesmo padrão do Playwright MCP na `feature-wiki`. Cada delegação tem fallback inline em [`references/delegacao-e-playwright.md`](references/delegacao-e-playwright.md).
 
 ---
 
 ## Convergência e separação de poderes
 
-"Loop engineering" sem regra de parada é loop infinito. Regras obrigatórias:
+"Loop engineering" sem regra de parada é loop infinito. Por isso o desenho fixou, desde o estudo, um teto de ciclos, o critério "sem achado novo encerra", a escalada ao humano quando o teto estoura e um orçamento de dimensões por risco. E fixou a separação de poderes: o quality-gate **não corrige nada**, porque quem julga e conserta volta a ter cegueira correlacionada.
 
-1. **Máximo 3 ciclos** de QA por feature
-2. **Critério "sem achado novo"** — ciclo que só reencontra o já registrado encerra
-3. **Escalada ao humano** ao estourar o teto, com o que ficou aberto
-4. **Separação de poderes** — o quality-gate **não corrige nada**. Lê, reproduz, reporta. Quem julga não conserta, senão a cegueira correlacionada volta
-5. **Orçamento por risco** — feature `ajuste` sem UI roda 3 dimensões, não 10
+Os valores e o procedimento estão nos [Princípios Inegociáveis](SKILL.md#princípios-inegociáveis) e em [Convergência do Loop](SKILL.md#convergência-do-loop).
 
 ---
 
@@ -465,15 +417,16 @@ Registrado para evitar autoengano no futuro:
 
 Por isso o `00-requisito.md` na `feature-wiki` é **pré-requisito**, não melhoria opcional.
 
-**Como o `SKILL.md` v1.0.0 honra o critério**, ponto por ponto:
+**Como o `SKILL.md` honra o critério**, ponto por ponto:
 
 | Exigência do estudo | Onde está implementada |
 |---|---|
 | Oráculo externo, PRD rebaixado a alegação | Princípio 1 — declarado como inegociável |
-| Wiki antiga sem `00` não passa em silêncio | seção "Oráculo degradado" — pede o requisito ao usuário, proíbe derivar do PRD, e estampa o aviso no topo do relatório |
+| Wiki antiga sem `00` não passa em silêncio | seção "Oráculo degradado" — pede o requisito ao usuário, proíbe derivar do PRD, e estampa o aviso no topo do relatório; vale também para `00` sem `RQ` e para `00` derivado do PRD |
 | Detectar omissão silenciosa | Dimensão A + Matriz de Rastreabilidade, marcada como **"nunca pular"** |
 | Roteamento em 5 destinos | seção "Classificação e Roteamento", com a tabela padrão-da-lacuna → destino |
-| Não corrigir o que julga | Princípio 2 + 10 proibições explícitas |
+| Não corrigir o que julga | Princípio 2 + 13 proibições explícitas; no Claude Code, agente sem Edit/Write e com hook no Bash |
+| Não aprovar o que não olhou | teto por cobertura: dimensão não verificada, por qualquer causa, segura o veredito em `APROVADO COM DÉBITO` |
 | Convergência | Princípio 3 + seção própria: teto de 3, sem-achado-novo, dedupe contra o `06` anterior |
 | Teto por risco | Gate de esforço com 3 perfis (mínimo / padrão / completo) |
 | Degradação graciosa | Princípio 5 + coluna "Fallback inline" na tabela de delegação + seção "Não Verificado" no relatório |
@@ -482,49 +435,6 @@ Por isso o `00-requisito.md` na `feature-wiki` é **pré-requisito**, não melho
 | Não reinventar técnica de QA | tabela de delegação ao `qa-skills`, com a ressalva de instalar só as usadas |
 | Relatório que não morre de tamanho | teto de ~150 linhas; "cortar detalhe, não cortar achado" |
 | Matriz não virar métrica de vaidade | matriz só é impressa **se houver lacuna** |
-
----
-
-## Dependências
-
-### Obrigatórias
-
-| Item | Motivo |
-|---|---|
-| `feature-wiki` ≥ 2.10.0 | precisa do `00-requisito.md` e da seção `## Natureza da Wiki` |
-| App servido e acessível na `APP_URL` | validação dinâmica |
-| Pest (4 ou 5) | rodar CT e CT-B existentes |
-
-### Opcionais (a skill degrada sem elas)
-
-| Item | Ganho |
-|---|---|
-| Pest 5 (`--parallel --tia`) | regressão por impacto medido |
-| `pest-plugin-agent` (`--agent`) | sondagem efêmera durante a validação |
-| `pest-plugin-browser` | rodar e criar CT-B |
-| Playwright MCP (`--isolated --headless --caps=testing`) | inventário de elementos, tema/cor, console/rede |
-| Boost MCP (`Browser Logs`, `database-query`, `search-docs`) | evidência de console e conferência de dados |
-| 5-6 skills do `qa-skills` | técnica de QA (SBTM, triagem, repro) |
-| Claude Code com sub-agentes | a skill roda como `fw-qa-gate` (`opus`, **sem Edit/Write**), cega à conversa que escreveu a wiki — "por quem não escreveu" e "não corrige nada" viram construção. Sem isso, roda em linha e o `06` declara `Independência: mesma sessão` |
-
-### Instalação do sub-agente (Claude Code)
-
-A definição do agente vem nesta skill, em [`agents/fw-qa-gate.md`](agents/fw-qa-gate.md), para o
-`boost:add-skill` instalá-la junto. **O Claude Code só lê `.claude/agents/`**, então depois de
-instalar ou atualizar as skills copie os agentes de toda a esteira — uma vez, e de novo a cada
-atualização:
-
-```bash
-mkdir -p .claude/agents
-cp .ai/skills/*/agents/*.md .claude/agents/
-```
-
-No PowerShell: `New-Item -ItemType Directory -Force .claudegents | Out-Null` e
-`Copy-Item -Force .ai\skills\*gents\*.md .claudegents\`.
-
-Sem a cópia, a `feature-wiki` não encontra `fw-qa-gate` e despacha um `general-purpose` com
-`model: opus` — funciona, mas com Edit/Write disponíveis, e o "não corrige nada" volta a ser promessa.
-| PCOV ou Xdebug | pré-requisito do `--tia` |
 
 ---
 

@@ -2,12 +2,26 @@
 name: fw-executor-ct
 description: Escreve e roda os testes Pest de backend de uma feature a partir do Gherkin do 04-casos-de-teste.md (feature-wiki, fase de implementação). Recebe o Setup Global e só as regras do seu lote; lê app/ apenas para nomes, nunca para o comportamento esperado. Classifica cada vermelho em CT errado / implementação divergente / flake e nunca altera código de aplicação para o teste passar.
 model: sonnet
+maxTurns: 40
+hooks:
+  PreToolUse:
+    - matcher: "Read|Grep|Glob|Bash|Edit|Write|MultiEdit|NotebookEdit"
+      hooks:
+        - type: command
+          command: >-
+            exec sh -c 'for d in "$CLAUDE_PROJECT_DIR/.ai/skills" "$CLAUDE_PROJECT_DIR/.claude/skills" "$HOME/.claude/skills";
+            do f="$d/feature-wiki/scripts/guarda-subagente.sh"; [ -f "$f" ] && exec bash "$f" executor-ct; done;
+            echo "guarda-subagente.sh nao encontrado: instale a feature-wiki" >&2; exit 2'; exit 2
 ---
 
 Você escreve e executa os testes Pest de **backend** de uma feature Laravel/Filament, a partir da
 **especificação** — não a partir do código. Você **não implementou** a feature e não leu o plano;
 isso é deliberado. Vermelho que sobra depois do seu trabalho é o resultado mais valioso que você
 pode entregar: ele é a prova de que a implementação divergiu do que foi especificado.
+
+Se toda ferramenta voltar negada com *"guarda-subagente.sh nao encontrado"* — ou com erro do PowerShell
+dizendo que `exec` não é reconhecido (hook rodando no Windows sem Git Bash) —, **pare** e devolva só
+essa linha: o hook falha fechado sem a `feature-wiki` ou sem o Git Bash, e a sessão cai no fallback declarado.
 
 ## Entrada
 
@@ -29,14 +43,18 @@ teste confirmada no vendor) e depois **só** as regras e cenários do seu lote, 
   do model")
 - **Nunca** para inferir o comportamento esperado: o `Então` vem do `04`. Se o código faz uma
   coisa e o `04` afirma outra, o `04` vence e o teste fica vermelho
-- **Não leia** `01-plano-acao.md` nem `02-decisoes-arquiteturais.md`
+- **Não leia** `01-plano-acao.md` nem `02-decisoes-arquiteturais.md` — um hook (`guarda-subagente.sh`,
+  perfil `executor-ct`) nega a leitura, o `grep` que os alcança e o `git diff` sem a exclusão de
+  `wikis/`. Leitura negada não se contorna: se o cenário não se resolve sem o plano, é ambiguidade do
+  `04` e vai para a saída
 
 ## Regras duras
 
 1. **Fixture por transições reais.** A situação de partida se constrói chamando a máquina de
    estados do domínio (`enviar()`, `aprovar()`, …), não gravando o estado à força com `create()`.
-   Use o helper de fixture que o `## Setup Global` nomeia (`{entidade}Em('{situacao}')`). Se o
-   helper não existe, você **não** o cria em `tests/Pest.php` — reporte como ambiguidade
+   Use o helper de fixture que o `## Setup Global` nomeia (`{entidade}Em('{situacao}')`). O helper
+   `{entidade}Em` vive em `tests/Pest.php` e pertence ao lote **D0**: se você é o lote D0, crie-o;
+   qualquer outro lote **não** o cria — se faltar, devolva `bloqueado: helper D0 ausente`
 2. **Só o seu arquivo.** `tests/Pest.php` tem um único dono (o lote `D0`); helper usado só pelo seu
    arquivo vive no seu arquivo
 3. **Nome do teste começa com o ID**: `it('[CT-13] envio vai ao gestor do centro', …)`.
@@ -46,7 +64,10 @@ teste confirmada no vendor) e depois **só** as regras e cenários do seu lote, 
    (`Notification::fake()` depois de construir a situação de partida, se o cenário afirma que a
    transição seguinte notifica)
 5. **Proibido**: alterar `app/`, `database/`, `config/`; relaxar asserção para ficar verde; remover
-   cenário que não passou; editar `00`/`01`/`02`/`04`
+   cenário que não passou; editar `00`/`01`/`02`/`03`/`04` ou o arquivo de um ticket. O hook nega
+   Edit/Write em `app/`, `database/migrations/`, no `00`/`04`/`05`, no `03` e em `07-tickets/` (ler o
+   ticket que o orquestrador indicou é permitido), e o git que altera a árvore (`stash`, `checkout`,
+   `commit`…); o resto é contrato. Correção que o `04` precisa volta como texto, em *Ambiguidades*
 6. Rode **só o seu arquivo**: `vendor/bin/pest {arquivo} --compact`. Máximo **3 iterações**
 7. **Classifique antes de mexer.** Todo vermelho recebe uma causa:
    - **(a) teste seu errado** — helper, API do vendor, ordem de fake, seletor → corrija o teste
@@ -55,9 +76,11 @@ teste confirmada no vendor) e depois **só** as regras e cenários do seu lote, 
    - **(c) flake** → anote a evidência (passou na re-execução, dependência de relógio, ordem)
 
    **Vermelho por (b) é resultado válido** e é o que o orquestrador roteia
-8. `vendor/bin/pint --dirty` ao final, só sobre os seus arquivos
-9. **Interrompido no meio** (limite de sessão, erro de ferramenta): a sua primeira frase ao ser
-   retomado é *"estado parcial"* com a lista de arquivos tocados
+8. Ao final, `vendor/bin/pint {arquivos de teste do lote}` — **nunca** `pint --dirty`, que formata todo
+   arquivo não commitado, `app/` incluído. O hook nega `pint` sem path ou com path em `app/`
+9. **Interrompido no meio** (limite de sessão, erro de ferramenta, teto de `maxTurns`): a sua
+   primeira frase ao ser retomado é *"estado parcial"* com a lista de arquivos tocados. O teto de 40
+   turnos é hipótese a calibrar — folga sobre os passos deste contrato, não medida
 
 ## Saída (formato fixo)
 
