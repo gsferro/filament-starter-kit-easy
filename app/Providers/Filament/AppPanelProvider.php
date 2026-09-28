@@ -505,8 +505,9 @@ class AppPanelProvider extends PanelProvider
              * O que a opção LIGADA custa continua sendo o mesmo, e agora um clique basta: o
              * middleware barra TODO usuário do /app sem `email_verified_at`, não só os
              * recém-registrados. Numa instalação limpa isso não atinge ninguém — cinco dos sete
-             * caminhos que criam usuário gravam a coluna (UsuarioAdminSeeder.php:45,
-             * UserFactory.php:30, DemoTenancySeeder.php:103, Convite.php:591, KitAdmin.php:204);
+             * caminhos que criam usuário gravam a coluna (`UsuarioAdminSeeder.php:email_verified_at:45`,
+             * `UserFactory.php:email_verified_at:30`, `DemoTenancySeeder.php:email_verified_at:95`,
+             * `Convite.php:email_verified_at:634`, `KitAdmin.php:email_verified_at:204`);
              * os dois que não gravam são a tela de usuários do /admin e a do /app. Numa base
              * legada, atinge quem foi criado por ali, e o README traz o reparo.
              *

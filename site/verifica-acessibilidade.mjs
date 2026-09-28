@@ -70,13 +70,30 @@ const todas = rotas().filter((r) => /^\/(pt|en)\//.test(r) || r === '/pt/' || r 
  * que tenha o elemento. O que varia por página é ESTRUTURA — cabeçalho, imagem, tabela —, e essa
  * é coberta varrendo todas no tema padrão.
  */
-const AMOSTRA_CLARA = ['/pt/', '/en/', '/pt/recursos/configuracoes-do-kit/', '/pt/autenticacao/'];
+const AMOSTRA_CLARA = [
+  '/pt/',
+  '/en/',
+  '/pt/recursos/configuracoes-do-kit/',
+  '/pt/autenticacao/',
+  '/pt/referencia/arquitetura-em-diagramas/',
+  '/en/referencia/arquitetura-em-diagramas/',
+];
 
 /** Quanto esperar pelo render client-side do Mermaid antes de desistir (ADR-02). */
 const MERMAID_TIMEOUT_MS = 15_000;
 
+/*
+ * Piso de páginas com diagrama por idioma (R23/CT-37, mutante M4): sem isto, uma varredura que
+ * não achasse `pre.mermaid` em página nenhuma (regressão que apaga os blocos, ou o catálogo de
+ * `docs/` movido sem o site acompanhar) ficaria verde do mesmo jeito — zero é um resultado
+ * silencioso demais para passar batido. Contado só no tema escuro, que varre TODAS as rotas
+ * (`todas`); o claro varre a amostra e contaria de menos.
+ */
+const PISO_DIAGRAMAS_POR_IDIOMA = 10;
+
 const navegador = await chromium.launch();
 const violacoes = [];
+const diagramasPorIdioma = { pt: 0, en: 0 };
 let conferidas = 0;
 
 for (const [tema, rotasDoTema] of [
@@ -105,20 +122,23 @@ for (const [tema, rotasDoTema] of [
     }
 
     // A única validação de sintaxe destes blocos: bloco sem <svg>, ou que virou o diagrama de erro.
-    const errosMermaid = await pagina.evaluate(() =>
-      [...document.querySelectorAll('pre.mermaid')]
-        .map((bloco, indice) => ({
-          indice,
-          temSvg: !!bloco.querySelector('svg'),
-          comErro: /syntax error|error rendering diagram/i.test(bloco.textContent || ''),
-        }))
-        .filter((b) => !b.temSvg || b.comErro),
+    const blocosMermaid = await pagina.evaluate(() =>
+      [...document.querySelectorAll('pre.mermaid')].map((bloco, indice) => ({
+        indice,
+        temSvg: !!bloco.querySelector('svg'),
+        comErro: /syntax error|error rendering diagram/i.test(bloco.textContent || ''),
+      })),
     );
 
-    for (const erro of errosMermaid) {
+    for (const erro of blocosMermaid.filter((b) => !b.temSvg || b.comErro)) {
       violacoes.push(
         `${tema} ${rota} — mermaid bloco #${erro.indice}: ${erro.temSvg ? 'SVG de erro ("Syntax error")' : 'sem SVG'}`,
       );
+    }
+
+    // Só no escuro (varre TODAS as rotas) — ver o comentário do piso, acima.
+    if (tema === 'dark' && blocosMermaid.length > 0) {
+      diagramasPorIdioma[rota.startsWith('/en/') ? 'en' : 'pt']++;
     }
 
     await pagina.addScriptTag({ content: AXE });
@@ -156,10 +176,20 @@ await navegador.close();
  */
 const PISO = 60;
 
+const idiomasAbaixoDoPiso = ['pt', 'en'].filter((idioma) => diagramasPorIdioma[idioma] < PISO_DIAGRAMAS_POR_IDIOMA);
+
 console.log(`paginas conferidas: ${conferidas} (${todas.length} no escuro, ${AMOSTRA_CLARA.length} no claro)`);
+console.log(`paginas com diagrama: pt=${diagramasPorIdioma.pt}, en=${diagramasPorIdioma.en} (piso ${PISO_DIAGRAMAS_POR_IDIOMA} por idioma)`);
 
 if (conferidas < PISO) {
   console.error(`REPROVADO — so ${conferidas} paginas conferidas, e o piso e ${PISO}`);
+  process.exitCode = 1;
+} else if (idiomasAbaixoDoPiso.length > 0) {
+  console.error(
+    `REPROVADO — piso de paginas com diagrama nao atingido: ${idiomasAbaixoDoPiso
+      .map((idioma) => `${idioma}=${diagramasPorIdioma[idioma]}/${PISO_DIAGRAMAS_POR_IDIOMA}`)
+      .join(', ')}`,
+  );
   process.exitCode = 1;
 } else if (violacoes.length > 0) {
   console.error(`REPROVADO — ${violacoes.length} violacao(oes) serious/critical:`);
@@ -168,5 +198,5 @@ if (conferidas < PISO) {
   }
   process.exitCode = 1;
 } else {
-  console.log('OK — nenhuma violacao serious/critical de WCAG 2.1 AA.');
+  console.log('OK — nenhuma violacao serious/critical de WCAG 2.1 AA, piso de diagramas atingido.');
 }
