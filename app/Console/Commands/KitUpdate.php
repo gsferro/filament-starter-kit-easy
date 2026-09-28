@@ -279,7 +279,8 @@ class KitUpdate extends Command
         | acusou: as cinco viajam no `composer create-project` (nenhuma tem
         | `export-ignore`) e nao eram entregues pelo `kit:update`. Quem instalou o kit
         | ficava com as skills da versao em que instalou, para sempre — e elas mudam
-        | mais rapido que o codigo: a `feature-wiki` ja esta na 3.5.0.
+        | mais rapido que o codigo: a `feature-wiki` foi da 3.5.0 a 4.0.0 entre
+        | duas releases do kit, e a 4.0.0 trouxe uma skill nova e agentes com hook.
         |
         | Sao quatro espelhos do MESMO material, porque cada ferramenta le de um
         | lugar: `.ai/` e o canonico, `.claude/` o do Claude Code, `.agents/` o da
