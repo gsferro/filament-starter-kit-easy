@@ -34,6 +34,45 @@ nas instalações de teste da feature.
 `php artisan migrate` antes de abrir a tela de configurações — sem a linha no banco, ela quebra.
 O valor semeado é o do `.env` naquele momento (`false` se a chave não existir).
 
+## Sequência: destino por 0/1/N painéis
+
+```mermaid
+sequenceDiagram
+%% DG-05
+accTitle: Login unificado — destino por 0, 1 ou N painéis
+accDescr: A página única de login (KIT_LOGIN_UNIFICADO) decide entre voltar ao login, entrar direto ou abrir a escolha de painel, conforme quantos painéis a pessoa acessa.
+  participant visitante as Visitante
+  participant tela_unificada as Tela de login única (KIT_LOGIN_UNIFICADO)
+  participant destino as DestinoAposLogin
+  participant escolha as Escolha de painel
+  participant controller as EntrarNoPainelController
+  visitante->>tela_unificada: credenciais
+  tela_unificada->>destino: urlPara(user)
+  alt 0 painéis acessíveis
+    destino->>escolha: encerra a sessão
+    escolha-->>visitante: volta ao login
+  else 1 painel acessível
+    destino-->>visitante: entra direto nele
+  else N painéis acessíveis
+    destino->>escolha: mostra um cartão por painel acessível
+    visitante->>escolha: escolhe um painel
+    escolha->>controller: entrar(painel)
+    controller->>destino: entrarEm(painel)
+    destino-->>visitante: entra no painel escolhido
+  end
+  note over destino: a URL pretendida só vence quando é de um painel acessível (painelDe)
+```
+
+`DestinoAposLogin::urlPara()` decide: com a URL pretendida de um painel acessível, ela vence; com
+exatamente 1 painel acessível, entra direto; no resto (0 ou N painéis), vai à escolha
+(`app/Support/DestinoAposLogin.php:urlPara:85`, `app/Support/DestinoAposLogin.php:painelDaPretendida:93`,
+`app/Support/DestinoAposLogin.php:count($paineis) === 1:97`, `:route('login.painel'):98`).
+`EscolhaDePainel::mount()` trata os três casos, com o de 0 painéis encerrando a sessão
+(`app/Filament/Pages/Auth/EscolhaDePainel.php:mount:62`, `:encerrarSemPainel:109`);
+`EntrarNoPainelController::__invoke()` delega em `DestinoAposLogin::entrarEm()`
+(`app/Http/Controllers/Auth/EntrarNoPainelController.php:__invoke:27`,
+`app/Support/DestinoAposLogin.php:entrarEm:173`).
+
 ## O que muda para quem entra
 
 | Situação | O que acontece |

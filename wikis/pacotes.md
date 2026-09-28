@@ -7,7 +7,7 @@
 | Se você fosse implementar… | Já vem de |
 |---|---|
 | CRUD de papéis e permissões | `bezhansalleh/filament-shield` (`/admin`) — com o `RoleResource` **publicado no projeto**, ver abaixo |
-| Perfil, avatar, troca de senha, 2FA, passkeys | `jeffgreco13/filament-breezy` (`/meu-perfil`) |
+| Perfil, avatar, troca de senha, 2FA | `jeffgreco13/filament-breezy` (`/meu-perfil`) — traz passkeys, mas o kit as mantém desligadas (`$passkeys = false`); liga com `enablePasskeys()` |
 | Tela de login com arte | `caresome/filament-auth-designer` |
 | Bloqueio de sessão por inatividade | `marjose123/filament-lockscreen` |
 | "Entrar como" outro usuário | `stechstudio/filament-impersonate` |

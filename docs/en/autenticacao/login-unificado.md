@@ -34,6 +34,45 @@ which recreates the database). Measured on the feature's test installations.
 `php artisan migrate` before opening the settings screen — without the row in the database it
 breaks. The seeded value is whatever the `.env` said at that moment (`false` if the key is absent).
 
+## Sequence: destination by 0/1/N panels
+
+```mermaid
+sequenceDiagram
+%% DG-05
+accTitle: Unified login - destination by 0, 1 or N panels
+accDescr: The single login page (KIT_LOGIN_UNIFICADO) decides between going back to login, entering directly or opening the panel choice, depending on how many panels the person can access.
+  participant visitante as Visitor
+  participant tela_unificada as Single login screen (KIT_LOGIN_UNIFICADO)
+  participant destino as DestinoAposLogin
+  participant escolha as Panel choice (escolha de painel)
+  participant controller as EntrarNoPainelController
+  visitante->>tela_unificada: credentials
+  tela_unificada->>destino: urlPara(user)
+  alt 0 accessible panels
+    destino->>escolha: ends the session
+    escolha-->>visitante: back to login
+  else 1 accessible panel
+    destino-->>visitante: enters it directly
+  else N accessible panels
+    destino->>escolha: shows one card per accessible panel
+    visitante->>escolha: picks a panel
+    escolha->>controller: entrar(panel)
+    controller->>destino: entrarEm(panel)
+    destino-->>visitante: enters the chosen panel
+  end
+  note over destino: the intended URL only wins when it is from a panel that person can access (painelDe)
+```
+
+`DestinoAposLogin::urlPara()` decides: an intended URL from an accessible panel wins; exactly 1
+accessible panel enters it directly; otherwise (0 or N panels), it goes to the choice
+(`app/Support/DestinoAposLogin.php:urlPara:85`, `app/Support/DestinoAposLogin.php:painelDaPretendida:93`,
+`app/Support/DestinoAposLogin.php:count($paineis) === 1:97`, `:route('login.painel'):98`).
+`EscolhaDePainel::mount()` handles the three cases, with the 0-panel one ending the session
+(`app/Filament/Pages/Auth/EscolhaDePainel.php:mount:62`, `:encerrarSemPainel:109`);
+`EntrarNoPainelController::__invoke()` delegates to `DestinoAposLogin::entrarEm()`
+(`app/Http/Controllers/Auth/EntrarNoPainelController.php:__invoke:27`,
+`app/Support/DestinoAposLogin.php:entrarEm:173`).
+
 ## What changes for whoever signs in
 
 | Situation | What happens |

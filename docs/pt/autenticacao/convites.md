@@ -65,3 +65,70 @@ O papel do convite decide o contexto da atribuição: papel do painel `/app` nas
 organização do convite; papel de `/admin` ou `/infra` nasce no contexto global — ser
 administrador de uma organização não é credencial para administrar a instalação.
 
+## Sequência: do envio ao aceite
+
+```mermaid
+sequenceDiagram
+%% DG-07
+accTitle: Convite, do envio ao aceite
+accDescr: Quem convida envia o link pela fila, o agendador lembra quem não respondeu, e o aceite segue um de dois ramos — conta nova ou oferta a conta existente — sempre ligando a organização do convite.
+  participant quem_convida as Quem convida (admin, ou admin_app com KIT_TENANCY)
+  participant convite as Convite
+  participant fila as Fila
+  participant agendador as Agendador
+  participant convidado_novo as Convidado novo
+  participant convidado_existente as Convidado com conta
+  quem_convida->>convite: enviar()
+  convite->>fila: ConviteDeAcesso (link de /app/register)
+  fila->>convidado_novo: e-mail com o link
+  loop diário às 08:00
+    agendador->>convite: lembrar() (kit:convites-lembrar)
+  end
+  alt sem conta com o e-mail (conta nova)
+    convidado_novo->>convite: aceitar(): define a própria senha
+    convite->>convidado_novo: nasce verificado, com o papel, vinculado à organização do convite
+  else conta existente (conta existente, oferta)
+    convidado_existente->>convite: aceitarComoUsuarioExistente()
+    convite->>convidado_existente: ganha o papel na organização do convite, acessos anteriores intactos
+  else recusa
+    convidado_existente->>convite: recusar()
+  end
+```
+
+O link sai sempre pela rota de registro do painel `/app`, qualquer que seja o papel do convite
+(`app/Notifications/ConviteDeAcesso.php:url:100`); a notificação é `ShouldQueue` — sem
+worker, nada sai (`app/Notifications/ConviteDeAcesso.php:ShouldQueue:27`). O lembrete só existe pelo
+comando agendado (`routes/console.php:40`,
+`app/Console/Commands/KitConvitesLembrar.php`), o único chamador de `lembrar()` em `app/`.
+`Convite::enviar()`, `::lembrar()`, `::aceitar()`, `::aceitarComoUsuarioExistente()` e `::recusar()`
+(`app/Models/Convite.php:enviar:143`, `:lembrar:207`, `:aceitar:606`,
+`:aceitarComoUsuarioExistente:674`, `:recusar:739`).
+
+## Estados do convite
+
+```mermaid
+stateDiagram-v2
+%% DG-09
+accTitle: Estados do convite
+accDescr: Do Pendente, o convite vai a Aceito, Recusado ou Expirado; só o Expirado volta a Pendente por reenvio; revogar apaga o convite de qualquer estado.
+  Pendente --> Aceito : aceitar
+  Pendente --> Recusado : recusar
+  Pendente --> Expirado : prazo vence
+  Expirado --> Pendente : reenviar
+  Pendente --> [*] : revogar
+  Aceito --> [*] : revogar
+  Recusado --> [*] : revogar
+  Expirado --> [*] : revogar
+  note right of Recusado: recusar exige KIT_TENANCY (caixa de convites recebidos)
+```
+
+`Convite::situacao()` tem a precedência Aceito &gt; Recusado &gt; Expirado &gt; Pendente
+(`app/Models/Convite.php:situacao:587`, `:'Aceito':590`, `:'Recusado':591`); a ação Reenviar só é
+visível em Pendente ou Expirado
+(`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:Action::make('reenviar'):73`,
+`:situacao() === 'Pendente':89`); a revogação é o `DeleteAction` nativo, visível em todo estado
+(`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:DeleteAction::make():97`). O
+evento recusar só existe pela caixa de convites recebidos, que só existe com a tenancy
+(`app/Filament/App/Pages/ConvitesRecebidos.php:Action::make('recusar'):132`,
+`:config('kit.tenancy.enabled'):77`).
+

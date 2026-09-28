@@ -135,6 +135,57 @@ three Google keys in `.env`, `config:clear`, and no button — until the migrati
 | [![Users list with the Origin column](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-users-origem.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-users-origem.png) | |
 | `/admin/users`: the **Origin** column says which door each account came through (Google, GitHub, Invite, Open registration, Internal) | |
 
+## Sequence: the outcomes of the provider's return
+
+```mermaid
+sequenceDiagram
+%% DG-06
+accTitle: Social login return
+accDescr: The outcomes of a social provider's return - refusals, unavailability, link confirmation, pending approval and the final destination for a new or an existing account.
+  participant visitante as Visitor
+  participant provedor as OAuth provider (provedor social)
+  participant controller as LoginSocialController
+  participant vinculo as VinculoSocial
+  participant email_fila as E-mail (queue)
+  visitante->>provedor: redirect
+  provedor->>controller: retorno()
+  alt no e-mail, or e-mail not verified at the provider
+    controller-->>visitante: refusal (missing/unverified e-mail)
+  else no invite, no account, registration closed
+    controller-->>visitante: refusal (access by invitation)
+  else invite exists, but for another e-mail
+    controller-->>visitante: refusal (invite is for another e-mail)
+  else continues
+    alt account unavailable (same check as password login)
+      controller-->>visitante: refusal (account unavailable)
+    else link already created
+      controller->>vinculo: registrarAcesso()
+    else no link, e-mail link confirmation on (KIT_SOCIALITE_VINCULO_CONFIRMAR)
+      controller->>email_fila: signed confirmation link
+      note over controller: does not sign in yet
+    else no link
+      controller->>vinculo: vincular()
+      controller->>email_fila: PrimeiroAcessoSocial
+    end
+    alt pending sign-up approval (KIT_REGISTRO_APROVACAO_MANUAL)
+      controller-->>visitante: wait for approval
+    else account just created
+      controller-->>visitante: profile (set a password)
+    else account already existed
+      controller-->>visitante: panel
+    end
+  end
+```
+
+`LoginSocialController::retorno()` checks, in this order, missing e-mail, unverified e-mail, the
+invite/closed-registration barrier, account unavailability (before any link confirmation), and
+only then pending approval - it applies to a new OR an already existing account
+(`app/Http/Controllers/Auth/LoginSocialController.php:retorno:133`,
+`:redirecionarSeIndisponivel:223`, `:pedirConfirmacaoDoVinculo:304`, `:aguardarAprovacao:330`,
+`:$novo = true:300`, `:urlDoPerfil:360`). The link (`VinculoSocial::vincular()`) runs after the
+whole chain, including for a just-created account (`:315`, `:560`). Link confirmation defaults to
+off (`config/kit.php:KIT_SOCIALITE_VINCULO_CONFIRMAR:728`).
+
 ## Linking to the provider: the first time, and the next ones
 
 The question that motivated this section: *"could I create a Google account with someone else's
