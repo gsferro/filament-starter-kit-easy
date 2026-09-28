@@ -679,7 +679,7 @@ it('captura a ficha de organização com o cabeçalho rico e as abas', function 
 | Busca ⌘K, login unificado e instalação — os clipes que a fase D2 acrescenta
 |--------------------------------------------------------------------------
 | `KitArte::CLIPES` já declara os quadros destes três clipes
-| (`app/Console/Commands/KitArte.php:68`); só faltava quem os capturasse — `[CT-50]` de
+| (`app/Console/Commands/KitArte.php:CLIPES:70`); só faltava quem os capturasse — `[CT-50]` de
 | `tests/Kit/KitArteTest.php` ficava vermelho para os três até aqui (R34).
 */
 
@@ -732,7 +732,7 @@ it('[CT-B03] captura a busca ⌘K fechada e aberta com um termo e resultado', fu
  * UI do `01-plano-acao.md` ("GIFs (busca ⌘K, escolha de painel do login unificado)"), nem o RQ-27
  * do `00-requisito.md` ("login unificado → escolha de painel"), nem o roteiro executável do
  * próprio `05` (que para no passo 5, neste mesmo quadro) pedem um terceiro quadro depois da
- * escolha — e `KitArte::CLIPES['login-unificado']` (`app/Console/Commands/KitArte.php:74-77`)
+ * escolha — e `KitArte::CLIPES['login-unificado']` (`app/Console/Commands/KitArte.php:76-79`)
  * também declara só estes dois. Corrigido no `05` (linha da Exemplos removida) em vez de inventar
  * aqui um quadro que nenhuma das três fontes pede.
  *

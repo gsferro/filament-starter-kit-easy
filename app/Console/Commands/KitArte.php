@@ -8,6 +8,7 @@ use Spatie\Image\Enums\Fit;
 use Spatie\Image\Image;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
+use Throwable;
 
 /**
  * Publica em `art/` o que a captura de tela produziu, e monta o GIF.
@@ -58,10 +59,11 @@ class KitArte extends Command
      * `docs/pt/recursos/import-export-csv.md` e `docs/en/recursos/import-export-csv.md`
      * (CT-46/CT-51 dependem dele não mudar).
      *
-     * Os quadros de `busca-spotlight`, `login-unificado` e `install` ainda não têm cenário de
-     * captura próprio (outro lote da feature os cria) — até lá, esses clipes aparecem sempre
-     * como "quadros ausentes" na saída, o que é o comportamento correto de R32 (nomeado, não
-     * silenciado), não um defeito.
+     * *(RD2-17, 2026-09-28)* `busca-spotlight`, `login-unificado` e `install` já têm cenário de
+     * captura próprio em `tests/BrowserTenancy/CapturaDeArteTest.php` (`cfafcd2`) — os cinco
+     * clipes têm quem produza os quadros deles hoje. Um quadro que faltar (captura removida,
+     * cenário quebrado) continua aparecendo como "ausente" na saída, o que é o comportamento
+     * correto de R32 (nomeado, não silenciado), não um defeito.
      *
      * @var array<string, list<string>>
      */
@@ -242,10 +244,11 @@ class KitArte extends Command
      * `palettegen`/`paletteuse` porque GIF é limitado a 256 cores: sem a paleta calculada
      * a partir DESTES quadros, a interface do Filament sai com faixas de cor visíveis.
      *
-     * Um clipe incompleto, cujo ffmpeg falha ou cujo ffmpeg ESTOURA O TIMEOUT (padrão do
-     * `Process`: 60s) é reportado pelo nome e não impede os outros (R32) — o `foreach` nunca
-     * para no primeiro incompleto/falho/travado; `montarClipe()` trata os três casos com o
-     * mesmo `try/finally`.
+     * Um clipe incompleto, cujo ffmpeg falha, cujo ffmpeg ESTOURA O TIMEOUT (padrão do
+     * `Process`: 60s), ou que lança QUALQUER OUTRA exceção antes disso (RD2-03 — ex.: um quadro
+     * que virou diretório e derruba `File::copy()`) é reportado pelo nome e não impede os outros
+     * (R32) — o `foreach` nunca para no primeiro incompleto/falho/travado/com exceção;
+     * `montarClipe()` trata os quatro casos com o mesmo `try/catch/finally`.
      *
      * Sem ffmpeg no PATH, avisa UMA VEZ e segue sem tentar nenhum clipe — as imagens
      * estáticas já foram publicadas, e tentar cada clipe só repetiria o mesmo aviso.
@@ -274,11 +277,17 @@ class KitArte extends Command
      * clipe (R32.M6) — um quadro sobrado de uma execução interrompida, ou do clipe anterior no
      * mesmo laço (R32.M5), não sobrevive para entrar neste GIF.
      *
-     * O `try/finally` cobre as TRÊS formas de o ffmpeg não terminar bem — falha (código != 0),
-     * timeout (`ProcessTimedOutException`, o padrão do `Process` é 60s) e qualquer outra
-     * exceção do processo: nos três casos o diretório de montagem é limpo do mesmo jeito, e
-     * `montarGif()` segue para o próximo clipe (R32) — travar num clipe não pode significar
-     * nunca tentar os outros.
+     * O `try/catch/finally` cobre as QUATRO formas de um clipe não terminar bem — falha do
+     * ffmpeg (código != 0), timeout (`ProcessTimedOutException`, o padrão do `Process` é 60s),
+     * falha ao PUBLICAR o GIF já pronto (`publicarGif()` retorna `false` — RD2-04) e qualquer
+     * OUTRA exceção, do `File::copy()` dos quadros ao próprio `Process` que não consegue iniciar
+     * (RD2-03): nos quatro casos o diretório de montagem é limpo do mesmo jeito (`finally`), e
+     * `montarGif()` segue para o próximo clipe (R32) — travar num clipe não pode significar nunca
+     * tentar os outros. O aviso distingue as três causas (RD2-04): "ffmpeg não disponível ou
+     * falhou" só quando o PRÓPRIO ffmpeg não terminou bem; "não consegui publicar" quando o
+     * ffmpeg terminou bem mas a cópia/rename para `art/` falhou; e a exceção crua, nomeando o
+     * clipe, para qualquer outra falha (RD2-03) — as três dizem coisas diferentes, e confundi-las
+     * mandaria quem lê o aviso investigar o ffmpeg quando o problema era outro.
      *
      * @param  list<string>  $quadros
      */
@@ -300,7 +309,8 @@ class KitArte extends Command
         $entrada    = base_path('storage/framework/cache/arte');
         $destino    = base_path("art/{$clipe}.gif");
         $temporario = "{$entrada}/{$clipe}-saida.gif";
-        $sucesso    = false;
+        $ffmpegOk   = false;
+        $publicado  = false;
 
         try {
             File::deleteDirectory($entrada);
@@ -326,19 +336,39 @@ class KitArte extends Command
                 // o `foreach` de `montarGif()`.
             }
 
-            $sucesso = $processo->isSuccessful() && File::exists($temporario);
+            $ffmpegOk = $processo->isSuccessful() && File::exists($temporario);
 
-            if ($sucesso) {
-                $sucesso = $this->publicarGif($temporario, $destino);
+            if ($ffmpegOk) {
+                $publicado = $this->publicarGif($temporario, $destino);
             }
+        } catch (Throwable $e) {
+            /*
+             * RD2-03: qualquer exceção que nasça ANTES do ffmpeg terminar — um quadro que virou
+             * diretório (`File::copy()` lança `ErrorException`), o `Process` que não consegue
+             * sequer iniciar (`ProcessStartFailedException`) — é reportada pelo NOME do clipe e
+             * não impede os demais. O docblock já prometia isso para "qualquer outra exceção";
+             * faltava o `catch` que faz a promessa valer.
+             */
+            $this->components->warn("Falha ao montar o clipe '{$label}': {$e->getMessage()}. GIF de '{$label}' não montado.");
+
+            return;
         } finally {
             // Sempre — sucesso, falha, timeout ou qualquer exceção: nenhum quadro nem GIF
             // temporário deste clipe pode sobreviver para contaminar o próximo (R32.M6).
             File::deleteDirectory($entrada);
         }
 
-        if (! $sucesso) {
+        if (! $ffmpegOk) {
             $this->components->warn("ffmpeg não disponível ou falhou — GIF de '{$label}' não montado. As imagens estáticas foram publicadas.");
+
+            return;
+        }
+
+        if (! $publicado) {
+            // RD2-04: o ffmpeg terminou bem — o problema é a publicação (rename/copy para
+            // art/), não o ffmpeg. Dizer "ffmpeg... falhou" aqui mandaria investigar o processo
+            // errado.
+            $this->components->warn("Não consegui publicar o GIF de '{$label}' — o ffmpeg concluiu, mas a cópia/rename para art/ falhou. O GIF anterior, se houver, foi preservado.");
 
             return;
         }

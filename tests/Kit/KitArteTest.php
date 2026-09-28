@@ -11,23 +11,25 @@ use Illuminate\Support\Str;
  * CT-64, CT-65 — R32/R33/R34.
  *
  * **O KitArte de HOJE já generaliza os 4 clipes do `00`** (busca ⌘K, login unificado → escolha
- * de painel, densidade, import/export) via `KitArte::CLIPES` (`app/Console/Commands/KitArte.php:68`),
+ * de painel, densidade, import/export) via `KitArte::CLIPES` (`app/Console/Commands/KitArte.php:CLIPES:70`),
  * mais um quinto clipe (`install`, referenciado pelo README) que não está nos exemplos do `04`
  * mas existe no código — coberto aqui como achado adicional, não como divergência.
  *
- * O que ainda NÃO existe é a CAPTURA de tela de três desses clipes (`busca-spotlight`,
- * `login-unificado`, `install`): nenhum cenário do `composer art` (`tests/BrowserTenancy/CapturaDeArteTest.php`,
- * `tests/Browser/HubDeCardsTest.php`) produz os PNGs deles ainda — outro lote os cria (D2). Por
- * isso `[CT-50]` fica VERMELHO para os quadros desses três clipes: é causa (b) (a implementação
- * ainda não chegou), não um teste quebrado, e a mensagem de falha diz isso. `[CT-46]`, `[CT-47]`
- * e `[CT-64]` não dependem dessa captura real — eles fornecem os quadros por FIXTURE e provam que
- * o `kit:arte` monta um GIF completo de verdade (conteúdo exato, byte a byte, na ordem declarada),
- * não apenas que o nome do clipe aparece na saída.
+ * *(RD2-17, 2026-09-28)* A CAPTURA de tela de `busca-spotlight`, `login-unificado` e `install` —
+ * que faltava quando este docblock foi escrito pela primeira vez — já existe hoje (`cfafcd2`):
+ * `tests/BrowserTenancy/CapturaDeArteTest.php` grava os quadros dos cinco clipes
+ * (`busca-spotlight-{1,2}-*`, `login-unificado-{1,2}-*`, `instalacao-{1..4}-*`, além dos três de
+ * `fluxo-*` e dos três de `densidade-*`). `[CT-50]` está VERDE para os cinco clipes hoje — nenhum
+ * quadro declarado em `KitArte::CLIPES` fica sem captura. `[CT-46]`, `[CT-47]` e `[CT-64]` não
+ * dependem dessa captura real de qualquer forma — eles fornecem os quadros por FIXTURE e provam
+ * que o `kit:arte` monta um GIF completo de verdade (conteúdo exato, byte a byte, na ordem
+ * declarada), não apenas que o nome do clipe aparece na saída.
  *
  * ## Arnês do ffmpeg de teste (Setup Global, hipótese confirmada nesta sessão)
  *
- * `Process::run()` do Symfony, chamado por `KitArte::montarGif()` SEM `$env` explícito
- * (`app/Console/Commands/KitArte.php:208`), herda o ambiente do processo PHP corrente — e
+ * `Process::run()` do Symfony, chamado por `KitArte::montarClipe()` (por sua vez chamado em laço
+ * por `montarGif()`) SEM `$env` explícito (`app/Console/Commands/KitArte.php:new Process([:323`),
+ * herda o ambiente do processo PHP corrente — e
  * `putenv()`/`$_ENV`/`$_SERVER` (as três, como `tests/Pest.php:kitConfigCom:582` já faz por
  * outro motivo) SIM alteram essa herança: confirmado empiricamente nesta sessão com um
  * executável de nome não-colidente prefixado ao `PATH`. Ressalva medida no mesmo teste: neste
@@ -90,8 +92,9 @@ afterEach(function (): void {
  * Um diretório de trabalho isolado para o `kit:arte`: `tests/Browser/Screenshots` (capturas) e
  * `art/thumbs` (publicação), sob `app()->setBasePath()` — para o comando NUNCA tocar o `art/`
  * real do repositório. `KitArte` só resolve caminhos por `base_path()`
- * (`app/Console/Commands/KitArte.php:100,126,199,206`), nunca por `storage_path()` fixo fora
- * disso, e o teste não faz HTTP/sessão depois — a troca é segura neste escopo.
+ * (`app/Console/Commands/KitArte.php:base_path():146,172,188,197,309,310`), nunca por
+ * `storage_path()` fixo fora disso, e o teste não faz HTTP/sessão depois — a troca é segura neste
+ * escopo.
  */
 function diretorioDeArte(): string
 {
@@ -365,7 +368,7 @@ function arquivosDaCapturaDeArte(): array
  * O quadro `$quadro` tem algum cenário do `composer art` que o produz? Duas formas contam, as
  * duas usadas de verdade nesta base: o literal `filename: '<quadro>'` (a maioria dos cenários),
  * e o quadro como VALOR de um `->with([...])` cujo cenário grava com `filename: $variavel`
- * (`densidade-*`, `tests/BrowserTenancy/CapturaDeArteTest.php:373` — `filename: $arquivo`, com
+ * (`densidade-*`, `tests/BrowserTenancy/CapturaDeArteTest.php:372` — `filename: $arquivo`, com
  * `'densidade-confortavel'` etc. só no dataset). As duas produzem o arquivo; procurar só a forma
  * literal acusaria `densidade-*` como sem captura, quando ela já existe.
  */
@@ -382,7 +385,7 @@ function quadroTemCapturaDeclarada(string $quadro): bool
 
 it('[CT-50] todo quadro declarado no KitArte (todos os clipes) tem quem o capture no composer art', function (string $quadro): void {
     expect(quadroTemCapturaDeclarada($quadro))->toBeTrue(
-        "nenhum cenário de tests/BrowserTenancy/CapturaDeArteTest.php ou tests/Browser/HubDeCardsTest.php produz o quadro '{$quadro}' — o quadro declarado em KitArte::CLIPES não tem quem o capture (R34.M1/M2). Se o quadro for de busca-spotlight, login-unificado ou install: causa (b), a fase de captura desses clipes (D2) ainda não existe. Para os demais (fluxo-*, densidade-*): defeito real.",
+        "nenhum cenário de tests/BrowserTenancy/CapturaDeArteTest.php ou tests/Browser/HubDeCardsTest.php produz o quadro '{$quadro}' — o quadro declarado em KitArte::CLIPES não tem quem o capture (R34.M1/M2).",
     );
 })->with(fn (): array => array_combine(todosOsQuadrosDoKitArte(), todosOsQuadrosDoKitArte()));
 
@@ -473,10 +476,26 @@ it('[CT-64] cada GIF recebe so os quadros do seu proprio clipe, na ordem declara
         }
     }
 
-    // Quadro sobrado no diretório de MONTAGEM do comando (não no de capturas) — de uma execução
-    // interrompida, exatamente o que R32.M6 (diretório não limpo antes de copiar) deixaria lá.
+    /*
+     * Quadro sobrado no diretório de MONTAGEM do comando (não no de capturas) — de uma execução
+     * interrompida, exatamente o que R32.M6 (diretório não limpo antes de copiar) deixaria lá.
+     *
+     * (RD2-01) O índice tem de ser MAIOR que a quantidade de quadros do PRIMEIRO clipe processado
+     * (`fluxo-import-export`, primeira chave de `KitArte::CLIPES`) — E contíguo com a numeração
+     * real dele (`quadro-01`, `quadro-02`... sem lacuna), para o ffmpeg (de teste ou real, ambos
+     * lendo pelo padrão `%02d` do demuxer `image2`) de fato incluir o sobrado na leitura sequencial
+     * do PRIMEIRO clipe, antes de o `finally` de `montarClipe()` limpar o diretório para o próximo.
+     * Um índice DENTRO da contagem do primeiro clipe (como `quadro-03` era, com um clipe de 3
+     * quadros) é sobrescrito pelo próprio `File::copy()` do clipe — sobrevive à falta de limpeza
+     * e ao encontro dela igualmente, e não discrimina nada (achado da 3ª rodada: o caso encolheu
+     * de `quadro-04` para `quadro-03` e parou de pegar a regressão).
+     */
+    $primeiroClipe = array_key_first($clipes);
+    $indiceSobrado = count($clipes[$primeiroClipe]) + 1;
+    $quadroSobrado = sprintf('quadro-%02d.png', $indiceSobrado);
+
     File::ensureDirectoryExists("{$base}/storage/framework/cache/arte");
-    File::put("{$base}/storage/framework/cache/arte/quadro-03.png", 'QUADRO-SOBRADO-DE-EXECUCAO-ANTERIOR');
+    File::put("{$base}/storage/framework/cache/arte/{$quadroSobrado}", 'QUADRO-SOBRADO-DE-EXECUCAO-ANTERIOR');
 
     Artisan::call('kit:arte');
 
@@ -527,4 +546,74 @@ it('[CT-65] o ffmpeg que abre a saida e falha no meio nao trunca o GIF publicado
     );
 
     expect(mb_strtolower($saida))->toContain('não disponível');
+});
+
+/*
+|--------------------------------------------------------------------------
+| R32 — RD2-02/RD2-03: uma excecao QUALQUER num clipe nao aborta os demais
+|--------------------------------------------------------------------------
+| O docblock de `montarClipe()` promete que falha, timeout OU "qualquer outra excecao" do
+| processo nao sobem e nao param o `foreach` de `montarGif()` (R32) — mas o `try` de
+| `montarClipe()` so tem `finally`, sem `catch`: só a excecao do `$processo->run()` (o
+| `ProcessTimedOutException` interno) e tratada. Uma excecao que nasca ANTES do `Process` — aqui,
+| `File::copy()` sobre um quadro que e um DIRETORIO, a mesma classe de falha que a revisao mediu
+| com uma captura real (`busca-spotlight-2-aberta.png` virando diretorio) — sobe por cima do laco
+| inteiro. `ProcessStartFailedException` (o outro repro da revisao) nao foi construida aqui: exige
+| apagar o binario do ffmpeg resolvido ENTRE a resolucao e o `Process::run()` deste clipe
+| especifico, uma corrida que este arnes (sincrono, um so processo) nao consegue forcar de forma
+| deterministica — declarado como nao-falsificavel nesta pilha sem tocar o SO.
+*/
+
+it('[RD2-02/RD2-03] uma excecao qualquer ao montar um clipe nao aborta os demais, e o diretorio de montagem fica limpo', function (): void {
+    $base = diretorioDeArte();
+    instalarFfmpegDeTeste('gravador');
+
+    $clipes = clipesDoKitArte();
+
+    // `fluxo-import-export` e o PRIMEIRO clipe do laco (primeira chave de `KitArte::CLIPES`): o
+    // seu primeiro quadro vira um DIRETORIO em vez de um PNG, e `File::copy()` (chamado dentro do
+    // `try` de `montarClipe()`, ANTES do `Process`) lanca `ErrorException` ("the first argument to
+    // copy() function cannot be a directory") — o Laravel converte o warning do PHP em excecao.
+    [$primeiroQuadro] = $clipes['fluxo-import-export'];
+    File::ensureDirectoryExists("{$base}/tests/Browser/Screenshots/{$primeiroQuadro}.png");
+
+    foreach (array_slice($clipes['fluxo-import-export'], 1) as $i => $quadro) {
+        File::put("{$base}/tests/Browser/Screenshots/{$quadro}.png", conteudoDoQuadroDeTeste('fluxo-import-export', $i + 1));
+    }
+
+    // Os DEMAIS clipes, completos — para provar que SERIAM montados se a excecao do primeiro nao
+    // abortasse o `foreach` de `montarGif()` inteiro.
+    foreach (array_diff_key($clipes, ['fluxo-import-export' => null]) as $clipe => $quadros) {
+        foreach ($quadros as $i => $quadro) {
+            File::put("{$base}/tests/Browser/Screenshots/{$quadro}.png", conteudoDoQuadroDeTeste($clipe, $i));
+        }
+    }
+
+    $excecao = null;
+
+    try {
+        Artisan::call('kit:arte');
+    } catch (Throwable $e) {
+        $excecao = $e;
+    }
+
+    expect($excecao)->toBeNull(
+        'uma excecao ao montar UM clipe (aqui, File::copy() sobre um quadro que e um diretorio) '
+        .'nao deveria propagar para fora do kit:arte inteiro — o docblock de montarClipe() promete '
+        .'que "qualquer outra excecao" segue para o proximo clipe (R32), nao so falha/timeout do '
+        .'ffmpeg. Excecao real: '.($excecao instanceof Throwable ? $excecao::class.': '.$excecao->getMessage() : ''),
+    );
+
+    // O `finally` de `montarClipe()` roda mesmo quando o `try` lanca — esta parte da promessa
+    // (diretorio de montagem limpo) NAO esta quebrada; a prova fica aqui ao lado da que esta.
+    expect(File::isDirectory("{$base}/storage/framework/cache/arte"))->toBeFalse(
+        'o diretorio de montagem deveria ficar limpo (finally) mesmo quando um clipe lanca uma excecao qualquer',
+    );
+
+    // `densidade` vem DEPOIS de `fluxo-import-export` em `KitArte::CLIPES` e tem todos os seus
+    // quadros: hoje ele nem chega a ser tentado, porque a excecao do primeiro aborta o laco antes
+    // de `montarGif()` alcancar os clipes seguintes.
+    expect(File::exists("{$base}/art/densidade.gif"))->toBeTrue(
+        'art/densidade.gif deveria existir — densidade vem depois de fluxo-import-export em KitArte::CLIPES e tem todos os seus quadros; um clipe malsucedido nao pode impedir os demais (R32)',
+    );
 });
