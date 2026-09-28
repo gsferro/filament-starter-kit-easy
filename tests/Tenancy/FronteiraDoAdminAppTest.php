@@ -231,9 +231,24 @@ it('[CT-10] montar a tela de edicao com o alvo em maos nao altera a conta de que
     $barrado = null;
 
     try {
-        Livewire::test(EditUser::class, ['record' => $alvo->uuid])
-            ->fillForm(['email' => 'sequestrado@example.com', 'password' => 'senha-nova-12345'])
-            ->call('save');
+        $tela = Livewire::test(EditUser::class, ['record' => $alvo->uuid]);
+
+        // Desde o Livewire 4.4.6 o RequestBroker de teste deixa o handler tratar o
+        // ModelNotFoundException (RequestBroker::temporarilyDisableExceptionHandlingAndMiddleware(), em
+        // vendor/livewire/livewire/src/Features/SupportTesting/): o binding recortado vira RESPOSTA 404,
+        // sem exceção, e o componente não monta. Sem número de linha: ela muda a cada versão do Livewire.
+        // As duas formas barram; só a gravação com 200 é o defeito.
+        if ($tela->instance() === null) {
+            // O Testable repassa status() à resposta mas devolve a si mesmo (API fluente): o código
+            // vem da própria resposta, pelo mesmo invade() que o Testable::instance() usa.
+            $status = \Livewire\invade($tela)->lastState->getResponse()->getStatusCode();
+
+            expect($status)->toBeIn([403, 404]);
+            $barrado = $status;
+        } else {
+            $tela->fillForm(['email' => 'sequestrado@example.com', 'password' => 'senha-nova-12345'])
+                ->call('save');
+        }
     } catch (ModelNotFoundException|NotFoundHttpException|AuthorizationException|HttpException $e) {
         $barrado = $e;
     }
