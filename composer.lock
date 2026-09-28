@@ -4724,16 +4724,16 @@
         },
         {
             "name": "laboiteacode/filament-logs-explorer",
-            "version": "v1.0.1",
+            "version": "v1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/La-boite-a-code/filament-logs-explorer.git",
-                "reference": "bd9639c4715be80a99677f55a6c4c1e419d3e7a6"
+                "reference": "826b53faec2e7d87bada73aed1a87c2e3ebf5927"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/La-boite-a-code/filament-logs-explorer/zipball/bd9639c4715be80a99677f55a6c4c1e419d3e7a6",
-                "reference": "bd9639c4715be80a99677f55a6c4c1e419d3e7a6",
+                "url": "https://api.github.com/repos/La-boite-a-code/filament-logs-explorer/zipball/826b53faec2e7d87bada73aed1a87c2e3ebf5927",
+                "reference": "826b53faec2e7d87bada73aed1a87c2e3ebf5927",
                 "shasum": ""
             },
             "require": {
@@ -4786,9 +4786,9 @@
             ],
             "support": {
                 "issues": "https://github.com/La-boite-a-code/filament-logs-explorer/issues",
-                "source": "https://github.com/La-boite-a-code/filament-logs-explorer/tree/v1.0.1"
+                "source": "https://github.com/La-boite-a-code/filament-logs-explorer/tree/v1.0.2"
             },
-            "time": "2026-07-24T06:15:06+00:00"
+            "time": "2026-09-22T17:53:30+00:00"
         },
         {
             "name": "lara-zeus/progress",
