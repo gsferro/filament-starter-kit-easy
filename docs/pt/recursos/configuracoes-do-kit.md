@@ -185,6 +185,25 @@ Esta é a pergunta que decide se a tela é útil ou decorativa, e a resposta é 
 
 > **O banco vence em tempo de execução. O `.env` semeia a primeira gravação e é o plano B.**
 
+```mermaid
+flowchart LR
+%% DG-14
+accTitle: De onde vem a configuração
+accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do mapaDeConfiguracao quando a tabela settings existe, e a tela de configurações grava nele; chave fora do mapa, como KIT_TENANCY, só tem o .env como fonte.
+  env_file[".env"] --> config_php["config/*.php"]
+  settings_banco["Settings no banco"] -->|"sobrepõe, chaves do mapa"| config_php
+  tela_config["Tela de configurações"] -->|"grava"| settings_banco
+  env_file -.->|"só .env: KIT_TENANCY e demais fora do mapa"| chave_fora_do_mapa["Chave fora do mapaDeConfiguracao"]
+```
+
+`ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:504`), chamado no boot por
+`KitServiceProvider::configureSettingsDoKit()`
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:394`); as chaves sobrepostas são
+exatamente as de `mapaDeConfiguracao()`
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:367`) — `KIT_TENANCY`
+(`config/kit.php:KIT_TENANCY:351`) não está nesse mapa, então o banco nunca a sobrescreve.
+
 Como isso funciona sem que nenhum consumidor saiba que o settings existe:
 
 1. A migration `database/settings/*_create_kit_settings.php` semeia cada propriedade com o valor **de `config(...)`**, que vem do `.env`. Numa instalação nova, a cor e o nome que você escolheu no `kit:install` chegam ao banco sozinhos — o `migrate` roda depois de o instalador ter escrito o arquivo.

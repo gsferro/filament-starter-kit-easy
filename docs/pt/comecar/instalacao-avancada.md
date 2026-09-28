@@ -162,10 +162,60 @@ Um aviso honesto: nessa combinação um container de Postgres sobe ocioso, porqu
 profile `app` dependem dele para ordenar o boot. A alternativa foi medida e é pior — sem essa
 dependência, `docker compose --profile app up -d` sobe a aplicação **sem banco nenhum** e sem erro.
 
+## Os containers por profile
+
+Os 12 serviços de `docker-compose.yml` sobem em grupos: `pgsql` e `redis` sempre, sem profile
+(`docker-compose.yml:pgsql::29`, `docker-compose.yml:redis::85`); `mysql` só com `--profile mysql`
+(`docker-compose.yml:profiles: [mysql]:55`); `llamacpp` e `llamacpp-embeddings` com `ai` ou `full`
+(`docker-compose.yml:profiles: [ai, full]:106`); `mailpit` com `mail` ou `full`
+(`docker-compose.yml:profiles: [mail, full]:164`); `nginx`, `app`, `queue` e `scheduler` com `app`
+(`docker-compose.yml:profiles: [app]:180`); e `reverb` e `pulse` com `app` ou `realtime`
+(`docker-compose.yml:profiles: [app, realtime]:335`).
+
+```mermaid
+flowchart TD
+%% DG-18
+accTitle: Containers por profile do Docker
+accDescr: Os 12 serviços do docker-compose.yml, agrupados pelos profiles que sobem juntos. redis e reverb só valem de fato com o .env.docker; o .env.example padrão não os usa.
+  subgraph sempre ["Sempre (sem profile)"]
+    pgsql[("pgsql")]
+    redis[("redis")]
+  end
+  subgraph perfil_mysql ["profile: mysql"]
+    mysql[("mysql")]
+  end
+  subgraph perfil_ai ["profile: ai, full"]
+    llamacpp["llamacpp"]
+    llamacpp_embeddings["llamacpp-embeddings"]
+  end
+  subgraph perfil_mail ["profile: mail, full"]
+    mailpit["mailpit"]
+  end
+  subgraph perfil_app ["profile: app"]
+    nginx["nginx"]
+    app["app"]
+    queue["queue"]
+    scheduler["scheduler"]
+  end
+  subgraph perfil_realtime ["profile: app, realtime"]
+    reverb["reverb"]
+    pulse["pulse"]
+  end
+  env_example[".env.example (padrão): CACHE_STORE=database, BROADCAST_CONNECTION=log"] -.->|"deixa ocioso"| redis
+  env_docker[".env.docker: CACHE_STORE=redis, BROADCAST_CONNECTION=reverb"] -->|"faz valer"| redis
+  env_docker -->|"faz valer"| reverb
+```
+
+O `.env.example` que a instalação usa por padrão **não** liga `redis` nem `reverb` de fato — o cache
+continua em `database` e o broadcast em `log` (`.env.example:CACHE_STORE:54`,
+`.env.example:BROADCAST_CONNECTION:50`). Os dois containers só passam a ser lidos com o
+`.env.docker` (`.env.docker:CACHE_STORE:27`, `.env.docker:BROADCAST_CONNECTION:63`), o arquivo que a
+seção anterior usa para o profile `app`.
+
 ## Comandos
 
 ```bash
-composer dev          # servidor + fila + vite juntos
+composer dev          # servidor + fila + vite + reverb juntos (e pail, fora do Windows)
 composer test         # pint + phpstan + filacheck + a suíte inteira
 composer test:kit     # só os testes do kit (a fundação), em paralelo
 composer lint         # formata o código
@@ -221,4 +271,51 @@ Os onze últimos não entram nas perguntas porque são **código ou dado de tela
 > ⚠️ O item 5 é o único que **não** é "edite um arquivo" depois de instalado: o `kit:tenancy` roda `migrate:fresh --seed` e **apaga os dados**. Ele exige árvore git limpa e confirmação explícita. **Respondido na instalação, ele não apaga nada** — o banco ainda nem existe, e é essa a hora certa de decidir.
 
 > A cor primária vale para os três painéis. Com o [modo multi-tenant](../../recursos/multi-tenancy/) ligado, a cor de cada organização **vence** esta dentro de `/app/{slug}` — o `/admin` e o `/infra` continuam com a do projeto. Para uma paleta completa, e não só a `primary`, o caminho continua sendo `->colors([...])` em cada `app/Providers/Filament/*PanelProvider.php`.
+
+## Como a instalação acontece por dentro
+
+O `composer create-project` roda dois scripts do próprio kit
+(`composer.json:post-root-package-install:204`, `composer.json:post-create-project-cmd:207`): o
+primeiro só copia `.env.example` para `.env` se ele ainda não existir; o segundo chama
+`php artisan kit:install --create-project`. Dentro de `KitInstall::handle()`
+(`app/Console/Commands/KitInstall.php:handle:70`), a ordem real é: as cinco perguntas de
+customização (`app/Console/Commands/KitInstall.php:customizar():97`) vêm antes de gerar a
+`APP_KEY` e preparar o SQLite; migrar e semear só acontecem **se o banco responder**
+(`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel):102`,
+`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel && ! $this->option('no-seed')):106`);
+e a senha do administrador é gerada **antes** do `db:seed`
+(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:357`,
+`app/Console/Commands/KitInstall.php:'db:seed':373`) — nunca o contrário, senão o banner imprimiria
+uma senha que o seeder já gravou como outra.
+
+```mermaid
+sequenceDiagram
+%% DG-15
+accTitle: Sequência da instalação
+accDescr: O post-create-project-cmd do Composer aciona o kit:install, que pergunta a customização antes de migrar, gera a senha do administrador antes do db:seed, e só migra e semeia com o banco acessível.
+  participant composer as composer create-project
+  participant kit_install as kit:install
+  participant banco as Banco de dados
+  participant seeders as Seeders
+  composer->>composer: post-root-package-install copia .env.example -> .env (só se faltar)
+  composer->>kit_install: post-create-project-cmd invoca kit:install --create-project
+  kit_install->>kit_install: customizar() - nome, banco, credenciais, cor, tenancy
+  kit_install->>kit_install: gerarAppKey(), prepararBancoSqlite()
+  kit_install->>banco: tenta conectar (conferirConexao)
+  alt banco acessível
+    kit_install->>banco: migrate --graceful --force
+    kit_install->>kit_install: senha gerada (ou a definida em KIT_ADMIN_PASSWORD)
+    kit_install->>seeders: db:seed --force (ShieldPermissionsSeeder, PapeisSeeder, UsuarioAdminSeeder, AssistenteSeeder, GuardaPromptSeeder)
+  else banco inacessível
+    kit_install-->>composer: aviso - rode migrate --seed depois
+  end
+  kit_install-->>composer: banner (mostra a senha só se foi gerada agora)
+```
+
+A ordem dos cinco seeders vem de `DatabaseSeeder::run()`
+(`database/seeders/DatabaseSeeder.php:run:16`) — `TenantsSeeder` entra depois deles, só com o modo
+multi-tenant ligado. O banner nunca imprime `password`: a senha é gerada com 24 caracteres
+alfanuméricos e só aparece uma vez, na execução em que nasceu
+(`app/Support/SenhaDoAdministrador.php:garantirNoEnv:115`); quem já definiu a
+própria em `KIT_ADMIN_PASSWORD` não a vê impressa de volta.
 

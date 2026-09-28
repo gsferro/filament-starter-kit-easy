@@ -150,7 +150,7 @@ accDescr: A ordem de decisão de canAccessPanel, da indisponibilidade da conta a
 
 ## DG-13 — ER do núcleo
 
-As entidades centrais e como se referenciam: a conta (`users`) a uma organização via `tenant_user` (`app/Models/User.php:tenants:748`, `app/Models/Tenant.php:users:112`), a um papel via `model_has_roles` (Shield), o vínculo social (`app/Models/User.php:vinculosSociais:758`), o convite (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) e o catálogo de agentes de IA — sem relação nenhuma com `projetos`, a tabela de demonstração (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` e `agent_conversations` guardam identificadores como texto solto, sem chave estrangeira de verdade — por isso entram sem relação desenhada. `passkeys` fica de fora deliberadamente: a tabela existe (vendor), mas nenhuma feature do kit a usa (`enablePasskeys()` não é chamado).
+As entidades centrais e como se referenciam: a conta (`users`) a uma organização via `tenant_user` (`app/Models/User.php:tenants:748`, `app/Models/Tenant.php:users:112`), a um papel via `model_has_roles` (Shield), o vínculo social (`app/Models/User.php:vinculosSociais:758`), o convite (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) e o catálogo de agentes de IA — sem relação nenhuma com `projetos`, a tabela de demonstração (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` e `agent_conversations` guardam identificadores como texto solto, sem chave estrangeira de verdade — por isso entram sem relação desenhada. `passkeys` fica de fora deliberadamente: a tabela existe (vendor), mas nenhuma feature do kit a usa — as passkeys estão desligadas (`enablePasskeys()` não é chamado).
 
 ```mermaid
 erDiagram

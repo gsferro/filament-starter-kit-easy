@@ -150,7 +150,7 @@ accDescr: The decision order of canAccessPanel, from account unavailability to t
 
 ## DG-13 — Core entity-relationship diagram
 
-The central entities and how they reference each other: the account (`users`) to a tenant via `tenant_user` (`app/Models/User.php:tenants:748`, `app/Models/Tenant.php:users:112`), to a role via `model_has_roles` (Shield), the social link (`app/Models/User.php:vinculosSociais:758`), the invite (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) and the AI agent catalog — with no relation at all to `projetos`, the demo table (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` and `agent_conversations` store identifiers as loose text, with no real foreign key — that is why they carry no drawn relation. `passkeys` is deliberately left out: the table exists (vendor), but no feature in the kit uses it (`enablePasskeys()` is never called).
+The central entities and how they reference each other: the account (`users`) to a tenant via `tenant_user` (`app/Models/User.php:tenants:748`, `app/Models/Tenant.php:users:112`), to a role via `model_has_roles` (Shield), the social link (`app/Models/User.php:vinculosSociais:758`), the invite (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) and the AI agent catalog — with no relation at all to `projetos`, the demo table (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` and `agent_conversations` store identifiers as loose text, with no real foreign key — that is why they carry no drawn relation. `passkeys` is deliberately left out: the table exists (vendor), but no feature in the kit uses it — passkeys are disabled (`enablePasskeys()` is never called).
 
 ```mermaid
 erDiagram

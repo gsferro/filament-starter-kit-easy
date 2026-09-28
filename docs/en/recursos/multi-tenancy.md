@@ -116,3 +116,51 @@ class Projeto extends Model
 It provides the `tenant()` relationship, a **global scope** and automatic `tenant_id` filling. The scope matters because Filament only scopes what goes through a Resource — jobs, commands, listeners and APIs would be left out, and that's exactly where one client's data leaks into another's.
 
 > ⚠️ **`kit:tenancy` recreates the database.** It turns on `permission.teams`, and the spatie migration only creates the tenant columns if the flag is active **before** the migrate. That's why it requires a clean git tree, an explicit confirmation, and runs `migrate:fresh --seed`. **The time to run it is day 1 of the project.** The detailed path — including global vs. per-tenant roles and `scopedUnique()` — is in [`wikis/arquitetura.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/arquitetura.md#multi-tenancy-opt-in) (pt-BR).
+
+## Inside `kit:tenancy`, and the request to `/app/{tenant}`
+
+`KitTenancy::handle()` (`app/Console/Commands/KitTenancy.php:handle:50`) runs, in this order:
+pre-flight — clean git (`app/Console/Commands/KitTenancy.php:preVoo:103`) — explicit confirmation,
+or `--force` (`app/Console/Commands/KitTenancy.php:confirmarDestruicao:143`), `KIT_TENANCY=true` in
+`.env` (`app/Console/Commands/KitTenancy.php:ligarFlagNoEnv:165`,
+`app/Support/AtivadorDeTenancy.php:escreverEnv:35`), `permission.teams` turned on per tenant
+(`app/Console/Commands/KitTenancy.php:ligarPapeisPorTenant:172`,
+`app/Support/AtivadorDeTenancy.php:ligarPapeisPorTenant:71`), `migrate:fresh --seed` —
+**destructive** — followed by a schema check
+(`app/Console/Commands/KitTenancy.php:recriarBanco:179`, `:migrate:fresh:187`,
+`:conferirSchema:189`, defined at `:198`) and, only with `--demo`, the demo scenario
+(`app/Console/Commands/KitTenancy.php:semearDemo:224`).
+
+With the mode on, every request to `/app/{tenant}` goes through two Filament middleware before
+reaching the screen: `IdentifyTenant` resolves the tenant from the route and already decides the
+404 by calling `canAccessTenant()`
+(`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:canAccessTenant:40`,
+`app/Models/User.php:canAccessTenant:789`); only after that does `DefinirTenantDePermissoes` — the
+kit's `tenantMiddleware` — fix the per-tenant role context
+(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:595`,
+`app/Http/Middleware/DefinirTenantDePermissoes.php:setPermissionsTeamId:46`).
+
+```mermaid
+sequenceDiagram
+%% DG-20
+accTitle: Request to /app/{tenant}
+accDescr: IdentifyTenant resolves the tenant from the route and calls canAccessTenant(); an inactive organization or one with no link answers 404, and only then does DefinirTenantDePermissoes fix the per-tenant role context.
+  participant visitante as Visitor
+  participant identify_tenant as IdentifyTenant
+  participant can_access_tenant as canAccessTenant()
+  participant definir_tenant as DefinirTenantDePermissoes
+  Note over identify_tenant,definir_tenant: only exists with KIT_TENANCY=true (hasTenancy())
+  visitante->>identify_tenant: GET /app/{tenant}
+  identify_tenant->>can_access_tenant: is the organization active and linked?
+  alt inactive organization or no link
+    can_access_tenant-->>visitante: refuses (404)
+  else access allowed
+    can_access_tenant-->>identify_tenant: allows
+    identify_tenant->>definir_tenant: Filament::setTenant()
+    definir_tenant-->>visitante: role context fixed (team_id)
+  end
+```
+
+The `master_global` guard always lets them through (line 826), and an inactive organization refuses
+everyone, including them (the line right before `isMasterGlobal()`) — it is the same fixed asymmetry
+that this page's 403×404 table already describes.

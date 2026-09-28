@@ -116,3 +116,50 @@ class Projeto extends Model
 Ela dá a relação `tenant()`, um **escopo global** e o preenchimento automático de `tenant_id`. O escopo importa porque o Filament só recorta o que passa por um Resource — job, comando, listener e API ficariam de fora, e é aí que dado de um cliente vaza para outro.
 
 > ⚠️ **`kit:tenancy` recria o banco.** Ele liga `permission.teams`, e a migration do spatie só cria as colunas de tenant se a flag estiver ativa **antes** do migrate. Por isso exige árvore git limpa, confirmação explícita e roda `migrate:fresh --seed`. **A hora de rodar é o dia 1 do projeto.** O caminho detalhado — inclusive papéis globais × por tenant e `scopedUnique()` — está em [`wikis/arquitetura.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/arquitetura.md#multi-tenancy-opt-in).
+
+## Por dentro do `kit:tenancy`, e a requisição em `/app/{tenant}`
+
+`KitTenancy::handle()` (`app/Console/Commands/KitTenancy.php:handle:50`) faz, nesta ordem:
+pré-voo — git limpo (`app/Console/Commands/KitTenancy.php:preVoo:103`) — confirmação explícita, ou
+`--force` (`app/Console/Commands/KitTenancy.php:confirmarDestruicao:143`), `KIT_TENANCY=true` no
+`.env` (`app/Console/Commands/KitTenancy.php:ligarFlagNoEnv:165`,
+`app/Support/AtivadorDeTenancy.php:escreverEnv:35`), `permission.teams` ligado por organização
+(`app/Console/Commands/KitTenancy.php:ligarPapeisPorTenant:172`,
+`app/Support/AtivadorDeTenancy.php:ligarPapeisPorTenant:71`), `migrate:fresh --seed` — **destrutivo**
+— seguido da conferência do schema
+(`app/Console/Commands/KitTenancy.php:recriarBanco:179`, `:migrate:fresh:187`,
+`:conferirSchema:189`, definida em `:198`) e, só com `--demo`, o cenário de demonstração
+(`app/Console/Commands/KitTenancy.php:semearDemo:224`).
+
+Com o modo ligado, toda requisição a `/app/{tenant}` passa por dois middlewares do Filament antes de
+chegar à tela: `IdentifyTenant` resolve o tenant da rota e já decide o 404 chamando
+`canAccessTenant()` (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:canAccessTenant:40`,
+`app/Models/User.php:canAccessTenant:789`); só depois disso o `DefinirTenantDePermissoes` — o
+`tenantMiddleware` do kit — fixa o contexto de papéis por tenant
+(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:595`,
+`app/Http/Middleware/DefinirTenantDePermissoes.php:setPermissionsTeamId:46`).
+
+```mermaid
+sequenceDiagram
+%% DG-20
+accTitle: Requisição em /app/{tenant}
+accDescr: O IdentifyTenant resolve o tenant da rota e consulta canAccessTenant(); organização inativa ou sem vínculo responde 404, e só então o DefinirTenantDePermissoes fixa o contexto de papéis por tenant.
+  participant visitante as Visitante
+  participant identify_tenant as IdentifyTenant
+  participant can_access_tenant as canAccessTenant()
+  participant definir_tenant as DefinirTenantDePermissoes
+  Note over identify_tenant,definir_tenant: só existe com KIT_TENANCY=true (hasTenancy())
+  visitante->>identify_tenant: GET /app/{tenant}
+  identify_tenant->>can_access_tenant: organização ativa e vinculada?
+  alt organização inativa ou sem vínculo
+    can_access_tenant-->>visitante: nega (404)
+  else acesso permitido
+    can_access_tenant-->>identify_tenant: permite
+    identify_tenant->>definir_tenant: Filament::setTenant()
+    definir_tenant-->>visitante: contexto de papéis fixado (team_id)
+  end
+```
+
+A guarda `master_global` sempre passa (linha 826), e organização inativa nega para todo mundo,
+inclusive ele (linha antes do `isMasterGlobal()`) — é a mesma assimetria corrigida que a tabela de
+403×404 desta página já descreve.

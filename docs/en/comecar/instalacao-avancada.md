@@ -160,10 +160,60 @@ profile services depend on it to order the boot. The alternative was measured an
 that dependency, `docker compose --profile app up -d` brings the application up with **no database at
 all**, and without an error.
 
+## Containers by profile
+
+The 12 services in `docker-compose.yml` come up in groups: `pgsql` and `redis` always, with no
+profile (`docker-compose.yml:pgsql::29`, `docker-compose.yml:redis::85`); `mysql` only with
+`--profile mysql` (`docker-compose.yml:profiles: [mysql]:55`); `llamacpp` and
+`llamacpp-embeddings` with `ai` or `full` (`docker-compose.yml:profiles: [ai, full]:106`); `mailpit`
+with `mail` or `full` (`docker-compose.yml:profiles: [mail, full]:164`); `nginx`, `app`, `queue` and
+`scheduler` with `app` (`docker-compose.yml:profiles: [app]:180`); and `reverb` and `pulse` with
+`app` or `realtime` (`docker-compose.yml:profiles: [app, realtime]:335`).
+
+```mermaid
+flowchart TD
+%% DG-18
+accTitle: Containers by Docker profile
+accDescr: The 12 services in docker-compose.yml, grouped by the profiles that bring them up together. redis and reverb only take effect with .env.docker; the default .env.example does not use them.
+  subgraph sempre ["Always (no profile)"]
+    pgsql[("pgsql")]
+    redis[("redis")]
+  end
+  subgraph perfil_mysql ["profile: mysql"]
+    mysql[("mysql")]
+  end
+  subgraph perfil_ai ["profile: ai, full"]
+    llamacpp["llamacpp"]
+    llamacpp_embeddings["llamacpp-embeddings"]
+  end
+  subgraph perfil_mail ["profile: mail, full"]
+    mailpit["mailpit"]
+  end
+  subgraph perfil_app ["profile: app"]
+    nginx["nginx"]
+    app["app"]
+    queue["queue"]
+    scheduler["scheduler"]
+  end
+  subgraph perfil_realtime ["profile: app, realtime"]
+    reverb["reverb"]
+    pulse["pulse"]
+  end
+  env_example[".env.example (default): CACHE_STORE=database, BROADCAST_CONNECTION=log"] -.->|"leaves idle"| redis
+  env_docker[".env.docker: CACHE_STORE=redis, BROADCAST_CONNECTION=reverb"] -->|"makes effective"| redis
+  env_docker -->|"makes effective"| reverb
+```
+
+The `.env.example` the installation uses by default does **not** actually turn `redis` or `reverb`
+on — the cache stays on `database` and the broadcast on `log` (`.env.example:CACHE_STORE:54`,
+`.env.example:BROADCAST_CONNECTION:50`). The two containers are only read once `.env.docker` is in
+place (`.env.docker:CACHE_STORE:27`, `.env.docker:BROADCAST_CONNECTION:63`), the same file the
+previous section uses for the `app` profile.
+
 ## Commands
 
 ```bash
-composer dev          # server + queue + vite together
+composer dev          # server + queue + vite + reverb together (and pail, off Windows)
 composer test         # pint + phpstan + filacheck + the whole suite
 composer test:kit     # only the kit's tests (the foundation), in parallel
 composer lint         # formats the code
@@ -219,4 +269,51 @@ The last eleven are not asked because they are **code or screen data**, not a va
 > ⚠️ Item 5 is the only one that is **not** "edit a file" once installed: `kit:tenancy` runs `migrate:fresh --seed` and **deletes your data**. It requires a clean git tree and an explicit confirmation. **Answered during installation it deletes nothing** — the database does not exist yet, and that is the right moment to decide.
 
 > The primary color applies to all three panels. With [multi-tenancy](../../recursos/multi-tenancy/) on, each organization's color **wins** over it inside `/app/{slug}` — `/admin` and `/infra` keep the project's one. For a full palette, and not just `primary`, the way is still `->colors([...])` in each `app/Providers/Filament/*PanelProvider.php`.
+
+## How the installation works under the hood
+
+`composer create-project` runs two of the kit's own scripts
+(`composer.json:post-root-package-install:204`, `composer.json:post-create-project-cmd:207`): the
+first only copies `.env.example` to `.env` if it does not exist yet; the second calls
+`php artisan kit:install --create-project`. Inside `KitInstall::handle()`
+(`app/Console/Commands/KitInstall.php:handle:70`), the real order is: the five customization
+questions (`app/Console/Commands/KitInstall.php:customizar():97`) come before generating the
+`APP_KEY` and preparing SQLite; migrating and seeding only happen **if the database answers**
+(`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel):102`,
+`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel && ! $this->option('no-seed')):106`);
+and the administrator password is generated **before** `db:seed`
+(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:357`,
+`app/Console/Commands/KitInstall.php:'db:seed':373`) — never the other way around, or the banner
+would print a password the seeder had already recorded as something else.
+
+```mermaid
+sequenceDiagram
+%% DG-15
+accTitle: Installation sequence
+accDescr: Composer's post-create-project-cmd triggers kit:install, which asks the customization questions before migrating, generates the administrator password before db:seed, and only migrates and seeds when the database is reachable.
+  participant composer as composer create-project
+  participant kit_install as kit:install
+  participant banco as Database
+  participant seeders as Seeders
+  composer->>composer: post-root-package-install copies .env.example -> .env (only if missing)
+  composer->>kit_install: post-create-project-cmd invokes kit:install --create-project
+  kit_install->>kit_install: customizar() - name, database, credentials, color, tenancy
+  kit_install->>kit_install: gerarAppKey(), prepararBancoSqlite()
+  kit_install->>banco: tries to connect (conferirConexao)
+  alt database reachable
+    kit_install->>banco: migrate --graceful --force
+    kit_install->>kit_install: password generated (or the one set in KIT_ADMIN_PASSWORD)
+    kit_install->>seeders: db:seed --force (ShieldPermissionsSeeder, PapeisSeeder, UsuarioAdminSeeder, AssistenteSeeder, GuardaPromptSeeder)
+  else database unreachable
+    kit_install-->>composer: warning - run migrate --seed later
+  end
+  kit_install-->>composer: banner (shows the password only if generated now)
+```
+
+The order of the five seeders comes from `DatabaseSeeder::run()`
+(`database/seeders/DatabaseSeeder.php:run:16`) — `TenantsSeeder` runs after them, only with
+multi-tenancy on. The banner never prints `password`: the password is generated with 24
+alphanumeric characters and only shows up once, in the run that created it
+(`app/Support/SenhaDoAdministrador.php:garantirNoEnv:115`); whoever already set their own in
+`KIT_ADMIN_PASSWORD` never sees it printed back.
 
