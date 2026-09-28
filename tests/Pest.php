@@ -1018,6 +1018,127 @@ function paginasDoSite(string $idioma): array
     return $paginas;
 }
 
+/**
+ * Todo bloco Mermaid dentro de um texto Markdown: o conteúdo cercado, a linha da cerca de
+ * abertura, o ID de catálogo (o marcador `%% DG-xx` dentro do bloco, ou `null` se ausente) e se a
+ * cerca está dentro de um comentário HTML (`<!-- … -->`).
+ *
+ * Aqui, e não dentro de um arquivo de teste, porque DOIS arquivos o usam —
+ * `tests/Kit/DiagramasDaArquiteturaTest.php` e `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`
+ * —, o Setup Global do `04` da wiki `diagramas-da-arquitetura` declara o extrator como
+ * compartilhado (`.ai/rules/testes.md`).
+ *
+ * ## Duas cercas, não uma (ciclo 2, A2-21 — R1)
+ *
+ * O CommonMark aceita a cerca de crase (` ``` `, 3 ou mais) e a de til (`~~~`, 3 ou mais) com a
+ * mesma info string, e as duas RENDERIZAM no GitHub e no site. Um extrator que só reconhece três
+ * crases perde o bloco de til ou de quatro crases em silêncio: o diagrama aparece na tela e
+ * ninguém o confere (`[CT-103]`, linhas de til e de quatro crases). A info string precisa ser
+ * exatamente "mermaid" (mais espaço em volta): um bloco ```php que MENCIONA a palavra "mermaid" no
+ * corpo não é um bloco Mermaid — a cerca de abertura dele não casa.
+ *
+ * ## Comentário HTML esconde o bloco do leitor, não do extrator ingênuo (ciclo 2, A2-21 — R1)
+ *
+ * `<!-- ```mermaid … ``` -->` é um bloco que o GitHub NÃO mostra e que um extrator de cercas cru
+ * conta do mesmo jeito — o achado que `dentroDeComentarioHtml` fixa. Este extrator só LEVANTA a
+ * marca; quem decide "recusa, nomeando o comentário e a linha" é a guarda que a consome.
+ *
+ * @return list<array{bloco: string, linha: int, idCatalogo: ?string, dentroDeComentarioHtml: bool}>
+ */
+function blocosMermaidDe(string $markdown): array
+{
+    $linhas             = explode("\n", $markdown);
+    $total              = count($linhas);
+    $blocos             = [];
+    $dentroDeComentario = false;
+
+    for ($i = 0; $i < $total; $i++) {
+        $linha = $linhas[$i];
+
+        if (str_contains($linha, '<!--') && ! str_contains($linha, '-->')) {
+            $dentroDeComentario = true;
+        }
+
+        // Delimitador `#`, e não `~`: a própria alternativa da cerca de til usa o caractere `~`,
+        // e um delimitador `~` cru quebra ali com "Unknown modifier" — o `~` da cerca fecha o
+        // regex antes da hora.
+        if (preg_match('#^\s*(`{3,}|~{3,})\s*mermaid\s*$#', $linha, $cerca) !== 1) {
+            if (str_contains($linha, '-->')) {
+                $dentroDeComentario = false;
+            }
+
+            continue;
+        }
+
+        $marcador        = $cerca[1][0];
+        $tamanho         = strlen($cerca[1]);
+        $linhaDeAbertura = $i + 1;
+        $escondido       = $dentroDeComentario;
+
+        $conteudo = [];
+        $fechou   = false;
+
+        for ($j = $i + 1; $j < $total; $j++) {
+            if (preg_match('#^\s*'.preg_quote($marcador, '#').'{'.$tamanho.',}\s*$#', $linhas[$j]) === 1) {
+                $fechou = true;
+                $i      = $j;
+                break;
+            }
+
+            $conteudo[] = $linhas[$j];
+        }
+
+        // Cerca sem fechamento: não é um bloco válido, e a varredura segue da linha seguinte.
+        if (! $fechou) {
+            continue;
+        }
+
+        $texto = implode("\n", $conteudo);
+
+        preg_match('~%%\s*(DG-\d+)~', $texto, $id);
+
+        $blocos[] = [
+            'bloco'                  => $texto,
+            'linha'                  => $linhaDeAbertura,
+            'idCatalogo'             => $id[1] ?? null,
+            'dentroDeComentarioHtml' => $escondido,
+        ];
+    }
+
+    return $blocos;
+}
+
+/**
+ * Todos os blocos Mermaid da árvore do kit, num idioma: o README do idioma mais cada página real
+ * de `docs/{idioma}/`, cada bloco marcado com o arquivo de origem e o idioma — o inventário que a
+ * guarda do catálogo (R1, `[CT-01]`/`[CT-02]`) confere.
+ *
+ * Reusa `paginasDoSite()`, e não repete a varredura de diretório: fora da árvore do kit (`docs/`
+ * é `export-ignore`) ela devolve `[]` e este array só traz o README.
+ *
+ * @return list<array{bloco: string, linha: int, idCatalogo: ?string, dentroDeComentarioHtml: bool, arquivo: string, idioma: string}>
+ */
+function blocosMermaidDaArvore(string $idioma): array
+{
+    $readme = $idioma === 'en' ? 'README.en.md' : 'README.md';
+
+    $paginas = [$readme => (string) file_get_contents(base_path($readme))];
+
+    foreach (paginasDoSite($idioma) as $relativo => $conteudo) {
+        $paginas["docs/{$idioma}/{$relativo}"] = $conteudo;
+    }
+
+    $blocos = [];
+
+    foreach ($paginas as $arquivo => $conteudo) {
+        foreach (blocosMermaidDe($conteudo) as $bloco) {
+            $blocos[] = [...$bloco, 'arquivo' => $arquivo, 'idioma' => $idioma];
+        }
+    }
+
+    return $blocos;
+}
+
 /** Um documento markdown sem as linhas de citação (`>`), para asserção de AUSÊNCIA. */
 function readmeSemCitacao(string $arquivo): string
 {
