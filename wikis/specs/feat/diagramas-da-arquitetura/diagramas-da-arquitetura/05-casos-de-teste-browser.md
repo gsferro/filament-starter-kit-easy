@@ -68,8 +68,8 @@ Perfil `padrão` → teto de **1** CT-B (happy path). São **3**, pelo gate do p
 | Elemento | Seletor | Já existe? |
 |---|---|---|
 | blocos da fonte de cada página | contagem de cercas ```` ```mermaid ```` no `.md` correspondente em `docs/` | sim (o conferidor lê o Markdown) |
-| SVG que a integração produz para cada bloco | `svg[aria-roledescription]` | **a confirmar no DOM do build** — o pacote não está instalado e não há citação de vendor; registrar o seletor real no `03` |
-| SVG de erro do Mermaid | o mesmo seletor com `aria-roledescription="error"`, ou o texto `Syntax error` dentro do SVG | a confirmar, idem |
+| SVG que a integração produz para cada bloco | `svg[aria-roledescription]` | **confirmado** — executor do CT-B01 leu o DOM real (`chromium` + `page.evaluate`, sessão de 2026-09-28): `<svg id="mermaid-…" role="graphics-document document" aria-roledescription="flowchart-v2">` (varia por tipo: `"er"` no `erDiagram`) |
+| SVG de erro do Mermaid | ~~o mesmo seletor com `aria-roledescription="error"`, ou o texto `Syntax error` dentro do SVG~~ **corrigido pelo executor do CT-B01** (causa a: seletor especificado errado) — o astro-mermaid 2.1.0 real NÃO desenha um SVG de erro; no `catch` de `initMermaid()` ele substitui o bloco por um `<div>` com um `<strong>Error rendering diagram:</strong>` filho direto (`node_modules/astro-mermaid/astro-mermaid-integration.js:554-563`, lido pelo executor). Seletor real: `:scope > div > strong` a partir de `pre.mermaid` — é o que `site/verifica-acessibilidade.mjs` já usava antes deste CT-B (o próprio conferidor já documentava a estrutura real; a tabela deste `05` é que trazia o palpite errado) |
 | troca de tema | `document.documentElement.setAttribute('data-theme', t)` — o jeito que o conferidor já usa (`site/verifica-acessibilidade.mjs:setAttribute('data-theme':78`) | sim |
 | overlay da busca ⌘K | `input[placeholder="Buscar registros e telas..."]` e `[x-on\:open-spotlight\.window]` (`tests/Browser/RoteiroDoKitTest.php`, F-45) | sim |
 | escolha de painel | `assertPathIs('/login/painel')` + `a[href$="/login/painel/{id}"]` (`tests/Browser/LoginUnificadoTest.php`, CT-B01 de `feat/login-unificado`) | sim |
@@ -195,8 +195,28 @@ Funcionalidade: GIFs pelo kit:arte
         | busca: overlay aberto           | master_global           | o campo "Buscar registros e telas..." visível e ancorado à viewport  |
         | busca: resultado                | master_global           | ao menos um resultado com o termo digitado                            |
         | login unificado: escolha        | admin + infra (global)  | caminho /login/painel com os cartões Administração e Infraestrutura   |
-        | login unificado: painel escolhido | admin + infra (global) | caminho /admin com "Painel de Controle"                              |
 ```
+
+> **Correção do executor do CT-B03 (causa a — CT-B especificado errado)**: a linha `login
+> unificado: painel escolhido` (`/admin` com "Painel de Controle") foi removida desta tabela de
+> Exemplos. Três fontes independentes concordam em parar em "escolha de painel" e nenhuma pede o
+> quadro seguinte:
+>
+> 1. A Superfície de UI do `01-plano-acao.md` declara "GIFs (busca ⌘K, **escolha de painel** do
+>    login unificado)" — não "painel escolhido".
+> 2. O RQ-27 do `00-requisito.md` diz "login unificado → **escolha de painel**", com a mesma seta
+>    parando aí.
+> 3. O próprio **Roteiro executável** logo abaixo (passos 1–5, inalterado) nunca implementou esta
+>    quarta linha — ela existia só no Esquema do Cenário, e nenhum passo a executava. Uma tabela de
+>    Exemplos que promete uma linha que o roteiro do MESMO `05` nunca cobre é a própria definição de
+>    "CT-B especificado errado": não é seletor nem rota errada, é uma linha sem execução por trás.
+>
+> `KitArte::CLIPES['login-unificado']` (`app/Console/Commands/KitArte.php:74-77`) também declara só
+> dois quadros (`login-unificado-1-formulario`, `login-unificado-2-escolha`) — Desenhado,
+> Implementado e o próprio Roteiro deste `05` concordam; só a tabela de Exemplos divergia. Ser
+> tecnicamente factível (`LoginUnificadoTest.php` já clica em "Administração" e chega a `/admin`)
+> não é o padrão: adicionar um quadro que nenhuma das três fontes pede seria escopo por conta
+> própria do executor, o que o contrato do CT-B proíbe tão quanto relaxar uma asserção.
 
 **Roteiro executável** (Pest, `pest-plugin-browser`)
 

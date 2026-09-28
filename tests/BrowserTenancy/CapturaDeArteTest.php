@@ -684,7 +684,13 @@ it('captura a ficha de organização com o cabeçalho rico e as abas', function 
 */
 
 /**
- * A busca ⌘K (Spotlight): fechada e aberta com um termo digitado e um RESULTADO real.
+ * [CT-B03] A busca ⌘K (Spotlight): fechada e aberta com um termo digitado e um RESULTADO real.
+ *
+ * Cobre as duas primeiras linhas do Esquema do Cenário `[CT-B03]` de `05-casos-de-teste-browser.md`
+ * ("busca: overlay aberto" e "busca: resultado") num único quadro: o overlay já está aberto E já
+ * tem resultado no instante do `screenshot('busca-spotlight-2-aberta')`, então a mesma foto prova
+ * as duas linhas — não há dois arquivos porque não há dois ESTADOS visuais distintos a fotografar
+ * (o roteiro executável do `05` também só desce até este quadro).
  *
  * Mesmo seletor do F-45 (`tests/Browser/RoteiroDoKitTest.php:100-154`): o clique em
  * `.fi-global-search-field` dispara a abertura do overlay num `setTimeout` do Alpine — nada
@@ -694,7 +700,7 @@ it('captura a ficha de organização com o cabeçalho rico e as abas', function 
  * para medir geometria), e não por texto solto na página: um `assertSee` sozinho passaria mesmo
  * sem a busca ter devolvido nada, porque o termo poderia estar em qualquer outro canto da tela.
  */
-it('captura a busca ⌘K fechada e aberta com um termo e resultado', function (): void {
+it('[CT-B03] captura a busca ⌘K fechada e aberta com um termo e resultado', function (): void {
     arranjarPainelApp($this, $this->organizacao);
 
     Projeto::create(['nome' => 'Contrato de fornecimento 2026']);
@@ -713,8 +719,22 @@ it('captura a busca ⌘K fechada e aberta com um termo e resultado', function ()
 })->group('browser', 'art');
 
 /**
- * As duas telas do login unificado: o formulário único (`/login`) e a escolha de painel
+ * [CT-B03] As duas telas do login unificado: o formulário único (`/login`) e a escolha de painel
  * (`/login/painel`).
+ *
+ * Cobre a terceira linha do Esquema do Cenário `[CT-B03]` ("login unificado: escolha") — o
+ * `assertPathIs('/login/painel')` + os dois `assertSee` rodam ANTES do
+ * `screenshot('login-unificado-2-escolha')`, exatamente na ordem que `.ai/rules/testes-browser.md`
+ * exige depois de uma navegação.
+ *
+ * A quarta linha do Esquema ("login unificado: painel escolhido", `/admin` com "Painel de
+ * Controle") NÃO tem quadro aqui, e a ausência é intencional, não uma lacuna: nem a Superfície de
+ * UI do `01-plano-acao.md` ("GIFs (busca ⌘K, escolha de painel do login unificado)"), nem o RQ-27
+ * do `00-requisito.md` ("login unificado → escolha de painel"), nem o roteiro executável do
+ * próprio `05` (que para no passo 5, neste mesmo quadro) pedem um terceiro quadro depois da
+ * escolha — e `KitArte::CLIPES['login-unificado']` (`app/Console/Commands/KitArte.php:74-77`)
+ * também declara só estes dois. Corrigido no `05` (linha da Exemplos removida) em vez de inventar
+ * aqui um quadro que nenhuma das três fontes pede.
  *
  * Reaproveita o arranjo de `tests/Browser/LoginUnificadoTest.php` (CT-B01) — um usuário com dois
  * papéis globais, `admin` e `infra`, que dão dois painéis (Administração e Infraestrutura) — sem
@@ -729,7 +749,7 @@ it('captura a busca ⌘K fechada e aberta com um termo e resultado', function ()
  * `ConfiguracaoDoLogin::unificado()` — chega ao servidor in-process do `pest-plugin-browser`
  * porque é o MESMO processo PHP que serve o `visit()` (`.ai/rules/testes-browser.md`).
  */
-it('captura o login unificado e a escolha de painel', function (): void {
+it('[CT-B03] captura o login unificado e a escolha de painel', function (): void {
     ligarLoginUnificado();
     usuarioComPapel('admin', email: 'dois@example.com')->assignRole('infra');
 
