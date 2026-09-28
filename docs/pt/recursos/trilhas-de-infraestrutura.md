@@ -40,6 +40,8 @@ accDescr: Cada tela do painel /infra liga-se à tabela ou fonte que mostra e a q
     tela_auditoria["Auditoria"]
     tela_log_acesso["Log de autenticação"]
     tela_comandos["Central de comandos"]
+    tela_comandos_cadastro["Central de comandos: comandos cadastrados"]
+    tela_pacotes["Releases de pacotes Composer"]
     tela_pulse["Pulse"]
     tela_ia["Execuções de IA"]
   end
@@ -53,6 +55,8 @@ accDescr: Cada tela do painel /infra liga-se à tabela ou fonte que mostra e a q
   tela_auditoria -->|"models Auditable"| audits[("audits")]
   tela_log_acesso -->|"evento de login"| authentication_log[("authentication_log")]
   tela_comandos -->|"execução pela própria tela"| command_center_runs[("command_center_runs")]
+  tela_comandos_cadastro -->|"CRUD da própria tela"| command_center_commands[("command_center_commands")]
+  tela_pacotes -->|"sync no login (QueueComposerReleaseSyncOnLogin)"| composer_release_snapshots[("composer_release_package_snapshots")]
   tela_pulse -->|"daemon pulse:check"| pulse_tabelas[("pulse_*")]
   tela_ia -->|"listener RegistrarAiRun"| ai_runs[("ai_runs")]
 ```
@@ -72,6 +76,22 @@ enganoso: `AiAuditMiddleware` só escreve no canal de log `ai`
 (`app/Models/User.php:implements Auditable:59`), e quem grava `ai_runs` é o listener
 `RegistrarAiRun` (`app/Ai/Listeners/RegistrarAiRun.php:AiRun::create:44`), nunca o middleware de
 auditoria.
+
+**Duas telas mais são Resources do painel, e nenhuma delas grava pelo mecanismo que o rótulo
+sugere.** `CommandRecordResource`
+(`vendor/ssbityukov/filament-command-center/src/Filament/CommandCenterPlugin.php:register:144`,
+registrado junto com as três páginas da Central de comandos) grava `command_center_commands` pelo
+CRUD da própria tela — a tabela é o `$table` do model
+(`vendor/ssbityukov/filament-command-center/src/Sources/CommandRecord.php:command_center_commands:16`),
+nunca `command_center_runs`, que é o histórico de EXECUÇÃO das outras duas páginas do plugin
+(Comandos e Histórico). `ComposerReleasePackageResource`
+(`app/Filament/Infra/Resources/ComposerReleasePackages/ComposerReleasePackageResource.php:ComposerReleasePackageResource:39`)
+é só leitura: quem grava `composer_release_package_snapshots`
+(`vendor/mominalzaraa/filament-composer-release-notifier/src/Models/ComposerReleasePackageSnapshot.php:composer_release_package_snapshots:23`)
+é o sync enfileirado no evento de login
+(`vendor/mominalzaraa/filament-composer-release-notifier/src/FilamentComposerReleaseNotifierServiceProvider.php:Login:25`,
+`vendor/mominalzaraa/filament-composer-release-notifier/src/Listeners/QueueComposerReleaseSyncOnLogin.php:handle:11`),
+nunca a própria tela.
 
 ## As duas trilhas guardam dado sensível
 

@@ -5,7 +5,7 @@
 [![Plumb](https://plumbphp.dev/badges/gsferro/starter-kit-easy/composite.svg)](https://plumbphp.dev/gsferro/starter-kit-easy)
 [![Tests](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=tests)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgsferro%2Ffilament-starter-kit-easy%2Fmain%2F.github%2Fbadges%2Fcobertura.json&style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
-[![Test cases](https://img.shields.io/badge/test%20cases-1,776-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
+[![Test cases](https://img.shields.io/badge/test%20cases-1,777-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-4c1?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
@@ -141,7 +141,7 @@ accDescr: From the browser to the three Filament panels, through role-based acce
   painel_admin --> acesso_por_papel
   painel_infra --> acesso_por_papel
   acesso_por_papel --> configuracoes[Settings]
-  acesso_por_papel -->|"only via /app"| agentes_ia[AI agents]
+  acesso_por_papel --> agentes_ia[AI agents]
   subgraph camada_infra ["Infrastructure"]
     banco[("Database")]
     fila[Queue]
@@ -157,13 +157,13 @@ accDescr: From the browser to the three Filament panels, through role-based acce
   agentes_ia --> fila
   fila --> worker
   agendador --> fila
-  reverb --> painel_admin
+  reverb --> camada_paineis
   painel_infra --> pulse
   pulse --> banco
   agentes_ia -.->|"optional"| ia_externa["Local or SaaS AI"]
-  painel_admin -.-> oauth["OAuth"]
+  camada_paineis -.-> oauth["OAuth"]
   configuracoes -.-> email_externo["Mail"]
-  painel_admin -.-> packagist["Packagist"]
+  painel_infra -.-> packagist["Packagist"]
 ```
 
 See all the architecture diagrams → [gsferro.github.io/filament-starter-kit-easy/en/referencia/arquitetura-em-diagramas](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/arquitetura-em-diagramas.html)

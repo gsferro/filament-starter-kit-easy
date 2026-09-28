@@ -160,6 +160,6 @@ accDescr: O IdentifyTenant resolve o tenant da rota e consulta canAccessTenant()
   end
 ```
 
-A guarda `master_global` sempre passa (linha 826), e organização inativa nega para todo mundo,
-inclusive ele (linha antes do `isMasterGlobal()`) — é a mesma assimetria corrigida que a tabela de
-403×404 desta página já descreve.
+A organização inativa nega para todo mundo, inclusive o `master_global` — a checagem vem antes de
+`isMasterGlobal()` (linha 813); só depois disso o `master_global` sempre entra (linha 826). É a
+mesma assimetria corrigida que a tabela de 403×404 desta página já descreve.

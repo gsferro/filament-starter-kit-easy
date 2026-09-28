@@ -161,6 +161,6 @@ accDescr: IdentifyTenant resolves the tenant from the route and calls canAccessT
   end
 ```
 
-The `master_global` guard always lets them through (line 826), and an inactive organization refuses
-everyone, including them (the line right before `isMasterGlobal()`) — it is the same fixed asymmetry
-that this page's 403×404 table already describes.
+An inactive organization refuses everyone, including `master_global` — the check runs before
+`isMasterGlobal()` (line 813); only after that does `master_global` always get in (line 826). It is
+the same fixed asymmetry that this page's 403×404 table already describes.

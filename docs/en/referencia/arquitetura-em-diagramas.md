@@ -28,7 +28,7 @@ accDescr: From the browser to the three Filament panels, through role-based acce
   painel_admin --> acesso_por_papel
   painel_infra --> acesso_por_papel
   acesso_por_papel --> configuracoes[Settings]
-  acesso_por_papel -->|"only via /app"| agentes_ia[AI agents]
+  acesso_por_papel --> agentes_ia[AI agents]
   subgraph camada_infra ["Infrastructure"]
     banco[("Database")]
     fila[Queue]
@@ -44,18 +44,18 @@ accDescr: From the browser to the three Filament panels, through role-based acce
   agentes_ia --> fila
   fila --> worker
   agendador --> fila
-  reverb --> painel_admin
+  reverb --> camada_paineis
   painel_infra --> pulse
   pulse --> banco
   agentes_ia -.->|"optional"| ia_externa["Local or SaaS AI"]
-  painel_admin -.-> oauth["OAuth"]
+  camada_paineis -.-> oauth["OAuth"]
   configuracoes -.-> email_externo["Mail"]
-  painel_admin -.-> packagist["Packagist"]
+  painel_infra -.-> packagist["Packagist"]
 ```
 
 ## DG-02 — Use cases by role
 
-The kit's eight actors (visitor, `panel_user`, `admin_app`, `admin`, `infra`, `master_global`, the scheduler and the CLI) and the use cases each role reaches. `admin_app` only exists when `KIT_TENANCY` is on (`database/seeders/PapeisSeeder.php:papel:80`); the other roles are always seeded (`database/seeders/PapeisSeeder.php:papel:58`, `:papel:61`, `:papel:101`). Every edge ties the role to the permission entity it actually holds in the database (Shield), never to a guess.
+The kit's eight actors (visitor, `panel_user`, `admin_app`, `admin`, `infra`, `master_global`, the scheduler and the CLI) and the use cases each role reaches. `admin_app` only exists when `KIT_TENANCY` is on (`database/seeders/PapeisSeeder.php:papel:80`); the other roles are always seeded (`database/seeders/PapeisSeeder.php:papel:58`, `:papel:61`, `:papel:101`). Every edge ties the role to the permission entity it actually holds in the database (Shield) — or, for `master_global`, to the code that lets them through without Shield: `Gate::before` (`cu_tudo`) and, for "Impersonate user", `User::canImpersonate()` (`app/Models/User.php:canImpersonate:852`), which only accepts `master_global` — never to a guess.
 
 ```mermaid
 flowchart LR
@@ -110,19 +110,19 @@ accDescr: The kit's eight actors and the use cases each role reaches, inside the
   ator_admin --> cu_convidar
   ator_admin --> cu_gerir_papeis
   ator_admin --> cu_configuracoes
-  ator_admin --> cu_personificar
   ator_admin --> cu_aprovar_cadastro
   ator_infra --> cu_ver_logs
   ator_infra --> cu_ver_saude
   ator_infra --> cu_lixeira
   ator_master_global --> cu_tudo
+  ator_master_global --> cu_personificar
   ator_agendador --> cu_lembrar_convites
   ator_cli --> cu_tenancy
 ```
 
 ## DG-03 — Panel access rule
 
-The exact order of `User::canAccessPanel()` (`app/Models/User.php:canAccessPanel:156`): account unavailability (`:166`), pending approval (`:193`), `master_global` (`:206`), the role's context — any tenant with tenancy on, only the global context without it (`:217`) — and finally the panel role (`:219`). Once allowed, the `User::canAccessTenant()` extension (`:789`) decides the tenant: inactive denies (`:813`), `master_global` always gets in (`:826`), and no link denies (`:830`).
+The exact order of `User::canAccessPanel()` (`app/Models/User.php:canAccessPanel:156`): account unavailability (`:166`), pending approval (`:193`), `master_global` (`:206`), the role's context — any tenant with tenancy on, only the global context without it (`:217`) — and finally the panel role (`:219`). Once allowed, the `User::canAccessTenant()` extension (`:789`) decides the tenant, and the ORDER matters: an inactive organization denies first, for everyone — including `master_global` (`:813`) —; only then does `master_global` always get in (`:826`), and no link denies (`:830`).
 
 ```mermaid
 flowchart TD
@@ -142,27 +142,28 @@ accDescr: The decision order of canAccessPanel, from account unavailability to t
   papel_global --> checa_papel
   checa_papel -->|"Yes"| permite
   checa_papel -->|"No"| nega_403
-  permite --> checa_tenant{"Tenant accessed: canAccessTenant?"}
-  checa_tenant -->|"master_global"| permite_tenant["Enter the tenant"]
-  checa_tenant -->|"linked to the tenant"| permite_tenant
-  checa_tenant -->|"inactive or not linked"| nega_404["Deny (404)"]
+  permite --> checa_tenant{"Tenant accessed: is it inactive?"}
+  checa_tenant -->|"Yes"| nega_404["Deny (404)"]
+  checa_tenant -->|"No"| checa_vinculo{"master_global or linked to the tenant?"}
+  checa_vinculo -->|"Yes"| permite_tenant["Enter the tenant"]
+  checa_vinculo -->|"No"| nega_404
 ```
 
 ## DG-13 — Core entity-relationship diagram
 
-The central entities and how they reference each other: the account (`users`) to a tenant via `tenant_user` (`app/Models/User.php:tenants:748`, `app/Models/Tenant.php:users:112`), to a role via `model_has_roles` (Shield), the social link (`app/Models/User.php:vinculosSociais:758`), the invite (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) and the AI agent catalog — with no relation at all to `projetos`, the demo table (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` and `agent_conversations` store identifiers as loose text, with no real foreign key — that is why they carry no drawn relation. `passkeys` is deliberately left out: the table exists (vendor), but no feature in the kit uses it — passkeys are disabled (`enablePasskeys()` is never called).
+The central entities and how they reference each other: the account (`users`) to a tenant via `tenant_user` (`app/Models/User.php:tenants:748`, `app/Models/Tenant.php:users:112`), to a role via `model_has_roles` (Shield), the social link (`app/Models/User.php:vinculosSociais:758`), the invite — with a nullable `convidado_por_id` (`database/migrations/2026_08_13_000002_create_convites_table.php:convidado_por_id:42`) — via `papel()`, `tenant()` and `convidadoPor()` (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) and the AI agent catalog — with no relation at all to `projetos`, the demo table (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` and `agent_conversations` are left out of this ER: they store identifiers as loose text (`subject_type`/`subject_id`, `participant_type`/`participant_id`), with no real foreign key, and drawing a relation for them would invent an FK the schema doesn't have. `passkeys` is left out for the opposite reason: the table exists (vendor), but no feature in the kit uses it — passkeys are disabled (`enablePasskeys()` is never called).
 
 ```mermaid
 erDiagram
 %% DG-13
 accTitle: Core entity-relationship diagram
-accDescr: The kit's central entities and how they reference each other - the user's tie to a tenant and a role, invites, social login links and the AI agent catalog; ai_runs and agent_conversations carry no FK, only convention.
+accDescr: The kit's central entities and how they reference each other - the user's tie to a tenant and a role, invites, social login links and the AI agent catalog.
   users ||--o{ tenant_user : belongs
   tenants ||--o{ tenant_user : gathers
   users ||--o{ model_has_roles : receives
   roles ||--o{ model_has_roles : grants
   users ||--o{ vinculos_sociais : authenticates
-  users ||--o{ convites : invited
+  users |o--o{ convites : invited
   roles ||--o{ convites : "invite role"
   tenants |o--o{ convites : "tenant, with KIT_TENANCY (optional)"
   tenants ||--o{ projetos : "has, demo scenario (KIT_DEMO)"
@@ -172,8 +173,16 @@ accDescr: The kit's central entities and how they reference each other - the use
     string provider
     text instrucoes
   }
-  users ||--o{ ai_runs : "logs (no FK)"
-  users ||--o{ agent_conversations : "chats (no FK)"
+  convites {
+    string email
+    string token
+    timestamp expira_em
+    timestamp aceito_em
+    timestamp recusado_em
+    string token_lembrete
+    timestamp enviado_em
+    int lembretes_enviados
+  }
 ```
 
 ## About where these diagrams come from

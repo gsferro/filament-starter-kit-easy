@@ -28,7 +28,7 @@ accDescr: Do navegador aos três painéis Filament, pelo acesso por papel, até 
   painel_admin --> acesso_por_papel
   painel_infra --> acesso_por_papel
   acesso_por_papel --> configuracoes[Configurações]
-  acesso_por_papel -->|"só via /app"| agentes_ia[Agentes de IA]
+  acesso_por_papel --> agentes_ia[Agentes de IA]
   subgraph camada_infra ["Infraestrutura"]
     banco[("Banco de dados")]
     fila[Fila]
@@ -44,18 +44,18 @@ accDescr: Do navegador aos três painéis Filament, pelo acesso por papel, até 
   agentes_ia --> fila
   fila --> worker
   agendador --> fila
-  reverb --> painel_admin
+  reverb --> camada_paineis
   painel_infra --> pulse
   pulse --> banco
   agentes_ia -.->|"opcional"| ia_externa["IA local ou SaaS"]
-  painel_admin -.-> oauth["OAuth"]
+  camada_paineis -.-> oauth["OAuth"]
   configuracoes -.-> email_externo["E-mail"]
-  painel_admin -.-> packagist["Packagist"]
+  painel_infra -.-> packagist["Packagist"]
 ```
 
 ## DG-02 — Casos de uso por papel
 
-Os oito atores do kit (visitante, `panel_user`, `admin_app`, `admin`, `infra`, `master_global`, o agendador e a CLI) e os casos de uso que cada papel alcança. `admin_app` só existe com `KIT_TENANCY` ligada (`database/seeders/PapeisSeeder.php:papel:80`); os demais papéis nascem sempre (`database/seeders/PapeisSeeder.php:papel:58`, `:papel:61`, `:papel:101`). Cada aresta liga o papel à entidade de permissão que ele de fato tem no banco (Shield), não a uma suposição.
+Os oito atores do kit (visitante, `panel_user`, `admin_app`, `admin`, `infra`, `master_global`, o agendador e a CLI) e os casos de uso que cada papel alcança. `admin_app` só existe com `KIT_TENANCY` ligada (`database/seeders/PapeisSeeder.php:papel:80`); os demais papéis nascem sempre (`database/seeders/PapeisSeeder.php:papel:58`, `:papel:61`, `:papel:101`). Cada aresta liga o papel à entidade de permissão que ele de fato tem no banco (Shield) — ou, para `master_global`, ao código que o libera sem Shield: `Gate::before` (`cu_tudo`) e, para "Personificar usuário", `User::canImpersonate()` (`app/Models/User.php:canImpersonate:852`), que só aceita `master_global` — não a uma suposição.
 
 ```mermaid
 flowchart LR
@@ -110,19 +110,19 @@ accDescr: Os oito atores do kit e os casos de uso que cada papel alcança, dentr
   ator_admin --> cu_convidar
   ator_admin --> cu_gerir_papeis
   ator_admin --> cu_configuracoes
-  ator_admin --> cu_personificar
   ator_admin --> cu_aprovar_cadastro
   ator_infra --> cu_ver_logs
   ator_infra --> cu_ver_saude
   ator_infra --> cu_lixeira
   ator_master_global --> cu_tudo
+  ator_master_global --> cu_personificar
   ator_agendador --> cu_lembrar_convites
   ator_cli --> cu_tenancy
 ```
 
 ## DG-03 — Regra de acesso ao painel
 
-A ordem exata de `User::canAccessPanel()` (`app/Models/User.php:canAccessPanel:156`): indisponibilidade da conta (`:166`), aprovação pendente (`:193`), `master_global` (`:206`), contexto do papel — qualquer organização com tenancy, só o contexto global sem ela (`:217`) — e por fim o papel do painel (`:219`). Depois de permitido, a extensão de `User::canAccessTenant()` (`:789`) decide a organização: inativa nega (`:813`), `master_global` sempre entra (`:826`), e sem vínculo nega (`:830`).
+A ordem exata de `User::canAccessPanel()` (`app/Models/User.php:canAccessPanel:156`): indisponibilidade da conta (`:166`), aprovação pendente (`:193`), `master_global` (`:206`), contexto do papel — qualquer organização com tenancy, só o contexto global sem ela (`:217`) — e por fim o papel do painel (`:219`). Depois de permitido, a extensão de `User::canAccessTenant()` (`:789`) decide a organização, e a ORDEM importa: organização inativa nega primeiro, para todo mundo — inclusive `master_global` (`:813`) —; só então `master_global` entra sempre (`:826`), e sem vínculo nega (`:830`).
 
 ```mermaid
 flowchart TD
@@ -142,27 +142,28 @@ accDescr: A ordem de decisão de canAccessPanel, da indisponibilidade da conta a
   papel_global --> checa_papel
   checa_papel -->|"Sim"| permite
   checa_papel -->|"Não"| nega_403
-  permite --> checa_tenant{"Organização acessada: canAccessTenant?"}
-  checa_tenant -->|"master_global"| permite_tenant["Entra na organização"]
-  checa_tenant -->|"vínculo com a organização"| permite_tenant
-  checa_tenant -->|"inativa ou sem vínculo"| nega_404["Nega — 404"]
+  permite --> checa_tenant{"Organização acessada: está inativa?"}
+  checa_tenant -->|"Sim"| nega_404["Nega — 404"]
+  checa_tenant -->|"Não"| checa_vinculo{"master_global ou vínculo com a organização?"}
+  checa_vinculo -->|"Sim"| permite_tenant["Entra na organização"]
+  checa_vinculo -->|"Não"| nega_404
 ```
 
 ## DG-13 — ER do núcleo
 
-As entidades centrais e como se referenciam: a conta (`users`) a uma organização via `tenant_user` (`app/Models/User.php:tenants:748`, `app/Models/Tenant.php:users:112`), a um papel via `model_has_roles` (Shield), o vínculo social (`app/Models/User.php:vinculosSociais:758`), o convite (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) e o catálogo de agentes de IA — sem relação nenhuma com `projetos`, a tabela de demonstração (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` e `agent_conversations` guardam identificadores como texto solto, sem chave estrangeira de verdade — por isso entram sem relação desenhada. `passkeys` fica de fora deliberadamente: a tabela existe (vendor), mas nenhuma feature do kit a usa — as passkeys estão desligadas (`enablePasskeys()` não é chamado).
+As entidades centrais e como se referenciam: a conta (`users`) a uma organização via `tenant_user` (`app/Models/User.php:tenants:748`, `app/Models/Tenant.php:users:112`), a um papel via `model_has_roles` (Shield), o vínculo social (`app/Models/User.php:vinculosSociais:758`), o convite — com `convidado_por_id` anulável (`database/migrations/2026_08_13_000002_create_convites_table.php:convidado_por_id:42`) — via `papel()`, `tenant()` e `convidadoPor()` (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) e o catálogo de agentes de IA — sem relação nenhuma com `projetos`, a tabela de demonstração (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` e `agent_conversations` ficam de fora deste ER: guardam identificadores como texto solto (`subject_type`/`subject_id`, `participant_type`/`participant_id`), sem chave estrangeira de verdade, e desenhar uma relação para eles inventaria uma FK que o schema não tem. `passkeys` fica de fora pelo motivo oposto: a tabela existe (vendor), mas nenhuma feature do kit a usa — as passkeys estão desligadas (`enablePasskeys()` não é chamado).
 
 ```mermaid
 erDiagram
 %% DG-13
 accTitle: ER do núcleo
-accDescr: As entidades centrais do kit e como se referenciam - o vínculo do usuário a uma organização e a um papel, convites, vínculos sociais e o catálogo de agentes de IA; ai_runs e agent_conversations sem FK, só por convenção.
+accDescr: As entidades centrais do kit e como se referenciam - o vínculo do usuário a uma organização e a um papel, convites, vínculos sociais e o catálogo de agentes de IA.
   users ||--o{ tenant_user : pertence
   tenants ||--o{ tenant_user : reune
   users ||--o{ model_has_roles : recebe
   roles ||--o{ model_has_roles : concede
   users ||--o{ vinculos_sociais : autentica
-  users ||--o{ convites : convidou
+  users |o--o{ convites : convidou
   roles ||--o{ convites : "papel do convite"
   tenants |o--o{ convites : "organização, com KIT_TENANCY (opcional)"
   tenants ||--o{ projetos : "tem, cenário de demo (KIT_DEMO)"
@@ -172,8 +173,16 @@ accDescr: As entidades centrais do kit e como se referenciam - o vínculo do usu
     string provider
     text instrucoes
   }
-  users ||--o{ ai_runs : "grava (sem FK)"
-  users ||--o{ agent_conversations : "conversa (sem FK)"
+  convites {
+    string email
+    string token
+    timestamp expira_em
+    timestamp aceito_em
+    timestamp recusado_em
+    string token_lembrete
+    timestamp enviado_em
+    int lembretes_enviados
+  }
 ```
 
 ## Sobre a origem destes diagramas

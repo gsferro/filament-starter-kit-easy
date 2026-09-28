@@ -40,6 +40,8 @@ accDescr: Each screen of the /infra panel links to the table or source it shows 
     tela_auditoria["Audit trail"]
     tela_log_acesso["Authentication log"]
     tela_comandos["Command Center"]
+    tela_comandos_cadastro["Command Center: registered commands"]
+    tela_pacotes["Composer package releases"]
     tela_pulse["Pulse"]
     tela_ia["AI runs"]
   end
@@ -53,6 +55,8 @@ accDescr: Each screen of the /infra panel links to the table or source it shows 
   tela_auditoria -->|"Auditable models"| audits[("audits")]
   tela_log_acesso -->|"login event"| authentication_log[("authentication_log")]
   tela_comandos -->|"run from the screen itself"| command_center_runs[("command_center_runs")]
+  tela_comandos_cadastro -->|"CRUD from the screen itself"| command_center_commands[("command_center_commands")]
+  tela_pacotes -->|"login sync (QueueComposerReleaseSyncOnLogin)"| composer_release_snapshots[("composer_release_package_snapshots")]
   tela_pulse -->|"pulse:check daemon"| pulse_tabelas[("pulse_*")]
   tela_ia -->|"RegistrarAiRun listener"| ai_runs[("ai_runs")]
 ```
@@ -71,6 +75,22 @@ namesake: `AiAuditMiddleware` only writes to the `ai` log channel
 (`app/Ai/Middleware/AiAuditMiddleware.php`) — `Auditable` models write `audits`
 (`app/Models/User.php:implements Auditable:59`), and the `RegistrarAiRun` listener writes `ai_runs`
 (`app/Ai/Listeners/RegistrarAiRun.php:AiRun::create:44`), never the audit middleware.
+
+**Two more screens are Resources of the panel, and neither writes through the mechanism its label
+suggests.** `CommandRecordResource`
+(`vendor/ssbityukov/filament-command-center/src/Filament/CommandCenterPlugin.php:register:144`,
+registered together with the Command Center's three pages) writes `command_center_commands`
+through the screen's own CRUD — the table is the model's `$table`
+(`vendor/ssbityukov/filament-command-center/src/Sources/CommandRecord.php:command_center_commands:16`),
+never `command_center_runs`, which is the EXECUTION history of the plugin's other two pages
+(Commands and History). `ComposerReleasePackageResource`
+(`app/Filament/Infra/Resources/ComposerReleasePackages/ComposerReleasePackageResource.php:ComposerReleasePackageResource:39`)
+is read-only: whoever writes `composer_release_package_snapshots`
+(`vendor/mominalzaraa/filament-composer-release-notifier/src/Models/ComposerReleasePackageSnapshot.php:composer_release_package_snapshots:23`)
+is the sync queued on the login event
+(`vendor/mominalzaraa/filament-composer-release-notifier/src/FilamentComposerReleaseNotifierServiceProvider.php:Login:25`,
+`vendor/mominalzaraa/filament-composer-release-notifier/src/Listeners/QueueComposerReleaseSyncOnLogin.php:handle:11`),
+never the screen itself.
 
 ## Both trails store sensitive data
 
