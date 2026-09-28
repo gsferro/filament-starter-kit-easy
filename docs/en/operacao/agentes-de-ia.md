@@ -31,9 +31,17 @@ It's also the folder where **you** write your project's own docs: `wikis/specs/{
 
 ## The installed skills
 
-[Laravel Boost](https://github.com/laravel/boost) is configured (`boost.json`) for five agents, with an MCP server (`php artisan boost:mcp`) and nine synchronized skills — among them `laravel-best-practices`, `pest-testing`, `ai-sdk-development`, `tailwindcss-development`, `pulse-development`, `laravel-backup` and `blaze-optimize`.
+[Laravel Boost](https://github.com/laravel/boost) is configured (`boost.json`) for five agents, with an MCP server (`php artisan boost:mcp`) and the skills listed in `boost.json` itself, synchronized to all of them — among them `laravel-best-practices`, `pest-testing`, `ai-sdk-development`, `filament-development`, `tailwindcss-development`, `pulse-development`, `laravel-backup` and `blaze-optimize`.
 
-The one that changes the workflow is **[`feature-wiki`](https://github.com/gsferro/laravel-ai-skills)**: invoked **before** implementing any feature, it creates `wikis/specs/{branch}/{feature}/` with an action plan (PRD), architecture decisions (ADR), progress tracking and test cases — and it sets the project's logging standard.
+The one that changes the workflow is **[`feature-wiki`](https://github.com/gsferro/laravel-ai-skills)** (4.0.0): invoked **before** implementing any feature, it creates `wikis/specs/{branch}/{feature}/` with the requirement, the action plan (PRD), the architecture decisions (ADR) and progress tracking — and it sets the project's logging standard. It carries the feature all the way to the PR together with the other four skills of the same collection, all versioned in the kit:
+
+| Skill | Role in the cycle |
+|---|---|
+| `feature-wiki` | requirement, plan, ADR and progress; diff review and reconciliation |
+| `feature-test-design` | derives the test cases (`04`/`05`) **from the requirement**, never from the plan |
+| `feature-quality-gate` | independent QA before the PR → `06-relatorio-qa.md` |
+| `requirement-to-rule` | turns a durable decision into an `.ai/rules` rule |
+| `feature-tickets` | slices the wiki into tickets when the plan doesn't fit one session — only via `/feature-tickets` |
 
 > 💡 **New feature? Call `/feature-wiki`.** It's the first step, before any `php artisan make:*`. The skill researches the code, writes the plan, and only then does implementation start. For a typo, a config tweak, a pure refactor or a dependency bump, skip it — the skill itself tells you when it isn't worth it.
 
@@ -45,12 +53,45 @@ In Claude Code it works alongside two plugins already enabled in `.claude/settin
 | Planning | [feature-wiki](https://github.com/gsferro/laravel-ai-skills) | PRD + ADR + test cases + tracking |
 | Execution | [Ponytail](https://github.com/DietrichGebert/ponytail) | the minimum code that works — without cutting validation, security or error handling |
 
+> `AGENTS.md` and `CLAUDE.md` are **generated** by Boost — editing them by hand is lost work on the next `boost:update`. Durable rules go in `.ai/rules` (the `record-rule` tool) or in `wikis/`.
+
+### The pipeline's sub-agents (Claude Code)
+
+In Claude Code, `feature-wiki` dispatches the work that needs **independence** to sub-agents born
+without the session's context: whoever reviews the diff did not implement it, whoever judges the test
+cases did not derive them, whoever approves the delivery did not write the wiki. There are five, in
+`.claude/agents/`:
+
+| Agent | What it does | What the hook denies |
+|---|---|---|
+| `fw-revisor-diff` | diff review, as soon as the tests pass | reading the plan (`01`) and the progress (`03`); changing the tree |
+| `fw-executor-ct` | writes and runs the backend tests from `04` | reading `01` and `02`; editing `app/`, migrations and the wiki |
+| `fw-executor-ctb` | writes and runs the browser tests from `05` | editing `app/`, migrations and the wiki |
+| `fw-adversario-ct` | tries to prove the test cases let a defect through | reading anything beyond `00`, `04`/`05` and the skills |
+| `fw-qa-gate` | runs the quality gate and returns `06` as text | changing the tree |
+
+Since 4.0.0, each one declares a `PreToolUse` **hook** that runs
+`.ai/skills/feature-wiki/scripts/guarda-subagente.sh` before every tool. For file reads, searches and
+edits the denial is by construction — the tool never runs; in `Bash`, it is by command pattern. Two
+consequences:
+
+- **On Windows, the hook needs [Git for Windows](https://gitforwindows.org/)** (Git Bash). Without
+  it Claude Code runs the hook in PowerShell, the hook denies every tool, and the session falls back
+  to `general-purpose`, with no tool restriction.
+- **Claude Code only reads agents from `.claude/agents/`**, and neither `boost:add-skill` nor
+  `boost:update` copies them there. `tests/Kit/AgentesDaEsteiraTest.php` turns red when the copy
+  fell behind.
+
+To update the skills in your project:
+
 ```bash
-php artisan boost:add-skill gsferro/laravel-ai-skills   # the skill
-php artisan boost:update                                # syncs it to every agent
+php artisan boost:add-skill gsferro/laravel-ai-skills --all --force   # the five skills, boost:update included
+cp .ai/skills/*/agents/*.md .claude/agents/                          # the agents, which Boost does not copy
 ```
 
-> `AGENTS.md` and `CLAUDE.md` are **generated** by Boost — editing them by hand is lost work on the next `boost:update`. Durable rules go in `.ai/rules` (the `record-rule` tool) or in `wikis/`.
+Then reopen the Claude Code session: the sub-agent list is read when the session opens. Updating
+the kit with `php artisan kit:update` brings the skills and agents along — `.ai/skills`, `.claude`,
+`.agents` and `.junie` are among the paths it delivers.
 
 ### Caveman and Ponytail outside of Claude Code
 
@@ -60,24 +101,21 @@ commands in the `/ponytail:…` and `/caveman:…` namespace. In other agents th
 system, and `feature-wiki` would invoke a `/ponytail-review` that does not exist.
 
 That's why the kit **versions a copy** of the three skills that `feature-wiki` cites by name, in
-`.agents/skills/`, `.ai/skills/` and `.junie/skills/`:
+`.ai/skills/` and in each agent's mirror:
 
 | Skill | What `feature-wiki` uses it for |
 |---|---|
-| `ponytail` | the simplicity ladder during implementation (step 7) |
+| `ponytail` | the simplicity ladder during implementation |
 | `ponytail-review` | plan audit against over-engineering (step 6, mandatory) and diff audit at the end |
 | `caveman` | terse agent ↔ you communication; does **not** apply to wiki, code, commit or security warning |
 
-Two practical consequences:
+The invocation name changes: in Claude Code, the plugin answers to `/ponytail:ponytail-review`; in
+the other agents, the local copy answers to `/ponytail-review`, with no namespace.
 
-- **The invocation name changes.** In Claude Code it is `/ponytail:ponytail-review`; in the other
-  agents the local copy answers to `/ponytail-review`, with no namespace.
-- **`.claude/skills/` is left out on purpose.** Copying there would create two active `ponytail`s
-  at the same time — the plugin's and the project's.
-
-`boost:update` **does not** delete these folders: it only removes a skill it has already tracked
-and that left `boost.json`, and none of the three are listed there. They are MIT copies, with the
-original `LICENSE` attached — updating is re-copying from upstream ([Caveman](https://github.com/JuliusBrussee/caveman),
+All three are listed in `boost.json`, so `boost:update` keeps them synchronized in every mirror —
+`.claude/skills/` included, where the copy lives alongside the plugin. They are MIT copies, with the
+original `LICENSE` attached — updating is re-copying from upstream
+([Caveman](https://github.com/JuliusBrussee/caveman),
 [Ponytail](https://github.com/DietrichGebert/ponytail)).
 
 ## The feature cycle with an agent
@@ -85,15 +123,19 @@ original `LICENSE` attached — updating is re-copying from upstream ([Caveman](
 The kit does not ask you to trust the agent: it asks the agent to **leave a trail**. Each step
 produces a file that the next step checks.
 
-| # | You do | The agent produces | Why it exists |
+The numbering is that of the `feature-wiki` 4.0.0 steps.
+
+| Step | You do | The agent produces | Why it exists |
 |---|---|---|---|
-| 1 | `/feature-wiki` with the request in plain text | `wikis/specs/{branch}/{feature}/00-requisito.md` — **immutable copy** of what you asked | The requirement is never rewritten to fit what was implemented. It is what judges the delivery |
-| 2 | read and adjust | `01-plano-acao.md` (step-by-step PRD), `02-decisoes.md` (ADR), `04-casos-de-teste.md`, and `05-…-browser.md` when there is a screen | Reviewing a plan is cheap; reviewing 900 lines of diff is not |
-| 3 | approve | automatic plan audit by `ponytail-review` | Cuts unnecessary step and premature abstraction **before** it becomes code |
-| 4 | — | implementation following the plan, with `03-progresso.md` updated | A session that drops resumes from where it stopped, without rebuilding context |
-| 5 | — | tests running (`--parallel --tia`) | Green is a precondition for the next step, not the delivery |
-| 6 | — | `/feature-quality-gate` → `06-relatorio-qa.md` | Confronts requirement × plan × running app. The **traceability matrix** exposes the clause that never became a step, test or code — the omission a green suite does not denounce |
-| 7 | approve | `/requirement-to-rule` → rule in `.ai/rules` | A decision that matters beyond this feature starts to matter for **every future session**, of any agent |
+| 0–4 | `/feature-wiki` with the request in plain text; answer the questions | `00-requisito.md` — **immutable copy** of what you asked —, `01-plano-acao.md` (PRD), `02-decisoes-arquiteturais.md` (ADR) and `03-progresso.md` | The requirement is never rewritten to fit what was implemented. It is what judges the delivery |
+| 5–6 | read, adjust and approve | deep review of the plan against the code, and audit by `ponytail-review` | Reviewing a plan is cheap; reviewing 900 lines of diff is not. Ponytail cuts unnecessary steps **before** they become code |
+| 7 | — | `04-casos-de-teste.md`, and `05-casos-de-teste-browser.md` when there is a screen, by `feature-test-design` | The test derives from the **requirement**, after Ponytail's cut — testing the plan would only confirm the plan |
+| 8 | only if the plan doesn't fit one session: `/feature-tickets` | one ticket per vertical slice, one per session | A large feature doesn't become a session that loses context halfway |
+| — | — | implementation following the plan, with `03-progresso.md` updated and the tests running | A session that drops resumes from where it stopped, without rebuilding context. Green is a precondition for the next step, not the delivery |
+| 9 | — | diff review by someone who did not implement it (`/code-review` and `fw-revisor-diff`) | It is the gate that reads the **code**: the others read the plan, the requirement or the screen |
+| 10 | — | reconciliation: wiki, code and tests tell the same story | What changed during implementation goes back into the plan, marked |
+| 11 | — | `/feature-quality-gate` → `06-relatorio-qa.md` | Confronts requirement × plan × running app. The **traceability matrix** exposes the clause that never became a step, test or code — the omission a green suite does not denounce |
+| 12 | approve | `/requirement-to-rule` → rule in `.ai/rules` | A decision that matters beyond this feature starts to matter for **every future session**, of any agent |
 
 **What this changes in practice:**
 

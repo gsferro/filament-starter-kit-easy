@@ -5,6 +5,38 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alterado
+
+- **As skills de `gsferro/laravel-ai-skills` na 4.0.0**: `feature-wiki` 3.5.1 → 4.0.0,
+  `feature-test-design` 1.14.0 → 1.16.0, `feature-quality-gate` 1.5.1 → 1.7.0,
+  `requirement-to-rule` 1.2.0 → 1.4.0, e a nova **`feature-tickets` 1.0.0**, que fatia a wiki em
+  tickets quando o plano não cabe numa sessão (só por `/feature-tickets`). A `feature-wiki`
+  renumerou os steps -- a derivação do `04`/`05` virou o **7**, o 8 é o fatiamento, e 6.5 → 9,
+  7 → 10, 8 → 11, 9 → 12 -- e as skills passaram a trazer `references/` e `scripts/`. Os cinco
+  sub-agentes `fw-*` de `.claude/agents/` foram recopiados: agora declaram um hook `PreToolUse`
+  que roda `guarda-subagente.sh` e nega, antes de a ferramenta rodar, a leitura e a edição fora
+  do perfil de cada um. **No Windows o hook pede o Git Bash**: sem ele, o agente nega toda
+  ferramenta e a sessão cai no fallback `general-purpose`. Quem já instalou recebe tudo pelo
+  `kit:update`, que já entrega `.ai/skills`, `.claude`, `.agents` e `.junie`; depois, reabra a
+  sessão do Claude Code
+
+### Adicionado
+
+- **`tests/Kit/AgentesDaEsteiraTest.php`**: os agentes de `.claude/agents/` são idênticos aos de
+  `.ai/skills/*/agents/`, o script do hook existe onde o hook o procura, e as skills, os agentes e
+  o script estão cobertos pelo `kit:update`. A cópia dos agentes é à mão e esquecê-la não dava erro
+  nenhum -- a sessão seguia com o agente da versão anterior, sem o hook. Provado vermelho com os
+  agentes da 3.x e com `.claude` fora de `CAMINHOS_DO_KIT`
+
+### Corrigido
+
+- **O guia de agentes de IA e `wikis/agentes-e-skills.md` descreviam o ciclo da 3.x**: sem a
+  revisão do diff, sem a reconciliação, sem os sub-agentes, com "nove skills" e com uma
+  `feature-wiki` que escrevia "quatro arquivos". Agora seguem a numeração 4.0.0, nos dois idiomas.
+  E caíram duas afirmações falsas sobre as cópias de Caveman e Ponytail: que `.claude/skills/`
+  ficava de fora e que nenhuma das três estava no `boost.json` -- as três estão, e o
+  `boost:update` as sincroniza em todos os espelhos
+
 ## [0.41.1] - 2026-09-27
 
 ### Adicionado
