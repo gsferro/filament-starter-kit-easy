@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Spatie\Image\Enums\Fit;
 use Spatie\Image\Image;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -33,8 +34,10 @@ class KitArte extends Command
     private const ALTURA_DA_THUMB = 475;
 
     /**
-     * Os quadros do GIF, na ordem. Eles NÃO vão para `art/` como PNG: existem só para
-     * virar GIF, e publicá-los dobraria o peso do repositório sem uso no README.
+     * Os quadros do clipe `fluxo-import-export`, na ordem. Nome mantido (em vez de dobrar
+     * dentro de `CLIPES` direto) porque `tests/Kit/KitArteTest.php` e
+     * `tests/Kit/DiagramasDaArquiteturaTest.php` o leem por Reflection pelo nome — mudar o
+     * nome quebraria os dois sem nenhuma mudança de comportamento.
      *
      * @var list<string>
      */
@@ -42,6 +45,47 @@ class KitArte extends Command
         'fluxo-1-listagem',
         'fluxo-2-export',
         'fluxo-3-import',
+    ];
+
+    /**
+     * Os clipes do GIF: chave = nome do arquivo publicado (`art/{chave}.gif`), valor = os
+     * quadros do clipe, na ordem. Eles NÃO vão para `art/` como PNG solto: existem só para
+     * virar GIF, e publicá-los dobraria o peso do repositório sem uso no README — salvo
+     * quando o quadro também é imagem DECLARADA em `IMAGENS` (`densidade-*`), que continua
+     * virando PNG normalmente porque `publicar()` confere `IMAGENS` primeiro.
+     *
+     * `fluxo-import-export` reaproveita `QUADROS_DO_GIF`: é o nome já referenciado em
+     * `docs/pt/recursos/import-export-csv.md` e `docs/en/recursos/import-export-csv.md`
+     * (CT-46/CT-51 dependem dele não mudar).
+     *
+     * Os quadros de `busca-spotlight`, `login-unificado` e `install` ainda não têm cenário de
+     * captura próprio (outro lote da feature os cria) — até lá, esses clipes aparecem sempre
+     * como "quadros ausentes" na saída, o que é o comportamento correto de R32 (nomeado, não
+     * silenciado), não um defeito.
+     *
+     * @var array<string, list<string>>
+     */
+    private const CLIPES = [
+        'fluxo-import-export' => self::QUADROS_DO_GIF,
+        'busca-spotlight'     => [
+            'busca-spotlight-1-fechada',
+            'busca-spotlight-2-aberta',
+        ],
+        'login-unificado' => [
+            'login-unificado-1-formulario',
+            'login-unificado-2-escolha',
+        ],
+        'densidade' => [
+            'densidade-confortavel',
+            'densidade-compacto',
+            'densidade-denso',
+        ],
+        'install' => [
+            'instalacao-1-inicio',
+            'instalacao-2-senha',
+            'instalacao-3-progresso',
+            'instalacao-4-resumo',
+        ],
     ];
 
     /**
@@ -120,10 +164,12 @@ class KitArte extends Command
         return self::SUCCESS;
     }
 
-    /** Copia para `art/` e gera a thumb de cada captura que não seja quadro de GIF. */
+    /** Copia para `art/` e gera a thumb de cada captura que não seja quadro só de GIF. */
     private function publicar(string $origem): int
     {
         File::ensureDirectoryExists(base_path('art/thumbs'));
+
+        $quadrosDeClipe = $this->quadrosDeTodosOsClipes();
 
         $publicadas = 0;
         $ignoradas  = [];
@@ -131,30 +177,35 @@ class KitArte extends Command
         foreach (File::glob($origem.'/*.png') as $arquivo) {
             $nome = pathinfo($arquivo, PATHINFO_FILENAME);
 
-            if (in_array($nome, self::QUADROS_DO_GIF, true)) {
-                continue;
-            }
-
-            if (! in_array($nome, self::IMAGENS, true)) {
-                $ignoradas[] = $nome;
-
-                continue;
-            }
-
-            File::copy($arquivo, $destino = base_path("art/{$nome}.png"));
-
             /*
-             * `fit(Contain)` e não `width()`: a captura já sai em 1400x875, mas o dia em
-             * que alguém mudar a viewport a thumb continua na proporção da galeria — com
-             * borda, não esticada.
+             * IMAGENS primeiro, SEMPRE — mesmo quando o nome também é quadro de um clipe
+             * (`densidade-*`): senão a generalização por clipe passaria a pular a publicação
+             * dessas PNG em silêncio (R33.M1).
              */
-            Image::load($destino)
-                ->fit(Fit::Contain, self::LARGURA_DA_THUMB, self::ALTURA_DA_THUMB)
-                ->save(base_path("art/thumbs/{$nome}.png"));
+            if (in_array($nome, self::IMAGENS, true)) {
+                File::copy($arquivo, $destino = base_path("art/{$nome}.png"));
 
-            $this->components->twoColumnDetail("art/{$nome}.png", 'publicada + thumb');
+                /*
+                 * `fit(Contain)` e não `width()`: a captura já sai em 1400x875, mas o dia em
+                 * que alguém mudar a viewport a thumb continua na proporção da galeria — com
+                 * borda, não esticada.
+                 */
+                Image::load($destino)
+                    ->fit(Fit::Contain, self::LARGURA_DA_THUMB, self::ALTURA_DA_THUMB)
+                    ->save(base_path("art/thumbs/{$nome}.png"));
 
-            $publicadas++;
+                $this->components->twoColumnDetail("art/{$nome}.png", 'publicada + thumb');
+
+                $publicadas++;
+
+                continue;
+            }
+
+            if (in_array($nome, $quadrosDeClipe, true)) {
+                continue;
+            }
+
+            $ignoradas[] = $nome;
         }
 
         /*
@@ -171,62 +222,152 @@ class KitArte extends Command
     }
 
     /**
-     * Monta o GIF do fluxo a partir dos quadros, com ffmpeg.
+     * Todos os quadros de todos os clipes, achatados — para `publicar()` não tratar quadro de
+     * clipe (que não seja também imagem declarada) como intruso.
+     *
+     * @return list<string>
+     */
+    private function quadrosDeTodosOsClipes(): array
+    {
+        return array_merge(...array_values(self::CLIPES));
+    }
+
+    /**
+     * Monta o GIF de cada clipe declarado em `CLIPES`, com ffmpeg.
      *
      * **Slideshow, não vídeo.** O `pest-plugin-browser` não grava vídeo, e captura de
      * quadros é o que dá para fazer de forma determinística — o mesmo cenário, os mesmos
-     * três estados, sempre. Um GIF de gravação real mudaria a cada execução.
+     * estados, sempre. Um GIF de gravação real mudaria a cada execução.
      *
      * `palettegen`/`paletteuse` porque GIF é limitado a 256 cores: sem a paleta calculada
      * a partir DESTES quadros, a interface do Filament sai com faixas de cor visíveis.
      *
-     * Sem ffmpeg no PATH, avisa e segue — as imagens estáticas já foram publicadas, e
-     * falhar aqui desperdiçaria a navegação inteira.
+     * Um clipe incompleto é reportado pelo nome e não impede os outros (R32) — o `foreach`
+     * nunca para no primeiro incompleto/falho.
+     *
+     * Sem ffmpeg no PATH, avisa UMA VEZ e segue sem tentar nenhum clipe — as imagens
+     * estáticas já foram publicadas, e tentar cada clipe só repetiria o mesmo aviso.
      */
     private function montarGif(string $origem): void
     {
+        $ffmpeg = $this->resolverFfmpeg();
+
+        if ($ffmpeg === null) {
+            $this->components->warn('ffmpeg não disponível — GIF não montado. As imagens estáticas foram publicadas.');
+
+            return;
+        }
+
+        foreach (self::CLIPES as $clipe => $quadros) {
+            $this->montarClipe($clipe, $quadros, $origem, $ffmpeg);
+        }
+    }
+
+    /**
+     * Monta o GIF de UM clipe. Nunca escreve por cima do GIF publicado antes de confirmar
+     * sucesso (R33): o ffmpeg recebe um destino TEMPORÁRIO, fora de `art/`
+     * (R33.M6 — um temporário dentro de `art/` ficaria lá, publicado, se o ffmpeg falhasse), e
+     * só o sucesso copia o temporário por cima do publicado. O diretório de montagem é limpo
+     * ANTES de copiar os quadros deste clipe (R32.M6) — um quadro sobrado de uma execução
+     * interrompida, ou do clipe anterior no mesmo laço (R32.M5), não sobrevive para entrar
+     * neste GIF.
+     *
+     * @param  list<string>  $quadros
+     */
+    private function montarClipe(string $clipe, array $quadros, string $origem, string $ffmpeg): void
+    {
+        $label = str_replace('-', ' ', $clipe);
+
         $faltando = array_filter(
-            self::QUADROS_DO_GIF,
+            $quadros,
             fn (string $quadro): bool => ! File::exists("{$origem}/{$quadro}.png"),
         );
 
         if ($faltando !== []) {
-            $this->components->warn('Quadros do GIF ausentes: '.implode(', ', $faltando).'. GIF não montado.');
+            $this->components->warn("Quadros do GIF '{$label}' ausentes: ".implode(', ', $faltando).". GIF de '{$label}' não montado.");
 
             return;
         }
 
         $entrada = base_path('storage/framework/cache/arte');
+
+        File::deleteDirectory($entrada);
         File::ensureDirectoryExists($entrada);
 
-        foreach (self::QUADROS_DO_GIF as $indice => $quadro) {
+        foreach (array_values($quadros) as $indice => $quadro) {
             File::copy("{$origem}/{$quadro}.png", sprintf('%s/quadro-%02d.png', $entrada, $indice + 1));
         }
 
-        $destino = base_path('art/fluxo-import-export.gif');
+        $destino    = base_path("art/{$clipe}.gif");
+        $temporario = "{$entrada}/{$clipe}-saida.gif";
 
         $processo = new Process([
-            'ffmpeg', '-y',
+            $ffmpeg, '-y',
             '-framerate', '0.6',
             '-i', $entrada.'/quadro-%02d.png',
             '-vf', 'scale=1000:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse',
             '-loop', '0',
-            $destino,
+            $temporario,
         ]);
 
         $processo->run();
 
+        $sucesso = $processo->isSuccessful() && File::exists($temporario);
+
+        if ($sucesso) {
+            File::copy($temporario, $destino);
+        }
+
         File::deleteDirectory($entrada);
 
-        if (! $processo->isSuccessful()) {
-            $this->components->warn('ffmpeg não disponível ou falhou — GIF não montado. As imagens estáticas foram publicadas.');
+        if (! $sucesso) {
+            $this->components->warn("ffmpeg não disponível ou falhou — GIF de '{$label}' não montado. As imagens estáticas foram publicadas.");
 
             return;
         }
 
         $this->components->twoColumnDetail(
-            'art/fluxo-import-export.gif',
+            "art/{$clipe}.gif",
             number_format(File::size($destino) / 1024, 0).' KB',
         );
+    }
+
+    /**
+     * Resolve o caminho do ffmpeg no PATH do ambiente, um diretório por vez.
+     *
+     * `ExecutableFinder::find()` varre por SUFIXO primeiro e diretório depois
+     * (`vendor/symfony/process/ExecutableFinder.php:76-88`): no Windows, com um ffmpeg REAL
+     * instalado mais adiante no PATH (ex.: WinGet), a extensão `.exe` é tentada em TODOS os
+     * diretórios antes de `.cmd` ser tentada em qualquer um — um ffmpeg de teste `.cmd` à
+     * FRENTE do PATH perde para o `.exe` real mais atrás. Provado nesta sessão com uma sonda:
+     * `ExecutableFinder::find('ffmpeg')` chamado direto, com o `.cmd` de teste na frente do
+     * PATH e um `ffmpeg.exe` real mais adiante, resolveu o `.exe` real.
+     *
+     * Isolar a varredura a um diretório por vez (sobrescrevendo `PATH` com só ele e
+     * restaurando em seguida) respeita a ordem real do PATH — o primeiro diretório com
+     * QUALQUER extensão de PATHEXT vence, como o Windows resolve de fato.
+     */
+    private function resolverFfmpeg(): ?string
+    {
+        $pathOriginal = getenv('PATH') ?: getenv('Path') ?: '';
+        $diretorios   = array_filter(explode(PATH_SEPARATOR, $pathOriginal), fn (string $d): bool => $d !== '');
+
+        $finder = new ExecutableFinder;
+
+        foreach ($diretorios as $diretorio) {
+            putenv("PATH={$diretorio}");
+
+            $encontrado = $finder->find('ffmpeg');
+
+            if ($encontrado !== null) {
+                putenv("PATH={$pathOriginal}");
+
+                return $encontrado;
+            }
+        }
+
+        putenv("PATH={$pathOriginal}");
+
+        return null;
     }
 }
