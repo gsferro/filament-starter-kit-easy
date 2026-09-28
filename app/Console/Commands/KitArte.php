@@ -306,7 +306,7 @@ class KitArte extends Command
             File::deleteDirectory($entrada);
             File::ensureDirectoryExists($entrada);
 
-            foreach (array_values($quadros) as $indice => $quadro) {
+            foreach ($quadros as $indice => $quadro) {
                 File::copy("{$origem}/{$quadro}.png", sprintf('%s/quadro-%02d.png', $entrada, $indice + 1));
             }
 
