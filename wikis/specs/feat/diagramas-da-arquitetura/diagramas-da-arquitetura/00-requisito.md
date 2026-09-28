@@ -323,6 +323,30 @@ As opções escolhidas diziam, na pergunta:
 | RQ-35 | Os 21 cenários que só conferiam a existência do bloco passam a conferir o conteúdo dele contra o código | "os 21 cenários passando a conferir o conteúdo do bloco" | restrição | reforça RQ-26 |
 | RQ-36 | O CI de pull request constrói e confere o site (build, links, acessibilidade e diagramas) quando o PR toca `docs/` ou `site/` | "Um job no ci.yml que roda npm ci + build + verifica-links + verifica-acessibilidade quando o PR toca docs/ ou site/" | funcional | — |
 
+## Adendo 4 — 2026-09-28
+
+- **Fonte**: resposta do mantenedor à pergunta que a sessão levou quando a revisão cega do delta da 3ª rodada (step 6.5 da 3.x, step 9 da 4.0.0) achou 12 itens novos, RQ-31 tendo autorizado só a 3ª
+- **Fidelidade**: alta (escolha entre opções escritas)
+
+### Texto Original
+
+<!-- IMUTÁVEL. Pergunta como foi feita → resposta como foi dada. -->
+
+> "A revisão cega do delta da 3ª rodada achou 12 itens novos (RD3-01..12). São 3 Major: RD3-01, o conselho do kit:install para "banco não populado", que leva a um admin com 'password' ou a um beco sem saída; RD3-06, fatos que ainda passam no vazio em DG-12/13/14/16/17, com o DG-03 só em pt; e RD3-02, a suíte vermelha, que já corrigi. Os outros 9 são Minor: formas de seta que o extrator não reconhece, dois achados da 2ª rodada não tocados, publicação do GIF entre volumes, permissions no job de CI, um literal duplicado, entre outros. O que fazer?"="Corrigir tudo, última rodada (Recomendado)"
+
+A opção escolhida dizia, na pergunta:
+
+- **Corrigir tudo, última rodada** — "Uma 4ª rodada fecha os Major e os Minor, com revisão cega só do delta novo. O que essa revisão achar vira dívida declarada no 03, sem 5ª rodada. Depois seguem a reconciliação, o quality gate e o PR."
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-37 | Uma 4ª rodada da revisão do diff fecha todos os achados da 3ª (RD3-01..RD3-12), Major e Minor | "Uma 4ª rodada fecha os Major e os Minor" | restrição | — |
+| RQ-38 | A 4ª rodada tem revisão cega só do delta novo | "com revisão cega só do delta novo" | restrição | — |
+| RQ-39 | É a última rodada: o que a revisão da 4ª achar vira dívida declarada no `03`, sem 5ª rodada | "O que essa revisão achar vira dívida declarada no 03, sem 5ª rodada" | restrição | — |
+| RQ-40 | Depois da 4ª rodada, a feature segue para a reconciliação, o quality gate e o PR | "Depois seguem a reconciliação, o quality gate e o PR." | restrição | — |
+
 ## Fora de Escopo (declarado)
 
 - Mudar o comportamento do kit para caber num diagrama — o diagrama segue o código, nunca o contrário
