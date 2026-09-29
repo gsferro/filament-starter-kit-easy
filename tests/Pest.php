@@ -1073,6 +1073,16 @@ function paginasDoSite(string $idioma): array
  * depois some (`bloco escondido em cerca alheia lida como texto`). A cerca de FECHAMENTO continua
  * exigindo a linha inteira em branco (o CommonMark não aceita meta ali).
  *
+ * ## Resíduo de RD2-18: crase que fecha na MESMA linha é span embutido, não cerca
+ *
+ * O CommonMark proíbe crase na info string de uma cerca de CRASE — é assim que ele distingue
+ * ` ```texto``` ` (um span de código embutido, com a MESMA linha fechando) de uma cerca de
+ * abertura de verdade. Sem checar isto, uma linha de PROSA que começa com esse span (ex. "```código
+ * inline``` explica o resto da frença") casava como abertura de cerca "alheia" (o `\S*` da info
+ * string não vê a segunda crase) e, sem fechamento genuíno depois, engolia o resto do arquivo —
+ * inclusive um ` ```mermaid ` de verdade mais adiante. A cerca de TIL não tem essa restrição (o
+ * CommonMark permite crase na info string dela), então o guard vale só para o marcador `` ` ``.
+ *
  * @return list<array{bloco: string, linha: int, idCatalogo: ?string, dentroDeComentarioHtml: bool}>
  */
 function blocosMermaidDe(string $markdown): array
@@ -1085,6 +1095,15 @@ function blocosMermaidDe(string $markdown): array
     for ($i = 0; $i < $total; $i++) {
         $linha = $linhas[$i];
 
+        // Resíduo de RD2-18: se o marcador é CRASE e o resto da linha (depois do primeiro run de
+        // crases) contém OUTRA crase, esta linha é um span de código embutido que fecha na própria
+        // linha — nunca abertura de cerca (CommonMark: a info string de cerca de crase não pode
+        // conter crase). O til não tem essa restrição.
+        preg_match('#^\s*(`{3,}|~{3,})#', $linha, $marcadorDaLinha);
+        $ehSpanEmbutido = ($marcadorDaLinha[1] ?? '') !== ''
+            && $marcadorDaLinha[1][0] === '`'
+            && str_contains(substr($linha, strlen($marcadorDaLinha[0])), '`');
+
         // Delimitador `#`, e não `~`: a própria alternativa da cerca de til usa o caractere `~`,
         // e um delimitador `~` cru quebra ali com "Unknown modifier" — o `~` da cerca fecha o
         // regex antes da hora.
@@ -1093,7 +1112,8 @@ function blocosMermaidDe(string $markdown): array
         // (` ```html title="x" `) — só a PRIMEIRA palavra (a linguagem) decide se a cerca é
         // "mermaid" ou "outra, a pular"; exigir linha em branco depois dela perdia a cerca com
         // meta por inteiro (nem mermaid, nem "outra" — texto comum, e o `<!--` de exemplo vazava).
-        if (preg_match('#^\s*(`{3,}|~{3,})\s*(\S*)#', $linha, $cercaQualquer) === 1
+        if (! $ehSpanEmbutido
+            && preg_match('#^\s*(`{3,}|~{3,})\s*(\S*)#', $linha, $cercaQualquer) === 1
             && $cercaQualquer[2] !== 'mermaid'
         ) {
             $marcadorAlheio = $cercaQualquer[1][0];
@@ -1122,8 +1142,9 @@ function blocosMermaidDe(string $markdown): array
 
         // Idem (RD2-18): `mermaid` pode vir seguido de meta (` ```mermaid title="x" `) — o que
         // fecha a linha aqui é a cerca de FECHAMENTO, abaixo, que continua exigindo linha em
-        // branco (o CommonMark não aceita meta ali).
-        if (preg_match('#^\s*(`{3,}|~{3,})\s*mermaid(?:\s|$)#', $linha, $cerca) !== 1) {
+        // branco (o CommonMark não aceita meta ali). E, pelo mesmo resíduo acima, um span
+        // embutido cuja info string comece por "mermaid" (` ```mermaid``` `) não abre cerca.
+        if ($ehSpanEmbutido || preg_match('#^\s*(`{3,}|~{3,})\s*mermaid(?:\s|$)#', $linha, $cerca) !== 1) {
             if (str_contains($linha, '-->')) {
                 $dentroDeComentario = false;
             }
@@ -1238,9 +1259,28 @@ function blocoDoCatalogoNaArvore(string $id, string $idioma): ?array
 | o `users`/`roles` reais, minúsculos).
 */
 
-/** As formas de seta de `flowchart`/`stateDiagram-v2` reconhecidas (RD2-10/RD2-11): normal (2 a 4
- * traços), pontilhada (1 ou 2 pontos), grossa (2 ou 3 iguais), círculo e X. */
-const SETA_DE_FLUXO = '(?:-{2,4}>|-\.{1,2}->|={2,3}>|--o|--x)';
+/**
+ * As formas de seta de `flowchart`/`stateDiagram-v2` reconhecidas (RD2-10/RD2-11, RD3-05): normal
+ * (2 ou mais traços, com ou sem ponta — inclusive `---` sem seta e `----->` com qualquer número de
+ * traços), pontilhada (1 ou mais pontos, com ou sem o traço/ponta em cada lado — inclusive
+ * `-...->`), grossa (2 ou mais iguais) e as pontas circulo/X/bidirecional (`<`, `o`, `x`) em
+ * qualquer combinação nas duas pontas.
+ *
+ * Espelha, char a char, o lexer real do Mermaid 11.17.2 (`mermaid/dist/chunks/mermaid.core/
+ * chunk-SHT3W25Y.mjs`, as regras de LINK/START_LINK): `[xo<]?--+[-xo>]`, `[xo<]?==+[=xo>]` e
+ * `[xo<]?-?\.+-[xo>]?` — não uma aproximação com quantificador fixo. A forma antiga (`-{2,4}>`,
+ * `-\.{1,2}->`, `={2,3}>`, `--o`, `--x`) perdia `----->`/`<-->`/`---` (normal com 5+ traços, sem
+ * ponta ou com `<` na origem) e `-...->` (3+ pontos) — sintaxe válida que o `mermaid.parse` aceita
+ * e que o extrator "normalizado" (RQ-34) precisa reconhecer para não confundir uma aresta redesenhada
+ * com uma aresta ausente.
+ */
+const SETA_DE_FLUXO = '(?:[xo<]?-{2,}[-xo>]|[xo<]?={2,}[=xo>]|[xo<]?-?\.+-[xo>]?)';
+
+/** O rótulo do MEIO da aresta, entre dois traços (`A -- "rótulo" --> B` ou `A -- rótulo --> B`),
+ * como alternativa ao rótulo depois da seta (`-->|"rótulo"|`) — RD3-05: `existeArestaDeFluxo()` só
+ * reconhecia a forma com pipe; a forma com travessão (a que o Mermaid gera para rótulo sem aspas)
+ * passava sem ser vista. Compartilhado com `arestasDeFluxo()`, que já a usava. */
+const ROTULO_TRACO_DE_FLUXO = '--\s+"?([^"\n-]+?)"?\s*';
 
 /** O desenho de um nó (a forma logo depois do ID: `["..."]`, `{"..."}`, `(["..."])`, etc.), quando
  * houver — usado para PULAR o desenho ao procurar a próxima aresta na mesma linha. */
@@ -1253,11 +1293,18 @@ const FORMA_DE_NO_DE_FLUXO = '(?:\(\[[^\]\n]*\]\)|\[\([^\)\n]*\)\]|\[[^\]\n]*\]|
  * inteira, e "B --> C" é substring de "A --> B --> C"). Ignora o que vier depois do ID de destino
  * (o desenho do PRÓPRIO nó, ex. `nega_403["Nega — 403"]`) — só o ID conta como identidade da
  * aresta, nunca o rótulo humano (a mesma regra de RD-03).
+ *
+ * RD3-05: o rótulo aceita as DUAS formas do Mermaid — depois da seta (`-->|"rótulo"|`) OU entre
+ * dois traços ANTES da seta completa (`-- "rótulo" -->`, a forma de `A -- ws --> B`) —, não só a
+ * primeira.
  */
 function existeArestaDeFluxo(string $bloco, string $de, string $para): bool
 {
+    $comRotuloDepois = SETA_DE_FLUXO.'\s*(?:\|[^|\n]*\|\s*)?';
+    $comRotuloEntre  = ROTULO_TRACO_DE_FLUXO.SETA_DE_FLUXO.'\s*';
+
     return (bool) preg_match(
-        '/\b'.preg_quote($de, '/').'\b'.FORMA_DE_NO_DE_FLUXO.'\s*'.SETA_DE_FLUXO.'\s*(?:\|[^|\n]*\|\s*)?'.preg_quote($para, '/').'\b/',
+        '/\b'.preg_quote($de, '/').'\b'.FORMA_DE_NO_DE_FLUXO.'\s*(?:'.$comRotuloDepois.'|'.$comRotuloEntre.')'.preg_quote($para, '/').'\b/',
         $bloco,
     );
 }
@@ -1311,7 +1358,7 @@ function rotulosDeNoDeFluxo(string $bloco): array
 function arestasDeFluxo(string $bloco): array
 {
     $rotuloPipe  = SETA_DE_FLUXO.'\s*\|\s*"?([^"|]*)"?\s*\|';
-    $rotuloTraco = '--\s+"?([^"\n-]+?)"?\s*'.SETA_DE_FLUXO;
+    $rotuloTraco = ROTULO_TRACO_DE_FLUXO.SETA_DE_FLUXO;
     $arestas     = [];
 
     foreach (explode("\n", $bloco) as $linha) {
@@ -1357,6 +1404,10 @@ function arestasDeFluxo(string $bloco): array
  * DIRETA entre as duas (RD2-12: a conta e o papel do kit se ligam por `model_has_roles`, então
  * `relacaoDeEr($bloco, 'users', 'roles')` é `null` no bloco correto).
  *
+ * RD3-05: a linha de conexão aceita `--` (identificadora) OU `..` (não identificadora) entre as
+ * duas cardinalidades — o Mermaid distingue as duas (a segunda desenha tracejado), e exigir só `--`
+ * perdia toda relação opcional desenhada com o traço certo.
+ *
  * @return ?array{cardDe: string, cardPara: string, rotulo: ?string, invertida: bool}
  */
 function relacaoDeEr(string $bloco, string $a, string $b): ?array
@@ -1366,7 +1417,7 @@ function relacaoDeEr(string $bloco, string $a, string $b): ?array
     foreach (explode("\n", $bloco) as $linha) {
         $linha = trim($linha);
 
-        if (preg_match('/^([A-Za-z0-9_]+)\s*('.$card.')--('.$card.')\s*([A-Za-z0-9_]+)\s*(?::\s*"?([^"\n]*)"?)?\s*$/', $linha, $m) !== 1) {
+        if (preg_match('/^([A-Za-z0-9_]+)\s*('.$card.')(?:--|\.\.)('.$card.')\s*([A-Za-z0-9_]+)\s*(?::\s*"?([^"\n]*)"?)?\s*$/', $linha, $m) !== 1) {
             continue;
         }
 

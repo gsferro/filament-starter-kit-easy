@@ -674,60 +674,65 @@ function fatosPorDg(): array
         // DG-02: panel_user NÃO tem "gerir usuários" entre suas arestas (subtração de administração).
         'DG-02' => static fn (string $b): bool => ! (bool) preg_match('/panel_user\s*-->\s*gerir_usuarios/', $b),
 
-        // DG-03: a pergunta de pendência vem ANTES da de master_global (canAccessPanel) E, na
-        // extensão de canAccessTenant, a organização inativa nega ANTES do master_global sempre
-        // entrar — `app/Models/User.php:canAccessTenant:789` faz a checagem de `!$tenant->ativo`
-        // primeiro "de propósito", e só depois `isMasterGlobal()` (RD-12).
+        // DG-03: a pergunta de pendência (checa_pendente) vem ANTES da de master_global
+        // (checa_master, canAccessPanel) E, na extensão de canAccessTenant, a organização inativa
+        // (checa_tenant) nega ANTES do master_global/vínculo sempre entrar (checa_vinculo) —
+        // `app/Models/User.php:canAccessTenant:789` faz a checagem de `!$tenant->ativo` primeiro
+        // "de propósito", e só depois `isMasterGlobal()` (RD-12).
+        //
+        // RD3-06: os IDs (checa_pendente, checa_master, checa_tenant, checa_vinculo) são os MESMOS
+        // nos dois idiomas — só o RÓTULO humano muda ("pendente?"/"pending?", "inativa"/"inactive")
+        // —, então checar pelo ID, não pelo rótulo em português, faz o fato rodar em pt E EN (antes
+        // só pt: `stripos($b, 'pendente?')` nunca casava com o inglês "Approval pending?").
         //
         // RD2-09: "antes" é CAMINHO no grafo, não ordem de texto — reordenar as LINHAS de um
         // losango único (o defeito original do RD-12: um nó só, com master_global como rótulo de
-        // uma aresta do PRÓPRIO nó de inativa) engana um cheque por posição de substring, porque
-        // a palavra "inativa" pode aparecer antes de "master_global" no texto sem que o SEGUNDO
-        // seja de fato alcançado só DEPOIS do primeiro no grafo. Por isso: acha o nó cujo PRÓPRIO
-        // rótulo fala de "inativa" (o nó tem de existir sozinho, sem "master_global" no seu
-        // próprio rótulo — um losango único falha aqui), e exige uma ARESTA DE SAÍDA desse nó (o
-        // rótulo da aresta em si não pode falar de "master_global" — só Sim/Não) para um SEGUNDO
-        // nó cujo rótulo fale de "master_global" ou "vínculo".
+        // uma aresta do PRÓPRIO nó de checa_tenant) engana um cheque por posição de substring,
+        // porque checa_tenant pode aparecer antes de checa_master no texto sem que o SEGUNDO seja
+        // de fato alcançado só DEPOIS do primeiro no grafo. Por isso: exige uma ARESTA DE SAÍDA de
+        // checa_tenant (que tem de existir sozinho, distinto de checa_master — um losango único
+        // falha aqui) para checa_vinculo — nunca direto para o permitido.
         'DG-03' => static function (string $b): bool {
-            $posPendencia = stripos($b, 'pendente?');
-            $posMaster    = stripos($b, 'master_global?');
+            $posPendencia = stripos($b, 'checa_pendente');
+            $posMaster    = stripos($b, 'checa_master');
 
             if ($posPendencia === false || $posMaster === false || $posPendencia >= $posMaster) {
                 return false;
             }
 
-            $rotulos   = rotulosDeNoDeFluxo($b);
-            $noInativa = null;
-
-            foreach ($rotulos as $id => $rotulo) {
-                if (stripos($rotulo, 'inativa') !== false) {
-                    $noInativa = $id;
-
-                    break;
-                }
+            if (! str_contains($b, 'checa_tenant') || ! str_contains($b, 'checa_vinculo')) {
+                return false;
             }
 
-            if ($noInativa === null || stripos($rotulos[$noInativa], 'master_global') !== false) {
+            if (! existeArestaDeFluxo($b, 'checa_tenant', 'checa_vinculo')) {
+                return false;
+            }
+
+            // RD4-03: o ID diz ONDE o nó está no grafo, o rótulo diz O QUE ele pergunta. Trocar os
+            // rótulos de checa_tenant e checa_vinculo, com IDs e arestas intactos, desenha
+            // "master_global ou vínculo?" antes de "está inativa?" — o defeito do RD-12, que um
+            // fato só por ID aceita. `User::canAccessTenant` checa `! $tenant->ativo` primeiro.
+            $rotulos       = rotulosDeNoDeFluxo($b);
+            $rotuloTenant  = $rotulos['checa_tenant'] ?? '';
+            $rotuloVinculo = $rotulos['checa_vinculo'] ?? '';
+
+            if (preg_match('/inativ|inactive/i', $rotuloTenant) !== 1
+                || stripos($rotuloTenant, 'master_global') !== false
+                || stripos($rotuloVinculo, 'master_global') === false
+            ) {
                 return false;
             }
 
             foreach (arestasDeFluxo($b) as $aresta) {
-                if ($aresta['de'] !== $noInativa) {
-                    continue;
-                }
-
-                if ($aresta['rotulo'] !== null && stripos($aresta['rotulo'], 'master_global') !== false) {
-                    return false;
-                }
-
-                $rotuloAlvo = $rotulos[$aresta['para']] ?? '';
-
-                if (stripos($rotuloAlvo, 'master_global') !== false || stripos($rotuloAlvo, 'vínculo') !== false) {
-                    return true;
+                if ($aresta['de'] === 'checa_tenant'
+                    && $aresta['para'] !== 'checa_vinculo'
+                    && stripos($aresta['para'], 'nega') === false
+                ) {
+                    return false; // saída de checa_tenant que não nega e não vai a checa_vinculo (RD-12 revivido).
                 }
             }
 
-            return false;
+            return true;
         },
 
         // DG-04: o desafio de 2FA está dentro de um bloco condicional (alt), não incondicional.
@@ -770,14 +775,55 @@ function fatosPorDg(): array
             return $posPii !== false && $posLocal !== false && $posLocal < $posPii;
         },
 
-        // DG-12: a tela de backups NÃO está ligada a um agendamento ativo (o backup:run está comentado).
-        'DG-12' => static fn (string $b): bool => ! str_contains($b, 'Backups --> AgendamentoAtivo'),
+        // DG-12: a tela de backups (tela_backups) NÃO está ligada a um agendamento ATIVO — o
+        // backup:run está comentado, e o diagrama publicado desenha essa aresta PONTILHADA (o
+        // traço do Mermaid para "desligado"), nunca sólida.
+        //
+        // RD3-06: os literais antigos (`Backups --> AgendamentoAtivo`, PascalCase) nunca existiram
+        // no bloco REAL (os IDs publicados são snake_case: tela_backups, backup_runs) — o fato
+        // passava no VAZIO, e o controle positivo (CT-62/CT-99/CT-100) aprovava o bloco real por
+        // um motivo que nada tinha a ver com o conteúdo dele. Checa pelo TIPO da seta (pontilhada
+        // vs sólida), não pelo rótulo — o rótulo muda de idioma ("desligado por padrão"/"off by
+        // default"), mas o traço pontilhado é o MESMO desenho nos dois.
+        'DG-12' => static function (string $b): bool {
+            $temPontilhada = (bool) preg_match('/\btela_backups\b[^\n]*?-\.+-[^\n]*?\bbackup_runs\b/', $b);
+            $temSolida     = (bool) preg_match('/\btela_backups\b[^\n]*?-{2,}>[^\n]*?\bbackup_runs\b/', $b);
 
-        // DG-13: nenhuma relação Projeto -> AgenteIa.
-        'DG-13' => static fn (string $b): bool => ! str_contains($b, 'PROJETO ||--o{ AGENTE_IA'),
+            return $temPontilhada && ! $temSolida;
+        },
 
-        // DG-14: o .env NÃO vence o banco em tempo de execução (o banco vence).
-        'DG-14' => static fn (string $b): bool => ! str_contains($b, '.env --> Efetivo : vence'),
+        // DG-13: nenhuma relação DIRETA projetos -> agentes_ia (a tabela de demonstração não se
+        // liga ao catálogo de agentes de IA).
+        //
+        // RD3-06: o literal antigo (`PROJETO ||--o{ AGENTE_IA`, singular e maiúsculo) nunca existiu
+        // no bloco real (as entidades publicadas são `projetos`/`agentes_ia`, plural e minúsculo) —
+        // o fato passava no vazio. `relacaoDeEr()` (RQ-34) já normaliza a relação em qualquer
+        // ordem/cardinalidade e roda igual em pt e en (os nomes de entidade não mudam de idioma).
+        'DG-13' => static fn (string $b): bool => relacaoDeEr($b, 'projetos', 'agentes_ia') === null,
+
+        // DG-14: o .env (env_file) NÃO tem, na sua aresta para config_php, um rótulo de
+        // precedência — só o banco (settings_banco) tem esse rótulo ("sobrepõe"/"overrides") na
+        // aresta dele para config_php. O banco vence em runtime; o .env só semeia.
+        //
+        // RD3-06: o literal antigo (`.env --> Efetivo : vence`) nunca existiu no bloco real (os
+        // IDs publicados são env_file/config_php/settings_banco, e o Mermaid de flowchart não tem
+        // rótulo com `:` — essa é sintaxe de erDiagram) — o fato passava no vazio. Checa a
+        // EXISTÊNCIA de rótulo (não o texto dele), que é o mesmo desenho nos dois idiomas.
+        'DG-14' => static function (string $b): bool {
+            $bancoSobrepoe = false;
+
+            foreach (arestasDeFluxo($b) as $aresta) {
+                if ($aresta['de'] === 'env_file' && $aresta['para'] === 'config_php' && $aresta['rotulo'] !== null) {
+                    return false; // .env não pode ter rótulo de precedência para config_php.
+                }
+
+                if ($aresta['de'] === 'settings_banco' && $aresta['para'] === 'config_php' && $aresta['rotulo'] !== null) {
+                    $bancoSobrepoe = true;
+                }
+            }
+
+            return $bancoSobrepoe;
+        },
 
         // DG-15: a senha do administrador é gerada ANTES do db:seed.
         'DG-15' => static function (string $b): bool {
@@ -787,11 +833,38 @@ function fatosPorDg(): array
             return $posSenha !== false && $posSeed !== false && $posSenha < $posSeed;
         },
 
-        // DG-16: o composer.json NÃO é aplicado pelo kit:update (só relatório).
-        'DG-16' => static fn (string $b): bool => ! str_contains($b, 'composer.json --> Aplicado'),
+        // DG-16: o composer.json (nó so_relatorio) NÃO é aplicado pelo kit:update — só relatado.
+        //
+        // RD3-06: o literal antigo (`composer.json --> Aplicado`) nunca existiu no bloco real (o
+        // nó publicado é `so_relatorio["composer.json: só relatório"/"composer.json: report
+        // only"]`) — o fato passava no vazio. Checa o RÓTULO do nó real (tem de citar
+        // composer.json e NÃO pode citar "aplicad"/"appli" — a palavra que a adulteração
+        // introduziria), não um texto sintético desconectado do ID publicado.
+        'DG-16' => static function (string $b): bool {
+            $rotulo = rotulosDeNoDeFluxo($b)['so_relatorio'] ?? null;
 
-        // DG-17: o kit:update NÃO entrega docs/.
-        'DG-17' => static fn (string $b): bool => ! str_contains($b, 'kit:update --> docs/'),
+            return $rotulo !== null
+                && str_contains($rotulo, 'composer.json')
+                && preg_match('/aplic|appli/i', $rotulo) !== 1;
+        },
+
+        // DG-17: o kit:update NÃO entrega docs/ — nenhuma aresta de CAMINHOS_DO_KIT
+        // (caminhos_do_kit) leva a um nó que fale de "docs".
+        //
+        // RD3-06: o literal antigo (`kit:update --> docs/`) nunca existiu no bloco real (o nó
+        // publicado é `caminhos_do_kit`, e "docs" nem aparece na lista do que o kit:update exclui
+        // — ele simplesmente nunca entra na lista de inclusão) — o fato passava no vazio.
+        'DG-17' => static function (string $b): bool {
+            $rotulos = rotulosDeNoDeFluxo($b);
+
+            foreach (arestasDeFluxo($b) as $aresta) {
+                if ($aresta['de'] === 'caminhos_do_kit' && preg_match('/\bdocs\b/i', $rotulos[$aresta['para']] ?? '') === 1) {
+                    return false;
+                }
+            }
+
+            return true;
+        },
 
         // DG-18: o mailpit tem profile (não sobe sempre).
         'DG-18' => static fn (string $b): bool => ! str_contains($b, 'mailpit[sem profile]'),
@@ -816,9 +889,21 @@ it('[CT-06] cada DG adulterado num fato do código é reprovado', function (stri
     // texto sintético — é a aplicação de fatosPorDg() a um bloco real que prova (ou reprova, RD-12)
     // que o diagrama publicado bate com o código hoje. Os outros 19 DGs continuam com o bloco
     // sintético como controle do MECANISMO (não foram auditados um a um contra o texto publicado).
+    //
+    // RD3-06: em EN também — antes só pt, porque o fato dependia de PALAVRA em português
+    // ("pendente?", "inativa"); reescrito por ID (checa_pendente, checa_tenant, ...), que é o
+    // mesmo nos dois idiomas, o controle positivo passa a valer para os dois.
     if ($dg === 'DG-03') {
-        $blocoReal = blocoDoCatalogoNaArvore('DG-03', 'pt');
-        expect($blocoReal)->not->toBeNull('DG-03 não encontrado em pt');
+        foreach (['pt', 'en'] as $idioma) {
+            $blocoReal = blocoDoCatalogoNaArvore('DG-03', $idioma);
+            expect($blocoReal)->not->toBeNull("DG-03 não encontrado em {$idioma}");
+
+            if ($blocoReal !== null) {
+                expect($fato((string) $blocoReal['bloco']))->toBeTrue("{$idioma}: o fato de DG-03 deveria aceitar o bloco real: {$blocoReal['bloco']}");
+            }
+        }
+
+        $blocoReal    = blocoDoCatalogoNaArvore('DG-03', 'pt');
         $blocoCorreto = (string) ($blocoReal['bloco'] ?? $blocoCorreto);
     }
 
@@ -827,13 +912,18 @@ it('[CT-06] cada DG adulterado num fato do código é reprovado', function (stri
 })->with([
     ['DG-01', "flowchart LR\n  Adm[/admin] --> AdminP\n  Inf[/infra] --> InfraP\n", "flowchart LR\n  Adm[/admin] --> AdminP\n"],
     ['DG-02', "flowchart LR\n  panel_user --> operar_negocio\n", "flowchart LR\n  panel_user --> gerir_usuarios\n"],
+    // RD3-06: os IDs (checa_pendente, checa_master, checa_tenant, checa_vinculo) são os REAIS do
+    // DG-03 publicado (pt e en usam os MESMOS IDs, só o rótulo muda de idioma) — não mais os
+    // sintéticos Q1/Q2, que nunca apareceriam num bloco real e mascaravam esta linha do dataset
+    // (o `blocoCorreto` é ignorado para DG-03, substituído pelo bloco REAL logo acima; só o
+    // `blocoAdulterado` abaixo é de fato exercitado por este cenário).
+    //
     // RD2-09: o bloco correto tem DOIS nós (checa_tenant, depois checa_vinculo), e o adulterado é
-    // exatamente o defeito revertido — um losango SÓ (checa_tenant com o rótulo genérico do
-    // método), com "master_global" como rótulo de uma ARESTA DE SAÍDA do próprio nó, e a aresta
-    // de "inativa" escrita PRIMEIRO no texto (o que enganava o cheque por posição de substring).
+    // exatamente o defeito revertido — um losango SÓ (sem checa_vinculo: master_global e vínculo
+    // decididos na PRÓPRIA aresta de saída de checa_tenant, não por um segundo nó).
     ['DG-03',
-        "flowchart LR\n  Q1{\"pendente?\"} --> Q2{\"master_global?\"}\n  checa_tenant{\"está inativa?\"} -->|\"Sim\"| nega[\"nega\"]\n  checa_tenant -->|\"Não\"| checa_vinculo{\"master_global ou vínculo?\"}\n  checa_vinculo -->|\"Sim\"| permite[\"permite\"]\n",
-        "flowchart LR\n  Q1{\"pendente?\"} --> Q2{\"master_global?\"}\n  checa_tenant{\"organização acessada, canAccessTenant?\"} -->|\"inativa\"| nega[\"nega\"]\n  checa_tenant -->|\"master_global\"| permite[\"permite\"]\n  checa_tenant -->|\"vínculo\"| permite\n",
+        "flowchart LR\n  checa_pendente{\"pendente?\"} --> checa_master{\"master_global?\"}\n  checa_tenant{\"está inativa?\"} -->|\"Sim\"| nega_404[\"nega\"]\n  checa_tenant -->|\"Não\"| checa_vinculo{\"master_global ou vínculo?\"}\n  checa_vinculo -->|\"Sim\"| permite_tenant[\"permite\"]\n",
+        "flowchart LR\n  checa_pendente{\"pendente?\"} --> checa_master{\"master_global?\"}\n  checa_tenant{\"organização acessada, canAccessTenant?\"} -->|\"inativa\"| nega_404[\"nega\"]\n  checa_tenant -->|\"master_global\"| permite_tenant[\"permite\"]\n  checa_tenant -->|\"vínculo\"| permite_tenant\n",
     ],
     ['DG-04', "sequenceDiagram\n  alt 2FA ligado\n    U->>S: desafio 2FA\n  end\n", "sequenceDiagram\n  U->>S: desafio 2FA\n"],
     ['DG-05', "flowchart LR\n  N2[2 painéis] --> Escolha[tela de escolha]\n", "flowchart LR\n  N2[2 painéis] --> Painel[direto ao painel]\n"],
@@ -843,12 +933,29 @@ it('[CT-06] cada DG adulterado num fato do código é reprovado', function (stri
     ['DG-09', "stateDiagram-v2\n  Expirado --> Pendente : reenviar\n", "stateDiagram-v2\n  Recusado --> Pendente : reenviar\n"],
     ['DG-10', "flowchart LR\n  AgenteIa --> Projeto\n", "flowchart LR\n  AgenteIa --> Convite\n"],
     ['DG-11', "flowchart LR\n  prompt_guard_local --> pii_redactor\n", "flowchart LR\n  pii_redactor --> prompt_guard_local\n"],
-    ['DG-12', "flowchart LR\n  Backups --> AgendamentoDesligado[desligado por padrão]\n", "flowchart LR\n  Backups --> AgendamentoAtivo\n"],
-    ['DG-13', "erDiagram\n  PROJETO ||--o{ CONVITE : recebe\n", "erDiagram\n  PROJETO ||--o{ AGENTE_IA : usa\n"],
-    ['DG-14', "flowchart LR\n  Banco --> Efetivo : vence\n  .env --> Efetivo : plano B\n", "flowchart LR\n  .env --> Efetivo : vence\n"],
+    // RD3-06: os IDs (tela_backups, backup_runs) são os REAIS do DG-12 publicado.
+    ['DG-12',
+        "flowchart TD\n  tela_backups -.->|\"backup:run, desligado por padrão\"| backup_runs[(\"backup_runs\")]\n",
+        "flowchart TD\n  tela_backups -->|\"backup:run, agendado diariamente\"| backup_runs[(\"backup_runs\")]\n",
+    ],
+    // RD3-06: os IDs (projetos, agentes_ia) são os REAIS do DG-13 publicado (plural, minúsculo).
+    ['DG-13', "erDiagram\n  tenants ||--o{ convites : recebe\n", "erDiagram\n  projetos ||--o{ agentes_ia : usa\n"],
+    // RD3-06: os IDs (env_file, config_php, settings_banco) são os REAIS do DG-14 publicado.
+    ['DG-14',
+        "flowchart LR\n  settings_banco -->|\"sobrepõe, chaves do mapa\"| config_php\n  env_file --> config_php\n",
+        "flowchart LR\n  env_file -->|\"vence\"| config_php\n  settings_banco -->|\"sobrepõe, chaves do mapa\"| config_php\n",
+    ],
     ['DG-15', "flowchart LR\n  A[senha gerada] --> B[db:seed]\n", "flowchart LR\n  A[db:seed] --> B[senha gerada]\n"],
-    ['DG-16', "flowchart LR\n  composer.json --> Relatorio[só relatório]\n", "flowchart LR\n  composer.json --> Aplicado\n"],
-    ['DG-17', "flowchart LR\n  kit:update --> app/Support\n", "flowchart LR\n  kit:update --> docs/\n"],
+    // RD3-06: o ID (so_relatorio) é o REAL do DG-16 publicado.
+    ['DG-16',
+        "flowchart LR\n  revisar --> so_relatorio[\"composer.json: só relatório\"]\n",
+        "flowchart LR\n  revisar --> so_relatorio[\"composer.json: aplicado\"]\n",
+    ],
+    // RD3-06: o ID (caminhos_do_kit) é o REAL do DG-17 publicado.
+    ['DG-17',
+        "flowchart LR\n  caminhos_do_kit --> fora_update[\"Fora: art, stubs\"]\n",
+        "flowchart LR\n  caminhos_do_kit --> entrega_docs[\"docs/\"]\n",
+    ],
     ['DG-18', "flowchart LR\n  mailpit[mail, full]\n", "flowchart LR\n  mailpit[sem profile]\n"],
 ]);
 
@@ -1347,9 +1454,20 @@ it('[CT-73] o caso de uso de escrita exige a permissão de escrita, não a de ve
 
         $idCaso = idDoNoComRotulo((string) $bloco['bloco'], 'dashboard');
 
-        // A linha só discrimina se o DG-02 desenhar o caso de uso; se não desenhar, nada a
-        // afirmar sobre a ARESTA (a permissão, acima, é sempre conferida).
+        // RD3-08: a checagem da ARESTA só discrimina se o DG-02 desenhar o caso de uso — o 04 diz
+        // que este lado é CONDICIONAL ("se o DG-02 desenha o caso de uso"). Um `continue` silencioso
+        // aqui passa no vazio SEMPRE que o nó não existir, sem que nada afirme que a ausência é o
+        // estado conferido hoje (um `dashboard`/`import` desenhado de outra forma, que
+        // `idDoNoComRotulo` não reconhecesse, passaria despercebido do mesmo jeito). Por isso a
+        // ausência vira ASSERÇÃO — 0 ocorrências de "dashboard" e "import" no bloco — e não um pulo:
+        // no dia em que um nó aparecer, esta linha reprova e obriga a reengatar a checagem da aresta.
         if ($idCaso === null) {
+            $ocorrenciasDashboard = preg_match_all('/\bdashboard\b/i', (string) $bloco['bloco']);
+            $ocorrenciasImport    = preg_match_all('/\bimport\b/i', (string) $bloco['bloco']);
+
+            expect($ocorrenciasDashboard)->toBe(0, "{$idioma}: o DG-02 não deveria mencionar \"dashboard\" hoje — se passou a mencionar, a checagem da aresta {$idAtor} --> (dashboard) precisa reengatar")
+                ->and($ocorrenciasImport)->toBe(0, "{$idioma}: o DG-02 não deveria mencionar \"import\" hoje");
+
             continue;
         }
 
@@ -2711,12 +2829,16 @@ it('[CT-62] o gravador que o DG-12 liga a uma tela, exercitado, grava a tabela q
         expect(AiRun::count())->toBeGreaterThan($antes, 'ai_runs deveria ganhar ao menos uma linha pelo listener RegistrarAiRun');
     }
 
-    $bloco = blocoDoCatalogoNaArvore('DG-12', 'pt');
-    expect($bloco)->not->toBeNull("DG-12 não encontrado — a ligação {$tela} → gravador não pode ser conferida contra o diagrama ainda");
+    // RQ-35/RD2-16/RD3-06: o bloco REAL bate com o fato do código (backups não ligado a
+    // agendamento ativo), em pt E en — o fato agora checa o traço da aresta pelos IDs reais
+    // (tela_backups -> backup_runs), não um literal sintético que nunca existiu no bloco publicado.
+    foreach (['pt', 'en'] as $idioma) {
+        $bloco = blocoDoCatalogoNaArvore('DG-12', $idioma);
+        expect($bloco)->not->toBeNull("DG-12 não encontrado em {$idioma} — a ligação {$tela} → gravador não pode ser conferida contra o diagrama ainda");
 
-    // RQ-35/RD2-16: o bloco REAL bate com o fato do código (o agendamento de backup não está ativo).
-    if ($bloco !== null) {
-        expect(fatosPorDg()['DG-12']((string) $bloco['bloco']))->toBeTrue('o bloco real do DG-12 deveria bater com o fato do código (backups não ligado a agendamento ativo)');
+        if ($bloco !== null) {
+            expect(fatosPorDg()['DG-12']((string) $bloco['bloco']))->toBeTrue("{$idioma}: o bloco real do DG-12 deveria bater com o fato do código (backups não ligado a agendamento ativo)");
+        }
     }
 })->with([
     ['Audits', 'audits', 'AiAuditMiddleware, numa execução do agente com provider falso'],
@@ -2760,12 +2882,14 @@ it('[CT-99] o gravador que o DG-12 liga a cada tela do /infra, exercitado, grava
         default => null,
     };
 
-    $bloco = blocoDoCatalogoNaArvore('DG-12', 'pt');
-    expect($bloco)->not->toBeNull("DG-12 não encontrado — a ligação {$tela} → gravador não pode ser conferida contra o diagrama ainda");
+    // RQ-35/RD2-16/RD3-06: o bloco REAL bate com o fato do código, em pt E en.
+    foreach (['pt', 'en'] as $idioma) {
+        $bloco = blocoDoCatalogoNaArvore('DG-12', $idioma);
+        expect($bloco)->not->toBeNull("DG-12 não encontrado em {$idioma} — a ligação {$tela} → gravador não pode ser conferida contra o diagrama ainda");
 
-    // RQ-35/RD2-16: o bloco REAL bate com o fato do código (o agendamento de backup não está ativo).
-    if ($bloco !== null) {
-        expect(fatosPorDg()['DG-12']((string) $bloco['bloco']))->toBeTrue('o bloco real do DG-12 deveria bater com o fato do código (backups não ligado a agendamento ativo)');
+        if ($bloco !== null) {
+            expect(fatosPorDg()['DG-12']((string) $bloco['bloco']))->toBeTrue("{$idioma}: o bloco real do DG-12 deveria bater com o fato do código (backups não ligado a agendamento ativo)");
+        }
     }
 })->with([
     ['AuthenticationLog', 'authentication_log'],
@@ -2789,12 +2913,14 @@ it('[CT-100] cada página do /infra que mostra dado de outro processo está liga
         expect(config('pulse.ingest.driver'))->not->toBeNull();
     }
 
-    $bloco = blocoDoCatalogoNaArvore('DG-12', 'pt');
-    expect($bloco)->not->toBeNull("DG-12 não encontrado — a fonte de {$pagina} não pode ser conferida contra o diagrama ainda");
+    // RQ-35/RD2-16/RD3-06: o bloco REAL bate com o fato do código, em pt E en.
+    foreach (['pt', 'en'] as $idioma) {
+        $bloco = blocoDoCatalogoNaArvore('DG-12', $idioma);
+        expect($bloco)->not->toBeNull("DG-12 não encontrado em {$idioma} — a fonte de {$pagina} não pode ser conferida contra o diagrama ainda");
 
-    // RQ-35/RD2-16: o bloco REAL bate com o fato do código (o agendamento de backup não está ativo).
-    if ($bloco !== null) {
-        expect(fatosPorDg()['DG-12']((string) $bloco['bloco']))->toBeTrue('o bloco real do DG-12 deveria bater com o fato do código (backups não ligado a agendamento ativo)');
+        if ($bloco !== null) {
+            expect(fatosPorDg()['DG-12']((string) $bloco['bloco']))->toBeTrue("{$idioma}: o bloco real do DG-12 deveria bater com o fato do código (backups não ligado a agendamento ativo)");
+        }
     }
 })->with([
     ['Health', 'health:check executado grava ao menos uma linha no store'],
@@ -2823,21 +2949,23 @@ it('[CT-27] o ER desenhado existe e cobre o núcleo', function (): void {
         ->and(Schema::hasColumn('vinculos_sociais', 'user_id'))->toBeTrue()
         ->and(Schema::hasColumn('tenant_user', 'tenant_id'))->toBeTrue();
 
-    $bloco = blocoDoCatalogoNaArvore('DG-13', 'pt');
-    expect($bloco)->not->toBeNull('DG-13 não encontrado — referencia/arquitetura-em-diagramas.md ainda não tem o ER');
+    // RQ-35/RD2-16/RD3-06: "cobre o núcleo" é conteúdo, não só existência — cada entidade do
+    // núcleo aparece de fato no bloco REAL — e o bloco bate com o fato do código (sem relação
+    // inventada projetos -> agentes_ia), em pt E en (antes só pt).
+    foreach (['pt', 'en'] as $idioma) {
+        $bloco = blocoDoCatalogoNaArvore('DG-13', $idioma);
+        expect($bloco)->not->toBeNull("DG-13 não encontrado em {$idioma} — referencia/arquitetura-em-diagramas.md ainda não tem o ER");
 
-    if ($bloco === null) {
-        return;
+        if ($bloco === null) {
+            continue;
+        }
+
+        foreach (entidadesDoNucleo() as $tabela) {
+            test()->assertMatchesRegularExpression('/\b'.preg_quote($tabela, '/').'\b/', (string) $bloco['bloco'], "{$idioma}: o DG-13 real deveria citar a entidade {$tabela}");
+        }
+
+        expect(fatosPorDg()['DG-13']((string) $bloco['bloco']))->toBeTrue("{$idioma}: o bloco real do DG-13 deveria bater com o fato do código (nenhuma relação projetos -> agentes_ia)");
     }
-
-    // RQ-35/RD2-16: "cobre o núcleo" é conteúdo, não só existência — cada entidade do núcleo
-    // aparece de fato no bloco REAL — e o bloco bate com o fato do código (sem relação inventada
-    // Projeto -> AgenteIa).
-    foreach (entidadesDoNucleo() as $tabela) {
-        test()->assertMatchesRegularExpression('/\b'.preg_quote($tabela, '/').'\b/', (string) $bloco['bloco'], "o DG-13 real deveria citar a entidade {$tabela}");
-    }
-
-    expect(fatosPorDg()['DG-13']((string) $bloco['bloco']))->toBeTrue('o bloco real do DG-13 deveria bater com o fato do código (nenhuma relação Projeto -> AgenteIa)');
 });
 
 /**
@@ -3085,12 +3213,15 @@ it('[CT-29] o valor efetivo desenhado é o valor efetivo executado', function (s
 
     expect(config('kit.cor_primaria'))->toBe($efetivo);
 
-    $bloco = blocoDoCatalogoNaArvore('DG-14', 'pt');
-    expect($bloco)->not->toBeNull('DG-14 não encontrado — recursos/configuracoes-do-kit.md ainda não existe');
+    // RQ-35/RD2-16/RD3-06: o bloco REAL bate com o fato do código (o .env não vence o banco), em
+    // pt E en (antes só pt).
+    foreach (['pt', 'en'] as $idioma) {
+        $bloco = blocoDoCatalogoNaArvore('DG-14', $idioma);
+        expect($bloco)->not->toBeNull("DG-14 não encontrado em {$idioma} — recursos/configuracoes-do-kit.md ainda não existe");
 
-    // RQ-35/RD2-16: o bloco REAL bate com o fato do código (o .env não vence o banco).
-    if ($bloco !== null) {
-        expect(fatosPorDg()['DG-14']((string) $bloco['bloco']))->toBeTrue('o bloco real do DG-14 deveria bater com o fato do código (.env não vence, o banco vence)');
+        if ($bloco !== null) {
+            expect(fatosPorDg()['DG-14']((string) $bloco['bloco']))->toBeTrue("{$idioma}: o bloco real do DG-14 deveria bater com o fato do código (.env não vence, o banco vence)");
+        }
     }
 })->with([
     'banco vence em execução' => ['Kit Env', 'Kit Banco', 'Kit Banco'],
@@ -3234,18 +3365,18 @@ it('[CT-31] a rota desenhada de cada caminho é a rota das listas', function (st
         expect($noKitUpdate)->toBeTrue("{$caminho} deveria estar em CAMINHOS_DO_KIT (ou coberto por um filho), rota: {$kitUpdate}");
     }
 
-    $bloco = blocoDoCatalogoNaArvore('DG-16', 'pt') ?? blocoDoCatalogoNaArvore('DG-17', 'pt');
-    expect($bloco)->not->toBeNull("DG-16/DG-17 não encontrado — comecar/atualizando-o-projeto.md ainda não existe; não é possível conferir a rota de {$caminho} contra o bloco");
+    // RQ-35/RD2-16/RD3-06: o bloco REAL de CADA DG (não só o primeiro que `??` encontra — DG-16
+    // SEMPRE existe, então o `??` nunca chegava a exercitar DG-17) bate com o fato do código, em
+    // pt E en (antes só pt).
+    foreach (['pt', 'en'] as $idioma) {
+        foreach (['DG-16', 'DG-17'] as $dg) {
+            $bloco = blocoDoCatalogoNaArvore($dg, $idioma);
+            expect($bloco)->not->toBeNull("{$dg} não encontrado em {$idioma} — comecar/atualizando-o-projeto.md ainda não existe; não é possível conferir a rota de {$caminho} contra o bloco");
 
-    // RQ-35/RD2-16: o bloco REAL bate com o fato do código do DG que de fato foi achado.
-    if ($bloco !== null && $bloco['idCatalogo'] !== null) {
-        $fato = fatosPorDg()[$bloco['idCatalogo']] ?? null;
-
-        if ($fato === null) {
-            throw new RuntimeException("sem fato declarado para {$bloco['idCatalogo']}");
+            if ($bloco !== null) {
+                expect(fatosPorDg()[$dg]((string) $bloco['bloco']))->toBeTrue("{$idioma}: o bloco real de {$dg} deveria bater com o fato do código");
+            }
         }
-
-        expect($fato((string) $bloco['bloco']))->toBeTrue("o bloco real de {$bloco['idCatalogo']} deveria bater com o fato do código");
     }
 })->with([
     'as duas rotas'         => ['app/Support', 'viaja', 'aplicado com aprovação'],
@@ -3291,18 +3422,16 @@ it('[CT-32] o fluxo desenhado do kit:update segue a ordem do handle', function (
 
     expect($codigo)->toContain('finally');
 
-    $bloco = blocoDoCatalogoNaArvore('DG-16', 'pt') ?? blocoDoCatalogoNaArvore('DG-17', 'pt');
-    expect($bloco)->not->toBeNull('DG-16/DG-17 não encontrado — não é possível conferir a ordem do fluxo contra o diagrama ainda');
+    // RQ-35/RD2-16/RD3-06: o bloco REAL de CADA DG bate com o fato do código, em pt E en.
+    foreach (['pt', 'en'] as $idioma) {
+        foreach (['DG-16', 'DG-17'] as $dg) {
+            $bloco = blocoDoCatalogoNaArvore($dg, $idioma);
+            expect($bloco)->not->toBeNull("{$dg} não encontrado em {$idioma} — não é possível conferir a ordem do fluxo contra o diagrama ainda");
 
-    // RQ-35/RD2-16: o bloco REAL bate com o fato do código do DG que de fato foi achado.
-    if ($bloco !== null && $bloco['idCatalogo'] !== null) {
-        $fato = fatosPorDg()[$bloco['idCatalogo']] ?? null;
-
-        if ($fato === null) {
-            throw new RuntimeException("sem fato declarado para {$bloco['idCatalogo']}");
+            if ($bloco !== null) {
+                expect(fatosPorDg()[$dg]((string) $bloco['bloco']))->toBeTrue("{$idioma}: o bloco real de {$dg} deveria bater com o fato do código");
+            }
         }
-
-        expect($fato((string) $bloco['bloco']))->toBeTrue("o bloco real de {$bloco['idCatalogo']} deveria bater com o fato do código");
     }
 });
 
@@ -4680,3 +4809,70 @@ function servicosDoCompose(string $compose): array
 
     return $servicos;
 }
+
+/*
+|--------------------------------------------------------------------------
+| RD3-05 — o extrator compartilhado (tests/Pest.php) reconhece toda forma válida de seta do
+| Mermaid 11.17.2, o rótulo por travessão, a relação de ER não identificadora, e não confunde um
+| span de código embutido (crase que fecha na MESMA linha) com abertura de cerca
+|--------------------------------------------------------------------------
+|
+| Cobertura DIRETA do extrator, com trechos Mermaid sintéticos — os blocos REAIS já são cobertos
+| pelo "controle positivo" de cada DG (acima, e nos cenários R7/R15/R16/R17/R19). O lexer de
+| flowchart do Mermaid 11.17.2 aceita `[xo<]?--+[-xo>]`, `[xo<]?==+[=xo>]` e `[xo<]?-?\.+-[xo>]?`
+| (medido em `mermaid/dist/chunks/mermaid.core/chunk-SHT3W25Y.mjs`, as regras LINK/START_LINK) — o
+| extrator antigo (`-{2,4}>|-\.{1,2}->|={2,3}>|--o|--x`) perdia `----->`/`<-->`/`---` (traço normal
+| com 5+ traços, sem ponta ou com `<` na origem) e `-...->` (3+ pontos); `existeArestaDeFluxo()` só
+| aceitava rótulo por pipe (`-->|"x"|`), nunca por travessão (`A -- "x" --> B`); e `relacaoDeEr()`
+| só aceitava `--` (identificadora), nunca `..` (não identificadora).
+*/
+
+it('[RD3-05] existeArestaDeFluxo() reconhece toda forma válida de seta do Mermaid, com controle negativo', function (string $trecho): void {
+    $bloco = "flowchart LR\n  {$trecho}\n";
+
+    expect(existeArestaDeFluxo($bloco, 'a', 'b'))->toBeTrue("a forma \"{$trecho}\" deveria ser reconhecida como aresta a -> b")
+        ->and(existeArestaDeFluxo($bloco, 'a', 'c'))->toBeFalse('controle negativo: a -> c não existe neste trecho');
+})->with([
+    'normal mínima (2 traços)'                        => 'a --> b',
+    'normal longa (5 traços — RD3-05, CT-83)'         => 'a -----> b',
+    'sem ponta (RD3-05)'                              => 'a --- b',
+    'bidirecional (RD3-05)'                           => 'a <--> b',
+    'pontilhada (1 ponto)'                            => 'a -.-> b',
+    'pontilhada (3 pontos — RD3-05)'                  => 'a -...-> b',
+    'grossa'                                          => 'a ==> b',
+    'grossa longa (RD3-05)'                           => 'a ====> b',
+    'círculo'                                         => 'a --o b',
+    'X'                                               => 'a --x b',
+    'rótulo por pipe'                                 => 'a -->|"ws"| b',
+    'rótulo por travessão, com aspas (RD3-05, CT-10)' => 'a -- "ws" --> b',
+    'rótulo por travessão, sem aspas (RD3-05)'        => 'a -- ws --> b',
+]);
+
+it('[RD3-05] relacaoDeEr() reconhece a relação identificadora (--) e a não identificadora (..), com controle negativo', function (string $conector): void {
+    $bloco = "erDiagram\n  users {$conector} roles : \"tem\"\n";
+
+    $relacao = relacaoDeEr($bloco, 'users', 'roles');
+
+    expect($relacao)->not->toBeNull("o conector \"{$conector}\" deveria ser reconhecido como relação users-roles")
+        ->and($relacao['cardDe'])->toBe('||')
+        ->and($relacao['cardPara'])->toBe('o{')
+        ->and(relacaoDeEr($bloco, 'users', 'convites'))->toBeNull('controle negativo: users-convites não existe neste bloco');
+})->with([
+    'identificadora (--)'                     => '||--o{',
+    'não identificadora (.. — RD3-05, CT-94)' => '||..o{',
+]);
+
+it('[RD3-05] blocosMermaidDe() não confunde span de código embutido (crase fechando na mesma linha) com abertura de cerca', function (): void {
+    // RD2-18 residual: sem o guard, a linha do span vira "cerca alheia" (o `\S*` da info string
+    // captura "texto```" inteiro, que não é "mermaid") e, sem fechamento genuíno depois, a busca
+    // pelo fechamento da cerca alheia CASA na cerca de fechamento do bloco mermaid REAL abaixo —
+    // engolindo o bloco inteiro em silêncio.
+    $markdown = "Antes do span.\n\n"
+        ."```texto``` isto é só um span de código embutido, não uma cerca.\n\n"
+        ."```mermaid\nflowchart LR\n%% DG-99\n  a --> b\n```\n";
+
+    $blocos = blocosMermaidDe($markdown);
+
+    expect($blocos)->toHaveCount(1, 'o span embutido não deveria abrir cerca nem engolir o bloco mermaid real que vem depois')
+        ->and($blocos[0]['idCatalogo'])->toBe('DG-99');
+});
