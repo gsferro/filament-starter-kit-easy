@@ -28,7 +28,7 @@ use Illuminate\Support\Str;
  * ## Arnês do ffmpeg de teste (Setup Global, hipótese confirmada nesta sessão)
  *
  * `Process::run()` do Symfony, chamado por `KitArte::montarClipe()` (por sua vez chamado em laço
- * por `montarGif()`) SEM `$env` explícito (`app/Console/Commands/KitArte.php:new Process([:323`),
+ * por `montarGif()`) SEM `$env` explícito (`app/Console/Commands/KitArte.php:new Process([:332`),
  * herda o ambiente do processo PHP corrente — e
  * `putenv()`/`$_ENV`/`$_SERVER` (as três, como `tests/Pest.php:kitConfigCom:582` já faz por
  * outro motivo) SIM alteram essa herança: confirmado empiricamente nesta sessão com um
@@ -92,7 +92,7 @@ afterEach(function (): void {
  * Um diretório de trabalho isolado para o `kit:arte`: `tests/Browser/Screenshots` (capturas) e
  * `art/thumbs` (publicação), sob `app()->setBasePath()` — para o comando NUNCA tocar o `art/`
  * real do repositório. `KitArte` só resolve caminhos por `base_path()`
- * (`app/Console/Commands/KitArte.php:base_path():146,172,188,197,309,310`), nunca por
+ * (`app/Console/Commands/KitArte.php:base_path():146,172,188,197,318,319`), nunca por
  * `storage_path()` fixo fora disso, e o teste não faz HTTP/sessão depois — a troca é segura neste
  * escopo.
  */
@@ -167,6 +167,19 @@ function instalarFfmpegDeTeste(string $modo): string
         $modo = array_shift($args);
         $destino = end($args);
 
+        // (RD4-01) O ffmpeg real escolhe o muxer pela extensão da saída, ou por `-f` antes dela:
+        // `quadro.gif.tmp-…` sem `-f gif` sai com "Unable to choose an output format" antes de
+        // abrir o arquivo. Sem esta checagem, o falso aceitava o que o real recusa, e a suíte
+        // ficou verde com o `kit:arte` sem montar GIF nenhum.
+        $indiceDoFormato = array_search('-f', $args, true);
+        $formatoDeclarado = $indiceDoFormato !== false && ($args[$indiceDoFormato + 1] ?? null) === 'gif';
+
+        if (! $formatoDeclarado && ! str_ends_with((string) $destino, '.gif')) {
+            fwrite(STDERR, "Unable to choose an output format for '{$destino}'\n");
+
+            exit(1);
+        }
+
         if ($modo === 'gravador') {
             $entrada = null;
 
@@ -198,6 +211,17 @@ function instalarFfmpegDeTeste(string $modo): string
             file_put_contents($destino, 'GIF89a-METADE-TRUNCADA-PELA-FALHA');
 
             exit(1);
+        }
+
+        if ($modo === 'saida-vira-diretorio') {
+            // (RD3-09) "Sucesso" que deixa o TEMPORÁRIO (o que `montarClipe()` confere com
+            // `File::exists($temporario)`) sendo um DIRETÓRIO em vez de um arquivo — a mesma
+            // classe de falha que RD2-02/RD2-03 já mede para um QUADRO de entrada, aqui do lado
+            // da SAÍDA do ffmpeg, para forçar `publicarGif()` a tentar o `rename()` de um
+            // diretório por cima do GIF publicado.
+            @mkdir($destino, 0777, true);
+
+            exit(0);
         }
 
         exit(1);
@@ -371,12 +395,28 @@ function arquivosDaCapturaDeArte(): array
  * (`densidade-*`, `tests/BrowserTenancy/CapturaDeArteTest.php:372` — `filename: $arquivo`, com
  * `'densidade-confortavel'` etc. só no dataset). As duas produzem o arquivo; procurar só a forma
  * literal acusaria `densidade-*` como sem captura, quando ela já existe.
+ *
+ * *(RD3-07, 2026-09-28)* `str_contains()` sobre o texto CRU do arquivo passa com o nome só
+ * MENCIONADO num docblock — foi assim que renomear o `filename:` real de `busca-spotlight-2-aberta`
+ * em `CapturaDeArteTest.php` continuou "encontrando" o quadro, porque o docblock da mesma tela
+ * já citava `screenshot('busca-spotlight-2-aberta')` como exemplo. `token_get_all()` em vez de
+ * regex/`str_contains()` — o mesmo padrão de `tests/Kit/HelpersDeTesteTest.php` — resolve isso
+ * de graça: um comentário (`T_COMMENT`/`T_DOC_COMMENT`) é UM token só, e o literal citado dentro
+ * dele nunca vira um token `T_CONSTANT_ENCAPSED_STRING` separado. Só o literal que o PARSER
+ * reconhece como string de CÓDIGO (dataset ou argumento nomeado) conta.
  */
 function quadroTemCapturaDeclarada(string $quadro): bool
 {
     foreach (arquivosDaCapturaDeArte() as $arquivo) {
-        if (str_contains(File::get($arquivo), "'{$quadro}'")) {
-            return true;
+        foreach (token_get_all(File::get($arquivo)) as $token) {
+            if (! is_array($token) || $token[0] !== T_CONSTANT_ENCAPSED_STRING) {
+                continue;
+            }
+
+            // Tira as aspas (simples ou duplas) que o próprio token carrega.
+            if (substr($token[1], 1, -1) === $quadro) {
+                return true;
+            }
         }
     }
 
@@ -542,7 +582,7 @@ it('[CT-65] o ffmpeg que abre a saida e falha no meio nao trunca o GIF publicado
 
     expect(File::get("{$base}/art/fluxo-import-export.gif"))->toBe(
         'CONTEUDO-CONHECIDO-BYTE-A-BYTE',
-        'o ffmpeg abriu o arquivo de saída e falhou no meio, mas o GIF publicado continua intacto — prova de que o destino do processo é um TEMPORÁRIO fora de art/ (app/Console/Commands/KitArte.php:montarClipe), copiado por cima do publicado só em caso de sucesso (R33)',
+        'o ffmpeg abriu o arquivo de saída e falhou no meio, mas o GIF publicado continua intacto — prova de que o destino do processo é um TEMPORÁRIO ao lado do publicado, em art/ (app/Console/Commands/KitArte.php:montarClipe), que só troca de lugar com ele por rename() em caso de sucesso (R33)',
     );
 
     expect(mb_strtolower($saida))->toContain('não disponível');
@@ -617,3 +657,74 @@ it('[RD2-02/RD2-03] uma excecao qualquer ao montar um clipe nao aborta os demais
         'art/densidade.gif deveria existir — densidade vem depois de fluxo-import-export em KitArte::CLIPES e tem todos os seus quadros; um clipe malsucedido nao pode impedir os demais (R32)',
     );
 });
+
+/*
+|--------------------------------------------------------------------------
+| R33 — RD3-09: falha ao PUBLICAR (nao o ffmpeg) avisa a causa certa
+|--------------------------------------------------------------------------
+| O ffmpeg TERMINA BEM (`$ffmpegOk = true`) — o problema é só a publicação
+| (`publicarGif()`: rename, e o copy/rename de contorno) — e hoje essa falha, quando nasce de
+| uma EXCEÇÃO (não de um `return false` limpo), escapa do método sem `catch` próprio, sobe pelo
+| `try` de `montarClipe()` e cai no `catch (Throwable $e)` do RD2-03: o aviso vira "Falha ao
+| montar o clipe" (que manda investigar o ffmpeg) em vez de "Não consegui publicar" (RD2-04) —
+| e o GIF publicado ANTES desta execução (se houver) precisa continuar intacto (R33), porque
+| `publicarGif()` nunca chegou a substituí-lo.
+*/
+
+it('[RD3-09] falha ao PUBLICAR o gif (o ffmpeg terminou bem) avisa "nao consegui publicar", nao "falha ao montar o clipe", e preserva o gif anterior', function (): void {
+    $base = diretorioDeArte();
+    instalarFfmpegDeTeste('saida-vira-diretorio');
+
+    $clipe = array_key_first(clipesDoKitArte());
+
+    // Um GIF publicado ANTES desta execução — para provar que ele sobrevive à falha de
+    // publicação (R33), o mesmo oráculo de CT-49/CT-65.
+    File::put("{$base}/art/{$clipe}.gif", 'CONTEUDO-ANTIGO-PRESERVADO');
+
+    foreach (clipesDoKitArte()[$clipe] as $i => $quadro) {
+        File::put("{$base}/tests/Browser/Screenshots/{$quadro}.png", conteudoDoQuadroDeTeste($clipe, $i));
+    }
+
+    Artisan::call('kit:arte');
+    $saida = mb_strtolower(Artisan::output());
+
+    $destino = "{$base}/art/{$clipe}.gif";
+
+    // Três asserções, não uma direto no conteúdo: `File::get()` sobre um caminho ausente OU
+    // sobre um DIRETÓRIO lança uma exceção do Filesystem (erro do teste, não falha limpa) — a
+    // publicação frustrada pode ter apagado o GIF antigo, ou pior, substituído o ARQUIVO por um
+    // DIRETÓRIO (o próprio temporário virando o destino via rename/copy malsucedido); as duas
+    // causas ficam NOMEADAS antes de qualquer comparação de conteúdo.
+    expect(File::isDirectory($destino))->toBeFalse(
+        'publicarGif() substituiu o GIF publicado (um ARQUIVO) por um DIRETORIO — o temporario do '
+        .'ffmpeg (que e um diretorio neste cenario) nao pode acabar ocupando o lugar do destino '
+        .'publicado (R33/RD3-09)',
+    );
+
+    expect(File::exists($destino) && File::isFile($destino))->toBeTrue(
+        'o GIF publicado antes desta execução sumiu de art/ — publicarGif() não pode apagar o '
+        .'destino antes de confirmar que o novo conteúdo foi escrito (R33/RD3-09)',
+    );
+
+    expect(File::get($destino))->toBe(
+        'CONTEUDO-ANTIGO-PRESERVADO',
+        'publicarGif() nao terminou (o temporario do ffmpeg virou diretorio), entao o GIF publicado antes desta execucao nao pode ter sido tocado (R33)',
+    );
+
+    $this->assertStringContainsString(
+        'não consegui publicar',
+        $saida,
+        'o ffmpeg terminou bem (o temporario existe) — quem falhou foi a publicacao (rename/copy para art/), entao o aviso tem de ser "nao consegui publicar" (RD2-04/RD3-09), com a saida: '.$saida,
+    );
+
+    $this->assertStringNotContainsString(
+        'falha ao montar o clipe',
+        $saida,
+        'a falha de PUBLICACAO (rename/copy) esta escapando como excecao nao-capturada e caindo no aviso generico do RD2-03 — deveria ser capturada DENTRO de publicarGif() (RD3-09), saida: '.$saida,
+    );
+
+    expect(File::glob("{$base}/art/*.tmp-*"))->toBe(
+        [],
+        'nenhum temporario de publicacao pode sobrar em art/ depois de uma falha (RD3-09)',
+    );
+})->group('kit');

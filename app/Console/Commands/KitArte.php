@@ -270,24 +270,33 @@ class KitArte extends Command
 
     /**
      * Monta o GIF de UM clipe. Nunca escreve por cima do GIF publicado antes de confirmar
-     * sucesso (R33): o ffmpeg recebe um destino TEMPORÁRIO, fora de `art/`
-     * (R33.M6 — um temporário dentro de `art/` ficaria lá, publicado, se o ffmpeg falhasse), e
-     * só o sucesso publica o temporário no lugar do publicado, de forma atômica
-     * (`publicarGif()`). O diretório de montagem é limpo ANTES de copiar os quadros deste
-     * clipe (R32.M6) — um quadro sobrado de uma execução interrompida, ou do clipe anterior no
-     * mesmo laço (R32.M5), não sobrevive para entrar neste GIF.
+     * sucesso (R33): o ffmpeg recebe como destino um temporário AO LADO do publicado — mesmo
+     * diretório, `art/` — e só o sucesso publica esse temporário no lugar do publicado, de forma
+     * atômica (`publicarGif()`). O diretório de MONTAGEM (`$entrada`, os quadros de entrada) é
+     * limpo ANTES de copiar os quadros deste clipe (R32.M6) — um quadro sobrado de uma execução
+     * interrompida, ou do clipe anterior no mesmo laço (R32.M5), não sobrevive para entrar neste
+     * GIF.
+     *
+     * *(RD3-09)* O temporário do ffmpeg vive DENTRO de `art/`, não em `$entrada`: a versão
+     * anterior deste docblock media uma premissa falsa — "`rename()` falha entre volumes
+     * diferentes (Windows: `false`; Linux: `EXDEV`)". No PHP, `rename()` entre volumes diferentes
+     * não falha: ele COPIA o conteúdo e devolve `true` mesmo assim, só que sem ser atômico (um
+     * leitor concorrente podia ver o destino publicado truncado a meio caminho). O conserto não é
+     * um fallback de copy+rename: é nunca ter dois volumes — com o temporário já em `art/`,
+     * `publicarGif()` faz um único `rename()` sempre intra-volume, sempre atômico de verdade.
      *
      * O `try/catch/finally` cobre as QUATRO formas de um clipe não terminar bem — falha do
      * ffmpeg (código != 0), timeout (`ProcessTimedOutException`, o padrão do `Process` é 60s),
-     * falha ao PUBLICAR o GIF já pronto (`publicarGif()` retorna `false` — RD2-04) e qualquer
-     * OUTRA exceção, do `File::copy()` dos quadros ao próprio `Process` que não consegue iniciar
-     * (RD2-03): nos quatro casos o diretório de montagem é limpo do mesmo jeito (`finally`), e
-     * `montarGif()` segue para o próximo clipe (R32) — travar num clipe não pode significar nunca
-     * tentar os outros. O aviso distingue as três causas (RD2-04): "ffmpeg não disponível ou
-     * falhou" só quando o PRÓPRIO ffmpeg não terminou bem; "não consegui publicar" quando o
-     * ffmpeg terminou bem mas a cópia/rename para `art/` falhou; e a exceção crua, nomeando o
-     * clipe, para qualquer outra falha (RD2-03) — as três dizem coisas diferentes, e confundi-las
-     * mandaria quem lê o aviso investigar o ffmpeg quando o problema era outro.
+     * falha ao PUBLICAR o GIF já pronto (`publicarGif()` retorna `false` — RD2-04/RD3-09) e
+     * qualquer OUTRA exceção, do `File::copy()` dos quadros ao próprio `Process` que não consegue
+     * iniciar (RD2-03): nos quatro casos o diretório de montagem é limpo do mesmo jeito
+     * (`finally`), o temporário do ffmpeg (se sobrou algum em `art/`) some junto, e `montarGif()`
+     * segue para o próximo clipe (R32) — travar num clipe não pode significar nunca tentar os
+     * outros. O aviso distingue as três causas (RD2-04): "ffmpeg não disponível ou falhou" só
+     * quando o PRÓPRIO ffmpeg não terminou bem; "não consegui publicar" quando o ffmpeg terminou
+     * bem mas o `rename()` para `art/` falhou; e a exceção crua, nomeando o clipe, para qualquer
+     * outra falha (RD2-03) — as três dizem coisas diferentes, e confundi-las mandaria quem lê o
+     * aviso investigar o ffmpeg quando o problema era outro.
      *
      * @param  list<string>  $quadros
      */
@@ -308,7 +317,7 @@ class KitArte extends Command
 
         $entrada    = base_path('storage/framework/cache/arte');
         $destino    = base_path("art/{$clipe}.gif");
-        $temporario = "{$entrada}/{$clipe}-saida.gif";
+        $temporario = "{$destino}.tmp-".bin2hex(random_bytes(8));
         $ffmpegOk   = false;
         $publicado  = false;
 
@@ -326,6 +335,9 @@ class KitArte extends Command
                 '-i', $entrada.'/quadro-%02d.png',
                 '-vf', 'scale=1000:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse',
                 '-loop', '0',
+                // O temporário não termina em `.gif`, e o ffmpeg escolhe o muxer pela extensão:
+                // sem `-f gif` ele recusa a saída ("Unable to choose an output format").
+                '-f', 'gif',
                 $temporario,
             ]);
 
@@ -356,6 +368,18 @@ class KitArte extends Command
             // Sempre — sucesso, falha, timeout ou qualquer exceção: nenhum quadro nem GIF
             // temporário deste clipe pode sobreviver para contaminar o próximo (R32.M6).
             File::deleteDirectory($entrada);
+
+            /*
+             * (RD3-09) O temporário do ffmpeg mora em `art/`, não em `$entrada` — o
+             * `deleteDirectory()` acima não o alcança. Sobra dele quando o PRÓPRIO ffmpeg
+             * terminou mal com conteúdo parcial já escrito (timeout, código != 0) OU quando
+             * terminou bem mas a publicação falhou (`publicarGif()` já devolveu `false` sem
+             * apagar o temporário sozinho — quem chama é dono do ciclo de vida inteiro). Nos
+             * demais casos ele nunca chegou a existir, e `File::exists()` já resolve isso.
+             */
+            if (File::exists($temporario)) {
+                File::isDirectory($temporario) ? File::deleteDirectory($temporario) : File::delete($temporario);
+            }
         }
 
         if (! $ffmpegOk) {
@@ -365,10 +389,9 @@ class KitArte extends Command
         }
 
         if (! $publicado) {
-            // RD2-04: o ffmpeg terminou bem — o problema é a publicação (rename/copy para
-            // art/), não o ffmpeg. Dizer "ffmpeg... falhou" aqui mandaria investigar o processo
-            // errado.
-            $this->components->warn("Não consegui publicar o GIF de '{$label}' — o ffmpeg concluiu, mas a cópia/rename para art/ falhou. O GIF anterior, se houver, foi preservado.");
+            // RD2-04: o ffmpeg terminou bem — o problema é a publicação (rename para art/), não
+            // o ffmpeg. Dizer "ffmpeg... falhou" aqui mandaria investigar o processo errado.
+            $this->components->warn("Não consegui publicar o GIF de '{$label}' — o ffmpeg concluiu, mas o rename para art/ falhou. O GIF anterior, se houver, foi preservado.");
 
             return;
         }
@@ -380,37 +403,41 @@ class KitArte extends Command
     }
 
     /**
-     * Publica o temporário no destino de forma ATÔMICA (R33): um leitor concorrente nunca vê o
-     * GIF publicado pela metade.
+     * Publica o temporário — já escrito pelo próprio ffmpeg dentro de `art/`, ao LADO do destino
+     * (`montarClipe()`) — no lugar do destino, com `rename()`.
      *
-     * `rename()` é atômico quando origem e destino estão no MESMO volume — o caso comum aqui,
-     * já que `$temporario` mora em `storage/framework/cache/arte` e `$destino` em `art/`,
-     * ambos dentro do mesmo `base_path()`. Quando os dois estão em volumes diferentes,
-     * `rename()` falha (Windows: `false`; Linux: `EXDEV`) e a troca vira: copia para um
-     * temporário AO LADO do destino (mesmo diretório `art/`, portanto mesmo volume que ele) e
-     * só então renomeia esse temporário para o nome final — `File::copy()` direto por cima do
-     * publicado NÃO é atômico, e um leitor concorrente poderia ver o arquivo truncado a meio
-     * caminho.
+     * *(RD3-09)* A versão anterior desta docblock media a premissa errada: "`rename()` falha
+     * entre volumes diferentes (Windows: `false`; Linux: `EXDEV`)". No PHP, `rename()` entre
+     * volumes diferentes não falha — ele COPIA o arquivo e devolve `true` mesmo assim, só que sem
+     * ser atômico. O conserto não é um fallback de copy+rename: é nunca ter dois volumes — o
+     * temporário e o destino estão sempre no MESMO diretório (`art/`), portanto sempre no MESMO
+     * volume, e `rename()` aqui é sempre intra-volume, sempre atômico de verdade.
+     *
+     * O temporário tem de ser um ARQUIVO — nunca um diretório (RD3-09: um ffmpeg que "termina
+     * bem" mas deixa o destino como diretório, por alguma falha do lado de fora). Medido nesta
+     * base: `rename()` de um DIRETÓRIO por cima de um ARQUIVO existente **não falha** no Windows
+     * — ele substitui o arquivo pelo diretório, silenciosamente, o oposto de "preservar o GIF
+     * anterior" (R33). A guarda (`File::isFile()`) recusa ANTES de chamar `rename()`, então o
+     * destino nunca é sequer tocado nesse caso.
+     *
+     * Qualquer outra falha de publicação — `rename()` devolvendo `false`, ou uma exceção
+     * (`ErrorException`, se algum erro do sistema de arquivos escapar da supressão de `@`) — é
+     * capturada AQUI DENTRO (RD3-09): quem chama só precisa saber SE publicou, nunca por quê. Uma
+     * exceção de publicação que escapasse cairia no `catch` genérico de `montarClipe()` e
+     * imprimiria a mensagem ERRADA ("falha ao montar o clipe", que manda investigar o ffmpeg, em
+     * vez de "não consegui publicar" — RD2-04).
      */
     private function publicarGif(string $temporario, string $destino): bool
     {
-        if (@rename($temporario, $destino)) {
-            return true;
-        }
+        try {
+            if (! File::isFile($temporario)) {
+                return false;
+            }
 
-        $temporarioAoLado = $destino.'.tmp-'.bin2hex(random_bytes(8));
-
-        if (! File::copy($temporario, $temporarioAoLado)) {
+            return (bool) @rename($temporario, $destino);
+        } catch (Throwable) {
             return false;
         }
-
-        if (@rename($temporarioAoLado, $destino)) {
-            return true;
-        }
-
-        File::delete($temporarioAoLado);
-
-        return false;
     }
 
     /**
