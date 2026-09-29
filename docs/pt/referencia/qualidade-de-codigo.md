@@ -284,7 +284,7 @@ processo de teste **passou** — o defeito que escaparia
 `mutationEscaped`). Mutante em linha que nenhum teste executa é outra categoria, `UNCOVERED`, e o
 `--covered-only` a tira da conta. Os sobreviventes das medições acima, nomeados:
 
-- `app/Support/CustomizadorDaInstalacao.php:label_plural:506` — quatro mutações no **default** de
+- `app/Support/CustomizadorDaInstalacao.php:label_plural:524` — quatro mutações no **default** de
   `config('kit.tenancy.label_plural', …)`, que nunca é lido: a chave sempre existe em
   `config/kit.php`. São equivalentes na configuração do kit, e declarados assim — um teste que
   removesse a chave teria de afirmar como esperado o plural errado que o próprio código chama de

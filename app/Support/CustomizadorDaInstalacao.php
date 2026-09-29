@@ -59,6 +59,19 @@ final class CustomizadorDaInstalacao
         'Pink', 'Purple', 'Red', 'Rose', 'Sky', 'Slate', 'Teal', 'Violet',
     ];
 
+    /**
+     * A frase que `aplicar()` escreve no resumo quando o `.env` de destino ainda NÃO tem uma senha
+     * utilizável — o instalador vai gerar uma e imprimi-la no fim.
+     *
+     * Constante PÚBLICA (RD3-12), não um literal espalhado: `KitInstall::corrigirResumoDaSenha()`
+     * precisa RECONHECER esta mesma frase para decidir se reescreve a linha, depois de saber o
+     * desfecho real de `semear()` (RD3-01/RD3-03) — e o caso de teste que fixa o contrato consulta
+     * a mesma constante. Três lugares respondendo à mesma pergunta ("qual é o texto de 'vai
+     * gerar'?") por literais soltos é lista paralela: mudar o texto aqui, sem tocar os outros dois,
+     * desligaria a correção do `KitInstall` em silêncio.
+     */
+    public const RESUMO_SENHA_GERADA = 'gerada pelo instalador e impressa no fim';
+
     private string $base;
 
     public function __construct(string $base = '')
@@ -150,7 +163,12 @@ final class CustomizadorDaInstalacao
             ),
             'senha' => password(
                 label: 'Senha do administrador',
-                hint: 'Enter deixa o instalador gerar uma senha aleatória e imprimi-la uma vez.',
+                /*
+                 * (RD3-01) Sem condicional: prometia gerar sempre, mas só gera quando o `.env` de
+                 * destino AINDA NÃO tem uma senha utilizável (`SenhaDoAdministrador::ehUtilizavel()`)
+                 * — reinstalação sobre um `.env` que já a definiu não gera nem imprime nada de novo.
+                 */
+                hint: 'Enter deixa o instalador gerar uma senha aleatória (se o .env ainda não tiver uma) e imprimi-la uma vez.',
             ),
             'cor'   => select(
                 label: 'Cor primária dos painéis',
@@ -173,7 +191,7 @@ final class CustomizadorDaInstalacao
      * As perguntas que podem ser refeitas SEM tocar no banco — e por que são só duas.
      *
      * O `--force` do `kit:install` refaz as cinco perguntas, mas apaga o SQLite antes
-     * (`KitInstall.php:236-238`). Isso é inócuo no minuto seguinte à instalação e destrutivo
+     * (`KitInstall.php:recriar:332`). Isso é inócuo no minuto seguinte à instalação e destrutivo
      * depois. Este caminho existe para o "depois", e por isso o recorte é conservador:
      *
      * - **nome** e **cor** são reescrita de `.env`, e valem no próximo request. Entram aqui.
@@ -312,7 +330,7 @@ final class CustomizadorDaInstalacao
         $resumo[] = ['Senha do administrador', match (true) {
             $senhaDigitadaUtilizavel => '•••••••• (a que você digitou)',
             $senhaJaUtilizavel       => 'a que você já definiu em KIT_ADMIN_PASSWORD',
-            default                  => 'gerada pelo instalador e impressa no fim',
+            default                  => self::RESUMO_SENHA_GERADA,
         }];
 
         SubstituicaoEmArquivo::definirNoEnv($env, 'KIT_COR_PRIMARIA', $cor);

@@ -67,6 +67,17 @@ class KitInstall extends Command
     /** Falso quando o banco escolhido não respondeu: migrar sem conexão só empilha erro. */
     private bool $bancoAcessivel = true;
 
+    /**
+     * Verdadeiro só quando `semear()` REALMENTE rodou nesta execução (banco acessível e sem
+     * `--no-seed`) — o desfecho de fato, não uma suposição.
+     *
+     * Fonte única (RD3-01/RD3-03): `corrigirResumoDaSenha()` e `mensagemDoBanner()` decidiam essa
+     * mesma pergunta por caminhos diferentes — uma nunca a consultava (sempre assumia que não
+     * rodou) e a outra recebia a expressão repetida por parâmetro. Gravado aqui, uma vez, no exato
+     * ponto em que `handle()` decide chamar `semear()`.
+     */
+    private bool $semeado = false;
+
     public function handle(): int
     {
         $this->components->info('Instalando o starter-kit-easy...');
@@ -104,14 +115,15 @@ class KitInstall extends Command
         }
 
         if ($this->bancoAcessivel && ! $this->option('no-seed')) {
+            $this->semeado = true;
             $this->semear();
             $this->formatarCodigoGerado();
         }
 
         /*
          * O desfecho (semeou? gerou?) só é conhecido AGORA — o resumo foi montado antes, em
-         * `customizar()` (linha 97), sem saber se `--no-seed` estava ligado ou se o banco ia
-         * responder. Corrige a linha da senha antes dela ser impressa (RD2-05).
+         * `customizar()` (linha 108), sem saber se `--no-seed` estava ligado ou se o banco ia
+         * responder. Corrige a linha da senha antes dela ser impressa (RD2-05/RD3-01/RD3-03).
          */
         $this->corrigirResumoDaSenha();
 
@@ -498,8 +510,12 @@ class KitInstall extends Command
          * nem no log de CI. Agora: gerada, aparece uma vez (e e a unica chance de anotar);
          * escolhida por quem instala, nao aparece; e se a semeadura nao rodou (RD2-05), nenhuma
          * das duas promessas e feita — ver `mensagemDoBanner()`.
+         *
+         * `$this->semeado` (RD3-01/RD3-03), nunca a expressão recalculada aqui: é a MESMA
+         * propriedade que `corrigirResumoDaSenha()` consulta, gravada uma vez em `handle()` no
+         * momento exato em que `semear()` é (ou não) chamado.
          */
-        note($this->mensagemDoBanner($this->bancoAcessivel && ! $this->option('no-seed')));
+        note($this->mensagemDoBanner($this->semeado));
 
         $this->components->bulletList([
             'Suba o servidor com: composer dev',
@@ -546,8 +562,7 @@ class KitInstall extends Command
 
         if (! $semeado) {
             return 'Nenhum usuario foi criado nesta execucao (banco nao populado) — nenhuma senha para mostrar.'
-                ."\nPara criar o administrador: php artisan kit:install --force (recria o banco), "
-                .'ou php artisan db:seed depois de resolver o banco.';
+                ."\nPara criar o administrador, ".$this->instrucaoBancoNaoPopulado().'.';
         }
 
         return 'Login inicial: '.config('kit.admin.email')
@@ -555,13 +570,44 @@ class KitInstall extends Command
     }
 
     /**
-     * Corrige a linha "Senha do administrador" do resumo quando NADA foi de fato gerado (RD2-05).
+     * A ÚNICA instrução para o caso "banco não populado" (`--no-seed` ou banco inacessível) —
+     * banner e resumo (RD3-01) davam conselhos DIFERENTES para a mesma situação, e nenhum
+     * funcionava: o banner mandava `php artisan kit:install --force` (apaga o banco à toa, para
+     * quem só quer semear) ou `php artisan db:seed` direto — que, com `KIT_ADMIN_PASSWORD` vazio,
+     * grava o administrador com `SenhaDoAdministrador::PADRAO_PUBLICADO` (o fallback de
+     * `config/kit.php`); o resumo mandava `php artisan kit:admin`, que FALHA sem nenhum
+     * administrador para atualizar.
+     *
+     * Fonte única (RD3-12): `mensagemDoBanner()` e `corrigirResumoDaSenha()` consultam este
+     * método, nunca um literal duplicado em cada um.
+     */
+    private function instrucaoBancoNaoPopulado(): string
+    {
+        return 'defina '.SenhaDoAdministrador::CHAVE.' no .env e só então rode: php artisan db:seed';
+    }
+
+    /**
+     * Corrige a linha "Senha do administrador" do resumo quando ela não bate com o desfecho REAL
+     * de `semear()` (RD2-05/RD3-01/RD3-03).
      *
      * `CustomizadorDaInstalacao::aplicar()` monta o resumo em `customizar()`, ANTES de o
-     * `kit:install` saber se `semear()` vai rodar — com `--no-seed` ou banco inacessível,
-     * `garantirSenhaDoAdministrador()` nunca roda e `$this->senhaGerada` fica `null`, mas a linha
-     * continua prometendo "gerada pelo instalador e impressa no fim". Chamado depois de
-     * `conferirConexao()` e da decisão de `semear()`, antes de `resumoDaCustomizacao()`.
+     * `kit:install` saber se `semear()` vai rodar — a linha promete
+     * `CustomizadorDaInstalacao::RESUMO_SENHA_GERADA` sempre que, NAQUELE momento, nem a senha
+     * digitada nem a do `.env` de destino eram utilizáveis. Dois desfechos reais podem contradizer
+     * essa promessa, e `$this->semeado` (gravado por `handle()`, o ÚNICO que sabe) é o que separa
+     * um do outro:
+     *
+     *   - **`$this->semeado === false`** (RD3-01): `--no-seed` ou banco inacessível — `semear()`
+     *     nunca rodou, nenhum administrador existe. Prometer "gerada e impressa" seria falso; a
+     *     linha vira a MESMA instrução que `mensagemDoBanner()` imprime (uma fonte só).
+     *   - **`$this->semeado === true`** e `$this->senhaGerada === null` (RD3-03): `semear()`
+     *     RODOU, mas nada foi gerado porque já havia senha utilizável — só que vinda do AMBIENTE
+     *     (`config('kit.admin.password')`, uma variável exportada), não do ARQUIVO que
+     *     `CustomizadorDaInstalacao::aplicar()` lia. A linha não pode negar que o banco foi
+     *     populado: passa a dizer o mesmo que diria se a origem tivesse sido o arquivo.
+     *
+     * Chamado depois de `conferirConexao()` e da decisão de `semear()`, antes de
+     * `resumoDaCustomizacao()`.
      */
     private function corrigirResumoDaSenha(): void
     {
@@ -570,10 +616,13 @@ class KitInstall extends Command
         }
 
         foreach ($this->resumo as $indice => [$item, $valor]) {
-            if ($item === 'Senha do administrador' && str_contains($valor, 'gerada pelo instalador e impressa no fim')) {
-                $this->resumo[$indice][1] = 'nenhuma foi definida — o banco não foi populado nesta '
-                    .'execução (--no-seed ou banco inacessível); depois, use php artisan kit:admin';
+            if ($item !== 'Senha do administrador' || ! str_contains($valor, CustomizadorDaInstalacao::RESUMO_SENHA_GERADA)) {
+                continue;
             }
+
+            $this->resumo[$indice][1] = $this->semeado
+                ? 'a que você já definiu em KIT_ADMIN_PASSWORD'
+                : 'nenhuma foi definida — o banco não foi populado nesta execução; '.$this->instrucaoBancoNaoPopulado();
         }
     }
 

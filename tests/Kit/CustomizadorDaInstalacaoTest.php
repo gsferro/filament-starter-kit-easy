@@ -735,7 +735,7 @@ it('[CT-19] o instalador anuncia o container em vez de negá-lo', function (): v
 | `04-casos-de-teste.md` da wiki `diagramas-da-arquitetura`, bloco R9: até a correção, a linha
 | "Senha do administrador" do resumo dizia `password (padrão do kit)` com a resposta vazia — uma
 | senha que nunca existiu (o kit gera uma aleatória), e a pergunta já promete "senha aleatória".
-| `app/Support/CustomizadorDaInstalacao.php:312-316` mostra a correção já aplicada.
+| `app/Support/CustomizadorDaInstalacao.php:330-334` mostra a correção já aplicada.
 */
 
 /**
@@ -764,7 +764,7 @@ it('[CT-41] o resumo do kit:install descreve a senha sem nunca citar password', 
  * [CT-41] (RD2-06) — a senha DIGITADA não é utilizável (o padrão publicado, ou só espaço), e o
  * resumo promete "a que você digitou" mesmo assim.
  *
- * O `match` de `aplicar()` (`app/Support/CustomizadorDaInstalacao.php:312-316`) decide esta linha
+ * O `match` de `aplicar()` (`app/Support/CustomizadorDaInstalacao.php:330-334`) decide esta linha
  * só por `$senha !== ''` — nunca consulta `SenhaDoAdministrador::ehUtilizavel($senha)` no ramo da
  * senha digitada (só no ramo vazio, para `$senhaJaUtilizavel`). Uma senha digitada como
  * `password` (o padrão publicado, `SenhaDoAdministrador::PADRAO_PUBLICADO`) ou feita só de espaço
@@ -801,14 +801,14 @@ it('[CT-41] senha digitada mas nao utilizavel nao e anunciada como "a que voce d
  * [CT-41] (RD-07/achado adicional) — o `.env` já tem uma `KIT_ADMIN_PASSWORD` UTILIZÁVEL (uma
  * reinstalação, ou um `.env` herdado) e a resposta desta execução vem vazia (Enter).
  *
- * `aplicar()` só GRAVA a chave quando `$senha !== ''` (`app/Support/CustomizadorDaInstalacao.php:291-293`):
+ * `aplicar()` só GRAVA a chave quando `$senha !== ''` (`app/Support/CustomizadorDaInstalacao.php:309-311`):
  * com resposta vazia e uma senha já utilizável no arquivo, nada é escrito e nada é gerado —
  * `SenhaDoAdministrador::garantirNoEnv()` (chamado depois, no `kit:install`) devolve `null` nesse
  * caso e NADA é impresso no terminal (`app/Support/SenhaDoAdministrador.php:garantirNoEnv:149`).
  * O resumo não pode prometer o que não vai acontecer: a linha não diz "gerada" nem "impressa", e
  * nomeia `KIT_ADMIN_PASSWORD` como a que vale, sem vazar o valor em claro.
  *
- * *(RD2-17, 2026-09-28)* VERDE hoje: o `match` de `aplicar()` (`:312-316`) já consulta
+ * *(RD2-17, 2026-09-28)* VERDE hoje: o `match` de `aplicar()` (`:330-334`) já consulta
  * `$senhaJaUtilizavel` (`SenhaDoAdministrador::ehUtilizavel($this->senhaAtualNoEnv($env))`) no
  * ramo da resposta vazia — este caso é a REGRESSÃO deste comportamento (RD-07, Repro A), não mais
  * uma reprodução de defeito aberto.
@@ -838,7 +838,7 @@ it('[CT-41] o resumo nao promete senha gerada nem impressa quando o .env ja tem 
 | RD2-05 — o desfecho FINAL (so o KitInstall sabe) corrige a linha do resumo e o banner
 |--------------------------------------------------------------------------
 | `CustomizadorDaInstalacao::aplicar()` decide a linha "Senha do administrador" ANTES de o
-| `KitInstall` saber se vai semear (`KitInstall.php:handle:97` roda antes de `:100` e `:106`): com
+| `KitInstall` saber se vai semear (`KitInstall.php:customizar:108` roda antes de `:111` e `:117`): com
 | `--no-seed`, ou banco inacessivel (`conferirConexao()` marca `bancoAcessivel = false`),
 | `semear()`/`garantirSenhaDoAdministrador()` NUNCA rodam — nada e gerado, `$this->senhaGerada`
 | fica `null` — mas o resumo grava "gerada pelo instalador e impressa no fim" (para senha vazia
@@ -866,10 +866,15 @@ it('[CT-41] o resumo nao promete senha gerada nem impressa quando o .env ja tem 
 it('[RD2-05] corrigirResumoDaSenha() reescreve a linha do resumo quando nada foi gerado (--no-seed ou banco inacessivel)', function (): void {
     $comando = new KitInstall;
 
+    // (RD3-12) A fixture usa a CONSTANTE de `CustomizadorDaInstalacao`, não um quarto literal
+    // solto: é ela que `corrigirResumoDaSenha()` tem de reconhecer, e é a MESMA que
+    // `CustomizadorDaInstalacao::aplicar()` de fato escreve no resumo (CT-41 mede isso do outro
+    // lado). Três lugares respondendo à mesma pergunta ("qual é o texto de 'vai gerar'?") por
+    // literais soltos é exatamente a lista paralela que RD3-12 mede.
     $propriedadeResumo = new ReflectionProperty(KitInstall::class, 'resumo');
     $propriedadeResumo->setValue($comando, [
         ['Nome do projeto', 'Loja do Ferro'],
-        ['Senha do administrador', 'gerada pelo instalador e impressa no fim'],
+        ['Senha do administrador', CustomizadorDaInstalacao::RESUMO_SENHA_GERADA],
     ]);
 
     $propriedadeSenhaGerada = new ReflectionProperty(KitInstall::class, 'senhaGerada');
@@ -924,4 +929,59 @@ it('[RD2-05] mensagemDoBanner() preserva a mensagem de senha gerada agora', func
 
         $this->assertStringContainsString('abc123XYZ', $mensagem, 'com senhaGerada preenchida, o banner deveria imprimir a senha gerada — comportamento de hoje, que este contrato nao pode quebrar');
     }
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| RD3-12 — a linha "vai gerar" do resumo tem UMA fonte, não um literal
+| duplicado em três lugares
+|--------------------------------------------------------------------------
+| Hoje `'gerada pelo instalador e impressa no fim'` vive solto em
+| `CustomizadorDaInstalacao::aplicar()` (onde nasce), em `KitInstall::corrigirResumoDaSenha()`
+| (que precisa RECONHECER a mesma frase para decidir se reescreve a linha) e no teste da
+| `:872` (que a repete pela terceira vez). Mudar o texto no Customizador desliga a correção do
+| KitInstall em silêncio — nenhum teste acusa. O construtor (F7) fixa isto numa constante
+| PÚBLICA em `CustomizadorDaInstalacao` — `RESUMO_SENHA_GERADA` — consultada pelas outras duas
+| pontas.
+*/
+
+it('[RD3-12] CustomizadorDaInstalacao expoe RESUMO_SENHA_GERADA como constante publica, e aplicar() a usa', function (): void {
+    expect(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA)
+        ->toBeString()
+        ->not->toBe('');
+
+    $resumo = customizadorNoTemp()->aplicar(respostasDeCustomizacao(['senha' => '']));
+    $linha  = collect($resumo)->first(fn (array $par): bool => $par[0] === 'Senha do administrador');
+
+    expect($linha)->not->toBeNull('o resumo não tem a linha "Senha do administrador"')
+        ->and($linha[1])->toBe(
+            CustomizadorDaInstalacao::RESUMO_SENHA_GERADA,
+            'aplicar() deveria escrever exatamente o valor da constante RESUMO_SENHA_GERADA, não um literal solto (RD3-12)',
+        );
+})->group('kit');
+
+it('[RD3-12] corrigirResumoDaSenha() reconhece a linha pela CONSTANTE de CustomizadorDaInstalacao, nao por um literal duplicado', function (): void {
+    $fonte = File::get((new ReflectionClass(KitInstall::class))->getFileName());
+
+    preg_match(
+        '~private function corrigirResumoDaSenha\(\): void\s*\{(.*?)\n    \}~s',
+        $fonte,
+        $achado,
+    );
+
+    $corpoDoMetodo = $achado[1] ?? '';
+
+    expect($corpoDoMetodo)->not->toBe('', 'nao encontrei o corpo de corrigirResumoDaSenha() em KitInstall.php — o regex de extracao pode ter ficado desatualizado');
+
+    $this->assertStringContainsString(
+        'CustomizadorDaInstalacao::RESUMO_SENHA_GERADA',
+        $corpoDoMetodo,
+        'corrigirResumoDaSenha() deveria reconhecer a linha do resumo pela CONSTANTE CustomizadorDaInstalacao::RESUMO_SENHA_GERADA, nao por um literal duplicado (RD3-12) — corpo do metodo: '.$corpoDoMetodo,
+    );
+
+    $this->assertStringNotContainsString(
+        "'gerada pelo instalador e impressa no fim'",
+        $corpoDoMetodo,
+        'corrigirResumoDaSenha() ainda compara com o literal duplicado em vez da constante (RD3-12)',
+    );
 })->group('kit');

@@ -279,14 +279,14 @@ O `composer create-project` roda dois scripts do próprio kit
 (`composer.json:post-root-package-install:204`, `composer.json:post-create-project-cmd:207`): o
 primeiro só copia `.env.example` para `.env` se ele ainda não existir; o segundo chama
 `php artisan kit:install --create-project`. Dentro de `KitInstall::handle()`
-(`app/Console/Commands/KitInstall.php:handle:70`), a ordem real é: as cinco perguntas de
-customização (`app/Console/Commands/KitInstall.php:customizar():97`) vêm antes de gerar a
+(`app/Console/Commands/KitInstall.php:handle:81`), a ordem real é: as cinco perguntas de
+customização (`app/Console/Commands/KitInstall.php:customizar():108`) vêm antes de gerar a
 `APP_KEY` e preparar o SQLite; migrar e semear só acontecem **se o banco responder**
-(`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel):102`,
-`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel && ! $this->option('no-seed')):106`);
+(`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel):113`,
+`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel && ! $this->option('no-seed')):117`);
 e a senha do administrador é gerada **antes** do `db:seed`
-(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:364`,
-`app/Console/Commands/KitInstall.php:'db:seed':380`) — nunca o contrário, senão o banner imprimiria
+(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:376`,
+`app/Console/Commands/KitInstall.php:'db:seed':392`) — nunca o contrário, senão o banner imprimiria
 uma senha que o seeder já gravou como outra.
 
 ```mermaid
