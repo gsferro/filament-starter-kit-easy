@@ -347,6 +347,30 @@ A opção escolhida dizia, na pergunta:
 | RQ-39 | É a última rodada: o que a revisão da 4ª achar vira dívida declarada no `03`, sem 5ª rodada | "O que essa revisão achar vira dívida declarada no 03, sem 5ª rodada" | restrição | — |
 | RQ-40 | Depois da 4ª rodada, a feature segue para a reconciliação, o quality gate e o PR | "Depois seguem a reconciliação, o quality gate e o PR." | restrição | — |
 
+## Adendo 5 — 2026-09-29
+
+- **Fonte**: resposta do mantenedor à pergunta que a sessão levou quando a revisão cega da 4ª rodada achou duas regressões introduzidas pela própria rodada, o que o RQ-39 ("vira dívida declarada") não previa
+- **Fidelidade**: alta (escolha entre opções escritas)
+
+### Texto Original
+
+<!-- IMUTÁVEL. Pergunta como foi feita → resposta como foi dada. -->
+
+> "A revisão cega da 4ª rodada achou duas regressões introduzidas pela própria rodada: RD4-01 (Blocker, o kit:arte não monta mais GIF com o ffmpeg real) e RD4-03 (Major, o fato do DG-03 parou de pegar a troca de rótulos em pt). Também achou dois consertos mecânicos (RD4-04, Pint vermelho que quebra o CI; RD4-06, citações deslocadas) e seis itens que não são regressão (RD4-02, 05, 07, 08, 09, 10). O Adendo 4 diz: "o que essa revisão achar vira dívida declarada, sem 5ª rodada". O que fazer?"="Só regressões e mecânico (Recomendado)"
+
+A opção escolhida dizia, na pergunta:
+
+- **Só regressões e mecânico** — "Corrijo as duas regressões e os dois consertos mecânicos: `-f gif` com um ffmpeg de teste que recusa saída sem formato, o fato do DG-03 lendo o rótulo, o Pint e as citações. Cada correção é provada vermelha, sem nova revisão cega. Os outros seis viram dívida declarada no 03 e no PR, com o RD4-02 e o RD4-10 em destaque."
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-41 | As duas regressões da 4ª rodada são corrigidas: o `kit:arte` volta a montar o GIF com o ffmpeg real (RD4-01), e o fato do DG-03 volta a pegar a troca de rótulos, nos dois idiomas (RD4-03) | "Corrijo as duas regressões [...] `-f gif` com um ffmpeg de teste que recusa saída sem formato, o fato do DG-03 lendo o rótulo" | funcional | exceção a RQ-39 |
+| RQ-42 | Os dois consertos mecânicos entram: Pint verde (RD4-04) e citações corretas (RD4-06) | "o Pint e as citações" | restrição | exceção a RQ-39 |
+| RQ-43 | Cada correção é provada vermelha antes; não há nova revisão cega | "Cada correção é provada vermelha, sem nova revisão cega." | restrição | — |
+| RQ-44 | RD4-02, RD4-05, RD4-07, RD4-08, RD4-09 e RD4-10 viram dívida declarada no `03` e no PR, com RD4-02 e RD4-10 em destaque | "Os outros seis viram dívida declarada no 03 e no PR, com o RD4-02 e o RD4-10 em destaque." | restrição | aplica RQ-39 |
+
 ## Fora de Escopo (declarado)
 
 - Mudar o comportamento do kit para caber num diagrama — o diagrama segue o código, nunca o contrário
