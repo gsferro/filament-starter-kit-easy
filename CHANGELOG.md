@@ -22,6 +22,42 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
+- **Vinte diagramas da arquitetura, em Mermaid, no README e no site** (wiki
+  `feat/diagramas-da-arquitetura`). O README ganha um, o DG-01 (a arquitetura em camadas: navegador,
+  os três painéis, acesso por papel, IA, fila, cache e os serviços opcionais), e um link para a
+  página nova **`referencia/arquitetura-em-diagramas`**, que traz o DG-01, os casos de uso por papel
+  (DG-02), a regra de acesso ao painel (DG-03), o ER do núcleo (DG-13) e o índice dos vinte. Os
+  outros moram ao lado do texto que explicam: login por senha e 2FA, sessão autenticada, login
+  unificado, retorno do login social, convite do envio ao aceite, estados da conta e do convite
+  (`autenticacao/`); o assistente de IA do prompt ao ledger `ai_runs` (`operacao/roteiro-de-features`);
+  o mapa do `/infra`, tela, tabela e quem grava (`recursos/trilhas-de-infraestrutura`); de onde vem a
+  configuração (`recursos/configuracoes-do-kit`); a instalação por dentro e os containers por profile
+  (`comecar/instalacao-avancada`); o `kit:update` e as duas rotas de entrega
+  (`comecar/atualizando-o-projeto`); o que roda em segundo plano (`operacao/desenvolvendo-o-kit`); e a
+  requisição em `/app/{tenant}` (`recursos/multi-tenancy`). Nos dois idiomas, com `accTitle`/`accDescr`
+  em todo bloco e sem cor fixa. A página credita o GitDiagram por link, como visão gerada por IA e não
+  verificada, sem embutir
+- **Cada diagrama tem guarda**: `tests/Kit/DiagramasDaArquiteturaTest.php` (411 casos) e
+  `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` (35) leem cada bloco em pt e en, com um
+  extrator de arestas que reconhece toda forma de seta do Mermaid 11.17.2, e o comparam com o código
+  -- painéis registrados, `roles.painel` semeado, `canAccessPanel()` executado, a pilha de middleware,
+  o schema migrado, a ordem do `handle()` do `kit:install` e do `kit:update`, o `docker-compose.yml`.
+  Quando o código muda e o diagrama não, a suíte fica vermelha. Os extratores moram em `tests/Pest.php`
+- **O site renderiza os diagramas**: `astro-mermaid` 2.1 e `mermaid` fixado em **11.17.2**, a mesma
+  versão do GitHub, em `site/package.json` (nunca na raiz). O tema segue o claro/escuro do site, e o
+  rótulo de aresta do tema escuro ganhou fundo mais escuro em `site/src/styles/kit.css` para passar no
+  AA (era 4,43:1, é 6,46:1). O `verifica-acessibilidade.mjs` espera cada bloco virar SVG antes do axe,
+  reprova bloco que não renderiza e confere que cada página tem exatamente tantos SVG quantos blocos a
+  fonte declara, nos dois temas, e que o diagrama troca de cor quando o leitor troca o tema
+- **Job `site` no CI de pull request**: `npm ci`, build, `verifica-links.mjs` e
+  `verifica-acessibilidade.mjs`, só quando o PR toca `docs/` ou `site/`, com as actions pinadas por
+  SHA e `permissions: contents: read`. O `pages.yml` só roda depois do merge -- um diagrama quebrado
+  por um `;` numa nota só apareceu porque o build foi rodado à mão
+- **O `kit:arte` monta um GIF por clipe** (`CLIPES`): além do `fluxo-import-export.gif` de sempre, a
+  busca ⌘K (`busca-spotlight.gif`), o login unificado até a escolha de painel (`login-unificado.gif`)
+  e os três níveis de densidade (`densidade.gif`), capturados no `CapturaDeArteTest` (`KIT_ART=1`).
+  Sem dependência nova, e vídeo fica de fora. As páginas de busca e idioma, login unificado e
+  configurações mostram os seus GIFs
 - **`tests/Kit/AgentesDaEsteiraTest.php`**: os agentes de `.claude/agents/` são idênticos aos de
   `.ai/skills/*/agents/`, o script do hook existe onde o hook o procura, e as skills, os agentes e
   o script estão cobertos pelo `kit:update`. A cópia dos agentes é à mão e esquecê-la não dava erro
@@ -36,6 +72,45 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   E caíram duas afirmações falsas sobre as cópias de Caveman e Ponytail: que `.claude/skills/`
   ficava de fora e que nenhuma das três estava no `boost.json` -- as três estão, e o
   `boost:update` as sincroniza em todos os espelhos
+- **O README e o `install.gif` diziam que a senha do administrador é `password`**, que a instalação
+  não usa desde o #100: ela gera uma senha aleatória (ou usa a de `KIT_ADMIN_PASSWORD`) e a imprime
+  uma vez. O `install.gif` foi refeito a partir da saída real do `kit:install` de um
+  `create-project` da v0.41.1, com a senha mascarada
+- **O resumo do `kit:install` dizia `password (padrão do kit)` justamente quando a senha é gerada**.
+  Agora a linha diz o que aconteceu -- digitada, já definida em `KIT_ADMIN_PASSWORD`, ou gerada e
+  impressa no fim --, senha digitada que o kit recusa (`password`, só espaços) não aparece como "a que
+  você digitou", e com `--no-seed` banner e resumo dão a mesma instrução: definir
+  `KIT_ADMIN_PASSWORD` no `.env` e só então rodar `php artisan db:seed`
+- **Valor com barra invertida no `.env` derrubava o `kit:install` no meio da customização**: o
+  `SubstituicaoEmArquivo` gravava a `\` sem escapar, e a leitura do resumo quebrava depois de nome,
+  banco e e-mail já gravados
+- **O `kit:arte` truncava o GIF publicado quando o ffmpeg falhava no meio**: ele escrevia direto no
+  arquivo de `art/` com `-y`. Agora monta num temporário ao lado e só troca por `rename()` quando o
+  processo termina bem; uma exceção num clipe não aborta os outros, e o aviso separa "o ffmpeg falhou"
+  de "não consegui publicar"
+- **Outras afirmações falsas**: o README e `pacotes-instalados` listavam passkeys como recurso (estão
+  desligadas: o Breezy nasce com `$passkeys = false` e nenhum painel chama `enablePasskeys()`); o
+  `composer dev` era "servidor + fila + vite" e também sobe o Reverb; `routes/console.php` e o roteiro
+  de features diziam que o `schedule:work` vem no `composer dev` (não vem); e seis docblocks
+  contradiziam o código -- o acesso ao `/app` é por papel, a temperatura do catálogo de agentes ainda
+  não chega ao provider, o `InfraPanelProvider` citava linhas vazias do `KitServiceProvider`, o
+  onboarding só tem autoria no `/admin`, e o `kit:install` pode parar numa falha de infraestrutura
+
+### Medido
+
+- **Os GIFs em `art/`** (`ls -l art/*.gif`; sem teto de peso, por decisão do mantenedor):
+  `busca-spotlight.gif` **60.692 bytes** (2 quadros, 3,34 s), `login-unificado.gif` **159.179**
+  (2 quadros, 3,34 s), `densidade.gif` **132.112** (3 quadros, 5 s), `fluxo-import-export.gif`
+  **108.568** (era 105.452) e `install.gif` **115.928** (era 347.561; 4 quadros, 6,67 s). O `art/`
+  inteiro passa de 9.209.455 para **9.343.775 bytes** (`git ls-tree -r -l`)
+- **O `mermaid` no site**: cerca de 700 KB de JS a mais, carregado só nas páginas com diagrama
+
+### Pendente
+
+- Dívidas declaradas da revisão do diff dos diagramas, no `03` da wiki: com o banco **inacessível**,
+  a nota do banner e o aviso do `conferirConexao()` dão instruções que se contradizem e nenhuma
+  funciona sozinha; e, de antes deste trabalho, reinstalar sobre um administrador que já existe com
+  `password` imprime uma senha gerada que não vale -- o `UsuarioAdminSeeder` não toca admin existente
 
 ## [0.41.1] - 2026-09-27
 

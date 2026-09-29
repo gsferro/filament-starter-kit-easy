@@ -1,6 +1,14 @@
 # Plano de Ação — Diagramas da arquitetura do kit no README e no site
 
 > Requisito: `00-requisito.md`. Decisões: `02-decisoes-arquiteturais.md`.
+>
+> **Reconciliado com o código no step 10 da feature-wiki 4.0.0 (2026-09-29).** Onde a implementação
+> divergiu do plano, o texto foi corrigido aqui e marcado *(alterado em 2026-09-29: …)*; o `03` só
+> aponta. Os passos 22 a 25 são novos e registram o que as rodadas da revisão do diff e os Adendos 3
+> a 5 acrescentaram. **Numeração dos steps**: a wiki nasceu na 3.x; "step 6.5" é o step 9 da 4.0.0
+> (revisão do diff), "step 7" é o 10 (reconciliação), "step 8" é o 11 (quality gate) e "step 9" é o
+> 12 (candidatos a rule) — tabela no README da feature-wiki, *Numeração dos steps — 3.x → 4.0.0*. A
+> numeração antiga fica onde foi escrita.
 
 ## Natureza da Wiki
 
@@ -14,11 +22,25 @@
   `tests/Kit/MysqlNoDockerTest.php` e `tests/Kit/DuasRotasDeEntregaTest.php` (ganham `it()` novos
   ao lado dos ajudantes que já têm — `blocoDoServico`/`FORA_DA_ENTREGA_POR_DECISAO` — nenhum dos
   dois sobe para `tests/Pest.php`; passo 14).
+  *(alterado em 2026-09-29: nenhum dos dois ganhou `it()` — as guardas do DG-17, DG-18 e DG-19
+  moram em `tests/Kit/DiagramasDaArquiteturaTest.php`, com os IDs do `04` (CT-31, CT-33, CT-72,
+  CT-75, CT-84, CT-93, CT-43, CT-76) —, e o `blocoDoServico` **subiu** para
+  `tests/Pest.php:blocoDoServico:1718`, porque ganhou um segundo consumidor. A infra compartilhada
+  tocada também inclui `app/Console/Commands/KitInstall.php`, `app/Support/SenhaDoAdministrador.php`
+  e `app/Support/SubstituicaoEmArquivo.php` (as correções do instalador das rodadas da revisão do
+  diff, passos 1 e 22), os extratores Mermaid de `tests/Pest.php` (passo 14) e
+  `.github/workflows/ci.yml` (job `site`, passo 23))*
 
   Isso **força regressão obrigatória** contra os testes-guarda que já protegem essas superfícies,
   mesmo a feature sendo "nova" — regressão: ver Impacto em Features Existentes.
 
 ## Cobertura do Requisito
+
+*(alterado em 2026-09-29: as faixas "4 a 13" viraram listas explícitas e os IDs de diagrama saíram da
+coluna de passos para a Observação — o `rastreabilidade.sh` lê todo número da coluna como passo, e
+"5 a 10" deixava os passos 6 a 9 sem `RQ`; entram as linhas RQ-31..RQ-44 dos Adendos 3 a 5. `—` com
+Observação é cláusula de estudo ou de processo, que não vira passo nem CT — o julgamento é do quality
+gate, dimensão A)*
 
 | RQ | Cláusula | Passo(s) que atende(m) | Observação |
 |----|----------|------------------------|------------|
@@ -26,32 +48,46 @@
 | RQ-02 | Levantar e registrar as funcionalidades do GitDiagram | — | Estudo **concluído**; resultado registrado em ADR-01 (rascunho de topologia, nunca fonte) |
 | RQ-03 | Avaliar as duas saídas de export (imagem e Mermaid) como insumo | — | Estudo **concluído**; ADR-03 decide que nenhuma exportação (imagem OU Mermaid de terceiro) vira fonte — o Mermaid é reescrito pela sessão |
 | RQ-04 | Viabilidade de levar o GitDiagram ao README, com decisão registrada | — | Resolvida em dois pedaços: o **diagrama** entra corrigido como DG-01 (passo 3); o **site do GitDiagram** entra só como crédito na página nova (passo 4), nunca no README — ADR-01, ADR-11 |
-| RQ-05 | Viabilidade de exibir diagramas em docs e site, com decisão registrada | 4 a 13, 15 a 18 | `docs/` (pt e en), renderizado por `astro-mermaid` — ADR-02 |
-| RQ-06 | Os diagramas mostram como o kit funciona, não são decoração | 3 a 13, 15 a 18 | Toda linha "Fato do código" da seção de diagramas abaixo é uma checagem executável, não estética |
-| RQ-07 | Diagramas de casos de uso são estudados | 4 (DG-02) | Concretizado por RQ-21 |
-| RQ-08 | Diagramas de sequência são estudados | 5 a 8, 11, 15, 17 (DG-04 a DG-07, DG-11, DG-15 e a sequência curta do DG-20; o DG-16 é `flowchart`) | Concretizado por RQ-22/23/24 |
-| RQ-09 | Outras representações gráficas são estudadas | 3 a 13, 15 a 18 | Concretizado por RQ-21/23/24/25 (`flowchart`, `stateDiagram-v2`, `erDiagram`) |
-| RQ-10 | Todo diagrama publicado reflete o que o kit já implementa, com guarda que vale depois da publicação | 3 a 13 e 15 a 18 (conteúdo), 14 (guarda) | Nenhum diagrama descreve funcionalidade planejada; o teste-guarda (passo 14) é o mecanismo que torna isso válido também DEPOIS de publicado |
+| RQ-05 | Viabilidade de exibir diagramas em docs e site, com decisão registrada | 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18 | `docs/` (pt e en), renderizado por `astro-mermaid` — ADR-02 |
+| RQ-06 | Os diagramas mostram como o kit funciona, não são decoração | 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18 | Toda linha "Fato do código" da seção de diagramas abaixo é uma checagem executável, não estética |
+| RQ-07 | Diagramas de casos de uso são estudados | 4 | DG-02. Concretizado por RQ-21 |
+| RQ-08 | Diagramas de sequência são estudados | 5, 6, 7, 8, 11, 15, 17 | DG-04 a DG-07, DG-11, DG-15 e a sequência do DG-20 (o DG-16 é `flowchart`). Concretizado por RQ-22/23/24 |
+| RQ-09 | Outras representações gráficas são estudadas | 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18 | Concretizado por RQ-21/23/24/25 (`flowchart`, `stateDiagram-v2`, `erDiagram`) |
+| RQ-10 | Todo diagrama publicado reflete o que o kit já implementa, com guarda que vale depois da publicação | 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 14 | Conteúdo nos passos 3 a 13 e 15 a 18; a guarda no 14. Nenhum diagrama descreve funcionalidade planejada; o teste-guarda (passo 14) é o mecanismo que torna isso válido também DEPOIS de publicado |
 | RQ-11 | Diagramas disponíveis no README | 3 | DG-01 + link, nos dois idiomas |
-| RQ-12 | Diagramas disponíveis no site do kit | 4 a 13, 15 a 18 | Página nova (passo 4) + diagramas nas páginas existentes (passos 5 a 13 e 15 a 18) |
+| RQ-12 | Diagramas disponíveis no site do kit | 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18 | Página nova (passo 4) + diagramas nas páginas existentes (passos 5 a 13 e 15 a 18) |
 | RQ-13 | O repositório `ahmedkhaleel2004/gitdiagram` é a fonte do estudo do RQ-02 | — | Usado na pesquisa (clone raso, commit `abe0620f`); registrado em ADR-01 |
 | RQ-14 | Avaliar o site indicado como gerador de vídeo para os diagramas | — | **Não se aplica** — `sent.dm` é API de mensagens (SMS/WhatsApp/RCS), não gera vídeo; quem gera vídeo é o próprio GitDiagram (`/video`), recurso não pedido no Adendo 2. Decisão registrada em `02-decisoes-arquiteturais.md`, ADR-12 |
 | RQ-15 | Avaliar o mesmo site como funcionalidade do próprio kit | — | **Não se aplica**, mesmo motivo — ADR-12 |
-| RQ-16 | Avaliar gerar GIFs/vídeos de partes do sistema | 19 a 21 | Concretizado por RQ-27: `kit:arte` generalizado, vídeo fora (CT-21) |
-| RQ-17 | Vídeos/imagens tornam o kit mais visível a quem for usá-lo | 19 a 21 | Os 4 clipes novos + o `install.gif` corrigido |
+| RQ-16 | Avaliar gerar GIFs/vídeos de partes do sistema | 19, 20, 21 | Concretizado por RQ-27: `kit:arte` generalizado, vídeo fora (CT-21) |
+| RQ-17 | Vídeos/imagens tornam o kit mais visível a quem for usá-lo | 19, 20, 21 | Os 4 clipes novos + o `install.gif` corrigido |
 | RQ-18 | `astro-mermaid` + `mermaid` 11.17.2 em `site/package.json`, aprovação explícita | 2 | `site/package.json` (não a raiz) — ADR-02 |
-| RQ-19 | Fonte de todo diagrama é Mermaid em texto, versionado | 3 a 13, 15 a 18 | ADR-03 |
+| RQ-19 | Fonte de todo diagrama é Mermaid em texto, versionado | 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18 | ADR-03 |
 | RQ-20 | README ganha 1 diagrama de arquitetura + link para a página de diagramas | 3 | DG-01 — ADR-07 |
 | RQ-21 | Diagramas da visão geral: arquitetura, casos de uso por papel, regra de acesso ao painel | 3, 4, 5 | DG-01, DG-02, DG-03 |
-| RQ-22 | Diagramas de autenticação: login por senha+2FA, login unificado, retorno social, convite, estados de conta/convite | 5 a 10 | DG-04, DG-05, DG-06, DG-07, DG-08, DG-09 |
-| RQ-23 | Diagramas de IA/infra/dados: assistente, mapa `/infra`, ER, precedência de configuração | 4 (DG-13), 11, 12, 13 | DG-11, DG-12, DG-13, DG-14 |
+| RQ-22 | Diagramas de autenticação: login por senha+2FA, login unificado, retorno social, convite, estados de conta/convite | 5, 6, 7, 8, 9, 10 | DG-04 (passo 5), DG-05 (6), DG-06 (7), DG-07 (8), DG-09 (9), DG-08 (10) |
+| RQ-23 | Diagramas de IA/infra/dados: assistente, mapa `/infra`, ER, precedência de configuração | 4, 11, 12, 13 | DG-13 (passo 4), DG-11 (11), DG-12 (12), DG-14 (13) |
 | RQ-24 | Diagramas do ciclo do kit: instalação, `kit:update` com as duas rotas, containers por profile | 15, 16 | DG-15, DG-16, DG-17, DG-18 |
-| RQ-25 | Diagramas pertinentes adicionais, justificados no `02` | 5 (DG-10), 17 (DG-20), 18 (DG-19) | DG-10 (sessão), DG-19 (segundo plano), DG-20 (`kit:tenancy`) — ADR-08 |
-| RQ-26 | Todo diagrama em pt e en, com guarda de teste | 3 a 13 e 15 a 18 (conteúdo), 14 (guarda) | ADR-04 (IDs), ADR-06 (guarda por diagrama) |
+| RQ-25 | Diagramas pertinentes adicionais, justificados no `02` | 5, 17, 18 | DG-10 (passo 5), DG-20 (17), DG-19 (18) — ADR-08 |
+| RQ-26 | Todo diagrama em pt e en, com guarda de teste | 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 14 | Conteúdo nos passos 3 a 13 e 15 a 18; a guarda no 14. ADR-04 (IDs), ADR-06 (guarda por diagrama) |
 | RQ-27 | `kit:arte` monta GIFs de mais partes do sistema, sem dependência nova; vídeo fora | 19, 20 | ADR-09 |
-| RQ-28 | README, resumo do `kit:install` e `art/install.gif` deixam de afirmar `password` | 1, 21 | ADR-09, ADR-10 |
+| RQ-28 | README, resumo do `kit:install` e `art/install.gif` deixam de afirmar `password` | 1, 21, 22 | ADR-09, ADR-10. *(alterado em 2026-09-29: o passo 22 registra as correções do instalador que a revisão do diff trouxe — o resumo e o banner nos casos em que nada é gerado)* |
 | RQ-29 | Outras afirmações falsas corrigidas (passkeys, `composer dev`, `schedule:work`, docblocks) | 1 | ADR-10 |
 | RQ-30 | Página de diagramas credita o GitDiagram, sem embutir | 4 | ADR-11 |
+| RQ-31 | Uma 3ª rodada da revisão do diff é autorizada, acima do teto da skill | — | Cláusula de **processo** (Adendo 3): não é comportamento do kit. Cumprida pela rodada 3 da revisão do diff (step 6.5 da 3.x, step 9 da 4.0.0) — o que ela mudou no código está no passo 22; os achados RD3-01..RD3-12 da revisão cega do delta, no `03`, `## Revisão do Diff (step 9)` |
+| RQ-32 | Todo diagrama renderiza no site e no GitHub, sem erro de sintaxe | 22 | O DG-11 não renderizava: o `;` da nota era separador de statement. Prova no site: CT-B01 (`05`); no GitHub, conferência manual no PR (L-03 do `04`) |
+| RQ-33 | Contraste WCAG AA nos dois temas, ajustado na configuração do site, nunca com cor fixa no bloco | 22 | Rótulo de aresta no tema escuro, em `site/src/styles/kit.css` — desvio do texto da opção ("na config do astro-mermaid"): o `astro-mermaid` não tem configuração por tema (ADR-02). CT-B01; CT-34, CT-35, CT-95 |
+| RQ-34 | As guardas leem as arestas de forma normalizada, nos dois idiomas | 22, 24 | Extrator de arestas em `tests/Pest.php` (rodada 3) e as formas de seta que ele ainda perdia (rodada 4, RD3-05) |
+| RQ-35 | Os 21 cenários que só conferiam a existência do bloco passam a conferir o conteúdo | 22, 24 | Rodada 3 (RD2-16) e os fatos de DG-12/13/14/16/17 com os IDs reais, em pt e en (rodada 4, RD3-06) |
+| RQ-36 | O CI de pull request constrói e confere o site quando o PR toca `docs/` ou `site/` | 23 | Job `site` no `.github/workflows/ci.yml`. ~~**Sem CT** — lacuna declarada no `04` e dívida no `03`~~ CT-105 (R47 do `04`) *(alterado em 2026-09-29: o cenário foi derivado no step 10, depois da reconferência mecânica; o teste ainda não existe — dívida DV-09 no `03`)* |
+| RQ-37 | Uma 4ª rodada fecha RD3-01..RD3-12, Major e Minor | — | Cláusula de **processo** (Adendo 4). Cumprida pela rodada 4 — o código dela está no passo 24; a situação de cada RD3 está no `03`, `## Revisão do Diff (step 9)` |
+| RQ-38 | A 4ª rodada tem revisão cega só do delta novo | — | Cláusula de **processo**: `fw-revisor-diff` sobre o delta, despacho #44 do `03` |
+| RQ-39 | É a última rodada: o que a revisão da 4ª achar vira dívida declarada no `03` | — | Cláusula de **processo**, com as exceções do Adendo 5 (RQ-41, RQ-42). As dívidas estão no `03`, `## Dívidas declaradas` |
+| RQ-40 | Depois da 4ª rodada, seguem a reconciliação, o quality gate e o PR | — | Cláusula de **processo**: este step 10, depois o 11 e o PR |
+| RQ-41 | As duas regressões da 4ª rodada são corrigidas | 25 | RD4-01 (`-f gif`, com um ffmpeg de teste que escolhe o formato como o real) e RD4-03 (o fato do DG-03 lê o rótulo, em pt e en) |
+| RQ-42 | Os dois consertos mecânicos entram: Pint verde e citações corretas | — | Conserto **mecânico** (RD4-04, RD4-06), sem comportamento do kit a derivar em CT: feito no passo 25 e provado por comando — `vendor/bin/pint --test` e `tests/Kit/CitacoesDeCodigoTest.php` verdes (`03`, `## Verificação Final`) |
+| RQ-43 | Cada correção é provada vermelha antes; sem nova revisão cega | — | Cláusula de **processo**: a prova de cada correção está no `03`, `## Revisão do Diff (step 9)` |
+| RQ-44 | RD4-02, 05, 07, 08, 09 e 10 viram dívida declarada no `03` e no PR, com RD4-02 e RD4-10 em destaque | — | Cláusula de **processo**: `03`, `## Dívidas declaradas`; no PR, no step 11 |
 
 ## Objetivo
 
@@ -91,6 +127,8 @@ instalação gera uma senha aleatória.
 ### `README.md` / `README.en.md`
 Hoje com 445/446 linhas (teto de `[CT-13]`: 756/767). Ganham um bloco Mermaid (DG-01) + um link
 para a página nova do site, e três correções de texto (senha, passkeys, `composer dev`).
+*(alterado em 2026-09-29: depois da entrega, 490/491 linhas — `wc -l README.md README.en.md` —, com
+folga para o teto do `[CT-13]`)*
 
 ### `docs/pt/**` e `docs/en/**`
 Doze páginas existentes recebem um ou mais diagramas cada — uma por passo, nos passos 5 a 13 e 15
@@ -114,20 +152,30 @@ acessibilidade (espera pelo SVG, página nova na `AMOSTRA_CLARA`).
 `QUADROS_DO_GIF` (lista) vira `CLIPES` (mapa `clipe => quadros`); `montarGif()` passa a aceitar
 mais de um clipe, sempre a partir de `tests/Browser/Screenshots` (uma origem só — ver passo 19).
 Os quadros dos clipes novos **não** entram em `IMAGENS`: o padrão existente é o oposto — quadro de
-GIF não vira PNG em `art/` (docblock de `app/Console/Commands/KitArte.php:QUADROS_DO_GIF:41`, e o
-`continue` de `app/Console/Commands/KitArte.php:QUADROS_DO_GIF:134`, que pula o quadro antes da
+GIF não vira PNG em `art/` (antes da entrega: o docblock de `QUADROS_DO_GIF`, na linha 41 de
+`app/Console/Commands/KitArte.php`, e o `continue` da linha 134, que pulava o quadro antes da
 checagem de `IMAGENS`). O par captura ↔ declaração de `.ai/rules/testes-browser.md` fica satisfeito
 pelo `CLIPES`, como já é hoje pelo `QUADROS_DO_GIF`. Os dois órfãos existentes
 (`admin-user-ficha-header`, `admin-organizacao-header`) ficam como estão — ver passo 19.
+*(alterado em 2026-09-29: `QUADROS_DO_GIF` não sumiu — continua sendo a lista do clipe
+`fluxo-import-export` (`app/Console/Commands/KitArte.php:QUADROS_DO_GIF:45`), que o `CLIPES` reaproveita
+(`app/Console/Commands/KitArte.php:CLIPES:70`), porque os testes o leem por Reflection pelo nome; hoje o
+`publicar()` confere `IMAGENS` primeiro (`app/Console/Commands/KitArte.php:IMAGENS:187`) e só depois
+pula o quadro de clipe (`app/Console/Commands/KitArte.php:$quadrosDeClipe:206`))*
 
 ### `tests/BrowserTenancy/CapturaDeArteTest.php`
 Ganha os cenários que capturam os quadros dos clipes `busca-spotlight` e `login-unificado`, e os
 quadros do roteiro do `install.gif`.
 
 ### `app/Support/CustomizadorDaInstalacao.php`
-O resumo do `kit:install` (`app/Support/CustomizadorDaInstalacao.php:password:295`) imprime
-`password (padrão do kit)` quando a resposta da senha vem vazia — que é justamente o caso em que a
-instalação **gera** a senha (D4, RQ-28). Muda o texto dessa linha, nada mais.
+O resumo do `kit:install` (antes da entrega: `app/Support/CustomizadorDaInstalacao.php`, linha 295)
+imprime `password (padrão do kit)` quando a resposta da senha vem vazia — que é justamente o caso em
+que a instalação **gera** a senha (D4, RQ-28). Muda o texto dessa linha, nada mais.
+*(alterado em 2026-09-29: mudou mais que a linha — a revisão do diff achou os casos em que o novo
+texto também mentia. Hoje a linha tem três valores, pela regra de `SenhaDoAdministrador`
+(`app/Support/CustomizadorDaInstalacao.php:$senhaDigitadaUtilizavel:331`: digitada e utilizável, já
+definida em `KIT_ADMIN_PASSWORD`, ou `RESUMO_SENHA_GERADA`), e o `KitInstall` a corrige com o desfecho
+real da semeadura (`app/Console/Commands/KitInstall.php:corrigirResumoDaSenha:612`); passos 1, 22 e 24)*
 
 ## Autorização
 
@@ -154,6 +202,12 @@ mascarada — ver passo 21).
 
 **Gate de CT-B**: N/A, o comportamento já é provado em `RoteiroDoKitTest` (F-45) e
 `LoginUnificadoTest` (CT-B01).
+*(alterado em 2026-09-29: a derivação do `04` refez o gate e ele **passa** — a renderização do site é
+JavaScript no cliente, que só o navegador prova. Há `05-casos-de-teste-browser.md` com três CT-B:
+CT-B01 e CT-B02 no conferidor Node + Playwright de `site/` (`site/verifica-acessibilidade.mjs`) e
+CT-B03 em `tests/BrowserTenancy/CapturaDeArteTest.php`. E a fixture do terminal não tem rota pública,
+mas é servida por uma rota registrada só dentro do teste de captura, depois de renderizada com
+`view()->file()` (`tests/BrowserTenancy/CapturaDeArteTest.php:Route:814`))*
 
 ## Variáveis de Ambiente
 
@@ -169,7 +223,7 @@ já existem e não mudam.
 ## Jobs / Queues
 
 **Nenhum novo.** O agendamento `kit:convites-lembrar` (citado no DG-07) já existe
-(`routes/console.php:'kit:convites-lembrar':39`) e não muda.
+(`routes/console.php:'kit:convites-lembrar':40`) e não muda.
 
 ## Modelo de Execução
 
@@ -235,6 +289,22 @@ já existem e não mudam.
 | O axe pode não auditar o SVG do Mermaid pela regra `svg-img-alt`: o seletor dela é `svg[role='graphics-document']`, de igualdade, e o Mermaid grava `graphics-document document` (não confirmado na pesquisa — `site-e-readme.md`, pendência 2) | A obrigação de `accTitle`/`accDescr` não depende do axe: a camada 1 da guarda (passo 14) a confere em todo bloco, no texto |
 | **Dívida declarada**: `admin-user-ficha-header` e `admin-organizacao-header` continuam publicados sem uso (0 ocorrências em `docs/`/`README*`), violando o par de `.ai/rules/testes-browser.md` — nenhum RQ desta feature pede a correção | Fica para um fix próprio; o `kit:arte` os relata como ignorados (passo 19) |
 
+*(alterado em 2026-09-29: desfecho de cada risco, medido na implementação)*
+
+- **Peso do `mermaid`**: medido — cerca de 700 KB de JS a mais, carregado só nas páginas com
+  diagrama (`92857dc`); o maior chunk do build é `site/dist/_astro/chunk-*.js` com 662.109 bytes
+  (`ls -l site/dist/_astro/*.js`, 2026-09-29), e o Vite avisa de chunk acima de 500 kB. Visível, não
+  proibitivo: nenhuma ação.
+- **Loader `glob` fora da raiz do Astro**: não se confirmou — o build transforma os blocos de `docs/`
+  (`[astro-mermaid] … transformed mermaid block in …/docs/pt/…` no log do `npm run build`) e o
+  `site/dist/pt/referencia/arquitetura-em-diagramas/index.html` tem 4 `class="mermaid"`.
+- **`install.gif`**: a transcrição é a saída real do `kit:install` de um `create-project` da v0.41.1,
+  com a senha gerada mascarada (`3c79ff0`, `2ab9bfa`).
+- **`svg-img-alt` do axe**: continua não confirmado se a regra chega a se aplicar; a camada 1 da guarda
+  cobra `accTitle`/`accDescr` em todo bloco, como previsto.
+- **Riscos que as rodadas da revisão do diff deixaram abertos**: as dívidas declaradas do `03`
+  (`## Dívidas declaradas`), com RD4-02 e RD4-10 em destaque.
+
 ## Channel de Log da Feature
 
 ### Verificação de Channel Existente
@@ -264,17 +334,17 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
     `password` pela indicação de que a senha é **gerada** (ex.: "gerada na instalação — impressa no
     terminal"), sem inventar um valor fixo.
   - `README.md:passkeys:201`/`README.en.md:passkeys:201`: remover "passkeys" da lista de recursos
-    do Breezy (fica "perfil do usuário, avatar, 2FA").
+    do Breezy (fica "perfil do usuário, avatar, 2FA"). *(alterado em 2026-09-29: a palavra ficou, dizendo o contrário — "perfil do usuário, avatar e 2FA (passkeys desligadas: o Breezy nasce com `$passkeys = false` e `enablePasskeys()` não é chamado em nenhum painel)", hoje na linha 246 dos dois READMEs; o mesmo em `pacotes-instalados.md`. O CT-42 recusa passkey afirmada como recurso e aceita a menção que diz que estão desligadas)*
   - `README.md:vite:365`/`README.en.md:vite:366`: trocar "servidor + fila + vite juntos"/"server +
     queue + vite together" por uma frase que inclua o Reverb (ex.: "servidor + fila + vite + Reverb").
 - **Path**: `app/Support/CustomizadorDaInstalacao.php` (resumo do `kit:install`,
-  `app/Support/CustomizadorDaInstalacao.php:password:295`)
+  antes da entrega na linha 295 de `app/Support/CustomizadorDaInstalacao.php`)
   - Trocar `'password (padrão do kit)'` (o ramo da resposta vazia, em que a instalação GERA a senha)
     por um texto que diga que a senha é gerada e aparece no banner final, sem valor nenhum.
   - Teste: um caso em `tests/Kit/CustomizadorDaInstalacaoTest.php`, no bloco `R9` (resumo e
     segredo, que já existe), com `senha` vazia: a linha `Senha do administrador` do resumo não
     contém `password` e diz que é gerada. É comportamento de texto guardado — sem o caso, o texto
-    antigo volta num merge sem ninguém ver.
+    antigo volta num merge sem ninguém ver. *(alterado em 2026-09-29: a revisão do diff achou os casos em que o texto novo também mentia, e a correção cresceu além da linha — rodada 1 (RD-07): o `.env` que já tem `KIT_ADMIN_PASSWORD` utilizável; rodada 3 (passo 22): senha digitada não utilizável, `--no-seed` ou banco inacessível, e a barra invertida no `.env`; rodada 4 (passo 24): banner e resumo com a mesma instrução, o desfecho lido de `handle()` e a constante `RESUMO_SENHA_GERADA`. Os casos de teste passaram de um para três `it('[CT-41]')` e mais nove testes com o ID do achado — lista no `04`, "Testes nascidos na revisão do diff, sem CT")*
 - **Ocorrências irmãs** das mesmas afirmações falsas, fora das linhas que a pesquisa listou (achadas
   por `grep -rn -i "passkey\|composer dev" README.md README.en.md docs wikis/*.md`) — mesma
   correção, na fonte:
@@ -284,7 +354,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
     `docs/en/operacao/roteiro-de-features.md:Passkeys:30` (a linha `F-05` apresenta passkeys como
     feature entregue — reescrever para "desligado no kit: o Breezy nasce com `$passkeys = false` e
     `enablePasskeys()` não é chamado", **sem apagar o `F-05`**, porque os IDs `F-xx` são referência
-    de teste, ex. `tests/Browser/RoteiroDoKitTest.php:F-03:36`); `wikis/pacotes.md:passkeys:10`
+    de teste, ex. `tests/Browser/RoteiroDoKitTest.php:'F-03':36`); `wikis/pacotes.md:passkeys:10`
     (tabela "já existe — não escreva de novo": o pacote traz passkeys, mas desligado — acrescentar
     "desligado; liga com `enablePasskeys()`", sem remover, porque a linha diz de onde vem, não o que
     está ligado).
@@ -298,7 +368,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
     `wikis/arquitetura.md:composer:375` ("já incluso no `composer dev`", a mesma frase do
     `routes/console.php`). As `wikis/` ficam fora como **destino de diagrama** (00, RQ-05), não como
     fonte de afirmação falsa — mantidas aqui (decisão 8, ver Decisões da sessão).
-- **Path**: `routes/console.php` (comentário na linha 20, `routes/console.php:composer:20`)
+- **Path**: `routes/console.php` (comentário nas linhas 19 a 22, `routes/console.php:composer:19`)
   - Reescrever o comentário para não afirmar que `schedule:work` "já incluso no `composer dev`" —
     ele não está: o `artisan dev` registra `serve`, `queue:listen`, `pail` (só com `pcntl`) e o
     `vite` (`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:registerDefaults:106`,
@@ -311,7 +381,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
     frase que descreva a regra real (papel com `roles.painel = 'app'`, ver `app/Models/User.php:canAccessPanel:156-219`).
 - **Path**: `app/Providers/Filament/InfraPanelProvider.php` (docblock na linha 343,
   `app/Providers/Filament/InfraPanelProvider.php:'ver-logs':343`)
-  - Corrigir a citação que o docblock traz hoje, "KitServiceProvider.php:172" (essa linha é um
+  - Corrigir a citação que o docblock trazia, "`KitServiceProvider.php`, linha 172" (essa linha é um
     comentário vazio, só `*` — confirmado com `sed -n '172p' app/Providers/KitServiceProvider.php`),
     para `app/Providers/KitServiceProvider.php:'ver-logs':429`, onde `Gate::define('ver-logs', ...)`
     de fato está.
@@ -325,7 +395,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   - Reescrever "Nenhum passo aborta a instalação" para refletir que passos idempotentes não
     abortam, mas uma falha de infraestrutura (ex.: SQLite preso por outro processo, com `--force`)
     pode interromper (`app/Support/BancoSqlite.php:recriar:39`, lança `RuntimeException`).
-- **Path**: `app/Models/AgenteIa.php` (docblock nas linhas 75-76, `app/Models/AgenteIa.php:'temperatura':75-76`)
+- **Path**: `app/Models/AgenteIa.php` (comentário do cast nas linhas 75 a 77, `app/Models/AgenteIa.php:'temperatura':78`)
   e irmã `app/Ai/Agents/GuardaPrompt.php:max_tokens:19`
   - As duas dizem que a temperatura do catálogo "vai direto para o provider" — falso:
     `vendor/laravel/ai/src/Gateway/TextGenerationOptions.php:forAgent:69-76` só lê
@@ -336,7 +406,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
     — fora do escopo desta feature; vira achado para o mantenedor.
 - **Logs**: n/a — passo é edição de texto, sem lógica de execução.
 - **Verificação**:
-  - `grep -rn -i "passkeys" README.md README.en.md docs/pt/referencia/pacotes-instalados.md docs/en/referencia/pacotes-instalados.md` volta vazio; a linha `F-05` do roteiro e a de `wikis/pacotes.md` dizem "desligado";
+  - `grep -rn -i "passkeys" README.md README.en.md docs/pt/referencia/pacotes-instalados.md docs/en/referencia/pacotes-instalados.md` volta vazio; a linha `F-05` do roteiro e a de `wikis/pacotes.md` dizem "desligado"; *(alterado em 2026-09-29: não volta vazio — acha as quatro linhas que dizem "passkeys desligadas"/"passkeys disabled", ver acima; o critério que vale é o do CT-42)*
   - ``grep -n '`password`' README.md README.en.md`` volta vazio — com crase: o `README.en.md` usa
     "password" como palavra comum em dez linhas, e o `grep -n "password"` sem crase nunca voltaria
     vazio;
@@ -352,24 +422,24 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
 - **Path**: `site/package-lock.json` — regenerado pelo `npm install` e commitado **junto** com o
   `site/package.json`: o workflow do site roda `npm ci` (`.github/workflows/pages.yml:npm:55`), que
   reprova lock divergente, e o `[CT-15]` exige o lock
-  (`tests/Kit/SiteDeDocumentacaoTest.php:package-lock:673`).
+  (`tests/Kit/SiteDeDocumentacaoTest.php:'package-lock':673`).
 - **Path**: `site/astro.config.mjs`
   - Importar o export default do `astro-mermaid` (o README do pacote mostra
     `import mermaid from 'astro-mermaid'`; conferir o nome no `node_modules` instalado) e inseri-lo
-    no array `integrations`, **antes** de `starlight(...)` (`site/astro.config.mjs:integrations:51`),
+    no array `integrations`, **antes** de `starlight(...)` (`site/astro.config.mjs:integrations:52`),
     com `autoTheme: true`.
 - **Path**: `site/verifica-acessibilidade.mjs`
-  - No ponto onde a página carrega (`site/verifica-acessibilidade.mjs:waitUntil:77`, hoje
+  - No ponto onde a página carrega (antes da entrega, a linha 77 de `site/verifica-acessibilidade.mjs`, com
     `waitUntil: 'domcontentloaded'`), nas páginas que têm bloco `.mermaid`, esperar
     `svg[role~="graphics-document"]` antes de rodar o axe — **`~=`** (casa uma palavra do atributo):
     o Mermaid grava `role="graphics-document document"`, e `[role="graphics-document"]` (igualdade)
-    não casaria nunca.
+    não casaria nunca. *(alterado em 2026-09-29: a espera não é por seletor de SVG — o conferidor espera todo `pre.mermaid` ganhar `data-processed` (`site/verifica-acessibilidade.mjs:waitForFunction:213`), que o `astro-mermaid` grava ao terminar, e só então confere cada bloco; o `goto` com `domcontentloaded` continua em `site/verifica-acessibilidade.mjs:domcontentloaded:205`)*
   - Na mesma página, **reprovar** (entrar em `violacoes`) quando algum `.mermaid` não virou `<svg>`
     ou virou o diagrama de erro do Mermaid (texto `Syntax error in text`). É esta a validação de
     sintaxe dos blocos: a guarda Pest do passo 14 lê texto e não roda o Mermaid, e o GitHub não
-    reprova nada — sem este item, um bloco quebrado publica em silêncio.
+    reprova nada — sem este item, um bloco quebrado publica em silêncio. *(alterado em 2026-09-29: o `astro-mermaid` 2.1.0 não desenha o SVG de erro do Mermaid — no `catch` ele troca o bloco por um `<div>` com `<strong>Error rendering diagram:</strong>`; a reprovação é por essa estrutura (`site/verifica-acessibilidade.mjs:temElementoDeErro:231`), nunca por regex no texto (CR-9 da rodada 1). E o conferidor ganhou os CT-B01 e CT-B02 do `05`: contagem EXATA de SVG por página contra os blocos da fonte, nos dois temas, console sem erro, piso de 10 páginas com diagrama por idioma, e a troca de tema com a página aberta)*
   - Acrescentar o caminho da página nova (`/pt/referencia/arquitetura-em-diagramas/`) à lista
-    `AMOSTRA_CLARA` (`site/verifica-acessibilidade.mjs:AMOSTRA_CLARA:63`).
+    `AMOSTRA_CLARA` (`site/verifica-acessibilidade.mjs:AMOSTRA_CLARA:89`). *(alterado em 2026-09-29: e a página en também, `/en/referencia/arquitetura-em-diagramas/`)*
 - **Logs**: n/a — mudança de configuração de build, sem lógica de runtime.
 - **Verificação**:
   - `cd site && npm install && npm run build` — build verde; `git status --porcelain site/` mostra
@@ -379,6 +449,10 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
     ≥ 4 (DG-01, DG-02, DG-03, DG-13); o `<svg>` **não** está no `dist/`, e procurá-lo ali
     (`grep graphics-document`) reprovaria sempre.
   - `node site/verifica-acessibilidade.mjs` verde.
+  - *(alterado em 2026-09-29: o CT-B01 achou o contraste do rótulo de aresta no tema escuro, 4,43:1,
+    corrigido no passo 22 em `site/src/styles/kit.css` — RQ-33 —, e o `pages.yml` passou a rodar o
+    mesmo conferidor com o nome "Conferir diagramas e acessibilidade" antes do upload do artefato; o
+    CI de pull request ganhou um job próprio no passo 23)*
 
 ### 3. README (pt/en): DG-01 + link para a página de diagramas (RQ-11, RQ-20, RQ-21)
 
@@ -425,9 +499,15 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   (tracejado) a `ia_externa`; `painel_admin`/pilha de auth ligam (tracejado) a `oauth`; `configuracoes`
   liga (tracejado) a `email_externo`; `painel_admin` liga (tracejado) a `packagist` (Release
   Notifier).
+  *(alterado em 2026-09-29: a rodada 1 da revisão do diff (RD-05) mostrou quatro arestas que o código
+  não tem, e o bloco publicado as corrigiu — `reverb --> camada_paineis` (o Reverb serve os três
+  painéis, não só o `/admin`), `painel_infra -.-> packagist` (o Release Notifier é plugin do `/infra`),
+  `camada_paineis -.-> oauth` (o login social entra por um hook global, não pelo `/admin`) e
+  `acesso_por_papel --> agentes_ia` sem o "só a partir do `painel_app`" (o catálogo de agentes é
+  administrado no `/admin`). O CT-10 do `04` recusa cada uma das quatro, nas quatro cópias do bloco)*
 
   **Fato do código**: ids `app`/`admin`/`infra` de `Filament::getPanels()`
-  (`app/Providers/Filament/AppPanelProvider.php:id:75`,
+  (`app/Providers/Filament/AppPanelProvider.php:id:76`,
   `app/Providers/Filament/AdminPanelProvider.php:id:67`,
   `app/Providers/Filament/InfraPanelProvider.php:id:88`).
 
@@ -441,9 +521,14 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
 - Logo abaixo do diagrama, o link: *"Veja todos os diagramas da arquitetura →
   [gsferro.github.io/filament-starter-kit-easy/pt/referencia/arquitetura-em-diagramas/](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/arquitetura-em-diagramas/)"*
   (e o equivalente `/en/` no README.en.md).
+  *(alterado em 2026-09-29: o link aponta para `…/arquitetura-em-diagramas.html`, o stub de redirect
+  que o `converter.mjs` gera, e não para o diretório)*
 - **Logs**: n/a.
 - **Verificação**: `wc -l README.md README.en.md` continua ≤ 756/767 (hoje 445/446 — folga de
   ~310; anotar o acréscimo real do bloco); `[CT-13]`/`[CT-14]` verdes.
+  *(alterado em 2026-09-29: medido — 490/491 linhas, +45 líquidas no `README.md` (`git diff --stat
+  origin/main...HEAD -- README.md`: 52 inserções, 7 remoções): o bloco de 42 linhas com as cercas, o
+  link e as linhas em branco; as correções de texto trocam linhas sem somar)*
 
 ### 4. Página nova de diagramas: `docs/{pt,en}/referencia/arquitetura-em-diagramas.md` (RQ-05, RQ-12, RQ-21, RQ-23, RQ-30)
 
@@ -568,6 +653,17 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   chave esperada; para as arestas marcadas lógicas, a ausência de FK é esperada (não reprova);
   todas as tabelas citadas ⊆ `Schema::getTableListing()`.
 
+  *(alterado em 2026-09-29: a rodada 1 da revisão do diff achou três destes diagramas afirmando o que
+  o código não faz, e os blocos publicados foram corrigidos (`a48c9b2`) — **DG-02**: o `admin` não liga
+  a "Personificar usuário", porque `User::canImpersonate` só aceita o `master_global` (RD-04);
+  **DG-03**: a organização inativa barra **antes** do `master_global`, e o ramo de tenant tem dois nós,
+  `checa_tenant` (organização inativa?) e `checa_vinculo` (`master_global` ou vínculo?), o que o fato da
+  guarda confere pelo ID e pelo rótulo (RD-12, RD4-03); **DG-13**: `convidado_por_id` é nulo (ponta
+  opcional), `ai_runs` e `agent_conversations` não têm FK de usuário, e o bloco `convites` ganhou os
+  atributos com as colunas reais, que o CT-28 confere contra o schema (RD-06, RD2-13). As guardas de
+  cada um estão no `04`: CT-11, CT-73, CT-83 (DG-02); CT-06, CT-13, CT-71 (DG-03); CT-27, CT-28, CT-63,
+  CT-94 (DG-13))*
+
 - **Comando que regenera sidebar/stubs/redirects**: `node converter.mjs` (dentro de `site/`, depois
   de escrever as duas páginas `.md`) — conferir com
   `git diff --stat site/sidebar.json site/public/ site/redirects.json` mostrando só adições.
@@ -620,7 +716,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   do diagrama. Sem tenancy, a subsequência é `Authenticate` → `AuthenticateSession` →
   `MustTwoFactor` → `Locker` → `ExigirEmailVerificado`; os dois nós opcionais
   (`IdentifyTenant` → `DefinirTenantDePermissoes`) só aparecem com o painel `app` montado com
-  tenancy, no boot (`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:593`) — restrição
+  tenancy, no boot (`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:595`) — restrição
   de bootstrap do passo 14.
 
   **DG-10 — Sessão autenticada (pertinente, RQ-25)**
@@ -640,7 +736,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   **Fato do código**: `config('lockscreen.idle_timeout')` = 1800
   (`config/lockscreen.php:'idle_timeout':16`); `enableRateLimit(limit: 5, decayMinutes: 5,
   forceLogout: true)` nos três painéis (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:259`,
-  `app/Providers/Filament/AppPanelProvider.php:enableRateLimit:372`,
+  `app/Providers/Filament/AppPanelProvider.php:enableRateLimit:373`,
   `app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:282`);
   `HasRateLimit::isForceLogout()`/`getRateLimitLimit()`
   (`vendor/marjose123/filament-lockscreen/src/Concerns/HasRateLimit.php:isForceLogout:48`,
@@ -650,6 +746,14 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   cada um dos três painéis (`Filament::getPanel($id)->getPlugin(...)`) devolve
   `getRateLimitLimit() === 5` e `isForceLogout() === true` — os dois são públicos no trait, sem
   Reflection.
+
+  *(alterado em 2026-09-29: **esta guarda do DG-10 não foi implementada**. As guardas vieram do `04`,
+  que é o contrato confirmado pelo mantenedor ("Os 104 cenários"), e ele trata os três extras (DG-10,
+  DG-19, DG-20) pelas regras genéricas R1–R4, R21, R40 e por uma relação declarada em `fatosPorDg`,
+  com a lacuna L-01. Os números do bloco — "ociosidade 1800s" e "5 tentativas erradas" — não têm quem
+  os confira: `grep -rn "1800\|idle_timeout" tests/Kit/DiagramasDaArquiteturaTest.php
+  tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php tests/Pest.php` volta vazio. Achado do step 10,
+  registrado no `03` para o quality gate: RQ-26 pede guarda que falhe quando o código deixar de bater)*
 
 - **Logs**: n/a.
 - **Verificação**: teste do passo 14, casos `[DG-04]` e `[DG-10]` (o `[DG-03]` é provado no passo 4, onde o bloco mora).
@@ -727,15 +831,18 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   **Guarda**: `ProvedorSocial::cases()` tem exatamente os 4 provedores do diagrama; rotas
   `auth.social.redirect`/`auth.social.callback`/`auth.social.confirmar` existem. Comportamento por
   ramo (vínculo existente / conta por e-mail / registro aberto / sem e-mail) já provado por
-  `// comportamento: tests/Kit/LoginSocialGoogleTest.php:280,:360,:393,:527` e
-  `tests/Kit/LoginSocialProvedoresTest.php:1014` (ramo de convite).
+  `// comportamento: tests/Kit/LoginSocialGoogleTest.php:it:280, :it:360, :it:393, :it:527` e
+  `tests/Kit/LoginSocialProvedoresTest.php:it:1014` (ramo de convite).
 
 - **Logs**: n/a.
 - **Verificação**: teste do passo 14, caso `[DG-06]`.
 
-### 8 e 9. `docs/{pt,en}/autenticacao/convites.md`: DG-07, DG-09 (RQ-22)
+### 8. `docs/{pt,en}/autenticacao/convites.md`: DG-07 (RQ-22)
 
 > Skills: `pest-testing`
+
+*(alterado em 2026-09-29: o título "8 e 9" virou dois passos, 8 (DG-07) e 9 (DG-09), na mesma página —
+o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os dois números)*
 
 - **Path**: `docs/pt/autenticacao/convites.md` (67 linhas hoje)
 
@@ -756,12 +863,21 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   **Fato do código**: `Convite::enviar()` (`:143`), `::lembrar()` (`:207`), `::valido()` (`:464`),
   `::aceitar()` (`:606`), `::aceitarComoUsuarioExistente()` (`:674`), `::recusar()` (`:739`);
   evento agendado `Schedule::command('kit:convites-lembrar')->dailyAt('08:00')`
-  (`routes/console.php:'kit:convites-lembrar':39`); `ConviteDeAcesso implements ShouldQueue`
+  (`routes/console.php:'kit:convites-lembrar':40`); `ConviteDeAcesso implements ShouldQueue`
   (`app/Notifications/ConviteDeAcesso.php:ShouldQueue:27`).
 
   **Guarda**: `method_exists(Convite::class, 'enviar'|'lembrar'|'aceitar'|
   'aceitarComoUsuarioExistente'|'recusar')`; `app(Schedule::class)->events()` contém um evento
   com `command` igual a `kit:convites-lembrar` e expressão cron `0 8 * * *`.
+
+- **Logs**: n/a.
+- **Verificação**: teste do passo 14, caso `[DG-07]`.
+
+### 9. `docs/{pt,en}/autenticacao/convites.md`: DG-09 (RQ-22)
+
+> Skills: `pest-testing`
+
+- **Path**: a mesma página do passo 8.
 
   **DG-09 — Estados do convite**
 
@@ -779,7 +895,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   Expirado (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:visible:89`).
 
   **Guarda**: os 4 valores possíveis de `situacao()` batem com os 4 estados do diagrama (comportamento
-  já provado por `// comportamento: tests/Kit/ConviteUsuarioExistenteTest.php:125` [CT-14]); a
+  já provado por `// comportamento: tests/Kit/ConviteUsuarioExistenteTest.php:it:125` [CT-14]); a
   aresta de reenvio é nova — a ação `reenviar` da tabela de convites do `/admin` é visível nos
   convites Pendente e Expirado e oculta nos Aceito e Recusado
   (`assertTableActionVisible`/`assertTableActionHidden` sobre a página de listagem).
@@ -813,7 +929,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
 
   **Guarda**: `motivoDeIndisponibilidade()` só devolve `conta_excluida`, `conta_inativa` ou `null`.
   Comportamento por estado (`canAccessPanel()` só verdadeiro em `ativo`) já provado por
-  `// comportamento: tests/Kit/SituacaoDaContaTest.php:75-99` [CT-01..03].
+  `// comportamento: tests/Kit/SituacaoDaContaTest.php:it:75-99` [CT-01..03].
 
 - **Logs**: n/a.
 - **Verificação**: teste do passo 14, caso `[DG-08]`.
@@ -849,6 +965,8 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   enviados) → `remember` (grava título + mensagem do usuário ORIGINAL + resposta JÁ REDIGIDA) → o
   SDK dispara `AgentStreamed` → `ledger` grava em `ai_runs`. Nota honesta: normalmente 2 linhas no
   ledger por turno (guarda-prompt + assistente); 1 quando o classificador não responde (fail-open).
+  *(alterado em 2026-09-29: no bloco, a nota não pode ter `;` — no Mermaid ele encerra o statement, e
+  foi exatamente isso que deixou o DG-11 sem renderizar até o CT-B01 pegar, passo 22)*
 
   **Fato do código**: ordem via `AgenteBase::middleware()`
   (`app/Ai/Agents/AgenteBase.php:middleware:66`) + `Assistente::middleware()`
@@ -856,7 +974,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   `GuardrailRegistry::MAPA` (`app/Ai/Guardrails/GuardrailRegistry.php:MAPA:23-27`); listener de
   `AgentStreamed` é `RegistrarAiRun` (`app/Ai/Listeners/RegistrarAiRun.php:handle:30`); o render
   hook do widget só existe no painel `app`
-  (`app/Providers/Filament/AppPanelProvider.php:BODY_END:154`); limite de 2000 caracteres
+  (`app/Providers/Filament/AppPanelProvider.php:BODY_END:155`); limite de 2000 caracteres
   (`app/Livewire/AssistenteChatWidget.php:Validate:43`, `:pendente:96`).
 
   **Guarda**: depois de `$this->seed(AssistenteSeeder::class)` — o `middleware()` lê os guardrails
@@ -893,9 +1011,13 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   `tela_comandos`/Central de comandos/Command Center, `tela_pulse`/Pulse, `tela_ia`/Execuções de
   IA/AI runs — cada um ligando à tabela ou fonte que mostra (`health_check_result_history_items`,
   `backup_runs`, `queue_monitors`, `storage/logs`, `filament_exceptions_table`, `mail_logs`,
-  `recycle_bin_items`, `audits`, `authentication_log`, `command_center_runs`, `pulse_*`, `ai_runs`)
+  `recycle_bin_items`, `audits`, `authentication_log`, `command_center_runs`, `pulse_*`, `ai_runs`
+  — *(alterado em 2026-09-29: o bloco publicado também desenha a tela de cadastro de comandos, que
+  grava `command_center_commands`, e a de pacotes, que grava `composer_release_package_snapshots` no
+  sync disparado no login; o backup aparece como manual, porque o agendamento está comentado — rodada
+  1 da revisão do diff e `a48c9b2`)*)
   e, dela, a **quem grava**: o `health:check` agendado a cada 15 min
-  (`routes/console.php:'health:check':28`); os eventos do `spatie/laravel-backup` (o `backup:run`
+  (`routes/console.php:'health:check':29`); os eventos do `spatie/laravel-backup` (o `backup:run`
   **não** está agendado — só roda à mão, pelo Command Center); o monitor de filas; o `reportable`
   do handler de exceções; o evento `MessageSending` (e-mail); a trait `Recyclable` de `User` e
   `Projeto` (lixeira); os models auditáveis e o listener `AuditarConfiguracoesDoKit` (auditoria); os
@@ -957,7 +1079,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
 
   **Guarda**: cada chave citada no diagrama existe em `mapaDeConfiguracao()`. O comportamento inerte
   sem a tabela `settings` já é provado por
-  `// comportamento: tests/Kit/ConfiguracoesDoKitTest.php:135`.
+  `// comportamento: tests/Kit/ConfiguracoesDoKitTest.php:it:135`.
 
 - **Logs**: n/a.
 - **Verificação**: teste do passo 14, caso `[DG-14]`.
@@ -1001,7 +1123,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   `tests/Kit/MysqlNoDockerTest.php` (os dois precisam do recorte `blocoDoServicoNoCompose` do
   `docker-compose.yml`, que o arquivo já tem — passos 15 e 18) — cada `it()` com
   `->skip(fn () => ! naArvoreDoKit(), …)` no próprio caso (padrão
-  `tests/Kit/AcoesPinadasPorShaTest.php:72`), já que esses dois arquivos não têm sentinela de
+  `tests/Kit/AcoesPinadasPorShaTest.php:skip:72`), já que esses dois arquivos não têm sentinela de
   arquivo inteiro. Nenhum helper muda de arquivo por causa disto.
 - **Restrição de bootstrap (modo tenancy)**: este arquivo roda sem `permission.teams` e com o
   painel `app` montado sem tenancy (o Pest não aceita dois `TestCase` na mesma pasta). Quatro
@@ -1015,6 +1137,24 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   `painel = app` (DG-02); o ramo de contexto e o `canAccessTenant` (DG-03); `IdentifyTenant` →
   `DefinirTenantDePermissoes` na pilha da rota `/app/{tenant}` (DG-04); e só `hasTenancy()`
   (DG-20 — o middleware de tenant já é conferido pelo DG-04 acima, na mesma pilha resolvida).
+- *(alterado em 2026-09-29: o que o código fez diferente deste passo, e por quê)*
+  - **Os testes levam os IDs do `04`, não `[DG-xx]`.** Os executores escreveram os cenários do `04`
+    (`[CT-01]`..`[CT-104]`), e cada `DG` é achado pelo marcador `%% DG-xx` dentro do cenário; o mapa
+    DG → página mora no próprio arquivo de teste. Não existe `it('[DG-xx]')`.
+  - **DG-17, DG-18 e DG-19 moram aqui**, em `tests/Kit/DiagramasDaArquiteturaTest.php` (DG-17: CT-31,
+    CT-32, CT-72, CT-93; DG-18: CT-33, CT-75, CT-84; DG-19: CT-43, CT-76) — nenhum `it()` novo em
+    `tests/Kit/DuasRotasDeEntregaTest.php` nem em `tests/Kit/MysqlNoDockerTest.php`.
+  - **O extrator e os helpers cruzados subiram para `tests/Pest.php`**, porque o arquivo de Tenancy
+    também lê bloco (`.ai/rules/testes.md`): `tests/Pest.php:blocosMermaidDe:1088`,
+    `tests/Pest.php:blocosMermaidDaArvore:1203`, `tests/Pest.php:blocoDoCatalogoNaArvore:1234`, o
+    extrator de arestas normalizado das rodadas 3 e 4 (passos 22 e 24) e
+    `tests/Pest.php:blocoDoServico:1718`, que saiu do `MysqlNoDockerTest`.
+  - **O irmão com tenancy lê bloco**: o DG-02, o DG-03 e o DG-09 são lidos em
+    `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` por `blocoDoCatalogoNaArvore()`, com a
+    sentinela `naArvoreDoKit()` no arquivo inteiro (RD-02, rodada 1) — sem ela, toda instalação nova
+    nasceria vermelha; `tests/Kit/RedeDeDocumentacaoTest.php` passou a varrer `tests/Tenancy` também.
+  - **As guardas passam a ler o conteúdo** do bloco (RD-03, rodada 1; RQ-35, rodada 3) e a reconhecer
+    toda forma de seta (RQ-34, rodadas 3 e 4).
 - **Logs**: n/a — arquivo de teste.
 - **Verificação**: `vendor/bin/pest tests/Kit/DiagramasDaArquiteturaTest.php --compact` e
   `vendor/bin/pest tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php --compact` verdes;
@@ -1046,16 +1186,16 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   `banner` (mostra a senha só se gerada nesta execução) → `resumoDaCustomizacao`.
 
   **Fato do código**: ordem de `$this->x()` dentro de `KitInstall::handle()`
-  (`app/Console/Commands/KitInstall.php:handle:68-124` — `prepararEnv:72`, `customizar:95`,
-  `gerarAppKey:96`, `prepararBancoSqlite:97`, `conferirConexao:98`, `migrar:101`, `semear:105`,
-  `formatarCodigoGerado:106`, `publicarAssets:109`, `construirFrontend:112`, `banner:121`,
-  `resumoDaCustomizacao:122`); scripts `post-root-package-install`/`post-create-project-cmd`
-  (`composer.json:post-root-package-install:204-208`); ordem de `DatabaseSeeder::run` (`database/seeders/DatabaseSeeder.php:run:16`).
+  (`app/Console/Commands/KitInstall.php:handle:81-148` — `prepararEnv:85`, `customizar:108`,
+  `gerarAppKey:109`, `prepararBancoSqlite:110`, `conferirConexao:111`, `migrar:114`, `semear:119`,
+  `formatarCodigoGerado:120`, `corrigirResumoDaSenha:128`, `publicarAssets:130`, `construirFrontend:133`, `banner:142`,
+  `resumoDaCustomizacao:143` *(alterado em 2026-09-29: linhas depois das correções do instalador; `corrigirResumoDaSenha` é novo, passos 22 e 24)*); scripts `post-root-package-install`/`post-create-project-cmd`
+  (`composer.json:'post-root-package-install':204-208`); ordem de `DatabaseSeeder::run` (`database/seeders/DatabaseSeeder.php:run:16`).
 
   **Guarda**: Reflection sobre `KitInstall::handle()` extrai a sequência de chamadas
   `$this->metodo()` (`ReflectionMethod::getStartLine()`/`getEndLine()`, precedente
-  `tests/Kit/RaizDeUrlRegistradaTest.php:162`, mais `codigoSemComentario()`
-  `tests/Pest.php:1264` e `preg_match_all('~\$this->(\w+)\(~')` — função local, reaproveitada por
+  `tests/Kit/RaizDeUrlRegistradaTest.php:ReflectionMethod:162`, mais `codigoSemComentario()`
+  `tests/Pest.php:codigoSemComentario:1758` e `preg_match_all('~\$this->(\w+)\(~')` — função local, reaproveitada por
   DG-16, DG-20 e `recriarBanco`) e confere que os métodos do diagrama aparecem nela **nesta ordem
   relativa** — subsequência, não igualdade: o `handle()` também chama o que o diagrama condensa ou
   omite (`customizarSemBanco` no ramo `--custom`, que retorna cedo, `desvincularDoSnyk`,
@@ -1085,7 +1225,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
 
   **Guarda**: `it('[DG-18]')` mora em `tests/Kit/MysqlNoDockerTest.php` (passo 14), não no arquivo
   de teste-guarda geral — é lá que o recorte `blocoDoServico`
-  (`tests/Kit/MysqlNoDockerTest.php:blocoDoServico:50`) já existe. Ele sai de **closure em `$this`**
+  (antes da entrega, na linha 50 de `tests/Kit/MysqlNoDockerTest.php`) já existe. *(alterado em 2026-09-29: o `it('[DG-18]')` não foi criado aqui — as guardas do DG-18 são CT-33, CT-75 e CT-84 em `tests/Kit/DiagramasDaArquiteturaTest.php` —, e o recorte, com dois consumidores, subiu para `tests/Pest.php:blocoDoServico:1718`; o `MysqlNoDockerTest` o chama por uma closure de uma linha)* Ele sai de **closure em `$this`**
   (montada no `beforeEach`) para função de topo do próprio arquivo (`blocoDoServicoNoCompose(string
   $compose, string $servico): string`, mesmo corpo, chamada pelos dois casos) — sem subir para
   `tests/Pest.php`, porque os dois usos ficam no mesmo arquivo. Extrai o bloco de cada serviço
@@ -1126,23 +1266,23 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   `branch_update` → `revisar` → `so_relatorio` → `marcar_versao` → `finally` (sempre roda,
   `try/finally`, salvo `--keep-remote`). Rótulo explícito: **"não interativo"**, nunca "sem TTY".
 
-  **Fato do código**: ordem em `KitUpdate::handle()` (`app/Console/Commands/KitUpdate.php:handle:374`);
+  **Fato do código**: ordem em `KitUpdate::handle()` (`app/Console/Commands/KitUpdate.php:handle:375`);
   guarda de interatividade usa `! $this->input->isInteractive()`
-  (`app/Console/Commands/KitUpdate.php:isInteractive:426`).
+  (`app/Console/Commands/KitUpdate.php:isInteractive:427`).
 
   **Guarda**: os nós não têm o nome do método (o diagrama é abstração), então a guarda leva o
   **mapa nó → método** e confere, na sequência de `$this->metodo()` extraída do corpo de
   `KitUpdate::handle()` por Reflection, a subsequência em ordem relativa — não a igualdade: o corpo
   tem retornos antecipados (tags vazias, nada mudou, `--dry-run`, não interativo) e um
-  `try/finally`. O mapa: `pre_voo` → `preVoo` (`:378`), `remote_kit` →
-  `vincularKit` (`:385`), `escolher_tags` → `tagsDoKit`/`escolherDestino`/`resolverOrigem`
-  (`:388`, `:396`, `:397`), `diff_filtrado` → `arquivosAlterados` (`:399`), `resumo` →
-  `mostrarResumo` (`:413`), `branch_update` → `prepararBranch` (`:436`), `revisar` →
-  `revisarEAplicar` (`:440`), `so_relatorio` → `relatarComposerJson` (`:443`), `marcar_versao` →
-  `encerrar` (`:445`, que chama `marcarVersao` em
-  `app/Console/Commands/KitUpdate.php:marcarVersao:1049`), `finally` → `desvincularKit` (`:448`).
+  `try/finally`. O mapa: `pre_voo` → `preVoo` (`:379`), `remote_kit` →
+  `vincularKit` (`:386`), `escolher_tags` → `tagsDoKit`/`escolherDestino`/`resolverOrigem`
+  (`:389`, `:397`, `:398`), `diff_filtrado` → `arquivosAlterados` (`:400`), `resumo` →
+  `mostrarResumo` (`:414`), `branch_update` → `prepararBranch` (`:437`), `revisar` →
+  `revisarEAplicar` (`:441`), `so_relatorio` → `relatarComposerJson` (`:444`), `marcar_versao` →
+  `encerrar` (`:446`, que chama `marcarVersao` em
+  `app/Console/Commands/KitUpdate.php:marcarVersao:1050`), `finally` → `desvincularKit` (`:449`). *(alterado em 2026-09-29: linhas deslocadas em uma pelo comentário que o PR #125 pôs no `KitUpdate` antes da linha 283, trazido pelo rebase sobre a `main`)*
   E: `(new ReflectionClassConstant(KitUpdate::class, 'CAMINHOS_SO_RELATORIO'))->getValue() ===
-  ['composer.json']` (`app/Console/Commands/KitUpdate.php:CAMINHOS_SO_RELATORIO:365`); as opções
+  ['composer.json']` (`app/Console/Commands/KitUpdate.php:CAMINHOS_SO_RELATORIO:366`); as opções
   que o diagrama cita (`--dry-run`, `--all`, `--only-new`, `--keep-remote`) existem em
   `Artisan::all()['kit:update']->getDefinition()` (subconjunto — a signature tem nove).
 
@@ -1168,13 +1308,17 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
 
   **Guarda**: `it('[DG-17]')` mora em `tests/Kit/DuasRotasDeEntregaTest.php` (passo 14), ao lado da
   própria `FORA_DA_ENTREGA_POR_DECISAO` — nada sobe para `tests/Pest.php`. Reaproveita o que o
-  arquivo já tem: `caminhosDoKit()` (`tests/Pest.php:1242`) para `! in_array('README.md',
-  CAMINHOS_DO_KIT)`, e o laço de `caminhosDeTopoQueViajam()` (`tests/Kit/DuasRotasDeEntregaTest.php:181`)
+  arquivo já tem: `caminhosDoKit()` (`tests/Pest.php:caminhosDoKit:1699`) para `! in_array('README.md',
+  CAMINHOS_DO_KIT)`, e o laço de `caminhosDeTopoQueViajam()` (`tests/Kit/DuasRotasDeEntregaTest.php:caminhosDeTopoQueViajam:181`)
   para os alvos `export-ignore`, sem o `explode('/')[0]` (aqui o alvo completo é comparado, não só o
   diretório de topo) — em vez de escrever um segundo parser de `.gitattributes`. Os alvos
   `export-ignore` batem exatamente com os nós de "fora do create-project"; as chaves de
   `FORA_DA_ENTREGA_POR_DECISAO` batem exatamente com os nós de "fora do kit:update", menos o
   `README.md`.
+  *(alterado em 2026-09-29: a guarda do DG-17 mora em `tests/Kit/DiagramasDaArquiteturaTest.php` —
+  CT-31, CT-72 e CT-93 do `04` —, e não em `tests/Kit/DuasRotasDeEntregaTest.php`, que não mudou.
+  Dívida da rodada 4 (RD4-07): o fato do DG-17 em `fatosPorDg` só olha os nós de destino, e acrescentar
+  `docs/` ao rótulo de `caminhos_do_kit` passa em pt e en)*
 
 - **Logs**: n/a.
 - **Verificação**: teste do passo 14, caso `[DG-16]`;
@@ -1216,7 +1360,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   em `:187` e `conferirSchema()` em `:189`, definido em `:198`) → `semearDemo` só com `--demo`
   (`app/Console/Commands/KitTenancy.php:semearDemo:75`: `DemoTenancySeeder` + `KIT_DEMO=true`,
   `:227,234`); tenant middleware do painel `app` contém `DefinirTenantDePermissoes`
-  (`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:593`); `hasTenancy()` reflete
+  (`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:595`); `hasTenancy()` reflete
   `config('kit.tenancy.enabled')` (`config/kit.php:'enabled':351`).
 
   **Guarda**: subsequência em ordem relativa de `preVoo` → `confirmarDestruicao` →
@@ -1227,6 +1371,16 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   `Filament::getPanel('app')->hasTenancy() === config('kit.tenancy.enabled')` (vale nos dois modos
   — é só isto que o DG-20 confere sobre tenant; o middleware de tenant já é conferido pelo DG-04,
   na mesma pilha resolvida).
+
+  *(alterado em 2026-09-29: **o flowchart do `kit:tenancy` não foi desenhado**. O DG-20 publicado é um
+  bloco só, o `sequenceDiagram` da requisição em `/app/{tenant}`; a ordem de `KitTenancy::handle()`
+  ficou em prosa, logo acima do bloco, com as citações de cada método
+  (`docs/pt/recursos/multi-tenancy.md`, seção "Por dentro do `kit:tenancy`…", e o par en), que o
+  `tests/Kit/CitacoesDeCodigoTest.php` confere. Por isso a subsequência de `KitTenancy::handle()` e de
+  `recriarBanco()` não foi implementada — `grep -n "KitTenancy\|recriarBanco" tests/Kit/DiagramasDaArquiteturaTest.php`
+  volta vazio. O que o DG-20 tem de guarda: `hasTenancy()` no irmão com tenancy
+  (`tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:hasTenancy:247`), as regras genéricas do `04` e a
+  relação declarada em `fatosPorDg` (lacuna L-01). Achado do step 10, registrado no `03`)*
 
 - **Logs**: n/a.
 - **Verificação**: teste do passo 14, caso `[DG-20]`.
@@ -1255,7 +1409,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   `--queue` escuta só `default` (`vendor/laravel/framework/src/Illuminate/Queue/Console/ListenCommand.php:getQueue:85`,
   `config/queue.php:'default':42`); comandos do Compose (`docker-compose.yml:queue:274`,
   `scheduler:304`, `reverb:337`, `pulse:367`); eventos do agendador
-  (`routes/console.php:'health:check':28` e `:'kit:convites-lembrar':39`, e as podas de retenção).
+  (`routes/console.php:'health:check':29` e `:'kit:convites-lembrar':40`, e as podas de retenção).
 
   **Guarda**: este diagrama É a guarda viva de D1/D2 (ADR-08). Três metades, as três no catálogo:
   (1) `array_column(DevCommands::commands(), 'command')` **não** contém `schedule:work` — com
@@ -1263,16 +1417,26 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   `php artisan reverb:start` e `npm run dev`. O `ArtisanServiceProvider` é deferível; sem o
   controle, a lista vazia passa;
   (2) os eventos de `app(Schedule::class)->events()` contêm `health:check` a cada 15 min e
-  `kit:convites-lembrar` às 08:00 (`routes/console.php:'health:check':28`,
-  `routes/console.php:'kit:convites-lembrar':39`), os horários que o diagrama mostra; (3) o `command:`
+  `kit:convites-lembrar` às 08:00 (`routes/console.php:'health:check':29`,
+  `routes/console.php:'kit:convites-lembrar':40`), os horários que o diagrama mostra; (3) o `command:`
   dos serviços do Compose (pelo mesmo recorte de `blocoDoServicoNoCompose` do DG-18): `queue` inclui
   `--queue=ai,ai-post,default` (superconjunto do que o `composer dev` escuta), `scheduler` roda
   `schedule:work`, `reverb` roda `reverb:start`, `pulse` roda `pulse:check`
   (`docker-compose.yml:queue:274`, `:schedule:304`, `:reverb:337`, `:pulse:367`).
 
+  *(alterado em 2026-09-29: só a metade (1) foi implementada, e fora do `MysqlNoDockerTest` — o
+  CT-76 de `tests/Kit/DiagramasDaArquiteturaTest.php` exige que todo bloco com "composer dev" nomeie
+  `serve`, `queue:listen`, `vite` e `reverb` e não nomeie `schedule:work`, e o CT-43 faz o mesmo na
+  prosa. As metades (2) e (3) — os horários do agendador e o `command:` de cada serviço do Compose —
+  não têm guarda: `grep -n "Schedule::class\|->events()\|pulse:check\|ai,ai-post" tests/Kit/DiagramasDaArquiteturaTest.php`
+  não acha nada delas; o `04` trata o DG-19 como extra, pela lacuna L-01. O bloco publicado também não
+  traz a nota "`schedule:work` NÃO roda dentro do `composer dev`": diz, no subgrafo do Compose, que o
+  container `scheduler` é quem roda o agendador. Achado do step 10, registrado no `03`)*
+
 - **Logs**: n/a.
 - **Verificação**: `vendor/bin/pest tests/Kit/MysqlNoDockerTest.php --compact`, caso `[DG-19]`
-  (mora ali — passo 14).
+  (mora ali — passo 14). *(alterado em 2026-09-29: não há caso `[DG-19]` ali; a verificação que vale é
+  `vendor/bin/pest tests/Kit/DiagramasDaArquiteturaTest.php --compact`, CT-43 e CT-76)*
 
 ### 19. `KitArte.php`: generalizar `QUADROS_DO_GIF` → `CLIPES` (RQ-27)
 
@@ -1292,17 +1456,33 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
 - `IMAGENS` não muda nesta feature (os dois órfãos existentes ficam como estão — dívida declarada
   em Riscos). Os quadros de `busca-spotlight`, `login-unificado` e `instalacao` (passo 21) também
   **não** entram em `IMAGENS`: quadro de GIF não vira PNG em `art/` (docblock de
-  `app/Console/Commands/KitArte.php:QUADROS_DO_GIF:41`: "publicá-los dobraria o peso do repositório
+  `QUADROS_DO_GIF`, na linha 41 de `app/Console/Commands/KitArte.php` antes da entrega; hoje o de `app/Console/Commands/KitArte.php:CLIPES:70`: "publicá-los dobraria o peso do repositório
   sem uso no README"). Os quadros do `densidade` já estão em `IMAGENS` hoje e continuam.
 - `publicar()` confere `IMAGENS` **primeiro** (publica o que estiver lá — os quadros do `densidade`
   saem por aqui); só então generaliza o `continue` de
-  `app/Console/Commands/KitArte.php:QUADROS_DO_GIF:134` para pular o que sobrar e for quadro de um
+  `QUADROS_DO_GIF` (linha 134 antes da entrega; hoje `app/Console/Commands/KitArte.php:$quadrosDeClipe:206`) para pular o que sobrar e for quadro de um
   clipe (`busca-spotlight`, `login-unificado`, `instalacao`).
 - **Logs**: n/a — este comando não usa `Log::`, usa `$this->components` (console), padrão mantido.
 - **Verificação**: `php artisan kit:arte --sem-gif` não cria `art/busca-spotlight-*.png` nem
   `art/login-unificado-*.png`; reporta os dois órfãos existentes como ignorados (dívida declarada,
   inalterado); com GIF, `art/fluxo-import-export.gif`, `art/densidade.gif`,
   `art/busca-spotlight.gif`, `art/login-unificado.gif` existem.
+- *(alterado em 2026-09-29: o que o código fez diferente deste passo)*
+  - **`QUADROS_DO_GIF` ficou**, como a lista do clipe `fluxo-import-export`
+    (`app/Console/Commands/KitArte.php:QUADROS_DO_GIF:45`), e o `CLIPES` a reaproveita — os testes a leem
+    por Reflection pelo nome. O `CLIPES` tem cinco chaves, com o `install` do passo 21.
+  - **A montagem mudou de forma** nas rodadas da revisão do diff: um GIF por clipe, com o diretório de
+    montagem limpo antes da cópia e no `finally` (rodada 1, RD-01/CR-1, e `3c79ff0`); o ffmpeg escrevia
+    no próprio GIF publicado com `-y` e truncava o arquivo numa falha — agora escreve num temporário
+    ao lado do publicado, e a publicação é um `rename()` no mesmo diretório
+    (`app/Console/Commands/KitArte.php:publicarGif:430`), com `-f gif` porque o temporário não termina
+    em `.gif` (passos 24 e 25); `Throwable` num clipe não aborta os outros (passo 22); o ffmpeg é
+    procurado diretório a diretório do `PATH`, com o `PATHEXT` no Windows, sem mutar o ambiente do
+    processo (`app/Console/Commands/KitArte.php:resolverFfmpeg:460`).
+  - **Medido** (`ls -l art/*.gif`, 2026-09-29): `busca-spotlight.gif` 60.692 bytes,
+    `densidade.gif` 132.112, `fluxo-import-export.gif` 108.568 (era 105.452), `login-unificado.gif`
+    159.179 e `install.gif` 115.928 (era 347.561); `art/` inteiro: 9.343.775 bytes (era 9.209.455 na
+    `origin/main`, `git ls-tree -r -l`), sem teto de peso — P-10 confirmada pelo mantenedor.
 
 ### 20. Capturas novas para os clipes `busca-spotlight` e `login-unificado` (RQ-27)
 
@@ -1314,8 +1494,8 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   arranja painel"):
   - `busca-spotlight`: visita uma tela do `/app`, screenshot fechada
     (`busca-spotlight-1-fechada`), abre o Spotlight (mesmo seletor de
-    `tests/Browser/RoteiroDoKitTest.php:F-45:100-154`), screenshot aberta (`busca-spotlight-2-aberta`).
-  - `login-unificado`: com `ligarLoginUnificado()` (`tests/Pest.php:507`), visita `/login`,
+    `tests/Browser/RoteiroDoKitTest.php:'F-45':100-154`), screenshot aberta (`busca-spotlight-2-aberta`).
+  - `login-unificado`: com `ligarLoginUnificado()` (`tests/Pest.php:ligarLoginUnificado:507`), visita `/login`,
     screenshot do formulário único (`login-unificado-1-formulario`); autentica um usuário com 2+ painéis
     acessíveis, chega em `/login/painel`, screenshot dos cartões (`login-unificado-2-escolha`) —
     reaproveita o arranjo de `tests/Browser/LoginUnificadoTest.php` (CT-B01 — o arquivo mora em `tests/Browser/`, não em `tests/Tenancy/`) sem duplicar as
@@ -1323,6 +1503,9 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
 - **Logs**: n/a.
 - **Verificação**: `KIT_ART=1 php artisan test tests/BrowserTenancy/CapturaDeArteTest.php` produz
   os 4 PNGs novos em `tests/Browser/Screenshots/`.
+- *(alterado em 2026-09-29: a busca é capturada em `/app/{organização}/projetos`, com um projeto criado
+  no cenário e o termo "Contrato" digitado, e o quadro aberto só sai depois de o resultado aparecer
+  dentro do overlay (`assertSeeIn`); os dois cenários levam o ID `[CT-B03]` do `05`)*
 
 ### 21. Correção do `art/install.gif` (RQ-28)
 
@@ -1361,6 +1544,114 @@ dependência nova").
   formas em que a senha antiga aparecia) — o texto que vira imagem é o da fixture, então conferir o
   texto confere o GIF; depois, conferir visualmente o `art/install.gif`; `[CT-11]` continua verde
   (arquivo existe).
+- *(alterado em 2026-09-29: a transcrição é a saída real do `kit:install` de um `create-project` da
+  v0.41.1, com a senha gerada mascarada por 24 `X` (o mesmo comprimento da senha real, nunca o valor); saíram **quatro** quadros (`instalacao-1-inicio`,
+  `instalacao-2-senha`, `instalacao-3-progresso`, `instalacao-4-resumo`), fotografados com viewport
+  1400x2100 — no corte padrão de 875 px o resumo, onde fica a senha, nunca aparecia. A view é
+  renderizada com `view()->file()` e servida por uma rota registrada só dentro do teste
+  (`tests/BrowserTenancy/CapturaDeArteTest.php:Route:814`), não pelo navegador abrindo um arquivo)*
+
+### 22. Terceira rodada da revisão do diff: diagramas, site, guardas e instalador (RQ-28, RQ-32 a RQ-35 — Adendo 3)
+
+*(alterado em 2026-09-29: passo novo, da reconciliação — registra o que a rodada 3 da revisão do diff
+mudou no código, autorizada pelo Adendo 3; as rodadas 1 e 2 estão marcadas nos passos que alteraram,
+1, 2, 14, 19 e 21)*
+
+> Skills: `pest-testing`, `laravel-best-practices`
+
+- **Diagramas** (`f39dd18`): o `;` dentro da nota do DG-11 encerrava o statement e o bloco virava
+  erro no site (CT-B01). Nenhum outro `;` ou `#` em nota ou mensagem nos 42 blocos (RQ-32).
+- **Site** (`b2991c9`): no tema escuro do Mermaid o rótulo de aresta saía 4,43:1; o fundo dele passa a
+  `#404040` (6,46:1) em `site/src/styles/kit.css`, só com `data-theme='dark'` e só dentro de
+  `pre.mermaid` — nenhuma cor no bloco, e o tema claro intocado (RQ-33; decisão no ADR-02).
+- **Guardas** (`8a3974e`): o extrator normalizado mora em `tests/Pest.php`
+  (`tests/Pest.php:existeArestaDeFluxo:1301`, `tests/Pest.php:arestasDeFluxo:1358`,
+  `tests/Pest.php:relacaoDeEr:1413`, `tests/Pest.php:mensagensDeSequencia:1442`,
+  `tests/Pest.php:transicoesDeEstado:1463`), usado em pt e en (RQ-34); o CT-10 lê as quatro cópias
+  do DG-01, o CT-63/CT-94 rodam nos dois idiomas com os nomes reais das entidades, o DG-03 exige a
+  ordem "inativa antes de master_global" como caminho no grafo, o CT-28 confere que todo atributo
+  desenhado no DG-13 existe no schema, e os 21 CTs que só afirmavam o bloco aplicam o fato do código
+  ao bloco real (RQ-35).
+- **Instalador** (`db345fb`): `SubstituicaoEmArquivo::definirNoEnv` grava a barra invertida escapada
+  (callback no lugar do `preg_replace`), e a leitura tolera o arquivo; senha digitada não utilizável
+  não aparece como "a que você digitou"; a leitura da senha do `.env` de destino mora em
+  `SenhaDoAdministrador` (`app/Support/SenhaDoAdministrador.php:doArquivo:92`); com `--no-seed` ou banco
+  inacessível, o `KitInstall` reescreve a linha do resumo e o banner sem prometer senha (RQ-28).
+- **`kit:arte`** (`12af492`): `montarClipe()` captura `Throwable` por clipe, avisa nomeando o clipe e
+  segue; o diretório de montagem é limpo no `finally`; o aviso distingue "o ffmpeg falhou" de "não
+  consegui publicar".
+- **Logs**: n/a — `$this->components` no console, como o resto do `kit:arte` e do `kit:install`.
+- **Verificação**: cada correção provada vermelha antes (`03`, `## Revisão do Diff (step 9)`,
+  rodada 3); CT-B01 e CT-B02 verdes no conferidor do site.
+
+### 23. Job `site` no CI de pull request (RQ-36 — Adendo 3)
+
+*(alterado em 2026-09-29: passo novo, da reconciliação)*
+
+> Skills: nenhuma
+
+- **Path**: `.github/workflows/ci.yml`, job `site` (`a86a6eb`): espelha os passos do `pages.yml`, com
+  as mesmas actions pinadas por SHA e sem publicar — `npm ci`, build, `verifica-links.mjs` e
+  `verifica-acessibilidade.mjs` com o Chromium do Playwright. Roda só em `pull_request` e só quando o
+  `git diff` entre as pontas do PR toca `docs/` ou `site/`.
+- Na rodada 4 (`5ff5227`, RD3-11): `permissions: contents: read` no nível do job — ele roda `npm ci` e
+  `playwright install --with-deps` com o token do PR e nunca publica.
+- **Logs**: n/a.
+- **Verificação**: `tests/Kit/AcoesPinadasPorShaTest.php` verde (as actions novas são pinadas). ~~**Não há
+  CT** que confira o job — lacuna declarada no `04` (RQ sem regra própria) e dívida no `03`.~~
+  *(alterado em 2026-09-29: o `04` ganhou a R47 e o CT-105 no step 10 — o job roda em `pull_request`,
+  cada passo depende da condição sobre os caminhos do PR, a condição aceita `docs/` e `site/` e recusa o
+  resto, e os quatro passos rodam com os conferidores depois do build, sem `continue-on-error`. O teste
+  do CT-105 ainda não existe: dívida DV-09 no `03`)*
+
+### 24. Quarta rodada da revisão do diff (RQ-34, RQ-35, RQ-28 — Adendo 4)
+
+*(alterado em 2026-09-29: passo novo, da reconciliação)*
+
+> Skills: `pest-testing`, `laravel-best-practices`
+
+- **Guardas** (`697a75b`): `tests/Pest.php:SETA_DE_FLUXO:1277` cobre as formas de seta do Mermaid
+  11.17.2 que o extrator perdia (`[xo<]?--+[-xo>]`, `==+`, `-.->`, `-...->`), o rótulo por travessão
+  (`A -- "ws" --> B`) e a relação ER não identificadora (`..`); a linha que abre e fecha código inline de
+  três crases não é cerca (RD3-05). Os fatos de DG-12/13/14/16/17 em `fatosPorDg` usam os IDs reais
+  dos blocos, com controle positivo, em pt e en (RD3-06). O CT-73 afirma a ausência de dashboard e
+  import no DG-02, em vez de pular com `continue` (RD3-08).
+- **Instalador** (`83219ff`): com `--no-seed`, banner e resumo dão a mesma instrução — definir
+  `KIT_ADMIN_PASSWORD` no `.env` e só então rodar `php artisan db:seed` (RD3-01); o desfecho vem de
+  `handle()`, que grava `$semeado` onde `semear()` roda (RD3-03); uma fonte só para a linha do resumo,
+  `app/Support/CustomizadorDaInstalacao.php:RESUMO_SENHA_GERADA:73` (RD3-12); o hint do prompt de senha
+  não promete geração incondicional; `tests/Kit/ResumoDoKitInstallTest.php` roda o `kit:install` pelo
+  ponto de entrada (RD3-04).
+- **`kit:arte`** (`8a6e9e1`): o temporário do ffmpeg nasce em `art/`, ao lado do publicado
+  (`app/Console/Commands/KitArte.php:$temporario:320`), e a publicação é um `rename()` no mesmo
+  diretório (`app/Console/Commands/KitArte.php:rename:437`); a falha de publicação é capturada dentro de
+  `publicarGif()`, avisa "não consegui publicar" e não deixa `.tmp` em `art/`; um temporário que virou
+  diretório não substitui o GIF publicado (RD3-09). O CT-50 reconhece só a chamada real de captura
+  (`token_get_all`), não o nome num docblock (RD3-07).
+- **Logs**: n/a.
+- **Verificação**: cada correção provada vermelha antes (`03`, rodada 4). O que a revisão cega desta
+  rodada achou está no `03`: duas regressões e dois consertos mecânicos entraram pelo passo 25, e os
+  outros seis viraram dívida declarada.
+
+### 25. As exceções do Adendo 5: duas regressões da rodada 4 e dois consertos mecânicos (RQ-41, RQ-42)
+
+*(alterado em 2026-09-29: passo novo, da reconciliação)*
+
+> Skills: `pest-testing`
+
+- **RD4-01** (Blocker, `8a6e9e1`): `'-f', 'gif'` antes da saída
+  (`app/Console/Commands/KitArte.php:'-f':340`) — o temporário não termina em `.gif`, o ffmpeg escolhe
+  o muxer pela extensão e, sem o formato, recusava a saída: o `kit:arte` não montava GIF nenhum. O
+  ffmpeg falso da suíte passa a escolher o formato como o real (sem `-f gif` e sem extensão `.gif`,
+  falha) — era por aceitar o que o real recusa que a suíte ficou verde com o defeito.
+- **RD4-03** (Major, `697a75b`): o fato do DG-03 confere a estrutura pelo ID e o que cada nó pergunta
+  pelo rótulo — `checa_tenant` fala de organização inativa, `checa_vinculo` traz o `master_global`.
+- **RD4-04** (Pint) e **RD4-06** (citações deslocadas pelo próprio delta), em `697a75b` e `83219ff`.
+- **Logs**: n/a.
+- **Verificação**: RD4-01 com 8 falhas contra o `KitArte` sem `-f gif` e 28/28 depois, e o ffmpeg 8.1
+  real, com os argumentos exatos, exit 0 e `GIF89a`; RD4-03 vermelho com a troca de rótulos em pt e
+  em en, separadamente; `vendor/bin/pint --test` e `tests/Kit/CitacoesDeCodigoTest.php` verdes. Sem
+  nova revisão cega (RQ-43).
 
 ## Filosofia de Implementação
 
@@ -1381,8 +1672,19 @@ dependência nova").
 > Ver `04-casos-de-teste.md` (a ser derivado pela skill `feature-test-design`, a partir do
 > `00-requisito.md`) para a especificação formal dos cenários. Este `01` já embute, em cada passo,
 > o "Fato do código" e a "Guarda" que o `04` precisa cobrir — nenhum cenário é duplicado aqui.
+>
+> *(alterado em 2026-09-29: o `04` foi derivado — 46 regras, 104 cenários, 259 mutantes, e 3 CT-B no
+> `05` — e é o contrato que o mantenedor confirmou; onde a "Guarda" de um passo aqui diverge dele, vale o
+> `04`, e o passo diz o que ficou de fora. As rodadas da revisão do diff deixaram 14 testes com o ID do
+> achado, sem CT — lista no `04`)*
+>
+> *(alterado em 2026-09-29: depois da reconferência mecânica do step 10, o `04` ganhou a R47 e o CT-105,
+> para a RQ-36, que era a única `RQ` fechada sem cenário: 47 regras, 105 cenários, 266 mutantes. O teste
+> do CT-105 ainda não existe — `03`, DV-09)*
 
 ## Verificação Final
+
+*(alterado em 2026-09-29: esta é a lista planejada; a executada, com a evidência inline de cada item, está no `03`, `## Verificação Final`. "step 6.5" abaixo é o step 9 da 4.0.0, e a citação é conferida hoje pelo `citacoes.sh` da skill, que já casa md/yml/mjs/json, símbolo entre aspas e path curto)*
 
 - [ ] `/ponytail:ponytail-review` no diff
 - [ ] `vendor/bin/pint --dirty`
@@ -1406,6 +1708,8 @@ dependência nova").
   certa
 
 ## Commits
+
+*(alterado em 2026-09-29: a entrega saiu em 33 commits — `git log --oneline origin/main..HEAD | wc -l` —, com as rodadas da revisão do diff e os Adendos 3 a 5; a lista abaixo é o plano)*
 
 - `:memo: docs(diagramas): wiki da feature diagramas-da-arquitetura`
 - `:bug: fix(docs): corrige senha, passkeys e composer dev no README e nos docblocks`

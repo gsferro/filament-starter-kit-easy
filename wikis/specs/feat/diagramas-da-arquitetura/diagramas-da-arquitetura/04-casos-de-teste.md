@@ -6,6 +6,46 @@
 > abertos. A implementação da feature (diagramas, guarda, `kit:arte` novo) não existe e não foi
 > fonte. O código **já existente** do kit foi lido como **o mundo que os diagramas descrevem**
 > (RQ-10) — toda afirmação sobre ele leva `{path}:{símbolo}:{linha}` conferida com `sed -n`.
+>
+> **Reconciliação pós-implementação (step 10 da feature-wiki 4.0.0, 2026-09-29)** — o que mudou aqui, e só isto:
+>
+> - **Citações**: as 145 que o `citacoes.sh` acusou foram corrigidas na forma (`Classe::método`,
+>   `->id('app')`, `[CT-nn]` sem aspas viraram `símbolo` ou `'chave'`) ou na linha deslocada. As que
+>   descrevem o **mundo de partida** (o código de antes desta entrega, que a implementação mudou)
+>   viraram referência histórica — `arquivo`, símbolo e "linha N antes da entrega" —, marcadas
+>   *(alterado em 2026-09-29: …)*, para não serem lidas como citação do código atual.
+> - **Origem** do `## Mapa de Regras`: as regras cujos cenários passaram a cumprir as cláusulas dos
+>   Adendos 3 a 5 (RQ-32..RQ-35, RQ-41) ganharam essas `RQ` na Origem, marcadas. Nenhum cenário foi
+>   escrito aqui: os testes das rodadas 3 e 4 da revisão do diff nasceram no código, pelo roteamento do
+>   step 9, e os 14 que levam só o ID do achado (`[RD2-…]`, `[RD3-…]`) estão listados em
+>   [Testes nascidos na revisão do diff, sem CT](#testes-nascidos-na-revisão-do-diff-sem-ct) — pendência
+>   declarada para a `feature-test-design`.
+> - **Números**: rederivados pelos comandos do comentário abaixo, sem mudança — 104 cenários, 46
+>   regras, 259 mutantes, 3 CT-B e 11 mutantes no `05`. Os "21 blocos por idioma" conferem com a árvore:
+>   20 em `docs/{idioma}` (`grep -r '^```mermaid' docs/pt | wc -l` = 20, idem `docs/en`) mais 1 no README
+>   de cada idioma — o DG-20 saiu com um bloco só, a sequência (desvio registrado no `01`, passo 17).
+>   *(alterado em 2026-09-29: esses eram os números antes da R47 — ver o item seguinte)*
+> - **RQ-36** (depois da reconferência mecânica do step 10): a única `RQ` fechada sem regra nem
+>   cenário ganhou a [Regra R47](#regra-r47--o-ci-de-pull-request-constrói-e-confere-o-site-quando-e-só-quando-o-pr-toca-docs-ou-site)
+>   e o CT-105, derivados do `00`, e a lacuna L-07. É o único cenário escrito neste step; o teste dele
+>   não existe ainda (`03`, DV-09). Os números, pelos mesmos comandos: 105 cenários, 47 regras, 266
+>   mutantes, 2 sem matador.
+> - **Achados A-01, A-02, A-03 e A-06** (`03`, `## Achados do step 10`) — segunda passada da
+>   `feature-test-design` 1.16.0 neste step *(alterado em 2026-09-29)*: os números do DG-10, as metades do
+>   agendador e do Compose do DG-19 e a sequência do DG-20 não tinham guarda, e os fatos de CT-06 para os três
+>   extras pedem termos que os blocos publicados não têm — a promessa da página ("guardado por um teste
+>   [...] que falha quando o código deixar de bater") não valia para eles. Seis regras novas (R48–R53), onze
+>   cenários (CT-106..CT-116), 29 mutantes, com a `Asserção que mata` da 1.16.0, e a seção
+>   [Costuras de Teste](#costuras-de-teste) para os dois grupos novos. O valor esperado de cada afirmação sai do
+>   **código** que o bloco descreve (`config/lockscreen.php`, o plugin de bloqueio de cada painel,
+>   `routes/console.php`, `docker-compose.yml`, `DevCommands`, `config/queue.php`, a pilha de tenant do painel app,
+>   `User::canAccessTenant()`), nunca do texto do bloco; toda citação nova foi conferida com
+>   `sed -n "{linha}p" {arquivo} | grep -F "{símbolo}"`. O flowchart do `kit:tenancy` não entra nesta entrega
+>   (decisão da sessão): a lacuna L-08 registra o que o DG-20 não desenha. **Um cenário nasce vermelho contra
+>   o bloco publicado, e é achado, não erro de derivação**: CT-114, linha "ativa × master_global × sem
+>   vínculo" — o `alt` do DG-20 nega "sem vínculo" sem excetuar o `master_global`, que o código deixa entrar
+>   (Q?2). Revisão adversarial desta adição: não disparada pelo gatilho (perfil padrão, Impacto 2) e não feita
+>   — a derivação rodou em sub-agente; o despacho, se houver, é da sessão.
 
 ## Perfil de Derivação
 
@@ -45,21 +85,27 @@
 - Versões conferidas em `vendor/composer/installed.json`: Pest v5.1.1, Filament v5.8.2, Livewire v4.4.5,
   Laravel v13.32.0 — `TestAction::make(...)->table($registro)`, `callAction`, `assertActionHidden`
   (Filament 5), não os `@deprecated`.
-- Cenários: 104 (+ 3 CT-B no `05`) · Regras: 46 · Mutantes previstos: 259 (+ 11 no `05`) · Sem matador: 1 mutante (R35.M3 → lacuna L-04), e 5 lacunas sem mutante próprio (L-01, reduzida no ciclo 1; L-02; L-03; L-05 e L-06, do ciclo 2)
+- Técnicas acrescentadas na segunda passada do step 10 *(alterado em 2026-09-29)*: valor lido do fonte da
+  config contra o plugin registrado em cada painel, com controle do homônimo (R48); EP exaustiva sobre
+  `Schedule::events()` com BVA 2-valores na janela da madrugada (R49); lista ordenada de filas (R50); ordem
+  derivada da pilha de middlewares da rota e rastreio de efeito sobre o id de time (R51); tabela de decisão
+  executada com o GET real (R52); controle positivo sobre o bloco **publicado** (R53).
+- Cenários: 116 (+ 3 CT-B no `05`) · Regras: 53 · Mutantes previstos: 295 (+ 11 no `05`) · Sem matador: 2 mutantes (R35.M3 → lacuna L-04; R47.M7 → lacuna L-07, do step 10), e 6 lacunas sem mutante próprio (L-01, reduzida no ciclo 1 e de novo no step 10; L-02; L-03; L-05 e L-06, do ciclo 2; L-08, do step 10) *(alterado em 2026-09-29: eram 104 · 46 · 259 · 1 antes da R47 do step 10, e 105 · 47 · 266 · 2 antes das R48–R53 da segunda passada)*
   <!-- recalculado pelos comandos do retorno: grep -cE '^\s+(Cenário|Esquema do Cenário): \[CT-' · grep -c '^## Regra R' · grep -cE '^\| M[0-9]+ \|' -->
 
 ## Varredura SFDIPOT
 
 | Letra | O que existe nesta feature | Cenários gerados |
 |---|---|---|
-| S | Markdown (README pt/en, 13 páginas de `docs/` por idioma + 1 nova), 21 blocos Mermaid por idioma, `site/package.json` + lock + `astro.config.mjs`, a guarda (`tests/Kit/DiagramasDaArquiteturaTest.php` e o par em `tests/Tenancy`), `KitArte.php`, uma view de fixture para o `install.gif`, docblocks de 5 arquivos, comentário de `routes/console.php`, o resumo de `CustomizadorDaInstalacao` | CT-01..CT-07, CT-38, CT-45, CT-52 |
+| S | Markdown (README pt/en, 13 páginas de `docs/` por idioma + 1 nova *(alterado em 2026-09-29: são 12 páginas existentes + 1 nova, 13 com diagrama por idioma — arquivos de `docs/pt` com cerca mermaid, contados por `grep -rl` e `wc -l`: 13)*), 21 blocos Mermaid por idioma, `site/package.json` + lock + `astro.config.mjs`, a guarda (`tests/Kit/DiagramasDaArquiteturaTest.php` e o par em `tests/Tenancy`), `KitArte.php`, uma view de fixture para o `install.gif`, docblocks de 5 arquivos, comentário de `routes/console.php`, o resumo de `CustomizadorDaInstalacao` | CT-01..CT-07, CT-38, CT-45, CT-52 |
 | F | afirmar o que o código faz (20 diagramas); falhar quando o código deixar de bater; montar GIFs de 4 clipes; corrigir 4 afirmações falsas | CT-09..CT-33, CT-40..CT-51; ciclo 1: CT-56..CT-77 |
 | D | fatos derivados do código: painéis registrados, `roles.painel` semeado, `canAccessPanel` executado, destino do login, estados da conta e do convite executados, middlewares do agente, Resources do `/infra`, schema migrado, `mapaDeConfiguracao()`, ordem do `handle()` de `kit:install`/`kit:update`, `.gitattributes`, `docker-compose.yml`, `DevCommands::commands()`. Cardinalidade: 0 blocos hoje (`grep -rln '```mermaid' docs README*` vazio) → 21 por idioma (ciclo 1: as 16 chaves desligadas por padrão, a imagem de `rotuloDaSituacao()`/`situacao()`, a cardinalidade das relações, os 62 arquivos de `art/`, os 12 serviços sem os 5 volumes) | CT-02 (piso), CT-09..CT-33, CT-56, CT-60..CT-63, CT-69, CT-72, CT-75 |
-| I | leitura por GitHub (README, páginas no navegador do GitHub), pelo site Starlight construído (navegador), pela suíte `composer test:kit`, pelo `composer art` (`KIT_ART=1`), pelo fluxo `pages.yml` | CT-34..CT-37, CT-B01..CT-B03 |
+| I | leitura por GitHub (README, páginas no navegador do GitHub), pelo site Starlight construído (navegador), pela suíte `composer test:kit`, pelo `composer art` (`KIT_ART=1`), pelo fluxo `pages.yml` *(alterado em 2026-09-29: e, desde o Adendo 3, pelo job de PR do `ci.yml`, que roda os conferidores antes do merge — R47, step 10)* | CT-34..CT-37, CT-B01..CT-B03, CT-105 |
 | P | Mermaid 11.17.2 no GitHub (premissa do 00) e no site; `astro-mermaid`; Chromium do Playwright do `site/`; ffmpeg opcional no PATH; Windows sem `pcntl_fork` (o `pail` não entra no `composer dev`: `vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:pcntl_fork:115`) (ciclo 1: ffmpeg de teste à frente do PATH, gravador e de falha tardia — o `Process` do Symfony não é alcançado pelo `Process::fake()`) | CT-34, CT-38, CT-43, CT-47, CT-49, CT-64, CT-65 |
 | O | quem lê: quem avalia o kit (README/Packagist), quem instala (site), quem mantém (guarda vermelha no `test:kit`); projeto instalado recebe `tests/Kit` pelo `kit:update` mas **não** recebe README nem `docs/` | CT-05, CT-31 |
 | T | o código muda depois da publicação (RQ-26) — por isso todo diagrama tem "mundo alterado"; prazo do convite (`travelTo`) na matriz do DG-09; ordem de passos (instalação, atualização, login) (ciclo 1: ordem das checagens do retorno social; execução interrompida deixando quadro sobrado; falha do ffmpeg no meio da escrita) (ciclo 2: sequência de dois eventos em que o primeiro muda um atributo que o rótulo esconde; ordem das mensagens no en; o lembrete agendado às 08:00; a fila que só esvazia com worker) | CT-10, CT-12, CT-19, CT-21, CT-24, CT-26, CT-28, CT-30, CT-32, CT-64, CT-65, CT-70; ciclo 2: CT-78, CT-80, CT-85, CT-90, CT-99 |
-| (ciclo 2) D/I/P | D: o `ativo` que o rótulo "Pendente" esconde; os 12 serviços com profiles; as 6 Resources e 3 páginas do `/infra` com o gravador de cada uma. I: a caixa de convites recebidos, única porta de `recusar()`, só com a tenancy; o comando agendado, única porta de `lembrar()`. P: `QUEUE_CONNECTION=sync`, `PULSE_ENABLED=false` e `LOG_KIT_DRIVER=monolog` no `phpunit.xml` (`phpunit.xml:name="QUEUE_CONNECTION":142`, `phpunit.xml:name="PULSE_ENABLED":153`, `phpunit.xml:name="LOG_KIT_DRIVER":140`) | CT-78, CT-80, CT-84, CT-90, CT-99, CT-100 |
+| (ciclo 2) D/I/P | D: o `ativo` que o rótulo "Pendente" esconde; os 12 serviços com profiles; as 6 Resources e 3 páginas do `/infra` com o gravador de cada uma. I: a caixa de convites recebidos, única porta de `recusar()`, só com a tenancy; o comando agendado, única porta de `lembrar()`. P: `QUEUE_CONNECTION=sync`, `PULSE_ENABLED=false` e `LOG_KIT_DRIVER=monolog` no `phpunit.xml` (`phpunit.xml:"QUEUE_CONNECTION":142`, `phpunit.xml:"PULSE_ENABLED":153`, `phpunit.xml:"LOG_KIT_DRIVER":140`) | CT-78, CT-80, CT-84, CT-90, CT-99, CT-100 |
+| (step 10, 2ª passada) S/D/T | S: `config/lockscreen.php`, o plugin de bloqueio registrado em cada painel, `routes/console.php`, os `command:` de `docker-compose.yml`, a pilha de tenant do painel app. D: os defaults do plugin iguais aos do kit (1800 s, 5 tentativas), com a ociosidade desligada e o force logout falso; os 7 eventos agendados; os 2 comentados. T: frequência e horário dos eventos, com a janela da madrugada | CT-106..CT-116 |
 
 ## Catálogo de diagramas (superfície do recorte)
 
@@ -95,27 +141,27 @@ recorte — **Pergunta P-02**.
 |---|---|---|---|---|
 | R1 — todo bloco pertence ao catálogo, e todo DG está onde o catálogo diz | B (padrão) | RQ-11, RQ-12, RQ-20..RQ-26 | EP + piso de população | CT-01, CT-02 |
 | R2 — pt e en de cada DG têm a mesma estrutura, e o en está traduzido | B (padrão) | RQ-26, amb. RQ-11/RQ-12 | normalização estrutural + rótulo visível invariante | CT-03, CT-04, CT-68 |
-| R3 — a guarda roda, e cada DG tem fato do código com controle negativo | B (padrão) | RQ-26, RQ-10, RQ-06 | controle negativo por DG; inspeção estática | CT-05, CT-06, CT-07 |
+| R3 — a guarda roda, e cada DG tem fato do código com controle negativo | B (padrão) | RQ-26, RQ-10, RQ-06; RQ-35, RQ-41 *(alterado em 2026-09-29: Adendos 3 e 5 — o fato de cada DG passou a ser aplicado ao bloco real em pt e en, e o do DG-03 lê o rótulo; RD2-16, RD3-06, RD4-03)* | controle negativo por DG; inspeção estática | CT-05, CT-06, CT-07 |
 | R4 — recurso opcional nunca é desenhado como sempre ligado | A (padrão) | RQ-10 | EP (elemento opt-in × chave) + controles do detector | CT-08, CT-58 |
-| R5 — DG-01: painéis, papel que abre cada um, IA e `/infra` | A (padrão) | RQ-20, RQ-21, RQ-10 | EP + mundo alterado | CT-09, CT-10 |
+| R5 — DG-01: painéis, papel que abre cada um, IA e `/infra` | A (padrão) | RQ-20, RQ-21, RQ-10; RQ-34 *(alterado em 2026-09-29: Adendo 3 — CT-10 lê as quatro cópias do DG-01 com o extrator de arestas normalizado; RD2-10, RD3-05)* | EP + mundo alterado | CT-09, CT-10 |
 | R6 — DG-02: casos de uso por papel | A (padrão) | RQ-21 | EP por papel + permissão exata por caso de uso | CT-11, CT-12, CT-73 |
 | R7 — DG-03: a ordem das decisões de `canAccessPanel` | A (padrão, técnica escalada) | RQ-21 | tabela de decisão (+ acumulação de papéis) | CT-13, CT-14, CT-71 |
-| R8 — DG-04: login por senha + 2FA | A (padrão) | RQ-22 | EP (2FA ligado/desligado) + ordem | CT-15, CT-16 |
-| R9 — DG-05: login unificado 0/1/N | A (padrão) | RQ-22 | BVA 0/1/2 + partição "URL pretendida" (acessível × inacessível × externa) | CT-17, CT-59 |
-| R10 — DG-06: desfechos do retorno do login social | A (padrão, técnica escalada no ciclo 1) | RQ-22 | EP exaustiva dos desfechos + tabela de decisão executada | CT-18, CT-70 |
-| R11 — DG-07: links do convite no envio, lembrete, reenvio e aceite | A (padrão) | RQ-22 | rastreio de efeito (canal + direções) | CT-19 |
-| R12 — DG-08: estados da conta | A (padrão) | RQ-22 | tabela estado × evento executada, 2-switch, destino e condição da seta | CT-20, CT-60 |
-| R13 — DG-09: estados do convite | A (padrão) | RQ-22 | tabela estado × evento executada, 2-switch, destino da seta | CT-21, CT-22, CT-61 |
-| R14 — DG-11: sequência do assistente, 4 guardrails e ledger | A (padrão) | RQ-23 | ordem + valor literal do 00 + mundo alterado | CT-23, CT-24 |
-| R15 — DG-12: mapa do `/infra` (tela → quem grava) | A (padrão) | RQ-23 | EP exaustiva sobre as Resources + mundo alterado + gravação executada | CT-25, CT-26, CT-62 |
-| R16 — DG-13: ER do núcleo | A (padrão) | RQ-23 | soundness contra o schema + mundo alterado + cardinalidade | CT-27, CT-28, CT-63 |
-| R17 — DG-14: precedência de configuração | A (padrão) | RQ-23 | tabela de decisão executada | CT-29 |
-| R18 — DG-15: sequência da instalação | A (padrão) | RQ-24, RQ-28 | ordem derivada da fonte | CT-30 |
-| R19 — DG-16/DG-17: `kit:update` e as duas rotas de entrega | A (padrão) | RQ-24 | EP por caminho × rota (+ diretório parcial) + ordem | CT-31, CT-32, CT-72 |
+| R8 — DG-04: login por senha + 2FA | A (padrão) | RQ-22; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16)* | EP (2FA ligado/desligado) + ordem | CT-15, CT-16 |
+| R9 — DG-05: login unificado 0/1/N | A (padrão) | RQ-22; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16)* | BVA 0/1/2 + partição "URL pretendida" (acessível × inacessível × externa) | CT-17, CT-59 |
+| R10 — DG-06: desfechos do retorno do login social | A (padrão, técnica escalada no ciclo 1) | RQ-22; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16)* | EP exaustiva dos desfechos + tabela de decisão executada | CT-18, CT-70 |
+| R11 — DG-07: links do convite no envio, lembrete, reenvio e aceite | A (padrão) | RQ-22; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16)* | rastreio de efeito (canal + direções) | CT-19 |
+| R12 — DG-08: estados da conta | A (padrão) | RQ-22; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16)* | tabela estado × evento executada, 2-switch, destino e condição da seta | CT-20, CT-60 |
+| R13 — DG-09: estados do convite | A (padrão) | RQ-22; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16)* | tabela estado × evento executada, 2-switch, destino da seta | CT-21, CT-22, CT-61 |
+| R14 — DG-11: sequência do assistente, 4 guardrails e ledger | A (padrão) | RQ-23; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16)* | ordem + valor literal do 00 + mundo alterado | CT-23, CT-24 |
+| R15 — DG-12: mapa do `/infra` (tela → quem grava) | A (padrão) | RQ-23; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16, RD3-06)* | EP exaustiva sobre as Resources + mundo alterado + gravação executada | CT-25, CT-26, CT-62 |
+| R16 — DG-13: ER do núcleo | A (padrão) | RQ-23; RQ-34, RQ-35 *(alterado em 2026-09-29: Adendo 3 — CT-63/CT-94 leem a relação ER normalizada nos dois idiomas, com os nomes reais das entidades; RD2-12, RD3-05, RD3-06)* | soundness contra o schema + mundo alterado + cardinalidade | CT-27, CT-28, CT-63 |
+| R17 — DG-14: precedência de configuração | A (padrão) | RQ-23; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16, RD3-06)* | tabela de decisão executada | CT-29 |
+| R18 — DG-15: sequência da instalação | A (padrão) | RQ-24, RQ-28; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16)* | ordem derivada da fonte | CT-30 |
+| R19 — DG-16/DG-17: `kit:update` e as duas rotas de entrega | A (padrão) | RQ-24; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16, RD3-06)* | EP por caminho × rota (+ diretório parcial) + ordem | CT-31, CT-32, CT-72 |
 | R20 — DG-18: containers por profile | A (padrão) | RQ-24 | EP exaustiva sobre os serviços + soundness diagrama → compose | CT-33, CT-75 |
-| R21 — tipo, tema e sintaxe portáveis | C (padrão) | RQ-05, RQ-12, RQ-18 | EP com controles do detector | CT-34, CT-35 |
+| R21 — tipo, tema e sintaxe portáveis | C (padrão) | RQ-05, RQ-12, RQ-18; RQ-33 *(alterado em 2026-09-29: Adendo 3 — "nunca com cor fixa no bloco" é o que CT-34, CT-35 e CT-95 recusam)* | EP com controles do detector | CT-34, CT-35 |
 | R22 — o bloco do README é o bloco do site | C (padrão) | RQ-18, RQ-20 | identidade (`@premissa`) | CT-36 |
-| R23 — o fluxo de publicação confere a renderização antes do envio | C (padrão) | RQ-12, RQ-18 | inspeção do fluxo | CT-37 (+ CT-B01, CT-B02 no 05) |
+| R23 — o fluxo de publicação confere a renderização antes do envio | C (padrão) | RQ-12, RQ-18; RQ-32, RQ-33 *(alterado em 2026-09-29: Adendo 3 — o CT-B01 reprova bloco que não vira SVG e violação serious do axe, que inclui o contraste, nos dois temas)* | inspeção do fluxo | CT-37 (+ CT-B01, CT-B02 no 05) |
 | R24 — `site/package.json` ganha só `astro-mermaid` e `mermaid` 11.17.2 exato | G (mínimo) | RQ-18 | valor literal do requisito | CT-38 |
 | R25 — nenhuma dependência fora de `site/` | G (mínimo) | RQ-18, RQ-27 | diff da entrega | CT-39 |
 | R26 — o README não afirma `password` como senha do administrador | D (mínimo) | RQ-28 | EP | CT-40 |
@@ -124,8 +170,8 @@ recorte — **Pergunta P-02**.
 | R29 — a documentação descreve o `composer dev` com os processos que ele sobe | D (mínimo) | RQ-29 | EP derivada de `DevCommands` (prosa e blocos Mermaid) | CT-43, CT-76 |
 | R30 — nenhum comentário afirma `schedule:work` no `composer dev` | D (mínimo) | RQ-29 | EP | CT-44 (+ CT-76 para os blocos) |
 | R31 — os docblocks corrigidos não voltam a contradizer o código | D (mínimo) | RQ-29 | EP (`@premissa` sobre a lista) + âncora positiva | CT-45, CT-67 |
-| R32 — cada clipe monta o seu GIF, e um clipe incompleto não para os outros | E (padrão) | RQ-27, RQ-16 | EP por clipe + rastreio da entrada do ffmpeg | CT-46, CT-47, CT-64 |
-| R33 — quadro de clipe não vira PNG solto; falha do ffmpeg não apaga GIF publicado | E (padrão) | RQ-27 | EP (quadro só × quadro que também é imagem) + atomicidade (ffmpeg ausente × ffmpeg que falha depois de abrir a saída) | CT-48, CT-49, CT-65 |
+| R32 — cada clipe monta o seu GIF, e um clipe incompleto não para os outros | E (padrão) | RQ-27, RQ-16; RQ-41 *(alterado em 2026-09-29: Adendo 5 — o ffmpeg de teste escolhe o muxer como o real e recusa saída sem `-f gif`; RD4-01)* | EP por clipe + rastreio da entrada do ffmpeg | CT-46, CT-47, CT-64 |
+| R33 — quadro de clipe não vira PNG solto; falha do ffmpeg não apaga GIF publicado | E (padrão) | RQ-27; RQ-41 *(alterado em 2026-09-29: Adendo 5 — idem R32; RD4-01)* | EP (quadro só × quadro que também é imagem) + atomicidade (ffmpeg ausente × ffmpeg que falha depois de abrir a saída) | CT-48, CT-49, CT-65 |
 | R34 — todo quadro é capturado e todo GIF referenciado existe e é mostrado | E (padrão) | RQ-27, RQ-17 | inspeção estática + EP do endereço (ref) | CT-50, CT-51, CT-74 |
 | R35 — o `install.gif` nasce de uma transcrição sem `password` | E (padrão) | RQ-28 | EP | CT-52 |
 | R36 — o README tem exatamente um diagrama e o link da página do mesmo idioma | F (mínimo) | RQ-20, RQ-11 | BVA 0/1/2 blocos | CT-53 |
@@ -136,9 +182,21 @@ recorte — **Pergunta P-02**.
 | R41 — citação de arquivo do kit em comentário aponta a linha que contém o símbolo | D (mínimo) | RQ-29 (+ `.ai/rules/specs.md`) | EP da forma da citação + conferência por `sed -n` | CT-66 |
 | R42 — em diagrama de sequência, pt e en têm as mesmas mensagens na mesma ordem e nos mesmos blocos *(ciclo 2, de R2)* | B (padrão) | RQ-26 | normalização estrutural ordenada | CT-85 |
 | R43 — o rótulo en de cada estado do DG-08 e do DG-09 é o termo fixado *(ciclo 2, de R2)* | B (padrão) | RQ-26 | EP exaustiva por identificador | CT-86 |
-| R44 — cada aresta do DG-02 é um caso de uso do mapa fixado, e existe se e só se o papel pode executá-lo *(ciclo 2, de R6)* | A (padrão) | RQ-21, RQ-10 | matriz papel × caso de uso executada (`can()`) | CT-83 |
-| R45 — o DG-07 desenha os dois ramos do aceite, com os efeitos de cada um *(ciclo 2, de R11)* | A (padrão) | RQ-22, RQ-10 | EP + rastreio de efeito | CT-88, CT-89 |
-| R46 — o DG-07 mostra o link no registro do /app, o e-mail pela fila e o lembrete pelo agendador *(ciclo 2, de R11)* | A (padrão) | RQ-22, RQ-10 | rastreio de efeito | CT-90 |
+| R44 — cada aresta do DG-02 é um caso de uso do mapa fixado, e existe se e só se o papel pode executá-lo *(ciclo 2, de R6)* | A (padrão) | RQ-21, RQ-10; RQ-34 *(alterado em 2026-09-29: Adendo 3 — CT-83 lê as arestas do DG-02 pelo extrator normalizado; RD2-11, RD3-05)* | matriz papel × caso de uso executada (`can()`) | CT-83 |
+| R45 — o DG-07 desenha os dois ramos do aceite, com os efeitos de cada um *(ciclo 2, de R11)* | A (padrão) | RQ-22, RQ-10; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16)* | EP + rastreio de efeito | CT-88, CT-89 |
+| R46 — o DG-07 mostra o link no registro do /app, o e-mail pela fila e o lembrete pelo agendador *(ciclo 2, de R11)* | A (padrão) | RQ-22, RQ-10; RQ-35 *(alterado em 2026-09-29: Adendo 3 — o cenário confere o conteúdo do bloco real; RD2-16)* | rastreio de efeito | CT-90 |
+| R47 — o CI de pull request constrói e confere o site quando, e só quando, o PR toca `docs/` ou `site/` *(alterado em 2026-09-29: regra nova, do step 10 — RQ-36 chegou à implementação sem cenário, e o `rastreabilidade.sh` acusou "RQ-36 sem CT")* | C (padrão) | RQ-36 | inspeção do fluxo + EP dos prefixos do gatilho | CT-105 |
+| R48 — DG-10: ociosidade, tentativas e force logout são os do plugin de bloqueio de cada painel *(alterado em 2026-09-29: regra nova da segunda passada do step 10, achado A-01)* | A (padrão) | RQ-25, RQ-26, RQ-10 | valor lido do fonte + EP por painel + mundo alterado + controle do homônimo | CT-106, CT-107 |
+| R49 — DG-19: o agendador desenha cada evento de `Schedule::events()` com a sua frequência *(alterado em 2026-09-29: idem, achado A-03)* | A (padrão) | RQ-25, RQ-26, RQ-10 | EP exaustiva + BVA 2-valores na janela da madrugada + mundo alterado + soundness | CT-108, CT-109 |
+| R50 — DG-19: cada processo leva o comando, as filas e a condição do código *(alterado em 2026-09-29: idem, achado A-03)* | A (padrão) | RQ-25, RQ-26, RQ-10 | EP por processo + lista ordenada + mundo alterado | CT-110, CT-111 |
+| R51 — DG-20: a ordem da pilha de tenant e o contexto de papéis fixado *(alterado em 2026-09-29: idem, achado A-02, na parte que o DG-20 desenha)* | A (padrão) | RQ-25, RQ-26, RQ-10 | ordem derivada da rota + rastreio de efeito | CT-112, CT-113 |
+| R52 — DG-20: os desfechos de `GET /app/{tenant}` *(alterado em 2026-09-29: idem, achado A-02)* | A (padrão, técnica escalada) | RQ-25, RQ-26, RQ-10 | tabela de decisão executada + controles contra a tabela literal | CT-114, CT-115 |
+| R53 — a promessa da página: o fato declarado de cada DG aceita o bloco publicado, pt e en *(alterado em 2026-09-29: idem, achado A-06; desdobrada de R3)* | B (padrão) | RQ-26, RQ-35, RQ-06 | controle positivo e adulteração sobre o bloco publicado | CT-116 |
+
+**Técnica escalada (step 10)**: R52 usa tabela de decisão completa numa área `padrão` — a regra é de ordem das
+checagens (a organização inativa antes do `master_global`), e a EP dos desfechos não distingue "antes" de
+"depois" (o mesmo motivo de R7). **Desdobramento**: R53 sai de R3, pelo critério do ciclo 2 — a propriedade é
+diferente (o fato vale sobre o bloco publicado, não sobre o do dataset), não mais uma linha da mesma tabela.
 
 **Cenários acrescentados a regras existentes no ciclo 2** (a coluna "Cenários" acima é a do ciclo 1):
 
@@ -184,7 +242,24 @@ R41 sai de R31.
 | RQ-06 | restrição absorvida por R3: diagrama sem nenhum fato do código conferido é decoração, e CT-06 o reprova | CT-06 |
 | RQ-14, RQ-15 | fechadas como **não se aplica** pelo próprio Adendo 2 (`sent.dm` não gera vídeo) | — |
 | RQ-17 | absorvida por R34 (GIF que ninguém mostra não torna nada visível) | CT-51 |
-| RQ-25 | os extras DG-10, DG-19, DG-20 entram nas regras genéricas R1–R4, R21 e — desde o ciclo 1 — R40 (toda referência a código resolve); o **fato específico** de cada um o 00 não determina (a justificativa vive no `02`) — lacuna declarada L-01, reduzida à verdade da **relação** entre elementos que resolvem; no ciclo 2, o reconhecimento passou a ser pela forma, com catálogo de produtos (CT-82) | CT-01..CT-08, CT-34, CT-35, CT-77, CT-82 |
+| RQ-25 *(alterado em 2026-09-29: segunda passada do step 10 — a RQ ganhou regras próprias, R48 a R52, e sai desta tabela por direito)* | ~~os extras DG-10, DG-19, DG-20 entram nas regras genéricas R1–R4, R21 e — desde o ciclo 1 — R40 (toda referência a código resolve); o **fato específico** de cada um o 00 não determina (a justificativa vive no `02`) — lacuna declarada L-01, reduzida à verdade da **relação** entre elementos que resolvem; no ciclo 2, o reconhecimento passou a ser pela forma, com catálogo de produtos (CT-82)~~ → o 00 não determina o conteúdo dos extras, mas o **bloco publicado** o determina, e o valor esperado de cada afirmação dele sai do código que ela descreve: R48 (DG-10), R49 e R50 (DG-19), R51 e R52 (DG-20); o resto de L-01 está nas Lacunas | CT-01..CT-08, CT-34, CT-35, CT-77, CT-82; CT-106..CT-115 |
+| RQ-31, RQ-37, RQ-38, RQ-39, RQ-40, RQ-43, RQ-44 *(alterado em 2026-09-29: Adendos 3 a 5)* | cláusulas de **processo** da revisão do diff (autorizam a 3ª e a 4ª rodada, a revisão cega só do delta, o fim das rodadas, a prova vermelha de cada correção e a dívida declarada): não descrevem comportamento do kit | o `03`, `## Revisão do Diff (step 9)` e `## Dívidas declaradas`; quality gate, dimensão A |
+| RQ-36 *(alterado em 2026-09-29: Adendo 3; e de novo no step 10, depois da reconferência mecânica: a lacuna foi fechada na fonte — a RQ ganhou regra própria, R47, e o cenário CT-105)* | ~~**sem CT, e isso é lacuna, não decisão**: o job `site` do `.github/workflows/ci.yml` nasceu na rodada 3 sem cenário derivado — nenhum teste lê o `ci.yml` atrás dele (`grep -rln "ci.yml" tests/` acha seis arquivos, nenhum sobre o job). O `AcoesPinadasPorShaTest` confere só que as actions dele são pinadas~~ → não está mais nesta tabela por direito: ver [Regra R47](#regra-r47--o-ci-de-pull-request-constrói-e-confere-o-site-quando-e-só-quando-o-pr-toca-docs-ou-site). O que falta é o **teste** do CT-105 | CT-105 (o teste a escrever: `03`, `## Dívidas declaradas`, DV-09) |
+| RQ-42 *(alterado em 2026-09-29: Adendo 5)* | conserto mecânico: o Pint e as linhas de citação não são comportamento do kit | `vendor/bin/pint --test` (job `qualidade` do CI) e `tests/Kit/CitacoesDeCodigoTest.php` (suíte do kit), com a saída no `03` |
+
+## Costuras de Teste
+
+*(alterado em 2026-09-29: seção nova, da segunda passada do step 10, na `feature-test-design` 1.16.0. As
+regras R1–R47 foram derivadas antes de a seção existir e ficam com a coluna `Camada` do índice; esta tabela
+declara só os grupos das regras R48–R53. Divergência declarada: o índice mantém as colunas antigas, e o grupo
+dos cenários novos vai escrito na coluna `Camada`)*
+
+| Grupo | Regras | Costura | Existente ou nova | Por quê esta camada | Confirmada |
+|---|---|---|---|---|---|
+| Extras do catálogo — suíte Kit | R48, R49, R50, R52 (CT-115), R53 | Pest feature HTTP | existente — `tests/Kit/DiagramasDaArquiteturaTest.php` | o `Então` afirma o bloco publicado contra o que a aplicação de pé registra (o plugin de cada painel, `Schedule::events()`, o fonte da config, o `docker-compose.yml`), sem tela; é a costura de CT-06, CT-84 e CT-90 | |
+| Extras do catálogo — suíte Tenancy | R51, R52 (CT-114) | Pest feature HTTP | existente — `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` | o `Então` afirma o status de um GET real e o id de time depois dele, e o painel `/app/{tenant}` só existe com o modo multi-tenant ligado | |
+
+Nenhuma costura `browser` nos grupos novos: o `05` não muda.
 
 ## Fronteira com o Plano
 
@@ -198,16 +273,46 @@ R41 sai de R31.
 | "Gate de CT-B: N/A" | a justificativa do recorte fala das telas do **app** fotografadas; o **site** tem renderização client-side nova ("+1 dependência de renderização client-side"), e isso só o navegador prova | gate do 05 refeito aqui: **passa** |
 | guarda num arquivo só (`tests/Kit/DiagramasDaArquiteturaTest.php`) | `.ai/rules/testes.md` ("Nem todo papel do kit existe em toda suíte"): `admin_app` só existe em `tests/Tenancy` | CT-12 e CT-14 vão para `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` — **achado** |
 | paths do passo 1 listam só o README para passkeys/`composer dev` | a mesma afirmação falsa está em `docs/pt/referencia/pacotes-instalados.md:passkeys:23`, `docs/pt/referencia/pacotes-instalados.md:composer dev:141`, `docs/pt/comecar/instalacao-avancada.md:servidor + fila + vite:168`, `docs/pt/operacao/roteiro-de-features.md:composer dev:150` (e os pares en) | CT-42/CT-43 usam `documentacaoDoKit()` — **achado**, P-04 |
-| lista de paths não traz `site/public/{pt,en}/referencia/arquitetura-em-diagramas.html` | `[CT-38]` herdado (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-38]:1445`) exige stub de redirect para **toda** folha, inclusive nova, e `[CT-41]` exige `order:` | herdados ficam vermelhos se faltar — **achado**, P-14 |
+| lista de paths não traz `site/public/{pt,en}/referencia/arquitetura-em-diagramas.html` | `[CT-38]` herdado (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-38]':1445`) exige stub de redirect para **toda** folha, inclusive nova, e `[CT-41]` exige `order:` | herdados ficam vermelhos se faltar — **achado**, P-14 |
 | lista de paths não traz teste para `KitArte` | comportamento novo sem arquivo de teste no plano | CT-46..CT-49 em `tests/Kit/KitArteTest.php` — **achado** |
 | cinco docblocks (KitInstall:27, AgenteIa:75-76, AdminPanelProvider:262-269, AppPanelProvider:67, InfraPanelProvider:343) | o 00 diz "três docblocks" | `@premissa` em CT-45, P-03 |
 | texto do crédito em inglês | o 00 só traz o literal pt ("visão gerada por IA, não verificada — o diagrama oficial é este") | P-13; CT-54 afirma o literal pt e a estrutura no en |
 | (ciclo 1) listas congeladas que a guarda passa a carregar: os arquivos de `art/` de hoje, os hosts de imagem de hoje, os termos invariantes entre idiomas | nenhuma vem do recorte: são **medidas desta derivação** sobre a árvore (`ls art/`, `grep` de `![](…)` nas páginas) e ficam congeladas como o baseline do `[CT-12]` herdado | CT-69, CT-68, P-23, P-24 |
 | (ciclo 1) `CLIPES` e o nome de cada GIF de clipe | escolha de implementação | detalhe de CT-64, CT-69, CT-74; o oráculo é "os quadros do clipe, na ordem declarada" |
+| (step 10) o job `site` do passo 23 do `01`: o nome `site`, "sem publicar", `permissions: contents: read` (RD3-11) e as actions pinadas por SHA *(alterado em 2026-09-29: linha nova, com a R47)* | só o PRD e a revisão do diff os fixam; o `00` pede o job no `ci.yml`, os quatro passos e o gatilho por `docs/`/`site/` | fora do oráculo do CT-105: o nome é detalhe de como a guarda acha o job; o pino das actions já é do `tests/Kit/AcoesPinadasPorShaTest.php` (de outra wiki) |
+| (step 10, 2ª passada) a nota "`schedule:work` NÃO roda dentro do `composer dev`" que o `01` previa dentro do bloco do DG-19 (achado A-03) *(alterado em 2026-09-29: linha nova)* | só o PRD a fixa; o `00` pede que o bloco reflita o código (RQ-10), e o `schedule:work` fora do `composer dev` já é recusado no bloco por CT-76 | não vira `Então`: a nota ausente não é defeito do bloco |
+| (step 10, 2ª passada) o flowchart do `kit:tenancy` no DG-20 (achado A-02) *(alterado em 2026-09-29: linha nova)* | decisão da sessão (2026-09-29): não entra nesta entrega | L-08; R51 e R52 guardam só o que o DG-20 desenha |
+| (step 10, 2ª passada) o texto dos blocos DG-10, DG-19 e DG-20 *(alterado em 2026-09-29: linha nova)* | lido para saber **o que** cada bloco afirma; o valor esperado de cada afirmação sai do código que ela descreve (`config/lockscreen.php`, o plugin de cada painel, `routes/console.php`, `docker-compose.yml`, `DevCommands`, `config/queue.php`, a pilha de tenant do painel app, `User::canAccessTenant()`) | nó, transição e rótulo são detalhe dos cenários R48–R52; nunca o oráculo |
+| (step 10, 2ª passada) `fatosPorDg()` e o dataset de CT-06 no teste da guarda *(alterado em 2026-09-29: linha nova)* | lidos só para confirmar o achado A-06: os fatos dos três extras não casam com o bloco publicado (`tests/Kit/DiagramasDaArquiteturaTest.php:AgenteIa:766`), e o controle sobre bloco real só existe para o DG-03 (`tests/Kit/DiagramasDaArquiteturaTest.php:$dg === 'DG-03':896`) | nenhum oráculo veio do teste; R53 |
+
+**Perguntas geradas na segunda passada do step 10** *(alterado em 2026-09-29: seção nova)* — as duas são da raia
+**desenho** (como o bloco e a guarda representam o que o código já decide), não vão ao `00`: aterrissam no `01`
+(`## Decisões de Desenho`) ou numa ADR, com o `Qn` que a sessão der. Numeração provisória, de sub-agente:
+
+❓ Q?1 · raia: desenho · afeta: RQ-26 · depende de: —
+Como a guarda lê a frequência nos rótulos do agendador do DG-19, e o que é "podas de retenção — madrugada"?
+➡️ Recomendação: três formas — "a cada N min"/"every N min" ↔ `*/N * * * *`; "HH:MM" ↔ `M H * * *`;
+"madrugada"/"overnight" ↔ diário com a hora em [00:00, 06:00). A poda de retenção se reconhece pela forma:
+comando `…:purge` ou `model:prune`, ou evento nomeado `kit:limpar-…` (os cinco de hoje). A janela fecha às
+06:00 porque cobre as cinco podas de hoje, das 00:00 às 02:30, e deixa fora o horário de uso; o invariante —
+todo evento agendado está no bloco, por nome ou como poda, com a frequência que o código lhe dá — vale para
+qualquer janela, e é CT-108.
+✅ **Decidida pela sessão, 2026-09-29**: a recomendação, como está — é a leitura que `tests/Kit/GuardasDosDiagramasTest.php` implementa (CT-108, CT-109).
+
+❓ Q?2 · raia: desenho · afeta: RQ-10, RQ-26 · depende de: —
+Como o DG-20 mostra que o `master_global` entra, sem vínculo, numa organização ativa
+(`app/Models/User.php:isMasterGlobal:826`)? O `alt` publicado — "organização inativa ou sem vínculo" — cobre
+essa situação, que o código permite.
+➡️ Recomendação: a condição do `alt` nomeia os motivos do código, e a de sem vínculo leva a ressalva —
+"organização inativa, ou sem vínculo e não é master_global" (en: "inactive organization, or no link and not
+master_global") —, no mesmo regime do P-20 (a condição no rótulo) e do nó `checa_vinculo` do DG-03
+("master_global ou vínculo?"). O invariante — o ramo que nega não cobre combinação que o código permite, e o
+`else` não cobre combinação que o código nega — vale qualquer que seja a forma, e é CT-114.
+✅ **Decidida pela sessão, 2026-09-29**: a recomendação. O `alt` do DG-20 foi corrigido para "organização inativa, ou sem vínculo e não é master_global" (en: "inactive tenant, or no link and not master_global" — "no link" é a forma que o oráculo do CT-114 reconhece), depois de o CT-114 ficar vermelho contra o bloco publicado (linha 5, causa b).
 
 **Divergência skill × rule, declarada**: a skill manda escrever CT-B com `pest-plugin-browser`; o
 projeto mediu que ele **não serve** site estático de outro toolchain
-(`site/verifica-acessibilidade.mjs:pest-plugin-browser:6`). A rule/precedente vence: CT-B01 e CT-B02
+(`site/verifica-acessibilidade.mjs:'pest-plugin-browser':6`). A rule/precedente vence: CT-B01 e CT-B02
 rodam no conferidor Node + Playwright de `site/`, e CT-37 trava no Pest que o fluxo de publicação os
 executa — o mesmo arranjo de `[CT-40]`/`[CT-42]`.
 
@@ -222,7 +327,7 @@ Windows pelo lançador `pestw.cmd` com `--covered-only --no-tia` (rule do projet
 ### Personas
 - `master_global`, `admin`, `infra`, `panel_user` — `usuarioDoKit($papel, $email)` (`tests/Pest.php:usuarioDoKit:491`), depois de `$this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class])` *(alterado em 2026-09-28: a ordem inversa deixava toda permissão vazia — o `PapeisSeeder` sincroniza permissões que ainda não existem; medido pelo executor do lote K, e é a ordem de `tests/Kit/LixeiraTest.php`)* (o `seed()` do `TestCase` passa por `db:seed`, `tests/TestCase.php:seed:158`)
 - sem papel — `usuarioCom(null)` (`tests/Pest.php:usuarioCom:404`)
-- `admin_app` e `admin` dentro de organização — só em `tests/Tenancy`: `usuarioComPapel($papel, $org)` (`tests/Pest.php:usuarioComPapel:725`), `tenant()` (`tests/Pest.php:tenant(:386`)
+- `admin_app` e `admin` dentro de organização — só em `tests/Tenancy`: `usuarioComPapel($papel, $org)` (`tests/Pest.php:usuarioComPapel:725`), `tenant()` (`tests/Pest.php:tenant:386`)
 - executor da desativação: **outro** `master_global` autenticado — desativar a própria conta é recusado (`app/Models/User.php:propria_conta:349`)
 
 ### Fixtures
@@ -257,21 +362,47 @@ Windows pelo lançador `pestw.cmd` com `--covered-only --no-tia` (rule do projet
 - (ciclo 2) **oferta de convite**: `ofertaPara()` (`tests/Pest.php:function ofertaPara(:926`) + `enviar()`, em
   `tests/Tenancy` (CT-80, CT-89)
 - (ciclo 2) **configuração gravada**: `gravarConfiguracao()` (`tests/Pest.php:function gravarConfiguracao(:348`) — CT-92
-- (ciclo 2) **fila real no cenário**: o `phpunit.xml` roda em `sync` (`phpunit.xml:name="QUEUE_CONNECTION":142`);
+- (ciclo 2) **fila real no cenário**: o `phpunit.xml` roda em `sync` (`phpunit.xml:"QUEUE_CONNECTION":142`);
   CT-90 usa `Queue::fake()` (o `Notification::fake()` intercepta antes da fila) e CT-99 troca a fila por
   `database` e processa com `queue:work --once`
 - (ciclo 2) **provider falso do assistente**: `Assistente::fake()` e `GuardaPrompt::fake()` — hipótese de
   arnês de CT-91, com as linhas "1 linha em ai_runs" como condição de discriminação das linhas "0"
+- (step 10, 2ª passada) **plugin de bloqueio por painel** — `Filament::getPanel($id)->getPlugin('filament-lockscreen')`
+  (o id: `vendor/marjose123/filament-lockscreen/src/Lockscreen.php:'filament-lockscreen':22`), com os getters
+  `isEnableIdleTimeout()`, `getIdleTimeout()`, `isRateLimitEnabled()`, `getRateLimitLimit()` e `isForceLogout()`
+  (`vendor/marjose123/filament-lockscreen/src/Concerns/HasSessionIdle.php:isEnableIdleTimeout:38`,
+  `vendor/marjose123/filament-lockscreen/src/Concerns/HasSessionIdle.php:getIdleTimeout:46`,
+  `vendor/marjose123/filament-lockscreen/src/Concerns/HasRateLimit.php:isForceLogout:48`,
+  `vendor/marjose123/filament-lockscreen/src/Concerns/HasRateLimit.php:getRateLimitLimit:58`). O mundo alterado
+  chama `enableRateLimit(...)`/`enableIdleTimeout(...)` no plugin **já registrado** — `config()` depois do boot
+  chega tarde. Hipótese de arnês para "sem a ociosidade ligada": `disableIdleTimeout()` declara `: self` e não
+  devolve nada (`vendor/marjose123/filament-lockscreen/src/Concerns/HasSessionIdle.php:disableIdleTimeout:30`), então
+  o mundo é uma instância nova de `Lockscreen` sem `enableIdleTimeout()` posta no painel, ou reflexão sobre
+  `enableActivityTimeout` — a medir na implementação. CT-106, CT-107
+- (step 10, 2ª passada) **default do fonte de `config/lockscreen.php` e de `config/queue.php`** — o 2º argumento
+  de `env()`, lido do texto do arquivo como R39 faz com `config/kit.php`; o mundo alterado é uma cópia desse
+  texto entregue à guarda. CT-106, CT-107, CT-110
+- (step 10, 2ª passada) **eventos agendados** — `app(Schedule::class)->events()`
+  (`vendor/laravel/framework/src/Illuminate/Console/Scheduling/Schedule.php:function events:443`), a expressão cron
+  em `$expression` (`vendor/laravel/framework/src/Illuminate/Console/Scheduling/ManagesAttributes.php:$expression:14`)
+  e o nome da closure em `$description` (`vendor/laravel/framework/src/Illuminate/Console/Scheduling/ManagesAttributes.php:$description:112`).
+  O mundo alterado registra um evento no teste ou troca a `$expression` de um existente. CT-108, CT-109
+- (step 10, 2ª passada) **command de cada serviço do Compose** — `blocoDoServico()` sobre o texto de
+  `docker-compose.yml` (`tests/Pest.php:function blocoDoServico(:1718`). CT-110, CT-111
+- (step 10, 2ª passada) **requisição a `/app/{tenant}`** — em `tests/Tenancy`: `tenant()` (`tests/Pest.php:function tenant(:386`),
+  `usuarioComPapel()` (`tests/Pest.php:function usuarioComPapel(:725`) e `tenants()->attach()` para o vínculo; o
+  `master_global` por `usuarioComPapel('master_global')`, sem vínculo, como `tests/Tenancy/TenancyTest.php:deixa o master_global acessar qualquer tenant:108`;
+  a pilha pela rota do painel app com `{tenant}` (`gatherMiddleware()`), nunca por lista escrita. CT-112..CT-114
 
 ### Fakes
-- `Notification::fake()` nos cenários de convite (o `enviar()` notifica por `mail`, `app/Models/Convite.php:Notification::route('mail':175`)
+- `Notification::fake()` nos cenários de convite (o `enviar()` notifica por `mail`, `app/Models/Convite.php:'mail':175`)
 - nenhum `Http::fake`: a feature não chama rede
 
 ### Estratégia de DB e execução
 - `RefreshDatabase` global das suítes `Kit` e `Tenancy` (`tests/Pest.php`)
 - sentinela `naArvoreDoKit()` no `beforeEach` (`tests/Pest.php:naArvoreDoKit:993`) — **nunca**
   `is_dir('docs')`; `[CT-10]` de `RedeDeDocumentacaoTest` inspeciona toda suíte de `tests/Kit` que nomeia
-  README/`docs/` (`tests/Kit/RedeDeDocumentacaoTest.php:suitesDeDocumentacao:41`), mas **não** alcança
+  README/`docs/` (`tests/Kit/RedeDeDocumentacaoTest.php:suitesDeDocumentacao:50`), mas **não** alcança
   `tests/Tenancy` — por isso CT-05 cobre os dois arquivos
 - asserção de ausência com mensagem: `assertStringNotContainsString`, nunca `->not->toContain($x, $msg)`
   (`.ai/rules/testes.md`, "toContain() é variádica")
@@ -352,7 +483,16 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | um bloco ````mermaid (quatro crases) sem ID de catálogo   | 1 | recusa: "bloco sem guarda"                   | cerca longa                   |
         | um bloco ```mermaid com o ID DG-01 dentro de <!-- … -->   | 1 | recusa, nomeando o comentário HTML e a linha | bloco escondido (A2-21, P-40) |
         | um bloco ```php que contém a palavra mermaid              | 0 | aceita                                       | falso positivo do detector    |
+        | um ```html com um `<!--` de exemplo sem fechar, e depois o DG-01 real | 1 | aceita                       | comentário de exemplo dentro de outra cerca (CR-7) |
+        | um ```mermaid de exemplo dentro de ````markdown, e depois o DG-01 real | 1 | aceita                      | mermaid aninhado em cerca de 4 crases (CR-7) |
+        | o mesmo do ```html, com meta na info string (`title="x"`) | 1 | aceita                                       | cerca alheia com meta (RD2-18) |
+        | o mesmo do ````markdown, com meta na info string          | 1 | aceita                                       | cerca de 4 crases com meta (RD2-18) |
 ```
+
+*(alterado em 2026-09-29: as quatro últimas linhas de Exemplos nasceram no teste, nas rodadas 1 e 2 da
+revisão do diff — CR-7 e RD2-18 —, e entram aqui para o Gherkin espelhar o dataset. O span de código
+embutido de três crases que abre e fecha na mesma linha, da rodada 4, ficou num teste à parte, sem
+CT: `[RD3-05]` em [Testes nascidos na revisão do diff, sem CT](#testes-nascidos-na-revisão-do-diff-sem-ct).)*
 
 Discrimina: com o extrator ingênuo, M6 devolve 0 nas linhas de til e de quatro crases, e M7 devolve 1 e
 aceita na linha do comentário.
@@ -418,7 +558,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 plausível é outro: o en **omite os aliases** (`state "Pending" as Pendente`, `A["Panel choice"]`) e o
 GitHub mostra o **identificador**, que R2 obriga a ser igual nos dois idiomas — e os identificadores
 bons são palavras pt sem acento (`Pendente`, `Aceito`, `Recusado`, `Expirado`, `reenviar`). O `[CT-19]`
-herdado só procura `não|que|é|são|sobre` (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-19]:430`) e não os
+herdado só procura `não|que|é|são|sobre` (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-19]':430`) e não os
 vê.
 
 `@premissa` P-23 (de mecanismo): **rótulo visível** é o alias/rótulo do elemento, ou o identificador
@@ -542,6 +682,12 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 > elementos que resolvem no código (não o tipo do bloco), e R40/CT-77 confere que **todo** nó de código
 > de qualquer DG — os três extras inclusive — existe. O que continua sem matador: uma relação falsa entre
 > dois elementos reais que **não** é a relação que a guarda escolheu declarar. Vai para P-02.
+>
+> *(alterado em 2026-09-29: segunda passada do step 10, achados A-01, A-02, A-03 e A-06.)* As linhas DG-10,
+> DG-19 e DG-20 da tabela de CT-06 ganharam conteúdo derivado do código — R48 (DG-10), R49 e R50 (DG-19), R51
+> e R52 (DG-20) —, e o `Então` de CT-06, que só pede a reprovação da cópia, ganhou o par que faltava: o fato
+> declarado de cada DG aceita o bloco **publicado**, em pt e en, e reprova o próprio bloco publicado adulterado
+> (R53/CT-116). O que ainda sobra em L-01 está na tabela de [Lacunas declaradas](#lacunas-declaradas).
 
 ---
 
@@ -622,7 +768,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 **Ciclo 2 (A2-22, baixa — aceito, com ressalva de evidência).** A marca de opcional de R4 é conferida só
 em blocos Mermaid; o GIF de um clipe de recurso desligado por padrão é a mesma afirmação em imagem. O login
 unificado nasce desligado (`config/kit.php:KIT_LOGIN_UNIFICADO:719`). Ressalva: o achado diz que "as
-capturas rodam com a chave forçada (`phpunit.xml:90`)"; a linha força o **contrário**, `false`
+capturas rodam com a chave forçada (`phpunit.xml`, linha 90)"; a linha força o **contrário**, `false`
 (`phpunit.xml:KIT_LOGIN_UNIFICADO:90`), e quem liga o recurso é o próprio cenário
 (`tests/Pest.php:ligarLoginUnificado:507`). O defeito continua plausível: a imagem mostra uma tela que só
 existe com a chave ligada. `@premissa` P-41 (de mecanismo): o mapa clipe → chave é declarado na guarda e só
@@ -656,7 +802,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 > `RQ-20`, `RQ-21`, `RQ-10` · perfil **padrão** · técnica: **EP** exaustiva sobre painéis e papéis + **mundo alterado**
 >
-> Mundo: `app` em `/app` (`app/Providers/Filament/AppPanelProvider.php:->id('app'):75`, `app/Providers/Filament/AppPanelProvider.php:->path('app'):76`), `admin` em `/admin` (`app/Providers/Filament/AdminPanelProvider.php:->id('admin'):67`), `infra` em `/infra` (`app/Providers/Filament/InfraPanelProvider.php:->id('infra'):88`); `roles.painel` semeado: `master_global` nulo (`database/seeders/PapeisSeeder.php:master_global:55`, entra pelo `Gate::before`), `admin`→admin (`database/seeders/PapeisSeeder.php:'admin':58`), `infra`→infra (`database/seeders/PapeisSeeder.php:'infra':61`), `panel_user`→app (`database/seeders/PapeisSeeder.php:panel_user:101`), `admin_app`→app só com tenancy (`database/seeders/PapeisSeeder.php:kit.tenancy.enabled:79`); ledger da IA gravado por `RegistrarAiRun` (`app/Providers/KitServiceProvider.php:RegistrarAiRun:455`)
+> Mundo: `app` em `/app` (`app/Providers/Filament/AppPanelProvider.php:id:76`, `app/Providers/Filament/AppPanelProvider.php:path:77`), `admin` em `/admin` (`app/Providers/Filament/AdminPanelProvider.php:id:67`), `infra` em `/infra` (`app/Providers/Filament/InfraPanelProvider.php:id:88`); `roles.painel` semeado: `master_global` nulo (`database/seeders/PapeisSeeder.php:master_global:55`, entra pelo `Gate::before`), `admin`→admin (`database/seeders/PapeisSeeder.php:'admin':58`), `infra`→infra (`database/seeders/PapeisSeeder.php:'infra':61`), `panel_user`→app (`database/seeders/PapeisSeeder.php:panel_user:101`), `admin_app`→app só com tenancy (`database/seeders/PapeisSeeder.php:'kit.tenancy.enabled':79`); ledger da IA gravado por `RegistrarAiRun` (`app/Providers/KitServiceProvider.php:RegistrarAiRun:455`)
 
 ```gherkin
 # language: pt
@@ -688,7 +834,17 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | um painel "financeiro" registrado por painelRegistradoEmTeste  | financeiro    | derivado × lista fixa      |
         | o bloco com um nó "Horizon" (classe inexistente no projeto)    | Horizon       | nó inventado               |
         | o papel infra semeado com roles.painel = admin                 | infra         | papel ligado ao painel errado |
+        | o reverb ligado só ao painel admin (os três painéis o usam)    | reverb        | aresta que o código não tem |
+        | o packagist ligado ao painel admin (o plugin é do /infra)      | packagist     | aresta que o código não tem |
+        | o oauth desenhado só no painel admin (o hook de login é global) | oauth        | aresta que o código não tem |
+        | os agentes de IA só via /app (o catálogo é administrado no /admin) | agentes_ia | aresta que o código não tem |
 ```
+
+*(alterado em 2026-09-29: as quatro últimas linhas nasceram no teste na rodada 1 da revisão do diff —
+RD-05, quatro arestas do DG-01 que o código não tem — e entram aqui para o Gherkin espelhar o dataset.
+Desde a rodada 3 (RD2-10, RQ-34) a conferência lê as quatro cópias do DG-01 — `README.md`,
+`README.en.md` e a página de diagramas nos dois idiomas —, com o extrator de arestas normalizado, e
+não só o DG-01 em pt que o `Quando` acima diz.)*
 
 #### Mutantes previstos
 
@@ -737,9 +893,9 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 **Ciclo 1 (A-14).** "Ao menos uma permissão da entidade" deixa o caso de uso de **escrita** passar com a
 permissão de **ler**, e o mapa caso de uso → permissão é escolhido pela própria guarda. O caso real do
 kit: o `panel_user` vê o dashboard e não o monta — `Manage:Dashboard` é subtraída dele
-(`database/seeders/PapeisSeeder.php:Manage:Dashboard:112`), vale para os três painéis nos outros papéis
+(`database/seeders/PapeisSeeder.php:'Manage:Dashboard':112`), vale para os três painéis nos outros papéis
 (`database/seeders/PapeisSeeder.php:'Manage:Dashboard' => ['app', 'admin', 'infra']:251`) e é o que a
-página consulta para editar (`app/Filament/App/Pages/Dashboard.php:Manage:Dashboard:94`). Aqui a
+página consulta para editar (`app/Filament/App/Pages/Dashboard.php:'Manage:Dashboard':94`). Aqui a
 permissão exigida por caso de uso é **fixada no 04**, não escolhida na guarda.
 
 ```gherkin
@@ -780,8 +936,8 @@ ausente).
 **Ciclo 2 (A2-04).** A atribuição de M5 a CT-11 era falsa: com zero arestas de um papel, "toda aresta
 corresponde" e "o ausente não se liga" são verdadeiras no vazio — a presença de cada papel estava só no
 título da regra. E a linha `master_global` de CT-11 é vácua: o papel nasce sem permissão nenhuma
-(`database/seeders/PapeisSeeder.php:->syncPermissions([]);:56`) e entra pelo `Gate::before`
-(`app/Providers/KitServiceProvider.php:Gate::before:414`), então "corresponde a permissão que ele tem"
+(`database/seeders/PapeisSeeder.php:syncPermissions:56`) e entra pelo `Gate::before`
+(`app/Providers/KitServiceProvider.php:before:414`), então "corresponde a permissão que ele tem"
 reprova toda aresta ou é dispensado. O fechamento virou regra própria, R44 (CT-83): aresta ⇔ `can()`
 executado, mapa de casos de uso fixado neste `04`, e uma linha "presente" por papel. **M4 e M5 passam a
 ser mortos por CT-83**; CT-11 continua, com as linhas `admin`, `infra` e `panel_user` como estão.
@@ -829,7 +985,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 **Ciclo 1 (A-12).** Toda linha de CT-13 e CT-14 tem **um** papel. O código não decide "pelo papel" da
 conta: pergunta se **algum** papel dela tem `roles.painel` igual ao painel
-(`app/Models/User.php:function temPapelDoPainel:388`, `app/Models/User.php:temPapelOnde('painel':390`).
+(`app/Models/User.php:function temPapelDoPainel:388`, `app/Models/User.php:temPapelOnde:390`).
 Um DG-03 desenhado como `switch` de ramos exclusivos (admin → /admin, infra → /infra) acerta toda linha
 de papel único e erra quem acumula — o par que a pergunta 5 da revisão adversarial manda testar.
 
@@ -899,7 +1055,7 @@ Arquivo: `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` — `admin_app` s
 
 ## Regra R8 — DG-04: login por senha + 2FA
 
-> `RQ-22` · perfil **padrão** · técnica: **EP** (2FA ativo para a conta × não) + **ordem** · mundo: a tela de login limita tentativas (`vendor/filament/filament/src/Auth/Pages/Login.php:rateLimit(5):70`), consulta `canAccessPanel` (`vendor/filament/filament/src/Auth/Pages/Login.php:canAccessPanel:172`), a tela do kit explica conta indisponível com senha certa (`app/Filament/Pages/Auth/TelaLogin.php:authenticate:196`); o desafio é do Breezy, na tela do kit (`app/Filament/Pages/Auth/TelaDoisFatores.php:TwoFactorPage:28`, registrado em `app/Providers/Filament/AdminPanelProvider.php:enableTwoFactorAuthentication:248`)
+> `RQ-22` · perfil **padrão** · técnica: **EP** (2FA ativo para a conta × não) + **ordem** · mundo: a tela de login limita tentativas (`vendor/filament/filament/src/Auth/Pages/Login.php:rateLimit:70`), consulta `canAccessPanel` (`vendor/filament/filament/src/Auth/Pages/Login.php:canAccessPanel:172`), a tela do kit explica conta indisponível com senha certa (`app/Filament/Pages/Auth/TelaLogin.php:authenticate:196`); o desafio é do Breezy, na tela do kit (`app/Filament/Pages/Auth/TelaDoisFatores.php:TwoFactorPage:28`, registrado em `app/Providers/Filament/AdminPanelProvider.php:enableTwoFactorAuthentication:248`)
 
 ```gherkin
 # language: pt
@@ -939,7 +1095,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 ## Regra R9 — DG-05: login unificado 0/1/N painéis
 
-> `RQ-22` · perfil **padrão** · técnica: **BVA** na contagem de painéis acessíveis (0, 1, 2 — borda em 1) + partição "URL pretendida num painel acessível" · mundo: `app/Support/DestinoAposLogin.php:urlPara:85` — pretendida acessível vence (`app/Support/DestinoAposLogin.php:painelDaPretendida:96`), exatamente 1 painel vai direto (`app/Support/DestinoAposLogin.php:count($paineis) === 1:97`), o resto vai à escolha (`app/Support/DestinoAposLogin.php:login.painel:98`); o recurso é opt-in (R4)
+> `RQ-22` · perfil **padrão** · técnica: **BVA** na contagem de painéis acessíveis (0, 1, 2 — borda em 1) + partição "URL pretendida num painel acessível" · mundo: `app/Support/DestinoAposLogin.php:urlPara:85` — pretendida acessível vence (`app/Support/DestinoAposLogin.php:painelDaPretendida:96`), exatamente 1 painel vai direto (`app/Support/DestinoAposLogin.php:count($paineis) === 1:97`), o resto vai à escolha (`app/Support/DestinoAposLogin.php:'login.painel':98`); o recurso é opt-in (R4)
 
 ```gherkin
 # language: pt
@@ -1088,7 +1244,7 @@ pendente — a espera vale para conta nova **ou** existente, depois da checagem 
 (`app/Http/Controllers/Auth/LoginSocialController.php:if (($redirecionamento = $this->redirecionarSeIndisponivel($user, $mascarado, $provedor)) !== null) {:324`,
 `app/Http/Controllers/Auth/LoginSocialController.php:if ($user->aprovacao_pendente) {:329`). A aprovação manual
 é a chave de `config/kit.php:KIT_REGISTRO_APROVACAO_MANUAL:404`, lida em
-`app/Support/RegistroAberto.php:kit.registro.aprovacao_manual:81`.
+`app/Support/RegistroAberto.php:'kit.registro.aprovacao_manual':81`.
 
 ```gherkin
 # language: pt
@@ -1119,7 +1275,7 @@ retorno, na linha 2; a existente, na linha 5), e o caminho feliz a autenticaria.
 
 ## Regra R11 — DG-07: os links do convite no envio, no lembrete, no reenvio e no aceite
 
-> `RQ-22` · perfil **padrão** · técnica: **rastreio de efeito** — primeiro o QUE: o convite sai por **e-mail** (`app/Models/Convite.php:Notification::route('mail':175` no envio, `app/Models/Convite.php:Notification::route('mail':223` no lembrete); depois as direções: link vale / deixa de valer, por evento. "Vale" = `Convite::valido($token) !== null` (`app/Models/Convite.php:valido:464`)
+> `RQ-22` · perfil **padrão** · técnica: **rastreio de efeito** — primeiro o QUE: o convite sai por **e-mail** (`app/Models/Convite.php:'mail':175` no envio, `app/Models/Convite.php:'mail':223` no lembrete); depois as direções: link vale / deixa de valer, por evento. "Vale" = `Convite::valido($token) !== null` (`app/Models/Convite.php:valido:464`)
 
 ```gherkin
 # language: pt
@@ -1254,15 +1410,15 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 **Ciclo 2 (A2-01, A2-02) — a matriz fechada, com o atributo que o rótulo esconde.** "20 células" estava
 na prosa, e o `Esquema` de CT-20 executava 9 linhas. Pior: o rótulo não é o estado. `rotuloDaSituacao()`
 mostra Pendente enquanto houver pendência, qualquer que seja `ativo` (`app/Models/User.php:'Pendente':504`);
-a conta pendente nasce ativa (`database/migrations/2026_08_26_183825_add_ativo_and_soft_deletes_to_users_table.php:default(true):37`);
-Desativar aparece para ela (`app/Filament/Concerns/SituacaoDaConta.php:$record->ativo:67`,
+a conta pendente nasce ativa (`database/migrations/2026_08_26_183825_add_ativo_and_soft_deletes_to_users_table.php:default:37`);
+Desativar aparece para ela (`app/Filament/Concerns/SituacaoDaConta.php:ativo:67`,
 `app/Filament/Concerns/SituacaoDaConta.php:! $record->trashed():68`) e Aprovar também, porque só olha a
-pendência (`app/Filament/Concerns/AprovacaoDeCadastro.php:$record->aprovacao_pendente):119`); aprovar só a
+pendência (`app/Filament/Concerns/AprovacaoDeCadastro.php:aprovacao_pendente:119`); aprovar só a
 baixa (`app/Models/User.php:'aprovacao_pendente' => false:526`). Pendente → desativar → aprovar dá
 **Inativo**. A pendência também atravessa a lixeira: Aprovar não olha `trashed()`, Excluir e Restaurar são as
 ações nativas, ocultas conforme `trashed()` (`vendor/filament/actions/src/DeleteAction.php:return $record->trashed();:48`,
 `vendor/filament/actions/src/RestoreAction.php:return $record->trashed();:64`), e restaurar devolve o que
-estava gravado. Ações da tabela: `app/Filament/Admin/Resources/Users/UserResource.php:self::acaoDeAprovar():220`,
+estava gravado. Ações da tabela: `app/Filament/Admin/Resources/Users/UserResource.php:acaoDeAprovar():220`,
 `:self::acaoDeDesativar():223`, `:self::acaoDeReativar():224`, `:DeleteAction::make():246`,
 `:RestoreAction::make():247`; Reativar aparece para quem não está ativo nem excluído
 (`app/Filament/Concerns/SituacaoDaConta.php:! $record->ativo && ! $record->trashed():86`).
@@ -1397,7 +1553,7 @@ e os únicos matadores de M8–M13, vindos da revisão — o gate vence o teto.
 
 ## Regra R13 — DG-09: estados do convite
 
-> `RQ-22` · perfil **padrão** · técnica: **tabela estado × evento executada** + **2-switch**. Matriz única do convite: **4 estados** (Pendente, Aceito, Recusado, Expirado — `app/Models/Convite.php:situacao:587`, não há coluna de status) × **6 eventos** (reenviar, lembrar, aceitar, recusar, prazo vence, revogar/excluir) = **24 células**. Precedência verificada: Aceito vence tudo (`app/Models/Convite.php:'Aceito':590`), Recusado vence Expirado (`app/Models/Convite.php:'Recusado':591`); `enviar()` zera `aceito_em` e **não** zera `recusado_em` (`app/Models/Convite.php:'aceito_em' => null:161`); a ação Reenviar só aparece em Pendente e Expirado (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:situacao() === 'Pendente':89`); aceite exige prazo (`app/Models/Convite.php:'expira_em', '>':480`) e não recusado (`app/Models/Convite.php:whereNull('recusado_em'):479`). A revogação é exclusão física (sem SoftDeletes no model) — fim, não estado
+> `RQ-22` · perfil **padrão** · técnica: **tabela estado × evento executada** + **2-switch**. Matriz única do convite: **4 estados** (Pendente, Aceito, Recusado, Expirado — `app/Models/Convite.php:situacao:587`, não há coluna de status) × **6 eventos** (reenviar, lembrar, aceitar, recusar, prazo vence, revogar/excluir) = **24 células**. Precedência verificada: Aceito vence tudo (`app/Models/Convite.php:'Aceito':590`), Recusado vence Expirado (`app/Models/Convite.php:'Recusado':591`); `enviar()` zera `aceito_em` e **não** zera `recusado_em` (`app/Models/Convite.php:'aceito_em' => null:161`); a ação Reenviar só aparece em Pendente e Expirado (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:situacao() === 'Pendente':89`); aceite exige prazo (`app/Models/Convite.php:'expira_em', '>':480`) e não recusado (`app/Models/Convite.php:'recusado_em':479`). A revogação é exclusão física (sem SoftDeletes no model) — fim, não estado
 
 ```gherkin
 # language: pt
@@ -1437,7 +1593,7 @@ Se P-08 for negada (o diagrama descreve o **model**, não a tela), CT-22 inverte
 **Oráculo de CT-21 reescrito no ciclo 1 (A-03)**, como o de CT-20: "tem a seta se e só se o resultado
 difere" **pedia** uma seta na linha da revogação (o resultado "(excluído)" difere de Pendente) e aceitava
 qualquer destino — `Pendente --> Revogado : revogar` passava. A coluna `caminho` afirma o destino; a
-revogação é o `DeleteAction` nativo relabelado (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:DeleteAction::make():97`),
+revogação é o `DeleteAction` nativo relabelado (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:DeleteAction:97`),
 então o destino é o fim, não um estado.
 
 ```gherkin
@@ -1481,9 +1637,9 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 (24 − 8) são resolvidas pela mesma execução" estava na prosa. E, ao montar o produto fechado, a derivação
 achou que a linha "Pendente × recusar" de CT-21, alocada em `tests/Kit`, **não tem ponto de entrada lá**: a
 única chamada de `recusar()` no código é a da caixa de convites recebidos
-(`app/Filament/App/Pages/ConvitesRecebidos.php:$record->recusar($this->usuario());:144`), que só existe com a
+(`app/Filament/App/Pages/ConvitesRecebidos.php:recusar:144`), que só existe com a
 tenancy (`app/Filament/App/Pages/ConvitesRecebidos.php:return (bool) config('kit.tenancy.enabled') && Auth::check();:77`)
-e lista só o convite válido (`app/Filament/App/Pages/ConvitesRecebidos.php:Convite::pendentesPara:88`,
+e lista só o convite válido (`app/Filament/App/Pages/ConvitesRecebidos.php:pendentesPara:88`,
 `app/Models/Convite.php:public static function pendentesPara:527`). Por isso a matriz roda em `tests/Tenancy`,
 e o Recusado é opt-in de `KIT_TENANCY` (R4) — `@premissa` P-43 (de comportamento, falha fechado): o evento
 recusar e o estado Recusado do DG-09 carregam `KIT_TENANCY`; invariante: nenhum bloco mostra a recusa como
@@ -1492,16 +1648,16 @@ possível numa instalação sem tenancy. Achado também: `recusar()` não confer
 célula Expirado × recusar é "não oferecida" só porque a caixa não lista o expirado, o mesmo regime de CT-22.
 
 Pontos de entrada: **reenviar** — ação da tabela de convites do `/admin`, visível em Pendente e Expirado
-(`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:Action::make('reenviar'):73`,
+(`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:'reenviar':73`,
 `app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:situacao() === 'Pendente':89`); **lembrar** —
-só o comando agendado (`routes/console.php:kit:convites-lembrar:39`,
-`app/Console/Commands/KitConvitesLembrar.php:$convite->lembrar();:84`), que exclui aceito, recusado e expirado
-(`app/Console/Commands/KitConvitesLembrar.php:->whereNull('aceito_em'):49`, `:->whereNull('recusado_em'):52`,
+só o comando agendado (`routes/console.php:'kit:convites-lembrar':40`,
+`app/Console/Commands/KitConvitesLembrar.php:lembrar:84`), que exclui aceito, recusado e expirado
+(`app/Console/Commands/KitConvitesLembrar.php:'aceito_em':49`, `app/Console/Commands/KitConvitesLembrar.php:'recusado_em':52`,
 `:->where('expira_em', '>', now()):54`); **aceitar** e **recusar** a oferta — a caixa de convites recebidos
-(`app/Filament/App/Pages/ConvitesRecebidos.php:Action::make('aceitar'):100`,
-`app/Filament/App/Pages/ConvitesRecebidos.php:Action::make('recusar'):132`); **prazo vence** — `travelTo()`
+(`app/Filament/App/Pages/ConvitesRecebidos.php:'aceitar':100`,
+`app/Filament/App/Pages/ConvitesRecebidos.php:'recusar':132`); **prazo vence** — `travelTo()`
 além de `expira_em`; **revogar** — o `DeleteAction` da tabela, sem `visible()`
-(`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:DeleteAction::make():97`), em todo estado.
+(`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:DeleteAction:97`), em todo estado.
 
 Situações por transição real: **Pendente** = `ofertaPara()` para a conta existente de ana
 (`tests/Pest.php:function ofertaPara(:926`) + `enviar()`; **Aceito** = Pendente → aceitar pela caixa;
@@ -1595,7 +1751,7 @@ os únicos matadores de M8–M12 — o gate vence o teto.
 
 ## Regra R14 — DG-11: a sequência do assistente, os 4 guardrails e o ledger `ai_runs`
 
-> `RQ-23` · perfil **padrão** · técnica: **ordem derivada de execução** + **valor literal do 00** ("os 4 guardrails") + **mundo alterado**. Mundo: middlewares do agente = `BudgetGuardMiddleware` primeiro (`app/Ai/Agents/AgenteBase.php:BudgetGuardMiddleware:76`), depois os guardrails do catálogo na ordem semeada (`database/seeders/AssistenteSeeder.php:guardrails:39`, resolvidos por `app/Ai/Guardrails/GuardrailRegistry.php:MAPA:23`), `AiAuditMiddleware` por último (`app/Ai/Agents/Assistente.php:AiAuditMiddleware:63`); o ledger é gravado por listener de evento (`app/Providers/KitServiceProvider.php:RegistrarAiRun:455`, `app/Ai/Listeners/RegistrarAiRun.php:AiRun::create:44`)
+> `RQ-23` · perfil **padrão** · técnica: **ordem derivada de execução** + **valor literal do 00** ("os 4 guardrails") + **mundo alterado**. Mundo: middlewares do agente = `BudgetGuardMiddleware` primeiro (`app/Ai/Agents/AgenteBase.php:BudgetGuardMiddleware:76`), depois os guardrails do catálogo na ordem semeada (`database/seeders/AssistenteSeeder.php:guardrails:39`, resolvidos por `app/Ai/Guardrails/GuardrailRegistry.php:MAPA:23`), `AiAuditMiddleware` por último (`app/Ai/Agents/Assistente.php:AiAuditMiddleware:63`); o ledger é gravado por listener de evento (`app/Providers/KitServiceProvider.php:RegistrarAiRun:455`, `app/Ai/Listeners/RegistrarAiRun.php:create:44`)
 
 ```gherkin
 # language: pt
@@ -1641,7 +1797,7 @@ linha exercita o que cada camada **faz**. Três bloqueiam por exceção — `pro
 `prompt_guard_local` (`app/Ai/Guardrails/GarantirPromptSeguroMiddleware.php:throw new PromptInjecaoBloqueadaException:58`)
 e o orçamento (`app/Ai/Middleware/BudgetGuardMiddleware.php:throw new BudgetExceededException:54`); duas
 transformam e seguem — o `pii_redactor` nunca bloqueia (`app/Ai/Guardrails/PiiRedactorMiddleware.php:Nunca:10`)
-e o filtro de saída redige a **resposta**, no `->then()` (`app/Ai/Guardrails/FiltroSaidaSensivelMiddleware.php:->then(:42`,
+e o filtro de saída redige a **resposta**, no `->then()` (`app/Ai/Guardrails/FiltroSaidaSensivelMiddleware.php:then:42`,
 `app/Ai/Guardrails/FiltroSaidaSensivelMiddleware.php:$response->text = $texto;:49`). O ledger só nasce do evento
 de fim de execução (`app/Providers/KitServiceProvider.php:Event::listen([AgentPrompted::class, AgentStreamed::class], RegistrarAiRun::class):455`,
 `app/Ai/Listeners/RegistrarAiRun.php:public function handle(AgentPrompted:30`), sempre com `status` `ok`
@@ -1650,7 +1806,7 @@ evidência: o achado diz "gravado só no `AgentPrompted`"; o listener escuta tam
 defeito não muda.
 
 Arnês (hipótese a confirmar, não conclusão): `Assistente::fake([...])` e `GuardaPrompt::fake([...])`, como em
-`tests/Kit/AssistenteChatWidgetTest.php:Assistente::fake(['ok']);:225` e
+`tests/Kit/AssistenteChatWidgetTest.php:fake:225` e
 `tests/Kit/AssistenteChatWidgetTest.php:GuardaPrompt::fake([['seguro' => true:224`; orçamento por
 `config(['ai-tasks.budgets.default.monthly_usd' => …])` (`config/ai-tasks.php:'budgets' => [:208`) com uma linha de
 `ai_runs` de custo acima dele. **As linhas "1" são a condição de discriminação das linhas "0"**: se o fake não
@@ -1683,7 +1839,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 ## Regra R15 — DG-12: o mapa do `/infra` (tela → quem grava)
 
-> `RQ-23` · perfil **padrão** · técnica: **EP exaustiva** sobre as Resources do painel (8 hoje: AiRuns, ComposerReleasePackages, QueueMonitor, AuthenticationLog, Audits, CommandRecord, Exception, MailLog — `Filament::getPanel('infra')->getResources()` medido com `tinker`) + **mundo alterado** (`vendor/filament/filament/src/Panel/Concerns/HasComponents.php:$this->resources[] = $resource:192`). O backup agendado está **comentado** (`routes/console.php:backup:run:140`); o health é agendado (`routes/console.php:health:check:28`)
+> `RQ-23` · perfil **padrão** · técnica: **EP exaustiva** sobre as Resources do painel (8 hoje: AiRuns, ComposerReleasePackages, QueueMonitor, AuthenticationLog, Audits, CommandRecord, Exception, MailLog — `Filament::getPanel('infra')->getResources()` medido com `tinker`) + **mundo alterado** (`vendor/filament/filament/src/Panel/Concerns/HasComponents.php:$this->resources[] = $resource:192`). O backup agendado está **comentado** (`routes/console.php:'backup:run':141`); o health é agendado (`routes/console.php:'health:check':29`)
 
 `@premissa` P-11 (de escopo): o mapa cobre toda Resource do `/infra` e as páginas cuja fonte é
 gravada por outro processo (Health, Backups, Logs, Pulse); telas sem dado próprio (Dashboard, Hub) ficam
@@ -1726,10 +1882,10 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 **Ciclo 1 (A-04).** "Resolve numa classe que existe" prova que o gravador existe, não que é ele quem
 grava **aquela** tela. O homônimo do kit: `AiAuditMiddleware` só escreve no canal `ai`
-(`app/Ai/Middleware/AiAuditMiddleware.php:Log::channel('ai'):31`, `:41`, `:51`); a tabela `audits` que a
+(`app/Ai/Middleware/AiAuditMiddleware.php:channel:31`, `:41`, `:51`); a tabela `audits` que a
 tela Audits lista (`vendor/tapp/filament-auditing/src/Filament/Resources/Audits/AuditResource.php:$model = Audit::class:20`,
 `config/audit.php:'audits':173`) é gravada pelos models `Auditable` (`app/Models/User.php:implements Auditable:59`);
-o `ai_runs` é gravado pelo listener (`app/Ai/Listeners/RegistrarAiRun.php:AiRun::create:44`). O oráculo
+o `ai_runs` é gravado pelo listener (`app/Ai/Listeners/RegistrarAiRun.php:create:44`). O oráculo
 passa a ser **executado**: exercitar o gravador que o bloco nomeia e contar a tabela da tela.
 
 ```gherkin
@@ -1762,30 +1918,30 @@ plausível de cada um:
 - **AuthenticationLog** — o listener do pacote no evento `Login` (`config/authentication-log.php:'login'               => LoginListener::class:32`,
   `vendor/rappasoft/laravel-authentication-log/src/Listeners/LoginListener.php:$log = $user->authentications()->create([:101`);
   homônimo: o canal de log `autenticacao` (`config/logging.php:'autenticacao' => [:132`), onde `canAccessPanel`
-  escreve a negativa (`app/Models/User.php:Log::channel('autenticacao')->warning(:167`)
-- **MailLog** — o handler do pacote no `MessageSending` (`vendor/tapp/filament-maillog/src/Events/MailLogEventHandler.php:MessageSending::class:25`,
+  escreve a negativa (`app/Models/User.php:'autenticacao':167`)
+- **MailLog** — o handler do pacote no `MessageSending` (`vendor/tapp/filament-maillog/src/Events/MailLogEventHandler.php:MessageSending:25`,
   `vendor/tapp/filament-maillog/src/Events/MailLogEventHandler.php:$mailLog = MailLog::create([:37`), tabela
-  `mail_logs` (`database/migrations/2026_08_18_171921_create_filament_mail_log_table.php:Schema::create('mail_logs':12`);
+  `mail_logs` (`database/migrations/2026_08_18_171921_create_filament_mail_log_table.php:'mail_logs':12`);
   homônimo: `Convite::enviar()`, cuja notificação é `ShouldQueue` (`app/Notifications/ConviteDeAcesso.php:implements ShouldQueue:27`)
-- **Exception** — o `reportable` do pacote no handler (`vendor/bezhansalleh/filament-exceptions/src/FilamentExceptionsServiceProvider.php:$handler->reportable(:37`),
-  tabela `filament_exceptions_table` (`database/migrations/2026_08_18_171919_create_filament_exceptions_table.php:Schema::create('filament_exceptions_table':11`);
+- **Exception** — o `reportable` do pacote no handler (`vendor/bezhansalleh/filament-exceptions/src/FilamentExceptionsServiceProvider.php:reportable:37`),
+  tabela `filament_exceptions_table` (`database/migrations/2026_08_18_171919_create_filament_exceptions_table.php:'filament_exceptions_table':11`);
   homônimo: `Log::error()` de uma exceção capturada
-- **QueueMonitor** — os ganchos do worker (`vendor/croustibat/filament-jobs-monitor/src/QueueMonitorProvider.php:Queue::before(:27`),
-  tabela `queue_monitors` (`database/migrations/2026_08_12_164919_create_filament-jobs-monitor_table.php:Schema::create('queue_monitors':14`);
+- **QueueMonitor** — os ganchos do worker (`vendor/croustibat/filament-jobs-monitor/src/QueueMonitorProvider.php:before:27`),
+  tabela `queue_monitors` (`database/migrations/2026_08_12_164919_create_filament-jobs-monitor_table.php:'queue_monitors':14`);
   homônimo: o despacho do job, sem worker
 - **CommandRecord** — a tela de cadastro do pacote, sobre `command_center_commands`
   (`vendor/ssbityukov/filament-command-center/src/Sources/CommandRecord.php:protected $table = 'command_center_commands':16`);
   homônimo: a execução de um comando pela Central, que grava `command_center_runs`
   (`vendor/ssbityukov/filament-command-center/src/Runs/RunRecord.php:protected $table = 'command_center_runs':28`)
 - **ComposerReleasePackages** — o serviço de sincronização do pacote
-  (`vendor/mominalzaraa/filament-composer-release-notifier/src/Services/ComposerReleaseSyncService.php:ComposerReleasePackageSnapshot::query()->updateOrCreate(:94`),
+  (`vendor/mominalzaraa/filament-composer-release-notifier/src/Services/ComposerReleaseSyncService.php:updateOrCreate:94`),
   tabela `composer_release_package_snapshots`; sem homônimo exercitável
 
-Arnês: o `phpunit.xml` roda a fila em `sync` (`phpunit.xml:name="QUEUE_CONNECTION":142`), o que faria o e-mail
+Arnês: o `phpunit.xml` roda a fila em `sync` (`phpunit.xml:"QUEUE_CONNECTION":142`), o que faria o e-mail
 e o job passarem pelo worker na hora — e o "sem worker" das linhas MailLog e QueueMonitor ficaria em mundo
 vazio. Essas duas linhas trocam a fila por `database` no próprio cenário e processam com `queue:work --once`.
-O Pulse nasce desligado nos testes (`phpunit.xml:name="PULSE_ENABLED":153`) e o canal do kit escreve em
-`monolog` com `NullHandler` (`phpunit.xml:name="LOG_KIT_DRIVER":140`): Logs e Pulse são **resolvidos**, não
+O Pulse nasce desligado nos testes (`phpunit.xml:"PULSE_ENABLED":153`) e o canal do kit escreve em
+`monolog` com `NullHandler` (`phpunit.xml:"LOG_KIT_DRIVER":140`): Logs e Pulse são **resolvidos**, não
 exercitados — lacuna L-05. Estouro do teto (R15 com 5 cenários): CT-99 e CT-100 são os únicos matadores de
 M6–M11, vindos da revisão — o gate vence o teto.
 
@@ -1873,13 +2029,13 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 **Ciclo 1 (A-05).** "Corresponde a um método de relação ou chave estrangeira" aceita `TENANT ||--o{ USER`
 porque `User::tenants()` existe. A cardinalidade sai do **tipo** da relação e da **nulidade** da chave:
-`belongsToMany` nos dois lados com tabela de ligação (`app/Models/User.php:belongsToMany(Tenant::class):750`,
-`app/Models/Tenant.php:belongsToMany(User::class):114`,
-`database/migrations/0001_01_01_000021_create_tenant_user_table.php:Schema::create('tenant_user':22`);
-`hasMany` com `user_id` obrigatório (`app/Models/User.php:hasMany(VinculoSocial::class):760`,
-`database/migrations/2026_08_26_172455_create_vinculos_sociais_table.php:foreignId('user_id'):23`);
-`convites.tenant_id` anulável (`database/migrations/2026_08_13_000002_create_convites_table.php:foreignId('tenant_id')->nullable():39`)
-e `convites.role_id` obrigatório (`database/migrations/2026_08_13_000002_create_convites_table.php:foreignId('role_id'):35`).
+`belongsToMany` nos dois lados com tabela de ligação (`app/Models/User.php:belongsToMany:750`,
+`app/Models/Tenant.php:belongsToMany:114`,
+`database/migrations/0001_01_01_000021_create_tenant_user_table.php:'tenant_user':22`);
+`hasMany` com `user_id` obrigatório (`app/Models/User.php:hasMany:760`,
+`database/migrations/2026_08_26_172455_create_vinculos_sociais_table.php:'user_id':23`);
+`convites.tenant_id` anulável (`database/migrations/2026_08_13_000002_create_convites_table.php:'tenant_id':39`)
+e `convites.role_id` obrigatório (`database/migrations/2026_08_13_000002_create_convites_table.php:'role_id':35`).
 
 ```gherkin
 # language: pt
@@ -1995,7 +2151,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 ## Regra R18 — DG-15: a sequência da instalação
 
-> `RQ-24`, `RQ-28` · perfil **padrão** · técnica: **ordem derivada da fonte** (`codigoSemComentario()`, `tests/Pest.php:codigoSemComentario:1264`). Mundo: `composer create-project` dispara `kit:install --create-project` (`composer.json:post-create-project-cmd:207`, `composer.json:--create-project:209`); `app/Console/Commands/KitInstall.php:handle:68` chama `customizar()` (`app/Console/Commands/KitInstall.php:customizar():95`) antes de migrar e `semear()` (`app/Console/Commands/KitInstall.php:semear():105`), que garante a senha **antes** do `db:seed` (`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:368`, `app/Console/Commands/KitInstall.php:db:seed:371`); o banner imprime a senha gerada uma vez (`app/Console/Commands/KitInstall.php:gerada agora:496`)
+> `RQ-24`, `RQ-28` · perfil **padrão** · técnica: **ordem derivada da fonte** (`codigoSemComentario()`, `tests/Pest.php:codigoSemComentario:1758`). Mundo: `composer create-project` dispara `kit:install --create-project` (`composer.json:'post-create-project-cmd':207`, `composer.json:'--create-project':209`); `app/Console/Commands/KitInstall.php:handle:81` chama `customizar()` (`app/Console/Commands/KitInstall.php:customizar():108`) antes de migrar e `semear()` (`app/Console/Commands/KitInstall.php:semear():119`), que garante a senha **antes** do `db:seed` (`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:389`, `app/Console/Commands/KitInstall.php:'db:seed':392`); o banner imprime a senha gerada uma vez (`app/Console/Commands/KitInstall.php:gerada agora:496`)
 
 ```gherkin
 # language: pt
@@ -2058,7 +2214,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 ## Regra R19 — DG-16/DG-17: o `kit:update` e as duas rotas de entrega
 
-> `RQ-24` · perfil **padrão** · técnica: **EP** por caminho × rota + **ordem derivada da fonte**. Mundo: as duas rotas são `composer create-project` (exclusão por `.gitattributes`) e `kit:update` (inclusão por `app/Console/Commands/KitUpdate.php:CAMINHOS_DO_KIT:93`) — nomeadas assim pelo próprio kit (`tests/Kit/DuasRotasDeEntregaTest.php:as duas so existem:124`); `composer.json` é só relatório (`app/Console/Commands/KitUpdate.php:CAMINHOS_SO_RELATORIO:365`); `docs/`, `site/`, `wikis/specs`, `.github` são `export-ignore` (`.gitattributes:/docs export-ignore:40`, `.gitattributes:/site export-ignore:46`, `.gitattributes:/wikis/specs export-ignore:32`, `.gitattributes:/.github export-ignore:20`). Lista do `kit:update` lida por `caminhosDoKit()` (`tests/Pest.php:caminhosDoKit:1242`)
+> `RQ-24` · perfil **padrão** · técnica: **EP** por caminho × rota + **ordem derivada da fonte**. Mundo: as duas rotas são `composer create-project` (exclusão por `.gitattributes`) e `kit:update` (inclusão por `app/Console/Commands/KitUpdate.php:CAMINHOS_DO_KIT:93`) — nomeadas assim pelo próprio kit (`tests/Kit/DuasRotasDeEntregaTest.php:as duas so existem:124`); `composer.json` é só relatório (`app/Console/Commands/KitUpdate.php:CAMINHOS_SO_RELATORIO:366`); `docs/`, `site/`, `wikis/specs`, `.github` são `export-ignore` (`.gitattributes:/docs export-ignore:40`, `.gitattributes:/site export-ignore:46`, `.gitattributes:/wikis/specs export-ignore:32`, `.gitattributes:/.github export-ignore:20`). Lista do `kit:update` lida por `caminhosDoKit()` (`tests/Pest.php:caminhosDoKit:1699`)
 
 ```gherkin
 # language: pt
@@ -2135,7 +2291,7 @@ viaja inteiro.
 **Ciclo 2 (A2-12) — a rota negativa.** CT-72 confere o que o bloco **põe** no `kit:update`; a afirmação de
 "não viaja" não é lida por ninguém. É o espelho do A-13: o `.gitattributes` exclui só `/wikis/specs`
 (`.gitattributes:/wikis/specs export-ignore:32`), e o `kit:update` entrega os documentos de topo um a um
-(`app/Console/Commands/KitUpdate.php:'wikis/README.md':309`) e os testes do kit
+(`app/Console/Commands/KitUpdate.php:'wikis/README.md':310`) e os testes do kit
 (`app/Console/Commands/KitUpdate.php:'tests/Kit':233`, `app/Console/Commands/KitUpdate.php:'tests/Pest.php':252`).
 Estouro do teto (R19 com 4 cenários): partição da mesma EP, único matador de M8–M10.
 
@@ -2164,7 +2320,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 ## Regra R20 — DG-18: containers por profile
 
-> `RQ-24` · perfil **padrão** · técnica: **EP exaustiva** sobre os serviços de `docker-compose.yml`. Mundo: sem profile (sobem sempre) `pgsql` (`docker-compose.yml:pgsql::29`) e `redis` (`docker-compose.yml:redis::85`); `mysql` só `[mysql]` (`docker-compose.yml:profiles: [mysql]:55`); `llamacpp` e `llamacpp-embeddings` `[ai, full]` (`docker-compose.yml:profiles: [ai, full]:106`); `mailpit` `[mail, full]` (`docker-compose.yml:profiles: [mail, full]:164`); `app`, `nginx`, `queue`, `scheduler` `[app]` (`docker-compose.yml:profiles: [app]:180`); `reverb` e `pulse` `[app, realtime]` (`docker-compose.yml:profiles: [app, realtime]:335`)
+> `RQ-24` · perfil **padrão** · técnica: **EP exaustiva** sobre os serviços de `docker-compose.yml`. Mundo: sem profile (sobem sempre) `pgsql` (`docker-compose.yml:pgsql:29`) e `redis` (`docker-compose.yml:redis:85`); `mysql` só `[mysql]` (`docker-compose.yml:profiles: [mysql]:55`); `llamacpp` e `llamacpp-embeddings` `[ai, full]` (`docker-compose.yml:profiles: [ai, full]:106`); `mailpit` `[mail, full]` (`docker-compose.yml:profiles: [mail, full]:164`); `app`, `nginx`, `queue`, `scheduler` `[app]` (`docker-compose.yml:profiles: [app]:180`); `reverb` e `pulse` `[app, realtime]` (`docker-compose.yml:profiles: [app, realtime]:335`)
 
 ```gherkin
 # language: pt
@@ -2201,8 +2357,8 @@ A guarda confere os **12** serviços; as 5 linhas são as partições discrimina
 | M7 | a guarda confere o conjunto de contêineres (CT-75) e os profiles só das linhas de CT-33 | CT-84 (uma linha por serviço) — *M3 também passa a ter CT-84* |
 
 **Ciclo 1 (A-16, baixa — aceito).** CT-33 vai só do compose ao diagrama. O sentido inverso custa uma
-linha e tem um discriminante concreto no arquivo: o bloco `volumes:` (`docker-compose.yml:volumes::386`,
-`docker-compose.yml:pgsql-data::387`) tem a mesma indentação dos serviços.
+linha e tem um discriminante concreto no arquivo: o bloco `volumes:` (`docker-compose.yml:volumes:386`,
+`docker-compose.yml:'pgsql-data':387`) tem a mesma indentação dos serviços.
 
 ```gherkin
 # language: pt
@@ -2225,7 +2381,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 **Ciclo 2 (A2-05).** "A guarda confere os 12 serviços" continuava na prosa, fora de qualquer `Então` — o
 defeito que o ciclo 1 corrigiu para a pertinência (CT-75) e não para os profiles. A tabela abaixo é
-exaustiva: sem profile, `pgsql` (`docker-compose.yml:pgsql::29`) e `redis` (`docker-compose.yml:redis::85`);
+exaustiva: sem profile, `pgsql` (`docker-compose.yml:pgsql:29`) e `redis` (`docker-compose.yml:redis:85`);
 `mysql` (`docker-compose.yml:profiles: [mysql]:55`); `llamacpp` (`docker-compose.yml:profiles: [ai, full]:106`) e
 `llamacpp-embeddings` (`docker-compose.yml:profiles: [ai, full]:134`); `mailpit`
 (`docker-compose.yml:profiles: [mail, full]:164`); `app` (`docker-compose.yml:profiles: [app]:180`), `nginx`
@@ -2310,7 +2466,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 | M1 | `architecture-beta`/`C4Context` para a visão geral (ícones e tipos que o GitHub não garante) | CT-34, CT-35 |
 | M2 | `%%{init}%%` com tema escuro para "ficar bonito" no site | CT-34, CT-35 |
 | M3 | `classDef` com cor fixa para destacar o painel | CT-34, CT-35 |
-| M4 | nó hexagonal `{{…}}` num fluxograma | `[CT-18]` herdado (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-18]:827`), CT-35 |
+| M4 | nó hexagonal `{{…}}` num fluxograma | `[CT-18]` herdado (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-18]':827`), CT-35 |
 | M5 | detector que só olha o primeiro bloco da página | CT-35 (21 blocos) + CT-02 |
 | M6 | *(revisão adversarial, A2-14)* o tema fixado pelo frontmatter YAML do bloco (`---` / `config:` / `theme: dark` / `---`), a forma que o Mermaid recomenda desde a depreciação das diretivas | CT-95 (linha do frontmatter com tema), CT-35 |
 | M7 | `%%{initialize: …}%%`, sinônimo de `init`, que um detector de `%%{init` não casa | CT-95 |
@@ -2382,7 +2538,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 ## Regra R23 — O fluxo de publicação confere a renderização antes de enviar o artefato
 
-> `RQ-12`, `RQ-18` · perfil **padrão** · técnica: **inspeção do fluxo**, irmã de `[CT-42]` (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-42]:1633`). O conferidor mora no Node, fora da suíte do Pest (`site/verifica-acessibilidade.mjs:pest-plugin-browser:6`)
+> `RQ-12`, `RQ-18` · perfil **padrão** · técnica: **inspeção do fluxo**, irmã de `[CT-42]` (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-42]':1633`). O conferidor mora no Node, fora da suíte do Pest (`site/verifica-acessibilidade.mjs:'pest-plugin-browser':6`)
 
 ```gherkin
 # language: pt
@@ -2404,7 +2560,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 |---|---|---|
 | M1 | o conferidor existe e o fluxo não o roda | CT-37 |
 | M2 | a conferência roda depois do upload | CT-37 |
-| M3 | o axe roda em `domcontentloaded` (`site/verifica-acessibilidade.mjs:domcontentloaded:77`) sobre o `<pre>` ainda não renderizado | CT-37 + CT-B01 |
+| M3 | o axe roda em `domcontentloaded` (`site/verifica-acessibilidade.mjs:domcontentloaded:205`, o `goto` que antecede a espera pelo SVG) sobre o `<pre>` ainda não renderizado | CT-37 + CT-B01 |
 | M4 | conferidor sem piso, verde sobre zero diagramas | CT-37 |
 
 ---
@@ -2439,7 +2595,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 ## Regra R25 — Nenhuma dependência fora de `site/`
 
-> `RQ-18` (aprovação só para o par), `RQ-27` ("sem dependência nova") · perfil **mínimo** · técnica: **diff da entrega**. Raiz npm já coberta por `[CT-12]` herdado (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-12]:531`, baseline congelado)
+> `RQ-18` (aprovação só para o par), `RQ-27` ("sem dependência nova") · perfil **mínimo** · técnica: **diff da entrega**. Raiz npm já coberta por `[CT-12]` herdado (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-12]':531`, baseline congelado)
 
 ```gherkin
 # language: pt
@@ -2453,7 +2609,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
       Então os quatro conjuntos são iguais
 ```
 
-Camada: **verificação da entrega** (step 8), não suíte — depois do merge o merge-base é o próprio HEAD e
+Camada: **verificação da entrega** (step 8 da 3.x, step 11 da 4.0.0 *(alterado em 2026-09-29: numeração 4.0.0)*), não suíte — depois do merge o merge-base é o próprio HEAD e
 o caso seria vácuo. A proteção permanente da raiz npm é o `[CT-12]` herdado.
 
 #### Mutantes previstos
@@ -2467,7 +2623,7 @@ o caso seria vácuo. A proteção permanente da raiz npm é o `[CT-12]` herdado.
 
 ## Regra R26 — O README não afirma `password` como senha do administrador
 
-> `RQ-28` · perfil **mínimo** · técnica: **EP**. Mundo: o padrão publicado é recusado e o instalador gera senha aleatória (`app/Support/SenhaDoAdministrador.php:PADRAO_PUBLICADO:37`, `app/Support/SenhaDoAdministrador.php:gerar:103`); hoje o README afirma `password` em `README.md:E-mail e senha do administrador:32`, `README.md:**Senha**:97`, `README.en.md:Administrator e-mail and password:32`, `README.en.md:**Password**:97`
+> `RQ-28` · perfil **mínimo** · técnica: **EP**. Mundo: o padrão publicado é recusado e o instalador gera senha aleatória (`app/Support/SenhaDoAdministrador.php:PADRAO_PUBLICADO:40`, `app/Support/SenhaDoAdministrador.php:gerar:137`); hoje o README afirma `password` em `README.md:E-mail e senha do administrador:32`, `README.md:**Senha**:97`, `README.en.md:Administrator e-mail and password:32`, `README.en.md:**Password**:97`
 
 ```gherkin
 # language: pt
@@ -2546,7 +2702,16 @@ Funcionalidade: Correções de texto
         | senha      | valor                                   |
         | (vazia)    | gerada pelo instalador e impressa no fim |
         | segredo123 | •••••••• (a que você digitou)           |
+        | password   | gerada pelo instalador e impressa no fim |
+        | (só espaços) | gerada pelo instalador e impressa no fim |
+        | (vazia, com `KIT_ADMIN_PASSWORD` utilizável no `.env`) | a que você já definiu em KIT_ADMIN_PASSWORD |
 ```
+
+*(alterado em 2026-09-29: as três últimas linhas de Exemplos nasceram no teste, na revisão do diff —
+RD2-06 para `password` e só espaços, RD-07 para o `.env` que já tem senha —, e entram aqui para o
+Gherkin espelhar o dataset. No teste são dois `it('[CT-41]')` a mais, com a mesma asserção de
+ausência. O que o `kit:install` faz com essa linha **depois** — `--no-seed`, banco inacessível — é do
+`KitInstall`, e os testes dele estão em [Testes nascidos na revisão do diff, sem CT](#testes-nascidos-na-revisão-do-diff-sem-ct).)*
 
 Arquivo: `tests/Kit/CustomizadorDaInstalacaoTest.php` (existente).
 
@@ -2627,7 +2792,7 @@ Funcionalidade: Correções de texto
 
 ## Regra R29 — A documentação descreve o `composer dev` com os processos que ele sobe
 
-> `RQ-29` · perfil **mínimo** · técnica: **EP derivada de `DevCommands::commands()`**. Mundo: `composer dev` = `php artisan dev` (`composer.json:@php artisan dev:125`), que sobe `serve`, `queue:listen`, `vite` (`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:serve:112`, `vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:queue:listen:113`, `vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:'vite':120`), `reverb` (`vendor/laravel/reverb/src/Reverb.php:reverb:start:15`) e, fora do Windows, `pail` (`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:pcntl_fork:115`)
+> `RQ-29` · perfil **mínimo** · técnica: **EP derivada de `DevCommands::commands()`**. Mundo: `composer dev` = `php artisan dev` (`composer.json:@php artisan dev:125`), que sobe `serve`, `queue:listen`, `vite` (`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:serve:112`, `vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:'queue:listen':113`, `vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:'vite':120`), `reverb` (`vendor/laravel/reverb/src/Reverb.php:'reverb:start':15`) e, fora do Windows, `pail` (`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:pcntl_fork:115`)
 
 `@premissa` P-05: toda descrição do `composer dev` nomeia servidor, fila, vite e **reverb**; o `pail`
 depende de plataforma e fica opcional no texto. Invariante: nenhuma descrição enumera um conjunto que
@@ -2740,7 +2905,7 @@ Funcionalidade: Correções de texto
         | app/Models/AgenteIa.php                        | vai direto para o provider                    | nenhum arquivo de app/Ai lê `temperatura`                                                    |
 ```
 
-Hoje as quatro afirmações estão em `app/Providers/Filament/AppPanelProvider.php:qualquer usuário autenticado:67`, `app/Providers/Filament/AdminPanelProvider.php:pertence ao painel de negócio:263`, `app/Providers/Filament/InfraPanelProvider.php:KitServiceProvider.php:172:343`, `app/Models/AgenteIa.php:vai direto para o provider:75`.
+*(alterado em 2026-09-29: mundo de partida — as quatro foram corrigidas no commit 1ed1964, CT-45 verde; citações reescritas como referência ao código de antes da entrega)* Antes desta entrega, as quatro afirmações estavam em `app/Providers/Filament/AppPanelProvider.php` (linha 67, "qualquer usuário autenticado"), `app/Providers/Filament/AdminPanelProvider.php` (linha 263, "pertence ao painel de negócio"), `app/Providers/Filament/InfraPanelProvider.php` (linha 343, que citava `KitServiceProvider.php` linha 172) e `app/Models/AgenteIa.php` (linha 75, "vai direto para o provider").
 
 #### Mutantes previstos
 
@@ -2779,8 +2944,8 @@ duas afirmações de CT-45 continuam protegidas por uma string literal, e a par�
 arquivo de `app/Ai` lê `temperatura` fora de comentário (a única ocorrência é um docblock,
 `app/Ai/Agents/GuardaPrompt.php:temperatura baixa:19`), e hoje a frase falsa está em
 `app/Models/AgenteIa.php:vai direto para o provider:75`; só o `AdminPanelProvider` registra o plugin de
-onboarding, com o consumo desligado (`app/Providers/Filament/AdminPanelProvider.php:->launcher(false):268`,
-`app/Providers/Filament/AdminPanelProvider.php:->tours(false):269`), e hoje a frase falsa está em
+onboarding, com o consumo desligado (`app/Providers/Filament/AdminPanelProvider.php:launcher:268`,
+`app/Providers/Filament/AdminPanelProvider.php:tours:269`), e hoje a frase falsa está em
 `app/Providers/Filament/AdminPanelProvider.php:pertence ao painel de negócio:263`. `@premissa` P-39 (de
 mecanismo): a âncora e os termos proibidos são os da tabela; o invariante é a ausência de qualquer afirmação
 de uso que o código desmente. Estouro do teto (R31, perfil `mínimo`, com 3): único matador de M5/M6.
@@ -2808,7 +2973,7 @@ Funcionalidade: Correções de texto
 
 ## Regra R32 — Cada clipe monta o seu GIF, e um clipe incompleto não para os outros
 
-> `RQ-27`, `RQ-16` · perfil **padrão** · técnica: **EP por clipe** (os 4 do 00: busca ⌘K, login unificado → escolha de painel, densidade, import/export). Mundo de partida: um clipe só (`app/Console/Commands/KitArte.php:QUADROS_DO_GIF:41`), que avisa e desiste quando falta quadro (`app/Console/Commands/KitArte.php:GIF não montado:194`) e quando o ffmpeg falha (`app/Console/Commands/KitArte.php:ffmpeg não disponível:222`)
+> `RQ-27`, `RQ-16` · perfil **padrão** · técnica: **EP por clipe** (os 4 do 00: busca ⌘K, login unificado → escolha de painel, densidade, import/export). Mundo de partida *(alterado em 2026-09-29: referência ao código de antes da entrega; hoje os clipes são `app/Console/Commands/KitArte.php:CLIPES:70`)*: um clipe só (`app/Console/Commands/KitArte.php`, `QUADROS_DO_GIF`, linha 41 antes da entrega), que avisa e desiste quando falta quadro (linha 194, "GIF não montado") e quando o ffmpeg falha (linha 222, "ffmpeg não disponível")
 
 Arnês (hipótese a confirmar, não conclusão): `app()->setBasePath()` num diretório temporário com
 `tests/Browser/Screenshots` e `art/` próprios, para o comando não tocar o `art/` do repositório.
@@ -2853,9 +3018,9 @@ Funcionalidade: GIFs pelo kit:arte
 
 **Ciclo 1 (A-06).** O `Então` de CT-46 aceita "montado **ou** ffmpeg não disponível": num ambiente sem
 ffmpeg ele confere uma linha de saída, e nenhum cenário olha **o que o ffmpeg recebe**. Hoje o comando
-copia os quadros para um diretório fixo como `quadro-NN.png` (`app/Console/Commands/KitArte.php:storage/framework/cache/arte:199`),
+copia os quadros para um diretório fixo como `quadro-NN.png` (`app/Console/Commands/KitArte.php:'storage/framework/cache/arte':318`),
 lê pelo padrão `%02d` e só apaga o diretório depois do processo
-(`app/Console/Commands/KitArte.php:File::deleteDirectory($entrada):219`) — generalizar o laço sem mover a
+(`app/Console/Commands/KitArte.php:deleteDirectory:370`, no `finally` — *(alterado em 2026-09-29: antes da entrega, a limpeza era a linha 219, depois do processo; hoje o diretório também é limpo antes da cópia, `:325`)*) — generalizar o laço sem mover a
 limpeza reusa o diretório. O arnês é o **ffmpeg de teste gravador** (Setup Global).
 
 ```gherkin
@@ -2882,7 +3047,7 @@ comando usa, não o de hoje.
 
 ## Regra R33 — Quadro de clipe não vira PNG solto, e a falha do ffmpeg não apaga o GIF publicado
 
-> `RQ-27` · perfil **padrão** · técnica: **EP** (quadro só de clipe × quadro que também é imagem declarada) + **atomicidade**. Mundo: hoje quadro de GIF é pulado antes da checagem de `IMAGENS` (`app/Console/Commands/KitArte.php:QUADROS_DO_GIF:134`); as imagens de densidade são **imagens publicadas** usadas pelo README e pelas docs (`docs/pt/recursos/configuracoes-do-kit.md:densidade-confortavel.png:122`) e passam a ser também quadros
+> `RQ-27` · perfil **padrão** · técnica: **EP** (quadro só de clipe × quadro que também é imagem declarada) + **atomicidade**. Mundo: antes desta entrega, quadro de GIF era pulado antes da checagem de `IMAGENS` (`app/Console/Commands/KitArte.php`, linha 134, o `continue` de `QUADROS_DO_GIF`) *(alterado em 2026-09-29: hoje `IMAGENS` é conferido primeiro, `app/Console/Commands/KitArte.php:IMAGENS:187`, e só depois o quadro de clipe é pulado, `app/Console/Commands/KitArte.php:$quadrosDeClipe:206`)*; as imagens de densidade são **imagens publicadas** usadas pelo README e pelas docs (`docs/pt/recursos/configuracoes-do-kit.md:densidade-confortavel.png:122`) e passam a ser também quadros
 
 ```gherkin
 # language: pt
@@ -2923,7 +3088,7 @@ Funcionalidade: GIFs pelo kit:arte
 
 **Ciclo 1 (A-07).** CT-49 só exercita o ffmpeg **ausente**: o processo nem abre a saída, e o GIF fica
 intacto por acidente. Hoje o destino do processo é o próprio GIF publicado
-(`app/Console/Commands/KitArte.php:art/fluxo-import-export.gif:206`, `app/Console/Commands/KitArte.php:'ffmpeg', '-y':209`).
+(antes da entrega: `app/Console/Commands/KitArte.php`, linha 206, a saída `art/fluxo-import-export.gif`, e linha 209, `'ffmpeg', '-y'` — *(alterado em 2026-09-29: hoje o ffmpeg escreve num temporário ao lado do publicado, `app/Console/Commands/KitArte.php:$temporario:320`, e a publicação é um `rename()` em `app/Console/Commands/KitArte.php:rename:437`)*).
 A partição que falta é o ffmpeg que **abre a saída e sai com erro** — é nela que a atomicidade de R33 é
 exercida, com o alvo (o GIF publicado) existente no `Dado`.
 
@@ -2947,7 +3112,7 @@ Funcionalidade: GIFs pelo kit:arte
 
 ## Regra R34 — Todo quadro é capturado, e todo GIF referenciado existe e é mostrado
 
-> `RQ-27`, `RQ-17` · perfil **padrão** · técnica: **inspeção estática**. Mundo: o `composer art` roda os arquivos de captura numa invocação só e depois o `kit:arte` (`composer.json:kit:arte:187`); captura nova precisa do `filename:` no cenário **e** da linha na lista (`.ai/rules/testes-browser.md`)
+> `RQ-27`, `RQ-17` · perfil **padrão** · técnica: **inspeção estática**. Mundo: o `composer art` roda os arquivos de captura numa invocação só e depois o `kit:arte` (`composer.json:'kit:arte':187`); captura nova precisa do `filename:` no cenário **e** da linha na lista (`.ai/rules/testes-browser.md`)
 
 ```gherkin
 # language: pt
@@ -3041,7 +3206,7 @@ Funcionalidade: GIFs pelo kit:arte
 
 ## Regra R36 — O README tem exatamente um diagrama e o link da página de diagramas do mesmo idioma
 
-> `RQ-20`, `RQ-11` · perfil **mínimo** · técnica: **BVA** na contagem de blocos (0/1/2). A resolução do link é do `[CT-14]` herdado (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-14]:581`); o teto de linhas e a paridade pt/en de tamanho são do `[CT-13]` herdado (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-13]:558`)
+> `RQ-20`, `RQ-11` · perfil **mínimo** · técnica: **BVA** na contagem de blocos (0/1/2). A resolução do link é do `[CT-14]` herdado (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-14]':581`); o teto de linhas e a paridade pt/en de tamanho são do `[CT-13]` herdado (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-13]':558`)
 
 ```gherkin
 # language: pt
@@ -3108,7 +3273,7 @@ Funcionalidade: README e crédito
 
 ## Regra R38 — Diagrama é texto Mermaid versionado, nunca imagem exportada
 
-> `RQ-19`, `RQ-03` · perfil **mínimo** · técnica: **EP**. `[CT-21]` herdado já proíbe arquivo não-Markdown em `docs/` (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-21]:960`), mas não proíbe **imagem remota** de diagrama
+> `RQ-19`, `RQ-03` · perfil **mínimo** · técnica: **EP**. `[CT-21]` herdado já proíbe arquivo não-Markdown em `docs/` (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-21]':960`), mas não proíbe **imagem remota** de diagrama
 
 ```gherkin
 # language: pt
@@ -3176,9 +3341,9 @@ Funcionalidade: README e crédito
 > R4 não passar do teto.
 >
 > Mundo — as três formas de "desligado por padrão" do arquivo, lidas no código **sem comentário**
-> (`tests/Pest.php:codigoSemComentario:1264`): `(bool) env(K, false)`, `filter_var(env(K, false), …)` e
+> (`tests/Pest.php:codigoSemComentario:1758`): `(bool) env(K, false)`, `filter_var(env(K, false), …)` e
 > `BooleanoDoEnv::comPadrao(env(K), false)`. As 16 chaves de hoje: `KIT_TENANCY` (`config/kit.php:KIT_TENANCY:351`),
-> `KIT_REGISTRO` (`config/kit.php:KIT_REGISTRO':403`), `KIT_REGISTRO_APROVACAO_MANUAL` (`config/kit.php:KIT_REGISTRO_APROVACAO_MANUAL:404`),
+> `KIT_REGISTRO` (`config/kit.php:'KIT_REGISTRO':403`), `KIT_REGISTRO_APROVACAO_MANUAL` (`config/kit.php:KIT_REGISTRO_APROVACAO_MANUAL:404`),
 > `KIT_REGISTRO_VERIFICAR_EMAIL` (`config/kit.php:KIT_REGISTRO_VERIFICAR_EMAIL:405`), `KIT_DEMO` (`config/kit.php:KIT_DEMO:431`),
 > `KIT_HUB` (`config/kit.php:KIT_HUB:460`), `KIT_DASHBOARD_DINAMICO` (`config/kit.php:KIT_DASHBOARD_DINAMICO:494`),
 > `KIT_SOCIALITE_GOOGLE`/`GITHUB`/`LINKEDIN`/`X` (`config/kit.php:KIT_SOCIALITE_GOOGLE:678`, `config/kit.php:KIT_SOCIALITE_GITHUB:686`,
@@ -3301,7 +3466,7 @@ de classe que **existe** em `app/`": o nome inexistente, por definição, não e
 sem vermelho. Comando só era reconhecido com `kit:` ou `artisan`. Os produtos plausíveis do GitDiagram e do
 roadmap não são classe do projeto nem estão instalados: `grep -niE "horizon|meilisearch|scout|sanctum|telescope|octane|fortify|passport" composer.json site/package.json package.json`
 volta vazio, e o `docker-compose.yml` não tem esses serviços (conferido nesta derivação). Os instalados, sim:
-`composer.json:laravel/reverb:51`, `composer.json:laravel/pulse:50`, `docker-compose.yml:redis::85`.
+`composer.json:'laravel/reverb':51`, `composer.json:'laravel/pulse':50`, `docker-compose.yml:redis:85`.
 
 `@premissa` P-31 (de mecanismo), que **substitui** o reconhecimento de classe de P-26 e acrescenta dois:
 
@@ -3357,15 +3522,15 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 > perfil **mínimo** (área D) · técnica: **EP da forma da citação** + **conferência por `sed -n`**. Nasceu
 > do achado A-08 a/b (média) do ciclo 1, desdobrado de R31
 >
-> Mundo — citações de arquivo do kit hoje nos comentários dos arquivos que R31 toca:
-> `app/Providers/Filament/InfraPanelProvider.php:KitServiceProvider.php:172:343` (`ver-logs`, hoje em
-> `app/Providers/KitServiceProvider.php:ver-logs:429`) e o irmão
-> `app/Providers/Filament/InfraPanelProvider.php:KitServiceProvider.php:173:435` (`command-center:access`, hoje em
-> `app/Providers/KitServiceProvider.php:command-center:access:430`); e, achado nesta derivação, cinco em
-> `app/Providers/Filament/AppPanelProvider.php:Convite.php:591:508` — duas delas apontam linha errada:
-> `DemoTenancySeeder.php:103` (o `email_verified_at` está em
-> `database/seeders/DemoTenancySeeder.php:'email_verified_at' => now():95`) e `Convite.php:591` (está em
-> `app/Models/Convite.php:'email_verified_at' => now():634`)
+> Mundo — citações de arquivo do kit nos comentários dos arquivos que R31 toca, **antes desta entrega** *(alterado em 2026-09-29: corrigidas nos commits 1ed1964 e bcc34ef; as citações velhas ficam abaixo como referência ao código de antes, não como citação do código atual)*:
+> `app/Providers/Filament/InfraPanelProvider.php` linha 343, que citava `KitServiceProvider.php` linha 172 (`ver-logs`, hoje em
+> `app/Providers/KitServiceProvider.php:'ver-logs':429`) e o irmão
+> `app/Providers/Filament/InfraPanelProvider.php` linha 435, que citava `KitServiceProvider.php` linha 173 (`command-center:access`, hoje em
+> `app/Providers/KitServiceProvider.php:'command-center:access':430`); e, achado nesta derivação, cinco em
+> `app/Providers/Filament/AppPanelProvider.php` (linha 508, que citava `Convite.php` linha 591) — duas delas apontavam linha errada:
+> `DemoTenancySeeder.php` linha 103 (o `email_verified_at` está em
+> `database/seeders/DemoTenancySeeder.php:'email_verified_at':95`) e `Convite.php` linha 591 (está em
+> `app/Models/Convite.php:'email_verified_at':634`)
 
 `@premissa` P-22 (de comportamento, falha fechado): RQ-29 corrige afirmação falsa, e citação que aponta
 a linha errada é afirmação falsa — entram as citações de arquivos do kit (`app/`, `database/`, `config/`,
@@ -3399,7 +3564,7 @@ Funcionalidade: Correções de texto
 | # | Implementação errada plausível | Cenário que mata |
 |---|---|---|
 | M1 | *(revisão adversarial, A-08 a)* o docblock do `InfraPanelProvider` troca `:172` por `:429`, número nu | CT-66 (linha "sem símbolo") |
-| M2 | *(revisão adversarial, A-08 b)* a citação irmã `KitServiceProvider.php:173` (`command-center:access`) fica intacta | CT-66 (linha do `InfraPanelProvider` real) |
+| M2 | *(revisão adversarial, A-08 b)* a citação irmã `KitServiceProvider.php` linha 173 (`command-center:access`) fica intacta | CT-66 (linha do `InfraPanelProvider` real) |
 | M3 | as citações de `email_verified_at` do `AppPanelProvider` ficam com as linhas velhas | CT-66 (linha do `AppPanelProvider` real) |
 | M4 | a guarda confere só a forma e não o `sed -n` | CT-66 (linha "linha velha") |
 
@@ -3501,9 +3666,9 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 > `RQ-21`, `RQ-10` · perfil **padrão** (área A) · técnica: **matriz papel × caso de uso executada** —
 > `can()`, que passa pelo `Gate::before`, e não `hasPermissionTo()`. Nasceu do achado A2-04 (média) do
-> ciclo 2, desdobrado de R6. O `master_global` nasce sem permissão (`database/seeders/PapeisSeeder.php:->syncPermissions([]);:56`)
-> e entra por `app/Providers/KitServiceProvider.php:Gate::before:414`; o `panel_user` tem `Aceitar:Convite`
-> também sem tenancy (`tests/Kit/PermissoesDeAcoesTest.php:hasPermissionTo('Aceitar:Convite'):236`), mas a caixa
+> ciclo 2, desdobrado de R6. O `master_global` nasce sem permissão (`database/seeders/PapeisSeeder.php:syncPermissions:56`)
+> e entra por `app/Providers/KitServiceProvider.php:before:414`; o `panel_user` tem `Aceitar:Convite`
+> também sem tenancy (`tests/Kit/PermissoesDeAcoesTest.php:'Aceitar:Convite':236`), mas a caixa
 > que usa a permissão só existe com ela (`app/Filament/App/Pages/ConvitesRecebidos.php:return (bool) config('kit.tenancy.enabled') && Auth::check();:77`)
 
 `@premissa` P-32 (de comportamento, falha fechado): o mapa caso de uso → permissão exata é fixado aqui e é
@@ -3565,15 +3730,15 @@ vermelha — é isso que CT-11 não fazia. O `admin_app` tem a sua em CT-12 (Ten
 > sessão × link usado) + **rastreio de efeito** do aceite. Nasceu do achado A2-08 (média) do ciclo 2,
 > desdobrado de R11. Mundo: quem já tem conta não ganha outra — o convite vira oferta
 > (`app/Models/Convite.php:if ($existente = $this->usuarioExistente()) {:615`), aceita pela pessoa autenticada
-> (`app/Filament/Pages/Auth/RegistroPorConvite.php:$this->desviarParaAceite($existente);:191`,
-> `app/Filament/Pages/Auth/RegistroPorConvite.php:$this->convite()->aceitarComoUsuarioExistente($autenticado);:290`),
+> (`app/Filament/Pages/Auth/RegistroPorConvite.php:desviarParaAceite:191`,
+> `app/Filament/Pages/Auth/RegistroPorConvite.php:aceitarComoUsuarioExistente:290`),
 > ou mandada entrar (`app/Filament/Pages/Auth/RegistroPorConvite.php:'Entre para aceitar o convite':270`), com
 > consumo atômico (`app/Models/Convite.php:public function aceitarComoUsuarioExistente:674`,
 > `app/Models/Convite.php:Este convite já foi usado.:699`). A conta nova nasce verificada
 > (`app/Models/Convite.php:'email_verified_at' => now():634`), ligada à organização
-> (`app/Models/Convite.php:syncWithoutDetaching([$this->tenant_id]):637`) e com o papel
+> (`app/Models/Convite.php:syncWithoutDetaching:637`) e com o papel
 > (`app/Models/Convite.php:$this->atribuirPapel($user, $papel);:640`); a existente, idem
-> (`app/Models/Convite.php:syncWithoutDetaching([$this->tenant_id]):709`, `app/Models/Convite.php:$this->atribuirPapel($user, $papel);:712`).
+> (`app/Models/Convite.php:syncWithoutDetaching:709`, `app/Models/Convite.php:atribuirPapel:712`).
 > Até a v0.11.0 o ramo da conta existente era a recusa "E-mail já cadastrado" — é o diagrama velho plausível
 
 ```gherkin
@@ -3629,14 +3794,14 @@ papel; "nenhuma conta nova" é contado contra a conta que o ramo da conta nova c
 > `RQ-22`, `RQ-10` · perfil **padrão** (área A) · técnica: **rastreio de efeito** — primeiro o QUE (o
 > destino do link e o canal), depois por onde ele sai (a fila) e quem o dispara (o agendador). Nasceu do
 > achado A2-09 (média) do ciclo 2, desdobrado de R11. Mundo: o link é sempre a rota de registro do painel
-> `app` (`app/Notifications/ConviteDeAcesso.php:Filament::getPanel('app')->route('auth.register':102`); a
+> `app` (`app/Notifications/ConviteDeAcesso.php:'auth.register':102`); a
 > notificação é `ShouldQueue` e não sai sem worker (`app/Notifications/ConviteDeAcesso.php:implements ShouldQueue:27`);
-> o lembrete só existe pelo comando agendado às 08:00 (`routes/console.php:kit:convites-lembrar:39`), o único
-> chamador de `lembrar()` (`app/Console/Commands/KitConvitesLembrar.php:$convite->lembrar();:84`); a tabela de
-> convites oferece Reenviar e Revogar (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:Action::make('reenviar'):73`,
-> `app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:DeleteAction::make():97`). `Notification::fake()`
+> o lembrete só existe pelo comando agendado às 08:00 (`routes/console.php:'kit:convites-lembrar':40`), o único
+> chamador de `lembrar()` (`app/Console/Commands/KitConvitesLembrar.php:lembrar:84`); a tabela de
+> convites oferece Reenviar e Revogar (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:'reenviar':73`,
+> `app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:DeleteAction:97`). `Notification::fake()`
 > intercepta **antes** da fila, então este cenário usa `Queue::fake()`; e o `phpunit.xml` roda a fila em `sync`
-> (`phpunit.xml:name="QUEUE_CONNECTION":142`), que também esconderia a fila
+> (`phpunit.xml:"QUEUE_CONNECTION":142`), que também esconderia a fila
 
 `@premissa` P-33 (de mecanismo): a fila aparece no DG-07 como participante ou nó entre o envio e o e-mail.
 Invariante: nenhum diagrama mostra o e-mail saindo no mesmo passo do envio.
@@ -3668,16 +3833,513 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 ---
 
+## Regra R47 — O CI de pull request constrói e confere o site quando, e só quando, o PR toca `docs/` ou `site/`
+
+*(alterado em 2026-09-29: regra nova, da reconciliação do step 10. RQ-36, do Adendo 3, chegou à
+implementação sem cenário — o job nasceu na rodada 3 da revisão do diff, direto no código — e o
+`rastreabilidade.sh` acusou "RQ-36 sem CT". O cenário é derivado do `00`; o job implementado só foi lido depois, para comparar (registro abaixo do cenário);
+o teste ainda não existe, e o `ids-ct.sh` acusa o CT-105 até o executor escrevê-lo — `03`, DV-09)*
+
+> `RQ-36` · perfil **padrão** (área C) · técnica: **inspeção do fluxo**, irmã de R23 (que confere o
+> `pages.yml`, que só roda depois do merge) e de `[CT-42]` herdado
+> (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-42]':1633`), mais **EP dos prefixos do gatilho**
+> (`docs/` × `site/` × outro caminho). Oráculo, do literal do `00`: "Um job no ci.yml que roda npm ci +
+> build + verifica-links + verifica-acessibilidade quando o PR toca docs/ ou site/"; e a razão da opção,
+> "pega diagrama quebrado e contraste antes do merge", faz do vermelho de um conferidor um vermelho do
+> PR. Mundo: `.github/` é `export-ignore` e não viaja para o projeto instalado — a guarda mora sob a
+> sentinela do arquivo (CT-05), como o CT-37
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no README e no site
+
+  Regra: O ci.yml tem um job de pull request que, quando o PR toca docs/ ou site/, roda npm ci, build, verifica-links e verifica-acessibilidade, e reprova o PR quando um deles falha
+
+    Cenário: [CT-105] o PR que toca docs/ ou site/ constrói e confere o site antes do merge
+      Dado o .github/workflows/ci.yml da árvore do kit
+      Quando a guarda lê o job que constrói e confere o site
+      Então o job roda no evento pull_request, e cada passo de build e de conferência depende de uma condição sobre os caminhos que o PR toca
+      E essa condição aceita um caminho sob "docs/" e um sob "site/", e recusa um caminho fora dos dois, como um sob "app/"
+      E os passos são npm ci, npm run build, verifica-links.mjs e verifica-acessibilidade.mjs, os dois conferidores depois do build e nenhum com continue-on-error
+```
+
+Camada: **Feature (Kit)**, leitura do YAML — a mesma do CT-37. A condição é avaliada contra os três
+caminhos do `Então` (a partição), não contra o texto dela: como ela é escrita é mecanismo. O que a
+guarda não alcança — as duas pontas do PR de onde a lista de caminhos sai — é a lacuna L-07.
+Registro: o primeiro rascunho deste `Então` pedia que a condição **nomeasse** `docs/` e `site/`; a
+comparação com o job, feita depois da derivação, mostrou que o texto é mecanismo (uma expressão como
+`^(docs|site)/` cumpre o requisito sem conter nenhum dos dois), e o `Então` passou a pedir a partição,
+que é o que o `00` diz. Nenhum outro oráculo veio do job.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata |
+|---|---|---|
+| M1 | a conferência só no `pages.yml`, ou num job do `ci.yml` que roda em `push` para a `main`: o PR não constrói o site, e o diagrama quebrado chega ao merge | CT-105 (evento `pull_request`) |
+| M2 | a condição cobre só `site/`: o PR que só muda `docs/`, onde moram os diagramas, passa sem build | CT-105 (aceita o caminho sob `docs/`) |
+| M3 | sem condição, ou calculada e não aplicada aos passos: o job constrói em todo PR, e os ~3-5 min que o `00` aceita "nesses PRs" caem em todos | CT-105 (cada passo depende da condição; recusa o caminho sob `app/`) |
+| M4 | o job roda o build e o `verifica-links.mjs`, sem o `verifica-acessibilidade.mjs`: bloco que não vira SVG e contraste reprovado passam no PR | CT-105 (os quatro passos) |
+| M5 | um conferidor roda antes do build, sobre um `dist/` que não existe ou que veio do cache | CT-105 (os conferidores depois do build) |
+| M6 | `continue-on-error: true` num conferidor: ele falha e o PR fica verde | CT-105 (nenhum passo tolera falha) |
+| M7 | a lista de caminhos sai da ponta errada do PR (`HEAD~1`, e não a base): um PR de vários commits que tocou `docs/` só no primeiro não constrói | ⚠️ **sem matador** — lacuna L-07: a guarda avalia a condição sobre caminhos dados, não sobre as pontas do PR |
+
+---
+
+## Regra R48 — DG-10: a sessão bloqueia pela ociosidade e encerra pelas tentativas com os números e o desfecho que o plugin de bloqueio de cada painel registra
+
+*(alterado em 2026-09-29: regra nova, da segunda passada do step 10 — achado A-01 do `03`: os números do
+DG-10 não tinham guarda. Derivada do código que o bloco descreve; o bloco só foi lido para saber **o que** ele
+afirma. As regras R48 a R53 usam a tabela de mutantes da 1.16.0, com `Asserção que mata`)*
+
+> `RQ-25`, `RQ-26`, `RQ-10` · perfil **padrão** (área A) · técnica: **valor lido do fonte** (o 2º argumento
+> de `env()` em `config/lockscreen.php`, como R4 faz com `config/kit.php` — nunca `config()`, que mede o
+> `.env` de quem roda: `.env.example:LOCKSCREEN_IDLE_TIMEOUT:405`) + **EP por painel** (admin, app, infra) +
+> **mundo alterado** + **controle do homônimo**. O bloco afirma "ociosidade 1800s"
+> (`docs/pt/autenticacao/index.md:ociosidade 1800s:74`, `docs/en/autenticacao/index.md:idle for 1800s:75`) e
+> "5 tentativas erradas (force logout)" (`docs/pt/autenticacao/index.md:5 tentativas erradas (force logout):76`,
+> `docs/en/autenticacao/index.md:5 wrong attempts (force logout):77`). O código: default 1800 em
+> `config/lockscreen.php:idle_timeout:16` e `true` em `config/lockscreen.php:LOCKSCREEN_ENABLED:13`; cada
+> painel registra o plugin com a ociosidade da config e o limite de 5 com force logout
+> (`app/Providers/Filament/AdminPanelProvider.php:enableIdleTimeout:258`,
+> `app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:259`,
+> `app/Providers/Filament/AppPanelProvider.php:enableIdleTimeout:372`,
+> `app/Providers/Filament/AppPanelProvider.php:enableRateLimit:373`,
+> `app/Providers/Filament/InfraPanelProvider.php:enableIdleTimeout:281`,
+> `app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:282`); a tela de bloqueio usa o limite e o
+> force logout (`vendor/marjose123/filament-lockscreen/src/Http/Livewire/LockerScreen.php:getRateLimitLimit:85`,
+> `vendor/marjose123/filament-lockscreen/src/Http/Livewire/LockerScreen.php:isForceLogout:89`), o middleware usa
+> a ociosidade (`vendor/marjose123/filament-lockscreen/src/Http/Middleware/Locker.php:$idleTimeout:46`), e o
+> bloqueio manual é a rota `lock-session` de cada painel (`vendor/marjose123/filament-lockscreen/routes/web.php:'lock-session':25`)
+
+**Os dois números batem por acidente.** Os defaults do próprio plugin são os do kit — 1800 s e 5 tentativas
+(`vendor/marjose123/filament-lockscreen/src/Concerns/HasSessionIdle.php:protected int $activityTimeout = 1800:11`,
+`vendor/marjose123/filament-lockscreen/src/Concerns/HasRateLimit.php:protected int $rateLimit = 5:11`) —, só que
+com a ociosidade desligada e o force logout falso
+(`vendor/marjose123/filament-lockscreen/src/Concerns/HasSessionIdle.php:protected bool $enableActivityTimeout = false:9`,
+`vendor/marjose123/filament-lockscreen/src/Concerns/HasRateLimit.php:protected bool $forceLogout = false:15`).
+Um provider que perde as duas chamadas continua com os números do diagrama e sem nada do que ele afirma: o
+discriminante são `isEnableIdleTimeout()` e `isForceLogout()`, não os números. E há um homônimo na mesma
+página: o "rate limit 5 tentativas" do DG-04 (`docs/pt/autenticacao/index.md:rate limit 5 tentativas:34`) é o do
+login do Filament (`vendor/filament/filament/src/Auth/Pages/Login.php:rateLimit:70`), que o CT-16 já confere
+com o literal 5 — não é a fonte do DG-10.
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no README e no site
+
+  Regra: O DG-10 bloqueia a sessão pela ociosidade e a encerra pelas tentativas com os números e o desfecho que o plugin de bloqueio de cada painel registra
+
+    Esquema do Cenário: [CT-106] a ociosidade, as tentativas e o desfecho desenhados no DG-10 são os do plugin de bloqueio do painel "<painel>"
+      Dado o default de LOCKSCREEN_IDLE_TIMEOUT lido do fonte de config/lockscreen.php, e não de config()
+      E o plugin filament-lockscreen registrado no painel "<painel>", com config('lockscreen.enabled') verdadeiro no processo de teste, afirmado e não presumido
+      Quando a guarda confere o DG-10 real, em pt e em en, contra esse plugin
+      Então o número da transição de autenticada para bloqueada é o default do fonte, e o plugin tem isEnableIdleTimeout() verdadeiro e getIdleTimeout() igual a config('lockscreen.idle_timeout')
+      E o número da transição que sai de bloqueada por tentativas é getRateLimitLimit() do plugin, com isRateLimitEnabled() verdadeiro
+      E essa transição chega a encerrada, e isForceLogout() do plugin é verdadeiro
+      E a rota lockscreen.<painel>.lock-session, o bloqueio manual do rótulo, existe
+
+      Exemplos:
+        | painel | # fonte                                                                                                                  |
+        | admin  | `app/Providers/Filament/AdminPanelProvider.php:enableIdleTimeout:258`, `app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:259` |
+        | app    | `app/Providers/Filament/AppPanelProvider.php:enableIdleTimeout:372`, `app/Providers/Filament/AppPanelProvider.php:enableRateLimit:373`     |
+        | infra  | `app/Providers/Filament/InfraPanelProvider.php:enableIdleTimeout:281`, `app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:282` |
+
+    Esquema do Cenário: [CT-107] o DG-10 fica vermelho quando o número, o desfecho ou a marca de opcional do bloqueio deixam de bater com o código
+      Dado o mundo "<mundo>"
+      E o bloco "<bloco>"
+      Quando a guarda confere o DG-10
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | mundo                                                                                                   | bloco                                                                    | resultado                                   | # o que discrimina                                                                 |
+        | nada alterado                                                                                           | DG-10 real, pt e en                                                      | aceita                                      | controle positivo                                                                  |
+        | o plugin do painel admin com enableRateLimit(limit: 3, forceLogout: true)                               | DG-10 real, pt e en                                                      | recusa, nomeando admin e o 3                | tentativas mudaram no código; a guarda que reusa o 5 do DG-04 fica verde           |
+        | o plugin do painel app com enableRateLimit(limit: 5, forceLogout: false)                                | DG-10 real, pt e en                                                      | recusa, nomeando app e o force logout       | é o default do plugin: o provider que perde a chamada inteira cai aqui             |
+        | o plugin do painel infra sem a ociosidade ligada: isEnableIdleTimeout() falso, getIdleTimeout() no 1800 de default do plugin | DG-10 real, pt e en                   | recusa, nomeando infra e a ociosidade       | o número bate por acidente                                                         |
+        | uma cópia do fonte de config/lockscreen.php com o default de LOCKSCREEN_IDLE_TIMEOUT em 900             | DG-10 real, pt e en                                                      | recusa, nomeando o 1800 e o 900             | o default do kit mudou; a guarda que compara com 1800 literal fica verde           |
+        | nada alterado                                                                                           | cópia do DG-10 en com "idle for 1800s" trocado por "idle for 900s"       | recusa                                      | o número do en também é conferido                                                  |
+        | nada alterado                                                                                           | cópia do DG-10 pt com a transição de bloqueada por tentativas levada a bloqueada | recusa                              | o desfecho, não só o número                                                        |
+        | uma cópia do fonte de config/lockscreen.php com o default de LOCKSCREEN_ENABLED em false                | DG-10 real, pt e en, que desenha bloqueada sem LOCKSCREEN_ENABLED        | recusa, nomeando LOCKSCREEN_ENABLED         | o bloqueio virou opt-in; R39 só extrai config/kit.php                              |
+        | a mesma cópia, com LOCKSCREEN_ENABLED em false                                                          | cópia do DG-10 com a nota LOCKSCREEN_ENABLED no estado bloqueada         | aceita                                      | controle positivo da marca (P-16)                                                  |
+```
+
+Camada: **Feature (Kit)**, grupo *Extras do catálogo — suíte Kit* (`## Costuras de Teste`). O mundo alterado muda
+o plugin **já registrado** no painel, nunca `config()` depois do boot — o painel leu a config ao ser montado.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 | um provider perde o `->enableRateLimit(...)`: o plugin cai no default dele — ligado, limite 5, `forceLogout` falso — e a sessão bloqueada que erra 5 vezes continua bloqueada, com o 5 do diagrama batendo por acidente | CT-106, CT-107 | CT-106: `isForceLogout()` do painel é verdadeiro — o mutante devolve falso. CT-107, linha "app com forceLogout: false": "recusa, nomeando app e o force logout"; o mutante aceita |
+| M2 | um provider perde o `->enableIdleTimeout(...)`: `getIdleTimeout()` devolve o 1800 de default do plugin com `isEnableIdleTimeout()` falso — não há bloqueio por ociosidade, e a guarda que só compara o número passa | CT-106, CT-107 | CT-106: `isEnableIdleTimeout()` verdadeiro — o mutante devolve falso. CT-107, linha "infra sem a ociosidade ligada": "recusa"; a guarda que lê só `getIdleTimeout()` aceita, 1800 = 1800 |
+| M3 | a guarda compara com literais escritos no teste — o 1800, e o 5 que o DG-04 já confere pelo login do Filament (CT-16) — e não com o fonte e o plugin | CT-107 | linha "admin com limit: 3": "recusa, nomeando admin e o 3"; a guarda literal aceita (bloco 5, literal 5). Linha "default 900 no fonte": "recusa"; a literal aceita |
+| M4 | a guarda confere só o painel /admin: o /app ou o /infra sem force logout, sem ociosidade ou com outro limite passam | CT-106, CT-107 | CT-106, linhas app e infra; CT-107, linhas "app com forceLogout: false" e "infra sem a ociosidade ligada": "recusa"; o mutante não lê esses painéis e aceita |
+| M5 | o default de `LOCKSCREEN_ENABLED` passa a `false` — o bloqueio vira opt-in — e o DG-10 continua desenhando bloqueada sem a chave: R39/CT-56 só extraem `config/kit.php`, e `config/lockscreen.php:LOCKSCREEN_ENABLED:13` fica fora | CT-107 | linha "LOCKSCREEN_ENABLED em false" × DG-10 real: "recusa, nomeando LOCKSCREEN_ENABLED"; o mutante aceita. A linha seguinte, "aceita", impede a guarda de recusar todo bloco que desenha bloqueada |
+
+---
+
+## Regra R49 — DG-19: o agendador desenha cada evento de `Schedule::events()` com a frequência que ele declara, nenhum evento que não esteja agendado, e só o contêiner que roda `schedule:work` liga a eles
+
+*(alterado em 2026-09-29: regra nova, da segunda passada do step 10 — achado A-03 do `03`, a metade do agendador)*
+
+> `RQ-25`, `RQ-26`, `RQ-10` · perfil **padrão** (área A) · técnica: **EP exaustiva** sobre os eventos agendados
+> + **BVA 2-valores** na janela da madrugada (a borda superior, 05:59 × 06:00; a inferior é a poda real das
+> 00:00) + **mundo alterado** + **soundness** (o que está comentado não é desenhado). Mundo: sete eventos —
+> `routes/console.php:'health:check':29` (`everyFifteenMinutes`), `routes/console.php:'authentication-log:purge':32`
+> (`daily()`, que é 00:00: `vendor/laravel/framework/src/Illuminate/Console/Scheduling/ManagesFrequencies.php:hourBasedSchedule(0, 0):340`),
+> `routes/console.php:'kit:convites-lembrar':40` (`dailyAt('08:00')`), `routes/console.php:'model:prune':64`
+> (`routes/console.php:'02:00':66`) e três closures nomeadas, `routes/console.php:'kit:limpar-trilha-de-emails':93`
+> (02:10), `routes/console.php:'kit:limpar-historico-de-importacoes':122` (02:20) e
+> `routes/console.php:'kit:limpar-historico-de-exportacoes':137` (02:30). Comentados, e portanto fora:
+> `routes/console.php:'backup:clean':140` e `routes/console.php:'backup:run':141`. Quem roda o agendador é o
+> serviço `scheduler` do Compose (`docker-compose.yml:'schedule:work':304`). O bloco:
+> `docs/pt/operacao/desenvolvendo-o-kit.md:a cada 15 min:129`, `docs/pt/operacao/desenvolvendo-o-kit.md:convites_lembrar:130`,
+> `docs/pt/operacao/desenvolvendo-o-kit.md:madrugada:131` e `docs/en/operacao/desenvolvendo-o-kit.md:overnight:130`
+
+`@premissa` Q?1 (de mecanismo, raia desenho — ver [Fronteira com o Plano](#fronteira-com-o-plano)): a guarda lê
+três formas de frequência nos rótulos — "a cada N min"/"every N min" ↔ `*/N * * * *`, "HH:MM" ↔ `M H * * *`,
+"madrugada"/"overnight" ↔ diário com a hora em [00:00, 06:00) — e reconhece a poda de retenção pela forma
+(comando `…:purge` ou `model:prune`, ou evento nomeado `kit:limpar-…`). Invariante, qualquer que seja a
+janela: todo evento agendado está no bloco, por nome ou como poda, com a frequência que o código lhe dá.
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no README e no site
+
+  Regra: O subgraph do agendador do DG-19 desenha cada evento de Schedule::events() com a frequência que ele declara, nenhum evento que não esteja agendado, e só o contêiner que roda schedule:work liga a eles
+
+    Esquema do Cenário: [CT-108] cada evento agendado está no agendador do DG-19 com a frequência que declara
+      Dado os eventos de Schedule::events() com routes/console.php carregado
+      Quando a guarda confere o evento "<evento>" no subgraph do agendador do DG-19 real, em pt e em en
+      Então o bloco o põe no nó "<no>", cujo rótulo diz a frequência da expressão cron do evento
+      E todo evento de Schedule::events() cai em uma das linhas abaixo, e elas são 7
+
+      Exemplos:
+        | evento                              | no                                               | cron hoje    | # fonte                                                       |
+        | health:check                        | health_check ("a cada 15 min" / "every 15 min")  | */15 * * * * | `routes/console.php:everyFifteenMinutes:29`                    |
+        | kit:convites-lembrar                | convites_lembrar ("08:00")                       | 0 8 * * *    | `routes/console.php:dailyAt('08:00'):40`                       |
+        | authentication-log:purge            | purge ("madrugada" / "overnight")                | 0 0 * * *    | `routes/console.php:'authentication-log:purge':32`             |
+        | model:prune --model=Exception       | purge                                            | 0 2 * * *    | `routes/console.php:'02:00':66`                            |
+        | kit:limpar-trilha-de-emails         | purge                                            | 10 2 * * *   | `routes/console.php:at('02:10'):93`                            |
+        | kit:limpar-historico-de-importacoes | purge                                            | 20 2 * * *   | `routes/console.php:at('02:20'):122`                           |
+        | kit:limpar-historico-de-exportacoes | purge                                            | 30 2 * * *   | `routes/console.php:at('02:30'):137`                           |
+
+    Esquema do Cenário: [CT-109] o agendador do DG-19 fica vermelho quando o código agenda o que o bloco não desenha, ou o bloco desenha o que o código não agenda
+      Dado os eventos de Schedule::events() com "<mundo>"
+      E o bloco "<bloco>"
+      Quando a guarda confere o subgraph do agendador do DG-19
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | mundo                                                                         | bloco                                                                  | resultado                                          | # o que discrimina                                                                          |
+        | nada alterado                                                                 | DG-19 real, pt e en                                                    | aceita                                             | controle positivo; a poda real das 00:00 está na madrugada (borda inferior)                 |
+        | Schedule::command('backup:run')->daily()->at('01:30') registrado no teste     | DG-19 real, pt e en                                                    | recusa, nomeando backup:run                        | evento novo, dentro da janela, que não é poda: a guarda que classifica pelo horário o absorve |
+        | nada alterado                                                                 | cópia com o nó "backup:run - 01:30" ligado a scheduler_container       | recusa, nomeando backup:run                        | evento comentado desenhado como agendado                                                    |
+        | a expressão de kit:convites-lembrar trocada para 0 9 * * *                    | DG-19 real, pt e en                                                    | recusa, nomeando kit:convites-lembrar e o 09:00    | horário mudou no código                                                                     |
+        | a expressão de health:check trocada para 0 * * * *                            | DG-19 real, pt e en                                                    | recusa, nomeando health:check                      | frequência mudou no código                                                                  |
+        | a expressão de kit:limpar-trilha-de-emails trocada para 0 6 * * *             | DG-19 real, pt e en                                                    | recusa, nomeando kit:limpar-trilha-de-emails       | borda: 06:00 já não é madrugada (`@premissa` Q?1)                                           |
+        | a expressão de kit:limpar-trilha-de-emails trocada para 59 5 * * *            | DG-19 real, pt e en                                                    | aceita                                             | borda−1: 05:59 ainda é                                                                      |
+        | nada alterado                                                                 | cópia com a aresta queue_worker --> health_check                       | recusa                                             | só o contêiner cujo command é schedule:work liga ao agendador                               |
+        | nada alterado                                                                 | cópia sem a aresta scheduler_container --> convites_lembrar            | recusa, nomeando kit:convites-lembrar              | evento desenhado sem quem o dispare                                                         |
+```
+
+A coluna `cron hoje` de CT-108 é o mundo de hoje, para quem lê: a guarda lê a expressão do `Event`, não a
+coluna (R3.M4). Camada: **Feature (Kit)**, grupo *Extras do catálogo — suíte Kit*. O mundo alterado mexe nos
+eventos do `Schedule` do próprio teste — cada teste nasce com a aplicação nova.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 | a guarda confere só os eventos que o bloco nomeia: um evento novo agendado não aparece no DG-19 e ela fica verde — e, se ela reconhece a poda pelo horário, o `backup:run` descomentado às 01:30 some dentro da madrugada | CT-108, CT-109 | CT-109, linha "backup:run registrado às 01:30": "recusa, nomeando backup:run"; o mutante aceita. CT-108: "todo evento cai em uma das 7 linhas" |
+| M2 | o bloco desenha como agendado o que está comentado (`routes/console.php:'backup:run':141`) | CT-109 | linha "cópia com o nó backup:run": "recusa, nomeando backup:run"; o mutante aceita |
+| M3 | a guarda compara a frequência com literais do teste ("15 min", "08:00"): o código muda e ela fica verde | CT-109 | linhas "kit:convites-lembrar em 0 9 * * *" e "health:check em 0 * * * *": "recusa"; o mutante aceita as duas |
+| M4 | janela da madrugada mal definida: começar às 01:00 reprova a poda real das 00:00 (`authentication-log:purge`, `daily()`) e leva quem implementa a afrouxar a guarda inteira; não ter teto aceita a poda movida para 06:00 | CT-109 | linha "nada alterado" × DG-19 real: "aceita" (00:00 dentro); linha "0 6 * * *": "recusa"; linha "59 5 * * *": "aceita" — cada janela errada erra uma das três |
+| M5 | o bloco liga ao agendador um contêiner que não roda `schedule:work` (`queue_worker --> health_check`), ou deixa um evento sem a aresta de quem o dispara | CT-109 | linha "aresta queue_worker --> health_check": "recusa"; linha "sem a aresta scheduler_container --> convites_lembrar": "recusa, nomeando kit:convites-lembrar"; o mutante aceita as duas |
+
+---
+
+## Regra R50 — DG-19: cada processo que o bloco desenha, no `composer dev` e no Docker Compose, leva o comando, as filas e a condição que o código lhe dá
+
+*(alterado em 2026-09-29: regra nova, da segunda passada do step 10 — achado A-03 do `03`, a metade do Compose,
+mais o que os rótulos do `composer dev` afirmam além do nome do processo)*
+
+> `RQ-25`, `RQ-26`, `RQ-10` · perfil **padrão** (área A) · técnica: **EP por processo** + **lista ordenada** (a
+> ordem do `--queue` é a prioridade do `queue:work`) + **mundo alterado**. O conjunto de processos do
+> `composer dev` já é de R29/CT-76; aqui entra o que cada rótulo afirma além do nome. Mundo:
+> `docker-compose.yml:'--queue=ai,ai-post,default':274`, `docker-compose.yml:'schedule:work':304`,
+> `docker-compose.yml:'reverb:start':337`, `docker-compose.yml:'pulse:check':367`; o `queue:listen` do
+> `composer dev` sai sem `--queue`
+> (`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:'queue:listen --tries=1 --timeout=0':113`) e
+> escuta a fila da conexão padrão — `database` e `default` no fonte (`config/queue.php:QUEUE_CONNECTION:16`,
+> `config/queue.php:DB_QUEUE:42`), e não o `sync` que o `phpunit.xml` força (`phpunit.xml:"QUEUE_CONNECTION":142`),
+> que não tem fila; o `pail` só entra com `pcntl_fork`
+> (`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:pcntl_fork:115`). O bloco:
+> `docs/pt/operacao/desenvolvendo-o-kit.md:--queue=default:117`, `docs/pt/operacao/desenvolvendo-o-kit.md:fora do Windows:120`,
+> `docs/pt/operacao/desenvolvendo-o-kit.md:--queue=ai,ai-post,default:123`,
+> `docs/pt/operacao/desenvolvendo-o-kit.md:roda o agendador do Laravel:124` e `docs/en/operacao/desenvolvendo-o-kit.md:off Windows:119`
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no README e no site
+
+  Regra: Cada processo que o DG-19 desenha, no composer dev e no Docker Compose, leva o comando, as filas e a condição que o código lhe dá
+
+    Esquema do Cenário: [CT-110] o que o rótulo de cada processo do DG-19 afirma é o que o código registra para ele
+      Dado "<fonte>"
+      Quando a guarda confere o nó "<no>" do DG-19 real, em pt e em en
+      Então o rótulo afirma "<afirmacao>", e ela é a lida da fonte
+
+      Exemplos:
+        | no                  | fonte                                                                                                          | afirmacao                                 | # fonte hoje                                                                                           |
+        | queue_worker        | o command do serviço queue de docker-compose.yml, por blocoDoServico()                                          | as filas ai, ai-post e default, nessa ordem | `docker-compose.yml:'--queue=ai,ai-post,default':274`                                                   |
+        | scheduler_container | o command do serviço scheduler                                                                                 | roda o agendador (schedule:work)          | `docker-compose.yml:'schedule:work':304`                                                               |
+        | reverb_compose      | o command do serviço reverb                                                                                    | reverb (reverb:start)                     | `docker-compose.yml:'reverb:start':337`                                                                |
+        | pulse_compose       | o command do serviço pulse                                                                                     | pulse:check                               | `docker-compose.yml:'pulse:check':367`                                                                 |
+        | queue_listen        | o queue:listen de DevCommands, sem --queue, e a fila da conexão padrão lida do fonte de config/queue.php       | a fila default                            | `config/queue.php:QUEUE_CONNECTION:16`, `config/queue.php:DB_QUEUE:42`                                 |
+        | pail                | a condição de DevCommands para registrar o pail                                                                | só fora do Windows                        | `vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:pcntl_fork:115`                    |
+
+    Esquema do Cenário: [CT-111] os processos do DG-19 ficam vermelhos quando o comando muda no código ou o rótulo muda no bloco
+      Dado "<mundo>"
+      E o bloco "<bloco>"
+      Quando a guarda confere os processos do DG-19
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | mundo                                                                              | bloco                                                                  | resultado                                 | # o que discrimina                                                    |
+        | nada alterado                                                                      | DG-19 real, pt e en                                                    | aceita                                    | controle positivo                                                     |
+        | cópia do docker-compose.yml com --queue=default,ai,ai-post no serviço queue         | DG-19 real, pt e en                                                    | recusa, nomeando queue e a ordem          | mesmo conjunto, ordem trocada: a guarda que compara conjunto fica verde |
+        | cópia do docker-compose.yml com --queue=ai,ai-post,ai-embed,default no serviço queue | DG-19 real, pt e en                                                  | recusa, nomeando ai-embed                 | fila nova no worker                                                   |
+        | nada alterado                                                                      | cópia com o queue_listen "queue:listen (--queue=ai,ai-post,default)"   | recusa                                    | o composer dev escuta só a fila da conexão padrão                     |
+        | nada alterado                                                                      | cópia com o nó pail sem a condição de plataforma                        | recusa, nomeando pail                     | o pail só entra com pcntl_fork                                        |
+        | nada alterado                                                                      | cópia com o nó horizon no subgraph Docker Compose                      | recusa, nomeando horizon                  | contêiner que o docker-compose.yml não tem                            |
+        | cópia do docker-compose.yml com o command do scheduler trocado para schedule:run    | DG-19 real, pt e en                                                    | recusa, nomeando scheduler                | schedule:run roda uma vez e sai: o contêiner não roda o agendador     |
+```
+
+Camada: **Feature (Kit)**, grupo *Extras do catálogo — suíte Kit*. O mundo alterado do compose é uma cópia do
+texto do `docker-compose.yml` entregue à guarda, como a de CT-75.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 | a guarda compara as filas do `queue_worker` como conjunto: o command troca a ordem e a prioridade do worker muda sem o DG-19 ficar vermelho | CT-111 | linha "--queue=default,ai,ai-post": "recusa, nomeando queue e a ordem"; o mutante aceita (mesmo conjunto) |
+| M2 | o serviço queue ganha uma fila e a guarda compara com a lista escrita no teste | CT-111 | linha "--queue=ai,ai-post,ai-embed,default": "recusa, nomeando ai-embed"; o mutante aceita |
+| M3 | a guarda lê a fila do `composer dev` de `config()` no processo de teste: com o `sync` do `phpunit.xml` não há fila, e o valor medido é o do ambiente — o bloco certo é reprovado, e quem implementa afrouxa a linha | CT-110 | linha `queue_listen`: a fila esperada é `default`, lida do fonte; o mutante espera nenhuma fila e reprova o bloco real — o controle positivo fica vermelho sem defeito no bloco |
+| M4 | o bloco troca as filas entre os dois processos (o `queue_listen` com as do Compose), ou desenha o `pail` sem a condição de plataforma | CT-110, CT-111 | CT-110, linhas `queue_listen` ("a fila default") e `pail` ("só fora do Windows") sobre o bloco publicado — o bloco mutante afirma outra coisa e reprova. CT-111, linhas "queue_listen com ai,ai-post,default" e "pail sem a condição": "recusa"; a guarda que não confere esses rótulos aceita as duas |
+| M5 | contêiner que o `docker-compose.yml` não tem (`horizon`) no subgraph Docker Compose, ou o scheduler com um command que não é `schedule:work` | CT-111 | linha "nó horizon": "recusa, nomeando horizon"; linha "command do scheduler em schedule:run": "recusa, nomeando scheduler"; o mutante aceita as duas |
+
+---
+
+## Regra R51 — DG-20: na requisição a `/app/{tenant}`, o `IdentifyTenant` consulta `canAccessTenant()` antes do `DefinirTenantDePermissoes`, e este só roda no ramo que permite, fixando o contexto de papéis da organização da rota
+
+*(alterado em 2026-09-29: regra nova, da segunda passada do step 10 — achado A-02 do `03`, na parte que o DG-20
+**desenha**. O flowchart do `kit:tenancy` não entra nesta entrega, por decisão da sessão: ver L-08)*
+
+> `RQ-25`, `RQ-26`, `RQ-10` · perfil **padrão** (área A) · técnica: **ordem derivada da rota** (a pilha de
+> middlewares que a rota do painel app com `{tenant}` executa, lida da rota e não de uma lista) + **rastreio de
+> efeito** (o id de time fixado no pedido permitido, e não fixado no negado). Mundo: `getTenantMiddleware()` põe
+> o `IdentifyTenant` antes do `tenantMiddleware` do painel
+> (`vendor/filament/filament/src/Panel/Concerns/HasMiddleware.php:getTenantMiddleware:116`,
+> `vendor/filament/filament/src/Panel/Concerns/HasMiddleware.php:IdentifyTenant:119`); o kit registra o
+> `DefinirTenantDePermissoes` como `tenantMiddleware`, só com o modo ligado
+> (`app/Providers/Filament/AppPanelProvider.php:'kit.tenancy.enabled':592`,
+> `app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:595`); o `IdentifyTenant` consulta
+> `canAccessTenant()`, responde 404 e só depois chama `Filament::setTenant()`
+> (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:canAccessTenant:40`,
+> `vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:abort:41`,
+> `vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:setTenant:44`); o
+> `DefinirTenantDePermissoes` fixa o id de time com o tenant resolvido, ou com `Tenant::CONTEXTO_GLOBAL` sem ele
+> (`app/Http/Middleware/DefinirTenantDePermissoes.php:setPermissionsTeamId:46`,
+> `app/Http/Middleware/DefinirTenantDePermissoes.php:CONTEXTO_GLOBAL:47`). Suíte `tests/Tenancy`: o modo
+> multi-tenant só existe no `TenancyTestCase`
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no README e no site
+
+  Regra: Na requisição a /app/{tenant}, o DG-20 desenha o IdentifyTenant consultando canAccessTenant() antes do DefinirTenantDePermissoes, e este só no ramo que permite, fixando o contexto de papéis da organização da rota
+
+    Esquema do Cenário: [CT-112] a ordem que o DG-20 desenha é a da pilha de middlewares de uma rota do /app/{tenant}
+      Dado o modo multi-tenant ligado pela suíte Tenancy e a pilha de middlewares da rota do painel app com o parâmetro {tenant}, lida da rota
+      E o bloco "<bloco>"
+      Quando a guarda confere as mensagens do bloco contra a pilha
+      Então a pilha tem IdentifyTenant antes de DefinirTenantDePermissoes, e getTenantMiddleware() do painel app é exatamente os dois, nessa ordem
+      E o resultado do bloco é "<resultado>"
+
+      Exemplos:
+        | bloco                                                                         | resultado                                                                                                                        | # o que discrimina                                |
+        | DG-20 real, pt e en                                                           | aceita: a consulta a can_access_tenant sai de identify_tenant antes de qualquer mensagem a definir_tenant, e a única mensagem a definir_tenant está no ramo que permite | controle positivo                                 |
+        | cópia com identify_tenant->>definir_tenant antes da consulta a can_access_tenant | recusa                                                                                                                         | ordem invertida                                   |
+        | cópia com a mensagem a definir_tenant fora do alt, depois do end              | recusa                                                                                                                           | o contexto fixado também no pedido negado         |
+
+    Esquema do Cenário: [CT-113] o contexto de papéis que o DG-20 desenha é fixado com o id da organização da rota, e só no pedido permitido
+      Dado as organizações acme e globex, ativas, e a pessoa operadora com o papel panel_user e vínculo só com a acme
+      E o id de time do PermissionRegistrar num valor-sentinela diferente dos ids das duas organizações
+      Quando ela faz GET /app/<slug>
+      Então a resposta é "<status>"
+      E o id de time do PermissionRegistrar é "<team_id>"
+
+      Exemplos:
+        | slug   | status | team_id                   | # o que discrimina                                                                                   |
+        | acme   | 200    | o id da acme              | o DefinirTenantDePermissoes rodou depois do IdentifyTenant; antes dele, o id cairia no CONTEXTO_GLOBAL |
+        | globex | 404    | não é o id da globex      | o pedido negado não fixa o contexto da organização que ele não pode ver                              |
+```
+
+Camada: **Feature (Tenancy)**, grupo *Extras do catálogo — suíte Tenancy*. O id de time é lido depois do GET
+porque, no teste, o mesmo container atravessa o request (`tests/Pest.php:function fronteiraDeRequest(:776`); o
+sentinela fixado antes é o que faz o `Então` discriminar — sem ele, "não é o id da globex" valeria no vazio.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 | o kit registra o `DefinirTenantDePermissoes` como `->middleware()` do painel, e não como `tenantMiddleware`: ele roda antes do `IdentifyTenant`, `Filament::getTenant()` é null e o id de time cai no `CONTEXTO_GLOBAL` — com o DG-20 dizendo "só então" | CT-112, CT-113 | CT-112: `IdentifyTenant` antes de `DefinirTenantDePermissoes` na pilha, e `getTenantMiddleware()` com os dois; o mutante tem um só ali. CT-113, linha acme: o id de time é o da acme; o mutante deixa o `CONTEXTO_GLOBAL` |
+| M2 | o bloco desenha a mensagem ao `definir_tenant` antes da consulta a `can_access_tenant`, ou fora do ramo que permite | CT-112 | linhas das duas cópias: "recusa"; o mutante aceita |
+| M3 | o contexto de papéis é fixado a partir do slug da rota antes da checagem de acesso: o pedido negado sai com o id de time da organização que ele não pode ver | CT-113 | linha globex: 404 e o id de time não é o da globex; o mutante deixa o id da globex |
+| M4 | a guarda roda na suíte Kit, sem o modo multi-tenant: `getTenantMiddleware()` é só `[IdentifyTenant]` e a rota não tem `{tenant}` — não há o que ordenar, e a ordem "passa" no vazio | CT-112 | `getTenantMiddleware()` é exatamente os dois, nessa ordem; sem a tenancy, o mutante tem um só e a asserção falha |
+
+---
+
+## Regra R52 — DG-20: o desfecho desenhado para cada situação de `GET /app/{tenant}` é o que o código produz — 404 para a organização inativa, para todos, e para quem não tem vínculo e não é `master_global`; o resto entra
+
+*(alterado em 2026-09-29: regra nova, da segunda passada do step 10 — achado A-02 do `03`, na parte que o DG-20
+desenha. **Nasce com um achado**: o `alt` publicado diz "sem vínculo" sem excetuar o `master_global`, que o
+código deixa entrar sem vínculo — a linha 5 de CT-114 fica vermelha contra o bloco de hoje, e o conserto é do
+bloco, não do cenário: Q?2)*
+
+> `RQ-25`, `RQ-26`, `RQ-10` · perfil **padrão** (área A, técnica escalada) · técnica: **tabela de decisão
+> executada** (situação da organização × persona × vínculo), com o GET real — escalada porque a regra é de
+> **ordem das checagens** (a inativa antes do `master_global`), e EP dos desfechos não distingue "master_global
+> antes da inativa" de "depois", o mesmo motivo de R7 — + **controles contra a tabela literal**, no molde de
+> CT-79 e CT-81. Mundo: `app/Models/User.php:canAccessTenant:789` — a organização inativa nega para todos
+> (`app/Models/User.php:ativo:813`), antes do `master_global`, que entra sem vínculo
+> (`app/Models/User.php:isMasterGlobal:826`; `tests/Tenancy/TenancyTest.php:deixa o master_global acessar qualquer tenant:108`);
+> os demais precisam do vínculo (`app/Models/User.php:whereKey:830`); a recusa é 404, nunca 403
+> (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:abort:41`;
+> `tests/Tenancy/TenancyTest.php:assertNotFound:216`). O bloco: `docs/pt/recursos/multi-tenancy.md:alt organização inativa ou sem vínculo:154`,
+> `docs/pt/recursos/multi-tenancy.md:nega (404):155`, `docs/pt/recursos/multi-tenancy.md:else acesso permitido:156`
+> e `docs/en/recursos/multi-tenancy.md:alt inactive organization or no link:155`
+
+`@premissa` Q?2 (de mecanismo, raia desenho): a condição do `alt` nomeia os motivos do código em que ela vale, e o
+`else` é o complemento; "sem vínculo" cobre o `master_global` a menos que o rótulo o exceta. Invariante,
+qualquer que seja a forma: o ramo que nega não cobre combinação que o código permite, e o `else` não cobre
+combinação que o código nega. A persona operadora tem papel na acme, ativa, para que o `canAccessPanel()` do
+/app passe e a resposta seja a do `IdentifyTenant`, não um 403 anterior a ele.
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no README e no site
+
+  Regra: O desfecho que o DG-20 desenha para cada situação de GET /app/{tenant} é o que o código produz: 404 para a organização inativa, para todos, e para quem não tem vínculo e não é master_global; o resto entra
+
+    Esquema do Cenário: [CT-114] o ramo do DG-20 que cobre a situação leva ao desfecho que o GET produz
+      Dado a organização acme ativa e a organização globex "<situacao_org>"
+      E "<persona>", "<vinculo>" com a globex
+      Quando a persona faz GET /app/globex
+      Então a resposta é "<status>"
+      E a condição do alt do DG-20 real, em pt e em en, cobre esta situação se e só se o status é 404
+
+      Exemplos:
+        | situacao_org | persona                                              | vinculo     | status | # motivo no código                                                       |
+        | ativa        | a pessoa operadora, panel_user da acme e da globex   | com vínculo | 200    | vínculo                                                                  |
+        | ativa        | a pessoa operadora, panel_user só da acme            | sem vínculo | 404    | sem vínculo — 404, não 403                                               |
+        | inativa      | a pessoa operadora, panel_user da acme e da globex   | com vínculo | 404    | organização inativa                                                      |
+        | inativa      | o master_global                                      | sem vínculo | 404    | a inativa vem antes do master_global                                     |
+        | ativa        | o master_global                                      | sem vínculo | 200    | o master_global entra sem vínculo — o alt de hoje cobre esta linha       |
+
+    Esquema do Cenário: [CT-115] controles do DG-20 contra a tabela literal de CT-114
+      Dado as cinco linhas de CT-114 como literal: situação da organização, persona, vínculo e status
+      E o bloco "<bloco>"
+      Quando a guarda confere, para cada linha, se a condição do alt a cobre
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | bloco                                                                                      | resultado                                              | # o que discrimina                                      |
+        | cópia do DG-20 com o alt "organização inativa, ou sem vínculo e não é master_global"       | aceita                                                 | a forma recomendada em Q?2                              |
+        | cópia com o alt "organização inativa" só                                                   | recusa, nomeando a linha sem vínculo                   | o pedido sem vínculo cairia no ramo que permite         |
+        | cópia com o alt "sem vínculo" só                                                           | recusa, nomeando a linha inativa com vínculo           | a inativa com vínculo cairia no ramo que permite        |
+        | cópia com o ramo que nega respondendo "nega (403)"                                         | recusa, nomeando o 403                                 | o 403 confirmaria que a organização existe              |
+        | cópia com a nota "master_global sempre entra" antes do alt                                 | recusa, nomeando a linha inativa × master_global       | a inativa barra o master_global                         |
+```
+
+Camada: CT-114 em **Feature (Tenancy)**, grupo *Extras do catálogo — suíte Tenancy* (o GET real); CT-115 em
+**Feature (Kit)**, grupo *Extras do catálogo — suíte Kit* — a tabela é literal, não precisa da tenancy.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 | o pedido recusado responde 403 — um middleware do kit antes do `IdentifyTenant` barra quem não tem vínculo, ou o bloco diz "nega (403)": o 403 confirma que a organização existe | CT-114, CT-115 | CT-114, linha "ativa × panel_user só da acme × sem vínculo": status 404; o mutante dá 403. CT-115, linha "nega (403)": "recusa, nomeando o 403"; o mutante aceita |
+| M2 | a condição do ramo que nega diz "sem vínculo" sem excetuar o `master_global` — **o bloco publicado hoje** (`docs/pt/recursos/multi-tenancy.md:alt organização inativa ou sem vínculo:154`) — e o `master_global`, que entra sem vínculo, aparece negado | CT-114 | linha "ativa × master_global × sem vínculo": status 200, e a condição do alt não cobre a linha; no bloco de hoje ela cobre — vermelho |
+| M3 | o `master_global` desenhado entrando em qualquer organização, inclusive a inativa (a checagem da inativa vem antes dele) | CT-114, CT-115 | CT-114, linha "inativa × master_global": 404, e a condição do alt cobre a linha. CT-115, linha "nota master_global sempre entra": "recusa"; o mutante aceita |
+| M4 | a guarda confere o desfecho chamando `canAccessTenant()` direto, sem o GET: o 404 do `IdentifyTenant` e qualquer barreira antes dele ficam fora da conferência, e M1 passa | CT-114 | o `Quando` é o GET /app/globex e o `Então` é o status; o mutante não produz status, e a linha "sem vínculo" com 403 passaria nele |
+| M5 | a condição do ramo que nega perde um dos motivos ("organização inativa" só, ou "sem vínculo" só): um pedido que o código nega cai no ramo que permite | CT-115 | linhas "alt organização inativa só" e "alt sem vínculo só": "recusa", nomeando a linha sem vínculo e a inativa com vínculo; o mutante aceita |
+
+---
+
+## Regra R53 — A frase da página de diagramas vale para todo DG: o fato declarado de cada um aceita o bloco publicado, em pt e em en, e reprova o próprio bloco publicado com um trecho adulterado
+
+*(alterado em 2026-09-29: regra nova, da segunda passada do step 10 — achado A-06 do `03`. Desdobrada de R3: a
+propriedade é outra — CT-06 prova o mecanismo contra blocos do dataset e o `Então` dele só pede a reprovação da
+cópia; esta prova que o fato declarado vale sobre o que a página publica)*
+
+> `RQ-26`, `RQ-35`, `RQ-06` · perfil **padrão** (área B) · técnica: **controle positivo sobre o bloco
+> publicado** + **adulteração do próprio bloco publicado**, nos dois idiomas. Mundo: a página promete que cada
+> diagrama "é guardado por um teste automatizado [...] que falha quando o código deixar de bater com o que o
+> diagrama descreve" (`docs/pt/referencia/arquitetura-em-diagramas.md:guardado por um teste automatizado:7`,
+> `docs/en/referencia/arquitetura-em-diagramas.md:guarded by an automated test:7`). Hoje os fatos declarados de
+> DG-10, DG-19 e DG-20 pedem termos que os blocos publicados não têm
+> (`tests/Kit/DiagramasDaArquiteturaTest.php:AgenteIa:766`, `tests/Kit/DiagramasDaArquiteturaTest.php:KitUpdate:767`,
+> `tests/Kit/DiagramasDaArquiteturaTest.php:Tenant --> Convite:768`), e o controle sobre o bloco real só existe
+> para o DG-03 (`tests/Kit/DiagramasDaArquiteturaTest.php:$dg === 'DG-03':896`) — lidos para confirmar o
+> achado, não como oráculo. É a classe do RD3-06 (fatos de DG-12, 13, 14, 16 e 17 que passavam no vazio),
+> varrida aqui para os 20 DGs de uma vez (`.ai/rules/specs.md`, "varra o padrão repetido")
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no README e no site
+
+  Regra: O fato que a guarda declara para cada DG aceita o bloco que a página publica, em pt e em en, e reprova esse mesmo bloco com um trecho adulterado
+
+    Cenário: [CT-116] o fato declarado de cada DG do catálogo aceita os blocos publicados e reprova a cópia adulterada deles, nos dois idiomas
+      Dado os 20 DGs do catálogo e, para cada um, o bloco real em pt e o bloco real em en
+      E, para cada bloco real, uma cópia com um único trecho trocado pela adulteração do DG na tabela de CT-06 — nos extras: no DG-10, o 5 da transição por tentativas trocado por 3; no DG-19, as filas do queue_worker na ordem default, ai, ai-post; no DG-20, a mensagem a definir_tenant antes da consulta a can_access_tenant
+      Quando a guarda aplica o fato declarado de cada DG ao bloco real e à cópia
+      Então o fato aceita os 40 blocos reais
+      E reprova as 40 cópias
+      E cada cópia difere do bloco real do mesmo idioma só pelo trecho adulterado
+```
+
+Camada: **Feature (Kit)**, grupo *Extras do catálogo — suíte Kit*. O fato declarado dos três extras passa a ser
+um de R48, R50 e R51 — nenhum deles é o tipo do bloco (R3.M6). Para o DG-20 foi escolhido o de R51 (ordem), e
+não o de R52: o de R52 reprova hoje o bloco publicado pela linha 5 de CT-114, e este cenário ficaria vermelho
+pelo mesmo achado, sem dizer nada sobre fato vácuo.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 | o fato declarado de um DG pede um termo que o bloco publicado não tem — o do DG-10 exige `AgenteIa` — e só roda contra o bloco sintético do dataset | CT-116 | "o fato aceita os 40 blocos reais": o DG-10 real não contém `AgenteIa`, e o mutante o reprova |
+| M2 | o fato é uma negação sobre um literal que o bloco publicado nunca contém (`KitUpdate --> Convite`): aceita o bloco real no vazio, e qualquer cópia dele | CT-116 | "reprova as 40 cópias": a cópia do DG-19 com as filas em outra ordem não contém o literal, e o mutante a aceita |
+| M3 | o fato reprova qualquer bloco: passa no CT-06, cujo `Então` só pede a reprovação da cópia | CT-116 | "o fato aceita os 40 blocos reais"; o mutante reprova todos |
+| M4 | o controle sobre o bloco real só em pt — o fato lê palavra do pt, como o do DG-03 lia antes do RD3-06 — e o en fica sem conferência | CT-116 | 40 = 20 DGs × 2 idiomas: a cópia en do DG-10 ("3 wrong attempts") tem de ser reprovada; o mutante que extrai o número por "tentativas" não acha número no en e aceita |
+| M5 | a cópia adulterada é um bloco sintético, e não o bloco real com um trecho trocado: o fato a reprova por um termo que só o sintético tem | CT-116 | "cada cópia difere do bloco real do mesmo idioma só pelo trecho adulterado"; o sintético difere em tudo, e a asserção falha |
+
+---
+
 ## Lacunas declaradas
 
 | ID | O que fica sem matador | O que foi tentado | Destino |
 |---|---|---|---|
-| L-01 | a verdade de uma **relação** entre dois elementos reais de DG-10, DG-19, DG-20 (RQ-25) que não seja a relação que a guarda declarou — reduzida no ciclo 1: todo nó de código dos três resolve (R40/CT-77) e o fato declarado é uma relação, não o tipo (CT-06) | derivar do Adendo 2 ("que agregue valor"); do recorte (só a página); soundness referencial (feito, CT-77) | P-02 |
+| L-01 | ~~a verdade de uma **relação** entre dois elementos reais de DG-10, DG-19, DG-20 (RQ-25) que não seja a relação que a guarda declarou — reduzida no ciclo 1: todo nó de código dos três resolve (R40/CT-77) e o fato declarado é uma relação, não o tipo (CT-06)~~ *(alterado em 2026-09-29: reduzida de novo na segunda passada do step 10 — o DG-19 e o que o DG-20 desenha saíram da lacuna, cobertos por R49, R50, R51 e R52; do DG-10 saíram a ociosidade, as tentativas, o force logout e o bloqueio manual, por R48; e o fato de cada DG passou a ser conferido sobre o bloco publicado, por R53)* O que **sobra**: no DG-10, as transições `autenticada → aguardando_2fa`, `aguardando_2fa → autenticada`, `bloqueada → autenticada : senha correta` e `autenticada → encerrada : logout manual` — nenhuma carrega número, condição ou nome do código que o kit decida; a do 2FA é a mesma afirmação do DG-04, que R8/CT-15 guardam só no bloco do DG-04 | derivar do Adendo 2 ("que agregue valor"); do recorte (só a página); soundness referencial (feito, CT-77); no step 10, fato por DG derivado do código (feito, R48–R53) | P-02; o que sobra do DG-10 é comportamento do plugin e do Filament, sem valor do kit a conferir |
 | L-02 | o "4 guardrails" do 00 ficar falso quando o kit ganhar um quinto | nada a tentar: é o comportamento desejado de RQ-26 | decisão do mantenedor |
 | L-03 | renderização **no GitHub** (o navegador de teste abre o site, não o GitHub) | fixar a mesma versão (CT-38) e o mesmo bloco (CT-36) como procuração | conferência manual no PR, evidência no `03`; P-15 |
 | L-04 | o pixel do `install.gif` e dos GIFs novos (texto falso numa imagem) | OCR descartado (dependência nova, RQ-27); a fonte é travada por CT-52 | screenshot e olhar, evidência no `03` |
-| L-05 | *(ciclo 2)* a **execução** do gravador das páginas Logs e Pulse do `/infra` (CT-100 as resolve, não as exercita) | ligar no cenário: o canal do kit escreve em `monolog` com `NullHandler` (`phpunit.xml:name="LOG_KIT_DRIVER":140`) e o Pulse nasce desligado (`phpunit.xml:name="PULSE_ENABLED":153`), com os recorders registrados no boot — `config()` no cenário chega tarde; hipótese a medir na implementação: `config(['logging.channels.x' => ['driver' => 'single', 'path' => …]])` para os Logs | a implementação mede; se o arnês fechar, CT-100 troca "resolvido" por "exercitado" |
+| L-05 | *(ciclo 2)* a **execução** do gravador das páginas Logs e Pulse do `/infra` (CT-100 as resolve, não as exercita) | ligar no cenário: o canal do kit escreve em `monolog` com `NullHandler` (`phpunit.xml:"LOG_KIT_DRIVER":140`) e o Pulse nasce desligado (`phpunit.xml:"PULSE_ENABLED":153`), com os recorders registrados no boot — `config()` no cenário chega tarde; hipótese a medir na implementação: `config(['logging.channels.x' => ['driver' => 'single', 'path' => …]])` para os Logs | a implementação mede; se o arnês fechar, CT-100 troca "resolvido" por "exercitado" |
 | L-06 | *(ciclo 2)* produto **fora** do catálogo de P-31, e palavra comum capitalizada usada como nó inventado ("Fila", "Cache Server") | catálogo por lista (feito, CT-82); dicionário de palavras descartado — dependência nova (RQ-27) e falso positivo em todo rótulo de prosa | a lista cresce a cada achado; P-31 |
+| L-07 | *(step 10, com a R47)* de **onde** sai a lista de caminhos que a condição do job de PR avalia: o CT-105 prova a partição (`docs/` e `site/` aceitos, `app/` recusado) e a dependência de cada passo, não as duas pontas do PR — a ponta errada (R47.M7) sobrevive | reproduzir as pontas exige um `git` com a base e a cabeça de um PR de vários commits, e o contexto `github.event` do Actions (mecanismo do runner, não do requisito) | o próprio PR desta feature toca `docs/` e `site/`: o job tem de aparecer e passar nos checks dele — evidência no `03`, no step 11 |
+| L-08 | *(step 10, achado A-02, com R51 e R52)* **o que o DG-20 não desenha**: o fluxo do `kit:tenancy`. A ordem de `KitTenancy::handle()` — pré-voo (`app/Console/Commands/KitTenancy.php:preVoo:61`), confirmação (`app/Console/Commands/KitTenancy.php:confirmarDestruicao:65`), a flag no `.env` (`app/Console/Commands/KitTenancy.php:ligarFlagNoEnv:70`), papéis por organização (`app/Console/Commands/KitTenancy.php:ligarPapeisPorTenant:71`), o banco recriado (`app/Console/Commands/KitTenancy.php:recriarBanco:72`, que roda `app/Console/Commands/KitTenancy.php:'migrate:fresh':187` e `app/Console/Commands/KitTenancy.php:conferirSchema:189`) e o demo só com `--demo` (`app/Console/Commands/KitTenancy.php:semearDemo:75`) — está só em prosa, na mesma página (`docs/pt/recursos/multi-tenancy.md:KitTenancy::handle():122`), sem diagrama e sem guarda de ordem | nada a guardar: a decisão da sessão (2026-09-29) é que o flowchart não entra nesta entrega, e R51/R52 guardam só o que o DG-20 desenha — a sequência do `/app/{tenant}` | se o flowchart entrar noutra entrega, ele nasce com uma regra de ordem derivada de `handle()`, no molde de R18/CT-30 (instalação) e R19/CT-32 (`kit:update`); sem mutante próprio aqui, porque não há afirmação desenhada a mutar |
 
 ## Checklist de Taxonomia
 
@@ -3692,7 +4354,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 | Estado × operação de escrita | CT-20, CT-21 (matrizes executadas, com 2-switch) |
 | Ausente ≠ null ≠ vazio | CT-41 (senha vazia × digitada; `password()` sempre devolve string, `null` não ocorre) |
 | Paginação / ordenação | não se aplica: sem listagem |
-| Timezone / DST | não se aplica: o prazo do convite é conferido por `travelTo()` relativo (CT-19, CT-21), sem virada de dia |
+| Timezone / DST | não se aplica: o prazo do convite é conferido por `travelTo()` relativo (CT-19, CT-21), sem virada de dia; *(alterado em 2026-09-29: 2ª passada do step 10)* CT-108 e CT-109 comparam a expressão cron do evento com o rótulo — o fuso do agendador é o mesmo dos dois lados, e nenhum instante é medido |
 | Unicode / limite de varchar | CT-03 (acento como marcador de tradução ausente); CT-B01 (páginas pt com acento renderizadas) |
 | Unicidade + soft delete | não se aplica: nada único é criado |
 | CRUD combinado | não se aplica |
@@ -3703,20 +4365,21 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 | Estado do framework usado sem validar | não se aplica, pelo mesmo motivo |
 | IDOR por entidade | não se aplica: nenhuma tabela persistida |
 | Escopo com discriminante nulo | não se aplica |
-| Saída do estado de erro | CT-01, CT-06, CT-10 (toda reprovação da guarda nomeia o DG e o arquivo — o destino de quem lê o vermelho); CT-59 (pretendida recusada leva a um destino alcançável: o painel único ou a escolha) |
-| Asserção de ausência em mundo com destinatário | CT-40 (a página de DTO **existe** e cita `password`), CT-42 (linha "desligadas" existe no controle), CT-43 (piso de 4 linhas), CT-48 (o intruso existe no diretório); ciclo 1: CT-62 (trilha ligada por `audit.console`, senão ninguém gravaria), CT-65 (o GIF publicado existe no `Dado`), CT-70 (a conta existe e receberia `ConfirmarVinculoSocial`) |
-| Guarda auto-anulante / skip | CT-05, `[CT-10]` herdado; CT-56 (piso das 16 chaves contra "extraído vazio = mapa vazio") |
-| Opcional desenhado como sempre ligado | CT-08, CT-12, CT-15, CT-25; ciclo 1: CT-56, CT-57 (conjunto nascido de `config/kit.php`), CT-58 (controle do detector, com homônimo sempre ligado) |
+| Saída do estado de erro | CT-01, CT-06, CT-10 (toda reprovação da guarda nomeia o DG e o arquivo — o destino de quem lê o vermelho); CT-59 (pretendida recusada leva a um destino alcançável: o painel único ou a escolha); *(alterado em 2026-09-29: 2ª passada do step 10)* os 404 de CT-113 e CT-114 são o desfecho que o código já tem e que o DG-20 descreve, não um estado de erro criado por esta entrega — para onde a pessoa vai depois o DG-20 não desenha, e nenhum par é devido |
+| Asserção de ausência em mundo com destinatário | CT-40 (a página de DTO **existe** e cita `password`), CT-42 (linha "desligadas" existe no controle), CT-43 (piso de 4 linhas), CT-48 (o intruso existe no diretório); ciclo 1: CT-62 (trilha ligada por `audit.console`, senão ninguém gravaria), CT-65 (o GIF publicado existe no `Dado`), CT-70 (a conta existe e receberia `ConfirmarVinculoSocial`); *(alterado em 2026-09-29: 2ª passada do step 10)* CT-113 (o 404 com a globex existente e o id de time num sentinela fixado antes do GET — sem ele, "não é o id da globex" valeria no vazio) |
+| Guarda auto-anulante / skip | CT-05, `[CT-10]` herdado; CT-56 (piso das 16 chaves contra "extraído vazio = mapa vazio"); CT-105 (conferidor do job de PR com `continue-on-error`, ou fora da condição) *(alterado em 2026-09-29: step 10, R47)*; *(alterado em 2026-09-29: 2ª passada do step 10)* CT-116 (fato declarado que só casa com o bloco do dataset, ou que aceita por ausência de um literal que o publicado nunca tem), CT-112 (a pilha de tenant com os dois middlewares, e não vazia na suíte sem tenancy) |
+| Opcional desenhado como sempre ligado | CT-08, CT-12, CT-15, CT-25; ciclo 1: CT-56, CT-57 (conjunto nascido de `config/kit.php`), CT-58 (controle do detector, com homônimo sempre ligado); *(alterado em 2026-09-29: 2ª passada do step 10)* CT-107 (`LOCKSCREEN_ENABLED`, que mora fora de `config/kit.php` e que R39 não extrai) |
 | **Acumulação de papéis** (a mesma pessoa com dois papéis) — pergunta 5 da revisão adversarial | CT-71 (`admin + infra`, `admin + panel_user`); CT-17/CT-59 (`admin + infra` no login unificado) |
-| **Soundness diagrama → código** (o bloco afirma o que o código não tem) | CT-10 (nó inventado no DG-01), CT-60, CT-61 (estado fora da imagem), CT-62 (gravador homônimo), CT-63 (cardinalidade), CT-72 (diretório parcial), CT-75 (contêiner), CT-77 (referência a código em qualquer DG) |
-| **Destino e condição da seta** (não só a existência) | CT-20, CT-21 (oráculos reescritos no ciclo 1), CT-60, CT-61 |
+| **Soundness diagrama → código** (o bloco afirma o que o código não tem) | CT-10 (nó inventado no DG-01), CT-60, CT-61 (estado fora da imagem), CT-62 (gravador homônimo), CT-63 (cardinalidade), CT-72 (diretório parcial), CT-75 (contêiner), CT-77 (referência a código em qualquer DG); *(alterado em 2026-09-29: 2ª passada do step 10)* CT-109 (o `backup:run` comentado), CT-111 (o contêiner `horizon`), CT-114 (o ramo que nega cobrindo o `master_global` que o código deixa entrar) |
+| **Destino e condição da seta** (não só a existência) | CT-20, CT-21 (oráculos reescritos no ciclo 1), CT-60, CT-61; *(alterado em 2026-09-29: 2ª passada do step 10)* CT-107 (o destino da transição por tentativas), CT-114 (a condição do `alt` do DG-20) |
 | **Matriz fechada executada, com o total afirmado sobre o dataset** (ciclo 2) | CT-78 (7 × 5 = 35), CT-80 (4 × 6 = 24) |
 | **Atributo que o rótulo esconde** — o estado exibido não é o estado (ciclo 2) | CT-78 (S1/S2 e S5/S6/S7), CT-79 |
 | **Porta de entrada que só existe com a tenancy** (ciclo 2) | CT-80 (a matriz do convite em `tests/Tenancy`), CT-81 (recusar com `KIT_TENANCY`) |
-| **Fila real no cenário** — `QUEUE_CONNECTION=sync` (`phpunit.xml:name="QUEUE_CONNECTION":142`) não discrimina (ciclo 2) | CT-90 (`Queue::fake()`), CT-99 (fila em `database` + `queue:work --once`) |
-| **Acumulação entre contextos** (papel global × papel de organização) — pergunta 5 da revisão (ciclo 2) | CT-98 |
-| **Presença não vácua** ("toda aresta corresponde" com zero arestas) (ciclo 2) | CT-83 (uma linha "presente" por papel) |
+| **Fila real no cenário** — `QUEUE_CONNECTION=sync` (`phpunit.xml:"QUEUE_CONNECTION":142`) não discrimina (ciclo 2) | CT-90 (`Queue::fake()`), CT-99 (fila em `database` + `queue:work --once`); *(alterado em 2026-09-29: 2ª passada do step 10)* CT-110 (a fila do `composer dev` lida do fonte de `config/queue.php`, e não do `sync` do `phpunit.xml`) |
+| **Acumulação entre contextos** (papel global × papel de organização) — pergunta 5 da revisão (ciclo 2) | CT-98; *(alterado em 2026-09-29: 2ª passada do step 10)* CT-114 (o `master_global` global × a organização sem vínculo) |
+| **Presença não vácua** ("toda aresta corresponde" com zero arestas) (ciclo 2) | CT-83 (uma linha "presente" por papel); *(alterado em 2026-09-29: 2ª passada do step 10)* CT-108 (piso de 7 eventos agendados), CT-116 (40 blocos publicados) |
 | **Rota negativa conferida** ("não viaja", "o kit:update não toca") (ciclo 2) | CT-93 |
+| **Default do pacote igual ao do kit** — o número bate por acidente, e a chamada que o ligava sumiu *(alterado em 2026-09-29: 2ª passada do step 10)* | CT-106, CT-107 (a ociosidade do plugin nasce desligada com 1800 de default, e o force logout nasce falso com 5 de limite) |
 
 ## Regressões herdadas que esta entrega aciona
 
@@ -3728,15 +4391,45 @@ títulos de cenário.
 
 | Guarda existente | Por que fica vermelha se a entrega esquecer algo |
 |---|---|
-| `[CT-13]` (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-13]:558`) | README acima de 756 (pt) / 767 (en) linhas, ou pt e en com diferença acima de 5 % |
-| `[CT-14]` (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-14]:581`) | link do README para página inexistente |
-| `[CT-18]` (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-18]:827`) | `{{` num bloco do site |
-| `[CT-19]` (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-19]:430`) | rótulo pt ("não", "que") num diagrama da árvore en |
-| `[CT-21]` (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-21]:960`) | vídeo, iframe, cópia de mídia em `docs/` |
-| `[CT-38]` / `[CT-41]` (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-38]:1445`, `tests/Kit/SiteDeDocumentacaoTest.php:[CT-41]:1595`) | página nova sem stub de redirect ou sem `order:` |
+| `[CT-13]` (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-13]':558`) | README acima de 756 (pt) / 767 (en) linhas, ou pt e en com diferença acima de 5 % |
+| `[CT-14]` (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-14]':581`) | link do README para página inexistente |
+| `[CT-18]` (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-18]':827`) | `{{` num bloco do site |
+| `[CT-19]` (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-19]':430`) | rótulo pt ("não", "que") num diagrama da árvore en |
+| `[CT-21]` (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-21]':960`) | vídeo, iframe, cópia de mídia em `docs/` |
+| `[CT-38]` / `[CT-41]` (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-38]':1445`, `tests/Kit/SiteDeDocumentacaoTest.php:'[CT-41]':1595`) | página nova sem stub de redirect ou sem `order:` |
 | números do README (`tests/Kit/SiteDeDocumentacaoTest.php:mantem os numeros objetivos:990`) | "Features especificadas" não soma esta wiki |
-| arquivos de teste (`tests/Kit/SiteDeDocumentacaoTest.php:contagem de arquivos de teste:1145`) e badge de casos (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-50]:2026`) | arquivos e blocos `it()` novos não contados no README |
-| `[CT-12]` (`tests/Kit/SiteDeDocumentacaoTest.php:[CT-12]:531`) | dependência npm na raiz |
+| arquivos de teste (`tests/Kit/SiteDeDocumentacaoTest.php:contagem de arquivos de teste:1145`) e badge de casos (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-50]':2026`) | arquivos e blocos `it()` novos não contados no README |
+| `[CT-12]` (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-12]':531`) | dependência npm na raiz |
+
+## Testes nascidos na revisão do diff, sem CT
+
+*(alterado em 2026-09-29: seção nova, da reconciliação do step 10)* O roteamento do step 9 manda o
+achado virar CT **neste** `04`, derivado pela `feature-test-design`, **antes** da correção. Nas
+rodadas 2 a 4 da revisão do diff (numeração 3.x: step 6.5) os executores escreveram o teste direto no
+código, com o ID do achado no nome em vez de um `[CT-nn]` — o `ids-ct.sh` não os vê, porque só casa
+`[CT-nn]`. Eles existem, rodam e foram provados vermelhos sem a correção (`03`, `## Revisão do Diff
+(step 9)`), mas **não têm cenário Gherkin nem mutante declarado aqui**. A lista abaixo é o rastro, não
+a derivação: derivar os cenários é pendência declarada para a `feature-test-design` (entrada: o `00`
+com os Adendos 3 a 5 e este `04`), e renomear os testes para os IDs novos cabe a quem os derivar.
+
+| Teste (arquivo:linha do `it()`) | Achado | Regra mais próxima | Origem |
+|---|---|---|---|
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:388` — valor com `\`, `$` e aspas sobrevive à ida e volta pelo `.env` | RD2-08 | R27 | RQ-28 |
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:866` — `corrigirResumoDaSenha()` reescreve a linha do resumo quando nada foi gerado | RD2-05 | R27 | RQ-28 |
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:894` — `mensagemDoBanner()` não promete "a que você definiu" sem semeadura | RD2-05 | R27 | RQ-28 |
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:908` — `mensagemDoBanner()` com a semeadura rodada | RD2-05 | R27 | RQ-28 |
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:922` — `mensagemDoBanner()` com senha gerada agora | RD2-05 | R27 | RQ-28 |
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:948` — `RESUMO_SENHA_GERADA` pública, usada por `aplicar()` | RD3-12 | R27 | RQ-28 |
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:963` — `corrigirResumoDaSenha()` reconhece a linha pela constante | RD3-12 | R27 | RQ-28 |
+| `tests/Kit/ResumoDoKitInstallTest.php:it:101` — com `--no-seed`, banner e resumo dão a mesma orientação, e ela funciona | RD3-01, RD3-04 | R27 | RQ-28 |
+| `tests/Kit/ResumoDoKitInstallTest.php:it:144` — senha utilizável pelo `config()` com o arquivo vazio: `semear()` roda | RD3-03 | R27 | RQ-28 |
+| `tests/Kit/DiagramasDaArquiteturaTest.php:it:4830` — `existeArestaDeFluxo()` reconhece toda seta válida, com controle negativo | RD3-05 | R1 (extrator) | RQ-34 |
+| `tests/Kit/DiagramasDaArquiteturaTest.php:it:4851` — `relacaoDeEr()` reconhece `--` e `..`, com controle negativo | RD3-05 | R16 | RQ-34 |
+| `tests/Kit/DiagramasDaArquiteturaTest.php:it:4865` — `blocosMermaidDe()` não lê span de código como cerca | RD3-05 | R1 (extrator) | RQ-34 |
+| `tests/Kit/KitArteTest.php:it:607` — uma exceção qualquer num clipe não aborta os outros, e o diretório de montagem fica limpo | RD2-02, RD2-03 | R32 | RQ-27 |
+| `tests/Kit/KitArteTest.php:it:674` — falha ao publicar avisa "não consegui publicar" e preserva o GIF anterior | RD3-09 | R33 | RQ-27 |
+
+Contagem: `grep -nE "^(it|test)\('\[RD" tests/Kit/*.php tests/Tenancy/*.php tests/BrowserTenancy/*.php | wc -l` = 14.
 
 ## Índice de Cenários
 
@@ -3780,7 +4473,7 @@ títulos de cenário.
 | CT-36 | README e site com o mesmo bloco | R22 | identidade | Feature (Kit) | idem | R22.M1, M2 |
 | CT-37 | conferência de diagramas antes do envio | R23 | inspeção do fluxo | Feature (Kit) | idem | R23.M1..M4 |
 | CT-38 | par aprovado no site, lock fixado | R24 | literal | Feature (Kit) | idem | R24.M1..M3 |
-| CT-39 | diff sem dependência fora do site | R25 | diff | Entrega (step 8) | — (quality gate) | R25.M1, M2 |
+| CT-39 | diff sem dependência fora do site | R25 | diff | Entrega (step 8 da 3.x, step 11 da 4.0.0) | — (quality gate; sem arquivo de teste por desenho — o `ids-ct.sh` o acusa como "CT sem teste", e a conferência é por comando: `git diff --name-only origin/main...HEAD -- composer.json composer.lock package.json package-lock.json` vazio em 2026-09-29, `03`) *(alterado em 2026-09-29: numeração 4.0.0 e a evidência do step 10)* | R25.M1, M2 |
 | CT-40 | README sem `password` como senha | R26 | EP | Feature (Kit) | `tests/Kit/DiagramasDaArquiteturaTest.php` | R26.M1..M3 |
 | CT-41 | resumo do kit:install por partição | R27 | EP | Feature (Kit) | `tests/Kit/CustomizadorDaInstalacaoTest.php` | R27.M1..M3 |
 | CT-42 | passkeys não listadas | R28 | EP | Feature (Kit) | `tests/Kit/DiagramasDaArquiteturaTest.php` | R28.M1, M2 |
@@ -3846,6 +4539,18 @@ títulos de cenário.
 | CT-102 | âncoras dos docblocks de AgenteIa e do onboarding | R31 | âncora positiva | Feature (Kit) | idem | R31.M5, M6 |
 | CT-103 | extrator: til, quatro crases e bloco em comentário HTML | R1 | EP com controles | Feature (Kit) | idem | R1.M6, M7 |
 | CT-104 | seção com GIF de recurso opt-in nomeia a chave | R4 | EP com controles | Feature (Kit) | idem | R4.M8, M9 |
+| CT-105 | job de PR constrói e confere o site quando o PR toca docs/ ou site/ | R47 | inspeção do fluxo + EP dos prefixos | Feature (Kit) | `tests/Kit/DiagramasDaArquiteturaTest.php` — **teste a escrever** *(alterado em 2026-09-29: cenário derivado no step 10; até o teste existir, o `ids-ct.sh` o acusa como "CT sem teste", e é a DV-09 do `03`)* | R47.M1..M6 |
+| CT-106 | ociosidade, tentativas e force logout do DG-10 = plugin de bloqueio de cada painel | R48 | valor do fonte + EP por painel | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/DiagramasDaArquiteturaTest.php` — **teste a escrever** *(alterado em 2026-09-29: 2ª passada do step 10; CT-106..CT-116 são acusados pelo `ids-ct.sh` como "CT sem teste" até existirem)* | R48.M1, M2, M4 |
+| CT-107 | DG-10 vermelho com número, desfecho ou marca de opcional alterados | R48 | mundo alterado + controles | Feature (Kit) · grupo Extras do catálogo — suíte Kit | idem — **teste a escrever** | R48.M1..M5 |
+| CT-108 | cada evento agendado no agendador do DG-19, com a sua frequência; piso de 7 | R49 | EP exaustiva + piso | Feature (Kit) · grupo Extras do catálogo — suíte Kit | idem — **teste a escrever** | R49.M1 |
+| CT-109 | agendador do DG-19 vermelho com evento novo, horário mudado ou aresta errada | R49 | mundo alterado + BVA 2-valores + soundness | Feature (Kit) · grupo Extras do catálogo — suíte Kit | idem — **teste a escrever** | R49.M1..M5 |
+| CT-110 | comando, filas e condição de cada processo do DG-19 | R50 | EP por processo | Feature (Kit) · grupo Extras do catálogo — suíte Kit | idem — **teste a escrever** | R50.M3, M4 |
+| CT-111 | processos do DG-19 vermelhos com comando ou rótulo alterado | R50 | mundo alterado + lista ordenada | Feature (Kit) · grupo Extras do catálogo — suíte Kit | idem — **teste a escrever** | R50.M1, M2, M4, M5 |
+| CT-112 | ordem do DG-20 = pilha de middlewares de uma rota do /app/{tenant} | R51 | ordem derivada da rota | Feature (Tenancy) · grupo Extras do catálogo — suíte Tenancy | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` — **teste a escrever** | R51.M1, M2, M4 |
+| CT-113 | contexto de papéis fixado com a organização da rota, só no pedido permitido | R51 | rastreio de efeito | Feature (Tenancy) · grupo Extras do catálogo — suíte Tenancy | idem — **teste a escrever** | R51.M1, M3 |
+| CT-114 | desfecho de GET /app/{tenant} = ramo do DG-20 que cobre a situação (nasce vermelho na linha master_global sem vínculo) | R52 | tabela de decisão executada | Feature (Tenancy) · grupo Extras do catálogo — suíte Tenancy | idem — **teste a escrever** | R52.M1..M4 |
+| CT-115 | controles do DG-20 contra a tabela literal de CT-114 | R52 | controles | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/DiagramasDaArquiteturaTest.php` — **teste a escrever** | R52.M1, M3, M5 |
+| CT-116 | fato declarado de cada DG aceita o bloco publicado e reprova a cópia adulterada dele, pt e en | R53 | controle positivo + adulteração do publicado | Feature (Kit) · grupo Extras do catálogo — suíte Kit | idem — **teste a escrever** | R53.M1..M5 |
 
 CT-B01..CT-B03: ver `05-casos-de-teste-browser.md` (sem mudança no ciclo 1: nenhum achado caiu no que só
 o navegador prova — A-06 cita o CT-B03, mas o que falta é a **montagem**, que CT-64 prova por comando).
@@ -3871,7 +4576,7 @@ parte — a fixação de tema por bloco é provada na fonte (CT-34, CT-35, CT-95
 | A-05 cardinalidade do ER | média | aceito | CT-63 (tipo da relação × nulidade da chave, com controles) | R16.M4..M6 |
 | A-06 diretório de montagem reusado entre clipes | média | aceito | CT-64 (ffmpeg de teste gravador; quadro sobrado de execução interrompida) | R32.M5, M6 |
 | A-07 ffmpeg que falha depois de abrir a saída trunca o GIF | média | aceito | CT-65 (ffmpeg de teste de falha tardia) | R33.M5, M6 |
-| A-08 a/b número nu e citação irmã `:173`; c paráfrase no docblock | média | aceito | regra nova R41 (CT-66) para a/b; CT-67 (âncora positiva) para c. Achado desta derivação ao conferir: mais duas citações velhas no `AppPanelProvider.php:508` | R41.M1..M4; R31.M3, M4 |
+| A-08 a/b número nu e citação irmã `:173`; c paráfrase no docblock | média | aceito | regra nova R41 (CT-66) para a/b; CT-67 (âncora positiva) para c. Achado desta derivação ao conferir: mais duas citações velhas no `app/Providers/Filament/AppPanelProvider.php` (linha 508 na data da derivação) | R41.M1..M4; R31.M3, M4 |
 | A-09 en com identificadores pt sem acento | média | aceito | CT-03 com o `Então` do rótulo invariante + CT-68 (controles) | R2.M5..M7 |
 | A-10 PNG do GitDiagram por `user-attachments` ou `art/` | média | aceito | CT-69 (inclusão: hosts e `art/` congelados) | R38.M3, M4 |
 | A-11 ordem das checagens do retorno social | média | aceito, com ressalva de evidência (ver abaixo) | CT-70 (tabela de decisão executada + ordem das alternativas no bloco) | R10.M4, M5 |
@@ -3965,13 +4670,13 @@ parte — a fixação de tema por bloco é provada na fonte (CT-34, CT-35, CT-95
 - **A2-10 — "o ledger é gravado só no `AgentPrompted`"**: o listener escuta também o `AgentStreamed`
   (`app/Providers/KitServiceProvider.php:Event::listen([AgentPrompted::class, AgentStreamed::class], RegistrarAiRun::class):455`).
   O defeito (pedido bloqueado não gera linha) não muda.
-- **A2-22 — "as capturas rodam com a chave forçada (`phpunit.xml:90`)"**: a linha força `false`
+- **A2-22 — "as capturas rodam com a chave forçada (`phpunit.xml`, linha 90)"**: a linha força `false`
   (`phpunit.xml:KIT_LOGIN_UNIFICADO:90`); o recurso é ligado no cenário de captura. O defeito continua.
 
 **Ciclo 1.** Nenhum achado foi rejeitado por inteiro. Duas ressalvas, com evidência:
 
 - **A-11 — a citação de apoio não é a que o achado diz.** O achado afirma que
-  `LoginSocialController.php:666` registra "o bug histórico" de pedir a confirmação de vínculo antes da
+  `app/Http/Controllers/Auth/LoginSocialController.php:redirecionarSeIndisponivel:666` registra "o bug histórico" de pedir a confirmação de vínculo antes da
   checagem de indisponibilidade. A linha registra **outro** defeito da mesma classe — o **aceite do
   convite** rodava antes de `redirecionarSeIndisponivel()`
   (`app/Http/Controllers/Auth/LoginSocialController.php:ANTES de:666`). O mutante proposto continua

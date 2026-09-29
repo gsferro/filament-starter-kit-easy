@@ -6,11 +6,11 @@
 >
 > - **CT-B01, CT-B02** — conferidor Node + Playwright de `site/`, sobre o site **construído** e servido
 >   pelo `astro preview`. O `pest-plugin-browser` sobe a aplicação Laravel em processo e não serve site
->   estático de outro toolchain (`site/verifica-acessibilidade.mjs:pest-plugin-browser:6`) — é o mesmo
+>   estático de outro toolchain (`site/verifica-acessibilidade.mjs:'pest-plugin-browser':6`) — é o mesmo
 >   arranjo do conferidor de acessibilidade, e o Pest trava que o fluxo o executa (`[CT-37]` do `04`,
 >   irmão de `[CT-42]`). Divergência do template da skill, declarada no `04`.
 > - **CT-B03** — `pest-plugin-browser`, dentro de `tests/BrowserTenancy/CapturaDeArteTest.php`, sob
->   `KIT_ART=1` (`tests/BrowserTenancy/CapturaDeArteTest.php:KIT_ART:58`). Roda no `composer art`, não
+>   `KIT_ART=1` (`tests/BrowserTenancy/CapturaDeArteTest.php:KIT_ART:59`). Roda no `composer art`, não
 >   no CI — é lá que os quadros nascem.
 >
 > Comandos:
@@ -69,8 +69,8 @@ Perfil `padrão` → teto de **1** CT-B (happy path). São **3**, pelo gate do p
 |---|---|---|
 | blocos da fonte de cada página | contagem de cercas ```` ```mermaid ```` no `.md` correspondente em `docs/` | sim (o conferidor lê o Markdown) |
 | SVG que a integração produz para cada bloco | `svg[aria-roledescription]` | **confirmado** — executor do CT-B01 leu o DOM real (`chromium` + `page.evaluate`, sessão de 2026-09-28): `<svg id="mermaid-…" role="graphics-document document" aria-roledescription="flowchart-v2">` (varia por tipo: `"er"` no `erDiagram`) |
-| SVG de erro do Mermaid | ~~o mesmo seletor com `aria-roledescription="error"`, ou o texto `Syntax error` dentro do SVG~~ **corrigido pelo executor do CT-B01** (causa a: seletor especificado errado) — o astro-mermaid 2.1.0 real NÃO desenha um SVG de erro; no `catch` de `initMermaid()` ele substitui o bloco por um `<div>` com um `<strong>Error rendering diagram:</strong>` filho direto (`node_modules/astro-mermaid/astro-mermaid-integration.js:554-563`, lido pelo executor). Seletor real: `:scope > div > strong` a partir de `pre.mermaid` — é o que `site/verifica-acessibilidade.mjs` já usava antes deste CT-B (o próprio conferidor já documentava a estrutura real; a tabela deste `05` é que trazia o palpite errado) |
-| troca de tema | `document.documentElement.setAttribute('data-theme', t)` — o jeito que o conferidor já usa (`site/verifica-acessibilidade.mjs:setAttribute('data-theme':78`) | sim |
+| SVG de erro do Mermaid | ~~o mesmo seletor com `aria-roledescription="error"`, ou o texto `Syntax error` dentro do SVG~~ **corrigido pelo executor do CT-B01** (causa a: seletor especificado errado) — o astro-mermaid 2.1.0 real NÃO desenha um SVG de erro; no `catch` de `initMermaid()` ele substitui o bloco por um `<div>` com um `<strong>Error rendering diagram:</strong>` filho direto (`site/node_modules/astro-mermaid/astro-mermaid-integration.js:catch:554-567`, lido pelo executor; o `node_modules` só existe depois do `npm ci` em `site/`). Seletor real: `:scope > div > strong` a partir de `pre.mermaid` — é o que `site/verifica-acessibilidade.mjs` já usava antes deste CT-B (o próprio conferidor já documentava a estrutura real; a tabela deste `05` é que trazia o palpite errado) |
+| troca de tema | `document.documentElement.setAttribute('data-theme', t)` — o jeito que o conferidor já usa (`site/verifica-acessibilidade.mjs:setAttribute:206`) | sim |
 | overlay da busca ⌘K | `input[placeholder="Buscar registros e telas..."]` e `[x-on\:open-spotlight\.window]` (`tests/Browser/RoteiroDoKitTest.php`, F-45) | sim |
 | escolha de painel | `assertPathIs('/login/painel')` + `a[href$="/login/painel/{id}"]` (`tests/Browser/LoginUnificadoTest.php`, CT-B01 de `feat/login-unificado`) | sim |
 
@@ -114,13 +114,21 @@ Funcionalidade: Diagramas da arquitetura no site
 **Assertions**: contagem **igual** à da fonte (não "≥ 1"); ausência de SVG de erro; console vazio; axe
 depois do passo 4; piso de 20.
 
+*(alterado em 2026-09-29: como o conferidor faz os passos 4 e 5 — espera todo `pre.mermaid` ganhar
+`data-processed` (`site/verifica-acessibilidade.mjs:waitForFunction:213`), que o `astro-mermaid` grava
+ao terminar, em vez de esperar o N-ésimo SVG; e reconhece o erro pela estrutura que o `astro-mermaid`
+2.1.0 põe no lugar do bloco (`:scope > div > strong`, `site/verifica-acessibilidade.mjs:temElementoDeErro:231`),
+não por `aria-roledescription="error"` nem pelo texto "Syntax error" — a tabela de Seletores acima já
+registra a correção. O CT-B01 achou dois defeitos reais, corrigidos no passo 22 do `01`: o DG-11 que
+não renderizava e o contraste do rótulo de aresta no tema escuro)*
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata |
 |---|---|---|
 | M1 | `astro-mermaid` registrado depois do Starlight — o Expressive Code pega a cerca e ela vira bloco de código | CT-B01 (contagem 0 ≠ N) |
 | M2 | bloco com sintaxe inválida (rótulo com parênteses sem aspas) — o Mermaid desenha um SVG **de erro**, e "tem SVG" passaria | CT-B01 (SVG de erro / "Syntax error") |
-| M3 | axe em `domcontentloaded` (`site/verifica-acessibilidade.mjs:domcontentloaded:77`), sobre o `<pre>` ainda não renderizado | CT-B01 (passo 4 antes do 6) |
+| M3 | axe em `domcontentloaded` (`site/verifica-acessibilidade.mjs:domcontentloaded:205`), sobre o `<pre>` ainda não renderizado | CT-B01 (passo 4 antes do 6) |
 | M4 | conferidor sem piso, verde sobre zero páginas com diagrama | CT-B01 (piso de 20) |
 | M5 | só o tema escuro conferido (o tema claro é amostra no conferidor atual) | CT-B01 (os dois temas em **toda** página com diagrama) |
 
@@ -211,7 +219,7 @@ Funcionalidade: GIFs pelo kit:arte
 >    Exemplos que promete uma linha que o roteiro do MESMO `05` nunca cobre é a própria definição de
 >    "CT-B especificado errado": não é seletor nem rota errada, é uma linha sem execução por trás.
 >
-> `KitArte::CLIPES['login-unificado']` (`app/Console/Commands/KitArte.php:74-77`) também declara só
+> `KitArte::CLIPES['login-unificado']` (`app/Console/Commands/KitArte.php:'login-unificado':76-79`) também declara só
 > dois quadros (`login-unificado-1-formulario`, `login-unificado-2-escolha`) — Desenhado,
 > Implementado e o próprio Roteiro deste `05` concordam; só a tabela de Exemplos divergia. Ser
 > tecnicamente factível (`LoginUnificadoTest.php` já clica em "Administração" e chega a `/admin`)
@@ -227,6 +235,15 @@ Funcionalidade: GIFs pelo kit:arte
 | 3 | quadro | `->screenshot(fullPage: false, filename: '{quadro}')` **depois** do passo 2 | PNG com o overlay |
 | 4 | escolha | `visit('/login')->fill('#form\.email', …)->fill('#form\.password', 'password')->press('Login')->assertPathIs('/login/painel')->assertSee('Administração')` | tela de escolha |
 | 5 | quadro | `->screenshot(fullPage: false, filename: '{quadro}')` | PNG da escolha |
+
+*(alterado em 2026-09-29: o que o teste faz, e que o roteiro acima não dizia — a busca é no `/app` com
+tenancy (`arranjarPainelApp()` e `visit("/app/{slug}/projetos")`), com um projeto criado no cenário; o
+quadro fechado sai depois do `assertSee` do projeto, e o aberto só depois de digitar "Contrato" e o
+resultado aparecer **dentro** do overlay (`assertSeeIn('[x-on\:open-spotlight\.window]', …)`); o login
+unificado arranja uma conta com `admin` e `infra` globais, desloga, aquece `/login` pelo kernel, fotografa
+o formulário vazio (`assertPresent('.fi-auth-layout')`) e, na escolha, afirma os dois cartões,
+Administração e Infraestrutura, antes do quadro — `tests/BrowserTenancy/CapturaDeArteTest.php:it:703` e
+`tests/BrowserTenancy/CapturaDeArteTest.php:it:752`)*
 
 A senha `password` do passo 4 é a da **persona de teste** (`tests/Pest.php:'password' => 'password':393` cria a conta com
 ela), não a do administrador instalado — RQ-28 não se aplica a fixture de teste.
@@ -249,8 +266,11 @@ usam `assertNoSmoke()`).
 
 | # | O que o requisito pediu | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | diagramas renderizados no site (RQ-12, RQ-18) | | | saída do conferidor (20 SVGs por idioma e tema) |
-| 2 | "segue o tema claro/escuro" (Adendo 2) | | | medidas do CT-B02 coladas no `03` |
-| 3 | o mesmo bloco renderiza no GitHub (Adendo 2) | | | print do README e da página no GitHub (L-03) |
-| 4 | GIFs de busca ⌘K, login unificado, densidade, import/export (RQ-27) | | | os quatro GIFs abertos e conferidos, barra lateral inclusive |
-| 5 | `install.gif` sem `password` (RQ-28) | | | quadro do GIF com a senha gerada (L-04) |
+| 1 | diagramas renderizados no site (RQ-12, RQ-18, RQ-32) | `astro-mermaid` + `mermaid` 11.17.2; 20 blocos por idioma em `docs/`, todos SVG, sem erro | ✅ | step 10, 2026-09-29: `npm ci && npm run build` (69 páginas), `node verifica-links.mjs` (2.584 links, 0 quebrados) e `node verifica-acessibilidade.mjs` com o `astro preview` de pé: `[CT-B01] SVGs conferidos — pt: claro=20 escuro=20 (fonte=20); en: claro=20 escuro=20 (fonte=20)`, `OK — nenhuma violacao serious/critical de WCAG 2.1 AA`, exit 0 |
+| 2 | "segue o tema claro/escuro" (Adendo 2), com contraste AA nos dois (RQ-33) | tema pelo `data-theme` (`autoTheme`); fundo do rótulo de aresta escurecido no tema escuro em `site/src/styles/kit.css` | ✅ | mesma execução: `[CT-B02] DG-01 claro: fill=rgb(236, 236, 255) texto=rgb(51, 51, 51)` → `escuro: fill=rgb(31, 32, 32) texto=rgb(204, 204, 204)`, com re-render na troca; axe sem `color-contrast` serious |
+| 3 | o mesmo bloco renderiza no GitHub (Adendo 2) | o DG-01 do README é o mesmo bloco da página (CT-36); mesma versão do Mermaid (CT-38) | ⚠️ | procuração só: o GitHub não é alcançável pelo navegador de teste (L-03). Conferência manual no PR, que o step 11 registra — **não feita aqui** |
+| 4 | GIFs de busca ⌘K, login unificado, densidade, import/export (RQ-27) | cinco clipes no `KitArte::CLIPES`; os quatro PNG novos capturados pelo CT-B03 | ✅ | `KIT_ART=1 vendor/bin/pest tests/BrowserTenancy/CapturaDeArteTest.php --filter="CT-B03"` → 2/2, 10 asserções, 37 s, 2026-09-29; `busca-spotlight-2-aberta.png` e `login-unificado-2-escolha.png` abertos e conferidos no olho (overlay com o resultado "Contrato de fornecimento 2026"; os cartões Administração e Infraestrutura). Os GIFs publicados são os de `2ab9bfa` (`ls -l art/*.gif`) — o `kit:arte` não foi rodado de novo aqui |
+| 5 | `install.gif` sem `password` (RQ-28) | fixture com a transcrição real, senha mascarada com 24 `X`; `assertDontSee('/ password')` e `assertDontSee('password (padrão do kit)')` antes de cada quadro | ⚠️ | a fonte é travada pelo CT-52 e pelo `assertDontSee`; o pixel do GIF é lacuna L-04 — `grep -n -i "password" tests/Browser/Fixtures/terminal-instalacao.blade.php` só acha o comentário que proíbe a palavra (linha 11) |
+
+*(alterado em 2026-09-29: preenchido no step 10; as duas linhas ⚠️ são as lacunas L-03 e L-04 do `04`,
+declaradas desde a derivação, e não divergência entre o desenhado e o implementado)*
