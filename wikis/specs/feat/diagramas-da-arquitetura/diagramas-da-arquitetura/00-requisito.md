@@ -208,6 +208,9 @@
 - **RQ-22 / RQ-10 (recusa do convite, ciclo 2)** — a recusa do convite só tem porta com a tenancy (a caixa de convites recebidos). O DG-09 marca o evento recusar e o estado Recusado com `KIT_TENANCY`?
   - **Assumido (P-43)**: sim (R4, falha fechado), e a matriz do convite roda em `tests/Tenancy`
   - **Se negado**: CT-81 perde a linha `KIT_TENANCY`; a matriz de CT-80 não muda
+- **RD2-08 (revisão do diff, 2ª rodada; premissa registrada no step 11, QA-03)** — o valor gravado no `.env` pelo `kit:install` (o `APP_NAME` que a pessoa digita, com barra invertida, `$` ou aspas) volta igual na leitura, e a gravação troca só a primeira ocorrência da chave?
+  - **Assumido (P-44)**: sim — `SubstituicaoEmArquivo::definirNoEnv` preserva o valor literal (ida e volta pelo `.env`) e troca uma ocorrência só; é o comportamento que o `[RD2-08]` e o `04` passam a travar
+  - **Se negado**: o `[RD2-08]` perde o cenário da chave repetida, e a ida e volta continua
 - **Escalada ao mantenedor (ciclo 2, teto de rodadas)** — a 2ª revisão adversarial trouxe três achados estruturais (A2-01, A2-02, A2-03), e o fechamento trocou a técnica de duas regras: R12 passou de "estado × evento sobre o rótulo" a "situação concreta × evento", e R40 de "referência que existe" a "referência pela forma, com catálogo". A skill não permite 3ª rodada. As duas trocas ficam valendo como premissas (P-29..P-31) até a confirmação
 
 ## Adendo 1 — 2026-09-27
@@ -370,6 +373,32 @@ A opção escolhida dizia, na pergunta:
 | RQ-42 | Os dois consertos mecânicos entram: Pint verde (RD4-04) e citações corretas (RD4-06) | "o Pint e as citações" | restrição | exceção a RQ-39 |
 | RQ-43 | Cada correção é provada vermelha antes; não há nova revisão cega | "Cada correção é provada vermelha, sem nova revisão cega." | restrição | — |
 | RQ-44 | RD4-02, RD4-05, RD4-07, RD4-08, RD4-09 e RD4-10 viram dívida declarada no `03` e no PR, com RD4-02 e RD4-10 em destaque | "Os outros seis viram dívida declarada no 03 e no PR, com o RD4-02 e o RD4-10 em destaque." | restrição | aplica RQ-39 |
+
+## Adendo 6 — 2026-09-29
+
+- **Fonte**: respostas do mantenedor às duas perguntas que a sessão levou quando o quality gate (step 11, ciclo 1) reprovou a feature com 7 Major, 5 Minor e 2 cosméticos (`06-relatorio-qa.md`)
+- **Fidelidade**: alta (escolha entre opções escritas)
+
+### Texto Original
+
+<!-- IMUTÁVEL. Pergunta como foi feita → resposta como foi dada. -->
+
+> "O quality gate dos diagramas reprovou com 7 Major, 5 Minor e 2 cosméticos. Como fecho para o ciclo 2 do gate?"="Corrigir tudo e rodar o gate de novo (Recomendado)", "QA-06: no site, a coluna tem 600 px e o Mermaid encolhe o SVG para caber nela, deixando 13 dos 20 diagramas com o texto abaixo de 10 px. Como resolvo?"="Tamanho natural com rolagem (Recomendado)"
+
+As opções escolhidas diziam, na pergunta:
+
+- **Corrigir tudo e rodar o gate de novo** — "Os 14 achados, com teste primeiro onde o destino é teste. O QA-12 vira nota para a skill. Depois, o quality gate roda o ciclo 2, cego como no 1."
+- **Tamanho natural com rolagem** — "CSS do site: o diagrama nunca encolhe abaixo de um piso de fonte (cerca de 12 px), e o que não couber rola na horizontal, dentro do próprio bloco. Não muda nenhum bloco nem o GitHub. Um CT-B mede o piso antes."
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-45 | Todos os achados do ciclo 1 do quality gate (QA-01..QA-14) são corrigidos, com o teste primeiro onde o destino é teste; o QA-12 vira nota para a skill | "Os 14 achados, com teste primeiro onde o destino é teste. O QA-12 vira nota para a skill." | restrição | — |
+| RQ-46 | O quality gate roda o ciclo 2, cego como no 1, antes do PR | "Depois, o quality gate roda o ciclo 2, cego como no 1." | restrição | — |
+| RQ-47 | No site, o diagrama nunca encolhe abaixo de um piso de fonte efetiva (cerca de 12 px); o que não couber rola na horizontal dentro do próprio bloco | "o diagrama nunca encolhe abaixo de um piso de fonte (cerca de 12 px), e o que não couber rola na horizontal, dentro do próprio bloco" | não-funcional | concretiza RQ-12/RQ-17 |
+| RQ-48 | A legibilidade se resolve no CSS do site, sem mudar bloco nem o que o GitHub mostra | "Não muda nenhum bloco nem o GitHub." | restrição | — |
+| RQ-49 | Um CT-B mede o piso de fonte antes da correção | "Um CT-B mede o piso antes." | restrição | — |
 
 ## Fora de Escopo (declarado)
 
