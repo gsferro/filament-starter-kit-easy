@@ -286,7 +286,7 @@ score is not auditable:
 `mutationEscaped`). A mutant on a line no test runs is a different category, `UNCOVERED`, and
 `--covered-only` leaves it out. The survivors of the measurements above, named:
 
-- `app/Support/CustomizadorDaInstalacao.php:label_plural:524` — four mutations in the **default** of
+- `app/Support/CustomizadorDaInstalacao.php:524` — four mutations in the **default** of
   `config('kit.tenancy.label_plural', …)`, which is never read: the key always exists in
   `config/kit.php`. They are equivalent in the kit's configuration, and declared as such — a test
   that removed the key would have to assert, as expected, the wrong plural the code itself calls a

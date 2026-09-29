@@ -143,7 +143,7 @@ chegar à tela: `IdentifyTenant` resolve o tenant da rota e já decide o 404 cha
 sequenceDiagram
 %% DG-20
 accTitle: Requisição em /app/{tenant}
-accDescr: O IdentifyTenant resolve o tenant da rota e consulta canAccessTenant(); organização inativa ou sem vínculo responde 404, e só então o DefinirTenantDePermissoes fixa o contexto de papéis por tenant.
+accDescr: O IdentifyTenant resolve o tenant da rota e consulta canAccessTenant(); organização inativa, ou sem vínculo e não é master_global, responde 404, e só então o DefinirTenantDePermissoes fixa o contexto de papéis por tenant.
   participant visitante as Visitante
   participant identify_tenant as IdentifyTenant
   participant can_access_tenant as canAccessTenant()
@@ -151,7 +151,7 @@ accDescr: O IdentifyTenant resolve o tenant da rota e consulta canAccessTenant()
   Note over identify_tenant,definir_tenant: só existe com KIT_TENANCY=true (hasTenancy())
   visitante->>identify_tenant: GET /app/{tenant}
   identify_tenant->>can_access_tenant: organização ativa e vinculada?
-  alt organização inativa ou sem vínculo
+  alt organização inativa, ou sem vínculo e não é master_global
     can_access_tenant-->>visitante: nega (404)
   else acesso permitido
     can_access_tenant-->>identify_tenant: permite

@@ -144,7 +144,7 @@ kit's `tenantMiddleware` — fix the per-tenant role context
 sequenceDiagram
 %% DG-20
 accTitle: Request to /app/{tenant}
-accDescr: IdentifyTenant resolves the tenant from the route and calls canAccessTenant(); an inactive organization or one with no link answers 404, and only then does DefinirTenantDePermissoes fix the per-tenant role context.
+accDescr: IdentifyTenant resolves the tenant from the route and calls canAccessTenant(); an inactive tenant, or one with no link and not master_global, answers 404, and only then does DefinirTenantDePermissoes fix the per-tenant role context.
   participant visitante as Visitor
   participant identify_tenant as IdentifyTenant
   participant can_access_tenant as canAccessTenant()
@@ -152,7 +152,7 @@ accDescr: IdentifyTenant resolves the tenant from the route and calls canAccessT
   Note over identify_tenant,definir_tenant: only exists with KIT_TENANCY=true (hasTenancy())
   visitante->>identify_tenant: GET /app/{tenant}
   identify_tenant->>can_access_tenant: is the organization active and linked?
-  alt inactive organization or no link
+  alt inactive tenant, or no link and not master_global
     can_access_tenant-->>visitante: refuses (404)
   else access allowed
     can_access_tenant-->>identify_tenant: allows
