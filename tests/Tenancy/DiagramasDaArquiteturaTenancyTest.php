@@ -3,6 +3,7 @@
 use App\Filament\Admin\Resources\Convites\Pages\ListConvites;
 use App\Filament\App\Pages\ConvitesRecebidos;
 use App\Filament\Pages\Auth\RegistroPorConvite;
+use App\Http\Middleware\DefinirTenantDePermissoes;
 use App\Models\Convite;
 use App\Models\Role;
 use App\Models\Tenant;
@@ -11,16 +12,21 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Filament\Http\Middleware\IdentifyTenant;
 use Filament\Panel;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Os CT do lote `T` (Tenancy) da wiki `diagramas-da-arquitetura`, ver
  * `wikis/specs/feat/diagramas-da-arquitetura/diagramas-da-arquitetura/04-casos-de-teste.md`:
- * CT-12, CT-14, CT-80, CT-89, CT-98 — os únicos do `## Índice de Cenários` cujo arquivo é este
- * (`.ai/rules/testes.md` §"Nem todo papel do kit existe em toda suíte": `admin_app` só existe
- * aqui).
+ * CT-12, CT-14, CT-80, CT-89, CT-98, CT-112, CT-113, CT-114 — os únicos do `## Índice de
+ * Cenários` cujo arquivo é este (`.ai/rules/testes.md` §"Nem todo papel do kit existe em toda
+ * suíte": `admin_app` só existe aqui; e a tabela "Extras do catálogo — suíte Tenancy" do `04`,
+ * linha 260: R51/R52 exigem o GET real, que só esta suíte tem o modo multi-tenant ligado para
+ * fazer).
  *
  * *(RD2-17, 2026-09-28, correção)* Cada cenário mistura uma parte que executa CÓDIGO REAL
  * (canAccessPanel(), a máquina de estados do convite pelos pontos de entrada) com a conferência do
@@ -725,4 +731,293 @@ it('[CT-89] com a tenancy, os dois ramos do aceite ligam a conta a organizacao d
 })->with([
     'conta nova'      => ['sem conta com o e-mail', 'conta nova'],
     'conta existente' => ['conta existente de ana, autenticada como ela', 'conta existente'],
+]);
+
+/*
+|--------------------------------------------------------------------------
+| R51/R52 — CT-112, CT-113, CT-114: DG-20, a requisição em /app/{tenant}
+|--------------------------------------------------------------------------
+| `mensagensDeSequencia()` (tests/Pest.php) devolve as MENSAGENS de um bloco `sequenceDiagram`,
+| na ordem em que aparecem — mas ignora as linhas de controle (`alt`/`else`/`end`), então não
+| basta para saber se uma mensagem está DENTRO do ramo que permite ou fora do bloco `alt`
+| inteiro. O que é local a este arquivo é só essa leitura de POSIÇÃO — nenhum outro arquivo
+| confere ramo de `alt` de um `sequenceDiagram` (.ai/rules/testes.md §"Helper de teste usado por
+| mais de um arquivo").
+*/
+
+/**
+ * A mensagem `identify_tenant->>definir_tenant` do DG-20 vem DEPOIS da consulta
+ * `identify_tenant->>can_access_tenant` (ordem de `mensagensDeSequencia()`) E está desenhada
+ * DENTRO do ramo `else` do `alt` (entre a linha `else` e o `end` que o fecha) — nunca antes do
+ * `alt`, nunca depois do `end`.
+ *
+ * As duas condições são necessárias: a primeira mata a ordem invertida (R51/M2, primeira
+ * cópia de CT-112); a segunda mata o contexto fixado também fora do ramo que nega (R51/M2,
+ * segunda cópia) — um mutante que só movesse a mensagem para fora do `alt`, mas ainda depois da
+ * consulta, passaria na primeira sozinha.
+ */
+function ordemDoDG20EstaCorreta(string $bloco): bool
+{
+    $mensagens   = mensagensDeSequencia($bloco);
+    $idxConsulta = null;
+    $idxDefinir  = null;
+
+    foreach ($mensagens as $i => $mensagem) {
+        if ($idxConsulta === null && $mensagem['de'] === 'identify_tenant' && $mensagem['para'] === 'can_access_tenant') {
+            $idxConsulta = $i;
+        }
+
+        if ($idxDefinir === null && $mensagem['de'] === 'identify_tenant' && $mensagem['para'] === 'definir_tenant') {
+            $idxDefinir = $i;
+        }
+    }
+
+    if ($idxConsulta === null || $idxDefinir === null || $idxConsulta >= $idxDefinir) {
+        return false;
+    }
+
+    $linhaElse    = null;
+    $linhaEnd     = null;
+    $linhaDefinir = null;
+
+    foreach (explode("\n", $bloco) as $i => $linha) {
+        $t = trim($linha);
+
+        if ($linhaElse === null && str_starts_with($t, 'else')) {
+            $linhaElse = $i;
+        }
+
+        if ($linhaElse !== null && $linhaEnd === null && $t === 'end') {
+            $linhaEnd = $i;
+        }
+
+        if ($linhaDefinir === null && preg_match('/^identify_tenant\s*-{1,2}>>\s*definir_tenant\s*:/', $t) === 1) {
+            $linhaDefinir = $i;
+        }
+    }
+
+    return $linhaElse !== null && $linhaEnd !== null && $linhaDefinir !== null
+        && $linhaDefinir > $linhaElse && $linhaDefinir < $linhaEnd;
+}
+
+/**
+ * A linha da mensagem `identify_tenant->>definir_tenant` do bloco real — para as duas cópias
+ * abaixo, que a MOVEM (nunca reescrevem o texto à mão, para não divergir se o rótulo mudar).
+ */
+function linhaDeDefinirTenant(string $bloco): string
+{
+    foreach (explode("\n", $bloco) as $linha) {
+        if (preg_match('/^\s*identify_tenant\s*-{1,2}>>\s*definir_tenant\s*:/', trim($linha)) === 1) {
+            return $linha;
+        }
+    }
+
+    throw new RuntimeException('DG-20: linha "identify_tenant->>definir_tenant" não encontrada no bloco real — o rótulo mudou?');
+}
+
+/** Cópia EM MEMÓRIA do DG-20 real com a mensagem a definir_tenant movida para ANTES da consulta a can_access_tenant — nunca escrita em disco (CT-112, 2ª linha de exemplos). */
+function dg20ComDefinirAntesDaConsulta(string $blocoReal): string
+{
+    $linhaDefinir = linhaDeDefinirTenant($blocoReal);
+    $linhas       = array_values(array_filter(
+        explode("\n", $blocoReal),
+        static fn (string $linha): bool => trim($linha) !== trim($linhaDefinir),
+    ));
+
+    $idxConsulta = null;
+
+    foreach ($linhas as $i => $linha) {
+        if (preg_match('/^\s*identify_tenant\s*-{1,2}>>\s*can_access_tenant\s*:/', trim($linha)) === 1) {
+            $idxConsulta = $i;
+
+            break;
+        }
+    }
+
+    if ($idxConsulta === null) {
+        throw new RuntimeException('DG-20: linha "identify_tenant->>can_access_tenant" não encontrada no bloco real — o rótulo mudou?');
+    }
+
+    array_splice($linhas, $idxConsulta, 0, [$linhaDefinir]);
+
+    return implode("\n", $linhas);
+}
+
+/** Cópia EM MEMÓRIA do DG-20 real com a mensagem a definir_tenant movida para DEPOIS do `end` que fecha o alt — nunca escrita em disco (CT-112, 3ª linha de exemplos). */
+function dg20ComDefinirForaDoAltDepoisDoEnd(string $blocoReal): string
+{
+    $linhaDefinir = linhaDeDefinirTenant($blocoReal);
+    $linhas       = array_values(array_filter(
+        explode("\n", $blocoReal),
+        static fn (string $linha): bool => trim($linha) !== trim($linhaDefinir),
+    ));
+
+    $idxEnd = null;
+
+    foreach ($linhas as $i => $linha) {
+        if (trim($linha) === 'end') {
+            $idxEnd = $i;
+        }
+    }
+
+    if ($idxEnd === null) {
+        throw new RuntimeException('DG-20: linha "end" não encontrada no bloco real — o bloco mudou de forma?');
+    }
+
+    array_splice($linhas, $idxEnd + 1, 0, [$linhaDefinir]);
+
+    return implode("\n", $linhas);
+}
+
+it('[CT-112] a ordem que o DG-20 desenha e a da pilha de middlewares de uma rota do /app/{tenant}', function (string $variante, bool $resultadoEsperado): void {
+    $rota = Route::getRoutes()->getByName('filament.app.pages.dashboard');
+
+    expect($rota)->not->toBeNull('rota filament.app.pages.dashboard não encontrada — o painel app não tem mais uma rota com {tenant}?');
+
+    $pilha       = $rota->gatherMiddleware();
+    $idxIdentify = array_search(IdentifyTenant::class, $pilha, true);
+    $idxDefinir  = array_search(DefinirTenantDePermissoes::class, $pilha, true);
+
+    expect($idxIdentify)->not->toBeFalse('IdentifyTenant não está na pilha de middlewares REAL da rota /app/{tenant}')
+        ->and($idxDefinir)->not->toBeFalse('DefinirTenantDePermissoes não está na pilha de middlewares REAL da rota /app/{tenant}')
+        ->and($idxIdentify)->toBeLessThan($idxDefinir, 'na pilha REAL, IdentifyTenant não vem antes de DefinirTenantDePermissoes');
+
+    expect(Filament::getPanel('app')->getTenantMiddleware())->toBe(
+        [IdentifyTenant::class, DefinirTenantDePermissoes::class],
+        'getTenantMiddleware() do painel app não é exatamente [IdentifyTenant, DefinirTenantDePermissoes], nessa ordem',
+    );
+
+    foreach (['pt', 'en'] as $idioma) {
+        $bloco = blocoDoCatalogoNaArvore('DG-20', $idioma);
+
+        expect($bloco)->not->toBeNull("DG-20 não encontrado em nenhum arquivo {$idioma} (README ou docs/{$idioma})");
+
+        $texto = match ($variante) {
+            'real'                    => $bloco['bloco'],
+            'ordem invertida'         => dg20ComDefinirAntesDaConsulta($bloco['bloco']),
+            'fora do alt, apos o end' => dg20ComDefinirForaDoAltDepoisDoEnd($bloco['bloco']),
+        };
+
+        expect(ordemDoDG20EstaCorreta($texto))->toBe(
+            $resultadoEsperado,
+            "DG-20 ({$idioma}, variante '{$variante}'): esperado '".($resultadoEsperado ? 'aceita' : 'recusa')."', a guarda discordou",
+        );
+    }
+})->with([
+    'DG-20 real, pt e en'                                                              => ['real', true],
+    'cópia com identify_tenant->>definir_tenant antes da consulta a can_access_tenant' => ['ordem invertida', false],
+    'cópia com a mensagem a definir_tenant fora do alt, depois do end'                 => ['fora do alt, apos o end', false],
+]);
+
+it('[CT-113] o contexto de papeis que o DG-20 desenha e fixado com o id da organizacao da rota, e so no pedido permitido', function (string $slug, int $status, bool $teamIdEhDaAcme): void {
+    $acme   = tenant('Acme', 'acme');
+    $globex = tenant('Globex', 'globex');
+
+    $operador = usuarioComPapel('panel_user', $acme);
+    $operador->tenants()->attach($acme);
+
+    $sentinela = 999999;
+    expect($sentinela)->not->toBe($acme->id)->and($sentinela)->not->toBe($globex->id);
+
+    $registrar = app(PermissionRegistrar::class);
+    $registrar->setPermissionsTeamId($sentinela);
+
+    $this->actingAs($operador)->get("/app/{$slug}")->assertStatus($status);
+
+    $teamId = (int) app(PermissionRegistrar::class)->getPermissionsTeamId();
+
+    if ($teamIdEhDaAcme) {
+        expect($teamId)->toBe($acme->id, 'o DefinirTenantDePermissoes deveria ter fixado o id de time com o da acme, a organização da rota permitida');
+    } else {
+        expect($teamId)->not->toBe($globex->id, 'o pedido negado não pode fixar o id de time da organização que o operador não pode ver');
+    }
+})->with([
+    'acme (permitido)'   => ['acme', 200, true],
+    'globex (negado)'    => ['globex', 404, false],
+]);
+
+/**
+ * A condição do `alt` do DG-20 ("organização inativa ou sem vínculo", ou a forma que o bloco
+ * publicado tiver) cobre esta situação concreta? Reconhece os dois motivos pela FORMA — livre de
+ * acento e caixa, pt/en — e não por uma lista fixa de blocos: "organização inativa"/"inactive
+ * organization", e "sem vínculo"/"no link". Só quando o rótulo QUALIFICA o segundo motivo com a
+ * exceção do `master_global` ("... e não é master_global"/"... and not master_global") essa
+ * exceção retira o `master_global` do motivo "sem vínculo" — sem a exceção no rótulo, "sem
+ * vínculo" cobre todo mundo sem vínculo, inclusive o `master_global` (R52/M2, achado contra o
+ * bloco publicado hoje: Q?2).
+ */
+function condicaoDoAltDoDg20Cobre(string $bloco, bool $organizacaoInativa, bool $semVinculo, bool $ehMasterGlobal): bool
+{
+    $normalizar = static fn (string $s): string => mb_strtolower(str_replace(
+        ['á', 'ã', 'â', 'é', 'ê', 'í', 'ó', 'ô', 'õ', 'ú', 'ç'],
+        ['a', 'a', 'a', 'e', 'e', 'i', 'o', 'o', 'o', 'u', 'c'],
+        $s,
+    ));
+
+    $condicao = null;
+
+    foreach (explode("\n", $bloco) as $linha) {
+        if (preg_match('/^\s*alt\s+(.*)$/', $linha, $m) === 1) {
+            $condicao = $normalizar($m[1]);
+
+            break;
+        }
+    }
+
+    if ($condicao === null) {
+        throw new RuntimeException('DG-20: nenhuma linha "alt ..." encontrada no bloco.');
+    }
+
+    $motivoInativa    = str_contains($condicao, 'inativ') || str_contains($condicao, 'inactive');
+    $motivoSemVinculo = str_contains($condicao, 'sem vinculo') || str_contains($condicao, 'no link');
+    $excetuaMaster    = str_contains($condicao, 'master_global') || str_contains($condicao, 'master global');
+
+    $cobreOrgInativa  = $motivoInativa && $organizacaoInativa;
+    $cobreSemVinculo  = $motivoSemVinculo && $semVinculo && ! ($ehMasterGlobal && $excetuaMaster);
+
+    return $cobreOrgInativa || $cobreSemVinculo;
+}
+
+it('[CT-114] o ramo do DG-20 que cobre a situacao leva ao desfecho que o GET produz', function (string $situacaoOrg, string $persona, string $vinculo, int $status): void {
+    $acme   = tenant('Acme', 'acme');
+    $globex = tenant('Globex', 'globex', ativo: $situacaoOrg === 'ativa');
+
+    if ($persona === 'master_global') {
+        $operador = usuarioComPapel('master_global');
+    } else {
+        $operador = usuario();
+        papelNaOrganizacao($operador, 'panel_user', $acme);
+
+        if ($vinculo === 'com vinculo') {
+            papelNaOrganizacao($operador, 'panel_user', $globex);
+            $operador->tenants()->attach([$acme->id, $globex->id]);
+        } else {
+            $operador->tenants()->attach($acme);
+        }
+    }
+
+    $this->actingAs($operador)->get("/app/{$globex->slug}")->assertStatus($status);
+
+    $organizacaoInativa = $situacaoOrg === 'inativa';
+    $semVinculo         = $vinculo === 'sem vinculo';
+    $ehMasterGlobal     = $persona === 'master_global';
+
+    foreach (['pt', 'en'] as $idioma) {
+        $bloco = blocoDoCatalogoNaArvore('DG-20', $idioma);
+
+        expect($bloco)->not->toBeNull("DG-20 não encontrado em nenhum arquivo {$idioma} (README ou docs/{$idioma})");
+
+        $cobre = condicaoDoAltDoDg20Cobre($bloco['bloco'], $organizacaoInativa, $semVinculo, $ehMasterGlobal);
+
+        expect($cobre)->toBe(
+            $status === 404,
+            "DG-20 ({$idioma}): a condição do alt ".($status === 404 ? 'deveria cobrir' : 'não deveria cobrir')." a situação '{$situacaoOrg} × {$persona} × {$vinculo}' (GET real respondeu {$status})",
+        );
+    }
+})->with([
+    'ativa × panel_user da acme e da globex × com vinculo'   => ['ativa', 'panel_user', 'com vinculo', 200],
+    'ativa × panel_user so da acme × sem vinculo'            => ['ativa', 'panel_user', 'sem vinculo', 404],
+    'inativa × panel_user da acme e da globex × com vinculo' => ['inativa', 'panel_user', 'com vinculo', 404],
+    'inativa × master_global × sem vinculo'                  => ['inativa', 'master_global', 'sem vinculo', 404],
+    'ativa × master_global × sem vinculo'                    => ['ativa', 'master_global', 'sem vinculo', 200],
 ]);

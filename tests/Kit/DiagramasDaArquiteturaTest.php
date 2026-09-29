@@ -4876,3 +4876,177 @@ it('[RD3-05] blocosMermaidDe() não confunde span de código embutido (crase fec
     expect($blocos)->toHaveCount(1, 'o span embutido não deveria abrir cerca nem engolir o bloco mermaid real que vem depois')
         ->and($blocos[0]['idCatalogo'])->toBe('DG-99');
 });
+
+/*
+|--------------------------------------------------------------------------
+| R47 (RQ-36, Adendo 3, step 10) — o job `site` do `ci.yml` roda em pull_request e só constrói e
+| confere o site quando o PR toca `docs/` ou `site/`
+|--------------------------------------------------------------------------
+|
+| A guarda lê o TEXTO do job (a mesma técnica de R23/[CT-42] sobre `pages.yml`: fatiar por
+| indentação, nunca um parser de YAML — o job de PR pode simplesmente não existir num mutante, e
+| um parser reagiria a erro de sintaxe, não à ausência do job) e AVALIA a condição do passo
+| checador como MECANISMO, contra três caminhos de amostra — um sob `docs/`, um sob `site/`, um
+| fora dos dois (`app/`) — em vez de conferir se o TEXTO da condição cita os dois prefixos. É o
+| que o Registro do `04` pede: uma expressão como `^(docs|site)/` cumpre o requisito sem conter
+| nenhum dos dois literalmente.
+|
+| `fatosDoJobSite()` recebe o CONTEÚDO do workflow (nunca o caminho): a prova de mutação dos
+| mutantes M1..M6 de R47 usa cópias do TEXTO mutadas fora do repositório, passadas direto para
+| esta função — o `.github/workflows/ci.yml` real nunca é tocado.
+*/
+
+/**
+ * Os fatos do job `site` do `ci.yml`, fatiado por indentação: 2 espaços sob `jobs:` recorta o
+ * bloco do job; dentro dele, a linha `    steps:` separa o CABEÇALHO (onde mora o `if:` de nível
+ * de JOB — o evento) da lista de PASSOS (onde mora o `if:` de nível de passo — a condição de
+ * caminho). Cada passo vira um bloco de texto bruto, do `      - ` que abre até o próximo no
+ * mesmo nível de indentação.
+ *
+ * @return array{
+ *     existe: bool,
+ *     eventoPullRequest: bool,
+ *     idChecker: ?string,
+ *     aceitaDocs: bool,
+ *     aceitaSite: bool,
+ *     recusaApp: bool,
+ *     passosDependemDaCondicao: bool,
+ *     posNpmCi: int|false,
+ *     posBuild: int|false,
+ *     posLinks: int|false,
+ *     posAcessibilidade: int|false,
+ *     semContinueOnError: bool,
+ * }
+ */
+function fatosDoJobSite(string $ci): array
+{
+    $vazio = [
+        'existe'                   => false,
+        'eventoPullRequest'        => false,
+        'idChecker'                => null,
+        'aceitaDocs'               => false,
+        'aceitaSite'               => false,
+        'recusaApp'                => false,
+        'passosDependemDaCondicao' => false,
+        'posNpmCi'                 => false,
+        'posBuild'                 => false,
+        'posLinks'                 => false,
+        'posAcessibilidade'        => false,
+        'semContinueOnError'       => false,
+    ];
+
+    if (preg_match('/^  site:\n(.*?)(?=\n  [a-zA-Z0-9_-]+:\n|\z)/ms', $ci, $bloco) !== 1) {
+        return $vazio; // M1 (variante a): não há job "site" — a conferência ficou só no pages.yml.
+    }
+
+    [$cabecalho, $passos] = array_pad(preg_split('/\n {4}steps:\n/', $bloco[1], 2), 2, '');
+
+    $eventoPullRequest = preg_match('/^\s*if:\s*github\.event_name\s*==\s*\'pull_request\'\s*$/m', $cabecalho) === 1;
+
+    $blocosDePasso = array_values(array_filter(
+        preg_split('/\n(?=      - )/', trim($passos, "\n")),
+        static fn (string $b): bool => trim($b) !== '',
+    ));
+
+    $idChecker     = null;
+    $regexCondicao = null;
+    $indiceChecker = null;
+
+    foreach ($blocosDePasso as $indice => $passo) {
+        if (! str_contains($passo, 'git diff --name-only')) {
+            continue;
+        }
+
+        if (preg_match('/grep\s+-[a-zA-Z]+\s+\'([^\']+)\'/', $passo, $g) === 1) {
+            $regexCondicao = $g[1];
+            $indiceChecker = $indice;
+
+            if (preg_match('/^\s*id:\s*(\S+)/m', $passo, $idm) === 1) {
+                $idChecker = $idm[1];
+            }
+        }
+
+        break;
+    }
+
+    $aceitaDocs = $aceitaSite = $recusaApp = false;
+
+    if ($regexCondicao !== null) {
+        // A PARTIÇÃO do `Então`: um caminho sob cada prefixo aceito, e um fora dos dois — o
+        // texto da condição não importa, só o que ela ACEITA e RECUSA (Registro do `04`).
+        $aceitaDocs = preg_match('~'.$regexCondicao.'~', 'docs/pt/index.md') === 1;
+        $aceitaSite = preg_match('~'.$regexCondicao.'~', 'site/astro.config.mjs') === 1;
+        $recusaApp  = preg_match('~'.$regexCondicao.'~', 'app/Models/User.php') !== 1;
+    }
+
+    $passosDependemDaCondicao = $idChecker !== null;
+
+    if ($passosDependemDaCondicao) {
+        foreach ($blocosDePasso as $indice => $passo) {
+            if ($indice <= $indiceChecker) {
+                continue; // checkout e o próprio checador não são "passo de build ou conferência".
+            }
+
+            if (preg_match('/^\s*if:\s*.*steps\.'.preg_quote($idChecker, '/').'\.outputs\./m', $passo) !== 1) {
+                $passosDependemDaCondicao = false; // M3 (variante b): condição calculada, mas não aplicada a este passo.
+
+                break;
+            }
+        }
+    }
+
+    $semComentario = implode("\n", array_filter(
+        explode("\n", $passos),
+        static fn (string $linha): bool => ! str_starts_with(ltrim($linha), '#'),
+    ));
+
+    return [
+        'existe'                   => true,
+        'eventoPullRequest'        => $eventoPullRequest,
+        'idChecker'                => $idChecker,
+        'aceitaDocs'               => $aceitaDocs,
+        'aceitaSite'               => $aceitaSite,
+        'recusaApp'                => $recusaApp,
+        'passosDependemDaCondicao' => $passosDependemDaCondicao,
+        'posNpmCi'                 => strpos($passos, 'npm ci'),
+        'posBuild'                 => strpos($passos, 'npm run build'),
+        'posLinks'                 => strpos($passos, 'verifica-links.mjs'),
+        'posAcessibilidade'        => strpos($passos, 'verifica-acessibilidade.mjs'),
+        'semContinueOnError'       => ! str_contains($semComentario, 'continue-on-error'),
+    ];
+}
+
+/**
+ * CT-105 — R47 (RQ-36, Adendo 3, step 10): o job `site` do `ci.yml` roda no evento
+ * `pull_request`, cada passo de build e de conferência depende da condição de caminho calculada
+ * pelo passo checador, essa condição aceita um caminho sob `docs/` e um sob `site/` e recusa um
+ * fora dos dois — a PARTIÇÃO, não o texto (Registro do `04`) —, os quatro passos (`npm ci`,
+ * `npm run build`, `verifica-links.mjs`, `verifica-acessibilidade.mjs`) existem com os dois
+ * conferidores depois do build, e nenhum passo tolera falha com `continue-on-error`.
+ *
+ * RQ-36 chegou à implementação sem cenário — o job nasceu direto no código, na rodada 3 da
+ * revisão do diff — e o `rastreabilidade.sh` acusou "RQ-36 sem CT". Mutantes previstos:
+ * R47.M1 (job ausente ou sem a restrição a `pull_request`), M2 (condição só aceita `site/`), M3
+ * (sem condição, ou calculada e não aplicada aos passos), M4 (falta o conferidor de
+ * acessibilidade), M5 (um conferidor roda antes do build) e M6 (`continue-on-error: true`).
+ * R47.M7 (a lista de caminhos sai da ponta errada do PR) não tem matador aqui — é a lacuna L-07
+ * do `04`: esta guarda avalia a condição sobre caminhos dados, não sobre as pontas do PR.
+ */
+it('[CT-105] o PR que toca docs/ ou site/ constroi e confere o site antes do merge', function (): void {
+    $fatos = fatosDoJobSite((string) file_get_contents(base_path('.github/workflows/ci.yml')));
+
+    expect($fatos['existe'])->toBeTrue('o job "site" não existe em ci.yml — a conferência pode ter ficado só no pages.yml, que roda depois do merge (R47.M1)')
+        ->and($fatos['eventoPullRequest'])->toBeTrue('o job "site" não está restrito ao evento pull_request (R47.M1)')
+        ->and($fatos['idChecker'])->not->toBeNull('nenhum passo calcula a condição de caminho (git diff + grep) — sem ela, os passos seguintes não têm o que checar (R47.M3)')
+        ->and($fatos['aceitaDocs'])->toBeTrue('a condição recusa um caminho sob docs/, onde moram os diagramas (R47.M2)')
+        ->and($fatos['aceitaSite'])->toBeTrue('a condição recusa um caminho sob site/')
+        ->and($fatos['recusaApp'])->toBeTrue('a condição aceita um caminho fora de docs/ e site/, como um sob app/ — o job rodaria em todo PR (R47.M3)')
+        ->and($fatos['passosDependemDaCondicao'])->toBeTrue('algum passo de build ou de conferência não depende da condição de caminho calculada pelo passo checador (R47.M3)')
+        ->and($fatos['posNpmCi'])->not->toBeFalse('não há passo que rode "npm ci"')
+        ->and($fatos['posBuild'])->not->toBeFalse('não há passo que rode "npm run build"')
+        ->and($fatos['posLinks'])->not->toBeFalse('não há passo que rode verifica-links.mjs')
+        ->and($fatos['posAcessibilidade'])->not->toBeFalse('não há passo que rode verifica-acessibilidade.mjs (R47.M4)')
+        ->and($fatos['posLinks'])->toBeGreaterThan($fatos['posBuild'], 'o conferidor de links roda antes do build (R47.M5)')
+        ->and($fatos['posAcessibilidade'])->toBeGreaterThan($fatos['posBuild'], 'o conferidor de acessibilidade roda antes do build (R47.M5)')
+        ->and($fatos['semContinueOnError'])->toBeTrue('um passo do job "site" tolera falha com continue-on-error (R47.M6)');
+});
