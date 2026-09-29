@@ -262,6 +262,14 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # RD3-11 (Adendo 4): só este job roda `npm ci` e `playwright install --with-deps` com o
+    # token do GITHUB_TOKEN, disparado por pull_request. Sem `permissions:`, o token herda o
+    # padrão do repositório, que pode ser mais amplo que a leitura que este job precisa — ele
+    # só lê o repo e nunca publica nada (quem publica é o `pages.yml`). No NÍVEL DO JOB, e não
+    # no workflow, para não mudar o padrão implícito dos outros jobs deste arquivo.
+    permissions:
+      contents: read
+
     # No NÍVEL DO JOB, pelo mesmo motivo do `pages.yml`: o conferidor de links precisa descontar
     # o mesmo prefixo que o build aplicou, e o de acessibilidade precisa navegar para ele.
     env:
