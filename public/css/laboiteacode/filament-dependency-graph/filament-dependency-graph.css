@@ -596,6 +596,12 @@
     font-size: 0.8125rem;
 }
 
+.fdg-tree-group {
+    font-family: ui-monospace, monospace;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
 .fdg-tree-label {
     border: none;
     background: transparent;

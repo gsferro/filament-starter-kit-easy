@@ -1,0 +1,1450 @@
+/*
+ * Filament Dashboard Widgets
+ * Self contained styles. Colours come from Filament design tokens so the
+ * widgets follow the panel accent colour and support light and dark themes.
+ * Surfaces, rings, shadows, type scale and focus states mirror the values
+ * Filament compiles for its own widgets (stats overview, section), so these
+ * cards sit next to native widgets without any visible seam.
+ */
+
+/* Same surface as a native Filament widget: a 1px ring (not a border, so it
+   takes no layout space) over the two layer "shadow-sm". The ring colour and
+   width are variables so the focus state can swap them without restating the
+   whole shadow stack. */
+.fi-fdw-card {
+    --fi-fdw-ring: color-mix(in oklab, var(--gray-950) 5%, transparent);
+    --fi-fdw-ring-width: 1px;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+    padding: 1.5rem;
+    background-color: var(--color-white);
+    border-radius: 0.75rem;
+    box-shadow:
+        0 0 0 var(--fi-fdw-ring-width) var(--fi-fdw-ring),
+        0 1px 3px 0 rgb(0 0 0 / 0.1),
+        0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.dark .fi-fdw-card {
+    --fi-fdw-ring: color-mix(in oklab, var(--color-white) 10%, transparent);
+
+    background-color: var(--gray-900);
+}
+
+/* Native clickable stats have no hover treatment, only a primary focus ring. */
+.fi-fdw-card--interactive {
+    color: inherit;
+    text-decoration: none;
+    outline: none;
+}
+
+.fi-fdw-card--interactive:focus-visible {
+    --fi-fdw-ring: var(--primary-600);
+    --fi-fdw-ring-width: 2px;
+}
+
+/* Heading shared by the list widgets */
+.fi-fdw-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.fi-fdw-heading__title {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5rem;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-heading__title {
+    color: var(--color-white);
+}
+
+.fi-fdw-heading__description {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--gray-500);
+}
+
+/* Generic pieces */
+.fi-fdw-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+    color: var(--gray-500);
+}
+
+.dark .fi-fdw-label {
+    color: var(--gray-400);
+}
+
+.fi-fdw-muted {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--gray-500);
+}
+
+/* Description under a value or a title: same scale as the native stat and
+   section descriptions. .fi-fdw-muted stays for compact meta lines. */
+.fi-fdw-description {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--gray-500);
+}
+
+.fi-fdw-strong {
+    color: var(--gray-950);
+    font-weight: 600;
+}
+
+.dark .fi-fdw-strong {
+    color: var(--color-white);
+}
+
+/* Metric widget */
+.fi-fdw-metric__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.fi-fdw-metric__value-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.fi-fdw-metric__value {
+    font-size: 1.875rem;
+    font-weight: 600;
+    line-height: 2.25rem;
+    letter-spacing: -0.025em;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-metric__value {
+    color: var(--color-white);
+}
+
+.fi-fdw-metric__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.625rem;
+    color: var(--color-500);
+    background-color: var(--color-100, color-mix(in srgb, var(--color-500) 12%, transparent));
+    flex-shrink: 0;
+}
+
+.fi-fdw-metric__icon svg {
+    width: 1.375rem;
+    height: 1.375rem;
+}
+
+.fi-fdw-metric__sparkline {
+    width: 100%;
+    margin-top: 0.25rem;
+    overflow: hidden;
+}
+
+.fi-fdw-metric__sparkline svg {
+    display: block;
+    width: 100%;
+}
+
+.fi-fdw-metric__sparkline-line {
+    fill: none;
+    stroke: var(--color-500);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Trend and comparison pills */
+.fi-fdw-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1rem;
+    color: var(--color-600);
+    white-space: nowrap;
+}
+
+.dark .fi-fdw-pill {
+    color: var(--color-400);
+}
+
+.fi-fdw-pill svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Progress bar shared by goal and breakdown */
+.fi-fdw-bar {
+    position: relative;
+    width: 100%;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: var(--gray-100);
+    overflow: hidden;
+}
+
+.dark .fi-fdw-bar {
+    background-color: var(--gray-800);
+}
+
+.fi-fdw-bar__fill {
+    height: 100%;
+    border-radius: 9999px;
+    background-color: var(--color-500);
+    transition: width 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fi-fdw-bar__fill {
+        transition: none;
+    }
+}
+
+.fi-fdw-bar--overflow .fi-fdw-bar__fill {
+    background-image: linear-gradient(
+        45deg,
+        rgb(255 255 255 / 0.25) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgb(255 255 255 / 0.25) 50%,
+        rgb(255 255 255 / 0.25) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 0.75rem 0.75rem;
+}
+
+/* Goal widget */
+.fi-fdw-goal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.fi-fdw-goal__values {
+    display: flex;
+    align-items: baseline;
+    gap: 0.375rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 2rem;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-goal__values {
+    color: var(--color-white);
+}
+
+.fi-fdw-goal__target {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-500);
+}
+
+.fi-fdw-goal__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Breakdown widget */
+.fi-fdw-breakdown__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.fi-fdw-breakdown__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.fi-fdw-breakdown__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.fi-fdw-breakdown__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.dark .fi-fdw-breakdown__label {
+    color: var(--gray-300);
+}
+
+.fi-fdw-breakdown__label span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fi-fdw-breakdown__label svg {
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-500);
+    flex-shrink: 0;
+}
+
+.fi-fdw-breakdown__values {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.fi-fdw-breakdown__value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-breakdown__value {
+    color: var(--color-white);
+}
+
+.fi-fdw-breakdown__percentage {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+a.fi-fdw-breakdown__item:hover .fi-fdw-breakdown__label {
+    color: var(--color-600);
+}
+
+.dark a.fi-fdw-breakdown__item:hover .fi-fdw-breakdown__label {
+    color: var(--color-400);
+}
+
+/* Recent items widget */
+.fi-fdw-recent__list {
+    display: flex;
+    flex-direction: column;
+    margin: -0.5rem -0.5rem;
+}
+
+.fi-fdw-recent__item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.5rem;
+    border-radius: 0.5rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+a.fi-fdw-recent__item:hover {
+    background-color: var(--gray-50);
+}
+
+.dark a.fi-fdw-recent__item:hover {
+    background-color: rgb(255 255 255 / 0.05);
+}
+
+a.fi-fdw-recent__item:focus-visible {
+    outline: 2px solid var(--primary-600);
+    outline-offset: -2px;
+}
+
+.fi-fdw-recent__visual {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+    overflow: hidden;
+    color: var(--color-500);
+    background-color: var(--color-100, color-mix(in srgb, var(--color-500) 12%, transparent));
+}
+
+.fi-fdw-recent__visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.fi-fdw-recent__visual svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.fi-fdw-recent__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.fi-fdw-recent__title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-950);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dark .fi-fdw-recent__title {
+    color: var(--color-white);
+}
+
+.fi-fdw-recent__description {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fi-fdw-recent__aside {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.fi-fdw-recent__meta {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    white-space: nowrap;
+}
+
+/* Timeline widget */
+.fi-fdw-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.fi-fdw-timeline__group-label {
+    align-self: flex-start;
+    margin: 0 0 0.25rem;
+    padding: 0.1875rem 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--gray-600);
+    background-color: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 0.375rem;
+}
+
+.fi-fdw-timeline__list + .fi-fdw-timeline__group-label {
+    margin-top: 0.75rem;
+}
+
+.dark .fi-fdw-timeline__group-label {
+    color: var(--gray-300);
+    background-color: rgb(255 255 255 / 0.05);
+    border-color: rgb(255 255 255 / 0.1);
+}
+
+.fi-fdw-timeline__list {
+    display: flex;
+    flex-direction: column;
+}
+
+.fi-fdw-timeline__event {
+    position: relative;
+    display: flex;
+    gap: 0.75rem;
+    padding-bottom: 1.25rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.fi-fdw-timeline__event:last-child {
+    padding-bottom: 0;
+}
+
+.fi-fdw-timeline__marker {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+    overflow: hidden;
+    z-index: 1;
+    color: var(--color-500);
+    background-color: var(--color-100, color-mix(in srgb, var(--color-500) 12%, transparent));
+}
+
+.dark .fi-fdw-timeline__marker {
+    color: var(--color-400);
+    background-color: color-mix(in oklab, var(--color-500) 20%, transparent);
+}
+
+/* Connector drawn on the event, not the marker: the marker has overflow:hidden
+   (to clip avatars) which would otherwise crop the line to the pastille. */
+.fi-fdw-timeline__event:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    top: 1.75rem;
+    bottom: 0;
+    left: 0.875rem;
+    width: 2px;
+    transform: translateX(-50%);
+    background-color: var(--gray-200);
+}
+
+.dark .fi-fdw-timeline__event:not(:last-child)::before {
+    background-color: color-mix(in oklab, var(--color-white) 10%, transparent);
+}
+
+.fi-fdw-timeline__marker svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.fi-fdw-timeline__marker img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.fi-fdw-timeline__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+    flex: 1 1 auto;
+    padding-top: 0.125rem;
+}
+
+.fi-fdw-timeline__title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-timeline__title {
+    color: var(--color-white);
+}
+
+.fi-fdw-timeline__description {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+.fi-fdw-timeline__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.125rem;
+}
+
+.fi-fdw-timeline__time {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+/* Detail list widget */
+.fi-fdw-details {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.fi-fdw-details__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.fi-fdw-details__row:last-child {
+    border-bottom: 0;
+}
+
+.dark .fi-fdw-details__row {
+    border-color: color-mix(in oklab, var(--color-white) 5%, transparent);
+}
+
+.fi-fdw-details__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+
+.dark .fi-fdw-details__label {
+    color: var(--gray-400);
+}
+
+.fi-fdw-details__icon {
+    display: inline-flex;
+    color: var(--color-500);
+    flex-shrink: 0;
+}
+
+.fi-fdw-details__icon svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.fi-fdw-details__value {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: right;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-details__value {
+    color: var(--color-white);
+}
+
+.fi-fdw-details__value > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Footer action */
+.fi-fdw-footer {
+    margin-top: auto;
+    padding-top: 0.25rem;
+}
+
+/* Usage limits widget */
+.fi-fdw-usage {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.fi-fdw-usage__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.fi-fdw-usage__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.fi-fdw-usage__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-width: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.dark .fi-fdw-usage__label {
+    color: var(--gray-300);
+}
+
+.fi-fdw-usage__label svg {
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-500);
+    flex-shrink: 0;
+}
+
+.fi-fdw-usage__values {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.375rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.fi-fdw-usage__value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-usage__value {
+    color: var(--color-white);
+}
+
+.fi-fdw-usage__limit {
+    font-size: 0.8125rem;
+    color: var(--gray-500);
+}
+
+.fi-fdw-usage__percentage {
+    margin-left: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-600);
+}
+
+.dark .fi-fdw-usage__percentage {
+    color: var(--color-400);
+}
+
+.fi-fdw-usage__threshold {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    z-index: 1;
+    background-color: var(--gray-500);
+}
+
+.dark .fi-fdw-usage__threshold {
+    background-color: var(--gray-400);
+}
+
+/* Segment bar widget */
+.fi-fdw-segbar__track {
+    display: flex;
+    width: 100%;
+    height: 1.25rem;
+    border-radius: 0.375rem;
+    overflow: hidden;
+    background-color: var(--gray-100);
+}
+
+.dark .fi-fdw-segbar__track {
+    background-color: var(--gray-800);
+}
+
+.fi-fdw-segbar__segment {
+    height: 100%;
+    background-color: var(--color-500);
+    transition: width 0.3s ease;
+}
+
+.fi-fdw-segbar__segment + .fi-fdw-segbar__segment {
+    border-left: 2px solid var(--color-white);
+}
+
+.dark .fi-fdw-segbar__segment + .fi-fdw-segbar__segment {
+    border-left-color: var(--gray-900);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fi-fdw-segbar__segment {
+        transition: none;
+    }
+}
+
+.fi-fdw-segbar__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin-top: 0.875rem;
+}
+
+.fi-fdw-segbar__legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.fi-fdw-segbar__dot {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 2px;
+    background-color: var(--color-500);
+    flex-shrink: 0;
+}
+
+.fi-fdw-segbar__legend-label {
+    font-size: 0.8125rem;
+    color: var(--gray-600);
+}
+
+.dark .fi-fdw-segbar__legend-label {
+    color: var(--gray-300);
+}
+
+.fi-fdw-segbar__legend-value {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-segbar__legend-value {
+    color: var(--color-white);
+}
+
+.fi-fdw-segbar__legend-percentage {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+/* Variance widget */
+.fi-fdw-variance {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.fi-fdw-variance__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.fi-fdw-variance__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.fi-fdw-variance__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dark .fi-fdw-variance__label {
+    color: var(--gray-300);
+}
+
+.fi-fdw-variance__values {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.fi-fdw-variance__value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-variance__value {
+    color: var(--color-white);
+}
+
+.fi-fdw-variance__delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-600);
+}
+
+.dark .fi-fdw-variance__delta {
+    color: var(--color-400);
+}
+
+.fi-fdw-variance__delta svg {
+    width: 0.85rem;
+    height: 0.85rem;
+}
+
+.fi-fdw-variance__percentage {
+    font-weight: 500;
+    opacity: 0.85;
+}
+
+.fi-fdw-variance__track {
+    position: relative;
+    height: 0.75rem;
+    border-radius: 0.25rem;
+    background-color: var(--gray-100);
+}
+
+.dark .fi-fdw-variance__track {
+    background-color: var(--gray-800);
+}
+
+.fi-fdw-variance__axis {
+    position: absolute;
+    top: -0.125rem;
+    bottom: -0.125rem;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    background-color: var(--gray-300);
+}
+
+.dark .fi-fdw-variance__axis {
+    background-color: var(--gray-600);
+}
+
+.fi-fdw-variance__bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background-color: var(--color-500);
+    transition: width 0.3s ease;
+}
+
+.fi-fdw-variance__bar--pos {
+    left: 50%;
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.fi-fdw-variance__bar--neg {
+    right: 50%;
+    border-radius: 0.25rem 0 0 0.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fi-fdw-variance__bar {
+        transition: none;
+    }
+}
+
+/* Funnel widget */
+.fi-fdw-funnel {
+    display: flex;
+    flex-direction: column;
+}
+
+.fi-fdw-funnel__stage {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
+
+.fi-fdw-funnel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.375rem;
+}
+
+.fi-fdw-funnel__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-width: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.dark .fi-fdw-funnel__label {
+    color: var(--gray-300);
+}
+
+.fi-fdw-funnel__label svg {
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-500);
+    flex-shrink: 0;
+}
+
+.fi-fdw-funnel__value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-funnel__value {
+    color: var(--color-white);
+}
+
+.fi-fdw-funnel__bar-track {
+    display: flex;
+    justify-content: center;
+}
+
+.fi-fdw-funnel__bar {
+    height: 2rem;
+    min-width: 0.5rem;
+    border-radius: 0.375rem;
+    background-color: var(--color-500);
+    transition: width 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fi-fdw-funnel__bar {
+        transition: none;
+    }
+}
+
+.fi-fdw-funnel__connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+    padding: 0.375rem 0;
+}
+
+.fi-fdw-funnel__connector-line {
+    width: 2px;
+    height: 0.75rem;
+    border-radius: 2px;
+    background-color: var(--gray-200);
+}
+
+.dark .fi-fdw-funnel__connector-line {
+    background-color: color-mix(in oklab, var(--color-white) 10%, transparent);
+}
+
+.fi-fdw-funnel__conversion {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gray-500);
+}
+
+.fi-fdw-funnel__conversion svg {
+    width: 0.85rem;
+    height: 0.85rem;
+}
+
+a.fi-fdw-funnel__stage:hover .fi-fdw-funnel__label {
+    color: var(--color-600);
+}
+
+.dark a.fi-fdw-funnel__stage:hover .fi-fdw-funnel__label {
+    color: var(--color-400);
+}
+
+/* Bullet widget */
+.fi-fdw-bullet {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.fi-fdw-bullet__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.fi-fdw-bullet__value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 2rem;
+    letter-spacing: -0.025em;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-bullet__value {
+    color: var(--color-white);
+}
+
+.fi-fdw-bullet__track {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 1.5rem;
+    border-radius: 0.375rem;
+    overflow: hidden;
+    background-color: var(--gray-100);
+}
+
+.dark .fi-fdw-bullet__track {
+    background-color: var(--gray-800);
+}
+
+.fi-fdw-bullet__band {
+    height: 100%;
+}
+
+.fi-fdw-bullet__band--1 { background-color: var(--gray-100); }
+.fi-fdw-bullet__band--2 { background-color: var(--gray-200); }
+.fi-fdw-bullet__band--3 { background-color: var(--gray-300); }
+.fi-fdw-bullet__band--4 { background-color: var(--gray-400); }
+
+.dark .fi-fdw-bullet__band--1 { background-color: var(--gray-800); }
+.dark .fi-fdw-bullet__band--2 { background-color: var(--gray-700); }
+.dark .fi-fdw-bullet__band--3 { background-color: var(--gray-600); }
+.dark .fi-fdw-bullet__band--4 { background-color: var(--gray-500); }
+
+.fi-fdw-bullet__measure {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 0.5rem;
+    transform: translateY(-50%);
+    border-radius: 9999px;
+    background-color: var(--color-500);
+    transition: width 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fi-fdw-bullet__measure {
+        transition: none;
+    }
+}
+
+.fi-fdw-bullet__target {
+    position: absolute;
+    top: 15%;
+    height: 70%;
+    width: 3px;
+    border-radius: 2px;
+    background-color: var(--gray-950);
+    transform: translateX(-50%);
+}
+
+.dark .fi-fdw-bullet__target {
+    background-color: var(--color-white);
+}
+
+.fi-fdw-bullet__marker {
+    position: absolute;
+    top: 50%;
+    width: 0.75rem;
+    height: 0.75rem;
+    transform: translate(-50%, -50%);
+    border-radius: 9999px;
+    background-color: var(--color-white);
+    border: 2px solid var(--gray-600);
+}
+
+.dark .fi-fdw-bullet__marker {
+    background-color: var(--gray-900);
+    border-color: var(--gray-300);
+}
+
+.fi-fdw-bullet__caption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+/* Empty state */
+.fi-fdw-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+}
+
+.fi-fdw-empty__icon {
+    color: var(--gray-400);
+}
+
+.fi-fdw-empty__icon svg {
+    width: 2rem;
+    height: 2rem;
+}
+
+.fi-fdw-empty__heading {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.dark .fi-fdw-empty__heading {
+    color: var(--gray-300);
+}
+
+.fi-fdw-empty__description {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    max-width: 20rem;
+}
+
+/* Card widget: a generic, customizable card with several layout variants */
+.fi-fdw-cardw__title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.375rem;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-cardw__title {
+    color: var(--color-white);
+}
+
+.fi-fdw-cardw__title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.fi-fdw-cardw__title-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    color: var(--color-500);
+}
+
+.dark .fi-fdw-cardw__title-icon {
+    color: var(--color-400);
+}
+
+.fi-fdw-cardw__title-icon svg {
+    width: 1.125rem;
+    height: 1.125rem;
+}
+
+/* Keep the leading icon aligned with the first line of the title */
+.fi-fdw-cardw--content .fi-fdw-cardw__title {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+}
+
+/* Stat variant */
+.fi-fdw-cardw__stat-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.fi-fdw-cardw__stat-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.625rem;
+    color: var(--color-500);
+    background-color: var(--color-100, color-mix(in srgb, var(--color-500) 12%, transparent));
+    flex-shrink: 0;
+}
+
+.dark .fi-fdw-cardw__stat-icon {
+    color: var(--color-400);
+    background-color: color-mix(in oklab, var(--color-500) 20%, transparent);
+}
+
+.fi-fdw-cardw__stat-icon svg {
+    width: 1.375rem;
+    height: 1.375rem;
+}
+
+.fi-fdw-cardw__value-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.fi-fdw-cardw__value {
+    font-size: 1.875rem;
+    font-weight: 600;
+    line-height: 2.25rem;
+    letter-spacing: -0.025em;
+    color: var(--gray-950);
+}
+
+.dark .fi-fdw-cardw__value {
+    color: var(--color-white);
+}
+
+/* Icon variant: a leading tile, a body, an optional trailing arrow. The card
+   stays a top anchored column and the media row holds the pieces, so a card
+   stretched by a taller neighbour does not float its content vertically. */
+.fi-fdw-cardw__media {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.fi-fdw-cardw__tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.75rem;
+    color: var(--color-500);
+    background-color: var(--color-100, color-mix(in srgb, var(--color-500) 12%, transparent));
+    flex-shrink: 0;
+}
+
+.dark .fi-fdw-cardw__tile {
+    color: var(--color-400);
+    background-color: color-mix(in oklab, var(--color-500) 20%, transparent);
+}
+
+.fi-fdw-cardw__tile svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.fi-fdw-cardw__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.fi-fdw-cardw__arrow {
+    display: inline-flex;
+    color: var(--gray-400);
+    flex-shrink: 0;
+}
+
+.fi-fdw-cardw__arrow svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.fi-fdw-cardw__arrow--corner {
+    position: absolute;
+    top: 1.25rem;
+    inset-inline-end: 1.25rem;
+}
+
+/* Content variant */
+.fi-fdw-cardw__text {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+    color: var(--gray-600);
+}
+
+.dark .fi-fdw-cardw__text {
+    color: var(--gray-300);
+}
+
+.fi-fdw-cardw--content .fi-fdw-cardw__title-row {
+    padding-inline-end: 1.5rem;
+}
+
+/* Call to action variant */
+.fi-fdw-cardw--cta {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.75rem;
+}
+
+.fi-fdw-cardw--cta .fi-fdw-cardw__tile {
+    width: 3rem;
+    height: 3rem;
+}
+
+.fi-fdw-cardw--cta .fi-fdw-cardw__tile svg {
+    width: 1.625rem;
+    height: 1.625rem;
+}
+
+.fi-fdw-cardw__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+/* Dark-mode muted-text contrast: lift secondary text to gray-400 (~5.8:1 on
+   the dark surface) so labels, timestamps and percentages meet WCAG AA. */
+.dark .fi-fdw-heading__description,
+.dark .fi-fdw-label,
+.dark .fi-fdw-muted,
+.dark .fi-fdw-description,
+.dark .fi-fdw-goal__target,
+.dark .fi-fdw-breakdown__percentage,
+.dark .fi-fdw-recent__description,
+.dark .fi-fdw-recent__meta,
+.dark .fi-fdw-timeline__description,
+.dark .fi-fdw-timeline__time,
+.dark .fi-fdw-usage__limit,
+.dark .fi-fdw-usage__threshold,
+.dark .fi-fdw-segbar__legend-percentage,
+.dark .fi-fdw-funnel__conversion,
+.dark .fi-fdw-empty__description {
+    color: var(--gray-400);
+}
+
+/* Dark-mode accent icons: same treatment as the other icon wells, which is
+   the one Filament applies to its own coloured icon backgrounds.
+   In light mode the wells use the 100 shade, with a fallback to the 1.0.0
+   tint for views published before 1.0.1, which only expose 400 to 600. */
+.dark .fi-fdw-metric__icon,
+.dark .fi-fdw-recent__visual {
+    color: var(--color-400);
+    background-color: color-mix(in oklab, var(--color-500) 20%, transparent);
+}
+
+/* Keyboard focus for the clickable list rows that only had a hover state. */
+a.fi-fdw-breakdown__item:focus-visible,
+a.fi-fdw-usage__item:focus-visible,
+a.fi-fdw-variance__item:focus-visible,
+a.fi-fdw-funnel__stage:focus-visible,
+a.fi-fdw-segbar__legend-item:focus-visible {
+    outline: 2px solid var(--primary-600);
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+}
+
+/* Smooth the row hovers instead of snapping. */
+@media (prefers-reduced-motion: no-preference) {
+    .fi-fdw-recent__item {
+        transition: background-color 0.15s ease;
+    }
+
+    .fi-fdw-breakdown__label,
+    .fi-fdw-funnel__label {
+        transition: color 0.15s ease;
+    }
+}
