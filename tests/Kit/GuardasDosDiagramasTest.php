@@ -850,44 +850,9 @@ function paresDeAdulteracaoPorDg(): array
     ];
 }
 
-/**
- * A ordem do DG-20 é a que o código executa: `identify_tenant` fala com `can_access_tenant` ANTES
- * de falar com `definir_tenant` (o fato de R51 escolhido para este cenário — ver a nota de R53 no
- * `04`: o de R52 reprovaria hoje o bloco publicado pela linha 5 de CT-114, sem dizer nada sobre
- * fato vácuo).
- */
-function ordemDg20EhCorreta(string $bloco): bool
-{
-    $indiceConsulta = null;
-    $indiceDefinir  = null;
-
-    foreach (mensagensDeSequencia($bloco) as $i => $m) {
-        if ($m['de'] === 'identify_tenant' && $m['para'] === 'can_access_tenant') {
-            $indiceConsulta ??= $i;
-        }
-
-        if ($m['de'] === 'identify_tenant' && $m['para'] === 'definir_tenant') {
-            $indiceDefinir ??= $i;
-        }
-    }
-
-    return $indiceConsulta !== null && $indiceDefinir !== null && $indiceConsulta < $indiceDefinir;
-}
-
-/**
- * Troca os DESTINOS de duas mensagens de sequência (`->>destinoA:` <-> `->>destinoB:`) — uma
- * involução: aplicar duas vezes devolve o bloco original. É a adulteração de R53 para o DG-20 ("a
- * mensagem a definir_tenant antes da consulta a can_access_tenant"): sem mover linha nenhuma, só
- * troca QUEM cada mensagem já existente alcança, então a cópia difere do bloco real só por isso.
- */
-function trocarDestinosDeMensagem(string $bloco, string $destinoA, string $destinoB): string
-{
-    $marcador = "\0TROCA\0";
-    $bloco    = str_replace("->>{$destinoA}:", $marcador, $bloco);
-    $bloco    = str_replace("->>{$destinoB}:", "->>{$destinoA}:", $bloco);
-
-    return str_replace($marcador, "->>{$destinoB}:", $bloco);
-}
+// `ordemDg20EhCorreta()` e `trocarDestinosDeMensagem()` moram em `tests/Pest.php` — dois arquivos
+// os usam (este e `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`, QA-07 / RD-11,
+// `.ai/rules/testes.md` §"Nunca crie um clone com outro nome").
 
 /**
  * O fato declarado do DG, a cópia adulterada dele e como desfazer a adulteração (para provar que a

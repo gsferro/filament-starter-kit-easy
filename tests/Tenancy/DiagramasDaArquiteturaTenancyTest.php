@@ -53,7 +53,7 @@ beforeEach(function (): void {
 | O bloco do catálogo em si (`blocoDoCatalogoNaArvore()`) mora em `tests/Pest.php`, porque os
 | DOIS arquivos (este e `tests/Kit/DiagramasDaArquiteturaTest.php`) o usam (RD-11,
 | `.ai/rules/testes.md` §"Nunca crie um clone com outro nome"). O que é LOCAL a este arquivo é a
-| leitura do GRAFO a partir do bloco (`grafoDoFluxo()`, `transicoesDoEstado()` etc.) — só o lote
+| leitura do GRAFO a partir do bloco (`grafoDoFluxo()`, `transicoesDeEstado()` etc.) — só o lote
 | Tenancy percorre DG-02/DG-03/DG-09/DG-07 pela ótica de organização/contexto.
 */
 
@@ -392,24 +392,9 @@ it('[CT-98] papeis em contextos diferentes abrem so o painel cujo papel esta no 
 |--------------------------------------------------------------------------
 */
 
-/** Transições `de --> para : evento` de um bloco Mermaid `stateDiagram-v2` (sintaxe canônica). */
-function transicoesDoEstado(string $bloco): array
-{
-    $transicoes = [];
-
-    foreach (explode("\n", $bloco) as $i => $linha) {
-        if (preg_match('/^\s*(\[\*\]|[A-Za-z0-9_]+)\s*-->\s*(\[\*\]|[A-Za-z0-9_]+)\s*(?::\s*(.+))?$/', $linha, $m) === 1) {
-            $transicoes[] = [
-                'de'     => $m[1],
-                'para'   => $m[2],
-                'evento' => isset($m[3]) ? trim($m[3]) : null,
-                'linha'  => $i + 1,
-            ];
-        }
-    }
-
-    return $transicoes;
-}
+// `transicoesDeEstado()` mora em `tests/Pest.php` — dois arquivos a usam (este e
+// `tests/Kit/DiagramasDaArquiteturaTest.php`, QA-07, `.ai/rules/testes.md` §"Nunca crie um clone
+// com outro nome").
 
 /**
  * Constrói o convite na situação de partida pedida, por TRANSIÇÃO REAL (Setup Global).
@@ -572,15 +557,15 @@ it('[CT-80] cada uma das 24 celulas da matriz fechada do convite, executada pelo
             // bloco pt), não o texto.
             $blocoPt = blocoDoCatalogoNaArvore('DG-09', 'pt');
 
-            expect(transicoesDoEstado($bloco['bloco']))->toHaveCount(
-                count(transicoesDoEstado($blocoPt['bloco'])),
+            expect(transicoesDeEstado($bloco['bloco']))->toHaveCount(
+                count(transicoesDeEstado($blocoPt['bloco'])),
                 'DG-09 en não tem o mesmo número de transições que o DG-09 pt',
             );
 
             continue;
         }
 
-        $transicoes = transicoesDoEstado($bloco['bloco']);
+        $transicoes = transicoesDeEstado($bloco['bloco']);
 
         $daCelula = array_values(array_filter(
             $transicoes,
@@ -652,7 +637,7 @@ it('[CT-80] 2-switch: expirado reenviado e depois aceito muda para Aceito, com a
 
     expect($bloco)->not->toBeNull('DG-09 não encontrado em nenhum arquivo pt (README ou docs/pt)');
 
-    $transicoes = transicoesDoEstado($bloco['bloco']);
+    $transicoes = transicoesDeEstado($bloco['bloco']);
 
     $temReenvio = collect($transicoes)->contains(fn (array $t): bool => $t['de'] === 'Expirado' && $t['para'] === 'Pendente' && mb_strtolower((string) $t['evento']) === 'reenviar');
     $temAceite  = collect($transicoes)->contains(fn (array $t): bool => $t['de'] === 'Pendente' && $t['para'] === 'Aceito' && mb_strtolower((string) $t['evento']) === 'aceitar');
@@ -667,7 +652,7 @@ it('[CT-80] 2-switch: expirado reenviado e depois aceito muda para Aceito, com a
 |--------------------------------------------------------------------------
 */
 
-it('[CT-89] com a tenancy, os dois ramos do aceite ligam a conta a organizacao do convite e dao o papel no contexto dela', function (string $particao, string $ramo): void {
+it('[CT-89] com a tenancy, os dois ramos do aceite ligam a conta a organizacao do convite e dao o papel no contexto dela', function (string $particao, string $ramoPt, string $ramoEn): void {
     Notification::fake();
 
     $acme      = tenant('Acme', 'acme');
@@ -706,13 +691,19 @@ it('[CT-89] com a tenancy, os dois ramos do aceite ligam a conta a organizacao d
         'team_id'  => $acme->id,
     ]);
 
+    // QA-09: o marcador procurado em CADA bloco é o do IDIOMA DELE — nunca o pt nos dois. A
+    // guarda de antes procurava o marcador pt também no en (`ramo` único), e o en passava com
+    // português dentro ("(conta nova)"/"conta existente" em docs/en/autenticacao/convites.md,
+    // que R61/CT-132 recusa). "organiza" cobre "organização" e "organization" nos dois idiomas.
+    $ramoPorIdioma = ['pt' => $ramoPt, 'en' => $ramoEn];
+
     foreach (['pt', 'en'] as $idioma) {
         $bloco = blocoDoCatalogoNaArvore('DG-07', $idioma);
 
         expect($bloco)->not->toBeNull("DG-07 não encontrado em nenhum arquivo {$idioma} (README ou docs/{$idioma})");
 
         $normalizar = static fn (string $s): string => mb_strtolower(str_replace(['á', 'ã', 'â', 'é', 'ê', 'í', 'ó', 'ô', 'õ', 'ú', 'ç'], ['a', 'a', 'a', 'e', 'e', 'i', 'o', 'o', 'o', 'u', 'c'], $s));
-        $marcador   = $normalizar($ramo);
+        $marcador   = $normalizar($ramoPorIdioma[$idioma]);
         $linhas     = explode("\n", $bloco['bloco']);
 
         $trecho = null;
@@ -725,12 +716,12 @@ it('[CT-89] com a tenancy, os dois ramos do aceite ligam a conta a organizacao d
             }
         }
 
-        expect($trecho)->not->toBeNull("DG-07 não nomeia o ramo \"{$ramo}\" ({$idioma})");
-        test()->assertStringContainsString('organiza', $normalizar((string) $trecho), "DG-07, ramo \"{$ramo}\" ({$idioma}), não menciona a ligação à organização do convite");
+        expect($trecho)->not->toBeNull("DG-07 não nomeia o ramo \"{$ramoPorIdioma[$idioma]}\" ({$idioma})");
+        test()->assertStringContainsString('organiza', $normalizar((string) $trecho), "DG-07, ramo \"{$ramoPorIdioma[$idioma]}\" ({$idioma}), não menciona a ligação à organização do convite");
     }
 })->with([
-    'conta nova'      => ['sem conta com o e-mail', 'conta nova'],
-    'conta existente' => ['conta existente de ana, autenticada como ela', 'conta existente'],
+    'conta nova'      => ['sem conta com o e-mail', 'conta nova', 'new account'],
+    'conta existente' => ['conta existente de ana, autenticada como ela', 'conta existente', 'existing account'],
 ]);
 
 /*
@@ -745,60 +736,13 @@ it('[CT-89] com a tenancy, os dois ramos do aceite ligam a conta a organizacao d
 | mais de um arquivo").
 */
 
-/**
- * A mensagem `identify_tenant->>definir_tenant` do DG-20 vem DEPOIS da consulta
- * `identify_tenant->>can_access_tenant` (ordem de `mensagensDeSequencia()`) E está desenhada
- * DENTRO do ramo `else` do `alt` (entre a linha `else` e o `end` que o fecha) — nunca antes do
- * `alt`, nunca depois do `end`.
- *
- * As duas condições são necessárias: a primeira mata a ordem invertida (R51/M2, primeira
- * cópia de CT-112); a segunda mata o contexto fixado também fora do ramo que nega (R51/M2,
- * segunda cópia) — um mutante que só movesse a mensagem para fora do `alt`, mas ainda depois da
- * consulta, passaria na primeira sozinha.
- */
-function ordemDoDG20EstaCorreta(string $bloco): bool
-{
-    $mensagens   = mensagensDeSequencia($bloco);
-    $idxConsulta = null;
-    $idxDefinir  = null;
-
-    foreach ($mensagens as $i => $mensagem) {
-        if ($idxConsulta === null && $mensagem['de'] === 'identify_tenant' && $mensagem['para'] === 'can_access_tenant') {
-            $idxConsulta = $i;
-        }
-
-        if ($idxDefinir === null && $mensagem['de'] === 'identify_tenant' && $mensagem['para'] === 'definir_tenant') {
-            $idxDefinir = $i;
-        }
-    }
-
-    if ($idxConsulta === null || $idxDefinir === null || $idxConsulta >= $idxDefinir) {
-        return false;
-    }
-
-    $linhaElse    = null;
-    $linhaEnd     = null;
-    $linhaDefinir = null;
-
-    foreach (explode("\n", $bloco) as $i => $linha) {
-        $t = trim($linha);
-
-        if ($linhaElse === null && str_starts_with($t, 'else')) {
-            $linhaElse = $i;
-        }
-
-        if ($linhaElse !== null && $linhaEnd === null && $t === 'end') {
-            $linhaEnd = $i;
-        }
-
-        if ($linhaDefinir === null && preg_match('/^identify_tenant\s*-{1,2}>>\s*definir_tenant\s*:/', $t) === 1) {
-            $linhaDefinir = $i;
-        }
-    }
-
-    return $linhaElse !== null && $linhaEnd !== null && $linhaDefinir !== null
-        && $linhaDefinir > $linhaElse && $linhaDefinir < $linhaEnd;
-}
+// `ordemDg20EhCorreta()` mora em `tests/Pest.php` — dois arquivos a usam (este e
+// `tests/Kit/GuardasDosDiagramasTest.php`, QA-07, `.ai/rules/testes.md` §"Nunca crie um clone com
+// outro nome"). A versão canônica já traz as duas condições que este arquivo precisa: a ORDEM
+// (`identify_tenant->>can_access_tenant` antes de `identify_tenant->>definir_tenant`) e o
+// ANINHAMENTO (a segunda dentro do ramo `else` do `alt`, entre a linha `else` e o `end` que o
+// fecha) — as duas são necessárias: a primeira mata a ordem invertida (R51/M2, primeira cópia de
+// CT-112); a segunda mata o contexto fixado também fora do ramo que nega (R51/M2, segunda cópia).
 
 /**
  * A linha da mensagem `identify_tenant->>definir_tenant` do bloco real — para as duas cópias
@@ -898,7 +842,7 @@ it('[CT-112] a ordem que o DG-20 desenha e a da pilha de middlewares de uma rota
             'fora do alt, apos o end' => dg20ComDefinirForaDoAltDepoisDoEnd($bloco['bloco']),
         };
 
-        expect(ordemDoDG20EstaCorreta($texto))->toBe(
+        expect(ordemDg20EhCorreta($texto))->toBe(
             $resultadoEsperado,
             "DG-20 ({$idioma}, variante '{$variante}'): esperado '".($resultadoEsperado ? 'aceita' : 'recusa')."', a guarda discordou",
         );

@@ -1412,46 +1412,166 @@ function arestasDeFluxo(string $bloco): array
  */
 function relacaoDeEr(string $bloco, string $a, string $b): ?array
 {
-    $card = '(?:\|\||\|o|o\||o\{|\{o|\}o|o\}|\|\{|\{\||\}\||\|\})';
-
-    foreach (explode("\n", $bloco) as $linha) {
-        $linha = trim($linha);
-
-        if (preg_match('/^([A-Za-z0-9_]+)\s*('.$card.')(?:--|\.\.)('.$card.')\s*([A-Za-z0-9_]+)\s*(?::\s*"?([^"\n]*)"?)?\s*$/', $linha, $m) !== 1) {
-            continue;
+    foreach (relacoesDeEr($bloco) as $r) {
+        if ($r['a'] === $a && $r['b'] === $b) {
+            return ['cardDe' => $r['cardDe'], 'cardPara' => $r['cardPara'], 'rotulo' => $r['rotulo'], 'invertida' => false];
         }
 
-        if ($m[1] === $a && $m[4] === $b) {
-            return ['cardDe' => $m[2], 'cardPara' => $m[3], 'rotulo' => isset($m[5]) ? trim($m[5]) : null, 'invertida' => false];
-        }
-
-        if ($m[1] === $b && $m[4] === $a) {
-            return ['cardDe' => $m[3], 'cardPara' => $m[2], 'rotulo' => isset($m[5]) ? trim($m[5]) : null, 'invertida' => true];
+        if ($r['a'] === $b && $r['b'] === $a) {
+            return ['cardDe' => $r['cardPara'], 'cardPara' => $r['cardDe'], 'rotulo' => $r['rotulo'], 'invertida' => true];
         }
     }
 
     return null;
 }
 
+/** A cardinalidade de um lado de uma relação `erDiagram` (RD3-05, R57): exatamente um, zero ou um, zero ou muitos, um ou muitos. */
+const CARDINALIDADE_DE_ER = '(?:\|\||\|o|o\||o\{|\{o|\}o|o\}|\|\{|\{\||\}\||\|\})';
+
 /**
- * As mensagens de um bloco `sequenceDiagram`, NA ORDEM em que aparecem: `A->>B`, `A-->>B`,
- * `A-)B`, `A-xB`, com o rótulo depois de `:`.
+ * TODAS as relações `erDiagram` de um bloco, na ordem em que aparecem, cada uma com as duas
+ * entidades NA ORDEM DA LINHA (`$a` antes de `$b`) — usado quando os dois IDs não são conhecidos de
+ * antemão (R2/CT-03, sobre os blocos publicados); quando já se sabe os dois lados,
+ * `relacaoDeEr()` é mais simples.
  *
- * @return list<array{de: string, seta: string, para: string, rotulo: ?string}>
+ * @return list<array{a: string, b: string, cardDe: string, cardPara: string, rotulo: ?string}>
  */
-function mensagensDeSequencia(string $bloco): array
+function relacoesDeEr(string $bloco): array
 {
-    $mensagens = [];
+    $relacoes = [];
 
     foreach (explode("\n", $bloco) as $linha) {
         $linha = trim($linha);
 
-        if (preg_match('/^([A-Za-z0-9_]+)\s*(-{1,2}>>|-\)|-x)\s*([A-Za-z0-9_]+)\s*:?\s*(.*)$/', $linha, $m) === 1) {
-            $mensagens[] = ['de' => $m[1], 'seta' => $m[2], 'para' => $m[3], 'rotulo' => $m[4] !== '' ? trim($m[4]) : null];
+        if (preg_match('/^([A-Za-z0-9_]+)\s*('.CARDINALIDADE_DE_ER.')(?:--|\.\.)('.CARDINALIDADE_DE_ER.')\s*([A-Za-z0-9_]+)\s*(?::\s*"?([^"\n]*)"?)?\s*$/', $linha, $m) === 1) {
+            $relacoes[] = ['a' => $m[1], 'b' => $m[4], 'cardDe' => $m[2], 'cardPara' => $m[3], 'rotulo' => isset($m[5]) ? trim($m[5]) : null];
+        }
+    }
+
+    return $relacoes;
+}
+
+/**
+ * As formas de seta de `sequenceDiagram` reconhecidas (R57, RD3-05/QA-05): sólida sem ponta
+ * (`->`), tracejada sem ponta (`-->`), sólida com ponta (`->>`), tracejada com ponta (`-->>`),
+ * assíncrona sólida (`-)`) e tracejada (`--)`), com X sólida (`-x`) e tracejada (`--x`), e as duas
+ * bidirecionais (`<<->>`, `<<-->>`) — espelha o lexer de sequência do Mermaid 11.17.2
+ * (`site/node_modules/mermaid/dist/chunks/mermaid.core/sequenceDiagram-WJ2MYXX4.mjs:rules`). A
+ * ordem das alternativas importa: a forma de DOIS caracteres de ponta (`>>`) vem antes da de UM
+ * (`>`), senão `-->>` seria lida como `-->` e sobraria um `>` solto; o mesmo vale para bidirecional
+ * antes da forma simples.
+ */
+const SETA_DE_SEQUENCIA = '(?:<<-{1,2}>>|-{1,2}>>|-{1,2}x|-{1,2}\)|-{1,2}>)';
+
+/**
+ * As mensagens de um bloco `sequenceDiagram`, NA ORDEM em que aparecem: qualquer forma de
+ * `SETA_DE_SEQUENCIA` (R57), com o marcador de ativação opcional (`+`/`-`) entre a seta e o
+ * destino, e o rótulo depois de `:`. Cada mensagem também traz a PILHA de blocos (`alt`, `opt`,
+ * `loop`, `par`) que a envolvem no momento em que aparece — `else` é um marcador dentro do MESMO
+ * `alt`, nunca abre nem fecha um — usada por R42/CT-85 para comparar o ANINHAMENTO, não só a ordem.
+ *
+ * @return list<array{de: string, seta: string, para: string, rotulo: ?string, pilha: list<string>}>
+ */
+function mensagensDeSequencia(string $bloco): array
+{
+    $mensagens = [];
+    $pilha     = [];
+
+    foreach (explode("\n", $bloco) as $linha) {
+        $linha = trim($linha);
+
+        if (preg_match('/^(alt|opt|loop|par)\b/', $linha, $mBloco) === 1) {
+            $pilha[] = $mBloco[1];
+
+            continue;
+        }
+
+        if ($linha === 'end') {
+            array_pop($pilha);
+
+            continue;
+        }
+
+        if (preg_match('/^([A-Za-z0-9_]+)\s*('.SETA_DE_SEQUENCIA.')\s*[+-]?\s*([A-Za-z0-9_]+)\s*:?\s*(.*)$/', $linha, $m) === 1) {
+            $mensagens[] = ['de' => $m[1], 'seta' => $m[2], 'para' => $m[3], 'rotulo' => $m[4] !== '' ? trim($m[4]) : null, 'pilha' => $pilha];
         }
     }
 
     return $mensagens;
+}
+
+/**
+ * A ordem do DG-20 é a que o código executa: `identify_tenant` fala com `can_access_tenant` ANTES
+ * de falar com `definir_tenant`, e a mensagem a `definir_tenant` está DENTRO do ramo `else` do
+ * `alt` (entre a linha `else` e o `end` que o fecha) — nunca antes do `alt`, nunca depois do `end`
+ * (R51/R52, CT-112/CT-116; ver a nota de R53 no `04`).
+ *
+ * Único helper deste par (QA-07, `.ai/rules/testes.md` §"Nunca crie um clone com outro nome"):
+ * `tests/Kit/GuardasDosDiagramasTest.php` (CT-116) e `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`
+ * (CT-112) tinham cada um a sua cópia — a de Tenancy com a checagem de aninhamento, a de Kit sem
+ * ela; as duas condições são necessárias: a ordem sozinha mata a inversão (R51/M2, primeira cópia
+ * de CT-112), e o aninhamento mata o contexto fixado fora do ramo que nega, mesmo com a ordem
+ * intacta (R51/M2, segunda cópia).
+ */
+function ordemDg20EhCorreta(string $bloco): bool
+{
+    $mensagens   = mensagensDeSequencia($bloco);
+    $idxConsulta = null;
+    $idxDefinir  = null;
+
+    foreach ($mensagens as $i => $m) {
+        if ($idxConsulta === null && $m['de'] === 'identify_tenant' && $m['para'] === 'can_access_tenant') {
+            $idxConsulta = $i;
+        }
+
+        if ($idxDefinir === null && $m['de'] === 'identify_tenant' && $m['para'] === 'definir_tenant') {
+            $idxDefinir = $i;
+        }
+    }
+
+    if ($idxConsulta === null || $idxDefinir === null || $idxConsulta >= $idxDefinir) {
+        return false;
+    }
+
+    $linhaElse    = null;
+    $linhaEnd     = null;
+    $linhaDefinir = null;
+
+    foreach (explode("\n", $bloco) as $i => $linha) {
+        $t = trim($linha);
+
+        if ($linhaElse === null && str_starts_with($t, 'else')) {
+            $linhaElse = $i;
+        }
+
+        if ($linhaElse !== null && $linhaEnd === null && $t === 'end') {
+            $linhaEnd = $i;
+        }
+
+        if ($linhaDefinir === null && preg_match('/^identify_tenant\s*-{1,2}>>\s*definir_tenant\s*:/', $t) === 1) {
+            $linhaDefinir = $i;
+        }
+    }
+
+    return $linhaElse !== null && $linhaEnd !== null && $linhaDefinir !== null
+        && $linhaDefinir > $linhaElse && $linhaDefinir < $linhaEnd;
+}
+
+/**
+ * Troca os DESTINOS de duas mensagens de sequência (`->>destinoA:` <-> `->>destinoB:`) — uma
+ * involução: aplicar duas vezes devolve o bloco original. Usado para adulterar EM MEMÓRIA uma
+ * mensagem sem mover linha nenhuma (só troca QUEM cada mensagem já existente alcança) — R53/CT-116
+ * (DG-20) e R42/CT-85 (guardrails do DG-11).
+ *
+ * Único (QA-07): morava clonado dentro de `tests/Kit/GuardasDosDiagramasTest.php`.
+ */
+function trocarDestinosDeMensagem(string $bloco, string $destinoA, string $destinoB): string
+{
+    $marcador = "\0TROCA\0";
+    $bloco    = str_replace("->>{$destinoA}:", $marcador, $bloco);
+    $bloco    = str_replace("->>{$destinoB}:", "->>{$destinoA}:", $bloco);
+
+    return str_replace($marcador, "->>{$destinoB}:", $bloco);
 }
 
 /**
