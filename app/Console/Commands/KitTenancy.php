@@ -228,12 +228,7 @@ class KitTenancy extends Command
             '--force' => true,
         ]);
 
-        SubstituicaoEmArquivo::aplicar(
-            base_path('.env'),
-            '/^#?\s*KIT_DEMO=.*$/m',
-            'KIT_DEMO=true',
-            PHP_EOL.'KIT_DEMO=true'.PHP_EOL,
-        );
+        SubstituicaoEmArquivo::definirLinhaNoEnv(base_path('.env'), 'KIT_DEMO', 'KIT_DEMO=true');
 
         config(['kit.demo' => true]);
 

@@ -39,8 +39,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   elemento (recusar convite, o vínculo à organização, a conta pendente), e o índice da página usa o título
   de cada bloco. A página credita o GitDiagram por link, como visão gerada por IA e não verificada, sem
   embutir
-- **Cada diagrama tem guarda**: `tests/Kit/DiagramasDaArquiteturaTest.php` (441 casos),
-  `tests/Kit/GuardasDosDiagramasTest.php` (47) e `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` (45)
+- **Cada diagrama tem guarda**: `tests/Kit/DiagramasDaArquiteturaTest.php` (525 casos),
+  `tests/Kit/GuardasDosDiagramasTest.php` (47) e `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` (50)
   leem cada bloco publicado em pt e en, com extratores que reconhecem toda forma de seta e de mensagem do
   Mermaid 11.17.2, e o comparam com o código -- painéis registrados, `roles.painel` semeado,
   `canAccessPanel()` executado, a pilha de middleware, o schema migrado, a ordem do `handle()` do
@@ -95,6 +95,14 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - **Valor com barra invertida no `.env` derrubava o `kit:install` no meio da customização**: o
   `SubstituicaoEmArquivo` gravava a `\` sem escapar, e a leitura do resumo quebrava depois de nome,
   banco e e-mail já gravados
+- **A gravação no `.env` trocava só a primeira linha da chave, e podia ser a comentada**: com a chave
+  ativa duas vezes (edição à mão), a segunda ficava com o valor velho -- e é a última que o Dotenv e o
+  Laravel leem --; com um `# APP_NAME=` comentado antes da ativa, o comentário é que virava a linha
+  gravada; `export CHAVE=` e `CHAVE = valor` não eram reconhecidos e ganhavam uma segunda definição no
+  fim. Agora `SubstituicaoEmArquivo::definirLinhaNoEnv()` troca **toda** linha que o Dotenv lê como a
+  chave e nenhuma comentada, descomenta no lugar quando só há a comentada, anexa quando não há nenhuma,
+  e vale para todo gravador do kit (nome, senha, banco, `APP_URL`, `KIT_TENANCY`, `KIT_DEMO`). A
+  quebra de linha num valor digitado vira um espaço, sem injetar chave (Adendo 7 da wiki, RQ-50 e RQ-51)
 - **O `kit:arte` truncava o GIF publicado quando o ffmpeg falhava no meio**: ele escrevia direto no
   arquivo de `art/` com `-y`. Agora monta num temporário ao lado e só troca por `rename()` quando o
   processo termina bem; uma exceção num clipe não aborta os outros, e o aviso separa "o ffmpeg falhou"

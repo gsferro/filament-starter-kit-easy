@@ -538,15 +538,10 @@ final class CustomizadorDaInstalacao
      */
     private function aplicarBanco(string $env, string $banco, string $nome): void
     {
-        SubstituicaoEmArquivo::aplicar($env, '/^#?\s*DB_CONNECTION=.*$/m', 'DB_CONNECTION='.$banco);
+        SubstituicaoEmArquivo::definirLinhaNoEnv($env, 'DB_CONNECTION', 'DB_CONNECTION='.$banco);
 
         foreach ($this->valoresDoBanco($banco, $nome) as $chave => $valor) {
-            SubstituicaoEmArquivo::aplicar(
-                $env,
-                '/^#?\s*'.$chave.'=.*$/m',
-                $chave.'='.$valor,
-                PHP_EOL.$chave.'='.$valor.PHP_EOL,
-            );
+            SubstituicaoEmArquivo::definirLinhaNoEnv($env, $chave, $chave.'='.$valor);
         }
     }
 

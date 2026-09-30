@@ -7,8 +7,8 @@ use Illuminate\Support\Str;
 
 /**
  * Os CT do lote `T` da wiki `diagramas-da-arquitetura` cujo arquivo é `tests/Kit/KitArteTest.php`
- * (ver `## Índice de Cenários` do `04-casos-de-teste.md`): CT-46, CT-47, CT-48, CT-49, CT-50,
- * CT-64, CT-65 — R32/R33/R34.
+ * (ver `## Índice de Cenários` do `04-casos-de-teste.md`): CT-46, CT-47, CT-48, CT-49, CT-50, CT-127, CT-128, CT-147,
+ * CT-64, CT-65, CT-127, CT-128, CT-147 — R32/R33/R34.
  *
  * **O KitArte de HOJE já generaliza os 4 clipes do `00`** (busca ⌘K, login unificado → escolha
  * de painel, densidade, import/export) via `KitArte::CLIPES` (`app/Console/Commands/KitArte.php:CLIPES:70`),
@@ -263,6 +263,119 @@ function clipesDoKitArte(): array
 function todosOsQuadrosDoKitArte(): array
 {
     return array_merge(...array_values(clipesDoKitArte()));
+}
+
+/** O nome do clipe como a saída do `kit:arte` o escreve (`app/Console/Commands/KitArte.php:$label:305`): traços viram espaços. */
+function saidaNomeiaOClipe(string $saida, string $clipe): bool
+{
+    $minuscula = mb_strtolower($saida);
+
+    return str_contains($minuscula, mb_strtolower($clipe))
+        || str_contains($minuscula, mb_strtolower(str_replace('-', ' ', $clipe)));
+}
+
+/**
+ * Cada linha da saída que nomeia o clipe (pela chave ou pelo rótulo com espaços).
+ *
+ * @return array<int, string>
+ */
+function linhasQueNomeiamOClipe(string $saida, string $clipe): array
+{
+    return array_values(array_filter(
+        preg_split('/\R/', $saida),
+        static fn (string $linha): bool => saidaNomeiaOClipe($linha, $clipe),
+    ));
+}
+
+/**
+ * Tudo o que existe sob `$pasta` (arquivos e diretórios), como caminhos relativos ordenados.
+ *
+ * @return array<int, string>
+ */
+function entradasDe(string $pasta): array
+{
+    $entradas = [];
+
+    $iterador = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($pasta, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST,
+    );
+
+    foreach ($iterador as $item) {
+        $entradas[] = str_replace('\\', '/', substr($item->getPathname(), strlen($pasta) + 1));
+    }
+
+    sort($entradas);
+
+    return $entradas;
+}
+
+/**
+ * O mundo de CT-128 e CT-147: GIF publicado com conteúdo conhecido, o ffmpeg de teste que termina
+ * com código 0 e deixa um diretório no lugar da saída, e os quadros do clipe de import/export.
+ *
+ * @return array{base: string, clipe: string, antes: array<int, string>}
+ */
+function mundoDaFalhaDePublicacao(): array
+{
+    $base = diretorioDeArte();
+    instalarFfmpegDeTeste('saida-vira-diretorio');
+
+    $clipe = array_key_first(clipesDoKitArte());
+
+    File::put("{$base}/art/{$clipe}.gif", 'CONTEUDO-ANTIGO-PRESERVADO');
+
+    foreach (clipesDoKitArte()[$clipe] as $i => $quadro) {
+        File::put("{$base}/tests/Browser/Screenshots/{$quadro}.png", conteudoDoQuadroDeTeste($clipe, $i));
+    }
+
+    return ['base' => $base, 'clipe' => $clipe, 'antes' => entradasDe("{$base}/art")];
+}
+
+/**
+ * A lista fechada (R33, ADV-31/ADV2-14) das formas de culpar a montagem ou o ffmpeg, sem acento e sem caixa.
+ *
+ * @return array<int, string>
+ */
+function formasDeCulpaDaMontagem(): array
+{
+    return [
+        'ffmpeg falhou', 'ffmpeg falha', 'falha ao montar', 'falha na montagem', 'montagem falhou',
+        'falhou ao gerar', 'erro do ffmpeg', 'nao disponivel ou falhou', 'nao montado',
+    ];
+}
+
+/**
+ * Cada forma de culpa que ALGUMA linha da saída contém (a saída inteira, não só a linha do clipe).
+ * Só ficam de fora as linhas cujo assunto é OUTRO clipe declarado (sem quadros no mundo, ele é
+ * reportado "não montado" por R32/CT-47, e isso não é culpa da publicação do clipe sob teste).
+ *
+ * @return array<string, string> forma => linha (normalizada) que a contém
+ */
+function culpasNaSaida(string $saida, string $clipe): array
+{
+    $achadas = [];
+    $outros  = array_diff(array_keys(clipesDoKitArte()), [$clipe]);
+
+    foreach (preg_split('/\R/', $saida) as $linha) {
+        if (! saidaNomeiaOClipe($linha, $clipe)) {
+            foreach ($outros as $outro) {
+                if (saidaNomeiaOClipe($linha, $outro)) {
+                    continue 2;
+                }
+            }
+        }
+
+        $normalizada = Str::ascii(mb_strtolower($linha));
+
+        foreach (formasDeCulpaDaMontagem() as $culpa) {
+            if (str_contains($normalizada, $culpa)) {
+                $achadas[$culpa] = $normalizada;
+            }
+        }
+    }
+
+    return $achadas;
 }
 
 /*
@@ -631,8 +744,11 @@ it('[RD2-02/RD2-03][CT-127] uma excecao qualquer ao montar um clipe nao aborta o
 
     $excecao = null;
 
+    $saida = '';
+
     try {
         Artisan::call('kit:arte');
+        $saida = Artisan::output();
     } catch (Throwable $e) {
         $excecao = $e;
     }
@@ -648,6 +764,17 @@ it('[RD2-02/RD2-03][CT-127] uma excecao qualquer ao montar um clipe nao aborta o
     // (diretorio de montagem limpo) NAO esta quebrada; a prova fica aqui ao lado da que esta.
     expect(File::isDirectory("{$base}/storage/framework/cache/arte"))->toBeFalse(
         'o diretorio de montagem deveria ficar limpo (finally) mesmo quando um clipe lanca uma excecao qualquer',
+    );
+
+    // CT-127 (R32.M8): a saída nomeia o primeiro clipe como NÃO montado — a exceção engolida em
+    // silêncio faria o clipe sumir da saída.
+    $linhasDoClipe = linhasQueNomeiamOClipe($saida, 'fluxo-import-export');
+
+    expect($linhasDoClipe)->not->toBe([], "a saída não nomeia o clipe 'fluxo-import-export'. Saída: {$saida}");
+    $this->assertStringContainsString(
+        'não montado',
+        mb_strtolower(implode("\n", $linhasDoClipe)),
+        "a saída nomeia o clipe, mas não diz que ele ficou 'não montado'. Saída: {$saida}",
     );
 
     // `densidade` vem DEPOIS de `fluxo-import-export` em `KitArte::CLIPES` e tem todos os seus
@@ -672,18 +799,9 @@ it('[RD2-02/RD2-03][CT-127] uma excecao qualquer ao montar um clipe nao aborta o
 */
 
 it('[RD3-09][CT-128] falha ao PUBLICAR o gif (o ffmpeg terminou bem) avisa "nao consegui publicar", nao "falha ao montar o clipe", e preserva o gif anterior', function (): void {
-    $base = diretorioDeArte();
-    instalarFfmpegDeTeste('saida-vira-diretorio');
-
-    $clipe = array_key_first(clipesDoKitArte());
-
     // Um GIF publicado ANTES desta execução — para provar que ele sobrevive à falha de
     // publicação (R33), o mesmo oráculo de CT-49/CT-65.
-    File::put("{$base}/art/{$clipe}.gif", 'CONTEUDO-ANTIGO-PRESERVADO');
-
-    foreach (clipesDoKitArte()[$clipe] as $i => $quadro) {
-        File::put("{$base}/tests/Browser/Screenshots/{$quadro}.png", conteudoDoQuadroDeTeste($clipe, $i));
-    }
+    ['base' => $base, 'clipe' => $clipe, 'antes' => $antes] = mundoDaFalhaDePublicacao();
 
     Artisan::call('kit:arte');
     $saida = mb_strtolower(Artisan::output());
@@ -717,6 +835,8 @@ it('[RD3-09][CT-128] falha ao PUBLICAR o gif (o ffmpeg terminou bem) avisa "nao 
         'o ffmpeg terminou bem (o temporario existe) — quem falhou foi a publicacao (rename/copy para art/), entao o aviso tem de ser "nao consegui publicar" (RD2-04/RD3-09), com a saida: '.$saida,
     );
 
+    expect(culpasNaSaida($saida, $clipe))->toBe([], 'nenhuma linha da saida pode culpar a montagem ou o ffmpeg (RQ-52, ADV2-14). Saida: '.$saida);
+
     $this->assertStringNotContainsString(
         'falha ao montar o clipe',
         $saida,
@@ -727,4 +847,31 @@ it('[RD3-09][CT-128] falha ao PUBLICAR o gif (o ffmpeg terminou bem) avisa "nao 
         [],
         'nenhum temporario de publicacao pode sobrar em art/ depois de uma falha (RD3-09)',
     );
+
+    // CT-128 (R33.M9): nenhum arquivo além dos de antes da execução — vale para qualquer resto, não só `*.tmp-*`.
+    expect(entradasDe("{$base}/art"))->toBe(
+        $antes,
+        'art/ ganhou (ou perdeu) entradas depois da falha de publicacao: nada alem do que existia antes da execucao pode existir',
+    );
+
+    // CT-128 (RQ-52): a saída nomeia o clipe de import/export.
+    expect(saidaNomeiaOClipe($saida, $clipe))->toBeTrue("a saida nao nomeia o clipe '{$clipe}'. Saida: {$saida}");
+})->group('kit');
+
+it('[CT-147] a falha ao publicar nao culpa a montagem por nenhum nome dela', function (): void {
+    ['clipe' => $clipe] = mundoDaFalhaDePublicacao();
+
+    Artisan::call('kit:arte');
+    $saida = Artisan::output();
+
+    $linhas = linhasQueNomeiamOClipe($saida, $clipe);
+
+    expect($linhas)->not->toBe([], "a saida nao tem linha que nomeie o clipe '{$clipe}'. Saida: {$saida}");
+
+    $linha = Str::ascii(mb_strtolower(implode("\n", $linhas)));
+
+    $this->assertStringContainsString('nao consegui publicar', $linha, "a linha do clipe nao diz 'nao consegui publicar'. Saida: {$saida}");
+
+    // ADV2-14 (R33.M12): um clipe só no mundo, então TODA linha da saída é sobre ele — nenhuma culpa a montagem.
+    expect(culpasNaSaida($saida, $clipe))->toBe([], "alguma linha da saida culpa a montagem ou o ffmpeg. Saida: {$saida}");
 })->group('kit');
