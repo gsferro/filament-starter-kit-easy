@@ -31,13 +31,13 @@
 - **Esperado**: citação `arquivo:símbolo:linha` que cai no teste citado. O `03:197` diz "64 citações … recitadas pelo ID … `citacoes.sh` vazio".
 - **Observado**:
   - O `[CT-105]` continua citado como `tests/Kit/DiagramasDaArquiteturaTest.php:it:5597` em `01:87`, `01:1663`, `03:215`, `04:514` e `04:4436`. A linha 5597 é o `it('[CT-85]`, e o CT-105 está em `:6223`. É o exemplo que o QA-21 nomeava.
-  - No total, 10 citações nomeiam um CT e caem no `it()` de outro. Por exemplo, `04:5702` (CT-129 → `:1462`, que é o CT-08), `04:5947` (CT-89 → CT-104), `04:6015` (CT-146 → CT-132), e `04:3617` e `04:6602` (CT-128 → `KitArteTest.php:it:682`, que é o CT-65).
+  - No total, 10 citações nomeiam um CT e caem no `it()` de outro. Por exemplo, `04:5702` (CT-129 → `:1462`, que é o CT-08), `04:5947` (CT-89 → CT-104), `04:6015` (CT-146 → CT-132), e `04:3617` e `04:6602` (CT-128 → `tests/Kit/KitArteTest.php`, `it`, linha 682 na data, que é o CT-65).
   - Outras 8 caem em linha sem `it(`. Quatro delas foram deslocadas pelo próprio delta do ciclo 3 (+2 linhas em `elementosOptInDeR58()`):
     - `04:6740`: CT-129 em `:1556`, que é uma linha de dataset (o `it` está em `:1560`).
     - `04:6741`: CT-130 em `:1594`, um `})->with(` (o `it` está em `:1596`).
     - `04:6737`: CT-126 em `:5918` (o `it` está em `:5921`).
     - `04:6753`: CT-142 em `:6017` (o `it` está em `:6020`).
-    - As outras quatro: `04:1483` (`:2277`), `04:5320` (`CustomizadorDaInstalacaoTest.php:it:933`), `04:5856` (`:5683`) e `04:6592` (`:948`).
+    - As outras quatro: `04:1483` (`:2277`), `04:5320` (`tests/Kit/CustomizadorDaInstalacaoTest.php`, `it`, linha 933 na data), `04:5856` (`:5683`) e `04:6592` (`:948`).
   - O `citacoes.sh` sai com exit 0 porque aceita `it` como substring ("Substituicao", "with"). As 44 citações na forma `arquivo:'[CT-nnn]':linha` estão todas certas.
 - **Repro**:
   1. `sed -n 5597p tests/Kit/DiagramasDaArquiteturaTest.php` → `it('[CT-85]…`
@@ -49,7 +49,7 @@
 - **Esperado**: o Adendo 8 (RQ-53) fecha a Q?9. O `01:104` (Cobertura) e o `04` já dizem isso.
 - **Observado**: três lugares ainda dizem "(P-45, Q?9 em aberto)":
   - `01:1765` (passo 27) e `02:665` (ADR-10), sem marca de alteração;
-  - `app/Support/SubstituicaoEmArquivo.php:definirLinhaNoEnv:107` ("P-45 da mesma wiki, pergunta Q?9 em aberto"). O ciclo 3 editou esse mesmo docblock (`:111`, o `@return`) e deixou a frase.
+  - `app/Support/SubstituicaoEmArquivo.php`, docblock de `definirLinhaNoEnv`, linha 107 na data ("P-45 da mesma wiki, pergunta Q?9 em aberto"). O ciclo 3 editou esse mesmo docblock (`:111`, o `@return`) e deixou a frase.
 - **Repro**: `grep -rn "Q?9" app/ {wiki}/01-plano-acao.md {wiki}/02-decisoes-arquiteturais.md`
 - **Destino**: 1 (texto do `01` e do `02`, com a marca `*(alterado em …)*`) e 2 (o docblock). **Ação exigida**: trocar "Q?9 em aberto" por "RQ-53, Adendo 8" nos três lugares.
 
@@ -101,7 +101,7 @@ Detalhe da dimensão L:
 
 - L1: `ids-ct.sh` (8 arquivos) exit 1, só o CT-39 (costura `diff`). O `git diff --name-only` de `composer.*` e `package*.json` vem vazio. A contagem do `04` dá 151 · 65 · 434 · 5 e a do `05` dá 11, que batem com o cabeçalho.
 - L2: `citacoes.sh` exit 0, vacuidade descrita no QA-24.
-- L4: `conformidade-rules.sh` exit 0. A `testes.md` agora é cumprida: `grep -rn "mb_strtolower(Str::ascii" tests/` só acha `tests/Pest.php:2400`.
+- L4: `conformidade-rules.sh` exit 0. A `testes.md` agora é cumprida: `grep -rn "mb_strtolower(Str::ascii" tests/` só acha `tests/Pest.php:semAcentoESemCaixa:2398`.
 - L6: `checkbox-sem-evidencia.sh` exit 0; os números estão no QA-26. Reproduzidos: 120/120, 10/10, 527/527, 68/68, 3/3, 92,68 %, 151 CT, 53 RQ e 48 P-nn, `115.928` ausente, 04 com 181 e 131 marcas, 05 com 24.
 - L7: glossário com os três termos do QA-23.
 
@@ -112,7 +112,7 @@ Detalhe da dimensão L:
 
 ## Suspeitas Não Confirmadas
 
-- `aplicar()` aparece como **UNTESTED** no `--mutate` do Customizador, embora `tests/Kit/CustomizadorDaInstalacaoTest.php:280` afirme `'teams' => true` no `config/permission.php` temporário. Ou esse caminho não passa por `AtivadorDeTenancy::ligarPapeisPorTenant()` no processo medido, ou a cobertura não o atribui. Não investiguei além disso.
+- `aplicar()` aparece como **UNTESTED** no `--mutate` do Customizador, embora `tests/Kit/CustomizadorDaInstalacaoTest.php:'teams':280` afirme `'teams' => true` no `config/permission.php` temporário. Ou esse caminho não passa por `AtivadorDeTenancy::ligarPapeisPorTenant()` no processo medido, ou a cobertura não o atribui. Não investiguei além disso.
 - RQ-53 nasceu de "continue", sem escolha de opção. A sessão declarou isso com fidelidade baixa e com o "Se negado". Não é defeito, mas a confirmação explícita cabe no PR.
 
 ## Não Verificado

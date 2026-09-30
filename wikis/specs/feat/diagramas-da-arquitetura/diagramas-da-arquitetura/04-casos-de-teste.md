@@ -5853,7 +5853,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | uma de controle, montada com os 20 accTitles pt           | a linha do DG-20 removida                                   | recusa, nomeando o DG-20 ausente                                                                              | DG sem linha                |
 ```
 
-Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:5681`, verde depois de o lote C1 trocar os títulos do índice)*
+Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-131]':6278`, verde depois de o lote C1 trocar os títulos do índice)*
 
 #### Mutantes previstos
 
