@@ -124,6 +124,9 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   a altura medida no último quadro). O `art/` inteiro passa de 9.209.455 para **9.344.194 bytes** (a soma de
   `git ls-files art/` no disco)
 - **O `mermaid` no site**: cerca de 700 KB de JS a mais, carregado só nas páginas com diagrama
+- **Cobertura de `app/`**: **84 %** (84,76 %, 8.533 de 10.067 statements), medida pelo job `cobertura` da `main`
+  em 2026-09-30, depois das guardas dos diagramas — era 82 %. Badge, README e a página de qualidade
+  acompanham (`[CT-49]`)
 
 ### Pendente
 

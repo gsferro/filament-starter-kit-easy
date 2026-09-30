@@ -224,7 +224,7 @@ dois já vêm completos.
 | Telas varridas em navegador real | **55** |
 | Arquivos de teste | **171** em `Kit` + `Tenancy` (**198** no total) |
 | PHPStan | **level 8**, zero erros |
-| Cobertura de testes (`app/`, linha) | **82 %** — ver [o que o número não inclui](docs/pt/referencia/qualidade-de-codigo.md) |
+| Cobertura de testes (`app/`, linha) | **84 %** — ver [o que o número não inclui](docs/pt/referencia/qualidade-de-codigo.md) |
 | FilaCheck | **17** regras, todas passando |
 
 | Documentação | |
