@@ -2,6 +2,7 @@
 
 **Estado**: concluída — 2026-09-30
 <!-- Ciclo 3 do quality gate (teto): REPROVADO só por texto, corrigido depois do veredito; o mantenedor confirmou a RQ-53 e mandou abrir o PR. -->
+**PR**: https://github.com/gsferro/filament-starter-kit-easy/pull/126 (aberto em 2026-09-30, base `main`; o step 12, candidatos a rule, fica para depois do merge ou a pedido)
 <!-- Step 9 (revisão do diff, 4 rodadas) concluído; step 10 (esta reconciliação) em 2026-09-29. Passa a
      "concluída — {data}" no step 11, depois do veredito do quality gate. -->
 
