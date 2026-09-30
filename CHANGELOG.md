@@ -35,20 +35,28 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   (`comecar/instalacao-avancada`); o `kit:update` e as duas rotas de entrega
   (`comecar/atualizando-o-projeto`); o que roda em segundo plano (`operacao/desenvolvendo-o-kit`); e a
   requisição em `/app/{tenant}` (`recursos/multi-tenancy`). Nos dois idiomas, com `accTitle`/`accDescr`
-  em todo bloco e sem cor fixa. A página credita o GitDiagram por link, como visão gerada por IA e não
-  verificada, sem embutir
-- **Cada diagrama tem guarda**: `tests/Kit/DiagramasDaArquiteturaTest.php` (411 casos) e
-  `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` (35) leem cada bloco em pt e en, com um
-  extrator de arestas que reconhece toda forma de seta do Mermaid 11.17.2, e o comparam com o código
-  -- painéis registrados, `roles.painel` semeado, `canAccessPanel()` executado, a pilha de middleware,
-  o schema migrado, a ordem do `handle()` do `kit:install` e do `kit:update`, o `docker-compose.yml`.
-  Quando o código muda e o diagrama não, a suíte fica vermelha. Os extratores moram em `tests/Pest.php`
+  em todo bloco e sem cor fixa; o que só existe com uma chave desligada por padrão leva a chave no próprio
+  elemento (recusar convite, o vínculo à organização, a conta pendente), e o índice da página usa o título
+  de cada bloco. A página credita o GitDiagram por link, como visão gerada por IA e não verificada, sem
+  embutir
+- **Cada diagrama tem guarda**: `tests/Kit/DiagramasDaArquiteturaTest.php` (441 casos),
+  `tests/Kit/GuardasDosDiagramasTest.php` (47) e `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` (45)
+  leem cada bloco publicado em pt e en, com extratores que reconhecem toda forma de seta e de mensagem do
+  Mermaid 11.17.2, e o comparam com o código -- painéis registrados, `roles.painel` semeado,
+  `canAccessPanel()` executado, a pilha de middleware, o schema migrado, a ordem do `handle()` do
+  `kit:install` e do `kit:update`, o `docker-compose.yml`, o plugin de bloqueio de cada painel, os eventos
+  do agendador e o status de `GET /app/{tenant}`. O opcional é conferido por elemento e pela chave exata, e
+  o texto de cada bloco, pelo idioma dele. Quando o código muda e o diagrama não, a suíte fica vermelha. Os
+  extratores moram em `tests/Pest.php`, uma vez cada
 - **O site renderiza os diagramas**: `astro-mermaid` 2.1 e `mermaid` fixado em **11.17.2**, a mesma
   versão do GitHub, em `site/package.json` (nunca na raiz). O tema segue o claro/escuro do site, e o
   rótulo de aresta do tema escuro ganhou fundo mais escuro em `site/src/styles/kit.css` para passar no
   AA (era 4,43:1, é 6,46:1). O `verifica-acessibilidade.mjs` espera cada bloco virar SVG antes do axe,
   reprova bloco que não renderiza e confere que cada página tem exatamente tantos SVG quantos blocos a
-  fonte declara, nos dois temas, e que o diagrama troca de cor quando o leitor troca o tema
+  fonte declara, nos dois temas, e que o diagrama troca de cor quando o leitor troca o tema. **O diagrama
+  sai no tamanho natural**: nenhum encolhe abaixo de 12 px de fonte efetiva (antes, 13 dos 20 ficavam abaixo
+  de 10 px, e um a 2,2 px), e o que não cabe na coluna rola dentro do próprio bloco, sem a página rolar --
+  só no CSS do site; os blocos e o GitHub não mudam. O conferidor mede os dois, a 1280 × 900 e a 390 × 844
 - **Job `site` no CI de pull request**: `npm ci`, build, `verifica-links.mjs` e
   `verifica-acessibilidade.mjs`, só quando o PR toca `docs/` ou `site/`, com as actions pinadas por
   SHA e `permissions: contents: read`. O `pages.yml` só roda depois do merge -- um diagrama quebrado
@@ -58,6 +66,9 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   e os três níveis de densidade (`densidade.gif`), capturados no `CapturaDeArteTest` (`KIT_ART=1`).
   Sem dependência nova, e vídeo fica de fora. As páginas de busca e idioma, login unificado e
   configurações mostram os seus GIFs
+- **`wikis/glossario.md`**: o glossário do projeto que a `feature-wiki` 4.0.0 pede, com os termos que a
+  feature dos diagramas decidiu -- Aceito e Expirado (en: Accepted, Expired), Excluída (en: Deleted, com o
+  identificador sem acento), organização × tenant no texto en, e "sem vínculo" (en: no link)
 - **`tests/Kit/AgentesDaEsteiraTest.php`**: os agentes de `.claude/agents/` são idênticos aos de
   `.ai/skills/*/agents/`, o script do hook existe onde o hook o procura, e as skills, os agentes e
   o script estão cobertos pelo `kit:update`. A cópia dos agentes é à mão e esquecê-la não dava erro
@@ -101,8 +112,9 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - **Os GIFs em `art/`** (`ls -l art/*.gif`; sem teto de peso, por decisão do mantenedor):
   `busca-spotlight.gif` **60.692 bytes** (2 quadros, 3,34 s), `login-unificado.gif` **159.179**
   (2 quadros, 3,34 s), `densidade.gif` **132.112** (3 quadros, 5 s), `fluxo-import-export.gif`
-  **108.568** (era 105.452) e `install.gif` **115.928** (era 347.561; 4 quadros, 6,67 s). O `art/`
-  inteiro passa de 9.209.455 para **9.343.775 bytes** (`git ls-tree -r -l`)
+  **108.568** (era 105.452) e `install.gif` **116.347** (era 347.561; 4 quadros, 6,67 s, 1000 × 1484, com
+  a altura medida no último quadro). O `art/` inteiro passa de 9.209.455 para **9.344.194 bytes** (a soma de
+  `git ls-files art/` no disco)
 - **O `mermaid` no site**: cerca de 700 KB de JS a mais, carregado só nas páginas com diagrama
 
 ### Pendente

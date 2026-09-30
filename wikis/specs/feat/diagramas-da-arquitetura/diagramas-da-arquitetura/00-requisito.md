@@ -210,6 +210,7 @@
   - **Se negado**: CT-81 perde a linha `KIT_TENANCY`; a matriz de CT-80 não muda
 - **RD2-08 (revisão do diff, 2ª rodada; premissa registrada no step 11, QA-03)** — o valor gravado no `.env` pelo `kit:install` (o `APP_NAME` que a pessoa digita, com barra invertida, `$` ou aspas) volta igual na leitura, e a gravação troca só a primeira ocorrência da chave?
   - **Assumido (P-44)**: sim — `SubstituicaoEmArquivo::definirNoEnv` preserva o valor literal (ida e volta pelo `.env`) e troca uma ocorrência só; é o comportamento que o `[RD2-08]` e o `04` passam a travar
+  - *(alterado em 2026-09-29, Adendo 7: a gravação troca **toda linha ativa** da chave e nenhuma comentada (RQ-50), e a quebra de linha vira espaço sem injetar chave (RQ-51) — a "troca de uma ocorrência só" não vale mais)*
   - **Se negado**: o `[RD2-08]` perde o cenário da chave repetida, e a ida e volta continua
 - **Escalada ao mantenedor (ciclo 2, teto de rodadas)** — a 2ª revisão adversarial trouxe três achados estruturais (A2-01, A2-02, A2-03), e o fechamento trocou a técnica de duas regras: R12 passou de "estado × evento sobre o rótulo" a "situação concreta × evento", e R40 de "referência que existe" a "referência pela forma, com catálogo". A skill não permite 3ª rodada. As duas trocas ficam valendo como premissas (P-29..P-31) até a confirmação
 
@@ -399,6 +400,31 @@ As opções escolhidas diziam, na pergunta:
 | RQ-47 | No site, o diagrama nunca encolhe abaixo de um piso de fonte efetiva (cerca de 12 px); o que não couber rola na horizontal dentro do próprio bloco | "o diagrama nunca encolhe abaixo de um piso de fonte (cerca de 12 px), e o que não couber rola na horizontal, dentro do próprio bloco" | não-funcional | concretiza RQ-12/RQ-17 |
 | RQ-48 | A legibilidade se resolve no CSS do site, sem mudar bloco nem o que o GitHub mostra | "Não muda nenhum bloco nem o GitHub." | restrição | — |
 | RQ-49 | Um CT-B mede o piso de fonte antes da correção | "Um CT-B mede o piso antes." | restrição | — |
+
+## Adendo 7 — 2026-09-29
+
+- **Fonte**: respostas do mantenedor às três perguntas de raia requisito que a derivação dos cenários do ciclo 2 do quality gate levantou (Q?3, Q?4, Q?5 do `04`)
+- **Fidelidade**: alta (escolha entre opções escritas)
+
+### Texto Original
+
+<!-- IMUTÁVEL. Pergunta como foi feita → resposta como foi dada. -->
+
+> "Q?4: se a mesma chave estiver ativa duas vezes no .env (edição à mão), o instalador hoje troca só a primeira linha (P-44). Só que o Dotenv, que o kit usa para ler, fica com a última, e o Laravel fica com a primeira. O que a gravação deve fazer?"="Trocar toda linha ativa (Recomendado)", "Q?3: o valor digitado com quebra de linha não volta igual do .env. O instalador troca a quebra por espaço, porque uma quebra injetaria uma chave nova no arquivo. Mantém assim ou recusa o valor?"="Troca por espaço (Recomendado)", "Q?5: quando o ffmpeg monta o GIF e quem falha é a publicação em art/ (disco, permissão), a saída do kit:arte deve dizer que foi a publicação, e não a montagem?"="Sim, nomeia a etapa (Recomendado)"
+
+As opções escolhidas diziam, na pergunta:
+
+- **Trocar toda linha ativa** — "Falha fechado: qualquer leitor fica com o valor gravado. A gravação troca todas as linhas ativas da chave e nenhuma comentada. A P-44 e o teste do QA-10 mudam para isso."
+- **Troca por espaço** — "É o comportamento de hoje, e o valor vem de um prompt de uma linha. A P-44 ganha a exceção escrita, e o teste afirma que o .env não ganha chave nova."
+- **Sim, nomeia a etapa** — "A mensagem diz "não consegui publicar", porque é o que mostra ao mantenedor onde agir (disco e permissão, não o ffmpeg). Fecha o mutante sem matador R33.M10."
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-50 | A gravação no `.env` troca toda linha ATIVA da chave e nenhuma linha comentada: qualquer leitor fica com o valor gravado | "A gravação troca todas as linhas ativas da chave e nenhuma comentada." | funcional | altera P-44 |
+| RQ-51 | Valor com quebra de linha vai ao `.env` com a quebra trocada por espaço, e o arquivo não ganha chave nova | "o teste afirma que o .env não ganha chave nova" | funcional | exceção escrita à P-44 |
+| RQ-52 | Quando a montagem do GIF dá certo e a publicação em `art/` falha, a saída do `kit:arte` nomeia a publicação ("não consegui publicar"), e não a montagem | "A mensagem diz "não consegui publicar"" | funcional | — |
 
 ## Fora de Escopo (declarado)
 

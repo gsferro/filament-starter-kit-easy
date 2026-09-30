@@ -4,6 +4,7 @@
 > Perfil de esforço: completo (o site renderiza os diagramas por JavaScript no cliente; o `kit:install` mexe em credencial)
 > Natureza da wiki: nova · Toca infra compartilhada: sim → README/`docs/`/`site/`, `kit:arte`, `kit:install` (`CustomizadorDaInstalacao`, `SenhaDoAdministrador`, `SubstituicaoEmArquivo`), `tests/Pest.php`, `ci.yml` · Regressão: sim
 > Independência: sub-agente fw-qa-gate/opus, sem acesso à conversa
+> *(alterado em 2026-09-29: step 10 do ciclo 2, só nas citações — o conteúdo do ciclo 1 não muda. As que apontam código que o ciclo 2 moveu ou apagou viraram referência histórica, "linha N no ciclo 1"; as de `app/`, que o ciclo 2 não tocou, ganharam o símbolo que o `citacoes.sh` pede)*
 > Cobertura: 10 de 12 dimensões verificadas ou provadas não aplicáveis (J e K rodaram só em parte) · teto: APROVADO COM DÉBITO
 
 ## Veredito — Ciclo 1
@@ -20,7 +21,7 @@
 ### QA-01 — O 01, o 02, o 04, o CHANGELOG e a página ainda descrevem a feature de antes da 2ª passada do step 10 · Major · destino 1
 - **Dimensão**: L3/L5 · **Relacionado a**: RQ-25, RQ-26, RQ-36, passos 5, 17, 18, 23; ADR-05, ADR-06, ADR-08
 - **Esperado**: o PRD e as ADRs dizem o que o código faz, e todo desvio vem marcado.
-- **Observado**: o `01` afirma que o DG-10, o DG-19 e o DG-20 ficaram sem guarda (`01:750-756`, `:1375-1383`, `:1427-1434`) e que o teste do CT-105 não existe (`01:82`, `:1600-1605`, `:1681-1683`). Também dá "47 regras, 105 cenários, 266 mutantes" e "33 commits" (`01:1712`). O código tem `tests/Kit/GuardasDosDiagramasTest.php` (CT-106..CT-111, CT-115, CT-116, com 47 testes) e `[CT-105]` em `tests/Kit/DiagramasDaArquiteturaTest.php:5035`. O `04` tem 53 regras e 116 cenários, e `git log --oneline origin/main..HEAD | wc -l` dá 36. A ADR-06 ainda diz "o que ficou sem guarda do fato" (`02:399-402`). A ADR-05 (`02:296`) e a ADR-08 (`02:456`) justificam um DG-20 "flowchart + sequência — o que acontece quando eu ligo isso", sem marca de alteração, mas o DG-20 publicado é só a sequência de `/app/{tenant}`, e a justificativa que o RQ-25 exige não bate com ele. O `04` põe as R48–R53 na costura `tests/Kit/DiagramasDaArquiteturaTest.php` (`04:259`) e ainda diz que "o teste [do CT-105] não existe" (`04:27-30`). O CHANGELOG fala em "411 casos" e "35" (`CHANGELOG.md:40-41`), sem o `GuardasDosDiagramasTest`. A página nomeia só `tests/Kit/DiagramasDaArquiteturaTest.php` como guarda (`docs/{pt,en}/referencia/arquitetura-em-diagramas.md:7`).
+- **Observado**: o `01` afirma que o DG-10, o DG-19 e o DG-20 ficaram sem guarda (`01:750-756`, `:1375-1383`, `:1427-1434`) e que o teste do CT-105 não existe (`01:82`, `:1600-1605`, `:1681-1683`). Também dá "47 regras, 105 cenários, 266 mutantes" e "33 commits" (`01:1712`). O código tem `tests/Kit/GuardasDosDiagramasTest.php` (CT-106..CT-111, CT-115, CT-116, com 47 testes) e `[CT-105]` em `tests/Kit/DiagramasDaArquiteturaTest.php`, linha 5035 no ciclo 1. O `04` tem 53 regras e 116 cenários, e `git log --oneline origin/main..HEAD | wc -l` dá 36. A ADR-06 ainda diz "o que ficou sem guarda do fato" (`02:399-402`). A ADR-05 (`02:296`) e a ADR-08 (`02:456`) justificam um DG-20 "flowchart + sequência — o que acontece quando eu ligo isso", sem marca de alteração, mas o DG-20 publicado é só a sequência de `/app/{tenant}`, e a justificativa que o RQ-25 exige não bate com ele. O `04` põe as R48–R53 na costura `tests/Kit/DiagramasDaArquiteturaTest.php` (`04:259`) e ainda diz que "o teste [do CT-105] não existe" (`04:27-30`). O CHANGELOG fala em "411 casos" e "35" (`CHANGELOG.md:40-41`), sem o `GuardasDosDiagramasTest`. A página nomeia só `tests/Kit/DiagramasDaArquiteturaTest.php` como guarda (`docs/{pt,en}/referencia/arquitetura-em-diagramas.md:7`).
 - **Repro**: `grep -n "não foi implementada\|ainda não existe\|47 regras" {wiki}/01-plano-acao.md`; `grep -n "CT-10[6-9]\|CT-11[0-6]" tests/Kit/GuardasDosDiagramasTest.php`
 - **Ação exigida**: refazer o step 10 sobre o delta `35c3eef`/`99c0722` nos arquivos `01`, `02` (ADR-05, 06, 08), `04` (cabeçalho e costuras), CHANGELOG e na frase da página, marcando cada alteração com *(alterado em …)*.
 
@@ -45,15 +46,15 @@
 - **Esperado**: todo elemento que só existe com uma chave desligada por padrão leva a condição, como o DG-09 já faz ("recusar exige KIT_TENANCY").
 - **Observado**:
   - DG-02: `cu_aceitar_convite["Aceitar/recusar convite recebido"]` aparece sem condição (`docs/pt/referencia/arquitetura-em-diagramas.md:78`, `:105`). A recusa só existe na caixa de convites recebidos, que responde `false` sem tenancy (`app/Filament/App/Pages/ConvitesRecebidos.php:regraLocalDeAcesso:75-77`; único chamador de `Convite::recusar`, em `:144`).
-  - DG-07: a `accDescr` diz "sempre ligando a organização do convite", e os dois ramos afirmam o vínculo à organização (`docs/pt/autenticacao/convites.md:74, 89, 92`). O código só vincula com `tenant_id` (`app/Models/Convite.php:636`, `:708`), e o ramo `else recusa` (`:93-94`) também não traz condição.
-  - DG-08: o estado `Pendente` aparece sem condição (`docs/pt/autenticacao/estados-de-usuario.md:24-33`). A única escrita de `aprovacao_pendente` vem de `RegistroAberto` com `KIT_REGISTRO_APROVACAO_MANUAL`, que vem desligada por padrão (`app/Support/RegistroAberto.php:81`, `:182`).
-  - A guarda não enxerga esses casos por dois motivos. Ela confere por bloco: basta a chave aparecer em qualquer ponto do bloco. E aceita a chave por substring: "provedor social" é aceito por causa de `KIT_SOCIALITE_VINCULO_CONFIRMAR`, e `KIT_REGISTRO` por causa de `KIT_REGISTRO_APROVACAO_MANUAL` (`tests/Kit/DiagramasDaArquiteturaTest.php:mapaOptInDaGuarda:1044`).
+  - DG-07: a `accDescr` diz "sempre ligando a organização do convite", e os dois ramos afirmam o vínculo à organização (`docs/pt/autenticacao/convites.md:74, 89, 92`). O código só vincula com `tenant_id` (`app/Models/Convite.php:tenant_id:636`, `:tenant_id:708`), e o ramo `else recusa` (`:93-94`) também não traz condição.
+  - DG-08: o estado `Pendente` aparece sem condição (`docs/pt/autenticacao/estados-de-usuario.md:24-33`). A única escrita de `aprovacao_pendente` vem de `RegistroAberto` com `KIT_REGISTRO_APROVACAO_MANUAL`, que vem desligada por padrão (`app/Support/RegistroAberto.php:aprovacao_manual:81`, `:aprovacao_pendente:182`).
+  - A guarda não enxerga esses casos por dois motivos. Ela confere por bloco: basta a chave aparecer em qualquer ponto do bloco. E aceita a chave por substring: "provedor social" é aceito por causa de `KIT_SOCIALITE_VINCULO_CONFIRMAR`, e `KIT_REGISTRO` por causa de `KIT_REGISTRO_APROVACAO_MANUAL` (`tests/Kit/DiagramasDaArquiteturaTest.php:mapaOptInDaGuarda:1162`).
 - **Ação exigida**: primeiro o CT que falha, por elemento e com a chave exata, pela `feature-test-design`; depois a correção dos três blocos, em pt e en.
 
 ### QA-05 — A paridade pt × en não vê mensagem de sequência nem aresta tracejada · Major · destino 3
 - **Dimensão**: K/A · **Relacionado a**: RQ-26, RQ-34 ("-.->, ==> … em pt e en"), R2/CT-03, R42/CT-85, R53/CT-116
 - **Observado**:
-  - O CT-03 usa um extrator local que só reconhece `-->` (`tests/Kit/DiagramasDaArquiteturaTest.php:estruturaNormalizada:232`), e não o normalizado de `tests/Pest.php`.
+  - O CT-03 usa um extrator local que só reconhece `-->` (`tests/Kit/DiagramasDaArquiteturaTest.php`, `estruturaNormalizada`, linha 232 no ciclo 1), e não o normalizado de `tests/Pest.php`.
   - O CT-85 compara só blocos sintéticos e nunca lê o publicado (`:4631`). O Gherkin pede "o bloco real" e a linha do DG-11, que falta no dataset. O extrator dele (`mensagensDaSequencia:4601`) também perde as setas `-->>`: acha 8 das 11 mensagens do DG-04.
   - Para 17 DGs, o "fato declarado" do CT-116 é só a presença de um literal fixo (`tests/Kit/GuardasDosDiagramasTest.php:paresDeAdulteracaoPorDg:830`), sem nenhum valor lido do código.
 - **Repro**: as funções do teste, copiadas sem alteração para o scratchpad, rodaram sobre os blocos publicados com o bloco en alterado em memória: o CT-03 dá "iguais" para as 6 alterações. As alterações foram: sem `painel_infra -.-> packagist` e com OAuth só no `/admin` (DG-01); sem o `finally` (DG-16); sem `resposta_login-->>visitante` e com `Authenticate`/`AuthenticateSession` invertidos (DG-04); sem `BudgetExceededException` (DG-11). Nenhuma outra guarda lê a mensagem en: `grep -n "mensagensDeSequencia(" tests/` só acha o DG-20.
@@ -79,9 +80,9 @@
 ### QA-07 — Helper clonado com outro nome, contra a `.ai/rules/testes.md` · Major · destino 2
 - **Dimensão**: L4
 - **Observado**:
-  - `transicoesDoEstado()` (`tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:396`) é a mesma regex de `tests/Pest.php:transicoesDeEstado:1463`.
-  - `mensagensDaSequencia()` (`tests/Kit/DiagramasDaArquiteturaTest.php:4601`) é um clone mais estreito de `tests/Pest.php:mensagensDeSequencia:1442`, e é a causa de parte do QA-05.
-  - `ordemDoDG20EstaCorreta()` (Tenancy, `:759`) repete `ordemDg20EhCorreta()` (`tests/Kit/GuardasDosDiagramasTest.php:859`).
+  - `transicoesDoEstado()` (`tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`, linha 396 no ciclo 1) é a mesma regex de `tests/Pest.php:transicoesDeEstado:1583`.
+  - `mensagensDaSequencia()` (`tests/Kit/DiagramasDaArquiteturaTest.php`, linha 4601 no ciclo 1) é um clone mais estreito de `tests/Pest.php:mensagensDeSequencia:1475`, e é a causa de parte do QA-05.
+  - `ordemDoDG20EstaCorreta()` (Tenancy, `:759`) repete `ordemDg20EhCorreta()` (`tests/Kit/GuardasDosDiagramasTest.php`, linha 859 no ciclo 1; hoje `tests/Pest.php:ordemDg20EhCorreta:1516`).
 - **Ação exigida**: uma função só em `tests/Pest.php` (a regra diz "Nunca crie um clone com outro nome"). O `03` marca a `testes.md` como "aplicada".
 
 ### QA-08 — Frases erradas nas docs novas · Minor · destino 3 → 2
@@ -98,7 +99,7 @@
 - **Ação exigida**: marcador por idioma no teste e o rótulo traduzido.
 
 ### QA-10 — Mutante sobrevivente numa linha do diff · Minor · destino 3
-- **Dimensão**: K2 · **Observado**: `app/Support/SubstituicaoEmArquivo.php:54`, `IncrementInteger` (limite `1` → `2` no `preg_replace_callback` do RD2-08) sobrevive. Nenhum teste prova que só a primeira ocorrência é trocada. O `RemoveStringCast` da mesma linha é equivalente.
+- **Dimensão**: K2 · **Observado**: `app/Support/SubstituicaoEmArquivo.php:preg_replace_callback:54`, `IncrementInteger` (limite `1` → `2` no `preg_replace_callback` do RD2-08) sobrevive. Nenhum teste prova que só a primeira ocorrência é trocada. O `RemoveStringCast` da mesma linha é equivalente.
 - **Evidência**: arnês próprio (QA-12), 54 mutantes, 13 sobreviventes, 208,1 s.
 - **Ação exigida**: um cenário com a chave duas vezes no `.env`, pela `feature-test-design`.
 

@@ -189,13 +189,24 @@ nasce **depois** do carregamento inicial da página (o plugin roda no cliente):
   como decidido; e, pelo Adendo 3 (RQ-36), o CI de pull request ganhou um job `site` com os mesmos
   passos, sem publicar, só quando o PR toca `docs/` ou `site/` — o `pages.yml` só roda depois do
   merge, e o DG-11 quebrado só apareceu porque o build foi rodado à mão.
+- **Legibilidade: tamanho natural, com rolagem dentro do bloco** *(alterado em 2026-09-29: Adendo 6,
+  RQ-47 a RQ-49, depois do QA-06 do quality gate)*: com o `useMaxWidth` padrão, o Mermaid entrega o SVG
+  com `width="100%"` e o `astro-mermaid` o limita à coluna de cerca de 600 px, e 13 dos 20 diagramas saíam
+  com fonte efetiva abaixo de 10 px (o DG-11 a 2,2 px). O mantenedor escolheu "tamanho natural com
+  rolagem": o `site/src/styles/kit.css` dá ao SVG uma largura que nunca é o limite e deixa o `max-width`
+  que o próprio Mermaid escreve no SVG cortar de volta ao tamanho natural, sem encolher; o que passa da
+  coluna rola dentro do `pre.mermaid`, que já tem `overflow: auto`, alinhado ao início para a rolagem
+  alcançar as duas bordas. Nenhum bloco muda e o GitHub, que não lê este CSS, fica como estava (RQ-48).
+  O conferidor ganhou o CT-B05 (piso de 12 px de fonte efetiva, a 1280×900 e a 390×844, nos dois temas e
+  idiomas) e o CT-B06 (o diagrama rola dentro do bloco e a página não); o CT-B05 foi escrito antes do CSS
+  (RQ-49). Medido em 2026-09-29: fonte efetiva mínima de 14,0 px (DG-13) em todas as variantes.
 
 ### Referências
 
 - `site/astro.config.mjs:rehypePlugins:85` (recusa do rehype), `site/astro.config.mjs:integrations:52`
 - `site/package.json:starlight:11-13`
 - `site/src/styles/kit.css:'data-theme':46`
-- `site/verifica-acessibilidade.mjs:waitUntil:205` (ponto de espera),
+- `site/verifica-acessibilidade.mjs:waitUntil:230` (ponto de espera),
   `site/verifica-acessibilidade.mjs:AMOSTRA_CLARA:89`
 - Refina: ADR-01 (por que não veio do GitDiagram), ADR-06 (guarda por diagrama)
 
@@ -271,7 +282,7 @@ Toda entrada do catálogo DG-01..DG-20 segue, sem exceção:
 ### Referências
 
 - `tests/Kit/SiteDeDocumentacaoTest.php:acusaLiquidSolto:227`, `:CT-19:430-455`
-- `site/verifica-acessibilidade.mjs:serious:261` (nível *serious*)
+- `site/verifica-acessibilidade.mjs:serious:286` (nível *serious*)
 - Refina: ADR-06 (a guarda que aplica estas regras)
 
 ---
@@ -293,8 +304,12 @@ reconhece (`grep -c usecase` no script de renderização do GitHub devolve 0).
 | Propósito | Tipo escolhido | Por quê |
 |---|---|---|
 | Caso de uso por papel (DG-02) | `flowchart LR` com atores fora de um `subgraph` que faz a fronteira do sistema | É o único formato com semântica de ator+fronteira+relação que renderiza **hoje**, nos dois lugares |
-| Arquitetura em camadas (DG-01), regra de acesso ao painel (DG-03), containers/Docker (DG-18), infra (DG-12), config (DG-14), fluxo do `kit:update` (DG-16), rotas de entrega (DG-17), segundo plano (DG-19), tenancy (DG-20, o fluxo do comando) | `flowchart TD`/`LR` com `subgraph` | Estável nos dois renderizadores, segue o tema, e é o mesmo tipo que `tests/Kit/SiteDeDocumentacaoTest.php:[CT-25]` já usa como precedente de guarda estrutural |
-| Sequências de autenticação, convite, instalação, assistente de IA e o request em `/app/{tenant}` (DG-04 a DG-07, DG-11, DG-15 e a sequência curta do DG-20) | `sequenceDiagram` | Cobre `alt`/`opt`/`loop`, ativação, notas e `autonumber` — confirmado no próprio script do GitHub — sem sintaxe experimental |
+| Arquitetura em camadas (DG-01), regra de acesso ao painel (DG-03), containers/Docker (DG-18), infra (DG-12), config (DG-14), fluxo do `kit:update` (DG-16), rotas de entrega (DG-17), segundo plano (DG-19), ~~tenancy (DG-20, o fluxo do comando)~~ | `flowchart TD`/`LR` com `subgraph` | Estável nos dois renderizadores, segue o tema, e é o mesmo tipo que `tests/Kit/SiteDeDocumentacaoTest.php:[CT-25]` já usa como precedente de guarda estrutural |
+| Sequências de autenticação, convite, instalação, assistente de IA e o request em `/app/{tenant}` (DG-04 a DG-07, DG-11, DG-15 e ~~a sequência curta do~~ o DG-20) | `sequenceDiagram` | Cobre `alt`/`opt`/`loop`, ativação, notas e `autonumber` — confirmado no próprio script do GitHub — sem sintaxe experimental |
+
+*(alterado em 2026-09-29: step 10 do ciclo 2, QA-01 — o DG-20 publicado é um bloco só, o `sequenceDiagram` da
+requisição em `/app/{tenant}`; o flowchart do `kit:tenancy` não foi desenhado — decisão da sessão no step 10, lacuna
+L-08 do `04` —, e a ordem do comando ficou em prosa, acima do bloco. A linha do flowchart deixa de listar o DG-20)*
 | Estados de conta e de convite, sessão autenticada (DG-08, DG-09, DG-10) | `stateDiagram-v2` | Suporta estado composto e escolha; é o vocabulário certo para "de onde vem, para onde vai" com guarda |
 | ER do núcleo (DG-13) | `erDiagram` | Suporte confirmado no GitHub 11.17.2 (regex de detecção do script inclui `erDiagram`) e no `astro-mermaid`; notação pé-de-galinha padrão |
 
@@ -396,10 +411,27 @@ que só afirma o código — o lado do diagrama dessas metades é lido no arquiv
 - **A camada 2 lê o conteúdo do bloco**: a rodada 1 da revisão do diff provou que 16 guardas não liam
   o bloco real (com quatro diagramas mentindo, a suíte passava), e a rodada 3 estendeu a leitura aos 21
   cenários que só afirmavam a existência do bloco (RQ-35).
-- **O que ficou sem guarda do fato**: os três extras (DG-10, DG-19, DG-20) têm as regras genéricas e
+- ~~**O que ficou sem guarda do fato**: os três extras (DG-10, DG-19, DG-20) têm as regras genéricas e
   uma relação declarada, com a lacuna L-01 do `04` — os números do DG-10 (1800 s, 5 tentativas), as
   metades do agendador e do Compose do DG-19 e a ordem do `kit:tenancy` (que ficou em prosa, sem
-  flowchart) não são conferidos contra o código. Achado do step 10, no `03`.
+  flowchart) não são conferidos contra o código. Achado do step 10, no `03`.~~
+  *(alterado em 2026-09-29: step 10 do ciclo 2, QA-01 — os extras ganharam guarda do fato na segunda
+  passada do step 10, num terceiro arquivo)* **Os extras têm guarda própria**:
+  `tests/Kit/GuardasDosDiagramasTest.php` confere o DG-10 contra o plugin de bloqueio de cada painel
+  (ociosidade, tentativas e o desfecho, CT-106/CT-107), o agendador do DG-19 contra `Schedule::events()`
+  (CT-108/CT-109), cada processo do DG-19 contra o comando que o `composer dev` e o `docker-compose.yml`
+  lhe dão (CT-110/CT-111), os controles do DG-20 (CT-115) e o fato declarado de cada um dos 20 DGs contra o
+  bloco publicado e uma cópia adulterada dele, em pt e en (CT-116); `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`
+  confere a ordem da pilha e o desfecho de `GET /app/{tenant}` (CT-112..CT-114). Sem guarda fica só o que o
+  DG-20 não desenha: a ordem do `kit:tenancy`, que ficou em prosa (lacuna L-08 do `04`).
+- **As guardas de paridade e de opcional leem o publicado, com um extrator só** *(alterado em
+  2026-09-29: step 10 do ciclo 2, QA-04, QA-05 e QA-07)*: o CT-03 e o CT-85 comparam os blocos
+  publicados pt × en com os extratores de `tests/Pest.php` (`arestasDeFluxo()`, `relacoesDeEr()`,
+  `mensagensDeSequencia()`, que passou a ler toda seta de sequência do Mermaid 11.17.2); os clones locais
+  (`mensagensDaSequencia()`, `transicoesDoEstado()`, `ordemDoDG20EstaCorreta()`) saíram, e cada helper
+  existe uma vez em `tests/Pest.php`. O opcional é conferido por elemento, no escopo dele, e pela chave
+  exata (CT-129/CT-130), não mais por bloco e por substring; o título do índice da página é o `accTitle` do
+  bloco (CT-131); e o texto visível de cada bloco é do idioma dele (CT-132).
 
 ### Consequências
 
@@ -453,10 +485,20 @@ ciclo do kit):
   torna verificável por teste as duas correções de RQ-29 (D1: `schedule:work` não vem no
   `composer dev`; D2: o `composer dev` omite o `reverb`) — sem este diagrama, a correção textual
   do README fica sem guarda que impeça a regressão.
-- **DG-20 — `kit:tenancy`: de single para multi-organização** (`flowchart TD` + `sequenceDiagram`
+- ~~**DG-20 — `kit:tenancy`: de single para multi-organização** (`flowchart TD` + `sequenceDiagram`
   curto): **Valor**: multi-tenancy é a feature opcional de maior impacto estrutural do kit (muda
   rotas, middleware e seeds inteiros), citada no README como recurso de destaque, e não tinha
-  nenhuma representação gráfica de "o que acontece quando eu ligo isso".
+  nenhuma representação gráfica de "o que acontece quando eu ligo isso".~~
+  *(alterado em 2026-09-29: step 10 do ciclo 2, QA-01 — o DG-20 publicado é só a sequência da requisição;
+  a justificativa passa a ser a dele)* **DG-20 — Requisição em `/app/{tenant}`** (`sequenceDiagram`):
+  **Valor**: multi-tenancy é a feature opcional de maior impacto estrutural do kit, citada no README como
+  recurso de destaque, e o que ela muda em **cada requisição** não tinha representação gráfica: o
+  `IdentifyTenant` resolve a organização da rota e consulta `canAccessTenant()`, a organização inativa
+  responde 404 para todos, inclusive o `master_global`, quem não tem vínculo e não é `master_global`
+  também, e só no ramo que permite o `DefinirTenantDePermissoes` fixa o contexto de papéis da organização.
+  É o "o que acontece quando eu ligo isso" do ponto de vista de quem usa o painel `/app`, e cada afirmação
+  tem guarda (CT-112..CT-115). O que o `kit:tenancy` faz ao ligar o modo (a ordem do comando) ficou em
+  prosa, logo acima do bloco, porque o flowchart não entrou nesta entrega (lacuna L-08 do `04`).
 
 ### Consequências
 
