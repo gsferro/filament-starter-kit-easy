@@ -385,7 +385,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
 - **Path**: `routes/console.php` (comentário nas linhas 19 a 22, `routes/console.php:composer:19`)
   - Reescrever o comentário para não afirmar que `schedule:work` "já incluso no `composer dev`" —
     ele não está: o `artisan dev` registra `serve`, `queue:listen`, `pail` (só com `pcntl`) e o
-    `vite` (`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:registerDefaults:106`,
+    `vite` (`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:registerDefaults:114`,
     linhas 112-121), e o Reverb acrescenta o `reverb:start` por conta própria
     (`vendor/laravel/reverb/src/Reverb.php:registerDevCommands:12`) — nenhum dos dois registra
     `schedule:work`.
@@ -1450,7 +1450,7 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
   Nota explícita: "`schedule:work` NÃO roda dentro do `composer dev`" (a correção de D1).
 
   **Fato do código**: processos registrados pelo `artisan dev`
-  (`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:registerDefaults:106`,
+  (`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:registerDefaults:114`,
   mais `vendor/laravel/reverb/src/ReverbServiceProvider.php:register:30`); `queue:listen` sem
   `--queue` escuta só `default` (`vendor/laravel/framework/src/Illuminate/Queue/Console/ListenCommand.php:getQueue:85`,
   `config/queue.php:'default':42`); comandos do Compose (`docker-compose.yml:queue:274`,

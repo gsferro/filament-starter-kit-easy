@@ -95,7 +95,7 @@ born from `create-project`. The guards for that live in `tests/Kit/SiteDeDocumen
 `composer dev` brings up **server + queue + vite + reverb** together, in a single terminal
 (`composer.json:"dev":123`, which runs `php artisan dev`); each process is registered by Laravel
 itself, in `DevCommands::registerDefaults()`
-(`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:registerDefaults:106`).
+(`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:registerDefaults:114`).
 `serve` brings up the development server (`:serve:112`).
 `queue:listen --tries=1 --timeout=0` runs with no `--queue` flag, so it only listens to the
 `default` queue

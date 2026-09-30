@@ -97,7 +97,7 @@ no lugar, é ali que se olha.
 `composer dev` sobe **servidor + fila + vite + reverb** juntos, num só terminal
 (`composer.json:"dev":123`, que roda `php artisan dev`); quem registra cada processo é o
 próprio Laravel, em `DevCommands::registerDefaults()`
-(`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:registerDefaults:106`).
+(`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:registerDefaults:114`).
 O `serve` sobe o servidor de desenvolvimento (`:serve:112`).
 O `queue:listen --tries=1 --timeout=0` roda sem `--queue`, e por isso só escuta a fila `default`
 (`:queue:listen:113`, `vendor/laravel/framework/src/Illuminate/Queue/Console/ListenCommand.php:getQueue:85`,
