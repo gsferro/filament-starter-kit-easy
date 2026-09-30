@@ -84,7 +84,7 @@ gate, dimensão A)*
 | RQ-33 | Contraste WCAG AA nos dois temas, ajustado na configuração do site, nunca com cor fixa no bloco | 22 | Rótulo de aresta no tema escuro, em `site/src/styles/kit.css` — desvio do texto da opção ("na config do astro-mermaid"): o `astro-mermaid` não tem configuração por tema (ADR-02). CT-B01; CT-34, CT-35, CT-95 |
 | RQ-34 | As guardas leem as arestas de forma normalizada, nos dois idiomas | 22, 24 | Extrator de arestas em `tests/Pest.php` (rodada 3) e as formas de seta que ele ainda perdia (rodada 4, RD3-05) |
 | RQ-35 | Os 21 cenários que só conferiam a existência do bloco passam a conferir o conteúdo | 22, 24 | Rodada 3 (RD2-16) e os fatos de DG-12/13/14/16/17 com os IDs reais, em pt e en (rodada 4, RD3-06) |
-| RQ-36 | O CI de pull request constrói e confere o site quando o PR toca `docs/` ou `site/` | 23 | Job `site` no `.github/workflows/ci.yml`. ~~**Sem CT** — lacuna declarada no `04` e dívida no `03`~~ CT-105 (R47 do `04`) *(alterado em 2026-09-29: o cenário foi derivado no step 10, depois da reconferência mecânica; ~~o teste ainda não existe — dívida DV-09 no `03`~~ o teste existe, `tests/Kit/DiagramasDaArquiteturaTest.php:it:5597`, e a DV-09 está fechada)* |
+| RQ-36 | O CI de pull request constrói e confere o site quando o PR toca `docs/` ou `site/` | 23 | Job `site` no `.github/workflows/ci.yml`. ~~**Sem CT** — lacuna declarada no `04` e dívida no `03`~~ CT-105 (R47 do `04`) *(alterado em 2026-09-29: o cenário foi derivado no step 10, depois da reconferência mecânica; ~~o teste ainda não existe — dívida DV-09 no `03`~~ o teste existe, `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-105]':6223`, e a DV-09 está fechada)* |
 | RQ-37 | Uma 4ª rodada fecha RD3-01..RD3-12, Major e Minor | — | Cláusula de **processo** (Adendo 4). Cumprida pela rodada 4 — o código dela está no passo 24; a situação de cada RD3 está no `03`, `## Revisão do Diff (step 9)` |
 | RQ-38 | A 4ª rodada tem revisão cega só do delta novo | — | Cláusula de **processo**: `fw-revisor-diff` sobre o delta, despacho #44 do `03` |
 | RQ-39 | É a última rodada: o que a revisão da 4ª achar vira dívida declarada no `03` | — | Cláusula de **processo**, com as exceções do Adendo 5 (RQ-41, RQ-42). As dívidas estão no `03`, `## Dívidas declaradas` |
@@ -771,7 +771,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
 
   *(alterado em 2026-09-29: ciclo 2 do gate, QA-01 — a nota acima deixou de valer na segunda passada do
   step 10. **A guarda do DG-10 existe**, pela R48 do `04`, num arquivo próprio: `[CT-106]`
-  (`tests/Kit/GuardasDosDiagramasTest.php:it:165`) lê a ociosidade, o número de tentativas e o desfecho
+  (`tests/Kit/GuardasDosDiagramasTest.php:'[CT-106]':165`) lê a ociosidade, o número de tentativas e o desfecho
   que o bloco desenha e os compara, painel a painel, com o plugin de bloqueio registrado e com o fonte de
   `config/lockscreen.php`; `[CT-107]` (`:197`) prova que ela fica vermelha quando o número, o desfecho ou
   a marca de opcional mudam no mundo. Os dois verdes em 2026-09-29, no `GuardasDosDiagramasTest` 47/47)*
@@ -950,7 +950,7 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
 
   **Guarda**: `motivoDeIndisponibilidade()` só devolve `conta_excluida`, `conta_inativa` ou `null`.
   Comportamento por estado (`canAccessPanel()` só verdadeiro em `ativo`) já provado por
-  `// comportamento: tests/Kit/SituacaoDaContaTest.php:it:75-99` [CT-01..03].
+  `// comportamento: tests/Kit/SituacaoDaContaTest.php:'[CT-01]':75-99` [CT-01..03].
 
 - **Logs**: n/a.
 - **Verificação**: teste do passo 14, caso `[DG-08]`.
@@ -1424,7 +1424,7 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
   o contexto de papéis é fixado com o id da organização da rota, e só no pedido permitido; `[CT-114]`
   (`:925`) executa o `GET` em cada situação e confere que o ramo desenhado leva ao status que o código dá —
   foi ele que achou o `alt` que negava a entrada do `master_global` sem vínculo, corrigido em pt e en; e
-  `[CT-115]` (`tests/Kit/GuardasDosDiagramasTest.php:it:799`) são os controles do DG-20 contra a tabela
+  `[CT-115]` (`tests/Kit/GuardasDosDiagramasTest.php:'[CT-115]':799`) são os controles do DG-20 contra a tabela
   literal do CT-114)*
 
 - **Logs**: n/a.
@@ -1481,7 +1481,7 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
 
   *(alterado em 2026-09-29: ciclo 2 do gate, QA-01 — as metades (2) e (3) **têm guarda** desde a segunda
   passada do step 10, pelas R49 e R50, em `tests/Kit/GuardasDosDiagramasTest.php`: `[CT-108]`
-  (`tests/Kit/GuardasDosDiagramasTest.php:it:437`) confere que cada evento de `Schedule::events()` cai numa
+  (`tests/Kit/GuardasDosDiagramasTest.php:'[CT-108]':437`) confere que cada evento de `Schedule::events()` cai numa
   das linhas do agendador do bloco com a frequência que declara (8 eventos hoje, com o `model:prune` que o
   `bezhansalleh/filament-exceptions` agenda às 00:00, na mesma linha das podas), e `[CT-109]` (`:473`) prova que ele fica vermelho com evento novo,
   horário mudado ou aresta errada; `[CT-110]` (`:624`) confere o comando, as filas e a condição de cada
@@ -1660,7 +1660,7 @@ mudou no código, autorizada pelo Adendo 3; as rodadas 1 e 2 estão marcadas nos
   cada passo depende da condição sobre os caminhos do PR, a condição aceita `docs/` e `site/` e recusa o
   resto, e os quatro passos rodam com os conferidores depois do build, sem `continue-on-error`. ~~O teste
   do CT-105 ainda não existe: dívida DV-09 no `03`~~)* *(alterado em 2026-09-29: ciclo 2 do gate, QA-01 —
-  o teste existe, `[CT-105]` em `tests/Kit/DiagramasDaArquiteturaTest.php:it:5597`, verde e provado
+  o teste existe, `[CT-105]` em `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-105]':6223`, verde e provado
   vermelho pelos mutantes R47.M1..M6 sobre cópias do `ci.yml` em memória; a DV-09 está fechada)*
 
 ### 24. Quarta rodada da revisão do diff (RQ-34, RQ-35, RQ-28 — Adendo 4)
@@ -1762,7 +1762,7 @@ CT-133..CT-150) e no `05` (CT-B07..CT-B11))*
   (DG-06 pt/en, DG-08) e CT-146 (DG-06 en) nasceram vermelhos contra as docs publicadas; a saída literal está no `03`.
 - **`.env`** (RQ-50, RQ-51, P-45): `app/Support/SubstituicaoEmArquivo.php:definirLinhaNoEnv` troca **toda** linha que o
   Dotenv lê como a chave (`export`, espaço no `=`, indentação) e nenhuma comentada; sem linha ativa, descomenta a
-  primeira comentada no lugar (P-45, Q?9 em aberto); sem nenhuma, anexa — para todo chamador, `DB_CONNECTION` incluído.
+  primeira comentada no lugar (P-45; a Q?9 fechou pelo Adendo 8, RQ-53) *(alterado em 2026-09-30: a Q?9 fechou pelo Adendo 8, RQ-53; QA-25 do ciclo 3)*; sem nenhuma, anexa — para todo chamador, `DB_CONNECTION` incluído.
   `definirNoEnv()` a chama, e `aplicarBanco()`, `AtivadorDeTenancy::escreverEnv()` e `KitTenancy::semearDemo()`
   deixaram de chamar `aplicar()` direto; `aplicar()` fica com o limite 1 para padrão arbitrário (config PHP). A
   quebra de linha já virava um espaço (RQ-51); o CT-117 passou a afirmar LF, CRLF e CR.

@@ -29,7 +29,7 @@
 >   cenário ganhou a [Regra R47](#regra-r47--o-ci-de-pull-request-constrói-e-confere-o-site-quando-e-só-quando-o-pr-toca-docs-ou-site)
 >   e o CT-105, derivados do `00`, e a lacuna L-07. É o único cenário escrito neste step; o teste dele
 >   não existe ainda (`03`, DV-09). *(alterado em 2026-09-29: existe — `[CT-105]` em
->   `tests/Kit/DiagramasDaArquiteturaTest.php:it:5597`, verde; a DV-09 está fechada)* Os números, pelos mesmos comandos: 105 cenários, 47 regras, 266
+>   `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-85]':5597`, verde; a DV-09 está fechada)* Os números, pelos mesmos comandos: 105 cenários, 47 regras, 266
 >   mutantes, 2 sem matador.
 > - **Achados A-01, A-02, A-03 e A-06** (`03`, `## Achados do step 10`) — segunda passada da
 >   `feature-test-design` 1.16.0 neste step *(alterado em 2026-09-29)*: os números do DG-10, as metades do
@@ -511,7 +511,7 @@ R41 sai de R31.
 | RQ-17 | absorvida por R34 (GIF que ninguém mostra não torna nada visível) | CT-51 |
 | RQ-25 *(alterado em 2026-09-29: segunda passada do step 10 — a RQ ganhou regras próprias, R48 a R52, e sai desta tabela por direito)* | ~~os extras DG-10, DG-19, DG-20 entram nas regras genéricas R1–R4, R21 e — desde o ciclo 1 — R40 (toda referência a código resolve); o **fato específico** de cada um o 00 não determina (a justificativa vive no `02`) — lacuna declarada L-01, reduzida à verdade da **relação** entre elementos que resolvem; no ciclo 2, o reconhecimento passou a ser pela forma, com catálogo de produtos (CT-82)~~ → o 00 não determina o conteúdo dos extras, mas o **bloco publicado** o determina, e o valor esperado de cada afirmação dele sai do código que ela descreve: R48 (DG-10), R49 e R50 (DG-19), R51 e R52 (DG-20); o resto de L-01 está nas Lacunas | CT-01..CT-08, CT-34, CT-35, CT-77, CT-82; CT-106..CT-115 |
 | RQ-31, RQ-37, RQ-38, RQ-39, RQ-40, RQ-43, RQ-44 *(alterado em 2026-09-29: Adendos 3 a 5)* | cláusulas de **processo** da revisão do diff (autorizam a 3ª e a 4ª rodada, a revisão cega só do delta, o fim das rodadas, a prova vermelha de cada correção e a dívida declarada): não descrevem comportamento do kit | o `03`, `## Revisão do Diff (step 9)` e `## Dívidas declaradas`; quality gate, dimensão A |
-| RQ-36 *(alterado em 2026-09-29: Adendo 3; e de novo no step 10, depois da reconferência mecânica: a lacuna foi fechada na fonte — a RQ ganhou regra própria, R47, e o cenário CT-105)* | ~~**sem CT, e isso é lacuna, não decisão**: o job `site` do `.github/workflows/ci.yml` nasceu na rodada 3 sem cenário derivado — nenhum teste lê o `ci.yml` atrás dele (`grep -rln "ci.yml" tests/` acha seis arquivos, nenhum sobre o job). O `AcoesPinadasPorShaTest` confere só que as actions dele são pinadas~~ → não está mais nesta tabela por direito: ver [Regra R47](#regra-r47--o-ci-de-pull-request-constrói-e-confere-o-site-quando-e-só-quando-o-pr-toca-docs-ou-site). O que falta é o **teste** do CT-105 *(alterado em 2026-09-29: não falta — escrito no step 10, DV-09 fechada)* | CT-105 (`tests/Kit/DiagramasDaArquiteturaTest.php:it:5597`) |
+| RQ-36 *(alterado em 2026-09-29: Adendo 3; e de novo no step 10, depois da reconferência mecânica: a lacuna foi fechada na fonte — a RQ ganhou regra própria, R47, e o cenário CT-105)* | ~~**sem CT, e isso é lacuna, não decisão**: o job `site` do `.github/workflows/ci.yml` nasceu na rodada 3 sem cenário derivado — nenhum teste lê o `ci.yml` atrás dele (`grep -rln "ci.yml" tests/` acha seis arquivos, nenhum sobre o job). O `AcoesPinadasPorShaTest` confere só que as actions dele são pinadas~~ → não está mais nesta tabela por direito: ver [Regra R47](#regra-r47--o-ci-de-pull-request-constrói-e-confere-o-site-quando-e-só-quando-o-pr-toca-docs-ou-site). O que falta é o **teste** do CT-105 *(alterado em 2026-09-29: não falta — escrito no step 10, DV-09 fechada)* | CT-105 (`tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-105]':6223`) |
 | RQ-45, RQ-46 *(alterado em 2026-09-29: Adendo 6, step 11)* | cláusulas de **processo** do quality gate (corrigir os 14 achados com o teste primeiro onde o destino é teste; rodar o ciclo 2 cego): não descrevem comportamento do kit. O "teste primeiro" do RQ-45 é cumprido aqui pelos cenários que nascem vermelhos (CT-126, CT-129, CT-131, CT-132, CT-B05, CT-B06) *(alterado em 2026-09-30: revisão adversarial, ADV-35 — a frase afirmava mais do que o conjunto prova. Nascer vermelho no `04` não é o teste vermelho antes da correção: os testes de CT-117, CT-119, CT-120, CT-121, CT-122 e CT-127 só ganharam o `[CT-nn]`, o de CT-132 está vermelho, e R55.M1..M5 e R56.M1, M2 têm matador no `04` e nenhuma asserção no teste (DV-03). Nenhum cenário separa "corrigido com o teste primeiro" de "renomeado" — é a lacuna L-15, com o destino)* | o `03` e o ciclo 2 do `06-relatorio-qa.md` |
 | RQ-42 *(alterado em 2026-09-29: Adendo 5)* | conserto mecânico: o Pint e as linhas de citação não são comportamento do kit | `vendor/bin/pint --test` (job `qualidade` do CI) e `tests/Kit/CitacoesDeCodigoTest.php` (suíte do kit), com a saída no `03` |
 
@@ -1480,7 +1480,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 **Rodada 2 (ADV2-24)** *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-24)*. A sonda 6 da revisão (a mesma pessoa com dois papéis)
 achou três pares sem cenário: `infra` × `panel_user`, `infra` × `admin_app` e `panel_user` × `admin_app`. O CT-13 tem uma
 coluna `papel` só e roda sem tenancy — sem `admin_app` —, então as linhas entram nos dois cenários de acumulação que a regra
-já tem, no formato deles: o par sem tenancy no CT-71 (`tests/Kit/DiagramasDaArquiteturaTest.php:it:2277`), e os dois com
+já tem, no formato deles: o par sem tenancy no CT-71 (`tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-71]':2439`), e os dois com
 `admin_app` no CT-98 (`tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:'[CT-98]':188`). Um cenário novo com o mesmo `Dado` e
 o mesmo `Então` repetiria o CT-98 com outro número. As linhas vêm do mundo que R7 já cita: o `/app` pede o papel do painel
 em qualquer organização, e o `/admin` e o `/infra`, no contexto global
@@ -3614,7 +3614,7 @@ Funcionalidade: GIFs pelo kit:arte
 ```
 
 Estouro do teto (R33 com 4 cenários no `padrão`): mesma justificativa de CT-127. O teste `[RD3-09]`
-(`tests/Kit/KitArteTest.php:it:682`) passa a levar `[CT-128]`; as asserções de "não consegui publicar" e de "falha ao
+(`tests/Kit/KitArteTest.php:'[CT-128]':801`) passa a levar `[CT-128]`; as asserções de "não consegui publicar" e de "falha ao
 montar o clipe" ficam nele como apoio, fora do oráculo, até a Q?5. *(alterado em 2026-09-29: Adendo 7 — as duas
 asserções entram no oráculo, e o teste de hoje já as tem: `tests/Kit/KitArteTest.php:não consegui publicar:715` e
 `tests/Kit/KitArteTest.php:falha ao montar o clipe:721`. Nessas duas, o CT-128 e o teste não divergem; em outras
@@ -3656,8 +3656,8 @@ Funcionalidade: GIFs pelo kit:arte
 ffmpeg — o aviso genérico de hoje para o ffmpeg que falha diz as duas coisas
 (`app/Console/Commands/KitArte.php:ffmpeg não disponível ou falhou:386`), e é ele que a lista passa a ver. A linha que diz
 que o ffmpeg **concluiu** (`app/Console/Commands/KitArte.php:Não consegui publicar:394`) continua certa. O CT-128 ganha o
-mesmo `Dado` e o "nenhuma linha". Os dois `[CT-nn]` existem (`tests/Kit/KitArteTest.php:it:720`,
-`tests/Kit/KitArteTest.php:it:801`) e ganham o clipe único e a leitura de toda linha.
+mesmo `Dado` e o "nenhuma linha". Os dois `[CT-nn]` existem (`tests/Kit/KitArteTest.php:'[CT-127]':720`,
+`tests/Kit/KitArteTest.php:'[CT-128]':801`) e ganham o clipe único e a leitura de toda linha.
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
@@ -4433,7 +4433,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 *(alterado em 2026-09-29: regra nova, da reconciliação do step 10. RQ-36, do Adendo 3, chegou à
 implementação sem cenário — o job nasceu na rodada 3 da revisão do diff, direto no código — e o
 `rastreabilidade.sh` acusou "RQ-36 sem CT". O cenário é derivado do `00`; o job implementado só foi lido depois, para comparar (registro abaixo do cenário);
-o teste ainda não existe, e o `ids-ct.sh` acusa o CT-105 até o executor escrevê-lo — `03`, DV-09)* *(alterado em 2026-09-29: existe — `tests/Kit/DiagramasDaArquiteturaTest.php:it:5597`; a DV-09 está fechada)*
+o teste ainda não existe, e o `ids-ct.sh` acusa o CT-105 até o executor escrevê-lo — `03`, DV-09)* *(alterado em 2026-09-29: existe — `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-105]':6223`; a DV-09 está fechada)*
 
 > `RQ-36` · perfil **padrão** (área C) · técnica: **inspeção do fluxo**, irmã de R23 (que confere o
 > `pages.yml`, que só roda depois do merge) e de `[CT-42]` herdado
@@ -5129,7 +5129,7 @@ consome — o M15 era o código de antes) e 2 ativas. Passa nas da ativa indenta
 M14 descrevem. *(alterado em 2026-09-30: re-revisão adversarial da adição, o código mudou)*: o `definirLinhaNoEnv()` de hoje aceita `export` e espaço no `=`,
 usa `[ \t]*` antes do nome e pula toda linha cujo primeiro caractere não branco é `#`
 (`app/Support/SubstituicaoEmArquivo.php:$ativa:122`); o `[CT-137]` existe
-(`tests/Kit/CustomizadorDaInstalacaoTest.php:it:658`), e o que ele mede contra o código de hoje é a execução.
+(`tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-118]':658`), e o que ele mede contra o código de hoje é a execução.
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
@@ -5317,7 +5317,7 @@ Testes: `tests/Kit/ResumoDoKitInstallTest.php:'[CT-121]':268` (`[RD3-01][RD3-04]
 presença de `KIT_ADMIN_PASSWORD` e de `php artisan db:seed` na saída inteira e a ausência de `kit:admin` — faltam as
 asserções da linha do resumo e do banner, que são as duas metades da DV-03 (RQ-44): com elas, a DV-03 fecha; sem
 elas, M1 e M2 têm o matador aqui e nenhuma asserção no teste. `:144` (`[RD3-03]`) passa a levar `[CT-122]` e ganha
-"o banner não imprime senha nenhuma". `tests/Kit/CustomizadorDaInstalacaoTest.php:it:933` e `:963` (`[RD3-12]`) passam
+"o banner não imprime senha nenhuma". `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-151]':924` e `:963` (`[RD3-12]`) passam
 a levar `[CT-123]`. O banco **inacessível** pelo `handle()` fica fora: é a DV-01 (L-09).
 
 #### Mutantes previstos
@@ -5391,7 +5391,7 @@ as duas leituras da Q?10 dizem isso (a de hoje, "Nenhum usuario foi criado nesta
 `app/Console/Commands/KitInstall.php:Nenhum usuario foi criado:564`; a da P-46, "nenhum administrador foi criado nesta
 execução"), e nenhuma oferece login — "login inicial" é o que o banner diz só quando há administrador. É invariante, e
 não a direção: o que o banner manda fazer com a senha já definida continua em R56.M11. O `[CT-134]` existe
-(`tests/Kit/ResumoDoKitInstallTest.php:it:373`) e ganha os dois `Então`. *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-04)*:
+(`tests/Kit/ResumoDoKitInstallTest.php:'[CT-133]':373`) e ganha os dois `Então`. *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-04)*:
 a lista ganha "recomendado", "recommended", "ou rode", "or run" e "direto", e "ligados por 'ou'" é a palavra inteira "ou"
 ou "or" entre a primeira ocorrência de `KIT_ADMIN_PASSWORD` e a primeira de `db:seed`, no mesmo texto — a chave e o
 `db:seed` ligados por "e", "depois" ou "então", como a instrução de hoje ("defina KIT_ADMIN_PASSWORD no .env e só então
@@ -5490,7 +5490,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | a-->>-b: x   | com o marcador de ativação -      |
 ```
 
-Testes: `tests/Kit/DiagramasDaArquiteturaTest.php:it:5322` (`[RD3-05]`, `existeArestaDeFluxo()`) passa a levar
+Testes: `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-82]':5322` (`[RD3-05]`, `existeArestaDeFluxo()`) passa a levar
 `[CT-124]` e ganha a linha `ab --> b`; `:5392` (`[RD3-05]`, `relacaoDeEr()`) passa a levar `[CT-125]` e ganha
 `|o--o{` e `}|..|{`; `[CT-126]` é teste a escrever e nasce vermelho em 8 das 12 linhas (lê só `->>`, `-->>`, `-x` e
 `-)`). O `[RD3-05]` de `:5432` (span de código) é de R1, linha nova de CT-103. *(alterado em 2026-09-29: step 10 do
@@ -5546,7 +5546,7 @@ Teste a escrever, ao lado do `[CT-125]` e do `[CT-126]` em `tests/Kit/DiagramasD
 só essas três passava. As cinco que faltavam (`-|/`, `-\\`, `--|\`, `--\\`, `--//`) entram uma por linha; o lexer as lê
 como tokens próprios (`site/node_modules/mermaid/dist/chunks/mermaid.core/sequenceDiagram-WJ2MYXX4.mjs:rules:1155`).
 Nos Exemplos, `\|` é a barra vertical e `\\` uma barra invertida, como nas linhas de cima. O `[CT-142]` existe
-(`tests/Kit/DiagramasDaArquiteturaTest.php:it:5766`) e ganha as cinco linhas.
+(`tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-104]':5766`) e ganha as cinco linhas.
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
@@ -5623,7 +5623,7 @@ e a linha do DG-08, no publicado lido na derivação, porque a nota de Pendente 
 (`docs/pt/autenticacao/estados-de-usuario.md:só existe com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL:35`,
 `docs/en/autenticacao/estados-de-usuario.md:only exists with KIT_REGISTRO and KIT_REGISTRO_APROVACAO_MANUAL:38`), e a
 linha passa contra ela. O `[CT-129]` existe
-(`tests/Kit/DiagramasDaArquiteturaTest.php:it:1462`) com as marcas de antes, e muda.
+(`tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-08]':1462`) com as marcas de antes, e muda.
 
 *(alterado em 2026-09-30: ciclo 2 do gate, QA-18)*. Duas linhas novas. A `accDescr` é o texto que o leitor de tela lê
 no lugar do desenho, e afirmar nela o opcional sem a chave é o mesmo defeito de RQ-10 que o desenho tinha: a do DG-07 ganhou
@@ -5642,7 +5642,7 @@ falha em "o elemento existe no bloco". **Nascem vermelhas** contra o publicado d
 quatro `accDescr` não têm a chave; a sessão corrige as docs depois do vermelho. O `[CT-129]` monta os elementos em
 `tests/Kit/DiagramasDaArquiteturaTest.php:elementosOptInDeR58:1546`, e as duas linhas entram ali.
 
-Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`, com o detector de R59. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:1435`, verde depois de o lote C1 marcar os três blocos)*
+Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`, com o detector de R59. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-57]':1435`, verde depois de o lote C1 marcar os três blocos)*
 
 #### Mutantes previstos
 
@@ -5699,7 +5699,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | DG-02 | en     | cu_aceitar_convite com a chave no pt e sem ela no en ("Accept/decline received invite")     | recusa em en, nomeando cu_aceitar_convite        | o termo do elemento no idioma do bloco      |
 ```
 
-Teste a escrever, junto de CT-129 *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:1462`)* *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-16, ADV2-20)*: a linha da nota
+Teste a escrever, junto de CT-129 *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-129]':1560`)* *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-16, ADV2-20)*: a linha da nota
 passa a ter as duas chaves, e ganha a irmã com uma chave só; a linha do `alt` tira a oração "quando ele tem tenant_id" da
 mensagem, porque, pela decisão da Q?13, o `tenant_id` no meio da mensagem é menção, e não condição — com ela, a linha
 recusaria. O `[CT-130]` de hoje é `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-08]':1462`. As linhas de CT-08 e CT-57 passam pelo detector novo: a linha "provedor social →
@@ -5853,7 +5853,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | uma de controle, montada com os 20 accTitles pt           | a linha do DG-20 removida                                   | recusa, nomeando o DG-20 ausente                                                                              | DG sem linha                |
 ```
 
-Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:5683`, verde depois de o lote C1 trocar os títulos do índice)*
+Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:5681`, verde depois de o lote C1 trocar os títulos do índice)*
 
 #### Mutantes previstos
 
@@ -5944,7 +5944,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | uma cópia do DG-16 pt                                        | "--only-new" e kit:update num rótulo                              | aceita                                  | opção de CLI e comando são invariantes (P-23)     |
 ```
 
-Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:5766`; **vermelho em duas linhas**: as de cópia do DG-07 en e do DG-05 en leem o bloco publicado sem aplicar a alteração da coluna `alteracao`, e o publicado já não tem o português — o teste diverge do Exemplo, `03`, `## 26.`)* O marcador por idioma do CT-89 (R45) está reescrito
+Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-104]':5766`; **vermelho em duas linhas**: as de cópia do DG-07 en e do DG-05 en leem o bloco publicado sem aplicar a alteração da coluna `alteracao`, e o publicado já não tem o português — o teste diverge do Exemplo, `03`, `## 26.`)* O marcador por idioma do CT-89 (R45) está reescrito
 com colunas pt e en; a coluna "ramo" do CT-88 é descrição do ramo, não marcador procurado (o teste confere o fato do
 DG-07), e fica.
 
@@ -6012,7 +6012,7 @@ inicial — "Conta nova" e "Painel de controle" no começo de um rótulo en pass
 **composto**. E o texto visível que o premissa lista (alias, rótulo, mensagem, nota, condição, `accTitle`, `accDescr`) não
 tinha uma linha por posição: um detector que lê só o alias e a mensagem deixava a palavra do outro idioma na `accDescr`,
 numa `note`, num rótulo de aresta ou num título de `subgraph`. Cada linha nova põe a palavra **só** naquela posição. O
-`[CT-146]` existe (`tests/Kit/DiagramasDaArquiteturaTest.php:it:6517`) e ganha as cinco linhas.
+`[CT-146]` existe (`tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-146]':6729`) e ganha as cinco linhas.
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
@@ -6266,7 +6266,7 @@ do KIT_DEMO depende de o arnês isolar `semearDemo()`, que grava o `.env` de `ba
 `[CT-138]` de hoje deixou a linha dele de fora por esse motivo
 (`tests/Kit/CustomizadorDaInstalacaoTest.php:KIT_DEMO:779`). Se o executor não isolar, as duas — a do CT-138 e esta —
 ficam como divergência declarada no Índice, com o motivo. Os dois `[CT-nn]` existem
-(`tests/Kit/CustomizadorDaInstalacaoTest.php:it:713`, `tests/Kit/CustomizadorDaInstalacaoTest.php:it:783`).
+(`tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-137]':713`, `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-138]':783`).
 
 **O comentário ao lado de uma linha ativa, por gravador (ADV2-05)** *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-05)*. O CT-118 e o CT-137
 provam "nenhuma comentada" só pelo customizador gravando APP_NAME. O conserto ingênuo de RQ-50 — tirar o limite de
@@ -6456,8 +6456,8 @@ Testes a escrever, ao lado do `[CT-124]` e do `[CT-126]` em `tests/Kit/Diagramas
 exatamente" é sobre todos os pares dos IDs do trecho: cada par existe se, e só se, está na coluna. *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-07)*:
 o Mermaid tira também o comentário **indentado** — o padrão dele é `^\s*%%`
 (`site/node_modules/mermaid/dist/mermaid.core.mjs:'%%':968`) —, e o extrator que pula só a linha que começa com
-`%` leria a aresta dele. Os `[CT-nn]` existem (`tests/Kit/DiagramasDaArquiteturaTest.php:it:5766`,
-`tests/Kit/DiagramasDaArquiteturaTest.php:it:5766`) e ganham uma linha cada.
+`%` leria a aresta dele. Os `[CT-nn]` existem (`tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-104]':5766`,
+`tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-104]':5766`) e ganham uma linha cada.
 
 #### Mutantes previstos
 
@@ -6589,7 +6589,7 @@ linhas abaixo são as de hoje — os testes novos deslocaram as de 866 a 963 do 
 | `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-117]':603` — valor com `\`, `$` e aspas sobrevive à ida e volta pelo `.env` | RD2-08 | R27 | RQ-28 | `[CT-117]` — R54 |
 | `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-120]':1464` — `corrigirResumoDaSenha()` reescreve a linha do resumo quando nada foi gerado | RD2-05 | R27 | RQ-28 | `[CT-120]` — R55 |
 | `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-119]':1521` — `mensagemDoBanner()` não promete "a que você definiu" sem semeadura | RD2-05 | R27 | RQ-28 | `[CT-119]` — R55 |
-| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:948` — `mensagemDoBanner()` com a semeadura rodada | RD2-05 | R27 | RQ-28 | `[CT-119]` — R55 |
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-119]':1521` — `mensagemDoBanner()` com a semeadura rodada | RD2-05 | R27 | RQ-28 | `[CT-119]` — R55 |
 | `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-119]':1521` — `mensagemDoBanner()` com senha gerada agora | RD2-05 | R27 | RQ-28 | `[CT-119]` — R55 |
 | `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-123]':1612` — `RESUMO_SENHA_GERADA` pública, usada por `aplicar()` | RD3-12 | R27 | RQ-28 | `[CT-123]` — R56 |
 | `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-123]':1612` — `corrigirResumoDaSenha()` reconhece a linha pela constante | RD3-12 | R27 | RQ-28 | `[CT-123]` — R56 |
@@ -6599,8 +6599,8 @@ linhas abaixo são as de hoje — os testes novos deslocaram as de 866 a 963 do 
 | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-125]':5905` — `relacaoDeEr()` reconhece `--` e `..`, com controle negativo | RD3-05 | R16 | RQ-34 | `[CT-125]` — R57 |
 | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-103]':6053` — `blocosMermaidDe()` não lê span de código como cerca | RD3-05 | R1 (extrator) | RQ-34 | `[CT-103]` — R1 |
 | `tests/Kit/KitArteTest.php:'[CT-127]':720` — uma exceção qualquer num clipe não aborta os outros, e o diretório de montagem fica limpo | RD2-02, RD2-03 | R32 | RQ-27 | `[CT-127]` — R32 |
-| `tests/Kit/KitArteTest.php:it:682` — falha ao publicar avisa "não consegui publicar" e preserva o GIF anterior | RD3-09 | R33 | RQ-27 | `[CT-128]` — R33 |
-| `tests/BrowserTenancy/CapturaDeArteTest.php:it:794` — os quatro quadros do `install.gif`, sem `password` | — (sem ID; QA-03) | R35 | RQ-28, RQ-27 | `[CT-B04]` — R35 (no `05`) |
+| `tests/Kit/KitArteTest.php:'[CT-128]':801` — falha ao publicar avisa "não consegui publicar" e preserva o GIF anterior | RD3-09 | R33 | RQ-27 | `[CT-128]` — R33 |
+| `tests/BrowserTenancy/CapturaDeArteTest.php:'[CT-B04]':794` — os quatro quadros do `install.gif`, sem `password` | — (sem ID; QA-03) | R35 | RQ-28, RQ-27 | `[CT-B04]` — R35 (no `05`) |
 
 Contagem: `grep -nE "^(it|test)\('\[RD" tests/Kit/*.php tests/Tenancy/*.php tests/BrowserTenancy/*.php | wc -l` = 14, e
 os 14 levam também o `[CT-nn]` (`grep -nE "^(it|test)\('\[RD[^']*\]\[CT-[0-9]+\]" … | wc -l` = 14, 2026-09-29).
@@ -6679,7 +6679,7 @@ os 14 levam também o `[CT-nn]` (`grep -nE "^(it|test)\('\[RD[^']*\]\[CT-[0-9]+\
 | CT-68 | rótulo igual nos dois idiomas só se invariante | R2 | EP com controles | Feature (Kit) | idem | R2.M5..M7 |
 | CT-69 | imagem de host conhecido; art/ de origem conhecida | R38 | EP (inclusão, baseline congelado) | Feature (Kit) | idem | R38.M2..M4; R37.M2 |
 | CT-70 | tabela de decisão do retorno social executada | R10 | tabela de decisão | Feature (Kit) | idem | R10.M4, M5 |
-| CT-71 | acumulação de papéis no canAccessPanel | R7 | tabela de decisão | Feature (Kit) | idem — `tests/Kit/DiagramasDaArquiteturaTest.php:it:2439` | R7.M6, M7; *(rodada 2: + R7.M10)* |
+| CT-71 | acumulação de papéis no canAccessPanel | R7 | tabela de decisão | Feature (Kit) | idem — `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-71]':2439` | R7.M6, M7; *(rodada 2: + R7.M10)* |
 | CT-72 | diretório listado em parte não é desenhado inteiro | R19 | EP (pai de entradas) | Feature (Kit) | idem | R19.M6, M7 |
 | CT-73 | caso de uso de escrita exige a permissão de escrita | R6 | EP por permissão exata | Feature (Kit) | idem | R6.M6, M7 |
 | CT-74 | toda imagem de art/ usa o ref main | R34 | EP do endereço | Feature (Kit) | idem | R34.M5, M6 |
@@ -6706,7 +6706,7 @@ os 14 levam também o `[CT-nn]` (`grep -nE "^(it|test)\('\[RD[^']*\]\[CT-[0-9]+\
 | CT-95 | frontmatter, initialize e classe aplicada recusados (+ `useMaxWidth` no bloco, step 11) | R21 | EP com controles | Feature (Kit) | idem — ganha as duas linhas | R21.M6..M8; R62.M1 |
 | CT-96 | DG-15: ramos da senha e banco acessível | R18 | EP + ordem derivada da fonte | Feature (Kit) | idem | R18.M4..M6 |
 | CT-97 | README: "aleatória" com a exceção de KIT_ADMIN_PASSWORD | R26 | EP | Feature (Kit) | idem | R26.M4 |
-| CT-98 | papéis em contextos diferentes (global × organização) | R7 | tabela de decisão | Feature (Tenancy) | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` — `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:it:188` | R7.M8, M9; *(rodada 2: + R7.M10)* |
+| CT-98 | papéis em contextos diferentes (global × organização) | R7 | tabela de decisão | Feature (Tenancy) | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` — `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:'[CT-98]':188` | R7.M8, M9; *(rodada 2: + R7.M10)* |
 | CT-99 | gravador de cada Resource do /infra, exercitado, com o homônimo | R15 | rastreio de efeito executado | Feature (Kit) | `tests/Kit/DiagramasDaArquiteturaTest.php` | R15.M6..M10 |
 | CT-100 | fonte de cada página do /infra (Health exercitado; Logs e Pulse resolvidos) | R15 | soundness | Feature (Kit) | idem | R15.M11 |
 | CT-101 | nenhum bloco nomeia passkey, WebAuthn ou FIDO | R28 | EP | Feature (Kit) | idem | R28.M3 |
@@ -6714,17 +6714,17 @@ os 14 levam também o `[CT-nn]` (`grep -nE "^(it|test)\('\[RD[^']*\]\[CT-[0-9]+\
 | CT-103 | extrator: til, quatro crases, bloco em comentário HTML e span de código embutido (step 11) | R1 | EP com controles | Feature (Kit) | idem — e o `[RD3-05]` de `:4865`, que passa a levar `[CT-103]` | R1.M6..M8 |
 | CT-104 | seção com GIF de recurso opt-in nomeia a chave | R4 | EP com controles | Feature (Kit) | idem | R4.M8, M9 |
 | CT-105 | job de PR constrói e confere o site quando o PR toca docs/ ou site/ | R47 | inspeção do fluxo + EP dos prefixos | Feature (Kit) | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-105]':6223` *(alterado em 2026-09-29: escrito no step 10 — DV-09 fechada; era "teste a escrever")* | R47.M1..M6 |
-| CT-106 | ociosidade, tentativas e force logout do DG-10 = plugin de bloqueio de cada painel | R48 | valor do fonte + EP por painel | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:165` *(alterado em 2026-09-29: step 10 do ciclo 2 — CT-106..CT-111, CT-115 e CT-116 moram em arquivo próprio, e não em `tests/Kit/DiagramasDaArquiteturaTest.php`; CT-112..CT-114, no irmão com tenancy; eram "teste a escrever")* | R48.M1, M2, M4 |
-| CT-107 | DG-10 vermelho com número, desfecho ou marca de opcional alterados | R48 | mundo alterado + controles | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:197` | R48.M1..M5 |
-| CT-108 | cada evento agendado no agendador do DG-19, com a sua frequência; piso de 7 | R49 | EP exaustiva + piso | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:437` | R49.M1 |
-| CT-109 | agendador do DG-19 vermelho com evento novo, horário mudado ou aresta errada | R49 | mundo alterado + BVA 2-valores + soundness | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:473` | R49.M1..M5 |
-| CT-110 | comando, filas e condição de cada processo do DG-19 | R50 | EP por processo | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:624` | R50.M3, M4 |
-| CT-111 | processos do DG-19 vermelhos com comando ou rótulo alterado | R50 | mundo alterado + lista ordenada | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:656` | R50.M1, M2, M4, M5 |
+| CT-106 | ociosidade, tentativas e force logout do DG-10 = plugin de bloqueio de cada painel | R48 | valor do fonte + EP por painel | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:'[CT-106]':165` *(alterado em 2026-09-29: step 10 do ciclo 2 — CT-106..CT-111, CT-115 e CT-116 moram em arquivo próprio, e não em `tests/Kit/DiagramasDaArquiteturaTest.php`; CT-112..CT-114, no irmão com tenancy; eram "teste a escrever")* | R48.M1, M2, M4 |
+| CT-107 | DG-10 vermelho com número, desfecho ou marca de opcional alterados | R48 | mundo alterado + controles | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:'[CT-107]':197` | R48.M1..M5 |
+| CT-108 | cada evento agendado no agendador do DG-19, com a sua frequência; piso de 7 | R49 | EP exaustiva + piso | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:'[CT-108]':437` | R49.M1 |
+| CT-109 | agendador do DG-19 vermelho com evento novo, horário mudado ou aresta errada | R49 | mundo alterado + BVA 2-valores + soundness | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:'[CT-109]':473` | R49.M1..M5 |
+| CT-110 | comando, filas e condição de cada processo do DG-19 | R50 | EP por processo | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:'[CT-110]':624` | R50.M3, M4 |
+| CT-111 | processos do DG-19 vermelhos com comando ou rótulo alterado | R50 | mundo alterado + lista ordenada | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:'[CT-111]':656` | R50.M1, M2, M4, M5 |
 | CT-112 | ordem do DG-20 = pilha de middlewares de uma rota do /app/{tenant} | R51 | ordem derivada da rota | Feature (Tenancy) · grupo Extras do catálogo — suíte Tenancy | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:'[CT-112]':668` | R51.M1, M2, M4 |
 | CT-113 | contexto de papéis fixado com a organização da rota, só no pedido permitido | R51 | rastreio de efeito | Feature (Tenancy) · grupo Extras do catálogo — suíte Tenancy | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:'[CT-113]':708` | R51.M1, M3 |
 | CT-114 | desfecho de GET /app/{tenant} = ramo do DG-20 que cobre a situação (nasce vermelho na linha master_global sem vínculo) | R52 | tabela de decisão executada | Feature (Tenancy) · grupo Extras do catálogo — suíte Tenancy | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:'[CT-114]':777` | R52.M1..M4 |
-| CT-115 | controles do DG-20 contra a tabela literal de CT-114 | R52 | controles | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:799` | R52.M1, M3, M5 |
-| CT-116 | fato declarado de cada DG aceita o bloco publicado e reprova a cópia adulterada dele, pt e en | R53 | controle positivo + adulteração do publicado | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:918` | R53.M1..M5 |
+| CT-115 | controles do DG-20 contra a tabela literal de CT-114 | R52 | controles | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:'[CT-115]':799` | R52.M1, M3, M5 |
+| CT-116 | fato declarado de cada DG aceita o bloco publicado e reprova a cópia adulterada dele, pt e en | R53 | controle positivo + adulteração do publicado | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:'[CT-116]':918` | R53.M1..M5 |
 | CT-117 | o valor gravado no .env faz a ida e volta, com a quebra LF, CRLF ou CR como um espaço *(alterado em 2026-09-29: Adendo 7, RQ-51)* | R54 | EP | Feature (Kit, service) · grupo Instalador: senha e .env | `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-117]':603` — o `[RD2-08][CT-117]` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R54.M1..M3, M5, M9, M10 |
 | CT-118 | toda linha ativa da chave é trocada, e nenhuma comentada — antes ou depois da ativa —, e os três leitores ficam com o valor gravado *(alterado em 2026-09-29: Adendo 7, RQ-50 — era "com a chave em duas linhas, só a primeira é trocada")* | R54 | BVA 1 × 2 nas linhas ativas | idem | `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-118]':658` (QA-10) *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R54.M4, M6..M8 |
 | CT-119 | o banner diz da senha o que o desfecho fez | R55 | tabela de decisão | Feature (Kit, comando) · grupo Instalador: senha e .env | `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-119]':1521`, `:1497` e `:1517` — os `[RD2-05][CT-119]` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R55.M1, M2, M5 |
@@ -6733,14 +6733,14 @@ os 14 levam também o `[CT-nn]` (`grep -nE "^(it|test)\('\[RD[^']*\]\[CT-[0-9]+\
 | CT-122 | com a senha só no ambiente, o resumo não nega a semeadura | R56 | rastreio pelo ponto de entrada | idem | `tests/Kit/ResumoDoKitInstallTest.php:'[CT-122]':327` — o `[RD3-03][CT-122]` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R56.M4 |
 | CT-123 | a promessa da senha gerada tem um texto só | R56 | inspeção estática | idem | `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-123]':1612` e `:1569` — os `[RD3-12][CT-123]` | R56.M5 |
 | CT-124 | toda seta de fluxo é a aresta, e só ela | R57 | EP + BVA + controle negativo | Feature (Kit) · grupo Extrator e guardas de paridade | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-124]':5883` — o `[RD3-05][CT-124]`, com a linha `ab --> b` | R57.M1..M3 |
-| CT-125 | toda relação de ER, `--` ou `..`, com as cardinalidades | R57 | EP | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5905` — o `[RD3-05][CT-125]`, com `\|o--o{` e `}\|..\|{` | R57.M4 |
-| CT-126 | toda seta de sequência é uma mensagem | R57 | EP + controle negativo | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5918` | R57.M5 |
-| CT-127 | a falha fora do ffmpeg num clipe não para os outros | R32 | EP (partição nova) | Feature (Kit, comando) · grupo GIFs pelo kit:arte | `tests/Kit/KitArteTest.php:it:720` — o `[RD2-02/RD2-03][CT-127]` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R32.M7..M9 |
-| CT-128 | a falha ao publicar preserva o GIF publicado e nomeia a publicação, e não a montagem *(alterado em 2026-09-29: Adendo 7, RQ-52)* | R33 | atomicidade + EP da etapa nomeada | idem | `tests/Kit/KitArteTest.php:it:801` — o `[RD3-09][CT-128]`; afirma as duas metades de RQ-52 (`tests/Kit/KitArteTest.php:nao consegui publicar:873`, `tests/Kit/KitArteTest.php:falha ao montar o clipe:841`) *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R33.M7..M10; *(rodada 2: + R33.M12)* |
-| CT-129 | o elemento opt-in publicado leva a chave exata no próprio escopo | R58 | EP por elemento | Feature (Kit) · grupo Extrator e guardas de paridade | `tests/Kit/DiagramasDaArquiteturaTest.php:it:1556`; as linhas da `accDescr` do DG-08 e do DG-09 a escrever em `elementosOptInDeR58()` — nascem vermelhas, em pt e em en *(alterado em 2026-09-30: ciclo 2 do gate, QA-18)* | R58.M1..M5; *(rodada 2: + R58.M6, M8)*; *(ciclo 2 do gate: + R58.M9, M10)* |
-| CT-130 | controles do detector de opcional: escopo, chave exata, homônimo, idioma | R59 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:1594` | R59.M1..M5; *(rodada 2: + R59.M14)* |
+| CT-125 | toda relação de ER, `--` ou `..`, com as cardinalidades | R57 | EP | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-125]':5905` — o `[RD3-05][CT-125]`, com `\|o--o{` e `}\|..\|{` | R57.M4 |
+| CT-126 | toda seta de sequência é uma mensagem | R57 | EP + controle negativo | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-126]':5921` | R57.M5 |
+| CT-127 | a falha fora do ffmpeg num clipe não para os outros | R32 | EP (partição nova) | Feature (Kit, comando) · grupo GIFs pelo kit:arte | `tests/Kit/KitArteTest.php:'[CT-127]':720` — o `[RD2-02/RD2-03][CT-127]` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R32.M7..M9 |
+| CT-128 | a falha ao publicar preserva o GIF publicado e nomeia a publicação, e não a montagem *(alterado em 2026-09-29: Adendo 7, RQ-52)* | R33 | atomicidade + EP da etapa nomeada | idem | `tests/Kit/KitArteTest.php:'[CT-128]':801` — o `[RD3-09][CT-128]`; afirma as duas metades de RQ-52 (`tests/Kit/KitArteTest.php:nao consegui publicar:873`, `tests/Kit/KitArteTest.php:falha ao montar o clipe:841`) *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R33.M7..M10; *(rodada 2: + R33.M12)* |
+| CT-129 | o elemento opt-in publicado leva a chave exata no próprio escopo | R58 | EP por elemento | Feature (Kit) · grupo Extrator e guardas de paridade | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-129]':1560`; as linhas da `accDescr` do DG-08 e do DG-09 a escrever em `elementosOptInDeR58()` — nascem vermelhas, em pt e em en *(alterado em 2026-09-30: ciclo 2 do gate, QA-18)* | R58.M1..M5; *(rodada 2: + R58.M6, M8)*; *(ciclo 2 do gate: + R58.M9, M10)* |
+| CT-130 | controles do detector de opcional: escopo, chave exata, homônimo, idioma | R59 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-130]':1596` | R59.M1..M5; *(rodada 2: + R59.M14)* |
 | CT-131 | o título de cada DG no índice é o accTitle | R60 | EP exaustiva + controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-131]':6278` | R60.M1..M4 |
-| CT-132 | o texto visível de cada bloco sem palavra do outro idioma | R61 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:6517` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R61.M1..M4 |
+| CT-132 | o texto visível de cada bloco sem palavra do outro idioma | R61 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-132]':6517` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R61.M1..M4 |
 | CT-133 | com --no-seed, a instrução põe a chave antes do db:seed, como condição, e nada promete senha — sem acento, sem caixa, contra a constante *(alterado em 2026-09-30: revisão adversarial da adição — as linhas CT-133..CT-148 são todas desta passada)* | R56 | rastreio pelo ponto de entrada + ordem | Feature (Kit, comando) · grupo Instalador: senha e .env | `tests/Kit/ResumoDoKitInstallTest.php:'[CT-133]':373` | R55.M6, M7; R56.M6, M7; *(rodada 2: + R55.M12)* |
 | CT-134 | com a senha já definida e --no-seed, nada promete a gerada, o banner não imprime senha, e o .env a guarda | R56 | EP da origem + rastreio | idem | `tests/Kit/ResumoDoKitInstallTest.php:'[CT-134]':419`; a linha da digitada, com a hipótese de arnês do Setup Global | R56.M8..M10; *(rodada 2: + R56.M12, M13)* |
 | CT-135 | a senha que a saída dá é a que autentica o administrador semeado, e password não | R63 | EP da origem + rastreio + estado semeado | idem | `tests/Kit/ResumoDoKitInstallTest.php:'[CT-135]':470` | R63.M1..M4 |
@@ -6750,13 +6750,13 @@ os 14 levam também o `[CT-nn]` (`grep -nE "^(it|test)\('\[RD[^']*\]\[CT-[0-9]+\
 | CT-139 | sem linha ativa antes, a gravação deixa exatamente uma, com o valor gravado | R64 | BVA 0 | idem | `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-139]':823` | R64.M3..M5; *(rodada 2: + R64.M7)* |
 | CT-140 | o extrator de fluxo: sentido, cadeia, &, comentário e seta dentro de rótulo | R65 | EP + controle negativo do sentido | Feature (Kit) · grupo Extrator e guardas de paridade | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-140]':5960` | R65.M1..M7; *(rodada 2: + R65.M8)* |
 | CT-141 | a linha de comentário não vira mensagem nem relação | R65 | EP | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-141]':5994` | R65.M7; *(rodada 2: + R65.M8)* |
-| CT-142 | meias-setas de sequência e cardinalidades de ER dos dois lados | R57 | EP das formas do lexer | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:6017` | R57.M6, M7; *(rodada 2: + R57.M8)* |
-| CT-143 | o detector não estende a condição do alt, nem aceita nota de outro estado ou a menção à coluna | R59 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:1722` e `:1818`; nasce vermelho na linha da menção a `tenant_id` *(nasceu vermelho em 2026-09-30, saída no `03`; verde depois da correção)* | R59.M6..M8; *(rodada 2: + R59.M12, M13; R58.M8)* |
-| CT-144 | o elemento é achado pelo termo do idioma, e o bloco publicado leva cada chave que o liga | R59 | EP por elemento × idioma | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:1923`; nasce vermelho no DG-06 (pt e en) e no DG-08 *(nasceu vermelho em 2026-09-30, saída no `03`; verde depois da correção)* | R59.M9, M10; R58.M6, M7; *(rodada 2: + R59.M11)* |
+| CT-142 | meias-setas de sequência e cardinalidades de ER dos dois lados | R57 | EP das formas do lexer | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-142]':6020` | R57.M6, M7; *(rodada 2: + R57.M8)* |
+| CT-143 | o detector não estende a condição do alt, nem aceita nota de outro estado ou a menção à coluna | R59 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-143]':1722` e `:1818`; nasce vermelho na linha da menção a `tenant_id` *(nasceu vermelho em 2026-09-30, saída no `03`; verde depois da correção)* | R59.M6..M8; *(rodada 2: + R59.M12, M13; R58.M8)* |
+| CT-144 | o elemento é achado pelo termo do idioma, e o bloco publicado leva cada chave que o liga | R59 | EP por elemento × idioma | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-144]':1923`; nasce vermelho no DG-06 (pt e en) e no DG-08 *(nasceu vermelho em 2026-09-30, saída no `03`; verde depois da correção)* | R59.M9, M10; R58.M6, M7; *(rodada 2: + R59.M11)* |
 | CT-145 | índice sem linha a mais, DG repetido nem título quase igual | R60 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-145]':6440` | R60.M5, M6 |
-| CT-146 | nenhuma palavra inteira da lista do outro idioma no texto visível | R61 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:6729`; nasce vermelho no DG-06 en *(nasceu vermelho em 2026-09-30, saída no `03`; verde depois da correção)* | R61.M5..M7; *(rodada 2: + R61.M8, M9)* |
-| CT-147 | a falha da publicação não culpa a montagem por nenhum nome dela | R33 | EP da etapa nomeada | Feature (Kit, comando) · grupo GIFs pelo kit:arte | `tests/Kit/KitArteTest.php:it:861` | R33.M11; *(rodada 2: + R33.M12)* |
-| CT-148 | a legibilidade do site não muda o tipo nem a direção de nenhum bloco | R62 | baseline congelado + mundo alterado | Feature (Kit) · grupo Extrator e guardas de paridade | `tests/Kit/DiagramasDaArquiteturaTest.php:it:7049` | R62.M3; *(rodada 2: + R62.M5)* |
+| CT-146 | nenhuma palavra inteira da lista do outro idioma no texto visível | R61 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-146]':6729`; nasce vermelho no DG-06 en *(nasceu vermelho em 2026-09-30, saída no `03`; verde depois da correção)* | R61.M5..M7; *(rodada 2: + R61.M8, M9)* |
+| CT-147 | a falha da publicação não culpa a montagem por nenhum nome dela | R33 | EP da etapa nomeada | Feature (Kit, comando) · grupo GIFs pelo kit:arte | `tests/Kit/KitArteTest.php:'[CT-147]':861` | R33.M11; *(rodada 2: + R33.M12)* |
+| CT-148 | a legibilidade do site não muda o tipo nem a direção de nenhum bloco | R62 | baseline congelado + mundo alterado | Feature (Kit) · grupo Extrator e guardas de paridade | `tests/Kit/DiagramasDaArquiteturaTest.php:'[CT-148]':7049` | R62.M3; *(rodada 2: + R62.M5)* |
 | CT-149 | duas instalações sem senha definida geram senhas diferentes, e cada banco autentica só a sua *(alterado em 2026-09-30: re-revisão adversarial da adição, rodada 2 — CT-149 e CT-150)* | R63 | EP da origem + rastreio + estado semeado, em duas instalações | Feature (Kit, comando) · grupo Instalador: senha e .env | `tests/Kit/ResumoDoKitInstallTest.php:'[CT-149]':567`; o banco recriado entre as execuções, hipótese de arnês | R63.M5, M6 |
 | CT-150 | o comentário ao lado de uma linha ativa continua byte a byte, por gravador | R64 | EP por chamador | Feature (Kit, service) · grupo Instalador: senha e .env | `tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-150]':875` | R64.M6 |
 | CT-151 | a porta de gravação do .env por situação da chave: o que muda no arquivo e o que ela devolve *(alterado em 2026-09-30: ciclo 2 do gate, QA-20)* | R64 | tabela de decisão arquivo × ativa × comentada, com o retorno + BVA 1 × 2 nas comentadas | Feature (Kit, service) · grupo Instalador: senha e .env | teste a escrever, em `tests/Kit/CustomizadorDaInstalacaoTest.php`, ao lado do `[CT-139]`; passa no código de hoje, e o matador se prova com `--mutate` | R64.M8..M12 |

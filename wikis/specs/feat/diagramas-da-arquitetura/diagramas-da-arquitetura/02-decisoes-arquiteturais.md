@@ -662,7 +662,7 @@ Cada afirmação falsa é corrigida na fonte que ela contradiz, nunca "suavizada
   ocorrência": `app/Support/SubstituicaoEmArquivo.php:definirLinhaNoEnv` troca **toda** linha que o Dotenv lê como a
   chave (`export`, espaço no `=`, indentação) e nenhuma comentada — o Dotenv e a carga do Laravel ficam com a última
   definição, e trocar só a primeira deixava os dois com o valor velho —; sem linha ativa, descomenta a primeira
-  comentada no lugar (P-45, Q?9 em aberto); sem nenhuma, anexa, `DB_CONNECTION` incluído. `definirNoEnv()` a chama, e
+  comentada no lugar (P-45; a Q?9 fechou pelo Adendo 8, RQ-53) *(alterado em 2026-09-30: a Q?9 fechou pelo Adendo 8, RQ-53; QA-25 do ciclo 3)*; sem nenhuma, anexa, `DB_CONNECTION` incluído. `definirNoEnv()` a chama, e
   `aplicarBanco()`, `AtivadorDeTenancy::escreverEnv()` e `KitTenancy::semearDemo()` deixaram de chamar `aplicar()`
   direto, que fica com o limite 1 para padrão arbitrário de config PHP. A quebra de linha no valor já virava um
   espaço; agora é cláusula (RQ-51). Guardado por R54 e R64 do `04` — CT-117, CT-118, CT-137..CT-139 e CT-150 —, cada

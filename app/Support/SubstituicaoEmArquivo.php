@@ -104,7 +104,7 @@ final class SubstituicaoEmArquivo
      *
      * Sem nenhuma linha ativa, a primeira comentada é descomentada NO LUGAR (é o
      * `# DB_HOST=` que o `.env.example` deixa para preencher — P-45 da mesma wiki,
-     * pergunta Q?9 em aberto); sem nem essa, a linha é anexada ao fim — para toda
+     * decidida pelo Adendo 8, RQ-53); sem nem essa, a linha é anexada ao fim — para toda
      * chave, `DB_CONNECTION` incluído: um `.env` de versão anterior à chave não pode
      * deixar o instalador seguir como se tivesse gravado (RQ-50, "qualquer leitor
      * fica com o valor gravado").

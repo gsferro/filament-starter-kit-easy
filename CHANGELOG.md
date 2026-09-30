@@ -39,7 +39,7 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   elemento (recusar convite, o vínculo à organização, a conta pendente), e o índice da página usa o título
   de cada bloco. A página credita o GitDiagram por link, como visão gerada por IA e não verificada, sem
   embutir
-- **Cada diagrama tem guarda**: `tests/Kit/DiagramasDaArquiteturaTest.php` (525 casos),
+- **Cada diagrama tem guarda**: `tests/Kit/DiagramasDaArquiteturaTest.php` (527 casos),
   `tests/Kit/GuardasDosDiagramasTest.php` (47) e `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` (50)
   leem cada bloco publicado em pt e en, com extratores que reconhecem toda forma de seta e de mensagem do
   Mermaid 11.17.2, e o comparam com o código -- painéis registrados, `roles.painel` semeado,
