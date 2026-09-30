@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.42.0] - 2026-09-30
+
 ### Alterado
 
 - **As skills de `gsferro/laravel-ai-skills` na 4.0.0**: `feature-wiki` 3.5.1 → 4.0.0,
