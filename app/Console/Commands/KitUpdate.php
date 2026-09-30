@@ -299,9 +299,9 @@ class KitUpdate extends Command
         '.junie',
 
         /*
-        | Os doze documentos de topo da wiki, um a um — e não `wikis` inteiro.
+        | Os treze documentos de topo da wiki, um a um — e não `wikis` inteiro.
         | Em ordem alfabética: a lista só envelhece bem se der para achar
-        | um nome nela sem ler as doze linhas.
+        | um nome nela sem ler as treze linhas.
         | `wikis/specs/` é o histórico de planejamento DO KIT (hoje ~6 mil
         | linhas, e só cresce); entregá-lo faria todo projeto instalado carregar
         | as ADRs das features do kit. O que o projeto precisa é a wiki de
@@ -312,6 +312,7 @@ class KitUpdate extends Command
         'wikis/arquitetura.md',
         'wikis/checklist-de-release.md',
         'wikis/convencoes.md',
+        'wikis/glossario.md',
         'wikis/ia.md',
         'wikis/pacotes-candidatos.md',
         'wikis/pacotes-ranking.md',
