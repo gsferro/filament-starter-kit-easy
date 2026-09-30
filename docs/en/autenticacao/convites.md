@@ -114,7 +114,7 @@ reminder only exists through the scheduled command
 stateDiagram-v2
 %% DG-09
 accTitle: Invitation states
-accDescr: From Pending, an invitation goes to Accepted, Declined or Expired; only Expired goes back to Pending by resending; revoking deletes the invitation from any state.
+accDescr: From Pending, an invitation goes to Accepted, Declined (only with KIT_TENANCY) or Expired; only Expired goes back to Pending by resending; revoking deletes the invitation from any state.
   state "Pending" as Pendente
   state "Accepted" as Aceito
   state "Declined" as Recusado

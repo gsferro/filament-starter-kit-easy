@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -490,12 +489,6 @@ function envDeExemploComLinhas(string $chave, array $linhas): string
     return implode("\n", $saida);
 }
 
-/** Texto de saída comparado sem acento e sem caixa — dos DOIS lados, na presença e na ausência. */
-function normalizadoSemAcentoESemCaixa(string $texto): string
-{
-    return mb_strtolower(Str::ascii($texto));
-}
-
 /**
  * Um gravador do R64 chamado DIRETO sobre o `.env` temporário; devolve o valor que ele gravou.
  *
@@ -915,6 +908,71 @@ it('[CT-150] o comentario ao lado de uma linha ativa continua byte a byte, qualq
         '# KIT_ADMIN_PASSWORD=password — o padrão publicado, não use',
     ],
 ])->group('kit');
+
+/**
+ * [CT-151] a porta de gravação do .env, por situação da chave: o que muda no arquivo e o que ela devolve (R64).
+ *
+ * Tabela de decisão arquivo × ativa × comentada, com `definirLinhaNoEnv()` chamada direto sobre um
+ * caminho temporário. O "depois" é o conteúdo inteiro (`toBe`): só a igualdade byte a byte mata as
+ * mutações da linha anexada. `null` em `$antes` é "nenhum .env no caminho"; em `$depois`, "nenhum
+ * arquivo depois". O corpo do arquivo usa `
+`; a quebra da linha anexada é `PHP_EOL` (no Windows, `
+`), a que a gravação escreve.
+ *
+ * @param  array<string, string>  $lidas  o que o Dotenv deve ler depois, `chave => valor`
+ */
+it('[CT-151] a porta de gravacao do .env, por situacao da chave: o que muda no arquivo e o que ela devolve', function (?string $antes, string $chave, string $linha, bool $retorno, ?string $depois, array $lidas): void {
+    $caminho = $this->base.'/sem-env/.env';
+
+    File::ensureDirectoryExists($this->base.'/sem-env');
+
+    if ($antes !== null) {
+        File::put($caminho, $antes);
+    }
+
+    expect(SubstituicaoEmArquivo::definirLinhaNoEnv($caminho, $chave, $linha))->toBe($retorno, 'o retorno da gravacao');
+
+    if ($depois === null) {
+        expect(File::exists($caminho))->toBeFalse('a gravacao nao deveria criar o .env');
+
+        return;
+    }
+
+    expect(File::get($caminho))->toBe($depois);
+
+    $lido = Dotenv\Dotenv::parse(File::get($caminho));
+
+    foreach ($lidas as $nome => $valor) {
+        expect($lido[$nome] ?? null)->toBe($valor, "o Dotenv deveria ler {$nome}={$valor}");
+    }
+})->with(function (): array {
+    $nl  = "\n";
+    $eol = PHP_EOL;
+
+    return [
+        'sem .env: false e nenhum arquivo criado' => [
+            null, 'DB_HOST', 'DB_HOST=db', false, null, [],
+        ],
+        'uma ativa: true (controle do retorno)' => [
+            "DB_HOST=127.0.0.1{$nl}# DB_HOST=db-antigo", 'DB_HOST', 'DB_HOST=db', true,
+            "DB_HOST=db{$nl}# DB_HOST=db-antigo", ['DB_HOST' => 'db'],
+        ],
+        'duas comentadas e nenhuma ativa: so a primeira, no lugar' => [
+            "DB_CONNECTION=pgsql{$nl}# DB_HOST=127.0.0.1{$nl}# DB_HOST=db-antigo{$nl}# DB_PORT=5432", 'DB_HOST', 'DB_HOST=db', true,
+            "DB_CONNECTION=pgsql{$nl}DB_HOST=db{$nl}# DB_HOST=db-antigo{$nl}# DB_PORT=5432", ['DB_CONNECTION' => 'pgsql', 'DB_HOST' => 'db'],
+        ],
+        'ausente, arquivo termina em quebra: o de antes, PHP_EOL, a linha e PHP_EOL' => [
+            "APP_ENV=local{$nl}APP_DEBUG=true{$nl}", 'APP_NAME', 'APP_NAME="Novo"', true,
+            "APP_ENV=local{$nl}APP_DEBUG=true{$nl}{$eol}APP_NAME=\"Novo\"{$eol}",
+            ['APP_ENV' => 'local', 'APP_DEBUG' => 'true', 'APP_NAME' => 'Novo'],
+        ],
+        'ausente, ultima linha sem quebra: o de antes, PHP_EOL, a linha e PHP_EOL' => [
+            "APP_ENV=local{$nl}APP_DEBUG=true", 'APP_NAME', 'APP_NAME="Novo"', true,
+            "APP_ENV=local{$nl}APP_DEBUG=true{$eol}APP_NAME=\"Novo\"{$eol}",
+            ['APP_ENV' => 'local', 'APP_DEBUG' => 'true', 'APP_NAME' => 'Novo'],
+        ],
+    ];
+})->group('kit');
 
 /*
 |--------------------------------------------------------------------------
@@ -1375,7 +1433,7 @@ it('[CT-41] o resumo nao promete senha gerada nem impressa quando o .env ja tem 
  */
 function semAChaveDaSenha(string $texto): string
 {
-    return str_replace('kit_admin_password', '', normalizadoSemAcentoESemCaixa($texto));
+    return str_replace('kit_admin_password', '', semAcentoESemCaixa($texto));
 }
 
 /** A linha "Senha do administrador" do resumo, depois de `corrigirResumoDaSenha()` no desfecho dado. */
@@ -1415,7 +1473,7 @@ it('[RD2-05][CT-120] a linha "Senha do administrador" do resumo diz o que o desf
 
     expect($linha)->not->toBeNull('a linha "Senha do administrador" nao pode sumir do resumo');
 
-    $texto = normalizadoSemAcentoESemCaixa($linha);
+    $texto = semAcentoESemCaixa($linha);
 
     $this->assertStringNotContainsString('password', semAChaveDaSenha($linha), 'a linha do resumo cita "password"');
 
@@ -1424,7 +1482,7 @@ it('[RD2-05][CT-120] a linha "Senha do administrador" do resumo diz o que o desf
             CustomizadorDaInstalacao::RESUMO_SENHA_GERADA,
             'com a senha gerada nesta execucao a linha continua prometendo a senha gerada e impressa no fim — o banner a imprimiu',
         );
-        $this->assertStringContainsString(normalizadoSemAcentoESemCaixa(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA), $texto);
+        $this->assertStringContainsString(semAcentoESemCaixa(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA), $texto);
 
         return;
     }
@@ -1441,7 +1499,7 @@ it('[RD2-05][CT-120] a linha "Senha do administrador" do resumo diz o que o desf
     $this->assertStringNotContainsString('gerada', $texto, 'o resumo continua prometendo uma senha GERADA quando nada foi semeado (RD2-05)');
     $this->assertStringNotContainsString('impressa', $texto, 'o resumo continua prometendo uma senha IMPRESSA quando nada foi semeado (RD2-05)');
     $this->assertStringNotContainsString(
-        normalizadoSemAcentoESemCaixa(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA),
+        semAcentoESemCaixa(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA),
         $texto,
         'a linha continua sendo a promessa da senha gerada',
     );
@@ -1471,7 +1529,7 @@ it('[RD2-05][CT-119] mensagemDoBanner() nao promete "a que voce definiu" quando 
     (new ReflectionProperty(KitInstall::class, 'senhaGerada'))->setValue($comando, null);
 
     $mensagem = (new ReflectionMethod(KitInstall::class, 'mensagemDoBanner'))->invoke($comando, false);
-    $texto    = normalizadoSemAcentoESemCaixa($mensagem);
+    $texto    = semAcentoESemCaixa($mensagem);
 
     $this->assertStringNotContainsString(
         'voce definiu',
@@ -1508,7 +1566,7 @@ it('[RD2-05][CT-119] mensagemDoBanner() preserva o comportamento de hoje quando 
         $mensagem,
         'com a semeadura rodada e nada gerado (o .env ja tinha uma senha utilizavel), o banner deveria nomear KIT_ADMIN_PASSWORD como a que vale — comportamento de hoje, que este contrato nao pode quebrar',
     );
-    $this->assertStringContainsString('kit_admin_password', normalizadoSemAcentoESemCaixa($mensagem));
+    $this->assertStringContainsString('kit_admin_password', semAcentoESemCaixa($mensagem));
     $this->assertStringNotContainsString('segredo-xyz-987', $mensagem, 'o banner imprime a senha que o usuario definiu — nao imprime senha nenhuma');
     $this->assertStringNotContainsString(config('kit.admin.email').' / ', $mensagem, 'o banner imprime um par e-mail / senha: nao imprime senha nenhuma');
     $this->assertStringNotContainsString('password', semAChaveDaSenha($mensagem), 'o banner apresenta "password" como a senha');
@@ -1532,7 +1590,7 @@ it('[RD2-05][CT-119] mensagemDoBanner() preserva a mensagem de senha gerada agor
     $this->assertStringContainsString(config('kit.admin.email'), $mensagem, 'o banner nao imprime o e-mail do administrador');
     $this->assertStringContainsString(
         'nao sera mostrada de novo',
-        normalizadoSemAcentoESemCaixa($mensagem),
+        semAcentoESemCaixa($mensagem),
         'o banner nao avisa que a senha gerada nao sera mostrada de novo',
     );
 })->group('kit');

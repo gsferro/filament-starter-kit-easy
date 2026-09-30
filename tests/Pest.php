@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Two\User as UsuarioDoProvedor;
 use Psr\Log\LoggerInterface;
 use Spatie\LaravelSettings\Models\SettingsProperty;
@@ -2386,4 +2387,15 @@ function avaliadorDoDG03(User $user, Panel $painel): Closure
             default => null,
         };
     };
+}
+
+/**
+ * Texto da saída do `kit:install` comparado sem acento e sem caixa — dos dois lados, na presença e na
+ * ausência. O banner é ASCII e a linha do resumo tem acento: com acento de um lado só, a ausência passa
+ * no vazio e a presença falha sem defeito (wiki `diagramas-da-arquitetura`, Setup Global do `04`, ADV-26).
+ * Usado por `tests/Kit/ResumoDoKitInstallTest.php` e `tests/Kit/CustomizadorDaInstalacaoTest.php`.
+ */
+function semAcentoESemCaixa(string $texto): string
+{
+    return mb_strtolower(Str::ascii($texto));
 }

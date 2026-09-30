@@ -109,7 +109,7 @@ final class SubstituicaoEmArquivo
      * deixar o instalador seguir como se tivesse gravado (RQ-50, "qualquer leitor
      * fica com o valor gravado").
      *
-     * @return bool se o arquivo foi alterado
+     * @return bool se a gravação aconteceu — o arquivo existe e, depois, tem a linha pedida (Q?15 da wiki); `false` só sem o arquivo
      */
     public static function definirLinhaNoEnv(string $caminho, string $chave, string $linha): bool
     {

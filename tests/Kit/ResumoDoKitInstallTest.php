@@ -100,16 +100,6 @@ function rodarKitInstallDeVerdade(array $opcoes = []): string
 }
 
 /**
- * Como o Setup Global do 04 manda comparar o texto da saída do `kit:install`: sem acento e sem
- * caixa, dos DOIS lados. O banner é ASCII ("A senha e a que voce definiu") e a linha do resumo
- * tem acento ("a que você já definiu"): com acento de um lado só, a ausência passa no vazio.
- */
-function textoSemAcentoESemCaixa(string $texto): string
-{
-    return mb_strtolower(Str::ascii($texto));
-}
-
-/**
  * Separa da saída inteira o BANNER (da linha "Pronto!" até o item "Suba o servidor") e a linha
  * "Senha do administrador" do RESUMO (do item até o próximo, "Cor primária"). Os dois já saem
  * sem acento e sem caixa. Falha se algum dos dois não existe: sem eles, toda asserção de
@@ -119,7 +109,7 @@ function textoSemAcentoESemCaixa(string $texto): string
  */
 function bannerELinhaDaSenha(string $saida): array
 {
-    $normalizada = textoSemAcentoESemCaixa($saida);
+    $normalizada = semAcentoESemCaixa($saida);
 
     $inicioDoBanner = mb_strpos($normalizada, 'pronto! o projeto esta instalado');
     $fimDoBanner    = mb_strpos($normalizada, 'suba o servidor com');
@@ -190,7 +180,7 @@ function chaveESeedLigadosPorOu(string $texto): bool
  */
 function bannerTemFormaDeSenhaImpressa(string $banner, string $email): bool
 {
-    $emailNormalizado = preg_quote(textoSemAcentoESemCaixa($email), '~');
+    $emailNormalizado = preg_quote(semAcentoESemCaixa($email), '~');
 
     return preg_match("~{$emailNormalizado}\s*/\s*\S~u", $banner) === 1
         || preg_match('~(senha|password):\s*\S~u', $banner) === 1;
@@ -319,7 +309,7 @@ it('[RD3-01][RD3-04][CT-121] com --no-seed, o banner e o resumo dao a MESMA orie
         ->and(chaveVemAntesDoSeed($banner))->toBeTrue('no banner, KIT_ADMIN_PASSWORD nao vem antes de db:seed')
         ->and(chaveVemAntesDoSeed($linha))->toBeTrue('na linha, KIT_ADMIN_PASSWORD nao vem antes de db:seed');
 
-    $this->assertStringNotContainsString('kit:admin', textoSemAcentoESemCaixa($saida));
+    $this->assertStringNotContainsString('kit:admin', semAcentoESemCaixa($saida));
 })->group('kit');
 
 /*
@@ -367,7 +357,7 @@ it('[RD3-03][CT-122] com senha ja utilizavel via config e o arquivo vazio, semea
         ->and($linha)->not->toContain('nao foi populado');
 
     $this->assertStringNotContainsString(
-        textoSemAcentoESemCaixa('senhaJaUtilizavelViaConfig1'),
+        semAcentoESemCaixa('senhaJaUtilizavelViaConfig1'),
         $banner,
         'o banner imprime a senha que quem instalou definiu',
     );
@@ -405,7 +395,7 @@ it('[CT-133] com --no-seed, a instrucao poe a chave antes do db:seed, como condi
 
     // A promessa da senha gerada, lida da CONSTANTE na execução — não as palavras de hoje dela.
     $this->assertStringNotContainsString(
-        textoSemAcentoESemCaixa(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA),
+        semAcentoESemCaixa(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA),
         $linha,
         'a linha ainda diz o que RESUMO_SENHA_GERADA promete',
     );
@@ -416,7 +406,7 @@ it('[CT-133] com --no-seed, a instrucao poe a chave antes do db:seed, como condi
     $this->assertStringNotContainsString('gerada', $linha);
     $this->assertStringNotContainsString('impressa', $linha);
 
-    $this->assertStringNotContainsString('kit:admin', textoSemAcentoESemCaixa($saida));
+    $this->assertStringNotContainsString('kit:admin', semAcentoESemCaixa($saida));
 })->group('kit');
 
 /*
@@ -445,14 +435,14 @@ it('[CT-134] com a senha ja definida e --no-seed, nada promete a senha gerada, o
     ['banner' => $banner, 'linha' => $linha] = bannerELinhaDaSenha($saida);
 
     $this->assertStringNotContainsString(
-        textoSemAcentoESemCaixa(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA),
+        semAcentoESemCaixa(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA),
         $linha,
         'a linha promete a senha gerada, mas a senha ja estava definida',
     );
     $this->assertStringNotContainsString('gerada', $linha);
     $this->assertStringNotContainsString('impressa', $linha);
 
-    $this->assertStringNotContainsString(textoSemAcentoESemCaixa($senha), $banner, "o banner imprime a senha {$senha}");
+    $this->assertStringNotContainsString(semAcentoESemCaixa($senha), $banner, "o banner imprime a senha {$senha}");
     expect(bannerImprimeSenha($banner))->toBeFalse('o banner imprime alguma senha')
         ->and(bannerTemFormaDeSenhaImpressa($banner, (string) config('kit.admin.email')))->toBeFalse('o banner tem a forma de senha impressa: "e-mail / valor", "senha:" ou "password:" seguido de valor');
 
@@ -461,7 +451,7 @@ it('[CT-134] com a senha ja definida e --no-seed, nada promete a senha gerada, o
         ->toBeTrue('o banner nao diz que nenhum usuario/administrador foi criado')
         ->and($banner)->not->toContain('login inicial');
 
-    $this->assertStringNotContainsString('kit:admin', textoSemAcentoESemCaixa($saida));
+    $this->assertStringNotContainsString('kit:admin', semAcentoESemCaixa($saida));
 
     expect(senhaRelidaDoEnv($base))->toBe($senha);
 })->with([
@@ -543,7 +533,7 @@ it('[CT-136] o db:seed que nao completa depois de a senha ser gerada nao deixa p
 
     $saida = rodarKitInstallDeVerdade(['--no-npm' => true, '--no-support' => true]);
 
-    $normalizada = textoSemAcentoESemCaixa($saida);
+    $normalizada = semAcentoESemCaixa($saida);
 
     // "a saída diz que a semeadura não completou e manda rodar php artisan db:seed"
     expect(Str::contains($normalizada, ['nao completaram', 'nao completou', 'nao foi concluida', 'nao terminou']))

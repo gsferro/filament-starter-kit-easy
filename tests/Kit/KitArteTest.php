@@ -30,7 +30,7 @@ use Illuminate\Support\Str;
  * `Process::run()` do Symfony, chamado por `KitArte::montarClipe()` (por sua vez chamado em laço
  * por `montarGif()`) SEM `$env` explícito (`app/Console/Commands/KitArte.php:new Process([:332`),
  * herda o ambiente do processo PHP corrente — e
- * `putenv()`/`$_ENV`/`$_SERVER` (as três, como `tests/Pest.php:kitConfigCom:582` já faz por
+ * `putenv()`/`$_ENV`/`$_SERVER` (as três, como `tests/Pest.php:kitConfigCom:583` já faz por
  * outro motivo) SIM alteram essa herança: confirmado empiricamente nesta sessão com um
  * executável de nome não-colidente prefixado ao `PATH`. Ressalva medida no mesmo teste: neste
  * ambiente Windows específico, com um `ffmpeg` REAL já instalado via WinGet, prefixar o `PATH`
@@ -150,7 +150,7 @@ function conteudoDoQuadroDeTeste(string $clipe, int $indice, string $prefixoDeTe
 
 /**
  * Instala o ffmpeg de teste à FRENTE do `PATH` do processo (as três formas —
- * `.ai/rules` não documenta isso, mas `tests/Pest.php:kitConfigCom:582` estabelece o padrão de
+ * `.ai/rules` não documenta isso, mas `tests/Pest.php:kitConfigCom:583` estabelece o padrão de
  * mudar as três para valer em todo lugar que lê env).
  *
  * @return string o diretório do executável — só para depuração; nunca precisa ser lido pelo teste.

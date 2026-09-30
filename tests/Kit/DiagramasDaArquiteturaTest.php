@@ -1552,6 +1552,8 @@ function elementosOptInDeR58(): array
         'DG-07: o ramo da recusa e a mensagem recusar()'                               => ['dg' => 'DG-07', 'marcador' => 'recusar()', 'chaves' => ['KIT_TENANCY'], 'tenantIdSoComoCondicao' => false],
         'DG-07: a accDescr, que cita a organização do convite'                         => ['dg' => 'DG-07', 'marcador' => 'accDescr:', 'chaves' => ['KIT_TENANCY'], 'tenantIdSoComoCondicao' => false],
         'DG-08: o estado Pendente'                                                     => ['dg' => 'DG-08', 'marcador' => 'Pendente', 'chaves' => ['KIT_REGISTRO', 'KIT_REGISTRO_APROVACAO_MANUAL'], 'tenantIdSoComoCondicao' => false],
+        'DG-08: a accDescr, que cita o Pendente'                                       => ['dg' => 'DG-08', 'marcador' => 'accDescr:', 'chaves' => ['KIT_REGISTRO', 'KIT_REGISTRO_APROVACAO_MANUAL'], 'tenantIdSoComoCondicao' => false],
+        'DG-09: a accDescr, que cita o Recusado'                                       => ['dg' => 'DG-09', 'marcador' => 'accDescr:', 'chaves' => ['KIT_TENANCY'], 'tenantIdSoComoCondicao' => false],
     ];
 }
 

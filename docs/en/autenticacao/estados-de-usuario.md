@@ -20,7 +20,7 @@ An unavailable account also **cannot be impersonated**: the *Impersonate* action
 stateDiagram-v2
 %% DG-08
 accTitle: User account states
-accDescr: Pending approves to Active (or Inactive, if it was deactivated before); Active and Inactive alternate by deactivate/reactivate; any of them can be deleted, and restoring goes back to the state from before deletion.
+accDescr: Pending (only exists with KIT_REGISTRO and KIT_REGISTRO_APROVACAO_MANUAL) approves to Active (or Inactive, if it was deactivated before); Active and Inactive alternate by deactivate/reactivate; any of them can be deleted, and restoring goes back to the state from before deletion.
   Pendente --> Ativo : approve [was active]
   Pendente --> Inativo : approve [was deactivated]
   Ativo --> Inativo : deactivate [not own account / not the last active master_global]

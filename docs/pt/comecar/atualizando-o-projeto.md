@@ -67,12 +67,12 @@ accDescr: O kit:update confere o terreno, vincula o kit como remote temporário,
 
 A ordem vem direto de `KitUpdate::handle()`
 (`app/Console/Commands/KitUpdate.php:handle:376`): pré-voo (`:preVoo:464`), remote temporário
-(`:vincularKit:523`), diff restrito (`:arquivosAlterados:629`), resumo (`:mostrarResumo:748`), a
-checagem de terminal (`:isInteractive:427`), o branch temporário (`:prepararBranch:768`), a revisão
-por arquivo (`:revisarEAplicar:817`), o relatório do `composer.json`
-(`:relatarComposerJson:1001`, `:CAMINHOS_SO_RELATORIO:365`) e `marcarVersao()`
-(`:marcarVersao:1049`, chamada dentro de `:encerrar:1035`). O `finally` que desfaz o remote roda em
-todo caminho de saída, inclusive erro (`:desvincularKit:532`).
+(`:vincularKit:524`), diff restrito (`:arquivosAlterados:630`), resumo (`:mostrarResumo:749`), a
+checagem de terminal (`:isInteractive:428`), o branch temporário (`:prepararBranch:769`), a revisão
+por arquivo (`:revisarEAplicar:818`), o relatório do `composer.json`
+(`:relatarComposerJson:1003`, `:CAMINHOS_SO_RELATORIO:367`) e `marcarVersao()`
+(`:marcarVersao:1112`, chamada dentro de `:encerrar:1037`). O `finally` que desfaz o remote roda em
+todo caminho de saída, inclusive erro (`:desvincularKit:533`).
 
 Dois detalhes que aparecem na prática:
 

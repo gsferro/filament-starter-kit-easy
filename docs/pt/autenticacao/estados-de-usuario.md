@@ -20,7 +20,7 @@ Conta indisponível também **não pode ser personificada**: a ação *Personifi
 stateDiagram-v2
 %% DG-08
 accTitle: Estados da conta do usuário
-accDescr: Pendente aprova para Ativo (ou Inativo, se foi desativada antes); Ativo e Inativo alternam por desativar/reativar; qualquer um deles pode ser excluído, e restaurar volta ao estado de antes da exclusão.
+accDescr: Pendente (só existe com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL) aprova para Ativo (ou Inativo, se foi desativada antes); Ativo e Inativo alternam por desativar/reativar; qualquer um deles pode ser excluído, e restaurar volta ao estado de antes da exclusão.
   Pendente --> Ativo : aprovar [estava ativa]
   Pendente --> Inativo : aprovar [estava desativada]
   Ativo --> Inativo : desativar [não é a própria conta / não é o último master_global ativo]

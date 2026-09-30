@@ -110,7 +110,7 @@ comando agendado (`routes/console.php:40`,
 stateDiagram-v2
 %% DG-09
 accTitle: Estados do convite
-accDescr: Do Pendente, o convite vai a Aceito, Recusado ou Expirado; só o Expirado volta a Pendente por reenvio; revogar apaga o convite de qualquer estado.
+accDescr: Do Pendente, o convite vai a Aceito, Recusado (só com KIT_TENANCY) ou Expirado; só o Expirado volta a Pendente por reenvio; revogar apaga o convite de qualquer estado.
   Pendente --> Aceito : aceitar
   Pendente --> Recusado : recusar
   Pendente --> Expirado : prazo vence
