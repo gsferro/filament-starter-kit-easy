@@ -35,6 +35,46 @@ What it does, in order:
 
 7. **Marks the applied version** in `config/kit.php` — only that line, without touching the rest of the file. It's the starting point for the next comparison.
 
+The flow is **non-interactive** when there is no terminal (CI, `--no-interaction`) — never "no
+TTY": it turns into a report and exits without applying anything, unless `--all` or `--only-new`
+already gave the approval on the command line
+(`app/Console/Commands/KitUpdate.php:isInteractive:428`).
+
+```mermaid
+flowchart TD
+%% DG-16
+accTitle: The kit:update flow
+accDescr: kit:update checks the ground, links the kit as a temporary remote, computes the diff restricted to the kit's paths and shows the summary; with no terminal or without --all/--only-new it exits without applying; applying, it reviews file by file and marks the version; the remote is always undone at the end, even when something fails.
+  pre_voo{"Pre-flight: clean git?"} -->|"no"| falha["Failure: refuses to run"]
+  pre_voo -->|"yes"| remote_kit["Temporary kit remote (kit-v*)"]
+  remote_kit --> diff_filtrado["Diff filtered by CAMINHOS_DO_KIT"]
+  diff_filtrado -->|"nothing changed"| nada_a_atualizar["Nothing to update"]
+  diff_filtrado -->|"there are changes"| resumo["Summary of changes"]
+  resumo -->|"--dry-run"| saida_relatorio["Exits: report only"]
+  resumo --> nao_interativo{"Non-interactive, without --all or --only-new?"}
+  nao_interativo -->|"yes"| saida_sem_aprovacao["Exits without applying"]
+  nao_interativo -->|"no"| branch_update["Temporary branch kit-update/&lt;tag&gt;"]
+  branch_update --> revisar["Reviews and applies, file by file"]
+  revisar --> so_relatorio["composer.json: report only"]
+  so_relatorio --> marcar_versao["marcarVersao() in config/kit.php"]
+  subgraph sempre ["finally - always runs"]
+    encerramento["Undoes the remote and the kit-* tags"]
+  end
+  nada_a_atualizar -.-> encerramento
+  saida_relatorio -.-> encerramento
+  saida_sem_aprovacao -.-> encerramento
+  marcar_versao -.-> encerramento
+```
+
+The order comes straight from `KitUpdate::handle()`
+(`app/Console/Commands/KitUpdate.php:handle:376`): pre-flight (`:preVoo:464`), temporary remote
+(`:vincularKit:524`), restricted diff (`:arquivosAlterados:630`), summary (`:mostrarResumo:749`),
+the terminal check (`:isInteractive:428`), the temporary branch (`:prepararBranch:769`), the
+file-by-file review (`:revisarEAplicar:818`), the `composer.json` report
+(`:relatarComposerJson:1003`, `:CAMINHOS_SO_RELATORIO:367`) and `marcarVersao()`
+(`:marcarVersao:1112`, called inside `:encerrar:1037`). The `finally` that undoes the remote runs on
+every exit path, including errors (`:desvincularKit:533`).
+
 Two details that show up in practice:
 
 - **`config/kit.php` always shows up as "modified"** (it carries the version mark). Applying it brings the kit's new keys, but **replaces the whole file** — if you changed seeder credentials or added your own keys there, read the diff and copy only what matters instead of applying.
@@ -113,6 +153,48 @@ The distinction is the point: **a new file has nothing to overwrite**, so applyi
 | `--repo=URL` | compare against another kit repository (a fork, for instance); the default is `config('kit.repository')`, which reads `KIT_REPOSITORY` from `.env` |
 
 With no terminal (CI, `--no-interaction`) the command becomes a report and changes nothing — unless you pass `--only-new` or `--all`, which **are** the approval, given on the command line.
+
+## The two delivery routes
+
+The kit reaches your project in two ways, and each one delivers a different slice of the tree.
+`composer create-project` brings **everything `.gitattributes` does not exclude**
+(`.gitattributes:/docs export-ignore:40`, `.gitattributes:/site export-ignore:46`,
+`.gitattributes:/wikis/specs export-ignore:32`, `.gitattributes:/.github export-ignore:20`);
+`kit:update` brings **only the paths in `CAMINHOS_DO_KIT`**
+(`app/Console/Commands/KitUpdate.php:CAMINHOS_DO_KIT:93`), with `composer.json` as the exception —
+it travels on `create-project`, but on `kit:update` it is **report only**, never applied (the
+section above, "A new kit dependency").
+
+```mermaid
+flowchart LR
+%% DG-17
+accTitle: The two delivery routes
+accDescr: composer create-project delivers everything .gitattributes does not exclude; kit:update delivers only the paths in CAMINHOS_DO_KIT, and composer.json enters only as a report, never applied.
+  subgraph rota_create ["composer create-project"]
+    gitattributes[".gitattributes (exclusion)"]
+    fora_create["Out: .github, CHANGELOG.md, .styleci.yml, wikis/specs, docs, site, site-vitepress"]
+    gitattributes --> fora_create
+  end
+  subgraph rota_update ["kit:update"]
+    caminhos_do_kit["CAMINHOS_DO_KIT (inclusion)"]
+    so_relatorio["composer.json: report only"]
+    fora_update["Out: art, stubs, bootstrap, lang/pt_BR, public/fonts, public/js, resources/js, tests/Feature, tests/Unit, README.md"]
+    caminhos_do_kit --> so_relatorio
+    caminhos_do_kit --> fora_update
+  end
+```
+
+A directory listed **only in part** is never drawn as delivered whole: `app/Models` in
+`kit:update` is only the kit's 7 files, one by one
+(`app/Console/Commands/KitUpdate.php:'app/Models/User.php':118`), never a model you add later — and
+`config/` is only five named files
+(`app/Console/Commands/KitUpdate.php:'config/kit.php':153`). And `wikis/` is **not** `export-ignore`
+as a whole — only `wikis/specs` is: `wikis/`'s top-level documents travel on `create-project` **and**
+`kit:update` delivers them one by one
+(`app/Console/Commands/KitUpdate.php:'wikis/README.md':309`), just like `tests/Kit` and
+`tests/Pest.php`
+(`app/Console/Commands/KitUpdate.php:'tests/Kit':233`, `app/Console/Commands/KitUpdate.php:'tests/Pest.php':252`)
+— `tests/` is not "untouched by kit:update".
 
 ## The manual way
 

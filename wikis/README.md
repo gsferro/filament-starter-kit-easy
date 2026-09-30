@@ -28,6 +28,7 @@ Leia nesta ordem. São ~20 minutos e evitam a maior parte dos erros caros:
 | 9 | [Qualidade de código](qualidade-de-codigo.md) | As quatro ferramentas — Pint, PHPStan level 8, FilaCheck e Rector — e por que só três estão no gate |
 | 10 | [Roadmap](roadmap.md) | O que o kit já olhou e **decidiu adiar**, com o motivo e a medição — para você não reavaliar do zero |
 | 11 | [Checklist de release](checklist-de-release.md) | **Do mantenedor do kit**: os quatro cenários obrigatórios a cada tag, e o que já quebrou em cada um |
+| 12 | [Glossário](glossario.md) | O vocabulário do domínio decidido nas features — o termo certo em pt e en, e com o que não confundir |
 
 ## O kit em dez linhas
 

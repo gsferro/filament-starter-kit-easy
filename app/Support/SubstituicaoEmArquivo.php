@@ -19,6 +19,11 @@ use Illuminate\Support\Facades\File;
  * Nasceu privada dentro do `KitTenancy`; virou classe quando o
  * `CustomizadorDaInstalacao` passou a precisar da mesma coisa. Dois chamadores
  * reais, não uma camada especulativa.
+ *
+ * Para CHAVE do `.env`, a porta é `definirNoEnv()` (valor citado e escapado) ou
+ * `definirLinhaNoEnv()` (linha pronta): as duas trocam TODA linha ativa da chave
+ * e nenhuma comentada (RQ-50 da wiki `diagramas-da-arquitetura`). `aplicar()`
+ * fica para padrão arbitrário — config PHP, uma ocorrência só.
  */
 final class SubstituicaoEmArquivo
 {
@@ -37,11 +42,22 @@ final class SubstituicaoEmArquivo
         $conteudo = File::get($caminho);
 
         /*
-         * Limite de 1: sem ele, um padrão que também casa dentro de um comentário
-         * ("# APP_NAME=…, mude aqui") reescreveria a documentação junto com o valor.
+         * Limite de 1: este é o substituto genérico (`'teams' => false` num config PHP), e
+         * uma ocorrência só é o contrato dele. Chave do `.env` NÃO passa por aqui — ver
+         * `definirLinhaNoEnv()`, que troca toda linha ativa e nenhuma comentada (RQ-50).
+         *
+         * `preg_replace_callback()`, e NUNCA `preg_replace($padrao, $novo, ...)` (RD2-08): o
+         * `$novo` pode ser uma linha ESCAPADA para o `.env` (`definirNoEnv()` grava `\\`, `\"` e
+         * `\$` dentro de aspas). Passar essa string pronta como argumento de SUBSTITUIÇÃO de
+         * `preg_replace()` é o defeito — o próprio PCRE interpreta `\\` e `\$` na substituição à
+         * sua maneira (`\\` colapsa para uma barra só, `\$` come a barra e deixa o cifrão nu),
+         * consumindo uma camada do escape ANTES de `$novo` chegar ao arquivo. O `.env` grava uma
+         * barra mal formada, e `Dotenv\Dotenv::parse()` lança `InvalidFileException: unexpected
+         * escape sequence` ao reler. O callback devolve `$novo` verbatim, sem nenhum
+         * processamento de backreference/escape sobre o texto de saída.
          */
         if (preg_match($padrao, $conteudo) === 1) {
-            File::put($caminho, (string) preg_replace($padrao, $novo, $conteudo, 1));
+            File::put($caminho, (string) preg_replace_callback($padrao, static fn (): string => $novo, $conteudo, 1));
 
             return true;
         }
@@ -70,14 +86,58 @@ final class SubstituicaoEmArquivo
      */
     public static function definirNoEnv(string $caminho, string $chave, string $valor): bool
     {
-        $linha = $chave.'="'.self::escaparValorDeEnv($valor).'"';
+        return self::definirLinhaNoEnv($caminho, $chave, $chave.'="'.self::escaparValorDeEnv($valor).'"');
+    }
 
-        return self::aplicar(
-            $caminho,
-            '/^#?\s*'.preg_quote($chave, '/').'=.*$/m',
-            $linha,
-            PHP_EOL.$linha.PHP_EOL,
-        );
+    /**
+     * Deixa a CHAVE do .env com a `$linha` dada em toda linha ATIVA, e nenhuma comentada.
+     *
+     * "Ativa" é o que o Dotenv lê como a chave — com `export` na frente, espaço em
+     * volta do `=` ou indentação (`vendor/vlucas/phpdotenv/src/Parser/EntryParser.php`,
+     * `parseName()` e o `trim()` de `parse()`); "comentada" é o que ele pula: primeiro
+     * caractere não branco `#` (`vendor/vlucas/phpdotenv/src/Parser/Lines.php`,
+     * `isCommentOrWhitespace()`). Toda ativa é trocada porque o Dotenv e a carga do
+     * Laravel ficam com a ÚLTIMA definição do arquivo: trocar só a primeira deixava
+     * os dois leitores com o valor velho (RQ-50, Adendo 7 da wiki
+     * `diagramas-da-arquitetura`). O espaço antes do nome é `[ \t]*`, nunca `\s*`:
+     * com `/m`, `\s*` começa na linha em branco anterior e consome a quebra dela.
+     *
+     * Sem nenhuma linha ativa, a primeira comentada é descomentada NO LUGAR (é o
+     * `# DB_HOST=` que o `.env.example` deixa para preencher — P-45 da mesma wiki,
+     * decidida pelo Adendo 8, RQ-53); sem nem essa, a linha é anexada ao fim — para toda
+     * chave, `DB_CONNECTION` incluído: um `.env` de versão anterior à chave não pode
+     * deixar o instalador seguir como se tivesse gravado (RQ-50, "qualquer leitor
+     * fica com o valor gravado").
+     *
+     * @return bool se a gravação aconteceu — o arquivo existe e, depois, tem a linha pedida (Q?15 da wiki); `false` só sem o arquivo
+     */
+    public static function definirLinhaNoEnv(string $caminho, string $chave, string $linha): bool
+    {
+        if (! File::exists($caminho)) {
+            return false;
+        }
+
+        $conteudo = File::get($caminho);
+        $nome     = preg_quote($chave, '/');
+        $ativa    = '/^[ \t]*(?:export[ \t]+)?'.$nome.'[ \t]*=.*$/m';
+
+        if (preg_match($ativa, $conteudo) === 1) {
+            File::put($caminho, (string) preg_replace_callback($ativa, static fn (): string => $linha, $conteudo));
+
+            return true;
+        }
+
+        $comentada = '/^[ \t]*#[ \t]*(?:export[ \t]+)?'.$nome.'[ \t]*=.*$/m';
+
+        if (preg_match($comentada, $conteudo) === 1) {
+            File::put($caminho, (string) preg_replace_callback($comentada, static fn (): string => $linha, $conteudo, 1));
+
+            return true;
+        }
+
+        File::append($caminho, PHP_EOL.$linha.PHP_EOL);
+
+        return true;
     }
 
     /**
@@ -86,7 +146,8 @@ final class SubstituicaoEmArquivo
      * Quebra de linha vira espaço em vez de `\n` escapado de propósito: o dotenv
      * do PHP expande `\n` dentro de aspas duplas, e o valor voltaria a conter uma
      * quebra — só que agora dentro do próprio valor, o que quebra
-     * `${APP_NAME}` em MAIL_FROM_NAME e VITE_APP_NAME.
+     * `${APP_NAME}` em MAIL_FROM_NAME e VITE_APP_NAME. CRLF vira UM espaço (RQ-51):
+     * a ordem do `str_replace` troca o par antes de `\n` e `\r` sozinhos.
      */
     private static function escaparValorDeEnv(string $valor): string
     {

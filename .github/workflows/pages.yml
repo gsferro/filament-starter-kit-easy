@@ -73,11 +73,13 @@ jobs:
         working-directory: site
         run: npx playwright install --with-deps chromium
 
-      - name: Conferir acessibilidade (axe, WCAG 2.1 AA, nos dois temas)
+      - name: Conferir diagramas e acessibilidade (axe, WCAG 2.1 AA, nos dois temas)
         working-directory: site
         # Sobe a prévia, roda o axe contra o site CONSTRUÍDO e derruba o job em qualquer violação
         # `serious`/`critical`. Nos dois temas de propósito: este site já teve um defeito de cor
-        # que era impecável no escuro e ilegível no claro.
+        # que era impecável no escuro e ilegível no claro. ANTES do axe (R23), o mesmo script
+        # espera cada bloco Mermaid virar `<svg>` (nunca o `<pre>` cru nem o diagrama de erro) e
+        # confere o piso de páginas com diagrama por idioma — ver `verifica-acessibilidade.mjs`.
         run: |
           npx astro preview &
           npx wait-on "http://localhost:4321${DOCS_BASE}/pt/" -t 60000

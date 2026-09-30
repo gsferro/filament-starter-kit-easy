@@ -126,6 +126,8 @@ works — they are not a mock-up. Look at the actions column on the right: on *c
 clipped to *"Edi…"*, and on *denso* it fits whole. Tightening is not only about height; it stops
 hiding content.
 
+![The three density levels, in sequence, on the same screen](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/densidade.gif)
+
 These numbers were **measured** on the kit itself, with a real browser reading computed style on
 `/admin/users` at 1600×1000 — not estimated.
 
@@ -190,6 +192,25 @@ Viewing is not building: dragging and saving the grid belongs to whoever has Shi
 This is the question that decides whether the screen is useful or decorative, and there is a single answer:
 
 > **The database wins at runtime. `.env` seeds the first write and is the fallback.**
+
+```mermaid
+flowchart LR
+%% DG-14
+accTitle: Where configuration comes from
+accDescr: .env seeds config/*.php at boot; the database overrides mapaDeConfiguracao's keys when the settings table exists, and the settings screen writes to it; a key outside the map, such as KIT_TENANCY, has only .env as its source.
+  env_file[".env"] --> config_php["config/*.php"]
+  settings_banco["Settings in DB"] -->|"overrides, mapped keys"| config_php
+  tela_config["Settings screen"] -->|"writes"| settings_banco
+  env_file -.->|"only .env: KIT_TENANCY and other unmapped keys"| chave_fora_do_mapa["Key outside mapaDeConfiguracao"]
+```
+
+`ConfiguracoesDoKit::aplicarNaConfig()` runs the second arrow
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:504`), called at boot by
+`KitServiceProvider::configureSettingsDoKit()`
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:394`); the overridden keys are exactly
+the ones in `mapaDeConfiguracao()`
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:367`) — `KIT_TENANCY`
+(`config/kit.php:KIT_TENANCY:351`) is not in that map, so the database never overrides it.
 
 How that works without any consumer knowing the settings exist:
 

@@ -134,6 +134,58 @@ três chaves do Google, `config:clear`, e nenhum botão — até a migration rel
 | [![Lista de usuários com a coluna Origem](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-users-origem.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-users-origem.png) | |
 | `/admin/users`: a coluna **Origem** diz por qual porta cada conta entrou (Google, GitHub, Convite, Registro aberto, Interno) | |
 
+## Sequência: os desfechos do retorno do provedor
+
+```mermaid
+sequenceDiagram
+%% DG-06
+accTitle: Retorno do login social
+accDescr: Os desfechos do retorno de um provedor social — recusas, indisponibilidade, confirmação de vínculo, aprovação pendente e o destino final por conta nova ou existente.
+  participant visitante as Visitante
+  participant provedor as Provedor OAuth
+  participant controller as LoginSocialController
+  participant vinculo as VinculoSocial
+  participant email_fila as E-mail (fila)
+  note over provedor: ligado por provedor: KIT_SOCIALITE_GOOGLE, KIT_SOCIALITE_GITHUB, KIT_SOCIALITE_LINKEDIN ou KIT_SOCIALITE_X
+  visitante->>provedor: redirect
+  provedor->>controller: retorno()
+  alt sem e-mail, ou e-mail não verificado no provedor
+    controller-->>visitante: recusa (e-mail ausente/não verificado)
+  else sem convite, sem conta, registro fechado
+    controller-->>visitante: recusa (acesso por convite)
+  else convite existe, mas é de outro e-mail
+    controller-->>visitante: recusa (convite é para outro e-mail)
+  else segue
+    alt conta indisponível (mesma checagem do login por senha)
+      controller-->>visitante: recusa (conta indisponível)
+    else com vínculo já criado
+      controller->>vinculo: registrarAcesso()
+    else sem vínculo, confirmação de vínculo social por e-mail ligada (KIT_SOCIALITE_VINCULO_CONFIRMAR)
+      controller->>email_fila: link de confirmação assinado
+      note over controller: não entra ainda
+    else sem vínculo
+      controller->>vinculo: vincular()
+      controller->>email_fila: PrimeiroAcessoSocial
+    end
+    alt cadastro pendente de aprovação (KIT_REGISTRO_APROVACAO_MANUAL)
+      controller-->>visitante: aguardar aprovação
+    else conta criada agora
+      controller-->>visitante: perfil (definir senha)
+    else conta já existia
+      controller-->>visitante: painel
+    end
+  end
+```
+
+`LoginSocialController::retorno()` checa, nesta ordem, e-mail ausente, e-mail não verificado, a
+barreira do convite/registro fechado, a indisponibilidade da conta (antes de qualquer confirmação
+de vínculo), e só então a aprovação pendente — vale para conta nova OU já existente
+(`app/Http/Controllers/Auth/LoginSocialController.php:retorno:133`,
+`:redirecionarSeIndisponivel:223`, `:pedirConfirmacaoDoVinculo:304`, `:aguardarAprovacao:330`,
+`:$novo = true:300`, `:urlDoPerfil:360`). O vínculo (`VinculoSocial::vincular()`) roda depois de
+toda a cadeia, inclusive para conta recém-criada (`:315`, `:560`). A confirmação de vínculo
+default é desligada (`config/kit.php:KIT_SOCIALITE_VINCULO_CONFIRMAR:728`).
+
 ## Vínculo com o provedor: a primeira vez, e as seguintes
 
 A pergunta que motivou esta seção: *"eu poderia criar uma conta no Google com o e-mail de outra

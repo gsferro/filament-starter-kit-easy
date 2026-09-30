@@ -14,3 +14,39 @@ Users with the `Desativar:User` permission see the deactivate action in the `/ad
 
 An unavailable account also **cannot be impersonated**: the *Impersonate* action does not appear on the row of anyone who is inactive, pending approval or deleted. It is the same rule as panel access — if the person cannot sign in on their own, nobody signs in as them.
 
+## Account states
+
+```mermaid
+stateDiagram-v2
+%% DG-08
+accTitle: User account states
+accDescr: Pending (only exists with KIT_REGISTRO and KIT_REGISTRO_APROVACAO_MANUAL) approves to Active (or Inactive, if it was deactivated before); Active and Inactive alternate by deactivate/reactivate; any of them can be deleted, and restoring goes back to the state from before deletion.
+  Pendente --> Ativo : approve [was active]
+  Pendente --> Inativo : approve [was deactivated]
+  Ativo --> Inativo : deactivate [not own account / not the last active master_global]
+  Ativo --> Excluida : delete
+  Inativo --> Ativo : reactivate
+  Inativo --> Excluida : delete
+  Pendente --> Excluida : delete
+  Excluida --> Ativo : restore [was active]
+  Excluida --> Inativo : restore [was inactive]
+  Excluida --> Pendente : restore [was pending]
+  state "Pending" as Pendente
+  state "Active" as Ativo
+  state "Inactive" as Inativo
+  state "Deleted" as Excluida
+  note right of Pendente : only exists with KIT_REGISTRO and KIT_REGISTRO_APROVACAO_MANUAL
+```
+
+The "Pending" label hides `ativo`: a pending account can be deactivated without stopping being
+Pending, and only when approved does it reveal whether it was active (goes to Active) or
+deactivated (goes to Inactive) - that is why the condition sits on the `approve` arrow.
+`rotuloDaSituacao()` returns Pending before Inactive before Active
+(`app/Models/User.php:rotuloDaSituacao:501`, `:'Pendente':504`); `aprovar()` only clears the
+pending flag, without touching `ativo` (`app/Models/User.php:aprovar:520`, `:526`); `desativar()`
+refuses the own account and the last active `master_global`
+(`app/Models/User.php:desativar:285`, `:propria_conta:349`, `:ultimo_master_global:350`); deletion
+is logical (`SoftDeletes`) and overrides the Pending/Active/Inactive display
+(`app/Models/User.php:SoftDeletes:85`); `restore()` (native to `SoftDeletes`, triggered by the
+`/admin` `RestoreAction`) returns the state saved before deletion.
+

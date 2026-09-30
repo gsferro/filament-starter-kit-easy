@@ -68,3 +68,75 @@ granted inside the invitation's organization; a role of `/admin` or `/infra` is 
 the global context — being an admin of one organization is not a credential to administer
 the installation.
 
+## Sequence: from send to acceptance
+
+```mermaid
+sequenceDiagram
+%% DG-07
+accTitle: Invitation, from send to acceptance
+accDescr: Whoever invites sends the link through the queue, the scheduler reminds whoever has not answered yet, and acceptance follows one of two branches - a new account or an offer to an existing one - linking the invitation's organization when it has one (tenant_id, only exists with KIT_TENANCY).
+  participant quem_convida as Inviter (admin, or admin_app with KIT_TENANCY)
+  participant convite as Convite
+  participant fila as Queue
+  participant agendador as Scheduler
+  participant convidado_novo as New invitee
+  participant convidado_existente as Invitee with an account
+  quem_convida->>convite: enviar()
+  convite->>fila: ConviteDeAcesso (link to /app/register)
+  fila->>convidado_novo: e-mail with the link
+  loop daily at 08:00
+    agendador->>convite: lembrar() (kit:convites-lembrar)
+  end
+  alt no account with the invited e-mail (new account)
+    convidado_novo->>convite: aceitar(): sets their own password
+    convite->>convidado_novo: born verified, with the role, linked to the invitation's organization, if it has a tenant_id (KIT_TENANCY)
+  else existing account (offer)
+    convidado_existente->>convite: aceitarComoUsuarioExistente()
+    convite->>convidado_existente: gets the role in the invitation's organization, if it has a tenant_id (KIT_TENANCY), previous access untouched
+  else decline (requires KIT_TENANCY)
+    convidado_existente->>convite: recusar()
+  end
+```
+
+The link always goes to the `/app` panel's registration route, whatever the invitation's role is
+(`app/Notifications/ConviteDeAcesso.php:url:100`); the notification is `ShouldQueue` -
+without a worker, nothing goes out (`app/Notifications/ConviteDeAcesso.php:ShouldQueue:27`). The
+reminder only exists through the scheduled command
+(`routes/console.php:40`,
+`app/Console/Commands/KitConvitesLembrar.php`), the only caller of `lembrar()` in `app/`.
+`Convite::enviar()`, `::lembrar()`, `::aceitar()`, `::aceitarComoUsuarioExistente()` and
+`::recusar()` (`app/Models/Convite.php:enviar:143`, `:lembrar:207`, `:aceitar:606`,
+`:aceitarComoUsuarioExistente:674`, `:recusar:739`).
+
+## Invitation states
+
+```mermaid
+stateDiagram-v2
+%% DG-09
+accTitle: Invitation states
+accDescr: From Pending, an invitation goes to Accepted, Declined (only with KIT_TENANCY) or Expired; only Expired goes back to Pending by resending; revoking deletes the invitation from any state.
+  state "Pending" as Pendente
+  state "Accepted" as Aceito
+  state "Declined" as Recusado
+  state "Expired" as Expirado
+  Pendente --> Aceito : accept
+  Pendente --> Recusado : decline
+  Pendente --> Expirado : deadline passes
+  Expirado --> Pendente : resend
+  Pendente --> [*] : revoke
+  Aceito --> [*] : revoke
+  Recusado --> [*] : revoke
+  Expirado --> [*] : revoke
+  note right of Recusado: declining requires KIT_TENANCY (received invitations box)
+```
+
+`Convite::situacao()` has the precedence Accepted &gt; Declined &gt; Expired &gt; Pending
+(`app/Models/Convite.php:situacao:587`, `:'Aceito':590`, `:'Recusado':591`); the Resend action is
+only visible on Pending or Expired
+(`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:Action::make('reenviar'):73`,
+`:situacao() === 'Pendente':89`); revoking is the native `DeleteAction`, visible in every state
+(`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:DeleteAction::make():97`). The
+decline event only exists through the received invitations box, which only exists with tenancy
+(`app/Filament/App/Pages/ConvitesRecebidos.php:Action::make('recusar'):132`,
+`:config('kit.tenancy.enabled'):77`).
+

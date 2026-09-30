@@ -340,8 +340,8 @@ class InfraPanelProvider extends PanelProvider
                     /*
                      * As DUAS condições valem, e não é redundância decorativa.
                      *
-                     * `ver-logs` é a barreira do PAINEL: `KitServiceProvider.php:172` o define
-                     * como `temPapelDoPainel('infra')`, então ele responde igual para todo papel
+                     * `ver-logs` é a barreira do PAINEL: `KitServiceProvider.php:ver-logs:429` o
+                     * define como `temPapelDoPainel('infra')`, então ele responde igual para todo papel
                      * que abre o /infra. `View:LogsExplorer` é a barreira da TELA, e é a que o
                      * checkbox de `/admin/shield/roles` promete. O `&&` é a mesma coexistência
                      * que ADR-06 da wiki `permissoes-de-telas-e-acoes` decidiu para a flag
@@ -432,7 +432,7 @@ class InfraPanelProvider extends PanelProvider
                  *
                  * Consequência escrita, para ninguém ler o checkbox errado: a barreira das três é
                  * `config('command-center.enabled')` + `command-center:access`, e esse gate é
-                 * `temPapelDoPainel('infra')` (`KitServiceProvider.php:173`) — barreira de PAINEL,
+                 * `temPapelDoPainel('infra')` (`KitServiceProvider.php:command-center:430`) — barreira de PAINEL,
                  * não permissão por tela. `tests/Kit/PermissoesDeTelasTest.php` tem o caso
                  * que assere a lacuna (`it('deixa só as três telas da Central de comandos…')`); ele fica VERMELHO no dia em que o pacote publicar o setter
                  * por Page, e é o sinal de revisar ADR-05.

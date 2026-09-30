@@ -1,13 +1,23 @@
 <?php
 
 use App\Console\Commands\KitInstall;
+use App\Console\Commands\KitTenancy;
+use App\Support\AtivadorDeTenancy;
 use App\Support\CustomizadorDaInstalacao;
+use App\Support\HostLocal;
 use App\Support\SenhaDoAdministrador;
 use App\Support\SubstituicaoEmArquivo;
+use Dotenv\Repository\Adapter\ArrayAdapter;
+use Dotenv\Repository\RepositoryBuilder;
+use Illuminate\Console\Command;
+use Illuminate\Console\OutputStyle;
+use Illuminate\Console\View\Components\Factory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 /**
  * O customizador de instalação — as perguntas do `kit:install` e a escrita delas.
@@ -372,6 +382,600 @@ it('ignora arquivo inexistente em vez de estourar', function (): void {
 
 /*
 |--------------------------------------------------------------------------
+| R54 e R64 — os leitores de uma chave do .env, e o que é "linha ativa"
+|--------------------------------------------------------------------------
+| Os três leitores de R54: `Dotenv::parse()`, `valorNoEnv()` (`tests/Pest.php`) e a carga do
+| Laravel sobre um repositório imutável com `ArrayAdapter` — o `.env` do teste nunca é o do
+| processo, e a carga não pode vazar para ele (o mesmo motivo de `SenhaDoAdministrador::doArquivo()`).
+| **Linha ativa** é a que o Dotenv lê como a chave (com `export`, espaço no `=`, indentação);
+| **comentada** é a que ele pula (primeiro caractere não branco `#`).
+*/
+
+/** O texto separado em LF, CRLF e CR, como o parser do Dotenv separa — sem juntar valor citado. */
+function linhasDoEnvNoTemp(string $texto): array
+{
+    return preg_split('/\r\n|\n|\r/', $texto);
+}
+
+/** As linhas do arquivo cru que o Dotenv lê como a chave. O espaço antes do nome é só horizontal. */
+function linhasAtivasDaChave(string $chave, string $texto): array
+{
+    return array_values(array_filter(
+        linhasDoEnvNoTemp($texto),
+        static fn (string $linha): bool => preg_match('/^[ \t]*(?:export[ \t]+)?'.preg_quote($chave, '/').'[ \t]*=/', $linha) === 1,
+    ));
+}
+
+/**
+ * As chaves do arquivo lidas por `Dotenv::parse()` e, separadamente, linha a linha: o nome antes
+ * do `=` de cada linha não comentada do arquivo cru.
+ *
+ * @return array{parse: list<string>, linhas: list<string>}
+ */
+function chavesDoEnvNoTemp(string $texto): array
+{
+    $porLinha = [];
+
+    foreach (linhasDoEnvNoTemp($texto) as $linha) {
+        $linha = ltrim($linha);
+
+        if ($linha === '' || str_starts_with($linha, '#') || ! str_contains($linha, '=')) {
+            continue;
+        }
+
+        $porLinha[] = trim(preg_replace('/^export\s+/', '', explode('=', $linha, 2)[0]));
+    }
+
+    $porParse = array_keys(Dotenv\Dotenv::parse($texto));
+
+    sort($porParse);
+    sort($porLinha);
+
+    return ['parse' => $porParse, 'linhas' => array_values(array_unique($porLinha))];
+}
+
+/** A leitura do Laravel: a carga do Dotenv sobre repositório imutável, com `ArrayAdapter`. */
+function leituraDoLaravelNoTemp(string $chave): ?string
+{
+    $repositorio = RepositoryBuilder::createWithNoAdapters()
+        ->addAdapter(ArrayAdapter::class)
+        ->immutable()
+        ->make();
+
+    Dotenv\Dotenv::create($repositorio, test()->base, '.env')->load();
+
+    return $repositorio->get($chave);
+}
+
+/**
+ * O valor da chave nos TRÊS leitores.
+ *
+ * @return array<string, ?string>
+ */
+function leitoresDaChave(string $chave): array
+{
+    return [
+        'Dotenv::parse()' => Dotenv\Dotenv::parse(envDoTeste())[$chave] ?? null,
+        'valorNoEnv()'    => valorNoEnv($chave),
+        'Laravel'         => leituraDoLaravelNoTemp($chave),
+    ];
+}
+
+/** Um `.env` temporário só com as linhas dadas, na ordem, com quebra no fim. */
+function gravarEnvComLinhas(array $linhas, bool $quebraNoFim = true): void
+{
+    File::put(test()->base.'/.env', implode("\n", $linhas).($quebraNoFim ? "\n" : ''));
+}
+
+/** O `.env.example` do kit com as linhas da chave (ativas ou comentadas) trocadas pelas dadas. */
+function envDeExemploComLinhas(string $chave, array $linhas): string
+{
+    $saida  = [];
+    $postas = false;
+
+    foreach (linhasDoEnvNoTemp(File::get(base_path('.env.example'))) as $linha) {
+        if (preg_match('/^#?[ \t]*'.preg_quote($chave, '/').'=/', $linha) === 1) {
+            if (! $postas) {
+                array_push($saida, ...$linhas);
+                $postas = true;
+            }
+
+            continue;
+        }
+
+        $saida[] = $linha;
+    }
+
+    return implode("\n", $saida);
+}
+
+/**
+ * Um gravador do R64 chamado DIRETO sobre o `.env` temporário; devolve o valor que ele gravou.
+ *
+ * O demo do `kit:tenancy --demo` (`KitTenancy::semearDemo()`) entra isolado: o `base_path()` aponta
+ * para o diretório temporário só durante a chamada (e volta no `finally`), e o `db:seed` do
+ * `call()` é neutralizado por uma subclasse anônima — o `.env` do projeto nunca é o escrito.
+ */
+function gravarNoEnvComo(string $gravador): string
+{
+    $env = test()->base.'/.env';
+
+    switch ($gravador) {
+        case 'nome':
+            SubstituicaoEmArquivo::definirNoEnv($env, 'APP_NAME', 'Novo');
+
+            return 'Novo';
+
+        case 'garantia da senha':
+            $gerada = SenhaDoAdministrador::garantirNoEnv($env, '');
+
+            expect($gerada)->not->toBeNull('a garantia não gerou senha para uma chave sem senha utilizável');
+
+            return (string) $gerada;
+
+        case 'senha digitada':
+            customizadorNoTemp()->aplicar(respostasDeCustomizacao(['senha' => 'segredo123']));
+
+            return 'segredo123';
+
+        case 'banco':
+            (new ReflectionMethod(CustomizadorDaInstalacao::class, 'aplicarBanco'))
+                ->invoke(customizadorNoTemp(), $env, 'pgsql', 'Loja do Ferro');
+
+            return 'pgsql';
+
+        case 'banco (host)':
+            (new ReflectionMethod(CustomizadorDaInstalacao::class, 'aplicarBanco'))
+                ->invoke(customizadorNoTemp(), $env, 'pgsql', 'Loja do Ferro');
+
+            return '127.0.0.1';
+
+        case 'host local':
+            File::put(test()->base.'/hosts', "127.0.0.1\tlocalhost\n");
+
+            (new HostLocal(
+                test()->base,
+                static fn (): int => 0,
+                test()->base.'/hosts',
+                static fn (): ?string => '127.0.0.1',
+                'Windows',
+            ))->processar('novo.test');
+
+            return 'http://novo.test';
+
+        case 'tenancy':
+            AtivadorDeTenancy::escreverEnv($env);
+
+            return 'true';
+
+        case 'demo':
+            $baseOriginal = base_path();
+            $demoOriginal = config('kit.demo');
+
+            $comando = new class extends KitTenancy
+            {
+                public function call($command, array $arguments = []): int
+                {
+                    return 0;
+                }
+            };
+
+            $comando->setLaravel(app());
+            (new ReflectionProperty(Command::class, 'components'))->setValue(
+                $comando,
+                new Factory(new OutputStyle(new ArrayInput([]), new BufferedOutput)),
+            );
+
+            try {
+                app()->setBasePath(test()->base);
+
+                expect(str_replace('\\', '/', base_path()))->toBe(str_replace('\\', '/', test()->base), 'o base_path() nao aponta para o diretorio temporario');
+
+                (new ReflectionMethod(KitTenancy::class, 'semearDemo'))->invoke($comando);
+            } finally {
+                app()->setBasePath($baseOriginal);
+                config(['kit.demo' => $demoOriginal]);
+            }
+
+            expect(base_path())->toBe($baseOriginal, 'o base_path() do projeto nao foi restaurado');
+
+            return 'true';
+    }
+
+    throw new InvalidArgumentException("gravador desconhecido: {$gravador}");
+}
+
+/**
+ * [RD2-08] Ida e volta de um valor com barra invertida, cifrão e aspas pelo `.env`.
+ *
+ * `escaparValorDeEnv()` (`app/Support/SubstituicaoEmArquivo.php:escaparValorDeEnv`) escapa `\`
+ * para `\\` ANTES de escapar `"` e `$` — pensado para o Dotenv, do lado da LEITURA, reconhecer a
+ * barra como escapada dentro do valor citado. O bug é um passo ANTES disso: essa linha inteira,
+ * já escapada, é o argumento de SUBSTITUIÇÃO de `preg_replace()` (`SubstituicaoEmArquivo::aplicar()`),
+ * e o próprio `preg_replace()` interpreta `\\` na substituição à sua maneira (backreference/escape
+ * de PCRE) — consumindo uma camada da barra ANTES dela chegar ao arquivo. O `.env` grava uma barra
+ * mal formada, e `Dotenv\Dotenv::parse()` (a mesma leitura de `valorNoEnv()` e de
+ * `CustomizadorDaInstalacao::senhaAtualNoEnv()`) lança `InvalidFileException: unexpected escape
+ * sequence` ao reler — o mesmo caminho que derruba `CustomizadorDaInstalacao::aplicar()` no meio
+ * quando o NOME digitado tem uma barra (APP_NAME e COMPOSE_PROJECT_NAME já foram gravados; cor,
+ * tenancy e settings nunca chegam a rodar).
+ */
+it('[RD2-08][CT-117] valor digitado faz a ida e volta pelo .env', function (string $valor, string $lido): void {
+    gravarEnvComLinhas(['APP_ENV=local', 'APP_NAME="Antigo"']);
+
+    $chavesAntes = chavesDoEnvNoTemp(envDoTeste());
+
+    $alterou = SubstituicaoEmArquivo::definirNoEnv($this->base.'/.env', 'APP_NAME', $valor);
+
+    expect($alterou)->toBeTrue();
+
+    $excecao = null;
+    $relido  = null;
+
+    try {
+        $relido = Dotenv\Dotenv::parse(envDoTeste())['APP_NAME'] ?? null;
+    } catch (Throwable $e) {
+        $excecao = $e;
+    }
+
+    expect($excecao)->toBeNull(
+        'Dotenv::parse() nao deveria lancar ao reler um valor gravado por '
+        .'SubstituicaoEmArquivo::definirNoEnv() (RD2-08). Excecao real: '
+        .($excecao instanceof Throwable ? $excecao::class.': '.$excecao->getMessage() : ''),
+    );
+
+    expect($relido)->toBe(
+        $lido,
+        'o valor lido de volta do .env diverge do esperado — a ida e volta nao foi intacta (RD2-08, RQ-51)',
+    );
+
+    $chavesDepois = chavesDoEnvNoTemp(envDoTeste());
+
+    expect($chavesDepois['parse'])->toBe($chavesAntes['parse'], 'o .env ganhou ou perdeu chave, lido por Dotenv::parse()')
+        ->and($chavesDepois['linhas'])->toBe($chavesAntes['linhas'], 'o .env ganhou ou perdeu chave, lido linha a linha (RQ-51)');
+})->with([
+    'controle: sem caractere especial'                    => ['Loja do Ferro', 'Loja do Ferro'],
+    'aspas, cifrao e barra no meio (o dataset do RD2-08)' => ['Loja "X" $HOME \ fim', 'Loja "X" $HOME \ fim'],
+    'barra no fim'                                        => ['Loja do Ferro\\', 'Loja do Ferro\\'],
+    'barra seguida de n (a barra e literal)'              => ['Loja\nova', 'Loja\nova'],
+    '${APP_ENV} de chave anterior'                        => ['Loja ${APP_ENV}', 'Loja ${APP_ENV}'],
+    'quebra LF e INJETADA=1 (RQ-51)'                      => ["Loja\nINJETADA=1", 'Loja INJETADA=1'],
+    'quebra CRLF e INJETADA=1: um espaco so'              => ["Loja\r\nINJETADA=1", 'Loja INJETADA=1'],
+    'quebra CR e INJETADA=1'                              => ["Loja\rINJETADA=1", 'Loja INJETADA=1'],
+])->group('kit');
+
+/**
+ * [CT-118] toda linha ativa da chave é trocada, e nenhuma linha comentada (RQ-50).
+ *
+ * `SubstituicaoEmArquivo::aplicar()` casa a linha COMENTADA que cita a chave, e a ativa que vem
+ * depois de um comentário. As quatro linhas do Esquema do `04`: a de duas ativas nomeia
+ * `MAIL_FROM_NAME="${APP_NAME}"` como intacta e o `Dado` dela não a tinha (ADV-29) — aqui o `Dado`
+ * a tem. Os três leitores leem "Novo", e o valor lido sozinho não separa "toda linha ativa" de
+ * "só a última": por isso cada linha ativa é conferida.
+ *
+ * @param  list<string>  $linhas
+ */
+it('[CT-118] toda linha ativa da chave e trocada, e nenhuma linha comentada', function (array $linhas, int $ativas, string $intacta): void {
+    gravarEnvComLinhas($linhas);
+
+    $linhasAntes = substr_count(envDoTeste(), "\n");
+
+    $alterou = SubstituicaoEmArquivo::definirNoEnv($this->base.'/.env', 'APP_NAME', 'Novo');
+
+    expect($alterou)->toBeTrue();
+
+    $ativasDepois = linhasAtivasDaChave('APP_NAME', envDoTeste());
+
+    expect($ativasDepois)->toHaveCount($ativas, 'o .env deveria ter '.$ativas.' linha(s) ativa(s) de APP_NAME — achei: '.json_encode($ativasDepois, JSON_UNESCAPED_UNICODE));
+
+    foreach ($ativasDepois as $linha) {
+        expect($linha)->toBe('APP_NAME="Novo"', 'cada linha ativa de APP_NAME deveria ser APP_NAME="Novo"');
+    }
+
+    $this->assertContains(
+        $intacta,
+        linhasDoEnvNoTemp(envDoTeste()),
+        'a linha "'.$intacta.'" deveria continuar no .env, byte a byte (RQ-50: nenhuma comentada é trocada)',
+    );
+
+    foreach (leitoresDaChave('APP_NAME') as $leitor => $lido) {
+        expect($lido)->toBe('Novo', "APP_NAME lido por {$leitor}");
+    }
+
+    expect(substr_count(envDoTeste(), "\n"))->toBe(
+        $linhasAntes,
+        'o .env deveria continuar com o mesmo numero de linhas de antes da gravacao',
+    );
+})->with([
+    '1 ativa, nenhuma comentada (controle)' => [
+        ['APP_NAME="Antigo"', 'MAIL_FROM_NAME="${APP_NAME}"'], 1, 'MAIL_FROM_NAME="${APP_NAME}"',
+    ],
+    '1 ativa, a comentada depois' => [
+        ['APP_NAME="Antigo"', '# APP_NAME="Exemplo" — mude aqui'], 1, '# APP_NAME="Exemplo" — mude aqui',
+    ],
+    '1 ativa, a comentada antes' => [
+        ['# APP_NAME="Exemplo" — mude aqui', 'APP_NAME="Antigo"'], 1, '# APP_NAME="Exemplo" — mude aqui',
+    ],
+    '2 ativas (edicao a mao), com a referencia intacta' => [
+        ['APP_NAME="Antigo"', 'APP_NAME="Repetida"', 'MAIL_FROM_NAME="${APP_NAME}"'], 2, 'MAIL_FROM_NAME="${APP_NAME}"',
+    ],
+])->group('kit');
+
+/**
+ * [CT-137] toda linha que o Dotenv lê como a chave é trocada, e nenhuma outra linha muda.
+ *
+ * A partição é a do leitor, não a de um padrão: `export`, espaço no `=` e indentação são a chave;
+ * `#` com ou sem espaço, indentado ou não, é comentário (ADV-07, ADV-08, ADV-11).
+ *
+ * @param  list<string>  $linhas
+ * @param  list<string>  $intactas
+ */
+it('[CT-137] toda linha que o Dotenv le como a chave e trocada, e nenhuma outra linha muda', function (array $linhas, int $ativas, array $intactas): void {
+    gravarEnvComLinhas($linhas);
+
+    $antes = linhasDoEnvNoTemp(envDoTeste());
+
+    $alterou = SubstituicaoEmArquivo::definirNoEnv($this->base.'/.env', 'APP_NAME', 'Novo');
+
+    expect($alterou)->toBeTrue();
+
+    $depois       = linhasDoEnvNoTemp(envDoTeste());
+    $ativasDepois = linhasAtivasDaChave('APP_NAME', envDoTeste());
+
+    expect($ativasDepois)->toHaveCount($ativas, 'deveria haver '.$ativas.' linha(s) que o Dotenv le como APP_NAME — achei: '.json_encode($ativasDepois, JSON_UNESCAPED_UNICODE));
+
+    foreach ($ativasDepois as $linha) {
+        expect(Dotenv\Dotenv::parse($linha)['APP_NAME'] ?? null)->toBe('Novo', 'a linha ativa "'.$linha.'" deveria dar "Novo"');
+    }
+
+    foreach ($intactas as $intacta) {
+        $posicao = array_search($intacta, $antes, true);
+
+        expect($depois[$posicao] ?? null)->toBe(
+            $intacta,
+            'a linha "'.$intacta.'" deveria continuar no .env, byte a byte, na posicao '.$posicao,
+        );
+    }
+
+    foreach (leitoresDaChave('APP_NAME') as $leitor => $lido) {
+        expect($lido)->toBe('Novo', "APP_NAME lido por {$leitor}");
+    }
+
+    expect(count($depois))->toBe(count($antes), 'o .env deveria continuar com o mesmo numero de linhas de antes da gravacao');
+})->with([
+    '`export` na frente' => [
+        ['export APP_NAME="Antigo"', 'MAIL_FROM_NAME="${APP_NAME}"'], 1, ['MAIL_FROM_NAME="${APP_NAME}"'],
+    ],
+    'espaco antes e depois do `=`' => [
+        ['APP_NAME = "Antigo"', 'MAIL_FROM_NAME="${APP_NAME}"'], 1, ['MAIL_FROM_NAME="${APP_NAME}"'],
+    ],
+    'ativa indentada' => [
+        ['  APP_NAME="Antigo"', 'MAIL_FROM_NAME="${APP_NAME}"'], 1, ['MAIL_FROM_NAME="${APP_NAME}"'],
+    ],
+    'comentario sem espaco depois do `#`, antes da ativa' => [
+        ['#APP_NAME="Exemplo"', 'APP_NAME="Antigo"'], 1, ['#APP_NAME="Exemplo"'],
+    ],
+    'comentario indentado, antes da ativa' => [
+        ['  # APP_NAME="Exemplo"', 'APP_NAME="Antigo"'], 1, ['  # APP_NAME="Exemplo"'],
+    ],
+    'chave que termina com o nome gravado (VITE_APP_NAME)' => [
+        ['APP_NAME="Antigo"', 'VITE_APP_NAME="${APP_NAME}"'], 1, ['VITE_APP_NAME="${APP_NAME}"'],
+    ],
+    'linha em branco logo antes da ativa' => [
+        ['APP_ENV=local', '', 'APP_NAME="Antigo"'], 1, ['APP_ENV=local', ''],
+    ],
+    '2 ativas, a comentada antes e a referencia entre elas' => [
+        ['# APP_NAME="Exemplo" — mude aqui', 'APP_NAME="Antigo"', 'MAIL_FROM_NAME="${APP_NAME}"', 'APP_NAME="Repetida"'],
+        2,
+        ['# APP_NAME="Exemplo" — mude aqui', 'MAIL_FROM_NAME="${APP_NAME}"'],
+    ],
+])->group('kit');
+
+/**
+ * [CT-138] com a chave ativa duas vezes, cada gravador do kit troca as duas (R64).
+ *
+ * Cada gravador é chamado DIRETO sobre um `.env` temporário (o `.env.example` do kit com as linhas
+ * da chave trocadas pelas duas do Esquema, para nenhuma outra chave ser anexada e mexer na conta
+ * de linhas). O demo do `kit:tenancy --demo` (KIT_DEMO) entra pelo gravador isolado `demo`.
+ *
+ * @param  list<string>  $linhas
+ */
+it('[CT-138] com a chave ativa duas vezes, cada gravador do kit troca as duas', function (string $gravador, string $chave, array $linhas): void {
+    File::put($this->base.'/.env', envDeExemploComLinhas($chave, $linhas));
+
+    $linhasAntes = count(linhasDoEnvNoTemp(envDoTeste()));
+
+    $gravado = gravarNoEnvComo($gravador);
+
+    $ativas = linhasAtivasDaChave($chave, envDoTeste());
+
+    expect($ativas)->toHaveCount(count($linhas), 'deveria haver '.count($linhas)." linhas ativas de {$chave} — achei: ".json_encode($ativas));
+
+    foreach ($ativas as $linha) {
+        expect(Dotenv\Dotenv::parse($linha)[$chave] ?? null)->toBe(
+            $gravado,
+            "a linha ativa \"{$linha}\" deveria dar o valor gravado (o limite 1 de aplicar() deixa a segunda com o valor velho)",
+        );
+    }
+
+    foreach (leitoresDaChave($chave) as $leitor => $lido) {
+        expect($lido)->toBe($gravado, "{$chave} lido por {$leitor}");
+    }
+
+    expect(count(linhasDoEnvNoTemp(envDoTeste())))->toBe($linhasAntes, 'o .env deveria continuar com o mesmo numero de linhas de antes');
+})->with([
+    'customizador, nome "Novo" (APP_NAME)'           => ['nome', 'APP_NAME', ['APP_NAME="Antigo"', 'APP_NAME="Repetida"']],
+    'garantia da senha, sem senha utilizavel'        => ['garantia da senha', 'KIT_ADMIN_PASSWORD', ['KIT_ADMIN_PASSWORD=', 'KIT_ADMIN_PASSWORD=password']],
+    'customizador, senha digitada'                   => ['senha digitada', 'KIT_ADMIN_PASSWORD', ['KIT_ADMIN_PASSWORD=', 'KIT_ADMIN_PASSWORD=password']],
+    'customizador, banco PostgreSQL (DB_CONNECTION)' => ['banco', 'DB_CONNECTION', ['DB_CONNECTION=sqlite', 'DB_CONNECTION=mysql']],
+    'customizador, banco PostgreSQL (DB_HOST)'       => ['banco (host)', 'DB_HOST', ['DB_HOST=127.0.0.1', 'DB_HOST=antigo']],
+    'host local (APP_URL)'                           => ['host local', 'APP_URL', ['APP_URL=http://localhost:8000', 'APP_URL=http://antigo.test']],
+    'ativacao da tenancy (KIT_TENANCY)'              => ['tenancy', 'KIT_TENANCY', ['KIT_TENANCY=false', 'KIT_TENANCY=false']],
+    'demo do kit:tenancy --demo (KIT_DEMO)'          => ['demo', 'KIT_DEMO', ['KIT_DEMO=false', 'KIT_DEMO=false']],
+])->group('kit');
+
+/**
+ * [CT-139] sem linha ativa da chave antes, a gravação deixa exatamente uma, com o valor gravado (R64).
+ *
+ * @param  list<string>  $linhas
+ * @param  list<string>  $intactas
+ */
+it('[CT-139] sem linha ativa da chave antes, a gravacao deixa exatamente uma com o valor gravado', function (string $gravador, string $chave, array $linhas, bool $quebraNoFim, array $intactas): void {
+    gravarEnvComLinhas($linhas, $quebraNoFim);
+
+    $gravado = gravarNoEnvComo($gravador);
+
+    $ativas = linhasAtivasDaChave($chave, envDoTeste());
+
+    expect($ativas)->toHaveCount(1, "deveria haver exatamente uma linha ativa de {$chave} — achei: ".json_encode($ativas))
+        ->and(Dotenv\Dotenv::parse($ativas[0])[$chave] ?? null)->toBe($gravado);
+
+    foreach (leitoresDaChave($chave) as $leitor => $lido) {
+        expect($lido)->toBe($gravado, "{$chave} lido por {$leitor}");
+    }
+
+    foreach ($intactas as $intacta) {
+        $this->assertContains($intacta, linhasDoEnvNoTemp(envDoTeste()), "a linha \"{$intacta}\" deveria continuar no .env, byte a byte");
+    }
+})->with([
+    'nome, chave ausente' => [
+        'nome', 'APP_NAME', ['APP_ENV=local', 'MAIL_FROM_NAME="Loja"'], true, ['APP_ENV=local', 'MAIL_FROM_NAME="Loja"'],
+    ],
+    'nome, ausente e a ultima linha sem quebra' => [
+        'nome', 'APP_NAME', ['APP_ENV=local', 'DEBUG=true'], false, ['APP_ENV=local', 'DEBUG=true'],
+    ],
+    'nome, so comentada' => [
+        'nome', 'APP_NAME', ['APP_ENV=local', '# APP_NAME="Exemplo"'], true, ['APP_ENV=local'],
+    ],
+    'banco PostgreSQL, DB_HOST so comentada (aplicar() direto)' => [
+        'banco (host)', 'DB_HOST', ['DB_CONNECTION=sqlite', '# DB_HOST=127.0.0.1', '# DB_PORT=5432'], true, [],
+    ],
+    'host local, APP_URL so comentada' => [
+        'host local', 'APP_URL', ['APP_ENV=local', '# APP_URL=http://localhost'], true, ['APP_ENV=local'],
+    ],
+    'banco PostgreSQL, DB_CONNECTION ausente (aplicarBanco)' => [
+        'banco', 'DB_CONNECTION', ['APP_ENV=local', 'APP_NAME="Loja"'], true, ['APP_ENV=local', 'APP_NAME="Loja"'],
+    ],
+    'ativacao da tenancy, KIT_TENANCY ausente (a chave que comeca com o nome nao e ela)' => [
+        'tenancy', 'KIT_TENANCY', ['APP_ENV=local', 'KIT_TENANCY_LABEL="Organização"'], true, ['APP_ENV=local', 'KIT_TENANCY_LABEL="Organização"'],
+    ],
+    'demo do kit:tenancy --demo, KIT_DEMO ausente' => [
+        'demo', 'KIT_DEMO', ['APP_ENV=local', 'KIT_TENANCY=true'], true, ['APP_ENV=local', 'KIT_TENANCY=true'],
+    ],
+])->group('kit');
+
+/**
+ * [CT-150] o comentário ao lado de uma linha ativa continua byte a byte, qualquer que seja o gravador (R64).
+ *
+ * O `.env` é o `.env.example` do kit com as linhas da chave (ativas ou comentadas) trocadas pelas
+ * dadas, na ordem — nenhuma outra chave é anexada, e a conta de linhas vale.
+ *
+ * @param  list<string>  $linhas
+ */
+it('[CT-150] o comentario ao lado de uma linha ativa continua byte a byte, qualquer que seja o gravador', function (string $gravador, string $chave, array $linhas, string $comentario): void {
+    File::put($this->base.'/.env', envDeExemploComLinhas($chave, $linhas));
+
+    $antes    = linhasDoEnvNoTemp(envDoTeste());
+    $posicao  = array_search($comentario, $antes, true);
+
+    expect($posicao)->not->toBeFalse('sonda do teste: o comentario nao esta no .env de partida');
+
+    $gravado = gravarNoEnvComo($gravador);
+
+    $depois = linhasDoEnvNoTemp(envDoTeste());
+    $ativas = linhasAtivasDaChave($chave, envDoTeste());
+
+    expect($ativas)->toHaveCount(1, "deveria haver so uma linha que o Dotenv le como {$chave} — achei: ".json_encode($ativas, JSON_UNESCAPED_UNICODE))
+        ->and(Dotenv\Dotenv::parse($ativas[0])[$chave] ?? null)->toBe($gravado, 'a linha ativa nao da o valor gravado');
+
+    expect($depois[$posicao] ?? null)->toBe($comentario, 'o comentario deveria continuar no .env, byte a byte, na mesma posicao');
+
+    expect(count($depois))->toBe(count($antes), 'o .env deveria continuar com o mesmo numero de linhas de antes');
+})->with([
+    'tenancy: comentario antes da ativa' => [
+        'tenancy', 'KIT_TENANCY',
+        ['# KIT_TENANCY=true — liga o multi-tenant; rode kit:tenancy', 'KIT_TENANCY=false'],
+        '# KIT_TENANCY=true — liga o multi-tenant; rode kit:tenancy',
+    ],
+    'aplicarBanco: comentario depois da ativa (DB_HOST)' => [
+        'banco (host)', 'DB_HOST',
+        ['DB_HOST=127.0.0.1', '# DB_HOST=db — o nome do serviço no Docker'],
+        '# DB_HOST=db — o nome do serviço no Docker',
+    ],
+    'garantia da senha: comentario antes da ativa' => [
+        'garantia da senha', 'KIT_ADMIN_PASSWORD',
+        ['# KIT_ADMIN_PASSWORD=password — o padrão publicado, não use', 'KIT_ADMIN_PASSWORD='],
+        '# KIT_ADMIN_PASSWORD=password — o padrão publicado, não use',
+    ],
+])->group('kit');
+
+/**
+ * [CT-151] a porta de gravação do .env, por situação da chave: o que muda no arquivo e o que ela devolve (R64).
+ *
+ * Tabela de decisão arquivo × ativa × comentada, com `definirLinhaNoEnv()` chamada direto sobre um
+ * caminho temporário. O "depois" é o conteúdo inteiro (`toBe`): só a igualdade byte a byte mata as
+ * mutações da linha anexada. `null` em `$antes` é "nenhum .env no caminho"; em `$depois`, "nenhum
+ * arquivo depois". O corpo do arquivo usa `
+`; a quebra da linha anexada é `PHP_EOL` (no Windows, `
+`), a que a gravação escreve.
+ *
+ * @param  array<string, string>  $lidas  o que o Dotenv deve ler depois, `chave => valor`
+ */
+it('[CT-151] a porta de gravacao do .env, por situacao da chave: o que muda no arquivo e o que ela devolve', function (?string $antes, string $chave, string $linha, bool $retorno, ?string $depois, array $lidas): void {
+    $caminho = $this->base.'/sem-env/.env';
+
+    File::ensureDirectoryExists($this->base.'/sem-env');
+
+    if ($antes !== null) {
+        File::put($caminho, $antes);
+    }
+
+    expect(SubstituicaoEmArquivo::definirLinhaNoEnv($caminho, $chave, $linha))->toBe($retorno, 'o retorno da gravacao');
+
+    if ($depois === null) {
+        expect(File::exists($caminho))->toBeFalse('a gravacao nao deveria criar o .env');
+
+        return;
+    }
+
+    expect(File::get($caminho))->toBe($depois);
+
+    $lido = Dotenv\Dotenv::parse(File::get($caminho));
+
+    foreach ($lidas as $nome => $valor) {
+        expect($lido[$nome] ?? null)->toBe($valor, "o Dotenv deveria ler {$nome}={$valor}");
+    }
+})->with(function (): array {
+    $nl  = "\n";
+    $eol = PHP_EOL;
+
+    return [
+        'sem .env: false e nenhum arquivo criado' => [
+            null, 'DB_HOST', 'DB_HOST=db', false, null, [],
+        ],
+        'uma ativa: true (controle do retorno)' => [
+            "DB_HOST=127.0.0.1{$nl}# DB_HOST=db-antigo", 'DB_HOST', 'DB_HOST=db', true,
+            "DB_HOST=db{$nl}# DB_HOST=db-antigo", ['DB_HOST' => 'db'],
+        ],
+        'duas comentadas e nenhuma ativa: so a primeira, no lugar' => [
+            "DB_CONNECTION=pgsql{$nl}# DB_HOST=127.0.0.1{$nl}# DB_HOST=db-antigo{$nl}# DB_PORT=5432", 'DB_HOST', 'DB_HOST=db', true,
+            "DB_CONNECTION=pgsql{$nl}DB_HOST=db{$nl}# DB_HOST=db-antigo{$nl}# DB_PORT=5432", ['DB_CONNECTION' => 'pgsql', 'DB_HOST' => 'db'],
+        ],
+        'ausente, arquivo termina em quebra: o de antes, PHP_EOL, a linha e PHP_EOL' => [
+            "APP_ENV=local{$nl}APP_DEBUG=true{$nl}", 'APP_NAME', 'APP_NAME="Novo"', true,
+            "APP_ENV=local{$nl}APP_DEBUG=true{$nl}{$eol}APP_NAME=\"Novo\"{$eol}",
+            ['APP_ENV' => 'local', 'APP_DEBUG' => 'true', 'APP_NAME' => 'Novo'],
+        ],
+        'ausente, ultima linha sem quebra: o de antes, PHP_EOL, a linha e PHP_EOL' => [
+            "APP_ENV=local{$nl}APP_DEBUG=true", 'APP_NAME', 'APP_NAME="Novo"', true,
+            "APP_ENV=local{$nl}APP_DEBUG=true{$eol}APP_NAME=\"Novo\"{$eol}",
+            ['APP_ENV' => 'local', 'APP_DEBUG' => 'true', 'APP_NAME' => 'Novo'],
+        ],
+    ];
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
 | O plural sugerido para o rótulo da organização
 |--------------------------------------------------------------------------
 | Encontrado em teste manual da v0.16.1: quem apertasse Enter nas duas perguntas
@@ -682,4 +1286,366 @@ it('[CT-19] o instalador anuncia o container em vez de negá-lo', function (): v
             "O {$onde} continua negando que o kit sobe container.",
         )->and($trecho)->not->toContain('o kit não sobe container MySQL');
     }
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| R27 (wiki diagramas-da-arquitetura) — o resumo nunca afirma `password`
+|--------------------------------------------------------------------------
+| `04-casos-de-teste.md` da wiki `diagramas-da-arquitetura`, bloco R9: até a correção, a linha
+| "Senha do administrador" do resumo dizia `password (padrão do kit)` com a resposta vazia — uma
+| senha que nunca existiu (o kit gera uma aleatória), e a pergunta já promete "senha aleatória".
+| `app/Support/CustomizadorDaInstalacao.php:330-334` mostra a correção já aplicada.
+*/
+
+/**
+ * [CT-41] o resumo descreve a senha de cada partição, e nunca cita `password` nem a senha em
+ * claro.
+ */
+it('[CT-41] o resumo do kit:install descreve a senha sem nunca citar password', function (string $senha, string $valorEsperado): void {
+    $resumo = customizadorNoTemp()->aplicar(respostasDeCustomizacao(['senha' => $senha]));
+
+    $linha = collect($resumo)->first(fn (array $par): bool => $par[0] === 'Senha do administrador');
+
+    expect($linha)->not->toBeNull('o resumo não tem a linha "Senha do administrador"')
+        ->and($linha[1])->toBe($valorEsperado);
+
+    $this->assertStringNotContainsString('password', $linha[1], 'a linha do resumo ainda cita "password"');
+
+    if ($senha !== '') {
+        $this->assertStringNotContainsString($senha, $linha[1], 'a linha do resumo expõe a senha em claro');
+    }
+})->with([
+    'senha vazia — gerada pelo instalador'  => ['', 'gerada pelo instalador e impressa no fim'],
+    'senha digitada — mascarada'            => ['segredo123', '•••••••• (a que você digitou)'],
+])->group('kit');
+
+/**
+ * [CT-41] (RD2-06) — a senha DIGITADA não é utilizável (o padrão publicado, ou só espaço), e o
+ * resumo promete "a que você digitou" mesmo assim.
+ *
+ * O `match` de `aplicar()` (`app/Support/CustomizadorDaInstalacao.php:330-334`) decide esta linha
+ * só por `$senha !== ''` — nunca consulta `SenhaDoAdministrador::ehUtilizavel($senha)` no ramo da
+ * senha digitada (só no ramo vazio, para `$senhaJaUtilizavel`). Uma senha digitada como
+ * `password` (o padrão publicado, `SenhaDoAdministrador::PADRAO_PUBLICADO`) ou feita só de espaço
+ * é NÃO utilizável: `SenhaDoAdministrador::garantirNoEnv()` (chamado depois, no `kit:install`) vai
+ * ignorá-la e GERAR outra — o resumo não pode prometer "a que você digitou" para um valor que
+ * nunca chega a valer.
+ */
+it('[CT-41] senha digitada mas nao utilizavel nao e anunciada como "a que voce digitou"', function (string $senhaDigitada): void {
+    // Sonda do dataset: se isto falhar, o dataset está errado, não o produto.
+    test()->assertFalse(
+        SenhaDoAdministrador::ehUtilizavel($senhaDigitada),
+        'sonda do teste: a senha do dataset deveria ser considerada NAO utilizavel por SenhaDoAdministrador::ehUtilizavel()',
+    );
+
+    $resumo = customizadorNoTemp()->aplicar(respostasDeCustomizacao(['senha' => $senhaDigitada]));
+
+    $linha = collect($resumo)->first(fn (array $par): bool => $par[0] === 'Senha do administrador');
+
+    expect($linha)->not->toBeNull('o resumo não tem a linha "Senha do administrador"');
+
+    $this->assertStringNotContainsString(
+        'a que você digitou',
+        $linha[1],
+        'o resumo promete "a que você digitou" para uma senha que SenhaDoAdministrador::ehUtilizavel() rejeita — o instalador vai gerar outra (RD2-06)',
+    );
+    $this->assertStringNotContainsString('password', $linha[1], 'a linha do resumo ainda cita "password"');
+    $this->assertStringNotContainsString($senhaDigitada, $linha[1], 'a linha do resumo expõe a senha em claro');
+})->with([
+    'padrão publicado ("password")' => ['password'],
+    'só espaços'                    => ['   '],
+])->group('kit');
+
+/**
+ * [CT-41] (RD-07/achado adicional) — o `.env` já tem uma `KIT_ADMIN_PASSWORD` UTILIZÁVEL (uma
+ * reinstalação, ou um `.env` herdado) e a resposta desta execução vem vazia (Enter).
+ *
+ * `aplicar()` só GRAVA a chave quando `$senha !== ''` (`app/Support/CustomizadorDaInstalacao.php:309-311`):
+ * com resposta vazia e uma senha já utilizável no arquivo, nada é escrito e nada é gerado —
+ * `SenhaDoAdministrador::garantirNoEnv()` (chamado depois, no `kit:install`) devolve `null` nesse
+ * caso e NADA é impresso no terminal (`app/Support/SenhaDoAdministrador.php:garantirNoEnv:149`).
+ * O resumo não pode prometer o que não vai acontecer: a linha não diz "gerada" nem "impressa", e
+ * nomeia `KIT_ADMIN_PASSWORD` como a que vale, sem vazar o valor em claro.
+ *
+ * *(RD2-17, 2026-09-28)* VERDE hoje: o `match` de `aplicar()` (`:330-334`) já consulta
+ * `$senhaJaUtilizavel` (`SenhaDoAdministrador::ehUtilizavel($this->senhaAtualNoEnv($env))`) no
+ * ramo da resposta vazia — este caso é a REGRESSÃO deste comportamento (RD-07, Repro A), não mais
+ * uma reprodução de defeito aberto.
+ */
+it('[CT-41] o resumo nao promete senha gerada nem impressa quando o .env ja tem KIT_ADMIN_PASSWORD utilizavel', function (): void {
+    File::put($this->base.'/.env', str_replace(
+        'KIT_ADMIN_PASSWORD=',
+        'KIT_ADMIN_PASSWORD=ja-era-utilizavel-123',
+        envDoTeste(),
+    ));
+
+    $resumo = customizadorNoTemp()->aplicar(respostasDeCustomizacao(['senha' => '']));
+
+    $linha = collect($resumo)->first(fn (array $par): bool => $par[0] === 'Senha do administrador');
+
+    expect($linha)->not->toBeNull('o resumo não tem a linha "Senha do administrador"');
+
+    $this->assertStringNotContainsString('gerada', $linha[1], 'o resumo promete uma senha GERADA quando o .env já tinha uma utilizável — nada foi gerado (RD-07)');
+    $this->assertStringNotContainsString('impressa', $linha[1], 'o resumo promete uma senha IMPRESSA quando o .env já tinha uma utilizável — SenhaDoAdministrador::garantirNoEnv() devolve null e nada é impresso (RD-07)');
+    $this->assertStringNotContainsString('password', $linha[1], 'a linha do resumo ainda cita "password"');
+    $this->assertStringNotContainsString('ja-era-utilizavel-123', $linha[1], 'a linha do resumo expõe a senha em claro');
+    $this->assertStringContainsString('KIT_ADMIN_PASSWORD', $linha[1], 'o resumo não nomeia KIT_ADMIN_PASSWORD como a senha que vale (RD-07)');
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| RD2-05 — o desfecho FINAL (so o KitInstall sabe) corrige a linha do resumo e o banner
+|--------------------------------------------------------------------------
+| `CustomizadorDaInstalacao::aplicar()` decide a linha "Senha do administrador" ANTES de o
+| `KitInstall` saber se vai semear (`KitInstall.php:customizar:108` roda antes de `:111` e `:117`): com
+| `--no-seed`, ou banco inacessivel (`conferirConexao()` marca `bancoAcessivel = false`),
+| `semear()`/`garantirSenhaDoAdministrador()` NUNCA rodam — nada e gerado, `$this->senhaGerada`
+| fica `null` — mas o resumo grava "gerada pelo instalador e impressa no fim" (para senha vazia
+| digitada) e o `banner()` imprime "A senha e a que voce definiu em KIT_ADMIN_PASSWORD." mesmo
+| quando ninguem definiu nada de fato utilizavel.
+|
+| Contrato exigido do construtor (F5), fixado por estes dois casos:
+|
+|   1. `KitInstall::corrigirResumoDaSenha(): void` (sem parametros) — chamado depois de
+|      `conferirConexao()` e da decisao de `semear()`/`no-seed`, ANTES de `resumoDaCustomizacao()`.
+|      Quando `$this->senhaGerada === null` E a entrada `'Senha do administrador'` de
+|      `$this->resumo` ainda diz "gerada pelo instalador e impressa no fim", reescreve essa entrada
+|      para algo que NAO prometa "gerada" nem "impressa" nem cite a senha em claro.
+|
+|   2. `KitInstall::mensagemDoBanner(bool $semeado): string` — a nota que `banner()` imprime
+|      (`note(...)`, hoje inline em `banner():494-502`), chamada com
+|      `$semeado = $this->bancoAcessivel && ! $this->option('no-seed')`. Com `$this->senhaGerada`
+|      preenchido: a mensagem de "gerada agora" (comportamento de hoje, preservado). Com
+|      `$this->senhaGerada === null` E `$semeado === true`: "a que voce definiu" (comportamento de
+|      hoje, preservado — quem semeou e o .env ja tinha senha utilizavel). Com
+|      `$this->senhaGerada === null` E `$semeado === false`: NAO pode dizer "voce definiu" (RD2-05)
+|      — nada foi semeado, entao a frase e uma promessa vazia.
+*/
+
+/**
+ * A tabela de R55: senha gerada nesta execução (G) × banco semeado nesta execução (S).
+ *
+ * A célula G ∧ ¬S não é esta tabela (é o CT-136). Os textos são comparados SEM acento e SEM caixa,
+ * dos dois lados, na presença e na ausência (Setup Global, ADV-26): o banner é ASCII e a linha do
+ * resumo tem acento. E `password` é procurado sem a própria chave `KIT_ADMIN_PASSWORD`, que o
+ * contém — as duas instruções a citam de propósito.
+ */
+function semAChaveDaSenha(string $texto): string
+{
+    return str_replace('kit_admin_password', '', semAcentoESemCaixa($texto));
+}
+
+/** A linha "Senha do administrador" do resumo, depois de `corrigirResumoDaSenha()` no desfecho dado. */
+function linhaDoResumoNoDesfecho(?string $senhaGerada, bool $semeado): ?string
+{
+    $comando = new KitInstall;
+
+    // (RD3-12) A fixture usa a CONSTANTE de `CustomizadorDaInstalacao`, não um quarto literal
+    // solto: é ela que `corrigirResumoDaSenha()` tem de reconhecer, e é a MESMA que
+    // `CustomizadorDaInstalacao::aplicar()` de fato escreve no resumo (CT-41 mede isso do outro lado).
+    $propriedadeResumo = new ReflectionProperty(KitInstall::class, 'resumo');
+    $propriedadeResumo->setValue($comando, [
+        ['Nome do projeto', 'Loja do Ferro'],
+        ['Senha do administrador', CustomizadorDaInstalacao::RESUMO_SENHA_GERADA],
+    ]);
+
+    (new ReflectionProperty(KitInstall::class, 'senhaGerada'))->setValue($comando, $senhaGerada);
+    (new ReflectionProperty(KitInstall::class, 'semeado'))->setValue($comando, $semeado);
+
+    (new ReflectionMethod(KitInstall::class, 'corrigirResumoDaSenha'))->invoke($comando);
+
+    $linha = collect($propriedadeResumo->getValue($comando))
+        ->first(fn (array $par): bool => $par[0] === 'Senha do administrador');
+
+    return $linha[1] ?? null;
+}
+
+it('[RD2-05][CT-120] a linha "Senha do administrador" do resumo diz o que o desfecho fez', function (?string $senhaGerada, bool $semeado, string $celula, ?string $senhaDoAmbiente): void {
+    if ($senhaDoAmbiente !== null) {
+        config(['kit.admin.password' => $senhaDoAmbiente]);
+
+        // Sonda do dataset (ADV2-19): a linha ¬G ∧ ¬S so vale sem senha utilizavel; a ¬G ∧ S, com ela.
+        expect(SenhaDoAdministrador::ehUtilizavel($senhaDoAmbiente))->toBe($celula === 'nao G e S', 'sonda do teste: a senha do ambiente do dataset nao bate com a celula');
+    }
+
+    $linha = linhaDoResumoNoDesfecho($senhaGerada, $semeado);
+
+    expect($linha)->not->toBeNull('a linha "Senha do administrador" nao pode sumir do resumo');
+
+    $texto = semAcentoESemCaixa($linha);
+
+    $this->assertStringNotContainsString('password', semAChaveDaSenha($linha), 'a linha do resumo cita "password"');
+
+    if ($celula === 'G e S') {
+        expect($linha)->toBe(
+            CustomizadorDaInstalacao::RESUMO_SENHA_GERADA,
+            'com a senha gerada nesta execucao a linha continua prometendo a senha gerada e impressa no fim — o banner a imprimiu',
+        );
+        $this->assertStringContainsString(semAcentoESemCaixa(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA), $texto);
+
+        return;
+    }
+
+    if ($celula === 'nao G e S') {
+        $this->assertStringContainsString('kit_admin_password', $texto, 'a linha nao nomeia KIT_ADMIN_PASSWORD como a senha que ja vale');
+        expect($texto)->toMatch('/\bja\b.*kit_admin_password/');
+        $this->assertStringNotContainsString('popula', $texto, 'a linha diz que o banco deixou de ser populado, e ele foi semeado');
+
+        return;
+    }
+
+    // ¬G ∧ ¬S: nada foi gerado e nada foi semeado.
+    $this->assertStringNotContainsString('gerada', $texto, 'o resumo continua prometendo uma senha GERADA quando nada foi semeado (RD2-05)');
+    $this->assertStringNotContainsString('impressa', $texto, 'o resumo continua prometendo uma senha IMPRESSA quando nada foi semeado (RD2-05)');
+    $this->assertStringNotContainsString(
+        semAcentoESemCaixa(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA),
+        $texto,
+        'a linha continua sendo a promessa da senha gerada',
+    );
+
+    $posicaoDaChave = strpos($texto, 'kit_admin_password');
+    $posicaoDoSeed  = strpos($texto, 'db:seed');
+
+    expect($posicaoDaChave)->not->toBeFalse('a instrucao nao manda definir KIT_ADMIN_PASSWORD')
+        ->and($posicaoDoSeed)->not->toBeFalse('a instrucao nao manda rodar db:seed')
+        ->and($posicaoDaChave)->toBeLessThan($posicaoDoSeed, 'KIT_ADMIN_PASSWORD deveria vir ANTES de db:seed: quem segue a primeira frase semeia "password"');
+    $this->assertStringNotContainsString('kit:admin', $texto, 'a instrucao cita kit:admin, que falha sem administrador para atualizar');
+})->with([
+    'G e S: senha gerada nesta execucao'                         => ['abc123XYZ', true, 'G e S', null],
+    'nao G e S: banco semeado com a senha que ja era utilizavel' => [null, true, 'nao G e S', 'segredo-xyz-987'],
+    'nao G e nao S: banco nao semeado, senha vazia'              => [null, false, 'nao G e nao S', ''],
+    'nao G e nao S: banco nao semeado, senha `password`'         => [null, false, 'nao G e nao S', 'password'],
+])->group('kit');
+
+it('[RD2-05][CT-119] mensagemDoBanner() nao promete "a que voce definiu" quando a semeadura nao rodou', function (string $senhaDoAmbiente): void {
+    // Sonda do dataset (ADV2-19): a linha ¬G ∧ ¬S so vale sem senha utilizavel (vazia ou `password`).
+    expect(SenhaDoAdministrador::ehUtilizavel($senhaDoAmbiente))->toBeFalse('sonda do teste: a senha do ambiente do dataset e utilizavel');
+
+    config(['kit.admin.password' => $senhaDoAmbiente]);
+
+    $comando = new KitInstall;
+
+    (new ReflectionProperty(KitInstall::class, 'senhaGerada'))->setValue($comando, null);
+
+    $mensagem = (new ReflectionMethod(KitInstall::class, 'mensagemDoBanner'))->invoke($comando, false);
+    $texto    = semAcentoESemCaixa($mensagem);
+
+    $this->assertStringNotContainsString(
+        'voce definiu',
+        $mensagem,
+        'o banner promete "a que voce definiu em KIT_ADMIN_PASSWORD" mesmo com a semeadura pulada (--no-seed ou banco inacessivel) — ninguem confirmou que essa senha vale para algum administrador (RD2-05)',
+    );
+    $this->assertStringNotContainsString('voce definiu', $texto);
+    $this->assertStringNotContainsString(config('kit.admin.email').' / ', $mensagem, 'o banner apresenta um login inicial: nao promete senha nenhuma');
+    $this->assertStringNotContainsString('password', semAChaveDaSenha($mensagem), 'o banner apresenta "password" como a senha');
+
+    $posicaoDaChave = strpos($texto, 'kit_admin_password');
+    $posicaoDoSeed  = strpos($texto, 'db:seed');
+
+    expect($posicaoDaChave)->not->toBeFalse('o banner nao manda definir KIT_ADMIN_PASSWORD')
+        ->and($posicaoDoSeed)->not->toBeFalse('o banner nao manda rodar db:seed')
+        ->and($posicaoDaChave)->toBeLessThan($posicaoDoSeed, 'KIT_ADMIN_PASSWORD deveria vir ANTES de db:seed no banner');
+    $this->assertStringNotContainsString('kit:admin', $texto, 'o banner cita kit:admin, que falha sem administrador para atualizar');
+})->with([
+    'senha vazia'         => [''],
+    'senha `password`'    => ['password'],
+])->group('kit');
+
+it('[RD2-05][CT-119] mensagemDoBanner() preserva o comportamento de hoje quando a semeadura RODOU', function (): void {
+    config(['kit.admin.password' => 'segredo-xyz-987']);
+
+    $comando = new KitInstall;
+
+    (new ReflectionProperty(KitInstall::class, 'senhaGerada'))->setValue($comando, null);
+
+    $mensagem = (new ReflectionMethod(KitInstall::class, 'mensagemDoBanner'))->invoke($comando, true);
+
+    $this->assertStringContainsString(
+        'KIT_ADMIN_PASSWORD',
+        $mensagem,
+        'com a semeadura rodada e nada gerado (o .env ja tinha uma senha utilizavel), o banner deveria nomear KIT_ADMIN_PASSWORD como a que vale — comportamento de hoje, que este contrato nao pode quebrar',
+    );
+    $this->assertStringContainsString('kit_admin_password', semAcentoESemCaixa($mensagem));
+    $this->assertStringNotContainsString('segredo-xyz-987', $mensagem, 'o banner imprime a senha que o usuario definiu — nao imprime senha nenhuma');
+    $this->assertStringNotContainsString(config('kit.admin.email').' / ', $mensagem, 'o banner imprime um par e-mail / senha: nao imprime senha nenhuma');
+    $this->assertStringNotContainsString('password', semAChaveDaSenha($mensagem), 'o banner apresenta "password" como a senha');
+})->group('kit');
+
+it('[RD2-05][CT-119] mensagemDoBanner() preserva a mensagem de senha gerada agora', function (): void {
+    $comando = new KitInstall;
+
+    (new ReflectionProperty(KitInstall::class, 'senhaGerada'))->setValue($comando, 'abc123XYZ');
+
+    foreach ([true, false] as $semeado) {
+        $mensagem = (new ReflectionMethod(KitInstall::class, 'mensagemDoBanner'))->invoke($comando, $semeado);
+
+        $this->assertStringContainsString('abc123XYZ', $mensagem, 'com senhaGerada preenchida, o banner deveria imprimir a senha gerada — comportamento de hoje, que este contrato nao pode quebrar');
+        $this->assertStringNotContainsString('password', semAChaveDaSenha($mensagem), 'o banner apresenta "password" como a senha');
+    }
+
+    // A célula G ∧ S: o e-mail e a senha gerada, e o aviso de que ela não será mostrada de novo.
+    $mensagem = (new ReflectionMethod(KitInstall::class, 'mensagemDoBanner'))->invoke($comando, true);
+
+    $this->assertStringContainsString(config('kit.admin.email'), $mensagem, 'o banner nao imprime o e-mail do administrador');
+    $this->assertStringContainsString(
+        'nao sera mostrada de novo',
+        semAcentoESemCaixa($mensagem),
+        'o banner nao avisa que a senha gerada nao sera mostrada de novo',
+    );
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| RD3-12 — a linha "vai gerar" do resumo tem UMA fonte, não um literal
+| duplicado em três lugares
+|--------------------------------------------------------------------------
+| Hoje `'gerada pelo instalador e impressa no fim'` vive solto em
+| `CustomizadorDaInstalacao::aplicar()` (onde nasce), em `KitInstall::corrigirResumoDaSenha()`
+| (que precisa RECONHECER a mesma frase para decidir se reescreve a linha) e no teste da
+| `:872` (que a repete pela terceira vez). Mudar o texto no Customizador desliga a correção do
+| KitInstall em silêncio — nenhum teste acusa. O construtor (F7) fixa isto numa constante
+| PÚBLICA em `CustomizadorDaInstalacao` — `RESUMO_SENHA_GERADA` — consultada pelas outras duas
+| pontas.
+*/
+
+it('[RD3-12][CT-123] CustomizadorDaInstalacao expoe RESUMO_SENHA_GERADA como constante publica, e aplicar() a usa', function (): void {
+    expect(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA)
+        ->toBeString()
+        ->not->toBe('');
+
+    $resumo = customizadorNoTemp()->aplicar(respostasDeCustomizacao(['senha' => '']));
+    $linha  = collect($resumo)->first(fn (array $par): bool => $par[0] === 'Senha do administrador');
+
+    expect($linha)->not->toBeNull('o resumo não tem a linha "Senha do administrador"')
+        ->and($linha[1])->toBe(
+            CustomizadorDaInstalacao::RESUMO_SENHA_GERADA,
+            'aplicar() deveria escrever exatamente o valor da constante RESUMO_SENHA_GERADA, não um literal solto (RD3-12)',
+        );
+})->group('kit');
+
+it('[RD3-12][CT-123] corrigirResumoDaSenha() reconhece a linha pela CONSTANTE de CustomizadorDaInstalacao, nao por um literal duplicado', function (): void {
+    $fonte = File::get((new ReflectionClass(KitInstall::class))->getFileName());
+
+    preg_match(
+        '~private function corrigirResumoDaSenha\(\): void\s*\{(.*?)\n    \}~s',
+        $fonte,
+        $achado,
+    );
+
+    $corpoDoMetodo = $achado[1] ?? '';
+
+    expect($corpoDoMetodo)->not->toBe('', 'nao encontrei o corpo de corrigirResumoDaSenha() em KitInstall.php — o regex de extracao pode ter ficado desatualizado');
+
+    $this->assertStringContainsString(
+        'CustomizadorDaInstalacao::RESUMO_SENHA_GERADA',
+        $corpoDoMetodo,
+        'corrigirResumoDaSenha() deveria reconhecer a linha do resumo pela CONSTANTE CustomizadorDaInstalacao::RESUMO_SENHA_GERADA, nao por um literal duplicado (RD3-12) — corpo do metodo: '.$corpoDoMetodo,
+    );
+
+    $this->assertStringNotContainsString(
+        "'gerada pelo instalador e impressa no fim'",
+        $corpoDoMetodo,
+        'corrigirResumoDaSenha() ainda compara com o literal duplicado em vez da constante (RD3-12)',
+    );
 })->group('kit');

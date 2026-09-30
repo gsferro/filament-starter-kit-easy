@@ -59,6 +59,19 @@ final class CustomizadorDaInstalacao
         'Pink', 'Purple', 'Red', 'Rose', 'Sky', 'Slate', 'Teal', 'Violet',
     ];
 
+    /**
+     * A frase que `aplicar()` escreve no resumo quando o `.env` de destino ainda NÃO tem uma senha
+     * utilizável — o instalador vai gerar uma e imprimi-la no fim.
+     *
+     * Constante PÚBLICA (RD3-12), não um literal espalhado: `KitInstall::corrigirResumoDaSenha()`
+     * precisa RECONHECER esta mesma frase para decidir se reescreve a linha, depois de saber o
+     * desfecho real de `semear()` (RD3-01/RD3-03) — e o caso de teste que fixa o contrato consulta
+     * a mesma constante. Três lugares respondendo à mesma pergunta ("qual é o texto de 'vai
+     * gerar'?") por literais soltos é lista paralela: mudar o texto aqui, sem tocar os outros dois,
+     * desligaria a correção do `KitInstall` em silêncio.
+     */
+    public const RESUMO_SENHA_GERADA = 'gerada pelo instalador e impressa no fim';
+
     private string $base;
 
     public function __construct(string $base = '')
@@ -150,7 +163,12 @@ final class CustomizadorDaInstalacao
             ),
             'senha' => password(
                 label: 'Senha do administrador',
-                hint: 'Enter deixa o instalador gerar uma senha aleatória e imprimi-la uma vez.',
+                /*
+                 * (RD3-01) Sem condicional: prometia gerar sempre, mas só gera quando o `.env` de
+                 * destino AINDA NÃO tem uma senha utilizável (`SenhaDoAdministrador::ehUtilizavel()`)
+                 * — reinstalação sobre um `.env` que já a definiu não gera nem imprime nada de novo.
+                 */
+                hint: 'Enter deixa o instalador gerar uma senha aleatória (se o .env ainda não tiver uma) e imprimi-la uma vez.',
             ),
             'cor'   => select(
                 label: 'Cor primária dos painéis',
@@ -173,7 +191,7 @@ final class CustomizadorDaInstalacao
      * As perguntas que podem ser refeitas SEM tocar no banco — e por que são só duas.
      *
      * O `--force` do `kit:install` refaz as cinco perguntas, mas apaga o SQLite antes
-     * (`KitInstall.php:229-231`). Isso é inócuo no minuto seguinte à instalação e destrutivo
+     * (`KitInstall.php:recriar:332`). Isso é inócuo no minuto seguinte à instalação e destrutivo
      * depois. Este caminho existe para o "depois", e por isso o recorte é conservador:
      *
      * - **nome** e **cor** são reescrita de `.env`, e valem no próximo request. Entram aqui.
@@ -289,10 +307,31 @@ final class CustomizadorDaInstalacao
         $resumo[] = ['E-mail do administrador', $email];
 
         if ($senha !== '') {
-            SubstituicaoEmArquivo::definirNoEnv($env, 'KIT_ADMIN_PASSWORD', $senha);
+            SubstituicaoEmArquivo::definirNoEnv($env, SenhaDoAdministrador::CHAVE, $senha);
         }
 
-        $resumo[] = ['Senha do administrador', $senha !== '' ? '•••••••• (a que você digitou)' : 'password (padrão do kit)'];
+        /*
+         * O resumo não pode prometer o que não vai acontecer (RD-07, RD2-06). Com resposta vazia,
+         * este método NÃO grava nada em `KIT_ADMIN_PASSWORD` (bloco acima) — "gerada pelo
+         * instalador e impressa no fim" só é verdade quando o `.env` de destino ainda NÃO tem uma
+         * senha utilizável, porque é só nesse caso que `SenhaDoAdministrador::garantirNoEnv()`
+         * (chamado depois, no `kit:install`) de fato gera e devolve uma senha nova para imprimir.
+         * Quando já havia uma utilizável, `garantirNoEnv()` devolve `null` e nada é impresso — a
+         * mesma regra de `ehUtilizavel()`, consultada aqui em vez de duplicada.
+         *
+         * A mesma regra vale para a senha DIGITADA (RD2-06): `password` (o padrão publicado) ou
+         * só espaço não é utilizável, e `garantirNoEnv()` vai IGNORAR o que foi digitado e gerar
+         * outra — o resumo não pode dizer "a que você digitou" para um valor que nunca chega a
+         * valer. Sem esta checagem, o `match` decidia só por `$senha !== ''`.
+         */
+        $senhaDigitadaUtilizavel = $senha !== '' && SenhaDoAdministrador::ehUtilizavel($senha);
+        $senhaJaUtilizavel       = $senha === '' && SenhaDoAdministrador::ehUtilizavel($this->senhaAtualNoEnv($env));
+
+        $resumo[] = ['Senha do administrador', match (true) {
+            $senhaDigitadaUtilizavel => '•••••••• (a que você digitou)',
+            $senhaJaUtilizavel       => 'a que você já definiu em KIT_ADMIN_PASSWORD',
+            default                  => self::RESUMO_SENHA_GERADA,
+        }];
 
         SubstituicaoEmArquivo::definirNoEnv($env, 'KIT_COR_PRIMARIA', $cor);
         $resumo[] = ['Cor primária', $cor !== '' ? $cor : 'padrão do Filament'];
@@ -323,6 +362,21 @@ final class CustomizadorDaInstalacao
         );
 
         return $resumo;
+    }
+
+    /**
+     * O valor ATUAL de `KIT_ADMIN_PASSWORD` no `.env` de destino — lido ANTES de qualquer
+     * escrita desta chamada, para decidir se já havia uma senha utilizável (RD-07).
+     *
+     * Delegado a `SenhaDoAdministrador::doArquivo()` (RD2-07/`.ai/rules/config.md`: "uma
+     * pergunta, uma dona") — a classe dona desta pergunta é quem lê o arquivo, nunca `config()`:
+     * o `.env` aqui é o do diretório INJETÁVEL (`$this->base`), que na suíte de testes nunca é o
+     * do processo PHP corrente, e `config('kit.admin.password')` responderia pelo `.env` de
+     * quem roda o teste ou o comando — não pelo arquivo que este método de fato lê e escreve.
+     */
+    private function senhaAtualNoEnv(string $env): ?string
+    {
+        return SenhaDoAdministrador::doArquivo($env);
     }
 
     /**
@@ -484,15 +538,10 @@ final class CustomizadorDaInstalacao
      */
     private function aplicarBanco(string $env, string $banco, string $nome): void
     {
-        SubstituicaoEmArquivo::aplicar($env, '/^#?\s*DB_CONNECTION=.*$/m', 'DB_CONNECTION='.$banco);
+        SubstituicaoEmArquivo::definirLinhaNoEnv($env, 'DB_CONNECTION', 'DB_CONNECTION='.$banco);
 
         foreach ($this->valoresDoBanco($banco, $nome) as $chave => $valor) {
-            SubstituicaoEmArquivo::aplicar(
-                $env,
-                '/^#?\s*'.$chave.'=.*$/m',
-                $chave.'='.$valor,
-                PHP_EOL.$chave.'='.$valor.PHP_EOL,
-            );
+            SubstituicaoEmArquivo::definirLinhaNoEnv($env, $chave, $chave.'='.$valor);
         }
     }
 

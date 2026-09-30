@@ -38,12 +38,7 @@ final class AtivadorDeTenancy
         ?string $labelPlural = null,
         ?string $slug = null,
     ): void {
-        SubstituicaoEmArquivo::aplicar(
-            $caminhoDoEnv,
-            '/^#?\s*KIT_TENANCY=.*$/m',
-            'KIT_TENANCY=true',
-            PHP_EOL.'KIT_TENANCY=true'.PHP_EOL,
-        );
+        SubstituicaoEmArquivo::definirLinhaNoEnv($caminhoDoEnv, 'KIT_TENANCY', 'KIT_TENANCY=true');
 
         if ($label === null) {
             return;

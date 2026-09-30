@@ -52,6 +52,40 @@
 }
 
 /*
+ * Diagramas Mermaid — contraste do rótulo de aresta no tema escuro (CT-B01).
+ *
+ * O `astro-mermaid` (ADR-02) usa o tema embutido `dark` do próprio Mermaid quando
+ * `data-theme="dark"`, sem opção própria para configurar isso por tema (`mermaidConfig` é o mesmo
+ * objeto para os dois — conferido em `node_modules/astro-mermaid`). Naquele tema, o fundo do
+ * rótulo de aresta (`.edgeLabel`, `labelBackground` clareado 25%) sai `#585858` sob o texto
+ * `#cccccc`: 4,43:1, abaixo do piso de 4,5:1 da WCAG AA (`color-contrast`, serious — medido pelo
+ * `verifica-acessibilidade.mjs`, CT-B01, em 8 páginas pt + 8 en com fluxo/estado).
+ *
+ * Escurecer só o FUNDO do rótulo de aresta resolve sem tocar no texto: o mesmo texto pinta também
+ * o rótulo do NÓ, só que sobre o fundo do nó (bem mais escuro), onde a razão já é folgada — mudar
+ * o texto arriscaria contraste que hoje passa. `#404040` dá 6,46:1 com a mesma margem que o resto
+ * do tema usa.
+ *
+ * Escopado ao tema escuro E ao `pre.mermaid` (ADR-04: nenhuma cor fixa fora do tema, e nunca no
+ * bloco) — o tema claro usa outro par fundo/texto, que já passa (CT-B01 só reprova no escuro), e
+ * continua intocado aqui. As três formas espelham as regras que o próprio Mermaid gera para o
+ * rótulo (`.edgeLabel`, `.edgeLabel p`, `.edgeLabel rect`).
+ *
+ * `!important` é necessário, não estilo: o `<style>` do Mermaid é injetado por diagrama, no
+ * cliente, e prefixa TODA regra com `#mermaid-<id-aleatorio> ` (medido no SVG construído) — um ID
+ * por render, então nenhuma pilha de classes desta folha supera aquela especificidade (a
+ * comparação de especificidade decide pelo ID antes de contar classe alguma). Sem isto, o fundo
+ * ficava com `fill` corrigido (propriedade sem efeito em HTML) e `background-color` — a que
+ * realmente pinta o `<p>` do rótulo — continuava a do Mermaid.
+ */
+:root[data-theme='dark'] pre.mermaid .edgeLabel,
+:root[data-theme='dark'] pre.mermaid .edgeLabel p,
+:root[data-theme='dark'] pre.mermaid .edgeLabel rect {
+  background-color: #404040 !important;
+  fill: #404040 !important;
+}
+
+/*
  * Hero da landing.
  *
  * Sem imagem: o banner do repositório é claro e já traz o título e o comando de instalação dentro
@@ -200,4 +234,89 @@
   display: block;
   overflow-x: auto;
   max-width: 100%;
+}
+
+/*
+ * Diagramas Mermaid — tamanho natural, com rolagem dentro do bloco (QA-06; RQ-47/RQ-48, Adendo 6).
+ *
+ * O `astro-mermaid` (v2.1.0) injeta, no cliente, um `<style>` global para todo `pre.mermaid`
+ * (`node_modules/astro-mermaid/astro-mermaid-integration.js:619-699`) com, entre outras regras:
+ *
+ *   pre.mermaid { display: flex; justify-content: center; align-items: center; overflow: auto; }
+ *   pre.mermaid svg { max-width: 100%; height: auto; }
+ *
+ * O Mermaid (`useMaxWidth`, o padrão — `astro.config.mjs` não desliga) devolve o SVG já com
+ * `width="100%"` como ATRIBUTO e `style="max-width: <largura natural>px;"` inline
+ * (`calculateSvgSizeAttrs`, `node_modules/mermaid/dist/chunks/mermaid.core/chunk-DU6HZSFF.mjs:5275-
+ * 5285`) — o `viewBox` sozinho não fixa tamanho nenhum: um `<svg viewBox="…">` sem `width`/`height`
+ * (mesmo depois de anular o atributo por CSS) SEMPRE ocupa 100% do espaço disponível do contêiner,
+ * em `display: flex` OU `block`, com ou sem `width: auto`/`max-content`/`fit-content` — medido em
+ * seis combinações, fora deste repositório, num documento isolado com um SVG só de `viewBox`: as
+ * seis deram a largura do CONTÊINER, nunca a do `viewBox`. O Chromium não trata este SVG como tendo
+ * tamanho intrínseco para fins de layout — só a proporção. Por isso a correção NÃO tenta forçar o
+ * `width` do SVG a "automático" (não adianta, é o que já acontece) nem zera o `max-width` do
+ * Mermaid — ela FAZ o `width` querer ser enorme e deixa o `max-width` (o do PRÓPRIO Mermaid, natural)
+ * cortar de volta ao tamanho certo — o mesmo truque que faz um `<img>` sem intrínseco caber exato
+ * num `max-width`, ao contrário.
+ *
+ * Medido no QA-06, antes desta correção: o DG-11 sai a 2,2px de fonte efetiva (escala do `viewBox`
+ * 0,14) — 13 dos 20 diagramas do site ficavam abaixo de 10px.
+ *
+ * A correção mexe só no SVG e no alinhamento, nunca em cor (vale nos dois temas) e nunca no bloco
+ * Mermaid da doc (RQ-48: o GitHub, que não lê este CSS, continua renderizando do jeito que sempre
+ * renderizou):
+ *
+ * - `width: 100000px` — um valor deliberadamente absurdo (nenhum diagrama do kit chega perto disso),
+ *   só para nunca ser ele o limite. Não precisa de `!important`: é a ÚNICA declaração de `width`
+ *   para `pre.mermaid svg` em qualquer folha (o `astro-mermaid`, acima, só declara `max-width` e
+ *   `height`) — mesmo de baixíssima especificidade, uma declaração de `width` de autor já vence o
+ *   atributo `width="100%"`, que é apresentacional (a fonte de MENOR prioridade do CSS).
+ * - Sem tocar em `max-width`: o `style="max-width: <natural>px"` que o próprio Mermaid escreve no
+ *   SVG já vence, sozinho, o `max-width: 100%` do `astro-mermaid` — os dois são declarações NÃO
+ *   `!important` para a MESMA propriedade, e nessa faixa um `style=` inline sempre vence uma regra
+ *   de folha externa, não importa a especificidade do seletor nem a ordem. Medido: com os dois
+ *   presentes (inline `max-width: 2000px` + folha `max-width: 100%`), o `max-width` computado sai
+ *   `2000px` — o de 100% nunca chega a valer. Sobrepor aqui um `max-width: none` (a primeira
+ *   tentativa desta correção) estragava tudo: sem teto nenhum, o `width: 100000px` valia por
+ *   inteiro, e o SVG saía do tamanho do PLACEHOLDER, não do diagrama.
+ * - `flex-shrink: 0` — sem isto, o modelo flex ainda tentaria encolher o item (agora com base de
+ *   100000px) de volta a caber na coluna antes mesmo do `max-width` entrar em jogo.
+ *
+ * Resultado, medido na página real (`/pt/operacao/roteiro-de-features/`, DG-11, natural 4267px,
+ * coluna de 632px): `width` computado bate exato com o `max-width` do próprio Mermaid — o diagrama
+ * sai no tamanho NATURAL, nunca menor (RQ-47) — e o mesmo teste, com um SVG de natural MENOR que a
+ * coluna (150px numa coluna de 300px), confirma que ele continua no seu próprio tamanho, nunca
+ * esticado para preencher a coluna à toa.
+ *
+ * `height: auto`, do próprio `astro-mermaid` (linha 669, acima), segue valendo sem alteração: com o
+ * `width` resolvido, o navegador calcula a altura pela proporção do `viewBox`, mantendo o desenho
+ * inteiro proporcional.
+ *
+ * O que sobra mais largo que a coluna rola DENTRO do `pre.mermaid` (RQ-47: "rola na horizontal
+ * dentro do próprio bloco"): o `overflow: auto` que o `astro-mermaid` já põe nele (linha 632,
+ * acima) já é o contêiner rolável — nada aqui precisa recriar rolagem, só não atrapalhar.
+ *
+ * `justify-content: flex-start !important` troca a centralização do mesmo `<style>` (linha 626), e
+ * é dupla a razão do `!important`:
+ *
+ * - Especificidade EMPATADA (`pre.mermaid` nas duas folhas) e a página real medida mostra o
+ *   `<style>` do `astro-mermaid` — injetado pelo cliente DEPOIS do `<link>` deste arquivo —
+ *   vencendo o empate por ordem: sem o `!important` aqui, `justify-content` computado continuava
+ *   `center` mesmo com esta regra presente.
+ * - Centralizar um item mais largo que o contêiner é o problema em si, não só estético: medido
+ *   (`overflow: auto` + `justify-content: center` + item mais largo que o contêiner, num documento
+ *   isolado, fora deste repositório) o Chromium NÃO inclui o transbordo do lado inicial (esquerda,
+ *   LTR) na região rolável — `scrollWidth` só contava até a borda DIREITA do item, e o trecho à
+ *   esquerda do centro ficava inacessível por rolagem alguma, não só distante. Alinhado a
+ *   `flex-start`, o mesmo teste mede `scrollWidth` igual à largura cheia do item e alcança as duas
+ *   bordas. A rolagem que o RQ-47 pede tem de alcançar o desenho inteiro a partir do início —
+ *   centralizar aqui esconderia parte do diagrama sem nenhuma barra que a devolvesse.
+ */
+pre.mermaid {
+  justify-content: flex-start !important;
+}
+
+pre.mermaid svg {
+  width: 100000px;
+  flex-shrink: 0;
 }

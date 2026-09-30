@@ -29,7 +29,7 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-03b | Aprovação de cadastro (opt-in) | tela de usuários → ação *Aprovar* | quem pode editar usuário | com `KIT_REGISTRO_APROVACAO_MANUAL=true` o cadastro nasce pendente e não entra em painel nenhum | 🟢 |
 | F-03c | Validação de e-mail (opt-in) | `/app/email-verification/prompt` | autenticado, com a exigência ligada (na tela ou no `.env`) | a rota existe sempre — quem decide é um middleware do kit, por request; quem vem de convite nunca é barrado | 🟢 |
 | F-04 | Autenticação em dois fatores | `/{painel}/two-factor-authentication` | autenticado | a tela abre e oferece o QR | 🔵 |
-| F-05 | Passkeys | Meu perfil | autenticado | cadastro de chave, no perfil do Breezy | ⚪ |
+| F-05 | Passkeys | — | — | desligado no kit: o Breezy nasce com `$passkeys = false`, e nenhum painel chama `enablePasskeys()` | ⚪ |
 | F-06 | Bloqueio de sessão | menu do usuário → *Bloquear sessão* | autenticado | trava sem deslogar; volta com a senha **ou** com o login social (os mesmos botões do login). Usa o layout do login, não a `SimplePage` | 🟢 |
 | F-07 | Meu perfil, avatar e senha | `/{painel}/meu-perfil` | autenticado | edita nome, e-mail, senha e avatar | 🔵 |
 | F-08 | Impersonate | `/admin/users` → ação na linha | `master_global` | entra como outro usuário e volta pela faixa no topo | ⚪ |
@@ -132,6 +132,71 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 | F-55 | Ledger de execuções | `/infra/execucoes-ia` | `infra` | toda chamada vira linha com custo e tokens | 🟢 |
 | F-56 | Inferência local | `docker compose --profile ai up -d` | — | llama.cpp; ou troque `AI_PROVIDER` por um SaaS | ⚪ |
 
+### Sequência do assistente, do prompt ao ledger
+
+O widget entra em duas fases: `enviar()` valida a pergunta (até 2000 caracteres,
+`app/Livewire/AssistenteChatWidget.php:Validate:43`) e guarda como pendente; `responder()` streama
+pelo agente. O SDK envolve o pipeline com `RememberConversation` **antes** de `middleware()` rodar,
+porque `Assistente` usa `RemembersConversations`
+(`vendor/laravel/ai/src/Providers/Concerns/GeneratesText.php:RemembersConversations:148`); dentro
+dele, a ordem é a do catálogo `agentes_ia.guardrails`, resolvida por `GuardrailRegistry::MAPA`
+(`app/Ai/Guardrails/GuardrailRegistry.php:MAPA:23-27`) e semeada por
+`database/seeders/AssistenteSeeder.php:guardrails:39`, com `BudgetGuardMiddleware` primeiro
+(`app/Ai/Agents/AgenteBase.php:middleware:66`) e `AiAuditMiddleware` por último
+(`app/Ai/Agents/Assistente.php:middleware:61`).
+
+```mermaid
+sequenceDiagram
+%% DG-11
+accTitle: Sequência do assistente de IA
+accDescr: RememberConversation envolve o pipeline; o orçamento e os quatro guardrails do catálogo rodam na ordem real antes do provider; o filtro de saída age na resposta, sem impedir o streaming; só o pedido que chega ao provider vira linha em ai_runs.
+  participant usuario as Usuário
+  participant widget as AssistenteChatWidget
+  participant remember as RememberConversation (vendor)
+  participant budget as BudgetGuardMiddleware
+  participant prompt_injection as PromptInjectionGuardMiddleware
+  participant prompt_guard_local as GarantirPromptSeguroMiddleware (classificador)
+  participant pii_redactor as PiiRedactorMiddleware
+  participant auditoria as AiAuditMiddleware
+  participant provider as Provider de IA
+  participant filtro_saida as FiltroSaidaSensivelMiddleware
+  participant ledger as RegistrarAiRun -> ai_runs
+  usuario->>widget: pergunta (enviar(), até 2000 caracteres)
+  widget->>remember: responder() (stream)
+  remember->>budget: prompt
+  alt orçamento do mês esgotado
+    budget-->>widget: BudgetExceededException
+  else dentro do orçamento
+    budget->>prompt_injection: prompt
+    alt prompt injection na regex
+      prompt_injection-->>widget: PromptInjecaoBloqueadaException
+    else limpo
+      prompt_injection->>prompt_guard_local: prompt
+      note right of prompt_guard_local: vê o texto ANTES da redação de PII
+      alt classificador julga inseguro
+        prompt_guard_local-->>widget: PromptInjecaoBloqueadaException
+      else seguro, ou classificador indisponível (fail-open)
+        prompt_guard_local->>pii_redactor: prompt
+        pii_redactor->>auditoria: prompt redigido (nunca bloqueia)
+        auditoria->>provider: prompt (log, por último)
+        provider->>filtro_saida: resposta (stream)
+        note right of filtro_saida: detecta mas NÃO impede o streaming - os deltas já saíram
+        filtro_saida->>remember: resposta (redigida se detectada)
+        remember->>widget: título + mensagem original + resposta já redigida
+        widget->>ledger: AgentStreamed
+        note right of ledger: normalmente 2 linhas por turno (guarda-prompt + assistente) - 1 quando o classificador falha (fail-open)
+      end
+    end
+  end
+```
+
+O ledger nasce de um listener de evento, nunca de uma chamada direta:
+`Event::listen([AgentPrompted::class, AgentStreamed::class], RegistrarAiRun::class)`
+(`app/Providers/KitServiceProvider.php:AgentStreamed:455`), e `RegistrarAiRun::handle()` grava em
+`ai_runs` com `status: 'ok'` (`app/Ai/Listeners/RegistrarAiRun.php:AiRun::create:44`) — pedido
+bloqueado por qualquer camada acima **não** chega a esta linha. O widget só existe no painel `/app`
+(`app/Providers/Filament/AppPanelProvider.php:BODY_END:155`).
+
 ## O que o roteiro **não** cobre sozinho
 
 Algumas features dependem de coisa fora do processo, e nenhum teste as substitui:
@@ -147,6 +212,9 @@ Algumas features dependem de coisa fora do processo, e nenhum teste as substitui
 | F-40 (Pulse) | `pulse:check` rodando | a tela abre sem dados |
 | F-53, F-56 (IA) | llama.cpp ou uma API key | o assistente responde indisponível |
 
-Os três primeiros o `composer dev` já resolve em desenvolvimento: ele sobe servidor, fila e Vite
-juntos.
+O `composer dev` sobe servidor, fila, Vite e Reverb juntos em desenvolvimento, o que já resolve a entrega de e-mail (o segundo item da lista).
+
+A retenção das trilhas (primeiro item) e os health checks (terceiro item) continuam dependendo do
+**agendador** (`schedule:work`), que o `composer dev` **não** inicia — rode-o à parte, ou suba o
+serviço `scheduler` do Docker.
 

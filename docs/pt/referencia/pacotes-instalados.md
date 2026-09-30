@@ -20,7 +20,7 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | Pacote | Para quê |
 |---|---|
 | [bezhansalleh/filament-shield](https://packagist.org/packages/bezhansalleh/filament-shield) | papéis e permissões com UI, sobre spatie/laravel-permission |
-| [jeffgreco13/filament-breezy](https://packagist.org/packages/jeffgreco13/filament-breezy) | perfil do usuário, avatar, 2FA e passkeys |
+| [jeffgreco13/filament-breezy](https://packagist.org/packages/jeffgreco13/filament-breezy) | perfil do usuário, avatar e 2FA (passkeys desligadas: liga com `enablePasskeys()`) |
 | [caresome/filament-auth-designer](https://packagist.org/packages/caresome/filament-auth-designer) | tela de login em duas colunas |
 | [marjose123/filament-lockscreen](https://packagist.org/packages/marjose123/filament-lockscreen) | bloqueio de sessão por inatividade, sem deslogar |
 | [stechstudio/filament-impersonate](https://packagist.org/packages/stechstudio/filament-impersonate) | entrar como outro usuário |
@@ -138,7 +138,7 @@ php artisan modelCache:clear      # limpa o cache das models
 |---|---|
 | [vite](https://www.npmjs.com/package/vite) + [laravel-vite-plugin](https://www.npmjs.com/package/laravel-vite-plugin) | o build dos assets |
 | [tailwindcss](https://www.npmjs.com/package/tailwindcss) + [@tailwindcss/vite](https://www.npmjs.com/package/@tailwindcss/vite) | o CSS (v4, sem arquivo de config) |
-| [concurrently](https://www.npmjs.com/package/concurrently) | roda servidor, fila e vite juntos no `composer dev` |
+| [concurrently](https://www.npmjs.com/package/concurrently) | roda servidor, fila, vite e Reverb juntos no `composer dev` |
 | [playwright](https://www.npmjs.com/package/playwright) | o navegador dos testes do `pest-plugin-browser` |
 | [@laravel/multiplex](https://www.npmjs.com/package/@laravel/multiplex) | agrupa requests do Livewire (opcional) |
 

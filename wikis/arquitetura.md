@@ -372,7 +372,7 @@ São **dois mecanismos diferentes**, e é o pacote que decide qual:
 | Exceções | `model:prune --model=…`, 02:00 | o `Exception` do pacote declara `prunable()`, o contrato do Laravel; a data de corte sai de `modelPruneInterval()` no `InfraPanelProvider`, lendo o mesmo config |
 | E-mails | `delete()` direto num `Schedule::call`, 02:10 | o `MailLog` **não** implementa `Prunable`. Passá-lo no `--model` daria um agendamento verde que nunca apaga nada — o pior resultado possível para uma rotina de dado pessoal |
 
-O `--model` é explícito de propósito: a varredura automática do `model:prune` alcançaria qualquer model podável do projeto, inclusive as **suas**, e retenção de dado de terceiro não pode ser efeito colateral de um agendamento do kit. Zero ou negativo em qualquer dos dois prazos desliga aquela poda, sem apagar nada por engano. Nada disso roda sem `php artisan schedule:work` (já incluso no `composer dev`) ou o serviço `scheduler` do compose — e é justamente o `ScheduleCheck` do Health que denuncia o agendador parado.
+O `--model` é explícito de propósito: a varredura automática do `model:prune` alcançaria qualquer model podável do projeto, inclusive as **suas**, e retenção de dado de terceiro não pode ser efeito colateral de um agendamento do kit. Zero ou negativo em qualquer dos dois prazos desliga aquela poda, sem apagar nada por engano. Nada disso roda sem `php artisan schedule:work` (o `composer dev` **não** o inclui — ver `routes/console.php`) ou o serviço `scheduler` do compose — e é justamente o `ScheduleCheck` do Health que denuncia o agendador parado.
 
 ## Testes
 

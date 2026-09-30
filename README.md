@@ -5,7 +5,7 @@
 [![Plumb](https://plumbphp.dev/badges/gsferro/starter-kit-easy/composite.svg)](https://plumbphp.dev/gsferro/starter-kit-easy)
 [![Testes](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=testes)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
 [![Cobertura](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgsferro%2Ffilament-starter-kit-easy%2Fmain%2F.github%2Fbadges%2Fcobertura.json&style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
-[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-1.674-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
+[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-1.836-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-4c1?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
@@ -29,7 +29,7 @@ Antes de tocar no banco, ele **pergunta cinco coisas** — como o `laravel new` 
 |---|---|---|
 | 1 | Nome do projeto | o nome da pasta |
 | 2 | Banco de dados | SQLite · **PostgreSQL** (recomendado: é o único com `pgvector`, exigido pelas funções de IA local) · MySQL |
-| 3 | E-mail e senha do administrador | `admin@example.com` / `password` |
+| 3 | E-mail e senha do administrador | `admin@example.com` / senha aleatória — gerada e impressa no fim (ou a de `KIT_ADMIN_PASSWORD`) |
 | 4 | Cor primária dos painéis | o padrão do Filament |
 | 5 | Multi-organização (multi-tenancy) | desligada |
 
@@ -94,7 +94,7 @@ O seeder cria um usuário master que já entra nos três painéis:
 | | |
 |---|---|
 | **Usuário** | `admin@example.com` |
-| **Senha** | `password` |
+| **Senha** | gerada pelo instalador e impressa uma vez no fim (ou a definida em `KIT_ADMIN_PASSWORD`) |
 | **Papel** | `master_global` (vence qualquer permissão via `Gate::before`) |
 
 Entre por `/app`, `/admin` ou `/infra` — a mesma sessão vale para os três, e o menu do usuário troca de painel.
@@ -122,6 +122,51 @@ Nos painéis **sem** tenancy (`/admin`, `/infra`) o papel precisa estar atribuí
 > Com o [modo multi-tenant](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/multi-tenancy.html) ligado, o **App** vira `/app/{tenant}` e passa a mostrar só os dados do tenant selecionado. Admin e Infra seguem globais.
 
 Separar admin de infra é o ponto do kit: quem administra usuários não precisa (nem deve) enxergar logs, filas e comandos operacionais, e vice-versa.
+
+```mermaid
+flowchart TD
+%% DG-01
+accTitle: Arquitetura em camadas
+accDescr: Do navegador aos três painéis Filament, pelo acesso por papel, até banco, fila, cache e os serviços opcionais.
+  navegador[Navegador] --> rota_publica["Rota pública /"]
+  navegador --> painel_app
+  navegador --> painel_admin
+  navegador --> painel_infra
+  subgraph camada_paineis ["Painéis (Filament)"]
+    painel_app["/app (padrão)"]
+    painel_admin["/admin"]
+    painel_infra["/infra"]
+  end
+  painel_app --> acesso_por_papel[Acesso por papel]
+  painel_admin --> acesso_por_papel
+  painel_infra --> acesso_por_papel
+  acesso_por_papel --> configuracoes[Configurações]
+  acesso_por_papel --> agentes_ia[Agentes de IA]
+  subgraph camada_infra ["Infraestrutura"]
+    banco[("Banco de dados")]
+    fila[Fila]
+    cache[("Cache")]
+    worker["Worker (opcional)"]
+    agendador["Agendador (opcional)"]
+    reverb["Reverb (opcional)"]
+    pulse["Pulse (pulse:check)"]
+  end
+  configuracoes --> banco
+  configuracoes --> cache
+  agentes_ia -->|"grava ai_runs"| banco
+  agentes_ia --> fila
+  fila --> worker
+  agendador --> fila
+  reverb --> camada_paineis
+  painel_infra --> pulse
+  pulse --> banco
+  agentes_ia -.->|"opcional"| ia_externa["IA local ou SaaS"]
+  camada_paineis -.-> oauth["OAuth"]
+  configuracoes -.-> email_externo["E-mail"]
+  painel_infra -.-> packagist["Packagist"]
+```
+
+Veja todos os diagramas da arquitetura → [gsferro.github.io/filament-starter-kit-easy/pt/referencia/arquitetura-em-diagramas](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/arquitetura-em-diagramas.html)
 
 ### Como cada um se parece
 
@@ -177,16 +222,16 @@ dois já vêm completos.
 |---|---:|
 | Casos de teste (`Kit` + `Tenancy`, medidos em 2026-09-26) | **2.990**, com **12.578 asserções** |
 | Telas varridas em navegador real | **55** |
-| Arquivos de teste | **166** em `Kit` + `Tenancy` (**193** no total) |
+| Arquivos de teste | **171** em `Kit` + `Tenancy` (**198** no total) |
 | PHPStan | **level 8**, zero erros |
 | Cobertura de testes (`app/`, linha) | **82 %** — ver [o que o número não inclui](docs/pt/referencia/qualidade-de-codigo.md) |
 | FilaCheck | **17** regras, todas passando |
 
 | Documentação | |
 |---|---:|
-| Documentos de referência (`wikis/`) | **11** |
-| Features especificadas (`wikis/specs/`) | **71** |
-| Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **18** |
+| Documentos de referência (`wikis/`) | **12** |
+| Features especificadas (`wikis/specs/`) | **72** |
+| Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **20** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
 
@@ -198,7 +243,7 @@ dois já vêm completos.
 
 **Administração e segurança**
 - Shield (papéis e permissões com UI) sobre spatie/laravel-permission
-- Breezy: perfil do usuário, avatar, 2FA e passkeys
+- Breezy: perfil do usuário, avatar e 2FA (passkeys desligadas: o Breezy nasce com `$passkeys = false` e `enablePasskeys()` não é chamado em nenhum painel)
 - **Ficha de usuário em tela cheia** (`/admin/users/{id}` e `/app/users/{id}`): conta, situação, origem e datas, com o botão de editar no topo. **Só no `/admin`** ela lista as organizações e os papéis da pessoa — no `/app` a omissão é a feature: contá-los ali diria a quem administra uma organização que aquela conta também é de outra ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/operacao/roteiro-de-features.html))
 - **Avatar desenhado aqui dentro**: sem foto, o provider padrão do Filament manda o navegador de cada pessoa pedir `ui-avatars.com` em toda tela — com as iniciais na query string e o `Referer` do painel junto. `App\Support\AvatarDeIniciais` devolve um SVG embutido nos três painéis: mesma aparência, nenhuma requisição externa
 - Auth Designer: tela de login em duas colunas — a arte **mostra o nome da aplicação**, lido de `APP_NAME` a cada carregamento; para usar a sua imagem, envie em `/admin/configuracoes-da-aplicacao`
@@ -362,7 +407,7 @@ O rebuild vem **depois** do pull porque a imagem é self-contained (o código é
 ## Comandos
 
 ```bash
-composer dev          # servidor + fila + vite juntos
+composer dev          # servidor + fila + vite + Reverb juntos
 composer test         # pint + phpstan + filacheck + a suíte inteira
 composer test:kit     # só os testes do kit (a fundação), em paralelo
 composer test:kit:serial  # os mesmos testes sem --parallel, para isolar um flake

@@ -10,6 +10,8 @@ sidebar:
 
 The topbar field is **Filament's native one** — same markup, same look, same `Ctrl/⌘+K`. What changes is what happens on click: instead of typing there, it opens the Spotlight overlay, which searches on four fronts:
 
+![The overlay closed and open, with a typed term and a real result from the records search](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/busca-spotlight.gif)
+
 | Category | What it finds |
 |---|---|
 | **Records** | Filament's native global search (respects your resources' `getGloballySearchableAttributes()`) |

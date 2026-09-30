@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Two\User as UsuarioDoProvedor;
 use Psr\Log\LoggerInterface;
 use Spatie\LaravelSettings\Models\SettingsProperty;
@@ -999,11 +1000,20 @@ function naArvoreDoKit(): bool
  * As páginas do site de um idioma, indexadas pelo caminho relativo a `docs/{idioma}/`
  * (sempre com `/`, mesmo no Windows), em ordem alfabética.
  *
+ * Fora da árvore do kit `docs/` não existe (`.gitattributes: /docs export-ignore`) — devolve
+ * `[]` em vez de deixar o `RecursiveDirectoryIterator` lançar `UnexpectedValueException` (RD-02:
+ * o docblock de `blocosMermaidDaArvore()` já prometia isto, e não era verdade até este `is_dir`).
+ *
  * @return array<string, string>
  */
 function paginasDoSite(string $idioma): array
 {
-    $raiz    = base_path("docs/{$idioma}");
+    $raiz = base_path("docs/{$idioma}");
+
+    if (! is_dir($raiz)) {
+        return [];
+    }
+
     $paginas = [];
 
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($raiz, FilesystemIterator::SKIP_DOTS)) as $arquivo) {
@@ -1016,6 +1026,609 @@ function paginasDoSite(string $idioma): array
     ksort($paginas);
 
     return $paginas;
+}
+
+/**
+ * Todo bloco Mermaid dentro de um texto Markdown: o conteúdo cercado, a linha da cerca de
+ * abertura, o ID de catálogo (o marcador `%% DG-xx` dentro do bloco, ou `null` se ausente) e se a
+ * cerca está dentro de um comentário HTML (`<!-- … -->`).
+ *
+ * Aqui, e não dentro de um arquivo de teste, porque DOIS arquivos o usam —
+ * `tests/Kit/DiagramasDaArquiteturaTest.php` e `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`
+ * —, o Setup Global do `04` da wiki `diagramas-da-arquitetura` declara o extrator como
+ * compartilhado (`.ai/rules/testes.md`).
+ *
+ * ## Duas cercas, não uma (ciclo 2, A2-21 — R1)
+ *
+ * O CommonMark aceita a cerca de crase (` ``` `, 3 ou mais) e a de til (`~~~`, 3 ou mais) com a
+ * mesma info string, e as duas RENDERIZAM no GitHub e no site. Um extrator que só reconhece três
+ * crases perde o bloco de til ou de quatro crases em silêncio: o diagrama aparece na tela e
+ * ninguém o confere (`[CT-103]`, linhas de til e de quatro crases). A info string precisa ser
+ * exatamente "mermaid" (mais espaço em volta): um bloco ```php que MENCIONA a palavra "mermaid" no
+ * corpo não é um bloco Mermaid — a cerca de abertura dele não casa.
+ *
+ * ## Comentário HTML esconde o bloco do leitor, não do extrator ingênuo (ciclo 2, A2-21 — R1)
+ *
+ * `<!-- ```mermaid … ``` -->` é um bloco que o GitHub NÃO mostra e que um extrator de cercas cru
+ * conta do mesmo jeito — o achado que `dentroDeComentarioHtml` fixa. Este extrator só LEVANTA a
+ * marca; quem decide "recusa, nomeando o comentário e a linha" é a guarda que a consome.
+ *
+ * ## Toda cerca de código é rastreada, não só a de Mermaid e o comentário HTML (CR-7)
+ *
+ * Sem isto, um `<!--` de EXEMPLO dentro de um bloco ` ```html `/` ```blade ` (ensinando como
+ * esconder um diagrama) liga "dentro de comentário" até achar um `-->` qualquer — inclusive o
+ * do PRÓPRIO fechamento da cerca de exemplo —, e um bloco visível de verdade que vier depois no
+ * arquivo é lido como escondido. E um ` ```mermaid ` aninhado dentro de uma cerca de quatro
+ * crases (um bloco Markdown de EXEMPLO, mostrando a sintaxe) é lido como diagrama real. A
+ * correção: toda cerca de código de qualquer linguagem — info string diferente de `mermaid` —
+ * é pulada inteira, do jeito que apareceu, até o fechamento da MESMA marca e do MESMO tamanho (ou
+ * maior); só fora dela `<!--`/`-->` e ` ```mermaid ` contam.
+ *
+ * ## A info string pode ter META depois da linguagem (RD2-18)
+ *
+ * O CommonMark aceita texto depois da linguagem na info string da cerca de ABERTURA (` ```html
+ * title="x" `, ` ```mermaid title="Exemplo" `) — só a linguagem (a primeira palavra) importa.
+ * Exigir a linha INTEIRA em branco depois dela (como CR-7 fazia) faz a cerca alheia com meta não
+ * casar nem como "mermaid" nem como "outra linguagem a pular": ela vira texto comum, o `<!--` de
+ * exemplo dentro dela vaza (CR-7 de novo, por outra porta) e um ` ```mermaid ` de verdade que vier
+ * depois some (`bloco escondido em cerca alheia lida como texto`). A cerca de FECHAMENTO continua
+ * exigindo a linha inteira em branco (o CommonMark não aceita meta ali).
+ *
+ * ## Resíduo de RD2-18: crase que fecha na MESMA linha é span embutido, não cerca
+ *
+ * O CommonMark proíbe crase na info string de uma cerca de CRASE — é assim que ele distingue
+ * ` ```texto``` ` (um span de código embutido, com a MESMA linha fechando) de uma cerca de
+ * abertura de verdade. Sem checar isto, uma linha de PROSA que começa com esse span (ex. "```código
+ * inline``` explica o resto da frença") casava como abertura de cerca "alheia" (o `\S*` da info
+ * string não vê a segunda crase) e, sem fechamento genuíno depois, engolia o resto do arquivo —
+ * inclusive um ` ```mermaid ` de verdade mais adiante. A cerca de TIL não tem essa restrição (o
+ * CommonMark permite crase na info string dela), então o guard vale só para o marcador `` ` ``.
+ *
+ * @return list<array{bloco: string, linha: int, idCatalogo: ?string, dentroDeComentarioHtml: bool}>
+ */
+function blocosMermaidDe(string $markdown): array
+{
+    $linhas             = explode("\n", $markdown);
+    $total              = count($linhas);
+    $blocos             = [];
+    $dentroDeComentario = false;
+
+    for ($i = 0; $i < $total; $i++) {
+        $linha = $linhas[$i];
+
+        // Resíduo de RD2-18: se o marcador é CRASE e o resto da linha (depois do primeiro run de
+        // crases) contém OUTRA crase, esta linha é um span de código embutido que fecha na própria
+        // linha — nunca abertura de cerca (CommonMark: a info string de cerca de crase não pode
+        // conter crase). O til não tem essa restrição.
+        preg_match('#^\s*(`{3,}|~{3,})#', $linha, $marcadorDaLinha);
+        $ehSpanEmbutido = ($marcadorDaLinha[1] ?? '') !== ''
+            && $marcadorDaLinha[1][0] === '`'
+            && str_contains(substr($linha, strlen($marcadorDaLinha[0])), '`');
+
+        // Delimitador `#`, e não `~`: a própria alternativa da cerca de til usa o caractere `~`,
+        // e um delimitador `~` cru quebra ali com "Unknown modifier" — o `~` da cerca fecha o
+        // regex antes da hora.
+        //
+        // Sem `\s*$` no fim (RD2-18): a info string pode ter META depois da linguagem
+        // (` ```html title="x" `) — só a PRIMEIRA palavra (a linguagem) decide se a cerca é
+        // "mermaid" ou "outra, a pular"; exigir linha em branco depois dela perdia a cerca com
+        // meta por inteiro (nem mermaid, nem "outra" — texto comum, e o `<!--` de exemplo vazava).
+        if (! $ehSpanEmbutido
+            && preg_match('#^\s*(`{3,}|~{3,})\s*(\S*)#', $linha, $cercaQualquer) === 1
+            && $cercaQualquer[2] !== 'mermaid'
+        ) {
+            $marcadorAlheio = $cercaQualquer[1][0];
+            $tamanhoAlheio  = strlen($cercaQualquer[1]);
+            $fechouAlheio   = false;
+
+            for ($j = $i + 1; $j < $total; $j++) {
+                if (preg_match('#^\s*'.preg_quote($marcadorAlheio, '#').'{'.$tamanhoAlheio.',}\s*$#', $linhas[$j]) === 1) {
+                    $i            = $j;
+                    $fechouAlheio = true;
+                    break;
+                }
+            }
+
+            // Sem fechamento: o resto do arquivo é literal (dentro da cerca aberta).
+            if (! $fechouAlheio) {
+                $i = $total;
+            }
+
+            continue;
+        }
+
+        if (str_contains($linha, '<!--') && ! str_contains($linha, '-->')) {
+            $dentroDeComentario = true;
+        }
+
+        // Idem (RD2-18): `mermaid` pode vir seguido de meta (` ```mermaid title="x" `) — o que
+        // fecha a linha aqui é a cerca de FECHAMENTO, abaixo, que continua exigindo linha em
+        // branco (o CommonMark não aceita meta ali). E, pelo mesmo resíduo acima, um span
+        // embutido cuja info string comece por "mermaid" (` ```mermaid``` `) não abre cerca.
+        if ($ehSpanEmbutido || preg_match('#^\s*(`{3,}|~{3,})\s*mermaid(?:\s|$)#', $linha, $cerca) !== 1) {
+            if (str_contains($linha, '-->')) {
+                $dentroDeComentario = false;
+            }
+
+            continue;
+        }
+
+        $marcador        = $cerca[1][0];
+        $tamanho         = strlen($cerca[1]);
+        $linhaDeAbertura = $i + 1;
+        $escondido       = $dentroDeComentario;
+
+        $conteudo = [];
+        $fechou   = false;
+
+        for ($j = $i + 1; $j < $total; $j++) {
+            if (preg_match('#^\s*'.preg_quote($marcador, '#').'{'.$tamanho.',}\s*$#', $linhas[$j]) === 1) {
+                $fechou = true;
+                $i      = $j;
+                break;
+            }
+
+            $conteudo[] = $linhas[$j];
+        }
+
+        // Cerca sem fechamento: não é um bloco válido, e a varredura segue da linha seguinte.
+        if (! $fechou) {
+            continue;
+        }
+
+        $texto = implode("\n", $conteudo);
+
+        preg_match('~%%\s*(DG-\d+)~', $texto, $id);
+
+        $blocos[] = [
+            'bloco'                  => $texto,
+            'linha'                  => $linhaDeAbertura,
+            'idCatalogo'             => $id[1] ?? null,
+            'dentroDeComentarioHtml' => $escondido,
+        ];
+    }
+
+    return $blocos;
+}
+
+/**
+ * Todos os blocos Mermaid da árvore do kit, num idioma: o README do idioma mais cada página real
+ * de `docs/{idioma}/`, cada bloco marcado com o arquivo de origem e o idioma — o inventário que a
+ * guarda do catálogo (R1, `[CT-01]`/`[CT-02]`) confere.
+ *
+ * Reusa `paginasDoSite()`, e não repete a varredura de diretório: fora da árvore do kit (`docs/`
+ * é `export-ignore`) ela devolve `[]` e este array só traz o README.
+ *
+ * @return list<array{bloco: string, linha: int, idCatalogo: ?string, dentroDeComentarioHtml: bool, arquivo: string, idioma: string}>
+ */
+function blocosMermaidDaArvore(string $idioma): array
+{
+    $readme = $idioma === 'en' ? 'README.en.md' : 'README.md';
+
+    $paginas = [$readme => (string) file_get_contents(base_path($readme))];
+
+    foreach (paginasDoSite($idioma) as $relativo => $conteudo) {
+        $paginas["docs/{$idioma}/{$relativo}"] = $conteudo;
+    }
+
+    $blocos = [];
+
+    foreach ($paginas as $arquivo => $conteudo) {
+        foreach (blocosMermaidDe($conteudo) as $bloco) {
+            $blocos[] = [...$bloco, 'arquivo' => $arquivo, 'idioma' => $idioma];
+        }
+    }
+
+    return $blocos;
+}
+
+/**
+ * Localiza, na árvore REAL, o bloco de um DG do catálogo (fora de comentário HTML); `null` se
+ * ausente.
+ *
+ * Aqui, e não em `tests/Kit/DiagramasDaArquiteturaTest.php` (nem clonado com outro nome em
+ * `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`, que tinha `blocoDoCatalogo()` idêntico
+ * byte a byte), porque os DOIS arquivos o usam — `.ai/rules/testes.md` (RD-11).
+ *
+ * @return ?array{bloco: string, linha: int, idCatalogo: ?string, dentroDeComentarioHtml: bool, arquivo: string, idioma: string}
+ */
+function blocoDoCatalogoNaArvore(string $id, string $idioma): ?array
+{
+    foreach (blocosMermaidDaArvore($idioma) as $bloco) {
+        if ($bloco['idCatalogo'] === $id && ! $bloco['dentroDeComentarioHtml']) {
+            return $bloco;
+        }
+    }
+
+    return null;
+}
+
+/*
+|--------------------------------------------------------------------------
+| RQ-34 — extrator de arestas normalizado (flowchart, erDiagram, sequenceDiagram, stateDiagram)
+|--------------------------------------------------------------------------
+|
+| Aqui, e não em tests/Kit/DiagramasDaArquiteturaTest.php, porque toda guarda de ARESTA do bloco
+| REAL usa (CT-10, CT-11, CT-73, CT-83, CT-63, CT-94) — a mesma razão de blocoDoCatalogoNaArvore
+| acima (.ai/rules/testes.md, RD-11): um helper usado por mais de um propósito no MESMO arquivo
+| ainda pode morar em tests/Pest.php quando o achado que o motivou (RQ-34) o declara compartilhado.
+|
+| RD2-10/RD2-11: as guardas antigas comparavam string crua com UMA forma de seta (`\s*-->\s*`, ou
+| a string literal `reverb --> painel_admin`) — uma aresta desenhada com `--->`, `-.->`, `==>` etc.
+| (mesmo grafo, sintaxe Mermaid válida) passava sem ser vista. RD2-12: a mesma cegueira valia para
+| `erDiagram` (regex fixa por cardinalidade e por CAIXA — `USER`/`ROLE` maiúsculo nunca casava com
+| o `users`/`roles` reais, minúsculos).
+*/
+
+/**
+ * As formas de seta de `flowchart`/`stateDiagram-v2` reconhecidas (RD2-10/RD2-11, RD3-05): normal
+ * (2 ou mais traços, com ou sem ponta — inclusive `---` sem seta e `----->` com qualquer número de
+ * traços), pontilhada (1 ou mais pontos, com ou sem o traço/ponta em cada lado — inclusive
+ * `-...->`), grossa (2 ou mais iguais) e as pontas circulo/X/bidirecional (`<`, `o`, `x`) em
+ * qualquer combinação nas duas pontas.
+ *
+ * Espelha, char a char, o lexer real do Mermaid 11.17.2 (`mermaid/dist/chunks/mermaid.core/
+ * chunk-SHT3W25Y.mjs`, as regras de LINK/START_LINK): `[xo<]?--+[-xo>]`, `[xo<]?==+[=xo>]` e
+ * `[xo<]?-?\.+-[xo>]?` — não uma aproximação com quantificador fixo. A forma antiga (`-{2,4}>`,
+ * `-\.{1,2}->`, `={2,3}>`, `--o`, `--x`) perdia `----->`/`<-->`/`---` (normal com 5+ traços, sem
+ * ponta ou com `<` na origem) e `-...->` (3+ pontos) — sintaxe válida que o `mermaid.parse` aceita
+ * e que o extrator "normalizado" (RQ-34) precisa reconhecer para não confundir uma aresta redesenhada
+ * com uma aresta ausente.
+ */
+const SETA_DE_FLUXO = '(?:[xo<]?-{2,}[-xo>]|[xo<]?={2,}[=xo>]|[xo<]?-?\.+-[xo>]?)';
+
+/** O rótulo do MEIO da aresta, entre dois traços (`A -- "rótulo" --> B` ou `A -- rótulo --> B`),
+ * como alternativa ao rótulo depois da seta (`-->|"rótulo"|`) — RD3-05: `existeArestaDeFluxo()` só
+ * reconhecia a forma com pipe; a forma com travessão (a que o Mermaid gera para rótulo sem aspas)
+ * passava sem ser vista. Compartilhado com `arestasDeFluxo()`, que já a usava. */
+const ROTULO_TRACO_DE_FLUXO = '--\s+"?([^"\n-]+?)"?\s*';
+
+/** O desenho de um nó (a forma logo depois do ID: `["..."]`, `{"..."}`, `(["..."])`, etc.), quando
+ * houver — usado para PULAR o desenho ao procurar a próxima aresta na mesma linha. */
+const FORMA_DE_NO_DE_FLUXO = '(?:\(\([^\)\n]*\)\)|\{\{[^}\n]*\}\}|\(\[[^\]\n]*\]\)|\[\([^\)\n]*\)\]|\[[^\]\n]*\]|\{[^}\n]*\}|\([^\)\n]*\))?';
+
+/**
+ * Existe uma aresta DIRETA $de -> $para num bloco `flowchart`/`stateDiagram-v2`, em QUALQUER forma
+ * de seta (RD2-10/RD2-11), com ou sem rótulo (`-->|"rótulo"|` ou sem rótulo) — inclusive um elo de
+ * uma cadeia `A --> B --> C` (a busca é por SUBSTRING "de(forma)? seta para", não por linha
+ * inteira, e "B --> C" é substring de "A --> B --> C"). Ignora o que vier depois do ID de destino
+ * (o desenho do PRÓPRIO nó, ex. `nega_403["Nega — 403"]`) — só o ID conta como identidade da
+ * aresta, nunca o rótulo humano (a mesma regra de RD-03).
+ *
+ * RD3-05: o rótulo aceita as DUAS formas do Mermaid — depois da seta (`-->|"rótulo"|`) OU entre
+ * dois traços ANTES da seta completa (`-- "rótulo" -->`, a forma de `A -- ws --> B`) —, não só a
+ * primeira.
+ */
+function existeArestaDeFluxo(string $bloco, string $de, string $para): bool
+{
+    foreach (arestasDeFluxo($bloco) as $aresta) {
+        if ($aresta['de'] === $de && $aresta['para'] === $para) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * O rótulo do PRÓPRIO nó $id num bloco `flowchart`/`stateDiagram-v2` (o texto do desenho, entre
+ * aspas ou não: `id{"texto"}`, `id["texto"]`, `id(["texto"])`, `id("texto")`) — `null` se o nó
+ * nunca é desenhado com forma neste bloco (só citado como origem/destino de aresta).
+ *
+ * @return array<string, string>
+ */
+function rotulosDeNoDeFluxo(string $bloco): array
+{
+    $rotulos = [];
+
+    preg_match_all(
+        '/\b([A-Za-z0-9_]+)(?:\(\[\s*"?([^"\]\)]*?)"?\s*\]\)|\[\(\s*"?([^"\]\)]*?)"?\s*\)\]|\[\s*"?([^"\]]*?)"?\s*\]|\{\s*"?([^"}]*?)"?\s*\}|\(\s*"?([^")]*?)"?\s*\))/',
+        $bloco,
+        $m,
+        PREG_SET_ORDER,
+    );
+
+    foreach ($m as $grupo) {
+        $id = $grupo[1];
+
+        if (array_key_exists($id, $rotulos)) {
+            continue;
+        }
+
+        foreach (array_slice($grupo, 2) as $possivel) {
+            if ($possivel !== '') {
+                $rotulos[$id] = trim($possivel);
+
+                break;
+            }
+        }
+    }
+
+    return $rotulos;
+}
+
+/**
+ * Todas as arestas de um bloco `flowchart`, NA ORDEM em que aparecem, com o rótulo quando houver
+ * (`-->|"rótulo"|` ou `-- rótulo -->`), e com o SENTIDO que o Mermaid desenha (R65, CT-140):
+ *
+ *  - uma cadeia `A --> B --> C` vira dois elos (A → B, B → C), nunca A → C;
+ *  - o `&` expande o produto: `A & D --> B & C` são quatro arestas;
+ *  - a seta com `<` na origem (`<-->`, `<==>`, `<-.->`) é bidirecional: as duas direções;
+ *  - a seta dentro do rótulo de um nó (`a["A --> c"]`) ou de uma aresta (`-->|"x --> c"|`) é
+ *    texto, e não aresta;
+ *  - a linha que começa com `%%` é comentário — o Mermaid a tira do texto antes do lexer
+ *    (`site/node_modules/mermaid/dist/mermaid.core.mjs:cleanupComments:967`).
+ *
+ * Ignora também as linhas de metadado (`accTitle`/`accDescr`/`classDef`/`class`/`style`/
+ * `subgraph`/`end`). Quando os dois IDs são conhecidos, `existeArestaDeFluxo()` é só esta função
+ * com um `foreach`.
+ *
+ * @return list<array{de: string, para: string, rotulo: ?string}>
+ */
+function arestasDeFluxo(string $bloco): array
+{
+    $ligacao  = '/^(?:'.SETA_DE_FLUXO.'\s*\|\s*"?([^"|]*)"?\s*\||'.ROTULO_TRACO_DE_FLUXO.SETA_DE_FLUXO.'|'.SETA_DE_FLUXO.')/';
+    $lerGrupo = static function (string $resto): ?array {
+        $ids = [];
+
+        while (preg_match('/^\s*([A-Za-z0-9_]+)\s*'.FORMA_DE_NO_DE_FLUXO.'\s*/', $resto, $m) === 1) {
+            $ids[] = $m[1];
+            $resto = substr($resto, strlen($m[0]));
+
+            if (preg_match('/^&\s*/', $resto, $amp) !== 1) {
+                break;
+            }
+
+            $resto = substr($resto, strlen($amp[0]));
+        }
+
+        return $ids === [] ? null : [$ids, $resto];
+    };
+
+    $arestas = [];
+
+    foreach (explode("\n", $bloco) as $linha) {
+        $linha = trim($linha);
+
+        if ($linha === ''
+            || preg_match('/^(%%|(?:flowchart|graph|stateDiagram|erDiagram|sequenceDiagram|accTitle|accDescr|classDef|class|style|state|note|linkStyle|subgraph)\b|end$)/i', $linha) === 1
+            || preg_match('/'.SETA_DE_FLUXO.'/', $linha) !== 1
+        ) {
+            continue;
+        }
+
+        $grupo = $lerGrupo($linha);
+
+        while ($grupo !== null) {
+            [$origens, $resto] = $grupo;
+
+            if (preg_match($ligacao, $resto, $mLigacao) !== 1) {
+                break;
+            }
+
+            $rotulo         = trim(($mLigacao[1] ?? '') !== '' ? $mLigacao[1] : ($mLigacao[2] ?? ''));
+            $bidirecional   = str_starts_with($mLigacao[0], '<');
+            $grupoDoDestino = $lerGrupo(substr($resto, strlen($mLigacao[0])));
+
+            if ($grupoDoDestino === null) {
+                break;
+            }
+
+            foreach ($origens as $origem) {
+                foreach ($grupoDoDestino[0] as $destino) {
+                    $arestas[] = ['de' => $origem, 'para' => $destino, 'rotulo' => $rotulo !== '' ? $rotulo : null];
+
+                    if ($bidirecional) {
+                        $arestas[] = ['de' => $destino, 'para' => $origem, 'rotulo' => $rotulo !== '' ? $rotulo : null];
+                    }
+                }
+            }
+
+            $grupo = $grupoDoDestino;
+        }
+    }
+
+    return $arestas;
+}
+
+/**
+ * A relação `erDiagram` entre duas entidades, em qualquer ordem de declaração — as duas
+ * cardinalidades (`||` exatamente um, `|o` zero ou um, `}o`/`o{` zero ou muitos, `}|`/`|{` um ou
+ * muitos), o rótulo e se a linha veio invertida ($b antes de $a). `null` se não houver relação
+ * DIRETA entre as duas (RD2-12: a conta e o papel do kit se ligam por `model_has_roles`, então
+ * `relacaoDeEr($bloco, 'users', 'roles')` é `null` no bloco correto).
+ *
+ * RD3-05: a linha de conexão aceita `--` (identificadora) OU `..` (não identificadora) entre as
+ * duas cardinalidades — o Mermaid distingue as duas (a segunda desenha tracejado), e exigir só `--`
+ * perdia toda relação opcional desenhada com o traço certo.
+ *
+ * @return ?array{cardDe: string, cardPara: string, rotulo: ?string, invertida: bool}
+ */
+function relacaoDeEr(string $bloco, string $a, string $b): ?array
+{
+    foreach (relacoesDeEr($bloco) as $r) {
+        if ($r['a'] === $a && $r['b'] === $b) {
+            return ['cardDe' => $r['cardDe'], 'cardPara' => $r['cardPara'], 'rotulo' => $r['rotulo'], 'invertida' => false];
+        }
+
+        if ($r['a'] === $b && $r['b'] === $a) {
+            return ['cardDe' => $r['cardPara'], 'cardPara' => $r['cardDe'], 'rotulo' => $r['rotulo'], 'invertida' => true];
+        }
+    }
+
+    return null;
+}
+
+/** A cardinalidade de um lado de uma relação `erDiagram` (RD3-05, R57): exatamente um, zero ou um, zero ou muitos, um ou muitos. */
+const CARDINALIDADE_DE_ER = '(?:\|\||\|o|o\||o\{|\{o|\}o|o\}|\|\{|\{\||\}\||\|\})';
+
+/**
+ * TODAS as relações `erDiagram` de um bloco, na ordem em que aparecem, cada uma com as duas
+ * entidades NA ORDEM DA LINHA (`$a` antes de `$b`) — usado quando os dois IDs não são conhecidos de
+ * antemão (R2/CT-03, sobre os blocos publicados); quando já se sabe os dois lados,
+ * `relacaoDeEr()` é mais simples.
+ *
+ * @return list<array{a: string, b: string, cardDe: string, cardPara: string, rotulo: ?string}>
+ */
+function relacoesDeEr(string $bloco): array
+{
+    $relacoes = [];
+
+    foreach (explode("\n", $bloco) as $linha) {
+        $linha = trim($linha);
+
+        if (preg_match('/^([A-Za-z0-9_]+)\s*('.CARDINALIDADE_DE_ER.')(?:--|\.\.)('.CARDINALIDADE_DE_ER.')\s*([A-Za-z0-9_]+)\s*(?::\s*"?([^"\n]*)"?)?\s*$/', $linha, $m) === 1) {
+            $relacoes[] = ['a' => $m[1], 'b' => $m[4], 'cardDe' => $m[2], 'cardPara' => $m[3], 'rotulo' => isset($m[5]) ? trim($m[5]) : null];
+        }
+    }
+
+    return $relacoes;
+}
+
+/**
+ * As formas de seta de `sequenceDiagram` reconhecidas (R57, RD3-05/QA-05): sólida sem ponta
+ * (`->`), tracejada sem ponta (`-->`), sólida com ponta (`->>`), tracejada com ponta (`-->>`),
+ * assíncrona sólida (`-)`) e tracejada (`--)`), com X sólida (`-x`) e tracejada (`--x`), e as duas
+ * bidirecionais (`<<->>`, `<<-->>`), mais as meias-setas que o lexer aceita (R57, CT-142: `-|\`,
+ * `-|/`, `-\\`, `-//` e as tracejadas `--|\`, `--|/`, `--\\`, `--//`) — espelha o lexer de sequência
+ * do Mermaid 11.17.2
+ * (`site/node_modules/mermaid/dist/chunks/mermaid.core/sequenceDiagram-WJ2MYXX4.mjs:rules`). A
+ * ordem das alternativas importa: a forma de DOIS caracteres de ponta (`>>`) vem antes da de UM
+ * (`>`), senão `-->>` seria lida como `-->` e sobraria um `>` solto; o mesmo vale para bidirecional
+ * antes da forma simples.
+ */
+const SETA_DE_SEQUENCIA = '(?:<<-{1,2}>>|-{1,2}>>|-{1,2}x|-{1,2}\)|-{1,2}\|(?:\\\\|\/)|-{1,2}(?:\\\\{2}|\/{2})|-{1,2}>)';
+
+/**
+ * As mensagens de um bloco `sequenceDiagram`, NA ORDEM em que aparecem: qualquer forma de
+ * `SETA_DE_SEQUENCIA` (R57), com o marcador de ativação opcional (`+`/`-`) entre a seta e o
+ * destino, e o rótulo depois de `:`. Cada mensagem também traz a PILHA de blocos (`alt`, `opt`,
+ * `loop`, `par`) que a envolvem no momento em que aparece — `else` é um marcador dentro do MESMO
+ * `alt`, nunca abre nem fecha um — usada por R42/CT-85 para comparar o ANINHAMENTO, não só a ordem.
+ *
+ * @return list<array{de: string, seta: string, para: string, rotulo: ?string, pilha: list<string>}>
+ */
+function mensagensDeSequencia(string $bloco): array
+{
+    $mensagens = [];
+    $pilha     = [];
+
+    foreach (explode("\n", $bloco) as $linha) {
+        $linha = trim($linha);
+
+        if (preg_match('/^(alt|opt|loop|par)\b/', $linha, $mBloco) === 1) {
+            $pilha[] = $mBloco[1];
+
+            continue;
+        }
+
+        if ($linha === 'end') {
+            array_pop($pilha);
+
+            continue;
+        }
+
+        if (preg_match('/^([A-Za-z0-9_]+)\s*('.SETA_DE_SEQUENCIA.')\s*[+-]?\s*([A-Za-z0-9_]+)\s*:?\s*(.*)$/', $linha, $m) === 1) {
+            $mensagens[] = ['de' => $m[1], 'seta' => $m[2], 'para' => $m[3], 'rotulo' => $m[4] !== '' ? trim($m[4]) : null, 'pilha' => $pilha];
+        }
+    }
+
+    return $mensagens;
+}
+
+/**
+ * A ordem do DG-20 é a que o código executa: `identify_tenant` fala com `can_access_tenant` ANTES
+ * de falar com `definir_tenant`, e a mensagem a `definir_tenant` está DENTRO do ramo `else` do
+ * `alt` (entre a linha `else` e o `end` que o fecha) — nunca antes do `alt`, nunca depois do `end`
+ * (R51/R52, CT-112/CT-116; ver a nota de R53 no `04`).
+ *
+ * Único helper deste par (QA-07, `.ai/rules/testes.md` §"Nunca crie um clone com outro nome"):
+ * `tests/Kit/GuardasDosDiagramasTest.php` (CT-116) e `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`
+ * (CT-112) tinham cada um a sua cópia — a de Tenancy com a checagem de aninhamento, a de Kit sem
+ * ela; as duas condições são necessárias: a ordem sozinha mata a inversão (R51/M2, primeira cópia
+ * de CT-112), e o aninhamento mata o contexto fixado fora do ramo que nega, mesmo com a ordem
+ * intacta (R51/M2, segunda cópia).
+ */
+function ordemDg20EhCorreta(string $bloco): bool
+{
+    $mensagens   = mensagensDeSequencia($bloco);
+    $idxConsulta = null;
+    $idxDefinir  = null;
+
+    foreach ($mensagens as $i => $m) {
+        if ($idxConsulta === null && $m['de'] === 'identify_tenant' && $m['para'] === 'can_access_tenant') {
+            $idxConsulta = $i;
+        }
+
+        if ($idxDefinir === null && $m['de'] === 'identify_tenant' && $m['para'] === 'definir_tenant') {
+            $idxDefinir = $i;
+        }
+    }
+
+    if ($idxConsulta === null || $idxDefinir === null || $idxConsulta >= $idxDefinir) {
+        return false;
+    }
+
+    $linhaElse    = null;
+    $linhaEnd     = null;
+    $linhaDefinir = null;
+
+    foreach (explode("\n", $bloco) as $i => $linha) {
+        $t = trim($linha);
+
+        if ($linhaElse === null && str_starts_with($t, 'else')) {
+            $linhaElse = $i;
+        }
+
+        if ($linhaElse !== null && $linhaEnd === null && $t === 'end') {
+            $linhaEnd = $i;
+        }
+
+        if ($linhaDefinir === null && preg_match('/^identify_tenant\s*-{1,2}>>\s*definir_tenant\s*:/', $t) === 1) {
+            $linhaDefinir = $i;
+        }
+    }
+
+    return $linhaElse !== null && $linhaEnd !== null && $linhaDefinir !== null
+        && $linhaDefinir > $linhaElse && $linhaDefinir < $linhaEnd;
+}
+
+/**
+ * Troca os DESTINOS de duas mensagens de sequência (`->>destinoA:` <-> `->>destinoB:`) — uma
+ * involução: aplicar duas vezes devolve o bloco original. Usado para adulterar EM MEMÓRIA uma
+ * mensagem sem mover linha nenhuma (só troca QUEM cada mensagem já existente alcança) — R53/CT-116
+ * (DG-20) e R42/CT-85 (guardrails do DG-11).
+ *
+ * Único (QA-07): morava clonado dentro de `tests/Kit/GuardasDosDiagramasTest.php`.
+ */
+function trocarDestinosDeMensagem(string $bloco, string $destinoA, string $destinoB): string
+{
+    $marcador = "\0TROCA\0";
+    $bloco    = str_replace("->>{$destinoA}:", $marcador, $bloco);
+    $bloco    = str_replace("->>{$destinoB}:", "->>{$destinoA}:", $bloco);
+
+    return str_replace($marcador, "->>{$destinoB}:", $bloco);
+}
+
+/**
+ * As transições de um bloco `stateDiagram-v2`, NA ORDEM em que aparecem: `A --> B : evento`
+ * (`[*]` conta como estado inicial/final).
+ *
+ * @return list<array{de: string, para: string, evento: ?string}>
+ */
+function transicoesDeEstado(string $bloco): array
+{
+    $transicoes = [];
+
+    foreach (explode("\n", $bloco) as $linha) {
+        $linha = trim($linha);
+
+        if (preg_match('/^(\[\*\]|[A-Za-z0-9_]+)\s*-->\s*(\[\*\]|[A-Za-z0-9_]+)\s*(?::\s*(.*))?$/', $linha, $m) === 1) {
+            $transicoes[] = ['de' => $m[1], 'para' => $m[2], 'evento' => isset($m[3]) && $m[3] !== '' ? trim($m[3]) : null];
+        }
+    }
+
+    return $transicoes;
 }
 
 /** Um documento markdown sem as linhas de citação (`>`), para asserção de AUSÊNCIA. */
@@ -1247,6 +1860,43 @@ function caminhosDoKit(): array
     $caminhos = $reflexao->getConstant('CAMINHOS_DO_KIT');
 
     return $caminhos;
+}
+
+/**
+ * O bloco de UM serviço do `docker-compose.yml`: do `  <nome>:` até a próxima chave de coluna 2
+ * (outro serviço) ou de coluna 0 (o `volumes:` de topo). Devolve `''` quando o serviço não existe.
+ *
+ * Movido de `tests/Kit/MysqlNoDockerTest.php` (era closure local) porque a wiki
+ * `diagramas-da-arquitetura` ganhou um segundo consumidor — `tests/Kit/DiagramasDaArquiteturaTest.php`,
+ * que confere os profiles do DG-18 contra o mesmo `docker-compose.yml`. `.ai/rules/testes.md`: helper
+ * usado por mais de um arquivo vive aqui, nunca clonado.
+ */
+function blocoDoServico(string $compose, string $servico): string
+{
+    $linhas = explode("\n", $compose);
+    $dentro = false;
+    $bloco  = [];
+
+    foreach ($linhas as $linha) {
+        if ($linha === '  '.$servico.':') {
+            $dentro = true;
+
+            continue;
+        }
+
+        if ($dentro) {
+            $fimDeServico = preg_match('/^  \S/', $linha) === 1;
+            $fimDeTopo    = preg_match('/^\S/', $linha) === 1;
+
+            if ($fimDeServico || $fimDeTopo) {
+                break;
+            }
+
+            $bloco[] = $linha;
+        }
+    }
+
+    return implode("\n", $bloco);
 }
 
 /**
@@ -1563,4 +2213,189 @@ function assinaturaDoRodape(string $html): string
     $texto = preg_replace('~\s+~', ' ', $texto) ?? $texto;
 
     return trim($texto);
+}
+
+/*
+|--------------------------------------------------------------------------
+| DG-03 — leitura do grafo de decisão e caminhada pelo predicado REAL
+|--------------------------------------------------------------------------
+|
+| Aqui, e não em tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php, porque dois arquivos os usam
+| (CT-14 e CT-98 no Tenancy; CT-71 no Kit, que caminha o DG-03 para a conta que acumula papéis) —
+| `.ai/rules/testes.md` §"Helper de teste usado por mais de um arquivo vive em tests/Pest.php".
+*/
+
+/**
+ * Nós (id => rótulo) e arestas de um bloco Mermaid `flowchart`/`graph`.
+ *
+ * Convenção assumida: um "shape" de nó (`id[Texto]`, `id(Texto)`, `id{Texto}`,
+ * `id{{Texto}}`, `id((Texto))`, `id([Texto])`, `id[[Texto]]`) pode aparecer em QUALQUER linha —
+ * o rótulo de um id é lido da primeira vez que ele aparece com shape, em lugar nenhum
+ * específico. O rótulo de uma ARESTA vem do `-->|Rótulo|` entre as duas pontas.
+ *
+ * @return array{nos: array<string, string>, arestas: list<array{de: string, para: string, rotulo: ?string, linha: int}>}
+ */
+function grafoDoFluxo(string $bloco): array
+{
+    $nos = [];
+
+    preg_match_all(
+        '/\b([A-Za-z0-9_]+)\s*(?|\{\{\s*(.*?)\s*\}\}|\(\(\s*(.*?)\s*\)\)|\(\[\s*(.*?)\s*\]\)|\[\[\s*(.*?)\s*\]\]|\[\s*(.*?)\s*\]|\(\s*(.*?)\s*\)|\{\s*(.*?)\s*\})/',
+        $bloco,
+        $achados,
+        PREG_SET_ORDER,
+    );
+
+    foreach ($achados as $achado) {
+        if (! isset($nos[$achado[1]])) {
+            $nos[$achado[1]] = trim($achado[2], " \t\"'");
+        }
+    }
+
+    $arestas = [];
+
+    foreach (explode("\n", $bloco) as $i => $linha) {
+        if (preg_match(
+            '/^\s*([A-Za-z0-9_]+)\s*(?:\{\{.*?\}\}|\(\(.*?\)\)|\(\[.*?\]\)|\[\[.*?\]\]|\[.*?\]|\(.*?\)|\{.*?\})?\s*(?:--[-.]*>|==>)\s*(?:\|([^|]*)\|)?\s*([A-Za-z0-9_]+)/',
+            $linha,
+            $m,
+        ) === 1) {
+            $arestas[] = [
+                'de'     => $m[1],
+                'para'   => $m[3],
+                'rotulo' => ($m[2] ?? '') !== '' ? trim($m[2], " \t\"'") : null,
+                'linha'  => $i + 1,
+            ];
+        }
+    }
+
+    foreach ($arestas as $aresta) {
+        $nos[$aresta['de']] ??= $aresta['de'];
+        $nos[$aresta['para']] ??= $aresta['para'];
+    }
+
+    return ['nos' => $nos, 'arestas' => $arestas];
+}
+
+/**
+ * Executa um grafo de DECISÃO (DG-03) a partir do nó sem aresta de entrada, avaliando cada nó
+ * pelo PREDICADO REAL (nunca por comparação textual de ordem — mata R7.M5), e devolve o rótulo
+ * terminal normalizado ("entra"/"nega").
+ *
+ * @param  array{nos: array<string, string>, arestas: list<array{de: string, para: string, rotulo: ?string, linha: int}>}  $grafo
+ * @param  callable(string): ?bool  $avaliar  null quando o texto do nó não é uma pergunta reconhecida
+ *
+ * @throws RuntimeException quando o grafo não tem a forma esperada (sem início, laço, pergunta
+ *                          não reconhecida ou aresta sem rótulo Sim/Não do lado decidido)
+ */
+function resultadoDoFluxo(array $grafo, callable $avaliar): string
+{
+    $comEntrada = array_unique(array_column($grafo['arestas'], 'para'));
+    $atual      = null;
+
+    foreach (array_keys($grafo['nos']) as $id) {
+        if (! in_array($id, $comEntrada, true)) {
+            $atual = $id;
+
+            break;
+        }
+    }
+
+    if ($atual === null) {
+        throw new RuntimeException('DG-03: nenhum nó sem aresta de entrada — não há por onde começar a caminhada.');
+    }
+
+    $visitados = [];
+
+    while (true) {
+        if (isset($visitados[$atual])) {
+            throw new RuntimeException("DG-03: laço encontrado no nó '{$atual}'.");
+        }
+
+        $visitados[$atual]  = true;
+        $texto              = $grafo['nos'][$atual] ?? $atual;
+
+        if (preg_match('/\bentra\b/i', $texto) === 1) {
+            return 'entra';
+        }
+
+        if (preg_match('/\bnega\b/i', $texto) === 1) {
+            return 'nega';
+        }
+
+        $saidas = array_values(array_filter($grafo['arestas'], static fn (array $a): bool => $a['de'] === $atual));
+
+        if ($saidas === []) {
+            throw new RuntimeException("DG-03: nó '{$texto}' ({$atual}) não é terminal (\"entra\"/\"nega\") e não tem aresta de saída.");
+        }
+
+        if (count($saidas) === 1) {
+            $atual = $saidas[0]['para'];
+
+            continue;
+        }
+
+        $resultado = $avaliar($texto);
+
+        if ($resultado === null) {
+            throw new RuntimeException("DG-03: pergunta não reconhecida pela guarda: \"{$texto}\".");
+        }
+
+        $alvo = null;
+
+        foreach ($saidas as $saida) {
+            $rotulo = mb_strtolower((string) $saida['rotulo']);
+            $ehSim  = str_contains($rotulo, 'sim') || str_contains($rotulo, 'yes') || $rotulo === 'true';
+            $ehNao  = str_contains($rotulo, 'não') || str_contains($rotulo, 'nao') || str_contains($rotulo, 'no') || $rotulo === 'false';
+
+            if (($resultado && $ehSim) || (! $resultado && $ehNao)) {
+                $alvo = $saida['para'];
+
+                break;
+            }
+        }
+
+        if ($alvo === null) {
+            $ladoEsperado = $resultado ? 'sim' : 'não';
+
+            throw new RuntimeException("DG-03: nó '{$texto}' não tem aresta rotulada para o lado \"{$ladoEsperado}\".");
+        }
+
+        $atual = $alvo;
+    }
+}
+
+/**
+ * O avaliador das perguntas de DG-03 — a MESMA ordem de `User::canAccessPanel()`
+ * (`app/Models/User.php:canAccessPanel:156`): indisponibilidade, pendência, master_global,
+ * contexto do painel (tenancy), papel do painel.
+ */
+function avaliadorDoDG03(User $user, Panel $painel): Closure
+{
+    return function (string $texto) use ($user, $painel): ?bool {
+        $t = mb_strtolower($texto);
+
+        return match (true) {
+            str_contains($t, 'indispon')                                           => $user->motivoDeIndisponibilidade() !== null,
+            str_contains($t, 'pendente')                                           => (bool) $user->aprovacao_pendente,
+            str_contains($t, 'master_global') || str_contains($t, 'master global') => $user->isMasterGlobal(),
+            str_contains($t, 'tenancy')                                            => $painel->hasTenancy(),
+            str_contains($t, 'papel') && str_contains($t, 'painel')                => $user->temPapelDoPainel(
+                $painel->getId(),
+                $painel->hasTenancy() ? null : (config('permission.teams') ? Tenant::CONTEXTO_GLOBAL : null),
+            ),
+            default => null,
+        };
+    };
+}
+
+/**
+ * Texto da saída do `kit:install` comparado sem acento e sem caixa — dos dois lados, na presença e na
+ * ausência. O banner é ASCII e a linha do resumo tem acento: com acento de um lado só, a ausência passa
+ * no vazio e a presença falha sem defeito (wiki `diagramas-da-arquitetura`, Setup Global do `04`, ADV-26).
+ * Usado por `tests/Kit/ResumoDoKitInstallTest.php` e `tests/Kit/CustomizadorDaInstalacaoTest.php`.
+ */
+function semAcentoESemCaixa(string $texto): string
+{
+    return mb_strtolower(Str::ascii($texto));
 }

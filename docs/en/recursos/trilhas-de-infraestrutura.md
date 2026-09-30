@@ -16,6 +16,87 @@ screens answer one of those each:
 | **Mail trail** | `/infra`, *Trails* group | every e-mail the kit sent — separates "it was never sent" from "it was sent and landed in spam" |
 | **Recycle bin** | `/infra`, *System* group | restores records deleted with `SoftDeletes` |
 
+## Map of /infra: screen, source and who writes it
+
+Every screen in the `/infra` panel — the Resources themselves and the pages whose source is written
+by another process — links to a real table or channel, never to a made-up writer. Backup is **not**
+tied to an active schedule: `Schedule::command('backup:run')` stays commented out in
+`routes/console.php:backup:run:141`, and only runs by hand, through the Command Center; health is
+not the only one scheduled — `health:check` runs every 15 minutes
+(`routes/console.php:health:check:29`), and the same scheduler also purges the authentication log
+(`routes/console.php:'authentication-log:purge':32`), prunes exceptions
+(`routes/console.php:'model:prune':64`), cleans up old mail, import and export records
+(`routes/console.php:'kit:limpar-trilha-de-emails':93`) and reminds pending invitations
+(`routes/console.php:'kit:convites-lembrar':40`).
+
+```mermaid
+flowchart TD
+%% DG-12
+accTitle: Map of /infra: screen, source and who writes it
+accDescr: Each screen of the /infra panel links to the table or source it shows and to whoever writes it; backup is off by default, and health is scheduled every 15 minutes.
+  subgraph telas ["/infra screens"]
+    tela_health["Health"]
+    tela_backups["Backups"]
+    tela_jobs["Jobs (queues)"]
+    tela_logs["Logs"]
+    tela_excecoes["Grouped exceptions"]
+    tela_email["Mail trail"]
+    tela_lixeira["Recycle bin"]
+    tela_auditoria["Audit trail"]
+    tela_log_acesso["Authentication log"]
+    tela_comandos["Command Center"]
+    tela_comandos_cadastro["Command Center: registered commands"]
+    tela_pacotes["Composer package releases"]
+    tela_pulse["Pulse"]
+    tela_ia["AI runs"]
+  end
+  tela_health -->|"health:check, every 15 min"| health_store[("health_check_result_history_items")]
+  tela_backups -.->|"backup:run, off by default"| backup_runs[("backup_runs")]
+  tela_jobs -->|"worker (queue:work)"| queue_monitors[("queue_monitors")]
+  tela_logs -->|"channels from config/logging.php"| storage_logs["storage/logs"]
+  tela_excecoes -->|"handler's reportable()"| filament_exceptions[("filament_exceptions_table")]
+  tela_email -->|"MessageSending event"| mail_logs[("mail_logs")]
+  tela_lixeira -->|"Recyclable trait"| recycle_bin[("recycle_bin_items")]
+  tela_auditoria -->|"Auditable models"| audits[("audits")]
+  tela_log_acesso -->|"login event"| authentication_log[("authentication_log")]
+  tela_comandos -->|"run from the screen itself"| command_center_runs[("command_center_runs")]
+  tela_comandos_cadastro -->|"CRUD from the screen itself"| command_center_commands[("command_center_commands")]
+  tela_pacotes -->|"login sync (QueueComposerReleaseSyncOnLogin)"| composer_release_snapshots[("composer_release_package_snapshots")]
+  tela_pulse -->|"pulse:check daemon"| pulse_tabelas[("pulse_*")]
+  tela_ia -->|"RegistrarAiRun listener"| ai_runs[("ai_runs")]
+```
+
+Each screen's plugin comes from `Filament::getPanel('infra')->getPlugins()`
+(`app/Providers/Filament/InfraPanelProvider.php:FilamentSpatieLaravelHealthPlugin:303` — Health,
+`:FilamentJobsMonitorPlugin:324` — Jobs, `:FilamentLogsExplorerPlugin:337` — Logs,
+`:FilamentExceptionsPlugin:502` — Exceptions, `:FilamentMailLogPlugin:547` — Mail trail,
+`:RevivePlugin:580` — Recycle bin, `:FilamentAuditingPlugin:330` — Audit trail,
+`:FilamentAuthenticationLogPlugin:327` — Authentication log, `:CommandCenterPlugin:440` — Command
+Center); Backups and Pulse are pages of the panel itself
+(`app/Filament/Infra/Pages/BackupRunsPage.php:BackupRunsPage:43`,
+`app/Filament/Infra/Pages/Pulse.php:Pulse:40`), and AI runs is a Resource
+(`app/Filament/Infra/Resources/AiRuns/AiRunResource.php:AiRunResource:31`). The most misleading
+namesake: `AiAuditMiddleware` only writes to the `ai` log channel
+(`app/Ai/Middleware/AiAuditMiddleware.php`) — `Auditable` models write `audits`
+(`app/Models/User.php:implements Auditable:59`), and the `RegistrarAiRun` listener writes `ai_runs`
+(`app/Ai/Listeners/RegistrarAiRun.php:AiRun::create:44`), never the audit middleware.
+
+**Two more screens are Resources of the panel, and neither writes through the mechanism its label
+suggests.** `CommandRecordResource`
+(`vendor/ssbityukov/filament-command-center/src/Filament/CommandCenterPlugin.php:register:144`,
+registered together with the Command Center's three pages) writes `command_center_commands`
+through the screen's own CRUD — the table is the model's `$table`
+(`vendor/ssbityukov/filament-command-center/src/Sources/CommandRecord.php:command_center_commands:16`),
+never `command_center_runs`, which is the EXECUTION history of the plugin's other two pages
+(Commands and History). `ComposerReleasePackageResource`
+(`app/Filament/Infra/Resources/ComposerReleasePackages/ComposerReleasePackageResource.php:ComposerReleasePackageResource:39`)
+is read-only: whoever writes `composer_release_package_snapshots`
+(`vendor/mominalzaraa/filament-composer-release-notifier/src/Models/ComposerReleasePackageSnapshot.php:composer_release_package_snapshots:23`)
+is the sync queued on the login event
+(`vendor/mominalzaraa/filament-composer-release-notifier/src/FilamentComposerReleaseNotifierServiceProvider.php:Login:25`,
+`vendor/mominalzaraa/filament-composer-release-notifier/src/Listeners/QueueComposerReleaseSyncOnLogin.php:handle:11`),
+never the screen itself.
+
 ## Both trails store sensitive data
 
 That is why they are only **reachable** on `/infra`, where getting in already requires the `master_global`

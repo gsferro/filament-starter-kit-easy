@@ -91,3 +91,55 @@ no lugar, é ali que se olha.
 
 `docs/` e `site/` são `export-ignore`: o site é material do kit e não chega ao projeto que nasce do
 `create-project`. As guardas disso ficam em `tests/Kit/SiteDeDocumentacaoTest.php`.
+
+## O que roda em segundo plano
+
+`composer dev` sobe **servidor + fila + vite + reverb** juntos, num só terminal
+(`composer.json:"dev":123`, que roda `php artisan dev`); quem registra cada processo é o
+próprio Laravel, em `DevCommands::registerDefaults()`
+(`vendor/laravel/framework/src/Illuminate/Foundation/DevCommands.php:registerDefaults:114`).
+O `serve` sobe o servidor de desenvolvimento (`:serve:112`).
+O `queue:listen --tries=1 --timeout=0` roda sem `--queue`, e por isso só escuta a fila `default`
+(`:queue:listen:113`, `vendor/laravel/framework/src/Illuminate/Queue/Console/ListenCommand.php:getQueue:85`,
+`config/queue.php:'queue':42`).
+O `vite` entra quando há `package.json` (`:node('dev', 'vite'):120`).
+Só fora do Windows entra também o `pail` (`:pcntl_fork:115`).
+O `reverb:start` entra pelo próprio pacote do Reverb
+(`vendor/laravel/reverb/src/Reverb.php:reverb:start:15`).
+
+```mermaid
+flowchart LR
+%% DG-19
+accTitle: Segundo plano - composer dev x Docker Compose x agendador
+accDescr: O composer dev sobe servidor, fila, vite e reverb para desenvolvimento local; o Docker Compose sobe os mesmos papéis como containers, mais um container dedicado ao agendador do Laravel.
+  subgraph composer_dev ["composer dev"]
+    serve["serve (php artisan serve)"]
+    queue_listen["queue:listen (--queue=default)"]
+    vite["vite"]
+    reverb["reverb (reverb:start)"]
+    pail["pail (fora do Windows)"]
+  end
+  subgraph docker_compose ["Docker Compose"]
+    queue_worker["queue (--queue=ai,ai-post,default)"]
+    scheduler_container["scheduler - roda o agendador do Laravel"]
+    reverb_compose["reverb"]
+    pulse_compose["pulse (pulse:check)"]
+  end
+  subgraph agendador ["Agendador (routes/console.php)"]
+    health_check["health:check - a cada 15 min"]
+    convites_lembrar["kit:convites-lembrar - 08:00"]
+    purge["Podas de retenção - madrugada"]
+  end
+  scheduler_container --> health_check
+  scheduler_container --> convites_lembrar
+  scheduler_container --> purge
+```
+
+O agendador **não** roda dentro do `composer dev` — é a correção que
+`routes/console.php:composer dev:19-21` já registra por escrito: rode `php artisan schedule:work`
+à parte, ou ligue o serviço `scheduler` do Docker Compose. Ele é quem de fato executa os eventos de
+`routes/console.php` (`:'health:check':29`, `:'kit:convites-lembrar':40`, mais as podas de
+retenção às 02h). O container `queue` do Compose escuta um superconjunto do que o `composer dev`
+escuta (`docker-compose.yml:queue:274`, contra `default` do `composer dev`); `reverb` e `pulse` do
+Compose repetem os mesmos comandos do `composer dev` e do `pulse:check`, só que containerizados
+(`docker-compose.yml:reverb:337`, `docker-compose.yml:pulse:367`).

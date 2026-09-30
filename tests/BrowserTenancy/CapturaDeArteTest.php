@@ -8,6 +8,7 @@ use App\Settings\ConfiguracoesDoKit;
 use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Illuminate\Support\Facades\Route;
 use Tests\TenancyTestCase;
 
 /**
@@ -671,4 +672,217 @@ it('captura a ficha de organização com o cabeçalho rico e as abas', function 
         ->assertSee('Acme')
         ->assertSee('Ativa')
         ->screenshot(fullPage: false, filename: 'admin-organizacao-header');
+})->group('browser', 'art');
+
+/*
+|--------------------------------------------------------------------------
+| Busca ⌘K, login unificado e instalação — os clipes que a fase D2 acrescenta
+|--------------------------------------------------------------------------
+| `KitArte::CLIPES` já declara os quadros destes três clipes
+| (`app/Console/Commands/KitArte.php:CLIPES:70`); só faltava quem os capturasse — `[CT-50]` de
+| `tests/Kit/KitArteTest.php` ficava vermelho para os três até aqui (R34).
+*/
+
+/**
+ * [CT-B03] A busca ⌘K (Spotlight): fechada e aberta com um termo digitado e um RESULTADO real.
+ *
+ * Cobre as duas primeiras linhas do Esquema do Cenário `[CT-B03]` de `05-casos-de-teste-browser.md`
+ * ("busca: overlay aberto" e "busca: resultado") num único quadro: o overlay já está aberto E já
+ * tem resultado no instante do `screenshot('busca-spotlight-2-aberta')`, então a mesma foto prova
+ * as duas linhas — não há dois arquivos porque não há dois ESTADOS visuais distintos a fotografar
+ * (o roteiro executável do `05` também só desce até este quadro).
+ *
+ * Mesmo seletor do F-45 (`tests/Browser/RoteiroDoKitTest.php:100-154`): o clique em
+ * `.fi-global-search-field` dispara a abertura do overlay num `setTimeout` do Alpine — nada
+ * disso existe num `$this->get()`.
+ *
+ * O resultado é medido DENTRO do overlay (`assertSeeIn`, o mesmo seletor de raiz que o F-45 usa
+ * para medir geometria), e não por texto solto na página: um `assertSee` sozinho passaria mesmo
+ * sem a busca ter devolvido nada, porque o termo poderia estar em qualquer outro canto da tela.
+ */
+it('[CT-B03] captura a busca ⌘K fechada e aberta com um termo e resultado', function (): void {
+    arranjarPainelApp($this, $this->organizacao);
+
+    Projeto::create(['nome' => 'Contrato de fornecimento 2026']);
+
+    $pagina = visit("/app/{$this->organizacao->slug}/projetos")
+        ->resize(1400, 875)
+        ->assertSee('Contrato de fornecimento 2026')
+        ->screenshot(fullPage: false, filename: 'busca-spotlight-1-fechada')
+        ->click('.fi-global-search-field')
+        ->assertVisible('input[placeholder="Buscar registros e telas..."]')
+        ->fill('input[placeholder="Buscar registros e telas..."]', 'Contrato')
+        ->assertSeeIn('[x-on\\:open-spotlight\\.window]', 'Contrato de fornecimento 2026')
+        ->assertNoJavaScriptErrors();
+
+    $pagina->screenshot(fullPage: false, filename: 'busca-spotlight-2-aberta');
+})->group('browser', 'art');
+
+/**
+ * [CT-B03] As duas telas do login unificado: o formulário único (`/login`) e a escolha de painel
+ * (`/login/painel`).
+ *
+ * Cobre a terceira linha do Esquema do Cenário `[CT-B03]` ("login unificado: escolha") — o
+ * `assertPathIs('/login/painel')` + os dois `assertSee` rodam ANTES do
+ * `screenshot('login-unificado-2-escolha')`, exatamente na ordem que `.ai/rules/testes-browser.md`
+ * exige depois de uma navegação.
+ *
+ * A quarta linha do Esquema ("login unificado: painel escolhido", `/admin` com "Painel de
+ * Controle") NÃO tem quadro aqui, e a ausência é intencional, não uma lacuna: nem a Superfície de
+ * UI do `01-plano-acao.md` ("GIFs (busca ⌘K, escolha de painel do login unificado)"), nem o RQ-27
+ * do `00-requisito.md` ("login unificado → escolha de painel"), nem o roteiro executável do
+ * próprio `05` (que para no passo 5, neste mesmo quadro) pedem um terceiro quadro depois da
+ * escolha — e `KitArte::CLIPES['login-unificado']` (`app/Console/Commands/KitArte.php:76-79`)
+ * também declara só estes dois. Corrigido no `05` (linha da Exemplos removida) em vez de inventar
+ * aqui um quadro que nenhuma das três fontes pede.
+ *
+ * Reaproveita o arranjo de `tests/Browser/LoginUnificadoTest.php` (CT-B01) — um usuário com dois
+ * papéis globais, `admin` e `infra`, que dão dois painéis (Administração e Infraestrutura) — sem
+ * duplicar as asserções funcionais daquele cenário; aqui é só captura.
+ *
+ * Login PELA TELA, e não `actingAs()`: é o único caminho real até `/login/painel` — a página
+ * decide o destino em `mount()` a partir de quem está autenticado
+ * (`app/Filament/Pages/Auth/EscolhaDePainel.php:62`), e chegar lá por `actingAs()` direto pularia
+ * exatamente o formulário que a primeira captura precisa mostrar vazio.
+ *
+ * `ligarLoginUnificado()` só altera `config()` (`tests/Pest.php:507`), lida por request em
+ * `ConfiguracaoDoLogin::unificado()` — chega ao servidor in-process do `pest-plugin-browser`
+ * porque é o MESMO processo PHP que serve o `visit()` (`.ai/rules/testes-browser.md`).
+ */
+it('[CT-B03] captura o login unificado e a escolha de painel', function (): void {
+    ligarLoginUnificado();
+    usuarioComPapel('admin', email: 'dois@example.com')->assignRole('infra');
+
+    auth()->logout();
+
+    // Aquece a rota /login (painel /app por baixo) pelo kernel, fora do cronômetro do
+    // Playwright — mesma razão do aquecimento em `arranjarPainelApp()`, acima.
+    $this->get('/login');
+
+    $pagina = visit('/login')
+        ->resize(1400, 875)
+        ->assertPresent('.fi-auth-layout')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(fullPage: false, filename: 'login-unificado-1-formulario')
+        ->fill('#form\.email', 'dois@example.com')
+        ->fill('#form\.password', 'password')
+        ->press('Login')
+        ->assertPathIs('/login/painel')
+        ->assertSee('Administração')
+        ->assertSee('Infraestrutura')
+        ->assertNoJavaScriptErrors();
+
+    $pagina->screenshot(fullPage: false, filename: 'login-unificado-2-escolha');
+})->group('browser', 'art');
+
+/**
+ * Os quadros do `install.gif`: a transcrição real do `kit:install` (fixture
+ * `tests/Browser/Fixtures/terminal-instalacao.blade.php`), recortada progressivamente pelo
+ * parâmetro `$ate` — nunca uma segunda fixture (`01-plano-acao.md`, passo 21).
+ *
+ * A view é renderizada para HTML AQUI, em PHP (`view()->file(...)->render()`), e servida por
+ * rotas registradas SÓ NESTE TESTE — nunca em `routes/web.php` nem em arquivo nenhum do app: a
+ * fixture não pode virar rota pública (docblock dela). O servidor do `pest-plugin-browser` roda
+ * IN-PROCESS (`.ai/rules/testes-browser.md`), então uma rota registrada aqui, antes do
+ * `visit()`, já responde ao navegador — mesmo Router, mesmo processo.
+ *
+ * `file://` não serve para isto: `Pest\Browser\Support\ComputeUrl::from()` só reconhece
+ * `http://`/`https://` como URL absoluta; qualquer outro esquema (inclusive `file://`) leva um
+ * `https://` colado na frente e navega para um endereço inválido (medido lendo o pacote —
+ * `vendor/pestphp/pest-plugin-browser/src/Support/ComputeUrl.php`).
+ */
+it('[CT-B04][CT-B10] captura os quadros do instalador', function (): void {
+    $fixture = base_path('tests/Browser/Fixtures/terminal-instalacao.blade.php');
+
+    /*
+     * Índice (na transcrição) que cada quadro do KitArte::CLIPES['install'] recorta —
+     * progressivo, do início da instalação ao resumo final (com a senha MASCARADA, nunca a
+     * palavra "password" — R35/[CT-52]).
+     *
+     * @var array<string, int|null>
+     */
+    $quadros = [
+        'instalacao-1-inicio'    => 4,    // INFO Instalando .. até "Rodando migrations .. DONE".
+        'instalacao-2-senha'     => 5,    // + "Gerando senha do administrador .. DONE".
+        'instalacao-3-progresso' => 11,   // + build/npm/Snyk, até o fim dos passos numerados.
+        'instalacao-4-resumo'    => null, // A transcrição inteira: links, login mascarado, aviso.
+    ];
+
+    foreach ($quadros as $arquivo => $ate) {
+        $html = view()->file($fixture, ['ate' => $ate])->render();
+
+        Route::get("/_teste-arte/{$arquivo}", fn () => response($html));
+    }
+
+    /*
+     * (QA-13) A altura da janela de captura é MEDIDA no quadro final (`instalacao-4-resumo`, a
+     * transcrição inteira — o mais alto dos quatro), nunca um chute. Os 4 quadros continuam
+     * saindo com a MESMA altura — o `ffmpeg` do `kit:arte` monta o GIF a partir de quadros do
+     * MESMO tamanho, e um quadro com dimensão diferente faz o filtro `palettegen`/`paletteuse`
+     * descartar os quadros seguintes e publicar só o primeiro, SEM erro nenhum (medido nesta
+     * sessão, com um GIF de teste variando o tamanho dos quadros de entrada: `nb_frames` caiu
+     * para 1). Antes, a altura era fixa e generosa (2100px): o quadro final precisa de só
+     * ~2.077px (`.janela` mais o padding do `body`), e os 3 primeiros — com bem menos texto —
+     * saíam com boa parte da altura vazia porque o valor não acompanhava o conteúdo. Medir num
+     * viewport bem mais alto que qualquer conteúdo esperado (3000px) garante que a medida não
+     * corta nada, e a soma pelo padding do `body` (e não só a `.janela`) é o que evita cortar a
+     * ÚLTIMA linha visível — o `box-shadow` da `.janela` pode sangrar visualmente além da borda,
+     * mas isso não é uma linha de texto.
+     */
+    $alturaDoConteudo = (int) visit('/_teste-arte/instalacao-4-resumo')
+        ->resize(1400, 3000)
+        ->script(<<<'JS'
+            Math.ceil(
+                document.querySelector('.janela').getBoundingClientRect().height
+                + parseFloat(getComputedStyle(document.body).paddingTop)
+                + parseFloat(getComputedStyle(document.body).paddingBottom)
+            )
+        JS);
+
+    /*
+     * (CT-B10) O que cada quadro mostra (o seu último passo) e o que NÃO mostra (o primeiro
+     * passo do quadro seguinte) — um recorte deslocado de um marcador passa por todo o resto.
+     *
+     * @var array<string, array{0: string, 1: string}>
+     */
+    $conteudoDoQuadro = [
+        'instalacao-1-inicio'    => ['Rodando migrations', 'Gerando senha do administrador'],
+        'instalacao-2-senha'     => ['Gerando senha do administrador', 'Populando papéis, permissões e usuário inicial'],
+        'instalacao-3-progresso' => ['Removendo o vínculo com o Snyk do kit', 'Pronto! O projeto está instalado.'],
+        'instalacao-4-resumo'    => ['Login inicial: admin@example.com / XXXXXXXXXXXXXXXXXXXXXXXX', 'admin@example.com / password'],
+    ];
+
+    $hashesDosQuadros = [];
+
+    foreach ($quadros as $arquivo => $ate) {
+        [$mostra, $naoMostra] = $conteudoDoQuadro[$arquivo];
+
+        visit("/_teste-arte/{$arquivo}")
+            ->resize(1400, $alturaDoConteudo)
+            // A âncora vem antes das ausências: uma página 404 não mostra nada disso e passaria.
+            ->assertSee('meu-projeto — instalação')
+            // As duas formas em que a senha antiga aparecia (R35/[CT-52]) — nunca no HTML que
+            // vira imagem.
+            ->assertDontSee('/ password')
+            ->assertDontSee('password (padrão do kit)')
+            // (CT-B10) o marcador do quadro à vista, antes da ausência do seguinte.
+            ->assertSee($mostra)
+            ->assertDontSee($naoMostra)
+            // (CT-B04, passo 5) a janela da transcrição termina dentro da área fotografada.
+            ->assertScript("document.querySelector('.janela').getBoundingClientRect().bottom <= window.innerHeight")
+            ->screenshot(fullPage: false, filename: $arquivo);
+
+        $hashesDosQuadros[$arquivo] = md5_file(base_path("tests/Browser/Screenshots/{$arquivo}.png"));
+    }
+
+    // (CT-B04, passo 7) cada quadro difere do anterior.
+    $anterior = null;
+
+    foreach ($hashesDosQuadros as $arquivo => $hash) {
+        if ($anterior !== null) {
+            expect($hash)->not->toBe($anterior, "o PNG de {$arquivo} é igual ao do quadro anterior");
+        }
+
+        $anterior = $hash;
+    }
 })->group('browser', 'art');

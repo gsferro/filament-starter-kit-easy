@@ -16,8 +16,9 @@ Artisan::command('inspire', function () {
 |--------------------------------------------------------------------------
 | Agendamentos do kit
 |--------------------------------------------------------------------------
-| Nada disso roda sem um scheduler ativo: `php artisan schedule:work` em dev
-| (já incluso no `composer dev`) ou o serviço `scheduler` do docker compose.
+| Nada disso roda sem um scheduler ativo: o `composer dev` NÃO registra o
+| `schedule:work` — rode-o à parte (`php artisan schedule:work`) ou ligue o
+| serviço `scheduler` do docker compose.
 |
 | O ScheduleCheck do Health falha justamente quando o agendador está parado —
 | é assim que o painel infra avisa que as rotinas abaixo não estão rodando.

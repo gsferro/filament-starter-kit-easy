@@ -242,3 +242,87 @@ jobs:
             echo "$rota -> $codigo"
             [ "$codigo" = "200" ] || exit 1
           done
+
+  site:
+    # RQ-36 (Adendo 3): o CI de pull request passa a construir e conferir o site de
+    # documentação (build, links, acessibilidade e diagramas) ANTES do merge. O defeito que
+    # motivou isto — o DG-11 quebrado por um `;` dentro de uma nota Mermaid, achado só porque
+    # alguém rodou o build à mão — não aparecia aqui: o `pages.yml` só roda DEPOIS do merge, em
+    # push para `main`.
+    #
+    # Só quando o PR toca `docs/` ou `site/`: os outros jobs deste arquivo já cobrem toda PR, e
+    # rodar Node + Astro + Playwright numa PR só de `app/` gastaria ~3-5 min sem examinar nada
+    # que mudou. Sem `dorny/paths-filter` nem outra action de terceiro nova para decidir isso —
+    # um `git diff` entre as duas pontas do PR já responde, e a AcoesPinadasPorShaTest não
+    # precisa aprender mais uma origem de supply chain só para um filtro de caminho.
+    #
+    # Só em pull_request: em push para `main` quem constrói e PUBLICA é o `pages.yml` — rodar
+    # de novo aqui mediria a mesma coisa duas vezes, e este job nunca publica nada.
+    if: github.event_name == 'pull_request'
+
+    runs-on: ubuntu-latest
+
+    # RD3-11 (Adendo 4): só este job roda `npm ci` e `playwright install --with-deps` com o
+    # token do GITHUB_TOKEN, disparado por pull_request. Sem `permissions:`, o token herda o
+    # padrão do repositório, que pode ser mais amplo que a leitura que este job precisa — ele
+    # só lê o repo e nunca publica nada (quem publica é o `pages.yml`). No NÍVEL DO JOB, e não
+    # no workflow, para não mudar o padrão implícito dos outros jobs deste arquivo.
+    permissions:
+      contents: read
+
+    # No NÍVEL DO JOB, pelo mesmo motivo do `pages.yml`: o conferidor de links precisa descontar
+    # o mesmo prefixo que o build aplicou, e o de acessibilidade precisa navegar para ele.
+    env:
+      DOCS_BASE: /filament-starter-kit-easy
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Histórico completo: o diff abaixo compara as duas pontas do PR contra o ancestral
+          # comum, e um checkout raso (o padrão desta action) não tem a base disponível.
+          fetch-depth: 0
+
+      - name: Verificar se o PR toca docs/ ou site/
+        id: mudou
+        run: |
+          if git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
+            | grep -qE '^(docs|site)/'; then
+            echo "toca=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "toca=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: steps.mudou.outputs.toca == 'true'
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Instalar dependências
+        if: steps.mudou.outputs.toca == 'true'
+        working-directory: site
+        run: npm ci
+
+      - name: Construir o site
+        if: steps.mudou.outputs.toca == 'true'
+        working-directory: site
+        run: npm run build
+
+      - name: Conferir links, âncoras e redirects
+        if: steps.mudou.outputs.toca == 'true'
+        working-directory: site
+        run: node verifica-links.mjs
+
+      - name: Instalar o navegador do Playwright
+        if: steps.mudou.outputs.toca == 'true'
+        working-directory: site
+        run: npx playwright install --with-deps chromium
+
+      - name: Conferir diagramas e acessibilidade (axe, WCAG 2.1 AA, nos dois temas)
+        if: steps.mudou.outputs.toca == 'true'
+        working-directory: site
+        run: |
+          npx astro preview &
+          npx wait-on "http://localhost:4321${DOCS_BASE}/pt/" -t 60000
+          node verifica-acessibilidade.mjs

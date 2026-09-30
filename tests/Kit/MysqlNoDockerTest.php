@@ -22,9 +22,12 @@
  * própria documentação. É a armadilha que `.ai/rules/testes.md` registra, e que já custou três
  * vezes nesta base.
  *
- * As duas são closures deste arquivo, não funções em `tests/Pest.php`: a regra de
- * `.ai/rules/testes.md` é sobre helper usado por MAIS DE UM arquivo. Se um terceiro precisar,
- * é aí que elas sobem — não antes.
+ * O RECORTE DE BLOCO usava ser uma closure deste arquivo; ganhou um segundo consumidor
+ * (`tests/Kit/DiagramasDaArquiteturaTest.php`, R20 da wiki `diagramas-da-arquitetura`) e subiu
+ * para `blocoDoServico()` em `tests/Pest.php` — `.ai/rules/testes.md`: helper usado por mais de
+ * um arquivo vive lá, nunca clonado.
+ *
+ * O FILTRO DE COMENTÁRIO continua closure local: só este arquivo o usa.
  *
  * Ver `wikis/specs/feat/mysql-no-docker/mysql-no-docker/`.
  */
@@ -42,37 +45,7 @@ beforeEach(function (): void {
 
     $this->composeExecutavel = ($this->semComentario)($this->compose);
 
-    /*
-     * O bloco de UM serviço: do `  <nome>:` até a próxima chave de coluna 2 (outro serviço) ou
-     * de coluna 0 (o `volumes:` de topo). Devolve '' quando o serviço não existe — e é isso que
-     * faz o cenário reprovar em vez de passar vazio.
-     */
-    $this->blocoDoServico = function (string $servico): string {
-        $linhas = explode("\n", $this->compose);
-        $dentro = false;
-        $bloco  = [];
-
-        foreach ($linhas as $linha) {
-            if ($linha === '  '.$servico.':') {
-                $dentro = true;
-
-                continue;
-            }
-
-            if ($dentro) {
-                $fimDeServico = preg_match('/^  \S/', $linha) === 1;
-                $fimDeTopo    = preg_match('/^\S/', $linha) === 1;
-
-                if ($fimDeServico || $fimDeTopo) {
-                    break;
-                }
-
-                $bloco[] = $linha;
-            }
-        }
-
-        return implode("\n", $bloco);
-    };
+    $this->blocoDoServico = fn (string $servico): string => blocoDoServico($this->compose, $servico);
 });
 
 /*
