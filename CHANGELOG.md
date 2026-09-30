@@ -137,6 +137,34 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   funciona sozinha; e, de antes deste trabalho, reinstalar sobre um administrador que já existe com
   `password` imprime uma senha gerada que não vale -- o `UsuarioAdminSeeder` não toca admin existente
 
+### Validação antes da tag
+
+Minor e não patch: feature nova (os vinte diagramas com guarda, o site com Mermaid) e uma mudança de
+comportamento no `kit:install` (a gravação no `.env` troca toda linha ativa da chave, RQ-50..RQ-53),
+sem quebra de API. O `checklist-de-release` pede os quatro cenários a cada tag, e o cenário 1 foi
+simulado pela mesma rota da `v0.41.0` e da `v0.41.1`: extração por `git archive` (que aplica o
+`export-ignore` como o Packagist aplica — `docs/` e `wikis/specs/` ausentes, conferido) +
+`composer install` + `.env` + `kit:install --create-project --no-interaction`.
+
+- **Cenário 1, simulado** (extração de `236491e`, o commit do bump desta versão): `config('kit.version')`
+  = `0.42.0`; `php artisan test --testsuite=Kit,Tenancy --parallel --processes=4 --compact` →
+  `{"result":"passed","tests":3800,"passed":2962,"assertions":12997,"duration_ms":893597,"skipped":838}`
+  — **3.800 testes, 2.962 passaram, 12.997 asserções, 838 pulados, 0 falhas**, 14,9 min
+- **Teto de pulados: 214 → 838 (+624)**, decomposto por causa **medindo** cada arquivo dentro da
+  extração (`php artisan test {arquivo} --compact`), não por estimativa — os três arquivos são as
+  guardas dos diagramas, que leem `docs/`, o README e o site, que não viajam, e pulam inteiros fora
+  da árvore do kit pela sentinela `naArvoreDoKit()` no `beforeEach` (ADR-06 da wiki):
+  - **+527** `tests/Kit/DiagramasDaArquiteturaTest.php`, novo (527 casos, 527 pulados)
+  - **+50** `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`, novo (50 casos, 50 pulados)
+  - **+47** `tests/Kit/GuardasDosDiagramasTest.php`, novo (47 casos, 47 pulados)
+  - os outros dois arquivos novos, `tests/Kit/KitArteTest.php` e `tests/Kit/ResumoDoKitInstallTest.php`,
+    e os casos novos de `CustomizadorDaInstalacaoTest` **rodam** no projeto instalado (0 pulados a
+    mais): 527 + 50 + 47 = 624 = 838 − 214, sem resíduo
+- **Cobertura no Linux**: o job `cobertura` da `main` mediu **84,76 %** (8.533 de 10.067 statements) em
+  `1385188`, *"Badge confere e o piso foi respeitado"*, com o badge em 84 %
+- **Cenários 2, 3 e 4**: rodam sobre a tag publicada, e o registro vem num PR de documentação, como
+  a `v0.41.1` fez
+
 ## [0.41.1] - 2026-09-27
 
 ### Adicionado
