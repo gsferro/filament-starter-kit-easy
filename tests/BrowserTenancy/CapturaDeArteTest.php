@@ -791,7 +791,7 @@ it('[CT-B03] captura o login unificado e a escolha de painel', function (): void
  * `https://` colado na frente e navega para um endereço inválido (medido lendo o pacote —
  * `vendor/pestphp/pest-plugin-browser/src/Support/ComputeUrl.php`).
  */
-it('captura os quadros do instalador', function (): void {
+it('[CT-B04] captura os quadros do instalador', function (): void {
     $fixture = base_path('tests/Browser/Fixtures/terminal-instalacao.blade.php');
 
     /*
@@ -812,15 +812,36 @@ it('captura os quadros do instalador', function (): void {
         $html = view()->file($fixture, ['ate' => $ate])->render();
 
         Route::get("/_teste-arte/{$arquivo}", fn () => response($html));
+    }
 
-        // Altura fixa e generosa (e igual nos 4 quadros — o `ffmpeg` monta um GIF de quadros do
-        // MESMO tamanho): a `.janela` da transcrição completa mede ~1.980px
-        // (`document.querySelector('.janela').getBoundingClientRect().height`, medido nesta
-        // sessão), e o viewport do resto das capturas (875px) a cortaria — o defeito medido
-        // aqui foi exatamente esse, com `instalacao-3-progresso` e `instalacao-4-resumo`
-        // saindo BYTE A BYTE idênticos porque o texto novo nascia fora da tela.
+    /*
+     * (QA-13) A altura da janela de captura é MEDIDA no quadro final (`instalacao-4-resumo`, a
+     * transcrição inteira — o mais alto dos quatro), nunca um chute. Os 4 quadros continuam
+     * saindo com a MESMA altura — o `ffmpeg` do `kit:arte` monta o GIF a partir de quadros do
+     * MESMO tamanho, e um quadro com dimensão diferente faz o filtro `palettegen`/`paletteuse`
+     * descartar os quadros seguintes e publicar só o primeiro, SEM erro nenhum (medido nesta
+     * sessão, com um GIF de teste variando o tamanho dos quadros de entrada: `nb_frames` caiu
+     * para 1). Antes, a altura era fixa e generosa (2100px): o quadro final precisa de só
+     * ~2.077px (`.janela` mais o padding do `body`), e os 3 primeiros — com bem menos texto —
+     * saíam com boa parte da altura vazia porque o valor não acompanhava o conteúdo. Medir num
+     * viewport bem mais alto que qualquer conteúdo esperado (3000px) garante que a medida não
+     * corta nada, e a soma pelo padding do `body` (e não só a `.janela`) é o que evita cortar a
+     * ÚLTIMA linha visível — o `box-shadow` da `.janela` pode sangrar visualmente além da borda,
+     * mas isso não é uma linha de texto.
+     */
+    $alturaDoConteudo = (int) visit('/_teste-arte/instalacao-4-resumo')
+        ->resize(1400, 3000)
+        ->script(<<<'JS'
+            Math.ceil(
+                document.querySelector('.janela').getBoundingClientRect().height
+                + parseFloat(getComputedStyle(document.body).paddingTop)
+                + parseFloat(getComputedStyle(document.body).paddingBottom)
+            )
+        JS);
+
+    foreach ($quadros as $arquivo => $ate) {
         visit("/_teste-arte/{$arquivo}")
-            ->resize(1400, 2100)
+            ->resize(1400, $alturaDoConteudo)
             // As duas formas em que a senha antiga aparecia (R35/[CT-52]) — nunca no HTML que
             // vira imagem.
             ->assertDontSee('/ password')

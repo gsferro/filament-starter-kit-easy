@@ -604,7 +604,7 @@ it('[CT-65] o ffmpeg que abre a saida e falha no meio nao trunca o GIF publicado
 | deterministica — declarado como nao-falsificavel nesta pilha sem tocar o SO.
 */
 
-it('[RD2-02/RD2-03] uma excecao qualquer ao montar um clipe nao aborta os demais, e o diretorio de montagem fica limpo', function (): void {
+it('[RD2-02/RD2-03][CT-127] uma excecao qualquer ao montar um clipe nao aborta os demais, e o diretorio de montagem fica limpo', function (): void {
     $base = diretorioDeArte();
     instalarFfmpegDeTeste('gravador');
 
@@ -671,7 +671,7 @@ it('[RD2-02/RD2-03] uma excecao qualquer ao montar um clipe nao aborta os demais
 | `publicarGif()` nunca chegou a substituí-lo.
 */
 
-it('[RD3-09] falha ao PUBLICAR o gif (o ffmpeg terminou bem) avisa "nao consegui publicar", nao "falha ao montar o clipe", e preserva o gif anterior', function (): void {
+it('[RD3-09][CT-128] falha ao PUBLICAR o gif (o ffmpeg terminou bem) avisa "nao consegui publicar", nao "falha ao montar o clipe", e preserva o gif anterior', function (): void {
     $base = diretorioDeArte();
     instalarFfmpegDeTeste('saida-vira-diretorio');
 

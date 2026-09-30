@@ -98,7 +98,7 @@ function rodarKitInstallDeVerdade(array $opcoes = []): string
 | delas nem funciona.
 */
 
-it('[RD3-01][RD3-04] com --no-seed, o banner e o resumo dao a MESMA orientacao para popular o banco, e ela funciona', function (): void {
+it('[RD3-01][RD3-04][CT-121] com --no-seed, o banner e o resumo dao a MESMA orientacao para popular o banco, e ela funciona', function (): void {
     diretorioDeInstalacaoDoKit();
     config(['app.key' => '']); // projeto "novo" para CustomizadorDaInstalacao::devePerguntar()
 
@@ -141,7 +141,7 @@ it('[RD3-01][RD3-04] com --no-seed, o banner e o resumo dao a MESMA orientacao p
 | que você definiu").
 */
 
-it('[RD3-03] com senha ja utilizavel via config e o arquivo vazio, semear() RODA e o resumo nao pode negar isso', function (): void {
+it('[RD3-03][CT-122] com senha ja utilizavel via config e o arquivo vazio, semear() RODA e o resumo nao pode negar isso', function (): void {
     diretorioDeInstalacaoDoKit();
     config(['app.key' => '']);
 

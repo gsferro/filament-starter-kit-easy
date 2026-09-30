@@ -385,7 +385,7 @@ it('ignora arquivo inexistente em vez de estourar', function (): void {
  * quando o NOME digitado tem uma barra (APP_NAME e COMPOSE_PROJECT_NAME já foram gravados; cor,
  * tenancy e settings nunca chegam a rodar).
  */
-it('[RD2-08] valor com barra invertida, cifrao e aspas sobrevive a ida e volta pelo .env', function (): void {
+it('[RD2-08][CT-117] valor com barra invertida, cifrao e aspas sobrevive a ida e volta pelo .env', function (): void {
     $valor = 'Loja "X" $HOME \ fim';
 
     $alterou = SubstituicaoEmArquivo::definirNoEnv($this->base.'/.env', 'APP_NAME', $valor);
@@ -413,6 +413,48 @@ it('[RD2-08] valor com barra invertida, cifrao e aspas sobrevive a ida e volta p
         .'que a acompanha) nao fez ida e volta intacta',
     );
 })->group('kit');
+
+/**
+ * [CT-118] QA-10: a chave em duas linhas só troca a primeira.
+ *
+ * `SubstituicaoEmArquivo::aplicar()` casa `/^#?\s*APP_NAME=.*$/m` também contra uma linha
+ * COMENTADA que cita a chave (o próprio motivo do limite `1` em
+ * `preg_replace_callback()`, ver o docblock de `aplicar()`). O mutante `IncrementInteger`
+ * dessa linha (o limite sobe de `1` para `2`) sobrevivia (QA-10) porque nenhum teste
+ * provava que a SEGUNDA ocorrência — aqui, o comentário — fica intacta.
+ */
+it('[CT-118] com a chave em duas linhas, so a primeira e trocada', function (?string $linhaExtra, string $intacta): void {
+    if ($linhaExtra !== null) {
+        File::append($this->base.'/.env', PHP_EOL.$linhaExtra);
+    }
+
+    $linhasAntes = substr_count(envDoTeste(), "\n");
+
+    $alterou = SubstituicaoEmArquivo::definirNoEnv($this->base.'/.env', 'APP_NAME', 'Novo');
+
+    preg_match('/^#?\s*APP_NAME=.*$/m', envDoTeste(), $primeiraLinha);
+
+    expect($alterou)->toBeTrue()
+        ->and($primeiraLinha[0] ?? null)->toBe(
+            'APP_NAME="Novo"',
+            'a PRIMEIRA linha que casa com APP_NAME deveria virar APP_NAME="Novo" (QA-10)',
+        );
+
+    $this->assertStringContainsString(
+        $intacta,
+        envDoTeste(),
+        'a linha "'.$intacta.'" deveria continuar no .env, byte a byte — só a primeira ocorrência '
+        .'da chave pode ser trocada (QA-10, limite do preg_replace_callback)',
+    );
+
+    expect(substr_count(envDoTeste(), "\n"))->toBe(
+        $linhasAntes,
+        'o .env deveria continuar com o mesmo numero de linhas de antes da gravacao',
+    );
+})->with([
+    '1 ocorrencia (controle: MAIL_FROM_NAME="${APP_NAME}" ja vem do .env.example)' => [null, 'MAIL_FROM_NAME="${APP_NAME}"'],
+    '2 ocorrencias: a segunda e um comentario que cita a chave'                    => ['# APP_NAME="Exemplo" — mude aqui', '# APP_NAME="Exemplo" — mude aqui'],
+])->group('kit');
 
 /*
 |--------------------------------------------------------------------------
@@ -863,7 +905,7 @@ it('[CT-41] o resumo nao promete senha gerada nem impressa quando o .env ja tem 
 |      — nada foi semeado, entao a frase e uma promessa vazia.
 */
 
-it('[RD2-05] corrigirResumoDaSenha() reescreve a linha do resumo quando nada foi gerado (--no-seed ou banco inacessivel)', function (): void {
+it('[RD2-05][CT-120] corrigirResumoDaSenha() reescreve a linha do resumo quando nada foi gerado (--no-seed ou banco inacessivel)', function (): void {
     $comando = new KitInstall;
 
     // (RD3-12) A fixture usa a CONSTANTE de `CustomizadorDaInstalacao`, não um quarto literal
@@ -891,7 +933,7 @@ it('[RD2-05] corrigirResumoDaSenha() reescreve a linha do resumo quando nada foi
     $this->assertStringNotContainsString('password', $linha[1], 'a linha do resumo cita "password"');
 })->group('kit');
 
-it('[RD2-05] mensagemDoBanner() nao promete "a que voce definiu" quando a semeadura nao rodou', function (): void {
+it('[RD2-05][CT-119] mensagemDoBanner() nao promete "a que voce definiu" quando a semeadura nao rodou', function (): void {
     $comando = new KitInstall;
 
     (new ReflectionProperty(KitInstall::class, 'senhaGerada'))->setValue($comando, null);
@@ -905,7 +947,7 @@ it('[RD2-05] mensagemDoBanner() nao promete "a que voce definiu" quando a semead
     );
 })->group('kit');
 
-it('[RD2-05] mensagemDoBanner() preserva o comportamento de hoje quando a semeadura RODOU', function (): void {
+it('[RD2-05][CT-119] mensagemDoBanner() preserva o comportamento de hoje quando a semeadura RODOU', function (): void {
     $comando = new KitInstall;
 
     (new ReflectionProperty(KitInstall::class, 'senhaGerada'))->setValue($comando, null);
@@ -919,7 +961,7 @@ it('[RD2-05] mensagemDoBanner() preserva o comportamento de hoje quando a semead
     );
 })->group('kit');
 
-it('[RD2-05] mensagemDoBanner() preserva a mensagem de senha gerada agora', function (): void {
+it('[RD2-05][CT-119] mensagemDoBanner() preserva a mensagem de senha gerada agora', function (): void {
     $comando = new KitInstall;
 
     (new ReflectionProperty(KitInstall::class, 'senhaGerada'))->setValue($comando, 'abc123XYZ');
@@ -945,7 +987,7 @@ it('[RD2-05] mensagemDoBanner() preserva a mensagem de senha gerada agora', func
 | pontas.
 */
 
-it('[RD3-12] CustomizadorDaInstalacao expoe RESUMO_SENHA_GERADA como constante publica, e aplicar() a usa', function (): void {
+it('[RD3-12][CT-123] CustomizadorDaInstalacao expoe RESUMO_SENHA_GERADA como constante publica, e aplicar() a usa', function (): void {
     expect(CustomizadorDaInstalacao::RESUMO_SENHA_GERADA)
         ->toBeString()
         ->not->toBe('');
@@ -960,7 +1002,7 @@ it('[RD3-12] CustomizadorDaInstalacao expoe RESUMO_SENHA_GERADA como constante p
         );
 })->group('kit');
 
-it('[RD3-12] corrigirResumoDaSenha() reconhece a linha pela CONSTANTE de CustomizadorDaInstalacao, nao por um literal duplicado', function (): void {
+it('[RD3-12][CT-123] corrigirResumoDaSenha() reconhece a linha pela CONSTANTE de CustomizadorDaInstalacao, nao por um literal duplicado', function (): void {
     $fonte = File::get((new ReflectionClass(KitInstall::class))->getFileName());
 
     preg_match(
