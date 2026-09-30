@@ -1,6 +1,7 @@
 # Progresso — Diagramas da arquitetura do kit no README e no site
 
-**Estado**: em revisão
+**Estado**: concluída — 2026-09-30
+<!-- Ciclo 3 do quality gate (teto): REPROVADO só por texto, corrigido depois do veredito; o mantenedor confirmou a RQ-53 e mandou abrir o PR. -->
 <!-- Step 9 (revisão do diff, 4 rodadas) concluído; step 10 (esta reconciliação) em 2026-09-29. Passa a
      "concluída — {data}" no step 11, depois do veredito do quality gate. -->
 
@@ -433,7 +434,7 @@ pegou o CT-05 do `MysqlNoDockerTest` contra o texto do DG-18 (`821d357`).
 - **Ciclo**: 3 · **Veredito**: REPROVADO → especificação · **Data**: 2026-09-30
 - **Relatório**: `06-relatorio-qa.md` — 3 achados, todos de texto (Major 1: QA-26, números que o comando não reproduz; Minor 2: QA-24, 18 citações `it:N` no teste errado; QA-25, "Q?9 em aberto" no `01`, no `02` e no docblock); G (nível 3), J e K só em parte; nenhum defeito novo de código ou de teste; sub-agente `fw-qa-gate`, cego (despacho #89)
 - **Teto atingido**: 3 de 3 ciclos — a skill manda parar e escalar ao mantenedor, sem ciclo 4
-- **Depois do veredito (sessão, 2026-09-30)**: os três achados corrigidos na fonte, sem novo ciclo — QA-24: toda citação `arquivo:it:N` recitada como `arquivo:'[CT-nnn]':linha` pelo CT nomeado na mesma linha; QA-25: "Q?9 em aberto" → "a Q?9 fechou pelo Adendo 8, RQ-53" no passo 27, no ADR-10 e no docblock; QA-26: 527 casos no CHANGELOG e neste `03`, 106 IDs, e os `grep -c` refeitos. A conferência dessas correções e a confirmação explícita da RQ-53 ficam para a revisão do PR, com o `06` do ciclo 3 na descrição
+- **Depois do veredito (sessão, 2026-09-30)**: os três achados corrigidos na fonte, sem novo ciclo — QA-24: toda citação `arquivo:it:N` recitada como `arquivo:'[CT-nnn]':linha` pelo CT nomeado na mesma linha; QA-25: "Q?9 em aberto" → "a Q?9 fechou pelo Adendo 8, RQ-53" no passo 27, no ADR-10 e no docblock; QA-26: 527 casos no CHANGELOG e neste `03`, 106 IDs, e os `grep -c` refeitos. A conferência dessas correções e a confirmação explícita da RQ-53 ficam para a revisão do PR, com o `06` do ciclo 3 na descrição. **RQ-53 confirmada por escrito pelo mantenedor em 2026-09-30** ("confirmo a RQ-53, abre o PR e faz o push"; Adendo 8, *Confirmação*), que também mandou abrir o PR
 
 | Achado | Severidade | Destino no gate | Situação (2026-09-30, depois do veredito) |
 |---|---|---|---|

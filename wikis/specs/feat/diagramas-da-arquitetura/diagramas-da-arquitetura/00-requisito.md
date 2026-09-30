@@ -442,6 +442,7 @@ As opções escolhidas diziam, na pergunta:
 
 - **Fonte**: resposta do mantenedor à pergunta Q?9 (raia requisito, P-45), feita pela sessão com a recomendação e as duas opções depois do veredito do ciclo 2 do quality gate (QA-15); Q?10 e Q?11 foram feitas junto
 - **Fidelidade**: baixa — o mantenedor mandou seguir sem escolher uma opção; a sessão aplicou a recomendação que a pergunta trazia (opção 1) e deixa registrado que a decisão foi por omissão
+- **Confirmação (2026-09-30, depois do ciclo 3 do gate)**: o mantenedor confirmou a RQ-53 por escrito — "confirmo a RQ-53, abre o PR e faz o push" —, e a fidelidade passa a **alta**; a decisão deixa de ser por omissão
 
 ### Texto Original
 
