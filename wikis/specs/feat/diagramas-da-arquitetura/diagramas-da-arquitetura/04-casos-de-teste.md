@@ -1,6 +1,6 @@
 # Casos de Teste — Diagramas da arquitetura do kit no README e no site
 
-> Requisito: `00-requisito.md` (RQ-01..RQ-30, Adendos 1 e 2 *(alterado em 2026-09-29: step 10 do ciclo 2 do gate — hoje RQ-01..RQ-49 e P-01..P-44, Adendos 1 a 6)*) · Plano: só o recorte de paths, rotas,
+> Requisito: `00-requisito.md` (RQ-01..RQ-30, Adendos 1 e 2 *(alterado em 2026-09-29: step 10 do ciclo 2 do gate — hoje RQ-01..RQ-49 e P-01..P-44, Adendos 1 a 6)* *(alterado em 2026-09-29: Adendo 7 — hoje RQ-01..RQ-52 e P-01..P-44, Adendos 1 a 7)*) · Plano: só o recorte de paths, rotas,
 > stack e Superfície de UI (`01-recorte-para-feature-test-design.md`, extraído do `01-plano-acao.md`).
 > Derivado do **requisito**. O `01-plano-acao.md` e o `02-decisoes-arquiteturais.md` não foram
 > abertos. A implementação da feature (diagramas, guarda, `kit:arte` novo) não existe e não foi
@@ -29,7 +29,7 @@
 >   cenário ganhou a [Regra R47](#regra-r47--o-ci-de-pull-request-constrói-e-confere-o-site-quando-e-só-quando-o-pr-toca-docs-ou-site)
 >   e o CT-105, derivados do `00`, e a lacuna L-07. É o único cenário escrito neste step; o teste dele
 >   não existe ainda (`03`, DV-09). *(alterado em 2026-09-29: existe — `[CT-105]` em
->   `tests/Kit/DiagramasDaArquiteturaTest.php:it:5602`, verde; a DV-09 está fechada)* Os números, pelos mesmos comandos: 105 cenários, 47 regras, 266
+>   `tests/Kit/DiagramasDaArquiteturaTest.php:it:5595`, verde; a DV-09 está fechada)* Os números, pelos mesmos comandos: 105 cenários, 47 regras, 266
 >   mutantes, 2 sem matador.
 > - **Achados A-01, A-02, A-03 e A-06** (`03`, `## Achados do step 10`) — segunda passada da
 >   `feature-test-design` 1.16.0 neste step *(alterado em 2026-09-29)*: os números do DG-10, as metades do
@@ -67,6 +67,61 @@
 >   os Exemplos e as asserções que o cenário acrescentou não entraram) e CT-132 (as duas linhas de cópia leem o bloco
 >   publicado sem aplicar a alteração e ficam vermelhas depois da correção do QA-09). Números, pelos comandos do
 >   comentário abaixo: 132 cenários, 62 regras, 353 mutantes, 3 sem matador; no `05`, 6 CT-B e 24 mutantes.
+> - **Adendo 7 — as respostas da Q?3, da Q?4 e da Q?5** *(alterado em 2026-09-29: passada da `feature-test-design`
+>   1.16.0 sobre o Adendo 7 do `00`)*: nenhum cenário nem regra novos; três cenários reescritos. A
+>   [Regra R54](#regra-r54--o-valor-que-o-kitinstall-grava-no-env-volta-igual-na-leitura-com-a-quebra-de-linha-como-espaço-e-a-gravação-troca-toda-linha-ativa-da-chave-e-nenhuma-comentada)
+>   passa a afirmar RQ-50 (CT-118: toda linha **ativa** trocada, a comentada intacta — antes **e** depois da ativa —, e
+>   o valor gravado lido por `Dotenv::parse()`, por `valorNoEnv()` e pela leitura do Laravel) e RQ-51 (CT-117: a quebra
+>   LF, CRLF ou CR vira um espaço, e o `.env` não ganha chave nova); o CT-128 afirma RQ-52 (a saída nomeia a
+>   publicação, e não a montagem) e mata o R33.M10, que sai da lacuna L-12. L-10, L-11 e L-12 fecham; as perguntas de
+>   desenho Q?6, Q?7 e Q?8 ficam decididas pela sessão, como os testes do ciclo 2 as implementaram — e onde a
+>   implementação é mais estreita que a ➡️ (Q?6, Q?7), o que vale está escrito na decisão. **Duas premissas corrigidas
+>   com o vendor lido** (em R54): o Laravel também fica com a **última** linha ativa, não com a primeira; e, entre
+>   aspas, a quebra crua não vira chave para o `Dotenv::parse()` — vira parte do valor —, então o matador de R54.M5 é
+>   o valor lido, e não a contagem de chaves. **Um achado vira pergunta nova, raia requisito** (Q?9, L-13): sem linha
+>   ativa, a leitura literal de RQ-50 ("nenhuma comentada") deixa vermelho o `[CT-19]` do `HostLocalTest`, da wiki
+>   `feat/kit-install-host-local/host-local-no-install`. E L-14 registra o que a lista fechada decidida na Q?7 não
+>   vê. O CT-118 **nasce vermelho** contra o código de hoje em duas linhas (destino 3 → 2): o limite 1 sobre `#?` troca
+>   o comentário que vem antes da ativa, e deixa a segunda ativa com o valor velho. O CT-117 passa no código de hoje
+>   nas linhas novas — o escape já troca as três quebras —, e o teste dele segue com um valor só. Revisão adversarial desta adição:
+>   não disparada pelo gatilho (áreas I e E, perfil padrão, Impacto 2). Números, pelos comandos do comentário abaixo:
+>   132 cenários, 62 regras, 358 mutantes, 2 sem matador.
+> - **Revisão adversarial da adição do step 11 e do Adendo 7 — fechamento** *(alterado em 2026-09-30: passada da
+>   `feature-test-design` 1.16.0 sobre os achados do sub-agente cego)*: a revisão que o gatilho pedia desde o step 11
+>   (Impacto 3 na área H) rodou cega sobre `00` + `04` + `05` e trouxe **39 achados** (8 alta, 20 média, 11 baixa). O
+>   fechamento está em [Revisão adversarial — adição do step 11 e do Adendo 7](#revisão-adversarial--adição-do-step-11-e-do-adendo-7):
+>   34 fechados por cenário novo ou forma reescrita (dezesseis no `04`, CT-133..CT-148; cinco CT-B no `05`, CT-B07..CT-B11;
+>   CT-B04 com a forma corrigida), com três regras novas — R63 (a senha impressa é a que autentica), R64 (toda gravação
+>   do `.env`, por chamador e com zero linha ativa) e R65 (o extrator só lê o que o bloco desenha, desdobrada de R57);
+>   2 só por lacuna declarada (L-15, L-16: processo); 3 rejeitados com evidência (ADV-10, ADV-38, ADV-39). Três
+>   mutantes ficam sem matador, com lacuna — L-17 e L-18, premissas de comportamento com o invariante já escrito, e L-19, o
+>   rótulo abreviado —, e quatro perguntas nascem:
+>   Q?10 e Q?11 (raia requisito), Q?12 e Q?13 (raia desenho). **Três achados desta derivação**, ao conferir os blocos
+>   publicados para fechar ADV-18, ADV-19 e ADV-21: o DG-06 não nomeia chave de provedor nenhuma, em pt e em en, e o
+>   `[CT-08]` do teste passa por substring (`KIT_SOCIALITE_` dentro de `KIT_SOCIALITE_VINCULO_CONFIRMAR`); o DG-06 en
+>   mostra "(provedor social)"; e a nota de Pendente do DG-08 nomeia só uma das duas chaves que o ligam. Os três nascem
+>   vermelhos em CT-144 e CT-146 (destino 3 → 2). **Re-revisão**: o fechamento criou cenário novo, e a skill manda **uma**
+>   re-revisão desta adição (teto de 2 rodadas); o despacho é da sessão. Números, pelos comandos do comentário abaixo:
+>   148 cenários, 65 regras, 407 mutantes, 5 sem matador; no `05`, 11 CT-B e 35 mutantes.
+> - **Re-revisão adversarial da adição — rodada 2, fechamento** *(alterado em 2026-09-30: passada da `feature-test-design`
+>   1.16.0 sobre os achados da segunda revisão cega, com a decisão da sessão para cada um)*: a re-revisão que o fechamento
+>   da rodada 1 pedia rodou cega sobre `00` + `04` + `05` e trouxe **24 achados** (ADV2-01..ADV2-24). O fechamento está em
+>   [Revisão adversarial — re-revisão da adição (rodada 2)](#revisão-adversarial--re-revisão-da-adição-rodada-2): 23
+>   aceitos (ADV2-04 em parte) e 1 rejeitado com evidência (ADV2-23; a L-16 fecha). Dois cenários novos, CT-149 (R63: a
+>   senha gerada não se repete entre instalações) e CT-150 (R64: o comentário ao lado da ativa, por gravador); linhas ou
+>   `Então` novos em CT-71, CT-98, CT-118, CT-119, CT-120, CT-128, CT-129, CT-130, CT-133, CT-134, CT-136, CT-139,
+>   CT-140, CT-141, CT-142, CT-143, CT-144, CT-146, CT-147 e CT-148, e no CT-B05 do `05` (nenhum CT-B novo). As decisões
+>   de 2026-09-30 entram escritas: Q?12 ✅ (a lista de palavras do CT-146 soma-se às expressões da Q?7), Q?13 ✅ (a
+>   condição do `tenant_id`, e a P-16 sem afrouxar: `KIT_TENANCY` no mesmo escopo), e toda gravação que anexa a chave
+>   ausente, `DB_CONNECTION` incluído. O código de `SubstituicaoEmArquivo` mudou em 2026-09-30 (`definirLinhaNoEnv()`): as
+>   frases de R54 e R64 sobre "o código de hoje" viraram "o código de antes", com as citações reconferidas. **Teto de 2
+>   rodadas atingido**: não há terceira revisão; o que ficou aberto é lacuna (L-17, L-18, L-19, L-20) ou premissa em aberto
+>   (RQ-28 e RQ-50 abertas em parte; P-45..P-47 no `00`). **Nascem vermelhos** (destino 3 → 2): CT-129 contra o DG-07
+>   publicado, pt e en (o vínculo sem `KIT_TENANCY` no escopo, e o "quando ele tem tenant_id" no meio da mensagem) — e
+>   contra o DG-08 do publicado lido, cuja nota de Pendente nomeava uma chave só, já corrigida na árvore em curso; CT-143 contra o publicado (o controle invertido) e contra a guarda de
+>   hoje (o "se" reflexivo, o "quando" no fim, o `tenant_id` sem a chave); CT-148 contra a guarda de hoje (as linhas de
+>   `direction`). Números, pelos comandos do comentário abaixo: 150 cenários, 65 regras, 427 mutantes, 5 sem matador; no
+>   `05`, 11 CT-B e 36 mutantes.
 
 ## Perfil de Derivação
 
@@ -120,7 +175,34 @@
   BVA na repetição (R57); EP por elemento × chave exata, e controles do escopo e da exatidão (R58, R59); igualdade
   literal título × `accTitle` (R60); EP texto visível × identificador, com lista fechada por idioma (R61); BVA
   2-valores no piso de fonte efetiva, no navegador (R62, CT-B05). Nenhuma técnica foi rebaixada.
-- Cenários: 132 (+ 6 CT-B no `05`) · Regras: 62 · Mutantes previstos: 353 (+ 24 no `05`) · Sem matador: 3 mutantes (R35.M3 → lacuna L-04; R47.M7 → lacuna L-07, do step 10; R33.M10 → lacuna L-12, do step 11, até a Q?5), e 9 lacunas sem mutante próprio (L-01, reduzida no ciclo 1 e de novo no step 10; L-02; L-03; L-05 e L-06, do ciclo 2; L-08, do step 10; L-09, L-10 e L-11, do step 11) *(alterado em 2026-09-29: eram 104 · 46 · 259 · 1 antes da R47 do step 10, 105 · 47 · 266 · 2 antes das R48–R53 da segunda passada, e 116 · 53 · 295 · 2, com 3 CT-B e 11 mutantes no `05`, antes do step 11)*
+- Técnicas acrescentadas no Adendo 7 *(alterado em 2026-09-29)*: em R54, a BVA 1 × 2 nas ocorrências vira **BVA 1 × 2
+  nas linhas ativas**, com a comentada antes e depois da ativa (RQ-50); EP das quebras de linha que o parser do
+  Dotenv separa — LF, CRLF e CR (RQ-51); e o valor gravado conferido por três leitores e linha a linha, porque o
+  valor lido sozinho não separa "toda linha ativa" de "a última" (R54.M8). Nenhuma técnica foi rebaixada.
+- **Revisão adversarial da adição do step 11 e do Adendo 7** *(alterado em 2026-09-30)*: **disparada pelo gatilho**
+  (Impacto 3 na área H) e **feita** por sub-agente cego (entrada `00` + `04` + `05`, sem o PRD, o código nem o
+  raciocínio de quem derivou). Áreas que os achados tocam (a lista que o revisor devolveu não declara as percorridas; a sessão confere no despacho): H, I, B, A, C, E — R54–R62, R33, R35 e as cláusulas
+  RQ-28, RQ-45, RQ-47..RQ-52. 39 achados, fechados como diz o cabeçalho. É a **primeira** rodada desta adição: o
+  fechamento criou cenário novo, e a skill manda uma re-revisão (teto de 2 rodadas).
+- Técnicas acrescentadas no fechamento *(alterado em 2026-09-30)*: EP da **origem da senha** (vazia × só no ambiente ×
+  o padrão publicado no ambiente × no arquivo × digitada) com o **estado semeado** como oráculo (`Hash::check()` contra
+  o administrador do banco, R63); **ordem** das partes da instrução impressa (R55, R56); comparação da saída **sem acento
+  e sem caixa** (Setup Global); EP das **formas de linha** que o Dotenv lê (`export`, espaço no `=`, indentação,
+  comentário sem espaço) e **BVA 0 × 1 × 2** nas linhas ativas (R54, R64); EP **por chamador** da gravação (R64); EP das
+  **formas de enunciado** do Mermaid — cadeia, `&`, rótulo com seta, comentário — e controle negativo do **sentido** (R65);
+  EP do **termo por idioma** e da **conjunção de chaves** (R59); a **matriz** que o navegador aplica como escala, e o
+  texto HTML de `foreignObject` (CT-B07, CT-B08); **baseline congelado** do tipo e da direção dos blocos (R62).
+  Nenhuma técnica foi rebaixada.
+- **Re-revisão adversarial da adição — rodada 2** *(alterado em 2026-09-30)*: a re-revisão única, **feita** por
+  sub-agente cego (entrada `00` + `04` + `05`). 24 achados, fechados como diz o cabeçalho; nenhum estrutural. **Teto de 2
+  rodadas atingido** — sem terceira rodada.
+- Técnicas acrescentadas na rodada 2 *(alterado em 2026-09-30)*: **duas amostras independentes** com a mesma entrada como
+  oráculo da aleatoriedade (CT-149); EP **por gravador** também do comentário ao lado da ativa (CT-150) e da chave ausente
+  (CT-139); EP da **posição** do texto visível (CT-146); **baseline** de toda instrução `direction`, e não só da primeira
+  linha (CT-148); EP da **posição da condição** na mensagem (CT-143); o **tema na abertura** como partição, separada da
+  troca (CT-B05); e as sondas de **acumulação** para os três pares de papéis que faltavam (CT-71, CT-98). Nenhuma técnica
+  foi rebaixada.
+- Cenários: 132 (+ 6 CT-B no `05`) · Regras: 62 · Mutantes previstos: 358 (+ 24 no `05`) · Sem matador: 2 mutantes (R35.M3 → lacuna L-04; R47.M7 → lacuna L-07, do step 10), e 9 lacunas sem mutante próprio (L-01, reduzida no ciclo 1 e de novo no step 10; L-02; L-03; L-05 e L-06, do ciclo 2; L-08, do step 10; L-09, do step 11; L-13 e L-14, do Adendo 7) *(alterado em 2026-09-29: eram 104 · 46 · 259 · 1 antes da R47 do step 10, 105 · 47 · 266 · 2 antes das R48–R53 da segunda passada, 116 · 53 · 295 · 2, com 3 CT-B e 11 mutantes no `05`, antes do step 11, e 132 · 62 · 353 · 3 antes do Adendo 7 — o R33.M10 saiu da L-12 para o CT-128, L-10, L-11 e L-12 fecharam, e R54 ganhou M6..M10)* *(alterado em 2026-09-30: fechamento da revisão adversarial da adição — hoje **148 cenários (+ 11 CT-B no `05`) · 65 regras · 407 mutantes (+ 35 no `05`) · 5 sem matador**: os dois de antes, mais R55.M10 → L-18, R56.M11 → L-17 e R62.M4 → L-19; e as lacunas sem mutante próprio ganham L-15 e L-16)* *(alterado em 2026-09-30: fechamento da re-revisão adversarial da adição, rodada 2 — hoje **150 cenários (+ 11 CT-B no `05`) · 65 regras · 427 mutantes (+ 36 no `05`) · 5 sem matador**, os mesmos cinco; a L-16 fecha, e a L-20 nasce, sem mutante próprio)*
   <!-- recalculado pelos comandos de references/template-04.md §Contagem do cabeçalho: grep -cE '^[[:space:]]*(Cenário|Esquema do Cenário): \[CT-[0-9]+\]' · grep -cE '^## Regra R[0-9]+' · grep -cE '^\| M-?[0-9]+' · grep -cE '^\| M-?[0-9]+.*sem matador' (no 05, o primeiro com \[CT-B[0-9]+\]) -->
 
 ## Varredura SFDIPOT
@@ -137,6 +219,8 @@
 | (ciclo 2) D/I/P | D: o `ativo` que o rótulo "Pendente" esconde; os 12 serviços com profiles; as 6 Resources e 3 páginas do `/infra` com o gravador de cada uma. I: a caixa de convites recebidos, única porta de `recusar()`, só com a tenancy; o comando agendado, única porta de `lembrar()`. P: `QUEUE_CONNECTION=sync`, `PULSE_ENABLED=false` e `LOG_KIT_DRIVER=monolog` no `phpunit.xml` (`phpunit.xml:"QUEUE_CONNECTION":142`, `phpunit.xml:"PULSE_ENABLED":153`, `phpunit.xml:"LOG_KIT_DRIVER":140`) | CT-78, CT-80, CT-84, CT-90, CT-99, CT-100 |
 | (step 10, 2ª passada) S/D/T | S: `config/lockscreen.php`, o plugin de bloqueio registrado em cada painel, `routes/console.php`, os `command:` de `docker-compose.yml`, a pilha de tenant do painel app. D: os defaults do plugin iguais aos do kit (1800 s, 5 tentativas), com a ociosidade desligada e o force logout falso; os 7 eventos agendados; os 2 comentados. T: frequência e horário dos eventos, com a janela da madrugada | CT-106..CT-116 |
 | (step 11, QA ciclo 1) S/D/I/P/T *(alterado em 2026-09-29)* | S: `SubstituicaoEmArquivo` (seis chamadores), o banner e o resumo do `kit:install`, a montagem e a publicação do `KitArte`, o extrator de `tests/Pest.php`, a tabela-índice da página de diagramas, o CSS do site. D: o valor digitado com `\`, `$`, `"`, `${…}` e quebra de linha; a chave duas vezes no `.env`; os três desfechos da senha; a fonte efetiva (fonte × escala do `viewBox`) de 20 SVGs por idioma; palavras sem acento de um idioma no bloco do outro. I: `kit:install` pelo `Artisan::call`; `kit:arte`; o conferidor do site; o `composer art`. P: `Dotenv::parse()` resolve `${…}` só contra chaves anteriores e fica com a última de duas definições; o lexer do Mermaid 11.17.2; a coluna de 600 px a 1280 × 900 e a do celular. T: o desfecho da semeadura, conhecido só depois de o resumo nascer; o re-render do diagrama na troca de tema | CT-117..CT-132, CT-B04..CT-B06 |
+| (revisão adversarial da adição, 2026-09-30) S/D/I/P/T *(alterado em 2026-09-30)* | S: os seis gravadores do `.env` — o customizador, a garantia da senha, `aplicarBanco()`, o host local, `AtivadorDeTenancy::escreverEnv()` e o demo do `kit:tenancy` —, o seeder do administrador. D: a senha no ambiente igual ao padrão publicado; a senha digitada ou já definida com o banco não populado; a chave ausente e a só comentada; linhas `export`, com espaço no `=`, indentadas, `VITE_APP_NAME`; a cadeia, o `&` e o `%%` num bloco; o texto HTML de `foreignObject`. I: `db:seed` que termina com código ≠ 0; o prompt da senha. P: o banner é ASCII e o resumo tem acento; o `cleanupComments` do Mermaid tira `%%` antes do lexer; `preserveAspectRatio` encolhe pela altura. T: o `db:seed` que falha **depois** de a senha ser gerada e gravada | CT-133..CT-148, CT-B07..CT-B11 |
+| (re-revisão adversarial da adição, rodada 2, 2026-09-30) D/I/P/T *(alterado em 2026-09-30)* | D: duas instalações com a mesma entrada; o comentário ao lado da ativa, por gravador; a chave ausente de `DB_CONNECTION`, `KIT_TENANCY` e `KIT_DEMO`; a palavra do outro idioma só na `accDescr`, na `note`, no rótulo de aresta ou no título de `subgraph`; `direction` num `subgraph` ou num `stateDiagram-v2`. I: o site aberto já no escuro. P: o `cleanupComments` do Mermaid tira também o `%%` indentado; as oito meias-setas do lexer de sequência. T: a culpa na linha seguinte à da publicação | CT-149, CT-150; linhas novas em CT-71, CT-98, CT-139, CT-140..CT-148, CT-B05 |
 
 ## Catálogo de diagramas (superfície do recorte)
 
@@ -202,7 +286,7 @@ recorte — **Pergunta P-02**.
 | R30 — nenhum comentário afirma `schedule:work` no `composer dev` | D (mínimo) | RQ-29 | EP | CT-44 (+ CT-76 para os blocos) |
 | R31 — os docblocks corrigidos não voltam a contradizer o código | D (mínimo) | RQ-29 | EP (`@premissa` sobre a lista) + âncora positiva | CT-45, CT-67 |
 | R32 — cada clipe monta o seu GIF, e um clipe incompleto não para os outros | E (padrão) | RQ-27, RQ-16; RQ-41 *(alterado em 2026-09-29: Adendo 5 — o ffmpeg de teste escolhe o muxer como o real e recusa saída sem `-f gif`; RD4-01)* | EP por clipe + rastreio da entrada do ffmpeg | CT-46, CT-47, CT-64 |
-| R33 — quadro de clipe não vira PNG solto; falha do ffmpeg não apaga GIF publicado | E (padrão) | RQ-27; RQ-41 *(alterado em 2026-09-29: Adendo 5 — idem R32; RD4-01)* | EP (quadro só × quadro que também é imagem) + atomicidade (ffmpeg ausente × ffmpeg que falha depois de abrir a saída) | CT-48, CT-49, CT-65 |
+| R33 — quadro de clipe não vira PNG solto; falha do ffmpeg não apaga GIF publicado | E (padrão) | RQ-27; RQ-41 *(alterado em 2026-09-29: Adendo 5 — idem R32; RD4-01)*; RQ-52 *(alterado em 2026-09-29: Adendo 7 — CT-128 afirma a etapa que a saída nomeia)* | EP (quadro só × quadro que também é imagem) + atomicidade (ffmpeg ausente × ffmpeg que falha depois de abrir a saída) | CT-48, CT-49, CT-65 |
 | R34 — todo quadro é capturado e todo GIF referenciado existe e é mostrado | E (padrão) | RQ-27, RQ-17 | inspeção estática + EP do endereço (ref) | CT-50, CT-51, CT-74 |
 | R35 — o `install.gif` nasce de uma transcrição sem `password` | E (padrão) | RQ-28 | EP | CT-52 |
 | R36 — o README tem exatamente um diagrama e o link da página do mesmo idioma | F (mínimo) | RQ-20, RQ-11 | BVA 0/1/2 blocos | CT-53 |
@@ -223,7 +307,7 @@ recorte — **Pergunta P-02**.
 | R51 — DG-20: a ordem da pilha de tenant e o contexto de papéis fixado *(alterado em 2026-09-29: idem, achado A-02, na parte que o DG-20 desenha)* | A (padrão) | RQ-25, RQ-26, RQ-10 | ordem derivada da rota + rastreio de efeito | CT-112, CT-113 |
 | R52 — DG-20: os desfechos de `GET /app/{tenant}` *(alterado em 2026-09-29: idem, achado A-02)* | A (padrão, técnica escalada) | RQ-25, RQ-26, RQ-10 | tabela de decisão executada + controles contra a tabela literal | CT-114, CT-115 |
 | R53 — a promessa da página: o fato declarado de cada DG aceita o bloco publicado, pt e en *(alterado em 2026-09-29: idem, achado A-06; desdobrada de R3)* | B (padrão) | RQ-26, RQ-35, RQ-06 | controle positivo e adulteração sobre o bloco publicado | CT-116 |
-| R54 — o valor gravado no `.env` volta igual na leitura, e a gravação troca só a primeira ocorrência *(alterado em 2026-09-29: regra nova do step 11, QA-03 e QA-10)* | I (padrão) | P-44 | EP dos caracteres do escape + BVA 1 × 2 nas ocorrências | CT-117, CT-118 |
+| R54 — o valor gravado no `.env` volta igual na leitura, com a quebra de linha como espaço, e a gravação troca toda linha ativa da chave e nenhuma comentada *(alterado em 2026-09-29: regra nova do step 11, QA-03 e QA-10)* *(alterado em 2026-09-29: Adendo 7 — era "a gravação troca só a primeira ocorrência", a P-44 de antes)* | I (padrão) | P-44; RQ-50, RQ-51 *(alterado em 2026-09-29: Adendo 7)* | EP dos caracteres do escape e das quebras (LF, CRLF, CR) + BVA 1 × 2 nas linhas ativas, com a comentada antes e depois | CT-117, CT-118 |
 | R55 — o banner e a linha "Senha do administrador" do resumo dizem, em cada desfecho, o que aconteceu com a senha *(alterado em 2026-09-29: idem, QA-03)* | H (padrão, Impacto 3) | RQ-28 | tabela de decisão (senha gerada × banco semeado) | CT-119, CT-120 |
 | R56 — o desfecho que o banner e o resumo leem é o da execução real do comando *(alterado em 2026-09-29: idem, QA-03; desdobrada de R55)* | H (padrão, Impacto 3) | RQ-28 | rastreio pelo ponto de entrada real + inspeção estática da fonte única | CT-121, CT-122, CT-123 |
 | R57 — o extrator de `tests/Pest.php` lê toda forma de aresta do Mermaid 11.17.2, e só a que existe *(alterado em 2026-09-29: idem, QA-03 e QA-05)* | B (padrão) | RQ-34, RQ-26 | EP das formas do lexer + BVA na repetição + controle negativo | CT-124, CT-125, CT-126 |
@@ -232,15 +316,96 @@ recorte — **Pergunta P-02**.
 | R60 — o título de cada DG no índice da página é o `accTitle` do bloco *(alterado em 2026-09-29: idem, QA-08)* | B (padrão) | RQ-06, RQ-10, RQ-26 | EP exaustiva por DG + controles | CT-131 |
 | R61 — o texto visível de cada bloco é do idioma dele, e o marcador procurado é o do idioma *(alterado em 2026-09-29: idem, QA-09; desdobrada de R2)* | B (padrão) | RQ-26, P-23 | EP texto visível × identificador, com controles | CT-132 (+ CT-89 reescrito, R45) |
 | R62 — no site, nenhum diagrama encolhe abaixo do piso de fonte efetiva, e o excesso rola dentro do bloco *(alterado em 2026-09-29: idem, QA-06, Adendo 6)* | C (padrão) | RQ-47, RQ-48, RQ-49, RQ-12, RQ-17 | BVA 2-valores no piso + EP de janela, tema e idioma | CT-B05, CT-B06 (no `05`); CT-95 (linhas novas) |
+| R63 — a senha que a saída do `kit:install` dá como a do administrador é a que autentica o administrador semeado, e `password` não autentica *(alterado em 2026-09-30: regra nova, da revisão adversarial da adição — ADV-03, ADV-04, ADV-28; desdobrada de R56)* | H (padrão, Impacto 3) | RQ-28 | EP da origem da senha + rastreio pelo ponto de entrada real + estado semeado (`Hash::check()`) | CT-135, CT-149 *(alterado em 2026-09-30: rodada 2, ADV2-01)* |
+| R64 — toda gravação do kit no `.env`, qualquer que seja o chamador, deixa a chave com o valor gravado em toda linha ativa, com zero, uma ou duas linhas ativas antes *(alterado em 2026-09-30: idem — ADV-06, ADV-09, ADV-37; desdobrada de R54)* | I (padrão) | RQ-50, RQ-51, P-44 | EP por chamador + BVA 0 × 1 × 2 nas linhas ativas | CT-138, CT-139, CT-150 *(alterado em 2026-09-30: rodada 2, ADV2-05)* |
+| R65 — o extrator de `tests/Pest.php` devolve só as arestas e mensagens que o bloco desenha, com o sentido delas *(alterado em 2026-09-30: idem — ADV-12, ADV-13, ADV-14; desdobrada de R57)* | B (padrão) | RQ-34, RQ-26 | EP das formas de enunciado + controle negativo do sentido | CT-140, CT-141 |
 
 **Premissas em aberto do step 11** *(alterado em 2026-09-29)* — sem cenário da direção até a resposta; o invariante
-das duas leituras já é cenário:
+das duas leituras já é cenário *(alterado em 2026-09-29: Adendo 7 — as três perguntas foram respondidas; a direção de cada uma é cenário)*:
 
-- P-44 — em parte aberta (Q?3: a quebra de linha no valor; Q?4: a chave **ativa** duas vezes), sem cenário da
+- ~~P-44 — em parte aberta (Q?3: a quebra de linha no valor; Q?4: a chave **ativa** duas vezes), sem cenário da
   direção até a resposta; o invariante é CT-117 (linha da quebra: nenhuma chave injetada) e CT-118 (o comentário que
-  cita a chave nunca é reescrito)
-- RQ-27 — a mensagem da falha de publicação do `kit:arte`, aberta (Q?5), sem cenário até a resposta; o invariante
-  (o GIF publicado preservado, o clipe nomeado) é CT-128
+  cita a chave nunca é reescrito)~~ → fechada pelo Adendo 7: a Q?3 com RQ-51 (a quebra vira espaço; CT-117, linhas LF,
+  CRLF e CR) e a Q?4 com RQ-50 (toda linha ativa trocada, nenhuma comentada; CT-118)
+- ~~RQ-27 — a mensagem da falha de publicação do `kit:arte`, aberta (Q?5), sem cenário até a resposta; o invariante
+  (o GIF publicado preservado, o clipe nomeado) é CT-128~~ → fechada pelo Adendo 7: a Q?5 com RQ-52 (a saída nomeia a
+  publicação, e não a montagem; CT-128)
+
+**Premissa em aberto do Adendo 7** *(alterado em 2026-09-29)* — sem cenário da direção até a resposta:
+
+- RQ-50 — em parte aberta (Q?9: a chave só comentada, sem nenhuma linha ativa), sem cenário da direção até a
+  resposta; o invariante das duas leituras — exatamente uma linha ativa da chave, com o valor gravado — já está no
+  `[CT-19]` do `HostLocalTest`, da wiki `feat/kit-install-host-local/host-local-no-install`, que guarda também uma das direções,
+  a do descomentar no lugar (ver [Regressões herdadas](#regressões-herdadas-que-esta-entrega-aciona)); o resto de
+  RQ-50 é CT-118
+  *(alterado em 2026-09-30: revisão adversarial, ADV-37 — a linha acima estava fora do formato da skill, e o invariante
+  que ela atribuía ao `[CT-19]` de outra wiki não é o das duas leituras: aquele teste conta `^#?\s*APP_URL=`, que é uma das
+  direções. O invariante passa a ser cenário daqui, CT-139 — exatamente uma linha ativa com o valor gravado, sem
+  afirmação sobre o comentário —, e a linha, no formato:)*
+
+**RQ abertas em parte, no formato da skill** *(alterado em 2026-09-30: revisão adversarial da adição)*:
+
+- RQ-50 — aberta em parte (Q?9: a chave só comentada, sem linha ativa), sem cenário da direção até a resposta; o
+  invariante das duas leituras é CT-139. ~~*A Q?9 não está no `00`*: a sessão a leva a `## Ambiguidades e Perguntas
+  Abertas` com a marca na RQ-50 — até lá, pelo `00`, RQ-50 parece fechada~~ *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-21)* — a Q?9 está
+  no `00` como a premissa P-45 (`## Ambiguidades e Perguntas Abertas`), que declara RQ-50 aberta em parte e o CT-139 como o
+  invariante
+- RQ-28 — aberta em parte (Q?10: a senha já definida com o banco não populado; Q?11: a senha gerada com a semeadura que
+  não completou), sem cenário da direção até a resposta; os invariantes são CT-134 e CT-136, e as direções são R56.M11
+  (L-17) e R55.M10 (L-18), sem matador *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-21)* — as duas estão no `00` como P-46 e P-47
+
+**Cenários acrescentados a regras existentes na revisão adversarial da adição** *(alterado em 2026-09-30)*:
+
+| Regra | Cenários novos | Achado |
+|---|---|---|
+| R33 | CT-147 | ADV-31 |
+| R54 | CT-137 | ADV-07, ADV-08, ADV-11, ADV-29 |
+| R55 | CT-136 | ADV-05 |
+| R56 | CT-133, CT-134 | ADV-01, ADV-26, ADV-27; ADV-02 |
+| R57 | CT-142 | ADV-15 |
+| R59 | CT-143, CT-144 | ADV-16, ADV-17, ADV-30; ADV-18, ADV-19 |
+| R60 | CT-145 | ADV-20 |
+| R61 | CT-146 | ADV-21 |
+| R62 | CT-148 (e CT-B07..CT-B11 no `05`) | ADV-25 (ADV-22, ADV-23, ADV-24, ADV-32, ADV-34) |
+
+**Cenários acrescentados ou alterados na re-revisão adversarial da adição (rodada 2)** *(alterado em 2026-09-30)*:
+
+| Regra | Cenários novos | Cenários com linha ou `Então` novo | Achado |
+|---|---|---|---|
+| R7 | — | CT-71, CT-98 (os três pares de papéis sem cenário) | ADV2-24 |
+| R33 | — | CT-128, CT-147 (um clipe só, e toda linha da saída) | ADV2-14 |
+| R54 | — | CT-118 (o `Dado` da linha "2 ativas") | ADV2-18 |
+| R55 | — | CT-119, CT-120 (o `Dado` das linhas ¬G ∧ ¬S), CT-136 (a senha impressa) | ADV2-19, ADV2-03 |
+| R56 | — | CT-133 (o opcional e o "ou"), CT-134 (nenhum administrador criado; a forma fechada da senha no banner) | ADV2-04, ADV2-02, ADV2-17 |
+| R57 | — | CT-142 (as cinco meias-setas que faltavam) | ADV2-08 |
+| R58 | — | CT-129 (as duas chaves do DG-08; `KIT_TENANCY` no vínculo do DG-07) | ADV2-16, ADV2-20 |
+| R59 | — | CT-130 (a nota com as duas chaves, e com uma), CT-143 (a condição da Q?13 e a P-16), CT-144 (a chave só em `%%`) | ADV2-16, ADV2-12, ADV2-20, ADV2-11 |
+| R61 | — | CT-146 (maiúscula inicial; uma linha por posição do texto visível) | ADV2-09, ADV2-10 |
+| R62 | — | CT-148 (toda instrução `direction`) | ADV2-13 |
+| R63 | CT-149 | — | ADV2-01 |
+| R64 | CT-150 | CT-139 (a chave ausente em `DB_CONNECTION`, `KIT_TENANCY` e `KIT_DEMO`) | ADV2-05, ADV2-06 |
+| R65 | — | CT-140, CT-141 (o comentário indentado) | ADV2-07 |
+
+Nenhuma regra estoura o teto de cenários com a rodada 2: R63 fica com 2 e R64 com 3. Os mutantes novos (R7.M10, R33.M12,
+R55.M11, M12, R56.M12, M13, R57.M8, R58.M8, R59.M11..M14, R61.M8, M9, R62.M5, R63.M5, M6, R64.M6, M7, R65.M8) vêm da
+revisão adversarial e não contam para o teto de mutantes (passo 6, regra 1).
+
+**Estouros de teto justificados (revisão adversarial da adição)** — R56 fica com 5 cenários e R33 com 5, no `padrão`
+(teto 3): CT-133 e CT-134 são outra partição do mesmo ponto de entrada (a ordem e a grafia da instrução; a origem da
+senha), CT-147 é outra partição da etapa nomeada, e cada um é o único matador de mutante trazido pela revisão — o gate
+vence o teto (passo 6, regra 5). R57 fica com 4 pelo mesmo motivo (CT-142, as partições do lexer que faltavam). Onde o
+cenário novo prova uma **propriedade diferente**, a regra foi desdobrada em vez de estourada: R63 sai de R56 (o banco,
+e não o texto), R64 de R54 (o chamador e a linha ausente, e não o valor), R65 de R57 (a soundness do extrator, e não a
+completude). Os mutantes a mais em R54 (15), R55 (10), R56 (11), R58 (7), R59 (10), R60 (6), R61 (7), R33 (11) e R65 (7) vêm da
+revisão adversarial e não contam para o teto de mutantes (passo 6, regra 1).
+
+**Cenários reescritos no Adendo 7** *(alterado em 2026-09-29)*:
+
+| Regra | Cenário | O que mudou | Cláusula |
+|---|---|---|---|
+| R54 | CT-117 | a linha da quebra ganha a direção (`lido` = um espaço no lugar da quebra), e as linhas CRLF e CR; "as mesmas chaves" passa a valer também linha a linha | RQ-51 |
+| R54 | CT-118 | reescrito: de "só a primeira é trocada" para "toda linha ativa, nenhuma comentada", com a comentada antes da ativa, as duas ativas e os três leitores | RQ-50 |
+| R33 | CT-128 | dois `Então`: a saída nomeia a publicação e não a montagem | RQ-52 |
 
 **Cenários acrescentados a regras existentes, ou reescritos, no step 11** *(alterado em 2026-09-29)*:
 
@@ -311,8 +476,8 @@ R41 sai de R31.
 | RQ-17 | absorvida por R34 (GIF que ninguém mostra não torna nada visível) | CT-51 |
 | RQ-25 *(alterado em 2026-09-29: segunda passada do step 10 — a RQ ganhou regras próprias, R48 a R52, e sai desta tabela por direito)* | ~~os extras DG-10, DG-19, DG-20 entram nas regras genéricas R1–R4, R21 e — desde o ciclo 1 — R40 (toda referência a código resolve); o **fato específico** de cada um o 00 não determina (a justificativa vive no `02`) — lacuna declarada L-01, reduzida à verdade da **relação** entre elementos que resolvem; no ciclo 2, o reconhecimento passou a ser pela forma, com catálogo de produtos (CT-82)~~ → o 00 não determina o conteúdo dos extras, mas o **bloco publicado** o determina, e o valor esperado de cada afirmação dele sai do código que ela descreve: R48 (DG-10), R49 e R50 (DG-19), R51 e R52 (DG-20); o resto de L-01 está nas Lacunas | CT-01..CT-08, CT-34, CT-35, CT-77, CT-82; CT-106..CT-115 |
 | RQ-31, RQ-37, RQ-38, RQ-39, RQ-40, RQ-43, RQ-44 *(alterado em 2026-09-29: Adendos 3 a 5)* | cláusulas de **processo** da revisão do diff (autorizam a 3ª e a 4ª rodada, a revisão cega só do delta, o fim das rodadas, a prova vermelha de cada correção e a dívida declarada): não descrevem comportamento do kit | o `03`, `## Revisão do Diff (step 9)` e `## Dívidas declaradas`; quality gate, dimensão A |
-| RQ-36 *(alterado em 2026-09-29: Adendo 3; e de novo no step 10, depois da reconferência mecânica: a lacuna foi fechada na fonte — a RQ ganhou regra própria, R47, e o cenário CT-105)* | ~~**sem CT, e isso é lacuna, não decisão**: o job `site` do `.github/workflows/ci.yml` nasceu na rodada 3 sem cenário derivado — nenhum teste lê o `ci.yml` atrás dele (`grep -rln "ci.yml" tests/` acha seis arquivos, nenhum sobre o job). O `AcoesPinadasPorShaTest` confere só que as actions dele são pinadas~~ → não está mais nesta tabela por direito: ver [Regra R47](#regra-r47--o-ci-de-pull-request-constrói-e-confere-o-site-quando-e-só-quando-o-pr-toca-docs-ou-site). O que falta é o **teste** do CT-105 *(alterado em 2026-09-29: não falta — escrito no step 10, DV-09 fechada)* | CT-105 (`tests/Kit/DiagramasDaArquiteturaTest.php:it:5602`) |
-| RQ-45, RQ-46 *(alterado em 2026-09-29: Adendo 6, step 11)* | cláusulas de **processo** do quality gate (corrigir os 14 achados com o teste primeiro onde o destino é teste; rodar o ciclo 2 cego): não descrevem comportamento do kit. O "teste primeiro" do RQ-45 é cumprido aqui pelos cenários que nascem vermelhos (CT-126, CT-129, CT-131, CT-132, CT-B05, CT-B06) | o `03` e o ciclo 2 do `06-relatorio-qa.md` |
+| RQ-36 *(alterado em 2026-09-29: Adendo 3; e de novo no step 10, depois da reconferência mecânica: a lacuna foi fechada na fonte — a RQ ganhou regra própria, R47, e o cenário CT-105)* | ~~**sem CT, e isso é lacuna, não decisão**: o job `site` do `.github/workflows/ci.yml` nasceu na rodada 3 sem cenário derivado — nenhum teste lê o `ci.yml` atrás dele (`grep -rln "ci.yml" tests/` acha seis arquivos, nenhum sobre o job). O `AcoesPinadasPorShaTest` confere só que as actions dele são pinadas~~ → não está mais nesta tabela por direito: ver [Regra R47](#regra-r47--o-ci-de-pull-request-constrói-e-confere-o-site-quando-e-só-quando-o-pr-toca-docs-ou-site). O que falta é o **teste** do CT-105 *(alterado em 2026-09-29: não falta — escrito no step 10, DV-09 fechada)* | CT-105 (`tests/Kit/DiagramasDaArquiteturaTest.php:it:5595`) |
+| RQ-45, RQ-46 *(alterado em 2026-09-29: Adendo 6, step 11)* | cláusulas de **processo** do quality gate (corrigir os 14 achados com o teste primeiro onde o destino é teste; rodar o ciclo 2 cego): não descrevem comportamento do kit. O "teste primeiro" do RQ-45 é cumprido aqui pelos cenários que nascem vermelhos (CT-126, CT-129, CT-131, CT-132, CT-B05, CT-B06) *(alterado em 2026-09-30: revisão adversarial, ADV-35 — a frase afirmava mais do que o conjunto prova. Nascer vermelho no `04` não é o teste vermelho antes da correção: os testes de CT-117, CT-119, CT-120, CT-121, CT-122 e CT-127 só ganharam o `[CT-nn]`, o de CT-132 está vermelho, e R55.M1..M5 e R56.M1, M2 têm matador no `04` e nenhuma asserção no teste (DV-03). Nenhum cenário separa "corrigido com o teste primeiro" de "renomeado" — é a lacuna L-15, com o destino)* | o `03` e o ciclo 2 do `06-relatorio-qa.md` |
 | RQ-42 *(alterado em 2026-09-29: Adendo 5)* | conserto mecânico: o Pint e as linhas de citação não são comportamento do kit | `vendor/bin/pint --test` (job `qualidade` do CI) e `tests/Kit/CitacoesDeCodigoTest.php` (suíte do kit), com a saída no `03` |
 
 ## Costuras de Teste
@@ -327,12 +492,12 @@ regras R54–R62 e dos cenários acrescentados ou reescritos nele — `Confirmad
 |---|---|---|---|---|---|
 | Extras do catálogo — suíte Kit | R48, R49, R50, R52 (CT-115), R53 | Pest feature HTTP | ~~existente — `tests/Kit/DiagramasDaArquiteturaTest.php`~~ nova — `tests/Kit/GuardasDosDiagramasTest.php`, com a sentinela do arquivo inteiro *(alterado em 2026-09-29: step 10 do ciclo 2 — os testes de CT-106..CT-111, CT-115 e CT-116 nasceram num arquivo próprio; QA-01)* | o `Então` afirma o bloco publicado contra o que a aplicação de pé registra (o plugin de cada painel, `Schedule::events()`, o fonte da config, o `docker-compose.yml`), sem tela; é a costura de CT-06, CT-84 e CT-90 | |
 | Extras do catálogo — suíte Tenancy | R51, R52 (CT-114) | Pest feature HTTP | existente — `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` | o `Então` afirma o status de um GET real e o id de time depois dele, e o painel `/app/{tenant}` só existe com o modo multi-tenant ligado | |
-| Instalador: senha e `.env` — suíte Kit *(alterado em 2026-09-29: step 11)* | R54, R55, R56 | Pest feature HTTP | existente — `tests/Kit/CustomizadorDaInstalacaoTest.php` (R54, R55, CT-123) e `tests/Kit/ResumoDoKitInstallTest.php` (CT-121, CT-122) | o `Então` afirma o arquivo gravado e o que a saída do comando promete; a tabela de R55 roda pelos métodos do comando (o arnês de hoje), e o `handle()` real, pelo `Artisan::call` num diretório isolado | |
-| Extrator e guardas de paridade — suíte Kit *(alterado em 2026-09-29: step 11)* | R1 (CT-103), R2 (CT-03), R21 (CT-95), R42 (CT-85), R57, R58, R59, R60, R61 | Pest feature HTTP | existente — `tests/Kit/DiagramasDaArquiteturaTest.php` | o `Então` afirma o bloco publicado e o que o extrator de `tests/Pest.php` lê dele; a costura de CT-02, CT-103 e CT-116 | |
+| Instalador: senha e `.env` — suíte Kit *(alterado em 2026-09-29: step 11)* | R54, R55, R56; R63, R64 *(alterado em 2026-09-30: revisão adversarial da adição)* | Pest feature HTTP | existente — `tests/Kit/CustomizadorDaInstalacaoTest.php` (R54, R55, CT-123; e CT-137..CT-139, com cada gravador chamado direto sobre um `.env` temporário) e `tests/Kit/ResumoDoKitInstallTest.php` (CT-121, CT-122; e CT-133..CT-136, pelo `Artisan::call` no diretório isolado) | o `Então` afirma o arquivo gravado e o que a saída do comando promete; a tabela de R55 roda pelos métodos do comando (o arnês de hoje), e o `handle()` real, pelo `Artisan::call` num diretório isolado | |
+| Extrator e guardas de paridade — suíte Kit *(alterado em 2026-09-29: step 11)* | R1 (CT-103), R2 (CT-03), R21 (CT-95), R42 (CT-85), R57, R58, R59, R60, R61; R62 (CT-148) e R65 *(alterado em 2026-09-30: revisão adversarial da adição)* | Pest feature HTTP | existente — `tests/Kit/DiagramasDaArquiteturaTest.php` | o `Então` afirma o bloco publicado e o que o extrator de `tests/Pest.php` lê dele; a costura de CT-02, CT-103 e CT-116 | |
 | Aceite com organização — suíte Tenancy *(alterado em 2026-09-29: step 11)* | R45 (CT-89) | componente Livewire/Filament | existente — `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` | o aceite pela página de registro por convite, e a organização do convite só existem com a tenancy | |
-| GIFs pelo `kit:arte` — suíte Kit *(alterado em 2026-09-29: step 11)* | R32 (CT-127), R33 (CT-128) | Pest feature HTTP | existente — `tests/Kit/KitArteTest.php` | o `Então` afirma o que o comando grava em `art/` e o que ele diz; o ffmpeg de teste do Setup Global | |
-| Capturas do `composer art` *(alterado em 2026-09-29: step 11)* | R35 (CT-B04) | browser | existente — `tests/BrowserTenancy/CapturaDeArteTest.php` (`pest-plugin-browser`, `KIT_ART=1`) | o quadro é o pixel do que a janela mostra; só o navegador prova que o recorte cabe nela | |
-| Site construído *(alterado em 2026-09-29: step 11)* | R62 (CT-B05, CT-B06); R23 (CT-B01, CT-B02, de antes) | browser | existente — o conferidor Node + Playwright de `site/` (`site/verifica-acessibilidade.mjs`) | a fonte efetiva e a rolagem só existem depois de o Mermaid desenhar o SVG no cliente; a divergência skill × rule (o `pest-plugin-browser` não serve site estático) já está declarada abaixo | |
+| GIFs pelo `kit:arte` — suíte Kit *(alterado em 2026-09-29: step 11)* | R32 (CT-127), R33 (CT-128; CT-147 *(alterado em 2026-09-30)*) | Pest feature HTTP | existente — `tests/Kit/KitArteTest.php` | o `Então` afirma o que o comando grava em `art/` e o que ele diz; o ffmpeg de teste do Setup Global | |
+| Capturas do `composer art` *(alterado em 2026-09-29: step 11)* | R35 (CT-B04; CT-B10 *(alterado em 2026-09-30)*) | browser | existente — `tests/BrowserTenancy/CapturaDeArteTest.php` (`pest-plugin-browser`, `KIT_ART=1`) | o quadro é o pixel do que a janela mostra; só o navegador prova que o recorte cabe nela | |
+| Site construído *(alterado em 2026-09-29: step 11)* | R62 (CT-B05, CT-B06; CT-B07, CT-B08, CT-B09, CT-B11 *(alterado em 2026-09-30)*); R23 (CT-B01, CT-B02, de antes) | browser | existente — o conferidor Node + Playwright de `site/` (`site/verifica-acessibilidade.mjs`) | a fonte efetiva e a rolagem só existem depois de o Mermaid desenhar o SVG no cliente; a divergência skill × rule (o `pest-plugin-browser` não serve site estático) já está declarada abaixo | |
 
 ~~Nenhuma costura `browser` nos grupos novos: o `05` não muda.~~ *(alterado em 2026-09-29: no step 11, duas linhas
 `browser` — o `05` ganha CT-B04, CT-B05 e CT-B06.)*
@@ -361,10 +526,14 @@ regras R54–R62 e dos cenários acrescentados ou reescritos nele — `Confirmad
 | (step 10, 2ª passada) o texto dos blocos DG-10, DG-19 e DG-20 *(alterado em 2026-09-29: linha nova)* | lido para saber **o que** cada bloco afirma; o valor esperado de cada afirmação sai do código que ela descreve (`config/lockscreen.php`, o plugin de cada painel, `routes/console.php`, `docker-compose.yml`, `DevCommands`, `config/queue.php`, a pilha de tenant do painel app, `User::canAccessTenant()`) | nó, transição e rótulo são detalhe dos cenários R48–R52; nunca o oráculo |
 | (step 11) o `06-relatorio-qa.md` *(alterado em 2026-09-29: linha nova)* | lido para saber o que o gate pede: os 14 testes, os três blocos do QA-04, as seis alterações do QA-05, a medida do QA-06; o valor esperado de cada cenário sai do `00` (RQ-10, RQ-26, RQ-27, RQ-28, RQ-34, RQ-47..RQ-49, P-44) e do código que cada bloco descreve | nenhum oráculo veio dele |
 | (step 11) os 14 testes `[RD…]` e o `it('captura os quadros do instalador')` *(alterado em 2026-09-29: linha nova)* | lidos para saber o que cada um confere e declarar o CT que ele passa a levar; o `Então` de cada CT saiu do `00`, não das asserções de hoje — onde o CT pede mais do que o teste afirma, o índice diz o que falta | [Testes nascidos na revisão do diff, sem CT](#testes-nascidos-na-revisão-do-diff-sem-ct) |
-| (step 11) o texto das mensagens do `kit:install` ("Nenhum usuario foi criado…", "defina KIT_ADMIN_PASSWORD no .env e só então rode…") e do `kit:arte` ("Não consegui publicar…") *(alterado em 2026-09-29: linha nova)* | só a revisão do diff fixou essas frases; o `Então` afirma o que a mensagem promete e o que ela manda fazer (RQ-28), nunca a frase | detalhe de R55, R56 e CT-128; a distinção publicar × montar do `kit:arte` é comportamento visível sem cláusula — Q?5 |
-| (step 11) o piso "cerca de 12 px" (RQ-47) e as larguras de janela *(alterado em 2026-09-29: linha nova)* | o número é do `00`; o "cerca de" e as larguras são desenho | `@premissa` de CT-B05, Q?8 |
-| (step 11) o escopo de um elemento e as listas de palavras por idioma *(alterado em 2026-09-29: linha nova)* | mecanismo da guarda, que o `00` não fixa | `@premissa` de R58, R59 (Q?6) e de R61 (Q?7) |
+| (step 11) o texto das mensagens do `kit:install` ("Nenhum usuario foi criado…", "defina KIT_ADMIN_PASSWORD no .env e só então rode…") e do `kit:arte` ("Não consegui publicar…") *(alterado em 2026-09-29: linha nova)* | só a revisão do diff fixou essas frases; o `Então` afirma o que a mensagem promete e o que ela manda fazer (RQ-28), nunca a frase | detalhe de R55, R56 e CT-128; ~~a distinção publicar × montar do `kit:arte` é comportamento visível sem cláusula — Q?5~~ *(alterado em 2026-09-29: Adendo 7 — a distinção tem cláusula, RQ-52, e o "não consegui publicar" é literal do `00`: entra no `Então` do CT-128; o resto da frase continua detalhe)* |
+| (step 11) o piso "cerca de 12 px" (RQ-47) e as larguras de janela *(alterado em 2026-09-29: linha nova)* | o número é do `00`; o "cerca de" e as larguras são desenho | `@premissa` de CT-B05, Q?8 *(alterado em 2026-09-29: decidida pela sessão — 12 px, sem tolerância, em 1280 × 900 e 390 × 844)* |
+| (step 11) o escopo de um elemento e as listas de palavras por idioma *(alterado em 2026-09-29: linha nova)* | mecanismo da guarda, que o `00` não fixa | `@premissa` de R58, R59 (Q?6) e de R61 (Q?7) *(alterado em 2026-09-29: as duas decididas pela sessão, como os testes do ciclo 2 as implementaram)* |
+| (Adendo 7) o texto da Q?4 e do Adendo 7: "o Laravel fica com a primeira" *(alterado em 2026-09-29: linha nova)* | premissa sobre o vendor escrita sem abrir o vendor; lido, ele diz o contrário — o Laravel também fica com a última (R54) | o `Então` do CT-118 confere cada linha ativa e os três leitores, e não depende da ordem de leitura de nenhum |
 | (step 10, 2ª passada) `fatosPorDg()` e o dataset de CT-06 no teste da guarda *(alterado em 2026-09-29: linha nova)* | lidos só para confirmar o achado A-06: os fatos dos três extras não casam com o bloco publicado (`tests/Kit/DiagramasDaArquiteturaTest.php:AgenteIa:884`), e o controle sobre bloco real só existe para o DG-03 (`tests/Kit/DiagramasDaArquiteturaTest.php:$dg === 'DG-03':1014`) | nenhum oráculo veio do teste; R53 |
+| (revisão adversarial da adição) o texto do banner e da linha do resumo no código *(alterado em 2026-09-30: linha nova)* | lido só para saber a **grafia**: o banner é ASCII (`app/Console/Commands/KitInstall.php:A senha e a que voce definiu:569`, `app/Console/Commands/KitInstall.php:Nenhum usuario foi criado:564`) e a linha do resumo tem acento (`app/Console/Commands/KitInstall.php:a que você já definiu:624`) — o `Então` "não diz 'a que você definiu'", com acento, não casava com o texto (ADV-26) | a comparação sem acento e sem caixa do Setup Global; a frase continua detalhe (R55, R56) |
+| (revisão adversarial da adição) o mapa de opcionais e o `[CT-08]` do teste da guarda *(alterado em 2026-09-30: linha nova)* | lidos só para confirmar ADV-18: os termos de vários elementos são só pt (`tests/Kit/DiagramasDaArquiteturaTest.php:mapaOptInDaGuarda:1162`), e o `[CT-08]` confere a chave por substring (`tests/Kit/DiagramasDaArquiteturaTest.php:assertStringContainsString:1445`), divergindo do que o `04` diz dele desde o step 11 (R59) | nenhum oráculo veio do teste; CT-144 |
+| (revisão adversarial da adição) o texto dos blocos DG-05, DG-06, DG-07 e DG-08 publicados, e o cabeçalho dos 42 blocos *(alterado em 2026-09-30: linha nova)* | lidos para saber **o que** cada bloco afirma e medir o baseline de CT-148; o valor esperado sai do código — a porta do registro (`app/Support/RegistroAberto.php:! self::habilitado():236`), as chaves de provedor (`config/kit.php`), o parser do Dotenv e o lexer do Mermaid —, nunca do texto do bloco | detalhe de CT-143, CT-144, CT-146 e CT-148 |
 
 **Perguntas geradas na segunda passada do step 10** *(alterado em 2026-09-29: seção nova)* — as duas são da raia
 **desenho** (como o bloco e a guarda representam o que o código já decide), não vão ao `00`: aterrissam no `01`
@@ -393,7 +562,8 @@ master_global") —, no mesmo regime do P-20 (a condição no rótulo) e do nó 
 
 **Perguntas geradas no step 11, raia desenho** *(alterado em 2026-09-29: seção nova)* — não vão ao `00`; numeração
 provisória, de sub-agente. As de raia requisito (Q?3, Q?4, Q?5) estão em
-[Perguntas para o 00-requisito.md](#perguntas-para-o-00-requisitomd).
+[Perguntas para o 00-requisito.md](#perguntas-para-o-00-requisitomd) *(alterado em 2026-09-29: respondidas no Adendo 7;
+as três de desenho abaixo, decididas pela sessão)*.
 
 ❓ Q?6 · raia: desenho · afeta: RQ-10, P-16 · depende de: —
 Qual é o escopo de um elemento — onde a chave de opcional tem de estar para valer para ele (R58, R59)?
@@ -404,6 +574,15 @@ a própria linha e as notas da origem e do destino; mensagem de sequência — a
 própria linha. A chave conta como palavra inteira (`(?<![A-Z0-9_])KIT_X(?![A-Z0-9_])`); no DG-07, o vínculo à
 organização aceita também a condição que o código usa, o `tenant_id` do convite (o regime de P-20). O invariante —
 nenhum elemento opt-in publicado sem a chave exata nele — vale para qualquer escopo, e é CT-129.
+✅ **Decidida pela sessão, 2026-09-29**: a recomendação, como os testes do ciclo 2 a implementaram
+(`tests/Kit/DiagramasDaArquiteturaTest.php:escoposDoTermo:1344`, CT-129 e CT-130) — e o que vale é a implementação,
+mais estreita que a ➡️ em três pontos, todos para o lado da falha fechada (a chave tem de estar mais perto do
+elemento): cada linha que **desenha** o elemento (com `[`, `(`, `{` ou `:`) é um escopo próprio, e não a união das
+linhas dele; o escopo soma só a condição do `alt`/`else` que envolve a linha diretamente e as notas `note … of X` do
+termo — o título do `subgraph` e as condições de `opt`/`loop`/`par`/`critical` não contam; e todo `end` fecha o
+`alt` aberto, inclusive o de um `opt` aninhado, o que só erra para o vermelho. A chave, como palavra inteira
+(`tests/Kit/DiagramasDaArquiteturaTest.php:contemChaveExata:1199`); no DG-07, o `tenant_id` aceito
+(`tests/Kit/DiagramasDaArquiteturaTest.php:tenant_id:1407`).
 
 ❓ Q?7 · raia: desenho · afeta: RQ-26, P-23 · depende de: —
 Que palavras a guarda trata como "do outro idioma" no texto visível de um bloco (R61)?
@@ -414,6 +593,14 @@ no texto visível (alias, rótulo, texto de mensagem, de nota e de condição de
 identificador — que R2 obriga a ser igual nos dois idiomas —, e fora dos termos invariantes de P-23 e da opção de CLI
 (`--only-new`). Palavra dos dois idiomas ("no", "do", "a", "e-mail") não entra. A lista cresce a cada achado; o
 invariante — o texto visível de um bloco en não tem palavra comum do português, e vice-versa — é CT-132.
+✅ **Decidida pela sessão, 2026-09-29**: a recomendação, como os testes do ciclo 2 a implementaram — e o que vale é a
+implementação, que **não** é a lista de palavras da ➡️: são duas listas fechadas de **expressões**, três por idioma,
+as dos achados do QA-09 — no bloco en, "conta nova", "conta existente" e "escolha de painel"
+(`tests/Kit/DiagramasDaArquiteturaTest.php:expressoesPtNoEn:6490`); no pt, "new account", "existing account" e
+"panel choice" (`tests/Kit/DiagramasDaArquiteturaTest.php:expressoesEnNoPt:6496`) —, procuradas sem caixa no bloco
+inteiro. Identificador fica de fora pela forma (nenhum tem espaço), e palavra solta ("de", "sem") não entra, porque
+casaria dentro de palavra inglesa. O que a lista não vê — palavra do outro idioma fora dessas expressões, "painel"
+sozinho num bloco en — é a lacuna L-14; a lista cresce a cada achado, como a ➡️ já dizia.
 
 ❓ Q?8 · raia: desenho · afeta: RQ-47 · depende de: —
 O piso de RQ-47 é "cerca de 12 px". O CT-B compara com 12 exato? Em que janelas?
@@ -421,6 +608,57 @@ O piso de RQ-47 é "cerca de 12 px". O CT-B compara com 12 exato? Em que janelas
 folga —, nas janelas 1280 × 900 (a medida do QA-06, coluna de 600 px) e 390 × 844 (a coluna do celular, onde
 "nunca encolhe" é mais exigido). O invariante — nenhum diagrama do site com fonte efetiva abaixo do piso — vale para
 qualquer janela; as duas são as partições do layout do Starlight.
+✅ **Decidida pela sessão, 2026-09-29**: a recomendação, como os testes do ciclo 2 a implementaram, sem diferença —
+12 px sem tolerância (`site/verifica-acessibilidade.mjs:PISO_FONTE_EFETIVA_PX:509`), nas janelas 1280 × 900
+(`site/verifica-acessibilidade.mjs:'1280x900':560`) e 390 × 844 (`site/verifica-acessibilidade.mjs:'390x844':563`), no
+CT-B05 do `05`.
+
+**Perguntas geradas no fechamento da revisão adversarial da adição, raia desenho** *(alterado em 2026-09-30: bloco
+novo)* — não vão ao `00`; numeração provisória, de sub-agente. As de raia requisito (Q?10, Q?11) estão em
+[Perguntas para o 00-requisito.md](#perguntas-para-o-00-requisitomd).
+
+❓ Q?12 · raia: desenho · afeta: RQ-26, P-23 · depende de: Q?7
+A lista fechada de R61 são três expressões por idioma (a decisão da Q?7), e a regra afirma que nenhum bloco mostra
+palavra do outro idioma: "(nova conta)", "escolha do painel" e "painel" sozinho passam no en (ADV-21), e o DG-06 en
+publicado mostra "(provedor social)" (`docs/en/autenticacao/login-social.md:provedor social:146`). A lista passa a ser
+de palavras inteiras, conferidas só no texto visível — sem os identificadores, os nomes de classe e as opções de CLI?
+➡️ Recomendação: sim, com a lista de CT-146. Medida nesta derivação, sem caixa e como palavra inteira, sobre o texto
+dos 42 blocos publicados (2026-09-30): no en, só identificadores casam (`convite`, `escolha` e `usuario`, IDs de
+participante) e, no texto visível, o "(provedor social)" do DG-06 en; no pt, só o `new` de `--only-new` (opção de CLI,
+P-23). As palavras que coincidem com identificador em minúscula (`convite`, `usuario`) ficam fora da lista, e palavra
+que existe nos dois idiomas, ou dentro de domínio de e-mail (`com`), também. O invariante — nenhuma palavra do outro
+idioma no texto visível — é o da regra; o que a lista não vê continua em L-14, reduzida.
+✅ **Decidida pela sessão, 2026-09-30** *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-20)*: a recomendação, com a relação com a Q?7 escrita —
+a lista de palavras inteiras no texto visível (CT-146) **soma-se** às três expressões decididas na Q?7 (CT-132), e não as
+substitui. As duas guardas são complementares pelo escopo: a das expressões procura no bloco **inteiro**, sem caixa, e
+pega o achado do QA-09 em qualquer posição, mesmo numa que o extrator do texto visível não leia; a das palavras procura
+só no **texto visível**, sem os identificadores, e pega a palavra solta e a ordem trocada que as expressões não veem
+(ADV-21). O conflito com a decisão da Q?7
+("palavra solta não entra, porque casaria dentro de palavra inglesa") fica resolvido pela forma: palavra **inteira**, no
+texto visível, sem os identificadores. O que nenhuma das duas vê é a L-14.
+
+❓ Q?13 · raia: desenho · afeta: RQ-10, P-16 · depende de: Q?6
+No DG-07, a ➡️ da Q?6 aceitava o `tenant_id` do convite como "a condição que o código usa" (o regime de P-20); a
+implementação aceita a palavra `tenant_id` em qualquer ponto do escopo
+(`tests/Kit/DiagramasDaArquiteturaTest.php:tenant_id:1407`), e "vincula a conta ao tenant_id do convite", sem condição
+nenhuma, passa (ADV-30). O `tenant_id` vale só como condição?
+➡️ Recomendação: sim — na condição do `alt`/`else` que contém a linha, ou numa oração de condição da própria linha
+("quando" ou "se" antes do `tenant_id`; en: "when" ou "if"), como o bloco publicado já escreve ("quando ele tem
+tenant_id"; en: "when it has a tenant_id"). O invariante — o vínculo à organização nunca desenhado como incondicional —
+é CT-143.
+✅ **Decidida pela sessão, 2026-09-30** *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-12, ADV2-20)*: a recomendação, com o refinamento de
+ADV2-12. **Condição** do `tenant_id` é: o texto do `alt`/`else`/`opt` que contém a linha; a mensagem que **começa** com
+"se" ou "quando" (en: "if", "when"); ou a oração que os traz **logo depois de vírgula**. O "se" reflexivo ("a conta se
+vincula ao tenant_id do convite") e o "quando" no fim ("vincula ao tenant_id do convite quando aceita") não são condição;
+"se o convite tem tenant_id, vincula a conta" é. E a **P-16 não afrouxa**: o vínculo condicionado ao `tenant_id` só é
+aceito com `KIT_TENANCY` nomeado no mesmo escopo (a mensagem, ou o `alt`/`else` que a contém) — o `tenant_id` é a
+condição que o código usa, e não a marca de opcional. O CT-129 exigia isso só em parte ("KIT_TENANCY ou tenant_id") e
+passa a exigir a chave; o `tenant_id` citado fora de posição de condição é menção, e a mensagem é recusada (CT-143). Pela
+decisão, o DG-07 publicado não passa, em pt e em en: "quando ele tem tenant_id" vem no meio da mensagem, e nenhum
+`KIT_TENANCY` está no escopo das duas mensagens do vínculo — o CT-129 e o CT-143 nascem vermelhos (destino 3 → 2). A
+citação da guarda na pergunta envelheceu: a condição é lida hoje em
+`tests/Kit/DiagramasDaArquiteturaTest.php:(?:quando|se|when|if):1344`. O que a decisão não vê — o vínculo sem condição e
+sem citar o `tenant_id`, com a chave no escopo — é a L-20.
 
 **Divergência skill × rule, declarada**: a skill manda escrever CT-B com `pest-plugin-browser`; o
 projeto mediu que ele **não serve** site estático de outro toolchain
@@ -505,6 +743,30 @@ Windows pelo lançador `pestw.cmd` com `--covered-only --no-tia` (rule do projet
   `usuarioComPapel()` (`tests/Pest.php:function usuarioComPapel(:725`) e `tenants()->attach()` para o vínculo; o
   `master_global` por `usuarioComPapel('master_global')`, sem vínculo, como `tests/Tenancy/TenancyTest.php:deixa o master_global acessar qualquer tenant:108`;
   a pilha pela rota do painel app com `{tenant}` (`gatherMiddleware()`), nunca por lista escrita. CT-112..CT-114
+- (revisão adversarial da adição, ADV-26) **texto da saída do `kit:install` comparado sem acento e sem caixa** —
+  `Str::ascii()` e `mb_strtolower()` dos dois lados, na presença **e** na ausência. O banner é ASCII
+  (`app/Console/Commands/KitInstall.php:A senha e a que voce definiu:569`) e a linha do resumo tem acento
+  (`app/Console/Commands/KitInstall.php:a que você já definiu:624`): com acento de um lado só, a ausência passa no vazio
+  e a presença falha sem defeito. Vale para CT-119..CT-122 e CT-133..CT-136
+- (revisão adversarial da adição) **a promessa da senha gerada lida da constante na execução** —
+  `CustomizadorDaInstalacao::RESUMO_SENHA_GERADA`, e não as palavras de hoje dela: o `Então` que proíbe "gerada" e
+  "impressa" deixa de valer no dia em que a constante é redita (ADV-27). CT-133, CT-134
+- (revisão adversarial da adição) **a senha do administrador semeado** — `Hash::check($senha, $admin->password)`, com o
+  administrador lido por `config('kit.admin.email')` na mesma conexão em que o `db:seed` do `handle()` semeou (a de
+  CT-122; hipótese de arnês a medir na implementação). É o único oráculo que separa "a saída diz a senha certa" de "o
+  banco tem essa senha" (R63). CT-135, CT-136
+- (revisão adversarial da adição) **`db:seed` que não completa** — hipótese de arnês: um comando `db:seed` registrado
+  no próprio cenário, que devolve código 1, no lugar do real; o `semear()` o chama por `callSilently()`
+  (`app/Console/Commands/KitInstall.php:callSilently:392`) depois de a senha ser gerada. Se o registro não
+  substituir o comando do framework, a alternativa é um `DatabaseSeeder` do diretório isolado que devolve falha — a
+  medir. CT-136
+- (revisão adversarial da adição) **senha digitada no prompt** — hipótese de arnês: o `kit:install` sem
+  `--no-interaction`, com `expectsQuestion()` para a pergunta da senha e as respostas padrão para as outras (o
+  `Laravel\Prompts` cai no `QuestionHelper` do Symfony nos testes). CT-134
+- (revisão adversarial da adição) **leitores de uma chave do `.env`** — os três de R54: `Dotenv::parse()`, `valorNoEnv()`
+  e a carga do Laravel sobre repositório imutável com `ArrayAdapter`. **Linha ativa** é a que o Dotenv lê como a chave
+  (com `export`, espaço no `=`, indentação); **comentada**, a que ele pula (primeiro caractere não branco `#`) — a
+  definição de R54 corrigida (CT-137). CT-137..CT-139
 
 ### Fakes
 - `Notification::fake()` nos cenários de convite (o `enviar()` notifica por `mail`, `app/Models/Convite.php:'mail':175`)
@@ -611,7 +873,7 @@ Discrimina: com o extrator ingênuo, M6 devolve 0 nas linhas de til e de quatro 
 aceita na linha do comentário.
 
 *(alterado em 2026-09-29: step 11, QA-03.)* A última linha de Exemplos é o `[RD3-05]` de
-`tests/Kit/DiagramasDaArquiteturaTest.php:blocosMermaidDe:5432`, que passa a levar `[CT-103]` (o CT-41 já tem três
+`tests/Kit/DiagramasDaArquiteturaTest.php:blocosMermaidDe:6060`, que passa a levar `[CT-103]` (o CT-41 já tem três
 `it()`; o mesmo regime). O mutante é da mesma regra — todo bloco que o GitHub mostra é um bloco que a guarda confere,
 e o bloco engolido por uma cerca falsa não é conferido por ninguém:
 
@@ -1128,6 +1390,9 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | admin + infra      | admin  | entra    | a outra ordem do mesmo switch                        |
         | admin + infra      | app    | nega     | "acumulou papel, entra em tudo"                      |
         | admin + panel_user | app    | entra    | papel de negócio somado ao de instalação             |
+        | infra + panel_user | infra  | entra    | o par infra × panel_user (ADV2-24)                   |
+        | infra + panel_user | app    | entra    | "papel de instalação → o painel dele" nega (M10)     |
+        | infra + panel_user | admin  | nega     | acumular não vira coringa (M7)                       |
 ```
 
 #### Mutantes previstos
@@ -1143,6 +1408,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 | M7 | o DG-03 trata a acumulação como coringa ("tem papel → entra") | CT-71 (linha `admin + infra` × `app`) |
 | M8 | *(revisão adversarial, A2-17)* o DG-03 decide o `/admin` e o `/infra` por "tem papel atribuído dentro de organização? sim → nega" e leva a "nega" quem tem `admin` no contexto global **e** `admin_app` numa organização | CT-98 (linha 1) |
 | M9 | o DG-03 decide o `/admin` por "tem algum papel no contexto global? sim → entra" e deixa entrar quem tem `infra` global e `admin` só dentro de uma organização | CT-98 (linha 3) |
+| M10 | *(re-revisão adversarial, ADV2-24)* o DG-03 pergunta "tem papel de instalação (`admin`, `infra`)? → o painel dele" antes do `/app`, e leva a "nega" no `/app` quem acumula `infra` com um papel de negócio | CT-71 (linha `infra + panel_user` × `app`), CT-98 (linha `infra` global + `admin_app` × `app`) |
 
 **Ciclo 2 (A2-17) — acumulação entre contextos.** CT-71 roda sem tenancy e toda linha de CT-14 tem um
 papel. O código pergunta pelo papel **do painel** num **contexto**: o global para painel sem tenancy,
@@ -1169,7 +1435,21 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | admin no contexto global + admin_app em acme  | app    | entra    | o papel da organização abre o /app                        |
         | infra no contexto global + admin em acme      | admin  | nega     | "algum papel global → entra" leva a entra (M9)            |
         | infra no contexto global + admin em acme      | infra  | entra    | o papel global do painel abre o painel                    |
+        | infra no contexto global + admin_app em acme  | infra  | entra    | o par infra × admin_app (ADV2-24)                         |
+        | infra no contexto global + admin_app em acme  | app    | entra    | "papel de instalação → o painel dele" nega (M10)          |
+        | infra no contexto global + admin_app em acme  | admin  | nega     | acumular não vira coringa (M7)                            |
+        | panel_user em acme + admin_app em acme        | app    | entra    | o par panel_user × admin_app (ADV2-24)                    |
+        | panel_user em acme + admin_app em acme        | admin  | nega     | dois papéis do /app não abrem painel de instalação        |
 ```
+
+**Rodada 2 (ADV2-24)** *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-24)*. A sonda 6 da revisão (a mesma pessoa com dois papéis)
+achou três pares sem cenário: `infra` × `panel_user`, `infra` × `admin_app` e `panel_user` × `admin_app`. O CT-13 tem uma
+coluna `papel` só e roda sem tenancy — sem `admin_app` —, então as linhas entram nos dois cenários de acumulação que a regra
+já tem, no formato deles: o par sem tenancy no CT-71 (`tests/Kit/DiagramasDaArquiteturaTest.php:it:2278`), e os dois com
+`admin_app` no CT-98 (`tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:it:351`). Um cenário novo com o mesmo `Dado` e
+o mesmo `Então` repetiria o CT-98 com outro número. As linhas vêm do mundo que R7 já cita: o `/app` pede o papel do painel
+em qualquer organização, e o `/admin` e o `/infra`, no contexto global
+(`app/Models/User.php:$contexto = $panel->hasTenancy() ? null : $this->contextoGlobal();:217`).
 
 Arquivo: `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` — `admin_app` só existe lá (`.ai/rules/testes.md`).
 
@@ -2273,7 +2553,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 ## Regra R18 — DG-15: a sequência da instalação
 
-> `RQ-24`, `RQ-28` · perfil **padrão** · técnica: **ordem derivada da fonte** (`codigoSemComentario()`, `tests/Pest.php:codigoSemComentario:1878`). Mundo: `composer create-project` dispara `kit:install --create-project` (`composer.json:'post-create-project-cmd':207`, `composer.json:'--create-project':209`); `app/Console/Commands/KitInstall.php:handle:81` chama `customizar()` (`app/Console/Commands/KitInstall.php:customizar():108`) antes de migrar e `semear()` (`app/Console/Commands/KitInstall.php:semear():119`), que garante a senha **antes** do `db:seed` (`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:389`, `app/Console/Commands/KitInstall.php:'db:seed':392`); o banner imprime a senha gerada uma vez (`app/Console/Commands/KitInstall.php:gerada agora:496`)
+> `RQ-24`, `RQ-28` · perfil **padrão** · técnica: **ordem derivada da fonte** (`codigoSemComentario()`, `tests/Pest.php:codigoSemComentario:1913`). Mundo: `composer create-project` dispara `kit:install --create-project` (`composer.json:'post-create-project-cmd':207`, `composer.json:'--create-project':209`); `app/Console/Commands/KitInstall.php:handle:81` chama `customizar()` (`app/Console/Commands/KitInstall.php:customizar():108`) antes de migrar e `semear()` (`app/Console/Commands/KitInstall.php:semear():119`), que garante a senha **antes** do `db:seed` (`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:389`, `app/Console/Commands/KitInstall.php:'db:seed':392`); o banner imprime a senha gerada uma vez (`app/Console/Commands/KitInstall.php:gerada agora:496`)
 
 ```gherkin
 # language: pt
@@ -2336,7 +2616,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 
 ## Regra R19 — DG-16/DG-17: o `kit:update` e as duas rotas de entrega
 
-> `RQ-24` · perfil **padrão** · técnica: **EP** por caminho × rota + **ordem derivada da fonte**. Mundo: as duas rotas são `composer create-project` (exclusão por `.gitattributes`) e `kit:update` (inclusão por `app/Console/Commands/KitUpdate.php:CAMINHOS_DO_KIT:93`) — nomeadas assim pelo próprio kit (`tests/Kit/DuasRotasDeEntregaTest.php:as duas so existem:124`); `composer.json` é só relatório (`app/Console/Commands/KitUpdate.php:CAMINHOS_SO_RELATORIO:366`); `docs/`, `site/`, `wikis/specs`, `.github` são `export-ignore` (`.gitattributes:/docs export-ignore:40`, `.gitattributes:/site export-ignore:46`, `.gitattributes:/wikis/specs export-ignore:32`, `.gitattributes:/.github export-ignore:20`). Lista do `kit:update` lida por `caminhosDoKit()` (`tests/Pest.php:caminhosDoKit:1819`)
+> `RQ-24` · perfil **padrão** · técnica: **EP** por caminho × rota + **ordem derivada da fonte**. Mundo: as duas rotas são `composer create-project` (exclusão por `.gitattributes`) e `kit:update` (inclusão por `app/Console/Commands/KitUpdate.php:CAMINHOS_DO_KIT:93`) — nomeadas assim pelo próprio kit (`tests/Kit/DuasRotasDeEntregaTest.php:as duas so existem:124`); `composer.json` é só relatório (`app/Console/Commands/KitUpdate.php:CAMINHOS_SO_RELATORIO:367`); `docs/`, `site/`, `wikis/specs`, `.github` são `export-ignore` (`.gitattributes:/docs export-ignore:40`, `.gitattributes:/site export-ignore:46`, `.gitattributes:/wikis/specs export-ignore:32`, `.gitattributes:/.github export-ignore:20`). Lista do `kit:update` lida por `caminhosDoKit()` (`tests/Pest.php:caminhosDoKit:1854`)
 
 ```gherkin
 # language: pt
@@ -2631,7 +2911,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 *(alterado em 2026-09-29: step 11, QA-06.)* As duas últimas linhas são de R62: RQ-48 manda resolver a legibilidade
 no CSS do site, "sem mudar bloco nem o que o GitHub mostra", e o conserto mais à mão — desligar o `useMaxWidth` no
 próprio bloco — não fixa tema nenhum, então nenhuma linha anterior o recusava por escrito (a implementação de hoje
-recusa toda diretiva `init`, `tests/Kit/DiagramasDaArquiteturaTest.php:initialize:4083`; o cenário não dizia).
+recusa toda diretiva `init`, `tests/Kit/DiagramasDaArquiteturaTest.php:initialize:4595`; o cenário não dizia).
 
 ---
 
@@ -3197,7 +3477,7 @@ Funcionalidade: GIFs pelo kit:arte
 ```
 
 Estouro do teto (R32 com 4 cenários no `padrão`): CT-127 é outra partição da mesma EP e o único matador de M7..M9 —
-o gate vence o teto. O teste `[RD2-02/RD2-03]` (`tests/Kit/KitArteTest.php:it:607`) passa a levar `[CT-127]`; ele já
+o gate vence o teto. O teste `[RD2-02/RD2-03]` (`tests/Kit/KitArteTest.php:it:605`) passa a levar `[CT-127]`; ele já
 afirma a exceção contida, o GIF do clipe seguinte e o diretório limpo, e ganha a linha da saída que nomeia o clipe.
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
@@ -3210,7 +3490,7 @@ afirma a exceção contida, o GIF do clipe seguinte e o diretório limpo, e ganh
 
 ## Regra R33 — Quadro de clipe não vira PNG solto, e a falha do ffmpeg não apaga o GIF publicado
 
-> `RQ-27` · perfil **padrão** · técnica: **EP** (quadro só de clipe × quadro que também é imagem declarada) + **atomicidade**. Mundo: antes desta entrega, quadro de GIF era pulado antes da checagem de `IMAGENS` (`app/Console/Commands/KitArte.php`, linha 134, o `continue` de `QUADROS_DO_GIF`) *(alterado em 2026-09-29: hoje `IMAGENS` é conferido primeiro, `app/Console/Commands/KitArte.php:IMAGENS:187`, e só depois o quadro de clipe é pulado, `app/Console/Commands/KitArte.php:$quadrosDeClipe:206`)*; as imagens de densidade são **imagens publicadas** usadas pelo README e pelas docs (`docs/pt/recursos/configuracoes-do-kit.md:densidade-confortavel.png:122`) e passam a ser também quadros
+> `RQ-27`, `RQ-52` *(alterado em 2026-09-29: Adendo 7 — a etapa que a saída nomeia, no CT-128)* · perfil **padrão** · técnica: **EP** (quadro só de clipe × quadro que também é imagem declarada) + **atomicidade**. Mundo: antes desta entrega, quadro de GIF era pulado antes da checagem de `IMAGENS` (`app/Console/Commands/KitArte.php`, linha 134, o `continue` de `QUADROS_DO_GIF`) *(alterado em 2026-09-29: hoje `IMAGENS` é conferido primeiro, `app/Console/Commands/KitArte.php:IMAGENS:187`, e só depois o quadro de clipe é pulado, `app/Console/Commands/KitArte.php:$quadrosDeClipe:206`)*; as imagens de densidade são **imagens publicadas** usadas pelo README e pelas docs (`docs/pt/recursos/configuracoes-do-kit.md:densidade-confortavel.png:122`) e passam a ser também quadros
 
 ```gherkin
 # language: pt
@@ -3276,7 +3556,9 @@ partição em que ele **termina bem** e quem falha é a publicação — o `rena
 por cópia (`app/Console/Commands/KitArte.php:publicarGif:430`). É a atomicidade de R33 no último passo, com o alvo (o
 GIF publicado) existente no `Dado`. A frase da saída — "não consegui publicar" em vez de "falha ao montar o clipe" —
 só a revisão do diff fixou (RD2-04, RD3-09): é comportamento visível sem cláusula, e vai como Q?5; até a resposta, o
-`Então` afirma só o que R32 já pede, o clipe nomeado.
+`Então` afirma só o que R32 já pede, o clipe nomeado. *(alterado em 2026-09-29: Adendo 7 — a Q?5 foi respondida com
+RQ-52: "a saída do `kit:arte` nomeia a publicação ("não consegui publicar"), e não a montagem". O `Então` ganha as duas
+metades da cláusula, e o R33.M10 passa a ter matador; L-12 fecha.)*
 
 ```gherkin
 # language: pt
@@ -3284,26 +3566,68 @@ Funcionalidade: GIFs pelo kit:arte
 
   Regra: Quadro de clipe não vira PNG solto, e a falha do ffmpeg não apaga nem trunca o GIF publicado
 
-    Cenário: [CT-128] a falha ao publicar o GIF que o ffmpeg montou preserva o GIF publicado
+    Cenário: [CT-128] a falha ao publicar o GIF que o ffmpeg montou preserva o GIF publicado e nomeia a publicação
       Dado art/fluxo-import-export.gif existente com um conteúdo conhecido
       E o ffmpeg de teste que termina com código 0 e deixa um diretório no lugar do arquivo de saída, que não se publica
-      E os quadros do clipe de import/export no diretório de capturas
+      E os quadros só do clipe de import/export no diretório de capturas, e de nenhum outro clipe
       Quando o mantenedor roda kit:arte
       Então art/fluxo-import-export.gif continua um arquivo, com o conteúdo conhecido, byte a byte
       E nenhum arquivo além dos de antes da execução existe em art/
       E a saída nomeia o clipe de import/export
+      E a saída diz que a etapa que falhou foi a publicação: "não consegui publicar"
+      E nenhuma linha da saída diz que a montagem do clipe falhou
 ```
 
 Estouro do teto (R33 com 4 cenários no `padrão`): mesma justificativa de CT-127. O teste `[RD3-09]`
-(`tests/Kit/KitArteTest.php:it:674`) passa a levar `[CT-128]`; as asserções de "não consegui publicar" e de "falha ao
-montar o clipe" ficam nele como apoio, fora do oráculo, até a Q?5.
+(`tests/Kit/KitArteTest.php:it:682`) passa a levar `[CT-128]`; as asserções de "não consegui publicar" e de "falha ao
+montar o clipe" ficam nele como apoio, fora do oráculo, até a Q?5. *(alterado em 2026-09-29: Adendo 7 — as duas
+asserções entram no oráculo, e o teste de hoje já as tem: `tests/Kit/KitArteTest.php:não consegui publicar:715` e
+`tests/Kit/KitArteTest.php:falha ao montar o clipe:721`. Nessas duas, o CT-128 e o teste não divergem; em outras
+duas, sim, desde o step 11: o teste não afirma que a saída nomeia o clipe, e confere só o temporário `*.tmp-*`
+(`tests/Kit/KitArteTest.php:'tmp-':846`), e não "nenhum arquivo além dos de antes".)*
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M7 | *(QA-03, RD2-04)* a publicação apaga o GIF de destino antes de confirmar a troca, e o `rename()` que falha deixa `art/` sem ele | CT-128 | "continua um arquivo, com o conteúdo conhecido": o mutante o apagou |
 | M8 | *(QA-03, RD3-09)* o contorno da troca copia ou renomeia o temporário, que é um diretório, para o lugar do GIF | CT-128 | "continua um arquivo": o destino virou diretório |
 | M9 | *(QA-03, RD3-09)* o temporário da publicação (`*.tmp-*`) fica em `art/` depois da falha — arquivo solto publicado | CT-128 | "nenhum arquivo além dos de antes da execução existe em art/" |
-| M10 | *(QA-03, RD2-04)* a saída culpa a montagem ("falha ao montar o clipe") quando o ffmpeg terminou bem, e manda investigar o ffmpeg | ⚠️ **sem matador** — até a Q?5 (L-12): a distinção é comportamento visível que o `00` não fixa | — (lacuna declarada) |
+| M10 | *(QA-03, RD2-04)* a saída culpa a montagem ("falha ao montar o clipe") quando o ffmpeg terminou bem, e manda investigar o ffmpeg | CT-128 *(alterado em 2026-09-29: Adendo 7, RQ-52 — era lacuna L-12, até a Q?5)* | "diz que a etapa que falhou foi a publicação" e "não diz que a montagem do clipe falhou": o mutante imprime o aviso da montagem, o do `catch` genérico do RD2-03, e não o da publicação |
+
+**Revisão adversarial da adição (ADV-31)** *(alterado em 2026-09-30)*. O "não diz que a montagem do clipe falhou" do
+CT-128 é, no teste, a ausência de um literal só (`tests/Kit/KitArteTest.php:falha ao montar o clipe:721`): "Não consegui
+publicar fluxo-import-export.gif: o ffmpeg falhou ao gerar o arquivo" nomeia a publicação e manda o mantenedor ao
+ffmpeg — o contrário do motivo de RQ-52 ("disco e permissão, não o ffmpeg", Adendo 7). A saída de hoje cita o ffmpeg,
+mas para dizer que ele **concluiu** (`app/Console/Commands/KitArte.php:Não consegui publicar:394`), e isso é certo: o
+que RQ-52 proíbe é culpar a montagem, não citá-la. O oráculo é uma lista fechada das formas de culpa, sem acento e sem
+caixa — o que ela não vê fica na mesma classe de L-14.
+
+```gherkin
+# language: pt
+Funcionalidade: GIFs pelo kit:arte
+
+  Regra: Quadro de clipe não vira PNG solto, e a falha do ffmpeg não apaga nem trunca o GIF publicado
+
+    Cenário: [CT-147] a falha ao publicar não culpa a montagem por nenhum nome dela
+      Dado art/fluxo-import-export.gif existente com um conteúdo conhecido
+      E o ffmpeg de teste que termina com código 0 e deixa um diretório no lugar do arquivo de saída, que não se publica
+      E os quadros só do clipe de import/export no diretório de capturas, e de nenhum outro clipe
+      Quando o mantenedor roda kit:arte
+      Então a linha da saída que nomeia o clipe de import/export diz "não consegui publicar"
+      E nenhuma linha da saída, sem acento e sem caixa, contém "ffmpeg falhou", "ffmpeg falha", "falha ao montar", "falha na montagem", "montagem falhou", "falhou ao gerar", "erro do ffmpeg", "nao disponivel ou falhou" nem "nao montado" — descontadas as linhas cujo assunto é outro clipe declarado em CLIPES
+```
+
+*(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-14)*. O `Então` de antes lia só a linha que nomeia a publicação; a culpa na linha
+**seguinte** passava. *(alterado em 2026-09-30: executor do CT — `KitArte::CLIPES` declara cinco clipes, e os quatro sem quadros saem como "GIF de 'x' não montado" (R32, CT-47) na mesma execução; "nenhuma linha" vale para toda linha que nomeia o clipe sob teste ou nenhum clipe, e a linha cujo assunto é outro clipe declarado fica de fora, senão o cenário seria vermelho com a implementação certa.)* Com um clipe só no `Dado`, toda linha da saída é sobre ele, e nenhuma pode culpar a montagem nem o
+ffmpeg — o aviso genérico de hoje para o ffmpeg que falha diz as duas coisas
+(`app/Console/Commands/KitArte.php:ffmpeg não disponível ou falhou:386`), e é ele que a lista passa a ver. A linha que diz
+que o ffmpeg **concluiu** (`app/Console/Commands/KitArte.php:Não consegui publicar:394`) continua certa. O CT-128 ganha o
+mesmo `Dado` e o "nenhuma linha". Os dois `[CT-nn]` existem (`tests/Kit/KitArteTest.php:it:758`,
+`tests/Kit/KitArteTest.php:it:813`) e ganham o clipe único e a leitura de toda linha.
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M11 | *(revisão adversarial, ADV-31)* a saída nomeia a publicação e culpa o ffmpeg na mesma linha — "Não consegui publicar …: o ffmpeg falhou ao gerar o arquivo" | CT-147 | "essa linha não contém 'ffmpeg falhou' … nem 'falhou ao gerar'": o mutante contém as duas; o CT-128, que só procura "falha ao montar o clipe", aceita |
+| M12 | *(re-revisão adversarial, ADV2-14)* na falha da publicação, a linha do clipe diz "não consegui publicar", e uma linha à parte repete o aviso genérico do ffmpeg — "ffmpeg não disponível ou falhou — GIF de '…' não montado" | CT-147, CT-128 | "nenhuma linha da saída contém 'nao disponivel ou falhou' nem 'nao montado'": a linha à parte contém as duas; o `Então` de antes lia só a linha da publicação |
 
 ---
 
@@ -3549,7 +3873,7 @@ Funcionalidade: README e crédito
 > R4 não passar do teto.
 >
 > Mundo — as três formas de "desligado por padrão" do arquivo, lidas no código **sem comentário**
-> (`tests/Pest.php:codigoSemComentario:1878`): `(bool) env(K, false)`, `filter_var(env(K, false), …)` e
+> (`tests/Pest.php:codigoSemComentario:1913`): `(bool) env(K, false)`, `filter_var(env(K, false), …)` e
 > `BooleanoDoEnv::comPadrao(env(K), false)`. As 16 chaves de hoje: `KIT_TENANCY` (`config/kit.php:KIT_TENANCY:351`),
 > `KIT_REGISTRO` (`config/kit.php:'KIT_REGISTRO':403`), `KIT_REGISTRO_APROVACAO_MANUAL` (`config/kit.php:KIT_REGISTRO_APROVACAO_MANUAL:404`),
 > `KIT_REGISTRO_VERIFICAR_EMAIL` (`config/kit.php:KIT_REGISTRO_VERIFICAR_EMAIL:405`), `KIT_DEMO` (`config/kit.php:KIT_DEMO:431`),
@@ -4074,7 +4398,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 *(alterado em 2026-09-29: regra nova, da reconciliação do step 10. RQ-36, do Adendo 3, chegou à
 implementação sem cenário — o job nasceu na rodada 3 da revisão do diff, direto no código — e o
 `rastreabilidade.sh` acusou "RQ-36 sem CT". O cenário é derivado do `00`; o job implementado só foi lido depois, para comparar (registro abaixo do cenário);
-o teste ainda não existe, e o `ids-ct.sh` acusa o CT-105 até o executor escrevê-lo — `03`, DV-09)* *(alterado em 2026-09-29: existe — `tests/Kit/DiagramasDaArquiteturaTest.php:it:5602`; a DV-09 está fechada)*
+o teste ainda não existe, e o `ids-ct.sh` acusa o CT-105 até o executor escrevê-lo — `03`, DV-09)* *(alterado em 2026-09-29: existe — `tests/Kit/DiagramasDaArquiteturaTest.php:it:5595`; a DV-09 está fechada)*
 
 > `RQ-36` · perfil **padrão** (área C) · técnica: **inspeção do fluxo**, irmã de R23 (que confere o
 > `pages.yml`, que só roda depois do merge) e de `[CT-42]` herdado
@@ -4564,69 +4888,143 @@ pelo mesmo achado, sem dizer nada sobre fato vácuo.
 
 ---
 
-## Regra R54 — O valor que o `kit:install` grava no `.env` volta igual na leitura, e a gravação troca só a primeira ocorrência da chave
+## Regra R54 — O valor que o `kit:install` grava no `.env` volta igual na leitura, com a quebra de linha como espaço, e a gravação troca toda linha ativa da chave e nenhuma comentada
 
 *(alterado em 2026-09-29: regra nova, do step 11 — QA-03, o `[RD2-08]` sem cenário, e QA-10, o mutante sobrevivente
-da linha do limite)*
+da linha do limite)* *(alterado em 2026-09-29: Adendo 7 — a Q?3 respondida com RQ-51 e a Q?4 com RQ-50. O título dizia
+"e a gravação troca só a primeira ocorrência da chave", a P-44 de antes; a linha da quebra do CT-117 ganha a direção,
+e o CT-118, reescrito, passa de "só a primeira" a "toda linha ativa, nenhuma comentada")*
 
-> `P-44` · perfil **padrão** (área I) · técnica: **EP** dos caracteres que o escape trata (barra no meio, barra no
-> fim, barra seguida de `n`, aspas com barra, `${…}` de chave anterior, quebra de linha) + **BVA 2-valores** na
-> contagem de linhas que casam com a chave (1 × 2). Mundo: `definirNoEnv()` cita e escapa o valor
-> (`app/Support/SubstituicaoEmArquivo.php:definirNoEnv:81`, `app/Support/SubstituicaoEmArquivo.php:escaparValorDeEnv:101`)
-> e troca a linha com limite 1 (`app/Support/SubstituicaoEmArquivo.php:preg_replace_callback:54`); o padrão casa também
-> a linha comentada (`#?\s*CHAVE=`). A leitura do kit é `Dotenv::parse()` — a de `valorNoEnv()` e de
-> `senhaAtualNoEnv()` —, que resolve `${CHAVE}` só contra as chaves **anteriores** do mesmo texto
+> `P-44`, `RQ-50`, `RQ-51` · perfil **padrão** (área I) · técnica: **EP** dos caracteres que o escape trata (barra no
+> meio, barra no fim, barra seguida de `n`, aspas com barra, `${…}` de chave anterior) e das quebras de linha (LF,
+> CRLF, CR) + **BVA 2-valores** na contagem de linhas **ativas** da chave (1 × 2), com a comentada antes e depois da
+> ativa. Mundo: `definirNoEnv()` cita e escapa o valor
+> (`app/Support/SubstituicaoEmArquivo.php:definirNoEnv:87`, `app/Support/SubstituicaoEmArquivo.php:escaparValorDeEnv:152`),
+> troca LF, CRLF e CR por um espaço (`app/Support/SubstituicaoEmArquivo.php:"\r\n":155`)
+> e, no **código de antes de 2026-09-30**, trocava a linha com limite 1 (o `preg_replace_callback()` de `aplicar()`, linha
+> 54 antes de 2026-09-30); o padrão casava também a linha comentada (o `#?` de `definirNoEnv()`, linha 87 antes de
+> 2026-09-30) — com o comentário **antes** da ativa, era ele que o limite 1 trocava. *(alterado em 2026-09-30: re-revisão
+> adversarial da adição — o código mudou: `definirNoEnv()` chama `definirLinhaNoEnv()`
+> (`app/Support/SubstituicaoEmArquivo.php:definirLinhaNoEnv:89`), que troca toda linha ativa pelo padrão do leitor
+> (`app/Support/SubstituicaoEmArquivo.php:$ativa:122`), sem ativa descomenta a primeira comentada no lugar
+> (`app/Support/SubstituicaoEmArquivo.php:$comentada:130`) e sem nenhuma anexa a linha
+> (`app/Support/SubstituicaoEmArquivo.php:append:138`); `aplicar()` ficou com o limite 1 só para config PHP
+> (`app/Support/SubstituicaoEmArquivo.php:Limite de 1:45`). As frases de "hoje" desta regra sobre a troca são do código
+> de antes.)* A leitura do kit é `Dotenv::parse()` — a de `SenhaDoAdministrador::doArquivo()`, que o
+> `senhaAtualNoEnv()` usa (`app/Support/SenhaDoAdministrador.php:parse:99`), e a de `valorNoEnv()`
+> (`tests/Pest.php:valorNoEnv:472`) —, que resolve `${CHAVE}` só contra as chaves **anteriores** do mesmo texto
 > (`vendor/vlucas/phpdotenv/src/Loader/Resolver.php:resolveVariable:67`) e, entre aspas, aceita só `\"`, `\\`, `\$` e
-> `\f \n \r \t \v` (`vendor/vlucas/phpdotenv/src/Parser/EntryParser.php:ESCAPE_SEQUENCE_STATE:274`)
+> `\f \n \r \t \v` (`vendor/vlucas/phpdotenv/src/Parser/EntryParser.php:ESCAPE_SEQUENCE_STATE:274`). A leitura do
+> Laravel no boot é a mesma carga, sobre o repositório imutável de `Env::getRepository()`
+> (`vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/LoadEnvironmentVariables.php:getRepository:87`,
+> `vendor/laravel/framework/src/Illuminate/Support/Env.php:make:89`)
+
+**Duas premissas corrigidas, com o vendor lido** *(alterado em 2026-09-29: Adendo 7)*. As duas conclusões ficam de pé
+por outro motivo — é o erro que `.ai/rules/specs.md` descreve —, e as duas mudam o oráculo:
+
+- **O Laravel também fica com a última linha ativa, e não com a primeira** — o texto da Q?4, e o do Adendo 7, dizem o
+  contrário. O escritor imutável recusa só a chave definida **antes** da carga
+  (`vendor/vlucas/phpdotenv/src/Repository/Adapter/ImmutableWriter.php:isExternallyDefined:106`); a que a própria
+  carga gravou fica marcada (`vendor/vlucas/phpdotenv/src/Repository/Adapter/ImmutableWriter.php:$this->loaded[$name] = '':67`),
+  e a segunda linha do mesmo arquivo a sobrescreve (`vendor/vlucas/phpdotenv/src/Loader/Loader.php:$repository:33`).
+  Com a troca só da primeira (a P-44 de antes), os dois leitores ficavam com o valor velho, e não só o do kit. RQ-50
+  não muda — com toda linha ativa trocada, a ordem de leitura deixa de importar —, mas o valor lido já não separa
+  "toda linha ativa" de "só a última", que é a que os três leitores leem (M8): o `Então` do CT-118 confere **cada
+  linha ativa**, e não só o valor lido.
+- **Entre aspas, a quebra crua não vira chave para o `Dotenv::parse()`: vira parte do valor.** O parser separa as
+  linhas em LF, CRLF e CR (`vendor/vlucas/phpdotenv/src/Parser/Parser.php:split:25`), mas junta de volta o
+  valor citado que não fechou na linha (`vendor/vlucas/phpdotenv/src/Parser/Lines.php:multilineProcess:58`,
+  `vendor/vlucas/phpdotenv/src/Parser/Lines.php:implode:72`) — e as aspas do valor estão escapadas, então ele não
+  fecha antes da hora. A chave `INJETADA` aparece para quem lê o arquivo **linha a linha**, como o próprio padrão
+  `/^#?\s*CHAVE=.*$/m` de `aplicar()` na próxima gravação dela. Por isso o "não ganha chave nova" de RQ-51 é conferido
+  nas duas leituras, e o matador de M5 é o valor lido: a M5 de antes dizia que "as mesmas chaves de antes", pelo
+  `Dotenv::parse()`, a matava — e não matava.
 
 **Exemplo discriminante.** O `$HOME` do dataset do `[RD2-08]` não separa o escape certo do que esquece o `$`: sem
 chaves, o Dotenv não resolve nada. O `${APP_ENV}`, com `APP_ENV` numa linha anterior, separa — o mutante lê "Loja
 local". E a barra seguida de `n` separa o defeito do RD2-08 de um conserto que só capture a exceção: sem o escape
-certo, ela não lança; vira quebra de linha em silêncio.
+certo, ela não lança; vira quebra de linha em silêncio. *(alterado em 2026-09-29: Adendo 7)* O CRLF separa "a quebra
+vira **um** espaço" do escape que troca `\r` e `\n` um a um; o CR sozinho, do escape que só conhece `\n` — o parser do
+Dotenv também separa linha em CR. O comentário **antes** da ativa separa a troca certa da de hoje, e a segunda linha
+ativa separa "toda linha ativa" de "a primeira" e de "a última".
 
 ```gherkin
 # language: pt
 Funcionalidade: Gravação no .env pelo kit:install
 
-  Regra: O valor gravado numa chave do .env é o valor lido de volta dela, e a gravação troca só a primeira linha que casa com a chave
+  Regra: O valor gravado numa chave do .env é o valor lido de volta dela, com a quebra de linha como espaço, e a gravação troca toda linha ativa da chave e nenhuma comentada
 
     Esquema do Cenário: [CT-117] o valor digitado faz a ida e volta pelo .env
       Dado um .env temporário em que "APP_ENV=local" vem numa linha antes de "APP_NAME"
       Quando o instalador grava em APP_NAME o valor "<valor>"
       Então o .env relido por Dotenv::parse() não lança exceção
       E APP_NAME lido de volta é "<lido>"
-      E o .env tem as mesmas chaves de antes da gravação
+      E o .env tem as mesmas chaves de antes da gravação, lidas por Dotenv::parse() e linha a linha
 
       Exemplos:
-        | valor                             | lido                                   | # partição                                                         |
-        | Loja do Ferro                     | Loja do Ferro                          | controle: sem caractere especial                                   |
-        | Loja "X" $HOME \ fim              | Loja "X" $HOME \ fim                   | aspas, cifrão e barra no meio (o dataset do [RD2-08])              |
-        | Loja do Ferro\                    | Loja do Ferro\                         | barra no fim: sem o escape, ela escapa as aspas que fecham         |
-        | Loja\nova (a barra é literal)     | Loja\nova                              | barra seguida de n: sem o escape, vira quebra de linha em silêncio |
-        | Loja ${APP_ENV}                   | Loja ${APP_ENV}                        | `${…}` de chave anterior: sem escapar o `$`, lê "Loja local"       |
-        | Loja, uma quebra de linha e INJETADA=1 | — a direção está em aberto (Q?3); só os outros dois `Então` valem | quebra de linha: o .env não ganha a chave INJETADA |
+        | valor                                  | lido                  | # partição                                                                  |
+        | Loja do Ferro                          | Loja do Ferro         | controle: sem caractere especial                                            |
+        | Loja "X" $HOME \ fim                   | Loja "X" $HOME \ fim  | aspas, cifrão e barra no meio (o dataset do [RD2-08])                       |
+        | Loja do Ferro\                         | Loja do Ferro\        | barra no fim: sem o escape, ela escapa as aspas que fecham                  |
+        | Loja\nova (a barra é literal)          | Loja\nova             | barra seguida de n: sem o escape, vira quebra de linha em silêncio          |
+        | Loja ${APP_ENV}                        | Loja ${APP_ENV}       | `${…}` de chave anterior: sem escapar o `$`, lê "Loja local"                |
+        | Loja, uma quebra LF e INJETADA=1       | Loja INJETADA=1       | quebra LF (RQ-51): vira espaço, e nenhuma linha do .env começa com INJETADA= |
+        | Loja, uma quebra CRLF e INJETADA=1     | Loja INJETADA=1       | quebra CRLF: um espaço só — a quebra é uma, não duas                        |
+        | Loja, uma quebra CR e INJETADA=1       | Loja INJETADA=1       | quebra CR: o parser do Dotenv também separa linha em CR                     |
 
-    Esquema do Cenário: [CT-118] com a chave em duas linhas, só a primeira é trocada
+    Esquema do Cenário: [CT-118] toda linha ativa da chave é trocada, e nenhuma linha comentada
       Dado um .env temporário com "<linhas>"
       Quando o instalador grava em APP_NAME o valor "Novo"
-      Então a primeira linha que casa com APP_NAME passa a ser APP_NAME="Novo"
+      Então o .env tem "<ativas>" linha(s) ativa(s) de APP_NAME, e cada uma é APP_NAME="Novo"
       E a linha "<intacta>" continua no .env, byte a byte
+      E APP_NAME lido de volta é "Novo" por Dotenv::parse(), por valorNoEnv() e pela leitura do Laravel
       E o .env tem o mesmo número de linhas de antes
 
       Exemplos:
-        | linhas                                                                              | intacta                             | # ocorrências                |
-        | APP_NAME="Antigo" e, mais abaixo, MAIL_FROM_NAME="${APP_NAME}"                      | MAIL_FROM_NAME="${APP_NAME}"        | 1 (controle)                 |
-        | APP_NAME="Antigo" e, mais abaixo, o comentário # APP_NAME="Exemplo" — mude aqui     | # APP_NAME="Exemplo" — mude aqui    | 2: a segunda é comentário    |
+        | linhas                                                                          | ativas | intacta                          | # linhas ativas × comentadas                                          |
+        | APP_NAME="Antigo" e, mais abaixo, MAIL_FROM_NAME="${APP_NAME}"                  | 1      | MAIL_FROM_NAME="${APP_NAME}"     | 1 ativa, nenhuma comentada (controle)                                 |
+        | APP_NAME="Antigo" e, mais abaixo, o comentário # APP_NAME="Exemplo" — mude aqui | 1      | # APP_NAME="Exemplo" — mude aqui | 1 ativa, a comentada depois                                           |
+        | o comentário # APP_NAME="Exemplo" — mude aqui e, mais abaixo, APP_NAME="Antigo" | 1      | # APP_NAME="Exemplo" — mude aqui | 1 ativa, a comentada antes: o limite 1 sobre `#?` troca o comentário |
+        | APP_NAME="Antigo", mais abaixo APP_NAME="Repetida" (edição à mão) e, depois das duas, MAIL_FROM_NAME="${APP_NAME}" | 2 | MAIL_FROM_NAME="${APP_NAME}" | 2 ativas (RQ-50, a Q?4) — com a referência no `Dado` (ADV2-18) |
 ```
 
-A linha "a chave **ativa** duas vezes" não está no Esquema: P-44 manda trocar só a primeira, e o `Dotenv::parse()`
+~~A linha "a chave **ativa** duas vezes" não está no Esquema: P-44 manda trocar só a primeira, e o `Dotenv::parse()`
 lê a última (o repositório dele não é imutável, `vendor/vlucas/phpdotenv/src/Dotenv.php:createWithNoAdapters:206`)
 — a leitura do kit ficaria com o valor antigo. É a Q?4, e L-11. O comentário, que o próprio docblock de `aplicar()`
-dá como razão do limite, é o invariante das duas leituras.
+dá como razão do limite, é o invariante das duas leituras.~~ *(alterado em 2026-09-29: Adendo 7 — a linha das duas
+ativas está no Esquema, pela RQ-50, e L-11 fecha. O comentário continua o que o docblock de `aplicar()` protege
+(`app/Support/SubstituicaoEmArquivo.php:Limite de 1:45`), agora nas duas posições.)* *(alterado em 2026-09-30: re-revisão
+adversarial da adição — o docblock de `aplicar()` diz hoje que chave do `.env` não passa por ele; quem deixa o comentário
+intacto é o padrão só de ativas de `definirLinhaNoEnv()`, `app/Support/SubstituicaoEmArquivo.php:$ativa:122`.)*
+
+**Linha ativa** é a que casa `^\s*APP_NAME=`, sem `#` na frente; **linha a linha** é o nome antes do `=` de cada linha
+não comentada do arquivo cru, separado em LF, CRLF e CR como o parser do Dotenv separa, mas sem juntar o valor citado
+que continua na linha seguinte. **A leitura do Laravel**, no teste, é a carga do Dotenv sobre um
+repositório imutável montado como o de `Env::getRepository()` (`->immutable()`), com um `ArrayAdapter`
+(`vendor/vlucas/phpdotenv/src/Repository/Adapter/ArrayAdapter.php:ArrayAdapter:10`) no lugar das variáveis do processo:
+o `.env` do teste nunca é o do processo, e a carga não pode vazar para ele — o mesmo motivo de
+`SenhaDoAdministrador::doArquivo()`. Sem nenhuma linha ativa, só a comentada (o `DB_HOST` e o `APP_URL` do
+`.env.example`), a direção está aberta — Q?9, L-13 — e não há linha para ela no Esquema; o invariante das duas leituras
+já está no `[CT-19]` do `HostLocalTest` (ver [Regressões herdadas](#regressões-herdadas-que-esta-entrega-aciona)).
+*(alterado em 2026-09-30: revisão adversarial da adição, ADV-37 — o `APP_URL` do `.env.example` é ativo
+(`.env.example:APP_URL:5`), e a chave só comentada dele é o bloco `DB_*`; o invariante das duas leituras passa a ser
+cenário deste `04`, o CT-139 de R64 — exatamente uma linha ativa com o valor gravado —, porque o `[CT-19]` do
+`HostLocalTest` conta `^#?\s*APP_URL=` e guarda uma das direções)*
 
 O teste `[RD2-08]` (`tests/Kit/CustomizadorDaInstalacaoTest.php:it:388`) passa a levar `[CT-117]` e ganha as linhas
-da barra no fim, da barra seguida de `n`, do `${APP_ENV}` e da quebra; o `[CT-118]` é teste a escrever *(alterado em 2026-09-29: step 10 do ciclo 2 — o `[CT-118]` existe, `tests/Kit/CustomizadorDaInstalacaoTest.php:it:426`, e o `[RD2-08][CT-117]` ainda não ganhou as quatro linhas: `03`, `## 26.`)*. O
-`RemoveStringCast` da mesma linha do limite é equivalente (QA-10) e não entra.
+da barra no fim, da barra seguida de `n`, do `${APP_ENV}` e da quebra; o `[CT-118]` é teste a escrever *(alterado em 2026-09-29: step 10 do ciclo 2 — o `[CT-118]` existe, `tests/Kit/CustomizadorDaInstalacaoTest.php:it:423`, e o `[RD2-08][CT-117]` ainda não ganhou as quatro linhas: `03`, `## 26.`)*. O
+`RemoveStringCast` da mesma linha do limite é equivalente (QA-10) e não entra. *(alterado em 2026-09-29: Adendo 7 — o
+`[CT-117]` ganha também as linhas CRLF e CR, e a da LF passa a afirmar `lido`; hoje a quebra LF só tem o valor lido em
+`tests/Kit/CustomizadorDaInstalacaoTest.php:it:196`, fora do `[CT-117]`. O `[CT-118]` de hoje afirma a P-44 de antes —
+"a primeira linha que casa com `^#?\s*APP_NAME=` é a trocada" — e tem só as duas primeiras linhas do Esquema: as do
+comentário antes da ativa e das duas ativas, e as três leituras, não entraram, e as duas linhas **nascem vermelhas**
+contra o código de hoje (destino 3 → 2). O `[RD2-08][CT-117]` passa nas linhas novas, porque o escape já troca as três
+quebras.)*
+
+**Estouro do teto de mutantes (R54 com 10 no `padrão`), justificado** *(alterado em 2026-09-29: Adendo 7)*: M6..M10
+vêm do Adendo 7, que mudou a direção de P-44 (RQ-50) e fechou a da quebra (RQ-51). A regra poderia ser duas — o valor
+que volta × as linhas que a gravação troca —, e fica uma para não renumerar `[CT-117]` e `[CT-118]`, que os testes já
+levam: o mesmo motivo da exceção dos mutantes da revisão adversarial (passo 6, regra 1).
 
 #### Mutantes previstos
 
@@ -4635,8 +5033,76 @@ da barra no fim, da barra seguida de `n`, do `${APP_ENV}` e da quebra; o `[CT-11
 | M1 | *(QA-03, RD2-08)* a linha já escapada vai como substituição de `preg_replace()`, que consome uma camada de barra | CT-117 | linhas da barra: no meio, o parse lança `unexpected escape sequence`; no fim, as aspas não fecham; seguida de `n`, lê "Loja", quebra, "ova" — nenhuma dá o valor de `lido` |
 | M2 | o escape deixa o `$` de fora ("entre aspas duplas, cifrão é texto") | CT-117 | linha `${APP_ENV}`: o mutante lê "Loja local"; o esperado é "Loja ${APP_ENV}" |
 | M3 | o escape troca `"` antes de `\` | CT-117 | linha de aspas e barra: o `\"` vira `\\"`, as aspas fecham no meio e o valor lido sai truncado, ou o parse lança |
-| M4 | *(QA-10)* o limite de `preg_replace_callback()` sobe de 1 (o `IncrementInteger` sobrevivente) ou some | CT-118 | linha do comentário: `# APP_NAME="Exemplo" — mude aqui` vira `APP_NAME="Novo"`, e "continua byte a byte" falha |
-| M5 | a neutralização da quebra de linha sai do escape | CT-117 | linha da quebra: o `.env` ganha a chave `INJETADA`, e "as mesmas chaves de antes" falha |
+| M4 | *(QA-10; RQ-50)* o limite de `preg_replace_callback()` sobe de 1 (o `IncrementInteger` sobrevivente) ou some, com o padrão `#?` mantido — o conserto ingênuo da RQ-50 | CT-118 | linhas do comentário, depois e antes da ativa: `# APP_NAME="Exemplo" — mude aqui` vira `APP_NAME="Novo"`, e "continua byte a byte" falha |
+| M5 | a neutralização da quebra de linha sai do escape | CT-117 | linha LF: o Dotenv junta as duas linhas no valor, e `lido` sai "Loja", quebra, "INJETADA=1"; linha a linha, o `.env` ganha `INJETADA` *(alterado em 2026-09-29: Adendo 7 — era "as mesmas chaves de antes falha", que pelo `Dotenv::parse()` não falha)* |
+| M6 | *(RQ-50, Q?4)* a gravação troca só a primeira linha ativa — o limite 1 da P-44 de antes, com o padrão só de ativas | CT-118 | linha das duas ativas: `APP_NAME="Repetida"` fica, e os três leitores leem "Repetida", a última |
+| M7 | *(RQ-50)* o código de antes do Adendo 7: limite 1 sobre `#?` — com o comentário antes da ativa, é o comentário que vira `APP_NAME="Novo"` | CT-118 | linha do comentário antes da ativa: o comentário não continua byte a byte, e os três leitores leem "Antigo" |
+| M8 | *(RQ-50)* a gravação troca só a última linha ativa, a que o `Dotenv::parse()` e o Laravel leem | CT-118 | linha das duas ativas: "cada uma é `APP_NAME="Novo"`" falha na primeira, que fica "Antigo"; os três leitores leem "Novo" e não o matam |
+| M9 | *(RQ-51)* o escape troca `\r` e `\n` um a um, e o CRLF vira dois espaços | CT-117 | linha CRLF: `lido` sai com dois espaços entre "Loja" e "INJETADA=1" |
+| M10 | *(RQ-51)* o escape só conhece `\n`, e o CR sozinho vai cru ao arquivo | CT-117 | linha CR: o Dotenv separa a linha no CR e junta no valor com `\n` (`vendor/vlucas/phpdotenv/src/Parser/Lines.php:implode:72`), e `lido` não é "Loja INJETADA=1"; linha a linha, o `.env` ganha `INJETADA` |
+
+**Revisão adversarial da adição (ADV-07, ADV-08, ADV-11, ADV-29)** *(alterado em 2026-09-30)*. A definição de **linha
+ativa** acima era mais estreita que o leitor. O `Dotenv::parse()` — e a carga do Laravel, que é a mesma — lê como a
+chave também a linha com `export` na frente (`vendor/vlucas/phpdotenv/src/Parser/EntryParser.php:export:99`) e a com
+espaço antes ou depois do `=` (o nome e o valor saem aparados,
+`vendor/vlucas/phpdotenv/src/Parser/EntryParser.php:trim:75`), e pula como comentário toda linha cujo
+primeiro caractere não branco é `#`, com ou sem espaço depois dele e com ou sem indentação
+(`vendor/vlucas/phpdotenv/src/Parser/Lines.php:isCommentOrWhitespace:130`). RQ-50 fala de "qualquer leitor", então a
+partição é a do leitor: **linha ativa** é a que o Dotenv lê como a chave, e **comentada**, a que ele pula (Setup
+Global). O `^\s*` da definição, com `/m`, tinha o próprio defeito de ADV-11: começa numa linha em branco e consome a
+quebra dela — o espaço antes do nome é só horizontal. E o controle de CT-118 (`MAIL_FROM_NAME="${APP_NAME}"`) não
+contém o literal `APP_NAME=`, então não separa o padrão ancorado do solto; `VITE_APP_NAME="${APP_NAME}"`, que está no
+`.env.example` (`.env.example:VITE_APP_NAME:81`), separa. A linha "2 ativas" de CT-118 pedia intacta uma linha que o
+`Dado` dela não tem (ADV-29, defeito do conjunto): CT-137 traz a mesma partição com o `Dado` completo, e a de CT-118
+fica como está, com a ressalva. *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-18)* — a ressalva sai: o `Dado` da linha "2 ativas" do
+CT-118 passa a ter `MAIL_FROM_NAME="${APP_NAME}"` depois das duas ativas, como o teste a materializou
+(`tests/Kit/CustomizadorDaInstalacaoTest.php:'2 ativas':706`), e a coluna `intacta` nomeia uma linha que o
+`Dado` tem.
+
+```gherkin
+# language: pt
+Funcionalidade: Gravação no .env pelo kit:install
+
+  Regra: O valor gravado numa chave do .env é o valor lido de volta dela, com a quebra de linha como espaço, e a gravação troca toda linha ativa da chave e nenhuma comentada
+
+    Esquema do Cenário: [CT-137] toda linha que o Dotenv lê como a chave é trocada, e nenhuma outra linha muda
+      Dado um .env temporário com as linhas "<linhas>", nessa ordem
+      Quando o instalador grava em APP_NAME o valor "Novo"
+      Então toda linha que o Dotenv lê como APP_NAME dá "Novo", e são <ativas>
+      E cada linha de "<intactas>" continua no .env, byte a byte, na mesma posição
+      E APP_NAME lido de volta é "Novo" por Dotenv::parse(), por valorNoEnv() e pela leitura do Laravel
+      E o .env tem o mesmo número de linhas de antes
+
+      Exemplos:
+        | linhas                                                                                          | ativas | intactas                                                  | # forma da linha                                                     |
+        | export APP_NAME="Antigo" · MAIL_FROM_NAME="${APP_NAME}"                                          | 1      | MAIL_FROM_NAME="${APP_NAME}"                              | `export` na frente: o Dotenv a lê como APP_NAME                      |
+        | APP_NAME = "Antigo" · MAIL_FROM_NAME="${APP_NAME}"                                               | 1      | MAIL_FROM_NAME="${APP_NAME}"                              | espaço antes e depois do `=`                                         |
+        | (dois espaços)APP_NAME="Antigo" · MAIL_FROM_NAME="${APP_NAME}"                                   | 1      | MAIL_FROM_NAME="${APP_NAME}"                              | ativa indentada                                                      |
+        | #APP_NAME="Exemplo" · APP_NAME="Antigo"                                                          | 1      | #APP_NAME="Exemplo"                                       | comentário sem espaço depois do `#`, antes da ativa                  |
+        | (dois espaços)# APP_NAME="Exemplo" · APP_NAME="Antigo"                                           | 1      | (dois espaços)# APP_NAME="Exemplo"                        | comentário indentado, antes da ativa                                 |
+        | APP_NAME="Antigo" · VITE_APP_NAME="${APP_NAME}"                                                  | 1      | VITE_APP_NAME="${APP_NAME}"                               | chave que termina com o nome gravado (a do `.env.example`)           |
+        | APP_ENV=local · (linha em branco) · APP_NAME="Antigo"                                            | 1      | APP_ENV=local · (linha em branco)                         | linha em branco logo antes da ativa                                  |
+        | # APP_NAME="Exemplo" — mude aqui · APP_NAME="Antigo" · MAIL_FROM_NAME="${APP_NAME}" · APP_NAME="Repetida" | 2 | # APP_NAME="Exemplo" — mude aqui · MAIL_FROM_NAME="${APP_NAME}" | 2 ativas, com a comentada antes e a referência entre elas (ADV-29) |
+```
+
+Teste a escrever, em `tests/Kit/CustomizadorDaInstalacaoTest.php`, ao lado do `[CT-118]`. O código de antes de 2026-09-30 (limite 1
+sobre `#?`, o `preg_replace_callback()` de `aplicar()`, linha 54 antes de 2026-09-30) **nascia vermelho** em cinco linhas: `export` e
+espaço no `=` (o padrão não casa, e o fallback anexa uma segunda definição), comentário sem espaço antes da ativa (o
+`#?` o casa primeiro), linha em branco (o `\s*` do padrão de antes, linha 87 antes de 2026-09-30, a
+consome — o M15 era o código de antes) e 2 ativas. Passa nas da ativa indentada, do comentário indentado (o `#?` só casa
+`#` no começo da linha) e do `VITE_APP_NAME` — que guardam a troca **de toda linha ativa** contra os consertos que M13 e
+M14 descrevem. *(alterado em 2026-09-30: re-revisão adversarial da adição, o código mudou)*: o `definirLinhaNoEnv()` de hoje aceita `export` e espaço no `=`,
+usa `[ \t]*` antes do nome e pula toda linha cujo primeiro caractere não branco é `#`
+(`app/Support/SubstituicaoEmArquivo.php:$ativa:122`); o `[CT-137]` existe
+(`tests/Kit/CustomizadorDaInstalacaoTest.php:it:688`), e o que ele mede contra o código de hoje é a execução.
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M11 | *(revisão adversarial, ADV-07)* o padrão da linha ativa é o da definição de antes (`^\s*APP_NAME=`, ou `^[ \t]*APP_NAME=` com o conserto do M15), e a linha `export APP_NAME="Antigo"` não casa: fica com o valor velho, e o fallback anexa outra | CT-137 | linha `export`: "toda linha que o Dotenv lê como APP_NAME dá 'Novo'" falha na do `export`, e "o mesmo número de linhas" falha pela anexada |
+| M12 | *(ADV-07)* idem com o espaço antes do `=`: `APP_NAME = "Antigo"` não casa | CT-137 | linha do espaço no `=`: a linha continua "Antigo", e o arquivo ganha uma linha |
+| M13 | *(ADV-07)* o callback da troca de toda linha pula só a linha que começa com `# ` — com o espaço — e reescreve `#APP_NAME=` e o comentário indentado | CT-137 | linhas do comentário sem espaço e do indentado: "continua byte a byte" falha |
+| M14 | *(ADV-08)* o padrão perde a âncora de início na troca de toda linha (`/APP_NAME=.*$/m`) | CT-137 | linha `VITE_APP_NAME`: ela vira `VITE_APP_NAME="Novo"`, e "continua byte a byte" falha; o controle de CT-118 não tem o literal `APP_NAME=` e não vê |
+| M15 | *(ADV-11)* o espaço antes do nome é `\s*` com `/m` — o padrão de hoje, mantido na troca de toda linha: o casamento começa na linha em branco e consome a quebra dela | CT-137 | linha da linha em branco: o `.env` perde uma linha — "o mesmo número de linhas" e "a linha em branco na mesma posição" falham |
 
 ---
 
@@ -4654,6 +5120,14 @@ da barra no fim, da barra seguida de `n`, do `${APP_ENV}` e da quebra; o `[CT-11
 > administrador com a senha publicada (`app/Support/SenhaDoAdministrador.php:PADRAO_PUBLICADO:40`), e `kit:admin`
 > falha sem administrador para atualizar (`app/Console/Commands/KitInstall.php:instrucaoBancoNaoPopulado:584`, no
 > docblock)
+
+*(alterado em 2026-09-30: revisão adversarial, ADV-05 — **a célula G ∧ ¬S existe**, e a frase "não se aplica" acima
+estava errada. Estar dentro de `semear()` não é ter semeado: o desfecho `$semeado` é gravado **antes** de `semear()`
+rodar (`app/Console/Commands/KitInstall.php:semeado:118`), e `semear()` registra o `db:seed` que termina com código
+diferente de zero como aviso, sem mudar o desfecho (`app/Console/Commands/KitInstall.php:Os seeders não completaram:395`)
+— com a senha gerada na primeira linha e o `db:seed` que não completa, o banner imprime "Login inicial" com ela. A
+negativa dispensava um controle sem cenário escrito como se fosse falsa (passo 3, *afirmação negativa*): é o CT-136,
+abaixo, com a direção na Q?11.)*
 
 **Por que a instrução entra no oráculo.** RQ-28 fecha a senha `password`, e a instrução impressa para o banco não
 populado é a saída desse estado (passo 3, *estado de erro declara a saída*): se ela manda `db:seed` sem
@@ -4676,7 +5150,7 @@ Funcionalidade: Correções de texto
         | desfecho                                                          | banner                                                                                                                                              | # célula |
         | senha gerada nesta execução (o banco foi semeado)                 | imprime o e-mail e a senha gerada, e avisa que ela não será mostrada de novo                                                                        | G ∧ S    |
         | nada gerado; banco semeado com a senha que já era utilizável      | nomeia KIT_ADMIN_PASSWORD como a senha que vale e não imprime senha nenhuma                                                                         | ¬G ∧ S   |
-        | nada gerado; banco não semeado (--no-seed ou banco inacessível)   | não promete senha nenhuma — nem "a que você definiu", nem uma senha impressa — e manda definir KIT_ADMIN_PASSWORD e só então rodar db:seed, sem citar kit:admin | ¬G ∧ ¬S  |
+        | nada gerado; banco não semeado (--no-seed ou banco inacessível), sem senha utilizável (KIT_ADMIN_PASSWORD vazia ou `password`) | não promete senha nenhuma — nem "a que você definiu", nem uma senha impressa — e manda definir KIT_ADMIN_PASSWORD e só então rodar db:seed, sem citar kit:admin | ¬G ∧ ¬S  |
 
     Esquema do Cenário: [CT-120] a linha "Senha do administrador" do resumo diz o que o desfecho fez
       Dado o resumo que o customizador montou com a senha vazia, prometendo a senha gerada pelo instalador
@@ -4689,8 +5163,15 @@ Funcionalidade: Correções de texto
         | desfecho                                                        | linha                                                                                                                 | # célula |
         | senha gerada nesta execução                                     | continua prometendo a senha gerada e impressa no fim — o banner a imprimiu                                            | G ∧ S    |
         | nada gerado; banco semeado com a senha que já era utilizável    | diz que a senha é a que já está em KIT_ADMIN_PASSWORD, e não que o banco deixou de ser populado                       | ¬G ∧ S   |
-        | nada gerado; banco não semeado                                  | não diz "gerada" nem "impressa", e dá a mesma instrução do banner: KIT_ADMIN_PASSWORD, depois db:seed, sem kit:admin  | ¬G ∧ ¬S  |
+        | nada gerado; banco não semeado, sem senha utilizável (KIT_ADMIN_PASSWORD vazia ou `password`) | não diz "gerada" nem "impressa", e dá a mesma instrução do banner: KIT_ADMIN_PASSWORD, depois db:seed, sem kit:admin  | ¬G ∧ ¬S  |
 ```
+
+*(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-19)* — as linhas ¬G ∧ ¬S do CT-119 e do CT-120 afirmavam
+"manda definir KIT_ADMIN_PASSWORD" para **todo** banco não populado, e com a senha já definida (digitada ou no arquivo)
+essa é a direção da Q?10, aberta (RQ-28 em parte, P-46): mandar definir a chave que já está definida. O `Dado` das duas
+linhas passa a ser o do banco não populado **sem senha utilizável** — vazia ou `password`, o predicado de
+`SenhaDoAdministrador::ehUtilizavel()` —, onde as duas leituras da Q?10 concordam. A senha já definida com o banco não
+populado fica só no CT-134, que afirma o invariante, e na L-17.
 
 Os quatro `[RD2-05]` exercem a tabela pelos métodos do comando, por Reflection: `:894`, `:908` e `:922` de
 `tests/Kit/CustomizadorDaInstalacaoTest.php` passam a levar `[CT-119]` (linhas ¬G ∧ ¬S, ¬G ∧ S e G ∧ S — a iteração
@@ -4709,6 +5190,52 @@ e a instrução na ¬G ∧ ¬S; no CT-120, as linhas G ∧ S e ¬G ∧ S e a ins
 | M4 | o acerto do resumo roda também quando a senha foi gerada (sem o retorno antecipado) | CT-120 | linha G ∧ S: "continua prometendo a senha gerada"; o mutante a troca pela da chave, e o resumo contradiz o banner |
 | M5 | *(QA-03, RD3-01)* a instrução do banco não populado é `db:seed` sem definir `KIT_ADMIN_PASSWORD` — que semeia `password` — ou `kit:admin`, que falha sem administrador | CT-119, CT-120 | linhas ¬G ∧ ¬S: "manda definir KIT_ADMIN_PASSWORD e só então rodar db:seed, sem citar kit:admin"; o mutante omite a chave ou cita `kit:admin` |
 
+**Revisão adversarial da adição (ADV-01, ADV-05)** *(alterado em 2026-09-30)*. Dois furos. O "só então" está no texto
+do CT-119 e do CT-120, mas a `Asserção que mata` do M5 só cobre "omite a chave ou cita `kit:admin`", e o teste do
+CT-121 confere a presença das duas palavras na saída inteira
+(`tests/Kit/ResumoDoKitInstallTest.php:toContain:297`,
+`tests/Kit/ResumoDoKitInstallTest.php:php artisan db:seed:121`): a instrução com a ordem invertida, ou com a chave como
+opcional, passa — e quem segue a primeira frase semeia `password`. A ordem é conferida pelo `handle()` real, no CT-133
+(R56), que mata M6 e M7. E a célula G ∧ ¬S, que o texto de cima dava por inexistente, é o CT-136: a direção — o banner
+apresenta a senha gerada como login de agora, ou como a que o `db:seed` vai usar — é premissa de comportamento, Q?11, e
+o cenário afirma o invariante das duas leituras.
+
+```gherkin
+# language: pt
+Funcionalidade: Correções de texto
+
+  Regra: O banner e a linha "Senha do administrador" do resumo afirmam da senha só o que a execução fez
+
+    Cenário: [CT-136] o db:seed que não completa depois de a senha ser gerada não deixa promessa sem saída
+      Dado um projeto novo num diretório isolado, com KIT_ADMIN_PASSWORD vazio no arquivo e o padrão publicado em config('kit.admin.password')
+      E um db:seed que termina com código diferente de zero
+      Quando o mantenedor roda kit:install --no-npm --no-support --no-interaction
+      Então a saída diz que a semeadura não completou e manda rodar php artisan db:seed
+      E a saída imprime uma senha, e ela é KIT_ADMIN_PASSWORD relido do .env, que é uma senha utilizável
+      E a saída não apresenta "password" como a senha
+```
+
+*(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-03)* — "toda senha que a saída imprime é ela" passava no vazio: a saída que não imprime
+senha nenhuma a cumpre, e a senha gerada fica no `.env` sem que ninguém a tenha visto. As duas leituras da Q?11 (P-47)
+imprimem a senha — como login de agora, ou como a que o `db:seed` vai usar —, então "a saída imprime uma senha" é o
+invariante delas, e não a direção. O `[CT-136]` existe (`tests/Kit/ResumoDoKitInstallTest.php:it:477`) e ganha a
+presença.
+
+Teste a escrever, em `tests/Kit/ResumoDoKitInstallTest.php`, com o `db:seed` que falha do Setup Global (hipótese de
+arnês). Discrimina: sem a falha, a saída não diz que a semeadura não completou; com a falha, o `.env` já tem a senha
+nova — o `db:seed` que a pessoa rodar depois cria o administrador com ela, e não com `password`, **se** o `.env` e a
+saída disserem a mesma senha.
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M6 | *(revisão adversarial, ADV-01)* a instrução do banco não populado sai com a ordem invertida — "rode `php artisan db:seed`; se quiser outra senha, defina `KIT_ADMIN_PASSWORD`" —, e quem segue a primeira frase semeia `password` | CT-133 | "no banner e na linha, `KIT_ADMIN_PASSWORD` vem antes de `db:seed`": no mutante, `db:seed` vem antes nos dois |
+| M7 | *(ADV-01)* a chave vem antes, mas como opcional — "defina `KIT_ADMIN_PASSWORD` se quiser e rode `db:seed`" | CT-133 | "nenhum dos dois marca a definição como opcional": o mutante diz "se quiser" |
+| M8 | *(ADV-05)* a captura da falha do `db:seed`, para "não abortar a instalação" (o regime do docblock de P-03), leva junto o aviso: a saída não diz que a semeadura não completou | CT-136 | "a saída diz que a semeadura não completou e manda rodar `php artisan db:seed`": o mutante cala |
+| M9 | *(ADV-05)* na falha, a senha impressa não é a do `.env` — a limpeza da falha apaga a linha, ou uma segunda garantia a regrava | CT-136 | "a saída imprime uma senha, e ela é `KIT_ADMIN_PASSWORD` relido do `.env`": o mutante imprime uma, e o `.env` tem outra ou nenhuma |
+| M10 | *(ADV-05)* "semeado" quer dizer "`semear()` foi chamado", e o banner imprime "Login inicial" com a senha gerada — e "Para trocar: php artisan kit:admin" — para um administrador que o `db:seed` não criou | ⚠️ **sem matador** — lacuna L-18: a direção é a Q?11 (raia requisito), e o código de hoje faz isso | — (lacuna declarada) |
+| M11 | *(re-revisão adversarial, ADV2-03)* na falha do `db:seed`, o banner cai no ramo do banco não populado e não imprime a senha gerada: ela fica no `.env`, e ninguém a viu | CT-136 | "a saída imprime uma senha": o mutante não imprime nenhuma, e o "toda senha impressa é ela" de antes aceitava |
+| M12 | *(re-revisão adversarial, ADV2-04)* a instrução do banco não populado põe a chave antes e sem "se quiser", mas oferece o `db:seed` como alternativa — "defina `KIT_ADMIN_PASSWORD` (recomendado) ou rode `php artisan db:seed` direto" —, e quem escolhe o segundo caminho semeia `password` | CT-133 | "nenhum dos dois liga a chave e o `db:seed` por 'ou'", e "recomendado", "ou rode" e "direto" na lista do opcional: o mutante tem as três |
+
 ---
 
 ## Regra R56 — O desfecho que o banner e o resumo leem é o da execução real do comando
@@ -4717,7 +5244,7 @@ e a instrução na ¬G ∧ ¬S; no CT-120, as linhas G ∧ S e ¬G ∧ S e a ins
 
 > `RQ-28` · perfil **padrão** (área H, Impacto 3) · técnica: **rastreio pelo ponto de entrada real**
 > (`Artisan::call('kit:install')` num diretório isolado, o arnês de
-> `tests/Kit/ResumoDoKitInstallTest.php:diretorioDeInstalacaoDoKit:46`) + **inspeção estática** da fonte única do texto
+> `tests/Kit/ResumoDoKitInstallTest.php:diretorioDeInstalacaoDoKit:54`) + **inspeção estática** da fonte única do texto
 > da promessa. Desdobrada de R55: a tabela prova a decisão; esta prova que `handle()` entrega a ela o desfecho que de
 > fato aconteceu (`app/Console/Commands/KitInstall.php:semeado:118`,
 > `app/Console/Commands/KitInstall.php:corrigirResumoDaSenha:128`). É o RD3-04: sem ela, os testes da tabela ficam
@@ -4751,11 +5278,11 @@ Funcionalidade: Correções de texto
       E o acerto reconhece a linha por essa constante, e nenhum dos dois repete o texto dela como literal
 ```
 
-Testes: `tests/Kit/ResumoDoKitInstallTest.php:it:101` (`[RD3-01][RD3-04]`) passa a levar `[CT-121]`; ele afirma hoje a
+Testes: `tests/Kit/ResumoDoKitInstallTest.php:it:103` (`[RD3-01][RD3-04]`) passa a levar `[CT-121]`; ele afirma hoje a
 presença de `KIT_ADMIN_PASSWORD` e de `php artisan db:seed` na saída inteira e a ausência de `kit:admin` — faltam as
 asserções da linha do resumo e do banner, que são as duas metades da DV-03 (RQ-44): com elas, a DV-03 fecha; sem
 elas, M1 e M2 têm o matador aqui e nenhuma asserção no teste. `:144` (`[RD3-03]`) passa a levar `[CT-122]` e ganha
-"o banner não imprime senha nenhuma". `tests/Kit/CustomizadorDaInstalacaoTest.php:it:948` e `:963` (`[RD3-12]`) passam
+"o banner não imprime senha nenhuma". `tests/Kit/CustomizadorDaInstalacaoTest.php:it:945` e `:963` (`[RD3-12]`) passam
 a levar `[CT-123]`. O banco **inacessível** pelo `handle()` fica fora: é a DV-01 (L-09).
 
 #### Mutantes previstos
@@ -4767,6 +5294,86 @@ a levar `[CT-123]`. O banco **inacessível** pelo `handle()` fica fora: é a DV-
 | M3 | *(QA-03, RD3-01)* a instrução do banco não populado é `kit:admin` | CT-121 | "a saída não cita kit:admin" |
 | M4 | *(QA-03, RD3-03)* "semeou?" decidido por "nada foi gerado", e não pelo que `semear()` fez | CT-122 | "não diz que o banco não foi populado"; o mutante diz, com a semeadura na mesma saída |
 | M5 | *(QA-03, RD3-12)* o texto da promessa duplicado como literal no `KitInstall`: mudar a frase no customizador desliga o acerto em silêncio | CT-123 | "o acerto reconhece a linha por essa constante, e nenhum dos dois repete o texto dela como literal"; o mutante compara com `'gerada pelo instalador e impressa no fim'` |
+
+**Revisão adversarial da adição (ADV-01, ADV-02, ADV-26, ADV-27)** *(alterado em 2026-09-30)*. Três `Então` do CT-121
+não divergem sob o próprio mutante:
+
+- **O acento** (ADV-26): o banner é ASCII — o ramo ¬G ∧ S diz "A senha e a que voce definiu em KIT_ADMIN_PASSWORD"
+  (`app/Console/Commands/KitInstall.php:A senha e a que voce definiu:569`) —, e o "o banner não diz 'a que você
+  definiu'", com acento, nunca casa com ele: o R56.M2 (e o R55.M1), que reaproveita o texto desse ramo, passa. A
+  comparação sem acento e sem caixa do Setup Global conserta o oráculo de CT-119..CT-122; o CT-133 a escreve.
+- **As palavras da constante** (ADV-27): "não diz 'gerada' nem 'impressa'" são as palavras de hoje de
+  `RESUMO_SENHA_GERADA`. O R56.M1 com a constante redita na mesma mudança ("aleatória, exibida uma vez no fim", a P-17)
+  passa. O CT-133 compara com o valor da constante, lido na execução.
+- **A ordem** (ADV-01): R55.M6 e R55.M7, acima.
+
+E a entrada que a tabela de R55 não tinha — **a origem da senha** (ADV-02): com ela já definida, digitada no prompt ou
+no arquivo, e `--no-seed`, o acerto reconhece a linha só pela promessa da senha gerada
+(`app/Console/Commands/KitInstall.php:RESUMO_SENHA_GERADA:619`) e a deixa como está — "•••••••• (a que você digitou)"
+ou "a que você já definiu em KIT_ADMIN_PASSWORD" —, enquanto o banner diz que nenhum usuário foi criado e manda definir a
+chave que já está definida. O que os dois devem dizer nesse desfecho é premissa de comportamento (Q?10, raia requisito);
+o CT-134 afirma o invariante das duas leituras.
+
+```gherkin
+# language: pt
+Funcionalidade: Correções de texto
+
+  Regra: O kit:install de verdade decide o banner e a linha do resumo pelo que semear() fez nesta execução, e a promessa da senha gerada tem um texto só
+
+    Cenário: [CT-133] com --no-seed, a instrução põe a chave antes do db:seed, como condição, e nada promete senha
+      Dado um projeto novo num diretório isolado, com o .env do .env.example e KIT_ADMIN_PASSWORD vazio
+      Quando o mantenedor roda kit:install --no-seed --no-npm --no-support --no-interaction
+      Então, no banner e na linha "Senha do administrador", KIT_ADMIN_PASSWORD vem antes de db:seed, e nenhum dos dois marca a definição como opcional
+      E, no banner e na linha, KIT_ADMIN_PASSWORD e db:seed não estão ligados por "ou" nem "or": o db:seed nunca é alternativa à definição da chave
+      E a linha "Senha do administrador" não contém o valor de CustomizadorDaInstalacao::RESUMO_SENHA_GERADA
+      E, comparados sem acento e sem caixa, o banner não diz "a que voce definiu" e a linha não diz "gerada" nem "impressa"
+      E a saída não cita kit:admin
+
+    Esquema do Cenário: [CT-134] com a senha já definida e --no-seed, nada promete a senha gerada, o banner não imprime senha, e o .env a guarda
+      Dado um projeto novo num diretório isolado, com a senha "<origem>"
+      Quando o mantenedor roda kit:install --no-seed --no-npm --no-support
+      Então a linha "Senha do administrador" existe e não contém o valor de RESUMO_SENHA_GERADA nem, sem acento e sem caixa, "gerada" ou "impressa"
+      E o banner não contém "<senha>", nem o padrão "<e-mail> / <valor>", nem "senha:" ou "password:" seguido de um valor
+      E o banner, sem acento e sem caixa, diz "nenhum usuario foi criado" ou "nenhum administrador foi criado", e não contém "login inicial"
+      E a saída não cita kit:admin
+      E KIT_ADMIN_PASSWORD, relido do .env, continua "<senha>"
+
+      Exemplos:
+        | origem                                                                                  | senha            | # partição da origem                                         |
+        | definida no arquivo, KIT_ADMIN_PASSWORD=senhaDoArquivo1, e a mesma em config()          | senhaDoArquivo1  | a que o resumo chama "a que você já definiu" (CT-41)         |
+        | digitada no prompt, segredoDigitado1, com KIT_ADMIN_PASSWORD vazio no arquivo           | segredoDigitado1 | a que o resumo chama "a que você digitou" (CT-41)            |
+```
+
+Testes a escrever, em `tests/Kit/ResumoDoKitInstallTest.php`: o CT-133 com o arnês do CT-121; o CT-134 na linha do
+arquivo com `--no-interaction`, e na da digitada com as respostas do Setup Global (hipótese de arnês, `expectsQuestion`).
+"KIT_ADMIN_PASSWORD vem antes de db:seed" é a posição da primeira ocorrência de cada um em cada texto — o banner e a
+linha —, e "marca como opcional" é uma lista fechada, sem acento e sem caixa: "se quiser", "caso queira", "opcional",
+"if you want", "optional". A direção do CT-134 — o que a linha e o banner dizem — fica em R56.M11. *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-02, ADV2-17)*:
+dois `Então` do CT-134 não se falsificavam. "Nem outra" não tem forma que um teste confira; passa a ser a forma fechada
+— nenhum `e-mail / valor`, a forma do banner que imprime a senha (`app/Console/Commands/KitInstall.php:Login inicial:557`),
+e nenhum "senha:" ou "password:" seguido de valor. E nada afirmava que o banner diz que **nenhum administrador existe**:
+as duas leituras da Q?10 dizem isso (a de hoje, "Nenhum usuario foi criado nesta execucao",
+`app/Console/Commands/KitInstall.php:Nenhum usuario foi criado:564`; a da P-46, "nenhum administrador foi criado nesta
+execução"), e nenhuma oferece login — "login inicial" é o que o banner diz só quando há administrador. É invariante, e
+não a direção: o que o banner manda fazer com a senha já definida continua em R56.M11. O `[CT-134]` existe
+(`tests/Kit/ResumoDoKitInstallTest.php:it:384`) e ganha os dois `Então`. *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-04)*:
+a lista ganha "recomendado", "recommended", "ou rode", "or run" e "direto", e "ligados por 'ou'" é a palavra inteira "ou"
+ou "or" entre a primeira ocorrência de `KIT_ADMIN_PASSWORD` e a primeira de `db:seed`, no mesmo texto — a chave e o
+`db:seed` ligados por "e", "depois" ou "então", como a instrução de hoje ("defina KIT_ADMIN_PASSWORD no .env e só então
+rode: php artisan db:seed", `app/Console/Commands/KitInstall.php:só então rode:586`). **A classe é aberta**: "opcional" se
+diz de mais jeitos do que a lista vê, e ela cresce a cada achado, no regime de L-06 — o que ela fecha é a forma que cada
+achado mostrou. O `[CT-133]` existe (`tests/Kit/ResumoDoKitInstallTest.php:it:344`) e ganha as cinco palavras e o "ou".
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M6 | *(revisão adversarial, ADV-26)* o banner do desfecho não semeado reaproveita o texto do ramo ¬G ∧ S, na grafia do código — "A senha e a que voce definiu em KIT_ADMIN_PASSWORD" | CT-133 | "comparado sem acento e sem caixa, o banner não diz 'a que voce definiu'": o mutante diz; o `Então` do CT-121, com acento, não casa com o texto dele e passa no vazio |
+| M7 | *(ADV-27)* o `handle()` deixa de chamar o acerto (o R56.M1), e na mesma mudança `RESUMO_SENHA_GERADA` é redita — "aleatória, exibida uma vez no fim" | CT-133 | "a linha não contém o valor de `RESUMO_SENHA_GERADA`", lido da constante na execução: o mutante imprime a constante nova, que não tem "gerada" nem "impressa"; o CT-123 é estático e continua verde |
+| M8 | *(ADV-02)* com `--no-seed` e a senha já definida, a linha cai no ramo da senha gerada — o customizador decide pelo arquivo e esquece a digitada, ou o contrário | CT-134 | a linha da origem esquecida contém `RESUMO_SENHA_GERADA` |
+| M9 | *(ADV-02)* o banner do banco não populado mostra a senha que achou em `KIT_ADMIN_PASSWORD`, "para a pessoa conferir" | CT-134 | "o banner não imprime senha nenhuma": o mutante imprime `senhaDoArquivo1` ou `segredoDigitado1` |
+| M10 | *(ADV-02)* o customizador só grava a senha digitada quando o banco vai ser semeado, e com `--no-seed` a descarta: o `db:seed` que a instrução manda rodar depois semeia `password` | CT-134 | linha da digitada: "KIT_ADMIN_PASSWORD, relido do `.env`, continua `segredoDigitado1`"; o mutante deixa vazio |
+| M11 | *(ADV-02)* o acerto reconhece a linha só por `RESUMO_SENHA_GERADA`, e com a senha já definida e `--no-seed` a linha continua "a que você digitou" ou "a que você já definiu" — a senha de um administrador que não existe —, enquanto o banner diz que nenhum usuário foi criado e manda definir a chave que já está definida | ⚠️ **sem matador** — lacuna L-17: a direção é a Q?10 (raia requisito), e o código de hoje faz isso | — (lacuna declarada) |
+| M12 | *(re-revisão adversarial, ADV2-02)* com a senha já definida e `--no-seed`, o banner cai no ramo da senha definida — "Login inicial: {e-mail}. A senha e a que voce definiu em KIT_ADMIN_PASSWORD." —, sem imprimir a senha: oferece login a um administrador que não existe | CT-134 | "diz 'nenhum usuario foi criado' ou 'nenhum administrador foi criado', e não contém 'login inicial'": o mutante diz "login inicial" e não diz nenhuma das duas; o "não imprime senha" de antes aceitava |
+| M13 | *(ADV2-17)* o banner do banco não populado mostra uma senha que não é a definida — a gerada por uma segunda garantia, ou "senha: ••••••••" | CT-134 | "nem 'senha:' ou 'password:' seguido de um valor": o mutante tem; o "nem outra" de antes não tinha forma conferível |
 
 ---
 
@@ -4782,7 +5389,7 @@ sequência)*
 > `tests/Pest.php:SETA_DE_FLUXO:1277`; o de sequência aceita `->`, `-->`, `->>`, `-->>`, `-x`, `--x`, `-)`, `--)`,
 > `<<->>`, `<<-->>` e as meias-setas (`site/node_modules/mermaid/dist/chunks/mermaid.core/sequenceDiagram-WJ2MYXX4.mjs:rules:1155`,
 > depois de `npm ci` em `site/`), e o extrator de hoje lê só `-{1,2}>>`, `-)` e `-x`
-> (a regex de `tests/Pest.php:mensagensDeSequencia:1475`). Os blocos publicados usam hoje só `->>` e `-->>` (medido: 7 `sequenceDiagram` por
+> (a regex de `tests/Pest.php:mensagensDeSequencia:1510`). Os blocos publicados usam hoje só `->>` e `-->>` (medido: 7 `sequenceDiagram` por
 > idioma, 74 mensagens) — CT-126 protege a próxima edição, não a de hoje
 
 ```gherkin
@@ -4848,7 +5455,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | a-->>-b: x   | com o marcador de ativação -      |
 ```
 
-Testes: `tests/Kit/DiagramasDaArquiteturaTest.php:it:5370` (`[RD3-05]`, `existeArestaDeFluxo()`) passa a levar
+Testes: `tests/Kit/DiagramasDaArquiteturaTest.php:it:5369` (`[RD3-05]`, `existeArestaDeFluxo()`) passa a levar
 `[CT-124]` e ganha a linha `ab --> b`; `:5392` (`[RD3-05]`, `relacaoDeEr()`) passa a levar `[CT-125]` e ganha
 `|o--o{` e `}|..|{`; `[CT-126]` é teste a escrever e nasce vermelho em 8 das 12 linhas (lê só `->>`, `-->>`, `-x` e
 `-)`). O `[RD3-05]` de `:5432` (span de código) é de R1, linha nova de CT-103. *(alterado em 2026-09-29: step 10 do
@@ -4864,6 +5471,53 @@ ciclo 2 — as linhas eram 4830, 4851 e 4865 antes dos testes novos; os três le
 | M3 | *(derivação)* o ID casa por prefixo, sem fronteira de palavra | CT-124 | linha `ab --> b`: "não existe"; o mutante acha a → b |
 | M4 | *(QA-03, RD3-05)* a relação de ER só com `--`, ou só com as cardinalidades `\|\|` e `o{` | CT-125 | linhas `..` e `\|o`: "a relação existe"; o mutante devolve nula |
 | M5 | *(QA-05)* a mensagem de sequência só com `-{1,2}>>`, `-)` e `-x` — o extrator de hoje | CT-126 | linhas `->`, `-->`, `--x`, `--)`, `<<->>`, `<<-->>` e as de ativação: "exatamente uma mensagem"; o mutante devolve zero |
+
+**Revisão adversarial da adição (ADV-15)** *(alterado em 2026-09-30)*. Duas partições do lexer que o próprio Mundo
+desta regra cita e nenhum Exemplo tem: as meias-setas de sequência — `-|\`, `-|/`, `-\\`, `-//` e as tracejadas `--|\`,
+`--|/`, `--\\`, `--//` (`site/node_modules/mermaid/dist/chunks/mermaid.core/sequenceDiagram-WJ2MYXX4.mjs:rules:1155`) — e
+o lado direito da relação de ER sem `{`: o lexer lê `||`, `o|`, `o{` e `|{` à direita e `|o`, `}o`, `}|` e `||` à esquerda
+(`site/node_modules/mermaid/dist/chunks/mermaid.core/erDiagram-RLTQ6QDP.mjs:rules:997`). CT-125 cobre à direita só `o{`
+e `|{`. As meias-setas invertidas (`/|-`, `\|-`…) ficam fora: o desenho delas põe a ponta no remetente, e o sentido
+que a guarda leria delas é pergunta que nenhum bloco publicado levanta hoje.
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no README e no site
+
+  Regra: O extrator normalizado reconhece toda seta válida do Mermaid 11.17.2 como a aresta entre os dois IDs dela, e nenhuma outra
+
+    Esquema do Cenário: [CT-142] as meias-setas de sequência e as cardinalidades de ER dos dois lados são lidas
+      Dado um bloco "<tipo>" de controle com a linha "<linha>"
+      Quando a guarda lê o bloco pelo extrator de tests/Pest.php
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | tipo                                                   | linha                        | resultado                                                                   | # partição                          |
+        | sequenceDiagram, com participant a e participant b     | a-\|\\b: x                    | exatamente uma mensagem, de a para b, com o rótulo "x"                      | meia-seta de cima, contínua         |
+        | idem                                                   | a--\|/b: x                   | idem                                                                        | meia-seta de baixo, tracejada       |
+        | idem                                                   | a-//b: x                     | idem                                                                        | meia-seta em traço, contínua        |
+        | idem                                                   | a-\|/b: x                    | idem                                                                        | meia-seta de baixo, contínua (ADV2-08) |
+        | idem                                                   | a-\\\\b: x                    | idem                                                                        | meia-seta em barra invertida, contínua |
+        | idem                                                   | a--\|\\b: x                   | idem                                                                        | meia-seta de cima, tracejada        |
+        | idem                                                   | a--\\\\b: x                   | idem                                                                        | meia-seta em barra invertida, tracejada |
+        | idem                                                   | a--//b: x                    | idem                                                                        | meia-seta em traço, tracejada       |
+        | erDiagram                                              | users \|\|--\|\| roles : tem   | a relação users–roles, com "\|\|" do lado de users e "\|\|" do lado de roles | um e só um dos dois lados           |
+        | idem                                                   | users \|\|--o\| roles : tem    | idem, com "\|\|" e "o\|"                                                     | zero ou um à direita                |
+        | idem                                                   | users }o--\|\| roles : tem     | idem, com "}o" e "\|\|"                                                      | zero ou muitos à esquerda, um à direita |
+```
+
+Teste a escrever, ao lado do `[CT-125]` e do `[CT-126]` em `tests/Kit/DiagramasDaArquiteturaTest.php`.
+*(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-08)* — o CT-142 tinha três das oito meias-setas que o lexer aceita, e o extrator que lesse
+só essas três passava. As cinco que faltavam (`-|/`, `-\\`, `--|\`, `--\\`, `--//`) entram uma por linha; o lexer as lê
+como tokens próprios (`site/node_modules/mermaid/dist/chunks/mermaid.core/sequenceDiagram-WJ2MYXX4.mjs:rules:1155`).
+Nos Exemplos, `\|` é a barra vertical e `\\` uma barra invertida, como nas linhas de cima. O `[CT-142]` existe
+(`tests/Kit/DiagramasDaArquiteturaTest.php:it:5835`) e ganha as cinco linhas.
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M6 | *(revisão adversarial, ADV-15)* o extrator de sequência não lê as meias-setas que o lexer aceita | CT-142 | linhas das meias-setas: "exatamente uma mensagem"; o mutante devolve zero |
+| M7 | *(ADV-15)* o extrator de ER lê o lado direito só com `{` (`o{`, `\|{`) | CT-142 | linhas `\|\|--\|\|`, `\|\|--o\|` e `}o--\|\|`: "a relação users–roles" com as duas cardinalidades; o mutante devolve nula |
+| M8 | *(re-revisão adversarial, ADV2-08)* o extrator de sequência lê só as três meias-setas da primeira passada (`-\|\`, `--\|/`, `-//`) | CT-142 | as cinco linhas novas: "exatamente uma mensagem"; o mutante devolve zero |
 
 ---
 
@@ -4889,7 +5543,8 @@ ciclo 2 — as linhas eram 4830, 4851 e 4865 antes dos testes novos; os três le
 > aceita a chave por substring (R59). **Nasce vermelho nas seis linhas** — é o CT que falha antes da correção dos três
 > blocos (QA-04, destino 3 → 2)
 
-`@premissa` (de mecanismo, Q?6): o escopo de cada tipo de elemento e a chave como palavra inteira; no DG-07, o vínculo
+`@premissa` (de mecanismo, Q?6 — *(alterado em 2026-09-29: decidida pela sessão, com o escopo que os testes
+implementam; ver a Q?6 em [Fronteira com o Plano](#fronteira-com-o-plano))*): o escopo de cada tipo de elemento e a chave como palavra inteira; no DG-07, o vínculo
 aceita também a condição que o código usa, o `tenant_id` do convite (o regime de P-20). Invariante, qualquer que seja
 o escopo: nenhum elemento opt-in publicado sem a chave exata nele.
 
@@ -4903,19 +5558,37 @@ Funcionalidade: Diagramas da arquitetura no README e no site
       Dado o bloco publicado "<dg>", em pt e em en
       Quando a guarda lê o escopo do elemento "<elemento>" em cada idioma
       Então o elemento existe no bloco
-      E o escopo dele contém "<marca>" como palavra inteira
+      E o escopo dele contém "<marca>", cada chave como palavra inteira
 
       Exemplos:
         | dg    | elemento                                                                  | marca                         |
         | DG-02 | o caso de uso cu_aceitar_convite (aceitar/recusar convite recebido)       | KIT_TENANCY                   |
-        | DG-07 | a mensagem que liga a conta nova à organização do convite                 | KIT_TENANCY ou tenant_id      |
-        | DG-07 | a mensagem que dá à conta existente o papel na organização do convite     | KIT_TENANCY ou tenant_id      |
+        | DG-07 | a mensagem que liga a conta nova à organização do convite                 | KIT_TENANCY, e o tenant_id, se citado, só como condição (Q?13) |
+        | DG-07 | a mensagem que dá à conta existente o papel na organização do convite     | KIT_TENANCY, e o tenant_id, se citado, só como condição (Q?13) |
         | DG-07 | o ramo da recusa e a mensagem recusar()                                   | KIT_TENANCY                   |
-        | DG-07 | a accDescr, que cita a organização do convite                             | KIT_TENANCY ou tenant_id      |
-        | DG-08 | o estado Pendente                                                         | KIT_REGISTRO_APROVACAO_MANUAL |
+        | DG-07 | a accDescr, que cita a organização do convite                             | KIT_TENANCY                   |
+        | DG-08 | o estado Pendente                                                         | KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL |
 ```
 
-Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`, com o detector de R59. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:1437`, verde depois de o lote C1 marcar os três blocos)*
+*(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-16, ADV2-20)*. Duas colunas `marca` mudam. **DG-08**: a pendência só nasce na porta do
+registro, que exige `KIT_REGISTRO` (R58.M6), e o CT-144 já pedia as duas chaves no escopo de Pendente — o CT-129 pedia
+uma, e os dois se contradiziam sobre o mesmo bloco. **DG-07**: a decisão da Q?13 (2026-09-30) com a P-16 sem afrouxar — o
+`tenant_id` do convite não substitui a chave: o vínculo à organização só é aceito com `KIT_TENANCY` no mesmo escopo (a
+mensagem, ou a condição do `alt`/`else` que a contém), e, quando a mensagem cita o `tenant_id`, ele tem de estar em
+posição de condição (ver o CT-143). O "KIT_TENANCY ou tenant_id" de antes deixava a coluna, sozinha, bastar. **Nasce
+vermelho** contra o publicado, em pt e em en (destino 3 → 2): as duas mensagens do vínculo não têm `KIT_TENANCY` no
+escopo — o `alt` e o `else` delas são "sem conta com o e-mail (conta nova)" e "conta existente (conta existente,
+oferta)" — e o "quando ele tem tenant_id" vem no meio da mensagem, e não no começo nem logo depois de vírgula
+(`docs/pt/autenticacao/convites.md:quando ele tem tenant_id:89`, `docs/pt/autenticacao/convites.md:quando ele tem tenant_id:92`,
+`docs/en/autenticacao/convites.md:when it has a tenant_id:92`, `docs/en/autenticacao/convites.md:when it has a tenant_id:95`);
+e a linha do DG-08, no publicado lido na derivação, porque a nota de Pendente nomeava uma só das duas chaves — a
+árvore de 2026-09-30 já traz a correção em curso, com as duas
+(`docs/pt/autenticacao/estados-de-usuario.md:só existe com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL:35`,
+`docs/en/autenticacao/estados-de-usuario.md:only exists with KIT_REGISTRO and KIT_REGISTRO_APROVACAO_MANUAL:38`), e a
+linha passa contra ela. O `[CT-129]` existe
+(`tests/Kit/DiagramasDaArquiteturaTest.php:it:1495`) com as marcas de antes, e muda.
+
+Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`, com o detector de R59. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:1435`, verde depois de o lote C1 marcar os três blocos)*
 
 #### Mutantes previstos
 
@@ -4926,6 +5599,9 @@ Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`, com o detector 
 | M3 | *(QA-04)* o DG-07 marca o aceite e esquece a recusa, cuja única porta é a caixa de convites recebidos | CT-129 | linha do ramo da recusa: nem o `else` nem a mensagem `recusar()` contêm `KIT_TENANCY` |
 | M4 | *(QA-04)* o DG-08 marca o estado Pendente só no pt, ou não o marca | CT-129 | linha DG-08, em en ou nos dois: o escopo de Pendente não contém `KIT_REGISTRO_APROVACAO_MANUAL` |
 | M5 | a correção apaga o elemento para calar a guarda — o ramo da recusa, o estado Pendente — em vez de marcá-lo | CT-129 | "o elemento existe no bloco"; P-32 e P-43 pedem o aceite e a recusa com a chave, não sem eles, e CT-60 pede Pendente |
+| M6 | *(revisão adversarial, ADV-19)* o DG-08 marca Pendente só com `KIT_REGISTRO_APROVACAO_MANUAL` — o bloco de hoje —, e quem liga só ela não vê conta pendente: a pendência só nasce em `RegistroAberto::registrar()` (`app/Support/RegistroAberto.php:aprovacao_pendente:182`), que recusa com a porta fechada (`app/Support/RegistroAberto.php:! self::habilitado():236`) — o login social passa pela mesma porta (`app/Http/Controllers/Auth/LoginSocialController.php:registrar:407`) | CT-144 (R59); CT-129 *(rodada 2, ADV2-16)* | linha do DG-08: `KIT_REGISTRO`, como palavra inteira, não está no escopo de Pendente — recusa |
+| M7 | *(achado desta derivação, ao fechar ADV-18)* o DG-06 desenha o provedor social sem chave de provedor nenhuma — o bloco de hoje, em pt e em en —, e o `[CT-08]` do teste passa porque `KIT_SOCIALITE_` é substring de `KIT_SOCIALITE_VINCULO_CONFIRMAR` | CT-144 (R59) | linhas do DG-06 publicado: nenhuma das quatro chaves de provedor como palavra inteira — recusa |
+| M8 | *(re-revisão adversarial, ADV2-20 — a P-16 na decisão da Q?13)* o DG-07 condiciona o vínculo só ao `tenant_id` — "quando ele tem tenant_id", o bloco de hoje —, sem `KIT_TENANCY` no escopo: quem lê não sabe que convite com organização só existe com a tenancy | CT-129, CT-143 | linhas do vínculo do CT-129, sobre o publicado: `KIT_TENANCY` não está no escopo — recusa; linha "se o convite tem tenant_id, vincula a conta", sem `KIT_TENANCY`, do CT-143: recusa; o mutante aceita pelo `tenant_id` |
 
 ---
 
@@ -4939,7 +5615,8 @@ substring, `tests/Kit/DiagramasDaArquiteturaTest.php:mapaOptInDaGuarda:1162`)*
 > (a chave × uma chave que ela prefixa × uma chave que contém o prefixo pedido), homônimo sempre ligado e idioma.
 > Desdobrada de R58: aquela prova os blocos publicados; esta, o detector que CT-08, CT-57 e CT-129 usam, contra cópias
 
-`@premissa` (de mecanismo, Q?6): o mesmo escopo de R58.
+`@premissa` (de mecanismo, Q?6): o mesmo escopo de R58. *(alterado em 2026-09-29: Q?6 decidida pela sessão — o
+escopo dos testes; as linhas do CT-130 são as que a decisão cobre: a nota do estado e a condição do `alt`.)*
 
 ```gherkin
 # language: pt
@@ -4959,13 +5636,17 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | DG-02 | pt     | nenhuma: KIT_TENANCY só no ator admin_app                                                   | recusa, nomeando cu_aceitar_convite              | a chave de outro elemento não vale          |
         | DG-08 | pt     | [*] --> Pendente : cadastro [KIT_REGISTRO]                                                  | recusa, nomeando Pendente                        | chave que é prefixo da certa                |
         | DG-06 | pt     | o provedor social com KIT_SOCIALITE_VINCULO_CONFIRMAR no escopo e nenhuma chave de provedor | recusa, nomeando o provedor social               | chave que só compartilha o prefixo          |
-        | DG-08 | pt     | note right of Pendente : só com KIT_REGISTRO_APROVACAO_MANUAL                               | aceita                                           | nota ligada ao estado                       |
-        | DG-07 | pt     | o alt do ramo da conta nova com "convite com organização (KIT_TENANCY)"                    | aceita para a mensagem do vínculo nesse ramo     | condição do bloco que contém a mensagem     |
+        | DG-08 | pt     | a declaração de Pendente sem chave, e as duas só na nota: note right of Pendente : só com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL | aceita                     | nota ligada ao estado, com as duas chaves (ADV2-16) |
+        | DG-08 | pt     | a declaração de Pendente sem chave, e uma só na nota: note right of Pendente : só com KIT_REGISTRO_APROVACAO_MANUAL | recusa, nomeando Pendente e KIT_REGISTRO | uma chave só; `KIT_REGISTRO` por substring passaria (ADV2-16) |
+        | DG-07 | pt     | o alt do ramo da conta nova com "convite com organização (KIT_TENANCY)", e a mensagem do vínculo nesse ramo sem a oração "quando ele tem tenant_id" | aceita para a mensagem do vínculo nesse ramo | condição do bloco que contém a mensagem (a oração sai pela Q?13, ver o CT-143) |
         | DG-09 | pt     | nenhuma: o Pendente do convite, sempre ligado, e o Recusado com a nota de KIT_TENANCY       | aceita                                           | homônimo Pendente, e a nota de P-43         |
         | DG-02 | en     | cu_aceitar_convite com a chave no pt e sem ela no en ("Accept/decline received invite")     | recusa em en, nomeando cu_aceitar_convite        | o termo do elemento no idioma do bloco      |
 ```
 
-Teste a escrever, junto de CT-129 *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:1463`)*. As linhas de CT-08 e CT-57 passam pelo detector novo: a linha "provedor social →
+Teste a escrever, junto de CT-129 *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:1462`)* *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-16, ADV2-20)*: a linha da nota
+passa a ter as duas chaves, e ganha a irmã com uma chave só; a linha do `alt` tira a oração "quando ele tem tenant_id" da
+mensagem, porque, pela decisão da Q?13, o `tenant_id` no meio da mensagem é menção, e não condição — com ela, a linha
+recusaria. O `[CT-130]` de hoje é `tests/Kit/DiagramasDaArquiteturaTest.php:it:1520`. As linhas de CT-08 e CT-57 passam pelo detector novo: a linha "provedor social →
 `KIT_SOCIALITE_`" de CT-08 aceita qualquer das quatro chaves de provedor (`KIT_SOCIALITE_GOOGLE`, `_GITHUB`,
 `_LINKEDIN`, `_X`) como palavra inteira, e não mais o prefixo.
 
@@ -4978,6 +5659,105 @@ Teste a escrever, junto de CT-129 *(alterado em 2026-09-29: escrito — `tests/K
 | M3 | o escopo é só a linha do elemento: a nota do estado e a condição do `alt` não contam, e a guarda fica vermelha contra o bloco certo | CT-130 | linhas da nota de Pendente e do `alt` com a chave: aceita; o mutante recusa |
 | M4 | o termo "Pendente" acusa todo estado com esse nome, e o DG-09 (convite, sempre ligado) fica vermelho | CT-130 | linha DG-09: aceita; o mutante recusa |
 | M5 | *(QA-09)* os termos do mapa só em pt: no en, o elemento não é reconhecido e fica sem conferência | CT-130 | linha en: recusa; o mutante não vê o elemento e aceita |
+
+**Revisão adversarial da adição (ADV-16, ADV-17, ADV-18, ADV-19, ADV-30)** *(alterado em 2026-09-30)*. O CT-130 tem
+só a linha positiva de cada escopo — a nota ligada ao próprio Pendente, a condição do `alt` para a mensagem **nesse**
+ramo —, e nenhum controle do escopo que se estende além dele: a condição do `alt` que vale para o `else` até o `end`
+(ADV-16), a nota de outro estado (ADV-17), a palavra `tenant_id` como mera menção à coluna (ADV-30). E o matador do
+M5 é a linha DG-02 en só: o mapa de opcionais tem termo só pt para a escolha de painel, o provedor social e a
+confirmação de vínculo (`tests/Kit/DiagramasDaArquiteturaTest.php:mapaOptInDaGuarda:1162`), então no en esses elementos
+não são achados e o bloco en perde a chave em silêncio (ADV-18). Conferindo os blocos publicados para fechar ADV-18,
+esta derivação achou mais três coisas: o DG-06 não nomeia chave de provedor nenhuma, em pt e em en, e o `[CT-08]` do
+teste passa porque confere a chave por substring (`tests/Kit/DiagramasDaArquiteturaTest.php:assertStringContainsString:1445`)
+— o `04` dizia, desde o step 11, que essa linha passava pelo detector novo, e o teste não passou; o DG-06 en mostra
+"(provedor social)" (R61); e a nota de Pendente do DG-08 nomeia uma só das duas chaves sem as quais a pendência não
+existe (ADV-19, R58.M6).
+
+`@premissa` (de mecanismo, Q?13): no DG-07, `tenant_id` vale como marca só como condição — na condição do `alt`/`else`
+que contém a linha, ou numa oração de condição da própria linha ("quando"/"se" antes dele; en: "when"/"if"). *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-12, ADV2-20: a Q?13 decidida — a premissa vira a decisão, mais estreita)*
+**Condição** é o texto do `alt`/`else`/`opt` que contém a linha, a mensagem que **começa** com "se"/"quando" (en:
+"if"/"when"), ou a oração que os traz **logo depois de vírgula**; o "se" reflexivo ("a conta se vincula") e o "quando" no
+fim da mensagem não são condição do `tenant_id`. E, pela P-16, que não afrouxa, o `tenant_id` nunca substitui a chave: o
+vínculo só é aceito com `KIT_TENANCY` no mesmo escopo, e o `tenant_id` citado fora de posição de condição é menção à
+coluna, que desenha o vínculo como incondicional — a mensagem é recusada. O que a regra não vê está em L-20. E o
+elemento de CT-144 é conferido no regime do CT-08 — a chave exata no bloco que o desenha —, e não no escopo da Q?6,
+que é o de R58 para o DG-02, o DG-07 e o DG-08.
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no README e no site
+
+  Regra: O detector de opcional só aceita o elemento cuja chave exata está no escopo dele, e não acusa o homônimo sempre ligado
+
+    Esquema do Cenário: [CT-143] o detector não estende a condição de um ramo aos outros, nem aceita nota de outro estado ou a menção à coluna como condição
+      Dado o bloco real "<dg>" em pt
+      E uma cópia com a alteração "<alteracao>"
+      Quando a guarda confere a marca de opcional da cópia, elemento a elemento
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | dg    | alteracao                                                                                                              | resultado                                                | # o que discrimina                                   |
+        | DG-07 | KIT_TENANCY e tenant_id só na condição do alt da conta nova; a mensagem da conta existente, no else, sem nenhum dos dois | recusa, nomeando a mensagem da conta existente           | a condição do alt não vale para o else (ADV-16)      |
+        | DG-07 | KIT_TENANCY só na condição do else da recusa; a mensagem do vínculo da conta nova, no alt, sem condição                 | recusa, nomeando a mensagem do vínculo da conta nova     | idem, no sentido inverso                             |
+        | DG-08 | a nota de Pendente trocada por "note right of Ativo : só com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL"              | recusa, nomeando Pendente                                | nota de outro estado (ADV-17), com as duas chaves (ADV2-16) |
+        | DG-07 | as duas mensagens do vínculo com "vincula a conta ao tenant_id do convite", sem condição, e nenhum KIT_TENANCY nelas   | recusa, nomeando as duas mensagens                       | a menção à coluna não é condição (ADV-30) — **nasce vermelho** contra a guarda de hoje |
+        | DG-07 | nenhuma: o publicado, com a condição "se ele tem tenant_id (KIT_TENANCY)" depois de vírgula em cada mensagem do vínculo | aceita — nenhuma mensagem recusada | o publicado, corrigido em 2026-09-30, contra a decisão da Q?13 e a P-16 (ADV2-12, ADV2-20): o controle positivo *(alterado em 2026-09-30: a linha nasceu como "recusa, nomeando as duas mensagens" contra o publicado de então — "quando ele tem tenant_id" no meio da mensagem e sem KIT_TENANCY no escopo — e ficou vermelha em 2026-09-30 (saída no `03`); com o DG-07 corrigido em pt e en, o publicado é o controle positivo, e a direção recusada continua nas linhas do "se" reflexivo, do "quando" no fim e do tenant_id sem a chave)* |
+        | DG-07 | a mensagem do vínculo da conta nova como "a conta se vincula ao tenant_id do convite", e "(KIT_TENANCY)" na condição do alt dela | recusa, nomeando a mensagem do vínculo da conta nova | o "se" reflexivo não é condição (ADV2-12) — **nasce vermelho** contra a guarda de hoje |
+        | DG-07 | a mensagem do vínculo da conta nova como "vincula ao tenant_id do convite quando aceita", e "(KIT_TENANCY)" na condição do alt dela | recusa, nomeando a mensagem do vínculo da conta nova | "quando" depois do `tenant_id` não é condição dele (ADV2-12) — **nasce vermelho** contra a guarda de hoje |
+        | DG-07 | a mensagem do vínculo da conta nova como "se o convite tem tenant_id, vincula a conta", e "(KIT_TENANCY)" na condição do alt dela | aceita para essa mensagem | a mensagem que começa pela condição, com a chave no escopo — o controle positivo (Q?13) |
+        | DG-07 | a mensagem do vínculo da conta nova como "se o convite tem tenant_id, vincula a conta", e nenhum KIT_TENANCY no alt nem na mensagem | recusa, nomeando a mensagem do vínculo da conta nova | o `tenant_id` como condição não dispensa a chave (P-16) — **nasce vermelho** contra a guarda de hoje |
+
+    Esquema do Cenário: [CT-144] cada elemento opt-in é achado pelo termo do idioma do bloco, e o bloco publicado leva cada chave que o liga
+      Dado o bloco "<bloco>"
+      Quando a guarda procura nele o elemento "<elemento>" pelo termo do idioma do bloco
+      Então o elemento é achado
+      E o resultado da conferência da chave é "<resultado>"
+
+      Exemplos:
+        | bloco                                                         | elemento                                                                      | resultado                                                                                                 | # partição                                  |
+        | o DG-05 en publicado                                          | a tela de login única e a escolha de painel ("Single login screen", "Panel choice") | aceita: KIT_LOGIN_UNIFICADO no bloco, como palavra inteira                                           | o termo en do elemento (ADV-18)             |
+        | uma cópia do DG-05 en sem KIT_LOGIN_UNIFICADO                  | idem                                                                          | recusa, nomeando o elemento e KIT_LOGIN_UNIFICADO                                                         | o en que perde a chave em silêncio (ADV-18) |
+        | uma cópia do DG-05 en com KIT_LOGIN_UNIFICADO tirado do alias e da accDescr e posto só numa linha "%% KIT_LOGIN_UNIFICADO" | idem | recusa, nomeando o elemento e KIT_LOGIN_UNIFICADO                                                  | a chave só em comentário: o Mermaid tira a linha antes de desenhar (ADV2-11) |
+        | uma cópia do DG-06 en sem KIT_SOCIALITE_VINCULO_CONFIRMAR      | a confirmação de vínculo ("link confirmation")                                | recusa, nomeando KIT_SOCIALITE_VINCULO_CONFIRMAR                                                          | idem, no DG-06                              |
+        | o DG-06 pt publicado                                          | o provedor social                                                             | aceita: uma das quatro chaves de provedor, como palavra inteira — **nasce vermelho**: o bloco não nomeia nenhuma | a chave de provedor, e não o prefixo por substring |
+        | o DG-06 en publicado                                          | o provedor social ("social provider", "OAuth provider")                       | idem — **nasce vermelho**                                                                                 | idem, em en                                 |
+        | o DG-08 publicado, em pt e em en                              | o estado Pendente                                                             | aceita: KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL, cada uma como palavra inteira, no escopo de Pendente — **nasce vermelho**: a nota nomeia só a segunda | elemento que só existe com duas chaves (ADV-19) |
+```
+
+*(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-12, ADV2-20)*. A guarda de hoje aceita "se"/"quando" em qualquer ponto da mensagem antes do
+`tenant_id` (`tests/Kit/DiagramasDaArquiteturaTest.php:(?:quando|se|when|if):1344`) e aceita o `tenant_id` como marca
+sozinha (`tests/Kit/DiagramasDaArquiteturaTest.php:'marcas' => ['KIT_TENANCY', 'tenant_id']:1485`): o "se" reflexivo
+passa como condição, e o `tenant_id` dispensa a chave. As quatro linhas novas separam a condição da menção, com a chave
+no escopo, e a chave da condição, sem ela; a de antes ("o publicado → aceita") inverte, porque o bloco publicado não
+cumpre a decisão. O `[CT-143]` existe (`tests/Kit/DiagramasDaArquiteturaTest.php:it:1611`) e ganha as quatro linhas e a
+inversão.
+
+*(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-11)* — a chave só num comentário `%%` contava como "o bloco nomeia a chave", e o leitor não a vê:
+o Mermaid tira a linha antes do lexer (`site/node_modules/mermaid/dist/mermaid.core.mjs:'%%':968`). Conferidos
+os blocos publicados de que o controle depende: o DG-05 en nomeia `KIT_LOGIN_UNIFICADO` na `accDescr` e no alias
+(`docs/en/autenticacao/login-unificado.md:KIT_LOGIN_UNIFICADO:45`, `docs/en/autenticacao/login-unificado.md:KIT_LOGIN_UNIFICADO:47`),
+e o DG-06 nomeia `KIT_SOCIALITE_VINCULO_CONFIRMAR` na condição do `else`, em pt e em en
+(`docs/pt/autenticacao/login-social.md:KIT_SOCIALITE_VINCULO_CONFIRMAR:163`, `docs/en/autenticacao/login-social.md:KIT_SOCIALITE_VINCULO_CONFIRMAR:164`)
+— nenhuma chave só em `%%`, e nenhuma linha real nasce vermelha por isto. As do DG-06 estavam vermelhas pela chave de
+provedor que o bloco não nomeava; a árvore de 2026-09-30 já traz a correção em curso — uma `note over provedor` com as
+quatro chaves, em pt e em en —, e não a chave só em comentário.
+
+Testes a escrever, junto de CT-129 e CT-130. O CT-144 nasce vermelho em três linhas — as do DG-06 e a do DG-08 —, e é
+achado, não erro de derivação (destino 3 → 2): o DG-06 passa a nomear as chaves de provedor, e a nota de Pendente, as
+duas chaves. A linha "provedor social → `KIT_SOCIALITE_`" do CT-08 passa pelo detector de palavra inteira, como o `04`
+já dizia; o teste de hoje diverge disso.
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M6 | *(revisão adversarial, ADV-16)* a condição do `alt` vale para todo ramo até o `end`: marcar `KIT_TENANCY` só no `alt` da conta nova cobre o vínculo da conta existente e a recusa, no `else` — R58.M2 e R58.M3 sobrevivem | CT-143 | linhas do `alt` e do `else`: recusa; o mutante aceita |
+| M7 | *(ADV-17)* toda nota `note … of …` do bloco soma ao escopo, sem conferir que o ID é o do elemento | CT-143 | linha da nota de Ativo: recusa, nomeando Pendente; o mutante aceita |
+| M8 | *(ADV-30)* `tenant_id`, como palavra inteira em qualquer ponto do escopo, vale como a marca — a menção à coluna passa por condição, e o DG-07 que "sempre liga" a organização passa (o R58.M2 na forma do ADV-30) | CT-143 | linha "vincula a conta ao tenant_id do convite": recusa; o mutante aceita |
+| M9 | *(ADV-18)* o mapa de opcionais ganha termo en só para `cu_aceitar_convite`: no en, a escolha de painel, o provedor social e a confirmação de vínculo não são achados, e o bloco en perde a chave em silêncio | CT-144 | linhas das cópias en: "o elemento é achado" e recusa; o mutante não acha o elemento e aceita |
+| M10 | *(achado desta derivação)* a conferência do bloco real aceita a chave por substring — `KIT_SOCIALITE_` dentro de `KIT_SOCIALITE_VINCULO_CONFIRMAR` —, o `[CT-08]` de hoje | CT-144 | linhas do DG-06 publicado: recusa, porque nenhuma das quatro chaves de provedor está no bloco como palavra inteira; o mutante aceita |
+| M11 | *(re-revisão adversarial, ADV2-11)* o escopo do elemento é o texto cru do bloco, com as linhas `%%`: a chave só num comentário conta | CT-144 | linha da chave só em `%%`: recusa; o mutante aceita |
+| M12 | *(ADV2-12)* a condição do `tenant_id` é "se"/"quando" em qualquer ponto da mensagem antes dele — a guarda de hoje: o "se" reflexivo passa | CT-143 | linha "a conta se vincula ao tenant_id do convite": recusa; o mutante aceita |
+| M13 | *(ADV2-12)* a condição é "se"/"quando" em qualquer ponto da mensagem, antes ou depois do `tenant_id` | CT-143 | linha "vincula ao tenant_id do convite quando aceita": recusa; o mutante aceita |
+| M14 | *(re-revisão adversarial, ADV2-16)* o elemento de duas chaves é conferido por substring, ou só por uma delas: `KIT_REGISTRO` casa dentro de `KIT_REGISTRO_APROVACAO_MANUAL`, e a nota de hoje, com uma chave só, passa | CT-130 | linha "uma só na nota": recusa, nomeando `KIT_REGISTRO`; o mutante aceita |
 
 ---
 
@@ -5017,7 +5797,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | uma de controle, montada com os 20 accTitles pt           | a linha do DG-20 removida                                   | recusa, nomeando o DG-20 ausente                                                                              | DG sem linha                |
 ```
 
-Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:5657`, verde depois de o lote C1 trocar os títulos do índice)*
+Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:5682`, verde depois de o lote C1 trocar os títulos do índice)*
 
 #### Mutantes previstos
 
@@ -5027,6 +5807,40 @@ Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. *(alterado em 2
 | M2 | *(QA-08)* o pt corrigido, o en esquecido | CT-131 | linha en real: "AI assistant in the session" ≠ "Authenticated session" |
 | M3 | a guarda compara por palavra em comum ou por semelhança | CT-131 | linha do DG-16 en: "kit:update — the report" tem "kit:update" em comum com "The kit:update flow"; a igualdade literal recusa, o mutante aceita |
 | M4 | a guarda percorre as linhas que acha, e um DG sem linha passa | CT-131 | linha "DG-20 removida": recusa pelas 20 linhas; o mutante aceita 19 |
+
+**Revisão adversarial da adição (ADV-20)** *(alterado em 2026-09-30)*. O "20 linhas, uma por DG" e o "caractere a
+caractere" estão no `Então` do controle positivo, mas nenhuma linha de controle os exerce: uma 21ª linha que nomeia um
+diagrama que não existe — o que o Mundo desta regra diz que o índice não pode fazer —, um DG com duas linhas, ou um
+título que difere do `accTitle` só por acento, caixa ou pontuação passariam por "≥ 20 linhas e cada DG tem uma com o
+`accTitle`" comparado com normalização.
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no README e no site
+
+  Regra: Cada linha da tabela-índice nomeia o DG com o accTitle do bloco dele, uma linha por DG do catálogo, nos dois idiomas
+
+    Esquema do Cenário: [CT-145] a tabela-índice não tem linha a mais, DG repetido nem título quase igual
+      Dado uma tabela-índice de controle, montada com os 20 accTitles pt
+      E a alteração "<alteracao>"
+      Quando a guarda lê as linhas da tabela-índice
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | alteracao                                                            | resultado                                                   | # partição               |
+        | uma 21ª linha, "DG-21 — Fila de e-mails"                             | recusa, nomeando o DG-21, que não está no catálogo          | linha a mais             |
+        | uma segunda linha do DG-10, com "Sessão bloqueada"                   | recusa, nomeando o DG-10 repetido                           | DG com duas linhas       |
+        | o título do DG-10 como "sessão autenticada"                          | recusa, nomeando o DG-10                                    | só a caixa difere        |
+        | o título do DG-10 como "Sessao autenticada"                          | recusa, nomeando o DG-10                                    | só o acento difere       |
+        | o travessão do título do DG-05 trocado por hífen                     | recusa, nomeando o DG-05                                    | só a pontuação difere    |
+```
+
+Teste a escrever, ao lado do `[CT-131]`.
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M5 | *(revisão adversarial, ADV-20)* a guarda confere "≥ 20 linhas" e "cada DG tem uma linha com o `accTitle`": linha a mais e DG repetido passam | CT-145 | linhas da 21ª e do DG-10 repetido: recusa; o mutante aceita |
+| M6 | *(ADV-20)* a comparação normaliza — sem acento, sem caixa, travessão por hífen — para "tolerar" diferença de digitação | CT-145 | linhas da caixa, do acento e do travessão: recusa; o mutante aceita |
 
 ---
 
@@ -5048,7 +5862,9 @@ Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. *(alterado em 2
 condição de bloco, o `accTitle` e o `accDescr` — **nunca** o identificador, que R2 obriga a ser igual nos dois idiomas
 (`escolha`, `banco`, `fila` e `agendador` são IDs do en). "Palavra do outro idioma" é uma lista fechada na guarda, com
 o mínimo da Q?7. Invariante das duas leituras: nenhuma palavra comum do português no texto visível de um bloco en, e
-vice-versa.
+vice-versa. *(alterado em 2026-09-29: Q?7 decidida pela sessão, como os testes do ciclo 2 a implementaram — a lista
+fechada é de **expressões**, três por idioma, e não de palavras; o identificador fica de fora pela forma. O invariante
+continua o de cima, e o que a lista não vê é a lacuna L-14; as linhas do CT-132 são todas cobertas pela decisão.)*
 
 ```gherkin
 # language: pt
@@ -5072,7 +5888,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
         | uma cópia do DG-16 pt                                        | "--only-new" e kit:update num rótulo                              | aceita                                  | opção de CLI e comando são invariantes (P-23)     |
 ```
 
-Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:5767`; **vermelho em duas linhas**: as de cópia do DG-07 en e do DG-05 en leem o bloco publicado sem aplicar a alteração da coluna `alteracao`, e o publicado já não tem o português — o teste diverge do Exemplo, `03`, `## 26.`)* O marcador por idioma do CT-89 (R45) está reescrito
+Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. *(alterado em 2026-09-29: escrito — `tests/Kit/DiagramasDaArquiteturaTest.php:it:5764`; **vermelho em duas linhas**: as de cópia do DG-07 en e do DG-05 en leem o bloco publicado sem aplicar a alteração da coluna `alteracao`, e o publicado já não tem o português — o teste diverge do Exemplo, `03`, `## 26.`)* O marcador por idioma do CT-89 (R45) está reescrito
 com colunas pt e en; a coluna "ramo" do CT-88 é descrição do ramo, não marcador procurado (o teste confere o fato do
 DG-07), e fica.
 
@@ -5084,6 +5900,71 @@ DG-07), e fica.
 | M2 | o detector lê os identificadores e acusa `banco` e `fila`, que R2 obriga a ser iguais nos dois idiomas | CT-132 | linha do DG-01 en: aceita; o mutante recusa o bloco certo |
 | M3 | o detector confere só o en | CT-132 | linha da cópia do DG-07 pt com "(new account)": recusa; o mutante aceita |
 | M4 | a lista inclui palavra dos dois idiomas ("e-mail", "no", "do") ou termo invariante, e reprova o bloco certo | CT-132 | linhas do DG-01 en ("e-mail") e do DG-16 pt (`--only-new`, `kit:update`): aceita; o mutante recusa |
+
+**Revisão adversarial da adição (ADV-21)** *(alterado em 2026-09-30)*. A `Regra:` do CT-132 afirma que nenhum bloco
+mostra palavra do outro idioma, e toda linha "recusa" dele usa exatamente uma das três expressões da lista decidida na
+Q?7: o cenário é um teste de regressão de três strings, e a próxima edição — "(nova conta)", "escolha do painel",
+"painel" sozinho — passa. L-14 declarava a lacuna, mas o texto da regra prometia o invariante inteiro. CT-146 fecha a
+parte que uma lista de **palavras inteiras no texto visível** alcança (a premissa de R61 de antes da decisão da Q?7, com
+a exclusão dos identificadores que ela já pedia); a mudança da decisão é a Q?12 (raia desenho). *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-20)*:
+a Q?12 foi decidida — a lista de palavras do CT-146 **soma-se** às três expressões da Q?7 (CT-132), e não as substitui; as
+duas guardas são complementares. Medida nesta derivação
+(2026-09-30), sem caixa e como palavra inteira, sobre o texto dos 42 blocos publicados: nos en, só identificadores casam
+(`convite`, `escolha`, `usuario`, IDs de participante) e, no texto visível, o "(provedor social)" do DG-06 en
+(`docs/en/autenticacao/login-social.md:provedor social:146`) — o português posto no en para o termo pt do mapa de
+opcionais achar o elemento, a mesma causa do QA-09; nos pt, só o `new` de `--only-new`.
+
+`@premissa` (de mecanismo, Q?12): lista fechada de palavras inteiras, sem caixa, procurada só no texto visível (alias,
+rótulo, mensagem, nota, condição de bloco, `accTitle`, `accDescr`), fora os identificadores, os nomes de classe
+(PascalCase, P-31) e as opções de CLI (P-23). No bloco en: painel, conta, escolha, nova, novo, existente, provedor,
+senha, organização, organizacao, recusa, aceita, pelo, pela, sem. No bloco pt: the, with, without, new, existing,
+account, panel, choice, and, when. Fora da lista, por coincidir com identificador em minúscula ou com o outro idioma:
+convite, usuario, com, no, do, e-mail.
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no README e no site
+
+  Regra: Nenhum bloco mostra palavra do outro idioma fora dos termos invariantes, e a guarda procura em cada bloco o marcador do idioma dele
+
+    Esquema do Cenário: [CT-146] nenhuma palavra inteira da lista do outro idioma no texto visível do bloco
+      Dado o bloco "<bloco>" com a alteração "<alteracao>"
+      Quando a guarda procura, no texto visível do bloco e sem os identificadores, as palavras inteiras da lista do outro idioma
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | bloco                                | alteracao                                                      | resultado                                                              | # partição                                     |
+        | cada um dos 21 blocos en publicados  | nenhuma                                                        | aceita — **nasce vermelho** no DG-06 en: "(provedor social)"           | controle, en                                   |
+        | cada um dos 21 blocos pt publicados  | nenhuma                                                        | aceita                                                                 | controle, pt                                   |
+        | uma cópia do DG-07 en                | o alt da conta nova com "(nova conta)"                         | recusa, nomeando "nova" e "conta"                                      | a ordem trocada da expressão da lista (ADV-21) |
+        | uma cópia do DG-05 en                | o participante escolha como "Panel (escolha do painel)"        | recusa, nomeando "escolha" e "painel"                                  | a preposição trocada (ADV-21)                  |
+        | uma cópia do DG-05 en                | uma mensagem com "painel" sozinho                              | recusa, nomeando "painel"                                              | a palavra solta (L-14)                         |
+        | uma cópia do DG-07 pt                | o alt da conta nova com "(the account)"                        | recusa, nomeando "the" e "account"                                     | inglês no pt, fora das expressões              |
+        | o DG-05 en publicado                 | nenhuma: os IDs escolha e destino, e o alias EntrarNoPainelController | aceita                                                          | identificador e nome de classe ficam de fora   |
+        | o DG-16 pt publicado                 | nenhuma: "--only-new"                                          | aceita                                                                 | opção de CLI (P-23)                            |
+        | uma cópia do DG-05 en                | o participante escolha como "Painel de controle" e uma mensagem com "Conta nova" | recusa, nomeando "painel", "conta" e "nova"           | maiúscula inicial não é nome de classe: só o PascalCase composto fica de fora (P-31; ADV2-09) |
+        | uma cópia do DG-05 en                | só a accDescr com "(escolha de painel)"                        | recusa, nomeando "escolha" e "painel"                                  | posição: a `accDescr` (ADV2-10)                |
+        | uma cópia do DG-05 en                | só a nota de destino com "(painel)"                            | recusa, nomeando "painel"                                              | posição: a `note` (ADV2-10)                    |
+        | uma cópia do DG-01 do README.en.md   | só o rótulo de uma aresta com "pela fila"                      | recusa, nomeando "pela"                                                | posição: o rótulo de aresta (ADV2-10)          |
+        | uma cópia do DG-19 en                | só o título do subgraph docker_compose com "(sem worker)"      | recusa, nomeando "sem"                                                 | posição: o título de `subgraph` (ADV2-10)      |
+```
+
+Teste a escrever, ao lado do `[CT-132]`. Nasce vermelho na primeira linha — achado, não erro de derivação (destino
+3 → 2): o DG-06 en troca "(provedor social)" pela chave de provedor que o CT-144 pede. *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-09, ADV2-10)*:
+duas classes de defeito do detector passavam. A exclusão dos nomes de classe valia para **toda** palavra com maiúscula
+inicial — "Conta nova" e "Painel de controle" no começo de um rótulo en passavam —, e a P-31 exclui só o PascalCase
+**composto**. E o texto visível que o premissa lista (alias, rótulo, mensagem, nota, condição, `accTitle`, `accDescr`) não
+tinha uma linha por posição: um detector que lê só o alias e a mensagem deixava a palavra do outro idioma na `accDescr`,
+numa `note`, num rótulo de aresta ou num título de `subgraph`. Cada linha nova põe a palavra **só** naquela posição. O
+`[CT-146]` existe (`tests/Kit/DiagramasDaArquiteturaTest.php:it:6515`) e ganha as cinco linhas.
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M5 | *(revisão adversarial, ADV-21)* a lista fechada é a das três expressões de hoje: "(nova conta)", "escolha do painel" e "painel" sozinho passam no en | CT-146 | linhas das cópias do DG-07 en e do DG-05 en: recusa; o mutante aceita |
+| M6 | *(ADV-21)* a lista de palavras é procurada no bloco inteiro, com os identificadores: o ID `escolha` reprova o DG-05 en certo | CT-146 | linha do DG-05 en publicado: aceita; o mutante recusa |
+| M7 | *(achado desta derivação)* o DG-06 en publicado mostra "(provedor social)" — o bloco de hoje | CT-146 | linha "cada um dos 21 blocos en": recusa no DG-06 en |
+| M8 | *(re-revisão adversarial, ADV2-09)* o detector exclui como nome de classe toda palavra com maiúscula inicial | CT-146 | linha "Painel de controle" / "Conta nova": recusa; o mutante tira "Painel" e "Conta" e aceita |
+| M9 | *(ADV2-10)* o texto visível é só o alias e o texto de mensagem e de nó: a `accDescr`, a `note`, o rótulo de aresta e o título de `subgraph` ficam fora | CT-146 | as quatro linhas de posição: recusa; o mutante não lê a posição e aceita |
 
 ---
 
@@ -5105,6 +5986,346 @@ DG-07), e fica.
 | M1 | *(QA-06)* a legibilidade resolvida no bloco — `%%{init: {'flowchart': {'useMaxWidth': false}}}%%` ou frontmatter com `useMaxWidth` em cada DG —, contra RQ-48 ("sem mudar bloco nem o GitHub") | CT-95 (as duas linhas do step 11) | recusa das duas formas; o mutante tem uma delas no bloco |
 | M2 | a medição do piso num script que nem o `pages.yml` nem o job `site` rodam: o piso fica verde localmente e nunca barra um PR | CT-B05 (no `05`) + CT-37, CT-105 | a linha `[CT-B05]` sai da execução de `node verifica-acessibilidade.mjs`, o script que CT-37 e CT-105 exigem nos dois fluxos; num script à parte, ela não sai ali |
 
+**Revisão adversarial da adição (ADV-22, ADV-23, ADV-24, ADV-25, ADV-32, ADV-34)** *(alterado em 2026-09-30)*. Cinco
+achados caem no que só o navegador prova, e viram CT-B no `05`: a escala limitada pela altura (CT-B07), o texto HTML de
+`foreignObject` e o SVG sem texto medido (CT-B08), o bloco que cresce além da coluna e é cortado por um ancestral
+(CT-B09), o recorte deslocado de um quadro do `install.gif` (CT-B10, de R35) e a troca de tema como o evento do cenário
+(CT-B11). O sexto é deste `04`: o M1 só recusa o `%%{init}%%` e o frontmatter com `useMaxWidth` (CT-95), e a
+legibilidade "resolvida" mudando o bloco de outro jeito — `flowchart LR` virando `flowchart TB` nos diagramas largos, ou
+o rótulo abreviado — muda o que o GitHub mostra (RQ-48), sem guarda. A direção e o tipo de cada bloco têm baseline
+medido: são os mesmos antes e depois da correção do QA-06 (os 42 cabeçalhos de `e597896^` e da árvore de hoje, lidos
+em 2026-09-30, iguais), e é esse o baseline que o CT-148 congela. O rótulo abreviado fica em L-19.
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no site
+
+  Regra: A legibilidade do site se resolve no CSS, sem mudar bloco nem o que o GitHub mostra
+
+    Esquema do Cenário: [CT-148] a legibilidade do site não muda o tipo nem a direção de nenhum bloco
+      Dado os blocos "<blocos>"
+      E o baseline do tipo e da direção de cada bloco, congelado na guarda e medido no commit anterior à correção do QA-06 (e597896^)
+      Quando a guarda lê, em cada bloco, o tipo e a direção da primeira linha e toda instrução direction, com a posição dela
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | blocos                                                          | resultado                                                                                                                  | # partição                                    |
+        | os 42 publicados (em cada idioma, os 20 do site e o do README)  | aceita: cada um é o do baseline — 12 flowchart TD, 8 flowchart LR, 14 sequenceDiagram, 6 stateDiagram-v2 e 2 erDiagram —, e nenhum tem instrução direction | controle                                      |
+        | uma cópia do DG-19 pt com "flowchart LR" trocado por "flowchart TB" | recusa, nomeando o DG-19 e as duas direções                                                                              | a direção trocada para caber na coluna (ADV-25) |
+        | uma cópia do DG-01 do README.md com "flowchart TD" trocado por "flowchart LR" | recusa, nomeando o README.md                                                                                   | o bloco que o GitHub mostra                   |
+        | uma cópia do DG-19 pt com "direction TB" dentro do subgraph composer_dev | recusa, nomeando o DG-19, o subgraph e a direção                                                                | a direção de um `subgraph` (ADV2-13)          |
+        | uma cópia do DG-08 pt com "direction LR" logo depois de stateDiagram-v2   | recusa, nomeando o DG-08 e a direção                                                                            | a direção de um `stateDiagram-v2`, que a primeira linha não tem (ADV2-13) |
+```
+
+Teste a escrever, em `tests/Kit/DiagramasDaArquiteturaTest.php`. O baseline é lista congelada na guarda, no regime de
+P-23 e P-24: mudar a direção de um bloco depois desta entrega é possível, e passa pela lista, à vista na revisão.
+*(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-13)* — a primeira linha não é toda a direção de um bloco: um `subgraph` tem a própria
+(`direction TB` dentro dele muda o desenho no GitHub), e o `stateDiagram-v2` não tem direção na primeira linha — a dele é
+uma instrução `direction` no corpo. O baseline congela também toda instrução `direction` de cada bloco, com a posição
+(o bloco e o `subgraph` que a contém); medido em 2026-09-30, nenhum dos 42 blocos publicados tem uma
+(`grep -rn '^\s*direction' docs README.md README.en.md`, vazio). As duas linhas novas **nascem vermelhas** contra a guarda
+de hoje, que lê só a primeira linha (`tests/Kit/DiagramasDaArquiteturaTest.php:function primeiraLinhaDoBloco:6713`); o
+`[CT-148]` é `tests/Kit/DiagramasDaArquiteturaTest.php:it:6760`.
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M3 | *(revisão adversarial, ADV-25)* a legibilidade "resolvida" no bloco por outro caminho que a diretiva: `flowchart LR` vira `flowchart TB` nos diagramas largos, e o GitHub passa a mostrar outro desenho (RQ-48) | CT-148 | linha da cópia do DG-19: recusa; o mutante passa pelo CT-95, que só recusa a diretiva e o frontmatter |
+| M4 | *(ADV-25)* os rótulos dos diagramas largos são abreviados para caber na coluna | ⚠️ **sem matador** — lacuna L-19: congelar o texto de cada bloco travaria a correção que RQ-26 exige quando o código muda | — (lacuna declarada) |
+| M5 | *(re-revisão adversarial, ADV2-13)* a legibilidade "resolvida" com `direction TB` num `subgraph` largo, ou `direction LR` num `stateDiagram-v2`, e a guarda congela só a primeira linha | CT-148 | linhas da cópia do DG-19 e do DG-08: recusa; o mutante passa, porque a primeira linha não muda |
+
+---
+
+## Regra R63 — A senha que a saída do `kit:install` dá como a do administrador é a que autentica o administrador semeado, e `password` não autentica
+
+*(alterado em 2026-09-30: regra nova, da revisão adversarial da adição — ADV-03, ADV-04, ADV-28)*
+
+> `RQ-28` · perfil **padrão** (área H, Impacto 3) · técnica: **EP da origem da senha** (nada utilizável × utilizável
+> só no ambiente × utilizável no arquivo e no ambiente) + **rastreio pelo ponto de entrada real** (`Artisan::call` no
+> diretório isolado de R56) com o **estado semeado** como oráculo — `Hash::check()` contra o administrador que o banco
+> tem. Desdobrada de R56: aquela prova o texto que o `handle()` imprime; esta, que o texto e o banco dizem a mesma senha.
+> Nenhum `Então` de R55 e R56 confere o administrador semeado — CT-122 é só saída, e CT-30 e CT-96 provam a ordem na
+> fonte. Mundo: a garantia decide pelo predicado sobre `config('kit.admin.password')`
+> (`app/Support/SenhaDoAdministrador.php:ehUtilizavel:158`), grava pelo `definirNoEnv()` e realinha a config
+> (`app/Support/SenhaDoAdministrador.php:set:171`); o seeder cria o administrador com a config
+> (`database/seeders/UsuarioAdminSeeder.php:'kit.admin.password':44`); e o fallback de `config/kit.php`, com a chave vazia,
+> é o padrão publicado (`config/kit.php:PADRAO_PUBLICADO:853`) — o mesmo valor que um `KIT_ADMIN_PASSWORD=password`
+> exportado no ambiente do processo (CI, Docker) deixa na config
+
+```gherkin
+# language: pt
+Funcionalidade: Correções de texto
+
+  Regra: A senha que o kit:install dá como a do administrador é a que autentica o administrador que ele semeou, e password nunca autentica
+
+    Esquema do Cenário: [CT-135] a senha que a saída dá como a do administrador é a que o autentica, e password não
+      Dado um projeto novo num diretório isolado, com KIT_ADMIN_PASSWORD "<no_arquivo>" no arquivo e "<na_config>" em config('kit.admin.password')
+      Quando o mantenedor roda kit:install --no-npm --no-support --no-interaction
+      Então o administrador semeado autentica com "<senha_que_vale>"
+      E ele não autentica com "password"
+      E o banner "<banner>"
+      E KIT_ADMIN_PASSWORD, relido do .env, é "<no_env_depois>"
+
+      Exemplos:
+        | no_arquivo      | na_config                                                                       | senha_que_vale                 | banner                                          | no_env_depois                  | # origem                                           |
+        | (vazio)         | password — o fallback com a chave vazia, e o valor de um KIT_ADMIN_PASSWORD=password exportado | a senha que o banner imprime | imprime uma senha, que não é password           | a senha que o banner imprime   | nada utilizável: gerada (G ∧ S), e o padrão publicado no ambiente |
+        | (vazio)         | outraSenhaUtilizavel1                                                            | outraSenhaUtilizavel1          | não imprime senha nenhuma                       | (vazio)                        | utilizável só no ambiente (a de CT-122)            |
+        | senhaDoArquivo1 | senhaDoArquivo1                                                                  | senhaDoArquivo1                | não imprime senha nenhuma                       | senhaDoArquivo1                | no arquivo, e o boot a levou à config              |
+```
+
+Teste a escrever, em `tests/Kit/ResumoDoKitInstallTest.php`, com o `Hash::check()` do Setup Global. Discrimina: na
+primeira linha, a senha que o banner imprime só autentica se a config foi realinhada antes do `db:seed` do mesmo
+processo; na segunda, só se o seeder lê a config, e não o arquivo; e as duas separam `ehUtilizavel()` de `filled()`,
+porque `password` é `filled()`.
+
+**Re-revisão adversarial da adição (ADV2-01)** *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-01)*. Nada no conjunto afirma que a senha
+gerada é **aleatória** (P-17: "senha aleatória, impressa uma vez"): um gerador que devolve sempre a mesma senha — uma
+constante do kit, ou uma semente fixa — imprime S, grava S e semeia S, e passa em toda linha do CT-135. É o `password`
+com outro nome: todo projeto novo nasce com uma senha que quem leu o código conhece. Mundo: a senha sai de
+`SenhaDoAdministrador::gerar()` (`app/Support/SenhaDoAdministrador.php:gerar:137`), com `Str::password()`
+(`app/Support/SenhaDoAdministrador.php:password:139`). O oráculo é a diferença entre duas instalações com a mesma
+entrada — o mesmo `.env`, o mesmo e-mail, no mesmo dia —, e o banco de cada uma: aleatoriedade não se prova com uma
+amostra, mas "duas amostras iguais" é o defeito, e é falsificável.
+
+```gherkin
+# language: pt
+Funcionalidade: Correções de texto
+
+  Regra: A senha que o kit:install dá como a do administrador é a que autentica o administrador que ele semeou, e password nunca autentica
+
+    Cenário: [CT-149] duas instalações sem senha definida geram senhas diferentes, e cada uma autentica só o seu administrador
+      Dado dois projetos novos em diretórios isolados, A e B, com o mesmo .env do .env.example — o mesmo APP_NAME e o mesmo KIT_ADMIN_EMAIL — e KIT_ADMIN_PASSWORD vazio nos dois
+      E o kit:install --no-npm --no-support --no-interaction já rodado em A, que imprimiu a senha S_A, e o banco recriado depois dele
+      Quando o mantenedor roda kit:install --no-npm --no-support --no-interaction em B
+      Então a saída de B imprime uma senha S_B, diferente de S_A, e nenhuma das duas é "password"
+      E KIT_ADMIN_PASSWORD, relido do .env de B, é S_B, e o de A continua S_A
+      E o administrador semeado por B autentica com S_B e não autentica com S_A
+```
+
+Teste a escrever, em `tests/Kit/ResumoDoKitInstallTest.php`, com o arnês do CT-135 duas vezes. Hipótese de arnês, a
+medir: dois diretórios de `diretorioDeInstalacaoDoKit()` e o banco recriado (`migrate:fresh`) entre as execuções, porque
+o seeder garante que exista administrador, e não que ele espelhe o `.env` — sem recriar, B acharia o administrador de A.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 | *(revisão adversarial, ADV-03)* a garantia decide "há senha utilizável" por `filled(config('kit.admin.password'))`, sem `SenhaDoAdministrador::ehUtilizavel()` | CT-135 | primeira linha: nada é gerado, o banner não imprime senha, e o administrador autentica com `password` |
+| M2 | *(ADV-04)* a garantia grava a senha gerada no `.env` e não realinha a config: o `db:seed` do mesmo processo semeia o valor do boot | CT-135 | primeira linha: o banner imprime S, o `.env` tem S, e o administrador autentica com `password`, não com S |
+| M3 | *(ADV-28)* o seeder resolve a senha pelo arquivo (`SenhaDoAdministrador::doArquivo()`), e não pela config | CT-135 | segunda linha: o arquivo tem `KIT_ADMIN_PASSWORD=` vazio, o seeder cai no padrão publicado, e o administrador não autentica com `outraSenhaUtilizavel1` — autentica com `password` |
+| M4 | *(derivação, ADV-04)* a senha impressa e a gravada saem de duas chamadas ao gerador | CT-135 | primeira linha: o administrador não autentica com a senha que o banner imprime |
+| M5 | *(re-revisão adversarial, ADV2-01)* a senha "gerada" é uma constante do kit, ou sai de um gerador com semente fixa: cada instalação imprime, grava e semeia a mesma | CT-149 | "S_B, diferente de S_A": o mutante imprime a mesma nas duas; o CT-135 aceita, porque impressa, gravada e semeada coincidem |
+| M6 | *(ADV2-01)* a senha é derivada de um dado da instalação que duas instalações repetem — o `APP_NAME`, o `KIT_ADMIN_EMAIL`, a data | CT-149 | idem: com o mesmo `.env` e no mesmo dia, S_A = S_B, e o administrador de B autentica com S_A |
+
+---
+
+## Regra R64 — Toda gravação do kit no `.env`, qualquer que seja o chamador, deixa a chave com o valor gravado em toda linha ativa, com zero, uma ou duas linhas ativas antes
+
+*(alterado em 2026-09-30: regra nova, da revisão adversarial da adição — ADV-06, ADV-09, ADV-37)*
+
+> `RQ-50`, `RQ-51`, `P-44` · perfil **padrão** (área I) · técnica: **EP por chamador** + **BVA 0 × 1 × 2** nas linhas
+> ativas. Desdobrada de R54: CT-117, CT-118 e CT-137 exercem só "o instalador grava em APP_NAME", e o `04` já dizia que
+> `SubstituicaoEmArquivo` tem seis chamadores. Mundo **de antes de 2026-09-30** *(alterado em 2026-09-30: re-revisão
+> adversarial da adição — o código mudou; as referências deste trecho são históricas)*: `definirNoEnv()` — o caminho de
+> APP_NAME, da senha digitada (`app/Support/CustomizadorDaInstalacao.php:CHAVE:310`), da garantia
+> da senha (`app/Support/SenhaDoAdministrador.php:definirNoEnv:164`) e do host local
+> (`app/Support/HostLocal.php:definirNoEnv:483`) — chamava `aplicar()` com o fallback que anexa a linha quando o padrão não
+> casa (linha 89 antes de 2026-09-30); e três chamadores usavam `aplicar()` direto, com o mesmo `#?` e o limite 1 dele: o
+> bloco `DB_*` (`aplicarBanco()`, linha 541 antes de 2026-09-30), a flag da tenancy (`AtivadorDeTenancy::escreverEnv()`,
+> linha 41 antes de 2026-09-30, chamada pelo `kit:install` com tenancy e pelo `kit:tenancy`,
+> `app/Console/Commands/KitTenancy.php:ligarFlagNoEnv:165`) e o demo (`KitTenancy::semearDemo()`, linha 231 antes de
+> 2026-09-30). **Mundo de hoje**: os seis passam por `definirLinhaNoEnv()` — `definirNoEnv()` a chama
+> (`app/Support/SubstituicaoEmArquivo.php:definirLinhaNoEnv:89`), e também `aplicarBanco()`
+> (`app/Support/CustomizadorDaInstalacao.php:definirLinhaNoEnv($env, 'DB_CONNECTION':541`,
+> `app/Support/CustomizadorDaInstalacao.php:definirLinhaNoEnv($env, $chave:544`), `AtivadorDeTenancy::escreverEnv()`
+> (`app/Support/AtivadorDeTenancy.php:definirLinhaNoEnv:41`) e `KitTenancy::semearDemo()`
+> (`app/Console/Commands/KitTenancy.php:definirLinhaNoEnv:231`): toda linha ativa trocada, sem ativa a primeira comentada
+> descomentada no lugar, sem nenhuma a linha anexada — para toda chave, `DB_CONNECTION` incluído
+> (`app/Support/SubstituicaoEmArquivo.php:append:138`). RQ-50 diz "a gravação no `.env`", sem
+> nomear o comando: o `kit:tenancy` entra pela letra, e se a sessão ler RQ-50 como só do `kit:install`, as duas últimas
+> linhas do CT-138 saem e ficam como dívida declarada
+
+**A chave sem linha ativa** (ADV-09, ADV-37). Com a chave ausente, as duas leituras da Q?9 concordam — RQ-50 manda
+"qualquer leitor fica com o valor gravado", e sem linha nenhuma o leitor não fica com nada: a gravação acrescenta a
+linha. Com a chave só comentada, as duas leituras (descomentar no lugar; manter o comentário e acrescentar a ativa)
+deixam **exatamente uma** linha ativa com o valor gravado — é o invariante, e é deste `04`, e não do `[CT-19]` do
+`HostLocalTest`, que conta `^#?\s*APP_URL=` e guarda uma das direções. O comentário fica fora do `Então` até a
+resposta.
+
+```gherkin
+# language: pt
+Funcionalidade: Gravação no .env pelo kit:install
+
+  Regra: Toda gravação do kit no .env deixa a chave com o valor gravado em toda linha que o Dotenv lê como ela, qualquer que seja o chamador, e com uma linha ativa quando não havia nenhuma
+
+    Esquema do Cenário: [CT-138] com a chave ativa duas vezes, cada gravador do kit troca as duas
+      Dado um .env temporário com "<chave>" ativa duas vezes: "<linhas>"
+      Quando "<gravador>" grava a chave
+      Então as duas linhas que o Dotenv lê como "<chave>" dão o valor gravado
+      E os três leitores leem de "<chave>" o valor gravado
+      E o .env tem o mesmo número de linhas de antes
+
+      Exemplos:
+        | gravador                                                           | chave              | linhas                                                  | # chamador                                                        |
+        | o customizador, com o nome "Novo"                                  | APP_NAME           | APP_NAME="Antigo" · APP_NAME="Repetida"                 | `definirNoEnv()` pelo customizador (a linha de CT-118, controle)  |
+        | a garantia da senha, sem senha utilizável                          | KIT_ADMIN_PASSWORD | KIT_ADMIN_PASSWORD= · KIT_ADMIN_PASSWORD=password       | `SenhaDoAdministrador::garantirNoEnv()` — e o valor que ela devolve, o que o banner imprime, é o que os três leem (ADV-06) |
+        | o customizador, com a senha digitada "segredo123"                  | KIT_ADMIN_PASSWORD | KIT_ADMIN_PASSWORD= · KIT_ADMIN_PASSWORD=password       | `definirNoEnv()` da senha digitada                                |
+        | o customizador, com o banco PostgreSQL                             | DB_CONNECTION      | DB_CONNECTION=sqlite · DB_CONNECTION=mysql              | `aplicarBanco()` (antes de 2026-09-30, `aplicar()` direto; hoje `definirLinhaNoEnv()`) |
+        | o customizador, com o banco PostgreSQL                             | DB_HOST            | DB_HOST=127.0.0.1 · DB_HOST=antigo                      | `aplicarBanco()`, idem                                            |
+        | o host local                                                       | APP_URL            | APP_URL=http://localhost:8000 · APP_URL=http://antigo.test | `HostLocal` → `definirNoEnv()`                                 |
+        | a ativação da tenancy (kit:install com tenancy, e kit:tenancy)     | KIT_TENANCY        | KIT_TENANCY=false · KIT_TENANCY=false                   | `AtivadorDeTenancy::escreverEnv()` (antes, `aplicar()` direto)    |
+        | o demo do kit:tenancy --demo                                       | KIT_DEMO           | KIT_DEMO=false · KIT_DEMO=false                         | `KitTenancy::semearDemo()` (antes, `aplicar()` direto)            |
+
+    Esquema do Cenário: [CT-139] sem linha ativa da chave antes, a gravação deixa exatamente uma, com o valor gravado
+      Dado um .env temporário com as linhas "<linhas>"
+      Quando "<gravador>" grava a chave "<chave>"
+      Então o .env tem exatamente uma linha que o Dotenv lê como "<chave>", com o valor gravado
+      E os três leitores leem de "<chave>" o valor gravado
+      E cada linha de "<intactas>" continua no .env, byte a byte
+
+      Exemplos:
+        | gravador                               | chave    | linhas                                                           | intactas                                | # linhas ativas antes                               |
+        | o customizador, com o nome "Novo"      | APP_NAME | APP_ENV=local · MAIL_FROM_NAME="Loja"                            | APP_ENV=local · MAIL_FROM_NAME="Loja"   | 0 — a chave ausente (ADV-09)                        |
+        | idem                                   | APP_NAME | APP_ENV=local · DEBUG=true, sem quebra de linha no fim do arquivo | APP_ENV=local · DEBUG=true              | 0 — ausente, com a última linha sem quebra          |
+        | idem                                   | APP_NAME | APP_ENV=local · # APP_NAME="Exemplo"                             | APP_ENV=local                           | 0 — só comentada: o comentário fica fora (Q?9)      |
+        | o customizador, com o banco PostgreSQL | DB_HOST  | DB_CONNECTION=sqlite · # DB_HOST=127.0.0.1 · # DB_PORT=5432      | —                                       | 0 — só comentada, pelo `aplicar()` direto: o bloco `DB_*` do `.env.example` (`.env.example:# DB_HOST:37`) |
+        | o host local                           | APP_URL  | APP_ENV=local · # APP_URL=http://localhost                       | APP_ENV=local                           | 0 — só comentada, a do `[CT-19]` do `HostLocalTest` |
+        | o customizador, com o banco PostgreSQL | DB_CONNECTION | APP_ENV=local · APP_NAME="Loja"                             | APP_ENV=local · APP_NAME="Loja"         | 0 — ausente, pelo `aplicarBanco()`: a chave do banco também é anexada (ADV2-06) |
+        | a ativação da tenancy                  | KIT_TENANCY   | APP_ENV=local · KIT_TENANCY_LABEL="Organização"             | APP_ENV=local · KIT_TENANCY_LABEL="Organização" | 0 — ausente, pela ativação; a chave que começa com o nome não é ela (ADV2-06) |
+        | o demo do kit:tenancy --demo           | KIT_DEMO      | APP_ENV=local · KIT_TENANCY=true                            | APP_ENV=local · KIT_TENANCY=true        | 0 — ausente, pelo demo — se o arnês isolar `semearDemo()` (ADV2-06; ver abaixo) |
+```
+
+Testes a escrever, em `tests/Kit/CustomizadorDaInstalacaoTest.php`, com cada gravador chamado direto sobre um `.env`
+temporário (o `kit:tenancy --demo` pelo `setBasePath()` do diretório isolado). O CT-138 nascia vermelho em todas as
+linhas contra o código de antes de 2026-09-30 — o limite 1 de `aplicar()` valia para os seis chamadores (destino 3 → 2) —,
+e o conserto em um só lugar (o customizador, ou só `definirNoEnv()`) fica vermelho nas linhas dos outros. O CT-139
+passava em todas no código de antes: o fallback anexa, e o `#?` descomenta no lugar.
+
+*(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-06)*. Três gravadores ficavam sem a linha "ausente" — o `DB_CONNECTION` de `aplicarBanco()`,
+a ativação da tenancy e o demo —, e o código de antes gravava o `DB_CONNECTION` sem fallback: um `.env` de versão anterior
+à chave deixava o instalador seguir como se tivesse gravado. **Decisão da sessão (2026-09-30)**: toda gravação do kit
+anexa a linha quando a chave está ausente, `DB_CONNECTION` incluído — é o que RQ-50 pede ("qualquer leitor fica com o
+valor gravado"), e a frase "o `DB_CONNECTION` sem fallback" saiu do Mundo desta regra. As três linhas entram no CT-139. A
+do KIT_DEMO depende de o arnês isolar `semearDemo()`, que grava o `.env` de `base_path()` e roda o seeder do demo: o
+`[CT-138]` de hoje deixou a linha dele de fora por esse motivo
+(`tests/Kit/CustomizadorDaInstalacaoTest.php:KIT_DEMO:786`). Se o executor não isolar, as duas — a do CT-138 e esta —
+ficam como divergência declarada no Índice, com o motivo. Os dois `[CT-nn]` existem
+(`tests/Kit/CustomizadorDaInstalacaoTest.php:it:748`, `tests/Kit/CustomizadorDaInstalacaoTest.php:it:790`).
+
+**O comentário ao lado de uma linha ativa, por gravador (ADV2-05)** *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-05)*. O CT-118 e o CT-137
+provam "nenhuma comentada" só pelo customizador gravando APP_NAME. O conserto ingênuo de RQ-50 — tirar o limite de
+`aplicar()` e manter o `#?` — reescreve o comentário ao lado da ativa em todo chamador que passe por ele, e três
+gravadores o chamavam direto até 2026-09-30. O `definirLinhaNoEnv()` de hoje separa a ativa do comentário
+(`app/Support/SubstituicaoEmArquivo.php:$ativa:122`), e o CT-150 é o que impede um gravador de voltar ao `aplicar()`.
+
+```gherkin
+# language: pt
+Funcionalidade: Gravação no .env pelo kit:install
+
+  Regra: Toda gravação do kit no .env deixa a chave com o valor gravado em toda linha que o Dotenv lê como ela, qualquer que seja o chamador, e com uma linha ativa quando não havia nenhuma
+
+    Esquema do Cenário: [CT-150] o comentário ao lado de uma linha ativa continua byte a byte, qualquer que seja o gravador
+      Dado um .env temporário com as linhas "<linhas>", nessa ordem
+      Quando "<gravador>" grava a chave "<chave>"
+      Então a linha ativa de "<chave>" dá o valor gravado, e é a única que o Dotenv lê como a chave
+      E a linha "<comentario>" continua no .env, byte a byte, na mesma posição
+      E o .env tem o mesmo número de linhas de antes
+
+      Exemplos:
+        | gravador                                                       | chave              | linhas                                                                                   | comentario                                                   | # posição do comentário                                  |
+        | a ativação da tenancy (kit:install com tenancy, e kit:tenancy) | KIT_TENANCY        | # KIT_TENANCY=true — liga o multi-tenant; rode kit:tenancy · KIT_TENANCY=false           | # KIT_TENANCY=true — liga o multi-tenant; rode kit:tenancy   | antes da ativa: o limite 1 sobre `#?` o troca            |
+        | o customizador, com o banco PostgreSQL (aplicarBanco)          | DB_HOST            | DB_HOST=127.0.0.1 · # DB_HOST=db — o nome do serviço no Docker                           | # DB_HOST=db — o nome do serviço no Docker                   | depois da ativa: só a troca sem limite o alcança         |
+        | a garantia da senha, sem senha utilizável                      | KIT_ADMIN_PASSWORD | # KIT_ADMIN_PASSWORD=password — o padrão publicado, não use · KIT_ADMIN_PASSWORD=        | # KIT_ADMIN_PASSWORD=password — o padrão publicado, não use  | antes da ativa, e o valor gravado é a senha gerada       |
+```
+
+Teste a escrever, em `tests/Kit/CustomizadorDaInstalacaoTest.php`, ao lado do `[CT-138]`, com os gravadores chamados
+direto como nele.
+
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 | *(revisão adversarial, ADV-06)* a troca de toda linha ativa entra só no caminho do customizador para APP_NAME: a garantia da senha, a senha digitada e o host local continuam trocando só a primeira — com `KIT_ADMIN_PASSWORD=` e, abaixo, `KIT_ADMIN_PASSWORD=password`, a primeira recebe a gerada, os leitores leem `password`, e o banner imprime a gerada | CT-138 | linha da garantia da senha: a segunda linha continua `password`, e o valor devolvido não é o que os três leem |
+| M2 | *(ADV-06)* a troca de toda linha ativa entra em `definirNoEnv()`, e `aplicar()` continua com limite 1: `aplicarBanco()`, `escreverEnv()` e `semearDemo()`, que o chamam direto, trocam só a primeira | CT-138 | linhas de DB_CONNECTION, DB_HOST, KIT_TENANCY e KIT_DEMO: a segunda linha fica com o valor velho, e os três leitores leem o velho |
+| M3 | *(ADV-09)* a troca nova, só de linhas ativas, perde o fallback: com a chave ausente, nada é gravado, e o instalador segue como se tivesse gravado | CT-139 | linha "ausente": nenhuma linha de APP_NAME no `.env`, e os três leitores não leem "Novo" |
+| M4 | *(ADV-37)* com a chave só comentada, o padrão só de ativas não casa e o fallback não roda — zero linhas ativas —, ou roda e o comentário também é descomentado — duas | CT-139 | linhas "só comentada": "exatamente uma linha" falha — zero, ou duas |
+| M5 | *(derivação, ADV-09)* o fallback anexa a linha sem a quebra antes dela, e ela cola na última linha de um arquivo que não termina em quebra | CT-139 | linha "sem quebra no fim": `DEBUG=true` não continua byte a byte, e APP_NAME não é lido |
+| M6 | *(re-revisão adversarial, ADV2-05)* o conserto ingênuo de RQ-50 em `aplicar()` — sem o limite, com o `#?` mantido —, e a ativação da tenancy, `aplicarBanco()` ou a garantia da senha passando por ele: o comentário ao lado da ativa vira uma segunda linha ativa | CT-150 | "continua byte a byte" e "é a única que o Dotenv lê": o comentário vira `KIT_TENANCY=true`, `DB_HOST=…` ou `KIT_ADMIN_PASSWORD=<gerada>` |
+| M7 | *(ADV2-06)* a linha ausente só é anexada pelo caminho de `definirNoEnv()`: `aplicarBanco()` grava o `DB_CONNECTION` sem fallback — o código de antes —, e a ativação e o demo idem | CT-139 | linhas "ausente" de `DB_CONNECTION`, `KIT_TENANCY` e `KIT_DEMO`: nenhuma linha da chave no `.env`, e os três leitores não leem o valor |
+
+---
+
+## Regra R65 — O extrator de `tests/Pest.php` devolve só as arestas e mensagens que o bloco desenha, com o sentido delas
+
+*(alterado em 2026-09-30: regra nova, da revisão adversarial da adição — ADV-12, ADV-13, ADV-14)*
+
+> `RQ-34`, `RQ-26` · perfil **padrão** (área B) · técnica: **EP das formas de enunciado** (cadeia, `&`, seta dentro de
+> rótulo, comentário) + **controle negativo do sentido**. Desdobrada de R57: aquela prova que toda forma de seta é lida
+> (completude); esta, que nada além do desenhado é lido (soundness) — é dela que dependem as guardas de "aresta que não
+> pode existir" (CT-10, CT-60, CT-61, CT-83, CT-109). O controle negativo de CT-124 é só "a → c não existe", sempre com
+> uma aresta e IDs nus por linha. Mundo: o Mermaid 11.17.2 aceita no fluxo a cadeia (o `vertexStatement` que continua por
+> `link`) e o `&` (`site/node_modules/mermaid/dist/chunks/mermaid.core/chunk-SHT3W25Y.mjs:"AMP":1149`), e tira do texto,
+> antes de qualquer lexer, toda linha que começa com `%%`
+> (`site/node_modules/mermaid/dist/mermaid.core.mjs:cleanupComments:967`)
+
+```gherkin
+# language: pt
+Funcionalidade: Diagramas da arquitetura no README e no site
+
+  Regra: O extrator devolve só as arestas e mensagens que o bloco desenha, com o sentido de cada uma
+
+    Esquema do Cenário: [CT-140] o extrator de fluxo lê o sentido, a cadeia e o &, e ignora o comentário e a seta dentro de rótulo
+      Dado um bloco flowchart de controle com o trecho "<trecho>"
+      Quando a guarda procura as arestas do bloco pelo extrator de tests/Pest.php, entre os IDs a, b, c, d e x
+      Então existem exatamente as arestas "<arestas>"
+
+      Exemplos:
+        | trecho                          | arestas                         | # partição                            |
+        | a --> b                         | a → b                           | sentido: b → a não existe             |
+        | a ==> b                         | a → b                           | sentido, grossa                       |
+        | a -.-> b                        | a → b                           | sentido, pontilhada                   |
+        | a <--> b                        | a → b e b → a                   | bidirecional: o controle do sentido   |
+        | a --> b --> c                   | a → b e b → c                   | cadeia: a → c não existe              |
+        | a & d --> b                     | a → b e d → b                   | `&` na origem                         |
+        | a --> b & c                     | a → b e a → c                   | `&` no destino                        |
+        | a["A --> c"] --> b              | a → b                           | seta dentro do rótulo do nó           |
+        | a -->\|"x --> c"\| b             | a → b                           | seta dentro do rótulo da aresta       |
+        | %% a --> c · a --> b            | a → b                           | linha de comentário                   |
+        | (dois espaços)%% a --> c · a --> b | a → b                        | comentário indentado (ADV2-07)        |
+
+    Esquema do Cenário: [CT-141] a linha de comentário não vira mensagem nem relação
+      Dado um bloco "<tipo>" de controle com as linhas "<linhas>"
+      Quando a guarda lê o bloco pelo extrator de tests/Pest.php
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | tipo                                               | linhas                                                   | resultado                                                   | # partição                    |
+        | sequenceDiagram, com participant a e participant b | %% a->>b: y · a->>b: x                                   | exatamente uma mensagem, de a para b, com o rótulo "x"      | comentário antes da mensagem  |
+        | idem                                               | a->>b: x · %% b->>a: y                                   | exatamente uma mensagem, a de rótulo "x"                    | comentário depois             |
+        | idem                                               | (dois espaços)%% a->>b: y · a->>b: x                     | exatamente uma mensagem, de a para b, com o rótulo "x"      | comentário indentado (ADV2-07) |
+        | erDiagram                                          | %% users \|\|--o{ convites : x · users \|\|--o{ roles : tem | a relação users–roles existe, e a users–convites não       | relação comentada             |
+```
+
+Testes a escrever, ao lado do `[CT-124]` e do `[CT-126]` em `tests/Kit/DiagramasDaArquiteturaTest.php`. "Existem
+exatamente" é sobre todos os pares dos IDs do trecho: cada par existe se, e só se, está na coluna. *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-07)*:
+o Mermaid tira também o comentário **indentado** — o padrão dele é `^\s*%%`
+(`site/node_modules/mermaid/dist/mermaid.core.mjs:'%%':968`) —, e o extrator que pula só a linha que começa com
+`%` leria a aresta dele. Os `[CT-nn]` existem (`tests/Kit/DiagramasDaArquiteturaTest.php:it:5780`,
+`tests/Kit/DiagramasDaArquiteturaTest.php:it:5801`) e ganham uma linha cada.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 | *(revisão adversarial, ADV-12)* o extrator normaliza o par sem ordem — guarda `[a,b]` e `[b,a]`, ou ordena os IDs — para acomodar o `<-->` | CT-140 | linhas `-->`, `==>` e `-.->`: b → a não está na coluna; o mutante acha |
+| M2 | *(ADV-12, o controle do sentido)* o `<` da ponta é ignorado, e a bidirecional vira só a → b | CT-140 | linha `<-->`: b → a está na coluna; o mutante não acha |
+| M3 | *(ADV-13)* o extrator lê só a primeira aresta de uma cadeia | CT-140 | linha da cadeia: b → c está na coluna; o mutante não acha |
+| M4 | *(ADV-13)* o extrator lê a cadeia como aresta entre as pontas | CT-140 | linha da cadeia: a → c não está na coluna; o mutante acha |
+| M5 | *(ADV-13)* o `&` não é expandido: `a & d` vira um ID só, ou só o último | CT-140 | linhas do `&`: d → b e a → c estão na coluna; o mutante não acha uma delas |
+| M6 | *(ADV-14)* a seta dentro de um rótulo — de nó ou de aresta — é lida como aresta | CT-140 | linhas dos rótulos: a → c (e x → c) não estão na coluna; o mutante acha |
+| M7 | *(ADV-14)* a linha que começa com `%%` é lida como aresta, mensagem ou relação | CT-140, CT-141 | linha do comentário: a → c não está na coluna, "exatamente uma mensagem", "users–convites não"; o mutante acha a do comentário |
+| M8 | *(re-revisão adversarial, ADV2-07)* o extrator reconhece o comentário só com `%%` na primeira coluna: o indentado vira aresta ou mensagem | CT-140, CT-141 | linhas do comentário indentado: a → c não está na coluna; "exatamente uma mensagem"; o mutante acha a do comentário |
+
 ---
 
 ## Lacunas declaradas
@@ -5120,9 +6341,17 @@ DG-07), e fica.
 | L-07 | *(step 10, com a R47)* de **onde** sai a lista de caminhos que a condição do job de PR avalia: o CT-105 prova a partição (`docs/` e `site/` aceitos, `app/` recusado) e a dependência de cada passo, não as duas pontas do PR — a ponta errada (R47.M7) sobrevive | reproduzir as pontas exige um `git` com a base e a cabeça de um PR de vários commits, e o contexto `github.event` do Actions (mecanismo do runner, não do requisito) | o próprio PR desta feature toca `docs/` e `site/`: o job tem de aparecer e passar nos checks dele — evidência no `03`, no step 11 |
 | L-08 | *(step 10, achado A-02, com R51 e R52)* **o que o DG-20 não desenha**: o fluxo do `kit:tenancy`. A ordem de `KitTenancy::handle()` — pré-voo (`app/Console/Commands/KitTenancy.php:preVoo:61`), confirmação (`app/Console/Commands/KitTenancy.php:confirmarDestruicao:65`), a flag no `.env` (`app/Console/Commands/KitTenancy.php:ligarFlagNoEnv:70`), papéis por organização (`app/Console/Commands/KitTenancy.php:ligarPapeisPorTenant:71`), o banco recriado (`app/Console/Commands/KitTenancy.php:recriarBanco:72`, que roda `app/Console/Commands/KitTenancy.php:'migrate:fresh':187` e `app/Console/Commands/KitTenancy.php:conferirSchema:189`) e o demo só com `--demo` (`app/Console/Commands/KitTenancy.php:semearDemo:75`) — está só em prosa, na mesma página (`docs/pt/recursos/multi-tenancy.md:KitTenancy::handle():122`), sem diagrama e sem guarda de ordem | nada a guardar: a decisão da sessão (2026-09-29) é que o flowchart não entra nesta entrega, e R51/R52 guardam só o que o DG-20 desenha — a sequência do `/app/{tenant}` | se o flowchart entrar noutra entrega, ele nasce com uma regra de ordem derivada de `handle()`, no molde de R18/CT-30 (instalação) e R19/CT-32 (`kit:update`); sem mutante próprio aqui, porque não há afirmação desenhada a mutar |
 | L-09 | *(step 11, R56)* o desfecho "banco inacessível" pelo `handle()` real: CT-121 e CT-122 exercem `--no-seed` e a senha só no ambiente; o banco inacessível só passa pela tabela de R55 (linha ¬G ∧ ¬S) | um cenário pelo `handle()` com o banco inacessível nasceria vermelho pela DV-01 (RD4-02, RQ-44): o banner e o aviso do `conferirConexao()` se contradizem, e isso é dívida aceita | a issue da DV-01 no PR; quando ela fechar, CT-121 ganha a linha do banco inacessível |
-| L-10 | *(step 11, R54)* a direção da quebra de linha no valor gravado no `.env` — vira espaço, como hoje, ou é recusada? P-44 diz "volta igual", e ela não volta | nada a tentar até a resposta | Q?3; o invariante — nenhuma chave injetada — é CT-117 |
-| L-11 | *(step 11, R54)* a chave **ativa** duas vezes no `.env`: P-44 troca a primeira, e `Dotenv::parse()`, a leitura do kit, fica com a última (`vendor/vlucas/phpdotenv/src/Dotenv.php:createWithNoAdapters:206`, repositório sem `immutable()`) | nada a tentar até a resposta | Q?4; o invariante — o comentário que cita a chave nunca é reescrito — é CT-118 |
-| L-12 | *(step 11, R33)* R33.M10: a saída que culpa a montagem quando quem falhou foi a publicação | a distinção "não consegui publicar" × "falha ao montar o clipe" só a revisão do diff fixou (RD2-04, RD3-09) — é pergunta, não oráculo | Q?5; o teste de hoje já a afirma, como apoio fora do oráculo |
+| L-10 | ~~*(step 11, R54)* a direção da quebra de linha no valor gravado no `.env` — vira espaço, como hoje, ou é recusada? P-44 diz "volta igual", e ela não volta~~ *(alterado em 2026-09-29: **fechada** pelo Adendo 7 — RQ-51: a quebra vira espaço)* | ~~nada a tentar até a resposta~~ | CT-117, linhas LF, CRLF e CR (R54.M5, M9, M10) |
+| L-11 | ~~*(step 11, R54)* a chave **ativa** duas vezes no `.env`: P-44 troca a primeira, e `Dotenv::parse()`, a leitura do kit, fica com a última (`vendor/vlucas/phpdotenv/src/Dotenv.php:createWithNoAdapters:206`, repositório sem `immutable()`)~~ *(alterado em 2026-09-29: **fechada** pelo Adendo 7 — RQ-50: toda linha ativa é trocada. E o "repositório sem `immutable()`" não era a razão: o imutável do Laravel também fica com a última, ver R54)* | ~~nada a tentar até a resposta~~ | CT-118, linha das duas ativas (R54.M6, M8) |
+| L-12 | ~~*(step 11, R33)* R33.M10: a saída que culpa a montagem quando quem falhou foi a publicação~~ *(alterado em 2026-09-29: **fechada** pelo Adendo 7 — RQ-52: a saída nomeia a publicação)* | ~~a distinção "não consegui publicar" × "falha ao montar o clipe" só a revisão do diff fixou (RD2-04, RD3-09) — é pergunta, não oráculo~~ | CT-128, que mata o R33.M10; as duas asserções do teste de hoje entram no oráculo |
+| L-13 | *(Adendo 7, R54)* a direção da chave **só comentada**, sem nenhuma linha ativa (o `DB_HOST` e o `APP_URL` do `.env.example` *(alterado em 2026-09-30: revisão adversarial da adição — o `APP_URL` do `.env.example` é ativo, `.env.example:APP_URL:5`; a chave só comentada dele é o bloco `DB_*`, `.env.example:# DB_HOST:37`; o invariante das duas leituras é o CT-139)*): a gravação descomenta a comentada no lugar, como hoje, ou a mantém e acrescenta a ativa no fim, como a letra de RQ-50 ("nenhuma linha comentada") lida sozinha? | nada a tentar até a resposta: a leitura literal deixa vermelho o `[CT-19]` do `HostLocalTest`, da wiki `feat/kit-install-host-local/host-local-no-install` | ~~Q?9; o invariante — exatamente uma linha ativa, com o valor gravado — já está no `[CT-19]` do `HostLocalTest`~~ *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-21)*: Q?9, no `00` como a premissa P-45 (RQ-50 aberta em parte); o invariante das duas leituras é o CT-139 deste `04`, e não o `[CT-19]`, que guarda uma das direções |
+| L-14 | *(Adendo 7, R61)* palavra do outro idioma **fora** das listas fechadas que a Q?7 decidiu — "painel", "sem" ou "conta" soltos num bloco en, "the" num bloco pt: o CT-132 só reprova as três expressões de cada idioma | a lista de palavras da ➡️ da Q?7 (descartada pela decisão: palavra solta casa dentro de palavra do outro idioma) | a lista cresce a cada achado, no regime de L-06; Q?7 *(alterado em 2026-09-30: **reduzida** pela revisão adversarial, ADV-21 — o CT-146 reprova palavra inteira de uma lista, no texto visível, e pega "(nova conta)", "escolha do painel", "painel" sozinho e "the"; o que sobra é a palavra fora da lista de CT-146, e a decisão de ampliar é a Q?12)* |
+| L-15 | *(revisão adversarial da adição, ADV-35)* a prova de que o "teste primeiro" de RQ-45 foi cumprido: os testes de CT-117, CT-119, CT-120, CT-121, CT-122 e CT-127 só ganharam o `[CT-nn]`, sem as asserções que o cenário acrescentou, e o de CT-132 está vermelho — R55.M1..M5 e R56.M1, M2 têm matador no `04` e nenhuma asserção no teste (DV-03). Nenhum cenário separa "corrigido com o teste primeiro" de "renomeado" | um cenário sobre o processo não é falsificável por teste do kit; o que separa as duas coisas é a execução vermelha de cada teste **sem a correção**, registrada com o comando | implementação (destino 3 → 2): as asserções que o Índice lista como faltantes entram nos testes, cada um provado vermelho sem a correção (`git stash` do código de produto), com o comando e a saída no `03`; o ciclo 2 do quality gate confere o par vermelho → verde |
+| L-16 | *(ADV-36)* a execução vermelha do CT-B05 **antes** do CSS (RQ-49): o `05` registra só a verde, e a medida vermelha citada é a do `qagate-escala.mjs`, que lê só o primeiro texto (o CT-B05.M5) | reproduzir: o conferidor de hoje contra o site construído com o `site/src/styles/kit.css` de `e597896^` | evidência no `03`: o `kit.css` de `e597896^`, `npm run build`, `node verifica-acessibilidade.mjs` com saída ≠ 0 e a linha `[CT-B05]` abaixo de 12 px; e o `kit.css` de hoje de volta, verde — *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-23)*: **fechada** — a evidência foi produzida em 2026-09-30: com o `kit.css` de `e597896^`, exit 1 e 16 dos 20 SVGs abaixo do piso; com o de hoje, exit 0. O registro vai ao `03`; a linha permanente no CT-B05 foi rejeitada (ver [Achados adversariais rejeitados](#achados-adversariais-rejeitados)) |
+| L-17 | *(ADV-02)* R56.M11 — o que a linha "Senha do administrador" e o banner dizem com a senha já definida (digitada ou no arquivo) e o banco não populado | nada a tentar até a resposta: premissa de comportamento | Q?10 (raia requisito); o invariante das duas leituras é CT-134 |
+| L-18 | *(ADV-05)* R55.M10 — o que o banner diz na célula G ∧ ¬S (a senha gerada, e o `db:seed` que não completou): login de agora ou senha que o `db:seed` vai usar | idem | Q?11 (raia requisito); o invariante é CT-136 |
+| L-19 | *(ADV-25)* R62.M4 — o rótulo abreviado para o diagrama caber na coluna, que muda o que o GitHub mostra (RQ-48) | baseline do texto de cada bloco (descartado: travaria a correção que RQ-26 exige quando o código muda); o diff do commit da correção, `git diff e597896^ e597896 -- docs README.md README.en.md`, lido em 2026-09-30: só as marcas de opcional (QA-04), o português tirado do en (QA-09) e o termo organization do DG-20 (QA-11) — nenhum rótulo encurtado | a próxima mudança de legibilidade passa pelo mesmo diff, na revisão do PR *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-22)*: a lacuna é só o rótulo abreviado. A direção — a da primeira linha e a de toda instrução `direction`, num `subgraph` ou num `stateDiagram-v2` — e o tipo saem dela: são o CT-148 |
+| L-20 | *(re-revisão adversarial da adição, ADV2-20 — a decisão da Q?13)* no DG-07, o vínculo à organização desenhado **sem condição e sem citar o `tenant_id`**, com `KIT_TENANCY` no escopo — "vincula a conta à organização do convite (KIT_TENANCY)": a regra da Q?13 recusa a menção ao `tenant_id` fora de posição de condição, e não uma condição que falta | lista fechada das formas de condição pela organização ("quando o convite tem organização", "com organização") — descartada: a condição tem forma livre, e a lista falharia o bloco certo | a revisão do PR; a lista cresce a cada achado, no regime de L-06; Q?13 |
 
 ## Checklist de Taxonomia
 
@@ -5132,13 +6361,13 @@ DG-07), e fica.
 | Autorização exercida na ação (não só `can()`) | não se aplica: a feature não cria barreira; as barreiras existentes entram como **fato executado** (CT-13, CT-14, CT-15) |
 | Idempotência (ancorada no agregado) | CT-49, CT-65 (execução com ffmpeg ausente ou que falha depois de abrir a saída não altera o GIF publicado — o agregado é o arquivo, byte a byte); CT-64 (o quadro sobrado de uma execução interrompida não entra na seguinte); CT-20/CT-21 (evento idempotente sem caminho para outro estado); *(alterado em 2026-09-29: step 11)* CT-128 (a falha da publicação não toca o GIF publicado, byte a byte) |
 | Concorrência | não se aplica: nenhum contador nem limite |
-| Fronteira no ponto de entrada (gravação) | ~~não se aplica: nenhum campo gravado~~ *(alterado em 2026-09-29: step 11 — há gravação: o `.env`, P-44)* CT-117, CT-118 (barra no meio e no fim, barra seguida de `n`, aspas, `${…}` e quebra de linha; 1 e 2 linhas que casam com a chave); a fronteira de contagem continua em CT-17 (0/1/2) e CT-53 (0/1/2 blocos) |
+| Fronteira no ponto de entrada (gravação) | ~~não se aplica: nenhum campo gravado~~ *(alterado em 2026-09-29: step 11 — há gravação: o `.env`, P-44)* CT-117, CT-118 (barra no meio e no fim, barra seguida de `n`, aspas, `${…}` e quebra de linha; 1 e 2 linhas que casam com a chave) *(alterado em 2026-09-29: Adendo 7 — a quebra em LF, CRLF e CR; 1 e 2 linhas **ativas**, com a comentada antes e depois da ativa; o valor conferido por três leitores e linha a linha; a linha sem ativa é Q?9)*; a fronteira de contagem continua em CT-17 (0/1/2) e CT-53 (0/1/2 blocos); *(alterado em 2026-09-30: revisão adversarial da adição)* CT-137 (as formas de linha que o Dotenv lê — `export`, espaço no `=`, indentação, comentário sem espaço, `VITE_APP_NAME`, a linha em branco), CT-138 (cada gravador do kit, com a chave ativa duas vezes), CT-139 (**0** linhas ativas: a chave ausente, sem quebra no fim, e a só comentada) |
 | Domínio condicionado | CT-08 (o elemento exige a marca só quando o recurso é opt-in); *(alterado em 2026-09-29: step 11)* CT-129, CT-130 (a chave exigida só no elemento opt-in, e a exata) |
 | Estado × operação de escrita | CT-20, CT-21 (matrizes executadas, com 2-switch) |
 | Ausente ≠ null ≠ vazio | CT-41 (senha vazia × digitada; `password()` sempre devolve string, `null` não ocorre) |
 | Paginação / ordenação | não se aplica: sem listagem |
 | Timezone / DST | não se aplica: o prazo do convite é conferido por `travelTo()` relativo (CT-19, CT-21), sem virada de dia; *(alterado em 2026-09-29: 2ª passada do step 10)* CT-108 e CT-109 comparam a expressão cron do evento com o rótulo — o fuso do agendador é o mesmo dos dois lados, e nenhum instante é medido |
-| Unicode / limite de varchar | CT-03 (acento como marcador de tradução ausente); CT-B01 (páginas pt com acento renderizadas); *(alterado em 2026-09-29: step 11)* CT-117 (barra, `$`, aspas e quebra de linha no valor gravado no `.env`), CT-132 (palavra sem acento do outro idioma) |
+| Unicode / limite de varchar | CT-03 (acento como marcador de tradução ausente); CT-B01 (páginas pt com acento renderizadas); *(alterado em 2026-09-29: step 11)* CT-117 (barra, `$`, aspas e quebra de linha no valor gravado no `.env`), CT-132 (palavra sem acento do outro idioma); *(alterado em 2026-09-30: revisão adversarial da adição)* CT-133 (a saída do `kit:install` é ASCII no banner e acentuada no resumo: comparação sem acento e sem caixa), CT-145 (título que difere do `accTitle` só por acento, caixa ou travessão), CT-146 (palavra inteira do outro idioma, sem acento) |
 | Unicidade + soft delete | não se aplica: nada único é criado |
 | CRUD combinado | não se aplica |
 | Mass assignment | não se aplica: nenhum payload |
@@ -5148,12 +6377,12 @@ DG-07), e fica.
 | Estado do framework usado sem validar | não se aplica, pelo mesmo motivo |
 | IDOR por entidade | não se aplica: nenhuma tabela persistida |
 | Escopo com discriminante nulo | não se aplica |
-| Saída do estado de erro | CT-01, CT-06, CT-10 (toda reprovação da guarda nomeia o DG e o arquivo — o destino de quem lê o vermelho); CT-59 (pretendida recusada leva a um destino alcançável: o painel único ou a escolha); *(alterado em 2026-09-29: 2ª passada do step 10)* os 404 de CT-113 e CT-114 são o desfecho que o código já tem e que o DG-20 descreve, não um estado de erro criado por esta entrega — para onde a pessoa vai depois o DG-20 não desenha, e nenhum par é devido; *(alterado em 2026-09-29: step 11)* CT-119, CT-121 (o banco não populado tem uma instrução que cria o administrador sem `password` e sem comando que falha), CT-127, CT-128 (o clipe que falhou é nomeado, e os outros seguem) |
-| Asserção de ausência em mundo com destinatário | CT-40 (a página de DTO **existe** e cita `password`), CT-42 (linha "desligadas" existe no controle), CT-43 (piso de 4 linhas), CT-48 (o intruso existe no diretório); ciclo 1: CT-62 (trilha ligada por `audit.console`, senão ninguém gravaria), CT-65 (o GIF publicado existe no `Dado`), CT-70 (a conta existe e receberia `ConfirmarVinculoSocial`); *(alterado em 2026-09-29: 2ª passada do step 10)* CT-113 (o 404 com a globex existente e o id de time num sentinela fixado antes do GET — sem ele, "não é o id da globex" valeria no vazio); *(alterado em 2026-09-29: step 11)* CT-118 (a linha do comentário existe no `Dado`), CT-122 (a semeadura rodou na mesma saída; sem ela, "não diz que o banco não foi populado" valeria no vazio), CT-128 (o GIF publicado existe no `Dado`), CT-B04 (o título da janela é afirmado antes do `assertDontSee`) |
-| Guarda auto-anulante / skip | CT-05, `[CT-10]` herdado; CT-56 (piso das 16 chaves contra "extraído vazio = mapa vazio"); CT-105 (conferidor do job de PR com `continue-on-error`, ou fora da condição) *(alterado em 2026-09-29: step 10, R47)*; *(alterado em 2026-09-29: 2ª passada do step 10)* CT-116 (fato declarado que só casa com o bloco do dataset, ou que aceita por ausência de um literal que o publicado nunca tem), CT-112 (a pilha de tenant com os dois middlewares, e não vazia na suíte sem tenancy); *(alterado em 2026-09-29: step 11)* CT-85 (as 11 mensagens do DG-04 nos dois idiomas), CT-131 (as 20 linhas do índice), CT-B06 (ao menos um diagrama excede a coluna do celular) |
-| Opcional desenhado como sempre ligado | CT-08, CT-12, CT-15, CT-25; ciclo 1: CT-56, CT-57 (conjunto nascido de `config/kit.php`), CT-58 (controle do detector, com homônimo sempre ligado); *(alterado em 2026-09-29: 2ª passada do step 10)* CT-107 (`LOCKSCREEN_ENABLED`, que mora fora de `config/kit.php` e que R39 não extrai); *(alterado em 2026-09-29: step 11)* CT-129 (por elemento, sobre o publicado), CT-130 (o escopo e a chave exata, contra cópias) |
-| **Acumulação de papéis** (a mesma pessoa com dois papéis) — pergunta 5 da revisão adversarial | CT-71 (`admin + infra`, `admin + panel_user`); CT-17/CT-59 (`admin + infra` no login unificado) |
-| **Soundness diagrama → código** (o bloco afirma o que o código não tem) | CT-10 (nó inventado no DG-01), CT-60, CT-61 (estado fora da imagem), CT-62 (gravador homônimo), CT-63 (cardinalidade), CT-72 (diretório parcial), CT-75 (contêiner), CT-77 (referência a código em qualquer DG); *(alterado em 2026-09-29: 2ª passada do step 10)* CT-109 (o `backup:run` comentado), CT-111 (o contêiner `horizon`), CT-114 (o ramo que nega cobrindo o `master_global` que o código deixa entrar) |
+| Saída do estado de erro | CT-01, CT-06, CT-10 (toda reprovação da guarda nomeia o DG e o arquivo — o destino de quem lê o vermelho); CT-59 (pretendida recusada leva a um destino alcançável: o painel único ou a escolha); *(alterado em 2026-09-29: 2ª passada do step 10)* os 404 de CT-113 e CT-114 são o desfecho que o código já tem e que o DG-20 descreve, não um estado de erro criado por esta entrega — para onde a pessoa vai depois o DG-20 não desenha, e nenhum par é devido; *(alterado em 2026-09-29: step 11)* CT-119, CT-121 (o banco não populado tem uma instrução que cria o administrador sem `password` e sem comando que falha), CT-127, CT-128 (o clipe que falhou é nomeado, e os outros seguem); *(alterado em 2026-09-30: revisão adversarial da adição)* CT-133 (a instrução do banco não populado na ordem que funciona: a chave antes do `db:seed`, como condição), CT-136 (a semeadura que não completou manda rodar `db:seed`, e a senha que ele vai usar é a impressa), CT-147 (a falha da publicação não manda o mantenedor ao ffmpeg) |
+| Asserção de ausência em mundo com destinatário | CT-40 (a página de DTO **existe** e cita `password`), CT-42 (linha "desligadas" existe no controle), CT-43 (piso de 4 linhas), CT-48 (o intruso existe no diretório); ciclo 1: CT-62 (trilha ligada por `audit.console`, senão ninguém gravaria), CT-65 (o GIF publicado existe no `Dado`), CT-70 (a conta existe e receberia `ConfirmarVinculoSocial`); *(alterado em 2026-09-29: 2ª passada do step 10)* CT-113 (o 404 com a globex existente e o id de time num sentinela fixado antes do GET — sem ele, "não é o id da globex" valeria no vazio); *(alterado em 2026-09-29: step 11)* CT-118 (a linha do comentário existe no `Dado`), CT-122 (a semeadura rodou na mesma saída; sem ela, "não diz que o banco não foi populado" valeria no vazio), CT-128 (o GIF publicado existe no `Dado`), CT-B04 (o título da janela é afirmado antes do `assertDontSee`); *(alterado em 2026-09-30: revisão adversarial da adição)* CT-133 (o banner existe e é ASCII: a ausência de "a que voce definiu" é comparada sem acento — com acento, passava no vazio, ADV-26), CT-134 (a senha definida existe no `.env`: "o banner não a imprime" tem o que vazar), CT-141 (a mensagem de verdade existe ao lado da comentada), CT-B10 (o marcador do quadro é afirmado presente antes do seguinte ausente) |
+| Guarda auto-anulante / skip | CT-05, `[CT-10]` herdado; CT-56 (piso das 16 chaves contra "extraído vazio = mapa vazio"); CT-105 (conferidor do job de PR com `continue-on-error`, ou fora da condição) *(alterado em 2026-09-29: step 10, R47)*; *(alterado em 2026-09-29: 2ª passada do step 10)* CT-116 (fato declarado que só casa com o bloco do dataset, ou que aceita por ausência de um literal que o publicado nunca tem), CT-112 (a pilha de tenant com os dois middlewares, e não vazia na suíte sem tenancy); *(alterado em 2026-09-29: step 11)* CT-85 (as 11 mensagens do DG-04 nos dois idiomas), CT-131 (as 20 linhas do índice), CT-B06 (ao menos um diagrama excede a coluna do celular); *(alterado em 2026-09-30: revisão adversarial da adição)* CT-144 (o termo en que não acha o elemento deixa o en sem conferência), CT-B08 (SVG sem texto medido dava mínimo vazio e passava) |
+| Opcional desenhado como sempre ligado | CT-08, CT-12, CT-15, CT-25; ciclo 1: CT-56, CT-57 (conjunto nascido de `config/kit.php`), CT-58 (controle do detector, com homônimo sempre ligado); *(alterado em 2026-09-29: 2ª passada do step 10)* CT-107 (`LOCKSCREEN_ENABLED`, que mora fora de `config/kit.php` e que R39 não extrai); *(alterado em 2026-09-29: step 11)* CT-129 (por elemento, sobre o publicado), CT-130 (o escopo e a chave exata, contra cópias); *(alterado em 2026-09-30: revisão adversarial da adição)* CT-143 (a condição do `alt` não vale para o `else`, a nota de outro estado, a menção à coluna), CT-144 (o termo do idioma do bloco acha o elemento; a chave de provedor por palavra inteira; o elemento de duas chaves) |
+| **Acumulação de papéis** (a mesma pessoa com dois papéis) — pergunta 5 da revisão adversarial | CT-71 (`admin + infra`, `admin + panel_user`); CT-17/CT-59 (`admin + infra` no login unificado); *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-24)* CT-71 (`infra + panel_user`), CT-98 (`infra` global + `admin_app`, `panel_user` + `admin_app`) |
+| **Soundness diagrama → código** (o bloco afirma o que o código não tem) | CT-10 (nó inventado no DG-01), CT-60, CT-61 (estado fora da imagem), CT-62 (gravador homônimo), CT-63 (cardinalidade), CT-72 (diretório parcial), CT-75 (contêiner), CT-77 (referência a código em qualquer DG); *(alterado em 2026-09-29: 2ª passada do step 10)* CT-109 (o `backup:run` comentado), CT-111 (o contêiner `horizon`), CT-114 (o ramo que nega cobrindo o `master_global` que o código deixa entrar); *(alterado em 2026-09-30: revisão adversarial da adição)* CT-140, CT-141 (o extrator não inventa aresta: sentido, cadeia, `&`, rótulo com seta, comentário) |
 | **Destino e condição da seta** (não só a existência) | CT-20, CT-21 (oráculos reescritos no ciclo 1), CT-60, CT-61; *(alterado em 2026-09-29: 2ª passada do step 10)* CT-107 (o destino da transição por tentativas), CT-114 (a condição do `alt` do DG-20) |
 | **Matriz fechada executada, com o total afirmado sobre o dataset** (ciclo 2) | CT-78 (7 × 5 = 35), CT-80 (4 × 6 = 24) |
 | **Atributo que o rótulo esconde** — o estado exibido não é o estado (ciclo 2) | CT-78 (S1/S2 e S5/S6/S7), CT-79 |
@@ -5163,6 +6392,7 @@ DG-07), e fica.
 | **Presença não vácua** ("toda aresta corresponde" com zero arestas) (ciclo 2) | CT-83 (uma linha "presente" por papel); *(alterado em 2026-09-29: 2ª passada do step 10)* CT-108 (piso de 7 eventos agendados), CT-116 (40 blocos publicados) |
 | **Rota negativa conferida** ("não viaja", "o kit:update não toca") (ciclo 2) | CT-93 |
 | **Default do pacote igual ao do kit** — o número bate por acidente, e a chamada que o ligava sumiu *(alterado em 2026-09-29: 2ª passada do step 10)* | CT-106, CT-107 (a ociosidade do plugin nasce desligada com 1800 de default, e o force logout nasce falso com 5 de limite) |
+| **Estado persistido × texto impresso** — a senha que a saída dá × a que o banco tem *(alterado em 2026-09-30: revisão adversarial da adição)* | CT-135 (`Hash::check()` contra o administrador semeado, com `password` recusado), CT-136 (a senha impressa é a do `.env` que o próximo `db:seed` usa); *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-01)* CT-149 (duas instalações não dão a mesma senha, e cada banco autentica só a sua) |
 
 ## Regressões herdadas que esta entrega aciona
 
@@ -5170,7 +6400,9 @@ Todo `[CT-nn]` entre colchetes seguido de "herdado" é da wiki `feat/site-de-doc
 de `RedeDeDocumentacaoTest`), **não** deste `04`: o número colide com os daqui, e é o arquivo de teste
 mais a wiki de origem que desambiguam — o mesmo regime que o docblock de `RedeDeDocumentacaoTest` já
 declara. Os IDs deste `04` são os `CT-nn` **sem** colchetes nos textos corridos e os `[CT-nn]` dos
-títulos de cenário.
+títulos de cenário. *(alterado em 2026-09-29: Adendo 7 — uma exceção, nomeada sempre pelo arquivo: o `[CT-19]` do
+`HostLocalTest` é da wiki `feat/kit-install-host-local/host-local-no-install`, e não o `[CT-19]` do
+`SiteDeDocumentacaoTest`.)*
 
 | Guarda existente | Por que fica vermelha se a entrega esquecer algo |
 |---|---|
@@ -5183,6 +6415,7 @@ títulos de cenário.
 | números do README (`tests/Kit/SiteDeDocumentacaoTest.php:mantem os numeros objetivos:990`) | "Features especificadas" não soma esta wiki |
 | arquivos de teste (`tests/Kit/SiteDeDocumentacaoTest.php:contagem de arquivos de teste:1145`) e badge de casos (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-50]':2026`) | arquivos e blocos `it()` novos não contados no README |
 | `[CT-12]` (`tests/Kit/SiteDeDocumentacaoTest.php:'[CT-12]':531`) | dependência npm na raiz |
+| `[CT-19]` do `HostLocalTest` (`tests/Kit/HostLocalTest.php:'CT-19':847`), da wiki `feat/kit-install-host-local/host-local-no-install` *(alterado em 2026-09-29: linha nova, do Adendo 7)* | a gravação de RQ-50 lida ao pé da letra na chave **só comentada**: com `# APP_URL=` e nenhuma linha ativa, manter o comentário e acrescentar a ativa deixa duas linhas que casam `^#?\s*APP_URL=`, e ele exige uma — Q?9, L-13 |
 
 ## Testes nascidos na revisão do diff, sem CT
 
@@ -5207,19 +6440,19 @@ linhas abaixo são as de hoje — os testes novos deslocaram as de 866 a 963 do 
 | Teste (arquivo:linha do `it()`) | Achado | Regra mais próxima | Origem | CT que passa a levar *(step 11)* |
 |---|---|---|---|---|
 | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:388` — valor com `\`, `$` e aspas sobrevive à ida e volta pelo `.env` | RD2-08 | R27 | RQ-28 | `[CT-117]` — R54 |
-| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:908` — `corrigirResumoDaSenha()` reescreve a linha do resumo quando nada foi gerado | RD2-05 | R27 | RQ-28 | `[CT-120]` — R55 |
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:905` — `corrigirResumoDaSenha()` reescreve a linha do resumo quando nada foi gerado | RD2-05 | R27 | RQ-28 | `[CT-120]` — R55 |
 | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:936` — `mensagemDoBanner()` não promete "a que você definiu" sem semeadura | RD2-05 | R27 | RQ-28 | `[CT-119]` — R55 |
-| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:950` — `mensagemDoBanner()` com a semeadura rodada | RD2-05 | R27 | RQ-28 | `[CT-119]` — R55 |
-| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:964` — `mensagemDoBanner()` com senha gerada agora | RD2-05 | R27 | RQ-28 | `[CT-119]` — R55 |
-| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:990` — `RESUMO_SENHA_GERADA` pública, usada por `aplicar()` | RD3-12 | R27 | RQ-28 | `[CT-123]` — R56 |
-| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:1005` — `corrigirResumoDaSenha()` reconhece a linha pela constante | RD3-12 | R27 | RQ-28 | `[CT-123]` — R56 |
-| `tests/Kit/ResumoDoKitInstallTest.php:it:101` — com `--no-seed`, banner e resumo dão a mesma orientação, e ela funciona | RD3-01, RD3-04 | R27 | RQ-28 | `[CT-121]` — R56 |
-| `tests/Kit/ResumoDoKitInstallTest.php:it:144` — senha utilizável pelo `config()` com o arquivo vazio: `semear()` roda | RD3-03 | R27 | RQ-28 | `[CT-122]` — R56 |
-| `tests/Kit/DiagramasDaArquiteturaTest.php:it:5370` — `existeArestaDeFluxo()` reconhece toda seta válida, com controle negativo | RD3-05 | R1 (extrator) | RQ-34 | `[CT-124]` — R57 |
-| `tests/Kit/DiagramasDaArquiteturaTest.php:it:5392` — `relacaoDeEr()` reconhece `--` e `..`, com controle negativo | RD3-05 | R16 | RQ-34 | `[CT-125]` — R57 |
-| `tests/Kit/DiagramasDaArquiteturaTest.php:it:5432` — `blocosMermaidDe()` não lê span de código como cerca | RD3-05 | R1 (extrator) | RQ-34 | `[CT-103]` — R1 |
-| `tests/Kit/KitArteTest.php:it:607` — uma exceção qualquer num clipe não aborta os outros, e o diretório de montagem fica limpo | RD2-02, RD2-03 | R32 | RQ-27 | `[CT-127]` — R32 |
-| `tests/Kit/KitArteTest.php:it:674` — falha ao publicar avisa "não consegui publicar" e preserva o GIF anterior | RD3-09 | R33 | RQ-27 | `[CT-128]` — R33 |
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:951` — `mensagemDoBanner()` com a semeadura rodada | RD2-05 | R27 | RQ-28 | `[CT-119]` — R55 |
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:966` — `mensagemDoBanner()` com senha gerada agora | RD2-05 | R27 | RQ-28 | `[CT-119]` — R55 |
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:994` — `RESUMO_SENHA_GERADA` pública, usada por `aplicar()` | RD3-12 | R27 | RQ-28 | `[CT-123]` — R56 |
+| `tests/Kit/CustomizadorDaInstalacaoTest.php:it:1003` — `corrigirResumoDaSenha()` reconhece a linha pela constante | RD3-12 | R27 | RQ-28 | `[CT-123]` — R56 |
+| `tests/Kit/ResumoDoKitInstallTest.php:it:103` — com `--no-seed`, banner e resumo dão a mesma orientação, e ela funciona | RD3-01, RD3-04 | R27 | RQ-28 | `[CT-121]` — R56 |
+| `tests/Kit/ResumoDoKitInstallTest.php:it:150` — senha utilizável pelo `config()` com o arquivo vazio: `semear()` roda | RD3-03 | R27 | RQ-28 | `[CT-122]` — R56 |
+| `tests/Kit/DiagramasDaArquiteturaTest.php:it:5369` — `existeArestaDeFluxo()` reconhece toda seta válida, com controle negativo | RD3-05 | R1 (extrator) | RQ-34 | `[CT-124]` — R57 |
+| `tests/Kit/DiagramasDaArquiteturaTest.php:it:5393` — `relacaoDeEr()` reconhece `--` e `..`, com controle negativo | RD3-05 | R16 | RQ-34 | `[CT-125]` — R57 |
+| `tests/Kit/DiagramasDaArquiteturaTest.php:it:5434` — `blocosMermaidDe()` não lê span de código como cerca | RD3-05 | R1 (extrator) | RQ-34 | `[CT-103]` — R1 |
+| `tests/Kit/KitArteTest.php:it:605` — uma exceção qualquer num clipe não aborta os outros, e o diretório de montagem fica limpo | RD2-02, RD2-03 | R32 | RQ-27 | `[CT-127]` — R32 |
+| `tests/Kit/KitArteTest.php:it:682` — falha ao publicar avisa "não consegui publicar" e preserva o GIF anterior | RD3-09 | R33 | RQ-27 | `[CT-128]` — R33 |
 | `tests/BrowserTenancy/CapturaDeArteTest.php:it:794` — os quatro quadros do `install.gif`, sem `password` | — (sem ID; QA-03) | R35 | RQ-28, RQ-27 | `[CT-B04]` — R35 (no `05`) |
 
 Contagem: `grep -nE "^(it|test)\('\[RD" tests/Kit/*.php tests/Tenancy/*.php tests/BrowserTenancy/*.php | wc -l` = 14, e
@@ -5299,7 +6532,7 @@ os 14 levam também o `[CT-nn]` (`grep -nE "^(it|test)\('\[RD[^']*\]\[CT-[0-9]+\
 | CT-68 | rótulo igual nos dois idiomas só se invariante | R2 | EP com controles | Feature (Kit) | idem | R2.M5..M7 |
 | CT-69 | imagem de host conhecido; art/ de origem conhecida | R38 | EP (inclusão, baseline congelado) | Feature (Kit) | idem | R38.M2..M4; R37.M2 |
 | CT-70 | tabela de decisão do retorno social executada | R10 | tabela de decisão | Feature (Kit) | idem | R10.M4, M5 |
-| CT-71 | acumulação de papéis no canAccessPanel | R7 | tabela de decisão | Feature (Kit) | idem | R7.M6, M7 |
+| CT-71 | acumulação de papéis no canAccessPanel | R7 | tabela de decisão | Feature (Kit) | idem — `tests/Kit/DiagramasDaArquiteturaTest.php:it:2437` | R7.M6, M7; *(rodada 2: + R7.M10)* |
 | CT-72 | diretório listado em parte não é desenhado inteiro | R19 | EP (pai de entradas) | Feature (Kit) | idem | R19.M6, M7 |
 | CT-73 | caso de uso de escrita exige a permissão de escrita | R6 | EP por permissão exata | Feature (Kit) | idem | R6.M6, M7 |
 | CT-74 | toda imagem de art/ usa o ref main | R34 | EP do endereço | Feature (Kit) | idem | R34.M5, M6 |
@@ -5326,47 +6559,68 @@ os 14 levam também o `[CT-nn]` (`grep -nE "^(it|test)\('\[RD[^']*\]\[CT-[0-9]+\
 | CT-95 | frontmatter, initialize e classe aplicada recusados (+ `useMaxWidth` no bloco, step 11) | R21 | EP com controles | Feature (Kit) | idem — ganha as duas linhas | R21.M6..M8; R62.M1 |
 | CT-96 | DG-15: ramos da senha e banco acessível | R18 | EP + ordem derivada da fonte | Feature (Kit) | idem | R18.M4..M6 |
 | CT-97 | README: "aleatória" com a exceção de KIT_ADMIN_PASSWORD | R26 | EP | Feature (Kit) | idem | R26.M4 |
-| CT-98 | papéis em contextos diferentes (global × organização) | R7 | tabela de decisão | Feature (Tenancy) | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` | R7.M8, M9 |
+| CT-98 | papéis em contextos diferentes (global × organização) | R7 | tabela de decisão | Feature (Tenancy) | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` — `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:it:188` | R7.M8, M9; *(rodada 2: + R7.M10)* |
 | CT-99 | gravador de cada Resource do /infra, exercitado, com o homônimo | R15 | rastreio de efeito executado | Feature (Kit) | `tests/Kit/DiagramasDaArquiteturaTest.php` | R15.M6..M10 |
 | CT-100 | fonte de cada página do /infra (Health exercitado; Logs e Pulse resolvidos) | R15 | soundness | Feature (Kit) | idem | R15.M11 |
 | CT-101 | nenhum bloco nomeia passkey, WebAuthn ou FIDO | R28 | EP | Feature (Kit) | idem | R28.M3 |
 | CT-102 | âncoras dos docblocks de AgenteIa e do onboarding | R31 | âncora positiva | Feature (Kit) | idem | R31.M5, M6 |
 | CT-103 | extrator: til, quatro crases, bloco em comentário HTML e span de código embutido (step 11) | R1 | EP com controles | Feature (Kit) | idem — e o `[RD3-05]` de `:4865`, que passa a levar `[CT-103]` | R1.M6..M8 |
 | CT-104 | seção com GIF de recurso opt-in nomeia a chave | R4 | EP com controles | Feature (Kit) | idem | R4.M8, M9 |
-| CT-105 | job de PR constrói e confere o site quando o PR toca docs/ ou site/ | R47 | inspeção do fluxo + EP dos prefixos | Feature (Kit) | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5602` *(alterado em 2026-09-29: escrito no step 10 — DV-09 fechada; era "teste a escrever")* | R47.M1..M6 |
+| CT-105 | job de PR constrói e confere o site quando o PR toca docs/ ou site/ | R47 | inspeção do fluxo + EP dos prefixos | Feature (Kit) | `tests/Kit/DiagramasDaArquiteturaTest.php:it:6224` *(alterado em 2026-09-29: escrito no step 10 — DV-09 fechada; era "teste a escrever")* | R47.M1..M6 |
 | CT-106 | ociosidade, tentativas e force logout do DG-10 = plugin de bloqueio de cada painel | R48 | valor do fonte + EP por painel | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:165` *(alterado em 2026-09-29: step 10 do ciclo 2 — CT-106..CT-111, CT-115 e CT-116 moram em arquivo próprio, e não em `tests/Kit/DiagramasDaArquiteturaTest.php`; CT-112..CT-114, no irmão com tenancy; eram "teste a escrever")* | R48.M1, M2, M4 |
 | CT-107 | DG-10 vermelho com número, desfecho ou marca de opcional alterados | R48 | mundo alterado + controles | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:197` | R48.M1..M5 |
 | CT-108 | cada evento agendado no agendador do DG-19, com a sua frequência; piso de 7 | R49 | EP exaustiva + piso | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:437` | R49.M1 |
 | CT-109 | agendador do DG-19 vermelho com evento novo, horário mudado ou aresta errada | R49 | mundo alterado + BVA 2-valores + soundness | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:473` | R49.M1..M5 |
 | CT-110 | comando, filas e condição de cada processo do DG-19 | R50 | EP por processo | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:624` | R50.M3, M4 |
 | CT-111 | processos do DG-19 vermelhos com comando ou rótulo alterado | R50 | mundo alterado + lista ordenada | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:656` | R50.M1, M2, M4, M5 |
-| CT-112 | ordem do DG-20 = pilha de middlewares de uma rota do /app/{tenant} | R51 | ordem derivada da rota | Feature (Tenancy) · grupo Extras do catálogo — suíte Tenancy | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:it:816` | R51.M1, M2, M4 |
-| CT-113 | contexto de papéis fixado com a organização da rota, só no pedido permitido | R51 | rastreio de efeito | Feature (Tenancy) · grupo Extras do catálogo — suíte Tenancy | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:it:856` | R51.M1, M3 |
-| CT-114 | desfecho de GET /app/{tenant} = ramo do DG-20 que cobre a situação (nasce vermelho na linha master_global sem vínculo) | R52 | tabela de decisão executada | Feature (Tenancy) · grupo Extras do catálogo — suíte Tenancy | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:it:925` | R52.M1..M4 |
+| CT-112 | ordem do DG-20 = pilha de middlewares de uma rota do /app/{tenant} | R51 | ordem derivada da rota | Feature (Tenancy) · grupo Extras do catálogo — suíte Tenancy | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:it:813` | R51.M1, M2, M4 |
+| CT-113 | contexto de papéis fixado com a organização da rota, só no pedido permitido | R51 | rastreio de efeito | Feature (Tenancy) · grupo Extras do catálogo — suíte Tenancy | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:it:813` | R51.M1, M3 |
+| CT-114 | desfecho de GET /app/{tenant} = ramo do DG-20 que cobre a situação (nasce vermelho na linha master_global sem vínculo) | R52 | tabela de decisão executada | Feature (Tenancy) · grupo Extras do catálogo — suíte Tenancy | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:it:813` | R52.M1..M4 |
 | CT-115 | controles do DG-20 contra a tabela literal de CT-114 | R52 | controles | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:799` | R52.M1, M3, M5 |
 | CT-116 | fato declarado de cada DG aceita o bloco publicado e reprova a cópia adulterada dele, pt e en | R53 | controle positivo + adulteração do publicado | Feature (Kit) · grupo Extras do catálogo — suíte Kit | `tests/Kit/GuardasDosDiagramasTest.php:it:918` | R53.M1..M5 |
-| CT-117 | o valor gravado no .env faz a ida e volta | R54 | EP | Feature (Kit, service) · grupo Instalador: senha e .env | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:388` — o `[RD2-08][CT-117]`, **ainda com um valor só**: as linhas da barra no fim, da barra seguida de n, do `${APP_ENV}` e da quebra não entraram *(alterado em 2026-09-29: step 10 do ciclo 2 — o teste só ganhou o `[CT-nn]` no nome; a divergência `04` × teste está no `03`, `## 26.`)* | R54.M1..M3, M5 |
-| CT-118 | com a chave em duas linhas, só a primeira é trocada | R54 | BVA 1 × 2 | idem | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:426` (QA-10) | R54.M4 |
-| CT-119 | o banner diz da senha o que o desfecho fez | R55 | tabela de decisão | Feature (Kit, comando) · grupo Instalador: senha e .env | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:936`, `:950` e `:964` — os `[RD2-05][CT-119]`; **ainda faltam** "não apresenta password", "não imprime senha" (¬G ∧ S) e a instrução (¬G ∧ ¬S) *(alterado em 2026-09-29: step 10 do ciclo 2 — o teste só ganhou o `[CT-nn]` no nome; a divergência `04` × teste está no `03`, `## 26.`)* | R55.M1, M2, M5 |
-| CT-120 | a linha "Senha do administrador" diz o que o desfecho fez | R55 | tabela de decisão | idem | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:908` — o `[RD2-05][CT-120]`; **ainda faltam** as linhas G ∧ S e ¬G ∧ S e a instrução *(alterado em 2026-09-29: step 10 do ciclo 2 — o teste só ganhou o `[CT-nn]` no nome; a divergência `04` × teste está no `03`, `## 26.`)* | R55.M3..M5 |
-| CT-121 | com --no-seed, banner e resumo sem promessa e com a mesma instrução | R56 | rastreio pelo ponto de entrada | idem | `tests/Kit/ResumoDoKitInstallTest.php:it:101` — o `[RD3-01][RD3-04][CT-121]`; **ainda faltam** as asserções da linha do resumo e do banner (DV-03) *(alterado em 2026-09-29: step 10 do ciclo 2 — o teste só ganhou o `[CT-nn]` no nome; a divergência `04` × teste está no `03`, `## 26.`)* | R56.M1..M3 |
-| CT-122 | com a senha só no ambiente, o resumo não nega a semeadura | R56 | rastreio pelo ponto de entrada | idem | `tests/Kit/ResumoDoKitInstallTest.php:it:144` — o `[RD3-03][CT-122]`; **ainda falta** "o banner não imprime senha" *(alterado em 2026-09-29: step 10 do ciclo 2 — o teste só ganhou o `[CT-nn]` no nome; a divergência `04` × teste está no `03`, `## 26.`)* | R56.M4 |
-| CT-123 | a promessa da senha gerada tem um texto só | R56 | inspeção estática | idem | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:990` e `:1005` — os `[RD3-12][CT-123]` | R56.M5 |
-| CT-124 | toda seta de fluxo é a aresta, e só ela | R57 | EP + BVA + controle negativo | Feature (Kit) · grupo Extrator e guardas de paridade | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5370` — o `[RD3-05][CT-124]`, com a linha `ab --> b` | R57.M1..M3 |
-| CT-125 | toda relação de ER, `--` ou `..`, com as cardinalidades | R57 | EP | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5392` — o `[RD3-05][CT-125]`, com `\|o--o{` e `}\|..\|{` | R57.M4 |
-| CT-126 | toda seta de sequência é uma mensagem | R57 | EP + controle negativo | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5408` | R57.M5 |
-| CT-127 | a falha fora do ffmpeg num clipe não para os outros | R32 | EP (partição nova) | Feature (Kit, comando) · grupo GIFs pelo kit:arte | `tests/Kit/KitArteTest.php:it:607` — o `[RD2-02/RD2-03][CT-127]`; **ainda falta** "a saída nomeia o clipe" *(alterado em 2026-09-29: step 10 do ciclo 2 — o teste só ganhou o `[CT-nn]` no nome; a divergência `04` × teste está no `03`, `## 26.`)* | R32.M7..M9 |
-| CT-128 | a falha ao publicar preserva o GIF publicado | R33 | atomicidade | idem | `tests/Kit/KitArteTest.php:it:674` — o `[RD3-09][CT-128]` | R33.M7..M9 |
-| CT-129 | o elemento opt-in publicado leva a chave exata no próprio escopo | R58 | EP por elemento | Feature (Kit) · grupo Extrator e guardas de paridade | `tests/Kit/DiagramasDaArquiteturaTest.php:it:1437` | R58.M1..M5 |
-| CT-130 | controles do detector de opcional: escopo, chave exata, homônimo, idioma | R59 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:1463` | R59.M1..M5 |
-| CT-131 | o título de cada DG no índice é o accTitle | R60 | EP exaustiva + controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5657` | R60.M1..M4 |
-| CT-132 | o texto visível de cada bloco sem palavra do outro idioma | R61 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5767` — **vermelho em 2 das 7 linhas** em 2026-09-29: as cópias do DG-07 en e do DG-05 en leem o bloco publicado sem aplicar a alteração do Exemplo, e o publicado já foi corrigido (QA-09) *(alterado em 2026-09-29: step 10 do ciclo 2, divergência `04` × teste no `03`, `## 26.`)* | R61.M1..M4 |
+| CT-117 | o valor gravado no .env faz a ida e volta, com a quebra LF, CRLF ou CR como um espaço *(alterado em 2026-09-29: Adendo 7, RQ-51)* | R54 | EP | Feature (Kit, service) · grupo Instalador: senha e .env | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:610` — o `[RD2-08][CT-117]` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R54.M1..M3, M5, M9, M10 |
+| CT-118 | toda linha ativa da chave é trocada, e nenhuma comentada — antes ou depois da ativa —, e os três leitores ficam com o valor gravado *(alterado em 2026-09-29: Adendo 7, RQ-50 — era "com a chave em duas linhas, só a primeira é trocada")* | R54 | BVA 1 × 2 nas linhas ativas | idem | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:665` (QA-10) *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R54.M4, M6..M8 |
+| CT-119 | o banner diz da senha o que o desfecho fez | R55 | tabela de decisão | Feature (Kit, comando) · grupo Instalador: senha e .env | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:1463`, `:1497` e `:1517` — os `[RD2-05][CT-119]` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R55.M1, M2, M5 |
+| CT-120 | a linha "Senha do administrador" diz o que o desfecho fez | R55 | tabela de decisão | idem | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:1406` — o `[RD2-05][CT-120]` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R55.M3..M5 |
+| CT-121 | com --no-seed, banner e resumo sem promessa e com a mesma instrução | R56 | rastreio pelo ponto de entrada | idem | `tests/Kit/ResumoDoKitInstallTest.php:it:278` — o `[RD3-01][RD3-04][CT-121]` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R56.M1..M3 |
+| CT-122 | com a senha só no ambiente, o resumo não nega a semeadura | R56 | rastreio pelo ponto de entrada | idem | `tests/Kit/ResumoDoKitInstallTest.php:it:337` — o `[RD3-03][CT-122]` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R56.M4 |
+| CT-123 | a promessa da senha gerada tem um texto só | R56 | inspeção estática | idem | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:1554` e `:1569` — os `[RD3-12][CT-123]` | R56.M5 |
+| CT-124 | toda seta de fluxo é a aresta, e só ela | R57 | EP + BVA + controle negativo | Feature (Kit) · grupo Extrator e guardas de paridade | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5886` — o `[RD3-05][CT-124]`, com a linha `ab --> b` | R57.M1..M3 |
+| CT-125 | toda relação de ER, `--` ou `..`, com as cardinalidades | R57 | EP | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5903` — o `[RD3-05][CT-125]`, com `\|o--o{` e `}\|..\|{` | R57.M4 |
+| CT-126 | toda seta de sequência é uma mensagem | R57 | EP + controle negativo | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5919` | R57.M5 |
+| CT-127 | a falha fora do ffmpeg num clipe não para os outros | R32 | EP (partição nova) | Feature (Kit, comando) · grupo GIFs pelo kit:arte | `tests/Kit/KitArteTest.php:it:720` — o `[RD2-02/RD2-03][CT-127]` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R32.M7..M9 |
+| CT-128 | a falha ao publicar preserva o GIF publicado e nomeia a publicação, e não a montagem *(alterado em 2026-09-29: Adendo 7, RQ-52)* | R33 | atomicidade + EP da etapa nomeada | idem | `tests/Kit/KitArteTest.php:it:801` — o `[RD3-09][CT-128]`; afirma as duas metades de RQ-52 (`tests/Kit/KitArteTest.php:nao consegui publicar:873`, `tests/Kit/KitArteTest.php:falha ao montar o clipe:841`) *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R33.M7..M10; *(rodada 2: + R33.M12)* |
+| CT-129 | o elemento opt-in publicado leva a chave exata no próprio escopo | R58 | EP por elemento | Feature (Kit) · grupo Extrator e guardas de paridade | `tests/Kit/DiagramasDaArquiteturaTest.php:it:1558` | R58.M1..M5; *(rodada 2: + R58.M6, M8)* |
+| CT-130 | controles do detector de opcional: escopo, chave exata, homônimo, idioma | R59 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:1594` | R59.M1..M5; *(rodada 2: + R59.M14)* |
+| CT-131 | o título de cada DG no índice é o accTitle | R60 | EP exaustiva + controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:6279` | R60.M1..M4 |
+| CT-132 | o texto visível de cada bloco sem palavra do outro idioma | R61 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:6515` *(alterado em 2026-09-30: o teste tem todo `Então` do cenário; verde em 2026-09-30)* | R61.M1..M4 |
+| CT-133 | com --no-seed, a instrução põe a chave antes do db:seed, como condição, e nada promete senha — sem acento, sem caixa, contra a constante *(alterado em 2026-09-30: revisão adversarial da adição — as linhas CT-133..CT-148 são todas desta passada)* | R56 | rastreio pelo ponto de entrada + ordem | Feature (Kit, comando) · grupo Instalador: senha e .env | `tests/Kit/ResumoDoKitInstallTest.php:it:383` | R55.M6, M7; R56.M6, M7; *(rodada 2: + R55.M12)* |
+| CT-134 | com a senha já definida e --no-seed, nada promete a gerada, o banner não imprime senha, e o .env a guarda | R56 | EP da origem + rastreio | idem | `tests/Kit/ResumoDoKitInstallTest.php:it:429`; a linha da digitada, com a hipótese de arnês do Setup Global | R56.M8..M10; *(rodada 2: + R56.M12, M13)* |
+| CT-135 | a senha que a saída dá é a que autentica o administrador semeado, e password não | R63 | EP da origem + rastreio + estado semeado | idem | `tests/Kit/ResumoDoKitInstallTest.php:it:480` | R63.M1..M4 |
+| CT-136 | o db:seed que não completa depois da senha gerada não deixa promessa sem saída | R55 | tabela de decisão (a célula G ∧ ¬S) + rastreio | idem | `tests/Kit/ResumoDoKitInstallTest.php:it:527`; o `db:seed` que falha, hipótese de arnês | R55.M8, M9; *(rodada 2: + R55.M11)* |
+| CT-137 | toda linha que o Dotenv lê como a chave é trocada, e nenhuma outra linha muda | R54 | EP das formas de linha | Feature (Kit, service) · grupo Instalador: senha e .env | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:720`; nasce vermelho em 5 das 8 linhas *(nasceu vermelho em 2026-09-30, saída no `03`; verde depois da correção)* | R54.M11..M15 |
+| CT-138 | com a chave ativa duas vezes, cada gravador do kit troca as duas | R64 | EP por chamador | idem | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:790`; nasce vermelho nas 8 linhas *(nasceu vermelho em 2026-09-30, saída no `03`; verde depois da correção)* | R64.M1, M2 |
+| CT-139 | sem linha ativa antes, a gravação deixa exatamente uma, com o valor gravado | R64 | BVA 0 | idem | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:830` | R64.M3..M5; *(rodada 2: + R64.M7)* |
+| CT-140 | o extrator de fluxo: sentido, cadeia, &, comentário e seta dentro de rótulo | R65 | EP + controle negativo do sentido | Feature (Kit) · grupo Extrator e guardas de paridade | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5961` | R65.M1..M7; *(rodada 2: + R65.M8)* |
+| CT-141 | a linha de comentário não vira mensagem nem relação | R65 | EP | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:5994` | R65.M7; *(rodada 2: + R65.M8)* |
+| CT-142 | meias-setas de sequência e cardinalidades de ER dos dois lados | R57 | EP das formas do lexer | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:6018` | R57.M6, M7; *(rodada 2: + R57.M8)* |
+| CT-143 | o detector não estende a condição do alt, nem aceita nota de outro estado ou a menção à coluna | R59 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:1720` e `:1818`; nasce vermelho na linha da menção a `tenant_id` *(nasceu vermelho em 2026-09-30, saída no `03`; verde depois da correção)* | R59.M6..M8; *(rodada 2: + R59.M12, M13; R58.M8)* |
+| CT-144 | o elemento é achado pelo termo do idioma, e o bloco publicado leva cada chave que o liga | R59 | EP por elemento × idioma | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:1921`; nasce vermelho no DG-06 (pt e en) e no DG-08 *(nasceu vermelho em 2026-09-30, saída no `03`; verde depois da correção)* | R59.M9, M10; R58.M6, M7; *(rodada 2: + R59.M11)* |
+| CT-145 | índice sem linha a mais, DG repetido nem título quase igual | R60 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:6440` | R60.M5, M6 |
+| CT-146 | nenhuma palavra inteira da lista do outro idioma no texto visível | R61 | EP com controles | idem | `tests/Kit/DiagramasDaArquiteturaTest.php:it:6727`; nasce vermelho no DG-06 en *(nasceu vermelho em 2026-09-30, saída no `03`; verde depois da correção)* | R61.M5..M7; *(rodada 2: + R61.M8, M9)* |
+| CT-147 | a falha da publicação não culpa a montagem por nenhum nome dela | R33 | EP da etapa nomeada | Feature (Kit, comando) · grupo GIFs pelo kit:arte | `tests/Kit/KitArteTest.php:it:861` | R33.M11; *(rodada 2: + R33.M12)* |
+| CT-148 | a legibilidade do site não muda o tipo nem a direção de nenhum bloco | R62 | baseline congelado + mundo alterado | Feature (Kit) · grupo Extrator e guardas de paridade | `tests/Kit/DiagramasDaArquiteturaTest.php:it:7047` | R62.M3; *(rodada 2: + R62.M5)* |
+| CT-149 | duas instalações sem senha definida geram senhas diferentes, e cada banco autentica só a sua *(alterado em 2026-09-30: re-revisão adversarial da adição, rodada 2 — CT-149 e CT-150)* | R63 | EP da origem + rastreio + estado semeado, em duas instalações | Feature (Kit, comando) · grupo Instalador: senha e .env | `tests/Kit/ResumoDoKitInstallTest.php:it:577`; o banco recriado entre as execuções, hipótese de arnês | R63.M5, M6 |
+| CT-150 | o comentário ao lado de uma linha ativa continua byte a byte, por gravador | R64 | EP por chamador | Feature (Kit, service) · grupo Instalador: senha e .env | `tests/Kit/CustomizadorDaInstalacaoTest.php:it:882` | R64.M6 |
 
 CT-B01..CT-B06: ver `05-casos-de-teste-browser.md` *(alterado em 2026-09-29: o step 11 acrescentou CT-B04, os quadros do
 `install.gif`, e CT-B05 e CT-B06, a legibilidade no site)* (sem mudança no ciclo 1: nenhum achado caiu no que só
 o navegador prova — A-06 cita o CT-B03, mas o que falta é a **montagem**, que CT-64 prova por comando).
 Sem mudança no ciclo 2: o único achado sobre o `05` (A2-14, "CT-B02 mede só o DG-01") foi rejeitado nessa
 parte — a fixação de tema por bloco é provada na fonte (CT-34, CT-35, CT-95), e a da integração é global.
+*(alterado em 2026-09-30: a revisão adversarial da adição acrescentou CT-B07..CT-B11 — a escala pela matriz, o texto de
+`foreignObject`, o bloco dentro da coluna, o recorte de cada quadro do `install.gif` e a troca de tema como evento —, e
+corrigiu a forma do CT-B04)*
 
 ## Revisão adversarial — ciclo 1
 
@@ -5464,7 +6718,192 @@ parte — a fixação de tema por bloco é provada na fonte (CT-34, CT-35, CT-95
 - **"A guarda exercita o gravador de toda Resource"** (R15) e **"a guarda confere os 12 serviços"** (R20)
   continuavam prosa fora de `Então` — a mesma classe do R20.M3 do ciclo 1. Viraram CT-99 e CT-84.
 
+## Revisão adversarial — adição do step 11 e do Adendo 7
+
+> *(alterado em 2026-09-30: seção nova)* **Disparo**: o gatilho da skill, pendente desde o step 11 — Impacto 3 na área H
+> (a senha do administrador). **Revisor**: sub-agente cego, entrada `00` + `04` + `05`, sem o PRD, o código nem o
+> raciocínio de quem derivou. **Fechamento**: esta passada, que não derivou R54–R62; cada afirmação sobre o código, o
+> vendor e o `site/node_modules` foi conferida com `sed -n` na linha citada, e os blocos publicados foram lidos para medir
+> o que os cenários novos afirmam deles (não como oráculo). **Áreas que os achados tocam**: H, I, B, A, C, E (a saída recebida não traz a declaração das áreas percorridas, que o contrato pede — a sessão a confere no despacho). **Resultado**:
+> 39 achados (8 alta, 20 média, 11 baixa) — 34 fechados por cenário novo ou forma reescrita, 2 só por lacuna, 3
+> rejeitados. **Próximo passo obrigatório**: o fechamento criou 16 cenários no `04` e 5 CT-B no `05`; a skill manda uma
+> re-revisão desta adição, e o teto é de 2 rodadas.
+
+| Achado | Sev. | Veredito | O que virou | Mutantes novos |
+|---|---|---|---|---|
+| ADV-01 instrução do banco não populado com a ordem invertida, ou a chave como opcional | alta | aceito | CT-133 (a ordem de cada texto, e a lista do "opcional") | R55.M6, M7 |
+| ADV-02 a origem da senha (digitada, já definida) × `--no-seed` fora da tabela | alta | aceito — o invariante; a direção é pergunta | CT-134; Q?10; L-17 | R56.M8..M10; R56.M11 sem matador |
+| ADV-03 `filled(config())` sem `ehUtilizavel()`, com `password` no ambiente | alta | aceito | regra nova R63, CT-135 (linha do padrão publicado) | R63.M1 |
+| ADV-04 G ∧ S pelo `handle()`: o `db:seed` do mesmo processo com a config do boot | alta | aceito | CT-135 (`Hash::check()` da senha impressa) | R63.M2, M4 |
+| ADV-05 "semeado" = "`semear()` foi chamado", e a falha do `db:seed` depois da senha gerada | média | aceito, com ressalva de evidência (abaixo) — o invariante; a direção é pergunta | CT-136; a afirmação "a célula não existe" corrigida em R55; Q?11; L-18 | R55.M8, M9; R55.M10 sem matador |
+| ADV-06 a troca de toda linha ativa só num chamador | alta | aceito, com ressalva de evidência (abaixo) | regra nova R64, CT-138 (os seis gravadores) | R64.M1, M2 |
+| ADV-07 `export`, espaço no `=`, comentário sem espaço ou indentado | média | aceito | CT-137; a definição de "linha ativa" corrigida pelo parser do Dotenv | R54.M11..M13 |
+| ADV-08 padrão sem âncora reescreve `VITE_APP_NAME` | média | aceito | CT-137 (linha `VITE_APP_NAME`, que está no `.env.example`) | R54.M14 |
+| ADV-09 chave ausente: a gravação não faz nada | média | aceito | CT-139 (BVA 0) | R64.M3, M5 |
+| ADV-10 duas quebras seguidas viram um espaço | baixa | **rejeitado** (ver abaixo) | — | — |
+| ADV-11 `\s*` com `/m` consome a linha em branco | baixa | aceito (custa uma linha, e o código de hoje tem o defeito) | CT-137 (linha em branco antes da ativa) | R54.M15 |
+| ADV-12 o par sem ordem | média | aceito | regra nova R65, CT-140 | R65.M1, M2 |
+| ADV-13 cadeia e `&` | média | aceito | CT-140 | R65.M3..M5 |
+| ADV-14 comentário `%%` e seta dentro de rótulo | média | aceito | CT-140, CT-141 | R65.M6, M7 |
+| ADV-15 meias-setas; ER à direita sem `{` | baixa | aceito (partições que o Mundo de R57 já cita) | CT-142 | R57.M6, M7 |
+| ADV-16 a condição do `alt` estendida ao `else` | média | aceito | CT-143 | R59.M6 |
+| ADV-17 nota de outro estado | baixa | aceito (uma linha no mesmo cenário) | CT-143 | R59.M7 |
+| ADV-18 termo en só para `cu_aceitar_convite` | alta | aceito — e a conferência do publicado achou o DG-06 sem chave de provedor e o `[CT-08]` por substring | CT-144 | R59.M9, M10; R58.M7 |
+| ADV-19 Pendente depende de duas chaves | baixa | aceito — confirmado no código: a pendência só nasce na porta do registro, que exige `KIT_REGISTRO` | CT-144 (linha do DG-08, nasce vermelha) | R58.M6 |
+| ADV-20 linha a mais, DG repetido, comparação normalizada | baixa | aceito (custa três linhas de controle) | CT-145 | R60.M5, M6 |
+| ADV-21 a lista de três expressões contra a regra que promete o invariante | média | aceito em parte — a lista de palavras inteiras; o que ela não vê continua em L-14, reduzida | CT-146; Q?12 | R61.M5, M6; R61.M7 (achado desta derivação) |
+| ADV-22 `max-height`: a escala pela altura | média | aceito | CT-B07 (no `05`) | CT-B07.M1, M2 |
+| ADV-23 texto HTML de `foreignObject`; SVG sem texto medido | média | aceito | CT-B08 (no `05`) | CT-B08.M1..M3 |
+| ADV-24 `width: max-content` com ancestral que corta | média | aceito | CT-B09 (no `05`) | CT-B09.M1, M2 |
+| ADV-25 a direção trocada ou o rótulo abreviado | média | aceito em parte — a direção e o tipo; o rótulo, lacuna | CT-148; L-19 | R62.M3; R62.M4 sem matador |
+| ADV-26 o acento no `Então` contra o banner ASCII | alta | aceito — defeito do conjunto | a comparação sem acento e sem caixa (Setup Global), escrita em CT-133 | R56.M6 |
+| ADV-27 a constante redita junto com o acerto desligado | média | aceito | CT-133 (a constante lida na execução) | R56.M7 |
+| ADV-28 o seeder lê a senha do arquivo | alta | aceito | CT-135 (linha "só no ambiente") | R63.M3 |
+| ADV-29 a linha "duas ativas" de CT-118 pede intacta uma linha que o `Dado` dela não tem | média | aceito — defeito do conjunto | CT-137, última linha, com o `Dado` completo | — (a partição é a do R54.M6/M8) |
+| ADV-30 `tenant_id` como menção, e não como condição | média | aceito | CT-143 (nasce vermelha contra a guarda de hoje); Q?13 | R59.M8 |
+| ADV-31 a publicação nomeada e o ffmpeg culpado na mesma linha | baixa | aceito (a distinção é o motivo da RQ-52) | CT-147 | R33.M11 |
+| ADV-32 o recorte de um quadro do `install.gif` deslocado de um marcador | média | aceito | CT-B10 (no `05`) | CT-B10.M1..M3 |
+| ADV-33 CT-B04 com dois `Quando`, e um `Então` "antes do screenshot" | baixa | aceito — defeito do conjunto | a forma do CT-B04 reescrita no `05`; o CT-B10 nasce na forma certa | — |
+| ADV-34 CT-B05 com o evento (a troca de tema) num parâmetro do `Dado` | baixa | aceito — defeito do conjunto | CT-B11 (no `05`), com a troca como `Quando` | CT-B11.M1 |
+| ADV-35 o "teste primeiro" de RQ-45 cumprido só renomeando | média | aceito — não é falsificável por cenário | a afirmação de "RQ sem regra própria" corrigida; L-15 | — |
+| ADV-36 o CT-B05 nunca rodou vermelho | baixa | aceito — evidência a produzir | L-16 | — |
+| ADV-37 RQ-50 fora do formato, a Q?9 fora do `00`, o invariante atribuído a um teste de outra wiki | média | aceito | a linha no formato da skill; o invariante como cenário daqui, CT-139; a Q?9 levada ao `00` pela sessão | R64.M4 |
+| ADV-38 a senha digitada com mais de 72 bytes | média | **rejeitado** (ver abaixo) | — | — |
+| ADV-39 APP_NAME longo no destino mais estreito | baixa | **rejeitado** (ver abaixo) | — | — |
+
+**Defeitos do próprio conjunto que a revisão expôs** (do `04`/`05`, não do produto):
+
+- **O acento do `Então`** (ADV-26): o CT-121 e o CT-119 proíbem "a que você definiu" com acento, e o banner é ASCII — a
+  ausência passava no vazio, e a `Asserção que mata` do R56.M2 não divergia sob o próprio mutante. Consertado pela
+  comparação sem acento e sem caixa do Setup Global, para CT-119..CT-122.
+- **O `Dado` da linha "2 ativas" do CT-118** (ADV-29): a coluna `intacta` nomeia `MAIL_FROM_NAME="${APP_NAME}"`, que o
+  `Dado` dessa linha não tem — ou o `E` "continua byte a byte" falha sempre, ou quem implementa completa o `Dado` por
+  conta própria. O CT-137 traz a partição com o `Dado` completo; quem materializar o CT-118 usa o `Dado` dele.
+- **A definição de "linha ativa"** (ADV-07, ADV-11): estreita demais contra o leitor e com o próprio defeito do `\s*`;
+  corrigida em R54 e no Setup Global.
+- **A afirmação "a célula G ∧ ¬S não existe"** em R55 (ADV-05): negativa que dispensava controle, sem cenário escrito como
+  se fosse falsa. Corrigida, e é o CT-136.
+- **A afirmação de que RQ-45 estava cumprida** (ADV-35) e **a linha de RQ-50 fora do formato** (ADV-37): corrigidas.
+- **O `APP_URL` do `.env.example`** (achado desta derivação, ao fechar ADV-37): R54 e L-13 o davam, junto do `DB_HOST`,
+  como chave só comentada; ele é ativo (`.env.example:APP_URL:5`). A chave só comentada do `.env.example` é o bloco `DB_*`
+  (`.env.example:# DB_HOST:37`); a do `[CT-19]` do `HostLocalTest` é a da fixture dele.
+- **O `[CT-08]` do teste diverge do `04`** (achado desta derivação, ao fechar ADV-18): o `04` diz, desde o step 11, que a
+  linha "provedor social → `KIT_SOCIALITE_`" passa pelo detector de palavra inteira; o teste confere por substring
+  (`tests/Kit/DiagramasDaArquiteturaTest.php:assertStringContainsString:1445`) e aceita o DG-06, que não nomeia chave de
+  provedor. Vira o R59.M10 e o R58.M7, mortos pelo CT-144.
+- **A forma do CT-B04 e do CT-B05** (ADV-33, ADV-34): dois `Quando` num, e o evento num parâmetro do `Dado`. Consertados no
+  `05`.
+
+## Revisão adversarial — re-revisão da adição (rodada 2)
+
+> *(alterado em 2026-09-30: seção nova)* **Disparo**: a re-revisão única que a skill manda quando o fechamento cria
+> cenário novo — o da rodada 1 criou CT-133..CT-148 e CT-B07..CT-B11. **Revisor**: sub-agente cego, entrada `00` + `04` +
+> `05`, sem o PRD, o código nem o raciocínio de quem derivou. **Fechamento**: esta passada, com a decisão da sessão para
+> cada achado (2026-09-30); toda afirmação sobre o código, o vendor e o `site/node_modules` foi conferida com `sed -n` na
+> linha citada, e os blocos publicados foram lidos só para medir o que os cenários afirmam deles. **Severidade**: a
+> classificação do revisor não veio no despacho recebido por esta passada; a coluna fica "—", em vez de inventada.
+> **Resultado**: 24 achados — 23 aceitos (ADV2-04 em parte) e 1 rejeitado (ADV2-23). Dois cenários novos no `04`
+> (CT-149, CT-150); nenhum CT-B novo no `05`; o resto são linhas e `Então` novos em cenários existentes. **Teto de 2
+> rodadas atingido**: não há terceira revisão. Nenhum achado desta rodada foi estrutural (nenhum trocou a técnica de uma
+> regra); o que ficou aberto está como lacuna (L-17, L-18, L-19, L-20) ou premissa em aberto (RQ-28 e RQ-50 abertas em
+> parte, P-45..P-47), nunca "a rever".
+
+| Achado | Sev. | Veredito | O que virou | Mutantes novos |
+|---|---|---|---|---|
+| ADV2-01 um gerador de senha fixa passa: nada afirma "aleatória" (P-17) | — | aceito | CT-149 (R63): duas instalações isoladas, a mesma entrada, senhas diferentes, e cada banco autentica só a sua | R63.M5, M6 |
+| ADV2-02 o CT-134 não afirma que o banner diz que nenhum administrador foi criado | — | aceito | `Então` novo no CT-134: "nenhum usuario/administrador foi criado", sem acento e sem caixa, e nenhum "login inicial" — o invariante das duas leituras da Q?10 | R56.M12 |
+| ADV2-03 "toda senha impressa é ela" do CT-136 é vazio sem senha impressa | — | aceito | CT-136: "a saída imprime uma senha, e ela é a relida do `.env`" — as duas leituras da Q?11 a imprimem | R55.M11 |
+| ADV2-04 a lista do "opcional" não fecha a classe ("recomendado", "ou rode … direto") | — | aceito em parte | CT-133: a lista ganha "recomendado", "recommended", "ou rode", "or run", "direto", e o `Então` "a chave e o `db:seed` nunca ligados por 'ou'"; a classe é aberta (regime de L-06), e a parte rejeitada está abaixo | R55.M12 |
+| ADV2-05 o conserto ingênuo em `aplicar()` reescreve o comentário ao lado da ativa nos chamadores diretos | — | aceito | CT-150 (R64): o comentário ao lado da ativa, pela ativação da tenancy, `aplicarBanco()` e a garantia da senha | R64.M6 |
+| ADV2-06 chave ausente sem fallback em `DB_CONNECTION`, `KIT_TENANCY`, `KIT_DEMO` | — | aceito | CT-139: as três linhas "0 — ausente" (a do `KIT_DEMO` se o arnês isolar); a decisão da sessão — toda gravação anexa a ausente, `DB_CONNECTION` incluído — escrita em R64, e a frase "o `DB_CONNECTION` sem fallback" saiu | R64.M7 |
+| ADV2-07 o `%%` indentado vira aresta | — | aceito | uma linha no CT-140 e uma no CT-141 | R65.M8 |
+| ADV2-08 faltam 5 das 8 meias-setas de sequência | — | aceito | CT-142: `-\|/`, `-\\`, `--\|\`, `--\\`, `--//`, uma linha cada | R57.M8 |
+| ADV2-09 o detector de R61 exclui toda palavra com maiúscula inicial | — | aceito | CT-146: "Painel de controle" e "Conta nova" no começo de rótulo en → recusa; a exclusão é só do PascalCase composto (P-31) | R61.M8 |
+| ADV2-10 o texto visível ignora `accDescr`, `note`, rótulo de aresta e título de `subgraph` | — | aceito | CT-146: uma linha por posição, com a palavra só nela | R61.M9 |
+| ADV2-11 a chave só num comentário `%%` conta como "o bloco nomeia a chave" | — | aceito | CT-144: o controle negativo da chave só em `%%`; os blocos publicados DG-05 en e DG-06 (pt e en) conferidos — nenhuma chave só em comentário, nenhuma linha real nasce vermelha por isto | R59.M11 |
+| ADV2-12 o "se" reflexivo e o "quando" no fim passam como condição do `tenant_id` | — | aceito | a decisão da Q?13 com o refinamento; CT-143: quatro linhas (o "se" reflexivo, o "quando" no fim, a condição que abre a mensagem, e ela sem `KIT_TENANCY`), e o controle do publicado invertido | R59.M12, M13 |
+| ADV2-13 `direction` num `subgraph` ou num `stateDiagram-v2`, e o CT-148 só lê a primeira linha | — | aceito | CT-148 congela toda instrução `direction` (posição e valor); duas linhas de mundo alterado | R62.M5 |
+| ADV2-14 a culpa da montagem na linha seguinte à da publicação | — | aceito | CT-147 e CT-128: um clipe só no `Dado`, e nenhuma linha da saída culpa a montagem ou o ffmpeg | R33.M12 |
+| ADV2-15 o conserto do piso só sob `prefers-color-scheme: light` | — | aceito | CT-B05 (no `05`): linhas "escuro desde o carregamento", pt 1280 × 900 e en 390 × 844 | CT-B05.M6 |
+| ADV2-16 CT-129 e CT-130 incompatíveis com o CT-144 sobre as duas chaves do Pendente | — | aceito — defeito do conjunto | CT-129: as duas chaves no DG-08; CT-130: as duas só na nota → aceita, uma só → recusa; CT-143: a nota de outro estado com as duas | R59.M14 (e R58.M6 ganha o CT-129) |
+| ADV2-17 o "nem outra" do CT-134 não se falsifica | — | aceito | CT-134: a forma fechada — nenhum `e-mail / valor`, nenhum "senha:"/"password:" seguido de valor, e não o valor de `<senha>` | R56.M13 |
+| ADV2-18 a linha 4 do CT-118 pede intacta uma linha que o `Dado` não tem | — | aceito — defeito do conjunto | o `Dado` da linha ganha `MAIL_FROM_NAME="${APP_NAME}"` depois das duas ativas, como o teste a materializou; a ressalva do ADV-29 saiu | — |
+| ADV2-19 CT-119 e CT-120, linhas ¬G ∧ ¬S, afirmam a direção da Q?10 com a senha já definida | — | aceito — defeito do conjunto (requisito inventado) | o `Dado` das duas linhas restrito a "sem senha utilizável (vazia ou `password`)"; a senha já definida fica no CT-134 e na L-17 | — |
+| ADV2-20 Q?12 e Q?13 sem ✅, e a Q?12 conflita com a decisão da Q?7 | — | decidido pela sessão (2026-09-30) | Q?12 ✅: a lista de palavras soma-se às expressões da Q?7, complementares; Q?13 ✅: a condição de ADV2-12, e a P-16 sem afrouxar — `KIT_TENANCY` no mesmo escopo; CT-129 passa a exigi-lo; L-20 | R58.M8 |
+| ADV2-21 texto velho: a Q?9 já está no `00` (P-45), e a L-13 ainda aponta o `[CT-19]` | — | aceito | as frases corrigidas — RQ abertas em parte, L-13, o fim da Q?9 e o bloco da Q?10/Q?11 (P-46, P-47) | — |
+| ADV2-22 a L-19 esconde o cenário de ADV2-13 | — | aceito | a L-19 fica só com o rótulo abreviado; a direção por `subgraph`/`stateDiagram-v2` é o CT-148 | — |
+| ADV2-23 a L-16 podia ser uma linha permanente do CT-B05 | — | **rejeitado** (ver abaixo) | L-16 fechada com a evidência de 2026-09-30 | — |
+| ADV2-24 os pares infra × panel_user, infra × admin_app e panel_user × admin_app sem cenário | — | aceito, fora da adição | linhas no CT-71 (o par sem tenancy) e no CT-98 (os dois com `admin_app`) — o CT-13 tem uma coluna de papel só e roda sem tenancy; ver R7 | R7.M10 |
+
+**Defeitos do próprio conjunto que a rodada 2 expôs** (do `04`/`05`, não do produto):
+
+- **Dois cenários de regras irmãs se contradiziam** sobre o mesmo bloco (ADV2-16): o CT-129 pedia uma chave no Pendente
+  do DG-08, e o CT-144, as duas. Consertado no CT-129 e no CT-130.
+- **Duas linhas afirmavam a direção de uma RQ aberta** (ADV2-19): as ¬G ∧ ¬S do CT-119 e do CT-120 mandavam definir a
+  chave também com a senha já definida — a Q?10. Consertado pelo `Dado`.
+- **Um `Dado` incompleto e uma ressalva que o perpetuava** (ADV2-18). Consertado.
+- **Um `Então` vazio** (ADV2-03) e **um sem forma conferível** (ADV2-17). Consertados.
+- **Texto que envelheceu com o `00`** (ADV2-21, ADV2-22). Consertado.
+
+**O que a rodada 2 fez o `04` achar no publicado e na guarda** (destino 3 → 2, nasce vermelho):
+
+- o DG-07, pt e en, contra a decisão da Q?13 e a P-16 — CT-129 (as duas mensagens do vínculo) e CT-143 (o controle do
+  publicado, invertido);
+- o DG-08, pt e en — CT-129 (a nota de Pendente com uma chave só; o CT-144 já o dizia), no publicado lido na
+  derivação: a árvore de 2026-09-30 já traz as duas chaves, e a linha passa contra ela;
+- a guarda do CT-143 (`tests/Kit/DiagramasDaArquiteturaTest.php:(?:quando|se|when|if):1344`) — as linhas do "se"
+  reflexivo, do "quando" no fim e do `tenant_id` sem `KIT_TENANCY`;
+- a guarda do CT-148 (`tests/Kit/DiagramasDaArquiteturaTest.php:function primeiraLinhaDoBloco:6713`) — as duas linhas
+  de `direction`.
+
 ## Achados adversariais rejeitados
+
+**Re-revisão da adição (rodada 2)** *(alterado em 2026-09-30)*. Um rejeitado por inteiro, e uma parte rejeitada:
+
+- **ADV2-23 — rejeitado.** O achado pedia que a L-16 virasse uma linha permanente do CT-B05: o site construído, a cada
+  execução, com o `kit.css` de `e597896^`, e o conferidor provado vermelho contra ele. O mutante que a linha mataria — o
+  conferidor que não mede o encolhimento — já morre pelos controles do CT-B05 (o `viewBox` 5 vezes mais largo, que dá
+  3,2 px) e do CT-B07 (a altura e a largura que limitam a escala), servidos por `page.setContent()`, sem site. Construir
+  o site duas vezes por execução dobra o job de PR e testa um **commit**, e não o requisito: RQ-49 pede que o piso seja
+  medido antes da correção, uma vez, e isso é evidência de processo. A evidência foi produzida em 2026-09-30 — com o
+  `kit.css` de `e597896^`, `node verifica-acessibilidade.mjs` sai com código 1 e 16 dos 20 SVGs abaixo do piso; com o de
+  hoje, sai 0 — e vai ao `03`. A L-16 fecha.
+- **ADV2-04 — rejeitada a parte "a lista fechada do opcional tem de fechar a classe".** Nenhuma lista fechada de palavras
+  fecha a classe "a instrução marca a chave como opcional": a língua tem mais formas do que a lista, e a lista que
+  tentasse todas reprovaria a instrução certa. O aceito é a forma que o achado mostrou ("recomendado", "ou rode …
+  direto") e a estrutural que ele revelou (o `db:seed` ligado à chave por "ou"); o resto fica no regime de L-06 — a lista
+  cresce a cada achado.
+
+**Adição do step 11 e do Adendo 7** *(alterado em 2026-09-30)*. Três rejeitados por inteiro, com evidência, e duas
+ressalvas de evidência:
+
+- **ADV-10 (baixa) — rejeitado.** RQ-51 diz "a quebra trocada por espaço" e "o arquivo não ganha chave nova", e não
+  distingue "cada quebra por um espaço" de "cada sequência de quebras por um espaço": as duas leituras cumprem as duas
+  coisas que a cláusula afirma, e o valor vem de um prompt de uma linha (a opção "Troca por espaço" do Adendo 7). O "um
+  espaço só" da linha CRLF do CT-117 separa o escape que troca `\r` e `\n` um a um — **uma** quebra que vira dois
+  espaços (R54.M9) —, e não fixa quantos espaços duas quebras dão. Um cenário que fixasse isso seria requisito
+  inventado.
+- **ADV-38 (média) — rejeitado: fora deste `00`.** A pergunta da senha e a gravação dela são do `kit:install` de outra
+  feature (a do #100); aqui, RQ-28 pede que o resumo, o README e o `install.gif` deixem de afirmar `password`, e com uma
+  senha digitada de 73 bytes nenhuma saída fica falsa — "a que você digitou" continua autenticando, porque o bcrypt do
+  PHP usa os 72 primeiros bytes (a documentação de `password_hash()`). O `db:seed` que lança depois de o `.env` ser gravado
+  só existe com `BCRYPT_LIMIT` definido: o padrão é nulo
+  (`vendor/laravel/framework/config/hashing.php:'limit':34`), o projeto não publica `config/hashing.php`, e o
+  `.env.example` não define a chave. Encaminhado à sessão como candidato da wiki do `kit:install`, onde o teto da senha
+  digitada é cláusula a decidir.
+- **ADV-39 (baixa) — rejeitado.** O destino mais estreito do `APP_NAME` não é estreito: ele vai ao `.env` e ao settings,
+  cuja coluna é `json` (`database/migrations/2022_12_14_083707_create_settings_table.php:payload:17`), e a propagação
+  captura toda falha sem abortar a customização
+  (`app/Support/CustomizadorDaInstalacao.php:propagarParaOSettings:404`, com o `catch (Throwable`). Não há teto
+  (n, n+1) a testar.
+- **ADV-06 — ressalva de evidência.** "`garantirNoEnv` (KIT_ADMIN_PASSWORD) continua com limite 1" como caminho próprio
+  não é o código de hoje: a garantia grava por `definirNoEnv()` (`app/Support/SenhaDoAdministrador.php:definirNoEnv:164`),
+  o mesmo caminho do APP_NAME. O mutante continua plausível — o conserto posto no customizador, e não em `definirNoEnv()`,
+  é o R64.M1 —, e o achado fica aceito; só a evidência foi corrigida.
+- **ADV-05 — ressalva de evidência.** O achado trata a célula G ∧ ¬S como consequência de uma mudança futura; ela já
+  existe no código de hoje, para o `db:seed` que termina com código diferente de zero
+  (`app/Console/Commands/KitInstall.php:semeado:118`, `app/Console/Commands/KitInstall.php:Os seeders não completaram:395`).
+  O achado fica aceito, com mais força.
 
 **Ciclo 2.** Nenhum achado rejeitado por inteiro. Uma parte rejeitada e três ressalvas de evidência:
 
@@ -5646,12 +7085,17 @@ invariante das duas leituras já é cenário.
 
 ❓ Q?3 · raia: requisito · afeta: P-44 · depende de: —
 P-44 diz que o valor gravado no `.env` "volta igual na leitura". O valor com quebra de linha não volta: o instalador a
-troca por espaço (`app/Support/SubstituicaoEmArquivo.php:escaparValorDeEnv:101`), porque a quebra injetaria uma chave
+troca por espaço (`app/Support/SubstituicaoEmArquivo.php:escaparValorDeEnv:152` *(alterado em 2026-09-30: era a linha 101, antes da mudança do código)*), porque a quebra injetaria uma chave
 nova no `.env`. Vale a troca por espaço, ou o valor com quebra é recusado?
 ➡️ Recomendação: nenhum valor com quebra de linha entra no `.env` como quebra (falha fechado: a quebra é injeção de
 chave). Entre trocar por espaço e recusar, recomenda-se manter a troca (é o comportamento de hoje, e o valor vem de um
 prompt de uma linha). Enquanto aberta: a linha da quebra do CT-117 afirma só o invariante — o `.env` não ganha chave
 nova —, e L-10.
+✅ **Respondida no Adendo 7 do `00`, 2026-09-29 — RQ-51**: "Troca por espaço (Recomendado)" — a quebra vira espaço, e
+o `.env` não ganha chave nova. A P-44 ganha a exceção escrita; o CT-117 afirma a direção nas linhas LF, CRLF e CR, e
+L-10 fecha. *Correção da premissa, com o vendor lido*: entre aspas, a quebra crua não vira chave para o
+`Dotenv::parse()` — ele junta a linha seguinte ao valor citado (`vendor/vlucas/phpdotenv/src/Parser/Lines.php:multilineProcess:58`);
+vira chave para quem lê o arquivo linha a linha. A resposta não muda; o oráculo confere as duas leituras (R54).
 
 ❓ Q?4 · raia: requisito · afeta: P-44 · depende de: —
 P-44 diz que a gravação troca só a primeira ocorrência da chave. Com a chave **ativa** duas vezes no `.env` (edição à
@@ -5662,6 +7106,15 @@ primeira. O que a gravação faz com a segunda linha ativa?
 velho) — a gravação troca toda linha **ativa** da chave e nenhuma linha comentada, que é o que o limite 1 existe para
 proteger (o docblock de `aplicar()`). Enquanto aberta: CT-118 afirma só o invariante — o comentário que cita a chave
 nunca é reescrito —, e L-11.
+✅ **Respondida no Adendo 7 do `00`, 2026-09-29 — RQ-50**: "Trocar toda linha ativa (Recomendado)" — a gravação troca
+toda linha ativa da chave e nenhuma comentada, e qualquer leitor fica com o valor gravado. O CT-118 afirma a direção
+(duas ativas; a comentada antes e depois da ativa; `Dotenv::parse()`, `valorNoEnv()` e a leitura do Laravel), e L-11
+fecha. *Correção da premissa, com o vendor lido*: o Laravel **não** fica com a primeira — o escritor imutável de
+`Env::getRepository()` recusa só a chave definida antes da carga
+(`vendor/vlucas/phpdotenv/src/Repository/Adapter/ImmutableWriter.php:isExternallyDefined:106`), e a segunda linha do
+mesmo arquivo sobrescreve a primeira: os dois leitores ficam com a última. A resposta não muda; o oráculo confere cada
+linha ativa, e não só o valor lido (R54.M8). A letra da resposta ("nenhuma comentada") deixa aberto o caso em que não
+há linha ativa — a Q?9, abaixo.
 
 ❓ Q?5 · raia: requisito · afeta: RQ-27 · depende de: —
 Quando o ffmpeg monta o GIF e quem falha é a publicação em `art/`, a saída do `kit:arte` deve dizer que foi a
@@ -5670,3 +7123,64 @@ a distinção (RD2-04, RD3-09), e o `00` não fala da saída do comando.
 ➡️ Recomendação: sim — a mensagem nomeia a etapa que falhou, porque é o que diz ao mantenedor onde agir (disco e
 permissão, não o ffmpeg). Enquanto aberta: o CT-128 afirma só o invariante — o GIF publicado preservado e o clipe
 nomeado —, e R33.M10 fica sem matador (L-12).
+✅ **Respondida no Adendo 7 do `00`, 2026-09-29 — RQ-52**: "Sim, nomeia a etapa (Recomendado)" — a saída diz "não
+consegui publicar", e não que a montagem falhou. O CT-128 ganha as duas metades da cláusula e mata o R33.M10; L-12
+fecha.
+
+**Pergunta do Adendo 7, raia requisito** *(alterado em 2026-09-29: bloco novo)* — nasceu da derivação de RQ-50; o
+`00` não foi editado (a tarefa proíbe tocar outro arquivo), e a sessão a leva a `## Ambiguidades e Perguntas Abertas`
+e renumera o `Q?n`. É premissa de comportamento: a direção fica sem cenário até a resposta, e o invariante das duas
+leituras já tem guarda.
+
+❓ Q?9 · raia: requisito · afeta: RQ-50 (a chave sem linha ativa) · depende de: —
+RQ-50 diz que a gravação troca "toda linha ATIVA da chave e nenhuma linha comentada". Quando a chave **só** existe
+comentada — o `# DB_HOST=` e o `# APP_URL=` que o `.env.example` deixa para ser preenchidos —, a gravação descomenta a
+linha no lugar, como hoje, ou a mantém intacta e acrescenta a linha ativa no fim, como a letra de RQ-50 lida sozinha?
+A opção respondida falava da chave ativa duas vezes. A leitura literal deixa vermelho o `[CT-19]` do `HostLocalTest`,
+da wiki `feat/kit-install-host-local/host-local-no-install`, que exige uma só linha casando `^#?\s*APP_URL=`
+(`tests/Kit/HostLocalTest.php:'CT-19':847`) — o `APP_URL` passa por `definirNoEnv()`
+(`app/Support/HostLocal.php:definirNoEnv:483`). E, se a gravação do banco seguir a mesma regra — ela chama `aplicar()`
+direto, com o mesmo `#?` (`app/Support/CustomizadorDaInstalacao.php:aplicarBanco:539`) —, muda o `.env` de quem escolhe
+PostgreSQL ou MySQL: o bloco `DB_*` comentado fica, e as linhas ativas vão para o fim do arquivo.
+➡️ Recomendação: sem linha ativa, descomentar no lugar — a guarda existente vence (o regime de P-14), e o comentário
+que RQ-50 protege é o que documenta **ao lado** de uma linha ativa (o docblock de `aplicar()`), não o marcador de lugar
+que o `.env.example` deixa para ser preenchido. As duas leituras fecham a falha que RQ-50 existe para fechar: qualquer
+leitor fica com o valor gravado. Enquanto aberta: nenhuma linha do CT-118 trata a chave só comentada; o invariante —
+exatamente uma linha ativa, com o valor gravado — já está no `[CT-19]` do `HostLocalTest`, e L-13.
+*(alterado em 2026-09-30: revisão adversarial da adição, ADV-37 — o invariante é cenário deste `04`, o CT-139 de R64,
+e não o `[CT-19]`, que conta `^#?\s*APP_URL=` e guarda uma das direções. **A Q?9 não está no `00`**: a sessão a leva a
+`## Ambiguidades e Perguntas Abertas` e marca RQ-50 como aberta em parte)* *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-21)*: está — é a
+premissa **P-45** do `00`, com RQ-50 aberta em parte e o CT-139 como o invariante das duas leituras; a direção segue sem
+cenário até a resposta.
+
+**Perguntas do fechamento da revisão adversarial da adição, raia requisito** *(alterado em 2026-09-30: bloco novo)* — o
+`00` não foi editado (a tarefa proíbe tocar outro arquivo); a sessão leva as duas a `## Ambiguidades e Perguntas
+Abertas`, marca RQ-28 como aberta em parte e renumera o `Q?n`. *(alterado em 2026-09-30: re-revisão adversarial da adição, ADV2-21)*: levadas — a Q?10 é a
+premissa **P-46** e a Q?11 a **P-47** do `00`, com RQ-28 aberta em parte; os invariantes são o CT-134 e o CT-136. As duas são premissa de comportamento: a direção fica sem
+cenário até a resposta, a recomendação é por falha fechado, e o invariante das duas leituras já é cenário.
+
+❓ Q?10 · raia: requisito · afeta: RQ-28 (a senha já definida com o banco não populado) · depende de: —
+Com a senha já definida — digitada no prompt, ou em `KIT_ADMIN_PASSWORD` no `.env` — e o banco não populado
+(`--no-seed` ou banco inacessível), nenhum administrador existe. Hoje a linha "Senha do administrador" continua
+"•••••••• (a que você digitou)" ou "a que você já definiu em KIT_ADMIN_PASSWORD" — o acerto só reconhece a linha pela
+promessa da senha gerada (`app/Console/Commands/KitInstall.php:RESUMO_SENHA_GERADA:619`) —, e o banner diz que nenhum
+usuário foi criado e manda definir `KIT_ADMIN_PASSWORD`, que já está definida
+(`app/Console/Commands/KitInstall.php:instrucaoBancoNaoPopulado:565`). O que a linha e o banner dizem nesse desfecho?
+➡️ Recomendação: os dois dizem o mesmo, e nada promete a credencial de um administrador que não existe (falha fechado —
+a regra que já vale para o banner, R55.M1): "nenhum administrador foi criado nesta execução; a senha de
+`KIT_ADMIN_PASSWORD` (a que você digitou, ou definiu) vale quando você rodar `php artisan db:seed`", sem mandar definir
+a chave que já está definida. Enquanto aberta: o CT-134 afirma o invariante das duas leituras — nada diz "gerada" nem
+"impressa", o banner não imprime senha, nenhum texto cita `kit:admin`, e o `.env` guarda a senha definida —, e R56.M11
+fica sem matador (L-17).
+
+❓ Q?11 · raia: requisito · afeta: RQ-28 (a senha gerada com a semeadura que não completou) · depende de: —
+Quando a senha foi gerada e o `db:seed` termina com código diferente de zero, o `.env` tem a senha nova e nenhum
+administrador existe, ou só em parte. Hoje o banner imprime "Login inicial: {e-mail} / {senha}", diz que ela não será
+mostrada de novo e manda trocar com `php artisan kit:admin` — que falha sem administrador —, e logo abaixo sai o aviso
+"Os seeders não completaram. Rode: php artisan db:seed" (`app/Console/Commands/KitInstall.php:Os seeders não completaram:395`).
+O banner apresenta a senha como o login de agora, ou como a senha que o `db:seed` vai usar?
+➡️ Recomendação: nunca como login de um administrador que o banco não tem (falha fechado): imprimir a senha gerada — ela
+está no `.env` e é a única chance de anotá-la —, dizendo que o administrador ainda não foi criado e que
+`php artisan db:seed` o cria com ela, sem `kit:admin` como próximo passo. Enquanto aberta: o CT-136 afirma o invariante
+das duas leituras — a saída diz que a semeadura não completou e manda rodar `db:seed`, e toda senha impressa é a do
+`.env` —, e R55.M10 fica sem matador (L-18).

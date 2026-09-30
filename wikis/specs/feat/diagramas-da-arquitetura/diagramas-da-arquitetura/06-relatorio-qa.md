@@ -1,177 +1,139 @@
 # Relatório de QA — feat/diagramas-da-arquitetura: Diagramas da arquitetura do kit no README e no site
 
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md`
-> Perfil de esforço: completo (o site renderiza os diagramas por JavaScript no cliente; o `kit:install` mexe em credencial)
-> Natureza da wiki: nova · Toca infra compartilhada: sim → README/`docs/`/`site/`, `kit:arte`, `kit:install` (`CustomizadorDaInstalacao`, `SenhaDoAdministrador`, `SubstituicaoEmArquivo`), `tests/Pest.php`, `ci.yml` · Regressão: sim
+> Perfil de esforço: completo (o site renderiza os diagramas por JavaScript no cliente, e o `kit:install` mexe em credencial e no `.env`)
+> Natureza da wiki: nova · Toca infra compartilhada: sim → README/`docs/`/`site/`, `kit:arte`, `kit:install` (`CustomizadorDaInstalacao`, `SenhaDoAdministrador`, `SubstituicaoEmArquivo` com 6 gravadores), `KitTenancy`, `AtivadorDeTenancy`, `tests/Pest.php`, `ci.yml` · Regressão: sim
 > Independência: sub-agente fw-qa-gate/opus, sem acesso à conversa
-> *(alterado em 2026-09-29: step 10 do ciclo 2, só nas citações — o conteúdo do ciclo 1 não muda. As que apontam código que o ciclo 2 moveu ou apagou viraram referência histórica, "linha N no ciclo 1"; as de `app/`, que o ciclo 2 não tocou, ganharam o símbolo que o `citacoes.sh` pede)*
-> Cobertura: 10 de 12 dimensões verificadas ou provadas não aplicáveis (J e K rodaram só em parte) · teto: APROVADO COM DÉBITO
+> Cobertura: 9 de 12 dimensões verificadas ou provadas não aplicáveis (G, J e K rodaram só em parte) · teto: APROVADO COM DÉBITO
 
-## Veredito — Ciclo 1
+## Veredito — Ciclo 2
 
 **REPROVADO → especificação**
 
-- Blocker: 0 · Major: 7 · Minor: 5 · Cosmético: 2
-- Não verificadas: J (parcial), K (parcial) — as causas estão em *Não Verificado*
-- `RQ` abertas: nenhuma (o `00` não tem a coluna `Estado`; as 43 premissas estão como "Assumido", e as 43 aparecem no `04`)
-- Ambiente: app em `http://127.0.0.1:8000` (HTTP 200) · Pest 5.1.1 · pest-plugin-mutate 5.0.2 · PCOV e Xdebug carregados · Playwright MCP indisponível; o MCP do Boost falhou ao conectar
+- Blocker: 0 · Major: 3 · Minor: 6 · Cosmético: 0 novos (o QA-13 do ciclo 1 segue aberto como débito cosmético)
+- Não verificadas: G (nível 3), J (parcial), K (parcial). As causas estão em *Não Verificado*
+- `RQ` abertas: RQ-50 em parte (Q?9 → P-45), **implementada** (QA-15); RQ-28 em parte (Q?10 → P-46, Q?11 → P-47), sem implementação da direção, o que só limita o teto
+- Ambiente: app em `http://127.0.0.1:8000` (`/login` → 302) · Pest 5.0.5 · pest-plugin-mutate · PCOV e Xdebug carregados · site em `astro preview :4399`, já encerrado · Playwright MCP indisponível · Boost MCP não usado
+- Convergência: o ciclo trouxe 9 achados novos (nenhum repete um achado do ciclo 1 já fechado), então o loop continua. O ciclo 3 é o último pelo teto da skill
 
 ## Achados
 
-### QA-01 — O 01, o 02, o 04, o CHANGELOG e a página ainda descrevem a feature de antes da 2ª passada do step 10 · Major · destino 1
-- **Dimensão**: L3/L5 · **Relacionado a**: RQ-25, RQ-26, RQ-36, passos 5, 17, 18, 23; ADR-05, ADR-06, ADR-08
-- **Esperado**: o PRD e as ADRs dizem o que o código faz, e todo desvio vem marcado.
-- **Observado**: o `01` afirma que o DG-10, o DG-19 e o DG-20 ficaram sem guarda (`01:750-756`, `:1375-1383`, `:1427-1434`) e que o teste do CT-105 não existe (`01:82`, `:1600-1605`, `:1681-1683`). Também dá "47 regras, 105 cenários, 266 mutantes" e "33 commits" (`01:1712`). O código tem `tests/Kit/GuardasDosDiagramasTest.php` (CT-106..CT-111, CT-115, CT-116, com 47 testes) e `[CT-105]` em `tests/Kit/DiagramasDaArquiteturaTest.php`, linha 5035 no ciclo 1. O `04` tem 53 regras e 116 cenários, e `git log --oneline origin/main..HEAD | wc -l` dá 36. A ADR-06 ainda diz "o que ficou sem guarda do fato" (`02:399-402`). A ADR-05 (`02:296`) e a ADR-08 (`02:456`) justificam um DG-20 "flowchart + sequência — o que acontece quando eu ligo isso", sem marca de alteração, mas o DG-20 publicado é só a sequência de `/app/{tenant}`, e a justificativa que o RQ-25 exige não bate com ele. O `04` põe as R48–R53 na costura `tests/Kit/DiagramasDaArquiteturaTest.php` (`04:259`) e ainda diz que "o teste [do CT-105] não existe" (`04:27-30`). O CHANGELOG fala em "411 casos" e "35" (`CHANGELOG.md:40-41`), sem o `GuardasDosDiagramasTest`. A página nomeia só `tests/Kit/DiagramasDaArquiteturaTest.php` como guarda (`docs/{pt,en}/referencia/arquitetura-em-diagramas.md:7`).
-- **Repro**: `grep -n "não foi implementada\|ainda não existe\|47 regras" {wiki}/01-plano-acao.md`; `grep -n "CT-10[6-9]\|CT-11[0-6]" tests/Kit/GuardasDosDiagramasTest.php`
-- **Ação exigida**: refazer o step 10 sobre o delta `35c3eef`/`99c0722` nos arquivos `01`, `02` (ADR-05, 06, 08), `04` (cabeçalho e costuras), CHANGELOG e na frase da página, marcando cada alteração com *(alterado em …)*.
-
-### QA-02 — As alegações do 03 não se reproduzem · Major · destino 1
-- **Dimensão**: L6
+### QA-15 — A RQ-50 está aberta (Q?9) e foi implementada com a interpretação da sessão · Major · destino 1
+- **Dimensão**: A (auditoria do requisito) · **Relacionado a**: RQ-50, P-45, Q?9, passo 27, CT-139; `[CT-19]` do `HostLocalTest` (outra wiki)
+- **Esperado**: uma `RQ` aberta não é implementada por passo sem `**Bloqueado por**` nem por código do diff. A RQ-50 diz: "troca toda linha ATIVA da chave e nenhuma linha comentada".
 - **Observado**:
-  - A `## Verificação Final` diz "DiagramasDaArquitetura 411/411; …Tenancy 35/35". O medido é 412 e 45 (`vendor/bin/pest {arquivo} --compact --no-tia`), e o `GuardasDosDiagramasTest` (47) não aparece.
-  - O mesmo item diz "suíte vermelha, 1 falha CT-27", e `## Blockers` mantém o A-04 aberto (`03:156`, `:548`). Mas `CoberturaDeTestesTest` e `CitacoesDeCodigoTest` passam (23/23), e a suíte serial completa também.
-  - O item do `ids-ct.sh` diz "uma linha só" e cola duas logo abaixo (`03:166` × `:167-168`).
-  - `grep -c "alterado em 2026-09-29" 04-casos-de-teste.md` dá 80, não 46.
-  - `## Testes` lista a Tenancy como "CT-12, CT-14, CT-80, CT-89, CT-98" sem os CT-112..CT-114, e `## Tickets` diz "105 CT".
-- **Ação exigida**: trocar cada número pela saída do comando e fechar ou retirar o A-04 de `## Blockers` e da `## Verificação Final`. `grep -rn "411\|35/35" {wiki}/` acha `03:19, 62, 78, 83, 118, 136, 137, 155`.
+  - O `00` (P-45) diz "RQ-50 fica aberta em parte até a resposta".
+  - O passo 27 do `01` "Atende: … P-45" e não tem bloqueio (`01:1754`, `:1761-1763`).
+  - `app/Support/SubstituicaoEmArquivo.php:definirLinhaNoEnv` descomenta a primeira linha comentada quando não há linha ativa (`:$comentada:131-136`). O próprio docblock admite: "P-45 da mesma wiki, pergunta Q?9 em aberto".
+  - Pela leitura literal da RQ-50, isso altera uma linha comentada. A leitura contrária quebra o `[CT-19]` do `HostLocalTest` (`tests/Kit/HostLocalTest.php:it:847`). O conflito é entre dois requisitos, e quem decide é o solicitante.
+  - O `00` não tem a coluna `Estado`, então o `rastreabilidade.sh` (exit 0) não enxerga a `RQ` aberta.
+  - O `03` diz "0 perguntas de requisito abertas" (`03:201`), com Q?9, Q?10 e Q?11 pendentes.
+  - Na Cobertura do `01`, a linha da RQ-28 não marca "aberta em parte" (`01:79`), e a da RQ-50 marca.
+- **Repro**:
+  1. `grep -n "aberta em parte\|Q?9" {wiki}/00-requisito.md {wiki}/01-plano-acao.md`
+  2. `grep -n "Q?9 em aberto" app/Support/SubstituicaoEmArquivo.php`
+  3. Sonda no scratchpad com `.env` = `"# APP_NAME=a\n#APP_NAME=b\n"`: depois do `definirNoEnv`, `APP_NAME="Novo"\n#APP_NAME=b`
+- **Destino**: 1 · **Ação exigida**: levar a Q?9 ao solicitante (raia requisito, já formulada). Pôr `Estado` na decomposição (RQ-50 e RQ-28 como `aberta — Q?n`), e marcar o passo 27 como `Bloqueado por` Q?9 na parte da linha sem ativa. Corrigir `03:201` e a linha da RQ-28 no `01`. Depois da resposta, confirmar o código ou mudar o código, com o CT primeiro.
 
-### QA-03 — 14 testes da revisão do diff sem cenário no 04, e RD2-08 sem P-nn · Major · destino 1 → 3
-- **Dimensão**: L1/A · **Relacionado a**: DV-10; RD2-08 (`SubstituicaoEmArquivo`, infraestrutura compartilhada com 6 chamadores)
-- **Esperado**: todo teste nasce de um cenário do `04`, e comportamento que nenhuma `RQ` escreve vira `P-nn`.
-- **Observado**: `grep -nE "^(it|test)\('\[RD" tests/Kit/*.php tests/Tenancy/*.php tests/BrowserTenancy/*.php | wc -l` dá 14 testes sem `[CT-nn]`. O `it('captura os quadros do instalador')` também não tem ID. O próprio `03:187` admite que o RD2-08 pedia `P-nn`, e ela não foi escrita.
-- **Ação exigida**: registrar a `P-nn` do RD2-08 em `## Premissas`; depois a `feature-test-design` deriva os cenários e os mutantes dos 14 testes e renomeia os `it()`.
+### QA-16 — Afirmações da wiki que o código contradiz ou que nenhum comando reproduz · Major · destino 1
+- **Dimensão**: L3/L6 · **Relacionado a**: QA-10 do ciclo 1, RQ-50, passo 26
+- **Observado** (cada linha diz o que foi medido agora):
+  - `01:1736-1738` (passo 26), sem marca: "o CT-118 prova que `definirNoEnv` troca só a primeira ocorrência da chave". O CT-118 afirma hoje "toda linha ativa" (`tests/Kit/CustomizadorDaInstalacaoTest.php:665`).
+  - `03:158` `[x]` QA-10: "só a primeira ocorrência da chave é trocada — CT-118 (`…:it:423`) … 75/75". É falso pela RQ-50. A linha 423 é um `if`, e o arquivo tem hoje 115 testes.
+  - `03:212` `[x]`: "o ciclo 2 não toca `app/`, `routes/` nem `database/` (`git diff --stat` vazio)". `git diff --stat -- app/` mostra 4 arquivos e 96 linhas.
+  - `03:215`: `grep -c "alterado em 2026-09-29" 04-casos-de-teste.md` dá **181**, não 165.
+  - `03:180`: "ChecklistDeRelease 26/26 + 3 pulados". O medido é 26 testes, 23 passaram e 3 foram pulados (`03:208` está certo).
+  - `install.gif`: `ls -l` dá 116.347 bytes (1000×1484), mas `01:1540`, `03:111` e `03:123` dizem 115.928. O CHANGELOG e `01:1742` já dizem 116.347 (`grep -rn "115.928" {wiki}/` acha os três).
+  - `03:154`: "[CT-B06] … 40 diagramas maiores que a coluna". O conferidor de agora dá **60**.
+  - O cabeçalho do `04` (`04:3`) diz "P-01..P-44"; o `00` vai até a P-47.
+- **Repro**: os comandos entre parênteses acima; `XDEBUG_MODE=off vendor/bin/pest tests/Kit/ChecklistDeReleaseTest.php --compact --no-tia`
+- **Destino**: 1 · **Ação exigida**: trocar cada número pela saída do comando em `01:1540`, `03:111`, `03:123`, `03:154`, `03:180`, `03:212` e `03:215`. Reescrever `01:1736-1738` e `03:158` para a RQ-50, com a marca *(alterado em …)*. Atualizar `04:3`.
 
-### QA-04 — Recurso opcional desenhado como sempre ligado no DG-02, no DG-07 e no DG-08 · Major · destino 3 → 2
-- **Dimensão**: A · **Relacionado a**: RQ-10, P-16, P-19, P-32 ("aceitar convite recebido … com KIT_TENANCY"), P-43; R4; CT-08, CT-57
-- **Esperado**: todo elemento que só existe com uma chave desligada por padrão leva a condição, como o DG-09 já faz ("recusar exige KIT_TENANCY").
+### QA-17 — Helper clonado com outro nome, de novo, contra a `.ai/rules/testes.md` · Major · destino 2
+- **Dimensão**: L4 · **Relacionado a**: QA-07 do ciclo 1 (mesma classe, instância nova do ciclo 2)
+- **Observado**: `textoSemAcentoESemCaixa()` (`tests/Kit/ResumoDoKitInstallTest.php:107`) e `normalizadoSemAcentoESemCaixa()` (`tests/Kit/CustomizadorDaInstalacaoTest.php:494`) têm o mesmo corpo, `mb_strtolower(Str::ascii($texto))`, e os dois nasceram neste delta. A rule diz "Nunca crie um clone com outro nome … Mova para `tests/Pest.php` e use uma só". O `03` marca a `testes.md` como "aplicada".
+- **Repro**: `grep -rn "mb_strtolower(Str::ascii" tests/`
+- **Destino**: 2 · **Ação exigida**: deixar uma função só em `tests/Pest.php` e trocar a linha da `testes.md` no `03`.
+
+### QA-18 — A `accDescr` do DG-08 e do DG-09 afirma o opcional sem a chave · Minor · destino 3 → 2
+- **Dimensão**: A (RQ-10, P-16, P-43) · **Relacionado a**: R58, CT-129
 - **Observado**:
-  - DG-02: `cu_aceitar_convite["Aceitar/recusar convite recebido"]` aparece sem condição (`docs/pt/referencia/arquitetura-em-diagramas.md:78`, `:105`). A recusa só existe na caixa de convites recebidos, que responde `false` sem tenancy (`app/Filament/App/Pages/ConvitesRecebidos.php:regraLocalDeAcesso:75-77`; único chamador de `Convite::recusar`, em `:144`).
-  - DG-07: a `accDescr` diz "sempre ligando a organização do convite", e os dois ramos afirmam o vínculo à organização (`docs/pt/autenticacao/convites.md:74, 89, 92`). O código só vincula com `tenant_id` (`app/Models/Convite.php:tenant_id:636`, `:tenant_id:708`), e o ramo `else recusa` (`:93-94`) também não traz condição.
-  - DG-08: o estado `Pendente` aparece sem condição (`docs/pt/autenticacao/estados-de-usuario.md:24-33`). A única escrita de `aprovacao_pendente` vem de `RegistroAberto` com `KIT_REGISTRO_APROVACAO_MANUAL`, que vem desligada por padrão (`app/Support/RegistroAberto.php:aprovacao_manual:81`, `:aprovacao_pendente:182`).
-  - A guarda não enxerga esses casos por dois motivos. Ela confere por bloco: basta a chave aparecer em qualquer ponto do bloco. E aceita a chave por substring: "provedor social" é aceito por causa de `KIT_SOCIALITE_VINCULO_CONFIRMAR`, e `KIT_REGISTRO` por causa de `KIT_REGISTRO_APROVACAO_MANUAL` (`tests/Kit/DiagramasDaArquiteturaTest.php:mapaOptInDaGuarda:1162`).
-- **Ação exigida**: primeiro o CT que falha, por elemento e com a chave exata, pela `feature-test-design`; depois a correção dos três blocos, em pt e en.
+  - DG-08 pt: "Pendente aprova para Ativo…"; DG-08 en: "Pending approves…" (`docs/{pt,en}/autenticacao/estados-de-usuario.md:23`).
+  - DG-09: "Do Pendente, o convite vai a Aceito, Recusado ou Expirado" (`docs/pt/autenticacao/convites.md:113`, en `:117`).
+  - Nenhuma das três traz `KIT_REGISTRO`/`KIT_REGISTRO_APROVACAO_MANUAL` nem `KIT_TENANCY`. A `accDescr` do DG-07 ganhou a condição e o CT-129 a guarda (`tests/Kit/DiagramasDaArquiteturaTest.php:elementosOptInDeR58:1553`), mas a lista não inclui as do DG-08 e do DG-09. É o texto que o leitor de tela lê.
+- **Ação exigida**: uma linha no R58/CT-129 pela `feature-test-design`, que nasce vermelha, e depois a correção pt/en.
 
-### QA-05 — A paridade pt × en não vê mensagem de sequência nem aresta tracejada · Major · destino 3
-- **Dimensão**: K/A · **Relacionado a**: RQ-26, RQ-34 ("-.->, ==> … em pt e en"), R2/CT-03, R42/CT-85, R53/CT-116
-- **Observado**:
-  - O CT-03 usa um extrator local que só reconhece `-->` (`tests/Kit/DiagramasDaArquiteturaTest.php`, `estruturaNormalizada`, linha 232 no ciclo 1), e não o normalizado de `tests/Pest.php`.
-  - O CT-85 compara só blocos sintéticos e nunca lê o publicado (`:4631`). O Gherkin pede "o bloco real" e a linha do DG-11, que falta no dataset. O extrator dele (`mensagensDaSequencia:4601`) também perde as setas `-->>`: acha 8 das 11 mensagens do DG-04.
-  - Para 17 DGs, o "fato declarado" do CT-116 é só a presença de um literal fixo (`tests/Kit/GuardasDosDiagramasTest.php:paresDeAdulteracaoPorDg:830`), sem nenhum valor lido do código.
-- **Repro**: as funções do teste, copiadas sem alteração para o scratchpad, rodaram sobre os blocos publicados com o bloco en alterado em memória: o CT-03 dá "iguais" para as 6 alterações. As alterações foram: sem `painel_infra -.-> packagist` e com OAuth só no `/admin` (DG-01); sem o `finally` (DG-16); sem `resposta_login-->>visitante` e com `Authenticate`/`AuthenticateSession` invertidos (DG-04); sem `BudgetExceededException` (DG-11). Nenhuma outra guarda lê a mensagem en: `grep -n "mensagensDeSequencia(" tests/` só acha o DG-20.
-- **Ação exigida**: pela `feature-test-design`, reescrever o CT-03 e o CT-85 sobre os blocos publicados, com o extrator de `tests/Pest.php`; os mutantes são as 6 alterações acima.
+### QA-19 — Valor multilinha entre aspas deixa o `.env` ilegível depois da gravação · Minor · destino 3
+- **Dimensão**: B · **Relacionado a**: RQ-50 ("qualquer leitor fica com o valor gravado")
+- **Observado**: o `.env` era `APP_NAME="linha1\nlinha2"\nB=2\n`, um valor que o Dotenv aceita. Depois do `definirNoEnv(…,'APP_NAME','Novo')` ficou `APP_NAME="Novo"\nlinha2"\nB=2`. O `Dotenv::parse()` lança `InvalidFileException … invalid name at [linha2"]`, e o app não sobe. O padrão `.*$` só troca a primeira linha física. O defeito já existia antes, mas o método reescrito promete "toda linha que o Dotenv lê como a chave". Entrada improvável (edição à mão).
+- **Repro**: a sonda `sonda-env.php` do scratchpad, caso `multilinha`, sobre um arquivo temporário.
+- **Ação exigida**: a `feature-test-design` decide se é linha do R64 ou premissa; depois, a correção.
 
-### QA-06 — No site, os diagramas saem com texto de 2 a 7 px · Major · destino 3 → 2
-- **Dimensão**: H (e G, texto que o usuário não lê) · **Relacionado a**: RQ-06, RQ-12, RQ-17; CT-B01
-- **Observado**: medido com o Playwright do `site/` a 1280×900, com a coluna de 600 px. A fonte efetiva (fonte × escala do `viewBox`) é:
-  - DG-11: 2,2 px (escala 0,14)
-  - DG-12: 3,0 px
-  - DG-04: 4,2 px
-  - DG-13: 5,2 px
-  - DG-18: 5,3 px
-  - DG-07 e DG-19: 5,6 px
-  - DG-01: 6,2 px
-  - DG-05: 6,7 px
-  - DG-15: 6,9 px
+### QA-20 — Mutantes sobreviventes em `definirLinhaNoEnv` · Minor · destino 3
+- **Dimensão**: K2 · **Evidência**: arnês do scratchpad (a `MutationTest` do plugin relança com `PHP_BINARY` na frente, sem `cmd`). 80 mutantes, 69 mortos, 11 sobreviventes, **86,25 % em 230,47 s**: cerca de 2,9 s por mutante, contra 22 s da suíte, o que é plausível. A medição só usou `tests/Kit/CustomizadorDaInstalacaoTest.php`.
+- **Sobreviventes do diff**:
+  - `:133 IncrementInteger`: com duas comentadas e nenhuma ativa, as duas viram ativas. Nenhum cenário prova "a primeira" da P-45.
+  - `:135 TrueToFalse` e `:140 TrueToFalse`: o retorno dos ramos "descomenta" e "anexa" não tem asserção.
+  - `:138 ConcatRemoveRight` e `:138 ConcatSwitchSides`: a forma da linha anexada.
+  - `:125 RemoveStringCast` e `:133 RemoveStringCast` são equivalentes.
+- **Fora do alcance desta suíte**: o mutante do QA-10 (`:60 IncrementInteger`, `aplicar()`) voltou a viver aqui. Hoje o `aplicar()` só serve config PHP (`AtivadorDeTenancy`), e não rodei a suíte da tenancy contra ele.
+- **Ação exigida**: a `feature-test-design` com esses mutantes como entrada (tabela de decisão ativa × comentada × ausente, com o retorno).
 
-  No total, 13 dos 20 ficam abaixo de 10 px. O `astro-mermaid` 2.1.0 não tem zoom. O CT-B01 conta SVGs e o axe não mede o tamanho do texto em SVG, então os dois passam.
-- **Evidência**: `qagate-escala.mjs` e `qagate-dg11-pagina.png` (scratchpad), com o DG-11 ilegível na página.
-- **Ação exigida**: um CT-B de legibilidade com piso de fonte efetiva, e só então o layout (orientação, divisão do bloco ou rolagem horizontal).
+### QA-21 — A citação `arquivo:it:linha` não prova nada, e várias apontam o teste errado · Minor · destino 1 (+ nota para a skill)
+- **Dimensão**: L2
+- **Observado**: 38 das 95 citações distintas `*.php:it:N` de `01`–`05` caem numa linha sem `it(`. Exemplos: `})->with([`, docblock, `expect`. O `[CT-105]` é citado como `…DiagramasDaArquiteturaTest.php:it:5595` em `01:87`, `01:1662`, `03:196`, `04:32`, `04:479` e `04:4401`, mas a linha 5595 é o `it('[CT-85]…`, e o CT-105 está na 6221. O `citacoes.sh` sai com exit 0 porque aceita `it` como substring ("with", "str_starts_with"). Pelo `03:180`, a correção automática "pelo símbolo mais próximo" usou esse mesmo símbolo.
+- **Repro**: o laço `sed -n "${n}p" | grep -E "^\s*(it|test)\("` sobre `grep -ohE "[^ ]+\.php:it:[0-9]+"`.
+- **Ação exigida**: citar pelo ID (`'[CT-105]'`) e refazer as 38. Nota para a `feature-wiki`: o `citacoes.sh` precisa recusar símbolo que não seja identificador.
 
-### QA-07 — Helper clonado com outro nome, contra a `.ai/rules/testes.md` · Major · destino 2
-- **Dimensão**: L4
-- **Observado**:
-  - `transicoesDoEstado()` (`tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`, linha 396 no ciclo 1) é a mesma regex de `tests/Pest.php:transicoesDeEstado:1583`.
-  - `mensagensDaSequencia()` (`tests/Kit/DiagramasDaArquiteturaTest.php`, linha 4601 no ciclo 1) é um clone mais estreito de `tests/Pest.php:mensagensDeSequencia:1475`, e é a causa de parte do QA-05.
-  - `ordemDoDG20EstaCorreta()` (Tenancy, `:759`) repete `ordemDg20EhCorreta()` (`tests/Kit/GuardasDosDiagramasTest.php`, linha 859 no ciclo 1; hoje `tests/Pest.php:ordemDg20EhCorreta:1516`).
-- **Ação exigida**: uma função só em `tests/Pest.php` (a regra diz "Nunca crie um clone com outro nome"). O `03` marca a `testes.md` como "aplicada".
+### QA-22 — As citações curtas da prosa do DG-16 ficaram uma linha atrás · Minor · destino 1
+- **Dimensão**: L2/L5 · **Observado**: em `docs/{pt,en}/comecar/atualizando-o-projeto.md:69-75` estão `:vincularKit:523`, `:arquivosAlterados:629`, `:mostrarResumo:748`, `:isInteractive:427`, `:prepararBranch:768`, `:revisarEAplicar:817`, `:desvincularKit:532` e outras. O `ef68f6d` deslocou cada uma em +1 (`sed -n 524p app/Console/Commands/KitUpdate.php` → `vincularKit`). A linha 40 do mesmo arquivo já diz `:isInteractive:428`. O `[CT-26]` só confere a forma com o caminho completo.
+- **Ação exigida**: corrigir nos dois idiomas; se o step 12 aceitar, estender o `[CT-26]` à forma curta.
 
-### QA-08 — Frases erradas nas docs novas · Minor · destino 3 → 2
-- **Dimensão**: L5
-- **Observado**:
-  - O índice chama o DG-10 de "Assistente de IA na sessão" e "AI assistant in the session", mas ele é a sessão autenticada (`docs/{pt,en}/referencia/arquitetura-em-diagramas.md:205`).
-  - O DG-16 vira "kit:update — relatório", e o fluxo também aplica (`:211`).
-  - O texto cita "`restaurar()` devolve o estado…", mas `restaurar` não existe em `app/` (`docs/pt/autenticacao/estados-de-usuario.md:44`, `docs/en/…:49`).
-  - "O health é o único agendado" (`docs/pt/recursos/trilhas-de-infraestrutura.md:24-25`, `docs/en/…:25`) é falso: `routes/console.php` agenda mais eventos, incluindo podas que apagam tabelas do mapa (`:32` `authentication-log:purge`, `:64` `model:prune` de exceções).
-- **Ação exigida**: corrigir o texto nos dois idiomas; o índice ganha guarda de título × `accTitle`.
-
-### QA-09 — Português visível nos blocos en · Minor · destino 3 → 2
-- **Dimensão**: L5/RQ-26, P-23 · **Observado**: "(conta nova)" e "conta existente" aparecem no DG-07 en (`docs/en/autenticacao/convites.md:90, 93`), e "(escolha de painel)" no DG-05 en (`docs/en/autenticacao/login-unificado.md:49`). O oráculo do CT-89 procura o marcador em pt nos dois idiomas (`tests/Tenancy/…:732-733`), e o detector de tradução só usa acento como sinal.
-- **Ação exigida**: marcador por idioma no teste e o rótulo traduzido.
-
-### QA-10 — Mutante sobrevivente numa linha do diff · Minor · destino 3
-- **Dimensão**: K2 · **Observado**: `app/Support/SubstituicaoEmArquivo.php:preg_replace_callback:54`, `IncrementInteger` (limite `1` → `2` no `preg_replace_callback` do RD2-08) sobrevive. Nenhum teste prova que só a primeira ocorrência é trocada. O `RemoveStringCast` da mesma linha é equivalente.
-- **Evidência**: arnês próprio (QA-12), 54 mutantes, 13 sobreviventes, 208,1 s.
-- **Ação exigida**: um cenário com a chave duas vezes no `.env`, pela `feature-test-design`.
-
-### QA-11 — Termos decididos na feature, sem glossário · Minor · destino 1
-- **Dimensão**: L7 · **Observado**: não existe `wikis/glossario.md`. Ficaram sem registro a P-34 (Accepted/Expired), a P-35 (`Excluida`) e a Q?2 ("no link"). O DG-20 en mistura "inactive tenant" e "organization" no mesmo bloco (`docs/en/recursos/multi-tenancy.md`).
-- **Ação exigida**: registrar os termos e alinhar o en.
-
-### QA-12 — `pest --mutate` pelo `pestw.cmd` dá score falso quando o mutante tem 2 ou mais testes cobridores · Minor · destino 4
-- **Dimensão**: K2 (arnês)
-- **Observado**: o plugin relança com `--filter="A|B"`, e o `%*` do `pestw.cmd` passa pelo `cmd`, que lê o `|` como pipe. O resultado é exit 255 em 0,22 s, e o plugin conta como mutante morto. Com um só teste cobridor, funciona (1,46 s).
-- **Comparação** (pelo `pestw.cmd`, sem cache, × pelo arnês do scratchpad, que relança por `proc_open` com array):
-
-  | Classe | `pestw.cmd` | Arnês do scratchpad |
-  |---|---|---|
-  | `CustomizadorDaInstalacao` | 98,58 % em 22 s | 57,09 % em 1.099,8 s |
-  | `SubstituicaoEmArquivo` | 100 % em 51 s | 75,93 % em 208,1 s |
-
-- **Efeito colateral**: com o arnês que funciona, um mutante de `CustomizadorDaInstalacao` fez os testes gravarem no `.env` e em `config/` reais. Detalhe em *Para o orquestrador*.
-- **Ação exigida**: nota para a `feature-wiki` (`pestw.cmd`) e para a `.ai/rules/testes.md`; não reprova a feature.
-
-### QA-13 — `install.gif` e acentos no DG-19 · Cosmético · destino 2
-- **Observado**: o GIF novo mede 1000×1500 (o antigo, 960×590). Os quadros 1 a 3 ficam com cerca de 70 % vazios, as linhas saem espaçadas e o último quadro mostra o WARN do terminal do Windows. O `resize(1400, 2100)` está em `tests/BrowserTenancy/CapturaDeArteTest.php`. O DG-19 pt escreve "retencao" e "papeis".
-
-### QA-14 — Falta a coluna `Custo` em `## Despachos` · Cosmético · destino 1
-- **Dimensão**: L6 · **Observado**: as tabelas #1–#28 não têm a coluna, e a #45–#57 usa "Onde".
+### QA-23 — Termos decididos nesta feature, fora do glossário · Minor · destino 1
+- **Dimensão**: L7 · **Observado**:
+  - `wikis/glossario.md` não tem "linha ativa" nem "linha comentada" do `.env`, que a RQ-50 e a P-45 definiram (por `EntryParser`/`Lines`).
+  - Também não tem "Pendente", que nomeia dois estados diferentes: conta à espera de aprovação (DG-08) e convite sem resposta (DG-09).
+- **Ação exigida**: incluir os termos, com "Não confundir com".
 
 ## Matriz de Rastreabilidade
 
 | RQ/P | Cláusula ou premissa | Passo PRD | CT | CT-B | Código | Resultado | Veredito |
 |---|---|---|---|---|---|---|---|
-| RQ-10 (P-16/19/32/43) | opcional nunca aparece sem condição | 4, 8, 10 | CT-08, CT-57, CT-81 | — | DG-02, DG-07, DG-08 | três elementos sem a chave | ❌ QA-04 |
-| RQ-26 / RQ-34 | pt e en com guarda, setas normalizadas nos dois idiomas | 14, 22, 24 | CT-03, CT-85, CT-116 | — | `estruturaNormalizada`, `mensagensDaSequencia` | en diverge em silêncio | ❌ QA-05 |
-| RQ-06 / RQ-12 / RQ-17 | o diagrama mostra como o kit funciona, no site | 2, 4–18 | — | CT-B01, CT-B02 | 13 de 20 blocos | < 10 px | ❌ QA-06 |
-| RQ-25 | extras justificados no `02` | 5, 17, 18 | CT-106..CT-116 | — | DG-20 (sequência) | a ADR justifica um flowchart | ⚠️ QA-01 |
-| — (RD2-08) | barra invertida no `.env` | 22 | `[RD2-08]` | — | `SubstituicaoEmArquivo` | sem `RQ` nem `P-nn` | ❌ QA-03 |
-| RQ-28 | nenhuma superfície afirma `password` | 1, 21, 22, 24 | CT-40, CT-41, CT-52 | CT-B03 | README, resumo, GIF (visto) | ✅ | ⏳ DV-01/DV-02 aceitas (RQ-44) |
-| RQ-36 | o CI de PR confere o site | 23 | CT-105 | — | job `site` | nunca rodou num PR | ⚠️ L-07 |
+| RQ-50 / P-45 | toda linha ativa, nenhuma comentada; sem ativa, descomenta (aberta, Q?9) | 27 (sem bloqueio) | CT-118, CT-137..CT-139, CT-150 | — | `definirLinhaNoEnv` | interpretação da sessão implementada | ❌ QA-15 |
+| RQ-28 / P-46, P-47 | senha já definida ou gerada, sem admin (aberta, Q?10/Q?11) | 1, 21, 22 | CT-134, CT-136 (invariante) | — | texto de hoje mantido | sem implementação da direção | ⏳ teto |
+| RQ-10 / P-16, P-43 | opcional nunca sem condição | 8, 10, 26 | CT-129, CT-144 | — | `accDescr` do DG-08 e do DG-09 | sem a chave | ⚠️ QA-18 |
+| RQ-50 | qualquer leitor fica com o valor gravado | 27 | CT-117, CT-118 | — | valor multilinha | `.env` ilegível | ⚠️ QA-19 |
 
 ## Dimensões
 
 | # | Dimensão | Status | Observação |
 |---|---|---|---|
-| A | Cobertura do requisito | ❌ | QA-03, QA-04; `rastreabilidade.sh` exit 0. Ressalva: 13 `RQ` saem da cobrança pela coluna `Substitui` (A-07) e o `00` não tem `Estado` nem tabela de `P-nn`; conferi por leitura (43/43 `P-nn` citadas no `04`). Sem `07-tickets/` |
-| B | Fronteiras e dados | ✅ | sonda no scratchpad: 14 valores (barra invertida, `$`, aspas, `#`, emoji, 500 caracteres, `${}`) fazem a ida e volta pelo `.env`; a quebra de linha vira espaço (intencional); `ehUtilizavel` ok; `.env` malformado devolve `null` |
-| C | Matriz de permissão | ✅ | não há superfície nova (`git diff` de `app/Policies`, `routes/web.php`, `app/Http` e `config` vazio); a matriz do DG-02 é executada por CT-11, CT-73 e CT-83, verdes |
-| D | Observabilidade | ✅ | nenhum `Log::` novo (grep = 0); só console; a senha aparece só no banner, como antes; fixture mascarada; os 4 quadros do GIF conferidos no olho |
-| E | Performance | ✅ | nenhum request novo; maior chunk 662.109 B; o JS do mermaid só nas páginas com diagrama (`dist/pt/index.html` sem mermaid) |
-| F | UX de erro | ✅ | mensagens em pt, dizem o que e como; a contradição com banco inacessível é a DV-01 (RQ-44) |
-| G | Tema e cor | ✅ | `dark-mode.sh --mecanismo` exit 1 (Filament + JS); nível 1 exit 0; CT-B02 verde; nível 3 por screenshot próprio, claro e escuro ok |
-| H | Acessibilidade | ❌ | axe em 96 páginas sem serious/critical; GIFs com `alt`; QA-06 |
-| I | Segurança | ✅ | step 9 com 68 linhas (60 achados, 8 rejeitados); eixo 9 não refeito nas rodadas 1–4. O delta do step 10 (testes e 4 docs) não passou pelo step 9: eixo 9 aplicado, não se aplica. Além disso: nenhuma rota nova (a da captura só existe no teste); job `site` em `pull_request` com `contents: read`, só SHAs interpolados; lock com mermaid 11.17.2 |
-| J | Regressão | ⚠️ | suíte Unit+Feature+Kit+Tenancy em série: 3.627 testes, 3.624 passaram, 3 pulados, 0 falhas, 1.664,5 s. Browser, só o que o Impacto nomeia: CapturaDeArte 22/22 (`KIT_ART=1`), HubDeCards 2/2, RoteiroDoKit 7/7, LoginUnificado 1/1. Site: links 2.584/0 quebrados, 56 redirects; Pint e PHPStan verdes. O resto da suíte Browser e o `--tia` ficaram fora |
-| K | Adequação da suíte | ⚠️ | K1 `k1-oraculo-fraco.sh` exit 1, 5 candidatos rejeitados (4 já existiam na base; 1 `assertDatabaseMissing` por id é o oráculo certo da exclusão). K2 pelo arnês próprio, sem cache: `KitArte` 145 mutantes, 3 sobreviventes fora do diff, 102 timeouts, 1.409,7 s; `Customizador` 282, 121 sobreviventes, 1 no diff e equivalente (`:327`); `SenhaDoAdministrador` 16, 1 fora do diff, 90,5 s; `Substituicao` QA-10; `KitInstall` só contra o `CustomizadorDaInstalacaoTest`: 58 mutantes, 37 sobreviventes, os do diff nas mensagens (espaço da DV-03). QA-05. Revisão adversarial: ciclos 1 e 2; a R48–R53 não teve (o gatilho não disparou) |
-| L | Consistência documental | ❌ | QA-01, 02, 03, 07, 08, 09, 11, 14; L1 `ids-ct.sh` exit 1 (só o CT-39, costura `diff`: `git diff --name-only … composer.json composer.lock package.json package-lock.json` vazio); L2 `citacoes.sh` exit 0; L4 `conformidade-rules.sh` exit 0, com a `testes.md` violada (QA-07); L6 `checkbox-sem-evidencia.sh` exit 0 |
+| A | Cobertura do requisito | ❌ | QA-15, QA-18; `rastreabilidade.sh` exit 0, mas cego para `RQ` aberta sem a coluna `Estado`; sem `07-tickets/`. Deduplicação: QA-04, QA-05 e QA-10 do ciclo 1 conferidos como fechados (CT-129, CT-03/CT-85, CT-118 verdes) |
+| B | Fronteiras e dados | ⚠️ | 10 sondas de `definirNoEnv` em arquivo temporário (CRLF, `export` com tab, espaço no `=`, prefixo `APP_NAME_X`, sem quebra no fim, arquivo vazio, duas comentadas, aspas simples duplicadas, `$1`/`\1`/`${}`, multilinha): só a multilinha falha (QA-19). `valoresDoBanco()` passa o nome por `Str::slug`, então não há injeção |
+| C | Matriz de permissão | ✅ | nenhuma superfície nova: o diff de `routes/`, `app/Http`, `app/Policies` e `config` é só o comentário de `routes/console.php` |
+| D | Observabilidade | ✅ | nenhum `Log::` novo (`grep -c` = 0); só saída de console, e o `.env` e o `config/` com o mesmo md5 antes e depois de cada execução |
+| E | Performance | ✅ | nenhum request novo; o custo é de build do site (69 páginas em 9,8 s) |
+| F | UX de erro | ✅ | o delta não muda mensagem do `kit:install`; "Não consegui publicar…" do `kit:arte` (`app/Console/Commands/KitArte.php:394`) nomeia a etapa (RQ-52). O que o banner diz no caso P-46/P-47 depende da resposta (teto) |
+| G | Tema e cor | ⏭️ parcial | `dark-mode.sh --mecanismo` exit 1 (Filament + JS); nível 1 exit 0; nível 2 pelo conferidor: CT-B02 e CT-B05/CT-B11 no escuro, 14,0 px; nível 3 sem MCP |
+| H | Acessibilidade | ✅ | `node verifica-acessibilidade.mjs 4399` exit 0: 96 páginas, nenhuma violação serious/critical; CT-B01 20/20 por idioma e tema; menor fonte efetiva 14,0 px (DG-13) nas 7 combinações; CT-B09 com 0 violações. Achado de texto alternativo: QA-18 |
+| I | Segurança | ✅ | `## Revisão do Diff (step 9)` com 68 linhas (60 achados, 8 rejeitados); eixo 9 não refeito sobre o que ele cobriu. O `app/` do Adendo 7 (`definirLinhaNoEnv` e 3 chamadores) não passou pelo step 9, então rodei o eixo 9 sobre ele: não se aplica (sem Livewire, rota, escopo nem 403). Além disso: sem mass assignment, upload nem `DB::raw` |
+| J | Regressão | ⏭️ parcial | 12 arquivos, um por vez, todos verdes: Diagramas 525/525 (3.831 asserções, 132 s), Tenancy 50/50, Guardas 47/47, KitArte 29/29, Customizador 115/115, Resumo 10/10, Checklist 23 + 3 pulados, SiteDeDocumentacao 68/68, Citacoes 3/3, HostLocal 77/77, KitUpdate 54/54, MysqlNoDocker 28/28. Suíte completa e `--tia` não rodados |
+| K | Adequação da suíte | ⏭️ parcial | K1 `k1-oraculo-fraco.sh` exit 1, 5 candidatos rejeitados (4 já estão na `origin/main`; o `assertDatabaseMissing` por id do CT-80 é o oráculo certo). K2: QA-20. Revisão adversarial do `04`: feita, duas rodadas da adição. Os outros três arquivos de `app/` do delta não foram mutados |
+| L | Consistência documental | ❌ | QA-16, 17, 21, 22, 23. L1 `ids-ct.sh` (8 arquivos) exit 1, só o CT-39, cuja costura `diff` vem vazia; contagem do `04` = 150 · 65 · 427 · 5 e do `05` = 11 · 36, que batem. L2 `citacoes.sh` exit 0, vacuidade em QA-21. L4 `conformidade-rules.sh` exit 0, `testes.md` violada (QA-17). L6 `checkbox-sem-evidencia.sh` exit 0; os números em QA-16. L5: pt × en do delta paralelos |
 
 ## Débitos Aceitos
 
-- DV-01 (RD4-02), DV-02 (RD4-10), DV-03 (RD4-05), DV-04 (RD4-07), DV-05 (RD4-08), DV-06 (RD4-09): aceitos pelo solicitante (Adendo 5, RQ-44). Já estão replicados no `03`.
-- DV-07 (limite do arnês) e DV-08 (capturas órfãs, que já existiam): declarados pela sessão; este gate não os reavaliou.
+- QA-13 (Cosmético, do ciclo 1, parcial): os quadros 1 a 3 do `install.gif` têm área vazia e o `WARN` aparece no último. É decisão do mantenedor e já está no `03`.
+- DV-01..DV-08 e DV-11, como no ciclo 1.
 
 ## Suspeitas Não Confirmadas
 
-- No DG-20 en, a mensagem "is the organization active and linked?" sugere vínculo obrigatório, enquanto o `alt` excetua o `master_global`. É semântica; não afirma nada falso.
-- No DG-02, `panel_user → Trocar de painel`: um `panel_user` sozinho tem um painel só. Só vale com papéis acumulados.
-- Fora do diff e já existente: `admin_email` em claro no contexto de `[CustomizadorDaInstalacao@aplicar]`.
+- CRLF: a linha regravada perde o `\r`, e a linha anexada usa `PHP_EOL`, o que deixa fim de linha misto. O Dotenv lê igual, e o comportamento já existia.
 
 ## Não Verificado
 
-- A renderização no GitHub (L-03) e o job `site` num PR de verdade (L-07). Motivo: ainda não existe PR.
-- A suíte Browser além dos 4 arquivos do Impacto, e o `pest --parallel --tia`. Motivo: memória (cerca de 0,9 GB livres) e a restrição "nunca `--parallel`".
-- O K2 do `KitInstall.php` com o `ResumoDoKitInstallTest`. Motivo: tempo — cada caso roda o `kit:install` real.
-- Os scores do `pestw.cmd` (QA-12). Motivo: são inválidos; os que valem são os do arnês próprio.
-- O nível 3 da G/H. Motivo: o Playwright MCP não está disponível; usei o Playwright do `site/` por script. `browser-logs` e `database-query`: o MCP do Boost falhou ao conectar.
-- `--agent`. Motivo: o `pest-plugin-agent` não está instalado; usei sonda por script no scratchpad. `qa-skills`: não instalado, usei o fallback em linha.
-- RQ-43 (cada correção provada vermelha antes). Motivo: é histórico de processo e não se reproduz sem alterar a árvore.
+- G nível 3 (olho nos dois temas). Motivo: Playwright MCP indisponível; só as medidas do conferidor.
+- J: a suíte completa e `pest --parallel --tia`. Motivo: a instrução é não rodar a suíte completa (memória) e nunca usar `--parallel`. O `03` alega 3.796 testes com 0 falhas, e não reproduzi.
+- K2 de `CustomizadorDaInstalacao::aplicarBanco`, `AtivadorDeTenancy` e `KitTenancy::semearDemo`, e o de `SubstituicaoEmArquivo` contra `HostLocalTest`, `TenancyNaInstalacaoTest` e `SenhaDoAdministradorTest`. Motivo: tempo e memória. Os scores do `pestw.cmd` continuam inválidos (DV-11).
+- L-03 (render no GitHub) e o job `site` num PR. Motivo: não existe PR.
+- `--agent`: `pest-plugin-agent` não instalado, usei sonda por script. `qa-skills`: fallback em linha.

@@ -30,7 +30,7 @@
   *(alterado em 2026-09-29: nenhum dos dois ganhou `it()` — as guardas do DG-17, DG-18 e DG-19
   moram em `tests/Kit/DiagramasDaArquiteturaTest.php`, com os IDs do `04` (CT-31, CT-33, CT-72,
   CT-75, CT-84, CT-93, CT-43, CT-76) —, e o `blocoDoServico` **subiu** para
-  `tests/Pest.php:blocoDoServico:1838`, porque ganhou um segundo consumidor. A infra compartilhada
+  `tests/Pest.php:blocoDoServico:1873`, porque ganhou um segundo consumidor. A infra compartilhada
   tocada também inclui `app/Console/Commands/KitInstall.php`, `app/Support/SenhaDoAdministrador.php`
   e `app/Support/SubstituicaoEmArquivo.php` (as correções do instalador das rodadas da revisão do
   diff, passos 1 e 22), os extratores Mermaid de `tests/Pest.php` (passo 14) e
@@ -84,7 +84,7 @@ gate, dimensão A)*
 | RQ-33 | Contraste WCAG AA nos dois temas, ajustado na configuração do site, nunca com cor fixa no bloco | 22 | Rótulo de aresta no tema escuro, em `site/src/styles/kit.css` — desvio do texto da opção ("na config do astro-mermaid"): o `astro-mermaid` não tem configuração por tema (ADR-02). CT-B01; CT-34, CT-35, CT-95 |
 | RQ-34 | As guardas leem as arestas de forma normalizada, nos dois idiomas | 22, 24 | Extrator de arestas em `tests/Pest.php` (rodada 3) e as formas de seta que ele ainda perdia (rodada 4, RD3-05) |
 | RQ-35 | Os 21 cenários que só conferiam a existência do bloco passam a conferir o conteúdo | 22, 24 | Rodada 3 (RD2-16) e os fatos de DG-12/13/14/16/17 com os IDs reais, em pt e en (rodada 4, RD3-06) |
-| RQ-36 | O CI de pull request constrói e confere o site quando o PR toca `docs/` ou `site/` | 23 | Job `site` no `.github/workflows/ci.yml`. ~~**Sem CT** — lacuna declarada no `04` e dívida no `03`~~ CT-105 (R47 do `04`) *(alterado em 2026-09-29: o cenário foi derivado no step 10, depois da reconferência mecânica; ~~o teste ainda não existe — dívida DV-09 no `03`~~ o teste existe, `tests/Kit/DiagramasDaArquiteturaTest.php:it:5602`, e a DV-09 está fechada)* |
+| RQ-36 | O CI de pull request constrói e confere o site quando o PR toca `docs/` ou `site/` | 23 | Job `site` no `.github/workflows/ci.yml`. ~~**Sem CT** — lacuna declarada no `04` e dívida no `03`~~ CT-105 (R47 do `04`) *(alterado em 2026-09-29: o cenário foi derivado no step 10, depois da reconferência mecânica; ~~o teste ainda não existe — dívida DV-09 no `03`~~ o teste existe, `tests/Kit/DiagramasDaArquiteturaTest.php:it:5595`, e a DV-09 está fechada)* |
 | RQ-37 | Uma 4ª rodada fecha RD3-01..RD3-12, Major e Minor | — | Cláusula de **processo** (Adendo 4). Cumprida pela rodada 4 — o código dela está no passo 24; a situação de cada RD3 está no `03`, `## Revisão do Diff (step 9)` |
 | RQ-38 | A 4ª rodada tem revisão cega só do delta novo | — | Cláusula de **processo**: `fw-revisor-diff` sobre o delta, despacho #44 do `03` |
 | RQ-39 | É a última rodada: o que a revisão da 4ª achar vira dívida declarada no `03` | — | Cláusula de **processo**, com as exceções do Adendo 5 (RQ-41, RQ-42). As dívidas estão no `03`, `## Dívidas declaradas` |
@@ -98,6 +98,9 @@ gate, dimensão A)*
 | RQ-47 | No site, o diagrama nunca encolhe abaixo de um piso de fonte efetiva (cerca de 12 px); o que não cabe rola na horizontal dentro do próprio bloco | 26 | `site/src/styles/kit.css` — ADR-02, *Alterações depois da implementação*; CT-B05 e CT-B06 do `05` |
 | RQ-48 | A legibilidade se resolve no CSS do site, sem mudar bloco nem o que o GitHub mostra | 26 | Só o `site/src/styles/kit.css` mudou para isto; nenhum bloco Mermaid foi tocado pela correção |
 | RQ-49 | Um CT-B mede o piso de fonte antes da correção | 26 | CT-B05, escrito no `site/verifica-acessibilidade.mjs` antes do CSS (lote T3 do ciclo 2, no `03`) |
+| RQ-50 | A gravação no `.env` troca toda linha ATIVA da chave e nenhuma comentada: qualquer leitor fica com o valor gravado | 27 | `app/Support/SubstituicaoEmArquivo.php:definirLinhaNoEnv` (todo chamador); CT-118, CT-137, CT-138, CT-150; aberta em parte (Q?9 → P-45: sem linha ativa, descomenta no lugar; CT-139 é o invariante) *(alterado em 2026-09-30: linha nova, Adendo 7)* |
+| RQ-51 | Valor com quebra de linha vai ao `.env` com a quebra trocada por espaço, e o arquivo não ganha chave nova | 27 | `app/Support/SubstituicaoEmArquivo.php:escaparValorDeEnv` (LF, CRLF e CR → um espaço); CT-117, linhas LF/CRLF/CR *(alterado em 2026-09-30: linha nova, Adendo 7)* |
+| RQ-52 | Quando a montagem do GIF dá certo e a publicação em `art/` falha, a saída do `kit:arte` nomeia a publicação, e não a montagem | 27 | `app/Console/Commands/KitArte.php` ("Não consegui publicar", RD2-04/RD3-09); CT-128, CT-147 *(alterado em 2026-09-30: linha nova, Adendo 7)* |
 
 ## Objetivo
 
@@ -1165,7 +1168,7 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
     também lê bloco (`.ai/rules/testes.md`): `tests/Pest.php:blocosMermaidDe:1088`,
     `tests/Pest.php:blocosMermaidDaArvore:1203`, `tests/Pest.php:blocoDoCatalogoNaArvore:1234`, o
     extrator de arestas normalizado das rodadas 3 e 4 (passos 22 e 24) e
-    `tests/Pest.php:blocoDoServico:1838`, que saiu do `MysqlNoDockerTest`.
+    `tests/Pest.php:blocoDoServico:1873`, que saiu do `MysqlNoDockerTest`.
   - **O irmão com tenancy lê bloco**: o DG-02, o DG-03 e o DG-09 são lidos em
     `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` por `blocoDoCatalogoNaArvore()`, com a
     sentinela `naArvoreDoKit()` no arquivo inteiro (RD-02, rodada 1) — sem ela, toda instalação nova
@@ -1177,11 +1180,11 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
     `tests/Kit/GuardasDosDiagramasTest.php` (CT-106..CT-111, CT-115, CT-116; segunda passada do step 10),
     com a mesma sentinela de arquivo inteiro; o irmão com tenancy ganhou CT-112..CT-114.
   - **Um extrator só.** O CT-03 e o CT-85 leem os blocos publicados pelos extratores de `tests/Pest.php`
-    (`tests/Pest.php:arestasDeFluxo:1358`, `tests/Pest.php:relacoesDeEr:1439`,
-    `tests/Pest.php:mensagensDeSequencia:1475`), e não mais por um extrator local que só lia `-->`; os
+    (`tests/Pest.php:arestasDeFluxo:1367`, `tests/Pest.php:relacoesDeEr:1448`,
+    `tests/Pest.php:mensagensDeSequencia:1510`), e não mais por um extrator local que só lia `-->`; os
     clones com outro nome saíram (`mensagensDaSequencia()` do arquivo Kit, `transicoesDoEstado()` e
     `ordemDoDG20EstaCorreta()` do irmão com tenancy), e cada um existe uma vez em `tests/Pest.php`
-    (`tests/Pest.php:transicoesDeEstado:1583`, `tests/Pest.php:ordemDg20EhCorreta:1516`).
+    (`tests/Pest.php:transicoesDeEstado:1618`, `tests/Pest.php:ordemDg20EhCorreta:1551`).
   - **Guardas novas no arquivo Kit**: o opcional por elemento e pela chave exata (CT-129, CT-130), o
     título do índice igual ao `accTitle` (CT-131), o texto visível de cada bloco no idioma dele (CT-132) e
     toda seta de sequência como mensagem (CT-126).
@@ -1225,7 +1228,7 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
   **Guarda**: Reflection sobre `KitInstall::handle()` extrai a sequência de chamadas
   `$this->metodo()` (`ReflectionMethod::getStartLine()`/`getEndLine()`, precedente
   `tests/Kit/RaizDeUrlRegistradaTest.php:ReflectionMethod:162`, mais `codigoSemComentario()`
-  `tests/Pest.php:codigoSemComentario:1878` e `preg_match_all('~\$this->(\w+)\(~')` — função local, reaproveitada por
+  `tests/Pest.php:codigoSemComentario:1913` e `preg_match_all('~\$this->(\w+)\(~')` — função local, reaproveitada por
   DG-16, DG-20 e `recriarBanco`) e confere que os métodos do diagrama aparecem nela **nesta ordem
   relativa** — subsequência, não igualdade: o `handle()` também chama o que o diagrama condensa ou
   omite (`customizarSemBanco` no ramo `--custom`, que retorna cedo, `desvincularDoSnyk`,
@@ -1255,7 +1258,7 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
 
   **Guarda**: `it('[DG-18]')` mora em `tests/Kit/MysqlNoDockerTest.php` (passo 14), não no arquivo
   de teste-guarda geral — é lá que o recorte `blocoDoServico`
-  (antes da entrega, na linha 50 de `tests/Kit/MysqlNoDockerTest.php`) já existe. *(alterado em 2026-09-29: o `it('[DG-18]')` não foi criado aqui — as guardas do DG-18 são CT-33, CT-75 e CT-84 em `tests/Kit/DiagramasDaArquiteturaTest.php` —, e o recorte, com dois consumidores, subiu para `tests/Pest.php:blocoDoServico:1838`; o `MysqlNoDockerTest` o chama por uma closure de uma linha)* Ele sai de **closure em `$this`**
+  (antes da entrega, na linha 50 de `tests/Kit/MysqlNoDockerTest.php`) já existe. *(alterado em 2026-09-29: o `it('[DG-18]')` não foi criado aqui — as guardas do DG-18 são CT-33, CT-75 e CT-84 em `tests/Kit/DiagramasDaArquiteturaTest.php` —, e o recorte, com dois consumidores, subiu para `tests/Pest.php:blocoDoServico:1873`; o `MysqlNoDockerTest` o chama por uma closure de uma linha)* Ele sai de **closure em `$this`**
   (montada no `beforeEach`) para função de topo do próprio arquivo (`blocoDoServicoNoCompose(string
   $compose, string $servico): string`, mesmo corpo, chamada pelos dois casos) — sem subir para
   `tests/Pest.php`, porque os dois usos ficam no mesmo arquivo. Extrai o bloco de cada serviço
@@ -1296,9 +1299,9 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
   `branch_update` → `revisar` → `so_relatorio` → `marcar_versao` → `finally` (sempre roda,
   `try/finally`, salvo `--keep-remote`). Rótulo explícito: **"não interativo"**, nunca "sem TTY".
 
-  **Fato do código**: ordem em `KitUpdate::handle()` (`app/Console/Commands/KitUpdate.php:handle:375`);
+  **Fato do código**: ordem em `KitUpdate::handle()` (`app/Console/Commands/KitUpdate.php:handle:376`);
   guarda de interatividade usa `! $this->input->isInteractive()`
-  (`app/Console/Commands/KitUpdate.php:isInteractive:427`).
+  (`app/Console/Commands/KitUpdate.php:isInteractive:428`).
 
   **Guarda**: os nós não têm o nome do método (o diagrama é abstração), então a guarda leva o
   **mapa nó → método** e confere, na sequência de `$this->metodo()` extraída do corpo de
@@ -1310,9 +1313,9 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
   `mostrarResumo` (`:414`), `branch_update` → `prepararBranch` (`:437`), `revisar` →
   `revisarEAplicar` (`:441`), `so_relatorio` → `relatarComposerJson` (`:444`), `marcar_versao` →
   `encerrar` (`:446`, que chama `marcarVersao` em
-  `app/Console/Commands/KitUpdate.php:marcarVersao:1050`), `finally` → `desvincularKit` (`:449`). *(alterado em 2026-09-29: linhas deslocadas em uma pelo comentário que o PR #125 pôs no `KitUpdate` antes da linha 283, trazido pelo rebase sobre a `main`)*
+  `app/Console/Commands/KitUpdate.php:marcarVersao:1051`), `finally` → `desvincularKit` (`:449`). *(alterado em 2026-09-29: linhas deslocadas em uma pelo comentário que o PR #125 pôs no `KitUpdate` antes da linha 283, trazido pelo rebase sobre a `main`)*
   E: `(new ReflectionClassConstant(KitUpdate::class, 'CAMINHOS_SO_RELATORIO'))->getValue() ===
-  ['composer.json']` (`app/Console/Commands/KitUpdate.php:CAMINHOS_SO_RELATORIO:366`); as opções
+  ['composer.json']` (`app/Console/Commands/KitUpdate.php:CAMINHOS_SO_RELATORIO:367`); as opções
   que o diagrama cita (`--dry-run`, `--all`, `--only-new`, `--keep-remote`) existem em
   `Artisan::all()['kit:update']->getDefinition()` (subconjunto — a signature tem nove).
 
@@ -1338,7 +1341,7 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
 
   **Guarda**: `it('[DG-17]')` mora em `tests/Kit/DuasRotasDeEntregaTest.php` (passo 14), ao lado da
   própria `FORA_DA_ENTREGA_POR_DECISAO` — nada sobe para `tests/Pest.php`. Reaproveita o que o
-  arquivo já tem: `caminhosDoKit()` (`tests/Pest.php:caminhosDoKit:1819`) para `! in_array('README.md',
+  arquivo já tem: `caminhosDoKit()` (`tests/Pest.php:caminhosDoKit:1854`) para `! in_array('README.md',
   CAMINHOS_DO_KIT)`, e o laço de `caminhosDeTopoQueViajam()` (`tests/Kit/DuasRotasDeEntregaTest.php:caminhosDeTopoQueViajam:181`)
   para os alvos `export-ignore`, sem o `explode('/')[0]` (aqui o alvo completo é comparado, não só o
   diretório de topo) — em vez de escrever um segundo parser de `.gitattributes`. Os alvos
@@ -1385,7 +1388,7 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
   (`:65`) → `ligarFlagNoEnv` (`app/Console/Commands/KitTenancy.php:ligarFlagNoEnv:70`, que escreve
   `KIT_TENANCY=true` por `app/Support/AtivadorDeTenancy.php:escreverEnv:35`) →
   `ligarPapeisPorTenant` (`app/Console/Commands/KitTenancy.php:ligarPapeisPorTenant:71`, delegando a
-  `app/Support/AtivadorDeTenancy.php:ligarPapeisPorTenant:71`) → `recriarBanco`
+  `app/Support/AtivadorDeTenancy.php:ligarPapeisPorTenant:66`) → `recriarBanco`
   (`app/Console/Commands/KitTenancy.php:recriarBanco:72`, que roda `migrate:fresh --seed --force`
   em `:187` e `conferirSchema()` em `:189`, definido em `:198`) → `semearDemo` só com `--demo`
   (`app/Console/Commands/KitTenancy.php:semearDemo:75`: `DemoTenancySeeder` + `KIT_DEMO=true`,
@@ -1409,13 +1412,13 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
   `tests/Kit/CitacoesDeCodigoTest.php` confere. Por isso a subsequência de `KitTenancy::handle()` e de
   `recriarBanco()` não foi implementada — `grep -n "KitTenancy\|recriarBanco" tests/Kit/DiagramasDaArquiteturaTest.php`
   volta vazio. O que o DG-20 tem de guarda: `hasTenancy()` no irmão com tenancy
-  (`tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:hasTenancy:247`), as regras genéricas do `04` e a
+  (`tests/Pest.php:hasTenancy:2381`), as regras genéricas do `04` e a
   relação declarada em `fatosPorDg` (lacuna L-01). Achado do step 10, registrado no `03`)*
 
   *(alterado em 2026-09-29: ciclo 2 do gate, QA-01 — a última frase da nota acima deixou de valer na
   segunda passada do step 10. O flowchart do `kit:tenancy` continua fora — decisão da sessão, lacuna L-08
   do `04` —, e a ordem do comando continua sem guarda. **A sequência publicada tem guarda**, pelas R51 e
-  R52: `[CT-112]` (`tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:it:816`) compara a ordem que o
+  R52: `[CT-112]` (`tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php:it:813`) compara a ordem que o
   bloco desenha com a pilha de middlewares de uma rota do `/app/{tenant}`; `[CT-113]` (`:856`) confere que
   o contexto de papéis é fixado com o id da organização da rota, e só no pedido permitido; `[CT-114]`
   (`:925`) executa o `GET` em cada situação e confere que o ramo desenhado leva ao status que o código dá —
@@ -1618,9 +1621,9 @@ mudou no código, autorizada pelo Adendo 3; as rodadas 1 e 2 estão marcadas nos
   `#404040` (6,46:1) em `site/src/styles/kit.css`, só com `data-theme='dark'` e só dentro de
   `pre.mermaid` — nenhuma cor no bloco, e o tema claro intocado (RQ-33; decisão no ADR-02).
 - **Guardas** (`8a3974e`): o extrator normalizado mora em `tests/Pest.php`
-  (`tests/Pest.php:existeArestaDeFluxo:1301`, `tests/Pest.php:arestasDeFluxo:1358`,
-  `tests/Pest.php:relacaoDeEr:1413`, `tests/Pest.php:mensagensDeSequencia:1475`,
-  `tests/Pest.php:transicoesDeEstado:1583`), usado em pt e en (RQ-34); o CT-10 lê as quatro cópias
+  (`tests/Pest.php:existeArestaDeFluxo:1301`, `tests/Pest.php:arestasDeFluxo:1367`,
+  `tests/Pest.php:relacaoDeEr:1438`, `tests/Pest.php:mensagensDeSequencia:1510`,
+  `tests/Pest.php:transicoesDeEstado:1618`), usado em pt e en (RQ-34); o CT-10 lê as quatro cópias
   do DG-01, o CT-63/CT-94 rodam nos dois idiomas com os nomes reais das entidades, o DG-03 exige a
   ordem "inativa antes de master_global" como caminho no grafo, o CT-28 confere que todo atributo
   desenhado no DG-13 existe no schema, e os 21 CTs que só afirmavam o bloco aplicam o fato do código
@@ -1656,7 +1659,7 @@ mudou no código, autorizada pelo Adendo 3; as rodadas 1 e 2 estão marcadas nos
   cada passo depende da condição sobre os caminhos do PR, a condição aceita `docs/` e `site/` e recusa o
   resto, e os quatro passos rodam com os conferidores depois do build, sem `continue-on-error`. ~~O teste
   do CT-105 ainda não existe: dívida DV-09 no `03`~~)* *(alterado em 2026-09-29: ciclo 2 do gate, QA-01 —
-  o teste existe, `[CT-105]` em `tests/Kit/DiagramasDaArquiteturaTest.php:it:5602`, verde e provado
+  o teste existe, `[CT-105]` em `tests/Kit/DiagramasDaArquiteturaTest.php:it:5595`, verde e provado
   vermelho pelos mutantes R47.M1..M6 sobre cópias do `ci.yml` em memória; a DV-09 está fechada)*
 
 ### 24. Quarta rodada da revisão do diff (RQ-34, RQ-35, RQ-28 — Adendo 4)
@@ -1730,7 +1733,7 @@ no código; o destino de cada achado está no `03`, `## Quality Gate`)*
   três arquivos de guarda (QA-01).
 - **Guardas** (QA-03, QA-05, QA-07, QA-10): os 14 testes `[RD…]` e o da captura do instalador ganharam o
   `[CT-nn]`; o CT-03 e o CT-85 leem os blocos publicados pelos extratores de `tests/Pest.php`, e
-  `tests/Pest.php:mensagensDeSequencia:1475` lê toda seta de sequência; os três clones saíram; o CT-118 prova
+  `tests/Pest.php:mensagensDeSequencia:1510` lê toda seta de sequência; os três clones saíram; o CT-118 prova
   que `SubstituicaoEmArquivo::definirNoEnv` troca só a primeira ocorrência da chave (o mutante do limite do
   `preg_replace_callback`).
 - **Site** (QA-06): `site/src/styles/kit.css` deixa o SVG no tamanho natural e a rolagem dentro do bloco
@@ -1741,6 +1744,37 @@ no código; o destino de cada achado está no `03`, `## Quality Gate`)*
 - **Logs**: n/a.
 - **Verificação**: cada arquivo da feature rodado sozinho, o conferidor do site e os scripts da reconciliação,
   com a saída no `03`, `## 26.` e `## Verificação Final`.
+
+### 27. Adendo 7 e a revisão adversarial da adição: a gravação no `.env` e as guardas que faltavam (RQ-50 a RQ-52; RQ-28, RQ-45)
+
+*(alterado em 2026-09-30: passo novo — registra o que o Adendo 7 e o fechamento das duas rodadas da revisão
+adversarial da adição do step 11 mudaram no código, nos testes e nas docs; os cenários estão no `04` (R54, R63..R65,
+CT-133..CT-150) e no `05` (CT-B07..CT-B11))*
+
+**Atende**: RQ-50, RQ-51, RQ-52, P-44, P-45 (e, pelos cenários, RQ-28, RQ-34, RQ-47..RQ-49)
+
+> Skills: `pest-testing`, `testing-best-practices`
+
+- **Teste primeiro** (RQ-45): os executores escreveram os testes contra o código de antes — CT-118 (2 linhas), CT-137
+  (5 linhas) e CT-138 (7 linhas) nasceram vermelhos em `tests/Kit/CustomizadorDaInstalacaoTest.php`, e CT-144
+  (DG-06 pt/en, DG-08) e CT-146 (DG-06 en) nasceram vermelhos contra as docs publicadas; a saída literal está no `03`.
+- **`.env`** (RQ-50, RQ-51, P-45): `app/Support/SubstituicaoEmArquivo.php:definirLinhaNoEnv` troca **toda** linha que o
+  Dotenv lê como a chave (`export`, espaço no `=`, indentação) e nenhuma comentada; sem linha ativa, descomenta a
+  primeira comentada no lugar (P-45, Q?9 em aberto); sem nenhuma, anexa — para todo chamador, `DB_CONNECTION` incluído.
+  `definirNoEnv()` a chama, e `aplicarBanco()`, `AtivadorDeTenancy::escreverEnv()` e `KitTenancy::semearDemo()`
+  deixaram de chamar `aplicar()` direto; `aplicar()` fica com o limite 1 para padrão arbitrário (config PHP). A
+  quebra de linha já virava um espaço (RQ-51); o CT-117 passou a afirmar LF, CRLF e CR.
+- **Saída do `kit:arte`** (RQ-52): a mensagem "Não consegui publicar" já existia (RD2-04/RD3-09); o CT-128 e o CT-147
+  passaram a afirmar que nenhuma linha da saída culpa a montagem ou o ffmpeg.
+- **Docs, pt e en**: o DG-06 nomeia as quatro chaves de provedor social numa `note over provedor` e o en perdeu o
+  "(provedor social)"; a nota de Pendente do DG-08 leva `KIT_REGISTRO` e `KIT_REGISTRO_APROVACAO_MANUAL`; o DG-07 leva
+  `KIT_TENANCY` no escopo do vínculo, com o `tenant_id` em posição de condição (Q?13).
+- **Guardas**: o extrator de `tests/Pest.php` lê cadeia, `&`, bidirecional, as oito meias-setas de sequência, e ignora
+  comentário `%%` e seta dentro de rótulo (R65, R57); o detector de opcional lê o escopo estruturado (`alt`/`else`/`opt`
+  e nota) e a chave como palavra inteira (R59, `[CT-08]`); baseline de tipo e direção dos blocos (R62, CT-148); o
+  conferidor do site mede a escala pela matriz da tela, inclui o HTML de `foreignObject`, confere o bloco dentro da
+  coluna e a troca de tema como evento (CT-B07..CT-B11); a captura do `install.gif` confere cada quadro (CT-B04, CT-B10).
+- **Logs**: n/a.
 
 ## Filosofia de Implementação
 

@@ -658,6 +658,15 @@ Cada afirmação falsa é corrigida na fonte que ela contradiz, nunca "suavizada
   e `ResumoDoKitInstallTest`, provados vermelhos sem cada correção. O que ficou aberto — banco
   inacessível (RD4-02) e reinstalação sobre admin com `password` (RD4-10) — é dívida declarada no
   `03`)*
+  *(alterado em 2026-09-30: Adendo 7 — RQ-50 e RQ-51. A gravação de chave no `.env` deixou de trocar "só a primeira
+  ocorrência": `app/Support/SubstituicaoEmArquivo.php:definirLinhaNoEnv` troca **toda** linha que o Dotenv lê como a
+  chave (`export`, espaço no `=`, indentação) e nenhuma comentada — o Dotenv e a carga do Laravel ficam com a última
+  definição, e trocar só a primeira deixava os dois com o valor velho —; sem linha ativa, descomenta a primeira
+  comentada no lugar (P-45, Q?9 em aberto); sem nenhuma, anexa, `DB_CONNECTION` incluído. `definirNoEnv()` a chama, e
+  `aplicarBanco()`, `AtivadorDeTenancy::escreverEnv()` e `KitTenancy::semearDemo()` deixaram de chamar `aplicar()`
+  direto, que fica com o limite 1 para padrão arbitrário de config PHP. A quebra de linha no valor já virava um
+  espaço; agora é cláusula (RQ-51). Guardado por R54 e R64 do `04` — CT-117, CT-118, CT-137..CT-139 e CT-150 —, cada
+  linha vermelha antes da correção, como o `03` registra)*
 
 ### Referências
 
