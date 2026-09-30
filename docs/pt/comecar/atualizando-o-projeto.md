@@ -37,7 +37,7 @@ O que ele faz, em ordem:
 
 O fluxo é **não interativo** quando não há terminal (CI, `--no-interaction`) — nunca "sem TTY": ele
 vira relatório e sai sem aplicar nada, a menos que `--all` ou `--only-new` já tenham dado a
-aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:427`).
+aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:428`).
 
 ```mermaid
 flowchart TD
@@ -66,7 +66,7 @@ accDescr: O kit:update confere o terreno, vincula o kit como remote temporário,
 ```
 
 A ordem vem direto de `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:375`): pré-voo (`:preVoo:463`), remote temporário
+(`app/Console/Commands/KitUpdate.php:handle:376`): pré-voo (`:preVoo:464`), remote temporário
 (`:vincularKit:523`), diff restrito (`:arquivosAlterados:629`), resumo (`:mostrarResumo:748`), a
 checagem de terminal (`:isInteractive:427`), o branch temporário (`:prepararBranch:768`), a revisão
 por arquivo (`:revisarEAplicar:817`), o relatório do `composer.json`

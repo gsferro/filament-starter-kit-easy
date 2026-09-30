@@ -1182,12 +1182,26 @@ function mapaOptInDaGuarda(): array
 }
 
 /**
+ * O texto sem as linhas de comentário do Mermaid — `^\s*%%(?!{)`, o padrão do `cleanupComments`
+ * (`site/node_modules/mermaid/dist/mermaid.core.mjs:^\s*%%(?!{):968`); a diretiva `%%{...}%%` não
+ * é comentário.
+ */
+function semLinhasDeComentarioMermaid(string $texto): string
+{
+    return (string) preg_replace('/^[ \t]*%%(?!\{).*$/m', '', $texto);
+}
+
+/**
  * A chave aparece no texto como IDENTIFICADOR INTEIRO — nunca como prefixo/sufixo de outra chave
  * maior (R59, QA-04: "KIT_REGISTRO" não pode casar dentro de "KIT_REGISTRO_APROVACAO_MANUAL", a
  * guarda de antes aceitava por substring).
  */
 function contemChaveExata(string $texto, string $chave): bool
 {
+    // O Mermaid tira a linha `%%` (indentada ou não) antes do lexer: a chave só num comentário não
+    // está no desenho (ADV2-11).
+    $texto = semLinhasDeComentarioMermaid($texto);
+
     return preg_match('/(?<![A-Z0-9_])'.preg_quote($chave, '/').'(?![A-Z0-9_])/', $texto) === 1;
 }
 
@@ -1230,39 +1244,50 @@ function contemMarcaDeChave(string $texto, string $chaveOuPrefixo): bool
 }
 
 /**
- * Os ESCOPOS de um termo dentro de um bloco (R59, QA-04, Q?6 de mecanismo) — uma entrada por linha
- * que CITA o termo, cada uma com: a própria linha, a condição do `alt`/`else` que a envolve
- * DIRETAMENTE (nunca o bloco inteiro — a mesma regra do aninhamento de R42/CT-85), e — quando o
- * termo é o identificador de um estado — a(s) nota(s) `note ... of <termo>: ...` ligada(s) a ele.
+ * Os ESCOPOS de um termo dentro de um bloco (R59, QA-04, Q?6 de mecanismo), ESTRUTURADOS — uma
+ * entrada por linha que CITA o termo, cada uma com: a própria linha, a condição do `alt`/`else`
+ * que a envolve DIRETAMENTE (nunca o bloco inteiro — a mesma regra do aninhamento de R42/CT-85),
+ * e — quando o termo é o identificador de um estado — a(s) nota(s) `note ... of <termo>: ...`
+ * ligada(s) a ELE (a nota de outro estado nunca soma: ADV-17).
+ *
+ * A condição de um ramo vale só para o ramo: o `else` SEM texto zera a condição, e não herda a do
+ * `alt` (ADV-16) — herdar era marcar `KIT_TENANCY` só no `alt` da conta nova e cobrir, no `else`,
+ * o vínculo da conta existente e a recusa. `end` fecha o bloco que abriu (`loop`, `opt`, `par`...),
+ * e não o `alt` mais próximo: a pilha guarda o tipo de cada um.
  *
  * Escopos são INDEPENDENTES: duas linhas que citam o MESMO termo nunca compartilham a marca uma da
  * outra — é o que corrige "confere por bloco inteiro, chave em qualquer ponto" (QA-04).
  *
- * @return list<string>
+ * @return list<array{linha: string, condicao: string, notas: list<string>}>
  */
-function escoposDoTermo(string $bloco, string $termo): array
+function escoposEstruturadosDoTermo(string $bloco, string $termo): array
 {
-    $linhas    = explode("\n", $bloco);
-    $condicoes = [];
-    $escopos   = [];
+    $linhas  = explode("\n", $bloco);
+    $pilha   = [];
+    $escopos = [];
 
     foreach ($linhas as $linha) {
         $t = trim($linha);
 
-        if (preg_match('/^alt\s+(.*)$/', $t, $m) === 1) {
-            $condicoes[] = $m[1];
+        // Linha de comentário: o Mermaid a tira antes do lexer (ADV2-11).
+        if (str_starts_with($t, '%%') && ! str_starts_with($t, '%%{')) {
+            continue;
+        }
+
+        if (preg_match('/^(alt|opt|loop|par|critical|break|rect|subgraph)\b\s*(.*)$/', $t, $m) === 1) {
+            $pilha[] = ['tipo' => $m[1], 'condicao' => in_array($m[1], ['alt', 'opt'], true) ? $m[2] : ''];
 
             continue;
         }
 
-        if (preg_match('/^else\b\s*(.*)$/', $t, $m) === 1 && $condicoes !== []) {
-            $condicoes[array_key_last($condicoes)] = $m[1] !== '' ? $m[1] : end($condicoes);
+        if (preg_match('/^else\b\s*(.*)$/', $t, $m) === 1 && $pilha !== []) {
+            $pilha[array_key_last($pilha)]['condicao'] = $m[1];
 
             continue;
         }
 
-        if ($t === 'end' && $condicoes !== []) {
-            array_pop($condicoes);
+        if ($t === 'end' && $pilha !== []) {
+            array_pop($pilha);
 
             continue;
         }
@@ -1276,22 +1301,113 @@ function escoposDoTermo(string $bloco, string $termo): array
             continue;
         }
 
-        $escopo = $linha;
+        $condicao = '';
 
-        if ($condicoes !== []) {
-            $escopo .= ' '.end($condicoes);
-        }
+        foreach (array_reverse($pilha) as $aberto) {
+            if (in_array($aberto['tipo'], ['alt', 'opt'], true)) {
+                $condicao = $aberto['condicao'];
 
-        foreach ($linhas as $linhaNota) {
-            if ($linhaNota !== $linha && preg_match('/^\s*note\b.*\bof\s+'.preg_quote($termo, '/').'\b\s*:/', $linhaNota) === 1) {
-                $escopo .= ' '.$linhaNota;
+                break;
             }
         }
 
-        $escopos[] = $escopo;
+        $notas = [];
+
+        foreach ($linhas as $linhaNota) {
+            if ($linhaNota !== $linha && ! str_starts_with(trim($linhaNota), '%%') && preg_match('/^\s*note\b.*\bof\s+'.preg_quote($termo, '/').'\b\s*:/', $linhaNota) === 1) {
+                $notas[] = $linhaNota;
+            }
+        }
+
+        $escopos[] = ['linha' => $linha, 'condicao' => $condicao, 'notas' => $notas];
     }
 
     return $escopos;
+}
+
+/**
+ * O escopo estruturado como texto: a linha, a condição do ramo e as notas (R59).
+ *
+ * @param  array{linha: string, condicao: string, notas: list<string>}  $escopo
+ */
+function textoDoEscopo(array $escopo): string
+{
+    return trim($escopo['linha'].' '.$escopo['condicao'].' '.implode(' ', $escopo['notas']));
+}
+
+/**
+ * Os ESCOPOS de um termo como texto — a forma de antes da estruturação, a que o CT-129 cita nas
+ * mensagens de falha.
+ *
+ * @return list<string>
+ */
+function escoposDoTermo(string $bloco, string $termo): array
+{
+    return array_map(textoDoEscopo(...), escoposEstruturadosDoTermo($bloco, $termo));
+}
+
+/**
+ * A marca de opcional vale NESTE escopo (R59): a chave `KIT_*` vale em qualquer parte dele (linha,
+ * condição do ramo ou nota do estado), como palavra inteira, e um prefixo de família
+ * (`KIT_SOCIALITE_`) vale por qualquer das chaves concretas dele. O `tenant_id` NÃO é marca — a
+ * P-16 não afrouxa, ele nunca substitui a chave (ver `tenantIdSoEmPosicaoDeCondicao()`).
+ *
+ * @param  array{linha: string, condicao: string, notas: list<string>}  $escopo
+ */
+function marcaValeNoEscopo(array $escopo, string $marca): bool
+{
+    return contemMarcaDeChave(textoDoEscopo($escopo), $marca);
+}
+
+/**
+ * A regra do `tenant_id` da Q?13 (ADV-30, ADV2-12): a mensagem que CITA a coluna a cita só em
+ * posição de CONDIÇÃO — a oração que COMEÇA com "se"/"quando" (en: "if"/"when"), a da mensagem
+ * inteira ou a que vem logo depois de vírgula. O "se" reflexivo ("a conta se vincula ao tenant_id")
+ * e o "quando" no fim ("vincula ao tenant_id do convite quando aceita") não são condição dele, e a
+ * menção à coluna desenha o vínculo como incondicional. Vale para a mensagem; a condição do
+ * `alt`/`else`/`opt` que contém a linha é outro escopo (e o `tenant_id` nela é condição por
+ * definição). Mensagem sem o `tenant_id` cumpre.
+ *
+ * @param  array{linha: string, condicao: string, notas: list<string>}  $escopo
+ */
+function tenantIdSoEmPosicaoDeCondicao(array $escopo): bool
+{
+    $partes   = explode(':', $escopo['linha'], 2);
+    $mensagem = trim($partes[1] ?? $partes[0]);
+
+    foreach ((array) preg_split('/\s*,\s*/u', $mensagem) as $oracao) {
+        $citaAColuna = preg_match('/(?<![A-Za-z0-9_])tenant_id(?![A-Za-z0-9_])/', (string) $oracao) === 1;
+        $eCondicao   = preg_match('/^(?:quando|se|when|if)(?![\p{L}\p{N}_])/iu', (string) $oracao) === 1;
+
+        if ($citaAColuna && ! $eCondicao) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Por que o escopo NÃO cumpre o que o elemento de R58 exige — `null` quando cumpre: toda chave de
+ * `chaves` como palavra inteira no escopo e, quando `tenantIdSoComoCondicao`, o `tenant_id` da
+ * mensagem, se citado, em posição de condição (Q?13).
+ *
+ * @param  array{dg: string, marcador: string, chaves: list<string>, tenantIdSoComoCondicao: bool}  $elemento
+ * @param  array{linha: string, condicao: string, notas: list<string>}  $escopo
+ */
+function motivoDoEscopoSemMarca(array $elemento, array $escopo): ?string
+{
+    $faltam = array_values(array_filter($elemento['chaves'], static fn (string $chave): bool => ! marcaValeNoEscopo($escopo, $chave)));
+
+    if ($faltam !== []) {
+        return 'sem '.implode(' e ', $faltam).' no escopo "'.textoDoEscopo($escopo).'"';
+    }
+
+    if ($elemento['tenantIdSoComoCondicao'] && ! tenantIdSoEmPosicaoDeCondicao($escopo)) {
+        return 'o tenant_id fora de posição de condição no escopo "'.textoDoEscopo($escopo).'"';
+    }
+
+    return null;
 }
 
 /**
@@ -1301,14 +1417,14 @@ function escoposDoTermo(string $bloco, string $termo): array
  */
 function opcionalMarcadoNoEscopo(string $bloco, string $termo, string $chaveOuPrefixo): ?bool
 {
-    $escopos = escoposDoTermo($bloco, $termo);
+    $escopos = escoposEstruturadosDoTermo($bloco, $termo);
 
     if ($escopos === []) {
         return null;
     }
 
     foreach ($escopos as $escopo) {
-        if (! contemMarcaDeChave($escopo, $chaveOuPrefixo)) {
+        if (! marcaValeNoEscopo($escopo, $chaveOuPrefixo)) {
             return false;
         }
     }
@@ -1355,8 +1471,11 @@ it('[CT-08] o elemento opt-in vem com a sua chave em todo bloco que o desenha', 
             static fn (array $b): bool => $nomeia($b['bloco']),
         );
 
+        // A chave como PALAVRA INTEIRA (R59, CT-144): `KIT_SOCIALITE_` dentro de
+        // `KIT_SOCIALITE_VINCULO_CONFIRMAR` não é chave de provedor — e a chave terminada em `_`
+        // é a família, cujas chaves concretas `contemMarcaDeChave()` resolve.
         foreach ($blocosComElemento as $bloco) {
-            test()->assertStringContainsString($chave, $bloco['bloco'], "{$bloco['arquivo']}:{$bloco['linha']} nomeia \"{$elemento}\" sem citar {$chave}");
+            expect(contemMarcaDeChave($bloco['bloco'], $chave))->toBeTrue("{$bloco['arquivo']}:{$bloco['linha']} nomeia \"{$elemento}\" sem citar {$chave} como palavra inteira");
         }
     }
 
@@ -1417,25 +1536,31 @@ it('[CT-58] o detector de opcional reprova o elemento sem chave e não acusa o h
 /**
  * Os 6 elementos opt-in publicados de R58, cada um com o marcador LINGUAGEM-INVARIANTE que
  * localiza a linha (id de nó, chamada de método ou início da mensagem — nunca texto traduzido) e
- * a(s) marca(s) aceita(s) — DG-07 aceita `KIT_TENANCY` OU `tenant_id`, o regime de P-20 (o convite
- * só liga a organização quando TEM uma, e só tem uma com a tenancy ligada).
+ * as chaves que o escopo dele TEM de trazer, todas como palavra inteira. No DG-07 a chave é
+ * `KIT_TENANCY` (P-16 sem afrouxar: o `tenant_id` do convite nunca a substitui) e, nas duas
+ * mensagens do vínculo, o `tenant_id`, se citado, só em posição de condição (Q?13). No DG-08, o
+ * Pendente leva as duas chaves (ADV2-16, R58.M6).
  *
- * @return array<string, array{dg:string, marcador:string, marcas:list<string>}>
+ * @return array<string, array{dg: string, marcador: string, chaves: list<string>, tenantIdSoComoCondicao: bool}>
  */
 function elementosOptInDeR58(): array
 {
     return [
-        'DG-02: o caso de uso cu_aceitar_convite (aceitar/recusar convite recebido)'   => ['dg' => 'DG-02', 'marcador' => 'cu_aceitar_convite', 'marcas' => ['KIT_TENANCY']],
-        'DG-07: a mensagem que liga a conta nova à organização do convite'             => ['dg' => 'DG-07', 'marcador' => 'convite->>convidado_novo:', 'marcas' => ['KIT_TENANCY', 'tenant_id']],
-        'DG-07: a mensagem que dá à conta existente o papel na organização do convite' => ['dg' => 'DG-07', 'marcador' => 'convite->>convidado_existente:', 'marcas' => ['KIT_TENANCY', 'tenant_id']],
-        'DG-07: o ramo da recusa e a mensagem recusar()'                               => ['dg' => 'DG-07', 'marcador' => 'recusar()', 'marcas' => ['KIT_TENANCY']],
-        'DG-07: a accDescr, que cita a organização do convite'                         => ['dg' => 'DG-07', 'marcador' => 'accDescr:', 'marcas' => ['KIT_TENANCY', 'tenant_id']],
-        'DG-08: o estado Pendente'                                                     => ['dg' => 'DG-08', 'marcador' => 'Pendente', 'marcas' => ['KIT_REGISTRO_APROVACAO_MANUAL']],
+        'DG-02: o caso de uso cu_aceitar_convite (aceitar/recusar convite recebido)'   => ['dg' => 'DG-02', 'marcador' => 'cu_aceitar_convite', 'chaves' => ['KIT_TENANCY'], 'tenantIdSoComoCondicao' => false],
+        'DG-07: a mensagem que liga a conta nova à organização do convite'             => ['dg' => 'DG-07', 'marcador' => 'convite->>convidado_novo:', 'chaves' => ['KIT_TENANCY'], 'tenantIdSoComoCondicao' => true],
+        'DG-07: a mensagem que dá à conta existente o papel na organização do convite' => ['dg' => 'DG-07', 'marcador' => 'convite->>convidado_existente:', 'chaves' => ['KIT_TENANCY'], 'tenantIdSoComoCondicao' => true],
+        'DG-07: o ramo da recusa e a mensagem recusar()'                               => ['dg' => 'DG-07', 'marcador' => 'recusar()', 'chaves' => ['KIT_TENANCY'], 'tenantIdSoComoCondicao' => false],
+        'DG-07: a accDescr, que cita a organização do convite'                         => ['dg' => 'DG-07', 'marcador' => 'accDescr:', 'chaves' => ['KIT_TENANCY'], 'tenantIdSoComoCondicao' => false],
+        'DG-08: o estado Pendente'                                                     => ['dg' => 'DG-08', 'marcador' => 'Pendente', 'chaves' => ['KIT_REGISTRO', 'KIT_REGISTRO_APROVACAO_MANUAL'], 'tenantIdSoComoCondicao' => false],
     ];
 }
 
 it('[CT-129] o elemento opt-in publicado leva a chave exata no próprio escopo', function (string $descricao): void {
-    ['dg' => $dg, 'marcador' => $marcador, 'marcas' => $marcas] = elementosOptInDeR58()[$descricao];
+    $elemento                              = elementosOptInDeR58()[$descricao];
+    ['dg' => $dg, 'marcador' => $marcador] = $elemento;
+
+    // Os dois idiomas são conferidos ANTES da asserção final: a falha de pt não esconde a de en.
+    $problemas = [];
 
     foreach (['pt', 'en'] as $idioma) {
         $bloco = blocoDoCatalogoNaArvore($dg, $idioma);
@@ -1446,35 +1571,74 @@ it('[CT-129] o elemento opt-in publicado leva a chave exata no próprio escopo',
             continue;
         }
 
-        $escopos = escoposDoTermo($bloco['bloco'], $marcador);
+        $escopos = escoposEstruturadosDoTermo($bloco['bloco'], $marcador);
 
         // O elemento existe no bloco — falha aqui seria "elemento apagado para calar a guarda"
         // (M5), não o resultado esperado desta regra.
         expect($escopos)->not->toBe([], "{$dg} ({$idioma}): elemento \"{$descricao}\" não encontrado no bloco publicado");
 
         foreach ($escopos as $escopo) {
-            $marcado = collect($marcas)->contains(fn (string $marca): bool => contemMarcaDeChave($escopo, $marca));
+            $motivo = motivoDoEscopoSemMarca($elemento, $escopo);
 
-            expect($marcado)->toBeTrue("{$dg} ({$idioma}): \"{$descricao}\" não contém [".implode(' ou ', $marcas)."] no próprio escopo — \"{$escopo}\"");
+            if ($motivo !== null) {
+                $problemas[$idioma] = "{$dg} ({$idioma}, {$bloco['arquivo']}:{$bloco['linha']}): \"{$descricao}\" — {$motivo}";
+
+                break;
+            }
         }
     }
+
+    expect($problemas)->toBe([], implode(PHP_EOL, $problemas));
 })->with(array_keys(elementosOptInDeR58()));
 
-it('[CT-130] o detector confere o escopo do elemento e a chave exata', function (string $dg, string $idioma, string $blocoOuReal, string $marcador, string $chave, string $resultado): void {
-    if ($blocoOuReal === 'REAL') {
-        $b = blocoDoCatalogoNaArvore($dg, $idioma);
+it('[CT-130] o detector confere o escopo do elemento e a chave exata', function (string $dg, string $idioma, string $blocoOuReal, string $marcador, string $chave, string $resultado, array $nomeia = []): void {
+    $b = blocoDoCatalogoNaArvore($dg, $idioma);
 
+    // "REAL" e "COPIA:…" partem do bloco publicado; qualquer outro valor é o bloco sintético.
+    if ($blocoOuReal === 'REAL' || str_starts_with($blocoOuReal, 'COPIA:')) {
         expect($b)->not->toBeNull("{$dg} não encontrado em {$idioma}");
 
-        $bloco = $b['bloco'] ?? '';
+        $real       = (string) ($b['bloco'] ?? '');
+        $notaDePend = 'note right of Pendente : só existe com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL';
+
+        $bloco = match ($blocoOuReal) {
+            'REAL'                                     => $real,
+            // A declaração de Pendente sem chave, e as DUAS só na nota (ADV2-16): aceita.
+            'COPIA:duas-chaves-so-na-nota'             => str_replace($notaDePend, 'note right of Pendente : só com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL', $real),
+            // Uma chave só na nota: `KIT_REGISTRO` por substring passaria (M14).
+            'COPIA:uma-chave-so-na-nota'               => str_replace($notaDePend, 'note right of Pendente : só com KIT_REGISTRO_APROVACAO_MANUAL', $real),
+            // O alt do ramo da conta nova com a chave, e a mensagem do vínculo sem a oração "quando ele tem tenant_id".
+            'COPIA:alt-da-conta-nova-com-a-chave'      => str_replace(['alt sem conta com o e-mail (conta nova)', ' quando ele tem tenant_id'], ['alt convite com organização (KIT_TENANCY)', ''], $real),
+            default                                    => throw new RuntimeException("CT-130: cópia desconhecida \"{$blocoOuReal}\""),
+        };
+
+        if ($blocoOuReal !== 'REAL') {
+            expect($bloco)->not->toBe($real, "a cópia \"{$blocoOuReal}\" não mudou o bloco publicado {$dg} ({$idioma})");
+        }
     } else {
         $bloco = $blocoOuReal;
     }
 
-    $resultadoDetector = opcionalMarcadoNoEscopo($bloco, $marcador, $chave);
+    $escopos = escoposEstruturadosDoTermo($bloco, $marcador);
 
-    expect($resultadoDetector)->not->toBeNull("dg={$dg} ({$idioma}): o marcador \"{$marcador}\" deveria existir no bloco")
-        ->and($resultadoDetector)->toBe($resultado === 'aceita', "dg={$dg} ({$idioma}), marcador=\"{$marcador}\": esperado \"{$resultado}\"");
+    expect($escopos)->not->toBe([], "dg={$dg} ({$idioma}): o marcador \"{$marcador}\" deveria existir no bloco");
+
+    // "A + B": o elemento tem de levar TODAS as chaves, cada uma como palavra inteira.
+    $faltam = array_values(array_filter(
+        explode(' + ', $chave),
+        static fn (string $c): bool => opcionalMarcadoNoEscopo($bloco, $marcador, $c) !== true,
+    ));
+
+    expect($faltam === [])->toBe($resultado === 'aceita', "dg={$dg} ({$idioma}), marcador=\"{$marcador}\": esperado \"{$resultado}\"; faltam: ".implode(', ', $faltam));
+
+    // "recusa, nomeando X": o elemento (o marcador) e a(s) chave(s) que faltam, cada uma inteira.
+    $recusa = $marcador.' '.implode(' ', $faltam);
+
+    foreach ($nomeia as $nome) {
+        $nomeado = str_starts_with($nome, 'KIT_') ? contemChaveExata($recusa, $nome) : str_contains($recusa, $nome);
+
+        expect($nomeado)->toBeTrue("a recusa deveria nomear \"{$nome}\" — \"{$recusa}\"");
+    }
 })->with([
     'DG-02 pt: controle positivo (KIT_TENANCY no próprio rótulo)' => [
         'DG-02', 'pt', "flowchart LR\n  cu_aceitar_convite[\"Aceitar/recusar convite recebido (KIT_TENANCY)\"]\n", 'cu_aceitar_convite', 'KIT_TENANCY', 'aceita',
@@ -1482,25 +1646,360 @@ it('[CT-130] o detector confere o escopo do elemento e a chave exata', function 
     'DG-02 pt: nenhuma — KIT_TENANCY só no ator admin_app' => [
         'DG-02', 'pt',
         "flowchart LR\n  ator_admin_app[\"Admin da organização (admin_app; requer KIT_TENANCY)\"]\n  cu_aceitar_convite[\"Aceitar/recusar convite recebido\"]\n  ator_admin_app --> cu_aceitar_convite\n",
-        'cu_aceitar_convite', 'KIT_TENANCY', 'recusa',
+        'cu_aceitar_convite', 'KIT_TENANCY', 'recusa', ['cu_aceitar_convite'],
     ],
     'DG-08 pt: chave que é prefixo da certa' => [
-        'DG-08', 'pt', "stateDiagram-v2\n  [*] --> Pendente : cadastro [KIT_REGISTRO]\n", 'Pendente', 'KIT_REGISTRO_APROVACAO_MANUAL', 'recusa',
+        'DG-08', 'pt', "stateDiagram-v2\n  [*] --> Pendente : cadastro [KIT_REGISTRO]\n", 'Pendente', 'KIT_REGISTRO_APROVACAO_MANUAL', 'recusa', ['Pendente'],
     ],
     'DG-06 pt: chave que só compartilha o prefixo' => [
-        'DG-06', 'pt', "sequenceDiagram\n  participant sp as provedor social (KIT_SOCIALITE_VINCULO_CONFIRMAR)\n", 'provedor social', 'KIT_SOCIALITE_', 'recusa',
+        'DG-06', 'pt', "sequenceDiagram\n  participant sp as provedor social (KIT_SOCIALITE_VINCULO_CONFIRMAR)\n", 'provedor social', 'KIT_SOCIALITE_', 'recusa', ['provedor social'],
     ],
-    'DG-08 pt: nota ligada ao estado' => [
-        'DG-08', 'pt', "stateDiagram-v2\n  Pendente --> Ativo : aprovar\n  note right of Pendente : só com KIT_REGISTRO_APROVACAO_MANUAL\n", 'Pendente', 'KIT_REGISTRO_APROVACAO_MANUAL', 'aceita',
+    'DG-08 pt: as duas chaves só na nota ligada ao estado (ADV2-16)' => [
+        'DG-08', 'pt', 'COPIA:duas-chaves-so-na-nota', 'Pendente', 'KIT_REGISTRO + KIT_REGISTRO_APROVACAO_MANUAL', 'aceita',
     ],
-    'DG-07 pt: condição do bloco que contém a mensagem' => [
-        'DG-07', 'pt', "sequenceDiagram\n  alt convite com organização (KIT_TENANCY)\n    convidado_novo->>convite: aceitar()\n  end\n", 'aceitar()', 'KIT_TENANCY', 'aceita',
+    'DG-08 pt: uma chave só na nota — KIT_REGISTRO por substring passaria (ADV2-16)' => [
+        'DG-08', 'pt', 'COPIA:uma-chave-so-na-nota', 'Pendente', 'KIT_REGISTRO + KIT_REGISTRO_APROVACAO_MANUAL', 'recusa', ['Pendente', 'KIT_REGISTRO'],
+    ],
+    'DG-07 pt: condição do bloco que contém a mensagem, sem a oração do tenant_id' => [
+        'DG-07', 'pt', 'COPIA:alt-da-conta-nova-com-a-chave', 'convite->>convidado_novo:', 'KIT_TENANCY', 'aceita',
     ],
     'DG-09 pt: homônimo Pendente, e a nota de P-43 (bloco real)' => [
         'DG-09', 'pt', 'REAL', 'Recusado', 'KIT_TENANCY', 'aceita',
     ],
     'DG-02 en: o termo do elemento no idioma do bloco' => [
-        'DG-02', 'en', "flowchart LR\n  cu_aceitar_convite[\"Accept/decline received invite\"]\n", 'cu_aceitar_convite', 'KIT_TENANCY', 'recusa',
+        'DG-02', 'en', "flowchart LR\n  cu_aceitar_convite[\"Accept/decline received invite\"]\n", 'cu_aceitar_convite', 'KIT_TENANCY', 'recusa', ['cu_aceitar_convite'],
+    ],
+]);
+
+/*
+|--------------------------------------------------------------------------
+| R59 (revisão adversarial da adição) — o detector não estende a condição de um ramo aos outros,
+| não aceita nota de outro estado nem a menção à coluna como condição, e acha o elemento pelo
+| termo do idioma do bloco (ADV-16, ADV-17, ADV-18, ADV-19, ADV-30)
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Os elementos de R58 de um DG que NÃO têm a marca no próprio escopo (ou que sumiram do bloco):
+ * descrição do elemento => motivo. Vazio quando o bloco leva a marca de todos. É o detector que o
+ * CT-129 aplica ao publicado, aplicado aqui a uma cópia.
+ *
+ * @return array<string, string>
+ */
+function elementosDeR58SemMarca(string $dg, string $bloco): array
+{
+    $sem = [];
+
+    foreach (elementosOptInDeR58() as $descricao => $elemento) {
+        if ($elemento['dg'] !== $dg) {
+            continue;
+        }
+
+        $escopos = escoposEstruturadosDoTermo($bloco, $elemento['marcador']);
+
+        if ($escopos === []) {
+            $sem[$descricao] = 'elemento ausente do bloco';
+
+            continue;
+        }
+
+        foreach ($escopos as $escopo) {
+            $motivo = motivoDoEscopoSemMarca($elemento, $escopo);
+
+            if ($motivo !== null) {
+                $sem[$descricao] = $motivo;
+
+                break;
+            }
+        }
+    }
+
+    return $sem;
+}
+
+it('[CT-143] o detector não estende a condição de um ramo aos outros, nem aceita nota de outro estado ou a menção à coluna como condição', function (string $dg, string $alteracao, array $recusados): void {
+    $real = blocoDoCatalogoNaArvore($dg, 'pt');
+
+    expect($real)->not->toBeNull("{$dg} não encontrado em pt");
+
+    $original  = (string) $real['bloco'];
+    $vinculo   = [', se ele tem tenant_id (KIT_TENANCY)', ', if it has a tenant_id (KIT_TENANCY)'];
+    $alt       = 'alt sem conta com o e-mail (conta nova)';
+    $else      = 'else conta existente (conta existente, oferta)';
+    $notaReal  = 'note right of Pendente : só existe com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL';
+    $publicado = 'nenhuma: o publicado, com a condição "se ele tem tenant_id (KIT_TENANCY)" depois de vírgula em cada mensagem do vínculo';
+
+    // A cópia parte do publicado SEM a oração ", se ele tem tenant_id (KIT_TENANCY)" das mensagens
+    // (a condição e a chave que o publicado já traz): assim cada linha altera UMA coisa, e a
+    // mensagem do outro ramo fica sem chave. `$altCom`/`$elseCom` põem a marca na condição do ramo.
+    $semOracao = static fn (string $bloco): string => str_replace($vinculo, '', $bloco);
+    $altCom    = static fn (string $marcas): string => "alt sem conta com o e-mail (conta nova; {$marcas})";
+    $elseCom   = static fn (string $marcas): string => "else conta existente (conta existente, oferta; {$marcas})";
+    $novaCom   = static fn (string $bloco, string $mensagem): string => (string) preg_replace('/^(\s*convite->>convidado_novo: ).*$/m', '${1}'.$mensagem, $bloco);
+    $comChaves = static fn (string $bloco): string => str_replace([$alt, $else], [$altCom('KIT_TENANCY'), $elseCom('KIT_TENANCY')], $semOracao($bloco));
+
+    $copia = match ($alteracao) {
+        'KIT_TENANCY e tenant_id só na condição do alt da conta nova; a mensagem da conta existente, no else, sem nenhum dos dois'                        => str_replace($alt, $altCom('KIT_TENANCY, tenant_id'), $semOracao($original)),
+        'KIT_TENANCY só na condição do else; a mensagem do vínculo da conta nova, no alt, sem condição'                                                   => str_replace($else, $elseCom('KIT_TENANCY'), $semOracao($original)),
+        'o else da conta existente sem texto, com a condição do alt marcada e nenhum dos dois nas mensagens'                                              => str_replace([$alt, $else], [$altCom('KIT_TENANCY'), 'else'], $semOracao($original)),
+        'a nota de Pendente trocada por "note right of Ativo : só com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL"'                                      => str_replace($notaReal, 'note right of Ativo : só com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL', $original),
+        'as duas mensagens do vínculo com "vincula a conta ao tenant_id do convite", sem condição, e nenhum KIT_TENANCY nelas'                            => (string) preg_replace('/^(\s*convite->>convidado_(?:novo|existente): ).*$/m', '${1}vincula a conta ao tenant_id do convite', $original),
+        $publicado                                                                                                                                        => $original,
+        'a mensagem do vínculo da conta nova como "a conta se vincula ao tenant_id do convite", e "(KIT_TENANCY)" na condição do alt dela'                => $novaCom($comChaves($original), 'a conta se vincula ao tenant_id do convite'),
+        'a mensagem do vínculo da conta nova como "vincula ao tenant_id do convite quando aceita", e "(KIT_TENANCY)" na condição do alt dela'             => $novaCom($comChaves($original), 'vincula ao tenant_id do convite quando aceita'),
+        'a mensagem do vínculo da conta nova como "se o convite tem tenant_id, vincula a conta", e "(KIT_TENANCY)" na condição do alt dela'               => $novaCom($comChaves($original), 'se o convite tem tenant_id, vincula a conta'),
+        'a mensagem do vínculo da conta nova como "se o convite tem tenant_id, vincula a conta", e nenhum KIT_TENANCY no alt nem na mensagem'             => $novaCom(str_replace($else, $elseCom('KIT_TENANCY'), $semOracao($original)), 'se o convite tem tenant_id, vincula a conta'),
+        default                                                                                                                                           => throw new RuntimeException("CT-143: alteração desconhecida \"{$alteracao}\""),
+    };
+
+    if ($alteracao !== $publicado) {
+        expect($copia)->not->toBe($original, "a alteração \"{$alteracao}\" não mudou o bloco publicado");
+    }
+
+    $sem = elementosDeR58SemMarca($dg, (string) $copia);
+
+    expect(array_keys($sem))->toEqualCanonicalizing($recusados, "\"{$alteracao}\": recusados = ".json_encode($sem, JSON_UNESCAPED_UNICODE));
+})->with([
+    'DG-07: a condição do alt não vale para o else (ADV-16)' => [
+        'DG-07',
+        'KIT_TENANCY e tenant_id só na condição do alt da conta nova; a mensagem da conta existente, no else, sem nenhum dos dois',
+        ['DG-07: a mensagem que dá à conta existente o papel na organização do convite'],
+    ],
+    'DG-07: idem, no sentido inverso' => [
+        'DG-07',
+        'KIT_TENANCY só na condição do else; a mensagem do vínculo da conta nova, no alt, sem condição',
+        ['DG-07: a mensagem que liga a conta nova à organização do convite'],
+    ],
+    'DG-07: o else sem texto não herda a condição do alt' => [
+        'DG-07',
+        'o else da conta existente sem texto, com a condição do alt marcada e nenhum dos dois nas mensagens',
+        ['DG-07: a mensagem que dá à conta existente o papel na organização do convite'],
+    ],
+    'DG-08: nota de outro estado, com as duas chaves (ADV-17, ADV2-16)' => [
+        'DG-08',
+        'a nota de Pendente trocada por "note right of Ativo : só com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL"',
+        ['DG-08: o estado Pendente'],
+    ],
+    'DG-07: a menção à coluna não é condição (ADV-30)' => [
+        'DG-07',
+        'as duas mensagens do vínculo com "vincula a conta ao tenant_id do convite", sem condição, e nenhum KIT_TENANCY nelas',
+        [
+            'DG-07: a mensagem que liga a conta nova à organização do convite',
+            'DG-07: a mensagem que dá à conta existente o papel na organização do convite',
+        ],
+    ],
+    'DG-07: o publicado, com a condição "se ele tem tenant_id (KIT_TENANCY)" depois de vírgula (ADV2-12, ADV2-20)' => [
+        'DG-07',
+        'nenhuma: o publicado, com a condição "se ele tem tenant_id (KIT_TENANCY)" depois de vírgula em cada mensagem do vínculo',
+        [],
+    ],
+    'DG-07: o "se" reflexivo não é condição (ADV2-12)' => [
+        'DG-07',
+        'a mensagem do vínculo da conta nova como "a conta se vincula ao tenant_id do convite", e "(KIT_TENANCY)" na condição do alt dela',
+        ['DG-07: a mensagem que liga a conta nova à organização do convite'],
+    ],
+    'DG-07: o "quando" depois do tenant_id não é condição dele (ADV2-12)' => [
+        'DG-07',
+        'a mensagem do vínculo da conta nova como "vincula ao tenant_id do convite quando aceita", e "(KIT_TENANCY)" na condição do alt dela',
+        ['DG-07: a mensagem que liga a conta nova à organização do convite'],
+    ],
+    'DG-07: a mensagem que começa pela condição, com a chave no escopo — controle positivo (Q?13)' => [
+        'DG-07',
+        'a mensagem do vínculo da conta nova como "se o convite tem tenant_id, vincula a conta", e "(KIT_TENANCY)" na condição do alt dela',
+        [],
+    ],
+    'DG-07: o tenant_id como condição não dispensa a chave (P-16)' => [
+        'DG-07',
+        'a mensagem do vínculo da conta nova como "se o convite tem tenant_id, vincula a conta", e nenhum KIT_TENANCY no alt nem na mensagem',
+        ['DG-07: a mensagem que liga a conta nova à organização do convite'],
+    ],
+]);
+
+it('[CT-143] a condição do tenant_id é a oração que abre a mensagem ou vem logo depois de vírgula (Q?13)', function (string $mensagem, bool $condicao): void {
+    $escopo = ['linha' => "convite->>convidado_novo: {$mensagem}", 'condicao' => '', 'notas' => []];
+
+    expect(tenantIdSoEmPosicaoDeCondicao($escopo))->toBe($condicao, "\"{$mensagem}\"");
+})->with([
+    'a mensagem que abre pela condição'         => ['se o convite tem tenant_id, vincula a conta', true],
+    'quando na abertura'                        => ['quando o convite tem tenant_id, vincula a conta', true],
+    'a oração logo depois de vírgula'           => ['nasce verificado, quando ele tem tenant_id', true],
+    'en: if na abertura'                        => ['if the invitation has a tenant_id, links the account', true],
+    'en: when depois de vírgula'                => ['born verified, when it has a tenant_id', true],
+    'o "se" reflexivo'                          => ['a conta se vincula ao tenant_id do convite', false],
+    'o "quando" no fim'                         => ['vincula ao tenant_id do convite quando aceita', false],
+    'o "quando" no meio, sem vírgula'           => ['vinculado à organização do convite quando ele tem tenant_id', false],
+    'a mensagem sem o tenant_id'                => ['nasce verificado, vinculado à organização do convite', true],
+    'só a menção à coluna'                      => ['vincula a conta ao tenant_id do convite', false],
+]);
+
+/**
+ * Os elementos opt-in que R58/CT-08 conferem POR BLOCO, achados pelo termo do idioma do bloco
+ * (R59, ADV-18): o mapa de opcionais tem termo só em pt para vários elementos, e no en o elemento
+ * não era achado e o bloco perdia a chave em silêncio.
+ *
+ * `escopo`: `bloco` é o regime do CT-08 (a chave exata no bloco que desenha o elemento); `elemento`
+ * é o de R58 (a chave no escopo de cada ocorrência do termo). `chaves` são TODAS as que ligam o
+ * elemento; a que termina em `_` é a família (`KIT_SOCIALITE_` = qualquer das quatro de provedor).
+ *
+ * @return array<string, array{dg: string, termos: array{pt: list<string>, en: list<string>}, chaves: list<string>, escopo: string}>
+ */
+function elementosOptInPorIdioma(): array
+{
+    return [
+        'a tela de login única e a escolha de painel' => [
+            'dg'     => 'DG-05',
+            'termos' => ['pt' => ['Tela de login única', 'Escolha de painel'], 'en' => ['Single login screen', 'Panel choice']],
+            'chaves' => ['KIT_LOGIN_UNIFICADO'],
+            'escopo' => 'bloco',
+        ],
+        'a confirmação de vínculo' => [
+            'dg'     => 'DG-06',
+            'termos' => ['pt' => ['confirmação de vínculo'], 'en' => ['link confirmation']],
+            'chaves' => ['KIT_SOCIALITE_VINCULO_CONFIRMAR'],
+            'escopo' => 'bloco',
+        ],
+        'o provedor social' => [
+            'dg'     => 'DG-06',
+            'termos' => ['pt' => ['provedor social'], 'en' => ['social provider', 'OAuth provider']],
+            'chaves' => ['KIT_SOCIALITE_'],
+            'escopo' => 'bloco',
+        ],
+        'o estado Pendente' => [
+            'dg'     => 'DG-08',
+            'termos' => ['pt' => ['Pendente'], 'en' => ['Pendente']],
+            'chaves' => ['KIT_REGISTRO', 'KIT_REGISTRO_APROVACAO_MANUAL'],
+            'escopo' => 'elemento',
+        ],
+    ];
+}
+
+/**
+ * A conferência de um elemento opt-in num bloco, pelo termo do idioma dele: se foi achado e quais
+ * das chaves que o ligam faltam — cada uma como PALAVRA INTEIRA (`KIT_REGISTRO` não é
+ * `KIT_REGISTRO_APROVACAO_MANUAL`).
+ *
+ * @param  array{dg: string, termos: array{pt: list<string>, en: list<string>}, chaves: list<string>, escopo: string}  $elemento
+ * @return array{achado: bool, faltam: list<string>}
+ */
+function conferenciaDoOpcionalNoBloco(array $elemento, string $bloco, string $idioma): array
+{
+    // O que o leitor vê: sem as linhas `%%`, que o Mermaid tira antes de desenhar (ADV2-11).
+    $bloco = semLinhasDeComentarioMermaid($bloco);
+
+    $achados = array_values(array_filter(
+        $elemento['termos'][$idioma],
+        static fn (string $termo): bool => str_contains($bloco, $termo),
+    ));
+
+    if ($achados === []) {
+        return ['achado' => false, 'faltam' => []];
+    }
+
+    $faltam = [];
+
+    if ($elemento['escopo'] === 'bloco') {
+        foreach ($elemento['chaves'] as $chave) {
+            if (! contemMarcaDeChave($bloco, $chave)) {
+                $faltam[] = $chave;
+            }
+        }
+    } else {
+        foreach ($achados as $termo) {
+            foreach (escoposEstruturadosDoTermo($bloco, $termo) as $escopo) {
+                foreach ($elemento['chaves'] as $chave) {
+                    if (! marcaValeNoEscopo($escopo, $chave)) {
+                        $faltam[] = $chave;
+                    }
+                }
+            }
+        }
+    }
+
+    return ['achado' => true, 'faltam' => array_values(array_unique($faltam))];
+}
+
+it('[CT-144] cada elemento opt-in é achado pelo termo do idioma do bloco, e o bloco publicado leva cada chave que o liga', function (string $elementoDescricao, string $blocoDescricao, string $resultado, array $nomeia): void {
+    $elemento = elementosOptInPorIdioma()[$elementoDescricao];
+
+    // [DG, idioma, texto a retirar do bloco publicado — vazio: o publicado como está]
+    [$dg, $idiomas, $retirar] = match ($blocoDescricao) {
+        'o DG-05 en publicado'                                                         => ['DG-05', ['en'], null],
+        'uma cópia do DG-05 en sem KIT_LOGIN_UNIFICADO'                                => ['DG-05', ['en'], 'KIT_LOGIN_UNIFICADO'],
+        'uma cópia do DG-05 en com KIT_LOGIN_UNIFICADO só em "%% KIT_LOGIN_UNIFICADO"' => ['DG-05', ['en'], '%%KIT_LOGIN_UNIFICADO'],
+        'uma cópia do DG-06 en sem KIT_SOCIALITE_VINCULO_CONFIRMAR'                    => ['DG-06', ['en'], 'KIT_SOCIALITE_VINCULO_CONFIRMAR'],
+        'o DG-06 pt publicado'                                                         => ['DG-06', ['pt'], null],
+        'o DG-06 en publicado'                                                         => ['DG-06', ['en'], null],
+        'o DG-08 publicado, em pt e em en'                                             => ['DG-08', ['pt', 'en'], null],
+        default                                                                        => throw new RuntimeException("CT-144: bloco desconhecido \"{$blocoDescricao}\""),
+    };
+
+    $problemas = [];
+
+    foreach ($idiomas as $idioma) {
+        $real = blocoDoCatalogoNaArvore($dg, $idioma);
+
+        expect($real)->not->toBeNull("{$dg} não encontrado em {$idioma}");
+
+        $bloco = (string) $real['bloco'];
+
+        if ($retirar === '%%KIT_LOGIN_UNIFICADO') {
+            // A chave sai do alias e da accDescr e fica só numa linha de comentário: o Mermaid tira a
+            // linha antes do lexer, e o leitor não a vê (ADV2-11).
+            $copia = str_replace("%% DG-05\n", "%% DG-05\n  %% KIT_LOGIN_UNIFICADO\n", str_replace('KIT_LOGIN_UNIFICADO', '', $bloco));
+
+            expect($copia)->toContain('%% KIT_LOGIN_UNIFICADO');
+
+            $bloco = $copia;
+        } elseif ($retirar !== null) {
+            $copia = str_replace($retirar, '', $bloco);
+
+            expect($copia)->not->toBe($bloco, "a cópia do {$dg} {$idioma} não mudou: {$retirar} não está no bloco publicado");
+
+            $bloco = $copia;
+        }
+
+        $conferencia = conferenciaDoOpcionalNoBloco($elemento, $bloco, $idioma);
+
+        // O elemento é achado pelo termo do idioma do bloco: sem isto, o bloco sem a chave passaria
+        // por "elemento não desenhado" (M9).
+        expect($conferencia['achado'])->toBeTrue("{$dg} ({$idioma}): o elemento \"{$elementoDescricao}\" não foi achado pelos termos ".json_encode($elemento['termos'][$idioma], JSON_UNESCAPED_UNICODE));
+
+        if ($conferencia['faltam'] !== []) {
+            $problemas[] = "{$dg} ({$idioma}): \"{$elementoDescricao}\" sem ".implode(' e ', array_map(
+                static fn (string $chave): string => str_ends_with($chave, '_') ? 'uma de ['.implode(', ', chavesComPrefixo($chave)).']' : $chave,
+                $conferencia['faltam'],
+            )).' como palavra inteira';
+        }
+    }
+
+    expect($problemas === [])->toBe($resultado === 'aceita', implode('; ', $problemas));
+
+    foreach ($nomeia as $trecho) {
+        test()->assertStringContainsString($trecho, implode('; ', $problemas), "a recusa deveria nomear \"{$trecho}\"");
+    }
+})->with([
+    'DG-05 en: o termo en do elemento, com KIT_LOGIN_UNIFICADO (ADV-18)' => [
+        'a tela de login única e a escolha de painel', 'o DG-05 en publicado', 'aceita', [],
+    ],
+    'DG-05 en sem a chave: recusa, nomeando o elemento e a chave (ADV-18)' => [
+        'a tela de login única e a escolha de painel', 'uma cópia do DG-05 en sem KIT_LOGIN_UNIFICADO', 'recusa',
+        ['a tela de login única e a escolha de painel', 'KIT_LOGIN_UNIFICADO'],
+    ],
+    'DG-05 en com a chave só num comentário %%: recusa (ADV2-11)' => [
+        'a tela de login única e a escolha de painel', 'uma cópia do DG-05 en com KIT_LOGIN_UNIFICADO só em "%% KIT_LOGIN_UNIFICADO"', 'recusa',
+        ['a tela de login única e a escolha de painel', 'KIT_LOGIN_UNIFICADO'],
+    ],
+    'DG-06 en sem KIT_SOCIALITE_VINCULO_CONFIRMAR: recusa' => [
+        'a confirmação de vínculo', 'uma cópia do DG-06 en sem KIT_SOCIALITE_VINCULO_CONFIRMAR', 'recusa', ['KIT_SOCIALITE_VINCULO_CONFIRMAR'],
+    ],
+    'DG-06 pt: o provedor social leva uma das quatro chaves de provedor' => [
+        'o provedor social', 'o DG-06 pt publicado', 'aceita', [],
+    ],
+    'DG-06 en: o provedor social leva uma das quatro chaves de provedor' => [
+        'o provedor social', 'o DG-06 en publicado', 'aceita', [],
+    ],
+    'DG-08: Pendente leva KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL (ADV-19)' => [
+        'o estado Pendente', 'o DG-08 publicado, em pt e em en', 'aceita', [],
     ],
 ]);
 
@@ -1944,14 +2443,26 @@ it('[CT-71] quem acumula papéis entra no painel de cada um deles, e só neles',
         $user->assignRole($p);
     }
 
-    $pode = $user->fresh()->canAccessPanel(Filament::getPanel($painel));
+    $user       = $user->fresh();
+    $painelAlvo = Filament::getPanel($painel);
 
-    expect($pode)->toBe($desfecho === 'entra');
+    expect($user->canAccessPanel($painelAlvo))->toBe($desfecho === 'entra', "canAccessPanel() de \"{$papeis}\" no painel {$painel}");
+
+    // O outro desfecho: o caminho que o DG-03 publicado percorre, avaliado pelo predicado real.
+    $bloco = blocoDoCatalogoNaArvore('DG-03', 'pt');
+
+    expect($bloco)->not->toBeNull('DG-03 não encontrado em pt');
+
+    expect(resultadoDoFluxo(grafoDoFluxo((string) $bloco['bloco']), avaliadorDoDG03($user, $painelAlvo)))
+        ->toBe($desfecho, "o DG-03 percorrido para \"{$papeis}\" no painel {$painel}");
 })->with([
     ['admin + infra', 'infra', 'entra'],
     ['admin + infra', 'admin', 'entra'],
     ['admin + infra', 'app', 'nega'],
     ['admin + panel_user', 'app', 'entra'],
+    ['infra + panel_user', 'infra', 'entra'],
+    ['infra + panel_user', 'app', 'entra'],
+    ['infra + panel_user', 'admin', 'nega'],
 ]);
 
 /*
@@ -5429,6 +5940,114 @@ it('[CT-126] toda seta de sequência é uma mensagem, na ordem do bloco', functi
     'com o marcador de ativação -'    => 'a-->>-b: x',
 ]);
 
+/*
+|--------------------------------------------------------------------------
+| R65 — o extrator devolve só o que o bloco DESENHA, com o sentido (ADV-12, ADV-13, ADV-14)
+|--------------------------------------------------------------------------
+|
+| CT-124 prova que toda forma de seta é lida (completude), sempre com uma aresta e IDs nus por
+| linha. Estes provam o inverso (soundness): nada além do desenhado é lido — cadeia, `&`, seta
+| dentro de rótulo, comentário e o sentido das setas. As guardas de "aresta que não pode existir"
+| (CT-10, CT-60, CT-61, CT-83, CT-109) dependem disto: uma aresta lida a mais é um "não existe"
+| que passa no vazio. O Mermaid 11.17.2 aceita a cadeia e o `&` no fluxo
+| (`site/node_modules/mermaid/dist/chunks/mermaid.core/chunk-SHT3W25Y.mjs:"AMP":1149`) e tira do
+| texto, antes de qualquer lexer, toda linha que começa com `%%`
+| (`site/node_modules/mermaid/dist/mermaid.core.mjs:cleanupComments:967`).
+*/
+
+it('[CT-140] o extrator de fluxo lê o sentido, a cadeia e o &, e ignora o comentário e a seta dentro de rótulo', function (array $linhas, array $esperadas): void {
+    // A linha que COMEÇA por `%%` fica na primeira coluna; a que começa por espaço, indentada de
+    // verdade (o Mermaid tira as duas: `^\s*%%`, ADV2-07). O resto leva o recuo de 2 espaços.
+    $bloco = "flowchart LR\n".implode('', array_map(static fn (string $linha): string => (str_starts_with($linha, '%%') ? '' : '  ').$linha."\n", $linhas));
+    $ids   = ['a', 'b', 'c', 'd', 'x'];
+
+    $lidas = array_map(static fn (array $aresta): string => "{$aresta['de']}>{$aresta['para']}", arestasDeFluxo($bloco));
+    sort($lidas);
+
+    $desejadas = array_map(static fn (array $par): string => "{$par[0]}>{$par[1]}", $esperadas);
+    sort($desejadas);
+
+    // "Existem exatamente": cada par ordenado dos IDs existe se, e só se, está na coluna.
+    foreach ($ids as $de) {
+        foreach ($ids as $para) {
+            expect(existeArestaDeFluxo($bloco, $de, $para))->toBe(in_array("{$de}>{$para}", $desejadas, true), "existeArestaDeFluxo({$de}, {$para}) sobre \"".implode(' · ', $linhas).'"');
+        }
+    }
+
+    expect($lidas)->toBe($desejadas, 'arestasDeFluxo() sobre "'.implode(' · ', $linhas).'"');
+})->with([
+    'a --> b: o sentido (b → a não existe)'                              => [['a --> b'], [['a', 'b']]],
+    'a ==> b: o sentido, grossa'                                         => [['a ==> b'], [['a', 'b']]],
+    'a -.-> b: o sentido, pontilhada'                                    => [['a -.-> b'], [['a', 'b']]],
+    'a <--> b: bidirecional, o controle do sentido'                      => [['a <--> b'], [['a', 'b'], ['b', 'a']]],
+    'a --> b --> c: cadeia (a → c não existe)'                           => [['a --> b --> c'], [['a', 'b'], ['b', 'c']]],
+    'a & d --> b: & na origem'                                           => [['a & d --> b'], [['a', 'b'], ['d', 'b']]],
+    'a --> b & c: & no destino'                                          => [['a --> b & c'], [['a', 'b'], ['a', 'c']]],
+    'a["A --> c"] --> b: seta no rótulo do nó'                           => [['a["A --> c"] --> b'], [['a', 'b']]],
+    'a -->|"x --> c"| b: seta no rótulo da aresta'                       => [['a -->|"x --> c"| b'], [['a', 'b']]],
+    '%% a --> c · a --> b: linha de comentário'                          => [['%% a --> c', 'a --> b'], [['a', 'b']]],
+    '(dois espaços)%% a --> c · a --> b: comentário indentado (ADV2-07)' => [['  %% a --> c', 'a --> b'], [['a', 'b']]],
+]);
+
+it('[CT-141] a linha de comentário não vira mensagem nem relação', function (string $tipo, array $linhas): void {
+    $cabecalho = $tipo === 'sequenceDiagram' ? "sequenceDiagram\n  participant a\n  participant b\n" : "erDiagram\n";
+    $bloco     = $cabecalho.implode('', array_map(static fn (string $linha): string => (str_starts_with($linha, '%%') ? '' : '  ').$linha."\n", $linhas));
+
+    if ($tipo === 'sequenceDiagram') {
+        $mensagens = mensagensDeSequencia($bloco);
+
+        expect($mensagens)->toHaveCount(1, 'exatamente uma mensagem — achadas: '.count($mensagens))
+            ->and($mensagens[0]['de'])->toBe('a')
+            ->and($mensagens[0]['para'])->toBe('b')
+            ->and($mensagens[0]['rotulo'])->toBe('x');
+
+        return;
+    }
+
+    expect(relacoesDeEr($bloco))->toHaveCount(1)
+        ->and(relacaoDeEr($bloco, 'users', 'roles'))->not->toBeNull('a relação users–roles existe')
+        ->and(relacaoDeEr($bloco, 'users', 'convites'))->toBeNull('a relação users–convites está comentada e não existe');
+})->with([
+    'comentário antes da mensagem'            => ['sequenceDiagram', ['%% a->>b: y', 'a->>b: x']],
+    'comentário depois'                       => ['sequenceDiagram', ['a->>b: x', '%% b->>a: y']],
+    'comentário indentado (ADV2-07)'          => ['sequenceDiagram', ['  %% a->>b: y', 'a->>b: x']],
+    'relação comentada e indentada (ADV2-07)' => ['erDiagram', ['  %% users ||--o{ convites : x', 'users ||--o{ roles : tem']],
+    'relação comentada'                       => ['erDiagram', ['%% users ||--o{ convites : x', 'users ||--o{ roles : tem']],
+]);
+
+it('[CT-142] as meias-setas de sequência e as cardinalidades de ER dos dois lados são lidas', function (string $tipo, string $linha, string $cardDe, string $cardPara): void {
+    if ($tipo === 'sequenceDiagram') {
+        $bloco     = "sequenceDiagram\n  participant a\n  participant b\n  {$linha}\n";
+        $mensagens = mensagensDeSequencia($bloco);
+
+        expect($mensagens)->toHaveCount(1, "\"{$linha}\": deveria haver exatamente uma mensagem — achadas: ".count($mensagens))
+            ->and($mensagens[0]['de'])->toBe('a')
+            ->and($mensagens[0]['para'])->toBe('b')
+            ->and($mensagens[0]['rotulo'])->toBe('x');
+
+        return;
+    }
+
+    $relacao = relacaoDeEr("erDiagram\n  {$linha}\n", 'users', 'roles');
+
+    expect($relacao)->not->toBeNull("\"{$linha}\": a relação users–roles deveria ser lida")
+        ->and($relacao['cardDe'])->toBe($cardDe)
+        ->and($relacao['cardPara'])->toBe($cardPara)
+        ->and($relacao['rotulo'])->toBe('tem');
+})->with([
+    'meia-seta de cima, contínua'                 => ['sequenceDiagram', 'a-|\\b: x', '', ''],
+    'meia-seta de baixo, contínua'                => ['sequenceDiagram', 'a-|/b: x', '', ''],
+    'meia-seta de cima, tracejada'                => ['sequenceDiagram', 'a--|\\b: x', '', ''],
+    'meia-seta de baixo, tracejada'               => ['sequenceDiagram', 'a--|/b: x', '', ''],
+    'meia-seta em traço, contínua (barra)'        => ['sequenceDiagram', 'a-\\\\b: x', '', ''],
+    'meia-seta em traço, contínua (inclinada)'    => ['sequenceDiagram', 'a-//b: x', '', ''],
+    'meia-seta em traço, tracejada (barra)'       => ['sequenceDiagram', 'a--\\\\b: x', '', ''],
+    'meia-seta em traço, tracejada (inclinada)'   => ['sequenceDiagram', 'a--//b: x', '', ''],
+    'ER: um e só um dos dois lados'               => ['erDiagram', 'users ||--|| roles : tem', '||', '||'],
+    'ER: zero ou um à direita'                    => ['erDiagram', 'users ||--o| roles : tem', '||', 'o|'],
+    'ER: zero ou muitos à esquerda, um à direita' => ['erDiagram', 'users }o--|| roles : tem', '}o', '||'],
+]);
+
 it('[RD3-05][CT-103] blocosMermaidDe() não confunde span de código embutido (crase fechando na mesma linha) com abertura de cerca', function (): void {
     // RD2-18 residual: sem o guard, a linha do span vira "cerca alheia" (o `\S*` da info string
     // captura "texto```" inteiro, que não é "mermaid") e, sem fechamento genuíno depois, a busca
@@ -5734,6 +6353,135 @@ it('[CT-131] o título de cada DG no índice é o accTitle do bloco', function (
 
 /*
 |--------------------------------------------------------------------------
+| R60 (revisão adversarial da adição, ADV-20) — o índice não tem linha a mais, DG repetido nem
+| título quase igual: "20 linhas, uma por DG" e "caractere a caractere" precisam de controle
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * As linhas `| DG-nn | Título | Página |` da tabela-índice, NA ORDEM, uma entrada por linha — sem o
+ * `array_key` de `linhasDoIndice()`, que soma o DG repetido numa chave só e esconde a segunda linha.
+ *
+ * @return list<array{dg: string, titulo: string}>
+ */
+function linhasBrutasDoIndice(string $conteudoDaPagina): array
+{
+    $linhas = [];
+
+    foreach (explode("\n", $conteudoDaPagina) as $linha) {
+        if (preg_match('/^\|\s*(DG-\d+)\s*\|\s*(.+?)\s*\|\s*.+?\s*\|\s*$/', trim($linha), $m) === 1) {
+            $linhas[] = ['dg' => $m[1], 'titulo' => $m[2]];
+        }
+    }
+
+    return $linhas;
+}
+
+/**
+ * Os accTitle dos 20 blocos do catálogo num idioma, por DG — a referência do índice (R60).
+ *
+ * @return array<string, string>
+ */
+function accTitlesDoCatalogo(string $idioma): array
+{
+    $titulos = [];
+
+    foreach (range(1, 20) as $n) {
+        $id    = 'DG-'.str_pad((string) $n, 2, '0', STR_PAD_LEFT);
+        $bloco = blocoDoCatalogoNaArvore($id, $idioma);
+
+        expect($bloco)->not->toBeNull("{$id} não encontrado em {$idioma}");
+
+        $titulos[$id] = accTitleDoBloco((string) ($bloco['bloco'] ?? '')) ?? '';
+    }
+
+    return $titulos;
+}
+
+/**
+ * O que há de errado na tabela-índice contra os accTitle do catálogo, ou `null`: DG fora do
+ * catálogo, DG com duas linhas, título diferente do accTitle — comparado LITERALMENTE, sem caixa,
+ * sem acento e sem normalizar a pontuação —, DG sem linha e o total de 20 (R60, CT-131, CT-145).
+ *
+ * @param  list<array{dg: string, titulo: string}>  $linhas
+ * @param  array<string, string>  $accTitles
+ */
+function problemaDaTabelaIndice(array $linhas, array $accTitles): ?string
+{
+    $vistos = [];
+
+    foreach ($linhas as $linha) {
+        if (! array_key_exists($linha['dg'], $accTitles)) {
+            return "{$linha['dg']} não está no catálogo (\"{$linha['titulo']}\")";
+        }
+
+        if (isset($vistos[$linha['dg']])) {
+            return "{$linha['dg']} repetido na tabela-índice (\"{$vistos[$linha['dg']]}\" e \"{$linha['titulo']}\")";
+        }
+
+        $vistos[$linha['dg']] = $linha['titulo'];
+
+        if ($linha['titulo'] !== $accTitles[$linha['dg']]) {
+            return "{$linha['dg']}: título do índice \"{$linha['titulo']}\" difere do accTitle \"{$accTitles[$linha['dg']]}\"";
+        }
+    }
+
+    foreach (array_keys($accTitles) as $dg) {
+        if (! isset($vistos[$dg])) {
+            return "{$dg} ausente da tabela-índice";
+        }
+    }
+
+    return count($linhas) === 20 ? null : 'a tabela-índice tem '.count($linhas).' linhas, e o catálogo 20';
+}
+
+it('[CT-145] a tabela-índice não tem linha a mais, DG repetido nem título quase igual', function (string $alteracao, string $resultado, ?string $nomeia): void {
+    $idioma    = str_starts_with($alteracao, 'o índice real en') ? 'en' : 'pt';
+    $accTitles = accTitlesDoCatalogo($idioma);
+
+    if (str_starts_with($alteracao, 'o índice real')) {
+        $linhas = linhasBrutasDoIndice((string) file_get_contents(base_path("docs/{$idioma}/referencia/arquitetura-em-diagramas.md")));
+    } else {
+        // Controle: as 20 linhas nascem dos accTitle REAIS, e só a alteração pedida mexe numa delas.
+        $linhas = array_map(static fn (string $dg, string $titulo): array => ['dg' => $dg, 'titulo' => $titulo], array_keys($accTitles), $accTitles);
+    }
+
+    $original = $linhas;
+
+    $linhas = match ($alteracao) {
+        'o índice real pt', 'o índice real en', 'nenhuma: as 20 linhas dos accTitle pt'  => $linhas,
+        'uma 21ª linha, "DG-21 — Fila de e-mails"'                                       => [...$linhas, ['dg' => 'DG-21', 'titulo' => 'Fila de e-mails']],
+        'uma segunda linha do DG-10, com "Sessão bloqueada"'                             => [...$linhas, ['dg' => 'DG-10', 'titulo' => 'Sessão bloqueada']],
+        'o título do DG-10 como "sessão autenticada"'                                    => array_map(static fn (array $l): array => $l['dg'] === 'DG-10' ? [...$l, 'titulo' => 'sessão autenticada'] : $l, $linhas),
+        'o título do DG-10 como "Sessao autenticada"'                                    => array_map(static fn (array $l): array => $l['dg'] === 'DG-10' ? [...$l, 'titulo' => 'Sessao autenticada'] : $l, $linhas),
+        'o travessão do título do DG-05 trocado por hífen'                               => array_map(static fn (array $l): array => $l['dg'] === 'DG-05' ? [...$l, 'titulo' => str_replace(' — ', ' - ', $l['titulo'])] : $l, $linhas),
+        default                                                                          => throw new RuntimeException("CT-145: alteração desconhecida \"{$alteracao}\""),
+    };
+
+    if ($resultado === 'recusa') {
+        expect($linhas)->not->toBe($original, "a alteração \"{$alteracao}\" não mudou a tabela de controle");
+    }
+
+    $problema = problemaDaTabelaIndice($linhas, $accTitles);
+
+    expect($problema === null)->toBe($resultado === 'aceita', (string) $problema);
+
+    if ($nomeia !== null) {
+        test()->assertStringContainsString($nomeia, (string) $problema, "a recusa deveria nomear \"{$nomeia}\": {$problema}");
+    }
+})->with([
+    'controle: as 20 linhas dos accTitle pt'   => ['nenhuma: as 20 linhas dos accTitle pt', 'aceita', null],
+    'o índice real pt (20 linhas exatas)'      => ['o índice real pt', 'aceita', null],
+    'o índice real en (20 linhas exatas)'      => ['o índice real en', 'aceita', null],
+    'linha a mais (DG-21)'                     => ['uma 21ª linha, "DG-21 — Fila de e-mails"', 'recusa', 'DG-21'],
+    'DG com duas linhas (DG-10)'               => ['uma segunda linha do DG-10, com "Sessão bloqueada"', 'recusa', 'DG-10'],
+    'só a caixa difere (DG-10)'                => ['o título do DG-10 como "sessão autenticada"', 'recusa', 'DG-10'],
+    'só o acento difere (DG-10)'               => ['o título do DG-10 como "Sessao autenticada"', 'recusa', 'DG-10'],
+    'só a pontuação difere (DG-05)'            => ['o travessão do título do DG-05 trocado por hífen', 'recusa', 'DG-05'],
+]);
+
+/*
+|--------------------------------------------------------------------------
 | R61 — QA-09: nenhum bloco mostra palavra do outro idioma fora dos termos invariantes
 |--------------------------------------------------------------------------
 */
@@ -5853,4 +6601,504 @@ it('[CT-132] o texto visível de cada bloco não tem palavra do outro idioma', f
     'DG-07 pt: inglês no pt'                                                                                      => ['uma cópia do DG-07 pt — o alt da conta nova com "(new account)"', 'recusa', 'new account'],
     'DG-01 en: identificador e palavra dos dois idiomas não são acusados'                                         => ['o DG-01 en publicado — os IDs banco e fila, e o rótulo "e-mail"', 'aceita', null],
     'DG-16 pt: opção de CLI e comando são invariantes (P-23)'                                                     => ['uma cópia do DG-16 pt — "--only-new" e kit:update num rótulo', 'aceita', null],
+]);
+
+/*
+|--------------------------------------------------------------------------
+| R61 (revisão adversarial da adição, ADV-21) — nenhuma palavra INTEIRA do outro idioma no texto
+| VISÍVEL de cada bloco, fora os identificadores, os nomes de classe e as opções de CLI
+|--------------------------------------------------------------------------
+|
+| CT-132 reprova as três expressões que a Q?7 decidiu, e só elas: "(nova conta)", "escolha do
+| painel" e "painel" sozinho passam. Este procura uma lista de PALAVRAS INTEIRAS (Q?12), sem caixa,
+| só no texto que o leitor vê — alias, rótulo, texto de mensagem, de nota e de condição de bloco,
+| accTitle e accDescr —, e nunca no identificador (`escolha`, `banco`, `fila` e `agendador` são IDs do
+| en, que R2 obriga a ser iguais nos dois idiomas), no nome de classe (PascalCase, P-31) nem na opção
+| de CLI (P-23). Fora da lista, por coincidir com identificador em minúscula ou com o outro
+| idioma: convite, usuario, com, no, do, e-mail.
+*/
+
+/**
+ * As palavras de cada idioma cuja presença, como palavra inteira, no texto visível de um bloco do
+ * OUTRO idioma denuncia tradução esquecida (Q?12).
+ *
+ * @return array{pt: list<string>, en: list<string>} `pt`: as palavras pt proibidas no bloco en; `en`: as en, no bloco pt
+ */
+function palavrasDoOutroIdioma(): array
+{
+    return [
+        'pt' => ['painel', 'conta', 'escolha', 'nova', 'novo', 'existente', 'provedor', 'senha', 'organização', 'organizacao', 'recusa', 'aceita', 'pelo', 'pela', 'sem'],
+        'en' => ['the', 'with', 'without', 'new', 'existing', 'account', 'panel', 'choice', 'and', 'when'],
+    ];
+}
+
+/**
+ * O texto que o LEITOR vê de um bloco Mermaid, um trecho por linha: `accTitle`, `accDescr`, alias de
+ * participante, `state "rótulo" as X`, texto de mensagem, de nota e de condição de `alt`/`else`/`opt`/
+ * `loop`, rótulo de nó e de aresta do fluxo, rótulo de relação de ER — e nunca o identificador, a
+ * seta, o tipo do diagrama nem a linha de comentário.
+ */
+function textoVisivelDoBloco(string $bloco): string
+{
+    $trechos = [];
+
+    foreach (explode("\n", $bloco) as $linha) {
+        $t = trim($linha);
+
+        if ($t === '' || str_starts_with($t, '%%') || $t === 'end') {
+            continue;
+        }
+
+        if (preg_match('/^(?:accTitle|accDescr)\s*:\s*(.*)$/', $t, $m) === 1
+            || preg_match('/^(?:participant|actor)\s+\S+\s+as\s+(.+)$/', $t, $m) === 1
+            || preg_match('/^(?:alt|else|opt|loop|par|and|critical|break|rect)\b\s*(.*)$/', $t, $m) === 1
+            || preg_match('/^note\b[^:]*:\s*(.*)$/i', $t, $m) === 1
+            || preg_match('/^[A-Za-z0-9_]+\s*'.SETA_DE_SEQUENCIA.'\s*[+-]?\s*[A-Za-z0-9_]+\s*:\s*(.*)$/', $t, $m) === 1
+            || preg_match('/^(?:\[\*\]|[A-Za-z0-9_]+)\s*-->\s*(?:\[\*\]|[A-Za-z0-9_]+)\s*:\s*(.*)$/', $t, $m) === 1
+            || preg_match('/^[A-Za-z0-9_]+\s*'.CARDINALIDADE_DE_ER.'(?:--|\.\.)'.CARDINALIDADE_DE_ER.'\s*[A-Za-z0-9_]+\s*:\s*(.*)$/', $t, $m) === 1
+        ) {
+            $trechos[] = $m[1];
+
+            continue;
+        }
+
+        if (preg_match('/^(?:participant|actor)\b/', $t) === 1
+            || preg_match('/^(?:sequenceDiagram|stateDiagram(?:-v2)?|erDiagram|autonumber|flowchart\b|graph\b|direction\b|classDef\b|class\b|style\b|linkStyle\b)/', $t) === 1
+        ) {
+            continue;
+        }
+
+        // Fluxo e estado: as strings entre aspas (rótulo de nó, de aresta, de subgraph, `state "x" as Y`)
+        // e, no que sobra, o rótulo sem aspas — entre colchetes, chaves, parênteses, pipes ou traços.
+        preg_match_all('/"([^"]*)"/', $t, $aspas);
+
+        foreach ($aspas[1] as $texto) {
+            $trechos[] = $texto;
+        }
+
+        $semAspas = preg_replace('/"[^"]*"/', '', $t);
+
+        preg_match_all('/\[([^\]]+)\]|\{([^}]+)\}|\|([^|]+)\||--\s+([^-][^>]*?)\s+-->/', (string) $semAspas, $soltos, PREG_SET_ORDER);
+
+        foreach ($soltos as $grupo) {
+            $trechos[] = implode(' ', array_filter(array_slice($grupo, 1)));
+        }
+    }
+
+    return implode("\n", $trechos);
+}
+
+/**
+ * As palavras da lista do OUTRO idioma que aparecem, como palavra inteira e sem caixa, no texto
+ * visível do bloco (R61, Q?12) — sem identificador, nome de classe nem opção de CLI.
+ *
+ * @return list<string>
+ */
+function palavrasDoOutroIdiomaNoBloco(string $bloco, string $idiomaDoBloco): array
+{
+    $texto = textoVisivelDoBloco($bloco);
+
+    // Fora do texto visível, por ser identificador (P-23, P-31): chamada com ou sem argumento, ID com
+    // `_`, `Classe::metodo`, comando (`kit:update`), opção de CLI, caminho e nome de classe PascalCase.
+    $identificadores = [
+        '/[A-Za-z0-9_$>-]+\([^)]*\)/u',
+        '/[A-Za-z0-9]+(?:_[A-Za-z0-9]+)+/u',
+        '/[A-Za-z0-9_]+::[A-Za-z0-9_]+/u',
+        '/(?<![\p{L}\p{N}])[a-z][a-z0-9-]*:[a-z][a-z0-9:-]*/u',
+        '/(?<![\p{L}\p{N}-])--[a-z][a-z0-9-]*/u',
+        '/(?<![\p{L}\p{N}])\/[\p{L}\p{N}_\/{}.-]*/u',
+        '/\b(?:[A-Z][a-z0-9]+){2,}[A-Za-z0-9]*\b/u',
+    ];
+
+    $texto = (string) preg_replace($identificadores, ' ', $texto);
+
+    $outro   = $idiomaDoBloco === 'en' ? 'pt' : 'en';
+    $achadas = [];
+
+    foreach (palavrasDoOutroIdioma()[$outro] as $palavra) {
+        if (preg_match('/(?<![\p{L}\p{N}_-])'.preg_quote($palavra, '/').'(?![\p{L}\p{N}_-])/iu', $texto) === 1) {
+            $achadas[] = $palavra;
+        }
+    }
+
+    return $achadas;
+}
+
+it('[CT-146] nenhuma palavra inteira da lista do outro idioma no texto visível do bloco', function (string $descricao, string $resultado, array $nomeia): void {
+    $achado = match ($descricao) {
+        'cada um dos 21 blocos en publicados', 'cada um dos 21 blocos pt publicados' => (function () use ($descricao): array {
+            $idioma  = str_contains($descricao, ' en ') ? 'en' : 'pt';
+            $achados = [];
+
+            foreach (blocosMermaidDaArvore($idioma) as $b) {
+                foreach (palavrasDoOutroIdiomaNoBloco($b['bloco'], $idioma) as $palavra) {
+                    $achados[] = "\"{$palavra}\" em {$b['arquivo']}:{$b['linha']}";
+                }
+            }
+
+            return $achados;
+        })(),
+
+        'uma cópia do DG-07 en, com o alt da conta nova como "(nova conta)"' => (function (): array {
+            $bloco = (string) blocoDoCatalogoNaArvore('DG-07', 'en')['bloco'];
+            $copia = str_replace('(new account)', '(nova conta)', $bloco);
+            expect($copia)->not->toBe($bloco, 'a cópia do DG-07 en não mudou: "(new account)" saiu do bloco publicado');
+
+            return palavrasDoOutroIdiomaNoBloco($copia, 'en');
+        })(),
+
+        'uma cópia do DG-05 en, com o participante escolha como "Panel (escolha do painel)"' => (function (): array {
+            $bloco = (string) blocoDoCatalogoNaArvore('DG-05', 'en')['bloco'];
+            $copia = str_replace('as Panel choice', 'as Panel (escolha do painel)', $bloco);
+            expect($copia)->not->toBe($bloco, 'a cópia do DG-05 en não mudou: "as Panel choice" saiu do bloco publicado');
+
+            return palavrasDoOutroIdiomaNoBloco($copia, 'en');
+        })(),
+
+        'uma cópia do DG-05 en, com uma mensagem "painel" sozinha' => (function (): array {
+            $bloco = (string) blocoDoCatalogoNaArvore('DG-05', 'en')['bloco'];
+            $copia = str_replace('visitante->>escolha: picks a panel', 'visitante->>escolha: painel', $bloco);
+            expect($copia)->not->toBe($bloco, 'a cópia do DG-05 en não mudou: a mensagem "picks a panel" saiu do bloco publicado');
+
+            return palavrasDoOutroIdiomaNoBloco($copia, 'en');
+        })(),
+
+        'uma cópia do DG-07 pt, com o alt da conta nova como "(the account)"' => (function (): array {
+            $bloco = (string) blocoDoCatalogoNaArvore('DG-07', 'pt')['bloco'];
+            $copia = str_replace('(conta nova)', '(the account)', $bloco);
+            expect($copia)->not->toBe($bloco, 'a cópia do DG-07 pt não mudou: "(conta nova)" saiu do bloco publicado');
+
+            return palavrasDoOutroIdiomaNoBloco($copia, 'pt');
+        })(),
+
+        // ADV2-09: a maiúscula inicial não é nome de classe — só o PascalCase composto fica de fora (P-31).
+        'uma cópia do DG-05 en, com o participante escolha como "Painel de controle" e uma mensagem com "Conta nova"' => (function (): array {
+            $bloco = (string) blocoDoCatalogoNaArvore('DG-05', 'en')['bloco'];
+            $copia = str_replace(['as Panel choice', 'visitante->>escolha: picks a panel'], ['as Painel de controle', 'visitante->>escolha: Conta nova'], $bloco);
+            expect($copia)->not->toBe($bloco)->and(substr_count($copia, 'Conta nova'))->toBe(1);
+
+            return palavrasDoOutroIdiomaNoBloco($copia, 'en');
+        })(),
+
+        // ADV2-10: uma linha por POSIÇÃO — a palavra só na accDescr, só na note, só no rótulo de aresta, só no título de subgraph.
+        'uma cópia do DG-05 en, só a accDescr com "(escolha de painel)"' => (function (): array {
+            $bloco = (string) blocoDoCatalogoNaArvore('DG-05', 'en')['bloco'];
+            $copia = str_replace('The single login page (KIT_LOGIN_UNIFICADO)', 'The single login page (escolha de painel)', $bloco);
+            expect($copia)->not->toBe($bloco, 'a accDescr do DG-05 en não tinha "The single login page (KIT_LOGIN_UNIFICADO)"');
+
+            return palavrasDoOutroIdiomaNoBloco($copia, 'en');
+        })(),
+
+        'uma cópia do DG-05 en, só a nota de destino com "(painel)"' => (function (): array {
+            $bloco = (string) blocoDoCatalogoNaArvore('DG-05', 'en')['bloco'];
+            $copia = str_replace('access (painelDe)', 'access (painel)', $bloco);
+            expect($copia)->not->toBe($bloco, 'a nota de destino do DG-05 en não terminava em "access (painelDe)"');
+
+            return palavrasDoOutroIdiomaNoBloco($copia, 'en');
+        })(),
+
+        'uma cópia do DG-01 do README.en.md, só o rótulo de uma aresta com "pela fila"' => (function (): array {
+            $real = blocoDoCatalogoNaArvore('DG-01', 'en');
+            expect($real['arquivo'])->toBe('README.en.md');
+
+            $copia = str_replace('-->|"writes ai_runs"|', '-->|"pela fila"|', (string) $real['bloco']);
+            expect($copia)->not->toBe($real['bloco'], 'o DG-01 do README.en.md não tinha o rótulo de aresta "writes ai_runs"');
+
+            return palavrasDoOutroIdiomaNoBloco($copia, 'en');
+        })(),
+
+        'uma cópia do DG-19 en, só o título do subgraph docker_compose com "(sem worker)"' => (function (): array {
+            $bloco = (string) blocoDoCatalogoNaArvore('DG-19', 'en')['bloco'];
+            $copia = str_replace('docker_compose ["Docker Compose"]', 'docker_compose ["Docker Compose (sem worker)"]', $bloco);
+            expect($copia)->not->toBe($bloco, 'o DG-19 en não tinha o subgraph docker_compose ["Docker Compose"]');
+
+            return palavrasDoOutroIdiomaNoBloco($copia, 'en');
+        })(),
+
+        'o DG-05 en publicado' => palavrasDoOutroIdiomaNoBloco((string) blocoDoCatalogoNaArvore('DG-05', 'en')['bloco'], 'en'),
+
+        'o DG-16 pt publicado' => palavrasDoOutroIdiomaNoBloco((string) blocoDoCatalogoNaArvore('DG-16', 'pt')['bloco'], 'pt'),
+
+        default => throw new RuntimeException("CT-146: descrição desconhecida \"{$descricao}\""),
+    };
+
+    $relato = implode('; ', array_map(static fn (string $a): string => str_starts_with($a, '"') ? $a : "\"{$a}\"", $achado));
+
+    expect($achado === [])->toBe($resultado === 'aceita', $relato);
+
+    foreach ($nomeia as $palavra) {
+        test()->assertStringContainsString("\"{$palavra}\"", $relato, "a recusa deveria nomear \"{$palavra}\"");
+    }
+})->with([
+    'os 21 blocos en publicados (controle, en)'                                   => ['cada um dos 21 blocos en publicados', 'aceita', []],
+    'os 21 blocos pt publicados (controle, pt)'                                   => ['cada um dos 21 blocos pt publicados', 'aceita', []],
+    'DG-07 en: a ordem trocada da expressão da lista (ADV-21)'                    => ['uma cópia do DG-07 en, com o alt da conta nova como "(nova conta)"', 'recusa', ['nova', 'conta']],
+    'DG-05 en: a preposição trocada (ADV-21)'                                     => ['uma cópia do DG-05 en, com o participante escolha como "Panel (escolha do painel)"', 'recusa', ['escolha', 'painel']],
+    'DG-05 en: a palavra solta (L-14)'                                            => ['uma cópia do DG-05 en, com uma mensagem "painel" sozinha', 'recusa', ['painel']],
+    'DG-07 pt: inglês fora das expressões'                                        => ['uma cópia do DG-07 pt, com o alt da conta nova como "(the account)"', 'recusa', ['the', 'account']],
+    'DG-05 en: identificador e nome de classe ficam de fora'                      => ['o DG-05 en publicado', 'aceita', []],
+    'DG-16 pt: opção de CLI (P-23)'                                               => ['o DG-16 pt publicado', 'aceita', []],
+    'DG-05 en: "Painel de controle" e "Conta nova" no começo do rótulo (ADV2-09)' => ['uma cópia do DG-05 en, com o participante escolha como "Painel de controle" e uma mensagem com "Conta nova"', 'recusa', ['painel', 'conta', 'nova']],
+    'DG-05 en: só a accDescr (ADV2-10)'                                           => ['uma cópia do DG-05 en, só a accDescr com "(escolha de painel)"', 'recusa', ['escolha', 'painel']],
+    'DG-05 en: só a nota de destino (ADV2-10)'                                    => ['uma cópia do DG-05 en, só a nota de destino com "(painel)"', 'recusa', ['painel']],
+    'DG-01 README en: só o rótulo de aresta (ADV2-10)'                            => ['uma cópia do DG-01 do README.en.md, só o rótulo de uma aresta com "pela fila"', 'recusa', ['pela']],
+    'DG-19 en: só o título do subgraph (ADV2-10)'                                 => ['uma cópia do DG-19 en, só o título do subgraph docker_compose com "(sem worker)"', 'recusa', ['sem']],
+]);
+
+/*
+|--------------------------------------------------------------------------
+| R62 (revisão adversarial da adição, ADV-25) — a legibilidade do site não muda o tipo nem a
+| direção de nenhum bloco
+|--------------------------------------------------------------------------
+|
+| A legibilidade se resolve no CSS, sem mudar bloco nem o que o GitHub mostra (RQ-48). CT-95 recusa
+| a diretiva `%%{init}%%` e o frontmatter com `useMaxWidth`; `flowchart LR` virando `flowchart TB`
+| nos diagramas largos, para caber na coluna, passava. O baseline é a lista congelada abaixo — o
+| tipo e a direção de cada bloco, lidos dos 42 publicados (em cada idioma, os 20 do site e o do
+| README), iguais nos commits antes e depois da correção do QA-06 —: mudar a direção de um bloco
+| depois desta entrega é possível, e passa por esta lista, à vista na revisão (P-23, P-24). O
+| rótulo abreviado para caber na coluna não tem guarda (L-19).
+*/
+
+/**
+ * O baseline do tipo e da direção de cada bloco, por idioma: a primeira linha do bloco, congelada.
+ * As chaves são o DG do site e o arquivo do README.
+ *
+ * @return array{pt: array<string, string>, en: array<string, string>}
+ */
+function baselineDeTipoEDirecao(): array
+{
+    return [
+        'pt' => [
+            'README.md' => 'flowchart TD',
+            'DG-01'     => 'flowchart TD',
+            'DG-02'     => 'flowchart LR',
+            'DG-03'     => 'flowchart TD',
+            'DG-04'     => 'sequenceDiagram',
+            'DG-05'     => 'sequenceDiagram',
+            'DG-06'     => 'sequenceDiagram',
+            'DG-07'     => 'sequenceDiagram',
+            'DG-08'     => 'stateDiagram-v2',
+            'DG-09'     => 'stateDiagram-v2',
+            'DG-10'     => 'stateDiagram-v2',
+            'DG-11'     => 'sequenceDiagram',
+            'DG-12'     => 'flowchart TD',
+            'DG-13'     => 'erDiagram',
+            'DG-14'     => 'flowchart LR',
+            'DG-15'     => 'sequenceDiagram',
+            'DG-16'     => 'flowchart TD',
+            'DG-17'     => 'flowchart LR',
+            'DG-18'     => 'flowchart TD',
+            'DG-19'     => 'flowchart LR',
+            'DG-20'     => 'sequenceDiagram',
+        ],
+        'en' => [
+            'README.en.md' => 'flowchart TD',
+            'DG-01'        => 'flowchart TD',
+            'DG-02'        => 'flowchart LR',
+            'DG-03'        => 'flowchart TD',
+            'DG-04'        => 'sequenceDiagram',
+            'DG-05'        => 'sequenceDiagram',
+            'DG-06'        => 'sequenceDiagram',
+            'DG-07'        => 'sequenceDiagram',
+            'DG-08'        => 'stateDiagram-v2',
+            'DG-09'        => 'stateDiagram-v2',
+            'DG-10'        => 'stateDiagram-v2',
+            'DG-11'        => 'sequenceDiagram',
+            'DG-12'        => 'flowchart TD',
+            'DG-13'        => 'erDiagram',
+            'DG-14'        => 'flowchart LR',
+            'DG-15'        => 'sequenceDiagram',
+            'DG-16'        => 'flowchart TD',
+            'DG-17'        => 'flowchart LR',
+            'DG-18'        => 'flowchart TD',
+            'DG-19'        => 'flowchart LR',
+            'DG-20'        => 'sequenceDiagram',
+        ],
+    ];
+}
+
+/**
+ * Os blocos publicados de um idioma, fora de comentário HTML, por chave do baseline: o DG do site,
+ * e o nome do arquivo para o bloco do README (que repete o DG-01).
+ *
+ * @return array<string, string>
+ */
+function blocosPublicadosPorChaveDoBaseline(string $idioma): array
+{
+    $porChave = [];
+
+    foreach (blocosMermaidDaArvore($idioma) as $b) {
+        if ($b['dentroDeComentarioHtml'] || $b['idCatalogo'] === null) {
+            continue;
+        }
+
+        $chave            = in_array($b['arquivo'], ['README.md', 'README.en.md'], true) ? $b['arquivo'] : $b['idCatalogo'];
+        $porChave[$chave] = $b['bloco'];
+    }
+
+    return $porChave;
+}
+
+/** A primeira linha não vazia do bloco: o tipo do diagrama e, no fluxo, a direção. */
+function primeiraLinhaDoBloco(string $bloco): string
+{
+    foreach (explode("\n", $bloco) as $linha) {
+        if (trim($linha) !== '') {
+            return trim($linha);
+        }
+    }
+
+    return '';
+}
+
+/**
+ * TODA instrução `direction` de um bloco, com a posição dela (ADV2-13): o `subgraph` (ou o estado
+ * composto) que a contém, ou o corpo do bloco. O `subgraph` tem a direção própria — `direction TB`
+ * dentro dele muda o desenho no GitHub —, e o `stateDiagram-v2` não tem direção na primeira linha:
+ * a dele é uma instrução `direction` no corpo.
+ *
+ * @return list<string> `"direction TB em subgraph composer_dev"`, `"direction LR em corpo do bloco"`
+ */
+function direcoesDoBloco(string $bloco): array
+{
+    $pilha    = [];
+    $direcoes = [];
+
+    foreach (explode("\n", $bloco) as $linha) {
+        $t = trim($linha);
+
+        if (str_starts_with($t, '%%') && ! str_starts_with($t, '%%{')) {
+            continue;
+        }
+
+        if (preg_match('/^subgraph\s+([A-Za-z0-9_]+)/', $t, $m) === 1) {
+            $pilha[] = "subgraph {$m[1]}";
+
+            continue;
+        }
+
+        if (preg_match('/^state\s+(?:"[^"]*"\s+as\s+)?([A-Za-z0-9_]+)\s*\{$/', $t, $m) === 1) {
+            $pilha[] = "estado {$m[1]}";
+
+            continue;
+        }
+
+        if (preg_match('/^(?:alt|opt|loop|par|critical|break|rect)\b/', $t) === 1) {
+            $pilha[] = 'bloco de sequência';
+
+            continue;
+        }
+
+        if ($t === 'end' || $t === '}') {
+            array_pop($pilha);
+
+            continue;
+        }
+
+        if (preg_match('/^direction\s+(\S+)/', $t, $m) === 1) {
+            $direcoes[] = "direction {$m[1]} em ".($pilha === [] ? 'corpo do bloco' : end($pilha));
+        }
+    }
+
+    return $direcoes;
+}
+
+/**
+ * O que difere do baseline: bloco ausente, bloco fora dele e tipo/direção trocado, com os dois
+ * valores.
+ *
+ * @param  array<string, string>  $blocos  bloco por chave
+ * @param  array<string, string>  $baseline  primeira linha esperada por chave
+ * @return list<string>
+ */
+function desviosDeTipoEDirecao(array $blocos, array $baseline): array
+{
+    $desvios = [];
+
+    foreach ($baseline as $chave => $esperada) {
+        if (! array_key_exists($chave, $blocos)) {
+            $desvios[] = "{$chave} ausente";
+
+            continue;
+        }
+
+        $atual = primeiraLinhaDoBloco($blocos[$chave]);
+
+        if ($atual !== $esperada) {
+            $desvios[] = "{$chave}: \"{$atual}\" no lugar de \"{$esperada}\"";
+        }
+
+        // O baseline congela também toda instrução `direction` — nenhum bloco publicado tem uma (ADV2-13).
+        foreach (direcoesDoBloco($blocos[$chave]) as $direcao) {
+            $desvios[] = "{$chave}: \"{$direcao}\", e o baseline não tem instrução direction";
+        }
+    }
+
+    foreach (array_keys($blocos) as $chave) {
+        if (! array_key_exists($chave, $baseline)) {
+            $desvios[] = "{$chave} fora do baseline";
+        }
+    }
+
+    return $desvios;
+}
+
+it('[CT-148] a legibilidade do site não muda o tipo nem a direção de nenhum bloco', function (string $alteracao, string $resultado, array $nomeia): void {
+    $baseline = baselineDeTipoEDirecao();
+    $blocos   = ['pt' => blocosPublicadosPorChaveDoBaseline('pt'), 'en' => blocosPublicadosPorChaveDoBaseline('en')];
+
+    match ($alteracao) {
+        'nenhuma: os 42 publicados'                                           => null,
+        'uma cópia do DG-19 pt com "flowchart LR" trocado por "flowchart TB"' => (function () use (&$blocos): void {
+            $original = $blocos['pt']['DG-19'];
+            $copia    = preg_replace('/^flowchart LR/m', 'flowchart TB', $original, 1);
+            expect($copia)->not->toBe($original, 'a cópia do DG-19 pt não mudou: "flowchart LR" saiu do bloco publicado');
+            $blocos['pt']['DG-19'] = $copia;
+        })(),
+        'uma cópia do DG-01 do README.md com "flowchart TD" trocado por "flowchart LR"' => (function () use (&$blocos): void {
+            $original = $blocos['pt']['README.md'];
+            $copia    = preg_replace('/^flowchart TD/m', 'flowchart LR', $original, 1);
+            expect($copia)->not->toBe($original, 'a cópia do README.md não mudou: "flowchart TD" saiu do bloco publicado');
+            $blocos['pt']['README.md'] = $copia;
+        })(),
+        'uma cópia do DG-19 pt com "direction TB" dentro do subgraph composer_dev' => (function () use (&$blocos): void {
+            $original = $blocos['pt']['DG-19'];
+            $copia    = preg_replace('/^(\s*subgraph composer_dev .*)$/m', '$1
+    direction TB', $original, 1);
+            expect($copia)->not->toBe($original, 'a cópia do DG-19 pt não mudou: o subgraph composer_dev saiu do bloco publicado');
+            $blocos['pt']['DG-19'] = $copia;
+        })(),
+        'uma cópia do DG-08 pt com "direction LR" logo depois de stateDiagram-v2' => (function () use (&$blocos): void {
+            $original = $blocos['pt']['DG-08'];
+            $copia    = preg_replace('/^stateDiagram-v2$/m', 'stateDiagram-v2
+  direction LR', $original, 1);
+            expect($copia)->not->toBe($original, 'a cópia do DG-08 pt não mudou: "stateDiagram-v2" saiu do bloco publicado');
+            $blocos['pt']['DG-08'] = $copia;
+        })(),
+        default => throw new RuntimeException("CT-148: alteração desconhecida \"{$alteracao}\""),
+    };
+
+    $desvios = [...desviosDeTipoEDirecao($blocos['pt'], $baseline['pt']), ...desviosDeTipoEDirecao($blocos['en'], $baseline['en'])];
+
+    // O controle vale sobre os 42: 21 por idioma, com a distribuição do baseline.
+    if ($alteracao === 'nenhuma: os 42 publicados') {
+        $porTipo = array_count_values(array_map(primeiraLinhaDoBloco(...), [...array_values($blocos['pt']), ...array_values($blocos['en'])]));
+        ksort($porTipo);
+
+        expect(count($blocos['pt']) + count($blocos['en']))->toBe(42)
+            ->and($porTipo)->toBe(['erDiagram' => 2, 'flowchart LR' => 8, 'flowchart TD' => 12, 'sequenceDiagram' => 14, 'stateDiagram-v2' => 6]);
+    }
+
+    expect($desvios === [])->toBe($resultado === 'aceita', implode('; ', $desvios));
+
+    foreach ($nomeia as $trecho) {
+        test()->assertStringContainsString($trecho, implode('; ', $desvios), "a recusa deveria nomear \"{$trecho}\"");
+    }
+})->with([
+    'os 42 publicados (controle)'                         => ['nenhuma: os 42 publicados', 'aceita', []],
+    'DG-19 pt: a direção trocada para caber (ADV-25)'     => ['uma cópia do DG-19 pt com "flowchart LR" trocado por "flowchart TB"', 'recusa', ['DG-19', 'flowchart TB', 'flowchart LR']],
+    'README.md: o bloco que o GitHub mostra'              => ['uma cópia do DG-01 do README.md com "flowchart TD" trocado por "flowchart LR"', 'recusa', ['README.md']],
+    'DG-19 pt: a direção de um subgraph (ADV2-13)'        => ['uma cópia do DG-19 pt com "direction TB" dentro do subgraph composer_dev', 'recusa', ['DG-19', 'subgraph composer_dev', 'direction TB']],
+    'DG-08 pt: a direção de um stateDiagram-v2 (ADV2-13)' => ['uma cópia do DG-08 pt com "direction LR" logo depois de stateDiagram-v2', 'recusa', ['DG-08', 'direction LR']],
 ]);

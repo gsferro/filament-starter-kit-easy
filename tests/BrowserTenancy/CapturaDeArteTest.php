@@ -791,7 +791,7 @@ it('[CT-B03] captura o login unificado e a escolha de painel', function (): void
  * `https://` colado na frente e navega para um endereço inválido (medido lendo o pacote —
  * `vendor/pestphp/pest-plugin-browser/src/Support/ComputeUrl.php`).
  */
-it('[CT-B04] captura os quadros do instalador', function (): void {
+it('[CT-B04][CT-B10] captura os quadros do instalador', function (): void {
     $fixture = base_path('tests/Browser/Fixtures/terminal-instalacao.blade.php');
 
     /*
@@ -839,14 +839,50 @@ it('[CT-B04] captura os quadros do instalador', function (): void {
             )
         JS);
 
+    /*
+     * (CT-B10) O que cada quadro mostra (o seu último passo) e o que NÃO mostra (o primeiro
+     * passo do quadro seguinte) — um recorte deslocado de um marcador passa por todo o resto.
+     *
+     * @var array<string, array{0: string, 1: string}>
+     */
+    $conteudoDoQuadro = [
+        'instalacao-1-inicio'    => ['Rodando migrations', 'Gerando senha do administrador'],
+        'instalacao-2-senha'     => ['Gerando senha do administrador', 'Populando papéis, permissões e usuário inicial'],
+        'instalacao-3-progresso' => ['Removendo o vínculo com o Snyk do kit', 'Pronto! O projeto está instalado.'],
+        'instalacao-4-resumo'    => ['Login inicial: admin@example.com / XXXXXXXXXXXXXXXXXXXXXXXX', 'admin@example.com / password'],
+    ];
+
+    $hashesDosQuadros = [];
+
     foreach ($quadros as $arquivo => $ate) {
+        [$mostra, $naoMostra] = $conteudoDoQuadro[$arquivo];
+
         visit("/_teste-arte/{$arquivo}")
             ->resize(1400, $alturaDoConteudo)
+            // A âncora vem antes das ausências: uma página 404 não mostra nada disso e passaria.
+            ->assertSee('meu-projeto — instalação')
             // As duas formas em que a senha antiga aparecia (R35/[CT-52]) — nunca no HTML que
             // vira imagem.
             ->assertDontSee('/ password')
             ->assertDontSee('password (padrão do kit)')
-            ->assertSee('meu-projeto — instalação')
+            // (CT-B10) o marcador do quadro à vista, antes da ausência do seguinte.
+            ->assertSee($mostra)
+            ->assertDontSee($naoMostra)
+            // (CT-B04, passo 5) a janela da transcrição termina dentro da área fotografada.
+            ->assertScript("document.querySelector('.janela').getBoundingClientRect().bottom <= window.innerHeight")
             ->screenshot(fullPage: false, filename: $arquivo);
+
+        $hashesDosQuadros[$arquivo] = md5_file(base_path("tests/Browser/Screenshots/{$arquivo}.png"));
+    }
+
+    // (CT-B04, passo 7) cada quadro difere do anterior.
+    $anterior = null;
+
+    foreach ($hashesDosQuadros as $arquivo => $hash) {
+        if ($anterior !== null) {
+            expect($hash)->not->toBe($anterior, "o PNG de {$arquivo} é igual ao do quadro anterior");
+        }
+
+        $anterior = $hash;
     }
 })->group('browser', 'art');

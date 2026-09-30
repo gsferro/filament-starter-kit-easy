@@ -13,7 +13,6 @@ use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Filament\Http\Middleware\IdentifyTenant;
-use Filament\Panel;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
@@ -58,58 +57,6 @@ beforeEach(function (): void {
 */
 
 /**
- * Nós (id => rótulo) e arestas de um bloco Mermaid `flowchart`/`graph`.
- *
- * Convenção assumida: um "shape" de nó (`id[Texto]`, `id(Texto)`, `id{Texto}`,
- * `id{{Texto}}`, `id((Texto))`, `id([Texto])`, `id[[Texto]]`) pode aparecer em QUALQUER linha —
- * o rótulo de um id é lido da primeira vez que ele aparece com shape, em lugar nenhum
- * específico. O rótulo de uma ARESTA vem do `-->|Rótulo|` entre as duas pontas.
- *
- * @return array{nos: array<string, string>, arestas: list<array{de: string, para: string, rotulo: ?string, linha: int}>}
- */
-function grafoDoFluxo(string $bloco): array
-{
-    $nos = [];
-
-    preg_match_all(
-        '/\b([A-Za-z0-9_]+)\s*(?|\{\{\s*(.*?)\s*\}\}|\(\(\s*(.*?)\s*\)\)|\(\[\s*(.*?)\s*\]\)|\[\[\s*(.*?)\s*\]\]|\[\s*(.*?)\s*\]|\(\s*(.*?)\s*\)|\{\s*(.*?)\s*\})/',
-        $bloco,
-        $achados,
-        PREG_SET_ORDER,
-    );
-
-    foreach ($achados as $achado) {
-        if (! isset($nos[$achado[1]])) {
-            $nos[$achado[1]] = trim($achado[2], " \t\"'");
-        }
-    }
-
-    $arestas = [];
-
-    foreach (explode("\n", $bloco) as $i => $linha) {
-        if (preg_match(
-            '/^\s*([A-Za-z0-9_]+)\s*(?:\{\{.*?\}\}|\(\(.*?\)\)|\(\[.*?\]\)|\[\[.*?\]\]|\[.*?\]|\(.*?\)|\{.*?\})?\s*(?:--[-.]*>|==>)\s*(?:\|([^|]*)\|)?\s*([A-Za-z0-9_]+)/',
-            $linha,
-            $m,
-        ) === 1) {
-            $arestas[] = [
-                'de'     => $m[1],
-                'para'   => $m[3],
-                'rotulo' => ($m[2] ?? '') !== '' ? trim($m[2], " \t\"'") : null,
-                'linha'  => $i + 1,
-            ];
-        }
-    }
-
-    foreach ($arestas as $aresta) {
-        $nos[$aresta['de']] ??= $aresta['de'];
-        $nos[$aresta['para']] ??= $aresta['para'];
-    }
-
-    return ['nos' => $nos, 'arestas' => $arestas];
-}
-
-/**
  * As arestas que SAEM de um nó cujo id OU rótulo contém `$origem` (comparação livre de acento
  * e caixa), pelo texto do destino.
  *
@@ -140,118 +87,6 @@ function arestasDeOrigem(array $grafo, string $origem): array
     }
 
     return $resultado;
-}
-
-/**
- * Executa um grafo de DECISÃO (DG-03) a partir do nó sem aresta de entrada, avaliando cada nó
- * pelo PREDICADO REAL (nunca por comparação textual de ordem — mata R7.M5), e devolve o rótulo
- * terminal normalizado ("entra"/"nega").
- *
- * @param  array{nos: array<string, string>, arestas: list<array{de: string, para: string, rotulo: ?string, linha: int}>}  $grafo
- * @param  callable(string): ?bool  $avaliar  null quando o texto do nó não é uma pergunta reconhecida
- *
- * @throws RuntimeException quando o grafo não tem a forma esperada (sem início, laço, pergunta
- *                          não reconhecida ou aresta sem rótulo Sim/Não do lado decidido)
- */
-function resultadoDoFluxo(array $grafo, callable $avaliar): string
-{
-    $comEntrada = array_unique(array_column($grafo['arestas'], 'para'));
-    $atual      = null;
-
-    foreach (array_keys($grafo['nos']) as $id) {
-        if (! in_array($id, $comEntrada, true)) {
-            $atual = $id;
-
-            break;
-        }
-    }
-
-    if ($atual === null) {
-        throw new RuntimeException('DG-03: nenhum nó sem aresta de entrada — não há por onde começar a caminhada.');
-    }
-
-    $visitados = [];
-
-    while (true) {
-        if (isset($visitados[$atual])) {
-            throw new RuntimeException("DG-03: laço encontrado no nó '{$atual}'.");
-        }
-
-        $visitados[$atual]  = true;
-        $texto              = $grafo['nos'][$atual] ?? $atual;
-
-        if (preg_match('/\bentra\b/i', $texto) === 1) {
-            return 'entra';
-        }
-
-        if (preg_match('/\bnega\b/i', $texto) === 1) {
-            return 'nega';
-        }
-
-        $saidas = array_values(array_filter($grafo['arestas'], static fn (array $a): bool => $a['de'] === $atual));
-
-        if ($saidas === []) {
-            throw new RuntimeException("DG-03: nó '{$texto}' ({$atual}) não é terminal (\"entra\"/\"nega\") e não tem aresta de saída.");
-        }
-
-        if (count($saidas) === 1) {
-            $atual = $saidas[0]['para'];
-
-            continue;
-        }
-
-        $resultado = $avaliar($texto);
-
-        if ($resultado === null) {
-            throw new RuntimeException("DG-03: pergunta não reconhecida pela guarda: \"{$texto}\".");
-        }
-
-        $alvo = null;
-
-        foreach ($saidas as $saida) {
-            $rotulo = mb_strtolower((string) $saida['rotulo']);
-            $ehSim  = str_contains($rotulo, 'sim') || str_contains($rotulo, 'yes') || $rotulo === 'true';
-            $ehNao  = str_contains($rotulo, 'não') || str_contains($rotulo, 'nao') || str_contains($rotulo, 'no') || $rotulo === 'false';
-
-            if (($resultado && $ehSim) || (! $resultado && $ehNao)) {
-                $alvo = $saida['para'];
-
-                break;
-            }
-        }
-
-        if ($alvo === null) {
-            $ladoEsperado = $resultado ? 'sim' : 'não';
-
-            throw new RuntimeException("DG-03: nó '{$texto}' não tem aresta rotulada para o lado \"{$ladoEsperado}\".");
-        }
-
-        $atual = $alvo;
-    }
-}
-
-/**
- * O avaliador das perguntas de DG-03 — a MESMA ordem de `User::canAccessPanel()`
- * (`app/Models/User.php:canAccessPanel:156`): indisponibilidade, pendência, master_global,
- * contexto do painel (tenancy), papel do painel.
- */
-function avaliadorDoDG03(User $user, Panel $painel): Closure
-{
-    return function (string $texto) use ($user, $painel): ?bool {
-        $t = mb_strtolower($texto);
-
-        return match (true) {
-            str_contains($t, 'indispon')                                           => $user->motivoDeIndisponibilidade() !== null,
-            str_contains($t, 'pendente')                                           => (bool) $user->aprovacao_pendente,
-            str_contains($t, 'master_global') || str_contains($t, 'master global') => $user->isMasterGlobal(),
-            str_contains($t, 'tenancy')                                            => $painel->hasTenancy(),
-            str_contains($t, 'papel') && str_contains($t, 'painel')                => $user->temPapelDoPainel(
-                $painel->getId(),
-                $painel->hasTenancy() ? null : (config('permission.teams') ? Tenant::CONTEXTO_GLOBAL : null),
-            ),
-            default => null,
-        };
-    };
 }
 
 /**
@@ -354,13 +189,25 @@ it('[CT-98] papeis em contextos diferentes abrem so o painel cujo papel esta no 
     $acme = tenant('Acme', 'acme');
     $user = usuario();
 
-    if ($combo === 'admin global + admin_app acme') {
-        papelNaOrganizacao($user, 'admin');
-        papelNaOrganizacao($user, 'admin_app', $acme);
-    } else {
-        papelNaOrganizacao($user, 'infra');
-        papelNaOrganizacao($user, 'admin', $acme);
-    }
+    match ($combo) {
+        'admin global + admin_app acme' => (function () use ($user, $acme): void {
+            papelNaOrganizacao($user, 'admin');
+            papelNaOrganizacao($user, 'admin_app', $acme);
+        })(),
+        'infra global + admin acme' => (function () use ($user, $acme): void {
+            papelNaOrganizacao($user, 'infra');
+            papelNaOrganizacao($user, 'admin', $acme);
+        })(),
+        'infra global + admin_app acme' => (function () use ($user, $acme): void {
+            papelNaOrganizacao($user, 'infra');
+            papelNaOrganizacao($user, 'admin_app', $acme);
+        })(),
+        'panel_user acme + admin_app acme' => (function () use ($user, $acme): void {
+            papelNaOrganizacao($user, 'panel_user', $acme);
+            papelNaOrganizacao($user, 'admin_app', $acme);
+        })(),
+        default => throw new RuntimeException("CT-98: combinação desconhecida \"{$combo}\""),
+    };
 
     $painel = Filament::getPanel($painelId);
 
@@ -384,6 +231,11 @@ it('[CT-98] papeis em contextos diferentes abrem so o painel cujo papel esta no 
     'admin no contexto global + admin_app em acme, painel app'   => ['admin global + admin_app acme', 'app', 'entra'],
     'infra no contexto global + admin em acme, painel admin'     => ['infra global + admin acme', 'admin', 'nega'],
     'infra no contexto global + admin em acme, painel infra'     => ['infra global + admin acme', 'infra', 'entra'],
+    'infra no contexto global + admin_app em acme, painel infra' => ['infra global + admin_app acme', 'infra', 'entra'],
+    'infra no contexto global + admin_app em acme, painel app'   => ['infra global + admin_app acme', 'app', 'entra'],
+    'infra no contexto global + admin_app em acme, painel admin' => ['infra global + admin_app acme', 'admin', 'nega'],
+    'panel_user em acme + admin_app em acme, painel app'         => ['panel_user acme + admin_app acme', 'app', 'entra'],
+    'panel_user em acme + admin_app em acme, painel admin'       => ['panel_user acme + admin_app acme', 'admin', 'nega'],
 ]);
 
 /*

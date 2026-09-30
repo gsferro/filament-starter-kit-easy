@@ -32,7 +32,7 @@ accDescr: Pendente aprova para Ativo (ou Inativo, se foi desativada antes); Ativ
   Excluida --> Inativo : restaurar [estava inativa]
   Excluida --> Pendente : restaurar [estava pendente]
   state "Excluída" as Excluida
-  note right of Pendente : só existe com KIT_REGISTRO_APROVACAO_MANUAL
+  note right of Pendente : só existe com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL
 ```
 
 O rótulo "Pendente" esconde o `ativo`: uma conta pendente pode ser desativada sem deixar de ser

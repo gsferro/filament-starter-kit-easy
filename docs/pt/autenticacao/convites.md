@@ -86,10 +86,10 @@ accDescr: Quem convida envia o link pela fila, o agendador lembra quem não resp
   end
   alt sem conta com o e-mail (conta nova)
     convidado_novo->>convite: aceitar(): define a própria senha
-    convite->>convidado_novo: nasce verificado, com o papel, vinculado à organização do convite quando ele tem tenant_id
+    convite->>convidado_novo: nasce verificado, com o papel, vinculado à organização do convite, se ele tem tenant_id (KIT_TENANCY)
   else conta existente (conta existente, oferta)
     convidado_existente->>convite: aceitarComoUsuarioExistente()
-    convite->>convidado_existente: ganha o papel na organização do convite quando ele tem tenant_id, acessos anteriores intactos
+    convite->>convidado_existente: ganha o papel na organização do convite, se ele tem tenant_id (KIT_TENANCY), acessos anteriores intactos
   else recusa (exige KIT_TENANCY)
     convidado_existente->>convite: recusar()
   end

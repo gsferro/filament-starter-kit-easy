@@ -125,7 +125,7 @@ pré-voo — git limpo (`app/Console/Commands/KitTenancy.php:preVoo:103`) — co
 `.env` (`app/Console/Commands/KitTenancy.php:ligarFlagNoEnv:165`,
 `app/Support/AtivadorDeTenancy.php:escreverEnv:35`), `permission.teams` ligado por organização
 (`app/Console/Commands/KitTenancy.php:ligarPapeisPorTenant:172`,
-`app/Support/AtivadorDeTenancy.php:ligarPapeisPorTenant:71`), `migrate:fresh --seed` — **destrutivo**
+`app/Support/AtivadorDeTenancy.php:ligarPapeisPorTenant:66`), `migrate:fresh --seed` — **destrutivo**
 — seguido da conferência do schema
 (`app/Console/Commands/KitTenancy.php:recriarBanco:179`, `:migrate:fresh:187`,
 `:conferirSchema:189`, definida em `:198`) e, só com `--demo`, o cenário de demonstração

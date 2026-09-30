@@ -35,7 +35,7 @@ accDescr: Pending approves to Active (or Inactive, if it was deactivated before)
   state "Active" as Ativo
   state "Inactive" as Inativo
   state "Deleted" as Excluida
-  note right of Pendente : only exists with KIT_REGISTRO_APROVACAO_MANUAL
+  note right of Pendente : only exists with KIT_REGISTRO and KIT_REGISTRO_APROVACAO_MANUAL
 ```
 
 The "Pending" label hides `ativo`: a pending account can be deactivated without stopping being

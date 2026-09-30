@@ -404,7 +404,7 @@ await conferirCtB02();
  * browser (o Playwright serializa a função para `page.evaluate`), por isso não pode fechar sobre
  * nada deste módulo.
  *
- * @returns {Array<{semSvg: true} | {semSvg: false, fonteEfetivaMinima: number|null, larguraSvg: number, blocoClientWidth: number, containerRolavel: {clientWidth: number, scrollWidth: number}|null}>}
+ * @returns {Array<{semSvg: true} | {semSvg: false, fonteEfetivaMinima: number|null, menorTipo: 'svg'|'html'|null, textosSvg: number, textosHtml: number, foreignObjectsComTexto: number, foreignObjectsMedidos: number, larguraSvg: number, blocoClientWidth: number, blocoRight: number, colunaRight: number|null, containerRolavel: {clientWidth: number, scrollWidth: number}|null}>}
  */
 function medirDiagramasDaPagina() {
   return [...document.querySelectorAll('pre.mermaid')].map((bloco) => {
@@ -415,24 +415,61 @@ function medirDiagramasDaPagina() {
     }
 
     const retangulo = svg.getBoundingClientRect();
-    const vb = svg.viewBox && svg.viewBox.baseVal;
-    const escala = vb && vb.width ? retangulo.width / vb.width : 1;
 
-    // O Mermaid 11 desenha rótulo de fluxo em HTML dentro de `foreignObject` e mensagem de
-    // sequência/nó em `<text>`/`<tspan>` (05, Seletores) — os três entram na conta, e é o MENOR
-    // texto que decide (mutante M5 do CT-B05: ler só o primeiro deixaria passar o rótulo menor).
+    /*
+     * [CT-B07] A escala real de um texto é a MATRIZ DA TELA do elemento (`getScreenCTM()`), que já
+     * inclui o `viewBox` e o `preserveAspectRatio` — o eixo que limita (largura OU altura) é o do
+     * layout do navegador. A razão largura/`viewBox` de antes via só o eixo x (ADV-22, M1).
+     * `text`/`tspan` usam a matriz do próprio `<text>`; o HTML de `foreignObject`, a do
+     * `foreignObject` ancestral. `hypot(a, b)` é `a` sem rotação e não zera com ela.
+     *
+     * [CT-B08] O Mermaid 11 desenha rótulo de fluxo em HTML dentro de `foreignObject` e mensagem
+     * de sequência/nó em `<text>`/`<tspan>` (05, Seletores) — todos entram, e é o MENOR texto que
+     * decide (M5 do CT-B05). Conta-se, por SVG, os textos medidos e os `foreignObject` com texto
+     * cujo conteúdo entrou na medida: SVG sem texto medido e `foreignObject` fora da medida
+     * reprovam (M2 e M3 do CT-B08).
+     */
     let menorFonte = Infinity;
+    let menorTipo = null;
+    let textosSvg = 0;
+    let textosHtml = 0;
+    const foreignObjectsMedidos = new Set();
+
     for (const el of svg.querySelectorAll('text, tspan, foreignObject *')) {
       if (!el.textContent || el.textContent.trim() === '') {
         continue;
       }
 
+      const fo = el.closest('foreignObject');
+      const ancora = fo ?? el.closest('text');
+      const matriz = ancora && typeof ancora.getScreenCTM === 'function' ? ancora.getScreenCTM() : null;
       const px = parseFloat(getComputedStyle(el).fontSize);
 
-      if (Number.isFinite(px) && px < menorFonte) {
-        menorFonte = px;
+      if (!matriz || !Number.isFinite(px)) {
+        continue;
+      }
+
+      const efetiva = px * Math.hypot(matriz.a, matriz.b);
+
+      if (fo) {
+        textosHtml++;
+        foreignObjectsMedidos.add(fo);
+      } else {
+        textosSvg++;
+      }
+
+      if (efetiva < menorFonte) {
+        menorFonte = efetiva;
+        menorTipo = fo ? 'html' : 'svg';
       }
     }
+
+    const foreignObjectsComTexto = [...svg.querySelectorAll('foreignObject')].filter(
+      (fo) => fo.textContent && fo.textContent.trim() !== '',
+    ).length;
+
+    // [CT-B09] a coluna de conteúdo do Starlight — o ancestral do bloco.
+    const coluna = bloco.closest('.sl-markdown-content');
 
     // [CT-B06] o contêiner rolável fica DENTRO do bloco: a busca sobe do próprio `pre.mermaid`
     // até quem o envolve (05, passo 1) e para aí — nunca até um ancestral que embrulhe outros
@@ -453,9 +490,16 @@ function medirDiagramasDaPagina() {
 
     return {
       semSvg: false,
-      fonteEfetivaMinima: Number.isFinite(menorFonte) ? menorFonte * escala : null,
+      fonteEfetivaMinima: Number.isFinite(menorFonte) ? menorFonte : null,
+      menorTipo,
+      textosSvg,
+      textosHtml,
+      foreignObjectsComTexto,
+      foreignObjectsMedidos: foreignObjectsMedidos.size,
       larguraSvg: retangulo.width,
       blocoClientWidth: bloco.clientWidth,
+      blocoRight: bloco.getBoundingClientRect().right,
+      colunaRight: coluna ? coluna.getBoundingClientRect().right : null,
       containerRolavel,
     };
   });
@@ -468,7 +512,43 @@ const PISO_FONTE_EFETIVA_PX = 12;
 const EPSILON_PX = 1;
 
 /**
- * [CT-B05]/[CT-B06] — QA-06/Adendo 6 (RQ-47..RQ-49). Mede, na MESMA passada, as 5 combinações
+ * [CT-B05]/[CT-B08] A decisão sobre a medida de UM SVG — a MESMA função para os 20 reais e para os
+ * controles sintéticos (05: "os controles pela mesma função de medida").
+ *
+ * @returns {{abaixoDoPiso: boolean, semTexto: boolean, foreignObjectForaDaMedida: boolean}}
+ */
+function avaliarTextos(m) {
+  return {
+    semTexto: m.textosSvg + m.textosHtml === 0,
+    foreignObjectForaDaMedida: m.foreignObjectsMedidos < m.foreignObjectsComTexto,
+    abaixoDoPiso: m.fonteEfetivaMinima !== null && m.fonteEfetivaMinima < PISO_FONTE_EFETIVA_PX,
+  };
+}
+
+/**
+ * [CT-B09] A decisão sobre a caixa de UM bloco: a borda direita dentro da coluna de conteúdo e,
+ * havendo contêiner rolável do bloco, o `scrollWidth` dele alcançando a largura do SVG.
+ *
+ * @returns {string[]} os motivos de reprovação (vazio = aceita)
+ */
+function avaliarColuna(m) {
+  const motivos = [];
+
+  if (m.colunaRight === null) {
+    motivos.push('sem coluna .sl-markdown-content ancestral do bloco');
+  } else if (m.blocoRight > m.colunaRight + EPSILON_PX) {
+    motivos.push(`a borda direita do bloco (${m.blocoRight.toFixed(0)}) passa da coluna (${m.colunaRight.toFixed(0)})`);
+  }
+
+  if (m.containerRolavel && m.containerRolavel.scrollWidth < m.larguraSvg - EPSILON_PX) {
+    motivos.push(`o scrollWidth do conteiner (${m.containerRolavel.scrollWidth}) nao alcanca a largura do SVG (${m.larguraSvg.toFixed(0)})`);
+  }
+
+  return motivos;
+}
+
+/**
+ * [CT-B05]/[CT-B06] — QA-06/Adendo 6 (RQ-47..RQ-49). Mede, na MESMA passada, as 7 combinações
  * reais do `05` (janela × idioma, com troca de tema onde o Gherkin pede) e soma as duas regras:
  * nenhum texto de diagrama abaixo do piso de 12px, e o diagrama mais largo que a coluna rola
  * DENTRO do próprio bloco (nunca a página). Hoje nasce vermelho nas duas frentes: o Mermaid encolhe
@@ -482,33 +562,55 @@ async function conferirLegibilidadeERolagem() {
     { janela: '1280x900', largura: 1280, altura: 900, idioma: 'en', tema: 'claro', trocarTema: false },
     { janela: '390x844', largura: 390, altura: 844, idioma: 'pt', tema: 'claro', trocarTema: false },
     { janela: '390x844', largura: 390, altura: 844, idioma: 'en', tema: 'escuro (trocado)', trocarTema: true },
+    // [CT-B05, ADV2-15/M6] escuro desde o carregamento: `colorScheme: 'dark'` ANTES do goto, sem troca de `data-theme`.
+    { janela: '1280x900', largura: 1280, altura: 900, idioma: 'pt', tema: 'escuro (desde o carregamento)', trocarTema: false, escuroDesdeCarga: true },
+    { janela: '390x844', largura: 390, altura: 844, idioma: 'en', tema: 'escuro (desde o carregamento)', trocarTema: false, escuroDesdeCarga: true },
   ];
 
   let maisLargoNoCelular = 0;
   const detalhesAbaixoDoPiso = [];
   const detalhesDeRolagem = [];
   const detalhesDePagina = [];
+  const detalhesDeTexto = [];
+  const detalhesDeColuna = [];
+  const detalhesDeTrocaDeTema = [];
+  // [CT-B08] não vácuo por TIPO de texto: quantos SVGs têm rótulo HTML de foreignObject e quantos têm <text>.
+  const svgsPorTipoDeTexto = { html: 0, svg: 0 };
 
   for (const combo of COMBOS) {
     const rotasDoIdioma = rotasComDiagrama.filter((r) => (r.startsWith('/en/') ? 'en' : 'pt') === combo.idioma);
     const contexto = await navegador.newContext({
       viewport: { width: combo.largura, height: combo.altura },
-      colorScheme: 'light',
+      colorScheme: combo.escuroDesdeCarga ? 'dark' : 'light',
     });
     const pagina = await contexto.newPage();
 
     let medidosNestaCombinacao = 0;
     let menorFonteDaCombinacao = Infinity;
     let dgDaMenorFonte = null;
+    let abaixoDoPisoNaCombinacao = 0;
 
     for (const rota of rotasDoIdioma) {
       await pagina.goto(`http://localhost:${PORTA}${BASE}${rota}`, { waitUntil: 'domcontentloaded' });
-      await pagina.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+      if (!combo.escuroDesdeCarga) {
+        await pagina.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+      }
       await pagina.waitForFunction(
         () => document.querySelectorAll('pre.mermaid:not([data-processed])').length === 0,
         null,
         { timeout: MERMAID_TIMEOUT_MS },
       );
+
+      if (combo.escuroDesdeCarga) {
+        // Guarda de não vácuo: a página abriu mesmo no escuro (a mídia do sistema), sem ninguém trocar o tema.
+        const escuroDeFato = await pagina.evaluate(
+          () => matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.getAttribute('data-theme') !== 'light',
+        );
+
+        if (!escuroDeFato) {
+          violacoes.push(`[CT-B05] ${combo.idioma} ${combo.janela} ${rota} — a pagina nao abriu no escuro (linha "escuro desde o carregamento" vazia)`);
+        }
+      }
 
       if (combo.trocarTema) {
         // [P-18, como o CT-B02] espera o SVG NOVO — o `astro-mermaid` redesenha do zero na troca.
@@ -529,7 +631,15 @@ async function conferirLegibilidadeERolagem() {
           );
         } catch {
           violacoes.push(`[CT-B05] ${combo.idioma} ${combo.janela} ${rota} — nao redesenhou apos a troca de tema (M2)`);
+          violacoes.push(`[CT-B11] ${combo.idioma} ${combo.janela} ${rota} — nao redesenhou apos a troca de tema`);
         }
+
+        // O `data-processed` volta depois do SVG novo: só se mede com todo bloco de novo processado.
+        await pagina.waitForFunction(
+          () => document.querySelectorAll('pre.mermaid:not([data-processed])').length === 0,
+          null,
+          { timeout: MERMAID_TIMEOUT_MS },
+        );
       }
 
       const [medidas, layoutDaPagina] = await Promise.all([
@@ -561,10 +671,38 @@ async function conferirLegibilidadeERolagem() {
           dgDaMenorFonte = dg;
         }
 
-        if (m.fonteEfetivaMinima === null || m.fonteEfetivaMinima < PISO_FONTE_EFETIVA_PX) {
-          detalhesAbaixoDoPiso.push(
-            `${dg} (${rota}, ${combo.idioma} ${combo.janela} ${combo.tema}): ${m.fonteEfetivaMinima?.toFixed(1) ?? 'sem texto medido'} px`,
+        const local = `${dg} (${rota}, ${combo.idioma} ${combo.janela} ${combo.tema})`;
+        const veredito = avaliarTextos(m);
+
+        if (m.textosHtml > 0) {
+          svgsPorTipoDeTexto.html++;
+        }
+        if (m.textosSvg > 0) {
+          svgsPorTipoDeTexto.svg++;
+        }
+
+        if (veredito.abaixoDoPiso) {
+          abaixoDoPisoNaCombinacao++;
+          const msg = `${local}: ${m.fonteEfetivaMinima.toFixed(1)} px (texto ${m.menorTipo === 'html' ? 'HTML de foreignObject' : 'SVG'})`;
+          detalhesAbaixoDoPiso.push(msg);
+
+          if (combo.trocarTema) {
+            detalhesDeTrocaDeTema.push(msg);
+          }
+        }
+
+        if (veredito.semTexto) {
+          detalhesDeTexto.push(`${local} — SVG sem texto medido`);
+        }
+
+        if (veredito.foreignObjectForaDaMedida) {
+          detalhesDeTexto.push(
+            `${local} — ${m.foreignObjectsComTexto - m.foreignObjectsMedidos} foreignObject(s) com texto fora da medida`,
           );
+        }
+
+        for (const motivo of avaliarColuna(m)) {
+          detalhesDeColuna.push(`${local} — ${motivo}`);
         }
 
         const maisLargoQueColuna = m.larguraSvg > m.blocoClientWidth + EPSILON_PX;
@@ -581,6 +719,19 @@ async function conferirLegibilidadeERolagem() {
           }
         }
       });
+    }
+
+    if (combo.trocarTema) {
+      console.log(
+        `[CT-B11] troca de tema - ${combo.idioma} ${combo.janela}: depois do redesenho, ` +
+          `${abaixoDoPisoNaCombinacao} SVG(s) abaixo de ${PISO_FONTE_EFETIVA_PX} px, ${medidosNestaCombinacao} SVGs medidos`,
+      );
+
+      if (medidosNestaCombinacao !== blocosNaFontePorIdioma[combo.idioma]) {
+        violacoes.push(
+          `[CT-B11] ${combo.idioma} ${combo.janela} — ${medidosNestaCombinacao} SVG(s) medido(s) depois da troca, a fonte tem ${blocosNaFontePorIdioma[combo.idioma]}`,
+        );
+      }
     }
 
     console.log(
@@ -602,6 +753,32 @@ async function conferirLegibilidadeERolagem() {
   for (const msg of detalhesAbaixoDoPiso) {
     violacoes.push(`[CT-B05] abaixo do piso de ${PISO_FONTE_EFETIVA_PX}px — ${msg}`);
   }
+
+  for (const msg of detalhesDeTrocaDeTema) {
+    violacoes.push(`[CT-B11] depois do redesenho, abaixo do piso de ${PISO_FONTE_EFETIVA_PX}px — ${msg}`);
+  }
+
+  for (const msg of detalhesDeTexto) {
+    violacoes.push(`[CT-B08] ${msg}`);
+  }
+
+  for (const msg of detalhesDeColuna) {
+    violacoes.push(`[CT-B09] ${msg}`);
+  }
+
+  // [CT-B08] não vácuo por tipo de texto: sem rótulo HTML medido (ou sem <text> medido) em algum
+  // SVG, "todo texto entra na medida" vale sobre metade dos diagramas.
+  for (const tipo of ['html', 'svg']) {
+    if (svgsPorTipoDeTexto[tipo] === 0) {
+      violacoes.push(`[CT-B08] ancora de nao vacuo — nenhum SVG com texto ${tipo === 'html' ? 'HTML de foreignObject' : '<text>/<tspan>'} medido`);
+    }
+  }
+
+  console.log(
+    `[CT-B08] textos medidos - SVGs com rotulo HTML de foreignObject: ${svgsPorTipoDeTexto.html}, ` +
+      `com <text>/<tspan>: ${svgsPorTipoDeTexto.svg}, sem texto medido ou foreignObject fora da medida: ${detalhesDeTexto.length}`,
+  );
+  console.log(`[CT-B09] bloco dentro da coluna e rolagem ate a borda do SVG: ${detalhesDeColuna.length} violacao(oes)`);
 
   for (const msg of detalhesDeRolagem) {
     violacoes.push(`[CT-B06] ${msg}`);
@@ -712,7 +889,122 @@ async function conferirControlesDeLegibilidadeERolagem() {
   );
 }
 
+/**
+ * [CT-B07]/[CT-B08]/[CT-B09] Controles sintéticos dos três cenários novos, medidos pela MESMA
+ * `medirDiagramasDaPagina` e decididos pelas MESMAS `avaliarTextos`/`avaliarColuna` que os 20
+ * diagramas reais — nunca uma segunda medida só para o controle.
+ */
+async function conferirControlesDaMedida() {
+  const html = (corpo) => `<!doctype html><html><body style="margin:0">${corpo}</body></html>`;
+  const XHTML = 'xmlns="http://www.w3.org/1999/xhtml"';
+
+  const contextoDesktop = await navegador.newContext({ viewport: { width: 1280, height: 900 } });
+  const desktop = await contextoDesktop.newPage();
+
+  const medirUm = async (corpo) => {
+    await desktop.setContent(html(corpo));
+    const [m] = await desktop.evaluate(medirDiagramasDaPagina);
+
+    return m;
+  };
+
+  // CT-B07, controle 1: texto de 16px; viewBox da largura desenhada (escala 1 na largura) e a
+  // ALTURA limitada por `max-height` a um quinto da natural (100 -> 20) => escala 0.2 => 3.2px.
+  const alturaLimita = await medirUm(
+    '<pre class="mermaid" data-processed="true"><svg viewBox="0 0 500 100" style="width:500px;height:auto;max-height:20px" xmlns="http://www.w3.org/2000/svg"><text style="font-size:16px" x="0" y="20">altura</text></svg></pre>',
+  );
+  // CT-B07, controle 2: a largura limita (viewBox 5x mais largo que o desenhado).
+  const larguraLimita = await medirUm(
+    '<pre class="mermaid" data-processed="true"><svg viewBox="0 0 500 100" style="width:100px;height:20px" xmlns="http://www.w3.org/2000/svg"><text style="font-size:16px" x="0" y="20">largura</text></svg></pre>',
+  );
+  // CT-B07, controle 3: 12px, escala 1 nos dois eixos.
+  const bordaDoPiso = await medirUm(
+    '<pre class="mermaid" data-processed="true"><svg viewBox="0 0 200 30" style="width:200px;height:30px" xmlns="http://www.w3.org/2000/svg"><text style="font-size:12px" x="0" y="20">piso</text></svg></pre>',
+  );
+
+  // CT-B08, controle 1: só um rótulo HTML de 8px em foreignObject, nenhum <text>.
+  const soHtml = await medirUm(
+    `<pre class="mermaid" data-processed="true"><svg viewBox="0 0 200 60" style="width:200px;height:60px" xmlns="http://www.w3.org/2000/svg"><foreignObject x="0" y="0" width="200" height="30"><div ${XHTML} style="font-size:8px"><span>rotulo</span></div></foreignObject></svg></pre>`,
+  );
+  // CT-B08, controle 2: um <text> de 16px e um rótulo HTML de 8px.
+  const textoEHtml = await medirUm(
+    `<pre class="mermaid" data-processed="true"><svg viewBox="0 0 200 60" style="width:200px;height:60px" xmlns="http://www.w3.org/2000/svg"><text style="font-size:16px" x="0" y="50">grande</text><foreignObject x="0" y="0" width="200" height="30"><div ${XHTML} style="font-size:8px"><span>rotulo</span></div></foreignObject></svg></pre>`,
+  );
+  // CT-B08, controle 3: SVG sem texto nenhum.
+  const semTexto = await medirUm(
+    '<pre class="mermaid" data-processed="true"><svg viewBox="0 0 200 60" style="width:200px;height:60px" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="20"/></svg></pre>',
+  );
+
+  await contextoDesktop.close();
+
+  const px = (m) => m.fonteEfetivaMinima?.toFixed(1);
+
+  console.log(
+    `[CT-B07] controles - altura limita: ${px(alturaLimita)} px; largura limita: ${px(larguraLimita)} px; borda do piso: ${px(bordaDoPiso)} px`,
+  );
+  console.log(
+    `[CT-B08] controles - so rotulo HTML de 8px: ${px(soHtml)} px; <text> 16px + HTML 8px: ${px(textoEHtml)} px; ` +
+      `SVG sem texto reprova: ${avaliarTextos(semTexto).semTexto}`,
+  );
+
+  const quase = (valor, alvo) => Math.abs((valor ?? 0) - alvo) <= 0.1;
+
+  if (!quase(alturaLimita.fonteEfetivaMinima, 3.2) || !avaliarTextos(alturaLimita).abaixoDoPiso) {
+    violacoes.push(`[CT-B07] controle (altura limita) — esperava reprovar nomeando 3.2px, mediu ${alturaLimita.fonteEfetivaMinima}`);
+  }
+
+  if (!quase(larguraLimita.fonteEfetivaMinima, 3.2) || !avaliarTextos(larguraLimita).abaixoDoPiso) {
+    violacoes.push(`[CT-B07] controle (largura limita) — esperava reprovar nomeando 3.2px, mediu ${larguraLimita.fonteEfetivaMinima}`);
+  }
+
+  if (avaliarTextos(bordaDoPiso).abaixoDoPiso || !quase(bordaDoPiso.fonteEfetivaMinima, 12)) {
+    violacoes.push(`[CT-B07] controle (12px, escala 1) — esperava aceitar, mediu ${bordaDoPiso.fonteEfetivaMinima}`);
+  }
+
+  if (!quase(soHtml.fonteEfetivaMinima, 8) || !avaliarTextos(soHtml).abaixoDoPiso) {
+    violacoes.push(`[CT-B08] controle (so rotulo HTML de 8px) — esperava reprovar nomeando 8px, mediu ${soHtml.fonteEfetivaMinima}`);
+  }
+
+  if (!quase(textoEHtml.fonteEfetivaMinima, 8) || !avaliarTextos(textoEHtml).abaixoDoPiso) {
+    violacoes.push(`[CT-B08] controle (<text> 16px + HTML 8px) — esperava reprovar nomeando 8px, mediu ${textoEHtml.fonteEfetivaMinima}`);
+  }
+
+  if (!avaliarTextos(semTexto).semTexto) {
+    violacoes.push('[CT-B08] controle (SVG sem texto) — esperava reprovar por SVG sem texto medido, e aceitou');
+  }
+
+  // CT-B09, controles: `pre.mermaid` com `width: max-content` (o bloco cresce com o SVG) dentro da
+  // coluna com `overflow-x` que corta — a borda direita do bloco passa da coluna.
+  const contextoCelular = await navegador.newContext({ viewport: { width: 390, height: 844 } });
+  const celular = await contextoCelular.newPage();
+  const colunaComCorte = {};
+
+  for (const corte of ['hidden', 'clip']) {
+    await celular.setContent(
+      html(
+        `<div class="sl-markdown-content" style="overflow-x:${corte};width:300px"><pre class="mermaid" data-processed="true" style="width:max-content"><svg viewBox="0 0 2000 100" style="width:2000px;height:100px" xmlns="http://www.w3.org/2000/svg"><text style="font-size:16px" x="0" y="20">largo</text></svg></pre></div>`,
+      ),
+    );
+    const [m] = await celular.evaluate(medirDiagramasDaPagina);
+    colunaComCorte[corte] = avaliarColuna(m);
+  }
+
+  await contextoCelular.close();
+
+  console.log(
+    `[CT-B09] controles - max-content + overflow-x:hidden reprova: ${colunaComCorte.hidden.length > 0}; ` +
+      `max-content + overflow-x:clip reprova: ${colunaComCorte.clip.length > 0}`,
+  );
+
+  for (const corte of ['hidden', 'clip']) {
+    if (!colunaComCorte[corte].some((motivo) => motivo.includes('passa da coluna'))) {
+      violacoes.push(`[CT-B09] controle (max-content + overflow-x:${corte}) — esperava reprovar: a borda direita do bloco passa da coluna, e aceitou`);
+    }
+  }
+}
+
 await conferirControlesDeLegibilidadeERolagem();
+await conferirControlesDaMedida();
 await conferirLegibilidadeERolagem();
 
 await navegador.close();

@@ -125,7 +125,7 @@ or `--force` (`app/Console/Commands/KitTenancy.php:confirmarDestruicao:143`), `K
 `.env` (`app/Console/Commands/KitTenancy.php:ligarFlagNoEnv:165`,
 `app/Support/AtivadorDeTenancy.php:escreverEnv:35`), `permission.teams` turned on per tenant
 (`app/Console/Commands/KitTenancy.php:ligarPapeisPorTenant:172`,
-`app/Support/AtivadorDeTenancy.php:ligarPapeisPorTenant:71`), `migrate:fresh --seed` —
+`app/Support/AtivadorDeTenancy.php:ligarPapeisPorTenant:66`), `migrate:fresh --seed` —
 **destructive** — followed by a schema check
 (`app/Console/Commands/KitTenancy.php:recriarBanco:179`, `:migrate:fresh:187`,
 `:conferirSchema:189`, defined at `:198`) and, only with `--demo`, the demo scenario

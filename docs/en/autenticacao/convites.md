@@ -89,10 +89,10 @@ accDescr: Whoever invites sends the link through the queue, the scheduler remind
   end
   alt no account with the invited e-mail (new account)
     convidado_novo->>convite: aceitar(): sets their own password
-    convite->>convidado_novo: born verified, with the role, linked to the invitation's organization when it has a tenant_id
+    convite->>convidado_novo: born verified, with the role, linked to the invitation's organization, if it has a tenant_id (KIT_TENANCY)
   else existing account (offer)
     convidado_existente->>convite: aceitarComoUsuarioExistente()
-    convite->>convidado_existente: gets the role in the invitation's organization when it has a tenant_id, previous access untouched
+    convite->>convidado_existente: gets the role in the invitation's organization, if it has a tenant_id (KIT_TENANCY), previous access untouched
   else decline (requires KIT_TENANCY)
     convidado_existente->>convite: recusar()
   end

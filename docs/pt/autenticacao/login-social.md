@@ -142,10 +142,11 @@ sequenceDiagram
 accTitle: Retorno do login social
 accDescr: Os desfechos do retorno de um provedor social — recusas, indisponibilidade, confirmação de vínculo, aprovação pendente e o destino final por conta nova ou existente.
   participant visitante as Visitante
-  participant provedor as Provedor OAuth (provedor social)
+  participant provedor as Provedor OAuth
   participant controller as LoginSocialController
   participant vinculo as VinculoSocial
   participant email_fila as E-mail (fila)
+  note over provedor: ligado por provedor: KIT_SOCIALITE_GOOGLE, KIT_SOCIALITE_GITHUB, KIT_SOCIALITE_LINKEDIN ou KIT_SOCIALITE_X
   visitante->>provedor: redirect
   provedor->>controller: retorno()
   alt sem e-mail, ou e-mail não verificado no provedor

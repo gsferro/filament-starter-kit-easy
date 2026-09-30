@@ -1284,7 +1284,7 @@ const ROTULO_TRACO_DE_FLUXO = '--\s+"?([^"\n-]+?)"?\s*';
 
 /** O desenho de um nó (a forma logo depois do ID: `["..."]`, `{"..."}`, `(["..."])`, etc.), quando
  * houver — usado para PULAR o desenho ao procurar a próxima aresta na mesma linha. */
-const FORMA_DE_NO_DE_FLUXO = '(?:\(\[[^\]\n]*\]\)|\[\([^\)\n]*\)\]|\[[^\]\n]*\]|\{[^}\n]*\}|\([^\)\n]*\))?';
+const FORMA_DE_NO_DE_FLUXO = '(?:\(\([^\)\n]*\)\)|\{\{[^}\n]*\}\}|\(\[[^\]\n]*\]\)|\[\([^\)\n]*\)\]|\[[^\]\n]*\]|\{[^}\n]*\}|\([^\)\n]*\))?';
 
 /**
  * Existe uma aresta DIRETA $de -> $para num bloco `flowchart`/`stateDiagram-v2`, em QUALQUER forma
@@ -1300,13 +1300,13 @@ const FORMA_DE_NO_DE_FLUXO = '(?:\(\[[^\]\n]*\]\)|\[\([^\)\n]*\)\]|\[[^\]\n]*\]|
  */
 function existeArestaDeFluxo(string $bloco, string $de, string $para): bool
 {
-    $comRotuloDepois = SETA_DE_FLUXO.'\s*(?:\|[^|\n]*\|\s*)?';
-    $comRotuloEntre  = ROTULO_TRACO_DE_FLUXO.SETA_DE_FLUXO.'\s*';
+    foreach (arestasDeFluxo($bloco) as $aresta) {
+        if ($aresta['de'] === $de && $aresta['para'] === $para) {
+            return true;
+        }
+    }
 
-    return (bool) preg_match(
-        '/\b'.preg_quote($de, '/').'\b'.FORMA_DE_NO_DE_FLUXO.'\s*(?:'.$comRotuloDepois.'|'.$comRotuloEntre.')'.preg_quote($para, '/').'\b/',
-        $bloco,
-    );
+    return false;
 }
 
 /**
@@ -1348,49 +1348,82 @@ function rotulosDeNoDeFluxo(string $bloco): array
 
 /**
  * Todas as arestas de um bloco `flowchart`, NA ORDEM em que aparecem, com o rótulo quando houver
- * (`-->|"rótulo"|` ou `-- rótulo -->`) — uma cadeia `A --> B --> C` vira dois elos. Ignora linhas
- * de metadado (`accTitle`/`accDescr`/`classDef`/`class`/`style`/`subgraph`/`end`/comentário `%%`).
- * Usado quando é preciso achar arestas SEM saber os dois IDs de antemão (ex. o fato do DG-03,
- * RD2-09) — quando os dois IDs já são conhecidos, `existeArestaDeFluxo()` é mais simples.
+ * (`-->|"rótulo"|` ou `-- rótulo -->`), e com o SENTIDO que o Mermaid desenha (R65, CT-140):
+ *
+ *  - uma cadeia `A --> B --> C` vira dois elos (A → B, B → C), nunca A → C;
+ *  - o `&` expande o produto: `A & D --> B & C` são quatro arestas;
+ *  - a seta com `<` na origem (`<-->`, `<==>`, `<-.->`) é bidirecional: as duas direções;
+ *  - a seta dentro do rótulo de um nó (`a["A --> c"]`) ou de uma aresta (`-->|"x --> c"|`) é
+ *    texto, e não aresta;
+ *  - a linha que começa com `%%` é comentário — o Mermaid a tira do texto antes do lexer
+ *    (`site/node_modules/mermaid/dist/mermaid.core.mjs:cleanupComments:967`).
+ *
+ * Ignora também as linhas de metadado (`accTitle`/`accDescr`/`classDef`/`class`/`style`/
+ * `subgraph`/`end`). Quando os dois IDs são conhecidos, `existeArestaDeFluxo()` é só esta função
+ * com um `foreach`.
  *
  * @return list<array{de: string, para: string, rotulo: ?string}>
  */
 function arestasDeFluxo(string $bloco): array
 {
-    $rotuloPipe  = SETA_DE_FLUXO.'\s*\|\s*"?([^"|]*)"?\s*\|';
-    $rotuloTraco = ROTULO_TRACO_DE_FLUXO.SETA_DE_FLUXO;
-    $arestas     = [];
+    $ligacao  = '/^(?:'.SETA_DE_FLUXO.'\s*\|\s*"?([^"|]*)"?\s*\||'.ROTULO_TRACO_DE_FLUXO.SETA_DE_FLUXO.'|'.SETA_DE_FLUXO.')/';
+    $lerGrupo = static function (string $resto): ?array {
+        $ids = [];
+
+        while (preg_match('/^\s*([A-Za-z0-9_]+)\s*'.FORMA_DE_NO_DE_FLUXO.'\s*/', $resto, $m) === 1) {
+            $ids[] = $m[1];
+            $resto = substr($resto, strlen($m[0]));
+
+            if (preg_match('/^&\s*/', $resto, $amp) !== 1) {
+                break;
+            }
+
+            $resto = substr($resto, strlen($amp[0]));
+        }
+
+        return $ids === [] ? null : [$ids, $resto];
+    };
+
+    $arestas = [];
 
     foreach (explode("\n", $bloco) as $linha) {
         $linha = trim($linha);
 
         if ($linha === ''
-            || preg_match('/^(%%|flowchart|graph|stateDiagram|erDiagram|sequenceDiagram|accTitle|accDescr|classDef|class\s|style\s|state\s|note\s|linkStyle\s|subgraph|end$)/i', $linha) === 1
+            || preg_match('/^(%%|(?:flowchart|graph|stateDiagram|erDiagram|sequenceDiagram|accTitle|accDescr|classDef|class|style|state|note|linkStyle|subgraph)\b|end$)/i', $linha) === 1
             || preg_match('/'.SETA_DE_FLUXO.'/', $linha) !== 1
         ) {
             continue;
         }
 
-        $resto   = $linha;
-        $deAtual = null;
+        $grupo = $lerGrupo($linha);
 
-        while (preg_match('/^\s*([A-Za-z0-9_]+)\s*'.FORMA_DE_NO_DE_FLUXO.'\s*(?:'.$rotuloPipe.'|'.$rotuloTraco.'|'.SETA_DE_FLUXO.')/', $resto, $m) === 1) {
-            $de     = $deAtual ?? $m[1];
-            $rotulo = match (true) {
-                ($m[2] ?? '') !== '' => $m[2],
-                ($m[3] ?? '') !== '' => $m[3],
-                default              => null,
-            };
+        while ($grupo !== null) {
+            [$origens, $resto] = $grupo;
 
-            $resto = substr($resto, strlen($m[0]));
-
-            if (preg_match('/^\s*([A-Za-z0-9_]+)\s*'.FORMA_DE_NO_DE_FLUXO.'/', $resto, $mPara) !== 1) {
+            if (preg_match($ligacao, $resto, $mLigacao) !== 1) {
                 break;
             }
 
-            $arestas[] = ['de' => $de, 'para' => $mPara[1], 'rotulo' => $rotulo !== null ? trim($rotulo) : null];
-            $deAtual   = $mPara[1];
-            $resto     = substr($resto, strlen($mPara[0]));
+            $rotulo         = trim(($mLigacao[1] ?? '') !== '' ? $mLigacao[1] : ($mLigacao[2] ?? ''));
+            $bidirecional   = str_starts_with($mLigacao[0], '<');
+            $grupoDoDestino = $lerGrupo(substr($resto, strlen($mLigacao[0])));
+
+            if ($grupoDoDestino === null) {
+                break;
+            }
+
+            foreach ($origens as $origem) {
+                foreach ($grupoDoDestino[0] as $destino) {
+                    $arestas[] = ['de' => $origem, 'para' => $destino, 'rotulo' => $rotulo !== '' ? $rotulo : null];
+
+                    if ($bidirecional) {
+                        $arestas[] = ['de' => $destino, 'para' => $origem, 'rotulo' => $rotulo !== '' ? $rotulo : null];
+                    }
+                }
+            }
+
+            $grupo = $grupoDoDestino;
         }
     }
 
@@ -1455,13 +1488,15 @@ function relacoesDeEr(string $bloco): array
  * As formas de seta de `sequenceDiagram` reconhecidas (R57, RD3-05/QA-05): sólida sem ponta
  * (`->`), tracejada sem ponta (`-->`), sólida com ponta (`->>`), tracejada com ponta (`-->>`),
  * assíncrona sólida (`-)`) e tracejada (`--)`), com X sólida (`-x`) e tracejada (`--x`), e as duas
- * bidirecionais (`<<->>`, `<<-->>`) — espelha o lexer de sequência do Mermaid 11.17.2
+ * bidirecionais (`<<->>`, `<<-->>`), mais as meias-setas que o lexer aceita (R57, CT-142: `-|\`,
+ * `-|/`, `-\\`, `-//` e as tracejadas `--|\`, `--|/`, `--\\`, `--//`) — espelha o lexer de sequência
+ * do Mermaid 11.17.2
  * (`site/node_modules/mermaid/dist/chunks/mermaid.core/sequenceDiagram-WJ2MYXX4.mjs:rules`). A
  * ordem das alternativas importa: a forma de DOIS caracteres de ponta (`>>`) vem antes da de UM
  * (`>`), senão `-->>` seria lida como `-->` e sobraria um `>` solto; o mesmo vale para bidirecional
  * antes da forma simples.
  */
-const SETA_DE_SEQUENCIA = '(?:<<-{1,2}>>|-{1,2}>>|-{1,2}x|-{1,2}\)|-{1,2}>)';
+const SETA_DE_SEQUENCIA = '(?:<<-{1,2}>>|-{1,2}>>|-{1,2}x|-{1,2}\)|-{1,2}\|(?:\\\\|\/)|-{1,2}(?:\\\\{2}|\/{2})|-{1,2}>)';
 
 /**
  * As mensagens de um bloco `sequenceDiagram`, NA ORDEM em que aparecem: qualquer forma de
@@ -2177,4 +2212,178 @@ function assinaturaDoRodape(string $html): string
     $texto = preg_replace('~\s+~', ' ', $texto) ?? $texto;
 
     return trim($texto);
+}
+
+/*
+|--------------------------------------------------------------------------
+| DG-03 — leitura do grafo de decisão e caminhada pelo predicado REAL
+|--------------------------------------------------------------------------
+|
+| Aqui, e não em tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php, porque dois arquivos os usam
+| (CT-14 e CT-98 no Tenancy; CT-71 no Kit, que caminha o DG-03 para a conta que acumula papéis) —
+| `.ai/rules/testes.md` §"Helper de teste usado por mais de um arquivo vive em tests/Pest.php".
+*/
+
+/**
+ * Nós (id => rótulo) e arestas de um bloco Mermaid `flowchart`/`graph`.
+ *
+ * Convenção assumida: um "shape" de nó (`id[Texto]`, `id(Texto)`, `id{Texto}`,
+ * `id{{Texto}}`, `id((Texto))`, `id([Texto])`, `id[[Texto]]`) pode aparecer em QUALQUER linha —
+ * o rótulo de um id é lido da primeira vez que ele aparece com shape, em lugar nenhum
+ * específico. O rótulo de uma ARESTA vem do `-->|Rótulo|` entre as duas pontas.
+ *
+ * @return array{nos: array<string, string>, arestas: list<array{de: string, para: string, rotulo: ?string, linha: int}>}
+ */
+function grafoDoFluxo(string $bloco): array
+{
+    $nos = [];
+
+    preg_match_all(
+        '/\b([A-Za-z0-9_]+)\s*(?|\{\{\s*(.*?)\s*\}\}|\(\(\s*(.*?)\s*\)\)|\(\[\s*(.*?)\s*\]\)|\[\[\s*(.*?)\s*\]\]|\[\s*(.*?)\s*\]|\(\s*(.*?)\s*\)|\{\s*(.*?)\s*\})/',
+        $bloco,
+        $achados,
+        PREG_SET_ORDER,
+    );
+
+    foreach ($achados as $achado) {
+        if (! isset($nos[$achado[1]])) {
+            $nos[$achado[1]] = trim($achado[2], " \t\"'");
+        }
+    }
+
+    $arestas = [];
+
+    foreach (explode("\n", $bloco) as $i => $linha) {
+        if (preg_match(
+            '/^\s*([A-Za-z0-9_]+)\s*(?:\{\{.*?\}\}|\(\(.*?\)\)|\(\[.*?\]\)|\[\[.*?\]\]|\[.*?\]|\(.*?\)|\{.*?\})?\s*(?:--[-.]*>|==>)\s*(?:\|([^|]*)\|)?\s*([A-Za-z0-9_]+)/',
+            $linha,
+            $m,
+        ) === 1) {
+            $arestas[] = [
+                'de'     => $m[1],
+                'para'   => $m[3],
+                'rotulo' => ($m[2] ?? '') !== '' ? trim($m[2], " \t\"'") : null,
+                'linha'  => $i + 1,
+            ];
+        }
+    }
+
+    foreach ($arestas as $aresta) {
+        $nos[$aresta['de']] ??= $aresta['de'];
+        $nos[$aresta['para']] ??= $aresta['para'];
+    }
+
+    return ['nos' => $nos, 'arestas' => $arestas];
+}
+
+/**
+ * Executa um grafo de DECISÃO (DG-03) a partir do nó sem aresta de entrada, avaliando cada nó
+ * pelo PREDICADO REAL (nunca por comparação textual de ordem — mata R7.M5), e devolve o rótulo
+ * terminal normalizado ("entra"/"nega").
+ *
+ * @param  array{nos: array<string, string>, arestas: list<array{de: string, para: string, rotulo: ?string, linha: int}>}  $grafo
+ * @param  callable(string): ?bool  $avaliar  null quando o texto do nó não é uma pergunta reconhecida
+ *
+ * @throws RuntimeException quando o grafo não tem a forma esperada (sem início, laço, pergunta
+ *                          não reconhecida ou aresta sem rótulo Sim/Não do lado decidido)
+ */
+function resultadoDoFluxo(array $grafo, callable $avaliar): string
+{
+    $comEntrada = array_unique(array_column($grafo['arestas'], 'para'));
+    $atual      = null;
+
+    foreach (array_keys($grafo['nos']) as $id) {
+        if (! in_array($id, $comEntrada, true)) {
+            $atual = $id;
+
+            break;
+        }
+    }
+
+    if ($atual === null) {
+        throw new RuntimeException('DG-03: nenhum nó sem aresta de entrada — não há por onde começar a caminhada.');
+    }
+
+    $visitados = [];
+
+    while (true) {
+        if (isset($visitados[$atual])) {
+            throw new RuntimeException("DG-03: laço encontrado no nó '{$atual}'.");
+        }
+
+        $visitados[$atual]  = true;
+        $texto              = $grafo['nos'][$atual] ?? $atual;
+
+        if (preg_match('/\bentra\b/i', $texto) === 1) {
+            return 'entra';
+        }
+
+        if (preg_match('/\bnega\b/i', $texto) === 1) {
+            return 'nega';
+        }
+
+        $saidas = array_values(array_filter($grafo['arestas'], static fn (array $a): bool => $a['de'] === $atual));
+
+        if ($saidas === []) {
+            throw new RuntimeException("DG-03: nó '{$texto}' ({$atual}) não é terminal (\"entra\"/\"nega\") e não tem aresta de saída.");
+        }
+
+        if (count($saidas) === 1) {
+            $atual = $saidas[0]['para'];
+
+            continue;
+        }
+
+        $resultado = $avaliar($texto);
+
+        if ($resultado === null) {
+            throw new RuntimeException("DG-03: pergunta não reconhecida pela guarda: \"{$texto}\".");
+        }
+
+        $alvo = null;
+
+        foreach ($saidas as $saida) {
+            $rotulo = mb_strtolower((string) $saida['rotulo']);
+            $ehSim  = str_contains($rotulo, 'sim') || str_contains($rotulo, 'yes') || $rotulo === 'true';
+            $ehNao  = str_contains($rotulo, 'não') || str_contains($rotulo, 'nao') || str_contains($rotulo, 'no') || $rotulo === 'false';
+
+            if (($resultado && $ehSim) || (! $resultado && $ehNao)) {
+                $alvo = $saida['para'];
+
+                break;
+            }
+        }
+
+        if ($alvo === null) {
+            $ladoEsperado = $resultado ? 'sim' : 'não';
+
+            throw new RuntimeException("DG-03: nó '{$texto}' não tem aresta rotulada para o lado \"{$ladoEsperado}\".");
+        }
+
+        $atual = $alvo;
+    }
+}
+
+/**
+ * O avaliador das perguntas de DG-03 — a MESMA ordem de `User::canAccessPanel()`
+ * (`app/Models/User.php:canAccessPanel:156`): indisponibilidade, pendência, master_global,
+ * contexto do painel (tenancy), papel do painel.
+ */
+function avaliadorDoDG03(User $user, Panel $painel): Closure
+{
+    return function (string $texto) use ($user, $painel): ?bool {
+        $t = mb_strtolower($texto);
+
+        return match (true) {
+            str_contains($t, 'indispon')                                           => $user->motivoDeIndisponibilidade() !== null,
+            str_contains($t, 'pendente')                                           => (bool) $user->aprovacao_pendente,
+            str_contains($t, 'master_global') || str_contains($t, 'master global') => $user->isMasterGlobal(),
+            str_contains($t, 'tenancy')                                            => $painel->hasTenancy(),
+            str_contains($t, 'papel') && str_contains($t, 'painel')                => $user->temPapelDoPainel(
+                $painel->getId(),
+                $painel->hasTenancy() ? null : (config('permission.teams') ? Tenant::CONTEXTO_GLOBAL : null),
+            ),
+            default => null,
+        };
+    };
 }

@@ -143,10 +143,11 @@ sequenceDiagram
 accTitle: Social login return
 accDescr: The outcomes of a social provider's return - refusals, unavailability, link confirmation, pending approval and the final destination for a new or an existing account.
   participant visitante as Visitor
-  participant provedor as OAuth provider (provedor social)
+  participant provedor as OAuth provider
   participant controller as LoginSocialController
   participant vinculo as VinculoSocial
   participant email_fila as E-mail (queue)
+  note over provedor: enabled per provider: KIT_SOCIALITE_GOOGLE, KIT_SOCIALITE_GITHUB, KIT_SOCIALITE_LINKEDIN or KIT_SOCIALITE_X
   visitante->>provedor: redirect
   provedor->>controller: retorno()
   alt no e-mail, or e-mail not verified at the provider
