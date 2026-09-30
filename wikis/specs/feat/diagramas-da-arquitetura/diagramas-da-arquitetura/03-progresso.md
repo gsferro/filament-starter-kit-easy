@@ -447,7 +447,12 @@ pegou o CT-05 do `MysqlNoDockerTest` contra o texto do DG-18 (`821d357`).
 
 <!-- Step 12, depois do veredito (requirement-to-rule). -->
 
-- {YYYY-MM-DD} — rota: {sessão principal | sub-agente com MCP herdado} — apresentados N · gravados N · recusados N · descartados no gate N · poda N
+- 2026-09-30 — rota: sessão principal (MCP do Boost: `search-docs` no gate 4, `record-rule`) — apresentados 2 · gravados 2 · recusados 0 · descartados no gate 4 · poda 0
+  - gravada (nova): "Chave do `.env` se grava por `SubstituicaoEmArquivo::definirNoEnv()` ou `definirLinhaNoEnv()`, nunca por regex própria" — `record-rule` em `app/Support/**` (`.ai/rules/support.md`, área nova) e em `app/Console/Commands/**` (`.ai/rules/commands.md`, área nova); origem ADR-10, RQ-50..RQ-53; sem `arch()` (a restrição não é expressável), prosa com a consequência; gate 4 por `search-docs` (só doc de leitura do `.env`)
+  - gravada (atualização de rule existente, por edição da seção): "Citação de teste se escreve pelo ID do CT entre aspas, nunca por `arquivo:it:N`" em `.ai/rules/specs.md` (`wikis/specs/**`); origem QA-21/QA-24 do gate
+  - descartados no gate: "helper compartilhado nasce no D0" (gate 4: `testes.md` já cobre); "todo bloco Mermaid com `accTitle`, chave e marcador" (gate 4: CT-01/CT-08/CT-129 garantem; gate 3: os blocos vizinhos mostram); "`.env` de teste sempre temporário" (gate 3: inferível dos irmãos); "`;` numa nota de `sequenceDiagram` quebra o site" (gate 4: CT-B01 e o job `site` garantem)
+  - poda: gatilho conferido — `app.md` (`app/**`) saiu `n.a.` em três features seguidas (rodape-coerente, validacao-de-release, diagramas); o mantenedor decidiu manter
+  - índice regenerado pelo `record-rule`: uma linha por arquivo, `support.md` e `commands.md` presentes; nenhuma seção duplicada
 ## Auditoria Pré-Implementação
 <!-- Saída dos steps 5 e 6, ANTES de escrever código. Não confundir com "Desvios do Plano",
      que é pós-implementação. -->

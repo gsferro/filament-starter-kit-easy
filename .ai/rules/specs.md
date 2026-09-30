@@ -48,3 +48,10 @@ Cite no formato `{path}:{símbolo}:{linha}` e confira mecanicamente, sem lista: 
 Vale para citação em QUALQUER arquivo, não só na wiki: o mesmo defeito apareceu em comentário de `app/Providers/Filament/*.php`, `app/Support/*.php` e `resources/views/filament/*.blade.php`.
 
 O contraste que fecha o argumento: na mesma feature, o CT-35 afirma sobre a posição dos dois render hooks do menu do usuário e SOBREVIVEU ao bump sem uma edição, porque lê a blade do vendor e compara posições relativas (`strpos` de um hook contra o do `<x-filament::dropdown>`), não números. O teste se protegeu; a prosa ao lado dele, escrita no mesmo commit, não. Quando a afirmação vale uma citação, ela costuma valer um teste — e o teste não envelhece.
+
+## Citação de teste se escreve pelo ID do CT entre aspas, nunca por `arquivo:it:N`
+Para apontar um caso de teste, cite `tests/Kit/XTest.php:'[CT-105]':6223` — o ID do CT entre aspas é a chave, e a conferência acha a linha do `it('[CT-105] …`. Nunca `tests/Kit/XTest.php:it:6223`: `it` casa por substring em `with`, `str_starts_with` e `Substituicao`, então o `citacoes.sh` fica silencioso com a citação apontando o teste errado — e uma correção mecânica "pelo símbolo mais próximo" escolhe justamente essas linhas.
+
+Medido na feature `diagramas-da-arquitetura`: 64 citações `it:N` caíam em linha sem `it(` ou no `it()` de outro CT, com o script em exit 0, em dois ciclos seguidos do quality gate (QA-21 e QA-24). Na forma pelo ID, as 44 que existiam estavam todas certas.
+
+Vale também para o `06-relatorio-qa.md` e para docblock de teste que cite outro teste. Uma citação que aponte código de teste apagado vira referência histórica em prosa ("`arquivo`, `it`, linha N na data"), nunca a forma `arquivo:símbolo:linha`.
