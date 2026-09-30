@@ -74,7 +74,7 @@ the installation.
 sequenceDiagram
 %% DG-07
 accTitle: Invitation, from send to acceptance
-accDescr: Whoever invites sends the link through the queue, the scheduler reminds whoever has not answered yet, and acceptance follows one of two branches - a new account or an offer to an existing one - always linking the invitation's organization.
+accDescr: Whoever invites sends the link through the queue, the scheduler reminds whoever has not answered yet, and acceptance follows one of two branches - a new account or an offer to an existing one - linking the invitation's organization when it has one (tenant_id, only exists with KIT_TENANCY).
   participant quem_convida as Inviter (admin, or admin_app with KIT_TENANCY)
   participant convite as Convite
   participant fila as Queue
@@ -87,13 +87,13 @@ accDescr: Whoever invites sends the link through the queue, the scheduler remind
   loop daily at 08:00
     agendador->>convite: lembrar() (kit:convites-lembrar)
   end
-  alt no account with the invited e-mail (conta nova)
+  alt no account with the invited e-mail (new account)
     convidado_novo->>convite: aceitar(): sets their own password
-    convite->>convidado_novo: born verified, with the role, linked to the invitation's organization
-  else conta existente (existing account, offer)
+    convite->>convidado_novo: born verified, with the role, linked to the invitation's organization when it has a tenant_id
+  else existing account (offer)
     convidado_existente->>convite: aceitarComoUsuarioExistente()
-    convite->>convidado_existente: gets the role in the invitation's organization, previous access untouched
-  else decline
+    convite->>convidado_existente: gets the role in the invitation's organization when it has a tenant_id, previous access untouched
+  else decline (requires KIT_TENANCY)
     convidado_existente->>convite: recusar()
   end
 ```

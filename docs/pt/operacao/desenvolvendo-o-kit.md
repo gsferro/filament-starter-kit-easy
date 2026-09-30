@@ -111,7 +111,7 @@ O `reverb:start` entra pelo próprio pacote do Reverb
 flowchart LR
 %% DG-19
 accTitle: Segundo plano - composer dev x Docker Compose x agendador
-accDescr: O composer dev sobe servidor, fila, vite e reverb para desenvolvimento local; o Docker Compose sobe os mesmos papeis como containers, mais um container dedicado ao agendador do Laravel.
+accDescr: O composer dev sobe servidor, fila, vite e reverb para desenvolvimento local; o Docker Compose sobe os mesmos papéis como containers, mais um container dedicado ao agendador do Laravel.
   subgraph composer_dev ["composer dev"]
     serve["serve (php artisan serve)"]
     queue_listen["queue:listen (--queue=default)"]
@@ -128,7 +128,7 @@ accDescr: O composer dev sobe servidor, fila, vite e reverb para desenvolvimento
   subgraph agendador ["Agendador (routes/console.php)"]
     health_check["health:check - a cada 15 min"]
     convites_lembrar["kit:convites-lembrar - 08:00"]
-    purge["Podas de retencao - madrugada"]
+    purge["Podas de retenção - madrugada"]
   end
   scheduler_container --> health_check
   scheduler_container --> convites_lembrar

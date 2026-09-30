@@ -46,7 +46,7 @@ accDescr: The single login page (KIT_LOGIN_UNIFICADO) decides between going back
   participant visitante as Visitor
   participant tela_unificada as Single login screen (KIT_LOGIN_UNIFICADO)
   participant destino as DestinoAposLogin
-  participant escolha as Panel choice (escolha de painel)
+  participant escolha as Panel choice
   participant controller as EntrarNoPainelController
   visitante->>tela_unificada: credentials
   tela_unificada->>destino: urlPara(user)

@@ -4,7 +4,7 @@ description: "Twenty Mermaid diagrams show how the kit works today: architecture
 sidebar:
   order: 5
 ---
-Twenty Mermaid diagrams show how the kit works today: architecture, role-based access, authentication, AI, infrastructure, the data model and the kit's own lifecycle. Each one is guarded by an automated test (`tests/Kit/DiagramasDaArquiteturaTest.php`) that fails the moment the code stops matching what the diagram describes — none of them describes planned functionality.
+Twenty Mermaid diagrams show how the kit works today: architecture, role-based access, authentication, AI, infrastructure, the data model and the kit's own lifecycle. Each one is guarded by an automated test (`tests/Kit/DiagramasDaArquiteturaTest.php`, `tests/Kit/GuardasDosDiagramasTest.php` and, under multi-tenancy, `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`) that fails the moment the code stops matching what the diagram describes — none of them describes planned functionality.
 
 ## DG-01 — Layered architecture
 
@@ -75,7 +75,7 @@ accDescr: The kit's eight actors and the use cases each role reaches, inside the
     cu_login_social["Log in with social login (optional)"]
     cu_recuperar_senha["Reset password"]
     cu_cadastro["Sign up (optional)"]
-    cu_aceitar_convite["Accept/decline received invite"]
+    cu_aceitar_convite["Accept/decline received invite (declining requires KIT_TENANCY)"]
     cu_trocar_painel["Switch panel"]
     cu_2fa["Confirm 2FA"]
     cu_bloqueio["Lock/unlock session"]
@@ -196,20 +196,20 @@ accDescr: The kit's central entities and how they reference each other - the use
 | DG-01 | Layered architecture | This page |
 | DG-02 | Use cases by role | This page |
 | DG-03 | Panel access rule | This page |
-| DG-04 | Password + 2FA login | [Authentication](../../autenticacao/) |
-| DG-05 | Unified login | [Unified login](../../autenticacao/login-unificado/) |
+| DG-04 | Password login and second factor | [Authentication](../../autenticacao/) |
+| DG-05 | Unified login - destination by 0, 1 or N panels | [Unified login](../../autenticacao/login-unificado/) |
 | DG-06 | Social login return | [Social login](../../autenticacao/login-social/) |
-| DG-07 | Accepting an invite | [Invites](../../autenticacao/convites/) |
-| DG-08 | Account states | [User states](../../autenticacao/estados-de-usuario/) |
-| DG-09 | Invite states | [Invites](../../autenticacao/convites/) |
-| DG-10 | AI assistant in the session | [Authentication](../../autenticacao/) |
-| DG-11 | Assistant guardrails | [Feature roadmap](../../operacao/roteiro-de-features/) |
-| DG-12 | The /infra panel map | [Infrastructure trails](../../recursos/trilhas-de-infraestrutura/) |
+| DG-07 | Invitation, from send to acceptance | [Invites](../../autenticacao/convites/) |
+| DG-08 | User account states | [User states](../../autenticacao/estados-de-usuario/) |
+| DG-09 | Invitation states | [Invites](../../autenticacao/convites/) |
+| DG-10 | Authenticated session | [Authentication](../../autenticacao/) |
+| DG-11 | Assistant sequence | [Feature roadmap](../../operacao/roteiro-de-features/) |
+| DG-12 | Map of /infra: screen, source and who writes it | [Infrastructure trails](../../recursos/trilhas-de-infraestrutura/) |
 | DG-13 | Core entity-relationship diagram | This page |
-| DG-14 | Configuration precedence | [Kit settings](../../recursos/configuracoes-do-kit/) |
-| DG-15 | Installation (kit:install) | [Advanced installation](../../comecar/instalacao-avancada/) |
-| DG-16 | kit:update — the report | [Updating the project](../../comecar/atualizando-o-projeto/) |
-| DG-17 | Two delivery routes | [Updating the project](../../comecar/atualizando-o-projeto/) |
-| DG-18 | Containers by profile | [Advanced installation](../../comecar/instalacao-avancada/) |
-| DG-19 | Background (composer dev) | [Developing the kit](../../operacao/desenvolvendo-o-kit/) |
-| DG-20 | Request in /app/{tenant} | [Multi-tenancy](../../recursos/multi-tenancy/) |
+| DG-14 | Where configuration comes from | [Kit settings](../../recursos/configuracoes-do-kit/) |
+| DG-15 | Installation sequence | [Advanced installation](../../comecar/instalacao-avancada/) |
+| DG-16 | The kit:update flow | [Updating the project](../../comecar/atualizando-o-projeto/) |
+| DG-17 | The two delivery routes | [Updating the project](../../comecar/atualizando-o-projeto/) |
+| DG-18 | Containers by Docker profile | [Advanced installation](../../comecar/instalacao-avancada/) |
+| DG-19 | Background - composer dev x Docker Compose x scheduler | [Developing the kit](../../operacao/desenvolvendo-o-kit/) |
+| DG-20 | Request to /app/{tenant} | [Multi-tenancy](../../recursos/multi-tenancy/) |

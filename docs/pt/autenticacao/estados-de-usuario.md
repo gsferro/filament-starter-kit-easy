@@ -32,6 +32,7 @@ accDescr: Pendente aprova para Ativo (ou Inativo, se foi desativada antes); Ativ
   Excluida --> Inativo : restaurar [estava inativa]
   Excluida --> Pendente : restaurar [estava pendente]
   state "Excluída" as Excluida
+  note right of Pendente : só existe com KIT_REGISTRO_APROVACAO_MANUAL
 ```
 
 O rótulo "Pendente" esconde o `ativo`: uma conta pendente pode ser desativada sem deixar de ser
@@ -41,6 +42,7 @@ antes de Ativo (`app/Models/User.php:rotuloDaSituacao:501`, `:'Pendente':504`); 
 a pendência, sem tocar `ativo` (`app/Models/User.php:aprovar:520`, `:526`); `desativar()` recusa a
 própria conta e o último `master_global` ativo (`app/Models/User.php:desativar:285`,
 `:propria_conta:349`, `:ultimo_master_global:350`); a exclusão é lógica (`SoftDeletes`) e vence a
-exibição de Pendente/Ativo/Inativo (`app/Models/User.php:SoftDeletes:85`); `restaurar()` devolve o
-estado gravado antes da exclusão.
+exibição de Pendente/Ativo/Inativo (`app/Models/User.php:SoftDeletes:85`); `restore()` (nativo do
+`SoftDeletes`, disparado pela `RestoreAction` do `/admin`) devolve o estado gravado antes da
+exclusão.
 

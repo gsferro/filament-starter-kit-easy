@@ -71,7 +71,7 @@ administrador de uma organização não é credencial para administrar a instala
 sequenceDiagram
 %% DG-07
 accTitle: Convite, do envio ao aceite
-accDescr: Quem convida envia o link pela fila, o agendador lembra quem não respondeu, e o aceite segue um de dois ramos — conta nova ou oferta a conta existente — sempre ligando a organização do convite.
+accDescr: Quem convida envia o link pela fila, o agendador lembra quem não respondeu, e o aceite segue um de dois ramos — conta nova ou oferta a conta existente — ligando a organização do convite quando ele tem uma (tenant_id, só existe com KIT_TENANCY).
   participant quem_convida as Quem convida (admin, ou admin_app com KIT_TENANCY)
   participant convite as Convite
   participant fila as Fila
@@ -86,11 +86,11 @@ accDescr: Quem convida envia o link pela fila, o agendador lembra quem não resp
   end
   alt sem conta com o e-mail (conta nova)
     convidado_novo->>convite: aceitar(): define a própria senha
-    convite->>convidado_novo: nasce verificado, com o papel, vinculado à organização do convite
+    convite->>convidado_novo: nasce verificado, com o papel, vinculado à organização do convite quando ele tem tenant_id
   else conta existente (conta existente, oferta)
     convidado_existente->>convite: aceitarComoUsuarioExistente()
-    convite->>convidado_existente: ganha o papel na organização do convite, acessos anteriores intactos
-  else recusa
+    convite->>convidado_existente: ganha o papel na organização do convite quando ele tem tenant_id, acessos anteriores intactos
+  else recusa (exige KIT_TENANCY)
     convidado_existente->>convite: recusar()
   end
 ```

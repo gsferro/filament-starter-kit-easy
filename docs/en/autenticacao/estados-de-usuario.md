@@ -35,6 +35,7 @@ accDescr: Pending approves to Active (or Inactive, if it was deactivated before)
   state "Active" as Ativo
   state "Inactive" as Inativo
   state "Deleted" as Excluida
+  note right of Pendente : only exists with KIT_REGISTRO_APROVACAO_MANUAL
 ```
 
 The "Pending" label hides `ativo`: a pending account can be deactivated without stopping being
@@ -46,5 +47,6 @@ pending flag, without touching `ativo` (`app/Models/User.php:aprovar:520`, `:526
 refuses the own account and the last active `master_global`
 (`app/Models/User.php:desativar:285`, `:propria_conta:349`, `:ultimo_master_global:350`); deletion
 is logical (`SoftDeletes`) and overrides the Pending/Active/Inactive display
-(`app/Models/User.php:SoftDeletes:85`); `restaurar()` returns the state saved before deletion.
+(`app/Models/User.php:SoftDeletes:85`); `restore()` (native to `SoftDeletes`, triggered by the
+`/admin` `RestoreAction`) returns the state saved before deletion.
 

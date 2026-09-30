@@ -4,7 +4,7 @@ description: "Vinte diagramas Mermaid mostram como o kit funciona hoje: arquitet
 sidebar:
   order: 5
 ---
-Vinte diagramas Mermaid mostram como o kit funciona hoje: arquitetura, acesso por papel, autenticação, IA, infraestrutura, modelo de dados e o ciclo de vida do próprio kit. Cada um é guardado por um teste automatizado (`tests/Kit/DiagramasDaArquiteturaTest.php`) que falha quando o código deixar de bater com o que o diagrama descreve — nenhum diagrama aqui descreve funcionalidade planejada.
+Vinte diagramas Mermaid mostram como o kit funciona hoje: arquitetura, acesso por papel, autenticação, IA, infraestrutura, modelo de dados e o ciclo de vida do próprio kit. Cada um é guardado por um teste automatizado (`tests/Kit/DiagramasDaArquiteturaTest.php`, `tests/Kit/GuardasDosDiagramasTest.php` e, no modo multi-organização, `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`) que falha quando o código deixar de bater com o que o diagrama descreve — nenhum diagrama aqui descreve funcionalidade planejada.
 
 ## DG-01 — Arquitetura em camadas
 
@@ -75,7 +75,7 @@ accDescr: Os oito atores do kit e os casos de uso que cada papel alcança, dentr
     cu_login_social["Entrar com login social (opcional)"]
     cu_recuperar_senha["Recuperar senha"]
     cu_cadastro["Cadastrar-se (opcional)"]
-    cu_aceitar_convite["Aceitar/recusar convite recebido"]
+    cu_aceitar_convite["Aceitar/recusar convite recebido (recusar exige KIT_TENANCY)"]
     cu_trocar_painel["Trocar de painel"]
     cu_2fa["Confirmar 2FA"]
     cu_bloqueio["Bloquear/desbloquear sessão"]
@@ -196,20 +196,20 @@ O [GitDiagram](https://gitdiagram.com/gsferro/filament-starter-kit-easy) gerou u
 | DG-01 | Arquitetura em camadas | Nesta página |
 | DG-02 | Casos de uso por papel | Nesta página |
 | DG-03 | Regra de acesso ao painel | Nesta página |
-| DG-04 | Login por senha + 2FA | [Autenticação](../../autenticacao/) |
-| DG-05 | Login unificado | [Login unificado](../../autenticacao/login-unificado/) |
+| DG-04 | Login por senha e segundo fator | [Autenticação](../../autenticacao/) |
+| DG-05 | Login unificado — destino por 0, 1 ou N painéis | [Login unificado](../../autenticacao/login-unificado/) |
 | DG-06 | Retorno do login social | [Login social](../../autenticacao/login-social/) |
-| DG-07 | Aceite de convite | [Convites](../../autenticacao/convites/) |
-| DG-08 | Estados da conta | [Estados de usuário](../../autenticacao/estados-de-usuario/) |
+| DG-07 | Convite, do envio ao aceite | [Convites](../../autenticacao/convites/) |
+| DG-08 | Estados da conta do usuário | [Estados de usuário](../../autenticacao/estados-de-usuario/) |
 | DG-09 | Estados do convite | [Convites](../../autenticacao/convites/) |
-| DG-10 | Assistente de IA na sessão | [Autenticação](../../autenticacao/) |
-| DG-11 | Guardrails do assistente | [Roteiro de features](../../operacao/roteiro-de-features/) |
-| DG-12 | Mapa do painel /infra | [Trilhas de infraestrutura](../../recursos/trilhas-de-infraestrutura/) |
+| DG-10 | Sessão autenticada | [Autenticação](../../autenticacao/) |
+| DG-11 | Sequência do assistente de IA | [Roteiro de features](../../operacao/roteiro-de-features/) |
+| DG-12 | Mapa do /infra: tela, fonte e quem grava | [Trilhas de infraestrutura](../../recursos/trilhas-de-infraestrutura/) |
 | DG-13 | ER do núcleo | Nesta página |
-| DG-14 | Precedência de configuração | [Configurações do kit](../../recursos/configuracoes-do-kit/) |
-| DG-15 | Instalação (kit:install) | [Instalação avançada](../../comecar/instalacao-avancada/) |
-| DG-16 | kit:update — relatório | [Atualizando o projeto](../../comecar/atualizando-o-projeto/) |
-| DG-17 | Duas rotas de entrega | [Atualizando o projeto](../../comecar/atualizando-o-projeto/) |
-| DG-18 | Containers por profile | [Instalação avançada](../../comecar/instalacao-avancada/) |
-| DG-19 | Segundo plano (composer dev) | [Desenvolvendo o kit](../../operacao/desenvolvendo-o-kit/) |
+| DG-14 | De onde vem a configuração | [Configurações do kit](../../recursos/configuracoes-do-kit/) |
+| DG-15 | Sequência da instalação | [Instalação avançada](../../comecar/instalacao-avancada/) |
+| DG-16 | Fluxo do kit:update | [Atualizando o projeto](../../comecar/atualizando-o-projeto/) |
+| DG-17 | As duas rotas de entrega | [Atualizando o projeto](../../comecar/atualizando-o-projeto/) |
+| DG-18 | Containers por profile do Docker | [Instalação avançada](../../comecar/instalacao-avancada/) |
+| DG-19 | Segundo plano - composer dev x Docker Compose x agendador | [Desenvolvendo o kit](../../operacao/desenvolvendo-o-kit/) |
 | DG-20 | Requisição em /app/{tenant} | [Multi-tenancy](../../recursos/multi-tenancy/) |

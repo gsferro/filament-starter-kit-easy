@@ -22,7 +22,12 @@ Every screen in the `/infra` panel — the Resources themselves and the pages wh
 by another process — links to a real table or channel, never to a made-up writer. Backup is **not**
 tied to an active schedule: `Schedule::command('backup:run')` stays commented out in
 `routes/console.php:backup:run:141`, and only runs by hand, through the Command Center; health is
-the only one scheduled, every 15 minutes (`routes/console.php:health:check:29`).
+not the only one scheduled — `health:check` runs every 15 minutes
+(`routes/console.php:health:check:29`), and the same scheduler also purges the authentication log
+(`routes/console.php:'authentication-log:purge':32`), prunes exceptions
+(`routes/console.php:'model:prune':64`), cleans up old mail, import and export records
+(`routes/console.php:'kit:limpar-trilha-de-emails':93`) and reminds pending invitations
+(`routes/console.php:'kit:convites-lembrar':40`).
 
 ```mermaid
 flowchart TD

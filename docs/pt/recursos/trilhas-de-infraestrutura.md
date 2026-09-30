@@ -21,8 +21,12 @@ respondem cada uma dessas perguntas:
 Toda tela do painel `/infra` — as próprias Resources e as páginas cuja fonte é gravada por outro
 processo — liga a uma tabela ou canal real, nunca a um gravador inventado. O backup **não** está
 ligado a um agendamento ativo: `Schedule::command('backup:run')` continua comentado em
-`routes/console.php:backup:run:141`, e só roda a mão, pelo Command Center; o health é o único
-agendado, a cada 15 minutos (`routes/console.php:health:check:29`).
+`routes/console.php:backup:run:141`, e só roda a mão, pelo Command Center; o health não é o único
+agendado — o `health:check` roda a cada 15 minutos (`routes/console.php:health:check:29`), e o
+mesmo agendador ainda expurga a trilha de autenticação (`routes/console.php:'authentication-log:purge':32`),
+poda as exceções (`routes/console.php:'model:prune':64`), limpa e-mails, importações e exportações
+antigas (`routes/console.php:'kit:limpar-trilha-de-emails':93`) e lembra convites pendentes
+(`routes/console.php:'kit:convites-lembrar':40`).
 
 ```mermaid
 flowchart TD
