@@ -221,6 +221,9 @@
 - **RQ-28 (a senha gerada com a semeadura que não completou; idem, 2026-09-30)** — a senha foi gerada e gravada no `.env`, e o `db:seed` terminou com código diferente de zero: o banner imprime "Login inicial: … / {senha}" e manda trocar com `kit:admin`, que falha sem administrador, e logo abaixo o aviso manda rodar `db:seed`. O banner apresenta a senha como o login de agora, ou como a senha que o `db:seed` vai usar? (Q?11 do `04`, raia requisito)
   - **Assumido (P-47)**: nunca como login de um administrador que o banco não tem (falha fechado): a senha gerada é impressa — está no `.env` e é a única chance de anotá-la —, com o aviso de que o administrador ainda não foi criado e de que `php artisan db:seed` o cria com ela, sem `kit:admin` como próximo passo. O invariante das duas leituras é o CT-136; a direção (R55.M10) fica sem matador (L-18)
   - **Se negado**: o banner mantém o texto de hoje, e L-18 vira lacuna aceita
+- **RQ-50 (valor multilinha entre aspas já no `.env`; ciclo 2 do gate, QA-19, 2026-09-30)** — um `.env` editado à mão pode ter um valor entre aspas que ocupa mais de uma linha física, e o Dotenv o lê; a gravação do kit troca só a primeira linha física e o resto vira uma linha que o Dotenv recusa. A gravação precisa suportar esse valor? (Q?14 do `04`, raia requisito)
+  - **Assumido (P-48)**: não — valor multilinha entre aspas não é suportado pela gravação do kit: o kit nunca grava um (a quebra vira espaço, RQ-51), a entrada só nasce de edição à mão, e o que o Dotenv aceita ler não é o que o kit promete escrever. Sem cenário que a afirme (lacuna L-21 do `04`); o que vale nas duas leituras — o kit nunca produz valor multilinha — é o CT-117
+  - **Se negado**: a gravação passa a trocar o valor inteiro até a aspa que fecha, ou a recusar com mensagem, e a L-21 vira linha de R64
 - **Escalada ao mantenedor (ciclo 2, teto de rodadas)** — a 2ª revisão adversarial trouxe três achados estruturais (A2-01, A2-02, A2-03), e o fechamento trocou a técnica de duas regras: R12 passou de "estado × evento sobre o rótulo" a "situação concreta × evento", e R40 de "referência que existe" a "referência pela forma, com catálogo". A skill não permite 3ª rodada. As duas trocas ficam valendo como premissas (P-29..P-31) até a confirmação
 
 ## Adendo 1 — 2026-09-27
@@ -434,6 +437,30 @@ As opções escolhidas diziam, na pergunta:
 | RQ-50 | A gravação no `.env` troca toda linha ATIVA da chave e nenhuma linha comentada: qualquer leitor fica com o valor gravado | "A gravação troca todas as linhas ativas da chave e nenhuma comentada." | funcional | altera P-44 |
 | RQ-51 | Valor com quebra de linha vai ao `.env` com a quebra trocada por espaço, e o arquivo não ganha chave nova | "o teste afirma que o .env não ganha chave nova" | funcional | exceção escrita à P-44 |
 | RQ-52 | Quando a montagem do GIF dá certo e a publicação em `art/` falha, a saída do `kit:arte` nomeia a publicação ("não consegui publicar"), e não a montagem | "A mensagem diz "não consegui publicar"" | funcional | — |
+
+## Adendo 8 — 2026-09-30
+
+- **Fonte**: resposta do mantenedor à pergunta Q?9 (raia requisito, P-45), feita pela sessão com a recomendação e as duas opções depois do veredito do ciclo 2 do quality gate (QA-15); Q?10 e Q?11 foram feitas junto
+- **Fidelidade**: baixa — o mantenedor mandou seguir sem escolher uma opção; a sessão aplicou a recomendação que a pergunta trazia (opção 1) e deixa registrado que a decisão foi por omissão
+
+### Texto Original
+
+<!-- IMUTÁVEL. Pergunta como foi feita → resposta como foi dada. -->
+
+> "A decisão que destrava o ciclo 3 (Q?9, RQ-50): quando a chave só existe comentada no .env (o bloco # DB_* do .env.example, um # APP_URL= deixado para preencher), a gravação deve: 1. Descomentar no lugar (o comportamento de hoje e a P-45): o comentário que a RQ-50 protege é o que documenta ao lado de uma linha ativa, não o marcador de lugar do .env.example; mantém o [CT-19] do HostLocalTest verde. É a minha recomendação. 2. Manter o comentário e acrescentar a linha ativa no fim (a letra da RQ-50 lida sozinha): muda o .env de quem escolhe PostgreSQL/MySQL e exige reescrever o [CT-19]. Se puder, decida também Q?10 e Q?11 (…); as recomendações estão no 00 como P-46 e P-47."
+>
+> "continue"
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-53 | Sem nenhuma linha ativa da chave, a gravação no `.env` descomenta a primeira linha comentada no lugar; "nenhuma linha comentada" da RQ-50 vale para o comentário ao lado de uma linha ativa | "continue" (a opção 1 da pergunta, aplicada por omissão) | funcional | fecha a Q?9 / P-45; complementa RQ-50 |
+
+### Ambiguidades do adendo
+
+- "continue" não escolhe uma opção. A sessão leu como "siga com a recomendação" porque a pergunta a nomeava e o texto anterior já dizia que o código de hoje faz isso. **Se negado**: a gravação passa a manter o comentário e acrescentar a ativa no fim, o CT-139 troca a direção, e o `[CT-19]` do `HostLocalTest` (outra wiki) é reescrito
+- Q?10 e Q?11 (P-46, P-47) **continuam abertas**: a resposta não as tocou, e nenhuma direção delas é implementada; o gate as trata como teto, não como reprovação
 
 ## Fora de Escopo (declarado)
 

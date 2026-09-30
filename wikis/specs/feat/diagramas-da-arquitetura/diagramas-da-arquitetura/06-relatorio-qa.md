@@ -38,7 +38,7 @@
 ### QA-16 — Afirmações da wiki que o código contradiz ou que nenhum comando reproduz · Major · destino 1
 - **Dimensão**: L3/L6 · **Relacionado a**: QA-10 do ciclo 1, RQ-50, passo 26
 - **Observado** (cada linha diz o que foi medido agora):
-  - `01:1736-1738` (passo 26), sem marca: "o CT-118 prova que `definirNoEnv` troca só a primeira ocorrência da chave". O CT-118 afirma hoje "toda linha ativa" (`tests/Kit/CustomizadorDaInstalacaoTest.php:665`).
+  - `01:1736-1738` (passo 26), sem marca: "o CT-118 prova que `definirNoEnv` troca só a primeira ocorrência da chave". O CT-118 afirma hoje "toda linha ativa" (`tests/Kit/CustomizadorDaInstalacaoTest.php:'[CT-118]':658`).
   - `03:158` `[x]` QA-10: "só a primeira ocorrência da chave é trocada — CT-118 (`…:it:423`) … 75/75". É falso pela RQ-50. A linha 423 é um `if`, e o arquivo tem hoje 115 testes.
   - `03:212` `[x]`: "o ciclo 2 não toca `app/`, `routes/` nem `database/` (`git diff --stat` vazio)". `git diff --stat -- app/` mostra 4 arquivos e 96 linhas.
   - `03:215`: `grep -c "alterado em 2026-09-29" 04-casos-de-teste.md` dá **181**, não 165.
@@ -51,7 +51,7 @@
 
 ### QA-17 — Helper clonado com outro nome, de novo, contra a `.ai/rules/testes.md` · Major · destino 2
 - **Dimensão**: L4 · **Relacionado a**: QA-07 do ciclo 1 (mesma classe, instância nova do ciclo 2)
-- **Observado**: `textoSemAcentoESemCaixa()` (`tests/Kit/ResumoDoKitInstallTest.php:107`) e `normalizadoSemAcentoESemCaixa()` (`tests/Kit/CustomizadorDaInstalacaoTest.php:494`) têm o mesmo corpo, `mb_strtolower(Str::ascii($texto))`, e os dois nasceram neste delta. A rule diz "Nunca crie um clone com outro nome … Mova para `tests/Pest.php` e use uma só". O `03` marca a `testes.md` como "aplicada".
+- **Observado**: `textoSemAcentoESemCaixa()` (`tests/Kit/ResumoDoKitInstallTest.php`, linha 107 na data) e `normalizadoSemAcentoESemCaixa()` (`tests/Kit/CustomizadorDaInstalacaoTest.php`, linha 494 na data) têm o mesmo corpo, `mb_strtolower(Str::ascii($texto))`, e os dois nasceram neste delta. A rule diz "Nunca crie um clone com outro nome … Mova para `tests/Pest.php` e use uma só". O `03` marca a `testes.md` como "aplicada".
 - **Repro**: `grep -rn "mb_strtolower(Str::ascii" tests/`
 - **Destino**: 2 · **Ação exigida**: deixar uma função só em `tests/Pest.php` e trocar a linha da `testes.md` no `03`.
 
@@ -60,7 +60,7 @@
 - **Observado**:
   - DG-08 pt: "Pendente aprova para Ativo…"; DG-08 en: "Pending approves…" (`docs/{pt,en}/autenticacao/estados-de-usuario.md:23`).
   - DG-09: "Do Pendente, o convite vai a Aceito, Recusado ou Expirado" (`docs/pt/autenticacao/convites.md:113`, en `:117`).
-  - Nenhuma das três traz `KIT_REGISTRO`/`KIT_REGISTRO_APROVACAO_MANUAL` nem `KIT_TENANCY`. A `accDescr` do DG-07 ganhou a condição e o CT-129 a guarda (`tests/Kit/DiagramasDaArquiteturaTest.php:elementosOptInDeR58:1553`), mas a lista não inclui as do DG-08 e do DG-09. É o texto que o leitor de tela lê.
+  - Nenhuma das três traz `KIT_REGISTRO`/`KIT_REGISTRO_APROVACAO_MANUAL` nem `KIT_TENANCY`. A `accDescr` do DG-07 ganhou a condição e o CT-129 a guarda (`tests/Kit/DiagramasDaArquiteturaTest.php:elementosOptInDeR58:1561`), mas a lista não inclui as do DG-08 e do DG-09. É o texto que o leitor de tela lê.
 - **Ação exigida**: uma linha no R58/CT-129 pela `feature-test-design`, que nasce vermelha, e depois a correção pt/en.
 
 ### QA-19 — Valor multilinha entre aspas deixa o `.env` ilegível depois da gravação · Minor · destino 3
@@ -81,7 +81,7 @@
 
 ### QA-21 — A citação `arquivo:it:linha` não prova nada, e várias apontam o teste errado · Minor · destino 1 (+ nota para a skill)
 - **Dimensão**: L2
-- **Observado**: 38 das 95 citações distintas `*.php:it:N` de `01`–`05` caem numa linha sem `it(`. Exemplos: `})->with([`, docblock, `expect`. O `[CT-105]` é citado como `…DiagramasDaArquiteturaTest.php:it:5595` em `01:87`, `01:1662`, `03:196`, `04:32`, `04:479` e `04:4401`, mas a linha 5595 é o `it('[CT-85]…`, e o CT-105 está na 6221. O `citacoes.sh` sai com exit 0 porque aceita `it` como substring ("with", "str_starts_with"). Pelo `03:180`, a correção automática "pelo símbolo mais próximo" usou esse mesmo símbolo.
+- **Observado**: 38 das 95 citações distintas `*.php:it:N` de `01`–`05` caem numa linha sem `it(`. Exemplos: `})->with([`, docblock, `expect`. O `[CT-105]` é citado como `…DiagramasDaArquiteturaTest.php`, `it`, linha 5595 na data em `01:87`, `01:1662`, `03:196`, `04:32`, `04:479` e `04:4401`, mas a linha 5595 é o `it('[CT-85]…`, e o CT-105 está na 6221. O `citacoes.sh` sai com exit 0 porque aceita `it` como substring ("with", "str_starts_with"). Pelo `03:180`, a correção automática "pelo símbolo mais próximo" usou esse mesmo símbolo.
 - **Repro**: o laço `sed -n "${n}p" | grep -E "^\s*(it|test)\("` sobre `grep -ohE "[^ ]+\.php:it:[0-9]+"`.
 - **Ação exigida**: citar pelo ID (`'[CT-105]'`) e refazer as 38. Nota para a `feature-wiki`: o `citacoes.sh` precisa recusar símbolo que não seja identificador.
 
@@ -113,7 +113,7 @@
 | C | Matriz de permissão | ✅ | nenhuma superfície nova: o diff de `routes/`, `app/Http`, `app/Policies` e `config` é só o comentário de `routes/console.php` |
 | D | Observabilidade | ✅ | nenhum `Log::` novo (`grep -c` = 0); só saída de console, e o `.env` e o `config/` com o mesmo md5 antes e depois de cada execução |
 | E | Performance | ✅ | nenhum request novo; o custo é de build do site (69 páginas em 9,8 s) |
-| F | UX de erro | ✅ | o delta não muda mensagem do `kit:install`; "Não consegui publicar…" do `kit:arte` (`app/Console/Commands/KitArte.php:394`) nomeia a etapa (RQ-52). O que o banner diz no caso P-46/P-47 depende da resposta (teto) |
+| F | UX de erro | ✅ | o delta não muda mensagem do `kit:install`; "Não consegui publicar…" do `kit:arte` (`app/Console/Commands/KitArte.php:'Não consegui publicar':394`) nomeia a etapa (RQ-52). O que o banner diz no caso P-46/P-47 depende da resposta (teto) |
 | G | Tema e cor | ⏭️ parcial | `dark-mode.sh --mecanismo` exit 1 (Filament + JS); nível 1 exit 0; nível 2 pelo conferidor: CT-B02 e CT-B05/CT-B11 no escuro, 14,0 px; nível 3 sem MCP |
 | H | Acessibilidade | ✅ | `node verifica-acessibilidade.mjs 4399` exit 0: 96 páginas, nenhuma violação serious/critical; CT-B01 20/20 por idioma e tema; menor fonte efetiva 14,0 px (DG-13) nas 7 combinações; CT-B09 com 0 violações. Achado de texto alternativo: QA-18 |
 | I | Segurança | ✅ | `## Revisão do Diff (step 9)` com 68 linhas (60 achados, 8 rejeitados); eixo 9 não refeito sobre o que ele cobriu. O `app/` do Adendo 7 (`definirLinhaNoEnv` e 3 chamadores) não passou pelo step 9, então rodei o eixo 9 sobre ele: não se aplica (sem Livewire, rota, escopo nem 403). Além disso: sem mass assignment, upload nem `DB::raw` |

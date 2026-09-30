@@ -358,7 +358,7 @@ código, não cabem numa única asserção genérica sem perder precisão sobre 
 `tests/Kit/DiagramasDaArquiteturaTest.php` (arquivo novo) tem duas camadas:
 
 1. **Regras comuns, uma vez** — extrai todo bloco ```` ```mermaid ```` de `README.md`,
-   `README.en.md` e `docs/**/*.md` (reaproveitando `paginasDoSite($idioma)`, `tests/Pest.php:paginasDoSite:1008`,
+   `README.en.md` e `docs/**/*.md` (reaproveitando `paginasDoSite($idioma)`, `tests/Pest.php:paginasDoSite:1009`,
    já usada pelo `[CT-18]`/`[CT-19]`, somada aos dois READMEs — sem glob novo); para cada bloco
    confere `accTitle`+`accDescr` presentes, ausência de `%%{init`/`classDef` com cor, tipo fora da
    lista proibida (ADR-04/05). Roda uma vez, sobre a coleção inteira de blocos — não por diagrama.
@@ -391,7 +391,7 @@ Três condições tornam as duas camadas executáveis, e estavam implícitas:
 **Restrição de bootstrap**: o arquivo roda com `Tests\TestCase`, sem `permission.teams` e com o
 painel `app` sem tenancy; a metade "com tenancy" das guardas de DG-02, DG-03, DG-04 e DG-20 não
 cabe nele (o Pest não aceita dois `TestCase`s na mesma pasta). Ela vai para
-`tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` (`TenancyTestCase`, `tests/Pest.php:TenancyTestCase:82-85`),
+`tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` (`TenancyTestCase`, `tests/Pest.php:TenancyTestCase:83-86`),
 que só afirma o código — o lado do diagrama dessas metades é lido no arquivo `Kit`. *(alterado em 2026-09-29: o irmão também lê o DG-02, o DG-03 e o DG-09 — ver abaixo)*
 
 ### Alterações depois da implementação
@@ -444,7 +444,7 @@ que só afirma o código — o lado do diagrama dessas metades é lido no arquiv
 ### Referências
 
 - `tests/Kit/SiteDeDocumentacaoTest.php:'[CT-25]':1046` (precedente de guarda estrutural)
-- `tests/Pest.php:paginasDoSite:1008`, `tests/Pest.php:TenancyTestCase:82-85`
+- `tests/Pest.php:paginasDoSite:1009`, `tests/Pest.php:TenancyTestCase:83-86`
 - `tests/Kit/AcoesPinadasPorShaTest.php:skip:72` (padrão de `->skip`)
 - `.ai/rules/testes.md` (helper cruzado em `tests/Pest.php`)
 - Refina: ADR-04 (o que a camada comum confere)
