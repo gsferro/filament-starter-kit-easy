@@ -449,6 +449,12 @@ class KitArte extends Command
             $alturaMax         = max($alturaMax, $dimensoes[1]);
         }
 
+        // Nenhum quadro legível (ou medido em zero): não há referência de tamanho para
+        // completar — e `imagecreatetruecolor()` abaixo exige dimensões positivas.
+        if ($larguraMax < 1 || $alturaMax < 1) {
+            return;
+        }
+
         foreach ($quadros as $arquivo => [$largura, $altura]) {
             if ($largura === $larguraMax && $altura === $alturaMax) {
                 continue;
