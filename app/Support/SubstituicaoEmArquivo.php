@@ -117,9 +117,28 @@ final class SubstituicaoEmArquivo
             return false;
         }
 
+        /*
+         * (DV-12) O valor depois do `=` não pode ser `.*$`: numa chave com valor entre
+         * aspas ESPALHADO em várias linhas (`APP_NAME="linha1\nlinha2"`), o `.*` para na
+         * primeira quebra e a substituição deixa a continuação órfã no arquivo — e o
+         * `Dotenv::parse()` lança `InvalidFileException` na linha seguinte, derrubando o
+         * boot INTEIRO do app. O alternado reconhece os três formatos do Dotenv —
+         * aspas duplas, aspas simples e valor nu — e a classe negada dentro das aspas
+         * cruza `\n` de propósito (classe negada ignora o `/s`; é o que `parse()` do
+         * Dotenv aceita como valor multilinha). Um valor com aspa NÃO fechada cai no
+         * terceiro ramo (linha única): a substituição troca só a primeira linha, e o
+         * arquivo já era inválido antes mesmo de tocar nele.
+         *
+         * O terceiro ramo é `[^\n]*`, nunca `[^\r\n]*`: em arquivo CRLF o `.*` antigo
+         * consumia o `\r` junto com o valor (`.` só exclui `\n`), e `[^\r\n]*` parava
+         * ANTES dele — a linha deixava de casar inteira e a chave era anexada outra vez
+         * no fim do arquivo (o duplicado que o CT-17 mede).
+         */
+        $valorDeEnv = "(?:\"(?:[^\"\\\\]|\\\\.)*\"|'(?:[^'\\\\]|\\\\.)*'|[^\\n]*)";
+
         $conteudo = File::get($caminho);
         $nome     = preg_quote($chave, '/');
-        $ativa    = '/^[ \t]*(?:export[ \t]+)?'.$nome.'[ \t]*=.*$/m';
+        $ativa    = '/^[ \t]*(?:export[ \t]+)?'.$nome.'[ \t]*='.$valorDeEnv.'$/m';
 
         if (preg_match($ativa, $conteudo) === 1) {
             File::put($caminho, (string) preg_replace_callback($ativa, static fn (): string => $linha, $conteudo));
@@ -127,7 +146,7 @@ final class SubstituicaoEmArquivo
             return true;
         }
 
-        $comentada = '/^[ \t]*#[ \t]*(?:export[ \t]+)?'.$nome.'[ \t]*=.*$/m';
+        $comentada = '/^[ \t]*#[ \t]*(?:export[ \t]+)?'.$nome.'[ \t]*='.$valorDeEnv.'$/m';
 
         if (preg_match($comentada, $conteudo) === 1) {
             File::put($caminho, (string) preg_replace_callback($comentada, static fn (): string => $linha, $conteudo, 1));

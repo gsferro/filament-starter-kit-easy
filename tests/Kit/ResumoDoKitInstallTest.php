@@ -1,8 +1,12 @@
 <?php
 
 use App\Models\User;
+use App\Support\AdministradorDaInstalacao;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\SenhaDoAdministrador;
+use Database\Seeders\PapeisSeeder;
+use Database\Seeders\ShieldPermissionsSeeder;
+use Database\Seeders\UsuarioAdminSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Console\OutputStyle;
 use Illuminate\Support\Facades\Artisan;
@@ -132,15 +136,41 @@ function bannerELinhaDaSenha(string $saida): array
 }
 
 /**
+ * A posição do comando de semeadura num texto já normalizado: `migrate --seed` (a instrução
+ * do banco-não-populado, DV-01) ou `db:seed` (o aviso do seeder que não completou), o que
+ * vier primeiro — `false` quando nenhum dos dois existe.
+ */
+function posicaoDoComandoDeSeed(string $texto): int|false
+{
+    return preg_match('~migrate\s+--seed|db:seed~', $texto, $m, PREG_OFFSET_CAPTURE) === 1
+        ? $m[0][1]
+        : false;
+}
+
+/**
  * A instrução do banco não populado: em `$texto` (já normalizado), `KIT_ADMIN_PASSWORD` aparece
- * ANTES de `db:seed` — a posição da primeira ocorrência de cada um.
+ * ANTES do comando de seed (`migrate --seed` ou `db:seed`) — a posição da primeira
+ * ocorrência de cada um.
  */
 function chaveVemAntesDoSeed(string $texto): bool
 {
     $chave = mb_strpos($texto, 'kit_admin_password');
-    $seed  = mb_strpos($texto, 'db:seed');
+    $seed  = posicaoDoComandoDeSeed($texto);
 
     return $chave !== false && $seed !== false && $chave < $seed;
+}
+
+/**
+ * (DV-03) A instrução do banco-não-populado EXTRAÍDA de um texto já normalizado: de
+ * "defina kit_admin_password" até o fim do comando de seed. Comparar os dois textos pelo
+ * recorte — não só por propriedades soltas — é o que mata o mutante em que banner e resumo
+ * divergem na redação mantendo cada propriedade.
+ */
+function instrucaoBancoNaoPopuladoDe(string $texto): ?string
+{
+    return preg_match('~defina\s+kit_admin_password.*?migrate\s+--seed~', $texto, $m) === 1
+        ? $m[0]
+        : null;
 }
 
 /**
@@ -163,7 +193,7 @@ function marcaComoOpcional(string $texto): bool
 function chaveESeedLigadosPorOu(string $texto): bool
 {
     $chave = mb_strpos($texto, 'kit_admin_password');
-    $seed  = mb_strpos($texto, 'db:seed');
+    $seed  = posicaoDoComandoDeSeed($texto);
 
     if ($chave === false || $seed === false) {
         return false;
@@ -285,7 +315,7 @@ it('[RD3-01][RD3-04][CT-121] com --no-seed, o banner e o resumo dao a MESMA orie
     // A MESMA orientação nos dois lugares: a chave a definir, e o comando que só DEPOIS dela
     // semeia de verdade.
     expect($saida)->toContain('KIT_ADMIN_PASSWORD')
-        ->and($saida)->toContain('php artisan db:seed');
+        ->and($saida)->toContain('php artisan migrate --seed');
 
     // "kit:admin" falha sem administrador nenhum: não pode ser a instrução impressa para o
     // caso banco-não-populado, nem no banner nem no resumo (RD3-01).
@@ -303,11 +333,20 @@ it('[RD3-01][RD3-04][CT-121] com --no-seed, o banner e o resumo dao a MESMA orie
     $this->assertStringNotContainsString('impressa', $linha, 'a linha "Senha do administrador" ainda promete senha "impressa" com --no-seed (R56.M1)');
     $this->assertStringNotContainsString('a que voce definiu', $banner, 'o banner com --no-seed promete "a que voce definiu" para um administrador que nao existe (R56.M2)');
 
-    // "mandam definir KIT_ADMIN_PASSWORD e só então rodar php artisan db:seed", nos DOIS textos.
-    expect($banner)->toContain('php artisan db:seed')
-        ->and($linha)->toContain('php artisan db:seed')
-        ->and(chaveVemAntesDoSeed($banner))->toBeTrue('no banner, KIT_ADMIN_PASSWORD nao vem antes de db:seed')
-        ->and(chaveVemAntesDoSeed($linha))->toBeTrue('na linha, KIT_ADMIN_PASSWORD nao vem antes de db:seed');
+    // "mandam definir KIT_ADMIN_PASSWORD e só então rodar php artisan migrate --seed", nos DOIS textos.
+    expect($banner)->toContain('php artisan migrate --seed')
+        ->and($linha)->toContain('php artisan migrate --seed')
+        ->and(chaveVemAntesDoSeed($banner))->toBeTrue('no banner, KIT_ADMIN_PASSWORD nao vem antes do comando de seed')
+        ->and(chaveVemAntesDoSeed($linha))->toBeTrue('na linha, KIT_ADMIN_PASSWORD nao vem antes do comando de seed');
+
+    // DV-03 (RQ-44): a MESMA instrução, recorte por recorte — não duas propriedades soltas
+    // que passam mesmo quando os textos divergem no meio. Banner em ASCII, linha com acento:
+    // a igualdade é medida depois de `semAcentoESemCaixa()` nos dois lados.
+    $instrucaoDoBanner = instrucaoBancoNaoPopuladoDe($banner);
+    $instrucaoDaLinha  = instrucaoBancoNaoPopuladoDe($linha);
+
+    expect($instrucaoDoBanner)->not->toBeNull('o banner nao contem a instrucao completa (defina ... migrate --seed)')
+        ->and($instrucaoDoBanner)->toBe($instrucaoDaLinha, 'o banner e o resumo divergem na instrucao do banco-nao-populado (DV-03)');
 
     $this->assertStringNotContainsString('kit:admin', semAcentoESemCaixa($saida));
 })->group('kit');
@@ -598,4 +637,56 @@ it('[CT-149] duas instalacoes sem senha definida geram senhas diferentes, e cada
         ->and(senhaRelidaDoEnv($baseA))->toBe($impressaA)
         ->and(Hash::check($impressaB, $administradorB->password))->toBeTrue('o administrador de B nao autentica com S_B')
         ->and(Hash::check($impressaA, $administradorB->password))->toBeFalse('o administrador de B autentica com S_A');
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| DV-02 — reinstalação sobre administrador pré-existente: nada de gerar,
+| gravar ou imprimir uma senha que o seeder não usa
+|--------------------------------------------------------------------------
+| O `UsuarioAdminSeeder` sai cedo quando já existe `master_global` — decisão deliberada,
+| documentada nele. Então o `garantirSenhaDoAdministrador()` de uma reinstalação sobre um
+| `.env` vazio gravava uma senha NOVA no `.env` e o banner a imprimia, mas a credencial que
+| continua valendo é a do administrador que já estava lá — a impressa não autentica ninguém.
+| Registrado nas dívidas do PR #126 (issue #128).
+*/
+
+it('[DV-02] com administrador pre-existente, a reinstalacao nao gera, nao grava e nao imprime senha — e avisa sobre o padrao publicado', function (): void {
+    $base = diretorioDeInstalacaoDoKit();
+    config(['app.key' => '', 'kit.admin.password' => 'password']);
+
+    // O resquício da v0.39.1-: administrador semeado com o padrão publicado, .env vazio.
+    test()->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class, UsuarioAdminSeeder::class]);
+
+    $administrador = User::where('email', config('kit.admin.email'))->first();
+
+    expect($administrador)->not->toBeNull('o arranjo nao semeou o administrador')
+        ->and(AdministradorDaInstalacao::existe())->toBeTrue()
+        ->and(Hash::check('password', $administrador->password))->toBeTrue('o arranjo deveria deixar o administrador com a senha padrao');
+
+    $saida = rodarKitInstallDeVerdade(['--no-npm' => true, '--no-support' => true]);
+
+    ['banner' => $banner, 'linha' => $linha] = bannerELinhaDaSenha($saida);
+
+    // Nenhuma senha gerada: nem a tarefa no progresso, nem valor impresso no banner.
+    expect(semAcentoESemCaixa($saida))->not->toContain('gerando senha do administrador')
+        ->and(senhaImpressaNaSaida($saida))->toBeNull('a saida imprime uma senha que o seeder nao usou')
+        ->and(bannerImprimeSenha($banner))->toBeFalse()
+        ->and(bannerTemFormaDeSenhaImpressa($banner, (string) config('kit.admin.email')))->toBeFalse();
+
+    // O banner diz a verdade (senha inalterada) e o aviso sobre o padrão publicado aparece.
+    expect($banner)->toContain('um administrador ja existia')
+        ->and($banner)->toContain('nao foi alterada')
+        ->and(semAcentoESemCaixa($saida))->toContain('senha padrao publicada');
+
+    // O resumo não promete a que o usuário digitou nem a que o .env já tinha — é "inalterada".
+    expect($linha)->toContain('inalterada')
+        ->and($linha)->not->toContain('gerada')
+        ->and($linha)->not->toContain('impressa')
+        ->and($linha)->not->toContain('a que voce definiu');
+
+    // O .env continua sem a chave — nenhum valor morto foi gravado — e o administrador
+    // segue autenticando com a senha que já tinha.
+    expect(senhaRelidaDoEnv($base))->toBe('', 'a reinstalacao gravou uma senha morta no .env')
+        ->and(Hash::check('password', $administrador->refresh()->password))->toBeTrue('a reinstalacao mexeu na senha do administrador existente');
 })->group('kit');

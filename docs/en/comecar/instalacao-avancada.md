@@ -14,13 +14,21 @@ If you pick Postgres during installation, the `.env` already comes with the bloc
 
 ```bash
 docker compose up -d
+# set KIT_ADMIN_PASSWORD in the .env BEFORE seeding — without it the admin is born with the published password
+php artisan migrate --seed
+```
+
+Container already created and you changed the `.env` (a new `KIT_ADMIN_PASSWORD`, say)? `docker compose up -d` does **not** re-read the file — `env_file` is only loaded when the container is CREATED. For the value to actually land, recreate it:
+
+```bash
+docker compose up -d --force-recreate
 php artisan migrate --seed
 ```
 
 To switch after the installation, bring the containers up and copy the variables:
 
 ```bash
-docker compose up -d              # pgsql (with pgvector) + redis
+docker compose up -d --force-recreate   # pgsql (with pgvector) + redis, re-reading the .env
 # copy the database block from .env.docker into your .env
 php artisan migrate --seed
 ```

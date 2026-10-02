@@ -976,6 +976,15 @@ function fatosPorDg(): array
             $rotulos = rotulosDeNoDeFluxo($b);
 
             foreach (arestasDeFluxo($b) as $aresta) {
+                /*
+                 * (DV-04) O rótulo da ORIGEM também conta: um mutante que renomeie o nó
+                 * `caminhos_do_kit` para algo que mencione docs/ (ou desenhe outro nó de
+                 * inclusão "de docs") passava quando só o destino era conferido.
+                 */
+                if ($aresta['de'] === 'caminhos_do_kit' && preg_match('/\bdocs\b/i', $rotulos[$aresta['de']] ?? '') === 1) {
+                    return false;
+                }
+
                 if ($aresta['de'] === 'caminhos_do_kit' && preg_match('/\bdocs\b/i', $rotulos[$aresta['para']] ?? '') === 1) {
                     return false;
                 }
@@ -1073,6 +1082,12 @@ it('[CT-06] cada DG adulterado num fato do código é reprovado', function (stri
     ['DG-17',
         "flowchart LR\n  caminhos_do_kit --> fora_update[\"Fora: art, stubs\"]\n",
         "flowchart LR\n  caminhos_do_kit --> entrega_docs[\"docs/\"]\n",
+    ],
+    // DV-04: o mutante que esconde "docs" no rótulo da ORIGEM (não do destino) só é morto
+    // quando o fato confere os dois lados da aresta.
+    ['DG-17',
+        "flowchart LR\n  caminhos_do_kit --> fora_update[\"Fora: art, stubs\"]\n",
+        "flowchart LR\n  caminhos_do_kit[\"CAMINHOS_DO_KIT — inclui docs/\"] --> fora_update[\"Fora: art, stubs\"]\n",
     ],
     ['DG-18', "flowchart LR\n  mailpit[mail, full]\n", "flowchart LR\n  mailpit[sem profile]\n"],
 ]);
@@ -2257,11 +2272,17 @@ it('[CT-11] os casos de uso de cada papel batem com as permissões semeadas, sem
 
             $idCaso = idDoCasoDeUsoNoDg02()[$usoAusente] ?? null;
 
-            // Sem id de nó dedicado hoje: cai para o texto humano (controle antigo, mais fraco,
-            // mas não vazio — sem nó a checagem por id não tem o que comparar).
-            if ($idCaso === null) {
-                test()->assertStringNotContainsString("{$papel} --> {$usoAusente}", (string) $bloco['bloco'], "{$idioma}: {$papel} não deveria se ligar a \"{$usoAusente}\"");
+            /*
+             * Sem id fixado no mapa, procura o nó pelo RÓTULO do bloco publicado
+             * (DV-04/RD3-08): o fallback literal `{$papel} --> {$usoAusente}` procurava um
+             * id que nunca existiu no bloco real (`panel_user --> importar` é um TEXTO de
+             * tabela do doc, não uma aresta do DG-02 — arestas ligam ids, nunca o texto
+             * humano). Sem nó algum com esse rótulo, o caso de uso não está desenhado e a
+             * aresta não pode existir; com um nó achado, a aresta é conferida de verdade.
+             */
+            $idCaso ??= idDoNoComRotulo((string) $bloco['bloco'], $usoAusente);
 
+            if ($idCaso === null) {
                 continue;
             }
 
