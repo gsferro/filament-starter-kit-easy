@@ -971,6 +971,24 @@ it('[CT-151] a porta de gravacao do .env, por situacao da chave: o que muda no a
             "APP_ENV=local{$nl}APP_DEBUG=true{$eol}APP_NAME=\"Novo\"{$eol}",
             ['APP_ENV' => 'local', 'APP_DEBUG' => 'true', 'APP_NAME' => 'Novo'],
         ],
+        /*
+         * (DV-12) Valor entre aspas ESPALHADO em várias linhas: o `.*$` antigo trocava só a
+         * primeira linha física e deixava `linha2"` órfã — o Dotenv::parse() do "depois"
+         * lançava InvalidFileException e o app não subia. A substituição cobre o valor
+         * inteiro, uma única vez, e o arquivo que resta é válido.
+         */
+        'DV-12: valor multilinha em aspas duplas some inteiro, nao so a primeira linha' => [
+            "APP_NAME=\"linha1{$nl}linha2\"{$nl}APP_ENV=local", 'APP_NAME', 'APP_NAME="Novo"', true,
+            "APP_NAME=\"Novo\"{$nl}APP_ENV=local", ['APP_NAME' => 'Novo', 'APP_ENV' => 'local'],
+        ],
+        'DV-12: valor multilinha em aspas simples some inteiro tambem' => [
+            "APP_NAME='linha1{$nl}linha2'{$nl}APP_ENV=local", 'APP_NAME', 'APP_NAME="Novo"', true,
+            "APP_NAME=\"Novo\"{$nl}APP_ENV=local", ['APP_NAME' => 'Novo', 'APP_ENV' => 'local'],
+        ],
+        'DV-12: a chave seguinte na linha depois do multilinha nao e engolida' => [
+            "APP_NAME=\"linha1{$nl}linha2\"{$nl}DB_HOST=db", 'DB_HOST', 'DB_HOST=novo', true,
+            "APP_NAME=\"linha1{$nl}linha2\"{$nl}DB_HOST=novo", ['DB_HOST' => 'novo'],
+        ],
     ];
 })->group('kit');
 
@@ -1505,11 +1523,11 @@ it('[RD2-05][CT-120] a linha "Senha do administrador" do resumo diz o que o desf
     );
 
     $posicaoDaChave = strpos($texto, 'kit_admin_password');
-    $posicaoDoSeed  = strpos($texto, 'db:seed');
+    $posicaoDoSeed  = strpos($texto, 'migrate --seed');
 
     expect($posicaoDaChave)->not->toBeFalse('a instrucao nao manda definir KIT_ADMIN_PASSWORD')
-        ->and($posicaoDoSeed)->not->toBeFalse('a instrucao nao manda rodar db:seed')
-        ->and($posicaoDaChave)->toBeLessThan($posicaoDoSeed, 'KIT_ADMIN_PASSWORD deveria vir ANTES de db:seed: quem segue a primeira frase semeia "password"');
+        ->and($posicaoDoSeed)->not->toBeFalse('a instrucao nao manda rodar migrate --seed')
+        ->and($posicaoDaChave)->toBeLessThan($posicaoDoSeed, 'KIT_ADMIN_PASSWORD deveria vir ANTES de migrate --seed: quem segue a primeira frase semeia "password"');
     $this->assertStringNotContainsString('kit:admin', $texto, 'a instrucao cita kit:admin, que falha sem administrador para atualizar');
 })->with([
     'G e S: senha gerada nesta execucao'                         => ['abc123XYZ', true, 'G e S', null],
@@ -1541,11 +1559,11 @@ it('[RD2-05][CT-119] mensagemDoBanner() nao promete "a que voce definiu" quando 
     $this->assertStringNotContainsString('password', semAChaveDaSenha($mensagem), 'o banner apresenta "password" como a senha');
 
     $posicaoDaChave = strpos($texto, 'kit_admin_password');
-    $posicaoDoSeed  = strpos($texto, 'db:seed');
+    $posicaoDoSeed  = strpos($texto, 'migrate --seed');
 
     expect($posicaoDaChave)->not->toBeFalse('o banner nao manda definir KIT_ADMIN_PASSWORD')
-        ->and($posicaoDoSeed)->not->toBeFalse('o banner nao manda rodar db:seed')
-        ->and($posicaoDaChave)->toBeLessThan($posicaoDoSeed, 'KIT_ADMIN_PASSWORD deveria vir ANTES de db:seed no banner');
+        ->and($posicaoDoSeed)->not->toBeFalse('o banner nao manda rodar migrate --seed')
+        ->and($posicaoDaChave)->toBeLessThan($posicaoDoSeed, 'KIT_ADMIN_PASSWORD deveria vir ANTES de migrate --seed no banner');
     $this->assertStringNotContainsString('kit:admin', $texto, 'o banner cita kit:admin, que falha sem administrador para atualizar');
 })->with([
     'senha vazia'         => [''],

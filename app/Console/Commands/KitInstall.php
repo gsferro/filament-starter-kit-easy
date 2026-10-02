@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Models\User;
 use App\Settings\ConfiguracoesDoKit;
+use App\Support\AdministradorDaInstalacao;
 use App\Support\BancoSqlite;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\HostLocal;
@@ -11,6 +13,7 @@ use App\Support\VinculoDoSnyk;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
@@ -77,6 +80,14 @@ class KitInstall extends Command
      * ponto em que `handle()` decide chamar `semear()`.
      */
     private bool $semeado = false;
+
+    /**
+     * Verdadeiro quando `garantirSenhaDoAdministrador()` encontrou um administrador JÁ
+     * existente antes do `db:seed` (DV-02): nesse caso nenhuma senha é gerada nem impressa —
+     * o `UsuarioAdminSeeder` não atualiza credencial de quem já existe, e a senha que o kit
+     * geraria não valeria.
+     */
+    private bool $adminJaExistia = false;
 
     public function handle(): int
     {
@@ -276,8 +287,15 @@ class KitInstall extends Command
         } catch (Throwable $e) {
             $this->bancoAcessivel = false;
 
+            /*
+             * (DV-01/DV-06) A MESMA instrução que a nota do banner e o resumo imprimem
+             * (`instrucaoBancoNaoPopulado()`), nunca um literal divergente — e o Postgres
+             * sobre Docker precisa do `--force-recreate`: `env_file` só é lido na CRIAÇÃO
+             * do container, e um `up -d` sobre container já criado não relê o `.env` que
+             * o usuário vai editar com a KIT_ADMIN_PASSWORD.
+             */
             $this->avisos[] = $driver === 'pgsql'
-                ? 'O PostgreSQL não respondeu — pulei migrations e seeders. Suba o serviço e rode: docker compose up -d && php artisan migrate --seed'
+                ? 'O PostgreSQL não respondeu — pulei migrations e seeders. Suba o serviço relendo o .env (o env_file só vale na criação do container): docker compose up -d --force-recreate. Depois, '.$this->instrucaoBancoNaoPopulado()
                 : 'O MySQL não respondeu — pulei migrations e seeders. Confira as credenciais no .env, crie o banco `'.config('database.connections.'.$driver.'.database').'` e rode: php artisan migrate --seed';
 
             Log::warning(
@@ -375,6 +393,33 @@ class KitInstall extends Command
      */
     protected function garantirSenhaDoAdministrador(): void
     {
+        /*
+         * (DV-02) Administrador já existente (`kit:install` rodado de novo sobre um banco
+         * populado): o `UsuarioAdminSeeder` sai cedo e NÃO toca na senha — gerar uma nova
+         * gravaria no `.env` um valor morto e o banner imprimiria credencial que não
+         * autentica. Nesse caso nada é gerado nem gravado, e o banner diz a verdade: a
+         * senha NÃO mudou.
+         */
+        $administradores = AdministradorDaInstalacao::todos();
+
+        if ($administradores->isNotEmpty()) {
+            $this->adminJaExistia = true;
+            $this->senhaGerada    = null;
+
+            /*
+             * O resquício anterior à geração de senha (v0.39.1-): administrador semeado com
+             * o padrão publicado. O `.env` vazio não é erro — é o estado que sobrou — mas a
+             * credencial default ainda ativa merece o aviso explícito.
+             */
+            if ($administradores->contains(
+                fn (User $admin): bool => Hash::check(SenhaDoAdministrador::PADRAO_PUBLICADO, (string) $admin->password),
+            )) {
+                $this->avisos[] = 'Um administrador já existe com a senha padrão publicada — defina '.SenhaDoAdministrador::CHAVE.' no .env e troque com: php artisan kit:admin';
+            }
+
+            return;
+        }
+
         $this->senhaGerada = SenhaDoAdministrador::garantirNoEnv(base_path('.env'));
 
         if ($this->senhaGerada === null) {
@@ -565,6 +610,16 @@ class KitInstall extends Command
                 ."\nPara criar o administrador, ".$this->instrucaoBancoNaoPopulado().'.';
         }
 
+        /*
+         * (DV-02) Quarto desfecho: `semear()` rodou mas já existia administrador — o seeder
+         * não tocou na credencial, então nem "gerada agora" nem "a que você definiu" são
+         * verdades. A senha que continua valendo é a que o administrador já tinha.
+         */
+        if ($this->adminJaExistia) {
+            return 'Login: '.config('kit.admin.email').' — um administrador ja existia; a senha NAO foi alterada nesta execucao.'
+                ."\nPara trocar: php artisan kit:admin";
+        }
+
         return 'Login inicial: '.config('kit.admin.email')
             ."\nA senha e a que voce definiu em KIT_ADMIN_PASSWORD.";
     }
@@ -583,7 +638,13 @@ class KitInstall extends Command
      */
     private function instrucaoBancoNaoPopulado(): string
     {
-        return 'defina '.SenhaDoAdministrador::CHAVE.' no .env e só então rode: php artisan db:seed';
+        /*
+         * `migrate --seed`, nunca `db:seed` puro (DV-01): a situação que dispara esta nota
+         * é "banco não populado", e em banco recém-criado o `db:seed` falha com
+         * `no such table: roles` — a migration nunca rodou. Com banco já migrado, o
+         * `migrate` é no-op e o `--seed` semeia: um comando só serve aos dois casos.
+         */
+        return 'defina '.SenhaDoAdministrador::CHAVE.' no .env e só então rode: php artisan migrate --seed';
     }
 
     /**
@@ -616,13 +677,26 @@ class KitInstall extends Command
         }
 
         foreach ($this->resumo as $indice => [$item, $valor]) {
-            if ($item !== 'Senha do administrador' || ! str_contains($valor, CustomizadorDaInstalacao::RESUMO_SENHA_GERADA)) {
+            if ($item !== 'Senha do administrador') {
                 continue;
             }
 
-            $this->resumo[$indice][1] = $this->semeado
-                ? 'a que você já definiu em KIT_ADMIN_PASSWORD'
-                : 'nenhuma foi definida — o banco não foi populado nesta execução; '.$this->instrucaoBancoNaoPopulado();
+            // (DV-02) Com administrador pré-existente TODA promessa é falsa — não só a de
+            // "gerada". Sem ele, só a promessa de geração precisa de correção.
+            if (! $this->adminJaExistia && ! str_contains($valor, CustomizadorDaInstalacao::RESUMO_SENHA_GERADA)) {
+                continue;
+            }
+
+            $this->resumo[$indice][1] = match (true) {
+                /*
+                 * (DV-02) Administrador pré-existente: qualquer promessa do resumo —
+                 * "gerada", "a que você digitou", "a que você já definiu" — é falsa, porque
+                 * o seeder não tocou na credencial dele.
+                 */
+                $this->adminJaExistia => 'inalterada — um administrador já existia antes da instalação',
+                $this->semeado        => 'a que você já definiu em KIT_ADMIN_PASSWORD',
+                default               => 'nenhuma foi definida — o banco não foi populado nesta execução; '.$this->instrucaoBancoNaoPopulado(),
+            };
         }
     }
 

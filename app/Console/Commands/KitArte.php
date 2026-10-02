@@ -329,6 +329,16 @@ class KitArte extends Command
                 File::copy("{$origem}/{$quadro}.png", sprintf('%s/quadro-%02d.png', $entrada, $indice + 1));
             }
 
+            /*
+             * (QA-13) Os quadros de um clipe podem chegar com alturas diferentes — a captura
+             * do `install` agora recorta cada quadro à PRÓPRIA altura do conteúdo, não à do
+             * quadro mais alto. O `paletteuse` do ffmpeg descarta em silêncio todo quadro de
+             * dimensão divergente do primeiro (medido: `nb_frames` cai para 1 e o GIF sai com
+             * um quadro só, sem erro nenhum), então o pad uniforme acontece AQUI, em GD —
+             * nunca no filtro do ffmpeg, que aceita só dimensões constantes.
+             */
+            $this->uniformizarQuadros($entrada, count($quadros));
+
             $processo = new Process([
                 $ffmpeg, '-y',
                 '-framerate', '0.6',
@@ -400,6 +410,82 @@ class KitArte extends Command
             "art/{$clipe}.gif",
             number_format(File::size($destino) / 1024, 0).' KB',
         );
+    }
+
+    /**
+     * Deixa todos os `quadro-NN.png` do diretório com a MESMA largura e altura — o máximo
+     * entre eles — completando os menores embaixo com a cor do próprio fundo (QA-13).
+     *
+     * Por que em GD e não no `-vf pad` do ffmpeg: o `pad` aceita só dimensões constantes, e
+     * medir o maior quadro exigiria um `ffprobe` extra ou um valor chumbado — a soma dos dois
+     * motivos pelo qual a captura recorta à própria altura é justamente não chutar número.
+     * Aqui `getimagesize()` mede os PNGs já copiados e o menor recebe pad real, com a cor do
+     * pixel de canto — que no `install` é o `#0d1117` do `body` da fixture, não um preto
+     * avulso.
+     *
+     * Sem a extensão GD nada acontece: quadros do mesmo tamanho (o resto dos clipes) não
+     * precisam dela, e o ffmpeg continua publicando o GIF.
+     */
+    private function uniformizarQuadros(string $entrada, int $quantidade): void
+    {
+        if (! extension_loaded('gd')) {
+            return;
+        }
+
+        $quadros    = [];
+        $larguraMax = 0;
+        $alturaMax  = 0;
+
+        for ($i = 1; $i <= $quantidade; $i++) {
+            $arquivo   = sprintf('%s/quadro-%02d.png', $entrada, $i);
+            $dimensoes = getimagesize($arquivo);
+
+            if ($dimensoes === false) {
+                continue;
+            }
+
+            $quadros[$arquivo] = [$dimensoes[0], $dimensoes[1]];
+            $larguraMax        = max($larguraMax, $dimensoes[0]);
+            $alturaMax         = max($alturaMax, $dimensoes[1]);
+        }
+
+        // Nenhum quadro legível (ou medido em zero): não há referência de tamanho para
+        // completar — e `imagecreatetruecolor()` abaixo exige dimensões positivas.
+        if ($larguraMax < 1 || $alturaMax < 1) {
+            return;
+        }
+
+        foreach ($quadros as $arquivo => [$largura, $altura]) {
+            if ($largura === $larguraMax && $altura === $alturaMax) {
+                continue;
+            }
+
+            $origem = imagecreatefrompng($arquivo);
+
+            if ($origem === false) {
+                continue;
+            }
+
+            $canvas = imagecreatetruecolor($larguraMax, $alturaMax);
+            imagealphablending($canvas, false);
+            imagesavealpha($canvas, true);
+
+            // A cor do canto inferior esquerdo do PRÓPRIO quadro: o pad embaixo continua o
+            // fundo da página, sem uma faixa de cor estranha à captura.
+            $fundo         = (int) imagecolorat($origem, 0, $altura - 1);
+            $preenchimento = imagecolorallocate(
+                $canvas,
+                ($fundo >> 16) & 0xFF,
+                ($fundo >> 8) & 0xFF,
+                $fundo & 0xFF,
+            );
+
+            imagefill($canvas, 0, 0, (int) $preenchimento);
+            imagecopy($canvas, $origem, 0, 0, 0, 0, $largura, $altura);
+            imagepng($canvas, $arquivo);
+            imagedestroy($origem);
+            imagedestroy($canvas);
+        }
     }
 
     /**

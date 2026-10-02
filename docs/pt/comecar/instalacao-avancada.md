@@ -14,13 +14,21 @@ Escolhendo Postgres na instalação, o `.env` já sai com o bloco que o `docker-
 
 ```bash
 docker compose up -d
+# defina KIT_ADMIN_PASSWORD no .env ANTES do seed — sem ela, o administrador nasce com a senha publicada
+php artisan migrate --seed
+```
+
+Container já criado e você mexeu no `.env` (um `KIT_ADMIN_PASSWORD` novo, por exemplo)? `docker compose up -d` **não relê** o arquivo — o `env_file` só entra na CRIAÇÃO do container. Para o valor valer de verdade, recrie-o:
+
+```bash
+docker compose up -d --force-recreate
 php artisan migrate --seed
 ```
 
 Para trocar depois da instalação, suba os containers e copie as variáveis:
 
 ```bash
-docker compose up -d              # pgsql (com pgvector) + redis
+docker compose up -d --force-recreate   # pgsql (com pgvector) + redis, relendo o .env
 # copie o bloco de banco de .env.docker para o seu .env
 php artisan migrate --seed
 ```
@@ -279,14 +287,14 @@ O `composer create-project` roda dois scripts do próprio kit
 (`composer.json:post-root-package-install:204`, `composer.json:post-create-project-cmd:207`): o
 primeiro só copia `.env.example` para `.env` se ele ainda não existir; o segundo chama
 `php artisan kit:install --create-project`. Dentro de `KitInstall::handle()`
-(`app/Console/Commands/KitInstall.php:handle:81`), a ordem real é: as cinco perguntas de
-customização (`app/Console/Commands/KitInstall.php:customizar():108`) vêm antes de gerar a
+(`app/Console/Commands/KitInstall.php:handle:92`), a ordem real é: as cinco perguntas de
+customização (`app/Console/Commands/KitInstall.php:customizar():231`) vêm antes de gerar a
 `APP_KEY` e preparar o SQLite; migrar e semear só acontecem **se o banco responder**
-(`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel):113`,
-`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel && ! $this->option('no-seed')):117`);
+(`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel):124`,
+`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel && ! $this->option('no-seed')):128`);
 e a senha do administrador é gerada **antes** do `db:seed`
-(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:376`,
-`app/Console/Commands/KitInstall.php:'db:seed':392`) — nunca o contrário, senão o banner imprimiria
+(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:394`,
+`app/Console/Commands/KitInstall.php:'db:seed':437`) — nunca o contrário, senão o banner imprimiria
 uma senha que o seeder já gravou como outra.
 
 ```mermaid

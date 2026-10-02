@@ -815,29 +815,30 @@ it('[CT-B04][CT-B10] captura os quadros do instalador', function (): void {
     }
 
     /*
-     * (QA-13) A altura da janela de captura é MEDIDA no quadro final (`instalacao-4-resumo`, a
-     * transcrição inteira — o mais alto dos quatro), nunca um chute. Os 4 quadros continuam
-     * saindo com a MESMA altura — o `ffmpeg` do `kit:arte` monta o GIF a partir de quadros do
-     * MESMO tamanho, e um quadro com dimensão diferente faz o filtro `palettegen`/`paletteuse`
-     * descartar os quadros seguintes e publicar só o primeiro, SEM erro nenhum (medido nesta
-     * sessão, com um GIF de teste variando o tamanho dos quadros de entrada: `nb_frames` caiu
-     * para 1). Antes, a altura era fixa e generosa (2100px): o quadro final precisa de só
-     * ~2.077px (`.janela` mais o padding do `body`), e os 3 primeiros — com bem menos texto —
-     * saíam com boa parte da altura vazia porque o valor não acompanhava o conteúdo. Medir num
-     * viewport bem mais alto que qualquer conteúdo esperado (3000px) garante que a medida não
-     * corta nada, e a soma pelo padding do `body` (e não só a `.janela`) é o que evita cortar a
-     * ÚLTIMA linha visível — o `box-shadow` da `.janela` pode sangrar visualmente além da borda,
-     * mas isso não é uma linha de texto.
+     * (QA-13) A altura da janela de captura é MEDIDA em CADA quadro, nunca um chute nem a
+     * altura do quadro mais alto aplicada a todos: quadro com altura do conteúdo não sai com
+     * faixa vazia embaixo. O pad que o `paletteuse`/`palettegen` do ffmpeg exige (quadros do
+     * MESMO tamanho, senão ele descarta os divergentes sem erro — `nb_frames` caía para 1,
+     * medido nesta sessão) é responsabilidade do `KitArte::uniformizarQuadros()`, que iguala
+     * as dimensões no diretório de entrada ANTES do ffmpeg. Medir num viewport bem mais alto
+     * que qualquer conteúdo esperado (3000px) garante que a medida não corta nada, e a soma
+     * pelo padding do `body` (e não só a `.janela`) é o que evita cortar a ÚLTIMA linha
+     * visível — o `box-shadow` da `.janela` pode sangrar visualmente além da borda, mas isso
+     * não é uma linha de texto.
      */
-    $alturaDoConteudo = (int) visit('/_teste-arte/instalacao-4-resumo')
-        ->resize(1400, 3000)
-        ->script(<<<'JS'
-            Math.ceil(
-                document.querySelector('.janela').getBoundingClientRect().height
-                + parseFloat(getComputedStyle(document.body).paddingTop)
-                + parseFloat(getComputedStyle(document.body).paddingBottom)
-            )
-        JS);
+    $alturaDeCadaQuadro = [];
+
+    foreach (array_keys($quadros) as $arquivo) {
+        $alturaDeCadaQuadro[$arquivo] = (int) visit("/_teste-arte/{$arquivo}")
+            ->resize(1400, 3000)
+            ->script(<<<'JS'
+                Math.ceil(
+                    document.querySelector('.janela').getBoundingClientRect().height
+                    + parseFloat(getComputedStyle(document.body).paddingTop)
+                    + parseFloat(getComputedStyle(document.body).paddingBottom)
+                )
+            JS);
+    }
 
     /*
      * (CT-B10) O que cada quadro mostra (o seu último passo) e o que NÃO mostra (o primeiro
@@ -858,7 +859,7 @@ it('[CT-B04][CT-B10] captura os quadros do instalador', function (): void {
         [$mostra, $naoMostra] = $conteudoDoQuadro[$arquivo];
 
         visit("/_teste-arte/{$arquivo}")
-            ->resize(1400, $alturaDoConteudo)
+            ->resize(1400, $alturaDeCadaQuadro[$arquivo])
             // A âncora vem antes das ausências: uma página 404 não mostra nada disso e passaria.
             ->assertSee('meu-projeto — instalação')
             // As duas formas em que a senha antiga aparecia (R35/[CT-52]) — nunca no HTML que

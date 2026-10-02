@@ -164,11 +164,20 @@ final class CustomizadorDaInstalacao
             'senha' => password(
                 label: 'Senha do administrador',
                 /*
-                 * (RD3-01) Sem condicional: prometia gerar sempre, mas só gera quando o `.env` de
-                 * destino AINDA NÃO tem uma senha utilizável (`SenhaDoAdministrador::ehUtilizavel()`)
-                 * — reinstalação sobre um `.env` que já a definiu não gera nem imprime nada de novo.
+                 * (RD3-01) Sem condicional no caso comum: prometia gerar sempre, mas só gera
+                 * quando o `.env` de destino AINDA NÃO tem uma senha utilizável
+                 * (`SenhaDoAdministrador::ehUtilizavel()`) — reinstalação sobre um `.env` que
+                 * já a definiu não gera nem imprime nada de novo.
+                 *
+                 * (DV-05) A UMA condicional ficou: `--no-seed`. O `semear()` nunca roda, então
+                 * nada é gerado nem impresso — prometer isso aqui seria falso, e o usuário
+                 * sairia esperando uma senha no fim que não vem. Com `--no-seed` o hint diz o
+                 * que de fato acontece: a senha digitada fica guardada no `.env` e vale quando
+                 * o `migrate --seed` rodar depois.
                  */
-                hint: 'Enter deixa o instalador gerar uma senha aleatória (se o .env ainda não tiver uma) e imprimi-la uma vez.',
+                hint: (bool) $comando->option('no-seed')
+                    ? 'Sem seed, o instalador não gera nada — o que você digitar fica no .env e vale quando o migrate --seed rodar.'
+                    : 'Enter deixa o instalador gerar uma senha aleatória (se o .env ainda não tiver uma) e imprimi-la uma vez.',
             ),
             'cor'   => select(
                 label: 'Cor primária dos painéis',

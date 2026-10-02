@@ -48,14 +48,14 @@
         ['texto' => ' ⇂ Suba o servidor com: composer dev', 'classe' => 'l'],
         ['texto' => ' ⇂ Serviços opcionais (Postgres, Redis, IA local): docker compose up -d', 'classe' => 'l'],
         ['texto' => '', 'classe' => 'l'],
-        [
-            'texto' => ' WARN Instalado com os padrões: este terminal não aceitou perguntas (no Windows o '
-                .'Composer nunca repassa o terminal ao script). Para escolher as cinco AGORA, com o banco '
-                .'ainda vazio: php artisan kit:install --force (recria o banco — inócuo neste instante, '
-                .'destrutivo depois). Só nome e cor, sem tocar no banco, a qualquer momento: php artisan '
-                .'kit:install --custom.',
-            'classe' => 'l-warn',
-        ],
+        /*
+         * (QA-13) O WARN "este terminal não aceitou perguntas" é ruído do ambiente em que a
+         * transcrição foi colhida (Windows, Composer sem repasse de terminal), não uma saída
+         * que toda instalação emite — nos terminais que aceitam as perguntas ele nem existe.
+         * Uma fixture que o ensina como parte do produto documenta um caso de borda no GIF
+         * final, então ela omite de propósito. Quem precisa do texto real está em
+         * `avisarSePerdeuAsPerguntas()` do `KitInstall`.
+         */
         ['texto' => '', 'classe' => 'l'],
         ['texto' => ' Repositório do kit .. https://github.com/gsferro/filament-starter-kit-easy', 'classe' => 'l'],
     ];

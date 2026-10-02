@@ -14,13 +14,21 @@ If you pick Postgres during installation, the `.env` already comes with the bloc
 
 ```bash
 docker compose up -d
+# set KIT_ADMIN_PASSWORD in the .env BEFORE seeding — without it the admin is born with the published password
+php artisan migrate --seed
+```
+
+Container already created and you changed the `.env` (a new `KIT_ADMIN_PASSWORD`, say)? `docker compose up -d` does **not** re-read the file — `env_file` is only loaded when the container is CREATED. For the value to actually land, recreate it:
+
+```bash
+docker compose up -d --force-recreate
 php artisan migrate --seed
 ```
 
 To switch after the installation, bring the containers up and copy the variables:
 
 ```bash
-docker compose up -d              # pgsql (with pgvector) + redis
+docker compose up -d --force-recreate   # pgsql (with pgvector) + redis, re-reading the .env
 # copy the database block from .env.docker into your .env
 php artisan migrate --seed
 ```
@@ -277,14 +285,14 @@ The last eleven are not asked because they are **code or screen data**, not a va
 (`composer.json:post-root-package-install:204`, `composer.json:post-create-project-cmd:207`): the
 first only copies `.env.example` to `.env` if it does not exist yet; the second calls
 `php artisan kit:install --create-project`. Inside `KitInstall::handle()`
-(`app/Console/Commands/KitInstall.php:handle:81`), the real order is: the five customization
-questions (`app/Console/Commands/KitInstall.php:customizar():108`) come before generating the
+(`app/Console/Commands/KitInstall.php:handle:92`), the real order is: the five customization
+questions (`app/Console/Commands/KitInstall.php:customizar():231`) come before generating the
 `APP_KEY` and preparing SQLite; migrating and seeding only happen **if the database answers**
-(`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel):113`,
-`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel && ! $this->option('no-seed')):117`);
+(`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel):124`,
+`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel && ! $this->option('no-seed')):128`);
 and the administrator password is generated **before** `db:seed`
-(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:376`,
-`app/Console/Commands/KitInstall.php:'db:seed':392`) — never the other way around, or the banner
+(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:394`,
+`app/Console/Commands/KitInstall.php:'db:seed':437`) — never the other way around, or the banner
 would print a password the seeder had already recorded as something else.
 
 ```mermaid
