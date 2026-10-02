@@ -5,6 +5,42 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.42.1] - 2026-10-02
+
+### Corrigido
+
+- **Instrução do banco não populado unificada** (#127): banner, aviso de conexão e resumo do
+  `kit:install` imprimem a mesma orientação — `defina KIT_ADMIN_PASSWORD no .env` e só então
+  `php artisan migrate --seed`. O `db:seed` que aparecia antes falha em banco sem migrations
+  (`no such table: roles`), que é exatamente o cenário da instrução.
+- **Reinstalação não gera, grava nem imprime senha que o seeder não usa** (#128): com um
+  administrador já semeado, o `kit:install` não gera senha nova — o `UsuarioAdminSeeder` sai
+  cedo sem sincronizar credencial, então a senha impressa era morta. Se a credencial existente
+  ainda é o padrão publicado, o kit avisa e mostra o caminho (`php artisan kit:admin`).
+- **`--force-recreate` na instrução de Postgres inacessível** (#132): o aviso ensina
+  `docker compose up -d --force-recreate` — o `env_file` só é lido na criação do container, e
+  um `up -d` comum deixaria um `KIT_ADMIN_PASSWORD` novo sem valer no Postgres. A documentação
+  de instalação avançada (pt/en) traz a mesma nota.
+- **`.env` com valor entre aspas espalhado em várias linhas** (#133): `definirLinhaNoEnv()`
+  cobria só a primeira linha física do valor multilinha e deixava a continuação órfã — o
+  `Dotenv::parse()` lançava `InvalidFileException` e o app não subia. A substituição agora cobre
+  o valor inteiro.
+- **Hint do prompt de senha condizente com `--no-seed`** (#131): com a flag ligada o prompt não
+  promete senha impressa no fim — nada será gerado nessa execução.
+- **Quadros do `install.gif` sem faixa vazia e sem WARN de ambiente** (#134): cada quadro é
+  capturado na própria altura de conteúdo, e `KitArte` igualiza as dimensões via GD antes do
+  ffmpeg — que descarta quadros de tamanho divergente sem erro. O aviso de ambiente (terminal
+  sem interação) saiu da transcrição da fixture.
+
+### Testes
+
+- **CT-121 compara a instrução por igualdade** (#129): o recorte `defina ... migrate --seed`
+  do banner e do resumo é comparado por valor, não por propriedades soltas — divergência no
+  meio dos textos não passa mais.
+- **Fato do DG-17 confere a origem, e fallback do CT-11 resolve o rótulo publicado** (#130):
+  um mutante que esconda `docs/` no rótulo do nó de origem é reprovado; o caso sem id no mapa
+  de casos de uso procura o nó pelo rótulo do diagrama em vez de um literal que nunca existiu.
+
 ## [0.42.0] - 2026-09-30
 
 ### Alterado
