@@ -39,7 +39,13 @@ it('resolve a logo para url publica quando o arquivo existe', function (): void 
     Storage::disk('public')->put('kit/logo.png', 'conteúdo');
     config(['kit.identidade.logo' => 'kit/logo.png']);
 
-    expect(IdentidadeDoKit::logo())->toBe(Storage::disk('public')->url('kit/logo.png'));
+    /*
+     * `asset()` e não `Storage::url()`: a URL pública segue o host do request
+     * (rule `URL pública de arquivo do disco` em `.ai/rules/app.md`). Em disco fake
+     * `Storage::url()` devolve `/storage/...` relativo — oráculo errado desde a
+     * feature `logo-dark-mode`, que trocou o resolvedor para `asset()`.
+     */
+    expect(IdentidadeDoKit::logo())->toBe(asset('storage/kit/logo.png'));
 })->group('kit');
 
 it('devolve nulo para logo e favicon quando o arquivo declarado nao esta no disco', function (string $chave, string $metodo): void {
@@ -63,7 +69,7 @@ it('resolve a arte do login para o arquivo enviado quando ele existe', function 
     Storage::disk('public')->put('kit/arte.svg', '<svg/>');
     config(['kit.identidade.arte_do_login' => 'kit/arte.svg']);
 
-    expect(IdentidadeDoKit::arteDoLogin())->toBe(Storage::disk('public')->url('kit/arte.svg'));
+    expect(IdentidadeDoKit::arteDoLogin())->toBe(asset('storage/kit/arte.svg'));
 })->group('kit');
 
 /**
@@ -98,13 +104,13 @@ it('mantem a precedencia da arte enviada sobre a arte padrao gerada', function (
 
     if ($noDisco) {
         expect($arte)
-            ->toBe(Storage::disk('public')->url((string) $configurado))
+            ->toBe(asset('storage/'.(string) $configurado))
             ->not->toStartWith('data:');
     } else {
         expect(textoDoSvg(documentoDoSvg(svgDaArte($arte))))->toBe('Prefeitura de Itabira');
 
         if ($configurado !== null) {
-            expect($arte)->not->toBe(Storage::disk('public')->url($configurado));
+            expect($arte)->not->toBe(asset('storage/'.$configurado));
         }
     }
 
@@ -146,8 +152,8 @@ it('serve o nome, a logo e o favicon gravados nas telas dos tres paineis', funct
         ->assertOk()
         ->assertSee('Nome Do Banco')
         ->assertDontSee($doAmbiente)
-        ->assertSee(Storage::disk('public')->url('kit/logo.png'), escape: false)
-        ->assertSee(Storage::disk('public')->url('kit/favicon.png'), escape: false);
+        ->assertSee(asset('storage/kit/logo.png'), escape: false)
+        ->assertSee(asset('storage/kit/favicon.png'), escape: false);
 })->with([
     'painel de administração'  => '/admin',
     'painel de negócio'        => '/app',
@@ -169,7 +175,7 @@ it('veste as telas de login com a arte gravada', function (string $rota): void {
 
     $this->get($rota)
         ->assertOk()
-        ->assertSee(Storage::disk('public')->url('kit/arte.svg'), escape: false)
+        ->assertSee(asset('storage/kit/arte.svg'), escape: false)
         // Reancorada: o caminho `images/auth/login.svg` deixou de existir. A metade
         // discriminante passa a ser que a mídia NÃO é a arte gerada — se a
         // precedência quebrasse, o `src` viria como data URI.

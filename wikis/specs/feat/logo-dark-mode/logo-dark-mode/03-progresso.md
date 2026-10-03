@@ -61,14 +61,14 @@ Não fatiado — a feature cabe numa sessão (12 passos pequenos, sem dependênc
 - [x] `vendor/bin/pint --dirty` — 5 arquivos formatados, 14 conferidos
 - [x] `vendor/bin/pest --filter=LogoDarkMode --compact` — 24/24 (114 asserções)
 - [x] `vendor/bin/pest tests/Browser --filter=LogoDarkMode` — CT-B01 verde (9 asserções)
-- [ ] Suíte `tests/Kit` completa — **em execução em background** (cmd 472); baseline de `main`: 3799 passaram, 3 falharam em `SiteDeDocumentacaoTest` (pré-existentes). Evidência de regressão já coletada: vizinhos 74/74 + feature 24/24 + CT-B01
+- [x] Suíte `tests/Kit` completa — **fechada** (serial, 1544 s + paralela, 292 s): 3348 passaram / 9 falharam / 3 pulados. Classificação das falhas: **4 nossas, corrigidas** — badge `casos de teste` 1.837→1.855 (2 readmes), `IdentidadeDoKitTest` ×3 (oráculo `Storage::url()` → `asset()`), `KitInfoTest` CT-06 55→57 propriedades, contagem de arquivos 171/198→172/200 (2 readmes); **4 pré-existentes, mantidas** — CT-25 pt/en (rótulo `kit 0.42.1` velho nos docs), números objetivos dos readmes, e CT-26 residual com 16 citações de *chamadas* (`->enableRateLimit(`, `BODY_END`, `env('KIT_TENANCY')`) que o detector de declarações nunca achou — vermelho em `main`, baseline estava incompleta
 - [x] **Custo medido**: stats de disco no render — 1 `exists()` por variante resolvida + 1 `Tenant::find` memoizado por `once()`; nenhuma query em loop (dimensão E do `06`)
 - [x] Revisão do diff + eixos (step 9) — ver `## Revisão do Diff`
 - [x] Desvios propagados ao `01`/`02`/`04`/`05` de origem, marcados `*(alterado em implementação)*`
 - [x] `rastreabilidade.sh {wiki}` — 3 linhas: RQ-11/RQ-12 rejeitadas (processo, QA-02), P-04 corrigida (QA-01)
 - [x] `checkbox-sem-evidencia.sh {wiki}` — exit 0 após evidências coladas
 - [x] Docs pt/en reconciliados; CHANGELOG e README: não tocados (sem release ainda)
-- [ ] `git commit`
+- [x] `git commit` — `✨ feat(identidade)`; PR aguardando `git push` do solicitante
 
 ## Revisão do Diff (step 9)
 
