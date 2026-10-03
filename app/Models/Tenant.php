@@ -46,6 +46,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property ?string $cor_primaria
  * @property ?string $cor_primaria_nome
  * @property ?string $logo
+ * @property ?string $logo_dark
  */
 class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
 {
@@ -87,6 +88,7 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         // separada da do hex de propósito; ver a migration `add_cor_primaria_nome`.
         'cor_primaria_nome',
         'logo',
+        'logo_dark',
     ];
 
     /** Rótulo exibido acima do nome no seletor de tenant do painel. */
@@ -200,5 +202,22 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         // enquanto o resto da página carrega. (A mídia base dos painéis não usa mais `asset()`:
         // a arte padrão virou SVG gerado com o nome da aplicação, embutido como data URI.)
         return asset('storage/'.$this->logo);
+    }
+
+    /**
+     * URL pública da variante escura da logo, ou `null` sem ela.
+     *
+     * Mesma guarda de `urlDaLogo()` — o path órfão degrada para a logo_dark da
+     * instalação (e, sem ela, para a clara), nunca para uma `<img>` quebrada.
+     * O quê ela vale quando gravada não é decisão do model: `TelaBloqueio` só a
+     * consulta no modo com marca separada.
+     */
+    public function urlDaLogoEscura(): ?string
+    {
+        if (blank($this->logo_dark) || ! Storage::disk('public')->exists($this->logo_dark)) {
+            return null;
+        }
+
+        return asset('storage/'.$this->logo_dark);
     }
 }

@@ -93,6 +93,9 @@ class AppPanelProvider extends PanelProvider
              * comportamento do kit antes desta feature.
              */
             ->brandLogo(fn (): ?string => IdentidadeDoKit::logo())
+            // Null na marca unificada — o componente logo.blade.php renderiza um
+            // <img> só; a closure é o ponto de consumo de `IdentidadeDoKit::logoEscura()`.
+            ->darkModeBrandLogo(fn (): ?string => IdentidadeDoKit::logoEscura())
             ->brandLogoHeight('2rem')
             ->favicon(fn (): ?string => IdentidadeDoKit::favicon())
             // Closure, e não array: o valor precisa vir da config resolvida no

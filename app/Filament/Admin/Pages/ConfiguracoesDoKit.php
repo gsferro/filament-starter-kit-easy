@@ -325,7 +325,32 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->helperText('Cor de marca em hexadecimal. VENCE a seleção acima quando preenchida. Valor inválido é ignorado.')
                     ->regex('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'),
 
-                $this->arquivo('logo', 'Logo da marca', 'Substitui o nome no topo dos painéis. Em branco, o nome é usado.'),
+                /*
+                 * O par de logos da marca, com o toggle que o liga.
+                 *
+                 * `required` por closure e não `required_with`: FileUpload guarda o path
+                 * já gravado no estado, e `filled($get)` lê esse estado — incluindo o
+                 * arquivo que veio do banco, que `required_with:campo` do Laravel não
+                 * enxerga no estado do FileUpload. "Um exige o outro" vale só no modo
+                 * separado: com a marca unificada, `logo_dark` está oculta e nada exige.
+                 *
+                 * O helper do `logo` NÃO é closure: `arquivo()` monta o texto por
+                 * argumento porque encadeado sobrescreveria o sufixo de teto/SVG (ver o
+                 * docblock do método). O texto cobre os dois modos — com a marca
+                 * separada, esta é a do tema claro.
+                 */
+                Toggle::make('unifica_logo_marca')
+                    ->label('Uma logo só, nos dois temas')
+                    ->helperText('Ligado (padrão), a mesma logo vale no tema claro e no escuro. Desligado, a marca separa em duas imagens: a da esquerda aparece no claro e a de baixo, no escuro — quem não enviar a escura fica com a clara nos dois temas.')
+                    ->live()
+                    ->inline(false),
+
+                $this->arquivo('logo', 'Logo da marca', 'Substitui o nome no topo dos painéis. Em branco, o nome é usado. Com a marca separada, esta é a do tema claro — fundo claro recomendado.')
+                    ->required(fn (Get $get): bool => ! $get('unifica_logo_marca') && filled($get('logo_dark'))),
+
+                $this->arquivo('logo_dark', 'Logo para o tema escuro', 'Variante escura — fundo transparente recomendado, para a clara não virar bloco sólido no dark. Em branco, a clara é usada.')
+                    ->visible(fn (Get $get): bool => ! $get('unifica_logo_marca'))
+                    ->required(fn (Get $get): bool => ! $get('unifica_logo_marca') && filled($get('logo'))),
 
                 $this->arquivo('favicon', 'Favicon', 'O ícone da aba do navegador. Em branco, o do Filament.'),
 

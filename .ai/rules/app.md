@@ -33,3 +33,10 @@ Enforçado por `App\Support\GuardaDoPadraoDeDto` + `tests/Kit/DtoComLaravelDataT
 `Filament::getCurrentOrDefaultPanel()` é anotado `?Panel` e nunca é nulo; use `App\Support\Paineis::correnteOuPadrao(): Panel`. Com o PHPStan no level 8 (gate do `composer test`), a chamada direta reprova, e o atalho `?->` esconde que o nulo é impossível. Exceção: hub de cards e tudo que NÃO pode cair no painel padrão lê `Filament::getCurrentPanel()` e falha com `LogicException` quando é nulo (`DescobreCardsDoPainel::painelCorrente()`), senão o hub do /admin lista os cartões do /app.
 
 `Panel::getUrl()` é nulo com tenant por domínio e `Panel::getLoginUrl()` é nulo em painel sem `->login()`: nunca passe isso a `redirect()`/`RedirectResponse` (congela a tela ou estoura `TypeError`). Use `Paineis::url($painel)` ou `$painel->getLoginUrl() ?? url($painel->getPath())` — a raiz do painel cai no `route('login')` pelo `redirectGuestsTo` padrão. Origem: `wikis/specs/feat/phpstan-nivel-8/` (ADR-02).
+
+## URL pública de arquivo do disco é `asset('storage/'.$caminho)`, nunca `Storage::url()`
+`Storage::disk('public')->url($caminho)` devolve a string **congelada** `APP_URL . '/storage'` de `config/filesystems.php`. `asset()` segue o host do request corrente. Os dois divergem sempre que o host efetivo não é o `APP_URL` — proxy, staging, HTTPS terminado fora, o servidor de teste do `pest-plugin-browser` (`127.0.0.1:porta`) — e aí a `<img>` quebra enquanto o resto da página carrega. Em console os dois são idênticos: **nenhum teste de feature/HTTP discrimina o bug**; só browser test ou um request com `Host` divergente o pega.
+
+Já é a terceira vez que o mesmo defeito aparece no repo, sempre corrigido upstream na hora: `Tenant::urlDaLogo()` (e agora `urlDaLogoEscura()`), e `IdentidadeDoKit::doDisco()` — este último descoberto pelo CT-B01 de `feat/logo-dark-mode`, cuja `<img>` saía quebrada no screenshot.
+
+Sinal de alerta na revisão: `Storage::url()`/`Storage::disk('public')->url()` gerando URL consumida por `<img>`, `href` ou CSS em código renderizado. Origem: `wikis/specs/feat/logo-dark-mode/` (RD-01, M4).

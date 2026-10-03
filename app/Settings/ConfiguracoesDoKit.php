@@ -95,6 +95,19 @@ final class ConfiguracoesDoKit extends Settings
     /** Caminho no disco `public`, resolvido por `App\Support\IdentidadeDoKit`. */
     public ?string $logo;
 
+    /**
+     * Variante escura da logo. Inerte com `unifica_logo_marca` ligado: gravada,
+     * mas nunca lida — o que liga o uso dela é o toggle abaixo.
+     */
+    public ?string $logo_dark;
+
+    /**
+     * `true` (default): uma logo só nos dois temas. `false` separa a marca em
+     * `logo` (tema claro) + `logo_dark` (tema escuro), e o swap é decidido no
+     * cliente pela classe `dark` do <html>.
+     */
+    public bool $unifica_logo_marca;
+
     public ?string $favicon;
 
     public ?string $arte_do_login;
@@ -372,6 +385,8 @@ final class ConfiguracoesDoKit extends Settings
             'cor_primaria'             => 'kit.cor_primaria',
             'cor_primaria_hex'         => 'kit.cor_primaria_hex',
             'logo'                     => 'kit.identidade.logo',
+            'logo_dark'                => 'kit.identidade.logo_dark',
+            'unifica_logo_marca'       => 'kit.identidade.unifica_logo_marca',
             'favicon'                  => 'kit.identidade.favicon',
             'arte_do_login'            => 'kit.identidade.arte_do_login',
             'mail_mailer'              => 'mail.default',

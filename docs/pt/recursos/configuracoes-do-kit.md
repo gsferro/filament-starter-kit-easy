@@ -236,6 +236,30 @@ O hexadecimal vence porque é o campo mais específico: quem digita `#7c3aed` es
 
 Dentro de `/app/{organização}`, a cor da **organização** continua vencendo as duas.
 
+## Logo da marca: uma só, ou duas por tema
+
+A aba **Identidade** tem um interruptor, **Uma logo só, nos dois temas** — e ele nasce LIGADO, porque
+instalação existente não muda de cara com update do kit. Com ele ligado, a mesma logo vale no
+tema claro e no escuro, como sempre foi.
+
+Desligado, a marca separa em duas imagens:
+
+- **Logo da marca** — exibida no tema claro, e na marca do topo dos três painéis. Fundo claro recomendado.
+- **Logo para o tema escuro** — exibida só no tema escuro. Fundo **transparente** recomendado: com fundo
+  branco, a logo vira um bloco sólido no escuro.
+
+Os dois campos viram obrigatórios **entre si** no modo separado: gravar a clara sem a escura (ou o contrário) é
+recusado. Com os dois vazios, o painel volta ao nome em texto, sem erro.
+
+![A logo do tema claro na tela de bloqueio](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/logo-tema-claro.png)
+
+![A logo do tema escuro na tela de bloqueio](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/logo-tema-escuro.png)
+
+**Quem troca a imagem é o navegador**, pela classe `dark` do `<html>` — o servidor não conhece o tema
+quando ele é "Sistema", então as duas `<img>` saem juntas no HTML e o CSS do Filament exibe a certa.
+Organização sem variante escura cai para a da instalação — e, sem ela, para a clara. A tela de bloqueio
+usa o mesmo par: logo da **organização**, se houver; da instalação, se não.
+
 ## Permissão
 
 Uma só: **`View:ConfiguracoesDoKit`**, gerada pelo `ShieldPermissionsSeeder` e entregue ao papel `admin` pelo `PapeisSeeder` — sem nenhuma lista para editar, porque a matriz do papel é a do painel inteiro. `master_global` entra pelo `Gate::before`; `infra` e `panel_user` não recebem.

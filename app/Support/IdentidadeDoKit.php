@@ -52,6 +52,35 @@ final class IdentidadeDoKit
         return self::doDisco('kit.identidade.logo');
     }
 
+    /**
+     * URL da variante escura da logo, ou `null` quando ela não vale.
+     *
+     * Dois `null` de propósito, com significados diferentes: marca unificada
+     * (`unifica_logo_marca` ligado — a logo_dark gravada é inerte por desenho,
+     * não por acidente) e marca separada sem arquivo utilizável. O consumidor
+     * (a `<img>` dark nas telas, o `darkModeBrandLogo` nos painéis) recebe o
+     * mesmo `null` nos dois casos e renderiza a clara sozinha.
+     */
+    public static function logoEscura(): ?string
+    {
+        if (self::unificaLogo()) {
+            return null;
+        }
+
+        return self::doDisco('kit.identidade.logo_dark');
+    }
+
+    /**
+     * A instalação usa uma logo só nos dois temas?
+     *
+     * Lê a config, e não o `.env`: o valor gravado nas settings vence o
+     * `KIT_UNIFICA_LOGO_MARCA` — como toda chave do `mapaDeConfiguracao()`.
+     */
+    public static function unificaLogo(): bool
+    {
+        return (bool) config('kit.identidade.unifica_logo_marca', true);
+    }
+
     /** URL do favicon, ou `null` para o Filament usar o ícone dele. */
     public static function favicon(): ?string
     {
@@ -111,6 +140,14 @@ final class IdentidadeDoKit
             return null;
         }
 
-        return $disco->url($caminho);
+        /*
+         * `asset()` e não `$disco->url()`: a URL do disk é a string congelada
+         * `APP_URL . '/storage'` (config/filesystems.php), e `asset()` segue o host
+         * do request corrente. Os dois divergem sempre que o host efetivo não é o
+         * APP_URL — proxy, staging, o servidor de teste do navegador — e aí a logo
+         * quebra enquanto o resto da página carrega. Mesma correção e mesma razão
+         * do comentário em `Tenant::urlDaLogo()`.
+         */
+        return asset('storage/'.$caminho);
     }
 }
