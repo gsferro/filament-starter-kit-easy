@@ -122,7 +122,8 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 
 > ### Sobre os pulados — e por que aqui há **teto**, não só registro
 >
-> **Teto corrente: 841**, medido na simulação por `git archive` do cenário 1 da `v0.43.0`, antes da tag
+> **Teto corrente: 841**, medido na simulação por `git archive` do cenário 1 da `v0.43.0` e **confirmado sem
+> mudança na `v0.44.0`** (decomposição por arquivo idêntica, 29 arquivos), antes de cada tag
 > (a confirmar nos quatro cenários sobre a tag publicada). O `+3` sobre o 838 da `v0.42.0` está decomposto
 > por arquivo, medido com `--log-junit` dentro da extração, na seção `Validação antes da tag` da `v0.43.0`
 > no `CHANGELOG.md` (+2 do `skip` novo do CT-20 de `LogoDarkModeTest`, +1 de uma linha de dataset dos

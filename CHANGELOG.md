@@ -50,6 +50,26 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   86,41 % (89 testados; sobreviventes só no texto do `warning`). READMEs: 74 features especificadas,
   175/204 arquivos de teste, badge de 1.893 casos.
 
+### Validação antes da tag
+
+Minor e não patch: feature nova, sem quebra de API — com as cinco opções no default o kit renderiza o
+que renderizava. O `checklist-de-release` pede os quatro cenários a cada tag, e o cenário 1 foi
+simulado pela mesma rota da `v0.43.0`: extração por `git archive` (que aplica o `export-ignore` como o
+Packagist aplica — `docs/` e `wikis/specs/` ausentes, conferido) + `composer install` + `.env` +
+`kit:install --create-project --no-npm --no-interaction`.
+
+- **Cenário 1, simulado** (extração de `7ed0b87`, o commit do bump desta versão): `config('kit.version')`
+  = `0.44.0`; `php artisan test --testsuite=Kit,Tenancy --parallel --processes=4 --compact --log-junit` →
+  `{"result":"passed","tests":3912,"passed":3071,"assertions":13694,"duration_ms":550090,"skipped":841}`
+  — **3.912 testes, 3.071 passaram, 13.694 asserções, 841 pulados, 0 falhas**, 9,2 min
+- **Teto de pulados: 841, sem mudança** — decomposição por arquivo (`--log-junit`) idêntica à da
+  `v0.43.0`, arquivo a arquivo (29 arquivos, 0 diferenças): os 83 testes novos do cabeçalho rodam
+  inteiros no projeto instalado (nenhum lê `docs/`, README ou site), e os 3 CT-B ficam fora da suíte
+  `Kit,Tenancy` por desenho
+- **Cobertura no Linux**: o job `cobertura` da `main` para `4ee5013` (o merge do #146) roda depois do
+  push; o número entra no PR de documentação dos cenários 2, 3 e 4, que rodam sobre a tag publicada,
+  como a `v0.43.0` fez
+
 ## [0.43.0] - 2026-10-05
 
 ### Adicionado
