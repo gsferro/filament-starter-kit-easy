@@ -1,6 +1,6 @@
 # Progresso — Deploy com Docker: vários ambientes no mesmo servidor, atrás do Traefik
 
-**Estado**: em planejamento
+**Estado**: em implementação
 
 > Branch: `feat/deploy-multiambiente-docker` · Base do PR: `main` (`71a7297`, v0.44.0)
 
@@ -8,27 +8,27 @@
 - [ ] Divergências documento × código registradas como premissas (P-01, P-02, P-05, P-06) e no confronto abaixo
 
 ## 1. `TRUSTED_PROXIES`
-- [ ] `app/Support/ProxiesConfiaveis.php` com `doEnv()`
-- [ ] `bootstrap/app.php` chama `trustProxies(at: …)` antes do `append`
-- [ ] `.env.example` com o bloco comentado
+- [x] `app/Support/ProxiesConfiaveis.php` com `doEnv()` — `vendor/bin/pint` passed, `phpstan analyse` 0 erros, 2026-10-05
+- [x] `bootstrap/app.php` chama `trustProxies(at: …)` antes do `append` — `php artisan config:show app.name` boota; `UrlSemPrefixoPublicTest` verde (114/114 no lote de regressão), 2026-10-05
+- [x] `.env.example` com o bloco comentado — `MysqlNoDockerTest` CT-15/CT-22 verdes depois da normalização para LF, 2026-10-05
 
 ## 2. `ARG` de build no estágio `assets`
-- [ ] `Dockerfile.laravel` com os quatro `ARG`/`ENV` antes do `npm run build`, sem citar comando de cache
+- [x] `Dockerfile.laravel` com os quatro `ARG` (sem default, sem `ENV` — P-12) antes do `npm run build`, sem citar comando de cache — `CacheDeViewsNoDockerTest` verde no lote de 114, 2026-10-05
 
 ## 3. Override de exemplo
-- [ ] `docker/traefik/docker-compose.override.yml` com cabeçalho, âncora `x-vite-args`, `nginx`, bloco do `reverb` comentado, rede externa
+- [x] `docker/traefik/docker-compose.override.yml` com cabeçalho, âncora `x-vite-args`, `nginx`, bloco do `reverb` comentado entre `>>>`/`<<<`, rede externa — `docker compose --profile app config` sobre cópia do base real: labels `projeto-dev`, `host_ip: 127.0.0.1`, rede `my-network` externa; sem `TRAEFIK_HOST`, recusa com a mensagem, 2026-10-05
 
 ## 4. `.gitignore` e `.env.docker`
-- [ ] `/docker-compose.override.yml` no `.gitignore`
-- [ ] Bloco "Vários ambientes / Traefik" no `.env.docker`
+- [x] `/docker-compose.override.yml` no `.gitignore` — commit `036c2f4`, 2026-10-05
+- [x] Bloco "Vários ambientes / Traefik" no `.env.docker` — `MysqlNoDockerTest` CT-20 verde (o `# DOCKER_DB_SERVICE=mysql` continua), 2026-10-05
 
 ## 5. Documentação
-- [ ] `docs/pt/operacao/deploy-docker-multiambiente.md`
-- [ ] `docs/en/operacao/deploy-docker-multiambiente.md`
-- [ ] `docs/{pt,en}/operacao/index.md`
-- [ ] `node converter.mjs` (sidebar, redirects, stubs)
-- [ ] `README.md` e `README.en.md`
-- [ ] `CHANGELOG.md` `[Unreleased]`
+- [x] `docs/pt/operacao/deploy-docker-multiambiente.md` — `SiteDeDocumentacaoTest` + `RedeDeDocumentacaoTest` 88/88 e, com `MysqlNoDockerTest` e `UploadLimiteETiposDocumentacaoTest`, 123/123, 2026-10-05
+- [x] `docs/en/operacao/deploy-docker-multiambiente.md` — `SiteDeDocumentacaoTest` + `RedeDeDocumentacaoTest` 88/88 e, com `MysqlNoDockerTest` e `UploadLimiteETiposDocumentacaoTest`, 123/123, 2026-10-05
+- [x] `docs/{pt,en}/operacao/index.md` — `SiteDeDocumentacaoTest` + `RedeDeDocumentacaoTest` 88/88 e, com `MysqlNoDockerTest` e `UploadLimiteETiposDocumentacaoTest`, 123/123, 2026-10-05
+- [x] `node converter.mjs` (sidebar, redirects, stubs) — `SiteDeDocumentacaoTest` + `RedeDeDocumentacaoTest` 88/88 e, com `MysqlNoDockerTest` e `UploadLimiteETiposDocumentacaoTest`, 123/123, 2026-10-05
+- [x] `README.md` e `README.en.md` — `SiteDeDocumentacaoTest` + `RedeDeDocumentacaoTest` 88/88 e, com `MysqlNoDockerTest` e `UploadLimiteETiposDocumentacaoTest`, 123/123, 2026-10-05
+- [x] `CHANGELOG.md` `[Unreleased]` — `SiteDeDocumentacaoTest` + `RedeDeDocumentacaoTest` 88/88 e, com `MysqlNoDockerTest` e `UploadLimiteETiposDocumentacaoTest`, 123/123, 2026-10-05
 
 ## 6. Testes e verificação
 - [ ] Testes do `04` escritos pelo `fw-executor-ct`
@@ -39,10 +39,11 @@
 - [ ] Bump, CHANGELOG com *Validação antes da tag*, tag, `release.yml`
 
 ## Testes
-<!-- Preenchida no step 7. -->
+- [ ] `tests/Kit/DeployMultiambienteDockerTest.php` (CT-01..CT-19, CT-23..CT-32)
+- [ ] `tests/Kit/ProxiesConfiaveisTest.php` (CT-20, CT-21, CT-22)
 
 ## Tickets
-<!-- Step 8. -->
+Não fatiado — 2026-10-05: 17 RQ vigentes, 32 CT, compactação: sim (antes do step 0 desta feature, na feature anterior da mesma sessão), 6 perguntas de requisito — sinal de compactação cruzado, sugestão não feita: sessão autônoma (só o usuário invoca a `feature-tickets`) e a feature cabe numa sessão — 3 arquivos de código, o resto é infra declarativa e documentação
 
 ## Verificação Final
 - [ ] `/ponytail:ponytail-review` no diff
@@ -84,7 +85,7 @@
 
 ## Auditoria Pré-Implementação
 
-Entendimento confirmado: 2026-10-05 — sessão autônoma, pelas recomendações (o solicitante confirma ao ler o PR) — 1 rodada; perguntas: 0 fato (resolvidas por leitura/medição), 3 desenho (Q3–Q5), 2 requisito (Q1, Q2 — nenhuma bloqueia passo: ausente = default de hoje; as duas rotas do Reverb entregues)
+Entendimento confirmado: 2026-10-05 — sessão autônoma, pelas recomendações (o solicitante confirma ao ler o PR) — 2 rodadas (step 4; step 7 devolveu seis); perguntas: 0 fato (resolvidas por leitura/medição), 5 desenho (Q3–Q5, Q7, Q10), 6 requisito (Q1, Q2, Q6, Q8, Q9, Q11 — nenhuma bloqueia passo: cada uma implementada pela direção que falha fechado, como premissa)
 
 ### Perguntas da entrevista (step 4)
 
@@ -95,6 +96,12 @@ Entendimento confirmado: 2026-10-05 — sessão autônoma, pelas recomendações
 | Q3 | desenho | RQ-11, P-03 | a cópia ativa do override entra no `.gitignore` do kit? | sim — D1 |
 | Q4 | desenho | RQ-01 | a página nova fica em Começar ou em Operação? | Operação, `order: 6` — D2 |
 | Q5 | desenho | P-02 | parsing de `TRUSTED_PROXIES` inline no bootstrap ou numa classe de `app/Support`? | classe, com teste unitário — D3 |
+| Q6 | requisito | RQ-10, RQ-16 | portas "opcionais" ou obrigatórias e distintas? (da derivação) | obrigatórias e distintas — P-09 |
+| Q7 | desenho | RQ-14 | `ARG X=`+`ENV` ou `ARG X` sem default? (da derivação) | sem default e sem `ENV` — P-12, medido |
+| Q8 | requisito | RQ-12 | recorte da rota do Reverb: `/app/<chave>` ou subdomínio? (da derivação) | `/app/<chave>` + `/apps/<id>` — P-10 |
+| Q9 | requisito | P-02 | `*` dentro de lista? (da derivação) | lista; `*` só sozinho — P-11 |
+| Q10 | desenho | RQ-12 | delimitadores no bloco comentado do Reverb? (da derivação) | sim — D6 |
+| Q11 | requisito | P-02, RQ-10 | `*` ao lado de porta em `0.0.0.0`? (da derivação) | `*` só com a porta em `127.0.0.1` — D7 |
 
 ### Confronto código × afirmação (step 3/5)
 
@@ -159,6 +166,7 @@ de inventário, sem seeder, sem provider): a classe nova precisa aparecer só on
 
 | # | Step | Agente / tarefa | Modelo | Não recebeu | Resultado | Custo | Auditoria do retorno |
 |---|---|---|---|---|---|---|---|
+| 1 | 7 | `general-purpose` (fallback: o `analista` não existe em `.claude/agents/`) — derivação do `04` lendo e seguindo `feature-test-design/SKILL.md` | opus | `01` (só paths/rotas/UI no prompt), `02` (só a Superfície), código como comportamento | `04` com 32 CT, 19 regras, 82 mutantes, 6 perguntas `Q?1–Q?6` (renumeradas Q6–Q11), 3 achados que contrariam o plano (Reverb `PathPrefix(/app)` captura o painel; `ARG X=`+`ENV` muda o build; portas "opcionais" não sobem) | 243,9 k tokens · 852 s | gravado verbatim do rascunho do scratchpad (`cp`), `git status`: só o `04` novo; amostragem: R7/R9/R13/R14 lidos, os três achados reproduzidos (`AppPanelProvider` em `/app`; `docker build` medido para o `ARG`; `ports` concatenam na sonda) |
 | — | 0–4 | Sem despacho — captura verbatim, decomposição, pesquisa por leitura direta (compose, Dockerfile, script, testes vizinhos, `KitUpdate`, `.gitattributes`, site), `search-docs` (trusted proxies, Reverb), `WebFetch` (Compose merge, Vite env, Traefik docker provider) e sonda local com `docker compose config` | sessão | — | pacote de pesquisa no `01` e nas medições acima | — | medições coladas acima |
 
 ## Blockers
@@ -168,7 +176,8 @@ de inventário, sem seeder, sem provider): a classe nova precisa aparecer só on
 <!-- Pós-implementação. -->
 
 ## Notas de Implementação
-<!-- Pós-implementação. -->
+- **Edição por Python no Windows grava CRLF**: `open(p, 'w')` sem `newline=` converteu `.env.docker`, `.env.example` e os `.md` da wiki para CRLF (`git ls-files --eol` → `w/crlf`), e três casos de `MysqlNoDockerTest` reprovaram porque `$` em regex `m` não casa antes de ``. Corrigido reescrevendo em modo binário; toda edição seguinte usa `newline='
+'`. Registrado também na memória do agente.
 
 ## Referências Abertas
 - `template-00-requisito.md` — step 4 — 2026-10-05

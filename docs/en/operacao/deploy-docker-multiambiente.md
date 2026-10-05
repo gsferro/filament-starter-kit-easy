@@ -100,44 +100,52 @@ links, does not mark the session cookie as `secure` and redirects to addresses t
 reach. `TRUSTED_PROXIES` says whom to believe — a comma-separated list of IPs/CIDRs, or `*`.
 **Empty or absent, nothing changes**: that is the behaviour the kit always had.
 
-`*` is safe when the container's port 80 is reachable only from Traefik's network — which is the
-case behind it, with no port published on the host. If you publish the port outward (next
-section), prefer the CIDR of Traefik's network.
+`*` is safe when the nginx port is reachable only from Traefik's network — with `FORWARD_APP_PORT`
+on loopback (next section). If the port goes outward, replace `*` with the CIDR of Traefik's
+network: whoever reaches the container without going through it could forge `X-Forwarded-*`.
 
-## Ports: optional, or just for you
+## Ports: distinct per environment, and on loopback unless they must go out
 
-Behind Traefik **no port needs to be published** on the host. But Compose adds the override's
-ports to the base file's — the override cannot *remove* the publication of 8000. So "optional" is
-solved by the key itself:
+Behind Traefik the browser traffic needs no port on the host at all. But the kit's
+`docker-compose.yml` **always** publishes the ports of `pgsql`, `redis`, `nginx` and `reverb`, and
+Compose adds the override's ports to the base file's — the override cannot *remove* a publication.
+Across three environments on the same server that collides: the second `up` stops with *port is
+already allocated*. So the four `FORWARD_*` keys are **mandatory and distinct** per environment, and
+what is "optional" is exposing them outward — loopback in the value itself keeps them for
+administration only:
 
 ```ini
 FORWARD_APP_PORT=127.0.0.1:8090   # publishes on loopback only: handy to debug on the machine, invisible from outside
 ```
 
-Without the key the port stays the usual 8000 — and across three environments that collides: the
-second `up` stops with *port is already allocated*. A matrix that works:
+It is also what makes `TRUSTED_PROXIES=*` safe: with the nginx port on `127.0.0.1`, only Traefik
+reaches the container. A matrix that works:
 
 | Variable | dev | test | staging |
 |---|---|---|---|
-| `FORWARD_APP_PORT` *(optional¹)* | `127.0.0.1:8090` | `127.0.0.1:9090` | `127.0.0.1:8080` |
-| `FORWARD_DB_PORT` *(optional¹)* | `127.0.0.1:5433` | `127.0.0.1:5434` | `127.0.0.1:5435` |
-| `FORWARD_REDIS_PORT` *(optional¹)* | `127.0.0.1:6380` | `127.0.0.1:6381` | `127.0.0.1:6382` |
-| `FORWARD_REVERB_PORT` *(only outside Traefik²)* | 8190 | 8191 | 8192 |
+| `FORWARD_APP_PORT` | `127.0.0.1:8090` | `127.0.0.1:9090` | `127.0.0.1:8080` |
+| `FORWARD_DB_PORT` | `127.0.0.1:5433` | `127.0.0.1:5434` | `127.0.0.1:5435` |
+| `FORWARD_REDIS_PORT` | `127.0.0.1:6380` | `127.0.0.1:6381` | `127.0.0.1:6382` |
+| `FORWARD_REVERB_PORT` | 8190¹ | 8191¹ | 8192¹ |
 
-¹ With Traefik routing by hostname none of these needs to exist — keep them only for debugging or
-administration, and on loopback.
+¹ With Reverb through Traefik (next section) it can also go to `127.0.0.1:`; outside it, it is the
+port the browser uses and stays open. Either way the default `8090` collides with the port the matrix
+reserved for dev's app — hence the offsets.
 
-² If Reverb does **not** go through Traefik, the default `FORWARD_REVERB_PORT=8090` collides with
-the port the matrix reserved for dev — hence the offsets.
+The original survey marked the first three as "optional"; in the kit they are not, because the base
+file always publishes them. Leaving one undefined is the mistake that keeps the second environment
+from starting.
 
 ## Reverb: two routes
 
 The WebSocket can take two paths, and the choice belongs to the server, not to the kit:
 
-- **Through Traefik, on the same hostname** (recommended): uncomment the `reverb` service block in
-  the override. It creates a second router, `{project}-reverb`, matching `Host(...)` with
-  `PathPrefix(/app)` and `PathPrefix(/apps)` — the two paths Reverb serves — and pointing at the
-  container's port 8090. In the `.env`, `REVERB_PORT=443` and `REVERB_SCHEME=https` (and the same
+- **Through Traefik, on the same hostname** (recommended): uncomment the block between
+  `# >>> reverb-traefik` and `# <<< reverb-traefik` in the override. It creates a second router,
+  `{project}-reverb`, matching `Host(...)` with `PathPrefix(/app/{REVERB_APP_KEY})` and
+  `PathPrefix(/apps/{REVERB_APP_ID})` — the WebSocket and the API Reverb serves — and pointing at
+  the container's port 8090. Narrowing by key and id is not decoration: `PathPrefix(/app)` alone
+  would steal the kit's `/app` panel, because in Traefik the longest rule wins. In the `.env`, `REVERB_PORT=443` and `REVERB_SCHEME=https` (and the same
   `VITE_REVERB_*` values if your front end has Echo). No extra port exposed, TLS for free.
 - **Its own port on the host**: uncomment nothing and use `FORWARD_REVERB_PORT` with the matrix offset.
 

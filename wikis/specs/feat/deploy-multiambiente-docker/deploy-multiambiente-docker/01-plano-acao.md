@@ -29,7 +29,7 @@
 | RQ-07 | `nginx` na rede externa com os seis labels | 3 | o arquivo de exemplo |
 | RQ-08 | `traefik.docker.network` obrigatório; router/service únicos | 3 | o nome vem de `COMPOSE_PROJECT_NAME` (P-05) |
 | RQ-09 | TLS no Traefik, backend HTTP 80, `nginx.conf` intocado | 1, 3 | o service aponta para a 80; o passo 1 faz o Laravel honrar o `X-Forwarded-Proto` (P-02) |
-| RQ-10 | porta no host opcional / bind em `127.0.0.1` | 4, 5 | pela própria chave `FORWARD_*` (P-06); documentado |
+| RQ-10 | porta no host opcional / bind em `127.0.0.1` | 4, 5 | pela própria chave `FORWARD_*` (P-06); "opcional" só no sentido de ir para o loopback — as quatro são obrigatórias e distintas (P-09, Q6) |
 | RQ-11 | tudo num `docker-compose.override.yml`; base intocado | 3, 4 | o exemplo vive em `docker/traefik/` e a cópia ativa fica fora do git (P-03) |
 | RQ-12 | Reverb: as duas rotas preparadas | 3, 5 | bloco do router comentado no exemplo + `FORWARD_REVERB_PORT` já existente |
 | RQ-13 | Opção A recomendada; B, C e D com prós e contras | 5 | só texto (P-07) |
@@ -44,6 +44,10 @@
 | P-05 | router = `COMPOSE_PROJECT_NAME` | 3 | — |
 | P-06 | "opcional" via `FORWARD_APP_PORT=127.0.0.1:porta` | 4, 5 | — |
 | P-07 | B, C, D só como análise | 5 | — |
+| P-09 | as quatro `FORWARD_*` obrigatórias e distintas | 4, 5 | — |
+| P-10 | rota do Reverb recorta por `/app/<chave>` e `/apps/<id>` | 3, 5 | — |
+| P-11 | `*` só vale sozinho | 1 | — |
+| P-12 | `ARG` sem default e sem `ENV` | 2 | — |
 | P-08 | `deploy_docker_local.sh` não muda | 5 | o CT do `04` prova que o script continua lendo a porta publicada pelo Docker |
 
 ## Objetivo
@@ -172,6 +176,8 @@ Cinco fatos do código atual sustentam o plano, todos lidos e medidos — não s
 | D2 | A página nova fica em **Operação** (`operacao/deploy-docker-multiambiente.md`, `order: 6`), não em Começar: deploy em servidor é o dia a dia de quem opera, e `instalacao-avancada` já é a maior página do site | Q4 (desenho) | surpreendente | sessão, pela recomendação — 2026-10-05 |
 | D3 | A leitura de `TRUSTED_PROXIES` sai de `bootstrap/app.php` para `App\Support\ProxiesConfiaveis::doEnv()`: lista por vírgula, `*`, vazio e ausente têm teste unitário; o bootstrap fica com uma linha | Q5 (desenho) | trade-off real (uma classe para quatro casos) | sessão — 2026-10-05 |
 | D4 | O bloco do Reverb pelo Traefik vai **comentado** no exemplo, no mesmo hostname com `PathPrefix(/app)` e `PathPrefix(/apps)` e service na 8090; descomentar é a adesão. A rota por porta própria é o `FORWARD_REVERB_PORT` que já existe | Q2 (requisito, aberta) | surpreendente | sessão, pela recomendação da Q2 — 2026-10-05 |
+| D6 | O bloco comentado do Reverb no exemplo fica entre `# >>> reverb-traefik` e `# <<< reverb-traefik`, para o teste descomentá-lo mecanicamente e rodar `docker compose config` (fecha a lacuna L3 do `04`) e para orientar quem descomenta à mão | Q10 (desenho) | surpreendente | sessão, pela recomendação — 2026-10-05 |
+| D7 | A página recomenda `TRUSTED_PROXIES=*` **só** com a porta do nginx em `127.0.0.1`, na mesma seção, e a sub-rede do Traefik como alternativa quando a porta sai para fora | Q11 (requisito, aberta) | surpreendente | sessão, pela recomendação — 2026-10-05 |
 | D5 | Nenhum channel de log: o único código PHP novo roda no bootstrap, antes de o container de log existir, e é parsing puro de uma string; o comportamento é provado por teste, não por log | — | — | sessão — 2026-10-05 |
 
 ## Autorização
@@ -322,15 +328,15 @@ logam pelo Laravel.
   # build`, e o .env nao entra na imagem (.dockerignore). Default vazio = a imagem de hoje. Quem
   # tiver Echo no bundle passa os valores por `build.args` — o override de exemplo em
   # docker/traefik/ ja faz isso. (O kit nao consome VITE_REVERB_* por padrao.)
-  ARG VITE_REVERB_HOST=
-  ARG VITE_REVERB_PORT=
-  ARG VITE_REVERB_SCHEME=
-  ARG VITE_REVERB_APP_KEY=
-  ENV VITE_REVERB_HOST=$VITE_REVERB_HOST \
-      VITE_REVERB_PORT=$VITE_REVERB_PORT \
-      VITE_REVERB_SCHEME=$VITE_REVERB_SCHEME \
-      VITE_REVERB_APP_KEY=$VITE_REVERB_APP_KEY
+  ARG VITE_REVERB_HOST
+  ARG VITE_REVERB_PORT
+  ARG VITE_REVERB_SCHEME
+  ARG VITE_REVERB_APP_KEY
   ```
+  *(alterado em 2026-10-05: eram `ARG X=` + `ENV`; a derivação do `04` (Q7) mostrou que `ARG X=`
+  entra no `RUN` como `''` e o Vite copia `VITE_*` vazia para o bundle — `undefined` viraria `''`
+  no projeto com Echo. Medido com `docker build --progress=plain`: `ARG X` sem default e não
+  passado fica **ausente**; passado, chega ao `RUN` como variável de ambiente — sem `ENV`. P-12)*
   Posição: depois do `COPY --from=vendor` e antes do `RUN npm run build`, para que uma mudança de
   argumento invalide só a camada do build. O comentário **não cita** `view:cache`, `config:cache`
   nem `route:cache`.
@@ -372,10 +378,13 @@ logam pelo Laravel.
   ```
   Labels em **lista**, porque em mapa a chave não interpola (medido). Router e service levam o
   nome do projeto Compose (P-05): único por ambiente, sem chave nova.
-- `reverb`: bloco **comentado** (D4) com `networks` + labels do router
+- `reverb`: bloco **comentado** (D4), entre os delimitadores `# >>> reverb-traefik` e
+  `# <<< reverb-traefik` (D6), com `networks` + labels do router
   `${COMPOSE_PROJECT_NAME:-starter-kit}-reverb`, regra
-  ``Host(`${TRAEFIK_HOST}`) && (PathPrefix(`/app`) || PathPrefix(`/apps`))``, mesmo entrypoint,
-  `tls=true`, service na porta 8090 — os dois prefixos que a doc do Reverb manda servir. Comentário
+  ``Host(`${TRAEFIK_HOST}`) && (PathPrefix(`/app/${REVERB_APP_KEY:-starter-kit-key}`) || PathPrefix(`/apps/${REVERB_APP_ID:-starter-kit}`))``,
+  mesmo entrypoint, `tls=true`, service na porta 8090 — o WebSocket em `/app/{chave}` e a API em
+  `/apps/{id}`, que a doc do Reverb manda servir. *(alterado em 2026-10-05: era `PathPrefix(/app)`,
+  que captura o painel `/app` do kit pela prioridade de regra mais longa — Q8/P-10, CT-16)* Comentário
   ao lado: com ele ligado, `REVERB_PORT=443`, `REVERB_SCHEME=https` e `VITE_REVERB_*` idem; sem
   ele, a rota é `FORWARD_REVERB_PORT` com offset por ambiente.
 - Rede de topo:
@@ -400,8 +409,11 @@ logam pelo Laravel.
 - `.env.docker`: bloco novo no fim, comentado, `# --- Varios ambientes no mesmo servidor, atras do
   Traefik ---`, com: `COMPOSE_PROJECT_NAME=projeto-dev` (um por ambiente), `APP_URL=https://…`,
   `TRUSTED_PROXIES=*`, `TRAEFIK_HOST=`, `# TRAEFIK_REDE=my-network`, 
-  `# FORWARD_APP_PORT=127.0.0.1:8090` (uma linha: publica só no loopback; a matriz completa por
-  ambiente fica na página — *cortada daqui no step 6, para não duplicar*). Todas as linhas
+  as quatro `FORWARD_*` comentadas com os valores do **dev** da matriz (`# FORWARD_APP_PORT=127.0.0.1:8090`,
+  `# FORWARD_DB_PORT=127.0.0.1:5433`, `# FORWARD_REDIS_PORT=127.0.0.1:6380`, `# FORWARD_REVERB_PORT=8190`)
+  e um apontador para a matriz da página *(alterado em 2026-10-05: era só a do app; a derivação do
+  `04` (Q6/P-09, CT-25) mostrou que as quatro são obrigatórias — o base publica todas — e que app em
+  8090 com o Reverb no default 8090 colide no mesmo ambiente)*. Todas as linhas
   **comentadas**: o `.env.docker` é um arquivo de colar, e as chaves do Traefik só valem com o
   override presente.
 - **Atende**: RQ-06, RQ-10, RQ-16, RQ-17, P-03, P-06
@@ -420,7 +432,8 @@ logam pelo Laravel.
   ambientes); **Traefik na frente** (a rede externa, os labels, por que `traefik.docker.network`,
   router único — RQ-07/08/09); **Ligar num servidor, passo a passo** (`cp` do exemplo, as chaves no
   `.env`, `TRUSTED_PROXIES`, `up`, `docker compose config` para conferir — RQ-05/11, P-02);
-  **Portas: opcionais, ou só para você** (RQ-10, P-06, e a matriz — RQ-16); **Reverb: duas rotas**
+  **Portas: distintas por ambiente, e no loopback se não forem para fora** (RQ-10, P-06, P-09, a
+  matriz — RQ-16, e `*` só com a porta em `127.0.0.1` — D7); **Reverb: duas rotas**
   (RQ-12, D4); **Um checkout por ambiente** (Opção A e o fluxo de atualização com o
   `deploy_docker_local.sh` — RQ-13, P-08); **As outras opções** (B descartada e por quê, C
   descartada, D com a receita por `environment:` — RQ-13, P-07); **Armadilhas** (cookies, `APP_KEY`,

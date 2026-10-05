@@ -1,0 +1,106 @@
+# =============================================================================
+# Encaixe OPCIONAL no Traefik — para varios ambientes do mesmo projeto no mesmo servidor.
+#
+# Este arquivo e um EXEMPLO versionado. Para ligar, copie-o para a raiz do checkout com o nome
+# que o Compose carrega sozinho (sem -f, inclusive pelo ./deploy_docker_local.sh):
+#
+#   cp docker/traefik/docker-compose.override.yml docker-compose.override.yml
+#
+# e preencha no .env deste ambiente (o bloco pronto esta no fim do .env.docker):
+#
+#   COMPOSE_PROJECT_NAME=projeto-dev   # um por ambiente: prefixa containers, rede, volumes e,
+#                                      # aqui, o router/service do Traefik — unico por construcao
+#   TRAEFIK_HOST=dev.exemplo.br        # OBRIGATORIA: sem ela o Compose recusa subir (ver :? abaixo)
+#   TRUSTED_PROXIES=*                  # o Laravel passa a honrar o X-Forwarded-Proto do Traefik
+#   # TRAEFIK_REDE=my-network          # so se a rede externa do Traefik tiver outro nome
+#
+# O que ele faz: poe SO o nginx na rede externa do Traefik, com os labels do docker provider
+# (TLS termina no Traefik; o backend segue HTTP na porta 80 interna; nginx.conf nao muda), e
+# repassa os VITE_REVERB_* como argumentos de build para quem tiver Echo no bundle.
+#
+# O que ele NAO faz: nao remove porta publicada pelo docker-compose.yml — o Compose SOMA as
+# `ports` dos dois arquivos, e o base publica pgsql, redis, nginx e reverb sempre. Em varios
+# ambientes no mesmo host as quatro FORWARD_* precisam ser DISTINTAS por ambiente; para nao
+# sairem para fora, use o loopback no proprio valor: FORWARD_APP_PORT=127.0.0.1:8090 (a matriz
+# completa esta na pagina). Sem este arquivo na raiz, nada do que esta aqui existe.
+#
+# A copia ativa (docker-compose.override.yml na raiz) esta no .gitignore do kit, como o .env: e
+# configuracao DO SERVIDOR. Documentacao: docs/{pt,en}/operacao/deploy-docker-multiambiente.md.
+# =============================================================================
+
+# Os mesmos argumentos nos seis servicos que fazem build, para a imagem ser UMA (camadas
+# compartilhadas) e nao seis. Vazios, produzem a imagem de hoje: o kit nao consome VITE_REVERB_*
+# por padrao — isto e para o projeto que acrescentar Echo ao front.
+x-vite-args: &vite-args
+  VITE_REVERB_HOST: ${VITE_REVERB_HOST:-}
+  VITE_REVERB_PORT: ${VITE_REVERB_PORT:-}
+  VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-}
+  VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY:-}
+
+services:
+  app:
+    build:
+      args: *vite-args
+
+  queue:
+    build:
+      args: *vite-args
+
+  scheduler:
+    build:
+      args: *vite-args
+
+  pulse:
+    build:
+      args: *vite-args
+
+  nginx:
+    build:
+      args: *vite-args
+    networks:
+      - default   # continua falando com app:9000
+      - traefik   # a rede externa do Traefik (nome real em TRAEFIK_REDE)
+    # Em LISTA, e nao em mapa: o Compose interpola ${…} no valor de cada item, e o nome do
+    # router precisa do nome do projeto. Em mapa, a CHAVE nao e interpolada (medido).
+    labels:
+      - traefik.enable=true
+      # Obrigatorio: o nginx esta em DUAS redes, e sem este label o Traefik pode escolher o IP
+      # da rede privada — o sintoma e um 504.
+      - traefik.docker.network=${TRAEFIK_REDE:-my-network}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-starter-kit}.rule=Host(`${TRAEFIK_HOST:?defina TRAEFIK_HOST no .env — o hostname publico deste ambiente}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-starter-kit}.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-starter-kit}.tls=true
+      - traefik.http.services.${COMPOSE_PROJECT_NAME:-starter-kit}.loadbalancer.server.port=80
+
+  reverb:
+    build:
+      args: *vite-args
+    # ---------------------------------------------------------------------------
+    # Reverb pelo Traefik, no MESMO hostname (opcional — descomente entre os dois marcadores).
+    # Cria um segundo router para os dois caminhos que o Reverb serve: o WebSocket em
+    # /app/<REVERB_APP_KEY> e a API em /apps/<REVERB_APP_ID>. O recorte pela chave e pelo id
+    # NAO e enfeite: `PathPrefix(/app)` sozinho roubaria o painel /app do kit, porque no Traefik a
+    # regra mais longa ganha prioridade. No .env: REVERB_PORT=443, REVERB_SCHEME=https (e os
+    # VITE_REVERB_* iguais, se o front tiver Echo).
+    # Sem isto, a rota do Reverb e a porta propria: FORWARD_REVERB_PORT, com um offset por
+    # ambiente (o default 8090 colide com a porta sugerida para o app do dev).
+    # ---------------------------------------------------------------------------
+    # >>> reverb-traefik
+    # networks:
+    #   - default
+    #   - traefik
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.docker.network=${TRAEFIK_REDE:-my-network}
+    #   - traefik.http.routers.${COMPOSE_PROJECT_NAME:-starter-kit}-reverb.rule=Host(`${TRAEFIK_HOST:?defina TRAEFIK_HOST no .env}`) && (PathPrefix(`/app/${REVERB_APP_KEY:-starter-kit-key}`) || PathPrefix(`/apps/${REVERB_APP_ID:-starter-kit}`))
+    #   - traefik.http.routers.${COMPOSE_PROJECT_NAME:-starter-kit}-reverb.entrypoints=websecure
+    #   - traefik.http.routers.${COMPOSE_PROJECT_NAME:-starter-kit}-reverb.tls=true
+    #   - traefik.http.services.${COMPOSE_PROJECT_NAME:-starter-kit}-reverb.loadbalancer.server.port=8090
+    # <<< reverb-traefik
+
+# Chave fixa (`traefik`) com o nome real em `name:`: a chave de topo NAO e interpolada pelo
+# Compose, o valor de `name:` e. `external: true` porque a rede e do Traefik, nao deste projeto.
+networks:
+  traefik:
+    external: true
+    name: ${TRAEFIK_REDE:-my-network}

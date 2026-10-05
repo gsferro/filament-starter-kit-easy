@@ -33,6 +33,17 @@ COPY resources ./resources
 COPY app ./app
 COPY --from=vendor /var/www/vendor ./vendor
 
+# VITE_* e assado no bundle: o Vite le estas variaveis do ambiente do processo durante o
+# `npm run build`, e o .env nao entra na imagem (.dockerignore). Sem default e sem ENV de
+# proposito: ARG nao passado fica AUSENTE no RUN (medido); `ARG X=` ficaria presente como ''
+# e o Vite copiaria a string vazia para o bundle, mudando `undefined` para '' em quem tiver
+# Echo. Quem precisa passa `build.args` — o override de exemplo em docker/traefik/ ja faz
+# isso. O kit nao consome VITE_REVERB_* por padrao: sem argumento, a imagem e a de sempre.
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT
+ARG VITE_REVERB_SCHEME
+ARG VITE_REVERB_APP_KEY
+
 RUN npm run build
 
 # ---- Estágio app: runtime php-fpm --------------------------------------------
