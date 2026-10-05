@@ -9,7 +9,7 @@ O que a instalação perguntou — e mais um punhado de coisas que antes só se 
 
 | Aba | O que você troca |
 |---|---|
-| **Identidade** | nome da aplicação, **versão do sistema**, cor primária (a paleta do Filament **ou** um hexadecimal livre), logo da marca, favicon e a arte das telas de autenticação |
+| **Identidade** | nome da aplicação, **versão do sistema**, cor primária (a paleta do Filament **ou** um hexadecimal livre), logo da marca, favicon, a arte das telas de autenticação e o **cabeçalho dos painéis** (a marca composta e o bloco do usuário) |
 | **E-mail** | transporte (`log`, `array`, `smtp`), servidor, porta, criptografia, usuário, senha e remetente |
 | **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário e colunas arrastáveis — os defaults de **toda** tabela dos três painéis |
 | **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../../autenticacao/registro-aberto/)) |
@@ -259,6 +259,48 @@ recusado. Com os dois vazios, o painel volta ao nome em texto, sem erro.
 quando ele é "Sistema", então as duas `<img>` saem juntas no HTML e o CSS do Filament exibe a certa.
 Organização sem variante escura cai para a da instalação — e, sem ela, para a clara. A tela de bloqueio
 usa o mesmo par: logo da **organização**, se houver; da instalação, se não.
+
+## Cabeçalho dos painéis: o que mostrar no topo
+
+A aba **Identidade** fecha com a seção **Cabeçalho dos painéis**: quatro interruptores e um seletor,
+**todos nascidos desligados** — com nada ligado, os três painéis ficam exatamente como sempre foram
+(a logo enviada ou, sem ela, o nome em texto). É a mesma regra da logo por tema: instalação existente
+não muda de cara com update do kit.
+
+Os três primeiros compõem a **marca do topo**, nesta ordem, com um separador entre cada segmento
+presente:
+
+- **Nome do projeto na marca do topo** — o nome da aplicação, em texto.
+- **Nome do painel na marca do topo** — `Administração`, `Infraestrutura` ou, no painel do negócio,
+  o nome da **organização aberta**. Sem organização aberta, o painel do negócio omite o segmento
+  quando ele repetiria o nome do projeto ao lado (lá o rótulo do painel *é* o nome da aplicação).
+- **Logo da marca ao fim da composição** — a logo da seção anterior (a clara e, com a marca
+  separada, a escura, trocadas pelo navegador). Sem logo enviada, nada aparece neste lugar — e se
+  nenhum segmento resolver, a marca volta à de sempre, nunca fica vazia.
+
+A composição substitui a marca **onde quer que o Filament a desenhe**: no topo da barra lateral,
+enquanto ela está aberta (ali a composição quebra linha para caber), e no topbar, quando ela está
+recolhida ou em tela estreita. As telas públicas (login, recuperação de senha, bloqueio) continuam
+com a marca de sempre: o cabeçalho é dos painéis autenticados. No painel do negócio a logo da
+composição é sempre a da **instalação** — a da organização segue aparecendo só na tela de bloqueio.
+
+O quarto interruptor, **Nome do usuário ao lado do avatar**, mostra quem está autenticado à
+esquerda do avatar, com uma linha abaixo escolhida em **Abaixo do nome do usuário**: o **perfil**
+(o papel no painel corrente, com o mesmo rótulo do menu do avatar — `Administrador Geral` em qualquer
+painel; quem não tem papel no painel fica só com o nome) ou o **e-mail**. O bloco **some abaixo de
+768 px** de largura; o menu do avatar continua mostrando nome, e-mail e papel. O seletor só aparece
+com o bloco ligado.
+
+As cinco opções têm par no `.env`, que semeia a primeira gravação e é o plano B — como todas as
+outras desta tela ([Quem manda](#quem-manda-o-banco-ou-o-env)):
+
+```dotenv
+# KIT_CABECALHO_NOME_DO_PROJETO=false
+# KIT_CABECALHO_NOME_DO_PAINEL=false
+# KIT_CABECALHO_LOGO_DA_MARCA=false
+# KIT_CABECALHO_USUARIO=false
+# KIT_CABECALHO_DETALHE_DO_USUARIO=perfil   # ou email; fora da lista cai em perfil
+```
 
 ## Permissão
 

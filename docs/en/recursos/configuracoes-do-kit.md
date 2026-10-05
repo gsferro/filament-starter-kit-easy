@@ -9,7 +9,7 @@ What the installer asked — plus a handful of things you previously could only 
 
 | Tab | What you change |
 |---|---|
-| **Identidade** (identity) | application name, **system version**, primary colour (the Filament palette **or** a free hex value), brand logo, favicon and the artwork on the authentication screens |
+| **Identidade** (identity) | application name, **system version**, primary colour (the Filament palette **or** a free hex value), brand logo, favicon, the artwork on the authentication screens and the **panel header** (the composed brand and the user block) |
 | **E-mail** | transport (`log`, `array`, `smtp`), host, port, encryption, username, password and sender |
 | **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns — the defaults for **every** table in all three panels |
 | **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](../../autenticacao/registro-aberto/)) |
@@ -268,6 +268,50 @@ theme when it is "System", so both `<img>` tags ship in the same HTML and Filame
 right one. An organisation without a dark variant falls back to the installation's — and, without
 that, to the light one. The lock screen uses the same pair: the **organisation's** logo if it has
 one, the installation's if not.
+
+## Panel header: what to show at the top
+
+The **Identidade** tab closes with the **Cabeçalho dos painéis** (panel header) section: four
+switches and one select, **all born off** — with nothing on, the three panels look exactly as they
+always did (the uploaded logo or, without one, the name as text). Same rule as the logo by theme: an
+existing installation does not change its face with a kit update.
+
+The first three compose the **top brand**, in this order, with a separator between each present
+segment:
+
+- **Nome do projeto na marca do topo** (project name) — the application name, as text.
+- **Nome do painel na marca do topo** (panel name) — `Administração`, `Infraestrutura` or, in the
+  business panel, the name of the **open organisation**. Without an open organisation, the business
+  panel omits the segment when it would repeat the project name next to it (there, the panel label
+  *is* the application name).
+- **Logo da marca ao fim da composição** (brand logo) — the logo from the previous section (the
+  light one and, with a split brand, the dark one, swapped by the browser). Without an uploaded logo
+  nothing shows in that spot — and if no segment resolves, the brand goes back to the usual one; it
+  is never empty.
+
+The composition replaces the brand **wherever Filament draws it**: at the top of the sidebar while
+it is open (there the composition wraps to fit), and in the topbar when it is collapsed or on a
+narrow screen. Public screens (login, password reset, lock screen) keep the usual brand: the header
+belongs to the authenticated panels. In the business panel the composition's logo is always the
+**installation's** — the organisation's keeps showing only on the lock screen.
+
+The fourth switch, **Nome do usuário ao lado do avatar** (user name next to the avatar), shows who
+is signed in to the left of the avatar, with a line below chosen in **Abaixo do nome do usuário**:
+the **profile** (the role in the current panel, with the same label as the avatar menu —
+`Administrador Geral` in any panel; someone with no role in the panel gets the name alone) or the
+**e-mail**. The block **disappears below 768 px** of width; the avatar menu keeps showing name,
+e-mail and role. The select only appears with the block on.
+
+The five options have `.env` counterparts, which seed the first write and are the fallback — like
+every other option on this screen ([Who wins](#who-wins-the-database-or-env)):
+
+```dotenv
+# KIT_CABECALHO_NOME_DO_PROJETO=false
+# KIT_CABECALHO_NOME_DO_PAINEL=false
+# KIT_CABECALHO_LOGO_DA_MARCA=false
+# KIT_CABECALHO_USUARIO=false
+# KIT_CABECALHO_DETALHE_DO_USUARIO=perfil   # or email; anything else falls back to perfil
+```
 
 ## Permission
 

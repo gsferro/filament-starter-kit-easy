@@ -188,7 +188,7 @@ Not a showcase: it's the inventory of everything that already exists, and of wha
 
 | | `/app` | `/admin` | `/infra` | **Total** |
 |---|---:|---:|---:|---:|
-| **Navigable screens** | 14 | 31 | 28 | **73** |
+| **Navigable screens** | 14 | 31 | 28 | **74** |
 | Resources | 4 | 8 | 8 | **20** |
 | Standalone pages | 5 | 5 | 13 | **23** |
 | Widgets | 1 | 9 | 19 | **29** |
@@ -230,7 +230,7 @@ The other two already come complete.
 | Documentation | |
 |---|---:|
 | Reference documents (`wikis/`) | **12** |
-| Specified features (`wikis/specs/`) | **73** |
+| Specified features (`wikis/specs/`) | **74** |
 | Project rules for AI agents (`.ai/rules/`, excluding the index) | **20** |
 
 > The details moved to the site: **[Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/)** and **[Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/)**.

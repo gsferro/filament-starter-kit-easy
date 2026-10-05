@@ -188,7 +188,7 @@ Não é vitrine: é o inventário de tudo que já existe, e o que você não vai
 
 | | `/app` | `/admin` | `/infra` | **Total** |
 |---|---:|---:|---:|---:|
-| **Telas navegáveis** | 14 | 31 | 28 | **73** |
+| **Telas navegáveis** | 14 | 31 | 28 | **74** |
 | Resources | 4 | 8 | 8 | **20** |
 | Páginas próprias | 5 | 5 | 13 | **23** |
 | Widgets | 1 | 9 | 19 | **29** |
@@ -230,7 +230,7 @@ dois já vêm completos.
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **12** |
-| Features especificadas (`wikis/specs/`) | **73** |
+| Features especificadas (`wikis/specs/`) | **74** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **20** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
