@@ -199,12 +199,12 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:504`), chamado no boot por
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:519`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:394`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:367`) — `KIT_TENANCY`
-(`config/kit.php:KIT_TENANCY:351`) não está nesse mapa, então o banco nunca a sobrescreve.
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:380`) — `KIT_TENANCY`
+(`config/kit.php:KIT_TENANCY:360`) não está nesse mapa, então o banco nunca a sobrescreve.
 
 Como isso funciona sem que nenhum consumidor saiba que o settings existe:
 
@@ -235,6 +235,30 @@ São dois campos, e a precedência é declarada:
 O hexadecimal vence porque é o campo mais específico: quem digita `#7c3aed` escolheu aquela cor, enquanto o seletor da lista tem valor padrão e pode nunca ter sido tocado. Valor fora do formato (`#abcd`, `azul`, `#gggggg`) é **ignorado** e a resolução cai para o nome — a mesma tolerância que o kit já tinha para nome de cor inválido, e pelo mesmo motivo: isto roda no boot de todo painel, e uma exceção ali derrubaria **toda** página do projeto, não uma tela.
 
 Dentro de `/app/{organização}`, a cor da **organização** continua vencendo as duas.
+
+## Logo da marca: uma só, ou duas por tema
+
+A aba **Identidade** tem um interruptor, **Uma logo só, nos dois temas** — e ele nasce LIGADO, porque
+instalação existente não muda de cara com update do kit. Com ele ligado, a mesma logo vale no
+tema claro e no escuro, como sempre foi.
+
+Desligado, a marca separa em duas imagens:
+
+- **Logo da marca** — exibida no tema claro, e na marca do topo dos três painéis. Fundo claro recomendado.
+- **Logo para o tema escuro** — exibida só no tema escuro. Fundo **transparente** recomendado: com fundo
+  branco, a logo vira um bloco sólido no escuro.
+
+Os dois campos viram obrigatórios **entre si** no modo separado: gravar a clara sem a escura (ou o contrário) é
+recusado. Com os dois vazios, o painel volta ao nome em texto, sem erro.
+
+![A logo do tema claro na tela de bloqueio](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/logo-tema-claro.png)
+
+![A logo do tema escuro na tela de bloqueio](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/logo-tema-escuro.png)
+
+**Quem troca a imagem é o navegador**, pela classe `dark` do `<html>` — o servidor não conhece o tema
+quando ele é "Sistema", então as duas `<img>` saem juntas no HTML e o CSS do Filament exibe a certa.
+Organização sem variante escura cai para a da instalação — e, sem ela, para a clara. A tela de bloqueio
+usa o mesmo par: logo da **organização**, se houver; da instalação, se não.
 
 ## Permissão
 

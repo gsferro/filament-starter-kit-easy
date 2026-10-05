@@ -209,6 +209,29 @@ class TenantForm
                             // Linha inteira: com os dois campos de cor na primeira linha, a logo
                             // espremida ao lado de um vazio ficava feia.
                             ->columnSpanFull(),
+
+                        /*
+                         * A variante escura, com o mesmo contrato do campo acima — a lista de
+                         * tipos, o disk público e o teto são a mesma decisão, não duas.
+                         *
+                         * `visible()`, e não sempre visível: com a marca unificada o campo é
+                         * inerte (a resolução nem a consulta), e um upload que não muda nada
+                         * na tela é promessa quebrada. O campo volta quando o admin separa a
+                         * marca em /admin/configuracoes-da-aplicacao.
+                         */
+                        FileUpload::make('logo_dark')
+                            ->label('Logo para o tema escuro')
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
+                            ->disk('public')
+                            ->directory('organizacoes/logos')
+                            ->visibility('public')
+                            ->maxSize(TetoDeUpload::emKb())
+                            ->validationMessages([
+                                'max' => 'O arquivo passa de '.TetoDeUpload::emMb().' MB.',
+                            ])
+                            ->helperText('Variante escura da logo — fundo transparente recomendado. Em branco, usa a da instalação. Até '.TetoDeUpload::emMb().' MB, e SVG não é aceito.')
+                            ->visible(fn (): bool => ! config('kit.identidade.unifica_logo_marca', true))
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

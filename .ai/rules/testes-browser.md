@@ -210,3 +210,30 @@ Mesmo espírito da nota sobre `assertNoSmoke()` em tela de plugin: suíte vermel
 alheia ninguém conserta, e o que ela ensina é a ignorar o vermelho.
 
 Custou um CI vermelho na feature `settings-do-kit`, com a suíte passando local.
+
+## `inDarkMode()`/`inLightMode()` só valem no LOAD — uma visita por tema
+
+`inDarkMode()` em página **já carregada** não reavalia nada: a emulação de
+`prefers-color-scheme` é lida pelo `theme.js` do Filament no `DOMContentLoaded`, que fixa a
+classe `dark` no `<html>` **ali** e não olha de novo. Chamar `->inDarkMode()` depois do
+`visit()` e esperar o swap acontecer dá falso negativo determinístico — `getComputedStyle`
+continua reportando o tema do load.
+
+O formato que funciona é uma visita por tema:
+
+```php
+$clara = visit('/rota')->inLightMode();
+$clara->assertVisible('.fi-logo-light')
+    ->assertScript("getComputedStyle(document.querySelector('.fi-logo-dark')).display === 'none'");
+
+$escura = visit('/rota')->inDarkMode();
+$escura->assertVisible('.fi-logo-dark')
+    ->assertScript("getComputedStyle(document.querySelector('.fi-logo-light')).display === 'none'");
+```
+
+Bonus: a emulação `inDarkMode()` **vaza para o cenário seguinte** (mesmo bug de estado já
+documentado em `RoteiroDoKitTest`/`TemaEscuroTest`) — mais um motivo para visitar de novo com
+o tema explícito em vez de depender da alternância.
+
+Origem: `tests/Browser/LogoDarkModeTest.php` (CT-B01), `wikis/specs/feat/logo-dark-mode/` —
+o cenário falhou com `<html>` sem `dark` até virar duas visitas.

@@ -133,8 +133,17 @@ return [
 
     'identidade' => [
         'logo'          => null,
-        'favicon'       => null,
-        'arte_do_login' => null,
+        // Variante para o tema escuro. Só vale com `unifica_logo_marca` em false:
+        // com a marca unificada (o default), a chave fica gravada mas inerte —
+        // `IdentidadeDoKit::logoEscura()` devolve null.
+        'logo_dark'     => null,
+        // Uma logo só, usada nos dois temas. `false` separa a marca em `logo`
+        // (fundo claro recomendado) + `logo_dark` (fundo transparente recomendado),
+        // e o swap é decidido no cliente pela classe `dark` do <html> — o servidor
+        // nunca conhece o tema "Sistema".
+        'unifica_logo_marca' => BooleanoDoEnv::comPadrao(env('KIT_UNIFICA_LOGO_MARCA'), true),
+        'favicon'            => null,
+        'arte_do_login'      => null,
     ],
 
     /*

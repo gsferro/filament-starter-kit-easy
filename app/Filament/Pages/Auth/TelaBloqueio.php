@@ -3,6 +3,7 @@
 namespace App\Filament\Pages\Auth;
 
 use App\Models\Tenant;
+use App\Support\IdentidadeDoKit;
 use App\Support\Paineis;
 use Caresome\FilamentAuthDesigner\Concerns\HasAuthDesignerLayout;
 use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
@@ -85,41 +86,61 @@ class TelaBloqueio extends LockerScreen
      *
      * Ver ADR-03 e ADR-04 da wiki `identidade-visual-da-organizacao`.
      */
+    /**
+     * O par de logos resolvido por variante — `clara` sempre, `escura` quando o modo separa.
+     *
+     * Público de propósito: a partial `media.blade.php` (override do pacote) lê este
+     * método por `method_exists` para decidir se renderiza a dupla de imgs ou a mídia
+     * única. Sem ele, a view não saberia distinguir "a mídia é logo" de "a mídia é a
+     * arte de fallback" — e aplicaria `object-fit:contain` (sem a classe `fi-auth-media`)
+     * na arte, quebrando RQ-05/Q1.
+     *
+     * A resolução é por variante, não cadeia plana: a escura cai para `kit.logo_dark`,
+     * nunca para a clara da organização (D3). `once()` porque `getAuthDesignerConfig()`
+     * e a partial são dois consumidores do mesmo par no mesmo render.
+     *
+     * @return array{clara: ?string, escura: ?string}
+     */
+    public function urlsDasLogos(): array
+    {
+        return once(fn (): array => [
+            'clara'  => $this->organizacaoResolvida()?->urlDaLogo() ?? IdentidadeDoKit::logo(),
+            'escura' => IdentidadeDoKit::unificaLogo()
+                ? null
+                : ($this->organizacaoResolvida()?->urlDaLogoEscura() ?? IdentidadeDoKit::logoEscura()),
+        ]);
+    }
+
     public function getAuthDesignerConfig(): AuthDesignerConfig
     {
         $config = $this->configBaseDoAuthDesigner();
         $painel = Paineis::correnteOuPadrao()->getId();
 
-        /*
-         * A CHAVE da organização, não a organização: quem grava a sessão é
-         * `DefinirTenantDePermissoes`, com `$tenant?->getKey()`.
-         *
-         * A guarda de tipo não é cerimônia — `session()` devolve `mixed`, e `find()` com
-         * array/Arrayable devolve uma COLEÇÃO em vez de um model. Sessão adulterada com
-         * `tenant_corrente = [1, 2]` faria o resto do método tratar a coleção como
-         * organização: `->urlDaLogo()` estouraria `BadMethodCallException` na tela de
-         * bloqueio, que é justamente a tela que ninguém pode perder.
-         */
-        $sessao = session('tenant_corrente');
-        $chave  = is_int($sessao) || is_string($sessao) ? $sessao : null;
-
-        $motivo = match (true) {
-            $painel !== 'app' => 'painel_sem_tenancy',
-            blank($chave)     => 'sem_tenant',
-            default           => null,
-        };
-
-        $organizacao = $motivo === null
-            ? Tenant::find($chave)
-            : null;
-
-        $logo = $organizacao?->urlDaLogo();
+        $organizacao = $this->organizacaoResolvida();
+        $logos       = $this->urlsDasLogos();
+        $logo        = $logos['clara'];
 
         if (blank($logo)) {
+            /*
+             * Os três motivos explicam a mídia base: sem organização possível
+             * (painel sem tenancy), sem organização na sessão e organização sem
+             * logo — agora somada a "nem a da marca". `tenant_corrente` é lido de
+             * novo aqui porque o `motivo` precisa do bruto da sessão, não do
+             * `null` resolvido — o CT-07 de `IdentidadeVisualTest` assere os três.
+             */
+            $sessao = session('tenant_corrente');
+            $chave  = is_int($sessao) || is_string($sessao) ? $sessao : null;
+
+            $motivo = match (true) {
+                $painel !== 'app' => 'painel_sem_tenancy',
+                blank($chave)     => 'sem_tenant',
+                default           => 'sem_logo',
+            };
+
             Log::channel('tenancy')->debug(
-                '[TelaBloqueio@getAuthDesignerConfig] Sem logo de organização, usando a mídia base | motivo: '.($motivo ?? 'sem_logo'),
+                '[TelaBloqueio@getAuthDesignerConfig] Sem logo de organização nem da marca, usando a mídia base | motivo: '.$motivo,
                 [
-                    'motivo'    => $motivo ?? 'sem_logo',
+                    'motivo'    => $motivo,
                     'painel'    => $painel,
                     'tenant_id' => $organizacao?->getKey(),
                 ],
@@ -129,11 +150,12 @@ class TelaBloqueio extends LockerScreen
         }
 
         Log::channel('tenancy')->debug(
-            '[TelaBloqueio@getAuthDesignerConfig] Logo da organização aplicada na tela de bloqueio | tenant: '.$organizacao->getKey(),
+            '[TelaBloqueio@getAuthDesignerConfig] Logo aplicada na tela de bloqueio | tenant: '.($organizacao?->getKey() ?? 'nenhum'),
             [
-                'tenant_id'   => $organizacao->getKey(),
-                'tenant_slug' => $organizacao->slug,
+                'tenant_id'   => $organizacao?->getKey(),
+                'tenant_slug' => $organizacao?->slug,
                 'painel'      => $painel,
+                'logo_escura' => filled($logos['escura']),
             ],
         );
 
@@ -142,7 +164,7 @@ class TelaBloqueio extends LockerScreen
             media: $logo,
             mediaSize: $config->mediaSize,
             blur: $config->blur,
-            mediaAlt: $organizacao->nome,
+            mediaAlt: $organizacao->nome ?? config('app.name'),
             showThemeSwitcher: $config->showThemeSwitcher,
             themePosition: $config->themePosition,
             // Logo é imagem: `isVideo` falso e sem mime de vídeo. O `FileUpload` do form
@@ -151,6 +173,35 @@ class TelaBloqueio extends LockerScreen
             mediaMimeType: null,
             renderHooks: $config->renderHooks,
         );
+    }
+
+    /**
+     * A organização da sessão bloqueada — `null` em painel sem tenancy, sessão sem
+     * tenant ou sessão adulterada. Um `find` por request: a resolução da clara, da
+     * escura e a própria chamada do `getAuthDesignerConfig()` compartilham o resultado.
+     *
+     * A guarda de tipo não é cerimônia — `session()` devolve `mixed`, e `find()` com
+     * array/Arrayable devolve uma COLEÇÃO em vez de um model. Sessão adulterada com
+     * `tenant_corrente = [1, 2]` faria o resto do método tratar a coleção como
+     * organização: `->urlDaLogo()` estouraria `BadMethodCallException` na tela de
+     * bloqueio, que é justamente a tela que ninguém pode perder.
+     */
+    private function organizacaoResolvida(): ?Tenant
+    {
+        return once(function (): ?Tenant {
+            if (Paineis::correnteOuPadrao()->getId() !== 'app') {
+                return null;
+            }
+
+            /*
+             * A CHAVE da organização, não a organização: quem grava a sessão é
+             * `DefinirTenantDePermissoes`, com `$tenant?->getKey()`.
+             */
+            $sessao = session('tenant_corrente');
+            $chave  = is_int($sessao) || is_string($sessao) ? $sessao : null;
+
+            return blank($chave) ? null : Tenant::find($chave);
+        });
     }
 
     /**

@@ -205,12 +205,12 @@ accDescr: .env seeds config/*.php at boot; the database overrides mapaDeConfigur
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` runs the second arrow
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:504`), called at boot by
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:519`), called at boot by
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:394`); the overridden keys are exactly
 the ones in `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:367`) — `KIT_TENANCY`
-(`config/kit.php:KIT_TENANCY:351`) is not in that map, so the database never overrides it.
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:380`) — `KIT_TENANCY`
+(`config/kit.php:KIT_TENANCY:360`) is not in that map, so the database never overrides it.
 
 How that works without any consumer knowing the settings exist:
 
@@ -241,6 +241,33 @@ Two fields, with a declared precedence:
 Hex wins because it is the more specific field: someone typing `#7c3aed` chose that colour, whereas the list selector has a default value and may never have been touched. A value outside the format (`#abcd`, `blue`, `#gggggg`) is **ignored** and resolution falls back to the name — the same tolerance the kit already had for an invalid colour name, and for the same reason: this runs in every panel's boot, and an exception there would take down **every** page in the project, not one screen.
 
 Inside `/app/{organisation}`, the **organisation's** colour still beats both.
+
+## Brand logo: one, or two by theme
+
+The **Identity** tab has a switch, **One logo only, on both themes** — and it ships ON, because an
+existing installation must not change its look through a kit update. With it on, the same logo is
+used on the light and dark themes, as it always was.
+
+Turned off, the brand splits into two images:
+
+- **Brand logo** — shown on the light theme, and in the top brand of all three panels. A light
+  background is recommended.
+- **Logo for the dark theme** — shown only on the dark theme. A **transparent** background is
+  recommended: with a white background the logo becomes a solid block in the dark.
+
+Both fields become required **of each other** in the split mode: saving the light one without the
+dark one (or the other way around) is refused. With both empty, the panel falls back to the name in
+text, with no error.
+
+![The light-theme logo on the lock screen](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/logo-tema-claro.png)
+
+![The dark-theme logo on the lock screen](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/logo-tema-escuro.png)
+
+**The browser swaps the image**, through the `dark` class on `<html>` — the server cannot know the
+theme when it is "System", so both `<img>` tags ship in the same HTML and Filament's CSS shows the
+right one. An organisation without a dark variant falls back to the installation's — and, without
+that, to the light one. The lock screen uses the same pair: the **organisation's** logo if it has
+one, the installation's if not.
 
 ## Permission
 

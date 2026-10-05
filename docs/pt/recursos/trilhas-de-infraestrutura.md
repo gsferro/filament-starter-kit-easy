@@ -66,7 +66,7 @@ accDescr: Cada tela do painel /infra liga-se à tabela ou fonte que mostra e a q
 ```
 
 Cada plugin de tela vem de `Filament::getPanel('infra')->getPlugins()`
-(`app/Providers/Filament/InfraPanelProvider.php:FilamentSpatieLaravelHealthPlugin:303` — Health,
+(`app/Providers/Filament/InfraPanelProvider.php:FilamentSpatieLaravelHealthPlugin:306` — Health,
 `:FilamentJobsMonitorPlugin:324` — Jobs, `:FilamentLogsExplorerPlugin:337` — Logs,
 `:FilamentExceptionsPlugin:502` — Exceções, `:FilamentMailLogPlugin:547` — Trilha de e-mails,
 `:RevivePlugin:580` — Lixeira, `:FilamentAuditingPlugin:330` — Auditoria,

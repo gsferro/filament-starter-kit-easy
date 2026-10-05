@@ -195,7 +195,7 @@ O ledger nasce de um listener de evento, nunca de uma chamada direta:
 (`app/Providers/KitServiceProvider.php:AgentStreamed:455`), e `RegistrarAiRun::handle()` grava em
 `ai_runs` com `status: 'ok'` (`app/Ai/Listeners/RegistrarAiRun.php:AiRun::create:44`) — pedido
 bloqueado por qualquer camada acima **não** chega a esta linha. O widget só existe no painel `/app`
-(`app/Providers/Filament/AppPanelProvider.php:BODY_END:155`).
+(`app/Providers/Filament/AppPanelProvider.php:BODY_END:158`).
 
 ## O que o roteiro **não** cobre sozinho
 
