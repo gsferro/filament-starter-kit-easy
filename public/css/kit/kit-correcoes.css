@@ -229,3 +229,125 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
     min-height: 0;
     flex: 1 1 auto;
 }
+
+/*
+| Cabeçalho dos painéis (feat/cabecalho-do-painel): a marca composta
+| ("nome do projeto | nome do painel | logo") que `CabecalhoDoPainel::marca()`
+| devolve ao `brandLogo()`, e o bloco do usuário do render hook
+| `USER_MENU_BEFORE`. As blades do kit só emitem estas classes — utilitária
+| Tailwind emitida por blade do kit não existe na página.
+|
+| O Filament envolve a composição numa `div.fi-logo` com `height: 2rem` nos
+| dois lugares em que desenha a marca: o topbar (uma linha) e o cabeçalho da
+| barra lateral (16,5–20 rem de largura), onde a composição pode quebrar linha.
+| Par `.dark:root` obrigatório: o Filament usa `:where()`, de especificidade
+| zero, e o seletor simples não venceria o tema escuro.
+*/
+.kit-cabecalho {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    height: 100%;
+    white-space: nowrap;
+    color: var(--gray-950);
+}
+
+.dark:root .kit-cabecalho {
+    color: #fff;
+}
+
+.kit-cabecalho__projeto {
+    font-weight: 700;
+    font-size: 1.125rem;
+    letter-spacing: -0.01em;
+}
+
+.kit-cabecalho__painel {
+    font-weight: 600;
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+.kit-cabecalho__sep {
+    width: 1px;
+    height: 1.5rem;
+    background: currentColor;
+    opacity: 0.25;
+}
+
+.kit-cabecalho__logo {
+    height: 100%;
+    width: auto;
+}
+
+/*
+| O swap claro/escuro das duas logos é do Filament, mas as regras dele são
+| `:where(.fi-logo-dark)` / `:where(.dark .fi-logo-light)`, de especificidade
+| ZERO — qualquer `display` declarado numa classe do kit as venceria e as duas
+| logos apareceriam juntas (foi o que o CT-B02 pegou com `display: block`
+| acima). Por isso o kit repete o swap com a própria especificidade, no par
+| claro/escuro, em vez de declarar `display` na classe da imagem.
+*/
+.kit-cabecalho .fi-logo-light {
+    display: block;
+}
+
+.kit-cabecalho .fi-logo-dark {
+    display: none;
+}
+
+.dark:root .kit-cabecalho .fi-logo-light {
+    display: none;
+}
+
+.dark:root .kit-cabecalho .fi-logo-dark {
+    display: block;
+}
+
+/* Dentro da barra lateral a composição quebra linha e a logo fixa a altura. */
+.fi-sidebar .kit-cabecalho {
+    flex-wrap: wrap;
+    white-space: normal;
+    height: auto;
+    row-gap: 0.25rem;
+}
+
+.fi-sidebar .kit-cabecalho__logo {
+    height: 2rem;
+}
+
+/*
+| Bloco do usuário: nome e, abaixo, o e-mail ou o papel. Oculto abaixo de
+| 768 px — ali o topbar já disputa espaço com busca, sininho e avatar, e o
+| menu do avatar continua mostrando nome, e-mail e papel.
+*/
+.kit-usuario {
+    display: none;
+    flex-direction: column;
+    line-height: 1.15;
+    text-align: end;
+    margin-inline-end: 0.5rem;
+    color: var(--gray-950);
+}
+
+@media (min-width: 768px) {
+    .kit-usuario {
+        display: flex;
+    }
+}
+
+.dark:root .kit-usuario {
+    color: #fff;
+}
+
+.kit-usuario__nome {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.kit-usuario__detalhe {
+    font-size: 0.75rem;
+    opacity: 0.75;
+}

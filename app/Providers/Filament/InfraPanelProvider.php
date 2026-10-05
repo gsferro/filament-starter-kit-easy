@@ -16,6 +16,7 @@ use App\Livewire\DefinirSenhaPorEmail;
 use App\Models\Projeto;
 use App\Models\User;
 use App\Support\AvatarDeIniciais;
+use App\Support\CabecalhoDoPainel;
 use App\Support\CorPrimaria;
 use App\Support\DensidadeDoLayout;
 use App\Support\IdentidadeDoKit;
@@ -47,6 +48,7 @@ use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Gsferro\FilamentOdometerEasy\FilamentOdometerEasyPlugin;
 use Harvirsidhu\FilamentCards\FilamentCardsPlugin;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -104,10 +106,13 @@ class InfraPanelProvider extends PanelProvider
              * aí o Filament cai no brand em texto e no favicon dele — que é o
              * comportamento do kit antes desta feature.
              */
-            ->brandLogo(fn (): ?string => IdentidadeDoKit::logo())
-            // Null na marca unificada — o componente logo.blade.php renderiza um
-            // <img> só; a closure é o ponto de consumo de `IdentidadeDoKit::logoEscura()`.
-            ->darkModeBrandLogo(fn (): ?string => IdentidadeDoKit::logoEscura())
+            // A Closure decide, a cada render, entre a logo solta de sempre e a marca
+            // composta ("projeto | painel | logo") das Configurações da aplicação — com tudo
+            // desligado ela devolve exatamente `IdentidadeDoKit::logo()`.
+            ->brandLogo(fn (): string|Htmlable|null => CabecalhoDoPainel::marca())
+            // Null na marca unificada e null com a composição ativa (o par claro/escuro
+            // já vai dentro dela); do contrário, `IdentidadeDoKit::logoEscura()`.
+            ->darkModeBrandLogo(fn (): ?string => CabecalhoDoPainel::marcaEscura())
             ->brandLogoHeight('2rem')
             ->favicon(fn (): ?string => IdentidadeDoKit::favicon())
             ->colors(fn (): array => CorPrimaria::paleta())
@@ -664,6 +669,16 @@ class InfraPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::USER_MENU_PROFILE_BEFORE,
                 fn (): string => view('filament.user-menu-header')->render(),
+            )
+            /*
+             * O bloco do usuário do cabeçalho (nome + e-mail ou papel), à esquerda do avatar
+             * e FORA do dropdown — é o hook que o docblock acima diz que não serve ao cabeçalho
+             * de identidade, e serve exatamente a isto. Vazio com a opção desligada
+             * (`kit.cabecalho.usuario`): o default é o topbar de sempre.
+             */
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn (): Htmlable => CabecalhoDoPainel::usuario(),
             )
             ->middleware([
                 EncryptCookies::class,
