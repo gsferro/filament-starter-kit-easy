@@ -12433,16 +12433,16 @@
         },
         {
             "name": "stechstudio/filament-impersonate",
-            "version": "v5.6.0",
+            "version": "v5.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stechstudio/filament-impersonate.git",
-                "reference": "2f6357e3d4564dabfdec4c1c2c636edafe83d944"
+                "reference": "d2516a44585f663b167f5a1ec991002dbd66dda8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stechstudio/filament-impersonate/zipball/2f6357e3d4564dabfdec4c1c2c636edafe83d944",
-                "reference": "2f6357e3d4564dabfdec4c1c2c636edafe83d944",
+                "url": "https://api.github.com/repos/stechstudio/filament-impersonate/zipball/d2516a44585f663b167f5a1ec991002dbd66dda8",
+                "reference": "d2516a44585f663b167f5a1ec991002dbd66dda8",
                 "shasum": ""
             },
             "require": {
@@ -12473,9 +12473,9 @@
             "description": "A Filament package to impersonate your users.",
             "support": {
                 "issues": "https://github.com/stechstudio/filament-impersonate/issues",
-                "source": "https://github.com/stechstudio/filament-impersonate/tree/v5.6.0"
+                "source": "https://github.com/stechstudio/filament-impersonate/tree/v5.6.1"
             },
-            "time": "2026-07-06T12:39:32+00:00"
+            "time": "2026-10-01T22:47:14+00:00"
         },
         {
             "name": "symfony/clock",
