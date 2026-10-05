@@ -632,9 +632,17 @@ it('[CT-18] o painel abre com detalhe fora do domínio gravado direto', function
 */
 
 it('[CT-19] as cinco opções nascem desligadas e em perfil', function (): void {
-    foreach (['NOME_DO_PROJETO', 'NOME_DO_PAINEL', 'LOGO_DA_MARCA', 'USUARIO', 'DETALHE_DO_USUARIO'] as $variavel) {
-        expect(env("KIT_CABECALHO_{$variavel}"))->toBeNull();
+    /*
+     * Guarda do arnês, não do requisito: o `.env` desta máquina não pode estar MASCARANDO o
+     * default (uma chave ligada aqui faria o caso medir o ambiente, não a fábrica). No CI o
+     * `.env` é cópia do `.env.example`, onde as cinco linhas são ATIVAS com o próprio valor de
+     * fábrica (CT-20) — então o aceito é "ausente OU igual à fábrica", nunca "ausente".
+     */
+    foreach (['NOME_DO_PROJETO', 'NOME_DO_PAINEL', 'LOGO_DA_MARCA', 'USUARIO'] as $variavel) {
+        expect(env("KIT_CABECALHO_{$variavel}"))->toBeIn([null, false, 'false']);
     }
+
+    expect(env('KIT_CABECALHO_DETALHE_DO_USUARIO'))->toBeIn([null, 'perfil']);
 
     foreach (['nome_do_projeto', 'nome_do_painel', 'logo_da_marca', 'usuario'] as $interruptor) {
         expect(configuracaoGravada("cabecalho_{$interruptor}"))->toBeFalse()
