@@ -5,6 +5,51 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.44.0] - 2026-10-05
+
+### Adicionado
+
+- **Cabeçalho dos painéis personalizável pelas Configurações da aplicação** (#146, wiki
+  `wikis/specs/feat/cabecalho-do-painel/`): a aba **Identidade** fecha com a seção **Cabeçalho dos
+  painéis** — três interruptores compõem a marca do topo, nesta ordem, **nome do projeto | nome do
+  painel | logo da marca**; um quarto mostra o **nome do usuário** à esquerda do avatar; e um seletor
+  escolhe o que vai abaixo dele, **perfil** (o papel no painel corrente, no rótulo do menu do avatar)
+  ou **e-mail**. **Tudo nasce desligado**: com os cinco no default, os três painéis renderizam
+  exatamente o que renderizavam. No painel do negócio com organização aberta, o segmento do painel
+  mostra o nome dela; sem organização, o `/app` omite o segmento quando repetiria o nome do projeto.
+  A logo é a da instalação (clara e escura, com o swap nativo); sem logo enviada, o segmento é
+  omitido e, se nada resolver, a marca volta à de sempre. As telas de autenticação (login, 2FA,
+  verificação de e-mail, bloqueio) ficam com a marca de hoje. O bloco do usuário some abaixo de
+  768 px. A composição substitui a marca onde o Filament a desenha — topbar e, em tela estreita com
+  a barra aberta, o topo da barra lateral, numa linha só, com reticências. Cinco chaves no `.env`
+  (`KIT_CABECALHO_*`) semeiam a primeira gravação. Documentado em
+  `docs/{pt,en}/recursos/configuracoes-do-kit.md`; "marca composta" e "bloco do usuário" no glossário.
+- **`User::papelNoPainelCorrente()`**: a pergunta "com que papel estou aqui" (painel corrente +
+  organização aberta + `master_global` vencendo) ganhou um método só, usado pelo badge do menu do
+  usuário e pelo cabeçalho — as duas cópias já divergiam. Chave de organização não numérica fecha
+  para `null` em vez de abrir o filtro.
+- **Três Project Rules** (`.ai/rules/`): `css-filament.md` — regra fora de camada vence o `:where()`
+  em `@layer` do Filament, nunca declarar `display` na imagem do swap `fi-logo-light`/`fi-logo-dark`;
+  `testes.md` — caso que lê `docs/`, README ou o site por path **interpolado** pula fora da árvore (o
+  CT-11 só pega literal; segunda recorrência da classe, depois do `HostLocalTest` da v0.38.0);
+  `models.md` — `papelNoPainelCorrente()` é a fonte única do papel exibido.
+
+### Corrigido
+
+- **`storage/gerar-logos-demo.php` no `.gitignore`**: script local que gera as duas logos de
+  demonstração (clara/escura) para testar a identidade por tema à mão; não viaja.
+
+### Qualidade
+
+- A feature nasceu com 35 casos de teste de backend e 3 de navegador derivados do requisito, com
+  revisão adversarial (35 achados, 2 blockers fechados antes de existir código) e quality gate em três
+  ciclos. Quatro casos nasceram vermelhos e pegaram defeito real antes do merge: array enviado no
+  select (`TypeError` na settings), swap da logo vencido por `display` fora de camada, as linhas do
+  `.env.example`, e a composição aparecendo em tela de autenticação depois de um update Livewire
+  (guarda por nome de rota não cobre `default-livewire.update`). Mutação em `CabecalhoDoPainel`:
+  86,41 % (89 testados; sobreviventes só no texto do `warning`). READMEs: 74 features especificadas,
+  175/204 arquivos de teste, badge de 1.893 casos.
+
 ## [0.43.0] - 2026-10-05
 
 ### Adicionado
