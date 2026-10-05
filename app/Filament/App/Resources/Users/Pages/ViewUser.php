@@ -31,7 +31,7 @@ use MortalKiller\FilamentPageHeader\Concerns\HasPageHeader;
  * ## O cabecalho
  *
  * O schema vem por convencao do pacote a partir do MODEL
- * (`vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:50`).
+ * (`vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:65`).
  * NAO declare `getHeader()` nesta classe: o trait sobrescreve exatamente esse metodo, e a classe
  * venceria o trait tornando o pacote inerte, sem erro nenhum.
  */
