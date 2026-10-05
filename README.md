@@ -230,7 +230,7 @@ dois já vêm completos.
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **12** |
-| Features especificadas (`wikis/specs/`) | **74** |
+| Features especificadas (`wikis/specs/`) | **75** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **20** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
@@ -403,6 +403,10 @@ Dá para abrir o projeto em `http://meu-projeto.test` no lugar de `http://127.0.
 O rebuild vem **depois** do pull porque a imagem é self-contained (o código é assado nela) — rebuild antes reassa o código velho. E como ele recria `reverb` e `pulse`, que estão no mesmo profile `app`, não há comando de restart à parte: processo long-running não vê código novo sem reiniciar.
 
 `--recreate` acrescenta `--force-recreate`, e é necessário quando o `.env` mudou: o Compose lê o `env_file` na **criação** do container, então um container já existente mantém os valores antigos. Se o `.env.example` mudou no pull, o script avisa.
+
+### Vários ambientes no mesmo servidor
+
+Dev, teste e homologação do mesmo projeto num servidor só, cada um com a própria stack, atrás de um Traefik que roteia por hostname: é opt-in — um override de exemplo em `docker/traefik/docker-compose.override.yml` copiado para a raiz do checkout, `COMPOSE_PROJECT_NAME` distinto por ambiente e `TRUSTED_PROXIES` no `.env` para o Laravel honrar o TLS terminado no proxy. Sem a cópia e sem as chaves, nada muda. [Passo a passo, matriz de portas e as duas rotas do Reverb](https://gsferro.github.io/filament-starter-kit-easy/pt/operacao/deploy-docker-multiambiente.html).
 
 ## Comandos
 

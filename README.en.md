@@ -230,7 +230,7 @@ The other two already come complete.
 | Documentation | |
 |---|---:|
 | Reference documents (`wikis/`) | **12** |
-| Specified features (`wikis/specs/`) | **74** |
+| Specified features (`wikis/specs/`) | **75** |
 | Project rules for AI agents (`.ai/rules/`, excluding the index) | **20** |
 
 > The details moved to the site: **[Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/)** and **[Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/)**.
@@ -404,6 +404,10 @@ You can open the project at `http://my-project.test` rather than `http://127.0.0
 The rebuild comes **after** the pull because the image is self-contained (the code is baked into it) — rebuilding first would bake the old code. And since it recreates `reverb` and `pulse`, both in the same `app` profile, there is no separate restart command: a long-running process won't see new code without restarting.
 
 `--recreate` adds `--force-recreate`, needed when `.env` changed: Compose reads `env_file` when the container is **created**, so an existing container keeps the old values. If `.env.example` changed in the pull, the script warns you.
+
+### Several environments on one server
+
+Dev, test and staging of the same project on a single server, each with its own stack, behind a Traefik that routes by hostname: it is opt-in — an example override at `docker/traefik/docker-compose.override.yml` copied to the checkout root, a distinct `COMPOSE_PROJECT_NAME` per environment and `TRUSTED_PROXIES` in the `.env` so Laravel honours the TLS terminated at the proxy. Without the copy and the keys, nothing changes. [Step by step, port matrix and the two Reverb routes](https://gsferro.github.io/filament-starter-kit-easy/en/operacao/deploy-docker-multiambiente.html).
 
 ## Commands
 

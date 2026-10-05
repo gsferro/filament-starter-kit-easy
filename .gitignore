@@ -3,6 +3,9 @@
 .env
 .env.backup
 .env.production
+# A copia ativa do override do Docker Compose e configuracao DO SERVIDOR, como o .env: cada
+# checkout tem a sua. O exemplo versionado esta em docker/traefik/.
+/docker-compose.override.yml
 /database/*.sqlite
 /database/*.sqlite-shm
 /database/*.sqlite-wal

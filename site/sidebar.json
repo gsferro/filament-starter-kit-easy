@@ -109,6 +109,9 @@
       },
       {
         "slug": "operacao/desenvolvendo-o-kit"
+      },
+      {
+        "slug": "operacao/deploy-docker-multiambiente"
       }
     ]
   },

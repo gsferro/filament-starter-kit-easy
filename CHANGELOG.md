@@ -5,6 +5,24 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Adicionado
+
+- **Deploy opt-in de vários ambientes no mesmo servidor, atrás do Traefik** (wiki
+  `wikis/specs/feat/deploy-multiambiente-docker/`): um override de exemplo em
+  `docker/traefik/docker-compose.override.yml` — copiado para a raiz do checkout, o Compose o carrega
+  sozinho — põe o `nginx` na rede externa do Traefik com os labels do docker provider (router e
+  service nomeados pelo `COMPOSE_PROJECT_NAME`, únicos por ambiente; `traefik.docker.network`
+  obrigatório; `TRAEFIK_HOST` sem default, o Compose recusa subir sem ela), com o bloco do Reverb pelo
+  mesmo hostname comentado e os `VITE_REVERB_*` repassados como `build.args`. O `Dockerfile.laravel`
+  aceita esses quatro argumentos no estágio `assets` (vazios por padrão — a imagem de hoje). Chave
+  nova `TRUSTED_PROXIES` (lista ou `*`; **ausente = nenhum proxy**, como sempre) lida em
+  `bootstrap/app.php` por `App\Support\ProxiesConfiaveis`, para o Laravel honrar o TLS terminado no
+  proxy. Bloco pronto no `.env.docker`; `/docker-compose.override.yml` no `.gitignore`. O
+  `docker-compose.yml` base, o `nginx.conf` e o `deploy_docker_local.sh` não mudam. Página nova no
+  site, `operacao/deploy-docker-multiambiente` (pt/en): mecanismo central, passo a passo, portas
+  opcionais com bind em `127.0.0.1` e matriz por ambiente, as duas rotas do Reverb, um checkout por
+  ambiente e as opções descartadas, armadilhas.
+
 ## [0.44.0] - 2026-10-05
 
 ### Adicionado
