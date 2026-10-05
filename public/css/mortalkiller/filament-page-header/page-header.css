@@ -44,6 +44,51 @@
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1);
 }
 .fph-breadcrumbs { min-width: 0; }
+.fph-root .fph-surface { min-width: 0; }
+.fph-root .fph-surface > .fph-breadcrumbs {
+    padding-bottom: 2rem;
+    background: var(--gray-50);
+    pointer-events: auto;
+}
+.dark .fph-root .fph-surface > .fph-breadcrumbs { background: var(--gray-950); }
+.fph-root .fph-header > .fph-breadcrumbs { margin-bottom: 1rem; }
+.fph-root .fph-sub-navigation {
+    min-width: 0;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--fph-border);
+}
+.fph-root .fph-sub-navigation-desktop { display: none; }
+@media (min-width: 768px) {
+    .fph-root .fph-sub-navigation { padding-top: 0; border-top: 0; }
+    .fph-root .fph-sub-navigation-desktop { display: block; }
+    .fph-root .fph-sub-navigation-mobile { display: none; }
+    .fph-root .fph-sub-navigation-desktop .fi-page-sub-navigation-tabs {
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+    .fph-root .fph-sub-navigation-desktop .fi-tabs-item {
+        position: relative;
+        padding-bottom: 1rem;
+        border-radius: 0;
+        background: transparent;
+    }
+    .fph-root .fph-sub-navigation-desktop .fi-tabs-item.fi-active::after {
+        position: absolute;
+        inset-inline: .75rem;
+        bottom: 0;
+        height: 2px;
+        border-radius: 9999px;
+        background: var(--primary-600);
+        content: "";
+    }
+    .dark .fph-root .fph-sub-navigation-desktop .fi-tabs-item.fi-active::after {
+        background: var(--primary-400);
+    }
+}
 .fph-root .fph-layout { min-width: 0; }
 .fph-root .fph-top {
     display: flex;
@@ -148,6 +193,12 @@
 .fph-root[data-fph-compact="true"] .fph-badges { margin-top: 0; }
 .fph-root[data-fph-compact="true"] .fph-avatar { width: clamp(2rem, 3vw, 2.5rem); height: clamp(2rem, 3vw, 2.5rem); font-size: .75rem; }
 .fph-root[data-fph-compact="true"] .fph-leading img { max-height: clamp(2rem, 3vw, 2.5rem); max-width: clamp(2rem, 3vw, 2.5rem); }
+@media (min-width: 768px) {
+    /* Match compact visibility, including the keyboard-focus exception. */
+    .fph-root:not([data-fph-compact="true"]) .fph-header[data-fph-has-sub-navigation],
+    .fph-root[data-fph-compact="true"] .fph-header:has(> [data-fph-sub-navigation][data-fph-hide-compact="false"]),
+    .fph-root[data-fph-compact="true"] .fph-header:has(> [data-fph-sub-navigation]:focus-within) { padding-bottom: 0; }
+}
 .fph-root[data-fph-measuring] .fph-header { transition: none !important; }
 @media (max-width: 767px) {
     .fph-root .fph-header { padding: 1rem; }

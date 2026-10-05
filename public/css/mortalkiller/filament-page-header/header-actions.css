@@ -1,0 +1,31 @@
+/* Only the header controller writes this reserved attribute, including on owned portals. */
+[data-fph-action-hidden="true"] { display: none !important; }
+
+@media (min-width: 768px) {
+    .fph-root .fph-layout[data-fph-actions-position="start"] > .fph-top > .fph-actions {
+        order: -1;
+        margin-inline-start: 0;
+        justify-content: flex-start;
+    }
+    .fph-root .fph-layout[data-fph-actions-position="start"] > .fph-top > .fph-actions > .fi-ac {
+        justify-content: flex-start;
+    }
+    .fph-root .fph-layout[data-fph-actions-position="below"] {
+        display: flex;
+        flex-direction: column;
+    }
+    .fph-root .fph-layout[data-fph-actions-position="below"] > .fph-top { display: contents; }
+    .fph-root .fph-layout[data-fph-actions-position="below"] > .fph-top > .fph-content {
+        order: 0;
+        flex-basis: auto;
+    }
+    .fph-root .fph-layout[data-fph-actions-position="below"] > .fph-details { order: 1; }
+    .fph-root .fph-layout[data-fph-actions-position="below"] > .fph-default { order: 2; }
+    .fph-root .fph-layout[data-fph-actions-position="below"] > .fph-top > .fph-actions {
+        order: 3;
+        align-self: stretch;
+        width: 100%;
+        margin-inline-start: 0;
+        margin-top: 1rem;
+    }
+}
