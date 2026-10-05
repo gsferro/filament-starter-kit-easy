@@ -5,6 +5,61 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-10-05
+
+### Adicionado
+
+- **Logo da marca por tema — variante escura para a instalação e para a organização** (#145,
+  wiki `wikis/specs/feat/logo-dark-mode/`): a aba **Identidade** ganha o interruptor **Uma logo
+  só, nos dois temas**, que nasce LIGADO — instalação existente não muda de cara com o update.
+  Desligado, a marca separa em **Logo da marca** (tema claro, fundo claro recomendado) e **Logo
+  para o tema escuro** (fundo transparente recomendado), obrigatórias **entre si**; a organização
+  ganha o par `logo` / `logo_dark` em `/admin/organizacoes`. Os três painéis passam a declarar
+  `darkModeBrandLogo()`, e a tela de bloqueio resolve por variante (`tenant.logo_dark ??
+  kit.logo_dark`, caindo para a clara). **Quem troca a imagem é o navegador**, pela classe `dark`
+  do `<html>` e as classes nativas `fi-logo-light`/`fi-logo-dark` do Filament — zero CSS novo, e
+  o servidor nunca precisa conhecer o tema "Sistema". A logo da tela de bloqueio deixou de usar
+  `fi-auth-media` (que a distorcia em `cover`): sai centrada e contida; a arte do login continua
+  `cover`. Documentado em `docs/{pt,en}/recursos/configuracoes-do-kit.md`, com screenshots em
+  `art/logo-tema-{claro,escuro}.png`. QA: APROVADO COM DÉBITO (0 blocker, 0 major), mutation
+  score 92,45 %.
+- **Duas Project Rules novas**: `app.md` — URL pública de arquivo do disco é
+  `asset('storage/'.$caminho)`, nunca `Storage::url()` (terceira recorrência do bug de host
+  divergente, agora em `IdentidadeDoKit::doDisco()`); `testes-browser.md` — `inDarkMode()` /
+  `inLightMode()` do `pest-plugin-browser` só valem no load da página: uma visita por tema.
+
+### Corrigido
+
+- **`IdentidadeDoKit::doDisco()` devolvia URL congelada em `APP_URL`** (#145, RD-01): com host
+  divergente (proxy, staging, o servidor do `pest-plugin-browser` em `127.0.0.1:porta`) a `<img>`
+  da logo e do favicon saía quebrada enquanto o resto da página carregava. Agora `asset()`, como
+  `Tenant::urlDaLogo()` já fazia.
+- **O exemplo do rótulo de versão das páginas de configurações ficou em `kit 0.42.0`** (#144):
+  a release 0.42.1 bumpou `config/kit.php` e o CHANGELOG, mas não o quarto arquivo da rodada, e
+  o CT-25 do `SiteDeDocumentacaoTest` ficou vermelho na `main` — e, por tabela, em todo PR do
+  Dependabot aberto desde então. Nesta release o exemplo diz `kit 0.43.0`.
+- **17 citações `arquivo:símbolo:linha` deslocadas pelo próprio diff da logo** (#145): os
+  `darkModeBrandLogo()` nos três providers, as chaves novas de `config/kit.php` e o
+  `urlDaLogoEscura()` do `Tenant` empurraram âncoras citadas nas docs pt/en e em `TenantHeader`;
+  o CT-26 pegou, e as 17 foram reancoradas por varredura mecânica. Os READMEs passaram a contar
+  **61** migrations e **73** features especificadas.
+- **O único CT-B que lia a logo da tela de bloqueio procurava `.fi-auth-media`** (#145):
+  `tests/BrowserTenancy/IdentidadeVisualTest.php` reprovou no job `telas` por `Timeout 45000ms`
+  — a classe saiu da logo de propósito. Seletor reancorado em `.fi-logo-light`; a regressão da
+  wiki tinha listado `tests/Kit` e esquecido `tests/BrowserTenancy`.
+
+### Dependências
+
+- `laravel/framework` 13.33.0 → **13.34.0** (#141), `laravel/boost` 2.9.1 → **2.10.1** (#143),
+  `stechstudio/filament-impersonate` 5.6.0 → **5.6.1** (#142),
+  `prodstarter/filament-notification-center` 1.0.1 → **1.1.0** (#139), `vite` 8.3.1 → **8.3.2**
+  (#137) e `@laravel/multiplex` 0.4.4 → **0.4.5** (#138).
+- `mortalkiller/filament-page-header` 2.1.5 → **2.4.3** (#140): três minors opt-in e sem mudança
+  de API em runtime (posicionamento de ações, navegação no header, releases de documentação). O
+  bump moveu `getPageHeaderSchemaClass()` da linha 50 para a 65 de `HasPageHeader.php`, e as dez
+  citações do kit (as páginas e os headers de `Users` e `Tenants`, `CabecalhoDeUsuario`,
+  `wikis/receitas.md`) foram reancoradas no mesmo PR — foi o CT-26 que acusou.
+
 ## [0.42.1] - 2026-10-02
 
 ### Corrigido
