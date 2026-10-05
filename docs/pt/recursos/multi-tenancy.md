@@ -134,9 +134,9 @@ pré-voo — git limpo (`app/Console/Commands/KitTenancy.php:preVoo:103`) — co
 Com o modo ligado, toda requisição a `/app/{tenant}` passa por dois middlewares do Filament antes de
 chegar à tela: `IdentifyTenant` resolve o tenant da rota e já decide o 404 chamando
 `canAccessTenant()` (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:canAccessTenant:40`,
-`app/Models/User.php:canAccessTenant:789`); só depois disso o `DefinirTenantDePermissoes` — o
+`app/Models/User.php:canAccessTenant:819`); só depois disso o `DefinirTenantDePermissoes` — o
 `tenantMiddleware` do kit — fixa o contexto de papéis por tenant
-(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:598`,
+(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:602`,
 `app/Http/Middleware/DefinirTenantDePermissoes.php:setPermissionsTeamId:46`).
 
 ```mermaid

@@ -38,11 +38,11 @@ accDescr: Pendente (só existe com KIT_REGISTRO e KIT_REGISTRO_APROVACAO_MANUAL)
 O rótulo "Pendente" esconde o `ativo`: uma conta pendente pode ser desativada sem deixar de ser
 Pendente, e só ao ser aprovada revela se estava ativa (vai a Ativo) ou desativada (vai a Inativo) —
 por isso a condição na seta de `aprovar`. `rotuloDaSituacao()` devolve Pendente antes de Inativo
-antes de Ativo (`app/Models/User.php:rotuloDaSituacao:501`, `:'Pendente':504`); `aprovar()` só baixa
-a pendência, sem tocar `ativo` (`app/Models/User.php:aprovar:520`, `:526`); `desativar()` recusa a
-própria conta e o último `master_global` ativo (`app/Models/User.php:desativar:285`,
+antes de Ativo (`app/Models/User.php:rotuloDaSituacao:531`, `:'Pendente':504`); `aprovar()` só baixa
+a pendência, sem tocar `ativo` (`app/Models/User.php:aprovar:550`, `:526`); `desativar()` recusa a
+própria conta e o último `master_global` ativo (`app/Models/User.php:desativar:286`,
 `:propria_conta:349`, `:ultimo_master_global:350`); a exclusão é lógica (`SoftDeletes`) e vence a
-exibição de Pendente/Ativo/Inativo (`app/Models/User.php:SoftDeletes:85`); `restore()` (nativo do
+exibição de Pendente/Ativo/Inativo (`app/Models/User.php:SoftDeletes:86`); `restore()` (nativo do
 `SoftDeletes`, disparado pela `RestoreAction` do `/admin`) devolve o estado gravado antes da
 exclusão.
 

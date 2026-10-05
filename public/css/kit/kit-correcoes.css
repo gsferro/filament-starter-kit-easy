@@ -238,16 +238,22 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
 | Tailwind emitida por blade do kit não existe na página.
 |
 | O Filament envolve a composição numa `div.fi-logo` com `height: 2rem` nos
-| dois lugares em que desenha a marca: o topbar (uma linha) e o cabeçalho da
-| barra lateral (16,5–20 rem de largura), onde a composição pode quebrar linha.
-| Par `.dark:root` obrigatório: o Filament usa `:where()`, de especificidade
-| zero, e o seletor simples não venceria o tema escuro.
+| dois lugares em que desenha a marca: o topbar e o cabeçalho da barra lateral
+| (16,5–20 rem de largura, 4 rem de altura). A composição fica SEMPRE numa
+| linha: na barra lateral os textos encolhem e cortam com reticências em vez
+| de quebrar — linha a mais vazaria por baixo do cabeçalho, que tem altura
+| fixa, sobre a navegação.
+|
+| Par `.dark:root` obrigatório para a cor: o Filament pinta por `:where()`,
+| de especificidade zero, e o seletor simples do kit venceria o tema escuro.
 */
 .kit-cabecalho {
     display: inline-flex;
     align-items: center;
     gap: 0.75rem;
+    max-width: 100%;
     height: 100%;
+    min-width: 0;
     white-space: nowrap;
     color: var(--gray-950);
 }
@@ -270,25 +276,44 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
     opacity: 0.85;
 }
 
+.kit-cabecalho__projeto,
+.kit-cabecalho__painel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .kit-cabecalho__sep {
+    flex: none;
     width: 1px;
     height: 1.5rem;
     background: currentColor;
     opacity: 0.25;
 }
 
+/*
+| Altura ABSOLUTA na imagem, não `100%`: `getBrandLogo()` tem outros
+| consumidores além do `logo.blade.php` do Filament — a página de erro do
+| Sentinel ecoa o HTML num `span` sem altura —, e `100%` de um pai sem altura
+| é o tamanho natural do arquivo. A blade repete `height: 2rem` inline pelo
+| mesmo motivo: fora do painel este CSS pode nem estar carregado.
+*/
 .kit-cabecalho__logo {
-    height: 100%;
+    flex: none;
+    height: 2rem;
     width: auto;
 }
 
 /*
-| O swap claro/escuro das duas logos é do Filament, mas as regras dele são
-| `:where(.fi-logo-dark)` / `:where(.dark .fi-logo-light)`, de especificidade
-| ZERO — qualquer `display` declarado numa classe do kit as venceria e as duas
-| logos apareceriam juntas (foi o que o CT-B02 pegou com `display: block`
-| acima). Por isso o kit repete o swap com a própria especificidade, no par
-| claro/escuro, em vez de declarar `display` na classe da imagem.
+| O swap claro/escuro das duas logos é do Filament
+| (`.fi-logo.fi-logo-light:where(.dark, .dark *), .fi-logo.fi-logo-dark { display: none }`,
+| dentro de `@layer components` do `app.css` compilado). Este arquivo não tem
+| camada, e regra FORA de camada vence toda regra em camada, qualquer que seja
+| a especificidade: um `display` declarado em `.kit-cabecalho__logo` apagava o
+| swap e as duas logos apareciam juntas (foi o que o CT-B02 pegou). Por isso a
+| classe da imagem não declara `display`, e o kit repete o swap aqui, no par
+| claro/escuro — regras também fora de camada, que vencem as do Filament pelo
+| mesmo motivo.
 */
 .kit-cabecalho .fi-logo-light {
     display: block;
@@ -306,16 +331,17 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
     display: block;
 }
 
-/* Dentro da barra lateral a composição quebra linha e a logo fixa a altura. */
+/* Na barra lateral cabe menos: textos menores, e a elipse faz o resto. */
 .fi-sidebar .kit-cabecalho {
-    flex-wrap: wrap;
-    white-space: normal;
-    height: auto;
-    row-gap: 0.25rem;
+    gap: 0.5rem;
 }
 
-.fi-sidebar .kit-cabecalho__logo {
-    height: 2rem;
+.fi-sidebar .kit-cabecalho__projeto {
+    font-size: 1rem;
+}
+
+.fi-sidebar .kit-cabecalho__painel {
+    font-size: 0.6875rem;
 }
 
 /*

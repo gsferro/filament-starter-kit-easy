@@ -8,7 +8,7 @@ Twenty Mermaid diagrams show how the kit works today: architecture, role-based a
 
 ## DG-01 — Layered architecture
 
-From the browser to the three Filament panels (`app/Providers/Filament/AppPanelProvider.php:id:76`, `app/Providers/Filament/AdminPanelProvider.php:id:67`, `app/Providers/Filament/InfraPanelProvider.php:id:88`), through role-based access, down to the database, queue, cache and the optional services. It is the same block as the README — a single source.
+From the browser to the three Filament panels (`app/Providers/Filament/AppPanelProvider.php:id:78`, `app/Providers/Filament/AdminPanelProvider.php:id:69`, `app/Providers/Filament/InfraPanelProvider.php:id:90`), through role-based access, down to the database, queue, cache and the optional services. It is the same block as the README — a single source.
 
 ```mermaid
 flowchart TD
@@ -55,7 +55,7 @@ accDescr: From the browser to the three Filament panels, through role-based acce
 
 ## DG-02 — Use cases by role
 
-The kit's eight actors (visitor, `panel_user`, `admin_app`, `admin`, `infra`, `master_global`, the scheduler and the CLI) and the use cases each role reaches. `admin_app` only exists when `KIT_TENANCY` is on (`database/seeders/PapeisSeeder.php:papel:80`); the other roles are always seeded (`database/seeders/PapeisSeeder.php:papel:58`, `:papel:61`, `:papel:101`). Every edge ties the role to the permission entity it actually holds in the database (Shield) — or, for `master_global`, to the code that lets them through without Shield: `Gate::before` (`cu_tudo`) and, for "Impersonate user", `User::canImpersonate()` (`app/Models/User.php:canImpersonate:852`), which only accepts `master_global` — never to a guess.
+The kit's eight actors (visitor, `panel_user`, `admin_app`, `admin`, `infra`, `master_global`, the scheduler and the CLI) and the use cases each role reaches. `admin_app` only exists when `KIT_TENANCY` is on (`database/seeders/PapeisSeeder.php:papel:80`); the other roles are always seeded (`database/seeders/PapeisSeeder.php:papel:58`, `:papel:61`, `:papel:101`). Every edge ties the role to the permission entity it actually holds in the database (Shield) — or, for `master_global`, to the code that lets them through without Shield: `Gate::before` (`cu_tudo`) and, for "Impersonate user", `User::canImpersonate()` (`app/Models/User.php:canImpersonate:882`), which only accepts `master_global` — never to a guess.
 
 ```mermaid
 flowchart LR
@@ -122,7 +122,7 @@ accDescr: The kit's eight actors and the use cases each role reaches, inside the
 
 ## DG-03 — Panel access rule
 
-The exact order of `User::canAccessPanel()` (`app/Models/User.php:canAccessPanel:156`): account unavailability (`:166`), pending approval (`:193`), `master_global` (`:206`), the role's context — any tenant with tenancy on, only the global context without it (`:217`) — and finally the panel role (`:219`). Once allowed, the `User::canAccessTenant()` extension (`:789`) decides the tenant, and the ORDER matters: an inactive organization denies first, for everyone — including `master_global` (`:813`) —; only then does `master_global` always get in (`:826`), and no link denies (`:830`).
+The exact order of `User::canAccessPanel()` (`app/Models/User.php:canAccessPanel:157`): account unavailability (`:166`), pending approval (`:193`), `master_global` (`:206`), the role's context — any tenant with tenancy on, only the global context without it (`:217`) — and finally the panel role (`:219`). Once allowed, the `User::canAccessTenant()` extension (`:789`) decides the tenant, and the ORDER matters: an inactive organization denies first, for everyone — including `master_global` (`:813`) —; only then does `master_global` always get in (`:826`), and no link denies (`:830`).
 
 ```mermaid
 flowchart TD
@@ -151,7 +151,7 @@ accDescr: The decision order of canAccessPanel, from account unavailability to t
 
 ## DG-13 — Core entity-relationship diagram
 
-The central entities and how they reference each other: the account (`users`) to a tenant via `tenant_user` (`app/Models/User.php:tenants:748`, `app/Models/Tenant.php:users:114`), to a role via `model_has_roles` (Shield), the social link (`app/Models/User.php:vinculosSociais:758`), the invite — with a nullable `convidado_por_id` (`database/migrations/2026_08_13_000002_create_convites_table.php:convidado_por_id:42`) — via `papel()`, `tenant()` and `convidadoPor()` (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) and the AI agent catalog — with no relation at all to `projetos`, the demo table (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` and `agent_conversations` are left out of this ER: they store identifiers as loose text (`subject_type`/`subject_id`, `participant_type`/`participant_id`), with no real foreign key, and drawing a relation for them would invent an FK the schema doesn't have. `passkeys` is left out for the opposite reason: the table exists (vendor), but no feature in the kit uses it — passkeys are disabled (`enablePasskeys()` is never called).
+The central entities and how they reference each other: the account (`users`) to a tenant via `tenant_user` (`app/Models/User.php:tenants:778`, `app/Models/Tenant.php:users:114`), to a role via `model_has_roles` (Shield), the social link (`app/Models/User.php:vinculosSociais:788`), the invite — with a nullable `convidado_por_id` (`database/migrations/2026_08_13_000002_create_convites_table.php:convidado_por_id:42`) — via `papel()`, `tenant()` and `convidadoPor()` (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) and the AI agent catalog — with no relation at all to `projetos`, the demo table (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` and `agent_conversations` are left out of this ER: they store identifiers as loose text (`subject_type`/`subject_id`, `participant_type`/`participant_id`), with no real foreign key, and drawing a relation for them would invent an FK the schema doesn't have. `passkeys` is left out for the opposite reason: the table exists (vendor), but no feature in the kit uses it — passkeys are disabled (`enablePasskeys()` is never called).
 
 ```mermaid
 erDiagram

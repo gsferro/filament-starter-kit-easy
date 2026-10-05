@@ -795,7 +795,7 @@ function fatosPorDg(): array
         // DG-03: a pergunta de pendência (checa_pendente) vem ANTES da de master_global
         // (checa_master, canAccessPanel) E, na extensão de canAccessTenant, a organização inativa
         // (checa_tenant) nega ANTES do master_global/vínculo sempre entrar (checa_vinculo) —
-        // `app/Models/User.php:canAccessTenant:789` faz a checagem de `!$tenant->ativo` primeiro
+        // `app/Models/User.php:canAccessTenant:819` faz a checagem de `!$tenant->ativo` primeiro
         // "de propósito", e só depois `isMasterGlobal()` (RD-12).
         //
         // RD3-06: os IDs (checa_pendente, checa_master, checa_tenant, checa_vinculo) são os MESMOS
@@ -1161,13 +1161,15 @@ it('[CT-56] o extrator acha as três formas de default desligado, só no código
         'KIT_DEMO', 'KIT_HUB', 'KIT_DASHBOARD_DINAMICO', 'KIT_SOCIALITE_GOOGLE', 'KIT_SOCIALITE_GITHUB',
         'KIT_SOCIALITE_LINKEDIN', 'KIT_SOCIALITE_X', 'KIT_LOGIN_UNIFICADO', 'KIT_SOCIALITE_VINCULO_CONFIRMAR',
         'KIT_ANTI_ROBO', 'KIT_ANTI_ROBO_LOCAL', 'KIT_EXIBIR_VERSAO',
+        // feat/cabecalho-do-painel: os quatro interruptores do cabeçalho (o detalhe não é booleano)
+        'KIT_CABECALHO_NOME_DO_PROJETO', 'KIT_CABECALHO_NOME_DO_PAINEL', 'KIT_CABECALHO_LOGO_DA_MARCA', 'KIT_CABECALHO_USUARIO',
     ];
 
     foreach ($esperadas as $chave) {
         test()->assertContains($chave, $doKitPhp, "config/kit.php deveria conter {$chave} extraída como desligada por padrão");
     }
 
-    expect($doKitPhp)->toHaveCount(16, 'piso das 16 chaves — extraído: '.implode(', ', $doKitPhp));
+    expect($doKitPhp)->toHaveCount(20, 'piso das 20 chaves — extraído: '.implode(', ', $doKitPhp));
 
     // Mapa da guarda = extraído (R57 usa exatamente este conjunto).
     expect(array_keys(mapaOptInDaGuarda()))->toEqualCanonicalizing($doKitPhp);
@@ -1193,6 +1195,12 @@ function mapaOptInDaGuarda(): array
         'KIT_EXIBIR_VERSAO'               => ['versão do kit no rodapé', 'kit version in the footer'],
         'KIT_ANTI_ROBO'                   => ['CampoAntiRobo', 'anti-robô', 'anti-robot'],
         'KIT_ANTI_ROBO_LOCAL'             => ['anti-robô em ambiente local', 'anti-robot locally'],
+        // feat/cabecalho-do-painel — nenhum diagrama desenha o cabeçalho hoje; as assinaturas
+        // existem para o dia em que um desenhar: aí ele cita a chave ou a guarda acusa.
+        'KIT_CABECALHO_NOME_DO_PROJETO'   => ['nome do projeto na marca', 'project name in the brand'],
+        'KIT_CABECALHO_NOME_DO_PAINEL'    => ['nome do painel na marca', 'panel name in the brand'],
+        'KIT_CABECALHO_LOGO_DA_MARCA'     => ['marca composta', 'composed brand', 'CabecalhoDoPainel'],
+        'KIT_CABECALHO_USUARIO'           => ['bloco do usuário', 'user block', 'usuario-no-cabecalho'],
     ];
 }
 

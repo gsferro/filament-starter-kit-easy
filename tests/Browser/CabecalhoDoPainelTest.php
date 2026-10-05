@@ -17,6 +17,11 @@ use Illuminate\Support\Facades\Storage;
  * O `beforeEach` não arranja painel (`.ai/rules/testes-browser.md`): cada cenário arranja o
  * seu e visita o `/admin`.
  */
+afterEach(function (): void {
+    // Disco `public` REAL (o navegador baixa a URL): o que o CT-B02 grava não pode sobrar.
+    Storage::disk('public')->delete(['kit/logo-cab.png', 'kit/logo-cab-dark.png']);
+});
+
 beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });

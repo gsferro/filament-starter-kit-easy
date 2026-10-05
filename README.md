@@ -5,7 +5,7 @@
 [![Plumb](https://plumbphp.dev/badges/gsferro/starter-kit-easy/composite.svg)](https://plumbphp.dev/gsferro/starter-kit-easy)
 [![Testes](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=testes)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
 [![Cobertura](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgsferro%2Ffilament-starter-kit-easy%2Fmain%2F.github%2Fbadges%2Fcobertura.json&style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
-[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-1.855-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
+[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-1.891-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-4c1?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
@@ -188,7 +188,7 @@ Não é vitrine: é o inventário de tudo que já existe, e o que você não vai
 
 | | `/app` | `/admin` | `/infra` | **Total** |
 |---|---:|---:|---:|---:|
-| **Telas navegáveis** | 14 | 31 | 28 | **74** |
+| **Telas navegáveis** | 14 | 31 | 28 | **73** |
 | Resources | 4 | 8 | 8 | **20** |
 | Páginas próprias | 5 | 5 | 13 | **23** |
 | Widgets | 1 | 9 | 19 | **29** |
@@ -222,7 +222,7 @@ dois já vêm completos.
 |---|---:|
 | Casos de teste (`Kit` + `Tenancy`, medidos em 2026-09-26) | **2.990**, com **12.578 asserções** |
 | Telas varridas em navegador real | **55** |
-| Arquivos de teste | **172** em `Kit` + `Tenancy` (**200** no total) |
+| Arquivos de teste | **175** em `Kit` + `Tenancy` (**204** no total) |
 | PHPStan | **level 8**, zero erros |
 | Cobertura de testes (`app/`, linha) | **84 %** — ver [o que o número não inclui](docs/pt/referencia/qualidade-de-codigo.md) |
 | FilaCheck | **17** regras, todas passando |

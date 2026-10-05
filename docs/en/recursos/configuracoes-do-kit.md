@@ -205,12 +205,12 @@ accDescr: .env seeds config/*.php at boot; the database overrides mapaDeConfigur
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` runs the second arrow
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:519`), called at boot by
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:540`), called at boot by
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:394`); the overridden keys are exactly
 the ones in `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:380`) — `KIT_TENANCY`
-(`config/kit.php:KIT_TENANCY:360`) is not in that map, so the database never overrides it.
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:396`) — `KIT_TENANCY`
+(`config/kit.php:KIT_TENANCY:386`) is not in that map, so the database never overrides it.
 
 How that works without any consumer knowing the settings exist:
 
@@ -290,9 +290,10 @@ segment:
   is never empty.
 
 The composition replaces the brand **wherever Filament draws it**: at the top of the sidebar while
-it is open (there the composition wraps to fit), and in the topbar when it is collapsed or on a
-narrow screen. Public screens (login, password reset, lock screen) keep the usual brand: the header
-belongs to the authenticated panels. In the business panel the composition's logo is always the
+it is open (there the texts shrink and truncate with an ellipsis to fit on one line), and in the
+topbar when it is collapsed or on a narrow screen. Authentication screens (login, password reset,
+lock screen, two-factor, e-mail verification) keep the usual brand: the header belongs to the
+panels' inner screens. In the business panel the composition's logo is always the
 **installation's** — the organisation's keeps showing only on the lock screen.
 
 The fourth switch, **Nome do usuário ao lado do avatar** (user name next to the avatar), shows who

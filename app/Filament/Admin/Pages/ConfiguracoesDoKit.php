@@ -365,8 +365,10 @@ class ConfiguracoesDoKit extends SettingsPage
                  * Cabeçalho dos painéis (feat/cabecalho-do-painel). Quatro interruptores e um
                  * select, todos nascidos no default que preserva a tela de hoje. Sem
                  * `->default()` no select: a SettingsPage preenche do banco, semeado com
-                 * `perfil`; e sem coerção aqui — `required()` + `options()` fechadas validam a
-                 * gravação, e `CabecalhoDoPainel::usuario()` coage a leitura (D3/D8 da wiki).
+                 * `perfil`. O valor fora da lista é coagido em DOIS pontos, de propósito:
+                 * no `mutateFormDataBeforeFill()` (senão `telefone` gravado à mão trava a tela
+                 * inteira na validação, como a densidade) e em `CabecalhoDoPainel::usuario()`
+                 * (o consumidor, para o `.env`/banco sem passar pela tela). D3/D8 da wiki.
                  */
                 Section::make('Cabeçalho dos painéis')
                     ->description('A marca do topo e o bloco do usuário. Tudo nasce desligado: com nada ligado, os painéis ficam como hoje.')
@@ -398,9 +400,11 @@ class ConfiguracoesDoKit extends SettingsPage
                             ->options(DetalheDoUsuario::opcoes())
                             ->selectablePlaceholder(false)
                             ->required()
-                            // `string` além do `in` que o Select já põe: `in` aprova um ARRAY cujos
-                            // elementos estão na lista (`["email"]`), o estado vira null ao desidratar
-                            // e a settings tipada estoura `TypeError` no save. Achado do CT-22 (R17 M3).
+                            // `string` além do `in` que o Select já põe. Medido pelo CT-22 (R17 M3):
+                            // sem esta regra, `$wire.set('data.…', ["email"])` atravessa a validação
+                            // do Select, o estado desidrata como null e a settings tipada estoura
+                            // `TypeError: Cannot assign null to property … of type string` no save.
+                            // Com ela, a lista é recusada no campo e nada é gravado.
                             ->rule('string')
                             ->visible(fn (Get $get): bool => (bool) $get('cabecalho_usuario')),
                     ])

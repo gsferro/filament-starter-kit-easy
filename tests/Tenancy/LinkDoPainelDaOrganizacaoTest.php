@@ -587,8 +587,8 @@ it('[CT-11] renderizar o link nao cria vinculo nem papel', function (): void {
  *
  * A célula `inativa × seguir` da matriz tem duas metades, e a pergunta 2 do `## Fronteira com o
  * Plano` suspende só UMA: a de quem PASSA nos portões (o `master_global`, a vinculada), onde
- * `canAccessTenant()` não olha `ativo` (`app/Models/User.php:canAccessTenant:789-809`) enquanto
- * `User::getTenants()` filtra `->where('ativo', true)` (`app/Models/User.php:getTenants:775-782`)
+ * `canAccessTenant()` não olha `ativo` (`app/Models/User.php:canAccessTenant:819-809`) enquanto
+ * `User::getTenants()` filtra `->where('ativo', true)` (`app/Models/User.php:getTenants:805-782`)
  * — as duas leituras DISCORDAM ali, e o `00` não decide qual vence. Escrever aquele cenário na
  * direção "falha fechado" o deixaria vermelho contra a implementação correta, porque mexer nos
  * portões está em `## Fora de Escopo`.

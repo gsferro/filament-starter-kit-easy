@@ -199,12 +199,12 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:519`), chamado no boot por
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:540`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:394`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:380`) — `KIT_TENANCY`
-(`config/kit.php:KIT_TENANCY:360`) não está nesse mapa, então o banco nunca a sobrescreve.
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:396`) — `KIT_TENANCY`
+(`config/kit.php:KIT_TENANCY:386`) não está nesse mapa, então o banco nunca a sobrescreve.
 
 Como isso funciona sem que nenhum consumidor saiba que o settings existe:
 
@@ -279,9 +279,10 @@ presente:
   nenhum segmento resolver, a marca volta à de sempre, nunca fica vazia.
 
 A composição substitui a marca **onde quer que o Filament a desenhe**: no topo da barra lateral,
-enquanto ela está aberta (ali a composição quebra linha para caber), e no topbar, quando ela está
-recolhida ou em tela estreita. As telas públicas (login, recuperação de senha, bloqueio) continuam
-com a marca de sempre: o cabeçalho é dos painéis autenticados. No painel do negócio a logo da
+enquanto ela está aberta (ali os textos encolhem e cortam com reticências para caber numa linha), e
+no topbar, quando ela está recolhida ou em tela estreita. As telas de autenticação (login,
+recuperação de senha, bloqueio, dois fatores, confirmação de e-mail) continuam com a marca de
+sempre: o cabeçalho é das telas internas dos painéis. No painel do negócio a logo da
 composição é sempre a da **instalação** — a da organização segue aparecendo só na tela de bloqueio.
 
 O quarto interruptor, **Nome do usuário ao lado do avatar**, mostra quem está autenticado à

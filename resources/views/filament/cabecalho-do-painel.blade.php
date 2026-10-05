@@ -28,9 +28,10 @@
         @if ($temTexto)
             <span class="kit-cabecalho__sep" aria-hidden="true"></span>
         @endif
-        <img src="{{ $logo_clara }}" alt="{{ $alt }}" class="kit-cabecalho__logo fi-logo{{ filled($logo_escura) ? ' fi-logo-light' : '' }}" />
+        {{-- height inline: fora do painel (página de erro do Sentinel) o CSS do kit pode não estar carregado, e sem altura a imagem sai no tamanho do arquivo. --}}
+        <img src="{{ $logo_clara }}" alt="{{ $alt }}" class="kit-cabecalho__logo fi-logo{{ filled($logo_escura) ? ' fi-logo-light' : '' }}" style="height:2rem;width:auto" />
         @if (filled($logo_escura))
-            <img src="{{ $logo_escura }}" alt="{{ $alt }}" class="kit-cabecalho__logo fi-logo fi-logo-dark" />
+            <img src="{{ $logo_escura }}" alt="{{ $alt }}" class="kit-cabecalho__logo fi-logo fi-logo-dark" style="height:2rem;width:auto" />
         @endif
     @endif
 </span>

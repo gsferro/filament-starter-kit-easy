@@ -23,7 +23,7 @@ use Filament\Schemas\Components\Section;
  * Fronteira de tenancy vazada por campo de exibição é a variedade que nenhum teste de rota pega.
  *
  * **A senha, o token e o `remember_token`.** Não estão no `$hidden` por acaso
- * (`app/Models/User.php:$hidden:96-99`), e ficha de leitura não é o lugar de reabri-los.
+ * (`app/Models/User.php:$hidden:97-99`), e ficha de leitura não é o lugar de reabri-los.
  */
 trait FichaDeUsuario
 {

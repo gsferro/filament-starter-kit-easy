@@ -8,7 +8,7 @@ Vinte diagramas Mermaid mostram como o kit funciona hoje: arquitetura, acesso po
 
 ## DG-01 — Arquitetura em camadas
 
-Do navegador aos três painéis Filament (`app/Providers/Filament/AppPanelProvider.php:id:76`, `app/Providers/Filament/AdminPanelProvider.php:id:67`, `app/Providers/Filament/InfraPanelProvider.php:id:88`), pelo acesso por papel, até banco, fila, cache e os serviços opcionais. É o mesmo bloco do README — a fonte é única.
+Do navegador aos três painéis Filament (`app/Providers/Filament/AppPanelProvider.php:id:78`, `app/Providers/Filament/AdminPanelProvider.php:id:69`, `app/Providers/Filament/InfraPanelProvider.php:id:90`), pelo acesso por papel, até banco, fila, cache e os serviços opcionais. É o mesmo bloco do README — a fonte é única.
 
 ```mermaid
 flowchart TD
@@ -55,7 +55,7 @@ accDescr: Do navegador aos três painéis Filament, pelo acesso por papel, até 
 
 ## DG-02 — Casos de uso por papel
 
-Os oito atores do kit (visitante, `panel_user`, `admin_app`, `admin`, `infra`, `master_global`, o agendador e a CLI) e os casos de uso que cada papel alcança. `admin_app` só existe com `KIT_TENANCY` ligada (`database/seeders/PapeisSeeder.php:papel:80`); os demais papéis nascem sempre (`database/seeders/PapeisSeeder.php:papel:58`, `:papel:61`, `:papel:101`). Cada aresta liga o papel à entidade de permissão que ele de fato tem no banco (Shield) — ou, para `master_global`, ao código que o libera sem Shield: `Gate::before` (`cu_tudo`) e, para "Personificar usuário", `User::canImpersonate()` (`app/Models/User.php:canImpersonate:852`), que só aceita `master_global` — não a uma suposição.
+Os oito atores do kit (visitante, `panel_user`, `admin_app`, `admin`, `infra`, `master_global`, o agendador e a CLI) e os casos de uso que cada papel alcança. `admin_app` só existe com `KIT_TENANCY` ligada (`database/seeders/PapeisSeeder.php:papel:80`); os demais papéis nascem sempre (`database/seeders/PapeisSeeder.php:papel:58`, `:papel:61`, `:papel:101`). Cada aresta liga o papel à entidade de permissão que ele de fato tem no banco (Shield) — ou, para `master_global`, ao código que o libera sem Shield: `Gate::before` (`cu_tudo`) e, para "Personificar usuário", `User::canImpersonate()` (`app/Models/User.php:canImpersonate:882`), que só aceita `master_global` — não a uma suposição.
 
 ```mermaid
 flowchart LR
@@ -122,7 +122,7 @@ accDescr: Os oito atores do kit e os casos de uso que cada papel alcança, dentr
 
 ## DG-03 — Regra de acesso ao painel
 
-A ordem exata de `User::canAccessPanel()` (`app/Models/User.php:canAccessPanel:156`): indisponibilidade da conta (`:166`), aprovação pendente (`:193`), `master_global` (`:206`), contexto do papel — qualquer organização com tenancy, só o contexto global sem ela (`:217`) — e por fim o papel do painel (`:219`). Depois de permitido, a extensão de `User::canAccessTenant()` (`:789`) decide a organização, e a ORDEM importa: organização inativa nega primeiro, para todo mundo — inclusive `master_global` (`:813`) —; só então `master_global` entra sempre (`:826`), e sem vínculo nega (`:830`).
+A ordem exata de `User::canAccessPanel()` (`app/Models/User.php:canAccessPanel:157`): indisponibilidade da conta (`:166`), aprovação pendente (`:193`), `master_global` (`:206`), contexto do papel — qualquer organização com tenancy, só o contexto global sem ela (`:217`) — e por fim o papel do painel (`:219`). Depois de permitido, a extensão de `User::canAccessTenant()` (`:789`) decide a organização, e a ORDEM importa: organização inativa nega primeiro, para todo mundo — inclusive `master_global` (`:813`) —; só então `master_global` entra sempre (`:826`), e sem vínculo nega (`:830`).
 
 ```mermaid
 flowchart TD
@@ -151,7 +151,7 @@ accDescr: A ordem de decisão de canAccessPanel, da indisponibilidade da conta a
 
 ## DG-13 — ER do núcleo
 
-As entidades centrais e como se referenciam: a conta (`users`) a uma organização via `tenant_user` (`app/Models/User.php:tenants:748`, `app/Models/Tenant.php:users:114`), a um papel via `model_has_roles` (Shield), o vínculo social (`app/Models/User.php:vinculosSociais:758`), o convite — com `convidado_por_id` anulável (`database/migrations/2026_08_13_000002_create_convites_table.php:convidado_por_id:42`) — via `papel()`, `tenant()` e `convidadoPor()` (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) e o catálogo de agentes de IA — sem relação nenhuma com `projetos`, a tabela de demonstração (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` e `agent_conversations` ficam de fora deste ER: guardam identificadores como texto solto (`subject_type`/`subject_id`, `participant_type`/`participant_id`), sem chave estrangeira de verdade, e desenhar uma relação para eles inventaria uma FK que o schema não tem. `passkeys` fica de fora pelo motivo oposto: a tabela existe (vendor), mas nenhuma feature do kit a usa — as passkeys estão desligadas (`enablePasskeys()` não é chamado).
+As entidades centrais e como se referenciam: a conta (`users`) a uma organização via `tenant_user` (`app/Models/User.php:tenants:778`, `app/Models/Tenant.php:users:114`), a um papel via `model_has_roles` (Shield), o vínculo social (`app/Models/User.php:vinculosSociais:788`), o convite — com `convidado_por_id` anulável (`database/migrations/2026_08_13_000002_create_convites_table.php:convidado_por_id:42`) — via `papel()`, `tenant()` e `convidadoPor()` (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) e o catálogo de agentes de IA — sem relação nenhuma com `projetos`, a tabela de demonstração (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` e `agent_conversations` ficam de fora deste ER: guardam identificadores como texto solto (`subject_type`/`subject_id`, `participant_type`/`participant_id`), sem chave estrangeira de verdade, e desenhar uma relação para eles inventaria uma FK que o schema não tem. `passkeys` fica de fora pelo motivo oposto: a tabela existe (vendor), mas nenhuma feature do kit a usa — as passkeys estão desligadas (`enablePasskeys()` não é chamado).
 
 ```mermaid
 erDiagram

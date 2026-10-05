@@ -184,7 +184,7 @@ de vínculo), e só então a aprovação pendente — vale para conta nova OU j�
 `:redirecionarSeIndisponivel:223`, `:pedirConfirmacaoDoVinculo:304`, `:aguardarAprovacao:330`,
 `:$novo = true:300`, `:urlDoPerfil:360`). O vínculo (`VinculoSocial::vincular()`) roda depois de
 toda a cadeia, inclusive para conta recém-criada (`:315`, `:560`). A confirmação de vínculo
-default é desligada (`config/kit.php:KIT_SOCIALITE_VINCULO_CONFIRMAR:737`).
+default é desligada (`config/kit.php:KIT_SOCIALITE_VINCULO_CONFIRMAR:763`).
 
 ## Vínculo com o provedor: a primeira vez, e as seguintes
 
