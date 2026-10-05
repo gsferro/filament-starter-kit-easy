@@ -167,7 +167,11 @@ it('exibe a logo da organizacao na tela de bloqueio', function (): void {
 
     visit('/app/screen/lock')
         ->assertPathIs('/app/screen/lock')
-        ->assertAttributeContains('.fi-auth-media', 'src', $caminho)
+        // `.fi-logo-light`, e não `.fi-auth-media`: desde `feat/logo-dark-mode` a logo da
+        // tela de bloqueio sai pelo override de `partials/media.blade.php` com as classes
+        // nativas do swap do Filament (`fi-logo fi-logo-light`), contida — `fi-auth-media`
+        // ficou só para a ARTE do login, que continua `cover`. Ver RQ-05 daquela wiki.
+        ->assertAttributeContains('.fi-logo-light', 'src', $caminho)
         // A tela não veio vazia: o formulário de desbloqueio está lá.
         ->assertSee('Desbloquear')
         // E o alternador de tema sobreviveu. É a asserção que pega o erro de trocar a mídia com
