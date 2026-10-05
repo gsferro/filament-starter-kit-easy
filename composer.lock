@@ -7384,16 +7384,16 @@
         },
         {
             "name": "mortalkiller/filament-page-header",
-            "version": "v2.1.5",
+            "version": "v2.4.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mortalkiller/filament-page-header.git",
-                "reference": "a56c43afee9bc0045b8b19f133e22e3b83e1e65e"
+                "reference": "46f6550b82fc856aee682eb0ece1c661fda63dd9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mortalkiller/filament-page-header/zipball/a56c43afee9bc0045b8b19f133e22e3b83e1e65e",
-                "reference": "a56c43afee9bc0045b8b19f133e22e3b83e1e65e",
+                "url": "https://api.github.com/repos/mortalkiller/filament-page-header/zipball/46f6550b82fc856aee682eb0ece1c661fda63dd9",
+                "reference": "46f6550b82fc856aee682eb0ece1c661fda63dd9",
                 "shasum": ""
             },
             "require": {
@@ -7403,6 +7403,7 @@
             },
             "require-dev": {
                 "laravel/pint": "^1.0",
+                "mortalkiller/filament-package-standard": "^1.0",
                 "orchestra/testbench": "^10.0 || ^11.0",
                 "pestphp/pest": "^4.1",
                 "pestphp/pest-plugin-laravel": "^4.0"
@@ -7425,9 +7426,10 @@
                 "MIT"
             ],
             "description": "Opt-in, schema-based Filament page headers with responsive sticky and compact modes.",
+            "homepage": "https://github.com/mortalkiller/filament-page-header",
             "support": {
                 "issues": "https://github.com/mortalkiller/filament-page-header/issues",
-                "source": "https://github.com/mortalkiller/filament-page-header/tree/v2.1.5"
+                "source": "https://github.com/mortalkiller/filament-page-header"
             },
             "funding": [
                 {
@@ -7435,7 +7437,7 @@
                     "type": "custom"
                 }
             ],
-            "time": "2026-09-18T23:48:27+00:00"
+            "time": "2026-09-22T09:24:25+00:00"
         },
         {
             "name": "mtdowling/jmespath.php",

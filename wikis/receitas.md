@@ -226,7 +226,7 @@ O cabeçalho vem de `mortalkiller/filament-page-header`, registrado no `/admin` 
 ```
 
 O pacote descobre a classe por **convenção sobre o MODEL do resource**, em
-`vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:50`:
+`vendor/mortalkiller/filament-page-header/src/Concerns/HasPageHeader.php:getPageHeaderSchemaClass:65`:
 
 ```
 {namespace do Resource}\Schemas\{class_basename do Model}Header
