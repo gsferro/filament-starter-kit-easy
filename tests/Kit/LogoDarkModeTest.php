@@ -435,4 +435,4 @@ it('[CT-20] documenta a logo light dark com screenshots nos dois idiomas', funct
         ->toContain('logo-tema-escuro.png')
         ->and(file_exists(base_path('art/logo-tema-claro.png')))->toBeTrue()
         ->and(file_exists(base_path('art/logo-tema-escuro.png')))->toBeTrue();
-})->with(['pt', 'en'])->group('kit');
+})->with(['pt', 'en'])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update e o create-project nao entregam docs/ (export-ignore): a pagina que este caso le nao viaja.')->group('kit');
