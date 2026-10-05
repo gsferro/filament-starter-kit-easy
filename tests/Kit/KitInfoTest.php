@@ -181,8 +181,9 @@ it('[CT-06] exibe uma linha para cada propriedade do settings, na ordem do mapa'
      * `alerta_alteracoes_nao_salvas` e `exibir_versao_do_kit`.
      * 54 → 55 na feature `layout-compact`: `densidade_do_layout`.
      * 55 → 57 na feature `logo-dark-mode`: `logo_dark` e `unifica_logo_marca`.
+     * 57 → 62 na feature `cabecalho-do-painel`: os quatro interruptores `cabecalho_*` e o detalhe do usuário.
      */
-    expect($propriedades)->toHaveCount(57);
+    expect($propriedades)->toHaveCount(62);
 
     foreach ($propriedades as $propriedade) {
         expect($saida)->toContain(Str::headline($propriedade));

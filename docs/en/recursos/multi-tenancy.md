@@ -135,9 +135,9 @@ With the mode on, every request to `/app/{tenant}` goes through two Filament mid
 reaching the screen: `IdentifyTenant` resolves the tenant from the route and already decides the
 404 by calling `canAccessTenant()`
 (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:canAccessTenant:40`,
-`app/Models/User.php:canAccessTenant:789`); only after that does `DefinirTenantDePermissoes` — the
+`app/Models/User.php:canAccessTenant:819`); only after that does `DefinirTenantDePermissoes` — the
 kit's `tenantMiddleware` — fix the per-tenant role context
-(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:598`,
+(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:602`,
 `app/Http/Middleware/DefinirTenantDePermissoes.php:setPermissionsTeamId:46`).
 
 ```mermaid

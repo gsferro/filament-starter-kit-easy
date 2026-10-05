@@ -2,6 +2,7 @@
 
 use App\Support\BooleanoDoEnv;
 use App\Support\DensidadeDoLayout;
+use App\Support\DetalheDoUsuario;
 use App\Support\NumeroDoEnv;
 use App\Support\SenhaDoAdministrador;
 use App\Support\ValidadeDoConvite;
@@ -144,6 +145,31 @@ return [
         'unifica_logo_marca' => BooleanoDoEnv::comPadrao(env('KIT_UNIFICA_LOGO_MARCA'), true),
         'favicon'            => null,
         'arte_do_login'      => null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cabeçalho dos painéis
+    |--------------------------------------------------------------------------
+    | A marca do topo composta ("nome do projeto | nome do painel | logo") e o
+    | bloco do usuário à esquerda do avatar. TUDO nasce desligado: com as cinco
+    | chaves no default, os três painéis renderizam exatamente o que renderizavam
+    | antes. Governado pela aba Identidade de /admin/configuracoes-da-aplicacao;
+    | o .env semeia a primeira gravação e é o plano B sem a tabela `settings`.
+    | Quem lê é `App\Support\CabecalhoDoPainel`, a cada request.
+    */
+    'cabecalho' => [
+        'nome_do_projeto'    => BooleanoDoEnv::comPadrao(env('KIT_CABECALHO_NOME_DO_PROJETO'), false),
+        // No /app o rótulo do painel é o nome da aplicação; com organização aberta
+        // o segmento mostra o nome dela, e sem organização é omitido quando repetiria
+        // o nome do projeto ao lado.
+        'nome_do_painel'     => BooleanoDoEnv::comPadrao(env('KIT_CABECALHO_NOME_DO_PAINEL'), false),
+        // A logo da aba Identidade (clara e, com a marca separada, a escura) ao fim
+        // da composição. Sem logo enviada, o segmento é omitido — nunca imagem quebrada.
+        'logo_da_marca'      => BooleanoDoEnv::comPadrao(env('KIT_CABECALHO_LOGO_DA_MARCA'), false),
+        'usuario'            => BooleanoDoEnv::comPadrao(env('KIT_CABECALHO_USUARIO'), false),
+        // `perfil` (o papel no painel corrente) ou `email`. Fora da lista cai em `perfil`.
+        'detalhe_do_usuario' => DetalheDoUsuario::coagir(env('KIT_CABECALHO_DETALHE_DO_USUARIO'))->value,
     ],
 
     /*

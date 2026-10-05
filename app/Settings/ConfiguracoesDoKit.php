@@ -112,6 +112,22 @@ final class ConfiguracoesDoKit extends Settings
 
     public ?string $arte_do_login;
 
+    /*
+     * Cabeçalho dos painéis (feat/cabecalho-do-painel). Tudo nasce desligado e o detalhe
+     * em `perfil`: com os cinco no default, a marca do topo e o menu do usuário são
+     * exatamente os de antes. Quem lê é `App\Support\CabecalhoDoPainel`, por request.
+     */
+    public bool $cabecalho_nome_do_projeto;
+
+    public bool $cabecalho_nome_do_painel;
+
+    public bool $cabecalho_logo_da_marca;
+
+    public bool $cabecalho_usuario;
+
+    /** `perfil` | `email` — coagido por `DetalheDoUsuario::coagir()` no consumidor, nunca aqui. */
+    public string $cabecalho_detalhe_do_usuario;
+
     // E-mail -----------------------------------------------------------------
 
     public string $mail_mailer;
@@ -380,28 +396,33 @@ final class ConfiguracoesDoKit extends Settings
     public static function mapaDeConfiguracao(): array
     {
         return [
-            'nome_da_aplicacao'        => 'app.name',
-            'versao_do_sistema'        => 'app.version',
-            'cor_primaria'             => 'kit.cor_primaria',
-            'cor_primaria_hex'         => 'kit.cor_primaria_hex',
-            'logo'                     => 'kit.identidade.logo',
-            'logo_dark'                => 'kit.identidade.logo_dark',
-            'unifica_logo_marca'       => 'kit.identidade.unifica_logo_marca',
-            'favicon'                  => 'kit.identidade.favicon',
-            'arte_do_login'            => 'kit.identidade.arte_do_login',
-            'mail_mailer'              => 'mail.default',
-            'mail_host'                => 'mail.mailers.smtp.host',
-            'mail_port'                => 'mail.mailers.smtp.port',
-            'mail_scheme'              => 'mail.mailers.smtp.scheme',
-            'mail_username'            => 'mail.mailers.smtp.username',
-            'mail_password'            => 'mail.mailers.smtp.password',
-            'mail_from_address'        => 'mail.from.address',
-            'mail_from_name'           => 'mail.from.name',
-            'paginacao_padrao'         => 'kit.tabelas.paginacao',
-            'tabela_listrada'          => 'kit.tabelas.listrada',
-            'persistir_filtros'        => 'kit.tabelas.persistir_filtros',
-            'colunas_redimensionaveis' => 'kit.tabelas.colunas_redimensionaveis',
-            'hub_de_navegacao'         => 'kit.hub',
+            'nome_da_aplicacao'            => 'app.name',
+            'versao_do_sistema'            => 'app.version',
+            'cor_primaria'                 => 'kit.cor_primaria',
+            'cor_primaria_hex'             => 'kit.cor_primaria_hex',
+            'logo'                         => 'kit.identidade.logo',
+            'logo_dark'                    => 'kit.identidade.logo_dark',
+            'unifica_logo_marca'           => 'kit.identidade.unifica_logo_marca',
+            'favicon'                      => 'kit.identidade.favicon',
+            'arte_do_login'                => 'kit.identidade.arte_do_login',
+            'cabecalho_nome_do_projeto'    => 'kit.cabecalho.nome_do_projeto',
+            'cabecalho_nome_do_painel'     => 'kit.cabecalho.nome_do_painel',
+            'cabecalho_logo_da_marca'      => 'kit.cabecalho.logo_da_marca',
+            'cabecalho_usuario'            => 'kit.cabecalho.usuario',
+            'cabecalho_detalhe_do_usuario' => 'kit.cabecalho.detalhe_do_usuario',
+            'mail_mailer'                  => 'mail.default',
+            'mail_host'                    => 'mail.mailers.smtp.host',
+            'mail_port'                    => 'mail.mailers.smtp.port',
+            'mail_scheme'                  => 'mail.mailers.smtp.scheme',
+            'mail_username'                => 'mail.mailers.smtp.username',
+            'mail_password'                => 'mail.mailers.smtp.password',
+            'mail_from_address'            => 'mail.from.address',
+            'mail_from_name'               => 'mail.from.name',
+            'paginacao_padrao'             => 'kit.tabelas.paginacao',
+            'tabela_listrada'              => 'kit.tabelas.listrada',
+            'persistir_filtros'            => 'kit.tabelas.persistir_filtros',
+            'colunas_redimensionaveis'     => 'kit.tabelas.colunas_redimensionaveis',
+            'hub_de_navegacao'             => 'kit.hub',
             /*
              * O alerta de alterações não salvas entra pelo MAPA e nada mais muda: os três
              * providers já leem `config('kit.alerta_alteracoes_nao_salvas')` por Closure, e

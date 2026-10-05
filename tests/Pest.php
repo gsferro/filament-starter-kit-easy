@@ -2367,7 +2367,7 @@ function resultadoDoFluxo(array $grafo, callable $avaliar): string
 
 /**
  * O avaliador das perguntas de DG-03 — a MESMA ordem de `User::canAccessPanel()`
- * (`app/Models/User.php:canAccessPanel:156`): indisponibilidade, pendência, master_global,
+ * (`app/Models/User.php:canAccessPanel:157`): indisponibilidade, pendência, master_global,
  * contexto do painel (tenancy), papel do painel.
  */
 function avaliadorDoDG03(User $user, Panel $painel): Closure

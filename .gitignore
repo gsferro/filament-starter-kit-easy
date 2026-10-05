@@ -25,6 +25,9 @@
 /storage/*.key
 /storage/media-library
 /storage/pail
+# Script local que gera as duas logos PNG de demonstração (clara/escura) para testar a
+# identidade por tema à mão em storage/app/public/identidade-demo. Uso local; não viaja.
+/storage/gerar-logos-demo.php
 /tests/Browser/Screenshots
 /vendor
 _ide_helper.php

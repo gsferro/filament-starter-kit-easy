@@ -229,3 +229,151 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
     min-height: 0;
     flex: 1 1 auto;
 }
+
+/*
+| Cabeçalho dos painéis (feat/cabecalho-do-painel): a marca composta
+| ("nome do projeto | nome do painel | logo") que `CabecalhoDoPainel::marca()`
+| devolve ao `brandLogo()`, e o bloco do usuário do render hook
+| `USER_MENU_BEFORE`. As blades do kit só emitem estas classes — utilitária
+| Tailwind emitida por blade do kit não existe na página.
+|
+| O Filament envolve a composição numa `div.fi-logo` com `height: 2rem` nos
+| dois lugares em que desenha a marca: o topbar e o cabeçalho da barra lateral
+| (16,5–20 rem de largura, 4 rem de altura). A composição fica SEMPRE numa
+| linha: na barra lateral os textos encolhem e cortam com reticências em vez
+| de quebrar — linha a mais vazaria por baixo do cabeçalho, que tem altura
+| fixa, sobre a navegação.
+|
+| Par `.dark:root` obrigatório para a cor: o Filament pinta por `:where()`,
+| de especificidade zero, e o seletor simples do kit venceria o tema escuro.
+*/
+.kit-cabecalho {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 100%;
+    height: 100%;
+    min-width: 0;
+    white-space: nowrap;
+    color: var(--gray-950);
+}
+
+.dark:root .kit-cabecalho {
+    color: #fff;
+}
+
+.kit-cabecalho__projeto {
+    font-weight: 700;
+    font-size: 1.125rem;
+    letter-spacing: -0.01em;
+}
+
+.kit-cabecalho__painel {
+    font-weight: 600;
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+.kit-cabecalho__projeto,
+.kit-cabecalho__painel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kit-cabecalho__sep {
+    flex: none;
+    width: 1px;
+    height: 1.5rem;
+    background: currentColor;
+    opacity: 0.25;
+}
+
+/*
+| Altura ABSOLUTA na imagem, não `100%`: `getBrandLogo()` tem outros
+| consumidores além do `logo.blade.php` do Filament — a página de erro do
+| Sentinel ecoa o HTML num `span` sem altura —, e `100%` de um pai sem altura
+| é o tamanho natural do arquivo. A blade repete `height: 2rem` inline pelo
+| mesmo motivo: fora do painel este CSS pode nem estar carregado.
+*/
+.kit-cabecalho__logo {
+    flex: none;
+    height: 2rem;
+    width: auto;
+}
+
+/*
+| O swap claro/escuro das duas logos é do Filament
+| (`.fi-logo.fi-logo-light:where(.dark, .dark *), .fi-logo.fi-logo-dark { display: none }`,
+| dentro de `@layer components` do `app.css` compilado). Este arquivo não tem
+| camada, e regra FORA de camada vence toda regra em camada, qualquer que seja
+| a especificidade: um `display` declarado em `.kit-cabecalho__logo` apagava o
+| swap e as duas logos apareciam juntas (foi o que o CT-B02 pegou). Por isso a
+| classe da imagem não declara `display`, e o kit repete o swap aqui, no par
+| claro/escuro — regras também fora de camada, que vencem as do Filament pelo
+| mesmo motivo.
+*/
+.kit-cabecalho .fi-logo-light {
+    display: block;
+}
+
+.kit-cabecalho .fi-logo-dark {
+    display: none;
+}
+
+.dark:root .kit-cabecalho .fi-logo-light {
+    display: none;
+}
+
+.dark:root .kit-cabecalho .fi-logo-dark {
+    display: block;
+}
+
+/* Na barra lateral cabe menos: textos menores, e a elipse faz o resto. */
+.fi-sidebar .kit-cabecalho {
+    gap: 0.5rem;
+}
+
+.fi-sidebar .kit-cabecalho__projeto {
+    font-size: 1rem;
+}
+
+.fi-sidebar .kit-cabecalho__painel {
+    font-size: 0.6875rem;
+}
+
+/*
+| Bloco do usuário: nome e, abaixo, o e-mail ou o papel. Oculto abaixo de
+| 768 px — ali o topbar já disputa espaço com busca, sininho e avatar, e o
+| menu do avatar continua mostrando nome, e-mail e papel.
+*/
+.kit-usuario {
+    display: none;
+    flex-direction: column;
+    line-height: 1.15;
+    text-align: end;
+    margin-inline-end: 0.5rem;
+    color: var(--gray-950);
+}
+
+@media (min-width: 768px) {
+    .kit-usuario {
+        display: flex;
+    }
+}
+
+.dark:root .kit-usuario {
+    color: #fff;
+}
+
+.kit-usuario__nome {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.kit-usuario__detalhe {
+    font-size: 0.75rem;
+    opacity: 0.75;
+}

@@ -185,7 +185,7 @@ only then pending approval - it applies to a new OR an already existing account
 `:redirecionarSeIndisponivel:223`, `:pedirConfirmacaoDoVinculo:304`, `:aguardarAprovacao:330`,
 `:$novo = true:300`, `:urlDoPerfil:360`). The link (`VinculoSocial::vincular()`) runs after the
 whole chain, including for a just-created account (`:315`, `:560`). Link confirmation defaults to
-off (`config/kit.php:KIT_SOCIALITE_VINCULO_CONFIRMAR:737`).
+off (`config/kit.php:KIT_SOCIALITE_VINCULO_CONFIRMAR:763`).
 
 ## Linking to the provider: the first time, and the next ones
 

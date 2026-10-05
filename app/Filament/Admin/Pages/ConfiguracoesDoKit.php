@@ -8,6 +8,7 @@ use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\DensidadeDoLayout;
+use App\Support\DetalheDoUsuario;
 use App\Support\Paineis;
 use App\Support\ProvedorAntiRobo;
 use App\Support\ProvedorSocial;
@@ -198,6 +199,10 @@ class ConfiguracoesDoKit extends SettingsPage
          */
         $data['densidade_do_layout'] = DensidadeDoLayout::coagir($data['densidade_do_layout'] ?? null)->value;
 
+        // Mesmo raciocínio para o detalhe do usuário no cabeçalho: vocabulário fechado
+        // (`perfil` | `email`), e `telefone` gravado à mão travaria a tela inteira.
+        $data['cabecalho_detalhe_do_usuario'] = DetalheDoUsuario::coagir($data['cabecalho_detalhe_do_usuario'] ?? null)->value;
+
         return $data;
     }
 
@@ -355,6 +360,55 @@ class ConfiguracoesDoKit extends SettingsPage
                 $this->arquivo('favicon', 'Favicon', 'O ícone da aba do navegador. Em branco, o do Filament.'),
 
                 $this->arquivo('arte_do_login', 'Arte das telas de autenticação', 'A imagem ao lado do formulário de login, recuperação de senha e confirmação de e-mail. Em branco, a arte que vem no kit.'),
+
+                /*
+                 * Cabeçalho dos painéis (feat/cabecalho-do-painel). Quatro interruptores e um
+                 * select, todos nascidos no default que preserva a tela de hoje. Sem
+                 * `->default()` no select: a SettingsPage preenche do banco, semeado com
+                 * `perfil`. O valor fora da lista é coagido em DOIS pontos, de propósito:
+                 * no `mutateFormDataBeforeFill()` (senão `telefone` gravado à mão trava a tela
+                 * inteira na validação, como a densidade) e em `CabecalhoDoPainel::usuario()`
+                 * (o consumidor, para o `.env`/banco sem passar pela tela). D3/D8 da wiki.
+                 */
+                Section::make('Cabeçalho dos painéis')
+                    ->description('A marca do topo e o bloco do usuário. Tudo nasce desligado: com nada ligado, os painéis ficam como hoje.')
+                    ->schema([
+                        Toggle::make('cabecalho_nome_do_projeto')
+                            ->label('Nome do projeto na marca do topo')
+                            ->helperText('O nome da aplicação em texto, antes do nome do painel e da logo.')
+                            ->inline(false),
+
+                        Toggle::make('cabecalho_nome_do_painel')
+                            ->label('Nome do painel na marca do topo')
+                            ->helperText('Administração, Infraestrutura ou, no painel do negócio, o nome da organização aberta. Sem organização, o painel do negócio omite o segmento quando ele repetiria o nome do projeto.')
+                            ->inline(false),
+
+                        Toggle::make('cabecalho_logo_da_marca')
+                            ->label('Logo da marca ao fim da composição')
+                            ->helperText('A logo da aba Identidade (clara e escura, se a marca estiver separada). Sem logo enviada, nada aparece neste lugar.')
+                            ->inline(false),
+
+                        Toggle::make('cabecalho_usuario')
+                            ->label('Nome do usuário ao lado do avatar')
+                            ->helperText('Quem está autenticado, à esquerda do avatar. Some em tela estreita; o menu do avatar continua mostrando tudo.')
+                            ->live()
+                            ->inline(false),
+
+                        Select::make('cabecalho_detalhe_do_usuario')
+                            ->label('Abaixo do nome do usuário')
+                            ->helperText('O papel no painel corrente (Perfil) ou o e-mail.')
+                            ->options(DetalheDoUsuario::opcoes())
+                            ->selectablePlaceholder(false)
+                            ->required()
+                            // `string` além do `in` que o Select já põe. Medido pelo CT-22 (R17 M3):
+                            // sem esta regra, `$wire.set('data.…', ["email"])` atravessa a validação
+                            // do Select, o estado desidrata como null e a settings tipada estoura
+                            // `TypeError: Cannot assign null to property … of type string` no save.
+                            // Com ela, a lista é recusada no campo e nada é gravado.
+                            ->rule('string')
+                            ->visible(fn (Get $get): bool => (bool) $get('cabecalho_usuario')),
+                    ])
+                    ->columns(2),
             ]);
     }
 

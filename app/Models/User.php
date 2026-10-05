@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\ContextoDePapeis;
+use App\Support\Paineis;
 use App\Support\ProvedorSocial;
 use App\Support\RegistroAberto;
 use App\Traits\AuditsFillables;
@@ -388,6 +389,35 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
     public function temPapelDoPainel(string $painel, ?int $contexto = null): bool
     {
         return $this->temPapelOnde('painel', $painel, $contexto);
+    }
+
+    /**
+     * O papel que a pessoa está usando NESTE request: o painel corrente e, no `/app`, a
+     * organização aberta como contexto.
+     *
+     * Fonte única da pergunta "com que papel eu estou aqui", que o badge do menu do usuário
+     * (`perfil-indicator.blade.php`) e o bloco do usuário do cabeçalho (`CabecalhoDoPainel`)
+     * fazem — e que a revisão do diff de `feat/cabecalho-do-painel` achou duplicada e já
+     * divergindo (um tratava a chave do tenant, o outro não). Exibição, nunca autorização,
+     * como `papelDoPainel()`.
+     *
+     * Chave de organização que não é numérica (projeto derivado com UUID) fecha para `null`
+     * em vez de virar "sem filtro": `papelDoPainel()` sem contexto devolveria o papel do
+     * painel em QUALQUER organização, em silêncio.
+     */
+    public function papelNoPainelCorrente(): ?string
+    {
+        $tenant   = Filament::getTenant();
+        $contexto = $tenant?->getKey();
+
+        if ($tenant !== null && ! is_numeric($contexto)) {
+            return null;
+        }
+
+        return $this->papelDoPainel(
+            Paineis::correnteOuPadrao()->getId(),
+            $contexto === null ? null : (int) $contexto,
+        );
     }
 
     /**

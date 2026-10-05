@@ -47,7 +47,7 @@ class UserInfolist
                         /*
                      * `papeisEmQualquerContexto()`, nunca a relacao `roles` do spatie: com
                      * `permission.teams` ligada, ela filtra pelo team do REQUEST
-                     * (`app/Models/User.php:papeisEmQualquerContexto:683`), e no /admin o contexto
+                     * (`app/Models/User.php:papeisEmQualquerContexto:744`), e no /admin o contexto
                      * e o global — a ficha mostraria so os papeis globais e esconderia os de
                      * organizacao, com cara de "esta pessoa nao tem papel nenhum".
                      */
