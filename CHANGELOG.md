@@ -60,6 +60,35 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   citações do kit (as páginas e os headers de `Users` e `Tenants`, `CabecalhoDeUsuario`,
   `wikis/receitas.md`) foram reancoradas no mesmo PR — foi o CT-26 que acusou.
 
+### Validação antes da tag
+
+Minor e não patch: feature nova (a logo por tema) e sete bumps de dependência, sem quebra de API.
+O `checklist-de-release` pede os quatro cenários a cada tag, e o cenário 1 foi simulado pela mesma
+rota da `v0.42.0`: extração por `git archive` (que aplica o `export-ignore` como o Packagist aplica —
+`docs/` e `wikis/specs/` ausentes, conferido) + `composer install` + `.env` + `kit:install
+--create-project --no-npm --no-interaction`.
+
+- **Primeira rodada (extração de `78521e3`, o commit do bump)**: `php artisan test --testsuite=Kit,Tenancy
+  --parallel --processes=4 --compact` → `{"result":"failed","tests":3829,"passed":2988,"assertions":13143,
+  "duration_ms":852883,"errors":2,"skipped":839}` — os 2 erros eram o **CT-20 do `LogoDarkModeTest`**
+  (pt e en) fazendo `file_get_contents(docs/{pt,en}/recursos/configuracoes-do-kit.md)`: a classe
+  *"teste que viaja lendo arquivo que não viaja"* do checklist, que nenhum gate dentro da árvore
+  alcança. Correção em `f2ef831`: `->skip(fn () => ! naArvoreDoKit(), …)`, a guarda dos vizinhos
+- **Segunda rodada (mesma extração, com o `skip` aplicado — a árvore desta tag menos o registro desta
+  seção e os assets republicados do page-header)**: `{"result":"passed","tests":3829,"passed":2988,
+  "assertions":13143,"duration_ms":623347,"skipped":841}` — **3.829 testes, 2.988 passaram, 13.143
+  asserções, 841 pulados, 0 falhas**, 10,4 min
+- **Teto de pulados: 838 → 841 (+3)**, decomposto por arquivo com `--log-junit` dentro da extração,
+  não por estimativa:
+  - **+2** `tests/Kit/LogoDarkModeTest.php` CT-20 (pt, en): o `skip` acima — o caso lê `docs/`, que não viaja
+  - **+1** `tests/Kit/DiagramasDaArquiteturaTest.php` 527 → 528: a linha de dataset `DG-17` acrescentada
+    no #136 (`v0.42.1`, que não re-mediu o teto); o arquivo inteiro pula fora da árvore
+  - os demais arquivos com pulados batem com a decomposição da `v0.42.0` (528 + 50 + 47 dos diagramas
+    + 216 dos outros 26 arquivos = 841, sem resíduo)
+- **Cobertura no Linux**: o job `cobertura` da `main` para `c6d900d` (o merge do #145) ainda rodava quando
+  a tag saiu; `qualidade`, `telas`, `instalacao` e `seguranca` verdes no mesmo run. O número entra no PR
+  de documentação dos cenários 2, 3 e 4, que rodam sobre a tag publicada, como a `v0.42.0` fez
+
 ## [0.42.1] - 2026-10-02
 
 ### Corrigido
