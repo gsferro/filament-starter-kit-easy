@@ -104,6 +104,11 @@ reach. `TRUSTED_PROXIES` says whom to believe — a comma-separated list of IPs/
 on loopback (next section). If the port goes outward, replace `*` with the CIDR of Traefik's
 network: whoever reaches the container without going through it could forge `X-Forwarded-*`.
 
+The key is read at bootstrap, before `config/`. With the **configuration cached** (`config:cache`)
+Laravel does not load the `.env`, so the key must be in the **process environment** — in the `app`
+profile the Compose `env_file` already does that; outside Docker, set it on the service that starts
+PHP (systemd, php-fpm pool) or do not use the configuration cache.
+
 ## Ports: distinct per environment, and on loopback unless they must go out
 
 Behind Traefik the browser traffic needs no port on the host at all. But the kit's
@@ -146,7 +151,15 @@ The WebSocket can take two paths, and the choice belongs to the server, not to t
   `PathPrefix(/apps/{REVERB_APP_ID})` — the WebSocket and the API Reverb serves — and pointing at
   the container's port 8090. Narrowing by key and id is not decoration: `PathPrefix(/app)` alone
   would steal the kit's `/app` panel, because in Traefik the longest rule wins. In the `.env`, `REVERB_PORT=443` and `REVERB_SCHEME=https` (and the same
-  `VITE_REVERB_*` values if your front end has Echo). No extra port exposed, TLS for free.
+  `VITE_REVERB_*` values if your front end has Echo). No extra port exposed, TLS for free. The values
+  the browser uses vary per environment and are **baked at build time** — change them and run `up`
+  with `--build`:
+
+  ```ini
+  VITE_REVERB_HOST=dev.example.org
+  VITE_REVERB_PORT=443
+  VITE_REVERB_SCHEME=https
+  ```
 - **Its own port on the host**: uncomment nothing and use `FORWARD_REVERB_PORT` with the matrix offset.
 
 ## One checkout per environment

@@ -17,11 +17,21 @@ namespace App\Support;
  * por vírgula de IPs ou CIDRs, sem validação aqui: o Symfony valida ao resolver o IP e lança
  * exceção legível no primeiro request, e um parser próprio só duplicaria o dele.
  *
- * Lida no bootstrap, antes do `config/` — por isso é `env()` ali e não `config('kit.…')`.
- * Ver ADR-02 de `wikis/specs/feat/deploy-multiambiente-docker/`.
+ * Os coringas do framework ficam de fora da lista de propósito: `*` só vale **sozinho**; `**`
+ * (confiar na cadeia inteira de `X-Forwarded-For`), `REMOTE_ADDR` (o token que o Symfony troca
+ * pelo IP do chamador) e `PRIVATE_SUBNETS` (todas as faixas privadas — no Docker, todo container)
+ * dentro de uma lista abririam confiança larga por um erro de digitação. Descartados, a lista fica
+ * só com o que foi escrito como endereço ou CIDR — e, vazia, não confia em ninguém.
+ *
+ * Lida no bootstrap, antes do `config/` — por isso é `env()` ali e não `config('kit.…')`. Com a
+ * configuração em cache o Laravel não lê o `.env`: a chave precisa estar no ambiente do processo,
+ * que é o que o `env_file` do Compose faz. Ver ADR-02 de `wikis/specs/feat/deploy-multiambiente-docker/`.
  */
 final class ProxiesConfiaveis
 {
+    /** Tokens que o framework trata como "confiar no chamador" e que nunca entram numa lista. */
+    private const CORINGAS = ['*', '**', 'REMOTE_ADDR', 'PRIVATE_SUBNETS'];
+
     /**
      * @return '*'|list<string>|null `null` = nenhum proxy confiável; `'*'` = todos; senão a lista limpa
      */
@@ -43,7 +53,7 @@ final class ProxiesConfiaveis
 
         $lista = array_values(array_filter(
             array_map(trim(...), explode(',', $texto)),
-            static fn (string $item): bool => $item !== '',
+            static fn (string $item): bool => $item !== '' && ! in_array($item, self::CORINGAS, true),
         ));
 
         return $lista === [] ? null : $lista;
