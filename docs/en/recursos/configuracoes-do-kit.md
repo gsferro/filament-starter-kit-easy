@@ -289,9 +289,9 @@ segment:
   nothing shows in that spot — and if no segment resolves, the brand goes back to the usual one; it
   is never empty.
 
-The composition replaces the brand **wherever Filament draws it**: at the top of the sidebar while
-it is open (there the texts shrink and truncate with an ellipsis to fit on one line), and in the
-topbar when it is collapsed or on a narrow screen. Authentication screens (login, password reset,
+The composition replaces the brand **wherever Filament draws it**: in the topbar and, on a narrow
+screen with the sidebar open, at the top of the sidebar (there the texts shrink and truncate with an
+ellipsis to fit on one line). Authentication screens (login, password reset,
 lock screen, two-factor, e-mail verification) keep the usual brand: the header belongs to the
 panels' inner screens. In the business panel the composition's logo is always the
 **installation's** — the organisation's keeps showing only on the lock screen.

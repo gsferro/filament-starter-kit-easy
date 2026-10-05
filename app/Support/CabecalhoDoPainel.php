@@ -5,10 +5,12 @@ namespace App\Support;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Models\Contracts\HasName;
+use Filament\Pages\SimplePage;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
+use Livewire\Livewire;
 use WeakMap;
 
 /**
@@ -153,12 +155,10 @@ final class CabecalhoDoPainel
         /*
          * Tela de autenticação fica com a marca de hoje — pública (login, recuperação,
          * bloqueio) ou já autenticada (dois fatores, confirmação de e-mail): a composição é
-         * das telas internas dos painéis (Fora de Escopo do `00`). Duas guardas porque a
-         * primeira não cobre a segunda: o 2FA do Breezy e o aviso de e-mail do Filament
-         * rodam com usuário autenticado, mas em rota `filament.{painel}.auth.*`. O
-         * `brandLogo()` é o mesmo em todas, então a guarda tem de estar aqui, não no provider.
+         * das telas internas dos painéis (Fora de Escopo do `00`). O `brandLogo()` é o mesmo
+         * em todas, então a guarda tem de estar aqui, não no provider.
          */
-        if (! Filament::auth()->check() || str_contains((string) request()->route()?->getName(), '.auth.')) {
+        if (! Filament::auth()->check() || self::emTelaDeAutenticacao()) {
             return null;
         }
 
@@ -200,6 +200,28 @@ final class CabecalhoDoPainel
             'logo_clara'  => $logoClara,
             'logo_escura' => $logoEscura,
         ];
+    }
+
+    /**
+     * Três sinais, porque cada um deixa um buraco sozinho:
+     *
+     * - sem usuário autenticado é tela pública — tratado antes de chamar este método;
+     * - a rota `filament.{painel}.auth.*` cobre o GET das telas autenticadas de autenticação
+     *   (2FA do Breezy, aviso de verificação de e-mail), mas **não** o update Livewire delas:
+     *   ali a rota corrente é `default-livewire.update`, e a `SimplePage` redesenha a logo
+     *   dentro do próprio componente (`vendor/filament/filament/resources/views/components/page/simple.blade.php:$hasLogo:23`).
+     *   Foi o QA-01 do ciclo 1: GET limpo, composição aparecendo depois do primeiro clique;
+     * - por isso o componente Livewire corrente decide: toda tela de autenticação do kit é
+     *   `SimplePage` (login do Filament, prompt de e-mail do Auth Designer, 2FA do Breezy),
+     *   e `Livewire::current()` é o mesmo no GET e no update.
+     */
+    private static function emTelaDeAutenticacao(): bool
+    {
+        if (str_contains((string) request()->route()?->getName(), '.auth.')) {
+            return true;
+        }
+
+        return Livewire::current() instanceof SimplePage;
     }
 
     private static function rotuloDoPapel(User $usuario): ?string

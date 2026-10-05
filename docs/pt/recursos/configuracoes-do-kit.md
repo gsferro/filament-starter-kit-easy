@@ -278,9 +278,9 @@ presente:
   separada, a escura, trocadas pelo navegador). Sem logo enviada, nada aparece neste lugar — e se
   nenhum segmento resolver, a marca volta à de sempre, nunca fica vazia.
 
-A composição substitui a marca **onde quer que o Filament a desenhe**: no topo da barra lateral,
-enquanto ela está aberta (ali os textos encolhem e cortam com reticências para caber numa linha), e
-no topbar, quando ela está recolhida ou em tela estreita. As telas de autenticação (login,
+A composição substitui a marca **onde quer que o Filament a desenhe**: no topbar e, em tela estreita com a
+barra lateral aberta, no topo dela (ali os textos encolhem e cortam com reticências para caber numa
+linha). As telas de autenticação (login,
 recuperação de senha, bloqueio, dois fatores, confirmação de e-mail) continuam com a marca de
 sempre: o cabeçalho é das telas internas dos painéis. No painel do negócio a logo da
 composição é sempre a da **instalação** — a da organização segue aparecendo só na tela de bloqueio.

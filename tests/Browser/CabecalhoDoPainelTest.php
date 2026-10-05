@@ -112,3 +112,58 @@ it('[CT-B02] a logo da composição troca com o tema', function (): void {
         ->assertScript("[...document.querySelectorAll('.kit-cabecalho .fi-logo-dark')].some(e => getComputedStyle(e).display !== 'none' && e.src.includes('logo-cab-dark.png'))")
         ->assertNoJavaScriptErrors();
 })->group('browser');
+
+/**
+ * CT-B03 — nome longo: a composição da barra lateral fica numa linha, dentro do
+ * `.fi-sidebar-header`, e o segmento do projeto é cortado com reticências (P-06 revisada).
+ *
+ * Altura, quebra de linha e `text-overflow` são layout calculado: o HTML é o mesmo com e sem
+ * o defeito.
+ */
+it('[CT-B03] o nome longo trunca e a composição fica dentro do cabeçalho da barra lateral', function (): void {
+    $nome = mb_substr(str_repeat('Projeto Longo de Integracao ', 3), 0, 59);
+    expect(mb_strlen($nome))->toBe(59);
+
+    Storage::disk('public')->put('kit/logo-cab.png', UploadedFile::fake()->image('a.png', 400, 80)->get());
+
+    gravarConfiguracao('nome_da_aplicacao', $nome);
+    gravarConfiguracao('logo', 'kit/logo-cab.png');
+    gravarConfiguracao('unifica_logo_marca', true);
+    gravarConfiguracao('cabecalho_nome_do_projeto', true);
+    gravarConfiguracao('cabecalho_nome_do_painel', true);
+    gravarConfiguracao('cabecalho_logo_da_marca', true);
+    alinharConfiguracoesDoKit();
+
+    $this->actingAs(usuarioDoKit('admin'));
+    $this->get('/admin');
+
+    /*
+     * A 1280 px o Filament desenha a marca só no topbar: a composição da barra lateral existe
+     * no DOM com 0x0 (display do cabeçalho da barra). Ela só aparece abaixo de 1024 px, com a
+     * barra aberta pelo botão do topbar — por isso 900 px e o clique.
+     */
+    $pagina = visit('/admin')->resize(900, 800);
+
+    $pagina->click('.fi-topbar-open-sidebar-btn')
+        ->assertVisible('.fi-sidebar .kit-cabecalho');
+
+    $medida = json_decode((string) $pagina->script(<<<'JS'
+        (() => {
+            const c = document.querySelector('.fi-sidebar .kit-cabecalho').getBoundingClientRect(),
+                  h = document.querySelector('.fi-sidebar-header').getBoundingClientRect(),
+                  p = document.querySelector('.fi-sidebar .kit-cabecalho__projeto');
+            return JSON.stringify({
+                altura: c.height, fundo: c.bottom, fundoDoCabecalho: h.bottom,
+                scrollWidth: p.scrollWidth, clientWidth: p.clientWidth,
+                textOverflow: getComputedStyle(p).textOverflow,
+            });
+        })()
+    JS), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($medida['altura'])->toBeGreaterThan(0)->toBeLessThanOrEqual(40)
+        ->and($medida['fundo'])->toBeLessThanOrEqual($medida['fundoDoCabecalho'] + 1)
+        ->and($medida['scrollWidth'])->toBeGreaterThan($medida['clientWidth'])
+        ->and($medida['textOverflow'])->toBe('ellipsis');
+
+    $pagina->assertNoJavaScriptErrors();
+})->group('browser');

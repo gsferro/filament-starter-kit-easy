@@ -2,6 +2,7 @@
 
 use App\Filament\Admin\Pages\ConfiguracoesDoKit;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
+use Caresome\FilamentAuthDesigner\Pages\Auth\EmailVerification;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
@@ -215,4 +216,26 @@ it('[CT-33] a secao "Cabecalho dos paineis" traz as cinco opcoes', function (): 
     ] as $campo) {
         $tela->assertSchemaComponentExists($campo);
     }
+})->group('kit');
+
+// --- R22 — tela de autenticação autenticada, depois de um update Livewire --------
+
+it('[CT-35] a tela de verificacao de e-mail continua sem composicao depois de um update Livewire', function (): void {
+    gravarConfiguracao('nome_da_aplicacao', 'Projeto Ômega');
+    gravarConfiguracao('cabecalho_nome_do_projeto', true);
+    alinharConfiguracoesDoKit();
+
+    $usuario = usuarioDoKit('panel_user');
+    $usuario->forceFill(['email_verified_at' => null])->save();
+
+    Filament::setCurrentPanel('app');
+
+    $tela = Livewire::actingAs($usuario)
+        ->test(EmailVerification::class);
+
+    expect($tela->html())->not->toContain('kit-cabecalho');
+
+    $tela->call('$refresh');
+
+    expect($tela->html())->not->toContain('kit-cabecalho');
 })->group('kit');
