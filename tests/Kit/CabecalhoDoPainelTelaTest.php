@@ -233,9 +233,11 @@ it('[CT-35] a tela de verificacao de e-mail continua sem composicao depois de um
     $tela = Livewire::actingAs($usuario)
         ->test(EmailVerification::class);
 
-    expect($tela->html())->not->toContain('kit-cabecalho');
+    expect($tela->html())->not->toContain('kit-cabecalho')
+        ->and(regiaoDoHeader($tela->html(), 'fi-logo'))->toContain('Projeto Ômega');
 
     $tela->call('$refresh');
 
-    expect($tela->html())->not->toContain('kit-cabecalho');
+    expect($tela->html())->not->toContain('kit-cabecalho')
+        ->and(regiaoDoHeader($tela->html(), 'fi-logo'))->toContain('Projeto Ômega');
 })->group('kit');
