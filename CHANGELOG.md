@@ -5,9 +5,11 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-10-06
+
 ### Adicionado
 
-- **Deploy opt-in de vários ambientes no mesmo servidor, atrás do Traefik** (wiki
+- **Deploy opt-in de vários ambientes no mesmo servidor, atrás do Traefik** (#147, wiki
   `wikis/specs/feat/deploy-multiambiente-docker/`): um override de exemplo em
   `docker/traefik/docker-compose.override.yml` — copiado para a raiz do checkout, o Compose o carrega
   sozinho — põe o `nginx` na rede externa do Traefik com os labels do docker provider (router e
