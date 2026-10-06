@@ -497,7 +497,7 @@ step 9; QA-03.)*
 
 - Os cenários nascem do `04` (step 7), escritos pelo `fw-executor-ct`. Arquivos previstos:
   `tests/Kit/DeployMultiambienteDockerTest.php` (compose/Dockerfile/override/env/docs) e
-  `tests/Kit/ProxiesConfiaveisTest.php` (parsing + bootstrap). Todo caso que leia `docs/`, README
+  `tests/Kit/ProxiesConfiaveisTest.php` (parsing + boot do provider *(alterado em 2026-10-06: dizia "bootstrap"; o teste cobre `KitServiceProvider::boot()`, não o `bootstrap/app.php` — QA-14)*). Todo caso que leia `docs/`, README
   ou `site/` leva `->skip(fn (): bool => ! naArvoreDoKit(), …)` (`.ai/rules/testes.md`).
 - Regressão: `CacheDeViewsNoDockerTest`, `MysqlNoDockerTest`, `DeployDockerLocalTest`,
   `UrlSemPrefixoPublicTest`, `DiagramasDaArquiteturaTest`, `SiteDeDocumentacaoTest`,
