@@ -274,6 +274,7 @@ Funcionalidade: Entrega dos overrides autorais de resources/views/vendor pelo ki
 ```gherkin
   Regra: fora da árvore do kit a varredura de resources/views/vendor pula, com motivo
 
+    # Procedimento (não vira `it()`): executado pela sessão, resultado no `03`. A regressão automatizada é o CT-13.
     Cenário: [CT-09] num projeto instalado a varredura é reportada como pulada, com motivo
       Dado a extração do git archive desta versão, com uma pasta de resources/views/vendor publicada e editada pelo projeto, fora da lista
       Quando o mantenedor roda os casos CT-06, CT-07 e CT-08 nela com relatório junit
@@ -388,7 +389,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | CT-06 | pasta autoral coberta inteira, com sonda | R4 | EP | Árvore real do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M11, M12 |
 | CT-07 | nenhuma view crua coberta | R4 | EP | Árvore real do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M13, M14 |
 | CT-08 | todas as pastas da árvore real examinadas (> 0) | R4 | controle positivo | Árvore real do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M15 |
-| CT-09 | pula fora da árvore com motivo (extração com publish do projeto) | R5 | rastreio de efeito | Árvore real do kit | unit de regra | procedimento junit sobre CT-06…CT-08 (evidência no `03`) | M17, M18 |
+| CT-09 | pula fora da árvore com motivo (extração com publish do projeto) | R5 | rastreio de efeito | Árvore real do kit | procedimento | fundido em CT-13 como regressão; o procedimento junit sobre CT-06…CT-08 na extração é evidência da `## Verificação Final` do `03`, não `it()` | M17, M18 |
 | CT-10 | o leitor do fonte produz a lista da constante | R6 | EP | Lista do kit | unit de regra | `tests/Kit/KitUpdateTest.php` (caso existente) | M19, M20 |
 | CT-11 | CHANGELOG cita #148 e resources/views/vendor | R7 | EP | CHANGELOG | unit de regra | `tests/Kit/KitUpdateTest.php` | M21, M22 |
 | CT-12 | autoral sem pacote, fora da lista, reprova | R3 | tabela de decisão | Classificação por fixture | unit de regra | `tests/Kit/KitUpdateTest.php` | M30 |

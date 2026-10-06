@@ -5,22 +5,22 @@
 > Branch: `fix/kit-update-views-vendor` · Base do PR: `main` (`dcb3083`, v0.45.0)
 
 ## 1. As cinco pastas autorais em `CAMINHOS_DO_KIT`
-- [ ] Comentário de bloco + 5 entradas depois de `'resources/views/svg',`, na forma que `caminhosDeclaradosEm()` lê
+- [x] Comentário de bloco + 5 entradas depois de `'resources/views/svg',`, na forma que `caminhosDeclaradosEm()` lê — `grep -c "^        '" app/Console/Commands/KitUpdate.php` = 84 (79 + 5); comentário de 7 linhas (teto 6 do ponytail estourado em 1: a última linha nomeia o teste que decide); `[CT-10]` verde, 2026-10-06
 
 ## 2. A varredura decide autoria em `resources/views/vendor`
-- [ ] Caso novo em `KitUpdateTest` (autoral → coberta; crua → fora; skip fora da árvore) pelo `fw-executor-ct`, a partir do `04`
-- [ ] Comentário do `continue` de `resources/views/vendor/` reescrito
-- [ ] `media.blade.php` no dataset da fundação
+- [x] Caso novo em `KitUpdateTest` (autoral → coberta; crua → fora; skip fora da árvore) pelo `fw-executor-ct`, a partir do `04` — CT-02…CT-08, CT-11…CT-14 + CT-01 no dataset e CT-10 renomeado; `pest tests/Kit/KitUpdateTest.php --compact` → 83/83, 133 asserções (despacho 3), 2026-10-06
+- [x] Comentário do `continue` de `resources/views/vendor/` reescrito — aponta CT-06/CT-07 deste arquivo (`git diff -- tests/Kit/KitUpdateTest.php`), 2026-10-06
+- [x] `media.blade.php` no dataset da fundação — chave `[CT-01] override da lock-screen` no `->with([...])` do caso `cobre os arquivos da fundação`, 2026-10-06
 
 ## 3. Recalcular as citações de `KitUpdate.php`
-- [ ] 20 citações em docs pt/en e 3 testes reancoradas; `CitacoesDeCodigoTest` e CT-66 verdes
+- [x] 20 citações em docs pt/en e 3 testes reancoradas; `CitacoesDeCodigoTest` e CT-66 verdes — 5 pelo `citacoes.py` (símbolo), 7 à mão (chave entre aspas: `'tests/Kit'`, `'tests/Pest.php'`, `'wikis/README.md'` ×2 idiomas, `CAMINHOS_SO_RELATORIO`) e 3 curtas (`483,1158`, `487-489`), todas +12; `pest CitacoesDeCodigoTest ChecklistDeReleaseTest ConstraintDeDependenciaTest DeployDockerLocalTest` → 47/47 (3 pulados); as citações de `wikis/specs/**` antigas **não** foram tocadas (registros datados, fora do `CitacoesDeCodigoTest` por decisão da v0.36.0), 2026-10-06
 
 ## 4. CHANGELOG
-- [ ] `[Unreleased]` → `### Corrigido` (#148)
+- [x] `[Unreleased]` → `### Corrigido` (#148) — entrada com as 5 pastas, as 7 de fora, o critério e o efeito para quem já editou uma delas; `[CT-11]` verde, 2026-10-06
 
 ## Testes
 - [ ] `tests/Kit/KitUpdateTest.php` (CT-01, CT-02 ×14, CT-03, CT-04 ×3, CT-05, CT-06, CT-07, CT-08, CT-11, CT-12, CT-13, CT-14; CT-10 = caso existente `extrai do fonte desta versão…`, renomeado com o ID) *(alterado em 2026-10-06: revisão adversarial +3 CT, +7 Exemplos)*
-- [ ] CT-09 — procedimento com `--log-junit` sobre CT-06…CT-08 na árvore do kit e na extração do `git archive` (evidência aqui, não `it()`)
+- [x] CT-09 — procedimento com `--log-junit` sobre CT-06…CT-08 na extração do `git archive` (evidência aqui, não `it()`) — na extração `validacao-v0.45.0/novo-sem-tenant` com uma pasta `resources/views/vendor/projeto-x` publicada e editada pelo projeto, fora da lista: `php artisan test tests/Kit/KitUpdateTest.php --filter='CT-0[678]' --log-junit` → `{"result":"passed","tests":6,"passed":3,"skipped":3}`, os três `skipped` (o junit do Pest 5 não carrega o motivo; o motivo não vazio é provado pelo CT-13); **M17**: com o `->skip(…)` removido por `sed` na cópia da extração → `"result":"failed"`, mensagem citando `projeto-x/painel.blade.php` e "override AUTORAL … em KitUpdate::CAMINHOS_DO_KIT"; na árvore do kit os três passam (83/83). Cópia restaurada, pasta sonda removida, 2026-10-06
 
 ## Tickets
 Não fatiado — 2026-10-06: 5 RQ vigentes, 11 CT, compactação: sim (da feature anterior desta sessão, antes do step 0 desta), 3 perguntas de requisito — nenhum sinal de tamanho (18 RQ / 60 CT); a compactação não é desta feature, que cabe numa sessão: sugestão não feita
