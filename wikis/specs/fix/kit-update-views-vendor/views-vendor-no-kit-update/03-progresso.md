@@ -1,6 +1,6 @@
 # Progresso — Issue #148: overrides autorais de `resources/views/vendor` no `kit:update`
 
-**Estado**: em implementação
+**Estado**: em revisão
 
 > Branch: `fix/kit-update-views-vendor` · Base do PR: `main` (`dcb3083`, v0.45.0)
 
@@ -27,10 +27,10 @@ Não fatiado — 2026-10-06: 5 RQ vigentes, 11 CT, compactação: sim (da featur
 
 ## Verificação Final
 - [ ] `/ponytail:ponytail-review` no diff (validar contra over-engineering)
-- [ ] `vendor/bin/pint --dirty`
-- [ ] `vendor/bin/pest tests/Kit/KitUpdateTest.php --compact`
-- [ ] Regressão: `DuasRotasDeEntregaTest`, `LogoDarkModeTest`, `BotaoLimparCacheTest`, `CitacoesDeCodigoTest`, `ChecklistDeReleaseTest`, `ConstraintDeDependenciaTest`, `DeployDockerLocalTest`, `DiagramasDaArquiteturaTest`
-- [ ] Mutantes manuais do caso novo: entrada removida da lista; pasta crua acrescentada à lista
+- [x] `vendor/bin/pint --dirty` — `{"tool":"pint","result":"passed"}` sobre `KitUpdate.php` e os 4 testes tocados, 2026-10-06
+- [x] `vendor/bin/pest tests/Kit/KitUpdateTest.php --compact` — OK (83 tests, 133 assertions), depois do `[CT-01]` no dataset, 2026-10-06
+- [x] Regressão: `DuasRotasDeEntregaTest`, `LogoDarkModeTest`, `BotaoLimparCacheTest`, `CitacoesDeCodigoTest`, `ChecklistDeReleaseTest`, `ConstraintDeDependenciaTest`, `DeployDockerLocalTest`, `DiagramasDaArquiteturaTest` — `pest DuasRotasDeEntregaTest LogoDarkModeTest BotaoLimparCacheTest DiagramasDaArquiteturaTest --compact` → OK (558 testes, 4.030 asserções, 2 min 48 s); `pest CitacoesDeCodigoTest ChecklistDeReleaseTest ConstraintDeDependenciaTest DeployDockerLocalTest --compact` → 47/47 (3 pulados); `pest tests/Kit/KitUpdateTest.php` → 83/83, 2026-10-06
+- [x] Mutantes manuais do caso novo: entrada removida da lista; pasta crua acrescentada à lista — três mutantes da constante por `sed`, suíte `KitUpdateTest` inteira, `git checkout` depois de cada um: **A** `filament-captcha` fora da lista → `Failures: 1`, CT-06 (`KitUpdateTest.php:799`) lista os 4 drivers + a sonda; **B** `pulse` na lista → `Failures: 1`, CT-07 (`:822`) acusa `pulse/dashboard.blade.php`; **C** entrada por arquivo (`…/media.blade.php`) no lugar da pasta → `Failures: 1`, CT-06 pela sonda `novo-arquivo-sonda.blade.php` (o CT-14 **não** mata esse: a entrada por arquivo ainda extrai o próprio arquivo — M31 corrigido no `04`). Árvore restaurada (`git status` limpo, 5 entradas), 2026-10-06
 - [ ] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação: achados fechados ou rejeitados com motivo
 - [ ] Desvios propagados ao `01`/`02`/`04` de origem, marcados `*(alterado em …)*`
 - [ ] `rastreabilidade.sh {wiki}` silencioso
@@ -108,6 +108,10 @@ Nenhuma classe nova nesta entrega. A "irmã" relevante é a **entrada** `'resour
 | — | 3 | Sem despacho — auditoria de `resources/views/vendor` por script (tarefa de 1–2 passos) | sessão | — | tabela de 12 pastas: 5 autorais, 7 cruas | — | 3 pastas conferidas por `git log` do arquivo |
 | 1 | 7 | `general-purpose` — seguir `feature-test-design`, derivar o `04` | opus (explícito) | `01` inteiro (só paths, stack e "Sem superfície de UI" colados no prompt), `02`, `03`, conversa, código da correção | `04` gravado: 11 CT, 7 regras, 23 mutantes, 4 costuras (unit de regra), 1 pergunta de desenho (Q7), `## Sem CT-B` | 139,3 k tokens · 281 s | `git status --porcelain`: só `?? …/04-casos-de-teste.md`; `grep -o "\[CT-[0-9][0-9]\]" \| sort -u \| wc -l` = 11 = cabeçalho; `rastreabilidade.sh` e `citacoes.sh` exit 0; amostrados CT-02 (7 partições isoladas), CT-09 (procedural com junit — aceito) e CT-11 (arquivo inteiro, regra do CHANGELOG) |
 | 2 | 7 | `fw-adversario-ct` — provar que o `04` deixa passar defeito | opus | `01`, `02`, `03`, conversa, código | 21 achados: 6 bloqueantes (pasta amarrada ao pacote pelo nome; iteração a partir do pacote; listagem não recursiva; M7/M5/M6 não morriam), 15 cosméticos; 19 aplicados no `04` (14 CT, 33 mutantes, 1 sem matador), 2 rejeitados com motivo (ADV-09 caixa no Windows, ADV-10 leitor antigo) — tabela em `04` → `## Revisão adversarial` | 55,6 k tokens · 210 s | `git status --porcelain` igual antes/depois (só leu); 3 bloqueantes reproduzidos de cabeça contra o script do step 3 (ele procurava o par por caminho relativo em todos os pacotes — ADV-01 não o atingia, mas atingiria uma implementação ingênua); `git ls-files resources/views/vendor` sem colisão de caixa (ADV-09) |
+| 3 | impl. | `fw-executor-ct` — CT-01…CT-14 em `tests/Kit/KitUpdateTest.php` a partir do `04` | opus (sobrepõe o sonnet do agente: fixtures em disco, `git archive` no Windows, meta-caso sobre o próprio fonte) | `01`, `02`, `03`, conversa | 83/83 no arquivo (24 casos do lote com as linhas de dataset), 0 vermelho; 5 ambiguidades do `04` resolvidas e declaradas (`.gitkeep` sempre acha par; "coberta" por direção; lista não vazia nos "fora da lista"; CT-14 compara com fim de linha normalizado; CT-04 "não sugere listá-la" = sem "liste") | 115,7 k tokens · 238 s | `git diff --stat`: só `tests/Kit/KitUpdateTest.php` (+402/−3) além dos arquivos que a sessão já tinha tocado; `ids-ct.sh` acusou CT-01 (dataset sem `[CT-01]`) → a sessão trocou a linha por chave `[CT-01] …` no `->with`; rerodado pela sessão: 83/83, 133 asserções; `pint --dirty` passed |
+| 4 | 9 | `general-purpose` — passe genérico sobre `main...HEAD` (fallback: `/code-review` não existe neste host) | opus (explícito) | `01`, `03`, conversa, `wikis/` | *(a receber)* | — | — |
+| 5 | 9 | `fw-revisor-diff` — eixos sobre `main...HEAD` sem `wikis/` | opus | `01`, `03`, conversa | *(a receber)* | — | — |
+| — | pré-9 | Sem despacho — re-varredura da `## Superfície Livewire`: não exigida (`git diff main...HEAD --stat -- app/Filament app/Livewire` vazio) | sessão | — | — | — | — |
 
 ## Blockers
 - nenhum

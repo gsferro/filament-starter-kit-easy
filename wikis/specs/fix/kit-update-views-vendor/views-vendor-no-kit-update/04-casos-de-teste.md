@@ -120,7 +120,7 @@ Funcionalidade: Entrega dos overrides autorais de resources/views/vendor pelo ki
 |---|---|---|---|
 | M1 | a entrada `resources/views/vendor/filament-auth-designer` não entra na constante (correção só no `.gitattributes`, na doc ou num comentário da constante) | CT-01 | `estaCoberto(media.blade.php)` é `true`; o mutante devolve `false` |
 | M2 | entrada com o caminho errado: `resources/views/filament-auth-designer` (sem `vendor/`) ou `…/filament-auth-design` | CT-01 | o prefixo da entrada não casa com o caminho do `Dado`; `estaCoberto` devolve `false` |
-| M31 | entrada por arquivo (`…/partials/media.blade.php`) ou entrega não recursiva da pasta: a lista unida com um destino antigo perde o arquivo aninhado | CT-14 | o arquivo existe na árvore temporária com o conteúdo do kit; o mutante não o extrai (ou extrai só a raiz da pasta) |
+| M31 | entrega não recursiva da entrada-pasta (`git archive` só da raiz, ou cópia sem subpastas): a lista unida com um destino antigo perde o arquivo aninhado | CT-14 | o arquivo existe na árvore temporária com o conteúdo do kit; o mutante não o extrai. *(alterado em 2026-10-06: a variante "entrada por arquivo" saiu daqui — ela ainda extrai o próprio arquivo e quem a mata é a sonda do CT-06, medido no mutante manual C)* |
 
 ---
 
