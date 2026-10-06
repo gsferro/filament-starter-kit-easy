@@ -433,11 +433,11 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 ```gherkin
   Regra: a classe antiga do kit:update, que compara tag→tag, entrega os dez arquivos na primeira rodada
 
-    # Procedimento (não vira `it()`): executado pela sessão, resultado no `03`.
+    # O "Quando/Então" do git diff vira `it()` (continência dos dez, nenhum de pasta crua); o `--dry-run` com a classe antiga é procedimento da sessão, resultado no `03`. *(alterado em 2026-10-06)*
     Cenário: [CT-18] cada view autoral difere da tag anterior, e a classe antiga as lista num projeto já atualizado
       Dado o repositório do kit com a tag anterior "v0.45.0" e esta versão
       Quando o mantenedor roda "git diff --name-only v0.45.0 HEAD -- resources/views/vendor"
-      Então a saída tem exatamente os dez arquivos das cinco pastas autorais, e nenhum das sete pastas cruas
+      Então a saída contém os dez arquivos das cinco pastas autorais, e nenhum caminho dela pertence a pasta classificada como publish cru *(alterado em 2026-10-06: continência, não igualdade)*
       E, num projeto na v0.45.0 com a CLASSE ANTIGA do kit:update, "kit:update --repo={kit local} --tag={tag com a correção} --dry-run" lista os dez arquivos
 ```
 
@@ -500,7 +500,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | CT-15 | entradas novas = destino − origem, reindexadas; origem `[]` ⇒ `[]` *(alterado em 2026-10-06: CR-01/RD-01)* | R8 | EP | Diff da entrada nova | unit de regra | `tests/Kit/KitUpdateTest.php` | M32, M33, M34 |
 | CT-16 | rótulo por status × origem, com saída real do git *(alterado em 2026-10-06: CR-01/RD-01)* | R8 | tabela de decisão | Diff da entrada nova | unit de regra | `tests/Kit/KitUpdateTest.php` | M35 |
 | CT-17 | `kit:update --dry-run` de v0.45.0 sem a pasta lista `media.blade.php` como novo no kit, e não a edição do projeto *(alterado em 2026-10-06: CR-01/RD-01)* | R8 | procedimento ponta a ponta | Diff da entrada nova | procedimento | fundido em CT-15/CT-16 como regressão; o procedimento é evidência do `03`, não `it()` | M36 (e M32, M34, M35 de ponta a ponta) |
-| CT-18 | as dez views autorais diferem da tag anterior; a classe antiga as lista | R9 | rastreio de efeito | Lista do kit | procedimento | regressão coberta por CT-01/CT-06; o diff contra a tag anterior e o `--dry-run` com a classe antiga são evidência da `## Verificação Final` do `03` | M43 |
+| CT-18 | as dez views autorais diferem da tag anterior (⊇, por `it()`); a classe antiga as lista (procedimento) | R9 | rastreio de efeito | Lista do kit | unit de regra | `tests/Kit/KitUpdateTest.php` — o `git diff --name-only v0.45.0 HEAD` é `it()` com **continência** dos dez e nenhum de pasta crua *(alterado em 2026-10-06: igualdade exata ficaria falsa na próxima release que tocar uma view)*; o `--dry-run` com a classe antiga é evidência da `## Verificação Final` do `03` | M43 |
 
 ## Cogitado e cortado
 
