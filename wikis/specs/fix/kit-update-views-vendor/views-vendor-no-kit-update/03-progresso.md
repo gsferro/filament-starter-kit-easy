@@ -19,10 +19,11 @@
 - [ ] `[Unreleased]` → `### Corrigido` (#148)
 
 ## Testes
-<!-- Preenchida no step 7, depois da derivação do 04/05. -->
+- [ ] `tests/Kit/KitUpdateTest.php` (CT-01, CT-02 ×7, CT-03, CT-04, CT-05, CT-06, CT-07, CT-08, CT-11; CT-10 = caso existente `extrai do fonte desta versão…`, renomeado com o ID)
+- [ ] CT-09 — procedimento com `--log-junit` sobre CT-06…CT-08 na árvore do kit e na extração do `git archive` (evidência aqui, não `it()`)
 
 ## Tickets
-<!-- Step 8. -->
+Não fatiado — 2026-10-06: 5 RQ vigentes, 11 CT, compactação: sim (da feature anterior desta sessão, antes do step 0 desta), 3 perguntas de requisito — nenhum sinal de tamanho (18 RQ / 60 CT); a compactação não é desta feature, que cabe numa sessão: sugestão não feita
 
 ## Verificação Final
 - [ ] `/ponytail:ponytail-review` no diff (validar contra over-engineering)
@@ -61,7 +62,7 @@
 
 ## Auditoria Pré-Implementação
 
-Entendimento confirmado: 2026-10-06 — sessão autônoma, pelas recomendações (o solicitante confirma ao ler o PR; ele pediu "analise com cuidado o que foi reportado e corrija") — 1 rodada; perguntas: 0 fato (resolvidas por leitura e pelo script de auditoria), 3 desenho (Q4–Q6 → D1–D3), 3 requisito (Q1–Q3 — nenhuma bloqueia passo: Q1 e Q2 implementadas pela direção que falha fechado como P-01 e P-02; Q3 é a tag, fora desta entrega)
+Entendimento confirmado: 2026-10-06 — sessão autônoma, pelas recomendações (o solicitante confirma ao ler o PR; ele pediu "analise com cuidado o que foi reportado e corrija") — 2 rodadas (step 4; step 7 devolveu Q7); perguntas: 0 fato (resolvidas por leitura e pelo script de auditoria), 4 desenho (Q4–Q7 → D1–D3), 3 requisito (Q1–Q3 — nenhuma bloqueia passo: Q1 e Q2 implementadas pela direção que falha fechado como P-01 e P-02; Q3 é a tag, fora desta entrega)
 
 ### Perguntas da entrevista (step 4)
 
@@ -73,6 +74,7 @@ Entendimento confirmado: 2026-10-06 — sessão autônoma, pelas recomendações
 | Q4 | desenho | RQ-03 | varredura em `KitUpdateTest` ou `DuasRotasDeEntregaTest`? | `KitUpdateTest`, onde está a exclusão (D1) |
 | Q5 | desenho | RQ-02 | entrada por pasta, arquivo ou raiz `resources/views/vendor`? | pasta (D2) |
 | Q6 | desenho | RQ-03, RQ-04 | oráculo de autoria: conteúdo × vendor, git, ou lista à mão? | conteúdo × vendor instalado (D3, P-03, P-05) |
+| Q7 | desenho (devolvida pela derivação do `04`) | P-03 | mesmo caminho relativo em dois pacotes / view sem par: compara com o quê? | idêntica a **algum** candidato = cru; sem par = autoral (já era a D3); as duas linhas de CT-02 fechadas |
 
 ### Confronto código × afirmação (step 5)
 | Pergunta | O `01` dizia | O código faz | Resposta (quem, data) | Onde a wiki mudou |
@@ -104,6 +106,7 @@ Nenhuma classe nova nesta entrega. A "irmã" relevante é a **entrada** `'resour
 |---|---|---|---|---|---|---|---|
 | — | 0 | Sem despacho — captura verbatim do requisito (exceção declarada) | sessão | — | `00` gerado do corpo bruto do issue com marcadores nos caracteres de controle | — | — |
 | — | 3 | Sem despacho — auditoria de `resources/views/vendor` por script (tarefa de 1–2 passos) | sessão | — | tabela de 12 pastas: 5 autorais, 7 cruas | — | 3 pastas conferidas por `git log` do arquivo |
+| 1 | 7 | `general-purpose` — seguir `feature-test-design`, derivar o `04` | opus (explícito) | `01` inteiro (só paths, stack e "Sem superfície de UI" colados no prompt), `02`, `03`, conversa, código da correção | `04` gravado: 11 CT, 7 regras, 23 mutantes, 4 costuras (unit de regra), 1 pergunta de desenho (Q7), `## Sem CT-B` | 139,3 k tokens · 281 s | `git status --porcelain`: só `?? …/04-casos-de-teste.md`; `grep -o "\[CT-[0-9][0-9]\]" \| sort -u \| wc -l` = 11 = cabeçalho; `rastreabilidade.sh` e `citacoes.sh` exit 0; amostrados CT-02 (7 partições isoladas), CT-09 (procedural com junit — aceito) e CT-11 (arquivo inteiro, regra do CHANGELOG) |
 
 ## Blockers
 - nenhum
