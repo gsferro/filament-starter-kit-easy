@@ -8,9 +8,10 @@
 > `.env.docker`, `.env.example`, `deploy_docker_local.sh`, `bootstrap/app.php`,
 > `App\Console\Commands\KitUpdate::CAMINHOS_DO_KIT`).
 > Derivação feita em sub-agente; perguntas renumeradas pela sessão e levadas ao `00`;
-> `## Costuras de Teste` **confirmadas** pela sessão. **Revisão adversarial feita**: 1 rodada
-> (`fw-adversario-ct`, cego ao PRD e ao código), **36 achados, todos fechados** — destino de cada um
-> em `## Revisão Adversarial`.
+> `## Costuras de Teste` **confirmadas** pela sessão. **Revisão adversarial feita**: 2 rodadas
+> (`fw-adversario-ct`, cego ao PRD e ao código), **36 + 33 achados, todos fechados** (a 2ª trouxe
+> também a Q12, implementada como P-14) — destino de cada um em `## Revisão Adversarial`. **Teto de
+> 2 rodadas atingido**: este v3 fecha a 2ª sem uma 3ª.
 
 ## Perfil de Derivação
 
@@ -29,13 +30,14 @@ aplicação aceita `X-Forwarded-For/Proto/Host` — confiar por engano é IP for
 autenticação e no rate limit. **Escalada**: R10 usa EP exaustiva porque a regra é a fronteira de
 confiança e cada partição tem modo de falha próprio.
 
-**Revisão adversarial: feita** (obrigatória por Impacto 3 em A e D) — 1 rodada, 36 achados, todos
-fechados. Os mutantes trazidos por ela (M83…M127) **não contam para o teto** do perfil
-(`SKILL.md` §Passo 6, item 1): onde a tabela de uma regra passa do teto, a linha
-`Estouro do teto` abaixo dela registra a origem.
+**Revisão adversarial: feita** (obrigatória por Impacto 3 em A e D) — 2 rodadas, 36 + 33 achados,
+todos fechados. Os mutantes trazidos por elas (M83…M127 da 1ª, M129…M164 da 2ª) **não contam para o
+teto** do perfil (`SKILL.md` §Passo 6, item 1); M128 nasceu de decisão da sessão (Q10, D6 do `01`) e
+também fica fora. Onde a tabela de uma regra passa do teto, a linha `Estouro do teto` abaixo dela
+registra a origem.
 
-- Técnicas aplicadas: EP (partição exaustiva em R10; por arquivo × chave em R13), tabela de decisão (R11/R12: chamador × valor de `TRUSTED_PROXIES` × saídas), rastreio de efeito como diff profundo de configuração (R3), golden de configuração efetiva (R1, CT-34), contrato entre arquivos (R8, R13), regex sobre regra interpolada (R7), BVA não se aplica (nenhuma faixa ordenável: portas são identidades, não faixas)
-- Cenários: 43 · Regras: 20 · Mutantes previstos: 127 · Sem matador: 0
+- Técnicas aplicadas: EP (partição exaustiva em R10; por arquivo × chave em R13), tabela de decisão (R11/R12: chamador × valor de `TRUSTED_PROXIES` × saídas), rastreio de efeito como diff profundo de configuração (R3), golden de configuração efetiva com procedência fixa (R1, CT-34: `docker-compose.yml` da tag `v0.44.0`, todos os profiles, comparado inteiro — P-17), canário de CI contra `skip` silencioso (R1, CT-46), contrato entre arquivos (R8, R13), regex sobre a regra **interpolada pelo próprio Compose** (R7), âncora na mesma frase sem negação (R16, R17), BVA não se aplica (nenhuma faixa ordenável: portas são identidades, não faixas)
+- Cenários: 47 · Regras: 20 · Mutantes previstos: 164 · Sem matador: 0
 <!-- derivado por grep -c; recalcular a cada cenário novo -->
 
 ### Divergências declaradas (skill × rule do projeto)
@@ -52,34 +54,34 @@ fechados. Os mutantes trazidos por ela (M83…M127) **não contam para o teto** 
 
 | Letra | O que existe nesta feature | Cenários gerados |
 |---|---|---|
-| S | `docker/traefik/docker-compose.override.yml` (exemplo), `.gitignore`, `Dockerfile.laravel` (estágio `assets`), `.env.example`, `.env.docker`, `bootstrap/app.php`, `app/Support/ProxiesConfiaveis.php`, docs pt/en, README pt/en, `CHANGELOG.md`, `site/sidebar.json`, stubs. Intocados: `docker-compose.yml`, `deploy_docker_local.sh`, `docker/nginx/nginx.conf`, `resources/js`, `package.json` | CT-01…CT-07, CT-17, CT-27, CT-28, CT-34, CT-35, CT-36, CT-43 |
-| F | (1) ligar o Traefik por cópia do exemplo; (2) não ligar nada sem a cópia; (3) parse de `TRUSTED_PROXIES`; (4) honrar `X-Forwarded-*` só de proxy confiável; (5) passar `VITE_REVERB_*` ao build; (6) ensinar o procedimento | CT-01, CT-06, CT-08…CT-22, CT-33, CT-38 |
-| D | valores de `.env` (ausente, vazio, só espaços, lista, `*`, tokens do Symfony, não-string); três `.env` (dev/teste/homol); nomes de projeto; hostnames; a matriz de portas do requisito, literal | CT-08, CT-11, CT-12, CT-20, CT-21, CT-22, CT-25, CT-26, CT-40 |
-| I | `docker compose` (carga automática do override, `--profile app`), `docker build` (args), request HTTP com cabeçalhos `X-Forwarded-*`, `git` (ignore/índice), `kit:update` (`CAMINHOS_DO_KIT`), `create-project` (`.gitattributes`), Traefik (docker provider por labels) | CT-01, CT-03, CT-04, CT-05, CT-21, CT-22, CT-37 |
-| P | Docker Compose v5.5.1 local × v2.x do `ubuntu-latest` (comportamento de label em lista medido só na v5.5.1); Windows sem CLI → `skip`; ambiente do processo PHP **vaza** chaves do `.env` do desenvolvedor para o subprocesso `docker compose` (Laravel escreve no `putenv`, a `Process` herda) — tratado no Setup Global; Vite trata `VITE_*` vazia de `process.env` como **definida** (`node_modules/vite/dist/node/chunks/node.js:loadEnv:5705`); `config:cache` fora do Docker congela a configuração e o `.env` deixa de ser lido (P-13) | CT-11, CT-19, CT-34, CT-41, Setup Global |
-| O | três checkouts no mesmo servidor, Opção A; quem não usa Traefik (todo projeto que já existe) copiando `.env.docker` como sempre fez; operador que esquece `TRAEFIK_HOST` ou o deixa vazio; Reverb pelo Traefik ou por porta | CT-12, CT-14, CT-23, CT-25, CT-26, CT-39 |
+| S | `docker/traefik/docker-compose.override.yml` (exemplo), `.gitignore`, `Dockerfile.laravel` (estágio `assets`), `.env.example`, `.env.docker`, `bootstrap/app.php`, `app/Support/ProxiesConfiaveis.php`, docs pt/en, README pt/en, `CHANGELOG.md`, `site/sidebar.json`, stubs, o golden `tests/Kit/fixtures/compose-base.json` (gerado de `v0.44.0` — P-17). Intocados: `docker-compose.yml`, `deploy_docker_local.sh`, `docker/nginx/nginx.conf`, `resources/js`, `package.json`, `config/filament.php` (se existir) | CT-01…CT-07, CT-17, CT-27, CT-28, CT-34, CT-35, CT-36, CT-43, CT-47 |
+| F | (1) ligar o Traefik por cópia do exemplo; (2) não ligar nada sem a cópia; (3) parse de `TRUSTED_PROXIES`; (4) honrar `X-Forwarded-*` só de proxy confiável; (5) passar `VITE_REVERB_*` ao build, só as definidas; (6) ligar a rota do Reverb pelo Traefik descomentando o bloco; (7) ensinar o procedimento | CT-01, CT-06, CT-08…CT-22, CT-33, CT-38, CT-44, CT-45 |
+| D | valores de `.env` (ausente, vazio, só espaços, lista, `*`, tokens do Symfony, não-string); três `.env` (dev/teste/homol); nomes de projeto; hostnames; `REVERB_APP_KEY`/`REVERB_APP_ID` ausente × vazia; `VITE_REVERB_*` ausente × definida; a matriz de portas do requisito, literal | CT-08, CT-11, CT-12, CT-20, CT-21, CT-22, CT-25, CT-26, CT-40, CT-44, CT-45 |
+| I | `docker compose` (carga automática do override, `--profile app`), `docker build` (args), request HTTP com cabeçalhos `X-Forwarded-*`, `git` (ignore/índice), `kit:update` (`CAMINHOS_DO_KIT`), `create-project` (`.gitattributes`), Traefik (docker provider por labels), o runner do CI (variável `CI`) | CT-01, CT-03, CT-04, CT-05, CT-21, CT-22, CT-37, CT-46 |
+| P | Docker Compose v5.5.1 local × v2.x do `ubuntu-latest` (comportamento de label em lista medido só na v5.5.1); Windows sem CLI → `skip`; ambiente do processo PHP **vaza** chaves do `.env` do desenvolvedor para o subprocesso `docker compose` (Laravel escreve no `putenv`, a `Process` herda) — tratado no Setup Global; Vite trata `VITE_*` vazia de `process.env` como **definida** (`node_modules/vite/dist/node/chunks/node.js:loadEnv:5705`); `config:cache` fora do Docker congela a configuração e o `.env` deixa de ser lido (P-13); o `docker compose config` devolve no JSON os extension fields de topo (`x-*`); `build.args` em lista sem valor **omite** a chave ausente do `.env` (P-15, medido); runner do CI sem o CLI faria toda a G2 virar `skip` verde | CT-06, CT-11, CT-19, CT-34, CT-41, CT-45, CT-46, Setup Global |
+| O | três checkouts no mesmo servidor, Opção A; quem não usa Traefik (todo projeto que já existe) copiando `.env.docker` como sempre fez; operador que esquece `TRAEFIK_HOST` ou o deixa vazio; Reverb pelo Traefik ou por porta; operador que descomenta o bloco do Reverb sem `REVERB_APP_KEY`/`REVERB_APP_ID`; outro projeto do servidor com container `app`/`reverb` na rede compartilhada (P-14) | CT-12, CT-14, CT-23, CT-25, CT-26, CT-39, CT-44, CT-47 |
 | T | não se aplica a relógio; **estado estático entre casos**: `TrustProxies::$alwaysTrustProxies` é estático do processo — o `tearDown` do framework chama `TrustProxies::flushState()` (`vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/InteractsWithTestCaseLifecycle.php:tearDownTheTestEnvironment:126`), e o env alterado no caso é restaurado pelo helper | CT-21, CT-22 (independência) |
 
 ## Mapa de Regras
 
 | Regra | Área (perfil herdado) | Origem (`RQ`/`P-nn`) | Técnica | Cenários |
 |---|---|---|---|---|
-| R1 — Sem a cópia ativa do override, a stack do kit não muda | A (completo) | RQ-04, RQ-05, RQ-09, RQ-11, P-08 | EP por arquivo-base + execução do Compose + golden da configuração efetiva | CT-01, CT-02, CT-03, CT-33, CT-34, CT-35, CT-36 |
+| R1 — Sem a cópia ativa do override, a stack do kit não muda | A (completo) | RQ-04, RQ-05, RQ-09, RQ-11, P-08, P-17 | EP por arquivo-base + execução do Compose + golden da configuração efetiva + canário de CI | CT-01, CT-02, CT-03, CT-33, CT-34, CT-35, CT-36, CT-46 |
 | R2 — O exemplo chega a quem instala; a cópia ativa nunca entra no git nem no `kit:update` | A (completo) | P-03, RQ-11 | EP por via de entrega | CT-04, CT-05, CT-37 |
 | R3 — Ligado o override, só muda o que o Traefik e o build precisam | A (completo) | RQ-04, RQ-07, RQ-10, RQ-11, RQ-14, P-06 | rastreio de efeito (diff profundo de configuração) | CT-06, CT-07 |
 | R4 — O `nginx` entra na rede externa sem sair da própria, e a rede é coerente | B (padrão) | RQ-07, RQ-08, P-04 | EP (rede ausente × vazia × definida) | CT-08, CT-09 |
 | R5 — Labels do docker provider com os valores do requisito | B (padrão) | RQ-07, RQ-09 | EP (valor exato por label) | CT-10 |
 | R6 — Router/service únicos por ambiente; hostname nunca fixo | B (padrão) | RQ-08, RQ-17, P-04, P-05 | EP (nome do projeto) + estado de erro com saída | CT-11, CT-12, CT-13 |
-| R7 — Reverb: duas rotas, nenhuma imposta; a do Traefik não captura painel | B (padrão) | RQ-12, RQ-04, P-04, P-10 | EP + invariante + regex sobre a regra interpolada | CT-14, CT-15, CT-16 |
-| R8 — Os quatro `VITE_REVERB_*` chegam ao `npm run build` de toda imagem | C (padrão) | RQ-14 | contrato estático + contrato entre serviços | CT-17, CT-18 |
-| R9 — Sem build-arg, o build é o de hoje | C (padrão) | RQ-02, RQ-04, P-01, P-12 | EP (declaração do `ARG`, origem do valor) | CT-19, CT-38 |
+| R7 — Reverb: duas rotas, nenhuma imposta; a do Traefik não captura painel | B (padrão) | RQ-12, RQ-04, P-04, P-10, P-16 | EP + invariante + regex sobre a regra interpolada pelo Compose + estado de erro com saída | CT-14, CT-15, CT-16, CT-44 |
+| R8 — Os quatro `VITE_REVERB_*` chegam ao `npm run build` de toda imagem | C (padrão) | RQ-14, P-15 | contrato estático + contrato entre serviços | CT-17, CT-18 |
+| R9 — Sem build-arg, o build é o de hoje | C (padrão) | RQ-02, RQ-04, P-01, P-12, P-15 | EP (declaração do `ARG`, origem do valor, chave ausente × definida no `.env`) | CT-19, CT-38, CT-45 |
 | R10 — Interpretação de `TRUSTED_PROXIES` | D (escalada a completo) | P-02, P-11 | EP exaustiva | CT-20 |
 | R11 — Ausente, vazia ou lista sem o chamador: `X-Forwarded-*` ignorados | D (padrão) | P-02, P-11, RQ-05 (invariante, vale com qualquer resposta a Q1) | tabela de decisão | CT-21 |
 | R12 — `*` ou lista com o chamador: a aplicação honra `X-Forwarded-*` | D (padrão) | P-02, RQ-09 | tabela de decisão | CT-22 |
 | R13 — Chaves novas só como linha comentada; o `.env.docker` oferece o que o exemplo consome; a sugestão não colide | E (padrão) | RQ-02, RQ-05, RQ-06, RQ-10, RQ-16, P-02, P-04, P-09 | EP arquivo × chave + contrato | CT-23, CT-24, CT-25, CT-39, CT-40 |
 | R14 — Três ambientes com a matriz do requisito não disputam porta nem nome | E (padrão) | RQ-06, RQ-16, P-09 | valor literal do requisito | CT-26 |
 | R15 — A página existe nos dois idiomas e é alcançável; o CHANGELOG registra | F (padrão) | RQ-01, RQ-03 | EP por idioma | CT-27, CT-28 |
-| R16 — A página ensina o mecanismo central, o encaixe no Traefik e o passo a passo | F (padrão) | RQ-06, RQ-07, RQ-08, RQ-09, RQ-11, P-13 | EP por âncora | CT-29, CT-41 |
+| R16 — A página ensina o mecanismo central, o encaixe no Traefik e o passo a passo | F (padrão) | RQ-06, RQ-07, RQ-08, RQ-09, RQ-11, P-13, P-14 | EP por âncora (na mesma frase, sem negação) | CT-29, CT-41, CT-47 |
 | R17 — A página cobre portas, matriz, o build do Reverb e as duas rotas | F (padrão) | RQ-10, RQ-12, RQ-14, RQ-16, P-06, P-09 | valor literal do requisito | CT-30, CT-42 |
 | R18 — A página apresenta as opções A–D e as armadilhas | F (padrão) | RQ-13, RQ-15, P-07 | EP por âncora | CT-31 |
 | R19 — pt e en são espelho | F (padrão) | RQ-01 | contrato entre arquivos | CT-32 |
@@ -95,16 +97,20 @@ fechados. Os mutantes trazidos por ela (M83…M127) **não contam para o teto** 
   qualquer resposta; R12 é a direção de Q1, implementada como P-02 pela mesma regra de Q6, Q8 e Q11 (falha fechado: ausente = hoje) — não é `@premissa` *(decisão da sessão, 2026-10-05)*.
 - **RQ-10, RQ-12 e RQ-16 são fechadas no `00`**: Q6, Q8 e Q11 estão registradas como perguntas ao
   solicitante **já implementadas pela direção que falha fechado** (P-09, P-10 e a recomendação de
-  Q11). Por isso têm regra e cenário (R7, R13, R14, R17) e nenhuma linha "aberta" aqui.
+  Q11, esta última com âncora de configuração em CT-25). Por isso têm regra e cenário (R7, R13, R14,
+  R17) e nenhuma linha "aberta" aqui.
+- **Q12 — aberta no `00`, não bloqueante**: implementada como P-14 (documentar e confirmar com o
+  DevOps; só o `nginx` entra na rede compartilhada). Cenário: CT-47 (R16, a página) e CT-09 (R4, só o
+  nginx na rede externa); o runtime com outro `app` na mesma rede é a lacuna L10.
 
 ## Costuras de Teste
 
 | Grupo | Regras | Costura | Existente ou nova | Por quê esta camada | Confirmada |
 |---|---|---|---|---|---|
-| G1 — Leitura estática de infra | R1 (CT-02, CT-03, CT-35, CT-36), R2 (CT-05, CT-37), R3 (CT-07), R6 (CT-13), R7 (CT-15, CT-16), R8 (CT-17), R9 (CT-19), R13 (CT-23, CT-24), R20 (CT-43) | Pest feature HTTP | existente — padrão de `tests/Kit/MysqlNoDockerTest.php` (`blocoDoServico()`, filtro de comentário) e `tests/Kit/DeployDockerLocalTest.php`; arquivo novo `tests/Kit/DeployMultiambienteDockerTest.php` | o `Então` afirma texto ativo de arquivo entregue; roda sem Docker (inclusive no Windows sem CLI) | sessão, 2026-10-05 |
-| G2 — `docker compose config` em pasta temporária | R1 (CT-01, CT-33, CT-34), R3 (CT-06), R4, R5, R6 (CT-11, CT-12), R7 (CT-14), R8 (CT-18), R9 (CT-38), R13 (CT-25, CT-39, CT-40), R14 | Pest feature HTTP | **nova** — nenhum teste do kit executa o CLI do Compose; interpolação de label, merge de `ports` e carga automática do override só o Compose resolve. Mesmo arquivo de G1. `skip` quando `docker compose version` falha | o observável é a configuração **efetiva** que o Compose montaria; regex sobre YAML não vê interpolação nem merge | sessão, 2026-10-05 — o CLI está no Windows local (v5.5.1) e no `ubuntu-latest` |
+| G1 — Leitura estática de infra | R1 (CT-02, CT-03, CT-35, CT-36), R2 (CT-05, CT-37), R3 (CT-07), R6 (CT-13), R7 (CT-15), R8 (CT-17), R9 (CT-19), R13 (CT-23, CT-24), R20 (CT-43) | Pest feature HTTP | existente — padrão de `tests/Kit/MysqlNoDockerTest.php` (`blocoDoServico()`, filtro de comentário) e `tests/Kit/DeployDockerLocalTest.php`; arquivo novo `tests/Kit/DeployMultiambienteDockerTest.php` | o `Então` afirma texto ativo de arquivo entregue; roda sem Docker (inclusive no Windows sem CLI) | sessão, 2026-10-05 |
+| G2 — `docker compose config` em pasta temporária | R1 (CT-01, CT-33, CT-34, CT-46), R3 (CT-06), R4, R5, R6 (CT-11, CT-12), R7 (CT-14, CT-16, CT-44), R8 (CT-18), R9 (CT-38, CT-45), R13 (CT-25, CT-39, CT-40), R14 | Pest feature HTTP | **nova** — nenhum teste do kit executa o CLI do Compose; interpolação de label, merge de `ports` e carga automática do override só o Compose resolve. Mesmo arquivo de G1. `skip` quando `docker compose version` falha — **menos o canário CT-46**, que com `CI=true` falha em vez de pular | o observável é a configuração **efetiva** que o Compose montaria; regex sobre YAML não vê interpolação nem merge | sessão, 2026-10-05 — o CLI está no Windows local (v5.5.1) e no `ubuntu-latest` |
 | G3 — Índice e ignore do git | R2 (CT-04) | Pest feature HTTP | existente — CT de bit de execução de `DeployDockerLocalTest.php` (`git ls-files` na árvore) | o `Então` é estado do repositório; só existe na árvore do kit → `skip` fora dela | sessão, 2026-10-05 |
-| G4 — Documentação, README e site | R15–R19 (CT-27…CT-32, CT-41, CT-42) | Pest feature HTTP | existente — `paginasDoSite()`, `secoesDoMarkdown()`, `naArvoreDoKit()` de `tests/Pest.php`; mesmo arquivo de G1 | texto entregue; `docs/` e `site/` são `export-ignore` → `skip` fora da árvore | sessão, 2026-10-05 |
+| G4 — Documentação, README e site | R15–R19 (CT-27…CT-32, CT-41, CT-42, CT-47) | Pest feature HTTP | existente — `paginasDoSite()`, `secoesDoMarkdown()`, `naArvoreDoKit()` de `tests/Pest.php`; mesmo arquivo de G1 | texto entregue; `docs/` e `site/` são `export-ignore` → `skip` fora da árvore | sessão, 2026-10-05 |
 | G5 — Parse de `TRUSTED_PROXIES` | R10 | unit de regra | existente — forma de `tests/Kit/BooleanoDoEnvTest.php` (dataset sobre função pura de `app/Support`); arquivo novo `tests/Kit/ProxiesConfiaveisTest.php` | o `Então` é valor calculado | sessão, 2026-10-05 |
 | G6 — Request pela configuração real de middleware | R11, R12 | Pest feature HTTP | **nova** — nenhum teste re-roda o `withMiddleware` de `bootstrap/app.php` com env diferente. Proposta: fixar o env nas três formas (`putenv`, `$_ENV`, `$_SERVER`), `app()->forgetInstance(\Illuminate\Contracts\Http\Kernel::class)` para o `afterResolving` de `ApplicationBuilder::withMiddleware` (`vendor/laravel/framework/src/Illuminate/Foundation/Configuration/ApplicationBuilder.php:withMiddleware:287`) rodar de novo no próximo `get()`; alternativa se a primeira não medir: `refreshApplication()` com rota de teste **sem banco**. A costura precisa ser **medida** antes de confirmada. Arquivo `tests/Kit/ProxiesConfiaveisTest.php` | o requisito afirma comportamento HTTP (esquema, host, URL e IP vistos pela aplicação), não a chamada a `trustProxies()` | sessão, 2026-10-05 — confirmada **com a medição delegada ao executor**: tenta (a) `forgetInstance`; se não medir, (b) `refreshApplication()`; se nenhuma, abre lacuna e devolve o fato como texto |
 
@@ -121,6 +127,8 @@ Nenhuma costura `browser` → sem `05`.
 | `# TRUSTED_PROXIES=` "logo abaixo de `APP_URL`" no `.env.example` | posição cosmética | recusado; CT-23 afirma só linha comentada presente e nenhuma linha ativa |
 | âncora `x-vite-args` e "os seis serviços" listados | mecanismo; a lista é derivada do **base** (todo serviço com `build:`), não do plano | CT-18 enumera do base |
 | `${TRAEFIK_HOST:?…}` — texto da mensagem | o requisito não fixa texto | CT-12 afirma só código ≠ 0 e o nome da chave no erro |
+| `${REVERB_APP_KEY:?…}` / `${REVERB_APP_ID:?…}` — texto da mensagem | o requisito não fixa texto; P-16 fixa só a obrigatoriedade | CT-44 afirma só código ≠ 0 e o nome da chave no erro |
+| `x-vite-args` devolvido no JSON do `docker compose config` | extension field de topo é mecanismo, não efeito: nenhum serviço o lê pelo nome | CT-06 ignora as chaves de topo que começam por `x-` |
 | regra do Reverb `PathPrefix(/app) \|\| PathPrefix(/apps)` | **contraria RQ-04**: o painel do kit vive em `/app` (`app/Providers/Filament/AppPanelProvider.php:path:79`) e a regra mais longa ganha prioridade no Traefik | invariante CT-16 + P-10 |
 | `ARG VITE_REVERB_*=` com `ENV` promovendo os quatro | **contraria RQ-04**: com o `ENV` vazio o Vite passa a ver `''` onde hoje vê `undefined` (`node_modules/vite/dist/node/chunks/node.js:loadEnv:5705`) | CT-19 + P-12 |
 | `# FORWARD_APP_PORT=127.0.0.1:8090` no bloco do `.env.docker` | valor do plano; o requisito (RQ-16, nota ²) diz que 8090 colide com o Reverb publicado no default | CT-25 afirma a não-colisão, sem fixar o valor |
@@ -133,17 +141,18 @@ Nenhuma costura `browser` → sem `05`.
 - Não há persona: nenhuma rota, painel ou autorização nova. O "ator" dos cenários é **o operador do servidor** (quem copia arquivos e edita o `.env`) ou **o Traefik** (quem faz o request com `X-Forwarded-*`).
 
 ### Fixtures — G2 (`docker compose config`)
-- Pasta temporária por caso (`sys_get_temp_dir()` + id único; apagada no `afterEach`), com: cópia do `docker-compose.yml` do kit; `.env` escrito pelo caso (o base declara `env_file: .env`, sem ele o Compose recusa); e, conforme o `Dado`, o exemplo copiado **para a raiz** como `docker-compose.override.yml` ou **para `docker/traefik/`** no mesmo caminho do kit.
-- Comando: `docker compose --profile app config --format json`, **sem `-f`** (a carga automática do override é o que está em teste), com a pasta temporária como `cwd`.
+- Pasta temporária por caso (`sys_get_temp_dir()` + id único; apagada no `afterEach`), com: cópia do `docker-compose.yml` do kit; `.env` escrito pelo caso (o base declara `env_file: .env`, sem ele o Compose recusa); e, conforme o `Dado`, o exemplo copiado **para a raiz** como `docker-compose.override.yml` ou **para `docker/traefik/`** no mesmo caminho do kit. Em CT-16 e CT-44, a cópia da raiz tem as linhas entre `# >>> reverb-traefik` e `# <<< reverb-traefik` **descomentadas** (o `# ` inicial removido) — os marcadores são a única âncora; o teste não adivinha onde o bloco começa.
+- Comando: `docker compose --profile app config --format json`, **sem `-f`** (a carga automática do override é o que está em teste), com a pasta temporária como `cwd`. CT-34 usa `--profile '*'` (todos os profiles — P-17).
 - **Armadilha de ambiente (P de SFDIPOT), obrigatória**: o Laravel escreve as chaves do `.env` do desenvolvedor no `putenv`, e a `Symfony\Component\Process\Process` herda o ambiente do PHP. Variável de shell **vence** o `.env` na interpolação do Compose — um `COMPOSE_PROJECT_NAME=starter-kit` ou `COMPOSE_FILE` herdado invalida o caso em silêncio. A `Process` recebe todo nome presente em `getenv()`, `$_ENV` e `$_SERVER` com valor `false` (remove), exceto a lista de sistema: `PATH`/`Path`, `SystemRoot`, `TEMP`, `TMP`, `HOME`, `USERPROFILE`, `APPDATA`, `LOCALAPPDATA`, `ProgramData`, `DOCKER_HOST`, `DOCKER_CONFIG`, `DOCKER_CONTEXT`.
-- `skip`: `docker compose version` com código ≠ 0 → `->skip('CLI do Docker Compose ausente')`. CT de G2 **não** leem `docs/` — não levam `naArvoreDoKit()`.
-- Leitura do JSON: `services.<s>.labels` (mapa), `services.<s>.networks` (mapa), `services.<s>.ports` (lista com `host_ip`, `published`, `target`), `services.<s>.environment` (mapa), `services.<s>.build.args` (mapa), `networks.<chave>.{name,external}`, `volumes.<chave>.name`, `name` de topo.
-- **Golden do base (CT-34)**: fixture versionado `tests/Kit/fixtures/compose-base.json`, gerado **uma vez** pelo executor com `docker compose --profile app config --format json` sobre a pasta temporária de CT-34 (só o `docker-compose.yml` e o `.env` mínimo do caso) e **normalizado**: `build.context`, `volumes[].source` de bind e qualquer path absoluto trocados por `<raiz>`; `name` de topo e `networks/volumes[].name` mantidos. O caso aplica a mesma normalização à saída do momento antes de comparar. Regenerar o fixture é o **ato deliberado** de quem muda o base de propósito — dito no docblock do caso.
+- `skip`: `docker compose version` com código ≠ 0 → `->skip('CLI do Docker Compose ausente')`, **em todo caso de G2 menos CT-46**: o canário é um `it()` só que, com `CI=true` no ambiente, **falha** quando o CLI falta, para a G2 inteira não virar verde por `skip` num runner sem o Compose; fora do CI ele pula. CT de G2 **não** leem `docs/` — não levam `naArvoreDoKit()`.
+- Leitura do JSON: `services.<s>.labels` (mapa), `services.<s>.networks` (mapa), `services.<s>.ports` (lista com `host_ip`, `published`, `target`), `services.<s>.environment` (mapa), `services.<s>.build.args` (mapa; com a lista sem valor do exemplo, a `VITE_REVERB_*` ausente do `.env` **não aparece** — P-15), `networks.<chave>.{name,external}`, `volumes.<chave>.name`, `name` de topo. O JSON traz também as chaves de topo `x-*` do arquivo (extension fields), que nenhum caso lê.
+- **Golden do base (CT-34, P-17)**: fixture versionado `tests/Kit/fixtures/compose-base.json`, gerado **pela sessão** — nunca pelo executor nem a partir da árvore da branch — com o `docker-compose.yml` de `git show v0.44.0:docker-compose.yml` (a tag anterior à branch; o arquivo atual é byte a byte igual, conferido com `git diff --quiet v0.44.0 HEAD -- docker-compose.yml`), numa pasta temporária com `.env` mínimo `COMPOSE_PROJECT_NAME=starter-kit`, pelo comando `docker compose --profile '*' config --format json` (todos os profiles: 12 serviços). A **única** normalização é trocar o prefixo da pasta temporária por `<raiz>`, em todas as grafias de separador em que ele aparece no JSON (`/`, `\` e `\\` escapado); nada mais é normalizado nem excluído. O caso aplica a mesma normalização à saída do momento e compara o JSON **inteiro** (diff profundo). O docblock do caso e este `04` registram a procedência (tag `v0.44.0`); regenerar o fixture é **ato deliberado** de quem muda o base de propósito, com linha no `CHANGELOG.md`.
 - Helpers ficam **locais** a `DeployMultiambienteDockerTest.php` (um consumidor só — `.ai/rules/testes.md`).
 
 ### Fixtures — G6 (request)
 - Rota **de teste**, declarada no caso, fora do grupo `web` (sem sessão nem banco): devolve `request()->isSecure()`, `request()->getHost()`, `url('/x')` e `request()->ip()`.
-- Request: `REMOTE_ADDR` da linha do caso (`withServerVariables`), `Host: interno.local`, `X-Forwarded-For: 203.0.113.9`, `X-Forwarded-Proto: https`, `X-Forwarded-Host: dev.exemplo.test`, `X-Forwarded-Port: 443`; `config(['app.url' => 'https://dev.exemplo.test'])` antes do request.
+- Request: `REMOTE_ADDR` da linha do caso (`withServerVariables`), `Host: interno.local`, `X-Forwarded-For: 203.0.113.9`, `X-Forwarded-Proto: https`, `X-Forwarded-Host: dev.exemplo.test`, `X-Forwarded-Port` da linha (443, salvo a linha 8443 de CT-22); `config(['app.url' => 'https://dev.exemplo.test'])` antes do request.
+- A linha de CT-21 com `TRAEFIK_HOST` fixa também essa chave nas três formas, pelo mesmo mecanismo do helper, e a restaura no `afterEach`.
 - Helper local `comTrustedProxies(?string $valor)`: `null` remove a chave das três formas; string grava nas três; restaura o anterior no `afterEach` (forma de `kitConfigCom()` em `tests/Pest.php`). O `Dado` de cada linha **afirma o valor efetivo lido** (`env('TRUSTED_PROXIES')`, que para a string `true` devolve o bool `true`) antes do request — o caso não pode medir o `.env` do desenvolvedor.
 
 ### Fakes
@@ -156,7 +165,7 @@ Nenhuma costura `browser` → sem `05`.
 
 ## Regra R1 — Sem a cópia ativa do override, a stack do kit não muda
 
-> `RQ-04`, `RQ-05`, `RQ-09`, `RQ-11`, `P-08` · perfil **completo** · técnica: **EP por arquivo-base** + execução real do Compose + **golden** da configuração efetiva (CT-34)
+> `RQ-04`, `RQ-05`, `RQ-09`, `RQ-11`, `P-08`, `P-17` · perfil **completo** · técnica: **EP por arquivo-base** + execução real do Compose + **golden** da configuração efetiva, com procedência na tag `v0.44.0` (CT-34) + **canário de CI** (CT-46)
 
 ```gherkin
 # language: pt
@@ -183,10 +192,11 @@ Funcionalidade: Deploy multiambiente atrás do Traefik é opt-in
         | docker-compose.yml       | ^\s*networks:  ·  ^\s*labels:  ·  traefik         | ^\s*- '\$\{FORWARD_APP_PORT:-8000\}:80'$       | compose base          |
         | docker/nginx/nginx.conf  | listen 443  ·  ssl_certificate                    | ^\s*listen 80;$                                | TLS termina no Traefik |
 
-    Cenário: [CT-03] o script de deploy chama o Compose sem fixar arquivo, projeto nem env-file
+    Cenário: [CT-03] o script de deploy chama o Compose sem fixar arquivo, projeto, diretório nem env-file
       Dado o "deploy_docker_local.sh", sem as linhas de comentário
-      Quando o teste lê cada linha que invoca "docker compose"
-      Então nenhuma passa "-f", "--file", "-p", "--project-name" nem "--env-file", e o script não define COMPOSE_FILE nem COMPOSE_PROJECT_NAME
+      Quando o teste lê cada linha que casa "docker[ -]compose"
+      Então nenhuma passa "-f", "--file", "-p", "--project-name", "--project-directory" nem "--env-file"
+      E o script não define COMPOSE_FILE, COMPOSE_PROJECT_NAME nem COMPOSE_ENV_FILES
       E ao menos uma linha invoca "docker compose" com "up -d --build"
       E a linha do health check obtém a porta de "docker compose --profile app port nginx 80" e não interpola "${FORWARD_APP_PORT"
 
@@ -195,30 +205,45 @@ Funcionalidade: Deploy multiambiente atrás do Traefik é opt-in
       Quando o operador roda "docker compose --profile app config" na pasta
       Então nenhum serviço tem a chave "TRUSTED_PROXIES" em "environment"
 
-    Cenário: [CT-34] a configuração efetiva do base é a do golden versionado
-      Dado uma pasta só com o docker-compose.yml do kit e um .env com COMPOSE_PROJECT_NAME "starter-kit" e as DB_* default das linhas ativas do .env.docker
-      Quando o operador roda "docker compose --profile app config --format json" na pasta e o teste normaliza os caminhos absolutos para "<raiz>"
-      Então o "name" de topo, o conjunto de serviços e as "networks" e "volumes" de topo são os de "tests/Kit/fixtures/compose-base.json"
-      E em todo serviço "ports", "command", "restart", "env_file", "environment", "volumes", "profiles", "depends_on", "healthcheck", "build.target" e "user" são iguais aos do fixture
+    Cenário: [CT-34] a configuração efetiva do base é, inteira, a do golden gerado da tag anterior
+      Dado uma pasta só com o docker-compose.yml do kit e um .env só com COMPOSE_PROJECT_NAME "starter-kit"
+      E o golden "tests/Kit/fixtures/compose-base.json", gerado do docker-compose.yml de "v0.44.0" com o mesmo .env e o mesmo comando
+      Quando o operador roda "docker compose --profile '*' config --format json" na pasta
+      Então a saída, com o prefixo da pasta temporária trocado por "<raiz>" em todas as grafias de separador, é igual ao golden em profundidade, folha a folha, sem chave excluída
+      E o golden tem os 12 serviços de todos os profiles, inclusive mysql, llamacpp, llamacpp-embeddings e mailpit
 
     Cenário: [CT-35] o nginx.conf não passa a honrar cabeçalho de proxy por conta própria
       Dado o "docker/nginx/nginx.conf" do kit, sem as linhas de comentário
       Quando o teste procura diretivas de proxy
-      Então o texto não contém "fastcgi_param HTTPS", "X_FORWARDED", "set_real_ip_from" nem "real_ip_header"
+      Então nenhuma linha casa "fastcgi_param\s+HTTPS\b"
+      E nenhuma linha casa "(?i)x[_-]forwarded"
+      E o texto não contém "set_real_ip_from" nem "real_ip_header"
 
-    Cenário: [CT-36] a raiz do kit tem um arquivo de Compose só, que lê o .env literal
+    Cenário: [CT-36] a raiz do kit tem um arquivo de Compose só, que lê o .env literal, e nenhum Compose de infra
       Dado a raiz do kit
-      Quando o teste lista "compose*.y*ml" e "docker-compose*.y*ml" e lê o "env_file" do docker-compose.yml
-      Então o único arquivo listado é "docker-compose.yml"
+      Quando o teste lista "compose*.y*ml" e "docker-compose*.y*ml" na raiz, lê o "env_file" do docker-compose.yml e procura "*infra*.y*ml" na árvore
+      Então o único arquivo listado na raiz é "docker-compose.yml"
       E app, queue, scheduler, reverb e pulse declaram "env_file: .env" literal, sem interpolação
+      E nenhum arquivo do kit fora de "node_modules", "vendor" e "site/" casa "*infra*.y*ml"
+
+    Cenário: [CT-46] no CI, a falta do CLI do Compose reprova em vez de pular
+      Dado a variável de ambiente CI igual a "true"
+      Quando o teste roda "docker compose version"
+      Então o comando sai com código 0
+      E com o CLI ausente o caso falha com a mensagem "CLI do Docker Compose ausente no CI" — nunca chama skip
 ```
 
 `[CT-01]` copia para a pasta **todo arquivo de Compose da raiz do kit** (`docker-compose*.y*ml`,
 `compose*.y*ml`) — não só o `docker-compose.yml` — para que um override commitado na raiz por engano
 seja carregado e reprove o caso. `[CT-36]` é o par estático (sem CLI) dessa mesma proteção.
-`[CT-34]` leva `skip` sem CLI do Compose; o docblock diz que o fixture **expira quando o base mudar
-de propósito** e que regenerá-lo (comando e normalização do Setup Global) é o ato deliberado que
-acompanha essa mudança. `[CT-03]`: o health check pela porta que o Docker publicou é o que mantém
+`[CT-34]` leva `skip` sem CLI do Compose. O fixture é da **sessão**, não do executor (P-17): gerado de
+`git show v0.44.0:docker-compose.yml`, com `--profile '*'` e o `.env` mínimo, normalizando só o prefixo
+da pasta temporária. Um golden gerado da árvore da branch se certificaria sozinho — o defeito entraria
+no fixture junto com o código (ADV2-01). O docblock registra a procedência e que regenerá-lo é ato
+deliberado com linha no `CHANGELOG.md`. O `Quando` é só a execução; a normalização é parte do `Então`
+(ADV2-30). `[CT-46]` é o **único** caso de G2 que não pula sem o CLI: com `CI` diferente de `"true"` ele
+pula (o Windows local sem Docker continua verde), e no CI a ausência do CLI é falha — sem ele, uma
+troca de imagem do runner deixaria R1, R3–R7, R9, R13 e R14 verdes por `skip`. `[CT-03]`: o health check pela porta que o Docker publicou é o que mantém
 P-08 verdadeira com `FORWARD_APP_PORT=127.0.0.1:…`.
 
 #### Mutantes previstos
@@ -238,8 +263,16 @@ P-08 verdadeira com `FORWARD_APP_PORT=127.0.0.1:…`.
 | M88 | `env_file: ${ENV_FILE:-.env}` no base, transplantando a parametrização da Opção B (ADV-22) | CT-36 | `env_file` do `app` não é o literal `.env` |
 | M89 | script passa `-p "$COMPOSE_PROJECT_NAME"` ou `--env-file .env` "para isolar o ambiente" (ADV-17) | CT-03 | linha ativa com `-p`/`--env-file`; o caso exige nenhuma |
 | M90 | health check do script monta a URL com `${FORWARD_APP_PORT:-8000}` — com `127.0.0.1:8090` a URL vira `http://127.0.0.1:127.0.0.1:8090` (ADV-35) | CT-03 | linha do health check interpola `${FORWARD_APP_PORT`; o caso exige a porta vinda de `port nginx 80` |
+| M129 | base muda serviço fora do profile `app` (`mailpit`, `llamacpp`, `mysql`) — o golden antigo, só com `--profile app`, não o via (ADV2-03) | CT-34 | `services.mailpit` (ou o alterado) difere do golden gerado com `--profile '*'` |
+| M130 | base muda chave que a lista antiga do CT-34 não comparava (`stop_grace_period`, `ulimits`, `logging`, `extra_hosts`, `build.args`) (ADV2-02) | CT-34 | a folha nova aparece no diff profundo do JSON inteiro |
+| M131 | golden gerado da árvore da branch, já com o base alterado — o caso compara o defeito com ele mesmo (ADV2-01) | CT-34 | o golden vem de `v0.44.0` (P-17): a configuração do base alterado diverge dele |
+| M132 | bind do base trocado (`./.env:/var/www/.env` → `./${ENV_FILE:-.env}:…`) e escondido pela normalização ampla de "todo path absoluto" (ADV2-01) | CT-34 | só o prefixo da pasta temporária é normalizado: `volumes[].source` difere do golden |
+| M133 | script usa `docker-compose -f …` (hífen), `--project-directory` ou exporta `COMPOSE_ENV_FILES` — a leitura antiga só via `docker compose` com espaço (ADV2-23) | CT-03 | linha que casa `docker[ -]compose` com flag proibida / `COMPOSE_ENV_FILES` definido |
+| M134 | `nginx.conf` ganha `fastcgi_param  HTTPS $https_from_proxy;` (dois espaços) ou `fastcgi_param HTTP_X_Forwarded_Proto …` — as âncoras literais antigas não casavam (ADV2-17) | CT-35 | `fastcgi_param\s+HTTPS\b` / `(?i)x[_-]forwarded` casa |
+| M135 | o kit entrega `docker-compose.infra.yml` (ou `docker/infra/compose.yml`) para a Opção D — fora de escopo (ADV2-32) | CT-36 | arquivo que casa `*infra*.y*ml` fora de `node_modules`, `vendor` e `site/` |
+| M136 | runner do CI sem o plugin do Compose (troca de imagem): toda a G2 pula e a suíte fica verde (ADV2-14) | CT-46 | com `CI=true`, `docker compose version` ≠ 0 reprova o caso |
 
-Estouro do teto (completo: 6): M83…M90 — revisão adversarial (ADV-01, ADV-02, ADV-06, ADV-17, ADV-22, ADV-35).
+Estouro do teto (completo: 6): M83…M90 — revisão adversarial (ADV-01, ADV-02, ADV-06, ADV-17, ADV-22, ADV-35); M129…M136 — 2ª rodada (ADV2-01, ADV2-02, ADV2-03, ADV2-14, ADV2-17, ADV2-23, ADV2-32).
 
 ---
 
@@ -264,17 +297,20 @@ Estouro do teto (completo: 6): M83…M90 — revisão adversarial (ADV-01, ADV-0
     Cenário: [CT-05] o exemplo está nas duas listas de entrega
       Dado a lista de caminhos do kit:update e o .gitattributes
       Quando o teste procura o exemplo nelas
-      Então algum caminho do kit:update é prefixo de "docker/traefik/docker-compose.override.yml"
+      Então algum caminho do kit:update cobre "docker/traefik/docker-compose.override.yml" — é igual a ele ou é diretório-pai por segmento
       E nenhuma linha "export-ignore" do .gitattributes cobre esse caminho
 
     Cenário: [CT-37] o kit:update nunca sobrescreve a cópia ativa do servidor
       Dado a lista de caminhos do kit:update
       Quando o teste procura a cópia ativa "docker-compose.override.yml" da raiz nela
-      Então nenhum caminho da lista é igual a "docker-compose.override.yml"
-      E nenhum caminho da lista é prefixo dele (nem "", nem ".", nem "docker-compose")
+      Então nenhum caminho da lista cobre "docker-compose.override.yml" — igual a ele ou diretório-pai por segmento
+      E a lista não tem "", "." nem "./"
 ```
 
-`[CT-04]` leva `->skip(fn (): bool => ! naArvoreDoKit(), …)`. O `--no-index` é obrigatório: sem ele o
+"Cobre", em CT-05 e CT-37, é por **segmento**, nunca por prefixo de string:
+`$c === $alvo || str_starts_with($alvo, rtrim($c, '/').'/')`. Prefixo de string aceitaria
+`docker/tra` (o `kit:update` não copia nada com ele) em CT-05 e acusaria `docker-compose` em CT-37
+(ADV2-15). `[CT-04]` leva `->skip(fn (): bool => ! naArvoreDoKit(), …)`. O `--no-index` é obrigatório: sem ele o
 `git check-ignore` responde "não ignorado" para arquivo já versionado, mesmo casando uma linha do
 `.gitignore`. `[CT-05]` e `[CT-37]` usam `caminhosDoKit()` de `tests/Pest.php` (Reflection sobre
 `App\Console\Commands\KitUpdate::CAMINHOS_DO_KIT`, privada).
@@ -291,7 +327,9 @@ Estouro do teto (completo: 6): M83…M90 — revisão adversarial (ADV-01, ADV-0
 | M91 | `docker-compose.override.yml` sem barra no `.gitignore` **depois** de o exemplo já estar versionado — o `check-ignore` sem `--no-index` diz "não ignorado" e o defeito passa (ADV-25) | CT-04 (linha exemplo) | com `--no-index` a resposta é "ignorado"; o caso exige "não" |
 | M92 | `docker-compose.override.yml` acrescentado a `CAMINHOS_DO_KIT` "para o exemplo viajar" — o `kit:update` sobrescreve o override de cada servidor (ADV-10) | CT-37 | o caminho aparece na lista; o caso exige ausência |
 
-Estouro do teto (completo: 6): M91, M92 — revisão adversarial (ADV-10, ADV-25).
+| M137 | `CAMINHOS_DO_KIT` com `docker/traefik/docker-compose` ou `docker/tra` — prefixo de string do exemplo, que o `kit:update` não resolve para o arquivo (ADV2-15) | CT-05 | nenhum caminho cobre o exemplo por segmento |
+
+Estouro do teto (completo: 6): M91, M92 — revisão adversarial (ADV-10, ADV-25); M137 — 2ª rodada (ADV2-15).
 
 ---
 
@@ -306,7 +344,7 @@ Estouro do teto (completo: 6): M91, M92 — revisão adversarial (ADV-10, ADV-25
       Dado um .env com COMPOSE_PROJECT_NAME "proj-dev" e TRAEFIK_HOST "dev.exemplo.test"
       E a configuração JSON do base sozinho e a do base com o exemplo copiado na raiz, ambas com esse .env
       Quando o teste calcula o diff profundo das duas, folha a folha
-      Então o diff, menos os caminhos "services.nginx.networks.<rede do Traefik>", "services.nginx.labels.traefik.*", "services.*.build.args.VITE_REVERB_*" e "networks.<rede do Traefik>", é vazio
+      Então o diff, menos as chaves de topo que começam por "x-" e os caminhos "services.nginx.networks.<rede do Traefik>", "services.nginx.labels.traefik.*", "services.*.build.args.VITE_REVERB_*" e "networks.<rede do Traefik>", é vazio
 
     Cenário: [CT-07] todo serviço do exemplo existe no base
       Dado o exemplo e o docker-compose.yml do kit
@@ -315,7 +353,10 @@ Estouro do teto (completo: 6): M91, M92 — revisão adversarial (ADV-10, ADV-25
 ```
 
 `[CT-06]` compara **toda folha** das duas árvores JSON (adição, remoção e troca de valor), não uma lista
-de chaves escolhidas: a chave que ninguém lembrou de listar é onde o defeito passa. `[CT-07]` é
+de chaves escolhidas: a chave que ninguém lembrou de listar é onde o defeito passa. As chaves de topo
+`x-*` ficam fora porque o Compose (v5.5.1) devolve os extension fields do arquivo no JSON (o
+`x-vite-args` do exemplo): não são serviço, rede nem volume, e o efeito delas já aparece onde são
+usadas (`services.*.build.args`). `[CT-07]` é
 estático (G1) e roda sem CLI — é o par barato de `[CT-06]` para o Windows sem Docker.
 
 #### Mutantes previstos
@@ -387,6 +428,7 @@ Estouro do teto (completo: 6): M93 — revisão adversarial (ADV-28).
       E "traefik.http.routers.proj-dev.rule" = "Host(`dev.exemplo.test`)"
       E "traefik.http.routers.proj-dev.entrypoints" = "websecure" e "traefik.http.routers.proj-dev.tls" = "true"
       E "traefik.http.services.proj-dev.loadbalancer.server.port" = "80"
+      E as chaves de label do nginx que começam por "traefik." são exatamente "traefik.enable", "traefik.docker.network", "traefik.http.routers.proj-dev.rule", "traefik.http.routers.proj-dev.entrypoints", "traefik.http.routers.proj-dev.tls" e "traefik.http.services.proj-dev.loadbalancer.server.port"
 ```
 
 #### Mutantes previstos
@@ -397,6 +439,7 @@ Estouro do teto (completo: 6): M93 — revisão adversarial (ADV-28).
 | M22 | entrypoint `web` | CT-10 | `entrypoints` = `web` |
 | M23 | `tls=true` esquecido | CT-10 | label ausente |
 | M24 | `traefik.enable=true` esquecido (Traefik com `exposedByDefault=false` ignora o container) | CT-10 | label ausente |
+| M138 | label a mais no nginx com nome que começa pelo projeto — `traefik.http.routers.proj-dev-http.entrypoints=web` (redirect sem TLS) ou `traefik.http.routers.proj-dev.middlewares=…` — passa pelo prefixo de CT-11 (ADV2-06) | CT-10 | o conjunto de chaves `traefik.` do nginx tem uma a mais que as seis |
 
 ---
 
@@ -463,7 +506,7 @@ Estouro do teto (padrão: 5): M95…M98 — revisão adversarial (ADV-08, ADV-11
 
 ## Regra R7 — Reverb: duas rotas, nenhuma imposta; a do Traefik não captura painel
 
-> `RQ-12`, `RQ-04`, `P-04`, `P-10` · perfil **padrão** · técnica: **EP** (rota ativa × comentada) + **invariante** (CT-16, origem RQ-04) + **regex** sobre a regra interpolada (recorte de P-10)
+> `RQ-12`, `RQ-04`, `P-04`, `P-10`, `P-16` · perfil **padrão** · técnica: **EP** (rota ativa × comentada) + **invariante** (CT-16, origem RQ-04) + **regex** sobre a regra interpolada pelo próprio Compose (recorte de P-10) + **estado de erro com saída** (CT-44, P-16)
 
 ```gherkin
   Regra: o exemplo oferece a rota do Reverb pelo Traefik sem ligá-la, e a porta própria continua valendo
@@ -483,11 +526,12 @@ Estouro do teto (padrão: 5): M95…M98 — revisão adversarial (ADV-08, ADV-11
       E o service desse router aponta a porta 8090
       E o bloco põe o reverb na rede externa e declara "traefik.docker.network"
 
-    Esquema do Cenário: [CT-16] a regra do Reverb pelo Traefik recorta pela chave e não captura caminho de painel
-      Dado a regra do router "-reverb" do exemplo, interpolada com TRAEFIK_HOST "dev.exemplo.test", REVERB_APP_KEY "<chave>" e REVERB_APP_ID "<id>"
-      Quando o teste confronta a regra interpolada e cada PathPrefix dela com caminhos do kit
-      Então a regra casa "^Host\(`[^`]+`\) && \(PathPrefix\(`/app/[^`]+`\) \|\| PathPrefix\(`/apps/[^`]+`\)\)$"
-      E nenhum PathPrefix é prefixo de "/app", "/app/login", "/app/acme/users", "/admin" ou "/infra"
+    Esquema do Cenário: [CT-16] a regra do Reverb, interpolada pelo Compose, recorta pela chave e não captura caminho de painel
+      Dado o exemplo copiado na raiz com as linhas entre "# >>> reverb-traefik" e "# <<< reverb-traefik" descomentadas
+      E um .env com TRAEFIK_HOST "dev.exemplo.test", COMPOSE_PROJECT_NAME "proj-dev", REVERB_APP_KEY "<chave>" e REVERB_APP_ID "<id>"
+      Quando o operador roda "docker compose --profile app config"
+      Então o label "traefik.http.routers.proj-dev-reverb.rule" do reverb, lido da configuração, casa "^Host\(`[^`]+`\) && \(PathPrefix\(`/app/[^`]+`\) \|\| PathPrefix\(`/apps/[^`]+`\)\)$"
+      E nenhum PathPrefix dela é prefixo de "/app", "/app/login", "/app/acme/users", "/admin" ou "/infra"
       E algum PathPrefix é prefixo de "/app/<chave>" e algum de "/apps/<id>/events"
       E a regra não contém "<ausente>"
 
@@ -497,27 +541,41 @@ Estouro do teto (padrão: 5): M95…M98 — revisão adversarial (ADV-08, ADV-11
         | outra-chave      | outro-id     | starter-kit-key  | outra chave: o valor vem do .env    |
 ```
 
-`[CT-16]` tem **controle positivo** (a linha "algum PathPrefix é prefixo"): uma regra que não casa
-nada não passa. O painel `/app` é do kit: `app/Providers/Filament/AppPanelProvider.php:path:79`
+`[CT-16]` lê a regra **que o Compose interpolou** (mecanismo de CT-44), uma execução do Compose por
+linha do Esquema — não a regra do texto interpolada pelo próprio teste, que aceitaria um `$${…}`
+escapado ou uma interpolação que o Compose não resolve (ADV2-27). Tem **controle positivo** (a linha
+"algum PathPrefix é prefixo"): uma regra que não casa nada não passa. O painel `/app` é do kit: `app/Providers/Filament/AppPanelProvider.php:path:79`
 (`->path('app')`). A regex exige os **parênteses** em volta do `||`: no Traefik `&&` precede `||`, e
 sem eles `PathPrefix(/apps/…)` casa em **qualquer** host — inclusive o dos outros ambientes.
 
 ```gherkin
-  Regra: o bloco comentado do Reverb, descomentado entre os marcadores, é uma configuração válida
-
-    Cenário: [CT-44] descomentar o bloco entre os marcadores liga a rota do Reverb pelo Traefik
+    Esquema do Cenário: [CT-44] descomentar o bloco entre os marcadores liga a rota do Reverb pelo Traefik, e só com chave e id
       Dado o exemplo copiado na raiz com as linhas entre "# >>> reverb-traefik" e "# <<< reverb-traefik" descomentadas (o "# " inicial removido)
-      E um .env com TRAEFIK_HOST "dev.exemplo.test", COMPOSE_PROJECT_NAME "proj-dev", REVERB_APP_KEY "chave-x" e REVERB_APP_ID "id-y"
+      E um .env com TRAEFIK_HOST "dev.exemplo.test", COMPOSE_PROJECT_NAME "proj-dev", REVERB_APP_KEY <chave> e REVERB_APP_ID <id>
       Quando o operador roda "docker compose --profile app config"
-      Então o comando sai com código 0
-      E o reverb está na rede externa e tem "traefik.docker.network" igual à rede externa
-      E o router "proj-dev-reverb" tem regra que casa a regex de R7 com "/app/chave-x" e "/apps/id-y", entrypoint "websecure" e tls "true"
-      E o service "proj-dev-reverb" aponta a porta 8090
-      E o nginx continua com o router "proj-dev" e sem o sufixo "-reverb"
+      Então o comando sai com código <código>
+      E a saída de erro nomeia "<nomeada>"
+      E, na partição feliz, o reverb está nas redes "default" e externa e tem "traefik.docker.network" igual ao nome da rede externa
+      E, na partição feliz, o router "proj-dev-reverb" tem regra que casa a regex de R7 com "/app/chave-x" e "/apps/id-y", entrypoint "websecure" e tls "true"
+      E, na partição feliz, o service "proj-dev-reverb" aponta a porta 8090
+      E, na partição feliz, o nginx continua com o router "proj-dev" e sem o sufixo "-reverb"
+
+      Exemplos:
+        | chave                     | id                       | código | nomeada         | # partição            |
+        | "chave-x"                 | "id-y"                   | 0      | — (sem erro)    | feliz                 |
+        | ausente                   | "id-y"                   | ≠ 0    | REVERB_APP_KEY  | chave ausente         |
+        | vazia (REVERB_APP_KEY=)   | "id-y"                   | ≠ 0    | REVERB_APP_KEY  | chave vazia ≠ ausente |
+        | "chave-x"                 | ausente                  | ≠ 0    | REVERB_APP_ID   | id ausente            |
+        | "chave-x"                 | vazia (REVERB_APP_ID=)   | ≠ 0    | REVERB_APP_ID   | id vazio ≠ ausente    |
 ```
 
-`[CT-44]` fecha a lacuna L3 (Q10 decidida como D6 no `01`: os marcadores existem para isto). Os
-marcadores são a única âncora: o teste não adivinha onde o bloco começa.
+`[CT-44]` é cenário da **mesma** regra de R7 (o bloco é a rota pelo Traefik que a regra oferece);
+nasceu da Q10, decidida como D6 no `01` — os marcadores existem para isto —, e retirou a antiga
+lacuna L3. As linhas de erro são P-16: com `REVERB_APP_KEY` ou `REVERB_APP_ID` vazia, a regra viraria
+`PathPrefix(/app/)` e roubaria o painel; a vazia importa porque o `.env.docker` traz as duas e quem
+apaga o valor deixa a chave **vazia**, não ausente. Saída do estado de erro: a linha feliz. As
+asserções "na partição feliz" só rodam na linha de código 0 — nas de erro não há configuração para
+ler.
 
 #### Mutantes previstos
 
@@ -530,21 +588,25 @@ marcadores são a única âncora: o teste não adivinha onde o bloco começa.
 | M33 | bloco do Reverb sem a rede externa | CT-15 | rede externa ausente do bloco |
 | M99 | regra sem parênteses: `Host(…) && PathPrefix(/app/…) \|\| PathPrefix(/apps/…)` (ADV-13) | CT-15, CT-16 | a regex com `&& \(… \|\| …\)$` não casa |
 | M100 | chave do `.env.docker` colada literal na regra (`PathPrefix(/app/starter-kit-key)`) em vez de `${REVERB_APP_KEY}` (ADV-14) | CT-16 (linha outra chave) | nenhum PathPrefix é prefixo de `/app/outra-chave`; a regra contém `starter-kit-key` |
+| M128 | bloco comentado do Reverb com YAML que não valida ao descomentar (indentação errada, label fora da lista) — a adesão falha na hora de ligar | CT-44 (linha feliz) | `docker compose config` sai com código ≠ 0 |
+| M139 | `PathPrefix(/app/${REVERB_APP_KEY})` ou `${REVERB_APP_KEY:-}` sem `:?` — com a chave vazia a regra vira `PathPrefix(/app/)` e rouba o painel (ADV2-04) | CT-44 (linhas chave ausente e vazia) | o comando sai 0; o caso exige ≠ 0 e `REVERB_APP_KEY` no erro |
+| M140 | `${REVERB_APP_ID?…}` (sem `:`) — a chave vazia passa e a regra vira `PathPrefix(/apps/)` (ADV2-04) | CT-44 (linha id vazio) | o comando sai 0 |
+| M141 | bloco põe o reverb **só** na rede externa (`networks: [traefik]`) — perde a `default` e não fala com o `redis` do próprio ambiente (ADV2-13) | CT-44 (linha feliz) | `default` ausente das redes do reverb |
+| M142 | regra escrita com `$${REVERB_APP_KEY}` (escape do Compose) — o texto parece certo, o Compose entrega `${REVERB_APP_KEY}` literal ao Traefik (ADV2-27) | CT-16 | a regra lida da configuração contém `${`; a linha "valores do .env.docker" exige ausência |
 
-Estouro do teto (padrão: 5): M99, M100 — revisão adversarial (ADV-13, ADV-14).
+Estouro do teto (padrão: 5): M99, M100 — revisão adversarial (ADV-13, ADV-14); M128 — decisão da sessão (Q10, D6 do `01`: os marcadores existem para que descomentar o bloco seja testável); M139…M142 — 2ª rodada (ADV2-04, ADV2-13, ADV2-27).
 
-| M128 | bloco comentado do Reverb com YAML que não valida ao descomentar (indentação errada, label fora da lista) — a adesão falha na hora de ligar | CT-44 | `docker compose config` sai com código ≠ 0 |
 ---
 
 ## Regra R8 — Os quatro `VITE_REVERB_*` chegam ao `npm run build` de toda imagem
 
-> `RQ-14` · perfil **padrão** · técnica: **contrato estático** (escopo de estágio) + **contrato entre serviços**
+> `RQ-14`, `P-15` · perfil **padrão** · técnica: **contrato estático** (escopo de estágio) + **contrato entre serviços**
 
 ```gherkin
   Regra: o estágio assets declara os quatro ARG antes do build, e todo serviço que constrói recebe os mesmos valores
 
     Esquema do Cenário: [CT-17] o ARG está no estágio assets, antes do npm run build
-      Dado o Dockerfile.laravel, recortado de "FROM node:22-alpine AS assets" até o próximo FROM
+      Dado o Dockerfile.laravel, recortado da linha que casa "^FROM\s+\S+\s+AS\s+assets$" até o próximo FROM
       Quando o teste procura a declaração de "<arg>"
       Então ela casa "^ARG <arg>(=.*)?$" dentro do recorte
       E aparece antes da linha "RUN npm run build" do recorte
@@ -556,8 +618,8 @@ Estouro do teto (padrão: 5): M99, M100 — revisão adversarial (ADV-13, ADV-14
         | VITE_REVERB_SCHEME   |
         | VITE_REVERB_APP_KEY  |
 
-    Cenário: [CT-18] todo serviço com build recebe os quatro args com os valores do .env
-      Dado o exemplo copiado na raiz e um .env com VITE_REVERB_HOST "dev.exemplo.test", VITE_REVERB_PORT "443", VITE_REVERB_SCHEME "https", VITE_REVERB_APP_KEY "chave-dev" e TRAEFIK_HOST "dev.exemplo.test"
+    Cenário: [CT-18] com os quatro no .env, todo serviço com build recebe os quatro args com os valores do .env
+      Dado o exemplo copiado na raiz e um .env que define os quatro — VITE_REVERB_HOST "dev.exemplo.test", VITE_REVERB_PORT "443", VITE_REVERB_SCHEME "https", VITE_REVERB_APP_KEY "chave-dev" e TRAEFIK_HOST "dev.exemplo.test"
       Quando o operador roda "docker compose --profile app config"
       Então todo serviço que tem "build" na configuração do base sozinho tem "build.args" com os quatro
       E os valores são "dev.exemplo.test", "443", "https" e "chave-dev" em todos eles
@@ -565,7 +627,10 @@ Estouro do teto (padrão: 5): M99, M100 — revisão adversarial (ADV-13, ADV-14
 
 Por que **todos** os serviços com build e não só o nginx: `app` e `web` compartilham o estágio
 `assets`; args diferentes por serviço produzem bundles com hash diferente, e o manifest do `app`
-passa a apontar arquivos que o nginx não serve. A lista sai do base, não do plano.
+passa a apontar arquivos que o nginx não serve. A lista sai do base, não do plano. O `.env` de CT-18
+define **os quatro** porque o exemplo os passa em lista sem valor (P-15): o Compose pega cada um do
+`.env` e omite o ausente — o caso com chave ausente é CT-45 (R9). O recorte do estágio é pelo nome
+`assets`, não pela imagem: trocar `node:22-alpine` não muda o contrato (ADV2-29).
 
 #### Mutantes previstos
 
@@ -581,7 +646,7 @@ passa a apontar arquivos que o nginx não serve. A lista sai do base, não do pl
 
 ## Regra R9 — Sem build-arg, o build é o de hoje
 
-> `RQ-02`, `RQ-04`, `P-01`, `P-12` · perfil **padrão** · técnica: **EP** (forma da declaração; origem do valor)
+> `RQ-02`, `RQ-04`, `P-01`, `P-12`, `P-15` · perfil **padrão** · técnica: **EP** (forma da declaração; origem do valor; chave ausente × definida no `.env`)
 > Mecanismo fixado por **P-12** (medido pela sessão com `docker build --progress=plain`: `ARG X` sem default fica **ausente** no `RUN`; `ARG X=` fica `''`).
 
 ```gherkin
@@ -593,12 +658,25 @@ passa a apontar arquivos que o nginx não serve. A lista sai do base, não do pl
       Então nenhuma linha ENV atribui VITE_REVERB_*
       E nenhuma linha ARG de VITE_REVERB_* tem "=" (sem default, nem vazio)
       E nenhum COPY ou ADD tem origem que case "\.env"
+      E nenhum COPY ou ADD tem origem "." (ou "./") ou com "*", salvo se o .dockerignore tiver a linha ativa ".env"
       E nenhum RUN atribui "VITE_REVERB_\w+=" antes do comando
+      E nenhum "RUN --mount" tem "source" (ou "src") que case "\.env"
 
     Cenário: [CT-38] o base sozinho não passa VITE_REVERB_* ao build
       Dado uma pasta só com o docker-compose.yml do kit e um .env com VITE_REVERB_HOST "dev.exemplo.test"
       Quando o operador roda "docker compose --profile app config"
       Então nenhum serviço tem em "build.args" chave que comece com "VITE_REVERB_"
+
+    Esquema do Cenário: [CT-45] com o override, build.args leva só as VITE_REVERB_* que o .env define
+      Dado o exemplo copiado na raiz e um .env com TRAEFIK_HOST "dev.exemplo.test" e <vite no .env>
+      Quando o operador roda "docker compose --profile app config"
+      Então em todo serviço que tem "build" na configuração do base sozinho, "build.args" tem <presentes>
+      E não tem as chaves <ausentes> — nem com valor vazio
+
+      Exemplos:
+        | vite no .env                              | presentes                                | ausentes                                                                  | # partição                    |
+        | nenhuma VITE_REVERB_*                     | nenhuma VITE_REVERB_*                    | VITE_REVERB_HOST, VITE_REVERB_PORT, VITE_REVERB_SCHEME, VITE_REVERB_APP_KEY | nenhuma: o build é o de hoje  |
+        | só VITE_REVERB_HOST "dev.exemplo.test"    | VITE_REVERB_HOST = "dev.exemplo.test"    | VITE_REVERB_PORT, VITE_REVERB_SCHEME, VITE_REVERB_APP_KEY                 | uma definida, três ausentes   |
 ```
 
 O porquê é medido, não suposto: o Vite copia para `import.meta.env` toda `VITE_*` presente em
@@ -606,7 +684,13 @@ O porquê é medido, não suposto: o Vite copia para `import.meta.env` toda `VIT
 estágio não tem `.env` e as chaves são `undefined`; com `ENV VITE_REVERB_PORT=` elas viram `''`, e o
 `import.meta.env.VITE_REVERB_PORT ?? 80` do projeto que adicionar Echo deixa de cair no default.
 `[CT-38]` fecha a outra porta: o `.env` do projeto tem `VITE_REVERB_HOST` (o `.env.example` a traz),
-e args no **base** a levariam ao build de quem nunca ligou o override.
+e args no **base** a levariam ao build de quem nunca ligou o override. `[CT-45]` fecha a terceira porta,
+**pelo override** (P-15, medido): `${VITE_REVERB_PORT:-}` passaria `""` ao build e reintroduziria a
+armadilha de P-12; a lista sem valor omite a chave ausente. O caso depende do filtro de ambiente do
+Setup Global — o `.env` do desenvolvedor traz `VITE_REVERB_*` e, herdado pelo subprocesso, faria a
+linha "nenhuma" medir o ambiente dele. `[CT-19]`, linha do `COPY`: o estágio de hoje copia
+`package*.json`, e o que o torna seguro é o `.dockerignore` excluir `.env`; um `COPY . .` ou um
+`RUN --mount=type=bind,source=.env` traria o `.env` para o `npm run build` por outro caminho (ADV2-20).
 
 #### Mutantes previstos
 
@@ -619,7 +703,12 @@ e args no **base** a levariam ao build de quem nunca ligou o override.
 | M102 | `COPY .env* ./` no estágio `assets` (a outra saída que o levantamento cita) (ADV-16) | CT-19 | `COPY` com origem `.env*` no recorte |
 | M103 | `RUN VITE_REVERB_PORT=${VITE_REVERB_PORT:-} npm run build` (ADV-16) | CT-19 | `RUN` com `VITE_REVERB_PORT=` antes do comando |
 
-Estouro do teto (padrão: 5): M101…M103 — revisão adversarial (ADV-03, ADV-16).
+| M143 | `build.args` do exemplo em mapa com `${VITE_REVERB_PORT:-}` — a chave ausente do `.env` vai ao build como `""` e o Vite a copia para o bundle (ADV2-07, P-15) | CT-45 (linha nenhuma) | `build.args.VITE_REVERB_PORT` = `""` presente; o caso exige a chave ausente |
+| M144 | lista com default (`- VITE_REVERB_PORT=443`, `- VITE_REVERB_SCHEME=https`) "porque atrás do Traefik é sempre 443" (ADV2-07) | CT-45 (as duas linhas) | `VITE_REVERB_PORT` presente sem estar no `.env` |
+| M145 | `COPY . .` no estágio `assets` com o `.dockerignore` sem `.env` (ADV2-20) | CT-19 | `COPY` com origem `.` sem a linha ativa `.env` no `.dockerignore` |
+| M146 | `RUN --mount=type=bind,source=.env,target=/app/.env npm run build` (ADV2-20) | CT-19 | `RUN --mount` com `source` que casa `\.env` |
+
+Estouro do teto (padrão: 5): M101…M103 — revisão adversarial (ADV-03, ADV-16); M143…M146 — 2ª rodada (ADV2-07, ADV2-20).
 
 ---
 
@@ -628,7 +717,9 @@ Estouro do teto (padrão: 5): M101…M103 — revisão adversarial (ADV-03, ADV-
 > `P-02`, `P-11` · perfil **completo** (escalado: fronteira de confiança) · técnica: **EP exaustiva**
 > Tokens que o Laravel/Symfony expandem (`*`, `**`, `REMOTE_ADDR`, `PRIVATE_SUBNETS`): **decisão da
 > sessão (ADV-20), falha fechado** — só `*` sozinho vale "todos"; dentro de lista os quatro são
-> descartados; `**` e `PRIVATE_SUBNETS` sozinhos viram `null`.
+> descartados; `**`, `REMOTE_ADDR` e `PRIVATE_SUBNETS` sozinhos viram `null` (falha fechado), e o
+> filtro compara o item **depois** do `trim`. Lista que, filtrada, fica vazia vira `null` — inclusive
+> `'*,'`, em que o `*` está numa lista (decisão da sessão, ADV2-19).
 
 ```gherkin
   Regra: o valor do .env vira nenhum proxy, todos, ou uma lista limpa sem token mágico
@@ -652,13 +743,18 @@ Estouro do teto (padrão: 5): M101…M103 — revisão adversarial (ADV-03, ADV-
         | ' 10.0.0.1 , ,172.18.0.0/16 '      | ['10.0.0.1', '172.18.0.0/16']      | espaço e item vazio no meio        |
         | true                               | null                               | não-string (`TRUSTED_PROXIES=true`) |
         | 1                                  | null                               | não-string inteiro                 |
+        | false                              | null                               | não-string falso                   |
         | '10.0.0.1,*'                       | ['10.0.0.1']                       | `*` dentro de lista (P-11)         |
         | '*,*'                              | null                               | só `*` repetido, em lista          |
+        | '*,'                               | null                               | `*` com separador: lista, não "todos" |
         | '**'                               | null                               | `**` sozinho                       |
+        | '10.0.0.1,**'                      | ['10.0.0.1']                       | `**` dentro de lista               |
         | '10.9.9.9,REMOTE_ADDR'             | ['10.9.9.9']                       | `REMOTE_ADDR` dentro de lista      |
+        | '10.9.9.9, REMOTE_ADDR '           | ['10.9.9.9']                       | token com espaço nas bordas        |
         | 'REMOTE_ADDR'                      | null                               | `REMOTE_ADDR` sozinho (falha fechado) |
         | 'PRIVATE_SUBNETS'                  | null                               | `PRIVATE_SUBNETS` sozinho          |
         | '10.9.9.9,PRIVATE_SUBNETS'         | ['10.9.9.9']                       | `PRIVATE_SUBNETS` dentro de lista  |
+        | '10.9.9.9 , PRIVATE_SUBNETS'       | ['10.9.9.9']                       | token e item com espaço            |
 ```
 
 A comparação é `toBe` (estrita): lista com chaves `0, 1` — `[0 => 'a', 2 => 'b']` reprova. Por que
@@ -683,7 +779,11 @@ transforma um erro de digitação em confiança total.
 | M107 | `REMOTE_ADDR` passado adiante dentro da lista — o Symfony o troca pelo IP do chamador e qualquer chamador vira proxy (ADV-20, ADV-33) | CT-20 (linha `REMOTE_ADDR`), CT-21 (linha `10.9.9.9,REMOTE_ADDR`) | `['10.9.9.9', 'REMOTE_ADDR']` ≠ `['10.9.9.9']` / `isSecure()` verdadeiro |
 | M108 | lista passa `PRIVATE_SUBNETS` adiante e o container da rede do Docker vira proxy confiável (decisão complementar da sessão) | CT-20 (linhas `PRIVATE_SUBNETS`), CT-21 (linha `10.9.9.9,PRIVATE_SUBNETS`, chamador `172.18.0.5`) | `['10.9.9.9', 'PRIVATE_SUBNETS']` ≠ `['10.9.9.9']` / `isSecure()` verdadeiro |
 
-Estouro do teto (completo: 6): M104…M108 — revisão adversarial (ADV-20, ADV-33) e complemento da sessão (`PRIVATE_SUBNETS`).
+| M147 | filtro de token aplicado **antes** do `trim` — `' REMOTE_ADDR '` não é reconhecido, é aparado depois e vai adiante (ADV2-10) | CT-20 (linhas token com espaço) | `['10.9.9.9', 'REMOTE_ADDR']` ≠ `['10.9.9.9']` |
+| M148 | dentro de lista só `*` é descartado; `**` vai adiante — o Laravel o trata como "todos" (ADV2-19) | CT-20 (linha `**` dentro de lista) | `['10.0.0.1', '**']` ≠ `['10.0.0.1']` |
+| M149 | lista que sobra com um item só é colapsada para ele, ou o valor é aparado de `,` antes do teste de `*` — `'*,'` vira `'*'` (ADV2-19) | CT-20 (linha `*` com separador) | `'*'` ≠ `null` |
+
+Estouro do teto (completo: 6): M104…M108 — revisão adversarial (ADV-20, ADV-33) e complemento da sessão (`PRIVATE_SUBNETS`); M147…M149 — 2ª rodada (ADV2-10, ADV2-19).
 
 ---
 
@@ -709,17 +809,28 @@ Estouro do teto (completo: 6): M104…M108 — revisão adversarial (ADV-20, ADV
         | 127.0.0.1   | true (bool, de `=true`)     | falso    | interno.local | http://interno.local/x  | 127.0.0.1   | não-string: falha fechado, sem TypeError  |
         | 127.0.0.1   | '10.9.9.9,*'                | falso    | interno.local | http://interno.local/x  | 127.0.0.1   | `*` dentro de lista (P-11)                |
         | 127.0.0.1   | '10.9.9.9,REMOTE_ADDR'      | falso    | interno.local | http://interno.local/x  | 127.0.0.1   | `REMOTE_ADDR` dentro de lista             |
+        | 127.0.0.1   | '**'                        | falso    | interno.local | http://interno.local/x  | 127.0.0.1   | `**` sozinho                              |
+        | 127.0.0.1   | 'REMOTE_ADDR'               | falso    | interno.local | http://interno.local/x  | 127.0.0.1   | `REMOTE_ADDR` sozinho                     |
+        | 127.0.0.1   | '*,*'                       | falso    | interno.local | http://interno.local/x  | 127.0.0.1   | `*` repetido, em lista                    |
+        | 127.0.0.1   | ausente, com TRAEFIK_HOST "dev.exemplo.test" no env | falso | interno.local | http://interno.local/x | 127.0.0.1 | override ligado não liga a confiança |
         | 172.18.0.5  | ausente                     | falso    | interno.local | http://interno.local/x  | 172.18.0.5  | chamador na rede do Docker, sem chave     |
         | 10.0.0.7    | ausente                     | falso    | interno.local | http://interno.local/x  | 10.0.0.7    | chamador em 10/8, sem chave               |
         | 172.18.0.5  | ''                          | falso    | interno.local | http://interno.local/x  | 172.18.0.5  | rede do Docker, vazia                     |
         | 10.0.0.7    | '10.9.9.9'                  | falso    | interno.local | http://interno.local/x  | 10.0.0.7    | faixa privada, lista sem o chamador       |
         | 172.18.0.5  | '10.9.9.9,PRIVATE_SUBNETS'  | falso    | interno.local | http://interno.local/x  | 172.18.0.5  | `PRIVATE_SUBNETS` dentro de lista         |
+        | 172.18.0.5  | 'PRIVATE_SUBNETS'           | falso    | interno.local | http://interno.local/x  | 172.18.0.5  | `PRIVATE_SUBNETS` sozinho, chamador privado |
 ```
 
 Todas as linhas têm a mesma saída **de propósito**: a tabela é a fronteira — nenhuma combinação de
 chamador e valor fora de R12 abre a confiança. O `APP_URL` em `https` no `Dado` é o que torna a coluna
 `url` discriminante: a URL do request continua a do request (`http://interno.local`), não a da
-configuração.
+configuração. Hoje nada no kit força esquema nem raiz que mascare essa coluna:
+`grep -rn "forceScheme\|forceRootUrl" app/` devolve só `URL::forceRootUrl` em
+`app/Http/Middleware/RaizDeUrlSemPublic.php:forceRootUrl:73` (dentro de `handle()`), condicionado a
+base de URL terminada em `/public` — a rota de teste não tem essa base. As linhas de token sozinho e
+`*,*` provam no HTTP o que CT-20 prova na função (ADV2-05): um `bootstrap/app.php` que repassasse o
+token cru ao `trustProxies()` passaria em CT-20. A linha com `TRAEFIK_HOST` prova que ligar o override
+não liga a confiança — só `TRUSTED_PROXIES` liga (ADV2-09).
 
 #### Mutantes previstos
 
@@ -729,10 +840,14 @@ configuração.
 | M49 | qualquer valor não vazio vira `'*'` | CT-21 (linha lista sem o chamador) | host visto `dev.exemplo.test` |
 | M50 | vazio tratado como "todos" (`?: '*'`) | CT-21 (linha vazia) | `isSecure()` verdadeiro |
 | M109 | default de faixas privadas quando a chave falta (`?? ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16']`, "porque o Traefik está na rede do Docker") (ADV-04) | CT-21 (linhas `172.18.0.5`/`10.0.0.7` com chave ausente ou vazia) | `isSecure()` verdadeiro, host `dev.exemplo.test`, ip `203.0.113.9` |
-| M110 | `bootstrap/app.php` passa o `env('TRUSTED_PROXIES')` cru ao `trustProxies(at:)`, sem a interpretação de R10 (ADV-05) | CT-22 (linha `' * '`), CT-21 (linha `true`) | `' * '` cru vira `['*']` no Laravel: `isSecure()` falso, o CT-22 exige verdadeiro; `true` cru não pode virar 500 nem confiança |
+| M110 | `bootstrap/app.php` passa o `env('TRUSTED_PROXIES')` cru ao `trustProxies(at:)`, sem a interpretação de R10 (ADV-05) | CT-22 (linha `' * '`) | `' * '` cru vira `['*']` no Laravel: `isSecure()` falso, o CT-22 exige verdadeiro. A linha `true` de CT-21 **não** mata: o `bootstrap/app.php` não declara `strict_types`, o `true` é coagido sem `TypeError` e não confia em ninguém (ADV2-25) |
 | M111 | `URL::forceRootUrl(config('app.url'))` / `forceScheme('https')` quando `APP_URL` é `https` — contorna a fronteira de confiança (ADV-18) | CT-21 (toda linha) | `url('/x')` = `https://dev.exemplo.test/x`; o caso exige `http://interno.local/x` |
 
-Estouro do teto (padrão: 5): M109…M111 — revisão adversarial (ADV-04, ADV-05, ADV-18).
+| M150 | `bootstrap/app.php` repassa ao `trustProxies()` o valor cru quando ele é um token do framework sozinho (`**`, `REMOTE_ADDR`, `PRIVATE_SUBNETS`) ou `*,*`, e só usa a interpretação de R10 para listas (ADV2-05) | CT-21 (linhas `**`, `REMOTE_ADDR`, `*,*`, `PRIVATE_SUBNETS` sozinhos) | `isSecure()` verdadeiro, host `dev.exemplo.test`, ip `203.0.113.9` |
+| M151 | `trustProxies(at: '*')` quando `TRAEFIK_HOST` está definida, "porque o override está ligado" (ADV2-09) | CT-21 (linha com `TRAEFIK_HOST`) | `isSecure()` verdadeiro |
+| M152 | lista que contém `*` promovida a `'*'` ("o operador quis todos") (ADV2-26) | CT-21 (linha `10.9.9.9,*`), CT-20 (linha `10.0.0.1,*`) | `isSecure()` verdadeiro / `'*'` ≠ `['10.0.0.1']` |
+
+Estouro do teto (padrão: 5): M109…M111 — revisão adversarial (ADV-04, ADV-05, ADV-18); M150…M152 — 2ª rodada (ADV2-05, ADV2-09, ADV2-26).
 
 ---
 
@@ -745,16 +860,17 @@ Estouro do teto (padrão: 5): M109…M111 — revisão adversarial (ADV-04, ADV-
 
     Esquema do Cenário: [CT-22] cabeçalhos de proxy confiável chegam à aplicação
       Dado TRUSTED_PROXIES efetivo <valor efetivo> e o chamador em 127.0.0.1
-      E o request com Host "interno.local", X-Forwarded-For "203.0.113.9", X-Forwarded-Proto "https", X-Forwarded-Host "dev.exemplo.test" e X-Forwarded-Port "443"
+      E o request com Host "interno.local", X-Forwarded-For "203.0.113.9", X-Forwarded-Proto "https", X-Forwarded-Host "dev.exemplo.test" e X-Forwarded-Port "<porta>"
       Quando o Traefik faz o request à rota de teste
       Então a aplicação vê isSecure() verdadeiro e host "dev.exemplo.test"
-      E url('/x') é "https://dev.exemplo.test/x" e ip() é "203.0.113.9"
+      E url('/x') é "<url>" e ip() é "203.0.113.9"
 
       Exemplos:
-        | valor efetivo             | # partição               |
-        | '*'                       | todos                    |
-        | ' * '                     | todos, com espaço        |
-        | '10.9.9.9,127.0.0.1'      | lista com o chamador     |
+        | valor efetivo             | porta | url                               | # partição                 |
+        | '*'                       | 443   | https://dev.exemplo.test/x        | todos                      |
+        | ' * '                     | 443   | https://dev.exemplo.test/x        | todos, com espaço          |
+        | '10.9.9.9,127.0.0.1'      | 443   | https://dev.exemplo.test/x        | lista com o chamador       |
+        | '*'                       | 8443  | https://dev.exemplo.test:8443/x   | porta não padrão do proxy  |
 ```
 
 #### Mutantes previstos
@@ -766,6 +882,7 @@ Estouro do teto (padrão: 5): M109…M111 — revisão adversarial (ADV-04, ADV-
 | M53 | `headers:` restrito a `HEADER_X_FORWARDED_FOR` | CT-22 | `isSecure()` falso e host `interno.local` |
 | M54 | só o primeiro item da lista é usado | CT-22 (linha lista com o chamador) | `isSecure()` falso |
 | M112 | `headers:` sem `HEADER_X_FORWARDED_FOR` (só Proto/Host/Port) — o IP do log e do rate limit vira o do Traefik (ADV-15) | CT-22 | `ip()` = `127.0.0.1`; o caso exige `203.0.113.9` |
+| M153 | `headers:` sem `HEADER_X_FORWARDED_PORT` — atrás de um entrypoint em porta não padrão a URL perde a porta (ADV2-18) | CT-22 (linha 8443) | `url('/x')` = `https://dev.exemplo.test/x`; o caso exige `:8443` |
 
 ---
 
@@ -807,6 +924,7 @@ Estouro do teto (padrão: 5): M109…M111 — revisão adversarial (ADV-04, ADV-
       E TRAEFIK_HOST "dev.exemplo.test" quando a linha descomentada vier vazia
       Quando o operador roda "docker compose --profile app config" com o exemplo copiado na raiz
       Então nenhum par de publicações tem o mesmo "published" com "host_ip" sobreposto (vazio e 0.0.0.0 sobrepõem qualquer IP)
+      E, como o bloco traz TRUSTED_PROXIES "*", toda publicação do nginx tem "host_ip" "127.0.0.1"
 
     Cenário: [CT-39] o .env.docker copiado como sempre, sem o override, não liga o Traefik
       Dado uma pasta com os arquivos de Compose da raiz do kit, o exemplo em "docker/traefik/" e o .env.docker copiado verbatim como .env
@@ -826,7 +944,10 @@ precisar dela, a exceção é escrita no caso com o motivo. `[CT-39]` copia o `.
 editar** (as `DB_*` ativas que ele já traz bastam): é o caminho de todo projeto que já usa o kit, e
 um `COMPOSE_FILE` ativo nele ligaria o exemplo sem cópia nenhuma. As três `FORWARD_*` novas de CT-23
 ficam no bloco do multiambiente, ao lado de `FORWARD_APP_PORT` (P-09: as quatro são obrigatórias e
-distintas por ambiente).
+distintas por ambiente). A última linha de `[CT-25]` é a recomendação de Q11 em configuração: o bloco
+que sugere `TRUSTED_PROXIES=*` tem de sugerir também a porta do nginx em loopback — com ela em
+`0.0.0.0`, quem alcança a porta sem passar pelo Traefik forja `X-Forwarded-*`. Retira a antiga lacuna
+L7 (ADV2-08).
 
 #### Mutantes previstos
 
@@ -842,7 +963,9 @@ distintas por ambiente).
 | M115 | bloco do multiambiente sugere só `FORWARD_APP_PORT` (o levantamento diz "opcional") — o segundo ambiente não sobe (ADV-09) | CT-23 (linhas `FORWARD_DB_PORT`, `FORWARD_REDIS_PORT`, `FORWARD_REVERB_PORT`) | linha comentada ausente |
 | M116 | publicação com IP fixo no override ou no base (`'0.0.0.0:${FORWARD_DB_PORT:-5432}:5432'`, ou um `ports` a mais no reverb) — o bind de administração em loopback deixa de valer (ADV-23) | CT-40 | publicação de `pgsql` (ou a extra) com `host_ip` `0.0.0.0`/vazio |
 
-Estouro do teto (padrão: 5): M113…M116 — revisão adversarial (ADV-07, ADV-09, ADV-23).
+| M154 | bloco do `.env.docker` sugere `TRUSTED_PROXIES=*` com `FORWARD_APP_PORT=8090` (sem loopback) — a porta aberta aceita `X-Forwarded-*` de qualquer um (ADV2-08, Q11) | CT-25 | publicação do nginx com `host_ip` vazio/`0.0.0.0` |
+
+Estouro do teto (padrão: 5): M113…M116 — revisão adversarial (ADV-07, ADV-09, ADV-23); M154 — 2ª rodada (ADV2-08).
 
 ---
 
@@ -919,7 +1042,7 @@ a entrega); branch, PR e tag ficam com o quality gate.
 
 ## Regra R16 — A página ensina o mecanismo central, o encaixe no Traefik e o passo a passo
 
-> `RQ-06`, `RQ-07`, `RQ-08`, `RQ-09`, `RQ-11`, `P-13` · perfil **padrão** · técnica: **EP por âncora**. `skip` fora da árvore.
+> `RQ-06`, `RQ-07`, `RQ-08`, `RQ-09`, `RQ-11`, `P-13`, `P-14` · perfil **padrão** · técnica: **EP por âncora** (na mesma frase, sem negação, onde o sentido importa). `skip` fora da árvore.
 
 ```gherkin
   Regra: o operador consegue montar um ambiente lendo só a página
@@ -935,22 +1058,43 @@ a entrega); branch, PR e tag ficam com o quality gate.
         | um .env por ambiente         | os 3 valores aparecem em blocos de .env distintos                                         | RQ-06  |
         | rede e label obrigatórios    | "traefik.docker.network=" e "external: true"                                              | RQ-07, RQ-08 |
         | labels do router             | "entrypoints=websecure", "tls=true", "loadbalancer.server.port=80"                        | RQ-07, RQ-09 |
-        | cópia do exemplo             | um bloco de código casa "cp\s+docker/traefik/docker-compose\.override\.yml\s+(\./)?docker-compose\.override\.yml"; o caminho de origem existe no kit | RQ-11, P-03 |
+        | cópia do exemplo             | uma linha de bloco de código casa "cp\s+docker/traefik/docker-compose\.override\.yml\s+(\./)?docker-compose\.override\.yml(\s*$\|\s*&&\|\s*;)"; o caminho de origem existe no kit | RQ-11, P-03 |
         | proxies confiáveis           | "TRUSTED_PROXIES="                                                                         | P-02   |
 
     Esquema do Cenário: [CT-41] a página avisa que, com a configuração em cache, TRUSTED_PROXIES vem do ambiente do processo
       Dado a página "operacao/deploy-docker-multiambiente.md" em <idioma>
       Quando o teste procura o aviso sobre configuração em cache
-      Então uma mesma seção contém "<cache>" e "<ambiente>" e "TRUSTED_PROXIES"
+      Então uma mesma frase contém "<cache>", "<ambiente>" e "TRUSTED_PROXIES"
+      E nenhuma das três âncoras tem "não", "nem", "not" ou "never" nas 3 palavras antes dela
 
       Exemplos:
         | idioma | cache                                     | ambiente              |
         | pt     | config:cache  ·  configuração em cache     | ambiente do processo  |
         | en     | config:cache  ·  cached configuration      | process environment   |
+
+    Esquema do Cenário: [CT-47] a seção do Traefik avisa que nome de serviço é global na rede compartilhada
+      Dado a página "operacao/deploy-docker-multiambiente.md" em <idioma>
+      Quando o teste lê a seção (secoesDoMarkdown) que contém "traefik.docker.network"
+      Então essa seção contém "`app`", "`reverb`", "my-network" e "DevOps"
+
+      Exemplos:
+        | idioma |
+        | pt     |
+        | en     |
 ```
 
+`[CT-29]`, linha "cópia do exemplo": na célula, os `\|` do grupo final são a alternância da regex
+escapada para a tabela — a regex é `(\s*$|\s*&&|\s*;)`, e ancora o fim do destino (ADV2-22).
 `[CT-41]`: na coluna `cache`, basta um dos dois termos (separados por `·`). É a documentação de
-P-13; o comportamento em runtime fora do Docker é a lacuna L9.
+P-13; o comportamento em runtime fora do Docker é a lacuna L9. **Frase** (CT-41, CT-42): trecho de
+prosa — fora de bloco de código e de linha de tabela — entre terminadores `.`, `!` ou `?` seguidos de
+espaço ou fim de linha, ou entre linhas em branco; o ponto de `.env` e o dois-pontos de
+`config:cache` não terminam frase. A janela de negação são as 3 palavras imediatamente antes da
+âncora, sem diferenciar caixa (ADV2-28): "seção" basta para presença, não para sentido — "não precisa
+de `TRUSTED_PROXIES` no ambiente do processo" passava. `[CT-47]` é a documentação de P-14 (Q12): o
+DNS do Docker resolve nome de serviço em **todas** as redes do container, e outro `app` na rede do
+Traefik pode receber o `fastcgi_pass app:9000`; a página manda confirmar com o DevOps. O runtime é a
+lacuna L10.
 
 #### Mutantes previstos
 
@@ -963,7 +1107,11 @@ P-13; o comportamento em runtime fora do Docker é a lacuna L9.
 | M118 | `cp` invertido no bloco (`cp docker-compose.override.yml docker/traefik/`) ou destino em `docker/` — os dois nomes aparecem, a cópia não liga nada (ADV-26) | CT-29 (linha cópia do exemplo) | a regex `cp\s+docker/traefik/…\s+(\./)?docker-compose\.override\.yml` não casa |
 | M119 | página sem o aviso de `config:cache` — quem roda fora do Docker com a configuração em cache perde a chave em silêncio (ADV-19) | CT-41 | nenhuma seção com `config:cache`/"configuração em cache" e "ambiente do processo" |
 
-Estouro do teto (padrão: 5): M118, M119 — revisão adversarial (ADV-19, ADV-26).
+| M155 | `cp docker/traefik/docker-compose.override.yml docker-compose.override.yml.bak` (ou `.example`) — o destino casa como prefixo e a cópia não liga nada (ADV2-22) | CT-29 (linha cópia do exemplo) | a regex ancorada no fim do comando não casa |
+| M156 | aviso invertido: "com `config:cache`, `TRUSTED_PROXIES` **não** precisa estar no ambiente do processo" (ADV2-28) | CT-41 | negação nas 3 palavras antes de uma âncora |
+| M157 | página sem o aviso de nome global na rede compartilhada — o operador põe o `app` na `my-network` ou não pergunta ao DevOps (ADV2-33, Q12) | CT-47 | seção do Traefik sem `` `app` ``, `` `reverb` `` ou `DevOps` |
+
+Estouro do teto (padrão: 5): M118, M119 — revisão adversarial (ADV-19, ADV-26); M155…M157 — 2ª rodada (ADV2-22, ADV2-28, ADV2-33).
 
 ---
 
@@ -981,21 +1129,23 @@ Estouro do teto (padrão: 5): M118, M119 — revisão adversarial (ADV-19, ADV-2
 
       Exemplos:
         | item                       | oráculo                                                                        | origem |
-        | linha de app da matriz     | linha de tabela "^\|.*FORWARD_APP_PORT.*\|\s*8090\s*\|\s*9090\s*\|\s*8080\s*\|" | RQ-16  |
-        | linha de banco             | "^\|.*FORWARD_DB_PORT.*\|\s*5433\s*\|\s*5434\s*\|\s*5435\s*\|"                  | RQ-16  |
-        | linha de cache             | "^\|.*FORWARD_REDIS_PORT.*\|\s*6380\s*\|\s*6381\s*\|\s*6382\s*\|"               | RQ-16  |
-        | linha do Reverb            | "^\|.*FORWARD_REVERB_PORT.*\|\s*8190\s*\|\s*8191\s*\|\s*8192\s*\|"              | RQ-16  |
+        | linha de app da matriz     | linha de tabela "^\|.*FORWARD_APP_PORT.*\|C(8090)\|C(9090)\|C(8080)\|"          | RQ-16  |
+        | linha de banco             | "^\|.*FORWARD_DB_PORT.*\|C(5433)\|C(5434)\|C(5435)\|"                           | RQ-16  |
+        | linha de cache             | "^\|.*FORWARD_REDIS_PORT.*\|C(6380)\|C(6381)\|C(6382)\|"                        | RQ-16  |
+        | linha do Reverb            | "^\|.*FORWARD_REVERB_PORT.*\|C(8190)\|C(8191)\|C(8192)\|"                       | RQ-16  |
         | nota do 8090               | uma linha de prosa (fora de bloco de código e de tabela) com "FORWARD_REVERB_PORT" e "8090" | RQ-16  |
         | bind de administração      | "FORWARD_APP_PORT=127.0.0.1:"                                                   | RQ-10, P-06 |
         | rota do Reverb pelo Traefik | "-reverb" num label de router                                                  | RQ-12  |
         | rota do Reverb por porta   | "FORWARD_REVERB_PORT=" fora da tabela                                           | RQ-12  |
         | VITE do Reverb no build    | um bloco de código com "VITE_REVERB_HOST=", "VITE_REVERB_PORT=443" e "VITE_REVERB_SCHEME=https" | RQ-14  |
         | rebuild ao mudar o VITE    | "--build" na mesma seção desse bloco                                            | RQ-14  |
+        | host do Reverb atrás do Traefik | no bloco com "VITE_REVERB_PORT=443", o valor de "VITE_REVERB_HOST=" não é "localhost" nem "127.0.0.1" e é igual a um valor de "TRAEFIK_HOST=" ou ao host de um "APP_URL=https://" da página | RQ-14, RQ-17 |
 
-    Esquema do Cenário: [CT-42] a matriz diz que as quatro portas são obrigatórias e distintas
-      Dado a seção da matriz de portas da página "operacao/deploy-docker-multiambiente.md" em <idioma>
-      Quando o teste lê o texto da seção e as células da tabela da matriz
-      Então o texto da seção contém "<obrigatória>" e "<distinta>"
+    Esquema do Cenário: [CT-42] a matriz diz que as quatro portas são obrigatórias e distintas, e que vão para o loopback
+      Dado a seção da matriz — a seção (secoesDoMarkdown) que contém a linha com "FORWARD_APP_PORT", "8090", "9090" e "8080" — da página "operacao/deploy-docker-multiambiente.md" em <idioma>
+      Quando o teste lê as frases da seção e as células da tabela da matriz
+      Então uma mesma frase contém "<obrigatória>" e "<distinta>", sem "não", "nem", "not" ou "never" nas 3 palavras antes de cada uma
+      E uma mesma frase contém "127.0.0.1" e "Traefik"
       E nenhuma célula da tabela da matriz contém "<opcional>"
 
       Exemplos:
@@ -1003,6 +1153,10 @@ Estouro do teto (padrão: 5): M118, M119 — revisão adversarial (ADV-19, ADV-2
         | pt     | obrigatóri   | distint    | opcional  |
         | en     | mandatory    | distinct   | optional  |
 ```
+
+`C(N)`, na coluna oráculo de CT-30, é a célula numérica `\s*(127\.0\.0\.1:)?N[¹²]?\s*`: a célula pode
+trazer o loopback (P-06/P-09: a página ensina `127.0.0.1:8090`) e o marcador de nota do requisito
+(`8190¹`). O número continua o **literal** do requisito.
 
 #### Mutantes previstos
 
@@ -1017,7 +1171,11 @@ Estouro do teto (padrão: 5): M118, M119 — revisão adversarial (ADV-19, ADV-2
 | M122 | matriz transcrita com "*(opcional¹)*" do levantamento (ADV-32) | CT-42 | célula com `opcional`/`optional` |
 | M123 | seção da matriz sem dizer que as quatro são obrigatórias e distintas (ADV-32) | CT-42 | `obrigatóri`/`mandatory` ausente da seção |
 
-Estouro do teto (padrão: 5): M120…M123 — revisão adversarial (ADV-24, ADV-27, ADV-32).
+| M158 | bloco do build com `VITE_REVERB_HOST=localhost` e `VITE_REVERB_PORT=443` — copiado do `.env` local, o Echo do navegador abre o socket no `localhost` de quem acessa (ADV2-21) | CT-30 (linha host do Reverb) | `VITE_REVERB_HOST` = `localhost` / diferente de todo `TRAEFIK_HOST` da página |
+| M159 | seção da matriz diz "não é obrigatório que sejam distintas" ou separa as âncoras em frases que se contradizem (ADV2-28) | CT-42 | negação nas 3 palavras antes de `obrigatóri`/`distint`, ou as duas em frases diferentes |
+| M160 | seção da matriz repete a nota ¹ do levantamento ("atrás do Traefik nenhuma porta precisa ser publicada") sem dizer que o base publica sempre e que ela vai para `127.0.0.1` (ADV2-31, P-09) | CT-42 | nenhuma frase com `127.0.0.1` e `Traefik` |
+
+Estouro do teto (padrão: 5): M120…M123 — revisão adversarial (ADV-24, ADV-27, ADV-32); M158…M160 — 2ª rodada (ADV2-21, ADV2-28, ADV2-31).
 
 ---
 
@@ -1041,7 +1199,13 @@ Estouro do teto (padrão: 5): M120…M123 — revisão adversarial (ADV-24, ADV-
         | equilíbrio da D        | na seção da D: "pgsql"/"redis", e uma mesma frase com "llama", "mailpit" e "compartilhad" (pt) / "shared" (en) | RQ-13  |
         | armadilhas             | "SESSION_COOKIE", "APP_KEY", "APP_URL=https://" e "APP_DEBUG=false"                               | RQ-15  |
         | sem SESSION_COOKIE customizado | nenhum bloco de código da página contém "SESSION_COOKIE="                                 | RQ-15  |
+        | APP_URL do ambiente    | no bloco de código de .env da página (o que tem "TRAEFIK_HOST="), "APP_URL=" é "https://" seguido do valor de "TRAEFIK_HOST=" do mesmo bloco | RQ-15, RQ-17 |
+        | sem debug ligado       | nenhum bloco de código da página contém "APP_DEBUG=true"                                         | RQ-15  |
+        | receita da D           | na seção da D, um bloco de código com "environment:" e "LLAMACPP_URL"                            | RQ-13, P-07 |
 ```
+
+A página tem **um** bloco de `.env` (o do dev); as linhas "APP_URL do ambiente" e "sem debug ligado"
+valem para ele e para qualquer outro que vier (ADV2-16).
 
 #### Mutantes previstos
 
@@ -1054,7 +1218,11 @@ Estouro do teto (padrão: 5): M120…M123 — revisão adversarial (ADV-24, ADV-
 | M124 | `.env` de exemplo da página com `SESSION_COOKIE=projeto3_dev` "por garantia" — contradiz RQ-15 (ADV-31) | CT-31 (linha sem SESSION_COOKIE customizado) | bloco de código com `SESSION_COOKIE=` |
 | M125 | D com llama e mailpit citados **por ambiente** (ou só "pgsql e redis por ambiente", sem dizer o que se compartilha) (ADV-31) | CT-31 (linha equilíbrio da D) | nenhuma frase com `llama`, `mailpit` e `compartilhad`/`shared` |
 
-Estouro do teto (padrão: 5): M124, M125 — revisão adversarial (ADV-31).
+| M161 | bloco de `.env` da página com `APP_URL=http://localhost:8000` (copiado do `.env.docker`) ou com host diferente do `TRAEFIK_HOST` do bloco (ADV2-16) | CT-31 (linha APP_URL do ambiente) | `APP_URL` ≠ `https://` + `TRAEFIK_HOST` |
+| M162 | bloco de `.env` da página com `APP_DEBUG=true` "porque é o dev" — o exemplo é copiado para teste e homol (ADV2-16) | CT-31 (linha sem debug ligado) | bloco com `APP_DEBUG=true` |
+| M163 | Opção D só em prosa, sem a receita de `environment:` no override (P-07) (ADV2-32) | CT-31 (linha receita da D) | nenhum bloco com `environment:` e `LLAMACPP_URL` na seção da D |
+
+Estouro do teto (padrão: 5): M124, M125 — revisão adversarial (ADV-31); M161…M163 — 2ª rodada (ADV2-16, ADV2-32).
 
 ---
 
@@ -1096,9 +1264,13 @@ Estouro do teto (padrão: 5): M124, M125 — revisão adversarial (ADV-31).
       Quando o teste procura Echo e as chaves do Reverb
       Então nenhum arquivo importa "laravel-echo" nem lê "import.meta.env.VITE_REVERB_"
       E nem "dependencies" nem "devDependencies" do package.json têm "laravel-echo" ou "pusher-js"
+      E config('filament.broadcasting.echo') é vazio ou nulo
+      E, se "config/filament.php" existir, o texto ativo dele não contém "'echo'" junto com "VITE_"
 ```
 
-`[CT-43]` lê `resources/js` e `package.json`, que viajam com o kit — sem `skip`.
+`[CT-43]` lê `resources/js`, `package.json` e `config/`, que viajam com o kit — sem `skip`. As duas
+últimas linhas fecham a outra porta de P-01: o Filament liga Echo pela configuração
+`broadcasting.echo`, sem nenhum `import` no bundle (ADV2-12).
 
 #### Mutantes previstos
 
@@ -1106,6 +1278,7 @@ Estouro do teto (padrão: 5): M124, M125 — revisão adversarial (ADV-31).
 |---|---|---|---|
 | M126 | `resources/js/echo.js` com `new Echo({ wsHost: import.meta.env.VITE_REVERB_HOST, … })` importado pelo `app.js`, "para o build-arg servir para algo" | CT-43 | `import.meta.env.VITE_REVERB_` / `laravel-echo` no texto ativo |
 | M127 | `laravel-echo` e `pusher-js` acrescentados ao `package.json` "para o projeto que quiser" | CT-43 | chave `laravel-echo` em `devDependencies` |
+| M164 | `config/filament.php` publicado com `'broadcasting' => ['echo' => ['key' => env('VITE_REVERB_APP_KEY'), …]]` — o Filament liga Echo sem tocar o bundle (ADV2-12) | CT-43 | `config('filament.broadcasting.echo')` não vazio / `'echo'` com `VITE_` no texto ativo |
 
 ---
 
@@ -1119,14 +1292,14 @@ Estouro do teto (padrão: 5): M124, M125 — revisão adversarial (ADV-31).
 | Concorrência | não se aplica: nenhum contador ou limite | — |
 | **Fronteira no ponto de entrada** (valor do `.env`) | CT-20 (todas as partições), CT-21, CT-22 | G5, G6 |
 | Domínio condicionado | CT-21/CT-22 (chamador × valor: a mesma lista confia ou não conforme o `REMOTE_ADDR`; faixa privada sem chave não confia) | G6 |
-| **Token mágico do framework** (`*`, `**`, `REMOTE_ADDR`, `PRIVATE_SUBNETS`) | CT-20 (sozinho e em lista), CT-21 (em lista, com chamador que o token casaria) | G5, G6 |
+| **Token mágico do framework** (`*`, `**`, `REMOTE_ADDR`, `PRIVATE_SUBNETS`) | CT-20 (sozinho, em lista e com espaço nas bordas), CT-21 (sozinho e em lista, com chamador que o token casaria) | G5, G6 |
 | Cardinalidade 0 / 1 / N | proxies: CT-20 (0, 1, 2); serviços com build: CT-18 (todos), CT-38 (nenhum, sem override); ambientes: CT-01 (1, sem override), CT-26 (3) | G5, G2 |
-| Ausente ≠ null ≠ vazio | CT-20 (ausente, `''`, `'   '`), CT-21 (ausente, `''`), CT-08 (`TRAEFIK_REDE` ausente e vazia), CT-11 (`COMPOSE_PROJECT_NAME` ausente e vazia), CT-12 (`TRAEFIK_HOST` ausente e vazia) | G5, G6, G2 |
+| Ausente ≠ null ≠ vazio | CT-20 (ausente, `''`, `'   '`, `false`), CT-21 (ausente, `''`), CT-08 (`TRAEFIK_REDE` ausente e vazia), CT-11 (`COMPOSE_PROJECT_NAME` ausente e vazia), CT-12 (`TRAEFIK_HOST` ausente e vazia), CT-44 (`REVERB_APP_KEY`/`REVERB_APP_ID` ausente e vazia), CT-45 (`VITE_REVERB_*` ausente ≠ `""` no build) | G5, G6, G2 |
 | Texto livre: espaços nas bordas, só espaços | CT-20, CT-22 (`' * '`) | G5, G6 |
 | Unicode / limite de varchar | não se aplica: hostnames e IPs; o Compose valida o nome de projeto | — |
 | Timezone / DST | não se aplica: nada temporal | — |
 | Unicidade + soft delete | não se aplica | — |
-| Unicidade de nome global (Traefik e Docker) | CT-11 (todo objeto `routers/services/middlewares` com o prefixo do projeto), CT-15 (sufixo `-reverb`), CT-26 (`name` de topo, rede default e volumes disjuntos) | G2, G1 |
+| Unicidade de nome global (Traefik e Docker) | CT-10 (conjunto fechado de labels do nginx), CT-11 (todo objeto `routers/services/middlewares` com o prefixo do projeto), CT-15 (sufixo `-reverb`), CT-26 (`name` de topo, rede default e volumes disjuntos); nome de **serviço** global na rede compartilhada (P-14): CT-47 documenta, L10 | G2, G1, G4 |
 | CRUD combinado | não se aplica | — |
 | Mass assignment | não se aplica: nenhum model | — |
 | Upload | não se aplica | — |
@@ -1134,12 +1307,16 @@ Estouro do teto (padrão: 5): M124, M125 — revisão adversarial (ADV-31).
 | Superfície Livewire | não se aplica: `02` declara nenhum componente | — |
 | Estado do framework usado sem validar | não se aplica: nenhum `$filters`/`$tableSearch` | — |
 | Discriminante nulo (fecha ou abre?) | CT-21 linhas ausente: **fecha** (nenhum proxy), inclusive com chamador em faixa privada | G6 |
-| Saída do estado de erro | CT-12 → saída: a mensagem nomeia `TRAEFIK_HOST`; par CT-10 (com a chave, a configuração passa) | G2 |
+| Saída do estado de erro | CT-12 → saída: a mensagem nomeia `TRAEFIK_HOST`; par CT-10 (com a chave, a configuração passa). CT-44 → a mensagem nomeia `REVERB_APP_KEY`/`REVERB_APP_ID`; par: a linha feliz do mesmo Esquema | G2 |
 | Estado estático entre casos | CT-21/CT-22: `TrustProxies::flushState()` no `tearDown` do framework + restauração do env pelo helper | G6 |
-| **Teste que viaja lendo arquivo que não viaja** (rule do projeto) | CT-04, CT-27…CT-32, CT-41, CT-42 com `skip` fora da árvore; CT-05 e CT-37 leem `.gitattributes` e `caminhosDoKit()`, que viajam; CT-43 lê `resources/js` e `package.json`, que viajam | G3, G4, G1 |
+| **Teste que viaja lendo arquivo que não viaja** (rule do projeto) | CT-04, CT-27…CT-32, CT-41, CT-42, CT-47 com `skip` fora da árvore; CT-05 e CT-37 leem `.gitattributes` e `caminhosDoKit()`, que viajam; CT-43 lê `resources/js` e `package.json`, que viajam | G3, G4, G1 |
 | **Ambiente do processo vaza para o subprocesso** | Setup Global G2 (env filtrado); sem isso CT-11 linha ausente e CT-33 medem o `.env` do desenvolvedor | G2 |
 | Asserção de ausência sobre arquivo comentado | CT-02, CT-03, CT-13, CT-19, CT-23, CT-35, CT-43 rodam a ausência sem comentário; presença no texto cru | G1 |
-| **Default intocado medido inteiro** (não por amostra de chaves) | CT-34 (golden), CT-06 (diff profundo) | G2 |
+| **Default intocado medido inteiro** (não por amostra de chaves) | CT-34 (golden do JSON inteiro, todos os profiles), CT-06 (diff profundo) | G2 |
+| **Golden que se certifica sozinho** | CT-34: o fixture nasce de `v0.44.0` pela sessão, nunca da árvore da branch (P-17) | G2 |
+| **`skip` silencioso no CI** (suíte verde porque pulou) | CT-46 (canário: com `CI=true`, CLI ausente reprova) | G2 |
+| **Âncora presente com sentido invertido** (negação na prosa) | CT-41, CT-42 (mesma frase, sem negação nas 3 palavras antes) | G4 |
+| **Oráculo que o próprio teste interpola** | CT-16 lê a regra interpolada pelo Compose, não pelo teste | G2 |
 | Prova de ponta a ponta com Traefik real | lacuna declarada L1 | G2 |
 
 ## Índice de Cenários
@@ -1148,64 +1325,68 @@ Estouro do teto (padrão: 5): M124, M125 — revisão adversarial (ADV-31).
 |----|---------|-------|---------|-------|---------|---------|------|
 | CT-01 | exemplo em docker/traefik não é carregado | R1 | EP | G2 | Pest feature HTTP | `tests/Kit/DeployMultiambienteDockerTest.php` | M1 |
 | CT-02 | arquivos-base sem Traefik nas linhas ativas | R1 | EP | G1 | Pest feature HTTP | idem | M2, M3, M4 |
-| CT-03 | script chama o Compose sem fixar arquivo, projeto nem env-file | R1 | EP | G1 | Pest feature HTTP | idem | M5, M89, M90 |
+| CT-03 | script chama o Compose sem fixar arquivo, projeto, diretório nem env-file | R1 | EP | G1 | Pest feature HTTP | idem | M5, M89, M90, M133 |
 | CT-04 | git ignora a cópia ativa e versiona o exemplo | R2 | EP | G3 | Pest feature HTTP | idem | M6, M7, M8, M91 |
-| CT-05 | exemplo nas duas listas de entrega | R2 | EP | G1 | Pest feature HTTP | idem | M9, M10 |
+| CT-05 | exemplo nas duas listas de entrega | R2 | EP | G1 | Pest feature HTTP | idem | M9, M10, M137 |
 | CT-06 | diff profundo da config restrito ao Traefik e ao build | R3 | rastreio de efeito | G2 | Pest feature HTTP | idem | M11, M12, M13, M15, M16, M93 |
 | CT-07 | serviços do exemplo existem no base | R3 | contrato | G1 | Pest feature HTTP | idem | M12, M14 |
 | CT-08 | rede externa do .env, default my-network | R4 | EP | G2 | Pest feature HTTP | idem | M17, M18, M19, M94 |
 | CT-09 | só o nginx na rede externa | R4 | EP | G2 | Pest feature HTTP | idem | M20 |
-| CT-10 | labels do router e do service | R5 | EP | G2 | Pest feature HTTP | idem | M21, M22, M23, M24 |
+| CT-10 | labels do router e do service, conjunto fechado | R5 | EP | G2 | Pest feature HTTP | idem | M21, M22, M23, M24, M138 |
 | CT-11 | objetos do Traefik com o nome do projeto e valores certos | R6 | EP | G2 | Pest feature HTTP | idem | M25, M26, M96, M97, M98 |
 | CT-12 | sem TRAEFIK_HOST (ou vazia) o Compose recusa | R6 | estado de erro | G2 | Pest feature HTTP | idem | M27, M95 |
 | CT-13 | exemplo não fixa hostname | R6 | EP | G1 | Pest feature HTTP | idem | M28 |
 | CT-14 | Reverb segue na rota por porta | R7 | EP | G2 | Pest feature HTTP | idem | M29 |
 | CT-15 | bloco comentado do Reverb completo | R7 | EP + regex | G1 | Pest feature HTTP | idem | M30, M31, M33, M99 |
-| CT-16 | regra do Reverb recorta pela chave e não captura painel | R7 | invariante + regex | G1 | Pest feature HTTP | idem | M32, M99, M100 |
+| CT-16 | regra do Reverb, interpolada pelo Compose, recorta pela chave e não captura painel | R7 | invariante + regex | G2 | Pest feature HTTP | idem | M32, M99, M100, M142 |
 | CT-17 | ARG no estágio assets antes do build | R8 | contrato estático | G1 | Pest feature HTTP | idem | M34, M35, M36, M38 |
-| CT-18 | todo serviço com build recebe os args | R8 | contrato | G2 | Pest feature HTTP | idem | M37, M38 |
-| CT-19 | sem build-arg nada de VITE_REVERB_* | R9 | EP | G1 | Pest feature HTTP | idem | M39, M40, M41, M102, M103 |
-| CT-20 | interpretação de TRUSTED_PROXIES | R10 | EP exaustiva | G5 | unit de regra | `tests/Kit/ProxiesConfiaveisTest.php` | M42…M47, M104…M108 |
-| CT-21 | proxy não confiável é ignorado | R11 | tabela de decisão | G6 | Pest feature HTTP | `tests/Kit/ProxiesConfiaveisTest.php` | M48, M49, M50, M107, M108, M109, M110, M111 |
-| CT-22 | proxy confiável é honrado | R12 | tabela de decisão | G6 | Pest feature HTTP | idem | M51, M52, M53, M54, M110, M112 |
+| CT-18 | com os quatro no .env, todo serviço com build recebe os args | R8 | contrato | G2 | Pest feature HTTP | idem | M37, M38 |
+| CT-19 | sem build-arg nada de VITE_REVERB_* | R9 | EP | G1 | Pest feature HTTP | idem | M39, M40, M41, M102, M103, M145, M146 |
+| CT-20 | interpretação de TRUSTED_PROXIES | R10 | EP exaustiva | G5 | unit de regra | `tests/Kit/ProxiesConfiaveisTest.php` | M42…M47, M104…M108, M147…M149, M152 |
+| CT-21 | proxy não confiável é ignorado | R11 | tabela de decisão | G6 | Pest feature HTTP | `tests/Kit/ProxiesConfiaveisTest.php` | M48, M49, M50, M107, M108, M109, M111, M150, M151, M152 |
+| CT-22 | proxy confiável é honrado | R12 | tabela de decisão | G6 | Pest feature HTTP | idem | M51, M52, M53, M54, M110, M112, M153 |
 | CT-23 | chave nova só como linha comentada | R13 | EP arquivo × chave | G1 | Pest feature HTTP | `tests/Kit/DeployMultiambienteDockerTest.php` | M55, M56, M58, M113, M114, M115 |
 | CT-24 | .env.docker oferece o que o exemplo consome | R13 | contrato | G1 | Pest feature HTTP | idem | M57, M58 |
-| CT-25 | bloco do .env.docker não colide porta | R13 | contrato | G2 | Pest feature HTTP | idem | M59 |
+| CT-25 | bloco do .env.docker não colide porta | R13 | contrato | G2 | Pest feature HTTP | idem | M59, M154 |
 | CT-26 | três ambientes não colidem | R14 | valor literal | G2 | Pest feature HTTP | idem | M60, M61, M62, M117 |
 | CT-27 | página alcançável nos dois idiomas | R15 | EP por idioma | G4 | Pest feature HTTP | idem | M63, M64, M65 |
 | CT-28 | CHANGELOG registra | R15 | EP | G4 | Pest feature HTTP | idem | M66 |
-| CT-29 | âncoras do procedimento | R16 | EP por âncora | G4 | Pest feature HTTP | idem | M67…M70, M118 |
-| CT-30 | matriz, build e rotas do Reverb | R17 | valor literal | G4 | Pest feature HTTP | idem | M71…M74, M120, M121 |
-| CT-31 | opções A–D e armadilhas | R18 | EP por âncora | G4 | Pest feature HTTP | idem | M75…M78, M124, M125 |
+| CT-29 | âncoras do procedimento | R16 | EP por âncora | G4 | Pest feature HTTP | idem | M67…M70, M118, M155 |
+| CT-30 | matriz, build e rotas do Reverb | R17 | valor literal | G4 | Pest feature HTTP | idem | M71…M74, M120, M121, M158 |
+| CT-31 | opções A–D e armadilhas | R18 | EP por âncora | G4 | Pest feature HTTP | idem | M75…M78, M124, M125, M161…M163 |
 | CT-32 | espelho pt/en | R19 | contrato | G4 | Pest feature HTTP | idem | M79…M82 |
 | CT-33 | sem override, nenhum serviço recebe TRUSTED_PROXIES | R1 | EP | G2 | Pest feature HTTP | `tests/Kit/DeployMultiambienteDockerTest.php` | M83 |
-| CT-34 | config efetiva do base = golden versionado | R1 | golden | G2 | Pest feature HTTP | idem | M3, M84, M85 |
-| CT-35 | nginx.conf sem diretiva de proxy | R1 | EP | G1 | Pest feature HTTP | idem | M86 |
-| CT-36 | um arquivo de Compose na raiz, `env_file: .env` literal | R1 | EP | G1 | Pest feature HTTP | idem | M1, M87, M88 |
-| CT-37 | kit:update não toca a cópia ativa | R2 | EP | G1 | Pest feature HTTP | idem | M92 |
+| CT-34 | config efetiva do base, inteira, = golden de `v0.44.0` | R1 | golden | G2 | Pest feature HTTP | idem | M3, M84, M85, M129…M132 |
+| CT-35 | nginx.conf sem diretiva de proxy | R1 | EP | G1 | Pest feature HTTP | idem | M86, M134 |
+| CT-36 | um arquivo de Compose na raiz, `env_file: .env` literal, nenhum `*infra*.y*ml` | R1 | EP | G1 | Pest feature HTTP | idem | M1, M87, M88, M135 |
+| CT-37 | kit:update não toca a cópia ativa | R2 | EP | G1 | Pest feature HTTP | idem | M92, M137 |
 | CT-38 | base sozinho sem build.args VITE_REVERB_* | R9 | EP | G2 | Pest feature HTTP | idem | M101 |
 | CT-39 | .env.docker verbatim não liga o Traefik | R13 | EP | G2 | Pest feature HTTP | idem | M113 |
 | CT-40 | FORWARD_* em loopback publicam só em 127.0.0.1 | R13 | contrato | G2 | Pest feature HTTP | idem | M116 |
-| CT-41 | aviso de config:cache na página | R16 | EP por âncora | G4 | Pest feature HTTP | idem | M119 |
-| CT-42 | matriz com as quatro portas obrigatórias e distintas | R17 | EP por âncora | G4 | Pest feature HTTP | idem | M122, M123 |
-| CT-43 | bundle do kit sem Echo | R20 | EP por arquivo | G1 | Pest feature HTTP | idem | M126, M127 |
-| CT-44 | bloco do Reverb descomentado entre os marcadores produz configuração válida | R7 | EP (rota ativa) + execução real | G2 | Pest feature HTTP | `tests/Kit/DeployMultiambienteDockerTest.php` | M128 |
+| CT-41 | aviso de config:cache na página | R16 | EP por âncora | G4 | Pest feature HTTP | idem | M119, M156 |
+| CT-42 | matriz com as quatro portas obrigatórias, distintas e em loopback | R17 | EP por âncora | G4 | Pest feature HTTP | idem | M122, M123, M159, M160 |
+| CT-43 | bundle do kit sem Echo | R20 | EP por arquivo | G1 | Pest feature HTTP | idem | M126, M127, M164 |
+| CT-44 | bloco do Reverb descomentado liga a rota, e só com chave e id | R7 | EP (rota ativa) + estado de erro + execução real | G2 | Pest feature HTTP | `tests/Kit/DeployMultiambienteDockerTest.php` | M128, M139, M140, M141 |
+| CT-45 | com o override, build.args só com as VITE_REVERB_* definidas | R9 | EP (ausente × definida) | G2 | Pest feature HTTP | idem | M143, M144 |
+| CT-46 | canário: no CI, CLI do Compose ausente reprova | R1 | canário | G2 | Pest feature HTTP | idem | M136 |
+| CT-47 | seção do Traefik avisa nome de serviço global | R16 | EP por âncora | G4 | Pest feature HTTP | idem | M157 |
 
 ## Cogitado e cortado
 
 | Cenário cogitado | Por que foi cortado |
 |---|---|
 | "a chamada a `trustProxies()` vem antes do `append(RaizDeUrlSemPublic)`" (leitura do `bootstrap/app.php`) | não mata mutante observável: a ordem do stack global já é afirmada por CT-13 de `UrlSemPrefixoPublicTest` |
-| snapshot `git show <tag>:docker-compose.yml` = arquivo atual | substituído pelo golden de **configuração efetiva** (CT-34): o snapshot de texto expira em toda mudança de comentário; o golden só expira quando o efeito muda, e regenerá-lo é ato deliberado |
+| snapshot `git show <tag>:docker-compose.yml` = arquivo atual | substituído pelo golden de **configuração efetiva** (CT-34): o snapshot de texto expira em toda mudança de comentário; o golden só expira quando o efeito muda, e regenerá-lo é ato deliberado. A tag continua sendo a **procedência** do golden (P-17) |
+| re-gerar no teste a configuração de `git show v0.44.0:docker-compose.yml` e compará-la à do momento | exige `git` e a tag no checkout (fora da árvore do kit, `skip`) e dobraria o tempo de G2; a procedência fica no fixture versionado, no docblock e no `CHANGELOG.md` (P-17) |
+| alias único para o `app` (ou `fastcgi_pass` pelo nome do container) contra a colisão de DNS na rede compartilhada | muda o `nginx.conf`, que RQ-09 manda não mudar; Q12 recomenda documentar e perguntar ao DevOps (P-14, CT-47) |
 | `docker build --target assets` com probe do ambiente do `RUN`, na suíte | exige daemon e uma linha de probe no Dockerfile; o mecanismo foi medido uma vez pela sessão (P-12) e a suíte cobre por leitura (CT-19) — lacuna L2 |
 | `config:cache` fora do Docker com `TRUSTED_PROXIES` só no `.env` (runtime) | exige processo PHP separado com configuração em cache; decisão da sessão: documentar (P-13, CT-41) e declarar L9 |
-| `TRUSTED_PROXIES=REMOTE_ADDR` sozinho | o `00` e a decisão da sessão (ADV-20) fixam `REMOTE_ADDR` só **dentro de lista**; sozinho fica sem cenário até a sessão decidir (ver retorno) |
 | CT-B de qualquer natureza | ver `## Sem CT-B` |
 
 ## Costuras — notas para quem confirmar
 
 - G6 precisa de **medição** antes de confirmar: (a) se o `HttpKernel` é resolvido de novo depois de `forgetInstance` e o `afterResolving` de `withMiddleware` roda outra vez no `get()`; (b) se não, `refreshApplication()` com a rota sem banco. Se nenhuma das duas medir, abre-se lacuna e R11/R12 caem para leitura do `bootstrap/app.php` + CT-20 — **piora declarada**, porque a leitura não prova o efeito em `isSecure()`.
-- G2 roda no CI (`ubuntu-latest` tem o plugin) e no Windows local (Compose v5.5.1). A interpolação de label em lista foi medida só na v5.5.1; se o CI divergir, CT-11 é o primeiro a acusar. O golden de CT-34 é gerado **numa** versão do Compose: se a do CI serializar o JSON de outro jeito (ex.: `ports[].published` como número × string), o caso normaliza o tipo antes de comparar, e o motivo fica no docblock.
+- G2 roda no CI (`ubuntu-latest` tem o plugin) e no Windows local (Compose v5.5.1). A interpolação de label em lista foi medida só na v5.5.1; se o CI divergir, CT-11 é o primeiro a acusar. O golden de CT-34 é gerado **numa** versão do Compose (v5.5.1): se a do CI serializar o JSON de outro jeito (ex.: `ports[].published` como número × string), o caso **falha** — a normalização é só a do prefixo da pasta temporária (P-17). Normalizar o tipo ou regenerar o fixture é decisão da sessão, com linha no `CHANGELOG.md`.
 
 ## Fechamento com mutation testing
 
@@ -1219,11 +1400,13 @@ Estouro do teto (padrão: 5): M124, M125 — revisão adversarial (ADV-31).
 | L1 | Traefik real roteando `Host` → `nginx:80` com TLS | exige daemon, container do Traefik, DNS e certificado; `docker compose config` prova o contrato, não o roteamento. Fica para a validação manual do quality gate | R4–R7 |
 | L2 | prova **recorrente** em runtime de que, sem build-arg, nenhuma `VITE_REVERB_*` existe no ambiente do `npm run build` | medido uma vez pela sessão com `docker build --progress=plain` (P-12); na suíte, `docker run <imagem> env` não vê ARG e provar o `RUN` exige probe no Dockerfile. CT-19 e CT-38 cobrem por leitura e configuração | R9 |
 | L4 | P-08 em runtime: health check do script com `FORWARD_APP_PORT=127.0.0.1:…` respondendo | exige daemon e stack de pé; CT-03 prova estaticamente que a porta vem de `docker compose --profile app port nginx 80` e não de `${FORWARD_APP_PORT` | R1 |
-| L7 | `TRUSTED_PROXIES=*` ao lado de porta do nginx publicada em `0.0.0.0` | Q11 registrada no `00` e implementada pela direção que falha fechado (a página recomenda `*` só com a porta em `127.0.0.1`); nenhum achado da revisão pediu âncora de página para ela | R12 |
 | L9 | `config:cache` fora do Docker: com a configuração em cache, `TRUSTED_PROXIES` só no `.env` não é lida | decisão da sessão (ADV-19): documentar como P-13 e afirmar o aviso na página (CT-41); o runtime exige processo PHP separado com cache e fica sem CT | R11, R16 |
+| L10 | resolução de `app:9000` quando outro projeto do servidor tem container `app` (ou `reverb`) na rede compartilhada do Traefik (P-14, Q12) | exige daemon, dois projetos na mesma rede externa e o `nginx` resolvendo o nome; a entrega documenta e manda confirmar com o DevOps (CT-47), e só o `nginx` entra na rede (CT-09) | R4, R16 |
 
-L5 (recorte do Reverb, agora P-10 com CT-15/CT-16), L6 ("opcional" da matriz, agora P-09 com CT-42) e
-L8 (revisão adversarial, feita) foram **retiradas** nesta revisão; os números não são reaproveitados.
+**Retiradas** (os números não são reaproveitados): L3 (bloco do Reverb descomentado, agora CT-44 —
+Q10/D6), L5 (recorte do Reverb, agora P-10 com CT-15/CT-16), L6 ("opcional" da matriz, agora P-09
+com CT-42), L7 (`TRUSTED_PROXIES=*` com a porta do nginx em `0.0.0.0`, agora a última linha de
+CT-25 — ADV2-08) e L8 (revisão adversarial, feita).
 
 ## Sem CT-B
 
@@ -1240,14 +1423,18 @@ Todas as perguntas desta derivação já foram levadas pela sessão; nenhuma `Q?
 | Q8 — recorte do Reverb sem capturar `/app` | requisito | `00`; implementada como P-10 (R7, CT-16) |
 | Q9 — `*` dentro de lista | requisito | `00`; implementada como P-11 (R10, R11), estendida pela decisão de ADV-20 a `**`, `REMOTE_ADDR` e `PRIVATE_SUBNETS` |
 | Q10 — delimitadores no bloco do Reverb | desenho | decidida: D6 do `01` (`# >>> reverb-traefik` / `# <<< reverb-traefik`); CT-44 fecha a L3 |
-| Q11 — `TRUSTED_PROXIES=*` com porta aberta | requisito | `00`; a página segue a recomendação (L7) |
+| Q11 — `TRUSTED_PROXIES=*` com porta aberta | requisito | `00`; a página segue a recomendação, e CT-25 a afirma na configuração do bloco do `.env.docker` (ADV2-08; a antiga L7 foi retirada) |
+| Q12 — nome de serviço global na rede compartilhada do Traefik (Q?2 da 2ª rodada adversarial) | requisito | `00`, aberta e não bloqueante; implementada como P-14 (documentar e confirmar com o DevOps; só o `nginx` entra na rede) — CT-47 (R16), CT-09 (R4), lacuna L10 |
 
 ## Revisão Adversarial
 
-1 rodada, `fw-adversario-ct` (entrada: só `00` + este `04` + `wikis/glossario.md`), **36 achados,
-todos fechados**. Destinos: **CT novo** · **oráculo reescrito** (CT existente com asserção nova ou
-reescrita) · **mutante** (linha nova na tabela da regra) · **texto** (rastreabilidade, sem efeito
-em cenário) · **lacuna** (declarada com motivo).
+2 rodadas, `fw-adversario-ct` (entrada: só `00` + este `04` + `wikis/glossario.md`), **36 + 33
+achados, todos fechados**. **Teto de 2 rodadas atingido**: o fechamento da 2ª (este v3) não passa por
+uma 3ª. Destinos: **CT novo** · **oráculo reescrito** (CT existente com asserção nova ou reescrita) ·
+**mutante** (linha nova na tabela da regra) · **texto** (rastreabilidade, sem efeito em cenário) ·
+**lacuna** (declarada com motivo).
+
+### Rodada 1 (`04` v1 → v2)
 
 | ADV | Sev. | Achado (implementação errada que passava, ou falha do conjunto) | Destino |
 |---|---|---|---|
@@ -1287,3 +1474,55 @@ em cenário) · **lacuna** (declarada com motivo).
 | ADV-34 | — | `04` dessincronizado do `00` (P-09…P-12, Q6/Q8/Q11, `@premissa` de R9, L5/L6, cabeçalho) | texto: Mapa de Regras, R7, R9, Lacunas, cabeçalho e esta tabela |
 | ADV-35 | — | health check do script pela `FORWARD_APP_PORT` | oráculo reescrito CT-03 · M90; L4 reescrita |
 | ADV-36 | — | RQ-02 e RQ-03 sem origem em regra | texto: RQ-02 na Origem de R9 e R13; RQ-03 na Origem de R15 |
+
+### Rodada 2 (`04` v2 + CT-44 → v3)
+
+Foco nos CT novos e reescritos da rodada 1. **33 achados** (1 blocker, 5 altos, 10 médios, 16 baixos,
+1 malformado — classificação do despacho no `03`, `## Despachos`) e uma pergunta, Q?2, levada ao `00`
+como **Q12** e implementada como **P-14**. Reabriu quatro fechamentos da rodada 1 (ADV-02, ADV-05,
+ADV-20, ADV-28) e a sincronia do `04` (ADV-34). A sessão reproduziu ADV2-03 (`--profile '*'`),
+ADV2-04 e ADV2-07 (medido: `${VAR:-}` passa `""`, a lista sem valor omite a ausente) e aceitou
+**todos**, com as decisões em P-14…P-17 do `00` e D8/D9 do `01`. A severidade individual abaixo só
+consta onde o despacho a fixou no texto da decisão.
+
+| ADV | Sev. | Achado (implementação errada que passava, ou falha do conjunto) | Destino |
+|---|---|---|---|
+| ADV2-01 | blocker | golden gerado pelo executor a partir da árvore da branch se certifica sozinho; a normalização de "todo path absoluto" escondia bind trocado | oráculo reescrito CT-34 + Setup Global (fixture da sessão, de `v0.44.0`; só o prefixo da pasta temporária normalizado) + P-17 no `00` · M131, M132 |
+| ADV2-02 | alto | CT-34 comparava lista fechada de chaves por serviço (reabre ADV-02) | oráculo reescrito CT-34 (JSON inteiro, diff profundo, nada excluído) · M130 |
+| ADV2-03 | alto | golden só com `--profile app`: serviço de outro profile mudava sem ser visto | oráculo reescrito CT-34 (`--profile '*'`, 12 serviços) · M129 |
+| ADV2-04 | — | `REVERB_APP_KEY`/`REVERB_APP_ID` vazias viram `PathPrefix(/app/)` e roubam o painel | CT-44 vira Esquema (ausente × vazia, por chave, e a linha feliz) + P-16 no `00` · M139, M140 |
+| ADV2-05 | — | tokens sozinhos (`**`, `REMOTE_ADDR`, `PRIVATE_SUBNETS`) e `*,*` sem prova no HTTP (reabre ADV-05 e ADV-20) | oráculo reescrito CT-21 (4 linhas) · M150 |
+| ADV2-06 | — | label a mais com o prefixo do projeto passava pelo CT-11 | oráculo reescrito CT-10 (conjunto fechado das seis chaves `traefik.`) · M138 |
+| ADV2-07 | — | `build.args` com `${VAR:-}` passa `""` ao build e reintroduz a armadilha de P-12 pelo override | CT novo CT-45 (R9) + CT-18 ajustado + P-15 no `00` · M143, M144 |
+| ADV2-08 | — | `TRUSTED_PROXIES=*` sugerido com a porta do nginx em `0.0.0.0` (era a L7) | oráculo reescrito CT-25 · M154; L7 retirada |
+| ADV2-09 | — | confiança ligada por `TRAEFIK_HOST` definida | oráculo reescrito CT-21 (linha com `TRAEFIK_HOST`) · M151 |
+| ADV2-10 | — | token com espaço nas bordas escapa do filtro | oráculo reescrito CT-20 (2 linhas) · M147 |
+| ADV2-11 | — | CT-21 afirmava, sem citar, que nada no kit força esquema ou raiz | texto: nota de CT-21 com `app/Http/Middleware/RaizDeUrlSemPublic.php:forceRootUrl:73` e a condição `/public` |
+| ADV2-12 | — | Echo ligado pela configuração `broadcasting.echo` do Filament, sem `import` no bundle | oráculo reescrito CT-43 (2 linhas) · M164 |
+| ADV2-13 | — | bloco do Reverb põe o reverb só na rede externa | oráculo reescrito CT-44 (redes `default` **e** externa) · M141 |
+| ADV2-14 | — | runner do CI sem o CLI: toda a G2 vira `skip` verde | CT novo CT-46 (canário, R1) + Setup Global · M136 |
+| ADV2-15 | — | "prefixo" por string em CT-05/CT-37 | oráculo reescrito CT-05 e CT-37 (por segmento) · M137 |
+| ADV2-16 | — | bloco de `.env` da página com `APP_URL` local ou `APP_DEBUG=true` | oráculo reescrito CT-31 (2 linhas) · M161, M162 |
+| ADV2-17 | — | âncoras literais do `nginx.conf` (espaço duplo, caixa, hífen) | oráculo reescrito CT-35 (regex) · M134 |
+| ADV2-18 | — | `X-Forwarded-Port` fora dos `headers` | oráculo reescrito CT-22 (coluna porta, linha 8443) · M153 |
+| ADV2-19 | — | `false`, `'10.0.0.1,**'` e `'*,'` sem linha | oráculo reescrito CT-20 (3 linhas; `'*,'` → `null` por decisão da sessão) + blockquote do R10 · M148, M149 |
+| ADV2-20 | — | `COPY . .` ou `RUN --mount` trazem o `.env` ao estágio `assets` | oráculo reescrito CT-19 (2 linhas) · M145, M146 |
+| ADV2-21 | — | bloco do build da página com `VITE_REVERB_HOST=localhost` | oráculo reescrito CT-30 (linha host do Reverb) · M158 |
+| ADV2-22 | — | regex do `cp` sem âncora no fim (`….yml.bak` passava) | oráculo reescrito CT-29 · M155 |
+| ADV2-23 | — | `docker-compose` com hífen, `--project-directory` e `COMPOSE_ENV_FILES` fora da leitura | oráculo reescrito CT-03 · M133 |
+| ADV2-24 | — | achado registrado | sem ação — decisão da sessão |
+| ADV2-25 | — | M110 com CT-21 (linha `true`) como matador: sem `strict_types` no `bootstrap/app.php`, não diverge | texto: M110 corrigido (só CT-22) |
+| ADV2-26 | — | "lista que contém `*` promovida a `'*'`" sem mutante | mutante M152 (CT-21 linha `10.9.9.9,*`; CT-20 linha `10.0.0.1,*`) |
+| ADV2-27 | — | CT-16 interpolava a regra no próprio teste (reabre ADV-28 no espírito: o oráculo não era o efeito) | oráculo reescrito CT-16 (regra interpolada pelo Compose, G2, uma execução por linha) · M142 |
+| ADV2-28 | — | âncoras de seção aceitavam frase negada; "seção da matriz" indefinida | oráculo reescrito CT-41 e CT-42 (mesma frase, sem negação nas 3 palavras antes; seção da matriz definida) · M156, M159 |
+| ADV2-29 | — | recorte do estágio pelo literal da imagem | oráculo reescrito CT-17 (`^FROM\s+\S+\s+AS\s+assets$`) |
+| ADV2-30 | — | `Quando` do CT-34 com duas ações (executar e normalizar) | texto: `Quando` só com a execução; normalização no `Então` |
+| ADV2-31 | — | seção da matriz podia repetir a nota ¹ sem o loopback | oráculo reescrito CT-42 (`127.0.0.1` e `Traefik` na mesma frase) · M160; RQ-16 no `00` fechada com a releitura por P-09 |
+| ADV2-32 | — | Opção D sem receita; arquivo de infra entregue pelo kit | oráculo reescrito CT-31 (linha receita da D) e CT-36 (`*infra*.y*ml`) · M163, M135 |
+| ADV2-33 / Q?2 | — | DNS do Docker resolve nome de serviço em todas as redes: outro `app` na rede do Traefik recebe o `fastcgi_pass` | Q12 no `00`, implementada como P-14 + CT novo CT-47 (R16) + lacuna L10 · M157 |
+| ADV-34 (reaberto) | — | `04` dessincronizado de novo: contagens do cabeçalho, M128 fora da tabela do R7, segunda linha de regra Gherkin no R7, L3 sem registro | texto: cabeçalho por `grep -c`; M128 na tabela do R7 com o estouro justificado; CT-44 na mesma regra do R7; L3 e L7 nas retiradas; `## Cogitado e cortado` sem a linha de `REMOTE_ADDR` sozinho (agora no blockquote do R10 e em CT-20/CT-21); `## Perguntas` com Q12 |
+
+Ajustes de oráculo vindos do executor depois do v2 (classificados pela sessão como oráculo
+prescritivo demais, não defeito): CT-06 ignora as chaves de topo `x-*` que o `docker compose config`
+(v5.5.1) devolve no JSON; CT-30 aceita, em cada célula da matriz, o prefixo `127.0.0.1:` (P-06/P-09)
+e o marcador de nota `¹`/`²`.
