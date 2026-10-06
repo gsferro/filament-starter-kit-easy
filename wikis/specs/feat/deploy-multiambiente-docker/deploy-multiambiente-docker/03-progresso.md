@@ -51,7 +51,7 @@ Não fatiado — 2026-10-05: 17 RQ vigentes, 32 CT, compactação: sim (antes do
 - [ ] `vendor/bin/pest tests/Kit/DeployMultiambienteDockerTest.php tests/Kit/ProxiesConfiaveisTest.php --compact`
 - [ ] Regressão nomeada (`CacheDeViewsNoDockerTest`, `MysqlNoDockerTest`, `DeployDockerLocalTest`, `UrlSemPrefixoPublicTest`, `DiagramasDaArquiteturaTest`, `SiteDeDocumentacaoTest`, `RedeDeDocumentacaoTest`, `KitUpdateTest`)
 - [ ] Suíte completa Kit+Tenancy contra a baseline (3.912 / 0 falhas / 841 pulados na simulação da v0.44.0)
-- [ ] `pest --mutate --path=app/Support/ProxiesConfiaveis.php` via `pestw.cmd`: score, duração e sobreviventes
+- [x] `pest --mutate --path=app/Support/ProxiesConfiaveis.php` via `pestw.cmd`: score, duração e sobreviventes — `XDEBUG_MODE=coverage MSYS_NO_PATHCONV=1 cmd /c pestw.cmd tests/Kit/ProxiesConfiaveisTest.php --mutate --path=app/Support/ProxiesConfiaveis.php --no-tia` → `27 Mutations`, `4 uncovered` (os `RemoveArrayItem` da linha da constante `CORINGAS`, que não é linha executada), `23 tested`, `Score: 85.19%`, **`Duration: 1.06s`** — duração **implausível** para 23 processos (~46 ms cada; `.ai/rules/testes.md` manda não aceitar), então o score **não é usado como evidência**. Evidência válida: **4 mutantes manuais mortos pela suíte** — `=== '*'`→`!== '*'` (21 falhas de 33), coringas não descartados (9), `PRIVATE_SUBNETS` fora de `CORINGAS` (3 — cobre exatamente o `uncovered` do plugin), `trim` dos itens removido (2); árvore restaurada e 33/33 verdes depois, 2026-10-05
 - [ ] `docker compose --profile app config` com e sem o override, fora da árvore
 - [ ] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação
 - [ ] Desvios propagados ao `01`/`02`/`04` de origem, marcados `*(alterado em …)*`
@@ -60,7 +60,7 @@ Não fatiado — 2026-10-05: 17 RQ vigentes, 32 CT, compactação: sim (antes do
 - [ ] `citacoes.sh {wiki}` silencioso
 - [ ] `ids-ct.sh {wiki} 'tests/Kit/DeployMultiambienteDockerTest.php' 'tests/Kit/ProxiesConfiaveisTest.php'` silencioso
 - [ ] `conformidade-rules.sh {wiki} main` silencioso
-- [ ] Falsificabilidade dos CTs novos: quantos falham sem o fix
+- [x] Falsificabilidade dos CTs novos: quantos falham sem o fix — `ProxiesConfiaveisTest`: com `bootstrap/app.php` da `main` e uma classe-toco que devolve a string crua, **17 de 33 falham** (os 16 que passam são as linhas "ausente/vazio = hoje", que valem nos dois lados por construção); `DeployMultiambienteDockerTest`: com `Dockerfile.laravel`, `.env.docker`, `.gitignore` e `.env.example` da `main` e o override de exemplo removido, **25 casos a mais falham** (96 → 55 verdes de 105; os 9 vermelhos restantes são os de oráculo pendente CT-06/CT-30). Árvore restaurada (`git status --porcelain` vazio), 2026-10-05
 - [ ] Docs pt/en, CHANGELOG e README reconciliados
 - [ ] `node converter.mjs` sem diff residual
 - [ ] `git commit`
