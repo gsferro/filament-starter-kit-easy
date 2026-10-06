@@ -48,6 +48,10 @@
 | P-10 | rota do Reverb recorta por `/app/<chave>` e `/apps/<id>` | 3, 5 | — |
 | P-11 | `*` só vale sozinho | 1 | — |
 | P-12 | `ARG` sem default e sem `ENV` | 2 | — |
+| P-14 | só o `nginx` na rede do Traefik; aviso de DNS na página | 3, 5 | — |
+| P-15 | `build.args` em lista sem valor | 3 | — |
+| P-16 | `REVERB_APP_KEY`/`REVERB_APP_ID` com `:?` | 3 | — |
+| P-17 | golden do base a partir da `v0.44.0`, todos os profiles | 6 | — |
 | P-08 | `deploy_docker_local.sh` não muda | 5 | o CT do `04` prova que o script continua lendo a porta publicada pelo Docker |
 
 ## Objetivo
@@ -177,6 +181,8 @@ Cinco fatos do código atual sustentam o plano, todos lidos e medidos — não s
 | D3 | A leitura de `TRUSTED_PROXIES` sai de `bootstrap/app.php` para `App\Support\ProxiesConfiaveis::doEnv()`: lista por vírgula, `*`, vazio e ausente têm teste unitário; o bootstrap fica com uma linha | Q5 (desenho) | trade-off real (uma classe para quatro casos) | sessão — 2026-10-05 |
 | D4 | O bloco do Reverb pelo Traefik vai **comentado** no exemplo, no mesmo hostname com `PathPrefix(/app)` e `PathPrefix(/apps)` e service na 8090; descomentar é a adesão. A rota por porta própria é o `FORWARD_REVERB_PORT` que já existe | Q2 (requisito, aberta) | surpreendente | sessão, pela recomendação da Q2 — 2026-10-05 |
 | D6 | O bloco comentado do Reverb no exemplo fica entre `# >>> reverb-traefik` e `# <<< reverb-traefik`, para o teste descomentá-lo mecanicamente e rodar `docker compose config` (fecha a lacuna L3 do `04`) e para orientar quem descomenta à mão | Q10 (desenho) | surpreendente | sessão, pela recomendação — 2026-10-05 |
+| D8 | A página avisa, na seção do Traefik, que nome de serviço é global na rede compartilhada (outro `app`/`reverb` na `my-network` desvia o `fastcgi_pass`) e manda confirmar com o DevOps; o `nginx.conf` não muda | Q12 (requisito, aberta) | surpreendente | sessão, pela recomendação — 2026-10-05 |
+| D9 | O golden `tests/Kit/fixtures/compose-base.json` nasce de `git show v0.44.0:docker-compose.yml`, com `--profile '*'`, comparado inteiro (só o prefixo da pasta temporária é normalizado); regenerar é passo deliberado com linha no CHANGELOG | ADV2-01..03 | trade-off | sessão — 2026-10-05 |
 | D7 | A página recomenda `TRUSTED_PROXIES=*` **só** com a porta do nginx em `127.0.0.1`, na mesma seção, e a sub-rede do Traefik como alternativa quando a porta sai para fora | Q11 (requisito, aberta) | surpreendente | sessão, pela recomendação — 2026-10-05 |
 | D5 | Nenhum channel de log: o único código PHP novo roda no bootstrap, antes de o container de log existir, e é parsing puro de uma string; o comportamento é provado por teste, não por log | — | — | sessão — 2026-10-05 |
 
@@ -351,13 +357,15 @@ logam pelo Laravel.
 - Cabeçalho em comentário: o que é, como ligar (`cp docker/traefik/docker-compose.override.yml .`),
   as chaves que lê, o que **não** muda (o base), e que o Compose carrega o arquivo da raiz
   sozinho — sem `-f`, inclusive pelo `deploy_docker_local.sh`.
-- Âncora YAML com os quatro `build.args`:
+- Âncora YAML com os quatro `build.args`, em **lista sem valor** *(alterado em 2026-10-05: era mapa
+  `${VAR:-}`; a 2ª rodada adversarial (ADV2-07) mostrou que `:-` passa string vazia e reintroduz a
+  armadilha de P-12; medido: em lista, o Compose pega do `.env` e omite a ausente — P-15)*:
   ```yaml
   x-vite-args: &vite-args
-    VITE_REVERB_HOST: ${VITE_REVERB_HOST:-}
-    VITE_REVERB_PORT: ${VITE_REVERB_PORT:-}
-    VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-}
-    VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY:-}
+    - VITE_REVERB_HOST
+    - VITE_REVERB_PORT
+    - VITE_REVERB_SCHEME
+    - VITE_REVERB_APP_KEY
   ```
   aplicada em `app`, `nginx`, `queue`, `scheduler`, `reverb` e `pulse` (`build: { args: *vite-args }`)
   — os seis que fazem `build:`; todos recebem os mesmos args para a imagem ser **uma** (camadas
@@ -381,7 +389,7 @@ logam pelo Laravel.
 - `reverb`: bloco **comentado** (D4), entre os delimitadores `# >>> reverb-traefik` e
   `# <<< reverb-traefik` (D6), com `networks` + labels do router
   `${COMPOSE_PROJECT_NAME:-starter-kit}-reverb`, regra
-  ``Host(`${TRAEFIK_HOST}`) && (PathPrefix(`/app/${REVERB_APP_KEY:-starter-kit-key}`) || PathPrefix(`/apps/${REVERB_APP_ID:-starter-kit}`))``,
+  ``Host(`${TRAEFIK_HOST}`) && (PathPrefix(`/app/${REVERB_APP_KEY:?…}`) || PathPrefix(`/apps/${REVERB_APP_ID:?…}`))`` *(as duas com `:?` — P-16, ADV2-04: vazia, a regra viraria `/app/`)*,
   mesmo entrypoint, `tls=true`, service na porta 8090 — o WebSocket em `/app/{chave}` e a API em
   `/apps/{id}`, que a doc do Reverb manda servir. *(alterado em 2026-10-05: era `PathPrefix(/app)`,
   que captura o painel `/app` do kit pela prioridade de regra mais longa — Q8/P-10, CT-16)* Comentário

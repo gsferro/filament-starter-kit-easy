@@ -52,6 +52,31 @@ kit's example already carries and that are usually forgotten:
   is a 504.
 - **Router and service names are global** in Traefik: they must be unique per environment. The
   example uses the `COMPOSE_PROJECT_NAME` itself, so uniqueness comes for free with the project name.
+- **Service names are global on the shared network too.** Docker's DNS resolves `app` for nginx
+  across **every** network it is attached to; if another project on the server has a container
+  named `app` or `reverb` on the same `my-network`, the kit's `fastcgi_pass app:9000` may land on
+  the wrong project. Confirm with whoever runs Traefik that the network has no other service with
+  those names — and only the kit's `nginx` joins it, never `app`.
+
+This is what the example override declares (with `projeto-dev` and `dev.example.org` coming from the `.env`):
+
+```yaml
+nginx:
+  networks:
+    - default        # keeps talking to app:9000
+    - traefik        # Traefik's network (real name in TRAEFIK_REDE)
+  labels:
+    - traefik.enable=true
+    - traefik.docker.network=my-network
+    - traefik.http.routers.projeto-dev.rule=Host(`dev.example.org`)
+    - traefik.http.routers.projeto-dev.entrypoints=websecure
+    - traefik.http.routers.projeto-dev.tls=true
+    - traefik.http.services.projeto-dev.loadbalancer.server.port=80
+networks:
+  traefik:
+    external: true
+    name: my-network
+```
 
 ## Enabling it on a server, step by step
 
@@ -134,8 +159,8 @@ reaches the container. A matrix that works:
 | `FORWARD_REVERB_PORT` | 8190¹ | 8191¹ | 8192¹ |
 
 ¹ With Reverb through Traefik (next section) it can also go to `127.0.0.1:`; outside it, it is the
-port the browser uses and stays open. Either way the default `8090` collides with the port the matrix
-reserved for dev's app — hence the offsets.
+port the browser uses and stays open. Either way the default `FORWARD_REVERB_PORT=8090` collides with
+the port 8090 the matrix reserved for dev's app — hence the offsets.
 
 The original survey marked the first three as "optional"; in the kit they are not, because the base
 file always publishes them. Leaving one undefined is the mistake that keeps the second environment
@@ -160,9 +185,28 @@ The WebSocket can take two paths, and the choice belongs to the server, not to t
   VITE_REVERB_PORT=443
   VITE_REVERB_SCHEME=https
   ```
-- **Its own port on the host**: uncomment nothing and use `FORWARD_REVERB_PORT` with the matrix offset.
 
-## One checkout per environment
+  What the block enables, already interpolated:
+
+  ```yaml
+  reverb:
+    networks: [default, traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=my-network
+      - traefik.http.routers.projeto-dev-reverb.rule=Host(`dev.example.org`) && (PathPrefix(`/app/starter-kit-key`) || PathPrefix(`/apps/starter-kit`))
+      - traefik.http.routers.projeto-dev-reverb.entrypoints=websecure
+      - traefik.http.routers.projeto-dev-reverb.tls=true
+      - traefik.http.services.projeto-dev-reverb.loadbalancer.server.port=8090
+  ```
+- **Its own port on the host**: uncomment nothing and use `FORWARD_REVERB_PORT` with the matrix
+  offset — it is the port the browser connects to, so it stays open outward:
+
+  ```ini
+  FORWARD_REVERB_PORT=8190
+  ```
+
+## One checkout per environment (Option A)
 
 This is the recommended layout: each environment is a folder, on a branch, with its own `.env`
 and its own copy of the override.
@@ -173,44 +217,98 @@ and its own copy of the override.
 /srv/projeto-homol   → release branch,  .env with COMPOSE_PROJECT_NAME=projeto-homol
 ```
 
-Updating an environment is the usual flow, in its folder — `./deploy_docker_local.sh`
-does `git pull`, rebuild, `up`, migrations and health check, and reads the port published by Docker
-itself, so it works with the `127.0.0.1` bind:
+The three `.env` files, in what differs between them (the rest — an `APP_KEY` generated in each,
+`TRUSTED_PROXIES=*`, database, cache — has the same shape):
+
+```ini
+# /srv/projeto-dev/.env
+COMPOSE_PROJECT_NAME=projeto-dev
+TRAEFIK_HOST=dev.example.org
+APP_URL=https://dev.example.org
+FORWARD_APP_PORT=127.0.0.1:8090
+FORWARD_DB_PORT=127.0.0.1:5433
+FORWARD_REDIS_PORT=127.0.0.1:6380
+FORWARD_REVERB_PORT=8190
+```
+
+```ini
+# /srv/projeto-teste/.env
+COMPOSE_PROJECT_NAME=projeto-teste
+TRAEFIK_HOST=test.example.org
+APP_URL=https://test.example.org
+APP_DEBUG=false
+FORWARD_APP_PORT=127.0.0.1:9090
+FORWARD_DB_PORT=127.0.0.1:5434
+FORWARD_REDIS_PORT=127.0.0.1:6381
+FORWARD_REVERB_PORT=8191
+```
+
+```ini
+# /srv/projeto-homol/.env
+COMPOSE_PROJECT_NAME=projeto-homol
+TRAEFIK_HOST=staging.example.org
+APP_URL=https://staging.example.org
+APP_DEBUG=false
+FORWARD_APP_PORT=127.0.0.1:8080
+FORWARD_DB_PORT=127.0.0.1:5435
+FORWARD_REDIS_PORT=127.0.0.1:6382
+FORWARD_REVERB_PORT=8192
+```
+
+Updating an environment is the usual flow, in its folder: `git pull` then rebuild, in that order —
+the image is self-contained, and rebuilding before the pull bakes the old code again.
 
 ```bash
 cd /srv/projeto-dev
-./deploy_docker_local.sh            # or: git pull && docker compose --profile app up -d --build
+git pull
+docker compose --profile app up -d --build
 docker compose ps                   # only this environment's containers
 docker compose logs -f app
 ```
+
+Or all at once with `./deploy_docker_local.sh`, which does the pull, the rebuild, the `up`, the
+migrations and the health check — and reads the port published by Docker itself, so it works with
+the `127.0.0.1` bind.
 
 **Pros**: independent branches, `.env` per folder, zero changes to the compose file, `restart:
 unless-stopped` survives a reboot. **Cons**: three images on disk and three Postgres/Redis pairs in
 memory — acceptable for database and cache, which are cheap; for what is expensive, see Option D.
 
-## The other options, and why not
+## The other options (B, C and D), and why not
 
-- **A single checkout with `-p` and `--env-file`** — `docker compose -p projeto-dev --env-file
-  .env.dev up`. Two conflicts with the kit's compose file: `env_file: .env` and the bind
-  `./.env:/var/www/.env` are fixed, and `--env-file` only changes interpolation, not those two.
-  Besides, one checkout is one branch: the three environments would run the **same code**. Discarded.
-- **One override file per environment** (`docker-compose.dev.yml`… with `-f`) — since everything is
-  already an `.env` variable, you gain one more file per environment and nothing over the layout
-  above. Discarded.
-- **Shared infrastructure** (Option D) — one environment hosts what is expensive and the others
-  point at it. Worth it for **llama.cpp** (~8 GB of RAM per instance) and for **Mailpit**; not for
-  Postgres and Redis, which are cheap and whose full isolation is what makes a `migrate:fresh` in
-  dev harmless for staging. The recipe goes in the override of the environment that does **not**
-  host, overriding the keys the base compose file fixes:
+### Option B — a single checkout with `-p` and `--env-file`
 
-  ```yaml
-  services:
-    app:   { environment: { LLAMACPP_URL: 'http://projeto-dev-llamacpp-1:8080/v1' } }
-    queue: { environment: { LLAMACPP_URL: 'http://projeto-dev-llamacpp-1:8080/v1' } }
-  ```
+`docker compose -p projeto-dev --env-file .env.dev up`. Two conflicts with the kit's compose file:
+`env_file: .env` and the bind `./.env:/var/www/.env` are fixed, and `--env-file` only changes
+interpolation, not those two. Besides, one checkout is one branch: the three environments would run
+the **same code**. Discarded.
 
-  with both environments on a common network (Traefik's will do) and `--profile ai` enabled only
-  on the one that hosts.
+### Option C — one override file per environment
+
+`docker-compose.dev.yml`… combined with `-f`. Since everything is already an `.env` variable, you
+gain one more file per environment and nothing over the layout above. Discarded.
+
+### Option D — shared infrastructure
+
+One environment hosts what is expensive and the others point at it. Worth it for **llama.cpp**
+(~8 GB of RAM per instance) and for **Mailpit**, which stay shared; not for `pgsql` and `redis`
+(Postgres and Redis), which are cheap, stay per environment, and whose full isolation is what makes a
+`migrate:fresh` in dev harmless for staging. The
+recipe goes in the override of the environment that does **not** host, overriding the keys the base
+compose file fixes:
+
+```yaml
+services:
+  app:
+    environment:
+      LLAMACPP_URL: 'http://projeto-dev-llamacpp-1:8080/v1'
+  queue:
+    environment:
+      LLAMACPP_URL: 'http://projeto-dev-llamacpp-1:8080/v1'
+```
+
+with both environments on a common network (Traefik's will do) and `--profile ai` enabled only on
+the one that hosts.
 
 ## Pitfalls
 

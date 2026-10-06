@@ -1,0 +1,482 @@
+{
+    "name": "starter-kit",
+    "networks": {
+        "default": {
+            "ipam": [],
+            "name": "starter-kit_default"
+        }
+    },
+    "services": {
+        "app": {
+            "build": {
+                "context": "<raiz>",
+                "dockerfile": "Dockerfile.laravel",
+                "target": "app"
+            },
+            "command": [
+                "sh",
+                "-c",
+                "php artisan view:cache &&\n       php-fpm"
+            ],
+            "depends_on": {
+                "mysql": {
+                    "condition": "service_healthy",
+                    "required": false
+                },
+                "pgsql": {
+                    "condition": "service_healthy",
+                    "required": true
+                },
+                "redis": {
+                    "condition": "service_healthy",
+                    "required": true
+                }
+            },
+            "entrypoint": null,
+            "environment": {
+                "COMPOSE_PROJECT_NAME": "starter-kit",
+                "DB_CONNECTION": "pgsql",
+                "DB_HOST": "pgsql",
+                "LLAMACPP_EMBED_URL": "http://llamacpp-embeddings:8080/v1",
+                "LLAMACPP_URL": "http://llamacpp:8080/v1",
+                "REDIS_HOST": "redis",
+                "REVERB_HOST": "reverb",
+                "REVERB_PORT": "8090",
+                "VITE_REVERB_HOST": "localhost",
+                "VITE_REVERB_PORT": "8090"
+            },
+            "healthcheck": {
+                "interval": "15s",
+                "retries": "5",
+                "start_period": "1m30s",
+                "test": [
+                    "CMD-SHELL",
+                    "pgrep php-fpm || exit 1"
+                ],
+                "timeout": "5s"
+            },
+            "networks": {
+                "default": null
+            },
+            "profiles": [
+                "app"
+            ],
+            "restart": "unless-stopped",
+            "user": "www-data",
+            "volumes": [
+                {
+                    "bind": [],
+                    "source": "<raiz>/.env",
+                    "target": "/var/www/.env",
+                    "type": "bind"
+                },
+                {
+                    "source": "app-storage",
+                    "target": "/var/www/storage",
+                    "type": "volume",
+                    "volume": []
+                }
+            ]
+        },
+        "nginx": {
+            "build": {
+                "context": "<raiz>",
+                "dockerfile": "Dockerfile.laravel",
+                "target": "web"
+            },
+            "command": [
+                "sh",
+                "-c",
+                "chown -R 82:82 /var/www/storage &&\n       ln -sf /var/www/storage/app/public /var/www/public/storage &&\n       nginx -g 'daemon off;'"
+            ],
+            "depends_on": {
+                "app": {
+                    "condition": "service_healthy",
+                    "required": true
+                }
+            },
+            "entrypoint": null,
+            "healthcheck": {
+                "interval": "15s",
+                "retries": "10",
+                "test": [
+                    "CMD-SHELL",
+                    "wget -q -O /dev/null http://127.0.0.1/up"
+                ],
+                "timeout": "5s"
+            },
+            "networks": {
+                "default": null
+            },
+            "ports": [
+                {
+                    "mode": "ingress",
+                    "protocol": "tcp",
+                    "published": "8000",
+                    "target": "80"
+                }
+            ],
+            "profiles": [
+                "app"
+            ],
+            "restart": "unless-stopped",
+            "volumes": [
+                {
+                    "bind": [],
+                    "source": "<raiz>/.env",
+                    "target": "/var/www/.env",
+                    "type": "bind"
+                },
+                {
+                    "source": "app-storage",
+                    "target": "/var/www/storage",
+                    "type": "volume",
+                    "volume": []
+                }
+            ]
+        },
+        "pgsql": {
+            "command": null,
+            "entrypoint": null,
+            "environment": {
+                "POSTGRES_DB": "starter_kit",
+                "POSTGRES_PASSWORD": "secret",
+                "POSTGRES_USER": "starter_kit"
+            },
+            "healthcheck": {
+                "interval": "10s",
+                "retries": "5",
+                "test": [
+                    "CMD-SHELL",
+                    "pg_isready -q -d starter_kit -U starter_kit"
+                ],
+                "timeout": "5s"
+            },
+            "image": "pgvector/pgvector:pg17",
+            "networks": {
+                "default": null
+            },
+            "ports": [
+                {
+                    "mode": "ingress",
+                    "protocol": "tcp",
+                    "published": "5432",
+                    "target": "5432"
+                }
+            ],
+            "restart": "unless-stopped",
+            "volumes": [
+                {
+                    "source": "pgsql-data",
+                    "target": "/var/lib/postgresql/data",
+                    "type": "volume",
+                    "volume": []
+                },
+                {
+                    "bind": [],
+                    "source": "<raiz>/docker/pgsql/init",
+                    "target": "/docker-entrypoint-initdb.d",
+                    "type": "bind"
+                }
+            ]
+        },
+        "pulse": {
+            "build": {
+                "context": "<raiz>",
+                "dockerfile": "Dockerfile.laravel",
+                "target": "app"
+            },
+            "command": [
+                "php",
+                "/var/www/artisan",
+                "pulse:check"
+            ],
+            "depends_on": {
+                "app": {
+                    "condition": "service_started",
+                    "required": false
+                },
+                "mysql": {
+                    "condition": "service_healthy",
+                    "required": false
+                },
+                "pgsql": {
+                    "condition": "service_healthy",
+                    "required": true
+                }
+            },
+            "entrypoint": null,
+            "environment": {
+                "COMPOSE_PROJECT_NAME": "starter-kit",
+                "DB_CONNECTION": "pgsql",
+                "DB_HOST": "pgsql",
+                "REDIS_HOST": "redis"
+            },
+            "networks": {
+                "default": null
+            },
+            "profiles": [
+                "app",
+                "realtime"
+            ],
+            "restart": "unless-stopped",
+            "user": "www-data",
+            "volumes": [
+                {
+                    "bind": [],
+                    "source": "<raiz>/.env",
+                    "target": "/var/www/.env",
+                    "type": "bind"
+                },
+                {
+                    "source": "app-storage",
+                    "target": "/var/www/storage",
+                    "type": "volume",
+                    "volume": []
+                }
+            ]
+        },
+        "queue": {
+            "build": {
+                "context": "<raiz>",
+                "dockerfile": "Dockerfile.laravel",
+                "target": "app"
+            },
+            "command": [
+                "php",
+                "/var/www/artisan",
+                "queue:work",
+                "--queue=ai,ai-post,default",
+                "--tries=3",
+                "--timeout=600",
+                "--max-time=3600"
+            ],
+            "depends_on": {
+                "app": {
+                    "condition": "service_started",
+                    "required": true
+                },
+                "mysql": {
+                    "condition": "service_healthy",
+                    "required": false
+                },
+                "pgsql": {
+                    "condition": "service_healthy",
+                    "required": true
+                },
+                "redis": {
+                    "condition": "service_healthy",
+                    "required": true
+                }
+            },
+            "entrypoint": null,
+            "environment": {
+                "COMPOSE_PROJECT_NAME": "starter-kit",
+                "DB_CONNECTION": "pgsql",
+                "DB_HOST": "pgsql",
+                "LLAMACPP_EMBED_URL": "http://llamacpp-embeddings:8080/v1",
+                "LLAMACPP_URL": "http://llamacpp:8080/v1",
+                "REDIS_HOST": "redis"
+            },
+            "networks": {
+                "default": null
+            },
+            "profiles": [
+                "app"
+            ],
+            "restart": "unless-stopped",
+            "user": "www-data",
+            "volumes": [
+                {
+                    "bind": [],
+                    "source": "<raiz>/.env",
+                    "target": "/var/www/.env",
+                    "type": "bind"
+                },
+                {
+                    "source": "app-storage",
+                    "target": "/var/www/storage",
+                    "type": "volume",
+                    "volume": []
+                }
+            ]
+        },
+        "redis": {
+            "command": [
+                "redis-server",
+                "--maxmemory",
+                "256mb",
+                "--maxmemory-policy",
+                "allkeys-lru",
+                "--appendonly",
+                "no"
+            ],
+            "entrypoint": null,
+            "healthcheck": {
+                "interval": "10s",
+                "retries": "5",
+                "test": [
+                    "CMD",
+                    "redis-cli",
+                    "ping"
+                ],
+                "timeout": "5s"
+            },
+            "image": "redis:7-alpine",
+            "networks": {
+                "default": null
+            },
+            "ports": [
+                {
+                    "mode": "ingress",
+                    "protocol": "tcp",
+                    "published": "6379",
+                    "target": "6379"
+                }
+            ],
+            "restart": "unless-stopped",
+            "volumes": [
+                {
+                    "source": "redis-data",
+                    "target": "/data",
+                    "type": "volume",
+                    "volume": []
+                }
+            ]
+        },
+        "reverb": {
+            "build": {
+                "context": "<raiz>",
+                "dockerfile": "Dockerfile.laravel",
+                "target": "app"
+            },
+            "command": [
+                "php",
+                "/var/www/artisan",
+                "reverb:start"
+            ],
+            "depends_on": {
+                "app": {
+                    "condition": "service_started",
+                    "required": false
+                },
+                "mysql": {
+                    "condition": "service_healthy",
+                    "required": false
+                },
+                "pgsql": {
+                    "condition": "service_healthy",
+                    "required": true
+                }
+            },
+            "entrypoint": null,
+            "environment": {
+                "COMPOSE_PROJECT_NAME": "starter-kit",
+                "DB_CONNECTION": "pgsql",
+                "DB_HOST": "pgsql",
+                "REDIS_HOST": "redis"
+            },
+            "networks": {
+                "default": null
+            },
+            "ports": [
+                {
+                    "mode": "ingress",
+                    "protocol": "tcp",
+                    "published": "8090",
+                    "target": "8090"
+                }
+            ],
+            "profiles": [
+                "app",
+                "realtime"
+            ],
+            "restart": "unless-stopped",
+            "user": "www-data",
+            "volumes": [
+                {
+                    "bind": [],
+                    "source": "<raiz>/.env",
+                    "target": "/var/www/.env",
+                    "type": "bind"
+                },
+                {
+                    "source": "app-storage",
+                    "target": "/var/www/storage",
+                    "type": "volume",
+                    "volume": []
+                }
+            ]
+        },
+        "scheduler": {
+            "build": {
+                "context": "<raiz>",
+                "dockerfile": "Dockerfile.laravel",
+                "target": "app"
+            },
+            "command": [
+                "php",
+                "/var/www/artisan",
+                "schedule:work"
+            ],
+            "depends_on": {
+                "app": {
+                    "condition": "service_started",
+                    "required": true
+                },
+                "mysql": {
+                    "condition": "service_healthy",
+                    "required": false
+                },
+                "pgsql": {
+                    "condition": "service_healthy",
+                    "required": true
+                },
+                "redis": {
+                    "condition": "service_healthy",
+                    "required": true
+                }
+            },
+            "entrypoint": null,
+            "environment": {
+                "COMPOSE_PROJECT_NAME": "starter-kit",
+                "DB_CONNECTION": "pgsql",
+                "DB_HOST": "pgsql",
+                "REDIS_HOST": "redis"
+            },
+            "networks": {
+                "default": null
+            },
+            "profiles": [
+                "app"
+            ],
+            "restart": "unless-stopped",
+            "user": "www-data",
+            "volumes": [
+                {
+                    "bind": [],
+                    "source": "<raiz>/.env",
+                    "target": "/var/www/.env",
+                    "type": "bind"
+                },
+                {
+                    "source": "app-storage",
+                    "target": "/var/www/storage",
+                    "type": "volume",
+                    "volume": []
+                }
+            ]
+        }
+    },
+    "volumes": {
+        "app-storage": {
+            "name": "starter-kit_app-storage"
+        },
+        "pgsql-data": {
+            "name": "starter-kit_pgsql-data"
+        },
+        "redis-data": {
+            "name": "starter-kit_redis-data"
+        }
+    }
+}

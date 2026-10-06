@@ -50,6 +50,31 @@ do kit já traz e que costumam ser esquecidos:
   Traefik), e sem esse label o Traefik pode escolher o IP da rede errada — o sintoma é um 504.
 - **Router e service têm nome global** no Traefik: precisam ser únicos por ambiente. O exemplo
   usa o próprio `COMPOSE_PROJECT_NAME`, então a unicidade vem de graça com o nome do projeto.
+- **Nome de serviço também é global na rede compartilhada.** O DNS do Docker resolve `app`
+  para o nginx em **todas** as redes em que ele está; se outro projeto do servidor tiver um
+  container chamado `app` ou `reverb` na mesma `my-network`, o `fastcgi_pass app:9000` do kit pode
+  cair no projeto errado. Confirme com quem administra o Traefik que a rede não tem outro serviço
+  com esses nomes — e só o `nginx` do kit entra nela, nunca o `app`.
+
+É isto que o override de exemplo declara (com `projeto-dev` e `dev.exemplo.br` vindos do `.env`):
+
+```yaml
+nginx:
+  networks:
+    - default        # continua falando com app:9000
+    - traefik        # a rede do Traefik (nome real em TRAEFIK_REDE)
+  labels:
+    - traefik.enable=true
+    - traefik.docker.network=my-network
+    - traefik.http.routers.projeto-dev.rule=Host(`dev.exemplo.br`)
+    - traefik.http.routers.projeto-dev.entrypoints=websecure
+    - traefik.http.routers.projeto-dev.tls=true
+    - traefik.http.services.projeto-dev.loadbalancer.server.port=80
+networks:
+  traefik:
+    external: true
+    name: my-network
+```
 
 ## Ligar num servidor, passo a passo
 
@@ -131,8 +156,8 @@ alcança o container. Uma matriz que funciona:
 | `FORWARD_REVERB_PORT` | 8190¹ | 8191¹ | 8192¹ |
 
 ¹ Com o Reverb pelo Traefik (próxima seção) ela também pode ir para `127.0.0.1:`; fora dele, é a
-porta que o navegador usa e fica aberta. Em qualquer caso o default `8090` colide com a porta que a
-matriz reservou ao app do dev — daí os offsets.
+porta que o navegador usa e fica aberta. Em qualquer caso o default `FORWARD_REVERB_PORT=8090` colide
+com a porta 8090 que a matriz reservou ao app do dev — daí os offsets.
 
 O levantamento original marcava as três primeiras como "opcionais"; no kit elas não são, porque o
 arquivo base as publica sempre. Deixar de definir uma delas é o erro que faz o segundo ambiente não
@@ -156,9 +181,28 @@ O WebSocket pode seguir dois caminhos, e a escolha é do servidor, não do kit:
   VITE_REVERB_PORT=443
   VITE_REVERB_SCHEME=https
   ```
-- **Porta própria no host**: não descomente nada e use `FORWARD_REVERB_PORT` com o offset da matriz.
 
-## Um checkout por ambiente
+  O que o bloco liga, já interpolado:
+
+  ```yaml
+  reverb:
+    networks: [default, traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=my-network
+      - traefik.http.routers.projeto-dev-reverb.rule=Host(`dev.exemplo.br`) && (PathPrefix(`/app/starter-kit-key`) || PathPrefix(`/apps/starter-kit`))
+      - traefik.http.routers.projeto-dev-reverb.entrypoints=websecure
+      - traefik.http.routers.projeto-dev-reverb.tls=true
+      - traefik.http.services.projeto-dev-reverb.loadbalancer.server.port=8090
+  ```
+- **Porta própria no host**: não descomente nada e use `FORWARD_REVERB_PORT` com o offset da matriz —
+  é a porta a que o navegador se conecta, então fica aberta para fora:
+
+  ```ini
+  FORWARD_REVERB_PORT=8190
+  ```
+
+## Um checkout por ambiente (Opção A)
 
 É o arranjo recomendado: cada ambiente é uma pasta, numa branch, com o próprio `.env` e a própria
 cópia do override.
@@ -169,45 +213,97 @@ cópia do override.
 /srv/projeto-homol   → branch release,   .env com COMPOSE_PROJECT_NAME=projeto-homol
 ```
 
-Atualizar um ambiente é o fluxo de sempre, na pasta dele — o
-`./deploy_docker_local.sh` faz `git pull`, rebuild, `up`,
-migrations e health check, e lê a porta publicada pelo próprio Docker, então funciona com o bind
-em `127.0.0.1`:
+Os três `.env`, no que difere entre eles (o resto — `APP_KEY` gerada em cada um, `TRUSTED_PROXIES=*`,
+banco, cache — é igual em forma):
+
+```ini
+# /srv/projeto-dev/.env
+COMPOSE_PROJECT_NAME=projeto-dev
+TRAEFIK_HOST=dev.exemplo.br
+APP_URL=https://dev.exemplo.br
+FORWARD_APP_PORT=127.0.0.1:8090
+FORWARD_DB_PORT=127.0.0.1:5433
+FORWARD_REDIS_PORT=127.0.0.1:6380
+FORWARD_REVERB_PORT=8190
+```
+
+```ini
+# /srv/projeto-teste/.env
+COMPOSE_PROJECT_NAME=projeto-teste
+TRAEFIK_HOST=teste.exemplo.br
+APP_URL=https://teste.exemplo.br
+APP_DEBUG=false
+FORWARD_APP_PORT=127.0.0.1:9090
+FORWARD_DB_PORT=127.0.0.1:5434
+FORWARD_REDIS_PORT=127.0.0.1:6381
+FORWARD_REVERB_PORT=8191
+```
+
+```ini
+# /srv/projeto-homol/.env
+COMPOSE_PROJECT_NAME=projeto-homol
+TRAEFIK_HOST=homol.exemplo.br
+APP_URL=https://homol.exemplo.br
+APP_DEBUG=false
+FORWARD_APP_PORT=127.0.0.1:8080
+FORWARD_DB_PORT=127.0.0.1:5435
+FORWARD_REDIS_PORT=127.0.0.1:6382
+FORWARD_REVERB_PORT=8192
+```
+
+Atualizar um ambiente é o fluxo de sempre, na pasta dele: `git pull` e rebuild, nesta ordem —
+a imagem é self-contained, e rebuild antes do pull reassa o código velho.
 
 ```bash
 cd /srv/projeto-dev
-./deploy_docker_local.sh            # ou: git pull && docker compose --profile app up -d --build
+git pull
+docker compose --profile app up -d --build
 docker compose ps                   # só os containers deste ambiente
 docker compose logs -f app
 ```
+
+Ou tudo de uma vez com o `./deploy_docker_local.sh`, que faz o pull, o rebuild, o `up`, as migrations
+e o health check — e lê a porta publicada pelo próprio Docker, então funciona com o bind em `127.0.0.1`.
 
 **Prós**: branches independentes, `.env` por pasta, zero alteração no compose, `restart:
 unless-stopped` sobrevive ao reboot. **Contras**: três imagens em disco e três pares
 Postgres/Redis em memória — aceitável para banco e cache, que são baratos; para o que é caro, veja
 a Opção D.
 
-## As outras opções, e por que não
+## As outras opções (B, C e D), e por que não
 
-- **Um checkout só, com `-p` e `--env-file`** — `docker compose -p projeto-dev --env-file .env.dev
-  up`. Dois conflitos com o compose do kit: `env_file: .env` e o bind `./.env:/var/www/.env` são
-  fixos, e `--env-file` muda só a interpolação, não os dois. Além disso um checkout é uma branch:
-  os três ambientes rodariam o **mesmo código**. Descartada.
-- **Um arquivo de override por ambiente** (`docker-compose.dev.yml`… com `-f`) — como tudo já é
-  variável de `.env`, ganha-se um arquivo a mais por ambiente e nada sobre o arranjo acima. Descartada.
-- **Infra compartilhada** (Opção D) — um ambiente hospeda o que é caro e os outros apontam para
-  ele. Vale para o **llama.cpp** (~8 GB de RAM por instância) e para o **Mailpit**; não vale para
-  Postgres e Redis, que são baratos e cujo isolamento total é o que torna um `migrate:fresh` do dev
-  inofensivo para a homologação. A receita é no próprio override do ambiente que **não** hospeda,
-  sobrepondo as chaves que o compose base fixa:
+### Opção B — um checkout só, com `-p` e `--env-file`
 
-  ```yaml
-  services:
-    app:   { environment: { LLAMACPP_URL: 'http://projeto-dev-llamacpp-1:8080/v1' } }
-    queue: { environment: { LLAMACPP_URL: 'http://projeto-dev-llamacpp-1:8080/v1' } }
-  ```
+`docker compose -p projeto-dev --env-file .env.dev up`. Dois conflitos com o compose do kit:
+`env_file: .env` e o bind `./.env:/var/www/.env` são fixos, e `--env-file` muda só a interpolação,
+não os dois. Além disso um checkout é uma branch: os três ambientes rodariam o **mesmo código**.
+Descartada.
 
-  com os dois ambientes numa rede comum (a do Traefik serve) e `--profile ai` ligado só no que
-  hospeda.
+### Opção C — um arquivo de override por ambiente
+
+`docker-compose.dev.yml`… combinados com `-f`. Como tudo já é variável de `.env`, ganha-se um
+arquivo a mais por ambiente e nada sobre o arranjo acima. Descartada.
+
+### Opção D — infra compartilhada
+
+Um ambiente hospeda o que é caro e os outros apontam para ele. Vale para o **llama.cpp** (~8 GB de
+RAM por instância) e para o **Mailpit**, que ficam compartilhados; não vale para `pgsql` e `redis`
+(Postgres e Redis), que são baratos, ficam por ambiente, e cujo isolamento total é o que torna um
+`migrate:fresh` do dev inofensivo para a homologação. A receita é no próprio override do ambiente que **não** hospeda, sobrepondo as chaves
+que o compose base fixa:
+
+```yaml
+services:
+  app:
+    environment:
+      LLAMACPP_URL: 'http://projeto-dev-llamacpp-1:8080/v1'
+  queue:
+    environment:
+      LLAMACPP_URL: 'http://projeto-dev-llamacpp-1:8080/v1'
+```
+
+com os dois ambientes numa rede comum (a do Traefik serve) e `--profile ai` ligado só no que
+hospeda.
 
 ## Armadilhas
 

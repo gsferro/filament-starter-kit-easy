@@ -29,13 +29,15 @@
 # =============================================================================
 
 # Os mesmos argumentos nos seis servicos que fazem build, para a imagem ser UMA (camadas
-# compartilhadas) e nao seis. Vazios, produzem a imagem de hoje: o kit nao consome VITE_REVERB_*
-# por padrao — isto e para o projeto que acrescentar Echo ao front.
+# compartilhadas) e nao seis. Em LISTA, sem valor: o Compose pega cada um do .env e OMITE o que
+# nao existe la (medido) — com `${VAR:-}` o argumento iria como string vazia, e o Vite copiaria
+# '' para o bundle no lugar de `undefined`. Sem nenhum definido, a imagem e a de hoje: o kit nao
+# consome VITE_REVERB_* por padrao — isto e para o projeto que acrescentar Echo ao front.
 x-vite-args: &vite-args
-  VITE_REVERB_HOST: ${VITE_REVERB_HOST:-}
-  VITE_REVERB_PORT: ${VITE_REVERB_PORT:-}
-  VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-}
-  VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY:-}
+  - VITE_REVERB_HOST
+  - VITE_REVERB_PORT
+  - VITE_REVERB_SCHEME
+  - VITE_REVERB_APP_KEY
 
 services:
   app:
@@ -92,7 +94,7 @@ services:
     # labels:
     #   - traefik.enable=true
     #   - traefik.docker.network=${TRAEFIK_REDE:-my-network}
-    #   - traefik.http.routers.${COMPOSE_PROJECT_NAME:-starter-kit}-reverb.rule=Host(`${TRAEFIK_HOST:?defina TRAEFIK_HOST no .env}`) && (PathPrefix(`/app/${REVERB_APP_KEY:-starter-kit-key}`) || PathPrefix(`/apps/${REVERB_APP_ID:-starter-kit}`))
+    #   - traefik.http.routers.${COMPOSE_PROJECT_NAME:-starter-kit}-reverb.rule=Host(`${TRAEFIK_HOST:?defina TRAEFIK_HOST no .env}`) && (PathPrefix(`/app/${REVERB_APP_KEY:?defina REVERB_APP_KEY no .env — vazia, a regra viraria /app/ e roubaria o painel}`) || PathPrefix(`/apps/${REVERB_APP_ID:?defina REVERB_APP_ID no .env}`))
     #   - traefik.http.routers.${COMPOSE_PROJECT_NAME:-starter-kit}-reverb.entrypoints=websecure
     #   - traefik.http.routers.${COMPOSE_PROJECT_NAME:-starter-kit}-reverb.tls=true
     #   - traefik.http.services.${COMPOSE_PROJECT_NAME:-starter-kit}-reverb.loadbalancer.server.port=8090
