@@ -433,7 +433,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | ADV-13 [B] | "maioria"/"última" não morriam | CT-02 `mista` com 3 views |
 | ADV-14 | CT-08 congelava a medição | CT-08 só conta pastas (> 0); partições na fixture |
 | ADV-15 | extração sem publish do projeto | CT-09 com pasta editada pelo projeto; M17 |
-| ADV-16 | M23 não morre hoje | M23 → sem matador (regra de `.ai/rules`) |
+| ADV-16 | M23 não morre hoje | M23 → sem cenário matador (regra de `.ai/rules`) |
 | ADV-17 | CT-04 aceita conselho errado | CT-04 afirma "remover" e não "liste"; M9b |
 | ADV-18 | CT-03 não distingue "todos os arquivos" | CT-03 com `outro.blade.php` idêntico; M9c |
 | ADV-19 | CT-09 só procedural | CT-13 (meta-caso sobre o fonte) |
