@@ -227,6 +227,18 @@ class KitUpdate extends Command
         'resources/views/filament',
         'resources/views/livewire',
         'resources/views/svg',
+        /*
+         * Overrides de view de pacote que o kit EDITOU (issue #148: a lock-screen do par de logos
+         * ficou na v0.43.0 só para quem instalou). Autoral = conteúdo diferente da view do pacote
+         * instalado, pasta inteira; publish cru (idêntico ao pacote) fica de fora de propósito,
+         * senão o update sobrescreveria customização do projeto. Quem decide, por conteúdo, é a
+         * varredura de `tests/Kit/KitUpdateTest.php` sobre `resources/views/vendor`.
+         */
+        'resources/views/vendor/asmit-resized-column',
+        'resources/views/vendor/command-center',
+        'resources/views/vendor/filament-auth-designer',
+        'resources/views/vendor/filament-captcha',
+        'resources/views/vendor/filament-clear-cache',
         'routes/console.php',
         // Os testes do kit acompanham a atualização: é com eles que você
         // confere se a fundação continua de pé depois de aplicar.

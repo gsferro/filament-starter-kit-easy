@@ -5,6 +5,23 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Corrigido
+
+- **`kit:update` passa a entregar os overrides de view que o kit escreveu** (#148, wiki
+  `wikis/specs/fix/kit-update-views-vendor/`): `resources/views/vendor` não estava em
+  `KitUpdate::CAMINHOS_DO_KIT`, então o override da lock-screen com o par de logos claro/escuro
+  (v0.43.0) chegava a quem instalava e nunca a quem atualizava — `LogoDarkModeTest` CT-16 falhava
+  6 vezes num projeto v0.42.0 → v0.44.0. Entram na lista as cinco pastas **autorais** — `asmit-resized-column`,
+  `command-center`, `filament-auth-designer`, `filament-captcha`, `filament-clear-cache` —, pasta
+  inteira; as sete pastas que são publish cru de pacote (`ai-tasks`, `authentication-log`,
+  `filament-composer-release-notifier`, `filament-jobs-monitor`, `filament-onboarding`,
+  `filament-sentinel`, `pulse`) ficam fora de propósito, senão o update sobrescreveria customização
+  do projeto. Autoral é decidido por **conteúdo** — a view difere da de mesmo caminho no pacote
+  instalado —, e a varredura de `tests/Kit/KitUpdateTest.php`, que até aqui pulava
+  `resources/views/vendor` inteiro, passa a reprovar nos dois sentidos: pasta autoral fora da lista e
+  pasta crua dentro dela. Para quem já editou uma dessas cinco pastas no próprio projeto, o próximo
+  `kit:update` passa a **oferecer** a view do kit no diff, como faz com toda pasta da lista.
+
 ## [0.45.0] - 2026-10-06
 
 ### Adicionado

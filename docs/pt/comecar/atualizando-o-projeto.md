@@ -37,7 +37,7 @@ O que ele faz, em ordem:
 
 O fluxo é **não interativo** quando não há terminal (CI, `--no-interaction`) — nunca "sem TTY": ele
 vira relatório e sai sem aplicar nada, a menos que `--all` ou `--only-new` já tenham dado a
-aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:437`).
+aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:449`).
 
 ```mermaid
 flowchart TD
@@ -66,7 +66,7 @@ accDescr: O kit:update confere o terreno, vincula o kit como remote temporário,
 ```
 
 A ordem vem direto de `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:385`): pré-voo (`:preVoo:473`), remote temporário
+(`app/Console/Commands/KitUpdate.php:handle:397`): pré-voo (`:preVoo:473`), remote temporário
 (`:vincularKit:533`), diff restrito (`:arquivosAlterados:639`), resumo (`:mostrarResumo:758`), a
 checagem de terminal (`:isInteractive:437`), o branch temporário (`:prepararBranch:778`), a revisão
 por arquivo (`:revisarEAplicar:827`), o relatório do `composer.json`
@@ -189,9 +189,9 @@ Um diretório listado **em parte** não é desenhado como entregue inteiro: `app
 depois — e `config/` é só cinco arquivos nomeados
 (`app/Console/Commands/KitUpdate.php:'config/kit.php':153`). E `wikis/` **não** é `export-ignore`
 inteiro — só `wikis/specs`: os documentos de topo de `wikis/` viajam no `create-project` **e** o
-`kit:update` os entrega um a um (`app/Console/Commands/KitUpdate.php:'wikis/README.md':310`),
+`kit:update` os entrega um a um (`app/Console/Commands/KitUpdate.php:'wikis/README.md':322`),
 assim como `tests/Kit` e `tests/Pest.php`
-(`app/Console/Commands/KitUpdate.php:'tests/Kit':233`, `app/Console/Commands/KitUpdate.php:'tests/Pest.php':252`)
+(`app/Console/Commands/KitUpdate.php:'tests/Kit':245`, `app/Console/Commands/KitUpdate.php:'tests/Pest.php':264`)
 — `tests/` não é "intocado pelo kit:update".
 
 ## O jeito manual

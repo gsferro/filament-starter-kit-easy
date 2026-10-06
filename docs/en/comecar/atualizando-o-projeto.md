@@ -38,7 +38,7 @@ What it does, in order:
 The flow is **non-interactive** when there is no terminal (CI, `--no-interaction`) — never "no
 TTY": it turns into a report and exits without applying anything, unless `--all` or `--only-new`
 already gave the approval on the command line
-(`app/Console/Commands/KitUpdate.php:isInteractive:437`).
+(`app/Console/Commands/KitUpdate.php:isInteractive:449`).
 
 ```mermaid
 flowchart TD
@@ -67,7 +67,7 @@ accDescr: kit:update checks the ground, links the kit as a temporary remote, com
 ```
 
 The order comes straight from `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:385`): pre-flight (`:preVoo:473`), temporary remote
+(`app/Console/Commands/KitUpdate.php:handle:397`): pre-flight (`:preVoo:473`), temporary remote
 (`:vincularKit:533`), restricted diff (`:arquivosAlterados:639`), summary (`:mostrarResumo:758`),
 the terminal check (`:isInteractive:437`), the temporary branch (`:prepararBranch:778`), the
 file-by-file review (`:revisarEAplicar:827`), the `composer.json` report
@@ -191,9 +191,9 @@ A directory listed **only in part** is never drawn as delivered whole: `app/Mode
 (`app/Console/Commands/KitUpdate.php:'config/kit.php':153`). And `wikis/` is **not** `export-ignore`
 as a whole — only `wikis/specs` is: `wikis/`'s top-level documents travel on `create-project` **and**
 `kit:update` delivers them one by one
-(`app/Console/Commands/KitUpdate.php:'wikis/README.md':310`), just like `tests/Kit` and
+(`app/Console/Commands/KitUpdate.php:'wikis/README.md':322`), just like `tests/Kit` and
 `tests/Pest.php`
-(`app/Console/Commands/KitUpdate.php:'tests/Kit':233`, `app/Console/Commands/KitUpdate.php:'tests/Pest.php':252`)
+(`app/Console/Commands/KitUpdate.php:'tests/Kit':245`, `app/Console/Commands/KitUpdate.php:'tests/Pest.php':264`)
 — `tests/` is not "untouched by kit:update".
 
 ## The manual way
