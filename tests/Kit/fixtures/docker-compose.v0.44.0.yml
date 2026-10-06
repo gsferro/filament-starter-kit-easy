@@ -1,0 +1,391 @@
+# =============================================================================
+# Stacks Docker do starter-kit-easy — um container por feature, opt-in via profiles.
+#
+# O kit roda 100% sem Docker (SQLite + filas database + cache database).
+# Docker entra quando você quiser Postgres/Redis, IA local, e-mail ou runtime completo:
+#
+#   docker compose up -d                            # pgsql + redis (infra base)
+#   docker compose up -d mysql redis                # MySQL em vez do Postgres
+#   docker compose --profile ai up -d               # + llama.cpp (chat e embeddings)
+#   docker compose --profile mail up -d             # + mailpit
+#   docker compose --profile full up -d             # infra completa (sem app)
+#   docker compose --profile app up -d --build      # app Laravel containerizada
+#   docker compose --profile realtime up -d reverb pulse  # WebSocket + Pulse (PHP no host)
+#
+# Ao usar as stacks, copie as variáveis de .env.docker para o seu .env.
+# =============================================================================
+
+# PISO: `COMPOSE_PROJECT_NAME` no .env vence, e é ele que o `kit:install` grava.
+# Nenhum serviço declara `container_name:` de propósito — fixo, ele IGNORA o nome do
+# projeto; sem ele o Compose nomeia `<projeto>-<serviço>-<índice>` sozinho.
+name: starter-kit
+
+services:
+  # ---------------------------------------------------------------------------
+  # Infra base (sem profile): sobe com `docker compose up -d`
+  # ---------------------------------------------------------------------------
+
+  # pgvector já embutido: habilita a extensão `vector` para a evolução com RAG.
+  pgsql:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    ports:
+      - '${FORWARD_DB_PORT:-5432}:5432'
+    environment:
+      POSTGRES_DB: '${DB_DATABASE:-starter_kit}'
+      POSTGRES_USER: '${DB_USERNAME:-starter_kit}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+    volumes:
+      - 'pgsql-data:/var/lib/postgresql/data'
+      - './docker/pgsql/init:/docker-entrypoint-initdb.d'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -q -d ${DB_DATABASE:-starter_kit} -U ${DB_USERNAME:-starter_kit}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # `docker compose up -d mysql redis` — nomear serviço com profile liga o profile
+  # dele E restringe a subida, então o `pgsql` do default não sobe. Ver ADR-01.
+  #
+  # `MYSQL_USER` não aparece de propósito: o instalador grava `root`, e a imagem recusa
+  # ("MYSQL_USER and MYSQL_PASSWORD ... cannot be used for the root user").
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    profiles: [mysql]
+    ports:
+      # Chave PRÓPRIA, e não o `FORWARD_DB_PORT` do Postgres: no profile `app` com
+      # MySQL os dois bancos sobem juntos, e uma variável só para os dois faria os
+      # dois publicarem na mesma porta do host — "port is already allocated".
+      - '${FORWARD_MYSQL_PORT:-3306}:3306'
+    environment:
+      MYSQL_DATABASE: '${DB_DATABASE:-starter_kit}'
+      # Default VAZIO de propósito, e não uma senha. Um default com valor aqui valeria
+      # só para o CONTAINER: um .env com DB_PASSWORD vazio — todo projeto MySQL
+      # instalado antes desta versão — daria container com a senha do default e
+      # aplicação conectando com vazio, "Access denied" sem nenhuma pista.
+      #
+      # Vazio, a imagem recusa subir e diz o que falta: "Database is uninitialized and
+      # password option is not specified". Falha barulhenta na subida vence falha
+      # silenciosa na conexão. O `:-` continua ali só para não emitir aviso de variável
+      # ausente em quem instalou com SQLite e nunca definiu a chave.
+      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD:-}'
+    volumes:
+      - 'mysql-data:/var/lib/mysql'
+    healthcheck:
+      # O dólar dobrado escapa a interpolação do Compose: a variável é lida DENTRO
+      # do container, onde o entrypoint da imagem já a definiu.
+      test: ['CMD-SHELL', 'mysqladmin ping -h localhost -u root -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Container EXCLUSIVO de cache (filas ficam em `database`, visíveis no Jobs Monitor).
+  # Eviction agressiva é segura porque só há cache descartável aqui.
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--maxmemory', '256mb', '--maxmemory-policy', 'allkeys-lru', '--appendonly', 'no']
+    ports:
+      - '${FORWARD_REDIS_PORT:-6379}:6379'
+    volumes:
+      - 'redis-data:/data'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # IA local (profile: ai) — inferência 100% na sua máquina, família Qwen
+  # ---------------------------------------------------------------------------
+
+  llamacpp:
+    image: 'ghcr.io/ggml-org/llama.cpp:${LLAMACPP_IMAGE:-server-b9967}'
+    restart: unless-stopped
+    profiles: [ai, full]
+    command: >-
+      -hf ${LLAMA_CHAT_HF:-bartowski/Qwen2.5-7B-Instruct-GGUF:Q4_K_M}
+      --alias ${LLAMA_CHAT_ALIAS:-qwen2.5-7b-instruct}
+      --host 0.0.0.0 --port 8080
+      --ctx-size ${LLAMA_CTX:-8192}
+      --parallel ${LLAMA_PARALLEL:-2}
+      --cache-reuse 256
+    ports:
+      - '${FORWARD_LLAMA_PORT:-8080}:8080'
+    volumes:
+      - 'llamacpp-cache:/root/.cache/llama.cpp'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
+      interval: 15s
+      timeout: 5s
+      retries: 40
+      start_period: 300s   # primeiro boot baixa o GGUF (~4,5 GB)
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+
+  # Embeddings (para a extensão RAG). Qwen3-Embedding exige last-token pooling,
+  # nunca mean; 1024 dims → coluna vector(1024).
+  llamacpp-embeddings:
+    image: 'ghcr.io/ggml-org/llama.cpp:${LLAMACPP_IMAGE:-server-b9967}'
+    restart: unless-stopped
+    profiles: [ai, full]
+    command: >-
+      -hf ${EMBED_HF:-Qwen/Qwen3-Embedding-0.6B-GGUF:Q8_0}
+      --alias ${EMBED_ALIAS:-qwen3-embedding-0.6b}
+      --embeddings --pooling last
+      --host 0.0.0.0 --port 8080
+      --ctx-size ${EMBED_CTX:-8192}
+      --ubatch-size 8192
+    ports:
+      - '${FORWARD_EMBED_PORT:-8081}:8080'
+    volumes:
+      - 'llamacpp-cache:/root/.cache/llama.cpp'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
+      interval: 15s
+      timeout: 5s
+      retries: 40
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  # ---------------------------------------------------------------------------
+  # E-mail de desenvolvimento (profile: mail)
+  # ---------------------------------------------------------------------------
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    restart: unless-stopped
+    profiles: [mail, full]
+    ports:
+      - '${FORWARD_MAILPIT_PORT:-1025}:1025'
+      - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
+
+  # ---------------------------------------------------------------------------
+  # App Laravel containerizada (profile: app) — imagem única multi-stage,
+  # diferenciada por command:. Código assado na imagem; só o .env é bind-mount.
+  # ---------------------------------------------------------------------------
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.laravel
+      target: app
+    restart: unless-stopped
+    profiles: [app]
+    # Sem `user: www-data`, `docker compose exec app php artisan ...` roda como root
+    # e cria os logs do dia com root:root, quebrando o append do worker.
+    user: www-data
+    # Compila as 417 views ANTES de servir o primeiro request. Medido: ~39s.
+    #
+    # Por que no boot e não no Dockerfile: `view:cache` grava em
+    # `storage/framework/views`, e `storage/` é o volume `app-storage` montado por cima
+    # do diretório da imagem. View assada no build é encoberta pelo volume assim que ele
+    # já existir de uma subida anterior — funcionaria no primeiro teste e sumiria em
+    # produção. Ver ADR-01 da wiki `cache-de-views-no-docker`.
+    #
+    # SÓ `view:cache`. `config:cache` faria o Laravel parar de ler o `.env` montado logo
+    # abaixo, e `route:cache` congelaria o estado de tenancy (com `kit.tenancy.enabled` o
+    # painel `app` deixa de ser `/app` e vira `/app/{tenant}`). Ver ADR-02.
+    #
+    # `&&` e não `;`: se a compilação falhar, o container morre em vez de servir com
+    # views não cacheadas. Falha de boot visível é melhor que degradação silenciosa.
+    command: >-
+      sh -c "php artisan view:cache &&
+             php-fpm"
+    env_file: .env
+    environment:
+      # O `DB_HOST` precisa deste override: o .env diz 127.0.0.1, e na rede do Compose
+      # o endereço é o nome do serviço. Uma variável para os dois campos porque os nomes
+      # coincidem — as conexões do config/database.php são `pgsql` e `mysql`. Ver ADR-06.
+      DB_CONNECTION: ${DOCKER_DB_SERVICE:-pgsql}
+      DB_HOST: ${DOCKER_DB_SERVICE:-pgsql}
+      REDIS_HOST: redis
+      LLAMACPP_URL: 'http://llamacpp:8080/v1'
+      LLAMACPP_EMBED_URL: 'http://llamacpp-embeddings:8080/v1'
+      REVERB_HOST: reverb
+      REVERB_PORT: 8090
+      # O browser conecta em localhost, nunca no nome do serviço Docker.
+      VITE_REVERB_HOST: localhost
+      VITE_REVERB_PORT: 8090
+    volumes:
+      - './.env:/var/www/.env'
+      - 'app-storage:/var/www/storage'
+    healthcheck:
+      test: ['CMD-SHELL', 'pgrep php-fpm || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # O `view:cache` do `command:` acima leva ~39s, e o php-fpm só sobe depois dele.
+      # Sem `start_period`, o Docker começa a contar falha no primeiro intervalo e o
+      # container nasce `unhealthy` — quem depender dele por `service_healthy` nunca
+      # sobe. Durante o start_period, falha de healthcheck não conta para o limite.
+      start_period: 90s
+    depends_on:
+      pgsql:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+        required: false   # fora da subida quando o profile `mysql` não está ligado
+      redis:
+        condition: service_healthy
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.laravel
+      target: web
+    restart: unless-stopped
+    profiles: [app]
+    # Único container do profile rodando como root: auto-repara o volume compartilhado.
+    # uid numérico 82 porque `www-data` não existe no nginx:alpine.
+    command: >-
+      sh -c "chown -R 82:82 /var/www/storage &&
+             ln -sf /var/www/storage/app/public /var/www/public/storage &&
+             nginx -g 'daemon off;'"
+    ports:
+      - '${FORWARD_APP_PORT:-8000}:80'
+    volumes:
+      - './.env:/var/www/.env'
+      - 'app-storage:/var/www/storage'
+    healthcheck:
+      # 127.0.0.1 e não localhost: o wget do busybox tenta ::1 e o nginx só escuta IPv4.
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1/up']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      app:
+        condition: service_healthy
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile.laravel
+      target: app
+    restart: unless-stopped
+    profiles: [app]
+    user: www-data
+    command: ['php', '/var/www/artisan', 'queue:work', '--queue=ai,ai-post,default', '--tries=3', '--timeout=600', '--max-time=3600']
+    env_file: .env
+    environment:
+      DB_CONNECTION: ${DOCKER_DB_SERVICE:-pgsql}
+      DB_HOST: ${DOCKER_DB_SERVICE:-pgsql}
+      REDIS_HOST: redis
+      LLAMACPP_URL: 'http://llamacpp:8080/v1'
+      LLAMACPP_EMBED_URL: 'http://llamacpp-embeddings:8080/v1'
+    volumes:
+      - './.env:/var/www/.env'
+      - 'app-storage:/var/www/storage'
+    depends_on:
+      pgsql:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+        required: false   # fora da subida quando o profile `mysql` não está ligado
+      redis:
+        condition: service_healthy
+      app:
+        condition: service_started   # evita corrida no skeleton do volume app-storage
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.laravel
+      target: app
+    restart: unless-stopped
+    profiles: [app]
+    user: www-data
+    command: ['php', '/var/www/artisan', 'schedule:work']
+    env_file: .env
+    environment:
+      DB_CONNECTION: ${DOCKER_DB_SERVICE:-pgsql}
+      DB_HOST: ${DOCKER_DB_SERVICE:-pgsql}
+      REDIS_HOST: redis
+    volumes:
+      - './.env:/var/www/.env'
+      - 'app-storage:/var/www/storage'
+    depends_on:
+      pgsql:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+        required: false   # fora da subida quando o profile `mysql` não está ligado
+      redis:
+        condition: service_healthy
+      app:
+        condition: service_started
+
+  # ---------------------------------------------------------------------------
+  # Tempo real (profiles: app, realtime)
+  # Reverb escuta em 8090 (não no default 8080) para não colidir com o llama.cpp.
+  # ---------------------------------------------------------------------------
+
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile.laravel
+      target: app
+    restart: unless-stopped
+    profiles: [app, realtime]
+    user: www-data
+    command: ['php', '/var/www/artisan', 'reverb:start']
+    ports:
+      - '${FORWARD_REVERB_PORT:-8090}:8090'
+    env_file: .env
+    environment:
+      DB_CONNECTION: ${DOCKER_DB_SERVICE:-pgsql}
+      DB_HOST: ${DOCKER_DB_SERVICE:-pgsql}
+      REDIS_HOST: redis
+    volumes:
+      - './.env:/var/www/.env'
+      - 'app-storage:/var/www/storage'
+    depends_on:
+      pgsql:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+        required: false   # fora da subida quando o profile `mysql` não está ligado
+      app:
+        condition: service_started
+        required: false   # permite `--profile realtime` sem o serviço app
+
+  # Daemon do Pulse (pulse:check): sem ele os recorders de servidor não gravam.
+  pulse:
+    build:
+      context: .
+      dockerfile: Dockerfile.laravel
+      target: app
+    restart: unless-stopped
+    profiles: [app, realtime]
+    user: www-data
+    command: ['php', '/var/www/artisan', 'pulse:check']
+    env_file: .env
+    environment:
+      DB_CONNECTION: ${DOCKER_DB_SERVICE:-pgsql}
+      DB_HOST: ${DOCKER_DB_SERVICE:-pgsql}
+      REDIS_HOST: redis
+    volumes:
+      - './.env:/var/www/.env'
+      - 'app-storage:/var/www/storage'
+    depends_on:
+      pgsql:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+        required: false   # fora da subida quando o profile `mysql` não está ligado
+      app:
+        condition: service_started
+        required: false
+
+volumes:
+  pgsql-data:
+  mysql-data:
+  redis-data:
+  llamacpp-cache:
+  app-storage:

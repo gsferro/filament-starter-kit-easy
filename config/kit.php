@@ -158,6 +158,20 @@ return [
     | o .env semeia a primeira gravação e é o plano B sem a tabela `settings`.
     | Quem lê é `App\Support\CabecalhoDoPainel`, a cada request.
     */
+    /*
+    |--------------------------------------------------------------------------
+    | Proxies confiáveis
+    |--------------------------------------------------------------------------
+    | Atrás de um proxy que termina o TLS (o Traefik do deploy multiambiente, um
+    | load balancer), quem o Laravel pode acreditar ao ler `X-Forwarded-*`: lista
+    | de IPs/CIDRs separada por vírgula, ou `*` (só com a porta do container fora
+    | do alcance de quem não é o proxy). Ausente ou vazia: ninguém, como sempre.
+    | O valor CRU fica aqui; quem o interpreta (coringas e itens inválidos
+    | descartados, com aviso no log) é `App\Support\ProxiesConfiaveis`, chamado em
+    | `KitServiceProvider::boot()` — depois de o .env ter sido carregado.
+    */
+    'proxies_confiaveis' => env('TRUSTED_PROXIES'),
+
     'cabecalho' => [
         'nome_do_projeto'    => BooleanoDoEnv::comPadrao(env('KIT_CABECALHO_NOME_DO_PROJETO'), false),
         // No /app o rótulo do painel é o nome da aplicação; com organização aberta

@@ -1,6 +1,6 @@
 # Progresso — Deploy com Docker: vários ambientes no mesmo servidor, atrás do Traefik
 
-**Estado**: em implementação
+**Estado**: em revisão
 
 > Branch: `feat/deploy-multiambiente-docker` · Base do PR: `main` (`71a7297`, v0.44.0)
 
@@ -47,19 +47,19 @@ Não fatiado — 2026-10-05: 17 RQ vigentes, 32 CT, compactação: sim (antes do
 
 ## Verificação Final
 - [ ] `/ponytail:ponytail-review` no diff
-- [ ] `vendor/bin/pint --dirty`
-- [ ] `vendor/bin/pest tests/Kit/DeployMultiambienteDockerTest.php tests/Kit/ProxiesConfiaveisTest.php --compact`
+- [x] `vendor/bin/pint --dirty` — `{"tool":"pint","result":"passed"}` sobre os PHP do diff, 2026-10-05
+- [x] `vendor/bin/pest tests/Kit/DeployMultiambienteDockerTest.php tests/Kit/ProxiesConfiaveisTest.php --compact` — 122/122 + 44/44 (166 casos), 2026-10-05
 - [ ] Regressão nomeada (`CacheDeViewsNoDockerTest`, `MysqlNoDockerTest`, `DeployDockerLocalTest`, `UrlSemPrefixoPublicTest`, `DiagramasDaArquiteturaTest`, `SiteDeDocumentacaoTest`, `RedeDeDocumentacaoTest`, `KitUpdateTest`)
 - [ ] Suíte completa Kit+Tenancy contra a baseline (3.912 / 0 falhas / 841 pulados na simulação da v0.44.0)
 - [x] `pest --mutate --path=app/Support/ProxiesConfiaveis.php` via `pestw.cmd`: score, duração e sobreviventes — `XDEBUG_MODE=coverage MSYS_NO_PATHCONV=1 cmd /c pestw.cmd tests/Kit/ProxiesConfiaveisTest.php --mutate --path=app/Support/ProxiesConfiaveis.php --no-tia` → `27 Mutations`, `4 uncovered` (os `RemoveArrayItem` da linha da constante `CORINGAS`, que não é linha executada), `23 tested`, `Score: 85.19%`, **`Duration: 1.06s`** — duração **implausível** para 23 processos (~46 ms cada; `.ai/rules/testes.md` manda não aceitar), então o score **não é usado como evidência**. Evidência válida: **4 mutantes manuais mortos pela suíte** — `=== '*'`→`!== '*'` (21 falhas de 33), coringas não descartados (9), `PRIVATE_SUBNETS` fora de `CORINGAS` (3 — cobre exatamente o `uncovered` do plugin), `trim` dos itens removido (2); árvore restaurada e 33/33 verdes depois, 2026-10-05
-- [ ] `docker compose --profile app config` com e sem o override, fora da árvore
+- [x] `docker compose --profile app config` com e sem o override, fora da árvore — medido na sonda `scratchpad/compose-real` (cópia do base real): com override, labels `projeto-dev`, `host_ip: 127.0.0.1`, rede `my-network` externa, `build.args` só com a `VITE_REVERB_HOST` definida; sem `TRAEFIK_HOST`/`REVERB_APP_KEY`, recusa nomeando a chave; sem o override, a config é a do golden (CT-34 verde), 2026-10-05
 - [ ] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação
 - [ ] Desvios propagados ao `01`/`02`/`04` de origem, marcados `*(alterado em …)*`
-- [ ] `rastreabilidade.sh {wiki}` silencioso
-- [ ] `checkbox-sem-evidencia.sh {wiki}` silencioso
-- [ ] `citacoes.sh {wiki}` silencioso
-- [ ] `ids-ct.sh {wiki} 'tests/Kit/DeployMultiambienteDockerTest.php' 'tests/Kit/ProxiesConfiaveisTest.php'` silencioso
-- [ ] `conformidade-rules.sh {wiki} main` silencioso
+- [x] `rastreabilidade.sh {wiki}` silencioso — `bash .claude/skills/feature-wiki/scripts/rastreabilidade.sh wikis/specs/feat/deploy-multiambiente-docker/deploy-multiambiente-docker` → vazio, exit 0, 2026-10-05
+- [x] `checkbox-sem-evidencia.sh {wiki}` silencioso — vazio, exit 0, 2026-10-05 (reconferido ao fechar o `03`)
+- [x] `citacoes.sh {wiki}` silencioso — vazio, exit 0 sobre `00`–`04`, 2026-10-05
+- [x] `ids-ct.sh {wiki} 'tests/Kit/DeployMultiambienteDockerTest.php' 'tests/Kit/ProxiesConfiaveisTest.php'` silencioso — vazio, exit 0 (47 IDs do `04` ⊆ 2 arquivos e vice-versa), 2026-10-05
+- [x] `conformidade-rules.sh {wiki} main` silencioso — vazio, exit 0 depois das 4 linhas em `## Conformidade com Rules` (`app.md` n.a., `support.md` n.a., `testes.md` aplicada, `specs.md` aplicada), 2026-10-05
 - [x] Falsificabilidade dos CTs novos: quantos falham sem o fix — `ProxiesConfiaveisTest`: com `bootstrap/app.php` da `main` e uma classe-toco que devolve a string crua, **17 de 33 falham** (os 16 que passam são as linhas "ausente/vazio = hoje", que valem nos dois lados por construção); `DeployMultiambienteDockerTest`: com `Dockerfile.laravel`, `.env.docker`, `.gitignore` e `.env.example` da `main` e o override de exemplo removido, **25 casos a mais falham** (96 → 55 verdes de 105; os 9 vermelhos restantes são os de oráculo pendente CT-06/CT-30). Árvore restaurada (`git status --porcelain` vazio), 2026-10-05
 - [ ] Docs pt/en, CHANGELOG e README reconciliados
 - [ ] `node converter.mjs` sem diff residual
@@ -69,11 +69,30 @@ Não fatiado — 2026-10-05: 17 RQ vigentes, 32 CT, compactação: sim (antes do
 
 | ID | Passe | Achado | Destino | `P-nn` / CT | Rejeitado — motivo |
 |---|---|---|---|---|---|
+| RD-01 / CR-01 | eixos + genérico | `env('TRUSTED_PROXIES')` no `withMiddleware()` roda antes do `LoadEnvironmentVariables`: chave só no arquivo `.env` é ignorada (medido pelos dois revisores) | premissa → CT → correção: leitura via `config/kit.php` + `TrustProxies::at()` no `boot()` do provider; `bootstrap/app.php` volta ao da `main`; docs/`.env.example`/CHANGELOG reescritos | P-02 (alterada), P-13 (reescrita) / CT-21, CT-22 (costura por `refreshApplication`), CT novo da leitura só pelo `.env` | — |
+| RD-02 | eixos | `private_ranges` (sinônimo em minúsculas do Symfony) passava pela lista e confiava em todas as faixas privadas | premissa → CT → correção: coringa acrescentado | P-19 / CT-20, CT-21 | — |
+| RD-03 / CR-04 | eixos + genérico | o Symfony não valida CIDR: `172.18.0.0/16x` dá `TypeError` em todo request; `17x.18.0.1` silêncio; o docblock afirmava validação que não existe | premissa → CT → correção: validação IP/CIDR na classe, `descartados()` + `warning` no provider | P-18 / CT-20, CT novo do log | — |
+| RD-04 / CR-02 | eixos + genérico | a página mandava `REVERB_SCHEME=https`/`REVERB_PORT=443` no `.env` para a rota pelo Traefik — quebra o broadcast servidor-para-servidor (`app` → `reverb:8090` em HTTP) | premissa → CT → correção (página pt/en e comentário do override) | P-20 / CT-30 (âncora) | — |
+| RD-05 | eixos | `.env.docker` não estava em `CAMINHOS_DO_KIT`: CT-23/CT-24 viajariam sem o arquivo; `bootstrap/app.php` idem (resolvido pela mudança de RD-01, `app/Providers` e `config/kit.php` estão na lista) | premissa → CT → correção | P-23 / CT-37 (lista cobre `.env.docker`) | — |
+| RD-06 | eixos | com a chave ausente, `Host: *.on-forge.com`/`.on-vapor.com` vira `'*'` (vendor, pré-existente) — o texto "nenhum proxy" é impreciso | texto: docblock da classe cita a exceção do vendor | — | parcialmente rejeitado como defeito: comportamento do framework anterior ao diff; só o texto muda |
+| RD-07 | eixos | CT-34 (golden) e CT-46 (canário) viajam para o projeto instalado sem saída possível lá | premissa → CT → correção: os dois com `skip` fora da árvore | P-24 / CT-34, CT-46 | — |
+| RD-08 | eixos | cabeçalho do override oferece `TRUSTED_PROXIES=*` sem a ressalva do loopback | correção de texto no exemplo | — (D7/P-21) | — |
+| CR-03 | genérico | `*` confia em qualquer container da `my-network`, não só no Traefik; o loopback não isola da rede compartilhada; o CIDR da rede também não | premissa → CT → correção (página pt/en, D7) | P-21 / CT-42 (âncora `IP fixo`/`ipv4_address`) | — |
+| CR-05 | genérico | receita da Opção D não funciona: `app` não está na rede do llama; faltava `LLAMACPP_EMBED_URL` | premissa → CT → correção (dois overrides com rede própria `ia-compartilhada`) | P-22 / CT-31 (receita da D: `networks:` + `LLAMACPP_EMBED_URL`) | — |
+| CR-06 | genérico | matriz: homol `8080` colide com o `llamacpp` (8080) do ambiente com `--profile ai`; `FORWARD_LLAMA/EMBED/MAILPIT_*` não cobertas | premissa → CT → correção (parágrafo das portas dos profiles) | P-22 / CT-30 (âncora `FORWARD_LLAMA_PORT`) | — |
+| CR-07 | genérico | golden em JSON gerado pelo Compose 5.5.1 local é frágil à versão do CI (formato de `null`, `required`, durações) | premissa → CT → correção: fixture passa a ser cópia textual do base da `v0.44.0`, os dois lados gerados pelo mesmo CLI em tempo de teste | P-24 / CT-34 | — |
+| CR-08 | genérico | CT-01/CT-36/CT-39 fazem `glob('docker-compose*.y*ml')` na raiz e pegam a cópia ativa ignorada pelo git de um checkout que seguiu a doc | teste (oráculo frágil) → CT-36 lista pelos arquivos **rastreados** (`git ls-files` na árvore; fora dela, exclui `docker-compose.override.yml`) | — / CT-36, CT-01, CT-39 | — |
+| CR-09 | genérico | aviso de DNS citava `app` e `reverb` como nomes em risco; o risco real é o `nginx` resolver `app` e o `reverb` (se na rede) resolver `pgsql`/`redis` | premissa → CT → correção (página) | P-25 / CT-47 (âncoras `pgsql`, `redis`) | — |
+| — | genérico | hipóteses rejeitadas pelo revisor: default do base alterado (não; `git diff main...HEAD -- docker-compose.yml` vazio), `ARG` sem default (ausente no `RUN`), `-p` × nome do router, bloco do `.env.docker` descomentado, `clear_env` do php-fpm, `private_subnets` minúsculo (inválido no Symfony), CRLF, health check com loopback, `skip` escondendo vermelho | — | — | registradas como rejeitadas |
 
 ## Conformidade com Rules
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
+| `app.md` — papel por `ContextoDePapeis`; DTO em `app/Data`; painel por `Paineis::correnteOuPadrao()`; URL pública por `asset()` | `app/**` | n.a. | `app/Support/ProxiesConfiaveis.php` e `bootstrap/app.php` não tocam papel, DTO, painel nem URL de arquivo (`grep -c "ContextoDePapeis\|assignRole\|Storage::url\|Paineis::"` nos dois → 0) |
+| `support.md` — chave do `.env` se grava por `SubstituicaoEmArquivo::definirNoEnv()`/`definirLinhaNoEnv()` | `app/Support/**` | n.a. | a classe só **lê** `env('TRUSTED_PROXIES')`; nenhuma gravação de `.env` no diff (`grep -c "definirNoEnv\|File::put\|preg_replace"` → 0) |
+| `testes.md` — helper usado por 2+ arquivos em `tests/Pest.php`; ausência filtra comentário; `toContain()` sem mensagem; caso que lê `docs/`/README/site pula fora da árvore; CHANGELOG pelo arquivo inteiro; `UNTESTED` é sobrevivente / `--mutate` só com duração plausível; ID de CT em docblock sem colchete | `tests/**` | aplicada | helpers locais a um arquivo só (`HelpersDeTesteTest` verde no lote 21/21); CT-02/CT-19/CT-35 afirmam ausência sobre texto sem comentário; nenhuma mensagem em `toContain()` (os casos usam `assertStringContainsString`/`toBeTrue` com mensagem); todo caso de docs/README/site/git com `naArvoreDoKit()` e mensagem sem `docs` (`RedeDeDocumentacaoTest` CT-10/CT-11 verdes); CT-28 lê o `CHANGELOG.md` inteiro; score do `--mutate` descartado por duração implausível, 4 mutantes manuais mortos; `ids-ct.sh` silencioso |
+| `specs.md` — comportamento de vendor citado com `file:line` depois de ler; conferência por símbolo (`citacoes.sh`); citação de teste pelo ID entre aspas, nunca `arquivo:it:N` | `wikis/specs/**` | aplicada | `citacoes.sh` silencioso (exit 0) sobre `00`–`04`; todas as afirmações sobre `TrustProxies`, `Middleware::trustProxies()`, `ApplicationBuilder::withMiddleware`, `loadEnv` do Vite e Compose vêm de leitura/medição citada; `grep -c ':it:'` na wiki → 0 em todos os arquivos |
 
 ## Quality Gate
 
@@ -175,6 +194,9 @@ de inventário, sem seeder, sem provider): a classe nova precisa aparecer só on
 | 7 | 7 | `general-purpose`/opus (fallback do `analista`) — `04` v3 fechando os 33 achados da 2ª rodada + sincronia + 2 ajustes de oráculo do executor | opus | `01`, código como comportamento | `04` v3: 47 CT, 20 regras, 164 mutantes; CT-16 migrou para G2; CT-44 Esquema; CT-45/46/47 novos; L3/L7 retiradas; 5 pontos devolvidos — decididos: citação `forceRootUrl:73` aceita; `'*,'`→`null` confirmado na classe; CT-46 em R1 e CT-47 próprio aceitos | 236,1 k tokens · 876 s | copiado verbatim; `grep`: 47 CT, 20 `Regra:`, 164 M, 0 `Q?` provisória (as 4 ocorrências são históricas); `citacoes.sh` e `rastreabilidade.sh` silenciosos |
 | 8 | impl. | `fw-executor-ct` — 2ª passada em `tests/Kit/ProxiesConfiaveisTest.php` (linhas novas de CT-20/21/22) | sonnet | `01`, `02`; `app/` só para nomes | 44 casos (CT-20 24 linhas, CT-21 16, CT-22 4), 44 verdes na 1ª execução; dataset × Exemplos sem linha de um lado só; 0 divergências | 67,9 k tokens · 45 s | `git status`: só o teste; `app/`/`bootstrap/` intactos; rerodado pela sessão 44/44; amostra por grep: `'*,'`, `8443`, `PRIVATE_SUBNETS` presentes |
 | 9 | impl. | `fw-executor-ct` — 2ª passada em `tests/Kit/DeployMultiambienteDockerTest.php` + golden da `v0.44.0` com `--profile '*'` | sonnet | `01`, `02`; infra/docs só para nomes | parou no teto de 40 turnos com o arquivo íntegro (110 casos, 101 verdes); retomado por `SendMessage` com o estado medido; final: 122 casos, 114 verdes, 8 vermelhos (b) — CT-30 (células da matriz com crases) e CT-41 (frase sem nomear `TRUSTED_PROXIES`); golden regenerado da `v0.44.0` com 12 serviços, idempotente (md5 igual), `<raiz>` normalizado; IDs `04` × arquivo sem diferença | 216,0 k + 250,2 k tokens · 327 s + 276 s | `git status`: só teste + fixture; sessão corrigiu a página (células sem crases, frase nomeando a chave) → 122/122; guardas `RedeDeDocumentacaoTest`/`HelpersDeTesteTest` 21/21 |
+| 10 | 9 | `fw-revisor-diff` — passe de eixos sobre `main...HEAD` sem `wikis/` | opus | `01`, `03`, conversa (hook `revisor-diff`) | 8 achados RD-01..RD-08 (3 altos: `.env` não lido no bootstrap; `private_ranges`; CIDR inválido = `TypeError`), 5 rejeitados, 6 não verificados declarados | 109,8 k tokens · 510 s | `git status --porcelain` igual antes/depois (só o `03` já modificado); 3 achados reproduzidos pela sessão (`afterResolving` antes do `LoadEnvironmentVariables` — `ApplicationBuilder.php:withMiddleware:287`; `Request.php:658` com `private_ranges`; `IpUtils.php:98-117` sem validação); **todos aceitos** |
+| 11 | 9 | `general-purpose`/opus cego (fallback: `/code-review` não existe neste host) — passe genérico sobre `main...HEAD` | opus | `01`, `03`, `06`, conversa (por prompt) | 9 achados CR-01..CR-09 (2 altos, coincidentes com RD-01/RD-04), 15 hipóteses rejeitadas com reprodução | 187,7 k tokens · 662 s | `git status --porcelain`: o `M bootstrap/app.php` staged que ele viu era o revert da **sessão** em curso, não dele; 2 achados reproduzidos (CR-05 `app.networks = [default]` no `config`; CR-06 porta 8080 do llama); **todos aceitos**; CR-08 roteado a teste |
+| — | pré-9 | Sem despacho — re-varredura da `## Superfície Livewire`: não exigida (nenhum componente, página ou widget no diff; `grep -rn "public function \|public \$" app/Filament app/Livewire` sobre o diff final: nenhuma linha nova — o único PHP novo é `app/Support/ProxiesConfiaveis.php`, estático, e uma linha em `bootstrap/app.php`) | sessão | — | — | — | — |
 | — | 0–4 | Sem despacho — captura verbatim, decomposição, pesquisa por leitura direta (compose, Dockerfile, script, testes vizinhos, `KitUpdate`, `.gitattributes`, site), `search-docs` (trusted proxies, Reverb), `WebFetch` (Compose merge, Vite env, Traefik docker provider) e sonda local com `docker compose config` | sessão | — | pacote de pesquisa no `01` e nas medições acima | — | medições coladas acima |
 
 ## Blockers

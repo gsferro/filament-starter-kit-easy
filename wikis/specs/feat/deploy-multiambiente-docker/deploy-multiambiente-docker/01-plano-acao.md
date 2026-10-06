@@ -51,7 +51,15 @@
 | P-14 | só o `nginx` na rede do Traefik; aviso de DNS na página | 3, 5 | — |
 | P-15 | `build.args` em lista sem valor | 3 | — |
 | P-16 | `REVERB_APP_KEY`/`REVERB_APP_ID` com `:?` | 3 | — |
-| P-17 | golden do base a partir da `v0.44.0`, todos os profiles | 6 | — |
+| P-17 | golden do base a partir da `v0.44.0`, todos os profiles | 6 | substituída por P-24 |
+| P-18 | item inválido descartado com aviso | 1 | — |
+| P-19 | `private_ranges` é coringa | 1 | — |
+| P-20 | só `VITE_REVERB_*` muda na rota pelo Traefik | 5 | — |
+| P-21 | `*` confia na rede inteira; IP fixo do Traefik | 5 | — |
+| P-22 | Opção D com rede própria; portas de `ai`/`mail` | 5 | — |
+| P-23 | `.env.docker` no `kit:update` | 4 | — |
+| P-24 | golden textual da `v0.44.0`, gerado dos dois lados em tempo de teste; só na árvore | 6 | — |
+| P-25 | aviso de DNS nomeia `app` (nginx) e `pgsql`/`redis` (reverb) | 5 | — |
 | P-08 | `deploy_docker_local.sh` não muda | 5 | o CT do `04` prova que o script continua lendo a porta publicada pelo Docker |
 
 ## Objetivo
@@ -182,8 +190,8 @@ Cinco fatos do código atual sustentam o plano, todos lidos e medidos — não s
 | D4 | O bloco do Reverb pelo Traefik vai **comentado** no exemplo, no mesmo hostname com `PathPrefix(/app)` e `PathPrefix(/apps)` e service na 8090; descomentar é a adesão. A rota por porta própria é o `FORWARD_REVERB_PORT` que já existe | Q2 (requisito, aberta) | surpreendente | sessão, pela recomendação da Q2 — 2026-10-05 |
 | D6 | O bloco comentado do Reverb no exemplo fica entre `# >>> reverb-traefik` e `# <<< reverb-traefik`, para o teste descomentá-lo mecanicamente e rodar `docker compose config` (fecha a lacuna L3 do `04`) e para orientar quem descomenta à mão | Q10 (desenho) | surpreendente | sessão, pela recomendação — 2026-10-05 |
 | D8 | A página avisa, na seção do Traefik, que nome de serviço é global na rede compartilhada (outro `app`/`reverb` na `my-network` desvia o `fastcgi_pass`) e manda confirmar com o DevOps; o `nginx.conf` não muda | Q12 (requisito, aberta) | surpreendente | sessão, pela recomendação — 2026-10-05 |
-| D9 | O golden `tests/Kit/fixtures/compose-base.json` nasce de `git show v0.44.0:docker-compose.yml`, com `--profile '*'`, comparado inteiro (só o prefixo da pasta temporária é normalizado); regenerar é passo deliberado com linha no CHANGELOG | ADV2-01..03 | trade-off | sessão — 2026-10-05 |
-| D7 | A página recomenda `TRUSTED_PROXIES=*` **só** com a porta do nginx em `127.0.0.1`, na mesma seção, e a sub-rede do Traefik como alternativa quando a porta sai para fora | Q11 (requisito, aberta) | surpreendente | sessão, pela recomendação — 2026-10-05 |
+| D9 | O golden é a **cópia textual** do `docker-compose.yml` da `v0.44.0` em `tests/Kit/fixtures/docker-compose.v0.44.0.yml`; o CT gera a configuração dos dois lados com o mesmo CLI e compara (só o prefixo da pasta temporária é normalizado); regenerar é copiar o base de novo, com linha no CHANGELOG *(alterado em 2026-10-05: CR-07 — um JSON gerado numa versão do Compose é frágil à versão do CI; P-24)*. CT-34 e o canário CT-46 valem só na árvore do kit (RD-07) | ADV2-01..03, CR-07, RD-07 | trade-off | sessão — 2026-10-05 |
+| D7 | A página recomenda `TRUSTED_PROXIES=*` **só** com a porta do nginx em `127.0.0.1`, e diz que mesmo assim o `*` confia em qualquer container da rede compartilhada: o que fecha é o IP fixo do Traefik; o `*` fica como risco aceito *(alterado em 2026-10-05: CR-03 — o loopback não isola da `my-network`; P-21)* | Q11 (requisito, aberta) | surpreendente | sessão, pela recomendação — 2026-10-05 |
 | D5 | Nenhum channel de log: o único código PHP novo roda no bootstrap, antes de o container de log existir, e é parsing puro de uma string; o comportamento é provado por teste, não por log | — | — | sessão — 2026-10-05 |
 
 ## Autorização
@@ -205,7 +213,7 @@ registrado no `04`.
 
 | Key | Default | Descrição |
 |-----|---------|-----------|
-| `TRUSTED_PROXIES` | ausente → nenhum proxy confiável (hoje) | Lista separada por vírgula de IPs/CIDRs, ou `*`. Lida em `bootstrap/app.php`; vazia ou ausente não chama `trustProxies()`. Documentada comentada no `.env.example` e ativa (`*`) no bloco Traefik do `.env.docker` |
+| `TRUSTED_PROXIES` | ausente → nenhum proxy confiável (hoje) | Lista separada por vírgula de IPs/CIDRs, ou `*`. Lida pelo `config/kit.php` (`kit.proxies_confiaveis`) e aplicada em `KitServiceProvider::boot()`; vazia, ausente ou sem item válido não chama `TrustProxies::at()`; item inválido/coringa em lista é descartado com aviso no log. Documentada comentada no `.env.example` e no bloco Traefik do `.env.docker` |
 | `TRAEFIK_HOST` | **sem default** — o override falha com mensagem (`${TRAEFIK_HOST:?…}`) | Hostname público do ambiente, usado no `Host(...)` do router. Só é lida com o override ativo (RQ-17, P-04) |
 | `TRAEFIK_REDE` | `my-network` | Nome da rede Docker externa onde o Traefik está; vai para `traefik.docker.network` e para o `name:` da rede externa |
 | `VITE_REVERB_HOST`, `VITE_REVERB_PORT`, `VITE_REVERB_SCHEME`, `VITE_REVERB_APP_KEY` | já existem no `.env.example` | Passam a chegar ao `npm run build` da imagem **quando** o override os repassa em `build.args`; default vazio no `ARG` (RQ-14, P-01) |
@@ -307,13 +315,20 @@ logam pelo Laravel.
   `trim` em cada item, descarta vazios; lista vazia → `null`. Nenhuma validação de IP/CIDR: o
   Symfony aceita os dois e recusa lixo com exceção clara no primeiro request — melhor que o kit
   reinventar o parser (ponytail: stdlib primeiro).
-- `bootstrap/app.php`, dentro de `withMiddleware`, **antes** do `append`:
-  ```php
-  $middleware->trustProxies(at: ProxiesConfiaveis::doEnv(env('TRUSTED_PROXIES')));
-  ```
-  Com `at` nulo o método é no-op (fato 4 do Contexto) — o default não muda. `env()` aqui é
-  legítimo: o bootstrap roda antes do `config/`, e é o lugar que a doc do Laravel 13 prescreve
-  para `trustProxies`. Comentário curto explicando por que a chave é lida aqui e não em `config/kit.php`.
+- `config/kit.php`: `'proxies_confiaveis' => env('TRUSTED_PROXIES')` (o valor **cru**) e, em
+  `KitServiceProvider::boot()`, `confiarNosProxiesDoEnv()`: loga em `configuracoes` cada item de
+  `ProxiesConfiaveis::descartados()` e chama `TrustProxies::at(ProxiesConfiaveis::doEnv(...))` quando
+  o resultado não é `null`. `bootstrap/app.php` **não muda**.
+  *(alterado em 2026-10-05: o plano original chamava `$middleware->trustProxies(at: …env())` no
+  `withMiddleware()` do bootstrap; o step 9 (RD-01/CR-01) mediu que esse closure roda no
+  `afterResolving(HttpKernel)`, antes do `LoadEnvironmentVariables`, e `env()` ali nunca lê o arquivo
+  `.env` — só o ambiente do processo; no Docker funcionava por acidente, pelo `env_file`. No `boot()`
+  do provider o `config/` já está carregado, `TrustProxies::at()` é estático e o middleware o lê em
+  todo request — e com `config:cache` vale o valor cacheado, como toda chave. P-02, P-13.)*
+- `ProxiesConfiaveis` também **valida** cada item (IPv4/IPv6, com `/prefixo` dentro do tamanho) e
+  expõe `descartados()`: coringas em lista (`*`, `**`, `REMOTE_ADDR`, `PRIVATE_SUBNETS`,
+  `private_ranges`) e item inválido saem da lista e vão para o log *(alterado em 2026-10-05: RD-02,
+  RD-03/CR-04 — o Symfony não valida e `172.18.0.0/16x` dava `TypeError` em todo request; P-18, P-19)*.
 - `.env.example`: logo abaixo de `APP_URL`, um bloco comentado:
   ```
   # Atras de proxy que termina o TLS (Traefik, load balancer): IPs/CIDRs separados por virgula,

@@ -52,11 +52,13 @@ kit's example already carries and that are usually forgotten:
   is a 504.
 - **Router and service names are global** in Traefik: they must be unique per environment. The
   example uses the `COMPOSE_PROJECT_NAME` itself, so uniqueness comes for free with the project name.
-- **Service names are global on the shared network too.** Docker's DNS resolves `app` for nginx
-  across **every** network it is attached to; if another project on the server has a container
-  named `app` or `reverb` on the same `my-network`, the kit's `fastcgi_pass app:9000` may land on
-  the wrong project. Confirm with whoever runs Traefik that the network has no other service with
-  those names — and only the kit's `nginx` joins it, never `app`.
+- **Service names are global on the shared network too.** Docker's DNS resolves a name across
+  **every** network of the container that asks: the kit's `nginx`, on `my-network`, resolves `app`
+  there as well, and if another project on the server has a container named `app` on that network,
+  the `fastcgi_pass app:9000` may land on the wrong project; with the Reverb block enabled, `reverb`
+  joins the network and resolves `pgsql` and `redis` the same way. Confirm with whoever runs Traefik
+  (DevOps) that `my-network` has no other service with those names — and only the kit's `nginx` (and
+  `reverb`, if enabled) joins it, never `app`.
 
 This is what the example override declares (with `projeto-dev` and `dev.example.org` coming from the `.env`):
 
@@ -125,14 +127,19 @@ links, does not mark the session cookie as `secure` and redirects to addresses t
 reach. `TRUSTED_PROXIES` says whom to believe — a comma-separated list of IPs/CIDRs, or `*`.
 **Empty or absent, nothing changes**: that is the behaviour the kit always had.
 
-`*` is safe when the nginx port is reachable only from Traefik's network — with `FORWARD_APP_PORT`
-on loopback (next section). If the port goes outward, replace `*` with the CIDR of Traefik's
-network: whoever reaches the container without going through it could forge `X-Forwarded-*`.
+`*` trusts **whoever reaches the nginx port 80**: with `FORWARD_APP_PORT` on loopback (next section)
+that excludes the internet and the host, but not the other containers on `my-network` — the network
+is shared, and a neighbouring container that reaches `nginx:80` directly forges `X-Forwarded-For` and
+`X-Forwarded-Proto` (the IP the login rate limit and the authentication trail record). What closes
+this is the **fixed IP of Traefik** (`ipv4_address` on the network, ask the DevOps) in
+`TRUSTED_PROXIES` instead of `*`; the CIDR of the whole network does not help, because the neighbours
+are inside it. If `*` stays, it stays as an accepted risk among projects on the same server.
 
-The key is read at bootstrap, before `config/`. With the **configuration cached** (`config:cache`)
-Laravel does not load the `.env`, so `TRUSTED_PROXIES` must be in the **process environment** — in the `app`
-profile the Compose `env_file` already does that; outside Docker, set it on the service that starts
-PHP (systemd, php-fpm pool) or do not use the configuration cache.
+The key is read like any other `.env` key, through `config/kit.php`, and applied at the kit's boot.
+Items that are neither IP nor CIDR, and wildcards inside a list (`**`, `REMOTE_ADDR`,
+`PRIVATE_SUBNETS`), are discarded with a warning in the log — a typo in `TRUSTED_PROXIES` never takes
+the application down nor widens trust. With the **configuration cached** (`config:cache`) the value
+`TRUSTED_PROXIES` had in the `.env` at cache time is what counts: rebuild the cache when you change it.
 
 ## Ports: distinct per environment, and on loopback unless they must go out
 
@@ -164,7 +171,11 @@ the port 8090 the matrix reserved for dev's app — hence the offsets.
 
 The original survey marked the first three as "optional"; in the kit they are not, because the base
 file always publishes them. Leaving one undefined is the mistake that keeps the second environment
-from starting.
+from starting. The same goes for the profiles you enable: `ai` publishes `FORWARD_LLAMA_PORT`
+(default 8080 — it collides with staging's app in the matrix) and `FORWARD_EMBED_PORT` (8081), `mail`
+publishes `FORWARD_MAILPIT_PORT` (1025) and `FORWARD_MAILPIT_DASHBOARD_PORT` (8025); on the
+environment that hosts them, move them to loopback with their own values
+(`FORWARD_LLAMA_PORT=127.0.0.1:8180`).
 
 ## Reverb: two routes
 
@@ -175,10 +186,14 @@ The WebSocket can take two paths, and the choice belongs to the server, not to t
   `{project}-reverb`, matching `Host(...)` with `PathPrefix(/app/{REVERB_APP_KEY})` and
   `PathPrefix(/apps/{REVERB_APP_ID})` — the WebSocket and the API Reverb serves — and pointing at
   the container's port 8090. Narrowing by key and id is not decoration: `PathPrefix(/app)` alone
-  would steal the kit's `/app` panel, because in Traefik the longest rule wins. In the `.env`, `REVERB_PORT=443` and `REVERB_SCHEME=https` (and the same
-  `VITE_REVERB_*` values if your front end has Echo). No extra port exposed, TLS for free. The values
-  the browser uses vary per environment and are **baked at build time** — change them and run `up`
-  with `--build`:
+  would steal the kit's `/app` panel, because in Traefik the longest rule wins. No extra port
+  exposed, TLS for free. In the `.env` **only** the `VITE_REVERB_*` values change — what the browser
+  uses, if your front end has Echo; `REVERB_HOST`, `REVERB_PORT` and `REVERB_SCHEME` do **not**
+  change: they are internal (PHP to the WebSocket container), and the compose file already points
+  `app` at port 8090 of that container over plain HTTP (a `REVERB_SCHEME=https` would make
+  broadcasting fail on a TLS the WebSocket container does not serve). The
+  browser values vary per environment and are **baked at build time** — change them and run `up` with
+  `--build`:
 
   ```ini
   VITE_REVERB_HOST=dev.example.org
@@ -197,8 +212,10 @@ The WebSocket can take two paths, and the choice belongs to the server, not to t
       - traefik.http.routers.projeto-dev-reverb.rule=Host(`dev.example.org`) && (PathPrefix(`/app/starter-kit-key`) || PathPrefix(`/apps/starter-kit`))
       - traefik.http.routers.projeto-dev-reverb.entrypoints=websecure
       - traefik.http.routers.projeto-dev-reverb.tls=true
-      - traefik.http.services.projeto-dev-reverb.loadbalancer.server.port=8090
   ```
+
+  plus the service of the same name pointing at the container's port 8090 (the `loadbalancer` line
+  of the example).
 - **Its own port on the host**: uncomment nothing and use `FORWARD_REVERB_PORT` with the matrix
   offset — it is the port the browser connects to, so it stays open outward:
 
@@ -294,21 +311,45 @@ One environment hosts what is expensive and the others point at it. Worth it for
 (~8 GB of RAM per instance) and for **Mailpit**, which stay shared; not for `pgsql` and `redis`
 (Postgres and Redis), which are cheap, stay per environment, and whose full isolation is what makes a
 `migrate:fresh` in dev harmless for staging. The
-recipe goes in the override of the environment that does **not** host, overriding the keys the base
-compose file fixes:
+recipe needs **a network of its own** between the environments (not Traefik's: only `nginx` joins
+that one), shared by the consumer's `app` and `queue` and the host's `llamacpp` — all in each side's
+override, overriding the keys the base compose file fixes:
 
 ```yaml
+# override of the CONSUMER (test, staging): docker network create ia-compartilhada, once
 services:
   app:
+    networks: [default, ia]
     environment:
       LLAMACPP_URL: 'http://projeto-dev-llamacpp-1:8080/v1'
+      LLAMACPP_EMBED_URL: 'http://projeto-dev-llamacpp-embeddings-1:8080/v1'
   queue:
+    networks: [default, ia]
     environment:
       LLAMACPP_URL: 'http://projeto-dev-llamacpp-1:8080/v1'
+      LLAMACPP_EMBED_URL: 'http://projeto-dev-llamacpp-embeddings-1:8080/v1'
+networks:
+  ia:
+    external: true
+    name: ia-compartilhada
 ```
 
-with both environments on a common network (Traefik's will do) and `--profile ai` enabled only on
-the one that hosts.
+```yaml
+# override of the HOST (dev): comes up with --profile ai, and publishes llama on loopback only
+# (FORWARD_LLAMA_PORT=127.0.0.1:8180: the default 8080 collides with staging's app in the matrix)
+services:
+  llamacpp:
+    networks: [default, ia]
+  llamacpp-embeddings:
+    networks: [default, ia]
+networks:
+  ia:
+    external: true
+    name: ia-compartilhada
+```
+
+The same global-name warning applies: only those containers join `ia-compartilhada`, by their
+full names (`projeto-dev-llamacpp-1`), never `app`.
 
 ## Pitfalls
 

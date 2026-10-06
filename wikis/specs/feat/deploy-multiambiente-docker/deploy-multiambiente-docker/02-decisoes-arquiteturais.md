@@ -60,11 +60,13 @@ passam a aplicar o encaixe sem mudar uma letra. A cópia ativa é ignorada pelo 
 
 ---
 
-## ADR-02: `TRUSTED_PROXIES` é lida no bootstrap, falha fechado, e não entra no `config/kit.php`
+## ADR-02: `TRUSTED_PROXIES` é lida pelo `config/kit.php`, aplicada no boot do kit, e falha fechado
 
 **Status**: Aceita
 **Data**: 2026-10-05
-**Portões**: difícil de reverter ✅ (chave pública no `.env.example` e na documentação; renomear depois é quebrar servidor configurado) · surpreendente ✅ (o kit guarda toda configuração própria em `config/kit.php`, e esta fica fora) · trade-off ✅ (`*` cômodo contra CIDR seguro; ausente = ninguém contra ausente = todos)
+**Portões**: difícil de reverter ✅ (chave pública no `.env.example` e na documentação; renomear depois é quebrar servidor configurado) · surpreendente ✅ (a doc do Laravel põe `trustProxies()` no `bootstrap/app.php`, e o kit **não** o faz ali) · trade-off ✅ (`*` cômodo contra IP do proxy seguro; ausente = ninguém contra ausente = todos; descartar item inválido em silêncio contra derrubar a aplicação)
+
+> *(revisada em 2026-10-05, step 9 — RD-01/CR-01: a primeira versão lia a chave no `bootstrap/app.php` com `env()`, por entender que o `config/` ainda não existia ali; o revisor mediu que o closure de `withMiddleware()` roda antes do `LoadEnvironmentVariables` e portanto nunca lê o arquivo `.env`, só o ambiente do processo. A decisão inverteu: a chave vive em `config/kit.php` como as outras, e a aplicação é no `boot()` de `KitServiceProvider`.)*
 
 ### Contexto
 
@@ -76,33 +78,42 @@ framework resolve isso com `trustProxies(at: …)` em `bootstrap/app.php`, e nas
 
 ### Decisão
 
-Uma chave de ambiente, `TRUSTED_PROXIES`, lida em `bootstrap/app.php` por `ProxiesConfiaveis::doEnv()`:
-lista separada por vírgula de IPs/CIDRs, ou `*`. **Vazia ou ausente, nada é chamado** — o
-comportamento de hoje. Os cabeçalhos confiados são os default do `TrustProxies` (todos os
+Uma chave de ambiente, `TRUSTED_PROXIES`, exposta crua em `config/kit.php` (`kit.proxies_confiaveis`)
+e interpretada por `ProxiesConfiaveis::doEnv()` no `boot()` de `KitServiceProvider`, que chama
+`TrustProxies::at()`: lista separada por vírgula de IPs/CIDRs, ou `*`. **Vazia, ausente ou sem item
+válido, nada é chamado** — o comportamento de hoje. Coringa dentro de lista e item que não é IP nem
+CIDR são descartados e registrados no log `configuracoes`: a aplicação não cai e a confiança não
+abre por erro de digitação. Os cabeçalhos confiados são os default do `TrustProxies` (todos os
 `X-Forwarded-*`), que é o que o Traefik envia.
 
 ### Alternativas Consideradas
 
-1. **`config/kit.php` → `kit.proxies_confiaveis`** — descartada: `trustProxies()` roda no
-   `withMiddleware()` do bootstrap, antes de o `config/` ser carregado; ler `config()` ali é ler o
-   valor errado ou nenhum. A doc do Laravel 13 põe a chamada no bootstrap, e `env()` é o único
-   leitor disponível nesse ponto.
+1. **`$middleware->trustProxies(at: …env('TRUSTED_PROXIES'))` no `bootstrap/app.php`**, como a doc
+   do Laravel 13 mostra — descartada depois de medida: o closure roda no `afterResolving` do
+   Kernel, antes do `LoadEnvironmentVariables`, e `env()` só vê o ambiente do processo. Com a chave
+   só no arquivo `.env` (todo deploy fora do Docker: `artisan serve`, php-fpm com `clear_env`
+   padrão), a confiança nunca liga e nada avisa. A doc assume a variável no ambiente, o que o
+   `env_file` do Compose faz e o `.env` não.
 2. **Confiar em `*` sempre que `APP_URL` for `https://`** — descartada: inferir confiança de outra
    chave é o padrão "uma pergunta, duas donas" que `.ai/rules/config.md` proíbe, e abriria
    `X-Forwarded-For` falsificado para qualquer um que alcance a porta publicada no host.
 3. **Default `*` quando a chave está ausente** — descartada: inverte a direção do erro. Quem roda
    hoje sem proxy passaria a aceitar cabeçalhos forjados sem ter pedido nada.
-4. **Validar o CIDR no kit** — descartada (ponytail): o Symfony valida ao resolver o IP e lança
-   exceção clara; um parser próprio só duplicaria.
+4. **Passar o item cru ao Symfony e deixar que ele valide** — descartada depois de medida (RD-03):
+   o Symfony **não** valida — `172.18.0.0/16x` é `TypeError` em `substr_compare()` em todo request
+   que leia `isSecure()`/`ip()`/`url()`, e `17x.18.0.1` é silêncio. Um `filter_var(FILTER_VALIDATE_IP)`
+   mais o tamanho do prefixo custa dez linhas e separa os dois modos de falha do mesmo jeito: fora,
+   com aviso.
 
 ### Consequências
 
 - **Positivas**: default intocado; uma chave, um significado; `*` resolve o caso comum (porta 80 do
   container alcançável só pela rede do Traefik) e a lista resolve o caso com porta publicada no host.
-- **Negativas**: é a única configuração do kit fora de `config/kit.php` e das Configurações da
-  aplicação — e não pode ser diferente. Está escrito no comentário do `.env.example` e no bootstrap.
-- **Riscos**: `*` com porta publicada em `0.0.0.0` aceita `X-Forwarded-For` forjado. A documentação
-  manda publicar só em `127.0.0.1` ou usar o CIDR da rede do Traefik nesse caso.
+- **Negativas**: a chave fica em `config/kit.php` como as outras, mas não nas Configurações da
+  aplicação (é infraestrutura do servidor, não preferência do produto). Com `config:cache`, vale o
+  valor cacheado — como toda chave.
+- **Riscos**: `*` confia em qualquer container da rede compartilhada do Traefik, não só nele; a
+  documentação recomenda o IP fixo do Traefik e declara o `*` como risco aceito (CR-03, P-21).
 
 ### Referências
 

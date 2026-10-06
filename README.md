@@ -406,7 +406,7 @@ O rebuild vem **depois** do pull porque a imagem é self-contained (o código é
 
 ### Vários ambientes no mesmo servidor
 
-Dev, teste e homologação do mesmo projeto num servidor só, cada um com a própria stack, atrás de um Traefik que roteia por hostname: é opt-in — um override de exemplo em `docker/traefik/docker-compose.override.yml` copiado para a raiz do checkout, `COMPOSE_PROJECT_NAME` distinto por ambiente e `TRUSTED_PROXIES` no `.env` para o Laravel honrar o TLS terminado no proxy. Sem a cópia e sem as chaves, nada muda. [Passo a passo, matriz de portas e as duas rotas do Reverb](https://gsferro.github.io/filament-starter-kit-easy/pt/operacao/deploy-docker-multiambiente.html).
+Dev, teste e homologação do mesmo projeto num servidor só, cada um com a própria stack, atrás de um Traefik que roteia por hostname: é opt-in — um override de exemplo em `docker/traefik/docker-compose.override.yml` copiado para a raiz do checkout, `COMPOSE_PROJECT_NAME` distinto por ambiente e `TRUSTED_PROXIES` no `.env` para o Laravel honrar o TLS terminado no proxy. Sem a cópia e sem as chaves, nada muda. [Passo a passo, matriz de portas e as duas rotas do WebSocket](https://gsferro.github.io/filament-starter-kit-easy/pt/operacao/deploy-docker-multiambiente.html).
 
 ## Comandos
 

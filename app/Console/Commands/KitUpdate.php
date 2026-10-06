@@ -353,6 +353,15 @@ class KitUpdate extends Command
          * própria ao exemplo revisa o diff antes de aceitar, como já faz com o `config/kit.php`.
          */
         '.env.example',
+        /*
+         * O `.env.docker` é o segundo arquivo de sugestão: o "upgrade" de quem usa as stacks
+         * do Docker, onde o kit documenta cada chave das stacks (e, desde o deploy
+         * multiambiente, o bloco do Traefik). Fora da lista, ele congelava na versão da
+         * instalação pelo mesmo motivo do `.env.example` — e `tests/Kit` afirma o conteúdo
+         * dele (`MysqlNoDockerTest` CT-20, `DeployMultiambienteDockerTest` CT-23/CT-24):
+         * a instalação atualizada recebia o teste e não a linha que ele exige.
+         */
+        '.env.docker',
     ];
 
     /**
