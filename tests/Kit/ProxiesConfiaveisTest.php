@@ -20,45 +20,46 @@ use Illuminate\Support\Facades\Route;
  */
 
 /**
- * Fixa `TRUSTED_PROXIES` nas três formas que o `env()` consulta; `null` remove a chave.
- * O valor anterior é guardado na primeira chamada e devolvido por `restauraTrustedProxies()`.
+ * Fixa uma chave nas três formas que o `env()` consulta; `null` remove a chave.
+ * O valor anterior é guardado na primeira chamada de cada chave e devolvido por `restauraEnvDoCaso()`.
  */
-function comTrustedProxies(?string $valor): void
+function comEnvDoCaso(string $chave, ?string $valor): void
 {
-    if (! isset($GLOBALS['__trusted_proxies_anterior'])) {
-        $GLOBALS['__trusted_proxies_anterior'] = [
-            'putenv' => getenv('TRUSTED_PROXIES'),
-            'env'    => $_ENV['TRUSTED_PROXIES'] ?? null,
-            'server' => $_SERVER['TRUSTED_PROXIES'] ?? null,
+    if (! isset($GLOBALS['__env_do_caso_anterior'][$chave])) {
+        $GLOBALS['__env_do_caso_anterior'][$chave] = [
+            'putenv' => getenv($chave),
+            'env'    => $_ENV[$chave] ?? null,
+            'server' => $_SERVER[$chave] ?? null,
         ];
     }
 
     if ($valor === null) {
-        putenv('TRUSTED_PROXIES');
-        unset($_ENV['TRUSTED_PROXIES'], $_SERVER['TRUSTED_PROXIES']);
+        putenv($chave);
+        unset($_ENV[$chave], $_SERVER[$chave]);
 
         return;
     }
 
-    putenv("TRUSTED_PROXIES={$valor}");
-    $_ENV['TRUSTED_PROXIES']    = $valor;
-    $_SERVER['TRUSTED_PROXIES'] = $valor;
+    putenv("{$chave}={$valor}");
+    $_ENV[$chave]    = $valor;
+    $_SERVER[$chave] = $valor;
 }
 
-function restauraTrustedProxies(): void
+function comTrustedProxies(?string $valor): void
 {
-    $anterior = $GLOBALS['__trusted_proxies_anterior'] ?? null;
+    comEnvDoCaso('TRUSTED_PROXIES', $valor);
+}
 
-    if ($anterior === null) {
-        return;
+function restauraEnvDoCaso(): void
+{
+    foreach ($GLOBALS['__env_do_caso_anterior'] ?? [] as $chave => $anterior) {
+        $anterior['putenv'] === false ? putenv($chave) : putenv("{$chave}={$anterior['putenv']}");
+
+        $anterior['env'] === null ? $_ENV       = array_diff_key($_ENV, [$chave => 1]) : $_ENV[$chave] = $anterior['env'];
+        $anterior['server'] === null ? $_SERVER = array_diff_key($_SERVER, [$chave => 1]) : $_SERVER[$chave] = $anterior['server'];
     }
 
-    $anterior['putenv'] === false ? putenv('TRUSTED_PROXIES') : putenv("TRUSTED_PROXIES={$anterior['putenv']}");
-
-    $anterior['env'] === null ? $_ENV       = array_diff_key($_ENV, ['TRUSTED_PROXIES' => 1]) : $_ENV['TRUSTED_PROXIES'] = $anterior['env'];
-    $anterior['server'] === null ? $_SERVER = array_diff_key($_SERVER, ['TRUSTED_PROXIES' => 1]) : $_SERVER['TRUSTED_PROXIES'] = $anterior['server'];
-
-    unset($GLOBALS['__trusted_proxies_anterior']);
+    unset($GLOBALS['__env_do_caso_anterior']);
 }
 
 /**
@@ -66,7 +67,7 @@ function restauraTrustedProxies(): void
  *
  * @return array{status: int, seguro: bool, host: string, url: string, ip: string}
  */
-function requestDoTraefik(string $chamador): array
+function requestDoTraefik(string $chamador, string $porta = '443'): array
 {
     app()->forgetInstance(Kernel::class);
     config(['app.url' => 'https://dev.exemplo.test']);
@@ -82,14 +83,14 @@ function requestDoTraefik(string $chamador): array
         'X-Forwarded-For'   => '203.0.113.9',
         'X-Forwarded-Proto' => 'https',
         'X-Forwarded-Host'  => 'dev.exemplo.test',
-        'X-Forwarded-Port'  => '443',
+        'X-Forwarded-Port'  => $porta,
     ]);
 
     return ['status' => $resposta->status()] + ($resposta->json() ?? []);
 }
 
 afterEach(function (): void {
-    restauraTrustedProxies();
+    restauraEnvDoCaso();
 });
 
 /**
@@ -112,13 +113,18 @@ it('[CT-20] cada forma do valor tem uma interpretacao so', function (mixed $brut
     'espaço e item vazio no meio'     => [' 10.0.0.1 , ,172.18.0.0/16 ', ['10.0.0.1', '172.18.0.0/16']],
     'não-string bool'                 => [true, null],
     'não-string inteiro'              => [1, null],
+    'não-string falso'                => [false, null],
     '* dentro de lista'               => ['10.0.0.1,*', ['10.0.0.1']],
     '* repetido, em lista'            => ['*,*', null],
+    '*, com separador'                => ['*,', null],
     '** sozinho'                      => ['**', null],
+    '** dentro de lista'              => ['10.0.0.1,**', ['10.0.0.1']],
     'REMOTE_ADDR dentro de lista'     => ['10.9.9.9,REMOTE_ADDR', ['10.9.9.9']],
+    'REMOTE_ADDR com espaço'          => ['10.9.9.9, REMOTE_ADDR ', ['10.9.9.9']],
     'REMOTE_ADDR sozinho'             => ['REMOTE_ADDR', null],
     'PRIVATE_SUBNETS sozinho'         => ['PRIVATE_SUBNETS', null],
     'PRIVATE_SUBNETS dentro de lista' => ['10.9.9.9,PRIVATE_SUBNETS', ['10.9.9.9']],
+    'PRIVATE_SUBNETS com espaço'      => ['10.9.9.9 , PRIVATE_SUBNETS', ['10.9.9.9']],
 ])->group('kit');
 
 /**
@@ -128,8 +134,9 @@ it('[CT-20] cada forma do valor tem uma interpretacao so', function (mixed $brut
  * `efetivo` é o que `env('TRUSTED_PROXIES')` devolve — para `=true` é o bool `true`, e o `Dado`
  * o afirma antes do request para o caso não medir o `.env` do desenvolvedor.
  */
-it('[CT-21] cabecalhos de proxy nao confiavel nao mudam esquema, host, URL nem IP', function (string $chamador, ?string $bruto, mixed $efetivo): void {
+it('[CT-21] cabecalhos de proxy nao confiavel nao mudam esquema, host, URL nem IP', function (string $chamador, ?string $bruto, mixed $efetivo, ?string $traefikHost = null): void {
     comTrustedProxies($bruto);
+    comEnvDoCaso('TRAEFIK_HOST', $traefikHost);
 
     expect(env('TRUSTED_PROXIES'))->toBe($efetivo);
 
@@ -147,31 +154,37 @@ it('[CT-21] cabecalhos de proxy nao confiavel nao mudam esquema, host, URL nem I
     'não-string, falha fechado'    => ['127.0.0.1', 'true', true],
     '* dentro de lista'            => ['127.0.0.1', '10.9.9.9,*', '10.9.9.9,*'],
     'REMOTE_ADDR dentro de lista'  => ['127.0.0.1', '10.9.9.9,REMOTE_ADDR', '10.9.9.9,REMOTE_ADDR'],
+    '** sozinho'                   => ['127.0.0.1', '**', '**'],
+    'REMOTE_ADDR sozinho'          => ['127.0.0.1', 'REMOTE_ADDR', 'REMOTE_ADDR'],
+    '*, repetido, em lista'        => ['127.0.0.1', '*,*', '*,*'],
+    'TRAEFIK_HOST definida'        => ['127.0.0.1', null, null, 'dev.exemplo.test'],
     'rede do Docker, sem chave'    => ['172.18.0.5', null, null],
     '10/8, sem chave'              => ['10.0.0.7', null, null],
     'rede do Docker, vazia'        => ['172.18.0.5', '', ''],
     'faixa privada, lista sem ele' => ['10.0.0.7', '10.9.9.9', '10.9.9.9'],
     'PRIVATE_SUBNETS em lista'     => ['172.18.0.5', '10.9.9.9,PRIVATE_SUBNETS', '10.9.9.9,PRIVATE_SUBNETS'],
+    'PRIVATE_SUBNETS sozinho'      => ['172.18.0.5', 'PRIVATE_SUBNETS', 'PRIVATE_SUBNETS'],
 ])->group('kit');
 
 /**
  * Com `*` ou lista que contém o chamador, esquema, host, URL e IP são os que o Traefik informa.
  * A linha com espaço é a que reprova o `env()` passado cru ao `trustProxies()`.
  */
-it('[CT-22] cabecalhos de proxy confiavel chegam a aplicacao', function (string $bruto): void {
+it('[CT-22] cabecalhos de proxy confiavel chegam a aplicacao', function (string $bruto, string $porta, string $url): void {
     comTrustedProxies($bruto);
 
     expect(env('TRUSTED_PROXIES'))->toBe($bruto);
 
-    $visto = requestDoTraefik('127.0.0.1');
+    $visto = requestDoTraefik('127.0.0.1', $porta);
 
     expect($visto['status'])->toBe(200)
         ->and($visto['seguro'])->toBeTrue()
         ->and($visto['host'])->toBe('dev.exemplo.test')
-        ->and($visto['url'])->toBe('https://dev.exemplo.test/x')
+        ->and($visto['url'])->toBe($url)
         ->and($visto['ip'])->toBe('203.0.113.9');
 })->with([
-    'todos'                => ['*'],
-    'todos, com espaço'    => [' * '],
-    'lista com o chamador' => ['10.9.9.9,127.0.0.1'],
+    'todos'                     => ['*', '443', 'https://dev.exemplo.test/x'],
+    'todos, com espaço'         => [' * ', '443', 'https://dev.exemplo.test/x'],
+    'lista com o chamador'      => ['10.9.9.9,127.0.0.1', '443', 'https://dev.exemplo.test/x'],
+    'porta não padrão do proxy' => ['*', '8443', 'https://dev.exemplo.test:8443/x'],
 ])->group('kit');

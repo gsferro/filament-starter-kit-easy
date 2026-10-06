@@ -13,15 +13,23 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   sozinho — põe o `nginx` na rede externa do Traefik com os labels do docker provider (router e
   service nomeados pelo `COMPOSE_PROJECT_NAME`, únicos por ambiente; `traefik.docker.network`
   obrigatório; `TRAEFIK_HOST` sem default, o Compose recusa subir sem ela), com o bloco do Reverb pelo
-  mesmo hostname comentado e os `VITE_REVERB_*` repassados como `build.args`. O `Dockerfile.laravel`
-  aceita esses quatro argumentos no estágio `assets` (vazios por padrão — a imagem de hoje). Chave
-  nova `TRUSTED_PROXIES` (lista ou `*`; **ausente = nenhum proxy**, como sempre) lida em
-  `bootstrap/app.php` por `App\Support\ProxiesConfiaveis`, para o Laravel honrar o TLS terminado no
-  proxy. Bloco pronto no `.env.docker`; `/docker-compose.override.yml` no `.gitignore`. O
-  `docker-compose.yml` base, o `nginx.conf` e o `deploy_docker_local.sh` não mudam. Página nova no
-  site, `operacao/deploy-docker-multiambiente` (pt/en): mecanismo central, passo a passo, portas
-  opcionais com bind em `127.0.0.1` e matriz por ambiente, as duas rotas do Reverb, um checkout por
-  ambiente e as opções descartadas, armadilhas.
+  mesmo hostname comentado entre marcadores (recortado por `/app/<REVERB_APP_KEY>` e
+  `/apps/<REVERB_APP_ID>`, obrigatórias — `PathPrefix(/app)` roubaria o painel `/app`) e os
+  `VITE_REVERB_*` repassados como `build.args` em lista (só os definidos no `.env` chegam). O
+  `Dockerfile.laravel` aceita esses quatro argumentos no estágio `assets` como `ARG` **sem default e
+  sem `ENV`** — não passados, ficam ausentes e a imagem é a de hoje. Chave nova `TRUSTED_PROXIES`
+  (lista de IPs/CIDRs ou `*`; **ausente = nenhum proxy**, como sempre; `*`, `**`, `REMOTE_ADDR` e
+  `PRIVATE_SUBNETS` dentro de lista são descartados) lida em `bootstrap/app.php` por
+  `App\Support\ProxiesConfiaveis`, para o Laravel honrar o TLS terminado no proxy — com a
+  configuração em cache ela precisa estar no ambiente do processo. Bloco pronto no `.env.docker`
+  (todo comentado); `/docker-compose.override.yml` no `.gitignore`. O `docker-compose.yml` base, o
+  `nginx.conf` e o `deploy_docker_local.sh` não mudam, e um golden da configuração efetiva do base
+  (`tests/Kit/fixtures/compose-base.json`, gerado da `v0.44.0` com todos os profiles) passa a
+  guardar isso. Página nova no site, `operacao/deploy-docker-multiambiente` (pt/en): mecanismo
+  central, o encaixe no Traefik (inclusive o aviso de nome de serviço global na rede
+  compartilhada), passo a passo, as quatro `FORWARD_*` obrigatórias e distintas por ambiente com
+  bind em `127.0.0.1` e a matriz, as duas rotas do Reverb, um checkout por ambiente com os três
+  `.env`, as opções B/C/D e as armadilhas.
 
 ## [0.44.0] - 2026-10-05
 
