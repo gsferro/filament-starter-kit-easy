@@ -5,7 +5,7 @@
 > Branch: `feat/deploy-multiambiente-docker` · Base do PR: `main` (`71a7297`, v0.44.0)
 
 ## 0. Revisão do levantamento
-- [ ] Divergências documento × código registradas como premissas (P-01, P-02, P-05, P-06) e no confronto abaixo
+- [x] Divergências documento × código registradas como premissas (P-01, P-02, P-05, P-06) e no confronto abaixo — tabela `Confronto código × afirmação` em `## Auditoria Pré-Implementação`, 2026-10-05
 
 ## 1. `TRUSTED_PROXIES`
 - [x] `app/Support/ProxiesConfiaveis.php` com `doEnv()` — `vendor/bin/pint` passed, `phpstan analyse` 0 erros, 2026-10-05
@@ -32,8 +32,8 @@
 
 ## 6. Testes e verificação
 - [x] Testes do `04` escritos pelo `fw-executor-ct` — dois arquivos, 205 casos (77 + 128), todos verdes após o `04` v4, 2026-10-05
-- [ ] Regressão nomeada verde
-- [ ] Contagens dos READMEs
+- [x] Regressão nomeada verde — ver `## Verificação Final`, 2026-10-05
+- [x] Contagens dos READMEs — 75 / 177 / 206 / 1.944 por comando (`SiteDeDocumentacaoTest` CT-25/CT-50 e o caso dos números objetivos verdes), 2026-10-05
 
 ## 7. Release
 - [ ] Bump, CHANGELOG com *Validação antes da tag*, tag, `release.yml`
@@ -49,20 +49,20 @@ Não fatiado — 2026-10-05: 17 RQ vigentes, 32 CT, compactação: sim (antes do
 - [x] `/ponytail:ponytail-review` no diff — passe em linha (skill do plugin) sobre `git diff main...HEAD -- app bootstrap config Dockerfile.laravel docker .env.* .gitignore`: código novo = 1 classe (`ProxiesConfiaveis`, 4 métodos, 1 constante), 1 método privado no provider, 1 chave de config, 4 `ARG`, 1 linha no `KitUpdate`; `bootstrap/app.php` idêntico à `main`. Achados: `L? shrink:` nenhum — `texto()`/`separar()`/`ehIpOuCidr()` são a menor forma que mantém `doEnv()` e `descartados()` com uma só regra; `delete:` nenhum (o `ARG` inerte é RQ-14, recusado no step 6 e mantido). `Lean already. Ship.` — `net: -0 lines possible`, 2026-10-05
 - [x] `vendor/bin/pint --dirty` — `{"tool":"pint","result":"passed"}` sobre os PHP do diff, 2026-10-05
 - [x] `vendor/bin/pest tests/Kit/DeployMultiambienteDockerTest.php tests/Kit/ProxiesConfiaveisTest.php --compact` — 128/128 + 77/77 (205 casos; com `RedeDeDocumentacaoTest` e `HelpersDeTesteTest`, 226/226), 2026-10-05
-- [ ] Regressão nomeada (`CacheDeViewsNoDockerTest`, `MysqlNoDockerTest`, `DeployDockerLocalTest`, `UrlSemPrefixoPublicTest`, `DiagramasDaArquiteturaTest`, `SiteDeDocumentacaoTest`, `RedeDeDocumentacaoTest`, `KitUpdateTest`)
-- [ ] Suíte completa Kit+Tenancy contra a baseline (3.912 / 0 falhas / 841 pulados na simulação da v0.44.0) — parcial: `pest --testsuite=Tenancy --parallel` → 486/486 verdes (2.012 asserções, 133 s) sobre o código final; a `Kit` roda de novo depois da 3ª passada do executor (a primeira rodada, antes do step 9, deu 3.592 testes com 2 falhas em `DiagramasDaArquiteturaTest` CT-43, já corrigidas na página)
+- [x] Regressão nomeada (`CacheDeViewsNoDockerTest`, `MysqlNoDockerTest`, `DeployDockerLocalTest`, `UrlSemPrefixoPublicTest`, `DiagramasDaArquiteturaTest`, `SiteDeDocumentacaoTest`, `RedeDeDocumentacaoTest`, `KitUpdateTest`) — todos dentro das três fatias da `Kit` (verdes) e rerodados isolados: 114/114 (cache/mysql/deploy/url/update), 88/88 (site/rede), 570/570 (diagramas/checklist/constraint/arquitetura), 2026-10-05
+- [x] Suíte completa Kit+Tenancy contra a baseline (3.912 / 0 falhas / 841 pulados na simulação da v0.44.0) — `Kit` em três fatias **em série** (a rodada em paralelo foi interrompida pelo host por falta de memória): 771 + 1.720 + 1.140 = **3.631** testes; 4 falhas nas duas primeiras fatias, todas corrigidas e rerodadas verdes no mesmo dia (`ArquiteturaDoCodigoTest` ×2: `var_export` em `app/` → `json_encode`; `DiagramasDaArquiteturaTest` CT-66 ×2: citações para `KitServiceProvider.php`/`KitUpdate.php` deslocadas pelas linhas novas — 20 citações recalculadas em docs, comentários e testes); `Tenancy` `--parallel`: 486/486. Total 4.117 casos sobre o código final, 0 falhas pendentes (a baseline da `main` tinha 3.912: +205 desta feature), 2026-10-05. Antes era parcial: `pest --testsuite=Tenancy --parallel` → 486/486 verdes (2.012 asserções, 133 s) sobre o código final; a `Kit` roda de novo depois da 3ª passada do executor (a primeira rodada, antes do step 9, deu 3.592 testes com 2 falhas em `DiagramasDaArquiteturaTest` CT-43, já corrigidas na página)
 - [x] `pest --mutate --path=app/Support/ProxiesConfiaveis.php` via `pestw.cmd`: score, duração e sobreviventes — `XDEBUG_MODE=coverage MSYS_NO_PATHCONV=1 cmd /c pestw.cmd tests/Kit/ProxiesConfiaveisTest.php --mutate --path=app/Support/ProxiesConfiaveis.php --no-tia` → `27 Mutations`, `4 uncovered` (os `RemoveArrayItem` da linha da constante `CORINGAS`, que não é linha executada), `23 tested`, `Score: 85.19%`, **`Duration: 1.06s`** — duração **implausível** para 23 processos (~46 ms cada; `.ai/rules/testes.md` manda não aceitar), então o score **não é usado como evidência**. Evidência válida: **4 mutantes manuais mortos pela suíte** — `=== '*'`→`!== '*'` (21 falhas de 33), coringas não descartados (9), `PRIVATE_SUBNETS` fora de `CORINGAS` (3 — cobre exatamente o `uncovered` do plugin), `trim` dos itens removido (2); árvore restaurada e 33/33 verdes depois, 2026-10-05
 - [x] `docker compose --profile app config` com e sem o override, fora da árvore — medido na sonda `scratchpad/compose-real` (cópia do base real): com override, labels `projeto-dev`, `host_ip: 127.0.0.1`, rede `my-network` externa, `build.args` só com a `VITE_REVERB_HOST` definida; sem `TRAEFIK_HOST`/`REVERB_APP_KEY`, recusa nomeando a chave; sem o override, a config é a do golden (CT-34 verde), 2026-10-05
-- [ ] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação
-- [ ] Desvios propagados ao `01`/`02`/`04` de origem, marcados `*(alterado em …)*`
+- [x] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação — `/code-review` indisponível neste host: passe genérico por `general-purpose`/opus cego (CR-01..09) + `fw-revisor-diff` (RD-01..08), 17 achados, todos aceitos e roteados (P-18..P-25 → CT → correção), 0 rejeitados sem motivo; tabela em `## Revisão do Diff (step 9)`, 2026-10-05
+- [x] Desvios propagados ao `01`/`02`/`04` de origem, marcados `*(alterado em …)*` — `grep -c 'alterado em 2026-10-05' 01-plano-acao.md` = 8, ADR-02 do `02` revisada com a nota, `04` v4 com `## Revisão Adversarial` + `### Step 9`; lista em `## Desvios do Plano`, 2026-10-05
 - [x] `rastreabilidade.sh {wiki}` silencioso — `bash .claude/skills/feature-wiki/scripts/rastreabilidade.sh wikis/specs/feat/deploy-multiambiente-docker/deploy-multiambiente-docker` → vazio, exit 0, 2026-10-05
 - [x] `checkbox-sem-evidencia.sh {wiki}` silencioso — vazio, exit 0, 2026-10-05 (reconferido ao fechar o `03`)
 - [x] `citacoes.sh {wiki}` silencioso — vazio, exit 0 sobre `00`–`04`, 2026-10-05
 - [x] `ids-ct.sh {wiki} 'tests/Kit/DeployMultiambienteDockerTest.php' 'tests/Kit/ProxiesConfiaveisTest.php'` silencioso — vazio, exit 0 (47 IDs do `04` ⊆ 2 arquivos e vice-versa), 2026-10-05
 - [x] `conformidade-rules.sh {wiki} main` silencioso — vazio, exit 0 depois das 4 linhas em `## Conformidade com Rules` (`app.md` n.a., `support.md` n.a., `testes.md` aplicada, `specs.md` aplicada), 2026-10-05
-- [x] Falsificabilidade dos CTs novos: quantos falham sem o fix — `ProxiesConfiaveisTest`: com `bootstrap/app.php` da `main` e uma classe-toco que devolve a string crua, **17 de 33 falham** (os 16 que passam são as linhas "ausente/vazio = hoje", que valem nos dois lados por construção); `DeployMultiambienteDockerTest`: com `Dockerfile.laravel`, `.env.docker`, `.gitignore` e `.env.example` da `main` e o override de exemplo removido, **25 casos a mais falham** (96 → 55 verdes de 105; os 9 vermelhos restantes são os de oráculo pendente CT-06/CT-30). Árvore restaurada (`git status --porcelain` vazio), 2026-10-05
-- [ ] Docs pt/en, CHANGELOG e README reconciliados
-- [ ] `node converter.mjs` sem diff residual
+- [x] Falsificabilidade dos CTs novos: quantos falham sem o fix — **fiação final** (chamada `confiarNosProxiesDoEnv()` comentada no `boot()` do provider): **7 de 77 falham** em `ProxiesConfiaveisTest` (os CT-22/CT-48/CT-50 de request e log), árvore restaurada e 77/77 depois, 2026-10-05; medições anteriores à mudança do step 9: `ProxiesConfiaveisTest`: com `bootstrap/app.php` da `main` e uma classe-toco que devolve a string crua, **17 de 33 falham** (os 16 que passam são as linhas "ausente/vazio = hoje", que valem nos dois lados por construção); `DeployMultiambienteDockerTest`: com `Dockerfile.laravel`, `.env.docker`, `.gitignore` e `.env.example` da `main` e o override de exemplo removido, **25 casos a mais falham** (96 → 55 verdes de 105; os 9 vermelhos restantes são os de oráculo pendente CT-06/CT-30). Árvore restaurada (`git status --porcelain` vazio), 2026-10-05
+- [x] Docs pt/en, CHANGELOG e README reconciliados — página pt/en com todas as âncoras do `04` v4 (CT-27..CT-32, CT-41, CT-42, CT-47 verdes); CHANGELOG `[Unreleased]` descreve o comportamento final (config/boot, coringas, lista de `build.args`, golden textual); READMEs com contagens por comando (75 specs, 177/206 arquivos, badge 1.944), 2026-10-05
+- [x] `node converter.mjs` sem diff residual — rerodado após cada edição de página; `git status --porcelain` vazio depois do último, 2026-10-05
 - [ ] `git commit`
 
 ## Revisão do Diff (step 9)
