@@ -373,7 +373,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 
 ## Regra R8 — a entrada nova na lista é comparada tag de destino × árvore do projeto *(alterado em 2026-10-06: CR-01/RD-01)*
 
-> `P-06`, `RQ-01`, `RQ-05` · perfil **padrão** · técnica: **EP** sobre conjuntos de caminhos (CT-15) + **tabela de decisão** status do `git diff --name-status` × há origem (CT-16) + **procedimento** do comando real (CT-17). Células da tabela: com origem, `A` = novo no kit, `M` = modificado, `D` = removido do kit; sem origem, `D` = novo no kit, `M` = modificado, `A` = ignorado (só o projeto tem); outra letra = modificado, nas duas colunas
+> `P-06`, `RQ-01`, `RQ-05` · perfil **padrão** · técnica: **EP** sobre conjuntos de caminhos (CT-15) + **tabela de decisão** status do `git diff --name-status` × há origem (CT-16) + **procedimento** do comando real (CT-17). Células da tabela: com origem, `A` = novo no kit, `M` = modificado, `D` = removido do kit; sem origem, `D` = novo no kit, `M` = modificado, `A` = ignorado (só o projeto tem); outra letra = modificado, nas duas colunas · *(alterado em 2026-10-06: QA-12 — células acrescentadas pela P-08: `M` + ausente no projeto = "novo no kit"; `M` + presente = "modificado"; qualquer outro status ignora o callable, inclusive `R`/`C`/`T`)*
 
 ```gherkin
   Regra: o caminho que entrou na lista do destino e não estava na da origem é comparado contra a árvore do projeto, e só ele
@@ -391,7 +391,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
         | ["app", "resources/views/vendor/fad"]                              | []                                        | []                                       | origem não lida: "não pude ler" não vira "tudo é novo"             |
         | ["app", "config/kit.php"]                                          | ["config/kit.php", "app", "routes"]       | []                                       | presentes nas duas, com a mesma forma e em outra ordem, não são novas; "routes" só na origem não entra — mata origem − destino |
 
-    # P-08 (QA-03): com `existeNoProjeto`, status M de arquivo que o projeto não tem vira "novo no kit"; com o arquivo presente, continua "modificado"; sem o callable, nada muda. Duas linhas a mais nos Exemplos. *(alterado em 2026-10-06, escrito pela sessão)*
+    # P-08 (QA-03): com `existeNoProjeto`, status M de arquivo que o projeto não tem vira "novo no kit"; com o arquivo presente, continua "modificado"; sem o callable, nada muda. Três linhas a mais nos Exemplos (M + ausente, M + presente, D + ausente) e, pelo QA-08, a linha `R100` (renome segue "modificado"). *(alterado em 2026-10-06, escrito pela sessão; QA-12 — dizia "duas")*
     Esquema do Cenário: [CT-16] a saída do git diff --name-status vira rótulo conforme haja origem
       Dado a saída real do "git diff --name-status" <saida>
       E <origem>
@@ -522,7 +522,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | BOM no início da view como partição | P-03 normaliza só fim de linha; BOM é diferença de conteúdo e cai na partição `byte`, sem mutante novo |
 | CT-14 com a lista "unida com a de um destino antigo" como prova de entrega a quem atualiza *(alterado em 2026-10-06: CR-08)* | a união é comutativa: a lista unida contém a entrada nova seja qual for a lista antiga, então o cenário passava com e sem P-06 e nunca exercitava o defeito real — entrada que entrou na lista com o arquivo igual entre as tags, e por isso fora do diff tag→tag. O mecanismo real (o diff entre tags) fica em CT-15 (quais entradas são novas), CT-16 (como a saída do diff vira rótulo) e CT-17 (o comando inteiro); CT-14 ficou só com o que prova: a entrada-pasta extrai o arquivo aninhado |
 | `it()` que monta um repositório git temporário com duas tags e roda `arquivosAlterados()` *(alterado em 2026-10-06: CR-01/RD-01)* | o método é privado e o arnês custaria um repositório com histórico por caso; a composição (qual diff roda sobre quais caminhos, M36) fica no procedimento CT-17, e as duas peças puras têm regressão em CT-15/CT-16 |
-| linha `R100\told\tnew` no CT-16 *(alterado em 2026-10-06: CR-01/RD-01)* | o desenho recebido diz que `R` vira "modificado", mas não qual dos dois caminhos é a chave; fixar um seria inventar o oráculo — volta como pergunta de desenho (Q8 do retorno). A célula "outra letra" está coberta pela linha `T` |
+| linha `R100\told\tnew` no CT-16 *(alterado em 2026-10-06: CR-01/RD-01)* | o desenho recebido diz que `R` vira "modificado", mas não qual dos dois caminhos é a chave; fixar um seria inventar o oráculo — volta como pergunta de desenho (Q8 do retorno). A célula "outra letra" está coberta pela linha `T` — **revertido em 2026-10-06 (QA-08/QA-12)**: a linha `R100` entrou no CT-16 com o oráculo pré-existente (chave `old\tnew`, rótulo "modificado"), porque a P-08 precisava provar que o callable não a alcança |
 
 ## Sem CT-B
 
