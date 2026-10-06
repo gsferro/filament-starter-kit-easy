@@ -22,7 +22,7 @@ return [
     | contra a árvore de trabalho, que é mais ruidosa.
     */
 
-    'version' => '0.44.0',
+    'version' => '0.45.0',
 
     /*
     |--------------------------------------------------------------------------
@@ -146,6 +146,20 @@ return [
         'favicon'            => null,
         'arte_do_login'      => null,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Proxies confiáveis
+    |--------------------------------------------------------------------------
+    | Atrás de um proxy que termina o TLS (o Traefik do deploy multiambiente, um
+    | load balancer), quem o Laravel pode acreditar ao ler `X-Forwarded-*`: lista
+    | de IPs/CIDRs separada por vírgula, ou `*` (só com a porta do container fora
+    | do alcance de quem não é o proxy). Ausente ou vazia: ninguém, como sempre.
+    | O valor CRU fica aqui; quem o interpreta (coringas e itens inválidos
+    | descartados, com aviso no log) é `App\Support\ProxiesConfiaveis`, chamado em
+    | `KitServiceProvider::boot()` — depois de o .env ter sido carregado.
+    */
+    'proxies_confiaveis' => env('TRUSTED_PROXIES'),
 
     /*
     |--------------------------------------------------------------------------

@@ -68,7 +68,7 @@ public.
 The **registration** and **password reset** screens get the signature only, not the notice.
 
 If the switch is on and the field is empty, the footer shows the signature and, beside it, **the kit version, labelled**
-(`kit 0.44.0`). It is never presented as if it were your product's: the label is precisely what
+(`kit 0.45.0`). It is never presented as if it were your product's: the label is precisely what
 prevents that reading, and it is a kit requirement, not a screen detail.
 
 **`APP_VERSION` seeds ONCE, at install time. After that, the screen wins.**
@@ -207,10 +207,10 @@ accDescr: .env seeds config/*.php at boot; the database overrides mapaDeConfigur
 `ConfiguracoesDoKit::aplicarNaConfig()` runs the second arrow
 (`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:540`), called at boot by
 `KitServiceProvider::configureSettingsDoKit()`
-(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:394`); the overridden keys are exactly
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:428`); the overridden keys are exactly
 the ones in `mapaDeConfiguracao()`
 (`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:396`) — `KIT_TENANCY`
-(`config/kit.php:KIT_TENANCY:386`) is not in that map, so the database never overrides it.
+(`config/kit.php:KIT_TENANCY:400`) is not in that map, so the database never overrides it.
 
 How that works without any consumer knowing the settings exist:
 

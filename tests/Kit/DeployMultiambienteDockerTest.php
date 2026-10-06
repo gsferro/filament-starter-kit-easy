@@ -1,0 +1,2371 @@
+<?php
+
+/**
+ * Deploy com Docker: vários ambientes não produtivos no mesmo servidor, atrás do Traefik.
+ *
+ * Derivado do `04-casos-de-teste.md` da wiki `deploy-multiambiente-docker`, que é o oráculo —
+ * não o código. Este arquivo cobre as regras R1 a R9 e R13 a R20 (CT-20, CT-21 e CT-22 moram em
+ * `ProxiesConfiaveisTest.php`).
+ *
+ * ## Duas formas de observar
+ *
+ * - LEITURA ESTÁTICA (G1, G3, G4): o `Então` afirma texto de arquivo entregue. A asserção de
+ *   AUSÊNCIA roda sobre o texto SEM as linhas de comentário — os arquivos do kit citam o que
+ *   proíbem; a de PRESENÇA roda sobre o texto cru (`.ai/rules/testes.md`).
+ * - `docker compose config` EM PASTA TEMPORÁRIA (G2): o observável é a configuração EFETIVA que o
+ *   Compose montaria. Interpolação de label, merge de `ports` e carga automática do override só
+ *   o Compose resolve; regex sobre YAML não vê. Quem não tem o CLI pula (`composeDisponivel()`).
+ *
+ * ## A armadilha de ambiente do G2
+ *
+ * O Laravel escreve as chaves do `.env` do desenvolvedor no `putenv`, e a `Process` herda o
+ * ambiente do PHP. Variável de shell VENCE o `.env` na interpolação do Compose: um
+ * `COMPOSE_PROJECT_NAME=starter-kit` herdado invalida o caso em silêncio. Por isso a `Process`
+ * recebe `false` (remove) para todo nome presente em `getenv()`, `$_ENV` e `$_SERVER`, exceto a
+ * lista de sistema que o CLI precisa para achar o plugin e o daemon. No Windows a lista do 04
+ * ganhou `ProgramFiles` e `ProgramW6432`: sem elas o `docker` não acha o plugin `compose`
+ * (medido: "unknown command: docker compose"); nenhuma é chave de `.env`.
+ *
+ * ## O golden do CT-34 (`tests/Kit/fixtures/docker-compose.v0.44.0.yml`)
+ *
+ * Procedência (P-17, P-24): cópia textual do `docker-compose.yml` da tag `v0.44.0`. O caso gera a
+ * configuração efetiva dos DOIS lados com o mesmo CLI; não há JSON gravado. Ver o docblock do caso.
+ *
+ * Helpers ficam LOCAIS: um consumidor só (`.ai/rules/testes.md`).
+ */
+
+use App\Console\Commands\KitUpdate;
+use Symfony\Component\Process\Process;
+
+/*
+|--------------------------------------------------------------------------
+| Helpers — Compose
+|--------------------------------------------------------------------------
+*/
+
+/** O CLI do Docker Compose responde? (cacheado: um processo por execução do arquivo) */
+function composeDisponivel(): bool
+{
+    static $disponivel = null;
+
+    if ($disponivel === null) {
+        try {
+            $processo = new Process(['docker', 'compose', 'version']);
+            $processo->setTimeout(60);
+            $processo->run();
+            $disponivel = $processo->isSuccessful();
+        } catch (Throwable) {
+            $disponivel = false;
+        }
+    }
+
+    return $disponivel;
+}
+
+/**
+ * O ambiente do subprocesso: tudo que o PHP carrega vira `false` (remove), menos a lista de
+ * sistema.
+ *
+ * @return array<string, false>
+ */
+function ambienteLimpoDoCompose(): array
+{
+    $manter = ['PATH', 'SYSTEMROOT', 'TEMP', 'TMP', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'PROGRAMDATA', 'PROGRAMFILES', 'PROGRAMW6432', 'DOCKER_HOST', 'DOCKER_CONFIG', 'DOCKER_CONTEXT'];
+
+    $nomes = array_merge(array_keys(getenv()), array_keys($_ENV), array_keys($_SERVER));
+    $env   = [];
+
+    foreach ($nomes as $nome) {
+        $nome = (string) $nome;
+
+        if ($nome === '' || str_contains($nome, '=') || in_array(strtoupper($nome), $manter, true)) {
+            continue;
+        }
+
+        $env[$nome] = false;
+    }
+
+    return $env;
+}
+
+/** Um `.env` a partir de pares; valor `null` omite a chave (ausente), `''` a deixa vazia. */
+function dotenvDoCaso(array $pares): string
+{
+    $linhas = [];
+
+    foreach ($pares as $chave => $valor) {
+        if ($valor !== null) {
+            $linhas[] = "{$chave}={$valor}";
+        }
+    }
+
+    return implode("\n", $linhas)."\n";
+}
+/**
+ * Os nomes dos arquivos de Compose da raiz (CR-08): na árvore do kit, os que
+ * `git ls-files 'docker-compose*' 'compose*'` lista — os RASTREADOS, de modo que a cópia ativa
+ * ignorada de um checkout que seguiu a página não entra; fora dela (sem `.git`), os que casam
+ * `compose*.y*ml` e `docker-compose*.y*ml`, menos `docker-compose.override.yml`.
+ *
+ * @return list<string>
+ */
+function nomesDeComposeDaRaiz(): array
+{
+    if (naArvoreDoKit()) {
+        $git = new Process(['git', 'ls-files', '--', 'docker-compose*', 'compose*'], base_path());
+        $git->run();
+
+        expect($git->isSuccessful())->toBeTrue('git ls-files falhou: '.$git->getErrorOutput());
+
+        $nomes = array_filter(
+            array_map('trim', explode("\n", $git->getOutput())),
+            // `compose*` casa também `composer.json`: só `*.y*ml` é arquivo de Compose.
+            static fn (string $caminho): bool => $caminho !== '' && ! str_contains($caminho, '/') && fnmatch('*.y*ml', $caminho),
+        );
+
+        return array_values(array_unique($nomes));
+    }
+
+    $achados = array_merge(
+        glob(base_path('docker-compose*.y*ml')) ?: [],
+        glob(base_path('compose*.y*ml')) ?: [],
+    );
+
+    return array_values(array_unique(array_filter(
+        array_map('basename', $achados),
+        static fn (string $nome): bool => $nome !== 'docker-compose.override.yml',
+    )));
+}
+
+/**
+ * Os arquivos de Compose da raiz (ver `nomesDeComposeDaRaiz()`), como mapa destino => origem
+ * relativa a `base_path()`.
+ *
+ * @return array<string, string>
+ */
+function arquivosDeComposeDaRaiz(): array
+{
+    $mapa = [];
+
+    foreach (nomesDeComposeDaRaiz() as $nome) {
+        $mapa[$nome] = $nome;
+    }
+
+    return $mapa;
+}
+
+/** Apaga uma pasta temporária, inclusive o que o Windows marca como somente leitura. */
+function removerPastaTemporaria(string $pasta): void
+{
+    if (! is_dir($pasta)) {
+        return;
+    }
+
+    $itens = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($pasta, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST,
+    );
+
+    foreach ($itens as $item) {
+        if ($item->isDir()) {
+            @rmdir($item->getPathname());
+        } else {
+            @chmod($item->getPathname(), 0666);
+            @unlink($item->getPathname());
+        }
+    }
+
+    @rmdir($pasta);
+}
+
+/**
+ * `docker compose --profile app config --format json` numa pasta temporária.
+ *
+ * @param  array<string, string>  $copias  destino => origem (relativa a base_path())
+ * @param  array<string, string>  $textos  destino => conteúdo
+ * @param  list<string>|null  $args  argumentos depois de `docker compose`
+ * @return array{codigo: int, config: array<string, mixed>, objeto: object|null, erro: string, raiz: string}
+ *                                                                                                           `config` e `objeto` já saem com o prefixo da pasta trocado por `<raiz>`
+ */
+function composeConfig(string $env, array $copias, array $textos = [], ?array $args = null): array
+{
+    $pasta = sys_get_temp_dir().DIRECTORY_SEPARATOR.'kit-compose-'.uniqid('', true);
+    mkdir($pasta, 0777, true);
+
+    try {
+        foreach ($copias as $destino => $origem) {
+            $alvo = $pasta.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $destino);
+            @mkdir(dirname($alvo), 0777, true);
+            copy(base_path($origem), $alvo);
+        }
+
+        foreach ($textos as $destino => $texto) {
+            $alvo = $pasta.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $destino);
+            @mkdir(dirname($alvo), 0777, true);
+            file_put_contents($alvo, $texto);
+        }
+
+        file_put_contents($pasta.DIRECTORY_SEPARATOR.'.env', $env);
+
+        $processo = new Process(
+            ['docker', 'compose', ...($args ?? ['--profile', 'app', 'config', '--format', 'json'])],
+            $pasta,
+            ambienteLimpoDoCompose(),
+        );
+        $processo->setTimeout(120);
+        $processo->run();
+
+        $raizes = array_values(array_unique(array_filter([$pasta, realpath($pasta) ?: ''])));
+        $config = json_decode($processo->getOutput(), true);
+        $objeto = json_decode($processo->getOutput());
+
+        return [
+            'codigo' => (int) $processo->getExitCode(),
+            'config' => is_array($config) ? normalizarConfiguracao($config, $raizes) : [],
+            'objeto' => is_object($objeto) ? normalizarConfiguracao($objeto, $raizes) : null,
+            'erro'   => $processo->getErrorOutput(),
+            'raiz'   => $pasta,
+        ];
+    } finally {
+        removerPastaTemporaria($pasta);
+    }
+}
+
+/**
+ * A configuração do base sozinho (só o `docker-compose.yml` e o `.env` dado), já com o prefixo da
+ * pasta temporária trocado por `<raiz>` — duas pastas, dois caminhos, e o diff do CT-06 não pode ver
+ * a diferença entre eles.
+ */
+function configDoBase(string $env): array
+{
+    $resultado = composeConfig($env, ['docker-compose.yml' => 'docker-compose.yml']);
+
+    expect($resultado['codigo'])->toBe(0, 'O compose do base recusou: '.$resultado['erro']);
+
+    return $resultado['config'];
+}
+
+/** O base com o exemplo copiado PARA A RAIZ (a cópia ativa que liga o Traefik). */
+function configComOverride(string $env, array $textosExtras = []): array
+{
+    $resultado = composeConfig(
+        $env,
+        ['docker-compose.yml' => 'docker-compose.yml', 'docker-compose.override.yml' => 'docker/traefik/docker-compose.override.yml'],
+        $textosExtras,
+    );
+
+    expect($resultado['codigo'])->toBe(0, 'O compose com o override recusou: '.$resultado['erro']);
+
+    return $resultado['config'];
+}
+
+/** Os labels de um serviço, como mapa. */
+function labelsDoServico(array $config, string $servico): array
+{
+    return $config['services'][$servico]['labels'] ?? [];
+}
+
+/** As redes de um serviço (nomes). Sem a chave, o Compose o põe só na `default`. */
+function redesDoServico(array $config, string $servico): array
+{
+    $redes = $config['services'][$servico]['networks'] ?? ['default' => null];
+
+    return array_keys($redes);
+}
+
+/** A chave da rede de topo externa (a do Traefik), ou `null`. */
+function chaveDaRedeExterna(array $config): ?string
+{
+    foreach ($config['networks'] ?? [] as $chave => $rede) {
+        if ($chave !== 'default' && ($rede['external'] ?? false) === true) {
+            return (string) $chave;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Toda publicação de porta da configuração.
+ *
+ * @return list<array{servico: string, ip: string, publicada: string, alvo: string}>
+ */
+function publicacoesDaConfig(array $config): array
+{
+    $saida = [];
+
+    foreach ($config['services'] ?? [] as $servico => $definicao) {
+        foreach ($definicao['ports'] ?? [] as $porta) {
+            $saida[] = [
+                'servico'   => (string) $servico,
+                'ip'        => (string) ($porta['host_ip'] ?? ''),
+                'publicada' => (string) ($porta['published'] ?? ''),
+                'alvo'      => (string) ($porta['target'] ?? ''),
+            ];
+        }
+    }
+
+    return $saida;
+}
+
+/** Dois IPs de host disputam a mesma porta? Vazio e 0.0.0.0 sobrepõem qualquer IP. */
+function ipsSobrepoem(string $a, string $b): bool
+{
+    $qualquer = static fn (string $ip): bool => $ip === '' || $ip === '0.0.0.0';
+
+    return $qualquer($a) || $qualquer($b) || $a === $b;
+}
+
+/**
+ * Pares de publicações que disputam a mesma porta do host.
+ *
+ * @param  list<array{servico: string, ip: string, publicada: string, alvo: string}>  $publicacoes
+ * @return list<string>
+ */
+function colisoesDePorta(array $publicacoes): array
+{
+    $colisoes = [];
+
+    foreach ($publicacoes as $i => $a) {
+        foreach ($publicacoes as $j => $b) {
+            if ($j <= $i || $a['publicada'] !== $b['publicada'] || ! ipsSobrepoem($a['ip'], $b['ip'])) {
+                continue;
+            }
+
+            $colisoes[] = "{$a['servico']}({$a['ip']}:{$a['publicada']}) × {$b['servico']}({$b['ip']}:{$b['publicada']})";
+        }
+    }
+
+    return $colisoes;
+}
+
+/**
+ * Toda folha de uma árvore, por caminho pontilhado; folha vazia (`[]`, `null`) é folha.
+ *
+ * @return array<string, string>
+ */
+function folhasDaConfiguracao(mixed $no, string $caminho = ''): array
+{
+    if (is_array($no) && $no !== []) {
+        $saida = [];
+
+        foreach ($no as $chave => $filho) {
+            $saida += folhasDaConfiguracao($filho, $caminho === '' ? (string) $chave : $caminho.'.'.$chave);
+        }
+
+        return $saida;
+    }
+
+    return [$caminho => (string) json_encode($no)];
+}
+
+/**
+ * A ÚNICA normalização da configuração: o prefixo da pasta temporária vira `<raiz>`, em todas as
+ * grafias de separador em que aparece (`/`, `\` e a forma real/8.3 do Windows). O JSON escapa a
+ * barra invertida (`\`); decodificado, é uma só. Nada mais é normalizado nem excluído: nem tipo
+ * de escalar, nem ordem de chave. Só o valor que CONTÉM o prefixo tem as barras unificadas (o resto
+ * do caminho, `<raiz>\.env` no Windows × `<raiz>/.env` no Linux, é a mesma grafia de separador).
+ *
+ * @param  list<string>  $raizes  as variantes do caminho da pasta temporária
+ */
+function normalizarConfiguracao(mixed $no, array $raizes): mixed
+{
+    $objeto = is_object($no);
+
+    if ($objeto) {
+        $no = get_object_vars($no);
+    }
+
+    if (is_array($no)) {
+        $normalizado = array_map(static fn (mixed $filho): mixed => normalizarConfiguracao($filho, $raizes), $no);
+
+        return $objeto ? (object) $normalizado : $normalizado;
+    }
+
+    if (! is_string($no)) {
+        return $no;
+    }
+
+    $unificado = str_replace('\\', '/', $no);
+
+    foreach ($raizes as $raiz) {
+        $prefixo = rtrim(str_replace('\\', '/', $raiz), '/');
+
+        if ($prefixo !== '' && stripos($unificado, $prefixo) !== false) {
+            return str_ireplace($prefixo, '<raiz>', $unificado);
+        }
+    }
+
+    return $no;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helpers — texto
+|--------------------------------------------------------------------------
+*/
+
+/** O texto sem as linhas de comentário — só para asserção de AUSÊNCIA. */
+function semLinhasDeComentario(string $texto): string
+{
+    return implode("\n", array_filter(
+        explode("\n", $texto),
+        static fn (string $linha): bool => ! str_starts_with(ltrim($linha), '#'),
+    ));
+}
+
+/** O texto de um arquivo do kit, cru. */
+function textoDoArquivo(string $caminho): string
+{
+    return (string) file_get_contents(base_path($caminho));
+}
+
+/** O recorte do estágio `assets` do Dockerfile: da linha `FROM <imagem> AS assets` até o próximo `FROM`. */
+function estagioAssetsDoDockerfile(): string
+{
+    $dentro  = false;
+    $recorte = [];
+
+    foreach (explode("\n", textoDoArquivo('Dockerfile.laravel')) as $linha) {
+        $linha = rtrim($linha, "\r");
+
+        if (preg_match('/^FROM\s+\S+\s+AS\s+assets$/', $linha) === 1) {
+            $dentro = true;
+        } elseif ($dentro && str_starts_with($linha, 'FROM ')) {
+            break;
+        }
+
+        if ($dentro) {
+            $recorte[] = $linha;
+        }
+    }
+
+    return implode("\n", $recorte);
+}
+
+/**
+ * As instruções do Dockerfile (uma por item, continuação de linha com barra invertida já juntada),
+ * sem comentário.
+ *
+ * @return list<string>
+ */
+function instrucoesDoDockerfile(string $recorte): array
+{
+    $juntas = (string) preg_replace('/\\\\\s*\n\s*/', ' ', $recorte);
+
+    return array_values(array_filter(
+        array_map('trim', explode("\n", semLinhasDeComentario($juntas))),
+        static fn (string $linha): bool => $linha !== '',
+    ));
+}
+
+/**
+ * As linhas entre os marcadores do bloco do Reverb, SEM o `# ` inicial (indentação preservada).
+ *
+ * @return list<string>
+ */
+function linhasDoBlocoDoReverb(string $exemplo): array
+{
+    $linhas = [];
+    $dentro = false;
+
+    foreach (explode("\n", $exemplo) as $linha) {
+        if (str_contains($linha, '# >>> reverb-traefik')) {
+            $dentro = true;
+
+            continue;
+        }
+
+        if (str_contains($linha, '# <<< reverb-traefik')) {
+            break;
+        }
+
+        if ($dentro) {
+            $linhas[] = (string) preg_replace('/^(\s*)# ?/', '$1', $linha);
+        }
+    }
+
+    return $linhas;
+}
+
+/** A regra do router `-reverb` do exemplo (valor cru, com `${…}`), das linhas do bloco. */
+function regraDoRouterDoReverb(string $exemplo): ?string
+{
+    foreach (linhasDoBlocoDoReverb($exemplo) as $linha) {
+        if (preg_match('~^\s*- traefik\.http\.routers\.[^\s=]+-reverb\.rule=(.+)$~', $linha, $m) === 1) {
+            return trim($m[1]);
+        }
+    }
+
+    return null;
+}
+
+/** O que a regra do Reverb do R7 precisa casar. */
+function regexDaRegraDoReverb(): string
+{
+    return '~^Host\(`[^`]+`\) && \(PathPrefix\(`/app/[^`]+`\) \|\| PathPrefix\(`/apps/[^`]+`\)\)$~';
+}
+
+/**
+ * As linhas ATIVAS (não comentadas) de um `.env`, como lista de [chave, valor].
+ *
+ * @return list<array{0: string, 1: string}>
+ */
+function linhasAtivasDoEnv(string $env): array
+{
+    $saida = [];
+
+    foreach (explode("\n", $env) as $linha) {
+        if (preg_match('/^\s*([A-Z][A-Z0-9_]*)=(.*)$/', $linha, $m) === 1 && ! str_starts_with(ltrim($linha), '#')) {
+            $saida[] = [$m[1], $m[2]];
+        }
+    }
+
+    return $saida;
+}
+
+/** O exemplo com as linhas entre os marcadores do bloco do Reverb descomentadas (o `# ` inicial removido). */
+function exemploComOReverbDescomentado(): string
+{
+    $saida  = [];
+    $dentro = false;
+
+    foreach (explode("\n", textoDoArquivo('docker/traefik/docker-compose.override.yml')) as $linha) {
+        if (str_contains($linha, '# <<< reverb-traefik')) {
+            $dentro = false;
+        }
+
+        $saida[] = $dentro ? (string) preg_replace('/^(\s*)# ?/', '$1', $linha) : $linha;
+
+        if (str_contains($linha, '# >>> reverb-traefik')) {
+            $dentro = true;
+        }
+    }
+
+    return implode("\n", $saida);
+}
+
+/** `docker compose --profile app config` com o exemplo, com o bloco do Reverb descomentado, copiado na raiz. */
+function composeComOReverbDescomentado(string $env): array
+{
+    return composeConfig($env, ['docker-compose.yml' => 'docker-compose.yml'], ['docker-compose.override.yml' => exemploComOReverbDescomentado()]);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helpers — a página de documentação
+|--------------------------------------------------------------------------
+*/
+
+/** O Markdown da página do idioma. Quem chama leva `skip` fora da árvore do kit. */
+function paginaMultiambiente(string $idioma): string
+{
+    return (string) file_get_contents(base_path("docs/{$idioma}/operacao/deploy-docker-multiambiente.md"));
+}
+
+/**
+ * As linhas do Markdown com a marca de "dentro de cerca de código".
+ *
+ * @return list<array{0: string, 1: bool}>
+ */
+function linhasDoMarkdown(string $markdown): array
+{
+    $saida  = [];
+    $cerca  = null;
+
+    foreach (explode("\n", $markdown) as $linha) {
+        if (preg_match('/^\s*(`{3,}|~{3,})/', $linha, $m) === 1) {
+            if ($cerca === null) {
+                $cerca   = $m[1][0];
+                $saida[] = [$linha, true];
+
+                continue;
+            }
+
+            if ($m[1][0] === $cerca) {
+                $cerca   = null;
+                $saida[] = [$linha, true];
+
+                continue;
+            }
+        }
+
+        $saida[] = [$linha, $cerca !== null];
+    }
+
+    return $saida;
+}
+
+/**
+ * Os blocos de código (conteúdo, sem as cercas).
+ *
+ * @return list<string>
+ */
+function blocosDeCodigoDoMarkdown(string $markdown): array
+{
+    $blocos = [];
+    $atual  = null;
+
+    foreach (linhasDoMarkdown($markdown) as [$linha, $dentro]) {
+        $ehCerca = preg_match('/^\s*(`{3,}|~{3,})/', $linha) === 1;
+
+        if ($ehCerca && $atual === null) {
+            $atual = [];
+
+            continue;
+        }
+
+        if ($ehCerca && $atual !== null) {
+            $blocos[] = implode("\n", $atual);
+            $atual    = null;
+
+            continue;
+        }
+
+        if ($atual !== null) {
+            $atual[] = $linha;
+        }
+    }
+
+    return $blocos;
+}
+
+/** A prosa: linhas fora de bloco de código (a tabela continua). */
+function prosaDoMarkdown(string $markdown): string
+{
+    return implode("\n", array_map(
+        static fn (array $l): string => $l[0],
+        array_filter(linhasDoMarkdown($markdown), static fn (array $l): bool => ! $l[1]),
+    ));
+}
+
+/**
+ * As seções, uma por título (fora de cerca de código): título, nível e o texto até o PRÓXIMO título.
+ *
+ * @return list<array{titulo: string, nivel: int, texto: string}>
+ */
+function secoesDaPagina(string $markdown): array
+{
+    $secoes = [];
+
+    foreach (linhasDoMarkdown($markdown) as [$linha, $dentro]) {
+        if (! $dentro && preg_match('/^(#{1,6}) (.*)$/', $linha, $m) === 1) {
+            $secoes[] = ['titulo' => trim($m[2]), 'nivel' => strlen($m[1]), 'texto' => ''];
+
+            continue;
+        }
+
+        if ($secoes === []) {
+            $secoes[] = ['titulo' => '', 'nivel' => 0, 'texto' => ''];
+        }
+
+        $secoes[count($secoes) - 1]['texto'] .= $linha."\n";
+    }
+
+    return $secoes;
+}
+
+/** O texto da seção `$i` com as subseções (títulos de nível maior que o dela). */
+function textoComSubsecoes(array $secoes, int $i): string
+{
+    $texto = $secoes[$i]['texto'];
+
+    for ($j = $i + 1; $j < count($secoes) && $secoes[$j]['nivel'] > $secoes[$i]['nivel']; $j++) {
+        $texto .= $secoes[$j]['titulo']."\n".$secoes[$j]['texto'];
+    }
+
+    return $texto;
+}
+
+/** O índice da seção cujo título casa o padrão, ou `null`. */
+function indiceDaSecaoPorTitulo(array $secoes, string $padrao): ?int
+{
+    foreach ($secoes as $i => $secao) {
+        if (preg_match($padrao, $secao['titulo']) === 1) {
+            return $i;
+        }
+    }
+
+    return null;
+}
+
+/** `str_contains` sem diferença de caixa, para texto em UTF-8. */
+function contemSemCaixa(string $texto, string $agulha): bool
+{
+    return mb_stripos($texto, $agulha) !== false;
+}
+
+/**
+ * Todas as combinações idioma × item, com nome legível.
+ *
+ * @param  list<string>  $itens
+ * @return array<string, array{0: string, 1: string}>
+ */
+function idiomasPorItem(array $itens): array
+{
+    $saida = [];
+
+    foreach (['pt', 'en'] as $idioma) {
+        foreach ($itens as $item) {
+            $saida["{$idioma}: {$item}"] = [$idioma, $item];
+        }
+    }
+
+    return $saida;
+}
+
+/**
+ * As frases da prosa: texto fora de bloco de código e de linha de tabela, entre terminadores `.`,
+ * `!` ou `?` seguidos de espaço ou fim de linha, ou entre linhas em branco. O ponto de `.env` e o
+ * dois-pontos de `config:cache` não terminam frase (nenhum é seguido de espaço).
+ *
+ * @return list<string>
+ */
+function frasesDaProsaDoMarkdown(string $markdown): array
+{
+    $linhas = array_filter(
+        explode("\n", prosaDoMarkdown($markdown)),
+        static fn (string $linha): bool => ! str_starts_with(ltrim($linha), '|'),
+    );
+
+    $frases = [];
+
+    foreach (preg_split('/\n\s*\n/', implode("\n", $linhas)) ?: [] as $paragrafo) {
+        $paragrafo = (string) preg_replace('/\s+/u', ' ', $paragrafo);
+
+        foreach (preg_split('/(?<=[.!?])(?:\s+|$)/u', $paragrafo) ?: [] as $frase) {
+            if (trim($frase) !== '') {
+                $frases[] = trim($frase);
+            }
+        }
+    }
+
+    return $frases;
+}
+
+/** Alguma das 3 palavras imediatamente antes da posição é "não", "nem", "not" ou "never"? (sem caixa) */
+function negacaoNasTresPalavrasAntes(string $frase, int $posicao): bool
+{
+    $antes    = substr($frase, 0, $posicao);
+    $palavras = preg_split('/\s+/u', trim($antes), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+    foreach (array_slice($palavras, -3) as $palavra) {
+        $limpa = mb_strtolower((string) preg_replace('/[^\p{L}]/u', '', $palavra));
+
+        if (in_array($limpa, ['não', 'nem', 'not', 'never'], true)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * A âncora aparece na frase e nenhuma das suas ocorrências tem negação nas 3 palavras antes?
+ * `$ancora` pode ser uma alternativa (lista): basta uma delas, e a negação vale para todas as que aparecem.
+ *
+ * @param  string|list<string>  $ancora
+ */
+function ancoraSemNegacaoNaFrase(string $frase, string|array $ancora): bool
+{
+    $achou = false;
+
+    foreach ((array) $ancora as $termo) {
+        $posicao = 0;
+
+        while (($posicao = mb_stripos($frase, $termo, $posicao)) !== false) {
+            $achou = true;
+
+            if (negacaoNasTresPalavrasAntes($frase, strlen(mb_substr($frase, 0, $posicao)))) {
+                return false;
+            }
+
+            $posicao++;
+        }
+    }
+
+    return $achou;
+}
+
+/*
+|--------------------------------------------------------------------------
+| R1 — Sem a cópia ativa do override, a stack do kit não muda
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-01] o exemplo em docker/traefik não é carregado pelo Compose', function (): void {
+    $resultado = composeConfig(
+        dotenvDoCaso(['APP_ENV' => 'local']),
+        [...arquivosDeComposeDaRaiz(), 'docker/traefik/docker-compose.override.yml' => 'docker/traefik/docker-compose.override.yml'],
+    );
+
+    expect($resultado['codigo'])->toBe(0, $resultado['erro']);
+
+    $config = $resultado['config'];
+
+    foreach (array_keys($config['services']) as $servico) {
+        $comTraefik = array_filter(array_keys(labelsDoServico($config, $servico)), static fn (string $chave): bool => str_starts_with($chave, 'traefik.'));
+
+        expect($comTraefik)->toBe([], "O serviço {$servico} ganhou label do Traefik sem a cópia ativa.");
+    }
+
+    expect(array_values(array_diff(array_keys($config['networks'] ?? []), ['default'])))->toBe([]);
+
+    $nginx = array_values(array_filter(publicacoesDaConfig($config), static fn (array $p): bool => $p['servico'] === 'nginx'));
+
+    expect($nginx)->toHaveCount(1)
+        ->and($nginx[0]['publicada'])->toBe('8000')
+        ->and($nginx[0]['alvo'])->toBe('80');
+})->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+it('[CT-02] os arquivos-base continuam sem nada do Traefik nas linhas ativas', function (string $arquivo, array $proibidos, string $preservado): void {
+    $cru   = textoDoArquivo($arquivo);
+    $ativo = semLinhasDeComentario($cru);
+
+    foreach ($proibidos as $proibido) {
+        expect(preg_match('~'.$proibido.'~mi', $ativo))->toBe(0, "`{$arquivo}` ganhou `{$proibido}` em linha ativa.");
+    }
+
+    expect(preg_match('~'.$preservado.'~m', $cru))->toBe(1, "`{$arquivo}` perdeu a linha que casa `{$preservado}`.");
+})->with([
+    'compose base'           => ['docker-compose.yml', ['^\s*networks:', '^\s*labels:', 'traefik'], "^\s*- '\\$\\{FORWARD_APP_PORT:-8000\\}:80'$"],
+    'TLS termina no Traefik' => ['docker/nginx/nginx.conf', ['listen 443', 'ssl_certificate'], '^\s*listen 80;$'],
+])->group('kit');
+
+it('[CT-03] o script de deploy chama o Compose sem fixar arquivo, projeto nem env-file', function (): void {
+    $ativo = semLinhasDeComentario(textoDoArquivo('deploy_docker_local.sh'));
+
+    // Toda linha que casa `docker[ -]compose` (inclui o `docker-compose` com hífen) e, porque o script
+    // monta o `up` em array (`up=(compose …)` + `docker "${up[@]}"`), a forma em array: é o mesmo comando.
+    $invocacoes = array_filter(
+        explode("\n", $ativo),
+        static fn (string $linha): bool => preg_match('/docker[ -]compose/', $linha) === 1
+            || str_contains($linha, 'up=(compose')
+            || str_contains($linha, 'docker "${up[@]}"'),
+    );
+
+    expect($invocacoes)->not->toBeEmpty();
+
+    foreach ($invocacoes as $linha) {
+        expect(preg_match('/(^|\s)(-f|--file|-p|--project-name|--project-directory|--env-file)(\s|=|$)/', $linha))->toBe(0, "A linha fixa arquivo, projeto, diretório ou env-file: {$linha}");
+    }
+
+    foreach (['COMPOSE_FILE', 'COMPOSE_PROJECT_NAME', 'COMPOSE_ENV_FILES'] as $variavel) {
+        expect(str_contains($ativo, $variavel))->toBeFalse("O script define {$variavel}.");
+    }
+
+    // O script monta o `up` em array (`up=(compose --profile app up -d --build)`): é a invocação.
+    $comUpBuild = array_filter($invocacoes, static fn (string $linha): bool => str_contains($linha, 'up -d --build'));
+
+    expect($comUpBuild)->not->toBeEmpty('Nenhuma linha invoca "docker compose" com "up -d --build".');
+
+    $linhaDoHealthCheck = array_values(array_filter(explode("\n", $ativo), static fn (string $linha): bool => str_contains($linha, 'port nginx 80')));
+
+    expect($linhaDoHealthCheck)->not->toBeEmpty()
+        ->and($linhaDoHealthCheck[0])->toContain('docker compose --profile app port nginx 80')
+        ->and($ativo)->not->toContain('${FORWARD_APP_PORT');
+})->group('kit');
+
+it('[CT-33] sem o override e sem a chave no .env, nenhum serviço recebe TRUSTED_PROXIES', function (): void {
+    $config = configDoBase(dotenvDoCaso(['APP_ENV' => 'local']));
+
+    foreach ($config['services'] as $servico => $definicao) {
+        expect(array_key_exists('TRUSTED_PROXIES', $definicao['environment'] ?? []))->toBeFalse("O serviço {$servico} recebeu TRUSTED_PROXIES.");
+    }
+})->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+/**
+ * [CT-34] A configuração efetiva do base é, inteira, a do base da tag anterior.
+ *
+ * PROCEDÊNCIA (P-17, P-24): `tests/Kit/fixtures/docker-compose.v0.44.0.yml` é a cópia textual do
+ * `docker-compose.yml` da tag `v0.44.0` (`git show v0.44.0:docker-compose.yml`). Duas pastas
+ * temporárias, o mesmo `.env` mínimo `COMPOSE_PROJECT_NAME=starter-kit`, o mesmo CLI e o comando
+ *
+ *     docker compose --profile '*' config --format json
+ *
+ * A única normalização é trocar o prefixo de cada pasta por `<raiz>`, em todas as grafias de
+ * separador. O JSON INTEIRO é comparado folha a folha — nada é excluído. Os dois lados vêm do mesmo
+ * CLI: a versão do Compose não cria diferença.
+ */
+it('[CT-34] a configuração efetiva do base é, inteira, a do base da tag anterior', function (): void {
+    $env        = dotenvDoCaso(['COMPOSE_PROJECT_NAME' => 'starter-kit']);
+    $argumentos = ['--profile', '*', 'config', '--format', 'json'];
+
+    $atual  = composeConfig($env, ['docker-compose.yml' => 'docker-compose.yml'], [], $argumentos);
+    $golden = composeConfig($env, ['docker-compose.yml' => 'tests/Kit/fixtures/docker-compose.v0.44.0.yml'], [], $argumentos);
+
+    expect($atual['codigo'])->toBe(0, $atual['erro'])
+        ->and($golden['codigo'])->toBe(0, $golden['erro']);
+
+    expect(array_keys($golden['config']['services']))->toHaveCount(12)
+        ->and(array_keys($golden['config']['services']))->toContain('mysql', 'llamacpp', 'llamacpp-embeddings', 'mailpit');
+
+    $esperado = folhasDaConfiguracao($golden['config']);
+    $obtido   = folhasDaConfiguracao($atual['config']);
+
+    $diferentes = [];
+
+    foreach (array_unique([...array_keys($esperado), ...array_keys($obtido)]) as $caminho) {
+        if (($esperado[$caminho] ?? '<ausente>') !== ($obtido[$caminho] ?? '<ausente>')) {
+            $diferentes[] = "{$caminho}: tag ".($esperado[$caminho] ?? '<ausente>').' × atual '.($obtido[$caminho] ?? '<ausente>');
+        }
+    }
+
+    expect($diferentes)->toBe([], 'A configuração efetiva do base divergiu da do docker-compose.yml da tag v0.44.0.');
+})->group('kit')->skip(fn (): bool => ! naArvoreDoKit(), 'a cópia da tag e o git do kit só existem na árvore do kit')
+    ->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+it('[CT-46] no CI, a falta do CLI do Compose reprova em vez de pular', function (): void {
+    $processo = new Process(['docker', 'compose', 'version']);
+    $processo->setTimeout(60);
+
+    try {
+        $processo->run();
+        $codigo = $processo->getExitCode();
+    } catch (Throwable) {
+        $codigo = null;
+    }
+
+    if ($codigo !== 0 && getenv('CI') !== 'true') {
+        $this->markTestSkipped('fora do CI, sem o CLI do Compose, a G2 pula (Windows local sem Docker continua verde)');
+    }
+
+    // Com CI=true e o CLI ausente, o caso FALHA (nunca chama skip): a G2 inteira não vira verde por pulo.
+    expect($codigo)->toBe(0, 'CLI do Docker Compose ausente no CI');
+})->group('kit')->skip(fn (): bool => ! naArvoreDoKit(), 'o canário é do repositório do kit: um projeto instalado não roda o CI do kit');
+
+it('[CT-35] o nginx.conf não passa a honrar cabeçalho de proxy por conta própria', function (): void {
+    $ativo = semLinhasDeComentario(textoDoArquivo('docker/nginx/nginx.conf'));
+
+    expect(preg_match('/fastcgi_param\s+HTTPS\b/', $ativo))->toBe(0, 'O nginx.conf define fastcgi_param HTTPS.')
+        ->and(preg_match('/x[_-]forwarded/i', $ativo))->toBe(0, 'O nginx.conf cita X-Forwarded-*.')
+        ->and(str_contains($ativo, 'set_real_ip_from'))->toBeFalse()
+        ->and(str_contains($ativo, 'real_ip_header'))->toBeFalse();
+})->group('kit');
+
+it('[CT-36] a raiz do kit tem um arquivo de Compose só, que lê o .env literal, e nenhum Compose de infra', function (): void {
+    expect(nomesDeComposeDaRaiz())->toBe(['docker-compose.yml']);
+
+    $compose = textoDoArquivo('docker-compose.yml');
+
+    foreach (['app', 'queue', 'scheduler', 'reverb', 'pulse'] as $servico) {
+        $bloco = blocoDoServico($compose, $servico);
+
+        expect(preg_match('/^\s*env_file:\s*\.env\s*(#.*)?$/m', $bloco))->toBe(1, "O serviço {$servico} não declara `env_file: .env` literal.")
+            ->and(preg_match('/^\s*env_file:.*\$\{/m', $bloco))->toBe(0, "O serviço {$servico} interpola o env_file.");
+    }
+
+    // Fora de `node_modules`, `vendor` e `site/` (o `.git` é só poda: não é árvore do kit).
+    $podados = ['node_modules', 'vendor', '.git'];
+
+    $arvore = new RecursiveIteratorIterator(new RecursiveCallbackFilterIterator(
+        new RecursiveDirectoryIterator(base_path(), FilesystemIterator::SKIP_DOTS),
+        static fn (SplFileInfo $item): bool => ! ($item->isDir() && (in_array($item->getFilename(), $podados, true) || $item->getPathname() === base_path('site'))),
+    ));
+
+    $infra = [];
+
+    foreach ($arvore as $item) {
+        if ($item->isFile() && fnmatch('*infra*.y*ml', $item->getFilename())) {
+            $infra[] = str_replace('\\', '/', substr($item->getPathname(), strlen(base_path()) + 1));
+        }
+    }
+
+    expect($infra)->toBe([], 'O kit entrega arquivo de Compose de infra (`*infra*.y*ml`).');
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| R2 — O exemplo chega a quem instala; a cópia ativa nunca entra no git
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-04] o git ignora a cópia ativa e versiona o exemplo', function (string $caminho, bool $ignorado, bool $versionado): void {
+    $ignore = new Process(['git', 'check-ignore', '--no-index', '-q', $caminho], base_path());
+    $ignore->run();
+
+    expect($ignore->getExitCode() === 0)->toBe($ignorado, "`git check-ignore --no-index {$caminho}` respondeu o contrário do esperado.");
+
+    $lista = new Process(['git', 'ls-files', '--', $caminho], base_path());
+    $lista->run();
+
+    expect(trim($lista->getOutput()) !== '')->toBe($versionado, "`git ls-files {$caminho}` respondeu o contrário do esperado.");
+})->with([
+    'cópia ativa' => ['docker-compose.override.yml', true, false],
+    'exemplo'     => ['docker/traefik/docker-compose.override.yml', false, true],
+])->group('kit')->skip(fn (): bool => ! naArvoreDoKit(), 'git e .gitignore só existem na árvore do kit');
+
+it('[CT-05] o exemplo está nas duas listas de entrega', function (): void {
+    $exemplo = 'docker/traefik/docker-compose.override.yml';
+
+    $cobertoPeloUpdate = array_filter(caminhosDoKit(), static fn (string $caminho): bool => $caminho === $exemplo
+        || str_starts_with($exemplo, rtrim($caminho, '/').'/'));
+
+    expect($cobertoPeloUpdate)->not->toBeEmpty('Nenhum caminho do kit:update cobre o exemplo.');
+
+    foreach (explode("\n", textoDoArquivo('.gitattributes')) as $linha) {
+        $linha = trim($linha);
+
+        if ($linha === '' || str_starts_with($linha, '#') || ! str_contains($linha, 'export-ignore')) {
+            continue;
+        }
+
+        $padrao = trim((string) preg_split('/\s+/', $linha)[0], '/');
+
+        $cobre = $padrao === $exemplo
+            || str_starts_with($exemplo, $padrao.'/')
+            || fnmatch($padrao, $exemplo);
+
+        expect($cobre)->toBeFalse("O .gitattributes tem `{$linha}`, que cobre o exemplo.");
+    }
+})->group('kit');
+
+it('[CT-37] o kit:update nunca sobrescreve a cópia ativa do servidor e leva o .env.docker', function (): void {
+    $copia = 'docker-compose.override.yml';
+
+    // "Cobre" é por SEGMENTO, nunca por prefixo de string: `docker-compose` não cobre `docker-compose.override.yml`.
+    foreach (caminhosDoKit() as $caminho) {
+        $cobre = $caminho === $copia || str_starts_with($copia, rtrim($caminho, '/').'/');
+
+        expect($cobre)->toBeFalse("`{$caminho}` cobre a cópia ativa.");
+    }
+
+    expect(array_intersect(caminhosDoKit(), ['', '.', './']))->toBe([], 'A lista do kit:update tem "", "." ou "./".');
+
+    // O .env.docker é entregue: algum caminho o cobre, igual a ele ou diretório-pai por segmento.
+    $cobertoEnvDocker = array_filter(caminhosDoKit(), static fn (string $caminho): bool => $caminho === '.env.docker'
+        || str_starts_with('.env.docker', rtrim($caminho, '/').'/'));
+
+    expect($cobertoEnvDocker)->not->toBeEmpty('Nenhum caminho do kit:update cobre o .env.docker.');
+
+    // Controle: a constante lida é a do kit:update (lista não vazia).
+    expect((new ReflectionClass(KitUpdate::class))->getConstant('CAMINHOS_DO_KIT'))->not->toBeEmpty();
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| R3 — Ligado o override, só muda o que o Traefik e o build precisam
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-06] a configuração com o override difere do base só nos caminhos permitidos', function (): void {
+    $env  = dotenvDoCaso(['COMPOSE_PROJECT_NAME' => 'proj-dev', 'TRAEFIK_HOST' => 'dev.exemplo.test']);
+    $base = configDoBase($env);
+    $com  = configComOverride($env);
+
+    $rede = chaveDaRedeExterna($com);
+
+    expect($rede)->not->toBeNull('O override não declarou rede externa.');
+
+    $permitidos = [
+        '~^services\.nginx\.networks\.'.preg_quote((string) $rede, '~').'(\.|$)~',
+        '~^services\.nginx\.labels\.traefik\.~',
+        '~^services\.[^.]+\.build\.args\.VITE_REVERB_~',
+        '~^networks\.'.preg_quote((string) $rede, '~').'(\.|$)~',
+    ];
+
+    $a = folhasDaConfiguracao($base);
+    $b = folhasDaConfiguracao($com);
+
+    $diferentes = [];
+
+    foreach (array_unique([...array_keys($a), ...array_keys($b)]) as $caminho) {
+        // Chaves de topo `x-*` são extension fields do arquivo (o `x-vite-args` do exemplo), não serviço, rede nem volume.
+        if (($a[$caminho] ?? null) === ($b[$caminho] ?? null) || str_starts_with((string) $caminho, 'x-')) {
+            continue;
+        }
+
+        $permitido = false;
+
+        foreach ($permitidos as $padrao) {
+            if (preg_match($padrao, $caminho) === 1) {
+                $permitido = true;
+            }
+        }
+
+        if (! $permitido) {
+            $diferentes[] = $caminho;
+        }
+    }
+
+    expect($diferentes)->toBe([], 'O override mudou folhas fora dos caminhos permitidos.');
+})->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+it('[CT-07] todo serviço do exemplo existe no base', function (): void {
+    /** @return list<string> as chaves de coluna 2 sob `services:` */
+    $servicosDe = static function (string $yaml): array {
+        $chaves     = [];
+        $emServicos = false;
+
+        foreach (explode("\n", semLinhasDeComentario($yaml)) as $linha) {
+            if (preg_match('/^\S/', $linha) === 1) {
+                $emServicos = preg_match('/^services:\s*$/', $linha) === 1;
+
+                continue;
+            }
+
+            if ($emServicos && preg_match('/^  ([A-Za-z0-9_.-]+):\s*(#.*)?$/', $linha, $m) === 1) {
+                $chaves[] = $m[1];
+            }
+        }
+
+        return $chaves;
+    };
+
+    $doExemplo = $servicosDe(textoDoArquivo('docker/traefik/docker-compose.override.yml'));
+    $doBase    = $servicosDe(textoDoArquivo('docker-compose.yml'));
+
+    expect($doExemplo)->not->toBeEmpty()
+        ->and(array_values(array_diff($doExemplo, $doBase)))->toBe([]);
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| R4 — O nginx entra na rede externa sem sair da própria
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-08] a rede externa vem do .env, com default my-network', function (?string $valor, string $rede): void {
+    $config = configComOverride(dotenvDoCaso(['TRAEFIK_HOST' => 'dev.exemplo.test', 'TRAEFIK_REDE' => $valor]));
+
+    $chave = chaveDaRedeExterna($config);
+
+    expect($chave)->not->toBeNull()
+        ->and($config['networks'][$chave]['name'])->toBe($rede)
+        ->and($config['networks'][$chave]['external'])->toBeTrue()
+        ->and(redesDoServico($config, 'nginx'))->toContain('default', $chave)
+        ->and(labelsDoServico($config, 'nginx')['traefik.docker.network'] ?? null)->toBe($rede);
+})->with([
+    'ausente'         => [null, 'my-network'],
+    'vazia ≠ ausente' => ['', 'my-network'],
+    'definida'        => ['rede-do-traefik', 'rede-do-traefik'],
+])->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+it('[CT-09] só o nginx entra na rede externa', function (): void {
+    $config = configComOverride(dotenvDoCaso(['TRAEFIK_HOST' => 'dev.exemplo.test']));
+
+    $chave = chaveDaRedeExterna($config);
+
+    expect($chave)->not->toBeNull();
+
+    foreach (['app', 'queue', 'scheduler', 'reverb', 'pulse', 'pgsql', 'redis'] as $servico) {
+        expect($config['services'])->toHaveKey($servico);
+        expect(redesDoServico($config, $servico))->toBe(['default'], "O serviço {$servico} não está só na rede default.");
+    }
+
+    foreach (array_keys($config['services']) as $servico) {
+        if ($servico !== 'nginx') {
+            expect(redesDoServico($config, $servico))->not->toContain($chave);
+        }
+    }
+})->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+/*
+|--------------------------------------------------------------------------
+| R5 — Labels do docker provider com os valores do requisito
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-10] o nginx carrega router por Host, websecure, TLS e service na porta 80', function (): void {
+    $config = configComOverride(dotenvDoCaso(['COMPOSE_PROJECT_NAME' => 'proj-dev', 'TRAEFIK_HOST' => 'dev.exemplo.test']));
+
+    $labels = labelsDoServico($config, 'nginx');
+
+    expect($labels['traefik.enable'] ?? null)->toBe('true')
+        ->and($labels['traefik.http.routers.proj-dev.rule'] ?? null)->toBe('Host(`dev.exemplo.test`)')
+        ->and($labels['traefik.http.routers.proj-dev.entrypoints'] ?? null)->toBe('websecure')
+        ->and($labels['traefik.http.routers.proj-dev.tls'] ?? null)->toBe('true')
+        ->and($labels['traefik.http.services.proj-dev.loadbalancer.server.port'] ?? null)->toBe('80');
+
+    $doTraefik = array_values(array_filter(array_keys($labels), static fn (string $chave): bool => str_starts_with($chave, 'traefik.')));
+
+    expect($doTraefik)->toEqualCanonicalizing([
+        'traefik.enable',
+        'traefik.docker.network',
+        'traefik.http.routers.proj-dev.rule',
+        'traefik.http.routers.proj-dev.entrypoints',
+        'traefik.http.routers.proj-dev.tls',
+        'traefik.http.services.proj-dev.loadbalancer.server.port',
+    ]);
+})->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+/*
+|--------------------------------------------------------------------------
+| R6 — Router/service únicos por ambiente; hostname nunca fixo
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-11] o router leva o nome do projeto de cada ambiente', function (?string $valor, string $router): void {
+    $config = configComOverride(dotenvDoCaso(['TRAEFIK_HOST' => 'h.exemplo.test', 'COMPOSE_PROJECT_NAME' => $valor]));
+
+    $labels = labelsDoServico($config, 'nginx');
+
+    expect($labels["traefik.http.routers.{$router}.rule"] ?? null)->toBe('Host(`h.exemplo.test`)')
+        ->and($labels["traefik.http.services.{$router}.loadbalancer.server.port"] ?? null)->toBe('80');
+
+    foreach (array_keys($labels) as $chave) {
+        if (preg_match('/^traefik\.http\.(routers|services|middlewares)\.([^.]+)\./', $chave, $m) === 1) {
+            expect(str_starts_with($m[2], $router))->toBeTrue("O objeto `{$m[2]}` do label `{$chave}` não começa por `{$router}`.");
+        }
+
+        expect(str_contains($chave, '${'))->toBeFalse("A chave de label `{$chave}` ficou sem interpolar.");
+    }
+})->with([
+    'ambiente 1'      => ['proj-dev', 'proj-dev'],
+    'ambiente 2'      => ['proj-homol', 'proj-homol'],
+    'ausente (piso)'  => [null, 'starter-kit'],
+    'vazia ≠ ausente' => ['', 'starter-kit'],
+])->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+it('[CT-12] sem TRAEFIK_HOST o Compose recusa e diz qual chave falta', function (?string $valor): void {
+    $resultado = composeConfig(
+        dotenvDoCaso(['TRAEFIK_HOST' => $valor]),
+        ['docker-compose.yml' => 'docker-compose.yml', 'docker-compose.override.yml' => 'docker/traefik/docker-compose.override.yml'],
+    );
+
+    expect($resultado['codigo'])->not->toBe(0)
+        ->and($resultado['erro'])->toContain('TRAEFIK_HOST');
+})->with([
+    'ausente'         => [null],
+    'vazia ≠ ausente' => [''],
+])->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+it('[CT-13] o exemplo não fixa hostname', function (): void {
+    $ativo = semLinhasDeComentario(textoDoArquivo('docker/traefik/docker-compose.override.yml'));
+
+    preg_match_all('~Host\(`([^`]*)`\)~', $ativo, $achados);
+
+    expect($achados[1])->not->toBeEmpty('Controle: nenhum Host( nas linhas ativas.');
+
+    foreach ($achados[1] as $argumento) {
+        expect(str_starts_with($argumento, '${TRAEFIK_HOST'))->toBeTrue("`Host(`{$argumento}`)` fixa o hostname.");
+    }
+
+    expect($ativo)->not->toContain('fiocruz.br', 'projtec');
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| R7 — Reverb: duas rotas, nenhuma imposta; a do Traefik não captura painel
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-14] com o override ativo, o Reverb continua na rota por porta', function (): void {
+    $config = configComOverride(dotenvDoCaso(['TRAEFIK_HOST' => 'dev.exemplo.test', 'FORWARD_REVERB_PORT' => '8190']));
+
+    $comTraefik = array_filter(array_keys(labelsDoServico($config, 'reverb')), static fn (string $chave): bool => str_starts_with($chave, 'traefik.'));
+
+    expect($comTraefik)->toBe([])
+        ->and(redesDoServico($config, 'reverb'))->not->toContain((string) chaveDaRedeExterna($config));
+
+    $reverb = array_values(array_filter(publicacoesDaConfig($config), static fn (array $p): bool => $p['servico'] === 'reverb'));
+
+    expect($reverb)->toHaveCount(1)
+        ->and($reverb[0]['publicada'])->toBe('8190')
+        ->and($reverb[0]['alvo'])->toBe('8090');
+})->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+it('[CT-15] o bloco comentado do Reverb traz a rota completa pelo Traefik', function (): void {
+    $exemplo = textoDoArquivo('docker/traefik/docker-compose.override.yml');
+    $linhas  = array_map('trim', linhasDoBlocoDoReverb($exemplo));
+
+    expect($linhas)->not->toBeEmpty('Os marcadores do bloco do Reverb não existem.');
+
+    $regra = regraDoRouterDoReverb($exemplo);
+
+    expect($regra)->not->toBeNull('O bloco não traz o router `-reverb`.');
+
+    $router = '${COMPOSE_PROJECT_NAME:-starter-kit}-reverb';
+
+    expect($linhas)->toContain("- traefik.http.routers.{$router}.rule={$regra}")
+        ->and(preg_match(regexDaRegraDoReverb(), (string) $regra))->toBe(1, "A regra `{$regra}` não casa a forma esperada.");
+
+    preg_match('~Host\(`([^`]*)`\)~', (string) $regra, $host);
+
+    expect(str_starts_with($host[1] ?? '', '${TRAEFIK_HOST'))->toBeTrue();
+
+    expect($linhas)->toContain("- traefik.http.services.{$router}.loadbalancer.server.port=8090");
+
+    // O cabeçalho: os comentários antes da primeira linha ativa; toda linha com `TRUSTED_PROXIES=*` cita `127.0.0.1`.
+    $cabecalho = [];
+
+    foreach (explode('
+', $exemplo) as $linha) {
+        if (trim($linha) !== '' && ! str_starts_with(ltrim($linha), '#')) {
+            break;
+        }
+
+        $cabecalho[] = $linha;
+    }
+
+    $comCuringa = array_filter($cabecalho, static fn (string $linha): bool => str_contains($linha, 'TRUSTED_PROXIES=*'));
+
+    expect($comCuringa)->not->toBeEmpty('O cabeçalho do exemplo não tem linha com TRUSTED_PROXIES=*.');
+
+    foreach ($comCuringa as $linha) {
+        expect(str_contains($linha, '127.0.0.1'))->toBeTrue("A linha do cabeçalho com TRUSTED_PROXIES=* não cita 127.0.0.1: {$linha}");
+    }
+
+    // O reverb entra na rede externa: o item da lista `networks:` é a chave da rede externa do exemplo.
+    expect(preg_match('~^networks:\s*\n\s+([\w-]+):\s*\n(?:\s+\S.*\n)*?\s+external:\s*true~m', $exemplo, $rede))->toBe(1);
+
+    $posicao = array_search('networks:', $linhas, true);
+
+    expect($posicao)->not->toBeFalse();
+
+    $itens = [];
+
+    for ($i = $posicao + 1; $i < count($linhas) && str_starts_with($linhas[$i], '- '); $i++) {
+        $itens[] = substr($linhas[$i], 2);
+    }
+
+    expect($itens)->toContain($rede[1])
+        ->and(count(array_filter($linhas, static fn (string $l): bool => str_starts_with($l, '- traefik.docker.network='))))->toBe(1);
+})->group('kit');
+
+it('[CT-16] a regra do Reverb, interpolada pelo Compose, recorta pela chave e não captura caminho de painel', function (string $chave, string $id, string $ausente): void {
+    // A regra é a que o COMPOSE interpolou (uma execução por linha do Esquema), não a que o teste montaria.
+    $resultado = composeComOReverbDescomentado(dotenvDoCaso([
+        'TRAEFIK_HOST'         => 'dev.exemplo.test',
+        'COMPOSE_PROJECT_NAME' => 'proj-dev',
+        'REVERB_APP_KEY'       => $chave,
+        'REVERB_APP_ID'        => $id,
+    ]));
+
+    expect($resultado['codigo'])->toBe(0, $resultado['erro']);
+
+    $regra = labelsDoServico($resultado['config'], 'reverb')['traefik.http.routers.proj-dev-reverb.rule'] ?? '';
+
+    expect(preg_match(regexDaRegraDoReverb(), $regra))->toBe(1, "A regra lida da configuração `{$regra}` não casa a forma esperada.");
+
+    preg_match_all('~PathPrefix\(`([^`]+)`\)~', $regra, $m);
+
+    $prefixos = $m[1];
+
+    foreach ($prefixos as $prefixo) {
+        foreach (['/app', '/app/login', '/app/acme/users', '/admin', '/infra'] as $caminho) {
+            expect(str_starts_with($caminho, $prefixo))->toBeFalse("`PathPrefix({$prefixo})` captura `{$caminho}`, rota de painel do kit.");
+        }
+    }
+
+    // Controle positivo: uma regra que não casa nada não passa.
+    expect(array_filter($prefixos, static fn (string $p): bool => str_starts_with("/app/{$chave}", $p)))->not->toBeEmpty()
+        ->and(array_filter($prefixos, static fn (string $p): bool => str_starts_with("/apps/{$id}/events", $p)))->not->toBeEmpty();
+
+    $this->assertStringNotContainsString($ausente, $regra);
+})->with([
+    'valores do .env.docker'           => ['starter-kit-key', 'starter-kit', '${'],
+    'outra chave: o valor vem do .env' => ['outra-chave', 'outro-id', 'starter-kit-key'],
+])->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+it('[CT-44] descomentar o bloco entre os marcadores liga a rota do Reverb pelo Traefik, e só com chave e id', function (?string $chave, ?string $id, bool $feliz, string $nomeada): void {
+    $resposta = composeComOReverbDescomentado(dotenvDoCaso([
+        'TRAEFIK_HOST'         => 'dev.exemplo.test',
+        'COMPOSE_PROJECT_NAME' => 'proj-dev',
+        'REVERB_APP_KEY'       => $chave,
+        'REVERB_APP_ID'        => $id,
+    ]));
+
+    if (! $feliz) {
+        expect($resposta['codigo'])->not->toBe(0)
+            ->and($resposta['erro'])->toContain($nomeada);
+
+        return;
+    }
+
+    expect($resposta['codigo'])->toBe(0, $resposta['erro']);
+
+    $config = $resposta['config'];
+    $rede   = chaveDaRedeExterna($config);
+
+    expect($rede)->not->toBeNull()
+        ->and(redesDoServico($config, 'reverb'))->toContain('default', (string) $rede);
+
+    $labelsReverb = labelsDoServico($config, 'reverb');
+
+    expect($labelsReverb['traefik.docker.network'] ?? null)->toBe($config['networks'][$rede]['name']);
+
+    $regra = $labelsReverb['traefik.http.routers.proj-dev-reverb.rule'] ?? '';
+
+    expect(preg_match(regexDaRegraDoReverb(), $regra))->toBe(1, "A regra `{$regra}` não casa a forma esperada.")
+        ->and($regra)->toContain('/app/chave-x', '/apps/id-y')
+        ->and($labelsReverb['traefik.http.routers.proj-dev-reverb.entrypoints'] ?? null)->toBe('websecure')
+        ->and($labelsReverb['traefik.http.routers.proj-dev-reverb.tls'] ?? null)->toBe('true')
+        ->and($labelsReverb['traefik.http.services.proj-dev-reverb.loadbalancer.server.port'] ?? null)->toBe('8090');
+
+    $labelsNginx = labelsDoServico($config, 'nginx');
+
+    expect($labelsNginx)->toHaveKey('traefik.http.routers.proj-dev.rule');
+
+    foreach (array_keys($labelsNginx) as $chaveDoLabel) {
+        expect(str_contains($chaveDoLabel, '-reverb'))->toBeFalse("O nginx ganhou o label `{$chaveDoLabel}` do Reverb.");
+    }
+})->with([
+    'feliz'                 => ['chave-x', 'id-y', true, ''],
+    'chave ausente'         => [null, 'id-y', false, 'REVERB_APP_KEY'],
+    'chave vazia ≠ ausente' => ['', 'id-y', false, 'REVERB_APP_KEY'],
+    'id ausente'            => ['chave-x', null, false, 'REVERB_APP_ID'],
+    'id vazio ≠ ausente'    => ['chave-x', '', false, 'REVERB_APP_ID'],
+])->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+/*
+|--------------------------------------------------------------------------
+| R8 — Os quatro VITE_REVERB_* chegam ao npm run build de toda imagem
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-17] o ARG está no estágio assets, antes do npm run build', function (string $arg): void {
+    $recorte = estagioAssetsDoDockerfile();
+
+    expect($recorte)->not->toBe('');
+
+    expect(preg_match('/^ARG '.$arg.'(=.*)?$/m', $recorte, $achado, PREG_OFFSET_CAPTURE))->toBe(1, "`ARG {$arg}` não está no estágio assets.");
+
+    $build = strpos($recorte, 'RUN npm run build');
+
+    expect($build)->not->toBeFalse()
+        ->and($achado[0][1])->toBeLessThan($build);
+})->with([
+    'VITE_REVERB_HOST',
+    'VITE_REVERB_PORT',
+    'VITE_REVERB_SCHEME',
+    'VITE_REVERB_APP_KEY',
+])->group('kit');
+
+it('[CT-18] todo serviço com build recebe os quatro args com os valores do .env', function (): void {
+    $env = dotenvDoCaso([
+        'VITE_REVERB_HOST'    => 'dev.exemplo.test',
+        'VITE_REVERB_PORT'    => '443',
+        'VITE_REVERB_SCHEME'  => 'https',
+        'VITE_REVERB_APP_KEY' => 'chave-dev',
+        'TRAEFIK_HOST'        => 'dev.exemplo.test',
+    ]);
+
+    $base = configDoBase($env);
+    $com  = configComOverride($env);
+
+    $comBuild = array_keys(array_filter($base['services'], static fn (array $s): bool => isset($s['build'])));
+
+    expect($comBuild)->not->toBeEmpty();
+
+    $esperado = [
+        'VITE_REVERB_HOST'    => 'dev.exemplo.test',
+        'VITE_REVERB_PORT'    => '443',
+        'VITE_REVERB_SCHEME'  => 'https',
+        'VITE_REVERB_APP_KEY' => 'chave-dev',
+    ];
+
+    foreach ($comBuild as $servico) {
+        $args = array_map('strval', $com['services'][$servico]['build']['args'] ?? []);
+        $args = array_intersect_key($args, $esperado);
+
+        ksort($args);
+        ksort($esperado);
+
+        expect($args)->toBe($esperado, "O serviço {$servico} não recebeu os quatro args com os valores do .env.");
+    }
+})->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+/*
+|--------------------------------------------------------------------------
+| R9 — Sem build-arg, o build é o de hoje
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-19] o estágio assets não define VITE_REVERB_* quando ninguém as passa', function (): void {
+    $recorte = estagioAssetsDoDockerfile();
+
+    expect($recorte)->not->toBe('');
+
+    $dockerignore = array_map('trim', explode("\n", semLinhasDeComentario(textoDoArquivo('.dockerignore'))));
+    $ignoraOEnv   = in_array('.env', $dockerignore, true);
+
+    foreach (instrucoesDoDockerfile($recorte) as $linha) {
+        if (preg_match('/^(ARG|ENV|COPY|ADD|RUN)\s+(.*)$/i', $linha, $m) !== 1) {
+            continue;
+        }
+
+        $instrucao = strtoupper($m[1]);
+        $resto     = $m[2];
+
+        if ($instrucao === 'ENV') {
+            expect(preg_match('/VITE_REVERB_/', $linha))->toBe(0, "ENV atribui VITE_REVERB_*: {$linha}");
+        }
+
+        if ($instrucao === 'ARG') {
+            expect(preg_match('/^VITE_REVERB_\w+\s*=/', $resto))->toBe(0, "ARG com default (ou vazio): {$linha}");
+        }
+
+        if ($instrucao === 'COPY' || $instrucao === 'ADD') {
+            $argumentos = array_values(array_filter(preg_split('/\s+/', $resto) ?: [], static fn (string $a): bool => $a !== '' && ! str_starts_with($a, '--')));
+            $origens    = array_slice($argumentos, 0, -1);
+
+            foreach ($origens as $origem) {
+                expect(preg_match('/\.env/', $origem))->toBe(0, "COPY/ADD de .env: {$linha}");
+
+                $amplo = in_array($origem, ['.', './'], true) || str_contains($origem, '*');
+
+                expect($amplo && ! $ignoraOEnv)->toBeFalse("COPY/ADD com origem ampla `{$origem}` sem `.env` ativo no .dockerignore: {$linha}");
+            }
+        }
+
+        if ($instrucao === 'RUN') {
+            expect(preg_match('/VITE_REVERB_\w+=/', $linha))->toBe(0, "RUN atribui VITE_REVERB_*: {$linha}");
+
+            if (preg_match('/--mount\S*/', $resto, $mount) === 1) {
+                expect(preg_match('/(source|src)=\S*\.env/', $mount[0]))->toBe(0, "RUN --mount com .env: {$linha}");
+            }
+        }
+    }
+})->group('kit');
+
+it('[CT-38] o base sozinho não passa VITE_REVERB_* ao build', function (): void {
+    $config = configDoBase(dotenvDoCaso(['VITE_REVERB_HOST' => 'dev.exemplo.test']));
+
+    foreach ($config['services'] as $servico => $definicao) {
+        $chaves = array_filter(array_keys($definicao['build']['args'] ?? []), static fn (string $chave): bool => str_starts_with($chave, 'VITE_REVERB_'));
+
+        expect($chaves)->toBe([], "O serviço {$servico} passa VITE_REVERB_* ao build sem o override.");
+    }
+})->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+it('[CT-45] com o override, build.args leva só as VITE_REVERB_* que o .env define', function (array $definidas): void {
+    $todas = ['VITE_REVERB_HOST', 'VITE_REVERB_PORT', 'VITE_REVERB_SCHEME', 'VITE_REVERB_APP_KEY'];
+
+    $env = dotenvDoCaso(['TRAEFIK_HOST' => 'dev.exemplo.test', ...$definidas]);
+
+    $base = configDoBase($env);
+    $com  = configComOverride($env);
+
+    $comBuild = array_keys(array_filter($base['services'], static fn (array $s): bool => isset($s['build'])));
+
+    expect($comBuild)->not->toBeEmpty();
+
+    foreach ($comBuild as $servico) {
+        $args = $com['services'][$servico]['build']['args'] ?? [];
+
+        foreach ($definidas as $chave => $valor) {
+            expect(array_key_exists($chave, $args))->toBeTrue("{$servico}: build.args não tem {$chave}.");
+            expect((string) $args[$chave])->toBe($valor);
+        }
+
+        foreach (array_diff($todas, array_keys($definidas)) as $ausente) {
+            expect(array_key_exists($ausente, $args))->toBeFalse("{$servico}: build.args tem {$ausente}, ausente do .env (nem vazia).");
+        }
+    }
+})->with([
+    'nenhuma: o build é o de hoje' => [[]],
+    'uma definida, três ausentes'  => [['VITE_REVERB_HOST' => 'dev.exemplo.test']],
+])->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+/*
+|--------------------------------------------------------------------------
+| R13 — Chaves novas só como linha comentada; a sugestão não colide
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-23] a chave nova existe só como linha comentada', function (string $arquivo, string $chave): void {
+    $cru = textoDoArquivo($arquivo);
+
+    expect(preg_match('/^\s*'.$chave.'=/m', semLinhasDeComentario($cru)))->toBe(0, "`{$arquivo}` tem linha ativa de {$chave}.")
+        ->and(preg_match('/^#\s*'.$chave.'=/m', $cru))->toBe(1, "`{$arquivo}` não oferece `# {$chave}=`.");
+
+    $ativasDoDocker = array_column(linhasAtivasDoEnv(textoDoArquivo('.env.docker')), 0);
+
+    expect($ativasDoDocker)->not->toContain('COMPOSE_FILE')
+        ->and($ativasDoDocker)->not->toContain('COMPOSE_PROFILES');
+})->with([
+    '.env.example TRUSTED_PROXIES'     => ['.env.example', 'TRUSTED_PROXIES'],
+    '.env.docker TRUSTED_PROXIES'      => ['.env.docker', 'TRUSTED_PROXIES'],
+    '.env.docker TRAEFIK_HOST'         => ['.env.docker', 'TRAEFIK_HOST'],
+    '.env.docker TRAEFIK_REDE'         => ['.env.docker', 'TRAEFIK_REDE'],
+    '.env.docker COMPOSE_PROJECT_NAME' => ['.env.docker', 'COMPOSE_PROJECT_NAME'],
+    '.env.docker FORWARD_APP_PORT'     => ['.env.docker', 'FORWARD_APP_PORT'],
+    '.env.docker FORWARD_DB_PORT'      => ['.env.docker', 'FORWARD_DB_PORT'],
+    '.env.docker FORWARD_REDIS_PORT'   => ['.env.docker', 'FORWARD_REDIS_PORT'],
+    '.env.docker FORWARD_REVERB_PORT'  => ['.env.docker', 'FORWARD_REVERB_PORT'],
+])->group('kit');
+
+it('[CT-24] toda variável que o exemplo interpola é oferecida no .env.docker', function (): void {
+    $exemplo = textoDoArquivo('docker/traefik/docker-compose.override.yml');
+    $docker  = textoDoArquivo('.env.docker');
+
+    preg_match_all('/\$\{([A-Za-z_][A-Za-z0-9_]*)/', $exemplo, $m);
+
+    // "Exceto os já resolvidos pelo próprio Compose" (04): `VAR` é o placeholder que um comentário do
+    // exemplo cita para explicar por que os `build.args` vão em lista — citar não é consumir.
+    $excecoes = ['VAR'];
+
+    $nomes = array_values(array_diff(array_unique($m[1]), $excecoes));
+
+    expect($nomes)->not->toBeEmpty();
+
+    foreach ($nomes as $nome) {
+        $oferecida = preg_match('/^(#\s*)?'.$nome.'=/m', $docker) === 1;
+
+        expect($oferecida)->toBeTrue("O exemplo interpola `{$nome}` e o .env.docker não a oferece.");
+    }
+
+    $appUrls = array_values(array_filter(linhasAtivasDoEnv($docker), static fn (array $l): bool => $l[0] === 'APP_URL'));
+
+    expect($appUrls)->not->toBeEmpty()
+        ->and(end($appUrls)[1])->toBe('http://localhost:8000');
+})->group('kit');
+
+it('[CT-25] descomentar o bloco do .env.docker não publica duas vezes a mesma porta', function (): void {
+    $chaves = ['COMPOSE_PROJECT_NAME', 'APP_URL', 'TRUSTED_PROXIES', 'TRAEFIK_HOST', 'TRAEFIK_REDE', 'FORWARD_APP_PORT', 'FORWARD_DB_PORT', 'FORWARD_REDIS_PORT', 'FORWARD_REVERB_PORT'];
+
+    $linhas = [];
+
+    foreach (explode("\n", textoDoArquivo('.env.docker')) as $linha) {
+        if (preg_match('/^#\s*([A-Z][A-Z0-9_]*)=(.*)$/', $linha, $m) === 1 && in_array($m[1], $chaves, true)) {
+            $valor = trim((string) preg_replace('/\s+#.*$/', '', $m[2]));
+            $valor = $valor === '' && $m[1] === 'TRAEFIK_HOST' ? 'dev.exemplo.test' : $valor;
+            $linha = "{$m[1]}={$valor}";
+        }
+
+        $linhas[] = $linha;
+    }
+
+    $env = implode("\n", $linhas)."\n";
+
+    expect(array_column(linhasAtivasDoEnv($env), 0))->toContain('FORWARD_APP_PORT', 'FORWARD_DB_PORT', 'FORWARD_REDIS_PORT', 'FORWARD_REVERB_PORT');
+
+    $config = configComOverride($env);
+
+    expect(publicacoesDaConfig($config))->not->toBeEmpty()
+        ->and(colisoesDePorta(publicacoesDaConfig($config)))->toBe([]);
+
+    // O bloco sugere TRUSTED_PROXIES "*": então toda publicação do nginx tem de estar em loopback.
+    $proxies = array_values(array_filter(linhasAtivasDoEnv($env), static fn (array $l): bool => $l[0] === 'TRUSTED_PROXIES'));
+
+    expect($proxies)->not->toBeEmpty()
+        ->and(end($proxies)[1])->toBe('*');
+
+    $doNginx = array_values(array_filter(publicacoesDaConfig($config), static fn (array $p): bool => $p['servico'] === 'nginx'));
+
+    expect($doNginx)->not->toBeEmpty();
+
+    foreach ($doNginx as $publicacao) {
+        expect($publicacao['ip'])->toBe('127.0.0.1', 'Com TRUSTED_PROXIES=*, o nginx publica fora do loopback.');
+    }
+})->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+it('[CT-39] o .env.docker copiado como sempre, sem o override, não liga o Traefik', function (): void {
+    $resultado = composeConfig(
+        textoDoArquivo('.env.docker'),
+        [...arquivosDeComposeDaRaiz(), 'docker/traefik/docker-compose.override.yml' => 'docker/traefik/docker-compose.override.yml'],
+    );
+
+    expect($resultado['codigo'])->toBe(0, $resultado['erro']);
+
+    $config = $resultado['config'];
+
+    foreach (array_keys($config['services']) as $servico) {
+        $comTraefik = array_filter(array_keys(labelsDoServico($config, $servico)), static fn (string $chave): bool => str_starts_with($chave, 'traefik.'));
+
+        expect($comTraefik)->toBe([], "O serviço {$servico} ganhou label do Traefik com o .env.docker verbatim.");
+    }
+
+    expect(array_values(array_diff(array_keys($config['networks'] ?? []), ['default'])))->toBe([]);
+})->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+it('[CT-40] com as quatro FORWARD_* em loopback, toda publicação fica em 127.0.0.1', function (): void {
+    $config = configComOverride(dotenvDoCaso([
+        'TRAEFIK_HOST'        => 'dev.exemplo.test',
+        'FORWARD_APP_PORT'    => '127.0.0.1:8090',
+        'FORWARD_DB_PORT'     => '127.0.0.1:5433',
+        'FORWARD_REDIS_PORT'  => '127.0.0.1:6380',
+        'FORWARD_REVERB_PORT' => '127.0.0.1:8190',
+    ]));
+
+    $esperado = ['nginx' => ['8090'], 'pgsql' => ['5433'], 'redis' => ['6380'], 'reverb' => ['8190']];
+
+    foreach ($esperado as $servico => $portas) {
+        $publicacoes = array_values(array_filter(publicacoesDaConfig($config), static fn (array $p): bool => $p['servico'] === $servico));
+
+        expect(array_column($publicacoes, 'publicada'))->toBe($portas, "As portas publicadas de {$servico} divergem.");
+
+        foreach ($publicacoes as $publicacao) {
+            expect($publicacao['ip'])->toBe('127.0.0.1', "{$servico} publica fora do loopback.");
+        }
+    }
+})->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+/*
+|--------------------------------------------------------------------------
+| R14 — Três ambientes com a matriz do requisito não disputam porta nem nome
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-26] dev, teste e homol com a matriz sugerida não colidem', function (): void {
+    $ambientes = [
+        ['projeto3-dev', 'dev.exemplo.test', '8090', '5433', '6380', '8190'],
+        ['projeto3-teste', 'teste.exemplo.test', '9090', '5434', '6381', '8191'],
+        ['projeto3-homol', 'homol.exemplo.test', '8080', '5435', '6382', '8192'],
+    ];
+
+    $configs = [];
+
+    foreach ($ambientes as [$projeto, $host, $app, $db, $redis, $reverb]) {
+        $configs[$projeto] = configComOverride(dotenvDoCaso([
+            'COMPOSE_PROJECT_NAME' => $projeto,
+            'TRAEFIK_HOST'         => $host,
+            'FORWARD_APP_PORT'     => $app,
+            'FORWARD_DB_PORT'      => $db,
+            'FORWARD_REDIS_PORT'   => $redis,
+            'FORWARD_REVERB_PORT'  => $reverb,
+        ]));
+    }
+
+    $todas = [];
+
+    foreach ($configs as $projeto => $config) {
+        foreach (publicacoesDaConfig($config) as $publicacao) {
+            $todas[] = [...$publicacao, 'servico' => "{$projeto}/{$publicacao['servico']}"];
+        }
+
+        foreach ($config['services'] as $servico => $definicao) {
+            expect(array_key_exists('container_name', $definicao))->toBeFalse("O serviço {$servico} fixa container_name.");
+        }
+    }
+
+    expect($todas)->not->toBeEmpty()
+        ->and(colisoesDePorta($todas))->toBe([])
+        ->and(array_column($configs, 'name'))->toBe(array_keys($configs));
+
+    $nomesDaRede   = array_map(static fn (array $c): string => (string) $c['networks']['default']['name'], $configs);
+    $nomesDeVolume = [];
+
+    foreach ($configs as $projeto => $config) {
+        foreach ($config['volumes'] ?? [] as $volume) {
+            $nomesDeVolume[$projeto][] = (string) ($volume['name'] ?? '');
+        }
+    }
+
+    expect(array_unique($nomesDaRede))->toHaveCount(3);
+
+    $achatado = array_merge(...array_values($nomesDeVolume));
+
+    expect($achatado)->not->toBeEmpty()
+        ->and(array_unique($achatado))->toHaveCount(count($achatado));
+})->group('kit')->skip(fn (): bool => ! composeDisponivel(), 'CLI do Docker Compose ausente');
+
+/*
+|--------------------------------------------------------------------------
+| R15 — A página existe nos dois idiomas e é alcançável; o CHANGELOG registra
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-27] a página do idioma existe e todos os caminhos levam a ela', function (string $idioma, string $readme): void {
+    $pagina = 'operacao/deploy-docker-multiambiente.md';
+
+    $paginas = paginasDoSite($idioma);
+
+    expect($paginas)->toHaveKey($pagina);
+
+    // As cláusulas do `Então` são coletadas e afirmadas juntas: a primeira que falha não esconde as outras.
+    $faltas = [];
+
+    if (preg_match('/\A---
+(.*?)
+---/s', $paginas[$pagina], $frente) !== 1
+        || preg_match('/^title:\s*\S/m', $frente[1]) !== 1
+        || preg_match('/^description:\s*\S/m', $frente[1]) !== 1) {
+        $faltas[] = 'a página não tem "title" e "description" no front-matter';
+    }
+
+    $secaoDocker = preg_match('/^## Docker\s*$(.*?)(?=^## |\z)/ms', textoDoArquivo($readme), $secao) === 1 ? $secao[1] : '';
+
+    if (preg_match('~\]\([^)\s]*/'.$idioma.'/operacao/deploy-docker-multiambiente\.html\)~', $secaoDocker) !== 1) {
+        $faltas[] = "o {$readme} não linka a página dentro de `## Docker`";
+    }
+
+    if (! str_contains(textoDoArquivo("docs/{$idioma}/operacao/index.md"), 'deploy-docker-multiambiente')) {
+        $faltas[] = "docs/{$idioma}/operacao/index.md não linka a página";
+    }
+
+    if (preg_match('/"slug"\s*:\s*"operacao\/deploy-docker-multiambiente"/', textoDoArquivo('site/sidebar.json')) !== 1) {
+        $faltas[] = 'site/sidebar.json não tem o slug';
+    }
+
+    if (! is_file(base_path("site/public/{$idioma}/operacao/deploy-docker-multiambiente.html"))) {
+        $faltas[] = "o stub site/public/{$idioma}/operacao/deploy-docker-multiambiente.html não existe";
+    }
+
+    expect($faltas)->toBe([]);
+})->with([
+    'pt' => ['pt', 'README.md'],
+    'en' => ['en', 'README.en.md'],
+])->group('kit')->skip(fn (): bool => ! naArvoreDoKit(), 'a página do site, os stubs e o README são do repositório do kit: não viajam no create-project (export-ignore)');
+
+it('[CT-28] o CHANGELOG registra a entrega', function (): void {
+    expect(textoDoArquivo('CHANGELOG.md'))->toContain('docker/traefik/docker-compose.override.yml', 'TRUSTED_PROXIES');
+})->group('kit')->skip(fn (): bool => ! naArvoreDoKit(), 'CHANGELOG.md é export-ignore: só existe na árvore do kit');
+
+/*
+|--------------------------------------------------------------------------
+| R16 — A página ensina o mecanismo central, o encaixe no Traefik e o passo a passo
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-29] a página do idioma carrega cada âncora do procedimento', function (string $idioma, string $ancora): void {
+    $pagina = paginaMultiambiente($idioma);
+    $blocos = blocosDeCodigoDoMarkdown($pagina);
+
+    switch ($ancora) {
+        case 'nome de projeto por ambiente':
+            preg_match_all('/^COMPOSE_PROJECT_NAME=([a-z0-9_-]+)$/m', $pagina, $m);
+
+            expect(array_unique($m[1]))->toHaveCount(3, 'Menos de 3 valores distintos de COMPOSE_PROJECT_NAME.');
+            break;
+
+        case 'um .env por ambiente':
+            $blocoDe = [];
+
+            foreach ($blocos as $indice => $bloco) {
+                if (preg_match_all('/^COMPOSE_PROJECT_NAME=([a-z0-9_-]+)$/m', $bloco, $m) > 0) {
+                    foreach ($m[1] as $valor) {
+                        $blocoDe[$valor] ??= $indice;
+                    }
+                }
+            }
+
+            expect($blocoDe)->toHaveCount(3)
+                ->and(array_unique(array_values($blocoDe)))->toHaveCount(3, 'Os 3 valores não estão em blocos de .env distintos.');
+            break;
+
+        case 'rede e label obrigatórios':
+            expect($pagina)->toContain('traefik.docker.network=', 'external: true');
+            break;
+
+        case 'labels do router':
+            expect($pagina)->toContain('entrypoints=websecure', 'tls=true', 'loadbalancer.server.port=80');
+            break;
+
+        case 'cópia do exemplo':
+            $regex = '~cp\s+docker/traefik/docker-compose\.override\.yml\s+(\./)?docker-compose\.override\.yml(\s*$|\s*&&|\s*;)~';
+            $achou = [];
+
+            foreach ($blocos as $bloco) {
+                foreach (explode("\n", $bloco) as $linha) {
+                    if (preg_match($regex, $linha) === 1) {
+                        $achou[] = $linha;
+                    }
+                }
+            }
+
+            expect($achou)->not->toBeEmpty('Nenhuma linha de bloco de código copia o exemplo para a raiz com o destino ancorado no fim.');
+            expect(base_path('docker/traefik/docker-compose.override.yml'))->toBeFile();
+            break;
+
+        case 'proxies confiáveis':
+            expect($pagina)->toContain('TRUSTED_PROXIES=');
+            break;
+    }
+})->with(idiomasPorItem([
+    'nome de projeto por ambiente',
+    'um .env por ambiente',
+    'rede e label obrigatórios',
+    'labels do router',
+    'cópia do exemplo',
+    'proxies confiáveis',
+]))->group('kit')->skip(fn (): bool => ! naArvoreDoKit(), 'a página do site é do repositório do kit: não viaja no create-project (export-ignore)');
+
+it('[CT-41] a seção de TRUSTED_PROXIES diz como o cache e o "*" se comportam', function (string $idioma, array $cache, array $refazer, string $ambiente, string $ipFixo, string $rede): void {
+    $pagina = paginaMultiambiente($idioma);
+    $secoes = secoesDaPagina($pagina);
+
+    $indices = array_keys(array_filter(
+        $secoes,
+        static fn (array $secao): bool => preg_match('/TRUSTED_PROXIES|proxies confiáveis|trusted proxies/iu', $secao['titulo']) === 1,
+    ));
+
+    expect($indices)->not->toBeEmpty('Nenhuma seção da página tem título de TRUSTED_PROXIES.');
+
+    $secao  = textoComSubsecoes($secoes, $indices[0]);
+    $frases = frasesDaProsaDoMarkdown($secao);
+
+    $cacheERefazer = array_filter(
+        $frases,
+        static fn (string $frase): bool => ancoraSemNegacaoNaFrase($frase, $cache)
+            && ancoraSemNegacaoNaFrase($frase, 'TRUSTED_PROXIES')
+            && ancoraSemNegacaoNaFrase($frase, $refazer),
+    );
+
+    expect($cacheERefazer)->not->toBeEmpty('Nenhuma frase da seção junta, sem negação, o cache, TRUSTED_PROXIES e o refazer.');
+
+    $instrucaoAntiga = array_filter(
+        frasesDaProsaDoMarkdown($pagina),
+        static fn (string $frase): bool => contemSemCaixa($frase, $ambiente) && str_contains($frase, 'TRUSTED_PROXIES'),
+    );
+
+    expect($instrucaoAntiga)->toBeEmpty("Uma frase da página junta `{$ambiente}` e TRUSTED_PROXIES.");
+
+    expect(contemSemCaixa($secao, 'ipv4_address'))->toBeTrue('A seção não cita ipv4_address.')
+        ->and(contemSemCaixa($secao, $ipFixo))->toBeTrue("A seção não cita `{$ipFixo}`.");
+
+    $curinga = array_filter(
+        $frases,
+        static fn (string $frase): bool => str_contains($frase, '`*`') && contemSemCaixa($frase, $rede) && contemSemCaixa($frase, 'container'),
+    );
+
+    expect($curinga)->not->toBeEmpty("Nenhuma frase da seção junta `*`, `{$rede}` e container.");
+})->with([
+    'pt' => ['pt', ['config:cache', 'configuração em cache'], ['refa', 'de novo', 'novamente'], 'ambiente do processo', 'IP fixo', 'rede'],
+    'en' => ['en', ['config:cache', 'cached configuration'], ['again', 're-run', 'rerun', 'rebuild'], 'process environment', 'fixed IP', 'network'],
+])->group('kit')->skip(fn (): bool => ! naArvoreDoKit(), 'a página do site é do repositório do kit: não viaja no create-project (export-ignore)');
+
+it('[CT-47] a seção do Traefik avisa que nome de serviço é global na rede compartilhada', function (string $idioma): void {
+    $secoes = array_filter(
+        secoesDaPagina(paginaMultiambiente($idioma)),
+        static fn (array $secao): bool => str_contains($secao['texto'], 'traefik.docker.network'),
+    );
+
+    expect($secoes)->not->toBeEmpty('Nenhuma seção da página contém "traefik.docker.network".');
+
+    $completas = array_filter($secoes, static function (array $secao): bool {
+        $frases = frasesDaProsaDoMarkdown($secao['texto']);
+
+        $juntas = static fn (array $agulhas): bool => array_filter(
+            $frases,
+            static fn (string $frase): bool => array_filter($agulhas, static fn (string $a): bool => ! str_contains($frase, $a)) === [],
+        ) !== [];
+
+        return str_contains($secao['texto'], '`app`')
+            && str_contains($secao['texto'], '`reverb`')
+            && str_contains($secao['texto'], 'my-network')
+            && str_contains($secao['texto'], 'DevOps')
+            && $juntas(['nginx', 'app'])
+            && $juntas(['reverb', 'pgsql', 'redis']);
+    });
+
+    expect($completas)->not->toBeEmpty('A seção do Traefik não tem `app`, `reverb`, my-network, DevOps, uma frase com nginx e app, e uma com reverb, pgsql e redis.');
+})->with(['pt', 'en'])->group('kit')->skip(fn (): bool => ! naArvoreDoKit(), 'a página do site é do repositório do kit: não viaja no create-project (export-ignore)');
+
+/*
+|--------------------------------------------------------------------------
+| R17 — A página cobre portas, matriz, o build do Reverb e as duas rotas
+|--------------------------------------------------------------------------
+*/
+
+/** A célula numérica da matriz: `\s*(127\.0\.0\.1:)?N[¹²]?\s*` — o número é o literal do requisito. */
+function celulaDaMatriz(string $numero): string
+{
+    return '\s*(?:127\.0\.0\.1:)?'.$numero.'[¹²]?\s*';
+}
+
+/** A linha de tabela da matriz: `^\|.*<chave>.*\|C(a)\|C(b)\|C(c)\|`. */
+function linhaDaMatriz(string $chave, string $a, string $b, string $c): string
+{
+    return '/^\|.*'.$chave.'.*\|'.celulaDaMatriz($a).'\|'.celulaDaMatriz($b).'\|'.celulaDaMatriz($c).'\|/mu';
+}
+
+it('[CT-30] a matriz de portas, o build e as rotas do Reverb estão na página', function (string $idioma, string $item): void {
+    $pagina = paginaMultiambiente($idioma);
+    $prosa  = prosaDoMarkdown($pagina);
+    $blocos = blocosDeCodigoDoMarkdown($pagina);
+
+    switch ($item) {
+        case 'linha de app da matriz':
+            expect(preg_match(linhaDaMatriz('FORWARD_APP_PORT', '8090', '9090', '8080'), $pagina))->toBe(1);
+            break;
+
+        case 'linha de banco':
+            expect(preg_match(linhaDaMatriz('FORWARD_DB_PORT', '5433', '5434', '5435'), $pagina))->toBe(1);
+            break;
+
+        case 'linha de cache':
+            expect(preg_match(linhaDaMatriz('FORWARD_REDIS_PORT', '6380', '6381', '6382'), $pagina))->toBe(1);
+            break;
+
+        case 'linha do Reverb':
+            expect(preg_match(linhaDaMatriz('FORWARD_REVERB_PORT', '8190', '8191', '8192'), $pagina))->toBe(1);
+            break;
+
+        case 'nota do 8090':
+            $linhas = array_filter(explode("\n", $prosa), static fn (string $l): bool => trim($l) !== '' && ! str_starts_with(ltrim($l), '|'));
+            $achou  = array_filter($linhas, static fn (string $l): bool => str_contains($l, 'FORWARD_REVERB_PORT') && str_contains($l, '8090'));
+
+            expect($achou)->not->toBeEmpty('Nenhuma linha de prosa liga FORWARD_REVERB_PORT ao 8090.');
+            break;
+
+        case 'bind de administração':
+            expect($pagina)->toContain('FORWARD_APP_PORT=127.0.0.1:');
+            break;
+
+        case 'rota do Reverb pelo Traefik':
+            expect(preg_match('/traefik\.http\.routers\.\S*-reverb/', $pagina))->toBe(1);
+            break;
+
+        case 'rota do Reverb por porta':
+            $foraDaTabela = array_filter(explode("\n", $prosa), static fn (string $l): bool => ! str_starts_with(ltrim($l), '|'));
+
+            expect(str_contains(implode("\n", $foraDaTabela), 'FORWARD_REVERB_PORT='))->toBeTrue();
+            break;
+
+        case 'VITE do Reverb no build':
+            $achou = array_filter($blocos, static fn (string $b): bool => str_contains($b, 'VITE_REVERB_HOST=')
+                && str_contains($b, 'VITE_REVERB_PORT=443')
+                && str_contains($b, 'VITE_REVERB_SCHEME=https'));
+
+            expect($achou)->not->toBeEmpty('Nenhum bloco traz os VITE_REVERB_* atrás do Traefik.');
+            break;
+
+        case 'rebuild ao mudar o VITE':
+            $secoes = secoesDaPagina($pagina);
+            $achou  = array_filter($secoes, static fn (array $s): bool => str_contains($s['texto'], 'VITE_REVERB_PORT=443') && str_contains($s['texto'], '--build'));
+
+            expect($achou)->not->toBeEmpty('A seção do bloco VITE não manda reconstruir com --build.');
+            break;
+
+        case 'host do Reverb atrás do Traefik':
+            $hostsDoTraefik = [];
+
+            preg_match_all('/^\s*TRAEFIK_HOST=(\S+)/m', $pagina, $t);
+            preg_match_all('~APP_URL=https://([^/\s]+)~', $pagina, $u);
+
+            foreach ([...$t[1], ...$u[1]] as $host) {
+                $hostsDoTraefik[] = trim($host);
+            }
+
+            $achou = array_filter($blocos, static fn (string $b): bool => str_contains($b, 'VITE_REVERB_PORT=443'));
+
+            expect($achou)->not->toBeEmpty('Nenhum bloco traz VITE_REVERB_PORT=443.');
+
+            foreach ($achou as $bloco) {
+                expect(preg_match('/^\s*VITE_REVERB_HOST=(\S+)/m', $bloco, $h))->toBe(1);
+
+                $host = $h[1];
+
+                expect($host)->not->toBe('localhost')
+                    ->and($host)->not->toBe('127.0.0.1')
+                    ->and($hostsDoTraefik)->toContain($host);
+            }
+            break;
+
+        case 'REVERB_* não mudam':
+            $secoes = array_filter(secoesDaPagina($pagina), static fn (array $s): bool => str_contains($s['texto'], 'VITE_REVERB_PORT=443'));
+
+            expect($secoes)->not->toBeEmpty('Nenhuma seção traz o bloco com VITE_REVERB_PORT=443.');
+
+            $negacao = $idioma === 'pt' ? '/\bnão\b/iu' : '/\bnot\b/i';
+            $achou   = [];
+
+            foreach ($secoes as $secao) {
+                foreach (frasesDaProsaDoMarkdown($secao['texto']) as $frase) {
+                    if (preg_match('/(?<![A-Z_])REVERB_HOST/', $frase) === 1
+                        && preg_match('/(?<![A-Z_])REVERB_PORT/', $frase) === 1
+                        && preg_match('/(?<![A-Z_])REVERB_SCHEME/', $frase) === 1
+                        && preg_match($negacao, $frase) === 1) {
+                        $achou[] = $frase;
+                    }
+                }
+            }
+
+            expect($achou)->not->toBeEmpty('Nenhuma frase da seção diz que REVERB_HOST, REVERB_PORT e REVERB_SCHEME não mudam.');
+            break;
+
+        case 'REVERB_* sem TLS no .env':
+            foreach ($blocos as $bloco) {
+                foreach (explode('
+', $bloco) as $linha) {
+                    expect(preg_match('/(?<![A-Z_])REVERB_SCHEME=https/', $linha))->toBe(0, "Um bloco de código põe TLS no REVERB_SCHEME: {$linha}")
+                        ->and(preg_match('/(?<![A-Z_])REVERB_PORT=443/', $linha))->toBe(0, "Um bloco de código põe 443 no REVERB_PORT: {$linha}");
+                }
+            }
+            break;
+
+        case 'portas dos profiles ai/mail':
+            $secoes = array_filter(secoesDaPagina($pagina), static function (array $secao): bool {
+                foreach (explode('
+', $secao['texto']) as $linha) {
+                    if (str_contains($linha, 'FORWARD_APP_PORT') && str_contains($linha, '8090') && str_contains($linha, '9090') && str_contains($linha, '8080')) {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+
+            expect($secoes)->not->toBeEmpty('A seção da matriz de portas não foi encontrada.');
+
+            $comLlama = array_filter($secoes, static fn (array $secao): bool => str_contains($secao['texto'], 'FORWARD_LLAMA_PORT'));
+
+            expect($comLlama)->not->toBeEmpty('A seção da matriz não cita FORWARD_LLAMA_PORT.');
+            break;
+    }
+})->with(idiomasPorItem([
+    'linha de app da matriz',
+    'linha de banco',
+    'linha de cache',
+    'linha do Reverb',
+    'nota do 8090',
+    'bind de administração',
+    'rota do Reverb pelo Traefik',
+    'rota do Reverb por porta',
+    'VITE do Reverb no build',
+    'rebuild ao mudar o VITE',
+    'host do Reverb atrás do Traefik',
+    'REVERB_* não mudam',
+    'REVERB_* sem TLS no .env',
+    'portas dos profiles ai/mail',
+]))->group('kit')->skip(fn (): bool => ! naArvoreDoKit(), 'a página do site é do repositório do kit: não viaja no create-project (export-ignore)');
+
+it('[CT-42] a matriz diz que as quatro portas são obrigatórias e distintas, e que vão para o loopback', function (string $idioma, string $obrigatoria, string $distinta, string $opcional): void {
+    $secoes = array_values(array_filter(
+        secoesDaPagina(paginaMultiambiente($idioma)),
+        static function (array $secao): bool {
+            foreach (explode("\n", $secao['texto']) as $linha) {
+                if (str_contains($linha, 'FORWARD_APP_PORT') && str_contains($linha, '8090') && str_contains($linha, '9090') && str_contains($linha, '8080')) {
+                    return true;
+                }
+            }
+
+            return false;
+        },
+    ));
+
+    expect($secoes)->not->toBeEmpty('A seção da matriz de portas não foi encontrada.');
+
+    $texto   = $secoes[0]['texto'];
+    $frases  = frasesDaProsaDoMarkdown($texto);
+    $celulas = implode("\n", array_filter(explode("\n", $texto), static fn (string $l): bool => str_starts_with(ltrim($l), '|')));
+
+    $obrigatoriaEDistinta = array_filter($frases, static fn (string $f): bool => ancoraSemNegacaoNaFrase($f, $obrigatoria) && ancoraSemNegacaoNaFrase($f, $distinta));
+
+    expect($obrigatoriaEDistinta)->not->toBeEmpty("Nenhuma frase da seção da matriz junta, sem negação, `{$obrigatoria}` e `{$distinta}`.");
+
+    $loopback = array_filter($frases, static fn (string $f): bool => str_contains($f, '127.0.0.1') && str_contains($f, 'Traefik'));
+
+    expect($loopback)->not->toBeEmpty('Nenhuma frase da seção da matriz junta `127.0.0.1` e `Traefik`.')
+        ->and(contemSemCaixa($celulas, $opcional))->toBeFalse("Uma célula da matriz diz `{$opcional}`.");
+})->with([
+    'pt' => ['pt', 'obrigatóri', 'distint', 'opcional'],
+    'en' => ['en', 'mandatory', 'distinct', 'optional'],
+])->group('kit')->skip(fn (): bool => ! naArvoreDoKit(), 'a página do site é do repositório do kit: não viaja no create-project (export-ignore)');
+
+/*
+|--------------------------------------------------------------------------
+| R18 — A página apresenta as opções A–D e as armadilhas
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-31] cada opção e cada armadilha tem seu lugar na página', function (string $idioma, string $item): void {
+    $pagina = paginaMultiambiente($idioma);
+    $secoes = secoesDaPagina($pagina);
+
+    $titulo = static fn (string $letra): string => $idioma === 'pt'
+        ? '/\bOp[cç][aã]o\s+'.$letra.'\b/iu'
+        : '/\bOption\s+'.$letra.'\b/i';
+
+    $recomendada = $idioma === 'pt' ? 'recomendad' : 'recommended';
+
+    switch ($item) {
+        case 'Opção A recomendada':
+            $i = indiceDaSecaoPorTitulo($secoes, $titulo('A'));
+
+            expect($i)->not->toBeNull('Nenhum título de seção para a Opção A.');
+            expect(contemSemCaixa(textoComSubsecoes($secoes, (int) $i), $recomendada))->toBeTrue();
+            break;
+
+        case 'fluxo de atualização':
+            $i = indiceDaSecaoPorTitulo($secoes, $titulo('A'));
+
+            expect($i)->not->toBeNull('Nenhum título de seção para a Opção A.');
+
+            $texto = textoComSubsecoes($secoes, (int) $i);
+            $pull  = strpos($texto, 'git pull');
+
+            $posicoes = array_filter([
+                strpos($texto, '--profile app up -d --build'),
+                strpos($texto, './deploy_docker_local.sh'),
+            ], static fn (int|false $p): bool => $p !== false);
+
+            expect($pull)->not->toBeFalse()
+                ->and($posicoes)->not->toBeEmpty()
+                ->and($pull)->toBeLessThan(min($posicoes));
+            break;
+
+        case 'opções B, C e D':
+            $semTitulo = array_values(array_filter(['B', 'C', 'D'], static fn (string $letra): bool => indiceDaSecaoPorTitulo($secoes, $titulo($letra)) === null));
+
+            expect($semTitulo)->toBe([], 'Opções sem título de seção próprio.');
+            break;
+
+        case 'equilíbrio da D':
+            $i = indiceDaSecaoPorTitulo($secoes, $titulo('D'));
+
+            expect($i)->not->toBeNull('Nenhum título de seção para a Opção D.');
+
+            $texto = textoComSubsecoes($secoes, (int) $i);
+
+            expect(str_contains($texto, 'pgsql'))->toBeTrue()
+                ->and(str_contains($texto, 'redis'))->toBeTrue();
+
+            $compartilhado = $idioma === 'pt' ? 'compartilhad' : 'shared';
+
+            $achou = array_filter(frasesDaProsaDoMarkdown($texto), static fn (string $f): bool => contemSemCaixa($f, 'llama')
+                && contemSemCaixa($f, 'mailpit')
+                && contemSemCaixa($f, $compartilhado));
+
+            expect($achou)->not->toBeEmpty('Nenhuma frase da Opção D junta llama, mailpit e o que se compartilha.');
+            break;
+
+        case 'armadilhas':
+            expect($pagina)->toContain('SESSION_COOKIE', 'APP_KEY', 'APP_URL=https://', 'APP_DEBUG=false');
+            break;
+
+        case 'sem SESSION_COOKIE customizado':
+            foreach (blocosDeCodigoDoMarkdown($pagina) as $bloco) {
+                expect(str_contains($bloco, 'SESSION_COOKIE='))->toBeFalse('Um bloco de código customiza SESSION_COOKIE.');
+            }
+            break;
+
+        case 'APP_URL do ambiente':
+            $blocosDeEnv = array_filter(blocosDeCodigoDoMarkdown($pagina), static fn (string $b): bool => str_contains($b, 'TRAEFIK_HOST='));
+
+            expect($blocosDeEnv)->not->toBeEmpty('Nenhum bloco de .env da página tem TRAEFIK_HOST=.');
+
+            foreach ($blocosDeEnv as $bloco) {
+                expect(preg_match('/^\s*TRAEFIK_HOST=(\S+)/m', $bloco, $h))->toBe(1)
+                    ->and(preg_match('/^\s*APP_URL=(\S+)/m', $bloco, $u))->toBe(1, 'O bloco de .env não tem APP_URL=.');
+
+                expect($u[1])->toBe('https://'.$h[1]);
+            }
+            break;
+
+        case 'sem debug ligado':
+            foreach (blocosDeCodigoDoMarkdown($pagina) as $bloco) {
+                expect(str_contains($bloco, 'APP_DEBUG=true'))->toBeFalse('Um bloco de código liga APP_DEBUG=true.');
+            }
+            break;
+
+        case 'receita da D':
+            $i = indiceDaSecaoPorTitulo($secoes, $titulo('D'));
+
+            expect($i)->not->toBeNull('Nenhum título de seção para a Opção D.');
+
+            $blocosDaD = blocosDeCodigoDoMarkdown(textoComSubsecoes($secoes, (int) $i));
+
+            $comRede = array_filter($blocosDaD, static fn (string $b): bool => str_contains($b, 'networks:') && str_contains($b, 'LLAMACPP_EMBED_URL'));
+
+            expect($comRede)->not->toBeEmpty('A seção da Opção D não tem bloco com `networks:` e `LLAMACPP_EMBED_URL`.');
+
+            $comAmbiente = array_filter($blocosDaD, static fn (string $b): bool => str_contains($b, 'environment:') && str_contains($b, 'LLAMACPP_URL'));
+
+            expect($comAmbiente)->not->toBeEmpty('A seção da Opção D não tem bloco com `environment:` e `LLAMACPP_URL`.');
+
+            // Uma rede externa que não é a do Traefik: nem `my-network` nem a interpolação de TRAEFIK_REDE.
+            $redesExternas = [];
+
+            foreach ($blocosDaD as $bloco) {
+                if (preg_match_all('/^[ 	]+([\w-]+):[ 	]*
+(?:[ 	]+\S.*
+)*?[ 	]+external:[ 	]*true\b/m', $bloco.'
+', $m) > 0) {
+                    array_push($redesExternas, ...$m[1]);
+                }
+            }
+
+            $deOutraRede = array_filter($redesExternas, static fn (string $nome): bool => $nome !== 'my-network' && ! str_contains($nome, 'TRAEFIK_REDE'));
+
+            expect($deOutraRede)->not->toBeEmpty('Nenhum bloco da Opção D declara uma rede `external: true` que não seja a do Traefik.');
+            break;
+    }
+})->with(idiomasPorItem([
+    'Opção A recomendada',
+    'fluxo de atualização',
+    'opções B, C e D',
+    'equilíbrio da D',
+    'armadilhas',
+    'sem SESSION_COOKIE customizado',
+    'APP_URL do ambiente',
+    'sem debug ligado',
+    'receita da D',
+]))->group('kit')->skip(fn (): bool => ! naArvoreDoKit(), 'a página do site é do repositório do kit: não viaja no create-project (export-ignore)');
+
+/*
+|--------------------------------------------------------------------------
+| R19 — pt e en são espelho
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-32] as duas páginas têm a mesma estrutura e os mesmos identificadores', function (): void {
+    $pt = paginaMultiambiente('pt');
+    $en = paginaMultiambiente('en');
+
+    $titulos = static function (string $pagina): array {
+        $n2 = $n3 = 0;
+
+        foreach (linhasDoMarkdown($pagina) as [$linha, $dentro]) {
+            if ($dentro) {
+                continue;
+            }
+
+            $n2 += str_starts_with($linha, '## ') ? 1 : 0;
+            $n3 += str_starts_with($linha, '### ') ? 1 : 0;
+        }
+
+        return [$n2, $n3];
+    };
+
+    $tokens = static function (string $pagina): array {
+        preg_match_all('/[A-Z][A-Z0-9_]{2,}=/', $pagina, $a);
+        preg_match_all('/traefik\.[a-z0-9.${}:_-]+/', $pagina, $b);
+
+        $todos = array_values(array_unique([...$a[0], ...$b[0]]));
+        sort($todos);
+
+        return $todos;
+    };
+
+    expect($titulos($en))->toBe($titulos($pt))
+        ->and($tokens($en))->toBe($tokens($pt))
+        ->and(count(blocosDeCodigoDoMarkdown($en)))->toBe(count(blocosDeCodigoDoMarkdown($pt)));
+})->group('kit')->skip(fn (): bool => ! naArvoreDoKit(), 'a página do site é do repositório do kit: não viaja no create-project (export-ignore)');
+
+/*
+|--------------------------------------------------------------------------
+| R20 — O bundle do kit continua sem Echo
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-43] nenhum arquivo do bundle importa Echo nem lê VITE_REVERB_*', function (): void {
+    $raiz = base_path('resources/js');
+
+    expect($raiz)->toBeDirectory();
+
+    $lidos = 0;
+
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($raiz, FilesystemIterator::SKIP_DOTS)) as $arquivo) {
+        if (! $arquivo->isFile()) {
+            continue;
+        }
+
+        $lidos++;
+        $ativo = semComentarios((string) file_get_contents($arquivo->getPathname()));
+
+        expect($ativo)->not->toContain('laravel-echo', 'import.meta.env.VITE_REVERB_');
+    }
+
+    expect($lidos)->toBeGreaterThan(0);
+
+    $pacote = json_decode(textoDoArquivo('package.json'), true);
+
+    foreach (['dependencies', 'devDependencies'] as $grupo) {
+        $nomes = array_keys($pacote[$grupo] ?? []);
+
+        expect($nomes)->not->toContain('laravel-echo')
+            ->and($nomes)->not->toContain('pusher-js');
+    }
+
+    // O Filament liga Echo pela configuração `broadcasting.echo`, sem nenhum `import` no bundle.
+    expect(config('filament.broadcasting.echo'))->toBeEmpty();
+
+    if (is_file(config_path('filament.php'))) {
+        $ativo = semComentarios((string) file_get_contents(config_path('filament.php')));
+
+        expect(str_contains($ativo, "'echo'") && str_contains($ativo, 'VITE_'))->toBeFalse("config/filament.php liga 'echo' com VITE_*.");
+    }
+})->group('kit');

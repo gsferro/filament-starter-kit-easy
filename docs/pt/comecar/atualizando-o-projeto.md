@@ -37,7 +37,7 @@ O que ele faz, em ordem:
 
 O fluxo é **não interativo** quando não há terminal (CI, `--no-interaction`) — nunca "sem TTY": ele
 vira relatório e sai sem aplicar nada, a menos que `--all` ou `--only-new` já tenham dado a
-aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:428`).
+aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:437`).
 
 ```mermaid
 flowchart TD
@@ -66,13 +66,13 @@ accDescr: O kit:update confere o terreno, vincula o kit como remote temporário,
 ```
 
 A ordem vem direto de `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:376`): pré-voo (`:preVoo:464`), remote temporário
-(`:vincularKit:524`), diff restrito (`:arquivosAlterados:630`), resumo (`:mostrarResumo:749`), a
-checagem de terminal (`:isInteractive:428`), o branch temporário (`:prepararBranch:769`), a revisão
-por arquivo (`:revisarEAplicar:818`), o relatório do `composer.json`
-(`:relatarComposerJson:1003`, `:CAMINHOS_SO_RELATORIO:367`) e `marcarVersao()`
-(`:marcarVersao:1112`, chamada dentro de `:encerrar:1037`). O `finally` que desfaz o remote roda em
-todo caminho de saída, inclusive erro (`:desvincularKit:533`).
+(`app/Console/Commands/KitUpdate.php:handle:385`): pré-voo (`:preVoo:473`), remote temporário
+(`:vincularKit:533`), diff restrito (`:arquivosAlterados:639`), resumo (`:mostrarResumo:758`), a
+checagem de terminal (`:isInteractive:437`), o branch temporário (`:prepararBranch:778`), a revisão
+por arquivo (`:revisarEAplicar:827`), o relatório do `composer.json`
+(`:relatarComposerJson:1012`, `:CAMINHOS_SO_RELATORIO:376`) e `marcarVersao()`
+(`:marcarVersao:1121`, chamada dentro de `:encerrar:1046`). O `finally` que desfaz o remote roda em
+todo caminho de saída, inclusive erro (`:desvincularKit:535`).
 
 Dois detalhes que aparecem na prática:
 
@@ -189,7 +189,7 @@ Um diretório listado **em parte** não é desenhado como entregue inteiro: `app
 depois — e `config/` é só cinco arquivos nomeados
 (`app/Console/Commands/KitUpdate.php:'config/kit.php':153`). E `wikis/` **não** é `export-ignore`
 inteiro — só `wikis/specs`: os documentos de topo de `wikis/` viajam no `create-project` **e** o
-`kit:update` os entrega um a um (`app/Console/Commands/KitUpdate.php:'wikis/README.md':309`),
+`kit:update` os entrega um a um (`app/Console/Commands/KitUpdate.php:'wikis/README.md':310`),
 assim como `tests/Kit` e `tests/Pest.php`
 (`app/Console/Commands/KitUpdate.php:'tests/Kit':233`, `app/Console/Commands/KitUpdate.php:'tests/Pest.php':252`)
 — `tests/` não é "intocado pelo kit:update".

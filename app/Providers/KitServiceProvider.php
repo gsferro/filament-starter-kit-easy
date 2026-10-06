@@ -22,6 +22,7 @@ use App\Support\ConfiguracaoDoLogin;
 use App\Support\DensidadeDoLayout;
 use App\Support\DestinoAposLogin;
 use App\Support\PoliciesDeVendor;
+use App\Support\ProxiesConfiaveis;
 use App\Support\TetoDeUpload;
 use Carbon\CarbonImmutable;
 use CmsMulti\FilamentClearCache\Facades\FilamentClearCache;
@@ -37,6 +38,7 @@ use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -72,6 +74,36 @@ use Throwable;
 class KitServiceProvider extends ServiceProvider
 {
     use ConfiguraFilamentGlobal;
+
+    /**
+     * `TRUSTED_PROXIES` → `TrustProxies::at()`: quem o Laravel pode acreditar ao ler `X-Forwarded-*`.
+     *
+     * Aqui, e não em `bootstrap/app.php`, porque o closure de `withMiddleware()` roda no
+     * `afterResolving` do Kernel — ANTES do `LoadEnvironmentVariables` — e `env()` ali só enxerga o
+     * ambiente do processo, nunca o arquivo `.env` (RD-01 do step 9 da wiki). O `boot()` roda com o
+     * `config/` carregado, e `TrustProxies::at()` é estático: o middleware o lê em todo request.
+     *
+     * `null` (chave ausente, vazia ou sem item válido) não chama nada: o comportamento de sempre.
+     * O que foi escrito e descartado — coringa dentro de lista, item que não é IP nem CIDR — vai
+     * para o log em vez de derrubar a aplicação ou abrir confiança em silêncio.
+     */
+    private function confiarNosProxiesDoEnv(): void
+    {
+        $bruto = config('kit.proxies_confiaveis');
+
+        foreach (ProxiesConfiaveis::descartados($bruto) as $item) {
+            Log::channel('configuracoes')->warning(
+                '[KitServiceProvider@confiarNosProxiesDoEnv] Item de TRUSTED_PROXIES descartado por não ser IP/CIDR ou por ser coringa dentro de lista | item: '.$item,
+                ['item' => $item],
+            );
+        }
+
+        $proxies = ProxiesConfiaveis::doEnv($bruto);
+
+        if ($proxies !== null) {
+            TrustProxies::at($proxies);
+        }
+    }
 
     /**
      * Rede de seguranca para o registro do `RaizDeUrlSemPublic` — nao uma realocacao.
@@ -117,6 +149,8 @@ class KitServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        $this->confiarNosProxiesDoEnv();
 
         $this->garantirRaizDeUrlSemPublic();
 
