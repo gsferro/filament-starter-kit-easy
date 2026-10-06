@@ -1017,8 +1017,16 @@ it('[CT-15] entrada nova é a que está na lista do destino e não na da origem'
     ],
 ])->group('kit');
 
-it('[CT-16] a saída do git diff --name-status vira rótulo conforme haja origem', function (string $saida, bool $comOrigem, array $rotulos): void {
-    expect(KitUpdate::rotularDiff($saida, $comOrigem))->toBe($rotulos);
+/*
+ * A coluna `existeNoProjeto` é a resposta do callable (P-08), ou `null` para chamar sem ele.
+ * Vai como bool, e não como closure: o Pest resolve closure de dataset antes de passar.
+ */
+it('[CT-16] a saída do git diff --name-status vira rótulo conforme haja origem', function (string $saida, bool $comOrigem, array $rotulos, ?bool $existeNoProjeto = null): void {
+    $rotulado = $existeNoProjeto === null
+        ? KitUpdate::rotularDiff($saida, $comOrigem)
+        : KitUpdate::rotularDiff($saida, $comOrigem, fn (string $caminho): bool => $existeNoProjeto);
+
+    expect($rotulado)->toBe($rotulos);
 })->with([
     'com origem: A, M, D, fora de ordem' => [
         "M\tp/b.php\nA\tp/a.php\nD\tp/c.php\n",
@@ -1039,6 +1047,24 @@ it('[CT-16] a saída do git diff --name-status vira rótulo conforme haja origem
         '',
         true,
         [],
+    ],
+    'P-08: M com origem e arquivo ausente no projeto' => [
+        "M\tresources/views/vendor/x/a.blade.php\n",
+        true,
+        ['resources/views/vendor/x/a.blade.php' => 'novo no kit'],
+        false,
+    ],
+    'P-08: M com origem e arquivo presente no projeto' => [
+        "M\tresources/views/vendor/x/a.blade.php\n",
+        true,
+        ['resources/views/vendor/x/a.blade.php' => 'modificado'],
+        true,
+    ],
+    'P-08: D com origem e arquivo ausente segue removido do kit' => [
+        "D\tresources/views/vendor/x/a.blade.php\n",
+        true,
+        ['resources/views/vendor/x/a.blade.php' => 'removido do kit'],
+        false,
     ],
 ])->group('kit');
 
@@ -1061,6 +1087,15 @@ const VIEWS_AUTORAIS_DESTA_RELEASE = [
     'resources/views/vendor/filament-captcha/drivers/turnstile.blade.php',
     'resources/views/vendor/filament-clear-cache/livewire/clear-cache-button.blade.php',
 ];
+
+/** O checkout raso do CI (`actions/checkout` sem tags) não traz a tag anterior (QA-02). */
+function tagAnteriorNoCheckout(): bool
+{
+    $processo = new Process(['git', 'rev-parse', '--verify', '--quiet', 'v0.45.0^{commit}'], base_path(), timeout: 60);
+    $processo->run();
+
+    return $processo->isSuccessful();
+}
 
 it('[CT-18] cada view autoral difere da tag anterior, e nenhuma de pasta crua', function (): void {
     $processo = new Process(['git', '-c', 'core.quotepath=off', 'diff', '--name-only', 'v0.45.0', 'HEAD', '--', 'resources/views/vendor'], base_path(), timeout: 120);
@@ -1093,4 +1128,7 @@ it('[CT-18] cada view autoral difere da tag anterior, e nenhuma de pasta crua', 
     }
 
     expect($deCrua)->toBe([], 'o diff da release toca views de pasta publish cru');
-})->skip(fn (): bool => ! naArvoreDoKit(), 'a tag anterior só existe no git do kit')->group('kit');
+})
+    ->skip(fn (): bool => ! naArvoreDoKit(), 'a tag anterior só existe no git do kit')
+    ->skip(fn (): bool => ! tagAnteriorNoCheckout(), 'a tag anterior v0.45.0 não está neste checkout (checkout raso do CI)')
+    ->group('kit');

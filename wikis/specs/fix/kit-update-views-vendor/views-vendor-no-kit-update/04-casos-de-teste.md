@@ -395,15 +395,19 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
     Esquema do Cenário: [CT-16] a saída do git diff --name-status vira rótulo conforme haja origem
       Dado a saída real do "git diff --name-status" <saida>
       E <origem>
+      E <existe no projeto> *(alterado em 2026-10-06: P-08 — coluna nova; "—" = sem o callable, como antes)*
       Quando o kit:update rotula a saída
       Então os rótulos por caminho, em ordem de caminho, são <rotulos>
 
       Exemplos:
-        | saida                                                    | origem         | rotulos                                                                           | # célula                                               |
-        | "M\tp/b.php\nA\tp/a.php\nD\tp/c.php\n"                   | há origem      | {"p/a.php": "novo no kit", "p/b.php": "modificado", "p/c.php": "removido do kit"} | com origem: A, M, D; entrada fora de ordem             |
-        | "D\tp/falta.php\nM\tp/dif.php\nA\tp/so-projeto.php\n"      | não há origem  | {"p/dif.php": "modificado", "p/falta.php": "novo no kit"}                         | sem origem: D, M, A ignorado (P-06)                    |
-        | "T\tp/link.php\n\n"                                       | não há origem  | {"p/link.php": "modificado"}                                                      | outra letra; linha em branco final não vira caminho "" |
-        | ""                                                       | há origem      | {}                                                                                | saída vazia                                            |
+        | saida                                                    | origem         | existe no projeto | rotulos                                                                           | # célula                                               |
+        | "M\tp/b.php\nA\tp/a.php\nD\tp/c.php\n"                   | há origem      | —                 | {"p/a.php": "novo no kit", "p/b.php": "modificado", "p/c.php": "removido do kit"} | com origem: A, M, D; entrada fora de ordem             |
+        | "D\tp/falta.php\nM\tp/dif.php\nA\tp/so-projeto.php\n"      | não há origem  | —                 | {"p/dif.php": "modificado", "p/falta.php": "novo no kit"}                         | sem origem: D, M, A ignorado (P-06)                    |
+        | "T\tp/link.php\n\n"                                       | não há origem  | —                 | {"p/link.php": "modificado"}                                                      | outra letra; linha em branco final não vira caminho "" |
+        | ""                                                       | há origem      | —                 | {}                                                                                | saída vazia                                            |
+        | "M\tresources/views/vendor/x/a.blade.php\n"              | há origem      | não               | {"resources/views/vendor/x/a.blade.php": "novo no kit"}                           | P-08: M + ausente ⇒ novo no kit (é o que --only-new aplica) |
+        | "M\tresources/views/vendor/x/a.blade.php\n"              | há origem      | sim               | {"resources/views/vendor/x/a.blade.php": "modificado"}                            | P-08: M + presente ⇒ modificado                        |
+        | "D\tresources/views/vendor/x/a.blade.php\n"              | há origem      | não               | {"resources/views/vendor/x/a.blade.php": "removido do kit"}                       | P-08: o callable só mexe em M — D com origem segue "removido" (mata "aplica a todo status") |
 
     # Procedimento (não vira `it()`): executado pela sessão, resultado no `03`. A regressão automatizada é CT-15/CT-16.
     Cenário: [CT-17] quem já está numa versão com a pasta fora da lista recebe o override como novo no kit
@@ -423,7 +427,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | M33 | `array_diff` sem reindexar (chaves 1 e 3 preservadas) | CT-15 linha 1 | `toBe` com `[0 => "resources/views/vendor/fad", 1 => "lang/x"]`; o mutante devolve `[1 => …, 3 => …]` |
 | M34 | lista da origem vazia tratada como "tudo é novo" (`array_diff(destino, [])`) | CT-15 linha 3 | esperado `[]`; o mutante devolve a lista do destino inteira |
 | M35 | sem origem, a tabela de rótulos é a mesma de com origem: `D` lido como "removido do kit" e `A` (só o projeto tem) como "novo no kit" | CT-16 linha 2 | esperado `{"p/dif.php": "modificado", "p/falta.php": "novo no kit"}`; o mutante dá `"p/falta.php": "removido do kit"` e acrescenta `"p/so-projeto.php"` |
-| M45 | `rotularDiff` ignora o `callable` (ou o aplica a todo status): arquivo ausente com status M sai "modificado", e `--only-new` nunca o aplica | CT-16 (linhas de P-08) | esperado "novo no kit" para M + ausente e "modificado" para M + presente; o mutante erra uma das duas *(alterado em 2026-10-06: QA-03)* |
+| M45 | `rotularDiff` ignora o `callable` (ou o aplica a todo status): arquivo ausente com status M sai "modificado", e `--only-new` nunca o aplica | CT-16 (as três linhas de P-08) | esperado "novo no kit" para M + ausente, "modificado" para M + presente e "removido do kit" para D + ausente; "ignora" erra a primeira, "todo status" erra a terceira *(alterado em 2026-10-06: QA-03)* |
 | M36 | o segundo diff (destino × árvore do projeto) roda sobre a lista inteira, não só sobre as entradas novas: acusa como "modificado" toda edição do projeto em pasta antiga da lista | CT-17 (procedural) | a lista do `--dry-run` não traz o arquivo editado só no projeto; o mutante o traz como "modificado". Decisão: CT-16 não mata, porque `rotularDiff` recebe a saída pronta e não escolhe os caminhos do diff — a escolha vive em `arquivosAlterados()`, privado; o matador fica no procedimento ponta a ponta, como asserção extra (ver Cogitado e cortado) |
 
 ---
