@@ -34,9 +34,6 @@ namespace App\Support;
  */
 final class ProxiesConfiaveis
 {
-    /** Tokens que o framework trata como "confiar no chamador" ou "toda faixa privada": nunca entram numa lista. */
-    private const CORINGAS = ['*', '**', 'REMOTE_ADDR', 'PRIVATE_SUBNETS', 'private_ranges'];
-
     /**
      * @return '*'|list<string>|null `null` = nenhum proxy confiável; `'*'` = todos; senão a lista limpa
      */
@@ -103,7 +100,9 @@ final class ProxiesConfiaveis
                 continue;
             }
 
-            if (in_array($item, self::CORINGAS, true) || ! self::ehIpOuCidr($item)) {
+            // Um só filtro: os coringas do framework (`*`, `**`, `REMOTE_ADDR`, `PRIVATE_SUBNETS`,
+            // `private_ranges`) não são IP nem CIDR, então caem aqui junto com o erro de digitação.
+            if (! self::ehIpOuCidr($item)) {
                 $descartados[] = $item;
 
                 continue;
