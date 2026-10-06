@@ -42,14 +42,14 @@ As duas rotas de entrega do kit são governadas por listas diferentes: `composer
 
 ### `app/Console/Commands/KitUpdate.php`
 - `CAMINHOS_DO_KIT` (`app/Console/Commands/KitUpdate.php:CAMINHOS_DO_KIT:93`) lista `resources/views/auth`, `errors`, `filament`, `livewire` e `svg` (`app/Console/Commands/KitUpdate.php:'resources/views/svg':229`); nenhuma entrada sob `resources/views/vendor`.
-- O comando aplica cada caminho com `git checkout {destino} -- {caminho}` (`app/Console/Commands/KitUpdate.php:aplicar():969`): uma pasta na lista entrega todos os arquivos dela na tag de destino e nunca apaga nada.
-- A lista efetiva é a **união** da constante desta versão com a lida na tag de destino (`app/Console/Commands/KitUpdate.php:caminhosUnidos():739`, `caminhosDeclaradosEm():758`, regex `^\s+'([^']+)',`): entrada nova com a forma `        'caminho',` é reconhecida em qualquer tag; comentário de bloco que cite um caminho fica de fora por construção.
+- O comando aplica cada caminho com `git checkout {destino} -- {caminho}` (`app/Console/Commands/KitUpdate.php:aplicar():1018`): uma pasta na lista entrega todos os arquivos dela na tag de destino e nunca apaga nada.
+- A lista efetiva é a **união** da constante desta versão com a lida na tag de destino (`app/Console/Commands/KitUpdate.php:caminhosUnidos():788`, `caminhosDeclaradosEm():807`, regex `^\s+'([^']+)',`): entrada nova com a forma `        'caminho',` é reconhecida em qualquer tag; comentário de bloco que cite um caminho fica de fora por construção.
 - O comentário de `lang/pt_BR.json` (`app/Console/Commands/KitUpdate.php:'lang/pt_BR.json':211`) conta as ocorrências anteriores da divergência; a entrada nova ganha comentário no mesmo tom, com o critério de autoria.
 
 ### `tests/Kit/KitUpdateTest.php`
-- `estaCoberto()` (`tests/Kit/KitUpdateTest.php:estaCoberto():5`) é o oráculo "está em `CAMINHOS_DO_KIT`"; o dataset da fundação (`tests/Kit/KitUpdateTest.php:'cobre os arquivos da fundação':16`) lista arquivo a arquivo o que nunca pode sair da lista — a `media.blade.php` entra ali (RQ-05).
-- O caso *cobre todo o código do kit* (`tests/Kit/KitUpdateTest.php:'cobre todo o código do kit':160`) varre `DIRETORIOS_DE_CODIGO` e pula `resources/views/vendor/` inteiro (`tests/Kit/KitUpdateTest.php:'resources/views/vendor/':185`). É aqui que a varredura cegou — não em `DuasRotasDeEntregaTest`, que compara só o **primeiro nível** de cada caminho que viaja (`resources/views` conta como coberto porque cinco subpastas estão na lista).
-- Guarda de árvore: `is_dir(base_path('.github'))` (`tests/Kit/KitUpdateTest.php:'.github':167`), o mesmo sinal que o caso novo usa (P-04).
+- `estaCoberto()` (`tests/Kit/KitUpdateTest.php:estaCoberto():7`) é o oráculo "está em `CAMINHOS_DO_KIT`"; o dataset da fundação (`tests/Kit/KitUpdateTest.php:'cobre os arquivos da fundação':18`) lista arquivo a arquivo o que nunca pode sair da lista — a `media.blade.php` entra ali (RQ-05).
+- O caso *cobre todo o código do kit* (`tests/Kit/KitUpdateTest.php:'cobre todo o código do kit':164`) varre `DIRETORIOS_DE_CODIGO` e pula `resources/views/vendor/` inteiro (`tests/Kit/KitUpdateTest.php:'resources/views/vendor/':190`). É aqui que a varredura cegou — não em `DuasRotasDeEntregaTest`, que compara só o **primeiro nível** de cada caminho que viaja (`resources/views` conta como coberto porque cinco subpastas estão na lista).
+- Guarda de árvore: `is_dir(base_path('.github'))` (`tests/Kit/KitUpdateTest.php:'.github':171`), o mesmo sinal que o caso novo usa (P-04).
 
 ### `tests/Kit/DuasRotasDeEntregaTest.php`
 - Três casos sobre o primeiro nível do `.gitattributes` × `CAMINHOS_DO_KIT` × `FORA_DA_ENTREGA_POR_DECISAO`. Não muda: a lacuna não é de primeiro nível. Entra na regressão.
@@ -169,7 +169,7 @@ Nenhum (D4). Verificado: `config/logging.php` não tem channel de `kit:update`, 
 - **Path**: `tests/Kit/KitUpdateTest.php`
 - Caso novo, ao lado de *cobre todo o código do kit*: para cada pasta de `resources/views/vendor`, classifica cada view por conteúdo contra `vendor/*/*/resources/views/{mesmo caminho relativo}` (D3) e exige, nos **dois sentidos**: pasta autoral → `estaCoberto('resources/views/vendor/{pasta}/…')` verdadeiro para toda view dela; pasta crua → falso para toda view dela. A mensagem de falha nomeia a pasta, os arquivos que diferem e as duas saídas (listar em `CAMINHOS_DO_KIT`, ou republicar a view do pacote se a diferença veio de atualização do pacote — P-05). Fora da árvore do kit, pula com motivo (P-04, mesma guarda `.github` do vizinho).
 - O `continue` que pulava `resources/views/vendor/` no caso *cobre todo o código do kit* fica, com o comentário reescrito: a pasta é decidida pelo caso novo, por conteúdo, e não "não é código do kit".
-- Dataset da fundação (`tests/Kit/KitUpdateTest.php:'cobre os arquivos da fundação':16`) ganha `resources/views/vendor/filament-auth-designer/components/partials/media.blade.php` com o comentário do issue (RQ-05).
+- Dataset da fundação (`tests/Kit/KitUpdateTest.php:'cobre os arquivos da fundação':18`) ganha `resources/views/vendor/filament-auth-designer/components/partials/media.blade.php` com o comentário do issue (RQ-05).
 - O Gherkin vem do `04`; quem escreve o teste é o `fw-executor-ct`.
 - **Atende**: RQ-03, RQ-04, RQ-05, P-01, P-02, P-03, P-04, P-05
 - **Logs**: nenhum (teste).
