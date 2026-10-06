@@ -46,7 +46,7 @@ Não fatiado — 2026-10-06: 5 RQ vigentes, 11 CT, compactação: sim (da featur
 - [x] IDs `[CT-nn]` do teste ⊆ `04` e vice-versa: `ids-ct.sh {wiki} 'tests/Kit/KitUpdateTest.php'` silencioso — vazio, exit 0 (CT-09 e CT-17 procedurais marcados "fundido em"), 2026-10-06
 - [x] Rules casadas pelo diff com linha em `## Conformidade com Rules`: `conformidade-rules.sh {wiki} main` silencioso — vazio, exit 0 com as 5 linhas da tabela, 2026-10-06
 - [x] Falsificabilidade dos CTs novos: quantos falham sem o fix — mutantes manuais A/B/C (constante), E/F (estáticos), D (enumeração) acima: cada um derruba o CT previsto; o `--dry-run` de controle (`rc0`, classe antiga) não lista nenhuma view, 2026-10-06
-- [x] CHANGELOG reconciliado com o comportamento final; docs pt/en — parágrafo novo (P-06/P-08) e a nota do `--only-new` na primeira rodada nos dois idiomas (QA-03), 2026-10-06
+- [x] CHANGELOG reconciliado com o comportamento final; docs pt/en — parágrafo novo (P-06/P-08) e a nota do `--only-new` na primeira rodada nos dois idiomas (QA-03); READMEs pt/en: features especificadas 75 → **76** (`find wikis/specs -name 00-requisito.md | wc -l`) e badge de casos de teste 1.944 → **1.958** (`grep -rhoE '^(it|test)\(' tests | wc -l`), acusados pelo job `qualidade` do CI do PR #149 (`SiteDeDocumentacaoTest` "números objetivos" e CT-50) e corrigidos, 2026-10-06
 - [ ] `git commit`
 
 ## Revisão do Diff (step 9)
@@ -182,6 +182,7 @@ Nenhuma classe nova nesta entrega. A "irmã" relevante é a **entrada** `'resour
 - **Ordem do step 9**: a revisão rodou sobre o diff dos passos 1–4; os passos 5 e 6 nasceram dela. Não houve segunda rodada de revisão do diff sobre eles (teto de 2 rodadas; o quality gate os lê) — a mitigação são os mutantes E/F/D e o `--dry-run` real em três configurações.
 
 ## Notas de Implementação
+- **CI do PR #149, primeira rodada, `qualidade` vermelho** (3 falhas em 4.157): `RedeDeDocumentacaoTest` CT-11 acusou o CT-16 por "invocar git sem sentinela" — o detector atribui ao caso anterior tudo que vem antes do próximo `it(`, e o helper `tagAnteriorNoCheckout()` (`git rev-parse`) estava entre o CT-16 e o CT-18; movido para o bloco dos helpers (antes do CT-02), onde já vive o helper do `git ls-files`. `SiteDeDocumentacaoTest` acusou os números do README (wiki nova e 43 casos novos). Nenhum dos três estava na regressão do `01`: a lista de regressão de uma correção que cria wiki ou acrescenta `it()` tem de incluir `RedeDeDocumentacaoTest` e `SiteDeDocumentacaoTest` (memória da sessão).
 - **`kit:update` roda a classe instalada**: toda correção no comando só vale a partir da rodada seguinte à que a entrega. Correção de entrega que precise valer "já" tem de estar nos **dados** (aqui: o conteúdo das views), não só no código. É o que P-07 faz, e é a razão de a P-06 ser para a próxima pasta, não para esta.
 - **O junit do Pest 5 não carrega o motivo do `skip`**: o atributo `message` do `<skipped>` vem vazio. Prova de "pulou com motivo" é o fonte (CT-13), não o junit.
 - **`git archive` + `tar` no Windows** funciona por `Process::fromShellCommandline` com `escapeshellarg` nos dois lados (CT-14); não foi preciso o plano B com zip.

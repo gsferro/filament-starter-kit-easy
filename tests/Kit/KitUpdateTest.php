@@ -511,6 +511,18 @@ it('documenta a lista do destino e o contorno para instalações anteriores, nos
 */
 
 /**
+ * O checkout raso do CI (`actions/checkout` sem tags) não traz a tag anterior (QA-02).
+ * Mora aqui, com os outros helpers, e não ao lado do CT-18: o detector de sentinela de
+ * `RedeDeDocumentacaoTest` atribui ao caso anterior tudo que vem antes do próximo `it(`. */
+function tagAnteriorNoCheckout(): bool
+{
+    $processo = new Process(['git', 'rev-parse', '--verify', '--quiet', 'v0.45.0^{commit}'], base_path(), timeout: 60);
+    $processo->run();
+
+    return $processo->isSuccessful();
+}
+
+/**
  * Os arquivos RASTREADOS pelo git da pasta, recursivo, relativos a ela e sempre com `/`.
  *
  * Na árvore real do kit só o que está no repositório decide a classe (RD-06): arquivo local
@@ -1093,15 +1105,6 @@ const VIEWS_AUTORAIS_DESTA_RELEASE = [
     'resources/views/vendor/filament-captcha/drivers/turnstile.blade.php',
     'resources/views/vendor/filament-clear-cache/livewire/clear-cache-button.blade.php',
 ];
-
-/** O checkout raso do CI (`actions/checkout` sem tags) não traz a tag anterior (QA-02). */
-function tagAnteriorNoCheckout(): bool
-{
-    $processo = new Process(['git', 'rev-parse', '--verify', '--quiet', 'v0.45.0^{commit}'], base_path(), timeout: 60);
-    $processo->run();
-
-    return $processo->isSuccessful();
-}
 
 it('[CT-18] cada view autoral difere da tag anterior, e nenhuma de pasta crua', function (): void {
     $processo = new Process(['git', '-c', 'core.quotepath=off', 'diff', '--name-only', 'v0.45.0', 'HEAD', '--', 'resources/views/vendor'], base_path(), timeout: 120);
