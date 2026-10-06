@@ -138,7 +138,7 @@ Cinco fatos do código atual sustentam o plano, todos lidos e medidos — não s
 
 ### `bootstrap/app.php`
 
-- `->withMiddleware(…)` (`bootstrap/app.php:withMiddleware():16`) só faz
+- `->withMiddleware(…)` (`bootstrap/app.php:withMiddleware():15`) só faz
   `$middleware->append(RaizDeUrlSemPublic::class)`. O comentário ali já diz que a posição importa
   por causa do `TrustProxies`. É onde entra o `trustProxies(at: …)`.
 - `bootstrap/` não está em nenhum glob de `.ai/rules/`; `app/Support/**` está (`support.md`).

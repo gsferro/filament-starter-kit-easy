@@ -65,6 +65,11 @@ final class ProxiesConfiaveis
      */
     public static function descartados(mixed $bruto): array
     {
+        // `TRUSTED_PROXIES=true` chega como bool pelo `env()`: não é lista, e quem escreveu merece o aviso.
+        if ($bruto !== null && ! is_string($bruto)) {
+            return [var_export($bruto, true)];
+        }
+
         $texto = self::texto($bruto);
 
         if ($texto === null || $texto === '*') {
