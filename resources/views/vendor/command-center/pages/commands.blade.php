@@ -1,3 +1,4 @@
+{{-- Override autoral do kit, entregue pelo kit:update (issue #148). --}}
 <x-filament-panels::page>
     {{-- Result of the last run, in place: running a command should not send
          anyone to another page to find out what happened. --}}

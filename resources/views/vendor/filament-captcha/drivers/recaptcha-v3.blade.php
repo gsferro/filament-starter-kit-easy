@@ -1,4 +1,5 @@
 {{--
+    Override autoral do kit, entregue pelo kit:update (issue #148).
     View publicada do ddr/filament-captcha (vendor/ddr/filament-captcha/resources/views/drivers/recaptcha-v3.blade.php).
 
     O v3 nao tem caixa: o script gera um token sozinho e o servidor compara a pontuacao com o

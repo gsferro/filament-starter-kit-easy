@@ -66,13 +66,13 @@ accDescr: O kit:update confere o terreno, vincula o kit como remote temporário,
 ```
 
 A ordem vem direto de `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:397`): pré-voo (`:preVoo:473`), remote temporário
-(`:vincularKit:533`), diff restrito (`:arquivosAlterados:639`), resumo (`:mostrarResumo:758`), a
-checagem de terminal (`:isInteractive:437`), o branch temporário (`:prepararBranch:778`), a revisão
-por arquivo (`:revisarEAplicar:827`), o relatório do `composer.json`
-(`:relatarComposerJson:1012`, `:CAMINHOS_SO_RELATORIO:376`) e `marcarVersao()`
-(`:marcarVersao:1121`, chamada dentro de `:encerrar:1046`). O `finally` que desfaz o remote roda em
-todo caminho de saída, inclusive erro (`:desvincularKit:535`).
+(`app/Console/Commands/KitUpdate.php:handle:397`): pré-voo (`:preVoo:485`), remote temporário
+(`:vincularKit:545`), diff restrito (`:arquivosAlterados:651`), resumo (`:mostrarResumo:819`), a
+checagem de terminal (`:isInteractive:449`), o branch temporário (`:prepararBranch:839`), a revisão
+por arquivo (`:revisarEAplicar:888`), o relatório do `composer.json`
+(`:relatarComposerJson:1073`, `:CAMINHOS_SO_RELATORIO:388`) e `marcarVersao()`
+(`:marcarVersao:1182`, chamada dentro de `:encerrar:1107`). O `finally` que desfaz o remote roda em
+todo caminho de saída, inclusive erro (`:desvincularKit:554`).
 
 Dois detalhes que aparecem na prática:
 
@@ -163,6 +163,12 @@ O kit chega ao seu projeto de dois jeitos, e cada um entrega um recorte diferent
 (`app/Console/Commands/KitUpdate.php:CAMINHOS_DO_KIT:93`), com o `composer.json` como exceção — ele
 viaja no `create-project`, mas no `kit:update` é **só relatório**, nunca aplicado (a seção acima,
 "Dependência nova do kit").
+
+Caminho que **entrou** em `CAMINHOS_DO_KIT` depois da sua versão — como as pastas autorais de
+`resources/views/vendor` — é comparado com a **sua árvore**, e não só tag com tag
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:691`): o arquivo que você não tem aparece como
+"novo no kit" mesmo que o kit não o tenha mudado desde a sua versão. Sem isso, quem já estava na v0.43.0
+sem o override da lock-screen nunca o receberia.
 
 ```mermaid
 flowchart LR

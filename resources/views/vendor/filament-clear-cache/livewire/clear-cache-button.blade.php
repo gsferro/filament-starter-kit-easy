@@ -1,4 +1,5 @@
 {{--
+    Override autoral do kit, entregue pelo kit:update (issue #148).
     DT-01 — o botão de limpar cache sem nome acessível.
 
     Cópia da blade do `cms-multi/filament-clear-cache`

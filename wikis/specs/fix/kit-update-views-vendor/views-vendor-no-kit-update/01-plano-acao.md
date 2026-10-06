@@ -13,16 +13,18 @@
 
 | RQ | Cláusula | Passo(s) que atende(m) | Observação |
 |----|----------|------------------------|------------|
-| RQ-01 | `filament-auth-designer` entra em `CAMINHOS_DO_KIT` e chega pelo `kit:update` | 1, 3, 4 | o passo 3 é consequência mecânica (as linhas de `KitUpdate.php` deslocam) e o 4 é o rastro (CHANGELOG) |
-| RQ-02 | auditoria de `resources/views/vendor`: toda pasta autoral entregue | 1 | as cinco pastas autorais medidas no step 3 (tabela em *Análise*) |
+| RQ-01 | `filament-auth-designer` entra em `CAMINHOS_DO_KIT` e chega pelo `kit:update` | 1, 3, 4, 5 | o passo 3 é consequência mecânica (as linhas de `KitUpdate.php` deslocam) e o 4 é o rastro (CHANGELOG) |
+| RQ-02 | auditoria de `resources/views/vendor`: toda pasta autoral entregue | 1, 6 | as cinco pastas autorais medidas no step 3 (tabela em *Análise*) |
 | RQ-03 | varredura automática cobre `resources/views/vendor` | 2 | caso novo em `KitUpdateTest`, onde mora a exclusão que cegou a varredura (D1) |
 | RQ-04 | publish cru fica fora; o `kit:update` não sobrescreve customização | 1, 2 | o passo 2 reprova pasta crua **dentro** da lista também (os dois sentidos) |
-| RQ-05 | sintoma some: a view do par claro/escuro chega e CT-16 passa no projeto atualizado | 1, 2 | o elo mecânico é `estaCoberto()` da `media.blade.php` (CT da fundação); o fim a fim é o cenário 3 do checklist de release (fora de escopo) |
+| RQ-05 | sintoma some: a view do par claro/escuro chega e CT-16 passa no projeto atualizado | 1, 2, 5 | o elo mecânico é `estaCoberto()` da `media.blade.php` (CT da fundação); o fim a fim é o cenário 3 do checklist de release (fora de escopo) |
 | P-01 | pasta crua não entra, e a varredura reprova se entrar | 2 | — |
 | P-02 | entrada por pasta, não por arquivo | 1, 2 | — |
 | P-03 | autoral = conteúdo diferente do pacote instalado | 2 | — |
 | P-04 | varredura só na árvore do kit | 2 | — |
 | P-05 | pacote que atualiza a view torna o publish cru "autoral": achado legítimo, mensagem com as duas saídas | 2 | — |
+| P-06 | caminho novo na lista é comparado tag de destino × árvore do projeto | 5 | *(alterado em 2026-10-06: passo novo, CR-01/RD-01)* |
+| P-07 | as dez views autorais mudam nesta release, para a classe antiga entregá-las na primeira rodada | 6 | *(alterado em 2026-10-06: passo novo)* |
 
 ## Objetivo
 
@@ -83,6 +85,8 @@ Laravel procura a view primeiro em `resources/views/vendor/{namespace}` e só de
 | D2 | Entrada em `CAMINHOS_DO_KIT` por **pasta** (`resources/views/vendor/{pacote}`), uma por pasta autoral; nenhuma entrada `resources/views/vendor` inteira. | Q5 (desenho): pasta, arquivo ou raiz? | difícil de reverter | sessão, 2026-10-06 — raiz inteira entregaria os 7 publishes crus (viola RQ-04); arquivo repete o esquecimento no próximo arquivo editado |
 | D3 | Oráculo de autoria = conteúdo da view do kit × view de mesmo caminho relativo em `vendor/*/*/resources/views` (CRLF normalizado), resolvido pelo nome do arquivo e não por mapa pasta → pacote. Pasta com ≥ 1 arquivo diferente é autoral; com todos iguais é crua. View sem original no vendor cai na mesma expressão (nenhum original igual ⇒ autoral), sem ramo extra *(ponytail, 2026-10-06)*. | Q6 (desenho): como decidir "autoral"? | difícil de reverter | sessão, 2026-10-06 — git não serve (P-03), lista à mão é a quarta lista. Consequência P-05 aceita |
 | D4 | Nenhum channel de log: a correção é uma constante e um teste, sem caminho de execução novo. O `kit:update` já loga o que aplica no console (`aplicado: {caminho}`). | — | — | sessão, 2026-10-06 |
+| D5 | Na árvore real, a varredura enumera os arquivos de `resources/views/vendor` pelo `git ls-files` (o rastreado, que é o que o kit entrega), não pelo disco; as fixtures, que não são repositório, enumeram pelo disco. *(alterado em 2026-10-06: RD-06)* | — | difícil de reverter | sessão, 2026-10-06 — a irmã `DuasRotasDeEntregaTest` já mede pelo git; disco varia por máquina |
+| D6 | O caminho novo na lista (P-06) é detectado comparando a lista do destino com a lida no fonte da **origem** (`caminhosDeclaradosEm` sobre `git show {origem}:…/KitUpdate.php`), e o diff extra é `git diff --name-status {destino} -- {novos}` com a rotulagem do modo sem origem; lista da origem ilegível ⇒ nenhum diff extra (fecha para o comportamento de hoje). *(alterado em 2026-10-06: CR-01/RD-01)* | — | difícil de reverter | sessão, 2026-10-06 — a alternativa "sempre diff contra a árvore" acusaria as edições do projeto em toda a lista |
 
 ## Autorização
 
@@ -177,6 +181,27 @@ Nenhum (D4). Verificado: `config/logging.php` não tem channel de `kit:update`, 
 - **Path**: `docs/pt/comecar/atualizando-o-projeto.md`, `docs/en/comecar/atualizando-o-projeto.md`, `tests/Kit/ChecklistDeReleaseTest.php`, `tests/Kit/ConstraintDeDependenciaTest.php`, `tests/Kit/DeployDockerLocalTest.php`
 - As 20 citações `KitUpdate.php:{símbolo}:{linha}` (e as curtas que as seguem) são reancoradas pelo símbolo, por script, depois do passo 1; `CitacoesDeCodigoTest` e `DiagramasDaArquiteturaTest` CT-66 provam.
 - **Atende**: RQ-01 (consequência mecânica da entrada nova)
+- **Logs**: nenhum.
+
+### 5. Caminho novo na lista é comparado com a árvore do projeto *(passo novo em 2026-10-06: CR-01/RD-01)*
+
+> Skills: `laravel-best-practices`, `ponytail`
+
+- **Path**: `app/Console/Commands/KitUpdate.php`
+- `arquivosAlterados()` ganha, quando há origem **e** a lista da origem foi lida: `$novos = caminhosNovosNaLista($listaDestino, $listaOrigem)` (estático, público: `array_values(array_diff(...))`); se `$novos !== []`, um segundo `git diff --name-status {destino} -- {novos}` rotulado como o modo sem origem (`D` → "novo no kit", `M` → "modificado", `A` → ignorado), somado ao resultado tag→tag (o tag→tag prevalece para o mesmo caminho). A rotulagem sai para um método estático público `rotularDiff(string $saida, bool $comOrigem): array`, testável sem git (D6).
+- A leitura da lista da origem reaproveita `caminhosDeclaradosEm($this->git(['show', "{$origem}:app/Console/Commands/KitUpdate.php"]))`.
+- Docs pt/en `atualizando-o-projeto`: uma frase nova na seção do que o `kit:update` traz — caminho que entrou na lista depois da sua versão é comparado com a sua árvore, então o arquivo que falta aparece como "novo no kit" mesmo que o kit não o tenha mudado desde a sua versão.
+- **Atende**: P-06 (RQ-01, RQ-05)
+- **Logs**: nenhum — o comando já imprime o resumo por arquivo.
+
+### 6. As dez views autorais mudam nesta release, para a classe antiga entregá-las *(passo novo em 2026-10-06: P-07)*
+
+> Skills: `ponytail`
+
+- **Path**: `resources/views/vendor/asmit-resized-column/sticky-panel.blade.php`, `resources/views/vendor/command-center/{components/output,pages/commands,pages/run}.blade.php`, `resources/views/vendor/filament-auth-designer/components/partials/media.blade.php`, `resources/views/vendor/filament-captcha/drivers/{hcaptcha,recaptcha-v2,recaptcha-v3,turnstile}.blade.php`, `resources/views/vendor/filament-clear-cache/livewire/clear-cache-button.blade.php`
+- Uma linha de comentário Blade — `{{-- Override autoral do kit, entregue pelo kit:update (issue #148). --}}` — no topo do arquivo; nos cinco que já começam com um bloco `{{-- … --}}`, a linha entra **dentro** desse bloco (o teste `BotaoLimparCacheTest` só descarta o primeiro bloco de comentário antes de comparar com o vendor).
+- Prova: `git diff --name-only v0.45.0 HEAD -- resources/views/vendor` lista exatamente os dez arquivos; a verificação ponta a ponta do passo 5 roda também com a classe antiga (sem `--from`).
+- **Atende**: P-07 (RQ-01, RQ-02, RQ-05)
 - **Logs**: nenhum.
 
 ### 4. CHANGELOG

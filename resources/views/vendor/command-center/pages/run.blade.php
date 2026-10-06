@@ -1,3 +1,4 @@
+{{-- Override autoral do kit, entregue pelo kit:update (issue #148). --}}
 <x-filament-panels::page>
     <x-filament::section>
         <x-slot name="heading">

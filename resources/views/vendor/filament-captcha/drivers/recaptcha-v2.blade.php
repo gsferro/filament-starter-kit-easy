@@ -1,4 +1,5 @@
 {{--
+    Override autoral do kit, entregue pelo kit:update (issue #148).
     View publicada do ddr/filament-captcha (vendor/ddr/filament-captcha/resources/views/drivers/recaptcha-v2.blade.php).
 
     Tres acrescimos do kit, e nada mais: `theme` segue a classe `dark` do <html>; o id do widget

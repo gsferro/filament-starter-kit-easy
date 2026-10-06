@@ -1,3 +1,4 @@
+{{-- Override autoral do kit, entregue pelo kit:update (issue #148). --}}
 <div x-data="resizedStickyPanel()" class="resized-sticky-panel">
     {{ $triggerAction }}
 

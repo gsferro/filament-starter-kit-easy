@@ -67,13 +67,13 @@ accDescr: kit:update checks the ground, links the kit as a temporary remote, com
 ```
 
 The order comes straight from `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:397`): pre-flight (`:preVoo:473`), temporary remote
-(`:vincularKit:533`), restricted diff (`:arquivosAlterados:639`), summary (`:mostrarResumo:758`),
-the terminal check (`:isInteractive:437`), the temporary branch (`:prepararBranch:778`), the
-file-by-file review (`:revisarEAplicar:827`), the `composer.json` report
-(`:relatarComposerJson:1012`, `:CAMINHOS_SO_RELATORIO:376`) and `marcarVersao()`
-(`:marcarVersao:1121`, called inside `:encerrar:1046`). The `finally` that undoes the remote runs on
-every exit path, including errors (`:desvincularKit:535`).
+(`app/Console/Commands/KitUpdate.php:handle:397`): pre-flight (`:preVoo:485`), temporary remote
+(`:vincularKit:545`), restricted diff (`:arquivosAlterados:651`), summary (`:mostrarResumo:819`),
+the terminal check (`:isInteractive:449`), the temporary branch (`:prepararBranch:839`), the
+file-by-file review (`:revisarEAplicar:888`), the `composer.json` report
+(`:relatarComposerJson:1073`, `:CAMINHOS_SO_RELATORIO:388`) and `marcarVersao()`
+(`:marcarVersao:1182`, called inside `:encerrar:1107`). The `finally` that undoes the remote runs on
+every exit path, including errors (`:desvincularKit:554`).
 
 Two details that show up in practice:
 
@@ -164,6 +164,12 @@ The kit reaches your project in two ways, and each one delivers a different slic
 (`app/Console/Commands/KitUpdate.php:CAMINHOS_DO_KIT:93`), with `composer.json` as the exception —
 it travels on `create-project`, but on `kit:update` it is **report only**, never applied (the
 section above, "A new kit dependency").
+
+A path that **entered** `CAMINHOS_DO_KIT` after your version — such as the authored folders under
+`resources/views/vendor` — is compared against **your tree**, not only tag against tag
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:691`): the file you do not have shows up as
+"novo no kit" even if the kit has not changed it since your version. Without this, anyone already on
+v0.43.0 without the lock-screen override would never receive it.
 
 ```mermaid
 flowchart LR

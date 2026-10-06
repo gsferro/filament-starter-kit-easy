@@ -16,8 +16,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   inteira; as sete pastas que são publish cru de pacote (`ai-tasks`, `authentication-log`,
   `filament-composer-release-notifier`, `filament-jobs-monitor`, `filament-onboarding`,
   `filament-sentinel`, `pulse`) ficam fora de propósito, senão o update sobrescreveria customização
-  do projeto. Autoral é decidido por **conteúdo** — a view difere da de mesmo caminho no pacote
-  instalado —, e a varredura de `tests/Kit/KitUpdateTest.php`, que até aqui pulava
+  do projeto. Autoral é decidido por **conteúdo** — a view difere de toda view de mesmo caminho relativo
+  nos pacotes instalados —, e a varredura de `tests/Kit/KitUpdateTest.php`, que até aqui pulava
   `resources/views/vendor` inteiro, passa a reprovar nos dois sentidos: pasta autoral fora da lista e
   pasta crua dentro dela. Para quem já editou uma dessas cinco pastas no próprio projeto, o próximo
   `kit:update` passa a **oferecer** a view do kit no diff, como faz com toda pasta da lista.

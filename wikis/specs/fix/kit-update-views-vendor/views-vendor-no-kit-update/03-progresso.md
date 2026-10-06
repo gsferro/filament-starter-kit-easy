@@ -15,6 +15,13 @@
 ## 3. Recalcular as citações de `KitUpdate.php`
 - [x] 20 citações em docs pt/en e 3 testes reancoradas; `CitacoesDeCodigoTest` e CT-66 verdes — 5 pelo `citacoes.py` (símbolo), 7 à mão (chave entre aspas: `'tests/Kit'`, `'tests/Pest.php'`, `'wikis/README.md'` ×2 idiomas, `CAMINHOS_SO_RELATORIO`) e 3 curtas (`483,1158`, `487-489`), todas +12; `pest CitacoesDeCodigoTest ChecklistDeReleaseTest ConstraintDeDependenciaTest DeployDockerLocalTest` → 47/47 (3 pulados); as citações de `wikis/specs/**` antigas **não** foram tocadas (registros datados, fora do `CitacoesDeCodigoTest` por decisão da v0.36.0), 2026-10-06
 
+## 5. Caminho novo na lista é comparado com a árvore do projeto *(passo novo em 2026-10-06)*
+- [ ] `caminhosNovosNaLista()` + `rotularDiff()` estáticos; segundo diff em `arquivosAlterados()`; frase nas docs pt/en
+- [ ] Verificação ponta a ponta: `kit:update --repo={kit local} --tag={tag temporária} --dry-run` na extração v0.45.0 lista `media.blade.php` como "novo no kit"
+
+## 6. As dez views autorais mudam nesta release *(passo novo em 2026-10-06)*
+- [ ] Linha de comentário Blade nas dez views; `git diff --name-only v0.45.0 HEAD -- resources/views/vendor` = 10 arquivos
+
 ## 4. CHANGELOG
 - [x] `[Unreleased]` → `### Corrigido` (#148) — entrada com as 5 pastas, as 7 de fora, o critério e o efeito para quem já editou uma delas; `[CT-11]` verde, 2026-10-06
 
@@ -46,6 +53,15 @@ Não fatiado — 2026-10-06: 5 RQ vigentes, 11 CT, compactação: sim (da featur
 
 | ID | Passe | Achado | Destino | `P-nn` / CT | Rejeitado — motivo |
 |---|---|---|---|---|---|
+| CR-01 = RD-01 | genérico + eixos | `arquivosAlterados()` compara tag→tag dentro da lista: caminho recém-entrado só entrega o que mudou depois da origem; quem já está em ≥ v0.43.0 sem o override (o caso do issue) nunca o receberia | premissa → CT → correção (passo 5 novo) | P-06 / CT-15, CT-16 + verificação ponta a ponta | — |
+| CR-02 = RD-02 | genérico + eixos | 11 âncoras curtas `(:símbolo:linha)` no parágrafo do `handle()` das docs pt/en ficaram 12 linhas atrás; `desvincularKit:535` já errada na `main` | fonte (docs), depois do passo 5 (as linhas deslocam de novo) | — | — |
+| CR-03/04/05/09 = RD-03 | genérico + eixos | citações curtas pré-existentes erradas na `main` e deslocadas por soma: `ChecklistDeReleaseTest` 483,1158 e 1146; `DeployDockerLocalTest` 487-489 (é `git init`, 497); `wikis/checklist-de-release.md:101` 838 (é 860) | fonte, com a linha certa, depois do passo 5 | — | — |
+| CR-06 = RD-04 | genérico + eixos | comentário da constante e CHANGELOG dizem "do pacote instalado"; o código compara com **qualquer** pacote do vendor com o mesmo caminho relativo (`.gitkeep` casa com 17) | texto alinhado ao código (comentário, CHANGELOG, glossário) | — | o mapa namespace→pacote **rejeitado**: é a Q7/D3 (lista à mão que P-03 recusa); o risco é view do kit byte a byte igual à de outro pacote, improvável, e o CT-01 cobre a lock-screen de qualquer jeito |
+| CR-07 | genérico | CT-08 tautológico (mesmo `glob` dos dois lados) | teste: contagem por referência independente + a pasta da lock-screen classificada `autoral` (é o objeto da RQ-01, não medição congelada) | CT-08 (alterado) | a parte "`pulse` sai cru" **rejeitada**: congelaria a medição (ADV-14) |
+| CR-08 | genérico | CT-14 não exercita o mecanismo (`caminhosUnidos` com a lista velha é comutativo; `git archive` não é o fluxo real) | CT-14 reescopado para "a entrada-pasta extrai o arquivo aninhado"; o mecanismo real vai para CT-15/CT-16 e para a verificação ponta a ponta do passo 5 | CT-14 (alterado), CT-15, CT-16 | — |
+| RD-05 | eixos | mensagens com saída errada: pasta sem pacote instalado ("republique" não existe; apagar a pasta órfã não é oferecido); cru coberto por ancestral ("remover a entrada" tiraria as autorais; é estreitar) | teste: mensagens com a saída certa por caso | CT-04 (linha `ancestral`), CT-12 (alterados) | — |
+| RD-06 | eixos | CT-06/CT-07 enumeram pelo disco; arquivo não rastreado muda a classe só numa máquina | teste: árvore real pelo `git ls-files` (D5) | CT-06, CT-07 (Dado alterado) | — |
+| — | ambos | rejeitados pelos revisores e confirmados pela sessão: symlink (nenhum na árvore, iterador não desce), `afterEach` por arquivo, `git archive` + `tar` com `escapeshellarg`, chaves de dataset únicas, regex de `caminhosDeclaradosEm` não vê o comentário novo (CT-10) | — | — | — |
 
 ## Conformidade com Rules
 
@@ -62,7 +78,7 @@ Não fatiado — 2026-10-06: 5 RQ vigentes, 11 CT, compactação: sim (da featur
 
 ## Auditoria Pré-Implementação
 
-Entendimento confirmado: 2026-10-06 — sessão autônoma, pelas recomendações (o solicitante confirma ao ler o PR; ele pediu "analise com cuidado o que foi reportado e corrija") — 2 rodadas (step 4; step 7 devolveu Q7); perguntas: 0 fato (resolvidas por leitura e pelo script de auditoria), 4 desenho (Q4–Q7 → D1–D3), 3 requisito (Q1–Q3 — nenhuma bloqueia passo: Q1 e Q2 implementadas pela direção que falha fechado como P-01 e P-02; Q3 é a tag, fora desta entrega)
+Entendimento confirmado: 2026-10-06 — sessão autônoma, pelas recomendações (o solicitante confirma ao ler o PR; ele pediu "analise com cuidado o que foi reportado e corrija") — 2 rodadas (step 4; step 7 devolveu Q7); perguntas: 0 fato (resolvidas por leitura e pelo script de auditoria), 4 desenho (Q4–Q7 → D1–D3), 4 requisito (Q1–Q4 — nenhuma bloqueia passo: Q1 e Q2 implementadas pela direção que falha fechado como P-01 e P-02; Q3 é a tag, fora desta entrega)
 
 ### Perguntas da entrevista (step 4)
 
@@ -75,6 +91,8 @@ Entendimento confirmado: 2026-10-06 — sessão autônoma, pelas recomendações
 | Q5 | desenho | RQ-02 | entrada por pasta, arquivo ou raiz `resources/views/vendor`? | pasta (D2) |
 | Q6 | desenho | RQ-03, RQ-04 | oráculo de autoria: conteúdo × vendor, git, ou lista à mão? | conteúdo × vendor instalado (D3, P-03, P-05) |
 | Q7 | desenho (devolvida pela derivação do `04`) | P-03 | mesmo caminho relativo em dois pacotes / view sem par: compara com o quê? | idêntica a **algum** candidato = cru; sem par = autoral (já era a D3); as duas linhas de CT-02 fechadas |
+| Q8 | desenho (devolvida pela re-derivação, step 9) | P-06 | numa linha `R100\told\tnew` do `git diff --name-status`, qual caminho é a chave? | comportamento **pré-existente** mantido (`preg_split` em 2 partes: a chave fica `old\tnew`); renome dentro da lista do kit é raro e não é desta correção; registrado, sem CT |
+| Q4 | requisito (step 9) | RQ-01, RQ-02, RQ-05 | linha de comentário nas dez views autorais para a classe antiga entregá-las? | sim (P-07); alternativa documentada (duas rodadas com `--from`) se recusar |
 
 ### Confronto código × afirmação (step 5)
 | Pergunta | O `01` dizia | O código faz | Resposta (quem, data) | Onde a wiki mudou |
@@ -109,8 +127,9 @@ Nenhuma classe nova nesta entrega. A "irmã" relevante é a **entrada** `'resour
 | 1 | 7 | `general-purpose` — seguir `feature-test-design`, derivar o `04` | opus (explícito) | `01` inteiro (só paths, stack e "Sem superfície de UI" colados no prompt), `02`, `03`, conversa, código da correção | `04` gravado: 11 CT, 7 regras, 23 mutantes, 4 costuras (unit de regra), 1 pergunta de desenho (Q7), `## Sem CT-B` | 139,3 k tokens · 281 s | `git status --porcelain`: só `?? …/04-casos-de-teste.md`; `grep -o "\[CT-[0-9][0-9]\]" \| sort -u \| wc -l` = 11 = cabeçalho; `rastreabilidade.sh` e `citacoes.sh` exit 0; amostrados CT-02 (7 partições isoladas), CT-09 (procedural com junit — aceito) e CT-11 (arquivo inteiro, regra do CHANGELOG) |
 | 2 | 7 | `fw-adversario-ct` — provar que o `04` deixa passar defeito | opus | `01`, `02`, `03`, conversa, código | 21 achados: 6 bloqueantes (pasta amarrada ao pacote pelo nome; iteração a partir do pacote; listagem não recursiva; M7/M5/M6 não morriam), 15 cosméticos; 19 aplicados no `04` (14 CT, 33 mutantes, 1 sem matador), 2 rejeitados com motivo (ADV-09 caixa no Windows, ADV-10 leitor antigo) — tabela em `04` → `## Revisão adversarial` | 55,6 k tokens · 210 s | `git status --porcelain` igual antes/depois (só leu); 3 bloqueantes reproduzidos de cabeça contra o script do step 3 (ele procurava o par por caminho relativo em todos os pacotes — ADV-01 não o atingia, mas atingiria uma implementação ingênua); `git ls-files resources/views/vendor` sem colisão de caixa (ADV-09) |
 | 3 | impl. | `fw-executor-ct` — CT-01…CT-14 em `tests/Kit/KitUpdateTest.php` a partir do `04` | opus (sobrepõe o sonnet do agente: fixtures em disco, `git archive` no Windows, meta-caso sobre o próprio fonte) | `01`, `02`, `03`, conversa | 83/83 no arquivo (24 casos do lote com as linhas de dataset), 0 vermelho; 5 ambiguidades do `04` resolvidas e declaradas (`.gitkeep` sempre acha par; "coberta" por direção; lista não vazia nos "fora da lista"; CT-14 compara com fim de linha normalizado; CT-04 "não sugere listá-la" = sem "liste") | 115,7 k tokens · 238 s | `git diff --stat`: só `tests/Kit/KitUpdateTest.php` (+402/−3) além dos arquivos que a sessão já tinha tocado; `ids-ct.sh` acusou CT-01 (dataset sem `[CT-01]`) → a sessão trocou a linha por chave `[CT-01] …` no `->with`; rerodado pela sessão: 83/83, 133 asserções; `pint --dirty` passed |
-| 4 | 9 | `general-purpose` — passe genérico sobre `main...HEAD` (fallback: `/code-review` não existe neste host) | opus (explícito) | `01`, `03`, conversa, `wikis/` | *(a receber)* | — | — |
-| 5 | 9 | `fw-revisor-diff` — eixos sobre `main...HEAD` sem `wikis/` | opus | `01`, `03`, conversa | *(a receber)* | — | — |
+| 4 | 9 | `general-purpose` — passe genérico sobre `main...HEAD` (fallback: `/code-review` não existe neste host) | opus (explícito) | `01`, `03`, conversa, `wikis/` | 9 achados: 1 major (CR-01), 7 minor, 1 nit; 15 itens considerados e rejeitados com motivo; rodou `KitUpdateTest` (83/83) e conferiu linha a linha as citações tocadas | 107,1 k tokens · 255 s | não editou nada (`git status` limpo depois); CR-01 reproduzido pela sessão lendo `arquivosAlterados()` (`diff --name-status origem destino -- lista`) e `git log -- resources/views/vendor/filament-auth-designer` (último commit `c6d900d`, v0.43.0); CR-02 conferido: `grep -n 'function preVoo'` = 485 contra `:preVoo:473` na doc |
+| 5 | 9 | `fw-revisor-diff` — eixos sobre `main...HEAD` sem `wikis/` | opus | `01`, `03`, conversa | 6 achados, 0 bloqueantes (RD-01 major = CR-01; RD-02/03 citações; RD-04 comentário × código; RD-05 mensagens; RD-06 disco × git); 8 rejeitados com motivo; 4 itens não verificados declarados (âncoras em `wikis/*.md`/README — o hook negou o Grep na raiz; tags `kit-v*` ausentes localmente; CT-16 do issue; suíte completa) | 101,1 k tokens · 324 s | `git status --porcelain` vazio antes e depois; RD-04 reproduzido: `ls vendor/*/*/resources/views/.gitkeep` lista 17 pacotes; RD-06 confirmado em `DuasRotasDeEntregaTest.php:220-238`; as âncoras que ele não verificou a sessão varre no passo 5 |
+| 6 | 9 | `general-purpose` — `feature-test-design` reinvocada para P-06 e os CTs alterados pelos achados | opus (explícito) | `01` (só as assinaturas novas), `02`, `03`, conversa, código | `04`: 17 CT, 8 regras, 42 mutantes, 1 sem matador; R8/CT-15/CT-16 novos, CT-17 procedural, CT-04/06/07/08/12/14 alterados com marca; 1 pergunta de desenho (Q8) | 148,3 k tokens · 324 s | `git status`: só o `04`; `grep -o '\[CT-[0-9][0-9]\]' \| sort -u \| wc -l` = 17 = cabeçalho; `rastreabilidade.sh` exit 0 depois (P-06 com CT); amostrados CT-15 (4 linhas, mata `array_diff` invertido e origem vazia) e CT-04 (coluna `<saida>`) |
 | — | pré-9 | Sem despacho — re-varredura da `## Superfície Livewire`: não exigida (`git diff main...HEAD --stat -- app/Filament app/Livewire` vazio) | sessão | — | — | — | — |
 
 ## Blockers

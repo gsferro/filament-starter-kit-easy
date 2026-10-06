@@ -11,10 +11,12 @@
 | Classificação autoral × publish cru e varredura (R2, R3, R4) | 2 | 2 | 4 | padrão |
 | Guarda da árvore do kit (R5) | 2 | 2 | 4 | padrão |
 | Registro no CHANGELOG (R7) | 1 | 1 | 1 | mínimo |
+| Comparação da entrada nova no `kit:update` (R8) *(alterado em 2026-10-06: CR-01/RD-01)* | 2 | 2 | 4 | padrão |
 
 - Probabilidade 2 na classificação: comparação de conteúdo com fim de linha, pares por caminho relativo e o mesmo nome em mais de um pacote. Impacto 2: o defeito de cada direção é retrabalho manual (view que não chega; customização do projeto sobrescrita, recuperável pelo git). Nenhuma área com Impacto 3 nem perfil completo pelo critério da derivação; a sessão despachou a revisão adversarial mesmo assim (ver `## Revisão adversarial`), e ela devolveu 21 achados — 19 aplicados nesta versão *(alterado em 2026-10-06)*.
-- Técnicas aplicadas: EP (classificação por conteúdo, partições isoladas), tabela de decisão (lista × autoria), rastreio de efeito negativo (pulo declarado fora da árvore).
-- Cenários: 14 · Regras: 7 · Mutantes previstos: 33 · Sem matador: 1
+- Técnicas aplicadas: EP (classificação por conteúdo, partições isoladas; conjuntos de caminhos), tabela de decisão (lista × autoria; status do diff × origem), rastreio de efeito negativo (pulo declarado fora da árvore), procedimento ponta a ponta do comando real (CT-09, CT-17).
+- R8 (P-06): Probabilidade 2 — integra com o `git diff` e com a leitura da lista da origem; Impacto 2 — o defeito de uma direção é o override que nunca chega (o próprio #148), o da outra é acusar como "modificado" a edição do projeto em pasta antiga da lista (retrabalho manual, recuperável). *(alterado em 2026-10-06: CR-01/RD-01)*
+- Cenários: 18 · Regras: 9 · Mutantes previstos: 43 · Sem matador: 1 *(alterado em 2026-10-06: CR-01/RD-01, CR-07, RD-05, RD-06)*
 <!-- derivado por grep -c (template-04 §Contagem do cabeçalho); recalcular a cada cenário novo -->
 
 ## Varredura SFDIPOT
@@ -24,7 +26,7 @@
 | S | a constante `KitUpdate::CAMINHOS_DO_KIT` (entradas novas), a varredura de `resources/views/vendor` em `tests/Kit/KitUpdateTest.php`, a entrada do `CHANGELOG.md` | CT-01, CT-06…CT-08, CT-11, CT-14 |
 | F | entregar override autoral pelo `kit:update`; classificar pasta como autoral ou publish cru; reprovar divergência lista × autoria antes da tag | CT-01…CT-08 |
 | D | 12 pastas reais, partições autoral (ao menos uma view diferente) e cru (todas idênticas); pasta mista (3 views); arquivo do kit sem par com o pacote instalado; view sem pacote nenhum; mesmo caminho relativo em dois pacotes, em ambas as ordens; pasta com nome diferente do pacote; subpasta; arquivo não-blade; pasta vazia; fim de linha CRLF × LF nas duas direções; espaço de borda | CT-02, CT-06…CT-08 |
-| I | `php artisan kit:update` (lê a lista do fonte do destino por `caminhosDeclaradosEm()` e une com a desta versão); a suíte `kit` antes da tag | CT-01, CT-10 |
+| I | `php artisan kit:update` (lê a lista do fonte do destino por `caminhosDeclaradosEm()` e une com a desta versão; compara a entrada nova na lista tag de destino × árvore do projeto, P-06 *(alterado em 2026-10-06: CR-01/RD-01)*); a suíte `kit` antes da tag | CT-01, CT-10, CT-15…CT-17 |
 | P | Windows (CRLF no checkout, separador `\`) e Linux; árvore do kit × projeto instalado (`.github` e `CHANGELOG.md` são `export-ignore`, `.gitattributes:21`) | CT-02, CT-09, CT-11 |
 | O | mantenedor edita uma view publicada e esquece a lista (a classe do issue); pacote atualiza a própria view e o publish cru fica para trás (P-05); projeto instalado com publishes próprios (P-04) | CT-03, CT-06, CT-09 |
 | T | não se aplica ao comportamento: nada depende de relógio. A única dimensão temporal é a drift do pacote (P-05), tratada como dado em CT-03 | — |
@@ -40,8 +42,10 @@
 | R5 — a varredura só roda na árvore do kit e, fora dela, pula com motivo | guarda (padrão) | P-04 | rastreio de efeito (pulou declarado na extração) + guarda declarada no fonte | CT-09, CT-13 |
 | R6 — as entradas novas têm a forma que `caminhosDeclaradosEm()` lê | entrega (mínimo) | RQ-01 (chega a quem atualiza) | EP (1 partição) | CT-10 |
 | R7 — o CHANGELOG registra a correção do #148 | changelog (mínimo) | sem `RQ`: convenção de entrega do kit, pedida pela sessão (ver Fronteira) | EP (1 partição) | CT-11 |
+| R8 — caminho que está na lista do destino e não estava na da origem é comparado tag de destino × árvore do projeto, só ele; sem lista da origem, nada muda *(alterado em 2026-10-06: CR-01/RD-01)* | comparação do `kit:update` (padrão) | P-06, RQ-01, RQ-05 | EP (conjuntos de caminhos) + tabela de decisão (status × origem) + procedimento ponta a ponta | CT-15, CT-16, CT-17 |
+| R9 — as dez views autorais mudam nesta release, para a classe antiga do `kit:update` entregá-las na primeira rodada | entrega (mínimo) | P-07 (RQ-01, RQ-02, RQ-05) | rastreio de efeito (diff tag anterior → HEAD) | CT-18 *(alterado em 2026-10-06: P-07, escrito pela sessão — cenário procedural, como CT-17)* |
 
-- RQ-05 — coberta pela entrega (CT-01) e pela entrega simulada (CT-14, *alterado em 2026-10-06: ADV-21*). O `LogoDarkModeTest` CT-16 existente é verde na árvore do kit antes e depois da correção e não discrimina. O cenário 3 **sobre a tag publicada** continua Fora de Escopo do `00`.
+- RQ-05 — coberta pela entrega (CT-01), pela extração da entrada-pasta (CT-14, *alterado em 2026-10-06: ADV-21*) e pela comparação da entrada nova a quem já está numa versão que tinha a pasta fora da lista (CT-15…CT-17) *(alterado em 2026-10-06: CR-01/RD-01, CR-08)*. O `LogoDarkModeTest` CT-16 existente é verde na árvore do kit antes e depois da correção e não discrimina. O cenário 3 **sobre a tag publicada** continua Fora de Escopo do `00`.
 - Q1, Q2 e Q3 abertas no `00` não bloqueiam: Q1/Q2 estão vigentes como P-01/P-02 (a direção falha fechado) e Q3 é a tag. Nenhuma `RQ` está `aberta — Qn`.
 - R2 escala de "mínimo" para EP com 7 partições isoladas: a classificação é o ponto onde mora a direção errada das duas (RQ-02 × RQ-04), e um `Esquema do Cenário` conta como 1.
 
@@ -52,6 +56,7 @@
 | Lista do kit | R1, R6 | unit de regra | existente — `tests/Kit/KitUpdateTest.php` (`estaCoberto()`, `caminhosDoKit()`, caso `extrai do fonte desta versão…`) | a afirmação é sobre o valor da constante e do leitor estático; nenhum banco nem rota | sessão (desenvolvedor), 2026-10-06 |
 | Classificação por fixture | R2, R3 | unit de regra | nova, no mesmo arquivo — a classificação e a varredura chamáveis com **duas raízes** (views do kit, views do vendor) e **uma lista**, apontadas para um diretório temporário. Nenhuma costura existente serve: a varredura atual só olha a árvore real, onde as partições "difere só em CRLF", "sem par" e "drift do pacote" podem não existir | sem fixture, os mutantes de normalização e de pasta mista dependem do checkout de quem roda | sessão (desenvolvedor), 2026-10-06 |
 | Árvore real do kit | R4, R5 | unit de regra | existente — o caso `cobre todo o código do kit…` de `tests/Kit/KitUpdateTest.php`, que hoje pula `resources/views/vendor/` com `continue` | a afirmação é sobre os arquivos do repositório × a constante; guarda `naArvoreDoKit()` de `tests/Pest.php` | sessão (desenvolvedor), 2026-10-06 |
+| Diff da entrada nova *(alterado em 2026-10-06: CR-01/RD-01)* | R8 | unit de regra | existente — `tests/Kit/KitUpdateTest.php` (os dois estáticos públicos de `KitUpdate` chamados direto, sem git nem árvore) | a afirmação é sobre conjuntos de caminhos e rótulos calculados; o comando real ponta a ponta é procedimento (CT-17), como o CT-09 | sessão (desenvolvedor), 2026-10-06 |
 | CHANGELOG | R7 | unit de regra | existente — padrão do caso `documenta a lista do destino…` de `tests/Kit/KitUpdateTest.php` (CHANGELOG inteiro + `->skip(fn (): bool => ! naArvoreDoKit(), …)`) | leitura de arquivo da árvore | sessão (desenvolvedor), 2026-10-06 |
 
 `tests/Kit` é ligado ao `TestCase` da aplicação com `RefreshDatabase` (`tests/Pest.php`, `pest()->extend(TestCase::class)…->in('Kit')`): "unit de regra" aqui roda com container, sem tocar banco. Helper usado só por `KitUpdateTest.php` fica nele (`.ai/rules/testes.md` §Helper de teste).
@@ -64,7 +69,8 @@
 | a forma textual `        'caminho',` lida por regex | escolha de implementação; o oráculo é a **igualdade** entre o que o leitor extrai e a constante, não a forma | detalhe de CT-10 |
 | contagem medida no step 3 (12 pastas; 5 autorais; 7 cruas; quais são) | fato do ambiente, não requisito: virar `Então` congelaria a medição e reprovaria a P-05 legítima | só no `Dado` e no Setup Global (existência das duas partições); o oráculo é a classificação por conteúdo |
 | entrada do `CHANGELOG.md` | nenhuma `RQ` pede o registro; é convenção de entrega do kit (`.ai/rules/testes.md` §CHANGELOG) pedida pela sessão | mantido como CT-11, mínimo, origem declarada sem `RQ`; candidato a corte se a sessão discordar |
-| as palavras exatas da mensagem de falha | o requisito só fixa o conteúdo: pasta, arquivos e as duas saídas (P-05) | CT-03 afirma presença do nome da pasta, do caminho do arquivo, de `CAMINHOS_DO_KIT` e de `vendor:publish`, não a frase |
+| as palavras exatas da mensagem de falha | o requisito só fixa o conteúdo: pasta, arquivos e as duas saídas (P-05) | CT-03 afirma presença do nome da pasta, do caminho do arquivo, de `CAMINHOS_DO_KIT` e de `vendor:publish`, não a frase. CT-04 (linha `ancestral`) e CT-12 afirmam o **trecho** da saída certa daquela célula ("estreite a entrada ancestral…", "apague a pasta órfã…"), fixado pela revisão do diff como saída acionável da P-05 — não a frase inteira *(alterado em 2026-10-06: RD-05)* |
+| nomes `caminhosNovosNaLista()`, `rotularDiff()` e a composição em `arquivosAlterados()` *(alterado em 2026-10-06: CR-01/RD-01)* | escolha de implementação (recebida da sessão, não do plano lido) | detalhe de CT-15/CT-16; o oráculo é P-06: entrada nova = só no destino; "novo no kit" e "modificado" sem origem; arquivo só do projeto ignorado. O rótulo "removido do kit" com origem é o comportamento de hoje do `kit:update`, mantido como regressão |
 
 **Perguntas geradas pela derivação** (em sub-agente: `Q?n` provisório, a sessão renumera):
 
@@ -105,13 +111,14 @@ Funcionalidade: Entrega dos overrides autorais de resources/views/vendor pelo ki
       Quando o mantenedor confere a cobertura pela lista de caminhos do kit desta versão
       Então o caminho está coberto por uma entrada de CAMINHOS_DO_KIT
 
-    Cenário: [CT-14] a entrada-pasta entrega o arquivo aninhado a uma árvore que não o tinha
+    # alterado em 2026-10-06: CR-08 — reescopado; a "lista antiga" unida era comutativa e não exercitava o diff entre tags (ver Cogitado e cortado)
+    Cenário: [CT-14] a entrada-pasta extrai o arquivo aninhado
       Dado uma árvore temporária sem "resources/views/vendor/filament-auth-designer"
-      E a lista de caminhos unida com a de um destino antigo que não tem a entrada
-      Quando o mantenedor extrai desta versão, por git archive, as entradas da lista unida que começam por "resources/views/vendor/" para a árvore temporária
+      E a lista de caminhos do kit desta versão
+      Quando o mantenedor extrai desta versão, por git archive, as entradas da lista que começam por "resources/views/vendor/" para a árvore temporária
       Então "resources/views/vendor/filament-auth-designer/components/partials/media.blade.php" existe na árvore temporária
       E o conteúdo dele é o do kit
-      # Pula fora da árvore do kit: precisa do git do kit (ADV-21 — simulação local do cenário 3, sem a tag)
+      # Pula fora da árvore do kit: precisa do git do kit (ADV-21). O mecanismo real de quem atualiza — o diff entre tags — é R8 (CT-15…CT-17)
 ```
 
 #### Mutantes previstos
@@ -120,7 +127,7 @@ Funcionalidade: Entrega dos overrides autorais de resources/views/vendor pelo ki
 |---|---|---|---|
 | M1 | a entrada `resources/views/vendor/filament-auth-designer` não entra na constante (correção só no `.gitattributes`, na doc ou num comentário da constante) | CT-01 | `estaCoberto(media.blade.php)` é `true`; o mutante devolve `false` |
 | M2 | entrada com o caminho errado: `resources/views/filament-auth-designer` (sem `vendor/`) ou `…/filament-auth-design` | CT-01 | o prefixo da entrada não casa com o caminho do `Dado`; `estaCoberto` devolve `false` |
-| M31 | entrega não recursiva da entrada-pasta (`git archive` só da raiz, ou cópia sem subpastas): a lista unida com um destino antigo perde o arquivo aninhado | CT-14 | o arquivo existe na árvore temporária com o conteúdo do kit; o mutante não o extrai. *(alterado em 2026-10-06: a variante "entrada por arquivo" saiu daqui — ela ainda extrai o próprio arquivo e quem a mata é a sonda do CT-06, medido no mutante manual C)* |
+| M31 | entrega não recursiva da entrada-pasta (`git archive` só da raiz, ou cópia sem subpastas): a extração perde o arquivo aninhado *(alterado em 2026-10-06: CR-08)* | CT-14 | o arquivo existe na árvore temporária com o conteúdo do kit; o mutante não o extrai. *(alterado em 2026-10-06: a variante "entrada por arquivo" saiu daqui — ela ainda extrai o próprio arquivo e quem a mata é a sonda do CT-06, medido no mutante manual C)* |
 
 ---
 
@@ -188,19 +195,20 @@ Funcionalidade: Entrega dos overrides autorais de resources/views/vendor pelo ki
       E a mensagem cita a pasta "drift", o arquivo "painel.blade.php", "CAMINHOS_DO_KIT" e "vendor:publish"
       E a mensagem não cita "outro.blade.php"
 
-    Esquema do Cenário: [CT-04] publish cru coberto pela lista reprova, por qualquer forma de entrada, com a saída de remover
+    # alterado em 2026-10-06: RD-05 — a saída depende da forma da entrada
+    Esquema do Cenário: [CT-04] publish cru coberto pela lista reprova, por qualquer forma de entrada, com a saída certa para a forma
       Dado uma árvore de fixture com a pasta "crua" idêntica à do pacote "acme/crua"
       E a lista de caminhos do kit com "<entrada>"
       Quando a varredura confere a lista contra a árvore
       Então a varredura reprova
-      E a mensagem cita a pasta "crua" e a saída "remover de CAMINHOS_DO_KIT"
+      E a mensagem cita a pasta "crua" e a saída "<saida>"
       E a mensagem não sugere listá-la
 
       Exemplos:
-        | entrada                                        | # forma            |
-        | resources/views/vendor/crua                    | exata              |
-        | resources/views/vendor                         | ancestral (ADV-07) |
-        | resources/views/vendor/crua/painel.blade.php   | arquivo (ADV-07)   |
+        | entrada                                        | saida                                                    | # forma            |
+        | resources/views/vendor/crua                    | remover de CAMINHOS_DO_KIT                               | exata              |
+        | resources/views/vendor                         | estreite a entrada ancestral para as pastas autorais     | ancestral (ADV-07, RD-05) — remover a entrada levaria junto toda pasta autoral |
+        | resources/views/vendor/crua/painel.blade.php   | remover de CAMINHOS_DO_KIT                               | arquivo (ADV-07)   |
 
     Cenário: [CT-05] lista coerente com a autoria aprova
       Dado uma árvore de fixture com a pasta autoral "editada" e a pasta "crua" idêntica ao pacote
@@ -208,12 +216,14 @@ Funcionalidade: Entrega dos overrides autorais de resources/views/vendor pelo ki
       Quando a varredura confere a lista contra a árvore
       Então a varredura aprova, sem nenhuma pasta acusada
 
-    Cenário: [CT-12] pasta autoral sem pacote instalado e fora da lista reprova
+    # alterado em 2026-10-06: RD-05 — sem pacote não há o que republicar
+    Cenário: [CT-12] pasta autoral sem pacote instalado e fora da lista reprova, oferecendo listar ou apagar a órfã
       Dado uma árvore de fixture com a pasta "sopar" com uma view sem par em pacote nenhum
       E a lista de caminhos do kit sem "resources/views/vendor/sopar"
       Quando a varredura confere a lista contra a árvore
       Então a varredura reprova
-      E a mensagem cita a pasta "sopar" e "CAMINHOS_DO_KIT"
+      E a mensagem cita a pasta "sopar", "CAMINHOS_DO_KIT" e "apague a pasta órfã, se o pacote saiu do composer.json"
+      E a mensagem não cita "vendor:publish"
 ```
 
 #### Mutantes previstos
@@ -225,8 +235,12 @@ Funcionalidade: Entrega dos overrides autorais de resources/views/vendor pelo ki
 | M10 | "toda pasta de `resources/views/vendor` fora da lista reprova", sem classificar (o `continue` trocado por exigência total) | CT-05 | esperado "aprova" com `crua` fora da lista; o mutante acusa `crua` |
 | M29 | "coberta" decidida por igualdade exata da entrada com `resources/views/vendor/{pasta}` | CT-04 linhas `ancestral` e `arquivo` | esperado "reprova" citando `crua`; o mutante não vê a cobertura e aprova |
 | M30 | a varredura pula (`continue`) pasta sem pacote instalado na direção autoral × fora da lista | CT-12 | esperado "reprova" citando `sopar`; o mutante aprova |
-| M9b | mensagem da direção cru × coberta reaproveita a de autoral × fora ("liste em `CAMINHOS_DO_KIT`") | CT-04 | a mensagem contém "remover de CAMINHOS_DO_KIT" e não "liste"; o mutante falha nas duas (ADV-17) |
+| M9b | mensagem da direção cru × coberta reaproveita a de autoral × fora ("liste em `CAMINHOS_DO_KIT`") | CT-04 | a mensagem contém a `<saida>` da linha ("remover de CAMINHOS_DO_KIT" nas linhas `exata` e `arquivo`, "estreite a entrada ancestral…" na `ancestral`) e não "liste"; o mutante falha nas duas (ADV-17; *(alterado em 2026-10-06: RD-05)*) |
+| M39 | mensagem única "remover de CAMINHOS_DO_KIT" para toda forma de entrada: na ancestral, mandaria apagar `resources/views/vendor` da lista e levaria junto toda pasta autoral *(alterado em 2026-10-06: RD-05)* | CT-04 linha `ancestral` | a mensagem contém "estreite a entrada ancestral para as pastas autorais"; o mutante não |
+| M40 | mensagem de autoral × fora sem pacote reaproveita a de autoral × fora com pacote, oferecendo `vendor:publish` (não há o que republicar) e omitindo apagar a órfã *(alterado em 2026-10-06: RD-05)* | CT-12 | a mensagem contém "apague a pasta órfã, se o pacote saiu do composer.json" e não contém "vendor:publish"; o mutante falha nas duas |
 | M9c | mensagem lista todos os arquivos da pasta, não os divergentes | CT-03 | a mensagem não contém `outro.blade.php`; o mutante contém (ADV-18) |
+
+Estouro do teto do perfil padrão (5) em R3: M39 e M40 vêm da revisão do diff (RD-05), a mesma exceção do mutante trazido pela revisão adversarial — achado medido, não enchimento *(alterado em 2026-10-06: RD-05)*.
 
 ---
 
@@ -237,22 +251,26 @@ Funcionalidade: Entrega dos overrides autorais de resources/views/vendor pelo ki
 ```gherkin
   Regra: a lista de caminhos do kit desta versão casa com a autoria das pastas de resources/views/vendor
 
+    # alterado em 2026-10-06: RD-06 — só arquivo rastreado decide a classe
     Cenário: [CT-06] toda pasta autoral está coberta inteira, inclusive por arquivo que ainda não existe
-      Dado a árvore do kit com as pastas de resources/views/vendor e o vendor instalado
+      Dado os arquivos rastreados de resources/views/vendor (git ls-files) e o vendor instalado
       Quando a varredura classifica cada pasta pelo conteúdo
       Então toda view de toda pasta autoral está coberta por CAMINHOS_DO_KIT
       E o caminho "novo-arquivo-sonda.blade.php" dentro de cada pasta autoral também está coberto
 
+    # alterado em 2026-10-06: RD-06
     Cenário: [CT-07] nenhuma view de pasta publish cru está coberta
-      Dado a árvore do kit com as pastas de resources/views/vendor e o vendor instalado
+      Dado os arquivos rastreados de resources/views/vendor (git ls-files) e o vendor instalado
       Quando a varredura classifica cada pasta pelo conteúdo
       Então nenhuma view de pasta classificada como publish cru está coberta por CAMINHOS_DO_KIT
 
-    Cenário: [CT-08] a varredura examina todas as pastas da árvore real
+    # alterado em 2026-10-06: CR-07 — referência independente e o objeto da RQ-01 classificado
+    Cenário: [CT-08] a varredura examina todas as pastas da árvore real e classifica a da lock-screen como autoral
       Dado a árvore do kit com as pastas de resources/views/vendor e o vendor instalado
       Quando a varredura classifica cada pasta pelo conteúdo
-      Então o número de pastas classificadas é o número de diretórios de resources/views/vendor, e é maior que zero
-      # A existência das duas partições é controle positivo da fixture (CT-05), não da árvore real: afirmá-la aqui congelaria a medição do step 3 e reprovaria a saída recomendada da Q1 (ADV-14)
+      Então o número de pastas classificadas é o número de diretórios de resources/views/vendor com arquivo rastreado, contados por listagem independente da varredura (scandir ou Finder, nunca o mesmo glob), e é maior que zero
+      E a pasta "filament-auth-designer" está classificada como "autoral"
+      # A existência das duas partições é controle positivo da fixture (CT-05), não da árvore real: afirmá-la aqui congelaria a medição do step 3 e reprovaria a saída recomendada da Q1 (ADV-14). Por isso nenhuma pasta é afirmada crua (nem pulse): só a da RQ-01 tem classe fixada
 ```
 
 #### Mutantes previstos
@@ -263,7 +281,11 @@ Funcionalidade: Entrega dos overrides autorais de resources/views/vendor pelo ki
 | M12 | entradas por arquivo em vez de pasta (`command-center` só com as 3 views editadas; `filament-auth-designer/components/partials/media.blade.php`) | CT-06 | a view idêntica de `command-center` e a sonda `novo-arquivo-sonda.blade.php` estão cobertas; o mutante deixa as duas de fora |
 | M13 | uma pasta crua acrescentada à lista (ex.: `pulse`, por "auditoria" que lista tudo que existe) | CT-07 | a lista de views cruas cobertas é `[]`; o mutante devolve as views de `pulse` |
 | M14 | `resources/views/vendor` inteiro na lista | CT-07 | idem: toda view crua fica coberta e a lista deixa de ser `[]` |
-| M15 | raiz das views ou do vendor montada errada (separador `\` no Windows, `base_path` duplicado) e a varredura examina zero pastas — CT-06 e CT-07 verdes por vazio | CT-08 | pastas classificadas = diretórios de `resources/views/vendor` e > 0; o mutante devolve 0 |
+| M15 | raiz das views ou do vendor montada errada (separador `\` no Windows, `base_path` duplicado) e a varredura examina zero pastas — CT-06 e CT-07 verdes por vazio | CT-08 | pastas classificadas = diretórios contados pela referência independente e > 0; o mutante devolve 0 |
+| M37 | a varredura descobre as pastas pelo padrão das views na raiz (`resources/views/vendor/*/*.blade.php`): pasta cujas views vivem só em subpasta — `filament-auth-designer/components/partials` — nunca é examinada; uma referência pelo mesmo glob concordaria com o erro *(alterado em 2026-10-06: CR-07)* | CT-08 | contagem da varredura = contagem por `scandir`/`Finder` e `filament-auth-designer` classificada `autoral`; o mutante conta uma pasta a menos e não classifica `filament-auth-designer` |
+| M38 | a varredura lista o disco (glob/Finder) em vez dos arquivos rastreados: arquivo não rastreado criado localmente em pasta crua muda a classe dela *(alterado em 2026-10-06: RD-06)* | CT-06 e CT-07 — mutante manual D | criar `resources/views/vendor/pulse/local.blade.php` sem `git add` e rodar CT-06 e CT-07: com `git ls-files` os dois seguem verdes; o mutante vê `local.blade.php` sem par, classifica `pulse` como autoral e CT-06 reprova acusando `pulse` fora da lista. Manual porque a fixture alteraria a árvore real; resultado colado no `03` |
+
+Estouro do teto do perfil padrão (5) em R4: M37 e M38 vêm da revisão do diff (CR-07, RD-06), a mesma exceção do mutante trazido pela revisão adversarial *(alterado em 2026-10-06: CR-07, RD-06)*.
 
 ---
 
@@ -349,6 +371,84 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 
 ---
 
+## Regra R8 — a entrada nova na lista é comparada tag de destino × árvore do projeto *(alterado em 2026-10-06: CR-01/RD-01)*
+
+> `P-06`, `RQ-01`, `RQ-05` · perfil **padrão** · técnica: **EP** sobre conjuntos de caminhos (CT-15) + **tabela de decisão** status do `git diff --name-status` × há origem (CT-16) + **procedimento** do comando real (CT-17). Células da tabela: com origem, `A` = novo no kit, `M` = modificado, `D` = removido do kit; sem origem, `D` = novo no kit, `M` = modificado, `A` = ignorado (só o projeto tem); outra letra = modificado, nas duas colunas
+
+```gherkin
+  Regra: o caminho que entrou na lista do destino e não estava na da origem é comparado contra a árvore do projeto, e só ele
+
+    Esquema do Cenário: [CT-15] entrada nova é a que está na lista do destino e não na da origem
+      Dado a lista do destino <destino>
+      E a lista da origem <origem>
+      Quando o kit:update separa as entradas novas na lista
+      Então as entradas novas são <novas>, como lista indexada a partir de 0, na ordem do destino
+
+      Exemplos:
+        | destino                                                            | origem                                    | novas                                    | # partição                                                         |
+        | ["app", "resources/views/vendor/fad", "config/kit.php", "lang/x"]  | ["app", "config/kit.php"]                 | ["resources/views/vendor/fad", "lang/x"] | entradas a mais, não contíguas — mata sem reindexar e a ordem      |
+        | ["app", "config/kit.php"]                                          | ["app", "config/kit.php"]                 | []                                       | listas iguais                                                      |
+        | ["app", "resources/views/vendor/fad"]                              | []                                        | []                                       | origem não lida: "não pude ler" não vira "tudo é novo"             |
+        | ["app", "config/kit.php"]                                          | ["config/kit.php", "app", "routes"]       | []                                       | presentes nas duas, com a mesma forma e em outra ordem, não são novas; "routes" só na origem não entra — mata origem − destino |
+
+    Esquema do Cenário: [CT-16] a saída do git diff --name-status vira rótulo conforme haja origem
+      Dado a saída real do "git diff --name-status" <saida>
+      E <origem>
+      Quando o kit:update rotula a saída
+      Então os rótulos por caminho, em ordem de caminho, são <rotulos>
+
+      Exemplos:
+        | saida                                                    | origem         | rotulos                                                                           | # célula                                               |
+        | "M\tp/b.php\nA\tp/a.php\nD\tp/c.php\n"                   | há origem      | {"p/a.php": "novo no kit", "p/b.php": "modificado", "p/c.php": "removido do kit"} | com origem: A, M, D; entrada fora de ordem             |
+        | "D\tp/falta.php\nM\tp/dif.php\nA\tp/so-projeto.php\n"      | não há origem  | {"p/dif.php": "modificado", "p/falta.php": "novo no kit"}                         | sem origem: D, M, A ignorado (P-06)                    |
+        | "T\tp/link.php\n\n"                                       | não há origem  | {"p/link.php": "modificado"}                                                      | outra letra; linha em branco final não vira caminho "" |
+        | ""                                                       | há origem      | {}                                                                                | saída vazia                                            |
+
+    # Procedimento (não vira `it()`): executado pela sessão, resultado no `03`. A regressão automatizada é CT-15/CT-16.
+    Cenário: [CT-17] quem já está numa versão com a pasta fora da lista recebe o override como novo no kit
+      Dado um projeto na v0.45.0 sem a pasta "resources/views/vendor/filament-auth-designer"
+      E nesse projeto um arquivo de pasta que a lista da v0.45.0 já tinha, editado só no projeto e igual entre a v0.45.0 e a tag temporária
+      Quando o mantenedor roda "php artisan kit:update --repo={repositório local do kit} --tag={tag temporária com a correção} --dry-run"
+      Então a lista traz "resources/views/vendor/filament-auth-designer/components/partials/media.blade.php" como "novo no kit"
+      E a lista não traz o arquivo editado só no projeto
+      # Controle de discriminação: o mesmo comando contra uma tag temporária sem a correção não traz nenhum arquivo de "resources/views/vendor/filament-auth-designer" — o diff tag→tag dentro da pasta é vazio, porque a origem tem os mesmos arquivos que o destino
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M32 | diferença invertida: `array_diff(origem, destino)` | CT-15 linhas 1 e 4 | linha 1: esperado `["resources/views/vendor/fad", "lang/x"]`, o mutante dá `[]`; linha 4: esperado `[]`, o mutante dá `["routes"]` |
+| M33 | `array_diff` sem reindexar (chaves 1 e 3 preservadas) | CT-15 linha 1 | `toBe` com `[0 => "resources/views/vendor/fad", 1 => "lang/x"]`; o mutante devolve `[1 => …, 3 => …]` |
+| M34 | lista da origem vazia tratada como "tudo é novo" (`array_diff(destino, [])`) | CT-15 linha 3 | esperado `[]`; o mutante devolve a lista do destino inteira |
+| M35 | sem origem, a tabela de rótulos é a mesma de com origem: `D` lido como "removido do kit" e `A` (só o projeto tem) como "novo no kit" | CT-16 linha 2 | esperado `{"p/dif.php": "modificado", "p/falta.php": "novo no kit"}`; o mutante dá `"p/falta.php": "removido do kit"` e acrescenta `"p/so-projeto.php"` |
+| M36 | o segundo diff (destino × árvore do projeto) roda sobre a lista inteira, não só sobre as entradas novas: acusa como "modificado" toda edição do projeto em pasta antiga da lista | CT-17 (procedural) | a lista do `--dry-run` não traz o arquivo editado só no projeto; o mutante o traz como "modificado". Decisão: CT-16 não mata, porque `rotularDiff` recebe a saída pronta e não escolhe os caminhos do diff — a escolha vive em `arquivosAlterados()`, privado; o matador fica no procedimento ponta a ponta, como asserção extra (ver Cogitado e cortado) |
+
+---
+
+## Regra R9 — as dez views autorais mudam nesta release *(alterado em 2026-10-06: P-07, escrito pela sessão)*
+
+> `P-07` (`RQ-01`, `RQ-02`, `RQ-05`) · perfil **mínimo** · técnica: **rastreio de efeito**
+
+```gherkin
+  Regra: a classe antiga do kit:update, que compara tag→tag, entrega os dez arquivos na primeira rodada
+
+    # Procedimento (não vira `it()`): executado pela sessão, resultado no `03`.
+    Cenário: [CT-18] cada view autoral difere da tag anterior, e a classe antiga as lista num projeto já atualizado
+      Dado o repositório do kit com a tag anterior "v0.45.0" e esta versão
+      Quando o mantenedor roda "git diff --name-only v0.45.0 HEAD -- resources/views/vendor"
+      Então a saída tem exatamente os dez arquivos das cinco pastas autorais, e nenhum das sete pastas cruas
+      E, num projeto na v0.45.0 com a CLASSE ANTIGA do kit:update, "kit:update --repo={kit local} --tag={tag com a correção} --dry-run" lista os dez arquivos
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M43 | a linha de comentário entrou em algumas views e não em todas (ou numa view crua) | CT-18 | a saída do `git diff --name-only` é exatamente a lista dos dez; o mutante tem menos de dez, ou um arquivo de pasta crua |
+
+---
+
 ## Checklist de Taxonomia
 
 | Item | Cenário que mata | Grupo |
@@ -360,9 +460,11 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | Fronteira no ponto de entrada | CT-01, CT-10 (a entrada da constante é o ponto de entrada da rota `kit:update`) | Lista do kit |
 | Domínio condicionado | CT-02 linha `dois` (a mesma view relativa vale conforme o pacote) | Classificação por fixture |
 | Cardinalidade 0 / 1 / N | 0 pastas examinadas: CT-08 · pasta com 0 arquivos: CT-02 `vazia` · 1 view: CT-02 `cru`/`byte` · N views com mistura: CT-02 `mista` (3), CT-06 | Classificação por fixture · Árvore real do kit |
-| Ausente ≠ null ≠ vazio | CT-02 linhas `sopar` (pacote ausente), `extra` (pacote presente, arquivo ausente nele), `vazia` (pasta sem arquivo); CT-12 | Classificação por fixture |
+| Ausente ≠ null ≠ vazio | CT-02 linhas `sopar` (pacote ausente), `extra` (pacote presente, arquivo ausente nele), `vazia` (pasta sem arquivo); CT-12; lista da origem não lida (`[]`) ≠ "tudo é novo": CT-15 linha 3; saída vazia do diff: CT-16 linha 4 *(alterado em 2026-10-06: CR-01/RD-01)* | Classificação por fixture · Diff da entrada nova |
 | Texto: fim de linha, espaço | CT-02 linhas `crlf`, `crlf-inv`, `byte`, `borda` | Classificação por fixture |
 | Plataforma: separador de caminho no Windows | CT-08 (raiz montada errada ⇒ zero pastas) | Árvore real do kit |
+| Arquivo local não rastreado na árvore do kit *(alterado em 2026-10-06: RD-06)* | CT-06/CT-07 com `Dado` em `git ls-files`; o matador do mutante M38 é o mutante manual D | Árvore real do kit |
+| Texto: separador e linhas da saída do git (TAB, linha em branco final) *(alterado em 2026-10-06: CR-01/RD-01)* | CT-16 linhas 1 a 3 | Diff da entrada nova |
 | Estado × operação de escrita | não se aplica: sem entidade com ciclo de vida | — |
 | Paginação / ordenação | não se aplica: sem listagem | — |
 | Timezone / DST | não se aplica: nada depende de relógio | — |
@@ -373,9 +475,9 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | Precisão monetária | não se aplica: sem valor monetário | — |
 | Superfície Livewire / estado do framework | não se aplica: sem página, widget nem componente | — |
 | Escopo com discriminante nulo | não se aplica: sem filtro de escopo | — |
-| Saída do estado de erro | CT-03 (a reprovação declara as duas saídas: `vendor:publish` ou `CAMINHOS_DO_KIT`) | Classificação por fixture |
+| Saída do estado de erro | CT-03 (a reprovação declara as duas saídas: `vendor:publish` ou `CAMINHOS_DO_KIT`); CT-04 linha `ancestral` (estreitar a entrada) e CT-12 (listar ou apagar a órfã, sem `vendor:publish`) *(alterado em 2026-10-06: RD-05)* | Classificação por fixture |
 | **Teste que viaja lendo arquivo que não viaja** (linha do projeto) | CT-09, CT-11 | Árvore real do kit · CHANGELOG |
-| Projeto antigo + `kit:update` real (RQ-05 ponta a ponta) | CT-14 simula localmente a entrega da entrada-pasta a uma árvore sem ela (lista unida com destino antigo + `git archive`); o cenário 3 **sobre a tag publicada** continua Fora de Escopo do `00`. O `LogoDarkModeTest` CT-16 é verde na árvore do kit antes e depois da correção e por isso não discrimina (ADV-21) | Lista do kit |
+| Projeto antigo + `kit:update` real (RQ-05 ponta a ponta) | CT-17 (procedimento: `kit:update --dry-run` de um projeto v0.45.0 sem a pasta contra tag temporária com a correção, com controle sem a correção), com regressão em CT-15/CT-16; CT-14 só prova que a entrada-pasta extrai o arquivo aninhado. O cenário 3 **sobre a tag publicada** continua Fora de Escopo do `00`. O `LogoDarkModeTest` CT-16 é verde na árvore do kit antes e depois da correção e por isso não discrimina (ADV-21) *(alterado em 2026-10-06: CR-01/RD-01, CR-08)* | Lista do kit · Diff da entrada nova |
 
 ## Índice de Cenários
 
@@ -384,17 +486,21 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | CT-01 | a view da lock-screen está coberta | R1 | EP | Lista do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M1, M2, M20 |
 | CT-02 | classificação por conteúdo (14 partições) | R2 | EP | Classificação por fixture | unit de regra | `tests/Kit/KitUpdateTest.php` | M3, M4, M5, M6, M7, M24, M25, M26, M27, M28 |
 | CT-03 | drift do pacote acusado com as duas saídas e só os divergentes | R3 | tabela de decisão | Classificação por fixture | unit de regra | `tests/Kit/KitUpdateTest.php` | M9, M9c |
-| CT-04 | publish cru coberto reprova (3 formas de entrada), saída de remover | R3 | tabela de decisão | Classificação por fixture | unit de regra | `tests/Kit/KitUpdateTest.php` | M8, M29, M9b |
+| CT-04 | publish cru coberto reprova (3 formas de entrada), saída certa para a forma *(alterado em 2026-10-06: RD-05)* | R3 | tabela de decisão | Classificação por fixture | unit de regra | `tests/Kit/KitUpdateTest.php` | M8, M29, M9b, M39 |
 | CT-05 | lista coerente aprova | R3 | tabela de decisão | Classificação por fixture | unit de regra | `tests/Kit/KitUpdateTest.php` | M10 |
-| CT-06 | pasta autoral coberta inteira, com sonda | R4 | EP | Árvore real do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M11, M12 |
-| CT-07 | nenhuma view crua coberta | R4 | EP | Árvore real do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M13, M14 |
-| CT-08 | todas as pastas da árvore real examinadas (> 0) | R4 | controle positivo | Árvore real do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M15 |
+| CT-06 | pasta autoral coberta inteira, com sonda, sobre os arquivos rastreados *(alterado em 2026-10-06: RD-06)* | R4 | EP | Árvore real do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M11, M12, M38 (manual D) |
+| CT-07 | nenhuma view crua coberta, sobre os arquivos rastreados *(alterado em 2026-10-06: RD-06)* | R4 | EP | Árvore real do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M13, M14, M38 (manual D) |
+| CT-08 | todas as pastas examinadas (referência independente, > 0) e `filament-auth-designer` autoral *(alterado em 2026-10-06: CR-07)* | R4 | controle positivo | Árvore real do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M15, M37 |
 | CT-09 | pula fora da árvore com motivo (extração com publish do projeto) | R5 | rastreio de efeito | Árvore real do kit | procedimento | fundido em CT-13 como regressão; o procedimento junit sobre CT-06…CT-08 na extração é evidência da `## Verificação Final` do `03`, não `it()` | M17, M18 |
 | CT-10 | o leitor do fonte produz a lista da constante | R6 | EP | Lista do kit | unit de regra | `tests/Kit/KitUpdateTest.php` (caso existente) | M19, M20 |
 | CT-11 | CHANGELOG cita #148 e resources/views/vendor | R7 | EP | CHANGELOG | unit de regra | `tests/Kit/KitUpdateTest.php` | M21, M22 |
-| CT-12 | autoral sem pacote, fora da lista, reprova | R3 | tabela de decisão | Classificação por fixture | unit de regra | `tests/Kit/KitUpdateTest.php` | M30 |
+| CT-12 | autoral sem pacote, fora da lista, reprova oferecendo listar ou apagar a órfã, sem `vendor:publish` *(alterado em 2026-10-06: RD-05)* | R3 | tabela de decisão | Classificação por fixture | unit de regra | `tests/Kit/KitUpdateTest.php` | M30, M40 |
 | CT-13 | guarda `! naArvoreDoKit()` com motivo declarada no fonte dos casos da árvore real | R5 | meta-caso sobre o fonte | Árvore real do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M16, M17, M18 |
-| CT-14 | a entrada-pasta entrega o arquivo aninhado por git archive numa árvore sem ele | R1 | entrega simulada | Lista do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M31 |
+| CT-14 | a entrada-pasta extrai o arquivo aninhado *(alterado em 2026-10-06: CR-08)* | R1 | entrega simulada | Lista do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M31 |
+| CT-15 | entradas novas = destino − origem, reindexadas; origem `[]` ⇒ `[]` *(alterado em 2026-10-06: CR-01/RD-01)* | R8 | EP | Diff da entrada nova | unit de regra | `tests/Kit/KitUpdateTest.php` | M32, M33, M34 |
+| CT-16 | rótulo por status × origem, com saída real do git *(alterado em 2026-10-06: CR-01/RD-01)* | R8 | tabela de decisão | Diff da entrada nova | unit de regra | `tests/Kit/KitUpdateTest.php` | M35 |
+| CT-17 | `kit:update --dry-run` de v0.45.0 sem a pasta lista `media.blade.php` como novo no kit, e não a edição do projeto *(alterado em 2026-10-06: CR-01/RD-01)* | R8 | procedimento ponta a ponta | Diff da entrada nova | procedimento | fundido em CT-15/CT-16 como regressão; o procedimento é evidência do `03`, não `it()` | M36 (e M32, M34, M35 de ponta a ponta) |
+| CT-18 | as dez views autorais diferem da tag anterior; a classe antiga as lista | R9 | rastreio de efeito | Lista do kit | procedimento | regressão coberta por CT-01/CT-06; o diff contra a tag anterior e o `--dry-run` com a classe antiga são evidência da `## Verificação Final` do `03` | M43 |
 
 ## Cogitado e cortado
 
@@ -403,6 +509,9 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | `caminhosUnidos()` com a lista de um destino v0.42.0 (sem as entradas novas) contém `filament-auth-designer` | a união já é provada genericamente pelos casos existentes (`caminho que só esta versão cobre não se perde…`); com CT-01 verde, nenhum mutante desta correção sobrevive a eles |
 | um cenário por pasta real (12 linhas com a classe esperada) | congelaria a medição do step 3 como oráculo e reprovaria a drift legítima de P-05; CT-06/CT-07 cobrem as mesmas pastas pelo conteúdo |
 | BOM no início da view como partição | P-03 normaliza só fim de linha; BOM é diferença de conteúdo e cai na partição `byte`, sem mutante novo |
+| CT-14 com a lista "unida com a de um destino antigo" como prova de entrega a quem atualiza *(alterado em 2026-10-06: CR-08)* | a união é comutativa: a lista unida contém a entrada nova seja qual for a lista antiga, então o cenário passava com e sem P-06 e nunca exercitava o defeito real — entrada que entrou na lista com o arquivo igual entre as tags, e por isso fora do diff tag→tag. O mecanismo real (o diff entre tags) fica em CT-15 (quais entradas são novas), CT-16 (como a saída do diff vira rótulo) e CT-17 (o comando inteiro); CT-14 ficou só com o que prova: a entrada-pasta extrai o arquivo aninhado |
+| `it()` que monta um repositório git temporário com duas tags e roda `arquivosAlterados()` *(alterado em 2026-10-06: CR-01/RD-01)* | o método é privado e o arnês custaria um repositório com histórico por caso; a composição (qual diff roda sobre quais caminhos, M36) fica no procedimento CT-17, e as duas peças puras têm regressão em CT-15/CT-16 |
+| linha `R100\told\tnew` no CT-16 *(alterado em 2026-10-06: CR-01/RD-01)* | o desenho recebido diz que `R` vira "modificado", mas não qual dos dois caminhos é a chave; fixar um seria inventar o oráculo — volta como pergunta de desenho (Q8 do retorno). A célula "outra letra" está coberta pela linha `T` |
 
 ## Sem CT-B
 

@@ -1,3 +1,4 @@
+{{-- Override autoral do kit, entregue pelo kit:update (issue #148). --}}
 @props([
     'config',
     'imageClass' => '',
