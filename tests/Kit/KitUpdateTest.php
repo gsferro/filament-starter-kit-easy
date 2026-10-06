@@ -1041,3 +1041,56 @@ it('[CT-16] a saída do git diff --name-status vira rótulo conforme haja origem
         [],
     ],
 ])->group('kit');
+
+/*
+| R9 — CT-18, só a parte automatizável: o diff da tag anterior até HEAD traz as dez views
+| autorais e nenhuma de pasta crua. O `kit:update --dry-run` com a classe antiga continua
+| procedimento da sessão (evidência do `03`).
+*/
+
+/** @var list<string> */
+const VIEWS_AUTORAIS_DESTA_RELEASE = [
+    'resources/views/vendor/asmit-resized-column/sticky-panel.blade.php',
+    'resources/views/vendor/command-center/components/output.blade.php',
+    'resources/views/vendor/command-center/pages/commands.blade.php',
+    'resources/views/vendor/command-center/pages/run.blade.php',
+    'resources/views/vendor/filament-auth-designer/components/partials/media.blade.php',
+    'resources/views/vendor/filament-captcha/drivers/hcaptcha.blade.php',
+    'resources/views/vendor/filament-captcha/drivers/recaptcha-v2.blade.php',
+    'resources/views/vendor/filament-captcha/drivers/recaptcha-v3.blade.php',
+    'resources/views/vendor/filament-captcha/drivers/turnstile.blade.php',
+    'resources/views/vendor/filament-clear-cache/livewire/clear-cache-button.blade.php',
+];
+
+it('[CT-18] cada view autoral difere da tag anterior, e nenhuma de pasta crua', function (): void {
+    $processo = new Process(['git', '-c', 'core.quotepath=off', 'diff', '--name-only', 'v0.45.0', 'HEAD', '--', 'resources/views/vendor'], base_path(), timeout: 120);
+    $processo->run();
+
+    expect($processo->isSuccessful())->toBeTrue('git diff falhou: '.$processo->getErrorOutput());
+
+    $alterados = array_values(array_filter(
+        array_map('trim', explode("\n", str_replace("\r\n", "\n", $processo->getOutput()))),
+        fn (string $linha): bool => $linha !== '',
+    ));
+
+    expect(array_values(array_diff(VIEWS_AUTORAIS_DESTA_RELEASE, $alterados)))
+        ->toBe([], 'views autorais que não diferem de v0.45.0 — a classe antiga do kit:update não as entrega');
+
+    $raizDasViews = base_path('resources/views/vendor');
+    $classes      = [];
+    $deCrua       = [];
+
+    foreach ($alterados as $caminho) {
+        $pasta = explode('/', substr($caminho, strlen('resources/views/vendor/')))[0];
+
+        $classes[$pasta] ??= is_dir($raizDasViews.'/'.$pasta)
+            ? classificarPastaDeViews($raizDasViews, base_path('vendor'), $pasta, rastreados: true)['classe']
+            : null;
+
+        if ($classes[$pasta] === 'cru') {
+            $deCrua[] = $caminho;
+        }
+    }
+
+    expect($deCrua)->toBe([], 'o diff da release toca views de pasta publish cru');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'a tag anterior só existe no git do kit')->group('kit');

@@ -690,11 +690,7 @@ class KitUpdate extends Command
      */
     public static function caminhosNovosNaLista(array $listaDestino, array $listaOrigem): array
     {
-        if ($listaOrigem === []) {
-            return [];
-        }
-
-        return array_values(array_diff($listaDestino, $listaOrigem));
+        return $listaOrigem === [] ? [] : array_values(array_diff($listaDestino, $listaOrigem));
     }
 
     /**

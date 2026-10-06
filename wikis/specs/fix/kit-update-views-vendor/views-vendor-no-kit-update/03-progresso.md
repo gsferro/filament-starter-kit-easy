@@ -33,7 +33,7 @@
 Não fatiado — 2026-10-06: 5 RQ vigentes, 11 CT, compactação: sim (da feature anterior desta sessão, antes do step 0 desta), 3 perguntas de requisito — nenhum sinal de tamanho (18 RQ / 60 CT); a compactação não é desta feature, que cabe numa sessão: sugestão não feita
 
 ## Verificação Final
-- [ ] `/ponytail:ponytail-review` no diff (validar contra over-engineering)
+- [x] `/ponytail:ponytail-review` no diff (validar contra over-engineering) — rodado em linha (skill do projeto) sobre `app`, `tests/Kit/KitUpdateTest.php` e as dez views: `net: -4 lines possible` (um `shrink` em `caminhosNovosNaLista`, aplicado; `yagni` do flag `$rastreados` recusado — é a D5; o `comPacote` do helper de teste ficou como o executor escreveu), 2026-10-06
 - [x] `vendor/bin/pint --dirty` — `{"tool":"pint","result":"passed"}` sobre `KitUpdate.php` e os 4 testes tocados, 2026-10-06
 - [x] `vendor/bin/pest tests/Kit/KitUpdateTest.php --compact` — OK (83 tests, 133 assertions) depois do `[CT-01]` no dataset; **91/91, 145 asserções** depois do segundo lote (CT-15/16 e os seis alterados), 2026-10-06
 - [x] Regressão: `DuasRotasDeEntregaTest`, `LogoDarkModeTest`, `BotaoLimparCacheTest`, `CitacoesDeCodigoTest`, `ChecklistDeReleaseTest`, `ConstraintDeDependenciaTest`, `DeployDockerLocalTest`, `DiagramasDaArquiteturaTest` — `pest DuasRotasDeEntregaTest LogoDarkModeTest BotaoLimparCacheTest DiagramasDaArquiteturaTest --compact` → OK (558 testes, 4.030 asserções, 2 min 48 s); `pest CitacoesDeCodigoTest ChecklistDeReleaseTest ConstraintDeDependenciaTest DeployDockerLocalTest --compact` → 47/47 (3 pulados); `pest tests/Kit/KitUpdateTest.php` → 83/83, 2026-10-06
@@ -141,10 +141,19 @@ Nenhuma classe nova nesta entrega. A "irmã" relevante é a **entrada** `'resour
 - nenhum
 
 ## Desvios do Plano
-- nenhum ainda
+- **Passo 5 novo (P-06)**: o plano original só acrescentava a constante; o step 9 (CR-01 = RD-01) mostrou que a entrada nova não entrega arquivo que não mudou desde a origem. `01` ganhou o passo 5, D6 e a linha de P-06 na Cobertura; `00` ganhou P-06; `04` ganhou R8 (CT-15…CT-17).
+- **Passo 6 novo (P-07)**: a classe antiga do `kit:update`, que roda na primeira rodada, não tem a P-06 e não avisa quando a lista do destino é lida — as dez views autorais mudam nesta release. `01` passo 6, `00` P-07 e Q4, `04` R9/CT-18.
+- **Passo 1, comentário**: 7 linhas, não 6 (teto do ponytail) — a última nomeia o teste que decide; e o texto diz "de toda view de mesmo caminho relativo nos pacotes instalados", não "do pacote" (CR-06/RD-04). `01` passo 1 segue válido (a entrada e a forma não mudaram).
+- **Passo 2, enumeração**: árvore real pelo `git ls-files`, não pelo disco (RD-06 → D5); CT-08 por referência independente (CR-07); mensagens por célula (RD-05). `01` passo 2 descreve a varredura sem fixar a enumeração — sem contradição; D5 registra.
+- **Passo 3**: além das 20 citações `KitUpdate.php:…:linha`, 11 âncoras curtas `(:símbolo:linha)` do parágrafo do `handle()` nas docs pt/en e 4 citações curtas pré-existentes erradas na `main` (CR-02…05, CR-09) — todas reancoradas pelo símbolo; e um segundo recálculo depois do `shrink` do ponytail no código (−4 linhas após `caminhosNovosNaLista`).
+- **Ordem do step 9**: a revisão rodou sobre o diff dos passos 1–4; os passos 5 e 6 nasceram dela. Não houve segunda rodada de revisão do diff sobre eles (teto de 2 rodadas; o quality gate os lê) — a mitigação são os mutantes E/F/D e o `--dry-run` real em três configurações.
 
 ## Notas de Implementação
-- nenhuma ainda
+- **`kit:update` roda a classe instalada**: toda correção no comando só vale a partir da rodada seguinte à que a entrega. Correção de entrega que precise valer "já" tem de estar nos **dados** (aqui: o conteúdo das views), não só no código. É o que P-07 faz, e é a razão de a P-06 ser para a próxima pasta, não para esta.
+- **O junit do Pest 5 não carrega o motivo do `skip`**: o atributo `message` do `<skipped>` vem vazio. Prova de "pulou com motivo" é o fonte (CT-13), não o junit.
+- **`git archive` + `tar` no Windows** funciona por `Process::fromShellCommandline` com `escapeshellarg` nos dois lados (CT-14); não foi preciso o plano B com zip.
+- **Extração como projeto**: `git add -A` numa extração grande falhou com "unable to index file" até `core.longpaths=true`; depois disso o `kit:update --repo={caminho local}` aceita o próprio repositório do kit como remote, e tags locais (`v0.45.1-rc*`) servem de destino — é o jeito barato de medir o cenário 3 antes da tag. As duas tags temporárias são locais e serão apagadas antes do release.
+- **Script de edição em lote**: `open(p, "w").write(fn(t))` truncou `ChecklistDeReleaseTest.php` quando `fn` lançou (o `open` com `w` avalia antes do argumento). Recuperado por `git checkout`; o padrão passou a `novo = fn(t)` antes de abrir para escrita (memória da sessão).
 
 ## Referências Abertas
 - `template-00-requisito.md` — step 4 — 2026-10-06
@@ -154,4 +163,6 @@ Nenhuma classe nova nesta entrega. A "irmã" relevante é a **entrada** `'resour
 - `entrevista-tres-raias.md`, `pesquisa-step-3.md`, `citacoes-de-codigo.md`, `roteamento-e-despacho.md`, `delegacao-casos-de-teste.md`, `padrao-de-log.md`, `estrutura-criada.md` — lidas nesta mesma sessão para a feature anterior (`deploy-multiambiente-docker`, 2026-10-05); não reabertas: o conteúdo está em contexto
 
 ## Retrospectiva
-- *(ao final)*
+- **Funcionou bem**: a auditoria por conteúdo no step 3 (5 autorais × 7 cruas) virou o oráculo do teste sem retrabalho; a revisão adversarial, despachada além do critério, pegou três implementações plausíveis que passariam (pasta amarrada ao pacote, iteração a partir do pacote, listagem não recursiva); o step 9 pegou o defeito que invalidaria a entrega (CR-01 = RD-01) antes do PR; o `--dry-run` real com `--repo` local provou as três configurações em minutos.
+- **Faltou no plano**: ler `arquivosAlterados()` e o aviso de segunda rodada no step 3 — o plano assumiu que "entrar na lista" bastava, e isso é exatamente a premissa que o próprio `KitUpdate.php` documenta como falsa (0.22.3 → 0.24.1). O passo 5 e o passo 6 nasceram do step 9 e custaram uma re-derivação, um segundo lote de testes e dois recálculos de citações.
+- **Para a próxima**: toda correção de "arquivo que não chega pelo `kit:update`" começa pela pergunta "o diff tag→tag desse arquivo é vazio para quem já está na versão em que ele nasceu?"; se for, ou o arquivo muda na release, ou o mecanismo muda — e o mecanismo só vale na rodada seguinte.
