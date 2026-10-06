@@ -23,9 +23,10 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   `App\Support\ProxiesConfiaveis`, para o Laravel honrar o TLS terminado no proxy — com a
   configuração em cache ela precisa estar no ambiente do processo. Bloco pronto no `.env.docker`
   (todo comentado); `/docker-compose.override.yml` no `.gitignore`. O `docker-compose.yml` base, o
-  `nginx.conf` e o `deploy_docker_local.sh` não mudam, e um golden da configuração efetiva do base
-  (`tests/Kit/fixtures/compose-base.json`, gerado da `v0.44.0` com todos os profiles) passa a
-  guardar isso. Página nova no site, `operacao/deploy-docker-multiambiente` (pt/en): mecanismo
+  `nginx.conf` e o `deploy_docker_local.sh` não mudam, e um golden textual do base
+  (`tests/Kit/fixtures/docker-compose.v0.44.0.yml`, a cópia da `v0.44.0`; o teste gera a configuração
+  dos dois lados com o mesmo CLI e compara) passa a guardar isso — regenerá-lo é copiar o base de
+  novo, de propósito, com uma linha aqui. Página nova no site, `operacao/deploy-docker-multiambiente` (pt/en): mecanismo
   central, o encaixe no Traefik (inclusive o aviso de nome de serviço global na rede
   compartilhada), passo a passo, as quatro `FORWARD_*` obrigatórias e distintas por ambiente com
   bind em `127.0.0.1` e a matriz, as duas rotas do Reverb, um checkout por ambiente com os três

@@ -11,9 +11,9 @@
 #   COMPOSE_PROJECT_NAME=projeto-dev   # um por ambiente: prefixa containers, rede, volumes e,
 #                                      # aqui, o router/service do Traefik — unico por construcao
 #   TRAEFIK_HOST=dev.exemplo.br        # OBRIGATORIA: sem ela o Compose recusa subir (ver :? abaixo)
-#   TRUSTED_PROXIES=*                  # o Laravel passa a honrar o X-Forwarded-Proto do Traefik —
-#                                      # `*` SO com FORWARD_APP_PORT=127.0.0.1:... (abaixo); com a
-#                                      # porta aberta para fora, use o CIDR da rede do Traefik
+#   TRUSTED_PROXIES=*                  # honra o X-Forwarded-* do Traefik; `*` SO com FORWARD_APP_PORT=127.0.0.1:...
+#                                      # (abaixo) — e mesmo assim confia em qualquer container da rede
+#                                      # compartilhada; o que fecha e o IP fixo do Traefik no lugar de `*`
 #   # TRAEFIK_REDE=my-network          # so se a rede externa do Traefik tiver outro nome
 #
 # O que ele faz: poe SO o nginx na rede externa do Traefik, com os labels do docker provider

@@ -1,7 +1,7 @@
 <?php
 
+use App\Providers\KitServiceProvider;
 use App\Support\ProxiesConfiaveis;
-use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -14,9 +14,11 @@ use Illuminate\Support\Facades\Route;
  *   e a aplicação lendo esquema, host, URL e IP. Provar só a função deixaria passar o
  *   `trustProxies(at: '*')` incondicional e o env passado cru.
  *
- * Costura de G6, medida: `app()->forgetInstance(Kernel::class)` faz o `afterResolving` de
- * `withMiddleware` rodar de novo no próximo `get()` — o `refreshApplication()` não é necessário. O
- * estado estático `TrustProxies::$alwaysTrustProxies` é zerado pelo `tearDown` do framework.
+ * Costura de G6/G7: o env é fixado nas três formas e `refreshApplication()` refaz o boot — o
+ * `config/kit.php` relê a chave e o `KitServiceProvider::boot()` a aplica (`TrustProxies::at()`). O
+ * `forgetInstance(Kernel)` não refaz o boot do provider. O estático `TrustProxies::$alwaysTrustProxies`
+ * é zerado pelo `tearDown` do framework. O refresh descarta rotas, `config()` e fachadas: a rota e o
+ * `app.url` são declarados depois dele, e o spy de log (CT-50) também.
  */
 
 /**
@@ -69,7 +71,7 @@ function restauraEnvDoCaso(): void
  */
 function requestDoTraefik(string $chamador, string $porta = '443'): array
 {
-    app()->forgetInstance(Kernel::class);
+    test()->refreshApplication();
     config(['app.url' => 'https://dev.exemplo.test']);
 
     Route::get('/_proxies', fn () => [
@@ -125,6 +127,38 @@ it('[CT-20] cada forma do valor tem uma interpretacao so', function (mixed $brut
     'PRIVATE_SUBNETS sozinho'         => ['PRIVATE_SUBNETS', null],
     'PRIVATE_SUBNETS dentro de lista' => ['10.9.9.9,PRIVATE_SUBNETS', ['10.9.9.9']],
     'PRIVATE_SUBNETS com espaço'      => ['10.9.9.9 , PRIVATE_SUBNETS', ['10.9.9.9']],
+    'private_ranges sozinho'          => ['private_ranges', null],
+    'private_ranges dentro de lista'  => ['10.9.9.9,private_ranges', ['10.9.9.9']],
+    'CIDR com prefixo malformado'     => ['172.18.0.0/16x', null],
+    'IP com octeto malformado'        => ['17x.18.0.1', null],
+    'inválido dentro de lista'        => ['10.0.0.1,172.18.0.0/16x', ['10.0.0.1']],
+    'prefixo IPv4 acima de 32'        => ['10.0.0.0/33', null],
+    'IPv6 válido'                     => ['2001:db8::1', ['2001:db8::1']],
+    'prefixo IPv6 acima de 128'       => ['2001:db8::/129', null],
+    'CIDR com bits de host'           => ['10.0.0.1/8', ['10.0.0.1/8']],
+])->group('kit');
+
+/**
+ * O que o kit descartou e vai avisar (R21): coringa em lista, coringa sozinho (Q13), item que não é
+ * IP/CIDR e não-string. `*` sozinho vale "todos" e item vazio não é descarte. `toBe`: ordem e chaves.
+ */
+it('[CT-49] o kit diz quais itens descartou', function (mixed $bruto, array $descartados): void {
+    expect(ProxiesConfiaveis::descartados($bruto))->toBe($descartados);
+})->with([
+    'coringa em lista'           => ['10.0.0.1,*', ['*']],
+    'coringa minúsculo em lista' => ['10.9.9.9,private_ranges', ['private_ranges']],
+    'inválido sozinho'           => ['172.18.0.0/16x', ['172.18.0.0/16x']],
+    'misto, na ordem'            => ['10.0.0.1,REMOTE_ADDR,17x.18.0.1', ['REMOTE_ADDR', '17x.18.0.1']],
+    'o descartado vem aparado'   => [' 10.0.0.1 , 17x.18.0.1 ', ['17x.18.0.1']],
+    'ausente'                    => [null, []],
+    'vazio'                      => ['', []],
+    'só separadores'             => [' , , ', []],
+    'lista limpa'                => ['10.0.0.1,172.18.0.0/16', []],
+    '* sozinho'                  => ['*', []],
+    '** sozinho'                 => ['**', ['**']],
+    'REMOTE_ADDR sozinho'        => ['REMOTE_ADDR', ['REMOTE_ADDR']],
+    'private_ranges sozinho'     => ['private_ranges', ['private_ranges']],
+    'não-string'                 => [true, ['true']],
 ])->group('kit');
 
 /**
@@ -164,6 +198,8 @@ it('[CT-21] cabecalhos de proxy nao confiavel nao mudam esquema, host, URL nem I
     'faixa privada, lista sem ele' => ['10.0.0.7', '10.9.9.9', '10.9.9.9'],
     'PRIVATE_SUBNETS em lista'     => ['172.18.0.5', '10.9.9.9,PRIVATE_SUBNETS', '10.9.9.9,PRIVATE_SUBNETS'],
     'PRIVATE_SUBNETS sozinho'      => ['172.18.0.5', 'PRIVATE_SUBNETS', 'PRIVATE_SUBNETS'],
+    'private_ranges em lista'      => ['172.18.0.5', '10.9.9.9,private_ranges', '10.9.9.9,private_ranges'],
+    'item malformado, sem erro'    => ['127.0.0.1', '172.18.0.0/16x', '172.18.0.0/16x'],
 ])->group('kit');
 
 /**
@@ -187,4 +223,69 @@ it('[CT-22] cabecalhos de proxy confiavel chegam a aplicacao', function (string 
     'todos, com espaço'         => [' * ', '443', 'https://dev.exemplo.test/x'],
     'lista com o chamador'      => ['10.9.9.9,127.0.0.1', '443', 'https://dev.exemplo.test/x'],
     'porta não padrão do proxy' => ['*', '8443', 'https://dev.exemplo.test:8443/x'],
+    'malformado descartado'     => ['17x.18.0.1,127.0.0.1', '443', 'https://dev.exemplo.test/x'],
+])->group('kit');
+
+/**
+ * A chave sai do `bootstrap/app.php` (o closure de `withMiddleware()` roda antes do `.env`) e passa a
+ * ser lida pelo config e aplicada no boot. A linha textual é a que discrimina o bootstrap; ela só roda
+ * na árvore do kit (o projeto instalado pode ter o seu próprio `trustProxies()`). A asserção de
+ * ausência filtra comentário (`.ai/rules/testes.md`): citar não é executar.
+ */
+it('[CT-48] a chave e lida pelo config e aplicada no boot, nao no bootstrap', function (?string $ambiente, ?string $noConfig, bool $seguro): void {
+    comTrustedProxies($ambiente);
+
+    $visto = requestDoTraefik('127.0.0.1');
+
+    expect(config('kit.proxies_confiaveis'))->toBe($noConfig)
+        ->and($visto['status'])->toBe(200)
+        ->and($visto['seguro'])->toBe($seguro);
+})->with([
+    'ausente'      => [null, null, false],
+    '*'            => ['*', '*', true],
+    '* com espaço' => [' * ', ' * ', true],
+])->group('kit');
+
+it('[CT-48] o bootstrap/app.php nao le TRUSTED_PROXIES nem chama trustProxies', function (): void {
+    $codigo = preg_replace(['~/\*.*?\*/~s', '~^\s*(//|#).*$~m'], '', file_get_contents(base_path('bootstrap/app.php')));
+
+    expect($codigo)->not->toContain('trustProxies')
+        ->and($codigo)->not->toContain('TRUSTED_PROXIES');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'o bootstrap do kit só é conferido na árvore do kit')->group('kit');
+
+/**
+ * Arnês G7: env fixado → refresh (limpa as fachadas) → spy do canal → re-execução do passo de boot que aplica a chave
+ * (forma de `alinharConfiguracoesDoKit()`: o `boot()` inteiro registra os health checks de novo e estoura
+ * `DuplicateCheckNamesFound`). Conta-se só o que a re-execução emite.
+ *
+ * @param  list<string>  $descartados
+ */
+it('[CT-50] cada item descartado gera um aviso no canal configuracoes, e so ele', function (string $valor, int $n, array $descartados): void {
+    comTrustedProxies($valor);
+    expect(env('TRUSTED_PROXIES'))->toBe($valor);
+
+    test()->refreshApplication();
+
+    $canal = espiarConfiguracoes();
+
+    (fn () => $this->confiarNosProxiesDoEnv())->call(app()->getProvider(KitServiceProvider::class));
+
+    if ($n === 0) {
+        $canal->shouldNotHaveReceived('warning');
+
+        return;
+    }
+
+    $canal->shouldHaveReceived('warning')->times($n);
+
+    foreach ($descartados as $item) {
+        $canal->shouldHaveReceived('warning')
+            ->withArgs(fn (string $mensagem, array $contexto = []): bool => str_starts_with($mensagem, '[KitServiceProvider@confiarNosProxiesDoEnv]')
+                && ($contexto['item'] ?? null) === $item)
+            ->once();
+    }
+})->with([
+    'coringa e malformado em lista' => ['10.0.0.1,REMOTE_ADDR,17x.18.0.1', 2, ['REMOTE_ADDR', '17x.18.0.1']],
+    'lista limpa'                   => ['10.0.0.1,172.18.0.0/16', 0, []],
+    '* sozinho'                     => ['*', 0, []],
 ])->group('kit');
