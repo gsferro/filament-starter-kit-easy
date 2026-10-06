@@ -1,6 +1,6 @@
 # Progresso — Issue #148: overrides autorais de `resources/views/vendor` no `kit:update`
 
-**Estado**: em planejamento
+**Estado**: em implementação
 
 > Branch: `fix/kit-update-views-vendor` · Base do PR: `main` (`dcb3083`, v0.45.0)
 
@@ -19,7 +19,7 @@
 - [ ] `[Unreleased]` → `### Corrigido` (#148)
 
 ## Testes
-- [ ] `tests/Kit/KitUpdateTest.php` (CT-01, CT-02 ×7, CT-03, CT-04, CT-05, CT-06, CT-07, CT-08, CT-11; CT-10 = caso existente `extrai do fonte desta versão…`, renomeado com o ID)
+- [ ] `tests/Kit/KitUpdateTest.php` (CT-01, CT-02 ×14, CT-03, CT-04 ×3, CT-05, CT-06, CT-07, CT-08, CT-11, CT-12, CT-13, CT-14; CT-10 = caso existente `extrai do fonte desta versão…`, renomeado com o ID) *(alterado em 2026-10-06: revisão adversarial +3 CT, +7 Exemplos)*
 - [ ] CT-09 — procedimento com `--log-junit` sobre CT-06…CT-08 na árvore do kit e na extração do `git archive` (evidência aqui, não `it()`)
 
 ## Tickets
@@ -107,6 +107,7 @@ Nenhuma classe nova nesta entrega. A "irmã" relevante é a **entrada** `'resour
 | — | 0 | Sem despacho — captura verbatim do requisito (exceção declarada) | sessão | — | `00` gerado do corpo bruto do issue com marcadores nos caracteres de controle | — | — |
 | — | 3 | Sem despacho — auditoria de `resources/views/vendor` por script (tarefa de 1–2 passos) | sessão | — | tabela de 12 pastas: 5 autorais, 7 cruas | — | 3 pastas conferidas por `git log` do arquivo |
 | 1 | 7 | `general-purpose` — seguir `feature-test-design`, derivar o `04` | opus (explícito) | `01` inteiro (só paths, stack e "Sem superfície de UI" colados no prompt), `02`, `03`, conversa, código da correção | `04` gravado: 11 CT, 7 regras, 23 mutantes, 4 costuras (unit de regra), 1 pergunta de desenho (Q7), `## Sem CT-B` | 139,3 k tokens · 281 s | `git status --porcelain`: só `?? …/04-casos-de-teste.md`; `grep -o "\[CT-[0-9][0-9]\]" \| sort -u \| wc -l` = 11 = cabeçalho; `rastreabilidade.sh` e `citacoes.sh` exit 0; amostrados CT-02 (7 partições isoladas), CT-09 (procedural com junit — aceito) e CT-11 (arquivo inteiro, regra do CHANGELOG) |
+| 2 | 7 | `fw-adversario-ct` — provar que o `04` deixa passar defeito | opus | `01`, `02`, `03`, conversa, código | 21 achados: 6 bloqueantes (pasta amarrada ao pacote pelo nome; iteração a partir do pacote; listagem não recursiva; M7/M5/M6 não morriam), 15 cosméticos; 19 aplicados no `04` (14 CT, 33 mutantes, 1 sem matador), 2 rejeitados com motivo (ADV-09 caixa no Windows, ADV-10 leitor antigo) — tabela em `04` → `## Revisão adversarial` | 55,6 k tokens · 210 s | `git status --porcelain` igual antes/depois (só leu); 3 bloqueantes reproduzidos de cabeça contra o script do step 3 (ele procurava o par por caminho relativo em todos os pacotes — ADV-01 não o atingia, mas atingiria uma implementação ingênua); `git ls-files resources/views/vendor` sem colisão de caixa (ADV-09) |
 
 ## Blockers
 - nenhum

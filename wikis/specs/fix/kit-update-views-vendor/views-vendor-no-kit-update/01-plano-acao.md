@@ -40,8 +40,8 @@ As duas rotas de entrega do kit são governadas por listas diferentes: `composer
 
 ### `app/Console/Commands/KitUpdate.php`
 - `CAMINHOS_DO_KIT` (`app/Console/Commands/KitUpdate.php:CAMINHOS_DO_KIT:93`) lista `resources/views/auth`, `errors`, `filament`, `livewire` e `svg` (`app/Console/Commands/KitUpdate.php:'resources/views/svg':229`); nenhuma entrada sob `resources/views/vendor`.
-- O comando aplica cada caminho com `git checkout {destino} -- {caminho}` (`app/Console/Commands/KitUpdate.php:aplicar():957`): uma pasta na lista entrega todos os arquivos dela na tag de destino e nunca apaga nada.
-- A lista efetiva é a **união** da constante desta versão com a lida na tag de destino (`app/Console/Commands/KitUpdate.php:caminhosUnidos():727`, `caminhosDeclaradosEm():746`, regex `^\s+'([^']+)',`): entrada nova com a forma `        'caminho',` é reconhecida em qualquer tag; comentário de bloco que cite um caminho fica de fora por construção.
+- O comando aplica cada caminho com `git checkout {destino} -- {caminho}` (`app/Console/Commands/KitUpdate.php:aplicar():969`): uma pasta na lista entrega todos os arquivos dela na tag de destino e nunca apaga nada.
+- A lista efetiva é a **união** da constante desta versão com a lida na tag de destino (`app/Console/Commands/KitUpdate.php:caminhosUnidos():739`, `caminhosDeclaradosEm():758`, regex `^\s+'([^']+)',`): entrada nova com a forma `        'caminho',` é reconhecida em qualquer tag; comentário de bloco que cite um caminho fica de fora por construção.
 - O comentário de `lang/pt_BR.json` (`app/Console/Commands/KitUpdate.php:'lang/pt_BR.json':211`) conta as ocorrências anteriores da divergência; a entrada nova ganha comentário no mesmo tom, com o critério de autoria.
 
 ### `tests/Kit/KitUpdateTest.php`
