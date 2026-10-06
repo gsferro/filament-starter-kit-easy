@@ -61,7 +61,7 @@ it('nenhuma dependencia de producao tem constraint sem teto de major', function 
      * Achado pelos quatro cenarios de instalacao da v0.40.0: os cenarios 3 e 4 (`kit:update` a
      * partir da v0.39.1) ficavam VERMELHOS por `spatie/laravel-backup => *`, que foi o proprio kit
      * que embarcou na v0.39.1 e corrigiu na v0.40.0. O `composer.json` esta deliberadamente fora do
-     * `kit:update` (`KitUpdate.php:CAMINHOS_SO_RELATORIO:366`), que avisa e manda revisar a mao -- entao quem atualiza
+     * `kit:update` (`KitUpdate.php:CAMINHOS_SO_RELATORIO:376`), que avisa e manda revisar a mao -- entao quem atualiza
      * recebe o TESTE novo sem a CORRECAO, e a suite dele fica vermelha no dia 1 por algo que ele
      * nao causou e que so ele pode consertar.
      *

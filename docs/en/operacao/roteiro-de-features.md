@@ -190,7 +190,7 @@ accDescr: RememberConversation wraps the pipeline; the budget guard and the four
 
 The ledger comes from an event listener, never a direct call:
 `Event::listen([AgentPrompted::class, AgentStreamed::class], RegistrarAiRun::class)`
-(`app/Providers/KitServiceProvider.php:AgentStreamed:455`), and `RegistrarAiRun::handle()` writes to
+(`app/Providers/KitServiceProvider.php:AgentStreamed:484`), and `RegistrarAiRun::handle()` writes to
 `ai_runs` with `status: 'ok'` (`app/Ai/Listeners/RegistrarAiRun.php:AiRun::create:44`) — a request
 blocked by any layer above **never** reaches this row. The widget only exists on the `/app` panel
 (`app/Providers/Filament/AppPanelProvider.php:BODY_END:163`).
