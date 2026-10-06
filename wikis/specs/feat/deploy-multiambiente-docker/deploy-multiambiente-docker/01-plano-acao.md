@@ -135,7 +135,9 @@ Cinco fatos do código atual sustentam o plano, todos lidos e medidos — não s
   (`Dockerfile.laravel:build:36`) sem `.env` — `.dockerignore` exclui `.env` e `.env.*`.
 - O Vite embute `VITE_*` no bundle no build e lê variáveis já presentes no ambiente do processo com
   prioridade sobre os arquivos `.env` (doc oficial do Vite, *Env Variables and Modes*). Um `ARG`
-  promovido a `ENV` no estágio `assets` é o caminho para o valor chegar ao `npm run build`.
+  declarado no estágio `assets` **sem default e sem `ENV`** é o caminho: passado, chega ao `RUN npm
+  run build` como variável de ambiente; não passado, fica ausente *(alterado em 2026-10-05: o plano
+  dizia "promovido a `ENV`" — P-12, medido com `docker build`)*.
 - `CacheDeViewsNoDockerTest` afirma **ausência** de `view:cache`, `config:cache` e `route:cache` no
   Dockerfile sem comentário: o comentário novo do passo 2 **não cita** esses comandos.
 
@@ -191,7 +193,7 @@ Cinco fatos do código atual sustentam o plano, todos lidos e medidos — não s
 |---|---|---|---|---|
 | D1 | A cópia ativa `docker-compose.override.yml` na raiz entra no `.gitignore` do kit; quem quiser versionar o override no próprio projeto apaga a linha | Q3 (desenho) | difícil de reverter (é uma linha) | sessão, pela recomendação — 2026-10-05 |
 | D2 | A página nova fica em **Operação** (`operacao/deploy-docker-multiambiente.md`, `order: 6`), não em Começar: deploy em servidor é o dia a dia de quem opera, e `instalacao-avancada` já é a maior página do site | Q4 (desenho) | surpreendente | sessão, pela recomendação — 2026-10-05 |
-| D3 | A leitura de `TRUSTED_PROXIES` sai de `bootstrap/app.php` para `App\Support\ProxiesConfiaveis::doEnv()`: lista por vírgula, `*`, vazio e ausente têm teste unitário; o bootstrap fica com uma linha | Q5 (desenho) | trade-off real (uma classe para quatro casos) | sessão — 2026-10-05 |
+| D3 | A leitura de `TRUSTED_PROXIES` sai de `bootstrap/app.php` para `App\Support\ProxiesConfiaveis::doEnv()`: lista por vírgula, `*`, vazio e ausente têm teste unitário; o chamador é um método privado de `KitServiceProvider::boot()` *(alterado em 2026-10-05: era "o bootstrap fica com uma linha" — `bootstrap/app.php` não muda, RD-01)* | Q5 (desenho) | trade-off real (uma classe para quatro casos) | sessão — 2026-10-05 |
 | D4 | O bloco do Reverb pelo Traefik vai **comentado** no exemplo, no mesmo hostname com `PathPrefix(/app)` e `PathPrefix(/apps)` e service na 8090; descomentar é a adesão. A rota por porta própria é o `FORWARD_REVERB_PORT` que já existe | Q2 (requisito, aberta) | surpreendente | sessão, pela recomendação da Q2 — 2026-10-05 |
 | D6 | O bloco comentado do Reverb no exemplo fica entre `# >>> reverb-traefik` e `# <<< reverb-traefik`, para o teste descomentá-lo mecanicamente e rodar `docker compose config` (fecha a lacuna L3 do `04`) e para orientar quem descomenta à mão | Q10 (desenho) | surpreendente | sessão, pela recomendação — 2026-10-05 |
 | D8 | A página avisa, na seção do Traefik, que nome de serviço é global na rede compartilhada (outro `app`/`reverb` na `my-network` desvia o `fastcgi_pass`) e manda confirmar com o DevOps; o `nginx.conf` não muda | Q12 (requisito, aberta) | surpreendente | sessão, pela recomendação — 2026-10-05 |
@@ -244,7 +246,7 @@ do processo PHP *(alterado em 2026-10-05: era "uma vez no bootstrap"; QA-03/QA-0
 
 | Onde | O que muda | Risco |
 |---|---|---|
-| `tests/Kit/CacheDeViewsNoDockerTest.php` | lê o `Dockerfile.laravel` inteiro, com asserções de ausência filtrando comentário | baixo — o passo 2 acrescenta `ARG`/`ENV` e um comentário que **não cita** os comandos proibidos |
+| `tests/Kit/CacheDeViewsNoDockerTest.php` | lê o `Dockerfile.laravel` inteiro, com asserções de ausência filtrando comentário | baixo — o passo 2 acrescenta quatro `ARG` (sem `ENV`, P-12) e um comentário que **não cita** os comandos proibidos *(alterado em 2026-10-05)* |
 | `tests/Kit/DiagramasDaArquiteturaTest.php` CT-75/CT-84 | contam 12 serviços e os profiles no compose base | nenhum — o base não muda |
 | `tests/Kit/MysqlNoDockerTest.php` | piso `name: starter-kit`, chave no `.env.example`, contrato `.env.docker` × compose | nenhum — nada disso muda; o `.env.docker` só ganha um bloco |
 | `tests/Kit/DeployDockerLocalTest.php` | ordem pull → build, faixa do `--help`, bit de execução, READMEs | nenhum — o script não muda; os READMEs continuam citando o script |
@@ -313,8 +315,8 @@ step 9; QA-03.)*
 
 > Skills: `laravel-best-practices`, `pest-testing`, `ponytail`
 
-- **Path**: `app/Support/ProxiesConfiaveis.php` (novo), `bootstrap/app.php`, `.env.example`
-- `final class ProxiesConfiaveis` com um método estático:
+- **Path**: `app/Support/ProxiesConfiaveis.php` (novo), `config/kit.php`, `app/Providers/KitServiceProvider.php`, `config/logging.php` (comentário do canal), `.env.example` *(alterado em 2026-10-05: era `bootstrap/app.php`, que não muda — RD-01; QA-03r)*
+- `final class ProxiesConfiaveis` com dois métodos estáticos públicos — `doEnv()` e `descartados()` — sobre o mesmo parser privado *(alterado em 2026-10-05: era "um método estático")*:
   ```php
   /**
    * @return '*'|list<string>|null  null = nenhum proxy confiável (o comportamento de hoje)
@@ -322,9 +324,12 @@ step 9; QA-03.)*
   public static function doEnv(mixed $bruto): array|string|null
   ```
   Regras: não-string ou vazio depois de `trim` → `null`; `*` → `'*'`; senão `explode(',')`,
-  `trim` em cada item, descarta vazios; lista vazia → `null`. Nenhuma validação de IP/CIDR: o
-  Symfony aceita os dois e recusa lixo com exceção clara no primeiro request — melhor que o kit
-  reinventar o parser (ponytail: stdlib primeiro).
+  `trim` em cada item, descarta vazios e **tudo o que não é IP/CIDR** (`filter_var(FILTER_VALIDATE_IP)`
+  + prefixo numérico dentro do tamanho do endereço — o que já cobre os coringas `**`, `REMOTE_ADDR`,
+  `PRIVATE_SUBNETS`/`private_ranges`); lista vazia → `null`; `descartados()` devolve o que saiu.
+  *(alterado em 2026-10-05: o plano dizia "nenhuma validação de IP/CIDR: o Symfony recusa lixo com
+  exceção clara" — falso, RD-03: `172.18.0.0/16x` é `TypeError` em todo request e `17x.18.0.1` é
+  silêncio; P-18.)*
 - `config/kit.php`: `'proxies_confiaveis' => env('TRUSTED_PROXIES')` (o valor **cru**) e, em
   `KitServiceProvider::boot()`, `confiarNosProxiesDoEnv()`: loga em `configuracoes` cada item de
   `ProxiesConfiaveis::descartados()` e chama `TrustProxies::at(ProxiesConfiaveis::doEnv(...))` quando
@@ -438,7 +443,7 @@ step 9; QA-03.)*
 
 > Skills: `ponytail`
 
-- **Path**: `.gitignore`, `.env.docker`
+- **Path**: `.gitignore`, `.env.docker`, `app/Console/Commands/KitUpdate.php` (`.env.docker` em `CAMINHOS_DO_KIT`, P-23) *(alterado em 2026-10-05)*
 - `.gitignore`: abaixo de `.env.production`, `/docker-compose.override.yml` com um comentário de
   duas linhas (é por servidor, como o `.env`; o exemplo versionado está em `docker/traefik/`).
 - `.env.docker`: bloco novo no fim, comentado, `# --- Varios ambientes no mesmo servidor, atras do
@@ -513,9 +518,10 @@ step 9; QA-03.)*
 ## Filosofia de Implementação
 
 > **Ponytail ativo em modo `full`** durante toda a implementação: reutilizar (o `COMPOSE_PROJECT_NAME`,
-> o `FORWARD_*`, o `TrustProxies` que já está no stack), stdlib antes de código (o parser do Symfony
-> valida o CIDR), nativo antes de dependência (o auto-load do override, a mesclagem do Compose),
-> uma linha quando possível (o bootstrap), mínimo que funciona. Atalho deliberado leva `ponytail:`.
+> o `FORWARD_*`, o `TrustProxies` que já está no stack), stdlib antes de código (`filter_var` para o
+> IP — o Symfony **não** valida, RD-03), nativo antes de dependência (o auto-load do override, a
+> mesclagem do Compose), uma linha quando possível (a chamada no `boot()` do provider), mínimo que
+> funciona *(alterado em 2026-10-05: QA-03r)*. Atalho deliberado leva `ponytail:`.
 > Após implementar, `/ponytail:ponytail-review` no diff.
 >
 > **Caveman `ultra`** na conversa; arquivos wiki, código, commits e PR em prosa normal.

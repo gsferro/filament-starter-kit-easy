@@ -149,17 +149,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Cabeçalho dos painéis
-    |--------------------------------------------------------------------------
-    | A marca do topo composta ("nome do projeto | nome do painel | logo") e o
-    | bloco do usuário à esquerda do avatar. TUDO nasce desligado: com as cinco
-    | chaves no default, os três painéis renderizam exatamente o que renderizavam
-    | antes. Governado pela aba Identidade de /admin/configuracoes-da-aplicacao;
-    | o .env semeia a primeira gravação e é o plano B sem a tabela `settings`.
-    | Quem lê é `App\Support\CabecalhoDoPainel`, a cada request.
-    */
-    /*
-    |--------------------------------------------------------------------------
     | Proxies confiáveis
     |--------------------------------------------------------------------------
     | Atrás de um proxy que termina o TLS (o Traefik do deploy multiambiente, um
@@ -172,6 +161,17 @@ return [
     */
     'proxies_confiaveis' => env('TRUSTED_PROXIES'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cabeçalho dos painéis
+    |--------------------------------------------------------------------------
+    | A marca do topo composta ("nome do projeto | nome do painel | logo") e o
+    | bloco do usuário à esquerda do avatar. TUDO nasce desligado: com as cinco
+    | chaves no default, os três painéis renderizam exatamente o que renderizavam
+    | antes. Governado pela aba Identidade de /admin/configuracoes-da-aplicacao;
+    | o .env semeia a primeira gravação e é o plano B sem a tabela `settings`.
+    | Quem lê é `App\Support\CabecalhoDoPainel`, a cada request.
+    */
     'cabecalho' => [
         'nome_do_projeto'    => BooleanoDoEnv::comPadrao(env('KIT_CABECALHO_NOME_DO_PROJETO'), false),
         // No /app o rótulo do painel é o nome da aplicação; com organização aberta
