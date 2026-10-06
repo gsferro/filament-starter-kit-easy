@@ -655,7 +655,8 @@ class KitUpdate extends Command
             : ['diff', '--name-status', $destino, '--'];
 
         $lista    = $this->caminhosDoKit($destino);
-        $arquivos = self::rotularDiff($this->git([...$args, ...$lista]), $origem !== null);
+        $existe   = static fn (string $caminho): bool => is_file(base_path($caminho));
+        $arquivos = self::rotularDiff($this->git([...$args, ...$lista]), $origem !== null, $existe);
 
         /*
          * Caminho que entrou na lista DEPOIS da origem (issue #148): o diff tag→tag só
@@ -671,7 +672,7 @@ class KitUpdate extends Command
             $novos    = self::caminhosNovosNaLista($lista, $daOrigem);
 
             if ($novos !== []) {
-                $arquivos += self::rotularDiff($this->git(['diff', '--name-status', $destino, '--', ...$novos]), false);
+                $arquivos += self::rotularDiff($this->git(['diff', '--name-status', $destino, '--', ...$novos]), false, $existe);
             }
         }
 
@@ -700,9 +701,15 @@ class KitUpdate extends Command
      * que o arquivo existe no kit e não no seu projeto, e 'A' que o arquivo é seu e o
      * kit não tem — este último se ignora.
      *
+     * `$existeNoProjeto` corrige o rótulo pelo que há na árvore: um arquivo que mudou
+     * entre as tags mas que o projeto NÃO tem é "novo no kit" para ele, não "modificado"
+     * — é o que o `--only-new` aplica, e um override que nunca viajou (issue #148) chega
+     * ao projeto exatamente assim.
+     *
+     * @param  null|callable(string): bool  $existeNoProjeto
      * @return array<string, string>
      */
-    public static function rotularDiff(string $saida, bool $comOrigem): array
+    public static function rotularDiff(string $saida, bool $comOrigem, ?callable $existeNoProjeto = null): array
     {
         $saida = trim($saida);
 
@@ -726,6 +733,10 @@ class KitUpdate extends Command
                 $status === 'D'               => 'novo no kit',
                 default                       => 'modificado',
             };
+
+            if ($rotulo === 'modificado' && $existeNoProjeto !== null && ! $existeNoProjeto($caminho)) {
+                $rotulo = 'novo no kit';
+            }
 
             if ($rotulo !== null) {
                 $arquivos[$caminho] = $rotulo;

@@ -68,11 +68,11 @@ accDescr: kit:update checks the ground, links the kit as a temporary remote, com
 
 The order comes straight from `KitUpdate::handle()`
 (`app/Console/Commands/KitUpdate.php:handle:397`): pre-flight (`:preVoo:485`), temporary remote
-(`:vincularKit:545`), restricted diff (`:arquivosAlterados:651`), summary (`:mostrarResumo:815`),
-the terminal check (`:isInteractive:449`), the temporary branch (`:prepararBranch:835`), the
-file-by-file review (`:revisarEAplicar:884`), the `composer.json` report
-(`:relatarComposerJson:1069`, `:CAMINHOS_SO_RELATORIO:388`) and `marcarVersao()`
-(`:marcarVersao:1178`, called inside `:encerrar:1103`). The `finally` that undoes the remote runs on
+(`:vincularKit:545`), restricted diff (`:arquivosAlterados:651`), summary (`:mostrarResumo:826`),
+the terminal check (`:isInteractive:449`), the temporary branch (`:prepararBranch:846`), the
+file-by-file review (`:revisarEAplicar:895`), the `composer.json` report
+(`:relatarComposerJson:1080`, `:CAMINHOS_SO_RELATORIO:388`) and `marcarVersao()`
+(`:marcarVersao:1189`, called inside `:encerrar:1114`). The `finally` that undoes the remote runs on
 every exit path, including errors (`:desvincularKit:554`).
 
 Two details that show up in practice:
@@ -167,9 +167,12 @@ section above, "A new kit dependency").
 
 A path that **entered** `CAMINHOS_DO_KIT` after your version — such as the authored folders under
 `resources/views/vendor` — is compared against **your tree**, not only tag against tag
-(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:691`): the file you do not have shows up as
-"novo no kit" even if the kit has not changed it since your version. Without this, anyone already on
-v0.43.0 without the lock-screen override would never receive it.
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:692`): the file you do not have shows up as
+"novo no kit" even if the kit has not changed it since your version, and a file your project does not
+have shows up as "novo no kit" even if the kit changed it between the tags — that is the label `--only-new`
+applies. This behaviour holds from the version that introduced it (the class that runs is the installed
+one): on the **first** round from an earlier version, a view you do not have may show up as
+"modificado" — apply it in interactive mode or with `--all`, not with `--only-new`, and run again.
 
 ```mermaid
 flowchart LR

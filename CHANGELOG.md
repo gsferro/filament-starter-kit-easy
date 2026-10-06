@@ -26,7 +26,11 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   compara tag com tag — as liste em qualquer origem (medido: projeto na v0.45.0 sem o override recebe
   `media.blade.php` na primeira rodada); e `KitUpdate::arquivosAlterados()` passa a comparar **com a
   árvore do projeto** todo caminho que entrou na lista depois da versão de origem
-  (`caminhosNovosNaLista()`), para a próxima pasta que entrar na lista não depender desse toque.
+  (`caminhosNovosNaLista()`), para a próxima pasta que entrar na lista não depender desse toque; e
+  arquivo que o projeto **não tem** passa a sair como "novo no kit" ainda que tenha mudado entre as tags
+  (`rotularDiff()` olha a árvore), que é o rótulo que o `--only-new` aplica — na primeira rodada a partir
+  de uma versão anterior, que roda a classe antiga, a view ausente ainda aparece como "modificado": aplique
+  pelo modo interativo ou com `--all`.
 
 ## [0.45.0] - 2026-10-06
 

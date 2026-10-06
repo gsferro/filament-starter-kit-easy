@@ -67,11 +67,11 @@ accDescr: O kit:update confere o terreno, vincula o kit como remote temporário,
 
 A ordem vem direto de `KitUpdate::handle()`
 (`app/Console/Commands/KitUpdate.php:handle:397`): pré-voo (`:preVoo:485`), remote temporário
-(`:vincularKit:545`), diff restrito (`:arquivosAlterados:651`), resumo (`:mostrarResumo:815`), a
-checagem de terminal (`:isInteractive:449`), o branch temporário (`:prepararBranch:835`), a revisão
-por arquivo (`:revisarEAplicar:884`), o relatório do `composer.json`
-(`:relatarComposerJson:1069`, `:CAMINHOS_SO_RELATORIO:388`) e `marcarVersao()`
-(`:marcarVersao:1178`, chamada dentro de `:encerrar:1103`). O `finally` que desfaz o remote roda em
+(`:vincularKit:545`), diff restrito (`:arquivosAlterados:651`), resumo (`:mostrarResumo:826`), a
+checagem de terminal (`:isInteractive:449`), o branch temporário (`:prepararBranch:846`), a revisão
+por arquivo (`:revisarEAplicar:895`), o relatório do `composer.json`
+(`:relatarComposerJson:1080`, `:CAMINHOS_SO_RELATORIO:388`) e `marcarVersao()`
+(`:marcarVersao:1189`, chamada dentro de `:encerrar:1114`). O `finally` que desfaz o remote roda em
 todo caminho de saída, inclusive erro (`:desvincularKit:554`).
 
 Dois detalhes que aparecem na prática:
@@ -166,9 +166,12 @@ viaja no `create-project`, mas no `kit:update` é **só relatório**, nunca apli
 
 Caminho que **entrou** em `CAMINHOS_DO_KIT` depois da sua versão — como as pastas autorais de
 `resources/views/vendor` — é comparado com a **sua árvore**, e não só tag com tag
-(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:691`): o arquivo que você não tem aparece como
-"novo no kit" mesmo que o kit não o tenha mudado desde a sua versão. Sem isso, quem já estava na v0.43.0
-sem o override da lock-screen nunca o receberia.
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:692`): o arquivo que você não tem aparece como
+"novo no kit" mesmo que o kit não o tenha mudado desde a sua versão, e arquivo que o seu projeto não tem
+aparece como "novo no kit" ainda que o kit o tenha mudado entre as tags — é o rótulo que o `--only-new`
+aplica. Esse comportamento vale a partir da versão em que ele entrou (a classe que roda é a instalada):
+na **primeira** rodada a partir de uma versão anterior, a view que você não tem pode aparecer como
+"modificado" — aplique pelo modo interativo ou com `--all`, não com `--only-new`, e rode de novo.
 
 ```mermaid
 flowchart LR

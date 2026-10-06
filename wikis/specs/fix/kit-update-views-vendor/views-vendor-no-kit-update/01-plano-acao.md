@@ -25,12 +25,13 @@
 | P-05 | pacote que atualiza a view torna o publish cru "autoral": achado legítimo, mensagem com as duas saídas | 2 | — |
 | P-06 | caminho novo na lista é comparado tag de destino × árvore do projeto | 5 | *(alterado em 2026-10-06: passo novo, CR-01/RD-01)* |
 | P-07 | as dez views autorais mudam nesta release, para a classe antiga entregá-las na primeira rodada | 6 | *(alterado em 2026-10-06: passo novo)* |
+| P-08 | arquivo que o projeto não tem é "novo no kit" | 5 | *(alterado em 2026-10-06: QA-03)* |
 
 ## Objetivo
 
 Fazer os overrides de view que o kit **escreveu** chegarem a quem atualiza por `kit:update`, e deixar a varredura que protege as duas rotas de entrega enxergar `resources/views/vendor` — distinguindo, por conteúdo, o que é autoral do kit do que é publish cru de pacote, que nunca deve ser entregue.
 
-A correção é uma constante e um teste. O que ela tem de delicado é o critério: `resources/views/vendor` mistura cópias editadas pelo kit (lock-screen, captcha, botão de limpar cache, tradução do command-center, painel fixo da coluna redimensionável) com cópias cruas que só existem porque alguém rodou `vendor:publish` no esqueleto. Entregar tudo sobrescreveria customização legítima do projeto; não entregar nada é o bug do issue.
+A correção é uma constante, um teste, dois estáticos no comando e uma linha em dez views *(alterado em 2026-10-06: QA-04 — era "uma constante e um teste" antes dos passos 5 e 6)*. O que ela tem de delicado é o critério: `resources/views/vendor` mistura cópias editadas pelo kit (lock-screen, captcha, botão de limpar cache, tradução do command-center, painel fixo da coluna redimensionável) com cópias cruas que só existem porque alguém rodou `vendor:publish` no esqueleto. Entregar tudo sobrescreveria customização legítima do projeto; não entregar nada é o bug do issue.
 
 ## Contexto
 
@@ -42,8 +43,8 @@ As duas rotas de entrega do kit são governadas por listas diferentes: `composer
 
 ### `app/Console/Commands/KitUpdate.php`
 - `CAMINHOS_DO_KIT` (`app/Console/Commands/KitUpdate.php:CAMINHOS_DO_KIT:93`) lista `resources/views/auth`, `errors`, `filament`, `livewire` e `svg` (`app/Console/Commands/KitUpdate.php:'resources/views/svg':229`); nenhuma entrada sob `resources/views/vendor`.
-- O comando aplica cada caminho com `git checkout {destino} -- {caminho}` (`app/Console/Commands/KitUpdate.php:aplicar():1014`): uma pasta na lista entrega todos os arquivos dela na tag de destino e nunca apaga nada.
-- A lista efetiva é a **união** da constante desta versão com a lida na tag de destino (`app/Console/Commands/KitUpdate.php:caminhosUnidos():784`, `caminhosDeclaradosEm():803`, regex `^\s+'([^']+)',`): entrada nova com a forma `        'caminho',` é reconhecida em qualquer tag; comentário de bloco que cite um caminho fica de fora por construção.
+- O comando aplica cada caminho com `git checkout {destino} -- {caminho}` (`app/Console/Commands/KitUpdate.php:aplicar():1025`): uma pasta na lista entrega todos os arquivos dela na tag de destino e nunca apaga nada.
+- A lista efetiva é a **união** da constante desta versão com a lida na tag de destino (`app/Console/Commands/KitUpdate.php:caminhosUnidos():795`, `caminhosDeclaradosEm():803`, regex `^\s+'([^']+)',`): entrada nova com a forma `        'caminho',` é reconhecida em qualquer tag; comentário de bloco que cite um caminho fica de fora por construção.
 - O comentário de `lang/pt_BR.json` (`app/Console/Commands/KitUpdate.php:'lang/pt_BR.json':211`) conta as ocorrências anteriores da divergência; a entrada nova ganha comentário no mesmo tom, com o critério de autoria.
 
 ### `tests/Kit/KitUpdateTest.php`
@@ -87,6 +88,8 @@ Laravel procura a view primeiro em `resources/views/vendor/{namespace}` e só de
 | D4 | Nenhum channel de log: a correção é uma constante e um teste, sem caminho de execução novo. O `kit:update` já loga o que aplica no console (`aplicado: {caminho}`). | — | — | sessão, 2026-10-06 |
 | D5 | Na árvore real, a varredura enumera os arquivos de `resources/views/vendor` pelo `git ls-files` (o rastreado, que é o que o kit entrega), não pelo disco; as fixtures, que não são repositório, enumeram pelo disco. *(alterado em 2026-10-06: RD-06)* | — | difícil de reverter | sessão, 2026-10-06 — a irmã `DuasRotasDeEntregaTest` já mede pelo git; disco varia por máquina |
 | D6 | O caminho novo na lista (P-06) é detectado comparando a lista do destino com a lida no fonte da **origem** (`caminhosDeclaradosEm` sobre `git show {origem}:…/KitUpdate.php`), e o diff extra é `git diff --name-status {destino} -- {novos}` com a rotulagem do modo sem origem; lista da origem ilegível ⇒ nenhum diff extra (fecha para o comportamento de hoje). *(alterado em 2026-10-06: CR-01/RD-01)* | — | difícil de reverter | sessão, 2026-10-06 — a alternativa "sempre diff contra a árvore" acusaria as edições do projeto em toda a lista |
+| D7 | As dez views autorais ganham uma linha de comentário Blade nesta release, para a classe **antiga** do `kit:update` (a que roda na primeira rodada) as listar em qualquer origem (P-07). Alternativa recusada: documentar "rode duas vezes, a segunda com `--from`". *(alterado em 2026-10-06: era a Q4 da raia requisito; reclassificada como desenho em QA-01 e renumerada Q9)* | Q9 | difícil de reverter | sessão, 2026-10-06 — entrega sem passo manual; o comentário não chega ao HTML |
+| D8 | O rótulo do diff olha a árvore do projeto: arquivo que o projeto não tem é "novo no kit" mesmo quando o tag→tag o vê como modificado (P-08); `rotularDiff()` recebe um `callable` de existência, para o estático continuar puro no teste. *(alterado em 2026-10-06: QA-03)* | — | difícil de reverter | sessão, 2026-10-06 — é o que `--only-new` promete |
 
 ## Autorização
 
@@ -114,11 +117,11 @@ Nenhum.
 
 ## Modelo de Execução
 
-Um comando de console, sem trabalho adiado: `kit:update` passa a fazer até 5 `git checkout` a mais (um por pasta nova), só quando a tag de destino tem diferença nelas. O teste novo lê `resources/views/vendor` (até 56 views) e `vendor/*/*/resources/views` uma vez por run, na árvore do kit.
+Um comando de console, sem trabalho adiado: `kit:update` passa a fazer até 10 `git checkout` a mais (um por **arquivo** entregue — `aplicar()` é por arquivo), mais um `git show` e um `git diff` por rodada com origem (P-06), e um `is_file` por arquivo rotulado (P-08) *(alterado em 2026-10-06: QA-04 — dizia "até 5, um por pasta")*. O teste novo lê `resources/views/vendor` (até 56 views) e `vendor/*/*/resources/views` uma vez por run, na árvore do kit.
 
 ## Impacto em Features Existentes
 
-- **`logo-dark-mode`** (ancestral): nenhum código muda; o override passa a viajar. Regressão: `LogoDarkModeTest` (22 casos).
+- **`logo-dark-mode`** (ancestral): nenhum código muda; o override passa a viajar. Regressão: `LogoDarkModeTest` (24 casos) *(alterado em 2026-10-06: QA-04)*.
 - **`kit:update`** (`KitUpdateTest`, 54 casos; `DuasRotasDeEntregaTest`, 3): a constante cresce 5 linhas; `caminhosDeclaradosEm()` tem caso que compara o fonte com a constante — continua verde se as entradas tiverem a forma `        'caminho',`.
 - **`filament-clear-cache`** (`BotaoLimparCacheTest`): passa a ser entregue; o teste já lê a cópia do kit.
 - **Citações `KitUpdate.php:…`** em docs pt/en e em 3 testes: deslocam; recalculadas no passo 3 (`CitacoesDeCodigoTest`, `DiagramasDaArquiteturaTest` CT-66).
@@ -127,7 +130,7 @@ Um comando de console, sem trabalho adiado: `kit:update` passa a fazer até 5 `g
 ## Rollback
 
 - **Migration down**: não há.
-- **Reversão**: remover as 5 entradas da constante e o caso novo do teste; `git revert` do commit.
+- **Reversão**: `git revert` dos commits da branch — a constante, os dois estáticos e o segundo diff em `arquivosAlterados()`, os casos do teste e a linha de comentário das dez views *(alterado em 2026-10-06: QA-04)*.
 
 ## Dependências
 
@@ -188,10 +191,11 @@ Nenhum (D4). Verificado: `config/logging.php` não tem channel de `kit:update`, 
 > Skills: `laravel-best-practices`, `ponytail`
 
 - **Path**: `app/Console/Commands/KitUpdate.php`
-- `arquivosAlterados()` ganha, quando há origem **e** a lista da origem foi lida: `$novos = caminhosNovosNaLista($listaDestino, $listaOrigem)` (estático, público: `array_values(array_diff(...))`); se `$novos !== []`, um segundo `git diff --name-status {destino} -- {novos}` rotulado como o modo sem origem (`D` → "novo no kit", `M` → "modificado", `A` → ignorado), somado ao resultado tag→tag (o tag→tag prevalece para o mesmo caminho). A rotulagem sai para um método estático público `rotularDiff(string $saida, bool $comOrigem): array`, testável sem git (D6).
+- `arquivosAlterados()` ganha, quando há origem **e** a lista da origem foi lida: `$novos = caminhosNovosNaLista($listaDestino, $listaOrigem)` (estático, público: `array_values(array_diff(...))`); se `$novos !== []`, um segundo `git diff --name-status {destino} -- {novos}` rotulado como o modo sem origem (`D` → "novo no kit", `M` → "modificado", `A` → ignorado), somado ao resultado tag→tag (o tag→tag prevalece para o mesmo caminho). A rotulagem sai para um método estático público `rotularDiff(string $saida, bool $comOrigem, ?callable $existeNoProjeto = null): array`, testável sem git (D6); com o `callable`, arquivo com rótulo "modificado" que não existe no projeto vira "novo no kit" (P-08, D8) *(alterado em 2026-10-06: QA-03)*.
 - A leitura da lista da origem reaproveita `caminhosDeclaradosEm($this->git(['show', "{$origem}:app/Console/Commands/KitUpdate.php"]))`.
 - Docs pt/en `atualizando-o-projeto`: uma frase nova na seção do que o `kit:update` traz — caminho que entrou na lista depois da sua versão é comparado com a sua árvore, então o arquivo que falta aparece como "novo no kit" mesmo que o kit não o tenha mudado desde a sua versão.
-- **Atende**: P-06 (RQ-01, RQ-05)
+- Docs pt/en e CHANGELOG: a view ausente é "novo no kit" com a classe nova; na primeira rodada (classe antiga) ainda sai "modificado" — aplicar pelo modo interativo ou `--all`, não `--only-new` *(alterado em 2026-10-06: QA-03)*.
+- **Atende**: P-06, P-08 (RQ-01, RQ-05)
 - **Logs**: nenhum — o comando já imprime o resumo por arquivo.
 
 ### 6. As dez views autorais mudam nesta release, para a classe antiga entregá-las *(passo novo em 2026-10-06: P-07)*
@@ -245,7 +249,7 @@ Não se aplica.
 - [ ] `vendor/bin/pint --dirty`
 - [ ] `vendor/bin/pest tests/Kit/KitUpdateTest.php --compact` (CTs de backend)
 - [ ] Regressão: `DuasRotasDeEntregaTest`, `LogoDarkModeTest`, `BotaoLimparCacheTest`, `CitacoesDeCodigoTest`, `ChecklistDeReleaseTest`, `ConstraintDeDependenciaTest`, `DeployDockerLocalTest`, `DiagramasDaArquiteturaTest`
-- [ ] `pest --mutate`: não se aplica a constante; o caso novo é provado por mutantes manuais (entrada removida da lista; pasta crua acrescentada à lista)
+- [ ] `pest --mutate`: não se aplica à constante; os dois estáticos (`caminhosNovosNaLista`, `rotularDiff`) e o caso novo são provados por mutantes manuais (entrada removida da lista; pasta crua acrescentada; `array_diff` invertido; `D` sem origem como "removido") *(alterado em 2026-10-06: QA-04)*
 - [ ] **Custo medido**: não se aplica (sem query)
 - [ ] **`/code-review high main...HEAD` + passe de eixos (step 9)** — antes da reconciliação
 

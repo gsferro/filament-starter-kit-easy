@@ -16,7 +16,7 @@
 - Probabilidade 2 na classificação: comparação de conteúdo com fim de linha, pares por caminho relativo e o mesmo nome em mais de um pacote. Impacto 2: o defeito de cada direção é retrabalho manual (view que não chega; customização do projeto sobrescrita, recuperável pelo git). Nenhuma área com Impacto 3 nem perfil completo pelo critério da derivação; a sessão despachou a revisão adversarial mesmo assim (ver `## Revisão adversarial`), e ela devolveu 21 achados — 19 aplicados nesta versão *(alterado em 2026-10-06)*.
 - Técnicas aplicadas: EP (classificação por conteúdo, partições isoladas; conjuntos de caminhos), tabela de decisão (lista × autoria; status do diff × origem), rastreio de efeito negativo (pulo declarado fora da árvore), procedimento ponta a ponta do comando real (CT-09, CT-17).
 - R8 (P-06): Probabilidade 2 — integra com o `git diff` e com a leitura da lista da origem; Impacto 2 — o defeito de uma direção é o override que nunca chega (o próprio #148), o da outra é acusar como "modificado" a edição do projeto em pasta antiga da lista (retrabalho manual, recuperável). *(alterado em 2026-10-06: CR-01/RD-01)*
-- Cenários: 18 · Regras: 9 · Mutantes previstos: 43 · Sem matador: 1 *(alterado em 2026-10-06: CR-01/RD-01, CR-07, RD-05, RD-06)*
+- Cenários: 18 · Regras: 9 · Mutantes previstos: 45 · Sem matador: 1 *(alterado em 2026-10-06: CR-01/RD-01, CR-07, RD-05, RD-06)*
 <!-- derivado por grep -c (template-04 §Contagem do cabeçalho); recalcular a cada cenário novo -->
 
 ## Varredura SFDIPOT
@@ -42,7 +42,7 @@
 | R5 — a varredura só roda na árvore do kit e, fora dela, pula com motivo | guarda (padrão) | P-04 | rastreio de efeito (pulou declarado na extração) + guarda declarada no fonte | CT-09, CT-13 |
 | R6 — as entradas novas têm a forma que `caminhosDeclaradosEm()` lê | entrega (mínimo) | RQ-01 (chega a quem atualiza) | EP (1 partição) | CT-10 |
 | R7 — o CHANGELOG registra a correção do #148 | changelog (mínimo) | sem `RQ`: convenção de entrega do kit, pedida pela sessão (ver Fronteira) | EP (1 partição) | CT-11 |
-| R8 — caminho que está na lista do destino e não estava na da origem é comparado tag de destino × árvore do projeto, só ele; sem lista da origem, nada muda *(alterado em 2026-10-06: CR-01/RD-01)* | comparação do `kit:update` (padrão) | P-06, RQ-01, RQ-05 | EP (conjuntos de caminhos) + tabela de decisão (status × origem) + procedimento ponta a ponta | CT-15, CT-16, CT-17 |
+| R8 — caminho que está na lista do destino e não estava na da origem é comparado tag de destino × árvore do projeto, só ele; sem lista da origem, nada muda; e arquivo que o projeto não tem é "novo no kit" (P-08) *(alterado em 2026-10-06: CR-01/RD-01; QA-03)* | comparação do `kit:update` (padrão) | P-06, P-08, RQ-01, RQ-05 | EP (conjuntos de caminhos) + tabela de decisão (status × origem) + procedimento ponta a ponta | CT-15, CT-16, CT-17 |
 | R9 — as dez views autorais mudam nesta release, para a classe antiga do `kit:update` entregá-las na primeira rodada | entrega (mínimo) | P-07 (RQ-01, RQ-02, RQ-05) | rastreio de efeito (diff tag anterior → HEAD) | CT-18 *(alterado em 2026-10-06: P-07, escrito pela sessão — cenário procedural, como CT-17)* |
 
 - RQ-05 — coberta pela entrega (CT-01), pela extração da entrada-pasta (CT-14, *alterado em 2026-10-06: ADV-21*) e pela comparação da entrada nova a quem já está numa versão que tinha a pasta fora da lista (CT-15…CT-17) *(alterado em 2026-10-06: CR-01/RD-01, CR-08)*. O `LogoDarkModeTest` CT-16 existente é verde na árvore do kit antes e depois da correção e não discrimina. O cenário 3 **sobre a tag publicada** continua Fora de Escopo do `00`.
@@ -166,7 +166,7 @@ Funcionalidade: Entrega dos overrides autorais de resources/views/vendor pelo ki
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M3 | "existe no vendor" no lugar de comparar conteúdo | CT-02 linhas `byte`, `mista`, `final` | esperado `autoral`; o mutante classifica `cru` (as três têm par no vendor) |
+| M3 | "existe no vendor" no lugar de comparar conteúdo | CT-02 linhas `byte`, `mista`, `borda` *(alterado em 2026-10-06: QA-06 — citava `final`, que virou `borda`)* | esperado `autoral`; o mutante classifica `cru` (as três têm par no vendor) |
 | M4 | comparação sem normalizar fim de linha | CT-02 linha `crlf` | esperado `cru`; o mutante vê bytes diferentes e classifica `autoral` |
 | M5 | normalização larga demais (`trim()`, `rtrim()` por linha ou remoção de todo espaço em branco) | CT-02 linhas `byte` e `borda` | esperado `autoral`; o mutante apaga a diferença de borda (`borda`) ou todo espaço (`byte`) e classifica `cru` |
 | M6 | pasta decidida pela primeira view, pela última ou pela maioria, não por "ao menos uma" | CT-02 linha `mista` | esperado `autoral`; com `a` = , `b` ≠ , `c` = , os três mutantes classificam `cru` |
@@ -318,7 +318,7 @@ Estouro do teto do perfil padrão (5) em R4: M37 e M38 vêm da revisão do diff 
 | M17 | sem guarda: a varredura roda no projeto instalado e acusa os publishes do projeto (P-04) | CT-09, CT-13 | na extração, com a pasta editada pelo projeto, o junit marca `skipped`; o mutante marca `failed` citando essa pasta (ADV-15); o fonte não tem a guarda (CT-13) |
 | M18 | guarda no padrão do vizinho, `expect(true)->toBeTrue(); return;` — verde por ausência, sem motivo | CT-09, CT-13 | na extração o junit marca `skipped` com motivo; o mutante marca `passed`; o fonte contém a forma proibida (CT-13) |
 
-Matador **procedural** (CT-09): a execução de CT-06…CT-08 na extração com `--log-junit` (o mesmo procedimento da simulação do cenário 1 antes da tag), com o resultado colado no `03`. O teto de pulados da `Validação antes da tag` do CHANGELOG sobe em 3, decomposto por arquivo (`.ai/rules/testes.md` §Caso que lê `docs/`…). O CT-13 é o matador **de regressão** (ADV-19): um `it()` que lê o fonte do próprio arquivo, no padrão dos meta-casos do kit (ex.: o CT-11 de `SiteDeDocumentacaoTest`, que confere a forma do `skip`).
+Matador **procedural** (CT-09): a execução de CT-06…CT-08 na extração com `--log-junit` (o mesmo procedimento da simulação do cenário 1 antes da tag), com o resultado colado no `03`. O teto de pulados da `Validação antes da tag` do CHANGELOG sobe em 6 — CT-06, CT-07, CT-08, CT-11, CT-14 e CT-18 pulam fora da árvore *(alterado em 2026-10-06: QA-05 — dizia 3)* — decomposto por arquivo (`.ai/rules/testes.md` §Caso que lê `docs/`…). O CT-13 é o matador **de regressão** (ADV-19): um `it()` que lê o fonte do próprio arquivo, no padrão dos meta-casos do kit (ex.: o CT-11 de `SiteDeDocumentacaoTest`, que confere a forma do `skip`).
 
 ---
 
@@ -391,6 +391,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
         | ["app", "resources/views/vendor/fad"]                              | []                                        | []                                       | origem não lida: "não pude ler" não vira "tudo é novo"             |
         | ["app", "config/kit.php"]                                          | ["config/kit.php", "app", "routes"]       | []                                       | presentes nas duas, com a mesma forma e em outra ordem, não são novas; "routes" só na origem não entra — mata origem − destino |
 
+    # P-08 (QA-03): com `existeNoProjeto`, status M de arquivo que o projeto não tem vira "novo no kit"; com o arquivo presente, continua "modificado"; sem o callable, nada muda. Duas linhas a mais nos Exemplos. *(alterado em 2026-10-06, escrito pela sessão)*
     Esquema do Cenário: [CT-16] a saída do git diff --name-status vira rótulo conforme haja origem
       Dado a saída real do "git diff --name-status" <saida>
       E <origem>
@@ -422,6 +423,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | M33 | `array_diff` sem reindexar (chaves 1 e 3 preservadas) | CT-15 linha 1 | `toBe` com `[0 => "resources/views/vendor/fad", 1 => "lang/x"]`; o mutante devolve `[1 => …, 3 => …]` |
 | M34 | lista da origem vazia tratada como "tudo é novo" (`array_diff(destino, [])`) | CT-15 linha 3 | esperado `[]`; o mutante devolve a lista do destino inteira |
 | M35 | sem origem, a tabela de rótulos é a mesma de com origem: `D` lido como "removido do kit" e `A` (só o projeto tem) como "novo no kit" | CT-16 linha 2 | esperado `{"p/dif.php": "modificado", "p/falta.php": "novo no kit"}`; o mutante dá `"p/falta.php": "removido do kit"` e acrescenta `"p/so-projeto.php"` |
+| M45 | `rotularDiff` ignora o `callable` (ou o aplica a todo status): arquivo ausente com status M sai "modificado", e `--only-new` nunca o aplica | CT-16 (linhas de P-08) | esperado "novo no kit" para M + ausente e "modificado" para M + presente; o mutante erra uma das duas *(alterado em 2026-10-06: QA-03)* |
 | M36 | o segundo diff (destino × árvore do projeto) roda sobre a lista inteira, não só sobre as entradas novas: acusa como "modificado" toda edição do projeto em pasta antiga da lista | CT-17 (procedural) | a lista do `--dry-run` não traz o arquivo editado só no projeto; o mutante o traz como "modificado". Decisão: CT-16 não mata, porque `rotularDiff` recebe a saída pronta e não escolhe os caminhos do diff — a escolha vive em `arquivosAlterados()`, privado; o matador fica no procedimento ponta a ponta, como asserção extra (ver Cogitado e cortado) |
 
 ---
@@ -436,6 +438,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
     # O "Quando/Então" do git diff vira `it()` (continência dos dez, nenhum de pasta crua); o `--dry-run` com a classe antiga é procedimento da sessão, resultado no `03`. *(alterado em 2026-10-06)*
     Cenário: [CT-18] cada view autoral difere da tag anterior, e a classe antiga as lista num projeto já atualizado
       Dado o repositório do kit com a tag anterior "v0.45.0" e esta versão
+      # Partição "tag anterior ausente" (QA-02): o checkout raso do CI não traz tags — o caso pula com motivo quando "git rev-parse --verify v0.45.0" falha, e o pulo entra na contagem. *(alterado em 2026-10-06, escrito pela sessão)*
       Quando o mantenedor roda "git diff --name-only v0.45.0 HEAD -- resources/views/vendor"
       Então a saída contém os dez arquivos das cinco pastas autorais, e nenhum caminho dela pertence a pasta classificada como publish cru *(alterado em 2026-10-06: continência, não igualdade)*
       E, num projeto na v0.45.0 com a CLASSE ANTIGA do kit:update, "kit:update --repo={kit local} --tag={tag com a correção} --dry-run" lista os dez arquivos
@@ -445,7 +448,8 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M43 | a linha de comentário entrou em algumas views e não em todas (ou numa view crua) | CT-18 | a saída do `git diff --name-only` é exatamente a lista dos dez; o mutante tem menos de dez, ou um arquivo de pasta crua |
+| M43 | a linha de comentário entrou em algumas views e não em todas (ou numa view crua) | CT-18 | a saída do `git diff --name-only` contém os dez; o mutante tem menos de dez, ou um arquivo de pasta crua |
+| M44 | CT-18 sem a guarda da tag: `git diff v0.45.0` falha no checkout raso do CI (`fatal: bad revision`) e o caso fica vermelho | CT-18 (partição "tag ausente") | com a tag inexistente o caso é `skipped` com motivo; o mutante é `failed` — medido num clone `--depth 1 --no-tags` *(alterado em 2026-10-06: QA-02)* |
 
 ---
 
@@ -458,7 +462,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | Idempotência | não se aplica: a varredura só lê; o `kit:update` já existente não muda de mecanismo | — |
 | Concorrência | não se aplica: nenhum contador nem escrita concorrente | — |
 | Fronteira no ponto de entrada | CT-01, CT-10 (a entrada da constante é o ponto de entrada da rota `kit:update`) | Lista do kit |
-| Domínio condicionado | CT-02 linha `dois` (a mesma view relativa vale conforme o pacote) | Classificação por fixture |
+| Domínio condicionado | CT-02 linhas `painel`/`painel2` (a mesma view relativa vale conforme o pacote) *(alterado em 2026-10-06: QA-06)* | Classificação por fixture |
 | Cardinalidade 0 / 1 / N | 0 pastas examinadas: CT-08 · pasta com 0 arquivos: CT-02 `vazia` · 1 view: CT-02 `cru`/`byte` · N views com mistura: CT-02 `mista` (3), CT-06 | Classificação por fixture · Árvore real do kit |
 | Ausente ≠ null ≠ vazio | CT-02 linhas `sopar` (pacote ausente), `extra` (pacote presente, arquivo ausente nele), `vazia` (pasta sem arquivo); CT-12; lista da origem não lida (`[]`) ≠ "tudo é novo": CT-15 linha 3; saída vazia do diff: CT-16 linha 4 *(alterado em 2026-10-06: CR-01/RD-01)* | Classificação por fixture · Diff da entrada nova |
 | Texto: fim de linha, espaço | CT-02 linhas `crlf`, `crlf-inv`, `byte`, `borda` | Classificação por fixture |
