@@ -122,9 +122,12 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 
 > ### Sobre os pulados — e por que aqui há **teto**, não só registro
 >
-> **Teto corrente: 841**, medido na simulação por `git archive` do cenário 1 da `v0.43.0` e **confirmado sem
-> mudança na `v0.44.0`** (decomposição por arquivo idêntica, 29 arquivos), antes de cada tag
-> (a confirmar nos quatro cenários sobre a tag publicada). O `+3` sobre o 838 da `v0.42.0` está decomposto
+> **Teto corrente: 914**, medido na simulação por `git archive` do cenário 1 da `v0.45.0`, antes da tag
+> (a confirmar nos quatro cenários sobre a tag publicada). O `+73` sobre o 841 da `v0.43.0`/`v0.44.0` está
+> decomposto por arquivo, medido com `--log-junit` dentro da extração, na seção `Validação antes da tag` da
+> `v0.45.0` no `CHANGELOG.md` (+72 das guardas `naArvoreDoKit()` de `DeployMultiambienteDockerTest`, +1 de
+> `ProxiesConfiaveisTest`; os 18 CTs guardados só pelo CLI do Compose rodaram). O 841 foi medido na `v0.43.0`
+> e confirmado sem mudança na `v0.44.0` (29 arquivos). O `+3` sobre o 838 da `v0.42.0` está decomposto
 > por arquivo, medido com `--log-junit` dentro da extração, na seção `Validação antes da tag` da `v0.43.0`
 > no `CHANGELOG.md` (+2 do `skip` novo do CT-20 de `LogoDarkModeTest`, +1 de uma linha de dataset dos
 > diagramas que a `v0.42.1` acrescentou sem re-medir). O `+624` sobre o 214 da `v0.41.0`/`v0.41.1` está

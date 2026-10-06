@@ -36,7 +36,7 @@
 - [x] Contagens dos READMEs — 75 / 177 / 206 / 1.944 por comando (`SiteDeDocumentacaoTest` CT-25/CT-50 e o caso dos números objetivos verdes), 2026-10-05
 
 ## 7. Release
-- [ ] Bump, CHANGELOG com *Validação antes da tag*, tag, `release.yml`
+- [x] Bump, CHANGELOG com *Validação antes da tag*, tag, `release.yml` — bump `968dadf` (na branch, antes do squash); PR #147 mergeado em `main` como `052f84b` (CI: 4.116 passaram, 6 pulados); cenário 1 simulado sobre a extração de `968dadf` (árvore igual à do squash): 4.119 testes, 3.205 passaram, 914 pulados, 0 falhas; teto 841 → 914 decomposto na seção da `[0.45.0]` do CHANGELOG; tag `v0.45.0` criada sobre o commit desta validação, `release.yml` a conferir em `gh run list --workflow release.yml`, 2026-10-06
 
 ## Testes
 - [x] `tests/Kit/DeployMultiambienteDockerTest.php` (CT-01..CT-19, CT-23..CT-47) — 128/128 verdes após o `04` v4 (122 na v3) (`pest tests/Kit/DeployMultiambienteDockerTest.php --compact`), 2026-10-05

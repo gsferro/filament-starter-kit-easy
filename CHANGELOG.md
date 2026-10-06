@@ -37,6 +37,35 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   bind em `127.0.0.1` e a matriz, as duas rotas do Reverb, um checkout por ambiente com os três
   `.env`, as opções B/C/D e as armadilhas.
 
+### Validação antes da tag
+
+Minor e não patch: feature nova, opt-in, sem quebra de API — sem o override e sem as chaves novas no
+`.env`, `docker compose config`, a imagem e a lista de proxies confiáveis são os da `v0.44.0`. O
+`checklist-de-release` pede os quatro cenários a cada tag, e o cenário 1 foi simulado pela mesma rota
+da `v0.43.0` e da `v0.44.0`: extração por `git archive` (que aplica o `export-ignore` como o Packagist
+aplica — `docs/` e `wikis/specs/` ausentes, conferido) + `composer install` + `.env` +
+`kit:install --create-project --no-npm --no-interaction`.
+
+- **Cenário 1, simulado** (extração de `968dadf`, o commit do bump; a árvore é idêntica à do squash
+  `052f84b` na `main`, `git diff --stat` vazio): `config('kit.version')` = `0.45.0`;
+  `php artisan test --testsuite=Kit,Tenancy --parallel --processes=2 --compact --log-junit` →
+  `{"result":"passed","tests":4119,"passed":3205,"assertions":14470,"duration_ms":952672,"skipped":914}`
+  — **4.119 testes, 3.205 passaram, 14.470 asserções, 914 pulados, 0 falhas**, 15,9 min com 2 processos
+  (a primeira rodada, com 4 processos e 1 GB de memória livre no host, falhou em `QualidadeDeCodigoTest`
+  e `KitArteTest` porque `phpstan` e `docker compose version` não conseguiram nascer — `0xC0000142` — e
+  por isso foi descartada e refeita)
+- **Teto de pulados: 841 → 914 (+73)**, decomposição por arquivo (`--log-junit`) contra o junit da
+  `v0.44.0`, 29 → 31 arquivos e nenhuma outra linha mudou: **+72** em
+  `tests/Kit/DeployMultiambienteDockerTest.php` (os CTs guardados por `naArvoreDoKit()`: CT-04, CT-27 a
+  CT-32, CT-34, CT-41, CT-42, CT-46 e CT-47 — página do site pt/en, README, CHANGELOG, `.gitignore`/git,
+  o golden da `v0.44.0` e o canário do CI, que não viajam no `create-project`; os 18 CTs guardados só por
+  `composeDisponivel()` **rodaram**, porque o Compose existe na máquina) e **+1** em
+  `tests/Kit/ProxiesConfiaveisTest.php` (CT-48, o `bootstrap/app.php` do kit, que o projeto instalado edita)
+- **CI no Linux**: o job `qualidade` do PR #147 sobre `968dadf` deu 4.116 passaram e 6 pulados — os testes
+  que chamam `docker compose config` rodaram no `ubuntu-latest`
+- **Cobertura no Linux**: o job `cobertura` da `main` para `052f84b` roda depois do push; o número entra no
+  PR de documentação dos cenários 2, 3 e 4, que rodam sobre a tag publicada, como a `v0.44.0` fez
+
 ## [0.44.0] - 2026-10-05
 
 ### Adicionado
