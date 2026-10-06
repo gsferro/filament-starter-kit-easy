@@ -20,7 +20,13 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   nos pacotes instalados —, e a varredura de `tests/Kit/KitUpdateTest.php`, que até aqui pulava
   `resources/views/vendor` inteiro, passa a reprovar nos dois sentidos: pasta autoral fora da lista e
   pasta crua dentro dela. Para quem já editou uma dessas cinco pastas no próprio projeto, o próximo
-  `kit:update` passa a **oferecer** a view do kit no diff, como faz com toda pasta da lista.
+  `kit:update` passa a **oferecer** a view do kit no diff, como faz com toda pasta da lista. Duas
+  consequências para a entrega: as dez views autorais ganham uma linha de comentário Blade nesta versão,
+  para que a classe **antiga** do `kit:update` — a que roda na primeira rodada de quem atualiza, e que
+  compara tag com tag — as liste em qualquer origem (medido: projeto na v0.45.0 sem o override recebe
+  `media.blade.php` na primeira rodada); e `KitUpdate::arquivosAlterados()` passa a comparar **com a
+  árvore do projeto** todo caminho que entrou na lista depois da versão de origem
+  (`caminhosNovosNaLista()`), para a próxima pasta que entrar na lista não depender desse toque.
 
 ## [0.45.0] - 2026-10-06
 
