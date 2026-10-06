@@ -46,7 +46,7 @@
 Não fatiado — 2026-10-05: 17 RQ vigentes, 32 CT, compactação: sim (antes do step 0 desta feature, na feature anterior da mesma sessão), 6 perguntas de requisito — sinal de compactação cruzado, sugestão não feita: sessão autônoma (só o usuário invoca a `feature-tickets`) e a feature cabe numa sessão — 3 arquivos de código, o resto é infra declarativa e documentação
 
 ## Verificação Final
-- [ ] `/ponytail:ponytail-review` no diff
+- [x] `/ponytail:ponytail-review` no diff — passe em linha (skill do plugin) sobre `git diff main...HEAD -- app bootstrap config Dockerfile.laravel docker .env.* .gitignore`: código novo = 1 classe (`ProxiesConfiaveis`, 4 métodos, 1 constante), 1 método privado no provider, 1 chave de config, 4 `ARG`, 1 linha no `KitUpdate`; `bootstrap/app.php` idêntico à `main`. Achados: `L? shrink:` nenhum — `texto()`/`separar()`/`ehIpOuCidr()` são a menor forma que mantém `doEnv()` e `descartados()` com uma só regra; `delete:` nenhum (o `ARG` inerte é RQ-14, recusado no step 6 e mantido). `Lean already. Ship.` — `net: -0 lines possible`, 2026-10-05
 - [x] `vendor/bin/pint --dirty` — `{"tool":"pint","result":"passed"}` sobre os PHP do diff, 2026-10-05
 - [x] `vendor/bin/pest tests/Kit/DeployMultiambienteDockerTest.php tests/Kit/ProxiesConfiaveisTest.php --compact` — 128/128 + 77/77 (205 casos; com `RedeDeDocumentacaoTest` e `HelpersDeTesteTest`, 226/226), 2026-10-05
 - [ ] Regressão nomeada (`CacheDeViewsNoDockerTest`, `MysqlNoDockerTest`, `DeployDockerLocalTest`, `UrlSemPrefixoPublicTest`, `DiagramasDaArquiteturaTest`, `SiteDeDocumentacaoTest`, `RedeDeDocumentacaoTest`, `KitUpdateTest`)
@@ -228,6 +228,7 @@ de inventário, sem seeder, sem provider): a classe nova precisa aparecer só on
 - **O Symfony não valida IP/CIDR** em `setTrustedProxies()`: `172.18.0.0/16x` é `TypeError` em `substr_compare()` a cada request; `private_ranges` é sinônimo de `PRIVATE_SUBNETS`.
 - **`refreshApplication()` limpa as fachadas antes do boot dos providers**: spy de `Log` tem de vir depois do refresh e o passo de boot tem de ser re-executado por `Closure::call` (o `boot()` inteiro re-registra os health checks do spatie/laravel-health e estoura `DuplicateCheckNamesFound`).
 - **O guarda CT-43 de `DiagramasDaArquiteturaTest` lê qualquer linha da documentação com dois nomes de processo do `composer dev`** (`server`/`reverb`…): um label `…-reverb.loadbalancer.server.port` numa página en dispara; a linha saiu do snippet.
+- **`ArquiteturaDoCodigoTest` (preset `php` do Pest) proíbe `var_export` em `app/`**: o primeiro `descartados()` usava `var_export($bruto, true)` para o não-string; a 1ª fatia da suíte `Kit` pegou (2 casos) e virou `(string) json_encode($bruto)` — mesmo oráculo (`true` → `'true'`).
 - **Edição por Python no Windows grava CRLF**: `open(p, 'w')` sem `newline=` converteu `.env.docker`, `.env.example` e os `.md` da wiki para CRLF (`git ls-files --eol` → `w/crlf`), e três casos de `MysqlNoDockerTest` reprovaram porque `$` em regex `m` não casa antes de ``. Corrigido reescrevendo em modo binário; toda edição seguinte usa `newline='
 '`. Registrado também na memória do agente.
 

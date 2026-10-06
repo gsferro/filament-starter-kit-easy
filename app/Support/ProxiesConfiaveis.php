@@ -67,7 +67,7 @@ final class ProxiesConfiaveis
     {
         // `TRUSTED_PROXIES=true` chega como bool pelo `env()`: não é lista, e quem escreveu merece o aviso.
         if ($bruto !== null && ! is_string($bruto)) {
-            return [var_export($bruto, true)];
+            return [(string) json_encode($bruto)];
         }
 
         $texto = self::texto($bruto);
