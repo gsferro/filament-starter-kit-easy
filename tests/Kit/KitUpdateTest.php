@@ -1066,6 +1066,12 @@ it('[CT-16] a saída do git diff --name-status vira rótulo conforme haja origem
         ['resources/views/vendor/x/a.blade.php' => 'removido do kit'],
         false,
     ],
+    'QA-08: R100 com origem e callable ausente segue modificado, chave do renome com TAB' => [
+        "R100\tp/old.php\tp/new.php\n",
+        true,
+        ["p/old.php\tp/new.php" => 'modificado'],
+        false,
+    ],
 ])->group('kit');
 
 /*

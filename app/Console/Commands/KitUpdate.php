@@ -704,7 +704,8 @@ class KitUpdate extends Command
      * `$existeNoProjeto` corrige o rótulo pelo que há na árvore: um arquivo que mudou
      * entre as tags mas que o projeto NÃO tem é "novo no kit" para ele, não "modificado"
      * — é o que o `--only-new` aplica, e um override que nunca viajou (issue #148) chega
-     * ao projeto exatamente assim.
+     * ao projeto exatamente assim. Só o status `M`: numa linha de renome (`R`/`C`) a
+     * chave é `old	new`, que nunca é arquivo, e o rótulo "modificado" fica como sempre foi.
      *
      * @param  null|callable(string): bool  $existeNoProjeto
      * @return array<string, string>
@@ -734,7 +735,7 @@ class KitUpdate extends Command
                 default                       => 'modificado',
             };
 
-            if ($rotulo === 'modificado' && $existeNoProjeto !== null && ! $existeNoProjeto($caminho)) {
+            if ($status === 'M' && $existeNoProjeto !== null && ! $existeNoProjeto($caminho)) {
                 $rotulo = 'novo no kit';
             }
 

@@ -16,7 +16,7 @@
 - Probabilidade 2 na classificação: comparação de conteúdo com fim de linha, pares por caminho relativo e o mesmo nome em mais de um pacote. Impacto 2: o defeito de cada direção é retrabalho manual (view que não chega; customização do projeto sobrescrita, recuperável pelo git). Nenhuma área com Impacto 3 nem perfil completo pelo critério da derivação; a sessão despachou a revisão adversarial mesmo assim (ver `## Revisão adversarial`), e ela devolveu 21 achados — 19 aplicados nesta versão *(alterado em 2026-10-06)*.
 - Técnicas aplicadas: EP (classificação por conteúdo, partições isoladas; conjuntos de caminhos), tabela de decisão (lista × autoria; status do diff × origem), rastreio de efeito negativo (pulo declarado fora da árvore), procedimento ponta a ponta do comando real (CT-09, CT-17).
 - R8 (P-06): Probabilidade 2 — integra com o `git diff` e com a leitura da lista da origem; Impacto 2 — o defeito de uma direção é o override que nunca chega (o próprio #148), o da outra é acusar como "modificado" a edição do projeto em pasta antiga da lista (retrabalho manual, recuperável). *(alterado em 2026-10-06: CR-01/RD-01)*
-- Cenários: 18 · Regras: 9 · Mutantes previstos: 45 · Sem matador: 1 *(alterado em 2026-10-06: CR-01/RD-01, CR-07, RD-05, RD-06)*
+- Cenários: 18 · Regras: 9 · Mutantes previstos: 46 · Sem matador: 1 *(alterado em 2026-10-06: CR-01/RD-01, CR-07, RD-05, RD-06)*
 <!-- derivado por grep -c (template-04 §Contagem do cabeçalho); recalcular a cada cenário novo -->
 
 ## Varredura SFDIPOT
@@ -408,6 +408,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
         | "M\tresources/views/vendor/x/a.blade.php\n"              | há origem      | não               | {"resources/views/vendor/x/a.blade.php": "novo no kit"}                           | P-08: M + ausente ⇒ novo no kit (é o que --only-new aplica) |
         | "M\tresources/views/vendor/x/a.blade.php\n"              | há origem      | sim               | {"resources/views/vendor/x/a.blade.php": "modificado"}                            | P-08: M + presente ⇒ modificado                        |
         | "D\tresources/views/vendor/x/a.blade.php\n"              | há origem      | não               | {"resources/views/vendor/x/a.blade.php": "removido do kit"}                       | P-08: o callable só mexe em M — D com origem segue "removido" (mata "aplica a todo status") |
+        | "R100\tp/old.php\tp/new.php\n"                          | há origem      | não               | {"p/old.php\tp/new.php": "modificado"}                                           | QA-08: renome segue "modificado" com a chave pré-existente (Q8); o callable não a transforma em "novo no kit" |
 
     # Procedimento (não vira `it()`): executado pela sessão, resultado no `03`. A regressão automatizada é CT-15/CT-16.
     Cenário: [CT-17] quem já está numa versão com a pasta fora da lista recebe o override como novo no kit
@@ -428,6 +429,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | M34 | lista da origem vazia tratada como "tudo é novo" (`array_diff(destino, [])`) | CT-15 linha 3 | esperado `[]`; o mutante devolve a lista do destino inteira |
 | M35 | sem origem, a tabela de rótulos é a mesma de com origem: `D` lido como "removido do kit" e `A` (só o projeto tem) como "novo no kit" | CT-16 linha 2 | esperado `{"p/dif.php": "modificado", "p/falta.php": "novo no kit"}`; o mutante dá `"p/falta.php": "removido do kit"` e acrescenta `"p/so-projeto.php"` |
 | M45 | `rotularDiff` ignora o `callable` (ou o aplica a todo status): arquivo ausente com status M sai "modificado", e `--only-new` nunca o aplica | CT-16 (as três linhas de P-08) | esperado "novo no kit" para M + ausente, "modificado" para M + presente e "removido do kit" para D + ausente; "ignora" erra a primeira, "todo status" erra a terceira *(alterado em 2026-10-06: QA-03)* |
+| M46 | o callable aplicado a todo rótulo "modificado" (inclusive `R`/`C`/`T`): a chave de renome `old\tnew` nunca existe, vira "novo no kit", e `--only-new` tenta aplicar um caminho inexistente e relata `aplicado:` | CT-16 (linha `R100`) | esperado `{"p/old.php\tp/new.php": "modificado"}`; o mutante devolve "novo no kit" *(alterado em 2026-10-06: QA-08)* |
 | M36 | o segundo diff (destino × árvore do projeto) roda sobre a lista inteira, não só sobre as entradas novas: acusa como "modificado" toda edição do projeto em pasta antiga da lista | CT-17 (procedural) | a lista do `--dry-run` não traz o arquivo editado só no projeto; o mutante o traz como "modificado". Decisão: CT-16 não mata, porque `rotularDiff` recebe a saída pronta e não escolhe os caminhos do diff — a escolha vive em `arquivosAlterados()`, privado; o matador fica no procedimento ponta a ponta, como asserção extra (ver Cogitado e cortado) |
 
 ---
@@ -440,6 +442,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
   Regra: a classe antiga do kit:update, que compara tag→tag, entrega os dez arquivos na primeira rodada
 
     # O "Quando/Então" do git diff vira `it()` (continência dos dez, nenhum de pasta crua); o `--dry-run` com a classe antiga é procedimento da sessão, resultado no `03`. *(alterado em 2026-10-06)*
+    # No CI (checkout raso, sem tags) este caso pula sempre: o M43 só morre localmente e na extração; a contagem de pulados do CI sobe 1. *(alterado em 2026-10-06: ciclo 2, suspeita registrada)*
     Cenário: [CT-18] cada view autoral difere da tag anterior, e a classe antiga as lista num projeto já atualizado
       Dado o repositório do kit com a tag anterior "v0.45.0" e esta versão
       # Partição "tag anterior ausente" (QA-02): o checkout raso do CI não traz tags — o caso pula com motivo quando "git rev-parse --verify v0.45.0" falha, e o pulo entra na contagem. *(alterado em 2026-10-06, escrito pela sessão)*
@@ -506,9 +509,9 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 | CT-13 | guarda `! naArvoreDoKit()` com motivo declarada no fonte dos casos da árvore real | R5 | meta-caso sobre o fonte | Árvore real do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M16, M17, M18 |
 | CT-14 | a entrada-pasta extrai o arquivo aninhado *(alterado em 2026-10-06: CR-08)* | R1 | entrega simulada | Lista do kit | unit de regra | `tests/Kit/KitUpdateTest.php` | M31 |
 | CT-15 | entradas novas = destino − origem, reindexadas; origem `[]` ⇒ `[]` *(alterado em 2026-10-06: CR-01/RD-01)* | R8 | EP | Diff da entrada nova | unit de regra | `tests/Kit/KitUpdateTest.php` | M32, M33, M34 |
-| CT-16 | rótulo por status × origem, com saída real do git *(alterado em 2026-10-06: CR-01/RD-01)* | R8 | tabela de decisão | Diff da entrada nova | unit de regra | `tests/Kit/KitUpdateTest.php` | M35 |
+| CT-16 | rótulo por status × origem, com saída real do git *(alterado em 2026-10-06: CR-01/RD-01)* | R8 | tabela de decisão | Diff da entrada nova | unit de regra | `tests/Kit/KitUpdateTest.php` | M35, M45, M46 |
 | CT-17 | `kit:update --dry-run` de v0.45.0 sem a pasta lista `media.blade.php` como novo no kit, e não a edição do projeto *(alterado em 2026-10-06: CR-01/RD-01)* | R8 | procedimento ponta a ponta | Diff da entrada nova | procedimento | fundido em CT-15/CT-16 como regressão; o procedimento é evidência do `03`, não `it()` | M36 (e M32, M34, M35 de ponta a ponta) |
-| CT-18 | as dez views autorais diferem da tag anterior (⊇, por `it()`); a classe antiga as lista (procedimento) | R9 | rastreio de efeito | Lista do kit | unit de regra | `tests/Kit/KitUpdateTest.php` — o `git diff --name-only v0.45.0 HEAD` é `it()` com **continência** dos dez e nenhum de pasta crua *(alterado em 2026-10-06: igualdade exata ficaria falsa na próxima release que tocar uma view)*; o `--dry-run` com a classe antiga é evidência da `## Verificação Final` do `03` | M43 |
+| CT-18 | as dez views autorais diferem da tag anterior (⊇, por `it()`); a classe antiga as lista (procedimento) | R9 | rastreio de efeito | Lista do kit | unit de regra | `tests/Kit/KitUpdateTest.php` — o `git diff --name-only v0.45.0 HEAD` é `it()` com **continência** dos dez e nenhum de pasta crua *(alterado em 2026-10-06: igualdade exata ficaria falsa na próxima release que tocar uma view)*; o `--dry-run` com a classe antiga é evidência da `## Verificação Final` do `03` | M43, M44 |
 
 ## Cogitado e cortado
 
@@ -523,7 +526,7 @@ Pula fora da árvore com motivo: `CHANGELOG.md` é `export-ignore` (`.gitattribu
 
 ## Sem CT-B
 
-- Motivo: "Sem superfície de UI" no plano. A correção é uma constante e um teste; a afirmação de cada cenário é sobre arquivos e a lista do kit. O efeito na tela (o par claro/escuro da lock-screen) já tem o `LogoDarkModeTest` CT-16, que não é desta wiki. Nenhuma costura `browser`, logo o `05` não existe.
+- Motivo: "Sem superfície de UI" no plano. A correção é uma constante, dois estáticos do comando, um teste e uma linha em dez views *(alterado em 2026-10-06: QA-04 — dizia "uma constante e um teste")*; a afirmação de cada cenário é sobre arquivos, a lista do kit e a saída do `git diff`. O efeito na tela (o par claro/escuro da lock-screen) já tem o `LogoDarkModeTest` CT-16, que não é desta wiki. Nenhuma costura `browser`, logo o `05` não existe.
 
 ## Perguntas devolvidas
 
