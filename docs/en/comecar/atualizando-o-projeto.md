@@ -67,13 +67,13 @@ accDescr: kit:update checks the ground, links the kit as a temporary remote, com
 ```
 
 The order comes straight from `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:385`): pre-flight (`:preVoo:464`), temporary remote
-(`:vincularKit:524`), restricted diff (`:arquivosAlterados:630`), summary (`:mostrarResumo:749`),
-the terminal check (`:isInteractive:428`), the temporary branch (`:prepararBranch:769`), the
-file-by-file review (`:revisarEAplicar:818`), the `composer.json` report
-(`:relatarComposerJson:1003`, `:CAMINHOS_SO_RELATORIO:367`) and `marcarVersao()`
-(`:marcarVersao:1112`, called inside `:encerrar:1037`). The `finally` that undoes the remote runs on
-every exit path, including errors (`:desvincularKit:533`).
+(`app/Console/Commands/KitUpdate.php:handle:385`): pre-flight (`:preVoo:473`), temporary remote
+(`:vincularKit:533`), restricted diff (`:arquivosAlterados:639`), summary (`:mostrarResumo:758`),
+the terminal check (`:isInteractive:437`), the temporary branch (`:prepararBranch:778`), the
+file-by-file review (`:revisarEAplicar:827`), the `composer.json` report
+(`:relatarComposerJson:1012`, `:CAMINHOS_SO_RELATORIO:376`) and `marcarVersao()`
+(`:marcarVersao:1121`, called inside `:encerrar:1046`). The `finally` that undoes the remote runs on
+every exit path, including errors (`:desvincularKit:535`).
 
 Two details that show up in practice:
 

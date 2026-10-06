@@ -128,4 +128,4 @@ abre por erro de digitação. Os cabeçalhos confiados são os default do `Trust
 
 Não exigida: a feature não cria página, widget nem componente Livewire. Nenhum `public function`
 nem `public $` novo em `app/Filament` ou `app/Livewire`; o único código PHP novo é uma classe
-estática de parsing chamada no bootstrap.
+estática de parsing chamada no boot do `KitServiceProvider` *(alterado em 2026-10-05: era "no bootstrap")*.

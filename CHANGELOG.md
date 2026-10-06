@@ -18,11 +18,14 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   `VITE_REVERB_*` repassados como `build.args` em lista (só os definidos no `.env` chegam). O
   `Dockerfile.laravel` aceita esses quatro argumentos no estágio `assets` como `ARG` **sem default e
   sem `ENV`** — não passados, ficam ausentes e a imagem é a de hoje. Chave nova `TRUSTED_PROXIES`
-  (lista de IPs/CIDRs ou `*`; **ausente = nenhum proxy**, como sempre; `*`, `**`, `REMOTE_ADDR` e
-  `PRIVATE_SUBNETS` dentro de lista são descartados) lida em `bootstrap/app.php` por
-  `App\Support\ProxiesConfiaveis`, para o Laravel honrar o TLS terminado no proxy — com a
-  configuração em cache ela precisa estar no ambiente do processo. Bloco pronto no `.env.docker`
-  (todo comentado); `/docker-compose.override.yml` no `.gitignore`. O `docker-compose.yml` base, o
+  (`kit.proxies_confiaveis` em `config/kit.php`, aplicada em `KitServiceProvider::boot()` por
+  `TrustProxies::at()` — **não** no `bootstrap/app.php`, cujo closure roda antes de o `.env` ser
+  carregado): lista de IPs/CIDRs ou `*`; **ausente = nenhum proxy**, como sempre; item que não é
+  IP/CIDR e os coringas `*`, `**`, `REMOTE_ADDR`, `PRIVATE_SUBNETS`/`private_ranges` dentro de lista
+  são descartados por `App\Support\ProxiesConfiaveis` com um `warning` no canal `configuracoes`,
+  para o Laravel honrar o TLS terminado no proxy sem cair nem abrir confiança por erro de digitação;
+  com a configuração em cache vale o valor cacheado, como toda chave. Bloco pronto no `.env.docker`
+  (todo comentado), que passa a viajar pelo `kit:update`; `/docker-compose.override.yml` no `.gitignore`. O `docker-compose.yml` base, o
   `nginx.conf` e o `deploy_docker_local.sh` não mudam, e um golden textual do base
   (`tests/Kit/fixtures/docker-compose.v0.44.0.yml`, a cópia da `v0.44.0`; o teste gera a configuração
   dos dois lados com o mesmo CLI e compara) passa a guardar isso — regenerá-lo é copiar o base de

@@ -297,7 +297,7 @@ P-08 verdadeira com `FORWARD_APP_PORT=127.0.0.1:…`.
 | M90 | health check do script monta a URL com `${FORWARD_APP_PORT:-8000}` — com `127.0.0.1:8090` a URL vira `http://127.0.0.1:127.0.0.1:8090` (ADV-35) | CT-03 | linha do health check interpola `${FORWARD_APP_PORT`; o caso exige a porta vinda de `port nginx 80` |
 | M129 | base muda serviço fora do profile `app` (`mailpit`, `llamacpp`, `mysql`) — o golden antigo, só com `--profile app`, não o via (ADV2-03) | CT-34 | `services.mailpit` (ou o alterado) difere do lado do fixture, gerado com `--profile '*'` |
 | M130 | base muda chave que a lista antiga do CT-34 não comparava (`stop_grace_period`, `ulimits`, `logging`, `extra_hosts`, `build.args`) (ADV2-02) | CT-34 | a folha nova aparece no diff profundo do JSON inteiro |
-| M131 | fixture copiado da árvore da branch, já com o base alterado — o caso compara o defeito com ele mesmo (ADV2-01) | — (lacuna declarada L11) | — : P-24 tirou do caso a dependência da tag (CR-07); a procedência fica no docblock e no `CHANGELOG.md` |
+| M131 | fixture copiado da árvore da branch, já com o base alterado — o caso compara o defeito com ele mesmo (ADV2-01) | sem matador — — (lacuna declarada L11) | — : P-24 tirou do caso a dependência da tag (CR-07); a procedência fica no docblock e no `CHANGELOG.md` |
 | M132 | bind do base trocado (`./.env:/var/www/.env` → `./${ENV_FILE:-.env}:…`) e escondido pela normalização ampla de "todo path absoluto" (ADV2-01) | CT-34 | só o prefixo de cada pasta temporária é normalizado: `volumes[].source` difere do lado do fixture |
 | M133 | script usa `docker-compose -f …` (hífen), `--project-directory` ou exporta `COMPOSE_ENV_FILES` — a leitura antiga só via `docker compose` com espaço (ADV2-23) | CT-03 | linha que casa `docker[ -]compose` com flag proibida / `COMPOSE_ENV_FILES` definido |
 | M134 | `nginx.conf` ganha `fastcgi_param  HTTPS $https_from_proxy;` (dois espaços) ou `fastcgi_param HTTP_X_Forwarded_Proto …` — as âncoras literais antigas não casavam (ADV2-17) | CT-35 | `fastcgi_param\s+HTTPS\b` / `(?i)x[_-]forwarded` casa |
@@ -810,6 +810,8 @@ Estouro do teto (padrão: 5): M101…M103 — revisão adversarial (ADV-03, ADV-
         | '2001:db8::1'                      | ['2001:db8::1']                    | IPv6 válido                        |
         | '2001:db8::/129'                   | null                               | prefixo IPv6 acima de 128          |
         | '10.0.0.1/8'                       | ['10.0.0.1/8']                     | CIDR com bits de host: aceito      |
+        | '10.0.0.1/32'                      | ['10.0.0.1/32']                    | prefixo no limite IPv4 (/32): aceito (QA-02, mutante `<=`→`<`) |
+        | '2001:db8::1/128'                  | ['2001:db8::1/128']                    | prefixo no limite IPv6 (/128): aceito |
 
     Esquema do Cenário: [CT-49] o kit diz quais itens descartou
       Dado o valor bruto <bruto> lido de TRUSTED_PROXIES
@@ -1011,7 +1013,7 @@ decisão da sessão de expor a chave crua no config (`## Fronteira com o Plano`)
 | M180 | havendo descarte, o boot não chama `TrustProxies::at()` ("valor suspeito, melhor não confiar em nada") (P-18) | CT-22 (linha item malformado descartado) | `isSecure()` falso |
 | M181 | `bootstrap/app.php` mantém `trustProxies(at: …env('TRUSTED_PROXIES'))` ao lado do provider — com a chave só no `.env`, o bootstrap aplica `null` e o resultado depende da ordem (RD-01) | CT-48 (linha textual) | o texto contém `trustProxies` |
 | M182 | `config/kit.php` sem a chave; o provider lê `env('TRUSTED_PROXIES')` no boot — com `config:cache` a chave vira `null` em silêncio (P-13) | CT-48 (linhas `'*'` e `' * '`) | `config('kit.proxies_confiaveis')` = `null` com a chave fixada |
-| M183 | `config/kit.php` com a chave, mas o provider lê `env()` direto em vez do config — sem cache é igual; com `config:cache`, o valor cacheado é ignorado (P-13) | — (lacuna declarada L9) | — : só a configuração em cache com a chave fora do ambiente diverge |
+| M183 | `config/kit.php` com a chave, mas o provider lê `env()` direto em vez do config — sem cache é igual; com `config:cache`, o valor cacheado é ignorado (P-13) | sem matador — — (lacuna declarada L9) | — : só a configuração em cache com a chave fora do ambiente diverge |
 | M184 | o provider lê `kit.trusted_proxies` e o config expõe `kit.proxies_confiaveis` (nomes divergentes) | CT-48 (linha `'*'`), CT-22 | `isSecure()` falso |
 
 Estouro do teto (padrão: 5): M112, M153 — revisão adversarial (ADV-15, ADV2-18); M180…M184 — step 9 (RD-01/CR-01, RD-03).

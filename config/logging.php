@@ -149,6 +149,9 @@ return [
          * gravação pela tela (info), a trilha de auditoria (info) e as duas condições em
          * que o banco é ignorado e vale o .env (warning). Nada por ABERTURA de tela — um
          * info por request é o ruído que a nota do canal 'autenticacao' mediu em 1,1 MB/dia.
+         * Exceção deliberada: item inválido em TRUSTED_PROXIES gera um warning por BOOT
+         * (request no php-fpm, comando artisan) até ser corrigido — configuração errada de
+         * proxy tem de ser barulhenta, e a chave certa não gera linha nenhuma.
          */
         'configuracoes' => [
             'driver'               => env('LOG_KIT_DRIVER', 'daily'),

@@ -11,10 +11,13 @@
   decidiu onde cada cache roda no Docker e deixou um teste que lê os dois arquivos que esta feature toca)
 - **Motivo**: —
 - **Toca infra compartilhada?**: **sim** — `Dockerfile.laravel` (lido por
-  `tests/Kit/CacheDeViewsNoDockerTest.php`, com asserções de ausência filtrando comentário) e
-  `bootstrap/app.php` (o stack global de middleware de toda tela). **Regressão obrigatória** contra
-  `CacheDeViewsNoDockerTest`, `MysqlNoDockerTest`, `DeployDockerLocalTest`, `UrlSemPrefixoPublicTest`
-  e `DiagramasDaArquiteturaTest` (CT-75/CT-84, que contam os 12 serviços do compose base).
+  `tests/Kit/CacheDeViewsNoDockerTest.php`, com asserções de ausência filtrando comentário),
+  `config/kit.php` e `KitServiceProvider::boot()` (o boot de todo request e de todo comando) e
+  `KitUpdate::CAMINHOS_DO_KIT` *(alterado em 2026-10-05: era `bootstrap/app.php`, que acabou
+  **igual ao da `main`** — RD-01)*. **Regressão obrigatória** contra `CacheDeViewsNoDockerTest`,
+  `MysqlNoDockerTest`, `DeployDockerLocalTest`, `UrlSemPrefixoPublicTest`, `DiagramasDaArquiteturaTest`
+  (CT-75/CT-84, que contam os 12 serviços do compose base; CT-66, que confere citações para os
+  arquivos cujas linhas se deslocaram), `KitUpdateTest` e `ArquiteturaDoCodigoTest` (preset `php`).
 
 ## Cobertura do Requisito
 
@@ -37,7 +40,7 @@
 | RQ-15 | armadilhas documentadas | 5 | cookies, `APP_KEY`, `APP_URL`, `APP_DEBUG` |
 | RQ-16 | matriz de portas com as duas notas | 4, 5 | no `.env.docker` (comentada) e na página |
 | RQ-17 | hostnames parametrizados, não fixados | 3, 4 | `TRAEFIK_HOST` obrigatória só com o override ativo (P-04) |
-| P-01 | o kit não consome `VITE_REVERB_*` | 2 | o `ARG` entra com default vazio; o CT prova que a imagem de hoje é a mesma |
+| P-01 | o kit não consome `VITE_REVERB_*` | 2 | o `ARG` entra **sem default** (P-12); o CT prova que a imagem de hoje é a mesma |
 | P-02 | `TRUSTED_PROXIES`, ausente = ninguém | 1 | — |
 | P-03 | exemplo em `docker/`, cópia ativa fora do git | 3, 4 | — |
 | P-04 | hostname e rota do Reverb por servidor | 3, 4 | — |
@@ -140,7 +143,9 @@ Cinco fatos do código atual sustentam o plano, todos lidos e medidos — não s
 
 - `->withMiddleware(…)` (`bootstrap/app.php:withMiddleware():15`) só faz
   `$middleware->append(RaizDeUrlSemPublic::class)`. O comentário ali já diz que a posição importa
-  por causa do `TrustProxies`. É onde entra o `trustProxies(at: …)`.
+  por causa do `TrustProxies`. *(alterado em 2026-10-05: o plano previa entrar aqui com
+  `trustProxies(at: …)`; o step 9 mediu que o closure roda antes do `LoadEnvironmentVariables` e o
+  arquivo ficou **sem mudança** — a chamada vive em `KitServiceProvider::boot()`, RD-01/P-02.)*
 - `bootstrap/` não está em nenhum glob de `.ai/rules/`; `app/Support/**` está (`support.md`).
 
 ### `deploy_docker_local.sh`
@@ -192,7 +197,7 @@ Cinco fatos do código atual sustentam o plano, todos lidos e medidos — não s
 | D8 | A página avisa, na seção do Traefik, que nome de serviço é global na rede compartilhada (outro `app`/`reverb` na `my-network` desvia o `fastcgi_pass`) e manda confirmar com o DevOps; o `nginx.conf` não muda | Q12 (requisito, aberta) | surpreendente | sessão, pela recomendação — 2026-10-05 |
 | D9 | O golden é a **cópia textual** do `docker-compose.yml` da `v0.44.0` em `tests/Kit/fixtures/docker-compose.v0.44.0.yml`; o CT gera a configuração dos dois lados com o mesmo CLI e compara (só o prefixo da pasta temporária é normalizado); regenerar é copiar o base de novo, com linha no CHANGELOG *(alterado em 2026-10-05: CR-07 — um JSON gerado numa versão do Compose é frágil à versão do CI; P-24)*. CT-34 e o canário CT-46 valem só na árvore do kit (RD-07) | ADV2-01..03, CR-07, RD-07 | trade-off | sessão — 2026-10-05 |
 | D7 | A página recomenda `TRUSTED_PROXIES=*` **só** com a porta do nginx em `127.0.0.1`, e diz que mesmo assim o `*` confia em qualquer container da rede compartilhada: o que fecha é o IP fixo do Traefik; o `*` fica como risco aceito *(alterado em 2026-10-05: CR-03 — o loopback não isola da `my-network`; P-21)* | Q11 (requisito, aberta) | surpreendente | sessão, pela recomendação — 2026-10-05 |
-| D5 | Nenhum channel de log: o único código PHP novo roda no bootstrap, antes de o container de log existir, e é parsing puro de uma string; o comportamento é provado por teste, não por log | — | — | sessão — 2026-10-05 |
+| D5 | Um log só, no canal `configuracoes` que já existe: um `warning` por item de `TRUSTED_PROXIES` descartado (coringa em lista, não-IP/CIDR), emitido em `KitServiceProvider::boot()` — a cada boot em que a chave estiver errada, de propósito (configuração errada tem de ser barulhenta até ser corrigida; a exceção está registrada no comentário do canal em `config/logging.php`) *(alterado em 2026-10-05: era "nenhum log" — a classe saiu do bootstrap no step 9 e ganhou `descartados()`; QA-04)* | Q13 | — | sessão — 2026-10-05 |
 
 ## Autorização
 
@@ -216,7 +221,7 @@ registrado no `04`.
 | `TRUSTED_PROXIES` | ausente → nenhum proxy confiável (hoje) | Lista separada por vírgula de IPs/CIDRs, ou `*`. Lida pelo `config/kit.php` (`kit.proxies_confiaveis`) e aplicada em `KitServiceProvider::boot()`; vazia, ausente ou sem item válido não chama `TrustProxies::at()`; item inválido/coringa em lista é descartado com aviso no log. Documentada comentada no `.env.example` e no bloco Traefik do `.env.docker` |
 | `TRAEFIK_HOST` | **sem default** — o override falha com mensagem (`${TRAEFIK_HOST:?…}`) | Hostname público do ambiente, usado no `Host(...)` do router. Só é lida com o override ativo (RQ-17, P-04) |
 | `TRAEFIK_REDE` | `my-network` | Nome da rede Docker externa onde o Traefik está; vai para `traefik.docker.network` e para o `name:` da rede externa |
-| `VITE_REVERB_HOST`, `VITE_REVERB_PORT`, `VITE_REVERB_SCHEME`, `VITE_REVERB_APP_KEY` | já existem no `.env.example` | Passam a chegar ao `npm run build` da imagem **quando** o override os repassa em `build.args`; default vazio no `ARG` (RQ-14, P-01) |
+| `VITE_REVERB_HOST`, `VITE_REVERB_PORT`, `VITE_REVERB_SCHEME`, `VITE_REVERB_APP_KEY` | já existem no `.env.example` | Passam a chegar ao `npm run build` da imagem **quando** o override os repassa em `build.args` (lista sem valor: só as definidas no `.env`); `ARG` sem default e sem `ENV` (RQ-14, P-01, P-12, P-15) |
 | `FORWARD_APP_PORT`, `FORWARD_DB_PORT`, `FORWARD_REDIS_PORT`, `FORWARD_REVERB_PORT` | já existem | Ganham a matriz sugerida por ambiente e a forma `127.0.0.1:porta` para publicar só no loopback (RQ-10, RQ-16, P-06) |
 | `COMPOSE_PROJECT_NAME` | já existe (`starter-kit`) | Passa a ser também o nome do router e do service do Traefik (P-05) — um por ambiente |
 
@@ -230,9 +235,10 @@ Nenhum. Os serviços `queue`, `scheduler`, `reverb` e `pulse` só recebem `build
 
 ## Modelo de Execução
 
-**Um request, sem trabalho adiado.** `ProxiesConfiaveis::doEnv()` roda uma vez no bootstrap da
-aplicação (não por request) e devolve um valor estático para o `TrustProxies`; o Compose e o
-Traefik estão fora do processo PHP.
+**Um request, sem trabalho adiado.** `ProxiesConfiaveis::doEnv()` roda **uma vez por boot do kit**
+(`KitServiceProvider::boot()`: a cada request no php-fpm, a cada comando artisan) e grava um valor
+estático no `TrustProxies`, que o middleware lê em todo request; o Compose e o Traefik estão fora
+do processo PHP *(alterado em 2026-10-05: era "uma vez no bootstrap"; QA-03/QA-04)*.
 
 ## Impacto em Features Existentes
 
@@ -247,7 +253,9 @@ Traefik estão fora do processo PHP.
 | `tests/Kit/SiteDeDocumentacaoTest.php` | navegação, front-matter, stubs, espelho pt/en, contagens dos READMEs | médio — página nova exige rodar o conversor e atualizar as contagens (features especificadas 74 → 75, arquivos de teste, badge) |
 | `tests/Kit/RedeDeDocumentacaoTest.php` CT-10/CT-11 | todo teste que lê `docs/`/README leva `naArvoreDoKit()` | nenhum, se os CTs do `04` que leem docs forem guardados |
 | Quem roda `docker compose --profile app up -d --build` hoje | nada: sem o override e sem as chaves, `docker compose config` é idêntico | nenhum (CT de ausência) |
-| Quem roda `kit:update` | recebe `docker/traefik/docker-compose.override.yml`, o `Dockerfile.laravel`, o `.env.example` e o `.gitignore`? — **`.gitignore` não está em `CAMINHOS_DO_KIT`**; quem já instalou acrescenta a linha à mão (documentado) | baixo |
+| Quem roda `kit:update` | recebe `docker/traefik/docker-compose.override.yml`, o `Dockerfile.laravel`, o `.env.example`, o `.env.docker` *(alterado em 2026-10-05: entrou em `CAMINHOS_DO_KIT`, P-23)*, `config/kit.php` e o provider; **`.gitignore` não está em `CAMINHOS_DO_KIT`** — quem já instalou acrescenta a linha à mão (documentado) | baixo |
+| `tests/Kit/ArquiteturaDoCodigoTest.php` (preset `php` do Pest) | proíbe `var_export` em `app/` — **medido** na suíte, não previsto: a primeira versão de `descartados()` o usava | corrigido (`json_encode`) *(acrescentado em 2026-10-05, QA-03)* |
+| `DiagramasDaArquiteturaTest` CT-66 e as citações `arquivo:símbolo:linha` espalhadas por docs, comentários e testes | as linhas novas em `KitServiceProvider`, `config/kit.php` e `KitUpdate` deslocam toda citação para esses arquivos — **medido**: 20 na forma completa + 24 na forma curta de `docs/*/comecar/atualizando-o-projeto.md` | recalculadas por script *(acrescentado em 2026-10-05, QA-03/QA-07)* |
 
 ## Rollback
 
@@ -269,7 +277,7 @@ já é exigido pelo compose de hoje; o override usa só interpolação e mesclag
 | Três `.env` com a mesma `FORWARD_APP_PORT` (default 8000) → o segundo `up` falha com *port is already allocated* | a página e o `.env.docker` trazem a matriz; o erro é duro e nomeia a porta |
 | `TRAEFIK_HOST` esquecida → router com `Host()` vazio roteando nada, em silêncio | `${TRAEFIK_HOST:?…}`: o Compose recusa subir e diz o que falta (medido) |
 | `traefik.docker.network` esquecida → Traefik escolhe o IP da rede privada e dá 504 | o label está no exemplo com o mesmo valor da rede externa; CT amarra os dois |
-| `TRUSTED_PROXIES=*` confia em qualquer `X-Forwarded-*` — aceitável quando **só** o Traefik alcança a porta 80 do container (rede interna) | documentado: com porta publicada no host, preferir o CIDR da rede do Traefik |
+| `TRUSTED_PROXIES=*` confia em qualquer `X-Forwarded-*` de quem alcançar a porta do nginx — e na rede compartilhada do Traefik isso inclui os containers vizinhos, mesmo com a porta no loopback | documentado: o que fecha é o **IP fixo do Traefik** no lugar de `*`; o CIDR da rede não resolve (os vizinhos estão dentro dele); `*` fica como risco aceito *(alterado em 2026-10-05: CR-03, P-21)* |
 | Comentário novo no Dockerfile cita comando de cache proibido e derruba `CacheDeViewsNoDockerTest` | não citar; rodar o arquivo antes de fechar |
 | Página nova fora do `sidebar.json`/sem stub → some da navegação sem erro | `node converter.mjs` regenera os três artefatos; CT-20/CT-38 reprovam se faltar |
 
@@ -278,15 +286,17 @@ já é exigido pelo compose de hoje; o override usa só interpolação e mesclag
 ### Verificação de Channel Existente
 
 `config/logging.php` tem `autenticacao` (`config/logging.php:'autenticacao':132`) e
-`configuracoes` (`config/logging.php:'configuracoes':153`), entre outros. Nenhum é desta feature.
+`configuracoes` (`config/logging.php:'configuracoes':156`), entre outros. Nenhum é desta feature.
 
 ### Decisão
 
-**Nenhum log** (D5). O único código PHP novo é `ProxiesConfiaveis::doEnv()`, chamado dentro de
-`withMiddleware()` no bootstrap — antes de o container estar resolvido, onde `Log::` não é seguro —,
-e é parsing puro: string → `null | '*' | list<string>`. O resultado é observável por teste
-(`request()->isSecure()` com e sem a chave) e por `php artisan about`. Infra Docker e Traefik não
-logam pelo Laravel.
+**Um `warning` por item descartado**, no canal `configuracoes` (D5 revisada): `KitServiceProvider::
+confiarNosProxiesDoEnv()` loga `[KitServiceProvider@confiarNosProxiesDoEnv] Item de TRUSTED_PROXIES
+descartado por não ser IP/CIDR ou por ser coringa dentro de lista | item: {item}` com `['item' => …]`
+— é a única saída observável de um erro de digitação na chave, já que o Symfony derrubaria a
+aplicação ou silenciaria (RD-03). Nenhum `info`: a chave certa não gera linha. Infra Docker e Traefik
+não logam pelo Laravel. *(alterado em 2026-10-05: era "nenhum log" — a leitura saiu do bootstrap no
+step 9; QA-03.)*
 
 ## Estrutura de Implementação
 
@@ -336,7 +346,7 @@ logam pelo Laravel.
   # TRUSTED_PROXIES=
   ```
 - **Atende**: P-02, RQ-09, RQ-05, RQ-04
-- **Logs**: nenhum (D5)
+- **Logs**: `Log::channel('configuracoes')->warning('[KitServiceProvider@confiarNosProxiesDoEnv] Item de TRUSTED_PROXIES descartado por não ser IP/CIDR ou por ser coringa dentro de lista | item: …', ['item' => …])`, um por item descartado, no boot *(alterado em 2026-10-05: era "nenhum")*
 
 ### 2. `ARG` de build para os `VITE_*` no estágio `assets`
 
@@ -406,10 +416,12 @@ logam pelo Laravel.
   `${COMPOSE_PROJECT_NAME:-starter-kit}-reverb`, regra
   ``Host(`${TRAEFIK_HOST}`) && (PathPrefix(`/app/${REVERB_APP_KEY:?…}`) || PathPrefix(`/apps/${REVERB_APP_ID:?…}`))`` *(as duas com `:?` — P-16, ADV2-04: vazia, a regra viraria `/app/`)*,
   mesmo entrypoint, `tls=true`, service na porta 8090 — o WebSocket em `/app/{chave}` e a API em
-  `/apps/{id}`, que a doc do Reverb manda servir. *(alterado em 2026-10-05: era `PathPrefix(/app)`,
-  que captura o painel `/app` do kit pela prioridade de regra mais longa — Q8/P-10, CT-16)* Comentário
-  ao lado: com ele ligado, `REVERB_PORT=443`, `REVERB_SCHEME=https` e `VITE_REVERB_*` idem; sem
-  ele, a rota é `FORWARD_REVERB_PORT` com offset por ambiente.
+  `/apps/{id}`, que a doc do Reverb manda servir. Comentário ao lado: com ele ligado mudam **só** os
+  `VITE_REVERB_*` (navegador: host público, 443, https); `REVERB_HOST`/`PORT`/`SCHEME` ficam em
+  `reverb`/`8090`/`http` — são servidor-para-servidor *(alterado em 2026-10-05: o texto anterior
+  mandava `REVERB_PORT=443`/`REVERB_SCHEME=https`, que quebraria o broadcast — RD-04/P-20)*. *(alterado em 2026-10-05: era `PathPrefix(/app)`,
+  que captura o painel `/app` do kit pela prioridade de regra mais longa — Q8/P-10, CT-16)* Sem o bloco, a
+  rota é `FORWARD_REVERB_PORT` com offset por ambiente.
 - Rede de topo:
   ```yaml
   networks:
@@ -520,7 +532,7 @@ logam pelo Laravel.
 | `TRAEFIK_HOST` | `Host(...)` do router do `nginx` (e do `reverb`, se ligado) |
 | `TRAEFIK_REDE` | `traefik.docker.network` + `name:` da rede externa |
 | `TRUSTED_PROXIES` | `TrustProxies::at()` via `ProxiesConfiaveis::doEnv()` |
-| `VITE_REVERB_*` | `build.args` → `ARG`/`ENV` do estágio `assets` → `npm run build` |
+| `VITE_REVERB_*` | `build.args` (lista, só as definidas) → `ARG` sem default do estágio `assets` → `npm run build` *(alterado em 2026-10-05: sem `ENV`, P-12)* |
 | `FORWARD_*` | `ports` do base, com `127.0.0.1:` opcional no valor |
 
 ## Testes

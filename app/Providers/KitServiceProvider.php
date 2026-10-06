@@ -76,6 +76,36 @@ class KitServiceProvider extends ServiceProvider
     use ConfiguraFilamentGlobal;
 
     /**
+     * `TRUSTED_PROXIES` → `TrustProxies::at()`: quem o Laravel pode acreditar ao ler `X-Forwarded-*`.
+     *
+     * Aqui, e não em `bootstrap/app.php`, porque o closure de `withMiddleware()` roda no
+     * `afterResolving` do Kernel — ANTES do `LoadEnvironmentVariables` — e `env()` ali só enxerga o
+     * ambiente do processo, nunca o arquivo `.env` (RD-01 do step 9 da wiki). O `boot()` roda com o
+     * `config/` carregado, e `TrustProxies::at()` é estático: o middleware o lê em todo request.
+     *
+     * `null` (chave ausente, vazia ou sem item válido) não chama nada: o comportamento de sempre.
+     * O que foi escrito e descartado — coringa dentro de lista, item que não é IP nem CIDR — vai
+     * para o log em vez de derrubar a aplicação ou abrir confiança em silêncio.
+     */
+    private function confiarNosProxiesDoEnv(): void
+    {
+        $bruto = config('kit.proxies_confiaveis');
+
+        foreach (ProxiesConfiaveis::descartados($bruto) as $item) {
+            Log::channel('configuracoes')->warning(
+                '[KitServiceProvider@confiarNosProxiesDoEnv] Item de TRUSTED_PROXIES descartado por não ser IP/CIDR ou por ser coringa dentro de lista | item: '.$item,
+                ['item' => $item],
+            );
+        }
+
+        $proxies = ProxiesConfiaveis::doEnv($bruto);
+
+        if ($proxies !== null) {
+            TrustProxies::at($proxies);
+        }
+    }
+
+    /**
      * Rede de seguranca para o registro do `RaizDeUrlSemPublic` — nao uma realocacao.
      *
      * ## O defeito que ela fecha, e ele esta em producao
@@ -111,36 +141,6 @@ class KitServiceProvider extends ServiceProvider
      * O `KitServiceProvider` viaja pelas duas rotas de entrega, entao a rede alcanca quem o
      * `bootstrap/app.php` nunca alcancou.
      */
-    /**
-     * `TRUSTED_PROXIES` → `TrustProxies::at()`: quem o Laravel pode acreditar ao ler `X-Forwarded-*`.
-     *
-     * Aqui, e não em `bootstrap/app.php`, porque o closure de `withMiddleware()` roda no
-     * `afterResolving` do Kernel — ANTES do `LoadEnvironmentVariables` — e `env()` ali só enxerga o
-     * ambiente do processo, nunca o arquivo `.env` (RD-01 do step 9 da wiki). O `boot()` roda com o
-     * `config/` carregado, e `TrustProxies::at()` é estático: o middleware o lê em todo request.
-     *
-     * `null` (chave ausente, vazia ou sem item válido) não chama nada: o comportamento de sempre.
-     * O que foi escrito e descartado — coringa dentro de lista, item que não é IP nem CIDR — vai
-     * para o log em vez de derrubar a aplicação ou abrir confiança em silêncio.
-     */
-    private function confiarNosProxiesDoEnv(): void
-    {
-        $bruto = config('kit.proxies_confiaveis');
-
-        foreach (ProxiesConfiaveis::descartados($bruto) as $item) {
-            Log::channel('configuracoes')->warning(
-                '[KitServiceProvider@confiarNosProxiesDoEnv] Item de TRUSTED_PROXIES descartado por não ser IP/CIDR ou por ser coringa dentro de lista | item: '.$item,
-                ['item' => $item],
-            );
-        }
-
-        $proxies = ProxiesConfiaveis::doEnv($bruto);
-
-        if ($proxies !== null) {
-            TrustProxies::at($proxies);
-        }
-    }
-
     private function garantirRaizDeUrlSemPublic(): void
     {
         $this->app->make(HttpKernel::class)->pushMiddleware(RaizDeUrlSemPublic::class);

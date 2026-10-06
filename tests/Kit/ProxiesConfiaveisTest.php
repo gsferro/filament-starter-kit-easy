@@ -136,6 +136,8 @@ it('[CT-20] cada forma do valor tem uma interpretacao so', function (mixed $brut
     'IPv6 válido'                     => ['2001:db8::1', ['2001:db8::1']],
     'prefixo IPv6 acima de 128'       => ['2001:db8::/129', null],
     'CIDR com bits de host'           => ['10.0.0.1/8', ['10.0.0.1/8']],
+    'prefixo no limite IPv4 (/32)'    => ['10.0.0.1/32', ['10.0.0.1/32']],
+    'prefixo no limite IPv6 (/128)'   => ['2001:db8::1/128', ['2001:db8::1/128']],
 ])->group('kit');
 
 /**
