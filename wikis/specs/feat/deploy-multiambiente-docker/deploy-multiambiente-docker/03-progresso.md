@@ -31,7 +31,7 @@
 - [x] `CHANGELOG.md` `[Unreleased]` — `SiteDeDocumentacaoTest` + `RedeDeDocumentacaoTest` 88/88 e, com `MysqlNoDockerTest` e `UploadLimiteETiposDocumentacaoTest`, 123/123, 2026-10-05
 
 ## 6. Testes e verificação
-- [ ] Testes do `04` escritos pelo `fw-executor-ct`
+- [x] Testes do `04` escritos pelo `fw-executor-ct` — dois arquivos, 166 casos (44 + 122), todos verdes, 2026-10-05
 - [ ] Regressão nomeada verde
 - [ ] Contagens dos READMEs
 
@@ -39,7 +39,7 @@
 - [ ] Bump, CHANGELOG com *Validação antes da tag*, tag, `release.yml`
 
 ## Testes
-- [ ] `tests/Kit/DeployMultiambienteDockerTest.php` (CT-01..CT-19, CT-23..CT-32)
+- [x] `tests/Kit/DeployMultiambienteDockerTest.php` (CT-01..CT-19, CT-23..CT-47) — 122/122 verdes (`pest tests/Kit/DeployMultiambienteDockerTest.php --compact`), 2026-10-05
 - [x] `tests/Kit/ProxiesConfiaveisTest.php` (CT-20, CT-21, CT-22) — 44/44 verdes após o `04` v3 (eram 33/33 na v2) (`pest tests/Kit/ProxiesConfiaveisTest.php --compact`), 2026-10-05
 
 ## Tickets
@@ -174,7 +174,7 @@ de inventário, sem seeder, sem provider): a classe nova precisa aparecer só on
 | 6 | 7 | `fw-adversario-ct` — segunda rodada sobre o `04` v2 (foco: CT novos/reescritos) | opus | `01`, `02`, código, conversa | 33 achados (1 blocker: golden que se certifica sozinho; 5 altos; 10 médios; 16 baixos; 1 malformado) + Q?2 (DNS na rede compartilhada → Q12/P-14); 4 fechamentos da rodada 1 reabertos (ADV-02, -05, -20, -28) e a sincronia do `04` quebrada de novo (contagens, M128 fora da tabela, 2ª `Regra:` no R7, L3) | 153,7 k tokens · 454 s | leu só `00`/`04`/glossário; 3 achados reproduzidos pela sessão: ADV2-07 (medido: `${VAR:-}` passa `""`, lista sem valor omite a ausente), ADV2-03 (`--profile '*'` funciona), ADV2-04 (`:-starter-kit-key` aceitaria vazio); **todos aceitos** com as decisões em P-14..P-17 e D8/D9; teto de 2 rodadas atingido — fechamento no `04` v3 sem nova rodada |
 | 7 | 7 | `general-purpose`/opus (fallback do `analista`) — `04` v3 fechando os 33 achados da 2ª rodada + sincronia + 2 ajustes de oráculo do executor | opus | `01`, código como comportamento | `04` v3: 47 CT, 20 regras, 164 mutantes; CT-16 migrou para G2; CT-44 Esquema; CT-45/46/47 novos; L3/L7 retiradas; 5 pontos devolvidos — decididos: citação `forceRootUrl:73` aceita; `'*,'`→`null` confirmado na classe; CT-46 em R1 e CT-47 próprio aceitos | 236,1 k tokens · 876 s | copiado verbatim; `grep`: 47 CT, 20 `Regra:`, 164 M, 0 `Q?` provisória (as 4 ocorrências são históricas); `citacoes.sh` e `rastreabilidade.sh` silenciosos |
 | 8 | impl. | `fw-executor-ct` — 2ª passada em `tests/Kit/ProxiesConfiaveisTest.php` (linhas novas de CT-20/21/22) | sonnet | `01`, `02`; `app/` só para nomes | 44 casos (CT-20 24 linhas, CT-21 16, CT-22 4), 44 verdes na 1ª execução; dataset × Exemplos sem linha de um lado só; 0 divergências | 67,9 k tokens · 45 s | `git status`: só o teste; `app/`/`bootstrap/` intactos; rerodado pela sessão 44/44; amostra por grep: `'*,'`, `8443`, `PRIVATE_SUBNETS` presentes |
-| 9 | impl. | `fw-executor-ct` — 2ª passada em `tests/Kit/DeployMultiambienteDockerTest.php` + golden da `v0.44.0` com `--profile '*'` | sonnet | `01`, `02`; infra/docs só para nomes | *(em andamento)* | — | — |
+| 9 | impl. | `fw-executor-ct` — 2ª passada em `tests/Kit/DeployMultiambienteDockerTest.php` + golden da `v0.44.0` com `--profile '*'` | sonnet | `01`, `02`; infra/docs só para nomes | parou no teto de 40 turnos com o arquivo íntegro (110 casos, 101 verdes); retomado por `SendMessage` com o estado medido; final: 122 casos, 114 verdes, 8 vermelhos (b) — CT-30 (células da matriz com crases) e CT-41 (frase sem nomear `TRUSTED_PROXIES`); golden regenerado da `v0.44.0` com 12 serviços, idempotente (md5 igual), `<raiz>` normalizado; IDs `04` × arquivo sem diferença | 216,0 k + 250,2 k tokens · 327 s + 276 s | `git status`: só teste + fixture; sessão corrigiu a página (células sem crases, frase nomeando a chave) → 122/122; guardas `RedeDeDocumentacaoTest`/`HelpersDeTesteTest` 21/21 |
 | — | 0–4 | Sem despacho — captura verbatim, decomposição, pesquisa por leitura direta (compose, Dockerfile, script, testes vizinhos, `KitUpdate`, `.gitattributes`, site), `search-docs` (trusted proxies, Reverb), `WebFetch` (Compose merge, Vite env, Traefik docker provider) e sonda local com `docker compose config` | sessão | — | pacote de pesquisa no `01` e nas medições acima | — | medições coladas acima |
 
 ## Blockers

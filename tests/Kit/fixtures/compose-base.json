@@ -2,12 +2,15 @@
     "name": "starter-kit",
     "networks": {
         "default": {
-            "ipam": [],
-            "name": "starter-kit_default"
+            "name": "starter-kit_default",
+            "ipam": {}
         }
     },
     "services": {
         "app": {
+            "profiles": [
+                "app"
+            ],
             "build": {
                 "context": "<raiz>",
                 "dockerfile": "Dockerfile.laravel",
@@ -46,39 +49,236 @@
                 "VITE_REVERB_PORT": "8090"
             },
             "healthcheck": {
-                "interval": "15s",
-                "retries": "5",
-                "start_period": "1m30s",
                 "test": [
                     "CMD-SHELL",
                     "pgrep php-fpm || exit 1"
                 ],
-                "timeout": "5s"
+                "timeout": "5s",
+                "interval": "15s",
+                "retries": 5,
+                "start_period": "1m30s"
             },
             "networks": {
                 "default": null
             },
-            "profiles": [
-                "app"
-            ],
             "restart": "unless-stopped",
             "user": "www-data",
             "volumes": [
                 {
-                    "bind": [],
+                    "type": "bind",
                     "source": "<raiz>/.env",
                     "target": "/var/www/.env",
-                    "type": "bind"
+                    "bind": {}
                 },
                 {
+                    "type": "volume",
                     "source": "app-storage",
                     "target": "/var/www/storage",
+                    "volume": {}
+                }
+            ]
+        },
+        "llamacpp": {
+            "profiles": [
+                "ai",
+                "full"
+            ],
+            "command": [
+                "-hf",
+                "bartowski/Qwen2.5-7B-Instruct-GGUF:Q4_K_M",
+                "--alias",
+                "qwen2.5-7b-instruct",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8080",
+                "--ctx-size",
+                "8192",
+                "--parallel",
+                "2",
+                "--cache-reuse",
+                "256"
+            ],
+            "deploy": {
+                "resources": {
+                    "limits": {
+                        "memory": "8589934592"
+                    }
+                },
+                "placement": {}
+            },
+            "entrypoint": null,
+            "healthcheck": {
+                "test": [
+                    "CMD",
+                    "curl",
+                    "-f",
+                    "http://localhost:8080/health"
+                ],
+                "timeout": "5s",
+                "interval": "15s",
+                "retries": 40,
+                "start_period": "5m0s"
+            },
+            "image": "ghcr.io/ggml-org/llama.cpp:server-b9967",
+            "networks": {
+                "default": null
+            },
+            "ports": [
+                {
+                    "mode": "ingress",
+                    "target": 8080,
+                    "published": "8080",
+                    "protocol": "tcp"
+                }
+            ],
+            "restart": "unless-stopped",
+            "volumes": [
+                {
                     "type": "volume",
-                    "volume": []
+                    "source": "llamacpp-cache",
+                    "target": "/root/.cache/llama.cpp",
+                    "volume": {}
+                }
+            ]
+        },
+        "llamacpp-embeddings": {
+            "profiles": [
+                "ai",
+                "full"
+            ],
+            "command": [
+                "-hf",
+                "Qwen/Qwen3-Embedding-0.6B-GGUF:Q8_0",
+                "--alias",
+                "qwen3-embedding-0.6b",
+                "--embeddings",
+                "--pooling",
+                "last",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8080",
+                "--ctx-size",
+                "8192",
+                "--ubatch-size",
+                "8192"
+            ],
+            "deploy": {
+                "resources": {
+                    "limits": {
+                        "memory": "2147483648"
+                    }
+                },
+                "placement": {}
+            },
+            "entrypoint": null,
+            "healthcheck": {
+                "test": [
+                    "CMD",
+                    "curl",
+                    "-f",
+                    "http://localhost:8080/health"
+                ],
+                "timeout": "5s",
+                "interval": "15s",
+                "retries": 40,
+                "start_period": "2m0s"
+            },
+            "image": "ghcr.io/ggml-org/llama.cpp:server-b9967",
+            "networks": {
+                "default": null
+            },
+            "ports": [
+                {
+                    "mode": "ingress",
+                    "target": 8080,
+                    "published": "8081",
+                    "protocol": "tcp"
+                }
+            ],
+            "restart": "unless-stopped",
+            "volumes": [
+                {
+                    "type": "volume",
+                    "source": "llamacpp-cache",
+                    "target": "/root/.cache/llama.cpp",
+                    "volume": {}
+                }
+            ]
+        },
+        "mailpit": {
+            "profiles": [
+                "mail",
+                "full"
+            ],
+            "command": null,
+            "entrypoint": null,
+            "image": "axllent/mailpit:v1.27",
+            "networks": {
+                "default": null
+            },
+            "ports": [
+                {
+                    "mode": "ingress",
+                    "target": 1025,
+                    "published": "1025",
+                    "protocol": "tcp"
+                },
+                {
+                    "mode": "ingress",
+                    "target": 8025,
+                    "published": "8025",
+                    "protocol": "tcp"
+                }
+            ],
+            "restart": "unless-stopped"
+        },
+        "mysql": {
+            "profiles": [
+                "mysql"
+            ],
+            "command": null,
+            "entrypoint": null,
+            "environment": {
+                "MYSQL_DATABASE": "starter_kit",
+                "MYSQL_ROOT_PASSWORD": ""
+            },
+            "healthcheck": {
+                "test": [
+                    "CMD-SHELL",
+                    "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"
+                ],
+                "timeout": "5s",
+                "interval": "10s",
+                "retries": 5
+            },
+            "image": "mysql:8.0",
+            "networks": {
+                "default": null
+            },
+            "ports": [
+                {
+                    "mode": "ingress",
+                    "target": 3306,
+                    "published": "3306",
+                    "protocol": "tcp"
+                }
+            ],
+            "restart": "unless-stopped",
+            "volumes": [
+                {
+                    "type": "volume",
+                    "source": "mysql-data",
+                    "target": "/var/lib/mysql",
+                    "volume": {}
                 }
             ]
         },
         "nginx": {
+            "profiles": [
+                "app"
+            ],
             "build": {
                 "context": "<raiz>",
                 "dockerfile": "Dockerfile.laravel",
@@ -97,13 +297,13 @@
             },
             "entrypoint": null,
             "healthcheck": {
-                "interval": "15s",
-                "retries": "10",
                 "test": [
                     "CMD-SHELL",
                     "wget -q -O /dev/null http://127.0.0.1/up"
                 ],
-                "timeout": "5s"
+                "timeout": "5s",
+                "interval": "15s",
+                "retries": 10
             },
             "networks": {
                 "default": null
@@ -111,27 +311,24 @@
             "ports": [
                 {
                     "mode": "ingress",
-                    "protocol": "tcp",
+                    "target": 80,
                     "published": "8000",
-                    "target": "80"
+                    "protocol": "tcp"
                 }
-            ],
-            "profiles": [
-                "app"
             ],
             "restart": "unless-stopped",
             "volumes": [
                 {
-                    "bind": [],
+                    "type": "bind",
                     "source": "<raiz>/.env",
                     "target": "/var/www/.env",
-                    "type": "bind"
+                    "bind": {}
                 },
                 {
+                    "type": "volume",
                     "source": "app-storage",
                     "target": "/var/www/storage",
-                    "type": "volume",
-                    "volume": []
+                    "volume": {}
                 }
             ]
         },
@@ -144,13 +341,13 @@
                 "POSTGRES_USER": "starter_kit"
             },
             "healthcheck": {
-                "interval": "10s",
-                "retries": "5",
                 "test": [
                     "CMD-SHELL",
                     "pg_isready -q -d starter_kit -U starter_kit"
                 ],
-                "timeout": "5s"
+                "timeout": "5s",
+                "interval": "10s",
+                "retries": 5
             },
             "image": "pgvector/pgvector:pg17",
             "networks": {
@@ -159,28 +356,32 @@
             "ports": [
                 {
                     "mode": "ingress",
-                    "protocol": "tcp",
+                    "target": 5432,
                     "published": "5432",
-                    "target": "5432"
+                    "protocol": "tcp"
                 }
             ],
             "restart": "unless-stopped",
             "volumes": [
                 {
+                    "type": "volume",
                     "source": "pgsql-data",
                     "target": "/var/lib/postgresql/data",
-                    "type": "volume",
-                    "volume": []
+                    "volume": {}
                 },
                 {
-                    "bind": [],
+                    "type": "bind",
                     "source": "<raiz>/docker/pgsql/init",
                     "target": "/docker-entrypoint-initdb.d",
-                    "type": "bind"
+                    "bind": {}
                 }
             ]
         },
         "pulse": {
+            "profiles": [
+                "app",
+                "realtime"
+            ],
             "build": {
                 "context": "<raiz>",
                 "dockerfile": "Dockerfile.laravel",
@@ -215,28 +416,27 @@
             "networks": {
                 "default": null
             },
-            "profiles": [
-                "app",
-                "realtime"
-            ],
             "restart": "unless-stopped",
             "user": "www-data",
             "volumes": [
                 {
-                    "bind": [],
+                    "type": "bind",
                     "source": "<raiz>/.env",
                     "target": "/var/www/.env",
-                    "type": "bind"
+                    "bind": {}
                 },
                 {
+                    "type": "volume",
                     "source": "app-storage",
                     "target": "/var/www/storage",
-                    "type": "volume",
-                    "volume": []
+                    "volume": {}
                 }
             ]
         },
         "queue": {
+            "profiles": [
+                "app"
+            ],
             "build": {
                 "context": "<raiz>",
                 "dockerfile": "Dockerfile.laravel",
@@ -281,23 +481,20 @@
             "networks": {
                 "default": null
             },
-            "profiles": [
-                "app"
-            ],
             "restart": "unless-stopped",
             "user": "www-data",
             "volumes": [
                 {
-                    "bind": [],
+                    "type": "bind",
                     "source": "<raiz>/.env",
                     "target": "/var/www/.env",
-                    "type": "bind"
+                    "bind": {}
                 },
                 {
+                    "type": "volume",
                     "source": "app-storage",
                     "target": "/var/www/storage",
-                    "type": "volume",
-                    "volume": []
+                    "volume": {}
                 }
             ]
         },
@@ -313,14 +510,14 @@
             ],
             "entrypoint": null,
             "healthcheck": {
-                "interval": "10s",
-                "retries": "5",
                 "test": [
                     "CMD",
                     "redis-cli",
                     "ping"
                 ],
-                "timeout": "5s"
+                "timeout": "5s",
+                "interval": "10s",
+                "retries": 5
             },
             "image": "redis:7-alpine",
             "networks": {
@@ -329,22 +526,26 @@
             "ports": [
                 {
                     "mode": "ingress",
-                    "protocol": "tcp",
+                    "target": 6379,
                     "published": "6379",
-                    "target": "6379"
+                    "protocol": "tcp"
                 }
             ],
             "restart": "unless-stopped",
             "volumes": [
                 {
+                    "type": "volume",
                     "source": "redis-data",
                     "target": "/data",
-                    "type": "volume",
-                    "volume": []
+                    "volume": {}
                 }
             ]
         },
         "reverb": {
+            "profiles": [
+                "app",
+                "realtime"
+            ],
             "build": {
                 "context": "<raiz>",
                 "dockerfile": "Dockerfile.laravel",
@@ -382,33 +583,32 @@
             "ports": [
                 {
                     "mode": "ingress",
-                    "protocol": "tcp",
+                    "target": 8090,
                     "published": "8090",
-                    "target": "8090"
+                    "protocol": "tcp"
                 }
-            ],
-            "profiles": [
-                "app",
-                "realtime"
             ],
             "restart": "unless-stopped",
             "user": "www-data",
             "volumes": [
                 {
-                    "bind": [],
+                    "type": "bind",
                     "source": "<raiz>/.env",
                     "target": "/var/www/.env",
-                    "type": "bind"
+                    "bind": {}
                 },
                 {
+                    "type": "volume",
                     "source": "app-storage",
                     "target": "/var/www/storage",
-                    "type": "volume",
-                    "volume": []
+                    "volume": {}
                 }
             ]
         },
         "scheduler": {
+            "profiles": [
+                "app"
+            ],
             "build": {
                 "context": "<raiz>",
                 "dockerfile": "Dockerfile.laravel",
@@ -447,23 +647,20 @@
             "networks": {
                 "default": null
             },
-            "profiles": [
-                "app"
-            ],
             "restart": "unless-stopped",
             "user": "www-data",
             "volumes": [
                 {
-                    "bind": [],
+                    "type": "bind",
                     "source": "<raiz>/.env",
                     "target": "/var/www/.env",
-                    "type": "bind"
+                    "bind": {}
                 },
                 {
+                    "type": "volume",
                     "source": "app-storage",
                     "target": "/var/www/storage",
-                    "type": "volume",
-                    "volume": []
+                    "volume": {}
                 }
             ]
         }
@@ -471,6 +668,12 @@
     "volumes": {
         "app-storage": {
             "name": "starter-kit_app-storage"
+        },
+        "llamacpp-cache": {
+            "name": "starter-kit_llamacpp-cache"
+        },
+        "mysql-data": {
+            "name": "starter-kit_mysql-data"
         },
         "pgsql-data": {
             "name": "starter-kit_pgsql-data"

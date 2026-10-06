@@ -130,7 +130,7 @@ on loopback (next section). If the port goes outward, replace `*` with the CIDR 
 network: whoever reaches the container without going through it could forge `X-Forwarded-*`.
 
 The key is read at bootstrap, before `config/`. With the **configuration cached** (`config:cache`)
-Laravel does not load the `.env`, so the key must be in the **process environment** — in the `app`
+Laravel does not load the `.env`, so `TRUSTED_PROXIES` must be in the **process environment** — in the `app`
 profile the Compose `env_file` already does that; outside Docker, set it on the service that starts
 PHP (systemd, php-fpm pool) or do not use the configuration cache.
 
@@ -153,9 +153,9 @@ reaches the container. A matrix that works:
 
 | Variable | dev | test | staging |
 |---|---|---|---|
-| `FORWARD_APP_PORT` | `127.0.0.1:8090` | `127.0.0.1:9090` | `127.0.0.1:8080` |
-| `FORWARD_DB_PORT` | `127.0.0.1:5433` | `127.0.0.1:5434` | `127.0.0.1:5435` |
-| `FORWARD_REDIS_PORT` | `127.0.0.1:6380` | `127.0.0.1:6381` | `127.0.0.1:6382` |
+| `FORWARD_APP_PORT` | 127.0.0.1:8090 | 127.0.0.1:9090 | 127.0.0.1:8080 |
+| `FORWARD_DB_PORT` | 127.0.0.1:5433 | 127.0.0.1:5434 | 127.0.0.1:5435 |
+| `FORWARD_REDIS_PORT` | 127.0.0.1:6380 | 127.0.0.1:6381 | 127.0.0.1:6382 |
 | `FORWARD_REVERB_PORT` | 8190¹ | 8191¹ | 8192¹ |
 
 ¹ With Reverb through Traefik (next section) it can also go to `127.0.0.1:`; outside it, it is the
