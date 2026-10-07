@@ -192,7 +192,7 @@ step 6 — ponytail (sonnet): 38 achados, net -140 proposto; aceitos os de A (re
 
 ## Blockers
 <!-- Impedimentos encontrados durante implementação -->
-- [ ] Confirmação do solicitante de Q7 (marca mista no tema escuro quando a organização só tem a clara) e do débito QA-08 (`alt`), pedidas no PR
+- [x] Confirmação do solicitante de Q7 (marca mista no tema escuro quando a organização só tem a clara) e do débito QA-08 (`alt`), pedidas no PR — confirmado pelo solicitante no chat em 2026-10-07 ("pode prosseguir", depois do relato de Q7 = P-03 e do débito do `alt` = P-06); débitos aceitos como estão
 
 ## Desvios do Plano
 <!-- Onde a implementação divergiu do PRD e por quê -->

@@ -37,7 +37,7 @@ Da segunda invocação, o trecho que vale para as duas features do pedido:
 | ID | Pergunta | Afeta | Recomendação | Estado |
 |----|----------|-------|--------------|--------|
 | Q1 | Onde a logo escura da organização deveria trocar com o tema? Hoje ela já troca na tela de bloqueio do `/app` (com a marca separada), e o topo dos painéis mostra sempre a logo da instalação, por decisão da feature do cabeçalho (P-12 dela). Opções: (a) topo do `/app` com organização aberta; (b) só onde a logo da organização já aparece (bloqueio e cadastro no `/admin`); (c) os dois. | RQ-03 | ➡️ (a): é o lugar onde "a logo marca" da instalação troca e onde o usuário da organização passa o dia; cai para a da instalação quando a organização não tem logo. | respondida no Adendo 1 |
-| Q7 | Com a marca separada e uma organização que tem só a logo clara, o tema escuro do topo do `/app` mostra a escura **da instalação** (P-03: a regra por variante da tela de bloqueio). Confirma, ou prefere que, sem escura própria, a organização use a própria clara nos dois temas? | RQ-05 | ➡️ manter P-03: é a regra que a tela de bloqueio já aplica e que o pedido manda replicar; o formulário da organização não exige o par | retirada — coberta por P-03 (confirmar no PR) |
+| Q7 | Com a marca separada e uma organização que tem só a logo clara, o tema escuro do topo do `/app` mostra a escura **da instalação** (P-03: a regra por variante da tela de bloqueio). Confirma, ou prefere que, sem escura própria, a organização use a própria clara nos dois temas? | RQ-05 | ➡️ manter P-03: é a regra que a tela de bloqueio já aplica e que o pedido manda replicar; o formulário da organização não exige o par | retirada — coberta por P-03, confirmada pelo solicitante em 2026-10-07 (chat) |
 
 ## Premissas
 
