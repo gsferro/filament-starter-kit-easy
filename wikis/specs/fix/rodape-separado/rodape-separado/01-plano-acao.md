@@ -33,7 +33,7 @@
 | 2 | Só comentários mudam: o cabeçalho da blade do recado e a linha 46 da blade da assinatura (D5) | `resources/views/filament/auth/rodape-login.blade.php`, `resources/views/filament/assinatura-do-rodape.blade.php` | 1 | o `git diff` das duas blades só tem linhas dentro do `{{-- --}}`; `<aside>` e Markdown intactos; nenhuma diretiva Blade no comentário novo |
 | 3 | Testes de backend: CT-10 troca de oráculo (e prova a ordem botões → recado); CT-09, CT-12 e CT-01 passam a afirmar ausência no HTML inteiro, cada um com controle positivo; CT-08 e CT-11 conferidos | `tests/Kit/RodapeCoerenteTest.php` | 1 | `vendor/bin/pest tests/Kit/RodapeCoerenteTest.php --compact` verde; cada CT alterado falha sem o passo 1 (falsificabilidade) |
 | 4 | Teste de browser: CT-B01 inverte a ordem visual; CT-B03 ganha a regra `landmark-complementary-is-top-level` e o M59 é medido com o recado no cartão | `tests/Browser/RodapeNaDobraTest.php` | 1 | `composer test:browser` (ou o arquivo, com as views aquecidas) verde nas cinco rotas; CT-B01 medido também contra o estado sem o passo 1; bifurcação do CT-B03 resolvida e registrada |
-| 5 | Docs pt/en, CHANGELOG e contagem dos READMEs | `docs/pt/recursos/configuracoes-do-kit.md`, `docs/en/recursos/configuracoes-do-kit.md`, `docs/pt/autenticacao/login-social.md`, `docs/en/autenticacao/login-social.md`, `CHANGELOG.md`, `README.md`, `README.en.md` | 1 | `SiteDeDocumentacaoTest` (números objetivos e CT-50) e `RedeDeDocumentacaoTest` verdes; CHANGELOG com a entrada em `[Unreleased]` |
+| 5 | Docs pt/en, CHANGELOG e contagem dos READMEs | `docs/pt/recursos/configuracoes-do-kit.md`, `docs/en/recursos/configuracoes-do-kit.md`, `docs/pt/autenticacao/login-social.md`, `docs/en/autenticacao/login-social.md`, `CHANGELOG.md`, `README.md`, `README.en.md`, `app/Filament/Admin/Pages/ConfiguracoesDoKit.php` *(alterado em 2026-10-07: RD-07 do step 9)* | 1 | `SiteDeDocumentacaoTest` (números objetivos e CT-50) e `RedeDeDocumentacaoTest` verdes; CHANGELOG com a entrada em `[Unreleased]` |
 | 6 | Reconciliação com as wikis anteriores, sem editá-las | `02-decisoes-arquiteturais.md` (ADR-02), `wikis/specs/INDEX.md` por script | 1–5 | ADR-02 lista o que da `rodape-coerente` fica superado; `INDEX.md` regenerado pelo `indice.sh`, nunca à mão; `git diff --stat -- wikis/specs/feat/rodape-coerente` vazio |
 
 ## Objetivo
@@ -111,7 +111,7 @@ Nenhuma nova. As quatro telas de login (`/admin/login`, `/app/login`, `/infra/lo
 
 **Gate de CT-B**: os CT-B da ancestral estão em `04-casos-de-teste.md` dela, seção `## Gate de CT-B` (l.980); o que muda é **geometria e acessibilidade**, que só o navegador prova — a ordem visual (recado acima da assinatura), a dobra (assinatura e recado dentro do viewport) e o axe com o `<aside>` dentro do cartão. É costura `browser` e fica no passo 4. Presença, ausência, ordem no documento e escopo são costura de backend (passo 3).
 
-**Gate de tela de escrita**: não há tela `create`/`edit` nova. A tela que grava o recado (`/admin/configuracoes-da-aplicacao`, aba Login) não muda (P-04) e já tem o seu caso de gravação na ancestral.
+**Gate de tela de escrita**: não há tela `create`/`edit` nova. A tela que grava o recado (`/admin/configuracoes-da-aplicacao`, aba Login) não muda de campo nem de chave (P-04); só o texto da descrição da seção "Rodapé da tela de login" mudou *(alterado em 2026-10-07: RD-07, passo 5)*, e a tela já tem o seu caso de gravação na ancestral.
 
 ## Variáveis de Ambiente
 
@@ -189,7 +189,7 @@ Nenhum, e é decisão: o passo 1 troca a chave de um render hook e o resto é co
 - **Atende**: RQ-01, RQ-02, P-03
 - **Logs**: nenhum.
 - **Também** (D5): a linha 46 de `resources/views/filament/assinatura-do-rodape.blade.php` passa a dizer que o recado do login vive dentro do cartão do formulário, acima desta linha. Só o comentário.
-- **Critério de pronto**: `git diff -U0 -- resources/views/filament/auth/rodape-login.blade.php resources/views/filament/assinatura-do-rodape.blade.php` só mostra linhas dentro de comentário; `git diff --name-only` **não** lista `AssinaturaDoRodape.php`, `ConfiguraFilamentGlobal.php` nem `kit.css`.
+- **Critério de pronto**: `git diff -U0 -- resources/views/filament/auth/rodape-login.blade.php resources/views/filament/assinatura-do-rodape.blade.php` só mostra linhas dentro de comentário; `git diff --name-only` **não** lista `AssinaturaDoRodape.php` nem `ConfiguraFilamentGlobal.php` *(alterado em 2026-10-07: `kit.css` entrou no diff só por comentário, RD-01, e `php artisan filament:assets` regenerou `public/css/kit/kit-correcoes.css`)*.
 
 ### 3. Testes de backend
 
@@ -213,7 +213,7 @@ Nenhum, e é decisão: o passo 1 troca a chave de um render hook e o resto é co
 - `tests/Pest.php` e os extratores não mudam, **exceto** pelo helper de D8.
 - **Atende**: RQ-01, RQ-02, RQ-03, P-01, P-02
 - **Logs**: nenhum (teste).
-- **Critério de pronto**: `vendor/bin/pest tests/Kit/RodapeCoerenteTest.php tests/Kit/LoginSocialGoogleTest.php tests/Kit/HelpersDeTesteTest.php --compact` verde; para cada CT alterado, a falsificabilidade: com o passo 1 desfeito (voltar o provider ao estado de `main`) o caso fica **vermelho**; se não ficar, ele não mede o defeito. Asserção de ausência com `assertStringNotContainsString`, nunca `not->toContain($x, $mensagem)` (`.ai/rules/testes.md`).
+- **Critério de pronto**: `vendor/bin/pest tests/Kit/RodapeCoerenteTest.php tests/Kit/LoginSocialGoogleTest.php tests/Kit/HelpersDeTesteTest.php --compact` verde; para cada CT alterado, a falsificabilidade: com o passo 1 desfeito (voltar o provider ao estado de `main`) o caso fica **vermelho**; se não ficar, ele não mede o defeito *(alterado em 2026-10-07: medido, `pest tests/Kit/RodapeCoerenteTest.php --compact`, 73 testes, um mutante por vez: M7 10 falharam (CT-01, CT-04, CT-10, CT-12), M8 14 (CT-01, CT-08, CT-09, CT-10, CT-11, CT-12, CT-20), M3 4 (CT-10 ×4), M2 2 (CT-10); contra `main` (M1) só o CT-10 fica vermelho, 4 de 25 no filtro `CT-10|CT-12|CT-09|CT-01|CT-04`, porque `main` não vaza o recado, e os outros quatro matam M7 a M11 por construção)*. Asserção de ausência com `assertStringNotContainsString`, nunca `not->toContain($x, $mensagem)` (`.ai/rules/testes.md`).
 
 ### 4. Teste de browser
 
@@ -239,6 +239,7 @@ Nenhum, e é decisão: o passo 1 troca a chave de um render hook e o resto é co
 - **`docs/pt/autenticacao/login-social.md`** (`## O rodapé da tela de login`, linha 293): "na base da tela de login dos três painéis" passa a dizer onde fica — dentro do cartão, abaixo dos botões sociais —, sem mexer no bloco `KIT_LOGIN_RODAPE`. **Espelho en** (`## The login screen footer`, linha 299).
 - **`CHANGELOG.md`**: `## [Unreleased]` já existe vazio no topo (linha 6); entra `### Alterado` com a entrada do ajuste — o recado volta ao cartão do login, abaixo dos botões, e a assinatura não muda — e uma frase de que isso desfaz **só** a junção no `FOOTER` da v0.39.0. **Sem tag**: não pedida (fora de escopo do `00`). A seção histórica da v0.39.0 não é editada.
 - **`README.md` e `README.en.md`**: a contagem "Features especificadas (`wikis/specs/`)" sobe de **76** para **77** (`find wikis/specs -name 00-requisito.md | wc -l` na worktree já conta esta wiki). O `SiteDeDocumentacaoTest` (caso "mantem os numeros objetivos dos readmes sincronizados com a arvore") exige a igualdade nos dois idiomas. O badge "Casos de teste" (1.958) só muda se o `04` acrescentar `it()` (CT-50 do `SiteDeDocumentacaoTest`).
+- **`app/Filament/Admin/Pages/ConfiguracoesDoKit.php`** *(alterado em 2026-10-07: RD-07 do step 9)*: o `->description()` da seção "Rodapé da tela de login" passa a dizer que o recado aparece dentro do cartão de login dos três painéis, abaixo dos botões. A chave `KIT_LOGIN_RODAPE` e o campo Markdown **não mudam** (P-04); só o texto. Rules `filament.md` e `pages.md`: n.a.
 - **Citações**: conferir `grep -rn 'KitServiceProvider.php' docs`; se alguma doc citar linha do provider, reancorar pelo símbolo (o comentário do método encolhe e desloca tudo abaixo).
 - **Atende**: RQ-02, P-04
 - **Logs**: nenhum.
@@ -271,7 +272,7 @@ Nenhum, e é decisão: o passo 1 troca a chave de um render hook e o resto é co
 > Arquivos wiki (00-06) são boundary do Caveman — escrever em prosa normal.
 > Código, commits e PRs também são boundary do Caveman.
 >
-> **Baseline antes do primeiro commit**: a `main` (`7221dd3`, v0.45.1) é a base. Rodar a suíte completa em `main` e listar por nome as falhas pré-existentes; a `## Verificação Final` compara contra a baseline, não contra zero. Teto de pulados em `main`: 914 (v0.45.0), a reconferir.
+> **Baseline antes do primeiro commit**: a `main` (`b347fcc`, v0.45.1) é a base. Rodar a suíte completa em `main` e listar por nome as falhas pré-existentes; a `## Verificação Final` compara contra a baseline, não contra zero. Teto de pulados em `main`: 920 (v0.45.1), a reconferir.
 
 ## Mapeamentos
 

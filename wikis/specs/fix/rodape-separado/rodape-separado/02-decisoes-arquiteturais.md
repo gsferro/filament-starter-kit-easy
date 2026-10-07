@@ -80,4 +80,4 @@ O INDEX é **gerado** pelo `indice.sh` da `feature-tickets`: esta wiki o cita, n
 
 ## Superfície Livewire
 
-Não exigida: a entrega não cria página, widget nem componente, e nenhuma `public function` ou `public $` nova. Muda apenas a chave de um render hook e o texto de comentários; a tela que grava o recado (`ConfiguracoesDoKit`) não é tocada.
+Não exigida: a entrega não cria página, widget nem componente, e nenhuma `public function` ou `public $` nova. Muda apenas a chave de um render hook e o texto de comentários; a tela que grava o recado (`ConfiguracoesDoKit`) muda só o texto da descrição da seção, sem campo, chave nem ação nova *(alterado em 2026-10-07: RD-07, QA-03)*.

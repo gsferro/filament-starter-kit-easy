@@ -10,11 +10,11 @@
 
 ## Pré-requisitos
 
-- [ ] `npm run build` executado (sem `public/build/manifest.json` toda tela responde `ViteException`)
-- [ ] `php artisan view:cache` aquecido pelo kernel antes de rodar o arquivo isolado
-- [ ] a cópia publicada `public/css/kit/kit-correcoes.css` acompanha `resources/css/filament/kit.css` (o Filament serve a cópia publicada; a regra da dobra é matéria do CT-B01)
-- [ ] `tests/Browser/Screenshots` no `.gitignore`
-- [ ] nenhuma autenticação: as telas de login e de recuperação de senha são do visitante
+- [x] `npm run build` executado: `public/build/manifest.json` existe na worktree (2026-10-07); `node_modules` por junction para a do repositório principal
+- [x] `php artisan view:cache` rodado antes do arquivo isolado (2026-10-07)
+- [x] a cópia publicada `public/css/kit/kit-correcoes.css` acompanha `resources/css/filament/kit.css`: `php artisan filament:assets` rodado e `diff resources/css/filament/kit.css public/css/kit/kit-correcoes.css` vazio em 2026-10-07
+- [x] `tests/Browser/Screenshots` no `.gitignore` (`.gitignore:34`)
+- [x] nenhuma autenticação: as telas de login e de recuperação de senha são do visitante
 
 ## Seletores
 
@@ -22,7 +22,7 @@
 |---|---|---|
 | a assinatura | `.kit-versao` | sim — o `<footer>` do kit, usado pelo `[CT-B01]` da ancestral |
 | o recado | `.fi-login-rodape` | sim — o `<aside>` do recado, usado pelo `[CT-B01]` da ancestral |
-| o cartão do formulário | `.fi-auth-card` (modo cover) ou `.fi-auth-form-container` (modo sem cartão): o que envolve o `{{ $slot }}` | sim, no pacote (`vendor/caresome/filament-auth-designer/resources/views/components/layouts/auth.blade.php:'fi-auth-card':51` e `vendor/caresome/filament-auth-designer/resources/views/components/layouts/auth.blade.php:'fi-auth-form-container':56`); **qual dos dois o kit emite é medido no step 10** e fixado no teste. Os dois no mesmo `closest()` cobrem o par |
+| o cartão do formulário | `.fi-auth-card` (modo cover) ou `.fi-auth-form-container` (modo sem cartão): o que envolve o `{{ $slot }}` | sim, no pacote (`vendor/caresome/filament-auth-designer/resources/views/components/layouts/auth.blade.php:'fi-auth-card':51` e `vendor/caresome/filament-auth-designer/resources/views/components/layouts/auth.blade.php:'fi-auth-form-container':56`); **medido no step 10: o kit emite `.fi-auth-form-container`; `.fi-auth-card` não é emitido**. O seletor efetivo do teste é `closest('.fi-auth-card, .fi-auth-form-container')`; o segundo é o que existe, e o primeiro fica como reserva se o vendor mudar de modo *(alterado em 2026-10-07: QA-06)* |
 | o viewport | `innerHeight` | sim (JS) |
 
 O kit não tem `data-testid` (dívida conhecida); as classes são as do kit e do pacote, como no `[CT-B01]` da ancestral (divergência declarada no `04`).
@@ -126,6 +126,7 @@ Funcionalidade: O rodapé do login cabe na dobra e fica separado da assinatura
 | **(c)** o CT-B03 fica **verde** com o `<aside>` e **vermelho** com a `<div>` (M21 morre) | nada muda | D1 e P-05 se confirmam |
 
 A branch (b) é a que o plano já pré-decidiu; a (a) e a (c) são as outras duas saídas possíveis da mesma medição. **Sem a medição de M21 com o recado no cartão, M21 não tem matador comprovado** (o matador (b) existe por construção, mas não foi executado).
+**Medido em 2026-10-07 (step 10): linha (c).** Com a `<div>` o CT-B03 ficou vermelho (2 de 3 falharam, mutante M21); com o `<aside>` ficou verde. D1 e P-05 se confirmam e a tag fica `<aside>` *(alterado em 2026-10-07: QA-06)*.
 
 **Falsificabilidade (medida no step 10, registrada no `03`)**: M22 (`<footer>` no recado) fica vermelho nas duas telas de login pelas regras de `contentinfo`; M23 (sem o axe) fica vermelho pelo controle positivo; M21 conforme a tabela acima.
 
@@ -137,5 +138,5 @@ A branch (b) é a que o plano já pré-decidiu; a (a) e a (c) são as outras dua
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | recado dentro do cartão, assinatura abaixo, as duas na dobra nas quatro telas de login | | | |
-| 2 | o recado é `<aside>` e não é acusado pelas quatro regras de landmark | | | |
+| 1 | recado dentro do cartão, assinatura abaixo, as duas na dobra nas quatro telas de login | recado dentro do cartão (`.fi-auth-form-container`), assinatura fora e abaixo, as duas na dobra nas quatro telas | sim | `tests/Browser/RodapeNaDobraTest.php` 9/9, 48 asserções (2026-10-07); `.fi-auth-card` não é emitido |
+| 2 | o recado é `<aside>` e não é acusado pelas quatro regras de landmark | `<aside>` dentro do cartão; as quatro regras do axe não o acusam nas cinco rotas | sim | CT-B03 verde com o `<aside>`; com a `<div>` (M21) 2 de 3 falharam: linha (c) da bifurcação |
