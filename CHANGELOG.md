@@ -5,6 +5,25 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.45.4] - 2026-10-07
+
+### Corrigido
+
+- **Análise estática da correção do `alt` da v0.45.3** (`app/Support/CabecalhoDoPainel.php`): os shapes
+  de tipo do memo por request (`entrada()`/`resolverEntrada()`) ganham as chaves `alt` e
+  `logo_da_organizacao`, e o método privado `logos()`, que ficou sem chamador, sai. Sem mudança de
+  comportamento: o CI da `main` reprovava em PHPStan sobre a v0.45.3, e com isto `phpstan analyse`
+  volta a 0 erros. A tag `v0.45.3` foi publicada no commit do bump (`1cd21fe`), antes da correção e da
+  seção de validação dela; as duas viajam nesta tag.
+
+### Validação antes da tag
+
+- Mudança só de tipos e docblock (`git diff v0.45.3 v0.45.4 -- app` = `CabecalhoDoPainel.php`);
+  `phpstan analyse` 0 erros; `CabecalhoDoPainelTenancyTest`, `CabecalhoDoPainelTest`, `LogoDarkModeTest`,
+  `CitacoesDeCodigoTest` e `QualidadeDeCodigoTest`: 170/170. CI da `main` sobre `7050a4e`: `qualidade`,
+  `telas` e `instalacao` verdes. Teto de pulados 922 (cenário 1 da v0.45.3, sem teste novo nem skip
+  novo desde então)
+
 ## [0.45.3] - 2026-10-07
 
 ### Corrigido
