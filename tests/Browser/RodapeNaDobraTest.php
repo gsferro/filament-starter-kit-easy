@@ -52,6 +52,8 @@ it('[CT-B01] mantem a assinatura e o recado dentro da dobra nas telas de autenti
                 assinaturaBottom: ca ? Math.round(ca.bottom) : null,
                 recadoTop: cr ? Math.round(cr.top) : null,
                 recadoBottom: cr ? Math.round(cr.bottom) : null,
+                recadoNoCartao: r ? r.closest('.fi-auth-card, .fi-auth-form-container') !== null : null,
+                recadoConteiner: r && r.closest('.fi-auth-card, .fi-auth-form-container') ? r.closest('.fi-auth-card, .fi-auth-form-container').className : null,
                 alturaDocumento: document.documentElement.scrollHeight,
             });
         })()
@@ -74,14 +76,16 @@ it('[CT-B01] mantem a assinatura e o recado dentro da dobra nas telas de autenti
     if ($esperaRecado) {
         expect($medida['recadoBottom'])->toBeLessThanOrEqual(
             $medida['vh'],
-            "o recado termina em y={$medida['recadoBottom']} num viewport de {$medida['vh']}px — e ele era visível DENTRO do cartão antes desta feature",
+            "o recado termina em y={$medida['recadoBottom']} num viewport de {$medida['vh']}px — abaixo da dobra",
         );
 
-        // A ordem VISUAL, que é o que o requisito pede e o DOM sozinho não garante: o CSS pode
-        // reordenar (`flex-col-reverse`) com a ordem do documento intacta.
-        expect($medida['assinaturaTop'])->toBeLessThan(
-            $medida['recadoTop'],
-            'a assinatura deveria aparecer ACIMA do recado na tela, não só antes dele no documento',
+        // A contenção: o recado está DENTRO do cartão, não só dentro do layout (M20).
+        expect($medida['recadoNoCartao'])->toBeTrue("o recado em {$rota} não está dentro do cartão do formulário");
+
+        // A ordem VISUAL, que é o que o requisito pede e o DOM sozinho não garante.
+        expect($medida['recadoTop'])->toBeLessThan(
+            $medida['assinaturaTop'],
+            'o recado deveria aparecer ACIMA da assinatura, dentro do cartão',
         );
     }
 })->with([
@@ -173,10 +177,10 @@ it('[CT-B03] nao acrescenta elemento sem landmark na tela publica', function (st
      */
     $acusados = json_decode((string) visit($rota)->script(<<<'JS'
         (() => new Promise((resolve) => {
-            const regras = ['region', 'landmark-no-duplicate-contentinfo', 'landmark-unique'];
+            const regras = ['region', 'landmark-no-duplicate-contentinfo', 'landmark-unique', 'landmark-complementary-is-top-level'];
             axe.run(document, { runOnly: { type: 'rule', values: regras } }).then((r) => {
                 const nos = r.violations.flatMap((v) => v.nodes).flatMap((n) => n.target).map(String);
-                resolve(JSON.stringify({ total: nos.length, alvos: nos }));
+                resolve(JSON.stringify({ total: nos.length, alvos: nos, regras: r.violations.map((v) => v.id + ':' + v.nodes.length) }));
             });
         }))()
     JS), true, flags: JSON_THROW_ON_ERROR);

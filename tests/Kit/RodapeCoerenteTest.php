@@ -30,6 +30,20 @@ beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
 
+/**
+ * Afirma a ausência DUPLA do recado no HTML INTEIRO: o texto e a classe do elemento.
+ *
+ * Wiki `rodape-separado` (Setup Global do `04`): com o recado dentro do cartão, a cauda
+ * (`rodapeDe()`) nunca o contém, e uma ausência medida ali é verdade sempre. Só o documento
+ * inteiro vê o cartão. `assertStringNotContainsString` com mensagem — nunca
+ * `not->toContain($x, $msg)` — e nenhuma chamada de regex aqui, por causa do `[CT-24]`.
+ */
+function semRecadoEmLugarNenhum(string $html): void
+{
+    test()->assertStringNotContainsString('Fale com o suporte', $html, 'o texto do recado existe no documento');
+    test()->assertStringNotContainsString('fi-login-rodape', $html, 'o elemento do recado existe no documento');
+}
+
 /*
 |--------------------------------------------------------------------------
 | R1 — a assinatura © {ano corrente} {Nome} aparece para todo mundo
@@ -49,7 +63,7 @@ beforeEach(function (): void {
  * `php artisan route:list`), e o `04` autoriza explicitamente cortar essa linha e manter a de
  * recuperação de senha, que sozinha já mata M37.
  */
-it('[CT-01] a assinatura sai em toda superfície, para as duas audiências', function (string $persona, string $rota, bool $recadoNaoDeveAparecer = false): void {
+it('[CT-01] a assinatura sai em toda superfície, e a recuperação de senha não tem recado em lugar nenhum', function (string $persona, string $rota, string $recado = 'nao afirmado'): void {
     emJunhoDe2026();
     comIdentidade('Acme', '2.4.0', exibirKit: false, recado: 'Fale com o suporte');
     ligarLoginUnificado($rota === '/login');
@@ -64,18 +78,24 @@ it('[CT-01] a assinatura sai em toda superfície, para as duas audiências', fun
 
     $this->assertStringContainsString('© 2026 Acme', assinaturaDoRodape($html));
 
-    if ($recadoNaoDeveAparecer) {
-        expect(rodapeDe($html))->not->toBe('', 'rodapeDe() nao achou o rodape nesta rota — a ausencia abaixo mediria o vazio');
-        $this->assertStringNotContainsString('Fale com o suporte', rodapeDe($html));
+    // Controle positivo da linha de baixo: o detector enxerga o recado onde ele existe.
+    if ($recado === 'presente') {
+        expect(recadoDoRodape($html))->toBe('Fale com o suporte');
+    }
+
+    // Ausência no HTML INTEIRO (rodape-separado, R2): a assinatura presente na mesma resposta
+    // (asserção acima) é o destinatário; a cauda não serve, o recado mora no cartão.
+    if ($recado === 'ausente') {
+        semRecadoEmLugarNenhum($html);
     }
 })->with([
-    'admin - painel admin'                        => ['admin', '/admin'],
-    'panel_user - painel com tenancy'             => ['panel_user', '/app'],
-    'infra - terceiro painel'                     => ['infra', '/infra'],
-    'visitante - login de painel'                 => ['visitante', '/admin/login'],
-    'visitante - login do painel com tenancy'     => ['visitante', '/app/login'],
-    'visitante - página única de login'           => ['visitante', '/login'],
-    'visitante - layout simple que NÃO é login'   => ['visitante', '/admin/password-reset/request', true],
+    'admin - painel admin'                            => ['admin', '/admin'],
+    'panel_user - painel com tenancy'                 => ['panel_user', '/app'],
+    'infra - terceiro painel'                         => ['infra', '/infra'],
+    'visitante - login de painel (controle positivo)' => ['visitante', '/admin/login', 'presente'],
+    'visitante - login do painel com tenancy'         => ['visitante', '/app/login'],
+    'visitante - página única de login'               => ['visitante', '/login'],
+    'visitante - layout simple que NÃO é login'       => ['visitante', '/admin/password-reset/request', 'ausente'],
 ])->group('kit');
 
 /**
@@ -222,8 +242,8 @@ it('[CT-04] o visitante vê a assinatura e nenhuma versão', function (string $r
     $this->assertStringNotContainsString((string) config('kit.version'), $html);
 
     if ($rota === '/admin/password-reset/request') {
-        expect(rodapeDe($html))->not->toBe('', 'rodapeDe() nao achou o rodape nesta rota — a ausencia abaixo mediria o vazio');
-        $this->assertStringNotContainsString('Fale com o suporte', rodapeDe($html));
+        // Q3/D6 de rodape-separado: a ausência é no HTML inteiro, não na cauda.
+        semRecadoEmLugarNenhum($html);
     }
 })->with([
     'guarda no caminho comum'                => ['/admin/login', false],
@@ -315,8 +335,7 @@ it('[CT-08] o recado preenchido não substitui a assinatura', function (): void 
     comIdentidade('Acme', null, exibirKit: false, recado: 'Fale com o suporte');
     ligarLoginUnificado(false);
 
-    $html   = (string) $this->get('/admin/login')->assertOk()->getContent();
-    $rodape = rodapeDe($html);
+    $html = (string) $this->get('/admin/login')->assertOk()->getContent();
 
     $this->assertStringContainsString('© 2026 Acme', assinaturaDoRodape($html));
 
@@ -326,26 +345,33 @@ it('[CT-08] o recado preenchido não substitui a assinatura', function (): void 
 })->group('kit');
 
 /**
- * [CT-09] o recado sem conteúdo não apaga a assinatura.
+ * [CT-09] o recado sem conteúdo não deixa elemento nem texto no documento e não apaga a assinatura.
  *
- * A linha `"   "` é a discriminante: separa `filled()` de `! empty()`. O elemento do recado
- * (`fi-login-rodape`) é condicional; a assinatura não é.
+ * Substitui o oráculo da ancestral (wiki `rodape-separado`): a ausência é no HTML INTEIRO, e a
+ * linha preenchida é o controle positivo do detector. A linha `"   "` separa `filled()` de
+ * `!== null` (M10).
  */
-it('[CT-09] o recado sem conteúdo não apaga a assinatura', function (?string $recado): void {
+it('[CT-09] o recado sem conteúdo não deixa elemento nem texto no documento e não apaga a assinatura', function (?string $recado, bool $presente): void {
     emJunhoDe2026();
     comIdentidade('Acme', null, exibirKit: false, recado: $recado);
     ligarLoginUnificado(false);
 
-    $html   = (string) $this->get('/admin/login')->assertOk()->getContent();
-    $rodape = rodapeDe($html);
+    $html = (string) $this->get('/admin/login')->assertOk()->getContent();
 
-    $this->assertStringContainsString('© 2026 Acme', assinaturaDoRodape($html));
-    expect($rodape)->not->toBe('', 'rodapeDe() nao achou o rodape nesta rota — a ausencia abaixo mediria o vazio');
-    $this->assertStringNotContainsString('fi-login-rodape', $rodape);
+    expect(assinaturaDoRodape($html))->toBe('© 2026 Acme');
+
+    if ($presente) {
+        expect(recadoDoRodape($html))->toBe('Fale com o suporte');
+
+        return;
+    }
+
+    semRecadoEmLugarNenhum($html);
 })->with([
-    'ausente'     => [null],
-    'vazio'       => [''],
-    'só espaços'  => ['   '],
+    'preenchido (controle positivo)' => ['Fale com o suporte', true],
+    'ausente'                        => [null, false],
+    'vazio'                          => ['', false],
+    'só espaços'                     => ['   ', false],
 ])->group('kit');
 
 /*
@@ -355,48 +381,76 @@ it('[CT-09] o recado sem conteúdo não apaga a assinatura', function (?string $
 */
 
 /**
- * [CT-10] a assinatura vem antes do recado, em toda tela de login.
+ * [CT-10] o recado sai dentro do cartão, depois do formulário e dos botões, e a assinatura fora dele, depois.
  *
- * A armadilha do oráculo: `strpos` devolve `false` para agulha ausente, e `false < N` é
- * verdadeiro em PHP — comparar posições SEM antes provar que as duas existem deixaria passar a
- * implementação que apaga a assinatura. Por isso a presença é afirmada primeiro, com as duas
- * asserções INTEIRAS (não por posição), e só então as posições são comparadas.
+ * Substitui o oráculo da ancestral (a ordem "assinatura antes do recado" caiu — wiki
+ * `rodape-separado`, R1). A posição se mede pelo MARCADOR de classe, não pelo texto: o
+ * `wire:snapshot` serializa o texto do recado antes do cartão.
  *
- * A assinatura e o recado são checados como DOIS BLOCOS IRMÃOS, cada um com conteúdo exato — não
- * concatenados no mesmo nó (M45): se estivessem, a checagem de posição abaixo passaria igual, e é
- * por isso que o conteúdo do elemento da assinatura precisa ser EXATAMENTE a assinatura, sem o
- * recado dentro.
+ * `strpos` devolve `false` para agulha ausente e `false < N` é verdadeiro: a presença de todos os
+ * marcadores é afirmada ANTES de qualquer posição. O controle positivo da âncora do layout vem
+ * primeiro — sem ela `$fim` degenera para o fim do documento e "dentro" passa de graça (M5).
+ *
+ * O "fim do bloco dos botões" é a última ocorrência de `Entrar com Google` (rótulo do último
+ * botão): o recado registrado ANTES do bloco (M2) tem posição menor que ela e que o início do bloco.
  */
-it('[CT-10] a assinatura vem antes do recado, em toda tela de login', function (string $rota): void {
+it('[CT-10] o recado sai dentro do cartão, depois do formulário e dos botões, e a assinatura fora dele, depois', function (string $rota, bool $unificado, bool $comGoogle): void {
     emJunhoDe2026();
     comIdentidade('Acme', null, exibirKit: false, recado: 'Fale com o suporte');
-    ligarLoginUnificado($rota === '/login');
+    ligarLoginUnificado($unificado);
+
+    if ($comGoogle) {
+        ligarLoginComGoogleDoKit();
+    }
 
     $html = (string) $this->get($rota)->assertOk()->getContent();
 
-    // Bloco 1: a assinatura, sozinha no seu elemento.
+    // 1. Controle positivo da âncora do layout (M5).
+    $depoisDoLayout = rodapeDoLayoutDeAutenticacao($html);
+    expect($depoisDoLayout)->not->toBe('', 'âncora do layout ausente em '.$rota);
+    $fim = strlen($html) - strlen($depoisDoLayout);
+
+    // 2. As presenças, antes de qualquer posição.
+    $this->assertStringContainsString('fi-login-rodape', $html);
+    $this->assertStringContainsString('kit-versao', $html);
+
+    // 3. O conteúdo exato dos dois elementos, irmãos e separados.
     expect(assinaturaDoRodape($html))->toBe('© 2026 Acme');
+    $this->assertStringContainsString('Fale com o suporte', recadoDoRodape($html));
 
-    // Bloco 2: o recado, num elemento IRMÃO — não dentro do mesmo nó da assinatura.
-    //
-    // `recadoDoRodape()`, e NÃO um regex local. Esta linha era a segunda cópia sobrevivente do
-    // extrator, com a tag `div` fixa; quebrou sozinha quando o ADR-09 de `rodape-coerente` trocou o recado por
-    // `<aside>`. Achado QA-45 — irmão do QA-44, e a prova de que fechar a ocorrência sem fechar
-    // a classe só adia o mesmo vermelho.
-    $recado = recadoDoRodape($html);
-    expect($recado)->not->toBe('', 'o elemento do recado não foi encontrado em '.$rota);
-    $this->assertStringContainsString('Fale com o suporte', $recado);
-
-    // As duas presenças já provadas — agora, e só agora, a ordem.
-    $posicaoDaAssinatura = strpos($html, 'kit-versao');
+    $posicaoDoLayout     = strpos($html, 'fi-auth-layout');
     $posicaoDoRecado     = strpos($html, 'fi-login-rodape');
+    $posicaoDaAssinatura = strpos($html, 'kit-versao');
+    $posicaoDoForm       = strpos($html, '</form>', (int) $posicaoDoLayout);
 
-    expect($posicaoDaAssinatura)->not->toBeFalse()
+    expect($posicaoDoLayout)->not->toBeFalse()
         ->and($posicaoDoRecado)->not->toBeFalse()
-        ->and($posicaoDaAssinatura)->toBeLessThan($posicaoDoRecado);
+        ->and($posicaoDaAssinatura)->not->toBeFalse()
+        ->and($posicaoDoForm)->not->toBeFalse();
+
+    // 4. Limite inferior 1: depois do layout abrir e do fim do formulário.
+    expect($posicaoDoRecado)->toBeGreaterThan($posicaoDoLayout)
+        ->and($posicaoDoRecado)->toBeGreaterThan($posicaoDoForm);
+
+    // 5. Limite inferior 2: depois do bloco dos botões sociais.
+    if ($comGoogle) {
+        $inicioDosBotoes = strpos($html, 'fi-login-social');
+        $fimDosBotoes    = strrpos($html, 'Entrar com Google');
+
+        expect($inicioDosBotoes)->not->toBeFalse()
+            ->and($fimDosBotoes)->not->toBeFalse()
+            ->and($posicaoDoRecado)->toBeGreaterThan($inicioDosBotoes)
+            ->and($posicaoDoRecado)->toBeGreaterThan($fimDosBotoes);
+    }
+
+    // 6. Limite superior: o recado dentro do layout; a assinatura fora dele.
+    expect($posicaoDoRecado)->toBeLessThan($fim)
+        ->and($posicaoDaAssinatura)->toBeGreaterThanOrEqual($fim);
 })->with([
-    'login de painel — a classe mãe'                            => ['/admin/login'],
-    'página única — a classe filha, registro por outro caminho' => ['/login'],
+    'login de painel — a classe mãe'                   => ['/admin/login', false, false],
+    'página única — a classe filha'                    => ['/login', true, false],
+    'Google habilitado — a ordem botões → recado (M2)' => ['/admin/login', false, true],
+    'Google habilitado — a ordem na classe filha'      => ['/login', true, true],
 ])->group('kit');
 
 /**
@@ -425,37 +479,39 @@ it('[CT-11] o recado aparece em todas as telas de login', function (string $rota
 ])->group('kit');
 
 /**
- * [CT-12] o recado aparece na tela de login e não na tela autenticada.
+ * [CT-12] o recado aparece na tela de login e em nenhuma outra tela.
  *
- * A linha do visitante é o CONTROLE POSITIVO: sem ela, "o recado não aparece em /admin" ficaria
- * verde com o recado nunca renderizado em lugar nenhum.
+ * Substitui o oráculo da ancestral (wiki `rodape-separado`): a ausência é no HTML INTEIRO. A linha
+ * do visitante em `/admin/login` é o CONTROLE POSITIVO; a de `/app/register` fixa o registro
+ * aberto e afirma 200 — sem isso a rota redireciona ao login e a ausência mediria o redirect.
  */
-it('[CT-12] o recado aparece na tela de login e não na tela autenticada', function (string $persona, string $rota, bool $espera): void {
+it('[CT-12] o recado aparece na tela de login e em nenhuma outra tela', function (string $persona, string $rota, bool $registroAberto, bool $espera): void {
     emJunhoDe2026();
     comIdentidade('Acme', null, exibirKit: false, recado: 'Fale com o suporte');
     ligarLoginUnificado(false);
+    config()->set('kit.registro.habilitado', $registroAberto);
 
     $resposta = $persona === 'visitante'
         ? $this->get($rota)
         : $this->actingAs(usuarioDoKit($persona, "{$persona}@example.com"))->get($rota);
 
-    $html   = (string) $resposta->assertOk()->getContent();
-    $rodape = rodapeDe($html);
-
-    // Presenca pelo RECORTE (QA-07); ausencia pela cauda, que e o recorte largo e correto para
-    // provar que o recado nao esta em lugar nenhum daquele pedaco.
-    expect($rodape)->not->toBe('', 'rodapeDe() nao achou o rodape nesta rota — a ausencia abaixo mediria o vazio');
-
-    $espera
-        ? $this->assertStringContainsString('Fale com o suporte', recadoDoRodape($html))
-        : $this->assertStringNotContainsString('Fale com o suporte', $rodape);
+    $html = (string) $resposta->assertOk()->getContent();
 
     $this->assertStringContainsString('© 2026 Acme', assinaturaDoRodape($html));
+
+    if ($espera) {
+        expect(recadoDoRodape($html))->toBe('Fale com o suporte');
+
+        return;
+    }
+
+    semRecadoEmLugarNenhum($html);
 })->with([
-    'o destinatário existe'     => ['visitante', '/admin/login', true],
-    'a fronteira, painel admin' => ['admin', '/admin', false],
-    'painel c/ tenancy'         => ['panel_user', '/app', false],
-    'terceiro painel'           => ['infra', '/infra', false],
+    'o destinatário existe (controle positivo)' => ['visitante', '/admin/login', false, true],
+    'a fronteira, painel admin'                 => ['admin', '/admin', false, false],
+    'painel c/ tenancy'                         => ['panel_user', '/app', false, false],
+    'terceiro painel'                           => ['infra', '/infra', false, false],
+    'tela de registro aberta'                   => ['visitante', '/app/register', true, false],
 ])->group('kit');
 
 /*
