@@ -18,7 +18,7 @@
 - Probabilidade 3 na resolução: quatro entradas (clara e escura da organização, clara e escura da instalação) mais o modo da marca, com a regra por variante que um desenvolvedor competente escreve "em bloco" por engano. Impacto 3 na área da organização do topo: errar a fonte não falha, **mostra a logo de outra organização** (dado de terceiro) no topo de quem não é cliente dela, e o dado já chegou ao navegador quando alguém nota (ADR-03). P×I 6 não chega ao perfil completo, mas o Impacto 3 disparou a revisão adversarial.
 - Técnicas aplicadas: tabela de decisão por variante (R1, com ausente ≠ vazio ≠ órfão), EP (partições da organização: com par, sem logo, só a clara, só a escura; modo unificado × separado; painel corrente × objeto aberto), rastreio de efeito negativo com controle positivo em todo cenário de ausência, 2-switch de organização no mesmo usuário nas duas ordens de vínculo (R6), estado do framework usado sem validar (R7).
 - Técnica escalada acima do perfil: R6 e R7 usam o cruzamento completo (organização × painel × vínculo) em área `padrão` porque o defeito é vazamento entre clientes, que a amostragem não pega.
-- Cenários: 18 (mais 1 CT-B no 05) · Regras: 11 · Mutantes previstos: 47 (mais 5 no 05: M36 a M39 e M48) · Sem matador: 0
+- Cenários: 18 (mais 1 CT-B no 05) · Regras: 11 · Mutantes previstos: 47 (mais 5 no 05: M36 a M39 e M48) · Sem matador: 1 (M51, por HTTP)
 <!-- derivado do arquivo por grep -c (template-04 §Contagem do cabeçalho); recalcular a cada cenário novo. Os mutantes M36 a M39 e M48 de R10 vivem no 05 -->
 
 ## Varredura SFDIPOT
@@ -373,7 +373,7 @@ Funcionalidade: A logo da organização, clara e escura, no topo do `/app`
       Exemplos:
         | vinculo     | globex     | instalacao | # partição                                       |
         | com vínculo | contém     | não contém | controle positivo: a marca é a da organização    |
-        | sem vínculo | não contém | contém     | organização de outro cliente: a marca é a da instalação |
+        | sem vínculo | não contém | não afirma | organização de outro cliente: responde 404, a página traz o nome da aplicação (`sn-brand`) e não contém globex.png *(alterado em 2026-10-07: QA-04)* |
 
     Cenário: [CT-56] a master_global sem vínculo que abre /app/globex vê o par da Globex
       Dado a marca separada, a composição só com o segmento logo da marca, e a instalação e a Globex cada uma com par próprio
@@ -418,8 +418,7 @@ Funcionalidade: A logo da organização, clara e escura, no topo do `/app`
         | /admin     | a pessoa com acesso ao painel            | com a Acme esquecida no gerenciador | sem organização corrente | painel global, org esquecida        |
         | /infra     | a pessoa com acesso ao painel            | com a Acme esquecida no gerenciador | sem organização corrente | outro painel global                 |
         | /app/login | uma visitante                            | sem organização no gerenciador      | apontando a Acme         | autenticação, sessão com org        |
-        | /app/new   | a pessoa autenticada no painel do negócio | sem organização no gerenciador      | apontando a Acme         | cadastro de organização, sem aberta |
-        | /app       | a pessoa autenticada no painel do negócio | sem organização no gerenciador      | apontando a Acme         | `/app` sem slug                     |
+        | /app/password-reset/request | uma visitante | sem organização no gerenciador | apontando a Acme | autenticação, sem organização aberta *(alterado em 2026-10-07: QA-04 — `/app` responde 302 e `/app/new` 404; o kit não tem cadastro de organização pelo /app)* |
 
     Esquema do Cenário: [CT-52] a marca do topo exige painel com tenancy e um objeto que seja organização
       Dado a marca separada, com o par "C" e "D" da instalação e a Acme com a logo "A" e a variante escura "B"
@@ -570,8 +569,8 @@ Funcionalidade: A logo da organização, clara e escura, no topo do `/app`
 | **Superfície Livewire** (método público, propriedade pública, estado do framework) | CT-53 (renderização da barra superior e da lateral pelo componente; a marca é desenhada pelos componentes `Topbar`/`Sidebar` do Filament); nenhum `public function` nem `public $` novo (`02`: "Superfície Livewire não exigida") | G4 |
 | **Estado do framework usado sem validar** | CT-52 (o objeto aberto no gerenciador, sem checagem de tipo, vira argumento da regra: linha `uma pessoa`), CT-53 (sessão apontando outra organização) | G3, G4 |
 | **IDOR por entidade** (uma linha por tabela persistida) | `tenants`: CT-50, CT-56. Nenhuma tabela nova | G3 |
-| **Escopo com discriminante nulo** (fecha ou abre?) | CT-41 e CT-52 (linhas `nenhum`), CT-51 (`/app/new`, `/app`: sem organização aberta): organização nula **fecha** na instalação; nunca abre a de outra | G1, G3 |
-| **Saída do estado de erro** (4xx/redirect tem destino) | não se aplica: nenhum `Então` desta wiki é 4xx, 5xx ou redirect; CT-50 afirma só presença e ausência de URLs, e o status da recusa é da feature existente | — |
+| **Escopo com discriminante nulo** (fecha ou abre?) | CT-41 e CT-52 (linhas `nenhum`), CT-51 (`/app/password-reset/request`: sem organização aberta): organização nula **fecha** na instalação; nunca abre a de outra | G1, G3 |
+| **Saída do estado de erro** (4xx/redirect tem destino) | o único `Então` 4xx desta wiki é o 404 do CT-50 (recusa de organização sem vínculo); nenhum é 5xx ou redirect | — |
 | **Afirmação negativa que dispensa controle** ("a organização aberta já vem validada pelo painel") | CT-50 (linha `sem vínculo`, escrita como se a negativa fosse falsa) e CT-52 (linha `uma pessoa`); evidência do vendor: `vendor/filament/filament/src/FilamentManager.php:getTenant:448` devolve `$this->tenant` sem olhar o painel, e `vendor/filament/filament/src/Panel/Concerns/HasTenancy.php:hasTenancy:207` diz se o painel tem organização | G3 |
 
 ## Índice de Cenários
