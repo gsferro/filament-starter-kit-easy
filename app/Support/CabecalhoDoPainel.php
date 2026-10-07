@@ -45,7 +45,7 @@ use WeakMap;
  * como chave): some junto com o request, então não vaza entre requests do mesmo processo — que
  * é o que um `once()` em método estático faria na suíte, devolvendo a composição velha depois
  * de a configuração mudar. Resultado: uma resolução e, no pior caso, um `warning` por request.
- * A mesma entrada do memo guarda os segmentos e o par de logos (`logos()`), para que a marca
+ * A mesma entrada do memo guarda os segmentos e o par de logos (`IdentidadeDoKit::logosPara()`), para que a marca
  * simples, a escura e a composição leiam a mesma resolução. Sem `Request` ligada, resolve sem memo.
  *
  * Só estáticos, como `IdentidadeDoKit` e `AssinaturaDoRodape`: o único estado é o memo.
@@ -58,7 +58,7 @@ final class CabecalhoDoPainel
     /**
      * O que o `brandLogo()` dos três painéis devolve.
      *
-     * `null` em `segmentos()` cobre os casos em que a marca é o par de `logos()` — o da
+     * `null` em `segmentos()` cobre os casos em que a marca é o par de `IdentidadeDoKit::logosPara()` — o da
      * organização aberta no `/app`, senão o da instalação —: nenhum segmento ligado, tela de
      * autenticação, ou ligado e nada resolvido (P-11 — nunca marca vazia, nunca imagem quebrada).
      */
@@ -93,7 +93,7 @@ final class CabecalhoDoPainel
     /**
      * O que o `darkModeBrandLogo()` devolve: `null` com a composição ativa, porque a variante
      * escura já vai dentro dela (`<img class="fi-logo fi-logo-dark">`); do contrário, o par de
-     * `logos()` — o da organização aberta no `/app`, senão o da instalação.
+     * `IdentidadeDoKit::logosPara()` — o da organização aberta no `/app`, senão o da instalação.
      */
     public static function marcaEscura(): ?string
     {
@@ -139,7 +139,7 @@ final class CabecalhoDoPainel
 
     /**
      * Os segmentos da composição, já resolvidos — ou `null` quando a marca deve ser o par de
-     * `logos()` — o da organização aberta no `/app`, senão o da instalação.
+     * `IdentidadeDoKit::logosPara()` — o da organização aberta no `/app`, senão o da instalação.
      * Memoizado por request (ver o docblock da classe).
      *
      * @return array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string, alt: string}|null
@@ -150,21 +150,9 @@ final class CabecalhoDoPainel
     }
 
     /**
-     * O par de logos da marca sem composição: o da organização aberta no `/app`, com queda por
-     * variante para o da instalação (`IdentidadeDoKit::logosPara()`); fora dele, o da instalação.
-     * Privado: quem consome é `marca()`, `marcaEscura()` e a composição.
-     *
-     * @return array{clara: ?string, escura: ?string}
-     */
-    private static function logos(): array
-    {
-        return self::entrada()['logos'];
-    }
-
-    /**
      * A entrada do memo do request corrente: segmentos e logos resolvidos juntos.
      *
-     * @return array{segmentos: array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string}|null, logos: array{clara: ?string, escura: ?string}}
+     * @return array{segmentos: array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string, alt: string}|null, logos: array{clara: ?string, escura: ?string}, alt: string, logo_da_organizacao: bool}
      */
     private static function entrada(): array
     {
@@ -184,7 +172,7 @@ final class CabecalhoDoPainel
     }
 
     /**
-     * @return array{segmentos: array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string}|null, logos: array{clara: ?string, escura: ?string}}
+     * @return array{segmentos: array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string, alt: string}|null, logos: array{clara: ?string, escura: ?string}, alt: string, logo_da_organizacao: bool}
      */
     private static function resolverEntrada(): array
     {
@@ -225,7 +213,7 @@ final class CabecalhoDoPainel
      * - `painel`: com organização aberta, o nome dela (RQ-02); sem, o rótulo do painel
      *   (`Paineis::rotulo()`), omitido quando o projeto está ligado e tem o mesmo texto (P-01 —
      *   o `/app` usa o nome da aplicação como rótulo).
-     * - `logo_clara`/`logo_escura`: o par de `logos()` (P-07), se o interruptor estiver ligado:
+     * - `logo_clara`/`logo_escura`: o par de `IdentidadeDoKit::logosPara()` (P-07), se o interruptor estiver ligado:
      *   a da organização aberta no `/app`, a da instalação no resto. A escura só existe
      *   com a marca separada e só acompanha uma clara.
      *
