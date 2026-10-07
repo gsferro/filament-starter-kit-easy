@@ -41,9 +41,9 @@
 
 ## Testes
 <!-- Preenchida no step 7, depois da derivação do 04/05: um arquivo de teste por linha, com os IDs que ele cobre. -->
-- [x] Casos de teste derivados no `04` e no `05` pela `feature-test-design` (step 7) — 16 CT e 1 CT-B, 11 regras, 42 mutantes previstos (38 no `04` e 4 no `05`), 1 sem matador (M24, equivalente por HTTP; CT-54 exercita a divergência sessão x rota); perfil padrão com Impacto 3 na área da organização do topo; `rastreabilidade.sh`, `citacoes.sh` e `checkbox-sem-evidencia.sh` silenciosos sobre a wiki, 2026-10-07
+- [x] Casos de teste derivados no `04` e no `05` pela `feature-test-design` (step 7) — 18 CT (CT-40 a CT-57) e 1 CT-B (CT-B01), 11 regras, 47 mutantes no `04` e 5 no `05` (52), 0 sem matador; perfil padrão com Impacto 3 na área da organização do topo; revisão adversarial: 26 achados, 6 altos; aplicados 23, recusados 3 com motivo (ADV-18: objeto não-organização com atributo `logo`, já coberto pela assinatura tipada e por CT-52; ADV-25: `alt` fora de escopo por P-06; ADV-26: desvínculo com aba aberta, fora de escopo e sem RQ); P-05 do `00` reescrita (ADV-24); `rastreabilidade.sh`, `citacoes.sh` e `checkbox-sem-evidencia.sh` conferidos, 2026-10-07
 - [ ] `tests/Kit/LogoDarkModeTest.php`: CT-40, CT-41 (regra de resolução do par), CT-54 (tela de bloqueio, organização da sessão), CT-55 (documentação pt/en); numeração a partir de CT-40 decidida pela sessão em 2026-10-07 (ver `### Colisão de IDs` do `04`; `ids-ct.sh` acusa os CT-01 a CT-20 da ancestral `logo-dark-mode` que vivem no mesmo arquivo)
-- [ ] `tests/Tenancy/CabecalhoDoPainelTenancyTest.php`: CT-42 a CT-53; CT-49 substitui o CT-07 da wiki ancestral `cabecalho-do-painel` (aprovação: Adendo 1 do `00`); CT-27 e CT-04 da ancestral ficam como regressão
+- [ ] `tests/Tenancy/CabecalhoDoPainelTenancyTest.php`: CT-42 a CT-53, CT-56 e CT-57; CT-49 substitui o CT-07 da wiki ancestral `cabecalho-do-painel` (aprovação: Adendo 1 do `00`); CT-27 e CT-04 da ancestral ficam como regressão
 - [ ] `tests/BrowserTenancy/IdentidadeVisualTest.php`: CT-B01 (um `Esquema do Cenário`: marca simples e composição, uma visita por tema)
 
 ## Tickets
@@ -137,7 +137,7 @@ step 6 — ponytail (sonnet): 38 achados, net -140 proposto; aceitos os de A (re
 | 2 | 5 | `general-purpose` (analista): revisão profunda do plano contra o código real | opus | a conversa da sessão | 18 achados RD-01..RD-18 (7 médias, 11 baixas), todos aplicados no `00` (P-05, P-06), `01`, `02` e `03` | — | pendente: `citacoes.sh` e `checkbox-sem-evidencia.sh` silenciosos |
 | 3 | 6 | `general-purpose` (ponytail): auditoria de simplicidade do `01`/`02`/`03` | sonnet | a conversa da sessão | 38 achados, net -140 proposto; aceitos os de A, recusados os demais por template/scripts ou decisão D3 | — | pendente: `citacoes.sh` e `checkbox-sem-evidencia.sh` silenciosos |
 
-**Pendente (step 7)**: a revisão adversarial do `04`/`05` é **exigida** (Impacto 3 na área "organização do topo": errar a fonte mostra a logo de outro cliente) e a sessão a despacha (`fw-adversario-ct`, `opus`, só o `00` + `04` + `05` + `wikis/glossario.md`); a confirmação das `## Costuras de Teste` com o desenvolvedor, o preenchimento da coluna `Confirmada` fica com o construtor da implementação; a Q6 está respondida por D5 do `01` e a colisão de IDs, resolvida (CT-40 a CT-55).
+**Step 7 fechado**: a revisão adversarial do `04`/`05` foi feita (26 achados, 6 altos; aplicados 23, recusados 3) e o preenchimento da coluna `Confirmada` fica com o construtor da implementação; a Q6 está respondida por D5 do `01` e a colisão de IDs, resolvida (CT-40 a CT-57). Pendências para a implementação: o executor mede se a página de recusa de CT-50 renderiza a marca (senão M25 fica sem matador), se `/app` de CT-51 renderiza topo ou redireciona, e o seletor de tema de CT-B01.
 
 ## Blockers
 <!-- Impedimentos encontrados durante implementação -->
