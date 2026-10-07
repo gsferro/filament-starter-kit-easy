@@ -6,9 +6,11 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | app/** | .ai/rules/app.md |
 | app/Filament/Pages/Auth/** | .ai/rules/auth.md |
+| bootstrap/app.php | .ai/rules/bootstrap.md |
 | app/Console/Commands/**, app/Console/Commands/KitUpdate.php | .ai/rules/commands.md |
 | config/** | .ai/rules/config.md |
 | resources/css/filament/**, app/Providers/** | .ai/rules/css-filament.md |
+| docker/**, docker-compose.yml, Dockerfile* | .ai/rules/docker.md |
 | app/Filament/**/Resources/** | .ai/rules/filament-resources.md |
 | app/Filament/** | .ai/rules/filament.md |
 | composer.json | .ai/rules/general.md |

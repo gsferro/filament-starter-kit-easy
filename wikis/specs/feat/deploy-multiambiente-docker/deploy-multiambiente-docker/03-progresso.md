@@ -138,7 +138,7 @@ Step 12 (`requirement-to-rule`), 2026-10-06 — rodado em linha pela sessão (te
 
 **Descartados**: nenhum além dos dois (teto 3). **Poda**: nenhuma — `support.md` e `config.md` continuam corretas.
 
-Linha de retorno: `apresentados 2 · gravados 0 · recusados 0 · descartados no gate 0 · poda 0` *(aguardando aprovação do solicitante)*.
+Linha de retorno: `apresentados 2 · gravados 2 · recusados 0 · descartados no gate 0 · poda 0` — aprovados pelo solicitante no chat em 2026-10-07 e gravados **à mão** (o MCP do Laravel Boost não conectou nesta sessão; fallback da `requirement-to-rule`): `.ai/rules/bootstrap.md` (`bootstrap/app.php`) e `.ai/rules/docker.md` (`docker/**`, `docker-compose.yml`, `Dockerfile*`), índice `.ai/rules/index.md` editado à mão na ordem alfabética do arquivo — a reconciliar na próxima chamada do `record-rule`, que regenera o índice. Enforcement: `ProxiesConfiaveisTest` (rule 1, prosa) e `DeployMultiambienteDockerTest` CT-34/CT-46 (rule 2), já existentes.
 
 ## Auditoria Pré-Implementação
 
