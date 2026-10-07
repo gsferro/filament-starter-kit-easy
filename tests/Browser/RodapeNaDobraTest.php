@@ -53,7 +53,6 @@ it('[CT-B01] mantem a assinatura e o recado dentro da dobra nas telas de autenti
                 recadoTop: cr ? Math.round(cr.top) : null,
                 recadoBottom: cr ? Math.round(cr.bottom) : null,
                 recadoNoCartao: r ? r.closest('.fi-auth-card, .fi-auth-form-container') !== null : null,
-                recadoConteiner: r && r.closest('.fi-auth-card, .fi-auth-form-container') ? r.closest('.fi-auth-card, .fi-auth-form-container').className : null,
                 alturaDocumento: document.documentElement.scrollHeight,
             });
         })()
@@ -65,7 +64,7 @@ it('[CT-B01] mantem a assinatura e o recado dentro da dobra nas telas de autenti
      * que estávamos olhando para a tela certa.
      */
     expect($medida['temAssinatura'])->toBeTrue("a assinatura não existe em {$rota} — a geometria abaixo mediria o vazio");
-    expect($medida['temRecado'])->toBe($esperaRecado, "o recado em {$rota} não está como o escopo do hook promete");
+    expect($medida['temRecado'])->toBe($esperaRecado, "o recado em {$rota} não está como esperado (na recuperação de senha o vendor não emite AUTH_LOGIN_FORM_AFTER)");
 
     // O oráculo: o elemento INTEIRO cabe, não só o topo dele.
     expect($medida['assinaturaBottom'])->toBeLessThanOrEqual(
@@ -171,9 +170,10 @@ it('[CT-B03] nao acrescenta elemento sem landmark na tela publica', function (st
      * Entao o que se afirma e: os elementos que ESTA feature acrescenta nao estao entre os
      * acusados. Ver `04-casos-de-teste.md`, regra R8, mutantes M58-M62.
      *
-     * AS TRES REGRAS, e nao so `region`. Varrer so `region` deixaria M62 vivo: <footer> no recado
-     * limpa o `region` e QUEBRA as outras duas, acusando a assinatura. As tres foram medidas nas
-     * tres formas (<div>, <footer>, <aside>) — a tabela esta na regra R8.
+     * AS QUATRO REGRAS, e nao so `region`. Varrer so `region` deixaria M62 vivo: <footer> no recado
+     * limpa o `region` e QUEBRA as outras duas, acusando a assinatura. A quarta
+     * (`landmark-complementary-is-top-level`) entrou pelo <aside> aninhado no cartao; medido: nao
+     * acusa. Medidas nas tres formas (<div>, <footer>, <aside>) — a tabela esta na regra R8.
      */
     $acusados = json_decode((string) visit($rota)->script(<<<'JS'
         (() => new Promise((resolve) => {

@@ -118,7 +118,7 @@ O CT-10 com provedor social habilitado precisa do arranjo `ligarLoginComGoogleDo
 
 ### Helper novo, local ao arquivo de teste
 
-`semRecadoEmLugarNenhum(string $html)` — afirma, sobre o **HTML inteiro**, a ausência **dupla** do recado: o texto `Fale com o suporte` **e** a classe `fi-login-rodape`. Fica em `tests/Kit/RodapeCoerenteTest.php` (só ele o usa, `.ai/rules/testes.md`). Usa `assertStringNotContainsString` com mensagem — nunca `not->toContain($x, $mensagem)`, em que o 2º argumento vira outra agulha — e **nenhuma** chamada `preg_*` com o marcador do rodapé na mesma linha, por causa do varredor `[CT-24]` da ancestral (`tests/Kit/RodapeCoerenteTest.php:'[CT-24]':857`).
+`semRecadoEmLugarNenhum(string $html)` — afirma, sobre o **HTML inteiro**, a ausência **dupla** do recado: o texto `Fale com o suporte` **e** a classe `fi-login-rodape`. Fica em `tests/Kit/RodapeCoerenteTest.php` (só ele o usa, `.ai/rules/testes.md`). Usa `assertStringNotContainsString` com mensagem — nunca `not->toContain($x, $mensagem)`, em que o 2º argumento vira outra agulha — e **nenhuma** chamada `preg_*` com o marcador do rodapé na mesma linha, por causa do varredor `[CT-24]` da ancestral (`tests/Kit/RodapeCoerenteTest.php:'[CT-24]':899`).
 
 **Por que a ausência é no HTML inteiro e não em `rodapeDe()`.** Com o recado dentro do cartão, a cauda **nunca** o contém. A ausência medida ali é verdade sempre: um recado emitido no cartão quando o texto é vazio, ou na tela autenticada, passaria. É a mesma fraqueza que `rodapeDe()` já tinha para o `wire:snapshot`, agora estrutural.
 
@@ -414,8 +414,8 @@ Nenhum destes casos muda de oráculo; todos entram na regressão obrigatória do
 | `tests/Kit/LoginSocialGoogleTest.php` — o caso que ordena `form.password` antes de `Entrar com Google` | o recado entra no mesmo hook, **depois** dos botões; a ordem dos botões não muda | nenhuma; é regressão |
 | `tests/Browser/LoginSocialTest.php` (comentário "sai pelo MESMO render hook dos botões") | volta a ser verdadeiro | conferir que o comentário e o caso concordam |
 | `tests/Kit/VersaoNoRodapeTest.php`, `tests/Kit/TelasDeAutenticacaoTest.php`, `tests/Kit/LoginUnificadoTest.php`, `tests/Kit/LoginSocialProvedoresTest.php`, `tests/Kit/LoginSocialContaIndisponivelTest.php` | leem `rodapeDe()` só para a assinatura; a assinatura não muda | nenhuma; é regressão |
-| `[CT-B02]` da ancestral (`tests/Browser/RodapeNaDobraTest.php:'[CT-B02]':109`) | a faixa da assinatura tem o estilo do kit; o diff não toca `kit.css` nem a blade da assinatura (P-03) | nenhuma; roda na regressão do passo 4. Fora do índice: não mata nenhum mutante desta feature (candidato a corte da skill) |
-| `[CT-24]` e `[CT-25]` da ancestral (`tests/Kit/RodapeCoerenteTest.php:'[CT-24]':857`) | varrem `tests/` por `preg_*` citando o marcador do rodapé | o texto novo dos testes não reintroduz essa cópia do extrator |
+| `[CT-B02]` da ancestral (`tests/Browser/RodapeNaDobraTest.php:'[CT-B02]':108`) | a faixa da assinatura tem o estilo do kit; o diff não toca `kit.css` nem a blade da assinatura (P-03) | nenhuma; roda na regressão do passo 4. Fora do índice: não mata nenhum mutante desta feature (candidato a corte da skill) |
+| `[CT-24]` e `[CT-25]` da ancestral (`tests/Kit/RodapeCoerenteTest.php:'[CT-24]':899`) | varrem `tests/` por `preg_*` citando o marcador do rodapé | o texto novo dos testes não reintroduz essa cópia do extrator |
 
 ## Cogitado e cortado
 

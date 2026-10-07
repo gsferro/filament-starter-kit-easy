@@ -1,6 +1,6 @@
 # Progresso — Rodapé separado: o recado volta ao cartão do login e a assinatura fica
 
-**Estado**: em planejamento
+**Estado**: em revisão
 <!-- Uma linha só, no topo: em planejamento | em implementação | em revisão | concluída — {YYYY-MM-DD}.
      Step 4 → "em planejamento"; início da implementação → "em implementação"; step 9 → "em revisão";
      step 11, depois do veredito e antes de regenerar o INDEX.md → "concluída — {data}".
@@ -9,41 +9,41 @@
 > `{base}`: `main` (`7221dd3`, v0.45.1) · Branch: `fix/rodape-separado` · Worktree: `D:/PROJECTS/PACOTES/FILAMENTS/STARTER-KIT-EASY/wt-rodape` · Wiki criada em 2026-10-07
 
 ## 1. O recado volta para `AUTH_LOGIN_FORM_AFTER`
-- [ ] Segundo `registerRenderHook` de `configureTelaDeLogin()` em `AUTH_LOGIN_FORM_AFTER`, sem `scopes:`, depois dos botões sociais
-- [ ] Bloco de comentário sobre ORDEM e ALCANCE do `FOOTER` substituído por um que explica a volta (pedido do solicitante, wiki `rodape-separado`) e por que o hook dispensa escopo
-- [ ] Parágrafo "O rodape USA o hook `FOOTER`" do docblock reescrito
-- [ ] `use App\Filament\Pages\Auth\TelaLogin;` removido; `TelaLoginUnificada` mantido (rota `/login`)
-- [ ] Reconfirmado no código que `TelaLogin` e `TelaLoginUnificada` não redeclaram `content()`
-- [ ] Citação de linhas 458-466 do docblock reancorada para `vendor/filament/filament/src/Auth/Pages/Login.php:content():416`
-- [ ] `grep -c 'TelaLogin::class'` do provider = 0 e `scopes:` ausente dentro de `configureTelaDeLogin()`
+- [x] Segundo `registerRenderHook` de `configureTelaDeLogin()` em `AUTH_LOGIN_FORM_AFTER`, sem `scopes:`, depois dos botões sociais — commit `23d1ed9`; `RodapeCoerenteTest` 73/73 e 322 asserções, `LoginSocialGoogleTest` 62/62, 2026-10-07
+- [x] Bloco de comentário sobre ORDEM e ALCANCE do `FOOTER` substituído por um que explica a volta (pedido do solicitante, wiki `rodape-separado`) e por que o hook dispensa escopo — commit `23d1ed9`; `RodapeCoerenteTest` 73/73 e 322 asserções, `LoginSocialGoogleTest` 62/62, 2026-10-07
+- [x] Parágrafo "O rodape USA o hook `FOOTER`" do docblock reescrito — commit `23d1ed9`; `RodapeCoerenteTest` 73/73 e 322 asserções, `LoginSocialGoogleTest` 62/62, 2026-10-07
+- [x] `use App\Filament\Pages\Auth\TelaLogin;` removido; `TelaLoginUnificada` mantido (rota `/login`) — commit `23d1ed9`; `RodapeCoerenteTest` 73/73 e 322 asserções, `LoginSocialGoogleTest` 62/62, 2026-10-07
+- [x] Reconfirmado no código que `TelaLogin` e `TelaLoginUnificada` não redeclaram `content()` — commit `23d1ed9`; `RodapeCoerenteTest` 73/73 e 322 asserções, `LoginSocialGoogleTest` 62/62, 2026-10-07
+- [x] Citação de linhas 458-466 do docblock reancorada para `vendor/filament/filament/src/Auth/Pages/Login.php:content():416` — commit `23d1ed9`; `RodapeCoerenteTest` 73/73 e 322 asserções, `LoginSocialGoogleTest` 62/62, 2026-10-07
+- [x] `grep -c 'TelaLogin::class'` do provider = 0 e `scopes:` ausente dentro de `configureTelaDeLogin()` — commit `23d1ed9`; `RodapeCoerenteTest` 73/73 e 322 asserções, `LoginSocialGoogleTest` 62/62, 2026-10-07
 
 ## 2. O comentário da blade do recado
-- [ ] Só o comentário de cabeçalho de `rodape-login.blade.php` muda; `<aside>` e Markdown intactos
-- [ ] Nenhuma diretiva Blade no comentário novo (`views.md`)
-- [ ] Linha 46 de `assinatura-do-rodape.blade.php` corrigida (só comentário — D5)
-- [ ] `git diff --name-only` sem `AssinaturaDoRodape.php`, `ConfiguraFilamentGlobal.php` e `kit.css`
+- [x] Só o comentário de cabeçalho de `rodape-login.blade.php` muda; `<aside>` e Markdown intactos — commit `23d1ed9`; blades só com comentário, 2026-10-07
+- [x] Nenhuma diretiva Blade no comentário novo (`views.md`) — commit `23d1ed9`; blades só com comentário, 2026-10-07
+- [x] Linha 46 de `assinatura-do-rodape.blade.php` corrigida (só comentário — D5) — commit `23d1ed9`; blades só com comentário, 2026-10-07
+- [x] `git diff --name-only` sem `AssinaturaDoRodape.php`, `ConfiguraFilamentGlobal.php` e `kit.css` — `git diff --name-only 7221dd3 HEAD` sem os três arquivos em 2026-10-07; a rodada pós-revisão toca só o COMENTÁRIO de `kit.css` (`git diff -U0`), desvio de redação do passo
 
 ## 3. Testes de backend
-- [ ] CT-10 com o oráculo novo: recado depois de `fi-auth-layout` e do `</form>`, antes do fechamento balanceado; assinatura depois; com controle positivo da âncora e, com provedor habilitado, recado depois do bloco `fi-login-social` (prova a ordem botões → recado; sem CT de ordem separado)
-- [ ] CT-09 e CT-12: ausência do recado no HTML inteiro (texto e classe) pelo helper `semRecadoEmLugarNenhum`, cada um com controle positivo no mesmo caso
-- [ ] CT-01: ausência na recuperação de senha no HTML inteiro, com controle positivo (presença em `/admin/login` no mesmo caso)
-- [ ] CT-08 e CT-11 conferidos (presença por recorte, sem mudança de oráculo)
-- [ ] CT-04: bloco de ausência do recado na recuperação de senha pelo helper de HTML inteiro (D6)
-- [ ] `ligarLoginComGoogleDoKit()` movido para `tests/Pest.php`; `HelpersDeTesteTest` verde (D8)
-- [ ] Falsificabilidade: cada CT alterado fica vermelho com o provider de `main`
+- [x] CT-10 com o oráculo novo: recado depois de `fi-auth-layout` e do `</form>`, antes do fechamento balanceado; assinatura depois; com controle positivo da âncora e, com provedor habilitado, recado depois do bloco `fi-login-social` (prova a ordem botões → recado; sem CT de ordem separado) — commit `b940d2c`; `RodapeCoerenteTest` 73/73 e 322 asserções, `HelpersDeTesteTest` 1/1; provider de `main` contra CT-10, CT-12, CT-09, CT-01 e CT-04 = 25 testes, 4 falharam (M1 e M7 mortos), 2026-10-07
+- [x] CT-09 e CT-12: ausência do recado no HTML inteiro (texto e classe) pelo helper `semRecadoEmLugarNenhum`, cada um com controle positivo no mesmo caso — commit `b940d2c`; `RodapeCoerenteTest` 73/73 e 322 asserções, `HelpersDeTesteTest` 1/1; provider de `main` contra CT-10, CT-12, CT-09, CT-01 e CT-04 = 25 testes, 4 falharam (M1 e M7 mortos), 2026-10-07
+- [x] CT-01: ausência na recuperação de senha no HTML inteiro, com controle positivo (presença em `/admin/login` no mesmo caso) — commit `b940d2c`; `RodapeCoerenteTest` 73/73 e 322 asserções, `HelpersDeTesteTest` 1/1; provider de `main` contra CT-10, CT-12, CT-09, CT-01 e CT-04 = 25 testes, 4 falharam (M1 e M7 mortos), 2026-10-07
+- [x] CT-08 e CT-11 conferidos (presença por recorte, sem mudança de oráculo) — commit `b940d2c`; `RodapeCoerenteTest` 73/73 e 322 asserções, `HelpersDeTesteTest` 1/1; provider de `main` contra CT-10, CT-12, CT-09, CT-01 e CT-04 = 25 testes, 4 falharam (M1 e M7 mortos), 2026-10-07
+- [x] CT-04: bloco de ausência do recado na recuperação de senha pelo helper de HTML inteiro (D6) — commit `b940d2c`; `RodapeCoerenteTest` 73/73 e 322 asserções, `HelpersDeTesteTest` 1/1; provider de `main` contra CT-10, CT-12, CT-09, CT-01 e CT-04 = 25 testes, 4 falharam (M1 e M7 mortos), 2026-10-07
+- [x] `ligarLoginComGoogleDoKit()` movido para `tests/Pest.php`; `HelpersDeTesteTest` verde (D8) — commit `b940d2c`; `RodapeCoerenteTest` 73/73 e 322 asserções, `HelpersDeTesteTest` 1/1; provider de `main` contra CT-10, CT-12, CT-09, CT-01 e CT-04 = 25 testes, 4 falharam (M1 e M7 mortos), 2026-10-07
+- [x] Falsificabilidade: cada CT alterado fica vermelho com o provider de `main` — commit `b940d2c`; `RodapeCoerenteTest` 73/73 e 322 asserções, `HelpersDeTesteTest` 1/1; provider de `main` contra CT-10, CT-12, CT-09, CT-01 e CT-04 = 25 testes, 4 falharam (M1 e M7 mortos), 2026-10-07
 
 ## 4. Teste de browser
-- [ ] CT-B01: ordem visual invertida (recado acima da assinatura) e mensagens trocadas
-- [ ] CT-B01: contenção no cartão por `closest('.fi-auth-card, .fi-auth-form-container')`, seletor medido contra o layout (D7)
-- [ ] CT-B03: `landmark-complementary-is-top-level` acrescentada à constante `regras`; verde com o `<aside>` no cartão, ou bifurcação (tag volta a `<div>` e P-05 revisada) registrada
-- [ ] Mutante M59 (`<aside>` → `<div>`) medido com o recado no cartão; se o CT-B03 seguir verde, oráculo passa a "o recado está contido num landmark" (`closest('aside,[role],main,form')`)
+- [x] CT-B01: ordem visual invertida (recado acima da assinatura) e mensagens trocadas — commit `b940d2c`; `RodapeNaDobraTest` 9/9 e 48 asserções; `<aside>` trocado por `<div>` contra CT-B03 = 3 testes, 2 falharam (M59 morto: o axe acusa `region` mesmo dentro do cartão, bifurcação (a) do `05`); seletor medido `.fi-auth-form-container`, `.fi-auth-card` não emitido; nenhuma das 4 regras acusa o `<aside>` nas 5 rotas, 2026-10-07
+- [x] CT-B01: contenção no cartão por `closest('.fi-auth-card, .fi-auth-form-container')`, seletor medido contra o layout (D7) — commit `b940d2c`; `RodapeNaDobraTest` 9/9 e 48 asserções; `<aside>` trocado por `<div>` contra CT-B03 = 3 testes, 2 falharam (M59 morto: o axe acusa `region` mesmo dentro do cartão, bifurcação (a) do `05`); seletor medido `.fi-auth-form-container`, `.fi-auth-card` não emitido; nenhuma das 4 regras acusa o `<aside>` nas 5 rotas, 2026-10-07
+- [x] CT-B03: `landmark-complementary-is-top-level` acrescentada à constante `regras`; verde com o `<aside>` no cartão, ou bifurcação (tag volta a `<div>` e P-05 revisada) registrada — commit `b940d2c`; `RodapeNaDobraTest` 9/9 e 48 asserções; `<aside>` trocado por `<div>` contra CT-B03 = 3 testes, 2 falharam (M59 morto: o axe acusa `region` mesmo dentro do cartão, bifurcação (a) do `05`); seletor medido `.fi-auth-form-container`, `.fi-auth-card` não emitido; nenhuma das 4 regras acusa o `<aside>` nas 5 rotas, 2026-10-07
+- [x] Mutante M59 (`<aside>` → `<div>`) medido com o recado no cartão; se o CT-B03 seguir verde, oráculo passa a "o recado está contido num landmark" (`closest('aside,[role],main,form')`) — commit `b940d2c`; `RodapeNaDobraTest` 9/9 e 48 asserções; `<aside>` trocado por `<div>` contra CT-B03 = 3 testes, 2 falharam (M59 morto: o axe acusa `region` mesmo dentro do cartão, bifurcação (a) do `05`); seletor medido `.fi-auth-form-container`, `.fi-auth-card` não emitido; nenhuma das 4 regras acusa o `<aside>` nas 5 rotas, 2026-10-07
 - [ ] CT-B01 medido contra o estado sem o passo 1 (vermelho)
 
 ## 5. Docs, CHANGELOG e READMEs
-- [ ] `docs/pt/recursos/configuracoes-do-kit.md` e espelho en
-- [ ] `docs/pt/autenticacao/login-social.md` e espelho en
-- [ ] `CHANGELOG.md`: `### Alterado` em `[Unreleased]`
-- [ ] `README.md` e `README.en.md`: features especificadas 76 → 77
+- [x] `docs/pt/recursos/configuracoes-do-kit.md` e espelho en — commits `23d1ed9` e `e3f9ab2` (docs reancoradas), 2026-10-07
+- [x] `docs/pt/autenticacao/login-social.md` e espelho en — commits `23d1ed9` e `e3f9ab2` (docs reancoradas), 2026-10-07
+- [x] `CHANGELOG.md`: `### Alterado` em `[Unreleased]` — commits `23d1ed9` e `e3f9ab2` (docs reancoradas), 2026-10-07
+- [x] `README.md` e `README.en.md`: features especificadas 76 → 77 — commits `23d1ed9` e `e3f9ab2` (docs reancoradas), 2026-10-07
 
 ## 6. Reconciliação com as wikis anteriores
 - [ ] ADR-02 do `02` registra o que da `rodape-coerente` fica superado
@@ -85,6 +85,16 @@ Sem fatiar — 6 passos, 8 CT (6 HTTP + 2 CT-B), um PR; step 8 não se aplica
 
 | ID | Passe | Achado | Destino | `P-nn` / CT | Rejeitado — motivo |
 |---|---|---|---|---|---|
+| RD-01 | fw-revisor-diff | achado menor 1: comentário do bloco da dobra em `kit.css` descrevia o estado antigo | comentário | — | aplicado (rodada pós-revisão, 2026-10-07) |
+| RD-02 | fw-revisor-diff | achado menor 2: docblock do CT-01 sem o nome novo do caso | teste | CT-01 | aplicado |
+| RD-03 | fw-revisor-diff | achado menor 3: CT-10 sem o limite superior pelo cartão | teste | CT-10 | aplicado (fechamento balanceado da `<div>` `.fi-auth-form-container`, pois `.fi-auth-card` não é emitido) |
+| RD-04 | fw-revisor-diff | achado menor 4: comentário do CT-B03 dizia três regras | teste | CT-B03 | aplicado |
+| RD-05 | fw-revisor-diff | achado menor 5: mensagem do CT-B01 citava "escopo do hook" | teste | CT-B01 | aplicado |
+| RD-06 | fw-revisor-diff | achado menor 6: docblock de `ligarLoginComGoogleDoKit()` longo | teste | — | aplicado |
+| RD-07 | fw-revisor-diff | achado menor 7: citação `Login.php:content():416` duplicada no provider; descrição da seção em `ConfiguracoesDoKit` desatualizada | código | — | aplicado |
+| RD-08 | fw-revisor-diff | achado menor 8: CT-B01 usa `closest` com classes do vendor, contra `testes-browser.md` | teste | CT-B01 | declarado em Desvios do Plano |
+
+Ponytail do diff (sonnet): net -43 proposto. Aplicados os cortes de redundância: `$inicioDosBotoes`, o bloco `fi-login-rodape`/`kit-versao` duplicado do CT-10, `recadoConteiner` do CT-B01 e a segunda chamada de `closest()`, docblocks de `semRecadoEmLugarNenhum()` e `ligarLoginComGoogleDoKit()` encurtados. Recusados os que a especificação exige: controles positivos de CT-01, CT-09 e CT-12, limite inferior pelo layout e a nota do Breezy no provider.
 
 ## Conformidade com Rules
 
@@ -149,12 +159,19 @@ Entendimento confirmado: —
 | 2 | 5 | analista — revisão profunda do `01`–`03` | opus | — | 15 achados RD-01..RD-15 (1 bloqueante, 2 altas, 6 médias, 6 baixas), todos aplicados | — | aplicados pelo construtor na rodada de correção; `citacoes.sh` e `checkbox-sem-evidencia.sh` silenciosos |
 | 3 | 6 | ponytail — corte de excesso do `01`–`03` | sonnet | — | 40 achados, net -190 proposto; 9 aceitos, o resto recusado (template, scripts, D5) | — | aceitos aplicados; recusados com motivo na Auditoria Pré-Implementação |
 | 4 | 7 | derivação dos CT · `general-purpose` com `feature-test-design` — `04` e `05` | (modelo da sessão) | a implementação (não existe) | `04` (6 cenários, 5 regras, 23 mutantes, 1 sem matador) e `05` (CT-B01, CT-B03); 3 perguntas de desenho Q?1 a Q?3 devolvidas para a sessão confirmar e renumerar; `rastreabilidade.sh` e `citacoes.sh` silenciosos, `ids-ct.sh` só com ruído de IDs da ancestral | — | revisão adversarial **não exigida** (perfil padrão, nenhuma área com Impacto 3: tela pública, texto de rodapé, reversível); a sessão decide se a despacha |
+| 5 | 8 | construtor do código · sonnet | sonnet | — | passos 1 a 5 em `23d1ed9` e `e3f9ab2` (código, blades, docs, CHANGELOG, READMEs) | — | revisado no step 9 |
+| 6 | 9 | `fw-executor-ct` | sonnet | — | `RodapeCoerenteTest` 73/73 e 322 asserções, `HelpersDeTesteTest` 1/1 em `b940d2c`; mutantes do provider de `main` medidos | — | números reproduzidos pela rodada pós-revisão |
+| 7 | 9 | `fw-executor-ctb` | sonnet | — | `RodapeNaDobraTest` 9/9 e 48 asserções; M59 morto (CT-B03) | — | reproduzido pela rodada pós-revisão (9/9, 48) |
+| 8 | 9 | `fw-revisor-diff` | (agente) | PRD e raciocínio de quem implementou | 8 achados menores RD-01..RD-08 | — | todos aplicados, RD-08 declarado em Desvios do Plano |
+| 9 | 9 | ponytail do diff | sonnet | — | net -43 proposto; cortes de redundância aplicados, os exigidos pela especificação recusados | — | aplicados na rodada seguinte |
+| 10 | 9→10 | rodada pós-revisão (construtor) | sonnet | — | RD-01..RD-08 aplicados; pest 81/81 (352 asserções) e browser 9/9 (48); wiki 03 parcial | — | conferido por `git diff --stat` e CRLF vazio |
 
 ## Blockers
 <!-- Impedimentos encontrados durante implementação -->
 
 ## Desvios do Plano
 <!-- Onde a implementação divergiu do PRD e por quê -->
+- RD-08 — o CT-B01 usa `closest('.fi-auth-card, .fi-auth-form-container')`, classes do vendor, contra `testes-browser.md` §Seletores: não há `aria-label` para medir contenção. Falha fechado se o vendor renomear (a asserção `recadoNoCartao` passa a falso).
 
 ## Notas de Implementação
 <!-- Descobertas durante o código que não estavam no plano -->
@@ -163,6 +180,7 @@ Entendimento confirmado: —
 <!-- Uma linha por arquivo de references/ das skills aberto nesta feature, com o step. O checklist
      final confere contra o mínimo da tabela do Índice do SKILL.md; o que foi pulado diz por quê. -->
 - `template-01-plano.md`, `template-02-adr.md`, `template-03-progresso.md`, `padrao-de-log.md`, `citacoes-de-codigo.md` — step 4 — 2026-10-07
+- `.env.example:358-360` ainda diz que o recado é "TEXTO, não HTML" (anterior a esta feature; fora de escopo) — step 10, 2026-10-07
 
 ## Retrospectiva
 <!-- O que funcionou bem no planejamento e o que faltou -->

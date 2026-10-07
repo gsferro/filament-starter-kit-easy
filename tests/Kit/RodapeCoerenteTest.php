@@ -31,17 +31,40 @@ beforeEach(function (): void {
 });
 
 /**
- * Afirma a ausência DUPLA do recado no HTML INTEIRO: o texto e a classe do elemento.
- *
- * Wiki `rodape-separado` (Setup Global do `04`): com o recado dentro do cartão, a cauda
- * (`rodapeDe()`) nunca o contém, e uma ausência medida ali é verdade sempre. Só o documento
- * inteiro vê o cartão. `assertStringNotContainsString` com mensagem — nunca
- * `not->toContain($x, $msg)` — e nenhuma chamada de regex aqui, por causa do `[CT-24]`.
+ * Ausência do recado no HTML inteiro: a cauda não vê o cartão; sem `preg_*` por causa do [CT-24].
  */
 function semRecadoEmLugarNenhum(string $html): void
 {
     test()->assertStringNotContainsString('Fale com o suporte', $html, 'o texto do recado existe no documento');
     test()->assertStringNotContainsString('fi-login-rodape', $html, 'o elemento do recado existe no documento');
+}
+
+/**
+ * Posição do fechamento da `<div>` do contêiner (`.fi-auth-form-container`; o `.fi-auth-card` do vendor não é emitido), contando aberturas e fechamentos (sem `preg_*`, [CT-24]).
+ */
+function fimDaDivQueContem(string $html, int $posicao): int|false
+{
+    $profundidade = 1;
+    $cursor       = (int) strrpos(substr($html, 0, $posicao), '<div') + 4;
+
+    while ($profundidade > 0) {
+        $abre  = strpos($html, '<div', $cursor);
+        $fecha = strpos($html, '</div', $cursor);
+
+        if ($fecha === false) {
+            return false;
+        }
+
+        if ($abre !== false && $abre < $fecha) {
+            $profundidade++;
+            $cursor = $abre + 4;
+        } else {
+            $profundidade--;
+            $cursor = $fecha + 5;
+        }
+    }
+
+    return $cursor;
 }
 
 /*
@@ -51,7 +74,7 @@ function semRecadoEmLugarNenhum(string $html): void
 */
 
 /**
- * [CT-01] a assinatura sai em toda superfície, para as duas audiências.
+ * [CT-01] a assinatura sai em toda superfície, e a recuperação de senha não tem recado em lugar nenhum.
  *
  * A última linha (`/admin/password-reset/request`) é a que impede a guarda de ser escrita por
  * ROTA em vez de por autenticação (M37/M39): é uma superfície pública que NÃO é tela de login, e
@@ -392,7 +415,7 @@ it('[CT-09] o recado sem conteúdo não deixa elemento nem texto no documento e 
  * primeiro — sem ela `$fim` degenera para o fim do documento e "dentro" passa de graça (M5).
  *
  * O "fim do bloco dos botões" é a última ocorrência de `Entrar com Google` (rótulo do último
- * botão): o recado registrado ANTES do bloco (M2) tem posição menor que ela e que o início do bloco.
+ * botão): o recado registrado ANTES do bloco (M2) tem posição menor que ela.
  */
 it('[CT-10] o recado sai dentro do cartão, depois do formulário e dos botões, e a assinatura fora dele, depois', function (string $rota, bool $unificado, bool $comGoogle): void {
     emJunhoDe2026();
@@ -410,41 +433,40 @@ it('[CT-10] o recado sai dentro do cartão, depois do formulário e dos botões,
     expect($depoisDoLayout)->not->toBe('', 'âncora do layout ausente em '.$rota);
     $fim = strlen($html) - strlen($depoisDoLayout);
 
-    // 2. As presenças, antes de qualquer posição.
-    $this->assertStringContainsString('fi-login-rodape', $html);
-    $this->assertStringContainsString('kit-versao', $html);
-
-    // 3. O conteúdo exato dos dois elementos, irmãos e separados.
+    // 2. O conteúdo exato dos dois elementos, irmãos e separados.
     expect(assinaturaDoRodape($html))->toBe('© 2026 Acme');
     $this->assertStringContainsString('Fale com o suporte', recadoDoRodape($html));
 
     $posicaoDoLayout     = strpos($html, 'fi-auth-layout');
+    $posicaoDoCartao     = strpos($html, 'fi-auth-form-container');
     $posicaoDoRecado     = strpos($html, 'fi-login-rodape');
     $posicaoDaAssinatura = strpos($html, 'kit-versao');
     $posicaoDoForm       = strpos($html, '</form>', (int) $posicaoDoLayout);
+    $fimDoCartao         = $posicaoDoCartao === false ? false : fimDaDivQueContem($html, $posicaoDoCartao);
 
     expect($posicaoDoLayout)->not->toBeFalse()
+        ->and($posicaoDoCartao)->not->toBeFalse()
         ->and($posicaoDoRecado)->not->toBeFalse()
         ->and($posicaoDaAssinatura)->not->toBeFalse()
-        ->and($posicaoDoForm)->not->toBeFalse();
+        ->and($posicaoDoForm)->not->toBeFalse()
+        ->and($fimDoCartao)->not->toBeFalse();
 
-    // 4. Limite inferior 1: depois do layout abrir e do fim do formulário.
+    // 3. Limite inferior 1: depois do layout abrir e do fim do formulário.
     expect($posicaoDoRecado)->toBeGreaterThan($posicaoDoLayout)
         ->and($posicaoDoRecado)->toBeGreaterThan($posicaoDoForm);
 
-    // 5. Limite inferior 2: depois do bloco dos botões sociais.
+    // 4. Limite inferior 2: depois do bloco dos botões sociais.
     if ($comGoogle) {
-        $inicioDosBotoes = strpos($html, 'fi-login-social');
-        $fimDosBotoes    = strrpos($html, 'Entrar com Google');
+        $fimDosBotoes = strrpos($html, 'Entrar com Google');
 
-        expect($inicioDosBotoes)->not->toBeFalse()
-            ->and($fimDosBotoes)->not->toBeFalse()
-            ->and($posicaoDoRecado)->toBeGreaterThan($inicioDosBotoes)
+        expect($fimDosBotoes)->not->toBeFalse()
             ->and($posicaoDoRecado)->toBeGreaterThan($fimDosBotoes);
     }
 
-    // 6. Limite superior: o recado dentro do layout; a assinatura fora dele.
-    expect($posicaoDoRecado)->toBeLessThan($fim)
+    // 5. Limite superior: o recado dentro do cartão e do layout; a assinatura fora dele.
+    expect($posicaoDoRecado)->toBeGreaterThan($posicaoDoCartao)
+        ->and($posicaoDoRecado)->toBeLessThan($fimDoCartao)
+        ->and($posicaoDoRecado)->toBeLessThan($fim)
         ->and($posicaoDaAssinatura)->toBeGreaterThanOrEqual($fim);
 })->with([
     'login de painel — a classe mãe'                   => ['/admin/login', false, false],

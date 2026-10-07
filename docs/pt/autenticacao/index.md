@@ -53,7 +53,7 @@ A tela de login do kit intercepta a falha do Filament só para explicar a conta 
 próprio Filament (`vendor/filament/filament/src/Auth/Pages/Login.php:rateLimit(5):70`), que também
 decide com `canAccessPanel()` (`vendor/filament/filament/src/Auth/Pages/Login.php:canAccessPanel:172`).
 O destino do login é sempre `app(LoginResponse::class)`, vinculado a `RespostaDeLogin`
-(`app/Providers/KitServiceProvider.php:LoginResponse:838`). A pilha do próximo request (ordem real,
+(`app/Providers/KitServiceProvider.php:LoginResponse:837`). A pilha do próximo request (ordem real,
 conferida com `php artisan route:list --json`) é `Authenticate` → `AuthenticateSession` →
 `MustTwoFactor` → `Locker` → `ExigirEmailVerificado` (só obrigatório no `/app`, com a chave ligada).
 

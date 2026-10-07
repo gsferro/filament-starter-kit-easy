@@ -84,7 +84,7 @@ Funcionalidade: O rodapé do login cabe na dobra e fica separado da assinatura
 
 **Por que browser e não HTTP**: acessibilidade é o que o axe calcula sobre a árvore renderizada (landmarks implícitos por tag, nome acessível, aninhamento); a tag no HTML não prova a regra.
 
-**substitui o `[CT-B03]` de `rodape-coerente`** (`tests/Browser/RodapeNaDobraTest.php:'[CT-B03]':153`): a constante `regras` do script do axe ganha `landmark-complementary-is-top-level` (a regra que um `<aside>` aninhado em outro landmark acusaria: o risco R2 do plano, que as três regras anteriores nunca mediram com o recado dentro do cartão), e o **M21** (`<aside>` → `<div>`) é medido **com o recado no cartão**.
+**substitui o `[CT-B03]` de `rodape-coerente`** (`tests/Browser/RodapeNaDobraTest.php:'[CT-B03]':152`): a constante `regras` do script do axe ganha `landmark-complementary-is-top-level` (a regra que um `<aside>` aninhado em outro landmark acusaria: o risco R2 do plano, que as três regras anteriores nunca mediram com o recado dentro do cartão), e o **M21** (`<aside>` → `<div>`) é medido **com o recado no cartão**.
 
 ```gherkin
 # language: pt

@@ -2401,12 +2401,9 @@ function semAcentoESemCaixa(string $texto): string
 }
 
 /**
- * Liga o login com Google para o caso corrente.
+ * Liga o login com Google (credenciais fake) para o caso corrente.
  *
- * Vive em `tests/Pest.php` porque tem dois consumidores (`LoginSocialGoogleTest.php` e
- * `RodapeCoerenteTest.php`, CT-10 de `rodape-separado`) — `.ai/rules/testes.md`. O nome é longo
- * de propósito: função em PHP é global no processo, e um `ligarGoogle()` colidiria com
- * qualquer vizinho futuro.
+ * Em `tests/Pest.php` por ter dois consumidores (`LoginSocialGoogleTest`, `RodapeCoerenteTest`); nome longo por colisão global de função.
  *
  * @param  array<string, mixed>  $credenciais  sobrescreve chaves de `services.google`
  */

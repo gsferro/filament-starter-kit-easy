@@ -764,9 +764,8 @@ class KitServiceProvider extends ServiceProvider
      * `tests/Kit/TelasDeAutenticacaoTest.php`.
      *
      * `AUTH_LOGIN_FORM_AFTER` e a chave que a `content()` da tela de login do Filament emite
-     * DEPOIS do componente do formulario
-     * (`vendor/filament/filament/src/Auth/Pages/Login.php:content():416`, hook na linha 423), que e onde o requisito
-     * pede o botao. Registrar global e seguro porque essa chave nao e emitida em nenhuma
+     * DEPOIS do componente do formulario, que e onde o requisito pede o botao (ver o comentario
+     * do registro abaixo). Registrar global e seguro porque essa chave nao e emitida em nenhuma
      * outra tela.
      *
      * O recado do rodape tambem fica em `AUTH_LOGIN_FORM_AFTER`, dentro do cartao do formulario,
