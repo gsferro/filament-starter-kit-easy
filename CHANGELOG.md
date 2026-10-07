@@ -34,6 +34,30 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   de uma versão anterior, que roda a classe antiga, a view ausente ainda aparece como "modificado": aplique
   pelo modo interativo ou com `--all`.
 
+### Validação antes da tag
+
+Patch e não minor: só a correção do #148, sem chave nova nem migration. O `checklist-de-release` pede os
+quatro cenários a cada tag, e o cenário 1 foi simulado pela mesma rota da `v0.43.0` à `v0.45.0`: extração
+por `git archive` (que aplica o `export-ignore` como o Packagist aplica — `docs/` e `wikis/specs/` ausentes,
+conferido) + `composer install` + `.env` + `kit:install --create-project --no-npm --no-interaction`.
+
+- **Cenário 1, simulado** (extração de `7221dd3`, o commit do bump): `config('kit.version')` = `0.45.1`;
+  `php artisan test --testsuite=Kit,Tenancy --parallel --processes=2 --compact --log-junit` →
+  `{"result":"passed","tests":4161,"passed":3241,"assertions":14537,"duration_ms":908213,"skipped":920}`
+  — **4.161 testes, 3.241 passaram, 14.537 asserções, 920 pulados, 0 falhas**, 15,1 min com 2 processos
+- **Teto de pulados: 914 → 920 (+6)**, decomposição por arquivo (`--log-junit`) contra o junit da
+  `v0.45.0`, 31 arquivos nos dois e nenhuma outra linha mudou: **+6** em `tests/Kit/KitUpdateTest.php`, os
+  seis casos novos do #148 guardados por `naArvoreDoKit()` ou pela tag anterior — CT-06, CT-07 e CT-08
+  (a varredura autoral × publish cru lê a árvore pelo `git ls-files`), CT-11 (o CHANGELOG), CT-14 (a
+  entrada-pasta extrai o arquivo aninhado) e CT-18 (cada view autoral difere da tag anterior — exige a tag
+  `v0.45.0` no checkout). Era o número previsto no `03` da wiki antes de medir, e foi medido mesmo assim
+- **Caminho de atualização, medido na wiki**: `kit:update --dry-run` numa extração `v0.45.0` sem o override
+  da lock-screen lista `media.blade.php` na primeira rodada (classe antiga) e o rotula "novo no kit" com a
+  classe nova e `--from=0.45.0` — logs `e2e-*.log` citados no `03` de `wikis/specs/fix/kit-update-views-vendor/`
+- **CI no Linux**: o job `qualidade` do PR #149 sobre a branch deu verde na segunda rodada (a primeira pegou
+  as contagens do README e um helper entre `it()` de `RedeDeDocumentacaoTest`); o job `cobertura` da `main`
+  para o squash `22088ca` roda depois do push e o número entra no PR de documentação dos cenários 2, 3 e 4
+
 ## [0.45.0] - 2026-10-06
 
 ### Adicionado
