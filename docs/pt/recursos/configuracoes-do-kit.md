@@ -259,6 +259,7 @@ recusado. Com os dois vazios, o painel volta ao nome em texto, sem erro.
 quando ele é "Sistema", então as duas `<img>` saem juntas no HTML e o CSS do Filament exibe a certa.
 Organização sem variante escura cai para a da instalação — e, sem ela, para a clara. O topo do painel do negócio
 e a tela de bloqueio usam o mesmo par: logo da **organização**, se houver; da instalação, se não.
+Com a marca separada, envie as duas variantes da logo da organização: sem a escura própria, o tema escuro mostra a escura da instalação ao lado do nome da organização.
 
 ## Cabeçalho dos painéis: o que mostrar no topo
 

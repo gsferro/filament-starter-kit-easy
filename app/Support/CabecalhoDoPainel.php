@@ -58,7 +58,7 @@ final class CabecalhoDoPainel
     /**
      * O que o `brandLogo()` dos três painéis devolve.
      *
-     * `null` em `segmentos()` cobre os casos em que a marca é a de hoje: nenhum segmento
+     * `null` em `segmentos()` cobre os casos em que a marca é o par de `logos()`: o da organização aberta no `/app`, senão o da instalação: nenhum segmento
      * ligado, tela de autenticação, ou ligado e nada resolvido (P-11 — nunca marca vazia,
      * nunca imagem quebrada).
      */
@@ -75,7 +75,7 @@ final class CabecalhoDoPainel
 
     /**
      * O que o `darkModeBrandLogo()` devolve: `null` com a composição ativa, porque a variante
-     * escura já vai dentro dela (`<img class="fi-logo fi-logo-dark">`); do contrário, o de hoje.
+     * escura já vai dentro dela (`<img class="fi-logo fi-logo-dark">`); do contrário, o par de `logos()`: o da organização aberta no `/app`, senão o da instalação.
      */
     public static function marcaEscura(): ?string
     {
@@ -117,7 +117,7 @@ final class CabecalhoDoPainel
     }
 
     /**
-     * Os segmentos da composição, já resolvidos — ou `null` quando a marca deve ser a de hoje.
+     * Os segmentos da composição, já resolvidos — ou `null` quando a marca deve ser o par de `logos()`: o da organização aberta no `/app`, senão o da instalação.
      * Memoizado por request (ver o docblock da classe).
      *
      * @return array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string}|null
