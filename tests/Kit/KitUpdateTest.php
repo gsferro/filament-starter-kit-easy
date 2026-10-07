@@ -1,6 +1,8 @@
 <?php
 
 use App\Console\Commands\KitUpdate;
+use Illuminate\Support\Facades\File;
+use Symfony\Component\Process\Process;
 
 function estaCoberto(string $arquivo): bool
 {
@@ -57,6 +59,8 @@ it('cobre os arquivos da fundação na lista de caminhos do kit', function (stri
     // Wiki login-unificado, CT-22: a migration de Settings e a resposta de login chegam a quem atualiza.
     'database/settings/2026_09_05_100000_add_login_unificado_to_kit_settings.php',
     'app/Http/Responses/RespostaDeLogin.php',
+    // Issue #148: o override da lock-screen (par claro/escuro de logos) chega a quem atualiza.
+    '[CT-01] override da lock-screen' => 'resources/views/vendor/filament-auth-designer/components/partials/media.blade.php',
 ]);
 
 /**
@@ -180,8 +184,9 @@ it('cobre todo o código do kit, e não só o que alguém lembrou de listar', fu
         foreach ($arquivos as $arquivo) {
             $relativo = str_replace('\\', '/', substr($arquivo->getPathname(), strlen(base_path()) + 1));
 
-            // `resources/views/vendor` é o que os pacotes publicam com `vendor:publish`;
-            // não é código do kit e não deve ser entregue pelo `kit:update`.
+            // `resources/views/vendor` não é decidido por esta varredura de caminho: é decidido
+            // por CONTEÚDO, pasta a pasta, pelos casos CT-06/CT-07 deste arquivo — override
+            // autoral entra em CAMINHOS_DO_KIT, publish cru idêntico ao pacote fica de fora (#148).
             if (str_starts_with($relativo, 'resources/views/vendor/')) {
                 continue;
             }
@@ -403,7 +408,7 @@ const FONTE_ANTIGA_DO_KIT_UPDATE = <<<'PHP'
     ];
 PHP;
 
-it('extrai do fonte desta versão exatamente a lista da constante — a forma textual é contrato', function (): void {
+it('[CT-10] extrai do fonte desta versão exatamente a lista da constante — a forma textual é contrato', function (): void {
     $fonte = (string) file_get_contents(base_path('app/Console/Commands/KitUpdate.php'));
 
     expect(KitUpdate::caminhosDeclaradosEm($fonte))->toBe(caminhosDoKit());
@@ -491,3 +496,648 @@ it('documenta a lista do destino e o contorno para instalações anteriores, nos
     'pt' => ['docs/pt/comecar/atualizando-o-projeto.md', 'versão destino'],
     'en' => ['docs/en/comecar/atualizando-o-projeto.md', 'target version'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o site do kit: o diretório do site é export-ignore e não existe no projeto instalado.')->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| resources/views/vendor: override autoral × publish cru (issue #148)
+|--------------------------------------------------------------------------
+|
+| Casos de `wikis/specs/fix/kit-update-views-vendor/views-vendor-no-kit-update/04-casos-de-teste.md`.
+| Uma pasta é AUTORAL quando ao menos um arquivo dela (recursivo, qualquer extensão) não é
+| idêntico — fim de linha normalizado nos dois lados — a nenhum arquivo de mesmo caminho
+| relativo nas views de qualquer pacote do vendor (`resources/views` de cada um); arquivo sem par é autoral, pasta vazia é crua.
+| Autoral tem de estar em CAMINHOS_DO_KIT inteira; crua não pode estar coberta por forma nenhuma.
+|
+*/
+
+/**
+ * O checkout raso do CI (`actions/checkout` sem tags) não traz a tag anterior (QA-02).
+ * Mora aqui, com os outros helpers, e não ao lado do CT-18: o detector de sentinela de
+ * `RedeDeDocumentacaoTest` atribui ao caso anterior tudo que vem antes do próximo `it(`. */
+function tagAnteriorNoCheckout(): bool
+{
+    $processo = new Process(['git', 'rev-parse', '--verify', '--quiet', 'v0.45.0^{commit}'], base_path(), timeout: 60);
+    $processo->run();
+
+    return $processo->isSuccessful();
+}
+
+/**
+ * Os arquivos RASTREADOS pelo git da pasta, recursivo, relativos a ela e sempre com `/`.
+ *
+ * Na árvore real do kit só o que está no repositório decide a classe (RD-06): arquivo local
+ * não rastreado numa pasta crua não vira override autoral. `git ls-files` roda com a pasta
+ * como diretório corrente, então devolve caminhos relativos a ela.
+ *
+ * @return list<string>
+ */
+function arquivosRastreadosDaPastaDeViews(string $pasta): array
+{
+    if (! is_dir($pasta)) {
+        return [];
+    }
+
+    $processo = new Process(['git', '-c', 'core.quotepath=off', 'ls-files', '-z', '--', '.'], $pasta, timeout: 60);
+    $processo->mustRun();
+
+    $arquivos = array_values(array_filter(
+        explode("\0", $processo->getOutput()),
+        fn (string $arquivo): bool => $arquivo !== '',
+    ));
+
+    sort($arquivos);
+
+    return $arquivos;
+}
+
+/**
+ * Todos os arquivos da pasta, recursivo, relativos a ela e sempre com `/`.
+ *
+ * Com `$rastreados`, só os arquivos que o git rastreia (árvore real); sem, o disco (fixture,
+ * que não é repositório git).
+ *
+ * @return list<string>
+ */
+function arquivosDaPastaDeViews(string $pasta, bool $rastreados = false): array
+{
+    if ($rastreados) {
+        return arquivosRastreadosDaPastaDeViews($pasta);
+    }
+
+    $arquivos = [];
+
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pasta, FilesystemIterator::SKIP_DOTS)) as $arquivo) {
+        if ($arquivo->isFile()) {
+            $arquivos[] = str_replace('\\', '/', substr($arquivo->getPathname(), strlen($pasta) + 1));
+        }
+    }
+
+    sort($arquivos);
+
+    return $arquivos;
+}
+
+function conteudoComFimDeLinhaNormalizado(string $arquivo): string
+{
+    return str_replace("\r\n", "\n", (string) file_get_contents($arquivo));
+}
+
+/**
+ * Classifica a pasta pelo conteúdo e devolve os arquivos que divergem de todo candidato.
+ *
+ * `comPacote` diz se ao menos um arquivo da pasta tem par em algum pacote instalado: sem
+ * nenhum, a pasta é órfã e não há o que republicar com `vendor:publish`.
+ *
+ * @return array{classe: 'autoral'|'cru', divergentes: list<string>, comPacote: bool}
+ */
+function classificarPastaDeViews(string $raizDasViews, string $raizDoVendor, string $pasta, bool $rastreados = false): array
+{
+    $divergentes = [];
+    $comPacote   = false;
+
+    foreach (arquivosDaPastaDeViews($raizDasViews.'/'.$pasta, $rastreados) as $relativo) {
+        $doKit      = conteudoComFimDeLinhaNormalizado($raizDasViews.'/'.$pasta.'/'.$relativo);
+        $candidatos = array_values(array_filter(glob($raizDoVendor.'/*/*/resources/views/'.$relativo) ?: [], 'is_file'));
+
+        if ($candidatos !== []) {
+            $comPacote = true;
+        }
+
+        $temIgual = array_filter(
+            $candidatos,
+            fn (string $candidato): bool => conteudoComFimDeLinhaNormalizado($candidato) === $doKit,
+        ) !== [];
+
+        if (! $temIgual) {
+            $divergentes[] = $relativo;
+        }
+    }
+
+    return ['classe' => $divergentes === [] ? 'cru' : 'autoral', 'divergentes' => $divergentes, 'comPacote' => $comPacote];
+}
+
+/**
+ * As pastas de views de pacote a examinar: no disco (fixture) ou as que têm arquivo rastreado
+ * (árvore real).
+ *
+ * @return list<string>
+ */
+function pastasDeViewsDeVendor(string $raizDasViews, bool $rastreados): array
+{
+    if ($rastreados) {
+        $pastas = array_values(array_unique(array_map(
+            fn (string $arquivo): string => explode('/', $arquivo)[0],
+            array_filter(arquivosRastreadosDaPastaDeViews($raizDasViews), fn (string $arquivo): bool => str_contains($arquivo, '/')),
+        )));
+    } else {
+        $pastas = array_map('basename', glob($raizDasViews.'/*', GLOB_ONLYDIR) ?: []);
+    }
+
+    sort($pastas);
+
+    return $pastas;
+}
+
+/**
+ * Confere a lista contra a autoria de cada pasta de views de pacote.
+ *
+ * Com `$rastreados`, as pastas e os arquivos vêm de `git ls-files` (árvore real); sem, do disco.
+ *
+ * A saída da reprovação depende da célula: autoral fora da lista com pacote instalado oferece
+ * listar ou republicar; sem pacote, listar ou apagar a órfã; publish cru coberto pela própria
+ * entrada (exata ou de arquivo) manda remover, e coberto por entrada ANCESTRAL manda estreitá-la —
+ * remover a ancestral levaria junto toda pasta autoral (RD-05).
+ *
+ * @param  list<string>  $lista
+ * @return array{classes: array<string, array{classe: 'autoral'|'cru', divergentes: list<string>, comPacote: bool}>, falhas: array<string, string>}
+ */
+function varrerViewsDeVendor(string $raizDasViews, string $raizDoVendor, array $lista, bool $rastreados = false): array
+{
+    $classes = [];
+    $falhas  = [];
+
+    foreach (pastasDeViewsDeVendor($raizDasViews, $rastreados) as $pasta) {
+        $caminho         = 'resources/views/vendor/'.$pasta;
+        $classificacao   = classificarPastaDeViews($raizDasViews, $raizDoVendor, $pasta, $rastreados);
+        $classes[$pasta] = $classificacao;
+
+        $inteira   = false;
+        $alguma    = false;
+        $ancestral = null;
+
+        foreach ($lista as $entrada) {
+            $entrada = rtrim($entrada, '/');
+
+            if ($caminho === $entrada) {
+                $inteira = true;
+                $alguma  = true;
+            } elseif (str_starts_with($caminho, $entrada.'/')) {
+                $inteira   = true;
+                $alguma    = true;
+                $ancestral = $entrada;
+            } elseif (str_starts_with($entrada, $caminho.'/')) {
+                $alguma = true;
+            }
+        }
+
+        if ($classificacao['classe'] === 'autoral' && ! $inteira) {
+            $mensagem = "A pasta `{$pasta}` é override AUTORAL (divergem do pacote instalado: "
+                .implode(', ', $classificacao['divergentes'])
+                .") e não está em CAMINHOS_DO_KIT: quem atualiza nunca a recebe. Liste `{$caminho}` em "
+                .'KitUpdate::CAMINHOS_DO_KIT; ';
+
+            $falhas[$pasta] = $mensagem.($classificacao['comPacote']
+                ? 'ou, se for publish cru que o pacote atualizou, republique com `php artisan vendor:publish` '
+                    .'para voltar a ser idêntica ao pacote.'
+                : 'ou apague a pasta órfã, se o pacote saiu do composer.json.');
+        } elseif ($classificacao['classe'] === 'cru' && $alguma) {
+            $falhas[$pasta] = "A pasta `{$pasta}` é publish cru, idêntica ao pacote instalado, e está coberta: "
+                .'o kit:update sobrescreveria a customização do projeto. Saída: '
+                .($ancestral !== null
+                    ? "estreite a entrada ancestral para as pastas autorais (`{$ancestral}` cobre `{$caminho}`)."
+                    : "remover de CAMINHOS_DO_KIT a entrada que cobre `{$caminho}`.");
+        }
+    }
+
+    return ['classes' => $classes, 'falhas' => $falhas];
+}
+
+/**
+ * Monta a árvore de fixture: `views/{pasta}/...` e `vendor/{fornecedor}/{pacote}/resources/views/...`.
+ *
+ * @param  array<string, array<string, string>>  $pastasDoKit  pasta => [relativo => conteúdo]
+ * @param  array<string, array<string, string>>  $pacotes  fornecedor/pacote => [relativo => conteúdo]
+ * @return array{0: string, 1: string}
+ */
+function arvoreDeViewsDeFixture(string $raiz, array $pastasDoKit, array $pacotes): array
+{
+    $escrever = function (string $arquivo, string $conteudo): void {
+        if (! is_dir(dirname($arquivo))) {
+            mkdir(dirname($arquivo), 0777, true);
+        }
+
+        file_put_contents($arquivo, $conteudo);
+    };
+
+    foreach ($pastasDoKit as $pasta => $arquivos) {
+        if (! is_dir($raiz.'/views/'.$pasta)) {
+            mkdir($raiz.'/views/'.$pasta, 0777, true);
+        }
+
+        foreach ($arquivos as $relativo => $conteudo) {
+            $escrever($raiz.'/views/'.$pasta.'/'.$relativo, $conteudo);
+        }
+    }
+
+    if (! is_dir($raiz.'/vendor')) {
+        mkdir($raiz.'/vendor', 0777, true);
+    }
+
+    foreach ($pacotes as $pacote => $arquivos) {
+        foreach ($arquivos as $relativo => $conteudo) {
+            $escrever($raiz.'/vendor/'.$pacote.'/resources/views/'.$relativo, $conteudo);
+        }
+    }
+
+    return [$raiz.'/views', $raiz.'/vendor'];
+}
+
+function raizTemporariaDeViews(): string
+{
+    $raiz = str_replace('\\', '/', sys_get_temp_dir()).'/kit-views-vendor-'.bin2hex(random_bytes(6));
+    mkdir($raiz, 0777, true);
+
+    return $raiz;
+}
+
+afterEach(function (): void {
+    if (isset($this->raizTemporaria) && is_dir($this->raizTemporaria)) {
+        File::deleteDirectory($this->raizTemporaria);
+    }
+});
+
+const VIEW_DO_PACOTE = "<div>\n    {{ \$slot }}\n</div>\n";
+
+it('[CT-02] a classificação de uma pasta de override segue o conteúdo das views', function (string $pasta, array $doKit, array $pacotes, string $classe): void {
+    $this->raizTemporaria = raizTemporariaDeViews();
+
+    [$views, $vendor] = arvoreDeViewsDeFixture($this->raizTemporaria, [$pasta => $doKit], $pacotes);
+
+    expect(classificarPastaDeViews($views, $vendor, $pasta)['classe'])->toBe($classe);
+})->with([
+    'cru'      => ['cru', ['v.blade.php' => VIEW_DO_PACOTE], ['acme/cru' => ['v.blade.php' => VIEW_DO_PACOTE]], 'cru'],
+    'crlf'     => ['crlf', ['v.blade.php' => "<div>\r\n    {{ \$slot }}\r\n</div>\r\n"], ['acme/crlf' => ['v.blade.php' => VIEW_DO_PACOTE]], 'cru'],
+    'crlf-inv' => ['crlf-inv', ['v.blade.php' => VIEW_DO_PACOTE], ['acme/crlf-inv' => ['v.blade.php' => "<div>\r\n    {{ \$slot }}\r\n</div>\r\n"]], 'cru'],
+    'byte'     => ['byte', ['v.blade.php' => "<div>\n    {{  \$slot }}\n</div>\n"], ['acme/byte' => ['v.blade.php' => VIEW_DO_PACOTE]], 'autoral'],
+    'borda'    => ['borda', ['v.blade.php' => "<div> \n    {{ \$slot }}\n</div>\n\n"], ['acme/borda' => ['v.blade.php' => VIEW_DO_PACOTE]], 'autoral'],
+    'mista'    => ['mista', [
+        'a.blade.php' => "<a>\n",
+        'b.blade.php' => "<b>editada</b>\n",
+        'c.blade.php' => "<c>\n",
+    ], ['acme/mista' => ['a.blade.php' => "<a>\n", 'b.blade.php' => "<b>\n", 'c.blade.php' => "<c>\n"]], 'autoral'],
+    'extra'    => ['extra', ['a.blade.php' => "<a>\n", 'novo.blade.php' => "<novo>\n"], ['acme/extra' => ['a.blade.php' => "<a>\n"]], 'autoral'],
+    'aninhada' => ['aninhada', [
+        'x.blade.php'            => "<x>\n",
+        'components/y.blade.php' => "<y>editada</y>\n",
+    ], ['acme/aninhada' => ['x.blade.php' => "<x>\n", 'components/y.blade.php' => "<y>\n"]], 'autoral'],
+    'svg'      => ['svg', ['icone.svg' => "<svg><path d=\"M1\"/></svg>\n"], ['acme/svg' => ['icone.svg' => "<svg><path d=\"M0\"/></svg>\n"]], 'autoral'],
+    'outro'    => ['outro', ['v.blade.php' => VIEW_DO_PACOTE], ['acme/outro-nome' => ['v.blade.php' => VIEW_DO_PACOTE]], 'cru'],
+    'vazia'    => ['vazia', [], [], 'cru'],
+    'sopar'    => ['sopar', ['so-do-kit.blade.php' => "<p>só do kit</p>\n"], [], 'autoral'],
+    'painel'   => ['painel', ['p.blade.php' => VIEW_DO_PACOTE], [
+        'acme/a-diferente' => ['p.blade.php' => "<section>outra</section>\n"],
+        'acme/z-igual'     => ['p.blade.php' => VIEW_DO_PACOTE],
+    ], 'cru'],
+    'painel2'  => ['painel2', ['p.blade.php' => VIEW_DO_PACOTE], [
+        'acme/a-igual'     => ['p.blade.php' => VIEW_DO_PACOTE],
+        'acme/z-diferente' => ['p.blade.php' => "<section>outra</section>\n"],
+    ], 'cru'],
+])->group('kit');
+
+it('[CT-03] publish cru que o pacote atualizou é acusado como autoral fora da lista, com as duas saídas e só os arquivos que divergem', function (): void {
+    $this->raizTemporaria = raizTemporariaDeViews();
+
+    [$views, $vendor] = arvoreDeViewsDeFixture($this->raizTemporaria, [
+        'drift' => ['painel.blade.php' => "<div>versão antiga</div>\n", 'outro.blade.php' => "<p>igual</p>\n"],
+    ], [
+        'acme/drift' => ['painel.blade.php' => "<div>versão nova</div>\n", 'outro.blade.php' => "<p>igual</p>\n"],
+    ]);
+
+    $falhas = varrerViewsDeVendor($views, $vendor, ['resources/views/outra-coisa'])['falhas'];
+
+    expect($falhas)->toHaveKey('drift');
+
+    $mensagem = $falhas['drift'];
+
+    expect($mensagem)->toContain('drift', 'painel.blade.php', 'CAMINHOS_DO_KIT', 'vendor:publish');
+    $this->assertStringNotContainsString('outro.blade.php', $mensagem, 'a mensagem só pode citar os arquivos que divergem');
+})->group('kit');
+
+it('[CT-04] publish cru coberto pela lista reprova, por qualquer forma de entrada, com a saída certa para a forma', function (string $entrada, string $saida): void {
+    $this->raizTemporaria = raizTemporariaDeViews();
+
+    [$views, $vendor] = arvoreDeViewsDeFixture($this->raizTemporaria, [
+        'crua' => ['painel.blade.php' => VIEW_DO_PACOTE],
+    ], [
+        'acme/crua' => ['painel.blade.php' => VIEW_DO_PACOTE],
+    ]);
+
+    $falhas = varrerViewsDeVendor($views, $vendor, [$entrada])['falhas'];
+
+    expect($falhas)->toHaveKey('crua');
+
+    $mensagem = $falhas['crua'];
+
+    expect($mensagem)->toContain('crua', $saida);
+    $this->assertStringNotContainsStringIgnoringCase('liste', $mensagem, 'a saída do publish cru coberto não é listar');
+})->with([
+    'exata'     => ['resources/views/vendor/crua', 'remover de CAMINHOS_DO_KIT'],
+    'ancestral' => ['resources/views/vendor', 'estreite a entrada ancestral para as pastas autorais'],
+    'arquivo'   => ['resources/views/vendor/crua/painel.blade.php', 'remover de CAMINHOS_DO_KIT'],
+])->group('kit');
+
+it('[CT-05] lista coerente com a autoria aprova', function (): void {
+    $this->raizTemporaria = raizTemporariaDeViews();
+
+    [$views, $vendor] = arvoreDeViewsDeFixture($this->raizTemporaria, [
+        'editada' => ['v.blade.php' => "<div>editada pelo kit</div>\n"],
+        'crua'    => ['v.blade.php' => VIEW_DO_PACOTE],
+    ], [
+        'acme/editada' => ['v.blade.php' => VIEW_DO_PACOTE],
+        'acme/crua'    => ['v.blade.php' => VIEW_DO_PACOTE],
+    ]);
+
+    $varredura = varrerViewsDeVendor($views, $vendor, ['resources/views/vendor/editada']);
+
+    expect($varredura['falhas'])->toBe([])
+        ->and($varredura['classes']['editada']['classe'])->toBe('autoral')
+        ->and($varredura['classes']['crua']['classe'])->toBe('cru');
+})->group('kit');
+
+it('[CT-12] pasta autoral sem pacote instalado e fora da lista reprova, oferecendo listar ou apagar a órfã', function (): void {
+    $this->raizTemporaria = raizTemporariaDeViews();
+
+    [$views, $vendor] = arvoreDeViewsDeFixture($this->raizTemporaria, [
+        'sopar' => ['so-do-kit.blade.php' => "<p>só do kit</p>\n"],
+    ], []);
+
+    $falhas = varrerViewsDeVendor($views, $vendor, ['resources/views/vendor/outra'])['falhas'];
+
+    expect($falhas)->toHaveKey('sopar')
+        ->and($falhas['sopar'])->toContain('sopar', 'CAMINHOS_DO_KIT', 'apague a pasta órfã, se o pacote saiu do composer.json');
+    $this->assertStringNotContainsString('vendor:publish', $falhas['sopar'], 'sem pacote instalado não há o que republicar');
+})->group('kit');
+
+it('[CT-06] toda pasta autoral está coberta inteira, inclusive por arquivo que ainda não existe', function (): void {
+    $varredura = varrerViewsDeVendor(base_path('resources/views/vendor'), base_path('vendor'), caminhosDoKit(), rastreados: true);
+
+    $descobertos = [];
+
+    foreach ($varredura['classes'] as $pasta => $classificacao) {
+        if ($classificacao['classe'] !== 'autoral') {
+            continue;
+        }
+
+        $arquivos = [...arquivosDaPastaDeViews(base_path('resources/views/vendor/'.$pasta), rastreados: true), 'novo-arquivo-sonda.blade.php'];
+
+        foreach ($arquivos as $relativo) {
+            $caminho = "resources/views/vendor/{$pasta}/{$relativo}";
+
+            if (! estaCoberto($caminho)) {
+                $descobertos[] = $caminho;
+            }
+        }
+    }
+
+    expect($descobertos)->toBe([], "Override autoral fora de KitUpdate::CAMINHOS_DO_KIT:\n  "
+        .implode("\n  ", $descobertos)."\n\n".implode("\n", $varredura['falhas']));
+})->skip(fn (): bool => ! naArvoreDoKit(), 'Projeto instalado: resources/views/vendor tem os publishes do próprio projeto, que não são do kit — a autoria só se decide na árvore do kit.')->group('kit');
+
+it('[CT-07] nenhuma view de pasta publish cru está coberta', function (): void {
+    $varredura = varrerViewsDeVendor(base_path('resources/views/vendor'), base_path('vendor'), caminhosDoKit(), rastreados: true);
+
+    $cobertas = [];
+
+    foreach ($varredura['classes'] as $pasta => $classificacao) {
+        if ($classificacao['classe'] !== 'cru') {
+            continue;
+        }
+
+        foreach (arquivosDaPastaDeViews(base_path('resources/views/vendor/'.$pasta), rastreados: true) as $relativo) {
+            $caminho = "resources/views/vendor/{$pasta}/{$relativo}";
+
+            if (estaCoberto($caminho)) {
+                $cobertas[] = $caminho;
+            }
+        }
+    }
+
+    expect($cobertas)->toBe([], "Publish cru coberto por KitUpdate::CAMINHOS_DO_KIT:\n  "
+        .implode("\n  ", $cobertas)."\n\n".implode("\n", $varredura['falhas']));
+})->skip(fn (): bool => ! naArvoreDoKit(), 'Projeto instalado: resources/views/vendor tem os publishes do próprio projeto, que não são do kit — a autoria só se decide na árvore do kit.')->group('kit');
+
+it('[CT-08] a varredura examina todas as pastas da árvore real e classifica a da lock-screen como autoral', function (): void {
+    /*
+     * Referência independente da varredura: `scandir` dos diretórios, e cada um conta se o git
+     * rastreia ao menos um arquivo dentro dele. Nunca o mesmo glob/enumerador da varredura,
+     * senão os dois concordariam com o mesmo erro (M37).
+     */
+    $raiz       = base_path('resources/views/vendor');
+    $diretorios = array_values(array_filter(
+        scandir($raiz) ?: [],
+        fn (string $nome): bool => $nome !== '.' && $nome !== '..' && is_dir($raiz.'/'.$nome),
+    ));
+
+    $comArquivoRastreado = array_values(array_filter($diretorios, function (string $nome): bool {
+        $processo = new Process(['git', 'ls-files', '--', 'resources/views/vendor/'.$nome], base_path(), timeout: 60);
+        $processo->mustRun();
+
+        return trim($processo->getOutput()) !== '';
+    }));
+
+    $varredura = varrerViewsDeVendor(base_path('resources/views/vendor'), base_path('vendor'), caminhosDoKit(), rastreados: true);
+
+    expect(count($comArquivoRastreado))->toBeGreaterThan(0)
+        ->and(count($varredura['classes']))->toBe(count($comArquivoRastreado))
+        ->and($varredura['classes'])->toHaveKey('filament-auth-designer')
+        ->and($varredura['classes']['filament-auth-designer']['classe'] ?? null)->toBe('autoral');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'Projeto instalado: resources/views/vendor tem os publishes do próprio projeto, que não são do kit — a autoria só se decide na árvore do kit.')->group('kit');
+
+it('[CT-11] o CHANGELOG registra a entrega de resources/views/vendor e o issue #148', function (): void {
+    $changelog = (string) file_get_contents(base_path('CHANGELOG.md'));
+
+    expect($changelog)->toContain('#148', 'resources/views/vendor');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'CHANGELOG.md é export-ignore (.gitattributes) e não existe no projeto instalado.')->group('kit');
+
+it('[CT-13] a guarda da árvore está declarada no fonte dos casos da árvore real', function (string $id): void {
+    $fonte = (string) file_get_contents(__FILE__);
+
+    $inicio = mb_strpos($fonte, "it('[".$id.']');
+
+    expect($inicio)->not->toBeFalse("a declaração de {$id} não foi encontrada no fonte");
+
+    $fim        = mb_strpos($fonte, "\nit(", (int) $inicio + 1);
+    $declaracao = mb_substr($fonte, (int) $inicio, $fim === false ? null : $fim - (int) $inicio);
+    $semEspacos = (string) preg_replace('/\s+/', '', $declaracao);
+
+    expect(preg_match("/->skip\\(fn \\(\\): bool => ! naArvoreDoKit\\(\\), '[^']+'\\)/", $declaracao))
+        ->toBe(1, "{$id} precisa pular com `! naArvoreDoKit()` e motivo não vazio")
+        ->and(str_contains($semEspacos, 'expect(true)->toBeTrue();return;'))
+        ->toBeFalse("{$id} não pode usar `expect(true)->toBeTrue(); return;` como guarda");
+})->with(['CT-06', 'CT-07', 'CT-08'])->group('kit');
+
+it('[CT-14] a entrada-pasta extrai o arquivo aninhado', function (): void {
+    $this->raizTemporaria = raizTemporariaDeViews();
+
+    $alvo = 'resources/views/vendor/filament-auth-designer/components/partials/media.blade.php';
+
+    expect(file_exists($this->raizTemporaria.'/resources/views/vendor/filament-auth-designer'))->toBeFalse();
+
+    $entradas = array_values(array_filter(
+        caminhosDoKit(),
+        fn (string $caminho): bool => str_starts_with($caminho, 'resources/views/vendor/'),
+    ));
+
+    expect($entradas)->not->toBeEmpty();
+
+    $comando = 'git archive HEAD -- '.implode(' ', array_map('escapeshellarg', $entradas))
+        .' | tar -x -f - -C '.escapeshellarg($this->raizTemporaria);
+
+    $processo = Process::fromShellCommandline($comando, base_path(), timeout: 120);
+    $processo->run();
+
+    expect($processo->isSuccessful())->toBeTrue('git archive | tar falhou: '.$processo->getErrorOutput());
+
+    $extraido = $this->raizTemporaria.'/'.$alvo;
+
+    expect(is_file($extraido))->toBeTrue("{$alvo} não chegou à árvore temporária")
+        ->and(conteudoComFimDeLinhaNormalizado($extraido))->toBe(conteudoComFimDeLinhaNormalizado(base_path($alvo)));
+})->skip(fn (): bool => ! naArvoreDoKit(), 'Precisa do git do kit: o projeto instalado não tem o histórico do kit para o git archive.')->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| R8 — a entrada nova na lista é comparada tag de destino × árvore do projeto
+|--------------------------------------------------------------------------
+|
+| CT-15/CT-16 do mesmo `04`. As duas peças puras do `kit:update` chamadas direto, sem git
+| nem árvore; o comando inteiro é o procedimento CT-17, evidência do `03`.
+|
+*/
+
+it('[CT-15] entrada nova é a que está na lista do destino e não na da origem', function (array $destino, array $origem, array $novas): void {
+    expect(KitUpdate::caminhosNovosNaLista($destino, $origem))->toBe($novas);
+})->with([
+    'entradas a mais, não contíguas' => [
+        ['app', 'resources/views/vendor/fad', 'config/kit.php', 'lang/x'],
+        ['app', 'config/kit.php'],
+        [0 => 'resources/views/vendor/fad', 1 => 'lang/x'],
+    ],
+    'listas iguais' => [
+        ['app', 'config/kit.php'],
+        ['app', 'config/kit.php'],
+        [],
+    ],
+    'origem não lida não vira "tudo é novo"' => [
+        ['app', 'resources/views/vendor/fad'],
+        [],
+        [],
+    ],
+    'outra ordem e caminho só na origem' => [
+        ['app', 'config/kit.php'],
+        ['config/kit.php', 'app', 'routes'],
+        [],
+    ],
+])->group('kit');
+
+/*
+ * A coluna `existeNoProjeto` é a resposta do callable (P-08), ou `null` para chamar sem ele.
+ * Vai como bool, e não como closure: o Pest resolve closure de dataset antes de passar.
+ */
+it('[CT-16] a saída do git diff --name-status vira rótulo conforme haja origem', function (string $saida, bool $comOrigem, array $rotulos, ?bool $existeNoProjeto = null): void {
+    $rotulado = $existeNoProjeto === null
+        ? KitUpdate::rotularDiff($saida, $comOrigem)
+        : KitUpdate::rotularDiff($saida, $comOrigem, fn (string $caminho): bool => $existeNoProjeto);
+
+    expect($rotulado)->toBe($rotulos);
+})->with([
+    'com origem: A, M, D, fora de ordem' => [
+        "M\tp/b.php\nA\tp/a.php\nD\tp/c.php\n",
+        true,
+        ['p/a.php' => 'novo no kit', 'p/b.php' => 'modificado', 'p/c.php' => 'removido do kit'],
+    ],
+    'sem origem: D, M, A ignorado' => [
+        "D\tp/falta.php\nM\tp/dif.php\nA\tp/so-projeto.php\n",
+        false,
+        ['p/dif.php' => 'modificado', 'p/falta.php' => 'novo no kit'],
+    ],
+    'outra letra e linha em branco final' => [
+        "T\tp/link.php\n\n",
+        false,
+        ['p/link.php' => 'modificado'],
+    ],
+    'saída vazia' => [
+        '',
+        true,
+        [],
+    ],
+    'P-08: M com origem e arquivo ausente no projeto' => [
+        "M\tresources/views/vendor/x/a.blade.php\n",
+        true,
+        ['resources/views/vendor/x/a.blade.php' => 'novo no kit'],
+        false,
+    ],
+    'P-08: M com origem e arquivo presente no projeto' => [
+        "M\tresources/views/vendor/x/a.blade.php\n",
+        true,
+        ['resources/views/vendor/x/a.blade.php' => 'modificado'],
+        true,
+    ],
+    'P-08: D com origem e arquivo ausente segue removido do kit' => [
+        "D\tresources/views/vendor/x/a.blade.php\n",
+        true,
+        ['resources/views/vendor/x/a.blade.php' => 'removido do kit'],
+        false,
+    ],
+    'QA-08: R100 com origem e callable ausente segue modificado, chave do renome com TAB' => [
+        "R100\tp/old.php\tp/new.php\n",
+        true,
+        ["p/old.php\tp/new.php" => 'modificado'],
+        false,
+    ],
+])->group('kit');
+
+/*
+| R9 — CT-18, só a parte automatizável: o diff da tag anterior até HEAD traz as dez views
+| autorais e nenhuma de pasta crua. O `kit:update --dry-run` com a classe antiga continua
+| procedimento da sessão (evidência do `03`).
+*/
+
+/** @var list<string> */
+const VIEWS_AUTORAIS_DESTA_RELEASE = [
+    'resources/views/vendor/asmit-resized-column/sticky-panel.blade.php',
+    'resources/views/vendor/command-center/components/output.blade.php',
+    'resources/views/vendor/command-center/pages/commands.blade.php',
+    'resources/views/vendor/command-center/pages/run.blade.php',
+    'resources/views/vendor/filament-auth-designer/components/partials/media.blade.php',
+    'resources/views/vendor/filament-captcha/drivers/hcaptcha.blade.php',
+    'resources/views/vendor/filament-captcha/drivers/recaptcha-v2.blade.php',
+    'resources/views/vendor/filament-captcha/drivers/recaptcha-v3.blade.php',
+    'resources/views/vendor/filament-captcha/drivers/turnstile.blade.php',
+    'resources/views/vendor/filament-clear-cache/livewire/clear-cache-button.blade.php',
+];
+
+it('[CT-18] cada view autoral difere da tag anterior, e nenhuma de pasta crua', function (): void {
+    $processo = new Process(['git', '-c', 'core.quotepath=off', 'diff', '--name-only', 'v0.45.0', 'HEAD', '--', 'resources/views/vendor'], base_path(), timeout: 120);
+    $processo->run();
+
+    expect($processo->isSuccessful())->toBeTrue('git diff falhou: '.$processo->getErrorOutput());
+
+    $alterados = array_values(array_filter(
+        array_map('trim', explode("\n", str_replace("\r\n", "\n", $processo->getOutput()))),
+        fn (string $linha): bool => $linha !== '',
+    ));
+
+    expect(array_values(array_diff(VIEWS_AUTORAIS_DESTA_RELEASE, $alterados)))
+        ->toBe([], 'views autorais que não diferem de v0.45.0 — a classe antiga do kit:update não as entrega');
+
+    $raizDasViews = base_path('resources/views/vendor');
+    $classes      = [];
+    $deCrua       = [];
+
+    foreach ($alterados as $caminho) {
+        $pasta = explode('/', substr($caminho, strlen('resources/views/vendor/')))[0];
+
+        $classes[$pasta] ??= is_dir($raizDasViews.'/'.$pasta)
+            ? classificarPastaDeViews($raizDasViews, base_path('vendor'), $pasta, rastreados: true)['classe']
+            : null;
+
+        if ($classes[$pasta] === 'cru') {
+            $deCrua[] = $caminho;
+        }
+    }
+
+    expect($deCrua)->toBe([], 'o diff da release toca views de pasta publish cru');
+})
+    ->skip(fn (): bool => ! naArvoreDoKit(), 'a tag anterior só existe no git do kit')
+    ->skip(fn (): bool => ! tagAnteriorNoCheckout(), 'a tag anterior v0.45.0 não está neste checkout (checkout raso do CI)')
+    ->group('kit');

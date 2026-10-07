@@ -5,6 +5,33 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Corrigido
+
+- **`kit:update` passa a entregar os overrides de view que o kit escreveu** (#148, wiki
+  `wikis/specs/fix/kit-update-views-vendor/`): `resources/views/vendor` não estava em
+  `KitUpdate::CAMINHOS_DO_KIT`, então o override da lock-screen com o par de logos claro/escuro
+  (v0.43.0) chegava a quem instalava e nunca a quem atualizava — `LogoDarkModeTest` CT-16 falhava
+  6 vezes num projeto v0.42.0 → v0.44.0. Entram na lista as cinco pastas **autorais** — `asmit-resized-column`,
+  `command-center`, `filament-auth-designer`, `filament-captcha`, `filament-clear-cache` —, pasta
+  inteira; as sete pastas que são publish cru de pacote (`ai-tasks`, `authentication-log`,
+  `filament-composer-release-notifier`, `filament-jobs-monitor`, `filament-onboarding`,
+  `filament-sentinel`, `pulse`) ficam fora de propósito, senão o update sobrescreveria customização
+  do projeto. Autoral é decidido por **conteúdo** — a view difere de toda view de mesmo caminho relativo
+  nos pacotes instalados —, e a varredura de `tests/Kit/KitUpdateTest.php`, que até aqui pulava
+  `resources/views/vendor` inteiro, passa a reprovar nos dois sentidos: pasta autoral fora da lista e
+  pasta crua dentro dela. Para quem já editou uma dessas cinco pastas no próprio projeto, o próximo
+  `kit:update` passa a **oferecer** a view do kit no diff, como faz com toda pasta da lista. Duas
+  consequências para a entrega: as dez views autorais ganham uma linha de comentário Blade nesta versão,
+  para que a classe **antiga** do `kit:update` — a que roda na primeira rodada de quem atualiza, e que
+  compara tag com tag — as liste em qualquer origem (medido: projeto na v0.45.0 sem o override recebe
+  `media.blade.php` na primeira rodada); e `KitUpdate::arquivosAlterados()` passa a comparar **com a
+  árvore do projeto** todo caminho que entrou na lista depois da versão de origem
+  (`caminhosNovosNaLista()`), para a próxima pasta que entrar na lista não depender desse toque; e
+  arquivo que o projeto **não tem** passa a sair como "novo no kit" ainda que tenha mudado entre as tags
+  (`rotularDiff()` olha a árvore), que é o rótulo que o `--only-new` aplica — na primeira rodada a partir
+  de uma versão anterior, que roda a classe antiga, a view ausente ainda aparece como "modificado": aplique
+  pelo modo interativo ou com `--all`.
+
 ## [0.45.0] - 2026-10-06
 
 ### Adicionado

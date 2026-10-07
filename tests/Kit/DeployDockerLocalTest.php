@@ -74,7 +74,7 @@ it('[CT-02] o --help imprime o cabeçalho inteiro, e só o cabeçalho', function
  * sentinela, pelo mesmo motivo dos casos de documentação deste arquivo.
  *
  * Numa instalação real este caso não passa nunca, e não por defeito: o `kit:update` manda rodar
- * `git init` (`app/Console/Commands/KitUpdate.php:475-477`), e no Windows o `core.filemode` nasce
+ * `git init` (`app/Console/Commands/KitUpdate.php:preVoo:485`), e no Windows o `core.filemode` nasce
  * `false` — o `git add -A` grava `100644` para todo arquivo, inclusive este. Medido nas duas
  * instalações de teste; reproduz com `git -C <projeto> ls-files -s deploy_docker_local.sh`.
  *

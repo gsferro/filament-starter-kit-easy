@@ -37,7 +37,7 @@ O que ele faz, em ordem:
 
 O fluxo é **não interativo** quando não há terminal (CI, `--no-interaction`) — nunca "sem TTY": ele
 vira relatório e sai sem aplicar nada, a menos que `--all` ou `--only-new` já tenham dado a
-aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:437`).
+aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:449`).
 
 ```mermaid
 flowchart TD
@@ -66,13 +66,13 @@ accDescr: O kit:update confere o terreno, vincula o kit como remote temporário,
 ```
 
 A ordem vem direto de `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:385`): pré-voo (`:preVoo:473`), remote temporário
-(`:vincularKit:533`), diff restrito (`:arquivosAlterados:639`), resumo (`:mostrarResumo:758`), a
-checagem de terminal (`:isInteractive:437`), o branch temporário (`:prepararBranch:778`), a revisão
-por arquivo (`:revisarEAplicar:827`), o relatório do `composer.json`
-(`:relatarComposerJson:1012`, `:CAMINHOS_SO_RELATORIO:376`) e `marcarVersao()`
-(`:marcarVersao:1121`, chamada dentro de `:encerrar:1046`). O `finally` que desfaz o remote roda em
-todo caminho de saída, inclusive erro (`:desvincularKit:535`).
+(`app/Console/Commands/KitUpdate.php:handle:397`): pré-voo (`:preVoo:485`), remote temporário
+(`:vincularKit:545`), diff restrito (`:arquivosAlterados:651`), resumo (`:mostrarResumo:827`), a
+checagem de terminal (`:isInteractive:449`), o branch temporário (`:prepararBranch:847`), a revisão
+por arquivo (`:revisarEAplicar:896`), o relatório do `composer.json`
+(`:relatarComposerJson:1081`, `:CAMINHOS_SO_RELATORIO:388`) e `marcarVersao()`
+(`:marcarVersao:1190`, chamada dentro de `:encerrar:1115`). O `finally` que desfaz o remote roda em
+todo caminho de saída, inclusive erro (`:desvincularKit:554`).
 
 Dois detalhes que aparecem na prática:
 
@@ -164,6 +164,15 @@ O kit chega ao seu projeto de dois jeitos, e cada um entrega um recorte diferent
 viaja no `create-project`, mas no `kit:update` é **só relatório**, nunca aplicado (a seção acima,
 "Dependência nova do kit").
 
+Caminho que **entrou** em `CAMINHOS_DO_KIT` depois da sua versão — como as pastas autorais de
+`resources/views/vendor` — é comparado com a **sua árvore**, e não só tag com tag
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:692`): o arquivo que você não tem aparece como
+"novo no kit" mesmo que o kit não o tenha mudado desde a sua versão, e arquivo que o seu projeto não tem
+aparece como "novo no kit" ainda que o kit o tenha mudado entre as tags — é o rótulo que o `--only-new`
+aplica. Esse comportamento vale a partir da versão em que ele entrou (a classe que roda é a instalada):
+na **primeira** rodada a partir de uma versão anterior, a view que você não tem pode aparecer como
+"modificado" — aplique pelo modo interativo ou com `--all`, não com `--only-new`, e rode de novo.
+
 ```mermaid
 flowchart LR
 %% DG-17
@@ -189,9 +198,9 @@ Um diretório listado **em parte** não é desenhado como entregue inteiro: `app
 depois — e `config/` é só cinco arquivos nomeados
 (`app/Console/Commands/KitUpdate.php:'config/kit.php':153`). E `wikis/` **não** é `export-ignore`
 inteiro — só `wikis/specs`: os documentos de topo de `wikis/` viajam no `create-project` **e** o
-`kit:update` os entrega um a um (`app/Console/Commands/KitUpdate.php:'wikis/README.md':310`),
+`kit:update` os entrega um a um (`app/Console/Commands/KitUpdate.php:'wikis/README.md':322`),
 assim como `tests/Kit` e `tests/Pest.php`
-(`app/Console/Commands/KitUpdate.php:'tests/Kit':233`, `app/Console/Commands/KitUpdate.php:'tests/Pest.php':252`)
+(`app/Console/Commands/KitUpdate.php:'tests/Kit':245`, `app/Console/Commands/KitUpdate.php:'tests/Pest.php':264`)
 — `tests/` não é "intocado pelo kit:update".
 
 ## O jeito manual

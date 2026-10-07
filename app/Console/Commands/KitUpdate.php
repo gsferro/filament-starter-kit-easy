@@ -227,6 +227,18 @@ class KitUpdate extends Command
         'resources/views/filament',
         'resources/views/livewire',
         'resources/views/svg',
+        /*
+         * Overrides de view de pacote que o kit EDITOU (issue #148: a lock-screen do par de logos
+         * ficou na v0.43.0 só para quem instalou). Autoral = conteúdo diferente de toda view de mesmo
+         * caminho relativo nos pacotes instalados, pasta inteira; publish cru (idêntico ao pacote) fica de fora de propósito,
+         * senão o update sobrescreveria customização do projeto. Quem decide, por conteúdo, é a
+         * varredura de `tests/Kit/KitUpdateTest.php` sobre `resources/views/vendor`.
+         */
+        'resources/views/vendor/asmit-resized-column',
+        'resources/views/vendor/command-center',
+        'resources/views/vendor/filament-auth-designer',
+        'resources/views/vendor/filament-captcha',
+        'resources/views/vendor/filament-clear-cache',
         'routes/console.php',
         // Os testes do kit acompanham a atualização: é com eles que você
         // confere se a fundação continua de pé depois de aplicar.
@@ -642,7 +654,65 @@ class KitUpdate extends Command
             ? ['diff', '--name-status', $origem, $destino, '--']
             : ['diff', '--name-status', $destino, '--'];
 
-        $saida = trim($this->git([...$args, ...$this->caminhosDoKit($destino)]));
+        $lista    = $this->caminhosDoKit($destino);
+        $existe   = static fn (string $caminho): bool => is_file(base_path($caminho));
+        $arquivos = self::rotularDiff($this->git([...$args, ...$lista]), $origem !== null, $existe);
+
+        /*
+         * Caminho que entrou na lista DEPOIS da origem (issue #148): o diff tag→tag só
+         * mostra o que mudou entre as duas, e um arquivo que o kit escreveu antes da
+         * origem — mas que nunca viajou, porque a pasta não estava na lista — não muda
+         * entre elas. Quem já estava na v0.43.0 sem o override da lock-screen nunca o
+         * receberia. Para esses caminhos, e só para eles, o diff é tag→sua árvore, como
+         * no modo sem origem; o tag→tag prevalece quando os dois falam do mesmo arquivo.
+         * Sem a lista da origem legível, nada muda: o aviso do fim manda repetir com --from.
+         */
+        if ($origem !== null) {
+            $daOrigem = self::caminhosDeclaradosEm($this->git(['show', "{$origem}:app/Console/Commands/KitUpdate.php"]));
+            $novos    = self::caminhosNovosNaLista($lista, $daOrigem);
+
+            if ($novos !== []) {
+                $arquivos += self::rotularDiff($this->git(['diff', '--name-status', $destino, '--', ...$novos]), false, $existe);
+            }
+        }
+
+        ksort($arquivos);
+
+        return $arquivos;
+    }
+
+    /**
+     * Os caminhos que a lista do destino tem e a da origem não — os que entraram na
+     * lista depois da versão instalada. Origem ilegível (`[]`) não vira "tudo é novo".
+     *
+     * @param  list<string>  $listaDestino
+     * @param  list<string>  $listaOrigem
+     * @return list<string>
+     */
+    public static function caminhosNovosNaLista(array $listaDestino, array $listaOrigem): array
+    {
+        return $listaOrigem === [] ? [] : array_values(array_diff($listaDestino, $listaOrigem));
+    }
+
+    /**
+     * A saída de `git diff --name-status` como caminho => rótulo, ordenada.
+     *
+     * Sem origem o diff é "tag → sua árvore", então a leitura inverte: 'D' quer dizer
+     * que o arquivo existe no kit e não no seu projeto, e 'A' que o arquivo é seu e o
+     * kit não tem — este último se ignora.
+     *
+     * `$existeNoProjeto` corrige o rótulo pelo que há na árvore: um arquivo que mudou
+     * entre as tags mas que o projeto NÃO tem é "novo no kit" para ele, não "modificado"
+     * — é o que o `--only-new` aplica, e um override que nunca viajou (issue #148) chega
+     * ao projeto exatamente assim. Só o status `M`: numa linha de renome (`R`/`C`) a
+     * chave é `old	new`, que nunca é arquivo, e o rótulo "modificado" fica como sempre foi.
+     *
+     * @param  null|callable(string): bool  $existeNoProjeto
+     * @return array<string, string>
+     */
+    public static function rotularDiff(string $saida, bool $comOrigem, ?callable $existeNoProjeto = null): array
+    {
+        $saida = trim($saida);
 
         if ($saida === '') {
             return [];
@@ -657,18 +727,17 @@ class KitUpdate extends Command
                 continue;
             }
 
-            /*
-             * Sem origem o diff é "tag → sua árvore", então a leitura inverte:
-             * 'D' quer dizer que o arquivo existe no kit e não no seu projeto,
-             * e 'A' que o arquivo é seu e o kit não tem — este último se ignora.
-             */
             $rotulo = match (true) {
-                $status === 'A' && $origem !== null => 'novo no kit',
-                $status === 'A'                     => null,
-                $status === 'D' && $origem !== null => 'removido do kit',
-                $status === 'D'                     => 'novo no kit',
-                default                             => 'modificado',
+                $status === 'A' && $comOrigem => 'novo no kit',
+                $status === 'A'               => null,
+                $status === 'D' && $comOrigem => 'removido do kit',
+                $status === 'D'               => 'novo no kit',
+                default                       => 'modificado',
             };
+
+            if ($status === 'M' && $existeNoProjeto !== null && ! $existeNoProjeto($caminho)) {
+                $rotulo = 'novo no kit';
+            }
 
             if ($rotulo !== null) {
                 $arquivos[$caminho] = $rotulo;
