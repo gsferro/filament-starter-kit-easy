@@ -196,32 +196,16 @@ it('[CT-04] o segmento do painel mostra a organização aberta, e só nela', fun
 // regra só no `/app` com organização aberta.
 
 /**
- * Os `src` das `<img>` do swap nativo, por variante (`fi-logo-light` e `fi-logo-dark`), sem repetição:
- * o Filament desenha a marca na barra lateral e no topo, então cada URL sai mais de uma vez.
- *
- * @return array{light: list<string>, dark: list<string>}
+ * Afirma o par da marca: exatamente uma `<img>` clara e uma escura, com as URLs dadas.
  */
-function imagensDaMarcaPorVariante(string $html): array
+function expectParDaMarca(string $html, string $clara, string $escura): void
 {
-    preg_match_all('~<img\b[^>]*>~i', $html, $tags);
+    $imagens = imagensDaMarcaPorVariante($html);
 
-    $imagens = ['light' => [], 'dark' => []];
-
-    foreach ($tags[0] as $tag) {
-        if (preg_match('~\sclass\s*=\s*"([^"]*)"~', $tag, $classe) !== 1 || preg_match('~\ssrc\s*=\s*"([^"]*)"~', $tag, $src) !== 1) {
-            continue;
-        }
-
-        $classes = preg_split('~\s+~', $classe[1], flags: PREG_SPLIT_NO_EMPTY) ?: [];
-
-        foreach (['light' => 'fi-logo-light', 'dark' => 'fi-logo-dark'] as $variante => $nome) {
-            if (in_array($nome, $classes, true)) {
-                $imagens[$variante][] = $src[1];
-            }
-        }
-    }
-
-    return ['light' => array_values(array_unique($imagens['light'])), 'dark' => array_values(array_unique($imagens['dark']))];
+    expect($imagens['light'])->toHaveCount(1)
+        ->and($imagens['light'][0])->toContain($clara)
+        ->and($imagens['dark'])->toHaveCount(1)
+        ->and($imagens['dark'][0])->toContain($escura);
 }
 
 /** O texto de todo `div.fi-logo` (a marca em texto, sem imagem), um por elemento. */
@@ -274,12 +258,7 @@ it('[CT-42] a marca simples do /app da Acme é o par da organização', function
     composicaoDoCabecalhoDaTenancia(false);
 
     $html    = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
-    $imagens = imagensDaMarcaPorVariante($html);
-
-    expect($imagens['light'])->toHaveCount(1)
-        ->and($imagens['light'][0])->toContain('organizacoes/logos/acme.png')
-        ->and($imagens['dark'])->toHaveCount(1)
-        ->and($imagens['dark'][0])->toContain('organizacoes/logos/acme-dark.png');
+    expectParDaMarca($html, 'organizacoes/logos/acme.png', 'organizacoes/logos/acme-dark.png');
 
     $todas = implode('|', imagensDaMarcaDaTenancia($html));
 
@@ -293,12 +272,7 @@ it('[CT-43] a marca simples cai por variante na instalação quando a organizaç
     composicaoDoCabecalhoDaTenancia(false);
 
     $html    = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
-    $imagens = imagensDaMarcaPorVariante($html);
-
-    expect($imagens['light'])->toHaveCount(1)
-        ->and($imagens['light'][0])->toContain($claraEsperada)
-        ->and($imagens['dark'])->toHaveCount(1)
-        ->and($imagens['dark'][0])->toContain('kit/logo-dark-ct.png');
+    expectParDaMarca($html, $claraEsperada, 'kit/logo-dark-ct.png');
 })->with([
     'queda total'        => [null, 'kit/logo-ct.png'],
     'queda só da escura' => ['organizacoes/logos/acme.png', 'organizacoes/logos/acme.png'],
@@ -328,12 +302,7 @@ it('[CT-57] organização só com a variante escura e instalação com a clara: 
     composicaoDoCabecalhoDaTenancia($composicao);
 
     $html    = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
-    $imagens = imagensDaMarcaPorVariante($html);
-
-    expect($imagens['light'])->toHaveCount(1)
-        ->and($imagens['light'][0])->toContain('kit/logo-ct.png')
-        ->and($imagens['dark'])->toHaveCount(1)
-        ->and($imagens['dark'][0])->toContain('organizacoes/logos/acme-dark.png');
+    expectParDaMarca($html, 'kit/logo-ct.png', 'organizacoes/logos/acme-dark.png');
 
     $this->assertStringNotContainsString('kit/logo-dark-ct.png', implode('|', imagensDaMarcaDaTenancia($html)));
 })->with([
@@ -348,15 +317,12 @@ it('[CT-45] a composição do /app da Acme mostra o par da organização, com um
 
     $html    = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
     $regiao  = regiaoDoHeader($html, 'kit-cabecalho');
-    $imagens = imagensDaMarcaPorVariante($regiao);
 
     expect($regiao)->not->toBe('')
         ->and(substr_count($regiao, 'fi-logo-light'))->toBe(1)
-        ->and(substr_count($regiao, 'fi-logo-dark'))->toBe(1)
-        ->and($imagens['light'])->toHaveCount(1)
-        ->and($imagens['light'][0])->toContain('organizacoes/logos/acme.png')
-        ->and($imagens['dark'])->toHaveCount(1)
-        ->and($imagens['dark'][0])->toContain('organizacoes/logos/acme-dark.png');
+        ->and(substr_count($regiao, 'fi-logo-dark'))->toBe(1);
+
+    expectParDaMarca($regiao, 'organizacoes/logos/acme.png', 'organizacoes/logos/acme-dark.png');
 
     // Nenhuma escura fora de uma composição: a página inteira tem tantas quanto composições (>= 1).
     $composicoes = substr_count($html, '<span class="kit-cabecalho">');
@@ -378,13 +344,9 @@ it('[CT-46] a composição cai no par da instalação quando a organização nã
 
     $html    = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
     $regiao  = regiaoDoHeader($html, 'kit-cabecalho');
-    $imagens = imagensDaMarcaPorVariante($regiao);
 
-    expect($regiao)->not->toBe('')
-        ->and($imagens['light'])->toHaveCount(1)
-        ->and($imagens['light'][0])->toContain('kit/logo-ct.png')
-        ->and($imagens['dark'])->toHaveCount(1)
-        ->and($imagens['dark'][0])->toContain('kit/logo-dark-ct.png');
+    expect($regiao)->not->toBe('');
+    expectParDaMarca($regiao, 'kit/logo-ct.png', 'kit/logo-dark-ct.png');
 })->group('kit');
 
 /** @premissa a composição descarta a escura quando a clara é nula (dependência clara → escura). */
@@ -415,6 +377,11 @@ it('[CT-48] a marca unificada mostra só a clara da organização e nenhuma escu
     expect(implode('|', imagensDaMarcaDaTenancia($html)))->toContain('organizacoes/logos/acme.png')
         ->and(imagensDaMarcaPorVariante($html)['dark'])->toBe([])
         ->and(preg_match('~fi-logo-dark~', $html))->toBe(0);
+
+    if ($composicao) {
+        // A composição renderiza a marca uma vez só: uma `<img>` (a clara), nenhuma escura.
+        expect(preg_match_all('~<img\b~i', regiaoDoHeader($html, 'kit-cabecalho')))->toBe(1);
+    }
 
     $this->assertStringNotContainsString('organizacoes/logos/acme-dark.png', $html);
     $this->assertStringNotContainsString('kit/logo-dark-ct.png', $html);
@@ -454,12 +421,7 @@ it('[CT-49] a pessoa de duas organizações vê no /app/acme o par da Acme (ou o
     fronteiraDeRequest();
 
     $html    = $this->get('/app/acme')->assertSuccessful()->getContent();
-    $imagens = imagensDaMarcaPorVariante($html);
-
-    expect($imagens['light'])->toHaveCount(1)
-        ->and($imagens['light'][0])->toContain($clara)
-        ->and($imagens['dark'])->toHaveCount(1)
-        ->and($imagens['dark'][0])->toContain($escura);
+    expectParDaMarca($html, $clara, $escura);
 
     $this->assertStringNotContainsString('organizacoes/logos/globex', $html);
 })->with([
@@ -469,7 +431,7 @@ it('[CT-49] a pessoa de duas organizações vê no /app/acme o par da Acme (ou o
     'a Acme sem logo não herda o par da Globex'    => [true, false, false, 'kit/logo-ct.png', 'kit/logo-dark-ct.png'],
 ])->group('kit');
 
-it('[CT-50] a logo de uma organização só chega a quem a rota deixa entrar nela', function (bool $comVinculo, bool $globexContem, ?bool $instalacaoContem): void {
+it('[CT-50] a logo de uma organização só chega a quem a rota deixa entrar nela', function (bool $comVinculo, bool $globexContem): void {
     gravarLogoDaInstalacaoDaTenancia(unifica: false);
     $acme   = acmeComPar();
     $globex = organizacaoComLogos('Globex', 'globex', 'organizacoes/logos/globex.png', 'organizacoes/logos/globex-dark.png');
@@ -483,25 +445,27 @@ it('[CT-50] a logo de uma organização só chega a quem a rota deixa entrar nel
 
     composicaoDoCabecalhoDaTenancia(false);
 
-    $html = $this->actingAs($usuario)->get('/app/globex')->getContent();
+    $resposta = $this->actingAs($usuario)->get('/app/globex');
 
     if ($globexContem) {
+        $html = $resposta->assertSuccessful()->getContent();
+
         $this->assertStringContainsString('organizacoes/logos/globex.png', $html);
-    } else {
-        $this->assertStringNotContainsString('organizacoes/logos/globex.png', $html);
+
+        return;
     }
 
-    // A página de recusa (404 do Sentinel) não renderiza a marca do painel: a cláusula sobre a
-    // logo da instalação não tem o que medir ali (`null`), e o M25 fica sem matador. Medido: a
-    // resposta tem o nome da aplicação em texto e nenhum `<img>`.
-    if ($instalacaoContem === true) {
-        $this->assertStringContainsString('kit/logo-ct.png', $html);
-    } elseif ($instalacaoContem === false) {
-        $this->assertStringNotContainsString('kit/logo-ct.png', $html);
-    }
+    // Sem vínculo a rota recusa (404 do Sentinel). Controle positivo na MESMA resposta: a página
+    // de recusa traz o nome da aplicação em texto (`sn-brand`), então a ausência da logo não vem
+    // de uma resposta vazia. Ela não renderiza a marca do painel (nenhuma `<img>`), por isso a
+    // cláusula sobre a logo da instalação não tem o que medir aqui.
+    $html = $resposta->assertNotFound()->getContent();
+
+    $this->assertStringContainsString('<div class="sn-brand">'.e((string) config('app.name')).'</div>', $html);
+    $this->assertStringNotContainsString('organizacoes/logos/globex.png', $html);
 })->with([
-    'com vínculo: a marca é a da organização'                  => [true, true, false],
-    'sem vínculo: a logo da organização não chega'             => [false, false, null],
+    'com vínculo: a marca é a da organização'      => [true, true],
+    'sem vínculo: a recusa não traz a logo dela'   => [false, false],
 ])->group('kit');
 
 it('[CT-56] a master_global sem vínculo que abre /app/globex vê o par da Globex', function (): void {
@@ -511,13 +475,9 @@ it('[CT-56] a master_global sem vínculo que abre /app/globex vê o par da Globe
 
     $html    = $this->actingAs(usuarioDoKit('master_global'))->get('/app/globex')->assertSuccessful()->getContent();
     $regiao  = regiaoDoHeader($html, 'kit-cabecalho');
-    $imagens = imagensDaMarcaPorVariante($regiao);
 
-    expect($regiao)->not->toBe('')
-        ->and($imagens['light'])->toHaveCount(1)
-        ->and($imagens['light'][0])->toContain('organizacoes/logos/globex.png')
-        ->and($imagens['dark'])->toHaveCount(1)
-        ->and($imagens['dark'][0])->toContain('organizacoes/logos/globex-dark.png');
+    expect($regiao)->not->toBe('');
+    expectParDaMarca($regiao, 'organizacoes/logos/globex.png', 'organizacoes/logos/globex-dark.png');
 
     $this->assertStringNotContainsString('kit/logo-ct.png', $regiao);
     $this->assertStringNotContainsString('kit/logo-dark-ct.png', $regiao);
@@ -553,12 +513,7 @@ it('[CT-51] o topo fora do /app com organização é o par da instalação', fun
     }
 
     $html    = $this->get($tela)->assertSuccessful()->getContent();
-    $imagens = imagensDaMarcaPorVariante($html);
-
-    expect($imagens['light'])->toHaveCount(1)
-        ->and($imagens['light'][0])->toContain('kit/logo-ct.png')
-        ->and($imagens['dark'])->toHaveCount(1)
-        ->and($imagens['dark'][0])->toContain('kit/logo-dark-ct.png');
+    expectParDaMarca($html, 'kit/logo-ct.png', 'kit/logo-dark-ct.png');
 
     $this->assertStringNotContainsString('organizacoes/logos/acme.png', $html);
     $this->assertStringNotContainsString('organizacoes/logos/acme-dark.png', $html);
@@ -610,12 +565,7 @@ it('[CT-53] a barra superior e a lateral do /app da Acme, renderizadas pelo comp
     }
 
     $html    = Livewire::test($componente)->html();
-    $imagens = imagensDaMarcaPorVariante($html);
-
-    expect($imagens['light'])->toHaveCount(1)
-        ->and($imagens['light'][0])->toContain('organizacoes/logos/acme.png')
-        ->and($imagens['dark'])->toHaveCount(1)
-        ->and($imagens['dark'][0])->toContain('organizacoes/logos/acme-dark.png');
+    expectParDaMarca($html, 'organizacoes/logos/acme.png', 'organizacoes/logos/acme-dark.png');
 
     foreach (['organizacoes/logos/globex', 'kit/logo-ct.png', 'kit/logo-dark-ct.png'] as $fora) {
         $this->assertStringNotContainsString($fora, $html);
@@ -649,7 +599,7 @@ it('[CT-11] o nome da organização sai escapado na composição', function (): 
 
 // --- R1 — com organização ativa, a marca de fábrica não muda --------------------
 
-it('[CT-27] com organização ativa, a marca de fábrica não muda', function (): void {
+it('[CT-27] com organização ativa SEM logo, a marca de fábrica não muda', function (): void {
     $acme = tenant('Acme', 'acme');
 
     $usuario = usuarioComPapel('panel_user', $acme);

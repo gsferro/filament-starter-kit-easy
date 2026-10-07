@@ -292,13 +292,13 @@ segment:
 The composition replaces the brand **wherever Filament draws it**: in the topbar and, on a narrow
 screen with the sidebar open, at the top of the sidebar (there the texts shrink and truncate with an
 ellipsis to fit on one line). Authentication screens (login, password reset,
-lock screen, two-factor, e-mail verification) keep the usual brand: the header belongs to the
+two-factor, e-mail verification) keep the usual brand: the header belongs to the
 panels' inner screens. In the business panel (`/app`), with an
 open organisation, the composition's logo (and the plain brand, with the composition off) is the
 **organisation's** — the light one and, with a split brand, the dark one, swapped by the browser
 with the theme — and falls back to the installation's when the organisation has none. In the
-administration and infrastructure panels, and on authentication screens, it is the installation's.
-The lock screen follows the same rule.
+administration and infrastructure panels it is the installation's; on authentication screens (login,
+password reset) too, and the lock screen uses the session's organisation, by the same rule.
 
 The fourth switch, **Nome do usuário ao lado do avatar** (user name next to the avatar), shows who
 is signed in to the left of the avatar, with a line below chosen in **Abaixo do nome do usuário**:

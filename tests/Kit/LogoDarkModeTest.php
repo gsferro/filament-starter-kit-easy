@@ -9,6 +9,7 @@ use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 /**
@@ -443,36 +444,6 @@ it('[CT-20] documenta a logo light dark com screenshots nos dois idiomas', funct
 // --- fix/logo-dark-do-tenant — a regra única do par de logos ---------------------
 
 /**
- * Os `<img>` do swap nativo (`fi-logo-light` e `fi-logo-dark`), por variante, da página inteira.
- *
- * @return array{light: list<string>, dark: list<string>}
- */
-function imagensPorVarianteDaTelaDeBloqueio(string $html): array
-{
-    preg_match_all('~<img\b[^>]*>~i', $html, $tags);
-
-    $imagens = ['light' => [], 'dark' => []];
-
-    foreach ($tags[0] as $tag) {
-        if (preg_match('~\sclass\s*=\s*"([^"]*)"~', $tag, $classe) !== 1 || preg_match('~\ssrc\s*=\s*"([^"]*)"~', $tag, $src) !== 1) {
-            continue;
-        }
-
-        $classes = preg_split('~\s+~', $classe[1], flags: PREG_SPLIT_NO_EMPTY) ?: [];
-
-        if (in_array('fi-logo-light', $classes, true)) {
-            $imagens['light'][] = $src[1];
-        }
-
-        if (in_array('fi-logo-dark', $classes, true)) {
-            $imagens['dark'][] = $src[1];
-        }
-    }
-
-    return $imagens;
-}
-
-/**
  * CT-40 — o par resolvido para uma organização, por variante e de forma independente.
  *
  * A letra é o dono da logo: A/B da organização (clara/escura), C/D da instalação. `null` é a
@@ -609,7 +580,7 @@ it('[CT-54] a tela de bloqueio mostra o par da organização da sessão e não o
     Filament::setTenant($globex, isQuiet: true);
 
     $html    = $this->get(route('lockscreen.app.page'))->assertOk()->getContent();
-    $imagens = imagensPorVarianteDaTelaDeBloqueio($html);
+    $imagens = imagensDaMarcaPorVariante($html);
 
     expect($imagens['light'])->toHaveCount(1)
         ->and($imagens['light'][0])->toContain('organizacoes/logos/acme.png')
@@ -631,13 +602,10 @@ it('[CT-54] a tela de bloqueio mostra o par da organização da sessão e não o
  */
 it('[CT-55] a documentação do cabeçalho dos painéis não afirma mais o que deixou de valer', function (string $idioma, string $titulo, string $organizacao, string $obsoleto, string $obsoletoBloqueio): void {
     $pagina = file_get_contents(base_path("docs/{$idioma}/recursos/configuracoes-do-kit.md"));
-    $inicio = strpos($pagina, "## {$titulo}");
 
-    expect($inicio)->not->toBeFalse();
+    expect($pagina)->toContain("## {$titulo}");
 
-    $resto = substr($pagina, $inicio + 3);
-    $fim   = strpos($resto, "\n## ");
-    $secao = $fim === false ? $resto : substr($resto, 0, $fim);
+    $secao = Str::before(Str::after($pagina, "## {$titulo}"), "\n## ");
 
     $normaliza = static fn (string $texto): string => (string) preg_replace('~\s+~u', ' ', str_replace('**', '', $texto));
 

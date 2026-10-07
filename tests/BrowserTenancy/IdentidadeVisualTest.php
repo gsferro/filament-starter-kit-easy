@@ -234,7 +234,7 @@ it('nao deixa nenhum elemento na cor default quando a organizacao tem a sua', fu
  * `inLightMode()`/`inDarkMode()` (a emulação só vale no load); a troca é o clique real no
  * alternador do Filament, no mesmo documento.
  *
- * Alternador, medido no DOM: o menu do usuário (`.fi-user-menu-trigger`) abre o dropdown, e nele
+ * Alternador, medido no DOM: o menu do usuário (`button[aria-label="Menu do usuário"]`, rótulo do pt_BR do Filament) abre o dropdown, e nele
  * `button.fi-theme-switcher-btn[aria-label="Mudar para tema escuro|claro"]`
  * (`x-on:click="(theme = 'dark') && close()"`). O rótulo é o do pt_BR do Filament.
  *
@@ -309,7 +309,7 @@ it('troca a imagem visivel da marca quando o tema e alternado sem recarregar', f
         // Controle positivo: no tema inicial a visível já é a da organização.
         ->assertScript($todaVisivelTermina($arquivoInicial))
         // Alterna pelo alternador real, no MESMO documento (sem `visit()` de novo).
-        ->click('.fi-user-menu-trigger')
+        ->click('button[aria-label="Menu do usuário"]')
         ->click($final === 'escuro'
             ? 'button.fi-theme-switcher-btn[aria-label="Mudar para tema escuro"]'
             : 'button.fi-theme-switcher-btn[aria-label="Mudar para tema claro"]')
