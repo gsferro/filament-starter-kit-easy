@@ -41,10 +41,10 @@
 
 ## Testes
 <!-- Preenchida no step 7, depois da derivação do 04/05: um arquivo de teste por linha, com os IDs que ele cobre. -->
-- [ ] `tests/Kit/LogoDarkModeTest.php` (CT novos desta wiki, a derivar no `04`; CT-01 a CT-20 são da wiki ancestral)
-- [ ] `tests/Tenancy/CabecalhoDoPainelTenancyTest.php` (CT novos desta wiki e o substituto do CT-07, a derivar no `04`)
-- [ ] `tests/Tenancy/CabecalhoDoPainelTenancyTest.php` (CT-07 reescrito; ID da wiki ancestral mantido, ver D8)
-- [ ] `tests/BrowserTenancy/IdentidadeVisualTest.php` (CT-B novos, a derivar no `05`)
+- [x] Casos de teste derivados no `04` e no `05` pela `feature-test-design` (step 7) — 16 CT e 1 CT-B, 11 regras, 42 mutantes previstos (38 no `04` e 4 no `05`), 1 sem matador (M24, equivalente por HTTP; CT-54 exercita a divergência sessão x rota); perfil padrão com Impacto 3 na área da organização do topo; `rastreabilidade.sh`, `citacoes.sh` e `checkbox-sem-evidencia.sh` silenciosos sobre a wiki, 2026-10-07
+- [ ] `tests/Kit/LogoDarkModeTest.php`: CT-40, CT-41 (regra de resolução do par), CT-54 (tela de bloqueio, organização da sessão), CT-55 (documentação pt/en); numeração a partir de CT-40 decidida pela sessão em 2026-10-07 (ver `### Colisão de IDs` do `04`; `ids-ct.sh` acusa os CT-01 a CT-20 da ancestral `logo-dark-mode` que vivem no mesmo arquivo)
+- [ ] `tests/Tenancy/CabecalhoDoPainelTenancyTest.php`: CT-42 a CT-53; CT-49 substitui o CT-07 da wiki ancestral `cabecalho-do-painel` (aprovação: Adendo 1 do `00`); CT-27 e CT-04 da ancestral ficam como regressão
+- [ ] `tests/BrowserTenancy/IdentidadeVisualTest.php`: CT-B01 (um `Esquema do Cenário`: marca simples e composição, uma visita por tema)
 
 ## Tickets
 <!-- Step 8. -->
@@ -136,6 +136,8 @@ step 6 — ponytail (sonnet): 38 achados, net -140 proposto; aceitos os de A (re
 | 1 | 4 | construtor · `general-purpose`: rascunho do `01`, `02` e `03` | sonnet | a conversa da sessão; recebeu o `00`, o mapeamento do step 3 e as decisões D1 a D5 já tomadas | `01` (7 passos, revisão RQ-01/RQ-02 com 12 superfícies e 8 lacunas), `02` (3 ADRs), `03` (este); CT-27 não inverte porque a organização dele não tem logo; D2/L8 resolvida pelo orquestrador (regra por variante, tela de bloqueio não muda) | — | pendente: `citacoes.sh`, `rastreabilidade.sh` e `git status --porcelain` na reconciliação |
 | 2 | 5 | `general-purpose` (analista): revisão profunda do plano contra o código real | opus | a conversa da sessão | 18 achados RD-01..RD-18 (7 médias, 11 baixas), todos aplicados no `00` (P-05, P-06), `01`, `02` e `03` | — | pendente: `citacoes.sh` e `checkbox-sem-evidencia.sh` silenciosos |
 | 3 | 6 | `general-purpose` (ponytail): auditoria de simplicidade do `01`/`02`/`03` | sonnet | a conversa da sessão | 38 achados, net -140 proposto; aceitos os de A, recusados os demais por template/scripts ou decisão D3 | — | pendente: `citacoes.sh` e `checkbox-sem-evidencia.sh` silenciosos |
+
+**Pendente (step 7)**: a revisão adversarial do `04`/`05` é **exigida** (Impacto 3 na área "organização do topo": errar a fonte mostra a logo de outro cliente) e a sessão a despacha (`fw-adversario-ct`, `opus`, só o `00` + `04` + `05` + `wikis/glossario.md`); a confirmação das `## Costuras de Teste` com o desenvolvedor, o preenchimento da coluna `Confirmada` fica com o construtor da implementação; a Q6 está respondida por D5 do `01` e a colisão de IDs, resolvida (CT-40 a CT-55).
 
 ## Blockers
 <!-- Impedimentos encontrados durante implementação -->
