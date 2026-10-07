@@ -28,10 +28,13 @@
 - [ ] CT-09 e CT-12: ausência do recado no HTML inteiro (texto e classe) pelo helper `semRecadoEmLugarNenhum`, cada um com controle positivo no mesmo caso
 - [ ] CT-01: ausência na recuperação de senha no HTML inteiro, com controle positivo (presença em `/admin/login` no mesmo caso)
 - [ ] CT-08 e CT-11 conferidos (presença por recorte, sem mudança de oráculo)
+- [ ] CT-04: bloco de ausência do recado na recuperação de senha pelo helper de HTML inteiro (D6)
+- [ ] `ligarLoginComGoogleDoKit()` movido para `tests/Pest.php`; `HelpersDeTesteTest` verde (D8)
 - [ ] Falsificabilidade: cada CT alterado fica vermelho com o provider de `main`
 
 ## 4. Teste de browser
 - [ ] CT-B01: ordem visual invertida (recado acima da assinatura) e mensagens trocadas
+- [ ] CT-B01: contenção no cartão por `closest('.fi-auth-card, .fi-auth-form-container')`, seletor medido contra o layout (D7)
 - [ ] CT-B03: `landmark-complementary-is-top-level` acrescentada à constante `regras`; verde com o `<aside>` no cartão, ou bifurcação (tag volta a `<div>` e P-05 revisada) registrada
 - [ ] Mutante M59 (`<aside>` → `<div>`) medido com o recado no cartão; se o CT-B03 seguir verde, oráculo passa a "o recado está contido num landmark" (`closest('aside,[role],main,form')`)
 - [ ] CT-B01 medido contra o estado sem o passo 1 (vermelho)
@@ -49,11 +52,11 @@
 
 ## Testes
 <!-- Preenchida no step 7, depois da derivação do 04/05: um arquivo de teste por linha, com os IDs que ele cobre. -->
-- [ ] `tests/Kit/RodapeCoerenteTest.php` (CT-01, CT-08, CT-09, CT-10, CT-11, CT-12; a lista final sai do `04`)
-- [ ] `tests/Browser/RodapeNaDobraTest.php` (CT-B01, CT-B03; a lista final sai do `04`, seção de costura browser)
+- [x] `tests/Kit/RodapeCoerenteTest.php` (CT-01, CT-09, CT-10, CT-12 substituem os da ancestral; CT-04 em parte; CT-08 e CT-11 regressão; CT-02, CT-07, CT-18 regressão como matadores de M15 a M18) — derivado no `04` (6 cenários, 5 regras, 23 mutantes, 1 sem matador), 2026-10-07
+- [x] `tests/Browser/RodapeNaDobraTest.php` (CT-B01 e CT-B03 substituem os da ancestral; CT-B02 só regressão) — derivado no `05` (gate: costura `browser` na linha Dobra, ordem visual e acessibilidade do `04`), 2026-10-07
 
 ## Tickets
-Não fatiado — 2026-10-07: 4 RQ vigentes, 0 CT (o `04` ainda não foi derivado), compactação: não, 2 perguntas de requisito retiradas (Q1, Q2: cobertas por P-01 e P-02, a confirmar no PR) — nenhum sinal de tamanho (6 passos, um registro de hook, dois arquivos de teste)
+Sem fatiar — 6 passos, 8 CT (6 HTTP + 2 CT-B), um PR; step 8 não se aplica
 
 ## Verificação Final
 - [ ] `/ponytail:ponytail-review` no diff (validar contra over-engineering)
@@ -69,7 +72,7 @@ Não fatiado — 2026-10-07: 4 RQ vigentes, 0 CT (o `04` ainda não foi derivado
 - [ ] `rastreabilidade.sh {wiki}` silencioso (`RQ`/`P-nn` × passo do `01` × CT do `04`)
 - [ ] `checkbox-sem-evidencia.sh {wiki}` silencioso
 - [ ] Citações `arquivo:símbolo:linha` reverificadas: `citacoes.sh {wiki}` silencioso
-- [ ] IDs `[CT-nn]` do teste ⊆ `04`/`05` e vice-versa: `ids-ct.sh {wiki} 'tests/**/RodapeCoerenteTest.php'` silencioso
+- [ ] IDs `[CT-nn]` do teste ⊆ `04`/`05` e vice-versa: `ids-ct.sh {wiki} 'tests/**/RodapeCoerenteTest.php'` só acusa IDs da `rodape-coerente` nos dois arquivos compartilhados (ruído esperado, registrado no step 7)
 - [ ] Rules casadas pelo diff com linha em `## Conformidade com Rules`: `conformidade-rules.sh {wiki} main` silencioso
 - [ ] Falsificabilidade dos CTs alterados: quantos falham sem o fix; os demais "não falsificável nesta pilha", com motivo
 - [ ] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final
@@ -145,6 +148,7 @@ Entendimento confirmado: —
 | 1 | 4 | construtor · `general-purpose` — rascunho do `01`, `02` e `03` | sonnet | — | `01` (6 passos), `02` (2 ADRs) e `03` gravados; `citacoes.sh` rodado pelo construtor | {tokens · duração, quando o host reportar} | lido pelo orquestrador, que o devolveu na revisão do step 5 |
 | 2 | 5 | analista — revisão profunda do `01`–`03` | opus | — | 15 achados RD-01..RD-15 (1 bloqueante, 2 altas, 6 médias, 6 baixas), todos aplicados | — | aplicados pelo construtor na rodada de correção; `citacoes.sh` e `checkbox-sem-evidencia.sh` silenciosos |
 | 3 | 6 | ponytail — corte de excesso do `01`–`03` | sonnet | — | 40 achados, net -190 proposto; 9 aceitos, o resto recusado (template, scripts, D5) | — | aceitos aplicados; recusados com motivo na Auditoria Pré-Implementação |
+| 4 | 7 | derivação dos CT · `general-purpose` com `feature-test-design` — `04` e `05` | (modelo da sessão) | a implementação (não existe) | `04` (6 cenários, 5 regras, 23 mutantes, 1 sem matador) e `05` (CT-B01, CT-B03); 3 perguntas de desenho Q?1 a Q?3 devolvidas para a sessão confirmar e renumerar; `rastreabilidade.sh` e `citacoes.sh` silenciosos, `ids-ct.sh` só com ruído de IDs da ancestral | — | revisão adversarial **não exigida** (perfil padrão, nenhuma área com Impacto 3: tela pública, texto de rodapé, reversível); a sessão decide se a despacha |
 
 ## Blockers
 <!-- Impedimentos encontrados durante implementação -->

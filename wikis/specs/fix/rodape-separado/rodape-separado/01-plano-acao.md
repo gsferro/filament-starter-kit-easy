@@ -87,6 +87,9 @@ O que fica, por P-03 do `00`: o prefixo `v` do campo de versão, o `©` e o nome
 | D3 | Os oráculos de **ausência** do recado (CT-01, CT-09, CT-12) olham o **HTML inteiro**, não a cauda de `rodapeDe()`. Reforço do oráculo: só o CT-09 ficava verde por motivo errado (a ausência na cauda é verdade sempre, com o recado no cartão); CT-01 e CT-12 pegavam o vazamento pela cauda e passam a pegá-lo em qualquer lugar. A ausência é dupla (texto **e** classe `fi-login-rodape`) e cada caso leva controle positivo do detector. | desenho: qual é o oráculo certo? | surpreendente (o oráculo do CT-09 continuaria verde) | construtor, 2026-10-07 |
 | D4 | A **ordem dentro do hook** (botões antes do recado) é invariante do "como estava" e depende só da ordem de registro no mesmo método; fica documentada no comentário novo do provider e é provada pelo limite inferior do CT-10 (recado depois do bloco `fi-login-social` num dataset com provedor habilitado), então **não há CT separado de ordem**. Nota: o Breezy registra o passkey em `AUTH_LOGIN_FORM_AFTER` no boot do painel (`vendor/jeffgreco13/filament-breezy/src/BreezyCore.php:AUTH_LOGIN_FORM_AFTER:100`), dentro de `if ($this->passkeys)` (`vendor/jeffgreco13/filament-breezy/src/BreezyCore.php:passkeys:94`), hoje inativo no kit; se ativado, sairia abaixo do recado. | desenho: quem guarda a ordem? | trade-off (custo do arranjo de provedor no teste) | construtor, 2026-10-07 |
 | D5 | O comentário da blade da assinatura (linha 46, "logo abaixo desta linha") é corrigido em uma linha, dentro do passo 2; o código dessa blade e o `kit.css` não mudam. P-03 é sobre comportamento, e um comentário falso custa mais ao próximo leitor do que uma linha de diff. Decidido pelo orquestrador em 2026-10-07. | desenho: tocar o comentário? | — | fechada |
+| D6 | (Q3) O `[CT-04]` da ancestral também passa a medir a ausência do recado pelo helper de HTML inteiro, na linha da recuperação de senha: o bloco que usa `rodapeDe()` troca por `semRecadoEmLugarNenhum()`. O resto do CT-04 não muda. Entra no passo 3. | desenho: o CT-04 fica de fora? | — | sessão, 2026-10-07 |
+| D7 | (Q4) O CT-B01 prova "dentro do cartão" com `closest('.fi-auth-card, .fi-auth-form-container')` não nulo; o seletor é medido no step 10 contra o layout do auth-designer (se nenhum dos dois existir, o contêiner do `<form id="form">`). Entra no passo 4. | desenho: como provar a contenção? | — | sessão, 2026-10-07 |
+| D8 | (Q5) `ligarLoginComGoogleDoKit()` sai de `tests/Kit/LoginSocialGoogleTest.php` para `tests/Pest.php`, porque o CT-10 passa a ser o segundo consumidor (`.ai/rules/testes.md`). Entra no passo 3; `tests/Kit/HelpersDeTesteTest.php` (que confere helper usado em outro arquivo) entra na regressão. | desenho: mover o helper ou gravar a config no `Dado`? | — | sessão, 2026-10-07 |
 
 ## Autorização
 
@@ -205,10 +208,12 @@ Nenhum, e é decisão: o passo 1 troca a chave de um render hook e o resto é co
 | `tests/Kit/RodapeCoerenteTest.php:'[CT-24]':821` e CT-25 | varredor de cópias do extrator | **não mudam**; entram na regressão. O texto novo dos testes **não** pode reintroduzir `preg_*` com `kit-versao` ou `fi-login-rodape` na mesma linha | o varredor acusaria a cópia |
 
 - Fora de `RodapeCoerenteTest`, nenhum caso muda: `LoginSocialGoogleTest` (`assertSee('fi-login-rodape')` no HTML inteiro) já vale para o recado no cartão. A guarda da ordem botões → recado (D4) é o limite inferior do CT-10, não um CT novo.
-- `tests/Pest.php` e os extratores não mudam.
+- **D6**: o bloco de ausência do recado na linha `/admin/password-reset/request` do `'[CT-04]'` troca `rodapeDe()` por `semRecadoEmLugarNenhum()`.
+- **D8**: `ligarLoginComGoogleDoKit()` é movido de `tests/Kit/LoginSocialGoogleTest.php` para `tests/Pest.php` (o CT-10 com provedor habilitado é o segundo consumidor); `tests/Kit/HelpersDeTesteTest.php` entra na regressão.
+- `tests/Pest.php` e os extratores não mudam, **exceto** pelo helper de D8.
 - **Atende**: RQ-01, RQ-02, RQ-03, P-01, P-02
 - **Logs**: nenhum (teste).
-- **Critério de pronto**: `vendor/bin/pest tests/Kit/RodapeCoerenteTest.php --compact` verde; para cada CT alterado, a falsificabilidade: com o passo 1 desfeito (voltar o provider ao estado de `main`) o caso fica **vermelho**; se não ficar, ele não mede o defeito. Asserção de ausência com `assertStringNotContainsString`, nunca `not->toContain($x, $mensagem)` (`.ai/rules/testes.md`).
+- **Critério de pronto**: `vendor/bin/pest tests/Kit/RodapeCoerenteTest.php tests/Kit/LoginSocialGoogleTest.php tests/Kit/HelpersDeTesteTest.php --compact` verde; para cada CT alterado, a falsificabilidade: com o passo 1 desfeito (voltar o provider ao estado de `main`) o caso fica **vermelho**; se não ficar, ele não mede o defeito. Asserção de ausência com `assertStringNotContainsString`, nunca `not->toContain($x, $mensagem)` (`.ai/rules/testes.md`).
 
 ### 4. Teste de browser
 
@@ -219,6 +224,7 @@ Nenhum, e é decisão: o passo 1 troca a chave de um render hook e o resto é co
 - **CT-B03** (`tests/Browser/RodapeNaDobraTest.php:'[CT-B03]':149`), duas mudanças verificáveis:
   1. **A constante `regras`** do script do axe (`const regras = [...]`) ganha `landmark-complementary-is-top-level`, a regra que um `<aside>` aninhado pode acusar (R2). **Bifurcação**: se o CT-B03 ficar vermelho com o `<aside>` dentro do cartão, a tag volta a `<div>` na blade e **P-05 é revisada** no `00` (Adendo), com a decisão registrada como Desvio do Plano; se ficar verde, P-05 e D1 se confirmam.
   2. **O mutante M59** (`<aside>` → `<div>`) é medido **com o recado no cartão**: se o CT-B03 continuar verde com a `<div>`, o oráculo não protege mais o landmark e passa a afirmar "o recado está contido num landmark" (`closest('aside,[role],main,form')`), no lugar da ausência na lista de acusados.
+- **D7**: o CT-B01 ganha a asserção de contenção, `recado.closest('.fi-auth-card, .fi-auth-form-container')` não nulo, medida no mesmo `script()`; o seletor é conferido no step 10 contra o layout do auth-designer (`.fi-auth-card` em `vendor/caresome/filament-auth-designer/resources/views/components/layouts/auth.blade.php:'fi-auth-card':51`, `.fi-auth-form-container` na linha 56) e, se nenhum existir, vale o contêiner do `<form id="form">`.
 - **CT-B02** (estilo da faixa da assinatura) não é tocado.
 - Rodar via `composer test:browser` (embute `npm run build` e `view:cache`, pré-requisitos duros) ou, para um arquivo, aquecendo as views pelo kernel como pede `.ai/rules/testes-browser.md`; nunca `--parallel`.
 - **Atende**: RQ-01, RQ-02, RQ-03
