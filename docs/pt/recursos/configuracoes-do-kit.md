@@ -201,7 +201,7 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
 (`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:540`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
-(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:428`); as chaves sobrepostas são
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:427`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
 (`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:396`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:400`) não está nesse mapa, então o banco nunca a sobrescreve.
