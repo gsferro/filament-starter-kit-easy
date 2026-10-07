@@ -2401,6 +2401,36 @@ function semAcentoESemCaixa(string $texto): string
 }
 
 /**
+ * Os `src` das `<img>` do swap nativo da marca (`fi-logo-light` e `fi-logo-dark`), por variante e sem
+ * repetição: o Filament desenha a marca na barra lateral e no topo, então cada URL sai mais de uma vez.
+ * Usado por `tests/Kit/LogoDarkModeTest.php` e `tests/Tenancy/CabecalhoDoPainelTenancyTest.php`.
+ *
+ * @return array{light: list<string>, dark: list<string>}
+ */
+function imagensDaMarcaPorVariante(string $html): array
+{
+    preg_match_all('~<img\b[^>]*>~i', $html, $tags);
+
+    $imagens = ['light' => [], 'dark' => []];
+
+    foreach ($tags[0] as $tag) {
+        if (preg_match('~\sclass\s*=\s*"([^"]*)"~', $tag, $classe) !== 1 || preg_match('~\ssrc\s*=\s*"([^"]*)"~', $tag, $src) !== 1) {
+            continue;
+        }
+
+        $classes = preg_split('~\s+~', $classe[1], flags: PREG_SPLIT_NO_EMPTY) ?: [];
+
+        foreach (['light' => 'fi-logo-light', 'dark' => 'fi-logo-dark'] as $variante => $nome) {
+            if (in_array($nome, $classes, true)) {
+                $imagens[$variante][] = $src[1];
+            }
+        }
+    }
+
+    return ['light' => array_values(array_unique($imagens['light'])), 'dark' => array_values(array_unique($imagens['dark']))];
+}
+
+/**
  * Liga o login com Google (credenciais fake) para o caso corrente.
  *
  * Em `tests/Pest.php` por ter dois consumidores (`LoginSocialGoogleTest`, `RodapeCoerenteTest`); nome longo por colisão global de função.

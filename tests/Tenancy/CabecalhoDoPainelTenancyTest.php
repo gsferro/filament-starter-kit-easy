@@ -2,14 +2,24 @@
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\CabecalhoDoPainel;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Facades\Filament;
+use Filament\Livewire\Sidebar;
+use Filament\Livewire\Topbar;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 
 /**
  * O cabeçalho dos painéis no que ele só significa com organização ativa (`/app/{slug}`).
  *
- * Os IDs de CT são os de `wikis/specs/feat/cabecalho-do-painel/cabecalho-do-painel/04-casos-de-teste.md`.
+ * Os IDs de CT vêm de duas wikis: os CT-04, CT-11, CT-15, CT-27 e CT-29 a CT-31 são de
+ * `wikis/specs/feat/cabecalho-do-painel/cabecalho-do-painel/04-casos-de-teste.md`, e os CT-42 a
+ * CT-53, CT-56 e CT-57 (a logo da organização, clara e escura, no topo do `/app`) são de
+ * `wikis/specs/fix/logo-dark-do-tenant/logo-dark-do-tenant/04-casos-de-teste.md`. O CT-49 desta
+ * substitui o antigo CT-07, que afirmava a logo da instalação no `/app/acme` (aprovação do
+ * solicitante no Adendo 1 daquela wiki).
  *
  * Aqui e não em `tests/Kit` porque `admin_app` e a organização na rota só existem com
  * `permission.teams` ligado, e `Tests\TenancyTestCase` o fixa antes das migrations.
@@ -39,14 +49,19 @@ function gravarCabecalhoDaTenancia(array $opcoes): void
     alinharConfiguracoesDoKit();
 }
 
-/** A logo da instalação no disco `public` e na settings, com a marca unificada. */
-function gravarLogoDaInstalacaoDaTenancia(): void
+/**
+ * A logo da instalação no disco `public` e na settings: a clara e a escura (`kit/logo-dark-ct.png`),
+ * com a marca unificada (`$unifica`, a escura fica inerte) ou separada.
+ */
+function gravarLogoDaInstalacaoDaTenancia(bool $unifica = true): void
 {
     Storage::fake('public');
     Storage::disk('public')->put('kit/logo-ct.png', 'png');
+    Storage::disk('public')->put('kit/logo-dark-ct.png', 'png');
 
     gravarConfiguracao('logo', 'kit/logo-ct.png');
-    gravarConfiguracao('unifica_logo_marca', true);
+    gravarConfiguracao('logo_dark', 'kit/logo-dark-ct.png');
+    gravarConfiguracao('unifica_logo_marca', $unifica);
     alinharConfiguracoesDoKit();
 }
 
@@ -175,36 +190,391 @@ it('[CT-04] o segmento do painel mostra a organização aberta, e só nela', fun
     ],
 ])->group('kit');
 
-// --- R6 — a logo é sempre a da instalação ---------------------------------------
+// --- fix/logo-dark-do-tenant — a logo da organização (clara e escura) no topo do /app ----
+//
+// O CT-49 substitui o antigo CT-07 (a logo era sempre a da instalação): o Adendo 1 reverte essa
+// regra só no `/app` com organização aberta.
 
-it('[CT-07] no /app da Acme a composição mostra a logo da instalação e nenhuma de organização', function (): void {
-    gravarLogoDaInstalacaoDaTenancia();
-    Storage::disk('public')->put('organizacoes/logos/acme.png', 'png');
-    Storage::disk('public')->put('organizacoes/logos/globex.png', 'png');
+/**
+ * Afirma o par da marca: exatamente uma `<img>` clara e uma escura, com as URLs dadas.
+ */
+function expectParDaMarca(string $html, string $clara, string $escura): void
+{
+    $imagens = imagensDaMarcaPorVariante($html);
 
-    $globex = Tenant::factory()->create(['nome' => 'Globex', 'slug' => 'globex', 'logo' => 'organizacoes/logos/globex.png']);
-    $acme   = Tenant::factory()->create(['nome' => 'Acme', 'slug' => 'acme', 'logo' => 'organizacoes/logos/acme.png']);
+    expect($imagens['light'])->toHaveCount(1)
+        ->and($imagens['light'][0])->toContain($clara)
+        ->and($imagens['dark'])->toHaveCount(1)
+        ->and($imagens['dark'][0])->toContain($escura);
+}
 
-    $usuario = usuarioComPapel('panel_user', $globex);
-    papelNaOrganizacao($usuario, 'panel_user', $acme);
-    $usuario->tenants()->attach([$globex->id, $acme->id]);
+/** O texto de todo `div.fi-logo` (a marca em texto, sem imagem), um por elemento. */
+function marcasEmTextoDaTenancia(string $html): array
+{
+    preg_match_all('~<div\b[^>]*class="[^"]*\bfi-logo\b[^"]*"[^>]*>(.*?)</div>~s', $html, $achados);
 
-    gravarCabecalhoDaTenancia(['nome_do_projeto' => false, 'nome_do_painel' => false, 'logo_da_marca' => true]);
+    return array_map(static fn (string $texto): string => trim(html_entity_decode(strip_tags($texto))), $achados[1]);
+}
 
-    $this->actingAs($usuario)->get('/app/globex')->assertSuccessful();
+/**
+ * Uma organização com as logos pedidas no disco `public` (o disco já é fake) e na coluna.
+ * `null` deixa a coluna vazia.
+ */
+function organizacaoComLogos(string $nome, string $slug, ?string $clara = null, ?string $escura = null): Tenant
+{
+    foreach (array_filter([$clara, $escura]) as $caminho) {
+        Storage::disk('public')->put($caminho, 'png');
+    }
+
+    return Tenant::factory()
+        ->comIdentidadeVisual('#7c3aed', $clara, null, $escura)
+        ->create(['nome' => $nome, 'slug' => $slug]);
+}
+
+/** A organização de teste "Acme" com o par `acme.png` / `acme-dark.png`. */
+function acmeComPar(): Tenant
+{
+    return organizacaoComLogos('Acme', 'acme', 'organizacoes/logos/acme.png', 'organizacoes/logos/acme-dark.png');
+}
+
+/** Pessoa com papel `panel_user` na organização e vínculo com ela. */
+function pessoaDaOrganizacao(Tenant $organizacao): User
+{
+    $usuario = usuarioComPapel('panel_user', $organizacao);
+    $usuario->tenants()->attach($organizacao->id);
+
+    return $usuario;
+}
+
+/** Desliga a composição do cabeçalho (marca simples) ou liga só o segmento logo da marca. */
+function composicaoDoCabecalhoDaTenancia(bool $ligada): void
+{
+    gravarCabecalhoDaTenancia(['nome_do_projeto' => false, 'nome_do_painel' => false, 'logo_da_marca' => $ligada]);
+}
+
+it('[CT-42] a marca simples do /app da Acme é o par da organização', function (): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: false);
+    $acme = acmeComPar();
+    composicaoDoCabecalhoDaTenancia(false);
+
+    $html    = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
+    expectParDaMarca($html, 'organizacoes/logos/acme.png', 'organizacoes/logos/acme-dark.png');
+
+    $todas = implode('|', imagensDaMarcaDaTenancia($html));
+
+    $this->assertStringNotContainsString('kit/logo-ct.png', $todas);
+    $this->assertStringNotContainsString('kit/logo-dark-ct.png', $todas);
+})->group('kit');
+
+it('[CT-43] a marca simples cai por variante na instalação quando a organização não tem a logo', function (?string $clara, string $claraEsperada): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: false);
+    $acme = organizacaoComLogos('Acme', 'acme', $clara);
+    composicaoDoCabecalhoDaTenancia(false);
+
+    $html    = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
+    expectParDaMarca($html, $claraEsperada, 'kit/logo-dark-ct.png');
+})->with([
+    'queda total'        => [null, 'kit/logo-ct.png'],
+    'queda só da escura' => ['organizacoes/logos/acme.png', 'organizacoes/logos/acme.png'],
+])->group('kit');
+
+/** @premissa o nome em texto no claro e a `<img>` escura no escuro é o comportamento nativo do Filament. */
+it('[CT-44] organização só com a variante escura e instalação sem clara: a escura no tema escuro e o nome no claro', function (): void {
+    Storage::fake('public');
+    gravarConfiguracao('unifica_logo_marca', false);
+    alinharConfiguracoesDoKit();
+
+    $acme = organizacaoComLogos('Acme', 'acme', null, 'organizacoes/logos/acme-dark.png');
+    composicaoDoCabecalhoDaTenancia(false);
+
+    $html    = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
+    $imagens = imagensDaMarcaPorVariante($html);
+
+    expect($imagens['dark'])->toHaveCount(1)
+        ->and($imagens['dark'][0])->toContain('organizacoes/logos/acme-dark.png')
+        ->and($imagens['light'])->toBe([])
+        ->and(implode('|', marcasEmTextoDaTenancia($html)))->toContain((string) config('app.name'));
+})->group('kit');
+
+it('[CT-57] organização só com a variante escura e instalação com a clara: clara da instalação e escura da organização', function (bool $composicao): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: false);
+    $acme = organizacaoComLogos('Acme', 'acme', null, 'organizacoes/logos/acme-dark.png');
+    composicaoDoCabecalhoDaTenancia($composicao);
+
+    $html    = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
+    expectParDaMarca($html, 'kit/logo-ct.png', 'organizacoes/logos/acme-dark.png');
+
+    $this->assertStringNotContainsString('kit/logo-dark-ct.png', implode('|', imagensDaMarcaDaTenancia($html)));
+})->with([
+    'desligada (marca simples)' => [false],
+    'ligada (composição)'       => [true],
+])->group('kit');
+
+it('[CT-45] a composição do /app da Acme mostra o par da organização, com um só fi-logo-dark', function (): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: false);
+    $acme = acmeComPar();
+    composicaoDoCabecalhoDaTenancia(true);
+
+    $html    = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
+    $regiao  = regiaoDoHeader($html, 'kit-cabecalho');
+
+    expect($regiao)->not->toBe('')
+        ->and(substr_count($regiao, 'fi-logo-light'))->toBe(1)
+        ->and(substr_count($regiao, 'fi-logo-dark'))->toBe(1);
+
+    expectParDaMarca($regiao, 'organizacoes/logos/acme.png', 'organizacoes/logos/acme-dark.png');
+
+    // Nenhuma escura fora de uma composição: a página inteira tem tantas quanto composições (>= 1).
+    $composicoes = substr_count($html, '<span class="kit-cabecalho">');
+    $escuras     = preg_match_all('~<img\b[^>]*class="[^"]*\bfi-logo-dark\b~', $html);
+
+    expect($composicoes)->toBeGreaterThanOrEqual(1)
+        ->and($escuras)->toBe($composicoes);
+
+    $todas = implode('|', imagensDaMarcaDaTenancia($html));
+
+    $this->assertStringNotContainsString('kit/logo-ct.png', $todas);
+    $this->assertStringNotContainsString('kit/logo-dark-ct.png', $todas);
+})->group('kit');
+
+it('[CT-46] a composição cai no par da instalação quando a organização não tem logo', function (): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: false);
+    $acme = organizacaoComLogos('Acme', 'acme');
+    composicaoDoCabecalhoDaTenancia(true);
+
+    $html    = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
+    $regiao  = regiaoDoHeader($html, 'kit-cabecalho');
+
+    expect($regiao)->not->toBe('');
+    expectParDaMarca($regiao, 'kit/logo-ct.png', 'kit/logo-dark-ct.png');
+})->group('kit');
+
+/** @premissa a composição descarta a escura quando a clara é nula (dependência clara → escura). */
+it('[CT-47] a composição descarta a escura da organização quando não há logo clara', function (): void {
+    Storage::fake('public');
+    gravarConfiguracao('unifica_logo_marca', false);
+    alinharConfiguracoesDoKit();
+
+    $acme = organizacaoComLogos('Acme', 'acme', null, 'organizacoes/logos/acme-dark.png');
+    gravarCabecalhoDaTenancia(['nome_do_projeto' => true, 'nome_do_painel' => false, 'logo_da_marca' => true]);
+
+    $html   = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
+    $regiao = regiaoDoHeader($html, 'kit-cabecalho');
+
+    // Controle positivo: o texto prova que a região existe e tem conteúdo.
+    expect(html_entity_decode(strip_tags($regiao)))->toContain('Projeto Ômega')
+        ->and($regiao)->not->toContain('<img')
+        ->and(imagensDaMarcaPorVariante($html)['dark'])->toBe([]);
+})->group('kit');
+
+it('[CT-48] a marca unificada mostra só a clara da organização e nenhuma escura', function (bool $composicao): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: true);
+    $acme = acmeComPar();
+    composicaoDoCabecalhoDaTenancia($composicao);
+
+    $html = $this->actingAs(pessoaDaOrganizacao($acme))->get('/app/acme')->assertSuccessful()->getContent();
+
+    expect(implode('|', imagensDaMarcaDaTenancia($html)))->toContain('organizacoes/logos/acme.png')
+        ->and(imagensDaMarcaPorVariante($html)['dark'])->toBe([])
+        ->and(preg_match('~fi-logo-dark~', $html))->toBe(0);
+
+    if ($composicao) {
+        // A composição renderiza a marca uma vez só: uma `<img>` (a clara), nenhuma escura.
+        expect(preg_match_all('~<img\b~i', regiaoDoHeader($html, 'kit-cabecalho')))->toBe(1);
+    }
+
+    $this->assertStringNotContainsString('organizacoes/logos/acme-dark.png', $html);
+    $this->assertStringNotContainsString('kit/logo-dark-ct.png', $html);
+})->with([
+    'desligada (marca simples)' => [false],
+    'ligada (composição)'       => [true],
+])->group('kit');
+
+// --- R6 — a organização do topo é a aberta pela rota -----------------------------
+
+it('[CT-49] a pessoa de duas organizações vê no /app/acme o par da Acme (ou o da instalação), nunca o da Globex', function (
+    bool $composicao,
+    bool $acmeComLogos,
+    bool $acmePrimeiro,
+    string $clara,
+    string $escura,
+): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: false);
+
+    $globex = organizacaoComLogos('Globex', 'globex', 'organizacoes/logos/globex.png', 'organizacoes/logos/globex-dark.png');
+    $acme   = $acmeComLogos ? acmeComPar() : organizacaoComLogos('Acme', 'acme');
+
+    $primeira = $acmePrimeiro ? $acme : $globex;
+    $segunda  = $acmePrimeiro ? $globex : $acme;
+
+    $usuario = usuarioComPapel('panel_user', $primeira);
+    papelNaOrganizacao($usuario, 'panel_user', $segunda);
+    $usuario->tenants()->attach([$primeira->id, $segunda->id]);
+
+    composicaoDoCabecalhoDaTenancia($composicao);
+
+    // Controle positivo: abre a Globex e vê o par dela, com a sessão apontando a Globex.
+    $primeiro = $this->actingAs($usuario)->get('/app/globex')->assertSuccessful()->getContent();
+
+    expect(imagensDaMarcaPorVariante($primeiro)['light'][0] ?? '')->toContain('organizacoes/logos/globex.png');
 
     fronteiraDeRequest();
 
-    $html   = $this->get('/app/acme')->assertSuccessful()->getContent();
-    $regiao = regiaoDoHeader($html, 'kit-cabecalho');
+    $html    = $this->get('/app/acme')->assertSuccessful()->getContent();
+    expectParDaMarca($html, $clara, $escura);
 
-    expect($regiao)->not->toBe('')
-        ->and(substr_count($regiao, '<img'))->toBe(1)
-        ->and($regiao)->toContain('kit/logo-ct.png');
+    $this->assertStringNotContainsString('organizacoes/logos/globex', $html);
+})->with([
+    'primeira vinculada = Globex'                  => [true, true, false, 'organizacoes/logos/acme.png', 'organizacoes/logos/acme-dark.png'],
+    'primeira vinculada = Acme (ordem inversa)'    => [true, true, true, 'organizacoes/logos/acme.png', 'organizacoes/logos/acme-dark.png'],
+    'marca simples'                                => [false, true, false, 'organizacoes/logos/acme.png', 'organizacoes/logos/acme-dark.png'],
+    'a Acme sem logo não herda o par da Globex'    => [true, false, false, 'kit/logo-ct.png', 'kit/logo-dark-ct.png'],
+])->group('kit');
 
-    $this->assertStringNotContainsString('organizacoes/logos/acme.png', $regiao);
-    $this->assertStringNotContainsString('organizacoes/logos/globex.png', $regiao);
+it('[CT-50] a logo de uma organização só chega a quem a rota deixa entrar nela', function (bool $comVinculo, bool $globexContem): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: false);
+    $acme   = acmeComPar();
+    $globex = organizacaoComLogos('Globex', 'globex', 'organizacoes/logos/globex.png', 'organizacoes/logos/globex-dark.png');
+
+    $usuario = pessoaDaOrganizacao($acme);
+
+    if ($comVinculo) {
+        papelNaOrganizacao($usuario, 'panel_user', $globex);
+        $usuario->tenants()->attach($globex->id);
+    }
+
+    composicaoDoCabecalhoDaTenancia(false);
+
+    $resposta = $this->actingAs($usuario)->get('/app/globex');
+
+    if ($globexContem) {
+        $html = $resposta->assertSuccessful()->getContent();
+
+        $this->assertStringContainsString('organizacoes/logos/globex.png', $html);
+
+        return;
+    }
+
+    // Sem vínculo a rota recusa (404 do Sentinel). Controle positivo na MESMA resposta: a página
+    // de recusa traz o nome da aplicação em texto (`sn-brand`), então a ausência da logo não vem
+    // de uma resposta vazia. Ela não renderiza a marca do painel (nenhuma `<img>`), por isso a
+    // cláusula sobre a logo da instalação não tem o que medir aqui.
+    $html = $resposta->assertNotFound()->getContent();
+
+    $this->assertStringContainsString('<div class="sn-brand">'.e((string) config('app.name')).'</div>', $html);
+    $this->assertStringNotContainsString('organizacoes/logos/globex.png', $html);
+})->with([
+    'com vínculo: a marca é a da organização'      => [true, true],
+    'sem vínculo: a recusa não traz a logo dela'   => [false, false],
+])->group('kit');
+
+it('[CT-56] a master_global sem vínculo que abre /app/globex vê o par da Globex', function (): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: false);
+    organizacaoComLogos('Globex', 'globex', 'organizacoes/logos/globex.png', 'organizacoes/logos/globex-dark.png');
+    composicaoDoCabecalhoDaTenancia(true);
+
+    $html    = $this->actingAs(usuarioDoKit('master_global'))->get('/app/globex')->assertSuccessful()->getContent();
+    $regiao  = regiaoDoHeader($html, 'kit-cabecalho');
+
+    expect($regiao)->not->toBe('');
+    expectParDaMarca($regiao, 'organizacoes/logos/globex.png', 'organizacoes/logos/globex-dark.png');
+
+    $this->assertStringNotContainsString('kit/logo-ct.png', $regiao);
+    $this->assertStringNotContainsString('kit/logo-dark-ct.png', $regiao);
 })->group('kit');
+
+// --- R7 — fora do /app com organização, nunca a logo de organização --------------
+
+it('[CT-51] o topo fora do /app com organização é o par da instalação', function (
+    string $tela,
+    string $papelDaPessoa,
+    bool $esquecidaNoGerenciador,
+    bool $sessaoApontaAcme,
+): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: false);
+    $acme = acmeComPar();
+    composicaoDoCabecalhoDaTenancia(false);
+
+    if ($papelDaPessoa === 'visitante') {
+        // sem autenticação
+    } elseif ($papelDaPessoa === 'panel_user') {
+        $this->actingAs(pessoaDaOrganizacao($acme));
+    } else {
+        $this->actingAs(usuarioComPapel($papelDaPessoa));
+    }
+
+    if ($esquecidaNoGerenciador) {
+        Filament::setCurrentPanel('app');
+        Filament::setTenant($acme, isQuiet: true);
+    }
+
+    if ($sessaoApontaAcme) {
+        session(['tenant_corrente' => $acme->getKey()]);
+    }
+
+    $html    = $this->get($tela)->assertSuccessful()->getContent();
+    expectParDaMarca($html, 'kit/logo-ct.png', 'kit/logo-dark-ct.png');
+
+    $this->assertStringNotContainsString('organizacoes/logos/acme.png', $html);
+    $this->assertStringNotContainsString('organizacoes/logos/acme-dark.png', $html);
+})->with([
+    '/admin'     => ['/admin', 'admin', true, false],
+    '/infra'     => ['/infra', 'infra', true, false],
+    '/app/login' => ['/app/login', 'visitante', false, true],
+    // `/app` só redireciona (302) e `/app/new` é 404 (o kit não tem cadastro de organização): sem topo
+    // para afirmar, a linha foi trocada por outra rota do `/app` sem organização que renderiza a marca.
+    '/app/password-reset/request' => ['/app/password-reset/request', 'visitante', false, true],
+])->group('kit');
+
+it('[CT-52] a marca do topo exige painel com tenancy e um objeto que seja organização', function (?string $painel, string $objeto, string $clara, string $escura): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: false);
+    $acme = acmeComPar();
+    composicaoDoCabecalhoDaTenancia(false);
+
+    Filament::setCurrentPanel($painel);
+    Filament::setTenant($objeto === 'acme' ? $acme : usuario('pessoa@example.com'), isQuiet: true);
+
+    $caminhos = ['A' => 'organizacoes/logos/acme.png', 'B' => 'organizacoes/logos/acme-dark.png', 'C' => 'kit/logo-ct.png', 'D' => 'kit/logo-dark-ct.png'];
+
+    expect(CabecalhoDoPainel::marca())->toBeString()->toContain($caminhos[$clara])
+        ->and(CabecalhoDoPainel::marcaEscura())->toBeString()->toContain($caminhos[$escura]);
+})->with([
+    'nenhum painel (console, job)'  => [null, 'acme', 'C', 'D'],
+    'o painel /admin'               => ['admin', 'acme', 'C', 'D'],
+    'o painel /app (controle)'      => ['app', 'acme', 'A', 'B'],
+    'objeto que não é organização'  => ['app', 'pessoa', 'C', 'D'],
+])->group('kit');
+
+// --- R8 — o redesenho Livewire mantém o par ------------------------------------
+
+it('[CT-53] a barra superior e a lateral do /app da Acme, renderizadas pelo componente, devolvem o par da organização', function (string $componente, bool $sessaoApontaGlobex): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: false);
+    $acme   = acmeComPar();
+    $globex = organizacaoComLogos('Globex', 'globex', 'organizacoes/logos/globex.png', 'organizacoes/logos/globex-dark.png');
+    composicaoDoCabecalhoDaTenancia(false);
+
+    $usuario = pessoaDaOrganizacao($acme);
+
+    // Boota o painel `app` por um request real (rule `testes.md`) antes do primeiro Livewire::test().
+    $this->actingAs($usuario)->get('/app/acme')->assertSuccessful();
+
+    noPainelDa($acme);
+
+    if ($sessaoApontaGlobex) {
+        session(['tenant_corrente' => $globex->getKey()]);
+    }
+
+    $html    = Livewire::test($componente)->html();
+    expectParDaMarca($html, 'organizacoes/logos/acme.png', 'organizacoes/logos/acme-dark.png');
+
+    foreach (['organizacoes/logos/globex', 'kit/logo-ct.png', 'kit/logo-dark-ct.png'] as $fora) {
+        $this->assertStringNotContainsString($fora, $html);
+    }
+})->with([
+    'Topbar, sem organização na sessão'  => [Topbar::class, false],
+    'Sidebar, sem organização na sessão' => [Sidebar::class, false],
+    'Topbar, sessão apontando a Globex'  => [Topbar::class, true],
+])->group('kit');
 
 // --- R9 — o nome da organização é texto, nunca marcação -------------------------
 
@@ -229,7 +599,7 @@ it('[CT-11] o nome da organização sai escapado na composição', function (): 
 
 // --- R1 — com organização ativa, a marca de fábrica não muda --------------------
 
-it('[CT-27] com organização ativa, a marca de fábrica não muda', function (): void {
+it('[CT-27] com organização ativa SEM logo, a marca de fábrica não muda', function (): void {
     $acme = tenant('Acme', 'acme');
 
     $usuario = usuarioComPapel('panel_user', $acme);

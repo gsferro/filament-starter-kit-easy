@@ -94,12 +94,12 @@ class AppPanelProvider extends PanelProvider
              * aí o Filament cai no brand em texto e no favicon dele — que é o
              * comportamento do kit antes desta feature.
              */
-            // A Closure decide, a cada render, entre a logo solta de sempre e a marca
-            // composta ("projeto | painel | logo") das Configurações da aplicação — com tudo
-            // desligado ela devolve exatamente `IdentidadeDoKit::logo()`.
+            // A Closure decide, a cada render, entre a logo solta e a marca composta ("projeto |
+            // painel | logo"). Com organização aberta o par é o dela (wiki `logo-dark-do-tenant`),
+            // caindo por variante para o da instalação (`IdentidadeDoKit::logo()`).
             ->brandLogo(fn (): string|Htmlable|null => CabecalhoDoPainel::marca())
             // Null na marca unificada e null com a composição ativa (o par claro/escuro
-            // já vai dentro dela); do contrário, `IdentidadeDoKit::logoEscura()`.
+            // já vai dentro dela); do contrário, a escura da organização, senão da instalação.
             ->darkModeBrandLogo(fn (): ?string => CabecalhoDoPainel::marcaEscura())
             ->brandLogoHeight('2rem')
             ->favicon(fn (): ?string => IdentidadeDoKit::favicon())

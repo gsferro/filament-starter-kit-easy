@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Models\Tenant;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -79,6 +80,25 @@ final class IdentidadeDoKit
     public static function unificaLogo(): bool
     {
         return (bool) config('kit.identidade.unifica_logo_marca', true);
+    }
+
+    /**
+     * O par de logos (clara e escura) de uma organização, com queda para a instalação.
+     *
+     * Regra única para duas superfícies — a tela de bloqueio e o topo do `/app` —, para que
+     * não divirjam. Por variante e independente: a escura nunca cai para a clara da
+     * organização, e com a marca unificada é `null`. Sem organização, é o par da instalação.
+     *
+     * @return array{clara: ?string, escura: ?string}
+     */
+    public static function logosPara(?Tenant $organizacao): array
+    {
+        return [
+            'clara'  => $organizacao?->urlDaLogo() ?? self::logo(),
+            'escura' => self::unificaLogo()
+                ? null
+                : ($organizacao?->urlDaLogoEscura() ?? self::logoEscura()),
+        ];
     }
 
     /** URL do favicon, ou `null` para o Filament usar o ícone dele. */

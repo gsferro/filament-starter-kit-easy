@@ -3,6 +3,7 @@
 use App\Models\Tenant;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -33,6 +34,10 @@ beforeEach(function (): void {
  */
 afterEach(function (): void {
     Storage::disk('public')->delete('organizacoes/logos/acme-teste-browser.png');
+
+    foreach (['organizacoes/logos/acme-dark-teste-browser.png', 'kit/logo-teste-browser.png', 'kit/logo-dark-teste-browser.png'] as $arquivo) {
+        Storage::disk('public')->delete($arquivo);
+    }
 });
 
 /**
@@ -221,3 +226,116 @@ it('nao deixa nenhum elemento na cor default quando a organizacao tem a sua', fu
         .'global com a paleta literal, sequestrando as utilitárias `*-primary-*` — ver '
         .'resources/css/filament/kit.css.');
 });
+
+/**
+ * Cria `public/storage` (o `storage:link`) se ainda não existir. Idempotente; o link é gitignored.
+ * Local a este arquivo: só o CT-B01 precisa da imagem carregada, não só da URL.
+ */
+function garantirLinkPublicoDoStorage(): void
+{
+    $link = public_path('storage');
+
+    if (is_link($link) || is_dir($link)) {
+        return;
+    }
+
+    Artisan::call('storage:link');
+}
+
+/**
+ * [CT-B01] (wiki `logo-dark-do-tenant`) — a imagem visível da marca troca com o tema, SEM recarregar.
+ *
+ * O HTML prova que as duas `<img>` estão lá; só `getComputedStyle` no navegador prova qual está
+ * visível e que ela TROCA quando o tema muda depois do load. O tema inicial vem de
+ * `inLightMode()`/`inDarkMode()` (a emulação só vale no load); a troca é o clique real no
+ * alternador do Filament, no mesmo documento.
+ *
+ * Alternador, medido no DOM: o menu do usuário (`button[aria-label="Menu do usuário"]`, rótulo do pt_BR do Filament) abre o dropdown, e nele
+ * `button.fi-theme-switcher-btn[aria-label="Mudar para tema escuro|claro"]`
+ * (`x-on:click="(theme = 'dark') && close()"`). O rótulo é o do pt_BR do Filament.
+ *
+ * O oráculo é sobre TODA imagem visível da marca (barra lateral e barra superior) terminar no
+ * arquivo da ORGANIZAÇÃO — a da instalação, distinta, é o que o mutante mostraria.
+ */
+dataset('alternancia de tema da marca', [
+    '[CT-B01] marca simples, claro para escuro' => [false, 'claro', 'acme-teste-browser.png', 'escuro', 'acme-dark-teste-browser.png', 'fi-logo-light'],
+    '[CT-B01] marca simples, escuro para claro' => [false, 'escuro', 'acme-dark-teste-browser.png', 'claro', 'acme-teste-browser.png', 'fi-logo-dark'],
+    '[CT-B01] composicao, claro para escuro'    => [true, 'claro', 'acme-teste-browser.png', 'escuro', 'acme-dark-teste-browser.png', 'fi-logo-light'],
+    '[CT-B01] composicao, escuro para claro'    => [true, 'escuro', 'acme-dark-teste-browser.png', 'claro', 'acme-teste-browser.png', 'fi-logo-dark'],
+]);
+
+it('troca a imagem visivel da marca quando o tema e alternado sem recarregar', function (
+    bool $composicao,
+    string $inicial,
+    string $arquivoInicial,
+    string $final,
+    string $arquivoFinal,
+    string $oculta,
+): void {
+    // 1x1 transparente válido: a imagem precisa CARREGAR para `naturalWidth` valer.
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==');
+
+    foreach (['organizacoes/logos/acme-teste-browser.png', 'organizacoes/logos/acme-dark-teste-browser.png', 'kit/logo-teste-browser.png', 'kit/logo-dark-teste-browser.png'] as $arquivo) {
+        Storage::disk('public')->put($arquivo, $png);
+    }
+
+    // Marca separada, par da instalação distinto do par da Acme.
+    gravarConfiguracao('logo', 'kit/logo-teste-browser.png');
+    gravarConfiguracao('logo_dark', 'kit/logo-dark-teste-browser.png');
+    gravarConfiguracao('unifica_logo_marca', false);
+    gravarConfiguracao('cabecalho_nome_do_projeto', false);
+    gravarConfiguracao('cabecalho_nome_do_painel', false);
+    gravarConfiguracao('cabecalho_logo_da_marca', $composicao);
+    alinharConfiguracoesDoKit();
+
+    $acme = Tenant::factory()
+        ->comIdentidadeVisual('#7c3aed', 'organizacoes/logos/acme-teste-browser.png', null, 'organizacoes/logos/acme-dark-teste-browser.png')
+        ->create(['nome' => 'Acme', 'slug' => 'acme']);
+
+    $usuario = usuarioComPapel('panel_user', $acme);
+    $usuario->tenants()->attach($acme->id);
+
+    $this->actingAs($usuario);
+
+    // O navegador só CARREGA `/storage/...` se `public/storage` existir. O job de telas do CI copia o
+    // `.env.example` e nunca roda `storage:link`; o CT-B04 acima só confere a URL no `src`, então a
+    // suíte ficava verde sem o link — e este caso, que exige `naturalWidth > 0`, caía só no CI.
+    garantirLinkPublicoDoStorage();
+
+    // Aquece pelo kernel: a compilação dos componentes fica fora do cronômetro do Playwright.
+    $this->get('/app/acme')->assertSuccessful();
+
+    $seletor = $composicao ? '.kit-cabecalho img.fi-logo' : 'img.fi-logo';
+
+    // Toda imagem visível da marca termina em `$arquivo`, carregada, e há ao menos uma.
+    $todaVisivelTermina = fn (string $arquivo): string => <<<JS
+        (() => {
+            const visiveis = [...document.querySelectorAll('{$seletor}')]
+                .filter((img) => img.offsetParent !== null && getComputedStyle(img).display !== 'none');
+
+            return visiveis.length > 0
+                && visiveis.every((img) => img.src.endsWith('/{$arquivo}') && img.naturalWidth > 0);
+        })()
+    JS;
+
+    $nenhumaOculta = <<<JS
+        [...document.querySelectorAll('{$seletor}.{$oculta}')]
+            .every((img) => img.offsetParent === null || getComputedStyle(img).display === 'none')
+    JS;
+
+    $pagina = $inicial === 'claro' ? visit('/app/acme')->inLightMode() : visit('/app/acme')->inDarkMode();
+
+    $pagina
+        ->assertPathIs('/app/acme')
+        // Controle positivo: no tema inicial a visível já é a da organização.
+        ->assertScript($todaVisivelTermina($arquivoInicial))
+        // Alterna pelo alternador real, no MESMO documento (sem `visit()` de novo).
+        ->click('button[aria-label="Menu do usuário"]')
+        ->click($final === 'escuro'
+            ? 'button.fi-theme-switcher-btn[aria-label="Mudar para tema escuro"]'
+            : 'button.fi-theme-switcher-btn[aria-label="Mudar para tema claro"]')
+        ->assertScript("document.documentElement.classList.contains('dark') === ".($final === 'escuro' ? 'true' : 'false'))
+        ->assertScript($todaVisivelTermina($arquivoFinal))
+        ->assertScript($nenhumaOculta)
+        ->assertNoJavaScriptErrors();
+})->with('alternancia de tema da marca');

@@ -266,8 +266,9 @@ text, with no error.
 **The browser swaps the image**, through the `dark` class on `<html>` — the server cannot know the
 theme when it is "System", so both `<img>` tags ship in the same HTML and Filament's CSS shows the
 right one. An organisation without a dark variant falls back to the installation's — and, without
-that, to the light one. The lock screen uses the same pair: the **organisation's** logo if it has
-one, the installation's if not.
+that, to the light one. The top of the business panel and the lock screen use the same pair: the **organisation's** logo
+if it has one, the installation's if not.
+With a split brand, upload both variants of the organisation's logo: without its own dark one, the dark theme shows the installation's dark logo in place of the organisation's logo.
 
 ## Panel header: what to show at the top
 
@@ -292,9 +293,13 @@ segment:
 The composition replaces the brand **wherever Filament draws it**: in the topbar and, on a narrow
 screen with the sidebar open, at the top of the sidebar (there the texts shrink and truncate with an
 ellipsis to fit on one line). Authentication screens (login, password reset,
-lock screen, two-factor, e-mail verification) keep the usual brand: the header belongs to the
-panels' inner screens. In the business panel the composition's logo is always the
-**installation's** — the organisation's keeps showing only on the lock screen.
+two-factor, e-mail verification) keep the usual brand: the header belongs to the
+panels' inner screens. In the business panel (`/app`), with an
+open organisation, the composition's logo (and the plain brand, with the composition off) is the
+**organisation's** — the light one and, with a split brand, the dark one, swapped by the browser
+with the theme — and falls back to the installation's when the organisation has none. In the
+administration and infrastructure panels it is the installation's; on authentication screens (login,
+password reset) too, and the lock screen uses the session's organisation, by the same rule.
 
 The fourth switch, **Nome do usuário ao lado do avatar** (user name next to the avatar), shows who
 is signed in to the left of the avatar, with a line below chosen in **Abaixo do nome do usuário**:

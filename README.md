@@ -5,7 +5,7 @@
 [![Plumb](https://plumbphp.dev/badges/gsferro/starter-kit-easy/composite.svg)](https://plumbphp.dev/gsferro/starter-kit-easy)
 [![Testes](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=testes)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
 [![Cobertura](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgsferro%2Ffilament-starter-kit-easy%2Fmain%2F.github%2Fbadges%2Fcobertura.json&style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
-[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-1.958-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
+[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-1.976-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-4c1?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
@@ -230,7 +230,7 @@ dois já vêm completos.
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **12** |
-| Features especificadas (`wikis/specs/`) | **77** |
+| Features especificadas (`wikis/specs/`) | **78** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **21** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.

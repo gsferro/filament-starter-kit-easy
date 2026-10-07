@@ -257,8 +257,9 @@ recusado. Com os dois vazios, o painel volta ao nome em texto, sem erro.
 
 **Quem troca a imagem é o navegador**, pela classe `dark` do `<html>` — o servidor não conhece o tema
 quando ele é "Sistema", então as duas `<img>` saem juntas no HTML e o CSS do Filament exibe a certa.
-Organização sem variante escura cai para a da instalação — e, sem ela, para a clara. A tela de bloqueio
-usa o mesmo par: logo da **organização**, se houver; da instalação, se não.
+Organização sem variante escura cai para a da instalação — e, sem ela, para a clara. O topo do painel do negócio
+e a tela de bloqueio usam o mesmo par: logo da **organização**, se houver; da instalação, se não.
+Com a marca separada, envie as duas variantes da logo da organização: sem a escura própria, o tema escuro mostra a escura da instalação no lugar da logo da organização.
 
 ## Cabeçalho dos painéis: o que mostrar no topo
 
@@ -281,9 +282,13 @@ presente:
 A composição substitui a marca **onde quer que o Filament a desenhe**: no topbar e, em tela estreita com a
 barra lateral aberta, no topo dela (ali os textos encolhem e cortam com reticências para caber numa
 linha). As telas de autenticação (login,
-recuperação de senha, bloqueio, dois fatores, confirmação de e-mail) continuam com a marca de
-sempre: o cabeçalho é das telas internas dos painéis. No painel do negócio a logo da
-composição é sempre a da **instalação** — a da organização segue aparecendo só na tela de bloqueio.
+recuperação de senha, dois fatores, confirmação de e-mail) continuam com a marca de
+sempre: o cabeçalho é das telas internas dos painéis. No painel do negócio (`/app`), com uma
+organização aberta, a logo da composição (e a marca simples, com a composição desligada) é a da
+**organização** — a clara e, com a marca separada, a escura, trocadas pelo navegador com o tema —,
+e cai para a da instalação quando a organização não tem logo. Nos painéis de administração e
+infraestrutura, a logo é a da instalação; nas telas de autenticação (login, recuperação de senha)
+também, e a tela de bloqueio usa a organização da sessão, pela mesma regra.
 
 O quarto interruptor, **Nome do usuário ao lado do avatar**, mostra quem está autenticado à
 esquerda do avatar, com uma linha abaixo escolhida em **Abaixo do nome do usuário**: o **perfil**

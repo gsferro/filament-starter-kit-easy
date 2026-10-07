@@ -35,7 +35,7 @@ class TenantsTable
                  * seria uma ida ao disco por linha renderizada, a cada paginação, ordenação e
                  * busca. Registro cuja logo sumiu do disco mostra imagem quebrada aqui — o
                  * comportamento padrão de qualquer ImageColumn. Onde a verificação importa (a
-                 * tela de bloqueio) o acessor continua sendo usado. Ver ADR-05 da wiki
+                 * tela de bloqueio e o topo do `/app`) o acessor continua sendo usado. Ver ADR-05 da wiki
                  * lightbox-em-imagens-e-documentos.
                  */
                 ImageColumn::make('logo')

@@ -95,20 +95,16 @@ class TelaBloqueio extends LockerScreen
      * arte de fallback" — e aplicaria `object-fit:contain` (sem a classe `fi-auth-media`)
      * na arte, quebrando RQ-05/Q1.
      *
-     * A resolução é por variante, não cadeia plana: a escura cai para `kit.logo_dark`,
-     * nunca para a clara da organização (D3). `once()` porque `getAuthDesignerConfig()`
+     * A regra (por variante, não cadeia plana: a escura cai para `kit.logo_dark`, nunca
+     * para a clara da organização — D3) mora em `IdentidadeDoKit::logosPara()`, a mesma que
+     * o topo do `/app` usa. `once()` porque `getAuthDesignerConfig()`
      * e a partial são dois consumidores do mesmo par no mesmo render.
      *
      * @return array{clara: ?string, escura: ?string}
      */
     public function urlsDasLogos(): array
     {
-        return once(fn (): array => [
-            'clara'  => $this->organizacaoResolvida()?->urlDaLogo() ?? IdentidadeDoKit::logo(),
-            'escura' => IdentidadeDoKit::unificaLogo()
-                ? null
-                : ($this->organizacaoResolvida()?->urlDaLogoEscura() ?? IdentidadeDoKit::logoEscura()),
-        ]);
+        return once(fn (): array => IdentidadeDoKit::logosPara($this->organizacaoResolvida()));
     }
 
     public function getAuthDesignerConfig(): AuthDesignerConfig
