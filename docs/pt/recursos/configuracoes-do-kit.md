@@ -282,7 +282,7 @@ A composição substitui a marca **onde quer que o Filament a desenhe**: no topb
 barra lateral aberta, no topo dela (ali os textos encolhem e cortam com reticências para caber numa
 linha). As telas de autenticação (login,
 recuperação de senha, bloqueio, dois fatores, confirmação de e-mail) continuam com a marca de
-sempre: o cabeçalho é das telas internas dos painéis. No painel do negócio, com uma
+sempre: o cabeçalho é das telas internas dos painéis. No painel do negócio (`/app`), com uma
 organização aberta, a logo da composição (e a marca simples, com a composição desligada) é a da
 **organização** — a clara e, com a marca separada, a escura, trocadas pelo navegador com o tema —,
 e cai para a da instalação quando a organização não tem logo. Nos painéis de administração e

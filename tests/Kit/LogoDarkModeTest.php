@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use App\Support\IdentidadeDoKit;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -15,7 +16,9 @@ use Livewire\Livewire;
  * separa (ou unifica) os dois campos.
  *
  * Os IDs de CT são os de
- * `wikis/specs/feat/logo-dark-mode/logo-dark-mode/04-casos-de-teste.md`.
+ * `wikis/specs/feat/logo-dark-mode/logo-dark-mode/04-casos-de-teste.md`, mais CT-40, CT-41, CT-54 e
+ * CT-55 de `wikis/specs/fix/logo-dark-do-tenant/logo-dark-do-tenant/04-casos-de-teste.md` (a regra
+ * única do par de logos, a tela de bloqueio e a documentação).
  */
 
 // --- R1 — logo_dark da organização -------------------------------------------
@@ -436,3 +439,223 @@ it('[CT-20] documenta a logo light dark com screenshots nos dois idiomas', funct
         ->and(file_exists(base_path('art/logo-tema-claro.png')))->toBeTrue()
         ->and(file_exists(base_path('art/logo-tema-escuro.png')))->toBeTrue();
 })->with(['pt', 'en'])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update e o create-project nao entregam docs/ (export-ignore): a pagina que este caso le nao viaja.')->group('kit');
+
+// --- fix/logo-dark-do-tenant — a regra única do par de logos ---------------------
+
+/**
+ * Os `<img>` do swap nativo (`fi-logo-light` e `fi-logo-dark`), por variante, da página inteira.
+ *
+ * @return array{light: list<string>, dark: list<string>}
+ */
+function imagensPorVarianteDaTelaDeBloqueio(string $html): array
+{
+    preg_match_all('~<img\b[^>]*>~i', $html, $tags);
+
+    $imagens = ['light' => [], 'dark' => []];
+
+    foreach ($tags[0] as $tag) {
+        if (preg_match('~\sclass\s*=\s*"([^"]*)"~', $tag, $classe) !== 1 || preg_match('~\ssrc\s*=\s*"([^"]*)"~', $tag, $src) !== 1) {
+            continue;
+        }
+
+        $classes = preg_split('~\s+~', $classe[1], flags: PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (in_array('fi-logo-light', $classes, true)) {
+            $imagens['light'][] = $src[1];
+        }
+
+        if (in_array('fi-logo-dark', $classes, true)) {
+            $imagens['dark'][] = $src[1];
+        }
+    }
+
+    return $imagens;
+}
+
+/**
+ * CT-40 — o par resolvido para uma organização, por variante e de forma independente.
+ *
+ * A letra é o dono da logo: A/B da organização (clara/escura), C/D da instalação. `null` é a
+ * coluna vazia, `''` o branco e `X!` o órfão (coluna preenchida, arquivo fora do disco).
+ * "nenhuma" é `null` estrito: nem string vazia nem URL.
+ */
+it('[CT-40] o par resolvido para uma organização segue a tabela de decisão por variante', function (
+    bool $separado,
+    ?string $orgClara,
+    ?string $orgEscura,
+    ?string $instClara,
+    ?string $instEscura,
+    ?string $clara,
+    ?string $escura,
+): void {
+    Storage::fake('public');
+
+    $caminhos = [
+        'A' => 'organizacoes/logos/a.png',
+        'B' => 'organizacoes/logos/b.png',
+        'C' => 'kit/c.png',
+        'D' => 'kit/d.png',
+    ];
+
+    $resolve = function (?string $codigo) use ($caminhos): ?string {
+        if ($codigo === null || $codigo === '') {
+            return $codigo;
+        }
+
+        $ausente = str_ends_with($codigo, '!');
+        $caminho = $caminhos[rtrim($codigo, '!')];
+
+        if (! $ausente) {
+            Storage::disk('public')->put($caminho, 'png');
+        }
+
+        return $caminho;
+    };
+
+    config([
+        'kit.identidade.unifica_logo_marca' => ! $separado,
+        'kit.identidade.logo'               => $resolve($instClara),
+        'kit.identidade.logo_dark'          => $resolve($instEscura),
+    ]);
+
+    $organizacao = Tenant::factory()->create([
+        'logo'      => $resolve($orgClara),
+        'logo_dark' => $resolve($orgEscura),
+    ]);
+
+    $par = IdentidadeDoKit::logosPara($organizacao);
+
+    if ($clara === null) {
+        expect($par['clara'])->toBeNull();
+    } else {
+        expect($par['clara'])->toBeString()->toContain($caminhos[$clara]);
+    }
+
+    if ($escura === null) {
+        expect($par['escura'])->toBeNull();
+    } else {
+        expect($par['escura'])->toBeString()->toContain($caminhos[$escura]);
+    }
+})->with([
+    'unificada ignora a escura da organização'              => [false, 'A', 'B', 'C', 'D', 'A', null],
+    'unificada, só escura na organização'                   => [false, null, 'B', 'C', 'D', 'C', null],
+    'par da organização'                                    => [true, 'A', 'B', 'C', 'D', 'A', 'B'],
+    'só clara: escura cai na da instalação'                 => [true, 'A', null, 'C', 'D', 'A', 'D'],
+    'branco = null'                                         => [true, 'A', '', 'C', 'D', 'A', 'D'],
+    'escura órfã'                                           => [true, 'A', 'B!', 'C', 'D', 'A', 'D'],
+    'clara órfã: cai na da instalação, escura segue'        => [true, 'A!', 'B', 'C', 'D', 'C', 'B'],
+    'clara em branco = null'                                => [true, '', 'B', 'C', 'D', 'C', 'B'],
+    'queda da escura não vira a clara da organização'       => [true, 'A', null, 'C', null, 'A', null],
+    'sem logo nenhuma: par da instalação'                   => [true, null, null, 'C', 'D', 'C', 'D'],
+    'só escura: clara da instalação, escura da organização' => [true, null, 'B', 'C', 'D', 'C', 'B'],
+    'só escura e instalação sem clara'                      => [true, null, 'B', null, 'D', null, 'B'],
+])->group('kit');
+
+/** CT-41 — sem organização aberta o par é o da instalação, como sempre foi. */
+it('[CT-41] o par resolvido sem organização é o da instalação', function (bool $separado, ?string $escura): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('kit/c.png', 'png');
+    Storage::disk('public')->put('kit/d.png', 'png');
+
+    config([
+        'kit.identidade.unifica_logo_marca' => ! $separado,
+        'kit.identidade.logo'               => 'kit/c.png',
+        'kit.identidade.logo_dark'          => 'kit/d.png',
+    ]);
+
+    $par = IdentidadeDoKit::logosPara(null);
+
+    expect($par['clara'])->toBeString()->toContain('kit/c.png');
+
+    if ($escura === null) {
+        expect($par['escura'])->toBeNull();
+    } else {
+        expect($par['escura'])->toBeString()->toContain($escura);
+    }
+})->with([
+    'separada: par da instalação' => [true, 'kit/d.png'],
+    'unificada: só a clara'       => [false, null],
+])->group('kit');
+
+// --- R9 — a tela de bloqueio segue com a organização da sessão ------------------
+
+/**
+ * CT-54 — a organização da tela de bloqueio é a da sessão; a aberta no gerenciador (a fonte do
+ * topo do `/app`) não a contamina.
+ */
+it('[CT-54] a tela de bloqueio mostra o par da organização da sessão e não o de outra aberta no gerenciador', function (): void {
+    Storage::fake('public');
+
+    foreach (['kit/logo-ct.png', 'kit/logo-dark-ct.png', 'organizacoes/logos/acme.png', 'organizacoes/logos/acme-dark.png', 'organizacoes/logos/globex.png', 'organizacoes/logos/globex-dark.png'] as $caminho) {
+        Storage::disk('public')->put($caminho, 'png');
+    }
+
+    config([
+        'kit.identidade.unifica_logo_marca' => false,
+        'kit.identidade.logo'               => 'kit/logo-ct.png',
+        'kit.identidade.logo_dark'          => 'kit/logo-dark-ct.png',
+    ]);
+
+    $acme   = Tenant::factory()->comIdentidadeVisual('#7c3aed', 'organizacoes/logos/acme.png', null, 'organizacoes/logos/acme-dark.png')->create(['slug' => 'acme']);
+    $globex = Tenant::factory()->comIdentidadeVisual('#059669', 'organizacoes/logos/globex.png', null, 'organizacoes/logos/globex-dark.png')->create(['slug' => 'globex']);
+
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    $this->actingAs(usuarioDoKit('master_global'));
+    session(['lockscreen' => true]);
+    session(['tenant_corrente' => $acme->getKey()]);
+
+    Filament::setCurrentPanel('app');
+    Filament::setTenant($globex, isQuiet: true);
+
+    $html    = $this->get(route('lockscreen.app.page'))->assertOk()->getContent();
+    $imagens = imagensPorVarianteDaTelaDeBloqueio($html);
+
+    expect($imagens['light'])->toHaveCount(1)
+        ->and($imagens['light'][0])->toContain('organizacoes/logos/acme.png')
+        ->and($imagens['dark'])->toHaveCount(1)
+        ->and($imagens['dark'][0])->toContain('organizacoes/logos/acme-dark.png');
+
+    foreach (['globex.png', 'globex-dark.png', 'kit/logo-ct.png', 'kit/logo-dark-ct.png'] as $fora) {
+        $this->assertStringNotContainsString($fora, $html, "a tela de bloqueio aponta para {$fora}");
+    }
+})->group('kit');
+
+// --- R11 — a documentação deixa de afirmar o que a mudança desmente -------------
+
+/**
+ * CT-55 — a seção do cabeçalho dos painéis, pt e en, não diz mais que a logo do topo é sempre
+ * a da instalação nem que a organização só aparece na tela de bloqueio.
+ *
+ * Comparação sem negrito e sem quebra de linha: o texto das docs quebra no meio da frase.
+ */
+it('[CT-55] a documentação do cabeçalho dos painéis não afirma mais o que deixou de valer', function (string $idioma, string $titulo, string $organizacao, string $obsoleto, string $obsoletoBloqueio): void {
+    $pagina = file_get_contents(base_path("docs/{$idioma}/recursos/configuracoes-do-kit.md"));
+    $inicio = strpos($pagina, "## {$titulo}");
+
+    expect($inicio)->not->toBeFalse();
+
+    $resto = substr($pagina, $inicio + 3);
+    $fim   = strpos($resto, "\n## ");
+    $secao = $fim === false ? $resto : substr($resto, 0, $fim);
+
+    $normaliza = static fn (string $texto): string => (string) preg_replace('~\s+~u', ' ', str_replace('**', '', $texto));
+
+    $temAppJuntoDaOrganizacao = false;
+
+    foreach (preg_split('~\n\s*\n~', $secao) ?: [] as $paragrafo) {
+        $paragrafo = $normaliza($paragrafo);
+
+        if (str_contains($paragrafo, '/app') && str_contains($paragrafo, $organizacao)) {
+            $temAppJuntoDaOrganizacao = true;
+        }
+    }
+
+    expect($temAppJuntoDaOrganizacao)->toBeTrue('a seção não fala de /app junto de '.$organizacao);
+
+    $this->assertStringNotContainsString($obsoleto, $normaliza($secao));
+    $this->assertStringNotContainsString($obsoletoBloqueio, $normaliza($secao));
+})->with([
+    'pt' => ['pt', 'Cabeçalho dos painéis: o que mostrar no topo', 'organização', 'sempre a da instalação', 'segue aparecendo só na tela de bloqueio'],
+    'en' => ['en', 'Panel header: what to show at the top', 'organisation', "always the installation's", 'keeps showing only on the lock screen'],
+])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update e o create-project nao entregam docs/ (export-ignore): a pagina que este caso le nao viaja.')->group('kit');

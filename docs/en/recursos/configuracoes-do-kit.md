@@ -293,7 +293,7 @@ The composition replaces the brand **wherever Filament draws it**: in the topbar
 screen with the sidebar open, at the top of the sidebar (there the texts shrink and truncate with an
 ellipsis to fit on one line). Authentication screens (login, password reset,
 lock screen, two-factor, e-mail verification) keep the usual brand: the header belongs to the
-panels' inner screens. In the business panel, with an
+panels' inner screens. In the business panel (`/app`), with an
 open organisation, the composition's logo (and the plain brand, with the composition off) is the
 **organisation's** — the light one and, with a split brand, the dark one, swapped by the browser
 with the theme — and falls back to the installation's when the organisation has none. In the
