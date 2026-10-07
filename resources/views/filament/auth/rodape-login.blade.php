@@ -16,22 +16,13 @@
     ponytail: estilo inline, pelo mesmo motivo do botao ao lado. `color:inherit` com opacity
     herda a cor do tema, entao o rodape acompanha claro e escuro sem uma cor fixa.
 
-    -- `<aside>`, e nao `<div>` nem `<footer>` --
+    -- `<aside>` --
 
-    Este elemento e irmao direto de `<body>` numa tela PUBLICA, entao precisa viver num landmark:
-    como `<div>` o axe o acusa por `region`. Mas `<footer>` nessa posicao tem `contentinfo`
-    implicito, e a assinatura do sistema (`assinatura-do-rodape.blade.php`) ja e um — dois
-    `contentinfo` disparam `landmark-no-duplicate-contentinfo` E `landmark-unique`, os dois
-    apontando para a ASSINATURA.
-
-    `<aside>` e landmark `complementary`: resolve o `region` sem duplicar nada. As tres formas
-    foram MEDIDAS com o axe, e nao deduzidas (achados QA-17 e QA-40 do quality gate):
-
-      <div>     region acusa o recado
-      <footer>  region ok, mas 2 regras novas acusam a assinatura
-      <aside>   nenhuma das tres acusa nenhum dos dois
-
-    `[CT-B03]` guarda isso, e o ADR-09 de `rodape-coerente` registra a medicao das tres formas.
+    O recado vive DENTRO do cartao do formulario de login, depois dos botoes sociais. O `<aside>`
+    fica porque continua inofensivo ali (landmark `complementary`, sem duplicar nada), o `[CT-B03]`
+    o mede, e a medicao das tres formas (`<div>`, `<footer>`, `<aside>`) vale para a ASSINATURA
+    do sistema (`assinatura-do-rodape.blade.php`), que segue filha de `<body>`: la `<div>` e
+    acusado por `region` e `<footer>` duplica `contentinfo`. Ver o ADR-09 de `rodape-coerente`.
 --}}
 @php
     $rodape = \App\Support\ConfiguracaoDoLogin::rodapeDoLogin();

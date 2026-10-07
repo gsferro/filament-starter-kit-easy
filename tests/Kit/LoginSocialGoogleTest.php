@@ -49,27 +49,6 @@ beforeEach(function (): void {
 });
 
 /**
- * Liga o login com Google para o caso corrente.
- *
- * Fica neste arquivo, e não em `tests/Pest.php`, porque só este arquivo usa —
- * `.ai/rules/testes.md` manda mover só o helper usado por MAIS DE UM arquivo. O nome é longo
- * de propósito: função em PHP é global no processo, e um `ligarGoogle()` colidiria com
- * qualquer vizinho futuro.
- *
- * @param  array<string, mixed>  $credenciais  sobrescreve chaves de `services.google`
- */
-function ligarLoginComGoogleDoKit(array $credenciais = []): void
-{
-    config()->set('kit.login.google.habilitado', true);
-
-    config()->set('services.google', array_merge([
-        'client_id'     => 'id-de-teste',
-        'client_secret' => 'segredo-de-teste',
-        'redirect'      => '/auth/google/callback',
-    ], $credenciais));
-}
-
-/**
  * O usuário que o Google devolveria.
  *
  * @param  array<string, mixed>  $atributos

@@ -292,7 +292,7 @@ a barreira final. Ter um provedor habilitado em um painel não concede acesso a 
 
 ## O rodapé da tela de login
 
-A mesma configuração traz um rodapé em Markdown (negrito, itálico, link; HTML cru é descartado) na base da tela de login dos três painéis:
+A mesma configuração traz um rodapé em Markdown (negrito, itálico, link; HTML cru é descartado) na base do cartão de login dos três painéis:
 
 ```dotenv
 KIT_LOGIN_RODAPE="Acme · Todos os direitos reservados"

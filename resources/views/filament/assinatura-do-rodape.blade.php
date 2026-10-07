@@ -43,8 +43,8 @@
     ── SAÍDA ESCAPADA, e isto não é detalhe ──
 
     `{{ }}`, nunca `{!! !!}`. O nome vem de campo editável, e esta blade passou a renderizar em
-    tela PÚBLICA e NÃO AUTENTICADA. O recado do login, logo abaixo desta linha, aceita Markdown
-    por um motivo próprio e documentado na blade dele — esse motivo NÃO se estende ao nome, que é
+    tela PÚBLICA e NÃO AUTENTICADA. O recado do login, que vive dentro do cartão do formulário de login, acima desta linha, aceita
+    Markdown por um motivo próprio e documentado na blade dele — esse motivo NÃO se estende ao nome, que é
     texto puro e não tem por que formatar. Unificar as duas vias por simetria estética abriria a
     superfície do nome (ADR-05).
 

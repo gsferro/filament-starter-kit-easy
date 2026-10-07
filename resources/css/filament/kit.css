@@ -199,8 +199,9 @@
 |--------------------------------------------------------------------------
 |
 | MEDIDO, não deduzido. Num viewport de 1117px a assinatura saía em y=1122 e o
-| recado em y=1186: os dois abaixo da dobra, invisíveis sem rolar. E o recado
-| REGREDIU — antes ele vivia dentro do cartão do formulário.
+| recado em y=1186: os dois abaixo da dobra, invisíveis sem rolar. O recado
+| voltou ao cartão do formulário (wiki `rodape-separado`); a regra segue
+| servindo à assinatura, que continua fora dele.
 |
 | A causa é estrutural. Este kit não usa o layout `simple` do Filament nessas
 | telas: usa o do `filament-auth-designer`, cujo `.fi-auth-layout` declara
@@ -208,7 +209,7 @@
 | (`components/layouts/auth.blade.php:60-63`). O contêiner sozinho já consome a
 | dobra inteira, e tudo o que vem depois sobra para fora.
 |
-| Os três são IRMÃOS diretos de `body.fi-body`, que já tem `min-height: 100vh`
+| O layout e a assinatura são IRMÃOS diretos de `body.fi-body`, que já tem `min-height: 100vh`
 | — então a correção é fazer o body ser a coluna e o layout parar de exigir a
 | altura toda. O rodapé encosta no fim da tela, dentro dela.
 |

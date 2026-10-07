@@ -669,7 +669,7 @@ class ConfiguracoesDoKit extends SettingsPage
                 $this->secaoAntiRobo(),
 
                 Section::make('Rodapé da tela de login')
-                    ->description('Aparece na base das telas de login dos três painéis.')
+                    ->description('Aparece dentro do cartão de login dos três painéis, abaixo dos botões.')
                     ->columnSpanFull()
                     ->schema([
                         /*
