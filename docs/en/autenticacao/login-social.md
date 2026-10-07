@@ -298,7 +298,7 @@ keep it off. Only `true` and `1` turn it on.
 
 ## The login screen footer
 
-The same configuration brings a Markdown footer (bold, italic, link; raw HTML is discarded) to the bottom of the login screen on all three panels:
+The same configuration brings a Markdown footer (bold, italic, link; raw HTML is discarded) to the bottom of the login card on all three panels:
 
 ```dotenv
 KIT_LOGIN_RODAPE="Acme · All rights reserved"

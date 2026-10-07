@@ -6,7 +6,6 @@ use App\Ai\Health\LocalAiCheck;
 use App\Ai\Listeners\RegistrarAiRun;
 use App\Filament\Pages\Auth\CadastroUnificado;
 use App\Filament\Pages\Auth\EscolhaDePainel;
-use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Pages\Auth\TelaLoginUnificada;
 use App\Filament\Pages\Auth\TelaRecuperarSenhaUnificada;
 use App\Http\Controllers\Auth\EntrarNoPainelController;
@@ -766,14 +765,13 @@ class KitServiceProvider extends ServiceProvider
      *
      * `AUTH_LOGIN_FORM_AFTER` e a chave que a `content()` da tela de login do Filament emite
      * DEPOIS do componente do formulario
-     * (`vendor/filament/filament/src/Auth/Pages/Login.php:458-466`), que e onde o requisito
+     * (`vendor/filament/filament/src/Auth/Pages/Login.php:content():416`, hook na linha 423), que e onde o requisito
      * pede o botao. Registrar global e seguro porque essa chave nao e emitida em nenhuma
      * outra tela.
      *
-     * O rodape USA o hook `FOOTER`, com `scopes:`. Ate a feature `rodape-coerente` ele NAO usava,
-     * e o motivo era bom: o layout de painel autenticado tambem emite `FOOTER`, e o texto
-     * apareceria em toda tela de todo painel. O `scopes:` e o que resolveu — o motivo continua
-     * valendo, e passou a ser atendido de outro jeito.
+     * O recado do rodape tambem fica em `AUTH_LOGIN_FORM_AFTER`, dentro do cartao do formulario,
+     * e nao no `FOOTER`: a wiki `rodape-separado` mantem os dois rodapes separados — o recado
+     * no cartao do login, a assinatura no `FOOTER` de `ConfiguraFilamentGlobal`.
      *
      * Duas registracoes e nao um blade com dois blocos: as duas superficies tem condicoes
      * independentes — os botoes dependem das credenciais de cada provedor, o rodape do texto.
@@ -790,42 +788,19 @@ class KitServiceProvider extends ServiceProvider
         );
 
         /*
-         * O recado do rodape sai no MESMO hook da assinatura do sistema (`FOOTER`), e nao num
-         * hook proprio. Duas coisas dependem disso, e nenhuma e obvia:
+         * O recado volta ao `AUTH_LOGIN_FORM_AFTER`, registrado DEPOIS dos botoes sociais: a ordem
+         * de registro e a de render, entao o recado vem abaixo dos botoes. Pedido do solicitante
+         * (wiki `rodape-separado`): a juncao com a assinatura no `FOOTER` nao ficou boa.
          *
-         * 1. ORDEM. `ViewManager::renderHook()` renderiza os hooks SEM escopo antes dos COM
-         *    escopo, qualquer que seja a ordem de registro. A assinatura e registrada sem escopo
-         *    em `ConfiguraFilamentGlobal`; este aqui tem escopo. E isso que garante
-         *    "assinatura em cima, recado embaixo" sem acoplar os dois registros.
-         *
-         *    Nao daria para conseguir isso deixando o recado em `AUTH_LOGIN_FORM_AFTER`: naquele
-         *    hook ele sai DENTRO do cartao do formulario, e o `FOOTER` sai fora e abaixo dele —
-         *    ou seja, a assinatura apareceria ABAIXO do recado.
-         *
-         *    ATENCAO ao medir isto de novo: estas telas NAO usam o layout `simple` do Filament.
-         *    `TelaLogin`, `TelaLoginUnificada` e `TelaRecuperarSenha` redeclaram `$layout` para
-         *    `filament-auth-designer::components.layouts.auth`, que nao tem `<main>`. A primeira
-         *    versao deste comentario argumentava sobre o `simple.blade.php` e media o layout
-         *    errado — achado RD-02 do step 6.5.
-         *
-         *    Esse layout tambem fixa `.fi-auth-layout` em `min-height: 100vh` e emite o `FOOTER`
-         *    DEPOIS de fechar a propria div: sem a regra de CSS que `resources/css/filament/kit.css`
-         *    acrescentou, a assinatura e o recado caem ABAIXO DA DOBRA. Medido: y=1122 e y=1186
-         *    num viewport de 1117px.
-         *
-         * 2. ALCANCE. O motivo de o recado nunca ter usado o `FOOTER` continua valendo: aquele
-         *    hook e emitido TAMBEM pelo layout de painel autenticado, e o texto apareceria em
-         *    toda tela do sistema. O `scopes:` e o que resolve — e e por isso que ele pode viver
-         *    no mesmo hook agora, o que antes era impossivel.
-         *
-         * AS DUAS CLASSES, e nao so a mae: `getRenderHookScopes()` devolve `[static::class]`, a
-         * classe CONCRETA. `TelaLoginUnificada` ESTENDE `TelaLogin`, entao escopar so na mae
-         * deixaria o login unificado (`/login`) sem recado — em silencio.
+         * SEM escopo de proposito: so `Login::content()` emite esse hook
+         * (`vendor/filament/filament/src/Auth/Pages/Login.php:content():416`, hook na 423), e
+         * `TelaLoginUnificada` estende `TelaLogin` sem redeclarar `content()` — as duas telas ja
+         * sao cobertas. Nota: o Breezy registra o passkey no mesmo hook se ativado
+         * (`vendor/jeffgreco13/filament-breezy/src/BreezyCore.php:99-100`); hoje inativo.
          */
         FilamentView::registerRenderHook(
-            PanelsRenderHook::FOOTER,
+            PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
             fn (): string => view('filament.auth.rodape-login')->render(),
-            scopes: [TelaLogin::class, TelaLoginUnificada::class],
         );
 
         // A tela de registro (registro aberto e aceite de convite) oferece os mesmos botoes; a

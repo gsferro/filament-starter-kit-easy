@@ -59,8 +59,8 @@ versiona — a assinatura `© {ano} {Nome}` continua lá, só sem o número.
 
 ### O recado da tela de login
 
-A aba **Login** tem um campo de texto livre que vira uma **segunda linha do rodapé, abaixo da
-assinatura**, e só nas telas de login (`/admin/login`, `/app/login`, `/infra/login` e `/login`). Ele
+A aba **Login** tem um campo de texto livre que é renderizado **dentro do cartão do formulário de login, abaixo dos
+botões** (inclusive os de login social), e só nas telas de login (`/admin/login`, `/app/login`, `/infra/login` e `/login`). Ele
 aceita Markdown — negrito, itálico e link — e descarta HTML cru, porque a tela de login é pública.
 
 As telas de **registro** e de **recuperação de senha** recebem só a assinatura, não o recado.

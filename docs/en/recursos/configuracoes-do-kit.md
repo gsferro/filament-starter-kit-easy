@@ -60,8 +60,8 @@ pretend to — the `© {year} {Name}` signature stays, just without the number.
 
 ### The login screen notice
 
-The **Login** tab has a free-text field that becomes a **second footer line, below the signature**,
-and only on the login screens (`/admin/login`, `/app/login`, `/infra/login` and `/login`). It
+The **Login** tab has a free-text field that is rendered **inside the login form card, below the buttons**
+(social login ones included), and only on the login screens (`/admin/login`, `/app/login`, `/infra/login` and `/login`). It
 accepts Markdown — bold, italic and links — and discards raw HTML, because the login screen is
 public.
 

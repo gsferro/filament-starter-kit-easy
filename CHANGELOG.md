@@ -5,6 +5,12 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alterado
+
+- **O recado da aba Login volta ao cartão do formulário de login**, abaixo dos botões, como era antes
+  da v0.39.0 (wiki `wikis/specs/fix/rodape-separado/`): o pedido foi que a junção com a assinatura no
+  rodapé da página não ficou boa e os dois rodapés ficam separados. A assinatura automática não muda.
+
 ## [0.45.1] - 2026-10-07
 
 ### Corrigido
