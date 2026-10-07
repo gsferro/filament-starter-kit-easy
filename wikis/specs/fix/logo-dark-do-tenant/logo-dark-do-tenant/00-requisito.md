@@ -48,7 +48,7 @@ Da segunda invocação, o trecho que vale para as duas features do pedido:
 | P-03 | A resolução é por variante, independente, a mesma que `TelaBloqueio::urlsDasLogos()` já aplica: clara = clara da organização, senão clara da instalação; escura = `null` com a marca unificada, senão escura da organização, senão escura da instalação. Organização sem logo nenhuma usa o par da instalação. Organização só com a escura (estado que o formulário não produz, só dado) mostra a clara da instalação com a escura da organização, como a tela de bloqueio mostra hoje. | step 4 — confronto com o código (`TelaBloqueio::urlsDasLogos()`), revisada em 2026-10-07 | 2026-10-07 | RQ-05 | vigente — revisada |
 | P-04 | Com a marca unificada (interruptor da aba Identidade ligado), a escura da organização é ignorada, como a da instalação. | step 3 — regra existente | 2026-10-07 | RQ-05 | vigente |
 | P-05 | A página de erro do Sentinel dentro de `/app/{slug}` herda a marca do painel; o que ela mostra decorre de quando o middleware fixa a organização (404 de rota inexistente vem antes dele: logo da instalação; 403 depois dele: logo da organização). Comportamento decorrente, não exigido e não testado nesta entrega — registrado para o leitor. | step 5 — RD-06; revisada pela revisão adversarial (ADV-24) | 2026-10-07 | RQ-05 | vigente — revisada (ADV-24) |
-| P-06 | O `alt` das imagens da marca não muda nesta entrega: o do Filament vem do nome da marca do painel e o da composição é o nome da aplicação; o `alt` com o nome da organização é da tela de bloqueio (CT-19 de `logo-dark-mode`) e fica fora de escopo. | step 5 — RD-12 | 2026-10-07 | RQ-05 | vigente |
+| P-06 | O `alt` das imagens da marca não muda nesta entrega: o do Filament vem do nome da marca do painel e o da composição é o nome da aplicação; o `alt` com o nome da organização é da tela de bloqueio (CT-19 de `logo-dark-mode`) e fica fora de escopo. | step 5 — RD-12 | 2026-10-07 | RQ-05 | substituída pelo Adendo 2 — o `alt` passa a ser o nome da organização quando a logo é dela (v0.45.3) |
 
 ## Fora de Escopo (declarado)
 
@@ -78,3 +78,21 @@ Da segunda invocação, o trecho que vale para as duas features do pedido:
 | ID | Cláusula | Trecho literal | Tipo | Substitui |
 |----|----------|----------------|------|-----------|
 | RQ-05 | No painel `/app`, com uma organização aberta, a marca do topo (a marca simples e a composição do cabeçalho) usa a logo da organização, clara e escura, trocando com o tema; sem logo da organização, usa a da instalação. | "Topo do /app com organização aberta" · "a marca do topo do painel /app passa a ser a logo da organização (clara e escura, trocando com o tema), caindo para a da instalação quando ela não tem logo" | funcional | RQ-03 |
+
+## Adendo 2 — 2026-10-07
+
+- **Fonte**: pedido do solicitante no chat, depois do merge do PR #151 e da v0.45.2, ao ler o débito QA-08 (`alt`) no relato da sessão
+- **Fidelidade**: alta (texto escrito no chat, copiado sem correção)
+- **Responde a**: QA-08 / P-06 (débito registrado no `03`); pedido direto, sem nova wiki
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> - lance agora a correção do alto da logo direto e crie uma nova tag
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-06 | O `alt` da logo da organização no topo do `/app` passa a ser o nome da organização ("alto" = `alt`), nas duas formas da marca; a correção sai direto, numa tag nova (v0.45.3). | "lance agora a correção do alto da logo direto e crie uma nova tag" | funcional | P-06 (deixa de valer) |

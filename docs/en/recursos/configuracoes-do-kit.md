@@ -297,7 +297,7 @@ two-factor, e-mail verification) keep the usual brand: the header belongs to the
 panels' inner screens. In the business panel (`/app`), with an
 open organisation, the composition's logo (and the plain brand, with the composition off) is the
 **organisation's** — the light one and, with a split brand, the dark one, swapped by the browser
-with the theme — and falls back to the installation's when the organisation has none. In the
+with the theme — and falls back to the installation's when the organisation has none; the image's `alt` is the organisation's name when the logo is hers. In the
 administration and infrastructure panels it is the installation's; on authentication screens (login,
 password reset) too, and the lock screen uses the session's organisation, by the same rule.
 

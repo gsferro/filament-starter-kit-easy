@@ -8,6 +8,7 @@ use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Filament\Livewire\Sidebar;
 use Filament\Livewire\Topbar;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
@@ -252,6 +253,26 @@ function composicaoDoCabecalhoDaTenancia(bool $ligada): void
     gravarCabecalhoDaTenancia(['nome_do_projeto' => false, 'nome_do_painel' => false, 'logo_da_marca' => $ligada]);
 }
 
+/** Os `alt` das `<img>` da marca (`fi-logo-light`/`fi-logo-dark`), um por imagem, na ordem do documento. */
+function altsDasImagensDaMarca(string $html): array
+{
+    preg_match_all('~<img[^>]*>~i', $html, $tags);
+
+    $alts = [];
+
+    foreach ($tags[0] as $tag) {
+        if (! preg_match('~\sclass\s*=\s*"([^"]*)"~', $tag, $classe) || ! preg_match('~(?<![\w-])(fi-logo-light|fi-logo-dark)(?![\w-])~', $classe[1])) {
+            continue;
+        }
+
+        if (preg_match('~\salt\s*=\s*"([^"]*)"~', $tag, $alt)) {
+            $alts[] = html_entity_decode($alt[1]);
+        }
+    }
+
+    return $alts;
+}
+
 it('[CT-42] a marca simples do /app da Acme é o par da organização', function (): void {
     gravarLogoDaInstalacaoDaTenancia(unifica: false);
     $acme = acmeComPar();
@@ -336,6 +357,44 @@ it('[CT-45] a composição do /app da Acme mostra o par da organização, com um
     $this->assertStringNotContainsString('kit/logo-ct.png', $todas);
     $this->assertStringNotContainsString('kit/logo-dark-ct.png', $todas);
 })->group('kit');
+
+/**
+ * [CT-58] o `alt` da logo da organização é o nome dela, nas duas formas da marca (v0.45.3).
+ *
+ * O Filament põe no `alt` da `<img>` da marca simples o nome da MARCA do painel; com a logo da
+ * organização no lugar, a imagem descrevia outra marca (débito QA-08 da wiki `logo-dark-do-tenant`,
+ * P-06 revista no Adendo 2). A tela de bloqueio já usava o nome da organização (CT-19 de `logo-dark-mode`).
+ * Controle: organização SEM logo continua com o nome da aplicação, porque a imagem é a da instalação.
+ */
+it('[CT-58] o alt da logo da organização no topo do /app é o nome dela, nas duas formas', function (bool $composicao): void {
+    gravarLogoDaInstalacaoDaTenancia(unifica: false);
+    $acme = acmeComPar();
+    composicaoDoCabecalhoDaTenancia($composicao);
+
+    $usuario = pessoaDaOrganizacao($acme);
+    $html    = $this->actingAs($usuario)->get('/app/acme')->assertSuccessful()->getContent();
+
+    $alts = altsDasImagensDaMarca($html);
+
+    expect($alts)->not->toBe([])
+        ->and(array_unique($alts))->toBe(['Acme']);
+
+    // Controle: a Globex não tem logo, a imagem é a da instalação e o `alt` segue o nome da aplicação.
+    $globex = organizacaoComLogos('Globex', 'globex');
+    papelNaOrganizacao($usuario, 'panel_user', $globex);
+    $usuario->tenants()->attach($globex->id);
+    fronteiraDeRequest();
+
+    $htmlDaGlobex = $this->actingAs($usuario)->get('/app/globex')->assertSuccessful()->getContent();
+    $altsDaGlobex = altsDasImagensDaMarca($htmlDaGlobex);
+
+    expect($altsDaGlobex)->not->toBe([])
+        ->and(implode('|', $altsDaGlobex))->toContain((string) config('app.name'))
+        ->and(implode('|', $altsDaGlobex))->not->toContain('Globex');
+})->with([
+    'desligada (marca simples)' => [false],
+    'ligada (composição)'       => [true],
+])->group('kit');
 
 it('[CT-46] a composição cai no par da instalação quando a organização não tem logo', function (): void {
     gravarLogoDaInstalacaoDaTenancia(unifica: false);
@@ -536,8 +595,23 @@ it('[CT-52] a marca do topo exige painel com tenancy e um objeto que seja organi
 
     $caminhos = ['A' => 'organizacoes/logos/acme.png', 'B' => 'organizacoes/logos/acme-dark.png', 'C' => 'kit/logo-ct.png', 'D' => 'kit/logo-dark-ct.png'];
 
-    expect(CabecalhoDoPainel::marca())->toBeString()->toContain($caminhos[$clara])
-        ->and(CabecalhoDoPainel::marcaEscura())->toBeString()->toContain($caminhos[$escura]);
+    $marca = CabecalhoDoPainel::marca();
+
+    if ($marca instanceof Htmlable) {
+        // Logo da organização: o par vai num `Htmlable` com o `alt` dela (CT-58) e `marcaEscura()` é `null`.
+        $imagens = imagensDaMarcaPorVariante($marca->toHtml());
+
+        expect($imagens['light'])->toHaveCount(1)->and($imagens['light'][0])->toContain($caminhos[$clara])
+            ->and($imagens['dark'])->toHaveCount(1)->and($imagens['dark'][0])->toContain($caminhos[$escura])
+            ->and(CabecalhoDoPainel::marcaEscura())->toBeNull()
+            ->and($clara)->toBe('A', 'só a logo da organização vira Htmlable na marca simples');
+
+        return;
+    }
+
+    expect($marca)->toBeString()->toContain($caminhos[$clara])
+        ->and(CabecalhoDoPainel::marcaEscura())->toBeString()->toContain($caminhos[$escura])
+        ->and($clara)->toBe('C', 'a logo da instalação segue como string');
 })->with([
     'nenhum painel (console, job)'  => [null, 'acme', 'C', 'D'],
     'o painel /admin'               => ['admin', 'acme', 'C', 'D'],

@@ -286,7 +286,7 @@ recuperação de senha, dois fatores, confirmação de e-mail) continuam com a m
 sempre: o cabeçalho é das telas internas dos painéis. No painel do negócio (`/app`), com uma
 organização aberta, a logo da composição (e a marca simples, com a composição desligada) é a da
 **organização** — a clara e, com a marca separada, a escura, trocadas pelo navegador com o tema —,
-e cai para a da instalação quando a organização não tem logo. Nos painéis de administração e
+e cai para a da instalação quando a organização não tem logo; o `alt` da imagem é o nome da organização quando a logo é dela. Nos painéis de administração e
 infraestrutura, a logo é a da instalação; nas telas de autenticação (login, recuperação de senha)
 também, e a tela de bloqueio usa a organização da sessão, pela mesma regra.
 

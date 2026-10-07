@@ -658,3 +658,23 @@ Rodada única, 2026-10-07: **26 achados** (ADV-01 a ADV-26), 6 altos. Aplicados 
 | POST real ao endpoint de update do Livewire para o redesenho | fora do arnês (D5); `Livewire::test` com o tenant fixado prova o par renderizado |
 | objeto aberto que não é organização mas tem um atributo `logo` (ADV-18) | recusado: ver `## Revisão Adversarial` |
 | o `alt` das imagens (P-06; ADV-25) e o desvínculo com aba aberta (ADV-26) | fora de escopo, ver `## Revisão Adversarial` |
+
+## Adendo 2 — CT-58 (v0.45.3)
+
+Origem: RQ-06 (Adendo 2 do `00`). Costura: HTTP (`CabecalhoDoPainelTenancyTest`). Regra R12 — o `alt` da logo da organização é o nome dela.
+
+```gherkin
+Esquema do Cenário: [CT-58] o alt da logo da organização no topo do /app é o nome dela, nas duas formas
+  Dado a instalação com marca separada e a Acme com o par de logos
+  E a composição do cabeçalho <composicao>
+  Quando a pessoa da Acme abre /app/acme
+  Então toda <img> da marca (fi-logo-light e fi-logo-dark) tem alt "Acme"
+  E, como controle, a Globex sem logo em /app/globex tem alt com o nome da aplicação e sem "Globex"
+
+  Exemplos:
+    | composicao |
+    | desligada  |
+    | ligada     |
+```
+
+Mutantes: M53 — `alt` fixo em `config('app.name')` (morto por CT-58, as duas linhas); M54 — nome da organização também quando a imagem é da instalação (morto pelo controle da Globex); M55 — `marcaEscura()` devolvendo a escura com o par da organização em `Htmlable` (morto por CT-52, linha "o painel /app (controle)": `marcaEscura()` tem de ser `null`). O CT-52 passou a aceitar `Htmlable` na marca simples quando a logo é da organização.

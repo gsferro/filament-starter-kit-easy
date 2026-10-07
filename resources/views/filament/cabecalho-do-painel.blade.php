@@ -11,7 +11,8 @@
     Tudo com chaves duplas: nome do projeto, da organização e da aplicação são texto de terceiro.
 --}}
 @php
-    $alt = (string) config('app.name');
+    // O `alt` vem de `CabecalhoDoPainel`: o nome da organização quando a logo é dela, senão o da aplicação (v0.45.3).
+    $alt = (string) ($alt ?? config('app.name'));
     $temTexto = filled($projeto) || filled($painel);
 @endphp
 <span class="kit-cabecalho">

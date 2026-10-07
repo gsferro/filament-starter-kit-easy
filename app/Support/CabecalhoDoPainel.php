@@ -52,7 +52,7 @@ use WeakMap;
  */
 final class CabecalhoDoPainel
 {
-    /** @var WeakMap<Request, array{segmentos: array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string}|null, logos: array{clara: ?string, escura: ?string}}>|null */
+    /** @var WeakMap<Request, array{segmentos: array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string, alt: string}|null, logos: array{clara: ?string, escura: ?string}, alt: string, logo_da_organizacao: bool}>|null */
     private static ?WeakMap $memo = null;
 
     /**
@@ -64,13 +64,30 @@ final class CabecalhoDoPainel
      */
     public static function marca(): string|Htmlable|null
     {
-        $segmentos = self::segmentos();
+        $entrada = self::entrada();
 
-        if ($segmentos === null) {
-            return self::logos()['clara'];
+        if ($entrada['segmentos'] !== null) {
+            return new HtmlString(view('filament.cabecalho-do-painel', $entrada['segmentos'])->render());
         }
 
-        return new HtmlString(view('filament.cabecalho-do-painel', $segmentos)->render());
+        /*
+         * Marca simples com a logo da ORGANIZAÇÃO: o par vai pela mesma blade da composição, só com a
+         * logo, porque o `alt` da `<img>` que o Filament desenha é o nome da marca do painel
+         * (`filament()->getBrandName()`, `vendor/filament/filament/resources/views/components/logo.blade.php`)
+         * e a imagem é de outra marca. Com `Htmlable` o Filament não acrescenta `<img>` nem `alt`, e a
+         * blade põe o nome da organização — o mesmo que a tela de bloqueio já põe (v0.45.3).
+         */
+        if ($entrada['logo_da_organizacao']) {
+            return new HtmlString(view('filament.cabecalho-do-painel', [
+                'projeto'     => null,
+                'painel'      => null,
+                'logo_clara'  => $entrada['logos']['clara'],
+                'logo_escura' => $entrada['logos']['escura'],
+                'alt'         => $entrada['alt'],
+            ])->render());
+        }
+
+        return $entrada['logos']['clara'];
     }
 
     /**
@@ -80,7 +97,10 @@ final class CabecalhoDoPainel
      */
     public static function marcaEscura(): ?string
     {
-        return self::segmentos() === null ? self::logos()['escura'] : null;
+        $entrada = self::entrada();
+
+        // Com a composição, ou com o par da organização, a escura já vai dentro do `Htmlable` de `marca()`.
+        return $entrada['segmentos'] === null && ! $entrada['logo_da_organizacao'] ? $entrada['logos']['escura'] : null;
     }
 
     /**
@@ -122,7 +142,7 @@ final class CabecalhoDoPainel
      * `logos()` — o da organização aberta no `/app`, senão o da instalação.
      * Memoizado por request (ver o docblock da classe).
      *
-     * @return array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string}|null
+     * @return array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string, alt: string}|null
      */
     public static function segmentos(): ?array
     {
@@ -168,9 +188,19 @@ final class CabecalhoDoPainel
      */
     private static function resolverEntrada(): array
     {
-        $logos = IdentidadeDoKit::logosPara(self::organizacaoAberta());
+        $organizacao = self::organizacaoAberta();
+        $logos       = IdentidadeDoKit::logosPara($organizacao);
 
-        return ['segmentos' => self::resolverSegmentos($logos), 'logos' => $logos];
+        // A clara é da organização? Então o `alt` é o nome dela, nas duas formas da marca (como na tela de bloqueio).
+        $logoDaOrganizacao = $organizacao !== null && $organizacao->urlDaLogo() !== null;
+        $alt               = $logoDaOrganizacao ? $organizacao->getFilamentName() : (string) config('app.name');
+
+        return [
+            'segmentos'           => self::resolverSegmentos($logos, $alt),
+            'logos'               => $logos,
+            'alt'                 => $alt,
+            'logo_da_organizacao' => $logoDaOrganizacao,
+        ];
     }
 
     /**
@@ -200,9 +230,9 @@ final class CabecalhoDoPainel
      *   com a marca separada e só acompanha uma clara.
      *
      * @param  array{clara: ?string, escura: ?string}  $logos
-     * @return array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string}|null
+     * @return array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string, alt: string}|null
      */
-    private static function resolverSegmentos(array $logos): ?array
+    private static function resolverSegmentos(array $logos, string $alt): ?array
     {
         $exibeProjeto = (bool) config('kit.cabecalho.nome_do_projeto', false);
         $exibePainel  = (bool) config('kit.cabecalho.nome_do_painel', false);
@@ -259,6 +289,7 @@ final class CabecalhoDoPainel
             'painel'      => filled($nomeDoPainel) ? $nomeDoPainel : null,
             'logo_clara'  => $logoClara,
             'logo_escura' => $logoEscura,
+            'alt'         => $alt,
         ];
     }
 

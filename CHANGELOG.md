@@ -5,6 +5,17 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.45.3] - 2026-10-07
+
+### Corrigido
+
+- **O `alt` da logo da organização no topo do `/app` é o nome da organização** (débito QA-08 da wiki
+  `wikis/specs/fix/logo-dark-do-tenant/`, P-06 revista no Adendo 2): o Filament põe no `alt` da `<img>`
+  da marca simples o nome da marca do painel, e com a logo da organização no lugar a imagem descrevia
+  outra marca. Agora `CabecalhoDoPainel` entrega o par da organização num `Htmlable` (a mesma blade da
+  composição, só com a logo) com o `alt` = nome da organização, nas duas formas da marca, como a tela de
+  bloqueio já fazia; organização sem logo segue com a imagem e o `alt` da instalação.
+
 ## [0.45.2] - 2026-10-07
 
 ### Alterado
