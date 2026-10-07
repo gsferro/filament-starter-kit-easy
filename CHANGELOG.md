@@ -5,9 +5,11 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.45.1] - 2026-10-07
+
 ### Corrigido
 
-- **`kit:update` passa a entregar os overrides de view que o kit escreveu** (#148, wiki
+- **`kit:update` passa a entregar os overrides de view que o kit escreveu** (#148, PR #149, wiki
   `wikis/specs/fix/kit-update-views-vendor/`): `resources/views/vendor` não estava em
   `KitUpdate::CAMINHOS_DO_KIT`, então o override da lock-screen com o par de logos claro/escuro
   (v0.43.0) chegava a quem instalava e nunca a quem atualizava — `LogoDarkModeTest` CT-16 falhava
