@@ -348,7 +348,7 @@ class InfraPanelProvider extends PanelProvider
                     /*
                      * As DUAS condições valem, e não é redundância decorativa.
                      *
-                     * `ver-logs` é a barreira do PAINEL: `KitServiceProvider.php:ver-logs:463` o
+                     * `ver-logs` é a barreira do PAINEL: `KitServiceProvider.php:ver-logs:462` o
                      * define como `temPapelDoPainel('infra')`, então ele responde igual para todo papel
                      * que abre o /infra. `View:LogsExplorer` é a barreira da TELA, e é a que o
                      * checkbox de `/admin/shield/roles` promete. O `&&` é a mesma coexistência

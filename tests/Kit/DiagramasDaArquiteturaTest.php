@@ -5480,7 +5480,7 @@ it('[CT-66] a citação de arquivo do kit resolve pelo símbolo, e a de número 
     'real, piso 5, @premissa P-22'                    => ['os comentários reais de Providers/Filament/AppPanelProvider.php', 'aceita, com as cinco citações de email_verified_at conferidas'],
     'número nu que apodrece no próximo edit (A-08 a)' => ['`KitServiceProvider.php:429`', 'recusa: sem símbolo'],
     'símbolo certo, linha velha'                      => ['`KitServiceProvider.php:ver-logs:172`', 'recusa: a linha 172 não contém ver-logs'],
-    'forma certa'                                     => ['`KitServiceProvider.php:ver-logs:463`', 'aceita'],
+    'forma certa'                                     => ['`KitServiceProvider.php:ver-logs:462`', 'aceita'],
 ]);
 
 /*
