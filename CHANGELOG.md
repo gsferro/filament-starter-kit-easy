@@ -5,6 +5,18 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Corrigido
+
+- **O topo do `/app/{organização}` usa a logo da organização, clara e escura, trocando com o tema**
+  (wiki `wikis/specs/fix/logo-dark-do-tenant/`): antes só a tela de bloqueio consultava a variante
+  escura da organização, e o topo mostrava sempre a da instalação. Agora a marca simples e a
+  composição do cabeçalho usam o par da organização aberta, com queda por variante para o da
+  instalação; `/admin`, `/infra` e `/app` sem organização seguem com a da instalação. Reverte a
+  P-12 do `cabecalho-do-painel` só para o `/app` com organização aberta. A regra de queda passa a
+  ser `IdentidadeDoKit::logosPara()`, a mesma da tela de bloqueio. Quem já tem organização com logo
+  enviada vê a marca do topo dela mudar no update (apagar a logo da organização devolve a da
+  instalação).
+
 ## [0.45.1] - 2026-10-07
 
 ### Corrigido

@@ -209,8 +209,8 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
      *
      * Mesma guarda de `urlDaLogo()` — o path órfão degrada para a logo_dark da
      * instalação (e, sem ela, para a clara), nunca para uma `<img>` quebrada.
-     * O quê ela vale quando gravada não é decisão do model: `TelaBloqueio` só a
-     * consulta no modo com marca separada.
+     * O quê ela vale quando gravada não é decisão do model: `IdentidadeDoKit::logosPara()`,
+     * o consumidor único, só a consulta no modo com marca separada.
      */
     public function urlDaLogoEscura(): ?string
     {

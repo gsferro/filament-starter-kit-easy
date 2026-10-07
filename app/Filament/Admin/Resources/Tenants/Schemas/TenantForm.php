@@ -205,7 +205,7 @@ class TenantForm
                             ->validationMessages([
                                 'max' => 'O arquivo passa de '.TetoDeUpload::emMb().' MB.',
                             ])
-                            ->helperText('Exibida na tela de bloqueio de sessão do painel de negócio. Em branco, usa a imagem padrão. Até '.TetoDeUpload::emMb().' MB, e SVG não é aceito.')
+                            ->helperText('Exibida no topo do painel de negócio e na tela de bloqueio de sessão. Em branco, usa a da instalação (ou o nome da aplicação, sem ela). Até '.TetoDeUpload::emMb().' MB, e SVG não é aceito.')
                             // Linha inteira: com os dois campos de cor na primeira linha, a logo
                             // espremida ao lado de um vazio ficava feia.
                             ->columnSpanFull(),

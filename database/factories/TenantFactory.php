@@ -35,13 +35,16 @@ class TenantFactory extends Factory
      *
      * O default de `definition()` deixa os dois campos nulos de propósito: o estado neutro é o
      * mais importante de cobrir, porque a feature tem de ser inerte sem eles.
+     *
+     * `$logoEscura` grava `logo_dark`, a variante escura da logo (só vale com a marca separada).
      */
-    public function comIdentidadeVisual(?string $cor = '#7c3aed', ?string $logo = null, ?string $paleta = null): static
+    public function comIdentidadeVisual(?string $cor = '#7c3aed', ?string $logo = null, ?string $paleta = null, ?string $logoEscura = null): static
     {
         return $this->state(fn (array $attributes): array => [
             'cor_primaria'      => $cor,
             'cor_primaria_nome' => $paleta,
             'logo'              => $logo,
+            'logo_dark'         => $logoEscura,
         ]);
     }
 

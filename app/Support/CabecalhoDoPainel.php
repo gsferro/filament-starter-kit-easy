@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Tenant;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Models\Contracts\HasName;
@@ -20,7 +21,13 @@ use WeakMap;
  * As três Closures dos `PanelProvider` (`brandLogo()`, `darkModeBrandLogo()` e o render hook
  * `USER_MENU_BEFORE`) delegam para cá, e o contrato que esta classe sustenta é o RQ-06 da
  * feature: **com tudo desligado, os painéis renderizam o que renderizavam antes** — `marca()`
- * devolve exatamente `IdentidadeDoKit::logo()` e `usuario()` devolve uma string vazia.
+ * devolve exatamente `IdentidadeDoKit::logo()` e `usuario()` devolve uma string vazia — **para
+ * quem não tem organização aberta com logo própria**. No `/app` com organização aberta, a logo
+ * (a marca simples e a da composição) é a da organização, clara e escura, com queda por variante
+ * para a da instalação: reverte a P-12 do cabeçalho só para esse painel (wiki
+ * `fix/logo-dark-do-tenant`, Adendo 1). A regra do par vive em `IdentidadeDoKit::logosPara()`,
+ * a mesma da tela de bloqueio; fora do `/app` (`/admin`, `/infra`) a organização é `null` e o
+ * par é o da instalação, sempre — mostrar logo de cliente ao administrador seria vazamento.
  *
  * Ligado qualquer segmento, `marca()` passa a devolver um `HtmlString` — o Filament aceita
  * `Htmlable` no `brandLogo()` (`vendor/filament/filament/src/Panel/Concerns/HasBrandLogo.php:getBrandLogo():37`)
@@ -38,12 +45,14 @@ use WeakMap;
  * como chave): some junto com o request, então não vaza entre requests do mesmo processo — que
  * é o que um `once()` em método estático faria na suíte, devolvendo a composição velha depois
  * de a configuração mudar. Resultado: uma resolução e, no pior caso, um `warning` por request.
+ * A mesma entrada do memo guarda os segmentos e o par de logos (`logos()`), para que a marca
+ * simples, a escura e a composição leiam a mesma resolução. Sem `Request` ligada, resolve sem memo.
  *
  * Só estáticos, como `IdentidadeDoKit` e `AssinaturaDoRodape`: o único estado é o memo.
  */
 final class CabecalhoDoPainel
 {
-    /** @var WeakMap<Request, array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string}|false>|null */
+    /** @var WeakMap<Request, array{segmentos: array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string}|null, logos: array{clara: ?string, escura: ?string}}>|null */
     private static ?WeakMap $memo = null;
 
     /**
@@ -58,7 +67,7 @@ final class CabecalhoDoPainel
         $segmentos = self::segmentos();
 
         if ($segmentos === null) {
-            return IdentidadeDoKit::logo();
+            return self::logos()['clara'];
         }
 
         return new HtmlString(view('filament.cabecalho-do-painel', $segmentos)->render());
@@ -70,7 +79,7 @@ final class CabecalhoDoPainel
      */
     public static function marcaEscura(): ?string
     {
-        return self::segmentos() === null ? IdentidadeDoKit::logoEscura() : null;
+        return self::segmentos() === null ? self::logos()['escura'] : null;
     }
 
     /**
@@ -115,21 +124,70 @@ final class CabecalhoDoPainel
      */
     public static function segmentos(): ?array
     {
+        return self::entrada()['segmentos'];
+    }
+
+    /**
+     * O par de logos da marca sem composição: o da organização aberta no `/app`, com queda por
+     * variante para o da instalação (`IdentidadeDoKit::logosPara()`); fora dele, o da instalação.
+     * Privado: quem consome é `marca()`, `marcaEscura()` e a composição.
+     *
+     * @return array{clara: ?string, escura: ?string}
+     */
+    private static function logos(): array
+    {
+        return self::entrada()['logos'];
+    }
+
+    /**
+     * A entrada do memo do request corrente: segmentos e logos resolvidos juntos.
+     *
+     * @return array{segmentos: array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string}|null, logos: array{clara: ?string, escura: ?string}}
+     */
+    private static function entrada(): array
+    {
         $request = app()->bound('request') ? app('request') : null;
 
         if (! $request instanceof Request) {
-            return self::resolverSegmentos();
+            return self::resolverEntrada();
         }
 
         self::$memo ??= new WeakMap;
 
         if (! isset(self::$memo[$request])) {
-            self::$memo[$request] = self::resolverSegmentos() ?? false;
+            self::$memo[$request] = self::resolverEntrada();
         }
 
-        $segmentos = self::$memo[$request];
+        return self::$memo[$request];
+    }
 
-        return $segmentos === false ? null : $segmentos;
+    /**
+     * @return array{segmentos: array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string}|null, logos: array{clara: ?string, escura: ?string}}
+     */
+    private static function resolverEntrada(): array
+    {
+        $logos = IdentidadeDoKit::logosPara(self::organizacaoAberta());
+
+        return ['segmentos' => self::resolverSegmentos($logos), 'logos' => $logos];
+    }
+
+    /**
+     * A organização aberta, só em painel com tenancy (o `/app`); `null` nos demais.
+     *
+     * Lê `Filament::getCurrentPanel()`, NUNCA `Paineis::correnteOuPadrao()`: sem painel
+     * corrente este cai no `app`, que tem tenancy, e a logo de uma organização vazaria para
+     * onde não há organização (exceção da rule `app.md`; precedente: a Closure da cor em
+     * `AppPanelProvider`). Falha para a instalação sempre que houver dúvida.
+     */
+    private static function organizacaoAberta(): ?Tenant
+    {
+        if (Filament::getCurrentPanel()?->hasTenancy() !== true) {
+            return null;
+        }
+
+        $organizacao = Filament::getTenant();
+
+        return $organizacao instanceof Tenant ? $organizacao : null;
     }
 
     /**
@@ -137,12 +195,15 @@ final class CabecalhoDoPainel
      * - `painel`: com organização aberta, o nome dela (RQ-02); sem, o rótulo do painel
      *   (`Paineis::rotulo()`), omitido quando o projeto está ligado e tem o mesmo texto (P-01 —
      *   o `/app` usa o nome da aplicação como rótulo).
-     * - `logo_clara`/`logo_escura`: a logo da aba Identidade (P-07, P-12), se o interruptor
-     *   estiver ligado; a escura só existe com a marca separada.
+     * - `logo_clara`/`logo_escura`: o par de `logos()` (P-07), se o interruptor estiver ligado:
+     *   a da organização aberta no `/app`, a da instalação no resto — a P-12 vale fora do `/app`
+     *   com organização aberta, ver `wikis/specs/fix/logo-dark-do-tenant/`. A escura só existe
+     *   com a marca separada e só acompanha uma clara.
      *
+     * @param  array{clara: ?string, escura: ?string}  $logos
      * @return array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string}|null
      */
-    private static function resolverSegmentos(): ?array
+    private static function resolverSegmentos(array $logos): ?array
     {
         $exibeProjeto = (bool) config('kit.cabecalho.nome_do_projeto', false);
         $exibePainel  = (bool) config('kit.cabecalho.nome_do_painel', false);
@@ -163,7 +224,7 @@ final class CabecalhoDoPainel
         }
 
         $painel  = Paineis::correnteOuPadrao();
-        $tenant  = Filament::getTenant();
+        $tenant  = self::organizacaoAberta();
         $projeto = $exibeProjeto ? (string) config('app.name') : null;
 
         $nomeDoPainel = null;
@@ -176,8 +237,8 @@ final class CabecalhoDoPainel
             }
         }
 
-        $logoClara  = $exibeLogo ? IdentidadeDoKit::logo() : null;
-        $logoEscura = $logoClara !== null ? IdentidadeDoKit::logoEscura() : null;
+        $logoClara  = $exibeLogo ? $logos['clara'] : null;
+        $logoEscura = $logoClara !== null ? $logos['escura'] : null;
 
         if (blank($projeto) && blank($nomeDoPainel) && $logoClara === null) {
             Log::channel('configuracoes')->warning(
